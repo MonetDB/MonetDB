@@ -1,4 +1,8 @@
 algebra_PROCs
+aggr
+aggr_uchr
+aggrX3
+aggrX3_uchr
 arith
 ascii_io
 bat
@@ -15,3 +19,4 @@ tcpip1
 tcpip2
 slice
 enum
+radix

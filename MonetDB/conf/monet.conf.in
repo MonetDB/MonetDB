@@ -32,7 +32,7 @@ exec_prefix=@exec_prefix@
 
 # GDK Section
 #============
-gdk_dbfarm=@localstatedir@@DIRSEP@dbfarm	# origin of the database store
+gdk_dbfarm=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm	# origin of the database store
 gdk_dbname=demo			# default database to open
 gdk_debug=0			# debug
 gdk_mmap=33554432		# memory chucks of size >= 32M will be mmaped
@@ -92,5 +92,5 @@ monet_daemon=no			# default yes
 #====================================
 #sql_port=45123				#default place to sent the SQL query
 #sql_debug=0				#default place to sent the SQL query
-sql_logdir=@localstatedir@@DIRSEP@dbfarm@DIRSEP@log #default place to store 
+sql_logdir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@log #default place to store 
 					# transaction logs

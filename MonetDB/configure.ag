@@ -32,7 +32,7 @@ AH_TOP([#include "sysdefs.h"])
 AH_TOP([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("MonetDB", 4.3.9)
+AM_INIT_AUTOMAKE("MonetDB", 4.3.11)
 AM_CONFIG_HEADER(config.h:conf/config.h.in)
 
 HOST=[$target]
@@ -224,9 +224,9 @@ AC_FUNC_UTIME_NULL()
 AC_FUNC_VPRINTF()
 AC_FUNC_MEMCMP()
 AC_CHECK_FUNCS(strsignal)
-AC_CHECK_FUNCS(mkdir rmdir getcwd getopt getrlimit vsnprintf snprintf)
+AC_CHECK_FUNCS(mkdir rmdir getcwd getopt getrlimit vsnprintf snprintf kill)
 AC_CHECK_FUNCS(strcspn strdup strstr strtod strtol strerror strcasecmp)
-AC_CHECK_FUNCS(gethostname gettimeofday setenv putenv select getpgid)
+AC_CHECK_FUNCS(gethostname gettimeofday setenv putenv select)
 AC_CHECK_FUNCS(fstat getpwuid getuid ftime sysconf)
 AC_CHECK_FUNCS(mrand48 drand48)
 AC_CHECK_FUNCS(nanosleep lockf)
@@ -243,16 +243,20 @@ AC_SYS_LARGEFILE()
 dnl Mx and mel are used during make
 if test x$cross_compiling != xyes; then
 	dnl  When not cross-compiling, make sure we use the MEL/Mx created during the very make.
-	MEL="$MONET_BUILD/src/mel/mel"
-	MX="$MONET_BUILD/src/utils/Mx/Mx"
+	MEL="$MONET_BUILD/src/mel/mel$EXEEXT"
+	MX="$MONET_BUILD/src/utils/Mx/Mx$EXEEXT"
+	AC_SUBST(MEL)
+	AC_SUBST(MX)
 else
 	dnl  When cross-compiling, we need to have MEL/Mx in our PATH that work on the building host.
-	MEL="mel"
-	MX="Mx"
+	AC_PATH_PROG(MX,Mx$EXEEXT,,$PATH)
+	if test x$MX = x; then
+		AC_ERROR([No Mx$EXEEXT found in PATH=$PATH])
+	fi
+	AC_PATH_PROG(MEL,mel$EXEEXT,,$PATH)
+	if test x$MEL = x; then
+		AC_ERROR([No Mel$EXEEXT found in PATH=$PATH])
+	fi
 fi
-MEL="$MEL$EXEEXT"
-MX="$MX$EXEEXT"
-AC_SUBST(MEL)
-AC_SUBST(MX)
 
 AM_CONDITIONAL(CROSS_COMPILING,test x$cross_compiling = xyes)

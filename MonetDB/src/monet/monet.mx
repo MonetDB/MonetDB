@@ -878,6 +878,7 @@ int monet_sigerror(str kind, str name, str extra, int argc, ValPtr argv){
                         *(p++) = ',';
                         strcpy(p, ATOMname(b->ttype)); p += strlen(p);
                         *(p++) = ']';
+			BBPunfix(b->batCacheid);
                 }
         }
         *(p++) = ')'; *p = 0;

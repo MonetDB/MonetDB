@@ -147,8 +147,6 @@ gdk_export int  BBPdecref    (bat b, int logical);
 gdk_export void BBPshare     (bat b);
 gdk_export void BBPunshare   (bat b);
 gdk_export int BBPresurrect (str name);
-
-#endif /* _GDK_BBP_H_ */
 @
 @c
 #include "gdk.h"
@@ -211,7 +209,7 @@ void BBP_delete(bat i) {
 other globals
 @c
 int		BBP_curstamp = 0; 	/* unique stamp for creation of a bat */
-MT_Id		BBP_notrim = (MT_Id) 1;	/* avoids BBPtrim when we really do not want it */
+MT_Id		BBP_notrim = ~((MT_Id) 0);/* avoids BBPtrim when we really do not want it */
 int		BBP_dirty = 0;		/* BBP structures modified? */
 int		BBPin = 0;		/* bats loaded statistic */
 int		BBPout = 0;		/* bats saved statistic */
@@ -578,7 +576,7 @@ void BBPexit(void)
 	/* free all memory */
 	for(i=0; i<BBPsize; i++) {
 		BAT *b = BBP_cache(i);
-		if (b) BBPfree(b);
+		if (BBPswappable(b)) BBPfree(b);
 	}
 }
 
@@ -998,7 +996,7 @@ Other suffixes are only supported in order just for backward compatibility with
 old repositories (you won't see them anymore in new repositories).
 @c
 int BBPrename(bat bid, str nme) {
-	BAT *b = BATdescriptor(bid);
+	BAT *b = BBPdescriptor(bid);
 	long_str dirname;
 	bat tmpid=0,i;
 
@@ -1056,11 +1054,13 @@ We should keep track of dirty unloaded BATs. They may have to be committed
 later on, which may include reading them in again.
 @
 BBPswappable: may this bat be unloaded?
-@c
+Only real bats without memory references can be unloaded.
+@h
 #define BBPswappable(b) ((b) && BBP_refs((b)->batCacheid) == 0)
 #define BBPtrimmable(b) (BBPswappable(b) && VIEWparent(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
 #define BBPdesctrimmable(bid) (BBP_desc(bid) != NULL && BBP_refs(bid) == 0 && (BBP_status(bid)&BBPWAITING) == 0)
 
+#endif /* _GDK_BBP_H_ */
 @- 
 The @%BBP_ref@ contains the amount of live references to a BAT.
 These might be in recursive BATs, C or MIL variables.  The count is 
@@ -1074,11 +1074,11 @@ int BBPincref(bat i, int logical) {
 	if (i < BBPsize && BBP_logical(i)) { /* no BBPcheck as BBPresurrect should not provoke an GDKerror */
 		for (;;) {
 			if (pid != locked_by) 
-				MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPfix"); 
+				MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPincref"); 
 			if (BBP_status(i) & BBPUNLOADING) { /* must wait for unload, then reload */
 				if (pid != locked_by) 
-					MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPfix spin wait"); 
-				BBPspin(i, "BBPfix", BBPWAITING);
+					MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPincref spin wait"); 
+				BBPspin(i, "BBPincref", BBPWAITING);
 			} else { 
 				break;
 			}
@@ -1164,11 +1164,11 @@ void BBPshare(bat parent) {
 	int fix = 0;
 
 	if (pid != locked_by) 
-        	MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "VIEWcreate");
+        	MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPshare");
         if (++BBP_cache(parent)->batSharecnt == 1) 
 		fix = 1;
 	if (pid != locked_by) 
-        	MT_unset_lock(GDKswapLock[parent&BBPLOCKMASK], "VIEWcreate");
+        	MT_unset_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPshare");
 	if (fix) BBPfix(parent);
 }
 
@@ -1177,11 +1177,11 @@ void BBPunshare(bat parent) {
 	int unfix = 0;
 
 	if (pid != locked_by) 
-		MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "VIEWunlink");
+		MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPunshare");
         if (--BBP_cache(parent)->batSharecnt == 0) 
 		unfix = 1;
 	if (pid != locked_by) 
-		MT_unset_lock(GDKswapLock[parent&BBPLOCKMASK], "VIEWunlink");
+		MT_unset_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPunshare");
 	if (unfix) BBPunfix(parent);
 }
 
@@ -1251,7 +1251,8 @@ BAT *BBPdescriptor(bat i) {
         if (!BBPcheck(i, "BBPdescriptor")) {
 		return NULL;
 	}
-	if (BBP_cache(i) == NULL) {
+	assert( BBP_refs(i) );
+	if ((b = BBP_cache(i)) == NULL) {
 		MT_Id pid = MT_getpid_();
 
 		if (pid != locked_by)
@@ -1259,7 +1260,7 @@ BAT *BBPdescriptor(bat i) {
 		while (BBP_status(j) & BBPWAITING) { /* wait for bat to be loaded by other thread */
 			if (pid != locked_by)
 				MT_unset_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
-			BBPspin(j, "BATdescriptor", BBPWAITING);
+			BBPspin(j, "BBPdescriptor", BBPWAITING);
 			if (pid != locked_by)
 				MT_set_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
 		}
@@ -1274,9 +1275,9 @@ BAT *BBPdescriptor(bat i) {
 			MT_unset_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
 	}
 	if (load) {
-		BBPin++;
 		IODEBUG THRprintf(GDKerr, "load %s\n", BBPname(i));
 		b = BATload_intern(i);
+		BBPin++;
 
 		/* clearing bits can be done without the lock */
 		BBP_status_off(j, BBPLOADING, "BBPdescriptor");
@@ -1459,7 +1460,7 @@ int BBPsave(BAT* b) {
 
 
 @-
-TODO merge BBPfree with BATfree? Its function isto prepare a BAT for being
+TODO merge BBPfree with BATfree? Its function is to prepare a BAT for being
 unloaded (or even destroyed, if the BAT is not persistent).
 @c
 int BBPfree(BAT *b) {
@@ -1467,9 +1468,9 @@ int BBPfree(BAT *b) {
 	bat bid = ABS(b->batCacheid), parent = VIEWparent(b);
 	int destroy = (BBP_lrefs(bid)) == 0 && (BBP_status(bid)&BBPDELETED) == 0;
 
-	if (!BBPswappable(b)) {
-		return 0;
-	}
+	assert(BBPswappable(b));
+	if (!parent)
+		assert(b->batSharecnt == 0);
 
 	/* write dirty BATs before being unloaded */
 	ret = BBPsave(b);
@@ -1514,6 +1515,8 @@ int BBPfree(BAT *b) {
 	} else {
 		BBPuncacheit(bid); /* just mark unloaded */
 	}
+	if (parent)		/* parent released when completely done with child */
+		BBPunshare(parent);
 	return 0; 
 }
 
@@ -1896,6 +1899,7 @@ BAT *BBPquickdesc(bat bid, int delaccess) {
                       || b->tacctype || (complexatom(b->tatom, delaccess)))
 	{
                 b = BATload_intern(bid);
+		BBPin++;
         }
         return b;
 }

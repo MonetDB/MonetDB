@@ -309,10 +309,6 @@ the memory consumption.
 @h
 /* default setting to administer everything */
 #define GDK_MEM_NULLALLOWED
-#ifdef DDI_PATCH
-#define GDK_MEM_KEEPHISTO
-#define GDK_VM_KEEPHISTO
-#endif
 
 #if (defined(WIN32))
 #define GDK_MEM_BIGSIZE LL_CONSTANT(32768)   /* very fragile malloc */
@@ -403,6 +399,13 @@ static int GDK_mem_allocs = 0;
   }\
 }
 
+@+ NIELS testing unload all
+#define CHKMEM(meminc, vminc) {\
+	int memchk = (meminc>0 && (++GDK_mem_allocs>=0 || meminc>LL_CONSTANT(50000)));\
+	int vmchk = (vminc>0 && (++GDK_vm_allocs>=0 || vminc>LL_CONSTANT(5000000)));\
+	if (memchk || vmchk) GDKmemchk(memchk, vmchk);\
+}
+@c
 /* at least each 50M of memory increase, BBPtrim is run */
 #define CHKMEM(meminc, vminc) {\
 	int memchk = (meminc>0 && (++GDK_mem_allocs>=1000 || meminc>LL_CONSTANT(50000)));\
@@ -1118,12 +1121,9 @@ int GDKinit(char *dbname, char *dbfarm) {
 
 	/* Mserver intends to rob 85% of all memory as a default */
  	GDK_mem_maxsize = (size_t) ((double)MT_npages() * (double)MT_pagesize() * 0.85); 
-#ifdef DDI_PATCH
-{	size_t vmlimit = GDK_mem_maxsize + GDKvm_cursize() - GDKmem_inuse();
-	if (GDK_vm_maxsize > vmlimit) {
-		GDK_vm_maxsize = vmlimit; /* in order not to swap like mad, limit vm consumption */
-	}}
-#endif
+/* NIELS testing unload all
+	GDK_mem_maxsize = 0;
+*/
 
 	GDKremovedir(DELDIR);  
 	BBPinit(); 

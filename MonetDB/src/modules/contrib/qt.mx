@@ -159,11 +159,6 @@ typedef enum {
 
 typedef gdk_int64 Time;
 
-static char *dirs[] = {
-  "North", "NorthEast", "East", "SouthEast", 
-  "South", "SouthWest", "West", "NorthWest",
-  "Parent" };
-
 static direction_t opposite[] = { S, SW, W, NW, N, NE, E, SE, Parent };
 
 /* Spot management */
@@ -1527,22 +1522,6 @@ qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
   BATdelete(bv);
   c->c_refs--;
   return rv;
-}
-
-static int
-convert_to_itten_runge(int color)
-{
-  int bin;
-
-  if (color < HUEBINS) {
-    bin = (int)((double)color / HUES_PER_ITTEN_RUNGE_BIN);
-    return (int)(bin * HUES_PER_ITTEN_RUNGE_BIN +
-		 HUES_PER_ITTEN_RUNGE_BIN / 2.);
-  }
-
-  bin = (int)((double)(color - HUEBINS) / GREYS_PER_ITTEN_RUNGE_BIN);
-  return (int)(bin * GREYS_PER_ITTEN_RUNGE_BIN +
-	       GREYS_PER_ITTEN_RUNGE_BIN / 2.) + HUEBINS;
 }
 
 int

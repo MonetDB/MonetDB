@@ -152,6 +152,12 @@ void bulkerror_finish(bulkerror_t *bulkerror, str fcn_nme) {
 	}	
 }
 
+static int BATunfix(ptr i){
+	if (i && *(bat*)i)
+		(void)BBPunfix(*(bat*)i);
+	return 0;
+}
+
 /* call an interpret tree, and return <0 only on error */
 int interpret_interpret(Cntxt stk, YYSTREE tt, ValPtr argv) {
 	int ret_val = interpret(stk, tt, argv);
@@ -208,7 +214,7 @@ operator are a special case.
 @c
 	for(i=1; i < argc; i++) {
 	    if (argv[i].vtype == TYPE_bat && argv[i].len != int_nil) {
-		BAT *b = BATdescriptor(argv[i].val.bval);
+		BAT *b = BBPdescriptor(argv[i].val.bval);
 		size_t sz = BATcount(b);
 
 		if (min_size == REALLY_REALLY_BIG) {
@@ -326,6 +332,7 @@ typedef struct {
 	ValPtr c[MAXPARAMS]; 	/* pointer to the elements in argv */
 	ColFcn f[MAXPARAMS]; 	/* pointer to value functions */
 	int (*unfix)(ptr);	/* unfix function for produced atoms */ 
+	int need_unfix;		/* indicates if an unfix function is needed */
 	ValRecord id;		/* current head value */
 	size_t cap;		/* capacity of the result */
 	BAT *b;			/* result bat */
@@ -377,6 +384,14 @@ static ColFcn multiplex_fcn(int tpe){
 @:multiplex_exec(fcn,extern,extern)@
 @:multiplex_exec(fcn,intern,tpechk)@
 @:multiplex_exec(fcn,extern,tpechk)@
+@:multiplex_exec_bat(proc,intern,tpechk)@
+@:multiplex_exec_bat(proc,extern,tpechk)@
+@:multiplex_exec_bat(fcn,intern,intern)@
+@:multiplex_exec_bat(fcn,extern,intern)@
+@:multiplex_exec_bat(fcn,intern,extern)@
+@:multiplex_exec_bat(fcn,extern,extern)@
+@:multiplex_exec_bat(fcn,intern,tpechk)@
+@:multiplex_exec_bat(fcn,extern,tpechk)@
 
 static 
 int interpret_multiplex_fcn(
@@ -391,9 +406,10 @@ int interpret_multiplex_fcn(
 	int ret,       /* return type; <=0 if unknown */
 	GDKfcn imp     /* command pack address or proc YYSTREE */
 ){
+	int recursive_bats = 0;
 	int r, i, proc = (stk >= 0), real_type = 0;
 	int special = (imp == CMDifthen || imp == CMDifelse || imp == CMDifthenelse);
-	BAT *assignbat=assignop?BATdescriptor(argv[1].val.bval):NULL;
+	BAT *assignbat=assignop?BBPdescriptor(argv[1].val.bval):NULL;
 	ValPtr bak = (ValPtr) alloca(argc*(int)sizeof(ValRecord));
 	exec_t desc;
 	RowFcn wrap;
@@ -411,7 +427,7 @@ int interpret_multiplex_fcn(
 	for(i=1; i<argc; i++) {
 	    bak[i] = argv[i];
 	    if (argv[i].vtype == TYPE_bat && argv[i].len != int_nil) {
-	        BAT *b = BATdescriptor(argv[i].val.bval); 
+	        BAT *b = BBPdescriptor(argv[i].val.bval); 
 		if (b == NULL) return 0;
 		real_type = b->htype;
 		desc.piv[desc.nbats] = b;	
@@ -424,9 +440,10 @@ int interpret_multiplex_fcn(
 Set up type and length info for the values that will come out of BAT params.
 @c
 	for(i=0; i<desc.nbats; i++) {
+		recursive_bats |= (desc.piv[i]->ttype == TYPE_bat);
 		desc.f[i+1] = multiplex_fcn(desc.piv[i]->ttype);
-		desc.c[i+1]->vtype = ATOMtype(desc.piv[i]->ttype);	
-		desc.c[i+1]->len = ATOMsize(desc.c[i+1]->vtype);	
+		desc.c[i+1]->vtype = ATOMtype(desc.piv[i]->ttype);
+		desc.c[i+1]->len = ATOMsize(desc.c[i+1]->vtype);
 	}
 	if (desc.nbats == 1 && real_type == TYPE_void) {
 		desc.id.vtype = real_type;
@@ -434,11 +451,26 @@ Set up type and length info for the values that will come out of BAT params.
 		desc.id.vtype = tpe;
         }
 	desc.id.len = ATOMsize(tpe);
-	desc.f[0] = multiplex_fcn(tpe); 
+	desc.f[0] = multiplex_fcn(tpe);
 	desc.c[0] = &desc.id;
-	wrap = (RowFcn) (proc?(ATOMextern(desc.id.vtype)?
-			multiplex_proc_extern_tpechk:
-			multiplex_proc_intern_tpechk):
+	wrap = (RowFcn) (recursive_bats?
+		  ((proc?(ATOMextern(desc.id.vtype)?
+			multiplex_bat_proc_extern_tpechk:
+			multiplex_bat_proc_intern_tpechk):
+		     (ret > 0)?	
+			(ATOMextern(ret)?
+			    (ATOMextern(desc.id.vtype)?
+				multiplex_bat_fcn_extern_extern:
+				multiplex_bat_fcn_intern_extern):
+			    (ATOMextern(desc.id.vtype)?
+				multiplex_bat_fcn_extern_intern:
+				multiplex_bat_fcn_intern_intern)):
+			(ATOMextern(desc.id.vtype)?
+			    multiplex_bat_fcn_extern_tpechk:
+			    multiplex_bat_fcn_intern_tpechk))):
+		  ((proc?(ATOMextern(desc.id.vtype)?
+			multiplex_bat_proc_extern_tpechk:
+			multiplex_bat_proc_intern_tpechk):
 		     (ret > 0)?	
 			(ATOMextern(ret)?
 			    (ATOMextern(desc.id.vtype)?
@@ -449,10 +481,13 @@ Set up type and length info for the values that will come out of BAT params.
 				multiplex_fcn_intern_intern)):
 			(ATOMextern(desc.id.vtype)?
 			    multiplex_fcn_extern_tpechk:
-			    multiplex_fcn_intern_tpechk));
+			    multiplex_fcn_intern_tpechk))));
+	desc.need_unfix = (!proc && !desc.notall);
  	if (ret > 0) {
 		desc.b = BATnew(desc.id.vtype, ret, desc.cap+3); 
 		desc.unfix = (desc.notall)?NULL:BATatoms[ret].atomUnfix;
+		if (desc.need_unfix && ret == TYPE_bat)
+			desc.unfix = BATunfix;
 	}
 @-
 Ok, do it! The integer return status tells us about how the matching
@@ -513,6 +548,44 @@ static int multiplex_@1_@2_@3(exec_t *desc, ValPtr* argv){
     if (!desc->b) {
 	desc->b = BATnew(desc->id.vtype, desc->argv[0].vtype, desc->cap+3); 
 	desc->unfix = (desc->notall)?NULL:BATatoms[desc->argv[0].vtype].atomUnfix;
+	if (desc->need_unfix && desc->argv[0].vtype == TYPE_bat)
+		desc->unfix = BATunfix;
+
+	/* void void case */
+	if (!desc->b){
+		GDKsetbuf(desc->bulkerror.bak);
+		GDKerror("Result bat[void,void] impossible.\n");
+		GDKsetbuf(desc->bulkerror.buf);
+		return -1;
+	}
+    } 
+    @:insert_@3(@2)@
+    return 0;
+}
+
+@= multiplex_exec_bat
+static int multiplex_bat_@1_@2_@3(exec_t *desc, ValPtr* argv){
+    int i, retval;
+
+    /* fix all bats */
+    for(i = 1; i < desc->argc; i++)
+	if (desc->c[i] && desc->c[i]->vtype == TYPE_bat && argv[i]->val.bval)
+		BBPfix(argv[i]->val.bval);
+    retval = @:call_@1@
+    /* unfix all bats */
+    for(i = 1; i < desc->argc; i++)
+	if (desc->c[i] && desc->c[i]->vtype == TYPE_bat && argv[i]->val.bval)
+		BBPunfix(argv[i]->val.bval);
+
+    if (desc->notall && retval < 0) {
+	return 0;
+    }
+    if (!desc->b) {
+	desc->b = BATnew(desc->id.vtype, desc->argv[0].vtype, desc->cap+3); 
+	desc->unfix = (desc->notall)?NULL:BATatoms[desc->argv[0].vtype].atomUnfix;
+	if (desc->need_unfix && desc->argv[0].vtype == TYPE_bat)
+		desc->unfix = BATunfix;
+
 	/* void void case */
 	if (!desc->b){
 		GDKsetbuf(desc->bulkerror.bak);
@@ -642,7 +715,7 @@ if (!retval) {
     }
 
 @= batinit
-	b@1 = BATdescriptor(@2);
+	b@1 = BBPdescriptor(@2);
 	a@1 = ATOMvarsized(b@1->ttype)?b@1->theap.base:0;
 	s@1 = BUNsize(b@1);
 	p@1 = (char*) (BUNfirst(b@1)+b@1->tloc);
@@ -881,7 +954,7 @@ if (p1<e1 && p2<e2 && p3<e3) {
 }
 
 @= mergeinit
-{   BAT *bn = BATdescriptor(argv[@1].val.bval);
+{   BAT *bn = BBPdescriptor(argv[@1].val.bval);
     if (htpe == TYPE_void) 
 	htpe = (special>1)?ATOMtype(bn->htype):bn->htype;
     b@1 = bn;
@@ -1192,6 +1265,8 @@ Note also that result atoms with an unfix ADT routine must be unfixed (odSet, e.
 	if (ATOMextern(argv->vtype)) {
 		GDKfree(_p);
 	}
+	/* NIELS for packed_call/bat results
+		 a BBPunfix is needed instead of a ATOMunfix */
 	@:exec_cleanup@
 }
 @= exec_opt
@@ -1232,10 +1307,10 @@ the {\tt bat[ht,tt]}. The second is the extent {\tt bat[ht,any]} and may
 be omitted; in which case the operators are executed on all unique
 head values only (no empty sets possible). 
 @c
-	if (!(b = BATdescriptor(argv[1].val.bval))) {
+	if (!(b = BBPdescriptor(argv[1].val.bval))) {
 		return -1;
 	}
-	if ((argc == 3) && !(extent = BATdescriptor(argv[2].val.bval))) {
+	if ((argc == 3) && !(extent = BBPdescriptor(argv[2].val.bval))) {
 		return -1;
 	}
 	minpos = BUNindex(b, (p=BUNfirst(b)));

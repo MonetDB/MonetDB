@@ -130,6 +130,7 @@ This module contains a simple interface for internet connections.
 #ifdef HAVE_WINSOCK_H
 # include <winsock.h>
 #endif
+#include "kernel.h"
 
 #ifdef AIX
 #define SOCKPTR struct sockaddr *
@@ -146,6 +147,12 @@ This module contains a simple interface for internet connections.
 #define SOCKLEN int
 #endif
 #endif
+#endif
+
+#ifdef NATIVE_WIN32
+#define s_close closesocket
+#else
+#define s_close close
 #endif
 
 @= builtin_operand
@@ -235,84 +242,90 @@ Get the new information for the server socket and start listening.
     		tv.tv_usec = 500;
 
     		retval = select(sock+1, &fds, &fds, &fds, &tv);
-		length = 0;
-    		if (retval && (msgsock = accept(sock, 0, &length)) < 0) {
+		if (retval == 0) {
+			/* nothing interesting has happened */
+			continue;
+		}
+		if (retval < 0) {
+			GDKsyserror("MAPIlisten:select failed\n");
+			return GDK_FAIL;
+		}
+    		if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
 			if (MT_geterrno() != EINTR) {
 				GDKsyserror("MAPIlisten:accept failed\n");
 				return GDK_FAIL;
 	    		}
-		} else if (retval) {
-			if (STREQ(cmd,"")) {
-				int i, mpl;
-				char *name = (char*) GDKmalloc(BUFSIZ), *user = name;
-				char *mp, *nmp;
-				stream *fdin = socket_rastream(msgsock, "mapi-r");
-				stream *fdout = socket_wastream(msgsock, "mapi-w");
-				Client c;
-	
-				if (fdin == 0){
-					GDKsyserror("CLIENTlisten:fdin problems\n");
-					continue;
-				}
-				if (fdout == 0){
-					GDKsyserror("CLIENTlisten:fdout problems\n");
-					continue;
-				}
-				/* get user name */
-				fdin->read(fdin, user, 1, 1);
-				for(i=0; i<BUFSIZ && *user != '\n'; i++){
-					user++;
-					fdin->read(fdin, user, 1, 1);
-				}
-				*user = 0;
-				mp = GDKgetenv("monet_prompt");
-				mpl = strlen(mp);
-				nmp = GDKmalloc(mpl +3);
-				nmp[0] = '\1';
-				strncpy(nmp+1,mp,mpl);
-				nmp[mpl+1] = '\1';
-				nmp[mpl+2] = '\0';
-				c = initClient(name, nmp, FALSE);
-				GDKfree(nmp);
-				if (c == 0) {
-					stream_printf(fdout, "CLIENTlisten:Failed to init client for user %s\n", name );
-					GDKfree(name);
-					fdout->flush(fdout);
+			continue;
+		}
+		if (STREQ(cmd,"")) {
+			int i, mpl;
+			char *name = (char*) GDKmalloc(BUFSIZ), *user = name;
+			char *mp, *nmp;
+			stream *fdin = socket_rastream(msgsock, "mapi-r");
+			stream *fdout = socket_wastream(msgsock, "mapi-w");
+			Client c;
 
-					fdout->close(fdout);
-					fdout->destroy(fdout);
-					fdout->close(fdin);
-					fdout->destroy(fdin);
-					close(msgsock);
-					continue;
-				}
+			if (fdin == 0){
+				GDKsyserror("CLIENTlisten:fdin problems\n");
+				continue;
+			}
+			if (fdout == 0){
+				GDKsyserror("CLIENTlisten:fdout problems\n");
+				continue;
+			}
+			/* get user name */
+			fdin->read(fdin, user, 1, 1);
+			for(i=0; i<BUFSIZ && *user != '\n'; i++){
+				user++;
+				fdin->read(fdin, user, 1, 1);
+			}
+			*user = 0;
+			mp = GDKgetenv("monet_prompt");
+			mpl = strlen(mp);
+			nmp = GDKmalloc(mpl +3);
+			nmp[0] = '\1';
+			strncpy(nmp+1,mp,mpl);
+			nmp[mpl+1] = '\1';
+			nmp[mpl+2] = '\0';
+			c = initClient(name, nmp, FALSE);
+			GDKfree(nmp);
+			if (c == 0) {
+				stream_printf(fdout, "CLIENTlisten:Failed to init client for user %s\n", name );
 				GDKfree(name);
-				c->login = time(0);
-				c->listing = 0;
-				c->socket = msgsock;
-				c->fdin = fdin;
-				c->fdout = fdout;
-				c->mode = BLOCKMODE;
-				CNTXTcopy(stk, c);
-				TBL_initclient(c, father);
-				(void)monetFork();
-				scheduleClient(c);
-				PARDEBUG THRprintf(GDKerr, 
-					"CLIENTlisten:client accepted %d\n", 
-						msgsock);
-			} else {
-				ValRecord res;
-				ptr val = &res.val.ival;
-				int cres = 0;
-				char buf[BUFSIZ];
-	
-				snprintf( buf, BUFSIZ, "%s(%d);\n", cmd, msgsock );
-        			res.vtype = TYPE_void; 
-				interpret_str( stk, buf, &res);
-				if ((cres = close(msgsock)) < 0){
-					GDKerror("Error closing socket %d\n", cres );
-					return GDK_FAIL;
-				}
+				fdout->flush(fdout);
+
+				fdout->close(fdout);
+				fdout->destroy(fdout);
+				fdout->close(fdin);
+				fdout->destroy(fdin);
+				s_close(msgsock);
+				continue;
+			}
+			GDKfree(name);
+			c->login = time(0);
+			c->listing = 0;
+			c->socket = msgsock;
+			c->fdin = fdin;
+			c->fdout = fdout;
+			c->mode = BLOCKMODE;
+			CNTXTcopy(stk,c);
+			TBL_initclient(c, father);
+			(void)monetFork();
+			scheduleClient(c);
+			PARDEBUG THRprintf(GDKerr, 
+				"CLIENTlisten:client accepted %d\n", 
+					msgsock);
+		} else {
+			ValRecord res;
+			int cres = 0;
+			char buf[BUFSIZ];
+
+			snprintf( buf, BUFSIZ, "%s(%d);\n", cmd, msgsock );
+			res.vtype = TYPE_void; 
+			interpret_str( stk, buf, &res);
+			if ((cres = s_close(msgsock)) < 0){
+				GDKerror("Error closing socket %d\n", cres );
+				return GDK_FAIL;
 			}
 		}
 	} while (monet_running);
@@ -350,12 +363,22 @@ int stream_read_until(str *res, Stream *S , str stop){
 }
 
 int socket_close_wrap( int *s ){
-	close(*s);
+	s_close(*s);
 	return GDK_SUCCEED;
 }
 
 int socket_dup_wrap( int *res, int *s ){
+#ifdef NATIVE_WIN32
+  	HANDLE process = GetCurrentProcess();
+  	DuplicateHandle(process, 
+	       (HANDLE) *s, process,
+	       (HANDLE*) res,
+	       0, 
+	       TRUE, 
+	       DUPLICATE_SAME_ACCESS);
+#else
 	*res = dup(*s);
+#endif
 	return GDK_SUCCEED;
 }
 

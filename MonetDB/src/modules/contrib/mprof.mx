@@ -519,6 +519,7 @@ In collecting the timing information we should sum over the thread
 and all its children.
 @c
 #include "mprof.h"
+#include "algebra.h"
 #include <stdlib.h>
 
 static Tms Tmsnullval;

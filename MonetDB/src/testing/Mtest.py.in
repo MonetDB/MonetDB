@@ -283,7 +283,11 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
     elif l[:17] == '<!--MajorDiffs-->':
         DIFF = "<B><I>Major differences</I></B>"
     else:
-        ErrXit("Unexpected last line in %s:\n%s" % (TST+WHAT+".diff.html",l))
+        Warn("Unexpected last line in %s:\n%s" % (TST+WHAT+".diff.html",l))
+        f = open(TST+WHAT+".diff.html","a")
+        f.write("\n<!--MajorDiffs-->\n")
+        f.close()
+        DIFF = "<B><I>Major differences</I></B>"
     SYSTEM = OSVER+":"
     if COMPILER:
         SYSTEM = COMPILER+", "+SYSTEM
@@ -429,7 +433,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
     elif l[:17] == '<!--MajorDiffs-->':
         o = 2
     else:
-        ErrXit("Unexpected last line in %s:\n%s" % (TST+".out.diff.html",l))
+        Warn("Unexpected last line in %s:\n%s" % (TST+".out.diff.html",l))
     for l in fileinput.input(TST+".err.diff.html"):
         pass
     if   l[:14] == '<!--NoDiffs-->':
@@ -439,7 +443,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
     elif l[:17] == '<!--MajorDiffs-->':
         e = 2
     else:
-        ErrXit("Unexpected last line in %s:\n%s" % (TST+".err.diff.html",l))
+        Warn("Unexpected last line in %s:\n%s" % (TST+".err.diff.html",l))
     if   o==2 or e==2:
         f.write("<B><I>"+TST+"</I></B>")
     elif o==1 or e==1:
@@ -575,21 +579,27 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     os.environ['RELBLDDIR'] = env['RELBLDDIR']
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        if os.path.exists(os.path.join(env['GDK_DBFARM'],TSTDB)):
+        for LogDBvar in 'GDK_DBFARM', 'SQL_LOGDIR':
+            LogDBdir = os.path.join(env[LogDBvar],TSTDB)
+            if LogDBvar == 'SQL_LOGDIR':
+                LogDBtxt = "log directory for "
+            else:
+                LogDBtxt = ""
+            if os.path.exists(LogDBdir):
+                try:
+                    shutil.rmtree(LogDBdir)
+                except:
+                    Warn(LogDBtxt+"database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
+                    #TODO:
+                    # add "something" to HTML output
+                    return td
             try:
-                shutil.rmtree(os.path.join(env['GDK_DBFARM'],TSTDB))
+                os.makedirs(LogDBdir)
             except:
-                Warn("database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
+                Warn("creating "+LogDBtxt+"database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
                 #TODO:
                 # add "something" to HTML output
                 return td
-        try:
-            os.makedirs(os.path.join(env['GDK_DBFARM'],TSTDB))
-        except:
-            Warn("creating database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
-            #TODO:
-            # add "something" to HTML output
-            return td
         if not os.path.exists(TSTTRGDIR):
             #TODO: set mode to umask
             os.makedirs(TSTTRGDIR)
@@ -609,6 +619,12 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
         if THISFILE in ["Mtest.py", "Mprofile.py"]:
             CreateHtmlIndex(env)
             AddSubToHtmlIndex(env, TSTDIR)
+
+	# HACK: remove large data-/input- files to save disk space
+        for f in 'tcpip2.init.bat', 'ascii_io.4MBload', 'test100k', 'no.145.k100_unique1', 'test_00.k100_unique1', 'VOCrightpages.xml', 'VOCleftpages.xml':
+            p = os.path.join(TSTTRGDIR,f)
+            if os.path.isfile(p):
+                os.remove(p)
 
     else: # THISFILE == "Mapprove.py"
         if not os.path.exists(TSTTRGDIR):
@@ -767,7 +783,7 @@ def CheckBATs(env, TST, TSTDB) :
     pOut,pIn,pErr = popen2.popen3('%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTDB))
     pIn.write('''\
         {
-            # print a list of all persisten BATs
+            # print a list of all persistent BATs
             # "BATs: bat1, bat2, ..."
             BATs := view_bbp_name;
             printf("\\nBATs: ");
@@ -935,7 +951,10 @@ def RunTest(env, TST, BusyPorts) :
     elif CALL == "sqlXp":
         SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".")
     elif SERVER in BusyPorts:
-        SkipTest(env, TST, EXT, "as %sPORT=%s is not available." % (SERVER,env[SERVER+'PORT']))
+        if SERVER == "SQL":
+            SkipTest(env, TST, EXT, "as SQLPORT=%s and/or MAPIPORT=%s are not available." % (env['SQLPORT'],env['MAPIPORT']))
+        else:
+            SkipTest(env, TST, EXT, "as %sPORT=%s is not available." % (SERVER,env[SERVER+'PORT']))
     else:
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
         for f in os.listdir(TSTSRCDIR):
@@ -993,11 +1012,11 @@ def RunTest(env, TST, BusyPorts) :
         if bestout:
             STABLEout = os.path.join(dir, bestout)[len(TST):]
         else:
-            STABLEout = ''
+            STABLEout = '.stable.out'
         if besterr:
             STABLEerr = os.path.join(dir, besterr)[len(TST):]
         else:
-            STABLEerr = ''
+            STABLEerr = '.stable.err'
         if not os.path.isfile(TST+STABLEout):
             open(TST+STABLEout,"w").close()
             ACCURACYout = 0
@@ -1061,6 +1080,7 @@ def RunTest(env, TST, BusyPorts) :
             FILES = os.path.join(TSTTRGDIR,TST)+" "+os.path.join(TSTTRGDIR,TST)+".*"
             for f in ["bat/\\*", '.gdk_lock']:
                 FILES = FILES+" "+os.path.join(env['GDK_DBFARM'],TSTDB,path(f))
+            FILES = FILES+" "+os.path.join(env['SQL_LOGDIR'],TSTDB,'log\\*')
             WHAT = os.path.join(THISPATH,"MkillUsers")+" -l"+ME+" -p"+ME+" "+FILES+r" \>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.out")+r" 2\>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.err")
             WHEN = "now + "+WAIT+" minutes"
             cmd  = "echo  "+WHAT+"  2>/dev/null | at "+WHEN+" 2>&1 | awk '/^[Jj]ob/{print $2}'"
@@ -1394,10 +1414,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if os.path.isfile(TST+".prologue"):
             PROLOGUE = " "+TST+".prologue"
 
-        Srvr = '%s%s %s "--dbname=%s" --set %s_port=%s' % (MTO, str(STO), exe['Mserver'][1], TSTDB, string.lower(SERVER), env[SERVER+'PORT'])
+        Srvr = '%s%s %s "--dbname=%s"' % (MTO, str(STO), exe['Mserver'][1], TSTDB)
         if SERVER == "MAPI":
             Srvr = '%s "%s"' % (Srvr, env['MAPI_MIL'])
-        else:
+        if SERVER == "SQL":
             Srvr = '%s "%s"' % (Srvr, env['SQLSERVER_MIL'])
         Srvr = Srvr+PROLOGUE
         #-background"
@@ -1417,6 +1437,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         open(ClntErrFile,"w").close()
 
         CheckSocket(env, SERVER, SrvrErr, LogLine)
+        if SERVER == "SQL":
+            CheckSocket(env, "MAPI", SrvrErr, LogLine)
 
         pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, 'printf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
         ln=""
@@ -1497,7 +1519,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             EPILOGUE = open(TST+".epilogue",'r')
             EpiFailed = ""
             try:
-                pSrvrIn.writelines(EPILOGUE.readlines())
+                pSrvrIn.write(EPILOGUE.read())
                 pSrvrIn.flush()
                 pSrvrIn.write(';\nprintf("\\nDone..\\n");\n')
                 pSrvrIn.flush()
@@ -1764,7 +1786,8 @@ def main(argv) :
         dft['GDK_DEBUG']      = "TSTDBG"
         dft['MONET_MOD_PATH'] = "''"   #"os.path.join(env['MONET_PREFIX'],'lib')+os.pathsep+os.path.join(env['MONET_PREFIX'],'lib','MonetDB')"
         dft['setMONET_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONET_MOD_PATH']+'\"'"
-        dft['setGDK_DBFARM'] = "'--dbfarm \"'+env['GDK_DBFARM']+'\"'"
+        dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
+        dft['setSQL_LOGDIR']     = "'--set \"sql_logdir='+env['SQL_LOGDIR']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(50000,59999))"
         dft['SQLPORT']        = "str(randomPort(50000,59999))"
         dft['SQLCLIENT']      = "'Msql'" # --port='+env['SQLPORT']"
@@ -1820,6 +1843,8 @@ def main(argv) :
              "override Mserver's default module search path"),
             ('dbfarm', None, 'gdk_dbfarm', '<directory>',
              "override default location of database directory"),
+            ('sql_logdir', None, 'sql_logdir', '<directory>',
+             "override default location of transaction-log directory"),
             ('MAPIPORT', None, 'mapiport', '<port-no.>',
              'default: %s' % dft['MAPIPORT']),
             ('MAPICLIENT', None, 'mapiclient', '<mapi-client program>',
@@ -1883,6 +1908,9 @@ def main(argv) :
         a = opts.get('gdk_dbfarm')
         if a is not None:
             env['GDK_DBFARM'] = a
+        a = opts.get('sql_logdir')
+        if a is not None:
+            env['SQL_LOGDIR'] = a
     if THISFILE == 'Mapprove.py':
         a = opts.get('ext')
         if a is None:
@@ -1947,6 +1975,10 @@ def main(argv) :
             env['setGDK_DBFARM'] = eval(dft['setGDK_DBFARM'])
         else:
             env['setGDK_DBFARM'] = ''
+        if env.has_key('SQL_LOGDIR'):
+            env['setSQL_LOGDIR'] = eval(dft['setSQL_LOGDIR'])
+        else:
+            env['setSQL_LOGDIR'] = ''
 
     if THISFILE == "Mprofile.py"  and  not env['CMDLST']:
         try:
@@ -2028,7 +2060,7 @@ def main(argv) :
     # export and display env
     STDERR.flush()
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars_ + ['GDK_DBFARM','setMONET_MOD_PATH','MAPI_MIL','SQLSERVER_MIL'] 
+        vars_ = vars_ + ['SQL_LOGDIR','GDK_DBFARM','setMONET_MOD_PATH','MAPI_MIL','SQLSERVER_MIL'] 
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
@@ -2072,12 +2104,13 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         exe = {}
         exe['Mtimeout']    = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s --set monet_prompt= --trace' % (opts.config, env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'])
+        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set monet_prompt= --trace' % \
+                                                         (opts.config, env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'])
         exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py "--config=%s" --host=%s --port=%s' % (opts.config, HOST, env['MAPIPORT'])
         exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']      = CheckExec('python')       , 'python'
         exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), '%s "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
-        exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , '%s -u monetdb -P monetdb --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['SQLPORT'])
+        exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , '%s -u monetdb -P monetdb --host=%s --port=%s --trace' % (env['SQLCLIENT'], HOST, env['SQLPORT'])
         if not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
@@ -2181,6 +2214,9 @@ def main(argv) :
         if not os.path.exists(env['GDK_DBFARM']):
             #TODO: set mode to umask
             os.makedirs(env['GDK_DBFARM'])
+        if not os.path.exists(env['SQL_LOGDIR']):
+            #TODO: set mode to umask
+            os.makedirs(env['SQL_LOGDIR'])
 
         if os.path.exists(os.path.join(env['GDK_DBFARM'],TSTPREF)):
             try:
@@ -2208,6 +2244,9 @@ def main(argv) :
             if busy:
                 Warn("Skipping %s tests as %sPORT=%s is not available (Error #%d: '%s')!" % (S,S,env[S+'PORT'],Serrno,Serrstr))
                 BusyPorts.append(S)
+        if 'SQL' not in BusyPorts  and  'MAPI' in BusyPorts:
+            Warn("Skipping SQL tests as MAPIPORT=%s is not available!" % env['MAPIPORT'])
+            BusyPorts.append('SQL')
 
     STDERR.flush()
     t_ = 0

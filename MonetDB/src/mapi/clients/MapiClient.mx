@@ -117,6 +117,7 @@ int doRequest(Msession mid, char *buf ){
 	while ((rtrn=Mgetreply(mid)) != 0) {
 		fprintf(toConsole, "%s\n",rtrn);
 	}
+	fflush(toConsole);
 	if (Merror(mid)) {
 		return 'q';
 	}

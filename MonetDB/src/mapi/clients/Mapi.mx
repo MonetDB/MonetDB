@@ -1020,7 +1020,7 @@ char *Mgetreply(Msession mid) {
 		mid->reply[n++] = ch;
         }
         mid->reply[n]=0;
-        mid->error = (mid->reply[0]=='!') || (n==0 && ch == EOF);
+        mid->error = (n==0 && ch == EOF);
 
 	if( mid->trace){
 		printf("Mgetreply:%s\n", mid->reply);

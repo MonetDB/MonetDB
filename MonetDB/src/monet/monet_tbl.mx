@@ -945,7 +945,7 @@ Most dictionary tables are created once and loaded upon system
 restart. By keeping the reference count at one we are assured that 
 they remain fixed in memory for the duration of the session.
 @c
-BAT *TBL_create(Client client, str nme, int cnt, int htpe, int ttpe, int hmode, int tmode) {
+static BAT *TBL_create(Client client, str nme, int cnt, int htpe, int ttpe, int hmode, int tmode) {
 	BAT *b = BATnew(htpe, ttpe, cnt);
 	char buf[128], *user = client->user;
 	Variable v;
@@ -976,19 +976,22 @@ BAT *TBL_create(Client client, str nme, int cnt, int htpe, int ttpe, int hmode, 
 	return b;
 }
 
-BAT *TBL_lookup( Client client, str nme ){
+static BAT *TBL_lookup( Client client, Client father, str nme ){
 	char buf[128];
 	Variable v;
 	BAT *b = NULL;
 
    	sprintf(buf, "monet_%s", nme);
-	v = VARfind(&client->stk, buf);
+	v = VARfind(&father->stk, buf);
 	if (v){ /* dirty replacement of the client bats */
-		BAT *o = BATdescriptor(v->binding.val.bval);
+		Variable n = VARnew(client->stk, v->name);
+		BAT *o = BBPdescriptor(v->binding.val.bval);
+		n->constant = TRUE;
+		n->frozen = TRUE;
+		n->binding.vtype = TYPE_bat;
 		b = BATcopy(o);
-		BBPdecref(v->binding.val.bval, TRUE);
 		BBPincref(b->batCacheid, TRUE);
-   		v->binding.val.bval = b->batCacheid;
+   		n->binding.val.bval = b->batCacheid;
 	} else {
 		GDKerror("variable %s not found\n",  buf );
 	}
@@ -1741,6 +1744,7 @@ int TBL_multiplex_resolve(str name, int argc, ValPtr argv,
 		    argc = i+1;
 		    RETURN(-2);
                 }
+		BBPunfix(b->batCacheid);
 	    } else {
 	        consts++;
 	    }
@@ -1858,43 +1862,48 @@ ready:	for(i=1; i < argc; i++) {
         return tok;
 }
 
+static int TBL_setaggr_cleanup( int res, BAT *b, BAT *e){
+	if (b) BBPunfix(b->batCacheid);
+	if (e) BBPunfix(e->batCacheid);
+	return res;
+}
 
 int TBL_setaggr_resolve(str nme, int argc, ValPtr argv, 
                         monet_sig_t *sig, Cntxt stk)
 {
         ValRecord param[2];
-        BAT *extent, *b, *tmp;
+        BAT *extent = NULL, *b = NULL, *tmp = NULL;
 	int tok;
  
         if (argc > 3  || argc < 2){
 		GDKerror("{%s}(Y):  1 or 2 params expected.\n", nme); 
-		return -1;
+		return TBL_setaggr_cleanup(-1, b, extent);
         }
         if (argv[1].vtype != TYPE_bat || !(b=BATdescriptor(argv[1].val.bval))){
                 GDKerror("{%s}(Y): must have BAT params\n", nme); 
-		return -2;
+		return TBL_setaggr_cleanup(-2, b, extent);
         }
         if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
 		GDKerror("{%s}(Y): void tailtype not allowed.\n", nme); 
-		return -1;
+		return TBL_setaggr_cleanup(-1, b, extent);
         }
         if (argc == 3) {
             if (argv[2].vtype != TYPE_bat ||
                 !(extent=BATdescriptor(argv[2].val.bval)))
             {
                 GDKerror("{%s}(Y): must have BAT params\n", nme); 
-		return -2;
+		return TBL_setaggr_cleanup(-2, b, extent);
             }
             if (TYPEerror(b->htype, extent->htype)) {
                 GDKerror("{%s}(Y): incompatible extent.\n", nme); 
-		return -2;
+		return TBL_setaggr_cleanup(-2, b, extent);
             }
             if (extent->hkey == FALSE) {
 		BATpropcheck(extent, BATPROPS_ALL); /* try to derive hkey */
 	    }
             if (extent->hkey == FALSE) {
                 GDKerror("{%s}(Y): extent must contain unique values.\n", nme);
-		return -1;
+		return TBL_setaggr_cleanup(-1, b, extent);
             }
         }
         tmp = BATnew(BATttype(b), BATttype(b), 1);
@@ -1903,13 +1912,13 @@ int TBL_setaggr_resolve(str nme, int argc, ValPtr argv,
  
         tok = TBL_normal_resolve(nme, 2, param, sig, stk);
         BBPreclaim(tmp);
-	if (tok < 0) return tok;
+	if (tok < 0) return TBL_setaggr_cleanup(tok, b, extent);
 	    
 	if (sig->ret_tpe == 0) {
                 GDKerror("{%s}(Y): 'any' return types not allowed.\n", nme);
-		return -1;
+		return TBL_setaggr_cleanup(-1, b, extent);
 	}
-        return tok;
+	return TBL_setaggr_cleanup(tok, b, extent);
 }
 
 @- TBL_printsigs
@@ -2296,11 +2305,11 @@ int check_type(int argc, ValPtr argv, int tpe, int mask) {
 		return 0;
 	}
 	if (kind == 2048) { 
-		BAT *b = BATdescriptor(argv[num].val.bval);
+		BAT *b = BBPdescriptor(argv[num].val.bval);
 		return b && TYPEcastable(tpe, BAThtype(b)); /* any-head */
 	}
 	if (kind == 1024) { 
-		BAT *b = BATdescriptor(argv[num].val.bval);
+		BAT *b = BBPdescriptor(argv[num].val.bval);
 		return b && TYPEcastable(tpe, BATttype(b)); /* any-tail */
 	}
 	return 0; /* illegal kind */
@@ -2310,7 +2319,7 @@ int TBL_procreturn(int argc, ValPtr argv, ValPtr res, YYSTREE t) {
 	if (PROC_TYPE1(t) == 0 && PROC_TYPE2(t) == 0) {
 		return 1;
 	} else if (res->vtype == TYPE_bat) {
-		BAT *b = BATdescriptor(res->val.bval);
+		BAT *b = BBPdescriptor(res->val.bval);
 		return b && check_type(argc, argv, BAThtype(b), PROC_TYPE1(t)) 
                          && check_type(argc, argv, BATttype(b), PROC_TYPE2(t));
 	} else if (PROC_TYPE2(t)) {
@@ -2335,9 +2344,9 @@ void TBL_initclient(Client client, Client father) {
 	int	i;
 
 	if (monet_clients != client){
-		client->fcntbl = TBL_lookup(client, "fcntbl");
-		client->acctbl = TBL_lookup(client, "acctbl"); 
-		client->atomtbl = TBL_lookup(client, "atomtbl"); 
+		client->fcntbl = TBL_lookup(client, father, "fcntbl");
+		client->acctbl = TBL_lookup(client, father, "acctbl"); 
+		client->atomtbl = TBL_lookup(client, father, "atomtbl"); 
 		TBL_incproc(client); /* inc reference counts to functions */
 		if (father)
 		    TBL_inc_mod_use(client, father); /* inc mod use counters */

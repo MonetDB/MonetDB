@@ -367,7 +367,13 @@ over it.
 @m
 .COMMAND count ( BAT[any,any] b ) : 
 				int = CMDcount; 
-"Return the number of elements currently in a BAT."
+"Returns the number of elements currently in a BAT."
+
+.COMMAND count ( BAT[any,any] b , bit ignore_nils ) : 
+				int = CMDcount_nil; 
+"Returns the number of elements currently in a BAT;
+ ignores BUNs with nil-tail iff ignore_nils==TRUE."
+
 @- Histogram on Tail 
 @m
 .COMMAND histogram ( BAT[any,any::2] b) : 
@@ -397,33 +403,35 @@ Give the lowest tail value. Error on empty BATs."
 .COMMAND max ( BAT[any::1,any::2] b ) 
 			: any::2 = CMDmaxany; "
 Give the highest tail value. Error on empty BATs."
-@+ Type-Specific Sum, Max and Min
+@+ Type-Specific Sum, Product, Max and Min
 @T
 For X $\in$ \{ uchr,sht,int,flt,dbl,lng \},  we define (using the {\em aggregate}
 macro):
 \begin{itemize}
 \item .COMMAND sum(BAT[any,X] : X, 
+\item .COMMAND prod(BAT[any,X] : X, 
 \item .COMMAND max(BAT[any,X] : X, and 
 \item .COMMAND min(BAT[any,X] : X. 
 \end{itemize}
 @m
-@:sum(sum,"Gives the sum of all tail values.")@
-@= sum_definition
+@:sumprod(sum,"Gives the sum of all tail values.")@
+@:sumprod(prod,"Gives the product of all tail values.")@
+@= sumprod_definition
 .COMMAND @1_@4 ( BAT[any,@2] ) : @4 = CMD@1_@2_@4; @3
-@= sum
-@:sum_definition(@1,uchr,@2,uchr)@
-@:sum_definition(@1,uchr,@2,sht)@
-@:sum_definition(@1,uchr,@2,int)@
-@:sum_definition(@1,uchr,@2,lng)@
-@:sum_definition(@1,sht,@2,sht)@
-@:sum_definition(@1,sht,@2,int)@
-@:sum_definition(@1,sht,@2,lng)@
-@:sum_definition(@1,int,@2,int)@
-@:sum_definition(@1,int,@2,lng)@
-@:sum_definition(@1,lng,@2,lng)@
-@:sum_definition(@1,flt,@2,flt)@
-@:sum_definition(@1,flt,@2,dbl)@
-@:sum_definition(@1,dbl,@2,dbl)@
+@= sumprod
+@:sumprod_definition(@1,uchr,@2,uchr)@
+@:sumprod_definition(@1,uchr,@2,sht)@
+@:sumprod_definition(@1,uchr,@2,int)@
+@:sumprod_definition(@1,uchr,@2,lng)@
+@:sumprod_definition(@1,sht,@2,sht)@
+@:sumprod_definition(@1,sht,@2,int)@
+@:sumprod_definition(@1,sht,@2,lng)@
+@:sumprod_definition(@1,int,@2,int)@
+@:sumprod_definition(@1,int,@2,lng)@
+@:sumprod_definition(@1,lng,@2,lng)@
+@:sumprod_definition(@1,flt,@2,flt)@
+@:sumprod_definition(@1,flt,@2,dbl)@
+@:sumprod_definition(@1,dbl,@2,dbl)@
 @m
 @:aggregate(max,"Give the highest tail value. Error on empty BATs.")@
 @:aggregate(min,"Give the lowest tail value. Error on empty BATs.")@
@@ -728,12 +736,31 @@ that for the moment are defined as procs.
             "sorts a BAT according to its head (primary) and tail values (secondary).\
              (straight forward hack, not tuned for performance at all, just used for testing.)", "algebra");
 
-    proc sum( bat[any,uchr] b ) : uchr { return sum_uchr(b); }
-    proc sum( bat[any,sht] b )  : sht  { return sum_sht(b); }
-    proc sum( bat[any,int] b )  : int  { return sum_int(b); }
-    proc sum( bat[any,lng] b )  : lng  { return sum_lng(b); }
-    proc sum( bat[any,flt] b )  : flt  { return sum_flt(b); }
-    proc sum( bat[any,dbl] b )  : dbl  { return sum_dbl(b); }
+@= sumprodavg
+    proc sum( bat[any,@1] b ) : @1 { return sum_@1(b); }
+    proc prod( bat[any,@1] b ) : @1 { return prod_@1(b); }
+
+    proc avg(BAT[any, @1] b) : dbl {
+	var cnt := count(b);
+        if (cnt = 0) 
+	    return dbl(nil);
+	return dbl(sum(b))/dbl(cnt);
+    }
+    ADDHELP("avg", "manegold", "May 14 2003",
+            "Gives the average of all tail values.", "algebra");
+@mil
+@:sumprodavg(uchr)@
+@:sumprodavg(sht)@
+@:sumprodavg(int)@
+@:sumprodavg(lng)@
+@:sumprodavg(flt)@
+@:sumprodavg(dbl)@
+
+    proc count_no_nil(BAT[any,any] b) : int {
+		return count(b,TRUE);
+    }
+    ADDHELP("count_no_nil", "manegold", "Jun 03 2003",
+    "short-cut for count(b,TRUE)", "algebra");
 
 @* Cost Model
 This module contains a full cost model on the algebraic 
@@ -973,6 +1000,30 @@ int CMDsum_@1_@2(@2* res, BAT *b) {
 	*res = result;
 	return GDK_SUCCEED;
 }
+
+@+ BAT prod[uct] operation
+The prod[uct] aggregate only works for int and float fields.
+The routines below assumes that the caller knows what type
+is large enough to prevent overflow.
+
+@= prod_implementation
+int CMDprod_@1_@2(@2* res, BAT *b) {
+	BUN p,q;
+	int xx;
+	@2 result=@3;
+
+	BATcheck(b,"BATprodInt");
+	BATloopFast(b, p, q, xx) {
+		@1 *value = (@1*) BUNtloc(b, p);
+		if (*value == @1_nil) {
+			result = @2_nil; break;
+		} else {
+			result *= *value;
+		}
+	}
+	*res = result;
+	return GDK_SUCCEED;
+}
 @h
 #ifndef ALGEBRA_H
 #define ALGEBRA_H
@@ -1081,6 +1132,20 @@ ptr BAT@1(BAT *b, ptr aggr) {
 @:sum_implementation(flt,flt,0.0)@
 @:sum_implementation(flt,dbl,0.0)@
 @:sum_implementation(dbl,dbl,0.0)@
+
+@:prod_implementation(uchr,uchr,1)@
+@:prod_implementation(uchr,sht,1)@
+@:prod_implementation(uchr,int,1)@
+@:prod_implementation(uchr,lng,1)@
+@:prod_implementation(sht,sht,1)@
+@:prod_implementation(sht,int,1)@
+@:prod_implementation(sht,lng,1)@
+@:prod_implementation(int,int,1)@
+@:prod_implementation(int,lng,1)@
+@:prod_implementation(lng,lng,1)@
+@:prod_implementation(flt,flt,1.0)@
+@:prod_implementation(flt,dbl,1.0)@
+@:prod_implementation(dbl,dbl,1.0)@
 
 @:aggregate_implementation(uchr)@
 @:aggregate_implementation(sht)@
@@ -1192,6 +1257,14 @@ int CMD@1(BAT **result, BAT* b, int *param) {
 @:binary(sdiff, BATsdiff)@
 @:binary(kdiff, BATkdiff)@
 @:binaryint(sample, BATsample)@
+
+int CMDcount_nil(int *result, BAT *b, bit *ignore_nils) {
+	if (*ignore_nils)
+		*result = (int) BATcount_no_nil(b);
+	else
+		*result = (int) BATcount(b);
+	return GDK_SUCCEED;
+}
 
 int CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize) {
         return (*result = (BAT *) BATgroup(b, *start, *incr, *grpsize))?GDK_SUCCEED:GDK_FAIL;
@@ -1336,7 +1409,6 @@ static int doCMDfetch(ptr ret, BAT *b, size_t i){
 	    } else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat*) BUNtloc(b, @1);
 		*(BAT**) ret = BATdescriptor(bid);
-		BBPfix(bid);
 	    } else if (_s == 4) {
 		*(int*) ret = *(int*) BUNtail(b, @1);
 	    } else if (_s == 1) {

@@ -827,6 +827,8 @@ view_var_name(
 	@:Pseudo(var,type)@
         res->vtype = TYPE_bat;
         res->val.bval = BBPcacheid(b);
+	BBPincref(res->val.bval, TRUE);
+	BBPunfix(res->val.bval);
 	return 0;
 }
 
@@ -856,6 +858,8 @@ view_var_type(
 	@:Pseudo(var,type)@
         res->vtype = TYPE_bat;
         res->val.bval = BBPcacheid(b);
+	BBPincref(res->val.bval, TRUE);
+	BBPunfix(res->val.bval);
 	return 0;
 }
 
@@ -885,6 +889,8 @@ view_var_kind(
 	@:Pseudo(var,type_status)@
         res->vtype = TYPE_bat;
         res->val.bval = BBPcacheid(b);
+	BBPincref(res->val.bval, TRUE);
+	BBPunfix(res->val.bval);
 	return 0;
 }
 int
@@ -913,6 +919,8 @@ view_var_constant(
 	@:Pseudo(var,value_status)@
         res->vtype = TYPE_bat;
         res->val.bval = BBPcacheid(b);
+	BBPincref(res->val.bval, TRUE);
+	BBPunfix(res->val.bval);
 	return 0;
 }
 
@@ -949,6 +957,8 @@ view_var_value(
 	@:Pseudo(var,value_value)@
         res->vtype = TYPE_bat;
         res->val.bval = BBPcacheid(b);
+	BBPincref(res->val.bval, TRUE);
+	BBPunfix(res->val.bval);
 	return 0;
 }
 

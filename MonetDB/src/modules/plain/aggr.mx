@@ -39,9 +39,11 @@ test scripts were added.
 
 .COMMAND {sum_uchr}(BAT[oid,uchr] b, BAT[oid,any] e) : BAT[oid,uchr] = CMDaggr_sum_uchr_uchr; 
 	"grouped tail sum"
-.COMMAND {sum_int}(BAT[oid,uchr] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_uchr_int; 
+.COMMAND {sum_sht}(BAT[oid,uchr] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_sum_uchr_sht; 
 	"grouped tail sum"
 .COMMAND {sum_sht}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_sum_sht_sht; 
+	"grouped tail sum"
+.COMMAND {sum_int}(BAT[oid,uchr] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_uchr_sht; 
 	"grouped tail sum"
 .COMMAND {sum_int}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_sht_int; 
 	"grouped tail sum"
@@ -57,6 +59,27 @@ test scripts were added.
 	"grouped tail sum"
 .COMMAND {sum_dbl}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_sum_dbl_dbl; 
 	"grouped tail sum"
+
+.COMMAND {prod_uchr}(BAT[oid,uchr] b, BAT[oid,any] e) : BAT[oid,uchr] = CMDaggr_prod_uchr_uchr; 
+	"grouped tail product"
+.COMMAND {prod_int}(BAT[oid,uchr] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_prod_uchr_int; 
+	"grouped tail product"
+.COMMAND {prod_sht}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_prod_sht_sht; 
+	"grouped tail product"
+.COMMAND {prod_int}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_prod_sht_int; 
+	"grouped tail product"
+.COMMAND {prod_int}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_prod_int_int; 
+	"grouped tail product"
+.COMMAND {prod_lng}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_prod_int_lng; 
+	"grouped tail product"
+.COMMAND {prod_lng}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_prod_lng_lng; 
+	"grouped tail product"
+.COMMAND {prod_flt}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,flt] = CMDaggr_prod_flt_flt; 
+	"grouped tail product"
+.COMMAND {prod_dbl}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_prod_flt_dbl; 
+	"grouped tail product"
+.COMMAND {prod_dbl}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_prod_dbl_dbl; 
+	"grouped tail product"
 
 .COMMAND {avg}(BAT[oid,uchr] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_uchr; 
 	"grouped tail average"
@@ -87,8 +110,8 @@ test scripts were added.
 .COMMAND {max}(BAT[oid,any::1] b, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggr_max; 
 	"grouped tail maximum"
 
-.COMMAND {count}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_count; 
-	"grouped count"
+.COMMAND {count}(BAT[oid,any] b, BAT[oid,any] e, bit ignore_nils) : BAT[oid,int] = CMDaggr_count; 
+	"grouped count; ignores nil values iff ignore_nils==TRUE"
 .COMMAND {size}(BAT[oid,bit] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_size;
 	"grouped count of true values"
 
@@ -104,6 +127,18 @@ test scripts were added.
 .END aggr;
 
 @mil
+    proc {count}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
+		return {count}(b,e,FALSE);
+    }
+    ADDHELP("{count}", "manegold", "Jun 03 2003",
+    "short-cut for {count}(b,e,FALSE)", "aggr");
+
+    proc {count_no_nil}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
+		return {count}(b,e,TRUE);
+    }
+    ADDHELP("{count_no_nil}", "manegold", "Jun 03 2003",
+    "short-cut for {count}(b,e,TRUE)", "aggr");
+
     proc size(BAT[any,bit] b) : int {
 	var h := b.histogram;
 	if (h.exist(true)) 
@@ -130,11 +165,23 @@ test scripts were added.
 		return	 {sum_dbl}(b,e);
     }
 
-    proc avg(BAT[any, any::1] b) : dbl {
-	var cnt := count(b);
-        if (cnt = 0) 
-	    return dbl(0);
-	return dbl(sum(b))/dbl(cnt);
+    proc {prod}(BAT[oid, uchr] b, bat[oid,any] e ) : BAT[oid,uchr] {
+		return	 {prod_uchr}(b,e);
+    }
+    proc {prod}(BAT[oid, sht] b, bat[oid,any] e ) : BAT[oid,sht] {
+		return	 {prod_sht}(b,e);
+    }
+    proc {prod}(BAT[oid, int] b, bat[oid,any] e ) : BAT[oid,int] {
+		return	 {prod_int}(b,e);
+    }
+    proc {prod}(BAT[oid, lng] b, bat[oid,any] e ) : BAT[oid,lng] {
+		return	 {prod_lng}(b,e);
+    }
+    proc {prod}(BAT[oid, flt] b, bat[oid,any] e ) : BAT[oid,flt] {
+		return	 {prod_flt}(b,e);
+    }
+    proc {prod}(BAT[oid, dbl] b, bat[oid,any] e ) : BAT[oid,dbl] {
+		return	 {prod_dbl}(b,e);
     }
 
     proc card(BAT[any,any] b) : int {
@@ -145,6 +192,13 @@ test scripts were added.
 	return {count}(b.sunique,e);
     }
 
+    proc variance(BAT[any,any::1] b) : any::1 {
+	var s := [*](b,b).sum;
+	var c := b.count.cast(s.type);
+	var a := b.avg.cast(s.type);
+	return ((s / c) - (a * a)).cast(b.ttype); 
+    }
+
 @{
 @+ Test Script
 
@@ -152,18 +206,23 @@ test scripts were added.
 proc toset(bat[any,any] b) : str {
         var res := "{ ";
         b@batloop() {
-                res :+= str($t) + " ";
+		if (isnil($t)) {
+			res :+= "nil ";
+		} else {
+	                res :+= str($t) + " ";
+		}
         }
         return res + "}";
 }
 
 proc aggrtst(int num, int fanout, str agg, ..str..) {
+	var gagg := sprintf("{%s}",agg);
 	var p := 3;
 	while((p :+= 1) <= $0) {
 	        var b, e, v := bat(void, int, num);
 	        var tpe := $(p);
 	        var i := 0;
-	        while(i < num) {
+	        while(i <= num) {
 	                v.insert(nil, 42);
 	                i :+= 1;
 	        }
@@ -175,32 +234,75 @@ proc aggrtst(int num, int fanout, str agg, ..str..) {
 	        }
 	        var n := 0; 
 	        e@batloop() {
+		   if (int($h) < num) {
 	                i := 0; 
 	                while(i < fanout) {
-	                        if  (($h = 0@0) and (i = 0)) {
+	                        if  (n = 0) {
+	                                b.insert($h, (*tpe)(-1));
+	                        } else if  (($h = oid(num/2)) and (i = (fanout/2))) {
 	                                b.insert($h, (*tpe)(nil));
+	                        } else if (($h = oid(num - 1)) and (i = (fanout - 1))) {
+	                                b.insert($h, (*tpe)(0));
 	                        } else {
 	                                b.insert($h, (*tpe)(n));
                         	} 
                         	n :+= 1; i :+= 1;
                 	}
+                    }
                 }
-        	print({toset}(b).col_name("test-set"),
-        	      (*agg)(b).col_name(sprintf("%s(b)",agg)),
-        	      (*agg)(b,v).col_name(sprintf("%s(b,v)",agg)),
-        	      (*agg)(b,e).col_name(sprintf("%s(b,e)",agg)));
+		var bs := {toset}(b).col_name("test-set "+tail(b));
+		var ab  := (*gagg)(b).col_name(sprintf("%s(b)",gagg));
+		var abv := (*gagg)(b,v).col_name(sprintf("%s(b,v)",gagg));
+		var abe := (*gagg)(b,e).col_name(sprintf("%s(b,e)",gagg));
+		if (not(printed)) {
+			v.print;
+			e.print;
+			var bh := b.mark(0@0).reverse;
+			var bt := b.reverse.mark(0@0).reverse;
+			print(bh,bt,bt.[sht],bt.[int],bt.[lng],bt.[flt],bt.[dbl],bt.[str]);
+			printed := TRUE;
+		}
+		var tpe2 := tail(ab);
+		ab.access(BAT_WRITE).insert(oid(num),(*agg)(b.reverse.select(oid(num)).reverse));
+		bs.access(BAT_WRITE).insert(oid(num),"{  }");
+        	print(bs,
+        	      ab , ab.[str] ,
+        	      abv, abv.[str],
+        	      abe, abe.[str]);
         }
 }
 
 PROC test_aggr() : void := {
 	module("decimal");
-	aggrtst(16,160,"{sum}","uchr", "sht","int","lng","flt","dbl");
-	aggrtst(16,160,"{avg}","uchr", "sht","int","lng","flt","dbl");
-	aggrtst(16,160,"{variance}","sht","int","lng","flt","dbl");
-	aggrtst(16,160,"{min}","uchr", "sht","int","lng","flt","dbl","decimal");
-	aggrtst(16,160,"{max}","uchr", "sht","int","lng","flt","dbl","decimal");
-	aggrtst(16,160,"{card}","uchr", "sht","int","lng","flt","dbl","decimal");
-	aggrtst(16,160,"{count}","uchr", "sht","int","lng","flt","dbl","decimal");
+	var printed := FALSE;
+	aggrtst(5,9,"sum","sht","int","lng","flt","dbl");
+	aggrtst(5,9,"sum_lng","sht","int","lng");
+	aggrtst(5,9,"sum_dbl","flt","dbl");
+	aggrtst(5,9,"prod","sht","int","lng","flt","dbl");
+	aggrtst(5,9,"prod_lng","sht","int","lng");
+	aggrtst(5,9,"prod_dbl","flt","dbl");
+	aggrtst(5,9,"avg","sht","int","lng","flt","dbl");
+	aggrtst(5,9,"min","sht","int","lng","flt","dbl","decimal");
+	aggrtst(5,9,"max","sht","int","lng","flt","dbl","decimal");
+	aggrtst(5,9,"count","sht","int","lng","flt","dbl","decimal");
+	aggrtst(5,9,"count_no_nil","sht","int","lng","flt","dbl","decimal");
+	aggrtst(5,9,"card","sht","int","lng","flt","dbl","decimal");
+	aggrtst(5,9,"variance","sht","int","lng","flt","dbl");
+}
+
+PROC test_aggr_uchr() : void := {
+	module("decimal");
+	var printed := FALSE;
+	aggrtst(5,9,"sum","uchr");
+	aggrtst(5,9,"sum_lng","uchr");
+	aggrtst(5,9,"prod","uchr");
+	aggrtst(5,9,"prod_lng","uchr");
+	aggrtst(5,9,"avg","uchr");
+	aggrtst(5,9,"min","uchr");
+	aggrtst(5,9,"max","uchr");
+	aggrtst(5,9,"count","uchr");
+	aggrtst(5,9,"count_no_nil","uchr");
+	aggrtst(5,9,"card","uchr");
 }
 
 @{
@@ -263,6 +365,49 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		*(@3*)BUN@2(bn, p) = sums[h];
 	}
         GDKfree(sums);
+@c
+@= large_aggr_prod
+	(void) BATprepareHash(bn);
+	BATloopFast(b, p, q, xx) {
+		oid *h = (oid*) BUNhead(b,p);
+		@1 *t = (@1*) BUN@2(b,p);
+
+		BUNfndOID(r, bn, h);
+		if (r) {
+			@3 *dst = (@3*) BUN@2(bn, r);
+			if (*dst != @3_nil) {
+				if (*t == @1_nil) {	
+					*dst = @3_nil;
+				} else {
+					*dst *= *t;
+				}
+			} 
+		}
+	} 
+@c
+@= small_aggr_prod
+	prods = (@3*) GDKmalloc(range*sizeof(@3));
+	for (i = 0; i < range; i++) prods[i] = one;
+	BATloopFast(b, p, q, xx) {
+		oid h = (*(oid*) BUNhead(b,p)) - min;
+		@1 *t = (@1*) BUN@2(b,p);
+
+		if (h < range) {
+			@3 *dst = prods + h;
+			if (*dst != @3_nil) {
+				if (*t == @1_nil) {	
+					*dst = @3_nil;
+				} else {
+					*dst *= *t;
+				}
+			} 
+		}
+	} 
+	BATloopFast(bn, p, q, xx) {
+		oid h = (*(oid*) BUNhead(bn,p)) - min;
+		*(@3*)BUN@2(bn, p) = prods[h];
+	}
+        GDKfree(prods);
 @c
 @= large_aggr_avg
 	cnt  = (size_t*) GDKmalloc(BATcount(e)*sizeof(size_t));
@@ -331,7 +476,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	GDKfree(cnt);
 @c
 
-@= arithsum
+@= arithsumprod
 int CMDaggr_sum_@1_@3(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, TYPE_@3, BATcount(e));	
 	@3 zero = (@3) 0, *sums;
@@ -371,17 +516,60 @@ int CMDaggr_sum_@1_@3(BAT **ret, BAT *b, BAT *e){
 	*ret = bn;
 	return GDK_SUCCEED;
 }
+
+int CMDaggr_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
+	BAT *bn = BATnew(e->htype, TYPE_@3, BATcount(e));	
+	@3 one = (@3) 1, *prods;
+	BUN p, q, r;
+	int xx;
+	oid i, range, min, max;
+
+	/* init: set all prods to one */
+	bn->tsorted = bn->hsorted = 0;
+	ALIGNsetH(bn, e);
+	if (BAThordered(e)&1) {
+		min = *(oid*)BUNhead(e, BUNfirst(e));
+		BATloopFast(e, p, q, xx) {
+			BUNfastins(bn, BUNhead(e,p), &one);
+		}
+		max = *(oid*)BUNhead(e, BUNlast(e)-BUNsize(e));
+	} else {
+		min = max = *(oid*)BUNhead(e, BUNfirst(e));
+		BATloopFast(e, p, q, xx) {
+			BUNfastins(bn, BUNhead(e,p), &one);
+			i = *(oid*)BUNhead(e, p);
+			if (i < min) min = i;
+			else
+			if (i > max) max = i;
+		}
+	}
+	range = max - min + 1;
+
+	/* scan b, and mul values to prods in-place */
+	if (range > SMALL_AGGR_MAX) {
+		ALGODEBUG THRprintf(GDKout, "CMDaggr_prod_@1_@3: range(=%lu) > SMALL_AGGR_MAX(=%d)  => large_aggr_prod\n",(unsigned long) range,SMALL_AGGR_MAX);
+		@:large_aggr_prod(@1,@2,@3)@
+	} else {
+		ALGODEBUG THRprintf(GDKout, "CMDaggr_prod_@1_@3: range(=%lu) <= SMALL_AGGR_MAX(=%d)  => small_aggr_prod\n",(unsigned long) range,SMALL_AGGR_MAX);
+		@:small_aggr_prod(@1,@2,@3)@
+	}
+	*ret = bn;
+	return GDK_SUCCEED;
+}
 @c
-@:arithsum(uchr,tloc,uchr)@
-@:arithsum(uchr,tloc,int)@
-@:arithsum(sht,tloc,sht)@
-@:arithsum(sht,tloc,int)@
-@:arithsum(int,tloc,int)@
-@:arithsum(int,tloc,lng)@
-@:arithsum(lng,tloc,lng)@
-@:arithsum(flt,tloc,flt)@
-@:arithsum(flt,tloc,dbl)@
-@:arithsum(dbl,tloc,dbl)@
+@:arithsumprod(uchr,tloc,uchr)@
+@:arithsumprod(uchr,tloc,sht)@
+@:arithsumprod(uchr,tloc,int)@
+@:arithsumprod(uchr,tloc,lng)@
+@:arithsumprod(sht,tloc,sht)@
+@:arithsumprod(sht,tloc,int)@
+@:arithsumprod(sht,tloc,lng)@
+@:arithsumprod(int,tloc,int)@
+@:arithsumprod(int,tloc,lng)@
+@:arithsumprod(lng,tloc,lng)@
+@:arithsumprod(flt,tloc,flt)@
+@:arithsumprod(flt,tloc,dbl)@
+@:arithsumprod(dbl,tloc,dbl)@
 
 @= arithavg
 int CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e){
@@ -564,7 +752,7 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 		BUNfndOID(r, bn, h);
 		if (r) {
 			ptr t = BUNtail(b,p);
-			if (ATOMcmp(btt,t,bt_nil)) {
+			@1 {
 				int *dst = (int*) BUNtloc(bn, r);
 				(*dst)++;
 			}
@@ -579,7 +767,7 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 
 		if (h < range) {
 			ptr t = BUNtail(b,p);
-			if (ATOMcmp(btt,t,bt_nil)) {
+			@1 {
 				cnt[h]++;
 			}
 		}
@@ -591,7 +779,7 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
         GDKfree(cnt);
 @c
 
-int CMDaggr_count(BAT **ret, BAT *b, BAT *e){
+int CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils){
 /* XXX in a large BAT, it is conceivable that there are head elements
    that occur more often than fits in an "int", so the return BAT
    should really have a tail type of size_t.
@@ -627,11 +815,21 @@ int CMDaggr_count(BAT **ret, BAT *b, BAT *e){
 
 	/* scan b, and add increment totals for true values */
 	if (range > SMALL_AGGR_MAX) {
-		ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count\n",(unsigned long)range,SMALL_AGGR_MAX);
-		@:large_aggr_count@
+		if (*ignore_nils) {
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n",(unsigned long)range,SMALL_AGGR_MAX);
+			@:large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))@
+		} else {
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n",(unsigned long)range,SMALL_AGGR_MAX);
+			@:large_aggr_count()@
+		}
 	} else {
-		ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count\n",(unsigned long)range,SMALL_AGGR_MAX);
-		@:small_aggr_count@
+		if (*ignore_nils) {
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n",(unsigned long)range,SMALL_AGGR_MAX);
+			@:small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))@
+		} else {
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n",(unsigned long)range,SMALL_AGGR_MAX);
+			@:small_aggr_count()@
+		}
 	}
 	*ret = bn;
 	return GDK_SUCCEED;

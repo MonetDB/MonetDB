@@ -240,7 +240,7 @@ BAT *TEMgetEvents(Client c) {
 		GDKerror("event: 'monet_events' not found.\n");
 		return 0;
 	}
-	b= BATdescriptor(v->binding.val.bval);
+	b= BBPdescriptor(v->binding.val.bval);
 	if( b == 0){
 		GDKerror("event: 'monet_events' bat not found.\n");
 		return 0;
@@ -260,7 +260,7 @@ BAT *TEMgetTriggers(Client c) {
 		GDKerror("event: 'monet_triggers' not found.\n");
 		return 0;
 	}
-	b= BATdescriptor(v->binding.val.bval);
+	b= BBPdescriptor(v->binding.val.bval);
 	if( b == 0){
 		GDKerror("event: 'monet_triggers' bat not found.\n");
 		return 0;

@@ -1,6 +1,7 @@
 monet_mod_cnt.print;
 monet_mod_cnt.copy.print;
-a:=view_bbp_name.reverse.mirror.[bat].[count];
-b:=view_bbp_name.reverse.mirror.[bat].[copy].[count];
+x:=view_bbp_name;
+a:=x.reverse.mirror.[bat].[count];
+b:=x.reverse.mirror.[bat].[copy].[count];
 c:=a.[-](b);
 print(a.col_name("count"),b.col_name("copy.count"),c.col_name("diff"));

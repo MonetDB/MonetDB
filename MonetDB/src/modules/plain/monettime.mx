@@ -577,6 +577,14 @@ proc current_timestamp() { return timestamp(epoch()); }
 proc current_date() { return date(current_timestamp()); }
 proc current_time() { return daytime(current_timestamp()); }
 
+# temporary(?) HACK to distinguish type-signatures of 
+# date_sub_sec_interval & date_add_sec_interval (now: date,lng) from those of
+# date_sub_month_interval & addmonth (date,int), 
+# and thus enable proper function binding in SQL.
+proc date_sub_sec_interval( date d, lng s ) : date :=
+	{ return date_sub_sec_interval( d, int(s) ); }
+proc date_add_sec_interval( date d, lng s ) : date :=
+	{ return date_add_sec_interval( d, int(s) ); }
 
 @+ Test Script
 
@@ -2113,7 +2121,7 @@ int tzone_extract_minutes(int *ret, tzone* t) {
 
 int date_sub_sec_interval_wrap(date *ret, date* t, int *sec) {
         if (*sec > 0){
-		int delta= -1 * *sec *86400;
+		int delta= -1 * *sec / 86400;
                 return date_adddays(ret, t, &delta);
         }
 
@@ -2121,7 +2129,7 @@ int date_sub_sec_interval_wrap(date *ret, date* t, int *sec) {
 }
 int date_add_sec_interval_wrap(date *ret, date* t, int *sec) {
         if (*sec > 0){
-		int delta= *sec *86400;
+		int delta= *sec / 86400;
                 return date_adddays(ret, t, &delta);
         }
 

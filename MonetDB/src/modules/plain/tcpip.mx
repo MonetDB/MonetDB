@@ -716,7 +716,7 @@ the standard mechanism.
 #endif
 
 		if (res.vtype == TYPE_bat) {
-		    val = (ptr) BATdescriptor(res.val.bval);
+		    val = (ptr) BBPdescriptor(res.val.bval);
 		} else if (ATOMextern(res.vtype)) {
 		    val = res.val.pval;
 		} else if (res.vtype == TYPE_void) {

@@ -44,7 +44,7 @@ b.print;
 [ 2,	  2.2	  ]
 [ 3,	  3.3	  ]
 
-thetajoin(a,b,LT).print;
+thetajoin(a,b,LT,lng(nil)).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (str)	  (flt)	  #
@@ -72,7 +72,7 @@ b.print;
 [ 3,	  3.3	  ]
 [ 4,	  4.4	  ]
 
-thetajoin(a,b,LT).print;
+thetajoin(a,b,LT,lng(nil)).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (str)	  (flt)	  #

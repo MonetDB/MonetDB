@@ -123,9 +123,6 @@
 /* Define to 1 if you have the `getpagesize' function. */
 /* #undef HAVE_GETPAGESIZE */
 
-/* Define to 1 if you have the `getpgid' function. */
-/* #undef HAVE_GETPGID */
-
 /* Define to 1 if you have the `getpwuid' function. */
 /* #undef HAVE_GETPWUID */
 
@@ -149,6 +146,9 @@
 
 /* Define to 1 if you have the `isinf' function. */
 /* #undef HAVE_ISINF */
+
+/* Define to 1 if you have the `kill' function. */
+/* #undef HAVE_KILL */
 
 /* Define if you have the bz2 library */
 /* #undef HAVE_LIBBZ2 */
@@ -464,7 +464,7 @@
 /* #undef TM_IN_SYS_TIME */
 
 /* Version number of package */
-#define VERSION "4.3.9"
+#define VERSION "4.3.11"
 
 /* Define on MS Windows (also under Cygwin) */
 #ifndef WIN32
@@ -500,3 +500,6 @@
 
 /* Define to `unsigned' if <sys/types.h> does not define. */
 /* #undef size_t */
+
+/*#define HAVE_GLOBALMEMORYSTATUSEX only on >= NT 5 */
+#define HAVE_GLOBALMEMORYSTATUS

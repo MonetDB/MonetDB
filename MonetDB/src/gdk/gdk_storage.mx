@@ -526,7 +526,7 @@ BAT *BATsave(BAT *bd) {
 	if (!b->halign) b->halign = OIDnew(1);
 	if (!b->talign) b->talign = OIDnew(1);
 	PERSISTENT_TYPE("BATsave", "head", ATOMstorage(b->htype));
-	PERSISTENT_TYPE("BATsave", "tail", ATOMstorage(b->htype));
+	PERSISTENT_TYPE("BATsave", "tail", ATOMstorage(b->ttype));
 
 	/* copy the descriptor to a local variable in order to let our messing in
 	 * the BAT descriptor not affect other threads that only read it. */
@@ -541,6 +541,7 @@ BAT *BATsave(BAT *bd) {
 	/* check the legality of the heap modes */
 	DESCsetmodes(bd, b);
 
+@+ NIELS broken needs correction of DELTA status
 	/* try to cut off unused bytes at the start of the heap */
 	if ((!(b->batBuns->storage & STORE_MMAP || b->batRestricted)) && 
 	    b->hacctype == 0 && b->tacctype == 0) {
@@ -556,6 +557,7 @@ BAT *BATsave(BAT *bd) {
 			bd->batMapdirty = TRUE; /* flush descriptor after unload */
 		}
 	}
+@c
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);

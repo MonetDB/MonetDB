@@ -23,6 +23,8 @@
  * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
+#define _GNU_SOURCE		/* to get declaration of strsignal on Linux */
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -159,27 +161,6 @@ usage(void)
 	    "\t-timeout <seconds>\n"
 	    "\t<progname> [<arguments>]\n", progname);
     exit(EXIT_FAILURE);
-}
-
-static int
-parse_bytes(char *s) 
-{
-    char *ptr;
-    long res;
-
-    res = strtol(s, &ptr, 10);
-    if (tolower(*ptr) == 'k') {
-	res *= 1024;
-    } else if (tolower(*ptr) == 'm') {
-	res *= 1024 * 1024;
-    } else if (tolower(*ptr) == 'g') {
-	res *= 1024 * 1024 * 1024;
-    } else if (*ptr) {
-	fprintf(stderr, "Garbage at end of byte count %s\n", s);
-	exit(EXIT_FAILURE);
-    }
-
-    return res;
 }
 
 static void
