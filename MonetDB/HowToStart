@@ -30,22 +30,25 @@ any case, BASE, BUILD, & PREFIX should always be given as absolute paths.
 1) Preparing your environment
 =============================
 
-First, set the environment variables  BUILD  and  PREFIX  to select your
-desired build and target directory as described above. If not set,
+The Monet development system needs two environment variables BUILD and PREFIX 
+to work properly. They are set to convenient defaults upon first use:
 
 	BUILD=BASE/`uname`
 	PREFIX=BUILD
 
-are used as default.
+You can overrule this default by selecting your desired build and 
+target directory and setting the variables in your shell before
+continuing.
 
-Then, you need to specify your desired compiler ("GNU" or "ntv" (native))
-and your desired binary type (32bit or 64bit). You can do this by setting
+Likewise, the Monet development system needs the identity of the
+desired compiler ("GNU" or "ntv" (native)) and the desired
+binary type (32bit or 64bit). You can do this by setting
 the following environment variables:
 
 	COMP="GNU"	or	COMP="ntv"
 	BITS="32"	or	BITS="64"
 
-If not or wrongly set,  "GNU32"  is used as default.
+If not or wrongly set,  COMP=GNU BITS=32 are used as default.
 
 After that, you need to set your (architecture dependent) environment to be
 able to compile Monet-4.2. The easiest way to do so, is to
@@ -103,7 +106,8 @@ Once bootstrap-ed and configure-d, you can compile Monet,by simply calling
 
 	make
 
-in BUILD. This compiles everything, and leave the results in BUILD.
+in BUILD. This compiles everything in about 10 minutes (on 550Mhz Linux box),
+and leaves the results in BUILD.
 
 To finally move the results to your favorite destination (i.e., PREFIX),
 just call
@@ -121,4 +125,11 @@ convenient ...
 
 Have fun with Monet!
 
-	Stefan Manegold
+
+	Stefan Manegold, Februari 2001
+
+DISCLAIMER:
+The Software is distributed under the Monet Public License on an "AS IS" 
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
+See the License for the specific language governing rights and 
+limitations under the License. 

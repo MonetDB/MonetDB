@@ -28,8 +28,6 @@ EXPORTS
 	monet_internet
 	monet_singlethreaded
 	monet_yaccsilent
-	monet_modulesilent
-	monet_prelude
 	monet_script
 	monet_noAccess
 	monet_critical

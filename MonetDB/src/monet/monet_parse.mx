@@ -301,7 +301,7 @@ int ll_getch() {
 
         if (ch == '\n') {
                 if (ll_client->listing) {
-                    if (!monet_modulesilent || !ll_stack) {
+                    if (GDKdebug&4096 || !ll_stack) {
                         *ll_client->cptr = 0;
                         fputs(ll_client->cline, ll_client->fdout); 
                         fputc('\n', ll_client->fdout); 
@@ -465,7 +465,7 @@ parses the grammar, executing the inlined C statements along its way.
 #include "monet.h"
 #include "monet_client.h"
 
-#define YYDEBUG	1
+#define YYDEBUG	0
 
 #undef yyerror
 #define yyerror(X)	{ ll_parserror(NULL);  }
@@ -1162,7 +1162,7 @@ should be the same. And they are not.. Sucker!
 		extern int yystate;
 		extern int yylineno;
 
-		if (!monet_yaccsilent) 
+		if (! (GDKdebug&8192) ) 
 		switch(yystate) {
 		case 3:	case 20: case 58: case 60: case 181: case 183:
 			sprintf(s,"you forgot a closing ';'.\n"); break;

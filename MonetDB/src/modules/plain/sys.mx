@@ -462,6 +462,9 @@ view_bbp_location(
         return GDK_SUCCEED;
 }
 
+
+#define monet_modulesilent (GDKdebug&4096)
+
 int
 view_bbp_heat(
    BAT**        retval  /* put pointer to BAT[int,int] record here. */
@@ -616,17 +619,17 @@ int view_gdk_env(
 ){
 	BAT *b = *retval = BATnew(TYPE_str, TYPE_str, 12);
 	char prefix[128];
-	int  i;
 	if (b == 0) return GDK_FAIL;
-	for (i = 0; i < GDKPROP; i++) 
-		if (GDKenvironName[i]) {
-			BUNins(*retval, GDKenvironName[i], (str) 
-				(GDKenviron[i]?GDKenviron[i]:"\"nil\""));
-		}
+	if( GDKdbfarmStr[0])
+		BUNins(b, "GDKdbfarm", GDKdbfarmStr);
+	if( GDKdbnameStr[0])
+		BUNins(b, "GDKdbname", GDKdbnameStr);
+	if( GDKdistrStr[0])
+		BUNins(b, "GDKdistr", GDKdistrStr);
+	BUNins(b, "GDKdir", GDKdirStr);
         sprintf(prefix, "%dbit%s", sizeof(ptr)*8, monet_arch);
 	BUNins(b, "prefix", prefix); 
 	BUNins(b, "processid", local_itoa(getpid()));
-	BUNins(b, "home", monet_dir);
 	BUNins(b, "version", monet_version);
 	@:Pseudo(gdk,env)@
 	return GDK_SUCCEED;
@@ -1042,7 +1045,10 @@ int get_mem_usage(BAT **ret, lng *minsize) {
 	if (tot) BUNins(bn, "_tot/found", &tot);
 	sz = GDKmem_heapsize();
 	if (sz) BUNins(bn, "_tot/sbrk", &sz);
+/*	compilation errors !
 	if (GDK_mem_cursize) BUNins(bn, "_tot/valloc", &GDK_mem_cursize);
+
+*/
 	sz = GDKmem_heapinuse();
 	if (sz) BUNins(bn, "_tot/malloc", &sz);
 	sz = sz + GDK_mem_cursize - tot;

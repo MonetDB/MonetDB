@@ -9,30 +9,15 @@ standard input/output.
 
 @+ Manual Page
 @T
-The {\tt Mserver} expects \$MONETHOME to be set to your Monet home
-directory, and a readable {\tt homes} file in it (as produced by
-@[<a href="Mcreatedb.html">Mcreatedb</a>@).
-\\
 The Mserver is a multithreaded program. There is one system thread, and for
 each user (system administrater included) there is one worker thread.
 As a default, the Mserver also starts the internet listener thread,
-on the port number specified in the {\tt homes} file.
+on the port number specified in the parameter file.
 
 @- Usage
 @T
 \begin{verbatim}
-Mserver {
-        [ -db <db-name> ]
-	[ -home  <dir> ]
-	[ -p <prompt-str> ] 
-	[ -d<debug-level> ] 
-        [ -single ]
-	[ -background ]
-	[ -port <nr> ]
-	[ -id <num> ]
-	[ -mmap <limit> ]
-        [ -prelude <input> ]
-  } [ <mil-script> ]
+Mserver { [ -db <db-name> ] [-monetrc <input> ] } [ <mil-script> ]
 \end{verbatim}
 
 Since the console has no command-line history nor file name completion,
@@ -44,47 +29,9 @@ The options have the following meaning:
 \begin{description}
 \item[{\tt -db $<$db-name$>$ }]
 	open the database {\em db-name}.
-\item[{\tt -home  $<$dir$>$ }]
-	use an {\em dir} as the alternative for \$MONETHOME.
-\item[{\tt -p $<$prompt-str$>$ }] 
-	use a different prompt.
-\item[{\tt -single }]
-	use only a single thread (hence no internet access to 
-	@[<a href="Mclient.html">Mclient</a>@).
-\item[{\tt -background }]
-	do not start a console. This makes {\tt Mserver} runnable in the
-	background.
-\item[{\tt -port $<$nr$>$ }]
-	use an alternative internet port number for 
-	@[<a href="Mclient.html">Mclient</a>@ access.
-\item[{\tt -id $<$id$>$ }]
-	generate oids with {\tt number\@id}, instead of {\tt number\@0}.
-\item[{\tt -mmap $<$limit$>$ }]
-	start using {\em anunymous virtual memory} for allocating
-	blocks larger than {\em limit}. This reduces memory fragmentation,
-	but is less efficient then {\tt malloc()} memory.
-\item[{\tt -prelude $<$input$>$ }]
-	run the MIL file {\tt input} before starting the session.
-\item[{\tt -d$<$debug-level$>$ }] 
-	print debug messages. {\em debug-level} is a mask integer.
+\item[{\tt -monetrc $<$input$>$ }]
+	where to find the environment settings
 \end{description}
-
-@- Debugging switches:
-@T
-\begin{tabular}{|l|l|l|}\hline
-& 1 & thread-specific debug output \\
-& 2 & property enforcing on new BATs \\
-& 4 & memory allocation \\
-& 8 & property manegement\\
-& 16 & major IO activity\\
-& 32 & BAT handling\\
-& 64 & MIL parser debugging\\
-& 128 & Thread management\\
-& 256 & Event management \\
-& 512 & Transaction management\\
-& 1024 & Triggers\\
-& 2048 & Dynamic loading\\\hline
-\end{tabular}
 
 @{
 @+ Implementation
@@ -197,9 +144,8 @@ A grain size of 128 bytes is used to keep overhead low.
 	monet_hello();
 @-
 Execute scripts.
-@C
 	if (monet_script ) printf("#script:%s\n",monet_script);
-	if (monet_prelude ) printf("#prelude:%s\n",monet_prelude);
+@C
 @- 
 thread management.
 @C

@@ -759,12 +759,11 @@ int CMDshutdown(Cntxt stk, YYSTREE lt, ValPtr res){
 	Client c;
 	CNTXTclient(stk, &c);
    
-	if (strcmp(c->user, MONET_ADMIN)  && 
-	    strcmp(c->user, GDKenviron[GDKowner]))
+	if (strcmp(c->user, MONET_ADMIN)  )
 	{
 		fprintf(GDKout,"No permission for shutdown; quit.\n");
 		fflush(GDKout);
-	} else if (monet_background == 1) {
+	} else if (monet_deamon == 1) {
 		fprintf(GDKout,"Shutdown of server in progress\n");
 		fflush(GDKout);
 		CMDquit(stk, lt, res);

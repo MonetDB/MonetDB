@@ -1,7 +1,7 @@
-EXTRA_DIST = README wwwgroup wwwmake wwwmake.mil
+EXTRA_DIST = README 
 EXTRA_DIST_DIR = gold
 
-SUBDIRS = adm guest user
+SUBDIRS = 
 
 scripts_mil = {
 	DIR = pkgdatadir
