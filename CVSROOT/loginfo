@@ -25,8 +25,12 @@
 # or
 #DEFAULT (echo ""; id; echo %{sVv}; date; cat) >> $CVSROOT/CVSROOT/commitlog
 
+ALL $CVSROOT/CVSROOT/changelog %s
+
 CVSROOT $CVSROOT/CVSROOT/syncmail -q -u %{sVv} sjoerd@users.sourceforge.net
+
 MonetDB $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-checkins@lists.sourceforge.net
 sql $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-sql-checkins@lists.sourceforge.net
 template $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-templ-chkins@lists.sourceforge.net
+
 #DEFAULT $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-checkins@lists.sourceforge.net
