@@ -287,7 +287,7 @@ void opt_open(opt_t* o, int optimize) {
 
 /* opt_close(): flush all output stmts; and clean up
  */
-char* opt_close(opt_t *o) {
+void opt_close(opt_t *o, char** prologue, char** query, char** epilogue) {
 	int i; 
 	opt_endscope(o, 0); /* destroy all variables (and elim dead code) */
 
@@ -295,10 +295,10 @@ char* opt_close(opt_t *o) {
 	for(i=0; i<OPT_STMTS; i++) {
 		opt_purgestmt(o, (i + o->curstmt) % OPT_STMTS);
 	}
-	/* append the query section to the preamble into the result */ 
-	opt_append(o, o->buf[OPT_SEC_MAIN], OPT_SEC_PROLOGUE);
-	opt_append(o, o->buf[OPT_SEC_EPILOGUE], OPT_SEC_PROLOGUE);
-	return o->buf[OPT_SEC_PROLOGUE];
+	/* return the three buffers */
+	*prologue = o->buf[OPT_SEC_PROLOGUE];
+	*query = o->buf[OPT_SEC_QUERY];
+	*epilogue = o->buf[OPT_SEC_EPILOGUE];
 }
 
 /* opt_mil(): accept a chunk of unoptimized MIL.

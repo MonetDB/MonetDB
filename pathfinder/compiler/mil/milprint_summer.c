@@ -7510,7 +7510,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             milprintf(f,
                     "UNDEF %s%i%x;\n",
                     c->sem.fun->qname.loc, c->sem.fun->arity, c->sem.fun);
-  	    opt_output(f, OPT_SEC_MAIN);
+  	    opt_output(f, OPT_SEC_QUERY);
             rc = NORMAL; /* dummy */
             break;
         case c_nil:
@@ -9315,8 +9315,8 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
  * @param f the Stream the MIL code is printed to
  * @param c the root of the core tree
  */
-char*
-PFprintMILtemp (PFcnode_t *c, PFstate_t *status)
+void
+PFprintMILtemp (PFcnode_t *c, PFstate_t *status, char** prologue, char** query, char** epilogue)
 {
     PFarray_t *way, *counter;
     opt_t *f = (opt_t*) PFmalloc(sizeof(opt_t));
@@ -9339,22 +9339,23 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status)
 
     milprintf(f,
             "# MODULE DECLARATIONS\n"
-#if TIMINGS
-            "module(\"alarm\");\n"
-#endif
             "module(\"pathfinder\");\n"
             "module(\"aggrX3\");\n"
             "module(\"xtables\");\n"
             "module(\"malalgebra\");\n"
             "module(\"mmath\");\n");
 
+    if (status->timing) 
+        milprintf(f, "module(\"alarm\");\n");
+
     milprintf(f, "\n\n# MIL-PROCS GENERATED FROM XQUERY FUNCTIONS\n");
 
     opt_output(f, OPT_SEC_EPILOGUE);
+
+    if (status->timing) 
+        milprintf(f, "drop(\"alarm\");\n");
+
     milprintf(f,
-#if TIMINGS
-            "drop(\"alarm\");\n"
-#endif
             "drop(\"pathfinder\");\n"
             "drop(\"aggrX3\");\n"
             "drop(\"xtables\");\n"
@@ -9362,7 +9363,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status)
             "drop(\"mmath\");\n");
 
     /* define working set and all other MIL context (global vars for the query) */
-    opt_output(f, OPT_SEC_MAIN);
+    opt_output(f, OPT_SEC_QUERY);
     milprintf(f, "\n\n# MAIN MIL QUERY\n{");
     init (f);
 
@@ -9386,59 +9387,42 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status)
             "  sorting := nil_oid_oid;\n"
             "}\n");
 
-#if TIMINGS
-#if WITH_SCRIPT
-#else
-    milprintf(f, "var tries := 3;\n");
-#endif
-    milprintf(f,
-            "var times := bat(int,int);\n"
-            "var rep := 0;\n"
-            "var timings := \"\\n\";\n"
-            "while (rep < tries) {\n"
-            "var timer := time();\n"
-            "rep := rep+1;\n");
-#endif
-
+    if (status->timing) 
+        milprintf(f, 
+            "var time_read := 0;\n"
+            "var time_shred := 0;\n"
+            "var time_print := 0;\n"
+            "var time_exec := time();\n\n");
+        
     /* recursive translation of the core tree */
     translate2MIL (f, 0, 0, 0, c);
 
-#if TIMINGS
-    milprintf(f,
-            "timer := time() - timer;\n"
-            "times.insert(rep,timer);\n"
-            "timings :+= \"### time for run \" + str(int(rep)) + \": \" + str(timer) + \" msec\\n\";\n"
-            "timer := nil_int;\n"
-            "if (rep = tries)\n"
-            "{\n"
-            "timer := time();\n"
-            "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n"); 
-            "timer := time() - timer;\n"
-            "timings :+= \"### time for serialization: \" + str(timer) + \" msec\\n\";\n"
-            "}\n"
-            "}\n"
-            "printf(\"%%s\", timings);\n"
-            "rep := nil; # nil_int is not declared here\n"
-            "tries := nil; # nil_int is not declared here\n");
-#if WITH_SCRIPT
-    milprintf(f, "test_results.insert(test_number,times);\n");
-#endif
-#else
+    if (status->timing) 
+        milprintf(f, 
+            "\ntime_print := time();\n"
+            "time_exec := time_print - time_exec;\n\n");
+
     switch( status->genType ) {
      case PF_GEN_ORG: {
       milprintf(f, "xml_print(ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       /* print result in iter|pos|item representation */
       /*
        * print_output (f);
-       * milprintf(f, "print(\"mil-programm without crash finished :)\");\n");
+       * milprintf(f, "print(\"mil-program without crash finished :)\");\n");
        */
       }
       break;
      case PF_GEN_XML:
       milprintf(f, "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       break;
+     case PF_GEN_XML_MAPI:
+      milprintf(f, "print_result(\"mapi-xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
+      break;
      case PF_GEN_DM:
       milprintf(f, "print_result(\"dm\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
+      break;
+     case PF_GEN_DM_MAPI:
+      milprintf(f, "print_result(\"mapi-dm\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       break;
      case PF_GEN_SAX:
       milprintf(f, "print_result(\"sax\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
@@ -9448,9 +9432,14 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status)
      default:
       milprintf(f, "** ERROR: PFprintMILtemp(): PF_GEN_* excpected!\n");
     }
-#endif
+    if (status->timing) 
+        milprintf(f, 
+            "\ntime_print := time() - time_print;\n"
+            "printf(\"= %%d read, %%d shred, %%d exec, %%d print\\n\","
+            "       time_shred, time_shred, time_exec, time_print);\n\n");
+
     milprintf(f, "}\n\n# MIL EPILOGUE\n");
-    return opt_close(f);
+    opt_close(f, prologue, query, epilogue);
 }
 
 /* vim:set shiftwidth=4 expandtab: */

@@ -47,7 +47,7 @@
 #define OPT_CONDS 32  /* maximum if-nesting */
 
 #define OPT_SEC_PROLOGUE 0
-#define OPT_SEC_MAIN 1
+#define OPT_SEC_QUERY 1
 #define OPT_SEC_EPILOGUE 2
 
 typedef struct {
@@ -119,5 +119,5 @@ typedef struct {
 #define opt_output(o,x) ((o)->sec = x)
 
 void opt_open(opt_t *o, int optimize);
-char* opt_close(opt_t *o);
+void opt_close(opt_t *o, char** prologue, char** query, char** epilogue);
 void opt_mil(opt_t *o, char* milbuf);

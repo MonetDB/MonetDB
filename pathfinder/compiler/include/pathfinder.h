@@ -74,9 +74,11 @@ typedef struct PFstate_t PFstate_t;
 
 #define PF_GEN_ORG      0
 #define PF_GEN_XML      1
-#define PF_GEN_DM       2
-#define PF_GEN_SAX      3
-#define PF_GEN_NONE     4 
+#define PF_GEN_XML_MAPI 2 
+#define PF_GEN_DM       3
+#define PF_GEN_DM_MAPI  4
+#define PF_GEN_SAX      5
+#define PF_GEN_NONE     6 
 
 /**
  * Has the Pathfinder compiler been invoked on the command line,
@@ -89,7 +91,7 @@ enum PFinvocation_t {
 
 /** componentes of global compiler state */
 struct PFstate_t {
-    bool quiet;               /**< command line switch: -q */
+    unsigned int debug;       /**< command line switch: -d */
     bool timing;              /**< command line switch: -T */
     bool print_dot;           /**< command line switch: -D */
     bool print_pretty;        /**< command line switch: -P */

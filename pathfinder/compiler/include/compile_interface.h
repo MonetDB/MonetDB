@@ -36,7 +36,7 @@
 #define COMPILEINT_H
 
 /* main compiler call from the Monet runtime environment */
-char* pf_compile_MonetDB (char* xquery, char* mode);
+void pf_compile_MonetDB (char* xquery, char* mode, char** prologue, char** query, char** epilogue);
 
 #endif
 

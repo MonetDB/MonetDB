@@ -411,6 +411,7 @@ static struct option long_options[] = {
     { "print-mil-algebra",            no_argument,    NULL, 'm' },
     { "print-parse-tree",             no_argument,    NULL, 'p' },
     { "quiet",                        no_argument,    NULL, 'q' },
+    { "debug",                     required_argument, NULL, 'd' },
     { "stop-after",                required_argument, NULL, 's' },
     { "typing",                       no_argument,    NULL, 't' },
     { NULL,                           no_argument,    NULL, 0 }
@@ -564,6 +565,8 @@ main (int argc, char *argv[])
                     long_option (opt_buf, ", --%s", 'H'));
             printf ("  -q%s: do not print informational messages to log file\n",
                     long_option (opt_buf, ", --%s", 'q'));
+            printf ("  -d[N]%s: print debug information (default level=1)\n",
+                    long_option (opt_buf, ", --%s", 'd'));
             /*
             printf ("  -H%s: read algebra code from Teggy's Haskell prototype"
                     "\n        (will not read XQuery input then)\n",
@@ -603,7 +606,7 @@ main (int argc, char *argv[])
             exit (0);
           
         case 'q':
-            status->quiet = true;
+            status->debug = 0;
             break;
 
         case 'p':
@@ -653,7 +656,11 @@ main (int argc, char *argv[])
 
         case 'T':
             status->timing = true;
+
             break;
+        case 'd':
+             status->debug = optarg ? atoi(optarg) : 1;
+             break;
 
         case 'O':
             status->optimize = optarg ? atoi(optarg) : 1;

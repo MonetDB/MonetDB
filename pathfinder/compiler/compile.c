@@ -106,7 +106,7 @@ static char *phases[] = {
 /* pretty ugly to have such a global, could not entirely remove it yet JF */
 /** global state of the compiler */
 PFstate_t PFstate = {
-    .quiet               = false,
+    .debug               = false,
     .timing              = false,
     .print_dot           = false,
     .print_pretty        = false,
@@ -311,8 +311,14 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
      */
 
     if (status->summer_branch) {
+        char *prologue = NULL, *query = NULL, *epilogue = NULL;
         tm = PFtimer_start ();
-        fputs(PFprintMILtemp (croot, status), pfout);
+        PFprintMILtemp (croot, status, &prologue, &query, &epilogue);
+        if (prologue && query && epilogue) {
+                fputs(prologue, pfout);
+                fputs(query, pfout);
+                /* epilogue is not necessary for standalone scripts */ 
+        }
         tm = PFtimer_stop (tm);
 
         if (status->timing)
@@ -422,7 +428,7 @@ subexelim:
     if (status->print_parse_tree) {
         if (proot) {
             if (status->print_pretty) {
-                if (!status->quiet)
+                if (status->debug == 0)
                     printf ("Parse tree %s:\n", phases[status->stop_after]);
                 PFabssyn_pretty (pfout, proot);
             }
@@ -438,7 +444,7 @@ subexelim:
     if (status->print_core_tree) {
         if (croot) {
             if (status->print_pretty) {
-                if (!status->quiet)
+                if (status->debug == 0)
                     printf ("Core tree %s:\n", phases[status->stop_after]);
                 PFcore_pretty (pfout, croot);
             }
@@ -454,7 +460,7 @@ subexelim:
     if (status->print_algebra_tree) {
         if (aroot) {
             if (status->print_pretty) {
-                if (!status->quiet)
+                if (status->debug == 0)
                     printf ("Algebra tree %s:\n", phases[status->stop_after]);
                 PFalg_pretty (pfout, aroot);
             }
@@ -501,25 +507,37 @@ subexelim:
  * This interface fixes the second issue. For the moment, the MonetDB
  * Runtime environment uses a lock to stay stable under concurrent requests. 
  */
-char*
-pf_compile_MonetDB (char *xquery, char* mode)
+void
+pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char** epilogue)
 {
 	PFpnode_t  *proot  = NULL;
 	PFcnode_t  *croot  = NULL;
 
         PFstate.invocation = invoke_monetdb;
         PFstate.summer_branch = true;
-        PFstate.genType = PF_GEN_XML;
+        PFstate.genType = PF_GEN_NONE;
 
+        if (strncmp(mode,"timing",6) == 0 ) {
+                PFstate.timing = 1;
+                mode += 7;
+        }
+        if (strncmp(mode,"debug",5) == 0 ) {
+                PFstate.debug = 1;
+                mode += 6;
+        }
         if ( strcmp(mode,"dm") == 0 ) {
                 PFstate.genType = PF_GEN_DM;
+        } else if ( strcmp(mode,"mapi-dm") == 0 ) {
+                PFstate.genType = PF_GEN_DM_MAPI;
         } else if ( strcmp(mode,"sax") == 0 ) {
                 PFstate.genType = PF_GEN_SAX;
-        } else if ( strcmp(mode,"none") == 0 ) {
-                PFstate.genType = PF_GEN_NONE;
+        } else if ( strcmp(mode,"xml") == 0 ) {
+                PFstate.genType = PF_GEN_XML;
+        } else if ( strcmp(mode,"mapi-xml") == 0 ) {
+                PFstate.genType = PF_GEN_XML_MAPI;
         } else if ( strcmp(mode,"org") == 0 ) {
                 PFstate.genType = PF_GEN_ORG;
-        } else if ( strcmp(mode,"xml") ) {
+        } else if ( strcmp(mode,"none") ) {
                 fprintf(stderr,"pf_compile_interface: unkown output mode \"%s\", using \"xml\".\n",mode);
         }
 	/* repeat pf_compile, which we can't reuse as we don't want to deal with files here */
@@ -535,7 +553,7 @@ pf_compile_MonetDB (char *xquery, char* mode)
         croot = PFsimplify (croot);
         croot = PFty_check (croot);
     	croot = PFcoreopt (croot);
-        return PFprintMILtemp (croot, &PFstate);
+        PFprintMILtemp (croot, &PFstate, prologue, query, epilogue);
 }
 
 #if HAVE_SIGNAL_H

@@ -251,7 +251,7 @@ PFinfo (PFrc_t rc, const char *msg, ...)
     va_list args;
 
     /* no logging if we are supposed to be quiet */
-    if (PFstate.quiet)
+    if (PFstate.debug == 0)
         return;
 
     va_start (args, msg);
@@ -270,7 +270,7 @@ PFinfo_loc (PFrc_t rc, PFloc_t loc, const char *msg, ...)
     char    buf[OOPS_SIZE];
 
     /* no logging if we are supposed to be quiet */
-    if (PFstate.quiet)
+    if (PFstate.debug == 0)
         return;
 
     snprintf (buf, OOPS_SIZE, "at (%i,%i-%i,%i): %s",

@@ -42,6 +42,7 @@
 .MODULE pathfinder;
 
 .USE xtables;
+.USE streams;
 
 @:prec_foll(following)@
 @:prec_foll(preceding)@
@@ -150,7 +151,9 @@ tuple will be in the result for this group."
 .COMMAND shred2bats(str docname,str opt) : BAT[oid, bat] = CMDshred2bats;
  "C implementation of the document shredder"
 .COMMAND xquery(str, str) : void = CMDxquery;
- "xquery-to-mil compilation. usage: xquery(\"xml\", str)"
+ "xquery execution. usage: xquery(\"xml\", str)"
+.BUILTIN xquery_server(Stream in, Stream out) : void = CMDxquery_server;
+ "read xquery from stream, and print on a stream."
 .COMMAND print_doc(str,BAT[void,bat], str) : void = xquery_print_doc_main;
  "C interface to Workset print routine"
 .COMMAND print_result(str,BAT[void,bat],BAT[void,oid],BAT[void,int],BAT[void,int],BAT[void,dbl],BAT[void,dbl],BAT[void,str]) : void = xquery_print_result_main;
@@ -2110,6 +2113,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 #ifndef PATHFINDER_H
 #define PATHFINDER_H
 
+#include <monet.h>
+#include <kernel.h>
+#include <streams.h>
 #include "pathfinder.proto.h"
 
 @:define_ws_constants@
@@ -2117,7 +2123,6 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 #endif
 
 @c
-#include <monet.h>
 #include "pathfinder.h"
 #include "compile_interface.h"
 
@@ -2252,12 +2257,123 @@ void pathfinder_epilogue() {
  */
 int
 CMDxquery(char *mode, char* xquery) {
-    char *milbuf;
+    char *prologue = NULL, *query = NULL, *epilogue = NULL;
+
     MT_set_lock(pathfinder_lock, "CMDxquery");
-    milbuf = pf_compile_MonetDB(xquery, mode);
+    pf_compile_MonetDB(xquery, mode, &prologue, &query, &epilogue);
     MT_unset_lock(pathfinder_lock, "CMDxquery");
-    if (milbuf == NULL) {
-         return GDK_FAIL;
+
+    if (prologue && query && epilogue &&
+        monet_exec(prologue) >= 0 &&
+        monet_exec(query) >= 0 &&
+        monet_exec(epilogue) >= 0)
+    {
+	return GDK_SUCCEED;
     }
-    return (monet_exec(milbuf) >= 0)?GDK_SUCCEED:GDK_FAIL;
+    return GDK_FAIL;
+}
+
+@= builtin_operand
+{
+	int _k = interpret(stk, arg(lt, @1), res);
+	if (_k < 0) {
+		return _k;
+	}
+	@3 = VALconvert(@2, res);
+	if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+		return handle_paramerror(res,@1,res->vtype,@2);
+	}
+}
+@c
+int
+connect_error(stream *in, stream *out)
+{
+	/* Make sure that the write- (out-) stream is closed first,
+	 * as the related read- (in-) stream closes the shared
+	 * socket; see also MonetDB/src/common/stream.mx:socket_close .
+	 */
+	if (out) {
+		stream_close(out);
+		stream_destroy(out);
+	}
+	if (in) {
+		stream_close(in);
+		stream_destroy(in);
+	}
+	return GDK_FAIL;
+}
+
+/*
+ * read xquery from input stream; execute and print on output stream 
+ */  
+int
+CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
+{
+	stream **In, **Out;
+	stream *in = NULL, *out = NULL;
+	stream *bkin, *bkout;
+	Thread XQthread = THRget(THRgettid());
+	Client client;
+	size_t curlen = 0, maxlen = 1024;
+	char *xquery, *buf = GDKmalloc(maxlen + 1); /* one extra for terminator */
+	int ret = GDK_FAIL;
+
+	if (lt->cnt != 2)
+		return handle_argerror(res, lt->cnt, 2);
+
+	/* this is a BUILTIN because we must obtain the client context (and thus the streams) */
+	CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
+	@:builtin_operand(0,TYPE_Stream,In)@
+	in = *In;
+	@:builtin_operand(1,TYPE_Stream,Out)@
+	out = *Out;
+	bkin = client->fdin;
+	bkout = client->fdout;
+	monetSetChannel(XQthread, in, out);
+
+	/* use the MAPI protocol to read as much xquery buffer as possible */
+	if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
+		return connect_error(in, out);
+	if (stream_flush(out))
+		return connect_error(in, out);
+
+	for (;buf;) {
+		ssize_t n = stream_read(in, buf + curlen, 1, maxlen - curlen);
+		if (n < 0)
+			return connect_error(in, out);
+		if (n == 0) {
+			if (stream_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) < 0)
+				return connect_error(in, out);
+			if (stream_flush(out))
+				return connect_error(in, out);
+			n = stream_read(in, buf + curlen, 1, maxlen - curlen);
+			if (n < 0)
+				return connect_error(in, out);
+			if (n == 0)
+				break;
+		}
+		curlen += n;
+		if (curlen == maxlen) {
+			maxlen += 1024;
+			buf = GDKrealloc(buf, maxlen + 1);
+		}
+	}
+
+	/* execute query */
+	if (buf) {
+		buf[curlen] = 0;	/* terminate (we know there is space) */
+
+		/* first line of the query is the mode */ 
+		for(xquery=buf; *xquery; xquery++)
+			if (*xquery == '\n') { *xquery++ = 0; break; }
+
+		ret = CMDxquery(buf, xquery); /* execute, see above */
+		GDKfree(buf);
+	}
+
+	/* cleanup */
+	close_stream(out);
+	close_stream(in);
+	monetSetChannel(XQthread, bkin, bkout);
+	return GDK_SUCCEED;
 }
