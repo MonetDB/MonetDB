@@ -164,7 +164,7 @@ def am_find_srcs(target, deps, am):
         sfb, sfext = split_filename(deps[pf][0])
         if sfext != pfext:
             if pfext in automake_ext:
-		dist = None
+                dist = None
                 am['BUILT_SOURCES'].append(pf)
     b, ext = split_filename(pf)
     if ext in automake_ext:
@@ -423,10 +423,10 @@ def am_binary(fd, var, binmap, am):
                 SCRIPTS.append(target)
         else:
             (dist,src) = am_find_srcs(target, binmap['DEPS'], am)
-	    if (dist):
-            	srcs = srcs + " " + src;
-	    else:
-            	nsrcs = nsrcs + " " + src;
+            if (dist):
+                srcs = srcs + " " + src;
+            else:
+                nsrcs = nsrcs + " " + src;
 
     fd.write(nsrcs + "\n")
     fd.write(srcs + "\n")
@@ -484,10 +484,10 @@ def am_bins(fd, var, binsmap, am):
                         SCRIPTS.append(target)
                 else:
                     (dist,src) = am_find_srcs(target, binsmap['DEPS'], am)
-		    if dist:
-                    	srcs = srcs + " " + src
-		    else:
-			nsrcs = nsrcs + " " + src
+                    if dist:
+                        srcs = srcs + " " + src
+                    else:
+                        nsrcs = nsrcs + " " + src
         fd.write(nsrcs + "\n")
         fd.write(srcs + "\n")
 
@@ -575,10 +575,10 @@ def am_library(fd, var, libmap, am):
                 SCRIPTS.append(target)
         else:
             (dist,src) = am_find_srcs(target, libmap['DEPS'], am)
-	    if dist:
-            	srcs = srcs + " " + src
-	    else:
-            	nsrcs = nsrcs + " " + src
+            if dist:
+                srcs = srcs + " " + src
+            else:
+                nsrcs = nsrcs + " " + src
     fd.write(nsrcs + "\n")
     fd.write(srcs + "\n")
 
@@ -643,10 +643,10 @@ def am_libs(fd, var, libsmap, am):
                         SCRIPTS.append(target)
                 else:
                     (dist,src) = am_find_srcs(target, libsmap['DEPS'], am)
-		    if dist:
-                    	srcs = srcs + " " + src
-		    else:
-                    	nsrcs = nsrcs + " " + src
+                    if dist:
+                        srcs = srcs + " " + src
+                    else:
+                        nsrcs = nsrcs + " " + src
         fd.write(nsrcs + "\n")
         fd.write(srcs + "\n")
 
@@ -688,31 +688,28 @@ def am_jar(fd, var, jar, am):
 
     if jar.has_key("MANIFEST") and len(jar['MANIFEST']) == 1:
         fd.write("%s_manifest_file= %s\n" % (name, am_translate_dir(jar['MANIFEST'][0],am)))
-	manifest_flag='m'
+        manifest_flag='m'
     else:
         fd.write("%s_manifest_file= \n" % name)
-	manifest_flag=''
+        manifest_flag=''
 
     fd.write("%s_java_files= " % (name))
     for j in jar['SOURCES']:
         s,ext = rsplit_filename(j)
         if ext == 'in':
-		fd.write('%s ' % s)
-	else:
-		fd.write('%s ' % j)
+            fd.write('%s ' % s)
+        else:
+            fd.write('%s ' % j)
 
     fd.write("\n%s_class_files= " % (name))
     for j in jar['TARGETS']:
-    	if string.find(j, '$$') >= 0:
-		fd.write("'%s' " % j)
-	else:
-		fd.write("%s " % j)
+        fd.write("%s " % j)
 
     fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
-    fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $^\n")
+    fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $(subst $$,\\$$,$^)\n")
 
     fd.write("%s.jar: $(%s_class_files) $(%s_manifest_file)\n" % (name, name, name))
-    fd.write("\t$(JAR) $(JARFLAGS) -cf%s $@ $(%s_manifest_file) $(%s_class_files)\n" % (manifest_flag, name, name))
+    fd.write("\t$(JAR) $(JARFLAGS) -cf%s $@ $(%s_manifest_file) $(subst $$,\\$$,$(%s_class_files))\n" % (manifest_flag, name, name))
 
     fd.write("install-exec-local-%s_jar: %s.jar\n" % (name, name))
     fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
@@ -754,13 +751,10 @@ def am_java(fd, var, java, am):
     fd.write("%s_java_files= %s\n" % (name, am_list2string(java['SOURCES'], " ", "")))
     fd.write("\n%s_class_files= " % (name))
     for j in java['TARGETS']:
-    	if string.find(j, '$$') >= 0:
-		fd.write("'%s' " % j)
-	else:
-		fd.write("%s " % j)
+        fd.write("%s " % j)
 
     fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
-    fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $^\n")
+    fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $(subst $$,\\$$,$^)\n")
 
     fd.write("install-exec-local-%s_class: %s.class\n" % (name, name))
     fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
@@ -956,12 +950,12 @@ CXXEXT = \\\"cc\\\"
 
     if len(am['HDRS']) > 0:
         incs = ""
-	# breaks make dist, used to be needed for sub projects?
+        # breaks make dist, used to be needed for sub projects?
         #if os.path.exists(".incs.in"):
             #incs = ".incs.in"
         if len(name) > 0:
             fd.write("%sincludedir = $(pkgincludedir)/%s\n" % (name, name))
-	else:
+        else:
             name="top"
             fd.write("%sincludedir = $(pkgincludedir)\n" % (name))
         fd.write("nodist_%sinclude_HEADERS = %s %s\n" % (name, am_list2string(am['HDRS'], " ", ""), incs))
