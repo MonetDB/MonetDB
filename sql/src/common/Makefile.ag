@@ -3,7 +3,10 @@
 YFLAGS = -d -p sql
 
 INCLUDES = \
-	$(MONET_INCS) 
+	-I../../common -I../../gdk  \
+	-I../modules/atoms \
+	-I../../mal $(Z_CFLAGS) $(BZ_CFLAGS)
+
 
 lib_sql = {
 	SOURCES = \
@@ -15,4 +18,5 @@ lib_sql = {
 		atom.c atom.h mem.h string.c \
 		datetime.c datetime.h var.h scope.c scope.h context.h
 	WINLIBS = $(MONET_LIBS) -lbat
+	HEADERS = h tab.h
 }
