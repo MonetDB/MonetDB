@@ -338,8 +338,6 @@ Request getRequest(Request barrier){
 		MT_unset_lock(monet_critical, "getRequest");
 
 		/* we did not found anything because what is available is for another process */
-		MT_sleep_ms(1); /* reduce thread switching overhead by sleeping say 1ms (>2 million CPU ticks on a 2GHz machine) */
-
 		/* all because of braindead queue impl. => parallel blocks should allocate a private semaphore of course! */ 
 		return 0;
 	}
