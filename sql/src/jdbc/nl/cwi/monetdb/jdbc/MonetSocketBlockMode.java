@@ -169,7 +169,6 @@ class MonetSocketBlockMode extends MonetSocket {
 			// In the same way as we read chunks from the socket, we write
 			// chunks to the socket, so the server can start processing while
 			// sending the rest of the input.
-			byte[] block = null;
 			byte[] bytes = data.getBytes("UTF-8");
 			int len = bytes.length;
 			int todo = len;
@@ -186,20 +185,11 @@ class MonetSocketBlockMode extends MonetSocket {
 				toMonetRaw.write(blklen);
 
 				// write the actual block
-				if (blocksize == len) {
-					// in this case the data that needs to be send is fits in one block
-					// this will often be the case, so we can avoid an array copy here
-					block = bytes;
-				} else {
-					// copy the part of the bytes array that we are going to send here
-					block = new byte[blocksize];
-					System.arraycopy(bytes, len - todo, block, 0, blocksize);
-				}
-				toMonetRaw.write(block);
+				toMonetRaw.write(bytes, len - todo, blocksize);
 				
 				if (debug) {
 					logTx("write block: " + blocksize + " bytes");
-					logTx(new String(block, "UTF-8"));
+					logTx(new String(bytes, len - todo, blocksize, "UTF-8"));
 				}
 
 				todo -= blocksize;
