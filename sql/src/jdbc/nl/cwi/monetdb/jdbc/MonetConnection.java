@@ -915,8 +915,6 @@ public class MonetConnection extends Thread implements Connection {
 	/**
 	 * Lets this thread terminate (die) so it turns into a normal object and
 	 * can be garbage collected.
-	 * A call to this function should be made when the parent Statement
-	 * closes to let this thread disappear.
 	 */
 	void shutdown() {
 		state = DEAD;
@@ -1071,7 +1069,7 @@ public class MonetConnection extends Thread implements Connection {
 				sendThread.runQuery(hdrl.query, monet);
 				sendThreadInUse = true;
 			} else {
-				// this is a simple call, which is a lot cheaper for and will
+				// this is a simple call, which is a lot cheaper and will
 				// always succeed for small queries
 				monet.writeln(hdrl.query);
 			}
