@@ -916,23 +916,29 @@ BAT *TBL_create(Client client, str nme, BAT *b) {
 	char buf[128];
 	Variable v;
 
-	if (client == monet_clients){
-		BATmode(b, TRANSIENT);
-		@:VAR_create("monet")@
-		/*BBPrename(b->batCacheid, buf);*/
-		if (client == monet_clients && strchr(nme,'_') == NULL) {
-	    		@:VAR_create("adm")@
-		}
+	BATmode(b, TRANSIENT);
+	@:VAR_create("monet")@
+	BBPrename(b->batCacheid, buf);
+	if (client == monet_clients && strchr(nme,'_') == NULL) {
+		@:VAR_create("adm")@
+	}
+	return b;
+}
+
+BAT *TBL_lookup( Client client, str nme ){
+	char buf[128];
+	Variable v;
+	BAT *b = NULL;
+
+   	sprintf(buf, "monet_%s", nme);
+	v = VARfind(&monet_cntxt[client->stk].outer, buf);
+	if (v){ /* dirty replacement of the client bats */
+		BAT *o = BATdescriptor(v->binding.val.bval);
+		b = BATcopy(o);
+		BBPunfix(o->batCacheid);
+   		v->binding.val.bval = b->batCacheid;
 	} else {
-   		sprintf(buf, "monet_%s", nme);
-		v = VARfind(&monet_cntxt[client->stk].outer, buf);
-		if (v){
-			BAT *o = BATdescriptor(v->binding.val.bval);
-			BBPreclaim(b);
-			b = BATcopy(o);
-			BBPunfix(o->batCacheid);
-   			v->binding.val.bval = b->batCacheid;
-		}
+		GDKerror("variable %s not found\n",  buf );
 	}
 	return b;
 }
@@ -2093,6 +2099,7 @@ void TBL_incproc(Client client) {
 		cnt++;
   		BUNreplace(TBL_fcn_cnt, &pid, &cnt);
 	}
+	BBPreclaim(bb);
 
 	TBL_M_unlock(client);
 }
@@ -2238,27 +2245,28 @@ Both tables are session and user specific.
 void TBL_initclient(Client client) {
 	int	i;
 
-	client->fcntbl = TBL_create(client, "fcntbl", 
+	if (monet_clients != client){
+		client->fcntbl = TBL_lookup(client, "fcntbl");
+		client->acctbl = TBL_lookup(client, "acctbl"); 
+		client->atomtbl = TBL_lookup(client, "atomtbl"); 
+		TBL_incproc(client); /* inc reference counts to functions */
+	} else {
+		client->fcntbl = TBL_create(client, "fcntbl", 
 				    BATnew(TYPE_str, TYPE_oid, TBL_SIZE));
-	TBL_incproc(client);
 
-	/* Create the client acc-table, and fill it 
-	 * with the standard types.
-	 */
-	client->acctbl = TBL_create(client, "acctbl", 
+		/* Create the client acc-table, and fill it 
+	 	 * with the standard types.
+	 	 */
+		client->acctbl = TBL_create(client, "acctbl", 
 			     	    BATnew(TYPE_str, TYPE_int, TBL_SIZE));
-	if (client == monet_clients){
 		i = ACC_hash; BUNins(client->acctbl, "hash", &i);
 		i = ACC_index;BUNins(client->acctbl, "index", &i);
-	}
 
-	/* Create the client atom-table, and fill it 
-	 * with the standard types.
-	 */
-	client->atomtbl = TBL_create(client, "atomtbl", 
+		/* Create the client atom-table, and fill it 
+	 	 * with the standard types.
+	 	 */
+		client->atomtbl = TBL_create(client, "atomtbl", 
 				     BATnew(TYPE_str, TYPE_int, TBL_SIZE));
-
-	if (client == monet_clients){
 		i = TYPE_void;BUNins(client->atomtbl, "void", &i);
 		i = TYPE_bit; BUNins(client->atomtbl, "bit", &i);
 		i = TYPE_chr; BUNins(client->atomtbl, "chr", &i);
@@ -2298,7 +2306,7 @@ void TBL_exitclient(Client client) {
 	/* run the drop scripts. */
 	bn = BATselect(TBL_mod_use, &client, &client);
 	b = BATsort(bn); 
-	b = BATrevert(BATsetaccess(b, BAT_WRITE));
+	b = BATrevert(procs=BATsetaccess(b, BAT_WRITE));
 	BATloopFast(b, p, q, xx) { 
 	    oid mid = *(oid*) BUNhloc(b,p); 
 	    if (BUNlocate(TBL_mod_use, BUNhloc(b,p), &client)) {

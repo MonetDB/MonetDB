@@ -248,29 +248,27 @@ void CNTXTclear(Cntxt stk){
 Copy the stack with all its variables.
 @c
 void CNTXTcopy(Cntxt dststk, Cntxt srcstk){
-	Cntxt tmp = CNTXTnew(0); 
+	Cntxt tmp = CNTXTnew(-1); 
+        Variable v;
 
 	monet_cntxt[dststk].outer = tmp;
 	while(srcstk>=0){
-		CntxtRec *d = &monet_cntxt[tmp];
-		CntxtRec *s = &monet_cntxt[srcstk];
+        	Variable v;
 
-        	Variable v = monet_cntxt[srcstk].var;
+		monet_cntxt[tmp].shadow = 0;
+		monet_cntxt[tmp].used = monet_cntxt[srcstk].used;
+		monet_cntxt[tmp].reuse = monet_cntxt[srcstk].reuse;
 
-		d->shadow = 0;
-		d->used = s->used;
-		d->reuse = s->reuse;
-		while(v){
+		for(v = monet_cntxt[srcstk].var; v != NULL; v= v->next) {
 			Variable n = VARnew( tmp, v->name );
 			
 			n->constant = v->constant;
 			n->frozen = v->frozen;
 			VALcopy(&n->binding, &v->binding);
-
-			v = v->next;
+			ATOMfix(n->binding.vtype, VALptr(&n->binding));
 		}
-		if (s->outer){ 
-			monet_cntxt[tmp].outer = CNTXTnew(0); 
+		if (monet_cntxt[srcstk].outer >= 0){ 
+			monet_cntxt[tmp].outer = CNTXTnew(-1); 
 			tmp = monet_cntxt[tmp].outer;
 		}
 		srcstk = monet_cntxt[srcstk].outer;
