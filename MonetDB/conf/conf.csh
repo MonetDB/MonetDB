@@ -40,8 +40,8 @@ if ( ! -x bootstrap ) then
 	if ( ! ${?PREFIX} ) then
 		echo ''
 		echo 'PREFIX not set to specify desired target directory.'
-		echo 'Using PREFIX="'${BUILD}/${os}'" (default).'
-		PREFIX="${BUILD}/${os}"
+		echo 'Using PREFIX="'${BUILD}'" (default).'
+		PREFIX="${BUILD}"
 	fi
 	if ( ! ${?COMP} ) then
 		echo ''
