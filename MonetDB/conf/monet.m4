@@ -489,26 +489,6 @@ AC_SUBST(JAR)
 AC_SUBST(CLASSPATH)
 AM_CONDITIONAL(HAVE_JAVA,test x$have_java = xyes)
 
-PHP_INCS=
-AC_ARG_WITH(php,
-	AC_HELP_STRING([--with-php=DIR], [php.h is installed in DIR/include]),
-	have_php="$withval",
-	have_php=auto)
-if test "x$have_php" != xno; then
-  if test "x$have_php" != xauto; then
-    PHP_INCS="-I$withval/include"
-  fi
-  save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $PHP_INCS"
-  AC_CHECK_HEADER(php.h, have_php=yes, have_php=no)
-  CPPFLAGS="$save_CPPFLAGS"
-fi
-if test $have_php != yes; then
-  PHP_INCS=
-fi
-AC_SUBST(PHP_INCS)
-AM_CONDITIONAL(HAVE_PHP, test $have_php = yes)
-
 AC_ARG_WITH(swig,
 	AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
 	SWIG="$withval",
@@ -1266,6 +1246,26 @@ AC_MSG_CHECKING([$INSTALL --backup option])
 fi ]
 AC_MSG_RESULT($INSTALL_BACKUP)
 AC_SUBST(INSTALL_BACKUP)
+
+PHP_INCS=
+AC_ARG_WITH(php,
+	AC_HELP_STRING([--with-php=DIR], [php.h is installed in DIR/include]),
+	have_php="$withval",
+	have_php=auto)
+if test "x$have_php" != xno; then
+  if test "x$have_php" != xauto; then
+    PHP_INCS="-I$withval/include"
+  fi
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $PHP_INCS"
+  AC_CHECK_HEADER(php.h, have_php=yes, have_php=no)
+  CPPFLAGS="$save_CPPFLAGS"
+fi
+if test $have_php != yes; then
+  PHP_INCS=
+fi
+AC_SUBST(PHP_INCS)
+AM_CONDITIONAL(HAVE_PHP, test $have_php = yes)
 
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
