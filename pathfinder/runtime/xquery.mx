@@ -21,6 +21,7 @@
 #         Torsten Grust <torsten.grust@uni-konstanz.de>
 #         Maurice van Keulen <M.van.Keulen@bigfoot.com>
 #         Jens Teubner <jens.teubner@uni-konstanz.de>
+#         Jan Flokstra <flokstra@cs.utwente.nl>
 #
 # $Id$
 
@@ -36,7 +37,7 @@
 */
 #include <gdk.h>
 
-#define MAXDEPTH        1024
+#define MAXTAGDEPTH        1024
 
 
 /**
@@ -73,7 +74,7 @@ typedef struct {
                 oid     pre;
                 str     ns;
                 str     name;
-        } tagStack[MAXDEPTH];
+        } tagStack[MAXTAGDEPTH];
         //
         int     nAttrOnLine; /* used by top result print routine to count the
                               * number of top-level result items printed on
@@ -175,10 +176,55 @@ void emit_start() {
 }
 
 
-void emit(char* eventName, char* val) {
-        if ( val )
-                stream_printf(GDKout,"[\"%s\",\t\"%s\"]\n",eventName,val);
-        else
+/* define borrowed fom gdk_atoms.mx */
+#define allowed_chr(ch) (!(0 < (ch) && (ch) < 32) && (ch) != '\377')
+
+void emit_escaped(char* src) {
+        /* Emit a string with all special character escaped
+         * Function adapted from strToStr() in gdk_atoms.mx
+         */
+        int start=0,end;
+        for(end=0; src[end]; end++) {
+                if (src[end] == '\t' || src[end] == '\n' ||
+                    src[end] == '\\' || src[end] == '\"' ||
+                    (!allowed_chr(src[end])) ) {
+                        stream_write(GDKout,&src[start],end-start,1); //flush
+                        start = end+1;
+                        switch( src[end] ) {
+                         case '\t':
+                                stream_write(GDKout,"\\t",2,1);
+                                break;
+                         case '\n':
+                                stream_write(GDKout,"\\n",2,1);
+                                break;
+                         case '\\':
+                                stream_write(GDKout,"\\\\ ",2,1);
+                                break;
+                         case '\"':
+                                stream_write(GDKout,"\"",2,1);
+                                break;
+                         default: // case: not_allowed()
+                                stream_printf(GDKout,"\\%03o",(unsigned char)src[end]);
+                                stream_flush(GDKout);
+                        }
+                }
+        }
+        if ( start < end ) {
+                stream_flush(GDKout);
+                stream_write(GDKout,&src[start],end-start,1); // flush
+        }
+}
+
+void emit(char* eventName, char* val, int escaped) {
+        if ( val ) {
+                if ( escaped ) {
+                        stream_printf(GDKout,"[\"%s\",\t\"",eventName);
+                        emit_escaped(val);
+                        stream_printf(GDKout,"\"]\n");
+                } else {
+                        stream_printf(GDKout,"[\"%s\",\t\"%s\"]\n",eventName,val);
+                }
+        } else
                 stream_printf(GDKout,"[%s,\tnil]\n",eventName);
 }
 
@@ -241,10 +287,10 @@ void handle_endDocument(XqueryCtx* ctx) {
 void handle_attribute(XqueryCtx* ctx, str ns, str name, str value) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
-                        emit(" attribute",name);
+                        emit(" attribute",name,0);
                         if ( ns && (strlen(ns)>0) )
-                                emit(" attribute prefix",ns);
-                        emit(" attribute value",value);
+                                emit(" attribute prefix",ns,0);
+                        emit(" attribute value",value,0);
                 } else {
                         stream_printf(GDKout,"<A %s=\"%s\"\n",name,value);
                 }
@@ -275,10 +321,10 @@ void handle_attributeEnd(XqueryCtx* ctx) {
 void handle_startElement(XqueryCtx* ctx, str ns, str name /*,str *atts*/) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
-                        emit("startElement",NULL);
+                        emit("startElement",NULL,0);
                         if ( ns && (strlen(ns)>0) )
-                                emit(" prefix",ns);
-                        emit(" localname",name);
+                                emit(" prefix",ns,0);
+                        emit(" localname",name,0);
                 } else {
                         stream_printf(GDKout,"<s %s\n",name);
                 }
@@ -297,10 +343,10 @@ void handle_startElement(XqueryCtx* ctx, str ns, str name /*,str *atts*/) {
 void handle_endElement(XqueryCtx* ctx, str ns, str name) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
-                        emit("endElement",NULL);
+                        emit("endElement",NULL,0);
                         if ( ns && (strlen(ns)>0) )
-                                emit(" prefix",ns);
-                        emit(" localname",name);
+                                emit(" prefix",ns,0);
+                        emit(" localname",name,0);
                 } else {
                         stream_printf(GDKout,"<e %s\n",name);
                 }
@@ -327,9 +373,8 @@ void handle_reference(XqueryCtx* ctx, str name) {
 void handle_characters(XqueryCtx* ctx, str ch) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
-                        emit("characters",NULL);
-                        // emit(" pcdata",ch); INCOMPLETE, Mapi problems with \n 
-                        emit(" pcdata","DATA");
+                        emit("characters",NULL,0);
+                        emit(" pcdata",ch,1);
                 } else {
                         stream_printf(GDKout,"%s\n",ch);
                 }
@@ -395,9 +440,12 @@ ptr indexedTail(BAT* b, oid oid_index) {
         ptr res;
 
         if ( BUNsize(b) == 1 ) {
-                // This is a BUG IN MONET. The else code should work
-                // for all situations but does not work for the 
-                // bat[void,chr] situation
+                // There is a probably bug in monet. The else code should work
+                // for all situations but does not work for all BAT[void,chr]
+                // arguments. At the moment some do and some don't.
+                // I reported this bug once and then I could not reproduce
+                // the failure. But it still fails for the 'kind' BAT in
+                // the xquery_result_main() function
                 BUN bun = BUNfirst(b);
                 res = &bun[oid_index];
         } else {
@@ -537,26 +585,39 @@ int xquery_document_main(
 
 
 /**
- * Main XML document printing routine
- *
  * XI. THE MAIN PATHFINDER QUERY RESULT PART
  *
  * First the event/emit handlers for the sequnce are defined and after that
  * the main function
  */
 
+#define XQRESTAG        "XqueryResult"
+
 /**
  * Handle the start() of an XQUERY/Pathfinder result sequence
  */
 void  seqStart(XqueryCtx* ctx) {
         if ( ctx->saxMode ) {
-                // INCOMPLETE
+                handle_startElement(ctx,NULL,XQRESTAG);
         } else {
                 stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-                stream_printf(GDKout,"<XqueryResult>\n");
+                stream_printf(GDKout,"<%s>\n",XQRESTAG);
                 ctx->nAttrOnLine = 0;
         }
 }
+
+/**
+ * Handle the end() of an XQUERY/Pathfinder result sequence
+ */
+void  seqEnd(XqueryCtx* ctx) {
+        if ( ctx->saxMode ) {
+                handle_endElement(ctx,NULL,XQRESTAG);
+        } else {
+                stream_printf(GDKout,"\n");
+                stream_printf(GDKout,"</%s>\n",XQRESTAG);
+        }
+}
+
 
 /**
  * Emit a NODE element of an XQUERY/Pathfinder result sequence
@@ -580,11 +641,13 @@ void  seqEmitNode(XqueryCtx* ctx, oid nv) {
  * Emit a Boolean element of an XQUERY/Pathfinder result sequence
  */
 void  seqEmitBool(XqueryCtx* ctx, int bv) {
+        char *bool_str = (char*)(bv?"true":"false");
+
         if ( ctx->saxMode ) {
-                // INCOMPLETE
+                handle_characters(ctx,bool_str);
         } else {
                 ctx->nAttrOnLine++;
-                stream_printf(GDKout,"%d ",(bv?"true":"false"));
+                stream_printf(GDKout,"%d ",bool_str);
         }
 }
 
@@ -593,7 +656,10 @@ void  seqEmitBool(XqueryCtx* ctx, int bv) {
  */
 void  seqEmitInt(XqueryCtx* ctx, int iv) {
         if ( ctx->saxMode ) {
-                // INCOMPLETE
+                char buff[32];
+
+                sprintf(buff,"%d",iv);
+                handle_characters(ctx,buff);
         } else {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"%d ",iv);
@@ -605,7 +671,10 @@ void  seqEmitInt(XqueryCtx* ctx, int iv) {
  */
 void  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
         if ( ctx->saxMode ) {
-                // INCOMPLETE
+                char buff[32];
+
+                sprintf(buff,"%f",dv);
+                handle_characters(ctx,buff);
         } else {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"%f ",dv);
@@ -617,22 +686,10 @@ void  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
  */
 void  seqEmitStr(XqueryCtx* ctx, str sv) {
         if ( ctx->saxMode ) {
-                // INCOMPLETE
+                handle_characters(ctx,sv);
         } else {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"\"%s\" ",sv);
-        }
-}
-
-/**
- * Handle the end() of an XQUERY/Pathfinder result sequence
- */
-void  seqEnd(XqueryCtx* ctx) {
-        if ( ctx->saxMode ) {
-                // INCOMPLETE
-        } else {
-                stream_printf(GDKout,"\n");
-                stream_printf(GDKout,"</XqueryResult>\n");
         }
 }
 
@@ -693,6 +750,10 @@ int xquery_result_main(
                 if ( DEBUG_BAT )
                         stream_printf(GDKout,"# %d\t%c\t%d\t",pre,k,valoid);
                 switch( k ) {
+                 case 'a': {
+                        stream_printf(GDKout,"<!--attr-not-impl-yet-->\n");
+                        break;
+                        };
                  case 'b': {
                         if (DEBUG_BAT) stream_printf(GDKout,"%s\n",(valoid?"true":"false"));
                         seqEmitBool(ctx,valoid);
@@ -701,13 +762,13 @@ int xquery_result_main(
                  case 'd': {
                         dbl dv = *(dbl*)indexedTail(dblVAL,valoid);
                         if (DEBUG_BAT) stream_printf(GDKout,"%f\n",dv);
-                        seqEmitDbl(ctx,dv); // INCOMPLETE
+                        seqEmitDbl(ctx,dv); // INCOMPLETE ?diff between d and e
                         break;
                         }
                  case 'e': {
                         dbl dv = *(dbl*)indexedTail(decVAL,valoid);
                         if (DEBUG_BAT) stream_printf(GDKout,"%f\n",dv);
-                        seqEmitDbl(ctx,dv);
+                        seqEmitDbl(ctx,dv); // INCOMPLETE ?diff between d and e
                         break;
                         }
                  case 'i': {
@@ -728,7 +789,7 @@ int xquery_result_main(
                         break;
                         }
                  default:
-                        stream_printf(GDKout,"UNKNOW_TYPE(\"%c\")\n",k);
+                        stream_printf(GDKout,"UNKNOW_TYPE(\'%c\'ch(%d))\n",k,k);
                 }
         }
         //
