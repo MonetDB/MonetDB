@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s1 <<'EOT'
-/foo/bar/baz
-EOT
-echo $?

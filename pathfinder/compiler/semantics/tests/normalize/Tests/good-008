@@ -1,7 +1,0 @@
-#!/bin/bash
-
-pf -s2 <<'EOT'
-declare xmlspace preserve;
-1.3
-EOT
-echo $?

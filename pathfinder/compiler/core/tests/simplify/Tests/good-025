@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s10 <<'EOT'
-for $a at $p in (1,2) return 43
-EOT
-echo $?

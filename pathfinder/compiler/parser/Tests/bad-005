@@ -1,7 +1,0 @@
-#!/bin/bash
-
-pf -s1 <<'EOT'
-(: processing-instruction target must not be `xml' :)
-<a> <?xml foo?> </a>
-EOT
-echo $?

@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s1 <<'EOT'
-let $a as xs:integer := 42 return 17
-EOT
-echo $?

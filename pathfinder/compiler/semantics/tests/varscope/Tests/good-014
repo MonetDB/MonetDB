@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s4 <<'EOT'
-some $a in (1,2) satisfies $a > 7
-EOT
-echo $?

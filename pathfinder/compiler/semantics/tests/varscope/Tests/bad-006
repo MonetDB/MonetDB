@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s4 <<'EOT'
-for $a in ($b,2) for $b in (3,4) return ($a, $b)
-EOT
-echo $?
