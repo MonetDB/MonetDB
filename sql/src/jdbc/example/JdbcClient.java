@@ -22,7 +22,7 @@ import java.io.*;
 import java.util.*;
 
 /**
- * This program acts like an extended client program for MonetDB. It's look
+ * This program acts like an extended client program for MonetDB. Its look
  * and feel is very much like PostgreSQL's interactive terminal program.
  * Although it looks like this client is designed for MonetDB, it demonstrates
  * the power of the JDBC interface since it built on top of JDBC only.
@@ -804,25 +804,31 @@ public class JdbcClient {
 			out.print("\""); out.print(repeat(' ', width - cols.getString("COLUMN_NAME").length()));
 		 	out.print(" "); out.print(cols.getString("TYPE_NAME"));
 			int size = cols.getInt("COLUMN_SIZE");
-		 	if (size != 0 &&
-				type != Types.REAL &&
-				type != Types.DOUBLE &&
-				type != Types.BOOLEAN &&
-				type != Types.TIMESTAMP &&
-				type != Types.DATE &&
-				type != Types.TIME)
-			{
-		 		out.print("("); out.print(size);
-		 		if (cols.getInt("DATA_TYPE") == Types.DECIMAL) {
-					out.print(","); out.print(cols.getString("DECIMAL_DIGITS"));
-				}
-				out.print(")");
-			} else if (
-				(type == Types.TIMESTAMP || type == Types.TIME) &&
-				size == 0 &&
-				cols.getBoolean("DECIMAL_DIGITS")
+			int digits = cols.getInt("DECIMAL_DIGITS");
+		 	if (type == Types.FLOAT ||
+				type == Types.VARCHAR ||
+				type == Types.LONGVARCHAR ||
+				type == Types.CHAR
 			) {
-				out.print(" WITH TIME ZONE");
+				if (size <= 0) throw
+					new SQLException("Illegal value for precision of type (" + size + ")");
+		 		out.print("("); out.print(size); out.print(")");
+			} else if (type == Types.CLOB) {
+				if (size > 0) {
+					out.print("("); out.print(size); out.print(")");
+				}
+			} else if (type == Types.DECIMAL ||
+				type == Types.NUMERIC
+			) {
+				if (digits < 0) throw
+					new SQLException("Illegal value for scale of decimal type (" + digits + ")");
+		 		out.print("("); out.print(size);
+				out.print(","); out.print(digits);
+				out.print(")");
+			} else if (type == Types.TIMESTAMP ||
+				type == Types.TIME
+			) {
+				if (digits != 0) out.print(" WITH TIME ZONE");
 			}
 			if (cols.getInt("NULLABLE") == DatabaseMetaData.columnNoNulls)
 				out.print("\tNOT NULL");
