@@ -150,7 +150,17 @@ def addlicense(file, pre = None, post = None, start = None, end = None):
             root, ext = os.path.splitext(root)
         if not suffixrules.has_key(ext):
             # no known suffix
-            return
+            # see if file starts with #! (i.e. shell script)
+            try:
+                f = open(file)
+                line = f.readline()
+                f.close()
+            except IOError:
+                return
+            if line[:2] == '#!':
+                ext = '.sh'
+            else:
+                return
         pre, post, start, end = suffixrules[ext]
     if not pre:
         pre = ''
@@ -189,7 +199,11 @@ def addlicense(file, pre = None, post = None, start = None, end = None):
     if pre:
         g.write(pre + '\n')
     for l in license:
-        g.write(start + l + end + '\n')
+        if l[:1] == '\t' or (not l and (not end or end[:1] == '\t')):
+            # if text after start begins with tab, remove spaces from start
+            g.write(start.rstrip() + l + end + '\n')
+        else:
+            g.write(start + l + end + '\n')
     if post:
         g.write(post + '\n')
     # add empty line after license
@@ -219,7 +233,17 @@ def dellicense(file, pre = None, post = None, start = None, end = None):
             root, ext = os.path.splitext(root)
         if not suffixrules.has_key(ext):
             # no known suffix
-            return
+            # see if file starts with #! (i.e. shell script)
+            try:
+                f = open(file)
+                line = f.readline()
+                f.close()
+            except IOError:
+                return
+            if line[:2] == '#!':
+                ext = '.sh'
+            else:
+                return
         pre, post, start, end = suffixrules[ext]
     if not pre:
         pre = ''
@@ -245,7 +269,7 @@ def dellicense(file, pre = None, post = None, start = None, end = None):
         line = f.readline()
         if line and line == '\n':
             line = f.readline()
-    if line.find('-*-'):
+    if line.find('-*-') >= 0:
         g.write(line)
         line = f.readline()
         if line and line == '\n':
@@ -264,7 +288,7 @@ def dellicense(file, pre = None, post = None, start = None, end = None):
                 pass
             return
     for l in license:
-        if (start + l + end).strip() == line.strip():
+        if line.find(l) >= 0:
             line = f.readline()
         else:
             # doesn't match
