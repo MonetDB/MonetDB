@@ -33,6 +33,7 @@
 @a Torsten Teggy Grust
 @a Maurice van Keulen
 @a Henning Rode
+@a Jan Flokstra
 @t Runtime Support for the Pathfinder XQuery Compiler
 
 @m
@@ -95,19 +96,56 @@ axis step evaluation on the @2 axis from the given context."
 .END pathfinder;
 
 @mil
+# load modules used in pathfinder.mx
+module(xtables);
+module(pf_support);
+module(malalgebra);
+
+PROC get_type (bat[void,int] kind, int type_) : bat[oid,void] :=
+{
+        return kind.[and](63).ord_uselect(type_); # 63 = 2^6 - 1
+}
+
+PROC get_fragment (bat[void,int] kind) : bat[void,oid] :=
+{
+        return kind.[>>](6).[oid];
+}
+
+PROC get_kind (bat[void,oid] frag, int type_) : bat[void,int] :=
+{
+        return frag.[int].[<<](6).[or](type_);
+}
+
+#PROC get_types (bat[void,int] kind) : bat[void,int] :=
+#{
+#        return kind.[and](63); # 63 = 2^6 - 1
+#}
+
+#PROC get_kind (bat[void,oid] frag, bat[void,int] type_) : bat[void,int] :=
+#{
+#        return frag.[int].[<<](6).[or](type_);
+#}
+
+#PROC get_kind (int frag, bat[void,int] type_) : bat[void,int] :=
+#{
+#        return type_.[or](frag<<6);
+#}
+
 #############################################
 # Document management functions
 #
 # - import_doc
 # - delete_doc
+# - delete_all_docs
 # - compress_properties
-# - doc_to_working_set
+# - create_ws
+# - add_doc
 #
 # Each imported XML-document is stored as a collection of persistent BATs 
 # whose name starts with the name of the BAT and ends with the document ID. 
 # The execution of an XQuery is not performed on the persistent BATs, but on 
 # the transient 'working set', a global document collection represented
-# by the T*-BATs.
+# by the ws-BAT.
 #
 # Each collection contains the following BATs:
 # - pre_size    : BAT[oid,int]  pre-value of node / and its descendant size,
@@ -115,101 +153,251 @@ axis step evaluation on the @2 axis from the given context."
 # - pre_prop    : BAT[oid,oid]  pre-value of node / and property ID,
 # - pre_kind    : BAT[oid,chr]  pre-value of node / and property ID,
 #
-# - prop_ns      : BAT[oid,str]  property ID / and name space,
-# - prop_loc     : BAT[oid,str]  property ID / and local name,
+# - qn_ns        : BAT[oid,str]  property ID / and name space (elements and attributes),
+# - qn_loc       : BAT[oid,str]  property ID / and local name (elements and attributes),
 # - prop_text    : BAT[oid,str]  property ID / and text,
 # - prop_com     : BAT[oid,str]  property ID / and comment,
 # - prop_ins     : BAT[oid,str]  property ID / and processing instruction,
 # - prop_tgt     : BAT[oid,str]  property ID / and processing instruction target,
 #
-# - attr_ns   : BAT[oid,str]  attribute ID / and name space of attribute names
-# - attr_loc  : BAT[oid,str]  attribute ID / and local name of attribute names
-# - attr_val  : BAT[oid,str]  attribute ID / value of attribute nodes
 # - attr_own  : BAT[oid,oid]  attribute ID / pre-value of owner
+# - attr_qn   : BAT[oid,oid]  attribute ID / and qname/property ID
+# - attr_prop : BAT[oid,oid]  attribute ID / value ID
+#
+# - prop_val  : BAT[oid,str]  value ID / value of attribute nodes
 #
 # Global information on persistent stored documents:
 # - doc_name    : BAT[oid,str]  document ID / document name
 # - doc_height  : BAT[oid,int]  document ID / height of document
 # 
 # Information on documents/fragments in the working set:
-# - Tdoc_pre : BAT[oid,oid] document ID / pre-value of document node in working set
-# - Tdoc_name : BAT[oid,str] document ID / name of document (only if name exists)
-# - Theight : int height of the working set
+# - PRE_FRAG   : BAT[void,BAT[void,oid]] list of bats with fragments
+#                oids for each pre value (copied in element construction)
+# - ATTR_FRAG  : BAT[void,BAT[void,oid]] list of bats with fragments
+#                oids for each attr value (copied in element/attribute 
+#                construction)
+# - DOC_LOADED : BAT[void,str] fragment ID / name of document 
+#                (starts with 1@0 because WS is first 'loaded' document
+# - FRAG       : BAT[void,oid] 0@0 / oid of the newest added fragment
+# - WS_FRAG    : BAT[void,oid] enumeration / root-pre values of
+#                generated element fragments
+# - HEIGTH     : BAT[void,int] enumeration of the fragments / maximal
+#                depth of the fragment (starts with 0@0 - WS)
 
 # DEFINITION of constants concerning the data model
-const DOC_BASE := 0@0;
 const PRE_BASE := 0@0;
-const ATTR_BASE := 1073741824@0; #2 * 2^29
 const ELEMENT := chr(0);
 const TEXT := chr(1);
 const COMMENT := chr(2);
 const PI := chr(3);
 const DOCUMENT := chr(4);
 
-# INITIALIZATION of working set (T*-BATs)
-var Tpre_size;
-var Tpre_level;
-var Tpre_prop;
-var Tpre_kind;
-var Tprop_ns;
-var Tprop_loc;
-var Tprop_text;
-var Tprop_com;
-var Tprop_ins;
-var Tprop_tgt;
-var Tattr_ns;
-var Tattr_loc;
-var Tattr_val;
-var Tattr_own;
-var Tdoc_pre;
-var Tdoc_name;
-var Theight;
-clear_working_set();
+# types in translation
+const NODE := 0;
+const ATTR := 1;
+const QNAME := 2;
+const BOOL := 3;
+const INT := 4;
+const DEC := 5;
+const DBL := 6;
+const STR := 7;
+
+const WS := 0@0;
+
+# don't switch the values without also changing the order in create_ws
+const PRE_SIZE   :=  0;
+const PRE_LEVEL  :=  1;
+const PRE_PROP   :=  2;
+const PRE_KIND   :=  3;
+const PRE_FRAG   :=  4;
+const QN_NS      :=  5;
+const QN_LOC     :=  6;
+const PROP_TEXT  :=  7;
+const PROP_COM   :=  8;
+const PROP_INS   :=  9;
+const PROP_TGT   := 10;
+const ATTR_OWN   := 11;
+const ATTR_QN    := 12;
+const ATTR_PROP  := 13;
+const ATTR_FRAG  := 14;
+const PROP_VAL   := 15;
+const DOC_LOADED := 16;
+const FRAG       := 17;
+const WS_FRAG    := 18;
+const HEIGHT     := 19;
+
+PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat] :=
+{
+    if (not(doc_name.reverse.exist(name)))
+        ERROR("Document %s does not exist\n",name);
+    var docid := doc_name.reverse.find(name);
+    docid := str(int(docid));
+    
+    var frag := ws.fetch(DOC_LOADED).uselect(name);
+    if (frag.count = 0)
+    {
+        ws.fetch(DOC_LOADED).insert(nil,name);
+	frag := oid(ws.fetch(DOC_LOADED).count);
+	ws.fetch(PRE_SIZE).insert(nil,bat("pre_size" + docid));
+	ws.fetch(PRE_LEVEL).insert(nil,bat("pre_level" + docid));
+	ws.fetch(PRE_PROP).insert(nil,bat("pre_prop" + docid));
+	ws.fetch(PRE_KIND).insert(nil,bat("pre_kind" + docid));
+	ws.fetch(PRE_FRAG).insert(nil,bat("pre_level" + docid).project(frag));
+	ws.fetch(QN_NS).insert(nil,bat("qn_ns" + docid));
+	ws.fetch(QN_LOC).insert(nil,bat("qn_loc" + docid));
+	ws.fetch(PROP_TEXT).insert(nil,bat("prop_text" + docid));
+	ws.fetch(PROP_COM).insert(nil,bat("prop_com" + docid));
+	ws.fetch(PROP_INS).insert(nil,bat("prop_ins" + docid));
+	ws.fetch(PROP_TGT).insert(nil,bat("prop_tgt" + docid));
+	ws.fetch(ATTR_OWN).insert(nil,bat("attr_own" + docid));
+	ws.fetch(ATTR_QN).insert(nil,bat("attr_qn" + docid));
+	ws.fetch(ATTR_PROP).insert(nil,bat("attr_prop" + docid));
+	ws.fetch(ATTR_FRAG).insert(nil,bat("attr_own" + docid).project(frag));
+	ws.fetch(PROP_VAL).insert(nil,bat("prop_val" + docid));
+        ws.fetch(FRAG).replace(0@0,frag);
+        ws.fetch(HEIGHT).insert(nil,bat("doc_height").find(oid(docid)));
+    }
+    else
+       ws.fetch(FRAG).replace(0@0,frag.reverse.fetch(0));
+
+    return ws;
+}
+ADDHELP("add_doc", "tsheyar", "July 2004",
+"PARAMETERS:\n\
+bat(void,bat) - actual working set,\n\
+str - the name of the document, which is added\n\
+DESCRIPITON:\n\
+adds the document to the working set and gives back the\n\
+updated working set. (At position FRAG stands the actual\n\
+fragment to which the new root is linked.)",
+"pathfinder");
+
+PROC create_ws () : BAT[void,bat] :=
+{
+    var ws := bat (void,bat).seqbase(PRE_BASE);
+    # don't switch the order without also changing the constants
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_SIZE
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_LEVEL
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_PROP
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_KIND
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_FRAG
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # QN_NS
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # QN_LOC
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_TEXT
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_COM
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_INS
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_TGT
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # ATTR_OWN
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # ATTR_QN
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # ATTR_PROP
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # ATTR_FRAG
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_VAL
+    # offset starts with 1@0 because temporary variables have no name
+    ws.insert(nil, bat(void,str).seqbase(1@0));      # DOC_LOADED
+    ws.insert(nil, bat(void,oid).seqbase(0@0));      # FRAG
+    ws.insert(nil, bat(void,oid).seqbase(0@0));      # WS_FRAG
+    ws.insert(nil, bat(void,int).seqbase(0@0));      # HEIGHT
+
+    # add the working set
+    ws.fetch(PRE_SIZE).insert(nil, bat(void,int).seqbase(PRE_BASE)); # PRE_SIZE
+    ws.fetch(PRE_LEVEL).insert(nil, bat(void,chr).seqbase(PRE_BASE)); # PRE_LEVEL
+    ws.fetch(PRE_PROP).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # PRE_PROP
+    ws.fetch(PRE_KIND).insert(nil, bat(void,chr).seqbase(PRE_BASE)); # PRE_KIND
+    ws.fetch(PRE_FRAG).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # PRE_FRAG
+    ws.fetch(QN_NS).insert(nil, bat(void,str).seqbase(PRE_BASE)); # QN_NS
+    ws.fetch(QN_LOC).insert(nil, bat(void,str).seqbase(PRE_BASE)); # QN_LOC
+    ws.fetch(PROP_TEXT).insert(nil, bat(void,str).seqbase(PRE_BASE)); # PROP_TEXT
+    ws.fetch(PROP_COM).insert(nil, bat(void,str).seqbase(PRE_BASE)); # PROP_COM
+    ws.fetch(PROP_INS).insert(nil, bat(void,str).seqbase(PRE_BASE)); # PROP_INS
+    ws.fetch(PROP_TGT).insert(nil, bat(void,str).seqbase(PRE_BASE)); # PROP_TGT
+    ws.fetch(ATTR_OWN).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # ATTR_OWN
+    ws.fetch(ATTR_QN).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # ATTR_QN
+    ws.fetch(ATTR_PROP).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # ATTR_PROP
+    ws.fetch(ATTR_FRAG).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # ATTR_FRAG
+    ws.fetch(PROP_VAL).insert(nil, bat(void,str).seqbase(PRE_BASE)); # PROP_VAL
+    ws.fetch(FRAG).insert(0@0,nil);
+    ws.fetch(HEIGHT).insert(nil,0);
+
+    return ws;
+}
+ADDHELP("create_ws", "tsheyar", "July 2004",
+"DESCRIPITON:\n\
+creates a new working set and gives back the reference",
+"pathfinder");
+
+PROC mposjoin (BAT[void,oid] pre, BAT[void,oid] frag, BAT[void, bat] ws_item) : BAT[void,any] :=
+{
+    var frag_pre := frag.reverse.leftfetchjoin(pre).[int];
+
+    var result := bat(void, ws_item.fetch(0).ttype, pre.count);
+    result.seqbase(pre.seqbase);
+    frag_pre@batloop () {
+        result.insert(nil, ws_item.fetch($h).fetch($t));
+    }
+    return result;
+}
+ADDHELP("mposjoin", "tsheyar", "July 2004",
+"PARAMETERS:\n\
+BAT[void,oid] - the values which have to be looked up\n\
+BAT[void,oid] - the corresponding fragments in which the values have to be looked up\n\
+BAT[void,BAT[void,any]] - the list of bats where the values are looked up\n\
+DESCRIPITON:\n\
+looks up the values in a list of bats. The first argument specifies the\n\
+value to be looked up (joined) and the second one saves which bat contains\n\
+the value (see also 'mvaljoin').\n\
+The result is a bat with the tail values from the batlist (any) and the same\n\
+void column like the first two arguments",
+"pathfinder");
+
+PROC mvaljoin (BAT[void,oid] pre, BAT[void,oid] frag, BAT[void, bat] ws_item) : BAT[oid,oid] :=
+{
+    var frag_pre := frag.reverse.leftfetchjoin(pre);
+    var guess := max(2000, pre.count); # no idea how big the new bat should be
+    var void_input := pre.seqbase;
+    var result := bat(oid, oid, guess);
+    frag_pre@batloop () {
+        result.insert(ws_item.fetch($h).select($t).project(void_input).reverse);
+	void_input := oid(int(void_input) + 1);
+    }
+    return result;
+}
+ADDHELP("mvaljoin", "tsheyar", "July 2004",
+"PARAMETERS:\n\
+BAT[void,oid] - the values which have to be joined\n\
+BAT[void,oid] - the corresponding fragments in which the values have to be looked up\n\
+BAT[void,BAT[void,oid]] - the list of bats where the tail values are joined\n\
+DESCRIPITON:\n\
+joins the tail values of the first argument with the tail values of the bat\n\
+from one bat of the third argument. Which bat from the list is chosen is\n\
+specified by the second argument (see also 'mposjoin').\n\
+The result is a bat with the head values of the first two arguments in the head\n\
+and the head values from the batlist",
+"pathfinder");
 
 # called by compress_properties
-PROC compress_val(BAT[oid,oid] pre_prop, BAT[oid,oid] pre_newprop,
-                  str batname) : void :=
+PROC compress_val(str batname) : bat[void,oid] :=
 {
-    prop_val := bat(batname);
-    
-    var cprval_newprop := prop_val.reverse.kunique.mark(PRE_BASE);
-    var prop_newprop := prop_val.join(cprval_newprop);
-    pre_newprop.insert(pre_prop.join(prop_newprop));
+    var bat1 := bat(batname);
+    var grp := CTgroup(bat1);
+    var unq := grp.tunique.mark(0@0).reverse;
 
-    # replace persistent prop_val by the new compressed BAT
-    prop_val := nil;
-    bat(batname).persists(false).rename(batname + "_");
-    cprval_newprop.reverse.persists(true).bbpname(batname);
+    { var tmp := unq.join(bat1); bat1.access(BAT_WRITE).delete.insert(tmp); }
+
+    return grp.join(unq.reverse);
 }
 
 # called by compress_properties
-PROC compress_val(BAT[oid,oid] pre_prop, BAT[oid,oid] pre_newprop,
-                  str batname1, str batname2) : void :=
+PROC compress_val(str batname1, str batname2) : bat[void,oid] :=
 {
-    prop_val1 := bat(batname1);
-    prop_val2 := bat(batname2);
-    
-    # ":" is added to distinguish between "foo:bar" and "fo:obar"
-    var prop_val12 := prop_val1.[+](":").[+](prop_val2);
-    var cprval12_prop := prop_val12.reverse.kunique;
-    var cprval12_newprop := cprval12_prop.mark(PRE_BASE);
-    
-    var prop_newprop := prop_val12.join(cprval12_newprop);
-    pre_newprop.insert(pre_prop.join(prop_newprop));
-    
-    var cprval1_prop := prop_val1.semijoin(cprval12_prop.reverse).reverse;
-    var cprval2_prop := prop_val2.semijoin(cprval12_prop.reverse).reverse;
-    
-    var cprval1_newprop := cprval1_prop.join(prop_newprop);
-    var cprval2_newprop := cprval2_prop.join(prop_newprop);
-    
-    # replace persistent prop_val1/2 by the new compressed BATs
-    prop_val1 := nil;
-    bat(batname1).persists(false).rename(batname1 + "_");
-    cprval1_newprop.reverse.persists(true).bbpname(batname1);
-    prop_val2 := nil;
-    bat(batname2).persists(false).rename(batname2 + "_");
-    cprval2_newprop.reverse.persists(true).bbpname(batname2);
+    var bat1 := bat(batname1);
+    var bat2 := bat(batname2);
+    var grp := CTgroup(bat1).CTgroup(bat2); # void,old-oid
+    var unq := grp.tunique.mark(0@0).reverse; # void,new-oid 
+
+    { var tmp := unq.join(bat1); bat1.access(BAT_WRITE).delete.insert(tmp); }
+    { var tmp := unq.join(bat2); bat2.access(BAT_WRITE).delete.insert(tmp); }
+ 
+    return grp.leftjoin(unq.reverse);
 }
 
 PROC compress_properties(str name) : void :=
@@ -217,182 +405,86 @@ PROC compress_properties(str name) : void :=
     if (not(doc_name.reverse.exist(name)))
 	ERROR("Document %s does not exist\n",name);
     var docid := str(int(doc_name.reverse.find(name)));
+
+    printf(">>> Compress properties of loaded document '%s'\n",name);
     
-    var batname := "pre_prop" + docid;
-    var pre_prop := bat(batname);
-    var pre_kind := bat("pre_kind" + docid);
-    var pre_newprop := new(oid,oid);
-   
     # eliminate property duplicates in each BAT prop_*
     # (in case of tag-names and PIs every unique combination of
     #  ns:loc, (resp. tgt:ins) gets a property ID)
-    pre_newprop.insert(pre_prop.semijoin(pre_kind.select(DOCUMENT)));
-    var tmp := pre_prop.semijoin(pre_kind.select(ELEMENT));
-    compress_val(tmp, pre_newprop, ("prop_loc" + docid), ("prop_ns" + docid));
-    tmp := pre_prop.semijoin(pre_kind.select(TEXT));
-    compress_val(tmp, pre_newprop, ("prop_text" + docid));
-    tmp := pre_prop.semijoin(pre_kind.select(COMMENT));
-    compress_val(tmp, pre_newprop, ("prop_com" + docid));
-    tmp := pre_prop.semijoin(pre_kind.select(PI));
-    compress_val(tmp, pre_newprop, ("prop_ins" + docid), ("prop_tgt" + docid));
     
-    # replace persistent pre_prop by the new BAT with compressed property IDs
-    pre_newprop := pre_newprop.sort.reverse.mark(PRE_BASE).reverse;
-    pre_prop := nil;
-    bat(batname).persists(false).rename(batname + "_");
-    pre_newprop.persists(true).bbpname(batname);
-    
+    var pre_kind := bat("pre_kind" + docid);
+    var pre_prop := bat("pre_prop" + docid);
+
+    var pre_oldProp := pre_kind.ord_uselect(DOCUMENT).mirror.leftfetchjoin(pre_prop); 
+    var _pre := pre_oldProp.mark(0@0).reverse;
+    var _newProp := pre_oldProp.reverse.mark(0@0).reverse;
+
+    pre_oldProp := pre_kind.ord_uselect(ELEMENT).mirror.leftfetchjoin(pre_prop);
+    var oldProp_newProp := compress_val(("qn_ns" + docid), ("qn_loc" + docid));
+    # combine the intermediate results
+    var pre_newProp_part := pre_oldProp.leftjoin(oldProp_newProp);
+    var _pre_part := pre_newProp_part.mark(0@0).reverse;
+    var _newProp_part := pre_newProp_part.reverse.mark(0@0).reverse;
+    var tmp := merged_union (_pre, _pre_part, _newProp, _newProp_part);
+    _pre := tmp.fetch(0);
+    _newProp := tmp.fetch(1);
+    # use the already compressed QNames to get the new attr qn references
+    var attr_oldQn := bat("attr_qn" + docid);
+    var attr_newQn := attr_oldQn.leftfetchjoin(oldProp_newProp);
+    # FIXME: leftfetchjoin has to be order preserving to allow such a mark
+    attr_newQn := attr_newQn.reverse.mark(0@0).reverse;
+    # change the persistent attr_qn bat
+    attr_oldQn.access(BAT_WRITE).delete.insert(attr_newQn);
+
+    pre_oldProp := pre_kind.ord_uselect(TEXT).mirror.leftfetchjoin(pre_prop); 
+    oldProp_newProp := compress_val(("prop_text" + docid));
+    # combine the intermediate results
+    pre_newProp_part := pre_oldProp.leftjoin(oldProp_newProp);
+    _pre_part := pre_newProp_part.mark(0@0).reverse;
+    _newProp_part := pre_newProp_part.reverse.mark(0@0).reverse;
+    tmp := merged_union (_pre, _pre_part, _newProp, _newProp_part);
+    _pre := tmp.fetch(0);
+    _newProp := tmp.fetch(1);
+
+    pre_oldProp := pre_kind.ord_uselect(COMMENT).mirror.leftfetchjoin(pre_prop); 
+    oldProp_newProp := compress_val(("prop_com" + docid));
+    # combine the intermediate results
+    pre_newProp_part := pre_oldProp.leftjoin(oldProp_newProp);
+    _pre_part := pre_newProp_part.mark(0@0).reverse;
+    _newProp_part := pre_newProp_part.reverse.mark(0@0).reverse;
+    tmp := merged_union (_pre, _pre_part, _newProp, _newProp_part);
+    _pre := tmp.fetch(0);
+    _newProp := tmp.fetch(1);
+
+    pre_oldProp := pre_kind.ord_uselect(PI).mirror.leftfetchjoin(pre_prop); 
+    oldProp_newProp := compress_val(("prop_ins" + docid), ("prop_tgt" + docid));
+    # combine the intermediate results
+    pre_newProp_part := pre_oldProp.leftjoin(oldProp_newProp);
+    _pre_part := pre_newProp_part.mark(0@0).reverse;
+    _newProp_part := pre_newProp_part.reverse.mark(0@0).reverse;
+    tmp := merged_union (_pre, _pre_part, _newProp, _newProp_part);
+    _pre := tmp.fetch(0);
+    _newProp := tmp.fetch(1);
+
+    # change the persistent pre_prop bat
+    pre_prop.access(BAT_WRITE).delete.insert(_pre.reverse.leftjoin(_newProp));
+
+    var attr_prop := bat("attr_prop" + docid);
+    oldProp_newProp := compress_val(("prop_val" + docid));
+    var attr_newProp := attr_prop.leftfetchjoin(oldProp_newProp);
+    # FIXME: leftfetchjoin has to be order preserving to allow such a mark
+    attr_newProp := attr_newProp.reverse.mark(0@0).reverse;
+    # change the persistent attr_prop bat
+    attr_prop.access(BAT_WRITE).delete.insert(attr_newProp);
+
     commit;
+    printf("Compression completed\n");
 }
-ADDHELP("compress_properties", "rode", "Nov 2003",
+ADDHELP("compress_properties", "tsheyar", "Juli 2004",
 "PARAMETERS:\n\
 str document name\n\
 DESCRIPITON:\n\
-compression of property duplicates\n\
-(this function should be called if the loader was used without property compression)",
-"pathfinder");
-
-# called by "doc_to_working_set" when importing properties
-PROC add_properties(BAT[oid,oid] pre_prop, BAT[oid,oid] pre_newprop,
-                    BAT[void,str] Tprop_val, str batname) : oid :=
-{
-    # get the actual property ID offset
-    var new_prop_base := oid(int(Tprop_val.seqbase) + Tprop_val.count);
-
-    # get the <prop/val> BAT of the new document
-    var prop_val := bat(batname);
-
-    # import all new property values and replace the corresponding
-    # property IDs 
-    var prop_newprop := prop_val.mirror.mark(new_prop_base);
-    pre_newprop.insert(pre_prop.join(prop_newprop));
-    Tprop_val.insert(prop_val.reverse.mark(new_prop_base).reverse);
-
-    return new_prop_base;
-}
-
-PROC doc_to_working_set(str name) : void :=
-{
-    if (not(doc_name.reverse.exist(name)))
-	ERROR("Document %s does not exist\n",name);
-    var docid := doc_name.reverse.find(name);
-
-    var new_pre_base := oid(int(PRE_BASE) + Tpre_size.count);
-    
-    # create document entry for Tdoc_pre, Tdoc_name and update max-height;
-    Tdoc_pre.insert(nil, new_pre_base);
-    Tdoc_name.insert(nil, name);
-    Theight := max(Theight, doc_height.find(docid));
-
-    docid := str(int(docid));
-
-    # append the size and level table to the respective T-BATs
-    Tpre_size.insert(bat("pre_size" + docid).reverse.mark(new_pre_base).reverse);
-    Tpre_level.insert(bat("pre_level" + docid).reverse.mark(new_pre_base).reverse);
-    Tpre_kind.insert(bat("pre_kind" + docid).reverse.mark(new_pre_base).reverse);
-
-    # append the property BATs
-    var pre_prop := bat("pre_prop" + docid).reverse.mark(new_pre_base).reverse;
-    var pre_newprop := new(oid,oid);
-    
-    pre_newprop.insert(pre_prop.semijoin(Tpre_kind.select(DOCUMENT)));
-    var tmp := pre_prop.semijoin(Tpre_kind.select(ELEMENT));
-    tmp_seqbase := add_properties(tmp, pre_newprop, Tprop_loc, "prop_loc" + docid);
-    Tprop_ns.insert(bat("prop_ns" + docid).reverse.mark(tmp_seqbase).reverse);
-    tmp := pre_prop.semijoin(Tpre_kind.select(TEXT));
-    add_properties(tmp, pre_newprop, Tprop_text, "prop_text" + docid);
-    tmp := pre_prop.semijoin(Tpre_kind.select(COMMENT));
-    add_properties(tmp, pre_newprop, Tprop_com, "prop_com" + docid);
-    tmp := pre_prop.semijoin(Tpre_kind.select(PI));
-    tmp_seqbase := add_properties(tmp, pre_newprop, Tprop_ins, "prop_ins" + docid);
-    Tprop_tgt.insert(bat("prop_tgt" + docid).reverse.mark(tmp_seqbase).reverse);
-    
-    pre_newprop := pre_newprop.sort.reverse.mark(new_pre_base).reverse;
-    Tpre_prop.insert(pre_newprop);
-
-    # append the attribute tables to the respective T-BATs
-    var new_attr_base := oid(int(ATTR_BASE) + Tattr_own.count);
-
-    Tattr_ns.insert(bat("attr_ns" + docid).reverse.mark(new_attr_base).reverse);
-    Tattr_loc.insert(bat("attr_loc" + docid).reverse.mark(new_attr_base).reverse);
-    Tattr_val.insert(bat("attr_val" + docid).reverse.mark(new_attr_base).reverse);
-
-    # the debugmask instructions helps to pass the sorted property,
-    # which would be lost otherwise after the [+](int) instruction
-    tmp := bat("attr_own" + docid).reverse.mark(new_attr_base).reverse;
-    tmp := tmp.[int];
-    var orgDebugMask := debugmask();
-    var newDebugMask := or(or(2,8),orgDebugMask);
-    debugmask(newDebugMask);
-    tmp := tmp.[+](int(new_pre_base) - int(PRE_BASE));
-    debugmask(orgDebugMask);
-    tmp := tmp.[oid];
-    Tattr_own.insert(tmp);
-}
-ADDHELP("doc_to_working_set", "rode", "Nov 2003",
-"PARAMETERS:\n\
-str document name\n\
-DESCRIPITON:\n\
-Load persistent document into working set (T-BATs).",
-"pathfinder");
-
-PROC clear_working_set() : void :=
-{
-    Tpre_size := new(void,int).seqbase(PRE_BASE);
-    Tpre_level := new(void,chr).seqbase(PRE_BASE);
-    Tpre_prop := new(void,oid).seqbase(PRE_BASE);
-    Tpre_kind := new(void,chr).seqbase(PRE_BASE);
-    Tprop_ns := new(void,str).seqbase(PRE_BASE);
-    Tprop_loc := new(void,str).seqbase(PRE_BASE);
-    Tprop_text := new(void,str).seqbase(PRE_BASE);
-    Tprop_com := new(void,str).seqbase(PRE_BASE);
-    Tprop_ins := new(void,str).seqbase(PRE_BASE);
-    Tprop_tgt := new(void,str).seqbase(PRE_BASE);
-    Tattr_ns := new(void,str).seqbase(ATTR_BASE);
-    Tattr_loc := new(void,str).seqbase(ATTR_BASE);
-    Tattr_val := new(void,str).seqbase(ATTR_BASE);
-    Tattr_own := new(void,oid).seqbase(ATTR_BASE);
-    Tdoc_pre := new(void,oid).seqbase(DOC_BASE);
-    Tdoc_name := new(void,str).seqbase(DOC_BASE);
-    Theight := 0;
-}
-ADDHELP("clear_working_set", "rode", "Dec 2003",
-"DESCRIPITON:\n\
-Empty the working set (T-BATs).",
-"pathfinder");
-
-PROC delete_doc(str name) : void :=
-{
-    if (not(doc_name.reverse.exist(name)))
-	ERROR("Document %s does not exist\n",name);
-    var docid := doc_name.reverse.find(name);
-    
-    doc_name.delete(docid);
-    doc_height.delete(docid);
-    
-    docid := str(int(docid));
-    bat("pre_size" + docid).persists(false);
-    bat("pre_level" + docid).persists(false);
-    bat("pre_prop" + docid).persists(false);
-    bat("pre_kind" + docid).persists(false);
-    bat("prop_ns" + docid).persists(false);
-    bat("prop_loc" + docid).persists(false);
-    bat("prop_text" + docid).persists(false);
-    bat("prop_com" + docid).persists(false);
-    bat("prop_tgt" + docid).persists(false);
-    bat("prop_ins" + docid).persists(false);
-    bat("attr_ns" + docid).persists(false);
-    bat("attr_loc" + docid).persists(false);
-    bat("attr_val" + docid).persists(false);
-    bat("attr_own" + docid).persists(false);
-    
-    commit;
-}
-ADDHELP("delete_doc", "rode", "Nov 2003",
-"PARAMETERS:\n\
-str document name\n\
-DESCRIPITON:\n\
-delete the persistent BATS that store the document.",
+compression of property duplicates",
 "pathfinder");
 
 PROC import_doc(str flnm, str name) : void :=
@@ -404,7 +496,7 @@ PROC import_doc(str flnm, str name) : void :=
         new(oid,int).persists(true).bbpname("doc_height");
     }
     var docid;
-    if (doc_name.count = 0) docid := DOC_BASE;
+    if (doc_name.count = 0) docid := 0@0;
     else docid := oid(int(doc_name.reverse.max) + 1);
     
     if (doc_name.reverse.exist(name))
@@ -420,6 +512,12 @@ PROC import_doc(str flnm, str name) : void :=
     seps4.insert (nil, ",");
     seps4.insert (nil, ",");
     seps4.insert (nil, "\n");
+
+    # column/line separators (3 columns)
+    var seps3 := new (void, str);
+    seps3.insert (nil, ",");
+    seps3.insert (nil, ",");
+    seps3.insert (nil, "\n");
 
     # column/line separators (2 columns)
     var seps2 := new (void, str);
@@ -480,19 +578,25 @@ PROC import_doc(str flnm, str name) : void :=
     pi_ty.insert (nil, "str");
     pi_ty.insert (nil, "str");
 
-    # table att|own|ns|loc|val
+    # table att|own|qn|prop
     var att := new (void, str);
     att.insert (nil, "own");
-    att.insert (nil, "ns");
-    att.insert (nil, "loc");
-    att.insert (nil, "val");
+    att.insert (nil, "qn");
+    att.insert (nil, "prop");
 
     # column types
     var att_ty := new (void, str);
     att_ty.insert (nil, "oid");
-    att_ty.insert (nil, "str");
-    att_ty.insert (nil, "str");
-    att_ty.insert (nil, "str");
+    att_ty.insert (nil, "oid");
+    att_ty.insert (nil, "oid");
+
+    # table prop|val
+    var att_val := new (void, str);
+    att_val.insert (nil, "val");
+
+    # column types
+    var att_val_ty := new (void, str);
+    att_val_ty.insert (nil, "str");
 
     # load table pre|size|level|prop|kind 
     tmp := load(pre, seps4, pre_ty, flnm + ".pre", -1);
@@ -507,9 +611,9 @@ PROC import_doc(str flnm, str name) : void :=
     tmp.find("kind").[chr].copy.persists(true).bbpname("pre_kind" + docid);
 
     # load table prop|ns|loc
-    tmp := load(tag, seps2, tag_ty, flnm + ".tag", -1);
-    tmp.find("ns").persists(true).bbpname("prop_ns" + docid);
-    tmp.find("loc").persists(true).bbpname("prop_loc" + docid);
+    tmp := load(tag, seps2, tag_ty, flnm + ".qn", -1);
+    tmp.find("ns").persists(true).bbpname("qn_ns" + docid);
+    tmp.find("loc").persists(true).bbpname("qn_loc" + docid);
 
     # load table prop|text
     tmp := load(text, seps1, text_ty, flnm + ".text", -1);
@@ -524,15 +628,30 @@ PROC import_doc(str flnm, str name) : void :=
     tmp.find("tgt").persists(true).bbpname("prop_tgt" + docid);
     tmp.find("ins").persists(true).bbpname("prop_ins" + docid);
 
-    # load table att|own|ns|loc|val
-    tmp := load(att, seps4, att_ty, flnm + ".@", -1);
-    tmp.find("ns").persists(true).bbpname("attr_ns" + docid);
-    tmp.find("loc").persists(true).bbpname("attr_loc" + docid);
-    tmp.find("val").persists(true).bbpname("attr_val" + docid);
+    # load table att|own|qn|prop
+    tmp := load(att, seps3, att_ty, flnm + ".@", -1);
     tmp.find("own").persists(true).bbpname("attr_own" + docid);
+    tmp.find("qn").persists(true).bbpname("attr_qn" + docid);
+    tmp.find("prop").persists(true).bbpname("attr_prop" + docid);
+
+    # load table prop|val
+    tmp := load(att_val, seps1, att_val_ty, flnm + ".@val", -1);
+    tmp.find("val").persists(true).bbpname("prop_val" + docid);
 
     # save all persistent BATs
     commit;
+    printf("Document successfully imported\n");
+
+    if (((bat("pre_kind" + docid).select(ELEMENT).count +
+          bat("attr_own" + docid).count) = 
+         bat("qn_ns" + docid).count)
+        and
+	(bat("pre_kind" + docid).select(TEXT).count =
+        bat("prop_text" + docid).count))
+    {
+        printf("The properties of the file '%s' are propably not compressed!\n", flnm);
+	printf("You can compress it with: 'compress_properties(\"%s\");'\n", name);
+    }
 }
 ADDHELP("import_doc", "rode", "Nov 2003",
 "PARAMETERS:\n\
@@ -541,6 +660,59 @@ str document name in database\n\
 DESCRIPITON:\n\
 Import files generated by the loader as persistent document.",
 "pathfinder");
+
+PROC delete_doc(str name) : void :=
+{
+    if (not(doc_name.reverse.exist(name)))
+	ERROR("Document %s does not exist\n",name);
+    var docid := doc_name.reverse.find(name);
+    
+    doc_name.delete(docid);
+    doc_height.delete(docid);
+    
+    docid := str(int(docid));
+    bat("pre_size" + docid).persists(false);
+    bat("pre_level" + docid).persists(false);
+    bat("pre_prop" + docid).persists(false);
+    bat("pre_kind" + docid).persists(false);
+    bat("qn_ns" + docid).persists(false);
+    bat("qn_loc" + docid).persists(false);
+    bat("prop_text" + docid).persists(false);
+    bat("prop_com" + docid).persists(false);
+    bat("prop_tgt" + docid).persists(false);
+    bat("prop_ins" + docid).persists(false);
+    bat("attr_own" + docid).persists(false);
+    bat("attr_qn" + docid).persists(false);
+    bat("attr_prop" + docid).persists(false);
+    bat("prop_val" + docid).persists(false);
+    
+    commit;
+}
+ADDHELP("delete_doc", "tsheyar", "July 2004",
+"PARAMETERS:\n\
+str document name\n\
+DESCRIPITON:\n\
+delete the persistent BATS that store the document.",
+"pathfinder");
+
+PROC delete_all_docs() : void :=
+{
+    if (not(view_bbp_name.reverse.exist("doc_name")))
+	printf("no documents to delete\n");
+    else {
+        bat("doc_name")@batloop () {
+            delete_doc($t);
+        }
+#        bat("doc_name").persists(false);
+#        bat("doc_height").persists(false);
+#        commit;
+    }
+}
+ADDHELP("delete_all_docs", "tsheyar", "July 2004",
+"DESCRIPITON:\n\
+deletes all persistent document BATs that store xml documents.",
+"pathfinder");
+
 
 #############################################
 # XML print functions / XML Serialization
@@ -696,9 +868,28 @@ Print XML-document with the specified name.",
 # interface provides...
 # 
 
-PROC descendant(BAT[oid,any] ctx) : BAT[oid,void] :=
+PROC descendant(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid] :=
 {
-    return scj_desc(Tpre_size, ctx, Theight, Tpre_size.count);
+    var pre_sizes := ws.fetch(PRE_SIZE);
+    var pre_levels := ws.fetch(PRE_LEVEL);
+    var heights := ws.fetch(HEIGHT);
+
+    var unq := {count}(frag.reverse, frag.tunique);
+
+    var result := bat(oid,oid);
+    var offset := 0;
+
+    unq@batloop () {
+        result.insert(scj_desc
+                              (pre_sizes.fetch($h),
+                               # sort is necessary because ctx was not sorted 
+                               ctx.slice(offset, offset + $t - 1).reverse.mark(0@0).sort.mark(0@0),
+                               heights.fetch($h),
+                               pre_sizes.fetch($h).count).project($h));
+        offset := offset + $t;
+    }
+    return result;
+#    return scj_desc(Tpre_size, ctx, Theight, Tpre_size.count);
 }
 ADDHELP("descendant", "rode", "Jan 2004",
 "PARAMETERS:\n\
@@ -707,9 +898,28 @@ DESCRIPITON:\n\
 returns all nodes on the descendant axis of the ctx-nodes.",
 "pathfinder");
 
-PROC descendant_or_self(BAT[oid,any] ctx) : BAT[oid,void] :=
+PROC descendant_or_self(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid] :=
 {
-    return scj_descorself(Tpre_size, ctx, Theight, Tpre_size.count);
+    var pre_sizes := ws.fetch(PRE_SIZE);
+    var pre_levels := ws.fetch(PRE_LEVEL);
+    var heights := ws.fetch(HEIGHT);
+
+    var unq := {count}(frag.reverse, frag.tunique);
+
+    var result := bat(oid,oid);
+    var offset := 0;
+
+    unq@batloop () {
+        result.insert(scj_descorself
+                              (pre_sizes.fetch($h),
+                               # sort is necessary because ctx was not sorted 
+                               ctx.slice(offset, offset + $t - 1).reverse.mark(0@0).sort.mark(0@0),
+                               heights.fetch($h),
+                               pre_sizes.fetch($h).count).project($h));
+        offset := offset + $t;
+    }
+    return result;
+#    return scj_descorself(Tpre_size, ctx, Theight, Tpre_size.count);
 }
 ADDHELP("descendant_or_self", "rode", "Jan 2004",
 "PARAMETERS:\n\
@@ -718,9 +928,28 @@ DESCRIPITON:\n\
 returns all nodes on the descendant-or-self axis of the ctx-nodes.",
 "pathfinder");
 
-PROC ancestor(BAT[oid,any] ctx) : BAT[oid,void] :=
+PROC ancestor(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid] :=
 {
-    return scj_anc(Tpre_size, ctx, Theight, Tpre_size.count);
+    var pre_sizes := ws.fetch(PRE_SIZE);
+    var pre_levels := ws.fetch(PRE_LEVEL);
+    var heights := ws.fetch(HEIGHT);
+
+    var unq := {count}(frag.reverse, frag.tunique);
+
+    var result := bat(oid,oid);
+    var offset := 0;
+
+    unq@batloop () {
+        result.insert(scj_anc
+                              (pre_sizes.fetch($h),
+                               # sort is necessary because ctx was not sorted 
+                               ctx.slice(offset, offset + $t - 1).reverse.mark(0@0).sort.mark(0@0),
+                               heights.fetch($h),
+                               pre_sizes.fetch($h).count).project($h));
+        offset := offset + $t;
+    }
+    return result;
+#    return scj_anc(Tpre_size, ctx, Theight, Tpre_size.count);
 }
 ADDHELP("ancestor", "rode", "Jan 2004",
 "PARAMETERS:\n\
@@ -729,9 +958,28 @@ DESCRIPITON:\n\
 returns all nodes on the ancestor axis of the ctx-nodes.",
 "pathfinder");
 
-PROC ancestor_or_self(BAT[oid,any] ctx) : BAT[oid,void] :=
+PROC ancestor_or_self(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid] :=
 {
-    return scj_ancorself(Tpre_size, ctx, Theight, Tpre_size.count);
+    var pre_sizes := ws.fetch(PRE_SIZE);
+    var pre_levels := ws.fetch(PRE_LEVEL);
+    var heights := ws.fetch(HEIGHT);
+
+    var unq := {count}(frag.reverse, frag.tunique);
+
+    var result := bat(oid,oid);
+    var offset := 0;
+
+    unq@batloop () {
+        result.insert(scj_ancorself
+                              (pre_sizes.fetch($h),
+                               # sort is necessary because ctx was not sorted 
+                               ctx.slice(offset, offset + $t - 1).reverse.mark(0@0).sort.mark(0@0),
+                               heights.fetch($h),
+                               pre_sizes.fetch($h).count).project($h));
+        offset := offset + $t;
+    }
+    return result;
+#    return scj_ancorself(Tpre_size, ctx, Theight, Tpre_size.count);
 }
 ADDHELP("ancestor_or_self", "rode", "Jan 2004",
 "PARAMETERS:\n\
@@ -740,9 +988,27 @@ DESCRIPITON:\n\
 returns all nodes on the ancestor-or-self axis of the ctx-nodes.",
 "pathfinder");
 
-PROC child(BAT[oid,any] ctx) : BAT[oid,void] :=
+PROC child(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid] :=
 {
-    return lev_child(Tpre_level, ctx, Theight, Tpre_level.count);
+    var pre_levels := ws.fetch(PRE_LEVEL);
+    var heights := ws.fetch(HEIGHT);
+
+    var unq := {count}(frag.reverse, frag.tunique);
+
+    var result := bat(oid,oid);
+    var offset := 0;
+
+    unq@batloop () {
+        result.insert(lev_child
+                              (pre_levels.fetch($h),
+                               # sort is necessary because ctx was not sorted 
+                               ctx.slice(offset, offset + $t - 1).reverse.mark(0@0).sort.mark(0@0),
+                               heights.fetch($h),
+                               pre_levels.fetch($h).count).project($h));
+        offset := offset + $t;
+    }
+    return result;
+#    return lev_child(Tpre_level, ctx, Theight, Tpre_level.count);
 }
 ADDHELP("child", "rode", "Jan 2004",
 "PARAMETERS:\n\
@@ -751,9 +1017,27 @@ DESCRIPITON:\n\
 returns all nodes on the child axis of the ctx-nodes.",
 "pathfinder");
 
-PROC parent(BAT[oid,any] ctx) : BAT[oid,void] :=
+PROC parent(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid] :=
 {
-    return lev_parent(Tpre_level, ctx, Theight, Tpre_level.count);
+    var pre_levels := ws.fetch(PRE_LEVEL);
+    var heights := ws.fetch(HEIGHT);
+
+    var unq := {count}(frag.reverse, frag.tunique);
+
+    var result := bat(oid,oid);
+    var offset := 0;
+
+    unq@batloop () {
+        result.insert(lev_parent
+                              (pre_levels.fetch($h),
+                               # sort is necessary because ctx was not sorted 
+                               ctx.slice(offset, offset + $t - 1).reverse.mark(0@0).sort.mark(0@0),
+                               heights.fetch($h),
+                               pre_levels.fetch($h).count).project($h));
+        offset := offset + $t;
+    }
+    return result;
+#    return lev_parent(Tpre_level, ctx, Theight, Tpre_level.count);
 }
 ADDHELP("parent", "rode", "Jan 2004",
 "PARAMETERS:\n\
@@ -762,9 +1046,27 @@ DESCRIPITON:\n\
 returns all nodes on the parent axis of the ctx-nodes.",
 "pathfinder");
 
-PROC following_sibling(BAT[oid,any] ctx) : BAT[oid,void] :=
+PROC following_sibling(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid] :=
 {
-    return lev_fs(Tpre_level, ctx, Theight, Tpre_level.count);
+    var pre_levels := ws.fetch(PRE_LEVEL);
+    var heights := ws.fetch(HEIGHT);
+
+    var unq := {count}(frag.reverse, frag.tunique);
+
+    var result := bat(oid,oid);
+    var offset := 0;
+
+    unq@batloop () {
+        result.insert(lev_fs
+                              (pre_levels.fetch($h),
+                               # sort is necessary because ctx was not sorted 
+                               ctx.slice(offset, offset + $t - 1).reverse.mark(0@0).sort.mark(0@0),
+                               heights.fetch($h),
+                               pre_levels.fetch($h).count).project($h));
+        offset := offset + $t;
+    }
+    return result;
+#    return lev_fs(Tpre_level, ctx, Theight, Tpre_level.count);
 }
 ADDHELP("following_sibling", "rode", "Jan 2004",
 "PARAMETERS:\n\
@@ -773,9 +1075,27 @@ DESCRIPITON:\n\
 returns all nodes on the following-sibling axis of the ctx-nodes.",
 "pathfinder");
 
-PROC preceding_sibling(BAT[oid,any] ctx) : BAT[oid,void] :=
+PROC preceding_sibling(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid] :=
 {
-    return lev_ps(Tpre_level, ctx, Theight, Tpre_level.count);
+    var pre_levels := ws.fetch(PRE_LEVEL);
+    var heights := ws.fetch(HEIGHT);
+
+    var unq := {count}(frag.reverse, frag.tunique);
+
+    var result := bat(oid,oid);
+    var offset := 0;
+
+    unq@batloop () {
+        result.insert(lev_ps
+                              (pre_levels.fetch($h),
+                               # sort is necessary because ctx was not sorted 
+                               ctx.slice(offset, offset + $t - 1).reverse.mark(0@0).sort.mark(0@0),
+                               heights.fetch($h),
+                               pre_levels.fetch($h).count).project($h));
+        offset := offset + $t;
+    }
+    return result;
+#    return lev_ps(Tpre_level, ctx, Theight, Tpre_level.count);
 }
 ADDHELP("preceding_sibling", "rode", "Jan 2004",
 "PARAMETERS:\n\
@@ -784,9 +1104,39 @@ DESCRIPITON:\n\
 returns all nodes on the preceding-sibling axis of the ctx-nodes.",
 "pathfinder");
 
-PROC following(BAT[oid,any] ctx) : BAT[oid,void] :=
+PROC following(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid] :=
 {
-    return following_void(Tpre_size, ctx, Tdoc_pre, Theight, Tpre_size.count);
+    var pre_sizes := ws.fetch(PRE_SIZE);
+    var pre_levels := ws.fetch(PRE_LEVEL);
+    var heights := ws.fetch(HEIGHT);
+
+    var unq := {count}(frag.reverse, frag.tunique);
+
+    var result := bat(oid,oid);
+    var offset := 0;
+
+    # FIXME: dirty code because, don't want to change scj implementation
+    var doc_pre;
+    var default_bat := bat(void,oid).seqbase(0@0).insert(nil,1@0);
+
+    unq@batloop () {
+        # FIXME: dirty code because, don't want to change scj implementation
+        if ($h = 0@0)
+            doc_pre := ws.fetch(WS_FRAG);
+        else
+            doc_pre := default_bat;
+
+        result.insert(following_void
+                              (pre_sizes.fetch($h),
+                               # sort is necessary because ctx was not sorted 
+                               ctx.slice(offset, offset + $t - 1).reverse.mark(0@0).sort.mark(0@0),
+                               doc_pre,
+                               heights.fetch($h),
+                               pre_sizes.fetch($h).count).project($h));
+        offset := offset + $t;
+    }
+    return result;
+#    return following_void(Tpre_size, ctx, Tdoc_pre, Theight, Tpre_size.count);
 }
 ADDHELP("following", "rode", "Jan 2004",
 "PARAMETERS:\n\
@@ -795,9 +1145,39 @@ DESCRIPITON:\n\
 returns all nodes on the following axis of the ctx-nodes.",
 "pathfinder");
 
-PROC preceding(BAT[oid,any] ctx) : BAT[oid,void] :=
+PROC preceding(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid] :=
 {
-    return preceding_void(Tpre_size, ctx, Tdoc_pre, Theight, Tpre_size.count);
+    var pre_sizes := ws.fetch(PRE_SIZE);
+    var pre_levels := ws.fetch(PRE_LEVEL);
+    var heights := ws.fetch(HEIGHT);
+
+    var unq := {count}(frag.reverse, frag.tunique);
+
+    var result := bat(oid,oid);
+    var offset := 0;
+
+    # FIXME: dirty code because, don't want to change scj implementation
+    var doc_pre;
+    var default_bat := bat(void,oid).seqbase(0@0).insert(nil,1@0);
+
+    unq@batloop () {
+        # FIXME: dirty code because, don't want to change scj implementation
+        if ($h = 0@0)
+            doc_pre := ws.fetch(FRAG_PRE);
+        else
+            doc_pre := default_bat;
+
+        result.insert(preceding_void
+                              (pre_sizes.fetch($h),
+                               # sort is necessary because ctx was not sorted 
+                               ctx.slice(offset, offset + $t - 1).reverse.mark(0@0).sort.mark(0@0),
+                               doc_pre,
+                               heights.fetch($h),
+                               pre_sizes.fetch($h).count).project($h));
+        offset := offset + $t;
+    }
+    return result;
+#    return preceding_void(Tpre_size, ctx, Tdoc_pre, Theight, Tpre_size.count);
 }
 ADDHELP("preceding", "rode", "Jan 2004",
 "PARAMETERS:\n\
@@ -806,3 +1186,203 @@ DESCRIPITON:\n\
 returns all nodes on the preceding axis of the ctx-nodes.",
 "pathfinder");
 
+
+@:loop_lifted_scj_step1(ancestor)@
+@:loop_lifted_scj_step1(ancestor_or_self)@
+@:loop_lifted_scj_step1(child)@
+@:loop_lifted_scj_step1(descendant)@
+@:loop_lifted_scj_step1(descendant_or_self)@
+@:loop_lifted_scj_step1(following)@
+@:loop_lifted_scj_step1(following_sibling)@
+@:loop_lifted_scj_step1(parent)@
+@:loop_lifted_scj_step1(preceding)@
+@:loop_lifted_scj_step1(preceding_sibling)@
+
+# expanding of the return_type
+@= jRetType
+bat[void,bat]
+@= jReturn
+result_scj := bat(void,bat).seqbase(0@0);
+# join is implicitly done in the iterative approach
+result_scj.insert(nil,pruned_item);
+result_scj.insert(nil,ctx_dn_item);
+result_scj.insert(nil,ctx_dn_frag);
+@
+@= unjRetType
+bat[void,bat]
+@= unjReturn
+result_scj := bat(void,bat).seqbase(0@0);
+result_scj.insert(nil,pruned_item);
+result_scj.insert(nil,ctx_dn_item);
+result_scj.insert(nil,ctx_dn_frag);
+@ 
+# expansion of the different return types
+@= loop_lifted_scj_step1
+@:loop_lifted_scj_step2(@1,_joined,@:jRetType@,@:jReturn)@
+@:loop_lifted_scj_step2(@1,_unjoined,@:unjRetType@,@:unjReturn@)@
+@
+#==================================================================
+# expansions of the loop lifted scj
+@= comma
+,
+@
+# kind argument
+@= kind
+@:comma@chr kind
+@
+# code for kind testing
+@= kindcode
+        temp1_scj := mposjoin (item_part, frag_part, ws.fetch(PRE_KIND));
+        temp1_scj := temp1_scj.ord_uselect(kind).mark(0@0).reverse;
+        item_part := temp1_scj.leftfetchjoin(item_part);
+        frag_part := temp1_scj.leftfetchjoin(frag_part);
+@
+# tagname argument
+@= tagname_ns
+@:comma@str ns
+@
+@= tagname_loc
+@:comma@str loc
+@
+@= tagname_nsloc
+@:comma@str ns@:comma@ str loc
+@
+# code for tagname testing
+@= ns_code
+		tmp := ws.fetch(QN_NS).fetch($t).ord_uselect(ns);
+@
+@= loc_code
+		tmp := ws.fetch(QN_LOC).fetch($t).ord_uselect(loc);
+@
+@= nsloc_code
+		tmp := ws.fetch(QN_NS).fetch($t).ord_uselect(ns).mark(0@0).reverse;
+		tmp := tmp.leftjoin(ws.fetch(QN_LOC).fetch($t)).ord_uselect(loc);
+@
+@= gettagnames
+	var tagtest_prop;
+	var tagtest_frag;
+	{
+	var tagtest := frag;
+	# FIXME: propably there is a better solution to get all fragments
+	# test if WS is present - if yes add all possible fragments
+	if (frag.ord_uselect(0@0).count > 0)
+            tagtest.access(BAT_WRITE).insert(ws.fetch(PRE_FRAG).fetch(WS));
+
+	tagtest := tagtest.tunique.mark(0@0).reverse;
+	var result := bat(oid,oid);
+
+	var tmp;
+	tagtest@batloop () {
+		@1
+		result.insert(tmp.project($t).reverse);
+	}
+	tagtest_prop := result.reverse.mark(0@0).reverse;
+	tagtest_frag := result.mark(0@0).reverse;
+	}
+@
+# code for tagname testing
+@= tagnamecode
+        temp1_scj := mposjoin (item_part, frag_part, ws.fetch(PRE_KIND));
+        temp1_scj := temp1_scj.ord_uselect(ELEMENT).mark(0@0).reverse;
+        item_part := temp1_scj.leftfetchjoin(item_part);
+        frag_part := temp1_scj.leftfetchjoin(frag_part);
+
+	# create void|testprop corresponding to item_part
+	temp1_scj := mposjoin(item_part, frag_part, ws.fetch(PRE_FRAG));
+	temp1_scj := temp1_scj.leftjoin(tagtest_frag.reverse);
+	temp1_scj := temp1_scj.leftfetchjoin(tagtest_prop);
+
+	# compare PROP of item_part with testprop
+	temp1_scj := temp1_scj.[=](mposjoin (item_part, frag_part, ws.fetch(PRE_PROP)));
+	temp1_scj := temp1_scj.ord_uselect(true).mark(0@0).reverse;
+
+        item_part := temp1_scj.leftfetchjoin(item_part);
+        frag_part := temp1_scj.leftfetchjoin(frag_part);
+@
+# resetting the tagname
+@= resetpropID
+tagtest_prop := nil;
+tagtest_frag := nil;
+@
+# expanding the scj for the different tests
+@= loop_lifted_scj_step2
+@:loop_lifted_scj_step3(@1,@2,,@3,,,,@4)@
+@:loop_lifted_scj_step3(@1,_with_kind_test@2,@:kind@,@3,,@:kindcode@,,@4)@
+@:loop_lifted_scj_step3(@1,_with_ns_test@2,@:tagname_ns@,@3,@:gettagnames(@:ns_code)@,@:tagnamecode@,@:resetpropID@,@4)@
+@:loop_lifted_scj_step3(@1,_with_loc_test@2,@:tagname_loc@,@3,@:gettagnames(@:loc_code@)@,@:tagnamecode@,@:resetpropID@,@4)@
+@:loop_lifted_scj_step3(@1,_with_nsloc_test@2,@:tagname_nsloc@,@3,@:gettagnames(@:nsloc_code@)@,@:tagnamecode@,@:resetpropID@,@4)@
+@
+#==================================================================
+# actual definition of the scj proc
+@= loop_lifted_scj_step3
+proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws@3) : @4 :=
+{
+   var offset := 0;
+   var pruned_item := bat(void,oid).access(BAT_APPEND).seqbase(0@0);
+   var ctx_dn_item := bat(void,oid).access(BAT_APPEND).seqbase(0@0);
+   var ctx_dn_frag := bat(void,oid).access(BAT_APPEND).seqbase(0@0);
+
+   var sorting := iter.reverse.sort.reverse.mark(0@0).reverse;
+   iter := sorting.leftfetchjoin(iter);
+   item := sorting.leftfetchjoin(item);
+   frag := sorting.leftfetchjoin(frag);
+   sorting := nil;
+
+   var uniqueIter_count := {count}(iter.reverse, iter.tunique);
+   
+   printf("order: uniqueIter_count %i, iter %i\n", uniqueIter_count.chk_order(false), iter.chk_order(false));
+   
+   if ((uniqueIter_count.chk_order(false) >= 4) or 
+       (iter.chk_order(false) >= 4))
+       ERROR ("ordering is wrong in scj (concept with slices doesn't work)");
+
+   uniqueIter_count := uniqueIter_count.[-](1);
+
+   @5
+
+   var temp1_scj;
+   var item_part;
+   var frag_part;
+   var seqb;
+
+   uniqueIter_count@batloop ()
+   {
+   	item_part := item.slice(offset, offset + $t).reverse.mark(0@0).reverse;
+   	frag_part := frag.slice(offset, offset + $t).reverse.mark(0@0).reverse;
+	temp1_scj := @1 (item_part, frag_part, ws);
+        item_part := temp1_scj.mark(0@0).reverse;
+        frag_part := temp1_scj.reverse.mark(0@0).reverse;
+
+	# possible test
+	@6
+
+   	seqb := count (ctx_dn_item);
+   	seqb := oid (seqb);
+   	item_part := item_part.reverse.mark(seqb).reverse;
+   	ctx_dn_item.insert(item_part);
+   	pruned_item.insert(item_part.project($h));
+   	frag_part := frag_part.reverse.mark(seqb).reverse;
+   	ctx_dn_frag.insert(frag_part);
+
+   	offset := offset + $t + 1;
+   }
+
+   offset := nil;
+   temp1_scj := nil;
+   item_part := nil;
+   frag_part := nil;
+   seqb := nil;
+   uniqueIter_count := nil;
+   iter := nil;
+   item := nil;
+   @7 # propID := nil;
+
+   ctx_dn_item.access(BAT_READ);
+   pruned_item.access(BAT_READ);
+   ctx_dn_frag.access(BAT_READ);
+
+   var result_scj;
+   @8
+   return result_scj;
+}
+@
