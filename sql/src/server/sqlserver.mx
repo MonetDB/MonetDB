@@ -1,7 +1,8 @@
 @f sqlserver
 @a N.J. Nes
 @* 
-
+The sqlserver module contains the complete wrapper interface for the
+SQL client and the corresponding MIL runtime startup.
 @m
 .MODULE sqlserver;
 	.USE ascii_io;
@@ -170,124 +171,6 @@ replace commands.
 #include <mem.h>
 #include <context.h>
 #include <kernel.h>
-
-@= builtin_operand
-{       int _k = interpret(stk, arg(lt, @1), res);
-        if (_k < 0) {
-                return _k;
-        }
-        @3 = VALconvert(@2, res, 0);
-        if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
-                return handle_paramerror(res,@1,res->vtype,@2);
-        }
-}
-@c
-
-extern catalog *mvc_catalog_create( mvc *m, context *lc );
-
-int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
-	buffer *bbuf = buffer_create( BUFSIZ );
-	int err = 0;
-	stmt *s = NULL;
-	char *cmd = NULL;
-	char *errbuf = GDKmalloc(GDKMAXERRLEN);
-
-	mvc **M, *m;
-	stream **In, *in, **Out, *out, *ws;
-	context *lc;
-
-  	if (lt->cnt != 3) {
-        	return handle_argerror(res, lt->cnt, 3);
-  	}
-  	@:builtin_operand(0,TYPE_mvc,M)@
-	m = *M;
-  	@:builtin_operand(1,TYPE_Stream,In)@
-	in = *In;
-  	@:builtin_operand(2,TYPE_Stream,Out)@
-	out = *Out;
-
-	lc = NEW(context);
-	ws = buffer_wastream( bbuf, "SQLserver" );
-	sql_init_context( lc, ws, m->debug, default_catalog_create() );
-	mvc_catalog_create( m, lc );
-
-	GDKsetbuf(errbuf);
-
-	while(lc->cur != EOF ){
-		s = sqlnext(lc, in, &err);
-		if (err){ /* output error */
-			stream_writeInt( out, 0 );
-			stream_writeInt( out, 0 );
-			stream_writeInt( out, -1 );
-			out->write( out, lc->errstr, strlen(lc->errstr), 1 );
-			out->flush( out );
-		} else if (s){
-	    		int nr = 1;
-	    		stmt_dump( s, &nr, lc );
-
-			cmd = buffer_get_buf(bbuf);
-	    		lc->out->flush( lc->out );
-
-			if (lc->debug&64){
-				stream_writeInt( out, 0 );
-				stream_writeInt( out, QDEBUG );
-				stream_writeInt( out, lc->debug );
-				out->write( out, cmd, strlen(cmd), 1 );
-				out->flush( out );
-			} else {
-
-			    if (s && s->op1.stval->type == st_copyfrom &&
-				!stmt_copyfrom_files(s)){
-				/*ask_for_data();*/
-				stream_writeInt( out, 0 );
-				stream_writeInt( out, QDATA );
-				stream_writeInt( out, 0 );
-				out->flush( out );
-			    }
-			
-			    {
-				int i;
-				ssize_t status;
-				ValRecord res;
-        			res.vtype = TYPE_void; 
-				i = interpret_str( stk, cmd, &res);
-
-				if (i < 0){
-					char *errstr = "Mil error";
-					char *buf = GDKerrbuf;
-					stream_writeInt( out, 0 );
-					stream_writeInt( out, mvc_type(m) );
-					stream_writeInt( out, i );
-					out->write( out, errstr, strlen(errstr), 1 );
-					out->write( out, buf, strlen(buf), 1 );
-					buf[0] = 0; /* reset error buf */
-					out->flush( out );
-				} else if ((status=mvc_status(m)) < 0){
-					char *errstr = "Error in result";
-					stream_writeInt( out, 0 );
-					stream_writeInt( out, mvc_type(m) );
-					stream_writeInt( out, status );
-					out->write( out, errstr, strlen(errstr), 1 );
-					out->flush( out );
-				} else if (s->type != st_output) {
-					stream_writeInt( out, 0 );
-					stream_writeInt( out, mvc_type(m) );
-					stream_writeInt( out, status );
-					out->flush( out );
-				}
-			    }
-			} 
-			/* BEWARE to use free instead of _DELETE
- 			 * as the stream library is build with out libbat 
- 			 * ie. it cannot use GDKmalloc can be used */
-			if (cmd) free(cmd);
-		}
-		if (s) stmt_destroy(s);
-	}
-	mvc_destroy(m);
-	sql_exit_context( lc );
-	return GDK_SUCCEED;
-}
 
 int mvc_init_wrap( int* debug, str dir_name){
 	mvc_init(*debug, dir_name);
@@ -746,43 +629,9 @@ proc sql_mul(x, y):= return x * y;
 proc sql_div(x, y):= return x / y;
 proc sql_neg(val):= return -1 * val;
 
-proc floor(flt f):= return flt(floor(dbl(f)));
-proc ceil(flt f):= return flt(ceil(dbl(f)));
-proc sin(flt f):= return flt(sin(dbl(f)));
-proc cos(flt f):= return flt(cos(dbl(f)));
-proc tan(flt f):= return flt(tan(dbl(f)));
-proc asin(flt f):= return flt(asin(dbl(f)));
-proc acos(flt f):= return flt(acos(dbl(f)));
-proc atan(flt f):= return flt(atan(dbl(f)));
-proc sinh(flt f):= return flt(sinh(dbl(f)));
-proc cosh(flt f):= return flt(cosh(dbl(f)));
-proc tanh(flt f):= return flt(tanh(dbl(f)));
-proc sqrt(flt f):= return flt(sqrt(dbl(f)));
-proc exp(flt f):= return flt(exp(dbl(f)));
-proc log(flt f):= return flt(log(dbl(f)));
-proc log10(flt f):= return flt(log10(dbl(f)));
-
-proc current_timestamp() { return timestamp(epoch()); }
-proc current_date() { return date(current_timestamp()); }
-proc current_time() { return daytime(current_timestamp()); }
-
 var dbname := monet_environment.find("gdk_dbname");
 var dbfarm := monet_environment.find("gdk_dbfarm");
 mvc_init(sql_debug,dbfarm + "/" + dbname + "/log");
-
-const QPARSE := 1;
-const QTABLE := 2;
-const QUPDATE := 3;
-const QDATA := 4;
-const QHEADER := 5;
-const QDEBUG := 6; 
-
-const RDONLY := 0;
-const INS := 1;
-const DEL := 2;
-const UPD := 3;
-const UPDATES := 4;
-const DELETES := 5;
 
 proc mvc_bind_( m, schema, Table, column, write_access ){
 	res := mvc_bind(m, schema,Table, column, write_access);

@@ -26,21 +26,19 @@ It must be initialized and told to accept SQL sessions. In a separate window
 start the server for a new SQL database (named VOC);
 
 $ mkdir -p $PREFIX/var/dbfarm/VOC
-$ Mserver --dbname=VOC $PREFIX/share/MonetDB/sqlserver.mil
+$ Mserver --dbname=VOC 
 # Monet Database Server V4.3.7
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-server listening on port 45123
-monet>
+monet>module(sqlserver);
 monet>
 
 Here $PREFIX denotes the path where Monet has been installed.
 All databases are kept in $PREFIX/var/dbfarm unless this location
 has been changed in the monet.conf file.
 
-The server is initialized running a MIL script kept around in
-the $PREFIX/share/MonetDB context. It should respond with a message
-saying the server is ready to listen for SQL sessions.
+The server is initialized by loading the SQL module. It will listen
+to a default port for requests.
 
 If you get an error message, e.g. 'port already in use', you might have 
 obsolete Mserver processes hanging around which should be killed first.
@@ -82,7 +80,7 @@ Msql> select t.name, c.name, c.type, c.null, c.default from columns c, tables t
 
 The distribution comes with a small sample database for the historical
 multinational VOC (East-Indian Trading Company 1595-1798)
-The schema is kept around in .../src/Tests/VOC where ... denotes the 
+The schema is kept around in .../src/test/VOC where ... denotes the 
 toplevel directory where you installed the sql frontend.
 
 The single table used in this example is created as follows:
@@ -92,9 +90,10 @@ Msql>         trip   integer,
 Msql>	      boatname varchar(25),
 Msql>         master varchar(25),
 Msql>         tonnage integer,
-Msql>         hired   integer,
-Msql>         yard    char,
-Msql>         chamber char,
+Msql>         birth   varchar(10),
+Msql>         acquired integer,
+Msql>         yard    varchar(1),
+Msql>         chamber varchar(1),
 Msql>         departure       date,
 Msql>         harbour varchar(12),
 Msql>         cape_arrival date,
@@ -107,9 +106,28 @@ To load the database with a small sample use the command
 Msql> copy 5 records into voyage from '.../src/test/VOC/VOCsample.csv'
 Msql> using delimiters ',','\n';
  
-
 The few tuples added can be shown with
-Msql> select * from voyage;
+Msql> select distinct boatname,master from voyage;
+"BRESLAU"       "Jan Kornelis Roos"
+"LES DEUX SOEURS"       "Blankman"
+"POTSDAM"       "Bernard Christiaan Muller"
+"GERECHTIGHEID" "Isaak Segon"
+SQL  4 Rows affected
+Msql>
+
+The VOC database in its full incarnation contains over 8 thousand
+records. To retrieve part of it, you have to use selection and order
+by predicates. A few illustrative SQL statements are shown.
+
+Msql> select boatname,destination_arrival from voyage order by destination_arrival;
+"LES DEUX SOEURS"       nil
+"BRESLAU"       1783-08-06
+"POTSDAM"       1783-08-09
+"GERECHTIGHEID" 1783-11-08
+SQL  4 Rows affected
+Msql> 
+
+
 It expects each tuple to be represented on a separate line and
 conforms to the Monet tuple format lexical structure.
 You can specify the column value separator. The defaults is

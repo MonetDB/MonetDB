@@ -4,8 +4,8 @@ INCLUDES = ../common ../client $(MONET_INCS)
 
 lib__sqlserver = {
 	DIR = libdir/MonetDB
-	SOURCES = sqlserver.mx mvc.mx bm.mx logger.mx privileges.mx \
-		catalog_module.c statement_exec.c 
+	SOURCES = sqlserver.mx sqlconnect.mx mvc.mx bm.mx logger.mx \
+		privileges.mx catalog_module.c statement_exec.c 
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io
 	LIBS = ../common/libsql $(MONET_LIBS)
 	LDFLAGS = -module
