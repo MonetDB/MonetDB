@@ -108,14 +108,19 @@ function Admin.main():int;	# 0  (main:int)
     io.printf("after 5rd assignment refcount =%d[1]\n",i);	# 25 IOprint_formatted_int ($28:int)<-($29:str)(i:int)
     io.printf("call function\n");	# 26 IOprint_str ($30:int)<-($31:str)
     d := Admin.steal(b);	# 27  (d:bat[:int,:str])<-(b:bat[:int,:str])
-    e := Admin.steal(b);	# 28  (e:bat[:int,:str])<-(b:bat[:int,:str])
-    i := bbp.getLRefCount(b);	# 29 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("return from function refcount =%d[2]\n",i);	# 30 IOprint_formatted_int ($34:int)<-($35:str)(i:int)
-    z := bbp.getRefCount();	# 31 CMDbbpRefCount (z:bat[:int,:int])
-    zl := bbp.getLRefCount();	# 32 CMDbbpLRefCount (zl:bat[:int,:int])
-    zn := bbp.getNames();	# 33 CMDbbpNames (zn:bat[:int,:str])
-    io.print(zn,z,zl);	# 34 IOtable ($39:int)<-(zn:bat[:int,:str])(z:bat[:int,:int])(zl:bat[:int,:int])
-end main;	# 35  
+    i := bbp.getLRefCount(b);	# 28 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
+    io.printf("return from function refcount =%d[2]\n",i);	# 29 IOprint_formatted_int ($33:int)<-($34:str)(i:int)
+    io.printf("check self replacement\n");	# 30 IOprint_str ($35:int)<-($36:str)
+    i := bbp.getLRefCount(b);	# 31 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
+    b := Admin.steal(b);	# 32  (b:bat[:int,:str])<-(b:bat[:int,:str])
+    j := bbp.getLRefCount(b);	# 33 CMDgetBATlrefcnt (j:int)<-(b:bat[:int,:str])
+    io.print(i);	# 34 IOprint_val ($38:int)<-(i:int)
+    io.print(j);	# 35 IOprint_val ($39:int)<-(j:int)
+    z := bbp.getRefCount();	# 36 CMDbbpRefCount (z:bat[:int,:int])
+    zl := bbp.getLRefCount();	# 37 CMDbbpLRefCount (zl:bat[:int,:int])
+    zn := bbp.getNames();	# 38 CMDbbpNames (zn:bat[:int,:str])
+    io.print(zn,z,zl);	# 39 IOtable ($43:int)<-(zn:bat[:int,:str])(z:bat[:int,:int])(zl:bat[:int,:int])
+end main;	# 40  
 refcount =1[1]
 #-------------------------#
 # h	tmp_4		  # name
@@ -137,9 +142,12 @@ after 5rd assignment refcount =1[1]
 call function
 enter function refcount =2[2]
 local in function refcount =3[3]
+return from function refcount =3[2]
+check self replacement
 enter function refcount =4[2]
 local in function refcount =5[3]
-return from function refcount =5[2]
+[ 3 ]
+[ 4 ]
 #---------------------------------------------------------#
 # bbp	name			refcnt	lrefcnt		  # name
 # int	str			int	int		  # type
@@ -147,7 +155,7 @@ return from function refcount =5[2]
 [ 1,	  "monet_environment",	  1,	  0		  ]
 [ 2,	  "monet_unicode_case",	  1,	  0		  ]
 [ 3,	  "timezones",		  1,	  0		  ]
-[ 4,	  "tmp_4",		  0,	  5		  ]
+[ 4,	  "tmp_4",		  0,	  4		  ]
 [ 5,	  "tmp_5",		  0,	  2		  ]
 [ 6,	  "tmp_6",		  0,	  1		  ]
 

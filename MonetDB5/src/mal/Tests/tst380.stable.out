@@ -111,8 +111,25 @@ function Admin.main():int;	# 0  (main:int)
     Admin.dir("simple");	# 7  ($12:void)<-($13:str)
 end main;	# 8  
 [ "Get first directory" ]
-!WARNING: BATdescriptor: range error 16
-!ERROR: MALexception:io.table:could not access descriptor
+#---------------------------------------------------------------------------------------------------------------------------------#
+# bbp	tmp_8			htype	ttype		count	heat	dirty		status	kind		refCount		  # name
+# int	str			str	str		lng	int	str		str	str		int		  # type
+#---------------------------------------------------------------------------------------------------------------------------------#
+[ 1,	  "monet_environment",	  "str",  "str",	  31,	  151,	  "dirty",	  "load", "transient",	  1		  ]
+[ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  152,	  "dirty",	  "load", "transient",	  1		  ]
+[ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "load", "transient",	  1		  ]
+[ 4,	  "simplemind",		  "int",  "int",	  0,	  59,	  "dirty",	  "load", "transient",	  0		  ]
+[ "Get second directory" ]
+#-------------------------#
+# h	tmp_6		  # name
+# int	str		  # type
+#-------------------------#
+[ 4,	  "simplemind"	  ]
+#-----------------------------------------------------------------------------------------------------------------#
+# tmp_6	tmp_25		htype	ttype	count	heat	dirty		status	kind		refCount		  # name
+# int	str		str	str	lng	int	str		str	str		int		  # type
+#-----------------------------------------------------------------------------------------------------------------#
+[ 4,	  "simplemind",	  "int",  "int",  0,	  231,	  "dirty",	  "load", "transient",	  0		  ]
 #
 
 # 11:28:52 >  
