@@ -11,6 +11,7 @@
   <!-- set global properties for this build -->
   <property name="srcdir"    value="." />
   <property name="builddir"  value="build" />
+  <property name="JDBC_jar"  value="../jars/MonetDB_JDBC.jar" />
 
 
   <!-- Prepares the build directory -->
@@ -34,4 +35,53 @@
     <delete quiet="true" dir="${builddir}" />
   </target>
 
+  <!-- Run tests -->
+  <path id="test_path">
+    <pathelement path="${builddir}" />
+    <pathelement path="${JDBC_jar}" />
+  </path>
+  <target
+    name="test"
+	depends="compile,Cautocommit,Csavepoints,PStimedate,PStimezone,Rbooleans,Rpositioning,Rtimedate,Sbatching"
+  />
+  <target name="Cautocommit">
+    <java classname="Test_Cautocommit" classpathref="test_path" failonerror="true">
+	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb" />
+	</java>
+  </target>
+  <target name="Csavepoints">
+    <java classname="Test_Csavepoints" classpathref="test_path" failonerror="true">
+	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb" />
+	</java>
+  </target>
+  <target name="PStimedate">
+    <java classname="Test_PStimedate" classpathref="test_path" failonerror="true">
+	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb" />
+	</java>
+  </target>
+  <target name="PStimezone">
+    <java classname="Test_PStimezone" classpathref="test_path" failonerror="true">
+	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb" />
+	</java>
+  </target>
+  <target name="Rbooleans">
+    <java classname="Test_Rbooleans" classpathref="test_path" failonerror="true">
+	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb" />
+	</java>
+  </target>
+  <target name="Rpositioning">
+    <java classname="Test_Rpositioning" classpathref="test_path" failonerror="true">
+	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb" />
+	</java>
+  </target>
+  <target name="Rtimedate">
+    <java classname="Test_Rtimedate" classpathref="test_path" failonerror="true">
+	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb" />
+	</java>
+  </target>
+  <target name="Sbatching">
+    <java classname="Test_Sbatching" classpathref="test_path" failonerror="true">
+	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb" />
+	</java>
+  </target>
 </project>
