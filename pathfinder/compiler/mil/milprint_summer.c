@@ -365,7 +365,7 @@ init (opt_t *f)
             /* a new working set is created */
             "var ws := create_ws();\n"
             /* the first loop is initialized */
-            "var loop000 := bat(void,oid).seqbase(0@0).insert(0@0, 1@0);\n"
+            "var loop000 := bat(void,oid,1).seqbase(0@0).insert(0@0, 1@0).access(BAT_READ);\n"
              /* variable environment vars */
             "var vu_fid;\n"
             "var vu_vid;\n"
@@ -387,11 +387,11 @@ init (opt_t *f)
             "var EMPTY_STRING := 0@0;\n"
 
              /* boolean mapping */
-            "var bool_not := bat(oid,oid).insert(0@0,1@0).insert(1@0,0@0);\n"
+            "var bool_not := bat(oid,oid,2).insert(0@0,1@0).insert(1@0,0@0).access(BAT_READ);\n"
 
              /* variable binding for loop-lifting of the empty sequence */
-            "var empty_bat := bat(void,oid).seqbase(0@0).access(BAT_READ);\n"
-            "var empty_kind_bat := bat(void,int).seqbase(0@0).access(BAT_READ);\n"
+            "var empty_bat := bat(void,oid,0).seqbase(0@0).access(BAT_READ);\n"
+            "var empty_kind_bat := bat(void,int,0).seqbase(0@0).access(BAT_READ);\n"
 
              /* variables for (intermediate) results */
             "var iter;\n"
@@ -407,9 +407,9 @@ init (opt_t *f)
             kind_str(INT), kind_str(DEC), kind_str(DBL), kind_str(STR));
 
     milprintf(f,
-            "var empty%s_bat := bat(void,dbl).seqbase(0@0).access(BAT_READ);\n"
+            "var empty%s_bat := bat(void,dbl,0).seqbase(0@0).access(BAT_READ);\n"
             "var empty%s_bat := empty%s_bat;\n"
-            "var empty%s_bat := bat(void,str).seqbase(0@0).access(BAT_READ);\n"
+            "var empty%s_bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);\n"
             "var empty%s_bat := empty_kind_bat;\n",
             kind_str(DBL), 
             kind_str(DEC), kind_str(DBL),
@@ -2318,9 +2318,9 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "var root_iter  := iter_size.mark(0@0).reverse().chk_order();\n"
                 "var root_size  := iter_size.reverse().mark(0@0).reverse();\n"
                 "iter_size := nil_oid_int;\n"
-                "var root_level := root_size.project(chr(0));\n"
-                "var root_kind  := root_size.project(ELEMENT);\n"
-                "var root_frag  := root_size.project(WS);\n"
+                "var root_level := fake_project(chr(0));\n"
+                "var root_kind  := fake_project(ELEMENT);\n"
+                "var root_frag  := fake_project(WS);\n"
                 "var root_prop  := iter%03u.reverse().leftfetchjoin(item%03u);\n"
                 "root_prop  := root_prop.reverse().mark(0@0).reverse();\n",
                 i, i, i);
@@ -2571,26 +2571,26 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                i);
     
         milprintf(f,
-                "root_level := iter_size.project(chr(0));\n"
+                "root_level := fake_project(chr(0));\n"
                 "root_size := iter_size;\n"
-                "root_kind := iter_size.project(ELEMENT);\n"
+                "root_kind := fake_project(ELEMENT);\n"
                 "root_prop := iter%03u.reverse().leftfetchjoin(item%03u);\n"
-                "root_frag := iter_size.project(WS);\n",
+                "root_frag := fake_project(WS);\n",
                 i, i);
     
         milprintf(f,
-                "root_level := root_level.reverse().mark(0@0).reverse();\n"
+              /*"root_level := root_level.reverse().mark(0@0).reverse();\n"*/
                 "root_size := root_size.reverse().mark(0@0).reverse();\n"
-                "root_kind := root_kind.reverse().mark(0@0).reverse();\n"
+              /*"root_kind := root_kind.reverse().mark(0@0).reverse();\n"*/
                 "root_prop := root_prop.reverse().mark(0@0).reverse();\n"
-                "root_frag := root_frag.reverse().mark(0@0).reverse();\n"
+              /*"root_frag := root_frag.reverse().mark(0@0).reverse();\n"*/
                 "var root_iter := iter_size.mark(0@0).reverse().chk_order();\n"
                 "iter_size := nil_oid_int;\n"
     
      /* attr */ /* root_pre is a dummy needed for merge union with content_pre */
-     /* attr */ "var root_pre := root_iter.project(nil);\n"
+     /* attr */ "var root_pre := fake_project(oid(nil));\n"
      /* attr */ /* as well as root_frag_pre */
-     /* attr */ "var root_frag_pre := root_iter.project(nil);\n"
+     /* attr */ "var root_frag_pre := fake_project(oid(nil));\n"
     
                 /* printing output for debugging purposes */
                 /*
@@ -2964,7 +2964,7 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
             "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
             "difference := difference.mark(0@0).reverse();\n"
             "var res_mu := merged_union(iter, difference, item%s, "
-                                       "difference.project(%s));\n"
+                                       "fake_project(%s));\n"
             "difference := nil_oid_oid;\n"
             "item%s := res_mu.fetch(1);\n"
             "res_mu := nil_oid_bat;\n"
@@ -3053,7 +3053,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
              /* "var unq_str := item%s.tunique().mark(0@0).reverse();\n" */
                 "var unq_str := bat(str,void).key(true)"
                                             ".insert(item%s.reverse().mark(nil))"
-                                            ".mark(0@0).reverse();\n",
+                                            ".mark(0@0).reverse().access(BAT_READ);\n",
                 item_ext);
     }
     else
@@ -4459,7 +4459,7 @@ typed_value (opt_t *f, int code, bool tv)
             "var difference := input_iter.reverse().kdiff(iter.reverse());\n"
             "difference := difference.mark(0@0).reverse();\n"
             "var res_mu := merged_union(iter, difference, item%s, "
-                                       "difference.project(%s));\n"
+                                       "fake_project(%s));\n"
             "item%s := res_mu.fetch(1);\n"
             "res_mu := nil_oid_bat;\n"
             "iter := input_iter;\n"
@@ -4577,7 +4577,7 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "var texts_order := texts.mark(0@0).reverse();\n"
             "texts := texts.reverse().mark(0@0).reverse();\n"
             /* 2@0 is text node constant for combine_text_string */
-            "var texts_const := texts.project(2@0);\n"
+            "var texts_const := fake_project(2@0);\n"
 
             /* get all other nodes and create empty strings for them */
             "var nodes := kind_node.[!=](TEXT).ord_uselect(true).project(\"\");\n"
@@ -4587,7 +4587,7 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "nodes_order := nodes.mark(0@0).reverse();\n"
             "nodes := nodes.reverse().mark(0@0).reverse();\n"
             /* 1@0 is node constant for combine_text_string */
-            "var nodes_const := nodes.project(1@0);\n"
+            "var nodes_const := fake_project(1@0);\n"
 
             "var res_mu_is2ns := merged_union (nodes_order, texts_order, "
                                               "nodes, texts, "
@@ -4830,7 +4830,7 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
                 "difference := difference.mark(0@0).reverse();\n"
                 "var res_mu := merged_union(iter, difference, item%s, "
-                                           "difference.project(%s));\n"
+                                           "fake_project(%s));\n"
                 "difference := nil_oid_oid;\n",
                 cur_level,
                 cur_level,
@@ -4874,7 +4874,7 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
             "difference := difference.mark(0@0).reverse();\n"
             "var res_mu := merged_union(iter, difference, item%s, "
-                                       "difference.project(%s));\n"
+                                       "fake_project(%s));\n"
             "difference := nil_oid_oid;\n",
             cur_level,
             cur_level,
@@ -5782,7 +5782,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
                 "difference := difference.mark(0@0).reverse();\n"
                 "var res_mu := merged_union(iter%03u, difference, item%s%03u, "
-                                           "difference.project(\"\"));\n"
+                                           "fake_project(\"\"));\n"
                 "difference := nil_oid_oid;\n"
                 "strings := res_mu.fetch(1);\n"
                 "res_mu := nil_oid_bat;\n"
@@ -5801,7 +5801,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
                 "difference := difference.mark(0@0).reverse();\n"
                 "var res_mu := merged_union(iter, difference, item%s, "
-                                           "difference.project(\"\"));\n"
+                                           "fake_project(\"\"));\n"
                 "difference := nil_oid_oid;\n"
                 "search_strs := res_mu.fetch(1);\n"
                 "res_mu := nil_oid_bat;\n"
@@ -5904,8 +5904,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var d_kind := doc_nodes.leftfetchjoin(kind);\n"
 
                 "var res_mu := merged_union(d_iter, t_iter, "
-                                           "d_iter.project(0@0), t_item, "
-                                           "d_kind, t_iter.project(ELEM));\n"
+                                           "fake_project(0@0), t_item, "
+                                           "d_kind, fake_project(ELEM));\n"
                 "iter := res_mu.fetch(0);\n"
                 "pos := iter.project(0);\n"
                 "item := res_mu.fetch(1);\n"
@@ -6751,7 +6751,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             /* we could have multiple different calls */
             translate2MIL (f, NORMAL, 0, counter, R(c));
             milprintf(f,
-                    "return bat(void,bat).insert(nil,iter).insert(nil,pos).insert(nil,item).insert(nil,kind);\n"
+                    "return bat(void,bat,4).insert(nil,iter).insert(nil,pos).insert(nil,item).insert(nil,kind).access(BAT_READ);\n"
                     "} # end of PROC %s%i%x\n",
                     c->sem.fun->qname.loc, c->sem.fun->arity, c->sem.fun);
             rc = NORMAL; /* dummy */
