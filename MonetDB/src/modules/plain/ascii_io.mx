@@ -1055,8 +1055,8 @@ int ascii_io_dump( BAT *names, BAT* seps, BAT* bats, str datafile, int *nr){
 	return GDK_SUCCEED;
 }
 int ascii_io_output( BAT *order, BAT* seps, BAT* bats, Stream *s ){
-	ASCIIoutput( order, seps, bats, *(stream**)s );
-	return GDK_SUCCEED;
+	size_t res = ASCIIoutput( order, seps, bats, *(stream**)s );
+	return ((res==~(size_t)0)?GDK_FAIL:GDK_SUCCEED);
 }
 
 @mil
