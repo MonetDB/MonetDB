@@ -1115,7 +1115,7 @@ def main(argv) :
 			#TODO:
 			#else:
 				# WARNING/ERROR
-		elif args[0].find(os.sep) != -1:
+		elif string.find(args[0], os.sep) != -1:
 			ErrXit("'"+args[0]+"` is neither a valid directory in "+os.getcwd()+" nor a valid test-name!")
 		elif args[0] != "All":
 			#TODO:
@@ -1133,7 +1133,7 @@ def main(argv) :
 			i = i + 1
 		if len(dirlist) == 1  and  i < len(args)  and  args[i] != "All":
 			while i < len(args):
-				if args[i].find(os.sep) == -1:
+				if string.find(args[i], os.sep) == -1:
 					#TODO:
 					# check, whether args[i] in All
 					testlist.append(args[i])

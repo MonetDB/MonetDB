@@ -374,7 +374,7 @@ int NumEvents = 0, NoEvent = 0;
 
 #endif
 
-#define monet_modulesilent (GDKdebug&4096)
+#define monet_modulesilent (!(GDKdebug&16384))
 
 int check_cpu() {
     FILE *fp = NULL;

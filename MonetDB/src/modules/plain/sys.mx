@@ -463,7 +463,7 @@ view_bbp_location(
 }
 
 
-#define monet_modulesilent (GDKdebug&4096)
+#define monet_modulesilent (!(GDKdebug&16384))
 
 int
 view_bbp_heat(

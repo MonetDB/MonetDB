@@ -1690,7 +1690,7 @@ int rngs_oidselect( BAT** res, BAT* b, ...){
 	@2 {
 		bn@3->batBuns->free = ((char*) dst@3) - bn@3->batBuns->base;
 		bn@3->hkey = BATmirror(bn@3)->tkey = b->hkey;
-		bn@3->hsorted = BAThordered(b) && ((GDKdebug&49152)==0);
+		bn@3->hsorted = BAThordered(b) && ((GDKdebug&786432)==0);
 		bn@3->batDirty = 1;
 	}
 
@@ -1704,8 +1704,8 @@ int rngs_oidselect( BAT** res, BAT* b, ...){
 	}
 @= prefetchmultiplex
 @= prefetch
-if (@3 < 128 && GDKdebug&65536)
-if ((GDKdebug&49152)==16384) {
+if (@3 < 128 && GDKdebug&1048576)
+if ((GDKdebug&786432)==262144) {
 	int d0 = @3*32;
 	BUN endK = end - 2*d0;
 	while(cur < endK) {
@@ -1722,7 +1722,7 @@ if ((GDKdebug&49152)==16384) {
 	    }
 	    cur += d0; o += 32;
 	}
-} else if ((GDKdebug&49152)==32768) {
+} else if ((GDKdebug&786432)==524288) {
 	int d0 = @3*32, d1=d0+d0, d2=d1+d0;
 	BUN endK = end - 4*d0;
 	while(cur < endK) {
@@ -1745,7 +1745,7 @@ if ((GDKdebug&49152)==16384) {
 	    }
 	    cur += d2; o += 128;
 	}
-} else if ((GDKdebug&49152)==49152) {
+} else if ((GDKdebug&786432)==786432) {
 	int d0 = @3*32, d1=d0+d0, d2=d1+d0, d3=d2+d0, d4=d3+d0;
 	BUN endK = end - 6*d0;
 	while(cur < endK) {
