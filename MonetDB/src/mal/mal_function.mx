@@ -340,6 +340,11 @@ Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 
 	/* check for errors after fixation , TODO*/
 	chkProgram(scope,new->def);
+	if( new->def->errors){
+		GDKerror("Error in cloned function\n");
+		showErrors(getClient());
+		printFunction(GDKout, new->def);
+	}
 #ifdef DEBUG_CLONE
 	printf("newly cloned function added to %s %d \n",scope->name,i);
 	printFunction(stdout,new->def);

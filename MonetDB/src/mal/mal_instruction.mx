@@ -175,6 +175,8 @@ Allocation of space assumes a rather exotic number of arguments.
 
 mal_export InstrPtr	newInstruction(int kind);
 mal_export InstrPtr 	copyInstruction(InstrPtr p);
+mal_export void 	moveInstruction(InstrPtr dst, InstrPtr src);
+mal_export void		clrInstruction(InstrPtr p);
 mal_export void		freeInstruction(InstrPtr p);
 mal_export Symbol	newSymbol(str nme, int kind);
 mal_export void 	freeSymbol(Symbol s);
@@ -200,6 +202,7 @@ mal_export void		pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export void		pushEndInstruction(MalBlkPtr mb);
 mal_export void		pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export void 	pushArgumentId(MalBlkPtr mb, InstrPtr p, str name);
+mal_export void		delArgument(InstrPtr p, int varid);
 mal_export int		getVarType(MalBlkPtr mb, int i) ;
 mal_export void		setVarType(MalBlkPtr mb, int i, int tpe);
 mal_export void		setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe);
@@ -402,22 +405,28 @@ InstrPtr newInstruction(int kind){
 @- 
 Copying an instruction is space conservative.
 @c
-InstrPtr copyInstruction(InstrPtr p)
-{
-	InstrPtr new;
+void moveInstruction(InstrPtr new, InstrPtr p){
 	int space;
 
 	space = sizeof(InstrRecord) + sizeof(int) * p->argc;
-	new = (InstrPtr) GDKmalloc(space);
 	memcpy((char*) new, (char*) p, space);
 	new->fcnname = p->fcnname? GDKstrdup(p->fcnname): NULL;
 	new->modname = p->modname? GDKstrdup(p->modname): NULL;
+}
+InstrPtr copyInstruction(InstrPtr p)
+{
+	InstrPtr new;
+	new = (InstrPtr) GDKmalloc(sizeof(InstrRecord) + sizeof(int) * p->argc);
+	moveInstruction(new,p);
 	return new;
 }
-void freeInstruction(InstrPtr p){
+void clrInstruction(InstrPtr p){
 	if(p->modname) GDKfree(p->modname);
 	if(p->fcnname) GDKfree(p->fcnname);
 	bzero((char*)p, sizeof(InstrRecord)+ (p->argc-1)*sizeof(int));
+}
+void freeInstruction(InstrPtr p){
+	clrInstruction(p);
 	GDKfree(p);
 }
 
@@ -819,6 +828,18 @@ void pushArgumentId(MalBlkPtr mb, InstrPtr p,str name){
 	else GDKfree(name);
 	pushArgument(mb,p,v);
 }
+@-
+The alternative is to remove arguments from an instruction record.
+This is typically part of instruction constructions.
+@c
+void delArgument(InstrPtr p, int idx){
+	int i;
+	for(i=idx;i<p->argc-1;i++)
+		p->argv[i] = p->argv[i+1];
+	p->argc--;
+	if( idx < p->retc) p->retc--;
+}
+
 int getVarType(MalBlkPtr mb, int i) 
 {
 	if(i<0) return malAnyType;

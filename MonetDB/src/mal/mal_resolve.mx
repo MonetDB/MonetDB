@@ -146,7 +146,7 @@ precedence and should handle all cases. It returns -1
 upon failure, which shortcuts the execution.
 @c
 	if(p->modname && scope->typeChecker &&
-	   idcmp(p->modname,scope->name)==0 ){
+		idcmp(p->modname,scope->name)==0 ){
 		if( (scope->typeChecker)(scope,mb,p,0)>=0)
 			return getArgType(mb,p,0);
 		return -3;
@@ -495,20 +495,6 @@ message to the user.
 #ifdef DEBUG_MAL_RESOLVE
 		tracefcn= idcmp(p->fcnname,traceFcnName)==0;
 #endif
-@-
-If any of the arguments is undefined, then postpone
-type checking to a later stage in the process.
-Otherwise generate an error message, because we know
-that no function signature will ever match.
-This also prohibits execution of the program involved.
-@c
-		for(i=p->retc; i<p->argc; i++)
-		if(getArgType(mb,p,i)== malAnyType) {
-			p->typechk= TYPE_UNKNOWN;
-			return;
-		}
-
-		/* continue search into outer scope */
 		m= findScope(scope,p->modname);
 		while(s1<0 && m!= NULL){
 			s1= findFunctionType(m,mb,p);
@@ -517,22 +503,16 @@ This also prohibits execution of the program involved.
 		}
 		if( s1<0 ) {
 			if( ! isaSignature(p) ){ 
-			if(p->modname){
+			if(p->modname)
 				GDKerror("'%s.%s' undefined in %s.%s[%d]\n", 
 					p->modname, p->fcnname,scope->name,
 					getInstrPtr(mb,0)->fcnname,getPC(mb,p));
-			} else { GDKerror("'%s' undefined in %s.%s[%d]\n", 
+			else  GDKerror("'%s' undefined in %s.%s[%d]\n", 
 				p->fcnname,scope->name,
 				getInstrPtr(mb,0)->fcnname,getPC(mb,p));
 			}
 			mb->errors++;
-			return;
-			}
-			if(s1>=0) p->typechk = TYPE_FIXED;
-			mb->errors++;
-			return;
-		}
-		if(s1>=0) p->typechk = TYPE_FIXED;
+		} else p->typechk = TYPE_FIXED;
 		return;
 	}
 @-
@@ -604,14 +584,19 @@ void chkProgram(Scope s, MalBlkPtr mb)
 	for(i=0;i<mb->stop;i++) {
 		p= getInstrPtr(mb,i);
 		if(p== NULL) continue;
-		if( kind== TYPE_POLYMORPHIC){
-			tst= TRUE;
-			for(k=p->retc;tst && k<p->argc;k++){
-				int actual = getArgType(mb,p,k);
-				if( isAnyExpression(actual)) tst= FALSE;
-			}
+@-
+If any of the arguments is undefined, then postpone
+type checking to a later stage in the process.
+However, the first instruction is always a signature
+and should be checked.
+@c
+		tst= TRUE;
+		for(k=p->retc;tst && k<p->argc;k++){
+			int actual = getArgType(mb,p,k);
+			if(getArgType(mb,p,k)== malAnyType ||
+			isAnyExpression(actual)) tst= FALSE;
 		}
-		if( tst) typeChecker(s,mb,p, kind);
+		if(i==0 || tst) typeChecker(s,mb,p, kind);
 		switch(p->token){
 		case FUNCTIONsymbol: case COMMANDsymbol:
 		case PATTERNsymbol: case HANDLERsymbol:
