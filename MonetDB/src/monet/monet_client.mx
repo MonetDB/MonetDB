@@ -476,6 +476,7 @@ int readClient(Client c)
 	char instring = 0;
 	int bracket = 0;
 	int incomment = 0;
+	int escaped = 0;
 	stream *fd = GDKout;
 	str  s, p;
 	int blocked;
@@ -544,23 +545,30 @@ int readClient(Client c)
 		   normalize line endings. */
 		for (s = p = c->input + offset; s < c->top; s++) {
 			switch (*s) {
+			case '\\':
+				escaped = !escaped;
+				*p++ = '\\';
+				break;
 			case '\r':
 				if (s + 1 < c->top && s[1] == '\n') /* Windows format line ending? */
-					break;
+					s++;
 				/* else Mac format line ending: fall through */
 			case '\n':
 				incomment = 0;
-				if (s > c->input && s[-1] != '\\')
+				if (s > c->input &&  !escaped)
 					instring = 0;
+				escaped = 0;
 				*p++ = '\n';
 				break;
 			case '\0':
+				escaped = 0;
 				*p++ = *s;
 				c->top = p;
 				return 0;
 			case '#':
 				if (!instring)
 					incomment++;
+				escaped = 0;
 				*p++ = *s;
 				break;
 			case '{':
@@ -568,6 +576,7 @@ int readClient(Client c)
 					bracket++;
 					doflush = 0;
 				}
+				escaped = 0;
 				*p++ = *s;
 				break;
 			case '}':
@@ -576,28 +585,32 @@ int readClient(Client c)
 					if (bracket == 0)
 						doflush = 1;
 				}
+				escaped = 0;
 				*p++ = *s;
 				break;
 			case '\'':
 			case '"':
 				if (!incomment && 
-				    (s <= c->input || s[-1] != '\\')) {
+				    (s <= c->input || !escaped)) {
 					if (instring == *s)
 						instring = 0;
 					else if (!instring)
 						instring = *s;
 					doflush = 0;
 				}
+				escaped = 0;
 				*p++ = *s;
 				break;
 			case ';':
 				if (!incomment && !instring)
 					doflush = 1;
+				escaped = 0;
 				*p++ = *s;
 				break;
 			default:
 				if (!incomment && !isspace((int) *s))
 					doflush = 0;
+				escaped = 0;
 				*p++ = *s;
 				break;
 			}
