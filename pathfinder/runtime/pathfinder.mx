@@ -879,7 +879,8 @@ PROC shred_doc_base(str flnm, str name, bit persistent,str opt) : void
     	commit();
         #
         us := usec() - us;
-        printf("# Shredded XML doc(\"%s\"), total time after commit=%d.%ds\n", name, us/1000000,us/1000);
+        var ms := us/1000;
+        printf("# Shredded XML doc(\"%s\"), total time after commit=%d.%03ds\n", name, ms/1000,ms%1000);
     }
 }
 
