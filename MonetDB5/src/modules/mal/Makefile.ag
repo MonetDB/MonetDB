@@ -24,7 +24,7 @@ LIBS = {
 }
 scripts_mal = {
 	DIR = sysconfdir/MonetDB/mal
-	SOURCES = mal_init.mal tcpip.mal thread.mal io.mal streams.mal \
+	SOURCES = mal_init.mal thread.mal io.mal streams.mal \
 		enum.mal profiler.mal mal.mal \
 		multiplex.mal const.mal bbp.mal box.mal inspect.mal \
 		optimizer.mal clients.mal tablet.mal

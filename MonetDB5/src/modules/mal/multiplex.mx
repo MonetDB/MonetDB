@@ -114,7 +114,10 @@ c tails and stores it in b. This case is detected by operatorModifier();
 #define REALLY_REALLY_BIG	2000000000
 static int multiplexDebug=0;
 
+static int batcalcTypeCheck(str operator, int type);
+
 str CMDmultiplexDebug(int *ret, int *b){
+	(void) ret ; /* still unused */
 	multiplexDebug= *b;
 	return MAL_SUCCEED;
 }
@@ -153,10 +156,12 @@ int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe){
 int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 	MalBlkPtr m, InstrPtr p)
 {
-	int i, k, t, tpe, tt;
+	int i, k, t, tpe= TYPE_void, tt;
 	int first = TRUE, inplace= FALSE;
 	str fcnname;
 	char name[1024];
+
+	(void) scope; /* still unused */
 
 #ifdef DEBUG_MULTIPLEX
 	printf("multiplexType on the instruction:\n");
@@ -292,6 +297,7 @@ int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
 	str operator;
 	Client cntxt= getClient();
 
+	(void) scope; /* still unused */
 	if( idcmp(functionName(pci),"tactics")) return -1;
 	/* look for constant first argument */
 	if( !isConstant(mb,pci->argv[pci->retc])) {
@@ -402,8 +408,8 @@ code construction.
 	pushInstruction(m,q);
 @c
 str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int i,k,l,x,mloop,cursor,refBat=0,resB,refType,bt=0,cr;
-	int nilVar=0, mvar,zz;
+	int i,k,l,mloop,refBat=0,resB,refType,cr;
+	int nilVar=0 /*, mvar*/,zz;
 	str ret= MAL_SUCCEED;
 	int hvar,rIndex=0;
 	int assignop = FALSE;

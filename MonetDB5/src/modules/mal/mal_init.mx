@@ -37,7 +37,6 @@ The negative effect is that this module is inspected as part of
 the function resolution scheme.
 
 @mal
-use "mal/tcpip";
 use "mal/thread";
 use "kernel/kernel_init";
 #use "x100/x100core";
