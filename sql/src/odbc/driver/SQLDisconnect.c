@@ -40,18 +40,27 @@ SQLRETURN SQLDisconnect( SQLHDBC    hDrvDbc )
      * 1. do driver specific close here
      ****************************/
     { 
-	int flag = 0;
+	int i, flag = 0;
 	stream *rs = hDbc->hDbcExtras->rs;
       	context *sql = &hDbc->hDbcExtras->lc;
-	char eot = EOT;
+	stream *ws = sql->out;
+	char buf[BUFSIZ];
 
-	sql->out->write( sql->out, &eot, 1, 1 );
-	sql->out->flush( sql->out );
+	i = snprintf(buf, BUFSIZ, "s0 := mvc_commit(myc, 0, \"\");\n" );
+	i += snprintf(buf+i, BUFSIZ-i, "result(Output, s0);\n" );
+	ws->write( ws, buf, i, 1 );
+	ws->flush( ws );
 
 	if (rs->readInt(rs, &flag)){
 		/* todo check if flag == COMM_DONE */
 		printf("flag %d\n", flag );
 	}
+
+	/* client waves goodbye */
+	buf[0] = EOT; 
+	ws->write( ws, buf, 1, 1 );
+	ws->flush( ws );
+
     	rs->close(rs);
     	rs->destroy(rs);
     }
