@@ -397,7 +397,7 @@ typedef struct {
 
 int	 DL_errno = 0;
 #ifndef STATIC
-static char *DL_errmsg;
+static const char *DL_errmsg;
 #endif
 str	 DL_mod[DL_TABLE_MAXLIBS] = { 0 };
 dltable* DL_table[DL_TABLE_MAXLIBS] = { 0 };
@@ -508,7 +508,7 @@ static short_str DL_errormsg[3] =
           "function name unknown (STATIC)" };
 
 
-char *DL_error(void) { 
+const char *DL_error(void) { 
 #ifndef STATIC
 	if (DL_errmsg != NULL)
 		return DL_errmsg;
