@@ -305,11 +305,11 @@ str STRbatEqual(int *ret, int *l, int *r)
         ptr h = BUNhead(left,o);
         ptr tl = BUNtail(left,o);
         ptr tr = BUNtail(right,p);
-		if(tl == 0 || tr == 0 || strcmp(tl,tr) != 0)
-			y = FALSE;
-			bunfastins(bn, h, &y);
-		p += xx;
-		r += yy;
+	if(tl == 0 || tr == 0 || strcmp(tl,tr) != 0)
+		y = FALSE;
+        bunfastins(bn, h, &y);
+	o += xx;
+	p += yy;
     }
     BBPunfix(right->batCacheid);
 	@:finalizeResult(ret,bn,left)@
@@ -343,8 +343,8 @@ str STRbat@1(int *ret, int *l, int *r)
         ptr tr = BUNtail(right,p);
 		@3(vp, tl, tr);
 		bunfastins(bn, h, vp);
-		p += xx;
-		r += yy;
+		o += xx;
+		p += yy;
     }
     BBPunfix(right->batCacheid);
 	@:finalizeResult(ret,bn,left)@
@@ -378,8 +378,8 @@ str STRbat@1(int *ret, int *l, int *r)
         ptr tr = BUNtail(right,p);
 		@3(vp, tl, tr);
 		bunfastins(bn, h, vp);
-		p += xx;
-		r += yy;
+		o += xx;
+		p += yy;
     }
     BBPunfix(right->batCacheid);
 	@:finalizeResult(ret,bn,left)@
@@ -417,9 +417,8 @@ str STRbatConcat(int *ret, int *l, int *r)
         ptr tr = BUNtail(right,p);
 		strConcat(vp, tl, tr, TYPE_str);
 		bunfastins(bn, h, v);
-		p += xx;
 		o += xx;
-		r += yy;
+		p += yy;
     }
     BBPunfix(right->batCacheid);
 	@:finalizeResult(ret,bn,left)@
