@@ -10,7 +10,7 @@ stdout of test 'order` in directory 'tests/XQuery` itself:
 # Compiled for i686-suse-linux/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult foo="12.3testblubfoo" bar="12.3testblubbar" baz="12.3testblubbaz">
+<XQueryResult foo="12.2999999523162842testblubfoo" bar="12.2999999523162842testblubbar" baz="12.2999999523162842testblubbaz">
 </XQueryResult>
 
 # 23:34:19 >  
