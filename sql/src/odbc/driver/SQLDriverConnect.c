@@ -20,7 +20,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
-#include <strings.h>
+#include <string.h>
 
 
 static int

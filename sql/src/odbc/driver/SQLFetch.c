@@ -17,11 +17,20 @@
  *
  **********************************************************************/
 
-#include "monetdb_config.h"
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 #include <errno.h>
 #include <time.h>
+
+#if SIZEOF_INT==8
+# define ULL_CONSTANT(val)     (val)
+#elif SIZEOF_LONG==8
+# define ULL_CONSTANT(val)     (val##UL)
+#elif defined(HAVE_LONG_LONG)
+# define ULL_CONSTANT(val)     (val##ULL)
+#elif defined(HAVE___INT64)
+# define ULL_CONSTANT(val)     (val##ui64)
+#endif
 
 struct c_int_types {
 	int type;		/* name of the type */
@@ -31,7 +40,7 @@ struct c_int_types {
 	int lastdig;		/* max value mod 10 as char */
 } c_int_types[] = {
 	/* SQL_C_UBIGINT must be first for getnumeric() */
-	{SQL_C_UBIGINT, 0, sizeof(SQLUBIGINT), 1844674407370955161ULL, '5'},
+	{SQL_C_UBIGINT, 0, sizeof(SQLUBIGINT), ULL_CONSTANT(1844674407370955161), '5'},
 	{SQL_C_STINYINT, 1, sizeof(signed char), 12, '7'},
 	{SQL_C_UTINYINT, 0, sizeof(unsigned char), 25, '5'},
 	{SQL_C_TINYINT, 1, sizeof(signed char), 12, '7'},
@@ -41,7 +50,7 @@ struct c_int_types {
 	{SQL_C_SLONG, 1, sizeof(long), 214748364L, '7'},
 	{SQL_C_ULONG, 0, sizeof(unsigned long), 429496729UL, '5'},
 	{SQL_C_LONG, 1, sizeof(long), 214748364L, '7'},
-	{SQL_C_SBIGINT, 1, sizeof(SQLBIGINT), 922337203685477580ULL, '7'},
+	{SQL_C_SBIGINT, 1, sizeof(SQLBIGINT), ULL_CONSTANT(922337203685477580), '7'},
 	{SQL_C_BIT, 0, sizeof(unsigned char), 0, '1'},
 };
 #define NC_INT_TYPES	(sizeof(c_int_types) / sizeof(c_int_types[0]))
@@ -180,7 +189,7 @@ getnum(ODBCStmt *stmt, const char *data, SQLSMALLINT type,
 				errno = 0;
 				d = strtod(data, &e);
 				if (e == data || errno == ERANGE ||
-				    d > 10 * p->maxdiv10 ||
+				    d > 10 * (double) (SQLBIGINT) p->maxdiv10 ||
 				    (d < 0 && !p->sign)) {
 					/* Numeric value out of range */
 					addStmtError(stmt, "22003", NULL, 0);

@@ -23,6 +23,13 @@
 #ifndef _H_ODBCGLOBAL
 #define _H_ODBCGLOBAL
 
+#include "monetdb_config.h"
+#ifdef NATIVE_WIN32
+/* indicate to sqltypes.h that windows.h has already been included and
+   that it doesn't have to define Windows constants */
+#define ALLREADY_HAVE_WINDOWS_TYPE
+#endif
+
 /**** Define the ODBC Version this ODBC driver complies with ****/
 #define ODBCVER 0x0351		/* Important: this must be defined before include of sqlext.h */
 
@@ -60,6 +67,18 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <assert.h>
+
+#ifndef HAVE_SSIZE_T
+#if SIZEOF_SIZE_T == SIZEOF_INT
+typedef int ssize_t;
+#define HAVE_SSIZE_T 1
+#else
+#if SIZEOF_SIZE_T == SIZEOF_LONG
+typedef long ssize_t;
+#define HAVE_SSIZE_T 1
+#endif
+#endif
+#endif
 
 /* these functions are called from within the library */
 SQLRETURN SQLAllocHandle_(SQLSMALLINT nHandleType, SQLHANDLE nInputHandle,
