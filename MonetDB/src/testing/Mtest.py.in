@@ -1890,6 +1890,22 @@ def Log() :
     time.strftime('%H:%M:%S> ',time.localtime(time.time()))
 ### Log() #
 
+def mapi_ping(port) :
+    retry = 0
+    wait = 1
+    host = ''
+    while (retry < 3):
+	retry += 1
+    	try:
+            	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            	sock.connect((host, port))
+		return True
+        except socket.error, (Serrno,Serrstr):
+            pass
+        time.sleep(wait)
+    return False
+### mapi_ping() #
+
 def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) :
     ATJOB2 = ""
     LogLine = os.path.join(env['TSTDIR'],TST+EXT)+' '+PRELUDE+' (<='+str(STIMEOUT+60)+'s) ...'
@@ -1955,6 +1971,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             SrvrOut.flush()
         if ln[:6] != 'Ready.':
             ServerReady = False
+
+	if ServerReady:
+    		port = int(env[SERVER+'PORT'])
+		ServerReady = mapi_ping(port)
 
     else:
         ClntOutFile = TestOutFile
