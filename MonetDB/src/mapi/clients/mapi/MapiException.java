@@ -23,8 +23,6 @@
  * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
-package mapi;
-
 /*
 This exception is thrown by Mapi indicating an error in the Monet/java
 communication. 
