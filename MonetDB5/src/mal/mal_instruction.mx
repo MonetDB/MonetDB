@@ -560,6 +560,18 @@ mal_export str      instruction2str(MalBlkPtr mb,InstrPtr p,int hidden);
 mal_export str      function2str(MalBlkPtr mb,int flg);
 mal_export void     pushEndInstruction(MalBlkPtr mb);   /* used in src/mal/mal_parser.c */
 
+/* Utility macros to inspect an instruction */
+#define functionStart(X) ((X)->token == FUNCTIONsymbol || \
+              (X)->token == COMMANDsymbol || \
+              (X)->token == FACTORYsymbol )
+#define functionExit(X)  ((X)->token == ENDsymbol)
+
+#define blockStart(X)   ((X)->barrier == BARRIERsymbol || \
+             (X)->barrier == CATCHsymbol || \
+             (X)->barrier == THREADsymbol)
+#define blockExit(X) (X)->barrier == EXITsymbol
+#define blockCntrl(X) ( (X)->barrier== LEAVEsymbol ||  \
+             (X)->barrier== REDOsymbol  )
 
 mal_export void strBeforeCall(ValPtr v,ValPtr bak);
 mal_export void strAfterCall(ValPtr v,ValPtr bak);

@@ -854,7 +854,7 @@ str memProfileVector(int cells){
     }
     v= GDKmalloc(cells+1);
     if( v== 0) 
-        GDKfatal("memProfileVector:malloca failure\n");
+        GDKfatal("memProfileVector:malloc failure\n");
     
     for(i=0; i<cells;i++) v[i]='.';
     v[i]=0;
