@@ -55,7 +55,7 @@ typedef struct YYSRECORD{
 #define YYSTYPE yystype
 extern YYSTYPE yylval;
 #define GDKerror(M) 	printf("%s",M) 
-#define multiplexOp(X) (*(X) == '[')
+#define mapOp(X) (*(X) == '[')
 #define setOp(X) (*(X) == '{')
 extern char *getOperator(char *nme);
 
@@ -71,6 +71,7 @@ extern char *newName();
 extern str getLastHead();
 extern str getLastTail();
 extern char *emitExpr(char *msg);
+extern str glue(str l, str r);
 
 extern int constantdeclaration;
 #endif /* _MIL_PARSER_H */
@@ -130,7 +131,7 @@ needed for tracing the parser.
 ("true"|"TRUE")       { Vector(TOK_CONSTANT, TYPE_bit, "1", 1);        }
 ("module"|"MODULE")   { Symbol(TOK_MODULE);				     }
 ("any"|"ANY")         { Vector(TOK_ANY, TYPE_int,  "-1", 2);               }
-("bat"|"BAT")         { Symbol(TOK_BAT);				      }
+("bat"|"BAT")         { Vector(TOK_BAT,TYPE_bat,"bat",0);		      }
 "$("                  { Symbol(TOK_VARTEMP);                                  }
 ".."                  { Symbol(TOK_RANGETEMP);                                }
 "::"                  { Symbol(TOK_ANYNUM);                                   }
@@ -342,7 +343,7 @@ str getLastTail(){ return getLast('T');}
 @+ Symbol table
 For Monet V 5 there is no automatic resolution of identifiers to
 outer or named scopes. Such variables are explicitly bound by a
-function bind(str nme).
+function take(str nme).
 For the M2m compiler this means we have to keep track on the identifiers
 introduced in a block and issue a bind operation before using them.
 @c
@@ -371,9 +372,19 @@ int fndId(str nme){
 	return 0;
 }
 
+@-
+MIL variable may refer to globals, constants, and persistent
+BATs. These cases are handled by a pattern in the MIL interpreter,
+except for the built-in types, which are expected to exist
+@c
+str typeNames[]={"void","bit","chr","sht","bat","int","oid","ptr",
+	"flt","dbl","lng","str",0};
 int bindId(str nme){
-	if( fndId(nme) == 0 && constantdeclaration==0)
-	printf("\t%s:= mil.bind(\"%s\");\n",nme,nme);
+	int i, fnd= 0;
+	for( i=0; typeNames[i]; i++)
+	if( strcmp(typeNames[i],nme)==0){ fnd++; break;}
+	if(fnd==0 &&  fndId(nme) == 0 && constantdeclaration==0)
+	printf("\t%s:= take(\"%s\");\n",nme,nme);
 }
 
 char *bindFcn(str nme){
@@ -382,15 +393,15 @@ char *bindFcn(str nme){
 	switch(*nme){
 	case '[':
 		nme[strlen(nme)-1]=0;
-		sprintf(buffer,"mil.multicast(\"%s\",", nme+1);
+		sprintf(buffer,"multiplex.%s(", nme+1);
 		break;
 	case '{':
 		nme[strlen(nme)-1]=0;
-		sprintf(buffer,"mil.setop(\"%s\",", nme-1);
+		sprintf(buffer,"pump.%s(", nme+1);
 		break;
 	case '(':
 		nme[strlen(nme)-1]=0;
-		sprintf(buffer,"mil.inplace(\"%s\",", nme-1);
+		sprintf(buffer,"mil.inplace(\"%s\",", nme+1);
 		break;
 	default: if(strchr(nme,'(') ) return nme;
 		sprintf(buffer,"%s(",nme);
@@ -468,13 +479,14 @@ statement:
 stmt: ';'
     |   expression ';'
     |   expression TOK_ITERATION_PAR expression ']' iterator
-	{ $2.val= newName();
+	{ char local[100];
+	  $2.val= newName();
 	  pushIterator($2.val);
 	  printf("\t%s_cursor := 0:lng;\n",$2.val);
-	  printf("barrier\t%s:= batloop(%s,%s_cursor);\n",
-		$2.val,$4.val,$2.val);
-	  printf("\t%sH := fetchHead(%s,%s_cursor);\n", $2.val,$4.val,$2.val);
-	  printf("\t%sT := fetchTail(%s,%s_cursor);\n", $2.val,$4.val,$2.val);
+	  printf("barrier\t%s:= batloop(%s_cursor,%s,%sH,%sT);\n",
+		$2.val,$2.val,$4.val,$2.val,$2.val);
+	  sprintf(local,"%sH",$2.val); newId(GDKstrdup(local));
+	  sprintf(local,"%sT",$2.val); newId(GDKstrdup(local));
 	}
 	stmt
 	{
@@ -483,13 +495,14 @@ stmt: ';'
 	  popIterator();
 	}
     |   expression TOK_ITERATION iterator
-	{ $2.val= newName();
+	{ char local[100];
+	  $2.val= newName();
 	  pushIterator($2.val);
 	  printf("\t%s_cursor := 0:lng;\n",$2.val);
-	  printf("barrier\t%s:= batloop(%s,%s_cursor);\n",
-		$2.val,$1.val,$2.val);
-	  printf("\t%sH := fetchHead(%s,%s_cursor);\n", $2.val,$1.val,$2.val);
-	  printf("\t%sT := fetchTail(%s,%s_cursor);\n", $2.val,$1.val,$2.val);
+	  printf("barrier\t%s:= batloop(%s_cursor,%s,%sH,%sT);\n",
+		$2.val,$2.val,$1.val,$2.val,$2.val);
+	  sprintf(local,"%sH",$2.val); newId(GDKstrdup(local));
+	  sprintf(local,"%sT",$2.val); newId(GDKstrdup(local));
 	}
 	stmt
 	{
@@ -581,11 +594,11 @@ proc_name:
 		switch($1.val[0]){
 		case '[':
 			$1.val[strlen($1.val)-1]=0;
-			printf("function %s_multicast(", $1.val+1);
+			printf("function %s_multiplex(", $1.val+1);
 			break;
 		case '{':
 			$1.val[strlen($1.val)-1]=0;
-			printf("function %s_setop(", $1.val-1);
+			printf("function %s_pump(", $1.val-1);
 			break;
 		case '(':
 			$1.val[strlen($1.val)-1]=0;
@@ -684,6 +697,7 @@ term :
 	factor
     |	factor TOK_OPERATOR term
 	{ char stmt[1024];
+	  $1.val = emitExpr($1.val);
 	  $3.val = emitExpr($3.val);
 	  sprintf(stmt,"%s%s,%s)", bindFcn($2.val),$1.val,$3.val);
 	  $$.val=GDKstrdup(stmt);
@@ -696,6 +710,7 @@ term :
 	}
     |	factor TOK_IDENT term
 	{ char stmt[1024];
+	  $1.val = emitExpr($1.val);
 	  $3.val = emitExpr($3.val);
 	  sprintf(stmt,"%s%s,%s)", bindFcn($2.val),$1.val,$3.val);
 	  $$.val=GDKstrdup(stmt);
@@ -759,11 +774,31 @@ bat_expression:
 	  printf("\t%s:= nil;\n",$$.val);}
 
 fcn_call: 
-     	fcn_hdr '(' expr_list ')'
+	fcn_call_A
+    | 	fcn_call '.' TOK_IDENT
 	{ char stmt[1024];
-	  sprintf(stmt,"%s%s)", bindFcn($1.val),$3.val);
+	  $1.val= emitExpr($1.val);
+	  sprintf(stmt,"%s%s)", bindFcn($3.val),$1.val);
 	  $$.val = GDKstrdup(stmt);}
-    |	TOK_OPERATOR '(' expr_list ')'
+    |	fcn_call '.' fcn_call_B
+	{ char stmt[1024], *s;
+	  /* move the result of the function into the second call */
+	  $1.val = emitExpr($1.val);
+	  s= strchr($3.val,'(');
+	  if(s==0) printf("unexpected function\n"); 
+	  else{
+		*s = 0;
+		sprintf(stmt,"%s%s,%s", bindFcn($3.val),$1.val,s+1);
+	  }
+	  $$.val = GDKstrdup(stmt);
+	}
+
+fcn_call_A:
+	fcn_target
+    |   fcn_call_B
+
+fcn_call_B:
+     	fcn_hdr '(' expr_list ')'
 	{ char stmt[1024];
 	  sprintf(stmt,"%s%s)", bindFcn($1.val),$3.val);
 	  $$.val = GDKstrdup(stmt);}
@@ -771,79 +806,51 @@ fcn_call:
 	{ char stmt[1024];
 	  sprintf(stmt,"%s)", bindFcn($1.val));
 	  $$.val = GDKstrdup(stmt);}
-    | fcn_target fcn_hdr '(' ')'
-	{ char stmt[1024];
-	  sprintf(stmt,"%s%s)", bindFcn($2.val),$1.val);
-	  $$.val = GDKstrdup(stmt);}
-    | fcn_target fcn_hdr '(' expr_list ')'
-	{ char stmt[1024];
-	  sprintf(stmt,"%s%s,%s)", bindFcn($2.val),$1.val,$4.val);
-	  $$.val = GDKstrdup(stmt);}
-    | fcn_target variable_reference
-	{ char stmt[1024];
-	  sprintf(stmt,"%s%s)", bindFcn($2.val),$1.val);
-	  $$.val = GDKstrdup(stmt);}
-    | fcn_call '.' fcn_hdr '(' ')'
-	{ char stmt[1024];
-	  char *nme= newName();
-	  printf("\t%s:= %s;\n",nme,$1.val);
-	  sprintf(stmt,"%s%s)", bindFcn($3.val),nme);
-	  $$.val = GDKstrdup(stmt);}
-    | fcn_call '.' fcn_hdr '(' expr_list ')'
-	{ char stmt[1024];
-	  char *nme= newName();
-	  printf("\t%s:= %s;\n",nme,$1.val);
-	  sprintf(stmt,"%s%s,%s)", bindFcn($3.val),nme,$5.val);
-	  $$.val = GDKstrdup(stmt);}
-    | fcn_call '.' variable_reference
-	{ char stmt[1024];
-	  char *nme= newName();
-	  printf("\t%s:= %s;\n",nme,$1.val);
-	  sprintf(stmt,"%s%s)", bindFcn($3.val),nme);
-	  $$.val = GDKstrdup(stmt);}
 
 fcn_hdr: 
        TOK_DEREF factor ')'  
 	{ char stmt[1024];
 	  $2.val =emitExpr($2.val);
-	  sprintf(stmt,"mil.derefer(%s,",$2.val);
+	  sprintf(stmt,"mil.deref(%s,",$2.val);
 	  $$.val= GDKstrdup(stmt);
 	}
     |  TOK_SETOP factor ']' 
 	{ char stmt[1024];
 	  $2.val =emitExpr($2.val);
-	  sprintf(stmt,"mil.multicast_deref(%s,",$2.val);
+	  sprintf(stmt,"mil.multiplex_deref(%s,",$2.val);
 	  $$.val= GDKstrdup(stmt);
 	}
     |  TOK_SETAGGR factor '}'
 	{ char stmt[1024];
 	  $2.val =emitExpr($2.val);
-	  sprintf(stmt,"mil.setop_deref(%s,",$2.val);
+	  sprintf(stmt,"mil.pump_deref(%s,",$2.val);
 	  $$.val= GDKstrdup(stmt);
 	}
     |  TOK_BAT
 	{ 
-	  $$.val="mil.bat";
+	  $$.val="bat";
 	}
+    |  TOK_OPERATOR	
+	{ $$= $1; }
     |  TOK_IDENT	
 	{ $$= $1; }
  
-fcn_target : TOK_CONSTANT '.'
-   |	'[' multiplex_expression ']' '.' { $$.val= $2.val;}
-   |	'(' expression ')' '.' {$$.val= $2.val;}
-   |	variable_reference '.' {$$=$1; bindId($1.val);}
+fcn_target : TOK_CONSTANT 
+   |	'[' multiplex_expression ']'  { $$.val= $2.val;}
+   |	'(' expression ')'  {$$.val= $2.val;}
+   |	variable_reference  {$$=$1; bindId($1.val);}
 
 expr_list:
      	expression
-	{$$=$1;}
+	{$$.val = emitExpr($1.val);}
     |	expr_list ',' expression
-	{ $$.val= glue(glue($1.val,","),$3.val);}
+	{ $$.val= emitExpr( glue(glue($1.val,","),$3.val));}
 
 module_list:
       modident
-	{printf("use %s;\n",$1.val);}
+	{printf("use \"kernel/%s\";\n",$1.val);}
     | module_list ',' modident
-	{printf("use %s;\n",$3.val);}
+	{printf("use \"kernel/%s\";\n",$3.val);}
 
 modident:
         TOK_CONSTANT
@@ -929,6 +936,7 @@ char *newName(){
 			} else nameId[2]++;
 		}
 	}
+	fndId(GDKstrdup(buf));
 	return GDKstrdup(buf);
 }
 char *getName(int i){

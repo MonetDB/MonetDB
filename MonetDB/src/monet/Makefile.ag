@@ -1,5 +1,6 @@
 
-INCLUDES = top_builddir/src/gdk top_builddir/src/mal
+INCLUDES = -I$(MONET_BUILD)/src/gdk -I$(MONET_BUILD)/src/mal \
+	-I$(MONET_BUILD)/src/monet
 
 YFLAGS = -d
 
@@ -8,8 +9,13 @@ MTSAFE
 lib_monet = { 
 	SOURCES = \
 		monet.mx 
+#		monet_interpreter.mx monet_queue.mx yytree.mx \
+#		monet_client.mx monet_multiplex.mx monet_tbl.mx \
+#		monet_context.mx monet_parse.mx monet_deparse.mx \
+#		monet_process.mx searchpath.mx
+
 	HEADERS = h tab.h
-	LIBS = ../gdk/libbat \
+	LIBS = ../gdk/libbat ../mal/libmal \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 
 }

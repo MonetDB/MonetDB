@@ -1,6 +1,9 @@
-
+#CHANGES TO ORIGINAL:
+# seqbase -> setSequenceBase
+# persists(FALSE) -> setTransient
+# persists(TRUE) -> setPersistent
 #line 23 "../../../src/gmm/gmm.mx"
-  module(io,alarm,lock,mmath,xtables,mgsl,gmm);
+  module(io,alarm,lock,mmath,xtables,mgsl,space);
   CONST Nthreads  := 4;
   CONST sessionId := "S" + int(newoid());
   VAR   randomseed;
@@ -28,12 +31,12 @@ vm_maxsize( 2000000000LL);
   PROC x_(BAT[any::1,any] x):BAT[any::1,void] := {RETURN x.mark(nil);}
   PROC xn(BAT[any::1,any] x):BAT[any::1,void] := {RETURN x.mark(oid(0));}
   PROC Nseq(int N):BAT[void,int] := {
-    VAR i := 0; VAR seq := new(void,int).seqbase(oid(0));
+    VAR i := 0; VAR seq := new(void,int).setSequenceBase(oid(0));
     WHILE (i<N) { seq.insert(nil,i); i:+=1; }
     RETURN seq;
   }
   PROC randseq(int N):BAT[void,int] := {
-    VAR i := 0; VAR seq := new(void,int).seqbase(oid(0));
+    VAR i := 0; VAR seq := new(void,int).setSequenceBase(oid(0));
     WHILE (i<N) { seq.insert(nil,rand()); i:+=1; }
     RETURN seq;
   }
@@ -99,7 +102,7 @@ vm_maxsize( 2000000000LL);
   }
   PROC destroy_clustertype():void := {
     enum_drop( TCluster );
-    bat("TCluster").persists( false );
+    bat("TCluster").setTransient();
   }
   VAR TCluster := init_clustertype();
   cseq := [encode](TCluster,cseq);
@@ -109,10 +112,10 @@ vm_maxsize( 2000000000LL);
   PROC coeffName(int i): str := { RETURN "Icoeff_" + str(i); }
   PROC newCollection( str cname, int Nimg ): BAT[str,bat] := {
     VAR res := new(str,bat).rename(cname);
-    VAR I := new( void, str, Nimg ).seqbase(oid(0)).rename( cname + "_I" );
-    VAR Ib := new( oid, void, Nimg ).reverse.seqbase(oid(0)).reverse.rename( cname + "_Ib" );
-    VAR Ix := new( void, int, Nimg ).seqbase(oid(0)).rename( cname + "_Ix" );
-    VAR Iy := new( void, int, Nimg ).seqbase(oid(0)).rename( cname + "_Iy" );
+    VAR I := new( void, str, Nimg ).setSequenceBase(oid(0)).rename( cname + "_I" );
+    VAR Ib := new( oid, void, Nimg ).reverse.setSequenceBase(oid(0)).reverse.rename( cname + "_Ib" );
+    VAR Ix := new( void, int, Nimg ).setSequenceBase(oid(0)).rename( cname + "_Ix" );
+    VAR Iy := new( void, int, Nimg ).setSequenceBase(oid(0)).rename( cname + "_Iy" );
     res.insert( "I", I );
     res.insert( "Ib", Ib );
     res.insert( "Ix", Ix );
@@ -120,7 +123,7 @@ vm_maxsize( 2000000000LL);
     VAR coeffs := new(int,bat,N).rename(cname + "_Icoeffs" );
     VAR i := 0;
     WHILE (i < N) {
-      VAR x_i := new(void,sht,Nimg).seqbase(oid(0)).rename( cname + "_" + coeffName(i) );
+      VAR x_i := new(void,sht,Nimg).setSequenceBase(oid(0)).rename( cname + "_" + coeffName(i) );
       coeffs.insert( i, x_i );
       x_i := nil;
       i :+= 1;
@@ -154,22 +157,22 @@ PROC renameGMM( bat[str,bat] model, str mname ):void := {
 PROC newGMM( int Nimg ): BAT[str,bat] := {
   VAR model := new(str,bat);
   VAR mImgIdx := new(oid,void,Nimg * C);
-  mImgIdx.reverse.seqbase(oid(0));
+  mImgIdx.reverse.setSequenceBase(oid(0));
   mImgIdx.access( BAT_APPEND );
   model.insert("mImgIdx", mImgIdx);
   VAR mCIdx := new(TCluster,void,Nimg * C);
-  mCIdx.reverse.seqbase(oid(0));
+  mCIdx.reverse.setSequenceBase(oid(0));
   mCIdx.access( BAT_APPEND );
   model.insert("mCIdx", mCIdx);
-  VAR prior := new(void,flt,Nimg * C).seqbase(oid(0));
+  VAR prior := new(void,flt,Nimg * C).setSequenceBase(oid(0));
   prior.access( BAT_APPEND );
   model.insert("Prior", prior);
   VAR mean := new(int,bat,N);
   VAR covar := new(int,bat,N);
   VAR i := 0;
   WHILE (i < N) {
-    VAR mean_i := new(void,flt,Nimg*C).seqbase(oid(0));
-    VAR variance_i := new(void,flt,Nimg*C).seqbase(oid(0));
+    VAR mean_i := new(void,flt,Nimg*C).setSequenceBase(oid(0));
+    VAR variance_i := new(void,flt,Nimg*C).setSequenceBase(oid(0));
     mean_i.access( BAT_APPEND );
     variance_i.access( BAT_APPEND );
     mean.insert( i, mean_i );
@@ -182,7 +185,7 @@ PROC newGMM( int Nimg ): BAT[str,bat] := {
   covar.access( BAT_READ );
   model.insert( "Mean", mean );
   model.insert( "Covar", covar );
-  VAR init_variances := new(void,flt,Nimg * C).seqbase(oid(0));
+  VAR init_variances := new(void,flt,Nimg * C).setSequenceBase(oid(0));
   init_variances.access( BAT_APPEND );
   model.insert("init_variances", init_variances);
   model.access( BAT_READ );
@@ -1003,7 +1006,7 @@ VAR minvars;
   }
 
   PROC gen2mix(int Nel):BAT[void,dbl] := {
-    VAR res := new(void,dbl).seqbase(oid(0));
+    VAR res := new(void,dbl).setSequenceBase(oid(0));
     VAR i := 0;
     WHILE (i < Nel) {
       res.insert(nil, mix2g());
@@ -1096,7 +1099,7 @@ VAR minvars;
   PROC gmmsamp_diag( int Nsamples, bat[str,bat] gmm ): bat[str,bat] := {
     VAR res := new(str,bat,2);
     VAR samples := new(int,bat,N);
-    nseq@batloop{ samples.insert($t,new(void,dbl,Nsamples).seqbase(oid(0))); }
+    nseq@batloop{ samples.insert($t,new(void,dbl,Nsamples).setSequenceBase(oid(0))); }
     samples.access(BAT_READ);
     # do it...
     VAR mean := gmm.find("Mean");
@@ -1186,7 +1189,7 @@ PROC initGMM( bat[str,bat] coll ):bat[str,bat] := {
 
 
 #line 1727 "../../../src/gmm/gmm.mx"
-  VAR aSample := new(oid,void,I.count * C).reverse.seqbase(oid(0)).reverse;
+  VAR aSample := new(oid,void,I.count * C).reverse.setSequenceBase(oid(0)).reverse;
   I.mark(oid(0))@batloop(){
     aSample.insert( Ib.reverse.select($h).sample(C).mark(oid(C * int($t))) );
   }
@@ -1472,8 +1475,8 @@ PROC test_EM(int Nimg, int M): bat[str,bat] := {
   VAR imgs := newCollection("imgs" + sessionId, Nimg);
   
 #line 663 "../../../src/gmm/gmm.mx"
-  imgs.find("Coeffs")@batloop{ persists($t, true); }
-  imgs@batloop(){ persists($t, true); }
+  imgs.find("Coeffs")@batloop{ setPersistent($t); }
+  imgs@batloop(){ setPersistent($t); }
 
 
 #line 1786 "../../../src/gmm/gmm.mx"
@@ -1489,16 +1492,16 @@ PROC test_EM(int Nimg, int M): bat[str,bat] := {
 
 
 #line 1793 "../../../src/gmm/gmm.mx"
-           imgs.find("Coeffs").persists(false);
+           imgs.find("Coeffs").setTransient();
   VAR src_gmm := newGMM("src" + sessionId);
   
 #line 655 "../../../src/gmm/gmm.mx"
-  persists( src_gmm.find("init_variances"), true );
-  persists( src_gmm.find("Prior"), true );
-  persists( src_gmm.find("mImgIdx"), true );
-  persists( src_gmm.find("mCIdx"), true );
-  src_gmm.find("Mean")@batloop{  persists($t, true); }
-  src_gmm.find("Covar")@batloop{ persists($t, true); }
+  setPersistent( src_gmm.find("init_variances") );
+  setPersistent( src_gmm.find("Prior") );
+  setPersistent( src_gmm.find("mImgIdx") );
+  setPersistent( src_gmm.find("mCIdx") );
+  src_gmm.find("Mean")@batloop{  setPersistent($t); }
+  src_gmm.find("Covar")@batloop{ setPersistent($t); }
 
 
 #line 1795 "../../../src/gmm/gmm.mx"
@@ -1556,8 +1559,8 @@ PROC test_EM(int Nimg, int M): bat[str,bat] := {
   src_gmm.find("mImgIdx").insert(_x(cseq).project(const oid(0)).reverse);
   src_gmm.find("mCIdx").insert(_x(cseq).reverse);
     # bug with first insert in table
-  src_gmm.find("mImgIdx").reverse.seqbase(oid(0)).reverse;
-  src_gmm.find("mCIdx").reverse.seqbase(oid(0)).reverse;
+  src_gmm.find("mImgIdx").reverse.setSequenceBase(oid(0)).reverse;
+  src_gmm.find("mCIdx").reverse.setSequenceBase(oid(0)).reverse;
   
 #line 655 "../../../src/gmm/gmm.mx"
   access( src_gmm.find("init_variances"), BAT_READ );
@@ -1591,8 +1594,8 @@ PROC test_EM(int Nimg, int M): bat[str,bat] := {
 
 #line 1798 "../../../src/gmm/gmm.mx"
 
-  src_gmm.find("mImgIdx").reverse.seqbase(oid(0)); # bug??
-  src_gmm.find("mCIdx").reverse.seqbase(oid(0));
+  src_gmm.find("mImgIdx").reverse.setSequenceBase(oid(0)); # bug??
+  src_gmm.find("mCIdx").reverse.setSequenceBase(oid(0));
 
   # Insert additional images
   VAR imgNr := 1;
@@ -1637,8 +1640,8 @@ PROC test_EM(int Nimg, int M): bat[str,bat] := {
   src_gmm.find("mImgIdx").insert(_x(cseq).project(const oid(imgNr)).reverse);
   src_gmm.find("mCIdx").insert(_x(cseq).reverse);
     # bug with first insert in table
-  src_gmm.find("mImgIdx").reverse.seqbase(oid(0)).reverse;
-  src_gmm.find("mCIdx").reverse.seqbase(oid(0)).reverse;
+  src_gmm.find("mImgIdx").reverse.setSequenceBase(oid(0)).reverse;
+  src_gmm.find("mCIdx").reverse.setSequenceBase(oid(0)).reverse;
   
 #line 655 "../../../src/gmm/gmm.mx"
   access( src_gmm.find("init_variances"), BAT_READ );
@@ -1953,7 +1956,7 @@ VAR dists;
   CONST infosep :=
     "------------------------------------------------------------";
   PROC gmminfo( BAT[str,bat] gmm ): BAT[void,str] := {
-    VAR s := new(void,str).seqbase(oid(0));
+    VAR s := new(void,str).setSequenceBase(oid(0));
     VAR imgidx := gmm.find("mImgIdx").reverse;
     VAR oldimgid := imgidx.fetch(0);
     VAR imgid := oldimgid;
@@ -2371,8 +2374,8 @@ debug("Results ranked");
 
 
 #line 2087 "../../../src/gmm/gmm.mx"
-    VAR x_1 := new( void, dbl ).seqbase(oid(0));
-    VAR x_2 := new( void, dbl ).seqbase(oid(0));
+    VAR x_1 := new( void, dbl ).setSequenceBase(oid(0));
+    VAR x_2 := new( void, dbl ).setSequenceBase(oid(0));
     # ...
     VAR i := 0;
     WHILE (i < Nsamples) {
@@ -2478,12 +2481,12 @@ debug("Results ranked");
 
     
 #line 655 "../../../src/gmm/gmm.mx"
-  persists( trainedmodels.find("init_variances"), true );
-  persists( trainedmodels.find("Prior"), true );
-  persists( trainedmodels.find("mImgIdx"), true );
-  persists( trainedmodels.find("mCIdx"), true );
-  trainedmodels.find("Mean")@batloop{  persists($t, true); }
-  trainedmodels.find("Covar")@batloop{ persists($t, true); }
+  setPersistent( trainedmodels.find("init_variances") );
+  setPersistent( trainedmodels.find("Prior") );
+  setPersistent( trainedmodels.find("mImgIdx") );
+  setPersistent( trainedmodels.find("mCIdx") );
+  trainedmodels.find("Mean")@batloop{  setPersistent($t); }
+  trainedmodels.find("Covar")@batloop{ setPersistent($t); }
 
 
 #line 2151 "../../../src/gmm/gmm.mx"
@@ -2626,7 +2629,7 @@ debug("Results ranked");
 
 #line 2346 "../../../src/gmm/gmm.mx"
 PROC modelIdx(int N): BAT[str,void] := {
-  VAR modelidx := new(str,void).reverse.seqbase(oid(0)).reverse;
+  VAR modelidx := new(str,void).reverse.setSequenceBase(oid(0)).reverse;
   VAR seq := Nseq(N).reverse;
   modelidx.insert( "Prior", nil );
   VAR mu := _x([+](seq.project("Mu_"), seq.mirror));
