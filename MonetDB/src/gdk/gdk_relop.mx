@@ -947,14 +947,24 @@ Normal merge-semijoin with a full scan on both is handled by kintersect
 differ significantly.
 
 @= binsemijoin
-{	BUN lp, lq, rp, rq;
+{	BUN lp, lq;
 	BAT *rr = BATmirror(r);
 	int xx, yy;
 
-	BATloopFast(l, lp, lq, xx) {
-		ptr v = BUNh@1(l,lp);
-		SORTloop_@2(rr, rp, rq, v, v, yy) {
-		     BUNfastins(bn, v, BUNtail(cpy,(cpy==l)?lp:rp));
+        if (cpy == l) {
+   		BATloopFast(l, lp, lq, xx) {
+			ptr v = BUNh@1(l,lp);
+			if (SORTfndfirst_@2(rr, v)) {
+				BUNfastins(bn, v, BUNtail(l,lp));
+			}
+		}
+	} else {
+		BATloopFast(l, lp, lq, xx) {
+			BUN rp, rq;
+			ptr v = BUNh@1(l,lp);
+			SORTloop_@2(rr, rp, rq, v, v, yy) {
+		    		BUNfastins(bn, v, BUNtail(r,rp));
+			}
 		}
 	} 
 } break;
@@ -979,9 +989,17 @@ BAT *BATbinsemijoin(BAT *l, BAT *r, BAT *cpy) {
 	case TYPE_dbl: @:binsemijoin(loc,dbl)@
 	case TYPE_lng: @:binsemijoin(loc,lng)@
 	default: if (l->hvarsized) {
+		   if (r->hvarsized) {
 		       @:binsemijoin(var,var)@
+		   } else {
+		       @:binsemijoin(var,loc)@
+		   }
 		 } else {
+		   if (r->hvarsized) {
+		       @:binsemijoin(loc,var)@
+		   } else {
 		       @:binsemijoin(loc,loc)@
+		   }
 		 }
 	}
 	/* propagate properties */
@@ -1004,16 +1022,26 @@ similar to binsemijoin, but now using an existing idx accelerator
 for the binary search.
 
 @= idxsemijoin
-{	BUN lp, lq, *rp, *rq;
+{	BUN lp, lq;
 	int xx;
 
-	BATloopFast(l, lp, lq, xx) {
-		ptr v = BUNh@1(l,lp);
-		IDXrng(r, v, v, &rp, &rq);
-		IDXloop(r, rp, rq) {
-		     BUNfastins(bn, v, BUNtail(cpy,(cpy==l)?lp:*rp));
+	if (cpy == l) {
+		BATloopFast(l, lp, lq, xx) {
+			ptr v = BUNh@1(l,lp);
+			if (IDXfnd_@2(r, v)) {
+				BUNfastins(bn, v, BUNtail(l,lp));
+			}
 		}
-	 } 
+	} else {
+		BATloopFast(l, lp, lq, xx) {
+			BUN *rp, *rq;
+			ptr v = BUNh@1(l,lp);
+			IDXrng(r, v, v, &rp, &rq);
+			IDXloop(r, rp, rq) {
+			     BUNfastins(bn, v, BUNtail(r,*rp));
+			}
+		}
+	} 
 } break;
 @c
 BAT *BATidxsemijoin(BAT *l, BAT *r, BAT *cpy) {
@@ -1035,9 +1063,17 @@ BAT *BATidxsemijoin(BAT *l, BAT *r, BAT *cpy) {
 	case TYPE_dbl: @:idxsemijoin(loc,dbl)@
 	case TYPE_lng: @:idxsemijoin(loc,lng)@
 	default: if (l->hvarsized) {
+		   if (r->hvarsized) {
 		       @:idxsemijoin(var,var)@
+		   } else {
+		       @:idxsemijoin(var,loc)@
+		   }
 		 } else {
+		   if (r->hvarsized) {
+		       @:idxsemijoin(loc,var)@
+		   } else {
 		       @:idxsemijoin(loc,loc)@
+		   }
 		 }
 	}
 	/* propagate properties */

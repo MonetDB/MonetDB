@@ -3,3 +3,4 @@ refcnt
 bat_insert
 reload
 BATkey
+binsemijoin
