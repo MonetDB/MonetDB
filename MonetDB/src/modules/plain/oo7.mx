@@ -432,7 +432,7 @@ int oo7genAssembly(int mod_oid,int level)
 int oo7_create(str par)
 {
     int i,j,k,d;
-    FILE *out;
+    stream *out = GDKout;
     
     /*
      * The Object Identifier(s);
@@ -474,10 +474,10 @@ int oo7_create(str par)
 		par1=par+strlen(par);
 
 	if((val=strchr(par,'='))==(char*)NULL) {
-		fprintf(out,"oo7_create({Parameter=Value}*)\n");
-		fprintf(out,"Default parameter values:\n\n");
+		stream_printf(out,"oo7_create({Parameter=Value}*)\n");
+		stream_printf(out,"Default parameter values:\n\n");
 		for(j=0; params[j].val!=(int*)NULL; j++)
-                	fprintf(out,"%-20s: %d\n",params[j].name,params[j].def);
+                	stream_printf(out,"%-20s: %d\n",params[j].name,params[j].def);
 		return 0;
 	}
 	val[0]='\0'; val++;
@@ -487,9 +487,9 @@ int oo7_create(str par)
 			break;
 		}
  	if( params[j].val==(int*)NULL ) {
-		fprintf(out,"oo7_create: unknown parameter: %s, default parameter values:\n\n",par);
+		stream_printf(out,"oo7_create: unknown parameter: %s, default parameter values:\n\n",par);
 		for(j=0; params[j].val!=(int*)NULL; j++)
-                	fprintf(out,"oo7_create: %-20s: %d\n",params[j].name,params[j].def);
+                	stream_printf(out,"oo7_create: %-20s: %d\n",params[j].name,params[j].def);
 		return 0;
 	}
     };
