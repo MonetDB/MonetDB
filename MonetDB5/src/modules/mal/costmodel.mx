@@ -19,14 +19,24 @@
 @a M.L. Kersten
 
 @* The MAL costmodel 
-The cost model for analysis of MAL programs is still under development. 
-For the time being we catch some calls.
+The cost model is geared at supporting the SQL front-end. 
+As such, it attempts to predict the result size of BATs created
+on the fly.
+The operations taken into account are @{reverse, select, join, mark,
+uselect, kdiff@}.
+
+The cost model can be called at runtime to analyse the MAL block
+in which it is embedded to predict properties of instructions to be
+executed.
+It is called by the SQL optimizer to prepare for more drastict code
+changes.
 @mal
 module costmodel;
 
-pattern setCount(v:any,c:lng)
-address CMsetCount
-comment "return the input stream to the database client";
+pattern recalculate(modnme:any,fcnnme:any)
+address CMrecalculate
+comment "recalculate the properties for the code block.";
+
 @-
 @{
 @* Implementation Code
@@ -36,26 +46,30 @@ comment "return the input stream to the database client";
 #define _COSTMODEL_H_
 
 #include "mal.h"
-#include "mal_instruction.h"
+#include "mal_function.h"
+#include "mal_costmodel.h"
+#include "mal_client.h"
 
 #endif /* _COSTMODEL_H_ */
-
-@+ Printing
+@-
 @c
 #include "costmodel.h"
 
-str CMsetCount(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+
+str CMrecalculate(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) mb; (void) stk; (void) pci;
-	return MAL_SUCCEED;
-}
-str CMsetMinimum(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) mb; (void) stk; (void) pci;
-	return MAL_SUCCEED;
-}
-str CMsetMaximum(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) mb; (void) stk; (void) pci;
+    str     modnme= getArgName(mb,pci,1);
+    str     fcnnme= getArgName(mb,pci,2);
+    Scope  scope=NULL;
+    Symbol s= NULL;
+    scope = findModule(getClient()->nspace,modnme);
+    if( scope)
+        s= findSymbolInModule(scope,fcnnme);
+
+    if( s == NULL)
+        return throwMessage("costmodel.recalculate","operation not found");
+	RMcalculator(s->def);
+
+	(void) stk; /* fool compiler */
 	return MAL_SUCCEED;
 }
