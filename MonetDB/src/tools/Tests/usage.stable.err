@@ -39,6 +39,7 @@ Options are:
  -t          | --trace          /* trace Monet interaction */
  -T          | --time           /* time commands */
  -u user     | --user=user      /* user id */
+ -H          | --history        /* load/save cmdline history (default off) */
  -?          | --help           /* show this usage message */
 
 # 16:36:12 >  
