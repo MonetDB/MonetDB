@@ -785,6 +785,9 @@ def msc_includes(fd, var, values, msc):
 def msc_jar(fd, var, values, msc):
     print "msc doesn't support jars (yet)!"
 
+def msc_java(fd, var, values, msc):
+    print "msc doesn't support java (yet)!"
+
 output_funcs = {'SUBDIRS': msc_subdirs,
                 'EXTRA_DIST': msc_extra_dist,
                 'EXTRA_HEADERS': msc_extra_headers,
@@ -804,6 +807,7 @@ output_funcs = {'SUBDIRS': msc_subdirs,
                 'largeTOC_SHARED_MODS': msc_mods_to_libs,
                 'HEADERS': msc_headers,
                 'JAR': msc_jar,
+                'JAVA': msc_java,
                 }
 
 def output(tree, cwd, topdir):
