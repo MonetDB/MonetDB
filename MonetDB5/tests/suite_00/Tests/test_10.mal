@@ -1,4 +1,7 @@
 # Monet Mil to Mal compiler
+include "mil_system_procs";
+include "mil_algebra_procs";
+include "mil_insert";
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -8,6 +11,8 @@
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
+include "mil_algebra_procs";
+include "mil_system_procs";
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
