@@ -281,10 +281,12 @@ address timestamp_fromstr;
 command tostr():str 
 address timestamp_tostr;
 #.NULL	 address timestamp_null;
-command  epoch():timestamp
+command unix_epoch():timestamp
+address MTIMEunix_epoch
+comment "The Unix epoch time (00:00:00 UTC on January 1, 1970)";
+command epoch():timestamp
 address MTIMEepoch
-comment "unix-time (epoch) support:
-	seconds since 1-jan-1970 GMT";
+comment "unix-time (epoch) support: seconds since the Unix epoch";
 command epoch(t:timestamp):lng 
 address MTIMEepoch2
 comment "unix-time (epoch) support:
@@ -915,6 +917,7 @@ typedef int date;
 #define date_nil ((date) int_nil)
 @c
 #include "mtime.h" 
+#include <time.h> /* for epoch (time(0)) */
 extern int timestamp_add(timestamp* ret, timestamp *v, lng *msecs);
 extern int date_adddays(date * ret, date *v, int *delta);
 
@@ -2880,7 +2883,7 @@ str MTIMEdaytime3(daytime *ret, int *h, int *m, int *s){
 	return MAL_SUCCEED;
 }
 
-str MTIMEepoch(timestamp *ret){
+str MTIMEunix_epoch(timestamp *ret){
 	date d0= todate(1,1,1970);
 	int zero=0;
 	str s= "GMT";
@@ -2891,6 +2894,17 @@ str MTIMEepoch(timestamp *ret){
 	timestamp_create(ret,&d0,&d1,&d2);
 	return MAL_SUCCEED;
 }
+
+str MTIMEepoch(timestamp *ret) {
+	timestamp ts;
+	lng t = ((lng)time(0)) * 1000;
+	str e;
+	/* convert number of seconds into a timestamp */
+	(e = MTIMEunix_epoch(&ts)) == MAL_SUCCEED &&
+		(e = MTIMEtimestamp_add(ret, &ts, &t)) == MAL_SUCCEED;
+	return(e);
+}
+
 str MTIMEepoch2(lng *ret, timestamp *t){
 	timestamp e;
 	lng v;
