@@ -1,3 +1,4 @@
+#!/bin/sh
 ./gcol elapuser 
 awk -f column  <o >o1
 ./gcol elapsys 
