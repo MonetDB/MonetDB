@@ -249,9 +249,19 @@ static BAT *BATmark_grp( BAT *b, BAT *g )
 	ALIGNsetH(bn,b);
 	bn->hsorted = BAThordered(b);
 	bn->hdense = BAThdense(b);
+	if (BAThdense(bn)) {
+		BATseqbase(bn, b->hseqbase);
+	}
 	BATkey(bn, (b->hkey!=0));
 	bn->tsorted = (tsdk?GDK_SORTED:0);
 	bn->tdense = tsdk;
+	if (BATtdense(bn)) {
+		if (BATcount(bn) == 0) {
+			BATseqbase(BATmirror(bn), (oid)0);
+		} else {
+			BATseqbase(BATmirror(bn), *(oid*)BUNtloc(bn,BUNfirst(bn)));
+		}
+	}
 	BATkey(BATmirror(bn), tsdk);
 
 	BBPreclaim(gc);

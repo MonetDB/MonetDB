@@ -1,0 +1,16 @@
+module(pf_support);
+
+var a:=
+new(void,oid)
+.seqbase(oid(0))
+.insert(nil,oid(0))
+.insert(nil,oid(0))
+.access(BAT_READ);
+print(a);
+
+var b:=a.tunique().project(oid(1));
+print(b);
+
+var c:=mark_grp(a,b);
+print(c);
+
