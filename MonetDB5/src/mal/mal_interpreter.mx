@@ -165,6 +165,7 @@ void showErrors(){
 		if( cntxt->errbuf[i-1]!='\n') 
 			stream_printf(cntxt->fdout,"\n");
 		*cntxt->errbuf=0;
+		stream_flush(cntxt->fdout);
 	}
 }
 
@@ -202,6 +203,9 @@ being called.
 		stk = env;
 		if( mb != stk->blk) 
 			GDKerror("runMAL:misalignment of symbols\n");
+		if( mb->vsize > stk->stksize) {
+			GDKerror("stack too small");
+		}
 		pci= pcicaller;
 	} else {
 		newStack(stk,mb->vsize);
@@ -1109,7 +1113,7 @@ void garbageElement(ValPtr v)
 #endif
 	if( ATOMstorage(v->vtype) == TYPE_str) 
 		strFinalCall(v);
-	if( v->vtype== TYPE_bat) batFinalCall(v);
+	if( v->vtype== TYPE_bat && v->val.bval) batFinalCall(v);
 }
 @-
 @}

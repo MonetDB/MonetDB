@@ -1899,7 +1899,7 @@ void batFinalCall(ValPtr v){
 		/* logical references do not count from here*/
 		/* watch out for built-ins */
 		if( BBP_refs(bid))
-			BBPunfix(v->val.bval);
+			BBPunfix(bid);
 		else 
 		if( BBP_lrefs(bid) )
 			BBPdecref(bid,TRUE);

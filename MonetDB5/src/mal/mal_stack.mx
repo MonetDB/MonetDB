@@ -72,7 +72,6 @@ typedef struct MALSTK {
 			bzero((char *) S, stackSize(CNT));\
 			(S)->stksize=CNT;
 	
-#define newFrame(S,Ssize,Top,Cnt) S= reallocStack(S,&(Ssize),Top,Cnt)
 
 mal_export MalStkPtr newGlobalStack(int size);
 mal_export MalStkPtr reallocStack(MalStkPtr s, int cnt);
@@ -109,11 +108,11 @@ MalStkPtr newGlobalStack(int size){
 }
 
 MalStkPtr reallocStack(MalStkPtr s, int cnt){
-	int k= s->stksize;
+	int k;
 	MalStkPtr old= s; 
 
-	if( s->stksize - s->stktop >cnt ) return s;
-	k = k+ ((cnt/STACKINCR)+1) * STACKINCR;
+	if( s->stksize >cnt ) return s;
+	k = ((cnt/STACKINCR)+1) * STACKINCR;
 	newStack(s, k);
 	memcpy(s, old, stackSize(old->stksize)); 
 	s->stksize = k;

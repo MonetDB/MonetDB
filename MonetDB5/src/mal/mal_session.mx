@@ -182,8 +182,11 @@ and the symbol table should also not be affected.
 Aside from removing instruction, we should also condense the
 variable stack, i.e. removing at least the temporary variables,
 but maybe everything beyond a previous defined pont.
+
 Beware that we have to cleanup the global stack as well. This to avoid
 subsequent calls to find garbage information.
+However, this action is only required after a successful execution.
+Otherwise, garbage collection is not needed.
 @c
 void 	resetInstructions(MalBlkPtr mb, int start)
 {	int i;
@@ -210,7 +213,9 @@ void	resetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 			if(i!=j){
 				copyVar(mb,j,i);
 				if(glb){
+					/* save stack state */
 					glb->stk[j]= glb->stk[i];
+					/* clean stack entry */
 					glb->stk[i].vtype= TYPE_int;
 					glb->stk[i].val.ival= 0;
 					glb->stk[i].len= 0;
@@ -275,7 +280,7 @@ table may have grown in size.
 	if( c->listing) 
 		printFunction(c->fdout,c->curprg->def, c->listing);
 	resetInstructions(c->curprg->def,oldstate.stop);
-	resetVariables(c->curprg->def, c->glb, oldstate.vtop);
+	resetVariables(c->curprg->def, 0, oldstate.vtop);
 @c
 str MALexitClient(Client c){
         garbageCollector(c->curprg->def,c->glb,TRUE);
@@ -347,8 +352,8 @@ str MALengine(Client c){
 		return throwMessage("MALengine","Program contains errors\n");
 	}
 	if( prg->def->stop ==1) return 0; /* empty block */
-	if(c->glb && prg->def && c->glb->stksize< prg->def->vtop){
-		c->glb= reallocStack(c->glb, prg->def->vsize- c->glb->stktop);
+	if(c->glb && prg->def && c->glb->stksize< prg->def->vsize){
+		c->glb= reallocStack(c->glb, prg->def->vsize);
 	}
 	if( c->glb){
 		c->glb->stktop = prg->def->vtop;

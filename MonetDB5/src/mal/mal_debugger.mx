@@ -319,10 +319,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 	}
 	do{
 	cntxt->nxt= cntxt->input; *cntxt->nxt=0;
-	if( readClient(cntxt,(cntxt==mal_clients?"mdb>":"\001mdb>\001"))==0){
-		stream_printf(GDKout,"Client %s disappeared\n",cntxt->user);
-		return;
-	}
+	readClient(cntxt,(cntxt==mal_clients?"mdb>":"\001mdb>\001"));
 	b= cntxt->input;
 	skipBlanc(b);
 	switch(*b){
