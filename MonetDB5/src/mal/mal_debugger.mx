@@ -51,7 +51,7 @@ mal_export void mdbHelp(stream *f);
 mal_export void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v,int index, int cnt,int first);
 mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
-mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc);
+mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra);
 
 mal_export int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export int mdbSetCmd(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -149,42 +149,47 @@ void mdbClrBreakpointName(Client cntxt, str name)
 #define skipNonBlanc(X)	while(*(X) && !isspace(*X)) X++;
 #define skipWord(X)	skipNonBlanc(X); skipBlanc(X);
 
-str call2str(MalBlkPtr mb, MalStkPtr stk, int pc){
+@-
+Prepare a string for an instruction call. The flag indicates
+a need for position information as well.
+@c
+str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra){
 	InstrPtr p;
 	char buf[BLOCK];
 	int l,k;
 
 	p= getInstrPtr(mb, pc);
 	if( p != NULL){
-		if( p->token== ASSIGNsymbol){
-			strcpy(buf,instruction2str(mb,p,FALSE));
-		} else {
-		snprintf(buf,BLOCK,"%s.%s(",moduleName(p),functionName(p));
-		for(k= p->retc; k<p->argc; k++){
-			str msg=0; 
-			ValPtr v= &stk->stk[p->argv[k]];
-			ATOMformat(v->vtype, VALptr(v), &msg);
-			l= strlen(buf);
-			snprintf(buf+l,BLOCK-l,"%s",msg);
-			GDKfree(msg);
-			if( k < p->argc-1 ) {
+		if( moduleId(p) && functionId(p)){
+			snprintf(buf,BLOCK,"%s.%s(",
+				moduleName(p),functionName(p));
+			for(k= p->retc; k<p->argc; k++){
+				str msg=0; 
+				ValPtr v= &stk->stk[p->argv[k]];
+				ATOMformat(v->vtype, VALptr(v), &msg);
 				l= strlen(buf);
-				snprintf(buf+l,BLOCK-l,",");
+				snprintf(buf+l,BLOCK-l,"%s",msg);
+				GDKfree(msg);
+				if( k < p->argc-1 ) {
+					l= strlen(buf);
+					snprintf(buf+l,BLOCK-l,",");
+				}
 			}
-		}
-		l= strlen(buf);
-		snprintf(buf+l,BLOCK-l,")");
-		}
+			l= strlen(buf);
+			snprintf(buf+l,BLOCK-l,");");
+		} else strcpy(buf,instruction2str(mb,p,FALSE));
 	}
-	p= getInstrPtr(mb,0);
-	l= strlen(buf);
-	snprintf(buf+l,BLOCK-l," at #%d in %s", pc, functionName(p));
+	if( extra){
+		p= getInstrPtr(mb,0);
+		l= strlen(buf);
+		snprintf(buf+l,BLOCK-l," at #%d in %s", pc, functionName(p));
+	}
 	return GDKstrdup(buf);
 }
 void printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc){
 	str msg;
 
-	msg= call2str(mb,stk,pc);
+	msg= call2str(mb,stk,pc,TRUE);
 	stream_printf(cntxt->fdout,"%s\n",msg);
 	GDKfree(msg);
 }

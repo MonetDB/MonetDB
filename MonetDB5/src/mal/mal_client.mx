@@ -55,6 +55,7 @@ are located in mal_startup.
 /* #define MAL_CLIENT_DEBUG */
 
 #include "mal_resolve.h"
+#include "mal_profiler.h"
 #include "mal.h"
 
 #define MAL_MAXCLIENTS	32
@@ -350,6 +351,7 @@ the proper IO descriptors.
 @c
 	if ( t==0) {
 		GDKerror("Failed to initialize client\n");
+		resetProfiler(c->fdout);
 		c->fdout->flush(c->fdout);
 		(void) c->fdin->close(c->fdin);
 		(void) c->fdin->close(c->fdout);
@@ -413,6 +415,7 @@ void freeClient(Client c)
 			(void) c->fdin->destroy(c->fdin);
 		}
 		if( c->fdout){
+			resetProfiler(c->fdout);
 			(void) c->fdout->flush(c->fdout); 
 			(void) c->fdout->close(c->fdout);
 			(void) c->fdout->destroy(c->fdout);
@@ -528,6 +531,7 @@ void killClient(Client c){
 	(void) c->fdout->flush(c->fdout);
 	(void) c->fdin->close(c->fdin);
 	(void) c->fdin->destroy(c->fdin); c->fdin= NULL;
+	resetProfiler(c->fdout);
 	(void) c->fdout->close(c->fdout);
 	(void) c->fdout->destroy(c->fdout); c->fdout= NULL;
 	if( c->socket) close(c->socket); c->socket=0;
@@ -556,6 +560,7 @@ void cleanupClients(){
 			(void) c->fdin->destroy(c->fdin); c->fdin= NULL;
 		}
 		if( c->fdout){
+			resetProfiler(c->fdout);
 			(void) c->fdout->destroy(c->fdout); c->fdout= NULL;
 		}
 	}

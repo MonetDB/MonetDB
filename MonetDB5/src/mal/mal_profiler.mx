@@ -69,6 +69,8 @@ in the interpreter to collect the information.
  * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
  */
 #ifndef _MAL_PROFILER_H
+#define _MAL_PROFILER_H
+
 #include "mal_client.h"
 /*#include "mal_scope.h"*/
 
@@ -102,51 +104,56 @@ mal_export str startProfiling();
 mal_export str stopProfiling();
 
 mal_export int instrFilter(InstrPtr pci, str mod, str fcn);
-mal_export int eventFilter(Scope cntxt, str mod, str fcn);
-mal_export int resetFilter(Scope cntxt, str mod, str fcn);
+mal_export void eventFilter(Scope cntxt, str mod, str fcn);
+mal_export void resetFilter(Scope cntxt, str mod, str fcn);
 
 mal_export void profileReport(Scope cntxt,int outer, stream *out);
-
+mal_export void resetProfiler(stream *fdout);
 
 mal_export int malProfileMode;
 #define DEBUG_MAL_PROFILER
 
 #endif
-@+ Administration
+@+ Performance tracing
+The interpreter comes with several variables to hold performance
+related data.
 Every MAL instruction record is extended with two fields: counter, timer
 The counter is incremented each time the instruction is taken into
 execution. Upon return, the timer is incremented with the microseconds
 spent.
+In addition to the default performance data collection,
+the user can request performance events to be collected on a statement
+basis. Care should be taken, because it leads to a large trace file,
+unless the results are directly passed to a Monet performance monitor
+front-end for filtering and summarization.
+
+The performance monitor has exclusive access to the event file, which
+avoid concurrency conflicts amongst clients. It avoid cluthered
+event records on the event stream. Since this event stream is owned
+by a client, we should ensure that the profiler is automatically be
+reset once the owner leaves. The routine profilerReset() handles the case.
+
 @c
 #include "mal_function.h"
 #include "mal_profiler.h"
+#include "mal_debugger.h"
 
 #ifdef MALprofiler
-MT_Lock profileLock = 0;
-stream *eventstream   = 0;
+static MT_Lock profileLock = 0;
+static stream *eventstream   = 0;
 
-int onlineProfiling = TRUE;
-int offlineProfiling = FALSE;
-int cachedProfiling = FALSE;
+static int onlineProfiling = TRUE;
+static int offlineProfiling = FALSE;
+static int cachedProfiling = FALSE;
 #endif
 
 static void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 static void offlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-int malProfileMode;	/* global flag to indicate profiling mode */
-static int delayswitch; /* to wait before sending the profile info */
+int malProfileMode=0;	/* global flag to indicate profiling mode */
+static int profileAll=0;/* all instructions should be profiled */
+static int delayswitch=0; /* to wait before sending the profile info */
 
-@+ Performance tracing
-The interpreter comes with several variables to hold performance
-related data. In addition to the default performance data collection,
-the user can request performance events to be collected on a statement
-basis. Care should be taken, because it leads to a large trace file,
-unless the results are directly passed to a Monet performance monitor
-front-end.
-
-The performance monitor has exclusive access to the event file, which
-avoid concurrency conflicts amongst clients. It avoid cluthered
-event records on the event stream.
 @c
 #define PROFlabel	0
 #define PROFcpu		1
@@ -159,12 +166,12 @@ static struct{
 	str name;	/* which logical counter is needed */
 	int status;	/* trace it or not */
 } profileCounter[]={
-	/*  0 */ {"tick",0},
-	/*  1 */ {"cpu",0},
-	/*  2 */ {"memory",0},
-	/*  3 */ {"io",0},
-	/*  4 */ {"pc",0},
-	/*  5 */ {"statement",0},
+	/*  0 */ {"tick",1},
+	/*  1 */ {"cpu",1},
+	/*  2 */ {"memory",1},
+	/*  3 */ {"io",1},
+	/*  4 */ {"pc",1},
+	/*  5 */ {"statement",1},
 	/*  6 */ {0,0}
 };
 @-
@@ -202,10 +209,9 @@ Online- and offline-profiling are disjoint options, because they
 currently share the same file descriptor in the client record.
 @c
 void profilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-fprintf(stderr,"sent event\n");
 #ifdef MALprofiler
 	if( onlineProfiling) onlineProfilerEvent(cntxt,mb,stk,pci);
-	if( offlineProfiling) onlineProfilerEvent(cntxt,mb,stk,pci);
+	if( offlineProfiling) offlineProfilerEvent(cntxt,mb,stk,pci);
 	if( cachedProfiling) onlineProfilerEvent(cntxt,mb,stk,pci);
 #endif
 }
@@ -214,18 +220,30 @@ fprintf(stderr,"sent event\n");
 The online processing structure is the easiest. We merely have to
 produce a correct tuple format for the front-end.
 @c
-#define log(X,Y) stream_printf(eventstream,X,Y)
-#define log0(X)	stream_printf(eventstream,X)
-#define flushLog() eventstream->flush(eventstream);
+#define log(X,Y) stream_printf(eventstream,X,Y);\
+		fprintf(stderr,X,Y)
+#define log0(X)	stream_printf(eventstream,X);\
+		fprintf(stderr,X)
+#define log2(X,Y,Z) stream_printf(eventstream,X,Y,Z);\
+		fprintf(stderr,X,Y)
+#define flushLog() eventstream->flush(eventstream);\
+		fflush(stderr);
 
 #ifdef MALprofiler
 
 void onlineProfilerHeader(){
 	@:getEventStream()@	/* profilerEvent -> void */
 	log0("# ");
+	if( profileCounter[PROFpc].status ){
+		log0("caller,\t");
+		log0("callee,\t");
+	}
 	if( profileCounter[PROFlabel].status ){
-		log0("clock,\t");
 		log0("ticks,\t");
+		log0("clock,\t");
+	}
+	if( profileCounter[PROFstmt].status ){
+		log0("stmt,\t");
 	}
 	if( profileCounter[PROFcpu].status ){
 		log0("utime,\t");
@@ -234,13 +252,8 @@ void onlineProfilerHeader(){
 		log0("cstime,\t");
 	}
 
-	if( profileCounter[PROFpc].status ){
-		log0("module\t,");
-		log0("function\t,");
-		log0("pc\t,");
-	}
 	if( profileCounter[PROFmemory].status ){
-		log0("ru_maxrss,\t");
+		log0("maxrss,\t");
 		log0("arena,\t");
 		log0("ordblks,\t");
 		log0("smblks,\t");
@@ -250,21 +263,19 @@ void onlineProfilerHeader(){
 		log0("uordblks,\t");
 	}
 	if( profileCounter[PROFio].status ){
-		log0("ru_minflt,\t");
-		log0("ru_majflt,\t");
-		log0("ru_nswap,\t");
-		log0("ru_inblock,\t");
-		log0("ru_oublock\t");
-		log0("ru_nvcsw,\t");
-		log0("ru_nivcsw,\t");
+		log0("page reclaim,\t");
+		log0("page faults,\t");
+		log0("swaps,\t");
+		log0("block reads,\t");
+		log0("block writes,\t");
+		log0("context switch,\t");
+		log0("involunarty switch,\t");
 	}
-	if( profileCounter[PROFstmt].status ){
-		log0("stmt,");
-	}
-	log0("\n");
+	log0("\t# name\n");
 	flushLog();
 	MT_unset_lock(profileLock,"profileLock");
 }
+
 void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	static struct mallinfo prevMalloc;
 	static struct rusage   prevUsage;
@@ -275,7 +286,7 @@ void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt; (void) stk; /* still unused */
 
-	if(pci->trace== FALSE) return;
+	if(!profileAll && pci->trace== FALSE) return;
 	if( delayswitch >0){
 		/* first call to profiled */
 		onlineProfilerHeader();
@@ -292,9 +303,28 @@ void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* make basic profile event tuple  */
 	log0("[ ");
+	if( profileCounter[PROFpc].status ){
+		str nme= "";
+		if( stk->blk) nme= functionName(getInstrPtr(stk->blk,0)); 
+
+		/* get identity of caller */
+		log2("%s.%d,\t",nme, getPC(mb,pci));
+		if( moduleId(pci) && functionId(pci)){
+			log2("\"%s.%s\",\t", moduleName(pci),functionName(pci));
+		} else {
+			log("\"%s\",\t",operatorName(pci));
+		}
+	}
 	if( profileCounter[PROFlabel].status ){
-		log("%d,\t", pci->clk);
 		log("%d,\t", pci->ticks);
+		log("%d,\t", pci->clk);
+	}
+	if( profileCounter[PROFstmt].status ){
+		/* generate actual call statement */
+		stmt= call2str(mb,stk,getPC(mb,pci),FALSE);
+		c= stmt;
+		while(c && *c && isspace(*c) ) c++;
+		log(" \"%s\",\t",c);
 	}
 	if( profileCounter[PROFcpu].status ){
 		log("%d,\t", newTms.tms_utime - pci->timer.tms_utime);
@@ -303,11 +333,6 @@ void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		log("%d,\t", newTms.tms_cstime - pci->timer.tms_cstime);
 	}
 
-	if( profileCounter[PROFpc].status ){
-		log("\"%s\",\t", (moduleId(pci)?moduleName(pci):"unknown"));
-		log("\"%s\",\t", (functionId(pci)?functionName(pci):"unknown"));
-		log("%d,\t", getPC(mb,pci));
-	}
 	if( profileCounter[PROFmemory].status ){
 		log("%d,\t",infoUsage.ru_maxrss);
 		log("%d,\t", infoMalloc.arena-prevMalloc.arena);
@@ -328,12 +353,6 @@ void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		log("%d,\t", infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
 		log("%d,\t", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
 		prevUsage = infoUsage;
-	}
-	if( profileCounter[PROFstmt].status ){
-		stmt= instruction2str(mb,pci,FALSE);
-		c= stmt;
-		while(c && *c && isspace(*c) ) c++;
-		log(" \"%s\",",c);
 	}
 	log0(" ]\n");
 	flushLog();
@@ -390,6 +409,7 @@ void offlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	str stmt,c;
 	(void) cntxt; /* still unused */
 
+	if(!profileAll && pci->trace== FALSE) return;
 	if( getDestVar(pci) <=0 )return;
 	if( delayswitch >0){
 		delayswitch--;
@@ -426,11 +446,11 @@ void offlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	for(;c && *c;c++){
 		if( *c=='#') break;
 		if( *c=='\n') break;
-		if(*c=='"') log0("&quot;");
+		if(*c=='"') { log0("&quot;");}
 		else
-		if(*c=='&') log0("&amp;");
+		if(*c=='&') {log0("&amp;");}
 		else
-		if(*c=='\'') log0("&apos;");
+		if(*c=='\'') {log0("&apos;");}
 		else stream_printf(eventstream,"%c",*c);
 	}
 	log0("\"");
@@ -621,7 +641,7 @@ str openProfilerStream(){
 	Client c= getClient();
 	malProfileMode = TRUE;
 	eventstream = c->fdout;
-	delayswitch=1;
+	delayswitch=1;	/* avoid an incomplete initial profile event */
 	return MAL_SUCCEED;
 }
 str closeProfilerStream(){
@@ -674,7 +694,18 @@ fprintf(stderr,"stop Profiling\n");
 	return MAL_SUCCEED;
 }
 @-
-Performance tracing is triggered on an instruction basis.
+The resetProfiler is called when the owner of the event stream
+leaves the scene. (Unclear if parallelism may cause errors)
+@c
+void resetProfiler(stream *fdout){
+	if( fdout != eventstream) return;
+	MT_set_lock(profileLock,"profileLock");
+	eventstream= 0;
+	MT_unset_lock(profileLock,"profileLock");
+}
+@-
+Performance tracing is triggered on an instruction basis
+or a the global flag 'profileAll' being set.
 Calling eventFilter(M,F) switches the performance tracing
 bit in the instruction record. The routine resetFilter
 clears all performance bits.
@@ -689,7 +720,7 @@ int instrFilter(InstrPtr pci, str mod, str fcn){
 		if( moduleId(pci) && (*mod=='*' || strcmp(mod,moduleName(pci))==0))
 		return 1;
 	}
-	 if( moduleId(pci) && *fcn == '*' &&
+	if( moduleId(pci) && *fcn == '*' &&
 	   ( *mod == '*' || strcmp(mod,moduleName(pci))==0) )
 		return 1;
 #else
@@ -698,15 +729,15 @@ int instrFilter(InstrPtr pci, str mod, str fcn){
 	return 0;
 }
 
-int eventFilter(Scope cntxt, str mod, str fcn){
+void eventFilter(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
         int j,k,moduleOnly=0;
         Scope s=cntxt;
 	Symbol t;
 	InstrPtr p;
-	int all;
 
-	all= strcmp(mod,"*")==0 && strcmp(fcn,"*")==0;
+	profileAll= strcmp(mod,"*")==0 && strcmp(fcn,"*")==0;
+	if( profileAll) return;
 	if( profileLock==0) profileLock= MT_create_lock();
 	MT_set_lock(profileLock,"profileLock");
         while(s!= NULL){
@@ -715,14 +746,10 @@ int eventFilter(Scope cntxt, str mod, str fcn){
                 if(s->subscope[j]){
                         for(t= s->subscope[j];t!=NULL;t=t->peer) {
 				p= getInstrPtr(t->def,0);
-				moduleOnly = ( moduleName(p) && 
-						strcmp(moduleName(p),mod)==0);
+				moduleOnly = moduleId(p) && strcmp(moduleName(p),mod)==0;
 				for(k=0;k<t->def->stop;k++){
 					p= getInstrPtr(t->def,k);
-					if( moduleOnly || all 
-					 || instrFilter(p,mod,fcn)){
-						p->trace = TRUE;
-					}
+					p->trace= moduleOnly || instrFilter(p,mod,fcn);
 				}
                         }
                 }
@@ -732,14 +759,13 @@ int eventFilter(Scope cntxt, str mod, str fcn){
 #else
 	stream_printf(GDKout,"# Monet not compiled for profiling\n");
 #endif
-	return -1;
 }
 @-
 Watch out. The profiling bits are only set for the shared modules and
 the private main(). The profiler setFilter should explicitly called in
 each separate top level routine.
 @c
-int resetFilter(Scope cntxt, str mod, str fcn){
+void resetFilter(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
         int j,k;
         Scope s=cntxt;
@@ -749,6 +775,10 @@ int resetFilter(Scope cntxt, str mod, str fcn){
 
 	if( profileLock==0) profileLock= MT_create_lock();
 	MT_set_lock(profileLock,"profileLock");
+	if( profileAll){
+		profileAll= FALSE;
+		return;
+	}
         while(s!= NULL){
                 if( s->subscope)
                 for(j=0;j<MAXSCOPE;j++)
@@ -766,7 +796,6 @@ int resetFilter(Scope cntxt, str mod, str fcn){
 #else
 	stream_printf(GDKout,"# Monet not compiled for profiling\n");
 #endif
-	return -1;
 }
 @+ Reporting
 The performance information is collected on an instruction basis,
