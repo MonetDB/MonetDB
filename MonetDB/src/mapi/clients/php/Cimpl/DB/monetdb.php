@@ -245,19 +245,17 @@ class DB_monetdb extends DB_common
      */
     function fetchInto($result, &$arr, $fetchmode, $rownum=null)
     {
-        // FIXME: monetdb_seek_row()!!
-        /*
-	        if ($rownum !== null) {
+        if ($rownum !== null) {
             if (!@monetdb_data_seek($result, $rownum)) {
                 return null;
             }
-        }*/
+        }
 	
         if ($fetchmode & DB_FETCHMODE_ASSOC) {
             $arr = monetdb_fetch_assoc($result);
         } else {
             $arr = monetdb_fetch_row($result);
-        }
+        } // other fetchmodes are handled internally by db_common.
 
         if (!$arr) {
             $errno = @monetdb_errno($this->connection);
