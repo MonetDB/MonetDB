@@ -18,17 +18,17 @@ CVS
 	heading CVS Instructions.
 
 Python
-	MonetDB uses Python (version 1.5.2 or better) during
+	MonetDB uses Python (version 2.0.0 or better) during
 	configuration of the software.  See http://www.python.org/ for
 	more information.
 
 autoconf/automake/libtool 
-	MonetDB uses GNU autoconf, automake, and libtool during
-	configuration of the software.  See
+	MonetDB uses GNU autoconf (>= 2.53), automake (>= 1.4), and
+	libtool (>= 1.4) during configuration of the software.  See
 	http://www.gnu.org/software/autoconf/,
 	http://www.gnu.org/software/automake/, and
-	http://www.gnu.org/software/libtool/ for more information.
-	Libtool is also used during the build.
+	http://www.gnu.org/software/libtool/
+	for more information. Libtool is also used during the build.
 
 standard software development tools
 	To compile MonetDB, you also need to have a the following 
@@ -81,7 +81,7 @@ In the top-level directory of MonetDB type the command:
 Then in any directory (a new empty directory or in the MonetDB top-level
 directory) give the command
 
- .../configure
+ .../configure [<options>]
 
 where ... is replaced with the (absolute or relative) path to the
 MonetDB top-level directory.  The directory where you execute configure
@@ -91,9 +91,17 @@ generated during compilation via "make".
 By default, MonetDB is eventually (i.e., during "make install"; see
 below) installed to /usr/local/. To choose another target directory, you
 need to call  configure --prefix=<prefixdir>.
-(Use the --help option of configure to find out about configure
-options).
-
+A sample of other useful configure options is:
+  --enable-debug          enable full debugging default=off
+  --enable-optimize       enable extra optimization default=off
+  --enable-warning           enable extended compiler warnings default=off
+  --enable-profile        enable profiling default=off
+  --enable-instrument        enable instrument default=off
+  --with-gcc=<compiler>   which C compiler to use
+  --with-gxx=<compiler>   which C++ compiler to use
+  --with-bits=<#bits>     specify number of bits (32 or 64)
+Use the --help option of configure to find out more about configure
+options.
 In the same directory (where you called configure) give the command
 
  make
@@ -173,6 +181,15 @@ is an incompatible version.
 Bootstrap adds files to the source directory, so it must have write
 permissions.
 
-Configure will fail if certain essential programs can't be found or
-certain essential tasks (such as compiling a C program) can't be
-executed.  The problem will usually be clear from the error message.
+Configure will fail if certain essential programs can't be found or certain
+essential tasks (such as compiling a C program) can't be executed.  The
+problem will usually be clear from the error message. 
+
+E.g., if configure cannot find package XYZ, it is either not installed on
+your machine, or it is not installed in places that configure usually
+searches (i.e., /usr, /usr/local). In the first case, you need to install
+package XYZ before you can configure, make, and install MonetDB. In the
+latter case, you need to tell configure via "--with-XYZ=<DIR>" where to find
+packages XYZ on your machine. configure then looks for the respective header
+files in <DIR>/include, and for the respective libraries in <DIR>/lib.
+
