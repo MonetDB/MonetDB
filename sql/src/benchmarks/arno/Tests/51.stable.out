@@ -40,7 +40,7 @@ Over..
 # 21:05:02 >  Mtimeout -timeout 21 sql_client --port=54321  < 51.sql
 # 21:05:02 >  
 
-"'F'"	8	1
+"F"	8	1
 1 Row affected
 
 # 21:05:02 >  
