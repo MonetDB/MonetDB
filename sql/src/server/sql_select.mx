@@ -2819,6 +2819,13 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 
 	sql_select_cleanup(sql, NULL, subset, grp);
 
+	if (sn->offset >= 0){
+		if (order) 
+			order = stmt_offset(order, sn->offset);
+		else 
+			order = stmt_offset(stmt_dup(s->op1.lval->h->data), sn->offset);
+	}
+
 	if (sn->limit >= 0){
 		if (order) 
 			order = stmt_limit(order, sn->limit);

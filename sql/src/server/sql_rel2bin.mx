@@ -191,6 +191,7 @@ static stmt *head_column(stmt * st)
 	case st_idxbat:
 
 	case st_limit:
+	case st_offset:
 	case st_order:
 	case st_reorder:
 
@@ -776,6 +777,7 @@ stmt *rel2bin( mvc *c, stmt *s )
 	case st_mirror: case st_const: case st_mark: 
 	case st_group: case st_group_ext: case st_derive: case st_unique: 
 	case st_limit: case st_order: case st_reorder: case st_ordered: 
+	case st_offset:
 
 	case st_alias: 
 	case st_ibat: 

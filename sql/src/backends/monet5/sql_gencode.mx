@@ -109,6 +109,17 @@ pushInt(MalBlkPtr mb, InstrPtr q, int val)
 }
 
 static InstrPtr 
+pushLng(MalBlkPtr mb, InstrPtr q, long val) 
+{	
+	int _t; 
+	char bufi[BUFSIZ];
+
+	snprintf(bufi,BUFSIZ,"%d",val);
+	_t= newConstant(mb,TYPE_lng,_strdup(bufi),TRUE); 
+	return pushArgument(mb,q,_t);
+}
+
+static InstrPtr 
 pushStr(MalBlkPtr mb, InstrPtr q, const char *val) 
 {
 	int _t = newConstant(mb,TYPE_str,_strdup(val),TRUE); 
@@ -406,6 +417,32 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		q= pushArgument(mb,q,l);
 		q= pushInt(mb,q,0);
 		q= pushArgument(mb,q,k);
+		s->nr= getDestVar(q);
+		@:SQLpostlude@
+	} 	break;
+	case st_offset: {
+		int l = backend_dumpstmt(sql,mb, s->op1.stval);
+		int k = backend_dumpstmt(sql,mb, s->op2.stval);
+		int m;
+		@:SQLprelude@
+
+		/* algebra.slice requires a start and stop, so calculate
+		   the length (stop value) of the bat first */
+		q= newStmt(mb,"algebra","count");
+		q= pushArgument(mb,q,l);
+		m= getDestVar(q);
+
+		/* algebra.slice wants int values, so convert the
+		   given value */
+		q= newStmt(mb,"calc","int");
+		q= pushArgument(mb,q,m);
+		m= getDestVar(q);
+	
+		q= newStmt(mb,"algebra","slice");
+		q= pushArgument(mb,q,l);
+		q= pushArgument(mb,q,k);
+		q= pushArgument(mb,q,m);
+		
 		s->nr= getDestVar(q);
 		@:SQLpostlude@
 	} 	break;

@@ -209,6 +209,7 @@ init_keywords()
 	keywords_insert("NATURAL", NATURAL);
 	keywords_insert("NOT", NOT);
 	keywords_insert("NULL", NULLX);
+	keywords_insert("OFFSET", OFFSET);
 	keywords_insert("ON", ON);
 	keywords_insert("OPTIONS", OPTIONS);
 	keywords_insert("OPTION", OPTION);

@@ -75,6 +75,7 @@ typedef struct SelectNode {
 	symbol s;
 
 	int limit;
+	int offset;
 	int distinct;
 	struct dlist *selection;
 	struct dlist *into; /* ?? */
@@ -99,7 +100,7 @@ extern symbol *symbol_create_symbol(int token, symbol * data );
 sql_export void symbol_destroy(symbol * sym);
 extern int symbol_cmp( symbol *s1, symbol *s2);
 
-extern symbol *newSelectNode( int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, int limit );
+extern symbol *newSelectNode( int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, int limit, int offset );
 
 extern symbol *newAtomNode( atom *a );
 
@@ -409,7 +410,8 @@ symbol *newSelectNode(
 	symbol *having, 
 	symbol *orderby, 
 	symbol *name,
-	int limit)
+	int limit,
+	int offset)
 {
 	SelectNode *sn = NEW(SelectNode);
 	symbol *s = (symbol*)sn;
@@ -417,6 +419,7 @@ symbol *newSelectNode(
 	symbol_init(s, SQL_SELECT);
 	sn->distinct = distinct;
 	sn->limit = limit;
+	sn->offset = offset;
 	sn->selection = selection;
 	sn->into = into;
 	sn->from = from;
@@ -523,6 +526,7 @@ static int SelectNodeCmp( SelectNode *s1, SelectNode *s2 )
 		return -1;
 
 	if (s1->limit == s2 ->limit &&
+	    s1->offset == s2 ->offset &&
 	    s1->distinct == s2 ->distinct &&
 	    symbol_cmp(s1->name, s2->name) == 0 &&
 	    symbol_cmp(s1->orderby, s2->orderby) == 0 &&

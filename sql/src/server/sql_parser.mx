@@ -390,8 +390,10 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	opt_index_type
 	intval
 	nonzero
+	posint	
 	opt_nr
 	opt_limit
+	opt_offset
 	opt_match
 	opt_match_type
 	opt_on_commit
@@ -493,7 +495,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW BATS WHERE WITH 
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
-%token LIMIT
+%token LIMIT OFFSET
 
 %token CASE WHEN THEN ELSE END NULLIF COALESCE
 %token COPY RECORDS DELIMITERS STDIN
@@ -1608,16 +1610,17 @@ sql:
 
 select_stmt:
     simple_select 			%prec UMINUS
-	opt_order_by_clause opt_limit
+	opt_order_by_clause opt_limit opt_offset
 	{
 	  if ($1->token == SQL_SELECT) {
           	SelectNode *sn = (SelectNode*)$1;
 	  	sn->orderby = $2;
 	  	sn->limit = $3;
+		sn->offset = $4;
 	  	$$ = $1;
 	   } else {
                 $$ = NULL;
-		yyerror("order by and limit are not allowed with a select statement");
+		yyerror("order by and limit are only allowed with a select statement");
 		YYABORT;
 	   }
  	}
@@ -1637,7 +1640,7 @@ simple_select:
 	  	$5->h->next->data.sym,
 	  	$5->h->next->next->data.sym,
 	  	$5->h->next->next->next->data.sym,
-	  	NULL, NULL, -1);
+	  	NULL, NULL, -1, -1);
 	  dlist_destroy_keep_data($5);
 	}
     ;
@@ -1837,8 +1840,12 @@ opt_order_by_clause:
 
 opt_limit:
     /* empty */ 			{ $$ = -1; }
- |  LIMIT nonzero 			{ $$ = $2; }
+ |  LIMIT nonzero			{ $$ = $2; }
  ;
+
+opt_offset:
+	/* empty */				{ $$ = -1; }
+ |  OFFSET posint			{ $$ = $2; }
 
 ordering_spec_commalist:
     ordering_spec	 { $$ = dlist_append_symbol(dlist_create(), $1); }
@@ -2000,7 +2007,7 @@ subquery:
 	  	$5->h->next->data.sym,
 	  	$5->h->next->next->data.sym,
 	  	$5->h->next->next->next->data.sym,
-	  	NULL, NULL, -1);
+	  	NULL, NULL, -1, -1);
 	  dlist_destroy_keep_data($5);
 	}
  ;
@@ -2621,7 +2628,17 @@ opt_else:
 
 nonzero:
 	intval 	{ $$ = $1;
-		  if ($$ == 0) {
+		  if ($$ <= 0) {
+			$$ = -1;
+			yyerror("Positive value greater than 0 expected");
+			YYABORT;
+		  }
+		}
+	;
+
+posint:
+	intval 	{ $$ = $1;
+		  if ($$ < 0) {
 			$$ = -1;
 			yyerror("Positive value expected");
 			YYABORT;
