@@ -330,7 +330,10 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 
 		if (cntxt->phase[READER]) {
  			if ((msg=(*cntxt->phase[READER])(cntxt)) ) {
-				GDKfree(msg);
+			    if(msg) {
+                                stream_printf(out,"#mdb %s\n",msg);
+                                free(msg);
+                            }
         		break;
 			}
 		} else if (readClient(cntxt, cntxt -> prompt) <= 0) {
