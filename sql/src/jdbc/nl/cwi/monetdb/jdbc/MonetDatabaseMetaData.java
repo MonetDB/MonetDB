@@ -1430,23 +1430,17 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		select =
 			"SELECT * FROM ( " +
 			"SELECT '" + cat + "' AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", \"tables\".\"name\" AS \"TABLE_NAME\", " +
-				"CASE WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = true THEN 'SYSTEM TABLE' " +
-				"	WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = false THEN 'SYSTEM VIEW' " +
-				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = true THEN 'TABLE' " +
-				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = false THEN 'VIEW' " +
+				"CASE WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = true AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM TABLE' " +
+				"	WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = false AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM VIEW' " +
+				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = true AND \"tables\".\"temporary\" = 0 THEN 'TABLE' " +
+				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = false AND \"tables\".\"temporary\" = 0 THEN 'VIEW' " +
+				"   WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = true AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION TABLE' " +
+				"	WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = false AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION VIEW' " +
+				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = true AND \"tables\".\"temporary\" = 1 THEN 'SESSION TABLE' " +
+				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = false AND \"tables\".\"temporary\" = 1 THEN 'SESSION VIEW' " +
 				"END AS \"TABLE_TYPE\", '' AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
 				"null AS \"TYPE_NAME\", 'rowid' AS \"SELF_REFERENCING_COL_NAME\", 'SYSTEM' AS \"REF_GENERATION\" " +
-				"FROM \"tables\", \"schemas\" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\"" +
-			"UNION ALL " +
-
-			"SELECT '" + cat + "' AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", \"tables\".\"name\" AS \"TABLE_NAME\", " +
-				"CASE WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = true THEN 'SYSTEM SESSION TABLE' " +
-				"	WHEN \"tables\".\"system\" = true AND \"tables\".\"istable\" = false THEN 'SYSTEM SESSION VIEW' " +
-				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = true THEN 'SESSION TABLE' " +
-				"	WHEN \"tables\".\"system\" = false AND \"tables\".\"istable\" = false THEN 'SESSION VIEW' " +
-				"END AS \"TABLE_TYPE\", '' AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
-				"null AS \"TYPE_NAME\", 'rowid' AS \"SELF_REFERENCING_COL_NAME\", 'SYSTEM' AS \"REF_GENERATION\" " +
-				"FROM \"tmp_tables\" AS \"tables\", \"schemas\" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\"" +
+			"FROM \"tables\", \"schemas\" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
 			") AS \"tables\" WHERE 1 = 1 ";
 
 		if (tableNamePattern != null) {
@@ -1667,15 +1661,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 				"WHEN true THEN CAST ('YES' AS varchar) " +
 				"WHEN false THEN CAST ('NO' AS varchar) " +
 			"END AS \"IS_NULLABLE\" " +
-				"FROM ( " +
-					"SELECT * FROM \"columns\" " +
-					"UNION ALL " +
-					"SELECT * FROM \"tmp_columns\" " +
-					") AS \"columns\", ( " +
-					"SELECT * FROM \"tables\" " +
-					"UNION ALL " +
-					"SELECT * FROM \"tmp_tables\" " +
-					") AS \"tables\", \"schemas\" " +
+				"FROM \"columns\", \"tables\", \"schemas\" " +
 				"WHERE \"columns\".\"table_id\" = \"tables\".\"id\" " +
 					"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" ";
 
@@ -1851,15 +1837,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"SELECT \"columns\".\"name\" AS \"COLUMN_NAME\", \"columns\".\"type\" AS \"TYPE_NAME\", " +
 			"\"columns\".\"type_digits\" AS \"COLUMN_SIZE\", 0 AS \"BUFFER_LENGTH\", " +
 			"\"columns\".\"type_scale\" AS \"DECIMAL_DIGITS\", \"keys\".\"type\" AS \"keytype\" " +
-				"FROM \"keys\", \"keycolumns\", ( " +
-					"SELECT * FROM \"columns\" " +
-					"UNION ALL " +
-					"SELECT * FROM \"tmp_columns\" " +
-					") AS \"columns\", ( " +
-					"SELECT * FROM \"tables\" " +
-					"UNION ALL " +
-					"SELECT * FROM \"tmp_tables\" " +
-					") AS \"tables\", \"schemas\" " +
+				"FROM \"keys\", \"keycolumns\", \"columns\", \"tables\", \"schemas\" " +
 				"WHERE \"keys\".\"id\" = \"keycolumns\".\"id\" AND \"keys\".\"table_id\" = \"tables\".\"id\" " +
 					"AND \"keys\".\"table_id\" = \"columns\".\"table_id\" " +
 					"AND \"keycolumns\".\"column\" = \"columns\".\"name\" " +
@@ -2005,11 +1983,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"SELECT null AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 			"\"tables\".\"name\" AS \"TABLE_NAME\", \"keycolumns\".\"column\" AS \"COLUMN_NAME\", " +
 			"\"keys\".\"type\" AS \"KEY_SEQ\", \"keys\".\"name\" AS \"PK_NAME\" " +
-				"FROM \"keys\", \"keycolumns\", ( " +
-					"SELECT * FROM \"tables\" " +
-					"UNION ALL " +
-					"SELECT * FROM \"tmp_tables\" " +
-					") AS \"tables\", \"schemas\" " +
+				"FROM \"keys\", \"keycolumns\", \"tables\", \"schemas\" " +
 				"WHERE \"keys\".\"id\" = \"keycolumns\".\"id\" AND \"keys\".\"table_id\" = \"tables\".\"id\" " +
 					"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
 					"AND \"keys\".\"type\" = 0 ";
@@ -2036,15 +2010,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		"\"fkkey\".\"name\" AS \"FK_NAME\", \"pkkey\".\"name\" AS \"PK_NAME\", " +
 		"" + DatabaseMetaData.importedKeyNotDeferrable + " AS \"DEFERRABILITY\" " +
 			"FROM \"keys\" AS \"fkkey\", \"keys\" AS \"pkkey\", \"keycolumns\" AS \"fkkeycol\", " +
-			"\"keycolumns\" AS \"pkkeycol\", ( " +
-					"SELECT * FROM \"tables\" " +
-					"UNION ALL " +
-					"SELECT * FROM \"tmp_tables\" " +
-					") AS \"fktable\", ( " +
-					"SELECT * FROM \"tables\" " +
-					"UNION ALL " +
-					"SELECT * FROM \"tmp_tables\" " +
-					") AS \"pktable\", " +
+			"\"keycolumns\" AS \"pkkeycol\", \"tables\" AS \"fktable\", \"tables\" \"pktable\", " +
 			"\"schemas\" AS \"fkschema\", \"schemas\" AS \"pkschema\" " +
 			"WHERE \"fktable\".\"id\" = \"fkkey\".\"table_id\" AND \"pktable\".\"id\" = \"pkkey\".\"table_id\" AND " +
 			"\"fkkey\".\"id\" = \"fkkeycol\".\"id\" AND \"pkkey\".\"id\" = \"pkkeycol\".\"id\" AND " +
@@ -2470,15 +2436,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 				"null AS \"ASC_OR_DESC\", " +
 				"0 AS \"PAGES\", " +
 				"null AS \"FILTER_CONDITION\" " +
-			"FROM \"idxs\" LEFT JOIN \"keys\" ON \"idxs\".\"name\" = \"keys\".\"name\", \"schemas\", \"keycolumns\", ( " +
-					"SELECT * FROM \"columns\" " +
-					"UNION ALL " +
-					"SELECT * FROM \"tmp_columns\" " +
-				") AS \"columns\", ( " +
-					"SELECT * FROM \"tables\" " +
-					"UNION ALL " +
-					"SELECT * FROM \"tmp_tables\" " +
-				") AS \"tables\" " +
+			"FROM \"idxs\" LEFT JOIN \"keys\" ON \"idxs\".\"name\" = \"keys\".\"name\", \"schemas\", \"keycolumns\", \"columns\", \"tables\" " +
 			"WHERE \"idxs\".\"table_id\" = \"tables\".\"id\" " +
 				"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
 				"AND \"idxs\".\"id\" = \"keycolumns\".\"id\" " +
