@@ -259,7 +259,7 @@ Some explanation of what mem_usage() and vm_usage() display:
 	return b;
     }
     PROC rename(BAT[any::1,any::2] b, str name) : bat[any::1,any::2] := {
-	if (not(b.bbpname(name))) ERROR("rename(%s,%s): operation failed", str(b), name);
+	if (not(b.bbpname(name))) ERROR("rename(%s,%s): operation failed\n", str(b), name);
 	return b;
     }
     ADDHELP("rename", "boncz", "Feb  6 1996",
@@ -442,7 +442,7 @@ Some explanation of what mem_usage() and vm_usage() display:
         } else if (s = "append-only") {
                 return BAT_APPEND;
         } 
-        ERROR("readonly: unknown mode.");
+        ERROR("readonly: unknown mode.\n");
     }
     ADDHELP("readonly", "boncz", "Aug  6 1998",
         "deprecated. Use 'info.find(batRestricted)' instead.", "sys");
