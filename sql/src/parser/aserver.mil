@@ -2,6 +2,7 @@ module(sqlserver);
 module(ascii_io);
 module(str);
 module(alarm);
+module(unix);
 
 proc create_table( name, temp ):= {
 	var t:=oid(table_name.count());
@@ -197,7 +198,15 @@ proc SQLclient( int sock ) := {
 	SQLclient_thread(sock).fork();
 }
 
-var port := 45123;
-sqlserver_start(port, "SQLclient").fork();
+proc get_sql_port() := {
+	var port := 45123;
+	var sqlport := getenv("SQLPORT");
+	if (length(sqlport) > 0){
+		port := int(sqlport);
+	}
+	return port;
+}
+
+sqlserver_start(get_sql_port(), "SQLclient").fork();
 
 
