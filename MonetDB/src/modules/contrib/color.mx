@@ -36,6 +36,7 @@ colors in various colorspaces and extract relevand color channels.
 
 rgb = (byte,byte,byte) colorspace r,g,b=[0..255]
 hsv = (flt,flt,flt) colorspace h=[0..360], s,v=[0..1]
+ycc = (byte,byte,byte) colorspace y,c,c=[0..255]
 
 @* Implementation
 
@@ -64,6 +65,15 @@ hsv = (flt,flt,flt) colorspace h=[0..360], s,v=[0..1]
 		"Extracts saturation component from a color atom"
 	.COMMAND value     (color c) : flt = value;
 		"Extracts value component from a color atom"
+
+	.COMMAND ycc(int y,int cr,int cb) : color = ycc;
+		"Converts an YCC triplets to a color atom"
+	.COMMAND luminance (color c) : int = luminance;
+		"Extracts Y(luminance) component from a color atom"
+	.COMMAND cr        (color c) : int = cr;
+		"Extracts Cr(red color) component from a color atom"
+	.COMMAND cb        (color c) : int = cb;
+		"Extracts Cb(blue color) component from a color atom"
 
 .END color;
 
@@ -213,7 +223,6 @@ int blue(int *b, color *c) {
 	return(GDK_SUCCEED);
 }
 
-
 #define max(a,b) ((a)>(b)?(a):(b))
 #define max3(a,b,c) max(max(a,b),(c))
 
@@ -296,6 +305,50 @@ int value(flt *f, color *c) {
 	return(GDK_SUCCEED);
 }
 
+
+#ifndef CLIP
+#define CLIP(X)     ((unsigned char)(((X)&~0xFF)?(((X)<0x00)?0x00:0xFF):(X)))
+#endif
+
+int ycc(color *c,int* y,int* cr,int* cb) {
+	int r,g,b;
+	float Y  = *y;
+	float CR = *cr - 128;
+        float CB = *cb - 128;
+	r = (int)(Y+CR*1.4022f);
+	r = CLIP(r);
+	g = (int)(Y-CB*0.3456f-CR*0.7145f);
+        g = CLIP(g);
+	b = (int)(Y+CB*1.7710f); 
+        b = CLIP(b);
+	return rgb(c,&r,&g,&b);
+}
+
+int luminance(int *y, color *c) {
+	int r = (int)((*c>>16) & 0xFF);
+	int g = (int)((*c>> 8) & 0xFF);
+	int b = (int)( *c      & 0xFF);
+	*y = (int)(0.2989f*(float)(r)+0.5866f*(float)(g)+0.1145f*(float)(b));
+	*y = CLIP(*y);
+	return(GDK_SUCCEED);
+}
+
+int cr(int *cr, color *c) {
+	int r = (int)((*c>>16) & 0xFF);
+	int g = (int)((*c>> 8) & 0xFF);
+	int b = (int)( *c      & 0xFF);
+	*cr = (int)(0.5000f*(float)(r)-0.4183f*(float)(g)-0.0816f*(float)(b)) + 128;
+	return(GDK_SUCCEED);
+}
+
+int cb(int *cb, color *c) {
+	int r = (int)((*c>>16) & 0xFF);
+	int g = (int)((*c>> 8) & 0xFF);
+	int b = (int)( *c      & 0xFF);
+	*cb = (int)(-0.1687f*(float)(r)-0.3312f*(float)(g)+0.5000f*(float)(b)) + 128;
+	return(GDK_SUCCEED);
+}
+
 @+ Test Script
 @mil
 
@@ -311,6 +364,12 @@ PROC test_color() : void := {
 	print(hue(c));
 	print(saturation(c));
 	print(value(c));
+
+	c := ycc(200,100,50);
+	print(c);
+	print(luminance(c));
+	print(cr(c));
+	print(cb(c));
 
 	c := color("0x0012ABcd");
 	print(c);
