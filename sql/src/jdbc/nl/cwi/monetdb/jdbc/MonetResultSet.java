@@ -1404,7 +1404,8 @@ public class MonetResultSet implements ResultSet {
 	public java.sql.Date getDate(int columnIndex, Calendar cal)
 		throws SQLException
 	{
-		return(new java.sql.Date(getJavaDate(cal, columnIndex, Types.DATE).getTime()));
+		java.util.Date d = getJavaDate(cal, columnIndex, Types.DATE);
+		return(d == null ? (java.sql.Date)d : new java.sql.Date(d.getTime()));
 	}
 
 	/**
@@ -1474,7 +1475,8 @@ public class MonetResultSet implements ResultSet {
 	public Time getTime(int columnIndex, Calendar cal)
 		throws SQLException
 	{
-		return(new Time(getJavaDate(cal, columnIndex, Types.TIME).getTime()));
+		java.util.Date d = getJavaDate(cal, columnIndex, Types.TIME);
+		return(d == null ? (Time)d : new Time(d.getTime()));
 	}
 
 	/**
@@ -1544,7 +1546,8 @@ public class MonetResultSet implements ResultSet {
 	public Timestamp getTimestamp(int columnIndex, Calendar cal)
 		throws SQLException
 	{
-		return(new Timestamp(getJavaDate(cal, columnIndex, Types.TIMESTAMP).getTime()));
+		java.util.Date d = getJavaDate(cal, columnIndex, Types.TIMESTAMP);
+		return(d == null ? (Timestamp)d : new Timestamp(d.getTime()));
 	}
 
 	/**
