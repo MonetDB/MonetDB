@@ -3,9 +3,16 @@
 #include "mem.h"
 #include "cCatalog.h"
 
-/* todo use the catalog c-code to store the current catalog 
- * We need a quick way to access the column-lists in pre-defined order 
- */
+
+#define SQL_READ 0
+#define SQL_WRITE 1
+
+static int stamp = 0;
+
+static int timestamp(){
+	return stamp++;
+}
+
 static 
 ptr *ADTfromStr( int type, char *s){
         int l = 0;
@@ -81,6 +88,7 @@ mvc *mvc_create(int debug){
 }
 
 void mvc_begin( mvc *c ){
+	/* if started already commit the changes */
 	printf( "TODO: time to implement BEGIN Transaction\n");
 }
 void mvc_commit( mvc *c ){
@@ -97,12 +105,12 @@ void mvc_dump( mvc *c ){
 			printf("%s %d %d\n", 
 				BUNtail(c->column_name,
 				  BUNfnd(c->column_name, (ptr)&i)), 
-				c->bats[i].reads, c->bats[i].writes);
+				c->bats[i].rtime, c->bats[i].wtime);
 		}
 	}
 }
 
-BAT *mvc_bind_intern( mvc *c, oid colid, int write ){
+BAT *mvc_bind_intern( mvc *c, oid colid, int kind ){
 	BAT *m = BATmirror(c->column_id);
 	oid cid = *(oid*)BUNtail(m,BUNfnd(m, (ptr)&colid));
 
@@ -125,15 +133,19 @@ BAT *mvc_bind_intern( mvc *c, oid colid, int write ){
 	return c->bats[cid].b;
 	*/
 	c->bats[cid].b = (BAT*)1; 
-	c->bats[cid].reads+=!write;
-	c->bats[cid].writes+=!write;
+
+	if (kind == SQL_READ){
+		c->bats[cid].rtime = timestamp();
+	} else {
+		c->bats[cid].wtime = timestamp();
+	}
 
 	return BATdescriptor(*(bat*)BUNtail(c->column_bat,
 				BUNfnd(c->column_bat, (ptr)&cid)));
 }
 
 BAT *mvc_bind( mvc *c, oid colid ){
-	return mvc_bind_intern(c, colid, 0);
+	return mvc_bind_intern(c, colid, SQL_READ);
 }
 
 
@@ -262,7 +274,7 @@ oid mvc_create_column( mvc *c, oid cid, oid tid,
 	BUNins(c->column_null, 	(ptr)&ci, (ptr)&one );
 	BUNins(c->column_number, 	(ptr)&ci, (ptr)&seqnr );
 	BUNins(c->column_bat, 	(ptr)&ci, (ptr)&b->batCacheid );
-	mvc_bind_intern( c, cid, 1 );
+	mvc_bind_intern( c, cid, SQL_WRITE );
 
 	return cid;
 }
@@ -327,7 +339,7 @@ void mvc_fast_insert( mvc *c, char *insert_string ){
 
 	if (nr){
 		oid id = strtol( next+1, &next, 10);
-		BAT *b = mvc_bind_intern(c, id, 1);
+		BAT *b = mvc_bind_intern(c, id, SQL_WRITE);
 		ptr *p;
 		char *e = next_comma(next+1); 
 		*e = '\0';
@@ -340,7 +352,7 @@ void mvc_fast_insert( mvc *c, char *insert_string ){
 
 	    	while(nr > 0){
 			oid id = strtol( next+1, &next, 10);
-			BAT  *b = mvc_bind_intern(c, id, 1);
+			BAT  *b = mvc_bind_intern(c, id, SQL_WRITE);
 			char *e = next_comma(next+1); 
 			*e = '\0';
 	        	p = ADTfromStr( b->dims.tailtype, next+1 );
@@ -380,9 +392,11 @@ void mvc_delete( mvc *c, oid tid, BAT *rids ){
 	BATloop(columns, p, q ){
 		BUN r,s;
 		int sz;
-		cid = *(oid*)BUNhead(columns,p);
-		b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
-				BUNfnd(c->column_bat, (ptr)&cid)));
+		oid lcid = *(oid*)BUNhead(columns,p);
+		oid thiscid = *(oid*)BUNtail(c->column_id,
+				BUNfnd(c->column_id, (ptr)&lcid));
+
+		b = mvc_bind_intern( c, thiscid, SQL_WRITE );
 
 		/* reverse order scan, since the deleted slots are
 		 * filled with stuff from the top, else the oid is
@@ -424,9 +438,7 @@ void mvc_update( mvc *c, oid tid, oid cid, BAT *v ){
 
 		oid thiscid = *(oid*)BUNtail(c->column_id,
 				BUNfnd(c->column_id, (ptr)&lcid));
-
-		b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
-				BUNfnd(c->column_bat, (ptr)&lcid)));
+		b = mvc_bind_intern( c, thiscid, SQL_WRITE );
 
 		if (thiscid != cid){
 			/* may need own BATsemijoin or use one which

@@ -4,8 +4,8 @@
 
 typedef struct batinfo {
 	BAT *b;
-	int reads;
-	int writes;
+	int rtime;
+	int wtime;
 } batinfo;
 
 typedef struct mvc {
