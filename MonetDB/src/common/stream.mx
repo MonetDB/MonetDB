@@ -50,6 +50,7 @@ the various underlying storage types.
 
 #include <monet_utils.h>
 
+#include <unistd.h>
 #include <ctype.h>
 #include <assert.h>
 
