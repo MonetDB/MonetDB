@@ -157,7 +157,6 @@ $DBD::monet::db::imp_data_size = 0;
 use strict;
 
 
-# Patterns referred to 'mysql_sub_escape_string()' of libmysql.c
 sub quote
 {
 	my $dbh = shift;
@@ -239,23 +238,25 @@ sub tables
 {
 	my $dbh = shift;
 	my @args = @_;
-	my $mysql = $dbh->FETCH('monet_connection');
+	my $mapi = $dbh->FETCH('monet_connection');
 
 	my @database_list;
 	eval {
-		$mysql->query('show tables');
-		die $mysql->get_error_message if $mysql->is_error;
-		if ($mysql->has_selected_record) {
-			my $record = $mysql->create_record_iterator;
-			while (my $db_name = $record->each) {
-				push @database_list, $db_name->[0];
-			}
+		$mapi->wrapup();
+		$mapi->doRequest("select name from tables;");
+		$dbh->{row} = $mapi->getFirstAnswer();
+		$dbh->{errstr} = $mapi->{errstr};
+		$dbh->{err} = $mapi->{error};
+
+		die $mapi->{errstr} if $mapi->{err};
+		while( my $ref = $dbh->fetchrow_arrayref()){
+			push @database_list, $ref->[0];
 		}
 	};
 	if ($@) {
-		warn $mysql->get_error_message;
+		warn $mapi->{errstr};
 	}
-	return $mysql->is_error
+	return $mapi->{err}
 		? undef
 		: @database_list;
 }
@@ -265,23 +266,26 @@ sub _ListDBs
 {
 	my $dbh = shift;
 	my @args = @_;
-	my $mysql = $dbh->FETCH('monet_connection');
+	my $mapi = $dbh->FETCH('monet_connection');
 
 	my @database_list;
 	eval {
-		$mysql->query('show databases');
-		die $mysql->get_error_message if $mysql->is_error;
-		if ($mysql->has_selected_record) {
-			my $record = $mysql->create_record_iterator;
-			while (my $db_name = $record->each) {
-				push @database_list, $db_name->[0];
-			}
+		$mapi->wrapup();
+		$mapi->doRequest("show databases;");
+		$dbh->{row} = $mapi->getFirstAnswer();
+		$dbh->{errstr} = $mapi->{errstr};
+		$dbh->{err} = $mapi->{error};
+
+		die $mapi->{errstr} if $mapi->{err};
+		while( my $ref = $dbh->fetchrow_arrayref()){
+			push @database_list, $ref->[0];
 		}
+
 	};
 	if ($@) {
-		warn $mysql->get_error_message;
+		warn $mapi->get_error_message;
 	}
-	return $mysql->is_error
+	return $mapi->is_error
 		? undef
 		: @database_list;
 }
@@ -501,7 +505,7 @@ __END__
 
 =head1 NAME
 
-DBD::monet - Pure Perl MySQL driver for the DBI
+DBD::monet - Pure Perl Monet Database driver for the DBI
 
 =head1 SYNOPSIS
 
@@ -561,13 +565,13 @@ DBD::monet - Pure Perl MySQL driver for the DBI
 
 =head1 DESCRIPTION
 
-DBD::monet is a Pure Perl client interface for the MySQL database. This module implements network protool between server and client of MySQL, thus you don't need external MySQL client library like libmysqlclient for this module to work. It means this module enables you to connect to MySQL server from some operation systems which MySQL is not ported. How nifty!
+DBD::monet is a Pure Perl client interface for the Monet Database Server. It means this module enables you to connect to MonetDB server from any platform where Perl is running, but MonetDB has not been installed.
 
 From perl you activate the interface with the statement
 
     use DBI;
 
-After that you can connect to multiple MySQL database servers
+After that you can connect to multiple Monet database servers
 and send multiple queries to any of them via a simple object oriented
 interface. Two types of objects are available: database handles and
 statement handles. Perl returns a database handle to the connect
@@ -631,13 +635,11 @@ A C<database> must always be specified.
 
 =item host
 
-The hostname, if not specified or specified as '', will default to an
-MySQL daemon running on the local machine on the default port
-for the INET socket.
+The default host to connect to is 'localhost', i.e. your workstation.
 
 =item port
 
-Port where MySQL daemon listens to. default is 3306.
+The port where MonetDB daemon listens to. default for SQL is ???.
 
 =back
 
@@ -663,7 +665,7 @@ Returns a list of table and view names, possibly including a schema prefix. This
 
     @dbs = $dbh->func('_ListDBs');
 
-Returns a list of all databases managed by the MySQL daemon.
+Returns a list of all databases managed by the MonetDB SQL daemon.
 
 =item ListTables
 
@@ -671,7 +673,7 @@ B<WARNING>: This method is obsolete due to DBI's $dbh->tables().
 
     @tables = $dbh->func('_ListTables');
 
-Once connected to the desired database on the desired mysql daemon with the "DBI-"connect()> method, we may extract a list of the tables that have been created within that database.
+Once connected to the desired database on the desired MonetDB server with the "DBI-"connect()> method, we may extract a list of the tables that have been created within that database.
 
 "ListTables" returns an array containing the names of all the tables present within the selected database. If no tables have been created, an empty list is returned.
 
@@ -711,27 +713,27 @@ To install this module type the following:
 
 =head1 SUPPORT OPERATING SYSTEM
 
-This module has been tested on these OSes.
+This module has not been tested on all these OSes.
 
 =over 4
 
 =item * MacOS 9.x
 
-with MacPerl5.6.1r.
+TODO with MacPerl5.6.1r.
 
 =item * MacOS X
 
-with perl5.6.0 build for darwin.
+TODO with perl5.6.0 build for darwin.
 
 =item * Windows2000
 
-with ActivePerl5.6.1 build631.
+TODO with ActivePerl5.6.1 build631.
 
 =item * FreeBSD 3.4 and 4.x
 
-with perl5.6.1 build for i386-freebsd.
+TODO with perl5.6.1 build for i386-freebsd.
 
-with perl5.005_03 build for i386-freebsd.
+TODO with perl5.005_03 build for i386-freebsd.
 
 =back
 
@@ -740,64 +742,12 @@ with perl5.005_03 build for i386-freebsd.
 This module requires these other modules and libraries:
 
   DBI
-  Net::MySQL
+  IO::Socket;
+  IO::Handle;
+  Mapi;
 
-B<Net::MySQL> is a Pure Perl client interface for the MySQL database.
-
-B<Net::MySQL> implements network protool between server and client of
-MySQL, thus you don't need external MySQL client library like
-libmysqlclient for this module to work. It means this module enables
-you to connect to MySQL server from some operation systems which MySQL
-is not ported. How nifty!
-
-=head1 DIFFERENCE FROM "DBD::mysql"
-
-The function of B<DBD::mysql> which cannot be used by B<DBD::monet> is described.
-
-=head2 Parameter of Cnstructor
-
-Cannot be used.
-
-=over 4
-
-=item * msql_configfile
-
-=item * mysql_compression
-
-=item * mysql_read_default_file/mysql_read_default_group
-
-=item * mysql_socket
-
-=back
-
-=head2 Private MetaData Methods
-
-These methods cannot be used for $drh.
-
-=over 4
-
-=item * ListDBs
-
-=item * ListTables
-
-
-=back
-
-=head2 Server Administration
-
-All func() method cannot be used.
-
-=over 4
-
-=item * func('createdb')
-
-=item * func('dropdb')
- 
-=item * func('shutdown')
-
-=item * func('reload')
-
-=back
+B<Mapi> is a Pure Perl client interface routines to setup
+the communication with the MonetDB server.
 
 =head2 Database Handles
 
@@ -811,57 +761,22 @@ Cannot be used
 
 =head2 Statement Handles
 
-A different part.
-
 =over 4
 
 =item * The return value of I<execute('SELECT * from table')>
 
-Although B<DBD::mysql> makes a return value the number of searched records SQL of I<SELECT> is performed, B<DBD::monet> surely returns I<0E0>.
+<DBD::monet> surely returns <0E0>.
 
 =back
 
 Cannot be used.
 
-=over 4
-
-=item * 'mysql_use_result' attribute
-
-=item * 'ChopBlanks' attribute
-
-=item * 'is_blob' attribute
-
-=item * 'is_key' attribute
-
-=item * 'is_num' attribute
-
-=item * 'is_pri_key' attribute
-
-=item * 'is_not_null' attribute
-
-=item * 'length'/'max_length' attribute
-
-=item * 'NUUABLE' attribute
-
-=item * 'table' attribute
-
-=item * 'TYPE' attribute
-
-=item * 'mysql_type' attribute
-
-=item * 'mysql_type_name' attributei
 
 =back
 
 =head2 SQL Extensions
 
-Cannot be used.
-
 =over 4
-
-=item * LISTFIELDS
-
-=item * LISTINDEX
 
 =back
 
@@ -871,17 +786,17 @@ Encryption of the password independent of I<Math::BigInt>.
 
 Enables access to much metadata.
 
-=head1 SEE ALSO
+Inclusion of info commands as presented in Mapi.mx
 
-L<Net::MySQL>, L<DBD::mysql>
+=head1 SEE ALSO
 
 =head1 AUTHORS
 
-Hiroyuki OYAMA E<lt>oyama@module.jpE<gt>
+Martin Kersten <lt>Martin.Kersten@cwi.nl<gt>
 
 =head1 COPYRIGHT AND LICENCE
 
-Copyright (C) 2002 Hiroyuki OYAMA. Japan. All rights reserved.
+Copyright (C) 2003 CWI Netherlands. All rights reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself. 
