@@ -171,8 +171,6 @@ MMONETERR & Monet error.\\
 #define MMAPIERR	-4
 #define MMONETERR	-5
 
-extern char *Mmessages[];
-
 #define COUNT(M,X)	(M)->counts[X]++;
 #define MAXVARS		32
 #define MAXBIND		16
@@ -233,31 +231,43 @@ typedef MsessionStruct *Msession;
 extern "C" {
 #endif
 
-extern void checkMid(Msession mid, char *nme);
-extern void promptMonet(Msession mid);
-extern void Mtail(Msession mid, char *qry);
-extern int Mbind(Msession mid, void *ptr);
-extern char *Mgetreply(Msession mid);
-extern int Mdorequest(Msession mid,char *cmd);
-extern Msession Mconnect(char *host, int port, char *username, char *password);
-extern Msession Mdup();
-extern Msession Mnewstruct(Msession mid);
-extern void Mdisconnect(Msession mid);
-extern int Msend(Msession mid, char *format, ...);
-extern int Maction();
-extern int Mget(Msession mid, ...);
-extern int Mquery(Msession mid, char *query, ...);
-extern int Mfetch(Msession mid, ...);
-extern void Mreset();
-extern void Mbatchreset();
-extern void Mstatistics(Msession mid, FILE *fd);
-extern void Mexplain(Msession mid, FILE *fd);
-extern void Mgetfields(Msession mid);
-extern int Mslice(char *tuple,int fnr, void *ptr, int typ);
-extern int MsliceText(char *tuple, char **ptrs, int max);
-extern int Msync(Msession mid);
-extern int Mtimeout(Msession mid, int time);
-extern void promptMonet(Msession mid);
+#ifdef _MSC_VER
+#ifndef LIBMAPI
+#define mapi_export extern __declspec(dllimport) 
+#else
+#define mapi_export extern __declspec(dllexport) 
+#endif
+#else
+#define mapi_export extern 
+#endif
+
+mapi_export char *Mmessages[];
+
+mapi_export void checkMid(Msession mid, char *nme);
+mapi_export void promptMonet(Msession mid);
+mapi_export void Mtail(Msession mid, char *qry);
+mapi_export int Mbind(Msession mid, void *ptr);
+mapi_export char *Mgetreply(Msession mid);
+mapi_export int Mdorequest(Msession mid,char *cmd);
+mapi_export Msession Mconnect(char *host, int port, char *username, char *password);
+mapi_export Msession Mdup();
+mapi_export Msession Mnewstruct(Msession mid);
+mapi_export void Mdisconnect(Msession mid);
+mapi_export int Msend(Msession mid, char *format, ...);
+mapi_export int Maction();
+mapi_export int Mget(Msession mid, ...);
+mapi_export int Mquery(Msession mid, char *query, ...);
+mapi_export int Mfetch(Msession mid, ...);
+mapi_export void Mreset();
+mapi_export void Mbatchreset();
+mapi_export void Mstatistics(Msession mid, FILE *fd);
+mapi_export void Mexplain(Msession mid, FILE *fd);
+mapi_export void Mgetfields(Msession mid);
+mapi_export int Mslice(char *tuple,int fnr, void *ptr, int typ);
+mapi_export int MsliceText(char *tuple, char **ptrs, int max);
+mapi_export int Msync(Msession mid);
+mapi_export int Mtimeout(Msession mid, int time);
+mapi_export void promptMonet(Msession mid);
 
 #ifdef __cplusplus
 }
