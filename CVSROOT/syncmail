@@ -4,8 +4,8 @@
 # All rights reserved.
 # See the accompanying LICENSE file for details.
 
-# NOTE: Until SourceForge installs a modern version of Python on the cvs
-# servers, this script MUST be compatible with Python 1.5.2.
+# NOTE: SourceForge currently runs Python 2.2.3, so we need to remain
+# compatible with the Python 2.2 line.
 
 """Complicated notification for CVS checkins.
 
@@ -88,35 +88,16 @@ The rest of the command line arguments are:
     email-addrs
         At least one email address.
 """
-__version__ = '1.2'
+__version__ = '1.3'
 
 import os
 import sys
 import re
 import time
-import string
 import getopt
 import smtplib
 import pwd
 import socket
-
-try:
-    from socket import getfqdn
-except ImportError:
-    def getfqdn():
-        # Python 1.5.2 :(
-        hostname = socket.gethostname()
-        byaddr = socket.gethostbyaddr(socket.gethostbyname(hostname))
-        aliases = byaddr[1]
-        aliases.insert(0, byaddr[0])
-        aliases.insert(0, hostname)
-        for fqdn in aliases:
-            if '.' in fqdn:
-                break
-        else:
-            fqdn = 'localhost.localdomain'
-        return fqdn
-
 
 from cStringIO import StringIO
 
@@ -159,13 +140,13 @@ def calculate_diff(entry, contextlines):
     if oldrev is None and newrev is None:
         return NOVERSION % file
 
-    if string.find(file, "'") <> -1:
+    if file.find("'") <> -1:
         # Those crazy users put single-quotes in their file names!  Now we
         # have to escape everything that is meaningful inside double-quotes.
-        filestr = string.replace(file, '\\', '\\\\')
-        filestr = string.replace(filestr, '`', '\`')
-        filestr = string.replace(filestr, '"', '\"')
-        filestr = string.replace(filestr, '$', '\$')
+        filestr = filestr.replace('\\', '\\\\')
+        filestr = filestr.replace('`', '\`')
+        filestr = filestr.replace('"', '\"')
+        filestr = filestr.replace('$', '\$')
         # and quote it with double-quotes.
         filestr = '"' + filestr + '"'
     else:
@@ -184,8 +165,8 @@ def calculate_diff(entry, contextlines):
             # Is this a binary file?  Let's look at the first few
             # lines to figure it out:
             for line in lines[:5]:
-                for c in string.rstrip(line):
-                    if c in string.whitespace:
+                for c in line.rstrip():
+                    if c.isspace():
                         continue
                     if c < ' ' or c > chr(127):
                         lines = BINARY_EXPLANATION_LINES[:]
@@ -215,7 +196,7 @@ def calculate_diff(entry, contextlines):
         del lines[DIFF_HEAD_LINES:-DIFF_TAIL_LINES]
         lines.insert(DIFF_HEAD_LINES,
                      '[...%d lines suppressed...]\n' % removedlines)
-    return string.join(lines, '')
+    return ''.join(lines)
 
 
 
@@ -223,7 +204,7 @@ rfc822_specials_re = re.compile(r'[\(\)\<\>\@\,\;\:\\\"\.\[\]]')
 
 def quotename(name):
     if name and rfc822_specials_re.search(name):
-        return '"%s"' % string.replace(name, '"', '\\"')
+        return '"%s"' % name.replace('"', '\\"')
     else:
         return name
 
@@ -239,9 +220,10 @@ def blast_mail(subject, people, entries, contextlines, fromhost, replyto):
         # Create the smtp connection to the localhost
         conn = smtplib.SMTP()
         conn.connect(MAILHOST, MAILPORT)
-        user = pwd.getpwuid(os.getuid())[0]
-        name = string.split(pwd.getpwuid(os.getuid())[4], ',')[0]
-        domain = fromhost or getfqdn()
+        pwinfo = pwd.getpwuid(os.getuid())
+        user = pwinfo[0]
+        name = pwinfo[4].split(',')[0]
+        domain = fromhost or socket.getfqdn()
         address = '%s@%s' % (user, domain)
         s = StringIO()
         sys.stdout = s
@@ -250,7 +232,7 @@ def blast_mail(subject, people, entries, contextlines, fromhost, replyto):
         try:
             vars = {'address' : address,
                     'name'    : quotename(name),
-                    'people'  : string.join(people, COMMASPACE),
+                    'people'  : COMMASPACE.join(people),
                     'subject' : subject,
                     'version' : __version__,
                     'date'    : datestamp,
@@ -288,8 +270,8 @@ class CVSEntry:
         self.tagdate = tagdate
 
 def get_entry(prefix, mapping, line, filename):
-    line = string.strip(line)
-    parts = string.split(line, "/")
+    line = line.strip()
+    parts = line.split("/")
     _, name, revision, timestamp, options, tagdate = parts
     key = namekey(prefix, name)
     try:
@@ -297,8 +279,8 @@ def get_entry(prefix, mapping, line, filename):
     except KeyError:
         if revision == "0":
             revision = None
-        if string.find(timestamp, "+") != -1:
-            timestamp, conflict = tuple(string.split(timestamp, "+"))
+        if timestamp.find("+") != -1:
+            timestamp, conflict = tuple(timestamp.split("+"))
         else:
             conflict = None
         entry = CVSEntry(key, revision, timestamp, conflict,
@@ -324,13 +306,13 @@ def load_change_info(prefix=None):
         line = f.readline()
         if not line:
             break
-##        if string.strip(line) == "D":
+##        if line.strip() == "D":
 ##            continue
         # we could recurse down subdirs, except the Entries.Log files
         # we need haven't been written to the subdirs yet, so it
         # doesn't do us any good
 ##        if line[0] == "D":
-##            name = string.split(line, "/")[1]
+##            name = line.split("/")[1]
 ##            dirname = namekey(prefix, name)
 ##            if os.path.isdir(dirname):
 ##                m = load_change_info(dirname)
@@ -350,7 +332,7 @@ def load_change_info(prefix=None):
                 # really old version of CVS
                 break
             entry = get_entry(prefix, mapping, line[2:], entries_log_fn)
-            parts = string.split(line, "/")[1:]
+            parts = line.split("/")[1:]
             if line[0] == "A":
                 # adding a file
                 entry.new_revision = parts[1]
@@ -368,7 +350,7 @@ def load_branch_name():
     tag_fn = os.path.join("CVS", "Tag")
     if os.path.isfile(tag_fn):
         f = open(tag_fn)
-        line = string.strip(f.readline())
+        line = f.readline().strip()
         f.close()
         if line[:1] == "T":
             return line[1:]
@@ -424,7 +406,7 @@ def main():
     if not args:
         usage(1, 'No CVS module specified')
     subject = subject_prefix + args[0]
-    specs = string.split(args[0])
+    specs = args[0].split()
     del args[0]
 
     # The remaining args should be the email addresses
@@ -442,7 +424,7 @@ def main():
     changes = load_change_info()
 
     if verbose:
-        print 'Mailing %s...' % string.join(people, COMMASPACE)
+        print 'Mailing %s...' % COMMASPACE.join(people)
         print 'Generating notification message...'
     blast_mail(subject, people, changes.values(),
                contextlines, fromhost, replyto)
