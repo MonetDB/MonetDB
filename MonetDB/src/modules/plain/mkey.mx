@@ -1,6 +1,6 @@
 @f mkey
-@a Peter Boncz
-@v 1.0
+@a Peter Boncz, Stefan Manegold
+@v 1.1
 @* Robust Multi-Attribute Equi-Join
 @m
 .MODULE mkey;
@@ -18,7 +18,7 @@
 .COMMAND hash(lng v) : int = CMDhash_lng; ""
 .COMMAND hash(str v) : int = CMDhash_str; ""
 
-.COMMAND bulk_rotate_xor_hash(BAT[void,int] h, int nbits, BAT[void,any] b) : BAT[void,int] = CMDbulk_rotate_xor_hash;
+.COMMAND bulk_rotate_xor_hash(BAT[oid,int] h, int nbits, BAT[oid,any] b) : BAT[oid,int] = CMDbulk_rotate_xor_hash;
 	"pre:  h and b should be synced on head
          post: [:xor=]([:rotate=](h, nbits), [hash](b))"
 
@@ -151,7 +151,7 @@ proc "[:rotate_xor_hash=]"(BAT[any::1,int] h, int nbits, BAT[any::1,any] b) : BA
   return [:xor=]([:rotate=](h, nbits), [hash](b));
 }
 
-proc ds_hash(BAT[str,any] keys) : BAT[void,int] {
+proc ds_hash(BAT[str,any] keys) : BAT[oid,int] {
   var nbits := 1 + (31 / keys.count);
   var fst := keys.reverse.fetch(0);
   var res := [hash](bat(fst)).access(BAT_WRITE);
@@ -165,7 +165,7 @@ proc ds_hash(BAT[str,any] keys) : BAT[void,int] {
   return [filter?int(nil):res]; # emit a nil for keys that contain a nil
 }
 
-const JOIN_BULK_SIZE := 5000000;
+const JOIN_BULK_SIZE := INT_MAX;	# 5000000;
 
 proc ds_eq(BAT[void,oid] l_slice, str l_nme, BAT[void,oid] r_slice, str r_nme) : BAT[void,bit] {
   var l := join(l_slice,bat(l_nme));
@@ -173,6 +173,26 @@ proc ds_eq(BAT[void,oid] l_slice, str l_nme, BAT[void,oid] r_slice, str r_nme) :
   return [=](l.ds_sort(true),r.ds_sort(true));
 }
  
+proc ds_link(BAT[oid,any::1] l1, BAT[oid,any::1] r1, ..BAT[oid,any]..) : BAT[oid, oid] {
+	var n := $0;
+	if (bit(n % 2)) {
+		ERROR("ds_link(BAT[oid,any::1] l1, BAT[oid,any::1] r1, ..BAT[oid,any]..) requires an even number of parameters!\n");
+		return nil;
+	} else {
+		var keys := new(str,str,n / 2);
+		var i := 0;
+		while (i < n) {
+			keys.insert(bbpname($(i+1)),bbpname($(i+2)));
+			i :+= 2;
+		}
+		return ds_link(keys);
+	}
+}
+
+proc ds_link(BAT[bat,bat] keys) : BAT[oid, oid] {
+	return ds_link(reverse([bbpname](reverse([bbpname](keys)))));
+}
+
 proc ds_link(BAT[str,str] keys) : BAT[oid, oid]
 {
   var res;
@@ -250,7 +270,7 @@ int CMDhash_chr(int *res, chr* val) {
     return GDK_SUCCEED;
 }
 
-int CMDhash_sht(int *res, chr* val) {
+int CMDhash_sht(int *res, sht* val) {
     *res = *(sht*) val;
     return GDK_SUCCEED;
 }
@@ -270,7 +290,7 @@ int CMDhash_lng(int *res, lng* val) {
     return GDK_SUCCEED;
 }
 
-int CMDhash_dbl(int *res, lng* val) {
+int CMDhash_dbl(int *res, dbl* val) {
     *res = ((int*) val)[0] ^ ((int*) val)[1];
     return GDK_SUCCEED;
 }
