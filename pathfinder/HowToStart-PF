@@ -317,18 +317,13 @@ Please make sure that you give a *detailed* description of your problem!
 Usage:
 ======
 
-The MonetDB/Pathfinder system consists of three components:
+The MonetDB/Pathfinder system consists of two components:
 
  - the MonetDB database server/backend (aka. "Mserver")
- - the XML document shredder/encoder (aka. "pf-shred")
  - the XQuery compiler (aka. "pf")
 
 For further information about then MonetDB database server see the
 respective documentation.
-
-The XML document shredder/encoder ("pf-shred") is a stand-alone program,
-that transform a given XML document in to the relational encoding that is
-used by the MonetDB/Pathfinder system.
 
 The XQuery compiler ("pf") is a stand-alone program, that translates XQuery
 into the query language of the respective database backend. In our case,
@@ -352,36 +347,15 @@ and Pathfinder, call
 Then, in a second shell, set up the same environment to prepare the following steps:
 
 
-Encoding ("shredding") an XML document:
----------------------------------------
+Loading an XML document:
+------------------------
 
-Before loading an XML document into the database, it needs to be transformed
-into a relational encoding. For this tranformation, Pathfinder provides a
-tool called "pf-shred". Simply executing
-
- pf-shred [/MyPath/]MyDoc.xml
-
-does the job, and creates a set of files [/MyPath/]MyDoc.xml* that contain
-the relational encoding of the given document.
-See
-
- pf-shred -h
-
-for more information about pf-shred.
-
-(Note, pf-shred does not require a running Mserver.)
-
-
-Loading an encoded/shredded XML document:
------------------------------------------
-
-Once encoded (shredded) as described above, the XML document can be loaded
-persistently into the database. To do so, you need to start an Mserver as
-described above. Then, there are two alternatives:
+To load an XML document (persistently) into the database, you need to start
+an Mserver as described above. Then, there are two alternatives:
 
 1) On the Mserver's MIL console, type
 
-    import_doc("/MyPath/MyDoc.xml","MyDoc.xml");
+    shred_doc("/MyPath/MyDoc.xml","MyDoc.xml");
 
 2) In a second shell, start a MapiClient by simply calling
 
@@ -389,14 +363,13 @@ described above. Then, there are two alternatives:
 
    and then give the same MIL command as above:
 
-    import_doc("/MyPath/MyDoc.xml","MyDoc.xml");
+    shred_doc("/MyPath/MyDoc.xml","MyDoc.xml");
 
-Note, the first parameter of "import_doc" must be the *absolute* path to the
-document that has previously been shredded as explained above. The second
-parameter is the name that can then be used to refer the document using
-XQuery's built-in "doc" function.
+Note, the first parameter of "shred_doc" must be the *absolute* path to the
+XML document. The second parameter is the name that can then be used to
+refer the document using XQuery's built-in "doc" function.
 
-Once import_doc has successfully finished, the document is persistently
+Once "shred_doc" has successfully finished, the document is persistently
 loaded into the database, hence, it will still be available after stopping
 and restarting the Mserver.
 
