@@ -2023,7 +2023,7 @@ sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset
 					cmp_like : cmp_notlike);
 			/* default to the '\' char for escape */
 			if (es == NULL || strcmp(es, "") == 0)
-				e = stmt_atom_string("\\");
+				e = stmt_atom_string("\\\\");
 			res = stmt_likeselect(ls, a, e, cmp);
 		}
 		return res;
