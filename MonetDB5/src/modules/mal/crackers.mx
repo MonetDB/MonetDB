@@ -223,9 +223,9 @@ int findCrackMap(int bid){
 void freeCrackMap(int m){
 	assert(m>=0);
 	/* re-initialize crackmap */
-        crackMap[m].bid= -1;
-        bzero((void*) crackMap[m].pieces, sizeof(Piece) * crackMap[m].maxpiece);
-        crackMap[m].freepiece= 0;
+	crackMap[m].bid= -1;
+	bzero((void*) crackMap[m].pieces, sizeof(Piece) * crackMap[m].maxpiece);
+	crackMap[m].freepiece= 0;
 }
 void printCrackMapElement(Piece *list, int i, int bid){
 	stream_printf(GDKout,"[ %3d %3d, ",i,bid);
@@ -251,7 +251,7 @@ str initCrackMap(CrackMap *map, int *bid){
 	BAT *b;
 	int result;
 
-        @:getBATdescriptor(&result,bid,b,initCrackMap)@
+	@:getBATdescriptor(&result,bid,b,initCrackMap)@
 	(void) result;
 @-
 The target BAT should not be modified by the applications,
@@ -366,8 +366,8 @@ str CRKcrackRange(int *partid, int *bid, int *low, int *hgh)
 
 
 	if( *(int*) low > *(int*) hgh)
-                return throwMessage("crackers.crack","illegal range");
-        @:getBATdescriptor(&result,bid,b,CRKcrackRange)@
+		return throwMessage("crackers.crack","illegal range");
+	@:getBATdescriptor(&result,bid,b,CRKcrackRange)@
 	(void) result;
 	m= findCrackMap(*bid);
 @-
@@ -468,24 +468,24 @@ and update the administration BATs.
 				piece->kind= PHI;
 				piece->left = crackMap[m].freepiece;
 				@:newPiece(m,npiece)@
-                                npiece->rng_min= piece->rng_min;
-                                npiece->rng_max= *(int*) low -1;
-                                npiece->idx_first= piece->idx_first;
-                                npiece->idx_last = l-1;
-                                npiece->kind = LEAF;
-                                npiece->parent=i;
+				npiece->rng_min= piece->rng_min;
+				npiece->rng_max= *(int*) low -1;
+				npiece->idx_first= piece->idx_first;
+				npiece->idx_last = l-1;
+				npiece->kind = LEAF;
+				npiece->parent=i;
 
 				piece->middle = -1;
 
 				piece->right = pid = crackMap[m].freepiece;
 				@:newPiece(m,npiece)@
-                                npiece->rng_min= *(int*) low;
-                                npiece->rng_max= piece->rng_max;
-                                npiece->idx_first= l;
-                                npiece->idx_last = piece->idx_last;
-                                npiece->kind = LEAF;
-                                npiece->parent=i;
-			}
+				npiece->rng_min= *(int*) low;
+				npiece->rng_max= piece->rng_max;
+				npiece->idx_first= l;
+				npiece->idx_last = piece->idx_last;
+				npiece->kind = LEAF;
+				npiece->parent=i;
+}
 		} else {
 #ifdef DEBUG_CRACKERS
 		printf("middle split [%d] %d-%d \n",i,l,h);
@@ -493,31 +493,31 @@ and update the administration BATs.
 				piece->kind= PHI;
 				piece->left = crackMap[m].freepiece;
 				@:newPiece(m,npiece)@
-                                npiece->rng_min= piece->rng_min;
-                                npiece->rng_max= *(int*) low -1;
-                                npiece->idx_first= piece->idx_first;
-                                npiece->idx_last = l-1;
-                                npiece->kind = LEAF;
-                                npiece->parent=i;
+				npiece->rng_min= piece->rng_min;
+				npiece->rng_max= *(int*) low -1;
+				npiece->idx_first= piece->idx_first;
+				npiece->idx_last = l-1;
+				npiece->kind = LEAF;
+				npiece->parent=i;
 
 				piece->middle = pid = crackMap[m].freepiece;
 				@:newPiece(m,npiece)@
-                                npiece->rng_min= *(int*) low;
-                                npiece->rng_max= *(int*) hgh;
-                                npiece->idx_first= l;
-                                npiece->idx_last = h;
-                                npiece->kind = LEAF;
-                                npiece->parent=i;
+				npiece->rng_min= *(int*) low;
+				npiece->rng_max= *(int*) hgh;
+				npiece->idx_first= l;
+				npiece->idx_last = h;
+				npiece->kind = LEAF;
+				npiece->parent=i;
 
 				piece->right = crackMap[m].freepiece;
 				@:newPiece(m,npiece)@
-                                npiece->rng_min= *(int*) hgh+1;
-                                npiece->rng_max= piece->rng_max;
-                                npiece->idx_first= h+1;
-                                npiece->idx_last = piece->idx_last;
-                                npiece->kind = LEAF;
-                                npiece->parent=i;
-		}
+				npiece->rng_min= *(int*) hgh+1;
+				npiece->rng_max= piece->rng_max;
+				npiece->idx_first= h+1;
+				npiece->idx_last = piece->idx_last;
+				npiece->kind = LEAF;
+				npiece->parent=i;
+}
 	}
 @-
 If this was the first cracking operation it makes sense to administer
@@ -798,7 +798,11 @@ str CRKselectPieces(int *result, int *bid, int *low, int *hgh)
 	oid o= oid_nil;
 
 	m= findCrackMap(*bid);
-	b= BATnew(TYPE_void,TYPE_int,oid_nil);
+	if( m<0) 
+		return throwMessage("crackers.select","Map non-existent");
+	b= BATnew(TYPE_void,TYPE_int,0);
+	if( b == 0)
+		return throwMessage("crackers.select","failed to create BAT");
 	for(i=0; i< crackMap[m].freepiece; i++)
 	if( crackMap[m].pieces[i].kind == LEAF){
 		if( crackMap[m].pieces[i].rng_max < *low) continue;
