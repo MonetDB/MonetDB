@@ -28,21 +28,19 @@ INCLUDES = \
 
 DEFS = @DEFS@
 
-EXTRA_DIST = \
-	ODBCGlobal.h
-
 lib_MonetODBC = {
 	SOURCES = \
-	ODBCEnv.c \
-	ODBCEnv.h \
 	ODBCDbc.c \
 	ODBCDbc.h \
-	ODBCStmt.c \
-	ODBCStmt.h \
-	ODBCHostVar.c \
-	ODBCHostVar.h \
+	ODBCEnv.c \
+	ODBCEnv.h \
 	ODBCError.c \
 	ODBCError.h \
+	ODBCGlobal.h \
+	ODBCHostVar.c \
+	ODBCHostVar.h \
+	ODBCStmt.c \
+	ODBCStmt.h \
 	ODBCUtil.c \
 	ODBCUtil.h \
 	SQLAllocConnect.c \
