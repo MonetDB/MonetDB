@@ -538,7 +538,7 @@ scanner_getc_s(struct scanner * lc)
 }
 
 static inline int
-read_more(struct scanner * lc)
+read_more(struct scanner * lc, int n)
 {
 	bstream *b = lc->rs;
 	int more = 0;
@@ -546,18 +546,20 @@ read_more(struct scanner * lc)
 	if (lc->mode == LINE_1) 
 		return EOF;
 
-	/* query is not finished ask for more */
-	if (b->eof) { 
-		if (stream_write(lc->ws,PROMPT2,sizeof(PROMPT2)-1,1) == 1)
-			stream_flush(lc->ws);
-		b->eof = 0;
-		more = 1;
+	while (b->pos+lc->yycur+n >= b->len) {
+		/* query is not finished ask for more */
+		if (b->eof || !isa_block_stream(b->s) ) { 
+			if (stream_write(lc->ws,PROMPT2,sizeof(PROMPT2)-1,1) == 1)
+				stream_flush(lc->ws);
+			b->eof = 0;
+			more = 1;
+		}
+		/* we need more query text */
+		if (bstream_next( b ) < 0 || 
+	    	   /* we asked for more data but didn't get any */
+	    	   (more && b->eof && b->pos+lc->yycur >= b->len))
+			return EOF;
 	}
-	/* we need more query text */
-	if (bstream_next( b ) < 0 || 
-	    /* we asked for more data but didn't get any */
-	    (more && b->eof && b->pos+lc->yycur >= b->len))
-		return EOF;
 	return 1;
 }
 
@@ -569,10 +571,8 @@ scanner_getc_bs(struct scanner * lc)
 	int c;
 	int n, m, mask;
 
-	while (b->pos+lc->yycur >= b->len) {
-		if (read_more(lc) == EOF)
-			return EOF;
-	}
+	if (read_more(lc, 1) == EOF)
+		return EOF;
 
 	s = (unsigned char*) b->buf + b->pos + lc->yycur++;
 	if (((c = *s) & 0x80) == 0) {
@@ -589,9 +589,8 @@ scanner_getc_bs(struct scanner * lc)
 		goto error;
 	}
 
-	while (b->pos+lc->yycur+n >= b->len)
-		if (read_more(lc) == EOF)
-			return EOF;
+	if (read_more(lc, n) == EOF)
+		return EOF;
 
 	mask = utf8chkmsk[n];
 	c &= ~(0xFFC0 >> n);	/* remove non-x bits */
@@ -646,8 +645,6 @@ scanner_string_bs(mvc * c, int quote)
 	while (cur != EOF) {
 		int pos = rs->pos + lc->yycur;
 
-		fflush(stdout);
-
 		while ((((cur = rs->buf[pos++]) & 0x80) == 0) && cur &&
 		       (cur != quote || escape)) 
 		{
@@ -661,9 +658,13 @@ scanner_string_bs(mvc * c, int quote)
 		if (cur == quote && !escape) {
 			return scanner_token_bs(lc, STRING);
 		}
-		lc->yycur--; /* go back to last valid char */
+		lc->yycur--; /* go back to current (possibly invalid) char */
 		/* long utf8, if correct isn't the quote */
-		cur = scanner_getc_bs(lc);
+		if (!cur) {
+			cur = read_more(lc, 1);
+		} else {
+			cur = scanner_getc_bs(lc);
+		}
 	}
 	(void)sql_error( c, 2, "Unexpected end of input" );
 	return LEX_ERROR;
