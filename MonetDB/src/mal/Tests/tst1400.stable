@@ -1,0 +1,98 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## testing the basic functionality of the enum module
+## This example illustrates use of the atomary aspect
+#
+#atom fruit:enum;	# to announce existence of a new type
+#a:= new(int,str);
+#insert(a,0,"apples");
+#insert(a,1,"oranges");
+#insert(a,2,"grapes");
+#insert(a,3,"grapes");
+#insert(a,5,"apples");
+#insert(a,6,"apples");
+#insert(a,7,"apples");
+#print(a);
+#enum.create(fruit,a);
+#b:= bbp.bind("fruit");
+#print("located fruit");
+#print(b);
+#print("check encode");
+#x:= enum.encode(fruit,"apples");
+#print(x);
+#y:= enum.encode(fruit, "oranges");
+#print(y);
+#z:= enum.encode(fruit,"grapes");
+#print(z);
+#print("finding lower of apples");
+#x:= enum.lower(fruit,"apples");
+#print(x);
+#y:= enum.lower(fruit, "oranges");
+#print(y);
+#z:= enum.lower(fruit,"grapes");
+#print(z);
+#
+#
+function Admin.main():int;	#0:(main:int)
+	a := mal.new(int,str);	#1:(a:bat[int,str])<-(int:int)(str:str)
+	bat.insert(a,0,"apples");	#2:($4:bat[int,str])<-(a:bat[int,str])($5:int)($6:str)
+	bat.insert(a,1,"oranges");	#3:($7:bat[int,str])<-(a:bat[int,str])($8:int)($9:str)
+	bat.insert(a,2,"grapes");	#4:($10:bat[int,str])<-(a:bat[int,str])($11:int)($12:str)
+	bat.insert(a,3,"grapes");	#5:($13:bat[int,str])<-(a:bat[int,str])($14:int)($12:str)
+	bat.insert(a,5,"apples");	#6:($15:bat[int,str])<-(a:bat[int,str])($16:int)($6:str)
+	bat.insert(a,6,"apples");	#7:($17:bat[int,str])<-(a:bat[int,str])($18:int)($6:str)
+	bat.insert(a,7,"apples");	#8:($19:bat[int,str])<-(a:bat[int,str])($20:int)($6:str)
+	io.print(a);	#9:($21:int)<-(a:bat[int,str])
+	enum.create(fruit,a);	#10:($22:bat[str,fruit])<-(fruit:fruit)(a:bat[int,str])
+	b := bbp.bind("fruit");	#11:(b:bat[any,any])<-($25:str)
+	io.print("located fruit");	#12:($26:int)<-($27:str)
+	io.print(b);	#13:($28:int)<-(b:bat[any,any])
+	io.print("check encode");	#14:($29:int)<-($30:str)
+	x := enum.encode(fruit,"apples");	#15:(x:fruit)<-(fruit:fruit)($6:str)
+	io.print(x);	#16:($32:int)<-(x:fruit)
+	y := enum.encode(fruit,"oranges");	#17:(y:fruit)<-(fruit:fruit)($9:str)
+	io.print(y);	#18:($34:int)<-(y:fruit)
+	z := enum.encode(fruit,"grapes");	#19:(z:fruit)<-(fruit:fruit)($12:str)
+	io.print(z);	#20:($36:int)<-(z:fruit)
+	io.print("finding lower of apples");	#21:($37:int)<-($38:str)
+	x := enum.lower(fruit,"apples");	#22:(x:fruit)<-(fruit:fruit)($39:str)
+	io.print(x);	#23:($40:int)<-(x:fruit)
+	y := enum.lower(fruit,"oranges");	#24:(y:fruit)<-(fruit:fruit)($9:str)
+	io.print(y);	#25:($41:int)<-(y:fruit)
+	z := enum.lower(fruit,"grapes");	#26:(z:fruit)<-(fruit:fruit)($12:str)
+	io.print(z);	#27:($42:int)<-(z:fruit)
+end function;	#28:
+#-------------------------#
+# BAT:	  tmp_4		  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 0,	  "apples"	  ]
+[ 1,	  "oranges"	  ]
+[ 2,	  "grapes"	  ]
+[ 3,	  "grapes"	  ]
+[ 5,	  "apples"	  ]
+[ 6,	  "apples"	  ]
+[ 7,	  "apples"	  ]
+[ "located fruit" ]
+#-------------------------#
+# BAT:		  fruit	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "apples",	  4	  ]
+[ "grapes",	  2	  ]
+[ "oranges",	  1	  ]
+[ "check encode" ]
+[ apples ]
+[ oranges ]
+[ grapes ]
+[ "finding lower of apples" ]
+[ apples ]
+[ oranges ]
+[ grapes ]
+>
