@@ -675,7 +675,7 @@ The evaluation identifier is also used for generating error messages.
 
 void conn_waiter(void * vi)
 {
-    int i=(int)vi;
+    int i=*(int*)vi;
     Thread thr = THRnew(MT_getpid(), "conn_waiter");
 
     if (thr) {
@@ -956,7 +956,7 @@ int conn_insert(str host, int port, int me, int sock)
 	    connections[i].sock = sock;
             connections[i].waiter = (Thread)0;
 	    strcpy(connections[i].hostname, host);
-	    if (me != -1 && MT_create_thread(&t, conn_waiter, (void*)i) != 0) {
+	    if (me != -1 && MT_create_thread(&t, conn_waiter, (void*)(&i)) != 0) {
                 connections[i].me = 0;
 	    	connections[i].valid = 0;
                 i = -1;
