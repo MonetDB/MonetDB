@@ -35,7 +35,7 @@
 #print(b,b,b);
 #
 function Admin.main():int; #0  (main:int)
-    o := calc.oid(20000000); #1 CALCint2oid (o:oid)<-($2:int)
+    o := calc.oid(20000000); #1 CALClng2oid (o:oid)<-($2:lng)
     calc.setoid(o); #2 CALCsetoidInc ($3:oid)<-(o:oid)
     b := bbp.new(int,int); #3 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
     system.printf("#~BeginVariableOutput~#\n"); #4 SYSprint_str ($6:int)<-($7:str)

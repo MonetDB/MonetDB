@@ -102,7 +102,7 @@ command trace(flag:bit):void = MAPItrace
 #define MAPIPORT	50000
 #define MAPIMAXUSERS 	5
 
-#define DEBUG_MAPI	1
+/*#define DEBUG_MAPI	1 */
 
 #endif /* MAPI_H */
 @c

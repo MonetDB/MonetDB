@@ -243,7 +243,7 @@ str INSPECTpatternNames(int *ret){ return INSPECTsymbolFind(ret,PATTERNsymbol); 
 str INSPECTcommandNames(int *ret){ return INSPECTsymbolFind(ret,COMMANDsymbol); }
 str INSPECTclients(int *ret){
         int i;
-        BAT *b = BATnew(TYPE_int, TYPE_str, 12);
+        BAT *b = BATnew(TYPE_int, TYPE_str, 256);
         if (b == 0) return throwMessage("catalog.clientNames", "failed to create BAT");
 
         for(i=0; i < MAL_MAXCLIENTS; i++)

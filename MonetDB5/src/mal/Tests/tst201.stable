@@ -167,7 +167,7 @@
 ##quit;
 #
 function Admin.main():int; #0  (main:int)
-    _v0 := calc.oid(20000000); #1 CALCint2oid (_v0:oid)<-($2:int)
+    _v0 := calc.oid(20000000); #1 CALClng2oid (_v0:oid)<-($2:lng)
     _v1 := calc.setoid(_v0); #2 CALCsetoidInc (_v1:oid)<-(_v0:oid)
     _v2 := bbp.new(str,int); #3 CMDBATnew (_v2:bat[str,int])<-(str:str)(int:int)
     b := _v2; #4  (b:bat[str,int])<-(_v2:bat[str,int])
