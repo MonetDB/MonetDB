@@ -78,7 +78,7 @@ comment "Locates the next element in the box";
 #define _ITERATOR_H
 #endif /* _ITERATOR_H*/
 @c
-#include "mal_function.h"
+#include "mal_exception.h"
 #include "mal_box.h"
 #include "mal_interpreter.h"
 

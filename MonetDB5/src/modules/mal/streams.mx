@@ -97,7 +97,7 @@ address stream_close_stream
 #endif /*_STREAMS_H_*/
 @c
 #include "streams.h"
-#include "mal_function.h"
+#include "mal_exception.h"
 
 
 @-

@@ -414,7 +414,7 @@ pre presented on the screen directly.
 
 #include <gdk.h>
 #include "streams.h"
-#include "mal_function.h"
+#include "mal_exception.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
 

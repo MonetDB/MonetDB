@@ -83,7 +83,7 @@ address atomsHeap;
 #include "mal_resolve.h"
 #include "mal_stack.h"
 
-#include "mal_function.h"
+#include "mal_exception.h"
 #define DEBUG_MAL_ATOMS 1
 #endif /*  _MAL_ATOMS*/
 

@@ -12,7 +12,7 @@
 @' The Original Code is the Monet Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2004 CWI.
+@' Pieces created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
 @'
 @' Contributor(s):
@@ -27,9 +27,11 @@
 This module contains the experimental code to play with cracked tables.
 It supports int-based bats for the time being.
 
-A cracker consists of 3 BATs associated with a table, which
-contains an administration of interesting partitions.
-The partitions are commonly value ranges.
+A cracker is a logically partitioned bat. The partitions are
+administered using separate administration BATs.
+The partitions are mostly derived from ordered, tail values.
+However, a derived fragmentation based on the (v)oid heads
+is foreseen.
 
 Each time we issue a scan against the BAT we split all partitions
 accordingly and retain their location. In this process we
@@ -64,22 +66,27 @@ A cracker partition is indicated by the index in the cidx
 table. It can be used to initialize a BATview to represent
 the partition during processing.
 @mal
-command portion(b:bat[:int,:int],
+command firstPiece(b:bat[:int,:int],
 	cidx:bat[:int,:int])
-	(:int, :bat[:int,:int])
-address CRKportion
+	(a:int, x:bat[:int,:int])
+address CRKfirstPiece
 comment "Retrieve the first portion of a cracked
 	BAT as a BAT view and also return the
 	identity of the next portion.";
 
-command nextPortion(b:bat[:int,:int],
+command nextPiece(b:bat[:int,:int],
 	cidx:bat[:int,:int], 
-	p:int, crk:bat[:int,:int])
+	crk:bat[:int,:int], piece:int)
 	:int
-address CRKnextPortion
+address CRKnextPiece
 comment "Retrieve the next portion of a cracked
 	BAT by adjusting the BAT view descriptor.
-	It returns the next valid portion id.";
+	It returns the next valid portion id.
+	A value zero means 'end-of-sequence'";
+
+command dropPiece(b:bat[:int,:int])
+address CRKdropPiece
+comment	"Garbage collect the piece representation";
 @{
 @* Implementation
 The implementation is geared at early experimentation
@@ -101,7 +108,7 @@ the value ranges supported.
 
 @c
 #include "mal.h"
-#include "mal_function.h"
+#include "mal_exception.h"
 
 str CRKnew(int *cret, int *vret, int *bid){
 	BAT *b, *cidx,*vrng;
@@ -113,7 +120,8 @@ str CRKnew(int *cret, int *vret, int *bid){
 
         @:getBATdescriptor(&result,bid,b,new)@
 @-
-The target BAT should be modifyable and not come with any index
+The target BAT should not be modified by the applications,
+otherwise the partitioning scheme becomes void
 already. [todo]
 @c
 	p= BUNfirst(b);
@@ -316,59 +324,91 @@ the ranges of the outer partitions as well.
 	return MAL_SUCCEED;
 }
 @- 
-The portions of a cracked BAT are obtained through bat view.
-The nextPortion simply changes the dimensions of the BATview
+The pieces of a cracked BAT are obtained through bat view.
+The nextPiece simply changes the dimensions of the BATview
 returned previously to represent a cracker portion.
 @c
-#define DEBUG
-int CRKsetBounds(BAT *view, BAT *cidx, int pid){
+int CRKsetBounds(BAT *b, BAT *view, BAT *cidx, int pid){
 	int l,h;
+	size_t low;
 	ptr p;
 	(void) view; /* fool compiler */
 
 	p= BUNptr(cidx,pid);
-	l= *(int*) BUNhead(cidx,p);
+	low= l= *(int*) BUNhead(cidx,p);
 	h= *(int*) BUNtail(cidx,p);
-#ifdef DEBG
-	printf("set view to new dimension: %d-%d",l,h);
+#ifdef DEBUG
+	printf("set view to new dimension[%d]: %d-%d\n",pid,l,h);
 #endif
+	view->batBuns->base = BUNptr(b, l-1);
+	view->batInserted = BUNptr(b, l);
+	view->batHole = view->batDeleted = view->batBuns->base;
+	view->batBuns->maxsize = view->batBuns->size =
+	view->batBuns->free = BUNptr(b,h+1) - view->batBuns->base;
+	view->hsorted = BAThordered(b);
+        view->tsorted = BATtordered(b);
+
+        BATkey(view, BAThkey(b));
+        BATkey(BATmirror(view), BATtkey(b));
+        if (BAThdense(b)) {
+                BATseqbase(view, b->hseqbase+l);
+        }
+        if (BATtdense(b)) {
+                BATseqbase(BATmirror(view), b->tseqbase+low);
+        }
+
+	if( pid== BATcount(b)) return 0;
 	return pid+1;
 }
-str CRKportion(int *newpid, int *vid, int *bid, int *cbid) 
+str CRKfirstPiece(int *newpid, int *vid, int *bid, int *cbid) 
 {
 	BAT *b, *cidx, *view;
 	int result=0;
 
-        @:getBATdescriptor(&result,bid,b,Portion)@
-        @:getBATdescriptor(&result,cbid,cidx,Portion)@
+        @:getBATdescriptor(&result,bid,b,Piece)@
+        @:getBATdescriptor(&result,cbid,cidx,Piece)@
 	if( BATcount(cidx)==0)
-                return throwMessage("crackers.Portion",
+                return throwMessage("crackers.Piece",
 			"BAT not yet cracked");
 
+	BATrestricted(b)= BAT_READ;
 	view= VIEWcreate_(b,TRUE);
 	BBPfix(*vid=  view->batCacheid);
-	*newpid = CRKsetBounds(view,cidx,0);
+	*newpid = CRKsetBounds(b,view,cidx,1);
+
 	return MAL_SUCCEED;
 }
-str CRKnextPortion(int *newpid, int *bid, 
-	int *cbid, int *pid, int *vbid) 
+str CRKnextPiece(int *newpid, int *bid, 
+	int *cbid,int *vbid, int *pid) 
 {
 	BAT *b, *cidx,*vid;
 	int result=0;
 
-        @:getBATdescriptor(&result,bid,b,nextPortion)@
-        @:getBATdescriptor(&result,cbid,cidx,nextPortion)@
-        @:getBATdescriptor(&result,vbid,vid,nextPortion)@
+        @:getBATdescriptor(&result,bid,b,nextPiece)@
+        @:getBATdescriptor(&result,cbid,cidx,nextPiece)@
+        @:getBATdescriptor(&result,vbid,vid,nextPiece)@
 
 	/* test validity of pid  [todo] */
-	if(*pid<0 || *pid >BATcount(cidx)){
-                return throwMessage("crackers.nextPortion",
-			"illegal portion id");
+	if(*pid<=0 || *pid >BATcount(cidx)){
+                return throwMessage("crackers.nextPiece",
+			"illegal piece");
 	}
 
-	*newpid = CRKsetBounds(vid,cidx,*pid);
+	*newpid = CRKsetBounds(b,vid,cidx,*pid);
 	return MAL_SUCCEED;
 }
+@-
+The GDK kernel contains an error wrt garbage collection
+of BATview objects. They have to be freed explicitly
+@c
+str CRKdropPiece(int *newpid, int *bid){
+	BAT *b;
+	int result=0;
+	(void) newpid;
+        @:getBATdescriptor(&result,bid,b,dropPiece)@
+	VIEWdestroy(b);
+	return MAL_SUCCEED;
+} 
 @-
 Test cases for this experiment are stored under the sequente tst5000
 

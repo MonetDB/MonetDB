@@ -175,7 +175,7 @@ comment "Map a BAT into disk/load status";
 command getKind():bat[:int,:str] 
 address CMDbbpKind
 comment "Map a BAT into its persistency status";
-command getBATrefcnt(b:bat[:any,:any]) :int
+command getRefCount(b:bat[:any,:any]) :int
 address CMDgetBATrefcnt
 comment "Utility for debugging MAL interpreter";
 @-
