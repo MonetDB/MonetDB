@@ -321,7 +321,6 @@ Variable VARfind(Cntxt *stk, str nme){
 		i = s;
 	        for (v = monet_cntxt[i].var; v; v = v->next) {
         	        if (*nme == *v->name && strcmp(nme, v->name) == 0) {
-				*stk = s;
                 	        return v;
                		}
 		}
