@@ -127,8 +127,8 @@ void usage( char *prog ){
 	fprintf(stderr, "usage: %s\n", prog);
 	fprintf(stderr, "[--dbname database_name ]\n" );
 	fprintf(stderr, "[--dbfarm database_directory ]\n" ); 
-	fprintf(stderr, "[-d or --debug [ debug_level ]]\n" );
-	fprintf(stderr, "[-? or --help\n" );
+	fprintf(stderr, "[-d or --debug [debug_level] ]\n" );
+	fprintf(stderr, "[-? or --help ]\n" );
 	fprintf(stderr, "[-c or --config config_file ]\n" );
 	fprintf(stderr, "[-s or --set option=value ]\n" );
 	fprintf(stderr, "script+\n" );
@@ -187,9 +187,7 @@ static Client Monet_init( opt *set, int setlen )
 
 		strncpy(value, n[i].value, BUFSIZ);
 		mo_substitute(n, nlen, value);
-		if (strcmp(n[i].name,"prefix") !=0 &&
-		    strcmp(n[i].name,"exec_prefix") !=0) 
-			GDKsetenv(n[i].name, value);
+		GDKsetenv(n[i].name, value);
 	}
 	GDKfree(n);
 
@@ -207,7 +205,7 @@ static Client Monet_init( opt *set, int setlen )
 }
 
 @C
-int main(int ac, char **av)
+int main(int argc, char **av)
 {
 	Client c;
 	char buf[BUFSIZ], *prog = *av, *config = NULL;
@@ -253,7 +251,7 @@ A grain size of 128 bytes is used to keep overhead low.
                {"dbname", 1, 0, 0},
                {"dbfarm", 1, 0, 0},
                {"debug", 2, 0, 'd'},
-               {"help", 0, 0, 'h'},
+               {"help", 0, 0, '?'},
                {"set", 1, 0, 's'},
                {0, 0, 0, 0}
              };
@@ -269,7 +267,7 @@ A grain size of 128 bytes is used to keep overhead low.
 	while(1){
 		int option_index = 0;
 
-		int c = getopt_long( ac, av, "c:ds:", 
+		int c = getopt_long( argc, av, "c:d::?s:", 
 				long_options, &option_index);
 
 		if (c == -1)
@@ -300,9 +298,6 @@ A grain size of 128 bytes is used to keep overhead low.
 				setlen = mo_add_option( &set, setlen, 
 					opt_cmdline, "gdk_debug", optarg );
 			}
-			break;
-		case 'h':
-			usage(prog);
 			break;
 		case 's': {
 			/* should add option to a list */
@@ -335,9 +330,9 @@ A grain size of 128 bytes is used to keep overhead low.
 	}
 
 	i = 0;
-	monet_script = (str*)GDKmalloc( sizeof(str) * (ac-optind+1) );
+	monet_script = (str*)GDKmalloc( sizeof(str) * (argc-optind+1) );
 	monet_script[i] = NULL;
-	while(optind < ac){
+	while(optind < argc){
 		monet_listing = 1;
 		monet_script[i] = absolute_path(av[optind]);
 		monet_script[i+1] = NULL;
