@@ -113,7 +113,9 @@ static void ssb_free(SmartStrBuff* ssb) {
  */
 
 typedef struct {
-        int     saxMode;        /* Flag, true if printing a Sax-O-Phone stream */
+        int     dmMode;         /* Data model flag, true if printing in
+                                 * data-model mode, eg. look like GALAX */
+        int     saxMode;        /* true if printing a Sax-O-Phone stream */
         BAT*    ws;             /* working set BAT */
         int     curFRAG;        /* current fragment used by working set */
         BAT*    curBAT[WS_BATS];/* The BAT's of the current fragment*/
@@ -217,7 +219,15 @@ static void switchWsContext(XqueryCtx* ctx, int wsID) {
 static void createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
         int i;
 
-        ctx->saxMode   = (strcmp(mode,"sax")==0);
+        if ( strcmp(mode,"sax")==0 ) {
+            ctx->saxMode = 1;
+        } else {
+            ctx->saxMode = 0;
+            if ( strcmp(mode,"dm")==0 )
+                ctx->dmMode = 1;
+            else
+                ctx->dmMode = 0;
+        }
         ctx->ws        = ws;
         ctx->curFRAG   = -1; /* empty, no frag loaded */
         /* initialize with all wsBAT()'s closed */
@@ -288,53 +298,77 @@ static void emit_start() {
         stream_printf(GDKout,"#-------------------------#\n");
 }
 
+/**
+ *
+ * The character translation section responsible for the special character
+ * recognition and XML entity characters. It consists of a small main table
+ * 'isspecial_tab' containing the flags for every possible character.
+ * v=0: no special char
+ * v=1: special char, should be presented as octal char in output
+ * v>1: special char, string repr of char is isspecial_val[v]
+ * isspecial_cnt has 2 purposes. 1) variabe use dfilling the tables and
+ * 2) as boolean flag to indicate if tables are initialized yet 
+ */
 
-/* define borrowed fom gdk_atoms.mx */
-#define allowed_chr(ch) (!(0 < (ch) && (ch) < 32) && (ch) != '\377')
+static unsigned char  isspecial_tab[CHAR_MAX]; /* the main table */
+static char*          isspecial_val[16]; /* the values of the special chars */
+static int            isspecial_cnt = 0; /* 0 = tables are not initialized */
 
+static void init_isspecial() {
+        int i;
+
+        for(i=0; i<CHAR_MAX; i++)
+                isspecial_tab[i] = 0;
+        for(i=0; i<32; i++)
+                isspecial_tab[i] = 1; /* means write as octal */
+        isspecial_tab[(int)'\377'] = 1; /* means write as octal */
+        isspecial_val[0] = "[*ERROR*]"; /* not used, 0 = no special meaning */
+        isspecial_val[1] = "[*ERROR*]"; /* not used, 1 = write as octal */
+        isspecial_cnt    = 2;
+        isspecial_tab[(int)'\t']       = isspecial_cnt;
+        isspecial_val[isspecial_cnt++] = "\\t";
+        isspecial_tab[(int)'\n']       = isspecial_cnt;
+        isspecial_val[isspecial_cnt++] = "\\n";
+        isspecial_tab[(int)'\\']       = isspecial_cnt;
+        isspecial_val[isspecial_cnt++] = "\\\\";
+        isspecial_tab[(int)'\"']       = isspecial_cnt;
+        isspecial_val[isspecial_cnt++] = "&quot;";
+        isspecial_tab[(int)'\'']       = isspecial_cnt;
+        isspecial_val[isspecial_cnt++] = "&apos;";
+        isspecial_tab[(int)'&']       = isspecial_cnt;
+        isspecial_val[isspecial_cnt++] = "&amp;";
+        isspecial_tab[(int)'<']       = isspecial_cnt;
+        isspecial_val[isspecial_cnt++] = "&lt;";
+        isspecial_tab[(int)'>']       = isspecial_cnt;
+        isspecial_val[isspecial_cnt++] = "&gt;";
+}
+
+/*
+ * This function is responsible for the presentation of special characters
+ * and XML entity characters in the result.
+ */
 static void emit_escaped(char* src) {
-        /* Emit a string with all special character escaped
-         * Function adapted from strToStr() in gdk_atoms.mx
-         * incomplete, could be faster with a xlation table.
+        /* Emit a string with all special character escaped. Inspired by
+         * function strToStr() in gdk_atoms.mx
          */
         int start=0,end;
+        unsigned char isspecial_ch;
+
+        if ( !isspecial_cnt ) /* module not initialized yet */
+                init_isspecial();
         for(end=0; src[end]; end++) {
-                if (src[end] == '\t' || src[end] == '\n' ||
-                    src[end] == '\\' || src[end] == '\"' || src[end] == '\'' ||
-                    src[end] == '&'  || src[end] == '<'  || src[end] == '>'  ||
-                    (!allowed_chr(src[end])) ) {
-                        stream_write(GDKout,&src[start],end-start,1); /*flush */
-                        start = end+1;
-                        switch( src[end] ) {
-                         case '\t':
-                                stream_write(GDKout,"\\t",2,1);
-                                break;
-                         case '\n':
-                                stream_write(GDKout,"\\n",2,1);
-                                break;
-                         case '\\':
-                                stream_write(GDKout,"\\\\ ",2,1);
-                                break;
-                         case '\"':
-                                stream_write(GDKout,"&quot;",6,1);
-                                break;
-                         case '\'':
-                                stream_write(GDKout,"&apos;",6,1);
-                                break;
-                         case '&':
-                                stream_write(GDKout,"&amp;",5,1);
-                                break;
-                         case '<':
-                                stream_write(GDKout,"&lt;",4,1);
-                                break;
-                         case '>':
-                                stream_write(GDKout,"&gt;",4,1);
-                                break;
-                         default: /* case: not_allowed() */
-                                stream_printf(GDKout,"\\%03o",(unsigned char)src[end]);
-                                stream_flush(GDKout);
-                        }
+            if ( (isspecial_ch = isspecial_tab[(int)src[end]]) ) {
+                stream_write(GDKout,&src[start],end-start,1); /*flush */
+                start = end+1;
+
+                if ( isspecial_ch == 1 ) {
+                   stream_printf(GDKout,"\\%03o",(unsigned char)src[end]);
+                   stream_flush(GDKout);
+                } else {
+                   char *emit_val = isspecial_val[(int)isspecial_ch];
+                   stream_write(GDKout,emit_val,strlen(emit_val),1);
                 }
+            }
         }
         if ( start < end ) {
                 stream_flush(GDKout);
@@ -357,7 +391,6 @@ static void emit(char* eventName, char* val, int escaped) {
 
 static void emit_end() {
 }
-
 
 /*
  *
@@ -784,6 +817,8 @@ int xquery_print_doc_main(str mode, BAT* ws, str docName) {
 static void  seqStart(XqueryCtx* ctx) {
         if ( ctx->saxMode ) {
                 handle_startElement(ctx,NULL,XQRESTAG);
+        } else if ( ctx->dmMode ) {
+                stream_printf(GDKout,"INCOMPLETE, dmMode-seqStart here\n");
         } else {
                 stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
                 stream_printf(GDKout,"<%s>\n",XQRESTAG);
@@ -797,6 +832,8 @@ static void  seqStart(XqueryCtx* ctx) {
 static void  seqEnd(XqueryCtx* ctx) {
         if ( ctx->saxMode ) {
                 handle_endElement(ctx,NULL,XQRESTAG);
+        } else if ( ctx->dmMode ) {
+                stream_printf(GDKout,"INCOMPLETE, dmMode-seqEnd here\n");
         } else {
                 stream_printf(GDKout,"\n");
                 stream_printf(GDKout,"</%s>\n",XQRESTAG);
@@ -808,6 +845,7 @@ static void  seqEnd(XqueryCtx* ctx) {
  * Emit a NODE element of an XQUERY/Pathfinder result sequence
  */
 static void  seqEmitNode(XqueryCtx* ctx, oid preVal, BAT* pre_frag) {
+        /* incomplete, different for dmMode ?? */
         int size = *(int*)idxTVinWS(ctx,PRE_SIZE,preVal);
         MY_xquery_pre_range(ctx,preVal,preVal+size, pre_frag);
 }
@@ -820,6 +858,8 @@ static void  seqEmitBool(XqueryCtx* ctx, int bv) {
 
         if ( ctx->saxMode ) {
                 handle_characters(ctx,bool_str);
+        } else if ( ctx->dmMode ) {
+                stream_printf(GDKout,"%s() ",bool_str);
         } else {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"%s ",bool_str);
@@ -835,6 +875,8 @@ static void  seqEmitInt(XqueryCtx* ctx, int iv) {
 
                 sprintf(buff,"%d",iv);
                 handle_characters(ctx,buff);
+        } else if ( ctx->dmMode ) {
+                stream_printf(GDKout,"INCOMPLETE, dmMode-seqEmitInt here\n");
         } else {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"%d ",iv);
@@ -850,6 +892,8 @@ static void  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
 
                 sprintf(buff,"%f",dv);
                 handle_characters(ctx,buff);
+        } else if ( ctx->dmMode ) {
+                stream_printf(GDKout,"INCOMPLETE, dmMode-seqEmitDbl here\n");
         } else {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"%f ",dv);
@@ -862,6 +906,8 @@ static void  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
 static void  seqEmitStr(XqueryCtx* ctx, str sv) {
         if ( ctx->saxMode ) {
                 handle_characters(ctx,sv);
+        } else if ( ctx->dmMode ) {
+                stream_printf(GDKout,"INCOMPLETE, dmMode-seqEmitStr here\n");
         } else {
                 ctx->nAttrOnLine++;
                 /* stream_printf(GDKout,"\"%s\" ",sv); */
@@ -944,13 +990,16 @@ int xquery_print_result_main(
                  case ELEM: {
                         int frag = XTRACT_FRAG(cmbn_frag_kind);
                         if (DEBUG_BAT) stream_printf(GDKout,"ELEM(frag=%d,v_oid=%d)\n",frag, valoid);
+                        /* if ( ctx->dmMode ),check for first kind text { "t" } 
+                         * check idxTVinWSorFRGN(ctx,frag,PRE_KIND,valoid);
+                         * for TEXT
+                         */
                         switchWsContext(ctx,frag);
                         seqEmitNode(ctx, valoid, wsBAT(ctx,PRE_FRAG));
                         break;
                         };
                  case NODE: {
-                        /* incomplete. Suppose just ignore ?*/
-                        /* stream_printf(GDKout,"<!--node-not-impl-yet-->\n");*/
+                        /* incomplete, suppose just ignore ?*/
                         break;
                         };
                  case BOOL: {
