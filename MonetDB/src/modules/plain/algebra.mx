@@ -407,7 +407,8 @@ CONST GT := 1;
 CONST GE := 2;
 
     PROC ADDHELP(str cmd, str aut, str dat, str hlp, str mod) : void {
-        VAR fid := monet_fcn_nme.reverse.find(cmd);
+        #VAR fid := monet_fcn_nme.reverse.find(cmd);
+        VAR fid := monet_fcn_nme.select(cmd).kdiff(monet_fcn_aut).reverse.find(cmd);
         monet_fcn_dsc.insert(fid, hlp);
         monet_fcn_aut.insert(fid, aut);
         monet_fcn_dat.insert(fid, dat);
@@ -947,10 +948,6 @@ Let cut this text down with some Mx macro's
 int CMD@1(BAT **result, BAT *b) {
 	return (*result = (BAT*) @2(b))?GDK_SUCCEED:GDK_FAIL;
 }
-@= unarygroup
-int CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize) {
-        return (*result = (BAT *)@2(b, *start, *incr, *grpsize)) ? GDK_SUCCEED : GDK_FAIL;
-}
 @= unaryint
 int CMD@1(int *result, BAT *b) {
 	*result = (int) @2(b);
@@ -969,7 +966,6 @@ int CMD@1(BAT **result, BAT* b, int *param) {
 @:unary(histogram, BAThistogram)@
 @:unary(sort, BATsort)@
 @:unary(number, BATnumber)@
-@:unarygroup(group,BATgroup)@
 @:unary(copy, BATcopy)@
 @:unary(kunique, BATkunique)@
 @:unary(sunique, BATsunique)@
@@ -983,6 +979,10 @@ int CMD@1(BAT **result, BAT* b, int *param) {
 @:binary(sdiff, BATsdiff)@
 @:binary(kdiff, BATkdiff)@
 @:binaryint(sample, BATsample)@
+
+int CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize) {
+        return (*result = (BAT *) BATgroup(b, *start, *incr, *grpsize))?GDK_SUCCEED:GDK_FAIL;
+}
 
 int CMDproject(BAT** res, BAT *b, ptr p, int t) {
 	return (*res=BATconst(b, t, p))?GDK_SUCCEED:GDK_FAIL;

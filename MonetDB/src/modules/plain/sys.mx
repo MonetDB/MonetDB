@@ -174,7 +174,7 @@ that you might well find very useful.
  
     PROC help; # forward decl
     PROC help(str fcn) : void := {
-	IF (monet_fcntbl.exist(fcn)) monet_fcntbl@hashloop(fcn) {
+	IF (monet_fcn_nme.reverse.exist(fcn)) monet_fcn_nme.reverse@hashloop(fcn) {
 	    help_sig($t); printf("\n");
 	} ELSE {
 	    printf("no help available\n");
