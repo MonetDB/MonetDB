@@ -346,6 +346,10 @@
 #define HAVE_STRCASECMP 1
 #define strcasecmp(x,y) stricmp(x,y)
 
+/* Define to 1 if you have the `strncasecmp' function. */
+#define HAVE_STRNCASECMP 1
+#define strncasecmp(x,y,z) strnicmp(x,y,z)
+
 /* Define to 1 if you have the `strcspn' function. */
 #define HAVE_STRCSPN 1
 
