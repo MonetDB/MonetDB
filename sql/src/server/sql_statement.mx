@@ -180,6 +180,7 @@ extern stmt *stmt_atom_int( int i );
 extern stmt *stmt_bool( int b );
 extern stmt *stmt_filter(stmt * sel);
 extern stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype);
+extern stmt *stmt_likeselect(stmt * op1, stmt * op2, stmt * op3, comp_type cmptype);
 extern stmt *stmt_uselect(stmt * op1, stmt * op2, comp_type cmptype);
 /* cmp 
        0 ==   l <  x <  h 	
@@ -884,6 +885,19 @@ stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype)
 	stmt *s = stmt_create(st_select);
 	s->op1.stval = op1;
 	s->op2.stval = op2;
+	s->flag = cmptype;
+	s->nrcols = 1;
+	s->h = stmt_dup(s->op1.stval->h);
+	s->t = stmt_dup(s->op1.stval->t);
+	return s;
+}
+
+stmt *stmt_likeselect(stmt * op1, stmt * op2, stmt * op3, comp_type cmptype)
+{
+	stmt *s = stmt_create(st_select);
+	s->op1.stval = op1;
+	s->op2.stval = op2;
+	s->op3.stval = op3;
 	s->flag = cmptype;
 	s->nrcols = 1;
 	s->h = stmt_dup(s->op1.stval->h);

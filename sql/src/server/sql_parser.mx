@@ -1943,14 +1943,25 @@ like_predicate:
 
 
 atom_exp:
-    atom 	{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  $$ = _symbol_create_list(SQL_ESCAPE, l ); }
- |  atom ESCAPE atom 	 
+    atom 	
 		{ dlist *l = dlist_create();
 		  dlist_append_symbol(l, $1); 
-		  dlist_append_symbol(l, $3); 
 		  $$ = _symbol_create_list(SQL_ESCAPE, l ); }
+ |	atom ESCAPE string
+ 		{ char *s = sql2str($3);
+		  if (strlen(s) != 1) {
+			char buf[BUFSIZ];
+			snprintf(buf, BUFSIZ, "ESCAPE must be one character");
+			yyerror(buf);
+			$$ = NULL;
+			YYABORT;
+		  } else {
+			dlist *l = dlist_create();
+			dlist_append_symbol(l, $1);
+			dlist_append_string(l, $3);
+			$$ = _symbol_create_list(SQL_ESCAPE, l);
+		  }
+		}
  ;
 
 test_for_null:

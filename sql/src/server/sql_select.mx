@@ -1982,6 +1982,7 @@ sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset
 		stmt *ls = sql_value_exp(sql, scp, lo, grp, subset, f);
 		stmt *a = NULL, *e = NULL;
 		sql_subtype *st = sql_bind_localtype("str");
+		char *es = NULL;
 
 		if (!ls)
 			return NULL;
@@ -1993,17 +1994,9 @@ sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset
 			stmt_destroy(ls);
 			return NULL;
 		}
-		if (dlist_length(ro->data.lval) == 2) {
-			symbol *es = ro->data.lval->h->next->data.sym;
-			e = sql_value_exp(sql, scp, es, grp, subset, f );
-			if ((e = check_types(sql, st, e, type_equal)) == NULL){
-				return sql_error(sql, 02, 
-					"Wrong type used with LIKE ESCAPE statment, should be string" );
-			}
-		}
-		if (e) {
-			return sql_error(sql, 02, 
-			    "LIKE with escapes, is currently not supported");
+		if (dlist_length(ro->data.lval) == 2) { 
+			es = ro->data.lval->h->next->data.sval;
+			e = stmt_atom_string(es);
 		}
 		if ((a = check_types(sql, st, a, type_equal)) == NULL){
 			return sql_error(sql, 02, 
@@ -2028,7 +2021,10 @@ sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset
 		} else {
 			comp_type cmp = (sc->token == SQL_LIKE ? 
 					cmp_like : cmp_notlike);
-			res = stmt_select(ls, a, cmp);
+			/* default to the '\' char for escape */
+			if (es == NULL || strcmp(es, "") == 0)
+				e = stmt_atom_string("\\");
+			res = stmt_likeselect(ls, a, e, cmp);
 		}
 		return res;
 	}
