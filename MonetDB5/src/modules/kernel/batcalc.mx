@@ -258,7 +258,7 @@ comment "Ifthen operation to assemble a conditional
 
 @- Coercion routines
 The coercion routines over BATs can not easily speed up using
-an accumulator approach, because they often require enlarged storage space. 
+an accumulator approach, because they often require different storage space. 
 Nevertheless, the implementation provided here are much faster compared
 to theVersion 4.3 implementation.
 
@@ -842,7 +842,48 @@ BAT *newBATresult(BAT *b, int tpe){
 	return bn;
 }
 @-
-@= coercionImpl
+The different coercion implementations exploit the fact
+that many coercions are simply space enlargers.
+The others effectively may loose information.
+@= Idempotent
+str CMDconvert@1_@1(int *ret, int *bid){
+	BAT *b, *bn;
+	@:getBATdescriptor(ret,bid,b,CMDconvert@1)@
+
+        bn= BATcopy(b);
+	@:tstBat(CMDconvert@1_@1)@
+	BBPfix(*ret= bn->batCacheid);
+	return MAL_SUCCEED;
+}
+@-
+@= Enlarge
+str CMDconvert@1_@2Enlarge(int *ret, int *bid){
+	BAT *b,*bn;
+	int xx;
+	BUN p,q;
+	@1 x;
+	ptr p1; int s1;
+
+	@:getBATdescriptor(ret,bid,b,CMDconvert@1)@
+
+	if( b->htype!= TYPE_void) 
+		return CMDconvert@1_@2(ret,bid);
+	bn= newBATresult(b, TYPE_@2);
+	@:tstBat(CMDconvert@1_@2)@
+
+	@:batinit(1,bn)@
+	BATloopFast(b, p, q, xx) {
+		x= *(@1 *) BUNtail(b,p);
+		if( x== @1_nil)
+			*(@2 *)p1 = @2_nil;
+		else *(@2 *) p1 = (@2) x;
+		p1 = (ptr) (((char *) p1)+s1);
+		(bn)->batBuns->free += s1;
+	}
+	BBPfix( *ret= bn->batCacheid);
+	return MAL_SUCCEED;
+}
+@= General
 str CMDconvert@1_@2(int *ret, int *bid){
 	BAT *b,*bn;
 	int xx;
@@ -865,18 +906,42 @@ bunins_failed:
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
-@= coercionImpList
-	@:coercionImpl(@1,sht)@
-	@:coercionImpl(@1,int)@
-	@:coercionImpl(@1,lng)@
-	@:coercionImpl(@1,flt)@
-	@:coercionImpl(@1,dbl)@
+@-
+The lengthly list of coercions options could have been generated.
 @c
-	@:coercionImpList(sht)@
-	@:coercionImpList(int)@
-	@:coercionImpList(lng)@
-	@:coercionImpList(flt)@
-	@:coercionImpList(dbl)@
+	@:Idempotent(sht)@
+	@:Idempotent(int)@
+	@:Idempotent(lng)@
+	@:Idempotent(flt)@
+	@:Idempotent(dbl)@
+	@:Idempotent(str)@
+	@:Idempotent(chr)@
+
+	@:General(sht,int)@ @:Enlarge(sht,int)@
+	@:General(sht,lng)@ @:Enlarge(sht,lng)@
+	@:General(sht,flt)@ @:Enlarge(sht,flt)@
+	@:General(sht,dbl)@ @:Enlarge(sht,dbl)@
+
+	@:General(int,sht)@ 
+	@:General(int,lng)@ @:Enlarge(int,lng)@
+	@:General(int,flt)@ @:Enlarge(int,flt)@
+	@:General(int,dbl)@ @:Enlarge(int,dbl)@
+
+	@:General(lng,sht)@
+	@:General(lng,int)@
+	@:General(lng,flt)@ @:Enlarge(lng,flt)@
+	@:General(lng,dbl)@ @:Enlarge(lng,dbl)@
+
+	@:General(flt,sht)@
+	@:General(flt,int)@
+	@:General(flt,lng)@
+	@:General(flt,dbl)@ @:Enlarge(flt,dbl)@
+
+	@:General(dbl,sht)@
+	@:General(dbl,int)@
+	@:General(dbl,lng)@
+	@:General(dbl,flt)@ @:Enlarge(dbl,flt)@
+
 str CMDconvertstr_int(int *ret, int *bid){
 	BAT *b,*bn;
 	int xx;

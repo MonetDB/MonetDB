@@ -1695,7 +1695,6 @@ str ALG@1(int *result, int* bid, int *param) {
 	return ALG@1estimate(result,bid,param,&lng_nil);
 }
 @c
-@:ALGunary(count_bat)@
 @:ALGunary(histogram)@
 @:ALGunary(sort)@
 @:ALGunary(number)@
@@ -1714,6 +1713,13 @@ str ALG@1(int *result, int* bid, int *param) {
 @:ALGbinary(kdiff)@
 @:ALGbinaryint(sample)@
 
+str ALGcount_bat(int *result, int *bid) {
+	BAT *b;
+	bit ignore_nils= FALSE;
+	@:getBATdescriptor(result,bid,b,count_nil)@
+	CMDcount_nil(result,b,&ignore_nils);
+	return MAL_SUCCEED;
+}
 str ALGcount_nil(int *result, int *bid, bit *ignore_nils) {
 	BAT *b;
 	@:getBATdescriptor(result,bid,b,count_nil)@

@@ -26,7 +26,8 @@
 @v 2.0
 @* The Arithmetics Module
 @T
-This module implements the arithmetic operations on the built-in types,
+This module is an extended version of the V4 arithmetic module.
+It implements the arithmetic operations on the built-in types,
 {\tt chr}, {\tt sht}, {\tt int}, {\tt flt}, {\tt dbl} and {\tt lng}.
 All combinations are implemented. Limited combinations are implemented
 for {\tt bit}, {\tt oid} and {\tt str}. 
@@ -352,7 +353,7 @@ command xor(left:bit, right:bit) :bit
 address CALCbinaryXORbit;
 command not(left:bit) :bit 
 address CALCunarybitNOT ;
-command ifthenelse(b:bit,t:any$1,f:any$1):any$1 
+command ifthenelse(b:bit,t:any$1,tpe:any$1,f:any$1):any$1 
 address CALCswitchbit;
 
 @- bitwise operations
@@ -796,11 +797,10 @@ str CALCunarybitNOT(bit *retval, bit *value){
     }
     return MAL_SUCCEED;
 }
-str CALCswitchbit(ptr retval, bit *b, ptr v1, ptr v2) {
-/* register ptr p; */
+str CALCswitchbit(ptr retval, bit *b, ptr v1, int tpe, ptr v2) {
+	ptr p; 
 	(void) retval; (void) b; (void) v1; (void)v2;/* fool compiler */
 	return throwMessage("ifthenelse","not yet implemented\n");
-/*
     if (*b == bit_nil) {
 	return MAL_SUCCEED;
 	p = ATOMnilptr(tpe);
@@ -815,7 +815,6 @@ str CALCswitchbit(ptr retval, bit *b, ptr v1, ptr v2) {
 	memcpy(retval, p, ATOMsize(tpe)); 
     }
     return MAL_SUCCEED;
-*/
 }
 
 str CALCrandint( int *res ){
