@@ -303,7 +303,7 @@ calls to the script case as well
 @c
 int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
 	InstrPtr p;
-	int i,olderr;
+	int i,olderr,oldtpe;
 	str operator;
 	Client cntxt= getClient();
 
@@ -325,6 +325,10 @@ int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
 	delArgument(p,p->retc);
 	olderr= mb->errors;
 	if( cntxt->errbuf) i= strlen(cntxt->errbuf); else i=0;
+@-
+Safe the old type of the destination because we may hae to restore it later on.
+@c
+	oldtpe= getArgType(mb,pci,0);
 	typeChecker(cntxt->nspace,mb,p);
 #ifdef DEBUG_MULTIPLEX
 	if(multiplexDebug ){
@@ -335,6 +339,25 @@ int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
 	if( cntxt->errbuf ) cntxt->errbuf[i] =0;
 	mb->errors= olderr;
 	if(p->typechk == TYPE_UNKNOWN) {
+		setFunctionId(pci, GDKstrdup("script"));
+		freeInstruction(p);
+		return -1;
+	}
+@-
+Applying a multiplex to a bat-of-bats should always be
+handled with a script. 
+@c
+/*
+	printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
+	printf("tail type %d %d\n",
+		 isaBatType(getArgType(mb,pci,2)),
+		 getTailType(getArgType(mb,pci,2)) ); */
+	if( getTailType(getArgType(mb,pci,2))==TYPE_bat  ){
+#ifdef DEBUG_MULTIPLEX
+		if( multiplexDebug)
+		printf("--> ignored bat-of-bat multiplex\n");
+#endif
+		setArgType(mb,pci,0,oldtpe);
 		setFunctionId(pci, GDKstrdup("script"));
 		freeInstruction(p);
 		return -1;

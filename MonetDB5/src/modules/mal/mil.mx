@@ -77,20 +77,28 @@ address MILprelude
 comment "Initialize the const box";
 
 mil.prelude();
+#theta join operators
 EQ :=0;
 LT :=-1;
 LE :=-2;
 GT :=1;
 GE :=2;
+
 STORE_MEM :=0;
 STORE_MMAP :=1;
 STORE_COMPR :=2;
+
 BUF_NORMAL :=0;
 BUF_RANDOM :=1;
 BUF_SEQUENTIAL :=2;
 BUF_WILLNEED :=3;
 BUF_DONTNEED :=4;
 EBUSY :=16;
+
+BAT_READ   := 1;      # allow only read access.
+BAT_APPEND := 2;      # allow reads and insertions of new elements.
+BAT_WRITE  := 0;      # allow reads, insertions, and updates.
+
 M_E :=2.7182818284590452354LL;
 M_LOG2E :=1.4426950408889634074LL;
 M_LOG10E :=0.43429448190325182765LL;
