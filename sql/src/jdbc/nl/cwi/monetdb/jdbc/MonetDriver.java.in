@@ -183,6 +183,41 @@ public class MonetDriver implements Driver {
 
 	//== end methods of interface driver
 
+	static java.util.Map typeMap = new java.util.HashMap();
+	static {
+		// fill the typeMap once
+		typeMap.put("table", new Integer(Types.ARRAY));
+		typeMap.put("boolean", new Integer(Types.BOOLEAN));
+		typeMap.put("bool", new Integer(Types.BOOLEAN));
+		typeMap.put("ubyte", new Integer(Types.CHAR));
+		typeMap.put("char", new Integer(Types.CHAR));
+		typeMap.put("character", new Integer(Types.CHAR));
+		typeMap.put("varchar", new Integer(Types.VARCHAR));
+		typeMap.put("text", new Integer(Types.LONGVARCHAR));
+		typeMap.put("tinytext", new Integer(Types.LONGVARCHAR));
+		typeMap.put("string", new Integer(Types.LONGVARCHAR));
+		typeMap.put("tinyint", new Integer(Types.INTEGER));
+		typeMap.put("smallint", new Integer(Types.INTEGER));
+		typeMap.put("mediumint", new Integer(Types.INTEGER));
+		typeMap.put("oid", new Integer(Types.OTHER));
+		typeMap.put("int", new Integer(Types.INTEGER));
+		typeMap.put("integer", new Integer(Types.INTEGER));
+		typeMap.put("bigint", new Integer(Types.INTEGER));
+		typeMap.put("number", new Integer(Types.NUMERIC));
+		typeMap.put("decimal", new Integer(Types.DECIMAL));
+		typeMap.put("numeric", new Integer(Types.NUMERIC));
+		typeMap.put("float", new Integer(Types.FLOAT));
+		typeMap.put("double", new Integer(Types.DOUBLE));
+		typeMap.put("real", new Integer(Types.REAL));
+		typeMap.put("month_interval", new Integer(Types.OTHER));
+		typeMap.put("sec_interval", new Integer(Types.OTHER));
+		typeMap.put("date", new Integer(Types.DATE));
+		typeMap.put("time", new Integer(Types.TIME));
+		typeMap.put("datetime", new Integer(Types.TIMESTAMP));
+		typeMap.put("timestamp", new Integer(Types.TIMESTAMP));
+		typeMap.put("blob", new Integer(Types.BLOB));
+	}
+
 	/**
 	 * Returns the java.sql.Types equivalent of the given Monet type.
 	 *
@@ -192,56 +227,9 @@ public class MonetDriver implements Driver {
 	 */
 	static int getJavaType(String type) {
 		// match the column type on a java.sql.Types constant
-		if ("table".equals(type)) {
-			return(Types.ARRAY);
-		} else if ("boolean".equals(type) || "bool".equals(type)) {
-			return(Types.BOOLEAN);
-		} else if ("ubyte".equals(type)) {
-			return(Types.CHAR);
-		} else if ("char".equals(type) || "character".equals(type)) {
-			return(Types.CHAR);
-		} else if ("varchar".equals(type)) {
-			return(Types.VARCHAR);
-		} else if ("text".equals(type) || "tinytext".equals(type)) {
-			return(Types.LONGVARCHAR);
-		} else if ("string".equals(type)) {
-			return(Types.LONGVARCHAR);
-		} else if ("tinyint".equals(type) || "smallint".equals(type)) {
-			return(Types.INTEGER);
-		} else if ("mediumint".equals(type)) {
-			return(Types.INTEGER);
-		} else if ("oid".equals(type)) {
-			return(Types.OTHER);
-		} else if ("int".equals(type) || "integer".equals(type)) {
-			return(Types.INTEGER);
-		} else if ("bigint".equals(type)) {
-			return(Types.INTEGER);
-		} else if ("number".equals(type)) {
-			return(Types.NUMERIC);
-		} else if ("decimal".equals(type)) {
-			return(Types.DECIMAL);
-		} else if ("numeric".equals(type)) {
-			return(Types.NUMERIC);
-		} else if ("float".equals(type)) {
-			return(Types.FLOAT);
-		} else if ("double".equals(type)) {
-			return(Types.DOUBLE);
-		} else if ("real".equals(type)) {
-			return(Types.REAL);
-		} else if ("int".equals(type)) {
-			return(Types.INTEGER);
-		} else if ("month_interval".equals(type)) {
-			return(Types.OTHER);
-		} else if ("sec_interval".equals(type)) {
-			return(Types.OTHER);
-		} else if ("date".equals(type)) {
-			return(Types.DATE);
-		} else if ("time".equals(type)) {
-			return(Types.TIME);
-		} else if ("datetime".equals(type) || "timestamp".equals(type)) {
-			return(Types.TIMESTAMP);
-		} else if ("blob".equals(type)) {
-			return(Types.BLOB);
+		Integer tp;
+		if ((tp = (Integer)(typeMap.get(type.toLowerCase()))) != null) {
+			return(tp.intValue());
 		} else {
 			// this should not be able to happen
 			// do not assert, since maybe feature versions introduce

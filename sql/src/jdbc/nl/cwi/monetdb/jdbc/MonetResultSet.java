@@ -763,10 +763,127 @@ public class MonetResultSet implements ResultSet {
 		});
 	}
 
-	public Object 	getObject(int columnIndex) { return(null); }
-	public Object 	getObject(int i, Map map) { return(null); }
-	public Object 	getObject(String columnName) { return(null); }
-	public Object 	getObject(String colName, Map map) { return(null); }
+	/**
+	 * Gets the value of the designated column in the current row of this
+	 * ResultSet object as an Object in the Java programming language.
+	 * <br /><br />
+	 * This method will return the value of the given column as a Java object.
+	 * The type of the Java object will be the default Java object type
+	 * corresponding to the column's SQL type, following the mapping for
+	 * built-in types specified in the JDBC specification. If the value is
+	 * an SQL NULL, the driver returns a Java null.
+	 * <br /><br />
+	 * This method may also be used to read database-specific abstract data
+	 * types. In the JDBC 2.0 API, the behavior of method getObject is extended
+	 * to materialize data of SQL user-defined types. When a column contains a
+	 * structured or distinct value, the behavior of this method is as if it
+	 * were a call to: getObject(columnIndex,
+	 * this.getStatement().getConnection().getTypeMap()).
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @return a java.lang.Object holding the column value
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Object getObject(int columnIndex) throws SQLException {
+		return(getObject(columnIndex, this.getStatement().getConnection().getTypeMap()));
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as an Object in the Java programming language. If the
+	 * value is an SQL NULL, the driver returns a Java null. This method uses
+	 * the given Map object for the custom mapping of the SQL structured or
+	 * distinct type that is being retrieved.
+	 *
+	 * @param i the first column is 1, the second is 2, ...
+	 * @param map a java.util.Map object that contains the mapping from SQL
+	 *        type names to classes in the Java programming language
+	 * @return an Object in the Java programming language representing the SQL
+	 *         value
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Object getObject(int i, Map map) throws SQLException {
+		if (result[i - 1] == null) {
+			lastColumnRead = i - 1;
+			return(null);
+		}
+
+		/**
+		 * This is somewhat badly implemented, but at the moment we simply
+		 * do not support all getters available. Also the types are a little
+		 * bit a big mess...
+		 */
+		switch(MonetDriver.getJavaType(types[i - 1])) {
+			case Types.ARRAY:
+			case Types.OTHER:
+			case Types.NUMERIC:
+			case Types.DECIMAL:
+			case Types.CHAR:
+			case Types.VARCHAR:
+			case Types.LONGVARCHAR:
+			case Types.DATE:
+			case Types.TIME:
+			case Types.TIMESTAMP:
+			default:
+				return(getString(i));
+			case Types.BOOLEAN:
+				return(Boolean.valueOf(getBoolean(i)));
+			case Types.INTEGER:
+				return(new Long(getLong(i)));
+			case Types.FLOAT:
+				return(new Float(getFloat(i)));
+			case Types.DOUBLE:
+			case Types.REAL:
+				return(new Double(getDouble(i)));
+			case Types.BLOB:
+				// luckily, an array is an object ;-)
+				return(getString(i).getBytes());
+		}
+	}
+
+	/**
+	 * Gets the value of the designated column in the current row of this
+	 * ResultSet object as an Object in the Java programming language.
+	 * <br /><br />
+	 * This method will return the value of the given column as a Java object.
+	 * The type of the Java object will be the default Java object type
+	 * corresponding to the column's SQL type, following the mapping for
+	 * built-in types specified in the JDBC specification. If the value is an
+	 * SQL NULL, the driver returns a Java null.
+	 * <br /><br />
+	 * This method may also be used to read database-specific abstract data
+	 * types.
+	 * <br /><br />
+	 * In the JDBC 2.0 API, the behavior of the method getObject is extended to
+	 * materialize data of SQL user-defined types. When a column contains a
+	 * structured or distinct value, the behavior of this method is as if it
+	 * were a call to: getObject(columnName,
+	 * this.getStatement().getConnection().getTypeMap()).
+	 *
+	 * @param columnName the SQL name of the column
+	 * @return a java.lang.Object holding the column value
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Object getObject(String columnName) throws SQLException {
+		return(getObject(columnName, this.getStatement().getConnection().getTypeMap()));
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as an Object  in the Java programming language. If the
+	 * value is an SQL NULL, the driver returns a Java null. This method uses
+	 * the specified Map object for custom mapping if appropriate.
+	 *
+	 * @param colName the name of the column from which to retrieve the value
+	 * @param map a java.util.Map object that contains the mapping from SQL
+	 *        type names to classes in the Java programming language
+	 * @return an Object representing the SQL value in the specified column
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Object getObject(String colName, Map map) throws SQLException {
+		return(getObject(findColumn(colName), map));
+	}
+
 	public Ref 	getRef(int i) { return(null); }
 	public Ref 	getRef(String colName) { return(null); }
 	public int 	getRow() { return(-1); }

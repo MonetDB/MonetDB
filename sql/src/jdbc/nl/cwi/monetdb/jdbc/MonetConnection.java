@@ -42,6 +42,7 @@ public class MonetConnection implements Connection {
 	private boolean autoCommit = true;
 
 	private SQLWarning warnings = null;
+	private Map typeMap = new HashMap();
 
 	// See javadoc for documentation about WeakHashMap if you don't know what
 	// it does !!!NOW!!! (only when you deal with it of course)
@@ -261,7 +262,16 @@ public class MonetConnection implements Connection {
 	}
 
 	public int getTransactionIsolation() {return(-1);}
-	public Map getTypeMap() {return(null);}
+
+	/**
+	 * Retrieves the Map object associated with this Connection object. Unless
+	 * the application has added an entry, the type map returned will be empty.
+	 *
+	 * @return the java.util.Map object associated with this Connection object
+	 */
+	public Map getTypeMap() {
+		return(typeMap);
+	}
 
 	/**
 	 * Retrieves the first warning reported by calls on this Connection object.
@@ -366,7 +376,18 @@ public class MonetConnection implements Connection {
 	public Savepoint setSavepoint() {return(null);}
 	public Savepoint setSavepoint(String name) {return(null);}
 	public void setTransactionIsolation(int level) {}
-	public void setTypeMap(Map map) {}
+
+	/**
+	 * Installs the given TypeMap object as the type map for this Connection
+	 * object. The type map will be used for the custom mapping of SQL
+	 * structured types and distinct types.
+	 *
+	 * @param map the java.util.Map object to install as the replacement for
+	 *        this Connection  object's default type map
+	 */
+	public void setTypeMap(Map map) {
+		typeMap = map;
+	}
 
 	//== end methods of interface Connection
 

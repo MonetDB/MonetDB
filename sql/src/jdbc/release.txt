@@ -2,7 +2,7 @@ RELEASE NOTES
 MonetDB JDBC driver version 0.3 beta
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2004-03-03
+Release date: 2004-03-29
 
 This JDBC driver for MonetDB is a second working implementation of a JDBC driver
 for the Monet Main Memory Database. See http://monetdb.cwi.nl/ for more info
@@ -29,10 +29,12 @@ this driver.
     . createStatement(int resultSetType, int resultSetConcurrency)
       (check for warnings after using this one!!!)
     . getAutoCommit()
+	. getTypeMap()
 	. getWarnings()
 	. isClosed()
     . rollback()
     . setAutoCommit(boolean autoCommit)
+	. setTypeMap()
   * java.sql.Statement interface
     . close()
 	. execute()
@@ -69,6 +71,10 @@ this driver.
     . getLong(int columnIndex)
     . getLong(java.lang.String columnName)
     . getMetaData()
+	. getObject(int columnIndex)
+	. getObject(java.lang.String columnName)
+	. getObject(int columnIndex, java.util.Map map)
+	. getObject(java.lang.String columnName, java.util.Map map)
     . getShort(int columnIndex)
     . getShort(java.lang.String columnName)
     . getStatement()
@@ -90,5 +96,9 @@ this driver.
     . getColumnName(int column)
     . getColumnType(int column)
     . getColumnTypeName(int column)
+  * java.sql.DatabaseMetaData interface
+    . all methods implemented, correctness not guaranteed :)
 - Note that Statement's executeUpdate is implemented via executeQuery and does
   NOT return the number of affected rows.
+- The getObject methods do not return all types correct, and currently ignore
+  any given type map.
