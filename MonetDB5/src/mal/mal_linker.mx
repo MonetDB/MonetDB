@@ -79,17 +79,23 @@ the current directory.
 static void clear_moddir();
 
 static int noDlopen;
+
 MALfcn getLocalObjectFile(str fcnname){
     int mode = RTLD_NOW|RTLD_GLOBAL;
     void *handle = NULL;
-    char nme[MAXPATHLEN];
+    char *fullname;
 
-    snprintf(nme,MAXPATHLEN,"./%s.so",fcnname);
-    /* printf("attempt to load function %s\n",nme);*/
-    handle = dlopen(nme, mode);
+    fullname = MSP_locate_module(fcnname);
+    if( fullname == NULL) {
+        stream_printf(GDKout,"Name not resolved %s\n",fullname);
+        return 0;
+    }
+    /* printf("attempt to load function %s\n",fullname);*/
+    handle = dlopen(fullname, mode);
     /* printf("loaded ? %s\n",(handle!=0?"yes":"no"));*/
     if( handle)
         return (MALfcn) dlsym(handle,fcnname);
+    stream_printf(GDKout,"could not access library %s\n",dlerror());
     return 0;
 }
 
@@ -111,8 +117,8 @@ MALfcn getAddress(str fcnname){
         GDKerror("address of '%s' not found\n", fcnname);
 #ifdef DEBUG_MAL_LINKER2
     if( adr != NULL)
-        stream_printf(GDKout,"addres of %s %o %s\n", fcnname,(int) adr, 
-    (dlerror()?dlerror():""));
+        stream_printf(GDKout,"addres of %s %o %s\n", 
+            fcnname,(int) adr, dlerror());
 #endif
     dlclose(dl);
     return adr;

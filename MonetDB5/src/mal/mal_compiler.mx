@@ -125,6 +125,7 @@ static char *mccPrelude[]={
     "*/\n",
     "#include \"mal.h\"\n",
     "#include \"mal_function.h\"\n",
+    "#define BAT int\n",    /* the interface works on BAT ids */
     0
 };
 void mccVar(stream *f,MalBlkPtr mb,int i){
@@ -308,9 +309,9 @@ int mccInstruction(stream *f, MalBlkPtr mb, InstrPtr p, int i, int *catch, int *
         if( p->barrier)
         switch(p->barrier){
         case BARRIERsymbol:
-            stream_printf(f,"\tif( !( ");
+            stream_printf(f,"\tif(  ");
             mccEntry(f,mb,getArg(p,0));
-            stream_printf(f,") ) goto EXIT_%d;\n",p->jump);
+            stream_printf(f," ) goto EXIT_%d;\n",p->jump);
             stream_printf(f,"BARRIER_%d:\n",i+1);
             break;
         case RETURNsymbol:
@@ -327,9 +328,9 @@ int mccInstruction(stream *f, MalBlkPtr mb, InstrPtr p, int i, int *catch, int *
             break;
         case LEAVEsymbol:
         case REDOsymbol:
-            stream_printf(f,"\tif(  ");
+            stream_printf(f,"\tif( !( ");
             mccEntry(f,mb,getArg(p,0));
-            stream_printf(f," ) goto BARRIER_%d;\n",p->jump);
+            stream_printf(f,") ) goto BARRIER_%d;\n",p->jump);
             break;
         default:
             stream_printf(f,"/* case not yet covered: %d */\n",p->barrier);
