@@ -739,7 +739,7 @@ public synchronized String getColumnName(int i){
 	check("getColumnName");
 	if(i<fieldcnt && columns[i]!= null && columns[i].columnname!= null)
 		return columns[i].columnname;
-	return "";
+	return "str";
 }
 public synchronized String getColumnType(int i){
 	check("getColumnType");
@@ -1135,7 +1135,11 @@ private void cacheResetInternal()
 	active= true;
 	if( cache.fldcnt==null)
 		cache.fldcnt = new int[cache.limit];
+	// set the default for single columns
 	fieldcnt=1;
+	if(columns[0]!= null){
+		columns[0].columntype="str";
+	}
 	cache.tuples= 0;
 	cacheFreeup(100);
 }
