@@ -105,14 +105,14 @@ Try: modules;                - for other modules.
 # name			| htype	| ttype		| count	| heat	| dirty		| status| kind	| refcnt  #
 #---------------------------------------------------------------------------------------------------------#
 [ "age_t",		  "int",  "int",	  46,	  0,	  "dirty",	  "load", "pers", 1	  ]
-[ "car_age",		  "oid",  "int",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
-[ "car_carprice",	  "oid",  "int",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
-[ "car_category",	  "oid",  "str",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
+[ "car_age",		  "oid",  "int",	  100000, 0,	  "clean",	  "load", "pers", 0	  ]
+[ "car_carprice",	  "oid",  "int",	  100000, 0,	  "clean",	  "load", "pers", 0	  ]
+[ "car_category",	  "oid",  "str",	  100000, 0,	  "clean",	  "load", "pers", 0	  ]
 [ "car_class",		  "oid",  "str",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
-[ "car_gender",		  "oid",  "chr",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
+[ "car_gender",		  "oid",  "chr",	  100000, 0,	  "clean",	  "load", "pers", 0	  ]
 [ "car_neg",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0	  ]
 [ "car_pos",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0	  ]
-[ "car_town",		  "oid",  "str",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
+[ "car_town",		  "oid",  "str",	  100000, 0,	  "clean",	  "load", "pers", 0	  ]
 [ "carprice_t",		  "int",  "int",	  9,	  0,	  "dirty",	  "load", "pers", 1	  ]
 [ "category_t",		  "str",  "int",	  2,	  0,	  "dirty",	  "load", "pers", 1	  ]
 [ "class_t",		  "str",  "int",	  2,	  0,	  "dirty",	  "load", "pers", 1	  ]
@@ -122,8 +122,8 @@ Try: modules;                - for other modules.
 [ "void_category",	  "oid",  "category_t",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
 [ "void_class",		  "oid",  "class_t",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
 [ "void_gender",	  "oid",  "chr",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
-[ "void_neg",		  "oid",  "void",	  50000,  0,	  "dirty",	  "load", "pers", 0	  ]
-[ "void_pos",		  "oid",  "void",	  50000,  0,	  "dirty",	  "load", "pers", 0	  ]
+[ "void_neg",		  "oid",  "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0	  ]
+[ "void_pos",		  "oid",  "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0	  ]
 [ "void_town",		  "oid",  "town_t",	  100000, 0,	  "dirty",	  "load", "pers", 0	  ]
 #> Mlog (15:07:00):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db scripts_gold_tstvoid tstvoid.mil
 # Monet Database Server V4.2
