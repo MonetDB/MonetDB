@@ -376,7 +376,8 @@ int oid_bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
 	BUN r,s;
         oid o;
 	
-	assert(i->htype == TYPE_oid && u->htype == TYPE_oid);
+	assert(i->htype == TYPE_oid && 
+		(BATcount(u) == 0 || u->htype == TYPE_oid));
 	BATmax(BATmirror(i),&o);
 	o++;
 	BATloop(u, r, s){

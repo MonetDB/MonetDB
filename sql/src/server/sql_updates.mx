@@ -388,7 +388,7 @@ is_idx_updated(sql_idx *i, stmt **updates )
 	for(m = i->columns->h; m; m = m->next ){
 		sql_kc *ic = m->data;
 		
-		if (!updates[ic->c->colnr]){
+		if (updates[ic->c->colnr]){
 			update = ic->c->colnr;
 			break;
 		}
@@ -433,21 +433,18 @@ update_check_ukey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 			stmt_dup(idx_updates)); 
 		for(m = k->columns->h; m; m = m->next) {
 			sql_kc *c = m->data;
-			stmt *upd;
+			stmt *upd, *l;
 			if (updates[c->c->colnr]){
 				upd = stmt_dup(updates[c->c->colnr]->op2.stval);
+				l = stmt_dup(updates[c->c->colnr]->op1.stval); 
 			} else {
 				upd = stmt_dup(updates[updcol]->op2.stval);
-				upd = stmt_semijoin(
-					stmt_cbat(c->c, stmt_dup(ts), RDONLY, st_bat), 
-					upd);
+				upd = stmt_semijoin( stmt_cbat(c->c, 
+					stmt_dup(ts), RDONLY, st_bat), upd);
+				l = stmt_dup(upd);
 			}
+			stmt_reljoin_fill( s, l, upd);
 
-			stmt_reljoin_fill( s,
-				stmt_diff(
-					stmt_dup(updates[c->c->colnr]->op1.stval), 
-					stmt_dup(idx_updates)),
-				upd);
 		}
 		s = stmt_binop(stmt_aggr(s, NULL, cnt),
 			stmt_atom_int(0), ne);
