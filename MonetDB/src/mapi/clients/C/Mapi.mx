@@ -617,6 +617,7 @@ mapi_export MapiMsg mapi_trace_log(Mapi mid, char *nme);
 
 mapi_export int mapi_timeout(Mapi mid, int time);
 mapi_export int mapi_fetch_row(Mapi mid);
+mapi_export int mapi_fetch_all_rows(Mapi mid);
 mapi_export int mapi_get_field_count(Mapi mid);
 mapi_export int mapi_get_row_count(Mapi mid);
 mapi_export int mapi_rows_affected(Mapi mid);
