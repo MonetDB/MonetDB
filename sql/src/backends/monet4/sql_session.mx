@@ -1210,7 +1210,7 @@ static int mvc_export_row( mvc *m, stream *s, res_table *t )
 	for (i = 0; i < t->nr_cols; i++) 
 	{
 		res_col *c = t->cols+i;
-		if (i != 0)
+		if (i != 0) 
 			stream_write(s, sep, strlen(sep), 1);
 
 		if (c->type->type->scale == SCALE_FIX){

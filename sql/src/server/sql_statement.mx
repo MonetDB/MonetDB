@@ -1001,6 +1001,7 @@ stmt *stmt_ibat(stmt * op1, stmt * basetable )
 	stmt *s = stmt_create(st_ibat);
 	s->op1.stval = op1;
 	s->nrcols = 1;
+	s->key = op1->key;
 	s->h = basetable; /* oid's used from this basetable */
 	return s;
 }
@@ -2032,6 +2033,7 @@ char *column_name(stmt * st)
 		if (st->op1.aval->data.vtype == TYPE_str)
 			return atom2string(st->op1.aval);
 	case st_var:
+	case st_temp:
 		return _strdup("single_value");
 
 	case st_relselect:

@@ -1471,9 +1471,17 @@ static stmt *sql_union_(mvc *sql, scope *scp, symbol *t1, int all, dlist *cols, 
 			n = n->next, m = m->next) {
 				cvar *lc = n->data;
 				cvar *rc = m->data;
+				stmt *ls = stmt_dup(lc->s);
 	
-				list_append(unions, 
-				stmt_append(stmt_dup(lc->s), stmt_dup(rc->s)));
+				/* insert single value into table */
+				if (lc->s->key) {
+					stmt *temp = stmt_temp(
+						sql_dup_subtype(
+							tail_type(lc->s)));
+					ls = stmt_append(temp, ls);
+				}
+				list_append(unions, stmt_append(ls, 
+					stmt_dup(rc->s)));
 		}
 	/* TODO cols length 0 see natural join
 	        cols length > 0 see union join, join on name */
@@ -4018,8 +4026,20 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 				node *m;
 				for(m = t->columns.set->h; m; m = m->next){
 					sql_column *c = m->data;
-					if (c->colnr == i)
-						inserts[i] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), stmt_atom(atom_general(sql_dup_subtype(c->type), _strdup(c->def))) );
+					if (c->colnr == i) {
+						atom *a = atom_general(
+						    sql_dup_subtype(c->type), 
+						    _strdup(c->def) );
+						/* no valid default ! */
+						if (!a) {
+							scp = scope_close(scp);
+		
+							cleanup_stmts(inserts, len);
+							return sql_error(sql, 02, 
+				 				"column %s has no valid default value", c->base.name);
+						}
+						inserts[i] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), stmt_atom(a));
+					}
 				}
 			}
 		}
@@ -4044,7 +4064,14 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 			for (n = s->op1.lval->h, m = collist->h;
 			     n && m; n = n->next, m = m->next) {
 				sql_column *c = m->data;
-				inserts[c->colnr] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), stmt_dup(n->data));
+				stmt *ins = check_types(sql, c->type, 	
+					stmt_dup(n->data));
+				if (!ins){
+					scp = scope_close(scp);
+					cleanup_stmts(inserts, len);
+					return NULL;
+				}
+				inserts[c->colnr] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), ins);
 			}
 		}
 		if (s) 
