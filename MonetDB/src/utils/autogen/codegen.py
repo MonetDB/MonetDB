@@ -342,10 +342,12 @@ def do_lib(lib,deps):
                 if base != b:
                     if ext in lib_map:
                         if b not in true_deps:
-                            if len(dirname) > 0:
-                                true_deps.append("-l_"+b)
+                            if len(dirname) > 0 and \
+				(dirname[0] == '$' or os.path.isabs(dirname)):
+                                true_deps.append("-l_"+b) 
+				# user should add -L$dirname to the Makefile.ag
                             else:
-                                true_deps.append("lib_"+b)
+                                true_deps.append(os.path.join(dirname,"lib_"+b))
                         n_libs = do_lib(d,deps)
                         for l in n_libs:
                             if l not in true_deps:
@@ -386,9 +388,9 @@ def read_depsfile(incdirs, cwd, topdir):
             elif d == "srcdir" or d == "builddir":
                 dir = rest
         if os.path.isabs(dir):
-            f = os.path.join(cwd, dir, ".cache")
-        else:
             f = os.path.join(dir, ".cache")
+        else:
+            f = os.path.join(cwd, dir, ".cache")
         lineno = 0
         if os.path.exists(f):
             cache = shelve.open(f)
@@ -409,12 +411,13 @@ def read_depsfile(incdirs, cwd, topdir):
                 if os.environ.has_key( var ):
                     value = os.environ[var]
                     i = value + rest
-            if i[0:2] != "$(":
-                i = os.path.join(cwd,i)
+	    p = i
+            if not os.path.isabs(i) and i[0:2] != "$(":
+               	i = os.path.join(cwd,i)
             if os.path.exists(i):
                 for dep in os.listdir(i):
-                    includes[os.path.join(i,dep)] = [ os.path.join(i,dep) ]
-                    incmap[dep] = i
+                    includes[os.path.join(p,dep)] = [ os.path.join(p,dep) ]
+                    incmap[dep] = p
 
     return includes,incmap
 
