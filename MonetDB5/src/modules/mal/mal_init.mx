@@ -71,6 +71,7 @@ include mil;
 include bbp;
 include box; 
 include inspect;
+include costmodel;
 include optimizer;
 include chopper;
 include transaction;

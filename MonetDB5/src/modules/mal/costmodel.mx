@@ -1,0 +1,61 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' 
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@' 
+@' The Original Code is the Monet Database System.
+@' 
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2004 CWI.
+@' All Rights Reserved.
+
+@f costmodel
+@a M.L. Kersten
+
+@* The MAL costmodel 
+The cost model for analysis of MAL programs is still under development. 
+For the time being we catch some calls.
+@mal
+module costmodel;
+
+pattern setCount(v:any,c:lng)
+address CMsetCount
+comment "return the input stream to the database client";
+@-
+@{
+@* Implementation Code
+
+@h
+#ifndef _COSTMODEL_H_
+#define _COSTMODEL_H_
+
+#include "mal.h"
+#include "mal_instruction.h"
+
+#endif /* _COSTMODEL_H_ */
+
+@+ Printing
+@c
+#include "costmodel.h"
+
+str CMsetCount(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb; (void) stk; (void) pci;
+	return MAL_SUCCEED;
+}
+str CMsetMinimum(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb; (void) stk; (void) pci;
+	return MAL_SUCCEED;
+}
+str CMsetMaximum(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb; (void) stk; (void) pci;
+	return MAL_SUCCEED;
+}
