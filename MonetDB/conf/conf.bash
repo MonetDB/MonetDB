@@ -336,7 +336,7 @@ fi
 if [ "${os}" = "AIX" ] ; then
 	# paths on beluga & solo
 	mypath=""
-	for d in "/san/stst/nielsnes/soft/local/bin" "/usr/java131/jre/bin" "/usr/java131/bin" "/usr/java130/jre/bin" "/usr/java130/bin" "/opt/freeware/bin" "/usr/bin" "/usr/local/bin" "/usr/local/tgcc-2.95.3/bin" "/usr/vac/bin" "/usr/vacpp/bin" "/usr/ccs/bin" "/usr/ucb" "/usr/dt/bin" "/usr/bin/X11" "/usr/lpp/X11/bin" ; do
+	for d in "/san/sara/nielsnes/soft/local/bin" "/usr/java131/jre/bin" "/usr/java131/bin" "/usr/java130/jre/bin" "/usr/java130/bin" "/opt/freeware/bin" "/usr/bin" "/usr/local/bin" "/usr/local/tgcc-2.95.3/bin" "/usr/vac/bin" "/usr/vacpp/bin" "/usr/ccs/bin" "/usr/ucb" "/usr/dt/bin" "/usr/bin/X11" "/usr/lpp/X11/bin" ; do
 		if [ -d ${d} ] ; then
 			mypath="${mypath}${d}:"
 		fi
