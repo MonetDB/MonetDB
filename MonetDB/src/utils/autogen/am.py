@@ -148,6 +148,7 @@ def am_list2string(l, pre, post):
     return res
 
 def am_find_srcs(target, deps, am):
+    dist = 1;
     base, ext = split_filename(target)
     f = target
     pf = f
@@ -163,11 +164,12 @@ def am_find_srcs(target, deps, am):
         sfb, sfext = split_filename(deps[pf][0])
         if sfext != pfext:
             if pfext in automake_ext:
+		dist = None
                 am['BUILT_SOURCES'].append(pf)
     b, ext = split_filename(pf)
     if ext in automake_ext:
-        return pf
-    return ""
+        return (dist,pf)
+    return (dist,"")
 
 def am_find_hdrs_r(am, target, deps, hdrs, hdrs_ext, map):
     if deps.has_key(target):
@@ -279,14 +281,14 @@ def am_scripts(fd, var, scripts, am):
             fd.write("install-exec-local-%s: %s\n" % (script, script))
             fd.write("\t-mkdir -p $(DESTDIR)%s\n" % sd)
             fd.write("\t$(INSTALL) $(INSTALL_BACKUP) $< $(DESTDIR)%s/%s\n\n" % (sd, script))
-            fd.write("uninstall-exec-local-%s: \n" % script)
-            fd.write("\t$(ECHO) $(DESTDIR)%s/%s\n\n" % (sd, script))
+            fd.write("uninstall-local-%s: \n" % script)
+            fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
         else:
             fd.write("install-exec-local-%s: %s\n" % (script, script))
             fd.write("\t-mkdir -p $(DESTDIR)%s\n" % sd)
             fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd, script))
             fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n\n" % (sd, script))
-            fd.write("uninstall-exec-local-%s: \n" % script)
+            fd.write("uninstall-local-%s: \n" % script)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
         am['INSTALL'].append(script)
         am['InstallList'].append("\t"+sd+"/"+script+"\n")
@@ -310,7 +312,7 @@ def am_headers(fd, var, headers, am):
             fd.write("\t-mkdir -p $(DESTDIR)%s\n" % sd)
             fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd, header))
             fd.write("\t$(INSTALL_DATA) $< $(DESTDIR)%s/%s\n\n" % (sd, header))
-            fd.write("uninstall-exec-local-%s: \n" % header)
+            fd.write("uninstall-local-%s: \n" % header)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, header))
             am['INSTALL'].append(header)
             am['InstallList'].append("\t"+sd+"/"+header+"\n")
@@ -366,7 +368,7 @@ def am_binary(fd, var, binmap, am):
             fd.write("\t-mkdir -p $(DESTDIR)$(bindir)\n")
             fd.write("\t-$(RM) $(DESTDIR)$(bindir)/%s\n" % name)
             fd.write("\tcd $(DESTDIR)$(bindir); $(LN_S) %s %s\n\n" % (src, name))
-            fd.write("uninstall-exec-local-%s: \n" % name)
+            fd.write("uninstall-local-%s: \n" % name)
             fd.write("\t$(RM) $(DESTDIR)$(bindir)/%s\n\n" % name)
             am['INSTALL'].append(name)
             am['InstallList'].append("\t$(bindir)/"+name+"\n")
@@ -412,14 +414,21 @@ def am_binary(fd, var, binmap, am):
         if ext not in automake_ext:
             am['EXTRA_DIST'].append(src)
 
-    srcs = am_normalize(binname)+"_SOURCES ="
+    nsrcs = "nodist_"+am_normalize(binname)+"_SOURCES ="
+    srcs = "dist_"+am_normalize(binname)+"_SOURCES ="
     for target in binmap['TARGETS']:
         t, ext = split_filename(target)
         if ext in scripts_ext:
             if target not in SCRIPTS:
                 SCRIPTS.append(target)
         else:
-            srcs = srcs + " " + am_find_srcs(target, binmap['DEPS'], am)
+            (dist,src) = am_find_srcs(target, binmap['DEPS'], am)
+	    if (dist):
+            	srcs = srcs + " " + src;
+	    else:
+            	nsrcs = nsrcs + " " + src;
+
+    fd.write(nsrcs + "\n")
     fd.write(srcs + "\n")
     if len(SCRIPTS) > 0:
         fd.write("%s_scripts = %s\n" % (binname, am_list2string(SCRIPTS, " ", "")))
@@ -464,7 +473,8 @@ def am_bins(fd, var, binsmap, am):
         if binsmap.has_key("LDFLAGS"):
             fd.write(am_additional_flags(bin, "", "BIN", binsmap["LDFLAGS"], am))
 
-        srcs = am_normalize(bin)+"_SOURCES ="
+        nsrcs = "nodist_"+am_normalize(bin)+"_SOURCES ="
+        srcs = "dist_"+am_normalize(bin)+"_SOURCES ="
         for target in binsmap['TARGETS']:
             t, ext = split_filename(target)
             if t == bin:
@@ -473,8 +483,14 @@ def am_bins(fd, var, binsmap, am):
                     if target not in SCRIPTS:
                         SCRIPTS.append(target)
                 else:
-                    srcs = srcs + " " + am_find_srcs(target, binsmap['DEPS'], am)
+                    (dist,src) = am_find_srcs(target, binsmap['DEPS'], am)
+		    if dist:
+                    	srcs = srcs + " " + src
+		    else:
+			nsrcs = nsrcs + " " + src
+        fd.write(nsrcs + "\n")
         fd.write(srcs + "\n")
+
         if len(SCRIPTS) > 0:
             fd.write("%s_scripts = %s\n\n" % (name, am_list2string(SCRIPTS, " ", "")))
             am['BUILT_SOURCES'].append("$(" + name + "_scripts)")
@@ -550,15 +566,22 @@ def am_library(fd, var, libmap, am):
         if ext not in automake_ext:
             am['EXTRA_DIST'].append(src)
 
-    srcs = "lib"+sep+libname+"_la_SOURCES ="
+    nsrcs = "nodist_"+"lib"+sep+libname+"_la_SOURCES ="
+    srcs = "dist_"+"lib"+sep+libname+"_la_SOURCES ="
     for target in libmap['TARGETS']:
         t, ext = split_filename(target)
         if ext in scripts_ext:
             if target not in SCRIPTS:
                 SCRIPTS.append(target)
         else:
-            srcs = srcs + " " + am_find_srcs(target, libmap['DEPS'], am)
+            (dist,src) = am_find_srcs(target, libmap['DEPS'], am)
+	    if dist:
+            	srcs = srcs + " " + src
+	    else:
+            	nsrcs = nsrcs + " " + src
+    fd.write(nsrcs + "\n")
     fd.write(srcs + "\n")
+
     if len(SCRIPTS) > 0:
         fd.write("%s_scripts = %s\n" % (libname, am_list2string(SCRIPTS, " ", "")))
         am['BUILT_SOURCES'].append("$(" + libname + "_scripts)")
@@ -610,7 +633,8 @@ def am_libs(fd, var, libsmap, am):
         if libsmap.has_key("LDFLAGS"):
             fd.write(am_additional_flags(libname, sep, "LIB", libsmap["LDFLAGS"], am))
 
-        srcs = "lib"+sep+libname+"_la_SOURCES ="
+        nsrcs = "nodist_"+"lib"+sep+libname+"_la_SOURCES ="
+        srcs = "dist_"+"lib"+sep+libname+"_la_SOURCES ="
         for target in libsmap['TARGETS']:
             t, ext = split_filename(target)
             if t == libname:
@@ -618,8 +642,14 @@ def am_libs(fd, var, libsmap, am):
                     if target not in SCRIPTS:
                         SCRIPTS.append(target)
                 else:
-                    srcs = srcs + " " + am_find_srcs(target, libsmap['DEPS'], am)
+                    (dist,src) = am_find_srcs(target, libsmap['DEPS'], am)
+		    if dist:
+                    	srcs = srcs + " " + src
+		    else:
+                    	nsrcs = nsrcs + " " + src
+        fd.write(nsrcs + "\n")
         fd.write(srcs + "\n")
+
         if len(SCRIPTS) > 0:
             fd.write("%s_scripts = %s\n\n" % (libname, am_list2string(SCRIPTS, " ", "")))
             am['BUILT_SOURCES'].append("$(" + libname + "_scripts)")
@@ -654,47 +684,53 @@ def am_jar(fd, var, jar, am):
     for src in jar['SOURCES']:
         am['EXTRA_DIST'].append(src)
 
-    fd.write("\nif HAVE_JAVA\n")
-
-    if jar.has_key("EXTRA"):
-        fd.write("\n%s_extra_files= %s\n" % (name, am_list2string(jar['EXTRA'], " ", "")))
-    else:
-        fd.write("\n%s_extra_files= \n" % name)
+    fd.write("\nif HAVE_JAVA\n\n")
 
     if jar.has_key("MANIFEST") and len(jar['MANIFEST']) == 1:
-        fd.write("\n%s_manifest_file= %s\n" % (name, jar['MANIFEST'][0]))
+        fd.write("%s_manifest_file= %s\n" % (name, am_translate_dir(jar['MANIFEST'][0],am)))
 	manifest_flag='m'
     else:
-        fd.write("\n%s_s_manifest_file= \n" % name)
+        fd.write("%s_manifest_file= \n" % name)
 	manifest_flag=''
 
-    fd.write("\n%s_java_files= %s\n" % (name, am_list2string(jar['TARGETS'], " ", "")))
-    fd.write("%s_class_files= $(patsubst %%.java,%%.class,$(%s_java_files))\n" % (name, name))
-    fd.write("%s_inner_class_files= $(patsubst %%.java,%%\$$*.class,$(%s_java_files))\n" % (name, name))
+    fd.write("%s_java_files= " % (name))
+    for j in jar['SOURCES']:
+        s,ext = rsplit_filename(j)
+        if ext == 'in':
+		fd.write('%s ' % s)
+	else:
+		fd.write('%s ' % j)
+
+    fd.write("\n%s_class_files= " % (name))
+    for j in jar['TARGETS']:
+    	if string.find(j, '$$') >= 0:
+		fd.write("'%s' " % j)
+	else:
+		fd.write("%s " % j)
 
     fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
     fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $^\n")
 
-    fd.write("\n%s.jar: $(%s_class_files) $(%s_extra_files) $(%s_manifest_file)\n" % (name, name, name, name))
-    fd.write("\t$(JAR) $(JARFLAGS) -cf%s $@ $(%s_manifest_file) $(%s_extra_files) $(%s_class_files) $(shell ls $(%s_inner_class_files) 2>/dev/null | sed -e 's|\\$$|\\\\$$|g')\n" % (manifest_flag, name, name, name, name))
+    fd.write("%s.jar: $(%s_class_files) $(%s_manifest_file)\n" % (name, name, name))
+    fd.write("\t$(JAR) $(JARFLAGS) -cf%s $@ $(%s_manifest_file) $(%s_class_files)\n" % (manifest_flag, name, name))
 
-    fd.write("\ninstall-exec-local-%s_jar: %s.jar\n" % (name, name))
+    fd.write("install-exec-local-%s_jar: %s.jar\n" % (name, name))
     fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
     fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s.jar\n" % (jd, name))
 
-    fd.write("\nuninstall-exec-local-%s_jar:\n" % name)
+    fd.write("uninstall-local-%s_jar:\n" % name)
     fd.write("\t$(RM) $(DESTDIR)%s/%s.jar\n" % (jd, name))
 
-    fd.write("\nall-local-%s_jar: %s.jar\n" % (name, name))
+    fd.write("all-local-%s_jar: %s.jar\n" % (name, name))
     am['ALL'].append(name+"_jar")
 
-    fd.write("\nelse\n")
+    fd.write("\nelse\n\n")
 
-    fd.write("\ninstall-exec-local-%s_jar:\n" % name)
-    fd.write("\nuninstall-exec-local-%s_jar:\n" % name)
-    fd.write("\nall-local-%s_jar:\n" % name)
+    fd.write("install-exec-local-%s_jar:\n" % name)
+    fd.write("uninstall-local-%s_jar:\n" % name)
+    fd.write("all-local-%s_jar:\n" % name)
 
-    fd.write("\nendif #HAVE_JAVA\n")
+    fd.write("\nendif #HAVE_JAVA\n\n")
 
     am['INSTALL'].append(name+"_jar")
     am['InstallList'].append("\t"+jd+"/"+name+".jar\n")
@@ -713,36 +749,36 @@ def am_java(fd, var, java, am):
     for src in java['SOURCES']:
         am['EXTRA_DIST'].append(src)
 
-    fd.write("\nif HAVE_JAVA\n")
+    fd.write("\nif HAVE_JAVA\n\n")
 
-    if java.has_key("EXTRA"):
-        fd.write("\n%s_extra_files= %s\n" % (name, am_list2string(java['EXTRA'], " ", "")))
-    else:
-        fd.write("\n%s_extra_files= \n" % name)
-
-    fd.write("\n%s_java_files= %s\n" % (name, am_list2string(java['TARGETS'], " ", "")))
-    fd.write("%s_class_files= $(patsubst %%.java,%%.class,$(%s_java_files))\n" % (name, name))
+    fd.write("%s_java_files= %s\n" % (name, am_list2string(java['SOURCES'], " ", "")))
+    fd.write("\n%s_class_files= " % (name))
+    for j in java['TARGETS']:
+    	if string.find(j, '$$') >= 0:
+		fd.write("'%s' " % j)
+	else:
+		fd.write("%s " % j)
 
     fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
     fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $^\n")
 
-    fd.write("\ninstall-exec-local-%s_class: %s.class\n" % (name, name))
+    fd.write("install-exec-local-%s_class: %s.class\n" % (name, name))
     fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
     fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s.class\n" % (jd, name))
 
-    fd.write("\nuninstall-exec-local-%s_class:\n" % name)
+    fd.write("uninstall-local-%s_class:\n" % name)
     fd.write("\t$(RM) $(DESTDIR)%s/%s.class\n" % (jd, name))
 
-    fd.write("\nall-local-%s_class: %s.class\n" % (name, name))
+    fd.write("all-local-%s_class: %s.class\n" % (name, name))
     am['ALL'].append(name+"_class")
 
-    fd.write("\nelse\n")
+    fd.write("\nelse\n\n")
 
-    fd.write("\ninstall-exec-local-%s_class:\n" % name)
-    fd.write("\nuninstall-exec-local-%s_class:\n" % name)
-    fd.write("\nall-local-%s_class:\n" % name)
+    fd.write("install-exec-local-%s_class:\n" % name)
+    fd.write("uninstall-local-%s_class:\n" % name)
+    fd.write("all-local-%s_class:\n" % name)
 
-    fd.write("\nendif #HAVE_JAVA\n")
+    fd.write("\nendif #HAVE_JAVA\n\n")
 
     am['INSTALL'].append(name+"_class")
     am['InstallList'].append("\t"+jd+"/"+name+".class\n")
@@ -911,6 +947,8 @@ CXXEXT = \\\"cc\\\"
     if len(am['INSTALL']) > 0:
         fd.write("install-exec-local:%s\n" % \
             am_list2string(am['INSTALL'], " install-exec-local-", ""))
+        fd.write("uninstall-local:%s\n" % \
+            am_list2string(am['INSTALL'], " uninstall-local-", ""))
 
     if len(am['ALL']) > 0:
         fd.write("all-local:%s\n" % \
@@ -918,14 +956,15 @@ CXXEXT = \\\"cc\\\"
 
     if len(am['HDRS']) > 0:
         incs = ""
-        if os.path.exists(".incs.in"):
-            incs = ".incs.in"
+	# breaks make dist, used to be needed for sub projects?
+        #if os.path.exists(".incs.in"):
+            #incs = ".incs.in"
         if len(name) > 0:
             fd.write("%sincludedir = $(pkgincludedir)/%s\n" % (name, name))
 	else:
             name="top"
             fd.write("%sincludedir = $(pkgincludedir)\n" % (name))
-        fd.write("%sinclude_HEADERS = %s %s\n" % (name, am_list2string(am['HDRS'], " ", ""), incs))
+        fd.write("nodist_%sinclude_HEADERS = %s %s\n" % (name, am_list2string(am['HDRS'], " ", ""), incs))
 
     fd.write('''
 include $(top_srcdir)/*.mk
