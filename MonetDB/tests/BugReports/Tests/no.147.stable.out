@@ -1,10 +1,10 @@
 stdout of test 'no.147` in directory 'tests/BugReports` itself:
 
-#> Mtest:	milM no.147 milM
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports no.147.milM
-# Monet Database Server V4.1
+#> Mtest (20:54:03):	milM no.147 milM
+#> Mtest (20:54:03):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports no.147.milM
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:no.147.milM
 
 loaded;
@@ -126,518 +126,450 @@ setoid(oid(2000000));
 module(alarm);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #1
 threadcnt(1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #2
 threadcnt(1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
-[ 5,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
-[ 5,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #3
 threadcnt(1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #4
 threadcnt(1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #5
 threadcnt(1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 8,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 8,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #6
 threadcnt(1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 8,	  "Interpreter"		  ]
-[ 9,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 8,	  "Interpreter"		  ]
-[ 9,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #7
 threadcnt(1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 8,	  "Interpreter"		  ]
-[ 9,	  "Interpreter"		  ]
-[ 10,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 8,	  "Interpreter"		  ]
-[ 9,	  "Interpreter"		  ]
-[ 10,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #8
 threadcnt(1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 8,	  "Interpreter"		  ]
-[ 9,	  "Interpreter"		  ]
-[ 10,	  "Interpreter"		  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 4,	  "Interpreter"		  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 8,	  "Interpreter"		  ]
-[ 9,	  "Interpreter"		  ]
-[ 10,	  "Interpreter"		  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #9
 threadcnt(-1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 8,	  "Interpreter"		  ]
-[ 9,	  "Interpreter"		  ]
-[ 10,	  "Interpreter"		  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 8,	  "Interpreter"		  ]
-[ 9,	  "Interpreter"		  ]
-[ 10,	  "Interpreter"		  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #8
 threadcnt(-1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 9,	  "Interpreter"		  ]
-[ 10,	  "Interpreter"		  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 9,	  "Interpreter"		  ]
-[ 10,	  "Interpreter"		  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 3,	  "Interpreter"	  ]
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #7
 threadcnt(-1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 10,	  "Interpreter"		  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 10,	  "Interpreter"		  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #6
 threadcnt(-1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 5,	  "Interpreter"		  ]
-[ 6,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 5,	  "Interpreter"	  ]
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #5
 threadcnt(-1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 5,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 5,	  "Interpreter"		  ]
-[ 7,	  "Interpreter"		  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 6,	  "Interpreter"	  ]
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #4
 threadcnt(-1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 5,	  "Interpreter"		  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 5,	  "Interpreter"		  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 7,	  "Interpreter"	  ]
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #3
 threadcnt(-1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
-[ 11,	  "Interpreter"		  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 8,	  "Interpreter"	  ]
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #2
 threadcnt(-1);
 sleep(1);
 printf("#~BeginVariableOutput~#\n");threads;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n");view_gdk_thread.print;printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 9,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 quit;
