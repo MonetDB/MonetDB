@@ -118,6 +118,7 @@ EXPORTS
 	CMDifthen
 	CMDifelse
 	CMDifthenelse
+	CMDconstant
 	TBL_init
 	TBL_initclient
 	TBL_exitclient
