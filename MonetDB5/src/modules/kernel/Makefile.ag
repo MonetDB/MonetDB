@@ -11,7 +11,7 @@ LIBS = {
 	SOURCES = \
 		calc.mx bat.mx algebra.mx status.mx unix.mx \
 		mapi.mx mmath.mx lock.mx alarm.mx \
-		batcalc.mx group.mx aggrX3.mx  algebra2.mx
+		batcalc.mx group.mx aggrX3.mx  algebra2.mx array.mx
 #mkey.mx  pcl.mx
 
 	HEADERS = h 
@@ -33,7 +33,7 @@ scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = calc.mx bat.mx algebra.mx status.mx unix.mx \
 		mapi.mx mmath.mx lock.mx alarm.mx \
-		batcalc.mx group.mx aggrX3.mx  algebra2.mx
+		batcalc.mx group.mx aggrX3.mx  algebra2.mx array.mx
 # pcl.mx
 }
 
