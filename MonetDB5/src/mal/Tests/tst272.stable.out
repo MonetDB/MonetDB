@@ -1,0 +1,249 @@
+stdout of test 'tst272` in directory 'src/mal` itself:
+
+
+# 21:45:33 >  
+# 21:45:33 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=47702 --set sql_port=53059 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst272.mal </dev/null
+# 21:45:33 >  
+
+# Monet Database Server V4.7.0
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
+##Same as tst270, but includes testing of the profiler trace
+#
+#profiler.activate("ticks");
+##profiler.activate("pc");
+#profiler.activate("statement");
+#profiler.setFilter("*","insert");
+#
+#o:=oid(20000000);
+#setoid(o);
+##test basic functionality of the BAT library.
+##focussed on integers
+##it includes insertions,deletions,selections, and joins.
+#
+#b:= new(:int,:int);
+#profiler.startTrace();
+#err := insert(b,1,15);
+#err := insert(b,2,4);
+#n0  := int(nil);
+#err := insert(b,3,n0);
+#err := insert(b,4,16);
+#err := insert(b,5,25);
+#err := insert(b,6,36);
+#err := insert(b,7,49);
+#err := insert(b,8,64);
+#err := insert(b,9,n0);
+#err := insert(b,n0,n0);
+#err := insert(b,n0,81);
+#print(b);
+#print(b,b,b);
+#profiler.stopTrace();
+#t:= profiler.getTrace("ticks");
+#print(t);
+#s:= profiler.getTrace("statement");
+#print(s);
+#print(t,s);
+#
+function Admin.main():int;	# 0  (main:int)
+    profiler.activate("ticks");	# 1 CMDactivateProfiler ($1:void)<-($2:str)
+    profiler.activate("statement");	# 2 CMDactivateProfiler ($3:void)<-($4:str)
+    profiler.setFilter("*","insert");	# 3 CMDsetFilterProfiler ($5:void)<-($6:str)($7:str)
+    o := calc.oid(20000000);	# 4 CALCint2oid (o:oid)<-($9:int)
+    calc.setoid(o);	# 5 CALCsetoidInc ($10:oid)<-(o:oid)
+    b := bbp.new(:int,:int);	# 6 CMDBATnew (b:bat[:int,:int])<-($12:int)($13:int)
+    io.printf("#~BeginVariableOutput~#\n");	# 7 IOprint_str ($14:int)<-($15:str)
+    binfo := bat.info(b);	# 8 BKCinfo (binfo:bat[:str,:str])<-(b:bat[:int,:int])
+    io.print(binfo);	# 9 IOprint_val ($17:int)<-(binfo:bat[:str,:str])
+    io.printf("#~EndVariableOutput~#\n");	# 10 IOprint_str ($18:int)<-($19:str)
+    profiler.startTrace();	# 11 CMDstartTrace ($20:void)
+    err := bat.insert(b,1,15);	# 12 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($22:int)($23:int)
+    err := bat.insert(b,2,4);	# 13 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($24:int)($25:int)
+    n0 := calc.int(nil);	# 14 CALCnil2int (n0:int)<-($27:void)
+    err := bat.insert(b,3,n0);	# 15 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($28:int)(n0:int)
+    err := bat.insert(b,4,16);	# 16 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($25:int)($29:int)
+    err := bat.insert(b,5,25);	# 17 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($30:int)($31:int)
+    err := bat.insert(b,6,36);	# 18 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($32:int)($33:int)
+    err := bat.insert(b,7,49);	# 19 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($34:int)($35:int)
+    err := bat.insert(b,8,64);	# 20 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($36:int)($37:int)
+    err := bat.insert(b,9,n0);	# 21 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($38:int)(n0:int)
+    err := bat.insert(b,n0,n0);	# 22 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)(n0:int)
+    err := bat.insert(b,n0,81);	# 23 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)($39:int)
+    io.print(b);	# 24 IOprint_val ($40:int)<-(b:bat[:int,:int])
+    io.print(b,b,b);	# 25 IOtable ($41:int)<-(b:bat[:int,:int])(b:bat[:int,:int])(b:bat[:int,:int])
+    profiler.stopTrace();	# 26 CMDstopTrace ($42:void)
+    t := profiler.getTrace("ticks");	# 27 CMDgetTrace (t:bat[:int,:any])<-($44:str)
+    io.print(t);	# 28 IOprint_val ($45:int)<-(t:bat[:int,:any])
+    s := profiler.getTrace("statement");	# 29 CMDgetTrace (s:bat[:int,:any])<-($47:str)
+    io.print(s);	# 30 IOprint_val ($48:int)<-(s:bat[:int,:any])
+    io.print(t,s);	# 31 IOtable ($49:int)<-(t:bat[:int,:any])(s:bat[:int,:any])
+end main;	# 32  
+#~BeginVariableOutput~#
+#-------------------------------------------------#
+# h				tmp_14		  # name
+# str				str		  # type
+#-------------------------------------------------#
+[ "version",			  "980714"	  ]
+[ "batId",			  "tmp_13"	  ]
+[ "batCacheid",			  "13"		  ]
+[ "batParentid",		  "0"		  ]
+[ "batSharecnt",		  "0"		  ]
+[ "head",			  "int"		  ]
+[ "tail",			  "int"		  ]
+[ "batPersistence",		  "transient"	  ]
+[ "batRestricted",		  "updatable"	  ]
+[ "batRefcnt",			  "0"		  ]
+[ "batLRefcnt",			  "1"		  ]
+[ "batDirty",			  "dirty"	  ]
+[ "batSet",			  "0"		  ]
+[ "void_tid",			  "0"		  ]
+[ "void_cnt",			  "0"		  ]
+[ "hsorted",			  "1"		  ]
+[ "hident",			  "h"		  ]
+[ "hdense",			  "0"		  ]
+[ "hseqbase",			  "0@0"		  ]
+[ "hkey",			  "0"		  ]
+[ "hloc",			  "0"		  ]
+[ "hvarsized",			  "0"		  ]
+[ "halign",			  "20000000"	  ]
+[ "tident",			  "t"		  ]
+[ "tdense",			  "0"		  ]
+[ "tseqbase",			  "0@0"		  ]
+[ "tsorted",			  "1"		  ]
+[ "tkey",			  "0"		  ]
+[ "tloc",			  "4"		  ]
+[ "tvarsized",			  "0"		  ]
+[ "talign",			  "20000001"	  ]
+[ "batInserted",		  "1"		  ]
+[ "batDeleted",			  "0"		  ]
+[ "batHole",			  "0"		  ]
+[ "top",			  "1"		  ]
+[ "batStamp",			  "13"		  ]
+[ "lastUsed",			  "15"		  ]
+[ "keepAround",			  "0"		  ]
+[ "curStamp",			  "14"		  ]
+[ "batCopiedtodisk",		  "0"		  ]
+[ "batDirtydesc",		  "clean"	  ]
+[ "batDirtybuns",		  "clean"	  ]
+[ "batBuns.free",		  "8"		  ]
+[ "batBuns.size",		  "424"		  ]
+[ "batBuns.maxsize",		  "424"		  ]
+[ "batBuns.storage",		  "malloced"	  ]
+[ "batBuns.filename",		  "13.buns"	  ]
+[ "batBuns.offset",		  "0"		  ]
+[ "hheapdirty",			  "clean"	  ]
+[ "hheap.free",			  "0"		  ]
+[ "hheap.size",			  "0"		  ]
+[ "hheap.maxsize",		  "0"		  ]
+[ "hheap.storage",		  "absent"	  ]
+[ "hheap.filename",		  "no file"	  ]
+[ "hheap.offset",		  "0"		  ]
+[ "theapdirty",			  "clean"	  ]
+[ "theap.free",			  "0"		  ]
+[ "theap.size",			  "0"		  ]
+[ "theap.maxsize",		  "0"		  ]
+[ "theap.storage",		  "absent"	  ]
+[ "theap.filename",		  "no file"	  ]
+[ "theap.offset",		  "0"		  ]
+[ "hacctype",			  "null"	  ]
+[ "haccdirty",			  "clean"	  ]
+[ "haccCopiedtodisk",		  "0"		  ]
+[ "haccelerator.free",		  "0"		  ]
+[ "haccelerator.size",		  "0"		  ]
+[ "haccelerator.maxsize",	  "0"		  ]
+[ "haccelerator.storage",	  "absent"	  ]
+[ "haccelerator.filename",	  "no file"	  ]
+[ "haccelerator.offset",	  "0"		  ]
+[ "tacctype",			  "null"	  ]
+[ "taccdirty",			  "clean"	  ]
+[ "taccCopiedtodisk",		  "0"		  ]
+[ "taccelerator.free",		  "0"		  ]
+[ "taccelerator.size",		  "0"		  ]
+[ "taccelerator.maxsize",	  "0"		  ]
+[ "taccelerator.storage",	  "absent"	  ]
+[ "taccelerator.filename",	  "no file"	  ]
+[ "taccelerator.offset",	  "0"		  ]
+[ "head_index",			  "absent"	  ]
+[ "tail_index",			  "absent"	  ]
+#~EndVariableOutput~#
+#-----------------#
+# h	tmp_13	  # name
+# int	int	  # type
+#-----------------#
+[ 1,	  15	  ]
+[ 2,	  4	  ]
+[ 3,	  nil	  ]
+[ 4,	  16	  ]
+[ 5,	  25	  ]
+[ 6,	  36	  ]
+[ 7,	  49	  ]
+[ 8,	  64	  ]
+[ 9,	  nil	  ]
+[ nil,	  nil	  ]
+[ nil,	  81	  ]
+#---------------------------------#
+# h	tmp_13	tmp_13	tmp_13	  # name
+# int	int	int	int	  # type
+#---------------------------------#
+[ 1,	  15,	  15,	  15	  ]
+[ 2,	  4,	  4,	  4	  ]
+[ 3,	  nil,	  nil,	  nil	  ]
+[ 4,	  16,	  16,	  16	  ]
+[ 5,	  25,	  25,	  25	  ]
+[ 6,	  36,	  36,	  36	  ]
+[ 7,	  49,	  49,	  49	  ]
+[ 8,	  64,	  64,	  64	  ]
+[ 9,	  nil,	  nil,	  nil	  ]
+#-------------------------#
+# h	trace_id_ticks	  # name
+# int	int		  # type
+#-------------------------#
+[ 0,	  22		  ]
+[ 1,	  5		  ]
+[ 2,	  4		  ]
+[ 3,	  3		  ]
+[ 4,	  4		  ]
+[ 5,	  3		  ]
+[ 6,	  4		  ]
+[ 7,	  3		  ]
+[ 8,	  3		  ]
+[ 9,	  4		  ]
+[ 10,	  4		  ]
+#-------------------------------------------------#
+# h	trace_id_statement			  # name
+# int	str					  # type
+#-------------------------------------------------#
+[ 0,	  "err := bat.insert(<tmp_13>,1,15);"	  ]
+[ 1,	  "err := bat.insert(<tmp_13>,2,4);"	  ]
+[ 2,	  "err := bat.insert(<tmp_13>,3,nil);"	  ]
+[ 3,	  "err := bat.insert(<tmp_13>,4,16);"	  ]
+[ 4,	  "err := bat.insert(<tmp_13>,5,25);"	  ]
+[ 5,	  "err := bat.insert(<tmp_13>,6,36);"	  ]
+[ 6,	  "err := bat.insert(<tmp_13>,7,49);"	  ]
+[ 7,	  "err := bat.insert(<tmp_13>,8,64);"	  ]
+[ 8,	  "err := bat.insert(<tmp_13>,9,nil);"	  ]
+[ 9,	  "err := bat.insert(<tmp_13>,nil,nil);"  ]
+[ 10,	  "err := bat.insert(<tmp_13>,nil,81);"	  ]
+#-----------------------------------------------------------------#
+# h	trace_id_ticks	trace_id_statement			  # name
+# int	int		str					  # type
+#-----------------------------------------------------------------#
+[ 0,	  22,		  "err := bat.insert(<tmp_13>,1,15);"	  ]
+[ 1,	  5,		  "err := bat.insert(<tmp_13>,2,4);"	  ]
+[ 2,	  4,		  "err := bat.insert(<tmp_13>,3,nil);"	  ]
+[ 3,	  3,		  "err := bat.insert(<tmp_13>,4,16);"	  ]
+[ 4,	  4,		  "err := bat.insert(<tmp_13>,5,25);"	  ]
+[ 5,	  3,		  "err := bat.insert(<tmp_13>,6,36);"	  ]
+[ 6,	  4,		  "err := bat.insert(<tmp_13>,7,49);"	  ]
+[ 7,	  3,		  "err := bat.insert(<tmp_13>,8,64);"	  ]
+[ 8,	  3,		  "err := bat.insert(<tmp_13>,9,nil);"	  ]
+[ 9,	  4,		  "err := bat.insert(<tmp_13>,nil,nil);"  ]
+[ 10,	  4,		  "err := bat.insert(<tmp_13>,nil,81);"	  ]
+
+# 21:45:33 >  
+# 21:45:33 >  Done.
+# 21:45:33 >  
+
