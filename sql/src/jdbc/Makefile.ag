@@ -36,6 +36,7 @@ jar_MonetJDBC = {
 	          nl/cwi/monetdb/jdbc/MonetSavepoint.java \
 	          nl/cwi/monetdb/jdbc/MonetSocket.java \
 	          nl/cwi/monetdb/jdbc/MonetStatement.java \
+	          nl/cwi/monetdb/jdbc/MonetSocketBlockMode.java \
 	          JdbcClient.java
 	EXTRA = MaskingThread.class PasswordField.class QueryPart.class SQLStack.class
 	MANIFEST = $(srcdir)/manifest
