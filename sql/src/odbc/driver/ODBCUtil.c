@@ -314,6 +314,8 @@ struct sql_types ODBC_c_types[] = {
 
 #ifdef ODBCDEBUG
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901
+#include <stdarg.h>
+
 void
 ODBCLOG(const char *fmt, ...)
 {
