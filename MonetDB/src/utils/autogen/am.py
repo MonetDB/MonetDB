@@ -203,7 +203,7 @@ def am_additional_flags(name, sep, type, list, am):
 
 def am_additional_libs(name, sep, type, list, am):
     if type == "BIN":
-        add = name+"_LDADD ="
+        add = am_normalize(name)+"_LDADD ="
     elif type == "LIB":
         add = "lib"+sep+name+"_la_LIBADD ="
     else:
@@ -338,6 +338,9 @@ def am_doc(fd, var, docmap, am):
     am_find_ins(am, docmap)
     am_deps(fd, docmap['DEPS'], "\.o", am)
 
+def am_normalize(name):
+    return string.replace(name, '-', '_')
+
 def am_binary(fd, var, binmap, am):
 
     if type(binmap) == type([]):
@@ -397,7 +400,7 @@ def am_binary(fd, var, binmap, am):
         if ext not in automake_ext:
             am['EXTRA_DIST'].append(src)
 
-    srcs = binname+"_SOURCES ="
+    srcs = am_normalize(binname)+"_SOURCES ="
     for target in binmap['TARGETS']:
         t, ext = split_filename(target)
         if ext in scripts_ext:
@@ -446,7 +449,7 @@ def am_bins(fd, var, binsmap, am):
         elif binsmap.has_key("LIBS"):
             fd.write(am_additional_libs(bin, "", "BIN", binsmap["LIBS"], am))
 
-        srcs = bin+"_SOURCES ="
+        srcs = am_normalize(bin)+"_SOURCES ="
         for target in binsmap['TARGETS']:
             t, ext = split_filename(target)
             if t == bin:
@@ -507,7 +510,10 @@ def am_library(fd, var, libmap, am):
 
     ld = am_translate_dir(ld, am)
     fd.write("%sdir = %s\n" % (libname, ld))
-    am['LIBS'].append((libname, sep))
+    if libmap.has_key('NOINST'):
+    	am['NLIBS'].append((libname, sep))
+    else:
+    	am['LIBS'].append((libname, sep))
     am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
 
     if libmap.has_key('MTSAFE'):
@@ -773,6 +779,7 @@ CXXEXT = \\\"cc\\\"
     am['BUILT_SOURCES'] = []
     am['EXTRA_DIST'] = []
     am['LIBS'] = []     # all libraries (am_libs and am_library)
+    am['NLIBS'] = []     # all libraries which are not installed 
     am['BINS'] = []
     am['BIN_SCRIPTS'] = []
     am['INSTALL'] = []
@@ -814,6 +821,10 @@ CXXEXT = \\\"cc\\\"
         s = ""
         for (lib, sep) in am['LIBS']:
             fd.write("%s_LTLIBRARIES = lib%s%s.la\n" % (lib, sep, lib))
+
+    if len(am['NLIBS']) > 0:
+        for (lib, sep) in am['NLIBS']:
+            fd.write("noinst_LTLIBRARIES = lib%s%s.la\n" % (sep, lib))
 
     if len(am['BINS']) > 0:
         fd.write("bin_PROGRAMS =%s\n" % am_list2string(am['BINS'], " ", ""))
