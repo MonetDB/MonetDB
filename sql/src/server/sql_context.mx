@@ -94,12 +94,14 @@ sql_export void cmd_add_string(context * c, char *str);
 #include "sql_semantic.h"
 #include "sql_optimize.h"
 #include "sql_rel2bin.h"
-#include "sql_server.h"
+/* temp. HACK until we properly solve the cyclic dependencies between src/backends & src/server */
+/*#include "sql_server.h"*/
 #include "sql_scope.h"
 #include "sql_qc.h"
 
 #include <monet_context.h>
 #include <kernel.h>
+#include <streams.h>
 
 @= builtin_operand
 {       int _k = interpret(stk, arg(lt, @1), res);
@@ -403,6 +405,22 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	mvc *m;
 	stream *in, *out;
 	context *sql;
+
+	/* <temp. HACK> until we properly solve the cyclic dependencies between src/backends & src/server */
+	bat AtmTblId;
+	BAT* AtmTblBat;
+	BUN AtmTblBun;
+	int TYPE_mvc;
+
+	AtmTblId = BBPindex("adm_atomtbl");	assert(AtmTblId);
+	AtmTblBat = BATdescriptor(AtmTblId);	assert(AtmTblBat);
+	AtmTblBun = BUNfnd(AtmTblBat, (ptr)"mvc");	assert(AtmTblBun);
+	TYPE_mvc = *(int*) BUNtloc(AtmTblBat, AtmTblBun);	assert(TYPE_mvc); 
+	AtmTblBun = NULL;
+	AtmTblBat = NULL;
+	BBPunfix(AtmTblId);
+	AtmTblId = 0;
+	/* </tmp.HACK> */
 
   	if (lt->cnt != 1) {
         	return handle_argerror(res, lt->cnt, 1);
