@@ -60,7 +60,7 @@ sql_export int sql_create_privileges(mvc *m, sql_schema *s);
 #include "sql_statement.h"
 
 @c
-int sql_create_role_id(mvc *m,  oid id, str auth, int grantor ) 
+int sql_create_role_id(mvc *m,  unsigned int id, str auth, int grantor ) 
 { 
 	sql_schema *sys = find_schema( m->trans, "sys");
 	sql_table *auths = find_table( sys, "auths");
@@ -441,7 +441,7 @@ char *mvc_login(mvc *m, char *user, char *passwd)
 		if (pwd && strcmp(passwd, pwd) == 0){
 			sql_column *users_schema = 
 					find_column( users, "default_schema");
-			oid schema_id = *(oid*)column_find_value( m->trans, users_schema, rid);
+			unsigned int schema_id = *(unsigned int*)column_find_value( m->trans, users_schema, rid);
 			sql_table *schemas = find_table(sys, "schemas");
 			sql_column*schemas_name = find_column(schemas, "name");
 			sql_column*schemas_id = find_column(schemas, "id");
