@@ -1528,7 +1528,7 @@ mapi_reconnect(Mapi mid)
 
 #ifdef MONET5
 	/* start the scenario handler */
-	snprintf(buf, BLOCK, "%s();", lang);
+	snprintf(buf, BLOCK, "%s();", mid->language);
 	if (mapi_error(mid))
 		return mid->error;
 	if (mid->trace)
