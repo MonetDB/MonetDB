@@ -54,6 +54,7 @@ data files.
 #include <malloc.h>
 #endif
 #include <errno.h>
+#include <signal.h>
 
 #ifdef _MSC_VER
 #ifndef LIBSTREAM
@@ -590,9 +591,9 @@ static int socket_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	int res = 0, size = elmsize*cnt, nr = 0;
 	while( res < size && (
 #ifdef WIN32
-		(nr = recv( (int)s->stream_data, buf+res, size-res, 0 ))
+		(nr = recv( (int)s->stream_data, buf+res, size-res, 0 )) >= 0
 #else
-		(nr = read( (int)s->stream_data, buf+res, size-res )) >= 0
+		(nr = read( (int)s->stream_data, buf+res, size-res )) > 0
 #endif
 		|| errno == EAGAIN)
 	){
@@ -612,6 +613,7 @@ static void socket_close( stream *s ){
 	else
 		shutdown(fd,1);
 }
+
 static
 stream *socket_open( int socket, char *name ){
 #ifndef NATIVE_WIN32
