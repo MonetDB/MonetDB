@@ -173,9 +173,14 @@ AC_LANG_CPLUSPLUS
 AC_TRY_COMPILE( [], [ bool x = true; ], [ AC_DEFINE(HAVE_BOOL) ] )
 AC_LANG_C
 AC_C_BIGENDIAN
-AC_CHECK_SIZEOF(long,4)
 AC_TRY_COMPILE( [], [ long long x; ], [ AC_DEFINE(HAVE_LONGLONG)]  )
-AC_TRY_COMPILE( [], [ __int64 x; ], [ AC_DEFINE(HAVE__INT64)] )
+AC_CHECK_SIZEOF(char,1)
+AC_CHECK_SIZEOF(short,2)
+AC_CHECK_SIZEOF(int,4)
+AC_CHECK_SIZEOF(long,4)
+AC_CHECK_SIZEOF(long long,8)
+
+dnl only win32 AC_TRY_COMPILE( [], [ __int64 x; ], [ AC_DEFINE(HAVE__INT64)] )
 
 dnl Checks for library functions.
 AC_FUNC_ALLOCA 
