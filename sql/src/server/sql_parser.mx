@@ -2852,6 +2852,8 @@ ident:
 
 non_reserved_word: 
   CHARACTER 	{ $$ = _strdup("character"); }
+| OBJECT	{ $$ = _strdup("object"); }
+| LARGE		{ $$ = _strdup("large"); }
 | sqlDECIMAL 	{ $$ = _strdup("decimal"); }
 | sqlFLOAT 	{ $$ = _strdup("float"); }
 | sqlDOUBLE 	{ $$ = _strdup("double"); }
