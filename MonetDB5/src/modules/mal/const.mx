@@ -18,7 +18,7 @@
 @f const
 @a Martin Kersten
 @v 0.1
-@* Predefined constants
+@* Constant support box
 This module shows the behavior of a simple box of global variables.
 They are stored into the box using {\sc deposit} and taken
 out with {\sc take}. Once you are done, elements can be
@@ -74,8 +74,7 @@ address CSTrelease
 comment "Release a new constant value";
 pattern toString(name:any):str 
 address CSTtoString
-comment "Get the string representation 
-	of an element in the box";
+comment "Get the string representation of an element in the box";
 pattern discard(name:any) :void 		
 address CSTdiscard
 comment "Release the const from the box";
@@ -86,13 +85,13 @@ pattern hasMoreElements()(:lng,:str)
 address CSThasMoreElements
 comment "Locate next element in the box";
 
+@{
 pattern prelude():void 
 address CSTprelude
 comment "Initialize the const box";
 
 const.prelude();
 @-
-@{
 @+ Implementation
 @h
 #ifndef _ITERATOR_H

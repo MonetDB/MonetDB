@@ -134,7 +134,7 @@ stdout of test 'crackers08` in directory 'src/modules/mal` itself:
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
 barrier (v,i):= mal.newRange(0:int);	# 2 RNGnewRange_int (v:bit)(i:int)<-($6:int) jump 7
-    k := calc.rand();	# 3 CALCrandint (k:int)
+    k := mmath.rand();	# 3 MATHrandint (k:int)
     l := calc.int(k);	# 4 CALCint2int (l:int)<-(k:int)
     bat.insert(b,l,l);	# 5 BKCinsert_bun ($9:void)<-(b:bat[:int,:int])(l:int)(l:int)
     redo (v,i):= mal.nextElement(1:int,1000000:int);	# 6 RNGnextElement_int (v:bit)(i:int)<-($10:int)($11:int) jump 3

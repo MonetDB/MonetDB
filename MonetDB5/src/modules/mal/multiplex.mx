@@ -20,25 +20,23 @@
 @a Peter Boncz, Martin Kersten
 
 @* Multiplexed Function Execution 
-@T
 This module contains the generic implementation of the 
 MIL [X]() multiplex operators. 
 Multiplex operators provide the possibility of executing any
 command "CMD" (or operators or FUNCTIONs) with signature:
-\begin{verbatim}
+@verbatim
 CMD(T1,..,Tn) : Tr
-\end{verbatim}
+@end verbatim
 on a series of BATs with corresponding head values 
 by putting the command between square brackets, giving the
 following corresponding signature:.
-\begin{verbatim}
-[CMD](bat[:any$1,:T1],...,bat[any$1,Tn])
-	:bat[any$1,Tr]
-\end{verbatim}
+@verbatim
+[CMD](bat[:any$1,:T1],...,bat[any$1,Tn]) :bat[any$1,Tr]
+@end verbatim
 and
-\begin{verbatim}
+@verbatim
 CMD(T1,...,Tn) : Tr
-\end{verbatim}
+@end verbatim
 Implementation of the multiplex is done by performing the
 natural join on all bat-valued parameters, and executing the 
 CMD for each combination of matching tuples. All results are 
@@ -83,8 +81,8 @@ address CMDmultiplexScript
 comment "Generic processor for mutiplexed 
 	instructions.";
 
-@-
 @{
+@-
 @h
 #ifndef _MAL_MULTIPLEX_H_
 #define _MAL_MULTIPLEX_H_
@@ -97,8 +95,8 @@ mal_export int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci);
 mal_export str CMDmultiplexScript(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 
 #endif /* _MAL_MULTIPLEX_H_ */
-
-@- Static Type Checker
+@}
+@+ Static Type Checker
 The first step in handling multiplex operators is to 
 assure there doesn;t exist a multiplex implementation
 for the operation at hand. If it fails, we provide 
@@ -109,7 +107,8 @@ to lookup its definition.
 
 The multiplex operator may be turned into a replacement operator
 enclosing with ':' and '=', e.g. multiplex(":+=",b,c) adds the b and
-c tails and stores it in b. This case is detected by operatorModifier();
+c tails and stores it in b. This case is detected by operatorModifier().
+@{
 @c
 #include "multiplex.h"
 #define REALLY_REALLY_BIG	2000000000
@@ -198,7 +197,7 @@ int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 	printf("multiplex against operator %s (original %s)\n",
 		name,functionName(pci));
 #endif
-@- Analysis Of The BAT Parameters
+@+ Analysis Of The BAT Parameters
 Do basic check on parameters. Look at the tail types in order to derive
 a function signature in 'p'. Check that all head types correspond. 
 Constants passed into the multiplex operator are a special case.
@@ -312,7 +311,8 @@ A polymorphic type is not allowed anymore at this stage,
 #endif
 	return i;
 }
-@- Tactical optimization
+@}
+@+ Tactical optimization
 A tactical operator multiplex() looks around in the symbol table
 to detect any fast implementation. If it does not work,
 then it falls back on the script() approach.
@@ -321,7 +321,6 @@ Care should be taken not to fall into a too generic
 definition in the kernel. For example, the batcalc routines
 accept any type, but can handle only the base types.
 This type enforcement is encoded here.
-
 Furthermore, any overloaded function should reside in the
 corresponding atom module
 
@@ -329,6 +328,7 @@ Note that this scheme is particular important for polymorphic
 routines, because you do not a priori know whether there exists
 a fast variant. This way the MIL parser can simply produce
 calls to the script case as well
+@{
 @c
 int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
 	InstrPtr p;
@@ -441,8 +441,8 @@ This is considered the generic solution, to be used when the modules
 do not provide a fast implementation of the multiplex equivalent.
 
 The call multiplex.script(CMD,A1,...An) introduces the following function:
-@T
-\begin{verbatim}
+
+@verbatim
 function CMD000(A1,....,An):bat
 	resB:= new(headtype,tailtype);
 barrier (mloop,h,t):= newIterator(Ai);
@@ -455,8 +455,8 @@ barrier (mloop,h,t):= newIterator(Ai);
 end mloop;
 	return resB;
 end CMD000;
-\end{verbatim}
-@
+@end verbatim
+
 This script is generated on the fly, because we do not a priori
 known the number/type of arguments. 
 
@@ -776,7 +776,7 @@ Therefore, we simple remove the temporary function.
 	freeMalBlk(m1);
 	return ret;
 }
-@- Type check
+@+ Type check
 The batcalc operator signatures are quite permissive
 with respect to the types they accept. However, only a few
 are actually supported and the other leads to a runtime

@@ -17,12 +17,11 @@
 @f box
 @a Martin Kersten
 @v 0.1
-@* The generic box
-@T
+@* Box definitions
 This module shows the behavior of a simple box of objects.
-Objects are stored into the box using {\sc deposit} and taken
-out with {\sc take}. Once you are done, elements can be
-removed by name or reference using {\sc discard}.
+Objects are stored into the box using @emph{ deposit} and taken
+out with @emph{ take}. Once you are done, elements can be
+removed by name or reference using @emph{ discard}.
 
 A box should be opened before being used. It is typically used
 to set-up the list of current users and to perform authorization.

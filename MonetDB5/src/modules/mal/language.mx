@@ -18,14 +18,15 @@
 @f language
 @a Martin Kersten
 @v 1.0
+@* MAL language support
 @+ Scalar iterators
 Iterators are sometimes needed also at the MAL level.
 The barrier and control primitives are often sufficient
 to mimick them directly.
 For the common case:
-@T
+@example
 for( i=first; i<last; i+= step)
-@-
+@end example
 we use a few predefined functions, which reduces the
 number of MAL instructions otherwise needed.
 
@@ -117,6 +118,7 @@ str CMDraise(str *ret,  str *msg){
 	*ret= GDKstrdup(*msg);
 	return GDKstrdup(*msg);
 }
+@}
 @+ Printing
 The print commands are implemented as single instruction rules,
 because they need access to the calling context.
@@ -125,6 +127,7 @@ parsing the format string as part of the initialization phase.
 The old method in V4 essentially causes a lot of overhead
 because you have to prepare for the worst (e.g. mismatch format
 identifier and argument value)
+@{
 @c
 str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -278,7 +281,7 @@ str CMDsetCwd(str *ret, str *fnme){
 	c->cwd= GDKstrdup(*fnme);
 	return MAL_SUCCEED;
 }
-
+@}
 @+ MAL iterator code
 This module contains the framework for the construction of iterators.
 Iterators enumerate elements in a collection defined by a few paramaters,
@@ -296,7 +299,7 @@ within the for-loop body is considered bad code and should be avoided
 to simplify data-flow analysis.
 
 We assume that the range boundaries comply with the underlying domain.
-
+@{
 @= newRange
 str RNGnewRange_@1(bit *res, @1 *i, @1 *first){
 	*res = TRUE;

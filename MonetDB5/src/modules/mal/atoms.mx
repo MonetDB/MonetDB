@@ -17,7 +17,6 @@
 
 @f atoms
 @a M.L. Kersten
-@v 1.0
 @* User defined atoms
 Monet supports definitions of user-defined types. 
 This feature is of particular interest to system experts. 
@@ -66,7 +65,7 @@ pattern length(nme:str):int
 address atomsLength;
 pattern heap(nme:str):int    
 address atomsHeap;
-
+@-
 @{
 @c
 @+ The Module implementation

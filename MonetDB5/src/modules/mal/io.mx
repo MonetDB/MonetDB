@@ -19,8 +19,7 @@
 @a N.J. Nes, M.L. Kersten
 @d 01/07/1996, 31/01/2002
 
-@* The io Module
-@T
+@* The IO module
 The IO module provides simple ascii-io rendering options.
 It is modeled after the version 4 tuple formats, but does not
 attempt to outline the results. Instead, it is geared at speed,

@@ -17,7 +17,7 @@
 
 @f profiler
 @a Martin Kersten
-@* Monet Performance Monitor
+@* Performance Monitor
 A key issue in developing fast programs using the Monet database
 back-end requires a keen eye on where performance is lost.
 Although performance tracking and measurements are highly
@@ -41,8 +41,8 @@ module and function names.
 The log record contents is derived from counters being
 (de-)activated. 
 A complete list of recognized counters is shown below.
-@T
-\begin{verbatim}
+
+@verbatim
 # thread and time since start
 profiler.activate("tick");	
 # cpu time in nano-seconds 
@@ -55,7 +55,7 @@ profiler.activate("io");
 profiler.activate("pc"); 
 # actual MAL instruction executed
 profiler.activate("statement");	
-\end{verbatim}
+@end verbatim
 @-
 The profiler event can be handled in several ways.
 The default strategy is to ship the event record immediately over a stream
@@ -140,8 +140,8 @@ address CMDprofTime
 comment "Returns the total microseconds measured 
 	while profiling the MAL interpreter";
 
-@-
 @{
+@-
 @+ Implementation
 The commands merely encapsulate the functionality provided by
 mal_profiler, which should be explicitly compiled with the kernel, because

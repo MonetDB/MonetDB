@@ -18,7 +18,7 @@
 @f mil
 @a Martin Kersten
 @v 0.1
-@+ MIL support box
+@* MIL support box
 This module implements the links necessary to run
 a MIL program against the version 5 kernel.
 In particular, this calls for name resolution into
@@ -83,7 +83,8 @@ address MILline
 comment "Produce comment for tracking
 	the MIL code produced";
 mil.prelude();
-#theta join operators
+
+#theta join operator encoding
 EQ :=0;
 LT :=-1;
 LE :=-2;

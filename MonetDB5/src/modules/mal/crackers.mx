@@ -18,7 +18,7 @@
 @f crackers
 @a Martin Kersten
 @d October 2004
-@* Crackers
+@* Cracker index
 
 A cracker is a logically partitioned bat.  Its partitions are 
 administered in a cracker index, a volatile data structure.
@@ -53,8 +53,7 @@ module crackers;
 
 command new(b:bat[:int,:int]) 
 address CRKnew
-comment "Create the index tables for a cracked
-	table.";
+comment "Create the index tables for a cracked table.";
 command new(b:bat[:int,:int], granule:int) 
 address CRKnewGranule
 comment "Create the index tables for a cracked
@@ -104,24 +103,17 @@ comment "Retrieve the next piece of a cracked
 	It returns the next valid piece id.
 	A value zero means 'end-of-sequence'";
 
-command getPiece(b:bat[:int,:int], piece:int)
-	:bat[:int,:int]
+command getPiece(b:bat[:int,:int], piece:int) :bat[:int,:int]
 address CRKgetPiece0
-comment "Retrieve a piece of a cracked
-	BAT into a new BAT view.";
+comment "Retrieve a piece of a cracked BAT into a new BAT view.";
 
-command getPiece(b:bat[:int,:int],
-	crk:bat[:int,:int], piece:int)
+command getPiece(b:bat[:int,:int], crk:bat[:int,:int], piece:int)
 address CRKgetPiece1
-comment "Retrieve a piece of a cracked
-	BAT into a known BAT view.";
+comment "Retrieve a piece of a cracked BAT into a known BAT view.";
 
-command selectPieces( b:bat[:int,:int],
-	low:int, hgh:int)
-	:bat[:void,:int]
+command selectPieces( b:bat[:int,:int], low:int, hgh:int) :bat[:void,:int]
 address CRKselectPieces
-comment "Retrieve identities of all pieces
-	that qualify the selection criterion.";
+comment "Retrieve identities of all pieces that qualify the selection criterion.";
 @-
 The relational select is overloaded. It collects the pieces
 into a single BAT. Preferrable using a BATview, otherwise

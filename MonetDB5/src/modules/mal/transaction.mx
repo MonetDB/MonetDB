@@ -17,17 +17,18 @@
 
 @f transaction
 @a M.L. Kersten, P. Boncz
-@* Introduction
+@* Transaction management
 In the philosophy of Monet, transaction management overhead should only
 be paid when necessary. Transaction management is for this purpose 
 implemented as a module.
-TODO: move simple 2-phase locking transaction code from ODMG to this module. 
+This code base is largely obsolute and should be re-considered when
+serious OLTP is being supported.
+Note, however, the SQL front-end obeys transaction semantics.
 
+@+ global transaction management
 @mal
 module transaction;
 
-@- global transaction management
-@mal
 command sync() 
 address TRNglobal_sync
 comment "save all persistent BATs";
@@ -38,7 +39,7 @@ command abort()
 address TRNglobal_abort
 comment "global abort on all BATs";
 
-@- BAT specific transaction management
+@+ BAT specific transaction management
 @mal
 pattern commit(c:bat[:any,:any]...) 
 address TRNtrans_commit
@@ -50,7 +51,7 @@ pattern clean(c:bat[:any,:any]...)
 address TRNtrans_clean
 comment "declare a BAT clean without 
 	 flushing to disk.";
-@- delta status
+@+ Delta status
 @mal
 command alpha(b:bat[:any$1,:any$2]) 
 		:bat[:any$1,:any$2] 

@@ -18,7 +18,7 @@
 @f inspect
 @a Martin Kersten
 @v 1
-@* Runtime Inspection
+@* Inspection at runtime
 This module introduces a series of commands that provide access
 to information stored within the interpreter data structures.
 In all cases, the pseudo BAT operation returns a transient BAT that

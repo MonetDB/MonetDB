@@ -70,8 +70,7 @@ try to encode/decode a value.
 atom enum:int;
 module enum;
 
-pattern create(e:any$2, src:bat[:any,:any$1])
-	:bat[:any$1,:any$2]	
+pattern create(e:any$2, src:bat[:any,:any$1]) :bat[:any$1,:any$2]	
 address ENUMcreate
 comment "Associate a value set with an enumerated type.";
 
@@ -87,12 +86,10 @@ pattern encode(e:any$1,v:any$2):any$1
 address ENUMencode
 comment "Encode a value using a small map";
 
-pattern encode(e:any$2,b:bat[:any$1,:any])
-	:bat[:any$1,:any$2] 	
+pattern encode(e:any$2,b:bat[:any$1,:any]) :bat[:any$1,:any$2] 	
 address ENUMencode_multi
-comment "Encode a BAT of tail values into 
-	a new BAT of encoded values.This action is 
-	actually a join operation.";
+comment "Encode a BAT of tail values into a new BAT of encoded values.
+        This action is actually a join operation.";
 
 pattern lower(e:any$1, v:any):any$1 
 address ENUMlower
@@ -101,16 +98,14 @@ comment "Encode to the lowest value in the encoded
 
 pattern upper(e:any$1, v:any):any$1 
 address ENUMupper
-comment "Encode to the highest value in 
-	the encoded domain that is 
+comment "Encode to the highest value in the encoded domain that is 
 	equal to or less than v";
 
 pattern decode(e:any):any 	
 address ENUMdecode
 comment "Decode a value";
 
-pattern decode(b:bat[:any$2,:any$1]) 
-	:bat[:any$2,:any] 	
+pattern decode(b:bat[:any$2,:any$1]) :bat[:any$2,:any] 	
 address ENUMdecode_multi
 comment "Decode a BAT of tail values
 	into a new BAT of decoded values";
@@ -121,20 +116,16 @@ comment "Return the enumeration BAT";
 
 command isEnum(tpe:bat[:any,:any]) :bit 
 address isEnum
-comment "Returns true iff the bat is 
-	used as an enumerated type";
+comment "Returns true iff the bat is used as an enumerated type";
 
-pattern setHistogram(tpe:any$1, 
-		b:bat[:any,:any]):void 			
+pattern setHistogram(tpe:any$1, b:bat[:any,:any]):void 			
 address ENUMsethisto
 comment "registers the fact that ENUMtable(tpe) 
 	is a histogram on b's head column";
 
-pattern isHistogram(tpe:any,b:bat[:any,:any]) 
-	:bit 			
+pattern isHistogram(tpe:any,b:bat[:any,:any]) :bit 			
 address ENUMishisto
-comment "returns whether ENUMtable(tpe) is 
-	a histogram on b's head column";
+comment "is ENUMtable(tpe) a histogram on b's head column";
 @-
 @{
 @include prelude.mx
