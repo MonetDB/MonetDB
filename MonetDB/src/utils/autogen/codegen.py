@@ -98,7 +98,7 @@ code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
 
 c_inc = "^[ \t]*#[ \t]*include[ \t]*[<\"]\([a-zA-Z0-9\.\_\-]*\)[>\"]"
 m_use = "^[ \t]*\.[Uu][Ss][Ee][ \t]+\([a-zA-Z0-9\.\_, ]*\);"
-m_sep = "[ \t]*,[ \t*]"
+m_sep = "[ \t]*,[ \t]*"
 xsl_inc = "^[ \t]*<xsl:{include|import}[ \t]*href=['\"]\([a-zA-Z0-9\.\_]*\)['\"]"
 tex_inc = ".*\\epsffile\{\([a-zA-Z0-9\.\_]*\)"
 
@@ -306,7 +306,8 @@ def do_scan_target(target,targets,deps,incmap,cwd,cache):
  		  elif (incmap.has_key(fnd1+depext)):
 	            if (fnd1+depext not in inc_files):
 		      inc_files.append(incmap[fnd1+depext]+os.sep+fnd1+depext)
-	          n = sep.search(fnd,p)
+	          n = sep.search(fnd,p+1)
+		fnd = fnd[p:]
 	      if (deps.has_key(fnd+depext) or fnd+depext in targets):
 	        if (fnd+depext not in inc_files):
 		  inc_files.append(fnd+depext)
