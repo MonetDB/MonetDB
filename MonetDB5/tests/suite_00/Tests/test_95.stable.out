@@ -8,304 +8,539 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 #script:test_95.milS
 
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-setoid(oid(20000000));
-# test the new set operations
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_suite_00
+# Visit http://monetdb.cwi.nl for further information.
+## Monet Mil to Mal compiler
+## Copyright (c) 2001-2004, CWI. All rights reserved.
+#
+## Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+#	mil.line("setoid(oid(20000000));");
+#	aa_a := oid(20000000);
+#	ba_a := setoid(aa_a);
+#	mil.line("# test the new set operations\n");
+#	mil.line("var b := new(int,int);");
+#	b := new(:int,:int);
+#	mil.line("var c := new(int,int);");
+#	c := new(:int,:int);
+#	mil.line("b.insert(3,5);");
+#	ca_a := insert(b,3,5);
+#	mil.line("b.insert(3,6);");
+#	da_a := insert(b,3,6);
+#	mil.line("b.insert(4,5);");
+#	ea_a := insert(b,4,5);
+#	mil.line("b.insert(4,6);");
+#	fa_a := insert(b,4,6);
+#	mil.line("b.insert(8,10);");
+#	ga_a := insert(b,8,10);
+#	mil.line("b.insert(8,11);");
+#	ha_a := insert(b,8,11);
+#	mil.line("b.insert(9,10);");
+#	ia_a := insert(b,9,10);
+#	mil.line("b.insert(9,11);");
+#	ja_a := insert(b,9,11);
+#	mil.line("b.insert(9,11);");
+#	ka_a := insert(b,9,11);
+#	mil.line("c.insert(3,10);");
+#	la_a := insert(c,3,10);
+#	mil.line("c.insert(3,5);");
+#	ma_a := insert(c,3,5);
+#	mil.line("c.insert(8,10);");
+#	na_a := insert(c,8,10);
+#	mil.line("c.insert(8,5);");
+#	oa_a := insert(c,8,5);
+#	mil.line("b.sunique().print();");
+#	pa_a := sunique(b);
+#	qa_a := print(pa_a);
+#	mil.line("b.kunique().print();");
+#	ra_a := kunique(b);
+#	sa_a := print(ra_a);
+#	mil.line("sintersect(c,b).print();");
+#	ta_a := sintersect(c,b);
+#	ua_a := print(ta_a);
+#	mil.line("kintersect(c,b).print();");
+#	va_a := kintersect(c,b);
+#	wa_a := print(va_a);
+#	mil.line("kintersect(b,c).print();");
+#	xa_a := kintersect(b,c);
+#	ya_a := print(xa_a);
+#	mil.line("sdiff(c,b).print();");
+#	ab_a := sdiff(c,b);
+#	bb_a := print(ab_a);
+#	mil.line("kdiff(b,c).print();");
+#	cb_a := kdiff(b,c);
+#	db_a := print(cb_a);
+#	mil.line("sdiff(b,c).print();");
+#	eb_a := sdiff(b,c);
+#	fb_a := print(eb_a);
+#	mil.line("kdiff(b,c).print();");
+#	gb_a := kdiff(b,c);
+#	hb_a := print(gb_a);
+#	mil.line("sunion(c,b).print();");
+#	ib_a := sunion(c,b);
+#	jb_a := print(ib_a);
+#	mil.line("kunion(c,b).print();");
+#	kb_a := kunion(c,b);
+#	lb_a := print(kb_a);
+#	mil.line("kunion(b,c).print();");
+#	mb_a := kunion(b,c);
+#	nb_a := print(mb_a);
+#	mil.line("b.insert(0,0);");
+#	ob_a := insert(b,0,0);
+#	mil.line("c.insert(0,0);");
+#	pb_a := insert(c,0,0);
+#	mil.line("b.sunique().print();");
+#	qb_a := sunique(b);
+#	rb_a := print(qb_a);
+#	mil.line("b.kunique().print();");
+#	sb_a := kunique(b);
+#	tb_a := print(sb_a);
+#	mil.line("sintersect(c,b).print();");
+#	ub_a := sintersect(c,b);
+#	vb_a := print(ub_a);
+#	mil.line("kintersect(c,b).print();");
+#	wb_a := kintersect(c,b);
+#	xb_a := print(wb_a);
+#	mil.line("kintersect(b,c).print();");
+#	yb_a := kintersect(b,c);
+#	ac_a := print(yb_a);
+#	mil.line("sdiff(c,b).print();");
+#	bc_a := sdiff(c,b);
+#	cc_a := print(bc_a);
+#	mil.line("kdiff(b,c).print();");
+#	dc_a := kdiff(b,c);
+#	ec_a := print(dc_a);
+#	mil.line("sdiff(b,c).print();");
+#	fc_a := sdiff(b,c);
+#	gc_a := print(fc_a);
+#	mil.line("kdiff(b,c).print();");
+#	hc_a := kdiff(b,c);
+#	ic_a := print(hc_a);
+#	mil.line("sunion(c,b).print();");
+#	jc_a := sunion(c,b);
+#	kc_a := print(jc_a);
+#	mil.line("kunion(c,b).print();");
+#	lc_a := kunion(c,b);
+#	mc_a := print(lc_a);
+#	mil.line("kunion(b,c).print();");
+#	nc_a := kunion(b,c);
+#	oc_a := print(nc_a);
+#	mil.line("quit();");
+#	pc_a := quit();
+#
+function Admin.main():int;	# 0  (main:int)
+    mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
+    aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
+    ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+    mil.line("# test the new set operations\n");	# 4 MILline ($6:void)<-($7:str)
+    mil.line("");	# 5 MILline ($8:void)<-($9:str)
+    mil.line("var b := new(int,int);");	# 6 MILline ($10:void)<-($11:str)
+    b := bbp.new(nil,nil);	# 7 CMDBATnew (b:bat[:int,:int])<-($13:int)($13:int)
+    mil.line("var c := new(int,int);");	# 8 MILline ($14:void)<-($15:str)
+    c := bbp.new(nil,nil);	# 9 CMDBATnew (c:bat[:int,:int])<-($13:int)($13:int)
+    mil.line("b.insert(3,5);");	# 10 MILline ($17:void)<-($18:str)
+    ca_a := bat.insert(b,3,5);	# 11 BKCinsert_bun (ca_a:void)<-(b:bat[:int,:int])($20:int)($21:int)
+    mil.line("b.insert(3,6);");	# 12 MILline ($22:void)<-($23:str)
+    da_a := bat.insert(b,3,6);	# 13 BKCinsert_bun (da_a:void)<-(b:bat[:int,:int])($20:int)($25:int)
+    mil.line("b.insert(4,5);");	# 14 MILline ($26:void)<-($27:str)
+    ea_a := bat.insert(b,4,5);	# 15 BKCinsert_bun (ea_a:void)<-(b:bat[:int,:int])($29:int)($21:int)
+    mil.line("b.insert(4,6);");	# 16 MILline ($30:void)<-($31:str)
+    fa_a := bat.insert(b,4,6);	# 17 BKCinsert_bun (fa_a:void)<-(b:bat[:int,:int])($29:int)($25:int)
+    mil.line("b.insert(8,10);");	# 18 MILline ($33:void)<-($34:str)
+    ga_a := bat.insert(b,8,10);	# 19 BKCinsert_bun (ga_a:void)<-(b:bat[:int,:int])($36:int)($37:int)
+    mil.line("b.insert(8,11);");	# 20 MILline ($38:void)<-($39:str)
+    ha_a := bat.insert(b,8,11);	# 21 BKCinsert_bun (ha_a:void)<-(b:bat[:int,:int])($36:int)($41:int)
+    mil.line("b.insert(9,10);");	# 22 MILline ($42:void)<-($43:str)
+    ia_a := bat.insert(b,9,10);	# 23 BKCinsert_bun (ia_a:void)<-(b:bat[:int,:int])($45:int)($37:int)
+    mil.line("b.insert(9,11);");	# 24 MILline ($46:void)<-($47:str)
+    ja_a := bat.insert(b,9,11);	# 25 BKCinsert_bun (ja_a:void)<-(b:bat[:int,:int])($45:int)($41:int)
+    mil.line("b.insert(9,11);");	# 26 MILline ($49:void)<-($47:str)
+    ka_a := bat.insert(b,9,11);	# 27 BKCinsert_bun (ka_a:void)<-(b:bat[:int,:int])($45:int)($41:int)
+    mil.line("c.insert(3,10);");	# 28 MILline ($51:void)<-($52:str)
+    la_a := bat.insert(c,3,10);	# 29 BKCinsert_bun (la_a:void)<-(c:bat[:int,:int])($54:int)($37:int)
+    mil.line("c.insert(3,5);");	# 30 MILline ($55:void)<-($56:str)
+    ma_a := bat.insert(c,3,5);	# 31 BKCinsert_bun (ma_a:void)<-(c:bat[:int,:int])($54:int)($58:int)
+    mil.line("c.insert(8,10);");	# 32 MILline ($59:void)<-($60:str)
+    na_a := bat.insert(c,8,10);	# 33 BKCinsert_bun (na_a:void)<-(c:bat[:int,:int])($36:int)($37:int)
+    mil.line("c.insert(8,5);");	# 34 MILline ($62:void)<-($63:str)
+    oa_a := bat.insert(c,8,5);	# 35 BKCinsert_bun (oa_a:void)<-(c:bat[:int,:int])($36:int)($58:int)
+    mil.line("b.sunique().print();");	# 36 MILline ($65:void)<-($66:str)
+    pa_a := algebra.sunique(b);	# 37 ALGsunique (pa_a:bat[:int,:int])<-(b:bat[:int,:int])
+    qa_a := io.print(pa_a);	# 38 IOprint_val (qa_a:int)<-(pa_a:bat[:int,:int])
+    mil.line("b.kunique().print();");	# 39 MILline ($69:void)<-($70:str)
+    ra_a := algebra.kunique(b);	# 40 ALGkunique (ra_a:bat[:int,:int])<-(b:bat[:int,:int])
+    sa_a := io.print(ra_a);	# 41 IOprint_val (sa_a:int)<-(ra_a:bat[:int,:int])
+    mil.line("sintersect(c,b).print();");	# 42 MILline ($73:void)<-($74:str)
+    ta_a := algebra.sintersect(c,b);	# 43 ALGsintersect (ta_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
+    ua_a := io.print(ta_a);	# 44 IOprint_val (ua_a:int)<-(ta_a:bat[:int,:int])
+    mil.line("kintersect(c,b).print();");	# 45 MILline ($77:void)<-($78:str)
+    va_a := algebra.kintersect(c,b);	# 46 ALGsemijoin (va_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
+    wa_a := io.print(va_a);	# 47 IOprint_val (wa_a:int)<-(va_a:bat[:int,:int])
+    mil.line("kintersect(b,c).print();");	# 48 MILline ($81:void)<-($82:str)
+    xa_a := algebra.kintersect(b,c);	# 49 ALGsemijoin (xa_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
+    ya_a := io.print(xa_a);	# 50 IOprint_val (ya_a:int)<-(xa_a:bat[:int,:int])
+    mil.line("sdiff(c,b).print();");	# 51 MILline ($85:void)<-($86:str)
+    ab_a := algebra.sdiff(c,b);	# 52 ALGsdiff (ab_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
+    bb_a := io.print(ab_a);	# 53 IOprint_val (bb_a:int)<-(ab_a:bat[:int,:int])
+    mil.line("kdiff(b,c).print();");	# 54 MILline ($89:void)<-($90:str)
+    cb_a := algebra.kdiff(b,c);	# 55 ALGkdiff (cb_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
+    db_a := io.print(cb_a);	# 56 IOprint_val (db_a:int)<-(cb_a:bat[:int,:int])
+    mil.line("sdiff(b,c).print();");	# 57 MILline ($93:void)<-($94:str)
+    eb_a := algebra.sdiff(b,c);	# 58 ALGsdiff (eb_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
+    fb_a := io.print(eb_a);	# 59 IOprint_val (fb_a:int)<-(eb_a:bat[:int,:int])
+    mil.line("kdiff(b,c).print();");	# 60 MILline ($97:void)<-($90:str)
+    gb_a := algebra.kdiff(b,c);	# 61 ALGkdiff (gb_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
+    hb_a := io.print(gb_a);	# 62 IOprint_val (hb_a:int)<-(gb_a:bat[:int,:int])
+    mil.line("sunion(c,b).print();");	# 63 MILline ($100:void)<-($101:str)
+    ib_a := algebra.sunion(c,b);	# 64 ALGsunion (ib_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
+    jb_a := io.print(ib_a);	# 65 IOprint_val (jb_a:int)<-(ib_a:bat[:int,:int])
+    mil.line("kunion(c,b).print();");	# 66 MILline ($104:void)<-($105:str)
+    kb_a := algebra.kunion(c,b);	# 67 ALGkunion (kb_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
+    lb_a := io.print(kb_a);	# 68 IOprint_val (lb_a:int)<-(kb_a:bat[:int,:int])
+    mil.line("kunion(b,c).print();");	# 69 MILline ($108:void)<-($109:str)
+    mb_a := algebra.kunion(b,c);	# 70 ALGkunion (mb_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
+    nb_a := io.print(mb_a);	# 71 IOprint_val (nb_a:int)<-(mb_a:bat[:int,:int])
+    mil.line("b.insert(0,0);");	# 72 MILline ($112:void)<-($113:str)
+    ob_a := bat.insert(b,0,0);	# 73 BKCinsert_bun (ob_a:void)<-(b:bat[:int,:int])($115:int)($115:int)
+    mil.line("c.insert(0,0);");	# 74 MILline ($116:void)<-($117:str)
+    pb_a := bat.insert(c,0,0);	# 75 BKCinsert_bun (pb_a:void)<-(c:bat[:int,:int])($115:int)($115:int)
+    mil.line("b.sunique().print();");	# 76 MILline ($119:void)<-($120:str)
+    qb_a := algebra.sunique(b);	# 77 ALGsunique (qb_a:bat[:int,:int])<-(b:bat[:int,:int])
+    rb_a := io.print(qb_a);	# 78 IOprint_val (rb_a:int)<-(qb_a:bat[:int,:int])
+    mil.line("b.kunique().print();");	# 79 MILline ($123:void)<-($124:str)
+    sb_a := algebra.kunique(b);	# 80 ALGkunique (sb_a:bat[:int,:int])<-(b:bat[:int,:int])
+    tb_a := io.print(sb_a);	# 81 IOprint_val (tb_a:int)<-(sb_a:bat[:int,:int])
+    mil.line("sintersect(c,b).print();");	# 82 MILline ($127:void)<-($128:str)
+    ub_a := algebra.sintersect(c,b);	# 83 ALGsintersect (ub_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
+    vb_a := io.print(ub_a);	# 84 IOprint_val (vb_a:int)<-(ub_a:bat[:int,:int])
+    mil.line("kintersect(c,b).print();");	# 85 MILline ($131:void)<-($132:str)
+    wb_a := algebra.kintersect(c,b);	# 86 ALGsemijoin (wb_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
+    xb_a := io.print(wb_a);	# 87 IOprint_val (xb_a:int)<-(wb_a:bat[:int,:int])
+    mil.line("kintersect(b,c).print();");	# 88 MILline ($135:void)<-($136:str)
+    yb_a := algebra.kintersect(b,c);	# 89 ALGsemijoin (yb_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
+    ac_a := io.print(yb_a);	# 90 IOprint_val (ac_a:int)<-(yb_a:bat[:int,:int])
+    mil.line("sdiff(c,b).print();");	# 91 MILline ($139:void)<-($140:str)
+    bc_a := algebra.sdiff(c,b);	# 92 ALGsdiff (bc_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
+    cc_a := io.print(bc_a);	# 93 IOprint_val (cc_a:int)<-(bc_a:bat[:int,:int])
+    mil.line("kdiff(b,c).print();");	# 94 MILline ($143:void)<-($144:str)
+    dc_a := algebra.kdiff(b,c);	# 95 ALGkdiff (dc_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
+    ec_a := io.print(dc_a);	# 96 IOprint_val (ec_a:int)<-(dc_a:bat[:int,:int])
+    mil.line("sdiff(b,c).print();");	# 97 MILline ($147:void)<-($148:str)
+    fc_a := algebra.sdiff(b,c);	# 98 ALGsdiff (fc_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
+    gc_a := io.print(fc_a);	# 99 IOprint_val (gc_a:int)<-(fc_a:bat[:int,:int])
+    mil.line("kdiff(b,c).print();");	# 100 MILline ($151:void)<-($144:str)
+    hc_a := algebra.kdiff(b,c);	# 101 ALGkdiff (hc_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
+    ic_a := io.print(hc_a);	# 102 IOprint_val (ic_a:int)<-(hc_a:bat[:int,:int])
+    mil.line("sunion(c,b).print();");	# 103 MILline ($154:void)<-($155:str)
+    jc_a := algebra.sunion(c,b);	# 104 ALGsunion (jc_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
+    kc_a := io.print(jc_a);	# 105 IOprint_val (kc_a:int)<-(jc_a:bat[:int,:int])
+    mil.line("kunion(c,b).print();");	# 106 MILline ($158:void)<-($159:str)
+    lc_a := algebra.kunion(c,b);	# 107 ALGkunion (lc_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
+    mc_a := io.print(lc_a);	# 108 IOprint_val (mc_a:int)<-(lc_a:bat[:int,:int])
+    mil.line("kunion(b,c).print();");	# 109 MILline ($162:void)<-($163:str)
+    nc_a := algebra.kunion(b,c);	# 110 ALGkunion (nc_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
+    oc_a := io.print(nc_a);	# 111 IOprint_val (oc_a:int)<-(nc_a:bat[:int,:int])
+    mil.line("quit();");	# 112 MILline ($166:void)<-($167:str)
+    pc_a := clients.quit();	# 113 CLTquit (pc_a:void)
+end main;	# 114  
+#setoid(oid(20000000));
+## test the new set operations
+#var b := new(int,int);
+#var c := new(int,int);
+#b.insert(3,5);
+#b.insert(3,6);
+#b.insert(4,5);
+#b.insert(4,6);
+#b.insert(8,10);
+#b.insert(8,11);
+#b.insert(9,10);
+#b.insert(9,11);
+#b.insert(9,11);
+#c.insert(3,10);
+#c.insert(3,5);
+#c.insert(8,10);
+#c.insert(8,5);
+#b.sunique().print();
+#-----------------#
+# h	tmp_6	  # name
+# int	int	  # type
+#-----------------#
+[ 3,	  5	  ]
+[ 3,	  6	  ]
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 8,	  10	  ]
+[ 8,	  11	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+#b.kunique().print();
+#-----------------#
+# h	tmp_7	  # name
+# int	int	  # type
+#-----------------#
+[ 3,	  6	  ]
+[ 4,	  6	  ]
+[ 8,	  11	  ]
+[ 9,	  11	  ]
+#sintersect(c,b).print();
+#-----------------#
+# h	tmp_8	  # name
+# int	int	  # type
+#-----------------#
+[ 3,	  5	  ]
+[ 8,	  10	  ]
+#kintersect(c,b).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  10	  ]
+[ 3,	  5	  ]
+[ 8,	  10	  ]
+[ 8,	  5	  ]
+#kintersect(b,c).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  5	  ]
+[ 3,	  6	  ]
+[ 8,	  10	  ]
+[ 8,	  11	  ]
+#sdiff(c,b).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  10	  ]
+[ 8,	  5	  ]
+#kdiff(b,c).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+[ 9,	  11	  ]
+#sdiff(b,c).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  6	  ]
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 8,	  11	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+[ 9,	  11	  ]
+#kdiff(b,c).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+[ 9,	  11	  ]
+#sunion(c,b).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  10	  ]
+[ 3,	  5	  ]
+[ 8,	  10	  ]
+[ 8,	  5	  ]
+[ 3,	  6	  ]
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 8,	  11	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+[ 9,	  11	  ]
+#kunion(c,b).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  10	  ]
+[ 3,	  5	  ]
+[ 8,	  10	  ]
+[ 8,	  5	  ]
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+[ 9,	  11	  ]
+#kunion(b,c).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  5	  ]
+[ 3,	  6	  ]
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 8,	  10	  ]
+[ 8,	  11	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+[ 9,	  11	  ]
+#b.insert(0,0);
+#c.insert(0,0);
+#b.sunique().print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  5	  ]
+[ 3,	  6	  ]
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 8,	  10	  ]
+[ 8,	  11	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+[ 0,	  0	  ]
+#b.kunique().print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  5	  ]
+[ 4,	  5	  ]
+[ 8,	  10	  ]
+[ 9,	  10	  ]
+[ 0,	  0	  ]
+#sintersect(c,b).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  5	  ]
+[ 8,	  10	  ]
+[ 0,	  0	  ]
+#kintersect(c,b).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  10	  ]
+[ 3,	  5	  ]
+[ 8,	  10	  ]
+[ 8,	  5	  ]
+[ 0,	  0	  ]
+#kintersect(b,c).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  5	  ]
+[ 3,	  6	  ]
+[ 8,	  10	  ]
+[ 8,	  11	  ]
+[ 0,	  0	  ]
+#sdiff(c,b).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  10	  ]
+[ 8,	  5	  ]
+#kdiff(b,c).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+[ 9,	  11	  ]
+#sdiff(b,c).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  6	  ]
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 8,	  11	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+[ 9,	  11	  ]
+#kdiff(b,c).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+[ 9,	  11	  ]
+#sunion(c,b).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  10	  ]
+[ 3,	  5	  ]
+[ 8,	  10	  ]
+[ 8,	  5	  ]
+[ 0,	  0	  ]
+[ 3,	  6	  ]
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 8,	  11	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+[ 9,	  11	  ]
+#kunion(c,b).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  10	  ]
+[ 3,	  5	  ]
+[ 8,	  10	  ]
+[ 8,	  5	  ]
+[ 0,	  0	  ]
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+[ 9,	  11	  ]
+#kunion(b,c).print();
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  5	  ]
+[ 3,	  6	  ]
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 8,	  10	  ]
+[ 8,	  11	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+[ 9,	  11	  ]
+[ 0,	  0	  ]
 
-var b := new(int,int);
-var c := new(int,int);
-b.insert(3,5);
-b.insert(3,6);
-b.insert(4,5);
-b.insert(4,6);
-b.insert(8,10);
-b.insert(8,11);
-b.insert(9,10);
-b.insert(9,11);
-b.insert(9,11);
-c.insert(3,10);
-c.insert(3,5);
-c.insert(8,10);
-c.insert(8,5);
-
-b.sunique().print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  5	  ]
-[ 3,	  6	  ]
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 8,	  10	  ]
-[ 8,	  11	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-b.kunique().print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  6	  ]
-[ 4,	  6	  ]
-[ 8,	  11	  ]
-[ 9,	  11	  ]
-sintersect(c,b).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  5	  ]
-[ 8,	  10	  ]
-kintersect(c,b).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  10	  ]
-[ 3,	  5	  ]
-[ 8,	  10	  ]
-[ 8,	  5	  ]
-kintersect(b,c).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  5	  ]
-[ 3,	  6	  ]
-[ 8,	  10	  ]
-[ 8,	  11	  ]
-sdiff(c,b).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  10	  ]
-[ 8,	  5	  ]
-kdiff(b,c).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-[ 9,	  11	  ]
-sdiff(b,c).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  6	  ]
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 8,	  11	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-[ 9,	  11	  ]
-kdiff(b,c).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-[ 9,	  11	  ]
-sunion(c,b).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  10	  ]
-[ 3,	  5	  ]
-[ 8,	  10	  ]
-[ 8,	  5	  ]
-[ 3,	  6	  ]
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 8,	  11	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-[ 9,	  11	  ]
-kunion(c,b).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  10	  ]
-[ 3,	  5	  ]
-[ 8,	  10	  ]
-[ 8,	  5	  ]
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-[ 9,	  11	  ]
-kunion(b,c).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  5	  ]
-[ 3,	  6	  ]
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 8,	  10	  ]
-[ 8,	  11	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-[ 9,	  11	  ]
-
-b.insert(0,0);
-c.insert(0,0);
-
-b.sunique().print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  5	  ]
-[ 3,	  6	  ]
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 8,	  10	  ]
-[ 8,	  11	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-[ 0,	  0	  ]
-b.kunique().print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  5	  ]
-[ 4,	  5	  ]
-[ 8,	  10	  ]
-[ 9,	  10	  ]
-[ 0,	  0	  ]
-sintersect(c,b).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  5	  ]
-[ 8,	  10	  ]
-[ 0,	  0	  ]
-kintersect(c,b).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  10	  ]
-[ 3,	  5	  ]
-[ 8,	  10	  ]
-[ 8,	  5	  ]
-[ 0,	  0	  ]
-kintersect(b,c).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  5	  ]
-[ 3,	  6	  ]
-[ 8,	  10	  ]
-[ 8,	  11	  ]
-[ 0,	  0	  ]
-sdiff(c,b).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  10	  ]
-[ 8,	  5	  ]
-kdiff(b,c).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-[ 9,	  11	  ]
-sdiff(b,c).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  6	  ]
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 8,	  11	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-[ 9,	  11	  ]
-kdiff(b,c).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-[ 9,	  11	  ]
-sunion(c,b).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  10	  ]
-[ 3,	  5	  ]
-[ 8,	  10	  ]
-[ 8,	  5	  ]
-[ 0,	  0	  ]
-[ 3,	  6	  ]
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 8,	  11	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-[ 9,	  11	  ]
-kunion(c,b).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  10	  ]
-[ 3,	  5	  ]
-[ 8,	  10	  ]
-[ 8,	  5	  ]
-[ 0,	  0	  ]
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-[ 9,	  11	  ]
-kunion(b,c).print();
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  5	  ]
-[ 3,	  6	  ]
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 8,	  10	  ]
-[ 8,	  11	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-[ 9,	  11	  ]
-[ 0,	  0	  ]
-
-quit();
-
-# 17:08:55 >  
-# 17:08:55 >  Done.
-# 17:08:55 >  
+# 09:25:25 >  
+# 09:25:25 >  Done.
+# 09:25:25 >  
 

@@ -8,22 +8,115 @@ stdout of test 'test_20` in directory 'tests/suite_00` itself:
 #script:test_20.milS
 
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-setoid(oid(20000000));
-# test single column BATs
-var a:= new(int,void);
-a.insert(1,void(nil));
-a.print();
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux//var/MonetDB5/dbfarm
+# dbname:mTests_tests_suite_00
+# Visit http://monetdb.cwi.nl for further information.
+## Monet Mil to Mal compiler
+## Copyright (c) 2001-2004, CWI. All rights reserved.
+#
+##Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+##include "mil_prelude";
+#	mil.line("setoid(oid(20000000));");
+#	aa_a := oid(20000000);
+#	ba_a := setoid(aa_a);
+#	mil.line("# test single column BATs\n");
+#	mil.line("var a:= new(int,void);");
+#	a := new(nil:int,nil:void);
+#	mil.line("a.insert(1,void(nil));");
+#	ca_a := void(nil);
+#	da_a := insert(a,1,ca_a);
+#	mil.line("a.print();");
+#	ea_a := print(a);
+#	mil.line("a.insert(2,void(nil));");
+#	fa_a := void(nil);
+#	ga_a := insert(a,2,fa_a);
+#	mil.line("a.insert(int(nil),void(nil));");
+#	ha_a := int(nil);
+#	ia_a := void(nil);
+#	ja_a := insert(a,ha_a,ia_a);
+#	mil.line("a.print();");
+#	ka_a := print(a);
+#	mil.line("var b:= new(void,int);");
+#	b := new(nil:void,nil:int);
+#	mil.line("b.insert(void(nil),1);");
+#	la_a := void(nil);
+#	ma_a := insert(b,la_a,1);
+#	mil.line("b.print();");
+#	na_a := print(b);
+#	mil.line("b.insert(void(nil),2);");
+#	oa_a := void(nil);
+#	pa_a := insert(b,oa_a,2);
+#	mil.line("b.insert(void(nil),int(nil));");
+#	qa_a := void(nil);
+#	ra_a := int(nil);
+#	sa_a := insert(b,qa_a,ra_a);
+#	mil.line("b.print();");
+#	ta_a := print(b);
+#	mil.line("quit();");
+#	ua_a := quit();
+#
+function Admin.main():int;	# 0  (main:int)
+    mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
+    aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
+    ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+    mil.line("# test single column BATs\n");	# 4 MILline ($6:void)<-($7:str)
+    mil.line("var a:= new(int,void);");	# 5 MILline ($8:void)<-($9:str)
+    a := bbp.new(nil,nil);	# 6 CMDBATnew (a:bat[:int,:void])<-($11:int)($12:void)
+    mil.line("a.insert(1,void(nil));");	# 7 MILline ($13:void)<-($14:str)
+    ca_a := calc.void(nil);	# 8 CALCnil2void (ca_a:void)<-($12:void)
+    da_a := bat.insert(a,1,ca_a);	# 9 BKCinsert_bun (da_a:void)<-(a:bat[:int,:void])($17:int)(ca_a:void)
+    mil.line("a.print();");	# 10 MILline ($18:void)<-($19:str)
+    ea_a := io.print(a);	# 11 IOprint_val (ea_a:int)<-(a:bat[:int,:void])
+    mil.line("a.insert(2,void(nil));");	# 12 MILline ($21:void)<-($22:str)
+    fa_a := calc.void(nil);	# 13 CALCnil2void (fa_a:void)<-($12:void)
+    ga_a := bat.insert(a,2,fa_a);	# 14 BKCinsert_bun (ga_a:void)<-(a:bat[:int,:void])($25:int)(fa_a:void)
+    mil.line("a.insert(int(nil),void(nil));");	# 15 MILline ($26:void)<-($27:str)
+    ha_a := calc.int(nil);	# 16 CALCnil2int (ha_a:int)<-($12:void)
+    ia_a := calc.void(nil);	# 17 CALCnil2void (ia_a:void)<-($12:void)
+    ja_a := bat.insert(a,ha_a,ia_a);	# 18 BKCinsert_bun (ja_a:void)<-(a:bat[:int,:void])(ha_a:int)(ia_a:void)
+    mil.line("a.print();");	# 19 MILline ($31:void)<-($19:str)
+    ka_a := io.print(a);	# 20 IOprint_val (ka_a:int)<-(a:bat[:int,:void])
+    mil.line("var b:= new(void,int);");	# 21 MILline ($33:void)<-($34:str)
+    b := bbp.new(nil,nil);	# 22 CMDBATnew (b:bat[:void,:int])<-($12:void)($11:int)
+    mil.line("b.insert(void(nil),1);");	# 23 MILline ($36:void)<-($37:str)
+    la_a := calc.void(nil);	# 24 CALCnil2void (la_a:void)<-($12:void)
+    ma_a := bat.insert(b,la_a,1);	# 25 BKCinsert_bun (ma_a:void)<-(b:bat[:void,:int])(la_a:void)($17:int)
+    mil.line("b.print();");	# 26 MILline ($40:void)<-($41:str)
+    na_a := io.print(b);	# 27 IOprint_val (na_a:int)<-(b:bat[:void,:int])
+    mil.line("b.insert(void(nil),2);");	# 28 MILline ($43:void)<-($44:str)
+    oa_a := calc.void(nil);	# 29 CALCnil2void (oa_a:void)<-($46:void)
+    pa_a := bat.insert(b,oa_a,2);	# 30 BKCinsert_bun (pa_a:void)<-(b:bat[:void,:int])(oa_a:void)($25:int)
+    mil.line("b.insert(void(nil),int(nil));");	# 31 MILline ($48:void)<-($49:str)
+    qa_a := calc.void(nil);	# 32 CALCnil2void (qa_a:void)<-($46:void)
+    ra_a := calc.int(nil);	# 33 CALCnil2int (ra_a:int)<-($46:void)
+    sa_a := bat.insert(b,qa_a,ra_a);	# 34 BKCinsert_bun (sa_a:void)<-(b:bat[:void,:int])(qa_a:void)(ra_a:int)
+    mil.line("b.print();");	# 35 MILline ($53:void)<-($41:str)
+    ta_a := io.print(b);	# 36 IOprint_val (ta_a:int)<-(b:bat[:void,:int])
+    mil.line("quit();");	# 37 MILline ($55:void)<-($56:str)
+    ua_a := clients.quit();	# 38 CLTquit (ua_a:void)
+end main;	# 39  
+#setoid(oid(20000000));
+## test single column BATs
+#var a:= new(int,void);
+#a.insert(1,void(nil));
+#a.print();
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (void)  #
 #-----------------#
 [ 1,	  nil	  ]
-a.insert(2,void(nil));
-a.insert(int(nil),void(nil));
-a.print();
+#a.insert(2,void(nil));
+#a.insert(int(nil),void(nil));
+#a.print();
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (void)  #
@@ -31,18 +124,17 @@ a.print();
 [ 1,	  nil	  ]
 [ 2,	  nil	  ]
 [ nil,	  nil	  ]
-
-var b:= new(void,int);
-b.insert(void(nil),1);
-b.print();
+#var b:= new(void,int);
+#b.insert(void(nil),1);
+#b.print();
 #-----------------#
 # BAT:	  tmp_23  #
 # (void)  (int)	  #
 #-----------------#
 [ nil,	  1	  ]
-b.insert(void(nil),2);
-b.insert(void(nil),int(nil));
-b.print();
+#b.insert(void(nil),2);
+#b.insert(void(nil),int(nil));
+#b.print();
 #-----------------#
 # BAT:	  tmp_23  #
 # (void)  (int)	  #
@@ -50,7 +142,7 @@ b.print();
 [ nil,	  1	  ]
 [ nil,	  2	  ]
 [ nil,	  nil	  ]
-quit();
+#quit();
 
 # 17:08:46 >  
 # 17:08:46 >  Done.

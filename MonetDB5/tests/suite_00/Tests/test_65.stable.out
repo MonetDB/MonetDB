@@ -7,24 +7,135 @@ stdout of test 'test_65` in directory 'tests/suite_00` itself:
 # compiled for i686-pc-linux-gnu/32bit.
 #script:test_65.milS
 
+# 23:27:12 >  
+# 23:27:12 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux//var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux//var/MonetDB5/log" --set mapi_port=43940 --set sql_port=54820 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_65.mal </dev/null
+# 23:27:12 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-setoid(oid(20000000));
-#test sampling
-var b:= new(int,int);
-b.insert(1,15);
-b.insert(2,4);
-b.insert(3,int(nil));
-b.insert(4,16);
-b.insert(5,25);
-b.insert(6,36);
-b.insert(7,49);
-b.insert(8,64);
-b.insert(9,int(nil));
-
-printf("#~BeginVariableOutput~#\n"); b.sample(1).print(); printf("#~EndVariableOutput~#\n");
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux//var/MonetDB5/dbfarm
+# dbname:mTests_tests_suite_00
+# Visit http://monetdb.cwi.nl for further information.
+## Monet Mil to Mal compiler
+## Copyright (c) 2001-2004, CWI. All rights reserved.
+#
+##Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+##include "mil_prelude";
+#	mil.line("setoid(oid(20000000));");
+#	aa_a := oid(20000000);
+#	ba_a := setoid(aa_a);
+#	mil.line("#test sampling\n");
+#	mil.line("var b:= new(int,int);");
+#	b := new(nil:int,nil:int);
+#	mil.line("b.insert(1,15);");
+#	ca_a := insert(b,1,15);
+#	mil.line("b.insert(2,4);");
+#	da_a := insert(b,2,4);
+#	mil.line("b.insert(3,int(nil));");
+#	ea_a := int(nil);
+#	fa_a := insert(b,3,ea_a);
+#	mil.line("b.insert(4,16);");
+#	ga_a := insert(b,4,16);
+#	mil.line("b.insert(5,25);");
+#	ha_a := insert(b,5,25);
+#	mil.line("b.insert(6,36);");
+#	ia_a := insert(b,6,36);
+#	mil.line("b.insert(7,49);");
+#	ja_a := insert(b,7,49);
+#	mil.line("b.insert(8,64);");
+#	ka_a := insert(b,8,64);
+#	mil.line("b.insert(9,int(nil));");
+#	la_a := int(nil);
+#	ma_a := insert(b,9,la_a);
+#	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); b.sample(1).print(); printf(\"#~EndVariableOutput~#\\n\");");
+#	na_a := printf("#~BeginVariableOutput~#\n");
+#	oa_a := sample(b,1);
+#	pa_a := print(oa_a);
+#	qa_a := printf("#~EndVariableOutput~#\n");
+#	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); b.sample(1).print(); printf(\"#~EndVariableOutput~#\\n\");");
+#	ra_a := printf("#~BeginVariableOutput~#\n");
+#	sa_a := sample(b,1);
+#	ta_a := print(sa_a);
+#	ua_a := printf("#~EndVariableOutput~#\n");
+#	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); b.sample(9).print(); printf(\"#~EndVariableOutput~#\\n\");");
+#	va_a := printf("#~BeginVariableOutput~#\n");
+#	wa_a := sample(b,9);
+#	xa_a := print(wa_a);
+#	ya_a := printf("#~EndVariableOutput~#\n");
+#	mil.line("b.sample(0).print();");
+#	ab_a := sample(b,0);
+#	bb_a := print(ab_a);
+#	mil.line("quit();");
+#	cb_a := quit();
+#
+function Admin.main():int;	# 0  (main:int)
+    mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
+    aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
+    ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+    mil.line("#test sampling\n");	# 4 MILline ($6:void)<-($7:str)
+    mil.line("var b:= new(int,int);");	# 5 MILline ($8:void)<-($9:str)
+    b := bbp.new(nil,nil);	# 6 CMDBATnew (b:bat[:int,:int])<-($11:int)($11:int)
+    mil.line("b.insert(1,15);");	# 7 MILline ($12:void)<-($13:str)
+    ca_a := bat.insert(b,1,15);	# 8 BKCinsert_bun (ca_a:void)<-(b:bat[:int,:int])($15:int)($16:int)
+    mil.line("b.insert(2,4);");	# 9 MILline ($17:void)<-($18:str)
+    da_a := bat.insert(b,2,4);	# 10 BKCinsert_bun (da_a:void)<-(b:bat[:int,:int])($20:int)($21:int)
+    mil.line("b.insert(3,int(nil));");	# 11 MILline ($22:void)<-($23:str)
+    ea_a := calc.int(nil);	# 12 CALCnil2int (ea_a:int)<-($25:void)
+    fa_a := bat.insert(b,3,ea_a);	# 13 BKCinsert_bun (fa_a:void)<-(b:bat[:int,:int])($27:int)(ea_a:int)
+    mil.line("b.insert(4,16);");	# 14 MILline ($28:void)<-($29:str)
+    ga_a := bat.insert(b,4,16);	# 15 BKCinsert_bun (ga_a:void)<-(b:bat[:int,:int])($21:int)($31:int)
+    mil.line("b.insert(5,25);");	# 16 MILline ($32:void)<-($33:str)
+    ha_a := bat.insert(b,5,25);	# 17 BKCinsert_bun (ha_a:void)<-(b:bat[:int,:int])($35:int)($36:int)
+    mil.line("b.insert(6,36);");	# 18 MILline ($37:void)<-($38:str)
+    ia_a := bat.insert(b,6,36);	# 19 BKCinsert_bun (ia_a:void)<-(b:bat[:int,:int])($40:int)($41:int)
+    mil.line("b.insert(7,49);");	# 20 MILline ($42:void)<-($43:str)
+    ja_a := bat.insert(b,7,49);	# 21 BKCinsert_bun (ja_a:void)<-(b:bat[:int,:int])($45:int)($46:int)
+    mil.line("b.insert(8,64);");	# 22 MILline ($47:void)<-($48:str)
+    ka_a := bat.insert(b,8,64);	# 23 BKCinsert_bun (ka_a:void)<-(b:bat[:int,:int])($50:int)($51:int)
+    mil.line("b.insert(9,int(nil));");	# 24 MILline ($52:void)<-($53:str)
+    la_a := calc.int(nil);	# 25 CALCnil2int (la_a:int)<-($25:void)
+    ma_a := bat.insert(b,9,la_a);	# 26 BKCinsert_bun (ma_a:void)<-(b:bat[:int,:int])($56:int)(la_a:int)
+    mil.line("printf(\"#~BeginVariableOutput~#\\n\"); b.sample(1).print(); printf(\"#~EndVariableOutput~#\\n\");");	# 27 MILline ($57:void)<-($58:str)
+    na_a := io.printf("#~BeginVariableOutput~#\n");	# 28 IOprint_str (na_a:int)<-($60:str)
+    oa_a := algebra.sample(b,1);	# 29 ALGsample (oa_a:bat[:int,:int])<-(b:bat[:int,:int])($62:int)
+    pa_a := io.print(oa_a);	# 30 IOprint_val (pa_a:int)<-(oa_a:bat[:int,:int])
+    qa_a := io.printf("#~EndVariableOutput~#\n");	# 31 IOprint_str (qa_a:int)<-($65:str)
+    mil.line("printf(\"#~BeginVariableOutput~#\\n\"); b.sample(1).print(); printf(\"#~EndVariableOutput~#\\n\");");	# 32 MILline ($66:void)<-($58:str)
+    ra_a := io.printf("#~BeginVariableOutput~#\n");	# 33 IOprint_str (ra_a:int)<-($60:str)
+    sa_a := algebra.sample(b,1);	# 34 ALGsample (sa_a:bat[:int,:int])<-(b:bat[:int,:int])($62:int)
+    ta_a := io.print(sa_a);	# 35 IOprint_val (ta_a:int)<-(sa_a:bat[:int,:int])
+    ua_a := io.printf("#~EndVariableOutput~#\n");	# 36 IOprint_str (ua_a:int)<-($65:str)
+    mil.line("printf(\"#~BeginVariableOutput~#\\n\"); b.sample(9).print(); printf(\"#~EndVariableOutput~#\\n\");");	# 37 MILline ($71:void)<-($72:str)
+    va_a := io.printf("#~BeginVariableOutput~#\n");	# 38 IOprint_str (va_a:int)<-($60:str)
+    wa_a := algebra.sample(b,9);	# 39 ALGsample (wa_a:bat[:int,:int])<-(b:bat[:int,:int])($56:int)
+    xa_a := io.print(wa_a);	# 40 IOprint_val (xa_a:int)<-(wa_a:bat[:int,:int])
+    ya_a := io.printf("#~EndVariableOutput~#\n");	# 41 IOprint_str (ya_a:int)<-($65:str)
+    mil.line("b.sample(0).print();");	# 42 MILline ($77:void)<-($78:str)
+    ab_a := algebra.sample(b,0);	# 43 ALGsample (ab_a:bat[:int,:int])<-(b:bat[:int,:int])($80:int)
+    bb_a := io.print(ab_a);	# 44 IOprint_val (bb_a:int)<-(ab_a:bat[:int,:int])
+    mil.line("quit();");	# 45 MILline ($82:void)<-($83:str)
+    cb_a := clients.quit();	# 46 CLTquit (cb_a:void)
+end main;	# 47  
+#setoid(oid(20000000));
+##test sampling
+#var b:= new(int,int);
+#b.insert(1,15);
+#b.insert(2,4);
+#b.insert(3,int(nil));
+#b.insert(4,16);
+#b.insert(5,25);
+#b.insert(6,36);
+#b.insert(7,49);
+#b.insert(8,64);
+#b.insert(9,int(nil));
+#printf("#~BeginVariableOutput~#\n"); b.sample(1).print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-----------------#
 # BAT:	  tmp_23  #
@@ -32,7 +143,9 @@ printf("#~BeginVariableOutput~#\n"); b.sample(1).print(); printf("#~EndVariableO
 #-----------------#
 [ 2,	  4	  ]
 #~EndVariableOutput~#
-printf("#~BeginVariableOutput~#\n"); b.sample(1).print(); printf("#~EndVariableOutput~#\n");
+#printf("#~BeginVariableOutput~#
+"); b.sample(1).print(); printf("#~EndVariableOutput~#
+");
 #~BeginVariableOutput~#
 #-----------------#
 # BAT:	  tmp_23  #
@@ -40,8 +153,7 @@ printf("#~BeginVariableOutput~#\n"); b.sample(1).print(); printf("#~EndVariableO
 #-----------------#
 [ 8,	  64	  ]
 #~EndVariableOutput~#
-
-printf("#~BeginVariableOutput~#\n"); b.sample(9).print(); printf("#~EndVariableOutput~#\n");
+#printf("#~BeginVariableOutput~#\n"); b.sample(9).print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-----------------#
 # BAT:	  tmp_23  #
@@ -57,13 +169,12 @@ printf("#~BeginVariableOutput~#\n"); b.sample(9).print(); printf("#~EndVariableO
 [ 8,	  64	  ]
 [ 9,	  nil	  ]
 #~EndVariableOutput~#
-
-b.sample(0).print();
+#b.sample(0).print();
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
-quit();
+#quit();
 
 # 17:08:52 >  
 # 17:08:52 >  Done.

@@ -1,47 +1,48 @@
 # Monet Mil to Mal compiler
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
-# Predefined code segment
+#Predefined code segment
 #The compiler can not guarantee an accurate compilation,
 #because MIL unlike MAL is a dynamically typed language.
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#setoid(oid(20000000));
+#include "mil_prelude";
+	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
-#var a:= new(int,void);
-	a := new(:int,:void);
-#a.insert(1,void(nil));
-	nil:= mil.take("nil");
+	mil.line("# test single column BATs\n");
+	mil.line("var a:= new(int,void);");
+	a := new(nil:int,nil:void);
+	mil.line("a.insert(1,void(nil));");
 	ca_a := void(nil);
 	da_a := insert(a,1,ca_a);
-#a.print();
-	ea_a := print(a,);
-#a.insert(2,void(nil));
+	mil.line("a.print();");
+	ea_a := print(a);
+	mil.line("a.insert(2,void(nil));");
 	fa_a := void(nil);
 	ga_a := insert(a,2,fa_a);
-#a.insert(int(nil),void(nil));
+	mil.line("a.insert(int(nil),void(nil));");
 	ha_a := int(nil);
 	ia_a := void(nil);
 	ja_a := insert(a,ha_a,ia_a);
-#a.print();
-	ka_a := print(a,);
-#var b:= new(void,int);
-	b := new(:void,:int);
-#b.insert(void(nil),1);
+	mil.line("a.print();");
+	ka_a := print(a);
+	mil.line("var b:= new(void,int);");
+	b := new(nil:void,nil:int);
+	mil.line("b.insert(void(nil),1);");
 	la_a := void(nil);
 	ma_a := insert(b,la_a,1);
-#b.print();
-	na_a := print(b,);
-#b.insert(void(nil),2);
+	mil.line("b.print();");
+	na_a := print(b);
+	mil.line("b.insert(void(nil),2);");
 	oa_a := void(nil);
 	pa_a := insert(b,oa_a,2);
-#b.insert(void(nil),int(nil));
+	mil.line("b.insert(void(nil),int(nil));");
 	qa_a := void(nil);
 	ra_a := int(nil);
 	sa_a := insert(b,qa_a,ra_a);
-#b.print();
-	ta_a := print(b,);
-#quit();
+	mil.line("b.print();");
+	ta_a := print(b);
+	mil.line("quit();");
 	ua_a := quit();
