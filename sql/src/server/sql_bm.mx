@@ -289,10 +289,11 @@ void bm_save( bm *bm, FILE *fp )
 	    	int version = *(int*)BUNtail(b,p);
 	    	int oversion = 0;
 	    	str name = BUNtail(bm->bat_name, BUNfnd(bm->bat_name,&id));
-	    	bat bid = *(oid*)BUNtail(bm->bat_bid, BUNfnd(bm->bat_bid,&id));
+	    	oid bid = *(oid*)BUNtail(bm->bat_bid, BUNfnd(bm->bat_bid,&id));
 	    	if (bm->bat_oversion && (z = BUNfnd(bm->bat_oversion, &id)) ){
 			oversion = *(int*)BUNtail(bm->bat_oversion, z);
 	    	}
+		/* keep the bat id's, schema_table_* can become too long! */
 	    	if (version > oversion) {	
 	    		char name_version[BUFSIZ];
 			BAT *o = bat_descriptor(bid, "bm_save");
@@ -307,10 +308,11 @@ void bm_save( bm *bm, FILE *fp )
 	    		BATmode(b, PERSISTENT);
 			BATkey(b, o->hkey);
 			BATkey(BATmirror(b), o->tkey);
+			bid = b->batCacheid;
 			bat_destroy(b);
 			bat_destroy(o);
 	    	}
-	    	fprintf(fp, "%s,%d\n", name, version); 
+	    	fprintf(fp, "%s,%d,%d\n", name, version, bid); 
 	}
 }
 
@@ -348,18 +350,25 @@ void bm_load( bm *bm, FILE *fp )
 	while(fgets(line, BUFSIZ, fp) != NULL && line[0] != '\n'){
 		char *s = strchr(line, ',');
 		if (s){
-			char nme[BUFSIZ];
+			char *name = NULL;
 			oid bid = 0;
 			int version = 0;
 
+			name = line;
 			*s++ = 0;
 			version = strtol(s,NULL,10);
-			snprintf(nme, BUFSIZ, "%s_%d", line, version );
-			bid = BBPindex(nme);
-			assert(bid);
+			s = strchr(s, ',');
+			if (!s)
+				GDKfatal("wrong bm format, please do a dump/restore!\n");
+			s++; /* skip , */
+			bid = strtol(s,NULL,10);
+		
+			if ((s=strchr(s, '\n')) != NULL)
+				*s = 0;
 			bm_add_bat_intern(bm, bm->lbid++, bid, line, version, BM_WRITE);
 			if (bm->debug &1 )
-				printf("bm_load %s\n", nme );
+				printf("bm_load %s %d %d\n", 
+					name, version, bid );
 		}
 	}
 	if (!bm->bat_oversion)
