@@ -613,6 +613,7 @@ scanner_getc_bs(struct scanner * lc)
 
 	if (read_more(lc, n) == EOF)
 		return EOF;
+	s = (unsigned char*) b->buf + b->pos + lc->yycur;
 
 	mask = utf8chkmsk[n];
 	c &= ~(0xFFC0 >> n);	/* remove non-x bits */
