@@ -1,0 +1,117 @@
+stdout of test 'tst_priv` in directory 'tests/by_Peter` itself:
+
+#> Mtest (20:55:13):	milM tst_priv milM
+#> Mtest (20:55:13):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_by_Peter tst_priv.milM
+# Monet Database Server V4.2
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for Linux2.2.12-20smp/32bit on Wed Apr 12 05:50:14 CEST 2000.
+#script:tst_priv.milM
+
+
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# test change of private mmap -> malloced under extends
+new(void,str,1000000).persists(true).access(BAT_WRITE).rename("a");
+d := new(void,int,1000);
+i := 0;
+while(i < 1000) d.insert(nil,i :+= 1);
+d := [str](d).seqbase(0@0);
+a.seqbase(0@0).insert(d);
+
+i := 0;
+while(i < 100) {
+    a.insert(d.seqbase(oid(a.count())));
+    i :+= 1;
+}
+
+a.mmap(1,1,1,1,1);
+unload("a");
+a.info.reverse.select("theap.storage").reverse.print;
+#-----------------------------------------#
+# BAT:			  tmp_30	  #
+# (str)			  (str)		  #
+#-----------------------------------------#
+[ "theap.storage",	  "malloced"	  ]
+
+[int](a.mirror);
+e := [str]([int](a.mirror));
+debugmask(49);
+a.insert(e);
+#01 pers(0) 26 (a) refs(1,1)
+#01 fix 26 (a)
+#01 unfix 26 (a)
+#01 fix 33 (tmp_33)
+#01 unfix 33 (tmp_33)
+#01 interpret_pin(insert) on bat(26) refcnt = 1
+#01 fix 26 (a)
+#01 interpret_pin(insert) => 26[1,0]
+#01 interpret_pin(insert) on bat(33) refcnt = 1
+#01 fix 33 (tmp_33)
+#01 interpret_pin(insert) => 33[1,0]
+#01 munmap(base=1146798080, size=4000012) = 0
+#01 move bat/26.buns.priv bat/26.buns = 0 (0ms)
+#01 fix 26 (a)
+# batstamp(26) = -139
+#01 pers(0) 26 (a) refs(2,1)
+#01 unfix 26 (a)
+#01 interpret_unpin(insert) on bat(26) refcnt = 0
+#01 unfix 26 (a)
+#01 interpret_unpin(insert) on bat(33) refcnt = 0
+#01 interpret_unpin(insert) => kill 33[0,1]
+#01 unfix 33 (tmp_33)
+#01 trans(0) 26 (a) refs(3,1)
+#01 trans(0) 26 (a) refs(2,1)
+debugmask(9);
+
+#a.mmap(1,1,1,1,1);
+a.info.reverse.select("theap.storage").reverse.print;
+#-----------------------------------------#
+# BAT:			  tmp_23	  #
+# (str)			  (str)		  #
+#-----------------------------------------#
+[ "theap.storage",	  "anonymous vm"  ]
+e := [str]([int](a.mirror));
+debugmask(49);
+a.insert(e);
+#01 pers(0) 26 (a) refs(1,1)
+#01 fix 26 (a)
+#01 unfix 26 (a)
+#01 fix 34 (tmp_34)
+#01 unfix 34 (tmp_34)
+#01 interpret_pin(insert) on bat(26) refcnt = 1
+#01 fix 26 (a)
+#01 interpret_pin(insert) on bat(34) refcnt = 1
+#01 fix 34 (tmp_34)
+#01 fix 26 (a)
+# batstamp(26) = -139
+#01 pers(0) 26 (a) refs(2,1)
+#01 unfix 26 (a)
+#01 interpret_unpin(insert) on bat(26) refcnt = 0
+#01 unfix 26 (a)
+#01 interpret_unpin(insert) on bat(34) refcnt = 0
+#01 unfix 34 (tmp_34)
+#01 trans(0) 26 (a) refs(3,1)
+#01 trans(0) 26 (a) refs(2,1)
+debugmask(9);
+
+a.info.reverse.select("theap.storage").reverse.print;
+#-----------------------------------------#
+# BAT:			  tmp_30	  #
+# (str)			  (str)		  #
+#-----------------------------------------#
+[ "theap.storage",	  "anonymous vm"  ]
+a.insert(nil,"make dirty..");
+commit;
+#01 #BBPdir: writing BBP.dir (52 bats).
+
+a.destroy;
+commit;
+#01 #BBPdir: writing BBP.dir (52 bats).
+
+quit;
+
+# 17:07:54 >  
+# 17:07:54 >  Done.
+# 17:07:54 >  
+
