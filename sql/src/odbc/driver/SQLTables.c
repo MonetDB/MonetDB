@@ -77,8 +77,7 @@ SQLTables_(ODBCStmt *stmt,
 			       "cast('' as varchar) as table_name, "
 			       "cast('' as varchar) as table_type, "
 			       "cast('' as varchar) as remarks "
-			       "from sys.schemas order by table_type, "
-			       "table_cat, table_schem, table_name");
+			       "from sys.schemas order by table_schem");
 	} else if (nCatalogNameLength == 0 && nSchemaNameLength == 0 &&
 		   nTableNameLength == 0 && szTableType && 
 		   strcmp((char*)szTableType, SQL_ALL_TABLE_TYPES) == 0) {
@@ -88,13 +87,12 @@ SQLTables_(ODBCStmt *stmt,
 			       "cast('' as varchar) as table_schem, "
 			       "cast('' as varchar) as table_name, "
 			       "case when t.istable = true and t.system = false and t.\"temporary\" = 0 then cast('TABLE' as varchar) "
-			       "when t.istable = true and t.system = true and t.\"temporary\" = 0 then cast('SYSTEM_TABLE' as varchar) "
+			       "when t.istable = true and t.system = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar) "
 			       "when t.istable = false then cast('VIEW' as varchar) "
-			       "when t.istable = true and t.system = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY TABLE' as varchar) "
+			       "when t.istable = true and t.system = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar) "
 			       "else cast('INTERNAL TABLE TYPE' as varchar) end as table_type, "
 			       "cast('' as varchar) as remarks "
-			       "from sys.tables t order by table_type, "
-			       "table_cat, table_schem, table_name");
+			       "from sys.tables t order by table_type");
 		/* TODO: UNION it with all supported table types */
 	} else {
 		/* no special case argument values */
@@ -113,9 +111,9 @@ SQLTables_(ODBCStmt *stmt,
 			"cast(s.name as varchar) as table_schem, "
 			"cast(t.name as varchar) as table_name, "
 			"case when t.istable = true and t.system = false and t.\"temporary\" = 0 then cast('TABLE' as varchar) "
-			"when t.istable = true and t.system = true and t.\"temporary\" = 0 then cast('SYSTEM_TABLE' as varchar) "
+			"when t.istable = true and t.system = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar) "
 			"when t.istable = false then cast('VIEW' as varchar) "
-			"when t.istable = true and t.system = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY TABLE' as varchar) "
+			"when t.istable = true and t.system = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar) "
 			"else cast('INTERNAL TABLE TYPE' as varchar) end as table_type, "
 			"cast('' as varchar) as remarks "
 			"from sys.schemas s, sys.tables t "
