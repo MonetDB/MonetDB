@@ -1,7 +1,7 @@
-#include <stdio.h>
 #include <monet_utils.h>
 #include <stream.h>
 #include <Mapi.h>
+#include <stdio.h>
 
 #define die(X) {mapi_explain(X,stdout); exit(-1); }
 
