@@ -4,9 +4,9 @@ build a simple template module (src/template.mx) for the monet database engine.
 
 Before continuing find (or compile) a monet version 4.2 or higher.
 
-set MONETDIST
+set MONET_PREFIX
 
-export MONETDIST=`./monet-config --prefix`
+export MONET_PREFIX=`./monet-config --prefix`
 
 run bootstrap in the top directory
 mkdir $ARCH
