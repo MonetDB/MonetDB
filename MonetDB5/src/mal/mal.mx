@@ -402,6 +402,6 @@ void mal_exit(Client cntxt){
     unloadModuleLibraries();
     TMcommit();
     finishNamespace();
-    GDKexit(1);
+    GDKexit(0);
 }
 @}
