@@ -748,10 +748,9 @@ public class JdbcClient {
 	 */
 	private static QueryPart scanQuery(String query, SQLStack stack) {
 		// examine string, char for char
-		boolean inString = (stack.peek() == '\'');
-		boolean inIdentifier = (stack.peek() == '"');
+		boolean wasInString = (stack.peek() == '\'');
+		boolean wasInIdentifier = (stack.peek() == '"');
 		boolean escaped = false;
-		boolean wasInString = inString, wasInIdentifier = inIdentifier;
 		int len = query.length();
 		for (int i = 0; i < len; i++) {
 			switch(query.charAt(i)) {
@@ -774,50 +773,44 @@ public class JdbcClient {
 					 * here. Because 'test \\\'' can exist as well, we need to
 					 * know if a quote is prefixed by an escaping slash or not.
 					 */
-					if (!inIdentifier) {
-						if (!inString && !escaped) {
+					if (!escaped && stack.peek() != '"') {
+						if (stack.peek() != '\'') {
 							// although it makes no sense to escape a quote
 							// outside a string, it is escaped, thus not meant
 							// as quote for us, apparently
-							inString = true;
 							stack.push('\'');
-						} else if (!escaped && stack.peek() == '\'') {
-							inString = false;
+						} else {
 							stack.pop();
 						}
-					} else {
-						// reset escaped flag
-						escaped = false;
 					}
+					// reset escaped flag
+					escaped = false;
 				break;
 				case '"':
-					if (!inString) {
-						if (!inIdentifier && !escaped) {
-							inIdentifier = true;
+					if (!escaped && stack.peek() != '\'') {
+						if (stack.peek() != '"') {
 							stack.push('"');
-						} else if (!escaped && stack.peek() == '"') {
-							inIdentifier = false;
+						} else {
 							stack.pop();
 						}
-					} else {
-						// reset escaped flag
-						escaped = false;
 					}
+					// reset escaped flag
+					escaped = false;
 				break;
 				case '-':
-					if (!escaped && !(inString || inIdentifier) && i + 1 < len && query.charAt(i + 1) == '-') {
+					if (!escaped && stack.peek() != '\'' && stack.peek() != '"' && i + 1 < len && query.charAt(i + 1) == '-') {
 						len = i;
 					}
 					escaped = false;
 				break;
 				case '(':
-					if (!escaped && !(inString || inIdentifier)) {
+					if (!escaped && stack.peek() != '\'' && stack.peek() != '"') {
 						stack.push('(');
 					}
 					escaped = false;
 				break;
 				case ')':
-					if (!escaped && !(inString || inIdentifier) && stack.peek() == '(') {
+					if (!escaped && stack.peek() == '(') {
 						stack.pop();
 					}
 					escaped = false;
@@ -831,7 +824,7 @@ public class JdbcClient {
 			for (; start < len && Character.isWhitespace(query.charAt(start)); start++);
 		}
 		int stop = len - 1;
-		if (!inString && !wasInIdentifier && stop > start) {
+		if (stack.peek() !=  '\'' && !wasInIdentifier && stop > start) {
 			// trim spaces at the end of the string
 			for (; stop >= start && Character.isWhitespace(query.charAt(stop)); stop--);
 		}
@@ -839,8 +832,8 @@ public class JdbcClient {
 
 		if (start == stop) {
 			// we have an empty string
-			return(new QueryPart(false, null, inString || inIdentifier));
-		} else if (inString || inIdentifier) {
+			return(new QueryPart(false, null, stack.peek() ==  '\'' || stack.peek() == '"'));
+		} else if (stack.peek() ==  '\'' || stack.peek() == '"') {
 			// we have an open quote
 			return(new QueryPart(false, query.substring(start, stop), true));
 		} else {
