@@ -732,8 +732,6 @@ InstrPtr newInstruction(int kind){
 
 	space = (MAXARG-1) * sizeof(int)+ sizeof(InstrRecord);
 	p = GDKmalloc(space);
-	p->token = kind;
-	p->barrier= 0;
 	p->typechk = TYPE_UNKNOWN;
 	setModuleId(p, NULL);
 	setFunctionId(p, NULL);
@@ -747,6 +745,27 @@ InstrPtr newInstruction(int kind){
 	p->retc= 1;
 	p->maxarg= MAXARG;
 	p->argv[0] = -1;	/* watch out for direct use in variable table*/
+@-
+Flow of control instructions are always marked as an assignment
+with modifier
+@c
+	switch(kind){
+	case BARRIERsymbol:	
+	case REDOsymbol:	
+	case LEAVEsymbol:	
+	case EXITsymbol:	
+	case RETURNsymbol:	
+	case YIELDsymbol:	
+	case CATCHsymbol:	
+	case RAISEsymbol:	
+	case THREADsymbol:	
+		p->token= ASSIGNsymbol;
+		p->barrier= kind;
+		break;
+	default:
+		p->token = kind;
+		p->barrier= 0;
+	}
 #ifdef MALprofiler
 	p->timer.tms_utime = 0;
 	p->timer.tms_stime = 0;

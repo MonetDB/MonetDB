@@ -1150,9 +1150,11 @@ In this case, we have to assure that all references are cleared
 as well. The routine below performs this action in the local
 stack frame only.
 @c
-#define STACKTRACE
 void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 { 	int k;
+	ValRecord backup;
+	backup.vtype= TYPE_int;
+	backup.val.ival= 0;
 
 #ifdef STACKTRACE
 	stream_printf(GDKout,"--->release BAT %d \n", bid);
@@ -1163,7 +1165,7 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 #ifdef STACKTRACE
 	stream_printf(GDKout,"released entry %d\n",k);
 #endif
-		batFinalCall(stk->stk+k);
+		batAfterCall(stk->stk+k,&backup);
 		stk->stk[k].val.ival= 0;
 	}
 #ifdef STACKTRACE
