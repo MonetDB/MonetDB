@@ -42,6 +42,11 @@ def rsplit_filename(f):
         return f[:s], f[s+1:]
     return base, ext
 
+def msc_basename(f):
+    # return basename (i.e. just the file name part) of a path, no
+    # matter which directory separator was used
+    return string.split(string.split(f, '/')[-1], '\\')[-1]
+
 def msc_dummy(fd, var, values, msc):
     res = fd
 
@@ -847,12 +852,18 @@ def msc_jar(fd, var, jar, msc):
         manifest_flag=''
 
     fd.write("%s_java_files= " % (name))
+    infiles = []
     for j in jar['SOURCES']:
         s,ext = rsplit_filename(j)
         if ext == 'in':
-            fd.write('%s ' % s)
+            fd.write('%s ' % msc_basename(msc_translate_dir(s, msc)))
+            infiles.append(msc_translate_dir(s, msc))
         else:
             fd.write('$(SRCDIR)\\%s ' % msc_translate_dir(j,msc))
+    fd.write('\n')
+    for infile in infiles:
+        fd.write('%s: "$(SRCDIR)\\%s.in"\n' % (msc_basename(infile), infile))
+        fd.write('\tif exist "$(SRCDIR)\\%s.in" $(CONFIGURE) "$(SRCDIR)\\%s.in" > "%s"\n' % (infile, infile, msc_basename(infile)))
 
     fd.write("\n%s_class_files= " % (name))
     for j in jar['TARGETS']:
