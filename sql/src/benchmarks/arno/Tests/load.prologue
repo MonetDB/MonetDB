@@ -1,5 +1,0 @@
-module("unix");
-
-var SQLprefix := getenv("SQL_PREFIX");
-
-source(SQLprefix+"/share/MonetDB/sqlserver.mil");
