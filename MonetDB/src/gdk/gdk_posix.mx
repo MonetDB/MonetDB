@@ -203,6 +203,10 @@ gdk_export int MT_alloc_print();
 # endif
 #endif 
 
+#ifndef MAP_NORESERVE
+#define MAP_NORESERVE 		MAP_PRIVATE
+#endif 
+
 #define MMAP_ADVISE		7
 #define MMAP_WRITABLE		(MMAP_WRITE|MMAP_COPY)
 
@@ -312,10 +316,6 @@ static void MT_alloc_init() {
 }
 
 #ifndef NATIVE_WIN32
-
-#ifndef MAP_NORESERVE
-#define MAP_NORESERVE MAP_PRIVATE
-#endif 
 
 char* MT_membase = NULL;
 
@@ -929,7 +929,7 @@ void MT_sleep_ms(unsigned int ms) {
         struct timespec ts;
         ts.tv_sec = ms/1000;
         ts.tv_nsec = 1000000*(ms%1000);
-        while(nanosleep(&ts, &ts) == -1 && errno
+        while(nanosleep(&ts, &ts) == -1 && errno == EINTR);
 }
 
 #else  /* WIN32 */

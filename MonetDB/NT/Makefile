@@ -4,7 +4,7 @@
 # Nothing much configurable below
 
 # cl -? describes the options
-CC = cl -GF -W3 -D -nologo -Zi
+CC = cl -GF -W3 -D -nologo -Zi -Ox -G6
 CXX = $(CC)
 # optimize use -Ox
 
