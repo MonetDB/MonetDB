@@ -69,10 +69,14 @@ def msc_translate_dir(path,msc):
     rest = ""
     if (string.find(path,'/') >= 0):
         dir,rest = string.split(path,'/', 1)
-    if (dir == "top_srcdir" or dir == "top_builddir"):
+    if (dir == "top_builddir"):
         dir = "$(TOPDIR)"
-    elif (dir == "srcdir" or dir == "builddir"):
+    elif (dir == "top_srcdir"):
+        dir = "$(TOPDIR)/.."
+    elif (dir == "builddir"):
         dir = "."
+    elif (dir == "srcdir"):
+        dir = "$(SRCDIR)"
     elif (dir == "pkglibdir" or dir == "libdir" or \
           dir == "pkgbindir" or dir == "bindir" or \
           dir == "pkgdatadir" or dir == "datadir"):
