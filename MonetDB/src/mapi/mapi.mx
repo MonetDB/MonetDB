@@ -37,6 +37,13 @@ This module contains a simple interface for internet connections.
 
 	.COMMAND stream_until(Stream S,str stop) : str = stream_read_until;
 		"read a string from <S> until the <stop> word"
+
+	.COMMAND socket_close( int s ) = socket_close_wrap;
+		"close a socket"
+
+	.COMMAND socket_dup( int s ) : int = socket_dup_wrap;
+		"duplicate a socket"
+
 .LOAD
 	VAR _params := nil;
 	IF (view_bbp_name.reverse.exist("mapi_params")){
@@ -92,8 +99,8 @@ This module contains a simple interface for internet connections.
 		"Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string.",
 		"mapi");
 
-	PROC stream_read(Stream s) : str := RETURN stream_strip(s,(""+chr(1)));
-	ADDHELP("stream_read", "windhouw", "June  22 2001",
+	PROC map_stream_read(Stream s) : str := RETURN stream_strip(s,(""+chr(1)));
+	ADDHELP("map_stream_read", "windhouw", "June  22 2001",
 		"Read a string from <S> until a '\1' character.",
 		"mapi");
 
@@ -225,7 +232,7 @@ Get the new information for the server socket and start listening.
 	listen(sock, maxusers); 
 
 	PARDEBUG {
-		THRprintf(GDKerr, "MAPIlisten:Internet started at %d\n", server.sin_port);
+		THRprintf(GDKerr, "MAPIlisten:Internet started at %d\n", port);
 	}
 	do {
 		int retval;
@@ -234,9 +241,9 @@ Get the new information for the server socket and start listening.
 
     		FD_ZERO(&fds);
     		FD_SET(sock, &fds);
-    		/* Wait up to five seconds. */
-    		tv.tv_sec = 5;
-    		tv.tv_usec = 0;
+    		/* Wait up to 0.5 seconds. */
+    		tv.tv_sec = 0;
+    		tv.tv_usec = 500;
 
     		retval = select(sock+1, &fds, &fds, &fds, &tv);
     		if (retval && (msgsock = accept(sock, 0, (SOCKLEN *)0)) < 0) {
@@ -307,10 +314,18 @@ changed setbuf to setbuffer to avoid unintentional buffer overflow.
 					"CLIENTlisten:client accepted %d\n", 
 						msgsock);
 			} else {
+				ValRecord res;
+				ptr val = &res.val.ival;
+				int cres = 0;
 				char buf[BUFSIZ];
 	
 				snprintf( buf, BUFSIZ, "%s(%d);\n", cmd, msgsock );
-				interpret_str( stk, buf, res);
+        			res.vtype = TYPE_void; 
+				interpret_str( stk, buf, &res);
+				if ((cres = close(msgsock)) < 0){
+					GDKerror("Error closing socket %d\n", cres );
+					return GDK_FAIL;
+				}
 			}
 		}
 	} while (monet_running);
@@ -344,6 +359,16 @@ int stream_read_until(str *res, Stream *S , str stop){
 	} else {
 		*res = GDKstrdup("");
 	}
+	return GDK_SUCCEED;
+}
+
+int socket_close_wrap( int *s ){
+	close(*s);
+	return GDK_SUCCEED;
+}
+
+int socket_dup_wrap( int *res, int *s ){
+	*res = dup(*s);
 	return GDK_SUCCEED;
 }
 
