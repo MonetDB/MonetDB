@@ -1,14 +1,14 @@
-stderr of test 'bug-sf-947600` in directory 'src/test/bugs` itself:
+stderr of test 'bug-sf-953560` in directory 'src/test/bugs` itself:
 
 
-# 15:12:34 >  
-# 15:12:34 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=49151 --set sql_port=54782 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/build-sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 15:12:34 >  
+# 00:22:41 >  
+# 00:22:41 >  Mtimeout -timeout 180 Mserver "--config=/home/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/home/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/home/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/home/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=48393 --set sql_port=50785 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/home/niels/data/Linux-i686/build-sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 00:22:41 >  
 
 # builtin opt 	gdk_arch = 32biti686-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.3.17
-# builtin opt 	monet_pid = 6506
-# builtin opt 	prefix = /ufs/niels/data/Linux-i686
+# builtin opt 	monet_pid = 18061
+# builtin opt 	prefix = /home/niels/data/Linux-i686
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
@@ -31,7 +31,7 @@ stderr of test 'bug-sf-947600` in directory 'src/test/bugs` itself:
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
 # builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	prefix = /ufs/niels/data/Linux-i686
+# config opt 	prefix = /home/niels/data/Linux-i686
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
 # config opt 	gdk_dbname = demo
@@ -42,16 +42,22 @@ stderr of test 'bug-sf-947600` in directory 'src/test/bugs` itself:
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # config opt 	monet_daemon = no
 # config opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	gdk_config = /ufs/niels/data/Linux-i686/etc/monet.conf
+# config opt 	gdk_config = /home/niels/data/Linux-i686/etc/monet.conf
 # cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /ufs/niels/data/Linux-i686/lib/MonetDB
-# cmdline opt 	gdk_dbfarm = /ufs/niels/data/Linux-i686/var/MonetDB/dbfarm
-# cmdline opt 	sql_logdir = /ufs/niels/data/Linux-i686/var/MonetDB/log
-# cmdline opt 	mapi_port = 49151
-# cmdline opt 	sql_port = 54782
+# cmdline opt 	monet_mod_path = /home/niels/data/Linux-i686/lib/MonetDB
+# cmdline opt 	gdk_dbfarm = /home/niels/data/Linux-i686/var/MonetDB/dbfarm
+# cmdline opt 	sql_logdir = /home/niels/data/Linux-i686/var/MonetDB/log
+# cmdline opt 	mapi_port = 48393
+# cmdline opt 	sql_port = 50785
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_test_bugs
 
+# 00:22:41 >  
+# 00:22:41 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=localhost --port=50785  < bug-sf-953560.sql
+# 00:22:41 >  
 
 
+# 00:22:42 >  
+# 00:22:42 >  Done.
+# 00:22:42 >  
 
