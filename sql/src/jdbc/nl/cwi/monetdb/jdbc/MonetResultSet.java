@@ -898,7 +898,7 @@ public class MonetResultSet implements ResultSet {
 							ret = 12;	// "hh:mm:ss.SSS".length();
 						break;
 						case Types.TIMESTAMP:
-							ret = 23;	// date + space + time
+							ret = 29;	// date + space + time + zone
 						break;
 					}
 				}
