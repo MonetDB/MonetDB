@@ -329,11 +329,13 @@ the resulting type can not be determined.
         s1= getPolyType(formal, polytype);
 
         returntype[i]= resolveType(actual,s1);
-        if( returntype[i]== -1 && i< p->retc){
-            returntype[i]= TYPE_any;
-            typeMismatch(mb, p, actual, s1,silent);
-            s1= -1;
-            break;
+        if( returntype[i]== -1 && i< p->retc ){
+            returntype[i]= actual; /* TYPE_any;*/
+			if( !isPolyType(actual)) {
+				typeMismatch(mb, p, actual, s1,silent);
+				s1= -1;
+				break;
+			}
         }
     }
     if(s1<0 ){
@@ -349,7 +351,7 @@ of the symbol stack, it is easy to filter such errors.
 @c
     p->typechk= TYPE_RESOLVED;
     for(i=0;i<p->argc;i++) {
-        if( !isFixed(mb,p->argv[i])) {
+        if( !isFixed(mb,p->argv[i]) && returntype[i]>=0) {
             setVarType(mb,p->argv[i],returntype[i]);
             setFixed(mb,p->argv[i]);
         } 
@@ -513,14 +515,14 @@ The BAT void column type is exchangeable with an oid column type
 @c
         h3= -1;
         if( h1 == TYPE_any) h3= h2;
-        if( h2 == TYPE_any) h3= h1;
+        /* if( h2 == TYPE_any) h3= h1;*/
         if( h1== TYPE_void && h2 == TYPE_oid) h3= TYPE_oid; else
         if( h2== TYPE_void && h1 == TYPE_oid) h3= TYPE_oid; else
         if( h1 == h2) h3= h1;
         if( h3 == -1) goto noResolution;
         t3= -1;
         if( t1 == TYPE_any) t3= t2;
-        if( t2 == TYPE_any) t3= t1;
+        /*if( t2 == TYPE_any) t3= t1;*/
         if( t1== TYPE_void && t1 == TYPE_oid) t3= TYPE_oid; else
         if( t1== TYPE_void && t1 == TYPE_oid) t3= TYPE_oid; else
         if( t1 == t2) t3= t1;
