@@ -441,8 +441,86 @@ static PyObject *ErrorObject;
 	$result = t_output_helper($result, o);
 }
 
-%ignore SQLGetDescField;
-%ignore SQLGetDescRec;
+// SQLGetDescField
+%typemap(in, numinputs=1) (SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength) (char tempbuf[BUFLEN], $*4_type len) {
+	$1 = ($1_type) PyInt_AsLong($input);
+	if (PyErr_Occurred()) SWIG_fail;
+	$2 = tempbuf;
+	$3 = len = sizeof(tempbuf);
+	$4 = &len;
+};
+%typemap(argout,fragment="t_output_helper") (SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength) {
+	PyObject *o;
+	switch ($1) {
+	case SQL_DESC_ALLOC_TYPE:
+	case SQL_DESC_COUNT:
+	case SQL_DESC_CONCISE_TYPE:
+	case SQL_DESC_DATETIME_INTERVAL_CODE:
+	case SQL_DESC_FIXED_PREC_SCALE:
+	case SQL_DESC_NULLABLE:
+	case SQL_DESC_PRECISION:
+	case SQL_DESC_ROWVER:
+	case SQL_DESC_SCALE:
+	case SQL_DESC_SEARCHABLE:
+	case SQL_DESC_TYPE:
+	case SQL_DESC_UNNAMED:
+	case SQL_DESC_UNSIGNED:
+	case SQL_DESC_UPDATABLE:
+		/* SQLSMALLINT */
+		o = PyInt_FromLong((long) * (SQLSMALLINT *) $2);
+		break;
+	case SQL_DESC_ARRAY_SIZE:
+	case SQL_DESC_BIND_TYPE:
+	case SQL_DESC_LENGTH:
+		/* SQLUINTEGER */
+		o = PyInt_FromLong((long) * (SQLUINTEGER *) $2);
+		break;
+	case SQL_DESC_AUTO_UNIQUE_VALUE:
+	case SQL_DESC_CASE_SENSITIVE:
+	case SQL_DESC_DATETIME_INTERVAL_PRECISION:
+	case SQL_DESC_DISPLAY_SIZE:
+	case SQL_DESC_NUM_PREC_RADIX:
+	case SQL_DESC_OCTET_LENGTH:
+	case SQL_DESC_PARAMETER_TYPE:
+		/* SQLINTEGER */
+		o = PyInt_FromLong((long) * (SQLINTEGER *) $2);
+		break;
+	case SQL_DESC_BASE_COLUMN_NAME:
+	case SQL_DESC_BASE_TABLE_NAME:
+	case SQL_DESC_CATALOG_NAME:
+	case SQL_DESC_LABEL:
+	case SQL_DESC_LITERAL_PREFIX:
+	case SQL_DESC_LITERAL_SUFFIX:
+	case SQL_DESC_LOCAL_TYPE_NAME:
+	case SQL_DESC_NAME:
+	case SQL_DESC_SCHEMA_NAME:
+	case SQL_DESC_TABLE_NAME:
+	case SQL_DESC_TYPE_NAME:
+		/* string */
+		o = PyString_FromStringAndSize((char *) $2, *$4 >= $3 ? $3 - 1 : *$4);
+		break;
+	case SQL_DESC_ARRAY_STATUS_PTR:
+	case SQL_DESC_BIND_OFFSET_PTR:
+	case SQL_DESC_ROWS_PROCESSED_PTR:
+	case SQL_DESC_DATA_PTR:
+	case SQL_DESC_INDICATOR_PTR:
+	case SQL_DESC_OCTET_LENGTH_PTR:
+		/* pointer */
+		o = Py_None;
+		Py_INCREF(Py_None);
+		break;
+	}
+	$result = t_output_helper($result, o);
+}
+
+// SQLGetDescRec
+%apply (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) { (SQLCHAR *Name, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength) };
+%apply int *OUTPUT { SQLSMALLINT *Type };
+%apply int *OUTPUT { SQLSMALLINT *SubType };
+%apply int *OUTPUT { SQLLEN *Length };
+%apply int *OUTPUT { SQLSMALLINT *Precision };
+%apply int *OUTPUT { SQLSMALLINT *Scale };
+%apply int *OUTPUT { SQLSMALLINT *Nullable };
 
 // SQLGetDiagField
 %typemap(in, numinputs=1) (SQLSMALLINT DiagIdentifier, SQLPOINTER DiagInfo, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength) (char tempbuf[BUFLEN], $*4_type len) {
@@ -747,7 +825,7 @@ static PyObject *ErrorObject;
 %typemap(in, numinputs=1) (SQLPOINTER Value, SQLINTEGER StringLength) (SQLUINTEGER u, SQLHANDLE h) {
 	u = (SQLUINTEGER) PyInt_AsUnsignedLongMask($input);
 	if (!PyErr_Occurred()) {
-		$1 = (SQLPOINTER) &u;
+		$1 = (SQLPOINTER) (size_t) u;
 		$2 = 0;
 	} else {
 		PyErr_Clear();
@@ -771,7 +849,7 @@ static PyObject *ErrorObject;
 %typemap(in, numinputs=1) (SQLULEN Value) (SQLUINTEGER u) {
 	u = (SQLUINTEGER) PyInt_AsUnsignedLongMask($input);
 	if (!PyErr_Occurred()) {
-		$1 = (SQLULEN) &u;
+		$1 = (SQLULEN) u;
 	} else {
 		PyErr_Clear();
 		$1 = (SQLULEN) PyString_AsString($input);
@@ -783,13 +861,38 @@ static PyObject *ErrorObject;
 	}
 }
 
+// SQLSetDescField
+%typemap(in, numinputs=1) (SQLPOINTER Value, SQLINTEGER BufferLength) (SQLUINTEGER u, SQLHANDLE h) {
+	u = (SQLUINTEGER) PyInt_AsUnsignedLongMask($input);
+	if (!PyErr_Occurred()) {
+		$1 = (SQLPOINTER) (size_t) u;
+		$2 = 0;
+	} else {
+		PyErr_Clear();
+		$1 = (SQLPOINTER) PyString_AsString($input);
+		if (!PyErr_Occurred()) {
+			$2 = PyString_Size($input);
+		} else {
+			PyErr_SetString(ErrorObject, "bad value type");
+			SWIG_fail;
+		}
+	}
+}
+
+// SQLSetDescRec
+%typemap(in, numinputs=0) (SQLPOINTER Data) {
+	$1 = NULL;
+}
+%typemap(in, numinputs=0) (SQLLEN *StringLength) {
+	$1 = NULL;
+}
+%apply SQLLEN *StringLength {SQLLEN *Indicator};
+
 // SQLSetCursorName
 %apply (char *STRING, int LENGTH) { (SQLCHAR *CursorName, SQLSMALLINT NameLength) };
 
 %ignore SQLBindCol;		/* can't be implemented in Python */
 %ignore SQLBindParam;		/* not part of ODBC */
-%ignore SQLSetDescField;	/* can't be implemented in Python */
-%ignore SQLSetDescRec;
 %ignore SQLBindParameter;
 %ignore SQLSetParam;
 
