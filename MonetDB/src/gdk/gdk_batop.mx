@@ -54,8 +54,9 @@ The content of a BAT can be appended to (removed from) another using
 @%BATins@ (@%BATdel@).
 @c
 #define bunins(b,h,t) if (BUNins(b,h,t) == NULL) return NULL;
-BAT *BATins(BAT *b, BAT *n)
+BAT *BATins(BAT *b, BAT *n) 
 {
+	BAT *tmp = NULL, *res = NULL;
 	ssize_t needed = 0;
 	int fastpath = 0;
 
@@ -77,13 +78,17 @@ BAT *BATins(BAT *b, BAT *n)
 		oid h = *(oid*)BUNhead(n,BUNfirst(n));
 		if ((t+1) != h || !BAThdense(n)){
 			b = BATmaterialize(b, BATcount(b)+ BATcount(n));
-			if( b == NULL) return b;
+			if( b == NULL) return NULL;
 		}
 	}
 	if (b->thash_heap==NULL && b->hacctype==0 && b->tacctype==0 && b->batSet==0 
-	    && (b->hkey&BOUND2BTRUE)==0 && (b->tkey&BOUND2BTRUE)==0 && 
+	    && (b->tkey&BOUND2BTRUE)==0 && 
 		(b->hhash_heap==NULL || ATOMstorage(b->htype) == TYPE_int)) 
 	{
+		if ((b->hkey&BOUND2BTRUE)) {
+			tmp = n = BATkdiff(n, b); 
+			if( n == NULL) return NULL;
+		}
 		fastpath = 1;
 	}
 
@@ -189,9 +194,10 @@ BAT *BATins(BAT *b, BAT *n)
 	} else {
 		@:updateloop(b,n,bunins)@
 	}
-	return b;
+	res = b;
 bunins_failed:
-	return NULL;
+	if (tmp) BBPreclaim(tmp);
+	return res;
 }
 
 BAT *BATdel(BAT *b, BAT *n)
@@ -1471,15 +1477,137 @@ bunins_failed:
 @- sorting 
 @%BATsort@ returns a sorted copy. @%BATorder@ sorts the BAT itself. 
 @c
-@:sort(1,,,_rev)@
-@:sort(GDK_SORTED,_REV,_rev,)@
+#ifdef HAVE_RESTRICT
+#define __r     restrict
+#else
+#ifdef HAVE___RESTRICT__
+#define __r     __restrict__
+#else
+#define __r
+#endif
+#endif
+
+@:sort(1,,,_rev,>)@
+@:sort(GDK_SORTED,_REV,_rev,,<)@
+
+@= sort_tpe
+static int chk_order@3_@1(@1*__r col) {
+	size_t i, r=1;
+	for(i=0; i<128; i+=4) {
+		r &= (col[i+1] @2= col[i+0]) &
+		     (col[i+2] @2= col[i+1]) &
+		     (col[i+3] @2= col[i+2]) &
+		     (col[i+4] @2= col[i+3]);
+	}
+	return r;
+}
 
 @= sort
-int BATordered@3(BAT *b)
-{
-	BATcheck(b, "BATordered@3: BAT"); 
-	PROPDEBUG BATpropcheck(b, BATPROPS_QUICK);
-	return (BAThordered(b)&(@1@2));
+@:sort_tpe(chr,@5,@3)@
+@:sort_tpe(sht,@5,@3)@
+@:sort_tpe(int,@5,@3)@
+@:sort_tpe(lng,@5,@3)@
+@:sort_tpe(flt,@5,@3)@
+@:sort_tpe(dbl,@5,@3)@
+
+static int chk_order@3_oid_oid(oid*__r col) {
+	size_t i, r=1;
+	for(i=0; i<256; i+=8) {
+		r &= (col[i+2] @5= col[i+0]) &
+		     (col[i+4] @5= col[i+2]) &
+		     (col[i+6] @5= col[i+4]) &
+		     (col[i+8] @5= col[i+6]);
+	}
+	return r;
+}
+
+int BATordered@3(BAT* b) {
+	size_t cnt = BATcount(b);
+
+	if ((BAThordered(b)&@1) == 0 && cnt > 0) {
+		int (*cmp)(ptr,ptr) = BATatoms[b->htype].atomCmp;
+		char* cur = (char*) BUNhloc(b,BUNfirst(b));
+		char* end = (char*) BUNhloc(b,BUNlast(b));
+		BUN base = b->hheap.base;
+		int xx = BUNsize(b);
+
+		/* we may have negative information already; this saves a scan */
+		if (b->H->nosorted@3 > BUNindex(b,cur) && 
+		    b->H->nosorted@3 < BUNindex(b,end) &&
+		    cmp(BUNhead(b, BUNptr(b,b->H->nosorted@3-1)),
+		        BUNhead(b, BUNptr(b,b->H->nosorted@3))) @5 0) 
+		{
+			return FALSE;
+		}
+
+		/* for [tpe,void] and [OID,OID] bats, we have fast 128-at-a-time routines */
+		if (ATOMstorage(b->htype) == ATOMstorage(TYPE_oid) && BUNsize(b) == 2*ATOMsize(TYPE_oid)) {
+			while(cur + 256*sizeof(oid) < end) {
+				if (!chk_order@3_oid_oid((oid*) cur)) break;
+				cur += 256*sizeof(oid);
+			}
+		} else if (ATOMstorage(b->htype) == TYPE_chr && BUNsize(b) == sizeof(chr)) {
+			while(cur + 128*sizeof(chr) < end) {
+				if (!chk_order@3_chr((chr*) cur)) break;
+				cur += 128*sizeof(chr);
+			}
+		} else if (ATOMstorage(b->htype) == TYPE_sht && BUNsize(b) == sizeof(sht)) {
+			while(cur + 128*sizeof(sht) < end) {
+				if (!chk_order@3_sht((sht*) cur)) break;
+				cur += 128*sizeof(sht);
+			}
+		} else if (ATOMstorage(b->htype) == TYPE_int && BUNsize(b) == sizeof(int)) {
+			while(cur + 128*sizeof(int) < end) {
+				if (!chk_order@3_int((int*) cur)) break;
+				cur += 128*sizeof(int);
+			}
+		} else if (ATOMstorage(b->htype) == TYPE_lng && BUNsize(b) == sizeof(lng)) {
+			while(cur + 128*sizeof(lng) < end) {
+				if (!chk_order@3_lng((lng*) cur)) break;
+				cur += 128*sizeof(lng);
+			}
+		} else if (ATOMstorage(b->htype) == TYPE_flt && BUNsize(b) == sizeof(flt)) {
+			while(cur + 128*sizeof(flt) < end) {
+				if (!chk_order@3_flt((flt*) cur)) break;
+				cur += 128*sizeof(flt);
+			}
+		} else if (ATOMstorage(b->htype) == TYPE_dbl && BUNsize(b) == sizeof(dbl)) {
+			while(cur + 128*sizeof(dbl) < end) {
+				if (!chk_order@3_dbl((dbl*) cur)) break;
+				cur += 128*sizeof(dbl);
+			}
+		}
+
+		/* check sortedness tuple-by-tuple */
+		if (base) {
+			char *prv = base + *(var_t*) cur; cur += xx;
+			while(cur < end) {
+				char* val = base + *(var_t*) cur;
+				if (cmp(prv,val) @5 0) {
+					/* record negative position info */	
+					b->H->nosorted@3 = BUNindex(b,cur);
+					return FALSE;
+				}
+				prv = val; cur += xx;
+			}
+		} else {
+			char* prv = cur; cur += xx;
+			while(cur < end) {
+				if (cmp(prv,cur) @5 0) {
+					/* record negative position info */	
+					b->H->nosorted@3 = BUNindex(b,cur);
+					return FALSE;
+				}
+				prv = cur; cur += xx;
+			}
+		}
+	}
+	/* it is sorted@3! set the properties */
+	if ((b->hsorted & (bit) GDK_SORTED@2) == 0) {
+		b->batDirtydesc = TRUE;
+	}
+	b->hsorted |= (bit)GDK_SORTED@2;
+	return TRUE;
 }
 
 BAT *BATsort@3(BAT *b)
