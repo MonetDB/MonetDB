@@ -319,7 +319,16 @@ char *	name;
 	    d->d_blk = blk;
 	    HideOff();
 	    break;
+ /*
+  * Comment statement
+  * Syntax:@/<blk>\n...
+  */
 	case Comment:
+	    if (allTrue()){
+		d = NwDef(lastdir, mod, sec, lino);
+		d->d_cmd = NULL;
+		d->d_blk = blk;
+	    }
 	    break;
 	default:
 	    Fatal("MakeDefs", "Unknown directive:%c%c", MARK, dir);
