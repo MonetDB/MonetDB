@@ -23,6 +23,7 @@
  * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
+#include "comm.h"
 #include <stdlib.h>
 #include <sys/types.h>
 #ifdef HAVE_SYS_SOCKET_H
