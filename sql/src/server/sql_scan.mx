@@ -678,6 +678,7 @@ static int
 skip_sql_comment@1(struct scanner * lc)
 {
 	int cur;
+
 	while ((cur = scanner_getc@1(lc)) != EOF && (cur != '\n'))
 		;
 	lc->yysval = lc->yycur;
@@ -708,8 +709,7 @@ number@1(mvc * c, int cur)
 		cur = scanner_getc@1(lc);
 		if (cur == '-' || cur == '+') 
 			token = 0;
-		while ((cur = scanner_getc@1(lc)) != EOF && 
-		       isdigit(cur)) 
+		while ((cur = scanner_getc@1(lc)) != EOF && isdigit(cur)) 
 			token = APPROXNUM;
 	}
 	if (token) {

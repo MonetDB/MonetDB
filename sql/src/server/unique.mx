@@ -121,7 +121,8 @@ CTunique_simple(BAT *attr)
 }
 
 @= CTunique_ordered
-oid CTunique_ordered_@1( BAT *res, BAT *attr, oid start )
+oid
+CTunique_ordered_@1(BAT *res, BAT *attr, oid start)
 {
 	size_t cnt = BATcount(attr);
 	oid *ro = (oid*)BUNtail(res,BUNfirst(res));
@@ -134,9 +135,8 @@ oid CTunique_ordered_@1( BAT *res, BAT *attr, oid start )
 
 	co = ao;
 	cv = *av;
-	while(av < ae)
-	{
-		if (*av != cv){
+	while (av < ae) {
+		if (*av != cv) {
 			if (*av < cv)
 				break;
 			co = ao;
@@ -263,7 +263,8 @@ CTunique(BAT **res, BAT *attr)
 }
 
 @= CTunique2_ordered
-BAT *CTunique2_ordered_@1( BAT *res, BAT *ct, BAT *attr )
+BAT *
+CTunique2_ordered_@1(BAT *res, BAT *ct, BAT *attr)
 {
 	size_t cnt = BATcount(ct);
 	oid co = ct->hseqbase;
@@ -271,9 +272,8 @@ BAT *CTunique2_ordered_@1( BAT *res, BAT *ct, BAT *attr )
 	@1 *ca = (@1*)BUNtail(attr, BUNfirst(attr)), v = *ca;
 	oid *o = (oid*)BUNtail(res, BUNfirst(res)), gid;
 	
-	for( cid = *ci, gid = co; ci < eci; ci++, ca++, co++, *o++)
-	{
-		if (*ci != cid || *ca != v ){
+	for( cid = *ci, gid = co; ci < eci; ci++, ca++, co++, *o++) {
+		if (*ci != cid || *ca != v ) {
 			gid = co; 
 			if (*ci != cid) {
 				cid = *ci;

@@ -89,40 +89,44 @@ extern "C" {
 #include "initmodules.h"
 #include <locale.h>
 }
-
 #ifdef HAVE_NEW
 #include <new>
 #endif
-void *operator new( size_t size ) 
+void *operator
+new(size_t size)
 #ifdef HAVE_NEW
-throw(std::bad_alloc) 
+throw(std::bad_alloc)
 #endif
 {
-        void *ptr = GDKmalloc( size );
-        return(ptr);
+	void *ptr = GDKmalloc(size);
+
+	return (ptr);
 }
-void operator delete( void *ptr ) 
-#ifdef HAVE_NEW
-throw() 
-#endif
-{
-        GDKfree( ptr );
-}
-#if defined(__GNUC__) && defined(__cplusplus)
-void *operator new[]( size_t size ) 
-#ifdef HAVE_NEW
-throw (std::bad_alloc)
-#endif
-{
-        void *ptr = GDKmalloc( size );
-        return(ptr);
-}
-void operator delete[]( void *ptr ) 
+void operator
+delete(void *ptr)
 #ifdef HAVE_NEW
 throw()
 #endif
 {
-        GDKfree( ptr );
+	GDKfree(ptr);
+}
+
+#if defined(__GNUC__) && defined(__cplusplus)
+void *operator  new[] (size_t size)
+#ifdef HAVE_NEW
+throw(std::bad_alloc)
+#endif
+{
+	void *ptr = GDKmalloc(size);
+
+	return (ptr);
+}
+void operator  delete[] (void *ptr)
+#ifdef HAVE_NEW
+throw()
+#endif
+{
+	GDKfree(ptr);
 }
 #endif
 
@@ -149,24 +153,28 @@ use of malloc().  We hack around it, by using realloc(0,size) in
 gdk/gdk_utils.mx and wrapping malloc in the below dummy function:
 @C
 #ifdef HAVE_MALLOPT
-static int malloc_init=1;
+static int malloc_init = 1;
 #endif
 @C
 #ifdef NATIVE_WIN32
 #include <eh.h>
-void Mserver_abort() {
-	fprintf(stderr,"\n! Mserver_abort() was called by terminate(). !\n");
+void
+Mserver_abort()
+{
+	fprintf(stderr, "\n! Mserver_abort() was called by terminate(). !\n");
 	fflush(stderr);
 	MT_global_exit(1);
 }
 #endif
 @C
-void usage( char *prog ){
+void
+usage(char *prog)
+{
 	fprintf(stderr, "Usage: %s [ options ] [ script+ ]                   \n", prog);
 	fprintf(stderr, "Options are:                                        \n");
 	fprintf(stderr, " -c <config_file>    | --config=<config_file>       \n");
 	fprintf(stderr, "                       --dbname=<database_name>     \n");
-	fprintf(stderr, "                       --dbfarm=<database_directory>\n"); 
+	fprintf(stderr, "                       --dbfarm=<database_directory>\n");
 	fprintf(stderr, "                       --dbinit=<MIL_statement>     \n");
 	fprintf(stderr, " -d <debug_level>    | --debug=<debug_level>        \n");
 	fprintf(stderr, " -s <option>=<value> | --set <option>=<value>       \n");
@@ -174,57 +182,63 @@ void usage( char *prog ){
 	exit(-1);
 }
 
-static str absolute_path(str s) {
-        if (!MT_path_absolute(s)) {
-                str ret = (str)GDKmalloc(strlen(s) + strlen(monet_cwd) + 2);
-                sprintf(ret, "%s%c%s", monet_cwd, DIR_SEP, s);
-                return ret;
-        }
-        return GDKstrdup(s);
+static str
+absolute_path(str s)
+{
+	if (!MT_path_absolute(s)) {
+		str ret = (str) GDKmalloc(strlen(s) + strlen(monet_cwd) + 2);
+
+		sprintf(ret, "%s%c%s", monet_cwd, DIR_SEP, s);
+		return ret;
+	}
+	return GDKstrdup(s);
 }
 
-static Client Monet_init( opt *set, int setlen )
+static Client
+Monet_init(opt *set, int setlen)
 {
 	char *p;
-	opt *n = (opt*)GDKmalloc(setlen*sizeof(opt));
-	int i,j, nlen = 0;
+	opt *n = (opt *) GDKmalloc(setlen * sizeof(opt));
+	int i, j, nlen = 0;
 
 	char dbfarm[BUFSIZ];
 	char *dbname = mo_find_option(set, setlen, "gdk_dbname");
 	char *dbfarmval = mo_find_option(set, setlen, "gdk_dbfarm");
 	char *alloc_map = mo_find_option(set, setlen, "gdk_alloc_map");
 
-	if (!n || !dbname || !dbfarmval || !alloc_map){
-		if (n) GDKfree(n);
+	if (!n || !dbname || !dbfarmval || !alloc_map) {
+		if (n)
+			GDKfree(n);
 		return NULL;
 	}
 
-	strcpy(dbfarm, dbfarmval );
+	strcpy(dbfarm, dbfarmval);
 	mo_substitute(set, setlen, dbfarm);
 
-        /* determine Monet's kernel settings. */
-	if (!GDKinit(dbname, dbfarm, strcasecmp(alloc_map,"yes")==0)){
+	/* determine Monet's kernel settings. */
+	if (!GDKinit(dbname, dbfarm, strcasecmp(alloc_map, "yes") == 0)) {
 		GDKfree(n);
 		return NULL;
 	}
 
-	for(i=0; i<setlen; i++){
+	for (i = 0; i < setlen; i++) {
 		int done = 0;
-		for(j=0; j<nlen; j++){
-			if (strcmp(n[j].name, set[i].name) == 0){ 
-			    	if (n[j].kind < set[i].kind){
+
+		for (j = 0; j < nlen; j++) {
+			if (strcmp(n[j].name, set[i].name) == 0) {
+				if (n[j].kind < set[i].kind) {
 					n[j] = set[i];
 				}
 				done = 1;
 				break;
 			}
 		}
-		if (!done){
+		if (!done) {
 			n[nlen] = set[i];
 			nlen++;
 		}
 	}
-	for(i=0; i<nlen; i++){
+	for (i = 0; i < nlen; i++) {
 		char value[BUFSIZ];
 
 		strncpy(value, n[i].value, BUFSIZ);
@@ -233,19 +247,19 @@ static Client Monet_init( opt *set, int setlen )
 	}
 	GDKfree(n);
 
-	if ((p=GDKgetenv("gdk_debug")) )
-		GDKdebug = strtol(p,NULL,10);
+	if ((p = GDKgetenv("gdk_debug")))
+		GDKdebug = strtol(p, NULL, 10);
 
-	if ((p=GDKgetenv("gdk_mem_bigsize")) )
-		GDK_mem_bigsize = strtol(p,NULL,10);
-	if ((p=GDKgetenv("gdk_vm_minsize")) )
-		GDK_vm_minsize = strtol(p,NULL,10);
-	if (GDKgetenv_isyes("gdk_embedded")){	
+	if ((p = GDKgetenv("gdk_mem_bigsize")))
+		GDK_mem_bigsize = strtol(p, NULL, 10);
+	if ((p = GDKgetenv("gdk_vm_minsize")))
+		GDK_vm_minsize = strtol(p, NULL, 10);
+	if (GDKgetenv_isyes("gdk_embedded")) {
 		GDKembedded = 1;
 		monet_daemon = 1;
 	}
 
-	if (GDKgetenv_isyes("monet_daemon")){	
+	if (GDKgetenv_isyes("monet_daemon")) {
 		monet_daemon = 1;
 	}
 
@@ -253,12 +267,13 @@ static Client Monet_init( opt *set, int setlen )
 }
 
 @C
-int main(int argc, char **av)
+int
+main(int argc, char **av)
 {
 	Client c;
 	char *prog = *av;
 	opt *set = NULL;
-	int idx=0,debug = 0, setlen = 0, status = 1;
+	int idx = 0, debug = 0, setlen = 0, status = 1;
 
 @-
 We give malloc advice here. Main goal: prevent fragmentation.
@@ -275,132 +290,119 @@ capabilities depend on the malloc implementation used at run time.
 	if (malloc_init) {
 /* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
 /* for (Red Hat) Linux (8) used at least as of glibc-2.2.93-5 */
-	    if (mallopt(M_MXFAST, 192)) {
-		fprintf(stderr, "monet: mallopt(M_MXFAST,192) fails.\n");
-	    }
+		if (mallopt(M_MXFAST, 192)) {
+			fprintf(stderr, "monet: mallopt(M_MXFAST,192) fails.\n");
+		}
 #ifdef M_BLKSZ
-	    if (mallopt(M_BLKSZ, 8*1024)) {
-		fprintf(stderr, "monet: mallopt(M_BLKSZ,8*1024) fails.\n");
-	    }
+		if (mallopt(M_BLKSZ, 8*1024)) {
+			fprintf(stderr, "monet: mallopt(M_BLKSZ,8*1024) fails.\n");
+		}
 #endif
 	}
 	malloc_init=0;
 @
 @C
 #ifdef NATIVE_WIN32
-	set_terminate( Mserver_abort );
+	set_terminate(Mserver_abort);
 #endif
 @C
-	if (setlocale(LC_CTYPE, "") == NULL){ 
-                GDKfatal( "cannot set locale\n");
+	if (setlocale(LC_CTYPE, "") == NULL) {
+		GDKfatal("cannot set locale\n");
 	}
-
 #ifdef HAVE_MALLOPT
 	@:mallopt@
 #endif
 
-	static struct option long_options[] =
-             {
-               {"config", 1, 0, 'c'},
-               {"dbname", 1, 0, 0},
-               {"dbfarm", 1, 0, 0},
-               {"dbinit", 1, 0, 0},
-               {"debug", 2, 0, 'd'},
-               {"help", 0, 0, '?'},
-               {"set", 1, 0, 's'},
-               {"trace", 0, 0, 0},
-               {0, 0, 0, 0}
-             };
+	static struct option long_options[] = {
+		{"config", 1, 0, 'c'},
+		{"dbname", 1, 0, 0},
+		{"dbfarm", 1, 0, 0},
+		{"dbinit", 1, 0, 0},
+		{"debug", 2, 0, 'd'},
+		{"help", 0, 0, '?'},
+		{"set", 1, 0, 's'},
+		{"trace", 0, 0, 0},
+		{0, 0, 0, 0}
+	};
 
-        if (getcwd(monet_cwd, PATHLENGTH-1)  == NULL ){
-                perror("pwd");
-                GDKfatal("Monet_init: could not determine current directory\n");
-        }
+	if (getcwd(monet_cwd, PATHLENGTH - 1) == NULL) {
+		perror("pwd");
+		GDKfatal("Monet_init: could not determine current directory\n");
+	}
 
-	if (!(setlen = mo_builtin_settings(&set)) )
+	if (!(setlen = mo_builtin_settings(&set)))
 		usage(prog);
 
-	monet_script = (str*)GDKmalloc( sizeof(str) * (argc-optind+5) );
+	monet_script = (str *) GDKmalloc(sizeof(str) * (argc - optind + 5));
 	monet_script[idx] = NULL;
 
-	for (;;){
+	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long( argc, av, "c:d::?s:", 
-				long_options, &option_index);
+		int c = getopt_long(argc, av, "c:d::?s:",
+				    long_options, &option_index);
 
 		if (c == -1)
 			break;
 
-		switch (c){
+		switch (c) {
 		case 0:
-			if (strcmp(long_options[option_index].name, 
-						"dbname") == 0){
-				setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "gdk_dbname", optarg );
+			if (strcmp(long_options[option_index].name, "dbname") == 0) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbname", optarg);
 				break;
 			}
-			if (strcmp(long_options[option_index].name, 
-						"dbfarm") == 0){
-				setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "gdk_dbfarm", optarg );
+			if (strcmp(long_options[option_index].name, "dbfarm") == 0) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbfarm", optarg);
 				break;
 			}
-			if(strcmp(long_options[option_index].name,
-                                                "dbinit") == 0){
-				if( monet_dbinit)
-				fprintf(stderr, "!ERROR: --dbinit set twice,"
-						" last one takes precedence\n");
+			if (strcmp(long_options[option_index].name, "dbinit") == 0) {
+				if (monet_dbinit)
+					fprintf(stderr, "!ERROR: --dbinit set twice," " last one takes precedence\n");
 				monet_dbinit = optarg;
 				break;
 			}
-			if (strcmp(long_options[option_index].name,
-						"trace") == 0) {
+			if (strcmp(long_options[option_index].name, "trace") == 0) {
 				monet_listing = 1;
 				break;
 			}
 			usage(prog);
 			break;
 		case 'c':
-			setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "config", optarg );
+			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
 			break;
 		case 'd':
-			debug=1;
-			if (optarg){ 
-				setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "gdk_debug", optarg );
+			debug = 1;
+			if (optarg) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", optarg);
 			}
 			break;
-		case 's': {
+		case 's':{
 			/* should add option to a list */
 			char *tmp = strchr(optarg, '=');
 
-			if (tmp){
+			if (tmp) {
 				*tmp = '\0';
-				setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, optarg, tmp+1 );
+				setlen = mo_add_option(&set, setlen, opt_cmdline, optarg, tmp + 1);
 			} else {
-				fprintf(stderr, "!ERROR: wrong format %s\n", 
-					optarg);
+				fprintf(stderr, "!ERROR: wrong format %s\n", optarg);
 			}
-		 } break;
+		}
+			break;
 		case '?':
 			usage(prog);
 		default:
-			fprintf( stderr, 
-			    "!ERROR: getopt returned character code 0%o ??\n",c);
+			fprintf(stderr, "!ERROR: getopt returned character code 0%o ??\n", c);
 			usage(prog);
 		}
 	}
 
-	if (!(setlen = mo_system_config(&set, setlen)) )
+	if (!(setlen = mo_system_config(&set, setlen)))
 		usage(prog);
 
-	while(optind < argc){
+	while (optind < argc) {
 		monet_listing = 1;
 		monet_script[idx] = absolute_path(av[optind]);
-		monet_script[idx+1] = NULL;
+		monet_script[idx + 1] = NULL;
 		optind++;
 		idx++;
 	}
@@ -408,11 +410,11 @@ capabilities depend on the malloc implementation used at run time.
 	if (debug)
 		mo_print_options(set, setlen);
 
-	setlen = mo_add_option( &set, setlen, opt_builtin, "monet_cwd", monet_cwd );
+	setlen = mo_add_option(&set, setlen, opt_builtin, "monet_cwd", monet_cwd);
 	c = Monet_init(set, setlen);
-	mo_free_options(set,setlen);
+	mo_free_options(set, setlen);
 
-	if (!c) 
+	if (!c)
 		usage(prog);
 
 	monet_hello(NULL);
@@ -425,7 +427,7 @@ Execute scripts.
 thread management.
 @C
 	scheduleClient(c);
-	monetInterpreter((void*)&status);
+	monetInterpreter((void *) &status);
 @-
 At the end of a multi-threaded session we should wait
 for all processes to terminate properly.
@@ -434,7 +436,8 @@ for all processes to terminate properly.
 Peter: for the time being avoid difficult things like dropping everything 
 @C
 	monet_exit(0);
-	MT_global_exit(0);  
+	MT_global_exit(0);
 	return 0;
-} /* main */
+}				/* main */
+
 @}

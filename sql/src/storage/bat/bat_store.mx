@@ -8,8 +8,8 @@
 
 #include <gdk.h>
 
-#define isNew(x) 	(x->base.flag == TR_NEW)
-#define isTemp(x) 	(isNew(x)||!x->t->persists||x->t->clear)
+#define isNew(x)	(x->base.flag == TR_NEW)
+#define isTemp(x)	(isNew(x)||!x->t->persists||x->t->clear)
 
 sqlbat_export BAT *bind_bat(sql_trans *tr, sql_column *c, int access);
 sqlbat_export BAT *bind_ubat(sql_trans *tr, sql_column *c, int access);

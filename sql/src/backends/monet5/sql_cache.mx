@@ -54,14 +54,15 @@ comment"Retrieve the SQL statement for a
 @+ BAT Iterator Implementation
 Part of the code is copied from the V 4.3 bat.mx file.
 @= getBATdescriptor
-if( *@2 < 0) {
-	/* reverse descriptor should be explicitly loaded */
-	@3=BATdescriptor(*@2); BBPunfix(*@2);
-} else @3= (BAT*) BBPgetdesc(*@2);
-if( @3 == NULL) { *@1 = 0;
-	return throwMessage("chopper.@4", 
-		"cannot access descriptor @2");
-}
+	if (*@2 < 0) {
+		/* reverse descriptor should be explicitly loaded */
+		@3=BATdescriptor(*@2); BBPunfix(*@2);
+	} else
+		@3= (BAT*) BBPgetdesc(*@2);
+	if( @3 == NULL) {
+		*@1 = 0;
+		return throwMessage("chopper.@4", "cannot access descriptor @2");
+	}
 @-
 
 @h

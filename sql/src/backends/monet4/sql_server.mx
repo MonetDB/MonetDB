@@ -639,7 +639,7 @@ int ftrunc2@1( @1 *res, str val, int *d, int *s )
 	int digits = *d - *s;
 	dbl value = 1;
 	
- 	e = ATOMfromstr(TYPE_@1, &p, &len, val);
+	e = ATOMfromstr(TYPE_@1, &p, &len, val);
 	if (e < 0 || !p || 
 	   (ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0 &&
 	    ATOMcmp(TYPE_str, val, ATOMnilptr(TYPE_str)) != 0) ) {
@@ -647,7 +647,7 @@ int ftrunc2@1( @1 *res, str val, int *d, int *s )
 			GDKfree(p);
 		return GDK_FAIL;
 	}
-	while(digits > 0) {
+	while (digits > 0) {
 		digits--;
 		value *= 10;
 	}
@@ -666,7 +666,8 @@ int ftrunc2@1( @1 *res, str val, int *d, int *s )
 @:fround(dbl)@
 
 @= cast
-int cast2@1( @1 *res, str val )
+int
+cast2@1( @1 *res, str val )
 {
 	ptr p = NULL;
 	int len = 0;
@@ -724,7 +725,9 @@ str_cast(str *res, ptr v, int tpe, int *len)
 }
 
 @= str_cast
-int str2@1( @1 *res, str v, int *len ){
+int
+str2@1( @1 *res, str v, int *len )
+{
 	int slen = strlen(v); 
 
 	if (slen > *len || slen > 5) {
@@ -749,7 +752,8 @@ int str2@1( @1 *res, str v, int *len ){
 @:str_cast(lng)@
 
 @= numcastup
-int @2_2_@1( @1 *res, @2 *v, int *len ){
+int @2_2_@1( @1 *res, @2 *v, int *len )
+{
 	int p = *len, inlen = 1;
 	@2 cpyval = *v;
 
@@ -760,7 +764,8 @@ int @2_2_@1( @1 *res, @2 *v, int *len ){
 	}
 	
 	/* count the number of digits in the input */
-	while(cpyval /= 10) inlen++;
+	while (cpyval /= 10)
+		inlen++;
 	if (p && inlen > p) {
 		GDKerror("@2_2_@1: too many digits (%d > %d)\n", inlen, p);
 		return(GDK_FAIL);
@@ -780,7 +785,8 @@ int @2_2_@1( @1 *res, @2 *v, int *len ){
 @:numcastup(lng,lng)@
 
 @= numcastdown
-int @2_2_@1( @1 *res, @2 *v, int *len ){
+int @2_2_@1( @1 *res, @2 *v, int *len )
+{
 	int p = *len, inlen = 1;
 	lng val = *v, cpyval = val;
 
@@ -791,7 +797,8 @@ int @2_2_@1( @1 *res, @2 *v, int *len ){
 	}
 	
 	/* count the number of digits in the input */
-	while(cpyval /= 10) inlen++;
+	while (cpyval /= 10)
+		inlen++;
 	if (p && inlen > p) {
 		GDKerror("@2_2_@1: too many digits (%d > %d)\n", inlen, p);
 		return(GDK_FAIL);

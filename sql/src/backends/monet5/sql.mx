@@ -211,9 +211,9 @@ include sql_cache;
 #include "sql_env.h"
 
 #define explainPlan() (be->mvc->explain && \
-        strcmp(be->mvc->explain, "plan") == 0)
+		strcmp(be->mvc->explain, "plan") == 0)
 #define explainPerformance() (be->mvc->explain && \
-        strcmp(be->mvc->explain, "performance") == 0)
+		strcmp(be->mvc->explain, "performance") == 0)
 
 @-
 The back end structure collects the information needed to support
@@ -354,13 +354,13 @@ Failure to find the state descriptor aborts the session.
 {	
 	Client _client = getClient();
 
-	if(_client == NULL ){
+	if (_client == NULL ) {
 		return throwMessage("mvc","Can not access client record");
 	} 
-	if( _client->state[PARSER] == NULL){
+	if ( _client->state[PARSER] == NULL) {
 		return throwMessage("mvc","PARSER not initialized\n");
 	}
-	if( _client->state[OPTIMIZE] == NULL){
+	if ( _client->state[OPTIMIZE] == NULL) {
 		str schema;
 		backend *be = _client->state[PARSER];
 
@@ -377,18 +377,20 @@ printf("Re-establish context for client not expected\n");
 	@1= ((mvc *) _client ->state[OPTIMIZE]);
 }
 @= setContext
-{	Client _client = getClient();
-	if(_client == NULL || _client ->state[OPTIMIZE]== 0 ){
+{
+	Client _client = getClient();
+	if (_client == NULL || _client ->state[OPTIMIZE]== 0 ) {
 		return throwMessage("mvc","Can not get access to @2 state");
 	} 
 	_client ->state[OPTIMIZE]= @1;
 }
 @= getBackend
-{	Client _client= getClient();
-	if(_client == NULL ){
+{
+	Client _client= getClient();
+	if (_client == NULL ) {
 		return throwMessage("be","Can not access client record");
 	} 
-	if( _client->state[PARSER] == NULL){
+	if ( _client->state[PARSER] == NULL) {
 		return throwMessage("be","PARSER not initialized\n");
 	}
 	@1= ((backend*) _client->state[PARSER]);
@@ -507,27 +509,27 @@ The Mx macro below is used in many places throughout the code base to
 access the BAT descriptor.
 
 @= getBATdescriptor
-   if( BBPcheck(*@2,"@4")==0) 
-        return throwMessage("@4","cannot access bat '@2' in bbp");
-   if( *@2 < 0) {
-        /* reverse descriptor should be explicitly loaded */
-        @3=BATdescriptor(*@2); BBPunfix(*@2);
-   } else @3= (BAT*) BBPgetdesc(*@2);
-   if( @3 == NULL) { *@1 = 0;
-         return throwMessage("@4",
-                 "cannot access descriptor @2");
-   }
+	if( BBPcheck(*@2,"@4")==0) 
+		return throwMessage("@4","cannot access bat '@2' in bbp");
+	if( *@2 < 0) {
+		/* reverse descriptor should be explicitly loaded */
+		@3=BATdescriptor(*@2); BBPunfix(*@2);
+	} else @3= (BAT*) BBPgetdesc(*@2);
+	if( @3 == NULL) { *@1 = 0;
+		return throwMessage("@4",
+				    "cannot access descriptor @2");
+	}
 @= chkIdentifier
-    /* generate exception if string is not an identifier */
-    if( isIdentifier(@1))
+	/* generate exception if string is not an identifier */
+	if( isIdentifier(@1))
 		return throwMessage( "@4","identifier expected");
 @= Pseudo
-    if (BBPindex("@1_@2_@3") <= 0)
-            BATname(b, "@1_@2_@3");
-    BATroles(b,"@1","@2");
-    BATmode(b,TRANSIENT);
-    BATfakeCommit(b);
-    *ret = b->batCacheid;
+	if (BBPindex("@1_@2_@3") <= 0)
+		BATname(b, "@1_@2_@3");
+	BATroles(b,"@1","@2");
+	BATmode(b,TRANSIENT);
+	BATfakeCommit(b);
+	*ret = b->batCacheid;
 
 @c
 
@@ -678,7 +680,8 @@ str @1_dbl_round_wrap( @1 *res, @1 *v, dbl *r )
 	return @1_round_wrap(res,v, &add);
 }
 
-str trunc2@1( @1 *res, str val, int *d, int *sc )
+str
+trunc2@1( @1 *res, str val, int *d, int *sc )
 {
 	char *s = strip_extra_zeros(val);
 	char *dot = strchr(s, '.');
@@ -704,7 +707,8 @@ str trunc2@1( @1 *res, str val, int *d, int *sc )
 		/* the current scale is too big, decrease it by correctly rounding */
 		int d = scale - *sc;	/* CANNOT be 0 */
 		value /= (d - 1) * 10;
-		if (value % 10 >= 5) value += 10;
+		if (value % 10 >= 5)
+			value += 10;
 		value /= 10;
 		scale -= d;
 		digits -= d;
@@ -739,7 +743,8 @@ str @1_round_wrap( @1 *res, @1 *v, @1 *r )
 	return MAL_SUCCEED;
 }
 
-str trunc2@1( @1 *res, str val, int *d, int *s )
+str
+trunc2@1( @1 *res, str val, int *d, int *s )
 {
 	ptr p = NULL;
 	int len = 0;
@@ -747,7 +752,7 @@ str trunc2@1( @1 *res, str val, int *d, int *s )
 	int digits = *d - *s;
 	lng value = 1;
 	
- 	e = ATOMfromstr(TYPE_@1, &p, &len, val);
+	e = ATOMfromstr(TYPE_@1, &p, &len, val);
 	if (e < 0 || !p || 
 	   (ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0 &&
 	    ATOMcmp(TYPE_str, val, ATOMnilptr(TYPE_str)) != 0) ) {
@@ -755,7 +760,7 @@ str trunc2@1( @1 *res, str val, int *d, int *s )
 			GDKfree(p);
 		return throwMessage("trunc", "atom nil");
 	}
-	while(digits > 0) {
+	while (digits > 0) {
 		digits--;
 		value *= 10;
 	}
@@ -775,7 +780,8 @@ str trunc2@1( @1 *res, str val, int *d, int *s )
 @:fround(dbl)@
 
 @= cast
-str cast2@1( @1 *res, str val )
+str
+cast2@1( @1 *res, str val )
 {
 	ptr p = NULL;
 	int len = 0;
@@ -786,7 +792,8 @@ str cast2@1( @1 *res, str val )
 	   (ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0 &&
 	    ATOMcmp(TYPE_str, val, ATOMnilptr(TYPE_str)) != 0))
 	{
-		if (p) GDKfree(p);
+		if (p)
+			GDKfree(p);
 		return throwMessage("cast", "atom nil");
 	}
 	*res = *(@1*)p;
@@ -832,7 +839,9 @@ str_cast(str *res, ptr v, int tpe, int *len)
 }
 
 @= str_cast
-str str2@1( @1 *res, str v, int *len ){
+str
+str2@1( @1 *res, str v, int *len )
+{
 	int slen = strlen(v); 
 
 	if (slen > *len || slen > 5) {
@@ -857,7 +866,8 @@ str str2@1( @1 *res, str v, int *len ){
 @:str_cast(lng)@
 
 @= numcastup
-str @2_2_@1( @1 *res, @2 *v, int *len ){
+str @2_2_@1( @1 *res, @2 *v, int *len )
+{
 	int p = *len, inlen = 1;
 	@2 cpyval = *v;
 
@@ -867,7 +877,8 @@ str @2_2_@1( @1 *res, @2 *v, int *len ){
 		return(MAL_SUCCEED);
 	}
 	
-	while(cpyval /= 10) inlen++;
+	while (cpyval /= 10)
+		inlen++;
 	if (p && inlen > p) {
 		return(throwException(MALEXCEPTION,"@2_2_@1",
 			"too many digits (%d > %d)\n", inlen, p));
@@ -887,7 +898,8 @@ str @2_2_@1( @1 *res, @2 *v, int *len ){
 @:numcastup(lng,lng)@
 
 @= numcastdown
-str @2_2_@1( @1 *res, @2 *v, int *len ){
+str @2_2_@1( @1 *res, @2 *v, int *len )
+{
 	int p = *len, inlen = 1;
 	lng val = *v, cpyval = val;
 
@@ -898,14 +910,15 @@ str @2_2_@1( @1 *res, @2 *v, int *len ){
 	}
 	
 	/* count the number of digits in the input */
-	while(cpyval /= 10) inlen++;
+	while (cpyval /= 10)
+		inlen++;
 	if (p && inlen > p) {
 		return(throwException(MALEXCEPTION,"@2_2_@1",
 			"too many digits (%d > %d)\n", inlen, p));
 	}
 
 	/* see if the number fits in the data type */
-	if (val >= GDK_@1_min && val <= GDK_@1_max)	{
+	if (val >= GDK_@1_min && val <= GDK_@1_max) {
 		*res = (@1)*v;
 		return(MAL_SUCCEED);
 	} else {

@@ -17,7 +17,7 @@
 
 @f sql_parser
 @a N.J. Nes
-@* 
+@*
 
 @h
 #ifndef _SQL_PARSER_H_
@@ -184,7 +184,7 @@ sql_export int sqlparse(void *);
 
 %}
 /* KNOWN NOT DONE OF sql'99
- * 
+ *
  * TRIGGERS
  * COLLATION
  * TRANSLATION
@@ -195,8 +195,8 @@ sql_export int sqlparse(void *);
 /* reentrant parser */
 %pure_parser
 %union {
-	int 		ival,operation,bval;
-	double 		fval;
+	int		ival,operation,bval;
+	double		fval;
 	char *		sval;
 	symbol*		sym;
 	dlist*		l;
@@ -207,7 +207,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 %}
 
 	/* symbolic tokens */
-%type <sym> 
+%type <sym>
 	alter
 	assignment
 	create
@@ -230,7 +230,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	type_def
 	func_def
 	index_def
-  	seq_def
+	seq_def
 	all_or_any_predicate
 	atom_exp
 	between_predicate
@@ -273,7 +273,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	column_options
 	column_option
 	column_constraint
-	column_constraint_type 
+	column_constraint_type
 	like_table
 	domain_constraint_type
 	opt_order_by_clause
@@ -293,7 +293,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	interval_expression
 	ordering_spec
 	simple_table
-	table_ref 
+	table_ref
 	opt_temp
 	case_exp
 	cast_exp
@@ -314,7 +314,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	func_data_type
 
 %type <sval>
-	opt_constraint_name 
+	opt_constraint_name
 	any_all_some
 	non_reserved_word
 	ident
@@ -343,11 +343,11 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	column_commalist
 	opt_corresponding
 	column_ref_commalist
-	name_commalist 
+	name_commalist
 	column_ref
 	atom_commalist
 	row_commalist
-	qname 
+	qname
 	ordering_spec_commalist
 	opt_schema_element_list
 	schema_element_list
@@ -359,7 +359,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	column_def_opt_list
 	opt_column_def_opt_list
 	table_exp
-	table_ref_commalist 
+	table_ref_commalist
 	table_element_list
 	table_content_source
 	column_exp_commalist
@@ -380,8 +380,8 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	opt_ref_action
 
 %type <ival>
-	drop_action 
-	ref_action 
+	drop_action
+	ref_action
 	join_type
 	outer_join_type
 	time_precision
@@ -392,7 +392,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	opt_index_type
 	intval
 	nonzero
-	posint	
+	posint
 	opt_nr
 	opt_limit
 	opt_offset
@@ -432,32 +432,32 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 %right <sval> STRING
 
 /* sql prefixes to avoid name clashes on various architectures */
-%token <sval> 
+%token <sval>
 	IDENT aMODULE aTYPE ALIAS AGGR sqlINT INTNUM APPROXNUM USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL CAST CONVERT
-	CHARACTER VARCHAR CLOB VARYING LARGE OBJECT sqlDECIMAL sqlFLOAT 
+	CHARACTER VARCHAR CLOB VARYING LARGE OBJECT sqlDECIMAL sqlFLOAT
 	SMALLINT MEDIUMINT BIGINT sqlINTEGER
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
-	BOOL_FALSE BOOL_TRUE 
+	BOOL_FALSE BOOL_TRUE
 	CURRENT_ROLE CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME
 	LEX_ERROR
 %token	USER CURRENT_USER sqlSESSION SESSION_USER LOCAL
 
 %token <sval> sqlDELETE UPDATE SELECT INSERT
-%token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER 
+%token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED REPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE
-	
+
 %token <sval> ASYMMETRIC SYMMETRIC ORDER BY
-%token <sval> LIKE BETWEEN 
-%token <operation> sqlIN EXISTS ESCAPE HAVING GROUP NULLX 
+%token <sval> LIKE BETWEEN
+%token <operation> sqlIN EXISTS ESCAPE HAVING GROUP NULLX
 %token <operation> FROM FOR MATCH
 
 /* datetime operations */
 %token <operation> EXTRACT
-%token SEQUENCE INCREMENT MAXVALUE MINVALUE CYCLE 
-%token NEXT VALUE 
+%token SEQUENCE INCREMENT MAXVALUE MINVALUE CYCLE
+%token NEXT VALUE
 %token GENERATED IDENTITY
 
 	/* operators */
@@ -477,23 +477,23 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 
 	/* literal keyword tokens */
 /*
-CONTINUE CURRENT CURSOR FOUND GOTO GO LANGUAGE 
-SQLCODE SQLERROR UNDER WHENEVER 
+CONTINUE CURRENT CURSOR FOUND GOTO GO LANGUAGE
+SQLCODE SQLERROR UNDER WHENEVER
 */
 
-%token TEMPORARY 
-%token<sval> AS ASC DESC AUTHORIZATION 
-%token CHECK CONSTRAINT CREATE 
+%token TEMPORARY
+%token<sval> AS ASC DESC AUTHORIZATION
+%token CHECK CONSTRAINT CREATE
 %token MODULE TYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME DECLARE
 %token PREPARE EXECUTE
-%token DEFAULT DISTINCT DROP 
-%token FOREIGN 
-%token PASSWORD GRANT REVOKE ROLE ADMIN HAVING INTO 
+%token DEFAULT DISTINCT DROP
+%token FOREIGN
+%token PASSWORD GRANT REVOKE ROLE ADMIN HAVING INTO
 %token IS KEY ON OPTION OPTIONS
-%token PATH PRIMARY PRIVILEGES 
-%token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT 
+%token PATH PRIMARY PRIVILEGES
+%token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT
 
-%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW BATS WHERE WITH 
+%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW BATS WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 %token LIMIT OFFSET
@@ -505,91 +505,91 @@ SQLCODE SQLERROR UNDER WHENEVER
 %%
 
 sqlstmt:
-   sql ';' 		{ mvc *m = (mvc*)parm; 
+   sql ';'		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = $1; YYACCEPT; }
- | prep   		{ mvc *m = (mvc*)parm; 
+ | prep			{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = $1; YYACCEPT; }
- | exec ';' 		{ mvc *m = (mvc*)parm; 
+ | exec ';'		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = $1; YYACCEPT; }
- | /*empty*/		{ mvc *m = (mvc*)parm; 
+ | /*empty*/		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = NULL; YYACCEPT; }
- | ';'			{ mvc *m = (mvc*)parm; 
+ | ';'			{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = NULL; YYACCEPT; }
  | error ';'		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = NULL; YYACCEPT; }
- | LEX_ERROR 		{ mvc *m = (mvc*)parm;
+ | LEX_ERROR		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = NULL; YYACCEPT; }
  ;
 
 sqlstmt_list:
-    sql 		{ $$ = dlist_append_symbol(dlist_create(), $1); }
- |  sqlstmt_list ';' sql 	
+    sql			{ $$ = dlist_append_symbol(dlist_create(), $1); }
+ |  sqlstmt_list ';' sql
 			{ $$ = dlist_append_symbol( $1, $3 ); }
  ;
 
 	/* schema definition language */
-sql: 
-    schema  	
- |  grant  	
- |  revoke  	
- |  create  
- |  drop   
- |  alter 
- |  declare 
- |  set 
+sql:
+    schema
+ |  grant
+ |  revoke
+ |  create
+ |  drop
+ |  alter
+ |  declare
+ |  set
  ;
-	
+
 declare:
-	DECLARE ident data_type 
+	DECLARE ident data_type
 			{ dlist *l = dlist_create();
 			dlist_append_string(l, $2 );
-	  		dlist_append_type(l, $3 );
+			dlist_append_type(l, $3 );
 			$$ = _symbol_create_list( SQL_DECLARE, l); }
 	;
 
-set: 
-	SET ident '=' scalar_exp	
+set:
+	SET ident '=' scalar_exp
 			{ dlist *l = dlist_create();
 			dlist_append_string(l, $2 );
 			dlist_append_symbol(l, $4 );
 			$$ = _symbol_create_list( SQL_SET, l); }
-  |	SET sqlSESSION AUTHORIZATION ident	
+  |	SET sqlSESSION AUTHORIZATION ident
 			{ dlist *l = dlist_create();
-		          sql_subtype *t = sql_bind_subtype("char", strlen($4), 0 ); 
+		          sql_subtype *t = sql_bind_subtype("char", strlen($4), 0 );
 			dlist_append_string(l, _strdup("current_user") );
-			dlist_append_symbol(l, 
+			dlist_append_symbol(l,
 				_newAtomNode( atom_string(t,sql2str($4))) );
 			$$ = _symbol_create_list( SQL_SET, l); }
-  |	SET SCHEMA ident	
+  |	SET SCHEMA ident
 			{ dlist *l = dlist_create();
-		          sql_subtype *t = sql_bind_subtype("char", strlen($3), 0 ); 
+		          sql_subtype *t = sql_bind_subtype("char", strlen($3), 0 );
 			dlist_append_string(l, _strdup("current_schema") );
-			dlist_append_symbol(l, 
+			dlist_append_symbol(l,
 				_newAtomNode( atom_string(t,sql2str($3))) );
 			$$ = _symbol_create_list( SQL_SET, l); }
-  |	SET user '=' ident	
+  |	SET user '=' ident
 			{ dlist *l = dlist_create();
-		          sql_subtype *t = sql_bind_subtype("char", strlen($4), 0 ); 
+		          sql_subtype *t = sql_bind_subtype("char", strlen($4), 0 );
 			dlist_append_string(l, _strdup("current_user") );
-			dlist_append_symbol(l, 
+			dlist_append_symbol(l,
 				_newAtomNode( atom_string(t,sql2str($4))) );
 			$$ = _symbol_create_list( SQL_SET, l); }
-  |	SET ROLE ident	
+  |	SET ROLE ident
 			{ dlist *l = dlist_create();
-		          sql_subtype *t = sql_bind_subtype("char", strlen($3), 0 ); 
+		          sql_subtype *t = sql_bind_subtype("char", strlen($3), 0 );
 			dlist_append_string(l, _strdup("current_role") );
-			dlist_append_symbol(l, 
+			dlist_append_symbol(l,
 				_newAtomNode( atom_string(t,sql2str($3))) );
 			$$ = _symbol_create_list( SQL_SET, l); }
-  | 	SET TIME ZONE LOCAL
+  |	SET TIME ZONE LOCAL
 			{ dlist *l = dlist_create();
 			dlist_append_string(l, _strdup("current_timezone") );
-			dlist_append_symbol(l, _symbol_create_list( SQL_OP, 
+			dlist_append_symbol(l, _symbol_create_list( SQL_OP,
 				dlist_append_string(
-					dlist_create(), 
+					dlist_create(),
 					_strdup("local_timezone"))));
 			$$ = _symbol_create_list( SQL_SET, l); }
-  | 	SET TIME ZONE interval_expression
+  |	SET TIME ZONE interval_expression
 			{ dlist *l = dlist_create();
 			dlist_append_string(l, _strdup("current_timezone") );
 			dlist_append_symbol(l, $4 );
@@ -598,7 +598,7 @@ set:
 
 schema:
     CREATE SCHEMA schema_name opt_schema_default_char_set
-	opt_schema_path	opt_schema_element_list	   
+	opt_schema_path	opt_schema_element_list
 
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $3);
@@ -606,7 +606,7 @@ schema:
 	  dlist_append_symbol(l, $5);
 	  dlist_append_list(l, $6);
 	  $$ = _symbol_create_list( SQL_CREATE_SCHEMA, l); }
- |  DROP SCHEMA qname drop_action 
+ |  DROP SCHEMA qname drop_action
 
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $3);
@@ -615,38 +615,38 @@ schema:
  ;
 
 schema_name:
-    ident		    	
+    ident
 	{ $$ = dlist_create();
 	  dlist_append_string($$, $1 );
 	  dlist_append_string($$, NULL ); }
- |  AUTHORIZATION ident  	
+ |  AUTHORIZATION ident
 	{ $$ = dlist_create();
 	  dlist_append_string($$, NULL );
 	  dlist_append_string($$, $2 ); }
- |  ident AUTHORIZATION ident 
+ |  ident AUTHORIZATION ident
 	{ $$ = dlist_create();
 	  dlist_append_string($$, $1 );
 	  dlist_append_string($$, $3 ); }
  ;
 
 opt_schema_default_char_set:
-    /* empty */		   	{ $$ = NULL; }
+    /* empty */			{ $$ = NULL; }
  |  DEFAULT CHARACTER SET ident { $$ = _symbol_create( SQL_CHARSET, $4 ); }
  ;
 
 opt_schema_path:
     /* empty */			{ $$ = NULL; }
- |  PATH name_commalist 	{ $$ = _symbol_create_list( SQL_PATH, $2 ); }
+ |  PATH name_commalist		{ $$ = _symbol_create_list( SQL_PATH, $2 ); }
  ;
 
 opt_schema_element_list:
     /* empty */			{ $$ = dlist_create(); }
- |  schema_element_list 	
+ |  schema_element_list
  ;
 
 schema_element_list:
     schema_element	{ $$ = dlist_append_symbol(dlist_create(), $1); }
- |  schema_element_list schema_element 	
+ |  schema_element_list schema_element
 			{ $$ = dlist_append_symbol( $1, $2 ); }
  ;
 
@@ -655,13 +655,13 @@ schema_element: grant | revoke | create | drop | alter ;
 
 
 opt_grantor:
-     /* empty */	 { $$ = cur_user; } 
+     /* empty */	 { $$ = cur_user; }
  |   WITH ADMIN grantor  { $$ = $3; }
  ;
 
 grantor:
     CURRENT_USER	{ $$ = cur_user; }
- |  CURRENT_ROLE 	{ $$ = cur_role; }
+ |  CURRENT_ROLE	{ $$ = cur_role; }
  ;
 
 grant:
@@ -671,10 +671,10 @@ grant:
 	  dlist_append_list(l, $4);
 	  dlist_append_int(l, $5);
 	  dlist_append_int(l, $6);
-	$$ = _symbol_create_list( SQL_GRANT, l); 
+	$$ = _symbol_create_list( SQL_GRANT, l);
 	}
 
- |  GRANT authid_list TO grantee_commalist opt_with_admin 
+ |  GRANT authid_list TO grantee_commalist opt_with_admin
 		opt_from_grantor
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $2);
@@ -685,8 +685,8 @@ grant:
  ;
 
 authid_list:
-	authid 		{ $$ = dlist_append_string(dlist_create(), $1); }
- | 	authid_list ',' authid 	
+	authid		{ $$ = dlist_append_string(dlist_create(), $1); }
+ |	authid_list ',' authid
 			{ $$ = dlist_append_string($1, $3); }
  ;
 
@@ -696,14 +696,14 @@ opt_with_grant:
  ;
 
 opt_with_admin:
- 	/* emtpy */		{ $$ = 0; }
- | 	WITH ADMIN OPTION	{ $$ = 1; }
+	/* emtpy */		{ $$ = 0; }
+ |	WITH ADMIN OPTION	{ $$ = 1; }
  ;
 
 
 opt_from_grantor:
- 	/* empty */	{ $$ = cur_user; }
- | 	FROM grantor	{ $$ = $2; }
+	/* empty */	{ $$ = cur_user; }
+ |	FROM grantor	{ $$ = $2; }
  ;
 
 revoke:
@@ -711,11 +711,11 @@ revoke:
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $3);
 	  dlist_append_list(l, $5);
-	  dlist_append_int(l, $2); /* GRANT OPTION FOR */ 
+	  dlist_append_int(l, $2); /* GRANT OPTION FOR */
 	  dlist_append_int(l, 0);
 	  dlist_append_int(l, $6);
 	$$ = _symbol_create_list( SQL_REVOKE, l); }
- |   REVOKE opt_admin_for authid_list FROM grantee_commalist 
+ |   REVOKE opt_admin_for authid_list FROM grantee_commalist
 	opt_from_grantor
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $3);
@@ -726,17 +726,17 @@ revoke:
  ;
 
 opt_grant_for:
-    	/* empty */			{ $$ = 0; }
+	/* empty */			{ $$ = 0; }
  |	GRANT OPTION FOR		{ $$ = 1; }
  ;
 
 opt_admin_for:
-    	/* empty */			{ $$ = 0; }
+	/* empty */			{ $$ = 0; }
  |	ADMIN OPTION FOR		{ $$ = 1; }
  ;
 
 privileges:
-	object_privileges ON object_name 	
+	object_privileges ON object_name
 	{ $$ = dlist_create();
 	  dlist_append_list($$, $1);
 	  dlist_append_symbol($$, $3); }
@@ -749,40 +749,40 @@ object_name:
 /* | DOMAIN domain_name
    | CHARACTER SET char_set_name
    | COLLATION collation_name
-   | TRANSLATION trans_name 
-   | TYPE udt_name 
-   | TYPE typed_table_name 
+   | TRANSLATION trans_name
+   | TYPE udt_name
+   | TYPE typed_table_name
 */
- ; 
+ ;
 
 object_privileges:
     ALL PRIVILEGES			{ $$ = NULL; }
- |  ALL 				{ $$ = NULL; }
- |  operation_commalist			
+ |  ALL					{ $$ = NULL; }
+ |  operation_commalist
  ;
 
 operation_commalist:
     operation		{ $$ = dlist_append_symbol(dlist_create(), $1); }
- |  operation_commalist ',' operation   
+ |  operation_commalist ',' operation
 			{ $$ = dlist_append_symbol($1, $3); }
  ;
 
 operation:
-    INSERT 			    { $$ = _symbol_create(SQL_INSERT,NULL); }
- |  sqlDELETE 			    { $$ = _symbol_create(SQL_DELETE,NULL); }
+    INSERT			    { $$ = _symbol_create(SQL_INSERT,NULL); }
+ |  sqlDELETE			    { $$ = _symbol_create(SQL_DELETE,NULL); }
  |  UPDATE opt_column_commalist     { $$ = _symbol_create_list(SQL_UPDATE,$2); }
  |  SELECT opt_column_commalist	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
  |  REFERENCES opt_column_commalist { $$ = _symbol_create_list(SQL_SELECT,$2); }
  |  EXECUTE			    { $$ = _symbol_create(SQL_EXECUTE,NULL); }
 /* | TRIGGER
-   | UNDER 
+   | UNDER
    | USAGE
 */
  ;
 
-grantee_commalist:			
+grantee_commalist:
     grantee			{ $$ = dlist_append_string(dlist_create(), $1); }
- |  grantee_commalist ',' grantee	
+ |  grantee_commalist ',' grantee
 				{ $$ = dlist_append_string($1, $3); }
  ;
 
@@ -791,22 +791,22 @@ grantee:
  |  authid			{ $$ = $1; }
  ;
 
-/* DOMAIN, ASSERTION, CHARACTER SET, TRANSLATION, TRIGGER */ 
+/* DOMAIN, ASSERTION, CHARACTER SET, TRANSLATION, TRIGGER */
 
-alter: 
-   ALTER TABLE qname ADD add_table_element 
-
-	{ dlist *l = dlist_create();
-	  dlist_append_list(l, $3);
-	  dlist_append_symbol(l, $5);
-	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname ALTER alter_table_element 
+alter:
+   ALTER TABLE qname ADD add_table_element
 
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $3);
 	  dlist_append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname DROP drop_table_element 
+ | ALTER TABLE qname ALTER alter_table_element
+
+	{ dlist *l = dlist_create();
+	  dlist_append_list(l, $3);
+	  dlist_append_symbol(l, $5);
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER TABLE qname DROP drop_table_element
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $3);
 	  dlist_append_symbol(l, $5);
@@ -821,21 +821,21 @@ alter:
 
 opt_passwd:
 	/* empty */		{ $$ = NULL; }
-  |	WITH PASSWORD string 	{ $$ = $3; }
+  |	WITH PASSWORD string	{ $$ = $3; }
   ;
 
 opt_schema:
 	/* empty */		{ $$ = NULL; }
-  |	SCHEMA ident 		{ $$ = $2; }
+  |	SCHEMA ident		{ $$ = $2; }
   ;
 
 alter_table_element:
-	opt_column ident SET DEFAULT default_value 
+	opt_column ident SET DEFAULT default_value
 	{ dlist *l = dlist_create();
 	  dlist_append_string(l, $2);
 	  dlist_append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_DEFAULT, l); }
- | 	opt_column ident DROP DEFAULT 
+ |	opt_column ident DROP DEFAULT
 	{ $$ = _symbol_create( SQL_DROP_DEFAULT, $2); }
  ;
 
@@ -860,8 +860,8 @@ opt_column:
 create:	role_def | table_def | view_def | module_def | type_def | func_def | index_def | seq_def;
 
 seq_def:
-    CREATE SEQUENCE qname 
-    AS data_type 
+    CREATE SEQUENCE qname
+    AS data_type
     opt_start
     opt_increment
     opt_min
@@ -876,18 +876,18 @@ seq_def:
 	  dlist_append_int(l, $9 );
 	  dlist_append_int(l, $10 );
 	  $$ = _symbol_create_list( SQL_CREATE_SEQ, l ); }
-  | DROP SEQUENCE qname 
-	{ $$ = _symbol_create_list( SQL_DROP_SEQ, $3 ); } 
+  | DROP SEQUENCE qname
+	{ $$ = _symbol_create_list( SQL_DROP_SEQ, $3 ); }
   ;
 
 opt_start:
-     /* empty */ 		{ $$ = 1; }
-  |  START WITH intval 		{ $$ = $3; }
+     /* empty */		{ $$ = 1; }
+  |  START WITH intval		{ $$ = $3; }
   ;
 
 opt_increment:
-     /* empty */ 		{ $$ = 1; }
-  |  INCREMENT BY intval 	{ $$ = $3; }
+     /* empty */		{ $$ = 1; }
+  |  INCREMENT BY intval	{ $$ = $3; }
   ;
 
 opt_min:
@@ -902,11 +902,11 @@ opt_max:
 
 opt_cycle:
      /* empty */ { $$ = 1; }
-  |  NO CYCLE 	 { $$ = 0; }
+  |  NO CYCLE	 { $$ = 0; }
   ;
 
 index_def:
-    CREATE opt_index_type INDEX ident ON qname '(' column_commalist ')' 
+    CREATE opt_index_type INDEX ident ON qname '(' column_commalist ')'
 	{ dlist *l = dlist_create();
 	  dlist_append_string(l, $4);
 	  dlist_append_int(l, $2);
@@ -932,7 +932,7 @@ CREATE [ UNIQUE ] [ CLUSTERED | NONCLUSTERED ] INDEX index_name
         IGNORE_DUP_KEY |
         DROP_EXISTING |
     STATISTICS_NORECOMPUTE |
-    SORT_IN_TEMPDB 
+    SORT_IN_TEMPDB
 }
 */
 
@@ -963,23 +963,23 @@ table_def:
  ;
 
 opt_temp:
-    /* empty */ 	{ $$ = NULL; }
- |  LOCAL TEMPORARY 	{ $$ = _symbol_create( SQL_TEMP_LOCAL, NULL); }
+    /* empty */		{ $$ = NULL; }
+ |  LOCAL TEMPORARY	{ $$ = _symbol_create( SQL_TEMP_LOCAL, NULL); }
  |  GLOBAL TEMPORARY	{ $$ = _symbol_create( SQL_TEMP_GLOBAL, NULL); }
  ;
 
 opt_on_commit: /* only for temporary tables */
     /* empty */			 { $$ = 0; } /* default delete rows on commit */
- |  ON COMMIT PRESERVE ROWS  	 { $$ = 1; }
- |  ON COMMIT sqlDELETE ROWS	 { $$ = 0; } 
+ |  ON COMMIT PRESERVE ROWS	 { $$ = 1; }
+ |  ON COMMIT sqlDELETE ROWS	 { $$ = 0; }
  ;
-	
+
 table_content_source:
-    '(' table_element_list ')' 	{ $$ = $2; }
+    '(' table_element_list ')'	{ $$ = $2; }
  ;
 
 table_element_list:
-    table_element	 
+    table_element
 			{ $$ = dlist_append_symbol(dlist_create(), $1); }
  |  table_element_list ',' table_element
 			{ $$ = dlist_append_symbol( $1, $3 ); }
@@ -990,7 +990,7 @@ table_element: add_table_element | column_options | like_table ;
 
 column_def:
     column data_type opt_column_def_opt_list
-   	{ dlist *l = dlist_create();
+	{ dlist *l = dlist_create();
 	  dlist_append_string(l, $1 );
 	  dlist_append_type(l, $2 );
 	  dlist_append_list(l, $3 );
@@ -1003,25 +1003,25 @@ opt_column_def_opt_list:
  ;
 
 column_def_opt_list:
-    column_option		
+    column_option
 			{ $$ = dlist_append_symbol(dlist_create(), $1 ); }
- |  column_def_opt_list column_option 	
+ |  column_def_opt_list column_option
 			{ $$ = dlist_append_symbol( $1, $2 ); }
  ;
 
 column_options:
-    ident WITH OPTIONS '(' column_option_list ')'  
+    ident WITH OPTIONS '(' column_option_list ')'
 
-   	{ dlist *l = dlist_create();
+	{ dlist *l = dlist_create();
 	  dlist_append_string(l, $1 );
 	  dlist_append_list(l, $5 );
 	  $$ = _symbol_create_list( SQL_COLUMN_OPTIONS, l ); }
  ;
 
 column_option_list:
-    column_option		
+    column_option
 			{ $$ = dlist_append_symbol(dlist_create(), $1 ); }
- |  column_option_list ',' column_option   
+ |  column_option_list ',' column_option
 			{ $$ = dlist_append_symbol($1, $3 ); }
  ;
 
@@ -1033,17 +1033,17 @@ default:
 
 /* TODO add auto increment */
 default_value:
-    literal 
+    literal
 
- |  NULLX 	
+ |  NULLX
 		{ $$ = _newAtomNode( NULL);  }
  ;
-	
+
 column_constraint:
     opt_constraint_name column_constraint_type  /*opt_constraint_attributes*/
 
-   	{ dlist *l = dlist_create();
- 	  dlist_append_string(l, $1 );
+	{ dlist *l = dlist_create();
+	  dlist_append_string(l, $1 );
 	  dlist_append_symbol(l, $2 );
 	  $$ = _symbol_create_list( SQL_CONSTRAINT, l ); }
  ;
@@ -1051,7 +1051,7 @@ column_constraint:
 table_constraint:
     opt_constraint_name table_constraint_type  /*opt_constraint_attributes*/
 
-   	{ dlist *l = dlist_create();
+	{ dlist *l = dlist_create();
 	  dlist_append_string(l, $1 );
 	  dlist_append_symbol(l, $2 );
 	  $$ = _symbol_create_list( SQL_CONSTRAINT, l ); }
@@ -1060,16 +1060,16 @@ table_constraint:
 /* opt_constraint_attributes: ; */
 
 opt_constraint_name:
-    /* empty */	 		{ $$ = NULL; }
- |  CONSTRAINT ident 		{ $$ = $2; }
+    /* empty */			{ $$ = NULL; }
+ |  CONSTRAINT ident		{ $$ = $2; }
  ;
 
 ref_action:
 	NO ACTION		{ $$ = 0; }
- | 	CASCADE			{ $$ = 1; }
- | 	RESTRICT		{ $$ = 2; }
- | 	SET NULLX		{ $$ = 3; }
- | 	SET DEFAULT		{ $$ = 4; }
+ |	CASCADE			{ $$ = 1; }
+ |	RESTRICT		{ $$ = 2; }
+ |	SET NULLX		{ $$ = 3; }
+ |	SET DEFAULT		{ $$ = 4; }
  ;
 
 ref_on:
@@ -1081,7 +1081,7 @@ opt_ref_action:
 	/* empty */	{ $$ = NULL; }
  | ref_on		{ $$ = dlist_append_symbol(dlist_create(), $1); }
  | ref_on ref_on	{ $$ = dlist_append_symbol(dlist_create(), $1);
- 			  dlist_append_symbol($$, $2); 			}
+			  dlist_append_symbol($$, $2);			}
  ;
 
 opt_match_type:
@@ -1093,7 +1093,7 @@ opt_match_type:
 
 opt_match:
     /* empty */			{ $$ = 0; }
- | MATCH opt_match_type	 	{ $$ = $2; }
+ | MATCH opt_match_type		{ $$ = $2; }
  ;
 
 column_constraint_type:
@@ -1113,11 +1113,11 @@ column_constraint_type:
  ;
 
 table_constraint_type:
-    UNIQUE column_commalist_parens  
+    UNIQUE column_commalist_parens
 			{ $$ = _symbol_create_list( SQL_UNIQUE, $2); }
- |  PRIMARY KEY column_commalist_parens 
+ |  PRIMARY KEY column_commalist_parens
 			{ $$ = _symbol_create_list( SQL_PRIMARY_KEY, $3); }
- |  FOREIGN KEY column_commalist_parens 
+ |  FOREIGN KEY column_commalist_parens
     REFERENCES qname opt_column_commalist opt_match opt_ref_action
 
 			{ dlist *l = dlist_create();
@@ -1130,20 +1130,20 @@ table_constraint_type:
 
  |  domain_constraint_type
  ;
-		
+
 domain_constraint_type:
     CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
-		
+
 column_commalist:
-    column		     
+    column
 			{ $$ = dlist_append_string(dlist_create(), $1); }
- |  column_commalist ',' column  
+ |  column_commalist ',' column
 			{ $$ = dlist_append_string( $1, $3 ); }
  ;
 
 like_table:
-	LIKE qname 	{ $$ = _symbol_create_list(SQL_LIKE, $2 ); }
+	LIKE qname	{ $$ = _symbol_create_list(SQL_LIKE, $2 ); }
  ;
 
 view_def:
@@ -1160,12 +1160,12 @@ view_def:
   ;
 
 view_as:
-	select_stmt 		
-  | 	BATS			{ $$ = NULL; }
+	select_stmt
+  |	BATS			{ $$ = NULL; }
   ;
-	
+
 opt_with_check_option:
-    /* empty */ 		{ $$ = FALSE; }
+    /* empty */			{ $$ = FALSE; }
  |  WITH CHECK OPTION		{ $$ = TRUE; }
  ;
 
@@ -1175,7 +1175,7 @@ opt_column_commalist:
  ;
 
 column_commalist_parens:
-   '(' column_commalist ')' 	{ $$ = $2; } 
+   '(' column_commalist ')'	{ $$ = $2; }
  ;
 
 module_def:
@@ -1184,57 +1184,59 @@ module_def:
 
 /*
 module_end:
-    END ident		
+    END ident
 */
 
 type_def:
     CREATE TYPE qname
     EXTERNAL sqlNAME ident
 			{ dlist *f = dlist_create();
-	  		  	dlist_append_list(f, $3);
+				dlist_append_list(f, $3);
 				dlist_append_string(f, $6);
- 			  $$ = _symbol_create_list( SQL_CREATE_TYPE, f ); }
+			  $$ = _symbol_create_list( SQL_CREATE_TYPE, f ); }
  ;
 
 func_def:
-    CREATE FUNCTION qname 
+    CREATE FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS data_type
     EXTERNAL sqlNAME ident
 			{ dlist *f = dlist_create();
-	  		  	dlist_append_list(f, $3);
-	  			dlist_append_list(f, $5);
-	  			dlist_append_type(f, $8);
+				dlist_append_list(f, $3);
+				dlist_append_list(f, $5);
+				dlist_append_type(f, $8);
 				dlist_append_string(f, $11);
 				dlist_append_symbol(f, NULL);
- 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  |
-    CREATE FUNCTION qname 
+    CREATE FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
     AS			{ mvc *m = (mvc*)parm;
 			  m->scanner.as = m->scanner.yycur; }
     select_stmt
 			{ dlist *f = dlist_create();
-	  		  	dlist_append_list(f, $3);
-	  			dlist_append_list(f, $5);
-	  			dlist_append_type(f, $8);
+
+
+dlist_append_list(f, $3);
+				dlist_append_list(f, $5);
+				dlist_append_type(f, $8);
 				dlist_append_string(f, NULL);
 				dlist_append_symbol(f, $11);
- 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  | /* proc ie no result */
-    CREATE PROCEDURE qname 
+    CREATE PROCEDURE qname
 	'(' opt_paramlist ')'
     AS			{ mvc *m = (mvc*)parm;
 			  m->scanner.as = m->scanner.yycur; }
-    select_stmt 	/* todo stmt set BEGIN/END */
+    select_stmt		/* todo stmt set BEGIN/END */
 			{ dlist *f = dlist_create();
-	  		  	dlist_append_list(f, $3);
-	  			dlist_append_list(f, $5);
-	  			dlist_append_type(f, NULL);   /* no result */
+				dlist_append_list(f, $3);
+				dlist_append_list(f, $5);
+				dlist_append_type(f, NULL);   /* no result */
 				dlist_append_string(f, NULL); /* no mil-impl */
 				dlist_append_symbol(f, $9);
- 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  ;
 
 func_data_type:
@@ -1243,27 +1245,27 @@ func_data_type:
  ;
 
 opt_paramlist:
-    paramlist		
- |			{ $$ = NULL; }  
+    paramlist
+ |			{ $$ = NULL; }
  ;
 
 paramlist:
-    paramlist ',' ident data_type	
+    paramlist ',' ident data_type
 			{ dlist *p = dlist_create();
-	  		  dlist_append_string(p, $3);
-	  		  dlist_append_type(p, $4);
+			  dlist_append_string(p, $3);
+			  dlist_append_type(p, $4);
 			  $$ = dlist_append_list($1, p); }
  |  ident data_type
 			{ dlist *l = dlist_create();
 			  dlist *p = dlist_create();
-	  		  dlist_append_string(p, $1);
-	  		  dlist_append_type(p, $2);
+			  dlist_append_string(p, $1);
+			  dlist_append_type(p, $2);
 			  $$ = dlist_append_list(l, p); }
  ;
 
 drop:
     DROP TABLE qname drop_action
-	
+
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $3 );
 	  dlist_append_int(l, $4 );
@@ -1277,81 +1279,81 @@ drop:
  ;
 
 drop_action:
-    /* empty */ 	{ $$ = 0; }
- |  RESTRICT  		{ $$ = 0; }
- |  CASCADE	  	{ $$ = 1; }
+    /* empty */		{ $$ = 0; }
+ |  RESTRICT		{ $$ = 0; }
+ |  CASCADE		{ $$ = 1; }
  ;
 
 	/* data manipulative stmts */
 
-sql: 
-   transaction_stmt  
- | delete_stmt 	
- | insert_stmt 
- | update_stmt 
+sql:
+   transaction_stmt
+ | delete_stmt
+ | insert_stmt
+ | update_stmt
  | copyfrom_stmt
  ;
 
 transaction_stmt:
-   _transaction_stmt 
+   _transaction_stmt
 	{ mvc *m = (mvc*)parm;
 	  $$ = $1;
-	  m->type = Q_TRANS; 					}
+	  m->type = Q_TRANS;					}
  ;
 
 _transaction_stmt:
-    COMMIT opt_work opt_chain 	
+    COMMIT opt_work opt_chain
 		{ $$ = _symbol_create_int( TR_COMMIT, $3);  }
- |  SAVEPOINT ident 		
+ |  SAVEPOINT ident
 		{ $$ = _symbol_create( TR_SAVEPOINT, $2); }
- |  RELEASE SAVEPOINT ident 	
+ |  RELEASE SAVEPOINT ident
 		{ $$ = _symbol_create( TR_RELEASE, $3); }
  |  ROLLBACK opt_work opt_chain opt_to_savepoint
-		{ $$ = _symbol_create_list( TR_ROLLBACK, 
+		{ $$ = _symbol_create_list( TR_ROLLBACK,
 		   dlist_append_string(
-		   	dlist_append_int(dlist_create(), $3), $4 )); }
+			dlist_append_int(dlist_create(), $3), $4 )); }
  |  START TRANSACTION transaction_mode_list
 		{ $$ = _symbol_create_int( TR_START, $3); }
  |  SET local TRANSACTION transaction_mode_list
 		{ $$ = _symbol_create_int( TR_MODE, $4); }
- |  SET AUTO_COMMIT '=' scalar_exp	
+ |  SET AUTO_COMMIT '=' scalar_exp
 		{ dlist *l = dlist_create();
 			dlist_append_string(l, _strdup("auto_commit") );
 			dlist_append_symbol(l, $4 );
-			$$ = _symbol_create_list( SQL_SET, l); 
+			$$ = _symbol_create_list( SQL_SET, l);
 		}
  ;
 
 local:
   /* empty */
- | 	LOCAL
+ |	LOCAL
  ;
 
 transaction_mode_list:
 	/* empty */		{ $$ = tr_none; }
- | 	_transaction_mode_list
+ |	_transaction_mode_list
  ;
 
 _transaction_mode_list:
-   	transaction_mode
-    		{ $$ = $1; }
- | 	_transaction_mode_list ',' transaction_mode
-		{ $$ = ($1 | $3); } 
+	transaction_mode
+		{ $$ = $1; }
+ |	_transaction_mode_list ',' transaction_mode
+		{ $$ = ($1 | $3); }
  ;
 
 
 transaction_mode:
 	READ ONLY			{ $$ = tr_readonly; }
  |	READ WRITE			{ $$ = tr_writable; }
- | 	ISOLATION LEVEL iso_level	{ $$ = tr_serializable; }
- | 	DIAGNOSTICS sqlSIZE intval	{ $$ = tr_none; /* not supported */ }
+ |	ISOLATION LEVEL iso_level	{ $$ = tr_serializable; }
+ |	DIAGNOSTICS sqlSIZE intval	{ $$ = tr_none; /* not supported */ }
  ;
 
 iso_level:
-	READ UNCOMMITTED	
- | 	READ COMMITTED	
- | 	REPEATABLE READ	
- | 	SERIALIZABLE	
+	READ UNCOMMITTED
+ |	READ COMMITTED
+ |	REPEATABLE READ
+ |	SERIALIZABLE
  ;
 
 opt_work: /* pure syntax sugar */
@@ -1366,19 +1368,19 @@ opt_chain:
  ;
 
 opt_to_savepoint:
-    /* empty */ 	{ $$ = NULL; }
+    /* empty */		{ $$ = NULL; }
  |  TO SAVEPOINT ident  { $$ = $3; }
  ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname FROM string_commalist opt_seps 
+    COPY opt_nr INTO qname FROM string_commalist opt_seps
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $4);
 	  dlist_append_list(l, $6);
 	  dlist_append_list(l, $7);
 	  dlist_append_int(l, $2);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname FROM STDIN opt_seps 
+  | COPY opt_nr INTO qname FROM STDIN opt_seps
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $4);
 	  dlist_append_list(l, NULL);
@@ -1388,19 +1390,19 @@ copyfrom_stmt:
   ;
 
 opt_seps:
-    /* empty */		
-				{ dlist *l = dlist_create(); 
-				  dlist_append_string(l, _strdup("|")); 
-				  dlist_append_string(l, _strdup("\\n")); 
+    /* empty */
+				{ dlist *l = dlist_create();
+				  dlist_append_string(l, _strdup("|"));
+				  dlist_append_string(l, _strdup("\\n"));
 				  $$ = l; }
- |  opt_using DELIMITERS string 
-				{ dlist *l = dlist_create(); 
-				  dlist_append_string(l, $3); 
-				  dlist_append_string(l, _strdup("\\n")); 
+ |  opt_using DELIMITERS string
+				{ dlist *l = dlist_create();
+				  dlist_append_string(l, $3);
+				  dlist_append_string(l, _strdup("\\n"));
 				  $$ = l; }
- |  opt_using DELIMITERS string ',' string 
-				{ dlist *l = dlist_create(); 
-				  dlist_append_string(l, $3); 
+ |  opt_using DELIMITERS string ',' string
+				{ dlist *l = dlist_create();
+				  dlist_append_string(l, $3);
 				  dlist_append_string(l, $5);
 				  $$ = l; }
  ;
@@ -1417,12 +1419,12 @@ opt_nr:
 
 string_commalist:
     string		{ $$ = dlist_append_string(dlist_create(), $1); }
- |  string_commalist ',' string  	
-			{ $$ = dlist_append_string($1, $3); } 
+ |  string_commalist ',' string
+			{ $$ = dlist_append_string($1, $3); }
  ;
 
 delete_stmt:
-    sqlDELETE FROM qname opt_where_clause 
+    sqlDELETE FROM qname opt_where_clause
 
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $3);
@@ -1474,13 +1476,13 @@ row_commalist:
 
 atom_commalist:
     insert_atom		{ $$ = dlist_append_symbol(dlist_create(), $1); }
- |  atom_commalist ',' insert_atom  
+ |  atom_commalist ',' insert_atom
 			{ $$ = dlist_append_symbol($1, $3); }
  ;
 
 insert_atom:
-    scalar_exp	
- |  NULLX		
+    scalar_exp
+ |  NULLX
 	{ /* replace by argument */
 	  mvc *m = (mvc*)parm;
 	  int len = (m->args)?list_length(m->args):0;
@@ -1488,62 +1490,62 @@ insert_atom:
 		atom *a = atom_general( sql_dup_subtype(
 				sql_bind_localtype("str")), NULL);
 
-	  	sql_add_arg( m, a);
- 	  	$$ = _symbol_create_list( SQL_COLUMN, 
-			dlist_append_int(dlist_create(), len)); 
+		sql_add_arg( m, a);
+		$$ = _symbol_create_list( SQL_COLUMN,
+			dlist_append_int(dlist_create(), len));
 	   } else {
- 		$$ = _symbol_create(SQL_NULL, NULL ); 
-	   } 
+		$$ = _symbol_create(SQL_NULL, NULL );
+	   }
 	}
  ;
 
 opt_distinct:
-    /* empty */ 	{ $$ = FALSE; }	
+    /* empty */		{ $$ = FALSE; }
  |  ALL			{ $$ = FALSE; }
  |  DISTINCT		{ $$ = TRUE; }
  ;
 
 assignment_commalist:
     assignment		{ $$ = dlist_append_symbol(dlist_create(), $1 ); }
- |  assignment_commalist ',' assignment  
+ |  assignment_commalist ',' assignment
 			{ $$ = dlist_append_symbol($1, $3 ); }
  ;
 
 assignment:
-    column '=' scalar_exp 	
+    column '=' scalar_exp
 
 	{ dlist *l = dlist_create();
-	  dlist_append_string(l, $1); 
-	  dlist_append_symbol(l, $3); 
+	  dlist_append_string(l, $1);
+	  dlist_append_symbol(l, $3);
 	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
 
  |  column '=' NULLX
 
 	{ dlist *l = dlist_create();
-	  dlist_append_string(l, $1); 
-	  dlist_append_symbol(l, NULL ); 
+	  dlist_append_string(l, $1);
+	  dlist_append_symbol(l, NULL );
 	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
  ;
 
 target_commalist:
     target		{ $$ = dlist_append_symbol(dlist_create(), $1); }
- |  target_commalist ',' target  
+ |  target_commalist ',' target
 			{ $$ = dlist_append_symbol($1, $3); }
  ;
 
 target:
-   TABLE qname  	{ $$ = _symbol_create_list( SQL_TABLE, $2); }
+   TABLE qname		{ $$ = _symbol_create_list( SQL_TABLE, $2); }
  ;
 
 opt_where_clause:
-    /* empty */ 		{ $$ = NULL; }
+    /* empty */			{ $$ = NULL; }
  |  WHERE search_condition	{ $$ = $2; }
  ;
 
 	/* query expressions */
 
 joined_table:
-   '(' joined_table ')' 	
+   '(' joined_table ')'
 	{ $$ = $2; }
  |  table_ref CROSS JOIN table_ref
 
@@ -1551,7 +1553,7 @@ joined_table:
 	  dlist_append_symbol(l, $1);
 	  dlist_append_symbol(l, $4);
 	  $$ = _symbol_create_list( SQL_CROSS, l); }
- |  table_ref UNIONJOIN table_ref join_spec 
+ |  table_ref UNIONJOIN table_ref join_spec
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $1);
 	  dlist_append_int(l, 0);
@@ -1559,7 +1561,7 @@ joined_table:
 	  dlist_append_symbol(l, $3);
 	  dlist_append_symbol(l, $4);
 	  $$ = _symbol_create_list( SQL_UNIONJOIN, l); }
- |  table_ref JOIN table_ref join_spec 
+ |  table_ref JOIN table_ref join_spec
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $1);
 	  dlist_append_int(l, 0);
@@ -1567,7 +1569,7 @@ joined_table:
 	  dlist_append_symbol(l, $3);
 	  dlist_append_symbol(l, $4);
 	  $$ = _symbol_create_list( SQL_JOIN, l); }
- |  table_ref NATURAL JOIN table_ref 
+ |  table_ref NATURAL JOIN table_ref
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $1);
 	  dlist_append_int(l, 1);
@@ -1575,7 +1577,7 @@ joined_table:
 	  dlist_append_symbol(l, $4);
 	  dlist_append_symbol(l, NULL);
 	  $$ = _symbol_create_list( SQL_JOIN, l); }
- |  table_ref join_type JOIN table_ref join_spec 
+ |  table_ref join_type JOIN table_ref join_spec
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $1);
 	  dlist_append_int(l, 0);
@@ -1583,7 +1585,7 @@ joined_table:
 	  dlist_append_symbol(l, $4);
 	  dlist_append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_JOIN, l); }
- |  table_ref NATURAL join_type JOIN table_ref 
+ |  table_ref NATURAL join_type JOIN table_ref
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $1);
 	  dlist_append_int(l, 1);
@@ -1595,8 +1597,8 @@ joined_table:
 
 join_type:
     INNER			{ $$ = 0; }
-  | outer_join_type OUTER 	{ $$ = 1 + $1; }
-  | outer_join_type 		{ $$ = 1 + $1; }
+  | outer_join_type OUTER	{ $$ = 1 + $1; }
+  | outer_join_type		{ $$ = 1 + $1; }
   ;
 
 outer_join_type:
@@ -1606,48 +1608,48 @@ outer_join_type:
   ;
 
 join_spec:
-    ON search_condition 		{ $$ = $2; }
-  | USING column_commalist_parens  	
+    ON search_condition			{ $$ = $2; }
+  | USING column_commalist_parens
 		{ $$ = _symbol_create_list( SQL_USING, $2); }
   ;
 
-sql: 
+sql:
     select_stmt
  ;
 
 select_stmt:
-    simple_select 			%prec UMINUS
+    simple_select			%prec UMINUS
 	opt_order_by_clause opt_limit opt_offset
 	{
 	  if ($1->token == SQL_SELECT) {
-          	SelectNode *sn = (SelectNode*)$1;
-	  	sn->orderby = $2;
-	  	sn->limit = $3;
+		SelectNode *sn = (SelectNode*)$1;
+		sn->orderby = $2;
+		sn->limit = $3;
 		sn->offset = $4;
-	  	$$ = $1;
+		$$ = $1;
 	   } else {
-                $$ = NULL;
+		$$ = NULL;
 		yyerror("order by and limit are only allowed with a select statement");
 		YYABORT;
 	   }
- 	}
- |  set_select                    	%prec UMINUS
- |  select_with_parens                  %prec UMINUS
+	}
+ |  set_select				%prec UMINUS
+ |  select_with_parens			%prec UMINUS
  ;
 
 select_with_parens:
-    '(' select_no_parens ')' 	{ $$ = $2; }
- |  '(' select_with_parens ')'  { $$ = $2; }
+    '(' select_no_parens ')'	{ $$ = $2; }
+ |  '(' select_with_parens ')'	{ $$ = $2; }
  ;
 
 simple_select:
-    SELECT opt_distinct selection opt_into table_exp 
-	{ $$ = newSelectNode( $2, $3, $4, 
-	  	$5->h->data.sym,
-	  	$5->h->next->data.sym,
-	  	$5->h->next->next->data.sym,
-	  	$5->h->next->next->next->data.sym,
-	  	NULL, NULL, -1, -1);
+    SELECT opt_distinct selection opt_into table_exp
+	{ $$ = newSelectNode( $2, $3, $4,
+		$5->h->data.sym,
+		$5->h->next->data.sym,
+		$5->h->next->next->data.sym,
+		$5->h->next->next->next->data.sym,
+		NULL, NULL, -1, -1);
 	  dlist_destroy_keep_data($5);
 	}
     ;
@@ -1664,7 +1666,7 @@ complex_select:
 
 set_select:
 
-    complex_select UNION 
+    complex_select UNION
 	set_distinct opt_corresponding complex_select
 
 	{ dlist *l = dlist_create();
@@ -1694,7 +1696,7 @@ set_select:
  ;
 
 set_distinct:
-    /* empty */ 	{ $$ = TRUE; }	
+    /* empty */		{ $$ = TRUE; }
  |  ALL			{ $$ = FALSE; }
  |  DISTINCT		{ $$ = TRUE; }
  ;
@@ -1702,14 +1704,14 @@ set_distinct:
 
 opt_corresponding:
 	/* empty */	{ $$ = NULL; }
- |  CORRESPONDING				
+ |  CORRESPONDING
 			{ $$ = dlist_create(); }
- |  CORRESPONDING BY '(' column_ref_commalist ')' 	
-			{ $$ = $4; } 
+ |  CORRESPONDING BY '(' column_ref_commalist ')'
+			{ $$ = $4; }
  ;
 
 opt_into:
-   INTO target_commalist 	{ $$ = $2; }
+   INTO target_commalist	{ $$ = $2; }
  | /* empty */			{ $$ = NULL; }
  ;
 
@@ -1728,81 +1730,81 @@ table_exp:
 	  dlist_append_symbol($$, $4); }
  ;
 
-opt_from_clause: 
+opt_from_clause:
     /* empty */			 { $$ = NULL; }
  |  FROM table_ref_commalist 	 { $$ = _symbol_create_list( SQL_FROM, $2); }
  ;
 
 table_ref_commalist:
     table_ref		{ $$ = dlist_append_symbol(dlist_create(), $1); }
- |  table_ref_commalist ',' table_ref  
+ |  table_ref_commalist ',' table_ref
 			{ $$ = dlist_append_symbol($1, $3); }
  ;
 
 simple_table:
    qname 			{ dlist *l = dlist_create();
-		  		  dlist_append_list(l, $1);  
-		  	  	  dlist_append_symbol(l, NULL);  
+		  		  dlist_append_list(l, $1);
+		  	  	  dlist_append_symbol(l, NULL);
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
  | qname table_name 		{ dlist *l = dlist_create();
-		  		  dlist_append_list(l, $1);  
-		  	  	  dlist_append_symbol(l, $2);  
+		  		  dlist_append_list(l, $1);
+		  	  	  dlist_append_symbol(l, $2);
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
  | func_ref table_name		{ dlist *l = dlist_create();
-		  		  dlist_append_symbol(l, $1);  
-		  	  	  dlist_append_symbol(l, $2);  
+		  		  dlist_append_symbol(l, $1);
+		  	  	  dlist_append_symbol(l, $2);
 		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
  ;
 
 table_ref:
     simple_table
- |  select_with_parens table_name	
+ |  select_with_parens table_name
 				{
-				  $$ = $1; 
+				  $$ = $1;
 				  if ($$->token == SQL_SELECT) {
 				  	SelectNode *sn = (SelectNode*)$1;
-				  	sn->name = $2; 
+				  	sn->name = $2;
 				  } else {
-				  	dlist_append_symbol($1->data.lval, $2); 
+				  	dlist_append_symbol($1->data.lval, $2);
 				  }
 				}
- |  select_with_parens error	
+ |  select_with_parens error
 				{ $$ = NULL;
 				  symbol_destroy($1);
 				  yyerror("Subquery table reference needs alias");
 				  YYABORT;
 				}
- |  joined_table 		{ $$ = $1; 
+ |  joined_table 		{ $$ = $1;
 				  dlist_append_symbol($1->data.lval, NULL); }
- |  '(' joined_table ')' table_name	
-				{ $$ = $2; 
+ |  '(' joined_table ')' table_name
+				{ $$ = $2;
 				  dlist_append_symbol($2->data.lval, $4); }
  ;
 
-table_name:	
+table_name:
 	/* empty */
 				{ $$ = NULL;
 				  yyerror("name required, use ... AS xxx");
 				  YYABORT; }
  |   AS ident '(' name_commalist ')'
 				{ dlist *l = dlist_create();
-		  		  dlist_append_string(l, $2);  
-		  	  	  dlist_append_list(l, $4);  
+		  		  dlist_append_string(l, $2);
+		  	  	  dlist_append_list(l, $4);
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
- |  AS ident 
+ |  AS ident
 				{ dlist *l = dlist_create();
-		  		  dlist_append_string(l, $2);  
-		  	  	  dlist_append_list(l, NULL);  
+		  		  dlist_append_string(l, $2);
+		  	  	  dlist_append_list(l, NULL);
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
  |  ident '(' name_commalist ')'
 				{ dlist *l = dlist_create();
-		  		  dlist_append_string(l, $1);  
-		  	  	  dlist_append_list(l, $3);  
+		  		  dlist_append_string(l, $1);
+		  	  	  dlist_append_list(l, $3);
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
- |  ident 
+ |  ident
 				{ dlist *l = dlist_create();
-		  		  dlist_append_string(l, $1);  
-		  	  	  dlist_append_list(l, NULL);  
+		  		  dlist_append_string(l, $1);
+		  	  	  dlist_append_list(l, NULL);
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
  ;
 
@@ -1812,10 +1814,10 @@ opt_group_by_clause:
  ;
 
 column_ref_commalist:
-    column_ref		{ $$ = dlist_append_symbol(dlist_create(), 
+    column_ref		{ $$ = dlist_append_symbol(dlist_create(),
 			       _symbol_create_list(SQL_COLUMN,$1)); }
- |  column_ref_commalist ',' column_ref  
-			{ $$ = dlist_append_symbol( $1, 
+ |  column_ref_commalist ',' column_ref
+			{ $$ = dlist_append_symbol( $1,
 			       _symbol_create_list(SQL_COLUMN,$3)); }
  ;
 
@@ -1826,26 +1828,26 @@ opt_having_clause:
 
 
 search_condition:
-    search_condition OR search_condition  	
+    search_condition OR search_condition
 		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_symbol(l, $3); 
+		  dlist_append_symbol(l, $1);
+		  dlist_append_symbol(l, $3);
 		  $$ = _symbol_create_list(SQL_OR, l ); }
  |  search_condition AND search_condition
 		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_symbol(l, $3); 
+		  dlist_append_symbol(l, $1);
+		  dlist_append_symbol(l, $3);
 		  $$ = _symbol_create_list(SQL_AND, l ); }
  |  '(' search_condition ')'	{ $$ = $2; }
- | predicate			
-/* search conditions 
+ | predicate
+/* search conditions
  |  NOT search_condition    	{ $$ = _symbol_create_symbol(SQL_NOT, $2); }
 */
  ;
 
 opt_order_by_clause:
     /* empty */ 			  { $$ = NULL; }
- |  ORDER BY ordering_spec_commalist  
+ |  ORDER BY ordering_spec_commalist
 		{ $$ = _symbol_create_list( SQL_ORDERBY, $3); }
  ;
 
@@ -1860,17 +1862,17 @@ opt_offset:
 
 ordering_spec_commalist:
     ordering_spec	 { $$ = dlist_append_symbol(dlist_create(), $1); }
- |  ordering_spec_commalist ',' ordering_spec 
+ |  ordering_spec_commalist ',' ordering_spec
 			 { $$ = dlist_append_symbol( $1, $3 ); }
  ;
 
 ordering_spec:
-    column_ref opt_asc_desc 
+    column_ref opt_asc_desc
 	{ dlist *l = dlist_create();
-	  dlist_append_symbol(l, _symbol_create_list(SQL_COLUMN, $1)); 
-	  dlist_append_int(l, $2); 
+	  dlist_append_symbol(l, _symbol_create_list(SQL_COLUMN, $1));
+	  dlist_append_int(l, $2);
 	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
-					  
+
  ;
 
 opt_asc_desc:
@@ -1879,51 +1881,51 @@ opt_asc_desc:
  |  DESC		{ $$ = FALSE; }
  ;
 
-predicate: 
-    comparison_predicate 
- |  between_predicate 
+predicate:
+    comparison_predicate
+ |  between_predicate
  |  like_predicate
- |  test_for_null 
- |  in_predicate  
- |  all_or_any_predicate 
- |  existence_test 
- |  BOOL_FALSE  
+ |  test_for_null
+ |  in_predicate
+ |  all_or_any_predicate
+ |  existence_test
+ |  BOOL_FALSE
 		{ sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
 		  $$ = _newAtomNode( atom_general(t, _strdup("false"))); }
- |  BOOL_TRUE  
+ |  BOOL_TRUE
 		{ sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
 		  $$ = _newAtomNode( atom_general(t, _strdup("true"))); }
  ;
 
 comparison_predicate:
-    scalar_exp COMPARISON scalar_exp	 
+    scalar_exp COMPARISON scalar_exp
 		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_string(l, $2); 
-		  dlist_append_symbol(l, $3); 
+		  dlist_append_symbol(l, $1);
+		  dlist_append_string(l, $2);
+		  dlist_append_symbol(l, $3);
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
  |  scalar_exp '=' scalar_exp
 		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_string(l, _strdup("=")); 
-		  dlist_append_symbol(l, $3); 
+		  dlist_append_symbol(l, $1);
+		  dlist_append_string(l, _strdup("="));
+		  dlist_append_symbol(l, $3);
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
  ;
 
 between_predicate:
     scalar_exp NOT BETWEEN opt_bounds scalar_exp AND scalar_exp
 		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_int(l, $4); 
-		  dlist_append_symbol(l, $5); 
-		  dlist_append_symbol(l, $7); 
+		  dlist_append_symbol(l, $1);
+		  dlist_append_int(l, $4);
+		  dlist_append_symbol(l, $5);
+		  dlist_append_symbol(l, $7);
 		  $$ = _symbol_create_list(SQL_NOT_BETWEEN, l ); }
  |  scalar_exp BETWEEN opt_bounds scalar_exp AND scalar_exp
 		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_int(l, $3); 
-		  dlist_append_symbol(l, $4); 
-		  dlist_append_symbol(l, $6); 
+		  dlist_append_symbol(l, $1);
+		  dlist_append_int(l, $3);
+		  dlist_append_symbol(l, $4);
+		  dlist_append_symbol(l, $6);
 		  $$ = _symbol_create_list(SQL_BETWEEN, l ); }
  ;
 
@@ -1936,21 +1938,21 @@ opt_bounds:
 like_predicate:
     scalar_exp NOT LIKE atom_exp
 		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_symbol(l, $4); 
+		  dlist_append_symbol(l, $1);
+		  dlist_append_symbol(l, $4);
 		  $$ = _symbol_create_list(SQL_NOT_LIKE, l ); }
  |  scalar_exp LIKE atom_exp
 		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_symbol(l, $3); 
+		  dlist_append_symbol(l, $1);
+		  dlist_append_symbol(l, $3);
 		  $$ = _symbol_create_list(SQL_LIKE, l ); }
  ;
 
 
 atom_exp:
-    atom 	
+    atom
 		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
+		  dlist_append_symbol(l, $1);
 		  $$ = _symbol_create_list(SQL_ESCAPE, l ); }
  |	atom ESCAPE string
  		{ char *s = sql2str($3);
@@ -1979,23 +1981,23 @@ test_for_null:
 in_predicate:
     scalar_exp NOT sqlIN subquery
 		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_symbol(l, $4); 
+		  dlist_append_symbol(l, $1);
+		  dlist_append_symbol(l, $4);
 		  $$ = _symbol_create_list(SQL_NOT_IN, l ); }
- |  scalar_exp sqlIN subquery 
+ |  scalar_exp sqlIN subquery
 		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_symbol(l, $3); 
+		  dlist_append_symbol(l, $1);
+		  dlist_append_symbol(l, $3);
 		  $$ = _symbol_create_list(SQL_IN, l ); }
  |  scalar_exp NOT sqlIN '(' atom_commalist ')'
 		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_list(l, $5); 
+		  dlist_append_symbol(l, $1);
+		  dlist_append_list(l, $5);
 		  $$ = _symbol_create_list(SQL_NOT_IN, l ); }
  |  scalar_exp sqlIN '(' atom_commalist ')'
 		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_list(l, $4); 
+		  dlist_append_symbol(l, $1);
+		  dlist_append_list(l, $4);
 		  $$ = _symbol_create_list(SQL_IN, l ); }
  ;
 
@@ -2003,13 +2005,13 @@ all_or_any_predicate:
     scalar_exp COMPARISON any_all_some subquery
 
 		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_string(l, $2); 
-		  dlist_append_string(l, $3); 
-		  dlist_append_symbol(l, $4); 
+		  dlist_append_symbol(l, $1);
+		  dlist_append_string(l, $2);
+		  dlist_append_string(l, $3);
+		  dlist_append_symbol(l, $4);
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
  ;
-			
+
 any_all_some:
     ANY		{ $$ = $1; }
  |  ALL		{ $$ = $1; }
@@ -2022,9 +2024,9 @@ existence_test:
  ;
 
 subquery:
-    '(' SELECT opt_distinct  selection table_exp ')' 
+    '(' SELECT opt_distinct  selection table_exp ')'
 
-	{ $$ = newSelectNode( $3, $4, NULL, 
+	{ $$ = newSelectNode( $3, $4, NULL,
 	  	$5->h->data.sym,
 	  	$5->h->next->data.sym,
 	  	$5->h->next->next->data.sym,
@@ -2039,13 +2041,13 @@ subquery:
 scalar_exp:
     value_exp
 
- |  scalar_exp '+' scalar_exp	
+ |  scalar_exp '+' scalar_exp
 				{ dlist *l = dlist_create();
 				  dlist_append_string(l, _strdup("sql_add"));
 	  			  dlist_append_symbol(l, $1);
 	  			  dlist_append_symbol(l, $3);
 	  			  $$ = _symbol_create_list( SQL_BINOP, l ); }
- |  scalar_exp '-' scalar_exp   
+ |  scalar_exp '-' scalar_exp
 				{ dlist *l = dlist_create();
 				  dlist_append_string(l, _strdup("sql_sub"));
 	  			  dlist_append_symbol(l, $1);
@@ -2076,17 +2078,17 @@ scalar_exp:
 	  			  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  '(' scalar_exp ')' 		{ $$ = $2; }
  |  subquery			%prec UMINUS
- |  predicate			
+ |  predicate
  ;
 
 value_exp:
     atom
  |  column_ref 			{ $$ = _symbol_create_list( SQL_COLUMN, $1); }
- |  aggr_ref 
- |  func_ref 
+ |  aggr_ref
+ |  func_ref
  |  datetime_funcs
  |  string_funcs
- |  case_exp	
+ |  case_exp
  |  cast_exp
  |  '?'				{ $$ = _symbol_create( SQL_PARAMETER, NULL ); }
  ;
@@ -2118,13 +2120,13 @@ func_ident:
  ;
 
 datetime_funcs:
-    EXTRACT '(' datetime_field FROM scalar_exp ')' 
+    EXTRACT '(' datetime_field FROM scalar_exp ')'
 				{ dlist *l = dlist_create();
 				  const char *ident = datetime_field((itype)$3);
   		  		  dlist_append_string(l, _strdup(ident));
   		  		  dlist_append_symbol(l, $5);
 		  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
- |  CURRENT_DATE opt_brackets 
+ |  CURRENT_DATE opt_brackets
  			{ dlist *l = dlist_create();
 			  dlist_append_string(l, _strdup("current_date"));
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
@@ -2144,7 +2146,7 @@ opt_brackets:
  ;
 
 string_funcs:
-    SUBSTRING '(' scalar_exp FROM scalar_exp FOR scalar_exp ')' 
+    SUBSTRING '(' scalar_exp FROM scalar_exp FOR scalar_exp ')'
 				{ dlist *l = dlist_create();
 				  dlist *ops = dlist_create();
   		  		  dlist_append_string(l, _strdup("substring"));
@@ -2153,7 +2155,7 @@ string_funcs:
   		  		  dlist_append_symbol(ops, $7);
 				  dlist_append_list(l, ops);
 		  		  $$ = _symbol_create_list( SQL_NOP, l ); }
-  | SUBSTRING '(' scalar_exp ',' scalar_exp ',' scalar_exp ')' 
+  | SUBSTRING '(' scalar_exp ',' scalar_exp ',' scalar_exp ')'
 				{ dlist *l = dlist_create();
 				  dlist *ops = dlist_create();
   		  		  dlist_append_string(l, _strdup("substring"));
@@ -2162,25 +2164,25 @@ string_funcs:
   		  		  dlist_append_symbol(ops, $7);
 				  dlist_append_list(l, ops);
 		  		  $$ = _symbol_create_list( SQL_NOP, l ); }
-  | SUBSTRING '(' scalar_exp FROM scalar_exp ')' 
+  | SUBSTRING '(' scalar_exp FROM scalar_exp ')'
 				{ dlist *l = dlist_create();
   		  		  dlist_append_string(l, _strdup("substring"));
   		  		  dlist_append_symbol(l, $3);
   		  		  dlist_append_symbol(l, $5);
 		  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
-  | SUBSTRING '(' scalar_exp ',' scalar_exp ')' 
+  | SUBSTRING '(' scalar_exp ',' scalar_exp ')'
 				{ dlist *l = dlist_create();
   		  		  dlist_append_string(l, _strdup("substring"));
   		  		  dlist_append_symbol(l, $3);
   		  		  dlist_append_symbol(l, $5);
 		  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
-  | POSITION '(' scalar_exp sqlIN scalar_exp ')' 
+  | POSITION '(' scalar_exp sqlIN scalar_exp ')'
 				{ dlist *l = dlist_create();
   		  		  dlist_append_string(l, _strdup("locate"));
   		  		  dlist_append_symbol(l, $3);
   		  		  dlist_append_symbol(l, $5);
 		  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
-  | scalar_exp CONCATSTRING scalar_exp  
+  | scalar_exp CONCATSTRING scalar_exp
 				{ dlist *l = dlist_create();
   		  		  dlist_append_string(l, _strdup("concat"));
   		  		  dlist_append_symbol(l, $1);
@@ -2190,7 +2192,7 @@ string_funcs:
 
 column_exp_commalist:
     column_exp 		{ $$ = dlist_append_symbol(dlist_create(), $1 ); }
- |  column_exp_commalist ',' column_exp  
+ |  column_exp_commalist ',' column_exp
 			{ $$ = dlist_append_symbol( $1, $3 ); }
  ;
 
@@ -2205,9 +2207,9 @@ column_exp:
   		  dlist_append_symbol(l, $1);
   		  dlist_append_string(l, $2);
   		  $$ = _symbol_create_list( SQL_COLUMN, l ); }
- |  NULLX opt_alias_name	
+ |  NULLX opt_alias_name
 		{ dlist *l = dlist_create();
-  		  dlist_append_symbol(l, _newAtomNode(NULL) );  
+  		  dlist_append_symbol(l, _newAtomNode(NULL) );
   		  dlist_append_string(l, $2);
   		  $$ = _symbol_create_list( SQL_COLUMN, l ); }
  ;
@@ -2218,7 +2220,7 @@ opt_alias_name:
  ;
 
 atom:
-    literal	
+    literal
 	{ /* replace by argument */
 	  mvc *m = (mvc*)parm;
 	  int len = (m->args)?list_length(m->args):0;
@@ -2228,10 +2230,10 @@ atom:
 	  	sql_add_arg( m, an->a);
 		an->a = NULL;
 		symbol_destroy($1);
-	  	/* we miss use SQL_COLUMN also for param's, maybe 
+	  	/* we miss use SQL_COLUMN also for param's, maybe
 	     		change SQL_COLUMN to SQL_IDENT */
- 	  	$$ = _symbol_create_list( SQL_COLUMN, 
-			dlist_append_int(dlist_create(), len)); 
+ 	  	$$ = _symbol_create_list( SQL_COLUMN,
+			dlist_append_int(dlist_create(), len));
 	   } else {
 		$$ = $1;
 	   }
@@ -2241,20 +2243,20 @@ atom:
 
 /* change to set function */
 aggr_ref:
-    AGGR '(' '*' ')' 	
+    AGGR '(' '*' ')'
 		{ dlist *l = dlist_create();
   		  dlist_append_string(l, $1);
   		  dlist_append_int(l, FALSE);
   		  dlist_append_symbol(l, NULL);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  AGGR '(' ident '.' '*' ')' 
+ |  AGGR '(' ident '.' '*' ')'
 		{ dlist *l = dlist_create();
 		  _DELETE($3);
   		  dlist_append_string(l, $1);
   		  dlist_append_int(l, FALSE);
   		  dlist_append_symbol(l, NULL);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  AGGR '(' DISTINCT column_ref ')' 
+ |  AGGR '(' DISTINCT column_ref ')'
 		{ dlist *l = dlist_create();
   		  dlist_append_string(l, $1);
   		  dlist_append_int(l, TRUE);
@@ -2266,7 +2268,7 @@ aggr_ref:
   		  dlist_append_int(l, FALSE);
   		  dlist_append_symbol(l, $4);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  AGGR '(' scalar_exp ')' 
+ |  AGGR '(' scalar_exp ')'
 		{ dlist *l = dlist_create();
   		  dlist_append_string(l, $1);
   		  dlist_append_int(l, FALSE);
@@ -2312,38 +2314,38 @@ datetime_field:
 
 start_field:
     non_second_datetime_field time_precision
-		{ $$ = dlist_append_int( 
+		{ $$ = dlist_append_int(
 			 	dlist_append_int( dlist_create(), $1), $2);  }
  ;
 
 end_field:
-    non_second_datetime_field 	
-		{ $$ = dlist_append_int( 
+    non_second_datetime_field
+		{ $$ = dlist_append_int(
 			 	dlist_append_int( dlist_create(), $1), 0);  }
- |  SECOND time_precision	
-		{ $$ = dlist_append_int( 
+ |  SECOND time_precision
+		{ $$ = dlist_append_int(
 			 	dlist_append_int( dlist_create(), isec), $2);  }
  ;
 
 single_datetime_field:
-    non_second_datetime_field time_precision 
-		{ $$ = dlist_append_int( 
+    non_second_datetime_field time_precision
+		{ $$ = dlist_append_int(
 			 	dlist_append_int( dlist_create(), $1), $2);  }
- |  SECOND time_precision	
-		{ $$ = dlist_append_int( 
+ |  SECOND time_precision
+		{ $$ = dlist_append_int(
 			 	dlist_append_int( dlist_create(), isec), $2);  }
  ;
 
 interval_qualifier:
-    start_field TO end_field  
+    start_field TO end_field
 	{ $$ =  dlist_append_list(
 			dlist_append_list( dlist_create(), $1), $3 ); }
- |  single_datetime_field    
+ |  single_datetime_field
 	{ $$ =  dlist_append_list( dlist_create(), $1); }
  ;
 
 interval_type:
-    INTERVAL interval_qualifier	{ 
+    INTERVAL interval_qualifier	{
 		int sk, ek;
 		mvc *m = (mvc*)parm;
 	  	int tpe;
@@ -2363,30 +2365,30 @@ interval_type:
  ;
 
 user:
-    USER     
- |  SESSION_USER     
- |  CURRENT_USER     
+    USER
+ |  SESSION_USER
+ |  CURRENT_USER
  ;
 
 literal:
     string
 		{ char *s = sql2str($1);
 		  int len = strlen(s);
-		  sql_subtype *t = sql_bind_subtype("char", len, 0 ); 
+		  sql_subtype *t = sql_bind_subtype("char", len, 0 );
 		  $$ = _newAtomNode( atom_string(t, s)); }
- |  user 
+ |  user
 		{ mvc *m = (mvc*)parm;
 		  sql_subtype *t = sql_bind_subtype("char", strlen(m->user),0);
 		  $$ = _newAtomNode( atom_string(t,sql2str(_strdup(m->user))));
 		}
 
- |  sqlINT   	
+ |  sqlINT
 		{ int digits = strlen($1), err = 0, len = sizeof(lng);
-		  lng value, *p = &value; 
+		  lng value, *p = &value;
 		  sql_subtype *t = NULL;
-		  
+
 		  lngFromStr($1, &len, &p);
-		  if (value == lng_nil) 
+		  if (value == lng_nil)
 		  err = 2;
 
 		  /* find the most suitable data type for the given number */
@@ -2398,22 +2400,22 @@ literal:
 		    else if ((digits <= 64) &&
 				(value >= GDK_lng_min && value <= GDK_lng_max))
 		  	  t = sql_bind_subtype("bigint", digits, 0 );
-		    else 
+		    else
 			  err = 1;
 		  }
 
 		  if (err) {
-			char buf[BUFSIZ]; 
+			char buf[BUFSIZ];
 
 			snprintf(buf, BUFSIZ, "integer value too large or not a number (%s)", $1);
 			yyerror(buf);
 			$$ = NULL;
 			YYABORT;
 		  } else {
-		  	$$ = _newAtomNode( atom_int(t, value)); 
+		  	$$ = _newAtomNode( atom_int(t, value));
 		  }
 		}
- |  INTNUM   
+ |  INTNUM
 		{ char *s = strip_extra_zeros($1);
 		  char *dot = strchr(s, '.');
 		  int digits = strlen(s) - 1;
@@ -2429,100 +2431,100 @@ literal:
 		{ sql_subtype *t = sql_bind_subtype("double", 51, 0 );
 		  double val = strtod($1,NULL);
 		  $$ = _newAtomNode( atom_float(t, val)); }
- |  sqlDATE string 
+ |  sqlDATE string
 		{ sql_subtype *t = sql_bind_subtype("date", 0, 0 );
-		  atom *a = atom_general(t, $2); 
+		  atom *a = atom_general(t, $2);
 		  if (!a) {
-			char buf[BUFSIZ]; 
+			char buf[BUFSIZ];
 
 			snprintf(buf, BUFSIZ, "incorrect date value (%s)", $2);
 			yyerror(buf);
 			$$ = NULL;
 			YYABORT;
 		  } else {
-		  	$$ = _newAtomNode(a); 
+		  	$$ = _newAtomNode(a);
 		} }
- |  TIME tz string 
+ |  TIME tz string
 		{ sql_subtype *t = sql_bind_subtype("time", 0, $2 );
-		  atom *a = atom_general(t, $3); 
+		  atom *a = atom_general(t, $3);
 		  if (!a) {
-			char buf[BUFSIZ]; 
+			char buf[BUFSIZ];
 
 			snprintf(buf, BUFSIZ, "incorrect time value (%s)", $3);
 			yyerror(buf);
 			$$ = NULL;
 			YYABORT;
 		  } else {
-		  	$$ = _newAtomNode(a); 
+		  	$$ = _newAtomNode(a);
 		} }
- |  TIMESTAMP tz string 
+ |  TIMESTAMP tz string
 		{ sql_subtype *t = sql_bind_subtype("timestamp", 0, $2 );
-		  atom *a = atom_general(t, $3); 
+		  atom *a = atom_general(t, $3);
 		  if (!a) {
-			char buf[BUFSIZ]; 
+			char buf[BUFSIZ];
 
 			snprintf(buf, BUFSIZ, "incorrect timestamp value (%s)", $3);
 			yyerror(buf);
 			$$ = NULL;
 			YYABORT;
 		  } else {
-		  	$$ = _newAtomNode(a); 
+		  	$$ = _newAtomNode(a);
 		} }
  |  interval_expression
- |  aTYPE string 
+ |  aTYPE string
 		{ sql_subtype *t = sql_bind_subtype($1, 0, 0);
 		  atom *a = atom_general(t, $2);
 		  $$ = NULL;
-	          if (a) 
-			$$ = _newAtomNode(a); 
+	          if (a)
+			$$ = _newAtomNode(a);
 		  if (!$$) {
-			char buf[BUFSIZ]; 
+			char buf[BUFSIZ];
 
 			snprintf(buf, BUFSIZ, "incorrect %s %s", $1, $2);
 			yyerror(buf);
-			if (a) 
+			if (a)
 				atom_destroy(a);
-	  	  	_DELETE($1); 
+	  	  	_DELETE($1);
 			YYABORT;
 		  }
-	  	  _DELETE($1); 
+	  	  _DELETE($1);
 		}
- | type_alias string 
+ | type_alias string
 		{ sql_subtype *t = sql_bind_subtype($1, 0, 0);
 		  atom *a = atom_general(t, $2);
 		  $$ = NULL;
-	          if (a) 
-			$$ = _newAtomNode(a); 
+	          if (a)
+			$$ = _newAtomNode(a);
 		  if (!$$) {
-			char buf[BUFSIZ]; 
+			char buf[BUFSIZ];
 
 			snprintf(buf, BUFSIZ, "incorrect %s %s", $1, $2);
 			yyerror(buf);
-			if (a) 
+			if (a)
 				atom_destroy(a);
 			YYABORT;
 		  }
 		}
- | IDENT string 
+ | IDENT string
 		{ mvc *m = (mvc*)parm;
-		  sql_type *t = mvc_bind_type(m, $1); 
+		  sql_type *t = mvc_bind_type(m, $1);
 		  atom *a;
 
 		  $$ = NULL;
-		  if (t) { 
+		  if (t) {
 			a = atom_general( sql_create_subtype(t, 0, 0), $2);
-			if (a) 
-				$$ = _newAtomNode(a); 
+			if (a)
+				$$ = _newAtomNode(a);
 		  }
 		  if (!t || !$$) {
-			char buf[BUFSIZ]; 
+			char buf[BUFSIZ];
 
 			snprintf(buf, BUFSIZ, "Type (%s) unknown", $1);
 			yyerror(buf);
-			_DELETE($1); 
+			_DELETE($1);
 			YYABORT;
 		  }
-		  _DELETE($1); 
+		  _DELETE($1);
 		}
  ;
 
@@ -2535,7 +2537,7 @@ interval_expression:
 			$$ = NULL;
 			YYABORT;
 	  	  } else {
-			sql_subtype *t = NULL; 
+			sql_subtype *t = NULL;
 			if (tpe == 0){
 				t = sql_bind_subtype("month_interval", 0, 0);
 			} else {
@@ -2588,27 +2590,27 @@ cast_value:
  | 	NULLX	 { $$ = _newAtomNode(NULL); }
  ;
 
-case_exp: 
-     NULLIF '(' scalar_exp ',' scalar_exp ')' 
+case_exp:
+     NULLIF '(' scalar_exp ',' scalar_exp ')'
 		{ $$ = _symbol_create_list(SQL_NULLIF,
 		   dlist_append_symbol(
 		    dlist_append_symbol(
 		     dlist_create(), $3), $5)); }
  |   COALESCE '(' scalar_exp ',' scalar_exp ')'
-		{ $$ = _symbol_create_list(SQL_COALESCE, 
+		{ $$ = _symbol_create_list(SQL_COALESCE,
 		   dlist_append_symbol(
 		    dlist_append_symbol(
 		     dlist_create(), $3), $5)); }
  |   COALESCE '(' scalar_exp_list2 ')'
 		{ $$ = _symbol_create_list(SQL_COALESCE, $3); }
  |   CASE scalar_exp when_value_list opt_else END
-		{ $$ = _symbol_create_list(SQL_CASE, 
+		{ $$ = _symbol_create_list(SQL_CASE,
 		   dlist_append_symbol(
 		    dlist_append_list(
 		     dlist_append_symbol(
 		      dlist_create(),$2),$3),$4)); }
  |   CASE when_search_list opt_else END
-		 { $$ = _symbol_create_list(SQL_CASE, 
+		 { $$ = _symbol_create_list(SQL_CASE,
 		   dlist_append_symbol(
 		    dlist_append_list(
 		     dlist_create(),$2),$3)); }
@@ -2617,7 +2619,7 @@ case_exp:
 scalar_exp_list2:
     scalar_exp ',' scalar_exp ',' scalar_exp
 			{ $$ = dlist_append_symbol( dlist_create(), $1);
-			  $$ = dlist_append_symbol( $$, $3); 
+			  $$ = dlist_append_symbol( $$, $3);
 			  $$ = dlist_append_symbol( $$, $5);
 			}
  |  scalar_exp_list2 ',' scalar_exp
@@ -2662,7 +2664,7 @@ opt_else:
 		/* data types, more types to come */
 
 nonzero:
-	intval 	
+	intval
 		{ $$ = $1;
 		  if ($$ <= 0) {
 			$$ = -1;
@@ -2691,7 +2693,7 @@ data_type:
 			  YYABORT;
 			}
  |  clob	{ $$ = sql_bind_subtype("clob", 0, 0); }
- |  CHARACTER '(' nonzero ')'	
+ |  CHARACTER '(' nonzero ')'
 			{ $$ = sql_bind_subtype("char", $3, 0); }
  |  varchar '(' nonzero ')'
 			{ $$ = sql_bind_subtype("varchar", $3, 0); }
@@ -2707,20 +2709,20 @@ data_type:
  |  SMALLINT	{ $$ = sql_bind_subtype("smallint", 0, 0); }
  |  sqlINTEGER	{ $$ = sql_bind_subtype("int", 0, 0); }
  |  BIGINT		{ $$ = sql_bind_subtype("bigint", 0, 0); }
- 
+
  |  sqlDECIMAL	{ $$ = sql_bind_subtype("decimal", 1, 0); }
  |  sqlDECIMAL '(' nonzero ')'
 				{ $$ = sql_bind_subtype("decimal", $3, 0); }
- |  sqlDECIMAL '(' nonzero ',' posint ')' 
+ |  sqlDECIMAL '(' nonzero ',' posint ')'
 			{ if ($5 >= $3) {
-				char buf[BUFSIZ]; 
+				char buf[BUFSIZ];
 
 				snprintf(buf, BUFSIZ, "Scale (%d) should be less than precision (%d)", $5, $3);
 				yyerror(buf);
 				$$ = NULL;
 				YYABORT;
 			  } else {
-				$$ = sql_bind_subtype("decimal", $3, $5); 
+				$$ = sql_bind_subtype("decimal", $3, $5);
 			  }
 			}
  |  sqlFLOAT		{ $$ = sql_bind_subtype("double", 0, 0); }
@@ -2737,9 +2739,9 @@ data_type:
 				YYABORT;
 			  }
 			}
- |  sqlFLOAT '(' intval ',' intval ')'	
+ |  sqlFLOAT '(' intval ',' intval ')'
 			{ if ($5 >= $3) {
-				char buf[BUFSIZ]; 
+				char buf[BUFSIZ];
 
 				snprintf(buf, BUFSIZ, "Precision(%d) should be less than number of digits(%d)", $5, $3);
 				yyerror(buf);
@@ -2761,7 +2763,7 @@ data_type:
  | sqlDOUBLE PRECISION	{ $$ = sql_bind_subtype("double", 0, 0); }
  | sqlREAL 			{ $$ = sql_bind_subtype("real", 0, 0); }
  | datetime_type
- | interval_type		
+ | interval_type
  | aTYPE		{ $$ = sql_bind_subtype($1, 0, 0); _DELETE($1); }
  | aTYPE '(' nonzero ')'
 				{ $$ = sql_bind_subtype($1, $3, 0); _DELETE($1); }
@@ -2770,65 +2772,65 @@ data_type:
 			{ $$ = sql_bind_subtype($1, $3, 0); }
  | type_alias '(' intval ',' intval ')'
 			{ if ($5 >= $3) {
-				char buf[BUFSIZ]; 
+				char buf[BUFSIZ];
 
 				snprintf(buf, BUFSIZ, "Precision(%d) should be less than number of digits(%d)", $5, $3);
 				yyerror(buf);
 				$$ = NULL;
 				YYABORT;
 			  } else {
-			 	$$ = sql_bind_subtype($1, $3, $5); 
+			 	$$ = sql_bind_subtype($1, $3, $5);
 			  }
 			}
  | IDENT	{ mvc *m = (mvc*)parm;
-			  sql_type *t = mvc_bind_type(m, $1); 
+			  sql_type *t = mvc_bind_type(m, $1);
 			  if (!t) {
-				char buf[BUFSIZ]; 
+				char buf[BUFSIZ];
 
 				snprintf(buf, BUFSIZ, "Type (%s) unknown", $1);
 				yyerror(buf);
-				_DELETE($1); 
+				_DELETE($1);
 				$$ = NULL;
 				YYABORT;
 			  } else {
 				$$ = sql_create_subtype(t, 0, 0);
 			  }
-			  _DELETE($1); 
+			  _DELETE($1);
 			}
-		
+
  | IDENT '(' nonzero ')'
 			{ mvc *m = (mvc*)parm;
-			  sql_type *t = mvc_bind_type(m, $1); 
+			  sql_type *t = mvc_bind_type(m, $1);
 			  if (!t) {
-				char buf[BUFSIZ]; 
+				char buf[BUFSIZ];
 
 				snprintf(buf, BUFSIZ, "Type (%s) unknown", $1);
 				yyerror(buf);
-				_DELETE($1); 
+				_DELETE($1);
 				$$ = NULL;
 				YYABORT;
 			  } else {
 				$$ = sql_create_subtype(t, $3, 0);
 			  }
-			  _DELETE($1); 
+			  _DELETE($1);
 			}
-		
+
  ;
 
 type_alias:
  ALIAS
 	{ 	char *t = sql_bind_alias($1);
 	  	if (!t) {
-			char buf[BUFSIZ]; 
+			char buf[BUFSIZ];
 
 			snprintf(buf, BUFSIZ, "Type (%s) unknown", $1);
 			yyerror(buf);
-			_DELETE($1); 
+			_DELETE($1);
 			$$ = NULL;
 			YYABORT;
 		}
-		_DELETE($1); 
-		$$ = t; 
+		_DELETE($1);
+		$$ = t;
 	}
  ;
 
@@ -2846,16 +2848,16 @@ column:			ident ;
 
 authid: 		ident ;
 
-ident: 
-    IDENT	{ $$ = $1; }	
+ident:
+    IDENT	{ $$ = $1; }
  |  aTYPE	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
  |  aMODULE	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
- |  non_reserved_word		
+ |  non_reserved_word
  ;
 
-non_reserved_word: 
+non_reserved_word:
   CHARACTER { $$ = _strdup("character"); }
 | OBJECT	{ $$ = _strdup("object"); }
 | LARGE		{ $$ = _strdup("large"); }
@@ -2886,35 +2888,35 @@ non_reserved_word:
 
 name_commalist:
     ident	{ $$ = dlist_append_string(dlist_create(), $1); }
- |  name_commalist ',' ident  	
-			{ $$ = dlist_append_string($1, $3); } 
+ |  name_commalist ',' ident
+			{ $$ = dlist_append_string($1, $3); }
  ;
 
 intval:
 	sqlINT	{ $$ = strtol($1,&$1,10); }
  |	IDENT	{ mvc *m = (mvc*)parm;
-		  char *name = $1; 
-		  char *v, *t; 
+		  char *name = $1;
+		  char *v, *t;
 		  sql_subtype *tpe;
 
 		  if (!(v = sql_get_var(m, name))) {
-			char buf[BUFSIZ]; 
+			char buf[BUFSIZ];
 
 			snprintf(buf, BUFSIZ, "Constant (%s) unknown", $1);
 			yyerror(buf);
-			_DELETE($1); 
+			_DELETE($1);
 			$$ = 0;
 			YYABORT;
 		  }
 		  t = sql_get_type(m, name);
 		  tpe = sql_bind_subtype(t, 0, 0);
-		  _DELETE($1); 
+		  _DELETE($1);
 		  if (tpe->type->localtype == TYPE_lng ||
 		      tpe->type->localtype == TYPE_int ||
 		      tpe->type->localtype == TYPE_sht ) {
-			$$ = strtol(v,&v,10); 
+			$$ = strtol(v,&v,10);
 		  } else {
-			char buf[BUFSIZ]; 
+			char buf[BUFSIZ];
 
 			snprintf(buf, BUFSIZ, "Constant (%s) has wrong type (number expected)", $1);
 			yyerror(buf);
@@ -2934,15 +2936,15 @@ string:
 
 prep:
     PREPARE sqlstmt_list ';'
-		{ mvc *m = (mvc*)parm; 
-		  m->mode = m_prepare; 
+		{ mvc *m = (mvc*)parm;
+		  m->mode = m_prepare;
 		  $$ = _symbol_create_list( SQL_PREP, $2); }
  ;
 
 exec:
      EXECUTE exec_ref
-		{ mvc *m = (mvc*)parm; 
-		  m->mode = m_execute; 
+		{ mvc *m = (mvc*)parm;
+		  m->mode = m_execute;
 		  $$ = $2; }
  ;
 
@@ -3164,20 +3166,20 @@ char *token2string(int token)
 
 stmt *sql_error( mvc * sql, int error_code, char *format, ... )
 {
-	va_list	ap; 
+	va_list	ap;
 
-	va_start (ap,format); 
-	if (sql->errstr[0] == '\0') 
-		vsnprintf(sql->errstr, ERRSIZE, _(format), ap); 
+	va_start (ap,format);
+	if (sql->errstr[0] == '\0')
+		vsnprintf(sql->errstr, ERRSIZE, _(format), ap);
 	if (!sql->status)
 		sql->status = -error_code;
-	va_end (ap); 
+	va_end (ap);
 	return NULL;
 }
 
 int parse_error(mvc * c, char *err)
 {
-	(void)sql_error( c, 4, 
+	(void)sql_error( c, 4,
 		 "!ERROR %s at token (%d) in statement: %s\n",
 		 err, c->scanner.yyval, QUERY(c->scanner));
 	return 1;

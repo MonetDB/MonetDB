@@ -17,7 +17,7 @@
 
 @f sql_statement
 @a N.J. Nes
-@* 
+@*
 
 @h
 #ifndef _SQL_STATEMENT_H_
@@ -160,9 +160,9 @@ extern stmt *stmt_basetable(sql_table *t, char *tname);
 #define isbasetable(s) (s->type == st_basetable && s->op1.tval->table)
 #define basetable_table(s) s->op1.tval
 
-#define ptable_pivots(s) 		((s)->op1.lval)
+#define ptable_pivots(s)		((s)->op1.lval)
 #define ptable_parent(s)		((s)->op2.stval)
-#define ptable_statements(s) 	((s)->op3.stval)
+#define ptable_statements(s)	((s)->op3.stval)
 
 extern stmt *stmt_cbat(sql_column *c, stmt *basetable, int access, st_type type);
 extern stmt *stmt_column(stmt *i, stmt *basetable);	/* relational column */
@@ -179,9 +179,9 @@ extern stmt *stmt_select(stmt *op1, stmt *op2, comp_type cmptype);
 extern stmt *stmt_likeselect(stmt *op1, stmt *op2, stmt *op3, comp_type cmptype);
 extern stmt *stmt_uselect(stmt *op1, stmt *op2, comp_type cmptype);
 
-/* cmp 
-       0 ==   l <  x <  h 	
-       1 ==   l <  x <= h 
+/* cmp
+       0 ==   l <  x <  h
+       1 ==   l <  x <= h
        2 ==   l <= x <  h
        3 ==   l <= x <= h
        */
@@ -685,7 +685,7 @@ stmt_destroy(stmt *s)
 /*
  * happens far too often for now, hence, we keep it for debugging, only ...
 
-NIELS: Because the optimizer rewrites partly inplace some parts of the 
+NIELS: Because the optimizer rewrites partly inplace some parts of the
   statement tree are really not executed!
 			printf("= sql_statement.mx: stmt_destroy: statement %s (%d) was never executed!\n",
 				st_type2string(s->type), (int)s->type);
@@ -832,7 +832,7 @@ stmt_const(stmt *s, stmt *val)
 	return ns;
 }
 
-/* BEWARE stmt_mark marks the head, this while the mil mark is a mark tail 
+/* BEWARE stmt_mark marks the head, this while the mil mark is a mark tail
  * Current implementation adds the reverses in stmt_mark nolonger in
  * the generated code.
 */
@@ -1246,13 +1246,13 @@ stmt_intersect(stmt *op1, stmt *op2)
 		return op1;
 	}
 
-	/* this case should have been transformed into a proper 
-	   multi-att join ("st_reljoin") by push_selects_down() 
+	/* this case should have been transformed into a proper
+	   multi-att join ("st_reljoin") by push_selects_down()
 	 */
 	assert(!(op1->flag == cmp_equal && op2->flag == cmp_equal));
 
 	/*
-	 * need to add the mark trick as [].select(true) on tables 
+	 * need to add the mark trick as [].select(true) on tables
 	 * without unique head identifiers + semijoin is wrong
 	 */
 	if (!reverse) {
@@ -1402,10 +1402,10 @@ stmt_sets(list *l1)
 	return s;
 }
 
-/* ptable 
+/* ptable
 		list of pivots
 		parent
-		statements	
+		statements
  */
 
 stmt *
@@ -1643,7 +1643,7 @@ tail_type(stmt *st)
 	case st_find:
 		return tail_type(st->op2.stval);
 	case st_reljoin:
-		/* The tail type of a reljoin is the head of the second list!,  
+		/* The tail type of a reljoin is the head of the second list!,
 		   ie should be 'oid' */
 		return head_type(st->op2.lval->h->data);
 
@@ -1935,7 +1935,7 @@ grp_find_groupby_col(group *g, stmt *s)
 {
 	node *n;
 
-	/* groups built for outer references or implicit groups 
+	/* groups built for outer references or implicit groups
 	   can always find columns */
 	if (!g->cols)
 		return s;

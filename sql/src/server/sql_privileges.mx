@@ -356,8 +356,7 @@ sql_grantable(mvc *m, int grantorid, int obj_id, int privs, int sub)
 	return sql_grantable_(m, grantorid, obj_id, privs, sub);
 }
 
-static
-    int
+static int
 mvc_set_user(mvc *m, char *user)
 {
 	ssize_t rid;

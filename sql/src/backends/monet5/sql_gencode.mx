@@ -162,8 +162,7 @@ SQL parser keeps the string representation around.
 This involves regeneration of their string as well and
 trimming the enclosing string quotes.
 @c
-static
-    int
+static int
 constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 {
 	int idx;
@@ -185,30 +184,30 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 @-
 Instructions are encapsulated with time code.
 @= SQLprelude
-        if (sql->debug&2){
+	if (sql->debug&2) {
 		/* t0:= time(); printf(" %d ",t0); */
-		q= newStmtId(mb, "t0","alarm","usec");
-		q= newStmt(mb,"io","printf");
-		q= pushStr(mb,q," %d ");
-		q= pushArgumentId(mb,q,_strdup("t0"));
-        }
+		q = newStmtId(mb, "t0","alarm","usec");
+		q = newStmt(mb,"io","printf");
+		q = pushStr(mb,q," %d ");
+		q = pushArgumentId(mb,q,_strdup("t0"));
+	}
 
 @= SQLpostlude
-        if (sql->debug&2){
+	if (sql->debug&2) {
 		/* t1 := time();t1:= t1-t0; 
 		   stream_printf(GDKout," %d ",t1);
 		   stream_printf(GDKout,"%d\n",nr);*/
-		q= newStmtId(mb,"t1","alarm","usec");
-		q= newStmtId(mb,"t1","calc","-");
-		q= pushArgumentId(mb,q,_strdup("t1"));
-		q= pushArgumentId(mb,q,_strdup("t0"));
-		q= newStmt(mb,"io","printf");
-		q= pushStr(mb,q," %d ");
-		q= pushArgumentId(mb,q,_strdup("t1"));
-		q= newStmt(mb,"io","printf");
-		q= pushStr(mb,q," %d \n");
-		q= pushArgumentId(mb,q,_strdup("nr"));
-        }
+		q = newStmtId(mb,"t1","alarm","usec");
+		q = newStmtId(mb,"t1","calc","-");
+		q = pushArgumentId(mb,q,_strdup("t1"));
+		q = pushArgumentId(mb,q,_strdup("t0"));
+		q = newStmt(mb,"io","printf");
+		q = pushStr(mb,q," %d ");
+		q = pushArgumentId(mb,q,_strdup("t1"));
+		q = newStmt(mb,"io","printf");
+		q = pushStr(mb,q," %d \n");
+		q = pushArgumentId(mb,q,_strdup("nr"));
+	}
 @-
 The dump_header produces a sequence of instructions for
 the front-end to prepare presentation of a result table.
@@ -396,9 +395,9 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLprelude@
 			q = newStmt(mb, "sql", "bind_dbat");
 /*
-                tt= getTypeIndex(tail_type(s)->type->base.name,
-                        strlen(tail_type(s)->type->base.name), TYPE_any);
-                setVarType(mb,getArg(q,0),newBatType(TYPE_void,tt));
+			tt= getTypeIndex(tail_type(s)->type->base.name,
+			    strlen(tail_type(s)->type->base.name), TYPE_any);
+			setVarType(mb,getArg(q,0),newBatType(TYPE_void,tt));
 */
 			q = pushStr(mb, q, s->op1.tval->s->base.name);
 			q = pushStr(mb, q, s->op1.tval->base.name);

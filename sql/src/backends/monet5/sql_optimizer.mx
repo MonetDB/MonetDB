@@ -299,14 +299,14 @@ In this case, we start with the mark operations, which
 will be faster when the operand is read only.
 Likewise, an append or insert requires write access.
 @= setAccess
-	if( p->fcnname && strcmp(p->fcnname,@1)==0){
-		q= newInstruction(ASSIGNsymbol);
-		q->modname= GDKstrdup("bat");
-		q->fcnname= GDKstrdup(@2);
-		q->argv[0]= newTmpVariable(mb,TYPE_any);
-		q->argv[1]= p->argv[1];
-		q->argc= 2;
-		ns[k++]= q;
+	if (p->fcnname && strcmp(p->fcnname,@1)==0) {
+		q = newInstruction(ASSIGNsymbol);
+		q->modname = GDKstrdup("bat");
+		q->fcnname = GDKstrdup(@2);
+		q->argv[0] = newTmpVariable(mb,TYPE_any);
+		q->argv[1] = p->argv[1];
+		q->argc = 2;
+		ns[k++] = q;
 	}
 @c
 void

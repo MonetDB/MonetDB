@@ -17,7 +17,7 @@
 
 @f sql_trans
 @a N.J. Nes
-@* 
+@*
 
 @h
 #ifndef _SQL_TRANS_H_
@@ -29,9 +29,9 @@
 #include "sql_symbol.h"
 #include "sql_statement.h"
 
-#define tr_none  	0
-#define tr_readonly 	1
-#define tr_writable 	2
+#define tr_none		0
+#define tr_readonly	1
+#define tr_writable	2
 #define tr_serializable 4
 
 sql_export stmt *transactions(mvc *sql, symbol *sym);

@@ -129,13 +129,13 @@ compared with the BAT to see if you need to consult the log file.]
 [Martin, this is not done as keeping multiple files open (or opening
 multiple files) has a too great performance impact.]
 @c
-#define SQL_LOG_START	1
+#define SQL_LOG_START		1
 #define SQL_LOG_END		2
-#define SQL_LOG_INSERT 	3
-#define SQL_LOG_DELETE	4
-#define SQL_LOG_CREATE 	5
-#define SQL_LOG_DESTROY	6
-#define SQL_LOG_CLEAR	7
+#define SQL_LOG_INSERT		3
+#define SQL_LOG_DELETE		4
+#define SQL_LOG_CREATE		5
+#define SQL_LOG_DESTROY		6
+#define SQL_LOG_CLEAR		7
 
 typedef struct logformat_t {
 	char flag;

@@ -70,14 +70,15 @@ extern int mvc_sql(mvc *c, str query);
 #include <bat/res_table.h>
 
 @= builtin_operand
-{       int _k = interpret(stk, arg(lt, @1), res);
-        if (_k < 0) {
-                return _k;
-        }
-        @3 = VALconvert(@2, res);
-        if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
-                return handle_paramerror(res,@1,res->vtype,@2);
-        }
+{
+	int _k = interpret(stk, arg(lt, @1), res);
+	if (_k < 0) {
+		return _k;
+	}
+	@3 = VALconvert(@2, res);
+	if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+		return handle_paramerror(res,@1,res->vtype,@2);
+	}
 }
 @c
 

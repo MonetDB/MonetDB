@@ -784,8 +784,7 @@ situation. [todo]
 For the time being we do not catch errors. They are
 passed to the environment.
 @c
-static
-    void
+static void
 pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
 {
 	InstrPtr p;
