@@ -22,7 +22,8 @@ end function;
 
 # release is overloaded for testing only
 function release(v:any):void;
-	raise "releasing a constant is forbidden";
+	BoxException:= "releasing a constant is forbidden";
+	raise BoxException;
 end function;
 
 # accept the definition of a new constant

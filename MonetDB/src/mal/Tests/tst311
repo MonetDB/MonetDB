@@ -13,10 +13,10 @@
 	c4:= "should not come here";
 #exception 
 catch WrongBlock;
-	err:=true;
+	printf("entered wrong block\n");
 end WrongBlock;
 
 catch	IllegalAccess;
-	n0:=0;
+	printf("catched IllegalAccess\n");
 end	IllegalAccess;
-	x:= "end of program";
+	print("end of program");

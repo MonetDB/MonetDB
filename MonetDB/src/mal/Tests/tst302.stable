@@ -6,23 +6,18 @@
 # gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
-## exception conceptual error, you can not recursively raise an exception
+##propagate INT exception
 ## (you should be able to pass it upwards though)
-#
-#	raise IllegalAccess := "new exception";
-#	c4:= "should not come here";
-##exception block;
-#catch	IllegalAccess;
-#	n0:=0;
-#	raise IllegalAccess:="an illegal exception raise";
-#end	IllegalAccess;
+#	IllegalAccess := 1234;
+#	raise IllegalAccess;
+#	print("should not come here\n");
 #
 function Admin.main():int;	#0:void (main:int)
-raise	IllegalAccess := "new exception";	#1:str (IllegalAccess:str)($2:str)
-	c4 := "should not come here";	#2:str (c4:str)($4:str)
-catch	IllegalAccess;	#3:str (IllegalAccess:str)
-	n0 := 0;	#4:int (n0:int)($6:int)
-raise	IllegalAccess := "an illegal exception raise";	#5:str (IllegalAccess:str)($7:str)
-end	IllegalAccess;	#6:str (IllegalAccess:str)
-end function;	#7:void 
+	IllegalAccess := 1234;	#1:int (IllegalAccess:int)($2:int)
+	raise IllegalAccess;	#2:int (IllegalAccess:int)
+	system.print("should not come here\n");	#3:int ($3:int)($4:str)
+end function;	#4:void 
+!ERROR: IllegalAccess:Admin.main[2]:raise exception
+
+MALexception:Admin.main[4]:propagated
 >

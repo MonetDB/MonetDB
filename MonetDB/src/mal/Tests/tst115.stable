@@ -9,6 +9,7 @@
 ## the next step is to trace the call of a mal function call
 #
 #command + (L:any::1,R:any::1):any::1 = addIntInt; 
+!ERROR: address of function 'addIntInt' not found
 command Admin.+(L:any::1,R:any::1):any::1 = addIntInt;	#0 polymorphic:void (+:any::1)(L:any::1)(R:any::1)
 #
 #function doitOnce():int;
@@ -41,6 +42,7 @@ end function;	#5:void
 #c:= 3;
 #d:= doitTwice("wrong");
 #
+!ERROR: 'doitTwice' undefined in Admin.main[6]
 function Admin.main():int;	#0:void (main:int)
 	a := 1;	#1:int (a:int)($2:int)
 	b := Admin.doitOnce();	#2:int (b:int)
@@ -49,9 +51,6 @@ function Admin.main():int;	#0:void (main:int)
 	c := 3;	#5:int (c:int)($7:int)
 	d := doitTwice("wrong");	#6 unknown:void (d:int)($8:str)
 end function;	#7:void 
-!ERROR: address of function 'addIntInt' not found
-!ERROR: 'doitTwice' undefined in Admin.main[6]
 !ERROR: MALexception:Admin.doitTwice[3]:address of function missing
-MALexception:Admin.doitTwice[6]:propagated
-MALexception:Admin.main[8]:propagated
+
 >

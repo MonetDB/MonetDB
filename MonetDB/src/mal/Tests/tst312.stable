@@ -19,34 +19,33 @@
 #	p2:= p1;
 ##exception block;
 #catch	IllegalAccess;
-#	c4:= "should not come here";
+#	print("should not come here");
 #	p3:= p1;
 #end	IllegalAccess;
-#	p4:= p1;
+#	print("done");
 #
 function Admin.main():int;	#0:void (main:int)
 	p1 := 1;	#1:int (p1:int)($2:int)
 	s0 := squeezer.access("p1");	#2:int (s0:int)($4:str)
 	p2 := p1;	#3:int (p2:int)(p1:int)
 catch	IllegalAccess;	#4:str (IllegalAccess:str)
-	c4 := "should not come here";	#5:str (c4:str)($8:str)
+	system.print("should not come here");	#5:int ($7:int)($8:str)
 	p3 := p1;	#6:int (p3:int)(p1:int)
 end	IllegalAccess;	#7:str (IllegalAccess:str)
-	p4 := p1;	#8:int (p4:int)(p1:int)
+	system.print("done");	#8:int ($10:int)($11:str)
 end function;	#9:void 
 entering sqzAccess blocking 1 p1
 Modified stmt sequence
 function Admin.main():int;	#0:void (main:int)
 	p1 := 1;	#1:int (p1:int)($2:int)
-	squeezer.AccessTst(p1);	#2:int ($11:int)(p1:int)
+	squeezer.AccessTst(p1);	#2:int ($12:int)(p1:int)
 	p2 := p1;	#3:int (p2:int)(p1:int)
 catch	IllegalAccess;	#4:str (IllegalAccess:str)
-	c4 := "should not come here";	#5:str (c4:str)($8:str)
-	squeezer.AccessTst(p1);	#6:int ($12:int)(p1:int)
+	system.print("should not come here");	#5:int ($7:int)($8:str)
+	squeezer.AccessTst(p1);	#6:int ($13:int)(p1:int)
 	p3 := p1;	#7:int (p3:int)(p1:int)
 end	IllegalAccess;	#8:str (IllegalAccess:str)
-	squeezer.AccessTst(p1);	#9:int ($13:int)(p1:int)
-	p4 := p1;	#10:int (p4:int)(p1:int)
-end function;	#11:void 
-Entering AccessTst with argument 1
+	system.print("done");	#9:int ($10:int)($11:str)
+end function;	#10:void 
+[ "done" ]
 >

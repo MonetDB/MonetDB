@@ -8,17 +8,17 @@
 # monetrc:/ufs/mk/.monet.conf
 ## the calls are wrong, they violate the type constraint
 #command + (L:any::1, R:any::1):any::1 = addIntInt
+!ERROR: address of function 'addIntInt' not found
 command Admin.+(L:any::1,R:any::1):any::1 = addIntInt;	#0 polymorphic:void (+:any::1)(L:any::1)(R:any::1)
 #
 #a:=1+"hello";
 #b:=3.5+1;
 #
+!ERROR: '+' undefined in Admin.main[1]
 function Admin.main():int;	#0:void (main:int)
 	a := +(1,"hello");	#1 unknown:void (a:any)($2:int)($3:str)
 	b := arith.+(3.5,1);	#2:flt (b:flt)($5:flt)($2:int)
 end function;	#3:void 
-!ERROR: address of function 'addIntInt' not found
-!ERROR: '+' undefined in Admin.main[1]
 !ERROR: MALexception:Admin.main[1]:Instruction type not fixed
-MALexception:Admin.main[4]:propagated
+
 >

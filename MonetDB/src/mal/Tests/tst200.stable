@@ -36,6 +36,7 @@
 #err := print(b);
 #err := print(b,b,b);
 #
+!ERROR: WARNING:newConstant:int coerced to lng
 function Admin.main():int;	#0:void (main:int)
 	o := atoms.oid(20000000);	#1:oid (o:oid)($2:int)
 	err := atoms.setoid(o);	#2:void (err:int)(o:oid)

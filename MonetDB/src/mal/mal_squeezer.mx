@@ -255,7 +255,7 @@ str sqzAccess(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 str sqzAccessTst(void *res, int *v0){
 	printf("Entering AccessTst with argument %d\n",*v0);
 	if( *v0 <0) 
-		return raiseException2("IllegalAccess","something is wrong");
+	return raiseException(0,0,"IllegalAccess","something is wrong");
 	return NULL; /* No exception */
 }
 

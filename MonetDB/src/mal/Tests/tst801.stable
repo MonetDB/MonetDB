@@ -34,23 +34,30 @@ end function;	#4:void
 #
 ## release is overloaded for testing only
 #function release(v:any):void;
-#	raise "releasing a constant is forbidden";
+#	BoxException:= "releasing a constant is forbidden";
+#	raise BoxException;
+#end function;
+function constants.release(v:str,v:str):void;	#0:void (release:void)(v:str)(v:str)
+	system.printf("looking for %s\n",v);	#1:int ($2:int)($3:str)(v:str)
+	w := take(v);	#2 unknown:void (w:any)(v:str)
+	return w;	#3:void (w:any)
+	BoxException := "releasing a constant is forbidden";	#4:str (BoxException:str)($6:str)
+	raise BoxException;	#5:str (BoxException:str)
+end function;	#6:void 
 #
 ## accept the definition of a new constant
 #function deposit(v:any,name:str) = space_deposit;
 #
 #
+!ERROR: 'deposit' undefined in constants.main[1]
+!ERROR: 'deposit' undefined in constants.main[2]
+!ERROR: 'deposit' undefined in constants.main[3]
+!ERROR: 'take' undefined in constants.release[2]
 function Admin.main():void;	#0:void (main:void)
 	deposit("STORE_MEM",0);	#1 unknown:void ($1:any)($2:str)($3:int)
 	deposit("STORE_MMAP",1);	#2 unknown:void ($4:any)($5:str)($6:int)
 	deposit("STORE_COMPR",2);	#3 unknown:void ($7:any)($8:str)($9:int)
 end function;	#4:void 
-!ERROR: 'deposit' undefined in constants.main[1]
-!ERROR: 'deposit' undefined in constants.main[2]
-!ERROR: 'deposit' undefined in constants.main[3]
-!ERROR: 	raise "releasing a constant is forbidden";
-!	             ^<identifier> expected
-!ERROR: 'take' undefined in constants.deposit[2]
 !ERROR: MALexception:Admin.main[1]:Instruction type not fixed
-MALexception:Admin.main[5]:propagated
+
 >

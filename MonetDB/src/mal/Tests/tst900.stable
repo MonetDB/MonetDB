@@ -49,5 +49,6 @@ end	v;	#7:bit (v:bit)
 	x := multiplex.+(b,b);	#16:void (x:bat[lng,lng])(b:bat[lng,lng])(b:bat[lng,lng])
 	a := b;	#17:BAT (a:bat[lng,lng])(b:bat[lng,lng])
 end function;	#18:void 
-!ERROR: SyntaxError::'Admin.main' contains errors
+!ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
+
 >

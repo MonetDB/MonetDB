@@ -15,12 +15,15 @@
 #i   := true;
 #
 !ERROR: MALresolve:Admin.main[2]:type mismatch int := sht
+
 !ERROR: MALresolve:Admin.main[3]:type mismatch flt := str
+
 function Admin.main():int;	#0:void (main:int)
 	str := "hello";	#1:str (str:str)($2:str)
 	int := 1;	#2 unknown:int (int:int)($4:sht)
 	flt := "wrong";	#3 unknown:flt (flt:flt)($6:str)
 	i := true;	#4:bit (i:bit)($8:bit)
 end function;	#5:void 
-!ERROR: SyntaxError::'Admin.main' contains errors
+!ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
+
 >

@@ -22,6 +22,7 @@
 #	printf("%s\n",value);
 #end b;
 #
+!ERROR: 'take' undefined in Admin.main[6]
 function Admin.main():int;	#0:void (main:int)
 	v := Admin.take("version",str);	#1:bit (v:bit)($2:str)(str:str)
 	u := Admin.take("user",str);	#2:bit (u:bit)($5:str)(str:str)
@@ -39,7 +40,6 @@ space_take not yet implemented
 space_take not yet implemented
 space_takeAny not yet implemented
 space_takeAny not yet implemented
-!ERROR: 'take' undefined in Admin.main[6]
 !ERROR: MALexception:Admin.main[6]:Instruction type not fixed
-MALexception:Admin.main[12]:propagated
+
 >

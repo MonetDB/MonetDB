@@ -18,13 +18,6 @@
 #d:= first("hello world");
 #e:= top.first(2:sht);
 #
-function Admin.main():int;	#0:void (main:int)
-	a := second("hh");	#1 unknown:void (a:any)($2:str)
-	b := first(1);	#2 unknown:void (b:any)($4:int)
-	c := first(1);	#3 unknown:void (c:any)($4:int)
-	d := first("hello world");	#4 unknown:void (d:any)($7:str)
-	e := top.first(2);	#5 unknown:void (e:any)($9:sht)
-end function;	#6:void 
 !ERROR: malImport: could not open file: tst120a
 !ERROR: malImport: could not open file: tst120b
 !ERROR: malImport: could not open file: tst120a
@@ -33,6 +26,13 @@ end function;	#6:void
 !ERROR: 'first' undefined in Admin.main[3]
 !ERROR: 'first' undefined in Admin.main[4]
 !ERROR: 'first' undefined in Admin.main[5]
+function Admin.main():int;	#0:void (main:int)
+	a := second("hh");	#1 unknown:void (a:any)($2:str)
+	b := first(1);	#2 unknown:void (b:any)($4:int)
+	c := first(1);	#3 unknown:void (c:any)($4:int)
+	d := first("hello world");	#4 unknown:void (d:any)($7:str)
+	e := top.first(2);	#5 unknown:void (e:any)($9:sht)
+end function;	#6:void 
 !ERROR: MALexception:Admin.main[1]:Instruction type not fixed
-MALexception:Admin.main[7]:propagated
+
 >

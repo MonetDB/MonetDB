@@ -11,7 +11,7 @@
 	p2:= p1;
 #exception block;
 catch	IllegalAccess;
-	c4:= "should not come here";
+	print("should not come here");
 	p3:= p1;
 end	IllegalAccess;
-	p4:= p1;
+	print("done");

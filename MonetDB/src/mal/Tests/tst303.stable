@@ -6,23 +6,31 @@
 # gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
-## Exceptions can be explicitly raised
-#
-#raise	IllegalAccess:="new exception";
-#	print("should not come here");
-##exception block;
+## recursively raise an exception passed upward
+#	IllegalAccess := "an exception";
+#	raise IllegalAccess;
+#	print("should not come here\n");
 #catch	IllegalAccess;
-#	printf("catched IllegalAccess");
+#	printf("catched %s\n",IllegalAccess);
+#	IllegalAccess:= "a second exception raise";
+#	raise IllegalAccess;
+#	print("should not come here either\n");
 #end	IllegalAccess;
-#	print("done");
+#	print("should not be done");
 #
 function Admin.main():int;	#0:void (main:int)
-raise	IllegalAccess := "new exception";	#1:str (IllegalAccess:str)($2:str)
-	system.print("should not come here");	#2:int ($3:int)($4:str)
-catch	IllegalAccess;	#3:str (IllegalAccess:str)
-	system.printf("catched IllegalAccess");	#4:int ($5:int)($6:str)
-end	IllegalAccess;	#5:str (IllegalAccess:str)
-	system.print("done");	#6:int ($7:int)($8:str)
-end function;	#7:void 
-catched IllegalAccess[ "done" ]
+	IllegalAccess := "an exception";	#1:str (IllegalAccess:str)($2:str)
+	raise IllegalAccess;	#2:str (IllegalAccess:str)
+	system.print("should not come here\n");	#3:int ($3:int)($4:str)
+catch	IllegalAccess;	#4:str (IllegalAccess:str)
+	system.printf("catched %s\n",IllegalAccess);	#5:int ($5:int)($6:str)(IllegalAccess:str)
+	IllegalAccess := "a second exception raise";	#6:str (IllegalAccess:str)($7:str)
+	raise IllegalAccess;	#7:str (IllegalAccess:str)
+	system.print("should not come here either\n");	#8:int ($8:int)($9:str)
+end	IllegalAccess;	#9:str (IllegalAccess:str)
+	system.print("should not be done");	#10:int ($10:int)($11:str)
+end function;	#11:void 
+catched an exception
+!ERROR: IllegalAccess:Admin.main[7]:a second exception raise
+MALexception:Admin.main[11]:propagated
 >

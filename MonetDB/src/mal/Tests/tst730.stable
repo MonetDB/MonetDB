@@ -45,16 +45,15 @@ end function;	#9:void
 #prStr("hello",1,true);
 #prStr("hello","quick","brown","fox");
 #
+!ERROR: 'getLength' undefined in Admin.prStr[2]
+!ERROR: 'get' undefined in Admin.prStr[4]
+!ERROR: 'printf' undefined in Admin.prStr[6]
+!ERROR: 'prStr' undefined in Admin.main[2]
 function Admin.main():int;	#0:void (main:int)
 	Admin.pr("hello",1,true);	#1:int ($1:int)($2:str)($3:int)($4:bit)
 	prStr("hello",1,true);	#2 unknown:void ($5:any)($2:str)($3:int)($4:bit)
 	Admin.prStr("hello","quick","brown","fox");	#3:oid ($6:void)($2:str)($7:str)($8:str)($9:str)
 end function;	#4:void 
-!ERROR: 'getLength' undefined in Admin.prStr[2]
-!ERROR: 'get' undefined in Admin.prStr[4]
-!ERROR: 'printf' undefined in Admin.prStr[6]
-!ERROR: 'prStr' undefined in Admin.main[2]
 !ERROR: MALexception:Admin.pr[2]:Instruction type not fixed
-MALexception:Admin.pr[5]:propagated
-MALexception:Admin.main[5]:propagated
+
 >

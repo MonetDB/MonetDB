@@ -1,9 +1,11 @@
-# Exceptions can be explicitly raised
-
-raise	IllegalAccess:="new exception";
-	print("should not come here");
-#exception block;
+# recursively raise an exception passed upward
+	IllegalAccess := "an exception";
+	raise IllegalAccess;
+	print("should not come here\n");
 catch	IllegalAccess;
-	printf("catched IllegalAccess");
+	printf("catched %s\n",IllegalAccess);
+	IllegalAccess:= "a second exception raise";
+	raise IllegalAccess;
+	print("should not come here either\n");
 end	IllegalAccess;
-	print("done");
+	print("should not be done");

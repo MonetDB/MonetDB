@@ -544,9 +544,10 @@ by a variable identifier in the MAL sequence.
 This means that per MAL instruction, we may end up with
 MAXARG entries in the symbol table. This may lead to long
 searches for variables.
-
-A possible optimization strategy: look around for
+An optimization strategy: look around for
 a similar (constant) definition and reuse the name.
+This also avoids an exploding symbol table with a lot
+of temporary variables (as in tst400cHuge)
 
 But then the question becomes how far to search?
 Searching through all variables is only useful when the list remains short
@@ -579,14 +580,10 @@ int newConstant(MalBlkPtr mb, malType type, str val){
 	if( k<0) k=0;
 	for(i= mb->vtop-1; i>=k;i--){
 		VarPtr v= getVar(mb,i);
-		if( v->literal &&
-		    /* v->type == type &&*/
-		    idcmp(v->literal,val)==0 
-		  ) {
-/*printf("reused a constant variable %s\n",v->name);*/
+		if( v->literal && idcmp(v->literal,val)==0 ) {
 			GDKfree(val);
 			return i;
-		 }
+		}
 	}
 	idx= k= newVariable(mb, s=newTmpName(mb->vtop), type);
 /* printf("new constant %d val %s\n",k,val);*/
@@ -965,6 +962,8 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 		case PATTERNsymbol:
 			return fcnDefinition(mb,p,s); 
 		case RAISEsymbol:
+			sprintf(t,"\traise %s",nme);
+			break;
 		case BARRIERsymbol:
 			sprintf(t,"\t%s",nme);
 			break;

@@ -83,5 +83,5 @@ barrier	FS := not(FTE);	#24 unknown:void (FS:any)(FTE:any)
 end	FS;	#25:void (FS:any)
 end function;	#26:void 
 !ERROR: MALexception:Admin.main[5]:Instruction type not fixed
-MALexception:Admin.main[27]:propagated
+
 >

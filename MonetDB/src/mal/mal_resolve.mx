@@ -17,7 +17,7 @@ definitely support at the language level.
 \begin{verbatim}
 function sample(nme:str, val:any):bit;
    c := 2*3;
-   b := dictionary.lookup(nme);	#find a bat
+   b := take("bbp",nme);	#find something in bbp
    h := select(b,val,val);
    t := count(h);
    x := print(t);
@@ -34,8 +34,12 @@ and could even lead to a frozen value. Looking up a BAT leads to
 an element bat[ht,tt] where ht and tt are runtime dependent types.
 We can not typecheck the bat selection. It should be done at runtime,
 i.e. TYPE_DYNAMIC.
-We can check t and x at compile time, because we only have to assure
-that count() is given a bat argument.
+We can check t at compile time, because we only have to assure
+that count() is given a bat argument. This assumes that we can infer
+that 'h' is indeed a BAT, which requires assurance that all 'select'
+operators produce a bat. In general, this is not easy and we opt for
+a delay in resolution. Since, print(t) contains an undetermined typed
+argument we should postpone typechecking as well.
 The last print statement can be checked upon function invocation,
 i.e. TYPE_POLYMORPHIC.
 
@@ -48,11 +52,12 @@ A few conclusions can be drawn. 1) Every statement should carry a
 flag to indicate whether it has been type-resolved. 
 1a) you can always postpone type checking, but then you may leave
 a computation in an inconsistent state upon encountering an error.
-2) we have to call the type-checker potentially at every instruction
-and its result can not be retained, unless we propagate every new
-type information upon production.
-3) cloning a function helps to built a cache of instantiated polymorphic
+2) polymorphic functions can be cloned to built a cache of instantiated 
 functions.
+3) we have to call the type-checker potentially at every instruction
+and its result is call specific, this means we have to propagate
+the type through the runtime stack rather than the symbol table, which
+complicates subsequent flow of control.
 4) once the type of a variable is fixed, we should stick to it.
 This precludes loops where the typing scheme changes with each step.
 Instead, such type changes should be factored out algoritmically.
@@ -134,7 +139,7 @@ malType findFunctionType(Scope scope, MalBlkPtr mb, InstrPtr p){
 	Symbol s;
 	InstrPtr sig;
 	int i,j,k,l, polymorphic, unmatched = 0, s1;
-	int lev, foundbutwrong=0;
+	int foundbutwrong=0;
 	int polytype[2*MAXARG];
 
 @-
@@ -143,7 +148,7 @@ precedence and should handle all cases. It returns -1
 upon failure, which shortcuts the execution.
 @c
 	if(p->modname && 
-	   strcmp(p->modname,scope->name)==0 && 
+	   idcmp(p->modname,scope->name)==0 && 
 	   scope->typeChecker){
 		if( (scope->typeChecker)(scope,mb,p)==0)
 			return getArgType(mb,p,0);
@@ -154,7 +159,7 @@ Within a module find the subscope to locate the element in its list
 of symbols.
 @c
 	m= scope;
-	s= m->subscope[lev = getSubScope(p->fcnname)];
+	s= m->subscope[getSubScope(p->fcnname)];
 	while(s != NULL){	/* single scope elements */
 	if( idcmp(p->fcnname,s->name ) ){
 		s= s->peer; continue;
@@ -178,10 +183,10 @@ we simple avoid an increment when running out of formal arguments.
 		printf("p->argc %d %d\n",p->argc,sig->argc);
 	}
 #endif
-	if( sig->varargs){
+	if( sig->argc!= p->argc ) {
+		if( !sig->varargs){ s= s->peer; continue;}
 		if( p->argc < sig->argc ) {s= s->peer; continue;}
-	} else 	if( sig->argc!= p->argc ) {s= s->peer; continue;}
-
+	}
 	polymorphic = 0;
 	unmatched = 0;
 @-
@@ -218,7 +223,7 @@ Take care of variable argument lists.
 @c
 	varargtst: 
 		k++;
-		if( k == sig->argc && sig->varargs) k--; 
+		if(sig->varargs && k == sig->argc ) k--; 
 	}
 @-
 It is possible that you may have to coerce the value to another type.
@@ -240,7 +245,7 @@ At a later stage we may automatically insert such coercion requests.
 #endif
 	if( unmatched) { s= s->peer; continue; }
 	if( polymorphic){
-		/* what to do with varirable args */
+		/* what to do with variable args */
 		if( s->kind == COMMANDsymbol || s->kind==PATTERNsymbol)
 			s1= getPolyReturn(s->def,sig, polytype);
 		else {
@@ -344,8 +349,9 @@ functions. Errors are simply ignored at this point of the game,
 because they may be resolved as part of the calling sequence.
 @c
 void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p, int level){
-	int s1, i;
+	int s1= -1, i;
 	char buf[1024];
+	Scope m;
 @-
 A function search should inspect all modules unless a specific module
 is given. Preference is given to the lower scopes.
@@ -361,31 +367,30 @@ message to the user.
 #ifdef DEBUG_MAL_RESOLVE
 		tracefcn= idcmp(p->fcnname,DEBUGFCN)==0;
 #endif
-		s1= findFunctionType(scope,mb,p);
-		if( s1 <0){ 
-			/* continue search into outer scope */
-			Scope m= findScope(scope,p->modname);
-			if(m == scope) m= m->outer;
-			while(s1<0 && m!= NULL){
-				s1= findFunctionType(m,mb,p);
-				m= m->outer;
-			}
-			if( s1<0 ) {
 @-
-If any of the arguments was undefined, then postpone
-generation of an error message to a later compilation stage.
+If any of the arguments is undefined, then postpone
+type checking to a later stage in the process.
 @c
-				int allBounded= TRUE;
-				p->typechk = TYPE_UNKNOWN;
-				for(i=1;i<p->argc;i++)
-				if(getArgType(mb,p,i)== malAnyType) 
-					allBounded= FALSE;
-				if( allBounded && ! isaSignature(p))
-				GDKerror("'%s' undefined in %s.%s[%d]\n", 
-				p->fcnname,scope->name,
-				getInstrPtr(mb,0)->fcnname,getPC(mb,p));
-				return;
-			}
+		for(i=1; i<p->argc; i++)
+		if(getArgType(mb,p,i)== malAnyType) {
+			if( isaSignature(p)) break;
+			p->typechk= TYPE_UNKNOWN;
+			return;
+		}
+
+		/* continue search into outer scope */
+		m= findScope(scope,p->modname);
+		while(s1<0 && m!= NULL){
+			s1= findFunctionType(m,mb,p);
+			if( p->modname) break;
+			m= m->outer;
+		}
+		if( s1<0 ) {
+			if( ! isaSignature(p))
+			GDKerror("'%s' undefined in %s.%s[%d]\n", 
+			p->fcnname,scope->name,
+			getInstrPtr(mb,0)->fcnname,getPC(mb,p));
+			return;
 		}
 		if(s1>=0) p->typechk = TYPE_FIXED;
 		return;

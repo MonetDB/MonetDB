@@ -21,13 +21,13 @@
 #	c4:= "should not come here";
 ##exception 
 #catch WrongBlock;
-#	err:=true;
+#	printf("entered wrong block\n");
 #end WrongBlock;
 #
 #catch	IllegalAccess;
-#	n0:=0;
+#	printf("catched IllegalAccess\n");
 #end	IllegalAccess;
-#	x:= "end of program";
+#	print("end of program");
 #
 function Admin.main():int;	#0:void (main:int)
 	p1 := -1;	#1:int (p1:int)($2:int)
@@ -36,12 +36,12 @@ function Admin.main():int;	#0:void (main:int)
 	c2 := arith.+(p1,p1);	#4:int (c2:int)(p1:int)(p1:int)
 	c4 := "should not come here";	#5:str (c4:str)($9:str)
 catch	WrongBlock;	#6:str (WrongBlock:str)
-	err := true;	#7:bit (err:bit)($12:bit)
+	system.printf("entered wrong block\n");	#7:int ($11:int)($12:str)
 end	WrongBlock;	#8:str (WrongBlock:str)
 catch	IllegalAccess;	#9:str (IllegalAccess:str)
-	n0 := 0;	#10:int (n0:int)($15:int)
+	system.printf("catched IllegalAccess\n");	#10:int ($14:int)($15:str)
 end	IllegalAccess;	#11:str (IllegalAccess:str)
-	x := "end of program";	#12:str (x:str)($17:str)
+	system.print("end of program");	#12:int ($16:int)($17:str)
 end function;	#13:void 
 entering sqzAccess blocking 1 p1
 Modified stmt sequence
@@ -53,12 +53,14 @@ function Admin.main():int;	#0:void (main:int)
 	c2 := arith.+(p1,p1);	#5:int (c2:int)(p1:int)(p1:int)
 	c4 := "should not come here";	#6:str (c4:str)($9:str)
 catch	WrongBlock;	#7:str (WrongBlock:str)
-	err := true;	#8:bit (err:bit)($12:bit)
+	system.printf("entered wrong block\n");	#8:int ($11:int)($12:str)
 end	WrongBlock;	#9:str (WrongBlock:str)
 catch	IllegalAccess;	#10:str (IllegalAccess:str)
-	n0 := 0;	#11:int (n0:int)($15:int)
+	system.printf("catched IllegalAccess\n");	#11:int ($14:int)($15:str)
 end	IllegalAccess;	#12:str (IllegalAccess:str)
-	x := "end of program";	#13:str (x:str)($17:str)
+	system.print("end of program");	#13:int ($16:int)($17:str)
 end function;	#14:void 
 Entering AccessTst with argument -1
+catched IllegalAccess
+[ "end of program" ]
 >

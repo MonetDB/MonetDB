@@ -20,10 +20,10 @@
 #end	t;
 #	i:= 0;
 #
-!ERROR: 7:end-label 'v' doesnot match 't'
-!ERROR: 9:end-label 't' doesnot match 'v'
-!ERROR: 2: barrier 'v' should be of type bit
-!ERROR: 7:end-label 'v' doesnot match 't'
+!ERROR: end-label 'v' doesnot match 't' in main[7]
+!ERROR: end-label 't' doesnot match 'v' in main[9]
+!ERROR: barrier 'v' should be of type bit in main[2]
+!ERROR: end-label 'v' doesnot match 't' in main[7]
 function Admin.main():int;	#0:void (main:int)
 	i := 0;	#1:int (i:int)($2:int)
 barrier	v := 1;	#2:int (v:int)($4:int)
@@ -36,5 +36,6 @@ end	v;	#7:int (v:int)
 end	t;	#9:bit (t:bit)
 	i := 0;	#10:int (i:int)($2:int)
 end function;	#11:void 
-!ERROR: SyntaxError::'Admin.main' contains errors
+!ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
+
 >

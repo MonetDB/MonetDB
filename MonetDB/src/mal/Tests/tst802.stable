@@ -27,5 +27,6 @@ function Admin.main():int;	#0:void (main:int)
 	release("roomnumber",v);	#5 unknown:void ($9:any)($10:str)(v:any)
 	release("roomnumber",v);	#6 unknown:void ($11:any)($10:str)(v:any)
 end function;	#7:void 
-!ERROR: SyntaxError::'Admin.main' contains errors
+!ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
+
 >

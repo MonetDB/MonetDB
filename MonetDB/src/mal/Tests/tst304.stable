@@ -6,21 +6,36 @@
 # gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
-## Exception identifiers can be introduced at any place
+## Exceptions can be explicitly raised in a function
+## which requires the exception identifier to be defined.
 #
-#raise	myNewException:="new exception";
-#	printf("should not come here\n");
+#function myException();
+#	IllegalAccess:="new exception";
+#	raise IllegalAccess;
+#	print("should have left function ");
+#end function;
+function Admin.myException():any;	#0 polymorphic:void (myException:any)
+	IllegalAccess := "new exception";	#1:str (IllegalAccess:str)($2:str)
+	raise IllegalAccess;	#2:str (IllegalAccess:str)
+	system.print("should have left function ");	#3:int ($3:int)($4:str)
+end function;	#4:void 
+#
+#	myException();
+#	print("should not come here");
 ##exception block;
-#catch	myNewException;
-#	printf("catched exception\n");
-#end	myNewException;
+#catch	IllegalAccess;
+#	printf("catched IllegalAccess\n");
+#end	IllegalAccess;
+#	print("done");
 #
 function Admin.main():int;	#0:void (main:int)
-raise	myNewException := "new exception";	#1:str (myNewException:str)($2:str)
-	system.printf("should not come here\n");	#2:int ($3:int)($4:str)
-catch	myNewException;	#3:str (myNewException:str)
-	system.printf("catched exception\n");	#4:int ($5:int)($6:str)
-end	myNewException;	#5:str (myNewException:str)
-end function;	#6:void 
-catched exception
+	Admin.myException();	#1:void ($1:any)
+	system.print("should not come here");	#2:int ($2:int)($3:str)
+catch	IllegalAccess;	#3:str (IllegalAccess:str)
+	system.printf("catched IllegalAccess\n");	#4:int ($5:int)($6:str)
+end	IllegalAccess;	#5:str (IllegalAccess:str)
+	system.print("done");	#6:int ($7:int)($8:str)
+end function;	#7:void 
+catched IllegalAccess
+[ "done" ]
 >

@@ -84,7 +84,7 @@ str runMAL(Client cntxt, MalBlkPtr mbcaller, MalStkPtr env, MalStkPtr glb){
 		showErrors(cntxt);
 		sprintf(buf,"'%s.%s' contains errors\n",
 			getModName(mb),getFcnName(mb));
-		return raiseException2("SyntaxError",buf);
+		return raiseException(mb,0,"SyntaxError",buf);
 	}
 	if( env){
 		/* locate instructions for called function */
@@ -142,12 +142,22 @@ onto the value stack. Then we do not have to check for the location
 later on any more. The effect is optimal, if at least ca. 20 constants
 are referenced in a function (a gain on tst400a of 20% has been observed).
 Otherwise, it is cheaper to lookup them up. 
+
+Moreover, we have to copy the result types to the stack for later
+use. In particular, to enable proper dynamic type analysis.
 @c
 	for(i= env?pci->argc:1; i< mb->vtop; i++)
 	if( isVarConstant(mb,i) && isVarUsed(mb,i) ){
 		lhs = &stk->stk[i];
 		rhs = &getVarConstant(mb,i);
 		VALcopy(lhs,rhs);
+	} 
+	for(i=1;i<mb->stop; i++) {
+		pci = getInstrPtr(mb,i);
+		if( pci->argv[0]>=0){
+			retval=  &stk->stk[pci->argv[0]];
+			retval->vtype = pci->gdktype;
+		}
 	}
 
 	/* run the program */
@@ -171,8 +181,8 @@ MALrestart:
 MALevalExit:
 	/* garbage collect and return */
 	if( glb == 0) garbageCollector(mb,stk);
-	if( stk->exception >= 0)
-	ret= appendException(mb,stop,"MALexception", "propagated",ret);
+	if( stk->exception >= 0) 
+		ret=appendException(mb,stop-1,"MALexception", "propagated",ret);
 	return ret;
 }
 @+ Safeguarding
@@ -230,10 +240,16 @@ elements in the value stack.
 	case COMMANDsymbol:
 	case FUNCTIONsymbol:
 	case ENDsymbol:
+		if( pci->argv[0] == stk->exception) stk->exception = -1; 
 		stk->pc++; 
 		break;
+	case RAISEsymbol:
+		@:raiseControl@
+		break;
 	case CATCHsymbol:
-		stk->exception = pci->argv[0]; /* skip it */
+		/* catch blocks are skipped unless searched for explicitly*/
+		if(stk->exception < 0) @:leaveControl@
+		stk->exception = -1;
 		stk->pc++; break;
 	case RETURNsymbol:
 		if( env != NULL){
@@ -246,7 +262,6 @@ elements in the value stack.
 			/* if(glb == 0) garbageCollector(mb,stk);*/
 			if(env) env->cmd = cmd; /* save debugger command */
 			goto MALevalExit;
-			/* return 0;*/
 		}
 	case ENDDEFsymbol: 
 		goto MALevalExit;
@@ -341,7 +356,6 @@ are determined at compile time.
 			"address of pattern missing\n");
 	else {
 		retval=  &stk->stk[pci->argv[0]];
-		retval->vtype = pci->gdktype;
 		garbageElement(retval);
 		ret = (str) (*pci->fcn)(mb,stk,pci);
 		@:resultParameter@
@@ -354,7 +368,6 @@ non-returned values.
 
 @= functioncall
 	retval=  &stk->stk[pci->argv[0]];
-	retval->vtype = pci->gdktype;
 	garbageElement(retval);
 	ret= runMAL(cntxt,mb,stk,0);
 	@:resultParameter@
@@ -378,7 +391,6 @@ the bind(namespace,batname,mode) operation.[todo]
 @= evalParameters
 {	int k;
 	retval=  &stk->stk[pci->argv[0]];
-	retval->vtype = pci->gdktype;
 	garbageElement(retval);
 	for(k=0;k<pci->argc; k++){
 		argv[k] =(ptr) getArgReference(stk,pci,k);
@@ -431,6 +443,27 @@ by faking an exception.
 		break;
 	} }
 @-
+You can skip to a catch blcok block by searching for the corresponding 'lab'
+The return value should be set to pass the error automatically upon
+reaching end of function block.
+@= skipToCatch
+	/* skip to catch block or end */
+	for( stk->pc++; stk->pc<stop; stk->pc++){
+	InstrPtr l= getInstrPtr(mb,stk->pc);
+	if( l->token == CATCHsymbol && l->argv[0]== @1){
+		break;
+	} }
+	if( stk->pc== stop) goto MALevalExit;
+
+@= raiseControl
+	stk->exception = pci->argv[0];
+	if( getVarType(mb, pci->argv[0])== TYPE_str){
+	ret= raiseException(mb, stk->pc, getVarName(mb,pci->argv[0]), 
+				stk->stk[pci->argv[0]].val.sval);
+	} else ret= raiseException(mb,stk->pc, 
+			    getVarName(mb,pci->argv[0]), "raise exception\n");
+	@:skipToCatch(stk->exception)@
+@-
 Each time we enter a barrier block, we could keep its position in the
 interpreter stack frame. It forms the starting point to issue a redo.
 Unfortunately, this does not work in the presence of squeezers, which
@@ -477,14 +510,6 @@ if( pci->typechk== TYPE_UNKNOWN){
 			    "Instruction type not fixed\n");
 	@:exceptionHndlr@
 }
-if( stk->exception >=0){
-	if( pci->barrier== CATCHsymbol && pci->argv[0]==stk->exception)
-		stk->exception = -1; 
-	if( pci->token  == ENDsymbol && pci->argv[0]==stk->exception)
-		stk->exception = -1; 
-	stk->pc++;
-	continue;
-}
 @-
 Exceptions raised within a linked-in function requires some care.
 First, the called procedure does not know anything about the MAL
@@ -507,7 +532,7 @@ starts with the exception identifer, followed by contextual details.
 @= exceptionHndlr
 if( ret != (str) GDK_SUCCEED && ret != NULL){
 	str msg, nxt;
-	int symid;
+	int symid= pci->argv[0];
 	msg= strchr(ret,':');
 	if( msg) {
 		*msg= 0;
@@ -520,29 +545,28 @@ if( ret != (str) GDK_SUCCEED && ret != NULL){
 			} else msg = GDKstrdup("unspecified error\n");
 			symid = findVariable(mb,"GDKerror");
 		} else {
-			ret= appendException(mb,stk->pc,"MALexception",
-			"syntax error in exception message", msg);
+			stk->exception = pci->argv[0];
 			stk->pc++;
 			continue;
 		}
 	}
+	stk->exception = symid; 
 	if( symid == -1){
 		*msg=':';
-/*		terminate this block and pass error  */
-		stk->exception = pci->argv[0];
 		goto MALevalExit;
 	}
 	msg++;
 	/* assure correct variable type */
-	if( (nxt= (str) setDynamicType(mb,stk,getVar(mb,symid),TYPE_str)) == 0 ){
+	if( (nxt= (str) setDynamicType(mb,stk,getVar(mb,symid),TYPE_str)) == 0){
 		v=  &stk->stk[symid];
 		v->vtype = TYPE_str;
 		v->val.pval= GDKstrdup(msg);
 		v->len= strlen(msg);
-		stk->exception = symid;
+		/* stk->exception = symid;*/
 		GDKfree(ret);
 		ret = 0;
 	} else GDKfree(nxt);
+	@:skipToCatch(symid)@
 }
 @-
 @+ Dynamic type
