@@ -221,7 +221,7 @@ def mFilter (FILE, IGNORE) :
             # differences due to property-checking, which we want to treat as "minor differences"; see above
             if os.name == "nt" and iline[:5] == 'quit;':
                 oline = "#" + iline
-            else
+            else:
                 oline = "=" + iline
         elif len(ftmp) > 2              and \
              test[3].match(iline)       and \
