@@ -1,3 +1,3 @@
 select char_length('\'');
-create table test (s varchar(1));
-insert into test values ('\'');
+create table test3 (s varchar(1));
+insert into test3 values ('\'');
