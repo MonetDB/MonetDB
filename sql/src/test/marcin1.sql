@@ -1,4 +1,3 @@
-############################
 
 create table t1(id int, val int);
 create table t2(id int, val int);
@@ -12,30 +11,30 @@ insert into t2 values(1,3);
 insert into t2 values(2,2);
 insert into t2 values(3,1);
 
-#and now some strange queries and even stranger results
+-- and now some strange queries and even stranger results
 
-#cartesian-product missing
+-- cartesian-product missing
 select * from t1,t2;
 
-#These actually give good results (cartesian-product like):
+-- These actually give good results (cartesian-product like):
 select t1.id,t2.id from t1,t2 where t1.id<>t2.id;
 select t1.id,t2.id from t1,t2 where t1.id>t2.id;
 
-#does not work (and should, assuming ids are unique)
+-- does not work (and should, assuming ids are unique)
 select t1.id, (select t2.id from t2 where t1.id=t2.id) from t1;
 
-# As the sub-select returns a single value (3), no error occures
+-- As the sub-select returns a single value (3), no error occures
 select t1.id, (select t2.id from t2 where t2.id>2) from t1;
 
-#Return only columns from first table
+-- Return only columns from first table
 select * from t2,t1 where t1.id=t2.id;
 select * from t1,t2 where t1.id=t2.id;
 
-#I'm not sure if t2.* is allowed but anyway it's strange
+-- I'm not sure if t2.* is allowed but anyway it's strange
 select * from t2;
 select t2.* from t2;
 
-#wrong subsets
+-- wrong subsets
 select * from t1 where id>2;
 select * from t1 where id>2 and id<2;
 
