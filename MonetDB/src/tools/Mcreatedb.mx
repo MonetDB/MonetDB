@@ -138,6 +138,7 @@ int main(int argc, char **argv) {
 	} else {
 		destroyDB();
 }
+FAKE_ALLOCA_CALL; /* buggy Intel C/C++ compiler for Linux; see gdk.h (gdk.mx) for details */
 return 0;
 }
 @-

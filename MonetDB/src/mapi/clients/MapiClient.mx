@@ -444,5 +444,6 @@ Check basic working of Monet interaction.
 	} else {
 		clientAccept(mid);
 	}
+	FAKE_ALLOCA_CALL; /* buggy Intel C/C++ compiler for Linux; see gdk.h (gdk.mx) for details */
 	return 0;
 }

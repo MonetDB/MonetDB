@@ -86,6 +86,7 @@ int main(int argc, char** argv) {
 
         Mdisconnect(mid);
 	printf("# shutdown finished\n");
+	FAKE_ALLOCA_CALL; /* buggy Intel C/C++ compiler for Linux; see gdk.h (gdk.mx) for details */
 	return 0;
 }
 @}
