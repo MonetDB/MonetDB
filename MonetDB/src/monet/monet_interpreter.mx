@@ -488,11 +488,13 @@ int startProfiler(stream *o)
 }
 int stopProfiler(void)
 {
-	monet_set_lock(profilerLock, "stopProfiler");
+	if(profilerLock)
+		monet_set_lock(profilerLock, "stopProfiler");
 	eventstream= NULL;
 	profilemode = 0;
 	if( profilerBAT) TMcommit();
-	monet_unset_lock(profilerLock, "stopProfiler");
+	if(profilerLock)
+		monet_unset_lock(profilerLock, "stopProfiler");
 	return 0;
 }
 void setProfilerMode(int mode){
