@@ -44,7 +44,7 @@ static const char *columnnames[NCOLUMNS] = {
 	"sql_data_type",
 	"sql_datetime_sub",
 	"num_prec_radix",
-	"interval_precision",
+	"interval_precision"
 };
 
 /* column types of result set */
@@ -67,7 +67,7 @@ static const char *columntypes[NCOLUMNS] = {
 	"smallint",
 	"smallint",
 	"mediumint",
-	"smallint",
+	"smallint"
 };
 
 static struct types {
@@ -756,7 +756,7 @@ static struct types {
 		-1,		/* num_prec_radix */
 		10,		/* interval_precision */
 		NULL		/* tuple */
-	},
+	}
 };
 
 static SQLRETURN
