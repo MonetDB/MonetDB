@@ -12,7 +12,7 @@ bug-sf-949135
 bug-sf-949228
 bug-sf-949255
 bug-sf-947600
-bug-sf-951206
+subselect_column-bug-sf-951206
 cast_bool2int-bug-sf-951800
 start_transaction-bug-sf-952755
 numeric-bug-sf-952758
