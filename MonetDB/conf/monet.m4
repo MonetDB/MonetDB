@@ -1029,7 +1029,7 @@ if test "x$enable_optim" = xyes; then
       dnl  With "-ipo -ipo_obj", pass-through linker options ("-Wl,...") are not handled correctly,
       dnl  and with "-ip -ipo_obj", the resulting Mserver segfaults immediately.
       dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.*.
-      x86_64-*-*-8.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axWP   ";;
+      x86_64-*-*-8.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
       i*86-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       ia64-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
