@@ -159,9 +159,9 @@ Thus, there are 2 * 7 * 2 * 2 = 56 GDKqsort implementation routines.
 #define direct(p) 		(p)
 
 #define any_LE(a,b)		((buf->cmp)(a,b) <= 0)
-#define any_LT(a,b)		((buf->cmp)(a,b) < 0)
+#define any_LT(a,b)		((buf->cmp)(a,b) <  0)
 #define any_GE(a,b)		((buf->cmp)(a,b) >= 0)
-#define any_GT(a,b)		((buf->cmp)(a,b) > 0)
+#define any_GT(a,b)		((buf->cmp)(a,b) >  0)
 
 typedef chr any;
 @:qsort_L_or_G_direction(any)@
@@ -175,8 +175,8 @@ typedef chr any;
 @= qsort_cmpdef
 #define @1_LE(a,b) (*(@1*) (a) <= *(@1*) (b))
 #define @1_LT(a,b) (*(@1*) (a) <  *(@1*) (b))
-#define @1_GT(a,b) (*(@1*) (a) >= *(@1*) (b))
-#define @1_GE(a,b) (*(@1*) (a) >  *(@1*) (b))
+#define @1_GE(a,b) (*(@1*) (a) >= *(@1*) (b))
+#define @1_GT(a,b) (*(@1*) (a) >  *(@1*) (b))
 
 @:qsort_L_or_G_direction(@1)@
 
@@ -243,17 +243,16 @@ loop:	swap_cnt = 0;
 	pc = pd = (char *) a + MULT_WIDTH(n - 1);
 
 	for (;;) {
-		int r;
-		while (pb <= pc && (r = @2_@3_@4E(pb, a))) {
-			if (r == 0) {
+		while (pb <= pc && @2_@3_@4E(pb, a)) {
+			if (!@2_@3_@4T(pb, a)) { /* pb (<|>)= a && !(pb (<|>) a)  =>  pb == a */
 				swap_cnt = 1;
 				@1_SWAP(@3, pa, pb);
 				pa += buf->width;
 			}
 			pb += buf->width;
 		}
-		while (pb <= pc && (r = @2_@3_@4T(a, pc))) {
-			if (r == 0) {
+		while (pb <= pc && @2_@3_@4E(a, pc)) {
+			if (!@2_@3_@4T(a, pc)) { /* a (<|>)= pc && !(a (<|>) pc)  =>  a == pc */
 				swap_cnt = 1;
 				@1_SWAP(@3, pc, pd);
 				pd -= buf->width;
