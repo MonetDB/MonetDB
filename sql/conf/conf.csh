@@ -52,6 +52,7 @@ if ( ! -x bootstrap ) then
   else
 	set binpath = ""
 	set libpath = ""
+	set modpath = ""
 
 	# check for not set variables (SQL_BUILD, SQL_PREFIX, COMP, BITS, LINK)
 
@@ -258,11 +259,16 @@ if ( ! -x bootstrap ) then
 
 	# prepend target bin-dir to PATH
 	set binpath = "${SQL_PREFIX}/bin:${binpath}"
-	# prepend Monet's lib dirs to LD_LIBRARY_PATH
-	set libpath = "${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet:${libpath}"
+
+	# the following is still needed for SQL
+	# set MONET_MOD_PATH and prepend it to LD_LIBRARY_PATH
+	set modpath = "${SQL_PREFIX}/lib:${SQL_PREFIX}/lib/sql"
+	set libpath = "${modpath}:${libpath}"
+
 	# remove trailing ':'
 	set binpath = `echo "${binpath}" | sed 's|:$||'`
 	set libpath = `echo "${libpath}" | sed 's|:$||'`
+	set modpath = `echo "${modpath}" | sed 's|:$||'`
 
 	# export new settings
 	echo ""
@@ -299,20 +305,22 @@ if ( ! -x bootstrap ) then
 		endif
 		echo " LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 	endif
+	if ( ${%modpath} ) then
+		if ( ${?MONET_MOD_PATH} ) then
+			# prepend new modpath to existing MONET_MOD_PATH, if MONET_MOD_PATH doesn't contain modpath, yet
+			if ( "`echo ':${MONET_MOD_PATH}:' | sed 's|:${modpath}:|:|'`" == ":${MONET_MOD_PATH}:" ) then
+				setenv MONET_MOD_PATH "${modpath}:${MONET_MOD_PATH}"
+			endif
+		  else
+			# set MONET_MOD_PATH as modpath
+			setenv MONET_MOD_PATH "${modpath}"
+		endif
+		echo " MONET_MOD_PATH=${MONET_MOD_PATH}"
+	endif
 
-#	# we shouldn't need this
-#	if ( ${?LD_LIBRARY_PATH} ) then
-#		setenv LD_LIBRARY_PATH "${SQL_PREFIX}/lib:${SQL_PREFIX}/lib/Monet:${LD_LIBRARY_PATH}"
-#	  else	setenv LD_LIBRARY_PATH "${SQL_PREFIX}/lib:${SQL_PREFIX}/lib/Monet"
-#	endif
-
-#	# this still needed for SQL
-	setenv MONET_MOD_PATH "${SQL_PREFIX}/lib:${SQL_PREFIX}/lib/sql:${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
-	echo " MONET_MOD_PATH=${MONET_MOD_PATH}"
-
-	# for convenience: store the complete configure-call in CONFIGURE
-	setenv CONFIGURE "${base}/configure ${conf_opts} --with-monet=${MONET_PREFIX} --prefix=${SQL_PREFIX}"
-	echo " CONFIGURE=${CONFIGURE}"
+	# for convenience: store the complete configure-call in SQL_CONFIGURE
+	setenv SQL_CONFIGURE "${base}/configure ${conf_opts} --with-monet=${MONET_PREFIX} --prefix=${SQL_PREFIX}"
+	echo " SQL_CONFIGURE=${SQL_CONFIGURE}"
 
 	mkdir -p ${SQL_BUILD}
 
