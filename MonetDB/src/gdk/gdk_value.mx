@@ -98,11 +98,9 @@ void *VALget(ValPtr v){
 }
 
 void VALclear(ValPtr v){
-        switch(ATOMstorage(v->vtype)) {
-        case TYPE_str:
-        case TYPE_ptr:
-                if(v->val.pval && v->val.pval != str_nil) GDKfree(v->val.pval);
-                v->val.pval = 0;
+	if (v->vtype == TYPE_str || ATOMextern(v->vtype)) {
+                if(v->val.pval && v->val.pval != str_nil) 
+			GDKfree(v->val.pval);
         }
 	VALempty(v);
 }
