@@ -50,7 +50,7 @@ SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 	querylen = strlen(query);
 
 	if (cbSqlStrMax > 0)
-		strncpy(szSqlStr, query, cbSqlStrMax);
+		strncpy((char *) szSqlStr, query, cbSqlStrMax);
 	free(query);
 
 	if (pcbSqlStr)
