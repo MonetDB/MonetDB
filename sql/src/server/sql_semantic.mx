@@ -47,6 +47,7 @@ sql_export void cleanup_stmts(stmt **stmts, int cnt);
 sql_export stmt *sql_insert(mvc * sql, sql_table *t, stmt **inserts, int len);
 sql_export stmt *sql_delete( mvc *sql, tvar *tv, sql_table *t, stmt *s );
 sql_export stmt *sql_subquery(mvc * sql, scope * scp, symbol * sq);
+sql_export stmt *sql_value_exp(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset);
 
 sql_export void sql_add_arg( mvc *sql, atom *v );		/* used in src/server/sql_parser.y */
 sql_export void sql_add_param( mvc *sql, char *name, stmt *s );	/* used in src/server/sql_parser.y */
@@ -63,6 +64,7 @@ sql_export void sql_destroy_args( mvc *sql );			/* used in backend */
 #include "sql_semantic.h"
 #include "sql_trans.h"
 #include "sql_schema.h"
+#include "sql_env.h"
 #include "sql_privileges.h"
 
 #include <unistd.h>
@@ -139,7 +141,6 @@ void sql_destroy_args( mvc *sql )
 static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel );
 static stmt *sql_simple_select(mvc * sql, scope * scp, dlist * selection);
 static stmt *sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset);
-static stmt *sql_value_exp(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset);
 static stmt *sql_compare_exp( mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symbol *ro, char *compare_op );
 
 static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q);
@@ -1186,7 +1187,7 @@ static stmt *sql_column_value(mvc * sql, scope * scp, symbol * se, group * grp, 
 	return res;
 }
 
-static stmt *sql_value_exp(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset)
+stmt *sql_value_exp(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset)
 {
 
 	switch (se->token) {
@@ -1207,6 +1208,9 @@ static stmt *sql_value_exp(mvc * sql, scope * scp, symbol * se, group * grp, stm
 	case SQL_PARAMETER:
 		printf("parameter not used\n");
 		break;
+	case SQL_NULL: 
+		return stmt_atom(atom_general(sql_dup_subtype(
+				sql_bind_localtype("str")),NULL));
 	case SQL_ATOM: {
 		AtomNode *an = (AtomNode*)se;
 		if (!an || !an->a){
@@ -1241,6 +1245,7 @@ static stmt *stmt2pivot(scope * scp, stmt * s)
 {
 	stmt *ptable = stmt_dup(scp->ptable);
 	ptable_statements(ptable) = s;
+	ptable ->nrcols = s->nrcols;
 	return ptable;
 }
 
@@ -2655,9 +2660,16 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 				stmt *foundsubset = find_pivot(subset, tv->s);
 
 				for (n = tv->columns->h; n; n = n->next) {
+					stmt *s;
 					cvar *cs = n->data;
 					stmt *cbat = stmt_dup(cs->s);
-					list_append(rl, stmt_join(stmt_dup(foundsubset), cbat, cmp_equal));
+					/* selected only a single row ?? */
+					if (subset->nrcols == 0) {
+						s = cbat;
+					} else {
+						s = stmt_join(stmt_dup(foundsubset), cbat, cmp_equal);
+					}
+					list_append(rl, s);
 				}
 				stmt_destroy(foundsubset);
 			}
@@ -2873,6 +2885,7 @@ insert_check_fkey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 
 	if (inserts[0]->op2.stval->key){
 		stmt *cur = NULL;
+		/*
 		sql_subtype *bt = sql_bind_localtype( "bit" );
 		sql_subfunc *or = sql_bind_func_result("or", bt, bt, bt);
 		sql_subfunc *not = sql_bind_func_result("not", bt, NULL, bt);
@@ -2894,6 +2907,7 @@ insert_check_fkey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 				cur = stmt_unop( stmt_unop(cur, not),  cnv);
 			}
 		}
+		*/
 		if (!cur)
 			cur = stmt_atom_int(1);
 
@@ -2902,6 +2916,7 @@ insert_check_fkey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 	} else {
 		/* reljoin.count <> inserts[col1].count */
 		stmt *cur = stmt_dup(inserts[0]->op2.stval);
+		/*
 		node *m;
 
 		for(m = k->columns->h; m; m = m->next) {
@@ -2915,6 +2930,7 @@ insert_check_fkey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 				cur = stmt_semijoin(cur,ins);
 			}
 		}
+		*/
 
 		s = stmt_binop( 
 			stmt_aggr(stmt_dup(idx_inserts), NULL, cnt), 
@@ -2991,6 +3007,7 @@ join_idx_insert( sql_idx *i, stmt **inserts )
 	stmt *s = NULL, *rts = stmt_basetable(ri->t);
 
 	if (inserts[0]->op2.stval->key){
+		int nulls = 0;
 		s = stmt_relselect_init();
 	    	for(m = i->columns->h, o = ri->columns->h; m && o; 
 			m = m->next, o = o->next) {
@@ -3000,10 +3017,16 @@ join_idx_insert( sql_idx *i, stmt **inserts )
 				stmt_dup(stmt_cbat(rc->c, stmt_dup(rts), 0, st_bat)), 
 				stmt_dup(inserts[c->c->colnr]->op2.stval),
 				cmp_equal));
+			if (c->c->null)
+				nulls = 1;
 		}
-		/* append to the pre-computed join-index */
-		s = stmt_mark(stmt_reverse(stmt_dup(s)), 0);
+		s = stmt_mark(stmt_reverse(s), 0);
+		/* add missing nulls (and NULLs only (SIMPLE MATCH)) */
+		if (nulls) {
+			s = stmt_union(s, stmt_diff(stmt_append(stmt_temp(sql_dup_subtype(tail_type(s))), stmt_atom(atom_general( sql_dup_subtype(tail_type(s)), NULL ))), s));
+		}
 	} else {
+		int nulls = 0;
 		s = stmt_reljoin_init();
 	    	for(m = i->columns->h, o = ri->columns->h; m && o; 
 			m = m->next, o = o->next) {
@@ -3012,8 +3035,38 @@ join_idx_insert( sql_idx *i, stmt **inserts )
 			stmt_reljoin_fill( s,
 				stmt_dup(inserts[c->c->colnr]->op2.stval),
 				stmt_dup(stmt_cbat(rc->c, stmt_dup(rts), 0, st_bat)));
+			if (c->c->null)
+				nulls = 1;
 		}
-		/* append to the pre-computed join-index */
+		/* add missing nulls (and NULLs only (SIMPLE MATCH)) */
+		if (nulls) {
+			stmt *cur = NULL, *missing = stmt_diff(
+				stmt_dup( inserts[0]->op2.stval ),
+				stmt_dup(s));
+	    		for(m = i->columns->h; m; m = m->next) {
+				
+				sql_kc *c = m->data;
+				sql_subfunc *isnil = 
+					sql_bind_func("isnull", 	
+					c->c->type, NULL );
+					
+				stmt *n;
+				n = stmt_dup(inserts[c->c->colnr]->op2.stval);
+				n = stmt_semijoin( n, stmt_dup(missing));
+				n = stmt_unop( n, isnil );
+				n = stmt_uselect( n, stmt_bool(1), cmp_equal );
+				if (cur)
+					cur = stmt_semijoin( cur, n);
+				else 
+					cur = n;
+			}
+			stmt_destroy(missing);
+			s = stmt_union(s, stmt_const(cur, stmt_atom( 
+				atom_general( sql_dup_subtype(tail_type(s)), 
+				NULL ))));
+		}
+		s = stmt_reverse(stmt_order(stmt_reverse(s), 0));
+		
 	}
 	stmt_destroy(rts);
 	return s;
@@ -3043,6 +3096,7 @@ sql_insert_idxs(mvc * sql, sql_table *t, stmt **inserts, list *l)
 			stmt *ckeys = sql_insert_key(sql, inserts, i->key, is);
 			list_prepend(l, ckeys);
 		}
+		/* append to the pre-computed join-index */
 		if (is) 
 			list_append(l, stmt_append(stmt_idxbat(i,1), is));
 	}
@@ -3274,6 +3328,7 @@ hash_update( sql_idx *i, stmt **updates, int updcol )
 static stmt *
 join_idx_update( sql_idx *i, stmt **updates, int updcol )
 {
+	int nulls = 0;
 	node *m, *o;
 	sql_idx *ri = ((sql_fkey*)i->key)->rkey->k.idx;
 	stmt *s = NULL, *rts = stmt_basetable(i->t), *ts;
@@ -3294,9 +3349,16 @@ join_idx_update( sql_idx *i, stmt **updates, int updcol )
 				stmt_cbat(c->c, stmt_dup(ts), RDONLY, st_bat), 
 				upd);
 		}
+		if (c->c->null)
+			nulls = 1;
 		stmt_reljoin_fill( s, upd,
 			stmt_dup(stmt_cbat(rc->c, stmt_dup(rts), 0, st_bat)));
+
 	}
+	/* add missing nulls */
+	if (nulls) 
+		s = stmt_union(s, stmt_const(stmt_semijoin(stmt_dup(updates[updcol]->op2.stval), stmt_dup(s)), stmt_atom(atom_general( sql_dup_subtype(tail_type(s)), NULL ))));
+
 	stmt_destroy(ts);
 	stmt_destroy(rts);
 	return s;
@@ -3852,6 +3914,9 @@ static stmt *sql_stmt(mvc * sql, symbol * s)
 	case SQL_CREATE_TYPE:
 	case SQL_CREATE_FUNC:
 		return schema(sql, s);
+
+	case SQL_SET:
+		return sql_set_var(sql, s);
 	
 	case SQL_COPYFROM:
 		{
@@ -3933,17 +3998,6 @@ static stmt *sql_stmt(mvc * sql, symbol * s)
 		if (ret) 
 			ret = stmt_output(ret);
 		sql->type = Q_TABLE;
-		break;
-	case SQL_SET:
-		{
-			dlist *l = s->data.lval;
-			symbol *val = l->h->next->data.sym;
-			scope *scp = scope_open(NULL);
-			stmt *v = sql_value_exp( sql, scp, val, NULL, NULL);
-			scope_close(scp);
-			if (v)
-				ret = stmt_assign(_strdup(l->h->data.sval), v);
-		}
 		break;
 	default:
 		return sql_error(sql, 01, 

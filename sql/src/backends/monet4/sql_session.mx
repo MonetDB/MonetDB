@@ -71,6 +71,7 @@ extern int sqlstatement(char *cmd, Cntxt stk );
 #include <sql_scope.h>
 #include <sql_qc.h>
 #include <sql_parser.h>		/* for sqlparse() */
+#include <sql_env.h>		/* explain,debug,reply_size,auto_commit etc */
 
 static res_table *find_export_table( mvc *m, int res_id );
 
@@ -336,11 +337,11 @@ int sqlcleanup( mvc *c, int err)
 		c->sym = NULL;
 	}
 	scanner_query_processed(&(c->scanner));
-	if (c->autocommit && c->autocommit->val.cval[0] == TRUE) {
+	if (c->auto_commit) {
 		if (err) 
-			mvc_rollback(c, 1, NULL);
+			mvc_rollback(c, 0, NULL);
 		else
-			mvc_commit(c, 1, NULL);
+			mvc_commit(c, 0, NULL);
 	}
 	return err;
 }
@@ -364,11 +365,14 @@ int sqlexecute(backend * be, stream *out )
 
 	cache = c->cache;
 
-	if (c->explain && c->explain->vtype == TYPE_str && c->explain->val.sval)
+	if (!c->trans)
+		mvc_trans(c);
+
+	if (c->explain)
 	{
-	    if (strcmp(c->explain->val.sval, "mil") == 0)
+	    if (strcmp(c->explain, "mil") == 0)
 		explain = ex_mil;
-	    else if (strcmp(c->explain->val.sval, "sql") == 0)
+	    else if (strcmp(c->explain, "sql") == 0)
 		explain = ex_sql;
 	}
 
@@ -399,10 +403,6 @@ int sqlexecute(backend * be, stream *out )
 			return sqlcleanup(c, err);
 		}
 		assert(s);
-		/* the SET statement may changed the explain value.
-		   without this we can never return form explain='bla' */
-		if (s->type == st_assign)
-			explain = ex_none;
 
 		if (explain == ex_mil) {
 			/* insert mil statements into a bat */
@@ -499,7 +499,7 @@ int sqlexecute(backend * be, stream *out )
 	}
 
 	if (explain == ex_sql) {
-		ValRecord *e = c->explain;
+		char *e = c->explain;
 		char buf[BUFSIZ];
 
 		T1 = GDKusec();
@@ -558,25 +558,6 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int mil )
 	v = VARnew(stk, "Input");
 	v->binding.vtype = TYPE_Bstream;
 	v->binding.val.pval = in;
-
-	v = VARnew(stk, "explain");
-	v->binding.vtype = TYPE_str;
-	v->binding.val.sval = NULL;
-	m->explain = &v->binding;
-
-	v = VARnew(stk, "debug");
-	v->binding.vtype = TYPE_int;
-	v->binding.val.ival = 0;
-	m->debug = &v->binding;
-
-	v = VARnew(stk, "reply_size");
-	v->binding.vtype = TYPE_int;
-	v->binding.val.ival = -1;
-
-	v = VARnew(stk, "autocommit");
-	v->binding.vtype = TYPE_bit;
-	v->binding.val.cval[0] = FALSE;
-	m->autocommit = &v->binding;
 
  	errbuf = GDKmalloc(GDKMAXERRLEN);
 	errbuf[0] = '\0';
@@ -637,23 +618,10 @@ query string with "M".
 		}
 		if (language == 'X') {
 			int n, id, off, len;
-			int reply_size = 0;
 
-			if (sscanf(in->buf+in->pos, "reply_size %d", &reply_size) == 1) {
-				Variable rs = 0;
-				if ((rs = VARfind(&stk, "reply_size")) != NULL)
-					rs->binding.val.ival = reply_size;
-				in->pos = in->len; /* HACK: should use parsed lenght */
-				continue;
-			}
 			n = sscanf(in->buf+in->pos, "export %d %d %d", &id, &off, &len);
 			if (n == 2 || n == 3) {
-				Variable rs = 0;
-				if ((rs = VARfind(&stk, "reply_size")) != 0)
-					reply_size = rs->binding.val.ival;
-				else
-					reply_size = 100;
-				mvc_export_table(m, out, id, off, n == 3 ? len : reply_size);
+				mvc_export_table(m, out, id, off, n == 3 ? len : m->reply_size);
 				in->pos = in->len; /* HACK: should use parsed lenght */
 				continue;
 			}
@@ -707,6 +675,7 @@ sqlstatement(char *cmd, Cntxt stk )
 	Variable v;
 
 	m = mvc_create(0, (backend_stack)stk, NULL, GDKout );
+	mvc_trans(m); /* start transaction */
 	m->user_id = m->role_id = 0;
 	m->user = _strdup("monetdb");
 	m->trans->schema = mvc_bind_schema(m, "sys");
@@ -757,7 +726,7 @@ mvc_sql(mvc *m, char *cmd )
 	m->params = NULL;
 	m->args = NULL;
 	m->sym = NULL;
-	m->autocommit = NULL;
+	m->auto_commit = 0;
 
 	err = sqlexecute(sql, GDKout );
 	backend_destroy( sql );

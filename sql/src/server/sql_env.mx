@@ -1,0 +1,338 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' 
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@' 
+@' The Original Code is the Monet Database System.
+@' 
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2004 CWI.
+@' All Rights Reserved.
+@' 
+@' Contributor(s):
+@' 		Martin Kersten <Martin.Kersten@cwi.nl>
+@' 		Peter Boncz <Peter.Boncz@cwi.nl>
+@' 		Niels Nes <Niels.Nes@cwi.nl>
+@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+
+@f sql_env
+@a N.J. Nes
+@* Env vars
+
+@h
+#ifndef _SQL_ENV_H_
+#define _SQL_ENV_H_
+
+#include "sql_parser.h"
+#include "sql_symbol.h"
+#include "sql_statement.h"
+#include "sql_mvc.h"
+
+sql_export int mvc_debug_on( mvc *m, int flag);
+
+sql_export stmt *sql_set_var(mvc *sql, symbol *s );
+sql_export int sql_set_var_value(mvc *sql, char *name, char *value );
+
+sql_export int sql_create_var(mvc *sql, sql_schema *s);
+sql_export int sql_create_env(mvc *sql, sql_schema *s);
+sql_export int sql_create_history(mvc *sql, sql_schema *s);
+
+#endif /* _SQL_ENV_H_ */
+
+@c
+
+#include "sql_env.h"
+#include "sql_bm.h"
+#include "sql_scope.h"
+#include "sql_semantic.h"
+/*
+TODO use virtual columns, ie only create (fill) the bats of the 'session' table
+when they are queried. 
+ */
+
+int mvc_debug_on( mvc *m, int flg)
+{
+	
+	if (m->debug&flg)
+		return 1;
+
+	return 0;
+}
+
+static char * 
+sql_get_var( mvc *sql, char *name )
+{
+	BAT *n = mvc_bind( sql, "sys", "session", "name", 0); 
+	BAT *v = mvc_bind( sql, "sys", "session", "value", 0); 
+	char *val = NULL;
+	BUN p;
+
+	if ((p=BUNfnd(BATmirror(n), name))) {
+		val = BUNtail(v, BUNfnd(v, BUNhead(n, p)));
+	}
+	bat_destroy(n);
+	bat_destroy(v);
+	return val;
+}
+
+int 
+sql_get_bit_var( mvc *sql, char *name )
+{
+	char *val = sql_get_var(sql, name);
+	if (val && strcmp(val, "true") == 0)
+		return TRUE;
+	return FALSE;
+}
+
+static int 
+sql_get_int_var( mvc *sql, char *name ) 
+{
+	char *val = sql_get_var(sql, name);
+	if (val)
+		return strtol(val, &val, 10);
+	return 0;
+}
+
+static char *
+sql_get_str_var( mvc *sql, char *name ) 
+{
+	char *val = sql_get_var(sql, name);
+	if (val)
+		return (char*)val;
+	assert(0);
+	return NULL;
+}
+
+void
+mvc_update_flags( mvc *m )
+{
+	char *explain;
+
+	m->debug = sql_get_int_var(m, "debug");
+	m->auto_commit = sql_get_bit_var(m, "auto_commit");
+	m->reply_size = sql_get_int_var(m, "reply_size");
+	explain = sql_get_str_var(m, "explain");
+	if (m->explain)  
+		_DELETE(m->explain);
+	if (!explain || strcmp(explain, "") == 0)
+		m->explain = NULL;
+	else
+		m->explain = _strdup(explain);
+}
+
+
+int 
+inttype( sql_subtype *itype, sql_subtype *rtype ) 
+{
+	if (strcmp(rtype->type->base.name, "int") == 0) {
+		if (strcmp(itype->type->base.name, "sht") == 0 ||
+		    strcmp(itype->type->base.name, "int") == 0 ||
+		    strcmp(itype->type->base.name, "lng") == 0) 
+		return 1;
+	}
+	return 0;
+}
+
+int simple_type( stmt *s ) 
+{
+	int type = s->type;
+	return type == st_var || type == st_atom || 
+		(type == st_unop && simple_type(s->op1.stval) && 
+		 strcmp(s->op4.funcval->func->name, "sql_neg") == 0);
+}
+
+atom *getatom( mvc *sql, stmt *s ) 
+{
+	atom *a;
+	int type = s->type;
+	if (type == st_var)
+		return sql->args->h->data;
+	if (type == st_atom)
+		return s->op1.aval;
+	/* unop */
+	a = getatom(sql, s->op1.stval);
+	if (a->data.vtype == TYPE_sht){
+		a->data.val.shval = -a->data.val.shval;
+	} else if (a->data.vtype == TYPE_int){
+		a->data.val.ival = -a->data.val.ival;
+	} else if (a->data.vtype == TYPE_lng){
+		a->data.val.lval = -a->data.val.lval;
+	}
+	return a;
+}
+
+stmt *
+sql_set_var( mvc *sql, symbol *s )
+{
+	if (s->token == SQL_SET) {
+		BUN p;
+		dlist *l = s->data.lval;
+		symbol *val = l->h->next->data.sym;
+		scope *scp = scope_open(NULL);
+
+		char *name = l->h->data.sval;
+		stmt *v = sql_value_exp( sql, scp, val, NULL, NULL);
+		sql_subtype *ctype, *valtype = tail_type(v);
+		str typename;
+		BAT *n, *t;
+		char *atom;
+
+		scope_close(scp);
+
+		if (!v || !simple_type(v)) {
+			return sql_error(sql, 02, "Can only set %s=simple_value (%s,%d)\n", name, st_type2string(v->type), v->type);
+		}
+
+		n = mvc_bind( sql, "sys", "session", "name", 0); 
+		t = mvc_bind( sql, "sys", "session", "type", 0); 
+		if (!(p=BUNfnd(BATmirror(n), name))) {
+			bat_destroy(n);
+			bat_destroy(t);
+			return sql_error(sql, 02, "Unknown session variable, %s\n",
+				name);
+		}
+		typename = BUNtail(t, BUNfnd(t, BUNhead(n,p)));
+		ctype = sql_bind_subtype(typename, 0, 0);
+		bat_destroy(n);
+		bat_destroy(t);
+
+		/* support 3 types 
+			bool (bit)
+			ints (sht,int,lng)
+			str
+		 */
+		if (!ctype || (strcmp(ctype->type->base.name, valtype->type->base.name) != 0 && (inttype(valtype, ctype)) == 0 )) {
+			sql_subtype_destroy(ctype);
+			stmt_destroy(v);
+			return sql_error(sql, 02, "Can only set %s=simple_value where simple_value is of type %s, value is of type %s\n", name, ctype->type->base.name, valtype->type->base.name);
+		}
+	
+		sql_set_var_value(sql, name, atom=atom2string(getatom(sql, v)));
+		sql_subtype_destroy(ctype);
+		stmt_destroy(v);
+		mvc_update_flags(sql);
+		_DELETE(atom);
+		return stmt_none();
+	}
+	return NULL;
+}
+
+int
+sql_set_var_value( mvc *sql, char *name, char *value )
+{
+	int res = -1;
+	BAT *n = mvc_bind( sql, "sys", "session", "name", 0); 
+	BAT *v = mvc_bind( sql, "sys", "session", "value", 1); 
+	BUN p;
+	
+	if ((p=BUNfnd(BATmirror(n), name))) {
+		oid id = *(oid*)BUNhead(n,p);
+		bun_inplace(v, id, value);
+		res = 0;
+	}
+	bat_destroy(n);
+	bat_destroy(v);
+	return res;
+}
+
+int
+sql_create_var( mvc *m, sql_schema *sys ) 
+{
+	char buf[BUFSIZ];
+	BAT *n,*v,*T;
+
+	oid h = 0;
+	sql_table *t;
+
+	t = mvc_create_table(m, sys, "session", tt_session, -1 );
+	mvc_create_column(m, t, "name", "VARCHAR",0,0);
+	mvc_create_column(m, t, "value", "VARCHAR",0,0);
+	mvc_create_column(m, t, "type", "VARCHAR",0,0);
+
+	n = mvc_bind( m, "sys", "session", "name", 1 );
+	v = mvc_bind( m, "sys", "session", "value", 1 );
+	T = mvc_bind( m, "sys", "session", "type", 1 );
+
+	BUNins(n, (ptr) &h, "debug" );
+	snprintf(buf, BUFSIZ, "%d", m->debug );
+	BUNins(v, (ptr) &h, buf);
+	BUNins(T, (ptr) &h, "MEDIUMINT");
+	h++;
+
+	BUNins(n, (ptr) &h, "reply_size" );
+	snprintf(buf, BUFSIZ, "%d", m->reply_size );
+	BUNins(v, (ptr) &h, buf);
+	BUNins(T, (ptr) &h, "MEDIUMINT");
+	h++;
+
+	BUNins(n, (ptr) &h, "explain" );
+	buf[0] = 0;
+	if (m->explain)
+		snprintf(buf, BUFSIZ, "%s", m->explain );
+	BUNins(v, (ptr) &h, buf);
+	BUNins(T, (ptr) &h, "VARCHAR");
+	h++;
+
+	BUNins(n, (ptr) &h, "auto_commit" );
+	if (m->auto_commit)
+		BUNins(v, (ptr) &h, "true");
+	else
+		BUNins(v, (ptr) &h, "false");
+	BUNins(T, (ptr) &h, "BOOL");
+	h++;
+
+	bat_destroy(n);
+	bat_destroy(v);
+	bat_destroy(T);
+
+	return 0;
+}
+
+int
+sql_create_env( mvc *m, sql_schema *s ) 
+{
+	BUN p,q;
+	BAT *n,*v;
+
+	sql_table *t = mvc_create_table(m, s, "env", tt_system, -1 );
+	mvc_create_column(m, t, "name", "VARCHAR",0,0);
+	mvc_create_column(m, t, "value", "VARCHAR",0,0);
+
+	n = mvc_bind( m, "sys", "env", "name", 1 );
+	v = mvc_bind( m, "sys", "env", "value", 1 );
+	BATloop(GDKenv,p,q){
+		oid h = n->hseqbase + BATcount(n);
+		char *name = BUNhead(GDKenv,p);
+		char *val = BUNtail(GDKenv,p);
+
+		BUNins(n, (ptr) &h, name);
+		BUNins(v, (ptr) &h, val);
+	}
+
+	bat_destroy(n);
+	bat_destroy(v);
+
+	return 0;
+}
+
+int
+sql_create_history( mvc *m, sql_schema *s ) 
+{
+	sql_table *t = mvc_create_table(m, s, "history", tt_system, -1 );
+
+	mvc_create_column(m, t, "start", "TIMESTAMP",0,0);
+	mvc_create_column(m, t, "query", "VARCHAR",0,0);
+	mvc_create_column(m, t, "parse", "MEDIUMINT",0,0);
+	mvc_create_column(m, t, "mil", "MEDIUMINT",0,0);
+	mvc_create_column(m, t, "exec", "MEDIUMINT",0,0);
+	mvc_create_column(m, t, "total", "MEDIUMINT",0,0);
+	mvc_create_column(m, t, "user", "VARCHAR",0,0);
+
+	return 0;
+}

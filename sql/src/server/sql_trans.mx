@@ -48,6 +48,7 @@ sql_export stmt *transaction( mvc * sql, symbol * sym);
 
 #include "sql_trans.h"
 #include "sql_parser.h"
+#include "sql_env.h"
 
 stmt *
 transaction(mvc * sql, symbol * s) 
@@ -56,7 +57,10 @@ transaction(mvc * sql, symbol * s)
 	switch (s->token) {
 	/* todo add start transaction and set iso levels */
 	case TR_RELEASE:
-		mvc_release( sql, s->data.sval );
+		ret = mvc_release( sql, s->data.sval );
+		if (ret < 0) 
+			return sql_error(sql, 01, 
+			 "release savepoint %s failed", s->data.sval);
 		break;
 	case TR_COMMIT:
 		ret = mvc_commit( sql, s->data.ival, NULL);
@@ -72,7 +76,10 @@ transaction(mvc * sql, symbol * s)
 		break;
 	case TR_ROLLBACK:{
 		dlist *l = s->data.lval;
-		(void)mvc_rollback(sql, l->h->data.ival, l->h->next->data.sval);
+		ret = mvc_rollback(sql, l->h->data.ival, l->h->next->data.sval);
+		if (ret < 0 && l->h->next->data.sval)
+			return sql_error(sql, 01, 
+			 "transaction rollback to savepoint (%s) failed", l->h->next->data.sval );
 	} break;
 	case TR_START: {
 	case TR_MODE: 
@@ -85,6 +92,9 @@ transaction(mvc * sql, symbol * s)
 			 (long) s, token2string(s->token));
 	}
 	/* any transaction statement switches of autocommit */
-	sql->autocommit->val.ival = FALSE;
+	if (sql->trans)
+		sql_set_var_value( sql, "auto_commit", "false");
+	else 
+		sql->auto_commit = 0;
 	return stmt_none();
 }

@@ -44,6 +44,9 @@ extern BAT *bat_new(int ht, int tt, size_t size, char *func);
 extern void bat_incref(bat bid, bit flag, char *func);
 extern void bat_decref(bat bid, bit flag);
 
+extern void bun_inplace(BAT *b, oid id, ptr val );
+extern ptr bun_find(BAT *b, ptr v);
+
 extern struct bm *bm_create(int debug);
 extern void bm_destroy(struct bm *bm);
 extern struct bm *bm_dup(struct bm *bm);
@@ -65,7 +68,7 @@ extern void bm_commit( struct bm *bm, int tid );
 extern void bm_abort( struct bm *bm, int tid );
 extern int bm_version( struct bm *bm);
 
-extern oid bm_add_bat(struct bm *bm, oid bid, char *name, int version);
+extern oid bm_add_bat(struct bm *bm, oid bid, char *name, int version,int pers);
 extern void bm_del_bat(struct bm *bm, oid lbid);
 extern void bm_new_version(struct bm *bm, oid lbid, int version );
 extern void bm_new_bat(struct bm *bm, oid lbid, oid bid );
@@ -173,6 +176,29 @@ void bat_decref( bat bid, bit flag)
 			printf("bat_decref %d (%d)\n", bid, BBPrefs(bid));
 	}
 	BBPdecref(bid,flag);
+}
+
+ptr bun_find(BAT *b, ptr v){
+	BUN p = BUNfnd(b,v);
+	if (p)
+		return BUNtail(b,p);
+	return NULL;
+}
+
+void bun_inplace(BAT *b, oid id, ptr val )
+{
+	BUN p = NULL;
+	BUN oldInserted = b->batInserted;
+
+	assert(b->htype == TYPE_void);
+	assert(b->hseqbase == 0);
+	assert(BATcount(b) > id);
+
+	b->batInserted = NULL;
+	BUNfndVOID(p, b, (ptr)&id);
+	assert(p >= b->batInserted); /* we don't want delete/ins */
+	(void) BUNinplace(b, p, (ptr)&id, val);
+	b->batInserted = oldInserted;
 }
 
 
@@ -513,14 +539,15 @@ void bm_new_bat(bm *bm, oid lbid, oid bid )
 	BUNreplace(bm->bat_mode, (ptr)&vid, &mode);
 }
 
-oid bm_add_bat(bm *bm, oid bid, char *name, int version)
+oid bm_add_bat(bm *bm, oid bid, char *name, int version, int persistent)
 {
 	oid lbid = bm_find_bat(bm, name);
 
 	if (!lbid){
 		lbid = bm->lbid++;
 		bm_add_bat_intern(bm, lbid, bid, name, version, BM_WRITE);
-		bat_rename(bid, name, version, BM_WRITE);
+		if (persistent)
+			bat_rename(bid, name, version, BM_WRITE);
 	} else {
 		bm_new_bat(bm, lbid, bid);
 		bm_new_version(bm, lbid, version);

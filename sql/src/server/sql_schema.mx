@@ -1317,7 +1317,7 @@ schema(mvc * sql, symbol * s)
 			dlist *l = s->data.lval;
 			ret = drop_schema(sql, 
 				l->h->data.lval, /* qname */
-				l->h->next->next->data.ival); /* drop_action */
+				l->h->next->data.ival); /* drop_action */
 			sql->type = Q_SCHEMA;
 		}
 		break;

@@ -348,7 +348,6 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	column_exp_commalist
 	column_option_list
 	selection
-	insert_atom_commalist
 	start_field
 	end_field
 	single_datetime_field
@@ -1307,14 +1306,14 @@ insert_stmt:
  ;
 
 values_or_query_spec:
-    VALUES '(' insert_atom_commalist ')' 
+    VALUES '(' atom_commalist ')' 
 		{ $$ = _symbol_create_list( SQL_VALUES, $3); }
  |  select_stmt
  ;
 
-insert_atom_commalist:
+atom_commalist:
     insert_atom		{ $$ = dlist_append_symbol(dlist_create(), $1); }
- |  insert_atom_commalist ',' insert_atom  
+ |  atom_commalist ',' insert_atom  
 			{ $$ = dlist_append_symbol($1, $3); }
  ;
 
@@ -1802,12 +1801,6 @@ in_predicate:
 		  dlist_append_symbol(l, $1); 
 		  dlist_append_list(l, $4); 
 		  $$ = _symbol_create_list(SQL_IN, l ); }
- ;
-
-atom_commalist:
-    atom	{ $$ = dlist_append_symbol(dlist_create(), $1); }
- |  atom_commalist ',' atom 	
-		{ $$ = dlist_append_symbol($1, $3); }
  ;
 
 all_or_any_predicate:

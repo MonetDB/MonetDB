@@ -215,7 +215,6 @@ int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 		sqlstatement("GRANT ALL on user_role to monetdb with grant option with hierarchy option;", stk);
 		sqlstatement("GRANT ALL on auths to monetdb with grant option with hierarchy option;", stk);
 		sqlstatement("GRANT ALL on privileges to monetdb with grant option with hierarchy option;", stk);
-		sqlstatement("CREATE TABLE history (start TIMESTAMP, query VARCHAR, parse MEDIUMINT, mil MEDIUMINT, exec MEDIUMINT, total MEDIUMINT, \"user\" VARCHAR);", stk);
 	} else if (ret < 0) {
 		return GDK_FAIL;
 	}
@@ -504,11 +503,14 @@ int trunc2@1( @1 *res, str val, int *d, int *s )
 {
 	ptr p = NULL;
 	int len = 0;
-	int e = ATOMfromstr(TYPE_@1, &p, &len, val);
+	int e;
 	int digits = *d - *s;
 	lng value = 1;
 	
-	if (e <= 0 || !p || ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0) {
+ 	e = ATOMfromstr(TYPE_@1, &p, &len, val);
+	if (e < 0 || !p || 
+	   (ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0 &&
+	    ATOMcmp(TYPE_str, val, ATOMnilptr(TYPE_str)) != 0) ) {
 		if (p)
 			GDKfree(p);
 		return GDK_FAIL;
@@ -537,9 +539,12 @@ int cast2@1( @1 *res, str val )
 {
 	ptr p = NULL;
 	int len = 0;
-	int e = ATOMfromstr(TYPE_@1, &p, &len, val);
+	int e; 
 	
-	if (e <= 0 || !p || ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0) {
+	e = ATOMfromstr(TYPE_@1, &p, &len, val);
+	if (e < 0 || !p || 
+	   (ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0 &&
+	    ATOMcmp(TYPE_str, val, ATOMnilptr(TYPE_str)) != 0) ) {
 		if (p)
 			GDKfree(p);
 		return GDK_FAIL;

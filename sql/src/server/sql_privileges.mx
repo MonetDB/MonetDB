@@ -67,26 +67,6 @@ sql_export int sql_drop_user(mvc *m,  str user);
 #include "sql_bm.h"
 /*#include <algebra.h>*/
 
-/** broken !!, need to use the sys_* versions from mvc */
-static BAT *desc(char *bname)
-{
-	BAT *res = NULL;
-	bat bid = BBPindex(bname);
-	if (bid){
-		res = BATdescriptor(bid);
-	}
-	assert(res);
-	return res;
-}
-
-static INLINE
-ptr bun_find(BAT *b, ptr v){
-	BUN p = BUNfnd(b,v);
-	if (p)
-		return BUNtail(b,p);
-	return NULL;
-}
-
 @-
 The remainder has been taken over from the sql_server mil document.
 The code below provides abstractions to manage the priviliges.

@@ -45,7 +45,6 @@ typedef enum stmt_type {
 	st_none,
 	st_sql,		/* sometimes a query rewrite is easier */
 	st_var,		/* still needs work */
-	st_assign,		/* still needs work */
 
 	st_basetable,
 	st_temp,	/* temporal bat */
@@ -161,7 +160,6 @@ sql_export const char * st_type2string(st_type type);
 
 extern stmt *stmt_none();
 extern stmt *stmt_sql( char *query );
-extern stmt *stmt_assign( char *varname, stmt *val);
 extern stmt *stmt_var( char *varname, sql_subtype *t);
 
 extern stmt *stmt_basetable(sql_table *t); 
@@ -182,6 +180,7 @@ extern stmt *stmt_temp(sql_subtype * t );
 extern stmt *stmt_atom(atom * op1);
 extern stmt *stmt_atom_string( char * s );
 extern stmt *stmt_atom_int( int i );
+extern stmt *stmt_bool( int b );
 extern stmt *stmt_filter(stmt * sel);
 extern stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype);
 extern stmt *stmt_uselect(stmt * op1, stmt * op2, comp_type cmptype);
@@ -360,6 +359,17 @@ stmt *stmt_atom_int( int i )
 	return stmt_atom( atom_int(t, i) );
 }
 
+stmt *stmt_bool( int b )
+{
+	sql_subtype *t = sql_bind_subtype("BOOL", 0, 0);
+
+	if (b){
+		return stmt_atom( atom_general(t, _strdup("true")));
+	} else {
+		return stmt_atom( atom_general(t, _strdup("false")));
+	}
+}
+
 static stmt *stmt_atom_oid( int i )
 {
 	sql_subtype *t = sql_bind_subtype("OID", 0, 0);
@@ -507,10 +517,6 @@ void stmt_destroy(stmt * s)
 			if (s->op4.stval) stmt_destroy(s->op4.stval);
 			break;
 
-		case st_assign:
-			if (s->op1.stval) stmt_destroy(s->op1.stval);
-			_DELETE(s->op4.sval);
-			break;
 		case st_var:
 			_DELETE(s->op1.sval);
 			sql_subtype_destroy(s->op2.typeval);
@@ -587,13 +593,6 @@ stmt *stmt_none(){
 stmt *stmt_sql(char *query ){
 	stmt *s = stmt_create(st_sql);
 	s->op1.stval = stmt_atom_string(query );
-	return s;
-}
-
-stmt *stmt_assign(char *varname, stmt *val){
-	stmt *s = stmt_create(st_assign);
-	s->op1.stval = val;
-	s->op4.sval = varname;
 	return s;
 }
 
@@ -1124,13 +1123,23 @@ stmt *stmt_set(stmt * s1)
 {
 	stmt *s = stmt_create(st_set);
 	s->op1.lval = list_append(list_create((fdestroy)&stmt_destroy),s1);
+	s->nrcols = s1->nrcols;
 	return s;
 }
 
 stmt *stmt_sets(list * l1)
 {
+	node *n;
+	int nrcols = 0;
 	stmt *s = stmt_create(st_sets);
+
 	s->op1.lval = l1;
+	for(n= l1->h; n; n = n->next) {
+		stmt *t = n->data;
+		if (t->nrcols > nrcols)
+			nrcols = t->nrcols;
+	}
+	s->nrcols = nrcols;
 	return s;
 }
 

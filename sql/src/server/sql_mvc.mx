@@ -225,13 +225,14 @@ typedef struct mvc {
 	int user_id;
 	int role_id;
 
-	/* should all move to mil */
+	char *schema;
 	char *user;
 	char *role;
 
-	ValRecord *debug;
-	ValRecord *explain;
-	ValRecord *autocommit;
+	int auto_commit;
+	int reply_size;
+	int debug;
+	char *explain;
 
 	sql_trans *trans;
 	
@@ -264,6 +265,7 @@ sql_export int mvc_type( mvc *c );
  * Rollbacks can be eigther full or until a given savepoint. 
  * The special mvc_release can be used to release savepoints. 
  */
+sql_export int mvc_trans( mvc *c );
 sql_export int mvc_commit( mvc *c, int chain, char *name );
 sql_export int mvc_rollback( mvc *c, int chain, char *name );
 sql_export int mvc_release( mvc *c, char *name );
@@ -315,8 +317,6 @@ sql_export int mvc_result_row( mvc *c, int nr_cols );
 sql_export int mvc_result_column( mvc *c, char *name, char *typename, int digits, int scale, BAT *b);
 sql_export int mvc_result_value( mvc *c, char *name, char *typename, int digits, int scale, ptr *p, int mtype);
 sql_export void mvc_clean_result( mvc *m, res_table *t);
-
-sql_export int mvc_debug_on( mvc *m, int flag);
 #endif /*_SQL_MVC_H*/
 @c
 
@@ -341,6 +341,7 @@ sql_export int mvc_debug_on( mvc *m, int flag);
 #include "sql_logger.h"
 #include "sql_statement.h"
 #include "sql_types.h"
+#include "sql_env.h"
 #include "sql_privileges.h"
 
 static int 		mvc_debug = 0;
@@ -368,29 +369,6 @@ static int key_cmp(sql_key *k, sqlid*id)
 	if (k && id && k->base.id == *id)
 		return 0;
 	return 1;
-}
-
-static ptr bun_find(BAT *b, ptr v){
-	BUN p = BUNfnd(b,v);
-	if (p)
-		return BUNtail(b,p);
-	return NULL;
-}
-
-static void bun_inplace(BAT *b, oid id, ptr val )
-{
-	BUN p = NULL;
-	BUN oldInserted = b->batInserted;
-
-	assert(b->htype == TYPE_void);
-	assert(b->hseqbase == 0);
-	assert(BATcount(b) > id);
-
-	b->batInserted = NULL;
-	BUNfndVOID(p, b, (ptr)&id);
-	assert(p >= b->batInserted); /* we don't want delete/ins */
-	(void) BUNinplace(b, p, (ptr)&id, val);
-	b->batInserted = oldInserted;
 }
 
 static size_t void_delete_bat( BAT *b, BAT *d, int delta){
@@ -1488,7 +1466,8 @@ static sql_schema *schema_dup(sql_trans *tr, int flag, sql_schema * os, sql_tran
 
 	if (os->tables.set ) for (n = os->tables.set->h; n; n = n->next) {
 		sql_table *ot = n->data;
-		if (ot->type != tt_temp && ot->type != tt_session)
+		if ( (ot->type != tt_temp && ot->type != tt_session) ||
+		      tr != gtrans)
 			cs_add( &s->tables, table_dup(tr, flag, ot, s), tr_flag(&ot->base, flag));
 	}
 	return s;
@@ -1548,7 +1527,7 @@ static BAT *mvc_bat( struct bm *bm, char *name, int type)
 			fprintf(stderr, "mvc_bat created %s bid %d\n", name,id);
 		b = bat_new( TYPE_void, type, BUFSIZ, "mvc_bat" );
 		BATseqbase(b,0);
-		bm_add_bat(bm, b->batCacheid, name, 0 /* do not use a transaction id */);
+		bm_add_bat(bm, b->batCacheid, name, 0 /* do not use a transaction id */, 1);
 	} else {
 		if (mvc_debug)
 			fprintf(stderr, "mvc_bat loaded %s bid %d\n", name, id);
@@ -1899,6 +1878,7 @@ int mvc_init(int debug, backend_stack stk)
 		sql_table *t;
 		mvc *m = mvc_create(0, stk, NULL, NULL);
 
+		mvc_trans(m);
 		res = 1;
 
 		s = bootstrap_create_schema(m, "sys", "sqladmin");
@@ -1989,6 +1969,9 @@ int mvc_init(int debug, backend_stack stk)
 		sql_create_role(m, "public", 0);
 		mvc_create_schema(m, "default-schema", "sqladmin");
 
+		sql_create_history(m, s);
+		sql_create_env(m, s);
+
 		m->trans->schema = s;
 		if (mvc_commit(m, 0, NULL) <0){
 			fprintf(stderr, "mvc_init: unable to create system tables\n");
@@ -2024,12 +2007,14 @@ int mvc_set_user( mvc *m, char *user )
 char *mvc_login(mvc *m, char *user, char *passwd)
 {
 	char *schema = NULL;
-	BAT *name_user = BATmirror(mvc_bind(m, "sys", "users", "name", 0 ));
+	BAT *name_user;
 	BUN p;
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_login %s\n", user);
 
+	mvc_trans(m);
+ 	name_user = BATmirror(mvc_bind(m, "sys", "users", "name", 0 ));
 	if ((p=BUNfnd(name_user, user)) != NULL){
 		ptr userid = BUNtail(name_user, p);
 		BAT *user_pwd = mvc_bind(m, "sys", "users", "passwd", 0 );
@@ -2063,6 +2048,8 @@ char *mvc_login(mvc *m, char *user, char *passwd)
 		_DELETE(schema);
 		return NULL;
 	}
+	m->schema = _strdup(schema);
+	mvc_rollback(m, 0, NULL);
 	return schema;
 }
 
@@ -2155,8 +2142,8 @@ rollforward_changeset_updates(sql_trans *tr, changeset *fs, changeset *ts,
 				sql_base *fb = n->data;
 				sql_base *tb = fd(tr, TR_NEW, fb, b);
 	
-				/* add the new bases */
-				if (rollforward_creates)
+				/* conditional add the new bases */
+				if (tb && rollforward_creates)
 					cs_add( ts, rollforward_creates(tr, tb), TR_NEW );
 			}
 		}
@@ -2450,6 +2437,15 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 	}
 }
 
+static sql_table *
+conditional_table_dup(sql_trans *tr, int flag, sql_table * ot, sql_schema *s)
+{
+	if ((ot->type != tt_temp && ot->type != tt_session) ||
+		tr->parent != gtrans)
+		return table_dup(tr, flag, ot, s);
+	return NULL;
+}
+
 static void
 rollforward_update_schema( sql_trans *tr, sql_schema *fs, sql_schema *ts)
 {
@@ -2457,7 +2453,7 @@ rollforward_update_schema( sql_trans *tr, sql_schema *fs, sql_schema *ts)
 		(rfufunc)&rollforward_update_table, 
 		(rfcfunc)&rollforward_create_table,
 		(rfdfunc)&rollforward_drop_table,
-		(dupfunc)&table_dup );
+		(dupfunc)&conditional_table_dup );
 }
 
 static void 
@@ -2535,6 +2531,21 @@ static int validate(sql_trans *tr)
                 }
 	}
 	return 1;
+}
+
+int mvc_trans(mvc * m)
+{
+	int res = Q_TRANS;
+	assert(!m->trans); /* can only start a new transaction */
+				
+	m->trans = trans_dup(m->stk, gtrans, NULL);
+	m->trans->level = ISO_SERIALIZABLE;
+	m->type = res;
+	if (m->schema) {
+		m->trans->schema = find_schema(m->trans, m->schema);
+		sql_create_var(m, find_schema(m->trans, "sys"));
+	}
+	return res;
 }
 
 /* 
@@ -2616,17 +2627,22 @@ int mvc_commit(mvc * m, int chain, char *name)
 
 	MT_unset_lock(mvc_lock, "mvc_commit");
 
-	assert(tr->schema);
-	schema = _strdup(tr->schema->base.name);
-	assert(schema);
-	while(tr->parent) 
-		tr = trans_destroy(tr);
-
-	m->trans = trans_dup(tr->stk, tr,NULL);
-	m->trans->level = level;
+	if (chain) {
+		assert(tr->schema);
+		schema = _strdup(tr->schema->base.name);
+		assert(schema);
+		while(tr->parent) 
+			tr = trans_destroy(tr);
+	
+		m->trans = trans_dup(tr->stk, tr,NULL);
+		m->trans->level = level;
+		m->trans->schema = find_schema(m->trans, schema);
+		sql_create_var(m, find_schema(m->trans, "sys"));
+		_DELETE(schema);
+	} else {
+		m->trans = NULL;
+	}
 	m->type = res;
-	m->trans->schema = find_schema(m->trans, schema);
-	_DELETE(schema);
 	return res;
 }
 
@@ -2661,11 +2677,15 @@ mvc_rollback(mvc * m, int chain, char *name)
 		m->trans = trans_dup(tr->stk, tr,NULL);
 	}
 	m->status = 0;
-	m->trans->level = level;
+	if (chain) {
+		m->trans->level = level;
+		m->trans->schema = find_schema(m->trans, schema);
+		sql_create_var(m, find_schema(m->trans, "sys"));
+		_DELETE(schema);
+	} else {
+		m->trans = NULL;
+	}
 	m->type = Q_TRANS;
-	m->trans->schema = find_schema(m->trans, schema);
-	assert(m->trans->schema);
-	_DELETE(schema);
 	return res;
 }
 
@@ -2754,11 +2774,14 @@ mvc *mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 	m->sym = NULL;
 
 	m->role_id = m->user_id = -1;
-	m->role = m->user = NULL;
-	m->debug = NULL;
+	m->schema = m->role = m->user = NULL;
+
+	m->auto_commit = 0;
+	m->reply_size = -1;
+	m->debug = 0;
 	m->explain = NULL;
-	m->autocommit = NULL;
-	m->trans = trans_dup(stk, gtrans,NULL);
+
+	m->trans = NULL;
 	m->status = 0;
 	m->type = Q_PARSE;
 
@@ -2785,7 +2808,9 @@ mvc_destroy(mvc * m)
 	}
 
 	tr = m->trans;
-	while(tr->parent) tr = trans_destroy(tr);
+	if (tr) 
+		while(tr->parent) tr = trans_destroy(tr);
+	if (m->schema) _DELETE(m->schema);
 	if (m->user) _DELETE(m->user);
 	if (m->role) _DELETE(m->role);
 
@@ -3135,6 +3160,11 @@ sys_drop_idx(sql_trans *tr, sql_idx *i ){
 		sql_kc *ic = n->data;
 		sys_drop_ic(tr, i, ic);
 	}
+	if (i->base.flag == TR_NEW && i->bat.bid) {
+		bm_del_bat( tr->bm, i->bat.bid );
+		bm_del_bat( tr->bm, i->bat.ubid );
+	}
+
 	sysidx->base.wtime = tr->wtime = tr->stime;
 	list_remove_data( i->t->s->idxs, i);
 }
@@ -3168,6 +3198,12 @@ sys_drop_column(sql_trans *tr, sql_column *col ){
 	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_dbat(tr, syscolumn, 1);
 	BUNins(b, ATOMnilptr(TYPE_void), (ptr) & rid); bat_destroy(b);
+
+	/* delete temp's directly */
+	if (col->base.flag == TR_NEW) {
+		bm_del_bat( tr->bm, col->bat.bid );
+		bm_del_bat( tr->bm, col->bat.ubid );
+	}
 
 	syscolumn->base.wtime = tr->stime;
 }
@@ -3208,27 +3244,32 @@ static void sys_drop_table(sql_trans * tr, sql_table *t)
 	BAT *b, *r;
 	oid rid = 0;
 
-	/* drop from sys tables */
-	b = bind_bat(tr, find_column(systable, "id"), 1);
-	r = BATmirror(b);
-	rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & t->base.id ));
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
-	b = bind_bat(tr, find_column(systable, "schema_id"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
-	b = bind_bat(tr, find_column(systable, "name"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
-	b = bind_bat(tr, find_column(systable, "type"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
-	b = bind_bat(tr, find_column(systable, "query"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
-	b = bind_dbat(tr, systable, 1);
-	BUNins(b, ATOMnilptr(TYPE_void), (ptr) & rid); bat_destroy(b);
-
+	if (t->type != tt_temp && t->type != tt_session) {
+		/* drop from sys tables */
+		b = bind_bat(tr, find_column(systable, "id"), 1);
+		r = BATmirror(b);
+		rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & t->base.id ));
+		bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+		b = bind_bat(tr, find_column(systable, "schema_id"), 1);
+		bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+		b = bind_bat(tr, find_column(systable, "name"), 1);
+		bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+		b = bind_bat(tr, find_column(systable, "type"), 1);
+		bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+		b = bind_bat(tr, find_column(systable, "query"), 1);
+		bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+		b = bind_dbat(tr, systable, 1);
+		BUNins(b, ATOMnilptr(TYPE_void), (ptr) & rid); bat_destroy(b);
+	}
+	
 	sys_drop_keys(tr, t);
 	sys_drop_idxs(tr, t);
-	if (t->type != tt_view && t->type != tt_temp && 
-	    t->type != tt_session) 
+
+	if (t->type != tt_view && t->type != tt_temp) {
+		if (t->type == tt_session && t->base.flag == TR_NEW) 
+			bm_del_bat( tr->bm, t->dbid );
 		sys_drop_columns(tr, t);
+	}
 
 	systable->base.wtime = tr->stime;
 }
@@ -3555,7 +3596,6 @@ sql_key *mvc_create_kc( mvc *m, sql_key *k, sql_column *c /*, extra options such
 	return k;
 }
 
-
 void mvc_drop_key(mvc * m, sql_schema *s, char *name)
 {
 	sql_trans *tr = m->trans;
@@ -3610,12 +3650,12 @@ mvc_create_idx( mvc * m, sql_table *t, char *name, idx_type it )
 		b = bat_new( TYPE_void, TYPE_oid, t->sz, "mvc_create_idx" );
 		BATseqbase(b,0);
 		snprintf(bname, BUFSIZ, "%s_%s", ni->t->base.name, ni->base.name );
-		ni->bat.bid = bm_add_bat(tr->bm, b->batCacheid, bname, 0);
+		ni->bat.bid = bm_add_bat(tr->bm, b->batCacheid, bname, 0, 1);
 		bat_destroy(b);
 
 		u = bat_new( TYPE_oid, TYPE_oid, t->sz, "mvc_create_idx" );
 		snprintf(bname, BUFSIZ, "U_%s_%s", ni->t->base.name, ni->base.name );
-		ni->bat.ubid = bm_add_bat(tr->bm, u->batCacheid, bname, 0);
+		ni->bat.ubid = bm_add_bat(tr->bm, u->batCacheid, bname, 0, 1);
 		bat_destroy(u);
 	}
 
@@ -3655,12 +3695,12 @@ sql_idx *mvc_create_ic( mvc *m, sql_idx *i, sql_column *c /*, extra options such
 		b = bat_new( TYPE_void, TYPE_int, i->t->sz, "mvc_create_ic" );
 		BATseqbase(b,0);
 		snprintf(bname, BUFSIZ, "%s_%s", i->t->base.name, i->base.name );
-		i->bat.bid = bm_add_bat(tr->bm, b->batCacheid, bname, 0);
+		i->bat.bid = bm_add_bat(tr->bm, b->batCacheid, bname, 0, 1);
 		bat_destroy(b);
 
 		u = bat_new( TYPE_oid, TYPE_int, i->t->sz, "mvc_create_ic" );
 		snprintf(bname, BUFSIZ, "U_%s_%s", i->t->base.name, i->base.name );
-		i->bat.ubid = bm_add_bat(tr->bm, u->batCacheid, bname, 0);
+		i->bat.ubid = bm_add_bat(tr->bm, u->batCacheid, bname, 0, 1);
 		bat_destroy(u);
 	}
 
@@ -3749,16 +3789,18 @@ sql_table *mvc_create_table(mvc * m, sql_schema *s, char *name, table_type type,
 		t->sz = BUFSIZ;
 	cs_add( &s->tables, t, TR_NEW);
 
-	if (t->type != tt_temp && t->type != tt_session){
+	if (t->type != tt_temp){
 		char bname[BUFSIZ];
  		BAT *b = bat_new( TYPE_void, TYPE_oid, t->sz, "mvc_create_table");
 
 		BATseqbase(b, 0);
 		snprintf(bname, BUFSIZ, "D_%s", t->base.name );
-		t->dbid = bm_add_bat(tr->bm, b->batCacheid, bname, 0);
+		t->dbid = bm_add_bat(tr->bm, b->batCacheid, bname, 0, t->type != tt_session);
 		bat_destroy(b);
+	}
 
-		b = bind_bat(tr, find_column(systable, "id"), 1);
+	if (t->type != tt_temp && t->type != tt_session){
+		BAT *b = bind_bat(tr, find_column(systable, "id"), 1);
 		rid = BATcount(b);
 		BUNins(b, (ptr)&rid, & t->base.id ); bat_destroy(b);
 		b = bind_bat(tr, find_column(systable, "schema_id"), 1);
@@ -3823,8 +3865,7 @@ void mvc_drop_table(mvc * m, sql_schema *s, char *name, int cascade)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_drop_table %s %s\n", s->base.name, name);
 
-	if (t->type != tt_temp && t->type != tt_session)
-		sys_drop_table(tr, t);
+	sys_drop_table(tr, t);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	cs_del( &s->tables, n, t->base.flag );
@@ -3908,17 +3949,17 @@ static sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
 	if (bb){
 		snprintf(bname, BUFSIZ, "%s_%s", col->t->base.name, 
 			col->base.name );
-		col->bat.bid = bm_add_bat(tr->bm, bb->batCacheid, bname, 0);
+		col->bat.bid = bm_add_bat(tr->bm, bb->batCacheid, bname, 0, col->t->type != tt_session);
 	}
 
 	if (u){
 		snprintf(bname, BUFSIZ, "U_%s_%s", col->t->base.name, 
 			col->base.name );
-		col->bat.ubid = bm_add_bat(tr->bm, u->batCacheid, bname, 0);
+		col->bat.ubid = bm_add_bat(tr->bm, u->batCacheid, bname, 0, col->t->type != tt_session);
 	}
 
 	col->base.wtime = t->base.wtime = tr->wtime = tr->stime;
-	if (t->type == tt_temp || t->type == tt_session)
+	if (t->type == tt_temp)
 		return col;
 
 	b = bind_bat(tr, find_column(syscolumn, "id"), 1);
@@ -3966,8 +4007,7 @@ sql_column *mvc_create_column(mvc * m, sql_table *t, char *name,
 		fprintf(stderr, "mvc_create_column %s %s %s\n", t->base.name,
 		       name, sqltype);
 
-	if (t->type != tt_view && t->type != tt_temp && 
-	    t->type != tt_session){ 
+	if (t->type != tt_view && t->type != tt_temp){ 
 		b = bat_new( TYPE_void, type, t->sz, "mvc_create_column" );
  		u = bat_new( TYPE_oid, type, t->sz, "mvc_create_column" );
 
@@ -4000,8 +4040,7 @@ void mvc_drop_column(mvc * m, sql_table *t, char *name)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_drop_column %s %s\n", t->base.name, name);
 
-	if (t->type != tt_view && t->type != tt_temp && 
-	    t->type != tt_session) {
+	if (t->type != tt_view && t->type != tt_temp) {
 		sys_drop_column(tr, col);
 	}
 
@@ -4136,9 +4175,3 @@ int mvc_result_value( mvc *m, char *name, char *typename, int digits, int scale,
 	return 0;
 }
 
-int mvc_debug_on( mvc *m, int flg)
-{
-	if (m->debug && m->debug->val.ival&flg)
-		return 1;
-	return 0;
-}

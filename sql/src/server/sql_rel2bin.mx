@@ -40,6 +40,7 @@ sql_export stmt *rel2bin( mvc *c, stmt *s );
 @c
 
 #include "sql_rel2bin.h"
+#include "sql_env.h"
 #include <stdio.h>
 
 static int cmp_sel2( stmt *sel, st_type *tpe )
@@ -478,7 +479,7 @@ stmt *rel2bin( mvc *c, stmt *s )
 	case st_atom: 
 	case st_find: case st_exist: 
 	case st_bulkinsert: 
-	case st_assign: case st_var:
+	case st_var:
 
 		s->optimized = 2;
 		return stmt_dup(s);
