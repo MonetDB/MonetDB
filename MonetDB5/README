@@ -35,3 +35,14 @@ at least make sure that:
 - the <arch>/lib/ directory is in LD_LIBRARY_PATH
 
 You might try creating the 'gold' demo database, in 'scripts/gold'
+
+Profiling
+=====================
+Goto the Linux tree and clean it 'gmake clean'
+run configure with --enable-debug --enable-instrument
+to test performance of test400a
+
+ LD_PRELOAD=/usr/local/lib/libfnccheck.so Mserver tst400a
+fncdump +calls -memory -no-unresolved -no-bad-malloc -no-bad-free -no-bad-realloc `which Mserver` > prof+mem.out
+
+zie also ~niels/FAQ

@@ -1,0 +1,11 @@
+- The V4 testing scheme has not been implemented yet
+- The group and radix modules should be brought in line with V4
+- The XML manual generation routines in catalog module should be implemented
+- The frontends should use the stream package
+- Multi-client access has not been tested yet
++ The SQL compiler server part should be rolled forward .
+- Several of the MIL scripts associated with the modules have not
+  been converted yet
+- Name cleansing over all modules/functions is needed.
+- Inclusion of the x100 instruction set
+- Stream (co-routine) function support in the kernel
