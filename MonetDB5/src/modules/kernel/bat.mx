@@ -602,10 +602,6 @@ command hasHash(b:bat[:any,:any]):bit
 address BKChasHash;
 command setHash(b:bat[:any,:any],prop:bit):bit 
 address BKCsetHash;
-command hasIndex(b:bat[:any,:any]):bit 
-address BKChasIndex;
-command setIndex(b:bat[:any,:any],prop:bit):bit 
-address BKCsetIndex;
 
 @- Synced BATs
 The binary model of Monet has important advantages when working in
@@ -1164,16 +1160,6 @@ int CMDinfo(BAT **retval, BAT *b){
         BUNins(bn, "theapdirty", b->theapdirty?"dirty":"clean");
 	infoHeap(bn, &b->theap, "theap.");
 
-        BUNins(bn, "hacctype", ACCname(b->hacctype));
-        BUNins(bn, "haccdirty", b->haccdirty?"dirty":"clean");
-        BUNins(bn, "haccCopiedtodisk", local_itoa(b->haccCopiedtodisk));
-	infoHeap(bn, &b->haccelerator, "haccelerator.");
-
-        BUNins(bn, "tacctype", ACCname(b->tacctype));
-        BUNins(bn, "taccdirty", b->taccdirty?"dirty":"clean");
-        BUNins(bn, "taccCopiedtodisk", local_itoa(b->taccCopiedtodisk));
-	infoHeap(bn, &b->taccelerator, "taccelerator.");
- 
         /* dump index information */
         if (b->hhash_heap) {
                 HASHinfo(bn, &b->hhash, "hhash->");
@@ -1196,8 +1182,6 @@ int CMDbatsize(int *tot, BAT *b){
 		size += ROUND_UP(b->batBuns->size, blksize);
 		if (b->hheap.base) size += ROUND_UP(b->hheap.size, blksize);
 		if (b->theap.base) size += ROUND_UP(b->theap.size, blksize);
-		if (b->haccelerator.base) size += ROUND_UP(b->haccelerator.size, blksize);
-		if (b->taccelerator.base) size += ROUND_UP(b->taccelerator.size, blksize);
 		if (b->hhash_heap) size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
 		if (b->thash_heap) size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
 	}
@@ -1317,8 +1301,6 @@ int CMDmmap(BAT **r, BAT *b, int *bns, int *hhp, int *thp, int *hacc, int *tacc)
 	@:change_heap(bns,(*b->batBuns))@
 	@:change_heap(hhp,b->hheap)@
 	@:change_heap(thp,b->theap)@
-	@:change_heap(hacc,b->haccelerator)@
-	@:change_heap(tacc,b->taccelerator)@
 	if (BATmmap(*r=b, *bns, *hhp, *thp, *hacc, *tacc) == 0) {
 	        BBPfix(b->batCacheid);
 		return GDK_SUCCEED;
@@ -2509,24 +2491,6 @@ str BKCsetHash(bit *ret, int *bid, bit *prop) {
 	BAThash(b,0);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
-}
-str BKChasIndex(bit *ret, int *bid) {
-	BAT *b;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("bat.hasIndex", "Cannot access descriptor");
-    }
-	*ret = b->hacctype == 2;
-	BBPunfix(b->batCacheid);
-	return throwMessage("bat.hasIndex", " not yet implemented");
-}
-str BKCsetIndex(bit *ret, int *bid, bit *prop) {
-	BAT *b;
-	(void) ret; (void) prop; /* fool compiler */
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("bat.setIndex", "Cannot access descriptor");
-    }
-	BBPunfix(b->batCacheid);
-	return throwMessage("bat.setIndex", " not yet implemented");
 }
 
 str BKCsetSequenceBase(int *r, int *bid, oid* o){
