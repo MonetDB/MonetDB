@@ -1006,7 +1006,9 @@ socket_write(stream *s, void *buf, size_t elmsize, size_t cnt)
 	size_t size = elmsize*cnt;
 	ssize_t sz;
 
-	assert(!s->errnr);
+	if (s->errnr)
+		return -1;
+	
 	if (size == 0)
 		return cnt;
 #ifdef NATIVE_WIN32
@@ -1027,7 +1029,9 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	ssize_t nr = 0;
 	size_t res = 0, size = elmsize*cnt;
 
-	assert(!s->errnr);
+	if (s->errnr)
+		return -1;
+	
 	while (res < size && (
 #ifdef NATIVE_WIN32
 		(nr = recv(s->stream_data.i, (void *) ((char *) buf + res), size-res, 0)) > 0
@@ -1185,10 +1189,12 @@ ssl_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	SSL *ssl;
 	size_t res = 0, size = elmsize * cnt;
 
+	if (s->errnr);
+		return -1;
+	
 	assert(s->stream_data.p);
 	ssl = ((struct ssl_data *) s->stream_data.p)->ssl;
 	assert(ssl);
-	assert(!s->errnr);
 	while (res < size) {
 		int nr, err;
 
