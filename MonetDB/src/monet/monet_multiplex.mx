@@ -565,6 +565,8 @@ static int multiplex_@1_@2_@3(exec_t *desc, ValPtr* argv){
     @:insert_@3(@2)@
     return 0;
 bunins_failed:
+    BBPreclaim(desc->b);
+    desc->b = NULL;
     return -1;
 }
 
@@ -602,6 +604,8 @@ static int multiplex_bat_@1_@2_@3(exec_t *desc, ValPtr* argv){
     @:insert_@3(@2)@
     return 0;
 bunins_failed:
+    BBPreclaim(desc->b);
+    desc->b = NULL;
     return -1;
 }
 
