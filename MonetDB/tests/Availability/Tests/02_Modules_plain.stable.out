@@ -434,8 +434,8 @@ Module: "counters"
 
 Module: "ddbench"
 
-[ 55 ]
-[ 55 ]
+[ 56 ]
+[ 56 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature										| help																																													  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -480,6 +480,7 @@ Module: "ddbench"
 [ "subselect",		  "COMMAND:   ",  "subselect(BAT[void,bit32], BAT[oid,any::1], any::1, any::1) : BAT[void,bit32]",	  "do a bitselect on the subset indicated by the first BAT param"																																					  ]
 [ "table",		  "PROC:      ",  "table(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",				  "not available"																																											  ]
 [ "test_ddbench",	  "PROC:      ",  "test_ddbench() : void",								  "not available"																																											  ]
+[ "test_streams",	  "PROC:      ",  "test_streams() : void",								  "not available"																																											  ]
 [ "test_xtables",	  "PROC:      ",  "test_xtables() : void",								  "not available"																																											  ]
 [ "tobat",		  "COMMAND:   ",  "tobat(BAT[void,bit32]) : BAT[oid,void]",						  "convert a bat[void,bit32] bitmap selection into a BAT of oids"																																					  ]
 [ "val_bitselect",	  "COMMAND:   ",  "val_bitselect(BAT[oid,any::1], any::1) : BAT[void,bit32]",				  "do a range-scan equiselect, but output the result as a bitmask, partitioned\n  in 32-bits integers. "																																  ]
@@ -534,8 +535,8 @@ Module: "decimal"
 
 Module: "enum"
 
-[ 22 ]
-[ 22 ]
+[ 23 ]
+[ 23 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature								| help										  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -560,6 +561,7 @@ Module: "enum"
 [ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",						  "not available"								  ]
 [ "isenum",		  "COMMAND:   ",  "isenum(int) : bit",							  "returns true iff tpe is an enumerated type"					  ]
 [ "lower",		  "COMMAND:   ",  "lower(int, any) : any",						  "encode to the lowest value in the encoded domain that is larger than v"	  ]
+[ "test_streams",	  "PROC:      ",  "test_streams() : void",						  "not available"								  ]
 [ "upper",		  "COMMAND:   ",  "upper(int, any) : any",						  "encode to the hightes value in the encoded domain that is smaller than v"	  ]
 
 Module: "lock"
@@ -582,8 +584,8 @@ Module: "lock"
 
 Module: "mapi"
 
-[ 19 ]
-[ 19 ]
+[ 20 ]
+[ 20 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature						| help																							  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -606,43 +608,59 @@ Module: "mapi"
 [ "stream_line",  "PROC:      ",  "stream_line(Stream) : str",				  "Read a string from <S> until a newline."																		  ]
 [ "stream_strip", "PROC:      ",  "stream_strip(Stream, str) : str",			  "Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string."											  ]
 [ "stream_until", "COMMAND:   ",  "stream_until(Stream, str) : str",			  "read a string from <S> until the <stop> word"																	  ]
+[ "test_streams",	  "PROC:      ",  "test_streams() : void",				  "not available"																					  ]
 
 Module: "mmath"
 
-[ 24 ]
-[ 24 ]
+[ 39 ]
+[ 39 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature			| help																																											  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "acos",	  "COMMAND:   ",  "acos(dbl) : dbl",		  "The acos(x) function calculates the arc cosine of x;\nthat is the value whose cosine is x. The value is returned in radians\nand is mathematically defined to be between 0 and PI (inclusive)."																			  ]
+[ "acos",	  "PROC:      ",  "acos(flt) : flt",		  "not available"																																									  ]
 [ "asin",	  "COMMAND:   ",  "asin(dbl) : dbl",		  "The asin(x) function calculates the arc sine of x;\nthat is the value whose sine is x. The value is returned in radians\nand is mathematically defined to be between -PI/20 and -PI/2 (inclusive)."																			  ]
+[ "asin",	  "PROC:      ",  "asin(flt) : flt",		  "not available"																																									  ]
 [ "atan",	  "COMMAND:   ",  "atan(dbl) : dbl",		  "The atan(x) function calculates the arc tangent of x;\nthat is the value whose tangent is x. The value is returned in radians\nand is mathematically defined to be between -PI/2 and PI/2 (inclusive)."																		  ]
+[ "atan",	  "PROC:      ",  "atan(flt) : flt",		  "not available"																																									  ]
 [ "atan2",	  "COMMAND:   ",  "atan2(dbl, dbl) : dbl",	  "The atan2(x,y) function calculates the arc tangent of the two\nvariables x and y. It is similar to calculating the arc\ntangent of y / x, except that the signs of both arguments\nare used to determine the quadrant of the result.\nThe value is returned in radians and is mathematically defined\nto be between -PI/2 and PI/2 (inclusive)."	  ]
 [ "ceil",	  "COMMAND:   ",  "ceil(dbl) : dbl",		  "The ceil(x) function rounds x upwards to the nearest integer."																																			  ]
+[ "ceil",	  "PROC:      ",  "ceil(flt) : flt",		  "not available"																																									  ]
 [ "cos",	  "COMMAND:   ",  "cos(dbl) : dbl",		  "The cos(x) function returns the cosine of x,\nwhere x is given in radians. The return value is between -1 and 1."																													  ]
+[ "cos",	  "PROC:      ",  "cos(flt) : flt",		  "not available"																																									  ]
 [ "cosh",	  "COMMAND:   ",  "cosh(dbl) : dbl",		  "The cosh() function  returns the hyperbolic cosine of x,\nwhich is defined mathematically as (exp(x) + exp(-x)) / 2."																												  ]
+[ "cosh",	  "PROC:      ",  "cosh(flt) : flt",		  "not available"																																									  ]
 [ "exp",	  "COMMAND:   ",  "exp(dbl) : dbl",		  "The exp(x) function returns the value of e\n(the base of natural logarithms) raised to the power of x."																														  ]
+[ "exp",	  "PROC:      ",  "exp(flt) : flt",		  "not available"																																									  ]
 [ "fabs",	  "COMMAND:   ",  "fabs(dbl) : dbl",		  "The fabs(x) function  returns  the  absolute value of the \nfloating-point number x."																																  ]
 [ "finite",	  "COMMAND:   ",  "finite(dbl) : bit",		  "The finite(x) function returns true if x is neither infinite nor a 'not-a-number' (NaN) value, and false otherwise."																													  ]
 [ "floor",	  "COMMAND:   ",  "floor(dbl) : dbl",		  "The floor(x) function rounds x downwards to the nearest integer."																																			  ]
+[ "floor",	  "PROC:      ",  "floor(flt) : flt",		  "not available"																																									  ]
 [ "fmod",	  "COMMAND:   ",  "fmod(dbl, dbl) : dbl",	  "The fmod(x,y) function computes the remainder of dividing x by y.\nThe return value is x - n * y, where n is the quotient of x / y,\nrounded towards zero to an integer."																						  ]
 [ "isinf",	  "COMMAND:   ",  "isinf(dbl) : int",		  "The isinf(x) function returns -1 if x represents negative infinity, 1 if x represents positive infinity, and 0 otherwise."																												  ]
 [ "isnan",	  "COMMAND:   ",  "isnan(dbl) : bit",		  "The isnan(x) function returns true if x is 'not-a-number' (NaN), and false otherwise."																																  ]
 [ "log",	  "COMMAND:   ",  "log(dbl) : dbl",		  "The log(x) function returns the natural logarithm of x."																																				  ]
+[ "log",	  "PROC:      ",  "log(flt) : flt",		  "not available"																																									  ]
 [ "log10",	  "COMMAND:   ",  "log10(dbl) : dbl",		  "The log10(x) function returns the base-10 logarithm of x."																																				  ]
+[ "log10",	  "PROC:      ",  "log10(flt) : flt",		  "not available"																																									  ]
 [ "pow",	  "COMMAND:   ",  "pow(dbl, dbl) : dbl",	  "The pow(x,y) function  returns the value of x raised to the power of y."																																		  ]
 [ "round",	  "COMMAND:   ",  "round(dbl, int) : dbl",	  "The round(n, m) returns n rounded to m places to the right of the\ndecimal point; if m is omitted, to 0 places. m can be negative to\nround off digits left of the decimal point. m must be an integer."																		  ]
 [ "sin",	  "COMMAND:   ",  "sin(dbl) : dbl",		  "The sin(x) function returns the cosine of x,\nwhere x is given in radians. The return value is between -1 and 1."																													  ]
+[ "sin",	  "PROC:      ",  "sin(flt) : flt",		  "not available"																																									  ]
 [ "sinh",	  "COMMAND:   ",  "sinh(dbl) : dbl",		  "The sinh() function  returns  the  hyperbolic sine of x,\nwhich is defined mathematically as (exp(x) - exp(-x)) / 2."																												  ]
+[ "sinh",	  "PROC:      ",  "sinh(flt) : flt",		  "not available"																																									  ]
 [ "sqrt",	  "COMMAND:   ",  "sqrt(dbl) : dbl",		  "The sqrt(x) function returns the non-negative square root of x."																																			  ]
+[ "sqrt",	  "PROC:      ",  "sqrt(flt) : flt",		  "not available"																																									  ]
 [ "tan",	  "COMMAND:   ",  "tan(dbl) : dbl",		  "The tan(x) function returns the tangent of x,\nwhere x is given in radians"																																		  ]
+[ "tan",	  "PROC:      ",  "tan(flt) : flt",		  "not available"																																									  ]
 [ "tanh",	  "COMMAND:   ",  "tanh(dbl) : dbl",		  "The tanh() function returns the hyperbolic tangent of x,\nwhich is defined mathematically as sinh(x) / cosh(x)."																													  ]
+[ "tanh",	  "PROC:      ",  "tanh(flt) : flt",		  "not available"																																									  ]
 [ "test_mmath",	  "PROC:      ",  "test_mmath() : void",	  "not available"																																									  ]
 
 Module: "monettime"
 
-[ 67 ]
-[ 67 ]
+[ 70 ]
+[ 70 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature														| help													  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -663,6 +681,9 @@ Module: "monettime"
 [ "addmonths",		  "COMMAND:   ",  "addmonths(date, int) : date",											  "returns the date after a number of months (possibly negative)."					  ]
 [ "addyears",		  "COMMAND:   ",  "addyears(date, int) : date",												  "returns the date after a number of years (possibly negative)."					  ]
 [ "compute",		  "COMMAND:   ",  "compute(rule, int) : date",												  "compute the date from a rule in a certain year (!DS2.2)."						  ]
+[ "current_date",	  "PROC:      ",  "current_date() : any",												  "not available"											  ]
+[ "current_time",	  "PROC:      ",  "current_time() : any",												  "not available"											  ]
+[ "current_timestamp",	  "PROC:      ",  "current_timestamp() : any",												  "not available"											  ]
 [ "date",		  "COMMAND:   ",  "date(int, int, int) : date",												  "creates a date from (year,month,day) parameters."							  ]
 [ "date",		  "COMMAND:   ",  "date(timestamp) : date",												  "extracts date from timestamp (in the local timezone)."						  ]
 [ "date",		  "COMMAND:   ",  "date(timestamp, tzone) : date",											  "extracts date from timestamp in a certain tzone (!DS2.2)."						  ]
@@ -914,8 +935,9 @@ Module: "stats"
 
 Module: "streams"
 
-[ 35 ]
-[ 35 ]
+#BBPreclaim: bat(28) view=0 lrefs=0 plevel=0 ref=2 stat=129
+[ 36 ]
+[ 36 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature						| help									  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -954,9 +976,11 @@ Module: "streams"
 [ "stream_readInt",	  "COMMAND:   ",  "stream_readInt(Stream) : int",			  "write an integer on the stream"					  ]
 [ "stream_write",	  "COMMAND:   ",  "stream_write(Stream, str) : void",			  "write data on the stream"						  ]
 [ "stream_writeInt",	  "COMMAND:   ",  "stream_writeInt(Stream, int) : void",		  "write an integer on the stream"					  ]
+[ "test_streams",	  "PROC:      ",  "test_streams() : void",				  "not available"							  ]
 
 Module: "tcpip"
 
+!WARNING: TCPepilogue: terminate 0 listeners
 [ 21 ]
 [ 21 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -1032,8 +1056,9 @@ Module: "url"
 
 Module: "xtables"
 
-[ 20 ]
-[ 20 ]
+#BBPreclaim: bat(28) view=0 lrefs=0 plevel=0 ref=2 stat=129
+[ 26 ]
+[ 26 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature									| help																																						  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -1054,7 +1079,13 @@ Module: "xtables"
 [ "orderby_table",	  "PROC:      ",  "orderby_table(str, str, ..BAT[any::1,any]..) : any",				  "not available"																																				  ]
 [ "print",		  "PROC:      ",  "print(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",			  "not available"																																				  ]
 [ "table",		  "PROC:      ",  "table(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",			  "not available"																																				  ]
+[ "test_xtables",	  "PROC:      ",  "test_xtables() : void",							  "not available"																																				  ]
 [ "tunique",		  "COMMAND:   ",  "tunique(BAT[oid,any::1]) : BAT[any::1,void]",				  "get all unique tail values. Optimized for getting all unique\n         oids from a cross-table computed by CTgroup."																								  ]
+[ "xtable_histo_direct",  "PROC:      ",  "xtable_histo_direct(..any..) : any",						  "not available"																																				  ]
+[ "xtable_histo_remap",	  "PROC:      ",  "xtable_histo_remap(..any..) : any",						  "not available"																																				  ]
+[ "xtable_print",	  "PROC:      ",  "xtable_print(..any..) : any",						  "not available"																																				  ]
+[ "xtable_realloc",	  "PROC:      ",  "xtable_realloc(any, any) : any",						  "not available"																																				  ]
+[ "xtable_test",	  "PROC:      ",  "xtable_test(any, any, any, any) : any",					  "not available"																																				  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[oid,bit], BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[void,bit], BAT[void,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
 

@@ -522,7 +522,7 @@ Start of MIL prelude.
 #-------------------------------------------------------------------------------------------------------------------------#
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_environment",	  "str",  "str",  24,	  0,	  "dirty",	  "load", "tran", 2,	  0,		  0	  ]
+[ "monet_environment",	  "str",  "str",  25,	  0,	  "dirty",	  "load", "tran", 2,	  0,	  0	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  559,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  595,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_fcn_dat",	  "oid",  "str",  559,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
@@ -531,8 +531,8 @@ Start of MIL prelude.
 [ "monet_fcn_imp",	  "oid",  "ptr",  595,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_fcn_mid",	  "oid",  "oid",  559,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  595,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1476,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1472,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
+[ "monet_fcn_sig",	  "oid",  "str",  40,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  595,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_fcntbl",	  "str",  "oid",  595,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
@@ -629,6 +629,7 @@ unknown("D:\\TmpDir\\mone#"                            ]
 [ "sql_api",		  "sql(default-schema)"				  ]
 [ "sql_user",		  "monetdb"					  ]
 [ "sql_schema",		  "default-schema"				  ]
+[ "sql_logdir",		  "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm/log"	  ]
 [ "monet_cwd",		  "/db1/niels/MonetDB/IRIX64/Tests/src/tools"	  ]
 #-------------------------------------------------------------------------#
 # BAT:			  monet_environment				  #
@@ -657,6 +658,7 @@ unknown("D:\\TmpDir\\mone#"                            ]
 [ "sql_api",		  "sql(default-schema)"				  ]
 [ "sql_user",		  "monetdb"					  ]
 [ "sql_schema",		  "default-schema"				  ]
+[ "sql_logdir",		  "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm/log"	  ]
 [ "monet_cwd",		  "/db1/niels/MonetDB/IRIX64/Tests/src/tools"	  ]
 #-------------------------#
 # BAT:		  io	  #
@@ -737,6 +739,7 @@ unknown("D:\\TmpDir\\mone#"                            ]
 [ "sql_api",		  "sql(default-schema)"				  ]
 [ "sql_user",		  "monetdb"					  ]
 [ "sql_schema",		  "default-schema"				  ]
+[ "sql_logdir",		  "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm/log"	  ]
 [ "monet_cwd",		  "/db1/niels/MonetDB/IRIX64/Tests/src/tools"	  ]
 #-------------------------#
 # BAT:		  io	  #
@@ -1302,7 +1305,7 @@ dir();
 #-------------------------------------------------------------------------------------------------------------------------#
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_environment",	  "str",  "str",  24,	  0,	  "dirty",	  "load", "tran", 2,	  0,		  0	  ]
+[ "monet_environment",	  "str",  "str",  25,	  0,	  "dirty",	  "load", "tran", 2,	  0,	  0	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  559,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  595,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_fcn_dat",	  "oid",  "str",  559,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
@@ -1311,8 +1314,8 @@ dir();
 [ "monet_fcn_imp",	  "oid",  "ptr",  595,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_fcn_mid",	  "oid",  "oid",  559,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  595,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1476,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1472,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
+[ "monet_fcn_sig",	  "oid",  "str",  40,	  0,	  "dirty",	  "load", "tran", 1,	  0,	  0	  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  595,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_fcntbl",	  "str",  "oid",  595,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
@@ -1419,6 +1422,7 @@ env();
 [ "sql_api",		  "sql(default-schema)"				  ]
 [ "sql_user",		  "monetdb"					  ]
 [ "sql_schema",		  "default-schema"				  ]
+[ "sql_logdir",		  "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm/log"	  ]
 [ "monet_cwd",		  "/db1/niels/MonetDB/IRIX64/Tests/src/tools"	  ]
 environment().print();
 #-------------------------------------------------------------------------#
@@ -1448,6 +1452,7 @@ environment().print();
 [ "sql_api",		  "sql(default-schema)"				  ]
 [ "sql_user",		  "monetdb"					  ]
 [ "sql_schema",		  "default-schema"				  ]
+[ "sql_logdir",		  "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm/log"	  ]
 [ "monet_cwd",		  "/db1/niels/MonetDB/IRIX64/Tests/src/tools"	  ]
 io().print();
 #-------------------------#
@@ -1533,6 +1538,7 @@ view_gdk_env().print();
 [ "sql_api",		  "sql(default-schema)"				  ]
 [ "sql_user",		  "monetdb"					  ]
 [ "sql_schema",		  "default-schema"				  ]
+[ "sql_logdir",		  "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm/log"	  ]
 [ "monet_cwd",		  "/db1/niels/MonetDB/IRIX64/Tests/src/tools"	  ]
 view_gdk_io().print();
 #-------------------------#
