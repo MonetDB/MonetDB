@@ -6,10 +6,10 @@ In line with previous versions of Monet it is possible to extend
 the functionalty using user-defined modules. The corresponding code
 is dynamically loaded when the MAL import command is encountered 
 from a specific file-system location.
-The user-defined modules recide in the library  MONETDBFARM/<dbname>/lib/, 
+The user-defined modules recide in the library  MONETPREFIX/<dbname>/lib/, 
 they are recognized  as lib_<modulename>.so names.
 The corresponding signature files are maintained 
-in MONETDBFARM/<dbname>/mal/<modulepath>/<modulename>.mal.
+in MONETPREFIX/<dbname>/mal/<modulepath>/<modulename>.mal.
 
 [reminder, directory structure of a database dir:
 .../bat
@@ -19,8 +19,6 @@ in MONETDBFARM/<dbname>/mal/<modulepath>/<modulename>.mal.
 .../mal		# all scripts needed by the MAL interpreter
 .../mil		# scripts in MIL format
 .../sql
-.../src		# database specific stable code
-.../users
 ]
 Mcreatedb should assess existence of a link-to/copy-of the distributed
 modules (eg algebra,arithm,..). Alternatively, the library should be
@@ -55,14 +53,14 @@ For the time being we assume that all commands are statically linked,
 because we now focus on the squeezer.
 @h
 #ifndef _MAL_LINKER_H
-#include "monet.h"
+/* #include "monet.h"*/
 #include "mal_instruction.h"
 #include <dlfcn.h>
 
 /* #define DEBUG_MAL_LINKER*/
 #define MONET64 1
 extern void 	*getAddress(str fcnname);
-extern void 	*loadModuleLibrary(str dbname, str modname);
+extern void 	*loadModuleLibrary(str modname);
 extern int 	initLibraries(str dbname);
 
 #endif
@@ -97,7 +95,7 @@ void *getAddress(str fcnname){
 
 @+ Module loading
 The first location to search for the module is the database for which
-the server has been started, i.e. look into MONETDBFARM/<dbname>/lib.
+the server has been started, i.e. look into MONETPREFIX/<dbname>/lib.
 
 Loading further relies on the Linux policy to search for the module
 location in the following order: 1) the colon-separated list of
@@ -110,18 +108,29 @@ before the module is unloaded.
 A module loading conflict emerges if a function is redefined.
 A duplicate load is simply ignored.
 @c
-#define LIBPATH "/ufs/monet/Current_V4-1/GNU_32/Linux/lib"
+#define LIBPATH "lib/Monet"
 
-void *loadModuleLibrary(str dbname, str modname){
+void *loadModuleLibrary(str modname){
 	char buf[MAXPATHLEN];
 	void *handle = NULL;
+	str path ="";
+	str library=0;
 
-	if( dbname == NULL) dbname = LIBPATH;
+	if( (library=strrchr(modname,DIR_SEP))  != NULL){
+		*library=0;
+		library++;
+		path = modname;
+	} else library= modname;
+
 #ifdef DEBUG_MAL_LINKER
-	printf("loadModuleLibrary:%s/lib_%s.so\n",dbname,modname);
+	printf("load module:path=%s, library=%s\n",library,modname);
 #endif
-	if( dbname != NULL && modname != NULL && modname[0]!='/') {
-		sprintf(buf,"%s/lib_%s.so", dbname, modname);
+	if( modname != NULL && modname[0]!='/') {
+		sprintf(buf,"%s/lib/lib_%s.so", GDKdirStr, library);
+		SLASH_2_DIR_SEP(buf);
+#ifdef DEBUG_MAL_LINKER
+	printf("loadModuleLibrary:%s\n",buf);
+#endif
 		if( access(buf,R_OK)== 0) {
 			handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
 			if(handle!= NULL && dlerror() != NULL){
@@ -135,9 +144,13 @@ void *loadModuleLibrary(str dbname, str modname){
 			return handle;
 		}
 	} 
-	sprintf(buf,"%s/%s", dbname, modname);
+#ifdef DEBUG_MAL_LINKER
+	printf("try distribution\n");
+#endif
+	sprintf(buf,"%s/%s/lib_%s.so", GDKdistrStr, LIBPATH, library);
+	SLASH_2_DIR_SEP(buf);
 	if( access(buf,R_OK) == 0) {
-		handle = dlopen(modname, RTLD_NOW | RTLD_GLOBAL);
+		handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
 		if( handle==NULL && dlerror() != NULL){
 			sprintf(buf,"loadModuleLibrary(2):%s\n", dlerror());
 			GDKerror(buf);
@@ -145,7 +158,7 @@ void *loadModuleLibrary(str dbname, str modname){
 		}
 	}
 #ifdef DEBUG_MAL_LINKER
-	printf("loadModuleLibrary:%s\n",handle==NULL?"failed":"succeeded");
+	printf("load:%s:%s\n",buf,handle==NULL?"failed":"succeeded");
 #endif
 	return handle;
 }
@@ -156,7 +169,7 @@ system kernel and its functionaltiy is needed to setup
 server-speciific administration tables.
 
 @= systemLoad
-	if( loadModuleLibrary(dbname,"@1") == NULL )
+	if( loadModuleLibrary("@1") == NULL )
 	{
 		GDKerror("failure to load libbat.so\n"); 
 		return 1;
@@ -171,7 +184,6 @@ int initLibraries(str dbname) {
 	@:systemLoad(sys)@
 	@:systemLoad(kernel)@
 	@:systemLoad(trans)@
-
 	return 0;
 }
 

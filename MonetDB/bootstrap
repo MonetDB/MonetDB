@@ -18,10 +18,6 @@ aclocal -I .
 autoheader
 automake -a -c
 
-# dirty hack, needed because automake 1.4 generates the wrong dependency
-#echo "mel_tab.h: mel_tab.cc" >> src/mel/Makefile.in
-perl -i -p -e  's/tab\.hh/tab.h/g' src/mel/Makefile.in
-
 #autoupdate
 autoconf
 

@@ -1,0 +1,49 @@
+# A collection of forloops, which should not execute
+foreach	H := batoperatie;
+	Tail:= b.fetch(H);
+	#body
+redo 	H;
+end	H;
+
+
+# de andere loops zijn eenvoudig. 'goto' is altijd beperkt tot
+# 'randen' van het blok. (redo L, leave L)
+# een while loop
+barrier L := b.hasMoreElements();
+	H:= b.head();
+
+	v:= b.nextElement();
+redo	L;
+end	L;
+	
+#een do-while loop
+	entry:= true;
+barrier M:= entry or exittest;
+	entry:= false;
+	# rest
+redo	M;
+end	M;
+
+#een for-loop 
+	i:= 1;
+barrier N:= i<10;
+	#body
+	i:=i+1;
+redo	N;
+end	N;
+
+
+# de if-then en if-then-else constructies
+
+barrier	FT:= booleanexpr;
+	# thenpart
+end	FT;
+
+barrier	FTE:= booleanexpr;
+	# thenpart
+end	FTE;
+barrier FS:= ~ FTE;
+	#elsepart
+end	FS;
+
+

@@ -1,0 +1,6 @@
+# check in-compatible polmorphic types
+
+command f(any::1 a, any::2 b, any::1 c) :bat[any::1,any::2] =f;
+
+b:= f(1,2,"help");
+a:= f(1,2,1);

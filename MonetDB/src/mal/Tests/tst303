@@ -1,0 +1,9 @@
+# Exceptions can be explicitly raised
+
+raise	IllegalAccess :="new exception";
+	c4:= "should not come here";
+#exception block;
+catch	IllegalAccess;
+	n0:=0;
+end	IllegalAccess;
+	post:= "done";

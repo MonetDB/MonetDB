@@ -1,0 +1,13 @@
+# This simple loop can be used in debugging mode to 
+# analyse the basic interpreter loop
+
+	i:=0;
+barrier	v:=1;
+	leave v;
+	i:= 1;
+barrier t:= i<3;
+end	v;
+	i:=i+1;
+	redo t;
+end	t;
+	i:= 0;

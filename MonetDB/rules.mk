@@ -1,5 +1,4 @@
 
-MEL=$(top_builddir)/src/mel/mel
 MX=$(top_builddir)/src/utils/Mx/Mx
 CP=cp
 MV=mv
@@ -48,17 +47,15 @@ MXFLAGS= -notouch
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
 
+%.mal: %.mx
+	$(MX) $(MXFLAGS) -x mal $<
+
 %.mil: %.mx
 	$(MX) $(MXFLAGS) -x mil $<
+	$(MX) $(MXFLAGS) -x mal $<	# should be removed!
 
 %: %.mx
 	$(MX) $(MXFLAGS) -x sh $<
-
-%.proto.h: %.m
-	$(MEL) $(INCLUDES) -o $@ -proto $<
-
-%.glue.c: %.m
-	$(MEL) $(INCLUDES) -o $@ -glue $<
 
 %.tex: %.mx
 	cat $< > /tmp/doc.mx

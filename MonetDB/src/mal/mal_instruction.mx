@@ -51,6 +51,7 @@ from the instruction record.
 #define _MAL_INSTR_H
 
 #include "mal_type.h"
+#include "mal.h"
 
 #define DEBUG_MAL_INSTR
 #define MAXARG 64
@@ -163,7 +164,6 @@ extern void printInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
 extern void promptInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
 extern void freeMalBlk(MalBlkPtr mb);
 extern str raiseException(str name, str msg);
-extern void setXlisting(int i);
 
 #endif /*  _MAL_INSTR_H*/
 @c
@@ -632,9 +632,6 @@ to leave information on the signature behind.
 @c
 #define advance(X)  while(*(X))(X)++;
 
-static int xlisting;
-void setXlisting(int i){ xlisting=i;}
-
 str hiddenInstructionArgs(MalBlkPtr mb,InstrPtr p,str s){
 	int i;
 	
@@ -684,7 +681,7 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
 		sprintf(t," = %s;",mb->sym->binding);
 	else	sprintf(t,";");
 #ifdef DEBUG_MAL_INSTR
-	if( xlisting){
+	if( mal_xlisting){
 		advance(t);
 		hiddenInstructionArgs(mb,p,t);
 	}
@@ -774,7 +771,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 	advance(t);
 	sprintf(t,";");
 #ifdef DEBUG_MAL_INSTR
-	if( xlisting){
+	if( mal_xlisting){
 		advance(t);
 		t= hiddenInstructionArgs(mb,p,t);
 	}

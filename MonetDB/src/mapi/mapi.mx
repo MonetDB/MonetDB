@@ -21,7 +21,7 @@ This module contains a simple interface for internet connections.
 
 #define MAPIPORT	50000
 #define MAPIMAXUSERS 	5
-#include <mapi.proto.h>
+/* #include <mapi.proto.h>*/
 
 #endif /* MAPI_H */
 @c
@@ -98,7 +98,6 @@ Get the new information for the server socket and start listening.
 			char *name = (char*) alloca(BUFSIZ), *user = name;
 			FILE *fdin = fdopen(msgsock, "r");
 			FILE *fdout = fdopen(msgsock, "w");
-			Client c;
 
 			if (fdin == 0){
 				GDKsyserror("monetServer: fdin problems\n");
@@ -114,8 +113,8 @@ Get the new information for the server socket and start listening.
 				*user = fgetc(fdin);
 			}
 			*user = 0;
-			c = initClient(GDKstrdup(name), GDKstrdup(monet_prompt), TRUE);
-			if (c == 0) {
+			fprintf(stderr,"create a client context \n");
+			if (0 == 0) {
 				fprintf(fdout, "Failed to init client for user %s\n", name );
 				fflush(fdout);
 				(void) fclose(fdin);
@@ -123,20 +122,6 @@ Get the new information for the server socket and start listening.
 				close(msgsock);
 				continue;
 			}
-        		c->login = time(0);
-			c->listing = 0;
-			c->socket = msgsock;
-			c->fdin = fdin;
-			c->fdout = fdout;
-@-
-changed setbuf to setbuffer to avoid unintentional buffer overflow.
-@c
-                        setbuffer(c->fdout, c->output, 4096);
-			c->mode = BLOCKMODE;
-			TBL_initclient(c);
-			scheduleClient(c);
-			PARDEBUG THRprintf(GDKerr, "client accepted %d %d\n", 
-					fileno(c->fdin), fileno(c->fdout));
 		}
 	} while (1);
 	return GDK_SUCCEED;

@@ -35,7 +35,7 @@ typedef enum {
     Title, Author, Version, Date, InHide, OutHide, 
     Module, Section, Subsection, Paragraph, Qtex, Qcode, Continue,
     Pspec, Pimpl, Cdef, Csrc, CCsrc, ODLspec, SQL,
-    OQLspec, Cyacc, Clex, Prolog, Monet, MILcode, Qnap, HTML, Java,
+    OQLspec, Cyacc, Clex, Prolog, MALcode, MILcode, Qnap, HTML, Java,
     Tcl, ProC, Shell, fGrammar, Macro, XML, DTD, XSL, Config, Swig,
     CCyacc, CClex } CmdCode;
 

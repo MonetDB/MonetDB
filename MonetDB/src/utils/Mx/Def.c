@@ -246,7 +246,7 @@ char *	name;
   * Code directives, 
   * Pool: spec, impl
   * C:    .h, .c, .cc, .y, .l
-  * Monet:    .mil, .m
+  * Monet:    .mil, .mal
   * Basename
   * Syntax:@[sihcylfp]\n<blk>\n@...
   */
@@ -265,7 +265,7 @@ char *	name;
 	case Cyacc:
 	case Clex:
 	case Prolog:
-	case Monet:
+	case MALcode:
 	case MILcode:
 	case HTML:
 	case ODLspec:

@@ -10,6 +10,7 @@ The debugger assumes a direct IO channel to a user.
 #ifndef _MAL_DEBUGGER_H
 #define _MAL_DEBUGGER_H
 
+#include "mal.h"
 #include "mal_instruction.h"
 #include "mal_stack.h"
 #include "mal_function.h"
@@ -171,7 +172,7 @@ table using the 'module.function' name. The default is to list the
 current function.
 [to do, list module signatures only]
 @c
-	case 'L': (void) setXlisting(1);
+	case 'L': mal_xlisting= !mal_xlisting;
 	case 'l': /* list the current code block */
 	{	str modname, fcnname;
 		Symbol fsym,fs;

@@ -76,6 +76,9 @@ typedef struct mallinfo mallinfo_t;
 #define SO_EXT ".so"
 #endif 
 
+#define SLASH_2_DIR_SEP(s) {char *t; for(t=strchr(s, (int)'/'    ); t; t=strchr(t+1, (int)'/'    )) *t=DIR_SEP;}
+#define DIR_SEP_2_SLASH(s) {char *t; for(t=strchr(s, (int)DIR_SEP); t; t=strchr(t+1, (int)DIR_SEP)) *t='/'    ;}
+
 /* the new mmap modes, mimick default MADV_* madvise POSIX constants */
 #define MMAP_NORMAL     	0               /* no further special treatment */
 #define MMAP_RANDOM     	1               /* expect random page references */
@@ -172,8 +175,17 @@ gdk_export void MT_sleep_ms(unsigned int ms);
 
 #define MT_PAGESIZE(s)		(((((s)-1) >> 12) + 1) << 12)
 #define MT_SEGSIZE(s)		((((((s)-1) >> 16) & 65535) + 1) << 16)
-#else
+typedef struct MT_socket {
+	SOCKET sock;
+} mt_socket;
+
+#else /* UNIX */
+
 #define MT_PAGESIZE(s)		((((s-1)/MT_pagesize())+1)*MT_pagesize())
+typedef struct MT_socket {
+	int sock;
+} mt_socket;
+
 #endif
 
 #ifndef HAVE_VSNPRINTF

@@ -1,0 +1,13 @@
+# analyse the basic interpreter loop
+# illegal destination type of a barrier
+
+	i:=0;
+barrier	v:= true;
+	leave v;
+	i:= 1;
+end	v;
+barrier t:= i<3;
+	i:=i+1;
+	redo t;
+end	t;
+	i:= 0;

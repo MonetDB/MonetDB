@@ -1,0 +1,2 @@
+module top;
+function first(sht i):sht; end function;

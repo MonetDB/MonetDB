@@ -1,0 +1,17 @@
+# squeezer integration in MAL code blocks.
+# the squeezer.access(V) implements a simple pruning of the
+# code to disallow access to a particular function
+# it is also the first function passing a parameter
+#
+# the access() authorization function raises an exception if the
+# current value of V is <= 0 . 
+
+	p1:= 1;
+	s0:= squeezer.access("p1");
+	p2:= p1;
+#exception block;
+catch	IllegalAccess;
+	c4:= "should not come here";
+	p3:= p1;
+end	IllegalAccess;
+	p4:= p1;

@@ -2,7 +2,7 @@
 @a M. Kersten
 @v 0.0
 @+ MAL startup
-Startup of the Monet engine consists of two a few. First, the
+Startup of the Monet engine consists of two steps. First, the
 system kernel libraries are loaded.
 The global symbol table is initialized with pre-compiled routines.
 Second, for each service thread we execute a script with predefined
@@ -48,6 +48,7 @@ may be optimized differently depending on the context of execution.
 #include "mal_import.h"
 
 #define SRVINIT "startup.mal"
+#define SRVORIGIN "share/Monet/startup.mal"
 
 extern Symbol malStartupGlobal(str dbname, int listing);
 extern Symbol malStartupService(Symbol cntxt);
@@ -64,10 +65,23 @@ position is being returned.
 
 Symbol malStartupGlobal(str dbname,int listing){
 	Symbol scope;
+	char buf[PATHLENGTH];
+	FILE *fd;
 	
-	/* if( initLibraries(dbname) == 0) return NULL;*/
 	scope = initScope();
-	if( malImport(scope,"MAL",SRVINIT,0) == NULL){
+	sprintf(buf,"%s/%s",GDKdirStr,SRVINIT);
+	SLASH_2_DIR_SEP(buf);
+	if( (fd= fopen(buf,"r")) == NULL){
+		sprintf(buf,"%s/%s",GDKdistrStr,SRVORIGIN);
+		SLASH_2_DIR_SEP(buf);
+		if( (fd= fopen(buf,"r")) == NULL){
+			GDKerror("FATAL:server file '%s' missing\n",SRVORIGIN);
+		}
+		fclose(fd);
+		
+	} else fclose(fd);
+
+	if( malImport(scope,"MAL",buf,0) == NULL){
 		return NULL;
 	}
 	MAL_scope = scope;

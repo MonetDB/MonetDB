@@ -16,6 +16,8 @@ become accessible for programming.
 #define _MAL_ATOM_H
 
 #include "mal_instruction.h"
+/*#define MAL_ATOM_DEBUG*/
+
 extern void malAtomDef(str name);
 
 #endif /*  _MAL_ATOM_H*/
@@ -59,10 +61,14 @@ void malAtomDef(str name){
 		GDKerror(buf);
 		return;
 	}
+#ifdef MAL_ATOM_DEBUG
 	printf("introduce a new atom type '%s' in the kernel\n",name);
 	/* ATOMproperty(name,GDKstrdup(""),0); */
+#endif
 }
 void defAtomCommand(InstrPtr p){
-	printf("atom candidate '%s' ?\n", p->fcnname,
+#ifdef MAL_ATOM_DEBUG
+	printf("atom candidate '%s' ?%s\n", p->fcnname,
 		(isAtomCandidate(p->fcnname)?"yes":"no"));
+#endif
 }

@@ -1,0 +1,12 @@
+function p1(i:str):int;
+	L:= "something";
+	r:=0;
+barrier l:= r= 0;
+	y:= r;
+	r:= r+1;
+	leave l;
+	redo l;
+end l;
+end function;
+a:= 1;
+z:= pl(a);

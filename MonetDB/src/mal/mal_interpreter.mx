@@ -51,9 +51,9 @@ str runMAL(MalBlkPtr mbcaller, MalStkPtr env, FILE *in, FILE *out, int trace){
 		GDKerror(buf);
 		return raiseException("SyntaxError",buf);
 	}
-	@:safeguardStack@
 	/* allocate space for value stack */
 	newStack(stk,STACKINCR);
+	@:safeguardStack@
 
 @-
 Prepare a new interpreter call. The env stackframe is only set when

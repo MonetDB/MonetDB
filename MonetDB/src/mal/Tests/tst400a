@@ -1,0 +1,6 @@
+# simple iterator loop test
+
+	i:= -1:lng;
+barrier v:= iterator.foreach(i,0:lng,1000000:lng);
+	redo v;
+end	v;

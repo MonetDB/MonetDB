@@ -35,16 +35,20 @@ Symbol malImport(Symbol cntxt, str nme, str fname,int listing){
 	Symbol	prg;
 	char path[PATHLENGTH];
 
+	sprintf(path, "%s.mal",fname);
+        SLASH_2_DIR_SEP(fname);
 	if ((fd = fopen(fname, "r")) == 0) {
 
-            if (fname[0] == '/') {
+            if (fname[0] == DIR_SEP) {
                 strcpy(path, fname);
                 fd = fopen(path, "r");
             } else {
-                sprintf(path, "modules/%s", fname);
+                sprintf(path, "%s/modules/%s.mal",GDKdirStr, fname);
+		SLASH_2_DIR_SEP(path);
                 fd = fopen(path, "r");
 		if( fd==NULL){
-			sprintf(path,"modules/%s.mal",fname);
+			sprintf(path, "%s/src/modules/%s.mal",GDKdistrStr, fname);
+			SLASH_2_DIR_SEP(path);
                 	fd = fopen(path, "r");
 		}
             }
@@ -73,7 +77,7 @@ Symbol malImport(Symbol cntxt, str nme, str fname,int listing){
 Load any associated module first, because this sets the context for
 resolving addresses. 
 @c
-	(void) loadModuleLibrary(NULL,fname);
+	(void) loadModuleLibrary(fname);
 
 	prg= mal_parse(cntxt,buf,listing);
 	/* execute main procedure of module */

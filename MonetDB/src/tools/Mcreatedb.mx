@@ -68,6 +68,8 @@ found in the same directory.
 
 ./scripts/general.mil        # generic obligatory prelude
 ./dbfarm/$DB/                # default database directory
+./dbfarm/$DB/lib/            # database specific modules
+./dbfarm/$DB/scripts/        # database specific scripts
 ./dbfarm/$DB/bat/            # database tables directory
 ./dbfarm/$DB/bat/BBP.dir     # database BAT directory
 \end{verbatim}
@@ -224,12 +226,18 @@ void copyfile( char *src, char *dst ){
 	char buf[1024];
 	FILE *dfd, *sfd;
 
-	if ((dfd = fopen(dst,"w")) == NULL) {
-		printf("%s: could not open(%s)\n", prog,dst);
+	sprintf(buf,"%s/mal/%s",GDKdirStr,dst);
+        SLASH_2_DIR_SEP(buf);
+
+	if ((dfd = fopen(buf,"w")) == NULL) {
+		printf("%s: could not open(%s)\n", prog,buf);
 		return;
 	}
-	if ((sfd = fopen(src,"r")) == NULL){
-		printf("%s: could not open(%s)\n", prog, src);
+
+	sprintf(buf,"%s/share/Monet/%s",GDKdistrStr,src);
+        SLASH_2_DIR_SEP(buf);
+	if ((sfd = fopen(buf,"r")) == NULL){
+		printf("%s: could not open(%s)\n", prog, buf);
 		fclose(dfd);
 		return;
 	}
@@ -247,6 +255,13 @@ void createDB(char *home) {
 
 	localmkdir("");
 	localmkdir("bat");
+	localmkdir("bin");
+	localmkdir("include");
+	localmkdir("lib");
+	localmkdir("mal");
+	copyfile("startup.mal","startup.mal");
+	localmkdir("mil");
+	localmkdir("sql");
 }
 #ifdef WIN32
 #define RM "del"

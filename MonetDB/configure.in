@@ -347,11 +347,15 @@ src/utils/Makefile
 src/utils/Mx/Makefile 
 src/utils/testing/Makefile 
 src/utils/autogen/Makefile
-src/mel/Makefile 
 src/gdk/Makefile 
 src/monet/Makefile
+src/mil/Makefile 
+src/mal/Makefile 
 src/modules/Makefile 
 src/modules/plain/Makefile
+src/modules/kernel/Makefile
+src/modules/atoms/Makefile
+src/modules/mal/Makefile
 src/mapi/Makefile
 src/mapi/clients/Makefile
 src/tools/Makefile
@@ -359,6 +363,7 @@ src/tools/monet-config.mx
 conf/Makefile
 doc/Makefile
 scripts/Makefile
+scripts/tools/Makefile
 tests/Makefile
 Makefile
 src/utils/Mx/epstogif

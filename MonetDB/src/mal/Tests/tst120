@@ -1,0 +1,11 @@
+#define 2 modules and check location of routines
+
+import tst120a;
+import tst120b;
+import tst120a;	# does not do anything
+
+a:= second("hh");
+b:= first(1);
+c:= first(1:sht);
+d:= first("hello world");
+e:= top.first(2:sht);

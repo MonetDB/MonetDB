@@ -1,0 +1,7 @@
+# testing the simple iterators on builtin types
+
+	i:= ' ':chr;
+barrier v1:= iterator.foreach(i,'A','C');
+	v:= "do something";
+	redo v1;
+end	v1;

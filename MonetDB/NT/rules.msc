@@ -62,5 +62,5 @@ DEL=del
 .cc.cxx:
 	rename $< $@
 
-.SUFFIXES: .m .mx .proto_h .mil .glue_c .cxx .cc
+.SUFFIXES: .m .mx .proto_h .mil .cxx .cc
 .PRECIOUS: .m 

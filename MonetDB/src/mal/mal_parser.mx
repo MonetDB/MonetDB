@@ -472,6 +472,12 @@ importStmt:
 	}
 importPath: TOK_IDENT
    |	importPath TOK_OPERATOR TOK_IDENT
+	{ char buf[PATHLENGTH];
+	  sprintf(buf,"%s/%s",$1.val,$3.val);
+	  $$.val= GDKstrdup(buf);
+	  if( $2.val[0] !='/')
+		GDKerror("ERROR: path separator in use-clause expected\n");
+	}
 @-
 The statements scattered between definitions are appended and collected
 in a 'main' procedure. This procedure definition should be

@@ -7,6 +7,7 @@ import shelve
 from var import *
 
 mx2mil = "^@mil[ \t\r\n]+"
+mx2mal = "^@mal[ \t\r\n]+"
 mx2mel = "^@m[ \t\r\n]+"
 mx2h = "^@h[ \t\r\n]+"
 mx2c = "^@c[ \t\r\n]+"
@@ -29,6 +30,7 @@ mx2html = "^@T[ \t\r\n]+"
 e_mx = regex.compile('^@[^\{\}]')
 
 code_extract = { 'mx': [ (mx2mil, '.mil'),
+		  (mx2mal, '.mal'), 
 		  (mx2mel, '.m'), 
 		  (mx2cc, '.cc'), 
 		  (mx2c, '.c'), 
@@ -48,6 +50,7 @@ code_extract = { 'mx': [ (mx2mil, '.mil'),
 		  (mx2tex, '.tex'), 
 		  (mx2html, '.html'), ], 
  		'mx.in': [ (mx2mil, '.mil'),
+		  (mx2mal, '.mal'), 
 		  (mx2mel, '.m'), 
 		  (mx2cc, '.cc'), 
 		  (mx2c, '.c'), 
@@ -69,7 +72,7 @@ code_extract = { 'mx': [ (mx2mil, '.mil'),
 }
 end_code_extract = { 'mx': e_mx, 'mx.in': e_mx }
 
-code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
+code_gen = { 'm': 	[ '.proto.h' ],
 	    'odl': 	[ '_odl.h', '_odl.cc', '_mil.cc', '_odl.m' ],
 	    'y': 	[ '.tab.c', '.tab.h' ],
 	    'tab.c': 	[ '.tab.o' ],
@@ -82,7 +85,6 @@ code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
 	    'cc': 	[ '.o' ],
 	    'c': 	[ '.o' ],
 	    'i':	[ '_wrap.c' ],
-	    'glue.c': 	[ '.glue.o' ],
 	    'fgr':     [ '_engine.c', '_proto.h' ],
 	    'java':   [ '.class' ],
 	    'mx.in':	[ '.mx' ],
@@ -116,11 +118,10 @@ scan_map = { 'c': [ c_inc, None, '' ],
 	 'tex': [ tex_inc, None, '' ], 
 }
 
-dep_rules = { 'glue.c': [ 'm', '.proto.h' ] , 
-	      'proto.h': [ 'm', '.proto.h']
+dep_rules = { 'proto.h': [ 'm', '.proto.h']
 }
 
-lib_map = [ 'glue.c', 'm' ]
+lib_map = [ 'm' ]
 
 def split_filename(f): 
 	base = f

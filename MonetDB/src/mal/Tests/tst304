@@ -1,0 +1,8 @@
+# Exception identifiers can be introduced at any place
+
+raise	myNewException :="new exception";
+	c4:= "should not come here";
+#exception block;
+catch	myNewException;
+	n0:=0;
+end	myNewException;

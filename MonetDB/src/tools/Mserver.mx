@@ -1,29 +1,27 @@
 @f Mserver
 @a M.L. Kersten, P. Boncz, Niels Nes
-@v 4.1
+@v 5.0
 @* The Monet Server
 @T
-The {\tt Mserver} is the Monet server. The database administrator starts
-and stops it. (S)he can type on the console, which is started on the
-standard input/output.
+The {\tt Mserver} is the Monet server. It is started by the database
+administrator.  The console is primarilly meant to further initialize
+the server, such as starting internet listeners.
 
 @+ Manual Page
 @T
 The Mserver is a multithreaded program. There is one system thread, and for
-each user (system administrater included) there is one worker thread.
-As a default, the Mserver also starts the internet listener thread,
-on the port number specified in the parameter file.
+each service, e.g. a client session or transaction service,
+there is one worker thread.
 
 @- Usage
 @T
 \begin{verbatim}
-Mserver { [ -db <db-name> ] [-monetrc <input> ] } [ <mil-script> ]
+Mserver { [ -db <db-name> ] [-monetrc <input> ] } [ <mal-script> ]
 \end{verbatim}
 
 Since the console has no command-line history nor file name completion,
-you are {\bf recommended} to use the 
-@[<a href="Mclient.html">Mclient</a>@ program for interactive sessions
-instead.
+you are {\em recommended} to use the 
+Mclient program for interactive sessions instead.
 
 The options have the following meaning:
 \begin{description}
@@ -36,25 +34,15 @@ The options have the following meaning:
 @{
 @+ Implementation
 @h
-#ifndef _MONET_GLOBAL_H_
-#define _MONET_GLOBAL_H_
-
-int debugger();
+#ifndef _MSERVER_H_
+#define _MSERVER_H_
+#include "mal.h"
 #include "monet.h"
-#include "yytree.h"
 
-#endif /* _MONET_GLOBAL_H_ */
+#endif /* _MSERVER_H_ */
 @C
 extern "C" {
 #include "Mserver.h"
-#include "monet_context.h"
-#include "monet_interpreter.h"
-#include "monet_parse.h"
-#include "monet_queue.h"
-#include "monet_client.h"
-#include "monet_process.h"
-
-extern void		static_module_init(Client c, char buf[]); 
 }
 
 void *operator new( size_t size ) {
@@ -80,13 +68,12 @@ The architecture is setup to handle multiple streams of requests.
 The first thread started represents the server. It reads from standard input
 and writes to standard input. This is also a way to recognize the server
 actions. 
-To start the server in the background one should use the argument -background.
+To start the server in the background one should use the argument -deamon.
 This closes standard input. Direct execution in the background may cause
 the server to hang in stdio for input from the terminal.
 @ 
-@ 
 The server thread started remains in existence until all other threads die.
-The server is stopped by cntrl-D or the quit command.
+The server is stopped by cntrl-D or receiving the quit command.
 @
 
 @-
@@ -110,7 +97,6 @@ void* malloc(size_t size) {
 int main(int argc, char** argv) {
 	char buf[256];
 	int status = 1;
-	Client c;
 @-
 We give malloc advice here. Main goal: prevent fragmentation.
 We do this by declaring everything below 2K as 'small'. These
@@ -139,25 +125,13 @@ A grain size of 128 bytes is used to keep overhead low.
 #ifndef NOMALLOPT
 	@:mallopt@
 #endif
-	c = (Client) monet_init(argc,argv);
-	static_module_init(c,buf);
-	monet_hello();
-@-
-Execute scripts.
-	if (monet_script ) printf("#script:%s\n",monet_script);
-@C
-@- 
-thread management.
-@C
-	scheduleClient(c);
-	monetInterpreter((void*)&status);
+	monet_init(argc,argv);
 @-
 At the end of a multi-threaded session we should wait
 for all processes to terminate properly.
 @C
 @-
 Peter: for the time being avoid difficult things like dropping everything 
-	monet_exit();
 @C
 	MT_global_exit(0);  
 	return 0; 

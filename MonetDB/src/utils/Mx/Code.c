@@ -48,7 +48,7 @@ again:  switch( d->d_dir ){
 	case Prolog:
 	case OQLspec:
 	case ODLspec:
-	case Monet:
+	case MALcode:
 	case SQL:
         case HTML:
 	case MILcode:

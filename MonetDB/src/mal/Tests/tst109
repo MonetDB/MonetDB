@@ -1,0 +1,13 @@
+# Error, illegal block weaveing 
+# analyse the basic interpreter loop
+
+	i:=0;
+barrier	v:=1;
+	leave v;
+	i:= 1;
+barrier t:= i<3;
+	i:=i+1;
+end	v;
+	redo t;
+end	t;
+	i:= 0;

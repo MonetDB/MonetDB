@@ -1,0 +1,3 @@
+module bottom;
+function first(str i):int; end function;
+function second(str i):int; end function;

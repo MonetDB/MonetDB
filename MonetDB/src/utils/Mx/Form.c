@@ -168,7 +168,7 @@ again:  switch( d->d_dir ){
 		case Clex:	PrCodeDisplay(d,"lex"); break;
 		case Cyacc:	PrCodeDisplay(d,"yacc"); break;
 		case MILcode:	PrCodeDisplay(d,"mil"); break;
-		case Monet:	PrCodeDisplay(d,"m"); break;
+		case MALcode:	PrCodeDisplay(d,"mal"); break;
 		case OQLspec:	PrCodeDisplay(d,"oql"); break;
 		case ODLspec:	PrCodeDisplay(d,"odl"); break;
 		case Prolog:	PrCodeDisplay(d,"plg"); break;

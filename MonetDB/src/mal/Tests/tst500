@@ -1,0 +1,12 @@
+# recursive MAL calls 
+
+function simple(i:int, lim:int, s:str):flt;
+	i:= i+1;
+barrier	v:= i<lim;
+	z:= simple(i,lim,s);
+end	v;
+	r:= 3.14:flt;
+	return r;
+end function;
+
+r:= simple(0,2,"hello");

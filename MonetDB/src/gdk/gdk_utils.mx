@@ -44,6 +44,8 @@ char	GDKdbnameStr[PATHLENGTH] = { 0 };
 char	GDKdirStr[PATHLENGTH] = { 0 };
 char	GDKdistrStr[PATHLENGTH] = MONET_PREFIX;
 char	GDKmonetrcStr[PATHLENGTH] = { 0 };
+char    GDKarchStr[PATHLENGTH]= HOST;
+char    GDKversionStr[PATHLENGTH]=VERSION;
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -100,13 +102,13 @@ to keep the absolute path to the .monet.conf file for top-levels
 to access its information.
 @c
 #define MONETRC  ".monet.conf"
-#define DIRSEP '/'
 
 str expandFile(str fname){
-static char name[PATHLENGTH];
+	static char name[PATHLENGTH];
 
-	if( strncmp(".../",fname,4)==0) {
-		sprintf(name,"%s/%s",MONET_PREFIX,fname+4);
+	SLASH_2_DIR_SEP(fname);
+	if( strncmp("...",fname,3)==0 && fname[3]==DIR_SEP ) {
+		sprintf(name,"%s%s",MONET_PREFIX,fname+3);
 		return GDKstrdup(name);
 	} else return fname;
 }
@@ -125,7 +127,7 @@ void GDKenvironment(str db, str monetrc)
 	char pwd[PATHLENGTH];
 	FILE *fd= NULL;
 
-	if( db != NULL && strchr(db,DIRSEP) ) {
+	if( db != NULL && strchr(db,DIR_SEP) ) {
 		strcpy(GDKdbnameStr,db);
 		strcpy(GDKdirStr,db);
 		return;
@@ -142,7 +144,7 @@ void GDKenvironment(str db, str monetrc)
 	if( fd == NULL){
 		str home= getenv("HOME");
 		if( home != NULL){
-			sprintf(buf,"%s/%s",home, MONETRC);
+			sprintf(buf,"%s%c%s",home, DIR_SEP, MONETRC);
 			fd= fopen(buf,"r");
 			if(fd!=NULL) strcpy(GDKmonetrcStr,buf);
 		}
@@ -195,15 +197,16 @@ void GDKenvironment(str db, str monetrc)
 	if( db != NULL) strcpy(GDKdbnameStr,db);
 
 	if( GDKdbfarmStr[0]){
-		sprintf(GDKdirStr,"%s/%s",GDKdbfarmStr,GDKdbnameStr);
+		sprintf(GDKdirStr,"%s%c%s",GDKdbfarmStr,DIR_SEP,GDKdbnameStr);
 	} else	strcpy(GDKdirStr,GDKdbnameStr);
 	/* handle monetrc */
-	if( GDKmonetrcStr[0]==DIRSEP) return;
+	if( MT_path_absolute(GDKmonetrcStr)) return; /* absolute path */
+	/* make relative path absolute */
         if (getcwd(pwd, PATHLENGTH-1)  == NULL ){
                 perror("pwd");
                 GDKfatal("GDKenvironment: could not determine current directory\n");
         }
-	sprintf(buf,"%s/%s",pwd,GDKmonetrcStr);
+	sprintf(buf,"%s%c%s",pwd,DIR_SEP,GDKmonetrcStr);
 	if( strlen(buf) >PATHLENGTH-1){
 		GDKfatal("GDKenvironment: path to monetrc file too long\n");
 	}
@@ -835,16 +838,12 @@ void GDKvmfree(void* blk, size_t size, size_t maxsize){
 }
 
 @+ Session Initialization
-GDK parameters often come directly from the command line.
-Meaningful parameters are identified and processed.
 The parameter @%db@ is followed by the database name relative to
 the environment variable dbfarm.
-The parameter @%recover@ removes any pending lock file and
-checks the consistency of the database files.
 The parameter @%monetrc@ tells that the system variables setting
 should be overruled by the specification given in the file argument.
 This format is only necessary to temporarely experiment with variable settings,
-without disturbing a system default setting.
+without disturbing a system/site default setting.
 
 The interface code to the operating system is highly dependent on
 the processing environment. It can be filtered away with compiletime flags.
@@ -1360,8 +1359,12 @@ int THRcnt() {
 
 int THRhighwater() {
 	unsigned long c = THRsp();
-	Thread s = GDK_find_thread(MT_getpid());
-	unsigned long diff = (c<s->sp)?s->sp-c:c-s->sp;
+	Thread s;
+	unsigned long diff;
+
+	s = GDK_find_thread(MT_getpid());
+	if (s== NULL) return 0;
+	diff = (c<s->sp)?s->sp-c:c-s->sp;
 	if (diff > (THREAD_STACK_SIZE-2048)){
 		return 1;
 	}

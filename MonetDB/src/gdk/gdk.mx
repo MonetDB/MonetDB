@@ -378,6 +378,8 @@ gdk_export char 	GDKdbfarmStr[PATHLENGTH];
 gdk_export char 	GDKdirStr[PATHLENGTH];
 gdk_export char 	GDKdistrStr[PATHLENGTH];
 gdk_export char 	GDKmonetrcStr[PATHLENGTH];
+gdk_export char		GDKarchStr[PATHLENGTH];
+gdk_export char		GDKversionStr[PATHLENGTH];
 
 @
 @}
@@ -1666,9 +1668,6 @@ gdk_export int  BBPfix        (bat b);
 gdk_export int  BBPunfix      (bat b);
 gdk_export void BBPhot        (bat b);
 gdk_export void BBPcold       (bat b);
-/*
-gdk_export int  BBPrefcnt     (bat b);
-*/
 gdk_export void BBPtrim       (lng memdelta, lng vmdelta);
 gdk_export void BBPunlock     (str s);
 gdk_export int  BBPfree       (BAT *b);
@@ -2235,6 +2234,8 @@ gdk_export MT_Lock		GDKtrimLock;
 #define DLDEBUG	        if (GDKdebug&2048)
 #define PERFDEBUG	if (GDKdebug&4096)
 #define DELTADEBUG	if (GDKdebug&8192)
+#define LOADDEBUG	if (GDKdebug&16384)
+#define YACCDEBUG	if (GDKdebug&32768)
 
 gdk_export int		GDKnrofthreads; 
 gdk_export int		GDKdebug; 
@@ -2936,7 +2937,6 @@ gdk_export int	BATmultijoin (int argc, BAT *argv[], RowFcn tuple_fcn,
 #ifdef __cplusplus
 }
 #endif
-#endif /* BAT32IMAGE */
 @
 @- GDK variant record type
 When manipulating values, Monet puts them into value records.
@@ -2968,6 +2968,7 @@ typedef struct {
 	int 		vtype;
 	int 	       	len;
 } *ValPtr, ValRecord;
+#endif /* BAT32IMAGE */
 
 #define VALptr(v) (ATOMextern((v)->vtype)?(v)->val.pval:(ptr)&(v)->val.ival)
 #define VALnil(v,t) VALset(v,t,ATOMextern(t)?ATOMnil(t):ATOMnilptr(t))

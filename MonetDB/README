@@ -33,6 +33,5 @@ For those without the patience to read the documentation,
 at least make sure that:
 - the Monet tools (located in <arch>/bin/) are in your PATH,
 - the <arch>/lib/ directory is in LD_LIBRARY_PATH
-- MONETHOME is set to the root of the distribution tree
 
 You might try creating the 'gold' demo database, in 'scripts/gold'

@@ -1,0 +1,5 @@
+# the calls are wrong, they violate the type constraint
+command + (any::1 L, any::1 R):any::1 = addIntInt; 
+
+a:=1+"hello";
+b:=3.5+1;
