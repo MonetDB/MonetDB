@@ -72,18 +72,19 @@ as well as in user defined module implementations.
 #ifndef _MAL_H
 #define _MAL_H
 
-#include "gdk.h"
+#include <gdk.h>
 #include <stream.h>
 
 #ifdef _MSC_VER
 #ifndef LIBMONET
-#define m_export extern __declspec(dllimport) 
+#define mal_export extern __declspec(dllimport)
 #else
-#define m_export extern __declspec(dllexport) 
+#define mal_export extern __declspec(dllexport)
 #endif
 #else
-#define m_export extern 
+#define mal_export extern
 #endif
+
 
 #define MONET_ADMIN	"adm"
 
@@ -94,15 +95,15 @@ See the monet.conf file for additional system variable settings
 @h
 #define MAXSCRIPT 64
 
-m_export void monet_hello();
+mal_export void monet_hello();
 
-m_export char            monet_cwd[PATHLENGTH];
-m_export int             monet_welcome; 
-m_export str             *monet_script;
-m_export str             monet_mod_path;
-m_export str             monet_mal_path;
+mal_export char            monet_cwd[PATHLENGTH];
+mal_export int             monet_welcome; 
+mal_export str             *monet_script;
+mal_export str             monet_mod_path;
+mal_export str             monet_mal_path;
 @c 
-#include "gdk.h"
+#include <mal.h>
 
 char            monet_cwd[PATHLENGTH]={0};
 int             monet_welcome=1; 
@@ -139,16 +140,6 @@ This danger required all accesses to global information to be packaged
 in a critical section, which was known to be a performance hindrence.
 @h
 
-#ifdef _MSC_VER
-#ifndef LIBMONET
-#define mal_export extern __declspec(dllimport)
-#else
-#define mal_export extern __declspec(dllexport)
-#endif
-#else
-#define mal_export extern
-#endif
-
 mal_export int             mal_debug;
 mal_export MT_Lock	mal_contextLock;
 
@@ -179,7 +170,6 @@ mal_export int mal_init(str modpath, str prefix);
 
 #endif /*  _MAL_H*/
 @c
-#include "mal.h"
 #include "mal_client.h"
 #include "mal_linker.h"
 #include "mal_session.h"

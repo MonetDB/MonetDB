@@ -50,6 +50,8 @@ mal_export void scheduleClient(str command, int msocket, stream *fin, stream *fo
 mal_export str MALreader(Client c);
 mal_export str MALparser(Client c);
 mal_export str MALengine(Client c);
+mal_export void resetInstructions(MalBlkPtr mb, int start);
+mal_export void	resetVariables(MalBlkPtr mb, MalStkPtr glb, int start);
 
 #endif /*  _MAL_SESSION_H*/
 @-
@@ -197,7 +199,8 @@ void 	resetInstructions(MalBlkPtr mb, int start)
 	
 	mb->stop= start;
 }
-void	resetVariables(MalBlkPtr mb, MalStkPtr glb, int start){
+void	resetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
+{
         int i,j;
 
 	for(i=j=start; i< mb->vtop; ){

@@ -217,6 +217,8 @@ quit;
 
 extern str CMDtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, 
 		  InstrPtr pci, int i, int order, int printhead);
+extern str CMDprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,int indx,str hd, str tl);
+
 typedef struct {
 	int up, down;
 } bipipe;
