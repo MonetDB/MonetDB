@@ -3,5 +3,5 @@
 NAME="$1"
 PRELUDE="$2 $3"
 
-Mlog   "$MSERVER -db $TSTDB -single $PRELUDE < $NAME.mil"
-        $MSERVER -db $TSTDB -single $PRELUDE < $NAME.mil
+Mlog   "$MSERVER -db $TSTDB $PRELUDE < $NAME.mil"
+        $MSERVER -db $TSTDB $PRELUDE < $NAME.mil

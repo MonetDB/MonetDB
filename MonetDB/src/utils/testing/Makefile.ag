@@ -15,3 +15,8 @@ scripts_bat = {
 	DIR = bindir
 	SOURCES = Mlog.bat Mtest.py.bat
 }
+
+scripts_conf = {
+	DIR = pkgdatadir
+	SOURCES = monet.Mtest.conf
+}

@@ -12,7 +12,7 @@ done
 
 TSTDB=${TSTDB}_${NAME}
 
-if [ -d $MONETFARM/dbfarm/$TSTDB ] ; then
+if [ -d $GDK_DBFARM/$TSTDB ] ; then
 	$MDESTROYDB -db $TSTDB
 fi
 Mlog -x $MCREATEDB  -db $TSTDB

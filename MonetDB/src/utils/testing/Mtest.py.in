@@ -18,6 +18,7 @@
 # - solve chdir - link - getcwd problem
 #   (e.g., implement own directory stack)
 # - normalize all path's used
+# - remove one of milM, milS
 
 import os
 import sys
@@ -44,11 +45,16 @@ Usage:  %s [options] ( [<dir>] [<tests>] | [<dirs>] )
  -I<exp> : (optional) ignore lines matching <exp> during diff (default: -I'^#')
  -c<num> : (optional) use <num> lines of context during diff (default: -c1)
  -a<num> : (optional) accuracy for diff: 0=lines, 1=words, 2=chars (default: -a1)
- -d<num> : (optional) debugmask to be used by Mserver; see Mserver -? for details
-                       (default: -d8)
  -t<sec> : (optional) timeout: kill (hanging) M{server,client,createdb,destroydb,load}
                        after <sec> seconds; -t0 means no timeout (default: -t600)
  -r      : (optional) proceed in subdirectories as well (implies 'All`)
+
+ --monetrc=<path>
+         : (optional) location of .monet.conf file; default is the first found of
+			%s.monet.Mtest.conf                        
+			<TSTSRCBASE>%s.monet.Mtest.conf            
+			%s.monet.Mtest.conf                               
+			%smonet.Mtest.conf                                                                      
 
  --TSTSRCBASE=<abspath>
  --TSTBLDBASE=<abspath>
@@ -67,7 +73,7 @@ Usage:  %s [options] ( [<dir>] [<tests>] | [<dirs>] )
 
          See  %sREADME  for details about  %s.
 
-''' % (THISFILE, THISFILE, THISFILE, path("@MONET_SOURCE@/src/utils/testing/"), THISFILE))
+''' % (THISFILE, os.getcwd()+os.sep, os.sep, os.environ['HOME']+os.sep, path("@MONET_PREFIX@/share/Monet/"), THISFILE, THISFILE, path("@MONET_SOURCE@/src/utils/testing/"), THISFILE))
 
 #TODO:
 #class TimeoutError:
@@ -421,7 +427,7 @@ def runtests(env, testdir, testlist) :
 	os.environ['TSTTRGDIR'] = TSTTRGDIR
 	os.environ['RELSRCDIR'] = env['RELSRCDIR']
 	os.environ['RELBLDDIR'] = env['RELBLDDIR']
-	if os.path.exists(env['MONETFARM']+os.sep+"dbfarm"+os.sep+TSTDB):
+	if os.path.exists(env['GDK_DBFARM']+os.sep+TSTDB):
 		if Check(env['exe']['Mdestroydb'][1]+" -db "+TSTDB, ""):
 			Warn("database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
 			#TODO:
@@ -558,11 +564,13 @@ def runtest(env, TST) :
 		SkipTest(env, TST, EXT, "as Mshutdown is not available.")
 	elif EXT == ".milC" and  not env['exe']['MapiClient'][0]:
 		SkipTest(env, TST, EXT, "as MapiClient is not available.")
-	elif EXT == ".milC" and  not os.path.isfile(env['MONETDIST']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")):
-		SkipTest(env, TST, EXT, "as "+env['MONETDIST']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")+" is not available.")
+	elif EXT == ".milC" and  not os.path.isfile(env['MONET_PREFIX']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")):
+		SkipTest(env, TST, EXT, "as "+env['MONET_PREFIX']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")+" is not available.")
 	elif EXT == ".py"   and  not env['exe']['python'][0]:
 		SkipTest(env, TST, EXT, "as python is not available.")
 		#TODO:
+	elif EXT == ".milC":
+		SkipTest(env, TST, EXT, "as MapiClient-tests are temporary not supported by Mtest.")
 	elif EXT == ".milC"  and  os.name == "nt":
 		SkipTest(env, TST, EXT, "as MapiClient is currently not working on WindowsNT.")
 		#TODO:
@@ -606,7 +614,9 @@ def runtest(env, TST) :
 			open(TST+STABLEerr,"w").close()
 
 		if os.path.isfile(TST+".prelude"):
-			PRELUDE = "-prelude "+TST+".prelude"
+			PRELUDE = TST+".prelude"
+			if EXT == ".milC":
+				PRELUDE = "-prelude "+PRELUDE
 		else:
 			PRELUDE = ""
 
@@ -754,8 +764,6 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr) :
 		RunIt(cmd, "", TestOut, TestErr)
 	elif CALL in ["milM", "milS", "milMXs", "milSXs"]:
 		cmd = MTO+str(TIO)+" "+exe['Mserver'][1]
-		if CALL in ["milS", "milSXs"]:
-			cmd = cmd+" -single"
 		cmd = cmd+" -db "+TSTDB+" "+PRELUDE+" < "
 		if CALL in ["milM", "milS"]:
 			X=""
@@ -780,7 +788,7 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr) :
 			if test.match(f):
 				TSTs.append(f)
 
-		Srvr = MTO+str(TIO*(len(TSTs)+2))+" "+exe['Mserver'][1]+" -db "+TSTDB+" -prelude "+env['MONETDIST']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")+" -background"
+		Srvr = MTO+str(TIO*(len(TSTs)+2))+" "+exe['Mserver'][1]+" -db "+TSTDB+" "+env['MONET_PREFIX']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")+" -background"
 		Clnt = MTO+str(TIO)+" "+exe['MapiClient'][1]+" "+PRELUDE+" < "
 		Shwn = MTO+str(TIO)+" "+exe['Mshutdown'][1]
 
@@ -861,13 +869,6 @@ def CheckExec(cmd) :
 THISFILE = os.path.basename(sys.argv[0])
 THISPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
 
-if os.environ.has_key('USER'):
-	USER  = os.environ['USER']
-	MUSER = "-user "+USER
-else:
-	USER  = ""
-	MUSER = ""
-
 if os.environ.has_key('HOST'):
 	HOST = os.environ['HOST']
 elif os.name != "nt":
@@ -907,12 +908,35 @@ URLSUFFIX_D = '?cvsroot=Monet-4.2'
 
 par = {}
 
+def FindMonetConf(env):
+	dirs = [ os.getcwd()+os.sep+".", env['TSTSRCBASE']+os.sep+"." ]
+	if os.environ.has_key('HOME'):
+		dirs.append(os.environ['HOME']+os.sep+".")
+	dirs.append(path(env['MONET_PREFIX']+"/share/Monet/"))
+	for d in dirs:
+		f = d+'monet.Mtest.conf'
+		if os.path.isfile(f):
+			return f
+	return ""
+
+def ReadFromMonetConf(env, var):
+	value = ""
+	test = re.compile("^\s*"+var+"\s*=\s*([^#\s]+)")
+	for l in fileinput.input(env['MONETRC']):
+		m = test.match(l)
+		if m:
+			value = m.group(1)
+	if len(value) >= 4  and  url(value[:4]) == ".../":
+		value = env['MONET_PREFIX']+value[3:]
+	return value
+
 def main(argv) :
 	#TODO:
 	#signal.signal(signal.SIGALRM, AlarmHandler)
 
-	vars = ['MONET_SOURCE', 'MONET_BUILD', 'MONET_PREFIX', 'TSTSRCBASE', 'TSTBLDBASE', 'TSTTRGBASE', \
-		'MONETDIST'   , 'MONETHOME'  , 'MONETFARM'   , 'MONETPORT' , 'MAPIPORT'  , 'MONET_MOD_PATH']
+	vars = ['MONET_SOURCE', 'MONET_BUILD'   , 'MONET_PREFIX'  , \
+		'TSTSRCBASE'  , 'TSTBLDBASE'    , 'TSTTRGBASE'    , \
+		'MONETRC'     , 'MONET_MOD_PATH', 'MAPIPORT'         ]
 
 	# most intuitive (?) default settings
 	dft = {}
@@ -922,19 +946,15 @@ def main(argv) :
 	dft['TSTSRCBASE']     = "env['MONET_SOURCE']"
 	dft['TSTBLDBASE']     = "env['MONET_BUILD']"
 	dft['TSTTRGBASE']     = "env['MONET_PREFIX']"	# or os.getcwd() ?
-	dft['MONETDIST']      = "env['MONET_PREFIX']"
-	dft['MONETHOME']      = "env['MONETDIST']"
-	dft['MONETFARM']      = "env['TSTTRGBASE']"
-	dft['MONETPORT']      = "HOST+':'+str(random.randint(10000,65535))"
-	dft['MAPIPORT']       = "env['MONETPORT']"
-	dft['MONET_MOD_PATH'] = "env['MONETDIST']+os.sep+'lib'+os.pathsep+env['MONETDIST']+os.sep+'lib'+os.sep+'Monet'"
+	dft['MONETRC']        = "FindMonetConf(env)"
+	dft['MONET_MOD_PATH'] = "env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'Monet'"
+	dft['MAPIPORT']       = "HOST+':'+str(random.randint(10000,65535))"
 	env = {}
 
 	#par = {}
 	par['IGNORE']    = '-I"^#"'
 	par['CONTEXT']   = '-c1'
 	par['ACCURACY']  = 2
-	par['DBGMASK']   = '-d8'
 	par['TIMEOUT']   = 600
 	par['RECURSIVE'] = 0
 
@@ -947,7 +967,7 @@ def main(argv) :
 
 	# commandline options overrule environment
 	try:
-		opts, args = getopt.getopt(argv[1:], "?hI:c:a:d:t:r", ["help", "TSTSRCBASE=", "TSTBLDBASE=", "TSTTRGBASE=", "MONET_SOURCE=", "MONET_BUILD=", "MONET_PREFIX="])
+		opts, args = getopt.getopt(argv[1:], "?hI:c:a:t:r", ["help", "monetrc=", "TSTSRCBASE=", "TSTBLDBASE=", "TSTTRGBASE=", "MONET_SOURCE=", "MONET_BUILD=", "MONET_PREFIX="])
 	except getopt.GetoptError:
 		Usage()
 		sys.exit(1)
@@ -965,8 +985,6 @@ def main(argv) :
 				Usage()
 				ErrXit("Accuracy for diff (-a) must be one of: 0=lines, 1=words, 2=chars !")
 			par['ACCURACY'] = a
-		elif o == "-d":
-			par['DBGMASK'] = o+str(int(a))
 		elif o == "-t":
 			par['TIMEOUT'] = int(a)
 		elif o == "-r":
@@ -996,10 +1014,12 @@ def main(argv) :
 	for v in vars:
 		if not env.has_key(v):
 			env[v] = eval(dft[v])
-			if v == "MONET_MOD_PATH"  and  env['MONETHOME'] != env['MONETDIST']:
-				env[v] =  eval(regsub.gsub("MONETDIST","MONETHOME",dft[v]))+os.pathsep+env[v]
 			#TODO:
 			# make sure, that PATHs ar absolute
+
+	if not env['MONETRC']:
+		Usage()
+		ErrXit("No .monet.[Mtest.]conf found!")
 
 	#TODO:
 	## in case of inconsistencies, try to fallback to "save" settings
@@ -1024,18 +1044,23 @@ def main(argv) :
 		RELBLDBASE = RELBASE+env['TSTBLDBASE'][len(TSTBASE):]
 	env['RELSRCBASE'] = RELSRCBASE
 	env['RELBLDBASE'] = RELBLDBASE
+	
+	#STDERR.flush()
+	#for v in 'RELSRCBASE', 'RELBLDBASE':
+	#	print(v+" = "+str(env[v]))
+	#STDOUT.flush()
+
+	env['GDK_DBFARM'] = path(ReadFromMonetConf(env, "gdk_dbfarm"))
 
 	# export and display env
 	STDERR.flush()
-	for v in vars:
+	for v in vars + ['GDK_DBFARM']:
 		os.environ[v] = env[v]
 		print(v+" = "+env[v])
 	STDOUT.flush()
 
 	# set/extend PATH & LD_LIBRARY_PATH
-	bp = env['MONETDIST']+os.sep+"bin"
-	if env['MONETHOME'] != env['MONETDIST']:
-		bp = env['MONETHOME']+os.sep+"bin"+os.pathsep+bp
+	bp = env['MONET_PREFIX']+os.sep+"bin"
 	lp = env['MONET_MOD_PATH']
 	if os.name == "nt":
 		bp = bp+os.pathsep+lp
@@ -1057,11 +1082,10 @@ def main(argv) :
 	# check for execuatables, set their standard options and export them
 	exe = {}
 	exe['Mtimeout']   = CheckExec('Mtimeout')  , 'Mtimeout -timeout '+str(par['TIMEOUT'])
-	exe['Mserver']    = CheckExec('Mserver')   , 'Mserver -p'' -modulesilent -yaccsilent '+par['DBGMASK']
+	exe['Mserver']    = CheckExec('Mserver')   , 'Mserver -monetrc '+env['MONETRC']
 	exe['MapiClient'] = CheckExec('MapiClient'), 'MapiClient -everything'
-	exe['Mcreatedb']  = CheckExec('Mcreatedb') , 'Mcreatedb '+MUSER
-	exe['Mdestroydb'] = CheckExec('Mdestroydb'), 'Mdestroydb'
-	exe['Mload']      = CheckExec('Mload')     , 'Mload'
+	exe['Mcreatedb']  = CheckExec('Mcreatedb') , 'Mcreatedb -monetrc '+env['MONETRC']
+	exe['Mdestroydb'] = CheckExec('Mdestroydb'), 'Mdestroydb -monetrc '+env['MONETRC']
 	exe['Mshutdown']  = CheckExec('Mshutdown') , 'Mshutdown'
 	exe['Mdiff']      = CheckExec('Mdiff')     , 'Mdiff'
 	exe['python']     = CheckExec('python')    , 'python'
@@ -1156,11 +1180,11 @@ def main(argv) :
 
 	if os.path.exists(env['TSTTRGBASE']+os.sep+"Tests"):
 		shutil.rmtree(env['TSTTRGBASE']+os.sep+"Tests")
-	if not os.path.exists(env['MONETFARM']):
+	if not os.path.exists(env['GDK_DBFARM']):
 		#TODO: set mode to umask
-		os.makedirs(env['MONETFARM'])
+		os.makedirs(env['GDK_DBFARM'])
 
-	if os.path.exists(env['MONETFARM']+os.sep+"dbfarm"+os.sep+"Tests"):
+	if os.path.exists(env['GDK_DBFARM']+os.sep+"Tests"):
 		if Check(env['exe']['Mdestroydb'][1]+" -db Tests", ""):
 			sys.exit(1)
 	if Check(env['exe']['Mcreatedb'][1] +" -db Tests", ""):

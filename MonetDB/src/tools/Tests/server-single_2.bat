@@ -4,4 +4,4 @@
 @set NAME=%1
 @set PRELUDE=%2 %3
 
-%MSERVER% -db %TSTDB% -single %PRELUDE% < %NAME%.mil
+%MSERVER% -db %TSTDB% %PRELUDE% < %NAME%.mil

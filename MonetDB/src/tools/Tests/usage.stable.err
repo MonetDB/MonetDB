@@ -10,6 +10,13 @@ stderr of test 'usage` in directory 'src/tools` itself:
 # 13:33:19 >  Mserver -?
 # 13:33:19 >  
 
+ERROR:database name missing
+usage: <program> [-db <db_name>] [-monetrc <file>]
+<program>	program using the GDK library
+<db-name>	database to open
+<file>		system variable settings
+		default: .monet.conf in current/home directory
+Other arguments are dealt with in the application startup routine
 
 # 13:33:19 >  
 # 13:33:19 >  MapiClient -help

@@ -18,7 +18,7 @@
 
 @set TSTDB=%TSTDB%_%NAME%
 
-@rem if exists %MONETFARM%\dbfarm\%TSTDB% %MDESTROYDB% -db %TSTDB%
+@rem if exists %GDK_DBFARM%\%TSTDB% %MDESTROYDB% -db %TSTDB%
 
 %MCREATEDB%  -db %TSTDB%
 @rem  %MLOAD% test100k -db %TSTDB% -oid 30000000 -s 100000 -f format

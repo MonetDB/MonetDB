@@ -36,11 +36,13 @@ def mFilter (FILE, IGNORE) :
 		WHAT, TST, TSTDIR = "", "", ""
 
 	test = 	re.compile(IGNORE) , \
-		re.compile("^Mdestroydb: processing database ..*. in "	+ "|"	\
-			 + "^Mcreatedb: processing database ..*. in "	+ "|"	\
-			 + "^Mcreatedb: using default dbdir "		+ "|"	\
-			 + "^connection= .*:[0-9]*$"			+ "|"	\
-			 + "^Connecting to server: localhost:[0-9]*$" )
+		re.compile( "^Mdestroydb: processing database ..*. in "			+ "|"	\
+			  + "^Mcreatedb: processing database ..*. in "			+ "|"	\
+			  + "^Mcreatedb: using default dbdir "				+ "|"	\
+			  + "^Mcreatedb: calling .Mserver -db .* for the first time..$"	+ "|"	\
+			  + "^Mcreatedb: database .* has been initialized succesfully!$"+ "|"	\
+			  + "^connection= .*:[0-9]*$"					+ "|"	\
+			  + "^Connecting to server: localhost:[0-9]*$"				)
 		
 	ftmp = []
 	ig = n = 0

@@ -10,35 +10,6 @@ stdout of test 'usage` in directory 'src/tools` itself:
 # 13:33:19 >  Mserver -?
 # 13:33:19 >  
 
-# Monet Database Server V4.3
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-usage: Mserver { option }
-option:	-db <db-name>		database to open
-	-prelude <input>	execute MIL file first
-	<script>		execute MIL file and exit
-	-single			singlethreaded (no Mclient+fork)
-	-noclients			no Mclient listener
-	-background		no console (only Mclient)
-	-home <dir>		use alternative MONETHOME
-	-version <ver>		create BATs in old formats
-	-id <num>		generate oid@id (default=0 <= id <= 3)
-	-p <prompt-str>		change the MIL prompt
-	-yaccsilent		no yacc-specific error msgs
-	-modulesilent		no module lines output
-	-mmap <size>		alloc blocks > sizeKB from VM
-	-d <debugmask>	    1 = thread-specific debug output
-			    2 = property enforcing on new BATs
-			    4 = memory allocation
-			    8 = property checking on all values
-			   16 = major IO activity
-			   32 = BAT handling
-			   64 = MIL parser debugging
-			  128 = Thread management
-			  256 = Event management 
-			  512 = Transaction management
-			 1024 = Triggers
-			 2048 = Dynamic loading
 
 # 13:33:19 >  
 # 13:33:19 >  MapiClient -help
@@ -50,22 +21,18 @@ option:	-db <db-name>		database to open
 # 13:33:19 >  
 
 usage:
-Mdestroydb [-home <file>] -db <name> {-user <usr>}
-	the special file 'homes' is expected in $MONETHOME
-Mcreatedb [-home <file>] -db <name> {-user <usr>} [-dir <dbdir>]
-	the default users are 'adm' and 'guest'
-	the default database directory is $MONETHOME/dbfarm/
+Mcreatedb -db <name> [-monetrc <environment>]
+	the default database location is ./dbfarm/
+	the environment variables as stored in '.monet.conf'
 
 # 13:33:19 >  
 # 13:33:19 >  Mdestroydb -?
 # 13:33:19 >  
 
 usage:
-Mdestroydb [-home <file>] -db <name> {-user <usr>}
-	the special file 'homes' is expected in $MONETHOME
-Mcreatedb [-home <file>] -db <name> {-user <usr>} [-dir <dbdir>]
-	the default users are 'adm' and 'guest'
-	the default database directory is $MONETHOME/dbfarm/
+Mdestroydb -db <name> [-monetrc <environment>]
+	the default database location is ./dbfarm/
+	the environment variables as stored in '.monet.conf'
 
 # 13:33:19 >  
 # 13:33:19 >  Mshutdown -?

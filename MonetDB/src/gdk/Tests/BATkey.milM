@@ -42,3 +42,4 @@ printf("# Finally, BATpropcheck (correctly) detects that _MMcastnil_14 is \"inco
 printf("> _MMreverse_49.print;  \n");
 	  _MMreverse_49.print; 
 	  
+quit;
