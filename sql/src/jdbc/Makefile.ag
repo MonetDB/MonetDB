@@ -25,6 +25,8 @@ MTSAFE
 
 VPATH = $(srcdir):$(srcdir)/example
 
+EXTRA_DIST = manifest
+
 jar_MonetJDBC = {
 	DIR = libdir/MonetDB/java
 	SOURCES = nl/cwi/monetdb/jdbc/MonetConnection.java \
