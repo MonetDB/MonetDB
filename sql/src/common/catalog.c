@@ -6,7 +6,7 @@
 
 #define OIDRANGE 100
 
-static int cat_debug = 1;
+static int cat_debug = 0;
 
 static void kc_destroy(kc *k)
 {
