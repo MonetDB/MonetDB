@@ -229,6 +229,11 @@ if [ "${os}" = "Linux" ] ; then
 	fi
 fi
 
+if [ "${os}" = "Darwin" ] ; then
+	# "our" autoconf on sap 
+	binpath="/Users/manegold/soft/local/bin:${binpath}"
+fi
+
 if [ "${os}" = "SunOS" ] ; then
 	# "our" /soft[64] path on apps
 	soft32="/var/tmp${soft32}"
