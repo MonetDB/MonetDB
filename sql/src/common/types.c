@@ -260,8 +260,243 @@ void parser_init(int debug)
 	types = list_create((fdestroy)&type_destroy);
 	aggrs = list_create((fdestroy)&aggr_destroy);
 	funcs = list_create((fdestroy)&func_destroy);
+	sqltypeinit();
 }
 
+/* SQL service initialization
+This C-code version initializes the 
+parser catalogs with typing information. Although, in principle,
+many of the function signatures can be obtained from the underlying
+database kernel, we have chosen for this explicit scheme for one
+simple reason. The SQL standard dictates the types and we have to
+check their availability in the kernel only. The kernel itself could
+include manyfunctions for which their is no standard.
+lead to unexpected 
+*/
+
+
+typedef struct{
+		char * h,  *t;
+} pair;
+
+sql_type_cmd(str sqlname, int digits, int scale, int radix, str name){
+	(void)sql_create_type( sqlname, digits, scale, radix, name );
+}
+sql_func_cmd(str name, str imp, str tp1, str tp2, str tp3, str rtp){
+	(void)sql_create_func( name, imp, tp1, tp2, tp3, rtp );
+}
+sql_aggr_cmd( str name, str imp, str atp, str rtp){
+	(void)sql_create_aggr( name, imp, atp, rtp );
+}
+
+
+int sqltypeinit()
+{	int i,j;
+	pair strings[]= {
+		{"CHAR",	"chr"}, 
+		{"VARCHAR",	"str"}, 
+		{  0,	0}
+	};
+	pair numerical[]= {
+		{"int",	"uchr"}, 
+		{"int",	"sht"},
+		{"lng",	"int"},
+		{"lng",	"lng"},
+		{"dbl",	"flt"}, 
+		{"dbl",	"dbl"}, 
+		{  0,	0}
+	};
+	pair floats[]= {
+		{"dbl",	"flt"}, 
+		{"dbl",	"dbl"}, 
+		{  0,	0}
+	};
+	pair dates[]= {
+		{"MONTH_INTERVAL",	"int"}, 
+		{"SEC_INTERVAL",	"int"}, 
+		{"DATE",		"date"}, 
+		{"TIME",		"time"}, 
+		{"TIMESTAMP",		"timestamp"}, 
+		{  0,	0}
+	};
+	/* packing strings,numerical,dates */
+	pair sql_types []= {
+		{"CHAR",	"chr"}, 
+		{"VARCHAR",	"str"}, 
+		{"int",	"uchr"}, 
+		{"int",	"sht"},
+		{"lng",	"int"},
+		{"lng",	"lng"},
+		{"dbl",	"flt"}, 
+		{"dbl",	"dbl"}, 
+		{"MONTH_INTERVAL",	"int"}, 
+		{"SEC_INTERVAL",	"int"}, 
+		{"DATE",		"date"}, 
+		{"TIME",		"time"}, 
+		{"TIMESTAMP",		"timestamp"}, 
+		{  0,	0}
+	};
+
+	sql_type_cmd("OID", 0, 0, 2, 	  	"oid");
+	sql_type_cmd("BOOL", 0, 0, 2,	  	"bit");
+	sql_type_cmd("BOOLEAN", 0, 0, 2,	"bit");
+
+	sql_type_cmd("CHAR", 0, 0, 0,  	"str"); 
+	sql_type_cmd("CHARACTER", 0, 0, 0, 	"str");
+	sql_type_cmd("VARCHAR", 0, 0, 0, 	"str");
+
+	sql_type_cmd("TEXT", 0, 0, 0, 		"str");
+	sql_type_cmd("TINYTEXT", 0, 0, 0, 	"str");
+	sql_type_cmd("STRING", 0, 0, 0, 	"str");
+
+/*
+	 *INT(n) n <= 2 -> TINYINT
+		  n <= 5 -> SMALLINT
+		  n <= 9 -> MEDIUMINT
+		  n <= 19 -> BIGINT
+*/
+
+	sql_type_cmd("UBYTE", 2, 0, 2,		"uchr");
+	sql_type_cmd("TINYINT", 2, 0, 2, 	"sht"); /* sht as sum(uchr) isn't implemented */
+	sql_type_cmd("SMALLINT", 5, 0, 2,	"sht");
+	sql_type_cmd("MEDIUMINT", 9, 0, 2,	"int");
+	sql_type_cmd("INTEGER", 9, 0, 2,	"int");
+	sql_type_cmd("NUMBER", 9, 0, 2,	"int");
+	sql_type_cmd("BIGINT", 19, 0, 2,	"lng");
+
+	/*sql_type("INT", 2, 0, 2, 		"uchr"); */
+	sql_type_cmd("INT", 5, 0, 2,		"sht");
+	sql_type_cmd("INT", 9, 0, 2,		"int");
+	sql_type_cmd("INT", 19, 0, 2,		"lng");
+
+	/* float(n) (n indicates precision of atleast n digits)*/
+	/* ie n <= 23 -> flt */
+	/*    n <= 51 -> dbl */
+	/*    n <= 62 -> long long dbl (with -ieee) (not supported) */
+	/* this requires a type definition */
+
+	sql_type_cmd("FLOAT", 23, 0, 2, 	"flt");
+	sql_type_cmd("FLOAT", 51, 0, 2, 	"dbl");
+
+	sql_type_cmd("DOUBLE", 51, 0, 2, 	"dbl");
+	sql_type_cmd("REAL", 51, 0, 2, 	"dbl");
+
+	/* decimal(n) == int(n)*/
+
+	/*#sql_type("DECIMAL", 2, 0, 10, 		"uchr"); */
+	sql_type_cmd("DECIMAL", 5, 0, 10,		"sht");
+	sql_type_cmd("DECIMAL", 9, 0, 10,		"int");
+	sql_type_cmd("DECIMAL", 19, 0, 10,		"lng");
+
+/*
+	# decimal(d,s) (d indicates nr digits, s scale indicates nr of digits after the dot .)
+	#sql_type_cmd("DECIMAL", 51, 50, "decimal");		# (fixed precision) requires decimal module
+*/
+	sql_type_cmd("DECIMAL", 23, 22, 10,		"flt");
+	sql_type_cmd("DECIMAL", 51, 50, 10,		"dbl");
+
+	/*sql_type_cmd("NUMERIC", 2, 0, 		"uchr"); */
+	sql_type_cmd("NUMERIC", 5, 0, 10,		"sht");
+	sql_type_cmd("NUMERIC", 9, 0, 10,		"int");
+	sql_type_cmd("NUMERIC", 19, 0, 10,		"lng");
+
+	sql_type_cmd("NUMERIC", 23, 22, 10,		"flt");
+	sql_type_cmd("NUMERIC", 51, 50, 10,		"dbl");
+
+
+
+	sql_type_cmd("MONTH_INTERVAL", 0, 0, 10, 	"int");
+	sql_type_cmd("SEC_INTERVAL", 0, 0, 10, 		"int");
+	sql_type_cmd("DATE", 0, 0, 0, 			"date");
+	sql_type_cmd("TIME", 0, 0, 0, 			"time");
+	sql_type_cmd("DATETIME", 0, 0, 0, 		"datetime");
+	sql_type_cmd("TIMESTAMP", 0, 0,0, 		"timestamp");
+
+
+	for(i=0; sql_types[i].h; i++)
+		sql_aggr_cmd("min","min",sql_types[i].t,sql_types[i].t);
+	for(i=0; sql_types[i].h; i++)
+		sql_aggr_cmd("max","max",sql_types[i].t,sql_types[i].t);
+
+	for(i=0; numerical[i].h; i++){
+		char buf[50];
+		snprintf(buf,50,"sum_%s",numerical[i].h);
+		sql_aggr_cmd("sum",buf,numerical[i].t, numerical[i].h);
+	}
+	for(i=0; numerical[i].h; i++){
+		sql_aggr_cmd("avg","avg",numerical[i].t, "dbl");
+	}
+
+	sql_aggr_cmd( "count", "count", "", "int" ); 
+
+	for(i=0; numerical[i].h; i++){
+	sql_func_cmd("sql_sub","-",numerical[i].t,numerical[i].t,"",numerical[i].t);
+	sql_func_cmd("sql_add","+",numerical[i].t,numerical[i].t,"",numerical[i].t);
+	sql_func_cmd("sql_mul","*",numerical[i].t,numerical[i].t,"",numerical[i].t);
+	sql_func_cmd("sql_div","/",numerical[i].t,numerical[i].t,"",numerical[i].t);
+	sql_func_cmd("sql_max","max",numerical[i].t,numerical[i].t,"",numerical[i].t);
+	sql_func_cmd("sql_min","min",numerical[i].t,numerical[i].t,"",numerical[i].t);
+	}
+
+	for(i=0; numerical[i].h; i++)
+		sql_func_cmd("sql_neg","-",numerical[i].t,",",",",numerical[i].t);
+
+
+	for(i=0; numerical[i].h; i++)
+	for(j=0; numerical[j].h;j++)
+	if( strcmp(numerical[i].t,numerical[j].t) )
+	    sql_func_cmd("convert", numerical[j].t, numerical[i].t, "","", numerical[j].t );
+	
+
+	for(i=0; strings[i].h; i++)
+	for(j=0; strings[j].h;j++)
+	if( strcmp(strings[i].t,strings[j].t) )
+	    sql_func_cmd("convert", strings[j].t, strings[i].t, "","", strings[j].t );
+	
+
+	for(i=0; strings[i].h; i++)
+	for(j=0; numerical[j].h;j++)
+	if( strcmp(strings[i].t,numerical[j].t) )
+	    sql_func_cmd("convert", numerical[j].t, strings[i].t, "","", numerical[j].t );
+	
+
+	for(i=0; floats[i].h;i++){
+		sql_func_cmd( "floor", "floor", floats[i].t, "", "", floats[i].t ); 
+		sql_func_cmd( "ceil", "ceil", floats[i].t, "", "", floats[i].t ); 
+		sql_func_cmd( "sin", "sin", floats[i].t, "", "", floats[i].t ); 
+		sql_func_cmd( "cos", "cos", floats[i].t, "", "", floats[i].t ); 
+		sql_func_cmd( "tan", "tan", floats[i].t, "", "", floats[i].t ); 
+		sql_func_cmd( "asin", "asin", floats[i].t, "", "", floats[i].t ); 
+		sql_func_cmd( "acos", "acos", floats[i].t, "", "", floats[i].t ); 
+		sql_func_cmd( "atan", "atan", floats[i].t, "", "", floats[i].t ); 
+		sql_func_cmd( "sinh", "sinh", floats[i].t, "", "", floats[i].t ); 
+		sql_func_cmd( "cosh", "cosh", floats[i].t, "", "", floats[i].t ); 
+		sql_func_cmd( "tanh", "tanh", floats[i].t, "", "", floats[i].t ); 
+		sql_func_cmd( "sqrt", "sqrt", floats[i].t, "", "", floats[i].t ); 
+		sql_func_cmd( "exp", "exp", floats[i].t, "", "", floats[i].t ); 
+		sql_func_cmd( "log", "log", floats[i].t, "", "", floats[i].t ); 
+		sql_func_cmd( "log10", "log10", floats[i].t, "", "", floats[i].t ); 
+	}
+
+	sql_func_cmd( "current_date", "current_date", "", "", "" , "date" );
+	sql_func_cmd( "current_time", "current_time", "", "", "" , "time" );
+	sql_func_cmd( "current_timestamp", "current_timestamp", "", "", "" , "timestamp" );
+
+	sql_func_cmd( "sql_sub", "date_sub_sec_interval", "date", "int", "", "date");
+	sql_func_cmd( "sql_sub", "date_sub_month_interval", "date", "int", "", "date");
+
+	sql_func_cmd( "sql_add", "date_add_sec_interval", "date", "int", "", "date");
+	sql_func_cmd( "sql_add", "addmonths", "date", "int", "", "date");
+
+	sql_func_cmd( ">", ">", "date", "date", "", "bit");
+	sql_func_cmd( "<", "<", "date", "date", "", "bit");
+
+	sql_func_cmd( "year", "year", "date", "", "", "int");
+	sql_func_cmd( "month", "month", "date", "", "", "int");
+
+	sql_func_cmd( "substring", "string", "str", "int", "int", "str");
+	sql_func_cmd( "strconcat", "+", "str", "str", "", "str");
+}
 void parser_exit()
 {
 	list_destroy(aggrs);
