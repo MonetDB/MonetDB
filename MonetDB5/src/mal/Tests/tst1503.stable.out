@@ -5,6 +5,8 @@ stdout of test 'tst1503` in directory 'src/mal` itself:
 # 07:59:07 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst1503.mal </dev/null
 # 07:59:07 >  
 
+
+
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
@@ -100,9 +102,9 @@ function Admin.main():int;	# 0  (main:int)
     io.print(b1);	# 40 IOprint_val ($74:int)<-(b1:bat[:oid,:void])
     io.print("zb1 becomes");	# 41 IOprint_val ($75:int)<-($76:str)
     io.print(zb1);	# 42 IOprint_val ($77:int)<-(zb1:bat[:chr,:int])
-    b2 := group.group(b1,y);	# 43 GRPderive2 (b2:bat[:oid,:oid])<-(b1:bat[:oid,:void])(y:bat[:oid,:dbl])
-    io.print("b2 becomes");	# 44 IOprint_val ($79:int)<-($80:str)
-    io.print(b2);	# 45 IOprint_val ($81:int)<-(b2:bat[:oid,:oid])
+    (zb2,b2):= group.group(b1,y);	# 43 GRPderive (zb2:bat[:dbl,:oid])(b2:bat[:oid,:oid])<-(b1:bat[:oid,:void])(y:bat[:oid,:dbl])
+    io.print("b2 becomes");	# 44 IOprint_val ($80:int)<-($81:str)
+    io.print(b2);	# 45 IOprint_val ($82:int)<-(b2:bat[:oid,:oid])
 end main;	# 46  
 [ "group x" ]
 #---------------------------------#

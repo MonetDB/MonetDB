@@ -39,6 +39,6 @@ print("group x");print(x,y,z);
         (zb1,b1) := group(x);
 print("b1 becomes"); print(b1);
 print("zb1 becomes"); print(zb1);
-        (zb1,b2) := group(b1,y);
+        (zb2,b2) := group(b1,y);
 print("b2 becomes"); print(b2);
 
