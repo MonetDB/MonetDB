@@ -827,16 +827,19 @@ printf("bstreamClient:read block\n"); fflush(stdout);
         while ((len = stream_read(c->fdin, s, 1, BLOCK)) >0 ){
                 size += len;
 		if( (c->limit-c->input) - size < BLOCK+1){
-			@:makespace@
+			enlargebuffer(c, BLOCK);
 		}
-		s[len]=0;
-                s= c->input+len;
+                s= c->input+size;
+		c->input[size]=0;
         }
 	if( len <0){
 		/* end of stream */
 		return 0;
-	}
-	s[len]=0;
+	} 
+	c->input[size]=0;
+#ifdef MAL_CLIENT_DEBUG
+	printf("ln %d len %d size %d buffer %d\n",ln,len,size,c->limit-c->input);
+#endif
 	c->nxt= c->input+ln;
 	s= strrchr(c->nxt,'\n');
 	if(s) *s=0;

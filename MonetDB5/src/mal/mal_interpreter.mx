@@ -1148,7 +1148,7 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall)
 Sometimes it helps to release a BAT when it won;t be used anymore.
 In this case, we have to assure that all references are cleared
 as well. The routine below performs this action in the local
-stack frame only.
+stack frame and its parents only.
 @c
 void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 { 	int k;
@@ -1161,11 +1161,9 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 	stream_printf(GDKout,"--->release BAT %d \n", bid);
 	printStack(GDKout,mb,stk);
 #endif
+   do{
 	for(k=0;k<mb->vtop-1; k++) 
 	if( stk->stk[k].vtype== TYPE_bat && abs(stk->stk[k].val.ival)==bid) {
-#ifdef STACKTRACE
-	stream_printf(GDKout,"released entry %d\n",k);
-#endif
 		BBPdecref(bid,TRUE);
 		stk->stk[k].val.ival= 0;
 	}
@@ -1177,6 +1175,11 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 	stream_printf(GDKout,"--->stack after release BAT %d\n", bid);
 	printStack(GDKout,mb,stk);
 #endif
+	if(stk->up){
+		stk= stk->up;
+		mb= stk->blk;
+	}else break;
+    } while(stk);
 }
 
 @-
