@@ -656,7 +656,7 @@ def CheckMods(env, TST, SERVER) :
 			if m not in env['TST_MODS']:
 				missing.append(m)
 	if SERVER == "SQL":
-		for m in "str", "xtables",  "sqlserver", "ascii_io", "alarm", "unix", "mvc":
+		for m in "str", "sqlserver", "sql", "ascii_io", "alarm", "unix", "mvc", "ddbench":
 			if m not in env['TST_MODS']:
 				missing.append(m)
 	return missing
@@ -760,8 +760,9 @@ def RunTest(env, TST) :
 
 	os.chdir(TSTTRGDIR)
 
-	NotOnNT = \
-		["src/modules/plain/tcpip1", "src/modules/plain/tcpip2"]
+	NotOnNT = []
+	#\
+	#	["src/modules/plain/tcpip1", "src/modules/plain/tcpip2"]
 	#\
 	#	"src/modules/plain/salgebra", "tests/by_Peter/tst_priv", \
 	#	"scripts/gold/tst100", "scripts/gold/tstvoid", "src/gdk/reload", "src/modules/plain/mprof", "src/modules/plain/mprof2",	\
@@ -986,19 +987,9 @@ def RunTest(env, TST) :
 			REVo=" (r"+REVo+")"
 			REVe=" (r"+REVe+")"
 
-			ACCURACY = par['ACCURACY']
-			#TODO:
-			#timedout = 1
-			#while timedout and ACCURACY >= 0:
-			#	timedout = 0
-			#	signal.alarm(par['TIMEOUT'])
-			#	try:
-			#		os.system(env['exe']['Mdiff'][1]+' '+par['IGNORE']+' '+par['CONTEXT']+' -a'+str(ACCURACY)+' -r"'+REVo+'" '+TST+STABLEout+'.FILTERED '+TST+'.test.out.FILTERED '+TST+'.out.diff.html')
-			#	except TimeoutError, t:
-			#		timedout = 1
-			#	signal.alarm(0)
-			#	ACCURACY = ACCURACY - 1
-			os.system(env['exe']['Mdiff'][1]+' '+par['IGNORE']+' '+par['CONTEXT']+' -a'+str(ACCURACY)+' -r"'+REVo+'" '+TST+STABLEout+'.FILTERED '+TST+'.test.out.FILTERED '+TST+'.out.diff.html')
+			MDIFF = env['exe']['Mdiff'][1]
+			if env['exe']['Mtimeout'][0]:
+				MDIFF = env['exe']['Mtimeout'][1]+' '+MDIFF
 
 			ACCURACY = par['ACCURACY']
 			#TODO:
@@ -1007,12 +998,32 @@ def RunTest(env, TST) :
 			#	timedout = 0
 			#	signal.alarm(par['TIMEOUT'])
 			#	try:
-			#		os.system(env['exe']['Mdiff'][1]+' '+par['IGNORE']+' '+par['CONTEXT']+' -a'+str(ACCURACY)+' -r"'+REVe+'" '+TST+STABLEerr+'.FILTERED '+TST+'.test.err.FILTERED '+TST+'.err.diff.html')
+			#		os.system(MDIFF+' '+par['IGNORE']+' '+par['CONTEXT']+' -a'+str(ACCURACY)+' -r"'+REVo+'" '+TST+STABLEout+'.FILTERED '+TST+'.test.out.FILTERED '+TST+'.out.diff.html')
 			#	except TimeoutError, t:
 			#		timedout = 1
 			#	signal.alarm(0)
 			#	ACCURACY = ACCURACY - 1
-			os.system(env['exe']['Mdiff'][1]+' '+par['IGNORE']+' '+par['CONTEXT']+' -a'+str(ACCURACY)+' -r"'+REVe+'" '+TST+STABLEerr+'.FILTERED '+TST+'.test.err.FILTERED '+TST+'.err.diff.html')
+			timedout = 1
+			while timedout and ACCURACY >= 0:
+				timedout = os.system(MDIFF+' '+par['IGNORE']+' '+par['CONTEXT']+' -a'+str(ACCURACY)+' -r"'+REVo+'" '+TST+STABLEout+'.FILTERED '+TST+'.test.out.FILTERED '+TST+'.out.diff.html')
+				ACCURACY = ACCURACY - 1
+
+			ACCURACY = par['ACCURACY']
+			#TODO:
+			#timedout = 1
+			#while timedout and ACCURACY >= 0:
+			#	timedout = 0
+			#	signal.alarm(par['TIMEOUT'])
+			#	try:
+			#		os.system(MDIFF+' '+par['IGNORE']+' '+par['CONTEXT']+' -a'+str(ACCURACY)+' -r"'+REVe+'" '+TST+STABLEerr+'.FILTERED '+TST+'.test.err.FILTERED '+TST+'.err.diff.html')
+			#	except TimeoutError, t:
+			#		timedout = 1
+			#	signal.alarm(0)
+			#	ACCURACY = ACCURACY - 1
+			timedout = 1
+			while timedout and ACCURACY >= 0:
+				timedout = os.system(MDIFF+' '+par['IGNORE']+' '+par['CONTEXT']+' -a'+str(ACCURACY)+' -r"'+REVe+'" '+TST+STABLEerr+'.FILTERED '+TST+'.test.err.FILTERED '+TST+'.err.diff.html')
+				ACCURACY = ACCURACY - 1
 
 			AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
 
