@@ -30,7 +30,6 @@
 #ifndef _searchpath_H
 #define _searchpath_H
 
-#include <monet_utils.h>
 #include <gdk_storage.h>
 
 #ifndef SO_EXT

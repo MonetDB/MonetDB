@@ -75,7 +75,7 @@ int debugger();
 #endif /* _MONET_GLOBAL_H_ */
 @C
 extern "C" {
-#include <config.h>
+#include "Mserver.h"
 
 #ifdef _CRTDBG_MAP_ALLOC
 /* Windows only:
@@ -85,7 +85,6 @@ extern "C" {
 #undef _CRTDBG_MAP_ALLOC
 #endif
 
-#include "Mserver.h"
 #include "monet_context.h"
 #include "monet_interpreter.h"
 #include "monet_parse.h"

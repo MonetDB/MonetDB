@@ -36,7 +36,6 @@ the WIN32 native platform.
 #define GDK_POSIX_H
 
 #include "gdk_system.h"
-#include <monet_utils.h>
 
 #include <sys/types.h>
 

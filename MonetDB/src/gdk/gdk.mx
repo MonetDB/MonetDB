@@ -267,7 +267,7 @@ An error at this stage normally lead to an abort.
 #ifndef _GDK_H_
 #define _GDK_H_
 
-#include <config.h>		/* we always have this */
+#include <monet_utils.h>
 
 /* standard includes upon which all configure tests depend */
 #include <stdio.h>
@@ -347,39 +347,12 @@ An error at this stage normally lead to an abort.
 # define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
 
-#include <assert.h>     
-
-
-#if defined (__GNUC__) && defined (__STDC__)
-#define INLINE	inline
-#else
-#define INLINE
-#endif
-
-#define REGISTER	register
-
-#ifndef HAVE_SSIZE_T
-#if SIZEOF_SIZE_T == SIZEOF_INT
-typedef int ssize_t;
-#else
-typedef long ssize_t;
-#endif
-#endif
-
-#ifndef HAVE_PTRDIFF_T
-#if SIZEOF_SIZE_T == SIZEOF_INT
-typedef int ptrdiff_t;
-#else
-typedef long ptrdiff_t;
-#endif
-#endif
-
 #ifdef __cplusplus
 extern "C" { 
 #endif
 
-#include "gdk_posix.h"	
 #include "gdk_system.h"	
+#include "gdk_posix.h"	
 #include <stream.h>	
 
 #undef MIN
