@@ -21,7 +21,7 @@ public class Test_Csavepoints {
 			con.close();
 			System.exit(-1);
 		} catch (SQLException e) {
-			System.out.println("failed :)");
+			System.out.println("failed :) " + e.getMessage());
 		}
 
 		con.setAutoCommit(false);

@@ -486,7 +486,6 @@ public class JdbcClient {
 			}
 		}
 		cols.close();
-		out.println();
 	}
 
 	private final static int AS_IS = 0;
