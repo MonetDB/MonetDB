@@ -97,7 +97,7 @@ log_worker (const char *msg, va_list msgs)
     int len = strlen(PFerrbuf);
     if (len+2 < OOPS_SIZE) {
         int n = vsnprintf (PFerrbuf+len, OOPS_SIZE-(len+2), msg, msgs);
-        if (n >= 0) {
+        if (n >= 0 && n < OOPS_SIZE-(len+2)) {
             PFerrbuf[len+n] = '\n';
             PFerrbuf[len+n+1] = 0;
         }
