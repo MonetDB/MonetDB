@@ -367,56 +367,36 @@ int keyword_exists(char *yytext)
 static int utf8_getchar(unsigned char *ch)
 {
 	int res = 0;
-        if (*ch >= 0xF0) {
+	if (*ch < 0xC0) {
+                (res) = *(ch)++;
+        } else if (*(ch) < 0xE0) {
+                (res)  = (*(ch)++ - 0xC0) << 6;
+                (res) |= (*(ch)++ & 0x3F);
+	} else if (*ch < 0xF0) {
+                (res)  = (*(ch)++ - 0xE0) << 12;
+                (res) |= (*(ch)++ & 0x3F) << 6;
+                (res) |= (*(ch)++ & 0x3F);
+        } else {
                 (res)  = (*(ch)++ - 0xF0) << 18;
                 (res) |= (*(ch)++ & 0x3F) << 12;
                 (res) |= (*(ch)++ & 0x3F) << 6;
                 (res) |= (*(ch)++ & 0x3F);
-        } else if (*(ch) >= 0xE0) {
-                (res)  = (*(ch)++ - 0xE0) << 12;
-                (res) |= (*(ch)++ & 0x3F) << 6;
-                (res) |= (*(ch)++ & 0x3F);
-        } else if (*(ch) >= 0xC0) {
-                (res)  = (*(ch)++ - 0xC0) << 6;
-                (res) |= (*(ch)++ & 0x3F);
-        } else {
-                (res) = *(ch)++;
         }
 	return res;
-}
-
-static void utf8_putchar(int ch, unsigned char *buf)
-{
-        if ((ch) < 0x80) {
-                *(buf)++ = (ch);
-        } else if ((ch) < 0x800) {
-                *(buf)++ = 0xC0 | ((ch) >> 6);
-                *(buf)++ = 0x80 | ((ch) & 0x3F);
-        } else if ((ch) < 0x10000) {
-                *(buf)++ = 0xE0 | ((ch) >> 12);
-                *(buf)++ = 0x80 | (((ch) >> 6) & 0x3F);
-                *(buf)++ = 0x80 | ((ch) & 0x3F);
-        } else {
-                *(buf)++ = 0xF0 | ((ch) >> 18);
-                *(buf)++ = 0x80 | (((ch) >> 12) & 0x3F);
-                *(buf)++ = 0x80 | (((ch) >> 6) & 0x3F);
-                *(buf)++ = 0x80 | ((ch) & 0x3F);
-        }
-	buf = 0;
 }
 
 /* given the first char return how many char's fill a single utf8 char */
 static int utf8_charlen(unsigned char ch)
 {
-	int res = 1;
-        if (ch >= 0xF0) {
-		res += 3;
+	if (ch < 0xC0) {
+		return 1;
+        } else if (ch >= 0xF0) {
+		return 4;
         } else if (ch >= 0xE0) {
-		res += 2;
-        } else if (ch >= 0xC0) {
-		res += 1;
+		return 3;
+        } else {
+		return 2;
 	}
-	return res;
 }
 
 static int utf8_intlen(int ch)
@@ -449,17 +429,28 @@ static int lex_getc(struct scanner * lc)
 	return c;
 }
 
-void lex_append(struct scanner *lc, int ch)
+static void lex_append(struct scanner *lc, int ch)
 {
-	int len = utf8_intlen(ch);
-
-	if (lc->yylen+len >= lc->yysize) { /* keep space for EOS */
+	if (lc->yylen+4 >= lc->yysize) { /* keep space for EOS */
 		lc->yysize *= 4;
 		lc->yytext = RENEW_ARRAY(char, lc->yytext, lc->yysize);
 		assert (lc->yytext);
 	}
-	utf8_putchar(ch, (unsigned char *)lc->yytext+lc->yylen);
-	lc->yylen += len;
+        if ((ch) < 0x80) {
+		lc->yytext[lc->yylen++] = (ch);
+        } else if ((ch) < 0x800) {
+		lc->yytext[lc->yylen++] = 0xC0 | ((ch) >> 6);
+		lc->yytext[lc->yylen++] = 0x80 | ((ch) & 0x3F);
+        } else if ((ch) < 0x10000) {
+		lc->yytext[lc->yylen++] = 0xE0 | ((ch) >> 12);
+		lc->yytext[lc->yylen++] = 0x80 | (((ch) >> 6) & 0x3F);
+		lc->yytext[lc->yylen++] = 0x80 | ((ch) & 0x3F);
+        } else {
+		lc->yytext[lc->yylen++] = 0xF0 | ((ch) >> 18);
+		lc->yytext[lc->yylen++] = 0x80 | (((ch) >> 12) & 0x3F);
+		lc->yytext[lc->yylen++] = 0x80 | (((ch) >> 6) & 0x3F);
+		lc->yytext[lc->yylen++] = 0x80 | ((ch) & 0x3F);
+        }
 	lc->yytext[lc->yylen] = 0;
 }
 
@@ -573,7 +564,7 @@ int lex_string(mvc * c, int quote)
 	assert(lc->yylen == 0);
 
 	while ((cur = lex_getc(lc)) != EOF && (cur != quote || escape)) {
-		if (!escape && cur == '\\')
+		if (cur == '\\' && !escape)
 			escape = 1;
 		else
 			escape = 0;
@@ -794,6 +785,8 @@ int sqllex(YYSTYPE * yylval, void *parm)
 		yylval->sval = lc->yytext;
 
 		if (token == UNION) {
+			lc->yylen = 0;
+			lc->yytext[0] = 0;
 			token = tokenize(c);
 			yylval->sval = lc->yytext;
 			if (token == JOIN) {

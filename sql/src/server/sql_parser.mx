@@ -478,7 +478,7 @@ sqlstmt:
 			  lc->sym = $$ = NULL; YYACCEPT; }
  | error ';'		{ mvc *lc = (mvc*)parm;
 			  lc->sym = $$ = NULL; YYACCEPT; }
- | LEX_ERROR ';'	{ mvc *lc = (mvc*)parm;
+ | LEX_ERROR 		{ mvc *lc = (mvc*)parm;
 			  lc->sym = $$ = NULL; YYACCEPT; }
  ;
 
@@ -1858,12 +1858,12 @@ column_exp_commalist:
  ;
 
 column_exp:
-    ident '.' '*'	
+    ident '.' '*'
 		{ dlist *l = dlist_create();
   		  dlist_append_string(l, $1);
   		  dlist_append_string(l, NULL);
   		  $$ = _symbol_create_list( SQL_TABLE, l ); }
- |  scalar_exp opt_alias_name	
+ |  scalar_exp opt_alias_name
 		{ dlist *l = dlist_create();
   		  dlist_append_symbol(l, $1);
   		  dlist_append_string(l, $2);
@@ -2138,8 +2138,10 @@ case_exp: /* could rewrite NULLIF and COALESCE to normal CASE stmts */
  ;
 
 scalar_exp_list:
-    scalar_exp			
-			{ $$ = dlist_append_symbol( dlist_create(), $1);}
+    scalar_exp ',' scalar_exp
+			{ $$ = dlist_append_symbol( dlist_create(), $1);
+			  $$ = dlist_append_symbol( $$, $3);
+			}
  |  scalar_exp_list ',' scalar_exp
 			{ $$ = dlist_append_symbol( $1, $3);}
  ;
@@ -2469,6 +2471,5 @@ int parse_error(mvc * c, char *err)
 		 "!ERROR (%d) %s at token (%d): %s in statement: %s\n",
 		 c->scanner.lineno, err, c->scanner.yyval, 
 		 c->scanner.yytext, c->scanner.sql);
-	c->scanner.cur = ' ';
 	return 1;
 }

@@ -2027,6 +2027,11 @@ char *column_name(stmt * st)
 
 	case st_relselect:
 	case st_reljoin:
+	case st_list:
+		if (list_length(st->op1.lval))
+			return column_name(st->op1.lval->h->data);
+		/* whats the name of an empty list ? */
+		assert(0);
 	default:
 		fprintf(stderr, "missing column name %d: %s\n", st->type, st_type2string(st->type) );
 		return NULL;
