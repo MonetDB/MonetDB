@@ -1,36 +1,36 @@
 The Monet Database System
 =========================
 
-The Monet database is developed by the CWI database research 
-group (see http://monetdb.cwi.nl). 
+The Monet database is developed by the CWI database research group 
+(see http://monetdb.cwi.nl).
 
-Via the MonetDB project we have brought the Monet system in open
-source, where it is accessible at http://sourceforge.net/projects/monetdb
+Via the MonetDB project we have brought the Monet system in open source,
+where it is accessible at http://sourceforge.net/projects/monetdb
 
-The Monet database system is a high-performance database kernel 
-for query-intensive applications. The Monet kernel works together
-with an SQL frontend that is in a separate CVS module.
+The Monet database system is a high-performance database kernel for
+query-intensive applications. The Monet kernel works together with an
+SQL frontend that is in a separate CVS module.
 
-If you got a source distribution, please compile and install 
-Monet first, following the instructions in the file 'HowToStart'.
+If you got a source distribution, please compile and install Monet
+first, following the instructions in the file 'HowToStart' (for Unix) or
+'HowToStart-Win32' (for Windows).
 
-The documentation starts in doc/monet.html, relative from
-your binary distribution top-level directory, or installation
-directory (once you compiled and installed the source distribution). 
+The documentation starts in doc/monet.html, relative from your binary
+distribution top-level directory, or installation directory (once you
+compiled and installed the source distribution).
 
 Copyright Notice
 ================
 
-The Monet Database is subject to the MonetDB Public
-License Version 1.0 (the "License"); you may not use this file
-except in compliance with the License. You may obtain a copy of
-the License at
+The Monet Database is subject to the MonetDB Public License Version 1.0
+(the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
 http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
 
-Software distributed under the License is distributed on an "AS
-IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
-implied. See the License for the specific language governing
-rights and limitations under the License.
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations under
+the License.
 
 The Original Code is the Monet Database System.
 
