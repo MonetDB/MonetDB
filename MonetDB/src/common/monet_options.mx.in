@@ -115,6 +115,14 @@ mutils_export void mo_free_options( opt *set, int setlen );
 #  include "getopt1.c"
 #endif
 
+#ifndef HAVE_DECL_STRDUP
+#ifdef HAVE_STRDUP
+extern char *strdup(const char *);
+#else
+#define strdup(s)	strcpy(malloc(strlen(s)),(s))
+#endif
+#endif
+
 void mo_print_options(opt *set, int setlen)
 {
 	int i = 0;

@@ -55,33 +55,33 @@ Provides access to some of the C stdlib.h functions.
  * The Basic UNIX commands.
  */
 
-int unix_getenv(str *res, str varname) {
-    char *p = getenv(varname);
-    if(p) *res = GDKstrdup(p);
-    else  *res = GDKstrdup("");
-    return GDK_SUCCEED;
+int unix_getenv(str *res, str varname)
+{
+	char *p = getenv(varname);
+	if(p) *res = GDKstrdup(p);
+	else  *res = GDKstrdup("");
+	return GDK_SUCCEED;
 }
 
-#ifndef HAVE_SETENV
-#ifdef HAVE_PUTENV
-int setenv(char *name, char *value, int overwrite) {
-        int ret = 0;
-        if (overwrite || getenv(name) == NULL) {
-                char *p = (char*) GDKmalloc(2+strlen(name)+strlen(value));
-                strcpy(p, name);
-                strcat(p, "=");
-                strcat(p, value);
-                ret = putenv(p);
-                /* GDKfree(p); */
-        }
-        return ret;
-}
+int unix_setenv(bit *res, str varname, str valname)
+{
+#ifdef HAVE_PUTENV		/* prefer POSIX putenv */
+	/* leaks memory when varname value reused */
+	size_t len = strlen(varname) + strlen(valname) + 2;
+	char *envval = GDKmalloc(len);
+	strcpy(envval, varname);
+	strcat(envval, "=");
+	strcat(envval, valname);
+	*res = putenv(envval);
+	/* don't free envval! */
+#else
+#ifdef HAVE_SETENV
+	*res = setenv(varname, valname, TRUE);
+#else
+	*res = -1;
 #endif
 #endif
-
-int unix_setenv(bit *res, str varname, str valname) {
-    *res = setenv(varname, valname, TRUE);
-    return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 /*

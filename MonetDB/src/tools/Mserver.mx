@@ -97,7 +97,7 @@ extern "C" {
 extern void		static_module_init(Client c, char buf[]); 
 }
 
-#include <new> 
+#include <new>
 void *operator new( size_t size ) 
 throw(std::bad_alloc) 
 {
@@ -141,7 +141,9 @@ malloc library totally unusable, since it requires you to do advice before any
 use of malloc().  We hack around it, by using realloc(0,size) in 
 gdk/gdk_utils.mx and wrapping malloc in the below dummy function:
 @C
+#ifdef HAVE_MALLOPT
 static int malloc_init=1;
+#endif
 #ifdef SOLARIS
 #ifdef HAVE_MALLOPT
 #undef malloc

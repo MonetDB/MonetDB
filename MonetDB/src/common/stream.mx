@@ -272,6 +272,14 @@ typedef long ssize_t;
 #define HAVE_SSIZE_T 1
 #endif
 
+#ifndef HAVE_DECL_STRDUP
+#ifdef HAVE_STRDUP
+extern char *strdup(const char *);
+#else
+#define strdup(s)	strcpy(malloc(strlen(s)),(s))
+#endif
+#endif
+
 int stream_init(void){
 #ifdef NATIVE_WIN32
 	int sockopt = SO_SYNCHRONOUS_NONALERT;

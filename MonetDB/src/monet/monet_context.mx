@@ -305,6 +305,7 @@ Variable VARnew(Cntxt stk, str name){
 	
 	i = strlen(name);
 	v = (Variable) GDKmalloc(sizeof(VarRecord)+i);
+	memset(v, 0, sizeof(VarRecord)+i);
 	v->binding.vtype = TYPE_int;
 	v->binding.val.ival = 0;
 

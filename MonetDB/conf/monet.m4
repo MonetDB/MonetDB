@@ -342,8 +342,8 @@ AC_ARG_ENABLE(warning,
   enable_warning=$enableval, enable_warning=no)
 if test "x$enable_warning" = xyes; then
   if test "x$GCC" = xyes; then
-    CFLAGS="$CFLAGS -Wall -std=c99"
-    CPPFLAGS="$CPPFLAGS -Wall -std=c99"
+    CFLAGS="$CFLAGS -Wall -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500"
+    CXXFLAGS="$CXXFLAGS -Wall -ansi"
   fi
 fi
 
