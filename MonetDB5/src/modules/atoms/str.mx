@@ -1597,7 +1597,7 @@ strStrSearch(int *res, str s, str s2)
 {
 	char *p;
 
-	RETURN_NIL_IF(strNil(s) || strNil(s2), TYPE_int);
+	RETURN_NIL_IF(s== 0 || s2 == 0 || strNil(s) || strNil(s2), TYPE_int);
 	if ((p = strstr(s, s2)) != 0)
 		*res = UTF8_strpos(s, p);
 	else
