@@ -643,11 +643,13 @@ Module: "stats"
 
 Module: "tcpip"
 
-[ 19 ]
-[ 19 ]
+[ 21 ]
+[ 21 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature				| help																							  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "TCPIP_listen", "COMMAND: ",	  "TCPIP_listen() : void",		  "start a TCP/IP server with the default port number."																	  ]
+[ "TCPIP_listen", "COMMAND: ",	  "TCPIP_listen(int) : void",		  "start a TCP/IP server"																				  ]
 [ "arpc",	  "PROC: ",	  "arpc(..any..) : any",		  "not available"																					  ]
 [ "cache",	  "COMMAND: ",	  "cache() : BAT[str,str]",		  "a copy of the list of BATs cached via the network"																	  ]
 [ "close",	  "COMMAND: ",	  "close() : void",			  "close all connections"																				  ]
