@@ -26,7 +26,7 @@ lib__sql = {
                 sql_optimizer.mx \
 		sql_cache.mx 
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_bat -l_kernel -l_ascii_io
-	LIBS = ../../server/libsqlserver ../../storage/bat/libbatstore $(MONETDB_LIBS) -lbat -lmal -lstream $(MONET5_LIBS)
+	LIBS = ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon $(MONETDB_LIBS) -lbat -lmal -lstream $(MONET5_LIBS)
 }
 
 scripts_mal = {
