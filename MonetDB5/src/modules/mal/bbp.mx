@@ -577,6 +577,12 @@ str CMDproject (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         p= (ptr*) getArgReference(stk,pci,2);
         tt=  getArgType(mb,pci,2);
         @:getBATdescriptor(result,bid,b,bbp.project)@
+ 	if( tt >= TYPE_str ){ 
+		if(p== 0 || *(str*)p==0) 
+			p = (ptr*)str_nil;
+   	  	else 
+			p = *(ptr**)p; 
+	}
         bn= BATconst(b, tt, p);
         if( bn ) {
                *result = bn->batCacheid;
