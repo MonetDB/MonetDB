@@ -189,8 +189,8 @@ Module: "cluster"
 
 Module: "color"
 
-[ 13 ]
-[ 13 ]
+[ 12 ]
+[ 12 ]
 #-------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature			help							  # name
 #-------------------------------------------------------------------------------------------------------------------------#
@@ -204,7 +204,6 @@ Module: "color"
 [ "red",	  "COMMAND:   ",  "red(color) : int",		  "Extracts red component from a color atom"		  ]
 [ "rgb",	  "COMMAND:   ",  "rgb(int, int, int) : color",	  "Converts an RGB triplets to a color atom"		  ]
 [ "saturation",	  "COMMAND:   ",  "saturation(color) : flt",	  "Extracts saturation component from a color atom"	  ]
-[ "test_color",	  "PROC:      ",  "test_color() : void",	  "not available"					  ]
 [ "value",	  "COMMAND:   ",  "value(color) : flt",		  "Extracts value component from a color atom"		  ]
 [ "ycc",	  "COMMAND:   ",  "ycc(int, int, int) : color",	  "Converts an YCC triplets to a color atom"		  ]
 
