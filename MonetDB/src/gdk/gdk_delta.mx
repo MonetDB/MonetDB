@@ -180,7 +180,7 @@ BAT *BATcommit(BAT *b) {
 				(*hatmdel)(&b->hheap,(size_t*)(h));
 			}
 			if (tunfix) {
-				(*hunfix)(t);
+				(*tunfix)(t);
 			}
 			if (tatmdel) {
 				(*tatmdel)(&b->theap,(size_t*)(t));
