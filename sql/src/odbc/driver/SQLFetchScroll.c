@@ -27,7 +27,7 @@ SQLRETURN
 SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 		SQLLEN FetchOffset)
 {
-	int LastResultRow;
+	unsigned int LastResultRow;
 
 	assert(stmt->hdl);
 
@@ -49,7 +49,7 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 	}
 
 #define RowSetSize	(stmt->ApplRowDescr->sql_desc_array_size)
-	LastResultRow = mapi_get_row_count(stmt->hdl);
+	LastResultRow = (unsigned int) mapi_get_row_count(stmt->hdl);
 	/* set currentRow to be the row number of the last row in the
 	   result set */
 	stmt->currentRow = stmt->startRow + stmt->rowSetSize;
@@ -87,7 +87,8 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 			    (stmt->startRow == 0 && FetchOffset < 0) ||
 			    (stmt->startRow > 0 &&
 			     (int) stmt->startRow + FetchOffset < 0 &&
-			     -FetchOffset > RowSetSize)) {
+			     /* FetchOffset must be negative, so cast works */
+			     (unsigned int) -FetchOffset > RowSetSize)) {
 				stmt->startRow = 0;
 				return SQL_NO_DATA;
 			}
@@ -108,12 +109,12 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 		/* fall through */
 	case SQL_FETCH_ABSOLUTE:
 		if (FetchOffset < 0) {
-			if (-FetchOffset <= LastResultRow) {
+			if ((unsigned int) -FetchOffset <= LastResultRow) {
 				stmt->startRow = LastResultRow + FetchOffset;
 				break;
 			}
 			stmt->startRow = 0;
-			if (-FetchOffset > RowSetSize)
+			if ((unsigned int) -FetchOffset > RowSetSize)
 				return SQL_NO_DATA;
 			addStmtError(stmt, "01S06", NULL, 0);
 			break;
@@ -122,7 +123,7 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation,
 			stmt->startRow = 0;
 			return SQL_NO_DATA;
 		}
-		if (FetchOffset > LastResultRow) {
+		if ((unsigned int) FetchOffset > LastResultRow) {
 			stmt->startRow = LastResultRow;
 			return SQL_NO_DATA;
 		}

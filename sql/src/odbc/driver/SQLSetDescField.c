@@ -297,7 +297,7 @@ SQLSetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
 	SQLRETURN rc;
 	SQLPOINTER ptr;
-	SQLSMALLINT n;
+	SQLINTEGER n;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetDescFieldW %d %d\n", RecordNumber, FieldIdentifier);
