@@ -72,6 +72,8 @@ extern int sqlstatement(char *cmd, Cntxt stk );
 #include <sql_qc.h>
 #include <sql_parser.h>		/* for sqlparse() */
 
+static res_table *find_export_table( mvc *m, int res_id );
+
 @= builtin_operand
 {       int _k = interpret(stk, arg(lt, @1), res);
         if (_k < 0) {
@@ -609,6 +611,11 @@ sqlclient2(mvc *m, Cntxt stk, stream *in, stream *out,
 				else
 					reply_size = 100;
 				mvc_export_table(m, out, id, off, n == 3 ? len : reply_size);
+				goto loop_end; /* continue */
+			}
+			if (sscanf(inbuf, "close %d", &id) == 1) {
+				res_table *t = find_export_table(m, id);
+				if (t) mvc_clean_result(m, t);
 				goto loop_end; /* continue */
 			}
 			error(out, "!ERROR:Unrecognized X command");
@@ -1162,10 +1169,6 @@ static int mvc_export_row( mvc *m, stream *s, res_table *t )
 	int i;
 
 	m->type = Q_RESULT;
-/*
-	stream_writeInt( s, Q_TABLE );
-	stream_writeInt( s, 1 );
-*/
 
 	stream_write(s, "[ ", strlen("[ "), 1);
 	for (i = 0; i < t->nr_cols; i++) 
