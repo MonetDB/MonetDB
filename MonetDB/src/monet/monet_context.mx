@@ -191,7 +191,7 @@ Cntxt CNTXTreserve(Cntxt outer) {
 	CNTXTclient(outer, &c);
 
 	MT_set_lock(monet_contextLock, "CNTXTreserve");
-	if (monet_cntxtcur >= monet_cntxtmax && !CNTXTrealloc((flt)oBATMARGIN)) {
+	if (monet_cntxtcur >= monet_cntxtmax && !CNTXTrealloc((flt)BATMARGIN)) {
 		MT_unset_lock(monet_contextLock, "CNTXTnew");
 		return 0;
 	}
