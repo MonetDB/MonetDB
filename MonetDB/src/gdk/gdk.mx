@@ -27,12 +27,30 @@
 @v Version 3.05
 @a Martin L. Kersten & Peter Boncz
 
-@* GDK Interface
+@* The Inner Core
 @T
-The Goblin Database Kernel is a C/C++ library that provides ACID
+The innermost library of the Monet Database System is formed by
+the library called GDK, an abbreviation of Goblin Database Kernel.
+Its development was originally rooted in the design of a puur
+active-object-oriented programming language, before development
+was shifted towards a re-useable database kernel engine.
+
+GDK is a C/C++ library that provides ACID
 properties on a DSM model~\cite{Copeland85}, using main-memory
 database algorithms~\cite{Garcia-Molina92}, built on virtual-memory
 OS primitives and multi-threaded parallellism.
+Its implementation has undergone various changes over its decade
+of development, many of which were driven by external needs to
+obtain a robust and fast database system.
+
+The coding scheme explored in GDK has also laid a foundation to
+communicate over time experiences and to provide (hopefully)
+helpful advice near to the place where the code-reader needs it.
+Of course, over such a long time the documentation diverges from
+reality. Especially in areas where the environment of this package
+is being described. 
+Consider such deviations as historic landmarks, e.g. cristalization
+of brave ideas and mistakes rectified at a later stage.
 
 @+ Short Outline
 The facilities provided in this implementation are:

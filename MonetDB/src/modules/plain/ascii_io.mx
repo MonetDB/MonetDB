@@ -379,6 +379,11 @@ size_t create_loadformat( ascii *as, BAT *names, BAT *seps, BAT *types ){
 		fmt[p].seplen = (int) strlen( fmt[p].sep );
 		fmt[p].type = (char*)bun_tail(types, p);
 		fmt[p].adt = ATOMindex( fmt[p].type );
+		if (fmt[p].adt < 0) {
+			GDKerror("load_format: %s has unknown type %s (using str instead).\n", 
+					fmt[p].name, fmt[p].name );
+			fmt[p].adt = TYPE_str;
+		}
 		fmt[p].tostr = &ASCIIadt_toStr;
 		fmt[p].frstr = &ASCIIadt_frStr;
 		fmt[p].extra = NULL;

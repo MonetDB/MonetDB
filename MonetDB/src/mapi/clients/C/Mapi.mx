@@ -496,7 +496,7 @@ Write the error message obtained from Mserver to a file.
 \item[MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd)]:
 Write the error message obtained from Mserver to a file.
 
-%\item[int mapi_timeout(Mapi mid, int timeout)]:
+%\item[MapiMsg mapi_timeout(Mapi mid, int timeout)]:
 %Sets the time out time in milli seconds for all subsequent
 %Mapi commands. Default value is 0, wait indefinitely.
 
@@ -846,7 +846,7 @@ mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, int rowne, int whence);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
 mapi_export MapiMsg mapi_trace_log(Mapi mid, const char *nme);
 
-mapi_export int mapi_timeout(Mapi mid, int time);
+mapi_export MapiMsg mapi_timeout(Mapi mid, int time);
 mapi_export int mapi_fetch_row(MapiHdl hdl);
 mapi_export int mapi_fetch_all_rows(MapiHdl hdl);
 mapi_export int mapi_get_field_count(MapiHdl hdl);

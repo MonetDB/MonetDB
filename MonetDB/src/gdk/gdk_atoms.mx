@@ -983,7 +983,8 @@ int chrFromStr(char *src, int *len, chr **dst) {
 		if (*p != '\'') {
 			error = 1; p = (unsigned char*) src;
 		}
-	} **dst = error?chr_nil:(chr)base;
+	}
+	**dst = error?chr_nil:(chr)base;
 	return p - (unsigned char*) src;
 }
 
@@ -1129,7 +1130,8 @@ int @1FromStr(char* src, int * len, @1 **dst) {
 		if (sizeof(@1) == 8 && p[0] == 'L' && p[1] == 'L') {
 			p += 2;
 		}
-	} **dst = error?@1_nil:sign*base;
+	}
+	**dst = error?@1_nil:sign*base;
 	return (int) (p-src);
 }
 @c
@@ -1193,7 +1195,8 @@ int ptrFromStr(char* src, int * len, ptr **dst) {
 			base = val; p++;
 			if (!num16(*p)) break;
 		}
-	} **dst = error?((ptr) ptr_nil):((ptr) base);
+	}
+	**dst = error?((ptr) ptr_nil):((ptr) base);
 	return (int) (p-src);
 }
 @:atomtostr(ptr,SZFMT,size_t)@
