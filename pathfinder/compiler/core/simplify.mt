@@ -244,7 +244,7 @@ TypeswitchExpr:  typesw (Atom,
 SequenceTypeCast: seqcast (seqtype, CoreExpr);
 SubtypingProof:  proof (CoreExpr, seqtype, CoreExpr);
 
-ConditionalExpr: ifthenelse (Atom, CoreExpr, CoreExpr);
+ConditionalExpr: ifthenelse (Atom, CoreExpr, CoreExpr)
     =
     {
       if (($1$)->kind == c_true)
