@@ -299,6 +299,7 @@ var *table_ref( context *sql, scope *scp, symbol *tableref ){
 
 	if (tableref->token == SQL_NAME){
 		tname = table_name(tableref->data.lval->h->data.lval);
+		printf("%s\n", tname );
 		t = cat_bind_table(sql->cat, sql->cat->cur_schema, tname);
 		if (!t){  
 			snprintf(sql->errstr, ERRSIZE, 
@@ -307,6 +308,7 @@ var *table_ref( context *sql, scope *scp, symbol *tableref ){
 		}
 		if (tableref->data.lval->h->next->data.sym){ /* AS */
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
+			printf("%s\n", tname );
 		} 
 		return scope_add_table( scp, t, tname );
 	} else if (tableref->token == SQL_SELECT) {

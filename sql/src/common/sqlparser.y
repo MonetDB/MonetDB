@@ -84,12 +84,10 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_group_by_clause
 	predicate
 	query_spec
-	query_term
 	query_exp
-	query_exp_body
-    	non_join_query_exp
-    	non_join_query_term
+	query_term
 	joined_table
+	union_table
     	cross_table
 	join_spec
     	qualified_join
@@ -763,27 +761,26 @@ join_spec:
   ;
 
 sql: 
-    query_exp 
+    query_spec 
  |  '(' sql ')' 	{ $$ = $2; }
 
 query_exp:
-    query_spec
- |  query_exp_body
-
-
-query_exp_body:
-    non_join_query_exp
+    '(' query_exp ')' 			{ $$ = $2; }
+ |  simple_table
+ |  query_spec
  |  joined_table
- ;
+ |  union_table
+ ; 
 
 query_term:
-    non_join_query_term
- |  joined_table
- ;
+    '(' query_term ')' 			{ $$ = $2; }
+ |  simple_table
+ |  query_spec
+ |  union_table
+ ; 
 
-non_join_query_exp:
-    non_join_query_term  
- |  query_exp UNION opt_all query_term
+union_table:
+    query_term UNION opt_all query_exp
 
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $1);
@@ -791,11 +788,6 @@ non_join_query_exp:
 	  dlist_append_symbol(l, $4);
 	  $$ = _symbol_create_list( SQL_UNION, l); }
  ;
-
-non_join_query_term:
-    simple_table
- |  '(' non_join_query_exp ')'  	{ $$ = $2; }  
-
 
 opt_all:
      /* empty */		{ $$ = 0; }
@@ -857,6 +849,11 @@ table_ref:
  |  joined_table 		{ $$ = $1; 
 				  dlist_append_symbol($1->data.lval, NULL); }
  |  '(' joined_table ')' table_name	
+				{ $$ = $2; 
+				  dlist_append_symbol($2->data.lval, $4); }
+ |  union_table 		{ $$ = $1; 
+				  dlist_append_symbol($1->data.lval, NULL); }
+ |  '(' union_table ')' table_name	
 				{ $$ = $2; 
 				  dlist_append_symbol($2->data.lval, $4); }
  ;
