@@ -64,6 +64,7 @@ MXFLAGS= -notouch
 	cat $< > /tmp/doc.mx
 	$(MX) -1 -H$(HIDE) -t /tmp/doc.mx 
 	$(MV) doc.tex $@
+	$(RM) /tmp/doc.mx
 
 %.pdf: %.tex
 	$(PDFLATEX) $< 
