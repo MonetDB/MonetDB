@@ -324,7 +324,7 @@ allocated arena gets to be large, BATs may be swapped out.
 @m
 .COMMAND bbpname ( BAT[any,any] , str s) : BIT = CMDrename;
 "Give a logical name to a BAT. This can fail if a BAT with name 's' already
- exists. The command then returns FALSE, ales TRUE."
+ exists. The command then returns FALSE, else TRUE."
 
 .COMMAND bbpname ( BAT[any,any]) : STR = CMDname;
 "Gives back the logical name of a BAT."
