@@ -63,6 +63,8 @@ to a performance monitor, eg. Mknife.
 An alternative strategy is preparation of off-line performance analysis.
 For this case the event record is turned into a XML structure and
 sent over the stream (most likely linked with a file)
+or the information is gathered in a BAT group for online analysis.
+
 To reduce the  interference of performance measurement with
 the experiments, the user can use an event cache, which is
 emptied explicitly upon need.
@@ -121,24 +123,25 @@ command stop()
 address CMDstopProfiler
 comment "Stop performance tracing";
 
-@- 
-If Monet is compiled with the profiler option, then it is
-possible to analyse the timeings obtained in the context of
-a database query itself.
-For each instruction executed, the profiler keeps track of the number of calls
-and the total time spent in microseconds.
-These statistics are accessed on a <module,function> basis.
-
+@+ Execution tracing
+Tracing is a special kind of profiling, where the information
+gathered is not sent to a remote system, but stored in the database
+itself. Each profile event is given a separate BAT
 @mal
-command getCnt(mod:str,fcn:str):bat[:int,:int] 
-address CMDprofCntModFcn
-comment "Returns the counts measured while 
-	profiling the MAL interpreter";
+command startTrace():void
+address CMDstartTrace
+comment "Prepare for online tracing using the profile filter";
+command stopTrace():void
+address CMDstopTrace
+comment "Stop online tracing";
 
-command getTime(mod:str,fcn:str):bat[:int,:int] 
-address CMDprofTime
-comment "Returns the total microseconds measured 
-	while profiling the MAL interpreter";
+command dumpTrace():void
+address CMDdumpTrace
+comment "List the events collected";
+
+command getTrace(e:str):bat[:int,:any]
+address CMDgetTrace
+comment "Get the trace details of a specific event";
 
 @{
 @-
@@ -242,15 +245,42 @@ str CMDstartProfiler(int *res){
 	startProfiling();
 	return MAL_SUCCEED;
 }
-
-str CMDprofCntModFcn(int *ret, str *mod, str *fcn){
-	*ret= 0;
-	(void) mod; (void) fcn; /* fool compiler */
-	return throwMessage("profiler.getCnt", "not yet implemented");
+@-
+Tracing the system.
+@c
+str CMDstartTrace(int *res){
+	(void) res; /* fool compiler */
+	@:checkProfiler(start)@
+	startTrace();
+	return MAL_SUCCEED;
 }
-str CMDprofTime(int *ret, str *mod, str *fcn){
-	*ret= 0;
-	(void) mod; (void) fcn; /* fool compiler */
-	return throwMessage("profiler.getTime", "not yet implemented");
+str CMDstopTrace(int *res){
+	(void) res; /* fool compiler */
+	@:checkProfiler(stop)@
+	stopTrace();
+	return MAL_SUCCEED;
+}
+str CMDresetTrace(int *res){
+	(void) res; /* fool compiler */
+	@:checkProfiler(stop)@
+	resetTrace();
+	return MAL_SUCCEED;
+}
+str CMDdumpTrace(int *res){
+	(void) res; /* fool compiler */
+	@:checkProfiler(dump)@
+	stopTrace();
+	return MAL_SUCCEED;
+}
+str CMDgetTrace(int *res, str *ev){
+	BAT *bn;
+	(void) res; /* fool compiler */
+	@:checkProfiler(dump)@
+	bn= getTrace(*ev);
+	if( bn){
+		BBPincref(*res=bn->batCacheid,TRUE);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("getTrace","Failed to find event profile");
 }
 @}
