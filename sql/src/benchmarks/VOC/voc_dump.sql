@@ -29285,12 +29285,12 @@ ALTER TABLE "voc"."seafarers" ADD PRIMARY KEY ("number", "number_sup");
 ALTER TABLE "voc"."soldiers" ADD PRIMARY KEY ("number", "number_sup");
 ALTER TABLE "voc"."total" ADD PRIMARY KEY ("number", "number_sup");
 
-ALTER TABLE "voc"."craftsmen" ADD FOREIGN KEY ("number_sup", "number") REFERENCES "voc"."voyages" ("number", "number_sup");
-ALTER TABLE "voc"."impotenten" ADD FOREIGN KEY ("number_sup", "number") REFERENCES "voc"."voyages" ("number", "number_sup");
-ALTER TABLE "voc"."invoices" ADD FOREIGN KEY ("number_sup", "number") REFERENCES "voc"."voyages" ("number", "number_sup");
-ALTER TABLE "voc"."passengers" ADD FOREIGN KEY ("number_sup", "number") REFERENCES "voc"."voyages" ("number", "number_sup");
-ALTER TABLE "voc"."seafarers" ADD FOREIGN KEY ("number_sup", "number") REFERENCES "voc"."voyages" ("number", "number_sup");
-ALTER TABLE "voc"."soldiers" ADD FOREIGN KEY ("number_sup", "number") REFERENCES "voc"."voyages" ("number", "number_sup");
-ALTER TABLE "voc"."total" ADD FOREIGN KEY ("number_sup", "number") REFERENCES "voc"."voyages" ("number", "number_sup");
+ALTER TABLE "voc"."craftsmen" ADD FOREIGN KEY ("number", "number_sup") REFERENCES "voc"."voyages" ("number", "number_sup");
+ALTER TABLE "voc"."impotenten" ADD FOREIGN KEY ("number", "number_sup") REFERENCES "voc"."voyages" ("number", "number_sup");
+ALTER TABLE "voc"."invoices" ADD FOREIGN KEY ("number", "number_sup") REFERENCES "voc"."voyages" ("number", "number_sup");
+ALTER TABLE "voc"."passengers" ADD FOREIGN KEY ("number", "number_sup") REFERENCES "voc"."voyages" ("number", "number_sup");
+ALTER TABLE "voc"."seafarers" ADD FOREIGN KEY ("number", "number_sup") REFERENCES "voc"."voyages" ("number", "number_sup");
+ALTER TABLE "voc"."soldiers" ADD FOREIGN KEY ("number", "number_sup") REFERENCES "voc"."voyages" ("number", "number_sup");
+ALTER TABLE "voc"."total" ADD FOREIGN KEY ("number", "number_sup") REFERENCES "voc"."voyages" ("number", "number_sup");
 
 COMMIT;
