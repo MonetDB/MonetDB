@@ -93,6 +93,7 @@ code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
 	    'in':	[ '' ],
 	    'cfg.in':	[ '.cfg' ],
 	    'java.in':	[ '.java' ],
+	    'mil.in':	[ '.mil' ],
 }
 
 c_inc = "^[ \t]*#[ \t]*include[ \t]*[<\"]\([a-zA-Z0-9\.\_\-]*\)[>\"]"
