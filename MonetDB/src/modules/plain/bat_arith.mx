@@ -74,6 +74,7 @@ int batbat_@1_@3(BAT **ret, BAT *l, BAT *r) {
 
 	bn = BATnew(TYPE_void, l->ttype, BATcount(l));
 	BATseqbase(bn,l->hseqbase);
+	bn->tsorted = 0;
 	lq = (@1*)BUNtloc(l,BUNlast(l));
 	lp = (@1*)BUNtloc(l,BUNfirst(l));
 	rp = (@1*)BUNtloc(r,BUNfirst(r));
@@ -109,6 +110,7 @@ int valbat_@1_@3(BAT **ret, @1 *v, BAT *b) {
 
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
 	BATseqbase(bn,b->hseqbase);
+	bn->tsorted = 0;
 	bq = (@1*)BUNtloc(b,BUNlast(b));
 	bp = (@1*)BUNtloc(b,BUNfirst(b));
 	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
@@ -146,6 +148,7 @@ int batval_@1_@3(BAT **ret, BAT *b, @1 *v) {
 
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
 	BATseqbase(bn,b->hseqbase);
+	bn->tsorted = 0;
 	bq = (@1*)BUNtloc(b,BUNlast(b));
 	bp = (@1*)BUNtloc(b,BUNfirst(b));
 	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
