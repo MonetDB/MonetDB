@@ -61,8 +61,8 @@ const int PF_SOFTWARE_PREFETCH = 128;
 @:ll_head(descendant)@
 @:ll_specialcases@
     self = FALSE;
-    res_size = 1000;			/* FIXME: estimate size! */
-    chunk_size = BATcount(iter_bat);	/* FIXME: estimate size! */
+    res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
+    chunk_size = 1000;			/* FIXME: estimate size! */
 @:ll_resultallocation@
 @:ll_main(descendant)@
 @:ll_end@
@@ -71,8 +71,8 @@ const int PF_SOFTWARE_PREFETCH = 128;
 @:ll_head(descendant_or_self)@
 @:ll_specialcases@
     self = TRUE;
-    res_size = 1000;			/* FIXME: estimate size! */
-    chunk_size = BATcount(iter_bat);	/* FIXME: estimate size! */
+    res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
+    chunk_size = 1000;			/* FIXME: estimate size! */
 @:ll_resultallocation@
 @:ll_main(descendant)@
 @:ll_end@
@@ -80,7 +80,7 @@ const int PF_SOFTWARE_PREFETCH = 128;
 /* CHILD STEP */
 @:ll_head(child)@
 @:ll_specialcases@
-    res_size = 1000;			/* FIXME: estimate size! */
+    res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
 @:ll_resultallocation@
 @:ll_main(child)@
 @:ll_reorder_res@
