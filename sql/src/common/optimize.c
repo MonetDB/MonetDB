@@ -331,7 +331,7 @@ static stmt *sets2pivot(list * ll)
 					stmt *cd = c->data;
 					stmt *md = m->data;
 					if (cd->t == md->t) {
-						list_append (inserts, stmt_insert (stmt_dup(cd), stmt_dup(md), 1));
+						list_append (inserts, stmt_append (stmt_dup(cd), stmt_dup(md)));
 						break;
 					}
 				}
@@ -431,7 +431,7 @@ stmt *optimize( context *c, stmt *s ){
 	case st_alias: case st_column_alias: 
 	case st_ibat: 
 	case st_output: 
-	case st_insert: case st_replace: 
+	case st_append: case st_insert: case st_replace: 
 
 	case st_count: case st_aggr: 
 	case st_op: case st_unop: case st_binop: case st_triop: 

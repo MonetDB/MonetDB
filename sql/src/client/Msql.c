@@ -853,7 +853,7 @@ main(int ac, char **av)
 	 * New start client sequence
 	 *
 	 * 1) socket connect
-	 * 2) send 'api(char api,int debug)' api("sql",0);
+	 * 2) send 'api(sql,debug)' api(sql,0);
 	 * 3) receive request for login 
 	 * 4) send user/passwd
 	 */

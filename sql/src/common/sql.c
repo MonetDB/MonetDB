@@ -3092,7 +3092,7 @@ static stmt *insert_into(context * sql, dlist * qname,
 					return NULL;
 				}
 					
-				inserts[c->colnr] = stmt_insert( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), ins, 0 );
+				inserts[c->colnr] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), ins );
 			}
 
 		}
@@ -3102,7 +3102,7 @@ static stmt *insert_into(context * sql, dlist * qname,
 				for(m = t->columns->h; m; m = m->next){
 					column *c = m->data;
 					if (c->colnr == i)
-						inserts[i] = stmt_insert( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), stmt_atom(atom_general(sql_dup_subtype(c->tpe), _strdup(c->default_value))) , 0 );
+						inserts[i] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), stmt_atom(atom_general(sql_dup_subtype(c->tpe), _strdup(c->default_value))) );
 				}
 			}
 		}
@@ -3127,7 +3127,7 @@ static stmt *insert_into(context * sql, dlist * qname,
 			for (n = s->op1.lval->h, m = collist->h;
 			     n && m; n = n->next, m = m->next) {
 				column *c = m->data;
-				inserts[c->colnr] = stmt_insert( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), stmt_dup(n->data), 0);
+				inserts[c->colnr] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), stmt_dup(n->data));
 			}
 		}
 		if (s) 
@@ -3207,7 +3207,7 @@ static stmt *sql_update(context * sql, dlist * qname,
 			}
 
 			list_append(l, stmt_replace( stmt_cbat(basecolumn(cl->s), stmt_dup(tv->s), UPD, st_bat), v));
-			list_append(l, stmt_insert( stmt_cbat(basecolumn(cl->s), stmt_dup(tv->s), UPD, st_ubat), stmt_dup(v), 0));
+			list_append(l, stmt_insert( stmt_cbat(basecolumn(cl->s), stmt_dup(tv->s), UPD, st_ubat), stmt_dup(v)));
 			n = n->next;
 		}
 		if (s) stmt_destroy(s);
@@ -3252,9 +3252,9 @@ static stmt *sql_delete(context * sql, dlist * qname, symbol * opt_where)
 		v = stmt_const( stmt_reverse(first_subset(s)), 
 					stmt_atom(atom_general(to, NULL)));
 		assert (tv->s->type == st_basetable);
-		list_append(l, stmt_insert(
+		list_append(l, stmt_append(
 				stmt_tbat(tv->s->op1.tval, INS, st_dbat), 
-				stmt_reverse(v), 0));
+				stmt_reverse(v)));
 		/* switched of as its not used and insert first needs code
 		 * to fill this bat 
 		list_append(l, stmt_replace(

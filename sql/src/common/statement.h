@@ -53,8 +53,9 @@ typedef enum stmt_type {
 	st_select,
 	st_select2,
 	st_copyfrom,
-	st_insert,
 	st_like,
+	st_append,
+	st_insert,
 	st_replace,
 	st_count,
 	st_const,
@@ -187,7 +188,8 @@ extern stmt *stmt_pivot(stmt *s, stmt *ptable);
 extern stmt *stmt_copyfrom(table * t, list *files, char *tsep, char *rsep, int nr );
 sql_export list *stmt_copyfrom_files( stmt *s );
 
-extern stmt *stmt_insert(stmt *c, stmt * values, int unique_oids);
+extern stmt *stmt_append(stmt *c, stmt * values);
+extern stmt *stmt_insert(stmt *c, stmt * values);
 extern stmt *stmt_replace(stmt * c, stmt * values);
 
 extern stmt *stmt_count(stmt * s);

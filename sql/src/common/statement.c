@@ -157,7 +157,7 @@ void stmt_destroy(stmt * s)
 		case st_alias: case st_column_alias:
 		case st_aggr:
 		case st_op: case st_unop: case st_binop: case st_triop:
-		case st_insert: case st_replace:
+		case st_append: case st_insert: case st_replace:
 		case st_pivot:
 
 			if (s->op1.stval) stmt_destroy(s->op1.stval);
@@ -758,13 +758,23 @@ stmt *stmt_pivot(stmt * p, stmt *ptable)
 	return s;
 }
 
-stmt *stmt_insert(stmt * c, stmt * a, int unique_oids)
+stmt *stmt_append(stmt * c, stmt * a )
+{
+	stmt *s = stmt_create();
+	s->type = st_append;
+	s->op1.stval = c;
+	s->op2.stval = a;
+	s->h = stmt_dup(c->h);
+	s->t = stmt_dup(c->t);
+	return s;
+}
+
+stmt *stmt_insert(stmt * c, stmt * a )
 {
 	stmt *s = stmt_create();
 	s->type = st_insert;
 	s->op1.stval = c;
 	s->op2.stval = a;
-	s->flag = unique_oids;
 	s->h = stmt_dup(c->h);
 	s->t = stmt_dup(c->t);
 	return s;
@@ -1244,7 +1254,6 @@ char *column_name(stmt * st)
 	case st_atom:
 		if (st->op1.aval->type == string_value)
 			return atom2string(st->op1.aval);
-		assert(0);
 		return strdup("single_value");
 	default:
 		fprintf(stderr, "missing name %d\n", st->type );
