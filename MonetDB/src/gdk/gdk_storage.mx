@@ -318,7 +318,7 @@ char *GDKload(str nme, str ext, int size, int chunk, int mode){
 	        int tpe = (store==STORE_MMAP)?MAP_SHARED:MAP_PRIVATE;
 	        int mod = (PROT_READ|PROT_WRITE);
 		*/
-		int mod = (store==STORE_MMAP)?(MMAP_READ):(MMAP_WRITE);
+		int mod = (store==STORE_MMAP)?(MMAP_WRITE):(MMAP_COPY);
 	        /* hack for STORE_MMAP & BAT_APPEND. This re-introduces the risk of stray
                  * memory writes into read-only heaps. In order to limit risk we might want 
                  * to only make the last part PROT_WRITE 
