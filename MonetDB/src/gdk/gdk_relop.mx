@@ -1465,7 +1465,7 @@ while(algo) {
 		for(n->nhits=1; (n->cur += xx) < last; n->nhits++) {
     			if (@2cmp(BUN@1(b,n->cur),h))  break;
     		}
-		if (n->cur>=last && (algo&LEAD_INTERRUPT_END)) algo = 0; 
+		if (n->cur>=last && !(algo&LEAD_INTERRUPT_END)) algo = 0; 
     		n->hi = n->cur;
 	/* IDX lookup
 	 * We perform a merge scan over the binary index
@@ -1493,7 +1493,6 @@ while(algo) {
 	/* Single Hash lookup
 	 */
     	} else if (BAThkey(n->b)) {
-printf("using hash\n");
     		BUNfnd@2(n->cur, b, h);
     		if (!n->cur) break; /* NOT FOUND */
     		n->lo = n->cur; 
@@ -1501,10 +1500,8 @@ printf("using hash\n");
 	/* Multiple Hash lookup
 	 */
     	} else {
-printf("fall back using hash\n");
     		n->nhits = 0;
     		HASHloop@3(b, b->hhash, j, h, r) {
-printf("fall back using hash %d %d\n", j, h);
     			REALLOCBUNS(n, n->nhits+1);
     			n->hit[n->nhits++] = r;
     		}

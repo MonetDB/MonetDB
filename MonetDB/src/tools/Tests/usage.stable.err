@@ -1,14 +1,40 @@
 stderr of test 'usage` in directory 'src/tools` itself:
 
-#> Mtest (05:10:34):	other usage 210
-#> Mtest (05:10:34):	Mtimeout -timeout 210 ./usage usage
-#> Mlog (05:10:34):	Mserver -?
-#> Mlog (05:10:34):	Mclient -help
-Usage: Mclient [-port host:port] [-session key] [-prelude  pfile ]
+
+# 13:33:19 >  
+# 13:33:19 >  Mtimeout -timeout 432 ./usage usage 
+# 13:33:19 >  
+
+
+# 13:33:19 >  
+# 13:33:19 >  Mserver -?
+# 13:33:19 >  
+
+
+# 13:33:19 >  
+# 13:33:19 >  MapiClient -help
+# 13:33:19 >  
+
+Usage: MapiClient [-port host:port] [-session key] [-prelude  pfile ]
 [-c command] [-help ] 
-#> Mlog:	Mcreatedb -?
-#> Mlog:	Mdestroydb -?
-#> Mlog:	Mload -?
-#> Mlog:	Mdump -?
+
+# 13:33:19 >  
+# 13:33:19 >  Mcreatedb -?
+# 13:33:19 >  
+
+
+# 13:33:19 >  
+# 13:33:19 >  Mdestroydb -?
+# 13:33:19 >  
+
+
+# 13:33:19 >  
+# 13:33:19 >  Mshutdown -?
+# 13:33:19 >  
+
 unknown argument:-?
-#> Mlog:	Mrecover -?
+
+# 13:33:19 >  
+# 13:33:19 >  Done.
+# 13:33:19 >  
+

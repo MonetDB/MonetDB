@@ -442,6 +442,30 @@ int strSubstitute(str *res, str s, str src, str dst, bit *g) {
 	int l = strLen(s), n = l + ldst;
 	str buf, fnd, end; 
 
+	if (repeat && ldst > lsrc) {
+		n = (ldst*l)/lsrc; /* max length */
+	}
+	buf = *res = (str) GDKmalloc(n);
+	end = buf + l; 
+	fnd = buf;
+	strcpy(buf, s);
+	do {
+		fnd = strstr((fnd < buf)?buf:fnd, src);
+		if (!fnd) break; 
+		memmove(fnd+ldst, fnd+lsrc, end-fnd);
+		memcpy(fnd, dst, ldst);
+		end += ldst - lsrc;
+		fnd += ldst - 1; 
+	} while(repeat);
+
+	return GDK_SUCCEED;
+}
+
+int strSubstitute2(str *res, str s, str src, str dst, bit *g) {
+	int repeat = *g, lsrc = strlen(src), ldst = strlen(dst);
+	int l = strLen(s), n = l + ldst;
+	str buf, fnd, end; 
+
 	if (repeat && strstr(dst,src)) {
 		repeat = FALSE; /* result would become unbounded */ 
 	}

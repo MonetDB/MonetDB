@@ -1,7 +1,7 @@
 from Mapi import * 
 import fileinput;
 
-s = server( hostname(), portnr(), environ['USER'] + '\n')
+s = server( hostname(), portnr(), environ['USER'])
 fi = fileinput.FileInput()
 print("#MapiClient (python) connected to %s:%d as %s" % (hostname(), portnr(), environ['USER']))
 sys.stdout.write( s.prompt )

@@ -131,6 +131,7 @@ def am_scripts(fd, var, scripts, am):
       fd.write("uninstall-exec-local-%s: \n" % (script))
       fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd,script))
       am['INSTALL'].append(script)
+      am['InstallList'].append("\t"+sd+"/"+script+"\n")
 
   am_deps(fd,scripts['DEPS'],"\.o",am);
 
@@ -167,6 +168,8 @@ def am_binary(fd, var, binmap, am ):
       fd.write("%s" % am_list2string(binmap,"\tchmod a+x ","\n"))
       am['INSTALL'].append(name)
       am['ALL'].append(name)
+      for i in binmap:
+        am['InstallList'].append("\t$(bindir)/"+i+"\n")
     else: # link
       src = binmap[0][4:]
       fd.write("install-exec-local-%s: %s\n" % (name,src))
@@ -175,6 +178,7 @@ def am_binary(fd, var, binmap, am ):
       fd.write("uninstall-exec-local-%s: \n" % (name))
       fd.write("\t$(RM) $(DESTDIR)$(bindir)/%s\n\n" % (name))
       am['INSTALL'].append(name)
+      am['InstallList'].append("\t$(bindir)/"+name+"\n")
 
       fd.write("all-local-%s: %s\n" % (name,src))
       fd.write("\t-$(RM) %s\n" % (name))
@@ -464,6 +468,11 @@ CXXEXT = \\\"cc\\\"
   am['LIBDIR'] = "lib"
   am['ALL'] = []
   am['DEPS'] = []
+  am['InstallList'] = []
+  if (cwd == topdir):
+    am['InstallList'].append("./\n")
+  else:
+    am['InstallList'].append(cwd[len(topdir)+1:]+"/\n")
   for i in tree.keys():
     j = i
     if (string.find(i,'_') >= 0):
@@ -485,9 +494,13 @@ CXXEXT = \\\"cc\\\"
   if (len(am['LIBS']) > 0):
     fd.write("%s_LTLIBRARIES =%s\n" % \
 		(am['LIBDIR'], am_list2string(am['LIBS']," lib",".la")))
+    for i in am['LIBS']:
+      am['InstallList'].append("\t$("+am['LIBDIR']+"dir)/lib"+i+".so\n")
 
   if (len(am['BINS']) > 0):
     fd.write("bin_PROGRAMS =%s\n" % am_list2string(am['BINS']," ",""))
+    for i in am['BINS']:
+      am['InstallList'].append("\t$(bindir)/"+i+"\n")
 
   if (len(am['INSTALL']) > 0):
     fd.write("install-exec-local:%s\n" % \
@@ -510,3 +523,5 @@ include $(top_srcdir)/rules.mk
 
 ''')
   fd.close();
+
+  return am['InstallList']

@@ -3,7 +3,7 @@ AC_INIT(src/utils/Mx/Mx.h)
 AC_CONFIG_AUX_DIR(conf)
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("Monet", 4.2)
+AM_INIT_AUTOMAKE("Monet", 4.3)
 AM_CONFIG_HEADER(config.h:conf/config.h.in)
 AC_CANONICAL_HOST
 
@@ -11,6 +11,13 @@ HOST=[$host]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
 PREFIX=[$prefix]
 AC_DEFINE_UNQUOTED(MONET_PREFIX, "$PREFIX", [directory prefix])
+
+MONET_PREFIX=`(mkdir -p $PREFIX && cd $PREFIX && pwd)`
+AC_SUBST(MONET_PREFIX)
+MONET_BUILD=`pwd`
+AC_SUBST(MONET_BUILD)
+MONET_SOURCE=`(cd $srcdir && pwd)`
+AC_SUBST(MONET_SOURCE)
 
 dnl we use LEXLIB=-ll because this is usually correctly installed 
 dnl and -lfl usually only in the 32bit version
@@ -75,6 +82,53 @@ AC_CHECK_TOOL(OBJC,objc)
 dnl AC_CHECK_PROG(CP,cp,cp -f)
 dnl AC_CHECK_PROG(MKDIR,mkdir,mkdir -p)
 dnl AC_CHECK_PROG(TAGS,ctags,ctags)
+
+dnl --enable-debug
+CFLAGS="$CFLAGS"
+AC_ARG_ENABLE(debug,
+[  --enable-debug          enable full debugging [default=off]],
+  enable_debug=$enableval, enable_debug=no)
+if test "x$enable_debug" = xyes; then
+  if test "x$GCC" = xyes; then
+    CFLAGS="$CFLAGS -O0"
+  fi
+  CFLAGS="$CFLAGS -g"
+fi
+
+dnl --enable-optimize
+AC_ARG_ENABLE(optimize,
+[  --enable-optimize       enable extra optimization [default=on]],
+  enable_optim=$enableval, enable_optim=yes)
+if test "x$enable_optim" = xyes; then
+  dnl Optimization flags
+  if test "x$enable_debug" = xno; then
+    if test "x$GCC" = xyes; then
+      dnl -fomit-frame-pointer crashes memprof
+      case "$host" in
+      i*86-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -ffast-math -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
+      *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions";;
+      *)              CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions";;
+      esac     
+    else
+      case "$host" in
+      *irix6.5*) CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
+		LDFLAGS="$LDFLAGS -IPA"
+		;;
+      esac     
+    fi
+	
+  fi
+fi
+
+dnl --enable-warning (only gcc)
+AC_ARG_ENABLE(warning,
+[  --enable-warning           enable extended compiler warnings [default=off]],
+  enable_warning=$enableval, enable_warning=no)
+if test "x$enable_warning" = xyes; then
+  if test "x$GCC" = xyes; then
+    CFLAGS="$CFLAGS -ansi -pedantic"
+  fi
+fi
 
 dnl systems checks
 AC_AIX
@@ -291,17 +345,15 @@ AC_SUBST(CXXFLAGS)
 AC_OUTPUT(src/Makefile
 src/utils/Makefile 
 src/utils/Mx/Makefile 
-src/utils/rewrite/Makefile 
 src/utils/testing/Makefile 
 src/utils/autogen/Makefile
-src/mil/Makefile 
 src/mel/Makefile 
-src/mal/Makefile
 src/gdk/Makefile 
 src/monet/Makefile
 src/modules/Makefile 
 src/modules/plain/Makefile
-src/modules/mapi/Makefile
+src/mapi/Makefile
+src/mapi/clients/Makefile
 src/tools/Makefile
 src/tools/monet-config.mx
 conf/Makefile
@@ -314,7 +366,7 @@ tests/Makefile
 Makefile
 src/utils/Mx/epstogif
 src/utils/testing/Mlog
-src/utils/testing/Mfilter
-src/utils/testing/Mtest
+src/utils/testing/Mtest.py
+src/utils/testing/Mfilter.py
 src/utils/testing/MkillUsers
 )

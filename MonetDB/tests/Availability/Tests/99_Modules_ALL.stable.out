@@ -33,7 +33,6 @@ Try: modules;                - for other modules.
      uchr: loading... done.
     trans: loaded.
      tpcd: loading... done.
- temporal: loading... done.
     tcpip: loading... done.
       sys: loaded.
       str: loaded.
@@ -103,7 +102,6 @@ bitvector: loaded.
 [ "str"		  ]
 [ "sys"		  ]
 [ "tcpip"	  ]
-[ "temporal"	  ]
 [ "tpcd"	  ]
 [ "trans"	  ]
 [ "uchr"	  ]

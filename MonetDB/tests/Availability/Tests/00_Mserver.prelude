@@ -41,7 +41,6 @@ MODULES.replace("salgebra",  "plain");
 MODULES.replace("stats",     "plain");
 MODULES.replace("sys",       "plain");
 MODULES.replace("tcpip",     "plain");
-MODULES.replace("temporal",  "plain");
 MODULES.replace("tpcd",      "plain");
 MODULES.replace("trans",     "plain");
 MODULES.replace("uchr",      "plain");

@@ -25,4 +25,6 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
+!ERROR: DL_open: library not found (STATIC).
+!ERROR: TBL_loadmod: module load jabberwocky cancelled.
 !ERROR: module(jabberwocky): load error.

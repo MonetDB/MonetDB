@@ -11,7 +11,7 @@ str
 url
 xtables
 date
-temporal
+#temporal
 bitset
 decimal
 monettime

@@ -1,23 +1,30 @@
 #!/bin/sh
 
 NAME="$1"
-PRELUDE="$2"
+PRELUDE="$2 $3"
 
 for i in README awkscript column format gcol summary test100k init.mil void.mil tstvoid.mil load.mil; do
     if [ ! -f $i ]; then
         /bin/rm -f $i
-        ln -s $RELSRCDIR/$i .
+        ln -s $TSTSRCDIR/../$i .
     fi
 done
 
 TSTDB=${TSTDB}_${NAME}
 
+if [ -d $MONETFARM/dbfarm/$TSTDB ] ; then
+	$MDESTROYDB -db $TSTDB
+fi
 Mlog -x $MCREATEDB  -db $TSTDB
 #Mlog -x $MLOAD test100k -db $TSTDB -oid 30000000 -s 100000 -f format
-Mlog -x $MSERVER -db $TSTDB         < load.mil
-Mlog -x $MSERVER -db $TSTDB         < init.mil
-Mlog -x $MSERVER -db $TSTDB         < void.mil
-Mlog -x $MSERVER -db $TSTDB         < $NAME.mil | tee output
+Mlog   "$MSERVER -db $TSTDB         < load.mil"
+        $MSERVER -db $TSTDB         < load.mil
+Mlog   "$MSERVER -db $TSTDB         < init.mil"
+        $MSERVER -db $TSTDB         < init.mil
+Mlog   "$MSERVER -db $TSTDB         < void.mil"
+        $MSERVER -db $TSTDB         < void.mil
+Mlog   "$MSERVER -db $TSTDB         < $NAME.mil | tee output"
+        $MSERVER -db $TSTDB         < $NAME.mil | tee output
 PATH=/bin:$PATH ; export PATH
 Mlog -x sh summary
 #Mlog -x $MDESTROYDB -db $TSTDB

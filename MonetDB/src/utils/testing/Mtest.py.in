@@ -39,8 +39,6 @@ STDOUT = sys.stdout
 STDERR = sys.stdout	# err
 
 def Usage() :
-	#TODO
-	# long options
 	print('''
 
 Usage:  %s [options] ( [<dir>] [<tests>] | [<dirs>] )
@@ -73,6 +71,7 @@ Usage:  %s [options] ( [<dir>] [<tests>] | [<dirs>] )
 
 ''' % (THISFILE, THISFILE, THISFILE, path("@MONET_SOURCE@/src/utils/testing/"), THISFILE))
 
+#TODO:
 #class TimeoutError:
 #	def __init__(self, text):
 #		self.text = text
@@ -173,9 +172,6 @@ def CreateHtmlIndex (env) :
 """)
 		f.close()
 		env['_'+TSTDIR+'_BODY_'] = ["",0]
-		#if not TSTDIR:
-			#os.rename(".index.html", "index.html")
-
 		os.chdir(BACK)
 
 def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
@@ -332,18 +328,18 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
 
 	CreateSrcIndex(env, TST, EXT)
 
-def AddSubToHtmlIndex (env, SUB) :
+def AddSubToHtmlIndex (env, TSTDIR) :
 	TSTTRGBASE = env['TSTTRGBASE']
 
-	if os.path.isfile(TSTTRGBASE+os.sep+"Tests"+os.sep+SUB+os.sep+".index.html"):
+	if os.path.isfile(TSTTRGBASE+os.sep+"Tests"+os.sep+TSTDIR+os.sep+".index.html"):
 		BACK = os.getcwd()
 		os.chdir(TSTTRGBASE+os.sep+"Tests")
 		f = open("index.head.html","a")
 		f.write("<TD><FONT FACE='helvetica, arial'>")
-		STRING = "<A HREF='"+url(SUB)+"/.index.html' TARGET='"+OSVER+"__body'>"+SUB+"</A>"
+		STRING = "<A HREF='"+url(TSTDIR)+"/.index.html' TARGET='"+OSVER+"__body'>"+TSTDIR+"</A>"
 		test = re.compile("^.*><B>.*</B><.*$")
 		diff = 0
-		for l in fileinput.input(SUB+os.sep+".index.head.html"):
+		for l in fileinput.input(TSTDIR+os.sep+".index.head.html"):
 			if test.match(l):
 				diff = 1
 		if diff:
@@ -355,7 +351,7 @@ def AddSubToHtmlIndex (env, SUB) :
 		if not env.has_key('__BODY_')  or  \
 		   not env['__BODY_'][0]  or  \
 		   ( (not env['__BODY_'][1])  and  diff ):
-			env['__BODY_'] = [SUB+"/.index.html", diff]
+			env['__BODY_'] = [TSTDIR+"/.index.html", diff]
 		os.chdir(BACK)
 
 def SkipTest(env, TST, EXT, REASON) :
@@ -390,58 +386,58 @@ def find_test_dirs(thisdir) :
 	return testdirs
 
 def runtests(env, testdir, testlist) :
-	TSB = env['TSTSRCBASE']
-	if testdir == TSB:
-		TD = os.curdir
+	TSTSRCBASE = env['TSTSRCBASE']
+	if testdir == TSTSRCBASE:
+		TSTDIR = os.curdir
 	else:
-		TD = testdir[len(TSB+os.sep):]
-	TSD = testdir+os.sep+"Tests"
-	TBD = env['TSTBLDBASE']+os.sep+TD+"Tests"
-	TTD = env['TSTTRGBASE']+os.sep+"Tests"+os.sep+TD
+		TSTDIR = testdir[len(TSTSRCBASE+os.sep):]
+	TSTSRCDIR = testdir+os.sep+"Tests"
+	TSTBLDDIR = env['TSTBLDBASE']+os.sep+TSTDIR+"Tests"
+	TSTTRGDIR = env['TSTTRGBASE']+os.sep+"Tests"+os.sep+TSTDIR
 	if os.name == "nt":
-		TDB = regsub.gsub("\\\\","_",TD)
+		TSTDB = "Tests_"+regsub.gsub("\\\\","_",TSTDIR)
 	else:
-		TDB = regsub.gsub(os.sep,"_",TD)
+		TSTDB = "Tests_"+regsub.gsub(os.sep,"_",TSTDIR)
 	if not testlist:
-		for tst in fileinput.input(TSD+os.sep+"All"):
+		for tst in fileinput.input(TSTSRCDIR+os.sep+"All"):
 			tst = string.strip(tst)
 			if tst  and  tst[0] != "#":
 				testlist.append(tst)
 	if not testlist:
-		Warn("No tests found in '"+TSD+"`; skipping directory!")
+		Warn("No tests found in '"+TSTSRCDIR+"`; skipping directory!")
 		return
-	if not os.path.exists(TTD):
+	if not os.path.exists(TSTTRGDIR):
 		#TODO: set mode to umask
-		os.makedirs(TTD)
-	env['TSTDB']     = TDB
-	env['TSTDIR']    = TD
-	env['TSTSRCDIR'] = TSD
-	env['TSTBLDDIR'] = TBD
-	env['TSTTRGDIR'] = TTD
-	env['RELSRCDIR'] = ((os.pardir+os.sep)*(len(string.split(TD,os.sep))+1))+env['RELSRCBASE']+os.sep+TD+os.sep+"Tests"
-	env['RELBLDDIR'] = ((os.pardir+os.sep)*(len(string.split(TD,os.sep))+1))+env['RELBLDBASE']+os.sep+TD+os.sep+"Tests"
-	os.environ['TSTDB']     = TDB
-	os.environ['TSTDIR']    = TD
-	os.environ['TSTSRCDIR'] = TSD
-	os.environ['TSTBLDDIR'] = TBD
-	os.environ['TSTTRGDIR'] = TTD
+		os.makedirs(TSTTRGDIR)
+	env['TSTDB']     = TSTDB
+	env['TSTDIR']    = TSTDIR
+	env['TSTSRCDIR'] = TSTSRCDIR
+	env['TSTBLDDIR'] = TSTBLDDIR
+	env['TSTTRGDIR'] = TSTTRGDIR
+	env['RELSRCDIR'] = ((os.pardir+os.sep)*(len(string.split(TSTDIR,os.sep))+1))+env['RELSRCBASE']+os.sep+TSTDIR+os.sep+"Tests"
+	env['RELBLDDIR'] = ((os.pardir+os.sep)*(len(string.split(TSTDIR,os.sep))+1))+env['RELBLDBASE']+os.sep+TSTDIR+os.sep+"Tests"
+	os.environ['TSTDB']     = TSTDB
+	os.environ['TSTDIR']    = TSTDIR
+	os.environ['TSTSRCDIR'] = TSTSRCDIR
+	os.environ['TSTBLDDIR'] = TSTBLDDIR
+	os.environ['TSTTRGDIR'] = TSTTRGDIR
 	os.environ['RELSRCDIR'] = env['RELSRCDIR']
 	os.environ['RELBLDDIR'] = env['RELBLDDIR']
-	if os.path.exists(env['MONETFARM']+os.sep+"dbfarm"+os.sep+TDB):
-		if Check(env['exe']['Mdestroydb'][1]+" -db "+TDB, ""):
-			Warn("database '"+TDB+"` exists, but destroying it failed; skipping tests in '"+TSD+"`!")
+	if os.path.exists(env['MONETFARM']+os.sep+"dbfarm"+os.sep+TSTDB):
+		if Check(env['exe']['Mdestroydb'][1]+" -db "+TSTDB, ""):
+			Warn("database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
 			#TODO:
 			# add "something" to HTML output
 			return
-	if Check(env['exe']['Mcreatedb'][1] +" -db "+TDB, ""):
-		Warn("creating database '"+TDB+" failed; skipping tests in '"+TSD+"`!")
+	if Check(env['exe']['Mcreatedb'][1] +" -db "+TSTDB, ""):
+		Warn("creating database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
 		#TODO:
 		# add "something" to HTML output
 		return
 	for t in testlist:
 		runtest(env, t)
 	CreateHtmlIndex(env)
-	AddSubToHtmlIndex(env, TD)
+	AddSubToHtmlIndex(env, TSTDIR)
 
 def isexecutable(TST) :
 	if   os.name == "nt":
@@ -490,8 +486,8 @@ def CheckMods(env, TST, EXT) :
 				missing.append(m)
 	return missing
 
-def CheckBATs(env, TST, TDB) :
-	pOut,pIn,pErr = popen2.popen3(env['exe']['Mserver'][1]+" -db "+TDB)
+def CheckBATs(env, TST, TSTDB) :
+	pOut,pIn,pErr = popen2.popen3(env['exe']['Mserver'][1]+" -db "+TSTDB)
 	pIn.write('''
 printf("\\n");x:="";view_bbp_name@batloop{printf("%s'%s'",x,$t);x:=",";}printf("\\n");quit;
 ''')
@@ -510,11 +506,11 @@ printf("\\n");x:="";view_bbp_name@batloop{printf("%s'%s'",x,$t);x:=",";}printf("
 	return missing
 
 def runtest(env, TST) :
-	TDB = env['TSTDB']
-	TD  = env['TSTDIR']
-	TSD = env['TSTSRCDIR']
-	TTD = env['TSTTRGDIR']
-	os.chdir(TSD)
+	TSTDB = env['TSTDB']
+	TSTDIR  = env['TSTDIR']
+	TSTSRCDIR = env['TSTSRCDIR']
+	TSTTRGDIR = env['TSTTRGDIR']
+	os.chdir(TSTSRCDIR)
 
 	EXT = "" ; CALL = ""
 	x = isexecutable(TST)
@@ -544,48 +540,47 @@ def runtest(env, TST) :
 	else:
 		EXT = ""      ; CALL = ""
 		if os.name == "nt":
-			ErrMsg("test missing: '"+TSD+os.sep+TST+".(exe|com|bat|cmd|py|milM|milS|milC)`")
-			return
+			ErrMsg("test missing: '"+TSTSRCDIR+os.sep+TST+".(exe|com|bat|cmd|py|milM|milS|milC)`")
 			#TODO:
 			#elif os.name == "posix":
 		else:
-			ErrMsg("test missing: '"+TSD+os.sep+TST+"[.py|.milM|.milS|.milC]`")
-			return
+			ErrMsg("test missing: '"+TSTSRCDIR+os.sep+TST+"[.py|.milM|.milS|.milC]`")
+		return
 
 	MissingMods = CheckMods(env, TST, EXT)
-	MissingBATs = CheckBATs(env, TST, TDB)
+	MissingBATs = CheckBATs(env, TST, TSTDB)
 
-	os.chdir(TTD)
+	os.chdir(TSTTRGDIR)
 
 	NotOnNT = ["src/modules/plain/salgebra", "tests/by_Peter/tst_priv"]
 	ReqMshdn = [".milC"]
-	if   os.name == "nt"  and  url(TD)+"/"+TST in NotOnNT:
+	if   os.name == "nt"  and  url(TSTDIR)+"/"+TST in NotOnNT:
 		SkipTest(env, TST, EXT, "as it currently crashes/hangs on NT.")
 	elif EXT in ReqMshdn  and  not env['exe']['Mshutdown'][0]:
 		SkipTest(env, TST, EXT, "as Mshutdown is not available.")
-	elif EXT == ".milC" and  not env['exe']['Mclient'][0]:
-		SkipTest(env, TST, EXT, "as Mclient is not available.")
+	elif EXT == ".milC" and  not env['exe']['MapiClient'][0]:
+		SkipTest(env, TST, EXT, "as MapiClient is not available.")
 	elif EXT == ".milC" and  not os.path.isfile(env['MONETDIST']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")):
 		SkipTest(env, TST, EXT, "as "+env['MONETDIST']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")+" is not available.")
 	elif EXT == ".py"   and  not env['exe']['python'][0]:
 		SkipTest(env, TST, EXT, "as python is not available.")
-	#TODO:
+		#TODO:
 	elif EXT == ".milC"  and  os.name == "nt":
-		SkipTest(env, TST, EXT, "as Mclient is currently not working on WindowsNT.")
-	#TODO:
-	#elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
+		SkipTest(env, TST, EXT, "as MapiClient is currently not working on WindowsNT.")
+		#TODO:
+		#elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
 		#SkipTest(env, TST, EXT, "as java is not in $PATH.")
 	elif MissingMods:
 		SkipTest(env, TST, EXT, "as modules '"+str(MissingMods)+"` are missing.")
 	elif MissingBATs:
-		SkipTest(env, TST, EXT, "as BATs '"+str(MissingBATs)+"` are missing in database '"+TDB+"`.")
+		SkipTest(env, TST, EXT, "as BATs '"+str(MissingBATs)+"` are missing in database '"+TSTDB+"`.")
 	elif CALL == "milCXp":
 		SkipTest(env, TST, EXT, "as multiple clients in parallel are currently not supported by Mtest.")
 	else:
 		test = re.compile("^"+TST+"(|\..*|_[sp][0-9][0-9]\..*)$")
-		for f in os.listdir(TSD):
+		for f in os.listdir(TSTSRCDIR):
 			if test.match(f):
-				shutil.copy(TSD+os.sep+f,TTD)
+				shutil.copy(TSTSRCDIR+os.sep+f,TSTTRGDIR)
 		if os.path.isfile(TST+EXT+".src")  and not os.path.isfile(TST+EXT):
 			f = open(TST+EXT+".src","r")
 			TSTSRC = os.path.expandvars(regsub.gsub("/",os.sep,string.strip(f.readline())))
@@ -619,8 +614,8 @@ def runtest(env, TST) :
 
 		TestOut = open(TST+".test.out","w")
 		TestErr = open(TST+".test.err","w")
-		TestOut.write("stdout of test '"+TST+"` in directory '"+url(TD)+"` itself:\n\n")
-		TestErr.write("stderr of test '"+TST+"` in directory '"+url(TD)+"` itself:\n\n")
+		TestOut.write("stdout of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
+		TestErr.write("stderr of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
 
 		#TODO:
 		##(
@@ -679,7 +674,7 @@ def runtest(env, TST) :
 		testE = re.compile("^/"+TST+STABLEerr+"/([^/]*)/")
 		REVo="?"
 		REVe="?"
-		for l in fileinput.input(TSD+os.sep+"CVS"+os.sep+"Entries"):
+		for l in fileinput.input(TSTSRCDIR+os.sep+"CVS"+os.sep+"Entries"):
 			mO = testO.match(l)
 			if mO:
 				REVo=mO.group(1)
@@ -690,6 +685,7 @@ def runtest(env, TST) :
 		REVe=" (r"+REVe+")"
 
 		ACCURACY = par['ACCURACY']
+		#TODO:
 		#timedout = 1
 		#while timedout and ACCURACY >= 0:
 		#	timedout = 0
@@ -703,6 +699,7 @@ def runtest(env, TST) :
 		os.system(env['exe']['Mdiff'][1]+' '+par['IGNORE']+' '+par['CONTEXT']+' -a'+str(ACCURACY)+' -r"'+REVo+'" '+TST+STABLEout+'.FILTERED '+TST+'.test.out.FILTERED '+TST+'.out.diff.html')
 
 		ACCURACY = par['ACCURACY']
+		#TODO:
 		#timedout = 1
 		#while timedout and ACCURACY >= 0:
 		#	timedout = 0
@@ -721,11 +718,29 @@ def Prompt(cmd):
 	prompt = time.strftime('\n# %H:%M:%S >  ',time.localtime(time.time()))
 	return prompt+prompt+cmd+prompt+"\n\n"
 
+def LaunchIt(cmd, TestIn, TestOut, TestErr):
+	TestOut.write(Prompt(cmd)) ; TestOut.flush()
+	TestErr.write(Prompt(cmd)) ; TestErr.flush()
+	pOut,pIn,pErr = popen2.popen3(cmd)
+	pIn.write(TestIn)
+	pIn.close()
+	return pOut, pErr
+
+def CollectIt(pOut, pErr, TestOut, TestErr):
+	TestOut.writelines(pOut.readlines()) ; TestOut.flush()
+	TestErr.writelines(pErr.readlines()) ; TestErr.flush()
+	pOut.close()
+	pErr.close()
+
+def RunIt(cmd, TestIn, TestOut, TestErr):
+	pOut, pErr = LaunchIt(cmd, TestIn, TestOut, TestErr)
+	CollectIt(pOut, pErr, TestOut, TestErr)
+
 def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr) :
 	STDERR.flush()
 	print(env['TSTDIR']+os.sep+TST+EXT+" "+PRELUDE)
 	STDOUT.flush()
-	TDB = env['TSTDB']
+	TSTDB = env['TSTDB']
 	exe = env['exe']
 	if exe['Mtimeout'][0]:
 		MTO = "Mtimeout -timeout "
@@ -735,29 +750,15 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr) :
 		TIO = ""
 	if   CALL == "other":
 		cmd = MTO+str(TIO)+" ."+os.sep+TST+" "+TST+" "+PRELUDE
-		TestOut.write(Prompt(cmd)) ; TestOut.flush()
-		TestErr.write(Prompt(cmd)) ; TestErr.flush()
-		pOut,pIn,pErr = popen2.popen3(cmd)
-		pIn.close()
-		TestOut.writelines(pOut.readlines()) ; TestOut.flush()
-		TestErr.writelines(pErr.readlines()) ; TestErr.flush()
-		pOut.close()
-		pErr.close()
+		RunIt(cmd, "", TestOut, TestErr)
 	elif CALL == "python":
 		cmd = MTO+str(TIO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
-		TestOut.write(Prompt(cmd)) ; TestOut.flush()
-		TestErr.write(Prompt(cmd)) ; TestErr.flush()
-		pOut,pIn,pErr = popen2.popen3(cmd)
-		pIn.close()
-		TestOut.writelines(pOut.readlines()) ; TestOut.flush()
-		TestErr.writelines(pErr.readlines()) ; TestErr.flush()
-		pOut.close()
-		pErr.close()
+		RunIt(cmd, "", TestOut, TestErr)
 	elif CALL in ["milM", "milS", "milMXs", "milSXs"]:
 		cmd = MTO+str(TIO)+" "+exe['Mserver'][1]
 		if CALL in ["milS", "milSXs"]:
 			cmd = cmd+" -single"
-		cmd = cmd+" -db "+TDB+" "+PRELUDE+" < "
+		cmd = cmd+" -db "+TSTDB+" "+PRELUDE+" < "
 		if CALL in ["milM", "milS"]:
 			X=""
 		else:
@@ -767,14 +768,7 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr) :
 		d.sort()
 		for f in d:
 			if test.match(f):
-				TestOut.write(Prompt(cmd+f)) ; TestOut.flush()
-				TestErr.write(Prompt(cmd+f)) ; TestErr.flush()
-				pOut,pIn,pErr = popen2.popen3(cmd+f)
-				pIn.close()
-				TestOut.writelines(pOut.readlines()) ; TestOut.flush()
-				TestErr.writelines(pErr.readlines()) ; TestErr.flush()
-				pOut.close()
-				pErr.close()
+				RunIt(cmd+f, "", TestOut, TestErr)
 	elif CALL in ["milC", "milCXs"]:
 		TSTs = []
 		if CALL == "milC":
@@ -788,8 +782,8 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr) :
 			if test.match(f):
 				TSTs.append(f)
 
-		Srvr = MTO+str(TIO*(len(TSTs)+2))+" "+exe['Mserver'][1]+" -db "+TDB+" -prelude "+env['MONETDIST']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")+" -background"
-		Clnt = MTO+str(TIO)+" "+exe['Mclient'][1]+" "+PRELUDE+" < "
+		Srvr = MTO+str(TIO*(len(TSTs)+2))+" "+exe['Mserver'][1]+" -db "+TSTDB+" -prelude "+env['MONETDIST']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")+" -background"
+		Clnt = MTO+str(TIO)+" "+exe['MapiClient'][1]+" "+PRELUDE+" < "
 		Shwn = MTO+str(TIO)+" "+exe['Mshutdown'][1]
 
 		SrvrOut = open(TST+".server.out","w")
@@ -799,77 +793,19 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr) :
 		ShwnOut = open(TST+".shutdown.out","w")
 		ShwnErr = open(TST+".shutdown.err","w")
 
-		SrvrOut.write(Prompt(Srvr)) ; SrvrOut.flush()
-		SrvrErr.write(Prompt(Srvr)) ; SrvrErr.flush()
-		pSrvrOut,pSrvrIn,pSrvrErr = popen2.popen3(Srvr)
-		pSrvrIn.close()
-		#l = "-"
-		#while l:
-		#	l = pSrvrOut.readline()
-		#	SrvrOut.write(l)
-		#SrvrOut.flush()
-		#l = "-"
-		#while l:
-		#	l = pSrvrErr.readline()
-		#	SrvrErr.write(l)
-		#SrvrErr.flush()
+		pSrvrOut, pSrvrErr = LaunchIt(Srvr, "", SrvrOut, SrvrErr)
 		time.sleep(9)
 
 		for f in TSTs:
-			ClntOut.write(Prompt(Clnt+f)) ; ClntOut.flush()
-			ClntErr.write(Prompt(Clnt+f)) ; ClntErr.flush()
-			pClntOut,pClntIn,pClntErr = popen2.popen3(Clnt+f)
-			pClntIn.close()
-			ClntOut.writelines(pClntOut.readlines()) ; ClntOut.flush()
-			ClntErr.writelines(pClntErr.readlines()) ; ClntErr.flush()
-			pClntOut.close()
-			pClntErr.close()
+			RunIt(Clnt+f, "", ClntOut, ClntErr)
 
-		#Clnt = MTO+str(TIO)+" "+exe['Mclient'][1]
-		#ClntOut.write(Prompt(Clnt)) ; ClntOut.flush()
-		#ClntErr.write(Prompt(Clnt)) ; ClntErr.flush()
-		#pClntOut,pClntIn,pClntErr = popen2.popen3(Clnt)
-		#pClntIn.write("shutdown;\n")
-		#pClntIn.close()
-		#ClntOut.writelines(pClntOut.readlines()) ; ClntOut.flush()
-		#ClntErr.writelines(pClntErr.readlines()) ; ClntErr.flush()
-		#pClntOut.close()
-		#pClntErr.close()
+		#TODO:
+		#Clnt = MTO+str(TIO)+" "+exe['MapiClient'][1]
+		#RunIt(Clnt, "shutdown;\n", ClntOut, ClntErr)
 
-		ShwnOut.write(Prompt(Shwn)) ; ShwnOut.flush()
-		ShwnErr.write(Prompt(Shwn)) ; ShwnErr.flush()
-		pShwnOut,pShwnIn,pShwnErr = popen2.popen3(Shwn)
-		pShwnIn.close()
-		#l = "-"
-		#while l:
-		#	l = pShwnOut.readline()
-		#	ShwnOut.write(l)
-		#ShwnOut.flush()
-		#l = "-"
-		#while l:
-		#	l = pShwnErr.readline()
-		#	ShwnErr.write(l)
-		#ShwnErr.flush()
-		#time.sleep(9)
+		RunIt(Shwn, "", ShwnOut, ShwnErr)
 
-		#pSrvrIn.write('''
-		#printf("\\n");
-		#printf("!ERROR: Mshutdown failed!\\n");
-		#printf("!ERROR: shutdown issued on console."\n);
-		#''')
-		#pSrvrIn.flush()
-		#pSrvrIn.write('shutdown;\n')
-		#pSrvrIn.close()
-
-		ShwnOut.writelines(pShwnOut.readlines()) ; ShwnOut.flush()
-		ShwnErr.writelines(pShwnErr.readlines()) ; ShwnErr.flush()
-		pShwnOut.close()
-		pShwnErr.close()
-
-		SrvrOut.writelines(pSrvrOut.readlines()) ; SrvrOut.flush()
-		SrvrErr.writelines(pSrvrErr.readlines()) ; SrvrErr.flush()
-		pSrvrOut.close()
-		pSrvrErr.close()
+		CollectIt(pSrvrOut, pSrvrErr, SrvrOut, SrvrErr)
 
 		for q in [SrvrOut, ClntOut, ShwnOut]:
 			n = q.name
@@ -974,21 +910,8 @@ URLSUFFIX_D = '?cvsroot=Monet-4.2'
 par = {}
 
 def main(argv) :
+	#TODO:
 	#signal.signal(signal.SIGALRM, AlarmHandler)
-
-	try:
-		opts, args = getopt.getopt(argv[1:], "?hI:c:a:d:t:r", ["help", "TSTSRCBASE=", "TSTBLDBASE=", "TSTTRGBASE=", "MONET_SOURCE=", "MONET_BUILD=", "MONET_PREFIX="])
-	except getopt.GetoptError:
-		Usage()
-		sys.exit(1)
-
-	#par = {}
-	par['IGNORE']    = '-I"^#"'
-	par['CONTEXT']   = '-c1'
-	par['ACCURACY']  = 2
-	par['DBGMASK']   = '-d8'
-	par['TIMEOUT']   = 600
-	par['RECURSIVE'] = 0
 
 	vars = ['MONET_SOURCE', 'MONET_BUILD', 'MONET_PREFIX', 'TSTSRCBASE', 'TSTBLDBASE', 'TSTTRGBASE', \
 		'MONETDIST'   , 'MONETHOME'  , 'MONETFARM'   , 'MONETPORT' , 'MAPIPORT'  , 'MONET_MOD_PATH']
@@ -1009,6 +932,14 @@ def main(argv) :
 	dft['MONET_MOD_PATH'] = "env['MONETDIST']+os.sep+'lib'+os.pathsep+env['MONETDIST']+os.sep+'lib'+os.sep+'Monet'"
 	env = {}
 
+	#par = {}
+	par['IGNORE']    = '-I"^#"'
+	par['CONTEXT']   = '-c1'
+	par['ACCURACY']  = 2
+	par['DBGMASK']   = '-d8'
+	par['TIMEOUT']   = 600
+	par['RECURSIVE'] = 0
+
 	# get current environment
 	for v in vars:
 		if os.environ.has_key(v):
@@ -1017,6 +948,11 @@ def main(argv) :
 			# make sure, that PATHs ar absolute
 
 	# commandline options overrule environment
+	try:
+		opts, args = getopt.getopt(argv[1:], "?hI:c:a:d:t:r", ["help", "TSTSRCBASE=", "TSTBLDBASE=", "TSTTRGBASE=", "MONET_SOURCE=", "MONET_BUILD=", "MONET_PREFIX="])
+	except getopt.GetoptError:
+		Usage()
+		sys.exit(1)
 	for o, a in opts:
 		if   o in ("-?", "-h", "--help"):
 			Usage()
@@ -1037,7 +973,7 @@ def main(argv) :
 			par['TIMEOUT'] = int(a)
 		elif o == "-r":
 			par['RECURSIVE'] = 1
-		# commandline options overrule environment
+			# commandline options overrule environment
 		elif len(o) > 2  and  o[:2] == "--"  and  o[2:] in vars:
 			env[o[2:]] = a
 			#TODO:
@@ -1045,9 +981,12 @@ def main(argv) :
 		else:
 			Usage()
 			ErrXit("Illegal option: '"+o+"`!")
+	#TODO
 	if os.name == "nt"  and  par['ACCURACY'] != 0:
 		Warn("Currently only '-a0` is supported on NT!")
 		par['ACCURACY'] = 0
+
+	# display par's
 	STDERR.flush()
 	for v in par.keys():
 		#os.environ[v] = par[v]
@@ -1059,6 +998,8 @@ def main(argv) :
 	for v in vars:
 		if not env.has_key(v):
 			env[v] = eval(dft[v])
+			if v == "MONET_MOD_PATH"  and  env['MONETHOME'] != env['MONETDIST']:
+				env[v] =  eval(regsub.gsub("MONETDIST","MONETHOME",dft[v]))+os.pathsep+env[v]
 			#TODO:
 			# make sure, that PATHs ar absolute
 
@@ -1074,6 +1015,7 @@ def main(argv) :
 	#if not os.path.indir(MONET_PREFIX):
 	#	ErrXit("Illegal MONET_PREFIX: directory '"+a"` does not exist!")
 
+	# some relative path's for relocatable HTML output
 	if env['TSTSRCBASE'] == env['TSTBLDBASE']  and  env['TSTBLDBASE'] == env['TSTTRGBASE']:
 		RELSRCBASE = os.curdir
 		RELBLDBASE = os.curdir
@@ -1085,13 +1027,17 @@ def main(argv) :
 	env['RELSRCBASE'] = RELSRCBASE
 	env['RELBLDBASE'] = RELBLDBASE
 
+	# export and display env
 	STDERR.flush()
 	for v in vars:
 		os.environ[v] = env[v]
 		print(v+" = "+env[v])
 	STDOUT.flush()
 
+	# set/extend PATH & LD_LIBRARY_PATH
 	bp = env['MONETDIST']+os.sep+"bin"
+	if env['MONETHOME'] != env['MONETDIST']:
+		bp = env['MONETHOME']+os.sep+"bin"+os.pathsep+bp
 	lp = env['MONET_MOD_PATH']
 	if os.name == "nt":
 		bp = bp+os.pathsep+lp
@@ -1110,10 +1056,11 @@ def main(argv) :
 		Warn("changing to TSTSRCBASE="+env['TSTSRCBASE']+", now.")
 		os.chdir(env['TSTSRCBASE'])
 
+	# check for execuatables, set their standard options and export them
 	exe = {}
 	exe['Mtimeout']   = CheckExec('Mtimeout')  , 'Mtimeout -timeout '+str(par['TIMEOUT'])
 	exe['Mserver']    = CheckExec('Mserver')   , 'Mserver -p'' -modulesilent -yaccsilent '+par['DBGMASK']
-	exe['Mclient']    = CheckExec('Mclient')   , 'Mclient'
+	exe['MapiClient'] = CheckExec('MapiClient'), 'MapiClient'
 	exe['Mcreatedb']  = CheckExec('Mcreatedb') , 'Mcreatedb '+MUSER
 	exe['Mdestroydb'] = CheckExec('Mdestroydb'), 'Mdestroydb'
 	exe['Mload']      = CheckExec('Mload')     , 'Mload'
@@ -1123,6 +1070,8 @@ def main(argv) :
 	STDERR.flush()
 	for v in exe.keys():
 		V = string.upper(v)
+		# TODO ?
+		# if exe[v][0]:
 		os.environ[V] = exe[v][1]
 		print(V+" = "+exe[v][0]+" "+exe[v][1])
 	STDOUT.flush()
@@ -1132,6 +1081,7 @@ def main(argv) :
 	#exe['JAVA']       = 'java'
 	#exe['JAVAC']      = 'javac'
 
+	# parse commandline arguments
 	testdirs = []
 	testlist = []
 	dirlist = []
@@ -1204,7 +1154,7 @@ def main(argv) :
 		# WARNING
 	if not testdirs:
 		Warn("No tests found!")
-		return
+		sys.exit(1)
 
 	if os.path.exists(env['TSTTRGBASE']+os.sep+"Tests"):
 		shutil.rmtree(env['TSTTRGBASE']+os.sep+"Tests")
@@ -1220,6 +1170,10 @@ def main(argv) :
 	if Check(env['exe']['Mserver'][1]   +" -db Tests", "quit;\n"):
 		sys.exit(1)
 	GetBitsAndMods(env)
+	STDERR.flush()
+	print("Bits: ", env['TST_BITS'])
+	print("Modules: ", env['TST_MODS'])
+	STDOUT.flush()
 
 	if len(testdirs) == 1:
 		runtests(env, testdirs[0], testlist)

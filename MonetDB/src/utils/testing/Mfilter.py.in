@@ -1,0 +1,123 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import getopt
+import re
+import fileinput
+import string
+import time
+
+#############################################################################
+#	FUNCTIONS
+
+def Usage(THISFILE) :
+	print('''
+
+Usage:  %s [-I<exp>] <files>
+
+ -I<exp> : ignore lines matching <exp> during first count (optional, default: -I'^#`)
+ <files> : list of files to be processed
+
+''' % THISFILE)
+
+def Warn(THISFILE,TEXT) :
+	sys.stderr.write("%s warning: %s\n" % (THISFILE,TEXT))
+
+def mFilter (FILE, IGNORE) :
+	fin = open(FILE, "r")
+	LINE = fin.readline()
+	while  len(LINE)  and  ( len(LINE) < 15  or  LINE[:15] not in ("stdout of test ", "stderr of test ") ):
+		LINE = fin.readline()
+	fin.close()
+	if  len(LINE) >= 15  and  LINE[:15] in ("stdout of test ", "stderr of test "):
+		WHAT, TST, TSTDIR = re.search("^std(out|err) of test .(.*). in directory .(.*). itself:", LINE).groups()
+	else:
+		WHAT, TST, TSTDIR = "", "", ""
+
+	test = 	re.compile(IGNORE) , \
+		re.compile("^Mdestroydb: processing database ..*. in "	+ "|"	\
+			 + "^Mcreatedb: processing database ..*. in "	+ "|"	\
+			 + "^Mcreatedb: using default dbdir "		+ "|"	\
+			 + "^connection= .*:[0-9]*$"			+ "|"	\
+			 + "^Connecting to server: localhost:[0-9]*$" )
+		
+	ftmp = []
+	ig = n = 0
+	il = iw = ic = al = aw = ac = 0
+	for iline in fileinput.input(FILE):
+		oline = xline = ""
+		if iline == "#~BeginVariableOutput~#\n":
+			ig = 1
+			n = 0
+		if ig  and  ( len(iline) == 0  or  iline[0] != "!" ):
+			oline = "#~ " + iline
+			n = n + 1
+		elif test[1].match(iline):
+			oline = "#~ " + iline
+		#TODO
+		# properly solve this "hack" to make diff on NT ignore so-called
+		# empty lines which actually contain a '\r' (i.e., '^M'=='')
+		elif iline == os.linesep  or  iline == "\n":
+			oline = "#" + iline
+		else:
+			oline = iline
+		if iline == "#~EndVariableOutput~#\n":
+			ig = 0
+			xline = "~ " + str(n) + " ~\n"
+		for ln in oline, xline:
+			if len(ln):
+				w = len(string.split(ln))
+				c = len(ln)
+				if ln != os.linesep  and  \
+				   not test[0].match(ln):
+					il = il + 1
+					iw = iw + w
+					ic = ic + c
+				al = al + 1
+				aw = aw + w
+				ac = ac + c
+				ftmp.append(ln)
+
+	fout = open(FILE + ".FILTERED", "w")
+	fout.write("Statistics about std"+WHAT+" of test '"+TST+"` in directory '"+TSTDIR+"`:\n")
+	fout.write("  %9d lines, %9d words, %9d chars   in lines not matching '%s|^$`\n" % (il,iw,ic,IGNORE))
+	fout.write("# %9d lines, %9d words, %9d chars   in all lines\n" % (al,aw,ac))
+	fout.write("\n")
+	for ln in ftmp:
+		fout.write(ln)
+	fout.flush()
+	fout.close()
+	if os.name == "nt":
+		time.sleep(1)
+
+#############################################################################
+#	MAIN
+
+def main(argv) :
+	THISFILE = os.path.basename(argv[0])
+	try:
+		opts, args = getopt.getopt(argv[1:], "?hI:", ["help"])
+	except getopt.GetoptError:
+		Usage(THISFILE)
+		sys.exit(1)
+
+	IGNORE = "^#"
+	for o, a in opts:
+		if o in ("-?", "-h", "--help"):
+			Usage(THISFILE)
+			sys.exit(0)
+		if o == "-I":
+			IGNORE = a
+
+	for f in args:
+		if os.path.isfile(f):
+			mFilter(f, IGNORE)
+	 	else:	
+	 		Warn(THISFILE, "file missing: " + f)
+
+if __name__ == "__main__":
+	main(sys.argv)
+
+#	END
+#############################################################################
