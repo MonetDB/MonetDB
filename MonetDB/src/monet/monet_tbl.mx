@@ -1524,7 +1524,7 @@ preparation phase (only meaningful for C-modules) */
 		nme = (char *) BUNtail(TBL_mod_acc, r);
 		for(j=0; nme[j] && nme[j] != '='; j++) s[j] = nme[j];
 		s[j] = 0;
-		r = (char *) BUNfnd(father->atomtbl, s);
+		r = (char *) BUNfnd(father->acctbl, s);
 		assert(r);
 		accs[naccs++] = *(int*) BUNtloc(father->acctbl, r);
 		if (naccs == maccs) 
