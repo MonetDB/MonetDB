@@ -52,7 +52,7 @@ pattern getStackDepth():int = INSPECTStkDepth
 pattern getStackFrame(i:int):bat[str,str] = INSPECTStkFrameN;
 pattern getStackFrame():bat[str,str] = INSPECTStkFrame
 	comment "Collect variable binding of current (n-th) stack frame.";
-#pattern getStackTrace():bat[str,str]= INSPECTStkTrace;
+pattern getStackTrace():bat[void,str]= INSPECTStkTrace;
 
 @+ MAL modules and scopes inspection
 Each module forms a separately named scope. Scopes visible to a user
@@ -123,6 +123,7 @@ pattern mdb():void = mdbToggle
 #include "mal_resolve.h"
 #include "mal_client.h"
 #include "mal_function.h"
+#include "mal_debugger.h"
 
 @+ Variables and stack information
 The variable information can be turned into a BAT for inspection as well.
@@ -175,6 +176,24 @@ str INSPECTStkFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if(n<0) return throwMessage("inspect.stkFrame", "illegal depth.");
 	@:Pseudo(stk,frame)@
 	return INSPECTgetFrame(b,m,s,n-1);
+}
+str INSPECTStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
+	str msg;
+	Client c= getClient();
+	int *ret= (int*) getArgReference(s,p,0);
+	int k=0;
+
+	msg= callString(s->blk, s, getPC(m,p));
+	BUNins(b,&k, msg);
+	GDKfree(msg);
+	for(s=s->up,k++; s!= NULL; s= s->up, k++){
+		msg= callString(s->blk, s, s->pcup);
+		BUNins(b,&k, msg);
+		GDKfree(msg);
+	}
+	@:Pseudo(stk,trace)@
+	return MAL_SUCCEED;
 }
 @+ Symbol table 
 Mal symbol table and environment analysis.
@@ -258,12 +277,12 @@ str INSPECTsymbolDef(int *ret, str *nme, str *fcn)
 str INSPECTcodeDump(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 {	int i, *ret= (int*)getArgReference(stk,p,0);
 	str ps, cm;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
         if(b == 0) return throwMessage("inspect.codeDump", "failed to create BAT");
 	
 	for(i=0;i<m->stop;i++){
 		ps= instruction2str(m, getInstrPtr(m,i),1);
-		BUNins(b,&int_nil,ps);
+		BUNins(b,&i,ps);
 		GDKfree(ps);
 	}
 	@:Pseudo(fcn,stmt)@

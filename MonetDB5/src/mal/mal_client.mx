@@ -74,7 +74,10 @@ are located in mal_startup.
 
 @-
 The prompt structure is designed to simplify recognition
-of a prompt, because it should start with a \001 character.
+of the language framework for interaction. For direct console
+access it is a short printable ascii string. For access through
+an API we assume the prompt is an ascii string surrounded by a \001
+character. This simplifies recognition.
 The information between the prompt brackets can be used to
 pass the mode to the front-end. Moreover, the prompt can be
 dropped if a single stream of information is expected from the
@@ -304,6 +307,7 @@ collect the buffer when in use.
 	c->errbuf = 0;
 
 	if( ! isAdministrator(c)){
+		/* access from a front-end application */
 		c->prompt = GDKstrdup(PROMPT);
 		c->promptlength= strlen(c->prompt);
 	} else {

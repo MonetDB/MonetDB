@@ -52,6 +52,7 @@ mal_export void mdbHelp(stream *f);
 mal_export void printStackElm(stream *f, MalBlkPtr mb,VarPtr n, ValPtr v,int index, int cnt,int first);
 mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
+mal_export str callString(MalBlkPtr mb, MalStkPtr stk, int pc);
 
 mal_export int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export int mdbSetCmd(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -146,23 +147,40 @@ void mdbClrBreakpointName(Client cntxt, str name)
 #define skipNonBlanc(X)	while(*(X) && !isspace(*X)) X++;
 #define skipWord(X)	skipNonBlanc(X); skipBlanc(X);
 
-void printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc){
+str callString(MalBlkPtr mb, MalStkPtr stk, int pc){
 	InstrPtr p;
-	int k;
+	char buf[8192];
+	int l,k;
 
 	p= getInstrPtr(mb, pc);
 	if( p != NULL){
-		promptInstruction(cntxt->fdout,mb,p,cntxt->listing);
-		p= getInstrPtr(mb, 0);
-		stream_printf(cntxt->fdout," at #%d in %s(", 
-			getPC(mb,p), getFcnName(mb));
+		snprintf(buf,8192,"%s.%s(",p->modname,p->fcnname);
 		for(k= p->retc; k<p->argc; k++){
+			str msg=0; 
 			ValPtr v= &stk->stk[p->argv[k]];
-			ATOMprint(v->vtype,VALptr(v),cntxt->fdout);
-			if( k < p->argc-1 ) stream_printf(cntxt->fdout,",");
+			ATOMformat(v->vtype, VALptr(v), &msg);
+			l= strlen(buf);
+			snprintf(buf+l,8192-l,"%s",msg);
+			GDKfree(msg);
+			if( k < p->argc-1 ) {
+				l= strlen(buf);
+				snprintf(buf+l,8192-l,",");
+			}
 		}
-		stream_printf(cntxt->fdout,")\n");
+		l= strlen(buf);
+		snprintf(buf+l,8192-l,")");
 	}
+	p= getInstrPtr(mb,0);
+	l= strlen(buf);
+	snprintf(buf+l,8192-l," at #%d in %s", pc, p->fcnname);
+	return GDKstrdup(buf);
+}
+void printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc){
+	str msg;
+
+	msg= callString(mb,stk,pc);
+	stream_printf(cntxt->fdout,"%s\n",msg);
+	GDKfree(msg);
 }
 void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int k;
@@ -578,8 +596,11 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
 	} else {
 		BAT *b;
 		b= BATdescriptor(v->val.ival);
-		stream_printf(f," count=%d\n",BATcount(b));
-		BBPunfix(b->batCacheid);
+		if(b){
+			stream_printf(f," count=%d",BATcount(b));
+			BBPunfix(b->batCacheid);
+		}
+		stream_printf(f,"\n");
 	}
 }
 void printBatInfo(stream *f, VarPtr n, ValPtr v){

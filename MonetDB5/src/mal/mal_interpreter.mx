@@ -198,6 +198,7 @@ being called.
 	if( env && mbcaller){
 		InstrPtr pp;
 		int k,n=0;
+		env->pcup= getPC(mbcaller,pcicaller);
 @-
 Beware, a function signature f(a1..an):(b1..bn) is parsed in such a way that
 the symbol table and stackframe contains the sequence 
