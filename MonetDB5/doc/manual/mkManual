@@ -1,4 +1,8 @@
 #!/bin/bash
+# use the result of the command
+# Mserver --dbinit="manual();"
+# trim the header and last prompt to prepare the xml file
+
 
 xsltproc manual.xsl manual.xml > manual.tex
 if [ $? -eq 0 ]; then
