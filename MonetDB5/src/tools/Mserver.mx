@@ -261,7 +261,7 @@ int main(int argc, char** av, char** envp) {
 	for (i = 0; av[i] != 0; i++) {
 		int j;
 		for (j = 0; j < strlen(av[i]); j++) {
-			if (!isprint(av[i][j])) {
+			if (!isprint((int)av[i][j])) {
 				/* non-printable char found! */
 				fprintf(stderr, "warning: discarding argument %d: it contains non-printable characters\n", i);
 				memset(av[i], 0, strlen(av[i]));
