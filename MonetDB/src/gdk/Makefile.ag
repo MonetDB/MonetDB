@@ -18,5 +18,5 @@ lib_gdk = {
 	LIBS = $(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS)
 }
 
-EXTRA_DIST = libbat.def index.html bat.eps bat1.eps bat2.eps
+EXTRA_DIST = libbat.def index.html bat.feps bat1.feps bat2.feps
 EXTRA_DIST_DIR = Tests

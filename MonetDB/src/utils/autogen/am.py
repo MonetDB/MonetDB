@@ -105,13 +105,17 @@ def am_find_srcs(target,deps,am):
     b,ext = split_filename(f)
     if (ext in automake_ext):
       pf = f 
+
   # built source if has dep and ext != cur ext
   if (deps.has_key(pf) and pf not in am['BUILT_SOURCES']):
 	pfb,pfext = split_filename(pf)
 	sfb,sfext = split_filename(deps[pf][0])
 	if (sfext != pfext):
 		am['BUILT_SOURCES'].append(pf)
-  return pf
+  b,ext = split_filename(pf)
+  if (ext in automake_ext):
+  	return pf
+  return ""
 
 def am_find_hdrs_r(am,target,deps,hdrs,hdrs_ext,map):
   if deps.has_key(target):
