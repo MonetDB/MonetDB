@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+#
+# ! this file should be kept identical in                                                         !
+# ! MonetDB, template, sql, pathfinder,  xml, pruning, playpen, times100, misq, gis, acoi, monet5 !
+#
+
 if [ "$1" ] ; then
 	echo '
 This script ("./de-bootstrap") can be used to clean up the source tree, 
