@@ -93,6 +93,14 @@ SQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLSetConnectAttrA(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
+		   SQLPOINTER ValuePtr, SQLINTEGER StringLength)
+{
+	return SQLSetConnectAttr(ConnectionHandle, Attribute,
+				 ValuePtr, StringLength);
+}
+
+SQLRETURN SQL_API
 SQLSetConnectAttrW(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 		   SQLPOINTER ValuePtr, SQLINTEGER StringLength)
 {

@@ -688,6 +688,14 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLGetInfoA(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
+	    SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
+{
+	return SQLGetInfo(hDbc, nInfoType,
+			  pInfoValue, nInfoValueMax, pnLength);
+}
+
+SQLRETURN SQL_API
 SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	    SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
 {

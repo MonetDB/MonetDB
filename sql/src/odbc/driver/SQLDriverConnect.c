@@ -235,6 +235,18 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLDriverConnectA(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
+		  SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut,
+		  SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut,
+		  SQLUSMALLINT nDriverCompletion)
+{
+	return SQLDriverConnect(hDbc, hWnd,
+				szConnStrIn, nConnStrIn,
+				szConnStrOut, cbConnStrOutMax, pnConnStrOut,
+				nDriverCompletion);
+}
+
+SQLRETURN SQL_API
 SQLDriverConnectW(SQLHDBC hDbc, SQLHWND hWnd, SQLWCHAR *szConnStrIn,
 		  SQLSMALLINT nConnStrIn, SQLWCHAR *szConnStrOut,
 		  SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut,

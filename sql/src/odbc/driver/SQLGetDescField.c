@@ -256,6 +256,15 @@ SQLGetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLGetDescFieldA(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
+		 SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
+		 SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+{
+	return SQLGetDescField(DescriptorHandle, RecordNumber, FieldIdentifier,
+			       Value, BufferLength, StringLength);
+}
+
+SQLRETURN SQL_API
 SQLGetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 		SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
 		SQLINTEGER BufferLength, SQLINTEGER *StringLength)

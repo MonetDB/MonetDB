@@ -76,6 +76,12 @@ SQLSetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLSetConnectOptionA(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
+{
+	return SQLSetConnectOption(hDbc, nOption, vParam);
+}
+
+SQLRETURN SQL_API
 SQLSetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;

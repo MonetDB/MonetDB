@@ -91,6 +91,18 @@ SQLProcedures(SQLHSTMT hStmt,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLProceduresA(SQLHSTMT hStmt,
+	       SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	       SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	       SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
+{
+	return SQLProcedures(hStmt,
+			     szCatalogName, nCatalogNameLength,
+			     szSchemaName, nSchemaNameLength,
+			     szProcName, nProcNameLength);
+}
+
+SQLRETURN SQL_API
 SQLProceduresW(SQLHSTMT hStmt,
 	       SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
 	       SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,

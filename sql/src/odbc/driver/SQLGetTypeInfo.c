@@ -968,6 +968,12 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLGetTypeInfoA(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
+{
+	return SQLGetTypeInfo(hStmt, nSqlDataType);
+}
+
+SQLRETURN SQL_API
 SQLGetTypeInfoW(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;

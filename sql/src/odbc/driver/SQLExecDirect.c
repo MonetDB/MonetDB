@@ -81,6 +81,12 @@ SQLExecDirect(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLExecDirectA(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
+{
+	return SQLExecDirect(hStmt, szSqlStr, nSqlStr);
+}
+
+SQLRETURN SQL_API
 SQLExecDirectW(SQLHSTMT hStmt, SQLWCHAR *szSqlStr, SQLINTEGER nSqlStr)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;

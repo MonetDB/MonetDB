@@ -226,6 +226,17 @@ SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLColAttributeA(SQLHSTMT hStmt, SQLSMALLINT nCol,
+		 SQLSMALLINT nFieldIdentifier, SQLPOINTER pszValue,
+		 SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength,
+		 SQLPOINTER pnValue)
+{
+	return SQLColAttribute(hStmt, (SQLUSMALLINT) nCol,
+			       (SQLUSMALLINT) nFieldIdentifier, pszValue,
+			       nValueLengthMax, pnValueLength, pnValue);
+}
+
+SQLRETURN SQL_API
 SQLColAttributeW(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 		 SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue,
 		 SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength,

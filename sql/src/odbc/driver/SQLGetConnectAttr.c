@@ -114,6 +114,14 @@ SQLGetConnectAttr(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLGetConnectAttrA(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
+		   SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+{
+	return SQLGetConnectAttr(hDbc, Attribute, ValuePtr,
+				 BufferLength, StringLength);
+}
+
+SQLRETURN SQL_API
 SQLGetConnectAttrW(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 		   SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {

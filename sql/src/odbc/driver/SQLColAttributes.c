@@ -78,6 +78,15 @@ SQLColAttributes(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLColAttributesA(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
+		  SQLPOINTER pszDesc, SQLSMALLINT nDescMax,
+		  SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
+{
+	return SQLColAttributes(hStmt, nCol, nDescType, pszDesc, nDescMax,
+				pcbDesc, pfDesc);
+}
+
+SQLRETURN SQL_API
 SQLColAttributesW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
 		  SQLPOINTER pszDesc, SQLSMALLINT nDescMax,
 		  SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)

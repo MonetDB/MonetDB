@@ -223,6 +223,20 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLSpecialColumnsA(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
+		   SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+		   SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+		   SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
+		   SQLUSMALLINT nScope, SQLUSMALLINT nNullable)
+{
+	return SQLSpecialColumns(hStmt, nIdentifierType,
+				 szCatalogName, nCatalogNameLength,
+				 szSchemaName, nSchemaNameLength,
+				 szTableName, nTableNameLength,
+				 nScope, nNullable);
+}
+
+SQLRETURN SQL_API
 SQLSpecialColumnsW(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 		   SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
 		   SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,

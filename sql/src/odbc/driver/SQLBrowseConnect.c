@@ -78,6 +78,15 @@ SQLBrowseConnect(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLBrowseConnectA(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
+		  SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax,
+		  SQLSMALLINT *pcbConnStrOut)
+{
+	return SQLBrowseConnect(hDbc, szConnStrIn, cbConnStrIn, szConnStrOut,
+				cbConnStrOutMax, pcbConnStrOut);
+}
+
+SQLRETURN SQL_API
 SQLBrowseConnectW(SQLHDBC hDbc, SQLWCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 		  SQLWCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax,
 		  SQLSMALLINT *pcbConnStrOut)

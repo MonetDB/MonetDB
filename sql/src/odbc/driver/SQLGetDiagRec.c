@@ -157,6 +157,17 @@ SQLGetDiagRec(SQLSMALLINT handleType, SQLHANDLE handle,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLGetDiagRecA(SQLSMALLINT handleType, SQLHANDLE handle,
+	       SQLSMALLINT recNumber, SQLCHAR *sqlState,
+	       SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText,
+	       SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr)
+{
+	return SQLGetDiagRec(handleType, handle, recNumber, sqlState,
+			     nativeErrorPtr, messageText, bufferLength,
+			     textLengthPtr);
+}
+
+SQLRETURN SQL_API
 SQLGetDiagRecW(SQLSMALLINT handleType, SQLHANDLE handle,
 	       SQLSMALLINT recNumber, SQLWCHAR *sqlState,
 	       SQLINTEGER *nativeErrorPtr, SQLWCHAR *messageText,

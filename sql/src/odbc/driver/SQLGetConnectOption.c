@@ -69,6 +69,12 @@ SQLGetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLGetConnectOptionA(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
+{
+	return SQLGetConnectOption(hDbc, nOption, pvParam);
+}
+
+SQLRETURN SQL_API
 SQLGetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 {
 	ODBCDbc * dbc = (ODBCDbc *) hDbc;

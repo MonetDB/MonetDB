@@ -67,6 +67,12 @@ SQLSetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLSetCursorNameA(SQLHSTMT hStmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
+{
+	return SQLSetCursorName(hStmt, szCursor, nCursorLength);
+}
+
+SQLRETURN SQL_API
 SQLSetCursorNameW(SQLHSTMT hStmt, SQLWCHAR *szCursor,
 		  SQLSMALLINT nCursorLength)
 {

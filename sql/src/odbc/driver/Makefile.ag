@@ -40,6 +40,7 @@ lib_MonetODBC = {
 	SQLDescribeParam.c \
 	SQLDisconnect.c \
 	SQLDriverConnect.c \
+	SQLDrivers.c \
 	SQLEndTran.c \
 	SQLError.c \
 	SQLExecDirect.c \

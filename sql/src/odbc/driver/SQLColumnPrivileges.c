@@ -92,6 +92,19 @@ SQLColumnPrivileges(SQLHSTMT hStmt,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLColumnPrivilegesA(SQLHSTMT hStmt,
+		     SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+		     SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+		     SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
+		     SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+{
+	return SQLColumnPrivileges(hStmt, szCatalogName, nCatalogNameLength,
+				   szSchemaName, nSchemaNameLength,
+				   szTableName, nTableNameLength,
+				   szColumnName, nColumnNameLength);
+}
+
+SQLRETURN SQL_API
 SQLColumnPrivilegesW(SQLHSTMT hStmt,
 		     SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
 		     SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,

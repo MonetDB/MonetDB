@@ -95,6 +95,12 @@ SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLPrepareA(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
+{
+	return SQLPrepare(hStmt, szSqlStr, nSqlStrLength);
+}
+
+SQLRETURN SQL_API
 SQLPrepareW(SQLHSTMT hStmt, SQLWCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
