@@ -99,7 +99,10 @@ stmt *sqlexecute(context * lc, char *buf)
 		if (res)
 			res = optimize(lc, res);
 	} else {
+		/* errors should be handled in upper layer
+		 * not directly printed
 		fprintf(stderr, "%s\n", lc->errstr);
+		*/
 	}
 	if (lc->sym) {
 		symbol_destroy(lc->sym);

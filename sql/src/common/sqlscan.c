@@ -473,6 +473,8 @@ int handle_error(context * lc)
 	case EOF:
 		(void)sql_error( lc, 1, "Unexpected end of file");
 		break;
+	default:
+		(void)sql_error( lc, 1, "Unexpected control character");
 	}
 	return -1;
 }
@@ -726,7 +728,7 @@ int tokenize(context * lc)
 		} else if (ispunct(lc->cur)) {
 			return lex_symbol(lc);
 		}
-		if (lc->cur == EOF)
+		if (lc->cur == EOF || iscntrl(lc->cur))
 			return handle_error(lc);
 	}
 }
