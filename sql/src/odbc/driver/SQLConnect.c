@@ -83,7 +83,7 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		pwd = dupODBCstring(szPWD, nPWDLength);
 	}
 
-	s = "47111";/*s = mo_find_option(NULL, 0, "sql_port");*/
+	s = mo_find_option(NULL, 0, "sql_port");
 	port = atoi(s);
 
 	/* TODO: get and use a database name */
