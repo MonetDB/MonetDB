@@ -483,9 +483,9 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 				filename);
 			return NULL;
 		}
-		fprintf(fp, "%6d\n\n", logger->version );
 	}
 	logger->id++;
+	fprintf(fp, "%6d\n\n", logger->version );
 	fprintf(fp, "%d\n", logger->id);
 	fclose(fp);
 	logger->tid = bm_version(logger->bm);
@@ -508,7 +508,8 @@ void logger_destroy(logger *logger)
 	_DELETE(logger);
 }
 
-void logger_exit(logger *logger) {
+void logger_exit(logger *logger) 
+{
 	FILE *fp;
 	char filename[BUFSIZ];
 
@@ -531,7 +532,8 @@ void logger_exit(logger *logger) {
 		   cleanup actions 
 		 */
 		snprintf(ext, BUFSIZ, "bak-%d", logger->id);
-		GDKmove( logger->dir, LOGFILE, "bak", logger->dir, LOGFILE, ext ); 
+		GDKmove( logger->dir, LOGFILE, "bak", 
+		     	 logger->dir, LOGFILE, ext ); 
 		bm_cleanup(logger->bm);
 		TMcommit();	/* cleanup old bats */
 	} else {
@@ -539,18 +541,19 @@ void logger_exit(logger *logger) {
 	}
 }
 
-void logger_restart(logger *logger) {
+void logger_restart(logger *logger) 
+{
 	logger_close(logger);
 	logger_exit(logger);
 	logger_open(logger);
 }
 
-int logger_cleanup(logger *logger) {
+int logger_cleanup(logger *logger) 
+{
 	char buf[BUFSIZ];
 	int res = 0;
 	char id[BUFSIZ];
 	FILE *fp = NULL;
-
 
 	snprintf(buf, BUFSIZ,"%s%s.bak-%d", logger->dir, LOGFILE, logger->id);
         if (logger->debug&1)
