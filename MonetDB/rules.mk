@@ -68,6 +68,7 @@ MXFLAGS= -notouch
 
 %: %.mx
 	$(MX) $(MXFLAGS) -x sh $<
+	chmod a+x $@
 
 %.proto.h: %.m
 	$(MEL) $(INCLUDES) -o $@ -proto $<
