@@ -9,7 +9,7 @@ use DBI;
 use Carp;
 use vars qw($VERSION $err $errstr $state $drh);
 use sigtrap;
-use Data::Dump qw(dump);
+# use Data::Dump qw(dump);
 
 $VERSION = '0.02';
 $err = 0;
