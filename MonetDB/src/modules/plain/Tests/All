@@ -1,5 +1,6 @@
 algebra_PROCs
 arith
+ascii_io
 bat
 blob
 io
@@ -17,3 +18,5 @@ decimal
 monettime
 malalgebra
 salgebra
+tcpip1
+tcpip2

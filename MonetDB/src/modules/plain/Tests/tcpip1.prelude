@@ -1,0 +1,5 @@
+module("tcpip");
+
+fork(listen(50000));
+VAR c := open("localhost:50000");
+

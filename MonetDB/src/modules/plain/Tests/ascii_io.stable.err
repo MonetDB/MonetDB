@@ -1,0 +1,12 @@
+stderr of test 'ascii_io` in directory 'src/modules/plain` itself:
+
+
+# 19:56:37 >  
+# 19:56:37 >  Mtimeout -timeout 600 Mserver -monetrc /ufs/niels/data/monet/Linux/share/Monet/monet.Mtest.conf -db Tests_src_modules_plain ascii_io.prelude < ascii_io.milM
+# 19:56:37 >  
+
+
+# 19:56:40 >  
+# 19:56:40 >  Done.
+# 19:56:40 >  
+
