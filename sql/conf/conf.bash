@@ -212,6 +212,10 @@ if [ "${os}" = "Linux" ] ; then
 			libpath="/home/niels/soft/local/lib:${libpath}"
 		fi
 	fi
+	if [ -x /net/lin_local/twig/twig ] ; then
+		# twig in Konstanz
+		binpath="/net/lin_local/twig:${binpath}"
+	fi
 fi
 
 if [ "${os}" = "Darwin" ] ; then
@@ -325,6 +329,9 @@ if [ "${os}" != "Linux"  -a  "${os}" != "CYGWIN"  -a  "${os}" != "Darwin" ] ; th
 			;;
 		esac
 	fi
+elif [ "${os}" = "Linux"  -a  "${what}" = "PATHFINDER"  -a  -d /net/lin_local/libgc-devel ] ; then
+	# libgc in Konstanz
+	conf_opts="${conf_opts} --with-gc=/net/lin_local/libgc-devel"
 fi
 
 # CWI specific additional package settings
