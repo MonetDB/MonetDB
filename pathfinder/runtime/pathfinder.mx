@@ -1582,18 +1582,46 @@ BATebv (BAT *b)
 {
     BAT *ret = NULL;    /* return value */
     BUN p = 0, q = 0;   /* BUN variables for iteration */
+    int bunsz;          /* BUN size used for iteration (BATloopFast) */
     oid old;            /* Last head value we had seen */
     bit val;            /* Boolean result value that belongs to `old' */
+    size_t cnt = 0;     /* "guess" of result cardinality */
+    bit trivial;        /* indicator for "trivial" result properties */
 
+    /* Just in case BATebv might be called from elsewhere than CMDebv:
+     * check, that b in not NULL.
+     */
+    BATcheck(b, "BATebv");
     /* Input must be sorted by head value, tail must be boolean */
-    ERRORcheck (!b->hsorted, "BATebv: head of BAT must be sorted.\n");
+    ERRORcheck (!(BAThordered(b)&1), "BATebv: head of BAT must be sorted.\n");
+    /* Needed only, if you want to disallow TYPE_void, 
+     * which also matches the oid requirement of the signature;
+     * or if BATebv could be called from somewhere/one else than CMDebv.
+     */
     ERRORcheck (!(b->htype == TYPE_oid),
                 "BATebv: head of BAT must have oid type.\n");
+@(
+    /* Not needed, if BATebv is only called from CMDebv,
+     * since the signature only allows bit-tailed BATs.
+     */
     ERRORcheck (!(b->ttype == TYPE_bit),
                 "BATebv: tail of BAT must have bit type.\n");
+@)
+
+    /* Try to "guess" the result cardinality:
+     * on the one hand, we don't want too allocate (far) too much memory;
+     * on the other hand, we want to avoid BATextends (i.e., (large) memcpy's),
+     * that occur if we initially allow too little space ... 
+     * Obviously, BATcount(b) is the upper limit;
+     * lower limit is just a "wild guess"...
+     */
+    if (BAThkey (b))
+        cnt = BATcount (b);
+    else
+        cnt = MIN (200, BATcount (b));
 
     /* Create return BAT */
-    ret = BATnew (b->htype, TYPE_bit, 200);
+    ret = BATnew (b->htype, TYPE_bit, cnt);
     if (!ret)
         return ret;
 
@@ -1604,23 +1632,52 @@ BATebv (BAT *b)
      * time, we re-set val to false. When we reach the next head
      * value, (old, val) will be the correct BUN for the last group.
      */
-    p = BUNfirst (b);
-    goto first;         /* Deal with uninitialized case */
 
-    BATloop (b, p, q) {
-        if (*(oid *) BUNhead (b, p) == old)
+    /* Initialize, ... */
+    bunsz = BUNsize (b);
+    p = BUNfirst (b);
+    old = *(oid *) BUNhloc (b, p);
+    val = *(bit *) BUNtloc (b, p);
+    /* ... skip first, ... */
+    p += bunsz;
+    /* ... and process the rest. */
+    for(q = BUNlast(b); p < q; p += bunsz) {
+    	oid *head = (oid *) BUNhloc (b, p);
+        if (*head == old)
             val = FALSE;
         else {
-            BUNins (ret, &old, &val);
-        first:
-            old = *(oid *) BUNhead (b, p);
-            val = *(bit *) BUNtail (b, p);
+            bunfastins (ret, &old, &val);
+            old = *head;
+            val = *(bit *) BUNtloc (b, p);
         }
     }
     /* Don't forget to produce the last BUN. */
-    BUNins (ret, &old, &val);
+    bunfastins (ret, &old, &val);
+    
+    /* Set result properties ... */
+    cnt = BATcount (ret);
+    trivial = (cnt < 2) ? TRUE : FALSE;
+    /* ... head ... */
+    BATkey (ret, TRUE);
+    ret->hsorted = GDK_SORTED;
+    ret->hdense = trivial;
+    if (trivial == TRUE) {
+        if (cnt == 0)
+            BATseqbase (ret, (oid)0); /* does not really matter */
+        else /* (cnt == 1) */
+            BATseqbase (ret, old);
+    }
+    /* ... tail */
+    BATkey (BATmirror(ret), trivial);
+    ret->tsorted = trivial;
+    ret->tdense = FALSE;
 
     return ret;
+
+/* required by bunfastins macro */
+bunins_failed:
+    BBPreclaim(b);
+    return NULL;
 }
 
 /*
