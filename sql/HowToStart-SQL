@@ -210,6 +210,30 @@ is an incompatible version.
 Bootstrap adds files to the source directory, so it must have write
 permissions.
 
+During bootstrap, warnings like
+	Remember to add `AC_PROG_LIBTOOL' to `configure.in'.
+	You should add the contents of `/usr/share/aclocal/libtool.m4' to `aclocal.m4'.
+	configure.in:37: warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
+	configure.in:104: warning: AC_PROG_LEX invoked multiple times
+	configure.in:334: warning: do not use m4_regexp: use regexp or m4_bregexp
+	automake/aclocal 1.6.3 is older than 1.7.
+	Patching aclocal.m4 for Intel compiler on Linux (icc/ecc).
+	patching file aclocal.m4
+	Hunk #1 FAILED at 2542.
+	1 out of 1 hunk FAILED -- saving rejects to file aclocal.m4.rej
+	patching file aclocal.m4
+	Hunk #1 FAILED at 1184.
+	Hunk #2 FAILED at 2444.
+	Hunk #3 FAILED at 2464.
+	3 out of 3 hunks FAILED -- saving rejects to file aclocal.m4.rej
+might occur.
+For some technical reasons, it's hard to completely avoid them. However,
+it is usually save to ignore them and simply proceed with the usual 
+compilation procedure. Only in case the subsequent configure or make
+do fail, these warning might have to be take more serious; in any case, 
+you should include the e bootstrap output in whenever you report (se below)
+compilation problems.
+
 Configure will fail if certain essential programs can't be found or
 certain essential tasks (such as compiling a C program) can't be
 executed.  The problem will usually be clear from the error message.
@@ -222,6 +246,12 @@ MonetDB.  In the latter case, you need to tell configure via
 "--with-XYZ=<DIR>" where to find packages XYZ on your machine. 
 configure then looks for the respective header files in <DIR>/include,
 and for the respective libraries in <DIR>/lib.
+
+Bugs and other problems with compiling or running MonetDB/SQL should be
+reported using the respective bug-tracking system at SourceFORGE (preferred;
+cf. https://sourceforge.net/tracker/?group_id=56967&atid=482468) or emailed
+to monet@cwi.nl; see also
+http://monetdb.cwi.nl/Development/Bugtracker/index.html .
 
 
 Usage:
