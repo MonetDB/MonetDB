@@ -103,6 +103,12 @@
 /* (partitioned) row counting operator */
 #define count(a,b,c)      PFalg_count ((a),(b),(c))
 
+/* algebra seqty1 operator (see PFalg_seqty1()) */
+#define seqty1(a,b,c,d)   PFalg_seqty1((a), (b), (c), (d))
+
+/* all operator (see PFalg_all()) */
+#define all(a,b,c,d)      PFalg_all((a), (b), (c), (d))
+
 /* duplicate elimination operator */
 #define distinct(a)       PFalg_distinct ((a))
 

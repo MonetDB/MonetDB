@@ -210,6 +210,9 @@ enum PFalg_op_kind_t {
     , aop_distinct         /**< duplicate elimination operator */
     , aop_element          /**< element-constructing operator */
     , aop_textnode         /**< text node-constructing operator */
+    , aop_seqty1           /**< test for exactly one type occurrence in one
+                                iteration (Pathfinder extension) */
+    , aop_all              /**< test if all items in an iteration are true */
 };
 /** algebra operator kinds */
 typedef enum PFalg_op_kind_t PFalg_op_kind_t;
@@ -267,7 +270,7 @@ union PFalg_op_sem_t {
     /* semantic content for type test operator */
     struct {
 	PFalg_att_t     att;     /**< name of type-tested attribute */
-	PFty_t          ty;      /**< comparison type */
+	PFalg_simple_type_t ty;  /**< comparison type */
 	PFalg_att_t     res;     /**< column to store result of type test */
     } type;
 
@@ -302,6 +305,13 @@ union PFalg_op_sem_t {
 	PFalg_att_t     part;     /**< partitioning attribute */
 	PFalg_att_t     res;      /**< attribute to hold the result */
     } count;
+
+    /* boolean grouping functions (seqty1, all,...) */
+    struct {
+        PFalg_att_t     res;      /**< result attribute */
+        PFalg_att_t     att;      /**< value attribute */
+        PFalg_att_t     part;     /**< partitioning attribute */
+    } blngroup;
 
     /* semantic content for dummy built-in function operator */
     struct {
@@ -489,7 +499,7 @@ PFalg_op_t * PFalg_select (PFalg_op_t *n, PFalg_att_t att);
  * stored in newly created column.
  */
 PFalg_op_t * PFalg_type (PFalg_op_t *n, PFalg_att_t res,
-			 PFalg_att_t att, PFty_t ty);
+			 PFalg_att_t att, PFalg_simple_type_t ty);
 
 /**
  * Constructor for the type cast of a column.
@@ -544,6 +554,18 @@ PFalg_op_t * PFalg_sum (PFalg_op_t *n, PFalg_att_t res,
 /** Constructor for (partitioned) row counting operators. */
 PFalg_op_t * PFalg_count (PFalg_op_t *n, PFalg_att_t res,
 			  PFalg_att_t part);
+
+/** Constructor for sequence type matching operator for `1' occurrence */
+PFalg_op_t * PFalg_seqty1 (PFalg_op_t *n,
+                           PFalg_att_t res, PFalg_att_t att, PFalg_att_t part);
+
+/**
+ * Constructor for `all' test.
+ * (Do all tuples in partition @a part carry the value true in
+ * attribute @a item ?)
+ */
+PFalg_op_t * PFalg_all (PFalg_op_t *n, PFalg_att_t res,
+                        PFalg_att_t att, PFalg_att_t part);
 
 /** Constructor for duplicate elimination operators. */
 PFalg_op_t * PFalg_distinct (PFalg_op_t *n);

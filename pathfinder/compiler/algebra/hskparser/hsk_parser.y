@@ -355,27 +355,27 @@ type    :   LSQBR TYPE list COMMA TYPEREF operator RSQBR
 	      if (!strcmp ($5, "int"))
                   $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 0)),
 			   *((PFalg_att_t*) PFarray_at ($3, 1)),
-			   PFty_integer ());
+                           aat_int);
 	      else if (!strcmp ($5, "str"))
                   $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 0)),
 			   *((PFalg_att_t*) PFarray_at ($3, 1)),
-			   PFty_string ());
+                           aat_str);
 	      else if (!strcmp ($5, "bool"))
                   $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 0)),
 			   *((PFalg_att_t*) PFarray_at ($3, 1)),
-			   PFty_boolean ());
+                           aat_bln);
 	      else if (!strcmp ($5, "dec"))
                   $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 0)),
 			   *((PFalg_att_t*) PFarray_at ($3, 1)),
-			   PFty_decimal ());
+                           aat_dec);
 	      else if (!strcmp ($5, "dbl"))
                   $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 0)),
 			   *((PFalg_att_t*) PFarray_at ($3, 1)),
-			   PFty_double ());
+                           aat_dbl);
 	      else if (!strcmp ($5, "node"))
                   $$=type ($6, *((PFalg_att_t*) PFarray_at ($3, 0)),
 			   *((PFalg_att_t*) PFarray_at ($3, 1)),
-			   PFty_node ());
+                           aat_node);
 	      else
 		  hskerror ("unknown type in typeswitch");
            }

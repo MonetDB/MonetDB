@@ -956,12 +956,14 @@ PFalg_select (PFalg_op_t *n, PFalg_att_t att)
     return ret;
 }
 
+
 /**
  * Constructor for type test on column values. The result is
  * stored in newly created column @a res.
  */
 PFalg_op_t *
-PFalg_type (PFalg_op_t *n, PFalg_att_t res, PFalg_att_t att, PFty_t ty)
+PFalg_type (PFalg_op_t *n,
+            PFalg_att_t res, PFalg_att_t att, PFalg_simple_type_t ty)
 {
     PFalg_op_t  *ret;
     int          i;
@@ -1113,50 +1115,50 @@ PFalg_divide (PFalg_op_t *n,
  * @param att1 Left operand of the `gt' operator.
  * @param att2 Right operand of the `gt' operator.
  */
-PFalg_op_t * PFalg_gt (PFalg_op_t *n,
-                       PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
+PFalg_op_t *
+PFalg_gt (PFalg_op_t *n, PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
     return compar_op (aop_num_gt, n, res, att1, att2);
 }
 
 
 /** Constructor for numeric equal operators. */
-PFalg_op_t * PFalg_eq (PFalg_op_t *n,
-                       PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
+PFalg_op_t *
+PFalg_eq (PFalg_op_t *n, PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
     return compar_op (aop_num_eq, n, res, att1, att2);
 }
 
 
 /** Constructor for numeric negation operators. */
-PFalg_op_t * PFalg_neg (PFalg_op_t *n, PFalg_att_t res,
-			PFalg_att_t att)
+PFalg_op_t *
+PFalg_neg (PFalg_op_t *n, PFalg_att_t res, PFalg_att_t att)
 {
     return unary_op (aop_num_neg, n, res, att);
 }
 
 
 /** Constructor for boolean AND operators. */
-PFalg_op_t * PFalg_and (PFalg_op_t *n, PFalg_att_t res,
-			PFalg_att_t att1, PFalg_att_t att2)
+PFalg_op_t *
+PFalg_and (PFalg_op_t *n, PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
     return boolean_op (aop_bool_and, n, res, att1, att2);
 }
 
 
 /** Constructor for boolean OR operators. */
-PFalg_op_t * PFalg_or (PFalg_op_t *n, PFalg_att_t res,
-		       PFalg_att_t att1, PFalg_att_t att2)
+PFalg_op_t *
+PFalg_or (PFalg_op_t *n, PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
     return boolean_op (aop_bool_or, n, res, att1, att2);
 }
 
 
 /** Constructor for boolean NOT operators. */
-PFalg_op_t * PFalg_not (PFalg_op_t *n, PFalg_att_t res,
-			PFalg_att_t att)
+PFalg_op_t *
+PFalg_not (PFalg_op_t *n, PFalg_att_t res, PFalg_att_t att)
 {
-    return unary_op (aop_bool_not, n, att, res);
+    return unary_op (aop_bool_not, n, res, att);
 }
 
 
@@ -1556,6 +1558,142 @@ PFalg_op_t * PFalg_count (PFalg_op_t *n, PFalg_att_t res,
     return ret;
 }
 
+/**
+ * Constructor for algebra `seqty1' operator.
+ *
+ * This operator is particularly crafted to test the occurrence
+ * indicator ``exactly one'' (`1'). It groups its argument according
+ * to the attribute @a part. For each partition it will look at the
+ * value attribute @a att. If there is exactly one tuple for the
+ * partition, and if the value of @a att is @c true for this tuple,
+ * the result for this partition will be @c true. In all other cases
+ * (There is more than one tuple, or the single tuple contains @c false
+ * in @a att.) the result for this partition will be @c false.
+ */
+PFalg_op_t *
+PFalg_seqty1 (PFalg_op_t *n,
+              PFalg_att_t res, PFalg_att_t att, PFalg_att_t part)
+{
+    int         i;
+    bool        att_found = false;
+    bool        part_found = false;
+    PFalg_op_t *ret;
+
+    assert (n);
+    assert (res); assert (att); assert (part);
+
+    /* sanity checks: value attribute must not equal partitioning attribute */
+    if (!strcmp (att, part))
+        PFoops (OOPS_FATAL,
+                "seqty1 operator: value attribute equals partitioning "
+                "attribute.");
+
+    /* both attributes must exist and must have appropriate type */
+    for (i = 0; i < n->schema.count; i++) {
+        if (!strcmp (att, n->schema.items[i].name)) {
+            att_found = true;
+            if (n->schema.items[i].type != aat_bln)
+                PFoops (OOPS_FATAL,
+                        "algebra operator `seqty1' only allowed on boolean "
+                        "attributes. (attribute `%s')", att);
+        }
+        if (!strcmp (part , n->schema.items[i].name)) {
+            part_found = true;
+            if (n->schema.items[i].type != aat_nat)
+                PFoops (OOPS_FATAL,
+                        "algebra operator `seqty1' can only partition by "
+                        "`nat' attributes. (attribute `%s')", part);
+        }
+    }
+
+    if (!att_found || !part_found)
+        PFoops (OOPS_FATAL,
+                "seqty1: value attribute or partitioning attribute not found.");
+
+    /* Now we can actually construct the result node */
+    ret = alg_op_wire1 (aop_seqty1, n);
+
+    ret->sem.blngroup.res  = PFstrdup (res);
+    ret->sem.blngroup.att  = PFstrdup (att);
+    ret->sem.blngroup.part = PFstrdup (part);
+
+    ret->schema.count = 2;
+    ret->schema.items = PFmalloc (2 * sizeof (PFalg_schema_t));
+    
+    ret->schema.items[0].name = PFstrdup (part);
+    ret->schema.items[0].type = aat_nat;
+    ret->schema.items[1].name = PFstrdup (res);
+    ret->schema.items[1].type = aat_bln;
+
+    return ret;
+}
+
+/**
+ * Construction operator for algebra `all' operator.
+ *
+ * The `all' operator looks into a group of tuples (by partitioning
+ * attribute @a part), and returns @c true for this group iff all
+ * values in attribute @a att for this group are @c true.
+ *
+ * This operator is used, e.g., to back the occurence indicators `+'
+ * and `*'.
+ */
+PFalg_op_t *
+PFalg_all (PFalg_op_t *n, PFalg_att_t res, PFalg_att_t att, PFalg_att_t part)
+{
+    int         i;
+    bool        att_found = false;
+    bool        part_found = false;
+    PFalg_op_t *ret;
+
+    assert (n);
+    assert (res); assert (att); assert (part);
+
+    /* sanity checks: value attribute must not equal partitioning attribute */
+    if (!strcmp (att, part))
+        PFoops (OOPS_FATAL,
+                "all operator: value attribute equals partitioning "
+                "attribute.");
+
+    /* both attributes must exist and must have appropriate type */
+    for (i = 0; i < n->schema.count; i++) {
+        if (!strcmp (att, n->schema.items[i].name)) {
+            att_found = true;
+            if (n->schema.items[i].type != aat_bln)
+                PFoops (OOPS_FATAL,
+                        "algebra operator `all' only allowed on boolean "
+                        "attributes. (attribute `%s')", att);
+        }
+        if (!strcmp (part , n->schema.items[i].name)) {
+            part_found = true;
+            if (n->schema.items[i].type != aat_nat)
+                PFoops (OOPS_FATAL,
+                        "algebra operator `all' can only partition by "
+                        "`nat' attributes. (attribute `%s')", part);
+        }
+    }
+
+    if (!att_found || !part_found)
+        PFoops (OOPS_FATAL,
+                "all: value attribute or partitioning attribute not found.");
+
+    /* Now we can actually construct the result node */
+    ret = alg_op_wire1 (aop_all, n);
+
+    ret->sem.blngroup.res  = PFstrdup (res);
+    ret->sem.blngroup.att  = PFstrdup (att);
+    ret->sem.blngroup.part = PFstrdup (part);
+
+    ret->schema.count = 2;
+    ret->schema.items = PFmalloc (2 * sizeof (PFalg_schema_t));
+    
+    ret->schema.items[0].name = PFstrdup (part);
+    ret->schema.items[0].type = aat_nat;
+    ret->schema.items[1].name = PFstrdup (res);
+    ret->schema.items[1].type = aat_bln;
+
+    return ret;
+}
 
 /** Constructor for duplicate elimination operators. */
 PFalg_op_t * PFalg_distinct (PFalg_op_t *n)

@@ -37,6 +37,7 @@ struct PFalg_pair_t {
     struct PFalg_op_t *result;
     struct PFalg_op_t *doc;
 };
+typedef struct PFalg_pair_t PFalg_pair_t;
 
 #include "core.h"
 

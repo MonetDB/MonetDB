@@ -547,7 +547,7 @@ find_type (PFalg_op_t *new)
             if (new->child[0] != old->child[0]
                 || strcmp (new->sem.type.att, old->sem.type.att)
                 || strcmp (new->sem.type.res, old->sem.type.res)
-                || !PFty_eq (new->sem.type.ty, old->sem.type.ty))
+                || new->sem.type.ty != old->sem.type.ty)
                 continue;
 
             /*
@@ -966,6 +966,49 @@ static PFalg_op_t * find_distinct (PFalg_op_t *new)
     return new;
 }
 
+/**
+ * See if we already saw a boolean grouping expression
+ * (`seqty1' or `all') like @a new during CSE.
+ */
+static PFalg_op_t *
+find_boolean_grouping (PFalg_op_t *new)
+{
+    unsigned int subex_idx;
+
+    assert (new);
+
+    /* search for distinct expression in the array of existing operators */
+    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
+
+        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+
+        if (new->kind != old->kind)
+            continue;
+
+        if (new->child[0] != old->child[0])
+            continue;
+
+        if (strcmp (new->sem.blngroup.res, old->sem.blngroup.res)
+            || strcmp (new->sem.blngroup.att, old->sem.blngroup.att)
+            || strcmp (new->sem.blngroup.part, old->sem.blngroup.part))
+            continue;
+
+        /*
+         * if we came until here, old and new grouping expression
+         * must be equal; return the existing one
+         */
+        return old;
+    }
+
+    /*
+     * the grouping expression is a new operator, so add it to
+     * the array of existing subexpressions
+     */
+    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+
+    return new;
+}
+
 
 /**
  *
@@ -1047,6 +1090,10 @@ find_subexp (PFalg_op_t *new)
 	/* the same applies to text node constructors */
         case aop_textnode:
 	    return new;
+
+        case aop_seqty1:
+        case aop_all:
+            return find_boolean_grouping (new);
 
     }
 

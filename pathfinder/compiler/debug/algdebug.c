@@ -77,6 +77,8 @@ char *a_id[]  = {
     , [aop_distinct]         = "DISTINCT"         /* indian red */
     , [aop_element]          = "ELEM"             /* lawn green */
     , [aop_textnode]         = "TEXT"             /* lawn green */
+    , [aop_seqty1]           = "SEQTY1"
+    , [aop_all]              = "ALL"
 };
 
 /** string representation of algebra atomic types */
@@ -118,34 +120,36 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
     static int node_id = 1;
 
     static char *color[] = {
-        [aop_lit_tbl]        = "grey",
-        [aop_disjunion]      = "grey",
-        [aop_difference]     = "orange",
-        [aop_cross]          = "yellow",
-        [aop_eqjoin]         = "green",
-        [aop_scjoin]         = "lightblue",
-        [aop_doc_tbl]        = "grey",
-        [aop_select]         = "grey",
-        [aop_type]           = "grey",
-        [aop_cast]           = "grey",
-        [aop_project]        = "grey",
-        [aop_rownum]         = "red",
-        [aop_serialize]      = "grey",
-        [aop_num_add]        = "grey",
-        [aop_num_subtract]   = "grey",
-        [aop_num_multiply]   = "grey",
-        [aop_num_divide]     = "grey",
-        [aop_num_eq]         = "grey",
-        [aop_num_gt]         = "grey",
-        [aop_num_neg]        = "grey",
-        [aop_bool_and ]      = "grey",
-        [aop_bool_or ]       = "grey",
-        [aop_bool_not]       = "grey",
-        [aop_sum]            = "grey",
-        [aop_count]          = "grey",
-        [aop_distinct]       = "indianred",
-        [aop_element]        = "lawngreen",
-        [aop_textnode]       = "lawngreen"
+          [aop_lit_tbl]        = "grey"
+        , [aop_disjunion]      = "grey"
+        , [aop_difference]     = "orange"
+        , [aop_cross]          = "yellow"
+        , [aop_eqjoin]         = "green"
+        , [aop_scjoin]         = "lightblue"
+        , [aop_doc_tbl]        = "grey"
+        , [aop_select]         = "grey"
+        , [aop_type]           = "grey"
+        , [aop_cast]           = "grey"
+        , [aop_project]        = "grey"
+        , [aop_rownum]         = "red"
+        , [aop_serialize]      = "grey"
+        , [aop_num_add]        = "grey"
+        , [aop_num_subtract]   = "grey"
+        , [aop_num_multiply]   = "grey"
+        , [aop_num_divide]     = "grey"
+        , [aop_num_eq]         = "grey"
+        , [aop_num_gt]         = "grey"
+        , [aop_num_neg]        = "grey"
+        , [aop_bool_and ]      = "grey"
+        , [aop_bool_or ]       = "grey"
+        , [aop_bool_not]       = "grey"
+        , [aop_sum]            = "grey"
+        , [aop_count]          = "grey"
+        , [aop_distinct]       = "indianred"
+        , [aop_element]        = "lawngreen"
+        , [aop_textnode]       = "lawngreen"
+        , [aop_seqty1]         = "grey"
+        , [aop_all]            = "grey"
     };
 
     n->node_id = node_id;
@@ -309,7 +313,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         case aop_type:
             PFarray_printf (dot, "%s (%s:%s,%s)", a_id[n->kind],
                             n->sem.type.res, n->sem.type.att,
-                            PFty_str (n->sem.type.ty));
+                            atomtype[n->sem.type.ty]);
             break;
 
         case aop_cast:
@@ -391,7 +395,22 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
             PFarray_printf (dot, ")");
             break;
 
-        default:          PFarray_printf (dot, "%s", a_id[n->kind]);
+        case aop_seqty1:
+        case aop_all:
+            PFarray_printf (dot, "%s (%s:%s/%s)", a_id[n->kind],
+                            n->sem.blngroup.res, n->sem.blngroup.att,
+                            n->sem.blngroup.part);
+            break;
+
+        case aop_cross:
+        case aop_disjunion:
+        case aop_difference:
+        case aop_serialize:
+        case aop_distinct:
+        case aop_element:
+        case aop_textnode:
+            PFarray_printf (dot, "%s", a_id[n->kind]);
+            break;
     }
 
     /*
@@ -572,6 +591,13 @@ alg_pretty (PFalg_op_t *n)
             if (n->sem.rownum.part)
                 PFprettyprintf ("/%s", n->sem.rownum.part);
             PFprettyprintf (")");
+            break;
+
+        case aop_seqty1:
+        case aop_all:
+            PFprettyprintf (" (%s:%s/%s)", n->sem.blngroup.res,
+                                           n->sem.blngroup.att,
+                                           n->sem.blngroup.part);
             break;
 
         case aop_serialize:

@@ -48,6 +48,8 @@ node  lit_tbl      /* literal table */
       project      /* algebra projection and renaming operator */
       rownum       /* consecutive number generation */
       serialize    /* result serialization */
+      difference   /* difference */
+      select_
 
       num_add      /* arithmetic plus operator */
       num_subtract /* arithmetic minus operator */
@@ -60,6 +62,11 @@ node  lit_tbl      /* literal table */
       not          /* logical negation (true <--> false) */
 
       cast         /* cast algebra data types */
+
+      type
+
+      seqty1
+      all
       ;
 
 
@@ -96,6 +103,8 @@ AlgExpr:  cross (AlgExpr, AlgExpr);
 AlgExpr:  eqjoin (AlgExpr, AlgExpr);
 AlgExpr:  project (AlgExpr);
 AlgExpr:  rownum (AlgExpr);
+AlgExpr:  difference (AlgExpr, AlgExpr);
+AlgExpr:  select_ (AlgExpr);
 AlgExpr:  num_add (AlgExpr);
 AlgExpr:  num_subtract (AlgExpr);
 AlgExpr:  num_multiply (AlgExpr);
@@ -104,6 +113,9 @@ AlgExpr:  cast (AlgExpr);
 AlgExpr:  not (AlgExpr);
 AlgExpr:  num_gt (AlgExpr);
 AlgExpr:  num_eq (AlgExpr);
+AlgExpr:  type (AlgExpr);
+AlgExpr:  seqty1 (AlgExpr);
+AlgExpr:  all (AlgExpr);
 
 AlgExpr:  cross (AlgExpr, lit_tbl)
     {
@@ -190,6 +202,9 @@ EmptyExpr: eqjoin (EmptyExpr, EmptyExpr);
 
 EmptyExpr: rownum (EmptyExpr);
 
+EmptyExpr: difference (EmptyExpr, AlgExpr);
+EmptyExpr: select_ (EmptyExpr);
+
 EmptyExpr: num_add (EmptyExpr);
 EmptyExpr: num_subtract (EmptyExpr);
 EmptyExpr: num_multiply (EmptyExpr);
@@ -201,5 +216,9 @@ EmptyExpr: num_eq (EmptyExpr);
 EmptyExpr: not (EmptyExpr);
 
 EmptyExpr: cast (EmptyExpr);
+
+EmptyExpr: type (EmptyExpr);
+EmptyExpr: seqty1 (EmptyExpr);
+EmptyExpr: all (EmptyExpr);
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */

@@ -220,6 +220,215 @@ static PFalg_op_t *loop = NULL;
 static PFalg_op_t *delta __attribute__((unused)) = NULL;
 static PFalg_op_t *empty_doc __attribute__((unused)) = NULL;
 
+/**
+ * Given an XQuery type @a ty, an algebra expression @a e, and the
+ * loop relation @a loop, return an algebra expression that returns
+ * the relation with schema (iter, subty), so that for each iter value
+ * in @a loop there exists one tuple, with the subty attribute set to
+ * true, if @a e has a subtype of @a ty, and false otherwise.
+ */
+static PFalg_op_t *
+type_test (PFty_t ty, PFalg_pair_t e, PFalg_op_t *loop)
+{
+    PFalg_op_t *itemty;
+
+    /*
+     * Collect algebra expression with schema (iter,pos,itemty)
+     * so that itemty is true for any item that is a subtype of
+     * ty, and false otherwise.
+     *
+     * The surface language only allows QNames for predefined
+     * types, or node kind tests. Fortunately, only few atomic
+     * types are predefined: xs:integer, xs:decimal, xs:double,
+     * xs:boolean, xs:string. For all of them we have an algebra
+     * correspondance.
+     * 
+     * We first consider the case that ty is the empty sequence.
+     * (This cannot be entered on the surface language. But it
+     * may be introduced during core generation/optimization.
+     * And we want to avoid nasty bugs here, when that case would
+     * be caught in the following cases.)
+     *
+     *        /                        subty \
+     *       | dist (proj_iter (e)) X ------- |       (non-empty iters)
+     *        \                        false /
+     *                           U
+     *    /                                 subty \
+     *   | (loop \ dist (proj_iter (e))) X ------- |  (empty iters)
+     *    \                                 false /
+     *
+     */
+    if (PFty_subtype (ty, PFty_empty ()))
+        return
+            disjunion (
+                cross (
+                    distinct (project (e.result, proj ("iter", "iter"))),
+                    lit_tbl (attlist ("subty"), tuple (lit_bln (false)))),
+                cross (
+                    difference (
+                        loop,
+                        distinct (project (e.result, proj ("iter", "iter")))),
+                    lit_tbl (attlist ("subty"), tuple (lit_bln (true)))));
+    /*
+     * To test, e.g., for integer values, use
+     *
+     *   proj_iter,pos,itemty (type_itemty:item/int (e))
+     *
+     */
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_integer ())))
+        itemty = project (type (e.result, "itemty", "item", aat_int),
+                          proj ("iter", "iter"),
+                          proj ("pos", "pos"),
+                          proj ("itemty", "itemty"));
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_decimal ())))
+        /* xs:integer is a subtype of xs:decimal.
+         * Test for both types. The `type' operator merely adds a boolean
+         * column. We OR them after testing for for both types.
+         */
+        itemty =
+            project (
+                or (type (type (e.result, "isint", "item", aat_int),
+                          "isdec", "item", aat_dec),
+                    "itemty", "isint", "isdec"),
+                proj ("iter", "iter"),
+                proj ("pos", "pos"),
+                proj ("itemty", "itemty"));
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_double ())))
+        itemty = project (type (e.result, "itemty", "item", aat_dbl),
+                          proj ("iter", "iter"),
+                          proj ("pos", "pos"),
+                          proj ("itemty", "itemty"));
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_boolean ())))
+        itemty = project (type (e.result, "itemty", "item", aat_bln),
+                          proj ("iter", "iter"),
+                          proj ("pos", "pos"),
+                          proj ("itemty", "itemty"));
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_string ())))
+        itemty = project (type (e.result, "itemty", "item", aat_str),
+                          proj ("iter", "iter"),
+                          proj ("pos", "pos"),
+                          proj ("itemty", "itemty"));
+    else
+        PFoops (OOPS_FATAL,
+                "Sorry, I cannot translate the test for type `%s'",
+                PFty_str (ty));
+
+
+    /*
+     * Second part is the test for the occurence indicator.
+     */
+
+    /*
+     * Ocurrence indicator `1' (exactly one item).
+     *
+     * seqty1_subty:item/iter (proj_iter,item:itemty (itemty))
+     *                    U
+     *  /                              subty\
+     * | (loop \ proj_iter (itemty)) X ----- |
+     *  \                              false/
+     *
+     * (First part considers all iterations with length of at
+     * least one: The itemty expression contains true/false values
+     * as determined above. The seqty1 operator sets true for all
+     * those `iter' groups, where there is exactly one tuple with
+     * value `true', and false otherwise. The second part of the
+     * union considers all the empty sequences. They do not match
+     * the occurrence indicator and are thus set to false.)
+     */
+    if (PFty_subtype (ty, PFty_item ()))
+        return
+            disjunion (
+                seqty1 (project (itemty,
+                                 proj ("iter", "iter"),
+                                 proj ("item", "itemty")),
+                        "subty", "item", "iter"),
+                cross (
+                    difference (
+                        loop,
+                        project (itemty, proj ("iter", "iter"))),
+                    lit_tbl (attlist ("subty"), tuple (lit_bln (false)))));
+
+    /*
+     * Ocurrence indicator `?' (zero or one item).
+     *
+     * seqty1_subty:item/iter (proj_iter,item:itemty (itemty))
+     *                    U
+     *  /                              subty\
+     * | (loop \ proj_iter (itemty)) X ----- |
+     *  \                              true /
+     *
+     * In contrast to `1', we return true for all empty sequences.
+     */
+    if (PFty_subtype (ty, PFty_opt (PFty_item ())))
+        return
+            disjunion (
+                seqty1 (project (itemty,
+                                 proj ("iter", "iter"),
+                                 proj ("item", "itemty")),
+                        "subty", "item", "iter"),
+                cross (
+                    difference (
+                        loop,
+                        project (itemty, proj ("iter", "iter"))),
+                    lit_tbl (attlist ("subty"), tuple (lit_bln (true)))));
+
+    /*
+     * Ocurrence indicator `+' (one or more items).
+     *
+     * all_subty:item/iter (proj_iter,item:itemty (itemty))
+     *                    U
+     *  /                              subty \
+     * | (loop \ proj_iter (itemty)) X -----  |
+     *  \                              false /
+     *
+     * Groupwise test if all tuples in itemty carry a `true'.
+     * This makes all iterations true that contain only items
+     * that satisfy the type test, and false all those that
+     * contain at least one item that does not satisfy the
+     * type test. We are left with considering the empty sequences
+     * that do not qualify for the name test. We return false for
+     * them.
+     */
+    if (PFty_subtype (ty, PFty_plus (PFty_item ())))
+        return
+            disjunion (
+                all (project (itemty,
+                              proj ("iter", "iter"), proj ("item", "itemty")),
+                     "subty", "item", "iter"),
+                cross (
+                    difference (
+                        loop,
+                        project (itemty, proj ("iter", "iter"))),
+                    lit_tbl (attlist ("subty"), tuple (lit_bln (true)))));
+
+    /*
+     * Ocurrence indicator `*' (zero or more items).
+     *
+     * all_subty:item/iter (proj_iter,item:itemty (itemty))
+     *                    U
+     *  /                              subty\
+     * | (loop \ proj_iter (itemty)) X ----  |
+     *  \                              true /
+     *
+     * Almost the same as `+', but return true for empty sequences.
+     */
+    if (PFty_subtype (ty, PFty_star (PFty_item ())))
+        return
+            disjunion (
+                all (project (itemty,
+                              proj ("iter", "iter"), proj ("item", "itemty")),
+                     "subty", "item", "iter"),
+                cross (
+                    difference (
+                        loop,
+                        project (itemty, proj ("iter", "iter"))),
+                    lit_tbl (attlist ("subty"), tuple (lit_bln (false)))));
+
+    /*
+     * We should never reach this point.
+     */
+    PFoops (OOPS_FATAL, "Error in type_test().");
+}
 
 PFalg_op_t *
 PFcore2alg (PFcnode_t *c)
@@ -326,6 +535,7 @@ PFcore2alg (PFcnode_t *c)
 
 }
 
+#if 0
 /**
  * Implementation type that we use for a given XQuery type.
  * Returns the algebra type that matches a given XQuery type
@@ -336,6 +546,8 @@ PFcore2alg (PFcnode_t *c)
  *    implementation type that best matches the requested type.
  *  - Cast types before invoking a built-in operation (see the
  *    `apply' translation in core2alg.mt.sed).
+ *
+ * CURRENTLY UNUSED.
  */
 static PFalg_simple_type_t
 implty (PFty_t ty)
@@ -361,6 +573,7 @@ implty (PFty_t ty)
         return aat_str;
     }
 }
+#endif
 
 /**
  * Construct a new entry to be inserted into the variable environment.

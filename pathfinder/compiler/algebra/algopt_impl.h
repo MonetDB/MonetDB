@@ -55,6 +55,8 @@ static int TWIG_ID[] = {
                                            (This is mainly used explicitly match
                                            the expression root during the Twig
                                            pass.) */
+    , [aop_difference]   = difference
+    , [aop_select]       = select_
     , [aop_num_add]      = num_add      /**< arithmetic plus operator */
     , [aop_num_subtract] = num_subtract /**< arithmetic plus operator */
     , [aop_num_multiply] = num_multiply /**< arithmetic plus operator */
@@ -66,6 +68,9 @@ static int TWIG_ID[] = {
     , [aop_bool_not]     = not          /**< boolean negation */
     
     , [aop_cast]         = cast         /**< algebra cast operator */
+    , [aop_type]         = type
+    , [aop_seqty1]       = seqty1
+    , [aop_all]          = all
 };
 
 /** twig: setup twig */
@@ -81,6 +86,8 @@ static int TWIG_ID[] = {
 #undef project
 #undef rownum
 #undef serialize
+#undef difference
+#undef select_
 #undef num_add
 #undef num_subtract
 #undef num_multiply
@@ -89,6 +96,9 @@ static int TWIG_ID[] = {
 #undef num_eq
 #undef not
 #undef cast
+#undef type
+#undef seqty1
+#undef all
 
 /* ----------------------- End of twig setup -------------------- */
 

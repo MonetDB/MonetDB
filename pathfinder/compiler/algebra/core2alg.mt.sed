@@ -355,9 +355,7 @@ TypeswitchExpr:  typesw (CoreExpr,
                                        CoreExpr),
                                 nil),
                          CoreExpr)
-    {
-        TOPDOWN;
-    }
+    { TOPDOWN; }
     =
     {
         /*
@@ -366,111 +364,109 @@ TypeswitchExpr:  typesw (CoreExpr,
          * either another typeswitch representing the next case
          * branch or the default branch of the overall typeswitch.
          *
-         * NB: the TYPE operator creates a new column named "type"
-         * of type boolean; it examines whether the "item" column is
-         * of type "ty"; if this is the case, it stores the value
-         * true in the "type" column and false otherwise. 
+         * A lot of work for this translation is captured in the
+         * function type_test() in core2alg_impl.c. Given an algebra
+         * expression and an XQuery sequence type, it will return
+         * a relation with columns `iter' and `subty', with `subty'
+         * set to true or false, depending on whether for this
+         * iteration the sequence type test succeeds or not.
          *
-         * env,loop,delta: e1 => q1,delta1
+         * env,loop: e1 => q1,delta1
+         * tested_q1 = type_test (ty, q1, loop)
+         * 
+         * -- translate stuff in the `case' branch
+         *  loop2 = proj_iter (select_subty (tested_q1))
+         *  {..., $v -> proj_iter,pos,item (
+         *    qv |X| (iter = iter1) (proj_iter1:iter loop2))},
+         *   loop2: e2 => q2,delta2
+         * 
+         * -- and in the `default' branch
+         *  loop3 = proj_iter (select_notsub (not_notsub:subty (tested_q1)))
+         *  {..., $v -> proj_iter,pos,item (
+         *    qv |X| (iter = iter1) (proj_iter1:iter loop3))},
+         *   loop3: e3 => q3,delta3
+         * 
+         * ---------------------------------------------------------------
+         *  env,loop:
+         *  typeswitch (e1) case ty return e2 default return e3 =>
+         *    (q2 U q3, delta2 U delta3)
          *
-         * loop2 = proj_iter (SEL type (TYPE type item ty q1))
-         *
-         * {..., $v -> 
-         *  proj_iter,pos,item (q(v) |X|(iter=iter1) (proj_iter1:iter (loop2)))
-         *
-         * env2,loop2,delta1: e2 => q2,delta2
-         *
-         *
-         * loop3 = proj_iter (SEL res (_NOT res type (TYPE type item ty q1)))
-         *
-         * {..., $v -> 
-         *  proj_iter,pos,item (q(v) |X|(iter=iter1) (proj_iter1:iter (loop3)))
-         *
-         * env3,loop3,delta2: e3 => q3,delta3
-         * ------------------------------------------------------------------
-         * env,loop,delta (q2 U q3, delta3)
+         * NB: the TYPE operator creates a new column of type boolean;
+         * it examines whether the specified column is of given type "ty";
+         * if this is the case, it sets the new column to true, otherwise
+         * to false.
          */
-        PFalg_op_t *stm;
-        PFalg_op_t *old_loop;
-        PFarray_t  *old_env;
-        unsigned int i;
-        PFalg_env_t e;
-        PFalg_op_t *new_bind;
 
-        /* initiate translation of e1 */
-        tDO($%1$);
+        PFalg_op_t   *tested_q1;  /* true/false if iteration satisfies test */
+        PFarray_t    *old_env;    /* backup of surrounding environment */
+        PFalg_op_t   *old_loop;   /* backup of surrounding loop relation */
+        PFalg_env_t   e;          /* helper variable */
+        PFalg_op_t   *new_bind;   /* helper variable */
+        unsigned int  i;
 
-        stm = disjunion (project (type ([[ $1$ ]].result, "type",
-                                        "item", $2.1.1$->sem.type),
-                                  proj ("iter", "iter"),
-                                  proj ("type", "type")),
-                         cross (difference (loop,
-                                            project ([[ $1$ ]].result,
-                                                     proj ("iter",
-                                                           "iter"))),
-                                lit_tbl (attlist ("type"),
-                                         tuple (lit_int (0)))));
+        /* translate CoreExpr1 */
+        tDO ($%1$);
 
-        /* save old loop operator */
+        tested_q1 = type_test ($2.1.1$->sem.type, [[ $1$ ]], loop);
+
+        /* translate stuff in the `case' branch */
+
+        /* map `loop' relation */
         old_loop = loop;
+        loop = project (select_ (tested_q1, "subty"), proj ("iter", "iter"));
 
-        /* create loop2 operator */
-        loop = project (select_ (stm, "type"), proj ("iter", "iter"));
-
-        /* save old environment */
+        /* map variable environment */
         old_env = env;
-
-        /* update the environment for translation of e2 TODO: eliminate empty_doc*/
         env = PFarray (sizeof (PFalg_env_t));
 
         for (i = 0; i < PFarray_last (old_env); i++) {
             e = *((PFalg_env_t *) PFarray_at (old_env, i));
-            new_bind = project (eqjoin (e.result,
-                                        project (loop,
-                                                 proj ("iter1", "iter")),
-                                        "iter",
-                                        "iter1"),
-                                proj ("iter", "iter"),
-                                proj ("pos", "pos"),
-                                proj ("item", "item"));
-            *((PFalg_env_t *) PFarray_add (env)) =
-                enventry (e.var, new_bind, empty_doc);
+            new_bind =
+                project (eqjoin (e.result,
+                                 project (loop, proj ("iter1", "iter")),
+                                 "iter", "iter1"),
+                         proj ("iter", "iter"),
+                         proj ("pos", "pos"),
+                         proj ("item", "item"));
+            *((PFalg_env_t *) PFarray_add (env))
+                = enventry (e.var, new_bind, e.doc);
         }
 
-        /* translate e2 */
-        tDO($%2$);
+        /* translate CoreExpr2 */
+        tDO ($%2$);
 
-        /* create loop3 operator */
-        loop = project (select_ (not ( stm, "res", "type"), "res"),
+        /* translate stuff in the `default' branch (equivalently) */
+
+        /* map `loop' relation */
+        loop = project (select_ (not (tested_q1, "notsub", "subty"), "notsub"),
                         proj ("iter", "iter"));
 
-        /* update the environment for translation of e3 TODO: eliminate empty_doc*/
         env = PFarray (sizeof (PFalg_env_t));
 
         for (i = 0; i < PFarray_last (old_env); i++) {
             e = *((PFalg_env_t *) PFarray_at (old_env, i));
-            new_bind = project (eqjoin (e.result,
-                                        project (loop,
-                                                 proj ("iter1", "iter")),
-                                        "iter",
-                                        "iter1"),
-                                proj ("iter", "iter"),
-                                proj ("pos", "pos"),
-                                proj ("item", "item"));
-            *((PFalg_env_t *) PFarray_add (env)) =
-                enventry (e.var, new_bind, empty_doc);
+            new_bind =
+                project (eqjoin (e.result,
+                                 project (loop, proj ("iter1", "iter")),
+                                 "iter", "iter1"),
+                         proj ("iter", "iter"),
+                         proj ("pos", "pos"),
+                         proj ("item", "item"));
+            *((PFalg_env_t *) PFarray_add (env))
+                = enventry (e.var, new_bind, e.doc);
         }
 
-        /* translate e3 */
-        tDO($%3$);
+        /* translate CoreExpr3 */
+        tDO ($%3$);
 
         /* reset loop relation and environment */
         loop = old_loop;
         env = old_env;
 
-        [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = disjunion ([[ $2.1.2$ ]].result, [[ $3$ ]].result),
-                 .doc = empty_doc };
+        [[ $$ ]] = (struct PFalg_pair_t) {
+            .result = disjunion ([[ $2.1.2$ ]].result, [[ $3$ ]].result),
+            .doc    = disjunion ([[ $2.1.2$ ]].doc, [[ $3$ ]].doc)
+        };
     }
     ;
 
