@@ -264,8 +264,10 @@ if test "x$enable_optim" = xyes; then
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
       case "$host" in
-      i*86-*-cygwin)  CFLAGS="$CFLAGS     -fomit-frame-pointer -finline-functions -falign-loops=4 -falign-jumps=4 -falign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt"
-                      dnl -On (n>0) makes configure incorrectly detect a non-existing _sys_siglist under CYGWIN
+      i*86-*-cygwin)  CFLAGS="$CFLAGS -O6 -finline-functions -falign-loops=4 -falign-jumps=4 -falign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt"
+                      dnl  the combination of "-On -fomit-frame-pointer" with n>1 
+                      dnl  does not seem to produce stable/correct? binaries under CYGWIN;
+                      dnl  hence, we omit -fomit-frame-pointer, here
                       ;;
       i*86-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -falign-loops=4 -falign-jumps=4 -falign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
       *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions"
