@@ -408,6 +408,7 @@ maintained. Note that column properties are derived from the
 table output returned from the server.
 \begin{description}
 \item[ char *mapi_get_name(Mapi mid, int fnr)]:
+\item[ char *mapi_get_type(Mapi mid, int fnr)]:
 \item[ char *mapi_get_table(Mapi mid, int fnr)]:
 \item[ int mapi_get_type(Mapi mid, int fnr)]:
 \item[ int mapi_get_len(Mapi mid, int fnr)]:
@@ -750,6 +751,7 @@ mapi_export char *mapi_get_monet_version(Mapi mid);
 mapi_export int mapi_get_monet_versionId(Mapi mid);
 mapi_export char *mapi_get_table(Mapi mid,int fnr);
 mapi_export char *mapi_get_name(Mapi mid,int fnr);
+mapi_export char *mapi_get_type(Mapi mid,int fnr);
 mapi_export char *mapi_quote(char *msg);
 mapi_export char *mapi_unquote(char *msg);
 
@@ -2198,7 +2200,8 @@ because the client may wish to perform a mapi_fetch_line();
 			strncpy(mid->fields[i].@2, fld,
 				sizeof(mid->fields[i].@2) - 1);
 			mid->fields[i].@2[sizeof(mid->fields[i].@2) - 1] = 0;
-			printf("got name %s\n", fld);
+			if (mid->trace)
+				printf("got %s %s\n", @1, fld);
 			i++;
 		}
 		mapi_clrError(mid);
@@ -2684,6 +2687,18 @@ char *mapi_get_name(Mapi mid, int fnr)
 		return mid->fields[fnr].columnname;
 	}
 	mapi_setError(mid,"Illegal field number","mapi_get_name");
+	return 0;
+}
+
+char *mapi_get_type(Mapi mid, int fnr)
+{
+	mapi_check0(mid,"mapi_get_type");
+	if( fnr >=0 && fnr <mid->fieldcnt) {
+		if( mid->fields[fnr].columntype[0] == 0)
+			return "unknown";
+		return mid->fields[fnr].columntype;
+	}
+	mapi_setError(mid,"Illegal field number","mapi_get_type");
 	return 0;
 }
 
