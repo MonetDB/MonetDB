@@ -3,7 +3,7 @@
 NAME="$1"
 PRELUDE="$2"
 
-for i in README awkscript column format gcol summary test100k init.mil void.mil tstvoid.mil; do
+for i in README awkscript column format gcol summary test100k init.mil void.mil tstvoid.mil load.mil; do
     if [ ! -f $i ]; then
         /bin/rm -f $i
         ln -s $RELSRCDIR/$i .
