@@ -1,6 +1,16 @@
 module("tcpip", "alarm");
 
-fork(listen(50000));
+proc get_mapi_port() := {
+	if (monet_environment.exist("mapi_port")){
+		return int(monet_environment.find("mapi_port"));
+	} else {
+		return 55555;
+	}
+}
+
+VAR tcpip_port = get_mapi_port();
+
+fork(listen(tcpip_port));
 sleep(2);
-VAR c := open("localhost:50000");
+VAR c := open("localhost:"+str(tcpip_port));
 
