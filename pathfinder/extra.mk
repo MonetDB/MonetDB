@@ -26,15 +26,18 @@
 # Twig checks its argument to end in `.mt'. Unfortunately
 # it does that the wrong way and will fail if the pathname
 # of the argument contains dots (which is the case in the
-# automated test environment). So we work around this by
-# temporarily switching to the directory in which the .mt
-# file resides.
+# automated test environment).
+# We thus copy the source file into the ``safe'' filename
+# `tmp.mt' and run twig on that. The proper solution would
+# of course be fixing Twig.
 %.symbols.h %.c : %.mt
 	$(LOCKFILE) waiting_for_twig
-	( cd `dirname $<` ; $(TWIG) -t `basename $<` )
+	$(CP) $< tmp.mt
+	$(TWIG) -t tmp.mt
 	mv -f symbols.h $*.symbols.h
 	sed 's/^short\(.*\)=/static short\1=/' walker.c > $*.c
 	$(RM) walker.c
+	$(RM) tmp.mt
 	$(RM) waiting_for_twig
 
 % :: %.m4
