@@ -12,7 +12,7 @@ import java.sql.*;
 public class MonetDatabaseMetaData implements DatabaseMetaData {
 	private Connection con;
 	private Driver driver;
-	
+
 	public MonetDatabaseMetaData(Connection parent) {
 		con = parent;
 		driver = new MonetDriver();
@@ -946,173 +946,150 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		return(0); // no limit
 	}
 
-	/*
+	/**
 	 * What's the maximum number of columns allowed in an index?
 	 *
 	 * @return max number of columns
-	 * @exception SQLException if a database access error occurs
 	 */
-	public int getMaxColumnsInIndex() throws SQLException
-	{
-		return getMaxIndexKeys();
+	public int getMaxColumnsInIndex() {
+		return(0);	// unlimited I guess
 	}
 
-	/*
+	/**
 	 * What's the maximum number of columns in an "ORDER BY clause?
 	 *
 	 * @return the max columns
-	 * @exception SQLException if a database access error occurs
 	 */
-	public int getMaxColumnsInOrderBy() throws SQLException
-	{
-		return 0; // no limit
+	public int getMaxColumnsInOrderBy() {
+		return(0); // unlimited I guess
 	}
 
-	/*
+	/**
 	 * What is the maximum number of columns in a "SELECT" list?
 	 *
 	 * @return the max columns
-	 * @exception SQLException if a database access error occurs
 	 */
-	public int getMaxColumnsInSelect() throws SQLException
-	{
-		return 0; // no limit
+	public int getMaxColumnsInSelect() {
+		return(0); // unlimited I guess
 	}
 
-	/*
-	 * What is the maximum number of columns in a table? From the
-	 * CREATE TABLE reference page...
-	 *
-	 * <p>"The new class is created as a heap with no initial data.  A
-	 * class can have no more than 1600 attributes (realistically,
-	 * this is limited by the fact that tuple sizes must be less than
-	 * 8192 bytes)..."
+	/**
+	 * What is the maximum number of columns in a table?
+	 * wasn't Monet designed for datamining? (= much columns)
 	 *
 	 * @return the max columns
-	 * @exception SQLException if a database access error occurs
 	 */
-	public int getMaxColumnsInTable() throws SQLException
-	{
-		return 1600;
+	public int getMaxColumnsInTable() {
+		return(0);
 	}
 
-	/*
-	 * How many active connection can we have at a time to this
-	 * database?  Well, since it depends on postmaster, which just
-	 * does a listen() followed by an accept() and fork(), its
-	 * basically very high.  Unless the system runs out of processes,
-	 * it can be 65535 (the number of aux. ports on a TCP/IP system).
-	 * I will return 8192 since that is what even the largest system
-	 * can realistically handle,
+	/**
+	 * How many active connections can we have at a time to this
+	 * database?  Well, since it depends on Mserver, which just listens
+	 * for new connections and creates a new thread for each connection,
+	 * this number can be very high, and theoretically till the system
+	 * runs out of resources. However, knowing Monet is knowing that you
+	 * should handle it a little bit with care, so I give a very minimalistic
+	 * number here.
 	 *
 	 * @return the maximum number of connections
-	 * @exception SQLException if a database access error occurs
 	 */
-	public int getMaxConnections() throws SQLException
-	{
-		return 8192;
+	public int getMaxConnections() {
+		return(16);
 	}
 
-	/*
+	/**
 	 * What is the maximum cursor name length
+	 * Actually we do not do named cursors, so I keep the value small as
+	 * a precaution for maybe the future.
 	 *
 	 * @return max cursor name length in bytes
-	 * @exception SQLException if a database access error occurs
 	 */
-	public int getMaxCursorNameLength() throws SQLException
-	{
-		return getMaxNameLength();
+	public int getMaxCursorNameLength() {
+		return(256);
 	}
 
-	/*
+	/**
 	 * Retrieves the maximum number of bytes for an index, including all
 	 * of the parts of the index.
 	 *
 	 * @return max index length in bytes, which includes the composite
-	 * of all the constituent parts of the index; a result of zero means
-	 * that there is no limit or the limit is not known
-	 * @exception SQLException if a database access error occurs
+	 *         of all the constituent parts of the index; a result of zero
+	 *         means that there is no limit or the limit is not known
 	 */
-	public int getMaxIndexLength() throws SQLException
-	{
-		return 0; // no limit (larger than an int anyway)
+	public int getMaxIndexLength() {
+		return(0); // I assume it is large, but I don't know
 	}
 
-	public int getMaxSchemaNameLength() throws SQLException
-	{
-		return getMaxNameLength();
+	/**
+	 * Retrieves the maximum number of characters that this database
+	 * allows in a schema name.
+	 *
+	 * @return the number of characters or 0 if there is no limit, or the
+	 *         limit is unknown.
+	 */
+	public int getMaxSchemaNameLength() {
+		return(0);	// I don't know...
 	}
 
-	/*
+	/**
 	 * What is the maximum length of a procedure name
 	 *
 	 * @return the max name length in bytes
-	 * @exception SQLException if a database access error occurs
 	 */
-	public int getMaxProcedureNameLength() throws SQLException
-	{
-		return getMaxNameLength();
+	public int getMaxProcedureNameLength() {
+		return(0);	// unknown
 	}
 
-	public int getMaxCatalogNameLength() throws SQLException
-	{
-		return getMaxNameLength();
+	/**
+	 * What is the maximum length of a catalog
+	 *
+	 * @return the max length
+	 */
+	public int getMaxCatalogNameLength() {
+		return(0);
 	}
 
-	/*
+	/**
 	 * What is the maximum length of a single row?
 	 *
 	 * @return max row size in bytes
-	 * @exception SQLException if a database access error occurs
 	 */
-	public int getMaxRowSize() throws SQLException
-	{
-		if (connection.haveMinimumServerVersion("7.1"))
-			return 1073741824;	// 1 GB
-		else
-			return 8192;		// XXX could be altered
+	public int getMaxRowSize() {
+		return(0);	// very long I hope...
 	}
 
-	/*
+	/**
 	 * Did getMaxRowSize() include LONGVARCHAR and LONGVARBINARY
-	 * blobs?  We don't handle blobs yet
+	 * blobs?
+	 * Yes I thought so...
 	 *
 	 * @return true if so
-	 * @exception SQLException if a database access error occurs
 	 */
-	public boolean doesMaxRowSizeIncludeBlobs() throws SQLException
-	{
-		return false;
+	public boolean doesMaxRowSizeIncludeBlobs() {
+		return(true);
 	}
 
-	/*
+	/**
 	 * What is the maximum length of a SQL statement?
+	 * Till a programmer makes a mistake and causes a segmentation fault
+	 * on a string overflow...
 	 *
 	 * @return max length in bytes
-	 * @exception SQLException if a database access error occurs
 	 */
-	public int getMaxStatementLength() throws SQLException
-	{
-		if (connection.haveMinimumServerVersion("7.0"))
-			return 0;		// actually whatever fits in size_t
-		else
-			return 16384;
+	public int getMaxStatementLength() {
+		return(0);		// actually whatever fits in size_t
 	}
 
-	/*
+	/**
 	 * How many active statements can we have open at one time to
 	 * this database?  Basically, since each Statement downloads
-	 * the results as the query is executed, we can have many.	However,
-	 * we can only really have one statement per connection going
-	 * at once (since they are executed serially) - so we return
-	 * one.
+	 * the results as the query is executed, we can have many.
 	 *
 	 * @return the maximum
-	 * @exception SQLException if a database access error occurs
 	 */
-	public int getMaxStatements() throws SQLException
-	{
-		return 1;
+	public int getMaxStatements() {
+		return(0);
 	}
 
 	/*
@@ -1947,7 +1924,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 				int atttypmod = rs.getInt("atttypmod");
 				tuple[6] = encoding.encode(Integer.toString(atttypmod != -1 ? atttypmod - VARHDRSZ : 0));
 			}
-			else if (pgType.equals("numeric") || pgType.equals("decimal")) 
+			else if (pgType.equals("numeric") || pgType.equals("decimal"))
 			{
 				int attypmod = rs.getInt("atttypmod") - VARHDRSZ;
 				tuple[6] = encoding.encode(Integer.toString( ( attypmod >> 16 ) & 0xffff ));
@@ -2221,7 +2198,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		int beginIndex = 1;
 		char prevChar = ' ';
 		for (int i=beginIndex; i<aclString.length(); i++) {
-			
+
 			char c = aclString.charAt(i);
 			if (c == '"' && prevChar != '\\') {
 				inQuotes = !inQuotes;
@@ -2605,7 +2582,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			if (foreignTable != null && !"".equals(foreignTable)) {
 				sql += " AND fkc.relname = '"+escapeQuotes(foreignTable)+"' ";
 			}
-						
+
 			if (primaryTable != null) {
 				sql += " ORDER BY fkn.nspname,fkc.relname,pos.n";
 			} else {
@@ -2656,7 +2633,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			+ "t1.tgnargs,t1.tgargs, "
 			+ "p1.proname as updaterule, "
 			+ "p2.proname as deleterule "
-			+ from 
+			+ from
 			+ "WHERE "
 			// isolate the update rule
 			+ "(t1.tgrelid=c1.oid "
@@ -3242,7 +3219,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	}
 
 
-	
+
 	// ** JDBC 2 Extensions **
 
 	/*
@@ -3374,7 +3351,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	}
 
 	// ** JDBC 3 extensions **
-	
+
 	/**
 	 * Retrieves whether this database supports savepoints.
 	 *
@@ -3451,9 +3428,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *	<LI><B>TYPE_CAT</B> String => the UDT's catalog (may be <code>null</code>)
 	 *	<LI><B>TYPE_SCHEM</B> String => UDT's schema (may be <code>null</code>)
 	 *	<LI><B>TYPE_NAME</B> String => type name of the UDT
-	 *	<LI><B>SUPERTYPE_CAT</B> String => the direct super type's catalog 
+	 *	<LI><B>SUPERTYPE_CAT</B> String => the direct super type's catalog
 	 *							 (may be <code>null</code>)
-	 *	<LI><B>SUPERTYPE_SCHEM</B> String => the direct super type's schema 
+	 *	<LI><B>SUPERTYPE_SCHEM</B> String => the direct super type's schema
 	 *							   (may be <code>null</code>)
 	 *	<LI><B>SUPERTYPE_NAME</B> String => the direct super type's name
 	 *	</OL>
