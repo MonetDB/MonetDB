@@ -1,5 +1,4 @@
 #tesing the optimizers
-include optimizer;
 
 #setDebug();
 function qry(i:dbl):dbl;
@@ -21,3 +20,4 @@ z:=qry(0.0:dbl);
 print(z);
 print("done");
 showFunction(Admin,qry);
+showFunction(Admin,main);
