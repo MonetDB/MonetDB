@@ -387,16 +387,16 @@ sql_session( mvc *m )
 	else
 		table_insert( tr, s, "auto_commit", "false", "boolean", &rw, NULL);
 
-	table_insert( tr, s, "curent_schema", m->schema, "varchar", &ro, NULL);
+	table_insert( tr, s, "current_schema", m->schema, "varchar", &ro, NULL);
 
 	/* MonetDB/SQL user/current_user/session_user (authorization id) */
-	table_insert( tr, s, "curent_user", m->user, "varchar", &ro, NULL);
+	table_insert( tr, s, "current_user", m->user, "varchar", &ro, NULL);
 
 	/* MonetDB/SQL role/current_role/session_role */
-	table_insert( tr, s, "curent_role", m->role, "varchar", &rw, NULL);
+	table_insert( tr, s, "current_role", m->role, "varchar", &rw, NULL);
 
 	snprintf(buf, BUFSIZ, "%d", m->timezone*60 );
-	table_insert( tr, s, "curent_timezone", buf, "sec_interval", &rw, NULL);
+	table_insert( tr, s, "current_timezone", buf, "sec_interval", &rw, NULL);
 
 	if (m->cache)
 		table_insert( tr, s, "cache", "true", "boolean", &rw, NULL);
