@@ -192,91 +192,6 @@ extern double fabs(double x);
 #define floor_unary(x, z)     *z = floor(*x)
 #define fmod_binary(x, y, z)  *z = fmod(*x,*y)
 
-@:unop(_ACOS,acos)@
-@:unop(_ASIN,asin)@
-@:unop(_ATAN,atan)@
-@:binop(_ATAN2,atan2)@
-@:unop(_COS,cos)@
-@:unop(_SIN,sin)@
-@:unop(_TAN,tan)@
-
-@:unop(_COSH,cosh)@
-@:unop(_SINH,sinh)@
-@:unop(_TANH,tanh)@
-
-@:unop(_EXP,exp)@
-@:unop(_LOG,log)@
-@:unop(_LOG10,log10)@
-
-@:binop(_POW,pow)@
-@:unop(_SQRT,sqrt)@
-
-@:unop(_CEIL,ceil)@
-@:unop(_FABS,fabs)@
-@:unop(_FLOOR,floor)@
-@:binop(_FMOD,fmod)@
-
-@= unop
-int math_unary@1(dbl *res , dbl *a ) {
-#ifdef DEBUG
-	printf( "math_unary@1\n");
-#endif
-   if (*a == dbl_nil) {
-	*res = dbl_nil;
-   } else {
-	errno = 0;
-	@2_unary( a, res );
-	if (errno == EDOM) {
-		GDKerror("Negative argument is not allowed");
-		return GDK_FAIL;
-	}
-	if (errno == ERANGE) {
-		GDKerror("Range error");
-		return GDK_FAIL;
-	}
-   }
-   return(GDK_SUCCEED);
-}
-@
-
-@= binop
-int math_binary@1(dbl *res, dbl *a, dbl *b ) {
-#ifdef DEBUG
-	printf( "math_binary@1\n");
-#endif
-   if (*a == dbl_nil || *b == dbl_nil) {
-	*res = dbl_nil;
-   } else {
-	@2_binary( a, b, res);
-   }
-   return(GDK_SUCCEED);
-}
-@
-
-@c
-int math_binary_ROUND(dbl *res, dbl *x, int *y) {
-  if(*x == dbl_nil || *y == int_nil) {
-    *res = dbl_nil;
-  } else {
-    double factor = pow(10,*y), integral;
-    double tmp = *y>0?modf(*x,&integral):*x;
-
-    tmp *= factor;
-    if(tmp>=0)
-      tmp = floor(tmp+0.5);
-    else
-      tmp = ceil(tmp-0.5);
-    tmp /= factor;
-
-    if(*y>0)
-      tmp += integral;
-
-    *res = tmp;
-  }
-
-  return(GDK_SUCCEED);
-}
-
 #ifdef NATIVE_WIN32
 #include <float.h>
 /* Windows spells these differently */
@@ -322,6 +237,99 @@ static int MNisinf(double x)
 
 #endif	/* HAVE_ISINF */
 #endif	/* HAVE_FPCLASSIFY */
+
+@:unop(_ACOS,acos)@
+@:unop(_ASIN,asin)@
+@:unop(_ATAN,atan)@
+@:binop(_ATAN2,atan2)@
+@:unop(_COS,cos)@
+@:unop(_SIN,sin)@
+@:unop(_TAN,tan)@
+
+@:unop(_COSH,cosh)@
+@:unop(_SINH,sinh)@
+@:unop(_TANH,tanh)@
+
+@:unop(_EXP,exp)@
+@:unop(_LOG,log)@
+@:unop(_LOG10,log10)@
+
+@:binop(_POW,pow)@
+@:unop(_SQRT,sqrt)@
+
+@:unop(_CEIL,ceil)@
+@:unop(_FABS,fabs)@
+@:unop(_FLOOR,floor)@
+@:binop(_FMOD,fmod)@
+
+@= unop
+int math_unary@1(dbl *res , dbl *a ) {
+#ifdef DEBUG
+	printf( "math_unary@1\n");
+#endif
+   if (*a == dbl_nil) {
+	*res = dbl_nil;
+   } else {
+	errno = 0;
+	@2_unary( a, res );
+	if (errno == EDOM) {
+		GDKerror("Negative argument is not allowed");
+		return GDK_FAIL;
+	}
+	if (errno == ERANGE) {
+		GDKerror("Range error");
+		return GDK_FAIL;
+	}
+	if (MNisnan(*res)) {
+		GDKerror("Negative argument is not allowed");
+		return GDK_FAIL;
+	}
+	if (!MNfinite(*res)) {
+		GDKerror("Range error");
+		return GDK_FAIL;
+	}
+   }
+   return(GDK_SUCCEED);
+}
+@
+
+@= binop
+int math_binary@1(dbl *res, dbl *a, dbl *b ) {
+#ifdef DEBUG
+	printf( "math_binary@1\n");
+#endif
+   if (*a == dbl_nil || *b == dbl_nil) {
+	*res = dbl_nil;
+   } else {
+	@2_binary( a, b, res);
+   }
+   return(GDK_SUCCEED);
+}
+@
+
+@c
+int math_binary_ROUND(dbl *res, dbl *x, int *y) {
+  if(*x == dbl_nil || *y == int_nil) {
+    *res = dbl_nil;
+  } else {
+    double factor = pow(10,*y), integral;
+    double tmp = *y>0?modf(*x,&integral):*x;
+
+    tmp *= factor;
+    if(tmp>=0)
+      tmp = floor(tmp+0.5);
+    else
+      tmp = ceil(tmp-0.5);
+    tmp /= factor;
+
+    if(*y>0)
+      tmp += integral;
+
+    *res = tmp;
+  }
+
+  return(GDK_SUCCEED);
+}
 
 int math_unary_ISNAN(bit *res , dbl *a ) {
 #ifdef DEBUG
