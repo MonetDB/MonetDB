@@ -514,7 +514,7 @@ str bindId(str nme){
 
 	if(fnd==0 &&  fndId(nme) == 0 && constantdeclaration==0){
 #ifdef M2Moffline
-		printf("\t%s:= mil.take(\"%s\");\n",nme,nme);
+		printf("\t%s:= mil.take(%s);\n",nme,nme);
 #else
 	TODO
 #endif
