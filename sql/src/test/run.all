@@ -44,3 +44,6 @@ echo "marcin"
 $SQL < marcin1.sql
 $SQL < marcin2.sql
 $SQL < marcin3.sql
+
+echo "cast_str2num"
+$SQL < cast_str2num.sql
