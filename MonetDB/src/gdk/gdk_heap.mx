@@ -173,17 +173,20 @@ int HEAPextend(Heap *h, size_t size) {
 		HEAPfree(h);
                 if (HEAPload(h, nme, ext, FALSE) < 0) return -1;
 	} else {
+		/* extend a malloced heap, possibly switching over to file-mapped storage */
 		Heap bak = *h;
+
+		/* enlarge the heap */
+        	h->maxsize = h->size = size;
+		if (size > GDK_mem_bigsize) {
+			/* maxsize is a multiple of 65536, andhas 20% free space */
+ 			h->maxsize = (h->maxsize * BATMARGIN) - 1;
+			h->maxsize = (1 + (h->maxsize >> 16)) << 16;
+		}
 
 		/* try GDKrealloc if the heap size stays within reasonable limits */
 		if (h->filename == NULL || (size*4 < GDK_mem_maxsize)) {
         		h->storage = STORE_MEM;
-        		h->maxsize = h->size = size;
-			if (size > GDK_mem_bigsize) {
-				/* maxsize is a multiple of 65536, andhas 20% free space */
- 				h->maxsize = (h->maxsize * BATMARGIN) - 1;
-				h->maxsize = (1 + (h->maxsize >> 16)) << 16;
-			}
                 	h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize);
 			if (h->base != NULL) return 0;
 		}
@@ -200,7 +203,7 @@ int HEAPextend(Heap *h, size_t size) {
 				/* a non-persistent heap: we create a .priv but *not* MMAP_PRIV !!! */
         			h->storage = STORE_MMAP;
 				if (HEAPload(h, nme, ext, FALSE) >= 0) {
-					memcpy(h->base, bak.base, bak.size);
+					memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak);
 					return 0;
 				}
@@ -344,10 +347,9 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 	if (h->base == NULL) {
 		return -1; /* file could  not be read satisfactorily */
 	}
-	if (h->filename == NULL) {
-		h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
-		sprintf(h->filename, "%s.%s", nme, ext);
-	}
+	h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
+	sprintf(h->filename, "%s.%s", nme, ext);
+
 	return desc_status; /* ok */
 }
 

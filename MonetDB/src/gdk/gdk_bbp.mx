@@ -863,7 +863,7 @@ void BBPcacheit(BAT* b) {
                 BBP_notrim = pid;
         }
         if (b->batId[0]) {
-                i = b->batCacheid;
+		i = b->batCacheid;
         } else {
                 i = BBPinsert(b); /* bat was not previously entered */
         }
@@ -913,7 +913,7 @@ void BBPuncacheit(bat i, int unloaddesc) {
 	}
 }
 
-@- BBP delete
+@- BBPclear
 @%BBPclear@ removes a BAT from the BBP directory forever.
 @c
 void BBPclear(bat i) {
@@ -946,18 +946,6 @@ void BBPclear(bat i) {
 		BBP_free = i;
 		if (pid != locked_by) 
 			MT_unset_lock(GDKcacheLock, "BBPclear"); 
-	}
-}
-
-static
-void BBPspin(bat i, str s, int event) {
-	if (BBPcheck(i,"BBPspin") && (BBP_status(i)&event)) {
-		lng spin = LL_CONSTANT(0);
-		while(BBP_status(i)&event) { 
-			MT_sleep_ms(1);
-			spin++;
-		}
-		BATDEBUG THRprintf(GDKout, "BBPspin(%d,%s,%d): " LLFMT " loops\n", (int) i, s, event, spin);
 	}
 }
 
@@ -1034,6 +1022,7 @@ int BBPrename(bat bid, str nme) {
 	return 0;
 }
 
+
 @+ BBP swapping Policy
 The BAT can be moved back to disk using the routine @%BBPfree@.
 It frees the storage for other BATs. After this call BAT* references
@@ -1054,6 +1043,18 @@ The @%BBP_ref@ contains the amount of live references to a BAT.
 These might be in recursive BATs, C or MIL variables.  The count is 
 incremented with @%BBPfix@ and decremented with @%BBPunfix@.
 @c
+static
+void BBPspin(bat i, str s, int event) {
+	if (BBPcheck(i,"BBPspin") && (BBP_status(i)&event)) {
+		lng spin = LL_CONSTANT(0);
+		while(BBP_status(i)&event) { 
+			MT_sleep_ms(1);
+			spin++;
+		}
+		BATDEBUG THRprintf(GDKout, "BBPspin(%d,%s,%d): " LLFMT " loops\n", (int) i, s, event, spin);
+	}
+}
+
 int BBPincref(bat i, int logical) {
 	MT_Id pid = BBP_getpid();
 	int refs = 0;
@@ -1280,8 +1281,15 @@ BAT *BBPdescriptor(bat i) {
 }
 
 
-static int file_move(str srcdir, str dstdir, str name, str ext) {
+static int file_move(str srcdir, str dstdir, str name, str e) {
+	long_str ext;
 	int ret = 0;
+	strcpy(ext, e);
+	ret = GDKmove(srcdir, name, ext, dstdir, name, ext);
+	if (ret == 0) {
+		return 0;
+	} 
+	strcat(ext, ".Z");
 	ret = GDKmove(srcdir, name, ext, dstdir, name, ext);
 	if (ret == 0) {
 		return 0;
@@ -2269,6 +2277,115 @@ lng BBPdiskscan_r(str parent) {
 
 lng BBPdiskscan(void) {
 	return BBPdiskscan_r(NULL);
+}
+
+@- BBPreplace
+BBP replace allows to replace a BAT in the BBP by another BAT. It is useful,
+e.g. for copy/cleanup operations that build a fresh copy of an existsing BAT 
+(without dead space e.g. in string heaps) and then replace the old BAT by the
+new image. Now we have BATmaterialize (converts void into oid) and VIEWreset
+(make a view independent of its parent) also use this interface.
+@c
+void BBPreplace(BAT* b, BAT* bn) {
+	bat bid = b->batCacheid;
+	bat bnid = bn->batCacheid;
+
+	/* trim lock keeps BBPsync out as well as of course BBPtrims */
+	MT_set_lock(GDKtrimLock, "BBPreplace"); 
+	if (b->batCacheid < 0 && bn->batCacheid < 0) {
+		b = BATmirror(b);
+		bn = BATmirror(bn);
+	}
+	if (bid < 0) {
+		GDKerror("BBPreplace: %s may not be reversed.\n", BBP_logical(bid));
+	} else if (bnid < 0) {
+		GDKerror("BBPreplace: %s may not be reversed.\n", BBP_logical(bnid));
+	} else if (ATOMtype(b->htype) != ATOMtype(bn->htype) || ATOMtype(b->ttype) != ATOMtype(bn->ttype)) {
+		GDKerror("BBPreplace: %s[%s,%s] is incompatible with %s[%s,%s]\n", 
+			BBP_logical(bid), ATOMname(b->htype), ATOMname(b->ttype),
+			BBP_logical(bnid), ATOMname(bn->htype), ATOMname(bn->ttype));
+	} else if (BBP_status(bnid)&BBPPERSISTENT) {
+		GDKerror("BBPreplace: %s is persistent and cannot disappear.", 
+			BBP_logical(bnid));
+	} else if (BBP_status(bnid)&BBPDELETED) {
+		GDKerror("BBPreplace: %s was persistent at the last commit and cannot disappear yet.", 
+			BBP_logical(bnid));
+	} else if (BBP_lrefs(bnid))  {
+		GDKerror("BBPreplace: %s has MIL variable refcount %d and cannot disappear.", 
+			BBP_logical(bnid), 
+			BBP_lrefs(bnid) - (BBP_status(bnid)&BBPPERSISTENT)?1:0);
+	} else {
+		long_str oldId;
+		int dirtyb = b->batDirty, dirtybn = bn->batDirty;
+		int ok = TRUE, newmode = b->batPersistence, oldmode = bn->batPersistence; 
+		int persistentb = (BBP_status(bid)&(BBPPERSISTENT|BBPDELETED));
+		int hugebn = bn->batBuns->storage | bn->hheap.storage | bn->theap.storage |
+			     bn->haccelerator.storage | bn->taccelerator.storage | STORE_MMAP;
+	
+		strcpy(oldId, bn->batId);
+		BATsetaccess(bn, b->batRestricted);
+		BATmmap(bn, b->batBuns->storage, b->hheap.storage, b->theap.storage, 
+			    b->haccelerator.storage, b->taccelerator.storage);
+
+		if (persistentb) {
+			/* start a mini-global-commit: back up any persistent b */
+			b->batDirty = 1;
+			backuped_files = 0;
+			ok = (backup_bat(b) == 0);
+		}
+
+		if (ok) {
+			/* make bn appear to BATsave (and others) as if it were b */
+			strcpy(bn->batId, b->batId);
+			bn->batCacheid = bid;
+		}
+		if (ok && (persistentb || hugebn)) { 
+			/* save bn entirely, on the location of b */
+			bn->batDirty = 1;
+			BATmode(bn, PERSISTENT);
+			ok = (BATsave(bn) != NULL);
+		}
+		if (ok && persistentb) {
+			/* try to commit; recover b on failure */
+			ok = (rename(BAKDIR, DELDIR) >= 0);
+			if (!ok) BBPrecover();
+			
+		}
+		if (!ok) {
+			/* FAILED: restore batId, cacheid and mode in bn */
+			strcpy(bn->batId, oldId);
+			bn->batCacheid = bnid;
+			BATmode(bn, oldmode);
+			b->batDirty = dirtyb;
+			bn->batDirty = dirtybn;
+		} else {
+			/* SUCCEEDED: free b, remove bn hash/idx */
+			BATfree(b);
+			BBPuncacheit(bid, TRUE);
+			BBPcacheit(bn);
+			if (hugebn) {
+				/* although not persistent: has heaps on disk. must delete/releoad */
+				bn->batCacheid = bnid;
+				BATdelete(bn);
+				b = NULL;
+			} else {
+				b = bn;
+			}
+			/* free mirror image and give back bn BBP slot */
+			GDKfree(BBP_cache(-bnid));
+			BBP_cache(bnid) = BBP_cache(-bnid) = NULL;
+			BBPclear(bnid);
+
+			if (hugebn) { /* do the reload now */
+				b = BBPdescriptor(bid);
+				if (b == NULL) 
+					GDKfatal("BBPreplace: we cannot load the new BAT image %d\n", bid); 
+			}
+			BATmode(b, newmode);
+		}
+		 
+	}
+	MT_unset_lock(GDKtrimLock, "BBPreplace"); 
 }
 @}
 
