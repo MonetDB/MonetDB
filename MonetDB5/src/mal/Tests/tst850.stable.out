@@ -26,9 +26,16 @@ function Admin.main():int;	# 0  (main:int)
     bat.setSequenceBase(t,0@0);	# 2 BKCsetSequenceBase ($4:bat[:void,:str])<-(t:bat[:void,:str])($5:oid)
     bat.insert(t,nil,"hello world");	# 3 BKCinsert_bun ($6:bat[:void,:str])<-(t:bat[:void,:str])($7:void)($8:str)
     bat.insert(t,nil,"sleep well");	# 4 BKCinsert_bun ($9:bat[:void,:str])<-(t:bat[:void,:str])($7:void)($10:str)
-    b := multiplex.script("startsWith",t,"");	# 5  (b:bat[:void,:bit])<-($12:str)(t:bat[:void,:str])($13:str)
-    io.print(b);	# 6 IOprint_val ($14:int)<-(b:bat[:void,:bit])
-end main;	# 7  
+    io.print(t);	# 5 IOprint_val ($11:int)<-(t:bat[:void,:str])
+    b := multiplex.script("startsWith",t,"");	# 6  (b:bat[:void,:bit])<-($13:str)(t:bat[:void,:str])($14:str)
+    io.print(b);	# 7 IOprint_val ($15:int)<-(b:bat[:void,:bit])
+end main;	# 8  
+#-------------------------#
+# h	tmp_13		  # name
+# void	str		  # type
+#-------------------------#
+[ 0@0,	  "hello world"	  ]
+[ 1@0,	  "sleep well"	  ]
 #-----------------#
 # h	tmp_5	  # name
 # int	bit	  # type

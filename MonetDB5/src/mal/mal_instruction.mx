@@ -547,6 +547,7 @@ mal_export int      newConstant(MalBlkPtr mb, malType type, str val, int f);
 
 mal_export void     pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
+mal_export InstrPtr pushReturn(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr     pushArgumentId(MalBlkPtr mb, InstrPtr p, str name);
 mal_export void     setVarInitialized(MalBlkPtr mb, int varid);
 mal_export void     delArgument(InstrPtr p, int varid);
@@ -1498,6 +1499,18 @@ InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid){
 } 
 void setVarInitialized(MalBlkPtr mb, int varid){
     isVarInitialized(mb,varid) = TRUE;
+}
+InstrPtr pushReturn(MalBlkPtr mb, InstrPtr p, int varid){
+	if( p->argv[p->retc-1] == -1){
+		p->argv[p->retc-1] = varid;
+		setVarUsed(mb,varid,TRUE);
+		setVarInitialized(mb,varid);
+		return p;
+	}
+	p= pushArgument(mb,p,varid);
+	setVarInitialized(mb,varid);
+	p->retc++;
+	return p;
 }
 @-
 Store the information of a destination variable in the signature structure of

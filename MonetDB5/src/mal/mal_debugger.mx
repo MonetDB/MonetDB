@@ -283,7 +283,7 @@ str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra){
 				moduleName(p),functionName(p));
 			for(k= p->retc; k<p->argc; k++){
 				str msg=0;
-				ValPtr v= &stk->stk[p->argv[k]];
+				ValPtr v= &stk->stk[getArg(p,k)];
 
                 ATOMformat(v->vtype, VALptr(v), &msg);
                 l= strlen(buf);
@@ -330,8 +330,8 @@ void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
         *s = 0;
         stream_printf(cntxt->fdout,"%s",msg);
         for(k= p->retc; k<p->argc; k++){
-			VarPtr v= getVar(mb, p->argv[k]);
-            ValPtr val= &stk->stk[p->argv[k]];
+			VarPtr v= getVar(mb, getArg(p,k));
+            ValPtr val= &stk->stk[getArg(p,k)];
 			if( v->tmpindex == 0)
 				stream_printf(cntxt->fdout,"%s=",v->name);
 			else

@@ -339,11 +339,11 @@ Let's call it as a synchronous action, without concern on parallelism.
       of the factory */
     i= psig->retc;
     for(k=pci->retc; i<pci->argc; i++,k++){
-        lhs = &pl->stk->stk[psig->argv[k]];
+        lhs = &pl->stk->stk[getArg(psig,k)];
         /* variable arguments ? */
         if( k== psig->argc-1) k--;
 
-        rhs = &pl->env->stk[pci->argv[i]];
+        rhs = &pl->env->stk[getArg(pci,i)];
         VALcopy(lhs,rhs);
     }
     if( mb->errors)
@@ -391,10 +391,10 @@ Plant yieldResult(MalBlkPtr mb, InstrPtr p, int pc){
         for(i=0;i < p->retc; i++){
 #ifdef DEBUG_MAL_FACTORY
                 printf("lhs %d rhs %d\n", 
-                    pl->pci->argv[i], p->argv[i]);
+                    getArg(pl->pci,i), getArg(p,i));
 #endif
-                                rhs = &pl->stk->stk[p->argv[i]];
-                                lhs = &pl->env->stk[pl->pci->argv[i]];
+                                rhs = &pl->stk->stk[getArg(p,i)];
+                                lhs = &pl->env->stk[getArg(pl->pci,i)];
                                 VALcopy(lhs,rhs);
                         }
         return pl;

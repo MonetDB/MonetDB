@@ -359,8 +359,10 @@ Box openBox(str name){
 int closeBox(str name ,int flag){
     Box box;
     (void) flag; /* fool the compiler */
-    if( (box=findBox(name)))
-        return saveBox(box,flag);
+    if( (box=findBox(name))){
+        saveBox(box,flag);
+		return 0;
+	}
     return -1;
 }
 void destroyBox(str name){
@@ -608,6 +610,7 @@ stream *prepareSaveBox(Box box, str *boxfile, str *boxfilebak){
     f= open_wastream(*boxfile);
 	if( f != NULL)
 		chmod(*boxfile, (S_IRUSR | S_IWUSR));
+	else GDKerror("saveBox:can not create box file\n");
 	return f;
 }
 int saveBox(Box box,int flag){
@@ -619,36 +622,34 @@ int saveBox(Box box,int flag){
 	(void) flag;
 
 	f= prepareSaveBox(box, &boxfile, &boxfilebak);
-    if(f != NULL){
+	if( f == NULL) return 1;
 #ifdef DEBUG_MAL_BOX
     stream_printf(GDKout,"saveBox:created %s\n",boxfile);
 #endif
-        for(i=0;i<box->sym->vtop; i++){
-            v= &box->val->stk[i];
-            if( v->vtype == TYPE_bat ) {
-            BAT *b= (BAT*)BBPgetdesc(v->val.br.id);
-            if( b && b->batPersistence & PERSISTENT)
-            stream_printf(f,"%s.bind(\"%s\",\"%s\");\n", 
-                box->name, getVarName(box->sym,i),
-                BBPname(v->val.br.id));
-            } else{
-                stream_printf(f,"%s := ", getVarName(box->sym,i));
-                ATOMprint(v->vtype,VALptr(v),f);
-                stream_printf(f,":%s;\n", getTypeName(v->vtype));
-                stream_printf(f,"%s.deposit(\"%s\",%s);\n", 
-                    box->name, getVarName(box->sym,i),
-                    getVarName(box->sym,i));
-            }
-        }
-        stream_close(f);
-        if( link(boxfilebak,boxfile) && unlink(boxfilebak) ) {
-			GDKfree(boxfile); GDKfree(boxfilebak);
-			return -1;
+	for(i=0;i<box->sym->vtop; i++){
+		v= &box->val->stk[i];
+		if( v->vtype == TYPE_bat ) {
+		BAT *b= (BAT*)BBPgetdesc(v->val.br.id);
+		if( b && b->batPersistence & PERSISTENT)
+		stream_printf(f,"%s.bind(\"%s\",\"%s\");\n", 
+			box->name, getVarName(box->sym,i),
+			BBPname(v->val.br.id));
+		} else{
+			stream_printf(f,"%s := ", getVarName(box->sym,i));
+			ATOMprint(v->vtype,VALptr(v),f);
+			stream_printf(f,":%s;\n", getTypeName(v->vtype));
+			stream_printf(f,"%s.deposit(\"%s\",%s);\n", 
+				box->name, getVarName(box->sym,i),
+				getVarName(box->sym,i));
 		}
+	}
+	stream_close(f);
+	if( link(boxfilebak,boxfile) && unlink(boxfilebak) ) {
 		GDKfree(boxfile); GDKfree(boxfilebak);
-		return 0;
-    } 
-    return -1;
+		return -1;
+	}
+	GDKfree(boxfile); GDKfree(boxfilebak);
+	return 0;
 }
 @-
 Loading a box is equivalent to reading a script.

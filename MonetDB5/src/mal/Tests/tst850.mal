@@ -4,6 +4,7 @@
 	setSequenceBase(t, 0@0);
 	insert(t,nil,"hello world");
 	insert(t,nil,"sleep well");
+	print(t);
 
 	b:= multiplex.script("startsWith",t,"");
 	print(b);

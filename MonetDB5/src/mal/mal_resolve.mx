@@ -351,9 +351,9 @@ of the symbol stack, it is easy to filter such errors.
 @c
     p->typechk= TYPE_RESOLVED;
     for(i=0;i<p->argc;i++) {
-        if( !isFixed(mb,p->argv[i]) && returntype[i]>=0) {
-            setVarType(mb,p->argv[i],returntype[i]);
-            setFixed(mb,p->argv[i]);
+        if( !isFixed(mb,getArg(p,i)) && returntype[i]>=0) {
+            setVarType(mb, getArg(p,i),returntype[i]);
+            setFixed(mb, getArg(p,i));
         } 
     }
 @-
@@ -610,7 +610,7 @@ void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p,int silent){
 
     if( isaSignature(p) ) {
         for(k=0;k<p->argc;k++)
-            setFixed(mb,p->argv[k]);
+            setFixed(mb,getArg(p,k));
         p->typechk= TYPE_RESOLVED;
         for(k=0; k<p->retc;k++)
             p->typechk = MIN(p->typechk,typeKind(mb,p,0));
@@ -645,13 +645,13 @@ In those cases, the detailed analysis is performed upon an actual call.
 @c
         if( moduleId(p) && (i=findVariable(mb,moduleName(p))) != -1 &&
                     getVarType(mb,i) == TYPE_str){
-            for(i=0;i<p->retc;i++) setFixed(mb,p->argv[i]);
+            for(i=0;i<p->retc;i++) setFixed(mb,getArg(p,i));
             p->typechk= TYPE_UNKNOWN;
             return;
         } 
         if( functionId(p) && (i=findVariable(mb,functionName(p))) != -1 &&
                     getVarType(mb,i) == TYPE_str){
-            for(i=0;i<p->retc;i++) setFixed(mb,p->argv[i]);
+            for(i=0;i<p->retc;i++) setFixed(mb,getArg(p,i));
             p->typechk= TYPE_UNKNOWN; 
 			return; 
         }
@@ -700,9 +700,9 @@ using the target type.
             typeMismatch(mb,p,lhs,rhs,silent);
             return;
         }
-        if( !isFixed(mb,p->argv[k])) {
-            setVarType(mb,p->argv[k],rhs);
-            setFixed(mb,p->argv[k]);
+        if( !isFixed(mb,getArg(p,k))) {
+            setVarType(mb,getArg(p,k),rhs);
+            setFixed(mb,getArg(p,k));
         }
         @:prepostProcess@
     }
