@@ -46,10 +46,51 @@ proc make_persistent( BAT[str,BAT] bats ) := {
 	}
 }
 
+
+proc dump_seps( BAT[void,BAT] bats ) : BAT[void,str] := {
+	var seps := new(void,str); seps.seqbase(oid(0));
+	var id := 0;
+	var cnt := bats.count - 1;
+	bats@batloop(){
+		if (id != cnt) {
+			seps.insert(nil,",");
+		} else {
+			seps.insert(nil,"\\n");
+		}
+		id += 1;
+	}
+	return seps;
+}
+
+proc bat_ttype( bat b ) : str := {
+	return monet_atomtbl.reverse.find(b.ttype);
+}
+
+proc dump_format( BAT[void,BAT] bats, str fmt ) : BAT[str,BAT] := {
+	bats := [~bats].seqbase(oid(0));
+	var names := [bbpname](bats);
+	var seps  := dump_seps(bats);
+	var types := [bat_ttype](bats);
+	bats:= new(void,bat); bats.seqbase(oid(0));
+	bats.insert(nil,names);
+	bats.insert(nil,seps);
+	bats.insert(nil,types);
+
+	names := new(void,str); names.seqbase(oid(0));
+	seps := new(void,str); seps.seqbase(oid(0));
+	names.insert(nil,"names");seps.insert(nil,",");
+	names.insert(nil,"seps");seps.insert(nil,",");
+	names.insert(nil,"types");seps.insert(nil,"\n");
+	dump(names, seps, bats, fmt, 1000);
+	return names.reverse.join(bats);
+}
+
 proc dump_data( BAT[str,BAT] fmt, str data, int cnt) := {
 	var names := fmt.find("names");
 	var seps := fmt.find("seps");
+	print(names,seps);
 	var bats := [load](names);
+	print(bats);
 	dump( names, seps, bats, data, cnt );
 }
 
