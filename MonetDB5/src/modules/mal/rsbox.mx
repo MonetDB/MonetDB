@@ -832,65 +832,12 @@ str RSsetPropertyInt(int* retval, int* handle, int* colno, str* nme, int* val) {
 static str RSsetComplete(resultset* rs) {
 	int i;
 	column* col;
-	str tmp;
 	
-	/* walk through the columns, and set those properties that are not
-	 * yet set, but are a necessity */
 	for (i = 0; i < rs->columnCount; i++) {
 		col = rs->columns[i];
 		
 		if (col->bat == NULL)
 			throw("resultset.setComplete", "ResultSet contains at least one column that has not been populated yet");
-
-		/* name defaults to column_x */
-		if (col->name == NULL) {
-			col->name = GDKmalloc(sizeof(str) * 15);
-			snprintf(col->name, 15, "column_%d", i + 1);
-		}
-		/* table and schema default to an empty string */
-		/* type defaults to the BAT tail type if not set */
-		if (col->type == NULL) {
-			switch (col->bat->ttype) {
-				case TYPE_bit:
-					col->type = GDKstrdup("boolean");
-				break;
-				case TYPE_chr:
-					col->type = GDKstrdup("char");
-				break;
-				case TYPE_oid:
-					col->type = GDKstrdup("oid");
-				break;
-				case TYPE_sht:
-					col->type = GDKstrdup("smallint");
-				break;
-				case TYPE_int:
-					col->type = GDKstrdup("int");
-				break;
-				case TYPE_lng:
-					col->type = GDKstrdup("bigint");
-				break;
-				case TYPE_flt:
-					col->type = GDKstrdup("real");
-				break;
-				case TYPE_dbl:
-					col->type = GDKstrdup("double");
-				break;
-				case TYPE_str:
-					col->type = GDKstrdup("varchar");
-				break;
-				case TYPE_ptr: /* C pointer! */
-				case TYPE_bat: /* BAT id: index in BBPcache */
-				default:
-					throw("resultset.tailWidth", "Invalid BAT tail type!");
-			}		
-		}
-		/* column width is derived if not set */
-		if (col->width == -1 &&
-			(tmp = RStailWidth(&(col->width), col->bat)) != MAL_SUCCEED)
-		{
-			return(tmp);
-		}
-		/* digits and scale are suppressed in the output if set to -1 */
 	}
 
 	rs->complete = (char)1;
@@ -958,10 +905,40 @@ str RSwriteHeader(int* retval, int* handle) {
 		throw("resultset.writeHeader", "Error while writing to the stream");
 	bytes += bt;
 @c
+	/* serialise the header to the stream */
 	@:MX-writeHeaderLineSingleValue("%d", rs->type, "querytype")@
 	@:MX-writeHeaderLineSingleValue("%s", rs->id == NULL ? "" : rs->id, "id")@
 	@:MX-writeHeaderLineSingleValue("%d", rs->length, "tuplecount")@
 
+	/* walk through the columns, and set those properties that are not
+	 * yet set, but are a necessity */
+
+	if ((bt = stream_printf(s, "%c%s ", RS_LINE_HEADER, "name")) > 0) {
+		bytes += bt;
+		for (i = 0; i < rs->columnCount; i++) {
+			col = rs->columns[i];
+			
+			/* name defaults to column_x */
+			if (col->name == NULL) {
+				if ((bt = stream_printf(s, "column_%d", i + 1)) < 0)
+					throw("resultset.writeHeader", "Error while writing to the stream");
+			} else {
+				if ((bt = stream_printf(s, "%s", col->name)) < 0)
+					throw("resultset.writeHeader", "Error while writing to the stream");
+			}
+			bytes += bt;
+			
+			/* write column or row separator */
+			if (stream_write(s, i < (rs->columnCount - 1) ? "\t" : "\n", 1, 1) != 1) {
+				*retval = 0;
+				throw("resultset.writeHeader", "Error while writing to the stream");
+			}
+			bytes += 1;
+		}
+	} else {
+		*retval = 0;
+		throw("resultset.writeHeader", "Error while writing to the stream");
+	}
 @= MX-writeHeaderLine
 	/* serialise the header to the stream */
 	if ((bt = stream_printf(s, "%c%s ", RS_LINE_HEADER, @3)) > 0) {
@@ -988,13 +965,98 @@ str RSwriteHeader(int* retval, int* handle) {
 	}
 @c
 	/* yeah baby!  dirty as hell! */
-	@:MX-writeHeaderLine("%s", col->name, "name", 1==1)@
 	@:MX-writeHeaderLine("%s", col->table, "table", col->table != NULL)@
 	@:MX-writeHeaderLine("%s", col->schema, "schema", col->schema != NULL)@
-	@:MX-writeHeaderLine("%s", col->type, "type", col->type != NULL)@
+	/* serialise the header to the stream */
+	if ((bt = stream_printf(s, "%c%s ", RS_LINE_HEADER, "type")) > 0) {
+		bytes += bt;
+		for (i = 0; i < rs->columnCount; i++) {
+			col = rs->columns[i];
+			
+			/* type defaults to the BAT tail type if not set */
+			if (col->type == NULL) {
+				switch (col->bat->ttype) {
+					case TYPE_bit:
+						bt = stream_printf(s, "%s", "boolean");
+					break;
+					case TYPE_chr:
+						bt = stream_printf(s, "%s", "char");
+					break;
+					case TYPE_oid:
+						bt = stream_printf(s, "%s", "oid");
+					break;
+					case TYPE_sht:
+						bt = stream_printf(s, "%s", "smallint");
+					break;
+					case TYPE_int:
+						bt = stream_printf(s, "%s", "int");
+					break;
+					case TYPE_lng:
+						bt = stream_printf(s, "%s", "bigint");
+					break;
+					case TYPE_flt:
+						bt = stream_printf(s, "%s", "real");
+					break;
+					case TYPE_dbl:
+						bt = stream_printf(s, "%s", "double");
+					break;
+					case TYPE_str:
+						bt = stream_printf(s, "%s", "varchar");
+					break;
+					case TYPE_ptr: /* C pointer! */
+					case TYPE_bat: /* BAT id: index in BBPcache */
+					default:
+						throw("resultset.writeHeader", "Invalid BAT tail type!");
+				}
+			} else {
+				if ((bt = stream_printf(s, "%s", col->type)) < 0)
+					throw("resultset.writeHeader", "Error while writing to the stream");
+			}
+			bytes += bt;
+			
+			/* write column or row separator */
+			if (stream_write(s, i < (rs->columnCount - 1) ? "\t" : "\n", 1, 1) != 1) {
+				*retval = 0;
+				throw("resultset.writeHeader", "Error while writing to the stream");
+			}
+			bytes += 1;
+		}
+	} else {
+		*retval = 0;
+		throw("resultset.writeHeader", "Error while writing to the stream");
+	}
 	@:MX-writeHeaderLine("%d", col->digits, "digits", col->digits > -1)@
 	@:MX-writeHeaderLine("%d", col->scale, "scale", col->scale > -1)@
-	@:MX-writeHeaderLine("%d", col->width, "width", col->width > -1)@
+	/* serialise the header to the stream */
+	if ((bt = stream_printf(s, "%c%s ", RS_LINE_HEADER, "width")) > 0) {
+		bytes += bt;
+		for (i = 0; i < rs->columnCount; i++) {
+			col = rs->columns[i];
+			
+			/* calculate width if not set */
+			if (col->width == -1) {
+				int width;
+				if ((tmp = RStailWidth(&width, col->bat)) != MAL_SUCCEED)
+					return(tmp);
+				if ((bt = stream_printf(s, "%d", width)) < 0)
+					throw("resultset.writeHeader", "Error while writing to the stream");
+			} else {
+				if ((bt = stream_printf(s, "%d", col->width)) < 0)
+					throw("resultset.writeHeader", "Error while writing to the stream");
+			}
+			bytes += bt;
+			
+			/* write column or row separator */
+			if (stream_write(s, i < (rs->columnCount - 1) ? "\t" : "\n", 1, 1) != 1) {
+				*retval = 0;
+				throw("resultset.writeHeader", "Error while writing to the stream");
+			}
+			bytes += 1;
+		}
+	} else {
+		*retval = 0;
+		throw("resultset.writeHeader", "Error while writing to the stream");
+	}
 
 	*retval = bytes;
 	return(MAL_SUCCEED);
