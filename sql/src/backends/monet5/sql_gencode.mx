@@ -234,6 +234,25 @@ void dump_2(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name){
 	@:SQLpostlude@
 }
 @-
+The intermediate results of this translation are mostly readonly.
+Set this property to reduce copying.
+@c
+void dump_3(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name){
+	InstrPtr q;
+	int o1 = backend_dumpstmt(sql,mb, s->op1.stval);
+	int o2 = backend_dumpstmt(sql,mb, s->op2.stval);
+
+	@:SQLprelude@
+	q= newStmt(mb,"bat","setReadMode");
+	q= pushArgument(mb,q,o1);
+
+	q= newStmt(mb,mod,name);
+	q= pushArgument(mb,q,o1);
+	q= pushArgument(mb,q,o2);
+	s->nr = getDestVar(q);
+	@:SQLpostlude@
+}
+@-
 The big code generation switch. The sections are aligned to the
 Monet version4 code generation block for ease of comparison.
 @c

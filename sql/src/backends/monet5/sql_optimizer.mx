@@ -35,6 +35,8 @@ phase of the scenario.
 sql_export void addQueryToCache(Client c);
 sql_export void optimizeQueryInCache(Client c);
 sql_export str SQLoptimizer(Client c);
+sql_export void SQLsetAccessMode(Client c);
+
 
 #endif /* _SQL_OPTIMIZER_H_ */
 
@@ -183,9 +185,46 @@ Finalize the factory loop
         mb->stop += 4;
         GDKfree(mb->stmt);
         mb->stmt = ns;
+        SQLsetAccessMode(c);
         chkProgram(c->nspace,mb);
 #ifdef _SQL_OPTIMIZER_DEBUG
         printFunction(c->fdout,c->curprg->def, LIST_MAL_INSTR);
 #endif
 }
 
+@-
+The code produced by the SQL front-end only sets the access mode
+when a BAT will become updated. In all other cases, it relies
+on the M4 policy that intermediate results are considered
+readonly. Readonly mode often improves processing speed.
+
+To compensate for this behaviour, a final pass is made 
+to inject the access modes in all places relevant.
+In this case, we start with the mark operations, which
+will be faster when the operand is read only.
+@c
+void SQLsetAccessMode(Client c){
+    MalBlkPtr mb;
+    InstrPtr *ns,p,q;
+    int i,k;
+    mb= c->curprg->def;
+    ns= (InstrPtr *) GDKmalloc( sizeof(InstrPtr) * mb->stop*2);
+    k =0;
+    for(i=0; i< mb->stop; i++){
+        p= getInstrPtr(mb,i);
+        if( p->fcnname && strcmp(p->fcnname,"mark")==0){
+            q= newInstruction(ASSIGNsymbol);
+            q->modname= GDKstrdup("bat");
+            q->fcnname= GDKstrdup("setReadMode");
+            q->argv[0]= newTmpVariable(mb,TYPE_any);
+            q->argv[1]= p->argv[1];
+            q->argc= 2;
+            ns[k++]= q;
+        }
+        ns[k++] = p;
+    }
+    mb->ssize = 2* mb->stop;
+    mb->stop = k;
+    GDKfree(mb->stmt);
+    mb->stmt = ns;
+}
