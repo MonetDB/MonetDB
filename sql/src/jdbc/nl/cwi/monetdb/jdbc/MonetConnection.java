@@ -908,6 +908,10 @@ public class MonetConnection extends Thread implements Connection {
 			// this thread will die, so before doing so,
 			// set it's state appropriately
 			state = DEAD;
+			// because we cannot tell this to the user in any normal
+			// way, the best we can do is dump the stack trace to
+			// standard err.
+			t.printStackTrace(System.err);
 		}
 	}
 
@@ -1412,9 +1416,6 @@ public class MonetConnection extends Thread implements Connection {
 		 *  Header */
 		private boolean destroyOnClose;
 
-		/** a regular expression that we often use to split
-		 *  the headers into an array (compile them once) */
-		private final Pattern splitPattern = Pattern.compile(",\t");
 
 		/**
 		 * Sole constructor, which requires a CacheThread parent to be given.
@@ -1446,37 +1447,125 @@ public class MonetConnection extends Thread implements Connection {
 		 * @throws SQLException if the header cannot be parsed or is unknown
 		 */
 		void addHeader(String tmpLine) throws SQLException {
-			int pos = tmpLine.indexOf("#", 1);
-			if (pos == -1) {
-				throw new SQLException("Illegal header: " + tmpLine);
-			}
+			int len = tmpLine.length();
+			char[] chrLine = new char[len];
+			tmpLine.getChars(0, len, chrLine, 0);
 
-			// split the header line into an array
-			String[] values =
-				splitPattern.split(tmpLine.substring(1, pos - 1));
-			// remove whitespace from all the results
-			for (int i = 0; i < values.length; i++) {
-				values[i] = values[i].trim();
+			String name = null;
+			int pos = 0;
+			boolean foundChar = false;
+			// find header name
+			for (int i = len - 1; i >= 0; i--) {
+				switch (chrLine[i]) {
+					case ' ':
+					case '\n':
+					case '\t':
+					case '\r':
+						if (!foundChar) {
+							len = i - 1;
+						} else {
+							pos = i + 1;
+						}
+					break;
+					case '#':
+						// found!
+						if (pos == 0) pos = i + 1;
+						name = new String(chrLine, pos, len - pos);
+						len = i - 1;	// " #"
+						i = 0;	// force the loop to terminate
+					break;
+					default:
+						foundChar = true;
+						pos = 0;
+					break;
+				}
 			}
-			// add the header
-			String name = tmpLine.substring(pos + 1).trim();
+			if (name == null)
+				throw new SQLException("Illegal header: " + tmpLine);
+
+			// depending on the name of the header, we continue
 			if (name.equals("name")) {
-				setNames(values);
+				setNames(getValues(chrLine, 2, len));
 			} else if (name.equals("type")) {
-				setTypes(values);
-			} else if (name.equals("tuplecount")) {
-				setTupleCount(values[0]);
-			} else if (name.equals("id")) {
-				setID(values[0]);
-			} else if (name.equals("querytype")) {
-				setQueryType(values[0]);
+				setTypes(getValues(chrLine, 2, len));
 			} else if (name.equals("table_name")) {
-				setTableNames(values);
+				setTableNames(getValues(chrLine, 2, len));
 			} else if (name.equals("length")) {
-				setColumnLengths(values);
+				setColumnLengths(getValues(chrLine, 2, len));
+			} else if (name.equals("tuplecount")) {
+				setTupleCount(getValue(chrLine, 2, len));
+			} else if (name.equals("id")) {
+				setID(getValue(chrLine, 2, len));
+			} else if (name.equals("querytype")) {
+				setQueryType(getValue(chrLine, 2, len));
 			} else {
 				throw new SQLException("Unknown header: " + name);
 			}
+		}
+
+		/**
+		 * Returns an array of Strings containing the values between
+		 * ',\t' separators.
+		 *
+		 * @param chrLine a character array holding the input data
+		 * @param start where the relevant data starts
+		 * @param stop where the relevant data stops
+		 * @returns an array of Strings
+		 */
+		final private String[] getValues(char[] chrLine, int start, int stop) {
+			int elem = 0, capacity = 25;
+			String[] values = new String[capacity];	// first guess
+			
+			for (int i = start; i < stop; i++) {
+				if (chrLine[i] == '\t' && chrLine[i - 1] == ',') {
+					if (elem == capacity) {
+						// increase the capacity, assume it's now or never
+						capacity *= 10;
+						String[] tmp = new String[capacity];
+						for (int j = 0; j < elem; j++) tmp[j] = values[j];
+						values = tmp;
+					}
+					values[elem++] =
+						new String(chrLine, start, i - 1 - start);
+					start = i + 1;
+				}
+			}
+			// at the left over part
+			if (elem == capacity) {
+				// increase the capacity just with one
+				capacity++;
+				String[] tmp = new String[capacity];
+				for (int j = 0; j < elem; j++) tmp[j] = values[j];
+				values = tmp;
+			}
+			values[elem++] = new String(chrLine, start, stop - start);
+
+			// if the array is already to the ideal size, return it
+			// straight away
+			if (capacity == elem) return(values);
+			
+			// otherwise truncate the array to it's real size
+			String[] ret = new String[elem];
+			for (int i = 0; i < elem; i++) ret[i] = values[i];
+			return(ret);
+		}
+
+		/**
+		 * Returns an the first String that appears before the first
+		 * occurrence of the ',\t' separator.
+		 *
+		 * @param chrLine a character array holding the input data
+		 * @param start where the relevant data starts
+		 * @param stop where the relevant data stops
+		 * @returns the first String found
+		 */
+		private final String getValue(char[] chrLine, int start, int stop) {
+			for (int i = start; i < stop; i++) {
+				if (chrLine[i] == '\t' && chrLine[i - 1] == ',') {
+					return(new String(chrLine, start, i - 1 - start));
+				}
+			}
+			return(new String(chrLine, start, stop - start));
 		}
 
 		/**
@@ -1759,14 +1848,17 @@ public class MonetConnection extends Thread implements Connection {
 						resultBlocks.clear();
 					}
 
-					/// todo: ponder about a maximum number of blocks to keep
+					/// TODO: ponder about a maximum number of blocks to keep
 					///       in memory when dealing with random access to
 					///       reduce memory blow-up
 
 					// set the cache size -> sliding window if forward only
 					if (rstype == ResultSet.TYPE_FORWARD_ONLY) {
-						//if previousResult.getStatistics().fetchedUnInterrupted()
-						//then multiply cachesize by 10 if not explicitly set
+						RawResults prev = (RawResults)(resultBlocks.get("" + (block - 1)));
+						if (prev != null) {
+							//if previousResult.getStatistics().fetchedUnInterrupted()
+							//then multiply cachesize by 10 if not explicitly set
+						}
 					}
 					
 					// ok, need to fetch cache block first
