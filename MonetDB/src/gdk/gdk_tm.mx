@@ -49,6 +49,7 @@ void TMfakeCommit(){
 	int nkills=0, maxkills=1024, killbuf[1024], *kills = killbuf;
 	int i;
         /* succeeded: adapt BBPstatus of all bats while we're still locked */
+	BBPlock("TMfakeCommit");
         for (i = 1; i < BBPsize; i++) {
 		if (BBP_status(i)&BBPPERSISTENT) {
 			BBP_status(i) |= BBPEXISTING;
@@ -71,7 +72,7 @@ void TMfakeCommit(){
 		}
 		BBP_status(i) &= ~(BBPDELETED|BBPSWAPPED|BBPNEW);
         }
-	BBPunlock("TMcommit");
+	BBPunlock("TMfakeCommit");
 
 	/* outside the lock: now kill all ex-persistent bats */
 	for(i=0; i<nkills; i++) {
@@ -103,16 +104,17 @@ int TMcommit() {
 		BAT *b = BBPcache(i);
 		if (b == NULL && (BBP_status(i)&BBPSWAPPED)) {
 			b = BBPquickdesc(i, TRUE);
-			if (b == NULL) { ret = 1; break; }
+			if (b == NULL) { 
+				ret = 1; 
+				break; 
+			}
 		}
-		if (b) {
-			BATcommit(b);
-		}
+		if (b) BATcommit(b);
 	}
+	BBPunlock("TMcommit");
 
         /* atomic write of all dirty BATs and BBP.dir */
-	if (ret == 0)
-	ret = BBPsync(TRUE);
+	if (ret == 0) ret = BBPsync(FALSE);
 	if (ret == 0) TMfakeCommit();
 	return ret;
 }
