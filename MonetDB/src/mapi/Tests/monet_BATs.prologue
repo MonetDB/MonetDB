@@ -1,4 +1,4 @@
-X := new(str,int);
+var X := new(str,int);
 X.insert("monet_acctbl",monet_acctbl.count());
 X.insert("monet_atomtbl",monet_atomtbl.count());
 X.insert("monet_fcn_aut",monet_fcn_aut.count());
@@ -28,3 +28,4 @@ monet_acctbl.print;
 monet_atomtbl.print;
 monet_fcntbl.print;
 }
+X := nil;

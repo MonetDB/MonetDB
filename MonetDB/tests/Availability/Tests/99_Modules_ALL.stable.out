@@ -47,6 +47,7 @@ Try: modules;                - for other modules.
     mprof: loading... done.
 monettime: loading... done.
     mmath: loaded.
+      mel: loading... done.
      mapi: loading... done.
 malalgebra: loading... done.
    logger: loading... done.
@@ -92,6 +93,7 @@ bitvector: loaded.
 [ "logger"	  ]
 [ "malalgebra"	  ]
 [ "mapi"	  ]
+[ "mel"		  ]
 [ "mmath"	  ]
 [ "monettime"	  ]
 [ "mprof"	  ]

@@ -1,12 +1,16 @@
 stdout of test 'salgebra` in directory 'src/modules/plain` itself:
 
-#> Mtest (20:34:28):	other salgebra 1200
-#> Mtest (20:34:28):	Mtimeout -timeout 1200 ./salgebra salgebra
-#> Mlog (20:34:28):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain salgebra.mil
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:salgebra.mil
+
+# 01:19:49 >  
+# 01:19:49 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_src_modules_plain  < salgebra.milM
+# 01:19:49 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
+# dbname:Tests_src_modules_plain
+# dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_src_modules_plain
 
 loaded;
 #---------------------------------#
@@ -33,9 +37,9 @@ Created clusterhash ti
 [ "name",	  "ti"	  ]
 [ "bname",	  "ti"	  ]
 [ "ttype",	  "oid"	  ]
-[ "batId",	  "48"	  ]
+[ "batId",	  "40"	  ]
 [ "perfect",	  "1"	  ]
-[ "refCnt",	  "3"	  ]
+[ "refCnt",	  "2"	  ]
 #-------------------------#
 # BAT:		  tmp_42  #
 # (str)		  (str)	  #
@@ -43,14 +47,14 @@ Created clusterhash ti
 [ "name",	  "ti"	  ]
 [ "bname",	  "ti"	  ]
 [ "ttype",	  "oid"	  ]
-[ "batId",	  "48"	  ]
+[ "batId",	  "40"	  ]
 [ "perfect",	  "1"	  ]
-[ "refCnt",	  "2"	  ]
+[ "refCnt",	  "1"	  ]
 #---------------------------------------------------------#
 # BAT:	  ch_namecache	| ch_refcnt	| ch_cache	  #
 # (int)	  (str)		| (int)		| (clusterhash)	  #
 #---------------------------------------------------------#
-[ 48,	  "ti",		  2,		  ti		  ]
+[ 40,	  "ti",		  1,		  ti		  ]
 #-----------------#
 # BAT:	  tmp_42  #
 # (oid)	  (void)  #
@@ -90,7 +94,7 @@ Created clusterhash ti
 # BAT:	  ch_namecache	| ch_refcnt	| ch_cache	  #
 # (int)	  (str)		| (int)		| (clusterhash)	  #
 #---------------------------------------------------------#
-[ 48,	  "ti",		  2,		  ti		  ]
+[ 40,	  "ti",		  1,		  ti		  ]
 
 # 04:15:15 >  
 # 04:15:15 >  Done.

@@ -30,6 +30,7 @@ MODULES.replace("lock",      "plain");
 MODULES.replace("logger",    "plain");
 MODULES.replace("malalgebra","plain");
 MODULES.replace("mapi",      "plain");
+MODULES.replace("mel",       "plain");
 MODULES.replace("mmath",     "plain");
 MODULES.replace("monettime", "plain");
 MODULES.replace("mprof",     "plain");
