@@ -54,12 +54,6 @@ cs_size( changeset * cs )
 }
 
 node *
-cs_find_name(changeset * cs, char *name)
-{
-	return list_find_name(cs->set, name);
-}
-
-node *
 cs_first_node(changeset *cs)
 {
 	return cs->set->h;

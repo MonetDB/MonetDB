@@ -18,8 +18,20 @@
 #else
 #define sql_export extern __declspec(dllexport)
 #endif
+#ifndef LIBSQLCOMMON
+#define sqlcommon_export extern __declspec(dllimport)
+#else
+#define sqlcommon_export extern __declspec(dllexport)
+#endif
+#ifndef LIBBATSTORE
+#define sqlbat_export extern __declspec(dllimport)
+#else
+#define sqlbat_export extern __declspec(dllexport)
+#endif
 #else
 #define sql_export extern
+#define sqlcommon_export extern
+#define sqlbat_export extern
 #endif
 
 #define NEW( type ) (type*)GDKmalloc(sizeof(type) )
@@ -34,8 +46,8 @@ typedef struct sql_ref {
 	int refcnt;
 } sql_ref;
 
-extern sql_ref *sql_ref_init( sql_ref *r );
-extern int sql_ref_inc( sql_ref *r );
-extern int sql_ref_dec( sql_ref *r );
+sqlcommon_export sql_ref *sql_ref_init( sql_ref *r );
+sqlcommon_export int sql_ref_inc( sql_ref *r );
+sqlcommon_export int sql_ref_dec( sql_ref *r );
 
 #endif /*_MEM_H_*/

@@ -11,11 +11,11 @@
 #define isNew(x) 	(x->base.flag == TR_NEW)
 #define isTemp(x) 	(isNew(x)||!x->t->persists||x->t->clear)
 
-extern BAT *bind_bat(sql_trans * tr, sql_column * c, int access );
-extern BAT *bind_ubat( sql_trans *tr, sql_column *c, int access );
-extern BAT *bind_dbat( sql_trans *tr, sql_table *t, int access );
-extern BAT *bind_idx( sql_trans *tr, sql_idx *i, int access );
-extern BAT *bind_uidx( sql_trans *tr, sql_idx *i, int access );
+sqlbat_export BAT *bind_bat(sql_trans * tr, sql_column * c, int access );
+sqlbat_export BAT *bind_ubat( sql_trans *tr, sql_column *c, int access );
+sqlbat_export BAT *bind_dbat( sql_trans *tr, sql_table *t, int access );
+sqlbat_export BAT *bind_idx( sql_trans *tr, sql_idx *i, int access );
+sqlbat_export BAT *bind_uidx( sql_trans *tr, sql_idx *i, int access );
 
 #endif /*BATSTORE_H*/
 @c

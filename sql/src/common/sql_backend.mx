@@ -43,11 +43,11 @@ typedef void (*freestack_fptr)( backend_stack stk );
 typedef void (*freecode_fptr)( backend_code code, backend_stack stk, int nr );
 typedef void (*interpret_fptr)( backend_stack stk, char *code );
 	
-sql_export void backend_init( freestack_fptr fstack, freecode_fptr fcode, 
+sqlcommon_export void backend_init( freestack_fptr fstack, freecode_fptr fcode,
 		   interpret_fptr finterpret );
-sql_export void backend_freestack( backend_stack stk );
-sql_export void backend_freecode( backend_code code, backend_stack stk, int nr);
-sql_export void backend_interpret( backend_stack stk, char *code);
+sqlcommon_export void backend_freestack( backend_stack stk );
+sqlcommon_export void backend_freecode( backend_code code, backend_stack stk, int nr);
+sqlcommon_export void backend_interpret( backend_stack stk, char *code);
 
 #endif /* _SQL_BACKEND_H_ */
 @c

@@ -27,6 +27,6 @@ lib_batstore = {
 		changeset.mx sql_catalog.mx sql_types.mx sql_keyword.mx \
 		res_table.mx
 
-	WINLIBS = -lbat -lmonet -lstream -l_streams -l_bat -l_kernel -l_ascii_io -l_algebra 
+	WINLIBS = ../../common/libsqlcommon -lbat -lmonet -lstream -l_streams -l_bat -l_kernel -l_ascii_io -l_algebra 
 	LIBS = $(MONETDB_LIBS)
 }

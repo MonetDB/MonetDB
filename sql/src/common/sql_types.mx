@@ -36,50 +36,50 @@ easy to find something akin you intend to enter.
 #include <sql_catalog.h>
 #include <stream.h>
 
-extern list *types;
+sqlcommon_export list *types;
 
-extern char *sql_bind_alias( char *alias );
-extern sql_subtype *sql_bind_subtype( char *name, unsigned int digits, unsigned int scale );
-extern sql_subtype *sql_bind_localtype( char *name );
-extern sql_subtype *sql_create_subtype( sql_type *t, unsigned int s, unsigned int d );
-extern sql_subtype *sql_dup_subtype( sql_subtype *t );
-extern void sql_subtype_destroy( sql_subtype *t );
+sqlcommon_export char *sql_bind_alias( char *alias );
+sqlcommon_export sql_subtype *sql_bind_subtype( char *name, unsigned int digits, unsigned int scale );
+sqlcommon_export sql_subtype *sql_bind_localtype( char *name );
+sqlcommon_export sql_subtype *sql_create_subtype( sql_type *t, unsigned int s, unsigned int d );
+sqlcommon_export sql_subtype *sql_dup_subtype( sql_subtype *t );
+sqlcommon_export void sql_subtype_destroy( sql_subtype *t );
 
-extern int type_cmp( sql_type *t1, sql_type *t2);
-extern int subtype_cmp( sql_subtype *t1, sql_subtype *t2);
+sqlcommon_export int type_cmp( sql_type *t1, sql_type *t2);
+sqlcommon_export int subtype_cmp( sql_subtype *t1, sql_subtype *t2);
 
-extern sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, unsigned char fixed, char *name );
-extern void type_destroy(sql_type * t);
+sqlcommon_export sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, unsigned char fixed, char *name );
+sqlcommon_export void type_destroy(sql_type * t);
 
-extern sql_arg *sql_create_arg( char *name, sql_subtype *t );
-extern void arg_destroy( sql_arg *a );
+sqlcommon_export sql_arg *sql_create_arg( char *name, sql_subtype *t );
+sqlcommon_export void arg_destroy( sql_arg *a );
 
-extern sql_subaggr *sql_bind_aggr( char *name, sql_subtype *type);
-extern sql_aggr *sql_create_aggr( char *name, char *imp, sql_type *tpe, sql_type *res);
-extern sql_subaggr *sql_dup_aggr( sql_subaggr *a);
-extern void sql_subaggr_destroy( sql_subaggr *f);
+sqlcommon_export sql_subaggr *sql_bind_aggr( char *name, sql_subtype *type);
+sqlcommon_export sql_aggr *sql_create_aggr( char *name, char *imp, sql_type *tpe, sql_type *res);
+sqlcommon_export sql_subaggr *sql_dup_aggr( sql_subaggr *a);
+sqlcommon_export void sql_subaggr_destroy( sql_subaggr *f);
 
-extern sql_subfunc *sql_find_func( char *name, int nrargs);
-extern sql_subfunc *sql_bind_member( char *name, sql_subtype *tp, int nrargs);
-extern sql_subfunc *sql_bind_func( char *name, sql_subtype *tp1, sql_subtype *tp2);
-extern sql_subfunc *sql_bind_func_result( char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *res);
+sqlcommon_export sql_subfunc *sql_find_func( char *name, int nrargs);
+sqlcommon_export sql_subfunc *sql_bind_member( char *name, sql_subtype *tp, int nrargs);
+sqlcommon_export sql_subfunc *sql_bind_func( char *name, sql_subtype *tp1, sql_subtype *tp2);
+sqlcommon_export sql_subfunc *sql_bind_func_result( char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *res);
 
-extern sql_subfunc *sql_bind_func_( char *name, list *ops);
-extern sql_subfunc *sql_bind_func_result_( char *name, list *ops, sql_subtype *res);
-extern sql_subfunc *sql_dup_func( sql_subfunc *f);
-extern void sql_subfunc_destroy( sql_subfunc *f);
-extern sql_subfunc *sql_bind_proc( char *name, list *ops );
+sqlcommon_export sql_subfunc *sql_bind_func_( char *name, list *ops);
+sqlcommon_export sql_subfunc *sql_bind_func_result_( char *name, list *ops, sql_subtype *res);
+sqlcommon_export sql_subfunc *sql_dup_func( sql_subfunc *f);
+sqlcommon_export void sql_subfunc_destroy( sql_subfunc *f);
+sqlcommon_export sql_subfunc *sql_bind_proc( char *name, list *ops );
 
-extern sql_func *sql_create_func(char *name, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int scale_fixing);
-extern sql_func *sql_create_func3(char *name, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *res, int scale_fixing);
-extern sql_func *sql_create_func4(char *name, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *res, int scale_fixing);
+sqlcommon_export sql_func *sql_create_func(char *name, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int scale_fixing);
+sqlcommon_export sql_func *sql_create_func3(char *name, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *res, int scale_fixing);
+sqlcommon_export sql_func *sql_create_func4(char *name, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *res, int scale_fixing);
 
-extern sql_func *sql_create_func_(char *name, char *imp, list *ops, sql_subtype *res);
+sqlcommon_export sql_func *sql_create_func_(char *name, char *imp, list *ops, sql_subtype *res);
 
-extern sql_func *sql_create_sqlfunc(char *name, char *imp, list *ops, sql_subtype *res );
+sqlcommon_export sql_func *sql_create_sqlfunc(char *name, char *imp, list *ops, sql_subtype *res );
 
-extern void types_init(int debug);
-extern void types_exit();
+sqlcommon_export void types_init(int debug);
+sqlcommon_export void types_exit();
 
 #endif /* SQL_TYPES_H */
 @c

@@ -52,9 +52,9 @@ typedef struct sql_base {
 	char *name;
 } sql_base;
 
-extern void base_init( sql_base *b, sqlid id, int flag, char *name );
+sqlcommon_export void base_init( sql_base *b, sqlid id, int flag, char *name );
 extern void base_set_name( sql_base *b, char *name );
-extern void base_destroy( sql_base *b );
+sqlcommon_export void base_destroy( sql_base *b );
 
 typedef struct sql_type {
 	sql_base base;
@@ -212,13 +212,13 @@ typedef struct changeset {
 	node *nelm;
 } changeset;
 
-extern void cs_init( changeset *cs, fdestroy destroy );
-extern void cs_destroy( changeset *cs );
-extern void cs_add( changeset *cs, void *elm, int flag );
-extern void cs_del( changeset *cs, node *elm, int flag );
-extern int cs_size( changeset * cs );
-extern node * cs_find_name(changeset * cs, char *name);
-extern node * cs_first_node(changeset *cs);
+sqlcommon_export void cs_init( changeset *cs, fdestroy destroy );
+sqlcommon_export void cs_destroy( changeset *cs );
+sqlcommon_export void cs_add( changeset *cs, void *elm, int flag );
+sqlcommon_export void cs_del( changeset *cs, node *elm, int flag );
+sqlcommon_export int cs_size( changeset * cs );
+sqlbat_export node * cs_find_name(changeset * cs, char *name);
+sqlcommon_export node * cs_first_node(changeset *cs);
 
 typedef struct sql_table {
 	sql_base base;
@@ -304,21 +304,21 @@ extern void kc_destroy(sql_kc * kc);
 extern void key_destroy(sql_key * k);
 extern void idx_destroy(sql_idx * i);
 
-extern node * list_find_name( list * l, char *name );
+sqlbat_export node * list_find_name( list * l, char *name );
 extern node * find_key_node(sql_table * t, char *kname);
 extern sql_key * find_key(sql_table * t, char *kname);
 extern node * find_idx_node(sql_table * t, char *kname);
 extern sql_idx * find_idx(sql_table * t, char *kname);
 extern node * find_column_node(sql_table * t, char *cname);
-extern sql_column * find_column(sql_table * t, char *cname);
+sqlbat_export sql_column * find_column(sql_table * t, char *cname);
 extern node * find_table_node(sql_schema * s, char *tname);
-extern sql_table * find_table(sql_schema * s, char *tname);
+sqlbat_export sql_table * find_table(sql_schema * s, char *tname);
 extern node * find_schema_node(sql_trans *t, char *sname);
-extern sql_schema *find_schema(sql_trans *t, char *sname);
+sqlbat_export sql_schema *find_schema(sql_trans *t, char *sname);
 extern node * find_module_node(sql_trans *t, char *mname);
-extern sql_module *find_module(sql_trans *t, char *mname);
+sqlbat_export sql_module *find_module(sql_trans *t, char *mname);
 extern node * find_type_node(sql_module * s, char *tname);
-extern sql_type * find_type(sql_module * s, char *tname);
-extern sql_type * sql_trans_bind_type(sql_trans *tr, char *name );
+sqlbat_export sql_type * find_type(sql_module * s, char *tname);
+sqlbat_export sql_type * sql_trans_bind_type(sql_trans *tr, char *name );
 
 #endif /* SQL_CATALOG_H */

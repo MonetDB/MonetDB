@@ -4,6 +4,12 @@
 #include "bat_store.h"
 
 node *
+cs_find_name(changeset * cs, char *name)
+{
+	return list_find_name(cs->set, name);
+}
+
+node *
 list_find_name( list * l, char *name )
 {
 	node *n;
