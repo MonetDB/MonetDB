@@ -42,6 +42,7 @@ MODULES.replace("algebra",   "plain");
 MODULES.replace("arith",     "plain");
 MODULES.replace("bat",       "plain");
 MODULES.replace("bitset",    "plain");
+MODULES.replace("bitvector", "plain");
 MODULES.replace("blob",      "plain");
 MODULES.replace("cluster",   "plain");
 MODULES.replace("counters",  "plain");
@@ -52,17 +53,22 @@ MODULES.replace("io",        "plain");
 MODULES.replace("iterator",  "plain");
 MODULES.replace("kernel",    "plain");
 MODULES.replace("lock",      "plain");
+MODULES.replace("malalgebra","plain");
 MODULES.replace("mmath",     "plain");
 MODULES.replace("monettime", "plain");
 MODULES.replace("mprof",     "plain");
 MODULES.replace("oo7",       "plain");
 MODULES.replace("perfex",    "plain");
+MODULES.replace("qt",        "plain");
 MODULES.replace("radix",     "plain");
+MODULES.replace("salgebra",  "plain");
+MODULES.replace("stats",     "plain");
 MODULES.replace("sys",       "plain");
 MODULES.replace("tcpip",     "plain");
 MODULES.replace("temporal",  "plain");
 MODULES.replace("tpcd",      "plain");
 MODULES.replace("trans",     "plain");
+MODULES.replace("uchr",      "plain");
 MODULES.replace("unix",      "plain");
 MODULES.replace("url",       "plain");
 MODULES.replace("vector",    "plain");
@@ -114,6 +120,7 @@ MODULES.sort.print;
 [ "arith",	  "static"	  ]
 [ "bat",	  "static"	  ]
 [ "bitset",	  "plain"	  ]
+[ "bitvector",	  "plain"	  ]
 [ "blob",	  "plain"	  ]
 [ "cluster",	  "plain"	  ]
 [ "counters",	  "plain"	  ]
@@ -124,19 +131,23 @@ MODULES.sort.print;
 [ "jOdmg",	  "odmg"	  ]
 [ "kernel",	  "static"	  ]
 [ "lock",	  "plain"	  ]
+[ "malalgebra",	  "plain"	  ]
 [ "mmath",	  "plain"	  ]
 [ "monettime",	  "plain"	  ]
 [ "mprof",	  "plain"	  ]
 [ "odmg",	  "odmg"	  ]
 [ "oo7",	  "plain"	  ]
 [ "radix",	  "plain"	  ]
+[ "salgebra",	  "plain"	  ]
 [ "signature",	  "odmg"	  ]
+[ "stats",	  "plain"	  ]
 [ "str",	  "static"	  ]
 [ "sys",	  "static"	  ]
 [ "tcpip",	  "plain"	  ]
 [ "temporal",	  "plain"	  ]
 [ "tpcd",	  "plain"	  ]
 [ "trans",	  "static"	  ]
+[ "uchr",	  "plain"	  ]
 [ "unix",	  "plain"	  ]
 [ "url",	  "plain"	  ]
 [ "wisc",	  "plain"	  ]
@@ -149,26 +160,26 @@ ls;
 #-----------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-----------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  39,	  0,	  "clean",	  "load", "pers", 1	  ]
+[ "MODULES",	  "str",  "str",  44,	  0,	  "clean",	  "load", "pers", 1	  ]
 
 dir;
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  39,	  0,	  "clean",	  "load", "pers", 1	  ]
+[ "MODULES",		  "str",  "str",  44,	  0,	  "clean",	  "load", "pers", 1	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  464,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  464,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  464,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  431,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  494,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  464,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  494,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1220,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  465,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  465,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  465,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  432,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  465,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1221,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  494,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  "str",  "oid",  494,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcntbl",	  "str",  "oid",  495,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_histo_mem",	  "lng",  "int",  19,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_histo_vm",	  "lng",  "int",  19,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -206,6 +217,7 @@ table(kdiff(view_modules.reverse,monet_mod_nme.reverse).sort.reverse.col_name("d
 [ "aggr"		  ]
 [ "alarm"		  ]
 [ "bitset"		  ]
+[ "bitvector"		  ]
 [ "blob"		  ]
 [ "cluster"		  ]
 [ "counters"		  ]
@@ -215,16 +227,20 @@ table(kdiff(view_modules.reverse,monet_mod_nme.reverse).sort.reverse.col_name("d
 [ "io"			  ]
 [ "jOdmg"		  ]
 [ "lock"		  ]
+[ "malalgebra"		  ]
 [ "mmath"		  ]
 [ "monettime"		  ]
 [ "mprof"		  ]
 [ "odmg"		  ]
 [ "oo7"			  ]
 [ "radix"		  ]
+[ "salgebra"		  ]
 [ "signature"		  ]
+[ "stats"		  ]
 [ "tcpip"		  ]
 [ "temporal"		  ]
 [ "tpcd"		  ]
+[ "uchr"		  ]
 [ "unix"		  ]
 [ "url"			  ]
 [ "wisc"		  ]

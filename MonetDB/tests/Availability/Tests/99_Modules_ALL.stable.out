@@ -46,23 +46,25 @@ All_mods@batloop {
    vector: loading... done.
       url: loading... done.
      unix: loading... done.
+     uchr: loading... done.
     trans: loaded.
      tpcd: loading... done.
  temporal: loading... done.
     tcpip: loading... done.
       sys: loaded.
       str: loaded.
-signature: loaded.
+    stats: loading... done.
+ salgebra: loading... done.
     radix: loading... done.
+       qt: loading... done.
    perfex: loading... done.
       oo7: loading... done.
-     odmg: loaded.
     mprof: loading... done.
 monettime: loading... done.
     mmath: loaded.
+malalgebra: loading... done.
      lock: loading... done.
    kernel: loaded.
-    jOdmg: loading... done.
  iterator: loading... done.
        io: loaded.
      enum: loading... done.
@@ -71,39 +73,25 @@ monettime: loading... done.
  counters: loading... done.
   cluster: loaded.
      blob: loaded.
-   bitset: loaded.
+bitvector: loaded.
+   bitset: loading... done.
       bat: loaded.
     arith: loaded.
   algebra: loaded.
     alarm: loading... done.
      aggr: loading... done.
-TransTest: loading... done.
-  TestUse: loading... done.
-    Test7: loading... done.
- OdmgTest: loading... done.
-     Meta: loaded.
-  CC_odmg: loaded.
-  CC_Test: loading... done.
-BasicOdmg: loaded.
 
 table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod_nme.count)));
 #-----------------#
 # 44 modules	  #
 #-----------------#
-[ "BasicOdmg"	  ]
-[ "CC_Test"	  ]
-[ "CC_odmg"	  ]
-[ "Meta"	  ]
-[ "OdmgTest"	  ]
-[ "Test7"	  ]
-[ "TestUse"	  ]
-[ "TransTest"	  ]
 [ "aggr"	  ]
 [ "alarm"	  ]
 [ "algebra"	  ]
 [ "arith"	  ]
 [ "bat"		  ]
 [ "bitset"	  ]
+[ "bitvector"	  ]
 [ "blob"	  ]
 [ "cluster"	  ]
 [ "counters"	  ]
@@ -112,23 +100,25 @@ table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod
 [ "enum"	  ]
 [ "io"		  ]
 [ "iterator"	  ]
-[ "jOdmg"	  ]
 [ "kernel"	  ]
 [ "lock"	  ]
+[ "malalgebra"	  ]
 [ "mmath"	  ]
 [ "monettime"	  ]
 [ "mprof"	  ]
-[ "odmg"	  ]
 [ "oo7"		  ]
 [ "perfex"	  ]
+[ "qt"		  ]
 [ "radix"	  ]
-[ "signature"	  ]
+[ "salgebra"	  ]
+[ "stats"	  ]
 [ "str"		  ]
 [ "sys"		  ]
 [ "tcpip"	  ]
 [ "temporal"	  ]
 [ "tpcd"	  ]
 [ "trans"	  ]
+[ "uchr"	  ]
 [ "unix"	  ]
 [ "url"		  ]
 [ "vector"	  ]

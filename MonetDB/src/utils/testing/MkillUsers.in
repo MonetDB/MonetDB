@@ -18,7 +18,7 @@ s3=-9
 
 if [ ! "$files" ] ; then  exit 0 ; fi
 
-function  LOG1  () { echo -e "${0##*/}:\t$*" ; }
+function  LOG1  () { echo -e "${0##*/} (`date +%H:%M:%S`):\t$*" ; }
 function  LOG2  () {  LOG1 $* ; LOG1 $* >&2 ; }
 function fLOG2  () {  LOG2 $*        1>>$TMP.out 2>>$TMP.err ; }
 function fLOG2x () { fLOG2 $* ; "$@" 1>>$TMP.out 2>>$TMP.err ; }

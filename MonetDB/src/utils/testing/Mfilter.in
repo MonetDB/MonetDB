@@ -43,29 +43,30 @@ function mFilter () {
 #	tail +"$L" $FILE  \
 	cat $FILE  \
 	  | awk 'BEGIN { p = 1; } /^#~BeginVariableOutput~#$/ { p = 2; n = 0; } p==2 && ! /^!/ { print "#~", $0; n++; } p==1 || /^!/ { print $0; } /^#~EndVariableOutput~#$/ { p = 1; print "~",n,"~"; }'  \
-	  | awk 'BEGIN { p = 1; } /^#~BeginLoadingModule~#$/ { p = 2; n = 0; } p==2 && ! /^!/ { n++; } p==1 || /^!/ { print $0; } /^#~EndLoadingModule~#$/ { p = 1; n--; print "~ Module load sequence: skipped",n,"echoed lines. ~"; }'  \
 	  | sed	-e "s|^\(Mdestroydb: processing database ..*. in \)|#~ \1|g"  \
 		-e "s|^\(Mcreatedb: processing database ..*. in \)|#~ \1|g"  \
-		-e "s|^\(Mcreatedb: calling .Mserver -db .*. for the first time..\)$|#~ \1|g"  \
-		-e "s|^\(Mcreatedb: database ..*. has been initialized succesfully!\)$|#~ \1|g"  \
 		-e "s|^\(Mcreatedb: using default dbdir \)|#~ \1|g"  \
-		-e "s|^\(!WARNING: BATsave(.*): saving tail as [il]n[tg] instead of ptr.\)$|#~ \1|g"  \
-		-e "s|^\(fork(listen(.*));\)$|#~ \1|g"  \
-		-e "s|^\(Connecting to server: localhost:[0-9]*\)$|#~ \1|g"  \
-		-e "s|^\(Mother of child(null): Person_new(oid([0-9]*))\)$|#~ \1|g"  \
-		-e "s|^\([a-zA-Z0-9_]*\.import(./[^)]*.);\)$|#~ \1|g"  \
-		-e "s|^\(!WARNING: TCPepilogue: terminate [01] listeners\)$|#~ \1|g"  \
-		-e "s|^\(!WARNING: TCPlisten([0-9]*): stopped.\)$|#~ \1|g"  \
 		-e "s|^\(connection= .*:[0-9]*\)$|#~ \1|g"  \
-		-e "s|^\(openDM listening to port [0-9]*\)$|#~ \1|g"  \
-		-e "s|^!ERROR: ([0-9]*): \([^ ]*::[^ ]*: .*\)$|MAS ERROR: \1|g" \
-		-e "s|^\(!ERROR: binding to stream socket ([0-9]*) failed\)$|#~ \1|g"  \
-		-e "s|^\(Address already in use\)$|#~ \1|g"  \
-		-e "s|^\(Try: modules;                - for other modules.\)$|#~ \1|g"  \
-		-e "s|^\(     ls;                     - for persistent bat listing.\)$|#~ \1|g"  \
-		-e "s|^\(     sigs(.<module>.)        - for available commands per module.\)$|#~ \1|g"  \
-		-e "s|^\(     help(.<command>.)       - for help one-liner for a command.\)$|#~ \1|g"  \
-	    > $TMP
+		-e "s|^\(Connecting to server: localhost:[0-9]*\)$|#~ \1|g"  \
+	  > $TMP
+# # # #	  | awk 'BEGIN { p = 1; } /^#~BeginLoadingModule~#$/ { p = 2; n = 0; } p==2 && ! /^!/ { n++; } p==1 || /^!/ { print $0; } /^#~EndLoadingModule~#$/ { p = 1; n--; print "~ Module load sequence: skipped",n,"echoed lines. ~"; }'  \
+# # # #		-e "s|^\(Mcreatedb: calling .Mserver -db .*. for the first time..\)$|#~ \1|g"  \
+# # # #		-e "s|^\(Mcreatedb: database ..*. has been initialized succesfully!\)$|#~ \1|g"  \
+# # # #		-e "s|^\(!WARNING: BATsave(.*): saving tail as [il]n[tg] instead of ptr.\)$|#~ \1|g"  \
+# # # #		-e "s|^\(fork(listen(.*));\)$|#~ \1|g"  \
+# # # #		-e "s|^\(Mother of child(null): Person_new(oid([0-9]*))\)$|#~ \1|g"  \
+# # # #		-e "s|^\([a-zA-Z0-9_]*\.import(./[^)]*.);\)$|#~ \1|g"  \
+# # # #		-e "s|^\(!WARNING: TCPepilogue: terminate [01] listeners\)$|#~ \1|g"  \
+# # # #		-e "s|^\(!WARNING: TCPlisten([0-9]*): stopped.\)$|#~ \1|g"  \
+# # # #		-e "s|^\(openDM listening to port [0-9]*\)$|#~ \1|g"  \
+# # # #		-e "s|^!ERROR: ([0-9]*): \([^ ]*::[^ ]*: .*\)$|MAS ERROR: \1|g" \
+# # # #		-e "s|^\(!ERROR: binding to stream socket ([0-9]*) failed\)$|#~ \1|g"  \
+# # # #		-e "s|^\(Address already in use\)$|#~ \1|g"  \
+# # # #		-e "s|^\(Try: modules;                - for other modules.\)$|#~ \1|g"  \
+# # # #		-e "s|^\(     ls;                     - for persistent bat listing.\)$|#~ \1|g"  \
+# # # #		-e "s|^\(     sigs(.<module>.)        - for available commands per module.\)$|#~ \1|g"  \
+# # # #		-e "s|^\(     help(.<command>.)       - for help one-liner for a command.\)$|#~ \1|g"  \
+# # # #	    > $TMP
 #	  | sed -e "s|^\(M[creatdsoy]*db: \)|#- \1|g"  \
 #	        -e "s|^\([^#][^-].*$OSVER\)|#- \1|g"  \
 #	        -e "s|^\([^#][^-].*$OS\)|#- \1|g"  \

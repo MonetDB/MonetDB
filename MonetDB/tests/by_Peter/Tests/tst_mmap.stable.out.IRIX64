@@ -4,7 +4,7 @@ stdout of test 'tst_mmap` in directory 'tests/by_Peter` itself:
 #> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_by_Peter tst_mmap.milM
 # Monet Database Server V4.1
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Tue Apr 11 05:46:23 MET DST 2000.
+# compiled for SunOS5.7/32bit on Wed Jun  7 07:15:00 MET DST 2000.
 #script:tst_mmap.milM
 
 loaded;
@@ -63,7 +63,7 @@ while(i < 10) {
 # BAT:			  tmp_31	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "theap.storage",	  "malloced"	  ]
+[ "theap.storage",	  "private map"	  ]
 [ 60000 ]
 #-------------------------------------------------#
 # BAT:			  tmp_31		  #
@@ -71,11 +71,11 @@ while(i < 10) {
 #-------------------------------------------------#
 [ "theap.storage",	  "memory mapped"	  ]
 [ 80000 ]
-#-----------------------------------------#
-# BAT:			  tmp_31	  #
-# (str)			  (str)		  #
-#-----------------------------------------#
-[ "theap.storage",	  "malloced"	  ]
+#-------------------------------------------------#
+# BAT:			  tmp_31		  #
+# (str)			  (str)			  #
+#-------------------------------------------------#
+[ "theap.storage",	  "memory mapped"	  ]
 [ 100000 ]
 #-------------------------------------------------#
 # BAT:			  tmp_31		  #
@@ -83,11 +83,11 @@ while(i < 10) {
 #-------------------------------------------------#
 [ "theap.storage",	  "memory mapped"	  ]
 [ 120000 ]
-#-----------------------------------------#
-# BAT:			  tmp_31	  #
-# (str)			  (str)		  #
-#-----------------------------------------#
-[ "theap.storage",	  "malloced"	  ]
+#-------------------------------------------------#
+# BAT:			  tmp_31		  #
+# (str)			  (str)			  #
+#-------------------------------------------------#
+[ "theap.storage",	  "memory mapped"	  ]
 [ 140000 ]
 #-------------------------------------------------#
 # BAT:			  tmp_31		  #
@@ -95,11 +95,11 @@ while(i < 10) {
 #-------------------------------------------------#
 [ "theap.storage",	  "memory mapped"	  ]
 [ 160000 ]
-#-----------------------------------------#
-# BAT:			  tmp_31	  #
-# (str)			  (str)		  #
-#-----------------------------------------#
-[ "theap.storage",	  "malloced"	  ]
+#-------------------------------------------------#
+# BAT:			  tmp_31		  #
+# (str)			  (str)			  #
+#-------------------------------------------------#
+[ "theap.storage",	  "memory mapped"	  ]
 [ 180000 ]
 #-------------------------------------------------#
 # BAT:			  tmp_31		  #
@@ -109,11 +109,11 @@ while(i < 10) {
 [ 200000 ]
 
 aa.info.reverse.select("theap.storage").reverse.print;
-#-----------------------------------------#
-# BAT:			  tmp_31	  #
-# (str)			  (str)		  #
-#-----------------------------------------#
-[ "theap.storage",	  "malloced"	  ]
+#-------------------------------------------------#
+# BAT:			  tmp_31		  #
+# (str)			  (str)			  #
+#-------------------------------------------------#
+[ "theap.storage",	  "memory mapped"	  ]
 aa.persists(false);
 commit;
 

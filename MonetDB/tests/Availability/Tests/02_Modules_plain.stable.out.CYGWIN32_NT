@@ -41,11 +41,12 @@ Fnts:=new(oid,str);
 Plain_mods:=MODULES.select("plain").copy.access(BAT_WRITE).delete("mprof","plain").sort.copy.access(BAT_WRITE).insert("mprof","plain");
 table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 #-----------------#
-# 23 modules	  #
+# 24 modules	  #
 #-----------------#
 [ "aggr"	  ]
 [ "alarm"	  ]
 [ "bitset"	  ]
+[ "bitvector"	  ]
 [ "blob"	  ]
 [ "cluster"	  ]
 [ "counters"	  ]
@@ -54,13 +55,17 @@ table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 [ "enum"	  ]
 [ "io"		  ]
 [ "lock"	  ]
+[ "malalgebra"	  ]
 [ "mmath"	  ]
 [ "monettime"	  ]
 [ "oo7"		  ]
 [ "radix"	  ]
+[ "salgebra"	  ]
+[ "stats"	  ]
 [ "tcpip"	  ]
 [ "temporal"	  ]
 [ "tpcd"	  ]
+[ "uchr"	  ]
 [ "unix"	  ]
 [ "url"		  ]
 [ "wisc"	  ]
@@ -118,8 +123,8 @@ Plain_mods@batloop {
 
 Module: "aggr"
 
-[ 19 ]
-[ 19 ]
+[ 18 ]
+[ 18 ]
 #---------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature							| help				  #
 #---------------------------------------------------------------------------------------------------------------------------------#
@@ -133,7 +138,6 @@ Module: "aggr"
 [ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,sht]",		  "grouped tail average"	  ]
 [ "{card}",	  "PROC: ",	  "{card}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",		  "not available"		  ]
 [ "{count}",	  "COMMAND: ",	  "{count}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",		  "grouped count"		  ]
-[ "{count}",	  "PROC: ",	  "{count}(BAT[any::1,any::2]) : BAT[any::1,int]",		  "not available"		  ]
 [ "{max}",	  "COMMAND: ",	  "{max}(BAT[oid,any::1], BAT[oid,any]) : BAT[oid,any::1]",	  "grouped tail maximum"	  ]
 [ "{min}",	  "COMMAND: ",	  "{min}(BAT[oid,any::1], BAT[oid,any]) : BAT[oid,any::1]",	  "grouped tail minimum"	  ]
 [ "{size}",	  "COMMAND: ",	  "{size}(BAT[oid,bit], BAT[oid,any]) : BAT[oid,int]",		  "grouped count of true values"  ]
@@ -177,6 +181,25 @@ Module: "bitset"
 [ "newBitset",		  "COMMAND: ",	  "newBitset() : bitset",			  "Create a new empty BitSet."				  ]
 [ "newBitset",		  "COMMAND: ",	  "newBitset(int) : bitset",			  "Create a new BitSet from an existing integer."	  ]
 
+Module: "bitvector"
+
+[ 11 ]
+[ 11 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature						| help							  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "[allocate]",	  "COMMAND: ",	  "[allocate](int, bit) : BAT[void,lng]",		  "Allocate a new and empty bitvector"			  ]
+[ "[and]",	  "COMMAND: ",	  "[and](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",  "Logically ANDs two bitvectors"			  ]
+[ "[clr]",	  "COMMAND: ",	  "[clr](BAT[any::1,lng], int) : void",			  "Clear a bit in a bitvector"				  ]
+[ "[count]",	  "COMMAND: ",	  "[count](BAT[void,lng]) : int",			  "Count the number of bits set"			  ]
+[ "[decode]",	  "COMMAND: ",	  "[decode](BAT[void,lng]) : BAT[oid,oid]",		  "Decodes a bitvector into a real BAT"			  ]
+[ "[encode]",	  "COMMAND: ",	  "[encode](BAT[any::1,oid]) : BAT[void,lng]",		  "Encode a BAT with tail values into a bitvector"	  ]
+[ "[isclr]",	  "COMMAND: ",	  "[isclr](BAT[any::1,lng], int) : bit",		  "Is bit bnum not set?"				  ]
+[ "[isset]",	  "COMMAND: ",	  "[isset](BAT[any::1,lng], int) : bit",		  "Is bit bnum set?"					  ]
+[ "[or]",	  "COMMAND: ",	  "[or](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",	  "Logically ORs two bitvectors"			  ]
+[ "[prt]",	  "COMMAND: ",	  "[prt](BAT[void,lng]) : void",			  "Print a bitvector"					  ]
+[ "[set]",	  "COMMAND: ",	  "[set](BAT[any::1,lng], int) : void",			  "Set a bit in a bitvector"				  ]
+
 Module: "blob"
 
 [ 3 ]
@@ -201,17 +224,18 @@ Module: "cluster"
 
 Module: "counters"
 
-[ 6 ]
-[ 6 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature				| help							  #
-#-----------------------------------------------------------------------------------------------------------------------------------------#
-[ "create_counter",	  "COMMAND: ",	  "create_counter(int, int) : counter",	  "start counters for two events specified by number"	  ]
-[ "create_counter",	  "COMMAND: ",	  "create_counter(str, str) : counter",	  "start counters for two events specified by name"	  ]
-[ "get_counter",	  "COMMAND: ",	  "get_counter(counter) : counter",	  "stop the counting and retrieve the results"		  ]
-[ "read_counter",	  "COMMAND: ",	  "read_counter(counter) : BAT[str,lng]", "store the retrieved results in a BAT"		  ]
-[ "show_native_events",	  "COMMAND: ",	  "show_native_events() : BAT[int,str]",  "all available events"				  ]
-[ "show_unified_events",  "COMMAND: ",	  "show_unified_events() : BAT[int,str]", "all unified event names"				  ]
+[ 7 ]
+[ 7 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature				| help													  #
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "check_cpu",		  "COMMAND: ",	  "check_cpu() : void",			  "on Linux systems: check, whether CPU is P5, P6, or K7\n  (to be used in .LOAD sequence, only)"	  ]
+[ "create_counter",	  "COMMAND: ",	  "create_counter(int, int) : counter",	  "start counters for two events specified by number"							  ]
+[ "create_counter",	  "COMMAND: ",	  "create_counter(str, str) : counter",	  "start counters for two events specified by name"							  ]
+[ "get_counter",	  "COMMAND: ",	  "get_counter(counter) : counter",	  "stop the counting and retrieve the results"								  ]
+[ "read_counter",	  "COMMAND: ",	  "read_counter(counter) : BAT[str,lng]", "store the retrieved results in a BAT"								  ]
+[ "show_native_events",	  "COMMAND: ",	  "show_native_events() : BAT[int,str]",  "all available events"										  ]
+[ "show_unified_events",  "COMMAND: ",	  "show_unified_events() : BAT[int,str]", "all unified event names"										  ]
 
 Module: "ddbench"
 
@@ -377,10 +401,32 @@ Module: "lock"
 [ "sema_try",	  "COMMAND: ",	  "sema_try(sema) : int",	  "try the semaphpore"					  ]
 [ "sema_up",	  "COMMAND: ",	  "sema_up(sema) : void",	  "increase the semaphore"				  ]
 
+Module: "malalgebra"
+
+[ 14 ]
+[ 14 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature									| help								  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "fetchjoin",	  "COMMAND: ",	  "fetchjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the fetch implementation of the join."	  ]
+[ "hashjoin",	  "COMMAND: ",	  "hashjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the hash implementation of the join."	  ]
+[ "indexjoin",	  "COMMAND: ",	  "indexjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the index implementation of the join."	  ]
+[ "mergejoin",	  "COMMAND: ",	  "mergejoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the merge implementation of the join."	  ]
+[ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "grouped tail sum"						  ]
+[ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "grouped tail sum"						  ]
+[ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,int]) : BAT[oid,int]",					  "grouped tail sum"						  ]
+[ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "grouped tail sum"						  ]
+[ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "grouped tail sum"						  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "not available"						  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,int]) : BAT[oid,int]",					  "not available"						  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "not available"						  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "not available"						  ]
+
 Module: "mmath"
 
-[ 19 ]
-[ 19 ]
+[ 20 ]
+[ 20 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature			| help																																											  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -398,6 +444,7 @@ Module: "mmath"
 [ "log",	  "COMMAND: ",	  "log(dbl) : dbl",		  "The log(x) function returns the natural logarithm of x."																																				  ]
 [ "log10",	  "COMMAND: ",	  "log10(dbl) : dbl",		  "The log10(x) function returns the base-10 logarithm of x."																																				  ]
 [ "pow",	  "COMMAND: ",	  "pow(dbl, dbl) : dbl",	  "The pow(x,y) function  returns the value of x raised to the power of y."																																		  ]
+[ "round",	  "COMMAND: ",	  "round(dbl, int) : dbl",	  "The round(n, m) returns n rounded to m places to the right of the\ndecimal point; if m is omitted, to 0 places. m can be negative to\nround off digits left of the decimal point. m must be an integer."																		  ]
 [ "sin",	  "COMMAND: ",	  "sin(dbl) : dbl",		  "The sin(x) function returns the cosine of x,\nwhere x is given in radians. The return value is between -1 and 1."																													  ]
 [ "sinh",	  "COMMAND: ",	  "sinh(dbl) : dbl",		  "The sinh() function  returns  the  hyperbolic sine of x,\nwhich is defined mathematically as (exp(x) - exp(-x)) / 2."																												  ]
 [ "sqrt",	  "COMMAND: ",	  "sqrt(dbl) : dbl",		  "The sqrt(x) function returns the non-negative square root of x."																																			  ]
@@ -406,8 +453,8 @@ Module: "mmath"
 
 Module: "monettime"
 
-[ 65 ]
-[ 65 ]
+[ 66 ]
+[ 66 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature														| help													  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -460,6 +507,7 @@ Module: "monettime"
 [ "monthnum",		  "COMMAND: ",	  "monthnum(str) : int",												  "Returns month number [1-12] from a string; or nil if does not match any (!DS2.2)."			  ]
 [ "msecs",		  "PROC: ",	  "msecs(int, int, int, int, int) : lng",										  "not available"											  ]
 [ "olddate",		  "COMMAND: ",	  "olddate(str) : date",												  "create a date from the old instant format."								  ]
+[ "oldduration",	  "COMMAND: ",	  "oldduration(str) : int",												  "parse the old duration format and return an (estimated) number of days."				  ]
 [ "rule",		  "COMMAND: ",	  "rule(int, int, int, int) : rule",											  "create a DST start/end date rule. (!DS2.2)"								  ]
 [ "rule",		  "PROC: ",	  "rule(int, int, int, int, int) : rule",										  "not available"											  ]
 [ "rule",		  "PROC: ",	  "rule(int, str, int, int) : rule",											  "not available"											  ]
@@ -520,6 +568,39 @@ Module: "radix"
 [ "uniform",		  "COMMAND: ",	  "uniform(oid, int, int) : BAT[oid,int]",							  "create a random bat of certain size, head values unique, tail values\n perfect uniform from a certain domain (domain>size => unique tails)."								  ]
 [ "uniform",		  "PROC: ",	  "uniform(int) : BAT[oid,int]",								  "not available"																							  ]
 [ "uniform",		  "PROC: ",	  "uniform(int, int) : BAT[oid,int]",								  "not available"																							  ]
+
+Module: "salgebra"
+
+[ 12 ]
+[ 12 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature							| help									  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "CHbat",	  "COMMAND: ",	  "CHbat(clusterhash) : BAT[void,any]",				  "Provides access to the original bat."				  ]
+[ "CHdir",	  "PROC: ",	  "CHdir() : void",						  "List the clusterhash dictionary."					  ]
+[ "CHdrop",	  "COMMAND: ",	  "CHdrop() : void",						  "Drop the module"							  ]
+[ "CHinit",	  "COMMAND: ",	  "CHinit() : void",						  "Initialize the module"						  ]
+[ "clusterhash",  "COMMAND: ",	  "clusterhash(BAT[any,any]) : clusterhash",			  "Build a new or get a previously built clusterhash for the input bat."  ]
+[ "destroy",	  "COMMAND: ",	  "destroy(str) : void",					  "Destroy the clusterhash with name chname (if possible)."		  ]
+[ "info",	  "COMMAND: ",	  "info(clusterhash) : BAT[str,str]",				  "Return some info about the chash."					  ]
+[ "rename",	  "COMMAND: ",	  "rename(clusterhash, str) : void",				  "Try to name ch; fail upon error."					  ]
+[ "select",	  "PROC: ",	  "select(clusterhash, any::1) : BAT[oid,any::1]",		  "Select using a clusterhash uselect plus a cast."			  ]
+[ "ujoin",	  "COMMAND: ",	  "ujoin(clusterhash, BAT[any,any]) : BAT[oid,void]",		  "Return join(ch, b).mark(nil) with propagated clustering."		  ]
+[ "uselect",	  "COMMAND: ",	  "uselect(clusterhash, any) : BAT[oid,void]",			  "Return select(ch, v).mark(nil) with propagated clustering."		  ]
+[ "usortedjoin",  "COMMAND: ",	  "usortedjoin(clusterhash, BAT[any,any]) : BAT[oid,void]",	  "Return join(ch, b).mark(nil).sort with propagated clustering."	  ]
+
+Module: "stats"
+
+[ 5 ]
+[ 5 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+# function			| type		| signature						| help					  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "[stats_add]",		  "COMMAND: ",	  "[stats_add](ptr, lng) : void",			  "Add a value to a statistics object."	  ]
+[ "[stats_del]",		  "COMMAND: ",	  "[stats_del](ptr) : void",				  "Delete a statistics object."		  ]
+[ "[stats_histogram_new]",	  "COMMAND: ",	  "[stats_histogram_new](str, int, int, lng) : ptr",	  "Construct a new statistics object."	  ]
+[ "[stats_new]",		  "COMMAND: ",	  "[stats_new](str) : ptr",				  "Construct a new statistics object."	  ]
+[ "[stats_report]",		  "COMMAND: ",	  "[stats_report](ptr, str) : void",			  "Generate results."			  ]
 
 Module: "tcpip"
 
@@ -631,6 +712,14 @@ Module: "tpcd"
 [ "{sum}",	  "COMMAND: ",	  "{sum}(BAT[int,int], BAT[int,any]) : BAT[int,int]",					  "grouped tail sum"																  ]
 [ "{sum}",	  "COMMAND: ",	  "{sum}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",					  "grouped tail sum"																  ]
 [ "{sum}",	  "COMMAND: ",	  "{sum}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",					  "grouped tail sum"																  ]
+
+Module: "uchr"
+
+[ 0 ]
+[ 0 ]
+#-------------------------------------------------#
+# function	| type	| signature	| help	  #
+#-------------------------------------------------#
 
 Module: "unix"
 

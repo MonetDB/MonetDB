@@ -2,7 +2,7 @@ setoid(oid(20000000));
 
 #All_mods:=MODULES.sort.copy;
 module("cluster");
-module(Meta);
+# # module(Meta);
 All_mods:=MODULES.sort.copy.access(BAT_WRITE).revert;
 All_mods@batloop {
 	printf("%9s: ",$h);

@@ -4,7 +4,7 @@ stdout of test 'tst_writestr` in directory 'tests/by_Peter` itself:
 #> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_by_Peter tst_writestr.milM
 # Monet Database Server V4.1
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Tue Apr 11 05:46:23 MET DST 2000.
+# compiled for Linux2.2.12-20smp/32bit on Wed Apr 12 05:50:14 CEST 2000.
 #script:tst_writestr.milM
 
 loaded;
@@ -66,13 +66,13 @@ while(true) {
 # BAT:			  tmp_31	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "theap.storage",	  "malloced"	  ]
+[ "theap.storage",	  "private map"	  ]
 [ 1500000 ]
 #-----------------------------------------#
 # BAT:			  tmp_31	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "theap.storage",	  "anonymous vm"  ]
+[ "theap.storage",	  "private map"	  ]
 [ 2000000 ]
 #-----------------------------------------#
 # BAT:			  tmp_31	  #

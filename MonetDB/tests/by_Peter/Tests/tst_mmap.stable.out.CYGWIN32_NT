@@ -1,10 +1,10 @@
 stdout of test 'tst_mmap` in directory 'tests/by_Peter` itself:
 
 #> Mtest:	milM tst_mmap milM
-#> Mtest:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_by_Peter tst_mmap.milM
+#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_by_Peter tst_mmap.milM
 # Monet Database Server V4.1
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for CYGWIN32_NT4.0/32bit on Thu Feb 24 03:32:02  2000.
+# compiled for SunOS5.7/32bit on Wed Jun  7 07:15:00 MET DST 2000.
 #script:tst_mmap.milM
 
 loaded;
@@ -53,17 +53,17 @@ while(i < 10) {
  unload("aa");
  i :+= 1;
 }
-#-----------------------------------------#
-# BAT:			  tmp_31	  #
-# (str)			  (str)		  #
-#-----------------------------------------#
+#-------------------------------------------------#
+# BAT:			  tmp_31		  #
+# (str)			  (str)			  #
+#-------------------------------------------------#
 [ "theap.storage",	  "memory mapped"	  ]
 [ 40000 ]
 #-----------------------------------------#
 # BAT:			  tmp_31	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "theap.storage",	  "memory mapped"	  ]
+[ "theap.storage",	  "private map"	  ]
 [ 60000 ]
 #-------------------------------------------------#
 # BAT:			  tmp_31		  #

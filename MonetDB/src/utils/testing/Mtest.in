@@ -77,7 +77,7 @@ function ErrMsg () { echo "$THISFILE ERROR: $*" | tee -a $LOGFILE.* >&2 ; }
 
 function ErrXit () { if [ "$*" ] ; then  ErrMsg "$*" ; fi ; rm -f $TMPDIR/.$THISFILE.* ; exit 1 ; }
 
- function LOG1 () { echo -e "#> ${0##*/}:\t$*" >&2 ; }
+ function LOG1 () { echo -e "#> ${0##*/} (`date +%H:%M:%S`):\t$*" >&2 ; }
  function LOG2 () { LOG1 $* 2>&1 ; LOG1 $* ; }
  
  function LOG1x () { LOG1 $* ; "$@" ; }
@@ -773,6 +773,16 @@ function CheckBATs () {
 	fi
 } # CheckBATs ()
 
+function CheckExec () {
+	local EXE="$1" ; if [ "$1" ] ; then  shift ; fi
+
+	for p in `echo $MONETPATH | sed 's|:| |g'` ; do
+		if [ -x $p/$EXE ] ; then
+			echo "$p/$EXE"
+		fi
+	done
+} # CheckExec ()
+
 function MtestIt () {
 	local TST="$1" ; if [ "$1" ] ; then  shift ; fi
 
@@ -795,9 +805,9 @@ function MtestIt () {
 
 	cd $TSTTRGDIR
 	ReqMshdn="|milC|"
-	if [ "$ReqMshdn" != "${ReqMshdn%|$EXT|*}"  -a  ! -x $MONETDISTPREFIX/bin/Mshutdown  -a  ! -x $MONETHOMEPREFIX/bin/Mshutdown ] ; then
+	if [ "$ReqMshdn" != "${ReqMshdn%|$EXT|*}"  -a  ! "`CheckExec Mshutdown`" ] ; then
 		SkipTest "as Mshutdown is not available." $TST $EXT
-	  elif [ "$EXT" = "milC"  -a  ! -x $MONETDISTPREFIX/bin/Mclient  -a  ! -x $MONETHOMEPREFIX/bin/Mclient ] ; then
+	  elif [ "$EXT" = "milC"  -a  ! "`CheckExec Mclient`" ] ; then
 		SkipTest "as Mclient is not available." $TST $EXT
 #	  elif [ "$EXT" = "milC"  -a  $OSVER = CYGWIN32_NT4.0 ] ; then
 #		SkipTest "as Mclient is not working on CYGWIN32_NT4.0." $TST $EXT

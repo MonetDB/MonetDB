@@ -4,7 +4,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 #> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_sigs -single none.milS
 # Monet Database Server V4.1
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for AIX4.3/32bit on Sat May 27 02:27:35 NFT 2000.
+# compiled for CYGWIN32_NT4.0/32bit on Thu Feb 24 03:32:02  2000.
 #script:none.milS
 
 loaded;
@@ -67,6 +67,7 @@ loaded;
 [ "arith",	  nil	  ]
 [ "bat",	  nil	  ]
 [ "bitset",	  nil	  ]
+[ "bitvector",	  nil	  ]
 [ "blob",	  nil	  ]
 [ "cluster",	  nil	  ]
 [ "counters",	  nil	  ]
@@ -77,19 +78,23 @@ loaded;
 [ "jOdmg",	  nil	  ]
 [ "kernel",	  nil	  ]
 [ "lock",	  nil	  ]
+[ "malalgebra",	  nil	  ]
 [ "mmath",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mprof",	  nil	  ]
 [ "odmg",	  nil	  ]
 [ "oo7",	  nil	  ]
 [ "radix",	  nil	  ]
+[ "salgebra",	  nil	  ]
 [ "signature",	  nil	  ]
+[ "stats",	  nil	  ]
 [ "str",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "tcpip",	  nil	  ]
 [ "temporal",	  nil	  ]
 [ "tpcd",	  nil	  ]
 [ "trans",	  nil	  ]
+[ "uchr",	  nil	  ]
 [ "unix",	  nil	  ]
 [ "url",	  nil	  ]
 [ "wisc",	  nil	  ]
@@ -190,13 +195,17 @@ others:=kdiff(view_modules.reverse,monet_mod_nme.reverse).access(BAT_WRITE).dele
 [ "wisc",	  nil	  ]
 [ "url",	  nil	  ]
 [ "unix",	  nil	  ]
+[ "uchr",	  nil	  ]
 [ "tpcd",	  nil	  ]
 [ "temporal",	  nil	  ]
 [ "tcpip",	  nil	  ]
+[ "stats",	  nil	  ]
+[ "salgebra",	  nil	  ]
 [ "radix",	  nil	  ]
 [ "oo7",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mmath",	  nil	  ]
+[ "malalgebra",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "jOdmg",	  nil	  ]
 [ "io",		  nil	  ]
@@ -205,6 +214,7 @@ others:=kdiff(view_modules.reverse,monet_mod_nme.reverse).access(BAT_WRITE).dele
 [ "ddbench",	  nil	  ]
 [ "counters",	  nil	  ]
 [ "blob",	  nil	  ]
+[ "bitvector",	  nil	  ]
 [ "alarm",	  nil	  ]
 [ "aggr",	  nil	  ]
 [ "TransTest",	  nil	  ]
@@ -334,7 +344,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "url",	  1		  ]
 #-----------------#
-# BAT:	  tmp_78  #
+# BAT:	  tmp_76  #
 # (str)	  (void)  #
 #-----------------#
 [ "url",  nil	  ]
@@ -378,12 +388,56 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "unix",	  1		  ]
 #-----------------#
-# BAT:	  tmp_76  #
+# BAT:	  tmp_74  #
 # (str)	  (void)  #
 #-----------------#
 [ "unix", nil	  ]
 
 	dropping unix
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading uchr
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  1		  ]
+#-----------------#
+# BAT:	  tmp_78  #
+# (str)	  (void)  #
+#-----------------#
+[ "uchr", nil	  ]
+
+	dropping uchr
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -422,7 +476,7 @@ others@batloop{
 [ "tpcd",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_74  #
+# BAT:	  tmp_78  #
 # (str)	  (void)  #
 #-----------------#
 [ "tpcd", nil	  ]
@@ -466,7 +520,7 @@ others@batloop{
 [ "temporal",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_78  #
+# BAT:		  tmp_76  #
 # (str)		  (void)  #
 #-------------------------#
 [ "temporal",	  nil	  ]
@@ -510,12 +564,100 @@ others@batloop{
 [ "tcpip",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_74  #
+# BAT:		  tmp_78  #
 # (str)		  (void)  #
 #-------------------------#
 [ "tcpip",	  nil	  ]
 
 	dropping tcpip
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading stats
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "stats",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_74  #
+# (str)		  (void)  #
+#-------------------------#
+[ "stats",	  nil	  ]
+
+	dropping stats
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading salgebra
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  2		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "salgebra",	  1		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_79  #
+# (str)		  (void)  #
+#-------------------------#
+[ "salgebra",	  nil	  ]
+
+	dropping salgebra
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -554,7 +696,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_78  #
+# BAT:		  tmp_76  #
 # (str)		  (void)  #
 #-------------------------#
 [ "radix",	  nil	  ]
@@ -598,7 +740,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_79  #
+# BAT:	  tmp_78  #
 # (str)	  (void)  #
 #-----------------#
 [ "oo7",  nil	  ]
@@ -642,7 +784,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_78  #
+# BAT:		  tmp_74  #
 # (str)		  (void)  #
 #-------------------------#
 [ "monettime",	  nil	  ]
@@ -686,12 +828,56 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_79  #
+# BAT:		  tmp_78  #
 # (str)		  (void)  #
 #-------------------------#
 [ "mmath",	  nil	  ]
 
 	dropping mmath
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading malalgebra
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "malalgebra",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_78  #
+# (str)		  (void)  #
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+
+	dropping malalgebra
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -730,7 +916,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_78  #
+# BAT:	  tmp_74  #
 # (str)	  (void)  #
 #-----------------#
 [ "lock", nil	  ]
@@ -777,7 +963,7 @@ others@batloop{
 [ "tcpip",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_78  #
+# BAT:		  tmp_74  #
 # (str)		  (void)  #
 #-------------------------#
 [ "jOdmg",	  nil	  ]
@@ -834,7 +1020,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_80  #
+# BAT:	  tmp_78  #
 # (str)	  (void)  #
 #-----------------#
 [ "io",	  nil	  ]
@@ -884,7 +1070,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_79  #
+# BAT:	  tmp_80  #
 # (str)	  (void)  #
 #-----------------#
 [ "enum", nil	  ]
@@ -936,7 +1122,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_81  #
+# BAT:		  tmp_79  #
 # (str)		  (void)  #
 #-------------------------#
 [ "decimal",	  nil	  ]
@@ -984,7 +1170,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_80  #
+# BAT:		  tmp_78  #
 # (str)		  (void)  #
 #-------------------------#
 [ "ddbench",	  nil	  ]
@@ -1044,7 +1230,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_80  #
+# BAT:		  tmp_78  #
 # (str)		  (void)  #
 #-------------------------#
 [ "counters",	  nil	  ]
@@ -1088,10 +1274,64 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_78  #
+# BAT:	  tmp_74  #
 # (str)	  (void)  #
 #-----------------#
 [ "blob", nil	  ]
+
+	dropping blob
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading bitvector
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "CC_odmg",	  1		  ]
+[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitset",	  1		  ]
+[ "bitvector",	  1		  ]
+[ "blob",	  1		  ]
+[ "cluster",	  1		  ]
+[ "io",		  1		  ]
+[ "kernel",	  1		  ]
+[ "odmg",	  2		  ]
+[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_80  #
+# (str)		  (void)  #
+#-------------------------#
+[ "bitvector",	  nil	  ]
+[ "io",		  nil	  ]
+[ "blob",	  nil	  ]
+
+	dropping bitvector
+
+
+	dropping io
+
 
 	dropping blob
 
@@ -1132,7 +1372,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_79  #
+# BAT:		  tmp_80  #
 # (str)		  (void)  #
 #-------------------------#
 [ "alarm",	  nil	  ]
@@ -1176,7 +1416,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_81  #
+# BAT:	  tmp_79  #
 # (str)	  (void)  #
 #-----------------#
 [ "aggr", nil	  ]
@@ -1220,7 +1460,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_80  #
+# BAT:		  tmp_78  #
 # (str)		  (void)  #
 #-------------------------#
 [ "TransTest",	  nil	  ]
@@ -1265,7 +1505,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #---------------------------------#
-# BAT:		  tmp_149	  #
+# BAT:		  tmp_150	  #
 # (str)		  (void)	  #
 #---------------------------------#
 [ "Test7",	  nil		  ]
@@ -1313,7 +1553,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #---------------------------------#
-# BAT:		  tmp_176	  #
+# BAT:		  tmp_195	  #
 # (str)		  (void)	  #
 #---------------------------------#
 [ "CC_Test",	  nil		  ]
@@ -1357,7 +1597,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #---------------------------------#
-# BAT:		  tmp_186	  #
+# BAT:		  tmp_205	  #
 # (str)		  (void)	  #
 #---------------------------------#
 [ "BasicOdmg",	  nil		  ]
@@ -1401,7 +1641,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #---------------------------------#
-# BAT:		  tmp_204	  #
+# BAT:		  tmp_223	  #
 # (str)		  (void)	  #
 #---------------------------------#
 [ "mprof",	  nil		  ]

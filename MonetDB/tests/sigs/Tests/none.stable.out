@@ -55,20 +55,13 @@ loaded;
 # BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
-[ "BasicOdmg",	  nil	  ]
-[ "CC_Test",	  nil	  ]
-[ "CC_odmg",	  nil	  ]
-[ "Meta",	  nil	  ]
-[ "OdmgTest",	  nil	  ]
-[ "Test7",	  nil	  ]
-[ "TestUse",	  nil	  ]
-[ "TransTest",	  nil	  ]
 [ "aggr",	  nil	  ]
 [ "alarm",	  nil	  ]
 [ "algebra",	  nil	  ]
 [ "arith",	  nil	  ]
 [ "bat",	  nil	  ]
 [ "bitset",	  nil	  ]
+[ "bitvector",	  nil	  ]
 [ "blob",	  nil	  ]
 [ "cluster",	  nil	  ]
 [ "counters",	  nil	  ]
@@ -77,23 +70,25 @@ loaded;
 [ "enum",	  nil	  ]
 [ "io",		  nil	  ]
 [ "iterator",	  nil	  ]
-[ "jOdmg",	  nil	  ]
 [ "kernel",	  nil	  ]
 [ "lock",	  nil	  ]
+[ "malalgebra",	  nil	  ]
 [ "mmath",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mprof",	  nil	  ]
-[ "odmg",	  nil	  ]
 [ "oo7",	  nil	  ]
 [ "perfex",	  nil	  ]
+[ "qt",		  nil	  ]
 [ "radix",	  nil	  ]
-[ "signature",	  nil	  ]
+[ "salgebra",	  nil	  ]
+[ "stats",	  nil	  ]
 [ "str",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "tcpip",	  nil	  ]
 [ "temporal",	  nil	  ]
 [ "tpcd",	  nil	  ]
 [ "trans",	  nil	  ]
+[ "uchr",	  nil	  ]
 [ "unix",	  nil	  ]
 [ "url",	  nil	  ]
 [ "vector",	  nil	  ]
@@ -127,42 +122,9 @@ loaded;
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
 
-
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-[~monet_mod_nme].reverse.sort.print;
-#-------------------------#
-# BAT:		  tmp_73  #
-# (str)		  (void)  #
-#-------------------------#
-[ "CC_odmg",	  nil	  ]
-[ "Meta",	  nil	  ]
-[ "algebra",	  nil	  ]
-[ "arith",	  nil	  ]
-[ "bat",	  nil	  ]
-[ "bitset",	  nil	  ]
-[ "cluster",	  nil	  ]
-[ "kernel",	  nil	  ]
-[ "odmg",	  nil	  ]
-[ "signature",	  nil	  ]
-[ "str",	  nil	  ]
-[ "sys",	  nil	  ]
-[ "trans",	  nil	  ]
+# # module("Meta");
+# # loaded;
+# # [~monet_mod_nme].reverse.sort.print;
 
 fix:=monet_mod_nme.reverse.copy;
 [fix~].print;
@@ -178,11 +140,6 @@ fix:=monet_mod_nme.reverse.copy;
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
 [ "cluster",	  nil	  ]
-[ "Meta",	  nil	  ]
-[ "CC_odmg",	  nil	  ]
-[ "odmg",	  nil	  ]
-[ "signature",	  nil	  ]
-[ "bitset",	  nil	  ]
 
 mprof:=view_modules.select("mprof").reverse;
 others:=kdiff(view_modules.reverse,monet_mod_nme.reverse).access(BAT_WRITE).delete("mprof").sort.access(BAT_WRITE).revert.insert(mprof);
@@ -196,16 +153,20 @@ others:=kdiff(view_modules.reverse,monet_mod_nme.reverse).access(BAT_WRITE).dele
 [ "vector",	  nil	  ]
 [ "url",	  nil	  ]
 [ "unix",	  nil	  ]
+[ "uchr",	  nil	  ]
 [ "tpcd",	  nil	  ]
 [ "temporal",	  nil	  ]
 [ "tcpip",	  nil	  ]
+[ "stats",	  nil	  ]
+[ "salgebra",	  nil	  ]
 [ "radix",	  nil	  ]
+[ "qt",		  nil	  ]
 [ "perfex",	  nil	  ]
 [ "oo7",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mmath",	  nil	  ]
+[ "malalgebra",	  nil	  ]
 [ "lock",	  nil	  ]
-[ "jOdmg",	  nil	  ]
 [ "iterator",	  nil	  ]
 [ "io",		  nil	  ]
 [ "enum",	  nil	  ]
@@ -213,14 +174,10 @@ others:=kdiff(view_modules.reverse,monet_mod_nme.reverse).access(BAT_WRITE).dele
 [ "ddbench",	  nil	  ]
 [ "counters",	  nil	  ]
 [ "blob",	  nil	  ]
+[ "bitvector",	  nil	  ]
+[ "bitset",	  nil	  ]
 [ "alarm",	  nil	  ]
 [ "aggr",	  nil	  ]
-[ "TransTest",	  nil	  ]
-[ "TestUse",	  nil	  ]
-[ "Test7",	  nil	  ]
-[ "OdmgTest",	  nil	  ]
-[ "CC_Test",	  nil	  ]
-[ "BasicOdmg",	  nil	  ]
 [ "mprof",	  nil	  ]
 
 others@batloop{
@@ -241,16 +198,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -266,16 +218,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -285,16 +232,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -310,16 +252,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -329,17 +266,12 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "mmath",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -359,16 +291,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -378,16 +305,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -403,16 +325,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -422,16 +339,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -447,16 +359,45 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading uchr
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  1		  ]
+#-----------------#
+# BAT:	  tmp_78  #
+# (str)	  (void)  #
+#-----------------#
+[ "uchr", nil	  ]
+
+	dropping uchr
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -466,16 +407,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  2		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "tpcd",	  1		  ]
@@ -491,16 +427,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -510,16 +441,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "temporal",	  1		  ]
@@ -535,16 +461,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -554,16 +475,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "tcpip",	  1		  ]
@@ -580,16 +496,79 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading stats
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "stats",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_74  #
+# (str)		  (void)  #
+#-------------------------#
+[ "stats",	  nil	  ]
+
+	dropping stats
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading salgebra
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  2		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "salgebra",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_79  #
+# (str)		  (void)  #
+#-------------------------#
+[ "salgebra",	  nil	  ]
+
+	dropping salgebra
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -599,17 +578,12 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
 [ "radix",	  1		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -624,16 +598,70 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading qt
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitvector",	  1		  ]
+[ "blob",	  1		  ]
+[ "cluster",	  1		  ]
+[ "io",		  1		  ]
+[ "kernel",	  1		  ]
+[ "qt",		  1		  ]
+[ "stats",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_79  #
+# (str)		  (void)  #
+#-------------------------#
+[ "qt",		  nil	  ]
+[ "uchr",	  nil	  ]
+[ "bitvector",	  nil	  ]
+[ "io",		  nil	  ]
+[ "blob",	  nil	  ]
+[ "stats",	  nil	  ]
+
+	dropping qt
+
+
+	dropping uchr
+
+
+	dropping bitvector
+
+
+	dropping io
+
+
+	dropping blob
+
+
+	dropping stats
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -643,17 +671,12 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
 [ "perfex",	  1		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -668,16 +691,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -687,17 +705,12 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
 [ "oo7",	  1		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -712,16 +725,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -731,17 +739,12 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "monettime",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -756,16 +759,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -775,17 +773,12 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "mmath",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -800,16 +793,45 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading malalgebra
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "malalgebra",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_78  #
+# (str)		  (void)  #
+#-------------------------#
+[ "malalgebra",	  nil	  ]
+
+	dropping malalgebra
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -819,17 +841,12 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "lock",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -844,76 +861,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading jOdmg
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "blob",	  2		  ]
-[ "cluster",	  1		  ]
-[ "io",		  1		  ]
-[ "jOdmg",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  3		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "tcpip",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_74  #
-# (str)		  (void)  #
-#-------------------------#
-[ "jOdmg",	  nil	  ]
-[ "blob",	  nil	  ]
-[ "tcpip",	  nil	  ]
-[ "io",		  nil	  ]
-
-	dropping jOdmg
-
-
-	dropping blob
-
-
-	dropping tcpip
-
-
-	dropping io
-
-!WARNING: TCPepilogue: terminate 0 listeners
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -923,17 +875,12 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "iterator",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -948,16 +895,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -967,18 +909,13 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "io",		  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -997,16 +934,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1016,19 +948,14 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "enum",	  1		  ]
 [ "io",		  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1051,16 +978,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1070,17 +992,12 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "decimal",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1095,16 +1012,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1114,20 +1026,15 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "ddbench",	  1		  ]
 [ "enum",	  1		  ]
 [ "io",		  2		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1159,16 +1066,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1178,17 +1080,12 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "counters",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1203,16 +1100,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1222,17 +1114,12 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1247,16 +1134,89 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading bitvector
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bitvector",	  1		  ]
+[ "blob",	  1		  ]
+[ "cluster",	  1		  ]
+[ "io",		  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_80  #
+# (str)		  (void)  #
+#-------------------------#
+[ "bitvector",	  nil	  ]
+[ "io",		  nil	  ]
+[ "blob",	  nil	  ]
+
+	dropping bitvector
+
+
+	dropping io
+
+
+	dropping blob
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading bitset
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_80  #
+# (str)		  (void)  #
+#-------------------------#
+[ "bitset",	  nil	  ]
+
+	dropping bitset
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1266,22 +1226,17 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "alarm",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_80  #
+# BAT:		  tmp_78  #
 # (str)		  (void)  #
 #-------------------------#
 [ "alarm",	  nil	  ]
@@ -1291,16 +1246,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1310,22 +1260,17 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "aggr",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_79  #
+# BAT:	  tmp_25  #
 # (str)	  (void)  #
 #-----------------#
 [ "aggr", nil	  ]
@@ -1335,290 +1280,11 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading TransTest
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  2		  ]
-[ "Meta",	  2		  ]
-[ "TransTest",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_78  #
-# (str)		  (void)  #
-#-------------------------#
-[ "TransTest",	  nil	  ]
-
-	dropping TransTest
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading TestUse
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  2		  ]
-[ "Meta",	  2		  ]
-[ "TestUse",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "temporal",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_82  #
-# (str)		  (void)  #
-#-------------------------#
-[ "TestUse",	  nil	  ]
-[ "temporal",	  nil	  ]
-
-	dropping TestUse
-
-
-	dropping temporal
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading Test7
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "BasicOdmg",	  1		  ]
-[ "CC_odmg",	  3		  ]
-[ "Meta",	  3		  ]
-[ "Test7",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#---------------------------------#
-# BAT:		  tmp_150	  #
-# (str)		  (void)	  #
-#---------------------------------#
-[ "Test7",	  nil		  ]
-[ "BasicOdmg",	  nil		  ]
-
-	dropping Test7
-
-
-	dropping BasicOdmg
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading OdmgTest
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  2		  ]
-[ "Meta",	  2		  ]
-[ "OdmgTest",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#---------------------------------#
-# BAT:		  tmp_167	  #
-# (str)		  (void)	  #
-#---------------------------------#
-[ "OdmgTest",	  nil		  ]
-
-	dropping OdmgTest
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading CC_Test
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_Test",	  1		  ]
-[ "CC_odmg",	  2		  ]
-[ "Meta",	  2		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#---------------------------------#
-# BAT:		  tmp_195	  #
-# (str)		  (void)	  #
-#---------------------------------#
-[ "CC_Test",	  nil		  ]
-
-	dropping CC_Test
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading BasicOdmg
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "BasicOdmg",	  1		  ]
-[ "CC_odmg",	  2		  ]
-[ "Meta",	  2		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#---------------------------------#
-# BAT:		  tmp_205	  #
-# (str)		  (void)	  #
-#---------------------------------#
-[ "BasicOdmg",	  nil		  ]
-
-	dropping BasicOdmg
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "bitset",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
@@ -1628,41 +1294,31 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "mprof",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-#---------------------------------#
-# BAT:		  tmp_223	  #
-# (str)		  (void)	  #
-#---------------------------------#
-[ "mprof",	  nil		  ]
+#-------------------------#
+# BAT:		  tmp_43  #
+# (str)		  (void)  #
+#-------------------------#
+[ "mprof",	  nil	  ]
 
 	dropping mprof
 
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "CC_odmg",	  1		  ]
-[ "Meta",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "odmg",	  2		  ]
-[ "signature",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]

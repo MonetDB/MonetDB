@@ -6,7 +6,7 @@ stdout of test 'usage` in directory 'src/tools` itself:
 # Monet Database Server V4.0
 # Copyright (c) 1993-1998, CWI & SION. All rights reserved.
 # compiled for IRIX646.2/32bit on Tue Jul 20 00:58:19 MET DST 1999.
-usage: Mserver { option }
+usage: lt-Mserver { option }
 option:	-db <db-name>		database to open
 	-prelude <input>	execute MIL file first
 	<script>		execute MIL file and exit
@@ -51,7 +51,7 @@ Mcreatedb [-home <file>] -db <name> {-user <usr>} [-dir <dbdir>] [-port <port>]
 	the default database directory is $MONETHOME/dbfarm/
 	the default tcp port is 50050
 #> Mlog:	Mload -?
-Mload: <ascii_file> { -db <db> | -id <stamp> | -home <home> | -version <ver>}
+lt-Mload: <ascii_file> { -db <db> | -id <stamp> | -home <home> | -version <ver>}
 	[-oid <seqbase>] [-s <size>] [-f <specfile>] {-mod <module>}
 	{ [[~|*|+]<batname>],("<sep>"|<len>),<type>[::<fcn>][,<nil>] } }
 #> Mlog:	Mdump -?
