@@ -19,6 +19,8 @@
 
 /* Manual config.h. needed for win32 .  */
 
+#define WIN32_LEAN_AND_MEAN 1
+
 #if defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 /* In this case, malloc and friends are redefined in crtdbg.h to debug
    versions.  We need to include stdlib.h and malloc.h first or else
@@ -58,9 +60,6 @@
 /* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
    */
 /* #undef HAVE_ALLOCA_H */
-
-/* Define to 1 if the system has the type `bool'. */
-#define HAVE_BOOL 1
 
 /* Define to 1 if you have the <cstdio> header file. */
 /* #undef HAVE_CSTDIO */
@@ -393,9 +392,6 @@ typedef int ssize_t;
 /* Host identifier */
 #define HOST "i686-pc-win32"
 
-/* Name of package */
-#define PACKAGE "sql"
-
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT ""
 
@@ -455,9 +451,6 @@ typedef int ssize_t;
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 /* #undef TM_IN_SYS_TIME */
 
-/* Version number of package */
-#define VERSION "2.0"
-
 /* Define on MS Windows (also under Cygwin) */
 #ifndef WIN32
 #define WIN32 1
@@ -494,4 +487,3 @@ typedef int ssize_t;
 /* #undef size_t */
 
 #define ALLREADY_HAVE_WINDOWS_TYPE
-

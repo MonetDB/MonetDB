@@ -17,20 +17,14 @@
 # Portions created by CWI are Copyright (C) 1997-2005 CWI.
 # All Rights Reserved.
 
-# 
-# Contributor(s):
-# 		Martin Kersten <Martin.Kersten@cwi.nl>
-# 		Peter Boncz <Peter.Boncz@cwi.nl>
-# 		Niels Nes <Niels.Nes@cwi.nl>
-# 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
-
 import sys
 import fileinput
 import os
 import string
 
-prefix=os.path.abspath(sys.argv[1]);
-build=prefix
+build=os.path.abspath(sys.argv[1]);
+prefix=os.path.abspath(sys.argv[2]);
+
 source=os.path.abspath(os.path.join(build,os.pardir))
 
 # double back slashes
@@ -59,12 +53,17 @@ subs = [
     ('@Qdatadir@',          "@Qprefix@@QDIRSEP@share"),
     ('@Qinfodir@',          "@Qprefix@@QDIRSEP@info"),
     ('@Qlibexecdir@',       "@Qprefix@@QDIRSEP@libexec"),
-    ('@PACKAGE@',           "sql"),
-    ('@VERSION@',           "2.0"),
+    ('@PACKAGE@',           "pathfinder"),
+    ('@VERSION@',           "0.1"),
     ('@DIRSEP@',            "\\"),
     ('@prefix@',            prefix),
+    ('@MONETDB_BUILD@',       build),
+    ('@MONETDB_SOURCE@',      source),
+    ('@MONETDB_PREFIX@',      os.getenv('MONETDB_PREFIX')),
     ('@QDIRSEP@',           "\\\\"),
     ('@Qprefix@',           Qprefix),
+    ('@QMONETDB_BUILD@',      Qbuild),
+    ('@QMONETDB_SOURCE@',     Qsource),
 ]
 
 
@@ -73,5 +72,5 @@ def substitute(line):
         line = string.replace(line, p, v);
     return line
 
-for line in fileinput.input(sys.argv[2:]):
+for line in fileinput.input(sys.argv[3:]):
     sys.stdout.write(substitute(line))
