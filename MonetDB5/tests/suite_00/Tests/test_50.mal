@@ -32,7 +32,7 @@ include mil_scenario;
 	mil.line("a.print();");
 	fa_a := print(a);
 	mil.line("#commit the changes and repeat the action\n");
-	ga_a := clear(bd);
+	ga_a := delete(bd);
 	mil.line("commit(b);");
 	ha_a := commit(b);
 	mil.line("b.alpha().print();");

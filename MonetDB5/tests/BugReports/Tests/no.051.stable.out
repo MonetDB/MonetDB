@@ -100,11 +100,11 @@ stdout of test 'no.051` in directory 'tests/BugReports` itself:
 #	mil.line("        return a;");
 #	return ea_a :=a;
 #end create;
-function Admin.create(b:bat[:any,:any]):bat[:any,:any];	# 0  (create:bat[:any,:any])<-(b:bat[:any,:any])
+function Admin.create(b:bat[:any$1,:any$2]):bat[:any$1,:any$2];	# 0  dynamic (create:bat[:any$1,:any$2])<-(b:bat[:any$1,:any$2])
     mil.line("        var a := new (oid,flt);");	# 1 MILline ($2:void)<-($3:str)
     a := bbp.new(nil:oid,nil:flt);	# 2 CMDBATnew (a:bat[:oid,:flt])<-($5:oid)($6:flt)
     mil.line("        b@batloop(){");	# 3 MILline ($7:void)<-($8:str)
-barrier (aa_a,aa_aH,aa_aT):= chopper.newIterator(b);	# 4 CHPbunIterator (aa_a:lng)(aa_aH:any)(aa_aT:any)<-(b:bat[:any,:any]) jump 13
+barrier (aa_a,aa_aH,aa_aT):= chopper.newIterator(b);	# 4 CHPbunIterator (aa_a:lng)(aa_aH:any)(aa_aT:any)<-(b:bat[:any$1,:any$2]) jump 13
     mil.line("                if (a.count() = 0)");	# 5 MILline ($12:void)<-($13:str)
     ba_a := algebra.count(a);	# 6 ALGcount_bat (ba_a:lng)<-(a:bat[:oid,:flt])
 barrier ca_a := calc.==(ba_a,0);	# 7 CALCcompEQlngint (ca_a:bit)<-(ba_a:lng)($16:int) jump 11
@@ -112,7 +112,7 @@ barrier ca_a := calc.==(ba_a,0);	# 7 CALCcompEQlngint (ca_a:bit)<-(ba_a:lng)($16
     return da_a := a;	# 9  (da_a:bat[:oid,:flt])<-(a:bat[:oid,:flt])
     mil.line("        }");	# 10 MILline ($20:void)<-($21:str)
 exit ca_a;	# 11  (ca_a:bit)
-    redo (aa_a,aa_aH,aa_aT):= chopper.hasMoreElements(b);	# 12 CHPbunHasMoreElements (aa_a:lng)(aa_aH:any)(aa_aT:any)<-(b:bat[:any,:any]) jump 5
+    redo (aa_a,aa_aH,aa_aT):= chopper.hasMoreElements(b);	# 12 CHPbunHasMoreElements (aa_a:lng)(aa_aH:any)(aa_aT:any)<-(b:bat[:any$1,:any$2]) jump 5
 exit (aa_a,aa_aH,aa_aT);	# 13  (aa_a:lng)(aa_aH:any)(aa_aT:any)
     mil.line("        return a;");	# 14 MILline ($22:void)<-($23:str)
     return ea_a := a;	# 15  (ea_a:bat[:oid,:flt])<-(a:bat[:oid,:flt])
@@ -180,17 +180,17 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("b.insert(oid(1),flt(2));");	# 40 MILline ($80:void)<-($81:str)
     fa_a := calc.oid(1);	# 41 CALCint2oid (fa_a:oid)<-($83:int)
     ga_a := calc.flt(2);	# 42 CALCint2flt (ga_a:flt)<-($85:int)
-    ha_a := bat.insert(b,fa_a,ga_a);	# 43 BKCinsert_bun (ha_a:void)<-(b:bat[:oid,:flt])(fa_a:oid)(ga_a:flt)
+    ha_a := bat.insert(b,fa_a,ga_a);	# 43 BKCinsert_bun (ha_a:bat[:any,:flt])<-(b:bat[:oid,:flt])(fa_a:oid)(ga_a:flt)
     mil.line("b.print();");	# 44 MILline ($87:void)<-($88:str)
     ia_a := io.print(b);	# 45 IOprint_val (ia_a:int)<-(b:bat[:oid,:flt])
     mil.line("var c := create(b);");	# 46 MILline ($90:void)<-($91:str)
-    c := Admin.create(b);	# 47  (c:bat[:any,:any])<-(b:bat[:oid,:flt])
+    c := Admin.create(b);	# 47  (c:bat[:oid,:flt])<-(b:bat[:oid,:flt])
     mil.line("b.print();");	# 48 MILline ($93:void)<-($88:str)
     ja_a := io.print(b);	# 49 IOprint_val (ja_a:int)<-(b:bat[:oid,:flt])
     mil.line("c.print();");	# 50 MILline ($95:void)<-($96:str)
-    ka_a := io.print(c);	# 51 IOprint_val (ka_a:int)<-(c:bat[:any,:any])
+    ka_a := io.print(c);	# 51 IOprint_val (ka_a:int)<-(c:bat[:oid,:flt])
     mil.line("b.semijoin(c).print();");	# 52 MILline ($98:void)<-($99:str)
-    la_a := algebra.semijoin(b,c);	# 53 ALGsemijoin (la_a:bat[:oid,:flt])<-(b:bat[:oid,:flt])(c:bat[:any,:any])
+    la_a := algebra.semijoin(b,c);	# 53 ALGsemijoin (la_a:bat[:oid,:flt])<-(b:bat[:oid,:flt])(c:bat[:oid,:flt])
     ma_a := io.print(la_a);	# 54 IOprint_val (ma_a:int)<-(la_a:bat[:oid,:flt])
     mil.line("quit();");	# 55 MILline ($102:void)<-($103:str)
     na_a := clients.quit();	# 56 CLTquit (na_a:void)

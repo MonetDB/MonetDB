@@ -81,24 +81,24 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("var s:= new(str,int);");	# 4 MILline ($6:void)<-($7:str)
     s := bbp.new("nil:str",nil:int);	# 5 CMDBATnew (s:bat[:str,:int])<-($9:str)($10:int)
     mil.line("insert(s,\"hello\",1);");	# 6 MILline ($11:void)<-($12:str)
-    ca_a := bat.insert(s,"hello",1);	# 7 BKCinsert_bun (ca_a:void)<-(s:bat[:str,:int])($14:str)($15:int)
+    ca_a := bat.insert(s,"hello",1);	# 7 BKCinsert_bun (ca_a:bat[:str,:int])<-(s:bat[:str,:int])($14:str)($15:int)
     mil.line("print(find(s,\"hello\"));");	# 8 MILline ($16:void)<-($17:str)
     da_a := algebra.find(s,"hello");	# 9 ALGfind (da_a:int)<-(s:bat[:str,:int])($14:str)
     ea_a := io.print(da_a);	# 10 IOprint_val (ea_a:int)<-(da_a:int)
     mil.line("insert(s,\"bello\",2);");	# 11 MILline ($20:void)<-($21:str)
-    fa_a := bat.insert(s,"bello",2);	# 12 BKCinsert_bun (fa_a:void)<-(s:bat[:str,:int])($23:str)($24:int)
+    fa_a := bat.insert(s,"bello",2);	# 12 BKCinsert_bun (fa_a:bat[:str,:int])<-(s:bat[:str,:int])($23:str)($24:int)
     mil.line("insert(s,\"cello\",3);");	# 13 MILline ($25:void)<-($26:str)
-    ga_a := bat.insert(s,"cello",3);	# 14 BKCinsert_bun (ga_a:void)<-(s:bat[:str,:int])($28:str)($29:int)
+    ga_a := bat.insert(s,"cello",3);	# 14 BKCinsert_bun (ga_a:bat[:str,:int])<-(s:bat[:str,:int])($28:str)($29:int)
     mil.line("insert(s,\"dello\",4);");	# 15 MILline ($30:void)<-($31:str)
-    ha_a := bat.insert(s,"dello",4);	# 16 BKCinsert_bun (ha_a:void)<-(s:bat[:str,:int])($33:str)($34:int)
+    ha_a := bat.insert(s,"dello",4);	# 16 BKCinsert_bun (ha_a:bat[:str,:int])<-(s:bat[:str,:int])($33:str)($34:int)
     mil.line("insert(s,\"eello\",5);");	# 17 MILline ($35:void)<-($36:str)
-    ia_a := bat.insert(s,"eello",5);	# 18 BKCinsert_bun (ia_a:void)<-(s:bat[:str,:int])($38:str)($39:int)
+    ia_a := bat.insert(s,"eello",5);	# 18 BKCinsert_bun (ia_a:bat[:str,:int])<-(s:bat[:str,:int])($38:str)($39:int)
     mil.line("insert(s,\"fello\",6);");	# 19 MILline ($40:void)<-($41:str)
-    ja_a := bat.insert(s,"fello",6);	# 20 BKCinsert_bun (ja_a:void)<-(s:bat[:str,:int])($43:str)($44:int)
+    ja_a := bat.insert(s,"fello",6);	# 20 BKCinsert_bun (ja_a:bat[:str,:int])<-(s:bat[:str,:int])($43:str)($44:int)
     mil.line("insert(s,\"gello\",7);");	# 21 MILline ($45:void)<-($46:str)
-    ka_a := bat.insert(s,"gello",7);	# 22 BKCinsert_bun (ka_a:void)<-(s:bat[:str,:int])($48:str)($49:int)
+    ka_a := bat.insert(s,"gello",7);	# 22 BKCinsert_bun (ka_a:bat[:str,:int])<-(s:bat[:str,:int])($48:str)($49:int)
     mil.line("insert(s,\"hello\",8);");	# 23 MILline ($50:void)<-($51:str)
-    la_a := bat.insert(s,"hello",8);	# 24 BKCinsert_bun (la_a:void)<-(s:bat[:str,:int])($53:str)($54:int)
+    la_a := bat.insert(s,"hello",8);	# 24 BKCinsert_bun (la_a:bat[:str,:int])<-(s:bat[:str,:int])($53:str)($54:int)
     mil.line("printf(\"#~BeginVariableOutput~#\\n\"); info(s).print(); printf(\"#~EndVariableOutput~#\\n\");");	# 25 MILline ($55:void)<-($56:str)
     ma_a := io.printf("#~BeginVariableOutput~#\n");	# 26 IOprint_str (ma_a:int)<-($58:str)
     na_a := bat.info(s);	# 27 BKCinfo (na_a:bat[:str,:str])<-(s:bat[:str,:int])
@@ -108,7 +108,7 @@ function Admin.main():int;	# 0  (main:int)
     qa_a := algebra.find(s,"cello");	# 31 ALGfind (qa_a:int)<-(s:bat[:str,:int])($66:str)
     ra_a := io.print(qa_a);	# 32 IOprint_val (ra_a:int)<-(qa_a:int)
     mil.line("delete(s,\"cello\",3);");	# 33 MILline ($68:void)<-($69:str)
-    sa_a := bat.delete(s,"cello",3);	# 34 BKCdelete_bun (sa_a:void)<-(s:bat[:str,:int])($66:str)($71:int)
+    sa_a := bat.delete(s,"cello",3);	# 34 BKCdelete_bun (sa_a:bat[:str,:int])<-(s:bat[:str,:int])($66:str)($71:int)
     mil.line("print(s);");	# 35 MILline ($72:void)<-($73:str)
     ta_a := io.print(s);	# 36 IOprint_val (ta_a:int)<-(s:bat[:str,:int])
     mil.line("var sn:= select(s,1,5);");	# 37 MILline ($75:void)<-($76:str)
@@ -155,8 +155,8 @@ end main;	# 53
 [ "tail",			  "int"		  ]
 [ "batPersistence",		  "transient"	  ]
 [ "batRestricted",		  "updatable"	  ]
-[ "batRefcnt",			  "0"		  ]
-[ "batLRefcnt",			  "1"		  ]
+[ "batRefcnt",			  "1"		  ]
+[ "batLRefcnt",			  "9"		  ]
 [ "batDirty",			  "dirty"	  ]
 [ "batSet",			  "0"		  ]
 [ "void_tid",			  "0"		  ]
@@ -182,7 +182,7 @@ end main;	# 53
 [ "batHole",			  "0"		  ]
 [ "top",			  "9"		  ]
 [ "batStamp",			  "13"		  ]
-[ "lastUsed",			  "24"		  ]
+[ "lastUsed",			  "163"		  ]
 [ "keepAround",			  "0"		  ]
 [ "curStamp",			  "14"		  ]
 [ "batCopiedtodisk",		  "0"		  ]

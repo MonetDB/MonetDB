@@ -237,12 +237,12 @@ function Admin.main():int;	# 0  (main:int)
     eb_a := io.print(db_a);	# 52 IOprint_val (eb_a:int)<-(db_a:int)
     mil.line("# This should cause an error\n");	# 53 MILline ($128:void)<-($129:str)
     mil.line("# Can we delete them and re-insert them later on\n");	# 54 MILline ($130:void)<-($131:str)
-    hb_a := bat.delete(b,4,16);	# 55 BKCdelete_bun (hb_a:void)<-(b:bat[:int,:int])($121:int)($133:int)
+    hb_a := bat.delete(b,4,16);	# 55 BKCdelete_bun (hb_a:bat[:int,:int])<-(b:bat[:int,:int])($121:int)($133:int)
     mil.line("b.delete(1,15);");	# 56 MILline ($134:void)<-($135:str)
-    ib_a := bat.delete(b,1,15);	# 57 BKCdelete_bun (ib_a:void)<-(b:bat[:int,:int])($116:int)($137:int)
+    ib_a := bat.delete(b,1,15);	# 57 BKCdelete_bun (ib_a:bat[:int,:int])<-(b:bat[:int,:int])($116:int)($137:int)
     mil.line("b.delete(int(nil),81);");	# 58 MILline ($138:void)<-($139:str)
     jb_a := calc.int(nil);	# 59 CALCnil2int (jb_a:int)<-($141:void)
-    kb_a := bat.delete(b,jb_a,81);	# 60 BKCdelete_bun (kb_a:void)<-(b:bat[:int,:int])(jb_a:int)($143:int)
+    kb_a := bat.delete(b,jb_a,81);	# 60 BKCdelete_bun (kb_a:bat[:int,:int])<-(b:bat[:int,:int])(jb_a:int)($143:int)
     mil.line("b.print();");	# 61 MILline ($144:void)<-($145:str)
     lb_a := io.print(b);	# 62 IOprint_val (lb_a:int)<-(b:bat[:int,:int])
     mil.line("b.insert(4,16);");	# 63 MILline ($147:void)<-($148:str)
@@ -340,7 +340,7 @@ end main;	# 136
 [ "tail",			  "int"		  ]
 [ "batPersistence",		  "transient"	  ]
 [ "batRestricted",		  "updatable"	  ]
-[ "batRefcnt",			  "0"		  ]
+[ "batRefcnt",			  "1"		  ]
 [ "batLRefcnt",			  "1"		  ]
 [ "batDirty",			  "dirty"	  ]
 [ "batSet",			  "0"		  ]
@@ -367,7 +367,7 @@ end main;	# 136
 [ "batHole",			  "0"		  ]
 [ "top",			  "1"		  ]
 [ "batStamp",			  "13"		  ]
-[ "lastUsed",			  "15"		  ]
+[ "lastUsed",			  "163"		  ]
 [ "keepAround",			  "0"		  ]
 [ "curStamp",			  "14"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
