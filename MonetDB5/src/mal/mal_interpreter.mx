@@ -1037,8 +1037,6 @@ else {
     if( pci->fcn== NULL){
         ret= raiseException(mb,stkpc,MALexception,
             "address of function missing\n");
-        printf("error, missing address");
-        printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
         goto MALevalExit;
     }
 }
