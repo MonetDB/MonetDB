@@ -194,7 +194,7 @@ char *atom2string(atom * a)
 		sprintf(buf, "%d", a->data.val.shval);
 		break;
 	case TYPE_bit:
-		if (a->data.val.cval)
+		if (a->data.val.cval[0])
 			return _strdup("true");
 		return _strdup("false");
 	case TYPE_dbl:
