@@ -7,3 +7,5 @@ printf_nil
 const
 modrefcnt1
 modrefcnt2
+monet_mod_cnt-copy_S
+monet_mod_cnt-copy_C

@@ -1,0 +1,154 @@
+stdout of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
+
+
+# 10:20:07 >  
+# 10:20:07 >  Mtimeout -timeout 66 Mserver --config=/ufs/manegold/Monet/4.3/monet/_PREFIX_/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_monet --set mapi_port=58924 /ufs/manegold/Monet/4.3/monet/_PREFIX_/share/MonetDB/mapi.mil monet_mod_cnt-copy_C.prologue ; echo  ; echo Over..
+# 10:20:07 >  
+
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+#---------------------------------#
+# BAT:		  monet_mod_cnt	  #
+# (oid)		  (int)		  #
+#---------------------------------#
+[ 10000@0,	  2		  ]
+[ 10033@0,	  2		  ]
+[ 10329@0,	  4		  ]
+[ 10347@0,	  2		  ]
+[ 10413@0,	  2		  ]
+[ 10491@0,	  2		  ]
+[ 10568@0,	  2		  ]
+[ 10580@0,	  2		  ]
+[ 10579@0,	  2		  ]
+[ 10578@0,	  2		  ]
+[ 10577@0,	  2		  ]
+#---------------------------------#
+# BAT:		  tmp_30	  #
+# (oid)		  (int)		  #
+#---------------------------------#
+[ 10000@0,	  2		  ]
+[ 10033@0,	  2		  ]
+[ 10329@0,	  4		  ]
+[ 10347@0,	  2		  ]
+[ 10413@0,	  2		  ]
+[ 10491@0,	  2		  ]
+[ 10568@0,	  2		  ]
+[ 10580@0,	  2		  ]
+[ 10579@0,	  2		  ]
+[ 10578@0,	  2		  ]
+[ 10577@0,	  2		  ]
+#---------------------------------------------------------#
+# BAT:			  count	| copy.count	| diff	  #
+# (str)			  (int)	| (int)		| (int)	  #
+#---------------------------------------------------------#
+[ "monet_environment",	  21,	  21,		  0	  ]
+[ "monet_fcn_fcn",	  560,	  560,		  0	  ]
+[ "monet_fcn_imp",	  634,	  634,		  0	  ]
+[ "monet_fcn_tpe",	  634,	  634,		  0	  ]
+[ "monet_fcn_mid",	  604,	  604,		  0	  ]
+[ "monet_fcn_sig",	  37,	  37,		  0	  ]
+[ "monet_fcn_dsc",	  604,	  604,		  0	  ]
+[ "monet_fcn_aut",	  604,	  604,		  0	  ]
+[ "monet_fcn_dat",	  604,	  604,		  0	  ]
+[ "monet_fcn_nme",	  634,	  634,		  0	  ]
+[ "monet_fcn_pro",	  1586,	  1586,		  0	  ]
+[ "monet_fcn_cnt",	  634,	  634,		  0	  ]
+[ "monet_mod_nme",	  11,	  11,		  0	  ]
+[ "monet_mod_cnt",	  11,	  11,		  0	  ]
+[ "monet_mod_atm",	  5,	  5,		  0	  ]
+[ "monet_mod_acc",	  0,	  0,		  0	  ]
+[ "monet_mod_hdl",	  11,	  11,		  0	  ]
+[ "monet_mod_dep",	  3,	  3,		  0	  ]
+[ "monet_mod_use",	  24,	  24,		  0	  ]
+[ "monet_mod_load",	  6,	  6,		  0	  ]
+[ "monet_mod_drop",	  0,	  0,		  0	  ]
+[ "monet_fcntbl",	  634,	  634,		  0	  ]
+[ "monet_acctbl",	  2,	  2,		  0	  ]
+[ "monet_atomtbl",	  18,	  18,		  0	  ]
+[ "mapi_params",	  1,	  1,		  0	  ]
+[ "tmp_26",		  2,	  2,		  0	  ]
+[ "tmp_27",		  634,	  634,		  0	  ]
+[ "tmp_28",		  18,	  18,		  0	  ]
+printf("\nReady.\n");
+
+Ready.
+
+Over..
+
+# 10:20:08 >  
+# 10:20:08 >  Mtimeout -timeout 3 MapiClient --port=58924 < monet_mod_cnt-copy_C.milC
+# 10:20:08 >  
+
+#---------------------------------#
+# BAT:		  monet_mod_cnt	  #
+# (oid)		  (int)		  #
+#---------------------------------#
+[ 10000@0,	  2		  ]
+[ 10033@0,	  2		  ]
+[ 10329@0,	  4		  ]
+[ 10347@0,	  2		  ]
+[ 10413@0,	  2		  ]
+[ 10491@0,	  2		  ]
+[ 10568@0,	  2		  ]
+[ 10580@0,	  2		  ]
+[ 10579@0,	  2		  ]
+[ 10578@0,	  2		  ]
+[ 10577@0,	  2		  ]
+#---------------------------------#
+# BAT:		  tmp_30	  #
+# (oid)		  (int)		  #
+#---------------------------------#
+[ 10000@0,	  2		  ]
+[ 10033@0,	  2		  ]
+[ 10329@0,	  4		  ]
+[ 10347@0,	  2		  ]
+[ 10413@0,	  2		  ]
+[ 10491@0,	  2		  ]
+[ 10568@0,	  2		  ]
+[ 10580@0,	  2		  ]
+[ 10579@0,	  2		  ]
+[ 10578@0,	  2		  ]
+[ 10577@0,	  2		  ]
+#---------------------------------------------------------#
+# BAT:			  count	| copy.count	| diff	  #
+# (str)			  (int)	| (int)		| (int)	  #
+#---------------------------------------------------------#
+[ "monet_environment",	  21,	  21,		  0	  ]
+[ "monet_fcn_fcn",	  560,	  560,		  0	  ]
+[ "monet_fcn_imp",	  634,	  634,		  0	  ]
+[ "monet_fcn_tpe",	  634,	  634,		  0	  ]
+[ "monet_fcn_mid",	  604,	  604,		  0	  ]
+[ "monet_fcn_sig",	  37,	  37,		  0	  ]
+[ "monet_fcn_dsc",	  604,	  604,		  0	  ]
+[ "monet_fcn_aut",	  604,	  604,		  0	  ]
+[ "monet_fcn_dat",	  604,	  604,		  0	  ]
+[ "monet_fcn_nme",	  634,	  634,		  0	  ]
+[ "monet_fcn_pro",	  1586,	  1586,		  0	  ]
+[ "monet_fcn_cnt",	  634,	  634,		  0	  ]
+[ "monet_mod_nme",	  11,	  11,		  0	  ]
+[ "monet_mod_cnt",	  11,	  11,		  0	  ]
+[ "monet_mod_atm",	  5,	  5,		  0	  ]
+[ "monet_mod_acc",	  0,	  0,		  0	  ]
+[ "monet_mod_hdl",	  11,	  11,		  0	  ]
+[ "monet_mod_dep",	  3,	  3,		  0	  ]
+[ "monet_mod_use",	  24,	  24,		  0	  ]
+[ "monet_mod_load",	  6,	  6,		  0	  ]
+[ "monet_mod_drop",	  0,	  0,		  0	  ]
+[ "monet_fcntbl",	  634,	  634,		  0	  ]
+[ "monet_acctbl",	  2,	  2,		  0	  ]
+[ "monet_atomtbl",	  18,	  18,		  0	  ]
+[ "mapi_params",	  0,	  0,		  0	  ]
+[ "tmp_26",		  2,	  2,		  0	  ]
+[ "tmp_27",		  634,	  634,		  0	  ]
+[ "tmp_28",		  18,	  18,		  0	  ]
+
+# 10:20:11 >  
+# 10:20:11 >  Mtimeout -timeout 3 Mshutdown.py --set mapi_port=58924
+# 10:20:11 >  
+
+
+# 10:21:16 >  
+# 10:21:16 >  Done.
+# 10:21:16 >  
+

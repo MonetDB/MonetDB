@@ -1,0 +1,63 @@
+stderr of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
+
+
+# 10:20:07 >  
+# 10:20:07 >  Mtimeout -timeout 66 Mserver --config=/ufs/manegold/Monet/4.3/monet/_PREFIX_/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_monet --set mapi_port=58924 /ufs/manegold/Monet/4.3/monet/_PREFIX_/share/MonetDB/mapi.mil monet_mod_cnt-copy_C.prologue ; echo  ; echo Over..
+# 10:20:07 >  
+
+# builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
+# builtin opt 	gdk_version = 4.3.5
+# builtin opt 	monet_pid = 9525
+# builtin opt 	prefix = /ufs/manegold/Monet/4.3/monet/_PREFIX_
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_mmap = 32M
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# builtin opt 	monet_deamon = yes
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	sql_port = 45123
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_api = sql
+# builtin opt 	sql_user = sqladmin
+# builtin opt 	sql_schema = default-schema
+# config opt 	prefix = /ufs/manegold/Monet/4.3/monet/_PREFIX_
+# config opt 	exec_prefix = ${prefix}
+# config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
+# config opt 	gdk_dbname = demo
+# config opt 	gdk_debug = 0
+# config opt 	gdk_mmap = 33554432
+# config opt 	monet_admin = adm
+# config opt 	monet_prompt = monet>
+# config opt 	monet_welcome = yes
+# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# config opt 	monet_deamon = no
+# cmdline opt 	gdk_debug = 10
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbname = Tests_src_monet
+# cmdline opt 	mapi_port = 58924
+
+
+# 10:20:08 >  
+# 10:20:08 >  Mtimeout -timeout 3 MapiClient --port=58924 < monet_mod_cnt-copy_C.milC
+# 10:20:08 >  
+
+
+
+# 10:20:11 >  
+# 10:20:11 >  Mtimeout -timeout 3 Mshutdown.py --set mapi_port=58924
+# 10:20:11 >  
+
+
+
+# 10:21:16 >  
+# 10:21:16 >  Done.
+# 10:21:16 >  
+

@@ -1,0 +1,65 @@
+stdout of test 'monet_mod_cnt-copy_S` in directory 'src/monet` itself:
+
+
+# 10:20:07 >  
+# 10:20:07 >  Mtimeout -timeout 3 Mserver --config=/ufs/manegold/Monet/4.3/monet/_PREFIX_/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_monet  < monet_mod_cnt-copy_S.milS
+# 10:20:07 >  
+
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+#---------------------------------#
+# BAT:		  monet_mod_cnt	  #
+# (oid)		  (int)		  #
+#---------------------------------#
+[ 10000@0,	  1		  ]
+[ 10033@0,	  1		  ]
+[ 10329@0,	  1		  ]
+[ 10347@0,	  1		  ]
+[ 10413@0,	  1		  ]
+[ 10491@0,	  1		  ]
+[ 10568@0,	  1		  ]
+#-------------------------#
+# BAT:		  tmp_26  #
+# (oid)		  (int)	  #
+#-------------------------#
+[ 10000@0,	  1	  ]
+[ 10033@0,	  1	  ]
+[ 10329@0,	  1	  ]
+[ 10347@0,	  1	  ]
+[ 10413@0,	  1	  ]
+[ 10491@0,	  1	  ]
+[ 10568@0,	  1	  ]
+#---------------------------------------------------------#
+# BAT:			  count	| copy.count	| diff	  #
+# (str)			  (int)	| (int)		| (int)	  #
+#---------------------------------------------------------#
+[ "monet_environment",	  21,	  21,		  0	  ]
+[ "monet_fcn_fcn",	  507,	  507,		  0	  ]
+[ "monet_fcn_imp",	  570,	  570,		  0	  ]
+[ "monet_fcn_tpe",	  570,	  570,		  0	  ]
+[ "monet_fcn_mid",	  542,	  542,		  0	  ]
+[ "monet_fcn_sig",	  36,	  36,		  0	  ]
+[ "monet_fcn_dsc",	  542,	  542,		  0	  ]
+[ "monet_fcn_aut",	  542,	  542,		  0	  ]
+[ "monet_fcn_dat",	  542,	  542,		  0	  ]
+[ "monet_fcn_nme",	  570,	  570,		  0	  ]
+[ "monet_fcn_pro",	  1427,	  1427,		  0	  ]
+[ "monet_fcn_cnt",	  570,	  570,		  0	  ]
+[ "monet_mod_nme",	  7,	  7,		  0	  ]
+[ "monet_mod_cnt",	  7,	  7,		  0	  ]
+[ "monet_mod_atm",	  0,	  0,		  0	  ]
+[ "monet_mod_acc",	  0,	  0,		  0	  ]
+[ "monet_mod_hdl",	  7,	  7,		  0	  ]
+[ "monet_mod_dep",	  0,	  0,		  0	  ]
+[ "monet_mod_use",	  7,	  7,		  0	  ]
+[ "monet_mod_load",	  4,	  4,		  0	  ]
+[ "monet_mod_drop",	  0,	  0,		  0	  ]
+[ "monet_fcntbl",	  570,	  570,		  0	  ]
+[ "monet_acctbl",	  2,	  2,		  0	  ]
+[ "monet_atomtbl",	  13,	  13,		  0	  ]
+
+# 10:20:07 >  
+# 10:20:07 >  Done.
+# 10:20:07 >  
+
