@@ -203,6 +203,21 @@ Ao far we haven;t re-used the pattern that both legs are
 identical. This could be modeled by a generic chunk factory.
 Choosing a new factory for each query steps reduces the 
 administrative overhead.
+@+ Open issues
+What is the lifetime of a factory? Does it persists after
+all clients has disappeared?
+
+What additional control do you need? Can you throw an
+exception to a Factory? implicitly yes.
+{\footnotesize
+\begin{verbatim}
+	RAISE reset:="reset";
+	chunkStep(L);	# receives 'reset' exception
+	CATCH reset;
+	EXIT reset;
+\end{verbatim}
+}
+
 @{
 @h
 #ifndef _MAL_FACTORY_H

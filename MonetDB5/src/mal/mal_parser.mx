@@ -344,15 +344,18 @@ int cstLength(Client cntxt, int *type)
 	}
 	return i;
 parseTFN:
-	if( *s=='f' && strncmp(s,"false",5)==0 && !isalnum((int)*(s+5)) ){
+	if( *s=='f' && strncmp(s,"false",5)==0 && !isalnum((int)*(s+5)) &&
+			*(s+5)!= '_'){
 		*type = TYPE_bit;
 		return 5;
 	}
-	if( *s== 't' && strncmp(s,"true",4)==0 && !isalnum((int)*(s+4)) ){
+	if( *s== 't' && strncmp(s,"true",4)==0 && !isalnum((int)*(s+4)) &&
+			*(s+4)!= '_'){
 		*type = TYPE_bit;
 		return 4;
 	}
-	if( *s== 'n' && strncmp(s,"nil",3)==0 && !isalnum((int)*(s+3)) ){
+	if( *s== 'n' && strncmp(s,"nil",3)==0 && !isalnum((int)*(s+3)) &&
+			*(s+3)!= '_'){
 		*type = TYPE_void;
 		return 3;
 	}

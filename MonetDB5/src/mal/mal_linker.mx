@@ -147,7 +147,6 @@ A module loading conflict emerges if a function is redefined.
 A duplicate load is simply ignored by keeping track of modules
 already loaded.
 @c
-#define LIBPATH "lib/MonetDB"
 #define MAXMODULES 256
 
 static str modulesLoaded[MAXMODULES];
