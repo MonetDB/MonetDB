@@ -685,6 +685,7 @@ def msc_library(fd, var, libmap, msc):
             msc['EXTRA_DIST'].append(src)
 
     srcs = pref + sep + libname + "_OBJS ="
+    deffile = ''
     for target in libmap['TARGETS']:
         if target == "@LIBOBJS@":
             srcs = srcs + " $(LIBOBJS)"
@@ -705,11 +706,13 @@ def msc_library(fd, var, libmap, msc):
             elif ext in scripts_ext:
                 if target not in SCRIPTS:
                     SCRIPTS.append(target)
+            elif ext == 'def':
+                deffile = ' "-DEF:$(SRCDIR)\\%s"' % target
     fd.write(srcs + "\n")
     ln = pref + sep + libname
     fd.write("%s.lib: %s%s\n" % (ln, ln, dll))
     fd.write("%s%s: $(%s_OBJS) \n" % (ln, dll, ln))
-    fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s%s $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)\n" % (ln, dll, ln, ln))
+    fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s%s $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, dll, ln, ln, deffile))
     if sep == "_":
         fd.write("\tif not exist .libs $(MKDIR) .libs\n")
         fd.write('\tif exist "%s%s" $(INSTALL) "%s%s" .libs\\%s%s\n' % (ln, dll, ln, dll, ln, dll))
@@ -769,6 +772,7 @@ def msc_libs(fd, var, libsmap, msc):
                 fd.write(msc_additional_libs(fd, libname, sep, "LIB", libslist, dlib, msc))
 
         srcs = "lib"+sep+libname+"_OBJS ="
+        deffile = ''
         for target in libsmap['TARGETS']:
             t, ext = split_filename(target)
             if t == libname:
@@ -786,11 +790,13 @@ def msc_libs(fd, var, libsmap, msc):
                 elif ext in scripts_ext:
                     if target not in SCRIPTS:
                         SCRIPTS.append(target)
+                elif ext == 'def':
+                    deffile = ' "-DEF:$(SRCDIR)\\%s"' % target
         fd.write(srcs + "\n")
         ln = "lib" + sep + libname
         fd.write(ln + ".lib: " + ln + ".dll\n")
         fd.write(ln + ".dll: $(" + ln + "_OBJS)\n")
-        fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)\n" % (ln, ln, ln))
+        fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, ln, ln, deffile))
         if sep == "_":
             fd.write("\tif not exist .libs $(MKDIR) .libs\n")
             fd.write('\tif exist "%s.dll" $(INSTALL) "%s.dll" .libs\\%s.dll\n' % (ln, ln, ln))
