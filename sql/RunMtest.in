@@ -22,6 +22,9 @@ fi
 if [ "${uname}" = "Darwin"  -a  "${DYLD_LIBRARY_PATH}" ] ; then
 	DYLD_LIBRARY_PATH=":${DYLD_LIBRARY_PATH}"
 fi
+if [ "${uname}" = "AIX"  -a  "${LIBPATH}" ] ; then
+	LIBPATH=":${LIBPATH}"
+fi
 
 # enhance PATH with Msql and MonetDB binaries
 PATH="${builddir}/src/client:${builddir}/src/tools:${MONET_PREFIX}/bin:$PATH"
@@ -30,6 +33,10 @@ LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
 if [ "${uname}" = "Darwin" ] ; then
 	DYLD_LIBRARY_PATH="${libpath}${DYLD_LIBRARY_PATH}"
 	export DYLD_LIBRARY_PATH
+fi
+if [ "${uname}" = "AIX" ] ; then
+	LIBPATH="${libpath}${LIBPATH}"
+	export LIBPATH
 fi
 export PATH LD_LIBRARY_PATH
 

@@ -433,6 +433,38 @@ if [ "${libpath}" ] ; then
 		LD_LIBRARY_PATH="${libpath}" ; export LD_LIBRARY_PATH
 	fi
 	echo " LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+	if [ "${os}" = "Darwin" ] ; then
+		if [ "${DYLD_LIBRARY_PATH}" ] ; then
+			# prepend new libpath to existing DYLD_LIBRARY_PATH, if DYLD_LIBRARY_PATH doesn't contain libpath, yet
+			case ":${DYLD_LIBRARY_PATH}:" in
+			*:${libpath}:*)
+				;;
+			*)
+				DYLD_LIBRARY_PATH="${libpath}:${DYLD_LIBRARY_PATH}" ; export DYLD_LIBRARY_PATH
+				;;
+			esac
+		  else
+			# set DYLD_LIBRARY_PATH as libpath
+			DYLD_LIBRARY_PATH="${libpath}" ; export DYLD_LIBRARY_PATH
+		fi
+		echo " DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}"
+	fi
+	if [ "${os}" = "AIX" ] ; then
+		if [ "${LIBPATH}" ] ; then
+			# prepend new libpath to existing LIBPATH, if LIBPATH doesn't contain libpath, yet
+			case ":${LIBPATH}:" in
+			*:${libpath}:*)
+				;;
+			*)
+				LIBPATH="${libpath}:${LIBPATH}" ; export LIBPATH
+				;;
+			esac
+		  else
+			# set LIBPATH as libpath
+			LIBPATH="${libpath}" ; export LIBPATH
+		fi
+		echo " LIBPATH=${LIBPATH}"
+	fi
 fi
 if [ "${modpath}" ] ; then
 	if [ "${MONET_MOD_PATH}" ] ; then

@@ -14,6 +14,9 @@ fi
 if [ "${uname}" = "Darwin"  -a  "${DYLD_LIBRARY_PATH}" ] ; then
 	DYLD_LIBRARY_PATH=":${DYLD_LIBRARY_PATH}"
 fi
+if [ "${uname}" = "AIX"  -a  "${LIBPATH}" ] ; then
+	LIBPATH=":${LIBPATH}"
+fi
 
 # enhance various paths to find our stuff
 PATH="${builddir}/src/testing:${builddir}/src/tools:${builddir}/src/mapi/clients/C:${builddir}/src/mapi/clients/python:$PATH"
@@ -23,6 +26,10 @@ LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
 if [ "${uname}" = "Darwin" ] ; then
 	DYLD_LIBRARY_PATH="${libpath}${DYLD_LIBRARY_PATH}"
 	export DYLD_LIBRARY_PATH
+fi
+if [ "${uname}" = "AIX" ] ; then
+	LIBPATH="${libpath}${LIBPATH}"
+	export LIBPATH
 fi
 export PATH PYTHONPATH LD_LIBRARY_PATH
 
