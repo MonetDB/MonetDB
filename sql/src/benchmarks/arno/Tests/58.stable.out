@@ -1,29 +1,29 @@
 stdout of test '58` in directory 'src/benchmarks/arno` itself:
 
 
-# 21:05:00 >  
-# 21:05:00 >  Mtimeout -timeout 102 Mserver -monetrc /export/scratch1/manegold/Monet/4.3/monet/_Linux_GNU_32_d_--enable-optimize_/share/Monet/monet.Mtest.conf -db Tests_src_benchmarks_arno /export/scratch1/manegold/Monet/4.3/sql/_Linux_GNU_32_d_--enable-optimize_/share/sql/catalog.mil /export/scratch1/manegold/Monet/4.3/sql/_Linux_GNU_32_d_--enable-optimize_/share/sql/sqlserver.mil ; echo  ; echo Over..
-# 21:05:00 >  
+# 19:40:52 >  
+# 19:40:52 >  Mtimeout -timeout 180 Mserver --config=/ufs/niels/.monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_benchmarks_arno --set sql_port=51478 /ufs/niels/data/sql/Linux/share/sql/catalog.mil /ufs/niels/data/sql/Linux/share/sql/sqlserver.mil ; echo  ; echo Over..
+# 19:40:52 >  
 
-# Monet Database Server V4.3.4
-# Copyright (c) 1993-2001, CWI. All rights reserved.
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 printf("\nReady.\n");
 
 Ready.
-# [ 8 ]
+# [ 9 10 ]
 quit;
 
 Over..
 
-# 21:05:02 >  
-# 21:05:02 >  Mtimeout -timeout 21 sql_client --port=54321  < 58.sql
-# 21:05:02 >  
+# 19:40:52 >  
+# 19:40:52 >  Mtimeout -timeout 60 sql_client --port=51478 < 58.sql
+# 19:40:52 >  
 
 "T"	14
 1 Row affected
 
-# 21:05:02 >  
-# 21:05:02 >  Done.
-# 21:05:02 >  
+# 19:40:53 >  
+# 19:40:53 >  Done.
+# 19:40:53 >  
 
