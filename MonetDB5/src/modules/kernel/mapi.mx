@@ -177,7 +177,6 @@ address mapi_epilogue;
 }
 @c
 
-static int mapiSpy;
 static char *threadcommand;
 
 str MAPIlistenThread(int *Sock ) {
@@ -187,8 +186,8 @@ str MAPIlistenThread(int *Sock ) {
 	char	*cmd= threadcommand;
 	struct 	timeval tv;
 	fd_set 	fds;
-        (void) mapiSpy; /* fool compilers */
 
+	GDKfree(Sock);
 	do {
 
 #ifdef DEBUG_MAPI
@@ -296,6 +295,7 @@ In V4 it is possible to execute a command using the command parameter.
 
 str MAPIlisten3(int *ret, int *Port, int *Maxusers, str *Cmd)
 {
+	int 	*Sock = GDKmalloc(sizeof(int));
 	struct sockaddr_in server;
 	int 	sock,pid;
 	SOCKLEN 	length = 0;
@@ -342,8 +342,9 @@ Get the new information for the server socket and start listening.
 
 
 	threadcommand= cmd;
+	*Sock = sock;
         if( MT_create_thread((MT_Id *)&pid,
-                (void (*)(void *))MAPIlistenThread, & sock) <0){
+                (void (*)(void *))MAPIlistenThread, Sock) <0){
                 return throwMessage("mapi.listen", "starting thread failed");
         }
 	gethostname(host,(int)512);
@@ -819,7 +820,6 @@ str MAPItrace2(int *ret, str *nme,int *flg){
 str MAPItrace(int *res, int *flg){
         (void) res; /* fool compiler */
         (void) traceAllClients(*flg);
-        mapiSpy = *flg;
         return MAL_SUCCEED;
 }
 str MAPIsuspend(int *res, int *skey, int *timeout){
