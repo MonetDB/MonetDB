@@ -46,37 +46,37 @@
 
 /** Node names to print out for all the Algebra tree nodes. */
 char *a_id[]  = {
-      [aop_lit_tbl]      "TBL"
-    , [aop_disjunion]    "U"
-    , [aop_difference]   "DIFF"
+      [aop_lit_tbl]      = "TBL"
+    , [aop_disjunion]    = "U"
+    , [aop_difference]   = "DIFF"
       /* note: dot does not like the sequence "×\nfoo", so we put spaces
        * around the cross symbol.
        */
-    , [aop_cross]        " × "              /* yellow */
-    , [aop_eqjoin]       "|X|"              /* green */
-    , [aop_scjoin]       "/|"               /* light blue */
-    , [aop_doc_tbl]      "DOC"
-    , [aop_select]       "SEL"
-    , [aop_negate]       "NOT"
-    , [aop_type]         "TYPE"
-    , [aop_cast]         "CAST"
-    , [aop_num_add]      "num-add"
-    , [aop_num_subtract] "num_subtr"
-    , [aop_num_multiply] "num-mult"
-    , [aop_num_divide]   "num-div"
-    , [aop_project]      "¶"
-    , [aop_rownum]       "ROW#"
-    , [aop_serialize]    "SERIALIZE"
+    , [aop_cross]        = " × "              /* yellow */
+    , [aop_eqjoin]       = "|X|"              /* green */
+    , [aop_scjoin]       = "/|"               /* light blue */
+    , [aop_doc_tbl]      = "DOC"
+    , [aop_select]       = "SEL"
+    , [aop_negate]       = "NOT"
+    , [aop_type]         = "TYPE"
+    , [aop_cast]         = "CAST"
+    , [aop_num_add]      = "num-add"
+    , [aop_num_subtract] = "num_subtr"
+    , [aop_num_multiply] = "num-mult"
+    , [aop_num_divide]   = "num-div"
+    , [aop_project]      = "¶"
+    , [aop_rownum]       = "ROW#"
+    , [aop_serialize]    = "SERIALIZE"
 };
 
 /** string representation of algebra atomic types */
 static char *atomtype[] = {
-      [aat_int]   "int"
-    , [aat_str]   "str"
-    , [aat_node]  "node"
-    , [aat_dec]   "dec"
-    , [aat_dbl]   "dbl"
-    , [aat_bln]   "bool"
+      [aat_int]  = "int"
+    , [aat_str]  = "str"
+    , [aat_node] = "node"
+    , [aat_dec]  = "dec"
+    , [aat_dbl]  = "dbl"
+    , [aat_bln]  = "bool"
 };
 
 /** Current node id */
@@ -108,24 +108,24 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
     static int node_id = 1;
 
     static char *color[] = {
-        [aop_lit_tbl]       "grey",
-        [aop_disjunion]     "grey",
-        [aop_difference]    "grey",
-        [aop_cross]         "yellow",
-        [aop_eqjoin]        "green",
-        [aop_scjoin]        "lightblue",
-        [aop_doc_tbl]       "grey",
-        [aop_select]        "grey",
-        [aop_negate]        "grey",
-        [aop_type]          "grey",
-        [aop_cast]          "grey",
-        [aop_project]       "grey",
-        [aop_rownum]        "red",
-        [aop_serialize]     "grey",
-        [aop_num_add]       "grey",
-        [aop_num_subtract]  "grey",
-        [aop_num_multiply]  "grey",
-        [aop_num_divide]    "grey"
+        [aop_lit_tbl]      = "grey",
+        [aop_disjunion]    = "grey",
+        [aop_difference]   = "grey",
+        [aop_cross]        = "yellow",
+        [aop_eqjoin]       = "green",
+        [aop_scjoin]       = "lightblue",
+        [aop_doc_tbl]      = "grey",
+        [aop_select]       = "grey",
+        [aop_negate]       = "grey",
+        [aop_type]         = "grey",
+        [aop_cast]         = "grey",
+        [aop_project]      = "grey",
+        [aop_rownum]       = "red",
+        [aop_serialize]    = "grey",
+        [aop_num_add]      = "grey",
+        [aop_num_subtract] = "grey",
+        [aop_num_multiply] = "grey",
+        [aop_num_divide]   = "grey"
     };
 
     n->node_id = node_id;

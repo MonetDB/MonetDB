@@ -61,9 +61,6 @@
 /** Maximum number of children of a core tree node */
 #define PFCNODE_MAXCHILD 4
 
-/** Core tree node type indicators */
-typedef enum PFctype_t PFctype_t;
-
 /**
  * Core tree node type indicators
  *
@@ -148,8 +145,8 @@ enum PFctype_t {
   , c_empty                   /**< built-in function `empty' */
 };
 
-/** Semantic node content of core tree node */
-typedef union PFcsem_t PFcsem_t;
+/** Core tree node type indicators */
+typedef enum PFctype_t PFctype_t;
 
 /** Semantic node content of core tree node */
 union PFcsem_t {
@@ -164,6 +161,9 @@ union PFcsem_t {
   PFty_t     type;       /**< used with c_type */
   PFfun_t   *fun;        /**< function reference */
 };
+
+/** Semantic node content of core tree node */
+typedef union PFcsem_t PFcsem_t;
 
 typedef struct PFcnode_t PFcnode_t;
 

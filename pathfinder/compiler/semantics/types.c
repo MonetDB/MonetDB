@@ -794,31 +794,31 @@ PFty_rchild (PFty_t t)
  * String representation of types.
  */
 static char* ty_id[] = {
-      [ty_none         ]     "none"
-    , [ty_empty        ]     "()"
-    , [ty_opt          ]     "?"
-    , [ty_plus         ]     "+"
-    , [ty_star         ]     "*"
-    , [ty_seq          ]     ","
-    , [ty_choice       ]     " | "
-    , [ty_all          ]     " & "
-    , [ty_item         ]     "item"
-    , [ty_untypedAny   ]     "untypedAny"
-    , [ty_atomic       ]     "atomic"
-    , [ty_untypedAtomic]     "untypedAtomic"
-    , [ty_numeric      ]     "numeric"
-    , [ty_integer      ]     "integer"
-    , [ty_decimal      ]     "decimal"
-    , [ty_double       ]     "double"
-    , [ty_string       ]     "string"
-    , [ty_boolean      ]     "boolean"
-    , [ty_node         ]     "node"
-    , [ty_elem         ]     "element"
-    , [ty_attr         ]     "attribute"
-    , [ty_doc          ]     "document"
-    , [ty_text         ]     "text"
-    , [ty_pi           ]     "processing-instruction"
-    , [ty_comm         ]     "comment"
+      [ty_none         ]   = "none"
+    , [ty_empty        ]   = "()"
+    , [ty_opt          ]   = "?"
+    , [ty_plus         ]   = "+"
+    , [ty_star         ]   = "*"
+    , [ty_seq          ]   = ","
+    , [ty_choice       ]   = " | "
+    , [ty_all          ]   = " & "
+    , [ty_item         ]   = "item"
+    , [ty_untypedAny   ]   = "untypedAny"
+    , [ty_atomic       ]   = "atomic"
+    , [ty_untypedAtomic]   = "untypedAtomic"
+    , [ty_numeric      ]   = "numeric"
+    , [ty_integer      ]   = "integer"
+    , [ty_decimal      ]   = "decimal"
+    , [ty_double       ]   = "double"
+    , [ty_string       ]   = "string"
+    , [ty_boolean      ]   = "boolean"
+    , [ty_node         ]   = "node"
+    , [ty_elem         ]   = "element"
+    , [ty_attr         ]   = "attribute"
+    , [ty_doc          ]   = "document"
+    , [ty_text         ]   = "text"
+    , [ty_pi           ]   = "processing-instruction"
+    , [ty_comm         ]   = "comment"
 };
   
 /**
@@ -832,12 +832,12 @@ static char* ty_id[] = {
  *       &   |  0
  */
 static int ty_prec[] = {
-     [ty_opt   ]     3
-    ,[ty_plus  ]     3
-    ,[ty_star  ]     3
-    ,[ty_seq   ]     2
-    ,[ty_choice]     1
-    ,[ty_all   ]     0
+     [ty_opt   ]   = 3
+    ,[ty_plus  ]   = 3
+    ,[ty_star  ]   = 3
+    ,[ty_seq   ]   = 2
+    ,[ty_choice]   = 1
+    ,[ty_all   ]   = 0
 };
 
 #include <stdio.h>
