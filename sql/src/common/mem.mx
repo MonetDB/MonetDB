@@ -67,6 +67,13 @@ extern int sql_ref_dec( sql_ref *r );
 
 @c
 
+/* Stefan: 
+ * "Fake-include" to make msc.py create the proper dependencies;
+ * otherwise, query.h doesn't get extracted from query.mx on Windows.
+ * TODO: fix msc.py instead...
+#include "query.h"
+*/
+
 #include <mem.h>
 
 sql_ref *sql_ref_init (sql_ref *r)
