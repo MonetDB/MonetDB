@@ -236,6 +236,7 @@ static int stream_writeInt( stream *s, const int val ){
 
 static void stream_close( stream *s ){
 	FILE *fp = (FILE*)s->stream_data;
+	if (!fp) return;
 	if (fp != stdin && fp != stdout && fp != stderr)
 		fclose( fp );
 	else
