@@ -107,7 +107,7 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	       "k.fk_name as fk_name, "
 	       "k.pk_name as pk_name, "
 	       "k.deferrability as deferrability "
-	       "from schemas s, tables t, columns c "
+	       "from sys.schemas s, sys.tables t, columns c "
 	       "where s.id = t.schema_id and t.id = c.table_id");
 	query_end += strlen(query_end);
 

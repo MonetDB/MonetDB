@@ -52,6 +52,209 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	}
 
 	switch (nInfoType) {
+	case SQL_ACCESSIBLE_PROCEDURES:
+		sValue = "Y";
+		break;
+	case SQL_ACCESSIBLE_TABLES:
+		sValue = "N";
+		break;
+	case SQL_ACTIVE_ENVIRONMENTS:
+		nValue = 0;	/* 0 = no limit */
+		len = sizeof(SQLUSMALLINT);
+		break;
+	case SQL_AGGREGATE_FUNCTIONS:
+		nValue = SQL_AF_ALL | SQL_AF_AVG | SQL_AF_COUNT |
+			SQL_AF_DISTINCT | SQL_AF_MAX | SQL_AF_MIN | SQL_AF_SUM;
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_ALTER_DOMAIN:
+		nValue = 0;
+		/* SQL_AD_ADD_CONSTRAINT_DEFERRABLE |
+		   SQL_AD_ADD_CONSTRAINT_INITIALLY_DEFERRED |
+		   SQL_AD_ADD_CONSTRAINT_INITIALLY_IMMEDIATE |
+		   SQL_AD_ADD_CONSTRAINT_NON_DEFERRABLE |
+		   SQL_AD_ADD_DOMAIN_CONSTRAINT |
+		   SQL_AD_ADD_DOMAIN_DEFAULT |
+		   SQL_AD_CONSTRAINT_NAME_DEFINITION |
+		   SQL_AD_DROP_DOMAIN_CONSTRAINT |
+		   SQL_AD_DROP_DOMAIN_DEFAULT */
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_ALTER_TABLE:
+		nValue = SQL_AT_ADD_COLUMN_DEFAULT |
+			SQL_AT_ADD_COLUMN_SINGLE |
+			SQL_AT_ADD_CONSTRAINT |
+			SQL_AT_ADD_TABLE_CONSTRAINT |
+			SQL_AT_CONSTRAINT_NAME_DEFINITION |
+			SQL_AT_DROP_COLUMN_RESTRICT |
+			SQL_AT_DROP_TABLE_CONSTRAINT_RESTRICT |
+			SQL_AT_SET_COLUMN_DEFAULT;
+		/* SQL_AT_ADD_COLUMN_SINGLE |
+		   SQL_AT_ADD_COLUMN_COLLATION |
+		   SQL_AT_ADD_COLUMN_DEFAULT |
+		   SQL_AT_ADD_TABLE_CONSTRAINT |
+		   SQL_AT_ADD_TABLE_CONSTRAINT |
+		   SQL_AT_CONSTRAINT_DEFERRABLE |
+		   SQL_AT_CONSTRAINT_INITIALLY_DEFERRED |
+		   SQL_AT_CONSTRAINT_INITIALLY_IMMEDIATE |
+		   SQL_AT_CONSTRAINT_NAME_DEFINITION |
+		   SQL_AT_DROP_COLUMN_CASCADE |
+		   SQL_AT_DROP_COLUMN_DEFAULT |
+		   SQL_AT_DROP_COLUMN_RESTRICT |
+		   SQL_AT_DROP_TABLE_CONSTRAINT_CASCADE |
+		   SQL_AT_DROP_TABLE_CONSTRAINT_RESTRICT |
+		   SQL_AT_SET_COLUMN_DEFAULT |
+		   SQL_AT_CONSTRAINT_NON_DEFERRABLE */
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_ASYNC_MODE:
+		nValue = SQL_AM_NONE;
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_BATCH_ROW_COUNT:
+		nValue = 0;
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_BATCH_SUPPORT:
+		nValue = 0;
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_BOOKMARK_PERSISTENCE:
+		nValue = 0;	/* bookmarks not supported */
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_CATALOG_LOCATION:
+		nValue = 0;
+		len = sizeof(SQLUSMALLINT);
+		break;
+	case SQL_CATALOG_NAME:
+		sValue = "N";
+		break;
+	case SQL_CATALOG_NAME_SEPARATOR:
+	case SQL_CATALOG_TERM:
+		sValue = "";
+		break;
+	case SQL_CATALOG_USAGE:
+		nValue = 0;
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_COLLATION_SEQ:
+		sValue = "UTF-8";
+		break;
+	case SQL_COLUMN_ALIAS:
+		sValue = "Y";
+		break;
+	case SQL_CONCAT_NULL_BEHAVIOR:
+		nValue = SQL_CB_NULL;
+		len = sizeof(SQLUSMALLINT);
+		break;
+	case SQL_CONVERT_BIGINT:
+	case SQL_CONVERT_BINARY:
+	case SQL_CONVERT_BIT:
+	case SQL_CONVERT_CHAR:
+	case SQL_CONVERT_DATE:
+	case SQL_CONVERT_DECIMAL:
+	case SQL_CONVERT_DOUBLE:
+	case SQL_CONVERT_FLOAT:
+	case SQL_CONVERT_INTEGER:
+	case SQL_CONVERT_INTERVAL_DAY_TIME:
+	case SQL_CONVERT_INTERVAL_YEAR_MONTH:
+	case SQL_CONVERT_LONGVARBINARY:
+	case SQL_CONVERT_LONGVARCHAR:
+	case SQL_CONVERT_NUMERIC:
+	case SQL_CONVERT_REAL:
+	case SQL_CONVERT_SMALLINT:
+	case SQL_CONVERT_TIME:
+	case SQL_CONVERT_TIMESTAMP:
+	case SQL_CONVERT_TINYINT:
+	case SQL_CONVERT_VARBINARY:
+	case SQL_CONVERT_VARCHAR:
+		nValue = SQL_CVT_CHAR |
+			SQL_CVT_NUMERIC |
+			SQL_CVT_DECIMAL |
+			SQL_CVT_INTEGER |
+			SQL_CVT_SMALLINT |
+			SQL_CVT_FLOAT |
+			SQL_CVT_REAL |
+			SQL_CVT_DOUBLE |
+			SQL_CVT_VARCHAR |
+			SQL_CVT_LONGVARCHAR |
+			SQL_CVT_BINARY |
+			SQL_CVT_VARBINARY |
+			SQL_CVT_BIT |
+			SQL_CVT_TINYINT |
+			SQL_CVT_BIGINT |
+			SQL_CVT_DATE |
+			SQL_CVT_TIME |
+			SQL_CVT_TIMESTAMP |
+			SQL_CVT_LONGVARBINARY |
+			SQL_CVT_INTERVAL_YEAR_MONTH |
+			SQL_CVT_INTERVAL_DAY_TIME;
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_CONVERT_FUNCTIONS:
+		/* No convert function supported */
+		nValue = SQL_FN_CVT_CAST | SQL_FN_CVT_CONVERT;
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_CORRELATION_NAME:
+		nValue = SQL_CN_ANY;
+		len = sizeof(SQLUSMALLINT);
+		break;
+	case SQL_CREATE_ASSERTION:
+	case SQL_CREATE_CHARACTER_SET:
+	case SQL_CREATE_COLLATION:
+	case SQL_CREATE_DOMAIN:
+	case SQL_CREATE_TRANSLATION:
+		nValue = 0;
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_CREATE_SCHEMA:
+		nValue = SQL_CS_CREATE_SCHEMA | SQL_CS_AUTHORIZATION;
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_CREATE_TABLE:
+		nValue = SQL_CT_CREATE_TABLE |
+			SQL_CT_COMMIT_PRESERVE |
+			SQL_CT_GLOBAL_TEMPORARY |
+			SQL_CT_LOCAL_TEMPORARY |
+			SQL_CT_COLUMN_CONSTRAINT |
+			SQL_CT_COLUMN_DEFAULT |
+			SQL_CT_TABLE_CONSTRAINT |
+			SQL_CT_CONSTRAINT_NAME_DEFINITION;
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_CREATE_VIEW:
+		nValue = SQL_CV_CREATE_VIEW | SQL_CV_CHECK_OPTION;
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_CURSOR_COMMIT_BEHAVIOR:
+	case SQL_CURSOR_ROLLBACK_BEHAVIOR:
+		nValue = SQL_CB_DELETE;
+		len = sizeof(SQLUSMALLINT);
+		break;
+	case SQL_CURSOR_SENSITIVITY:
+		nValue = SQL_UNSPECIFIED;
+		len = sizeof(SQLUINTEGER);
+		break;
+	case SQL_DATA_SOURCE_NAME:
+		sValue = dbc->DSN != NULL ? dbc->DSN : "";
+		break;
+	case SQL_DATA_SOURCE_READ_ONLY:
+		sValue = "N";
+		break;
+	case SQL_DATABASE_NAME:
+		sValue = dbc->DBNAME ? dbc->DBNAME : "";
+		break;
+	case SQL_ODBC_INTERFACE_CONFORMANCE:
+		nValue = SQL_OIC_CORE;
+		len = sizeof(SQLUINTEGER);
+		break;
+
+	case SQL_SQL_CONFORMANCE:
+		nValue = SQL_SC_SQL92_FULL;
+		len = sizeof(SQLUINTEGER);
+		break;
 	case SQL_MAX_DRIVER_CONNECTIONS:
 		nValue = 0;			/* 0 = No specified limit */
 		len = sizeof(SQLUSMALLINT);
@@ -59,12 +262,6 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	case SQL_MAX_CONCURRENT_ACTIVITIES:
 		nValue = 0;			/* 0 = No specified limit */
 		len = sizeof(SQLUSMALLINT);
-		break;
-	case SQL_DATA_SOURCE_NAME:
-		sValue = dbc->DSN != NULL ? dbc->DSN : "";
-		break;
-	case SQL_DATABASE_NAME:
-		sValue = dbc->DBNAME ? dbc->DBNAME : "";
 		break;
 	case SQL_DRIVER_NAME:
 		sValue = MONETDB_DRIVER_NAME;
@@ -107,25 +304,7 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	case SQL_DBMS_VER:
 		sValue = MONETDB_DRIVER_VER;
 		break;
-	case SQL_ACCESSIBLE_TABLES:
-		sValue = "Y";
-		break;
-	case SQL_ACCESSIBLE_PROCEDURES:
-		sValue = "Y";
-		break;
 	case SQL_PROCEDURES:
-		sValue = "N";
-		break;
-	case SQL_CONCAT_NULL_BEHAVIOR:
-		nValue = SQL_CB_NON_NULL;
-		len = sizeof(SQLUSMALLINT);
-		break;
-	case SQL_CURSOR_COMMIT_BEHAVIOR:
-	case SQL_CURSOR_ROLLBACK_BEHAVIOR:
-		nValue = SQL_CB_PRESERVE;
-		len = sizeof(SQLUSMALLINT);
-		break;
-	case SQL_DATA_SOURCE_READ_ONLY:
 		sValue = "N";
 		break;
 	case SQL_DEFAULT_TXN_ISOLATION:
@@ -171,7 +350,6 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		break;
 	case SQL_SCHEMA_TERM:
 	case SQL_PROCEDURE_TERM:
-	case SQL_CATALOG_TERM:
 	case SQL_TABLE_TERM:
 		/* no Terms supported */
 		sValue = "";
@@ -190,11 +368,6 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		break;
 	case SQL_USER_NAME:
 		sValue = dbc->UID ? dbc->UID : "";
-		break;
-	case SQL_CONVERT_FUNCTIONS:
-		/* No convert function supported */
-		nValue = 0;	/* SQL_FN_CVT_CONVERT; */
-		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_NUMERIC_FUNCTIONS:
 		nValue = SQL_FN_NUM_ABS | SQL_FN_NUM_ACOS | SQL_FN_NUM_ASIN |
@@ -236,38 +409,12 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 			SQL_FN_TD_WEEK | SQL_FN_TD_YEAR;
 		len = sizeof(SQLUINTEGER);
 		break;
-	case SQL_CONVERT_BIGINT:
-	case SQL_CONVERT_BINARY:
-	case SQL_CONVERT_BIT:
-	case SQL_CONVERT_CHAR:
-	case SQL_CONVERT_DATE:
-	case SQL_CONVERT_DECIMAL:
-	case SQL_CONVERT_DOUBLE:
-	case SQL_CONVERT_FLOAT:
-	case SQL_CONVERT_INTEGER:
-	case SQL_CONVERT_LONGVARCHAR:
-	case SQL_CONVERT_NUMERIC:
-	case SQL_CONVERT_REAL:
-	case SQL_CONVERT_SMALLINT:
-	case SQL_CONVERT_TIME:
-	case SQL_CONVERT_TIMESTAMP:
-	case SQL_CONVERT_TINYINT:
-	case SQL_CONVERT_VARBINARY:
-	case SQL_CONVERT_VARCHAR:
-	case SQL_CONVERT_LONGVARBINARY:
-		nValue = 0;
-		len = sizeof(SQLUINTEGER);
-		break;
 	case SQL_TXN_ISOLATION_OPTION:
 		nValue = SQL_TXN_REPEATABLE_READ;
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_INTEGRITY:
 		sValue = "N";
-		break;
-	case SQL_CORRELATION_NAME:
-		nValue = SQL_CN_ANY;
-		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_NON_NULLABLE_COLUMNS:
 		nValue = SQL_NNC_NON_NULL;
@@ -288,9 +435,6 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	case SQL_NULL_COLLATION:
 		nValue = SQL_NC_LOW;
 		len = sizeof(SQLUSMALLINT);
-		break;
-	case SQL_COLUMN_ALIAS:
-		sValue = "N";
 		break;
 	case SQL_GROUP_BY:
 		nValue = SQL_GB_NO_RELATION;
@@ -371,85 +515,7 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		len = sizeof(SQLUINTEGER);
 		break;
 
-	case SQL_ALTER_TABLE:
-		nValue = 0;	/* XXX needs checking */
-		/* SQL_AT_ADD_COLUMN_SINGLE |
-		   SQL_AT_ADD_COLUMN_DEFAULT |
-		   SQL_AT_ADD_COLUMN_COLLATION |
-		   SQL_AT_SET_COLUMN_DEFAULT |
-		   SQL_AT_DROP_COLUMN_DEFAULT |
-		   SQL_AT_DROP_COLUMN_CASCADE |
-		   SQL_AT_DROP_COLUMN_RESTRICT |
-		   SQL_AT_ADD_TABLE_CONSTRAINT |
-		   SQL_AT_DROP_TABLE_CONSTRAINT_CASCADE |
-		   SQL_AT_DROP_TABLE_CONSTRAINT_RESTRICT |
-		   SQL_AT_CONSTRAINT_NAME_DEFINITION |
-		   SQL_AT_CONSTRAINT_INITIALLY_DEFERRED |
-		   SQL_AT_CONSTRAINT_INITIALLY_IMMEDIATE |
-		   SQL_AT_CONSTRAINT_DEFERRABLE |
-		   SQL_AT_CONSTRAINT_NON_DEFERRABLE */
-		len = sizeof(SQLUINTEGER);
-		break;
 
-	case SQL_ACTIVE_ENVIRONMENTS:
-		nValue = 0;	/* 0 = no limit */
-		len = sizeof(SQLUSMALLINT);
-		break;
-	case SQL_AGGREGATE_FUNCTIONS:
-		nValue = SQL_AF_ALL | SQL_AF_AVG | SQL_AF_COUNT |
-			SQL_AF_DISTINCT | SQL_AF_MAX | SQL_AF_MIN | SQL_AF_SUM;
-		len = sizeof(SQLUINTEGER);
-		break;
-	case SQL_ALTER_DOMAIN:
-		nValue = 0;	/* XXX needs checking */
-		/* SQL_AD_ADD_CONSTRAINT_DEFERRABLE |
-		   SQL_AD_ADD_CONSTRAINT_INITIALLY_DEFERRED |
-		   SQL_AD_ADD_CONSTRAINT_INITIALLY_IMMEDIATE |
-		   SQL_AD_ADD_CONSTRAINT_NON_DEFERRABLE |
-		   SQL_AD_ADD_DOMAIN_CONSTRAINT |
-		   SQL_AD_ADD_DOMAIN_DEFAULT |
-		   SQL_AD_CONSTRAINT_NAME_DEFINITION |
-		   SQL_AD_DROP_DOMAIN_CONSTRAINT |
-		   SQL_AD_DROP_DOMAIN_DEFAULT */
-		len = sizeof(SQLUINTEGER);
-		break;
-	case SQL_ASYNC_MODE:
-		nValue = SQL_AM_NONE;	/* XXX needs checking */
-		len = sizeof(SQLUINTEGER);
-		break;
-	case SQL_BATCH_ROW_COUNT:
-		nValue = 0;	/* XXX needs checking */
-		len = sizeof(SQLUINTEGER);
-		break;
-	case SQL_BATCH_SUPPORT:
-		nValue = 0;	/* XXX needs checking */
-		len = sizeof(SQLUINTEGER);
-		break;
-	case SQL_BOOKMARK_PERSISTENCE:
-		nValue = 0;	/* bookmarks not supported */
-		len = sizeof(SQLUINTEGER);
-		break;
-	case SQL_CATALOG_LOCATION:
-		nValue = SQL_CL_END; /* XXX needs checking */
-		len = sizeof(SQLUSMALLINT);
-		break;
-	case SQL_CATALOG_NAME:
-		sValue = "N";	/* XXX needs checking */
-		break;
-	case SQL_CATALOG_NAME_SEPARATOR:
-		sValue = ".";	/* XXX needs checking */
-		break;
-	case SQL_CATALOG_USAGE:
-	case SQL_COLLATION_SEQ:
-	case SQL_CONVERT_INTERVAL_DAY_TIME:
-	case SQL_CONVERT_INTERVAL_YEAR_MONTH:
-	case SQL_CREATE_ASSERTION:
-	case SQL_CREATE_CHARACTER_SET:
-	case SQL_CREATE_COLLATION:
-	case SQL_CREATE_DOMAIN:
-	case SQL_CREATE_TABLE:
-	case SQL_CREATE_TRANSLATION:
-	case SQL_CURSOR_SENSITIVITY:
 	case SQL_DATETIME_LITERALS:
 	case SQL_DDL_INDEX:
 	case SQL_DESCRIBE_PARAMETER:

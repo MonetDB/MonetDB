@@ -55,14 +55,23 @@ SQLColumnPrivileges(SQLHSTMT hStmt,
 	   VARCHAR	table_cat
 	   VARCHAR	table_schem
 	   VARCHAR	table_name NOT NULL
+	   VARCHAR	column_name NOT NULL
 	   VARCHAR	grantor
 	   VARCHAR	grantee NOT NULL
 	   VARCHAR	privilege NOT NULL
 	   VARCHAR	is_grantable
 	*/
 
-	/* IM001 = Driver does not support this function */
-	addStmtError(stmt, "IM001", NULL, 0);
-
-	return SQL_ERROR;
+	/* for now return dummy result set */
+	return SQLExecDirect_(stmt,
+			      (SQLCHAR *) "select "
+			      "cast('' as varchar) as table_cat, "
+			      "cast('' as varchar) as table_schem, "
+			      "cast('' as varchar) as table_name, "
+			      "cast('' as varchar) as column_name, "
+			      "cast('' as varchar) as grantor, "
+			      "cast('' as varchar) as grantee, "
+			      "cast('' as varchar) as privilege, "
+			      "cast('' as varchar) as is_grantable "
+			      "where 0 = 1", SQL_NTS);
 }

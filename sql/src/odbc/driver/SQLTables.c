@@ -84,7 +84,7 @@ SQLTables(SQLHSTMT hStmt,
 			       "'' as table_name, "
 			       "'' as table_type, "
 			       "'' as remarks "
-			       "from schemas where 0 = 1");
+			       "from sys.schemas where 0 = 1");
 	} else if (nCatalogNameLength == 0 && nTableNameLength == 0 &&
 		   szSchemaName && 
 		   strcmp((char*)szSchemaName, SQL_ALL_SCHEMAS) == 0) {
@@ -94,7 +94,7 @@ SQLTables(SQLHSTMT hStmt,
 			       "'' as table_name, "
 			       "'' as table_type, "
 			       "'' as remarks "
-			       "from schemas order by name");
+			       "from sys.schemas order by name");
 	} else if (nCatalogNameLength == 0 && nSchemaNameLength == 0 &&
 		   nTableNameLength == 0 && szTableType && 
 		   strcmp((char*)szTableType, SQL_ALL_TABLE_TYPES) == 0) {
@@ -108,7 +108,7 @@ SQLTables(SQLHSTMT hStmt,
 			       "when 3 then 'LOCAL TEMPORARY TABLE' "
 			       "else 'INTERNAL TYPE' end as table_type, "
 			       "'' as remarks "
-			       "from tables order by type");
+			       "from sys.tables order by type");
 		/* TODO: UNION it with all supported table types */
 	} else {
 		/* no special case argument values */
@@ -130,7 +130,7 @@ SQLTables(SQLHSTMT hStmt,
 			"when 3 then 'LOCAL TEMPORARY TABLE' "
 			"else 'INTERNAL TABLE TYPE' end as table_type, "
 			"'' as remarks "
-			"from schemas s, tables t "
+			"from sys.schemas s, sys.tables t "
 			"where s.id = t.schema_id",
 			nCatalogNameLength, szCatalogName);
 		query_end += strlen(query_end);

@@ -106,7 +106,7 @@ SQLColumns(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	       "'' as char_octet_length, "
 	       "c.number as ordinal_position, "
 	       "c.\"null\" as is_nullable "
-	       "from schemas s, tables t, columns c "
+	       "from sys.schemas s, sys.tables t, columns c "
 	       "where s.id = t.schema_id and t.id = c.table_id");
 	query_end += strlen(query_end);
 

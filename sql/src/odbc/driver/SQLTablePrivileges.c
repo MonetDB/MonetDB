@@ -53,6 +53,16 @@ SQLTablePrivileges(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 		return SQL_ERROR;
 	}
 
+	/* SQLTablePrivileges returns a table with the following columns:
+	   VARCHAR	table_cat
+	   VARCHAR	table_schem
+	   VARCHAR	table_name NOT NULL
+	   VARCHAR	grantor
+	   VARCHAR	grantee NOT NULL
+	   VARCHAR	privilege NOT NULL
+	   VARCHAR	is_grantable
+	 */
+
 	/* IM001 = Driver does not support this function */
 	addStmtError(stmt, "IM001", NULL, 0);
 

@@ -131,7 +131,7 @@ SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	       "cast(null as integer) as cardinality, "
 	       "cast(null as integer) as pages, "
 	       "cast(null as varchar) as filter_condition "
-	       "from schemas s, tables t, columns c "
+	       "from sys.schemas s, sys.tables t, columns c "
 	       "where s.id = t.schema_id and t.id = c.table_id and "
 	       "t.id = k.table_id");
 	query_end += strlen(query_end);
