@@ -16,19 +16,19 @@
 @' All Rights Reserved.
 
 @f mel
-@t MEL: Monet Extension Language 
+@t MEL: MonetDB Extension Language 
 @a Peter Boncz 
 @d 04/08/2003
 @v 1.2
 @T 
 @* Introduction
 The primary interface
-of Monet is called MIL, the Monet Interpreter Language (see the
+of MonetDB is called MIL, the MonetDB Interpreter Language (see the
 @[<a href="../../FrontEnds/mil/index.html">MIL Reference Manual</a>@ for an exhaustive
-description.
+description).
 @-
 MIL is an interpreted scripting language, designed as an intermediate 
-language interface for a database kernel. Monet provides a number of 
+language interface for a database kernel. MonetDB provides a number of 
 atomic types, and one collection type called the @#BAT@, which stands 
 for Binary Association Table. This simple design makes for a simple 
 kernel; the idea being that simple kernels can be implemented very 
@@ -36,40 +36,40 @@ efficiently.
 
 @+ Extending The Database
 @T
-Monet is an {\bf extensible database system}, and hence MIL is an 
-extensible language. Persons, knowledgeable om 
-some application domain, can extend the Monet database system to store
+MonetDB is an {\bf extensible database system}, and hence MIL is an 
+extensible language. Persons, knowledgeable in 
+some application domain, can extend the MonetDB database system to store
 new kinds of data, and define operations on them. These can be added to
-the existing operations and types already present in Monet.
+the existing operations and types already present in MonetDB.
 
-Extending Monet is achieved by writing an {\em extension module} in
-the Monet Extension Language (MEL). The MEL is a 
+Extending MonetDB is achieved by writing an {\em extension module} in
+the MonetDB Extension Language (MEL). The MEL is a 
 {\bf specification-only language}. 
 
 A MEL module states with what types, accelerators, and  
-commands the extension programmer wants to extend Monet. A MEL module
-also contains help texts on these new primitives. They will be inserted
-in Monet's online help system. Finally, a MEL module contains references
+commands the extension programmer wants to extend MonetDB. A MEL module
+also contains help texts on these new primitives which will be inserted
+into MonetDB's on-line help system. Finally, a MEL module contains references
 to C functions that implement the primitives.
 @T
-MEL modules can contain any of the following Monet Extensions: 
+MEL modules can contain any of the following MonetDB Extensions: 
 \begin{itemize}
 \item {\em new atomic data types}
-MIL has builtin support for \{ {\tt boolean, character, integer, oid, pointer, 
-float, double, long, and string} \} values. You can add new types, like
+MIL has built-in support for \{ {\tt Boolean}, {\tt character}, {\tt integer}, {\tt oid}, {\tt pointer}, 
+{\tt float}, {\tt double}, {\tt long}, and {\tt string} \} values. You can add new types, such as
 {\tt date} or {\tt polygon}. 
 \item {\em new algebraic commands or operators}
 Algebraic commands get passed in a set of values as parameters, then 
 do some execution, and return one value.  MIL allows for overloading 
 of algebraic commands and operators. You specify a type-signature 
-(with any-wildcarding and lambda expressions allowed), and MIL chooses
+(with any-wildcarding and lambda expressions allowed), and MIL chooses at
 run-time on the basis of the actual parameters.
 \item {\em new search accelerators}
 Some operations on tables need additional -- persistent -- data structures
-for efficient execution. Famous examples  are B-trees or Hash-tables.
-You provide ADT operations to create, destroy, and traverse such tables.
-The database needs to keep these tables consistent under updates; for these
-reason additional update ADT operations are required from the extension 
+for efficient execution. Well-known examples are B-trees or Hash-tables.
+You provide @[<acronym title="Abstract Data Type">ADT</acronym>@ operations to create, destroy, and traverse such tables.
+The database needs to keep these tables consistent under updates; therefore,
+additional update @[<acronym title="Abstract Data Type">ADT</acronym>@ operations are required from the extension 
 programmer. 
 \end{itemize}
 This document describes MEL, and the C/C++ extension programmers
@@ -81,25 +81,25 @@ Checking and installing your MEL extension modules is done
 using the 
 @[<a href="mel-tool/index.html">mel utility</a>@.
 @T
-It checks the MEL syntax, and depending on the switch:
+It checks the MEL syntax, and performs further operations depending on the command line switch.
 \begin{description}
-\item[-proto] generates a {\em prototype file} that contains
+\item[-proto] Generate a {\em prototype file} that contains
 function definitions in C/C++ for the implementations functions 
 that you have to provide for the new commands that the module 
-specifies. It generates type declarations for new data types 
+specifies. This also generates type declarations for new data types 
 you define.
-\item[-template] like function prototype definitions, but also 
+\item[-template] Like function prototype definitions, but also 
 helps you on your way a bit with the implementation, in that it 
 generates template implementations that just need to be filled in.
-\item[-glue] this switch forms the important link between 
-the Monet server and user-provided module code. Functions are 
+\item[-glue] This switch forms the important link between 
+the MonetDB server and user-provided module code. Functions are 
 generated for activating and de-activating a module. Also,
 for each command or operator, MEL generates internal functions
-that perform type checking and parameter packing between the
-Monet's internal structures, and the simple parameter passing
+that perform type checking and parameter packing between
+MonetDB's internal structures, and the simple parameter passing
 convention that module implementors must adhere to (see 
 @[<a target="_self" href="#mod_3_4_0">Section 3.4</a>@).
-\item[-html] generates simple html summary of the module's 
+\item[-html] Generate a simple html summary of the module's 
 functionality.
 \end{description}
 
@@ -111,13 +111,13 @@ functionality.
 \end{figure}
 \end{center}
 
-@- programming interface 
+@- Programming Interface 
 The C or C++ implementation can contain any kind of code, depending
-on your application domain. For handling of Monet values and BATs,
+on your application domain. For handling of MonetDB values and BATs,
 and the existing GDK library of BAT operations, see the 
 @[<a href="../gdk/index.html">GDK Interface</a>@. 
 
-The Monet extension module loader expects unmangled routine names, 
+The MonetDB extension module loader expects unmangled routine names, 
 so C++ programmers have to declare their top-level functions as 
 @!extern "C" { }@ blocks (see the 
 @[<a href="../Modules/monettime/index.html">monettime module</a>@ 
@@ -125,7 +125,7 @@ for an example of use of C++ as implementation language).
 
 @- The Development Process
 @T
-The line of action when implementing a Monet extension module is 
+The line of action when implementing a MonetDB extension module is 
 the following:
 \begin{enumerate}
 \item think first. Of what you want to make, and how you want to make it.
@@ -145,7 +145,7 @@ loadable library (in whatever way appropriate on your system).
 The name-convention of the library in the \$MONETHOME/lib directory
 steers module lookup when in the Mserver:
 \begin{itemize}
-\item A library colled "module.so" is usable by everyone, by any valid Monet 
+\item A library called "module.so" is usable by everyone, by any valid MonetDB 
 database. 
 \item A library called "module-db.so" indicates that this module can only
 be loaded by users of database "db". 
@@ -159,9 +159,9 @@ file "module.mx" and contains just one source file "module.c" or
 "module.cc". For more complex situations, you must invent something
 yourself.
 
-@* The Monet Extension Language (MEL)
+@* The MonetDB Extension Language (MEL)
 
-This section will discuss the Monet Extension Language (MEL) 
+This section will discuss the MonetDB Extension Language (MEL) 
 in detail. 
 
 @+ Grammar Specification
@@ -200,9 +200,9 @@ Individual characters are enclosed in single quotes.
 @+ MEL Modules 
 @T
 MEL is used to write modules. One MEL file describes one module. 
-These modules specify Monet extensions. Modules are the unit
-of extension in Monet: a module is loaded, or not. When it
-is loaded, all its new language elements are added to Monet's 
+These modules specify MonetDB extensions. Modules are the unit
+of extension in MonetDB: a module is loaded, or not. When it
+is loaded, all its new language elements are added to MonetDB's 
 interpreter language (MIL). When a module is {\em dropped},
 they are removed.
 
@@ -228,7 +228,7 @@ modulelist:
 	<ident: external module> | <ident: external module> ',' modulelist
 \end{verbatim}} 
 
-As module-loading and -dropping is individual to Monet users, and 
+As module-loading and -dropping is individual to MonetDB users, and 
 modules can be shared; loading the (physical) OS shared library and 
 logical module loading in the Mserver may occur at different points 
 in time: if someone else
@@ -245,11 +245,11 @@ Most preludes may just return a NULL pointer, but those modules
 where the prelude create BATs that have a head/tail type which is
 defined in the same module, must pass those BAT-ids in this array.
 
-This mechanism allows Monet to properly analyze whether all live
+This mechanism allows MonetDB to properly analyze whether all live
 references to atomic types introduced by a module will be cleaned
 up at the drop. That is, if a 'polygon' module is dropped, the system
 needs to ensure that no MIL variables or BATs with polygons are in 
-memory anymore. With the ADTs and dynamic libraries unloaded, using
+memory anymore. With the @[<acronym title="Abstract Data Type">ADT</acronym>@s and dynamic libraries unloaded, using
 even basic MIL functionalities (e.g. printing) would cause crashes. 
 If live atoms are found at drop-time, the module drop is canceled 
 (nothing is dropped, thus the epilogue is then not executed).  However, 
@@ -261,10 +261,10 @@ prelude-references are the only ones remaining.
 
 @- MIL-only modules
 @T
-Monet now also has support for MIL-only extension modules. That is, extension
-modules that are just MIL scripts. Monet just executes the MIL in them when 
-they are loaded. When such MIL-only modules are dropped, Monet undefines 
-all PROCs and variables thay have introduced, and also drops all modules that 
+MonetDB now also has support for MIL-only extension modules. That is, extension
+modules that are just MIL scripts. MonetDB just executes the MIL in them when 
+they are loaded. When such MIL-only modules are dropped, MonetDB undefines 
+all PROCs and variables they have introduced, and also drops all modules that 
 they loaded.
 
 As these MIL-only modules do not introduce new (C/C++ powered) language elements 
@@ -272,7 +272,7 @@ such as ATOMs and COMMANDs they have a functionality that is fully separate
 of MEL "true" extension modules.
 
 However, it is often useful to define a number of MIL constants, variables
-or even PROCs that go with a MEL extension module. The Monet Makefile systems 
+or even PROCs that go with a MEL extension module. The MonetDB Makefile systems 
 allows for bundling a MIL-only module with a MEL C++/C extension module, when these
 are implemented in a Mx file: the mel and c/C Mx-blocks are then compiled into a 
 MEL module, and the mil Mx-block becomes the MIL-only module.
@@ -285,7 +285,7 @@ code found in the mil Mx-blocks of your source file.
 
 @+ Atomic Types
 @T
-Monet comes with a standard collection of atomic values that are
+MonetDB comes with a standard collection of atomic values that are
 recognized automatically by MEL:
 
 {\small\begin{verbatim}
@@ -299,7 +299,7 @@ atomdef ::=
 \end{verbatim}} 
 
 As already shown in the example with the 'monettime' module, new
-atomic types can be introduced to Monet.
+atomic types can be introduced to MonetDB.
 
 {\small\begin{verbatim}
 fixedsizeatom ::=
@@ -316,24 +316,24 @@ varsizeatom ::=
 
 @- Two kinds of atoms 
 @T
-An important point in Monet's atomic types is that there are basically 
+An important point in MonetDB's atomic types is that there are basically 
 two classes of them:
 \begin{description}
 \item[fixed-size atoms] Their memory management is simple because all possible
 instances have the same size. They are stored directly in the BUN heap 
 (tuple heap)
-of a BAT. These types are very efficiently implemented in Monet. 
-\item[variable-size atoms] From the builtin-types, {\tt string} is the
+of a BAT. These types are very efficiently implemented in MonetDB. 
+\item[variable-size atoms] From the built-in types, {\tt string} is the
 only variable sized type. Values are stored in a separate heap, the BUN heap
-contains integer byte-offests into it. Monet ensures in this way that the 
-BUN heap can be implemented as an array of fixeds-size elements, even if 
+contains integer byte-offsets into it. MonetDB ensures in this way that the 
+BUN heap can be implemented as an array of fixed-size elements, even if 
 it contains values of variable-size. 
 \end{description}
 
-The correct functioning of all Monet's standard operations (like 
+The correct functioning of all MonetDB's standard operations (like 
 {\tt join, select}) is guaranteed by your plight to implement
-an ADT of operations for your new data type. For instance, you will have to
-define a hash-function on a {\tt date} so that Monet's hash-join can work 
+an @[<acronym title="Abstract Data Type">ADT</acronym>@ of operations for your new data type. For instance, you will have to
+define a hash-function on a {\tt date} so that MonetDB's hash-join can work 
 on columns of {\tt date}.
 
 {\small\begin{verbatim}
@@ -354,12 +354,12 @@ varsizeADTops:
 
 \end{verbatim}} 
 
-Above we show the ADT interface that needs to be implemented.
+Above we show the @[<acronym title="Abstract Data Type">ADT</acronym>@ interface that needs to be implemented.
 In  @[<a target="_self" href="#mod_3_2_0">Section 3.2</a>@).
 we will discuss the details (exact semantics
 and parameter conventions) for them.
 
-Monet will recognize each new atom as a MIL keyword. It will
+MonetDB will recognize each new atom as a MIL keyword. It will
 also add new atoms to the virtual user table {\small\tt monet\_atomtbl}.
 
 @- Redefined Atoms 
@@ -382,17 +382,17 @@ its father type (or actually its root ancestor).
 
 The total-remap mechanisms allows for high efficiency: a selection on 
 {\tt timestamp} falls into the highly optimized {\tt integer} code, 
-without the algorithms having to use ADT jump-tables in  their inner loops.
-This total-remap can only be exploited by the Monet kernel, if you do not 
-redefine any ADT operation! You may in fact still redefine the TOSTR and 
-FROMSTR in order to give the new atom a different appearrance; this will
-not prevent Monet from making the remap optimizations during query processing. 
+without the algorithms having to use @[<acronym title="Abstract Data Type">ADT</acronym>@ jump-tables in  their inner loops.
+This total-remap can only be exploited by the MonetDB kernel, if you do not 
+redefine any @[<acronym title="Abstract Data Type">ADT</acronym>@ operation! You may in fact still redefine the TOSTR and 
+FROMSTR in order to give the new atom a different appearance; this will
+not prevent MonetDB from making the remap optimizations during query processing. 
 
 As a very primitive form of inheritance, the redefine mechanism -- even 
 if it is not a total remap -- eases software development, as code 
-can be reused. To give an example, we come back to the ADT operations 
+can be reused. To give an example, we come back to the @[<acronym title="Abstract Data Type">ADT</acronym>@ operations 
 for variable-sized extension atoms. Since such values are managed 
-in a separate heap, users have to implement heap managing ADT operations 
+in a separate heap, users have to implement heap managing @[<acronym title="Abstract Data Type">ADT</acronym>@ operations 
 for e.g. the {\tt polygon} type. To facilitate development, you 
 can declare a polygon as the {\tt blob} type from the 
 @[<a href="../Modules/blob/index.html">standard library</a>@.
@@ -468,14 +468,14 @@ argumentlist ::=
 	argument | '...' type '...' | argument ',' argumentlist
 \end{verbatim}} 
 
-In Monet, command signatures are registered in the order the
+In MonetDB, command signatures are registered in the order the
 modules are loaded. Within a module, the order of definition
-is preserved. When Monet does function resolution, it checks
+is preserved. When MonetDB does function resolution, it checks
 all commands with the matching name in {\em reverse order} of 
 definition. The first match of actual parameters with formal parameters
 is chosen for execution.
 
-Monet will recognize each new command and operator as a MIL keyword. 
+MonetDB will recognize each new command and operator as a MIL keyword. 
 It will also add new commands to the virtual user table {\small\tt monet\_fcntbl}.
 
 @+ New Search Accelerators
@@ -493,9 +493,9 @@ Every new application domain for database systems seems to come
 with new types of search accelerators.
 
 For this reason the MEL extension mechanism allows for the addition
-of new search accelerators to the Monet system. A BAT can hold
+of new search accelerators to the MonetDB system. A BAT can hold
 two user-defined search accelerators: one for the head and one for 
-the tail. Monet automatically provides two standard search accelerators
+the tail. MonetDB automatically provides two standard search accelerators
 oriented towards main-memory relational processing (the {\tt index}
 binary tree index and the {\tt hash} chained bucket hash-tables).
 
@@ -520,21 +520,21 @@ signature ::=
 	atom | atom ',' signature
 \end{verbatim}} 
 
-Above we show the ADT interface that needs to be implemented.
+Above we show the @[<acronym title="Abstract Data Type">ADT</acronym>@ interface that needs to be implemented.
 In @[<a target="_self" href="#mod_3_2_0">Section 3.2</a>@ we will discuss 
 the details (exact semantics and parameter conventions) for them.
 
-Monet will recognize each new accelerators as MIL keywords. 
+MonetDB will recognize each new accelerators as MIL keywords. 
 It will also add new commands to the virtual user table {\small\tt monet\_acctbl}.
 
 @+ Special Primitives
 
-Only advanced Monet extension programmers may need the extensibility
+Only advanced MonetDB extension programmers may need the extensibility
 features discussed in this section.
 
 @- Iterators
 @T
-Iterators are primitives that iterate to some subset of a BAT. Monet
+Iterators are primitives that iterate to some subset of a BAT. MonetDB
 provides the following iterators automatically:
 
 \begin{description}
@@ -567,10 +567,10 @@ are discussed in @[<a target="_self" href="#mod_3_6_0">Section 3.6</a>@.
 
 @- Free-form Primitives
 @T
-To fork a new process that executes some piece of MIL, Monet has
-the builtin primitive '{\small\tt fork}'. As only parameter it
+To fork a new process that executes some piece of MIL, MonetDB has
+the built-in primitive '{\small\tt fork}'. As only parameter it
 expects a statement. If fork would be treated like a normal
-command, the Monet interpreter would first evaluate that 
+command, the MonetDB interpreter would first evaluate that 
 parameter, and on its return value initiate function resolution.
 
 This is clearly not what we want. Sometimes you may need  more
@@ -584,13 +584,13 @@ builtin ::=
 		<STRING: help text about this builtin>
 \end{verbatim}} 
 
-What happens with a builtin is that you get passed a syntax
+What happens with a built-in is that you get passed a syntax
 tree as a parameter. From then on, what you do with that syntax tree 
 is your own problem.   
 
-Note that builtins will override all other commands with the
+Note that built-ins will override all other commands with the
 same name by definition. The converse holds when a command
-redefines a builtin.
+redefines a built-in.
 
 @- Memory Objects
 @T
@@ -608,8 +608,8 @@ object ::=
 @* Writing Module Implementations
 @T
 Modules can be implemented in any language really. The one restriction
-is that Monet calls out to the implementations using C-routines.
-This makes C (ansi) a natural choice. The {\tt mel} utilities takes care 
+is that MonetDB calls out to the implementations using C-routines.
+This makes C (ANSI) a natural choice. The {\tt mel} utilities takes care 
 to generated {\small\tt extern "C" \{ \}} blocks around all interface
 functions; so implementations can just as easily be provided in C++.  
 
@@ -628,14 +628,14 @@ the implementations.
 
 @+ General Database Interface
 @T
-When interfacing with user-provided implementations functions, Monet 
+When interfacing with user-provided implementations functions, MonetDB 
 passes atomic values and BATs to these user-generated functions. When
 the to-be-implemented command returns a value, it also expects 
 back a value of such kind. 
 
-You will therefore have to use the {\tt gdk} interface for manipulating
-Monet values, and possibly too the {\tt monet} interface (if you
-get yourself into interpretering MIL trees or strings by hand). 
+You will therefore have to use the {\tt GDK} interface for manipulating
+MonetDB values, and possibly too the {\tt monet} interface (if you
+get yourself into interpreting MIL trees or strings by hand). 
 
 In this document we cannot go deeply in these details, so below we
 provide references to their detailed definitions.
@@ -645,7 +645,7 @@ provide references to their detailed definitions.
 GDK stands for the Goblin Database Kernel,
 (see the @[<a href="../gdk/index.html">The GDK Document</a>@), 
 and forms the basic 
-library on which on which Monet is built. GDK contains an extensive
+library on which on which MonetDB is built. GDK contains an extensive
 collection of relational operators on the binary model. It
 supports a standard collection of 
 @[<a href="../gdk/index.html#mod_1_5_1">atoms</a>@ 
@@ -659,27 +659,27 @@ Of special interest is the section on how
 @[<a href="../gdk/index.html#mod_1_3_0">BATs</a>@
 (Binary Association Tables) are managed.
 
-@- Monet
-Monet (see the 
-@[<a href="../monet/index.html">The Monet Document</a>@), 
+@- MonetDB
+MonetDB (see the 
+@[<a href="../monet/index.html">The MonetDB Document</a>@), 
 is a threaded execution system built on top of GDK.
 Its specific features will only be used by extension programmers 
-delving in the more complex extension possibilities (builtins,
+delving in the more complex extension possibilities (built-ins,
 iterators).
 
 @+ Implementing Fixed-size Atoms
 @T
-As discussed earlier, atoms are covered behind an ADT interface 
-to GDK. The ADT interface required for implementing variable-size atoms 
+As discussed earlier, atoms are covered behind an @[<acronym title="Abstract Data Type">ADT</acronym>@ interface 
+to GDK. The @[<acronym title="Abstract Data Type">ADT</acronym>@ interface required for implementing variable-size atoms 
 is a superset of that of of fixed-size atoms as discussed in this section. 
 The specifics for variable-size atoms are discussed in 
 @[<a target="_self" href="#mod_3_3_0">the next section</a>@.
 
-You are strongly urged to look at the 
+You are strongly urged to read the 
 @[<a href="../gdk/index.html#mod_1_5_1">ATOM</a>@ and
 @[<a href="../gdk/index.html#mod_1_3_2">HEAP</a>@ sections 
 of the GDK Document and the @[<a href="../../../monet-compiled/share/MonetDB/docs/gdk/gdk_atoms.html">gdk\_atoms</a>@ 
-file, as prereading material.
+file first.
 
 We will use the fictitious  user-defined atoms called {\small\tt point} 
 and {\small\tt polyline}, as the running examples in this section. 
@@ -707,13 +707,13 @@ In fact, we allocate {\small\tt polyline} values in a region
 larger than {\small\tt sizeof(polyline)}; to be precise we will do
 {\small\tt GDKmalloc(POLYLINE\_LENGTH(npoints))}.
 
-The reason we define polylines in this way, is Monet's requirement
+The reason we define polylines in this way, is MonetDB's requirement
 that atomic values occupy a {\em contiguous} memory space. 
 
-We will go one-on-one with the ADT operations in the following 
+We will go one-on-one with the @[<acronym title="Abstract Data Type">ADT</acronym>@ operations in the following 
 subsections. 
 \\
-{\bf You are expected to be C-literate}; as each ADT operation
+{\bf You are expected to be C-literate}; as each @[<acronym title="Abstract Data Type">ADT</acronym>@ operation
 is first characterized by an example in the context of {\small\tt point} or 
 {\small\tt polyline}.
 
@@ -742,7 +742,7 @@ region.
 It is the duty of this implementation function to see whether the
 presented region is large enough to hold the new atom. If so, this
 region is used, and {\tt dst} and {\tt len} are left untouched. 
-If not, the function itselfs allocates enough space with
+If not, the function itself allocates enough space with
 @[<a href="../gdk/index.html#mod_1_6_1">GDKmalloc(size) : void*</a>@
 returns it in {\tt *dst} and stores the size in {\tt *len}.
 If {\tt *dst} was not NULL, the old region is freed first with 
@@ -762,7 +762,7 @@ int pointToStr(char **dst, int  *len, point *src){
 \end{verbatim}}
 
 This function formats an atomic value into a string. It returns the number of
-characters printed. This number does {\bf not} include the coling zero
+characters printed. This number does {\bf not} include the closing zero
 character you are supposed to print!
 
 The {\tt *dst} pointer may be NULL, or may already point to some string.
@@ -772,7 +772,7 @@ region.
 It is the duty of this implementation function to see whether the
 presented region is large enough to hold the string. If so, this
 region is used, and {\tt dst} and {\tt len} are left untouched. 
-If not, the function itselfs allocates enough space with
+If not, the function itself allocates enough space with
 @[<a href="../gdk/index.html#mod_1_6_1">GDKmalloc(size) : void*</a>@
 returns it in {\tt *dst} and stores the size in {\tt *len}.
 If {\tt *dst} was not NULL, the old region is freed first with 
@@ -816,7 +816,7 @@ int polylineNequal(polyline *v1, polyline *v2)
 @
  
 @T
-On atoms on which an ordering exists, Monet will be able to use
+On atoms on which an ordering exists, MonetDB will be able to use
 sorting-based relational algorithms, and build binary index trees.
 Some atoms though -- especially multi-dimensional ones -- do not
 allow for linearization.
@@ -853,7 +853,7 @@ Only if very specific functionality is required, will you need to
 write your own functions -- as described in this section. 
 Variable-size atoms need to manage a 
 additional @[<a href="../gdk/index.html#mod_1_3_2">Heap</a>@.
-Monet provides a standard collection of functions to do this. 
+MonetDB provides a standard collection of functions to do this. 
 
 @- LEN: atom length function 
 @T
@@ -956,13 +956,13 @@ number. You have the choice between {\small\tt GDK\_SUCCEED} and {\small\tt GDK\
 The latter will automatically produce a MIL error; stopping 
 execution of the current statement.
 
-You may print to {\small\tt stderr}, which is redirected to the Monet console.
+You may print to {\small\tt stderr}, which is redirected to the MonetDB console.
 Otherwise, you should print on the {\small\tt GDKout} file descriptor
 (a C {\small\tt FILE*}). 
 
 @- Normal Parameters
 @T
-Monet values can be subdivided in three categories, with respect
+MonetDB values can be subdivided in three categories, with respect
 to the way they are passed to command implementations:
 
 \begin{description}
@@ -976,7 +976,7 @@ an integer offset into that heap.
 \end{description}
 
 Fixed- and variable-size atoms are essentially treated in
-the same way. Monet just requires them to consist of contiguous
+the same way. MonetDB just requires them to consist of contiguous
 range of memory. You can use the 
 @[<a href="../../../monet-compiled/share/MonetDB/docs/gdk/gdk_atoms.html#mod_1_2_3">ATOMlen(tpe,val) : int</a>@
 macro to inquire for the length of the region. For fixed-size
@@ -1005,7 +1005,7 @@ atom {\tt str} is passed as is. BAT parameters follow a different logic
 altogether. The BAT interface provides the macros 
 @[<a href="../gdk/index.html#mod_1_3_5">BAThtype(bat) : int</a>@ and
 @[<a href="../gdk/index.html#mod_1_3_5">BATttype(bat) : int</a>@ respectively,
-to inquire about the type of the left colum ({\em head}) and
+to inquire about the type of the left column ({\em head}) and
 right column ({\em tail}).
 
 @- Any Parameters
@@ -1014,13 +1014,13 @@ An any-parameter can be a any kind of atom. To make known its type,
 the value pointer (which is passed in the way described above) is
 followed by an {\tt int} type number.
 
-The GDK interface has standard constants for all builtin atomic
+The GDK interface has standard constants for all built-in atomic
 types name {\tt TYPE\_$<$atom$>$} (e.g. {\tt TYPE\_int}). MEL
 makes sure that for each newly introduced atomic type, such a 
 constant is generated as well. 
 
 Any-parameters can be tagged with a number. All tagged any-parameters
-with the same tag-number must have the same type. Monet does not redundantly
+with the same tag-number must have the same type. MonetDB does not redundantly
 pass the extra integer type numbers: the first occurrence of a tagged any
 parameter is called the {\em free} any-parameter. It is passed with a 
 type number. All following any-parameters with the same tag are said
@@ -1033,7 +1033,7 @@ inquire about the head- and tail-type of a
 @[<href="../gdk/index.html#mod_1_3_1">BAT</a>@ with the
 @[<a href="../gdk/index.html#mod_1_3_5">BAThtype(bat) : int</a>@ and
 @[<a href="../gdk/index.html#mod_1_3_5">BATttype(bat) : int</a>@ 
-macros, Monet does *not* pass extra integer parameters to specify
+macros, MonetDB does *not* pass extra integer parameters to specify
 head- and tail-types of a BAT.
 
 As an example, consider the following example MEL definition:
@@ -1094,7 +1094,7 @@ know for sure when the sequence terminates.
 
 An even more tricky situation is when you pass a sequence
 of {\em free} any-parameters as varargs. In this case, 
-Monet prefixes the sequence with one type integer.
+MonetDB prefixes the sequence with one type integer.
 
 {\small\begin{verbatim}
 .COMMAND sum(...ANY::1...) : ANY::1 = sum_impl;
@@ -1192,10 +1192,10 @@ int new_polygon_impl(polygon** retval, ...) {
 @- Unbound Any-Type Return Values
 @T
 The forth case are any-type return atoms.
-These can have a more complex behaviour. Normally they
+These can have a more complex behavior. Normally they
 don't, though: as the return type of 
 a command will be derived from (one of) its parameters.
-That is, if the any return value is {\em bound}, Monet knows
+That is, if the any return value is {\em bound}, MonetDB knows
 what to expect, and return values follow the normal logic as 
 described above (bat, fixed-size or var-sized). 
 
@@ -1204,7 +1204,7 @@ an unbound any-type: BAT return values with any head- and tail-types
 count as 'normal' return values and are handled in the standard way.  
 
 Only in the rather exceptional case that the any-return value is
-{\em free}, complications occur. In this case, the Monet Interpreter
+{\em free}, complications occur. In this case, the MonetDB Interpreter
 does not know what kind of value the command is going to return.
 In order to tell this, there is an extra second parameter, which is an 
 {\tt int*}, where the command should pass the type of the result value.
@@ -1217,8 +1217,8 @@ that is handled in the following ways:
 interpreter as being a {\tt BAT**}. You pass back the {\tt BAT*} BAT 
 descriptor in it.
 
-\item[{\em internal atoms}] are all builtin Monet atoms except
-{\tt str} (that is \{{\small\tt bit, chr sht, int, ptr, flt, lng, dbl}\}).
+\item[{\em internal atoms}] are all built-in MonetDB atoms except
+{\tt str} (that is \{{\small\tt bit, chr, sht, int, ptr, flt, lng, dbl}\}).
 The first parameter is the supposed to point to already allocated storage. 
 You can just fill this storage with the return value.
 
@@ -1290,7 +1290,7 @@ search accelerator {\tt\small\bf mean} (presumably it is cheaper to have the
 information precomputed, than having to do a table scan with 
 {\tt\small BATsum\_int()})!
 
-Notice that {\small\tt b->hacctype} contains tye type integer for the accelerator
+Notice that {\small\tt b->hacctype} contains the type integer for the accelerator
 in the head, and that the automatically generated integer {\small\tt ACC\_mean}
 contains the type identifier (currently) assigned to {\small\tt mean}. 
 
@@ -1416,16 +1416,16 @@ smaller than zero, than some exception occurred in the MIL execution
 and the loop should be stopped. By returning the same value, the
 exception is passed upward.
 
-@+ Implementing Builtins
+@+ Implementing Built-ins
 @T
 {\small\begin{verbatim} 
 .BUILTIN fork(STATEMENT) = fork_impl;
 \end{verbatim}}
 
 The careful reader will note that 'STATEMENT' is not correct MEL syntax.
-Since builtins bypass the function resolution mechanism and consequently
+Since built-ins bypass the function resolution mechanism and consequently
 do not have signatures, but we want to feed some 'intuitive' information 
-about the builtin into the help system; MEL accepts a free syntax between
+about the built-in into the help system; MEL accepts a free syntax between
 the BUILTIN keyword and the '=' in front of the implementation name,
 
 The implementation function has the syntax:
