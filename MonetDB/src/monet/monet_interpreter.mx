@@ -337,9 +337,10 @@ void interpret_unpin(batrec *r, str s) {
 	BAT *b = BBP_cache(r->id);
 	BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) on bat(%d) refcnt = %d\n",
 				s, r->id, BBPrefs(r->id)-1);
-	if (b->batStamp != r->stamp) {
+	if (b){
+	    if (b->batStamp != r->stamp) {
 		GDKerror("interpret_unpin(%s) bat=%d,stamp=%d OVERWRITTEN\n", s, r->id, r->stamp);
-	} else if (b->htype == TYPE_void || b->ttype == TYPE_void) {
+	    } else if (b->htype == TYPE_void || b->ttype == TYPE_void) {
 		BAT *_b = BATdescriptor(ABS(r->id));
 		MT_set_lock(monet_voidLock, "unpin");
 		if (--(_b->void_cnt) == 0) {
@@ -351,8 +352,9 @@ void interpret_unpin(batrec *r, str s) {
 				s, b->batCacheid, _b->void_cnt, _b->void_tid);
 		}
 		MT_unset_lock(monet_voidLock, "unpin");
+	    }
+	    BBPunfix(b->batCacheid);
 	}
-	BBPunfix(b->batCacheid);
 }
 
 @- param execution(name,lt,argc,argv) 
