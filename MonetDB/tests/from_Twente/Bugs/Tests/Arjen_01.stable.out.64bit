@@ -20,8 +20,8 @@ stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 
 setoid(2000@0);
 
-indexA  := new(void,oid);
-valuesA := new(void,int);
+var indexA  := new(void,oid);
+var valuesA := new(void,int);
 indexA.insert(nil,0@0);
 indexA.insert(nil,1@0);
 indexA.insert(nil,2@0);
@@ -32,7 +32,7 @@ valuesA.insert(nil,30);
 valuesA.insert(nil,40);
 indexA.seqbase(0@0);
 valuesA.seqbase(0@0);
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (void)  (oid)	  #
@@ -41,7 +41,7 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesA.print;
+valuesA.print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (void)  (int)	  #
@@ -53,7 +53,7 @@ valuesA.print;
 
 # Test:
 
-_MMoper_2 := [>=](valuesA,20);   _MMoper_2.print;
+var _MMoper_2 := [>=](valuesA,20);   _MMoper_2.print();
 #-----------------#
 # BAT:	  tmp_30  #
 # (void)  (bit)	  #
@@ -62,7 +62,7 @@ _MMoper_2 := [>=](valuesA,20);   _MMoper_2.print;
 [ 1@0,	  true	  ]
 [ 2@0,	  true	  ]
 [ 3@0,	  true	  ]
-_MMuselect_3 := uselect(_MMoper_2,true).mark(0@0);   _MMuselect_3.print;
+var _MMuselect_3 := uselect(_MMoper_2,true).mark(0@0);   _MMuselect_3.print();
 #-----------------#
 # BAT:	  tmp_31  #
 # (void)  (void)  #
@@ -70,7 +70,7 @@ _MMuselect_3 := uselect(_MMoper_2,true).mark(0@0);   _MMuselect_3.print;
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
 [ 3@0,	  2@0	  ]
-_MMoper_4 := [<=](valuesA,30);   _MMoper_4.print;
+var _MMoper_4 := [<=](valuesA,30);   _MMoper_4.print();
 #-----------------#
 # BAT:	  tmp_32  #
 # (void)  (bit)	  #
@@ -79,7 +79,7 @@ _MMoper_4 := [<=](valuesA,30);   _MMoper_4.print;
 [ 1@0,	  true	  ]
 [ 2@0,	  true	  ]
 [ 3@0,	  false	  ]
-_MMuselect_5 := uselect(_MMoper_4,true).mark(0@0);   _MMuselect_5.print;
+var _MMuselect_5 := uselect(_MMoper_4,true).mark(0@0);   _MMuselect_5.print();
 #-----------------#
 # BAT:	  tmp_34  #
 # (oid)	  (void)  #
@@ -87,35 +87,35 @@ _MMuselect_5 := uselect(_MMoper_4,true).mark(0@0);   _MMuselect_5.print;
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
-_MMsemijoin_6 := semijoin(_MMuselect_3,_MMuselect_5);   _MMsemijoin_6.print;
+var _MMsemijoin_6 := semijoin(_MMuselect_3,_MMuselect_5);   _MMsemijoin_6.print();
 #-----------------#
 # BAT:	  tmp_35  #
 # (void)  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
-_MMcastnil_7 := _MMsemijoin_6.mark(0@0);   _MMcastnil_7.print;
+var _MMcastnil_7 := _MMsemijoin_6.mark(0@0);   _MMcastnil_7.print();
 #-----------------#
 # BAT:	  tmp_36  #
 # (void)  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
-_MMjoin_8 := join(indexA,_MMcastnil_7);   _MMjoin_8.print;
+var _MMjoin_8 := join(indexA,_MMcastnil_7);   _MMjoin_8.print();
 #-----------------#
 # BAT:	  tmp_38  #
 # (oid)	  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
-_MMreverse_9 := reverse(_MMcastnil_7);   _MMreverse_9.print;
+var _MMreverse_9 := reverse(_MMcastnil_7);   _MMreverse_9.print();
 #-----------------#
 # BAT:	  tmp_36  #
 # (void)  (void)  #
 #-----------------#
 [ 0@0,	  1@0	  ]
 [ 1@0,	  2@0	  ]
-_MMjoin_10 := join(_MMreverse_9,valuesA);   _MMjoin_10.print;
+var _MMjoin_10 := join(_MMreverse_9,valuesA);   _MMjoin_10.print();
 #-----------------#
 # BAT:	  tmp_39  #
 # (void)  (int)	  #
@@ -126,17 +126,17 @@ _MMjoin_10 := join(_MMreverse_9,valuesA);   _MMjoin_10.print;
 # This gives <0,10>,<1,20> instead of <0,20>,<0,30>
 # The cause is that _MMjoin_8 has 0,1 instead of 1,2:
 
-print(indexA.info.access(BAT_WRITE).delete("batBuns.base").delete("void_cnt").delete("void_tid").col_name("indexA"),
-      valuesA.info.col_name("valuesA"),
-      _MMoper_2.info.col_name("MMoper_2"),
-      _MMuselect_3.info.col_name("MMuselect_3"),
-      _MMoper_4.info.col_name("MMoper_4"),
-      _MMuselect_5.info.col_name("MMuselect_5"),
-      _MMsemijoin_6.info.col_name("MMsemijoin_6"),
-      _MMcastnil_7.info.col_name("MMcastnil_7"),
-      _MMjoin_8.info.col_name("MMjoin_8"),
-      _MMreverse_9.info.col_name("MMreverse_9"),
-      _MMjoin_10.info.col_name("MMjoin_10"));
+print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("void_cnt").delete("void_tid").col_name("indexA"),
+      valuesA.info().col_name("valuesA"),
+      _MMoper_2.info().col_name("MMoper_2"),
+      _MMuselect_3.info().col_name("MMuselect_3"),
+      _MMoper_4.info().col_name("MMoper_4"),
+      _MMuselect_5.info().col_name("MMuselect_5"),
+      _MMsemijoin_6.info().col_name("MMsemijoin_6"),
+      _MMcastnil_7.info().col_name("MMcastnil_7"),
+      _MMjoin_8.info().col_name("MMjoin_8"),
+      _MMreverse_9.info().col_name("MMreverse_9"),
+      _MMjoin_10.info().col_name("MMjoin_10"));
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # BAT:				  indexA	| valuesA	| MMoper_2	| MMuselect_3	| MMoper_4	| MMuselect_5	| MMsemijoin_6	| MMcastnil_7	| MMjoin_8	| MMreverse_9	| MMjoin_10	  #
 # (str)				  (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		  #
@@ -224,7 +224,7 @@ print(indexA.info.access(BAT_WRITE).delete("batBuns.base").delete("void_cnt").de
 [ "taccelerator.filename",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
 [ "taccelerator.offset",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 
-quit;
+quit();
 
 # 18:31:55 >  
 # 18:31:55 >  Done.
