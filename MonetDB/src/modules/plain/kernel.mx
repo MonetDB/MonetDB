@@ -152,7 +152,7 @@ any client activity.
  WARNING: if BAT-modifying operations are killed, we do not
  garuantee *anything*!!"
 
-.BUILTIN fork(STATEMENT) : int = CMDfork; 
+.BUILTIN fork(str STATEMENT) : int = CMDfork; 
 "Open a new client session to execute this request.  
  FUTURE: forks on remote Mservers.
  Returns new client id."
@@ -661,6 +661,9 @@ int CMDkill(Cntxt stk, YYSTREE lt, ValPtr res){
 
 int CMDfork(Cntxt stk, YYSTREE lt, ValPtr res){
 	Client c;
+	str s = NULL;
+	@:builtin_args(1)@;
+	@:builtin_operand(0, TYPE_str, s)@
 	if (monet_singlethreaded) {
 		GDKerror("fork: cannot execute in -single mode.\n");
 		return -1;
