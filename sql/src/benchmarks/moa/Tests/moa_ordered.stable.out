@@ -25,7 +25,7 @@ SQL  connected to database mTests_src_benchmarks_moa using schema sys
 #------------------------------------------
 #| name | type | field1 | field2 | field3 |
 #------------------------------------------
-"Video"	"match"	"ID"	"MediaInformationFK"	"nil"
+"Video"	"match"	"ID"	"MediaInformationFK"	nil
 SQL  1 Row affected
 #     3: 1  SELECT * FROM MOA_DD WHERE name='Creation' AND type='match';
 #------------------------------------------
@@ -36,7 +36,7 @@ SQL  no Rows affected
 #------------------------------------------
 #| name | type | field1 | field2 | field3 |
 #------------------------------------------
-"CreationCreator"	"match"	"CreationFK"	"CreatorFK"	"nil"
+"CreationCreator"	"match"	"CreationFK"	"CreatorFK"	nil
 SQL  1 Row affected
 #     5: 1  SELECT * FROM MOA_DD WHERE name='CreationCreator' AND type='primary';
 #------------------------------------------
@@ -47,7 +47,7 @@ SQL  no Rows affected
 #------------------------------------------
 #| name | type | field1 | field2 | field3 |
 #------------------------------------------
-"Creator"	"match"	"CreatorPK"	"IndividualFK"	"nil"
+"Creator"	"match"	"CreatorPK"	"IndividualFK"	nil
 SQL  1 Row affected
 #     7: 1  SELECT * FROM MOA_DD WHERE name='Individual' AND type='match';
 #------------------------------------------
