@@ -14,13 +14,6 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@'
-@' Contributor(s):
-@'              Martin Kersten <Martin.Kersten@cwi.nl>
-@'              Peter Boncz <Peter.Boncz@cwi.nl>
-@'              Niels Nes <Niels.Nes@cwi.nl>
-@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
-@'              Sjoerd Mullender  <Sjoerd.Mullender@cwi.nl>
 
 @a M. Kersten
 @v 0.0
@@ -46,6 +39,7 @@ at the exception handling block of the MAL procedure.
 #define _MAL_INTERPRET_H
 
 #include "mal_client.h"
+#include "mal_factory.h"
 #include "mal_profiler.h"
 
 @-
@@ -66,9 +60,12 @@ typedef struct{
 /*#define DEBUG_MAL_PARALLEL */
 /*#define STACKTRACE*/
 mal_export void showErrors();
-mal_export str runMAL(Client c, MalBlkPtr mb, 
+mal_export str runMAL(Client c, MalBlkPtr mb, int startpc,
 		MalBlkPtr mbcaller, 
-		MalStkPtr env, InstrPtr pcicaller, int envpc);
+		MalStkPtr env, InstrPtr pcicaller);
+mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, 
+		int startpc, MalStkPtr stk,
+		MalStkPtr env, InstrPtr pcicaller);
 mal_export str runMALsequence( malTask *task);
 mal_export void runMALtask(malTask *task);
 mal_export void waitForChildren(MalStkPtr stk);
@@ -176,8 +173,8 @@ void showErrors(){
 	}
 }
 
-str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, 
-	   MalStkPtr env, InstrPtr pcicaller,int envpc){
+str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller, 
+	   MalStkPtr env, InstrPtr pcicaller){
 	MalStkPtr stk= NULL;
 	int i;
 	ValPtr lhs,rhs;
@@ -230,7 +227,6 @@ being called.
 	if( env && mbcaller){
 		InstrPtr pp;
 		int k;
-		env->pcup= envpc;
 @-
 Beware, a function signature f(a1..an):(b1..bn) is parsed in such a way that
 the symbol table and stackframe contains the sequence 
@@ -285,7 +281,7 @@ pattern operators to deal with it.
 		int tpe= getVarType(mb,i);
 		lhs = &stk->stk[i];
 		if( tpe != TYPE_any)
-			lhs->vtype =getGDKtype(tpe);
+			lhs->vtype = getGDKtype(mb,i);
 		if(env == 0 && mbcaller==0)
 			lhs->val.ival =0; 
 	}
@@ -299,7 +295,7 @@ pattern operators to deal with it.
 	task.cntxt= cntxt; 
 	task.mb= mb; 
 	task.stk=stk; 
-	task.startpc=1; 
+	task.startpc=startpc; 
 	task.env=env;
 	task.pcicaller=pcicaller;
 	task.pci= 0;
@@ -314,8 +310,41 @@ pattern operators to deal with it.
 	stream_printf(GDKout,"Stack after loop\n");
 	printStack(GDKout,mb,stk); fflush(GDKout);
 #endif
-	garbageCollector(mb,stk,env != stk);
+	if( !stk->keepAlive)
+		garbageCollector(mb,stk,env != stk);
 	return ret;
+}
+@-
+It is possible to re-enter the interpreter at a specific place.
+This is used in the area where we need to support co-routines.
+@c
+str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, MalStkPtr stk,
+	   MalStkPtr env, InstrPtr pcicaller)
+{
+	malTask	task;
+	str ret;
+        task.cntxt= cntxt;
+        task.mb= mb;
+        task.stk=stk;
+        task.startpc=startpc;
+        task.env=env;
+        task.pcicaller=pcicaller;
+        task.pci= 0;
+
+        if(env && stk->cmd!='f') stk->cmd = env->cmd ;
+
+	ret= runMALsequence(&task);
+
+        @:waitForChildren@
+        /* pass the debug mode */
+        if(env && stk->cmd!='f') env->cmd = stk->cmd;
+#ifdef STACKTRACE
+        stream_printf(GDKout,"Stack after loop\n");
+        printStack(GDKout,mb,stk); fflush(GDKout);
+#endif
+	if( !stk->keepAlive)
+		garbageCollector(mb,stk,env != stk);
+        return ret;
 }
 @-
 The core of the interpreter is presented next. It takes the context information
@@ -437,7 +466,7 @@ elements in the value stack.
 		break;
 	case PATcall: @:patterncall@ break;
 	case CMDcall: @:commandcall@ break;
-	case FACcall: /* to be defined */
+	case FACcall: @:factorycall@ break;
 	case FCNcall: @:functioncall@ break;
 	case NOOPsymbol:
 	case ENDsymbol: 
@@ -531,6 +560,7 @@ possible change in the control flow.
 		stkpc++;
 		break;
 	case YIELDsymbol: /* to be defined */
+		return yieldFactory( mb, pci,stkpc);
 	case RETURNsymbol:
 		/* a fake multi-assignment */
 		if( env != NULL && pcicaller != NULL){
@@ -714,7 +744,23 @@ non-returned values.
 	if( pci->blk== NULL)
 		ret= raiseException(mb,stkpc,MALexception,
 			"reference to MAL function missing\n");
-	else ret= runMAL(cntxt,pci->blk,mb,stk,pci,stkpc);
+	else {
+		stk->pcup = stkpc;
+		ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
+	}
+	@:resultParameter@
+@-
+Factory calls are more involved. At this stage it is a synchrononous
+call to the factory manager.
+@= factorycall
+	 /* if( pci->beforeCall) */
+	 if( garbageControl(mb,getDestVar(pci)) )
+		(*pci->beforeCall)(&stk->stk[getDestVar(pci)],
+				   &backup);
+	if( pci->blk== NULL)
+		ret= raiseException(mb,stkpc,MALexception,
+			"reference to MAL function missing\n");
+	else ret= callFactory(cntxt,pci->blk,mb,stk,pci);
 	@:resultParameter@
 @-
 The type dispatching table in getArgValue can be removed if we 

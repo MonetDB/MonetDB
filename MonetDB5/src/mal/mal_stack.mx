@@ -56,6 +56,7 @@ typedef struct MALSTK {
 	int 	stksize;
 	int	stktop;
 	long	stkdepth;	/* to protect against overflow*/
+	int 	keepAlive;	/* do not garbage collect when set */
 	MT_Lock	stklock;	/* used for parallel processing */
 	int	shares;		/* number of processes on this stack */
 	int	childs[MAXSHARES];

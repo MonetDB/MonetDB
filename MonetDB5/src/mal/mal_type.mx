@@ -111,7 +111,7 @@ mal_export str	newTmpName(char tag,int i);
 mal_export int	isTmpName(str n);
 mal_export int	isTypeName(str n);
 mal_export int	isIdentifier(str s);
-mal_export int getGDKtype(int type);	/* used in src/mal/mal_interpreter.c */
+mal_export int findGDKtype(int type);	/* used in src/mal/mal_interpreter.c */
 
 #endif /* MAL_TYPE_H*/
 @-
@@ -284,7 +284,7 @@ int getTypeIndex(str nme, int len){
 	if( i== -GDKatomcnt) i = TYPE_any;
 	return i;
 }
-int getGDKtype(int type){
+int findGDKtype(int type){
 	if( isaBatType(type)) return TYPE_bat;
 	if( type == TYPE_any) return TYPE_int;
 	return ATOMtype(type);

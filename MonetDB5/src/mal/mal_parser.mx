@@ -1369,7 +1369,7 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			  goto allLeft;
 		case 'Y': case 'y':
 			if( keyword(cntxt,"yield",5)){
-				cntrl= RETURNsymbol;
+				cntrl= YIELDsymbol;
 				goto allLeft;
 			}
 		default: allLeft:

@@ -231,6 +231,13 @@ void chkFlow(MalBlkPtr mb)
 				mb->errors++;
 			}
 		} else
+		if( p->barrier == YIELDsymbol){
+			InstrPtr pn= getInstrPtr(mb,0);
+			if( pn->token != FACTORYsymbol){
+				GDKerror("SYNTAX ERROR: yield misplaced\n!");
+				mb->errors++;
+			}
+		} else
 		if( isaSignature(p) && i ){
 			str msg=instruction2str(mb,p,TRUE);
                         GDKerror("SYNTAX ERROR: signature misplaced\n!%s\n",msg);

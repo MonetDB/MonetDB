@@ -368,7 +368,8 @@ str MALengine(Client c){
 
 	if( c->listing) printFunction(c->fdout,c->curprg->def, c->listing);
 
-	msg= (str) runMAL(c,prg->def,0,c->glb,0,0);
+	if( c->glb) c->glb->pcup =0;
+	msg= (str) runMAL(c,prg->def,1,0,c->glb,0);
 	if( msg ){
 		GDKerror(msg);
 		if( !c->listing) 
