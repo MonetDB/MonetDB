@@ -165,6 +165,7 @@ typedef struct stmt {
 
 	char nrcols;
 	char key;		/* key (aka all values are unique) */
+	char aggr;		/* aggregated */
 	int flag;
 
 	int nr; 		/* variable assignement */
@@ -469,6 +470,7 @@ static stmt *stmt_create(st_type type)
 	s->flag = 0;
 	s->nrcols = 0;
 	s->key = 0;
+	s->aggr = 0;
 	s->nr = 0;
 	s->h = NULL;
 	s->t = NULL;
@@ -1621,13 +1623,13 @@ stmt *stmt_aggr(stmt * op1, group * grp, sql_subaggr * op )
 		s->op3.stval = stmt_dup(grp->ext);
 		s->nrcols = 1;
 		s->h = stmt_dup(grp->grp->h);
-		s->key = 1;
 		grp_destroy(grp);
 	} else {
 		s->nrcols = 0;	
-		s->key = 1;
 		s->h = stmt_dup(op1->h);
 	}
+	s->key = 1;
+	s->aggr = 1;
 	s->op4.aggrval = op;
 	return s;
 }

@@ -2381,8 +2381,8 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 					list_append(rl, s);
 				}
 			} else if (cs->nrcols == 0 && nrcols > 0){
-				/* temp hack to fix  select name,count(*) bug */
-				if (cs->type == st_atom || cs->type == st_var){
+				/* select name,count(*) should give an error */
+				if (!cs->aggr){
 					stmt *ss = first_subset(subset);
 					cs = stmt_const(ss,stmt_dup(cs));
 					list_append(rl, cs);
