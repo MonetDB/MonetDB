@@ -134,6 +134,9 @@
 #define ctrefine(a,b) PFmil_ctrefine(a,b)
 
 /** max() operator */
+#ifdef max
+#undef max
+#endif
 #define max(a) PFmil_max(a)
 
 /** count() operator */

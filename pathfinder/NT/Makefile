@@ -16,7 +16,7 @@ UNISTD_H =
 UNISTD_H = unistd.h
 !ENDIF
 
-all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H)
+all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) RunMtest.bat RunMserver.bat
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" all
 
 check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
@@ -37,7 +37,7 @@ pf_config.h: winconfig.h
 	$(INSTALL) winconfig.h pf_config.h
 
 !IFNDEF USE_MINGW
-unistd.h: 
+unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h
 	$(ECHO) #define UNISTD_H >> unistd.h
 	$(ECHO) #include "io.h" >> unistd.h
@@ -46,6 +46,9 @@ unistd.h:
 
 RunMtest.bat: "$(SRCDIR)\RunMtest.bat.in"
 	if exist "$(SRCDIR)\RunMtest.bat.in" $(CONFIGURE) "$(SRCDIR)\RunMtest.bat.in" > RunMtest.bat
+
+RunMserver.bat: "$(SRCDIR)\RunMserver.bat.in"
+	if exist "$(SRCDIR)\RunMserver.bat.in" $(CONFIGURE) "$(SRCDIR)\RunMserver.bat.in" > RunMserver.bat
 
 targetdirs:
 	if not exist "$(bindir)"		$(MKDIR) "$(bindir)"

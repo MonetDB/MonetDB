@@ -36,7 +36,7 @@ lib__pathfinder = {
 		shredder.mx \
 		serialize.mx
 
-	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
+	WINLIBS = -lbat -lmonet -lstream -l_streams -l_builtin -l_ascii_io -l_algebra $(LIBGC_LDADD) $(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) $(SOCKET_LIBS)
 	LIBS = ../compiler/libcompiler1 \
 		../compiler/schema/libschema \
 		../compiler/debug/libdebug \
@@ -56,7 +56,7 @@ lib__pf_support = {
 	SOURCES = \
 		pf_support.mx
 
-	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
+	WINLIBS = -lbat -lmonet -lstream -l_streams -l_builtin -l_ascii_io -l_algebra $(LIBGC_LDADD) $(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) $(SOCKET_LIBS)
 	LIBS = $(MONETDB_LIBS)
 }
 

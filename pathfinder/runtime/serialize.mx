@@ -811,7 +811,7 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
 				return 0;
                         break;
                         }
-                case (char)1: {/* TEXT */
+                case (char)1: {/* PFTEXT */
                         if ( !handle_characters(ctx,(str)idxTVinWSorFRGN(ctx,vFRAG,PROP_TEXT,prop),(top?"text":0)))
 				return 0;
                         break;

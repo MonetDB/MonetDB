@@ -665,7 +665,7 @@ static INLINE nat append_str_oid2bat(shredCtxStruct* shredCtx, int idx, str s, o
  * XML node kinds
  */
 #define ELEMENT   0
-#define TEXT      1
+#define PFTEXT    1
 #define COMMENT   2
 #define PI        3
 #define DOCUMENT  4
@@ -792,7 +792,7 @@ emitString(shredCtxStruct* shredCtx, char* s)
     NEXT_PRE(shredCtx->nnode_pre);
     node.size  = 0;
     node.level = shredCtx->level;
-    node.kind  = TEXT;
+    node.kind  = PFTEXT;
     if ( (node.prop=append_str2bat(shredCtx,PROP_TEXT,s)) == NIL)
             return -1;
 
@@ -986,14 +986,27 @@ tokenize_IDREFS( shredCtxStruct *shredCtx,
 	/* tokenize IDREFS value attrVal and handle every tokenized value
 	 * as an IDREF.
 	 */ 
+	/* Windows doesn't support strtok_r, but at least strtok is
+	 * thread-safe
+	 */
+#ifdef HAVE_STRTOK_R
 	char* insideStrtok;
+#endif
 	char* spaces = " \t";
 	char *tok;
+#ifdef HAVE_STRTOK_R
 	tok = strtok_r(attrVal,spaces,&insideStrtok);
+#else
+	tok = strtok(attrVal,spaces);
+#endif
 	while ( tok ) {
 		if ( !handleID_IDREF(shredCtx,ownerTag,pre,attrTag,tok,XML_ATTRIBUTE_IDREF) )
 			return 0;
+#ifdef HAVE_STRTOK_R
 		tok = strtok_r(0,spaces,&insideStrtok);
+#else
+		tok = strtok(0,spaces);
+#endif
 	}
 	return 1;
 }

@@ -1,0 +1,14 @@
+@echo off
+
+setlocal
+
+set monetdbdir=@MONETDB_PREFIX@
+set pfdir=@PF_BUILD@
+
+set MOD_PATH=%pfdir%\runtime;%monetdbdir%\lib\MonetDB
+
+set PATH=%MOD_PATH%;%monetdbdir%\bin;%PATH%
+
+"%monetdbdir%\bin\Mserver.exe" "--config=%monetdbdir%\etc\MonetDB.conf" --set "monet_mod_path=%MOD_PATH%" %*
+
+endlocal

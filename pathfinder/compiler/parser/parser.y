@@ -2216,7 +2216,7 @@ void pferror (const char *s)
 
 char* pfinput = NULL; /* standard input of scanner, used by flex */
 YYLTYPE pflloc; /* why ? */
-extern pfStart(char*);
+extern void pfStart(char*);
 
 /**
  * Parse an XQuery coming in on stdin (or whatever stdin might have

@@ -1264,7 +1264,7 @@ PROC node_print(oid pre, oid frag, BAT[void,bat] ws, BAT[oid,str] S) : void
 		S.insert(oid(int(pre) + ws.fetch(PRE_SIZE).fetch(frag).fetch(pre)), tag);
 	}
     }
-    else { if (kind = TEXT)
+    else { if (kind = PFTEXT)
         { printf("%s", ws.fetch(PROP_TEXT).fetch(elem_frag).fetch(elem_prop)); }
     else { if (kind = COMMENT)
         { printf("<!--%s-->", ws.fetch(PROP_COM).fetch(elem_frag).fetch(elem_prop)); }
@@ -1362,7 +1362,7 @@ PROC xml_print(BAT[void,bat] ws,
         	lastpre := oid(int(pre) + ws.fetch(PRE_SIZE).fetch(frag).fetch(pre));
 
 		# cheat a little bit to get the same output like Galax
-    		if (ws.fetch(PRE_KIND).fetch(frag).fetch(pre) = TEXT) {
+    		if (ws.fetch(PRE_KIND).fetch(frag).fetch(pre) = PFTEXT) {
     			var elem_frag := ws.fetch(PRE_FRAG).fetch(frag).fake_fetch(pre);
 			var elem_prop := ws.fetch(PRE_PROP).fetch(frag).fetch(pre);
 			printf("text \{\"");
