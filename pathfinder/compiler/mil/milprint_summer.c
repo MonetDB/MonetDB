@@ -1923,8 +1923,8 @@ loop_liftedSCJ (opt_t *f,
             */
 
             /* the above code should do the same without a hash table               
-            "var unq := CTgroup(iter).CTgroup(item)"
-                       ".CTgroup(kind).tunique().mark(0@0).reverse();\n"
+            "var unq := CTgroup(iter).CTmap().CTgroup(item).CTmap()"
+                       ".CTgroup(kind).CTmap().tunique().mark(0@0).reverse();\n"
             */
             "var oid_iter := iter;\n"
             "var oid_item := item;\n"
@@ -2009,8 +2009,8 @@ loop_liftedSCJ (opt_t *f,
             */
 
             /* the above code should do the same without a hash table               
-            "var unq := CTgroup(iter).CTgroup(item)"
-                       ".CTgroup(kind).tunique().mark(0@0).reverse();\n"
+            "var unq := CTgroup(iter).CTmap().CTgroup(item).CTmap()"
+                       ".CTgroup(kind).CTmap().tunique().mark(0@0).reverse();\n"
             */
             "var oid_iter := iter;\n"
             "var oid_item := item;\n"
@@ -2986,9 +2986,9 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "attr_qn_frag := nil_oid_oid;\n"
                 "sorting := nil_oid_oid;\n"
                 /* 
-                "var unq_attrs := CTgroup(attr_iter)"
-                                 ".CTgroup(mposjoin(attr_item, attr_frag, ws.fetch(ATTR_QN)))"
-                                 ".CTgroup(mposjoin(attr_item, attr_frag, ws.fetch(ATTR_FRAG)))"
+                "var unq_attrs := CTgroup(attr_iter).CTmap()"
+                                 ".CTgroup(mposjoin(attr_item, attr_frag, ws.fetch(ATTR_QN))).CTmap()"
+                                 ".CTgroup(mposjoin(attr_item, attr_frag, ws.fetch(ATTR_FRAG))).CTmap()"
                                  ".tunique();\n"
                 */
                 /* test uniqueness */
@@ -6370,7 +6370,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "sorting := sorting.CTrefine(item);\n"
                 "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
                 /*
-                "var temp_ddo := CTgroup(iter).CTgroup(kind).CTgroup(item);\n"
+                "var temp_ddo := CTgroup(iter).CTmap().CTgroup(kind).CTmap().CTgroup(item).CTmap();\n"
                 "temp_ddo := temp_ddo.tuniqueALT().mark(0@0).reverse();\n"
                 
                 "iter := temp_ddo.leftfetchjoin(iter);\n"
@@ -6553,7 +6553,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f,
                 "{ # translate fn:distinct-values (atomic*) as atomic*\n"
                 /*
-                "var sorting := CTgroup(iter).CTgroup(item).CTgroup(kind);\n"
+                "var sorting := CTgroup(iter).CTmap().CTgroup(item).CTmap().CTgroup(kind).CTmap();\n"
                 "sorting := sorting.tunique().mark(0@0).reverse();\n"
                 "iter := sorting.leftfetchjoin(iter);\n"
                 "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
