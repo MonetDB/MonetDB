@@ -206,7 +206,7 @@ public class MonetConnection extends Thread implements Connection {
 				try {
 					len = Integer.parseInt(new String(chal, "UTF-8"));
 				} catch (NumberFormatException e) {
-					throw new SQLException("Server challenge length unparsable");
+					throw new SQLException("Server challenge length unparsable (" + new String(chal, "UTF-8") + ")");
 				}
 				// read the challenge string
 				chal = new byte[len];
