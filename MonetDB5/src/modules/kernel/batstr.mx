@@ -21,40 +21,39 @@
 [TODO: property propagations]
 The collection of routines provided here are map operations
 for the atom string primitives. 
-They have been implemented explicitly here, because
-the multiplex operator in M4 was too generic and had
-to analyse at runtime the operations required.
 
 In line with the batcalc module, we assume that
 if two bat operands are provided that they are already
-aligned on the head.
+aligned on the head. Moreover, the head of the BATs
+are limited to :void, which can be cheaply realized using
+the GRPsplit operation.
 @mal
 module batstr;
 command str(b:bat[:void,:str]):bat[:void,:str]
 address STRbattostr
 comment "Identity mapping for string bats";
 
-command length( s:bat[:any$1,:str] ) :bat[:any$1,:int]
+command length( s:bat[:void,:str] ) :bat[:void,:int]
 address STRbatLength
 comment "Return the length of a string.";
 
-command bytes( s:bat[:any$1,:str] ) :bat[:any$1,:int]
+command bytes( s:bat[:void,:str] ) :bat[:void,:int]
 address STRbatBytes
 comment "Return the string length in bytes.";
 
-#command chrAt( s:bat[:any$1,:str], index:int) :bat[:any$1,:chr]
+#command chrAt( s:bat[:void,:str], index:int) :bat[:void,:chr]
 #address STRbatChrAt
 #comment "String array lookup operation.";
 
-command match(b:bat[:any$1,:str], pat:str):bat[:any$1,:bit]
+command match(b:bat[:void,:str], pat:str):bat[:void,:bit]
 address STRbatmatchCst
 comment "POSIX pattern matching against a string BAT";
 
-command ==( l:bat[:any$1,:str], r:str) :bat[:any$1,:bit]
+command ==( l:bat[:void,:str], r:str) :bat[:void,:bit]
 address STRbatEqualCst
 comment "Equate a bat of strings against a singleton";
 
-command ==( l:bat[:any$1,:str], r:bat[:any$1,:str]) :bat[:any$1,:bit]
+command ==( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:bit]
 address STRbatEqual
 comment "Equate a bat of strings against each other";
 
@@ -75,19 +74,34 @@ command rtrim( s:bat[:void,:str] ) :bat[:void,:str]
 address STRbatRtrim
 comment "Strip whitespaces from end of a string.";
 
-@-
-not now
-command string(b:bat[:void,:str],offset:int) :bat[:void,:str]
-address STRbatTail
-comment "Return the tail s[offset..n] of a string s[0..n].";
+command startsWith(s:bat[:void,:str],prefix:bat[:void,:str]):bat[:void,:str]
+address STRbatPrefix
+comment "Prefix check.";
+command endsWith( s:bat[:void,:str], suffix:bat[:void,:str] ) :bat[:void,:bit]
+address STRbatSuffix
+comment "Suffix check.";
 
-command string(s:bat[:void,:str],offset:int,count:int):bat[:void:str]
-address STRbatSubString
-comment "Return substring s[offset..offset+count] of a string s[0..n]";
+command search( s:bat[:void,:str], c:bat[:void,:str] ) :bat[:void,:int]
+address STRbatstrSearch
+comment "Search for a substring. Returns position, -1 if not found.";
+
+command r_search( s:bat[:void,:str], c:bat[:void,:str] ) :bat[:void,:int]
+address STRbatReverseStrSearch
+comment "Reverse search for a substring. Returns position, -1 if not found.";
 
 command +( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:str]
 address STRbatConcat
 comment "Concatenate two strings.";
+
+@-
+not now
+command string(s:bat[:void,:str],offset:int,count:int):bat[:void:str]
+address STRbatSubString
+comment "Return substring s[offset..offset+count] of a string s[0..n]";
+
+command string(b:bat[:void,:str],offset:int) :bat[:void,:str]
+address STRbatTail
+comment "Return the tail s[offset..n] of a string s[0..n].";
 
 command unicodeAt(s:bat[:void,:str], index:int) :bat[:void,:int]
 address STRWbatChrAt
@@ -103,23 +117,10 @@ command iconv(org:bat[:void,:str],fromCs:bat[:void,:str],
 address STRIbatconv
 comment "String codeset conversion";
 
-command startsWith(s:bat[:void,:str],prefix:bat[:void,:str]):bat[:void,:str]
-address STRbatPrefix
-comment "Prefix check.";
-command endsWith( s:bat[:void,:str], suffix:bat[:void,:str] ) :bat[:void,:bit]
-address STRbatSuffix
-comment "Suffix check.";
-
-command search( s:bat[:void,:str], c:bat[:void,:str] ) bat[:void,:int]
-address STRbatstrSearch
-comment "Search for a substring. Returns position, -1 if not found.";
-
 command search( s:bat[:void,:str], c:bat[:void,:chr] ) :bat[:void,:int]
 address STRbatchrSearch
 comment "Search for a character. Returns position, -1 if not found.";
-command r_search( s:bat[:void,:str], c:bat[:void,:str] ) :bat[:void,:int]
-address STRbatReverseStrSearch
-comment "Reverse search for a substring. Returns position, -1 if not found.";
+
 command r_search( s:bat[:void,:str], c:bat[:void,:chr] ) :bat[:void,:int]
 address STRReverseChrSearch
 comment "Reverse search for a char. Returns position, -1 if not found.";
@@ -167,6 +168,7 @@ Let's see how many different versions we need
     @1= BATnew(@2->htype,TYPE_@3,BATcount(@2));
 	if( @2->htype== TYPE_void)
 		BATseqbase(@1, @2->hseqbase);
+	@2->hsorted=@1->hsorted;
     if( @1 == NULL){
         BBPunfix(@2->batCacheid);
         return throwMessage("batstr.@4", "no space available ");
@@ -175,6 +177,7 @@ Let's see how many different versions we need
     @1= BATnew(@2->htype,TYPE_@4,BATcount(@2));
 	if( @2->htype== TYPE_void)
 		BATseqbase(@1, @2->hseqbase);
+	@2->hsorted=@1->hsorted;
     if( @1 == NULL){
         BBPunfix(@2->batCacheid);
         BBPunfix(@3->batCacheid);
@@ -184,13 +187,43 @@ Let's see how many different versions we need
     BBPincref(*@1 = @2->batCacheid,TRUE);
     BBPunfix(*@1);
     BBPunfix(@3->batCacheid);
+@= BATint
+str STRbat@1(int *ret, int *l)
+{   BAT *bn, *b;
+	BUN p,q;
+	int xx;
+	@3 x;
+	int y, *yp = &y;
+
+	@:prepareOperand(b,l,@1)@
+	@:prepareResult(bn,b,int,@1)@
+
+    BATloopFast(b, p, q, xx) {
+        ptr h = BUNhead(b,p);
+        x= (@3) BUNtail(b,p);
+		if(x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
+			y= int_nil;
+		else @2(yp,x);
+        bunfastins(bn, h, yp);
+    }
+	@:finalizeResult(ret,bn,b);
+    return MAL_SUCCEED;
+bunins_failed:
+    BBPunfix(b->batCacheid);
+    BBPunfix(bn->batCacheid);
+    return throwMessage("batstr.==", "bunins failed");
+}
+
+@c
+	@:BATint(Length,strLength,str)@
+	@:BATint(Bytes,strBytes,str)@
 @= BATstr
 str STRbat@1(int *ret, int *l)
 {   BAT *bn, *b;
 	BUN p,q;
 	int xx;
 	@3 x;
-	@4 y;
+	@4 y, *yp = &y;
 
 	@:prepareOperand(b,l,@1)@
 	@:prepareResult(bn,b,@4,@1)@
@@ -200,25 +233,25 @@ str STRbat@1(int *ret, int *l)
         x= (@3) BUNtail(b,p);
 		if(x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
 			y= @4_nil;
-		else @2(&y,&x);
-        bunfastins(bn, h, &y);
+		else @2(yp,x);
+        bunfastins(bn, h, *yp);
     }
-bunins_failed:
 	@:finalizeResult(ret,bn,b);
     return MAL_SUCCEED;
+bunins_failed:
+    BBPunfix(b->batCacheid);
+    BBPunfix(bn->batCacheid);
+    return throwMessage("batstr.==", "bunins failed");
 }
-
 @c
-	@:BATstr(Length,STRLength,str,int)@
-	@:BATstr(Bytes,STRBytes,str,int)@
-	@:BATstr(Lower,STRLower,str,str)@
-	@:BATstr(Upper,STRUpper,str,str)@
-	@:BATstr(Strip,STRStrip,str,str)@
-	@:BATstr(Ltrim,STRLtrim,str,str)@
-	@:BATstr(Rtrim,STRRtrim,str,str)@
+	@:BATstr(Lower,strLower,str,str)@
+	@:BATstr(Upper,strUpper,str,str)@
+	@:BATstr(Strip,strStrip,str,str)@
+	@:BATstr(Ltrim,strLtrim,str,str)@
+	@:BATstr(Rtrim,strRtrim,str,str)@
 @-
-	@:BATstr(unicode,STRFromWChr,str,int)@
-	@:BATstr(charAt,STRChrAt,str,chr)@
+	@:BATstr(unicode,strFromWChr,str,int)@
+	@:BATstr(charAt,strChrAt,str,chr)@
 @-
 @c
 str STRbatEqualCst(int *ret, int *l,str *cst)
@@ -238,9 +271,12 @@ str STRbatEqualCst(int *ret, int *l,str *cst)
 		else y= strcmp(x,*cst)==0;
         bunfastins(bn, h, &y);
     }
-bunins_failed:
 	@:finalizeResult(ret,bn,b);
     return MAL_SUCCEED;
+bunins_failed:
+    BBPunfix(b->batCacheid);
+    BBPunfix(bn->batCacheid);
+    return throwMessage("batstr.==", "bunins failed");
 }
 @-
 A general assumption in all cases is the bats are synchronized on their
@@ -265,15 +301,85 @@ str STRbatEqual(int *ret, int *l, int *r)
     xx = BUNsize(left);
     yy = BUNsize(right);
     while(p<q) {
-	bit y = TRUE;
+		bit y = TRUE;
         ptr h = BUNhead(left,o);
         ptr tl = BUNtail(left,o);
         ptr tr = BUNtail(right,p);
-	if(tl == 0 || tr == 0 || strcmp(tl,tr) != 0)
-		y = FALSE;
-        bunfastins(bn, h, &y);
-	p += xx;
-	r += yy;
+		if(tl == 0 || tr == 0 || strcmp(tl,tr) != 0)
+			y = FALSE;
+			bunfastins(bn, h, &y);
+		p += xx;
+		r += yy;
+    }
+    BBPunfix(right->batCacheid);
+	@:finalizeResult(ret,bn,left)@
+    return MAL_SUCCEED;
+
+bunins_failed:
+    BBPunfix(left->batCacheid);
+    BBPunfix(right->batCacheid);
+    BBPunfix(*ret);
+    return throwMessage("batstr.==", "bunins failed");
+}
+@= binarySTR
+str STRbat@1(int *ret, int *l, int *r)
+{   BAT *bn, *left, *right;
+	BUN o,p,q;
+	int xx,yy;
+	@2 v, *vp= &v;
+
+	@:prepareOperand2(left,l,right,r,==)@
+	@:chkSize(left,right,CMDcompare@1)@
+	@:prepareResult2(bn,left,right,@2,==)@
+
+    o = BUNfirst(left);
+    p = BUNfirst(right);
+    q = BUNlast(right);
+    xx = BUNsize(left);
+    yy = BUNsize(right);
+    while(p<q) {
+        ptr h = BUNhead(left,o);
+        ptr tl = BUNtail(left,o);
+        ptr tr = BUNtail(right,p);
+		@3(vp, tl, tr);
+		bunfastins(bn, h, vp);
+		p += xx;
+		r += yy;
+    }
+    BBPunfix(right->batCacheid);
+	@:finalizeResult(ret,bn,left)@
+    return MAL_SUCCEED;
+
+bunins_failed:
+    BBPunfix(left->batCacheid);
+    BBPunfix(right->batCacheid);
+    BBPunfix(*ret);
+    return throwMessage("batstr.==", "bunins failed");
+}
+@= binarySTRchrint
+str STRbat@1(int *ret, int *l, int *r)
+{   BAT *bn, *left, *right;
+	BUN o,p,q;
+	int xx,yy;
+	@2 v, *vp= &v;
+
+	@:prepareOperand2(left,l,right,r,==)@
+	@:chkSize(left,right,CMDcompare@1)@
+	@:prepareResult2(bn,left,right,@2,==)@
+
+    o = BUNfirst(left);
+    p = BUNfirst(right);
+    q = BUNlast(right);
+    xx = BUNsize(left);
+    yy = BUNsize(right);
+    while(p<q) {
+        ptr h = BUNhead(left,o);
+        ptr tl = BUNtail(left,o);
+        ptr tr = BUNtail(right,p);
+		@3(vp, tl, tr);
+		bunfastins(bn, h, vp);
+		p += xx;
+		r += yy;
     }
     BBPunfix(right->batCacheid);
 	@:finalizeResult(ret,bn,left)@
@@ -286,6 +392,46 @@ bunins_failed:
     return throwMessage("batstr.==", "bunins failed");
 }
 @c
+	@:binarySTR(Prefix,bit, strPrefix)@
+	@:binarySTR(Suffix,bit, strSuffix)@
+	@:binarySTR(strSearch,int, strStrSearch)@
+	@:binarySTR(RstrSearch,int, strReverseStrSearch)@
+str STRbatConcat(int *ret, int *l, int *r)
+{   BAT *bn, *left, *right;
+	BUN o,p,q;
+	int xx,yy;
+	str v, *vp= &v;
+
+	@:prepareOperand2(left,l,right,r,+)@
+	@:chkSize(left,right,STRconcat)@
+	@:prepareResult2(bn,left,right,str,+)@
+
+    o = BUNfirst(left);
+    p = BUNfirst(right);
+    q = BUNlast(right);
+    xx = BUNsize(left);
+    yy = BUNsize(right);
+    while(p<q) {
+        ptr h = BUNhead(left,o);
+        ptr tl = BUNtail(left,o);
+        ptr tr = BUNtail(right,p);
+		strConcat(vp, tl, tr, TYPE_str);
+		bunfastins(bn, h, v);
+		p += xx;
+		o += xx;
+		r += yy;
+    }
+    BBPunfix(right->batCacheid);
+	@:finalizeResult(ret,bn,left)@
+    return MAL_SUCCEED;
+
+bunins_failed:
+    BBPunfix(left->batCacheid);
+    BBPunfix(right->batCacheid);
+    BBPunfix(*ret);
+    return throwMessage("batstr.==", "bunins failed");
+}
+
 str
 STRbattostr(int *ret, int *bid){
 	BBPincref(*ret= *bid,TRUE);
@@ -293,8 +439,8 @@ STRbattostr(int *ret, int *bid){
 }
 
 str STRbatmatchCst(int  *ret, int *bid, str *pat){
-        regex_t prg;
-        BAT *b, *bn;
+	regex_t prg;
+	BAT *b, *bn;
 	int tpe,xx;
 	BUN p,q;
 	ptr nilptr;
