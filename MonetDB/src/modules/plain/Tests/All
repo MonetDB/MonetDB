@@ -15,6 +15,7 @@ url
 xtables
 date
 decimal
+decimal_debug
 monettime
 tcpip1
 tcpip2
