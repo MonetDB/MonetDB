@@ -246,8 +246,11 @@ void scheduleClient(Client c){
 	}
 	if (c != monet_clients || monet_daemon != 1) {
 		QMADD(req, c->stk, c->mil_accept, "readCmd;");
-        }
-        putRequest(req);
+	} 
+	if (!req){
+		GDKfatal("Daemon mode without startup script\n");
+	}
+	putRequest(req);
 }
 
 void rescheduleClient(Client c) {	
