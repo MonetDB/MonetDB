@@ -1243,7 +1243,7 @@ AC_CHECK_FUNC(setsockopt, , AC_CHECK_LIB(socket, setsockopt,
 AC_SUBST(SOCKET_LIBS)
 
 dnl check for NetCDF io library (default /usr and /usr/local)
-have_z=auto
+have_netcdf=auto
 NETCDF_CFLAGS=""
 NETCDF_LIBS=""
 AC_ARG_WITH(netcdf,
@@ -1262,7 +1262,6 @@ if test "x$have_netcdf" != xno; then
   CPPFLAGS="$save_CPPFLAGS"
 
   if test "x$have_netcdf" = xyes; then
-	AM_CONDITIONAL(HAVE_NETCDF, true)
   	save_LDFLAGS="$LDFLAGS"
   	LDFLAGS="$LDFLAGS $NETCDF_LIBS"
   	AC_CHECK_LIB(netcdf, nc_open, NETCDF_LIBS="$NETCDF_LIBS -lnetcdf"
