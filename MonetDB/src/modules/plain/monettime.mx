@@ -866,7 +866,7 @@ date DATE_MAX, DATE_MIN; /* often used dates; computed once */
 @c
 
 static timestamp ts_nil = {-1,-1};
-static tzone tz_nil = {1,1,1,1,1};
+static tzone tz_nil = {0,12,0,0,0};
 
 timestamp*
 timestamp_null() {
@@ -1047,7 +1047,8 @@ static int dummy;
 #define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2)) 
 
 #define ts_isnil(t) ((t).days == -1 && (t).msecs == -1)
-#define tz_isnil(z) ((z).dst == (z).off1 == (z).off2 == (z).dst_start == (z).dst_end == 1)
+#define tz_isnil(z) ((z).dst == (z).off2 == (z).dst_start == (z).dst_end == 1 \
+			&& (z).off1 == 12 )
 
 static INLINE
 int timestamp_inside(timestamp *ret, timestamp *t, tzone* z, lng offset) {
