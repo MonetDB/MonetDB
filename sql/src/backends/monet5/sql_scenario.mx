@@ -264,7 +264,7 @@ str SQLreader(Client c){
 	backend *be = ((backend*)c->state[PARSER]);
 	bstream *in = c->fdin;
 	mvc *m;
-	int language = 'S';
+	int language = be->language; /* 'S' for SQL, 'D' from debugger */
 
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout,"#SQLparser: start reading SQL block\n");
@@ -319,11 +319,14 @@ Continue processing any left-over input from the previous round.
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout,"#rd %d  language %d eof %d\n",rd, language, in->eof);
 #endif
-			if (rd == 0 && language != 0 && in->eof) {
+			if( be->language=='D' && in->eof == 0){
+				return 0;
+			} 
+			if (rd == 0 && language != 0 && in->eof ) {
 				/* we hadn't seen the EOF before, so just try again
 				(this time with prompt) */
 				SQLreader(c);
-			} else if( rd == 0 && in->eof==0){
+			} else if( rd == 0 && in->eof==0 ){
                             return 0;
 			} else {
 				go = FALSE;
@@ -332,6 +335,8 @@ Continue processing any left-over input from the previous round.
 			language = in->buf[in->pos++];
 		}
 	}
+	if( be->language=='D' )
+		return 0;
 
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout,"#SQL blk:%s\n",in->buf+in->pos);
@@ -358,19 +363,20 @@ The current analysis is simple and fulfills our short-term needs.
 A future version may analyze the parameter settings in more detail.
 @c
 
-void SQLsetDebugger(Client c)
+void SQLsetDebugger(Client c, int onoff)
 {
 	InstrPtr q;
 	mvc *m;
 
    m = ((mvc*)c->state[OPTIMIZE]);
 
-	if(m == 0 || m->debug == 0) 
+	if(m == 0 || m->debug==0 )
 		return;
 	q= newInstruction(ASSIGNsymbol);
 	functionId(q)= GDKstrdup("mdb");
 	q= pushArgument(c->curprg->def,q, 
-	newConstant(c->curprg->def,TYPE_bit, GDKstrdup("true"),0));
+	newConstant(c->curprg->def,TYPE_bit,
+		GDKstrdup(onoff? "true":"false"),0));
 	pushInstruction(c->curprg->def,q);
 }
 
@@ -394,25 +400,25 @@ prepare the intermediate code.
 
 str SQLparser(Client c) {
 	str msg=0;
-	int debug=0, err=0;
+	int err=0;
 	backend *be;
 	mvc *m;
 	MalBlkRecord oldstate;
 	lng T0 = 0;
-	InstrPtr q;
 	int pstatus = 0;
 
 	oldstate= *c->curprg->def;
 #ifdef _SQL_PARSER_DEBUG
 	stream_printf(GDKout,"#SQL compilation %s\n",c->nxt);
 #endif
-	SQLsetDebugger(c);
+	SQLsetDebugger(c,TRUE);
 	be = ((backend*)c->state[PARSER]);
     if (be == 0) {
     	GDKerror("SQL state descriptor missing\n");
         return throwMessage("SQLparser","State decriptor missing\n");
     }
 	m = be->mvc;
+	be->language ='S'; /* expect SQL text first */
 	/* input string is copied to the SQL structure for parsing */
 	/*
 	scanner_reset(&m->scanner, _strdup(c->nxt));
@@ -486,13 +492,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 In the final phase we add any debugging control
 @c
 	/* turn off debugger */
-	if(debug){
-		q= newInstruction(ASSIGNsymbol);
-		functionId(q)= GDKstrdup("mdb");
-		q= pushArgument(c->curprg->def,q,
-			     newConstant(c->curprg->def,TYPE_bit, GDKstrdup("false"),0));
-		pushInstruction(c->curprg->def,q);
-	}
+	SQLsetDebugger(c,FALSE);
 
 	if (explainPerformance()){
 		be->qry= sql_escape(QUERY(m->scanner));
@@ -554,6 +554,7 @@ str SQLengine(Client c) {
 #endif
 	T0= GDKusec();
 	c->glb= 0;
+	be->language = 'D'; /* perhaps we need debugger commands */
 	msg= MALengine(c);
 @-
 Any error encountered during execution should block further processing
