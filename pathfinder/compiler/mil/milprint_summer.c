@@ -74,6 +74,7 @@
 /* ... and so on ... */
 #define DRL(p) L(R(L(p)))
 #define RLL(p) L(L(R(p)))
+#define RRL(p) L(R(R(p)))
 #define RLR(p) R(L(R(p)))
 #define LLR(p) R(L(L(p)))
 #define RRR(p) R(R(R(p)))
@@ -117,9 +118,16 @@ static bool
 castable (PFty_t t1, PFty_t t2)
 {
     t2 = PFty_defn (t2);
+
     if (t2.type == ty_choice ||
-        (t2.type == ty_opt && (PFty_child (t2)).type == ty_choice))
+        t2.type == ty_atomic || /* avoid problems with ty_atomic */
+        (t2.type == ty_opt && ((PFty_child (t2)).type == ty_choice ||
+                               (PFty_child (t2)).type == ty_atomic)))
         return false;
+    /* handle aggregates with sequences within an iteration */
+    else if (t2.type == ty_star)
+        return (PFty_subtype (t2, PFty_star (PFty_atomic ())) &&
+                PFty_subtype (t1, PFty_star (PFty_atomic ())));
     else
         return (PFty_subtype (t1, PFty_opt (PFty_atomic ())) &&
                 PFty_subtype (t2, PFty_opt (PFty_atomic ())));
@@ -131,10 +139,12 @@ castable (PFty_t t1, PFty_t t2)
 #define NORMAL      0 /* normal `iter|pos|item|kind' interface */
 #define VALUES      1 /* direct value interface `iter|pos|item-value|kind' */
 #define NODE       32 /* element/attribute construction interface */
+#define BOOL  3
 #define INT   4
 #define DEC   5
 #define DBL   6
 #define STR   7
+#define U_A   8
 
 /**
  * val_join returns the string, which maps the
@@ -155,6 +165,8 @@ val_join (int i)
     else if (i == DBL)
         return ".leftfetchjoin(dbl_values)";
     else if (i == STR)
+        return ".leftfetchjoin(str_values)";
+    else if (i == U_A)
         return ".leftfetchjoin(str_values)";
     else if (i == NODE)
         PFoops(OOPS_FATAL,
@@ -189,6 +201,8 @@ kind_str (int i)
         return "_dbl_";
     else if (i == STR)
         return "_str_";
+    else if (i == U_A)
+        return "_str_";
     else if (i == NODE)
         PFoops(OOPS_FATAL,
                "kind_str: NODE is no valid reference");
@@ -220,7 +234,7 @@ get_kind (PFty_t t)
     else if (PFty_subtype (t, PFty_star (PFty_decimal ())))
         return DEC;
     else if (PFty_subtype (t, PFty_star (PFty_untypedAtomic ())))
-        return STR;
+        return U_A;
     else if (PFty_subtype (t, PFty_star (PFty_boolean ())))
         return NORMAL;
     else if (PFty_subtype (t, PFty_star (PFty_node ())))
@@ -244,25 +258,18 @@ static int
 combinable (PFty_t t1, PFty_t t2)
 {
     int rc;
-    if ((rc = get_kind (t1)) == get_kind (t2))
+    if ((PFty_prime(PFty_defn(t1))).type == ty_choice ||
+        (PFty_prime(PFty_defn(t2))).type == ty_choice)
+        return NORMAL;
+    else if ((rc = get_kind (t1)) == get_kind (t2))
         return rc;
     else
         return NORMAL;
 }
 
-/* enumeration of supported types */
-enum kind_co {
-    co_int,
-    co_dbl,
-    co_dec,
-    co_str,
-    co_bool
-};
-typedef enum kind_co kind_co;
-
 /* container for type information */
 struct type_co {
-    kind_co kind;      /* kind of the container */
+    int  kind;         /* kind of the container */
     char *table;       /* variable name of the corresponding table of values */
     char *mil_type;    /* implementation type */
     char *mil_cast;    /* the MIL constant representing the type */
@@ -274,7 +281,7 @@ static type_co
 int_container ()
 {
     type_co new_co;
-    new_co.kind = co_int;
+    new_co.kind = INT;
     new_co.table = "int_values";
     new_co.mil_type = "int";
     new_co.mil_cast = "INT";
@@ -287,7 +294,7 @@ static type_co
 dbl_container ()
 {
     type_co new_co;
-    new_co.kind = co_dbl;
+    new_co.kind = DBL;
     new_co.table = "dbl_values";
     new_co.mil_type = "dbl";
     new_co.mil_cast = "DBL";
@@ -300,7 +307,7 @@ static type_co
 dec_container ()
 {
     type_co new_co;
-    new_co.kind = co_dec;
+    new_co.kind = DEC;
     new_co.table = "dec_values";
     new_co.mil_type = "dbl";
     new_co.mil_cast = "DEC";
@@ -313,7 +320,7 @@ static type_co
 str_container ()
 {
     type_co new_co;
-    new_co.kind = co_str;
+    new_co.kind = STR;
     new_co.table = "str_values";
     new_co.mil_type = "str";
     new_co.mil_cast = "STR";
@@ -323,16 +330,63 @@ str_container ()
 }
 
 static type_co
+u_A_container ()
+{
+    type_co new_co;
+    new_co.kind = U_A;
+    new_co.table = "str_values";
+    new_co.mil_type = "str";
+    new_co.mil_cast = "U_A";
+    new_co.name = "untypedAtomic";
+
+    return new_co;
+}
+
+static type_co
 bool_container ()
 {
     type_co new_co;
-    new_co.kind = co_bool;
+    new_co.kind = BOOL;
     new_co.table = 0;
     new_co.mil_type = "bit";
     new_co.mil_cast = "BOOL";
     new_co.name = "boolean";
 
     return new_co;
+}
+
+/**
+ * kind_container returns a the container
+ * accoriding to the kind value
+ *
+ * @param i the kind of the values
+ * @result the string mapping the references to
+ *         their values
+ */
+static type_co
+kind_container (int i)
+{
+    if (i == INT)
+        return int_container();
+    else if (i == DEC)
+        return dec_container();
+    else if (i == DBL)
+        return dbl_container();
+    else if (i == STR)
+        return str_container();
+    else if (i == U_A)
+        return u_A_container();
+    else if (i == BOOL)
+        return bool_container();
+    else if (i == NODE)
+        PFoops(OOPS_FATAL,
+               "kind_container: NODE is no valid reference");
+    else if (i == VALUES)
+        PFoops(OOPS_FATAL,
+               "kind_container: VALUES is no valid reference");
+    else
+        PFoops(OOPS_FATAL,
+               "kind_container: no valid reference (%i)", i);
 }
 
 /**
@@ -1619,16 +1673,17 @@ translateIfThen (opt_t *f, int code, int cur_level, int counter,
  * @param code the number indicating, which result interface is preferred
  * @param cur_level the level of the for-scope
  * @param counter the actual offset of saved variables
- * @param c the Core node containing the if-then-else expression
+ * @param then_ the Core node containing the then expression
+ * @param else_ the Core node containing the else expression
  * @result the kind indicating, which result interface is chosen
  */
 static int
-translateIfThenElse (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
+translateIfThenElse (opt_t *f, int code, int cur_level, int counter, 
+                     PFcnode_t *then_, PFcnode_t *else_)
 {
     int bool_res, rcode, rc1, rc2;
     char *item_ext;
 
-    translate2MIL (f, NORMAL, cur_level, counter, L(c));
     counter ++;
     saveResult (f, counter);
     bool_res = counter;
@@ -1650,22 +1705,22 @@ translateIfThenElse (opt_t *f, int code, int cur_level, int counter, PFcnode_t *
             bool_res, bool_res);
     /* if at compile time one argument is already known to
        be empty don't do the other */
-    if (RR(c)->kind == c_empty)
+    if (else_->kind == c_empty)
     {
         rcode = translateIfThen (f, code, cur_level, counter, 
-                                 RL(c), 1, bool_res);
+                                 then_, 1, bool_res);
     }
-    else if (RL(c)->kind == c_empty)
+    else if (then_->kind == c_empty)
     {
         rcode = translateIfThen (f, code, cur_level, counter,
-                                 RR(c), 0, bool_res);
+                                 else_, 0, bool_res);
     }
     else if (code == VALUES && 
-             (rcode = combinable(TY(RL(c)),TY(RR(c)))))
+             (rcode = combinable(TY(then_),TY(else_))))
     {
         item_ext = kind_str(rcode);
         rc1 = translateIfThen (f, code, cur_level, counter,
-                               RL(c), 1, bool_res);
+                               then_, 1, bool_res);
         if (!rc1)
             milprintf(f, "item%s := item%s;\n", 
                       item_ext, val_join(rcode));
@@ -1673,7 +1728,7 @@ translateIfThenElse (opt_t *f, int code, int cur_level, int counter, PFcnode_t *
         saveResult_ (f, counter, rcode);
 
         rc2 = translateIfThen (f, code, cur_level, counter,
-                               RR(c), 0, bool_res);
+                               else_, 0, bool_res);
         if (!rc2)
             milprintf(f, "item%s := item%s;\n", 
                       item_ext, val_join(rcode));
@@ -1691,11 +1746,11 @@ translateIfThenElse (opt_t *f, int code, int cur_level, int counter, PFcnode_t *
 
     /* main case return the result using the normal interface */
         translateIfThen (f, NORMAL, cur_level, counter,
-                         RL(c), 1, bool_res);
+                         then_, 1, bool_res);
         counter++;
         saveResult (f, counter);
         translateIfThen (f, NORMAL, cur_level, counter,
-                         RR(c), 0, bool_res);
+                         else_, 0, bool_res);
         translateSeq (f, counter);
         deleteResult (f, counter);
         rcode = NORMAL;
@@ -1703,6 +1758,118 @@ translateIfThenElse (opt_t *f, int code, int cur_level, int counter, PFcnode_t *
     milprintf(f, "} # end of ifthenelse-translation\n");
     deleteResult (f, bool_res);
     return rcode;
+}
+
+/**
+ * translateTypeswitch generates a boolean list for all
+ * iterations, which match the sequence type and the default
+ * types
+ * Only a small part of the possible sequence types is 
+ * covered. The parts not supported stop the processing
+ * at compile time.
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param cur_level the level of the for-scope
+ * @param input_type the input type of the typeswitch expression
+ * @param seq_type the the sequence type used for splitting the cases
+ */
+static void
+translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type)
+{
+    char *kind;
+    /* '()?' = 0; '()' = 1; '()*' = 2; '()+' = 3; */
+    int qualifier = 1;
+
+    seq_type = PFty_defn (seq_type);
+
+    if (seq_type.type == ty_opt)
+    {
+        qualifier = 0;
+        seq_type = PFty_child (seq_type);
+    }
+    else if (seq_type.type == ty_star)
+    {
+        qualifier = 2;
+        seq_type = PFty_child (seq_type);
+    }
+    else if (seq_type.type == ty_plus)
+    {
+        qualifier = 3;
+        seq_type = PFty_child (seq_type);
+    }
+
+    if (TY_EQ(seq_type, PFty_empty ()))
+    {
+        milprintf(f,
+                "{ # typeswitch\n"
+                "var unique_iter := iter.tunique();\n"
+                "item := loop%03u.outerjoin(unique_iter.project(false)).[isnil]().[oid]();\n"
+                "unique_iter := nil_oid_oid;\n"
+                "iter := loop%03u;\n"
+                "pos := iter.project(1@0);\n"
+                "kind := item.project(BOOL);\n"
+                "} # end of typeswitch\n",
+                cur_level, cur_level);
+        return;
+    }
+    else if (TY_EQ (seq_type, PFty_integer ()))
+        kind = "INT";
+    else if (TY_EQ (seq_type, PFty_decimal ()))
+        kind = "DEC";
+    else if (TY_EQ (seq_type, PFty_string ()))
+        kind = "STR";
+    else if (TY_EQ (seq_type, PFty_double ()))
+        kind = "DEC";
+    else if (TY_EQ (seq_type, PFty_boolean ()))
+        kind = "BOOL";
+    else if (TY_EQ (seq_type, PFty_untypedAtomic ()))
+        kind = "U_A";
+    else
+        PFoops (OOPS_TYPECHECK,
+                "couldn't solve typeswitch at compile time;"
+                " don't know if '%s' is subtype of '%s'",
+                PFty_str(input_type), PFty_str(seq_type));
+
+    /* match one/multiple values per iteration */
+    if (qualifier == 0 || qualifier == 1)
+        milprintf(f,
+                "{ # typeswitch\n"
+                "var single_iters := {count}(iter.reverse()).[=](1).select(true).mirror();\n"
+                "single_iters := single_iters.leftjoin(iter.reverse());\n"
+                "var matching_iters := single_iters.leftfetchjoin(kind).[=](%s).select(true);\n"
+                "single_iters := nil_oid_oid;\n",
+                kind);
+    else
+        milprintf(f,
+                "{ # typeswitch\n"
+                "var iter_count := {count}(iter.reverse());\n"
+                "var iter_kind := iter.reverse().leftfetchjoin(kind);\n"
+                "var kind_count := iter_kind.[=](%s).select(true).{count}();\n"
+                "iter_kind := nil_oid_int;\n"
+                "var matching_iters := iter_count.[=](kind_count).select(true);\n"
+                "iter_count := nil_oid_int;\n"
+                "kind_count := nil_oid_int;\n",
+                kind);
+
+    /* create result for empty iterations */
+    if (qualifier == 0 || qualifier == 2)
+        milprintf(f,
+                "iter := iter.tunique().mirror();\n"
+                "item := iter.outerjoin(matching_iters).[isnil]().select(true);\n"
+                "item := loop%03u.outerjoin(item).[isnil]().[oid]();\n",
+                cur_level);
+    else
+        milprintf(f,
+                "item := loop%03u.outerjoin(matching_iters).[isnil]().[not]().[oid]();\n",
+                cur_level);
+
+    milprintf(f,
+            "matching_iters := nil_oid_bit;\n"
+            "iter := loop%03u;\n"
+            "pos := iter.project(1@0);\n"
+            "kind := item.project(BOOL);\n"
+            "} # end of typeswitch\n",
+            cur_level);
 }
 
 /**
@@ -1946,7 +2113,14 @@ loop_liftedSCJ (opt_t *f,
            3 = input and output in item|iter order */
         int item_order = ((rev_out)?2:0) + ((rev_in)?1:0);
         
-        if (kind)
+        if (kind && loc)
+        {
+            milprintf(f,
+                    "res_scj := loop_lifted_%s_step_with_target_test"
+                    "(iter, item, kind.get_fragment(), ws, %i, \"%s\");\n",
+                    axis, item_order, loc);
+        }
+        else if (kind)
         {
             milprintf(f,
                     "res_scj := loop_lifted_%s_step_with_kind_test"
@@ -2085,10 +2259,10 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
     {
         loop_liftedSCJ (f, axis, "TEXT", 0, 0, rev_in, rev_out);
     }
-    else if (PFty_eq (in_ty, PFty_pi (NULL)))
+    else if (PFty_subtype (in_ty, PFty_pi (NULL)))
     {
-        /* FIXME: Consider target specifier in processing instructions */
-        loop_liftedSCJ (f, axis, "PI", 0, 0, rev_in, rev_out);
+        char *target = (PFty_qname(in_ty)).loc;
+        loop_liftedSCJ (f, axis, "PI", 0, target, rev_in, rev_out);
     }
     else if (PFty_subtype (in_ty, PFty_doc (PFty_xs_anyType ())))
     {
@@ -3196,7 +3370,7 @@ evaluateCastBlock (opt_t *f, type_co ori, char *cast, char *target_type)
             "part_kind := nil_oid_oid;\n"
             "var part_item := oid_oid.leftfetchjoin(item);\n",
             ori.mil_cast);
-    if (ori.kind != co_bool)
+    if (ori.kind != BOOL)
         milprintf(f,
                 "var part_%s := part_item.leftfetchjoin(%s);\n",
                 ori.mil_type, ori.table);
@@ -3245,7 +3419,7 @@ evaluateCast (opt_t *f,
     if (rc)
         milprintf(f,
                 "var cast_val := item%s.%s;\n", kind_str(rc), cast);
-    else if (ori.kind != co_bool)
+    else if (ori.kind != BOOL)
         milprintf(f,
                 "var ori_val := item.leftfetchjoin(%s);\n"
                 "var cast_val := ori_val.%s;\n"
@@ -3259,7 +3433,7 @@ evaluateCast (opt_t *f,
             "{    ERROR (\"couldn't cast all values from %s to %s\"); }\n",
             target.mil_type, ori.name, target.name);
 
-    if (target.kind == co_bool)
+    if (target.kind == BOOL)
         milprintf(f, "item := cast_val.[oid]();\n");
     else if (!rcode)
         addValues (f, target, "cast_val", "item");
@@ -3329,6 +3503,7 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCastBlock (f, dec_container(), "[int]()", "int");
         evaluateCastBlock (f, dbl_container(), "[int]()", "int");
         evaluateCastBlock (f, str_container(), "[int]()", "int");
+        evaluateCastBlock (f, u_A_container(), "[int]()", "int");
 
         milprintf(f,
                 "if (_val.ord_uselect(int(nil)).count() != 0)\n"
@@ -3401,6 +3576,7 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCastBlock (f, int_container(), "[dbl]()", "dbl");
         evaluateCastBlock (f, dbl_container(), "[dbl]()", "dbl");
         evaluateCastBlock (f, str_container(), "[dbl]()", "dbl");
+        evaluateCastBlock (f, u_A_container(), "[dbl]()", "dbl");
  
         milprintf(f,
                 "if (_val.ord_uselect(dbl(nil)).count() != 0)\n"
@@ -3473,6 +3649,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCastBlock (f, dec_container(), "[dbl]()", "dbl");
         evaluateCastBlock (f, int_container(), "[dbl]()", "dbl");
         evaluateCastBlock (f, str_container(), "[dbl]()", "dbl");
+        evaluateCastBlock (f, u_A_container(), "[dbl]()", "dbl");
  
         milprintf(f,
                 "if (_val.ord_uselect(dbl(nil)).count() != 0)\n"
@@ -3504,13 +3681,14 @@ static void
 translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
 {
     char *item_ext = kind_str(rcode);
+    type_co cast_container = (rcode == STR)?str_container():u_A_container();
 
     if (TY_EQ (input_type, PFty_integer ()))
-        evaluateCast (f, rcode, rc, int_container(), str_container(), "[str]()");
+        evaluateCast (f, rcode, rc, int_container(), cast_container, "[str]()");
     else if (TY_EQ (input_type, PFty_decimal ()))
-        evaluateCast (f, rcode, rc, dec_container(), str_container(), "[str]()");
+        evaluateCast (f, rcode, rc, dec_container(), cast_container, "[str]()");
     else if (TY_EQ (input_type, PFty_double ()))
-        evaluateCast (f, rcode, rc, dbl_container(), str_container(), "[str]()");
+        evaluateCast (f, rcode, rc, dbl_container(), cast_container, "[str]()");
     else if (TY_EQ (input_type, PFty_string ()) ||
              TY_EQ (input_type, PFty_untypedAtomic ()))
     {
@@ -3526,9 +3704,14 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
             addValues(f, str_container(), item, "item");
             milprintf(f, "item := item.reverse().mark(0@0).reverse();\n");
         }
+
+        if (TY_EQ (input_type, PFty_string ()) && rcode == U_A)
+            milprintf(f, "kind := kind.project(U_A);\n");
+        else if (TY_EQ (input_type, PFty_untypedAtomic ()) && rcode == STR)
+            milprintf(f, "kind := kind.project(STR);\n");
     }
     else if (TY_EQ (input_type, PFty_boolean ()))
-        evaluateCast (f, rcode, rc, bool_container(), str_container(), "[str]()");
+        evaluateCast (f, rcode, rc, bool_container(), cast_container, "[str]()");
     else /* handles the choice type */ 
     {
         if (rc) PFoops (OOPS_FATAL, 
@@ -3545,6 +3728,7 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCastBlock (f, dec_container(), "[str]()", "str");
         evaluateCastBlock (f, dbl_container(), "[str]()", "str");
         evaluateCastBlock (f, int_container(), "[str]()", "str");
+        evaluateCastBlock (f, u_A_container(), "[str]()", "str");
  
         milprintf(f,
                 "if (_val.ord_uselect(str(nil)).count() != 0)\n"
@@ -3557,8 +3741,8 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
 
         milprintf(f,
                 "item%s := item%s.reverse().mark(0@0).reverse();\n"
-                "kind := _oid.project(STR);\n",
-                item_ext, item_ext);
+                "kind := _oid.project(%s);\n",
+                item_ext, item_ext, (rcode == STR)?"STR":"U_A");
     }
 }
 
@@ -3602,6 +3786,7 @@ translateCast2BOOL (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCastBlock (f, dec_container(), "[bit]()", "bit");
         evaluateCastBlock (f, dbl_container(), "[bit]()", "bit");
         evaluateCastBlock (f, str_container(), "[!=](\"\")", "bit");
+        evaluateCastBlock (f, u_A_container(), "[!=](\"\")", "bit");
  
         milprintf(f,
                 "if (_val.ord_uselect(bit(nil)).count() != 0)\n"
@@ -3635,18 +3820,19 @@ translateCast (opt_t *f,
     PFty_t input_type = PFty_defn (R(c)->type);
     int cast_optional = 0;
      
-    if (cast_type.type == ty_opt)
+    if (cast_type.type == ty_opt ||
+        cast_type.type == ty_star)
     {
         cast_type = PFty_child (cast_type);
         cast_optional = 1;
     }
 
-    if (input_type.type == ty_opt) 
-        input_type = PFty_child (input_type);
+    input_type = PFty_prime(input_type);
 
     milprintf(f,
             "{ # cast from %s to %s\n", 
-            PFty_str(input_type), PFty_str(cast_type));
+            PFty_str(PFty_defn (R(c)->type)),
+            PFty_str(PFty_defn (L(c)->sem.type)));
 
     switch (cast_type.type)
     {
@@ -3667,7 +3853,7 @@ translateCast (opt_t *f,
             translateCast2DBL (f, rcode, rc, input_type);
             break;
         case ty_untypedAtomic:
-            rcode = (code)?STR:NORMAL;
+            rcode = (code)?U_A:NORMAL;
             translateCast2STR (f, rcode, rc, input_type);
             break;
         case ty_string:
@@ -3677,8 +3863,8 @@ translateCast (opt_t *f,
         default:
             PFoops (OOPS_TYPECHECK,
                     "can't cast type '%s' to type '%s'",
-                    PFty_str(R(c)->type),
-                    PFty_str(L(c)->sem.type));
+                    PFty_str(L(c)->sem.type),
+                    PFty_str(R(c)->type));
             break;
     }
 
@@ -3687,7 +3873,8 @@ translateCast (opt_t *f,
 
     milprintf(f,
             "} # end of cast from %s to %s\n", 
-            PFty_str(input_type), PFty_str(cast_type));
+            PFty_str(PFty_defn (L(c)->sem.type)),
+            PFty_str(PFty_defn (R(c)->type)));
 
     return rcode;
 }
@@ -3921,7 +4108,7 @@ evaluateComp (opt_t *f, int rc1, int rc2,
     milprintf(f, "{ # '%s' comparison\n", operator);
     /* FIXME: assume that both intermediate results are aligned 
               otherwise this doesn't work */
-    if (t_co.kind != co_bool)
+    if (t_co.kind != BOOL)
     {
         if (rc2)
             milprintf(f, "var val_snd := item%s;\n", kind_str(rc2));
@@ -3970,7 +4157,7 @@ evaluateCompOpt (opt_t *f, int rc1, int rc2,
                  int counter, char *operator, type_co t_co)
 {
     milprintf(f, "{ # '%s' comparison with optional type\n", operator);
-    if (t_co.kind != co_bool)
+    if (t_co.kind != BOOL)
     {
         if (rc2)
             milprintf(f,
@@ -4220,50 +4407,60 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "var test_kind := test.leftjoin(kind);\n"
                 "test := nil_oid_oid;\n"
                 "var str_test := test_kind.ord_uselect(STR);\n"
+                "var u_A_test := test_kind.ord_uselect(U_A);\n"
                 "var int_test := test_kind.ord_uselect(INT);\n"
                 "var dbl_test := test_kind.ord_uselect(DBL);\n"
                 "var dec_test := test_kind.ord_uselect(DEC);\n"
                 "var bool_test := test_kind.ord_uselect(BOOL);\n"
                 "test := nil_oid_int;\n"
                 "str_test := str_test.mirror();\n"
+                "u_A_test := u_A_test.mirror();\n"
                 "int_test := int_test.mirror();\n"
                 "dbl_test := dbl_test.mirror();\n"
                 "dec_test := dec_test.mirror();\n"
                 "bool_test := bool_test.mirror();\n"
                 "str_test := str_test.leftjoin(item);\n"
+                "u_A_test := u_A_test.leftjoin(item);\n"
                 "int_test := int_test.leftjoin(item);\n"
                 "dec_test := dec_test.leftjoin(item);\n"
                 "dbl_test := dbl_test.leftjoin(item);\n"
                 "bool_test := bool_test.leftjoin(item);\n"
                 "var test_str_ := str_test.leftfetchjoin(str_values);\n"
+                "var test_u_A_ := u_A_test.leftfetchjoin(str_values);\n"
                 "var test_int := int_test.leftfetchjoin(int_values);\n"
                 "var test_dec := dec_test.leftfetchjoin(dec_values);\n"
                 "var test_dbl := dbl_test.leftfetchjoin(dbl_values);\n"
                 "bool_test := bool_test.ord_uselect(0@0);\n"
                 "str_test := test_str_.ord_uselect(\"\");\n"
+                "u_A_test := test_u_A_.ord_uselect(\"\");\n"
                 "int_test := test_int.ord_uselect(0);\n"
                 "dec_test := test_dec.ord_uselect(dbl(0));\n"
                 "dbl_test := test_dbl.ord_uselect(dbl(0));\n"
                 "test_str_ := nil_oid_str;\n"
+                "test_u_A_ := nil_oid_str;\n"
                 "test_int := nil_oid_int;\n"
                 "test_dec := nil_oid_dbl;\n"
                 "test_dbl := nil_oid_dbl;\n"
                 "var str_falses := str_test.project(false);\n"
+                "var u_A_falses := u_A_test.project(false);\n"
                 "var int_falses := int_test.project(false);\n"
                 "var dec_falses := dec_test.project(false);\n"
                 "var dbl_falses := dbl_test.project(false);\n"
                 "var bool_falses := bool_test.project(false);\n"
                 "str_test := nil_oid_oid;\n"
+                "u_A_test := nil_oid_oid;\n"
                 "int_test := nil_oid_oid;\n"
                 "dec_test := nil_oid_oid;\n"
                 "dbl_test := nil_oid_oid;\n"
                 "bool_test := nil_oid_oid;\n"
                 "trues.replace(str_falses);\n"
+                "trues.replace(u_A_falses);\n"
                 "trues.replace(int_falses);\n"
                 "trues.replace(dec_falses);\n"
                 "trues.replace(dbl_falses);\n"
                 "trues.replace(bool_falses);\n"
                 "str_falses := nil_oid_bit;\n"
+                "u_A_falses := nil_oid_bit;\n"
                 "int_falses := nil_oid_bit;\n"
                 "dec_falses := nil_oid_bit;\n"
                 "dbl_falses := nil_oid_bit;\n"
@@ -4302,8 +4499,8 @@ combine_strings (opt_t *f, int code, int rc)
             "iter_str := iter_str.string_join(iter.tunique().project(\" \"));\n"
             "iter := iter_str.mark(0@0).reverse();\n"
             "pos := iter.mark(1@0);\n"
-            "kind := iter.project(STR);\n",
-            item_ext, (rc)?"":val_join(STR));
+            "kind := iter.project(U_A);\n",
+            item_ext, (rc)?"":val_join(U_A));
     if (code)
         milprintf(f, "item%s := iter_str;\n", item_ext);
     else
@@ -4324,11 +4521,12 @@ combine_strings (opt_t *f, int code, int rc)
  *
  * @param f the Stream the MIL code is printed to
  * @param code the number indicating, which result interface is preferred
+ * @param kind the string indicating, whether the result should be STR or U_A
  * @param tv the boolean indicating wether typed-value or
  *        string-value is called
  */
 static void
-typed_value (opt_t *f, int code, bool tv)
+typed_value (opt_t *f, int code, char *kind, bool tv)
 {
     char *empty_string = (code)?"\"\"":"EMPTY_STRING";
     char *item_ext = (code)?kind_str(STR):"";
@@ -4500,12 +4698,13 @@ typed_value (opt_t *f, int code, bool tv)
             "}\n"
             "input_iter := nil_oid_oid;\n"
             "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
-            "kind := iter.project(STR);\n"
+            "kind := iter.project(%s);\n"
             "} # end of typed-value\n",
             item_ext, item_ext,
             item_ext,
             empty_string,
-            item_ext);
+            item_ext,
+            kind);
 }
 
 /**
@@ -4534,7 +4733,7 @@ fn_data (opt_t *f)
             "pos := node.leftfetchjoin(pos);\n"
             "item := node.leftfetchjoin(item);\n"
             "kind := node.leftfetchjoin(kind);\n");
-    typed_value (f, NORMAL, false);
+    typed_value (f, NORMAL, "U_A", false);
     milprintf(f,
             /* every input row of typed-value gives back exactly
                one output row - therefore a mapping is not necessary */
@@ -4856,7 +5055,7 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
     if (PFty_subtype (PFty_node(),input_type))
     {
         translate2MIL (f, NORMAL, cur_level, counter, c);
-        typed_value (f, code, false);
+        typed_value (f, code, "STR", false);
     
         milprintf(f,
                 "if (iter.count() != loop%03u.count())\n"
@@ -4931,6 +5130,53 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
         cur_level);
 
     return rcode;
+}
+
+/**
+ * translateAggregates translates fn:avg, fn:max, fn:min, and fn:sum
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param code the number indicating, which result interface is preferred
+ * @param rc the integer indicating which kind the input has used
+ * @param fun the function information
+ * @param args the head of the argument list
+ * @param args op the name of the aggregate function
+ * @result the kind indicating, which result interface is chosen
+ */
+static int
+translateAggregates (opt_t *f, int code, int rc,
+                     PFfun_t *fun, PFcnode_t *args, char *op)
+{
+    int ic = get_kind(PFty_prime(PFty_defn(TY(L(args)))));
+    int rcode = get_kind(fun->ret_ty);
+    char *item_ext = (code)?kind_str(rcode):"";
+    type_co t_co = kind_container(rcode);
+
+    milprintf(f,
+            "if (iter.count() != 0) { # fn:%s\n"
+            "var iter_aggr := iter.reverse().leftfetchjoin(item%s).{%s}();\n"
+            "iter := iter_aggr.mark(0@0).reverse();\n"
+            "pos := iter.project(1@0);\n"
+            "kind := iter.project(%s);\n",
+            op,
+            (rc)?kind_str(rc):val_join(ic), op,
+            t_co.mil_cast);
+
+    if (code)
+        milprintf(f, "item%s := iter_aggr;\n", item_ext);
+    else 
+        addValues (f, t_co, "iter_aggr", "item");
+
+    milprintf(f,
+            "item%s := item%s.reverse().mark(0@0).reverse();\n"
+            "} else {\n"
+            "item%s := empty%s_bat;\n"
+            "} # end of fn:%s\n",
+            item_ext, item_ext, 
+            item_ext, item_ext,
+            op);
+
+    return (code)?rcode:NORMAL;
 }
 
 /**
@@ -5518,7 +5764,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 
 
 /**
- * translateFunction translates the builtin functions
+ * translateUDF translates the user defined functions
  *
  * @param f the Stream the MIL code is printed to
  * @param cur_level the level of the for-scope
@@ -5629,16 +5875,17 @@ translateUDF (opt_t *f, int cur_level, int counter,
  * @param code the number indicating, which result interface is preferred
  * @param cur_level the level of the for-scope
  * @param counter the actual offset of saved variables
- * @param fnQname the name of the function
- * @args the head of the argument list
+ * @param fun the function information
+ * @param args the head of the argument list
  * @result the kind indicating, which result interface is chosen
  */
 static int
 translateFunction (opt_t *f, int code, int cur_level, int counter, 
-                   PFqname_t fnQname, PFcnode_t *args)
+                   PFfun_t *fun, PFcnode_t *args)
 {
     int rc;
     char *item_ext;
+    PFqname_t fnQname = fun->qname;
 
     if (!PFqname_eq(fnQname,PFqname (PFns_fn,"doc")))
     {
@@ -5706,6 +5953,30 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                );
         return NORMAL;
     }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"true")))
+    {
+        milprintf(f,
+                "{\n"
+                "var itemID := 1@0;\n");
+        /* translateConst needs a bound variable itemID */
+        translateConst(f, cur_level, "BOOL");
+        milprintf(f, 
+                "itemID := nil_oid;\n"
+                "}\n");
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"false")))
+    {
+        milprintf(f,
+                "{\n"
+                "var itemID := 0@0;\n");
+        /* translateConst needs a bound variable itemID */
+        translateConst(f, cur_level, "BOOL");
+        milprintf(f, 
+                "itemID := nil_oid;\n"
+                "}\n");
+        return NORMAL;
+    }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"exactly-one")))
     {
         rc = translate2MIL (f, code, cur_level, counter, L(args));
@@ -5755,6 +6026,117 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 item_ext, item_ext, cur_level);
 
         return (code)?INT:NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"avg")))
+    {
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        return translateAggregates (f, code, rc, fun, args, "avg");
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"max")))
+    {
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        return translateAggregates (f, code, rc, fun, args, "max");
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"min")))
+    {
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        return translateAggregates (f, code, rc, fun, args, "min");
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"sum")))
+    {
+        int rcode = get_kind(fun->ret_ty);
+        type_co t_co = kind_container(rcode);
+        item_ext = kind_str(rcode);
+
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        rc = translateAggregates (f, VALUES, rc, fun, args, "sum");
+        if (!rc)
+        {
+            milprintf(f, "item%s := item%s;\n", item_ext, val_join(rcode));
+        }
+        counter++;
+        saveResult_ (f, counter, rcode);
+
+        if (fun->arity == 2)
+        {
+
+            rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+            if (!rc)
+            {
+                milprintf(f, "item%s := item%s;\n", item_ext, val_join(rcode));
+            }
+            milprintf(f, 
+                    "if (iter.count() != loop%03u.count())\n"
+                    "{ # add 0 for missing zero values in fn:sum\n"
+                    "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
+                    "difference := difference.mark(0@0).reverse();\n"
+                    "var res_mu := merged_union(iter, difference, "
+                                               "item%s, fake_project(%s(0)));\n"
+                    "difference := nil_oid_oid;\n"
+                    "iter := loop%03u;\n"
+                    "item%s := res_mu.fetch(1);\n"
+                    "res_mu := nil_oid_bat;\n"
+                    "}\n",
+                    cur_level, 
+                    cur_level,
+                    item_ext, t_co.mil_type,
+                    cur_level,
+                    item_ext);
+        }
+        else
+        {
+            milprintf(f, 
+                    "iter := loop%03u;\n"
+                    "item%s := iter.project(%s(0));\n",
+                    cur_level,
+                    item_ext, t_co.mil_type);
+        }
+
+        milprintf(f,
+                "var item_result;\n"
+                "if (iter%03u.count() != loop%03u.count())\n"
+                "{ # add zero values needed for fn:sum\n"
+                "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
+                "difference := difference.mark(0@0).reverse();\n"
+                "var zeros := difference.leftfetchjoin(iter.reverse())"
+                                       ".leftfetchjoin(item%s);\n"
+                "var res_mu := merged_union(iter%03u, difference, "
+                                           "item%s%03u, zeros);\n"
+                "difference := nil_oid_oid;\n"
+                "zeros := nil_oid_%s;\n"
+                "item_result := res_mu.fetch(1);\n"
+                "res_mu := nil_oid_bat;\n"
+                "} "
+                "else {\n"
+                "item_result := item%s%03u;\n"
+                "}\n"
+                "iter := loop%03u;\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(%s);\n",
+                counter, cur_level, 
+                cur_level, counter,
+                item_ext,
+                counter,
+                item_ext, counter,
+                t_co.mil_type,
+                item_ext, counter,
+                cur_level,
+                t_co.mil_cast);
+
+        if (code)
+        {
+            milprintf(f, "item%s := item_result;\n", item_ext);
+        }
+        else
+        {
+            addValues (f, t_co, "item_result", "item");
+        }
+        milprintf(f, 
+                "item%s := item%s.reverse().mark(0@0).reverse();\n",
+                (code)?item_ext:"", (code)?item_ext:"");
+
+        deleteResult_ (f, counter, rcode);
+        return rcode;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"empty")))
     {
@@ -5960,13 +6342,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"typed-value")))
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        typed_value (f, code, true);
+        typed_value (f, code, "U_A", true);
         return (code)?STR:NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"string-value")))
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        typed_value (f, code, false);
+        typed_value (f, code, "STR", false);
         return (code)?STR:NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"data")))
@@ -5977,7 +6359,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         {
             /* this branch is probably never evaluated
                - optimization already applied in coreopt.brg */
-            typed_value (f, code, false);
+            typed_value (f, code, "U_A", false);
             rc = (code)?STR:NORMAL;
         }
         else
@@ -5986,6 +6368,56 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             rc = NORMAL;
         }
         return rc;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"number")))
+    {
+        item_ext = (code)?kind_str(DBL):"";
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+
+        /* cast to dbl is inlined nil represents NaN value */
+        if (rc)
+            milprintf(f,
+                    "var cast_val := item%s.[dbl]();\n", kind_str(rc));
+        else if (PFty_subtype (TY(L(args)), PFty_boolean ()))
+            milprintf(f,
+                    "var cast_val := item.[dbl]();\n");
+        else
+            milprintf(f,
+                    "var cast_val := item%s.[dbl]();\n", kind_str(get_kind(TY(L(args)))));
+
+        milprintf(f,
+                "if (iter.count() != loop%03u.count())\n"
+                "{\n"
+                "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
+                "difference := difference.mark(0@0).reverse();\n"
+                "var res_mu := merged_union(iter, difference, cast_val, "
+                                           "fake_project(dbl(nil)));\n"
+                "difference := nil_oid_oid;\n"
+                "cast_val := res_mu.fetch(1);\n"
+                "res_mu := nil_oid_bat;\n"
+                "}\n",
+                cur_level,
+                cur_level);
+
+        /* nil as NaN value doesn't work out, because nil disappears in joins */
+        milprintf(f,
+                "if (cast_val.ord_uselect(dbl(nil)).count() != 0)\n"
+                "{    ERROR (\"don't support NaN value\"); }\n");
+
+        if (!code)
+            addValues (f, dbl_container(), "cast_val", "item");
+        else
+            milprintf(f, "item%s := cast_val;\n", item_ext);
+
+        milprintf(f,
+                "cast_val := nil_oid_dbl;\n"
+                "iter := loop%03u;\n"
+                "pos := iter.project(1@0);\n"
+                "item%s := item%s.reverse().mark(0@0).reverse();\n"
+                "kind := iter.project(DBL);\n",
+                cur_level, item_ext, item_ext);
+
+        return (code)?DBL:NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"string")))
     {
@@ -6230,7 +6662,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         fn_data (f);
         translateCast2STR (f, STR, NORMAL, L(args)->type);
-        combine_strings (f, code, STR);
+        combine_strings (f, code, U_A);
         return (code)?STR:NORMAL;
     }
     else if (!PFqname_eq(fnQname,
@@ -6290,6 +6722,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                          PFqname (PFns_pf,"join")))
     {
         return evaluate_join (f, code, cur_level, counter, args);
+    }
+    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"unordered")))
+    {
+        milprintf(f, "# ignored fn:unordered\n");
+        return translate2MIL (f, code, cur_level, counter, L(args));
     }
     else 
     {
@@ -6548,7 +6985,13 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             milprintf(f, "}  # end of for-translation\n");
             break;
         case c_if:
-            rc = translateIfThenElse (f, code, cur_level, counter, c);
+            translate2MIL (f, NORMAL, cur_level, counter, L(c));
+            rc = translateIfThenElse (f, code, cur_level, counter, RL(c), RR(c));
+            break;
+        case c_typesw:
+            translate2MIL (f, NORMAL, cur_level, counter, L(c));
+            translateTypeswitch (f, cur_level, TY(L(c)), TY(RLL(c)));
+            rc = translateIfThenElse (f, code, cur_level, counter, RLR(c), RRL(c));
             break;
         case c_locsteps:
             /* ignore result code if it's not ITEM_ORDER */
@@ -6670,7 +7113,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             if (c->sem.fun->builtin)
             {
                 rc = translateFunction (f, code, cur_level, counter, 
-                                        c->sem.fun->qname, D(c));
+                                        c->sem.fun, D(c));
             }
             else
             {
@@ -6794,8 +7237,6 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             /* don't do anything */
             rc = NORMAL; /* dummy */
             break;
-        case c_typesw:
-            PFlog("typeswitch occured");
         case c_letbind:
             PFlog("letbind occured");
         case c_forbind:
@@ -7132,7 +7573,8 @@ simplifyCoreTree (PFcnode_t *c)
             input_type = R(c)->type;
             opt_cast_type = cast_type;
 
-            if (cast_type.type == ty_opt)
+            if (cast_type.type == ty_opt ||
+                cast_type.type == ty_star)
                 opt_cast_type = PFty_child (cast_type);
 
             /* if casts are nested only the most outest
@@ -7151,7 +7593,8 @@ simplifyCoreTree (PFcnode_t *c)
                  input type */
             if (TY_EQ (input_type, cast_type) ||
                 TY_EQ (input_type, opt_cast_type) ||
-                (cast_type.type == ty_opt &&
+                ((cast_type.type == ty_opt ||
+                  cast_type.type == ty_star) &&
                  TY_EQ (input_type, PFty_empty ())))
             {
                 *c = *(R(c));
@@ -7172,13 +7615,6 @@ simplifyCoreTree (PFcnode_t *c)
                        PFty_str (cast_type));
                 */
             }
-            break;
-        case c_typesw:
-            PFoops (OOPS_TYPECHECK,
-                    "couldn't solve typeswitch at compile time;"
-                    " don't know if '%s' is subtype of '%s'",
-                    PFty_str(L(c)->type), PFty_str(cast_type));
-        
             break;
         case c_apply:
             /* handle the promotable types explicitly by casting them */
@@ -7239,18 +7675,29 @@ simplifyCoreTree (PFcnode_t *c)
                 *c = *new_node;
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-untypedAtomic")) &&
-                     (PFty_subtype (DL(c)->type, fun->ret_ty) ||
-                      PFty_subtype (DL(c)->type, PFty_string ())))
+                     PFty_subtype (DL(c)->type, fun->ret_ty))
             {
                 /* don't use function - omit apply and arg node */
                 *c = *(DL(c));
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-untypedAtomic")) &&
+                      PFty_subtype (DL(c)->type, PFty_atomic ()))
+            {
+                new_node = PFcore_seqcast (PFcore_seqtype (PFty_untypedAtomic ()),
+                                           DL(c));
+                TY(new_node)    =
+                TY(L(new_node)) = PFty_untypedAtomic ();
+                *c = *new_node;
+            }
+            else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-untypedAtomic")) &&
                      PFty_subtype (DL(c)->type, PFty_empty()))
             {
-                    new_node = PFcore_str ("");
-                    new_node->type = PFty_string ();
-                    *c = *new_node;
+                new_node = PFcore_seqcast (PFcore_seqtype (PFty_untypedAtomic ()),
+                                           PFcore_str (""));
+                TY(new_node)    =
+                TY(L(new_node)) = PFty_untypedAtomic ();
+                TY(R(new_node)) = PFty_string ();
+                *c = *new_node;
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"distinct-doc-order")) &&
                      (PFty_subtype (DL(c)->type, PFty_opt(PFty_node ())) ||

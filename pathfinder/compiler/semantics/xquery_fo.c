@@ -80,6 +80,14 @@
   { .ns = PFns_fn, .loc = "data",                                        \
     .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
     .ret_ty = PFty_star (PFty_atomic ()) }                               \
+, /* fn:number () as double */                                           \
+  { .ns = PFns_fn, .loc = "number",                                      \
+    .arity = 0,                                                          \
+    .ret_ty = PFty_double () }                                           \
+, /* fn:number (atomic?) as double */                                    \
+  { .ns = PFns_fn, .loc = "number",                                      \
+    .arity = 1, .par_ty = { PFty_opt (PFty_atomic ()) },                 \
+    .ret_ty = PFty_double () }                                           \
 , /* fn:doc (string?) as document? - FIXME: is type of PFty_doc right? */\
   { .ns = PFns_fn, .loc = "doc",                                         \
     .arity = 1, .par_ty = { PFty_opt (PFty_string ()) },                 \
@@ -103,6 +111,14 @@
     .arity = 1, .par_ty = { PFty_boolean () },                           \
     .ret_ty = PFty_boolean (),                                           \
     .alg = PFbui_fn_not_bln }                                            \
+, /* fn:true () as boolean */                                            \
+  { .ns = PFns_fn, .loc = "true",                                        \
+    .arity = 0,                                                          \
+    .ret_ty = PFty_boolean () }                                          \
+, /* fn:false () as boolean */                                           \
+  { .ns = PFns_fn, .loc = "false",                                       \
+    .arity = 0,                                                          \
+    .ret_ty = PFty_boolean () }                                          \
 , /* fn:boolean (boolean) as boolean */                                  \
   { .ns = PFns_fn, .loc = "boolean",                                     \
     .arity = 1, .par_ty = { PFty_boolean () },                           \
@@ -122,10 +138,6 @@
     .arity = 2, .par_ty = { PFty_opt (PFty_string ()),                   \
                             PFty_opt (PFty_string ()) },                 \
     .ret_ty = PFty_boolean () }                                          \
-, /* fn:count (item*) as integer */                                      \
-  { .ns = PFns_fn, .loc = "count",                                       \
-    .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
-    .ret_ty = PFty_integer () }                                          \
 , /* fn:error (item?) as none */                                         \
   { .ns = PFns_fn, .loc = "error",                                       \
     .arity = 1, .par_ty = { PFty_opt (PFty_item ()) },                   \
@@ -507,6 +519,83 @@
     .alg = PFbui_op_ge_str }                                             \
                                                                          \
                                                                          \
+, /* fn:count (item*) as integer */                                      \
+  { .ns = PFns_fn, .loc = "count",                                       \
+    .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
+    .ret_ty = PFty_integer () }                                          \
+/* untypedAtomic needs to be casted into double therefore */             \
+/* fn:max (double*) is the last entry for fn:max */                      \
+, /* fn:avg (integer*) as double */                                      \
+  { .ns = PFns_fn, .loc = "avg",                                         \
+    .arity = 1, .par_ty = { PFty_star (PFty_integer ()) },               \
+    .ret_ty = PFty_double () }                                           \
+, /* fn:avg (decimal*) as decimal */                                     \
+  { .ns = PFns_fn, .loc = "avg",                                         \
+    .arity = 1, .par_ty = { PFty_star (PFty_decimal ()) },               \
+    .ret_ty = PFty_decimal () }                                          \
+, /* fn:avg (double*) as double */                                       \
+  { .ns = PFns_fn, .loc = "avg",                                         \
+    .arity = 1, .par_ty = { PFty_star (PFty_double ()) },                \
+    .ret_ty = PFty_double () }                                           \
+, /* fn:max (string*) as string */                                       \
+  { .ns = PFns_fn, .loc = "max",                                         \
+    .arity = 1, .par_ty = { PFty_star (PFty_string ()) },                \
+    .ret_ty = PFty_string () }                                           \
+, /* fn:max (integer*) as integer */                                     \
+  { .ns = PFns_fn, .loc = "max",                                         \
+    .arity = 1, .par_ty = { PFty_star (PFty_integer ()) },               \
+    .ret_ty = PFty_integer () }                                          \
+, /* fn:max (decimal*) as decimal */                                     \
+  { .ns = PFns_fn, .loc = "max",                                         \
+    .arity = 1, .par_ty = { PFty_star (PFty_decimal ()) },               \
+    .ret_ty = PFty_decimal () }                                          \
+, /* fn:max (double*) as double */                                       \
+  { .ns = PFns_fn, .loc = "max",                                         \
+    .arity = 1, .par_ty = { PFty_star (PFty_double ()) },                \
+    .ret_ty = PFty_double () }                                           \
+, /* fn:min (string*) as string */                                       \
+  { .ns = PFns_fn, .loc = "min",                                         \
+    .arity = 1, .par_ty = { PFty_star (PFty_string ()) },                \
+    .ret_ty = PFty_string () }                                           \
+, /* fn:min (integer*) as integer */                                     \
+  { .ns = PFns_fn, .loc = "min",                                         \
+    .arity = 1, .par_ty = { PFty_star (PFty_integer ()) },               \
+    .ret_ty = PFty_integer () }                                          \
+, /* fn:min (decimal*) as decimal */                                     \
+  { .ns = PFns_fn, .loc = "min",                                         \
+    .arity = 1, .par_ty = { PFty_star (PFty_decimal ()) },               \
+    .ret_ty = PFty_decimal () }                                          \
+, /* fn:min (double*) as double */                                       \
+  { .ns = PFns_fn, .loc = "min",                                         \
+    .arity = 1, .par_ty = { PFty_star (PFty_double ()) },                \
+    .ret_ty = PFty_double () }                                           \
+, /* fn:sum (integer*) as double */                                      \
+  { .ns = PFns_fn, .loc = "sum",                                         \
+    .arity = 1, .par_ty = { PFty_star (PFty_integer ()) },               \
+    .ret_ty = PFty_integer () }                                          \
+, /* fn:sum (decimal*) as decimal */                                     \
+  { .ns = PFns_fn, .loc = "sum",                                         \
+    .arity = 1, .par_ty = { PFty_star (PFty_decimal ()) },               \
+    .ret_ty = PFty_decimal () }                                          \
+, /* fn:sum (double*) as double */                                       \
+  { .ns = PFns_fn, .loc = "sum",                                         \
+    .arity = 1, .par_ty = { PFty_star (PFty_double ()) },                \
+    .ret_ty = PFty_double () }                                           \
+, /* fn:sum (integer*, integer?) as double */                            \
+  { .ns = PFns_fn, .loc = "sum",                                         \
+    .arity = 2, .par_ty = { PFty_star (PFty_integer ()),                 \
+                            PFty_opt (PFty_integer ()) },                \
+    .ret_ty = PFty_integer () }                                          \
+, /* fn:sum (decimal*, decimal?) as decimal */                           \
+  { .ns = PFns_fn, .loc = "sum",                                         \
+    .arity = 2, .par_ty = { PFty_star (PFty_decimal ()),                 \
+                            PFty_opt (PFty_decimal ()) },                \
+    .ret_ty = PFty_decimal () }                                          \
+, /* fn:sum (double*, double?) as double */                              \
+  { .ns = PFns_fn, .loc = "sum",                                         \
+    .arity = 2, .par_ty = { PFty_star (PFty_double ()),                  \
+                            PFty_opt (PFty_double ()) },                 \
+    .ret_ty = PFty_double () }                                           \
 , /* op:plus (integer, integer) as integer */                            \
   { .ns = PFns_op, .loc = "plus",                                        \
     .arity = 2, .par_ty = { PFty_integer (),                             \
@@ -829,6 +918,10 @@
   { .ns = PFns_fn, .loc = "zero-or-one",                                 \
     .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
     .ret_ty = PFty_opt (PFty_node ()) }                                  \
+, /* fn:unordered (item *) as item */                                    \
+  { .ns = PFns_fn, .loc = "unordered",                                   \
+    .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
+    .ret_ty = PFty_opt (PFty_item ()) }                                  \
                                                                          \
 , /* fn:root () as node */                                               \
   { .ns = PFns_fn, .loc = "root",                                        \

@@ -984,6 +984,7 @@ static void  seqEmitStr(XqueryCtx* ctx, str sv) {
 #define DEC   5
 #define DBL   6
 #define STR   7
+#define U_A   8
 #define NODE  32
 #define ELEM  33
 #define ATTR  34
@@ -1079,6 +1080,11 @@ int xquery_print_result_main(
                         break;
                         }
                  case STR: {
+                        str sv = (str)idxTV(ctx,"strVAL",strVAL,valoid);
+                        seqEmitStr(ctx,sv);
+                        break;
+                        }
+                 case U_A: {
                         str sv = (str)idxTV(ctx,"strVAL",strVAL,valoid);
                         seqEmitStr(ctx,sv);
                         break;

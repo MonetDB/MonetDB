@@ -137,6 +137,7 @@ comp4
 comp5
 order
 helper-functions
+is2ns
 element1
 element2
 element3
@@ -168,6 +169,7 @@ contains1
 contains2
 doc
 typeswitch
+typeswitch2
 orderby1
 orderby2
 orderby3
@@ -176,6 +178,12 @@ orderby5
 orderby6
 orderby7
 orderby8
+fn_avg
+fn_min
+fn_max
+fn_sum
+fn_number
+fn_true_false
 fun1
 fun2
 fun3

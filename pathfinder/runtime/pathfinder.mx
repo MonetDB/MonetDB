@@ -349,6 +349,7 @@ const INT := 4;
 const DEC := 5;
 const DBL := 6;
 const STR := 7;
+const U_A := 8;
 # ATOMIC is not a type but all atomic types
 # can be retrieved with 'select(int(nil),ATOMIC)'
 const ATOMIC := 31;
@@ -392,7 +393,8 @@ const KIND_PRE_PI := 25;
 const KIND_PRE_DO := 26;
 const PROP_PRE    := 27;
 const PROP_PRE_EL := 27;
-const WS_SIZE     := 28; # must be last!
+const PROP_PRE_PI := 28;
+const WS_SIZE     := 29; # must be last!
 @= define_ws_constants
 #define PRE_SIZE     0
 #define PRE_LEVEL    1
@@ -425,7 +427,8 @@ const WS_SIZE     := 28; # must be last!
 #define KIND_PRE_DO 26
 #define PROP_PRE    27
 #define PROP_PRE_EL 27
-#define WS_SIZE     28 /* must be last! */
+#define PROP_PRE_PI 28
+#define WS_SIZE     29 /* must be last! */
 @mil
 
 PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
@@ -468,12 +471,10 @@ PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
           }
         }
 	{
-          var knd := ELEMENT;
-          while ( knd <= ELEMENT ) {
-            var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + knd);
-            ws.fetch(PROP_PRE + int(knd)).insert(nil,bat(prop_pre_name));
-            knd :+= chr(1);
-          }
+          var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + ELEMENT);
+          ws.fetch(PROP_PRE_EL).insert(nil,bat(prop_pre_name));
+          prop_pre_name := "prop_pre" + docid + "_" + chr(48 + PI);
+          ws.fetch(PROP_PRE_PI).insert(nil,bat(prop_pre_name));
         }
     }
     else
@@ -524,6 +525,7 @@ PROC create_ws () : BAT[void,bat]
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_PRE_PI
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_PRE_DO
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_PRE_EL
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_PRE_PI
 
     ws := ws.access(BAT_READ);
 
@@ -556,11 +558,8 @@ PROC create_ws () : BAT[void,bat]
       }
     }
     {
-      var knd := ELEMENT;
-      while ( knd <= ELEMENT ) {
-         ws.fetch(PROP_PRE + int(knd)).insert(nil,bat(oid,oid));
-        knd :+= chr(1);
-      }
+      ws.fetch(PROP_PRE_EL).insert(nil,bat(oid,oid));
+      ws.fetch(PROP_PRE_PI).insert(nil,bat(oid,oid));
     }
 
     return ws;
@@ -978,13 +977,15 @@ PROC shred_doc_base(str flnm, str name, bit persistent,str opt) : void
      }
      var pre_prop := bat("pre_prop" + docid);
      var knd := ELEMENT;
-     while ( knd <= ELEMENT ) {
         var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + knd);
         var kind_pre_bat := bat("kind_pre" + docid + "_" + chr(48 + knd)).reverse().mirror();
         var prop_pre_ := kind_pre_bat.leftfetchjoin(pre_prop).reverse();
         prop_pre_.chk_order().mmap(STORE_MMAP).persists(persistent).bbpname(prop_pre_name);
-        knd :+= chr(1);
-     }
+     var knd := PI;
+        var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + knd);
+        var kind_pre_bat := bat("kind_pre" + docid + "_" + chr(48 + knd)).reverse().mirror();
+        var prop_pre_ := kind_pre_bat.leftfetchjoin(pre_prop).reverse();
+        prop_pre_.chk_order().mmap(STORE_MMAP).persists(persistent).bbpname(prop_pre_name);
     }
 
     # save all persistent BATs
@@ -1046,12 +1047,10 @@ PROC delete_doc(str name) : void
         bat(kind_pre_name).persists(false);
         knd :+= chr(1);
       }
-      var knd := ELEMENT;
-      while ( knd <= ELEMENT ) {
-        var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + knd);
-        bat(prop_pre_name).persists(false);
-        knd :+= chr(1);
-      }
+      var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + ELEMENT);
+      bat(prop_pre_name).persists(false);
+      prop_pre_name := "prop_pre" + docid + "_" + chr(48 + PI);
+      bat(prop_pre_name).persists(false);
     }
     
     commit();
@@ -1241,7 +1240,7 @@ PROC xml_print(BAT[void,bat] ws,
 	else if (type_ = DEC) {
 		printf("%d\n", dec_values.fetch($t));
 	}
-	else if (type_ = STR) {
+	else if (or (type_ = STR, type_ = U_A)) {
 		printf("\"%s\"\n", str_values.fetch($t));
 	}
 	else if (type_ = ATTR)
@@ -1642,6 +1641,12 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= loc_params
 , loc
 @
+@= tgt_args
+, str tgt
+@
+@= tgt_params
+, tgt
+@
 @= nsloc_args
 , str ns, str loc
 @
@@ -1714,10 +1719,14 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
  }
 @
 @= loc_post
-	@:ns_loc_post(loc,LOC)@
+	@:ns_loc_post(qn,loc,QN,LOC,ELEMENT)@
 @
 @= ns_post
-	@:ns_loc_post(ns,NS)@
+	@:ns_loc_post(qn,ns,QN,NS,ELEMENT)@
+@
+@= target_post
+        @:ns_loc_post(prop,tgt,PROP,TGT,1)@
+@( FIXME: '1' is used instead of PI because we skip the other kinds @)
 @
 @= ns_loc_post
  {
@@ -1725,26 +1734,26 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	if (is_fake_project(pre_frag)) {
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
-		var qn_@1 := ws.fetch(QN_@2).fetch(frag);
-		    qn_@1 := qn_@1.ord_uselect(@1);
-		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
+		var @1_@2 := ws.fetch(@3_@4).fetch(frag);
+		    @1_@2 := @1_@2.ord_uselect(@2);
+		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
 		if (flt(count(pre_prop)) <= (1.1 * flt(count(result_part_item)))) {
-			var pre_@1;
-			if (count(qn_@1) = 1) {
-				pre_@1 := pre_prop.ord_uselect(qn_@1.reverse().fetch(0));
+			var pre_@2;
+			if (count(@1_@2) = 1) {
+				pre_@2 := pre_prop.ord_uselect(@1_@2.reverse().fetch(0));
 			} else {
-				pre_@1 := pre_prop.leftjoin(qn_@1);
+				pre_@2 := pre_prop.leftjoin(@1_@2);
 			}
 			pre_prop := nil;
-			qn_@1 := nil;
-			tmp_res := result_part_item.leftjoin(pre_@1).mark(0@0).reverse();
+			@1_@2 := nil;
+			tmp_res := result_part_item.leftjoin(pre_@2).mark(0@0).reverse();
 		} else {
 			var res_prop := result_part_item.leftjoin(pre_prop);
 			pre_prop := nil;
-			tmp_res := res_prop.leftjoin(qn_@1).mark(0@0).reverse();
+			tmp_res := res_prop.leftjoin(@1_@2).mark(0@0).reverse();
 		}
 	} else {
-		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
+		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
 		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
 		var res_prop := result_part_item.leftjoin(pre_prop);
 		    pre_prop := nil;
@@ -1755,11 +1764,11 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		    res_prop := nil;
 		var X_frag   := res_frag.reverse().mark(0@0).reverse();
 		    res_frag := nil;
-		var X_@1     := mposjoin(X_prop, X_frag, ws.fetch(QN_@2));
+		var X_@2     := mposjoin(X_prop, X_frag, ws.fetch(@3_@4));
 		    X_prop   := nil;
 		    X_frag   := nil;
-		var _X       := X_@1.ord_uselect(@1).reverse();
-		    X_@1     := nil;
+		var _X       := X_@2.ord_uselect(@2).reverse();
+		    X_@2     := nil;
 		tmp_res := _X.leftfetchjoin(X_res).reverse().mark(0@0).reverse();
 	}
 	@:mapping_code@
@@ -1856,10 +1865,14 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
  }
 @
 @= loc_pre
-	@:ns_loc_pre(loc,LOC)@
+	@:ns_loc_pre(qn,loc,QN,LOC,ELEMENT)@
 @
 @= ns_pre
-	@:ns_loc_pre(ns,NS)@
+	@:ns_loc_pre(qn,ns,QN,NS,ELEMENT)@
+@
+@= target_pre
+	@:ns_loc_pre(prop,tgt,PROP,TGT,1)@ 
+@( FIXME: '1' is used instead of PI because we skip the other kinds @)
 @
 @= ns_loc_pre
  {
@@ -1867,29 +1880,29 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	if (is_fake_project(pre_frag)) {
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
-		var qn_@1 := ws.fetch(QN_@2).fetch(frag);
-		    qn_@1 := qn_@1.ord_uselect(@1);
-		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
-		if (count(qn_@1) = 1) {
-			cands := pre_prop.ord_uselect(qn_@1.reverse().fetch(0)).reverse();
+		var @1_@2 := ws.fetch(@3_@4).fetch(frag);
+		    @1_@2 := @1_@2.ord_uselect(@2);
+		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
+		if (count(@1_@2) = 1) {
+			cands := pre_prop.ord_uselect(@1_@2.reverse().fetch(0)).reverse();
 		} else {
-			cands := pre_prop.leftjoin(qn_@1).reverse();
+			cands := pre_prop.leftjoin(@1_@2).reverse();
 		}
 		pre_prop := nil;
-		qn_@1 := nil;
+		@1_@2 := nil;
 	} else {
-		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
+		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
 		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
 		var X_pre    := pre_prop.mark(0@0).reverse();
 		var X_prop   := pre_prop.reverse().mark(0@0).reverse();
 		    pre_prop := nil;
 		var X_frag   := pre_frag.reverse().mark(0@0).reverse();
 		    pre_frag := nil;
-		var X_@1     := mposjoin(X_prop, X_frag, ws.fetch(QN_@2));
+		var X_@2     := mposjoin(X_prop, X_frag, ws.fetch(@3_@4));
 		    X_prop   := nil;
 		    X_frag   := nil;
-		var _X       := X_@1.ord_uselect(@1).reverse();
-		    X_@1     := nil;
+		var _X       := X_@2.ord_uselect(@2).reverse();
+		    X_@2     := nil;
 		cands := _X.leftfetchjoin(X_pre);
 	}
 	cands := cands.chk_order();
@@ -1899,18 +1912,20 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 
 # expanding the scj for the different tests
 @= loop_lifted_scj_wrap1
-@:loop_lifted_scj_step2(@1,,,,,                                            @:params2@,@:no_pre@        )@
-@:loop_lifted_scj_step2(@1,_with_kind_test, @:kind_args@, @:kind_params@,, @:params2@,@:kind_pre(kind)@)@
-@:loop_lifted_scj_step2(@1,_with_ns_test,   @:ns_args@,   @:ns_params@,,   @:params2@,@:ns_pre@        )@
-@:loop_lifted_scj_step2(@1,_with_loc_test,  @:loc_args@,  @:loc_params@,,  @:params2@,@:loc_pre@       )@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test,@:nsloc_args@,@:nsloc_params@,,@:params2@,@:nsloc_pre@     )@
+@:loop_lifted_scj_step2(@1,,,,,                                             @:params2@,@:no_pre@        )@
+@:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@,, @:params2@,@:kind_pre(kind)@)@
+@:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,,   @:params2@,@:ns_pre@        )@
+@:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,,  @:params2@,@:loc_pre@       )@
+@:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,,  @:params2@,@:target_pre@    )@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,,@:params2@,@:nsloc_pre@     )@
 @
 @= loop_lifted_scj_step1
-@:loop_lifted_scj_step2(@1,,,,,,                                                              )@
-@:loop_lifted_scj_step2(@1,_with_kind_test, @:kind_args@, @:kind_params@, @:kind_post(kind)@,,)@
-@:loop_lifted_scj_step2(@1,_with_ns_test,   @:ns_args@,   @:ns_params@,   @:ns_post@        ,,)@
-@:loop_lifted_scj_step2(@1,_with_loc_test,  @:loc_args@,  @:loc_params@,  @:loc_post@       ,,)@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test,@:nsloc_args@,@:nsloc_params@,@:nsloc_post@     ,,)@
+@:loop_lifted_scj_step2(@1,,,,,,                                                               )@
+@:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@, @:kind_post(kind)@,,)@
+@:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@        ,,)@
+@:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@       ,,)@
+@:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@    ,,)@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@     ,,)@
 @
 #==================================================================
 # actual definition of the scj proc
