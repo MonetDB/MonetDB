@@ -304,6 +304,8 @@ yes-*-*)
 	dnl  Portland Group (PGI) (pgcc/pgCC on Linux)
 	dnl  required for "scale" in module "decimal"
 	CFLAGS="$CFLAGS -Msignextend"
+	CFLAGS="$CFLAGS -c9x"
+	CXXFLAGS="$CXXFLAGS -c9x"
 	;;
 esac
 AC_SUBST(CFLAGS)
