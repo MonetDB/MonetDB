@@ -365,6 +365,7 @@ int bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
 
 int bat_append_oidvoid_bat_wrap( BAT **res, BAT *i, BAT *u )
 {
+	(void)u; /* fake usage to fool compilers in case assertions are disabled */
 	*res = i;
 	assert(BATcount(i)==0 && BATcount(u) == 0);
 	BBPfix(i->batCacheid);
