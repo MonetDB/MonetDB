@@ -29,7 +29,7 @@ sub readBBP ($) {
   open BBP, "<$dbdir/BBP.dir";
   <BBP>;
   while (<BBP>) {
-    my @fs = split /,\s+/;
+    my @fs = split /,\s*/;
     $bats{$fs[3]}++;
   }
   close BBP;
@@ -45,9 +45,9 @@ sub checkBBP ($) {
 
 sub findtmpbats {
   return unless -f;
-  return unless $File::Find::name =~ m|bat/(\d+)/?(\d+)?|;
+  return unless $File::Find::name =~ m|bat/(\d+)|gc;
   my $bat = $1;
-  $bat .= "/" . $2 if defined $2;
+  $bat .= $1 while $File::Find::name =~ m|(/\d+)|gc;
   print $File::Find::name, "\n" if not defined $bats{$bat};
 }
 
@@ -61,5 +61,3 @@ find
   }, 
   $dbfarm;
 map { checkBBP $_; } @dbs;
-
-
