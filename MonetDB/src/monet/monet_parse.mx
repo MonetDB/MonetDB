@@ -327,41 +327,44 @@ void ll_reset() {
 }
 
 int ll_push(str s, str mod) {
-        strstack *sp = (strstack*) GDKmalloc(sizeof(strstack));
-        if (ll_insert) {
+	strstack *sp = (strstack*) GDKmalloc(sizeof(strstack));
+	if (ll_insert) {
 		*sp = *ll_insert;
 		ll_insert->up = sp;
 		ll_insert->cline = ll_insert->cptr = s;
 		ll_insert->mod = GDKstrdup(mod);
-        	ll_insert = sp;
-        } else {
-        	sp->cline = ll_client->cline; 
+		ll_insert = sp;
+	} else {
+		sp->cline = ll_client->cline; 
 		sp->cptr = ll_client->cptr;
 		sp->mod = ll_mod;
  		ll_mod = GDKstrdup(mod);
 		ll_client->cline = ll_client->cptr = s;
-                sp->up = ll_stack;
-                ll_insert = ll_stack = sp;
-        }
+		sp->up = ll_stack;
+		ll_insert = ll_stack = sp;
+	}
 	sp->cleanup = s;
-        return 1;
+	return 1;
 }
 
 int ll_pop(void) {
-        strstack *sp = ll_stack;
-        if (ll_stack) {
-                ll_insert = NULL;
+	strstack *sp = ll_stack;
+	if (ll_stack) {
+		ll_insert = NULL;
+		if (ll_insert) {
+		}
 		ll_stack = sp->up;
 		if (ll_mod) GDKfree(ll_mod);
 		ll_mod = sp->mod;
-                if (ll_client->cleanup)
-                	GDKfree(ll_client->cleanup);
-                ll_client->cptr = sp->cptr;
-                ll_client->cline = sp->cline;
-                GDKfree(sp);
-                return 1;
-        }
-        return 0;
+		if (ll_client->cleanup)
+			GDKfree(ll_client->cleanup);
+		ll_client->cptr = sp->cptr;
+		ll_client->cline = sp->cline;
+		ll_client->cleanup = sp->cleanup;
+		GDKfree(sp);
+		return 1;
+	}
+	return 0;
 }
 
 str ll_parent_module(){
@@ -370,28 +373,27 @@ str ll_parent_module(){
 }
 
 int ll_getch(void) {
-        char ch;
+	char ch;
 
-        if (ll_client == 0) {
-                GDKfatal("parser: no client for lexical.\n");
-        }
+	if (ll_client == 0) {
+		GDKfatal("parser: no client for lexical.\n");
+	}
    	do {
-        	ch = *ll_client->cptr;
+		ch = *ll_client->cptr;
 	} while (ch == 0 && ll_pop());
 
-        if (ch == '\n') {
-                if (ll_client->listing) {
-                    if (GDKdebug&16384 || !ll_stack) {
-			stream *s = ll_client->fdout;
-			if (stream_write(s, ll_client->cline, ll_client->cptr - ll_client->cline + 1 , 1  ) < 0 ||
-			    stream_flush(s))
-				GDKdebug &= ~16384; /* stop logging after error */
-		    }
-                }
-                ll_client->cline = ll_client->cptr + 1;
-        }
-        if (ch) ll_client->cptr++;
-        return ch;
+	if (ch == '\n') {
+		if (ll_client->listing) {
+			if (GDKdebug&16384 || !ll_stack) {
+				stream *s = ll_client->fdout;
+				if (stream_write(s, ll_client->cline, ll_client->cptr - ll_client->cline + 1 , 1  ) < 0 || stream_flush(s))
+					GDKdebug &= ~16384; /* stop logging after error */
+			}
+		}
+		ll_client->cline = ll_client->cptr + 1;
+	}
+	if (ch) ll_client->cptr++;
+	return ch;
 }
 
 int ll_getstring(char *buf, int max_size)
@@ -688,30 +690,31 @@ session:
 	    str parmod = ll_parent_module();
 	    ll_resolution = 1;
 	    /* EXECUTE MODULE LOAD *DURING* PARSE!!*/
-            while (lt) {
-	        unsigned i; 
-                for(i = 0; i < lt->cnt; i++)  {
-        	    str mod;
-                    if (!lt->yysons[i]) continue;
-                    if ((int) lt->yysons[i]->token == monet_tokident) {
-                            mod = arg(lt, i)->yyval.val.sval;
-                    } else {
-			    ValRecord res;
-			    int ret = interpret(ll_client->stk, lt->yysons[i], &res);
-			    if (ret < 0 || res.vtype != TYPE_str) {
-				    GDKerror("module: illegal argument.\n");
-			    } 
-			    mod = res.val.sval; 
-                    }
-		    initstr = moduleClient( ll_client, mod, parmod );
+		while (lt) {
+			unsigned i; 
+			for(i = 0; i < lt->cnt; i++)  {
+				str mod;
+
+				if (!lt->yysons[i]) continue;
+				if ((int) lt->yysons[i]->token == monet_tokident) {
+					mod = arg(lt, i)->yyval.val.sval;
+				} else {
+					ValRecord res;
+					int ret = interpret(ll_client->stk, lt->yysons[i], &res);
+					if (ret < 0 || res.vtype != TYPE_str) {
+						GDKerror("module: illegal argument.\n");
+					} 
+					mod = res.val.sval; 
+				}
+				initstr = moduleClient( ll_client, mod, parmod );
 	            if (initstr != NULL) {
-			ll_push(initstr,mod);
-	            }
-                }
-		ll_reset();
-                lt = lt->overflow;
-            }
-            $$=0; yylogfree($4);                                              }
+					ll_push(initstr,mod);
+				}
+			}
+			ll_reset();
+			lt = lt->overflow;
+		}
+		$$=0; yylogfree($4);                                              }
     ;
 
 definition:

@@ -65,6 +65,8 @@ typedef struct CLIENT{
 	str		top, limit;		/* parser pointers */
 	char		*cptr;			/* parser pointers */
 	char		*cline;			/* current parse line */
+	char	    *cleanup;		/* optional pointer to the buffer 
+								   which needs garbage collection */
 	YYSTREE 	tree;			/* current request */
 	YYSTREE 	mil_accept;		/* accept request */
 	Cntxt		maxstk;			/* highest context stack */
@@ -75,7 +77,6 @@ typedef struct CLIENT{
 	BAT		*triggers;		/* BAT(str, type-id) */
 	BAT		*events;		/* BAT(str, type-id) */
 	modstack	*m_stack;		/* module stack */
-        void            (*cleanup)(struct CLIENT* c);   /* cleanup handler */
 } *Client, ClientRec;
 
 m_export ClientRec monet_clients[MAXCLIENTS+1];
@@ -138,7 +139,7 @@ Client initClient(str nme, str prompt, int thread)
 	if (thread && monetFork() == ~ (MT_Id) 0) {
 		return 0; /* cannot create required MIL interpreter thread */
 	}
-       	c->user = GDKstrdup(nme);
+	c->user = GDKstrdup(nme);
 	c->prompt = GDKstrdup(prompt);
 	c->fdin = GDKstdin;
 	c->fdout = GDKstdout;
@@ -150,6 +151,7 @@ Client initClient(str nme, str prompt, int thread)
 	monet_cntxt[c->stk].outer = c->stk?0:-1;
 	monet_cntxt[c->stk].next = -1;
 	monet_cntxt[c->stk].shadow = 0;
+	c->cleanup = NULL;
 	if (c->input == 0) {
 		c->input = (str) GDKmalloc(4096);
 	}
@@ -263,12 +265,11 @@ Client forkClient(Cntxt stk, int thread)
 		son->fdin = father->fdin;
 		son->fdout = father->fdout;
 		son->fcntbl = father->fcntbl;
-        	son->atomtbl = father->atomtbl;
-        	son->acctbl = father->acctbl;
-        	son->triggers = father->triggers;
-        	son->events = father->events;
-        	son->login = father->login;
-		son->cleanup = NULL;
+		son->atomtbl = father->atomtbl;
+		son->acctbl = father->acctbl;
+		son->triggers = father->triggers;
+		son->events = father->events;
+		son->login = father->login;
 
 		if (thread) {
 			/* independent thread must be fully decoupled from father */
@@ -340,10 +341,6 @@ void freeClient(Client c)
 		bkin = t->data[1];
 		bkout = t->data[0];
 
-		if (c->cleanup) {
-			(*c->cleanup)(c);
-			c->cleanup = NULL;
-		}
 		monetSetChannel(t, bkin, bkout);
        		TBL_exitclient(c); /* module drops */
 		/* GDKlog("Mserver: %s session ends", c->user); */
