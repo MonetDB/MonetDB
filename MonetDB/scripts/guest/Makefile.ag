@@ -1,0 +1,5 @@
+
+scripts_mil = {
+	DIR = pkgdatadir/guest
+	SOURCES = epilogue.mil  prelude.mil
+}

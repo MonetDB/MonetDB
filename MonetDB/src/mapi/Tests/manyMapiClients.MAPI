@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+n=195
+Mlog "${n}x MapiClient -everything"
+i=0;
+while [ $i -lt $n ] ; do
+	i=$[i+1]
+	echo "$i:"
+	echo "$i:" >&2
+#				# 65x 60s = 195x 20s #
+	$MAPI_CLIENT <<- EOF	# 65x
+		print($i);
+	EOF
+done
+echo "done: $i"
+

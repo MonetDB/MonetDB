@@ -1,0 +1,2 @@
+# epilogue file; executed at session end 
+printf("No access is currently permitted.\n");
