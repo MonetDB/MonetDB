@@ -47,9 +47,16 @@ for the time being.
 	.BUILTIN sqlconsole( ) = sqlconsole;
 	"Read sql statements from stdin and output results on stdout"
 
-	.COMMAND logmanager() = logmanager;
+	.COMMAND sqllogmanager() = sqllogmanager;
 		"The log manager takes care off keeping the logs small, ie. it merges the changs into bats and abands the logs"
 
+@-
+The session is interpreted in the context of a globally
+known catalogue. It is commonly represented by a variable
+in the user context and should be provided to all commands.
+No sanity check is performed on its validity and authorized
+access after being logged in.
+@m
 	.BUILTIN mvc_init(int debug) = mvc_init_wrap; 
 		"create the global catalog"
 
@@ -68,6 +75,13 @@ for the time being.
 	.COMMAND mvc_type( mvc m ) : int 
 		= mvc_type_wrap; "return the type of the last mvc operation"
 
+@-
+The updates against the relational tables are collected in separate
+BATs until transaction commit. 
+The code produced by the SQL->MIL compiler uses it to propagate
+the updates to the persistent versions.
+??What is the idx table??
+@m
 	.COMMAND mvc_bind( mvc c, str sname, str tname, str cname, int access ) : 
 		BAT[any::1,any::2] = 
 		mvc_bind_wrap; "Bind the bat, tname.cname"
@@ -83,7 +97,11 @@ for the time being.
 	.COMMAND mvc_bind_ibat( mvc c, str sname, str tname, str iname, int access ) : 
 		BAT[any::1,any::2] = mvc_bind_ibat_wrap; 
 		"Bind the idx table"
-
+@-
+The results of the SQL queries are assembled in result sets, which
+can be shipped to the front-end for display or exported over a
+stream.
+@c
 	.COMMAND mvc_result_table( mvc m, int nr_cols, any order ) : int = mvc_result_row_wrap; "Create structure to cache a row query result" 
 
 	.COMMAND mvc_result_table( mvc m, int nr_cols, BAT[oid,any] order ) : int = mvc_result_table_wrap; "Create structure to cache a table query result" 
@@ -151,6 +169,11 @@ kernel libraries, e.g. bat.mx
 
 .END sql_server;
 
+@-
+The implementation below mostly wraps around the primitives
+provided in the SQL server code base. The wrapper handles
+conversion from the MIL interpretation context to direct
+handles and returns proper error messages upon failure.
 @h
 #ifndef _SQL_SERVER_H_
 #define _SQL_SERVER_H_
@@ -183,6 +206,12 @@ kernel libraries, e.g. bat.mx
 #include <sql_string.h>
 #include <algebra.h>
 
+@-
+The code heavily depends on the (complex) data structures for
+both program representation (YYSTREE), runtime stack (Cntxt),
+and the MIL interpreter. Details can be found in the src/monet
+directory.
+@c
 static int builtin_operand( Cntxt stk, YYSTREE lt, int arg_nr, ptr *Res, int type, ValPtr res)
 { 
 	int k = interpret( stk, arg(lt, arg_nr), res);
@@ -193,7 +222,13 @@ static int builtin_operand( Cntxt stk, YYSTREE lt, int arg_nr, ptr *Res, int typ
         }
 	return 0;
 }
+@-
+The bootstrap method for accessing an SQL database is hardwired.
+An alternative scheme is to collect these statements in a SQL boot file.
 
+??Where and how is the catalogue defined??
+?? Which not making the grants part of it??
+@c
 int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 { 
 	int ret, *Debug = NULL;
@@ -221,7 +256,7 @@ int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	return GDK_SUCCEED;
 }
 
-int logmanager() {
+int sqllogmanager() {
 	/* try log cleanup every minute */
 	while(1) {
 		MT_sleep_ms(60000); 
@@ -425,7 +460,11 @@ int hash_wrap( int *res, ptr v, int tpe, int *sh )
 	*res = (ATOMhash(tpe,v)<<(*sh))&0xEFFFFFFF;
 	return GDK_SUCCEED;
 }
-
+@-
+The core modules of Monet provide just a limited set of
+mathematical operators. The extensions required to support
+SQL-99 are shown below. At some point they also should be
+moved to module code base.
 @= round
 int @1_round_wrap( @1 *res, @1 *v, @1 *r )
 {
@@ -563,7 +602,10 @@ int cast2@1( @1 *res, str val )
 @:cast(lng)@
 @:cast(flt)@
 @:cast(dbl)@
-
+@-
+An SQL session needs a minimal set of modules, shown below.
+The MIL procs should also be moved to the kernel, despite the
+fact that they are rather SQL specific.
 @mil
 module(alarm);
 module(xtables);
@@ -595,7 +637,7 @@ proc SQLclient( Stream s_in, Stream s_out ) := {
 }
 
 if (isnil(err)){
-	fork(logmanager);
+	fork(sqllogmanager);
 
 	mapi_listen(int(monet_environment.find("sql_port")), 5, "SQLclient").fork();
 	# start a default mapi client for debugging, this should go once
