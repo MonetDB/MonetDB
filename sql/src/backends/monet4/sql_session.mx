@@ -533,19 +533,32 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out,
 	GDKsetbuf(errbuf);
 
 	/*fprintf(stderr,"mapisqlclient:accept queries\n");*/
+	in->eof = 1;		/* force prompt on first iteration */
 	while(go){
 		/* fprintf(stdout,"mapisqlclient:ready to accept next query\n");*/
 		if (in->pos >= in->len) {
-			if (stream_write(out,prompt,promptlength,1) != 1 ||
-		    	    stream_flush(out)) {
-				go = FALSE;
+			ssize_t rd;
+			if (in->eof) {
+				language = 0;
+				if (stream_write(out,prompt,promptlength,1) != 1 ||
+				    stream_flush(out)) {
+					go = FALSE;
+					break;
+				}
+				in->eof = 0;
+			}
+			if ((rd = bstream_next(in)) <= 0) {
+				if (rd == 0 && language != 0 && in->eof) {
+					/* we hadn't seen the EOF
+					   before, so just try again
+					   (this time with prompt) */
+					continue;
+				}
+				go= FALSE;
 				break;
 			}
-			in->eof = 0;
-			if (bstream_next(in) <= 0) {
-				go= FALSE; break;
-			}
-			language = in->buf[in->pos++];
+			if (language == 0)
+				language = in->buf[in->pos++];
 		}
 		if (language != 'S' && language != 'X') {
 			error(out, "!ERROR:Unrecognized language prefix");
