@@ -35,6 +35,7 @@
 @a Henning Rode
 @a Jan Flokstra
 @a Jens Teubner
+@a Stefan Manegold
 @t Runtime Support for the Pathfinder XQuery Compiler
 
 @m
@@ -225,7 +226,7 @@ PROC serialize (BAT[void,oid] pos,
                 BAT[oid,oid] item_node) : void
 {
     var positions;
-    var values := new (void, BAT);
+    var values := new (void, BAT, 6);
 
     values.insert (nil, item_int);
     values.insert (nil, item_str);
@@ -233,6 +234,8 @@ PROC serialize (BAT[void,oid] pos,
     values.insert (nil, item_dbl);
     values.insert (nil, item_bit);
     values.insert (nil, item_node);
+    
+    values := values.access(BAT_READ);
 
     # Sort by pos column
     positions := pos.reverse().sort().reverse();
@@ -443,7 +446,7 @@ fragment to which the new root is linked.)",
 
 PROC create_ws () : BAT[void,bat]
 {
-    var ws := bat (void,bat).seqbase(PRE_BASE);
+    var ws := bat (void,bat,WS_SIZE).seqbase(PRE_BASE);
     # don't switch the order without also changing the constants
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_SIZE
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_LEVEL
@@ -466,6 +469,8 @@ PROC create_ws () : BAT[void,bat]
     ws.insert(nil, bat(void,oid).seqbase(0@0));      # FRAG
     ws.insert(nil, bat(void,oid).seqbase(0@0));      # WS_FRAG
     ws.insert(nil, bat(void,int).seqbase(0@0));      # HEIGHT
+    
+    ws := ws.access(BAT_READ);
 
     # add the working set
     ws.fetch(PRE_SIZE).insert(nil, bat(void,int).seqbase(PRE_BASE)); # PRE_SIZE
@@ -655,96 +660,114 @@ PROC import_doc(str flnm, str name) : void
     printf("# \">>> Importing '%s' with name '%s'\"\n",flnm,name);
 
     # column/line separators (4 columns)
-    var seps4 := new (void, str);
+    var seps4 := new (void, str, 4);
     seps4.insert (nil, ",");
     seps4.insert (nil, ",");
     seps4.insert (nil, ",");
     seps4.insert (nil, "\n");
+    seps4 := seps4.access(BAT_READ);
 
     # column/line separators (3 columns)
-    var seps3 := new (void, str);
+    var seps3 := new (void, str, 3);
     seps3.insert (nil, ",");
     seps3.insert (nil, ",");
     seps3.insert (nil, "\n");
+    seps3 := seps3.access(BAT_READ);
 
     # column/line separators (2 columns)
-    var seps2 := new (void, str);
+    var seps2 := new (void, str, 2);
     seps2.insert (nil, ",");
     seps2.insert (nil, "\n");
+    seps2 := seps2.access(BAT_READ);
 
     # column/line separators (1 column)
-    var seps1 := new (void, str);
+    var seps1 := new (void, str, 1);
     seps1.insert (nil, "\n");
+    seps1 := seps1.access(BAT_READ);
 
     # table pre|size|level|prop|kind 
-    var pre := new (void, str);
+    var pre := new (void, str, 4);
     pre.insert (nil, "size");
     pre.insert (nil, "level");
     pre.insert (nil, "prop");
     pre.insert (nil, "kind");
+    pre := pre.access(BAT_READ);
 
     # column types
-    var pre_ty := new (void, str);
+    var pre_ty := new (void, str, 4);
     pre_ty.insert (nil, "int");
     pre_ty.insert (nil, "sht");
     pre_ty.insert (nil, "oid");
     pre_ty.insert (nil, "sht");
+    pre_ty := pre_ty.access(BAT_READ);
 
     # table prop|ns|loc
-    var tag := new (void, str);
+    var tag := new (void, str, 2);
     tag.insert (nil, "ns");
     tag.insert (nil, "loc");
+    tag := tag.access(BAT_READ);
 
     # column types
-    var tag_ty := new (void, str);
+    var tag_ty := new (void, str, 2);
     tag_ty.insert (nil, "str");
     tag_ty.insert (nil, "str");
+    tag_ty := tag_ty.access(BAT_READ);
 
     # table prop|text
-    var text := new (void, str);
+    var text := new (void, str, 1);
     text.insert (nil, "text");
+    text := text.access(BAT_READ);
 
     # column types
-    var text_ty := new (void, str);
+    var text_ty := new (void, str, 1);
     text_ty.insert (nil, "str");
+    text_ty := text_ty.access(BAT_READ);
 
     # table prop|com
-    var com := new (void, str);
+    var com := new (void, str, 1);
     com.insert (nil, "com");
+    com := com.access(BAT_READ);
 
     # column types
-    var com_ty := new (void, str);
+    var com_ty := new (void, str, 1);
     com_ty.insert (nil, "str");
+    com_ty := com_ty.access(BAT_READ);
 
     # table prop|tgt|ins
-    var pi := new (void, str);
+    var pi := new (void, str, 2);
     pi.insert (nil, "tgt");
     pi.insert (nil, "ins");
+    pi := pi.access(BAT_READ);
 
     # column types
-    var pi_ty := new (void, str);
+    var pi_ty := new (void, str, 2);
     pi_ty.insert (nil, "str");
     pi_ty.insert (nil, "str");
+    pi_ty := pi_ty.access(BAT_READ);
 
     # table att|own|qn|prop
-    var att := new (void, str);
+    var att := new (void, str, 3);
     att.insert (nil, "own");
     att.insert (nil, "qn");
     att.insert (nil, "prop");
+    att := att.access(BAT_READ);
 
     # column types
-    var att_ty := new (void, str);
+    var att_ty := new (void, str, 3);
     att_ty.insert (nil, "oid");
     att_ty.insert (nil, "oid");
     att_ty.insert (nil, "oid");
+    att_ty := att_ty.access(BAT_READ);
 
     # table prop|val
-    var att_val := new (void, str);
+    var att_val := new (void, str, 1);
     att_val.insert (nil, "val");
+    att_val := att_val.access(BAT_READ);
 
     # column types
-    var att_val_ty := new (void, str);
+    var att_val_ty := new (void, str, 1);
     att_val_ty.insert (nil, "str");
+    att_val_ty := att_val_ty.access(BAT_READ);
 
     # load table pre|size|level|prop|kind 
     var tmp := load(pre, seps4, pre_ty, flnm + ".pre", -1);
@@ -1259,7 +1282,7 @@ pre_levels
     if (frag = 0@0)
         { doc_pre := ws.fetch(WS_FRAG); }
     else
-        { doc_pre := bat(void,oid).seqbase(0@0).insert(nil,1@0); }
+        { doc_pre := bat(void,oid,1).seqbase(0@0).insert(nil,1@0).access(BAT_READ); }
 @
 @= doc_pre
 doc_pre,
@@ -1282,7 +1305,7 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws) : BAT
 
     unq@batloop () {
 	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
-	ctx_slice.chk_order(false); # have to check because step expects it sorted
+	ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
         result.insert(@3
                               (@5,
                                ctx_slice,
@@ -1420,10 +1443,10 @@ var pre_kind;
 # expanding the scj for the different tests
 @= loop_lifted_scj_step1
 @:loop_lifted_scj_step2(@1,,,,,)@
-@:loop_lifted_scj_step2(@1,_with_kind_test,@:kind@,@:kind_vars@,@:kind_code(,uniqueFrag.reverse().fetch(0))@,@:kind_code(_part,$h))@
-@:loop_lifted_scj_step2(@1,_with_ns_test,@:tagname_ns@,@:ns_vars@,@:ns_code(,uniqueFrag.reverse().fetch(0))@,@:ns_code(_part,$h))@
-@:loop_lifted_scj_step2(@1,_with_loc_test,@:tagname_loc@,@:loc_vars@,@:loc_code(,uniqueFrag.reverse().fetch(0))@,@:loc_code(_part,$h))@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test,@:tagname_nsloc@,@:ns_loc_vars@,@:ns_loc_code(,uniqueFrag.reverse().fetch(0))@,@:ns_loc_code(_part,$h))@
+@:loop_lifted_scj_step2(@1,_with_kind_test,@:kind@,@:kind_vars@,@:kind_code(,firstFrag)@,@:kind_code(_part,$h))@
+@:loop_lifted_scj_step2(@1,_with_ns_test,@:tagname_ns@,@:ns_vars@,@:ns_code(,firstFrag)@,@:ns_code(_part,$h))@
+@:loop_lifted_scj_step2(@1,_with_loc_test,@:tagname_loc@,@:loc_vars@,@:loc_code(,firstFrag)@,@:loc_code(_part,$h))@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test,@:tagname_nsloc@,@:ns_loc_vars@,@:ns_loc_code(,firstFrag)@,@:ns_loc_code(_part,$h))@
 @
 #==================================================================
 # actual definition of the scj proc
@@ -1432,8 +1455,8 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 {
     # handle empty results correctly
     if (iter.count() = 0) {
-	var empty := bat(void,oid).seqbase(0@0).access(BAT_READ);
-	return bat(void,bat).seqbase(0@0)
+	var empty := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+	return bat(void,bat,3).seqbase(0@0)
 			    .insert(nil,empty)
 			    .insert(nil,empty)
 			    .insert(nil,empty)
@@ -1448,22 +1471,23 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     @4 
 
     var uniqueFrag := frag.tunique().sort();
+    var firstFrag := uniqueFrag.reverse().fetch(0);
     if (uniqueFrag.count() = 1) {
-	iter.chk_order(FALSE);
-	item.chk_order(FALSE);
+	iter := iter.chk_order();
+	item := item.chk_order();
 	result := @1 (iter, item, frag.fetch(0), ws);
 	result_iter := result.mark(0@0).reverse();
 	result_item := result.reverse().mark(0@0).reverse();
 	# test
 	@5
-        result_frag := fake_project(uniqueFrag.reverse().fetch(0));
+        result_frag := fake_project(firstFrag);
     } else {
-        var result_part_frag := frag.ord_uselect(uniqueFrag.reverse().fetch(0)).mark(0@0).reverse();
+        var result_part_frag := frag.ord_uselect(firstFrag).mark(0@0).reverse();
         var result_part_iter := result_part_frag.leftfetchjoin(iter);
         var result_part_item := result_part_frag.leftfetchjoin(item);
-	result_part_iter.chk_order(FALSE);
-	result_part_item.chk_order(FALSE);
-        var result := @1 (result_part_iter, result_part_item, uniqueFrag.reverse().fetch(0), ws);
+	result_part_iter := result_part_iter.chk_order();
+	result_part_item := result_part_item.chk_order();
+        var result := @1 (result_part_iter, result_part_item, firstFrag, ws);
         result_part_iter := nil;
         result_part_item := nil;
         result_part_frag := nil;
@@ -1472,7 +1496,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 	result_item := result.reverse().mark(0@0).reverse();
 	# test
 	@5
-        result_frag := result_iter.project(uniqueFrag.reverse().fetch(0));
+        result_frag := fake_project(firstFrag);
 
         var res_mu;
 
@@ -1480,8 +1504,8 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
             result_part_frag := frag.ord_uselect($h).mark(0@0).reverse();
             result_part_iter := result_part_frag.leftfetchjoin(iter);
             result_part_item := result_part_frag.leftfetchjoin(item);
-  	    result_part_iter.chk_order(FALSE);
-	    result_part_item.chk_order(FALSE);
+  	    result_part_iter := result_part_iter.chk_order();
+	    result_part_item := result_part_item.chk_order();
             result := @1 (result_part_iter, result_part_item, $h, ws);
             result_part_iter := nil;
             result_part_item := nil;
@@ -1492,7 +1516,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 
             # test
             @6
-            result_part_frag := result_part_iter.project($h);
+            result_part_frag := fake_project($h);
 
             res_mu := merged_union(result_iter, result_part_iter,
 				   result_item, result_part_item,
@@ -1510,7 +1534,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     result_iter.access(BAT_READ);
     result_item.access(BAT_READ);
     result_frag.access(BAT_READ);
-    var result_scj := bat(void,bat).seqbase(0@0);
+    var result_scj := bat(void,bat,3).seqbase(0@0);
     result_scj.insert(nil,result_iter);
     result_scj.insert(nil,result_item);
     result_scj.insert(nil,result_frag);
