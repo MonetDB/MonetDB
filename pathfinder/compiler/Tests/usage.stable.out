@@ -32,6 +32,7 @@ Usage: pf [OPTION] [FILE]
   -s, --stop-after-semantics: stop after semantical analysis
   -n, --stop-after-normalizing: stop after core tree normalization
   -c, --stop-after-core-compilation: stop after core language generation
+  -M: print out temporary MIL
   -m, --stop-after-mil-generation: stop after MIL code generation
 
 Enjoy.

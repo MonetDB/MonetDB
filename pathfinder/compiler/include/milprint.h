@@ -38,12 +38,14 @@
 #define MILPRINT_H
 
 #include "mil.h"
+#include "core.h"
 
 /** Indentation width for MIL output */
 #define INDENT_WIDTH 4
 
 PFarray_t *PFmil_gen (PFmnode_t *);
 void PFmilprint (FILE *, PFarray_t *);
+void PFprintMILtemp (PFcnode_t *);
 
 #endif    /* MILPRINT_H */
 
