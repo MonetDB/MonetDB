@@ -199,8 +199,8 @@ void GDKlog(char *format, ...) {
 	for(p=buf; (p=strchr(p,'\@')) != NULL; *p = ' ');
 
 	fseek(GDKlockFile, 0, SEEK_END);
-	fprintf(GDKlockFile, "%s \@ USR=%d PID=%d THR=%d TIME=%s", buf, 
-		(int) getuid(), (int) getpid(), (int) MT_getpid(), ctime(&tm));
+	fprintf(GDKlockFile, "%s \@ USR=%d PID=%d THR=%ld TIME=%s", buf, 
+		(int) getuid(), (int) getpid(), (long) MT_getpid(), ctime(&tm));
 	fflush(GDKlockFile);
 
 	if (mustopen) GDKunlockHome();
@@ -213,12 +213,12 @@ received.
 @c
 #include <signal.h>
 void BATSIGignore(int nr) {
-	GDKsyserror("! ERROR signal %d caught by thread %d\n", nr, (int) MT_getpid()); 
-
+	GDKsyserror("! ERROR signal %d caught by thread %ld\n", 
+		nr, (long) MT_getpid()); 
 }
 
 void BATSIGabort(int nr) {
-	GDKfatal("signal %d caught by thread %d\n", nr, (int) MT_getpid()); 
+	GDKfatal("signal %d caught by thread %ld\n", nr, (long) MT_getpid()); 
 }
 
 void BATSIGpipe() {
@@ -226,6 +226,7 @@ void BATSIGpipe() {
 	int	status; 
 
 	while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
+	(void)pid;
 	PARDEBUG THRprintf(GDKerr, "BROKEN PIPE \n"); 
 	(void) signal(SIGPIPE, (void (*)()) BATSIGpipe); 
 }
@@ -1168,7 +1169,7 @@ ThreadRec 	GDKthreads[THREADS];
 void *		THRdata[THREADDATA] = { 0 };
 
 Thread THRget(MT_Id tid) {
-	return (GDKthreads+(int)tid-1);
+	return (GDKthreads+(int)(long)tid-1);
 }
 
 static INLINE 
@@ -1215,7 +1216,7 @@ Thread THRnew(MT_Id pid, str name) {
 			(unsigned long) s->tid, (unsigned long) pid, s->sp); 
 	PARDEBUG THRprintf(GDKerr, "nrofthreads %d\n", GDKnrofthreads); 
 	GDKnrofthreads++; 
-	MT_alloc_register(&tid, 1, '0'+ ((int) tid) - 1);
+	MT_alloc_register(&tid, 1, '0'+ ((int)(long) tid) - 1);
 	MT_unset_lock(GDKthreadLock, "THRnew"); 
 
 	return s; 
@@ -1327,7 +1328,7 @@ int THRprintf(FILE *fp, char *format, ...) {
 	        *p++ = '!'; format++;
 	}
 	if (GDKdebug&1) {
-		sprintf(p, "%02d ", (int) THRgettid());
+		sprintf(p, "%02d ", (int) (long) THRgettid());
 		while(*p) p++;
 	}
         va_start (ap,format);

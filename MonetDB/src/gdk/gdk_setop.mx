@@ -115,7 +115,7 @@ next@2@3@5:;
 	} else {
 		@:hashelim(@1,@2,loc,@3)@
 	} 
-	return (((int)cmp) && 0); /* fooling the stupid compiler */
+	return (((int)(long)cmp) && 0); /* fooling the stupid compiler */
 }
 @= elim_doubles
 	switch(ATOMstorage(b->htype)) {
@@ -310,6 +310,8 @@ end@2@3:;
     oid rh = rl + BATcount(r);
     ptr h, t=NULL, t2=NULL;
 
+    (void)t2;
+
     if (BAThdense(l)) {
 	oid ll = *(oid*) BUNhead(l,(p1=BUNfirst(l))); 
     	oid lh = ll + BATcount(l);
@@ -399,6 +401,7 @@ int BATins_@1@2(BAT *bn, BAT *l, BAT *r) {
 	    }
 	} 
 	cmp = BATatoms[l->ttype].atomCmp;
+	(void)cmp;
 
 	if (BAThdense(r)) {
 	    @:voidcheck(@2,@1)@

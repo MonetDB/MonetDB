@@ -570,7 +570,7 @@ And emit them in forward order.
 	/* Remember previous code. */
 	oldcode = incode;
     }
-    return ((int) ptr) - ((int) start);
+    return (int) (long) (ptr - start);
 }
 
 

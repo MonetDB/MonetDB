@@ -647,6 +647,8 @@ INLINE BUN IDXfnd_@2(BAT *b, ptr v) {
 	BUN	*middle; 
 
 	var = loc = b->htype;
+	(void)var;
+	(void)loc;
 	low = b->hidx.first; 
 	up = b->hidx.last-1; 
 	do {

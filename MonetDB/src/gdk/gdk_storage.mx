@@ -235,8 +235,8 @@ at commit-time.
 		err = MT_msync(buf, size, MMAP_ASYNC);
 		if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
-		IODEBUG THRprintf(GDKerr, "MT_msync(buf %d, size %d, MMAP_ASYNC) = %d\n", 
-							(int) buf, size, err);
+		IODEBUG THRprintf(GDKerr, "MT_msync(buf %ld, size %d, MMAP_ASYNC) = %d\n", 
+							(long) buf, size, err);
 	} else if (mode == STORE_COMPR) {
 		char extension[PATHLENGTH];
         	sprintf(extension, "%s.Z", ext); 
@@ -246,8 +246,8 @@ at commit-time.
 			}
 			if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
-			IODEBUG THRprintf(GDKerr, "compress(buf %d, size %d, fd %d) = %d\n", 
-							(int) buf, size, fileno(fp), err);
+			IODEBUG THRprintf(GDKerr, "compress(buf %ld, size %d, fd %d) = %d\n", 
+							(long) buf, size, fileno(fp), err);
 	       	}  else {
 			err = -1;
 		}
@@ -258,8 +258,8 @@ at commit-time.
 			}
 			if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
-			IODEBUG THRprintf(GDKerr, "fwrite(buf %d, size %d, fd %d) = %d\n", 
-							(int) buf, size, fd, err);
+			IODEBUG THRprintf(GDKerr, "fwrite(buf %ld, size %d, fd %d) = %d\n", 
+							(long) buf, size, fd, err);
 	       	}  else {
 			err = -1;
 		}
@@ -301,8 +301,8 @@ char *GDKload(str nme, str ext, int size, int chunk, int mode){
 
 		for(n_expected = size; n_expected > 0; n_expected -= n){
                         n = read(fd, dst, n_expected);
-			IODEBUG THRprintf(GDKerr, "read(dst %d, n_expected %d, fd %d) = %d\n", 
-							(int) dst, n_expected, fd, n);
+			IODEBUG THRprintf(GDKerr, "read(dst %ld, n_expected %d, fd %d) = %d\n", 
+							(long) dst, n_expected, fd, n);
 			if (n <= 0) break;
 			dst += n;
 		}
@@ -331,8 +331,8 @@ char *GDKload(str nme, str ext, int size, int chunk, int mode){
        	    	    GDKsyserror("GDKload: cannot mmap(): name=%s, ext=%s\n", nme, ext?ext:"");
      		    buf = NULL;
 		}
-		IODEBUG THRprintf(GDKerr, "mmap(NULL, 0, chunk %d, mod %d, tpe %d, fd %d, 0) = %d\n",
-						chunk, mod, tpe, fileno(fp), (int) buf);
+		IODEBUG THRprintf(GDKerr, "mmap(NULL, 0, chunk %d, mod %d, tpe %d, fd %d, 0) = %ld\n",
+						chunk, mod, tpe, fileno(fp), (long) buf);
 		n_expected = 0;
 	    }
 	}
