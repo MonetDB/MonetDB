@@ -240,7 +240,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		    s->op1.stval->type == st_derive){
 			/* dirty optimization, use CThistolinks tunique */
 		  	len += snprintf( buf+len, BUFSIZ, 
-			"s%d := s%d.tunique();\n", *nr, l);
+			"s%d := s%d.tunique().mirror();\n", *nr, l);
 		} else {
 		  	len += snprintf( buf+len, BUFSIZ, 
 			"s%d := s%d.reverse().kunique().reverse();\n", *nr, l);
