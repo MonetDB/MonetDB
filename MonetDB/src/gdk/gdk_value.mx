@@ -92,6 +92,7 @@ void VALempty(ValPtr v){
 ValPtr VALcopy(ValPtr d, ValPtr s){
 	if (ATOMextern(s->vtype) == 0) {
 		*d = *s;
+		ATOMfix(s->vtype,&d->val.ival);
 	} else if (s->val.pval == 0) {
 		GDKwarning("VALcopy: copying null %s.\n", ATOMname(s->vtype)); 
 		d->vtype = TYPE_void;
