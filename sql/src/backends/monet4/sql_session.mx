@@ -59,6 +59,7 @@ extern int mvc_sql(mvc *c, str query);
 #include "sql_result.h"
 #include "sql_gencode.h"	/* for backend_dumpproc() */
 #include <sql_semantic.h>
+#include <rel_semantic.h>
 #include <sql_optimize.h>
 #include <sql_privileges.h>
 #include <sql_rel2bin.h>
@@ -363,14 +364,52 @@ explain_cmd(mvc *c, char *cmd, stream *out)
 stmt *
 sql_symbol2stmt(mvc *c)
 {
-	stmt *s = semantic(c, c->sym);
+	stmt *s;
 
-	if (s) {
-		stmt *opt = optimize(c, s);
+	if (mvc_debug_on(c,16384)) {
+		sql_rel *r = rel_semantic(c, c->sym);
+		if (!r)
+			return NULL;
+	} 
+	/*
+	printf("# semantic\n");
+	*/
+	s = semantic(c, c->sym);
 
+	if (s){
+		stmt *opt;
+/*
+		if(i<=0){
+			i *= 10;
+			printf("\ndigraph %d {\nnode[shape=box,fontname=Helvetica];\nedge[labelfontname=Helvetica,labelfontcolor=red];\n", -i);
+			(void)stmt_stmt2dot(s, i, &i, stdout);
+			printf("}\n");
+		}
+		printf("# optimize\n");
+*/
+		opt = optimize(c, s);
 		stmt_destroy(s);
-		s = rel2bin(c, opt);
-		stmt_destroy(opt);
+		s = opt;
+/*
+		if(i<=0){
+			i *= 10;
+			printf("\ndigraph %d {\nnode[shape=box,fontname=Helvetica];\nedge[labelfontname=Helvetica,labelfontcolor=red];\n", -i);
+			(void)stmt_stmt2dot(s, i, &i, stdout);
+			printf("}\n");
+		}
+		printf("# rel2bin\n");
+*/
+		opt = rel2bin(c, s);
+		stmt_destroy(s);
+		s = opt;
+/*
+		if(i<=0){
+			i *= 10;
+			printf("\ndigraph %d {\nnode[shape=box,fontname=Helvetica];\nedge[labelfontname=Helvetica,labelfontcolor=red];\n", -i);
+			(void)stmt_stmt2dot(s, i, &i, stdout);
+			printf("}\n");
+		}
+*/
 	}
 	return s;
 }
