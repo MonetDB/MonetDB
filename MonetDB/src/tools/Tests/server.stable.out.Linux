@@ -130,7 +130,7 @@ Start of MIL prelude.
 #-----------------------------------------------------------------------------------------#
 # tmp_32		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "BBPTRIM_ALL",	  "int",  "frozen",	  "constant",	  "1073741824"		  ]
+[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -418,7 +418,7 @@ Start of MIL prelude.
 # BAT:			  tmp_34  #
 # (str)			  (str)	  #
 #---------------------------------#
-[ "BBPTRIM_ALL",	  "int"	  ]
+[ "BBPTRIM_ALL",	  "lng"	  ]
 [ "GE",			  "int"	  ]
 [ "GT",			  "int"	  ]
 [ "LE",			  "int"	  ]
@@ -849,7 +849,7 @@ vars();
 #-----------------------------------------------------------------------------------------#
 # tmp_46		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "BBPTRIM_ALL",	  "int",  "frozen",	  "constant",	  "1073741824"		  ]
+[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -1146,7 +1146,7 @@ view_var_name.reverse.join(view_var_type()).print();
 # BAT:			  tmp_32  #
 # (str)			  (str)	  #
 #---------------------------------#
-[ "BBPTRIM_ALL",	  "int"	  ]
+[ "BBPTRIM_ALL",	  "lng"	  ]
 [ "GE",			  "int"	  ]
 [ "GT",			  "int"	  ]
 [ "LE",			  "int"	  ]

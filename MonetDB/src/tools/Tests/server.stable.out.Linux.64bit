@@ -130,7 +130,7 @@ Start of MIL prelude.
 #-----------------------------------------------------------------------------------------#
 # tmp_32		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
+[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "4611686018427387904"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -155,7 +155,7 @@ Start of MIL prelude.
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
 [ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "˛Å"			  ]
 [ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "32767"		  ]
+[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
@@ -524,8 +524,7 @@ Start of MIL prelude.
 ##------------------------------------------------------------------#
 #[      1,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x40037997.
 unknown(0)#"                   ]
-#[      1,         1,   running,         2, "!ERROR: TBL_getname: inexistent function 1000132A.
-unknown("D:\\TmpDir\\mone#"                            ]
+#[      0,         1,   running,         1, "source("/var/tmp/_4.3.13-#"    ]
 [ 1 ]
 #-----------------------------------------------------------------#
 # BAT:	  name	| login				| tree		  #
@@ -850,7 +849,7 @@ vars();
 #-----------------------------------------------------------------------------------------#
 # tmp_46		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
+[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "4611686018427387904"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -875,7 +874,7 @@ vars();
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
 [ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "˛Å"			  ]
 [ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
-[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "32767"		  ]
+[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]

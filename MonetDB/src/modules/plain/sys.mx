@@ -452,7 +452,7 @@ Some explanation of what mem_usage() and vm_usage() display:
     PROC mem_usage(int minsize) : BAT[str,lng] return mem_usage(lng(minsize));
     PROC vm_usage(int minsize) : BAT[str,lng] return vm_usage(lng(minsize));
 
-    const BBPTRIM_ALL := <<(1, (monet_environment.find("gdk_arch").int - 2));
+    const BBPTRIM_ALL := <<(1LL, (monet_environment.find("gdk_arch").int - 2));
 
 @{
 @* Implementation Code

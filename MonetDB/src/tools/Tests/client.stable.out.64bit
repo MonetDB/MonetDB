@@ -626,7 +626,7 @@ Start of MIL script.
 [ "cmd",		  "str",  "liquid",	  "changeable",	  "\"\""		  ]
 [ "mapi_params",	  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
 [ "EOF",		  "int",  "frozen",	  "constant",	  "-1"			  ]
-[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
+[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "4611686018427387904"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]

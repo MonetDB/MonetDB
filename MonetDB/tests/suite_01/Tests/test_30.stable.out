@@ -32,7 +32,7 @@ c;
 # tmp_31		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
 [ "i",			  "int",  "liquid",	  "changeable",	  "123"			  ]
-[ "BBPTRIM_ALL",	  "int",  "frozen",	  "constant",	  "1073741824"		  ]
+[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -76,7 +76,7 @@ xyz;
 #-----------------------------------------------------------------------------------------#
 [ "k",			  "int",  "liquid",	  "changeable",	  "234"			  ]
 [ "j",			  "int",  "liquid",	  "changeable",	  "23"			  ]
-[ "BBPTRIM_ALL",	  "int",  "frozen",	  "constant",	  "1073741824"		  ]
+[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -115,7 +115,7 @@ vars;
 #-----------------------------------------------------------------------------------------#
 # tmp_30		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "BBPTRIM_ALL",	  "int",  "frozen",	  "constant",	  "1073741824"		  ]
+[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]

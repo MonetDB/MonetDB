@@ -77,7 +77,7 @@ vars;
 #-----------------------------------------------------------------------------------------#
 [ "h",			  "BAT",  "liquid",	  "changeable",	  "<tmp_28>"		  ]
 [ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_29>"		  ]
-[ "BBPTRIM_ALL",	  "int",  "frozen",	  "constant",	  "1073741824"		  ]
+[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]

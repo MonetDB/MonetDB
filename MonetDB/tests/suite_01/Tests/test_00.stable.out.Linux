@@ -16,7 +16,7 @@ vars;
 # tmp_32		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
 [ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_29>"		  ]
-[ "BBPTRIM_ALL",	  "int",  "frozen",	  "constant",	  "1073741824"		  ]
+[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -58,7 +58,7 @@ vars;
 #-----------------------------------------------------------------------------------------#
 [ "bn",			  "BAT",  "liquid",	  "changeable",	  "<tmp_37>"		  ]
 [ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_29>"		  ]
-[ "BBPTRIM_ALL",	  "int",  "frozen",	  "constant",	  "1073741824"		  ]
+[ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]

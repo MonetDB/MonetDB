@@ -108,7 +108,7 @@ parent is memory resident as required because of the 'pointer' sharing.
 #define BBPWAITING      896	
 #define BBPRENAMED	1024	/* set when bat is renamed in this transaction */
 
-#define BBPTRIM_ALL	(1 << (sizeof(size_t)*8 - 2)) /* very large positive size_t */
+#define BBPTRIM_ALL	(((size_t)1) << (sizeof(size_t)*8 - 2)) /* very large positive size_t */
 #define BBPLASTUSED(x)  ((x) & 0x7fffffff)  /* stamp is always a positive int */
 
 gdk_export int  BBPin;	        /* BATs swapped into BBP  */
