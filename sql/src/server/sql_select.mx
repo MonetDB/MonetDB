@@ -1441,7 +1441,6 @@ sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols )
 	list *stmts = create_stmt_list();
 
 	if (!cols) {
-		cvar *c;
 		/*
 		 * The multi column intersect is handled using a multi column
 		 * join and a semijoin on the base oids. 
@@ -1466,8 +1465,7 @@ sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols )
 			}
 			stmt_reljoin_fill(s, ls, rs);
 		}
-		c = tv1->columns->h->data;
-		s = stmt_mark( stmt_reverse(s), 100 );
+		s = stmt_mark( stmt_unique(stmt_reverse(s), NULL), 100 );
 		/* project columns of left hand expression */
 		for (n = tv1->columns->h; n; n = n->next) {
 			cvar *lc = n->data;
