@@ -409,6 +409,7 @@ void BBPinit() {
 		BBP_status_set(i, BBPEXISTING | (j & ~(BBPLOADED|BBPNEW)), "BBPinit");
 		BBP_physical(i) = GDKstrdup(BBPparse(&c)); 
 		BBP_plevel(i) = atoi(BBPparse(&c));
+		BBP_refs(i) = 0;
 		c = strchr(batname, '~');
 		if (c && c == batname) {
 			sprintf(logical, "tmp_%d", i);
