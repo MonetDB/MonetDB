@@ -202,6 +202,7 @@ successive mapi_fetch_row commands.
 A defensive programming style is adviced.
 Upon an error, the routine mapi_explain gives information about the context of
 the failed call, including the expression shipped and any response received.
+The side-effect is clearing the error status.
 
 @T
 \begin{description}
@@ -1160,6 +1161,7 @@ MapiMsg mapi_explain(Mapi mid, FILE *fd)
 	if( mid->error)
 		fprintf(fd,"ERROR = %s\n",mid->errorstr);
 	fflush(fd);
+	mapi_clrError(mid);
 	return MOK;
 }
 @-
@@ -1829,7 +1831,7 @@ int mapi_get_row(Mapi mid)
 	while(mid->active || mid->cache.reader+1 < mid->cache.writer ){
 		if( mid->active){
 			reply= mapi_fetch_line_internal(mid);
-			if( reply == 0 || mid->error)
+			if( reply == 0 )
 				return MERROR;
 		} else
 			reply = mid->cache.rows[++mid->cache.reader];
@@ -1851,8 +1853,11 @@ int mapi_get_row(Mapi mid)
 			newerr[0]=0;
 			if(olderr) strcpy(newerr,olderr);
 			strcat(newerr,reply);
-			mapi_clrError(mid);
-			mapi_setError(mid,newerr,"mapi_get_row");
+			strcat(newerr,"\n");
+			mid->error= MERROR;
+			mid->action = "mapi_get_row";
+			if(mid->errorstr) free(mid->errorstr);
+			mid->errorstr= newerr;
 			return mapi_get_row(mid);
 			}
 			break;

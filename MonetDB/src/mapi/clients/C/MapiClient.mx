@@ -369,14 +369,22 @@ redirection of output to a separate file.
 			}
 			break;
 		case '<':
+@-
+The lines of the input file should be consumed as a block.
+All new-lines should be removed before we turn it into
+a single query for the engine.
+@c
 			if ((fp = fopen(start_cmd+1, "r")) != NULL) {
+				char *s;
 				while ((n = fread(message+m_index, 1,
 						  CHUNK_SIZE, fp)) != 0) {
 					GROW_MESSAGE(n);
-					/* echo to stdout */
 					message[m_index] = 0;
-					fwrite(message+m_index-n, 1, n, stdout);
 				}
+				/* echo to stdout */
+				fwrite(message, 1, strlen(message), stdout);
+				for(s=message; *s; s++)
+				if(*s=='\n') *s=' ';
 			}
 			break;
 @-
