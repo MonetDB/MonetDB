@@ -402,7 +402,7 @@ dec_bat.reverse.sort.reverse.col_name("sorted dec").print;
 dec_abs.reverse.sort.reverse.col_name("sorted abs(dec)").print;
 
 # test hash-join
-dec_abs.join(dec_abs.reverse).print;
+dec_abs.join(dec_abs.reverse).sort_ht.print;
 
 
 @- performance test

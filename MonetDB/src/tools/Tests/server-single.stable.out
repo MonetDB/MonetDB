@@ -10,7 +10,6 @@ stdout of test 'server-single` in directory 'src/tools` itself:
 # compiled for mips-sgi-irix6.5/64bit; dynamically linked.
 Start of MIL prelude.
 [ 1 ]
-[ 10 ]
 ##------------------------------------------------------------------------#
 ## key   | put   | get  | wakeup  | enter | start | duration | action     #
 ##------------------------------------------------------------------------#
@@ -306,7 +305,7 @@ Start of MIL prelude.
 # (int)	  (str)											  #
 #-------------------------------------------------------------------------------------------------#
 [ 0,	  ""											  ]
-[ 1,	  "setoid(oid(10000000));printf(\"Start of MIL prelude.\\n\");print(clientid());print"	  ]
+[ 1,	  "setoid(oid(10000000));printf(\"Start of MIL prelude.\\n\");print(clientid());qstat"	  ]
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -559,6 +558,7 @@ Start of MIL prelude.
 [ 23,	  0	  ]
 [ 24,	  0	  ]
 #~BeginVariableOutput~#
+[ 10 ]
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
@@ -756,8 +756,6 @@ Start of MIL script.
 
 clientid().print();
 [ 0 ]
-debugmask().print();
-[ 10 ]
 qstat();
 ##------------------------------------------------------------------------#
 ## key   | put   | get  | wakeup  | enter | start | duration | action     #
@@ -1328,6 +1326,8 @@ view_bbp_heat().print();
 printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
 
+debugmask().print();
+[ 10 ]
 queue();
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #

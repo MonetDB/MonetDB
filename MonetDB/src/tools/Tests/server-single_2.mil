@@ -3,7 +3,6 @@ setoid(oid(20000000));
 printf("Start of MIL script.\n");
 
 clientid().print();
-debugmask().print();
 qstat();
 
 bbp.print();
@@ -27,6 +26,7 @@ view_bbp_heat().print();
 
 printf("#~BeginVariableOutput~#\n");
 
+debugmask().print();
 queue();
 threadid().print();
 
