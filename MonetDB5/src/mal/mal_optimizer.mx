@@ -477,7 +477,7 @@ str MALoptimizer(Client c)
 {	MalBlkPtr mb= c->curprg->def;
 	InstrPtr p;
 	int pc,qot=0, oldstop;
-	str msg;
+	str msg= NULL;
 
 	if( c->state[OPTIMIZE]){
 		/* prepend query with client specific optimizer scheme */

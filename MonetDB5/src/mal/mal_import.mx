@@ -220,7 +220,7 @@ a definition.
 @c
 void runScript(Client c, str fname, int listing, MalStkPtr glb)
 {	
-	stream *fd, *oldinput;
+	stream *fd = NULL, *oldinput;
 	int oldlisting= c->listing;
 	int oldblkmode = c->blkmode;
 	str oldprompt = c->prompt;

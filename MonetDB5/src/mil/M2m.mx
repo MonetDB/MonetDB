@@ -46,7 +46,13 @@ str absolute_path(str s) {
 
 int main(int argc,char ** av)
 {
-        char *buf, *ptr, *prog = *av, *config = NULL;
+	/* Stefan: "buf" wasn't initialized, so I set it to NULL.
+	 * It is initialized eventually initialized after the line
+	 * "The files are processed as one big program", 
+         * however, that's too late for "case 'c'" in the 
+	 * option-checking "while(1)" loop ...
+	 */
+        char *buf = NULL, *ptr, *prog = *av, *config = NULL;
         opt *set = NULL;
         int i,debug = 0, setlen = 0;
 	int k,len,totlen;

@@ -152,10 +152,10 @@ str loadModuleLibrary(str modname){
 	str path ="";
 	str library=0;
 	str msg= NULL;
-	int i,idx;
+	int i = 0, idx;
 
 	for(idx=0;modulesLoaded[idx] && idx<128;idx++)
-	if( strcmp(modulesLoaded[i],modname)==0)
+	if( strcmp(modulesLoaded[idx],modname)==0)
 		return 0;
 	if( idx== 128){
 		GDKfatal("too many modules\n");

@@ -221,12 +221,13 @@ to the context.
 
 int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Client cntxt= getClient();
-	int b;
+	int b=0;
 	if( p->argc==1){
 		/* Toggle */
 		stk->cmd= stk->cmd? 0: 's';
 		cntxt->itrace = cntxt->itrace == 0;
 		if( stk->up) stk->up->cmd=  b?'s':0;
+		/* Stefan: b is always 0, here, so what's the sense of the prev. statement? */
 		return 0;
 	}
 	if( p->argc >1){
@@ -673,7 +674,7 @@ str memProfileVector(int cells){
 	int i;
 	long max= (long) sbrk(0);
 	long min= 0;
-	long granule;
+	long granule= 0;
 	if( cells<=0) {
 		GDKerror("memProfileVector:positive argument expected\n");
 		return GDKstrdup("");
