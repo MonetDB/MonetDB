@@ -1529,7 +1529,12 @@ mapi_reconnect(Mapi mid)
 	}
 
 	if (connect(s, (struct sockaddr *) &server, sizeof(server)) < 0) {
-		perror("!ERROR mapi_reconnect: ");
+#ifdef NATIVE_WIN32
+		fprintf(stderr, "!ERROR mapi_reconnect: connect: error %d\n",
+			WSAGetLastError());
+#else
+		perror("!ERROR mapi_reconnect: connect");
+#endif
 		return mapi_setError(mid, "Setup connection failed",
 				     "mapi_reconnect", MERROR);
 	}
