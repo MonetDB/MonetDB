@@ -78,9 +78,11 @@ Over..
 [ "sys",	  3		  ]
 [ "trans",	  3		  ]
 [ "uchr",	  6		  ]
-!ERROR: interpret: MIL operator invocation of 'print(BAT[int,lock])' with illegal types.
-!ERROR: interpret: MIL operator invocation of 'count(BAT[int,lock])' with illegal types.
-!ERROR: print(param 1): evaluation error.
+#-----------------#
+# BAT:	  test	  #
+# (int)	  (lock)  #
+#-----------------#
+[ 0 ]
 
 # 18:26:30 >  
 # 18:26:30 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708
