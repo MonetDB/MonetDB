@@ -1,13 +1,13 @@
 stdout of test 'moa_ordered` in directory 'src/benchmarks/moa` itself:
 
 
-# 16:07:50 >  
-# 16:07:50 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_PREFIX__GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX__GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX__GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX__GNU_32_d__/var/MonetDB/log" --set mapi_port=45373 --set sql_port=53186 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_moa" "/var/tmp/_BUILD_SQL_GNU_32_d__/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 16:07:50 >  
+# 11:05:24 >  
+# 11:05:24 >  Mtimeout -timeout 180 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=46861 --set sql_port=58097 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_moa" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 11:05:24 >  
 
-# Monet Database Server V4.3.19
+# Monet Database Server V4.5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
@@ -17,9 +17,9 @@ quit();
 
 Over..
 
-# 16:07:51 >  
-# 16:07:51 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=53186  < moa_ordered.sql
-# 16:07:51 >  
+# 11:05:25 >  
+# 11:05:25 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=58097  < moa_ordered.sql
+# 11:05:25 >  
 
 # 3 # querytype
 # moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
@@ -27,7 +27,7 @@ Over..
 # varchar,	varchar,	varchar,	varchar,	varchar # type
 # 5,	5,	2,	18,	1 # length
 # 1,	,	,	,	 # tuplecount
-# 0,	,	,	,	 # id
+# 1,	,	,	,	 # id
 [ "Video",	"match",	"ID",	"MediaInformationFK",	NULL	]
 # 3 # querytype
 # moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
@@ -35,14 +35,14 @@ Over..
 # varchar,	varchar,	varchar,	varchar,	varchar # type
 # 0,	0,	0,	0,	0 # length
 # 0,	,	,	,	 # tuplecount
-# 1,	,	,	,	 # id
+# 2,	,	,	,	 # id
 # 3 # querytype
 # moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
 # name,	type,	field1,	field2,	field3 # name
 # varchar,	varchar,	varchar,	varchar,	varchar # type
 # 15,	5,	10,	9,	1 # length
 # 1,	,	,	,	 # tuplecount
-# 2,	,	,	,	 # id
+# 3,	,	,	,	 # id
 [ "CreationCreator",	"match",	"CreationFK",	"CreatorFK",	NULL	]
 # 3 # querytype
 # moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
@@ -50,14 +50,14 @@ Over..
 # varchar,	varchar,	varchar,	varchar,	varchar # type
 # 0,	0,	0,	0,	0 # length
 # 0,	,	,	,	 # tuplecount
-# 3,	,	,	,	 # id
+# 4,	,	,	,	 # id
 # 3 # querytype
 # moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
 # name,	type,	field1,	field2,	field3 # name
 # varchar,	varchar,	varchar,	varchar,	varchar # type
 # 7,	5,	9,	12,	1 # length
 # 1,	,	,	,	 # tuplecount
-# 4,	,	,	,	 # id
+# 5,	,	,	,	 # id
 [ "Creator",	"match",	"CreatorPK",	"IndividualFK",	NULL	]
 # 3 # querytype
 # moa_dd,	moa_dd,	moa_dd,	moa_dd,	moa_dd # table_name
@@ -65,75 +65,75 @@ Over..
 # varchar,	varchar,	varchar,	varchar,	varchar # type
 # 0,	0,	0,	0,	0 # length
 # 0,	,	,	,	 # tuplecount
-# 5,	,	,	,	 # id
+# 6,	,	,	,	 # id
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_creationpk # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
-# 6 # id
-[ 1	]
-# 6 # querytype
-# 4 # querytype
-#  # table_name
-# count_convert_id # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 7 # id
 [ 1	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_creationfk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 8 # id
-[ 17	]
+[ 1	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_creatorpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 9 # id
 [ 17	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_individualpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 10 # id
+[ 17	]
+# 6 # querytype
+# 4 # querytype
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
+# 1 # tuplecount
+# 11 # id
 [ 17	]
 # 3 # querytype
 # _t2,	_t2,	_t2,	_t2 # table_name
 # id,	imdb,	image,	mediainformationfk # name
 # int,	varchar,	varchar,	int # type
-# 0,	7,	72,	0 # length
+# 11,	7,	72,	11 # length
 # 1,	,	,	 # tuplecount
-# 11,	,	,	 # id
+# 12,	,	,	 # id
 [ 1,	"0120338",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0792156684.01.MZZZZZZZ.gif",	1	]
 # 3 # querytype
 # _t1,	_t1,	_t1 # table_name
 # creationpk,	title,	creationdate # name
 # int,	varchar,	varchar # type
-# 0,	7,	4 # length
+# 11,	7,	4 # length
 # 1,	,	 # tuplecount
-# 12,	,	 # id
+# 13,	,	 # id
 [ 1,	"Titanic",	"1997"	]
 # 3 # querytype
 # _t3,	_t3 # table_name
 # creationfk,	creatorfk # name
 # int,	int # type
-# 0,	0 # length
+# 11,	11 # length
 # 17,	 # tuplecount
-# 13,	 # id
+# 14,	 # id
 [ 1,	5823	]
 [ 1,	5824	]
 [ 1,	5825	]
@@ -155,9 +155,9 @@ Over..
 # _t4,	_t4,	_t4 # table_name
 # creatorpk,	role,	individualfk # name
 # int,	varchar,	int # type
-# 0,	8,	0 # length
+# 11,	8,	11 # length
 # 17,	,	 # tuplecount
-# 14,	,	 # id
+# 15,	,	 # id
 [ 5823,	"Actor",	2328	]
 [ 5824,	"Actor",	415	]
 [ 5825,	"Actor",	3	]
@@ -179,9 +179,9 @@ Over..
 # _t5,	_t5 # table_name
 # individualpk,	personname # name
 # int,	varchar # type
-# 0,	27 # length
+# 11,	27 # length
 # 17,	 # tuplecount
-# 15,	 # id
+# 16,	 # id
 [ 3,	"Abernathy,+Lewis"	]
 [ 43,	"Amis,+Suzy"	]
 [ 156,	"Bates,+Kathy"	]
@@ -203,9 +203,9 @@ Over..
 # video,	video,	video,	video # table_name
 # id,	imdb,	image,	mediainformationfk # name
 # decimal,	varchar,	varchar,	decimal # type
-# 0,	7,	72,	0 # length
+# 12,	7,	72,	12 # length
 # 224,	,	,	 # tuplecount
-# 16,	,	,	 # id
+# 17,	,	,	 # id
 [ 1,	"0120338",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0792156684.01.MZZZZZZZ.gif",	1	]
 [ 2,	"0076759",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6301773551.01.MZZZZZZZ.gif",	1	]
 [ 3,	"0120915",	"http%3A%2F%2Fposters.imdb.com%2FPosters%2Fs%2Fswepi1styleb1.jpg",	1	]
@@ -434,9 +434,9 @@ Over..
 # creation,	creation,	creation # table_name
 # creationpk,	title,	creationdate # name
 # decimal,	varchar,	varchar # type
-# 0,	50,	6 # length
+# 12,	50,	6 # length
 # 224,	,	 # tuplecount
-# 17,	,	 # id
+# 18,	,	 # id
 [ 1,	"Titanic",	"1997"	]
 [ 2,	"Star Wars",	"1977"	]
 [ 3,	"Star Wars: Episode I - The Phantom Menace",	"1999"	]
@@ -665,9 +665,9 @@ Over..
 # creationcreator,	creationcreator # table_name
 # creationfk,	creatorfk # name
 # decimal,	decimal # type
-# 0,	0 # length
+# 12,	12 # length
 # 3996,	 # tuplecount
-# 18,	 # id
+# 19,	 # id
 [ 1,	5823	]
 [ 1,	5824	]
 [ 1,	5825	]
@@ -4668,9 +4668,9 @@ Over..
 # creator,	creator,	creator # table_name
 # creatorpk,	role,	individualfk # name
 # decimal,	varchar,	decimal # type
-# 0,	8,	0 # length
+# 12,	8,	12 # length
 # 3996,	,	 # tuplecount
-# 19,	,	 # id
+# 20,	,	 # id
 [ 262,	"Actor",	1176	]
 [ 263,	"Actor",	1239	]
 [ 264,	"Actor",	1332	]
@@ -8671,9 +8671,9 @@ Over..
 # individual,	individual # table_name
 # individualpk,	personname # name
 # decimal,	varchar # type
-# 0,	31 # length
+# 12,	31 # length
 # 2987,	 # tuplecount
-# 20,	 # id
+# 21,	 # id
 [ 1,	"Abatemarco,+Tony"	]
 [ 2,	"Abbott,+John+(I)"	]
 [ 3,	"Abernathy,+Lewis"	]
@@ -11663,38 +11663,38 @@ Over..
 [ 2987,	"Zumwalt,+Rick"	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_creatorpk # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
-# 21 # id
-[ 243	]
-# 6 # querytype
-# 4 # querytype
-#  # table_name
-# convert_creationfk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 22 # id
 [ 243	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_individualpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 23 # id
+[ 243	]
+# 6 # querytype
+# 4 # querytype
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
+# 1 # tuplecount
+# 24 # id
 [ 243	]
 # 3 # querytype
 # _t7,	_t7 # table_name
 # creationfk,	creatorfk # name
 # int,	int # type
-# 0,	0 # length
+# 11,	11 # length
 # 243,	 # tuplecount
-# 24,	 # id
+# 25,	 # id
 [ 1,	5839	]
 [ 2,	5815	]
 [ 3,	5791	]
@@ -11942,9 +11942,9 @@ Over..
 # _t6,	_t6,	_t6 # table_name
 # creatorpk,	role,	individualfk # name
 # int,	varchar,	int # type
-# 0,	8,	0 # length
+# 11,	8,	11 # length
 # 243,	,	 # tuplecount
-# 25,	,	 # id
+# 26,	,	 # id
 [ 279,	"Director",	1805	]
 [ 304,	"Director",	1278	]
 [ 332,	"Director",	2915	]
@@ -12192,9 +12192,9 @@ Over..
 # _t8,	_t8 # table_name
 # individualpk,	personname # name
 # int,	varchar # type
-# 0,	23 # length
+# 11,	23 # length
 # 243,	 # tuplecount
-# 26,	 # id
+# 27,	 # id
 [ 33,	"Allen,+Irwin"	]
 [ 40,	"Allers,+Roger"	]
 [ 57,	"Apted,+Michael"	]
@@ -12440,83 +12440,83 @@ Over..
 [ 2986,	"Zucker,+Jerry"	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_creationpk # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
-# 27 # id
-[ 14	]
-# 6 # querytype
-# 4 # querytype
-#  # table_name
-# count_convert_id # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 28 # id
 [ 14	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_creatorpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 29 # id
-[ 391	]
+[ 14	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_creationfk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 30 # id
 [ 391	]
 # 6 # querytype
 # 4 # querytype
-# _t12 # table_name
-# count_creationfk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 31 # id
-[ 25	]
+[ 391	]
 # 6 # querytype
 # 4 # querytype
-# _t11 # table_name
-# count_creatorpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 32 # id
 [ 25	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_individualpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 33 # id
+[ 25	]
+# 6 # querytype
+# 4 # querytype
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
+# 1 # tuplecount
+# 34 # id
 [ 391	]
 # 6 # querytype
 # 4 # querytype
-# _t15 # table_name
-# count_individualpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 34 # id
+# 35 # id
 [ 39	]
 # 3 # querytype
 # _t10,	_t10,	_t10,	_t10 # table_name
 # id,	imdb,	image,	mediainformationfk # name
 # int,	varchar,	varchar,	int # type
-# 0,	7,	72,	0 # length
+# 11,	7,	72,	11 # length
 # 14,	,	,	 # tuplecount
-# 35,	,	,	 # id
+# 36,	,	,	 # id
 [ 9,	"0116629",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2FB00003Q43A.01.MZZZZZZZ.gif",	1	]
 [ 19,	"0117998",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0790729636.01.MZZZZZZZ.gif",	1	]
 [ 45,	"0117060",	"http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6305181772.01.MZZZZZZZ.gif",	1	]
@@ -12535,9 +12535,9 @@ Over..
 # _t9,	_t9,	_t9 # table_name
 # creationpk,	title,	creationdate # name
 # int,	varchar,	varchar # type
-# 0,	21,	4 # length
+# 11,	21,	4 # length
 # 14,	,	 # tuplecount
-# 36,	,	 # id
+# 37,	,	 # id
 [ 9,	"Independence Day",	"1996"	]
 [ 19,	"Twister",	"1996"	]
 [ 45,	"Mission: Impossible",	"1996"	]
@@ -12556,9 +12556,9 @@ Over..
 # _t13,	_t13 # table_name
 # creationfk,	creatorfk # name
 # int,	int # type
-# 0,	0 # length
+# 11,	11 # length
 # 25,	 # tuplecount
-# 37,	 # id
+# 38,	 # id
 [ 9,	5640	]
 [ 9,	5641	]
 [ 19,	5390	]
@@ -12588,9 +12588,9 @@ Over..
 # _t14,	_t14,	_t14 # table_name
 # creatorpk,	role,	individualfk # name
 # int,	varchar,	int # type
-# 0,	6,	0 # length
+# 11,	6,	11 # length
 # 25,	,	 # tuplecount
-# 38,	,	 # id
+# 39,	,	 # id
 [ 532,	"Writer",	1082	]
 [ 533,	"Writer",	2169	]
 [ 1000,	"Writer",	2882	]
@@ -12620,9 +12620,9 @@ Over..
 # _t16,	_t16 # table_name
 # individualpk,	personname # name
 # int,	varchar # type
-# 0,	19 # length
+# 11,	19 # length
 # 39,	 # tuplecount
-# 39,	 # id
+# 40,	 # id
 [ 540,	"Cook,+Douglas+(I)"	]
 [ 540,	"Cook,+Douglas+(I)"	]
 [ 578,	"Crichton,+Michael"	]
@@ -12664,38 +12664,38 @@ Over..
 [ 2882,	"Williamson,+Kevin"	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_creatorpk # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
-# 40 # id
-[ 243	]
-# 6 # querytype
-# 4 # querytype
-#  # table_name
-# convert_creationfk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 41 # id
 [ 243	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_creationpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 42 # id
+[ 243	]
+# 6 # querytype
+# 4 # querytype
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
+# 1 # tuplecount
+# 43 # id
 [ 243	]
 # 3 # querytype
 # _t17,	_t17,	_t17 # table_name
 # creatorpk,	role,	individualfk # name
 # int,	varchar,	int # type
-# 0,	8,	0 # length
+# 11,	8,	11 # length
 # 243,	,	 # tuplecount
-# 43,	,	 # id
+# 44,	,	 # id
 [ 279,	"Director",	1805	]
 [ 304,	"Director",	1278	]
 [ 332,	"Director",	2915	]
@@ -12943,9 +12943,9 @@ Over..
 # _t18,	_t18 # table_name
 # creationfk,	creatorfk # name
 # int,	int # type
-# 0,	0 # length
+# 11,	11 # length
 # 243,	 # tuplecount
-# 44,	 # id
+# 45,	 # id
 [ 1,	5839	]
 [ 2,	5815	]
 [ 3,	5791	]
@@ -13193,9 +13193,9 @@ Over..
 # _t19,	_t19,	_t19 # table_name
 # creationpk,	title,	creationdate # name
 # int,	varchar,	varchar # type
-# 0,	50,	6 # length
+# 11,	50,	6 # length
 # 243,	,	 # tuplecount
-# 45,	,	 # id
+# 46,	,	 # id
 [ 1,	"Titanic",	"1997"	]
 [ 2,	"Star Wars",	"1977"	]
 [ 3,	"Star Wars: Episode I - The Phantom Menace",	"1999"	]
@@ -13441,91 +13441,91 @@ Over..
 [ 224,	"Die Hard: With a Vengeance",	"1995"	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_individualpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 46 # id
+# 47 # id
 [ 1	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_creatorpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 47 # id
+# 48 # id
 [ 243	]
 # 6 # querytype
 # 4 # querytype
-# _t21 # table_name
-# count_creatorpk # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
-# 48 # id
-[ 10	]
-# 6 # querytype
-# 4 # querytype
-# _t21 # table_name
-# count_creatorpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 49 # id
 [ 10	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_creationfk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 50 # id
-[ 243	]
-# 6 # querytype
-# 4 # querytype
-# _t24 # table_name
-# count_creationfk # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
-# 51 # id
 [ 10	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_creationpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 52 # id
+# 51 # id
 [ 243	]
 # 6 # querytype
 # 4 # querytype
-# _t26 # table_name
-# count_creationpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
+# 1 # tuplecount
+# 52 # id
+[ 10	]
+# 6 # querytype
+# 4 # querytype
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 53 # id
+[ 243	]
+# 6 # querytype
+# 4 # querytype
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
+# 1 # tuplecount
+# 54 # id
 [ 10	]
 # 3 # querytype
 # _t20,	_t20 # table_name
 # individualpk,	personname # name
 # int,	varchar # type
-# 0,	17 # length
+# 11,	17 # length
 # 1,	 # tuplecount
-# 54,	 # id
+# 55,	 # id
 [ 2522,	"Spielberg,+Steven"	]
 # 3 # querytype
 # _t22,	_t22,	_t22 # table_name
 # creatorpk,	role,	individualfk # name
 # int,	varchar,	int # type
-# 0,	8,	0 # length
+# 11,	8,	11 # length
 # 10,	,	 # tuplecount
-# 55,	,	 # id
+# 56,	,	 # id
 [ 2290,	"Director",	2522	]
 [ 2884,	"Director",	2522	]
 [ 4722,	"Director",	2522	]
@@ -13540,9 +13540,9 @@ Over..
 # _t23,	_t23,	_t23 # table_name
 # creatorpk,	role,	individualfk # name
 # int,	varchar,	int # type
-# 0,	8,	0 # length
+# 11,	8,	11 # length
 # 10,	,	 # tuplecount
-# 56,	,	 # id
+# 57,	,	 # id
 [ 2290,	"Director",	2522	]
 [ 2884,	"Director",	2522	]
 [ 4722,	"Director",	2522	]
@@ -13557,9 +13557,9 @@ Over..
 # _t25,	_t25 # table_name
 # creationfk,	creatorfk # name
 # int,	int # type
-# 0,	0 # length
+# 11,	11 # length
 # 10,	 # tuplecount
-# 57,	 # id
+# 58,	 # id
 [ 4,	5767	]
 [ 5,	5743	]
 [ 13,	5543	]
@@ -13574,9 +13574,9 @@ Over..
 # _t27,	_t27,	_t27 # table_name
 # creationpk,	title,	creationdate # name
 # int,	varchar,	varchar # type
-# 0,	36,	4 # length
+# 11,	36,	4 # length
 # 10,	,	 # tuplecount
-# 58,	,	 # id
+# 59,	,	 # id
 [ 4,	"E.T. the Extra-Terrestrial",	"1982"	]
 [ 5,	"Jurassic Park",	"1993"	]
 [ 13,	"Jaws",	"1975"	]
@@ -13589,56 +13589,56 @@ Over..
 [ 143,	"Hook",	"1991"	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_individualpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 59 # id
+# 60 # id
 [ 2	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# convert_creatorpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 60 # id
+# 61 # id
 [ 243	]
 # 6 # querytype
 # 4 # querytype
-# _t29 # table_name
-# count_individualpk # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
-# 61 # id
-[ 10	]
-# 6 # querytype
-# 4 # querytype
-# _t30 # table_name
-# count_individualpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 62 # id
 [ 10	]
 # 6 # querytype
 # 4 # querytype
-# _t31 # table_name
-# count_individualpk # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
 # 63 # id
+[ 10	]
+# 6 # querytype
+# 4 # querytype
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
+# 1 # tuplecount
+# 64 # id
 [ 10	]
 # 3 # querytype
 # _t32,	_t32,	_t32,	_t32,	_t32,	_t32,	_t32,	_t32,	_t32,	_t32 # table_name
 # individualpk,	personname,	creatorpk,	role,	individualfk,	creationfk,	creatorfk,	creationpk,	title,	creationdate # name
 # int,	varchar,	int,	varchar,	int,	int,	int,	int,	varchar,	varchar # type
-# 0,	17,	0,	8,	0,	0,	0,	0,	36,	4 # length
+# 11,	17,	11,	8,	11,	11,	11,	11,	36,	4 # length
 # 10,	,	,	,	,	,	,	,	,	 # tuplecount
-# 64,	,	,	,	,	,	,	,	,	 # id
+# 65,	,	,	,	,	,	,	,	,	 # id
 [ 2522,	"Spielberg,+Steven",	2290,	"Director",	2522,	143,	2290,	143,	"Hook",	"1991"	]
 [ 2522,	"Spielberg,+Steven",	2884,	"Director",	2522,	119,	2884,	119,	"Close Encounters of the Third Kind",	"1977"	]
 [ 2522,	"Spielberg,+Steven",	4722,	"Director",	2522,	46,	4722,	46,	"Indiana Jones and the Temple of Doom",	"1984"	]
@@ -13682,7 +13682,7 @@ Over..
 # 6 # querytype
 # 6 # querytype
 
-# 16:07:52 >  
-# 16:07:52 >  Done.
-# 16:07:52 >  
+# 11:05:26 >  
+# 11:05:26 >  Done.
+# 11:05:26 >  
 
