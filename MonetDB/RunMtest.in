@@ -26,10 +26,6 @@ if [ "${uname}" = "Darwin" ] ; then
 fi
 export PATH PYTHONPATH LD_LIBRARY_PATH
 
-# as opposed to the libraries, <modname>.mil files don't end up the .libs
-# subdirectories, hence:
-MOD_PATH="$MOD_PATH:`echo $MOD_PATH | sed 's|/\.libs||g'`"
-
 # execute Mtest.py in the source directory
 cd "$srcdir"
 
