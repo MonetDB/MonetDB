@@ -1149,6 +1149,46 @@ int dec_tostr( void *extra, char **Buf, int *len, int type, ptr a)
 	return 0;
 }
 
+int sql_time_tostr( void *M, char **buf, int *len, int type, ptr A)
+{
+	mvc *m = M;
+	int len1, big=128;
+	char buf1[128], *s1 = buf1, *s;
+	lng val, timezone = m->timezone * 60*1000;
+	daytime tmp, *a = A;
+        daytime mtime = 24*60*60*1000;
+
+	(void)type;
+	if (*(int*)a == int_nil) {
+		if( *len <5){
+			if (*buf) GDKfree(*buf);
+			*buf = (str) GDKmalloc(*len = 16);
+		} s= *buf;
+		strcpy(s, "nil");
+		return 3;
+	}
+
+	val = *a + timezone;
+	if (val < 0)
+                val = mtime + val;
+        if (val > mtime)
+                val = val - mtime;
+	tmp = (daytime)val;
+
+	len1 = daytime_tostr(&s1, &big, &tmp);
+
+	if (*len < len1+ 8) {
+		if (*buf) GDKfree(*buf);
+		*buf = (str) GDKmalloc(*len = len1+8);
+	} s = *buf;
+	strcpy(s, buf1); s += len1;
+
+	*s++ = (m->timezone>=0)?'+':'-';
+	sprintf(s, "%02d:%02d", ABS(m->timezone)/60, ABS(m->timezone)%60); 
+	s += 5;
+	return (int) (s - *buf);
+}
+
 int sql_timestamp_tostr( void *M, char **buf, int *len, int type, ptr A)
 {
 	mvc *m = M;
@@ -1517,6 +1557,14 @@ static int mvc_export_row( mvc *m, stream *s, res_table *t )
 			ok = (stream_write(s, buf, l, 1) == 1);
 			_DELETE(buf);
 		} else if (c->type->scale == SCALE_FIX &&
+	            strcmp(c->type->type->sqlname, "time")==0){
+			char *buf = NULL;
+			int len = 0;
+			int l = sql_time_tostr((void*)m, &buf, &len,
+					c->mtype, c->p);
+			ok = (stream_write(s, buf, l, 1) == 1);
+			_DELETE(buf);
+		} else if (c->type->scale == SCALE_FIX &&
 	            strcmp(c->type->type->sqlname, "timestamp")==0){
 			char *buf = NULL;
 			int len = 0;
@@ -1616,6 +1664,12 @@ int mvc_export_table( mvc *m, stream *s, int res_id, unsigned int offset, unsign
 		if (c->type->scale == SCALE_FIX && 
 	            strcmp(c->type->type->sqlname, "timestamp")==0){
 			fmt[i].tostr = &sql_timestamp_tostr;
+			fmt[i].frstr = NULL;
+			fmt[i].extra = m;
+		} else 
+		if (c->type->scale == SCALE_FIX && 
+	            strcmp(c->type->type->sqlname, "time")==0){
+			fmt[i].tostr = &sql_time_tostr;
 			fmt[i].frstr = NULL;
 			fmt[i].extra = m;
 		}

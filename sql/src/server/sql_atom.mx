@@ -53,6 +53,7 @@ sql_export void atom_dump(atom *a, stream *s);
 @c
 #include "sql_atom.h"
 #include <sql_string.h>
+#include <monettime.h>
 
 static int atom_debug = 0;
 
@@ -145,7 +146,15 @@ atom *atom_general(sql_subtype * tpe, char *val)
 			a->data.val.sval = sql2str(val);
 			a->data.len = strlen(a->data.val.sval); 
 		} else {
-			int res = ATOMfromstr(type, &p, &a->data.len, val);
+			int res;
+			if (a->tpe->scale == SCALE_FIX &&
+				strcmp(a->tpe->type->sqlname, "time") == 0){
+				daytime *d = p;
+				res = daytime_tz_fromstr(val, &a->data.len, &d);
+				p = (ptr)d;
+			} else {
+				res = ATOMfromstr(type, &p, &a->data.len, val);
+			}
 			/* no result or nil means error (SQL has NULL not nil)*/
 			if (res <= 0 || !p ||
 			    ATOMcmp(type, p, ATOMnilptr(type)) == 0) {

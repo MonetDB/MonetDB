@@ -2333,22 +2333,22 @@ literal:
 		  } else {
 		  	$$ = _newAtomNode(a); 
 		} }
- |  TIME string 
-		{ sql_subtype *t = sql_bind_subtype("TIME", 0, 0 );
-		  atom *a = atom_general(t, $2); 
+ |  TIME tz string 
+		{ sql_subtype *t = sql_bind_subtype("TIME", 0, $2 );
+		  atom *a = atom_general(t, $3); 
 		  if (!a) {
 			char buf[BUFSIZ]; 
 
-			snprintf(buf, BUFSIZ, "incorrect time value (%s)", $2);
+			snprintf(buf, BUFSIZ, "incorrect time value (%s)", $3);
 			yyerror(buf);
 			$$ = NULL;
 			YYABORT;
 		  } else {
 		  	$$ = _newAtomNode(a); 
 		} }
- |  TIMESTAMP string 
-		{ sql_subtype *t = sql_bind_subtype("TIMESTAMP", 0, 0 );
-		  atom *a = atom_general(t, $2); 
+ |  TIMESTAMP tz string 
+		{ sql_subtype *t = sql_bind_subtype("TIMESTAMP", 0, $2 );
+		  atom *a = atom_general(t, $3); 
 		  if (!a) {
 			char buf[BUFSIZ]; 
 
