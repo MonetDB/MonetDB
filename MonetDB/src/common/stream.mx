@@ -113,16 +113,21 @@ stream_export char *stream_error(stream *s);
 stream_export int stream_flush(stream *s);
 stream_export char *stream_name(stream *s);
 stream_export int stream_errnr(stream *s);
+stream_export int stream_type(stream *s);
 stream_export int stream_byteorder(stream *s);
 stream_export stream *stream_rstream(stream *s);
 stream_export stream *stream_wstream(stream *s);
 
 stream_export stream *open_rstream( const char *filename );
 stream_export stream *open_wstream( const char *filename );
+/* append to stream */
+stream_export stream *append_wstream( const char *filename );
 /* open in ascii stream in read mode */
 stream_export stream *open_rastream( const char *filename ); 
 /* open in ascii stream in write mode*/
 stream_export stream *open_wastream( const char *filename ); 
+/* append to ascii stream */
+stream_export stream *append_wastream( const char *filename ); 
 
 #ifdef HAVE_LIBZ
 stream_export stream *open_gzrstream( const char *filename );
@@ -174,7 +179,7 @@ stream_export stream *buffer_rastream( buffer *b, const char *name );
 stream_export stream *buffer_wastream( buffer *b, const char *name );
 stream_export buffer *stream_get_buffer( stream *s );
 
-#define BLOCK 8192
+#define BLOCK 1024*1024
 /* 
    Block stream is a stream which sends data in blocks of a known
    size (BLOCK size or dynamically changed using CHANGE_BLOCK_SIZE msg).
@@ -406,6 +411,11 @@ int stream_errnr(stream *s)
 	return s->errnr;
 }
 
+int stream_type(stream *s)
+{
+	return s->type;
+}
+
 int stream_byteorder(stream *s)
 {
 	return s->byteorder;
@@ -539,168 +549,6 @@ static stream *open_stream( const char *filename, const char *flags )
 	return s;
 }
 
-stream *open_rstream( const char *filename )
-{
-	stream *s;
-  	char    ext[EXT_LEN];
-
-#ifdef STREAM_DEBUG
-	printf("open_rstream %s\n", filename);
-#endif
-  	get_extention(filename, ext);
-
-#ifdef HAVE_LIBZ
-  	if (!strcmp(ext,"gz" )){
-		return open_gzrstream( filename );
-	} else 
-#else
-  	if (!strcmp(ext,"gz" )){
-		s = create_stream(filename);
-		s->errnr = OPEN_ERROR;
-		return s;
-	} 
-#endif
-#ifdef HAVE_LIBBZ2
-	if (!strcmp(ext,"bz2" )){
-		return open_bzrstream( filename );
-	} else 
-#else
-	if (!strcmp(ext,"bz2" )){
-		s = create_stream(filename);
-		s->errnr = OPEN_ERROR;
-		return s;
-	} 
-#endif
-	{
-	  	s = open_stream( filename, "rb");
-		s->type = ST_BIN;
-		if (s->errnr == NO__ERROR)
-	   		fread( (void *) &s->byteorder, sizeof(short), 
-						1, (FILE*)s->stream_data.p);
-		return s;
-	}
-}
-stream *open_wstream( const char *filename )
-{
-	stream *s;
-  	char    ext[EXT_LEN];
-
-#ifdef STREAM_DEBUG
-	printf("open_wstream %s\n", filename);
-#endif
-  	get_extention(filename, ext);
-
-#ifdef HAVE_LIBZ
-  	if (!strcmp(ext,"gz" )){
-		return open_gzwstream( filename );
-	} else
-#else
-  	if (!strcmp(ext,"gz" )){
-		s = create_stream(filename);
-		s->errnr = OPEN_ERROR;
-		return s;
-	} 
-#endif
-#ifdef HAVE_LIBBZ2
-	if (!strcmp(ext,"bz2" )){
-		return open_bzwstream( filename );
-	} else 
-#else
-	if (!strcmp(ext,"bz2" )){
-		s = create_stream(filename);
-		s->errnr = OPEN_ERROR;
-		return s;
-	} 
-#endif
-	{
-		s = open_stream( filename, "wb");
-		s->access = ST_WRITE;
-		s->type = ST_BIN;
-		if (s->errnr == NO__ERROR)
-	   		fwrite( (void*)&s->byteorder, sizeof(short), 
-						1, (FILE*)s->stream_data.p);
-		return s;
-	}
-}
-stream *open_rastream( const char *filename )
-{
-	stream *s;
-  	char    ext[EXT_LEN];
-
-#ifdef STREAM_DEBUG
-	printf("open_rastream %s\n", filename);
-#endif
-  	get_extention(filename, ext);
-
-#ifdef HAVE_LIBZ
-  	if (!strcmp(ext,"gz" )){
-		return open_gzrastream( filename );
-	} else
-#else
-  	if (!strcmp(ext,"gz" )){
-		s = create_stream(filename);
-		s->errnr = OPEN_ERROR;
-		return s;
-	} 
-#endif
-#ifdef HAVE_LIBBZ2
-	if (!strcmp(ext,"bz2" )){
-		return open_bzrastream( filename );
-	} else 
-#else
-	if (!strcmp(ext,"bz2" )){
-		s = create_stream(filename);
-		s->errnr = OPEN_ERROR;
-		return s;
-	} 
-#endif
-	{
-		s = open_stream( filename, "r");
-		s->type = ST_ASCII;
-		return s;
-	}
-}
-stream *open_wastream( const char *filename )
-{
-	stream *s;
-  	char    ext[EXT_LEN];
-
-#ifdef STREAM_DEBUG
-	printf("open_wastream %s\n", filename);
-#endif
-  	get_extention(filename, ext);
-
-#ifdef HAVE_LIBZ
-  	if (!strcmp(ext,"gz" )){
-		return open_gzwastream( filename );
-	} else
-#else
-  	if (!strcmp(ext,"gz" )){
-		s = create_stream(filename);
-		s->errnr = OPEN_ERROR;
-		return s;
-	} 
-#endif
-#ifdef HAVE_LIBBZ2
-	if (!strcmp(ext,"bz2" )){
-		return open_bzwastream( filename );
-	} else 
-#else
-	if (!strcmp(ext,"bz2" )){
-		s = create_stream(filename);
-		s->errnr = OPEN_ERROR;
-		return s;
-	} 
-#endif
-	{
-		s = open_stream( filename, "w");
-		s->access = ST_WRITE;
-		s->type = ST_ASCII;
-		return s;
-	}
-}
-
-
 #ifdef HAVE_LIBZ
 static ssize_t stream_gzread( stream *s, void *buf, size_t elmsize, size_t cnt )
 {
@@ -753,14 +601,18 @@ stream *open_gzrstream( const char *filename )
 	   gzread( (gzFile*)s->stream_data.p, (void*)&s->byteorder, sizeof(short));
 	return s;
 }
-stream *open_gzwstream( const char *filename )
+stream *open_gzwstream_( const char *filename, const char *mode )
 {
-	stream *s = open_gzstream( filename, "wb");
+	stream *s = open_gzstream( filename, mode);
 	s->access = ST_WRITE;
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR)
 	   gzwrite( (gzFile*)s->stream_data.p, (void*)&s->byteorder, sizeof(short));
 	return s;
+}
+stream *open_gzwstream( const char *filename )
+{
+	return open_gzwstream_( filename, "wb" );
 }
 stream *open_gzrastream( const char *filename )
 {
@@ -768,12 +620,16 @@ stream *open_gzrastream( const char *filename )
 	s->type = ST_ASCII;
 	return s;
 }
-stream *open_gzwastream( const char *filename )
+stream *open_gzwastream_( const char *filename, const char *mode )
 {
-	stream *s = open_gzstream( filename, "wb");
+	stream *s = open_gzstream( filename, mode);
 	s->access = ST_WRITE;
 	s->type = ST_ASCII;
 	return s;
+}
+stream *open_gzwastream( const char *filename )
+{
+	return open_gzwastream_( filename, "wb"); 
 }
 #endif
 
@@ -829,29 +685,223 @@ stream *open_bzrstream( const char *filename )
 		(BZFILE*)s->stream_data.p, (void*)&s->byteorder, sizeof(short) );
 	return s;
 }
-stream *open_bzwstream( const char *filename )
+stream *open_bzwstream_( const char *filename, const char *mode )
 {
-	stream *s = open_bzstream( filename, "wb");
+	stream *s = open_bzstream( filename, mode);
 	s->access = ST_WRITE;
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR) BZ2_bzwrite( 
 		(BZFILE*)s->stream_data.p, (void*)&s->byteorder, sizeof(short) );
 	return s;
 }
+stream *open_bzwstream( const char *filename )
+{
+	return open_bzwstream_( filename, "wb" );
+}
+
 stream *open_bzrastream( const char *filename )
 {
 	stream *s = open_bzstream( filename, "rb");
 	s->type = ST_ASCII;
 	return s;
 }
-stream *open_bzwastream( const char *filename )
+stream *open_bzwastream_( const char *filename, const char *mode )
 {
-	stream *s = open_bzstream( filename, "wb");
+	stream *s = open_bzstream( filename, mode);
 	s->access = ST_WRITE;
 	s->type = ST_ASCII;
 	return s;
 }
+stream *open_bzwastream( const char *filename )
+{
+	return open_bzwastream_( filename, "wb" );
+}
 #endif
+
+stream *open_rstream( const char *filename )
+{
+	stream *s;
+  	char    ext[EXT_LEN];
+
+#ifdef STREAM_DEBUG
+	printf("open_rstream %s\n", filename);
+#endif
+  	get_extention(filename, ext);
+
+#ifdef HAVE_LIBZ
+  	if (!strcmp(ext,"gz" )){
+		return open_gzrstream( filename );
+	} else 
+#else
+  	if (!strcmp(ext,"gz" )){
+		s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return s;
+	} 
+#endif
+#ifdef HAVE_LIBBZ2
+	if (!strcmp(ext,"bz2" )){
+		return open_bzrstream( filename );
+	} else 
+#else
+	if (!strcmp(ext,"bz2" )){
+		s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return s;
+	} 
+#endif
+	{
+	  	s = open_stream( filename, "rb");
+		s->type = ST_BIN;
+		if (s->errnr == NO__ERROR)
+	   		fread( (void *) &s->byteorder, sizeof(short), 
+						1, (FILE*)s->stream_data.p);
+		return s;
+	}
+}
+stream *open_wstream_( const char *filename, char *mode )
+{
+	stream *s;
+  	char    ext[EXT_LEN];
+
+#ifdef STREAM_DEBUG
+	printf("open_wstream %s\n", filename);
+#endif
+  	get_extention(filename, ext);
+
+#ifdef HAVE_LIBZ
+  	if (!strcmp(ext,"gz" )){
+		return open_gzwstream_( filename, mode );
+	} else
+#else
+  	if (!strcmp(ext,"gz" )){
+		s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return s;
+	} 
+#endif
+#ifdef HAVE_LIBBZ2
+	if (!strcmp(ext,"bz2" )){
+		return open_bzwstream_( filename, mode );
+	} else 
+#else
+	if (!strcmp(ext,"bz2" )){
+		s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return s;
+	} 
+#endif
+	{
+		s = open_stream( filename, mode);
+		s->access = ST_WRITE;
+		s->type = ST_BIN;
+		if (s->errnr == NO__ERROR)
+	   		fwrite( (void*)&s->byteorder, sizeof(short), 
+						1, (FILE*)s->stream_data.p);
+		return s;
+	}
+}
+
+stream *open_wstream( const char *filename )
+{
+	return open_wstream_( filename, "wb" );
+}
+
+stream *append_wstream( const char *filename )
+{
+	return open_wstream_( filename, "ab" );
+}
+
+stream *open_rastream( const char *filename )
+{
+	stream *s;
+  	char    ext[EXT_LEN];
+
+#ifdef STREAM_DEBUG
+	printf("open_rastream %s\n", filename);
+#endif
+  	get_extention(filename, ext);
+
+#ifdef HAVE_LIBZ
+  	if (!strcmp(ext,"gz" )){
+		return open_gzrastream( filename );
+	} else
+#else
+  	if (!strcmp(ext,"gz" )){
+		s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return s;
+	} 
+#endif
+#ifdef HAVE_LIBBZ2
+	if (!strcmp(ext,"bz2" )){
+		return open_bzrastream( filename );
+	} else 
+#else
+	if (!strcmp(ext,"bz2" )){
+		s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return s;
+	} 
+#endif
+	{
+		s = open_stream( filename, "r");
+		s->type = ST_ASCII;
+		return s;
+	}
+}
+
+stream *open_wastream_( const char *filename, char *mode )
+{
+	stream *s;
+  	char    ext[EXT_LEN];
+
+#ifdef STREAM_DEBUG
+	printf("open_wastream %s\n", filename);
+#endif
+  	get_extention(filename, ext);
+
+#ifdef HAVE_LIBZ
+  	if (!strcmp(ext,"gz" )){
+		return open_gzwastream_( filename, mode );
+	} else
+#else
+  	if (!strcmp(ext,"gz" )){
+		s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return s;
+	} 
+#endif
+#ifdef HAVE_LIBBZ2
+	if (!strcmp(ext,"bz2" )){
+		return open_bzwastream_( filename, mode );
+	} else 
+#else
+	if (!strcmp(ext,"bz2" )){
+		s = create_stream(filename);
+		s->errnr = OPEN_ERROR;
+		return s;
+	} 
+#endif
+	{
+		s = open_stream( filename, mode);
+		s->access = ST_WRITE;
+		s->type = ST_ASCII;
+		return s;
+	}
+}
+
+stream *open_wastream( const char *filename )
+{
+	return open_wastream_(filename, "w");
+}
+
+stream *append_wastream( const char *filename )
+{
+	return open_wastream_(filename, "a");
+}
+
+
 
 static ssize_t socket_write( stream *s, void *buf, size_t elmsize, size_t cnt )
 {
