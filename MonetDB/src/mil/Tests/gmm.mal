@@ -1,0 +1,5595 @@
+# Mil compiler Version 1.0)
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+
+# Predefined code segment
+#
+##line 23 "../../../src/gmm/gmm.mx"
+use io;
+use alarm;
+use lock;
+use mmath;
+use xtables;
+use mgsl;
+use gmm;
+#  module(io,alarm,lock,mmath,xtables,mgsl,gmm);
+	Nthreads := 4;
+#  CONST Nthreads  := 4;
+	aa_a := newoid();
+	ba_a := int(aa_a);
+	sessionId := +("S",ba_a);
+#  CONST sessionId := "S" + int(newoid());
+#  VAR   randomseed;
+	randomseed := 40;
+#randomseed := 40;
+	ca_a := mem_maxsize(1000000000LL);
+#mem_maxsize(1000000000LL);
+	da_a := vm_maxsize(2000000000LL);
+#vm_maxsize( 2000000000LL);
+function init_modgmm():void;
+#  PROC init_modgmm():void := { 
+	curthreads:= threadcnt(0);
+#    VAR curthreads := threadcnt(0);
+	ea_a := +(Nthreads,1);
+barrier	fa_a:= <(curthreads,ea_a);
+#    IF (curthreads < (Nthreads + 1)) 
+	ga_a := -(Nthreads,curthreads);
+	ha_a := +(ga_a,1);
+	ia_a := threadcnt(ha_a);
+#	threadcnt( (Nthreads - curthreads) + 1 );
+end	fa_a;
+barrier	ja_a:= isnil(randomseed);
+	randomseed := time();
+#    IF (isnil(randomseed)) randomseed := time();
+end	ja_a;
+	ka_a := srand(randomseed);
+#    srand(randomseed);
+end function;
+#  }
+	la_a := init_modgmm();
+#  init_modgmm();
+#
+	GMMdebuglog:= fopen("/ufs/arjen/tmp/GMM.log","a");
+#  VAR GMMdebuglog := fopen("/ufs/arjen/tmp/GMM.log", "a");
+function debug(msg:str,msg:any[]):void;
+#  PROC debug( str msg, ..any.. ):void := {
+	ma_a := +(msg," @ %s\n");
+	na_a := +("GMM: ",ma_a);
+	oa_a := mil.getVarTempRange(2);
+	oa_a:= mil.bind("oa_a");
+	pa_a := ctime();
+	qa_a := trim(pa_a);
+	ra_a := fprintf(GMMdebuglog,na_a,oa_a,qa_a);
+#    fprintf( GMMdebuglog, "GMM: " + msg + " @ %s\n", $(2..), trim( ctime() ) );
+	sa_a := fflush(GMMdebuglog);
+#    fflush( GMMdebuglog );
+end function;
+#  }
+	sessionId:= mil.bind("sessionId");
+	ta_a := debug("Starting gmm.mil session %s",sessionId);
+#  debug("Starting gmm.mil session %s", sessionId);
+#
+function _x(x:bat[any,any::1]):bat[void,any::1];
+	ua_a:= reverse(x);
+	va_a:= mark(ua_a,nil);
+	wa_a := reverse(va_a);
+	return wa_a;
+end function;
+#  PROC _x(BAT[any,any::1] x):BAT[void,any::1] := {RETURN x.reverse.mark(nil).reverse;}
+function nx(x:bat[any,any::1]):bat[void,any::1];
+	xa_a := oid(0);
+	ya_a:= reverse(x);
+	ab_a:= mark(ya_a,xa_a);
+	bb_a := reverse(ab_a);
+	return bb_a;
+end function;
+#  PROC nx(BAT[any,any::1] x):BAT[void,any::1] := {RETURN x.reverse.mark(oid(0)).reverse;}
+function x_(x:bat[any::1,any]):bat[any::1,void];
+	cb_a := mark(x,nil);
+	return cb_a;
+end function;
+#  PROC x_(BAT[any::1,any] x):BAT[any::1,void] := {RETURN x.mark(nil);}
+function xn(x:bat[any::1,any]):bat[any::1,void];
+	db_a := oid(0);
+	eb_a := mark(x,db_a);
+	return eb_a;
+end function;
+#  PROC xn(BAT[any::1,any] x):BAT[any::1,void] := {RETURN x.mark(oid(0));}
+function Nseq(N:int):bat[void,int];
+#  PROC Nseq(int N):BAT[void,int] := {
+	i:= 0;
+	void:= mil.bind("void");
+	int:= mil.bind("int");
+	fb_a := oid(0);
+	gb_a:= new(void,int);
+	seq:= seqbase(gb_a,fb_a);
+#    VAR i := 0; VAR seq := new(void,int).seqbase(oid(0));
+barrier	hb_a:= true;
+	jb_a := <(i,N);
+barrier	ib_a:= jb_a;
+	kb_a := insert(seq,nil,i);
+	lb_a := :+=(i,1);
+redo	hb_a;
+end	ib_a;
+end	hb_a;
+#    WHILE (i<N) { seq.insert(nil,i); i:+=1; }
+	return seq;
+#    RETURN seq;
+end function;
+#  }
+function randseq(N:int):bat[void,int];
+#  PROC randseq(int N):BAT[void,int] := {
+	i:= 0;
+	void:= mil.bind("void");
+	int:= mil.bind("int");
+	mb_a := oid(0);
+	nb_a:= new(void,int);
+	seq:= seqbase(nb_a,mb_a);
+#    VAR i := 0; VAR seq := new(void,int).seqbase(oid(0));
+barrier	ob_a:= true;
+	qb_a := <(i,N);
+barrier	pb_a:= qb_a;
+	rb_a := rand();
+	sb_a := insert(seq,nil,rb_a);
+	tb_a := :+=(i,1);
+redo	ob_a;
+end	pb_a;
+end	ob_a;
+#    WHILE (i<N) { seq.insert(nil,rand()); i:+=1; }
+	return seq;
+#    RETURN seq;
+end function;
+#  }
+#
+#  # casting bats of bats should have worked with [dbl] but doesn't -- BUG!
+function conv2sht(b:bat[any::1,any]):bat[any::1,sht];
+	ub_a := mil.multicast("sht",b);
+	return ub_a;
+end function;
+#  PROC conv2sht(BAT[any::1,any] b):BAT[any::1,sht] := {RETURN [sht](b);}
+function conv2flt(b:bat[any::1,any]):bat[any::1,flt];
+	vb_a := mil.multicast("flt",b);
+	return vb_a;
+end function;
+#  PROC conv2flt(BAT[any::1,any] b):BAT[any::1,flt] := {RETURN [flt](b);}
+function conv2dbl(b:bat[any::1,any]):bat[any::1,dbl];
+	wb_a := mil.multicast("dbl",b);
+	return wb_a;
+end function;
+#  PROC conv2dbl(BAT[any::1,any] b):BAT[any::1,dbl] := {RETURN [dbl](b);}
+#
+function sqrt(x:flt):dbl;
+	xb_a := dbl(x);
+	yb_a := sqrt(xb_a);
+	return yb_a;
+end function;
+#  PROC sqrt(flt x):dbl := {RETURN sqrt(dbl(x));}
+function sqrt_multicast(x:bat[any::1,flt]):bat[any::1,dbl];
+	ac_a := mil.multicast("dbl",x);
+	bc_a := mil.multicast("sqrt",ac_a);
+	return bc_a;
+end function;
+#  PROC [sqrt](BAT[any::1,flt] x):BAT[any::1,dbl] := {RETURN [sqrt]([dbl](x));}
+function log(x:flt):dbl;
+	cc_a := dbl(x);
+	dc_a := log(cc_a);
+	return dc_a;
+end function;
+#  PROC log(flt x):dbl := {RETURN log(dbl(x));}
+function log_multicast(x:bat[any::1,flt]):bat[any::1,dbl];
+	ec_a := mil.multicast("dbl",x);
+	fc_a := mil.multicast("log",ec_a);
+	return fc_a;
+end function;
+#  PROC [log](BAT[any::1,flt] x):BAT[any::1,dbl] := {RETURN [log]([dbl](x));}
+#
+#
+##line 77 "../../../src/gmm/gmm.mx"
+#  # circumvent parsing problems with [[op]](bat[bat],bat[bat])
+function nestedop(op:str, x:bat[any::1,any], y:bat[any::1,any]):bat[any::1,any];
+#  PROC nestedop(str op, bat[any::1,any] x, bat[any::1,any] y):BAT[any::1,any] := {
+	gc_a := mil.multicast_deref(op,x,y);
+	return gc_a;
+#    RETURN [* op](x, y); 
+end function;
+#  }
+function nestedop(op:str, x:bat[any::1,any], y:bat[any::1,any], z:any):bat[any::1,any];
+#  PROC nestedop(str op, bat[any::1,any] x, bat[any::1,any] y, any z):BAT[any::1,any] := 
+#  {
+	hc_a := mil.multicast_deref(op,x,y,z);
+	return hc_a;
+#    RETURN [* op](x, y, z); 
+end function;
+#  }
+function nestedop(op:str, x:bat[any::1,any::2]):bat[any::1,any::2];
+#  PROC nestedop(str op, bat[any::1,any::2] x):BAT[any::1,any::2] := {
+	ic_a := mil.multicast_deref(op,x);
+	return ic_a;
+#    RETURN [* op](x); 
+end function;
+#  }
+#
+function square(x:bat[any::1,any::2]):bat[any::1,any::2];
+	jc_a := mil.multicast("*",x,x);
+	return jc_a;
+end function;
+#  PROC square(bat[any::1,any::2] x):BAT[any::1,any::2] := {RETURN [*](x, x );}
+#
+#  #  post@batloop{
+#  #    VAR p := $t;
+#  #    p.access(BAT_WRITE);
+#  #    [:/=](p, s);
+#  #    p.access(BAT_READ);
+#  #  }
+#
+#
+#
+##line 392 "../../../src/gmm/gmm.mx"
+	N := 8;
+#  CONST N := 8;
+	C := 8;
+#  CONST C := 8;
+#
+	cseq:= Nseq(C);
+#  VAR cseq := Nseq( C );
+	nseq:= Nseq(N);
+#  VAR nseq := Nseq( N );
+#
+#
+##line 455 "../../../src/gmm/gmm.mx"
+##VAR dict := new( str, str );
+##dict.rename(sessionId + "dict");
+#
+#
+##line 466 "../../../src/gmm/gmm.mx"
+use enum;
+#  module(enum);
+function init_clustertype():int;
+#  PROC init_clustertype(): int := {
+#    VAR tc;
+	kc_a:= view_bbp_name();
+	lc_a:= reverse(kc_a);
+barrier	mc_a:= exist(lc_a,"TCluster");
+#    IF( view_bbp_name().reverse.exist("TCluster" ) ) {
+	tc := enum_load("TCluster");
+#      tc := enum_load( "TCluster" );
+end	mc_a;
+barrier	nc_a:= not(mc_a);
+#    } ELSE {
+	tc := enum_create("TCluster",cseq);
+#      tc := enum_create( "TCluster", cseq );
+end	nc_a;
+#    }
+	return tc;
+#    RETURN tc;
+end function;
+#  }
+function destroy_clustertype():void;
+#  PROC destroy_clustertype():void := {
+	TCluster:= mil.bind("TCluster");
+	oc_a := enum_drop(TCluster);
+#    enum_drop( TCluster );
+	pc_a:= mil.bat("TCluster");
+	qc_a := persists(pc_a,0);
+#    bat("TCluster").persists( false );
+end function;
+#  }
+	TCluster:= init_clustertype();
+#  VAR TCluster := init_clustertype();
+	cseq:= mil.bind("cseq");
+	cseq := mil.multicast("encode",TCluster,cseq);
+#  cseq := [encode](TCluster,cseq);
+#
+#
+##line 499 "../../../src/gmm/gmm.mx"
+function coeffName(i:int):str;
+	rc_a := str(i);
+	sc_a := +("Icoeff_",rc_a);
+	return sc_a;
+end function;
+#  PROC coeffName(int i): str := { RETURN "Icoeff_" + str(i); }
+function newCollection(cname:str, Nimg:int):bat[str,str];
+#  PROC newCollection( str cname, int Nimg ): BAT[str,bat] := {
+	str:= mil.bind("str");
+	tc_a:= new(str,str);
+	res:= rename(tc_a,cname);
+#    VAR res := new(str,bat).rename(cname);
+	void:= mil.bind("void");
+	uc_a := oid(0);
+	vc_a:= new(void,str,Nimg);
+	wc_a := +(cname,"_I");
+	xc_a:= seqbase(vc_a,uc_a);
+	I:= rename(xc_a,wc_a);
+#    VAR I := new( void, str, Nimg ).seqbase(oid(0)).rename( cname + "_I" );
+	oid:= mil.bind("oid");
+	yc_a:= new(oid,void,Nimg);
+	ad_a := oid(0);
+	bd_a:= reverse(yc_a);
+	cd_a:= seqbase(bd_a,ad_a);
+	dd_a := +(cname,"_Ib");
+	ed_a:= reverse(cd_a);
+	Ib:= rename(ed_a,dd_a);
+#    VAR Ib := new( oid, void, Nimg ).reverse.seqbase(oid(0)).reverse.rename( cname + "_Ib" );
+	int:= mil.bind("int");
+	fd_a := oid(0);
+	gd_a:= new(void,int,Nimg);
+	hd_a := +(cname,"_Ix");
+	id_a:= seqbase(gd_a,fd_a);
+	Ix:= rename(id_a,hd_a);
+#    VAR Ix := new( void, int, Nimg ).seqbase(oid(0)).rename( cname + "_Ix" );
+	jd_a := oid(0);
+	kd_a:= new(void,int,Nimg);
+	ld_a := +(cname,"_Iy");
+	md_a:= seqbase(kd_a,jd_a);
+	Iy:= rename(md_a,ld_a);
+#    VAR Iy := new( void, int, Nimg ).seqbase(oid(0)).rename( cname + "_Iy" );
+	nd_a := insert(res,"I",I);
+#    res.insert( "I", I );
+	od_a := insert(res,"Ib",Ib);
+#    res.insert( "Ib", Ib );
+	pd_a := insert(res,"Ix",Ix);
+#    res.insert( "Ix", Ix );
+	qd_a := insert(res,"Iy",Iy);
+#    res.insert( "Iy", Iy );
+	N:= mil.bind("N");
+	rd_a := +(cname,"_Icoeffs");
+	sd_a:= new(int,int,N);
+	coeffs:= rename(sd_a,rd_a);
+#    VAR coeffs := new(int,bat,N).rename(cname + "_Icoeffs" );
+	i:= 0;
+#    VAR i := 0;
+barrier	td_a:= true;
+	vd_a := <(i,N);
+barrier	ud_a:= vd_a;
+#    WHILE (i < N) {
+	sht:= mil.bind("sht");
+	wd_a := oid(0);
+	xd_a:= new(void,sht,Nimg);
+	yd_a := coeffName(i);
+	ae_a := +("_",yd_a);
+	be_a := +(cname,ae_a);
+	ce_a:= seqbase(xd_a,wd_a);
+	x_i:= rename(ce_a,be_a);
+#      VAR x_i := new(void,sht,Nimg).seqbase(oid(0)).rename( cname + "_" + coeffName(i) );
+	de_a := insert(coeffs,i,x_i);
+#      coeffs.insert( i, x_i );
+	x_i := nil;
+#      x_i := nil;
+	ee_a := :+=(i,1);
+#      i :+= 1;
+redo	td_a;
+end	ud_a;
+end	td_a;
+#    }
+	fe_a := insert(res,"Coeffs",coeffs);
+#    res.insert( "Coeffs", coeffs );
+	BAT_READ:= mil.bind("BAT_READ");
+	ge_a := access(res,BAT_READ);
+#    res.access( BAT_READ );
+	return res;
+#    RETURN res;
+end function;
+#  }
+function newCollection(cname:str):bat[str,str];
+#  PROC newCollection( str cname ): BAT[str,bat] :=
+#  {
+	he_a := newCollection(cname,1);
+	return he_a;
+#    RETURN newCollection(cname, 1);
+end function;
+#  }
+#
+#
+##line 546 "../../../src/gmm/gmm.mx"
+function paramName(p:str, i:int):str;
+#PROC paramName(str p,int i): str := { 
+	ie_a := str(i);
+	je_a := +("_",ie_a);
+	ke_a := +(p,je_a);
+	return ke_a;
+#  RETURN p + "_" + str(i); 
+end function;
+#}
+function renameGMM(model:bat[str,str], mname:str):void;
+#PROC renameGMM( bat[str,bat] model, str mname ):void := {
+	le_a := rename(model,mname);
+#  model.rename(mname);
+	me_a_cursor := 0:lng;
+barrier	me_a:= batloop(model,me_a_cursor);
+	me_aH := fetchHead(model,me_a_cursor);
+	me_aT := fetchTail(model,me_a_cursor);
+#  model@batloop(){
+	me_aT:= mil.bind("me_aT");
+	me_aH:= mil.bind("me_aH");
+	ne_a := +("_",me_aH);
+	oe_a := +(mname,ne_a);
+	pe_a := rename(me_aT,oe_a);
+#    $t.rename(mname + "_" + $h);
+redo	me_a;
+end	me_a;
+#  }
+	qe_a := find(model,"Mean");
+	re_a_cursor := 0:lng;
+barrier	re_a:= batloop(qe_a,re_a_cursor);
+	re_aH := fetchHead(qe_a,re_a_cursor);
+	re_aT := fetchTail(qe_a,re_a_cursor);
+#  model.find("Mean")@batloop(){
+	re_aT:= mil.bind("re_aT");
+	re_aH:= mil.bind("re_aH");
+	se_a := str(re_aH);
+	te_a := +("_Mean_",se_a);
+	ue_a := +(mname,te_a);
+	ve_a := rename(re_aT,ue_a);
+#    $t.rename(mname + "_Mean_" + str($h));
+redo	re_a;
+end	re_a;
+#  }
+	we_a := find(model,"Covar");
+	xe_a_cursor := 0:lng;
+barrier	xe_a:= batloop(we_a,xe_a_cursor);
+	xe_aH := fetchHead(we_a,xe_a_cursor);
+	xe_aT := fetchTail(we_a,xe_a_cursor);
+#  model.find("Covar")@batloop(){
+	xe_aT:= mil.bind("xe_aT");
+	xe_aH:= mil.bind("xe_aH");
+	ye_a := str(xe_aH);
+	af_a := +("_Covar_",ye_a);
+	bf_a := +(mname,af_a);
+	cf_a := rename(xe_aT,bf_a);
+#    $t.rename(mname + "_Covar_" + str($h));
+redo	xe_a;
+end	xe_a;
+#  }
+end function;
+#}
+function newGMM(Nimg:int):bat[str,str];
+#PROC newGMM( int Nimg ): BAT[str,bat] := {
+	str:= mil.bind("str");
+	model:= new(str,str);
+#  VAR model := new(str,bat);
+	oid:= mil.bind("oid");
+	void:= mil.bind("void");
+	C:= mil.bind("C");
+	df_a := *(Nimg,C);
+	mImgIdx:= new(oid,void,df_a);
+#  VAR mImgIdx := new(oid,void,Nimg * C);
+	ef_a := oid(0);
+	ff_a:= reverse(mImgIdx);
+	gf_a := seqbase(ff_a,ef_a);
+#  mImgIdx.reverse.seqbase(oid(0));
+	BAT_APPEND:= mil.bind("BAT_APPEND");
+	hf_a := access(mImgIdx,BAT_APPEND);
+#  mImgIdx.access( BAT_APPEND );
+	if_a := insert(model,"mImgIdx",mImgIdx);
+#  model.insert("mImgIdx", mImgIdx);
+	TCluster:= mil.bind("TCluster");
+	jf_a := *(Nimg,C);
+	mCIdx:= new(TCluster,void,jf_a);
+#  VAR mCIdx := new(TCluster,void,Nimg * C);
+	kf_a := oid(0);
+	lf_a:= reverse(mCIdx);
+	mf_a := seqbase(lf_a,kf_a);
+#  mCIdx.reverse.seqbase(oid(0));
+	nf_a := access(mCIdx,BAT_APPEND);
+#  mCIdx.access( BAT_APPEND );
+	of_a := insert(model,"mCIdx",mCIdx);
+#  model.insert("mCIdx", mCIdx);
+	flt:= mil.bind("flt");
+	pf_a := *(Nimg,C);
+	qf_a := oid(0);
+	rf_a:= new(void,flt,pf_a);
+	prior:= seqbase(rf_a,qf_a);
+#  VAR prior := new(void,flt,Nimg * C).seqbase(oid(0));
+	sf_a := access(prior,BAT_APPEND);
+#  prior.access( BAT_APPEND );
+	tf_a := insert(model,"Prior",prior);
+#  model.insert("Prior", prior);
+	int:= mil.bind("int");
+	N:= mil.bind("N");
+	mean:= new(int,int,N);
+#  VAR mean := new(int,bat,N);
+	covar:= new(int,int,N);
+#  VAR covar := new(int,bat,N);
+	i:= 0;
+#  VAR i := 0;
+barrier	uf_a:= true;
+	wf_a := <(i,N);
+barrier	vf_a:= wf_a;
+#  WHILE (i < N) {
+	xf_a := *(Nimg,C);
+	yf_a := oid(0);
+	ag_a:= new(void,flt,xf_a);
+	mean_i:= seqbase(ag_a,yf_a);
+#    VAR mean_i := new(void,flt,Nimg*C).seqbase(oid(0));
+	bg_a := *(Nimg,C);
+	cg_a := oid(0);
+	dg_a:= new(void,flt,bg_a);
+	variance_i:= seqbase(dg_a,cg_a);
+#    VAR variance_i := new(void,flt,Nimg*C).seqbase(oid(0));
+	eg_a := access(mean_i,BAT_APPEND);
+#    mean_i.access( BAT_APPEND );
+	fg_a := access(variance_i,BAT_APPEND);
+#    variance_i.access( BAT_APPEND );
+	gg_a := insert(mean,i,mean_i);
+#    mean.insert( i, mean_i );
+	hg_a := insert(covar,i,variance_i);
+#    covar.insert( i, variance_i );
+	mean_i := nil;
+#    mean_i := nil;
+	variance_i := nil;
+#    variance_i := nil;
+	ig_a := :+=(i,1);
+#    i :+= 1;
+redo	uf_a;
+end	vf_a;
+end	uf_a;
+#  }
+	BAT_READ:= mil.bind("BAT_READ");
+	jg_a := access(mean,BAT_READ);
+#  mean.access( BAT_READ );
+	kg_a := access(covar,BAT_READ);
+#  covar.access( BAT_READ );
+	lg_a := insert(model,"Mean",mean);
+#  model.insert( "Mean", mean );
+	mg_a := insert(model,"Covar",covar);
+#  model.insert( "Covar", covar );
+	ng_a := *(Nimg,C);
+	og_a := oid(0);
+	pg_a:= new(void,flt,ng_a);
+	init_variances:= seqbase(pg_a,og_a);
+#  VAR init_variances := new(void,flt,Nimg * C).seqbase(oid(0));
+	qg_a := access(init_variances,BAT_APPEND);
+#  init_variances.access( BAT_APPEND );
+	rg_a := insert(model,"init_variances",init_variances);
+#  model.insert("init_variances", init_variances);
+	sg_a := access(model,BAT_READ);
+#  model.access( BAT_READ );
+	return model;
+#  RETURN model;
+end function;
+#}
+function newGMM(mname:str, Nimg:int):bat[str,str];
+#PROC newGMM( str mname, int Nimg ): BAT[str,bat] := {
+	gmm:= newGMM(Nimg);
+#  VAR gmm := newGMM(Nimg);
+	tg_a := renameGMM(gmm,mname);
+#  renameGMM(gmm, mname);
+	return gmm;
+#  RETURN gmm;
+end function;
+#}
+function newGMM(mname:str):bat[str,str];
+#PROC newGMM( str mname ): BAT[str,bat] := {
+	ug_a := newGMM(mname,1);
+	return ug_a;
+#  RETURN newGMM( mname, 1 );
+end function;
+#}
+#
+#
+##line 669 "../../../src/gmm/gmm.mx"
+function newImage(dict:bat[str,str], theUrl:str):oid;
+#  PROC newImage( BAT[str,str] dict, str theUrl ): oid := {
+#    VAR theImgId;
+	vg_a := find(dict,"I");
+	wg_a:= mil.bat(vg_a);
+	xg_a := insert(wg_a,nil,theUrl);
+#    bat(dict.find("I")).insert( nil, theUrl );
+	I:= mil.bind("I");
+	yg_a := max(I);
+	ah_a:= reverse(I);
+	theImgId := fetch(ah_a,yg_a);
+#    theImgId := I.reverse.fetch( I.max );
+	return theImgId;
+#    RETURN theImgId;
+end function;
+#  }
+#
+#
+#
+##line 1264 "../../../src/gmm/gmm.mx"
+	Niter := 100;
+#  CONST Niter     := 100;
+	MIN_COVAR := 0.005;
+#  CONST MIN_COVAR := 0.005;           # 0.005LL;
+	MIN_S := 1.0E-300LL;
+#  CONST MIN_S     := 1.0E-300LL;
+	COVAR_INIT_FRACTION := 0.1;
+#  CONST COVAR_INIT_FRACTION := 0.1;   # 1.0LL/10;
+#
+#  VAR olde;
+#  VAR loglikelihood;
+#  VAR EM_model;
+#  VAR EM_coll;
+#
+#
+#
+##line 1330 "../../../src/gmm/gmm.mx"
+#
+#
+##line 1431 "../../../src/gmm/gmm.mx"
+#
+#
+##line 1494 "../../../src/gmm/gmm.mx"
+#    # PROC EM(int Niter, bat[str,bat] EM_coll, bat[str,bat] EM_model):bat[str,bat]
+function EM_globalmodel(Niter:int):bat[str,str];
+#  PROC EM_globalmodel(int Niter): bat[str,bat] := {
+#    
+##line 1279 "../../../src/gmm/gmm.mx"
+	gmm:= EM_model;
+#  VAR gmm      := EM_model;
+#
+	bh_a:= find(EM_coll,"I");
+	NImg:= count(bh_a);
+#  VAR NImg     := EM_coll.find("I").count;
+	Ib:= find(EM_coll,"Ib");
+#  VAR Ib       := EM_coll.find("Ib");
+	coeffs:= find(EM_coll,"Coeffs");
+#  VAR coeffs   := EM_coll.find("Coeffs");
+#
+	sessionId:= mil.bind("sessionId");
+	ch_a := +(sessionId,"_final");
+	dh_a := +("gmm",ch_a);
+	gmmfinal:= newGMM(dh_a,NImg);
+#  VAR gmmfinal := newGMM("gmm" + sessionId + "_final", NImg);
+#  
+##line 655 "../../../src/gmm/gmm.mx"
+	eh_a := find(gmmfinal,"init_variances");
+	BAT_APPEND:= mil.bind("BAT_APPEND");
+	fh_a := access(eh_a,BAT_APPEND);
+#  access( gmmfinal.find("init_variances"), BAT_APPEND );
+	gh_a := find(gmmfinal,"Prior");
+	hh_a := access(gh_a,BAT_APPEND);
+#  access( gmmfinal.find("Prior"), BAT_APPEND );
+	ih_a := find(gmmfinal,"mImgIdx");
+	jh_a := access(ih_a,BAT_APPEND);
+#  access( gmmfinal.find("mImgIdx"), BAT_APPEND );
+	kh_a := find(gmmfinal,"mCIdx");
+	lh_a := access(kh_a,BAT_APPEND);
+#  access( gmmfinal.find("mCIdx"), BAT_APPEND );
+	mh_a := find(gmmfinal,"Mean");
+	nh_a_cursor := 0:lng;
+barrier	nh_a:= batloop(mh_a,nh_a_cursor);
+	nh_aH := fetchHead(mh_a,nh_a_cursor);
+	nh_aT := fetchTail(mh_a,nh_a_cursor);
+	nh_aT:= mil.bind("nh_aT");
+	oh_a := access(nh_aT,BAT_APPEND);
+redo	nh_a;
+end	nh_a;
+#  gmmfinal.find("Mean")@batloop{  access($t, BAT_APPEND); }
+	ph_a := find(gmmfinal,"Covar");
+	qh_a_cursor := 0:lng;
+barrier	qh_a:= batloop(ph_a,qh_a_cursor);
+	qh_aH := fetchHead(ph_a,qh_a_cursor);
+	qh_aT := fetchTail(ph_a,qh_a_cursor);
+	qh_aT:= mil.bind("qh_aT");
+	rh_a := access(qh_aT,BAT_APPEND);
+redo	qh_a;
+end	qh_a;
+#  gmmfinal.find("Covar")@batloop{ access($t, BAT_APPEND); }
+#
+#
+##line 1286 "../../../src/gmm/gmm.mx"
+#
+#      # @@modelop(gmmfinal,persists,true)@
+#  
+##line 655 "../../../src/gmm/gmm.mx"
+	sh_a := find(gmmfinal,"init_variances");
+	STORE_MEM:= mil.bind("STORE_MEM");
+	th_a := mmap(sh_a,STORE_MEM);
+#  mmap( gmmfinal.find("init_variances"), STORE_MEM );
+	uh_a := find(gmmfinal,"Prior");
+	vh_a := mmap(uh_a,STORE_MEM);
+#  mmap( gmmfinal.find("Prior"), STORE_MEM );
+	wh_a := find(gmmfinal,"mImgIdx");
+	xh_a := mmap(wh_a,STORE_MEM);
+#  mmap( gmmfinal.find("mImgIdx"), STORE_MEM );
+	yh_a := find(gmmfinal,"mCIdx");
+	ai_a := mmap(yh_a,STORE_MEM);
+#  mmap( gmmfinal.find("mCIdx"), STORE_MEM );
+	bi_a := find(gmmfinal,"Mean");
+	ci_a_cursor := 0:lng;
+barrier	ci_a:= batloop(bi_a,ci_a_cursor);
+	ci_aH := fetchHead(bi_a,ci_a_cursor);
+	ci_aT := fetchTail(bi_a,ci_a_cursor);
+	ci_aT:= mil.bind("ci_aT");
+	di_a := mmap(ci_aT,STORE_MEM);
+redo	ci_a;
+end	ci_a;
+#  gmmfinal.find("Mean")@batloop{  mmap($t, STORE_MEM); }
+	ei_a := find(gmmfinal,"Covar");
+	fi_a_cursor := 0:lng;
+barrier	fi_a:= batloop(ei_a,fi_a_cursor);
+	fi_aH := fetchHead(ei_a,fi_a_cursor);
+	fi_aT := fetchTail(ei_a,fi_a_cursor);
+	fi_aT:= mil.bind("fi_aT");
+	gi_a := mmap(fi_aT,STORE_MEM);
+redo	fi_a;
+end	fi_a;
+#  gmmfinal.find("Covar")@batloop{ mmap($t, STORE_MEM); }
+#
+#
+##line 1288 "../../../src/gmm/gmm.mx"
+#
+#
+	mImgIdx:= find(gmm,"mImgIdx");
+#  VAR mImgIdx  := gmm.find("mImgIdx");
+	mCIdx:= find(gmm,"mCIdx");
+#  VAR mCIdx    := gmm.find("mCIdx");
+	hi_a := reverse(Ib);
+	xcIdx:= join(hi_a,mImgIdx);
+#  VAR xcIdx    := join(Ib.reverse, mImgIdx);
+	ii_a:= xn(xcIdx);
+	xIdx:= reverse(ii_a);
+#  VAR xIdx     := xn(xcIdx).reverse;
+	cIdx:= nx(xcIdx);
+#  VAR cIdx     := nx(xcIdx);
+#
+#
+##line 1496 "../../../src/gmm/gmm.mx"
+#
+	iter:= 1;
+#    VAR iter := 1;
+barrier	ji_a:= true;
+	li_a := <(iter,Niter);
+barrier	ki_a:= li_a;
+#    WHILE (iter < Niter) {
+#      
+##line 1349 "../../../src/gmm/gmm.mx"
+#  
+##line 1331 "../../../src/gmm/gmm.mx"
+#  
+##line 1305 "../../../src/gmm/gmm.mx"
+	covar:= find(gmm,"Covar");
+#  VAR covar    := gmm.find("Covar");
+	covar := mil.multicast("nestedop","dbl",covar);
+#                  covar := [nestedop]( "dbl", covar);
+#  
+##line 107 "../../../src/gmm/gmm.mx"
+	mi_a := htype(covar);
+	ni_a := count(covar);
+	ivariances:= new(mi_a,htype,ni_a);
+#  VAR ivariances := new(covar.htype,bat,covar.count);
+#  {
+	ivariances_lock:= lock_create();
+#    VAR ivariances_lock := lock_create();
+	Nthreads:= mil.bind("Nthreads");
+	oi_a_cursor := 0:lng;
+barrier	oi_a:= batloop(Nthreads,oi_a_cursor);
+	oi_aH := fetchHead(Nthreads,oi_a_cursor);
+	oi_aT := fetchTail(Nthreads,oi_a_cursor);
+#    covar@ [Nthreads]batloop(){
+#      VAR _ivariances_result := [inv]($t
+	oi_aT:= mil.bind("oi_aT");
+	_ivariances_result:= mil.multicast("inv",oi_aT);
+#	   );
+	pi_a := lock_set(ivariances_lock);
+#      lock_set(ivariances_lock);
+	oi_aH:= mil.bind("oi_aH");
+	qi_a := insert(ivariances,oi_aH,_ivariances_result);
+#      ivariances.insert($h,_ivariances_result);
+	ri_a := lock_unset(ivariances_lock);
+#      lock_unset(ivariances_lock);
+redo	oi_a;
+end	oi_a;
+#    }
+	si_a := lock_destroy(ivariances_lock);
+#    lock_destroy(ivariances_lock);
+#  }
+#
+#
+##line 1307 "../../../src/gmm/gmm.mx"
+#
+	covar := nil;
+#                  covar  := nil;
+#  
+##line 130 "../../../src/gmm/gmm.mx"
+#VAR isqrtdet;
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+##line 167 "../../../src/gmm/gmm.mx"
+#  {
+	isqrtdet_a:= fetch(ivariances,0);
+	isqrtdet_e:= fetch(ivariances,4);
+#    VAR isqrtdet_a := ivariances.fetch(0);    VAR isqrtdet_e := ivariances.fetch(4);
+	isqrtdet_b:= fetch(ivariances,1);
+	isqrtdet_f:= fetch(ivariances,5);
+#    VAR isqrtdet_b := ivariances.fetch(1);    VAR isqrtdet_f := ivariances.fetch(5);
+	isqrtdet_c:= fetch(ivariances,2);
+	isqrtdet_g:= fetch(ivariances,6);
+#    VAR isqrtdet_c := ivariances.fetch(2);    VAR isqrtdet_g := ivariances.fetch(6);
+	isqrtdet_d:= fetch(ivariances,3);
+	isqrtdet_h:= fetch(ivariances,7);
+#    VAR isqrtdet_d := ivariances.fetch(3);    VAR isqrtdet_h := ivariances.fetch(7);
+#    
+##line 157 "../../../src/gmm/gmm.mx"
+#    # perform four operations isqrtdet_a in parallel
+#    {
+#      {|
+barrier	ti_a:= true;
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations isqrtdet_a in parallel
+#      {
+#	{|
+barrier	ui_a:= true;
+	BAT_WRITE:= mil.bind("BAT_WRITE");
+	vi_a:= mil.multicast("*",isqrtdet_a,isqrtdet_b);
+	isqrtdet_a := access(vi_a,BAT_WRITE);
+#	   isqrtdet_a := [*](isqrtdet_a,isqrtdet_b).access(BAT_WRITE);
+	isqrtdet_c := mil.multicast("*",isqrtdet_c,isqrtdet_d);
+#	   isqrtdet_c := [*](isqrtdet_c,isqrtdet_d);
+end	ui_a;
+#	 |}
+	wi_a := mil.multicast(":*=",isqrtdet_a,isqrtdet_c);
+#	 [:*=](isqrtdet_a,isqrtdet_c);
+#      }
+#
+#
+##line 160 "../../../src/gmm/gmm.mx"
+#
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations isqrtdet_e in parallel
+#      {
+#	{|
+barrier	xi_a:= true;
+	yi_a:= mil.multicast("*",isqrtdet_e,isqrtdet_f);
+	isqrtdet_e := access(yi_a,BAT_WRITE);
+#	   isqrtdet_e := [*](isqrtdet_e,isqrtdet_f).access(BAT_WRITE);
+	isqrtdet_g := mil.multicast("*",isqrtdet_g,isqrtdet_h);
+#	   isqrtdet_g := [*](isqrtdet_g,isqrtdet_h);
+end	xi_a;
+#	 |}
+	aj_a := mil.multicast(":*=",isqrtdet_e,isqrtdet_g);
+#	 [:*=](isqrtdet_e,isqrtdet_g);
+#      }
+#
+#
+##line 161 "../../../src/gmm/gmm.mx"
+#
+end	ti_a;
+#       |}
+	bj_a := mil.multicast(":*=",isqrtdet_a,isqrtdet_e);
+#       [:*=](isqrtdet_a,isqrtdet_e);      
+#    }
+#
+#
+##line 172 "../../../src/gmm/gmm.mx"
+#
+	isqrtdet := isqrtdet_a;
+#    isqrtdet := isqrtdet_a;
+#  }
+#
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 131 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1309 "../../../src/gmm/gmm.mx"
+#
+	isqrtdet := mil.multicast("sqrt",isqrtdet);
+#  isqrtdet     := [sqrt](isqrtdet);
+#  
+##line 1227 "../../../src/gmm/gmm.mx"
+#VAR xs;
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+##line 1240 "../../../src/gmm/gmm.mx"
+	cj_a := htype(coeffs);
+	dj_a := count(coeffs);
+	xs := new(cj_a,htype,dj_a);
+#  xs := new(coeffs.htype,bat,coeffs.count);
+	xs_lock:= lock_create();
+#  VAR xs_lock := lock_create();
+	ej_a_cursor := 0:lng;
+barrier	ej_a:= batloop(Nthreads,ej_a_cursor);
+	ej_aH := fetchHead(Nthreads,ej_a_cursor);
+	ej_aT := fetchTail(Nthreads,ej_a_cursor);
+#  coeffs@ [Nthreads]batloop(){
+	ej_aT:= mil.bind("ej_aT");
+	_xs_result:= join(xIdx,ej_aT);
+#    VAR _xs_result := join( xIdx, $t );
+	fj_a := lock_set(xs_lock);
+#    lock_set(xs_lock);
+	ej_aH:= mil.bind("ej_aH");
+	gj_a := insert(xs,ej_aH,_xs_result);
+#    xs.insert( $h, _xs_result );
+	hj_a := lock_unset(xs_lock);
+#    lock_unset(xs_lock);
+redo	ej_a;
+end	ej_a;
+#  }
+	ij_a := lock_destroy(xs_lock);
+#  lock_destroy(xs_lock);
+#
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1228 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1311 "../../../src/gmm/gmm.mx"
+#
+	jj_a := find(gmm,"Mean");
+	means:= mil.multicast("join",cIdx,jj_a);
+#  VAR means    := [join]( const cIdx, gmm.find("Mean") );
+	ivars:= mil.multicast("join",cIdx,ivariances);
+#  VAR ivars    := [join]( const cIdx, ivariances );
+	diffs:= mil.multicast("nestedop","dmahalanobis_i_diagcov",xs,means,ivars);
+#  VAR diffs    := [nestedop]("dmahalanobis_i_diagcov",xs,means,ivars);
+#  
+##line 130 "../../../src/gmm/gmm.mx"
+#VAR dists;
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+##line 167 "../../../src/gmm/gmm.mx"
+#  {
+	dists_a:= fetch(diffs,0);
+	dists_e:= fetch(diffs,4);
+#    VAR dists_a := diffs.fetch(0);    VAR dists_e := diffs.fetch(4);
+	dists_b:= fetch(diffs,1);
+	dists_f:= fetch(diffs,5);
+#    VAR dists_b := diffs.fetch(1);    VAR dists_f := diffs.fetch(5);
+	dists_c:= fetch(diffs,2);
+	dists_g:= fetch(diffs,6);
+#    VAR dists_c := diffs.fetch(2);    VAR dists_g := diffs.fetch(6);
+	dists_d:= fetch(diffs,3);
+	dists_h:= fetch(diffs,7);
+#    VAR dists_d := diffs.fetch(3);    VAR dists_h := diffs.fetch(7);
+#    
+##line 157 "../../../src/gmm/gmm.mx"
+#    # perform four operations dists_a in parallel
+#    {
+#      {|
+barrier	kj_a:= true;
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations dists_a in parallel
+#      {
+#	{|
+barrier	lj_a:= true;
+	mj_a:= mil.multicast("+",dists_a,dists_b);
+	dists_a := access(mj_a,BAT_WRITE);
+#	   dists_a := [+](dists_a,dists_b).access(BAT_WRITE);
+	dists_c := mil.multicast("+",dists_c,dists_d);
+#	   dists_c := [+](dists_c,dists_d);
+end	lj_a;
+#	 |}
+	nj_a := mil.multicast(":+=",dists_a,dists_c);
+#	 [:+=](dists_a,dists_c);
+#      }
+#
+#
+##line 160 "../../../src/gmm/gmm.mx"
+#
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations dists_e in parallel
+#      {
+#	{|
+barrier	oj_a:= true;
+	pj_a:= mil.multicast("+",dists_e,dists_f);
+	dists_e := access(pj_a,BAT_WRITE);
+#	   dists_e := [+](dists_e,dists_f).access(BAT_WRITE);
+	dists_g := mil.multicast("+",dists_g,dists_h);
+#	   dists_g := [+](dists_g,dists_h);
+end	oj_a;
+#	 |}
+	qj_a := mil.multicast(":+=",dists_e,dists_g);
+#	 [:+=](dists_e,dists_g);
+#      }
+#
+#
+##line 161 "../../../src/gmm/gmm.mx"
+#
+end	kj_a;
+#       |}
+	rj_a := mil.multicast(":+=",dists_a,dists_e);
+#       [:+=](dists_a,dists_e);      
+#    }
+#
+#
+##line 172 "../../../src/gmm/gmm.mx"
+#
+	dists := dists_a;
+#    dists := dists_a;
+#  }
+#
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 131 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1315 "../../../src/gmm/gmm.mx"
+#
+	xs := nil;
+#                  xs     := nil;
+	diffs := nil;
+#                  diffs  := nil;
+	means := nil;
+#		  means  := nil;
+	ivars := nil;
+#		  ivars  := nil;
+	ivariances := nil;
+#		  ivariances := nil;
+	isdet:= join(cIdx,isqrtdet);
+#  VAR isdet    := join( cIdx, isqrtdet );
+	N:= mil.bind("N");
+	act:= mil.multicast("multivariate_gaussian_pdf_diagcov",dists,isdet,N);
+#  VAR act      := [multivariate_gaussian_pdf_diagcov]( dists, isdet, N );
+	dists := nil;
+#                  dists  := nil;
+	isdet := nil;
+#                  isdet  := nil;
+#
+#
+##line 1331 "../../../src/gmm/gmm.mx"
+#
+	sj_a := find(gmm,"Prior");
+	tj_a := mil.multicast("dbl",sj_a);
+	priors:= join(cIdx,tj_a);
+#  VAR priors   := join( cIdx, [dbl](gmm.find("Prior")) );
+	act := mil.multicast("*",act,priors);
+#  act          := [*]( act, priors );
+	uj_a:= reverse(xIdx);
+	vj_a := join(uj_a,act);
+	s:= mil.setop("",vj_a);
+#  VAR s        := {sum}( xIdx.reverse.join(act) );
+##  s            := [ [>](s,const MIN_S)? s : const MIN_S ];
+##  s            := [ [!=](s,const dbl(0))? s : const 1.0LL ];
+	wj_a := mil.multicast(">",s,MIN_S);
+	xj_a := M2m.ifthen(wj_a,s,1.0LL);
+	yj_a:= M2m.batconstruct1(xj_a);
+	s := yj_a;
+#  s            := [ [>](s,const MIN_S)? s : const 1.0LL ];
+	ak_a := join(xIdx,s);
+	post:= mil.multicast("/",act,ak_a);
+#  VAR post     := [/](act,xIdx.join(s));
+	priors := nil;
+#                  priors := nil;
+	act := nil;
+#                  act    := nil;
+#
+#
+##line 1349 "../../../src/gmm/gmm.mx"
+#
+#  
+##line 1353 "../../../src/gmm/gmm.mx"
+	bk_a := mil.multicast("log",s);
+	loglikelihood := mil.multicast("*",bk_a,-1);
+#  loglikelihood := [*]([log](s), const -1);
+	ck_a := join(Ib,loglikelihood);
+	loglikelihood := mil.setop("",ck_a);
+#  loglikelihood := {sum}(join(Ib,loglikelihood));
+	s := nil;
+#                  s      := nil;
+	dk_a := max(loglikelihood);
+	ek_a := isnil(dk_a);
+barrier	fk_a:= not(ek_a);
+#  IF (not(isnil(loglikelihood.max)))
+	gk_a := max(loglikelihood);
+	hk_a := debug("Iter %d, maxLL %lf",iter,gk_a);
+#    debug("Iter %d, maxLL %lf", iter, loglikelihood.max);
+#  ELSE
+end	fk_a;
+barrier	ik_a:= not(fk_a);
+	jk_a := debug("Iter %d",iter);
+end	ik_a;
+#    debug("Iter %d", iter);    
+barrier	kk_a:= >(iter,1);
+#  IF (iter>1) {
+	lk_a := mil.multicast("-",loglikelihood,olde);
+	deltall:= mil.multicast("abs",lk_a);
+#    VAR deltall := [abs]([-](loglikelihood, olde));
+##print( loglikelihood, olde, deltall );
+	mk_a:= mil.multicast("<",deltall,1.0LL);
+	converged:= uselect(mk_a,1);
+#    VAR converged := [<](deltall, const 1.0LL).uselect(true);
+	nk_a_cursor := 0:lng;
+barrier	nk_a:= batloop(converged,nk_a_cursor);
+	nk_aH := fetchHead(converged,nk_a_cursor);
+	nk_aT := fetchTail(converged,nk_a_cursor);
+#    converged@batloop(){
+	ok_a := "Image %3d converged to (local?) maximum of likelihood";
+	nk_aH:= mil.bind("nk_aH");
+	pk_a := debug(ok_a,nk_aH);
+#      debug("Image %3d converged to (local?) maximum of likelihood", $h);
+redo	nk_a;
+end	nk_a;
+#    }
+barrier	qk_a:= >(count(converged),0);
+#    IF (converged.count > 0) {
+	loglikelihood := kdiff(loglikelihood,converged);
+#      loglikelihood := kdiff( loglikelihood, converged );
+#      
+##line 1386 "../../../src/gmm/gmm.mx"
+	str:= mil.bind("str");
+	restgmm:= new(str,str);
+#  VAR restgmm := new(str,bat);
+#
+#  VAR fff;
+#  {
+	rk_a:= find(gmmfinal,"mImgIdx");
+	sk_a := count(rk_a);
+	convNewId:= oid(sk_a);
+#    VAR convNewId := oid(gmmfinal.find("mImgIdx").count);
+	tk_a := mirror(converged);
+	convIdx:= join(tk_a,mImgIdx);
+#    VAR convIdx   := join(converged.mirror, mImgIdx);
+#    
+##line 611 "../../../src/gmm/gmm.mx"
+#{
+	uk_a:= reverse(convIdx);
+	vk_a:= mark(uk_a,convNewId);
+	fIdx:= reverse(vk_a);
+#  VAR fIdx := convIdx.reverse.mark(convNewId).reverse;
+#
+	wk_a:= find(gmm,"mImgIdx");
+	xk_a := reverse(wk_a);
+	convImgIdx:= join(fIdx,xk_a);
+#  VAR convImgIdx     := join( fIdx, gmm.find("mImgIdx").reverse );
+	yk_a:= find(gmm,"mCIdx");
+	al_a := reverse(yk_a);
+	convCIdx:= join(fIdx,al_a);
+#  VAR convCIdx       := join( fIdx, gmm.find("mCIdx").reverse );
+#        # implementation of batinsert into empty voidbats causes trouble...
+#        debug("<PROPCHECK1 hkey=%s />",     
+	bl_a:= find(gmmfinal,"mImgIdx");
+	cl_a:= info(bl_a);
+	dl_a := find(cl_a,"hkey");
+	el_a := debug("<PROPCHECK1 hkey=%s />",dl_a);
+#          gmmfinal.find("mImgIdx").info.find("hkey"));
+	fl_a := reverse(convImgIdx);
+	gl_a:= find(gmmfinal,"mImgIdx");
+	hl_a := insert(gl_a,fl_a);
+#  gmmfinal.find("mImgIdx").insert( convImgIdx.reverse );
+#        debug("<PROPCHECK2 hkey=%s />",    
+	il_a:= find(gmmfinal,"mImgIdx");
+	jl_a:= info(il_a);
+	kl_a := find(jl_a,"hkey");
+	ll_a := debug("<PROPCHECK2 hkey=%s />",kl_a);
+#          gmmfinal.find("mImgIdx").info.find("hkey"));
+	ml_a := reverse(convCIdx);
+	nl_a:= find(gmmfinal,"mCIdx");
+	ol_a := insert(nl_a,ml_a);
+#  gmmfinal.find("mCIdx").insert( convCIdx.reverse );
+#
+	pl_a := find(gmm,"Prior");
+	ql_a := join(fIdx,pl_a);
+	rl_a:= find(gmmfinal,"Prior");
+	sl_a := insert(rl_a,ql_a);
+#  gmmfinal.find("Prior").insert( join(fIdx, gmm.find("Prior")) );
+	tl_a := find(gmmfinal,"Mean");
+#  [insert]( gmmfinal.find("Mean"),
+	ul_a := find(gmm,"Mean");
+	vl_a := mil.multicast("join",fIdx,ul_a);
+	wl_a := mil.multicast("insert",tl_a,vl_a);
+#            [join](const fIdx, gmm.find("Mean")) );
+	xl_a := find(gmmfinal,"Covar");
+#  [insert]( gmmfinal.find("Covar"),
+	yl_a := find(gmm,"Covar");
+	am_a := mil.multicast("join",fIdx,yl_a);
+	bm_a := mil.multicast("insert",xl_a,am_a);
+#            [join](const fIdx, gmm.find("Covar")) );
+#
+	cm_a := find(gmm,"init_variances");
+	dm_a := join(fIdx,cm_a);
+	em_a:= find(gmmfinal,"init_variances");
+	fm_a := insert(em_a,dm_a);
+#  gmmfinal.find("init_variances").insert( join(fIdx, gmm.find("init_variances")) );
+#}
+#
+#
+##line 1392 "../../../src/gmm/gmm.mx"
+#
+#    
+##line 1376 "../../../src/gmm/gmm.mx"
+	gm_a:= find(gmmfinal,"mImgIdx");
+	hm_a:= kunique(gm_a);
+barrier	im_a:= =(count(hm_a),NImg);
+#    IF ( gmmfinal.find("mImgIdx").kunique.count = NImg ) {
+	jm_a := debug("All images converged; break...");
+#      debug("All images converged; break...");
+leave	im_a;
+#      BREAK;
+#    }
+#
+#
+##line 1393 "../../../src/gmm/gmm.mx"
+#
+#
+end	im_a;
+	nconvIdx:= diff(mImgIdx,convIdx);
+#    VAR nconvIdx  := diff(mImgIdx,convIdx);
+#    
+##line 634 "../../../src/gmm/gmm.mx"
+	km_a := oid(0);
+	lm_a:= reverse(nconvIdx);
+	mm_a:= mark(lm_a,km_a);
+	fIdx:= reverse(mm_a);
+#VAR fIdx           := nconvIdx.reverse.mark(oid(0)).reverse;
+#{
+	nm_a:= find(gmm,"mImgIdx");
+	om_a := reverse(nm_a);
+	convImgIdx:= join(fIdx,om_a);
+#  VAR convImgIdx     := join( fIdx, gmm.find("mImgIdx").reverse );
+	pm_a:= find(gmm,"mCIdx");
+	qm_a := reverse(pm_a);
+	convCIdx:= join(fIdx,qm_a);
+#  VAR convCIdx       := join( fIdx, gmm.find("mCIdx").reverse );
+	rm_a := reverse(convImgIdx);
+	sm_a := insert(restgmm,"mImgIdx",rm_a);
+#  restgmm.insert( "mImgIdx", convImgIdx.reverse );
+	tm_a := reverse(convCIdx);
+	um_a := insert(restgmm,"mCIdx",tm_a);
+#  restgmm.insert( "mCIdx",   convCIdx.reverse );
+#
+	vm_a := find(gmm,"Prior");
+	wm_a := join(fIdx,vm_a);
+	xm_a := insert(restgmm,"Prior",wm_a);
+#  restgmm.insert( "Prior", join(fIdx, gmm.find("Prior")) );
+	ym_a := find(gmm,"Mean");
+	an_a := mil.multicast("join",fIdx,ym_a);
+	bn_a := insert(restgmm,"Mean",an_a);
+#  restgmm.insert( "Mean",  [join](const fIdx, gmm.find("Mean")) );
+	cn_a := find(gmm,"Covar");
+	dn_a := mil.multicast("join",fIdx,cn_a);
+	en_a := insert(restgmm,"Covar",dn_a);
+#  restgmm.insert( "Covar", [join](const fIdx, gmm.find("Covar")) );
+#
+	fn_a := find(gmm,"init_variances");
+	gn_a := join(fIdx,fn_a);
+	hn_a := insert(restgmm,"init_variances",gn_a);
+#  restgmm.insert( "init_variances", join(fIdx, gmm.find("init_variances")) );
+#}
+#
+#
+##line 1396 "../../../src/gmm/gmm.mx"
+#
+#
+	fff := fIdx;
+#    fff := fIdx;
+#  }
+	in_a := +(str(iter),"_rest");
+	jn_a := +("_",in_a);
+	kn_a := +(sessionId,jn_a);
+	ln_a := +("gmm",kn_a);
+	mn_a := renameGMM(restgmm,ln_a);
+#  renameGMM(restgmm,"gmm" + sessionId + "_" + str(iter) + "_rest");
+#  
+##line 655 "../../../src/gmm/gmm.mx"
+	nn_a := find(restgmm,"init_variances");
+	BAT_READ:= mil.bind("BAT_READ");
+	on_a := access(nn_a,BAT_READ);
+#  access( restgmm.find("init_variances"), BAT_READ );
+	pn_a := find(restgmm,"Prior");
+	qn_a := access(pn_a,BAT_READ);
+#  access( restgmm.find("Prior"), BAT_READ );
+	rn_a := find(restgmm,"mImgIdx");
+	sn_a := access(rn_a,BAT_READ);
+#  access( restgmm.find("mImgIdx"), BAT_READ );
+	tn_a := find(restgmm,"mCIdx");
+	un_a := access(tn_a,BAT_READ);
+#  access( restgmm.find("mCIdx"), BAT_READ );
+	vn_a := find(restgmm,"Mean");
+	wn_a_cursor := 0:lng;
+barrier	wn_a:= batloop(vn_a,wn_a_cursor);
+	wn_aH := fetchHead(vn_a,wn_a_cursor);
+	wn_aT := fetchTail(vn_a,wn_a_cursor);
+	wn_aT:= mil.bind("wn_aT");
+	xn_a := access(wn_aT,BAT_READ);
+redo	wn_a;
+end	wn_a;
+#  restgmm.find("Mean")@batloop{  access($t, BAT_READ); }
+	yn_a := find(restgmm,"Covar");
+	ao_a_cursor := 0:lng;
+barrier	ao_a:= batloop(yn_a,ao_a_cursor);
+	ao_aH := fetchHead(yn_a,ao_a_cursor);
+	ao_aT := fetchTail(yn_a,ao_a_cursor);
+	ao_aT:= mil.bind("ao_aT");
+	bo_a := access(ao_aT,BAT_READ);
+redo	ao_a;
+end	ao_a;
+#  restgmm.find("Covar")@batloop{ access($t, BAT_READ); }
+#
+#
+##line 1401 "../../../src/gmm/gmm.mx"
+#
+	gmm := restgmm;
+#  gmm         := restgmm;
+	restgmm := nil;
+#  restgmm     := nil;
+#
+	Ib := kdiff(Ib,converged);
+#  Ib          := kdiff(Ib, converged);
+	iIdx:= nx(Ib);
+#  VAR iIdx    := nx(Ib); # <new oid, old oid>
+	Ib := xn(Ib);
+#  Ib          := xn(Ib);
+#
+	oldc:= coeffs;
+#  VAR oldc    := coeffs; # UGLY: nestedjoin macro makes new variable
+#  
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+##line 1240 "../../../src/gmm/gmm.mx"
+	co_a := htype(oldc);
+	do_a := count(oldc);
+	coeffs := new(co_a,htype,do_a);
+#  coeffs := new(oldc.htype,bat,oldc.count);
+	coeffs_lock:= lock_create();
+#  VAR coeffs_lock := lock_create();
+	eo_a_cursor := 0:lng;
+barrier	eo_a:= batloop(Nthreads,eo_a_cursor);
+	eo_aH := fetchHead(Nthreads,eo_a_cursor);
+	eo_aT := fetchTail(Nthreads,eo_a_cursor);
+#  oldc@ [Nthreads]batloop(){
+	eo_aT:= mil.bind("eo_aT");
+	_coeffs_result:= join(iIdx,eo_aT);
+#    VAR _coeffs_result := join( iIdx, $t );
+	fo_a := lock_set(coeffs_lock);
+#    lock_set(coeffs_lock);
+	eo_aH:= mil.bind("eo_aH");
+	go_a := insert(coeffs,eo_aH,_coeffs_result);
+#    coeffs.insert( $h, _coeffs_result );
+	ho_a := lock_unset(coeffs_lock);
+#    lock_unset(coeffs_lock);
+redo	eo_a;
+end	eo_a;
+#  }
+	io_a := lock_destroy(coeffs_lock);
+#  lock_destroy(coeffs_lock);
+#
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1410 "../../../src/gmm/gmm.mx"
+#
+	oldc := nil;
+#                  oldc    := nil;
+#
+	jo_a := reverse(iIdx);
+	xIdx := join(xIdx,jo_a);
+#  xIdx        := join(xIdx, iIdx.reverse);
+	ko_a:= xn(xIdx);
+	newxIdx:= reverse(ko_a);
+#  VAR newxIdx := xn(xIdx).reverse;
+	xIdx := nx(xIdx);
+#  xIdx        := nx(xIdx);
+	post := join(newxIdx,post);
+#  post        := join(newxIdx, post);
+	cIdx := join(newxIdx,cIdx);
+#  cIdx        := join(newxIdx, cIdx);
+	lo_a := reverse(fff);
+	cIdx := join(cIdx,lo_a);
+#  cIdx        := join( cIdx, fff.reverse ); # renumber for mCIdx/mImgIdx
+	newxIdx := nil;
+#                  newxIdx := nil;             
+	fff := nil;
+#                  fff     := nil;             
+#
+	mImgIdx := find(gmm,"mImgIdx");
+#  mImgIdx     := gmm.find("mImgIdx");
+	mCIdx := find(gmm,"mCIdx");
+#  mCIdx       := gmm.find("mCIdx");
+#
+#
+##line 1369 "../../../src/gmm/gmm.mx"
+#
+#    }
+#    
+##line 1376 "../../../src/gmm/gmm.mx"
+end	qk_a;
+	mo_a:= find(gmmfinal,"mImgIdx");
+	no_a:= kunique(mo_a);
+barrier	oo_a:= =(count(no_a),NImg);
+#    IF ( gmmfinal.find("mImgIdx").kunique.count = NImg ) {
+	po_a := debug("All images converged; break...");
+#      debug("All images converged; break...");
+leave	oo_a;
+#      BREAK;
+#    }
+#
+#
+##line 1371 "../../../src/gmm/gmm.mx"
+#
+end	oo_a;
+#  }
+end	kk_a;
+	olde := loglikelihood;
+#  olde := loglikelihood;
+#
+#
+##line 1350 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1499 "../../../src/gmm/gmm.mx"
+#
+#      
+##line 1432 "../../../src/gmm/gmm.mx"
+	qo_a:= reverse(cIdx);
+	ro_a := join(qo_a,post);
+	newpr:= mil.setop("",ro_a);
+#   VAR newpr     := {sum}( cIdx.reverse.join(post) );
+	newpr := mil.multicast("flt",newpr);
+#                  newpr := [flt]( newpr );
+#   VAR newpriors := [/]( newpr,
+	so_a:= reverse(Ib);
+	to_a := histogram(so_a);
+	uo_a:= reverse(mImgIdx);
+	vo_a := join(uo_a,to_a);
+	newpriors:= mil.multicast("/",newpr,vo_a);
+#                         mImgIdx.reverse.join( Ib.reverse.histogram ) );
+#debug("NP: #post %d, #newpr %d, #newpriors %d, #Ndata %d",
+	wo_a:= reverse(cIdx);
+	xo_a:= join(wo_a,post);
+	yo_a := count(xo_a);
+#  cIdx.reverse.join(post).count,
+	ap_a := count(newpr);
+#  newpr.count,
+	bp_a := count(newpriors);
+#  newpriors.count,
+	cp_a:= reverse(Ib);
+#  Ib.reverse.histogram.count
+	dp_a:= histogram(cp_a);
+	ep_a := count(dp_a);
+	fp_a := debug("NP: #post %d, #newpr %d, #newpriors %d, #Ndata %d",yo_a,ap_a,bp_a,ep_a);
+#);
+#
+#   
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+##line 1240 "../../../src/gmm/gmm.mx"
+	gp_a := htype(coeffs);
+	hp_a := count(coeffs);
+	xs := new(gp_a,htype,hp_a);
+#  xs := new(coeffs.htype,bat,coeffs.count);
+	xs_lock:= lock_create();
+#  VAR xs_lock := lock_create();
+	ip_a_cursor := 0:lng;
+barrier	ip_a:= batloop(Nthreads,ip_a_cursor);
+	ip_aH := fetchHead(Nthreads,ip_a_cursor);
+	ip_aT := fetchTail(Nthreads,ip_a_cursor);
+#  coeffs@ [Nthreads]batloop(){
+	ip_aT:= mil.bind("ip_aT");
+	_xs_result:= join(xIdx,ip_aT);
+#    VAR _xs_result := join( xIdx, $t );
+	jp_a := lock_set(xs_lock);
+#    lock_set(xs_lock);
+	ip_aH:= mil.bind("ip_aH");
+	kp_a := insert(xs,ip_aH,_xs_result);
+#    xs.insert( $h, _xs_result );
+	lp_a := lock_unset(xs_lock);
+#    lock_unset(xs_lock);
+redo	ip_a;
+end	ip_a;
+#  }
+	mp_a := lock_destroy(xs_lock);
+#  lock_destroy(xs_lock);
+#
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1443 "../../../src/gmm/gmm.mx"
+#
+	xhc:= mil.multicast("nestedop","*",xs,post);
+#   VAR xhc       := [nestedop]( "*", xs, const post );
+	xhc := mil.multicast("nestedop","flt",xhc);
+#                  xhc := [nestedop]("flt", xhc);
+#   
+##line 1227 "../../../src/gmm/gmm.mx"
+#VAR gxhc;
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+##line 1240 "../../../src/gmm/gmm.mx"
+	np_a := htype(xhc);
+	op_a := count(xhc);
+	gxhc := new(np_a,htype,op_a);
+#  gxhc := new(xhc.htype,bat,xhc.count);
+	gxhc_lock:= lock_create();
+#  VAR gxhc_lock := lock_create();
+	pp_a_cursor := 0:lng;
+barrier	pp_a:= batloop(Nthreads,pp_a_cursor);
+	pp_aH := fetchHead(Nthreads,pp_a_cursor);
+	pp_aT := fetchTail(Nthreads,pp_a_cursor);
+#  xhc@ [Nthreads]batloop(){
+	qp_a := reverse(cIdx);
+	pp_aT:= mil.bind("pp_aT");
+	_gxhc_result:= join(qp_a,pp_aT);
+#    VAR _gxhc_result := join( cIdx.reverse, $t );
+	rp_a := lock_set(gxhc_lock);
+#    lock_set(gxhc_lock);
+	pp_aH:= mil.bind("pp_aH");
+	sp_a := insert(gxhc,pp_aH,_gxhc_result);
+#    gxhc.insert( $h, _gxhc_result );
+	tp_a := lock_unset(gxhc_lock);
+#    lock_unset(gxhc_lock);
+redo	pp_a;
+end	pp_a;
+#  }
+	up_a := lock_destroy(gxhc_lock);
+#  lock_destroy(gxhc_lock);
+#
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1228 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1446 "../../../src/gmm/gmm.mx"
+#
+#   
+##line 107 "../../../src/gmm/gmm.mx"
+	vp_a := htype(gxhc);
+	wp_a := count(gxhc);
+	newc:= new(vp_a,htype,wp_a);
+#  VAR newc := new(gxhc.htype,bat,gxhc.count);
+#  {
+	newc_lock:= lock_create();
+#    VAR newc_lock := lock_create();
+	xp_a_cursor := 0:lng;
+barrier	xp_a:= batloop(Nthreads,xp_a_cursor);
+	xp_aH := fetchHead(Nthreads,xp_a_cursor);
+	xp_aT := fetchTail(Nthreads,xp_a_cursor);
+#    gxhc@ [Nthreads]batloop(){
+#      VAR _newc_result := {sum}($t
+	xp_aT:= mil.bind("xp_aT");
+	_newc_result:= mil.setop("",xp_aT);
+#	   );
+	yp_a := lock_set(newc_lock);
+#      lock_set(newc_lock);
+	xp_aH:= mil.bind("xp_aH");
+	aq_a := insert(newc,xp_aH,_newc_result);
+#      newc.insert($h,_newc_result);
+	bq_a := lock_unset(newc_lock);
+#      lock_unset(newc_lock);
+redo	xp_a;
+end	xp_a;
+#    }
+	cq_a := lock_destroy(newc_lock);
+#    lock_destroy(newc_lock);
+#  }
+#
+#
+##line 1447 "../../../src/gmm/gmm.mx"
+#
+	gxhc := nil;
+#                  gxhc    := nil;
+	xhc := nil;
+#                  xhc     := nil;
+	newmeans:= mil.multicast("nestedop","/",newc,newpr);
+#   VAR newmeans  := [nestedop]("/", newc, const newpr);
+	newc := nil;
+#                  newc    := nil;
+#
+#   
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+##line 1240 "../../../src/gmm/gmm.mx"
+	dq_a := htype(newmeans);
+	eq_a := count(newmeans);
+	means := new(dq_a,htype,eq_a);
+#  means := new(newmeans.htype,bat,newmeans.count);
+	means_lock:= lock_create();
+#  VAR means_lock := lock_create();
+	fq_a_cursor := 0:lng;
+barrier	fq_a:= batloop(Nthreads,fq_a_cursor);
+	fq_aH := fetchHead(Nthreads,fq_a_cursor);
+	fq_aT := fetchTail(Nthreads,fq_a_cursor);
+#  newmeans@ [Nthreads]batloop(){
+	fq_aT:= mil.bind("fq_aT");
+	_means_result:= join(cIdx,fq_aT);
+#    VAR _means_result := join( cIdx, $t );
+	gq_a := lock_set(means_lock);
+#    lock_set(means_lock);
+	fq_aH:= mil.bind("fq_aH");
+	hq_a := insert(means,fq_aH,_means_result);
+#    means.insert( $h, _means_result );
+	iq_a := lock_unset(means_lock);
+#    lock_unset(means_lock);
+redo	fq_a;
+end	fq_a;
+#  }
+	jq_a := lock_destroy(means_lock);
+#  lock_destroy(means_lock);
+#
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1453 "../../../src/gmm/gmm.mx"
+#
+	hdiffs:= mil.multicast("nestedop","-",xs,means);
+#   VAR hdiffs    := [nestedop]("-",xs,means);
+	xs := nil;
+#                  xs      := nil;
+	means := nil;
+#                  means   := nil;
+	hdiffs := mil.multicast("square",hdiffs);
+#   hdiffs        := [square](hdiffs);
+	hdiffs := mil.multicast("nestedop","*",hdiffs,post);
+#   hdiffs	 := [nestedop]("*",hdiffs,const post);
+	hdiffs := mil.multicast("nestedop","flt",hdiffs);
+#                  hdiffs := [nestedop]("flt", hdiffs);
+#   
+##line 1227 "../../../src/gmm/gmm.mx"
+#VAR ghdiffs;
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+##line 1240 "../../../src/gmm/gmm.mx"
+	kq_a := htype(hdiffs);
+	lq_a := count(hdiffs);
+	ghdiffs := new(kq_a,htype,lq_a);
+#  ghdiffs := new(hdiffs.htype,bat,hdiffs.count);
+	ghdiffs_lock:= lock_create();
+#  VAR ghdiffs_lock := lock_create();
+	mq_a_cursor := 0:lng;
+barrier	mq_a:= batloop(Nthreads,mq_a_cursor);
+	mq_aH := fetchHead(Nthreads,mq_a_cursor);
+	mq_aT := fetchTail(Nthreads,mq_a_cursor);
+#  hdiffs@ [Nthreads]batloop(){
+	nq_a := reverse(cIdx);
+	mq_aT:= mil.bind("mq_aT");
+	_ghdiffs_result:= join(nq_a,mq_aT);
+#    VAR _ghdiffs_result := join( cIdx.reverse, $t );
+	oq_a := lock_set(ghdiffs_lock);
+#    lock_set(ghdiffs_lock);
+	mq_aH:= mil.bind("mq_aH");
+	pq_a := insert(ghdiffs,mq_aH,_ghdiffs_result);
+#    ghdiffs.insert( $h, _ghdiffs_result );
+	qq_a := lock_unset(ghdiffs_lock);
+#    lock_unset(ghdiffs_lock);
+redo	mq_a;
+end	mq_a;
+#  }
+	rq_a := lock_destroy(ghdiffs_lock);
+#  lock_destroy(ghdiffs_lock);
+#
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1228 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1460 "../../../src/gmm/gmm.mx"
+#
+#   
+##line 107 "../../../src/gmm/gmm.mx"
+	sq_a := htype(ghdiffs);
+	tq_a := count(ghdiffs);
+	diffs:= new(sq_a,htype,tq_a);
+#  VAR diffs := new(ghdiffs.htype,bat,ghdiffs.count);
+#  {
+	diffs_lock:= lock_create();
+#    VAR diffs_lock := lock_create();
+	uq_a_cursor := 0:lng;
+barrier	uq_a:= batloop(Nthreads,uq_a_cursor);
+	uq_aH := fetchHead(Nthreads,uq_a_cursor);
+	uq_aT := fetchTail(Nthreads,uq_a_cursor);
+#    ghdiffs@ [Nthreads]batloop(){
+#      VAR _diffs_result := {sum}($t
+	uq_aT:= mil.bind("uq_aT");
+	_diffs_result:= mil.setop("",uq_aT);
+#	   );
+	vq_a := lock_set(diffs_lock);
+#      lock_set(diffs_lock);
+	uq_aH:= mil.bind("uq_aH");
+	wq_a := insert(diffs,uq_aH,_diffs_result);
+#      diffs.insert($h,_diffs_result);
+	xq_a := lock_unset(diffs_lock);
+#      lock_unset(diffs_lock);
+redo	uq_a;
+end	uq_a;
+#    }
+	yq_a := lock_destroy(diffs_lock);
+#    lock_destroy(diffs_lock);
+#  }
+#
+#
+##line 1461 "../../../src/gmm/gmm.mx"
+#
+	ghdiffs := nil;
+#                  ghdiffs := nil;
+	hdiffs := nil;
+#                  hdiffs  := nil;
+	newvars:= mil.multicast("nestedop","/",diffs,newpr);
+#   VAR newvars   := [nestedop]("/",diffs,const newpr);
+	diffs := nil;
+#                  diffs   := nil;
+#
+#
+##line 1500 "../../../src/gmm/gmm.mx"
+#
+#      
+##line 1471 "../../../src/gmm/gmm.mx"
+#   
+##line 130 "../../../src/gmm/gmm.mx"
+#VAR minvars;
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+##line 167 "../../../src/gmm/gmm.mx"
+#  {
+	minvars_a:= fetch(newvars,0);
+	minvars_e:= fetch(newvars,4);
+#    VAR minvars_a := newvars.fetch(0);    VAR minvars_e := newvars.fetch(4);
+	minvars_b:= fetch(newvars,1);
+	minvars_f:= fetch(newvars,5);
+#    VAR minvars_b := newvars.fetch(1);    VAR minvars_f := newvars.fetch(5);
+	minvars_c:= fetch(newvars,2);
+	minvars_g:= fetch(newvars,6);
+#    VAR minvars_c := newvars.fetch(2);    VAR minvars_g := newvars.fetch(6);
+	minvars_d:= fetch(newvars,3);
+	minvars_h:= fetch(newvars,7);
+#    VAR minvars_d := newvars.fetch(3);    VAR minvars_h := newvars.fetch(7);
+#    
+##line 157 "../../../src/gmm/gmm.mx"
+#    # perform four operations minvars_a in parallel
+#    {
+#      {|
+barrier	ar_a:= true;
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations minvars_a in parallel
+#      {
+#	{|
+barrier	br_a:= true;
+	cr_a:= mil.multicast("min",minvars_a,minvars_b);
+	minvars_a := access(cr_a,BAT_WRITE);
+#	   minvars_a := [min](minvars_a,minvars_b).access(BAT_WRITE);
+	minvars_c := mil.multicast("min",minvars_c,minvars_d);
+#	   minvars_c := [min](minvars_c,minvars_d);
+end	br_a;
+#	 |}
+	dr_a := mil.multicast(":min=",minvars_a,minvars_c);
+#	 [:min=](minvars_a,minvars_c);
+#      }
+#
+#
+##line 160 "../../../src/gmm/gmm.mx"
+#
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations minvars_e in parallel
+#      {
+#	{|
+barrier	er_a:= true;
+	fr_a:= mil.multicast("min",minvars_e,minvars_f);
+	minvars_e := access(fr_a,BAT_WRITE);
+#	   minvars_e := [min](minvars_e,minvars_f).access(BAT_WRITE);
+	minvars_g := mil.multicast("min",minvars_g,minvars_h);
+#	   minvars_g := [min](minvars_g,minvars_h);
+end	er_a;
+#	 |}
+	gr_a := mil.multicast(":min=",minvars_e,minvars_g);
+#	 [:min=](minvars_e,minvars_g);
+#      }
+#
+#
+##line 161 "../../../src/gmm/gmm.mx"
+#
+end	ar_a;
+#       |}
+	hr_a := mil.multicast(":min=",minvars_a,minvars_e);
+#       [:min=](minvars_a,minvars_e);      
+#    }
+#
+#
+##line 172 "../../../src/gmm/gmm.mx"
+#
+	minvars := minvars_a;
+#    minvars := minvars_a;
+#  }
+#
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 131 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1471 "../../../src/gmm/gmm.mx"
+#
+	covarsmall:= mil.multicast("<",minvars,MIN_COVAR);
+#   VAR covarsmall    := [<](minvars,const MIN_COVAR);
+	covarnil:= mil.multicast("isnil",minvars);
+#   VAR covarnil      := [isnil](minvars);
+	ir_a := mil.multicast("or",covarsmall,covarnil);
+	covarnotsmall:= mil.multicast("not",ir_a);
+#   VAR covarnotsmall := [not]([or](covarsmall,covarnil));
+	covarsmall := nil;
+#                  covarsmall := nil;
+	covarnil := nil;
+#                  covarnil   := nil;
+	jr_a:= select(covarnotsmall,0);
+	Ntoosmall:= count(jr_a);
+#   VAR Ntoosmall     := select(covarnotsmall,false).count;
+barrier	kr_a:= >(Ntoosmall,0);
+#   IF ( Ntoosmall > 0 ) {
+	lr_a := "Covariance too small in %d model(s)";
+	mr_a := debug(lr_a,Ntoosmall);
+#     debug("Covariance too small in %d model(s)", Ntoosmall);
+	init_variances:= find(gmm,"init_variances");
+#     VAR init_variances := gmm.find("init_variances");
+	nr_a := htype(newvars);
+	or_a := count(newvars);
+	ccovars:= new(nr_a,htype,or_a);
+#     VAR ccovars   := new( newvars.htype, bat, newvars.count );
+	pr_a_cursor := 0:lng;
+barrier	pr_a:= batloop(newvars,pr_a_cursor);
+	pr_aH := fetchHead(newvars,pr_a_cursor);
+	pr_aT := fetchTail(newvars,pr_a_cursor);
+#     newvars@batloop(){
+	pr_aT:= mil.bind("pr_aT");
+	qr_a := M2m.ifthen(covarnotsmall,pr_aT,init_variances);
+	rr_a:= M2m.batconstruct1(qr_a);
+	cv:= rr_a;
+#       VAR cv := [ covarnotsmall ? $t : init_variances ];
+	pr_aH:= mil.bind("pr_aH");
+	sr_a := insert(ccovars,pr_aH,cv);
+#       ccovars.insert($h, cv);
+redo	pr_a;
+end	pr_a;
+#     }
+	newvars := ccovars;
+#     newvars := ccovars;
+#   }
+#
+#
+##line 1501 "../../../src/gmm/gmm.mx"
+#
+end	kr_a;
+	tr_a := :+=(iter,1);
+#      iter :+= 1;
+#
+	gmmnew:= new(str,str);
+#      VAR gmmnew := new(str,bat);
+	ur_a := insert(gmmnew,"Prior",newpriors);
+#      gmmnew.insert( "Prior",  newpriors );
+	vr_a := insert(gmmnew,"Mean",newmeans);
+#      gmmnew.insert( "Mean",   newmeans );
+	wr_a := insert(gmmnew,"Covar",newvars);
+#      gmmnew.insert( "Covar",  newvars );
+#
+	xr_a := insert(gmmnew,"mImgIdx",mImgIdx);
+#      gmmnew.insert("mImgIdx", mImgIdx );
+	yr_a := insert(gmmnew,"mCIdx",mCIdx);
+#      gmmnew.insert("mCIdx",   mCIdx );
+	as_a := find(gmm,"init_variances");
+	bs_a := insert(gmmnew,"init_variances",as_a);
+#      gmmnew.insert("init_variances", gmm.find("init_variances") );
+#      
+##line 655 "../../../src/gmm/gmm.mx"
+	cs_a := find(gmmnew,"init_variances");
+	ds_a := access(cs_a,BAT_READ);
+#  access( gmmnew.find("init_variances"), BAT_READ );
+	es_a := find(gmmnew,"Prior");
+	fs_a := access(es_a,BAT_READ);
+#  access( gmmnew.find("Prior"), BAT_READ );
+	gs_a := find(gmmnew,"mImgIdx");
+	hs_a := access(gs_a,BAT_READ);
+#  access( gmmnew.find("mImgIdx"), BAT_READ );
+	is_a := find(gmmnew,"mCIdx");
+	js_a := access(is_a,BAT_READ);
+#  access( gmmnew.find("mCIdx"), BAT_READ );
+	ks_a := find(gmmnew,"Mean");
+	ls_a_cursor := 0:lng;
+barrier	ls_a:= batloop(ks_a,ls_a_cursor);
+	ls_aH := fetchHead(ks_a,ls_a_cursor);
+	ls_aT := fetchTail(ks_a,ls_a_cursor);
+	ls_aT:= mil.bind("ls_aT");
+	ms_a := access(ls_aT,BAT_READ);
+redo	ls_a;
+end	ls_a;
+#  gmmnew.find("Mean")@batloop{  access($t, BAT_READ); }
+	ns_a := find(gmmnew,"Covar");
+	os_a_cursor := 0:lng;
+barrier	os_a:= batloop(ns_a,os_a_cursor);
+	os_aH := fetchHead(ns_a,os_a_cursor);
+	os_aT := fetchTail(ns_a,os_a_cursor);
+	os_aT:= mil.bind("os_aT");
+	ps_a := access(os_aT,BAT_READ);
+redo	os_a;
+end	os_a;
+#  gmmnew.find("Covar")@batloop{ access($t, BAT_READ); }
+#
+#
+##line 1512 "../../../src/gmm/gmm.mx"
+#
+	qs_a := str(iter);
+	rs_a := +("_",qs_a);
+	ss_a := +(sessionId,rs_a);
+	ts_a := +("gmm",ss_a);
+	us_a := renameGMM(gmmnew,ts_a);
+#      gmmnew.renameGMM("gmm" + sessionId + "_" + str(iter));
+#
+	gmm := gmmnew;
+#      gmm := gmmnew;
+#
+barrier	vs_a:= =(iter,2);
+#      IF (iter = 2) {
+#        # free memory for globals
+	EM_coll := nil;
+#        EM_coll  := nil;
+	EM_model := nil;
+#        EM_model := nil;
+#      }
+end	vs_a;
+redo	ji_a;
+end	ki_a;
+end	ji_a;
+#    }
+barrier	ws_a:= =(iter,Niter);
+#    IF (iter = Niter) {
+	xs_a := debug("Not all images have converged");
+#      debug("Not all images have converged");
+	ys_a:= find(gmmfinal,"mImgIdx");
+	at_a := count(ys_a);
+	lastId:= oid(at_a);
+#      VAR lastId       := oid(gmmfinal.find("mImgIdx").count);
+	remainingIdx:= find(gmm,"mImgIdx");
+#      VAR remainingIdx := gmm.find("mImgIdx");
+#      
+##line 611 "../../../src/gmm/gmm.mx"
+#{
+	bt_a:= reverse(remainingIdx);
+	ct_a:= mark(bt_a,lastId);
+	fIdx:= reverse(ct_a);
+#  VAR fIdx := remainingIdx.reverse.mark(lastId).reverse;
+#
+	dt_a:= find(gmm,"mImgIdx");
+	et_a := reverse(dt_a);
+	convImgIdx:= join(fIdx,et_a);
+#  VAR convImgIdx     := join( fIdx, gmm.find("mImgIdx").reverse );
+	ft_a:= find(gmm,"mCIdx");
+	gt_a := reverse(ft_a);
+	convCIdx:= join(fIdx,gt_a);
+#  VAR convCIdx       := join( fIdx, gmm.find("mCIdx").reverse );
+#        # implementation of batinsert into empty voidbats causes trouble...
+#        debug("<PROPCHECK1 hkey=%s />",     
+	ht_a:= find(gmmfinal,"mImgIdx");
+	it_a:= info(ht_a);
+	jt_a := find(it_a,"hkey");
+	kt_a := debug("<PROPCHECK1 hkey=%s />",jt_a);
+#          gmmfinal.find("mImgIdx").info.find("hkey"));
+	lt_a := reverse(convImgIdx);
+	mt_a:= find(gmmfinal,"mImgIdx");
+	nt_a := insert(mt_a,lt_a);
+#  gmmfinal.find("mImgIdx").insert( convImgIdx.reverse );
+#        debug("<PROPCHECK2 hkey=%s />",    
+	ot_a:= find(gmmfinal,"mImgIdx");
+	pt_a:= info(ot_a);
+	qt_a := find(pt_a,"hkey");
+	rt_a := debug("<PROPCHECK2 hkey=%s />",qt_a);
+#          gmmfinal.find("mImgIdx").info.find("hkey"));
+	st_a := reverse(convCIdx);
+	tt_a:= find(gmmfinal,"mCIdx");
+	ut_a := insert(tt_a,st_a);
+#  gmmfinal.find("mCIdx").insert( convCIdx.reverse );
+#
+	vt_a := find(gmm,"Prior");
+	wt_a := join(fIdx,vt_a);
+	xt_a:= find(gmmfinal,"Prior");
+	yt_a := insert(xt_a,wt_a);
+#  gmmfinal.find("Prior").insert( join(fIdx, gmm.find("Prior")) );
+	au_a := find(gmmfinal,"Mean");
+#  [insert]( gmmfinal.find("Mean"),
+	bu_a := find(gmm,"Mean");
+	cu_a := mil.multicast("join",fIdx,bu_a);
+	du_a := mil.multicast("insert",au_a,cu_a);
+#            [join](const fIdx, gmm.find("Mean")) );
+	eu_a := find(gmmfinal,"Covar");
+#  [insert]( gmmfinal.find("Covar"),
+	fu_a := find(gmm,"Covar");
+	gu_a := mil.multicast("join",fIdx,fu_a);
+	hu_a := mil.multicast("insert",eu_a,gu_a);
+#            [join](const fIdx, gmm.find("Covar")) );
+#
+	iu_a := find(gmm,"init_variances");
+	ju_a := join(fIdx,iu_a);
+	ku_a:= find(gmmfinal,"init_variances");
+	lu_a := insert(ku_a,ju_a);
+#  gmmfinal.find("init_variances").insert( join(fIdx, gmm.find("init_variances")) );
+#}
+#
+#
+##line 1527 "../../../src/gmm/gmm.mx"
+#
+#    }
+#      # @@modelop(gmmfinal,persists,false)@
+end	ws_a;
+	return gmmfinal;
+#    RETURN gmmfinal;
+end function;
+#  }
+#
+#    # PROC EM(bat[str,bat] EM_coll, bat[str,bat] EM_model):bat[str,bat]
+function EM_globalmodel():bat[str,str];
+#  PROC EM_globalmodel():bat[str,bat] := {
+	Niter:= mil.bind("Niter");
+	mu_a := EM_globalmodel(Niter);
+	return mu_a;
+#    RETURN EM_globalmodel(Niter);
+end function;
+#  }
+#
+#
+#
+##line 1557 "../../../src/gmm/gmm.mx"
+	Nsamples := 100;
+#  CONST Nsamples := 100;
+	mu_1 := 5.0LL;
+	sigma_1 := 2.0LL;
+#  CONST mu_1 := 5.0LL; CONST sigma_1 := 2.0LL;
+	mu_2 := 7.0LL;
+	sigma_2 := 3.0LL;
+#  CONST mu_2 := 7.0LL; CONST sigma_2 := 3.0LL;
+#
+function mix2g():dbl;
+#  PROC mix2g(): dbl := {
+	rand:= mil.bind("rand");
+	nu_a := and(rand,15);
+barrier	ou_a:= >(nu_a,10);
+#    IF ( (rand and 15) > 10 ) 
+	pu_a := ran_gaussian(mu_1,sigma_1);
+	return pu_a;
+#      RETURN ran_gaussian(mu_1,sigma_1);
+end	ou_a;
+barrier	qu_a:= not(ou_a);
+	ru_a := ran_gaussian(mu_2,sigma_2);
+	return ru_a;
+end	qu_a;
+#    ELSE RETURN ran_gaussian(mu_2,sigma_2);
+end function;
+#  }
+#
+function gen2mix(Nel:int):bat[void,dbl];
+#  PROC gen2mix(int Nel):BAT[void,dbl] := {
+	void:= mil.bind("void");
+	dbl:= mil.bind("dbl");
+	su_a := oid(0);
+	tu_a:= new(void,dbl);
+	res:= seqbase(tu_a,su_a);
+#    VAR res := new(void,dbl).seqbase(oid(0));
+	i:= 0;
+#    VAR i := 0;
+barrier	uu_a:= true;
+	wu_a := <(i,Nel);
+barrier	vu_a:= wu_a;
+#    WHILE (i < Nel) {
+	xu_a := mix2g();
+	yu_a := insert(res,nil,xu_a);
+#      res.insert(nil, mix2g());
+	av_a := :+=(i,1);
+#      i :+=1; 
+redo	uu_a;
+end	vu_a;
+end	uu_a;
+#    }
+	return res;
+#    RETURN res;
+end function;
+#  }
+#
+#
+##line 1591 "../../../src/gmm/gmm.mx"
+function cumsum_multicast(xs:bat[any::1,any]):bat[any::1,lng];
+#  PROC [cumsum](BAT[any::1,any] xs): BAT[any::1,lng] := {
+	bv_a := htype(xs);
+	lng:= mil.bind("lng");
+	cv_a := count(xs);
+	res:= new(bv_a,lng,cv_a);
+#    VAR res := new(xs.htype,lng,xs.count);
+	s:= lng(0);
+#    VAR s := lng(0);
+	dv_a_cursor := 0:lng;
+barrier	dv_a:= batloop(xs,dv_a_cursor);
+	dv_aH := fetchHead(xs,dv_a_cursor);
+	dv_aT := fetchTail(xs,dv_a_cursor);
+#    xs@batloop(){
+	dv_aT:= mil.bind("dv_aT");
+	ev_a := :+=(s,dv_aT);
+#      s :+= $t;
+	dv_aH:= mil.bind("dv_aH");
+	fv_a := insert(res,dv_aH,s);
+#      res.insert( $h, s );
+redo	dv_a;
+end	dv_a;
+#    }
+	return res;
+#    RETURN res;
+end function;
+#  }
+#
+#  
+##line 1605 "../../../src/gmm/gmm.mx"
+function randseq(Nsamples:int, prior:bat[int,flt]):bat[void,any::1];
+#  PROC randseq(int Nsamples, bat[int,flt] prior): bat[void,any::1] := {
+	oid:= mil.bind("oid");
+	gv_a := htype(prior);
+	res:= new(oid,gv_a,Nsamples);
+#    VAR res := new(oid, prior.htype,Nsamples);
+	hv_a := randseq(Nsamples);
+	samp:= mil.multicast("lng",hv_a);
+#    VAR samp := [lng](randseq(Nsamples));
+	iv_a := mil.multicast("*",prior,RAND_MAX);
+	jv_a := mil.multicast("int",iv_a);
+	kv_a:= mil.multicast("cumsum",jv_a);
+	cint:= reverse(kv_a);
+#    VAR cint := [cumsum]( [int]([*](prior, const RAND_MAX)) ).reverse;
+	ib:= lng(0);
+#    VAR ib := lng(0);
+	lv_a_cursor := 0:lng;
+barrier	lv_a:= batloop(cint,lv_a_cursor);
+	lv_aH := fetchHead(cint,lv_a_cursor);
+	lv_aT := fetchTail(cint,lv_a_cursor);
+#    cint@batloop(){
+	lv_aH:= mil.bind("lv_aH");
+	ie:= lv_aH;
+#      VAR ie := $h;
+#      # a poor man's interval-join
+#      res.insert(
+	mv_a := mil.multicast(">",samp,ib);
+	nv_a := mil.multicast("<=",samp,ie);
+	ov_a:= mil.multicast("and",mv_a,nv_a);
+	lv_aT:= mil.bind("lv_aT");
+	pv_a:= uselect(ov_a,1);
+#	[and]( [>](samp,ib), [<=](samp,ie) ).uselect(true).project($t) 
+	qv_a := project(pv_a,lv_aT);
+	rv_a := insert(res,qv_a);
+#      );
+	ib := ie;
+#      ib := ie;
+redo	lv_a;
+end	lv_a;
+#    }
+	sv_a := order(res);
+#    res.order;
+	BAT_READ:= mil.bind("BAT_READ");
+	tv_a:= nx(res);
+	uv_a := access(tv_a,BAT_READ);
+	return uv_a;
+#    RETURN nx(res).access(BAT_READ);
+end function;
+#  }
+#
+#
+##line 1601 "../../../src/gmm/gmm.mx"
+#
+#  
+##line 1605 "../../../src/gmm/gmm.mx"
+function randseq(Nsamples:int, prior:bat[TCluster,flt]):bat[void,any::1];
+#  PROC randseq(int Nsamples, bat[TCluster,flt] prior): bat[void,any::1] := {
+	oid:= mil.bind("oid");
+	vv_a := htype(prior);
+	res:= new(oid,vv_a,Nsamples);
+#    VAR res := new(oid, prior.htype,Nsamples);
+	wv_a := randseq(Nsamples);
+	samp:= mil.multicast("lng",wv_a);
+#    VAR samp := [lng](randseq(Nsamples));
+	xv_a := mil.multicast("*",prior,RAND_MAX);
+	yv_a := mil.multicast("int",xv_a);
+	aw_a:= mil.multicast("cumsum",yv_a);
+	cint:= reverse(aw_a);
+#    VAR cint := [cumsum]( [int]([*](prior, const RAND_MAX)) ).reverse;
+	ib:= lng(0);
+#    VAR ib := lng(0);
+	bw_a_cursor := 0:lng;
+barrier	bw_a:= batloop(cint,bw_a_cursor);
+	bw_aH := fetchHead(cint,bw_a_cursor);
+	bw_aT := fetchTail(cint,bw_a_cursor);
+#    cint@batloop(){
+	bw_aH:= mil.bind("bw_aH");
+	ie:= bw_aH;
+#      VAR ie := $h;
+#      # a poor man's interval-join
+#      res.insert(
+	cw_a := mil.multicast(">",samp,ib);
+	dw_a := mil.multicast("<=",samp,ie);
+	ew_a:= mil.multicast("and",cw_a,dw_a);
+	bw_aT:= mil.bind("bw_aT");
+	fw_a:= uselect(ew_a,1);
+#	[and]( [>](samp,ib), [<=](samp,ie) ).uselect(true).project($t) 
+	gw_a := project(fw_a,bw_aT);
+	hw_a := insert(res,gw_a);
+#      );
+	ib := ie;
+#      ib := ie;
+redo	bw_a;
+end	bw_a;
+#    }
+	iw_a := order(res);
+#    res.order;
+	BAT_READ:= mil.bind("BAT_READ");
+	jw_a:= nx(res);
+	kw_a := access(jw_a,BAT_READ);
+	return kw_a;
+#    RETURN nx(res).access(BAT_READ);
+end function;
+#  }
+#
+#
+##line 1602 "../../../src/gmm/gmm.mx"
+#
+#  
+##line 1605 "../../../src/gmm/gmm.mx"
+function randseq(Nsamples:int, prior:bat[void,flt]):bat[void,any::1];
+#  PROC randseq(int Nsamples, bat[void,flt] prior): bat[void,any::1] := {
+	oid:= mil.bind("oid");
+	lw_a := htype(prior);
+	res:= new(oid,lw_a,Nsamples);
+#    VAR res := new(oid, prior.htype,Nsamples);
+	mw_a := randseq(Nsamples);
+	samp:= mil.multicast("lng",mw_a);
+#    VAR samp := [lng](randseq(Nsamples));
+	nw_a := mil.multicast("*",prior,RAND_MAX);
+	ow_a := mil.multicast("int",nw_a);
+	pw_a:= mil.multicast("cumsum",ow_a);
+	cint:= reverse(pw_a);
+#    VAR cint := [cumsum]( [int]([*](prior, const RAND_MAX)) ).reverse;
+	ib:= lng(0);
+#    VAR ib := lng(0);
+	qw_a_cursor := 0:lng;
+barrier	qw_a:= batloop(cint,qw_a_cursor);
+	qw_aH := fetchHead(cint,qw_a_cursor);
+	qw_aT := fetchTail(cint,qw_a_cursor);
+#    cint@batloop(){
+	qw_aH:= mil.bind("qw_aH");
+	ie:= qw_aH;
+#      VAR ie := $h;
+#      # a poor man's interval-join
+#      res.insert(
+	rw_a := mil.multicast(">",samp,ib);
+	sw_a := mil.multicast("<=",samp,ie);
+	tw_a:= mil.multicast("and",rw_a,sw_a);
+	qw_aT:= mil.bind("qw_aT");
+	uw_a:= uselect(tw_a,1);
+#	[and]( [>](samp,ib), [<=](samp,ie) ).uselect(true).project($t) 
+	vw_a := project(uw_a,qw_aT);
+	ww_a := insert(res,vw_a);
+#      );
+	ib := ie;
+#      ib := ie;
+redo	qw_a;
+end	qw_a;
+#    }
+	xw_a := order(res);
+#    res.order;
+	BAT_READ:= mil.bind("BAT_READ");
+	yw_a:= nx(res);
+	ax_a := access(yw_a,BAT_READ);
+	return ax_a;
+#    RETURN nx(res).access(BAT_READ);
+end function;
+#  }
+#
+#
+##line 1603 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1623 "../../../src/gmm/gmm.mx"
+function gmmsamp_diag(Nsamples:int, gmm:bat[str,str]):bat[str,str];
+#  PROC gmmsamp_diag( int Nsamples, bat[str,bat] gmm ): bat[str,bat] := {
+	str:= mil.bind("str");
+	res:= new(str,str,2);
+#    VAR res := new(str,bat,2);
+	int:= mil.bind("int");
+	N:= mil.bind("N");
+	samples:= new(int,int,N);
+#    VAR samples := new(int,bat,N);
+	nseq:= mil.bind("nseq");
+	bx_a_cursor := 0:lng;
+barrier	bx_a:= batloop(nseq,bx_a_cursor);
+	bx_aH := fetchHead(nseq,bx_a_cursor);
+	bx_aT := fetchTail(nseq,bx_a_cursor);
+	bx_aT:= mil.bind("bx_aT");
+	void:= mil.bind("void");
+	dbl:= mil.bind("dbl");
+	cx_a := oid(0);
+	dx_a:= new(void,dbl,Nsamples);
+	ex_a := seqbase(dx_a,cx_a);
+	fx_a := insert(samples,bx_aT,ex_a);
+redo	bx_a;
+end	bx_a;
+#    nseq@batloop{ samples.insert($t,new(void,dbl,Nsamples).seqbase(oid(0))); }
+	BAT_READ:= mil.bind("BAT_READ");
+	gx_a := access(samples,BAT_READ);
+#    samples.access(BAT_READ);
+#    # do it...
+	mean:= find(gmm,"Mean");
+#    VAR mean := gmm.find("Mean");
+	covar:= find(gmm,"Covar");
+#    VAR covar := gmm.find("Covar");
+#    
+##line 107 "../../../src/gmm/gmm.mx"
+	hx_a := htype(covar);
+	ix_a := count(covar);
+	sigma:= new(hx_a,htype,ix_a);
+#  VAR sigma := new(covar.htype,bat,covar.count);
+#  {
+	sigma_lock:= lock_create();
+#    VAR sigma_lock := lock_create();
+	Nthreads:= mil.bind("Nthreads");
+	jx_a_cursor := 0:lng;
+barrier	jx_a:= batloop(Nthreads,jx_a_cursor);
+	jx_aH := fetchHead(Nthreads,jx_a_cursor);
+	jx_aT := fetchTail(Nthreads,jx_a_cursor);
+#    covar@ [Nthreads]batloop(){
+#      VAR _sigma_result := [sqrt]($t
+	jx_aT:= mil.bind("jx_aT");
+	_sigma_result:= mil.multicast("sqrt",jx_aT);
+#	   );
+	kx_a := lock_set(sigma_lock);
+#      lock_set(sigma_lock);
+	jx_aH:= mil.bind("jx_aH");
+	lx_a := insert(sigma,jx_aH,_sigma_result);
+#      sigma.insert($h,_sigma_result);
+	mx_a := lock_unset(sigma_lock);
+#      lock_unset(sigma_lock);
+redo	jx_a;
+end	jx_a;
+#    }
+	nx_a := lock_destroy(sigma_lock);
+#    lock_destroy(sigma_lock);
+#  }
+#
+#
+##line 1631 "../../../src/gmm/gmm.mx"
+#
+#
+	cseq:= mil.bind("cseq");
+	ox_a := find(gmm,"Prior");
+	px_a:= reverse(cseq);
+	qx_a := join(px_a,ox_a);
+	clusters:= randseq(Nsamples,qx_a);
+#    VAR clusters := randseq(Nsamples, cseq.reverse.join(gmm.find("Prior")));
+	rx_a_cursor := 0:lng;
+barrier	rx_a:= batloop(clusters,rx_a_cursor);
+	rx_aH := fetchHead(clusters,rx_a_cursor);
+	rx_aT := fetchTail(clusters,rx_a_cursor);
+#    clusters@batloop(){
+	rx_aT:= mil.bind("rx_aT");
+	sx_a:= reverse(cseq);
+	c:= find(sx_a,rx_aT);
+#      VAR c := cseq.reverse.find($t);
+#      [insert]( samples, const $h,
+	tx_a := mil.multicast("find",mean,c);
+	ux_a := mil.multicast("find",sigma,c);
+	vx_a := mil.multicast("ran_gaussian",tx_a,ux_a);
+	wx_a := mil.multicast("insert",samples,rx_aH,vx_a);
+#	[ran_gaussian]( [find](mean,c), [find](sigma,c) ) );
+redo	rx_a;
+end	rx_a;
+#    }
+	xx_a := mil.multicast("access",samples,BAT_READ);
+#    [access](samples,BAT_READ);
+#    # return structure
+	yx_a := insert(res,"Samples",samples);
+#    res.insert( "Samples", samples );
+	ay_a := insert(res,"Clusters",clusters);
+#    res.insert( "Clusters", clusters );
+	return res;
+#    RETURN res;
+end function;
+#  }
+function gmmsamp_diag(Nsamples:int, theImg:oid, gmm:bat[str,str]):bat[str,str];
+#  PROC gmmsamp_diag( int Nsamples, oid theImg, bat[str,bat] gmm ): bat[str,bat] := {
+	by_a:= find(gmm,"mImgIdx");
+	cy_a:= reverse(by_a);
+	dy_a:= uselect(cy_a,theImg);
+	selIdx:= mirror(dy_a);
+#    VAR selIdx := gmm.find("mImgIdx").reverse.uselect(theImg).mirror;
+	str:= mil.bind("str");
+	subgmm:= new(str,str);
+#    VAR subgmm := new(str,bat);
+#    
+##line 634 "../../../src/gmm/gmm.mx"
+	ey_a := oid(0);
+	fy_a:= reverse(selIdx);
+	gy_a:= mark(fy_a,ey_a);
+	fIdx:= reverse(gy_a);
+#VAR fIdx           := selIdx.reverse.mark(oid(0)).reverse;
+#{
+	hy_a:= find(gmm,"mImgIdx");
+	iy_a := reverse(hy_a);
+	convImgIdx:= join(fIdx,iy_a);
+#  VAR convImgIdx     := join( fIdx, gmm.find("mImgIdx").reverse );
+	jy_a:= find(gmm,"mCIdx");
+	ky_a := reverse(jy_a);
+	convCIdx:= join(fIdx,ky_a);
+#  VAR convCIdx       := join( fIdx, gmm.find("mCIdx").reverse );
+	ly_a := reverse(convImgIdx);
+	my_a := insert(subgmm,"mImgIdx",ly_a);
+#  subgmm.insert( "mImgIdx", convImgIdx.reverse );
+	ny_a := reverse(convCIdx);
+	oy_a := insert(subgmm,"mCIdx",ny_a);
+#  subgmm.insert( "mCIdx",   convCIdx.reverse );
+#
+	py_a := find(gmm,"Prior");
+	qy_a := join(fIdx,py_a);
+	ry_a := insert(subgmm,"Prior",qy_a);
+#  subgmm.insert( "Prior", join(fIdx, gmm.find("Prior")) );
+	sy_a := find(gmm,"Mean");
+	ty_a := mil.multicast("join",fIdx,sy_a);
+	uy_a := insert(subgmm,"Mean",ty_a);
+#  subgmm.insert( "Mean",  [join](const fIdx, gmm.find("Mean")) );
+	vy_a := find(gmm,"Covar");
+	wy_a := mil.multicast("join",fIdx,vy_a);
+	xy_a := insert(subgmm,"Covar",wy_a);
+#  subgmm.insert( "Covar", [join](const fIdx, gmm.find("Covar")) );
+#
+	yy_a := find(gmm,"init_variances");
+	aa_b := join(fIdx,yy_a);
+	ba_b := insert(subgmm,"init_variances",aa_b);
+#  subgmm.insert( "init_variances", join(fIdx, gmm.find("init_variances")) );
+#}
+#
+#
+##line 1648 "../../../src/gmm/gmm.mx"
+#
+	ca_b := gmmsamp_diag(Nsamples,subgmm);
+	return ca_b;
+#    RETURN gmmsamp_diag( Nsamples, subgmm );
+end function;
+#  }
+#
+function randprob(N:int):bat[void,dbl];
+#  PROC randprob(int N):bat[void,dbl] := {
+	t:= randseq(N);
+#    VAR t := randseq(N);
+	da_b:= mil.multicast("lng",t);
+	ea_b := sum(da_b);
+	fa_b := dbl(ea_b);
+	t := mil.multicast("/",t,fa_b);
+#    t := [/]( t, const dbl([lng](t).sum) );
+	return t;
+#    RETURN t;
+end function;
+#  }
+#
+#
+##line 1705 "../../../src/gmm/gmm.mx"
+function initGMM(coll:bat[str,str]):bat[str,str];
+#PROC initGMM( bat[str,bat] coll ):bat[str,bat] := {
+	ga_b := debug("Estimating initial model");
+#  debug("Estimating initial model");
+	str:= mil.bind("str");
+	gmm:= new(str,str);
+#  VAR gmm := new(str,bat);
+#
+	I:= find(coll,"I");
+#  VAR I       := coll.find("I");
+	Ib:= find(coll,"Ib");
+#  VAR Ib      := coll.find("Ib");
+	coeffs:= find(coll,"Coeffs");
+#  VAR coeffs  := coll.find("Coeffs");
+#
+	cseq:= mil.bind("cseq");
+	ha_b:= reverse(cseq);
+	ia_b:= project(ha_b,1);
+	ja_b := reverse(ia_b);
+	ka_b:= project(I,1);
+	icIdx:= join(ka_b,ja_b);
+#  VAR icIdx   := I.project(1).join(cseq.reverse.project(1).reverse);
+	mImgIdx:= xn(icIdx);
+#  VAR mImgIdx := xn(icIdx);
+	la_b:= nx(icIdx);
+	mCIdx:= reverse(la_b);
+#  VAR mCIdx   := nx(icIdx).reverse;
+#
+	ma_b := insert(gmm,"mImgIdx",mImgIdx);
+#  gmm.insert( "mImgIdx", mImgIdx );
+	na_b := insert(gmm,"mCIdx",mCIdx);
+#  gmm.insert( "mCIdx",   mCIdx );
+#
+#
+##line 1722 "../../../src/gmm/gmm.mx"
+	C:= mil.bind("C");
+	oa_b := /(1.0,C);
+	pa_b:= reverse(mImgIdx);
+	qa_b := project(pa_b,oa_b);
+	ra_b := insert(gmm,"Prior",qa_b);
+#  gmm.insert( "Prior", mImgIdx.reverse.project(1.0 / C ) );
+#
+#
+##line 1727 "../../../src/gmm/gmm.mx"
+	oid:= mil.bind("oid");
+	void:= mil.bind("void");
+	sa_b := *(count(I),C);
+	ta_b:= new(oid,void,sa_b);
+	ua_b := oid(0);
+	va_b:= reverse(ta_b);
+	wa_b:= seqbase(va_b,ua_b);
+	aSample:= reverse(wa_b);
+#  VAR aSample := new(oid,void,I.count * C).reverse.seqbase(oid(0)).reverse;
+	xa_b := oid(0);
+	ya_b := mark(I,xa_b);
+	ab_b_cursor := 0:lng;
+barrier	ab_b:= batloop(ya_b,ab_b_cursor);
+	ab_bH := fetchHead(ya_b,ab_b_cursor);
+	ab_bT := fetchTail(ya_b,ab_b_cursor);
+#  I.mark(oid(0))@batloop(){
+	ab_bH:= mil.bind("ab_bH");
+	bb_b:= reverse(Ib);
+	cb_b:= select(bb_b,ab_bH);
+	ab_bT:= mil.bind("ab_bT");
+	db_b := int(ab_bT);
+	eb_b := *(C,db_b);
+	fb_b := oid(eb_b);
+	gb_b:= sample(cb_b,C);
+	hb_b := mark(gb_b,fb_b);
+	ib_b := insert(aSample,hb_b);
+#    aSample.insert( Ib.reverse.select($h).sample(C).mark(oid(C * int($t))) );
+redo	ab_b;
+end	ab_b;
+#  }
+#  gmm.insert( "Mean",
+#      [reverse]( 
+#	[join](
+	jb_b := mil.multicast("reverse",coeffs);
+#	  [reverse](coeffs), 
+	kb_b := mil.multicast("join",jb_b,aSample);
+#	  const aSample ))
+	lb_b := mil.multicast("reverse",kb_b);
+	mb_b := insert(gmm,"Mean",lb_b);
+#  );
+#
+#
+##line 1741 "../../../src/gmm/gmm.mx"
+#  
+##line 1227 "../../../src/gmm/gmm.mx"
+#VAR imgcoeffs;
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+##line 1240 "../../../src/gmm/gmm.mx"
+	nb_b := htype(coeffs);
+	ob_b := count(coeffs);
+	imgcoeffs := new(nb_b,htype,ob_b);
+#  imgcoeffs := new(coeffs.htype,bat,coeffs.count);
+	imgcoeffs_lock:= lock_create();
+#  VAR imgcoeffs_lock := lock_create();
+	Nthreads:= mil.bind("Nthreads");
+	pb_b_cursor := 0:lng;
+barrier	pb_b:= batloop(Nthreads,pb_b_cursor);
+	pb_bH := fetchHead(Nthreads,pb_b_cursor);
+	pb_bT := fetchTail(Nthreads,pb_b_cursor);
+#  coeffs@ [Nthreads]batloop(){
+	pb_bT:= mil.bind("pb_bT");
+	_imgcoeffs_result:= join(Ib,pb_bT);
+#    VAR _imgcoeffs_result := join( Ib, $t );
+	qb_b := lock_set(imgcoeffs_lock);
+#    lock_set(imgcoeffs_lock);
+	pb_bH:= mil.bind("pb_bH");
+	rb_b := insert(imgcoeffs,pb_bH,_imgcoeffs_result);
+#    imgcoeffs.insert( $h, _imgcoeffs_result );
+	sb_b := lock_unset(imgcoeffs_lock);
+#    lock_unset(imgcoeffs_lock);
+redo	pb_b;
+end	pb_b;
+#  }
+	tb_b := lock_destroy(imgcoeffs_lock);
+#  lock_destroy(imgcoeffs_lock);
+#
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1228 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1741 "../../../src/gmm/gmm.mx"
+#
+#  
+##line 107 "../../../src/gmm/gmm.mx"
+	ub_b := htype(imgcoeffs);
+	vb_b := count(imgcoeffs);
+	Area:= new(ub_b,htype,vb_b);
+#  VAR Area := new(imgcoeffs.htype,bat,imgcoeffs.count);
+#  {
+	Area_lock:= lock_create();
+#    VAR Area_lock := lock_create();
+	wb_b_cursor := 0:lng;
+barrier	wb_b:= batloop(Nthreads,wb_b_cursor);
+	wb_bH := fetchHead(Nthreads,wb_b_cursor);
+	wb_bT := fetchTail(Nthreads,wb_b_cursor);
+#    imgcoeffs@ [Nthreads]batloop(){
+#      VAR _Area_result := {sum}($t
+	wb_bT:= mil.bind("wb_bT");
+	_Area_result:= mil.setop("",wb_bT);
+#	   );
+	xb_b := lock_set(Area_lock);
+#      lock_set(Area_lock);
+	wb_bH:= mil.bind("wb_bH");
+	yb_b := insert(Area,wb_bH,_Area_result);
+#      Area.insert($h,_Area_result);
+	ac_b := lock_unset(Area_lock);
+#      lock_unset(Area_lock);
+redo	wb_b;
+end	wb_b;
+#    }
+	bc_b := lock_destroy(Area_lock);
+#    lock_destroy(Area_lock);
+#  }
+#
+#
+##line 1742 "../../../src/gmm/gmm.mx"
+#
+	imgcoeffs := nil;
+#            imgcoeffs := nil;
+	cc_b:= reverse(Ib);
+	Ndata:= histogram(cc_b);
+#  VAR Ndata := Ib.reverse.histogram;
+#  
+##line 107 "../../../src/gmm/gmm.mx"
+	dc_b := htype(Area);
+	ec_b := count(Area);
+	means:= new(dc_b,htype,ec_b);
+#  VAR means := new(Area.htype,bat,Area.count);
+#  {
+	means_lock:= lock_create();
+#    VAR means_lock := lock_create();
+	fc_b_cursor := 0:lng;
+barrier	fc_b:= batloop(Nthreads,fc_b_cursor);
+	fc_bH := fetchHead(Nthreads,fc_b_cursor);
+	fc_bT := fetchTail(Nthreads,fc_b_cursor);
+#    Area@ [Nthreads]batloop(){
+#      VAR _means_result := [/]($t
+#	
+##line 104 "../../../src/gmm/gmm.mx"
+	fc_bT:= mil.bind("fc_bT");
+#,Ndata
+#
+#
+##line 112 "../../../src/gmm/gmm.mx"
+	_means_result:= mil.multicast("/",fc_bT,Ndata);
+#   );
+	gc_b := lock_set(means_lock);
+#      lock_set(means_lock);
+	fc_bH:= mil.bind("fc_bH");
+	hc_b := insert(means,fc_bH,_means_result);
+#      means.insert($h,_means_result);
+	ic_b := lock_unset(means_lock);
+#      lock_unset(means_lock);
+redo	fc_b;
+end	fc_b;
+#    }
+	jc_b := lock_destroy(means_lock);
+#    lock_destroy(means_lock);
+#  }
+#
+#
+##line 1745 "../../../src/gmm/gmm.mx"
+#
+#  
+##line 1227 "../../../src/gmm/gmm.mx"
+#VAR alignedmeans;
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+##line 1240 "../../../src/gmm/gmm.mx"
+	kc_b := htype(means);
+	lc_b := count(means);
+	alignedmeans := new(kc_b,htype,lc_b);
+#  alignedmeans := new(means.htype,bat,means.count);
+	alignedmeans_lock:= lock_create();
+#  VAR alignedmeans_lock := lock_create();
+	mc_b_cursor := 0:lng;
+barrier	mc_b:= batloop(Nthreads,mc_b_cursor);
+	mc_bH := fetchHead(Nthreads,mc_b_cursor);
+	mc_bT := fetchTail(Nthreads,mc_b_cursor);
+#  means@ [Nthreads]batloop(){
+	nc_b := reverse(Ib);
+	mc_bT:= mil.bind("mc_bT");
+	_alignedmeans_result:= join(nc_b,mc_bT);
+#    VAR _alignedmeans_result := join( Ib.reverse, $t );
+	oc_b := lock_set(alignedmeans_lock);
+#    lock_set(alignedmeans_lock);
+	mc_bH:= mil.bind("mc_bH");
+	pc_b := insert(alignedmeans,mc_bH,_alignedmeans_result);
+#    alignedmeans.insert( $h, _alignedmeans_result );
+	qc_b := lock_unset(alignedmeans_lock);
+#    lock_unset(alignedmeans_lock);
+redo	mc_b;
+end	mc_b;
+#  }
+	rc_b := lock_destroy(alignedmeans_lock);
+#  lock_destroy(alignedmeans_lock);
+#
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1228 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1746 "../../../src/gmm/gmm.mx"
+#
+	means := nil;
+#            means := nil;
+#
+	diffs:= mil.multicast("nestedop","-",coeffs,alignedmeans);
+#  VAR diffs := [nestedop]("-",coeffs,alignedmeans);
+	alignedmeans := nil;
+#            alignedmeans := nil;
+	coeffs := nil;
+#	    coeffs := nil;
+	diffs := mil.multicast("square",diffs);
+#  diffs := [square](diffs);       # deepop?
+#  
+##line 1227 "../../../src/gmm/gmm.mx"
+#VAR imgdiffs;
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+##line 1240 "../../../src/gmm/gmm.mx"
+	sc_b := htype(diffs);
+	tc_b := count(diffs);
+	imgdiffs := new(sc_b,htype,tc_b);
+#  imgdiffs := new(diffs.htype,bat,diffs.count);
+	imgdiffs_lock:= lock_create();
+#  VAR imgdiffs_lock := lock_create();
+	uc_b_cursor := 0:lng;
+barrier	uc_b:= batloop(Nthreads,uc_b_cursor);
+	uc_bH := fetchHead(Nthreads,uc_b_cursor);
+	uc_bT := fetchTail(Nthreads,uc_b_cursor);
+#  diffs@ [Nthreads]batloop(){
+	uc_bT:= mil.bind("uc_bT");
+	_imgdiffs_result:= join(Ib,uc_bT);
+#    VAR _imgdiffs_result := join( Ib, $t );
+	vc_b := lock_set(imgdiffs_lock);
+#    lock_set(imgdiffs_lock);
+	uc_bH:= mil.bind("uc_bH");
+	wc_b := insert(imgdiffs,uc_bH,_imgdiffs_result);
+#    imgdiffs.insert( $h, _imgdiffs_result );
+	xc_b := lock_unset(imgdiffs_lock);
+#    lock_unset(imgdiffs_lock);
+redo	uc_b;
+end	uc_b;
+#  }
+	yc_b := lock_destroy(imgdiffs_lock);
+#  lock_destroy(imgdiffs_lock);
+#
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1228 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1753 "../../../src/gmm/gmm.mx"
+#
+#  
+##line 107 "../../../src/gmm/gmm.mx"
+	ad_b := htype(imgdiffs);
+	bd_b := count(imgdiffs);
+	tmp:= new(ad_b,htype,bd_b);
+#  VAR tmp := new(imgdiffs.htype,bat,imgdiffs.count);
+#  {
+	tmp_lock:= lock_create();
+#    VAR tmp_lock := lock_create();
+	cd_b_cursor := 0:lng;
+barrier	cd_b:= batloop(Nthreads,cd_b_cursor);
+	cd_bH := fetchHead(Nthreads,cd_b_cursor);
+	cd_bT := fetchTail(Nthreads,cd_b_cursor);
+#    imgdiffs@ [Nthreads]batloop(){
+#      VAR _tmp_result := {sum}($t
+	cd_bT:= mil.bind("cd_bT");
+	_tmp_result:= mil.setop("",cd_bT);
+#	   );
+	dd_b := lock_set(tmp_lock);
+#      lock_set(tmp_lock);
+	cd_bH:= mil.bind("cd_bH");
+	ed_b := insert(tmp,cd_bH,_tmp_result);
+#      tmp.insert($h,_tmp_result);
+	fd_b := lock_unset(tmp_lock);
+#      lock_unset(tmp_lock);
+redo	cd_b;
+end	cd_b;
+#    }
+	gd_b := lock_destroy(tmp_lock);
+#    lock_destroy(tmp_lock);
+#  }
+#
+#
+##line 1754 "../../../src/gmm/gmm.mx"
+#
+#  
+##line 107 "../../../src/gmm/gmm.mx"
+	hd_b := htype(tmp);
+	id_b := count(tmp);
+	variances:= new(hd_b,htype,id_b);
+#  VAR variances := new(tmp.htype,bat,tmp.count);
+#  {
+	variances_lock:= lock_create();
+#    VAR variances_lock := lock_create();
+	jd_b_cursor := 0:lng;
+barrier	jd_b:= batloop(Nthreads,jd_b_cursor);
+	jd_bH := fetchHead(Nthreads,jd_b_cursor);
+	jd_bT := fetchTail(Nthreads,jd_b_cursor);
+#    tmp@ [Nthreads]batloop(){
+#      VAR _variances_result := [/]($t
+#	
+##line 104 "../../../src/gmm/gmm.mx"
+	jd_bT:= mil.bind("jd_bT");
+#,Ndata
+#
+#
+##line 112 "../../../src/gmm/gmm.mx"
+	_variances_result:= mil.multicast("/",jd_bT,Ndata);
+#   );
+	kd_b := lock_set(variances_lock);
+#      lock_set(variances_lock);
+	jd_bH:= mil.bind("jd_bH");
+	ld_b := insert(variances,jd_bH,_variances_result);
+#      variances.insert($h,_variances_result);
+	md_b := lock_unset(variances_lock);
+#      lock_unset(variances_lock);
+redo	jd_b;
+end	jd_b;
+#    }
+	nd_b := lock_destroy(variances_lock);
+#    lock_destroy(variances_lock);
+#  }
+#
+#
+##line 1755 "../../../src/gmm/gmm.mx"
+#
+	tmp := nil;
+#            tmp := nil;
+	imgdiffs := nil;
+#	    imgdiffs := nil;
+	Ndata := nil;
+#	    Ndata := nil;
+#  
+##line 130 "../../../src/gmm/gmm.mx"
+#VAR init_variances;
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+##line 167 "../../../src/gmm/gmm.mx"
+#  {
+	init_variances_a:= fetch(variances,0);
+	init_variances_e:= fetch(variances,4);
+#    VAR init_variances_a := variances.fetch(0);    VAR init_variances_e := variances.fetch(4);
+	init_variances_b:= fetch(variances,1);
+	init_variances_f:= fetch(variances,5);
+#    VAR init_variances_b := variances.fetch(1);    VAR init_variances_f := variances.fetch(5);
+	init_variances_c:= fetch(variances,2);
+	init_variances_g:= fetch(variances,6);
+#    VAR init_variances_c := variances.fetch(2);    VAR init_variances_g := variances.fetch(6);
+	init_variances_d:= fetch(variances,3);
+	init_variances_h:= fetch(variances,7);
+#    VAR init_variances_d := variances.fetch(3);    VAR init_variances_h := variances.fetch(7);
+#    
+##line 157 "../../../src/gmm/gmm.mx"
+#    # perform four operations init_variances_a in parallel
+#    {
+#      {|
+barrier	od_b:= true;
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations init_variances_a in parallel
+#      {
+#	{|
+barrier	pd_b:= true;
+	BAT_WRITE:= mil.bind("BAT_WRITE");
+	qd_b:= mil.multicast("+",init_variances_a,init_variances_b);
+	init_variances_a := access(qd_b,BAT_WRITE);
+#	   init_variances_a := [+](init_variances_a,init_variances_b).access(BAT_WRITE);
+	init_variances_c := mil.multicast("+",init_variances_c,init_variances_d);
+#	   init_variances_c := [+](init_variances_c,init_variances_d);
+end	pd_b;
+#	 |}
+	rd_b := mil.multicast(":+=",init_variances_a,init_variances_c);
+#	 [:+=](init_variances_a,init_variances_c);
+#      }
+#
+#
+##line 160 "../../../src/gmm/gmm.mx"
+#
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations init_variances_e in parallel
+#      {
+#	{|
+barrier	sd_b:= true;
+	td_b:= mil.multicast("+",init_variances_e,init_variances_f);
+	init_variances_e := access(td_b,BAT_WRITE);
+#	   init_variances_e := [+](init_variances_e,init_variances_f).access(BAT_WRITE);
+	init_variances_g := mil.multicast("+",init_variances_g,init_variances_h);
+#	   init_variances_g := [+](init_variances_g,init_variances_h);
+end	sd_b;
+#	 |}
+	ud_b := mil.multicast(":+=",init_variances_e,init_variances_g);
+#	 [:+=](init_variances_e,init_variances_g);
+#      }
+#
+#
+##line 161 "../../../src/gmm/gmm.mx"
+#
+end	od_b;
+#       |}
+	vd_b := mil.multicast(":+=",init_variances_a,init_variances_e);
+#       [:+=](init_variances_a,init_variances_e);      
+#    }
+#
+#
+##line 172 "../../../src/gmm/gmm.mx"
+#
+	init_variances := init_variances_a;
+#    init_variances := init_variances_a;
+#  }
+#
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 131 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1759 "../../../src/gmm/gmm.mx"
+#
+	wd_b := mil.multicast("/",init_variances,N);
+#  init_variances := [*]( [/]( init_variances, const N ), 
+	init_variances := mil.multicast("*",wd_b,COVAR_INIT_FRACTION);
+#    const COVAR_INIT_FRACTION );
+#    # Q: blow up this one here or in the loop???
+	xd_b := reverse(mImgIdx);
+	init_variances := join(xd_b,init_variances);
+#  init_variances := join(mImgIdx.reverse, init_variances);
+	yd_b := insert(gmm,"init_variances",init_variances);
+#  gmm.insert( "init_variances", init_variances );
+#
+	int:= mil.bind("int");
+	covar:= new(int,int,N);
+#  VAR covar := new(int,bat,N);
+	i:= 0;
+#  VAR i := 0;
+barrier	ae_b:= true;
+	ce_b := <(i,N);
+barrier	be_b:= ce_b;
+#  WHILE (i < N) {
+	de_b := insert(covar,i,init_variances);
+#    covar.insert( i, init_variances );
+	ee_b := :+=(i,1);
+#    i :+= 1;
+redo	ae_b;
+end	be_b;
+end	ae_b;
+#  }
+	fe_b := insert(gmm,"Covar",covar);
+#  gmm.insert( "Covar", covar );
+#
+	sessionId:= mil.bind("sessionId");
+	ge_b := +(sessionId,"_init");
+	he_b := +("gmm",ge_b);
+	ie_b := renameGMM(gmm,he_b);
+#  gmm.renameGMM("gmm" + sessionId + "_init");
+	return gmm;
+#  RETURN gmm;
+end function;
+#}
+#
+#
+#
+##line 1781 "../../../src/gmm/gmm.mx"
+function test_EM(Nimg:int, M:int):bat[str,str];
+#PROC test_EM(int Nimg, int M): bat[str,bat] := {
+	str:= mil.bind("str");
+	testmodels:= new(str,str);
+#  VAR testmodels := new(str,bat);
+#
+	je_b := debug("Creating collection with M=%d",M);
+#  debug("Creating collection with M=%d",M);
+	sessionId:= mil.bind("sessionId");
+	ke_b := +("imgs",sessionId);
+	imgs:= newCollection(ke_b,Nimg);
+#  VAR imgs := newCollection("imgs" + sessionId, Nimg);
+#  
+##line 663 "../../../src/gmm/gmm.mx"
+	le_b := find(imgs,"Coeffs");
+	me_b_cursor := 0:lng;
+barrier	me_b:= batloop(le_b,me_b_cursor);
+	me_bH := fetchHead(le_b,me_b_cursor);
+	me_bT := fetchTail(le_b,me_b_cursor);
+	me_bT:= mil.bind("me_bT");
+	ne_b := persists(me_bT,1);
+redo	me_b;
+end	me_b;
+#  imgs.find("Coeffs")@batloop{ persists($t, true); }
+	oe_b_cursor := 0:lng;
+barrier	oe_b:= batloop(imgs,oe_b_cursor);
+	oe_bH := fetchHead(imgs,oe_b_cursor);
+	oe_bT := fetchTail(imgs,oe_b_cursor);
+	oe_bT:= mil.bind("oe_bT");
+	pe_b := persists(oe_bT,1);
+redo	oe_b;
+end	oe_b;
+#  imgs@batloop(){ persists($t, true); }
+#
+#
+##line 1786 "../../../src/gmm/gmm.mx"
+#
+#  
+##line 663 "../../../src/gmm/gmm.mx"
+	qe_b := find(imgs,"Coeffs");
+	re_b_cursor := 0:lng;
+barrier	re_b:= batloop(qe_b,re_b_cursor);
+	re_bH := fetchHead(qe_b,re_b_cursor);
+	re_bT := fetchTail(qe_b,re_b_cursor);
+	re_bT:= mil.bind("re_bT");
+	STORE_MMAP:= mil.bind("STORE_MMAP");
+	se_b := mmap(re_bT,STORE_MMAP);
+redo	re_b;
+end	re_b;
+#  imgs.find("Coeffs")@batloop{ mmap($t, STORE_MMAP); }
+	te_b_cursor := 0:lng;
+barrier	te_b:= batloop(imgs,te_b_cursor);
+	te_bH := fetchHead(imgs,te_b_cursor);
+	te_bT := fetchTail(imgs,te_b_cursor);
+	te_bT:= mil.bind("te_bT");
+	ue_b := mmap(te_bT,STORE_MMAP);
+redo	te_b;
+end	te_b;
+#  imgs@batloop(){ mmap($t, STORE_MMAP); }
+#
+#
+##line 1787 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1793 "../../../src/gmm/gmm.mx"
+	ve_b:= find(imgs,"Coeffs");
+	we_b := persists(ve_b,0);
+#           imgs.find("Coeffs").persists(false);
+	xe_b := +("src",sessionId);
+	src_gmm:= newGMM(xe_b);
+#  VAR src_gmm := newGMM("src" + sessionId);
+#  
+##line 655 "../../../src/gmm/gmm.mx"
+	ye_b := find(src_gmm,"init_variances");
+	af_b := persists(ye_b,1);
+#  persists( src_gmm.find("init_variances"), true );
+	bf_b := find(src_gmm,"Prior");
+	cf_b := persists(bf_b,1);
+#  persists( src_gmm.find("Prior"), true );
+	df_b := find(src_gmm,"mImgIdx");
+	ef_b := persists(df_b,1);
+#  persists( src_gmm.find("mImgIdx"), true );
+	ff_b := find(src_gmm,"mCIdx");
+	gf_b := persists(ff_b,1);
+#  persists( src_gmm.find("mCIdx"), true );
+	hf_b := find(src_gmm,"Mean");
+	if_b_cursor := 0:lng;
+barrier	if_b:= batloop(hf_b,if_b_cursor);
+	if_bH := fetchHead(hf_b,if_b_cursor);
+	if_bT := fetchTail(hf_b,if_b_cursor);
+	if_bT:= mil.bind("if_bT");
+	jf_b := persists(if_bT,1);
+redo	if_b;
+end	if_b;
+#  src_gmm.find("Mean")@batloop{  persists($t, true); }
+	kf_b := find(src_gmm,"Covar");
+	lf_b_cursor := 0:lng;
+barrier	lf_b:= batloop(kf_b,lf_b_cursor);
+	lf_bH := fetchHead(kf_b,lf_b_cursor);
+	lf_bT := fetchTail(kf_b,lf_b_cursor);
+	lf_bT:= mil.bind("lf_bT");
+	mf_b := persists(lf_bT,1);
+redo	lf_b;
+end	lf_b;
+#  src_gmm.find("Covar")@batloop{ persists($t, true); }
+#
+#
+##line 1795 "../../../src/gmm/gmm.mx"
+#
+#  
+##line 655 "../../../src/gmm/gmm.mx"
+	nf_b := find(src_gmm,"init_variances");
+	of_b := mmap(nf_b,STORE_MMAP);
+#  mmap( src_gmm.find("init_variances"), STORE_MMAP );
+	pf_b := find(src_gmm,"Prior");
+	qf_b := mmap(pf_b,STORE_MMAP);
+#  mmap( src_gmm.find("Prior"), STORE_MMAP );
+	rf_b := find(src_gmm,"mImgIdx");
+	sf_b := mmap(rf_b,STORE_MMAP);
+#  mmap( src_gmm.find("mImgIdx"), STORE_MMAP );
+	tf_b := find(src_gmm,"mCIdx");
+	uf_b := mmap(tf_b,STORE_MMAP);
+#  mmap( src_gmm.find("mCIdx"), STORE_MMAP );
+	vf_b := find(src_gmm,"Mean");
+	wf_b_cursor := 0:lng;
+barrier	wf_b:= batloop(vf_b,wf_b_cursor);
+	wf_bH := fetchHead(vf_b,wf_b_cursor);
+	wf_bT := fetchTail(vf_b,wf_b_cursor);
+	wf_bT:= mil.bind("wf_bT");
+	xf_b := mmap(wf_bT,STORE_MMAP);
+redo	wf_b;
+end	wf_b;
+#  src_gmm.find("Mean")@batloop{  mmap($t, STORE_MMAP); }
+	yf_b := find(src_gmm,"Covar");
+	ag_b_cursor := 0:lng;
+barrier	ag_b:= batloop(yf_b,ag_b_cursor);
+	ag_bH := fetchHead(yf_b,ag_b_cursor);
+	ag_bT := fetchTail(yf_b,ag_b_cursor);
+	ag_bT:= mil.bind("ag_bT");
+	bg_b := mmap(ag_bT,STORE_MMAP);
+redo	ag_b;
+end	ag_b;
+#  src_gmm.find("Covar")@batloop{ mmap($t, STORE_MMAP); }
+#
+#
+##line 1796 "../../../src/gmm/gmm.mx"
+#
+#
+#  
+##line 1663 "../../../src/gmm/gmm.mx"
+#  
+##line 663 "../../../src/gmm/gmm.mx"
+	cg_b := find(imgs,"Coeffs");
+	dg_b_cursor := 0:lng;
+barrier	dg_b:= batloop(cg_b,dg_b_cursor);
+	dg_bH := fetchHead(cg_b,dg_b_cursor);
+	dg_bT := fetchTail(cg_b,dg_b_cursor);
+	dg_bT:= mil.bind("dg_bT");
+	BAT_APPEND:= mil.bind("BAT_APPEND");
+	eg_b := access(dg_bT,BAT_APPEND);
+redo	dg_b;
+end	dg_b;
+#  imgs.find("Coeffs")@batloop{ access($t, BAT_APPEND); }
+	fg_b_cursor := 0:lng;
+barrier	fg_b:= batloop(imgs,fg_b_cursor);
+	fg_bH := fetchHead(imgs,fg_b_cursor);
+	fg_bT := fetchTail(imgs,fg_b_cursor);
+	fg_bT:= mil.bind("fg_bT");
+	gg_b := access(fg_bT,BAT_APPEND);
+redo	fg_b;
+end	fg_b;
+#  imgs@batloop(){ access($t, BAT_APPEND); }
+#
+#
+##line 1663 "../../../src/gmm/gmm.mx"
+#
+#  
+##line 655 "../../../src/gmm/gmm.mx"
+	hg_b := find(src_gmm,"init_variances");
+	ig_b := access(hg_b,BAT_APPEND);
+#  access( src_gmm.find("init_variances"), BAT_APPEND );
+	jg_b := find(src_gmm,"Prior");
+	kg_b := access(jg_b,BAT_APPEND);
+#  access( src_gmm.find("Prior"), BAT_APPEND );
+	lg_b := find(src_gmm,"mImgIdx");
+	mg_b := access(lg_b,BAT_APPEND);
+#  access( src_gmm.find("mImgIdx"), BAT_APPEND );
+	ng_b := find(src_gmm,"mCIdx");
+	og_b := access(ng_b,BAT_APPEND);
+#  access( src_gmm.find("mCIdx"), BAT_APPEND );
+	pg_b := find(src_gmm,"Mean");
+	qg_b_cursor := 0:lng;
+barrier	qg_b:= batloop(pg_b,qg_b_cursor);
+	qg_bH := fetchHead(pg_b,qg_b_cursor);
+	qg_bT := fetchTail(pg_b,qg_b_cursor);
+	qg_bT:= mil.bind("qg_bT");
+	rg_b := access(qg_bT,BAT_APPEND);
+redo	qg_b;
+end	qg_b;
+#  src_gmm.find("Mean")@batloop{  access($t, BAT_APPEND); }
+	sg_b := find(src_gmm,"Covar");
+	tg_b_cursor := 0:lng;
+barrier	tg_b:= batloop(sg_b,tg_b_cursor);
+	tg_bH := fetchHead(sg_b,tg_b_cursor);
+	tg_bT := fetchTail(sg_b,tg_b_cursor);
+	tg_bT:= mil.bind("tg_bT");
+	ug_b := access(tg_bT,BAT_APPEND);
+redo	tg_b;
+end	tg_b;
+#  src_gmm.find("Covar")@batloop{ access($t, BAT_APPEND); }
+#
+#
+##line 1664 "../../../src/gmm/gmm.mx"
+#
+#  # some random metadata for now
+	vg_b := +(str(0),".jpg");
+	wg_b := +("http://nowhere.org/noimg_",vg_b);
+	xg_b:= find(imgs,"I");
+	yg_b := insert(xg_b,nil,wg_b);
+#  imgs.find("I").insert(nil,"http://nowhere.org/noimg_" + str(0) + ".jpg");
+	ah_b := Nseq(M);
+	bh_b_cursor := 0:lng;
+barrier	bh_b:= batloop(ah_b,bh_b_cursor);
+	bh_bH := fetchHead(ah_b,bh_b_cursor);
+	bh_bT := fetchTail(ah_b,bh_b_cursor);
+#  Nseq(M)@batloop(){
+	ch_b := oid(0);
+	dh_b:= find(imgs,"Ib");
+	eh_b := insert(dh_b,ch_b,nil);
+#    imgs.find("Ib").insert(oid(0),nil);
+	bh_bT:= mil.bind("bh_bT");
+	fh_b := %(bh_bT,44);
+	gh_b:= find(imgs,"Ix");
+	hh_b := insert(gh_b,nil,fh_b);
+#    imgs.find("Ix").insert(nil, ($t % 44));
+	ih_b := /(bh_bT,44);
+	jh_b:= find(imgs,"Iy");
+	kh_b := insert(jh_b,nil,ih_b);
+#    imgs.find("Iy").insert(nil, ($t / 44));
+redo	bh_b;
+end	bh_b;
+#  }
+	C:= mil.bind("C");
+	lh_b := randprob(C);
+	mh_b := mil.multicast("flt",lh_b);
+	nh_b:= find(src_gmm,"Prior");
+	oh_b := insert(nh_b,mh_b);
+#  src_gmm.find("Prior").insert( [flt](randprob(C)) );
+	cseq:= mil.bind("cseq");
+	ph_b_cursor := 0:lng;
+barrier	ph_b:= batloop(cseq,ph_b_cursor);
+	ph_bH := fetchHead(cseq,ph_b_cursor);
+	ph_bT := fetchTail(cseq,ph_b_cursor);
+#  cseq@batloop(){
+#    # NOTE: was RAND_MAX + 1.0LL
+	qh_b := find(src_gmm,"Mean");
+#    [insert]( src_gmm.find("Mean"), const nil,
+	rh_b := randseq(N);
+	sh_b := +(RAND_MAX,1.0);
+	th_b := /(sh_b,255);
+	uh_b:= mil.multicast("/",rh_b,th_b);
+	vh_b:= reverse(uh_b);
+	wh_b:= number(vh_b);
+	xh_b := reverse(wh_b);
+	yh_b := mil.multicast("insert",qh_b,nil,xh_b);
+#      [/]( randseq(N), const (RAND_MAX + 1.0) / 255).reverse.number.reverse );
+	ai_b := find(src_gmm,"Covar");
+#    [insert]( src_gmm.find("Covar"), const nil,
+	bi_b := randseq(N);
+	ci_b := +(RAND_MAX,1.0);
+	di_b := /(ci_b,128);
+	ei_b:= mil.multicast("/",bi_b,di_b);
+	fi_b:= reverse(ei_b);
+	gi_b:= number(fi_b);
+	hi_b := reverse(gi_b);
+	ii_b := mil.multicast("insert",ai_b,nil,hi_b);
+#      [/]( randseq(N), const (RAND_MAX + 1.0) / 128).reverse.number.reverse );
+redo	ph_b;
+end	ph_b;
+#  }
+	ji_b := oid(0);
+	ki_b:= _x(cseq);
+	li_b:= project(ki_b,ji_b);
+	mi_b := reverse(li_b);
+	ni_b:= find(src_gmm,"mImgIdx");
+	oi_b := insert(ni_b,mi_b);
+#  src_gmm.find("mImgIdx").insert(_x(cseq).project(const oid(0)).reverse);
+	pi_b:= _x(cseq);
+	qi_b := reverse(pi_b);
+	ri_b:= find(src_gmm,"mCIdx");
+	si_b := insert(ri_b,qi_b);
+#  src_gmm.find("mCIdx").insert(_x(cseq).reverse);
+#    # bug with first insert in table
+	ti_b:= find(src_gmm,"mImgIdx");
+	ui_b := oid(0);
+	vi_b:= reverse(ti_b);
+	wi_b:= seqbase(vi_b,ui_b);
+	xi_b := reverse(wi_b);
+#  src_gmm.find("mImgIdx").reverse.seqbase(oid(0)).reverse;
+	yi_b:= find(src_gmm,"mCIdx");
+	aj_b := oid(0);
+	bj_b:= reverse(yi_b);
+	cj_b:= seqbase(bj_b,aj_b);
+	dj_b := reverse(cj_b);
+#  src_gmm.find("mCIdx").reverse.seqbase(oid(0)).reverse;
+#  
+##line 655 "../../../src/gmm/gmm.mx"
+	ej_b := find(src_gmm,"init_variances");
+	BAT_READ:= mil.bind("BAT_READ");
+	fj_b := access(ej_b,BAT_READ);
+#  access( src_gmm.find("init_variances"), BAT_READ );
+	gj_b := find(src_gmm,"Prior");
+	hj_b := access(gj_b,BAT_READ);
+#  access( src_gmm.find("Prior"), BAT_READ );
+	ij_b := find(src_gmm,"mImgIdx");
+	jj_b := access(ij_b,BAT_READ);
+#  access( src_gmm.find("mImgIdx"), BAT_READ );
+	kj_b := find(src_gmm,"mCIdx");
+	lj_b := access(kj_b,BAT_READ);
+#  access( src_gmm.find("mCIdx"), BAT_READ );
+	mj_b := find(src_gmm,"Mean");
+	nj_b_cursor := 0:lng;
+barrier	nj_b:= batloop(mj_b,nj_b_cursor);
+	nj_bH := fetchHead(mj_b,nj_b_cursor);
+	nj_bT := fetchTail(mj_b,nj_b_cursor);
+	nj_bT:= mil.bind("nj_bT");
+	oj_b := access(nj_bT,BAT_READ);
+redo	nj_b;
+end	nj_b;
+#  src_gmm.find("Mean")@batloop{  access($t, BAT_READ); }
+	pj_b := find(src_gmm,"Covar");
+	qj_b_cursor := 0:lng;
+barrier	qj_b:= batloop(pj_b,qj_b_cursor);
+	qj_bH := fetchHead(pj_b,qj_b_cursor);
+	qj_bT := fetchTail(pj_b,qj_b_cursor);
+	qj_bT:= mil.bind("qj_bT");
+	rj_b := access(qj_bT,BAT_READ);
+redo	qj_b;
+end	qj_b;
+#  src_gmm.find("Covar")@batloop{ access($t, BAT_READ); }
+#
+#
+##line 1685 "../../../src/gmm/gmm.mx"
+#
+	sj_b := oid(0);
+	aSampleImg:= gmmsamp_diag(M,sj_b,src_gmm);
+#  VAR aSampleImg := gmmsamp_diag(M, oid(0), src_gmm);
+#  {
+	tj_b := find(aSampleImg,"Samples");
+	imgSamples:= mil.multicast("nestedop","sht",tj_b);
+#    VAR imgSamples := [nestedop]( "sht", aSampleImg.find("Samples") );
+#    [insert](
+	uj_b := find(imgs,"Coeffs");
+#      imgs.find("Coeffs"),
+#      imgSamples
+	vj_b := mil.multicast("insert",uj_b,imgSamples);
+#    );
+	commit:= mil.bind("commit");
+#    commit;
+#  }
+#  
+##line 663 "../../../src/gmm/gmm.mx"
+	wj_b := find(imgs,"Coeffs");
+	xj_b_cursor := 0:lng;
+barrier	xj_b:= batloop(wj_b,xj_b_cursor);
+	xj_bH := fetchHead(wj_b,xj_b_cursor);
+	xj_bT := fetchTail(wj_b,xj_b_cursor);
+	xj_bT:= mil.bind("xj_bT");
+	yj_b := access(xj_bT,BAT_READ);
+redo	xj_b;
+end	xj_b;
+#  imgs.find("Coeffs")@batloop{ access($t, BAT_READ); }
+	ak_b_cursor := 0:lng;
+barrier	ak_b:= batloop(imgs,ak_b_cursor);
+	ak_bH := fetchHead(imgs,ak_b_cursor);
+	ak_bT := fetchTail(imgs,ak_b_cursor);
+	ak_bT:= mil.bind("ak_bT");
+	bk_b := access(ak_bT,BAT_READ);
+redo	ak_b;
+end	ak_b;
+#  imgs@batloop(){ access($t, BAT_READ); }
+#
+#
+##line 1695 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1798 "../../../src/gmm/gmm.mx"
+#
+	ck_b:= find(src_gmm,"mImgIdx");
+	dk_b := oid(0);
+	ek_b:= reverse(ck_b);
+	fk_b := seqbase(ek_b,dk_b);
+#  src_gmm.find("mImgIdx").reverse.seqbase(oid(0)); # bug??
+	gk_b:= find(src_gmm,"mCIdx");
+	hk_b := oid(0);
+	ik_b:= reverse(gk_b);
+	jk_b := seqbase(ik_b,hk_b);
+#  src_gmm.find("mCIdx").reverse.seqbase(oid(0));
+#
+#  # Insert additional images
+	imgNr:= 1;
+#  VAR imgNr := 1;
+barrier	kk_b:= true;
+	mk_b := <(imgNr,Nimg);
+barrier	lk_b:= mk_b;
+#  WHILE ( imgNr < Nimg ) {
+#    
+##line 1663 "../../../src/gmm/gmm.mx"
+#  
+##line 663 "../../../src/gmm/gmm.mx"
+	nk_b := find(imgs,"Coeffs");
+	ok_b_cursor := 0:lng;
+barrier	ok_b:= batloop(nk_b,ok_b_cursor);
+	ok_bH := fetchHead(nk_b,ok_b_cursor);
+	ok_bT := fetchTail(nk_b,ok_b_cursor);
+	ok_bT:= mil.bind("ok_bT");
+	pk_b := access(ok_bT,BAT_APPEND);
+redo	ok_b;
+end	ok_b;
+#  imgs.find("Coeffs")@batloop{ access($t, BAT_APPEND); }
+	qk_b_cursor := 0:lng;
+barrier	qk_b:= batloop(imgs,qk_b_cursor);
+	qk_bH := fetchHead(imgs,qk_b_cursor);
+	qk_bT := fetchTail(imgs,qk_b_cursor);
+	qk_bT:= mil.bind("qk_bT");
+	rk_b := access(qk_bT,BAT_APPEND);
+redo	qk_b;
+end	qk_b;
+#  imgs@batloop(){ access($t, BAT_APPEND); }
+#
+#
+##line 1663 "../../../src/gmm/gmm.mx"
+#
+#  
+##line 655 "../../../src/gmm/gmm.mx"
+	sk_b := find(src_gmm,"init_variances");
+	tk_b := access(sk_b,BAT_APPEND);
+#  access( src_gmm.find("init_variances"), BAT_APPEND );
+	uk_b := find(src_gmm,"Prior");
+	vk_b := access(uk_b,BAT_APPEND);
+#  access( src_gmm.find("Prior"), BAT_APPEND );
+	wk_b := find(src_gmm,"mImgIdx");
+	xk_b := access(wk_b,BAT_APPEND);
+#  access( src_gmm.find("mImgIdx"), BAT_APPEND );
+	yk_b := find(src_gmm,"mCIdx");
+	al_b := access(yk_b,BAT_APPEND);
+#  access( src_gmm.find("mCIdx"), BAT_APPEND );
+	bl_b := find(src_gmm,"Mean");
+	cl_b_cursor := 0:lng;
+barrier	cl_b:= batloop(bl_b,cl_b_cursor);
+	cl_bH := fetchHead(bl_b,cl_b_cursor);
+	cl_bT := fetchTail(bl_b,cl_b_cursor);
+	cl_bT:= mil.bind("cl_bT");
+	dl_b := access(cl_bT,BAT_APPEND);
+redo	cl_b;
+end	cl_b;
+#  src_gmm.find("Mean")@batloop{  access($t, BAT_APPEND); }
+	el_b := find(src_gmm,"Covar");
+	fl_b_cursor := 0:lng;
+barrier	fl_b:= batloop(el_b,fl_b_cursor);
+	fl_bH := fetchHead(el_b,fl_b_cursor);
+	fl_bT := fetchTail(el_b,fl_b_cursor);
+	fl_bT:= mil.bind("fl_bT");
+	gl_b := access(fl_bT,BAT_APPEND);
+redo	fl_b;
+end	fl_b;
+#  src_gmm.find("Covar")@batloop{ access($t, BAT_APPEND); }
+#
+#
+##line 1664 "../../../src/gmm/gmm.mx"
+#
+#  # some random metadata for now
+	hl_b := +(str(imgNr),".jpg");
+	il_b := +("http://nowhere.org/noimg_",hl_b);
+	jl_b:= find(imgs,"I");
+	kl_b := insert(jl_b,nil,il_b);
+#  imgs.find("I").insert(nil,"http://nowhere.org/noimg_" + str(imgNr) + ".jpg");
+	ll_b := Nseq(M);
+	ml_b_cursor := 0:lng;
+barrier	ml_b:= batloop(ll_b,ml_b_cursor);
+	ml_bH := fetchHead(ll_b,ml_b_cursor);
+	ml_bT := fetchTail(ll_b,ml_b_cursor);
+#  Nseq(M)@batloop(){
+	nl_b := oid(imgNr);
+	ol_b:= find(imgs,"Ib");
+	pl_b := insert(ol_b,nl_b,nil);
+#    imgs.find("Ib").insert(oid(imgNr),nil);
+	ml_bT:= mil.bind("ml_bT");
+	ql_b := %(ml_bT,44);
+	rl_b:= find(imgs,"Ix");
+	sl_b := insert(rl_b,nil,ql_b);
+#    imgs.find("Ix").insert(nil, ($t % 44));
+	tl_b := /(ml_bT,44);
+	ul_b:= find(imgs,"Iy");
+	vl_b := insert(ul_b,nil,tl_b);
+#    imgs.find("Iy").insert(nil, ($t / 44));
+redo	ml_b;
+end	ml_b;
+#  }
+	wl_b := randprob(C);
+	xl_b := mil.multicast("flt",wl_b);
+	yl_b:= find(src_gmm,"Prior");
+	am_b := insert(yl_b,xl_b);
+#  src_gmm.find("Prior").insert( [flt](randprob(C)) );
+	bm_b_cursor := 0:lng;
+barrier	bm_b:= batloop(cseq,bm_b_cursor);
+	bm_bH := fetchHead(cseq,bm_b_cursor);
+	bm_bT := fetchTail(cseq,bm_b_cursor);
+#  cseq@batloop(){
+#    # NOTE: was RAND_MAX + 1.0LL
+	cm_b := find(src_gmm,"Mean");
+#    [insert]( src_gmm.find("Mean"), const nil,
+	dm_b := randseq(N);
+	em_b := +(RAND_MAX,1.0);
+	fm_b := /(em_b,255);
+	gm_b:= mil.multicast("/",dm_b,fm_b);
+	hm_b:= reverse(gm_b);
+	im_b:= number(hm_b);
+	jm_b := reverse(im_b);
+	km_b := mil.multicast("insert",cm_b,nil,jm_b);
+#      [/]( randseq(N), const (RAND_MAX + 1.0) / 255).reverse.number.reverse );
+	lm_b := find(src_gmm,"Covar");
+#    [insert]( src_gmm.find("Covar"), const nil,
+	mm_b := randseq(N);
+	nm_b := +(RAND_MAX,1.0);
+	om_b := /(nm_b,128);
+	pm_b:= mil.multicast("/",mm_b,om_b);
+	qm_b:= reverse(pm_b);
+	rm_b:= number(qm_b);
+	sm_b := reverse(rm_b);
+	tm_b := mil.multicast("insert",lm_b,nil,sm_b);
+#      [/]( randseq(N), const (RAND_MAX + 1.0) / 128).reverse.number.reverse );
+redo	bm_b;
+end	bm_b;
+#  }
+	um_b := oid(imgNr);
+	vm_b:= _x(cseq);
+	wm_b:= project(vm_b,um_b);
+	xm_b := reverse(wm_b);
+	ym_b:= find(src_gmm,"mImgIdx");
+	an_b := insert(ym_b,xm_b);
+#  src_gmm.find("mImgIdx").insert(_x(cseq).project(const oid(imgNr)).reverse);
+	bn_b:= _x(cseq);
+	cn_b := reverse(bn_b);
+	dn_b:= find(src_gmm,"mCIdx");
+	en_b := insert(dn_b,cn_b);
+#  src_gmm.find("mCIdx").insert(_x(cseq).reverse);
+#    # bug with first insert in table
+	fn_b:= find(src_gmm,"mImgIdx");
+	gn_b := oid(0);
+	hn_b:= reverse(fn_b);
+	in_b:= seqbase(hn_b,gn_b);
+	jn_b := reverse(in_b);
+#  src_gmm.find("mImgIdx").reverse.seqbase(oid(0)).reverse;
+	kn_b:= find(src_gmm,"mCIdx");
+	ln_b := oid(0);
+	mn_b:= reverse(kn_b);
+	nn_b:= seqbase(mn_b,ln_b);
+	on_b := reverse(nn_b);
+#  src_gmm.find("mCIdx").reverse.seqbase(oid(0)).reverse;
+#  
+##line 655 "../../../src/gmm/gmm.mx"
+	pn_b := find(src_gmm,"init_variances");
+	qn_b := access(pn_b,BAT_READ);
+#  access( src_gmm.find("init_variances"), BAT_READ );
+	rn_b := find(src_gmm,"Prior");
+	sn_b := access(rn_b,BAT_READ);
+#  access( src_gmm.find("Prior"), BAT_READ );
+	tn_b := find(src_gmm,"mImgIdx");
+	un_b := access(tn_b,BAT_READ);
+#  access( src_gmm.find("mImgIdx"), BAT_READ );
+	vn_b := find(src_gmm,"mCIdx");
+	wn_b := access(vn_b,BAT_READ);
+#  access( src_gmm.find("mCIdx"), BAT_READ );
+	xn_b := find(src_gmm,"Mean");
+	yn_b_cursor := 0:lng;
+barrier	yn_b:= batloop(xn_b,yn_b_cursor);
+	yn_bH := fetchHead(xn_b,yn_b_cursor);
+	yn_bT := fetchTail(xn_b,yn_b_cursor);
+	yn_bT:= mil.bind("yn_bT");
+	ao_b := access(yn_bT,BAT_READ);
+redo	yn_b;
+end	yn_b;
+#  src_gmm.find("Mean")@batloop{  access($t, BAT_READ); }
+	bo_b := find(src_gmm,"Covar");
+	co_b_cursor := 0:lng;
+barrier	co_b:= batloop(bo_b,co_b_cursor);
+	co_bH := fetchHead(bo_b,co_b_cursor);
+	co_bT := fetchTail(bo_b,co_b_cursor);
+	co_bT:= mil.bind("co_bT");
+	do_b := access(co_bT,BAT_READ);
+redo	co_b;
+end	co_b;
+#  src_gmm.find("Covar")@batloop{ access($t, BAT_READ); }
+#
+#
+##line 1685 "../../../src/gmm/gmm.mx"
+#
+	eo_b := oid(imgNr);
+	aSampleImg:= gmmsamp_diag(M,eo_b,src_gmm);
+#  VAR aSampleImg := gmmsamp_diag(M, oid(imgNr), src_gmm);
+#  {
+	fo_b := find(aSampleImg,"Samples");
+	imgSamples:= mil.multicast("nestedop","sht",fo_b);
+#    VAR imgSamples := [nestedop]( "sht", aSampleImg.find("Samples") );
+#    [insert](
+	go_b := find(imgs,"Coeffs");
+#      imgs.find("Coeffs"),
+#      imgSamples
+	ho_b := mil.multicast("insert",go_b,imgSamples);
+#    );
+#    commit;
+#  }
+#  
+##line 663 "../../../src/gmm/gmm.mx"
+	io_b := find(imgs,"Coeffs");
+	jo_b_cursor := 0:lng;
+barrier	jo_b:= batloop(io_b,jo_b_cursor);
+	jo_bH := fetchHead(io_b,jo_b_cursor);
+	jo_bT := fetchTail(io_b,jo_b_cursor);
+	jo_bT:= mil.bind("jo_bT");
+	ko_b := access(jo_bT,BAT_READ);
+redo	jo_b;
+end	jo_b;
+#  imgs.find("Coeffs")@batloop{ access($t, BAT_READ); }
+	lo_b_cursor := 0:lng;
+barrier	lo_b:= batloop(imgs,lo_b_cursor);
+	lo_bH := fetchHead(imgs,lo_b_cursor);
+	lo_bT := fetchTail(imgs,lo_b_cursor);
+	lo_bT:= mil.bind("lo_bT");
+	mo_b := access(lo_bT,BAT_READ);
+redo	lo_b;
+end	lo_b;
+#  imgs@batloop(){ access($t, BAT_READ); }
+#
+#
+##line 1695 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1805 "../../../src/gmm/gmm.mx"
+#
+	no_b := :+=(imgNr,1);
+#    imgNr :+= 1;
+redo	kk_b;
+end	lk_b;
+end	kk_b;
+#  }
+##  testmodels.insert( "coll",  imgs );
+##  testmodels.insert( "src",   src_gmm );
+#
+	gmm:= initGMM(imgs);
+#  VAR gmm := initGMM( imgs );
+##  testmodels.insert( "init",  gmm );
+#
+#
+##line 1816 "../../../src/gmm/gmm.mx"
+	oo_b := debug("EM model training");
+#  debug("EM model training");
+	EM_coll:= mil.bind("EM_coll");
+	EM_coll := imgs;
+#  EM_coll  := imgs;
+	EM_model:= mil.bind("EM_model");
+	EM_model := gmm;
+#  EM_model := gmm;
+	src_gmm := nil;
+#    src_gmm := nil;
+	imgs := nil;
+#    imgs := nil;
+	gmm := nil;
+#    gmm  := nil;
+#    #VAR gmmnew := EM(imgs, gmm);
+	gmmnew:= EM_globalmodel();
+#  VAR gmmnew := EM_globalmodel();
+	po_b := insert(testmodels,"final",gmmnew);
+#  testmodels.insert( "final", gmmnew );
+#
+#  # @@imgop(imgs,persists,false)@
+#  # @@modelop(src_gmm,persists,false)@
+#
+	return testmodels;
+#  RETURN testmodels;
+end function;
+#}
+##VAR testmodels := test_EM(128,1320);
+##VAR testmodels := test_EM(10,100);
+#
+#
+#
+##line 1838 "../../../src/gmm/gmm.mx"
+function classify(coeffs:bat[int,int], gmm:bat[str,str]):bat[void,TCluster];
+#  PROC classify( bat[int,bat] coeffs, bat[str,bat] gmm ): bat[void,TCluster] := {
+#    
+##line 1331 "../../../src/gmm/gmm.mx"
+#  
+##line 1305 "../../../src/gmm/gmm.mx"
+	covar:= find(gmm,"Covar");
+#  VAR covar    := gmm.find("Covar");
+	covar := mil.multicast("nestedop","dbl",covar);
+#                  covar := [nestedop]( "dbl", covar);
+#  
+##line 107 "../../../src/gmm/gmm.mx"
+	qo_b := htype(covar);
+	ro_b := count(covar);
+	ivariances:= new(qo_b,htype,ro_b);
+#  VAR ivariances := new(covar.htype,bat,covar.count);
+#  {
+	ivariances_lock:= lock_create();
+#    VAR ivariances_lock := lock_create();
+	Nthreads:= mil.bind("Nthreads");
+	so_b_cursor := 0:lng;
+barrier	so_b:= batloop(Nthreads,so_b_cursor);
+	so_bH := fetchHead(Nthreads,so_b_cursor);
+	so_bT := fetchTail(Nthreads,so_b_cursor);
+#    covar@ [Nthreads]batloop(){
+#      VAR _ivariances_result := [inv]($t
+	so_bT:= mil.bind("so_bT");
+	_ivariances_result:= mil.multicast("inv",so_bT);
+#	   );
+	to_b := lock_set(ivariances_lock);
+#      lock_set(ivariances_lock);
+	so_bH:= mil.bind("so_bH");
+	uo_b := insert(ivariances,so_bH,_ivariances_result);
+#      ivariances.insert($h,_ivariances_result);
+	vo_b := lock_unset(ivariances_lock);
+#      lock_unset(ivariances_lock);
+redo	so_b;
+end	so_b;
+#    }
+	wo_b := lock_destroy(ivariances_lock);
+#    lock_destroy(ivariances_lock);
+#  }
+#
+#
+##line 1307 "../../../src/gmm/gmm.mx"
+#
+	covar := nil;
+#                  covar  := nil;
+#  
+##line 130 "../../../src/gmm/gmm.mx"
+#VAR isqrtdet;
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+##line 167 "../../../src/gmm/gmm.mx"
+#  {
+	isqrtdet_a:= fetch(ivariances,0);
+	isqrtdet_e:= fetch(ivariances,4);
+#    VAR isqrtdet_a := ivariances.fetch(0);    VAR isqrtdet_e := ivariances.fetch(4);
+	isqrtdet_b:= fetch(ivariances,1);
+	isqrtdet_f:= fetch(ivariances,5);
+#    VAR isqrtdet_b := ivariances.fetch(1);    VAR isqrtdet_f := ivariances.fetch(5);
+	isqrtdet_c:= fetch(ivariances,2);
+	isqrtdet_g:= fetch(ivariances,6);
+#    VAR isqrtdet_c := ivariances.fetch(2);    VAR isqrtdet_g := ivariances.fetch(6);
+	isqrtdet_d:= fetch(ivariances,3);
+	isqrtdet_h:= fetch(ivariances,7);
+#    VAR isqrtdet_d := ivariances.fetch(3);    VAR isqrtdet_h := ivariances.fetch(7);
+#    
+##line 157 "../../../src/gmm/gmm.mx"
+#    # perform four operations isqrtdet_a in parallel
+#    {
+#      {|
+barrier	xo_b:= true;
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations isqrtdet_a in parallel
+#      {
+#	{|
+barrier	yo_b:= true;
+	BAT_WRITE:= mil.bind("BAT_WRITE");
+	ap_b:= mil.multicast("*",isqrtdet_a,isqrtdet_b);
+	isqrtdet_a := access(ap_b,BAT_WRITE);
+#	   isqrtdet_a := [*](isqrtdet_a,isqrtdet_b).access(BAT_WRITE);
+	isqrtdet_c := mil.multicast("*",isqrtdet_c,isqrtdet_d);
+#	   isqrtdet_c := [*](isqrtdet_c,isqrtdet_d);
+end	yo_b;
+#	 |}
+	bp_b := mil.multicast(":*=",isqrtdet_a,isqrtdet_c);
+#	 [:*=](isqrtdet_a,isqrtdet_c);
+#      }
+#
+#
+##line 160 "../../../src/gmm/gmm.mx"
+#
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations isqrtdet_e in parallel
+#      {
+#	{|
+barrier	cp_b:= true;
+	dp_b:= mil.multicast("*",isqrtdet_e,isqrtdet_f);
+	isqrtdet_e := access(dp_b,BAT_WRITE);
+#	   isqrtdet_e := [*](isqrtdet_e,isqrtdet_f).access(BAT_WRITE);
+	isqrtdet_g := mil.multicast("*",isqrtdet_g,isqrtdet_h);
+#	   isqrtdet_g := [*](isqrtdet_g,isqrtdet_h);
+end	cp_b;
+#	 |}
+	ep_b := mil.multicast(":*=",isqrtdet_e,isqrtdet_g);
+#	 [:*=](isqrtdet_e,isqrtdet_g);
+#      }
+#
+#
+##line 161 "../../../src/gmm/gmm.mx"
+#
+end	xo_b;
+#       |}
+	fp_b := mil.multicast(":*=",isqrtdet_a,isqrtdet_e);
+#       [:*=](isqrtdet_a,isqrtdet_e);      
+#    }
+#
+#
+##line 172 "../../../src/gmm/gmm.mx"
+#
+	isqrtdet := isqrtdet_a;
+#    isqrtdet := isqrtdet_a;
+#  }
+#
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 131 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1309 "../../../src/gmm/gmm.mx"
+#
+	isqrtdet := mil.multicast("sqrt",isqrtdet);
+#  isqrtdet     := [sqrt](isqrtdet);
+#  
+##line 1227 "../../../src/gmm/gmm.mx"
+#VAR xs;
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+##line 1240 "../../../src/gmm/gmm.mx"
+	gp_b := htype(coeffs);
+	hp_b := count(coeffs);
+	xs := new(gp_b,htype,hp_b);
+#  xs := new(coeffs.htype,bat,coeffs.count);
+	xs_lock:= lock_create();
+#  VAR xs_lock := lock_create();
+	ip_b_cursor := 0:lng;
+barrier	ip_b:= batloop(Nthreads,ip_b_cursor);
+	ip_bH := fetchHead(Nthreads,ip_b_cursor);
+	ip_bT := fetchTail(Nthreads,ip_b_cursor);
+#  coeffs@ [Nthreads]batloop(){
+	xIdx:= mil.bind("xIdx");
+	ip_bT:= mil.bind("ip_bT");
+	_xs_result:= join(xIdx,ip_bT);
+#    VAR _xs_result := join( xIdx, $t );
+	jp_b := lock_set(xs_lock);
+#    lock_set(xs_lock);
+	ip_bH:= mil.bind("ip_bH");
+	kp_b := insert(xs,ip_bH,_xs_result);
+#    xs.insert( $h, _xs_result );
+	lp_b := lock_unset(xs_lock);
+#    lock_unset(xs_lock);
+redo	ip_b;
+end	ip_b;
+#  }
+	mp_b := lock_destroy(xs_lock);
+#  lock_destroy(xs_lock);
+#
+#
+##line 1224 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1228 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1311 "../../../src/gmm/gmm.mx"
+#
+	np_b := find(gmm,"Mean");
+	means:= mil.multicast("join",cIdx,np_b);
+#  VAR means    := [join]( const cIdx, gmm.find("Mean") );
+	ivars:= mil.multicast("join",cIdx,ivariances);
+#  VAR ivars    := [join]( const cIdx, ivariances );
+	diffs:= mil.multicast("nestedop","dmahalanobis_i_diagcov",xs,means,ivars);
+#  VAR diffs    := [nestedop]("dmahalanobis_i_diagcov",xs,means,ivars);
+#  
+##line 130 "../../../src/gmm/gmm.mx"
+#VAR dists;
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+##line 167 "../../../src/gmm/gmm.mx"
+#  {
+	dists_a:= fetch(diffs,0);
+	dists_e:= fetch(diffs,4);
+#    VAR dists_a := diffs.fetch(0);    VAR dists_e := diffs.fetch(4);
+	dists_b:= fetch(diffs,1);
+	dists_f:= fetch(diffs,5);
+#    VAR dists_b := diffs.fetch(1);    VAR dists_f := diffs.fetch(5);
+	dists_c:= fetch(diffs,2);
+	dists_g:= fetch(diffs,6);
+#    VAR dists_c := diffs.fetch(2);    VAR dists_g := diffs.fetch(6);
+	dists_d:= fetch(diffs,3);
+	dists_h:= fetch(diffs,7);
+#    VAR dists_d := diffs.fetch(3);    VAR dists_h := diffs.fetch(7);
+#    
+##line 157 "../../../src/gmm/gmm.mx"
+#    # perform four operations dists_a in parallel
+#    {
+#      {|
+barrier	op_b:= true;
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations dists_a in parallel
+#      {
+#	{|
+barrier	pp_b:= true;
+	qp_b:= mil.multicast("+",dists_a,dists_b);
+	dists_a := access(qp_b,BAT_WRITE);
+#	   dists_a := [+](dists_a,dists_b).access(BAT_WRITE);
+	dists_c := mil.multicast("+",dists_c,dists_d);
+#	   dists_c := [+](dists_c,dists_d);
+end	pp_b;
+#	 |}
+	rp_b := mil.multicast(":+=",dists_a,dists_c);
+#	 [:+=](dists_a,dists_c);
+#      }
+#
+#
+##line 160 "../../../src/gmm/gmm.mx"
+#
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations dists_e in parallel
+#      {
+#	{|
+barrier	sp_b:= true;
+	tp_b:= mil.multicast("+",dists_e,dists_f);
+	dists_e := access(tp_b,BAT_WRITE);
+#	   dists_e := [+](dists_e,dists_f).access(BAT_WRITE);
+	dists_g := mil.multicast("+",dists_g,dists_h);
+#	   dists_g := [+](dists_g,dists_h);
+end	sp_b;
+#	 |}
+	up_b := mil.multicast(":+=",dists_e,dists_g);
+#	 [:+=](dists_e,dists_g);
+#      }
+#
+#
+##line 161 "../../../src/gmm/gmm.mx"
+#
+end	op_b;
+#       |}
+	vp_b := mil.multicast(":+=",dists_a,dists_e);
+#       [:+=](dists_a,dists_e);      
+#    }
+#
+#
+##line 172 "../../../src/gmm/gmm.mx"
+#
+	dists := dists_a;
+#    dists := dists_a;
+#  }
+#
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 131 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1315 "../../../src/gmm/gmm.mx"
+#
+	xs := nil;
+#                  xs     := nil;
+	diffs := nil;
+#                  diffs  := nil;
+	means := nil;
+#		  means  := nil;
+	ivars := nil;
+#		  ivars  := nil;
+	ivariances := nil;
+#		  ivariances := nil;
+	isdet:= join(cIdx,isqrtdet);
+#  VAR isdet    := join( cIdx, isqrtdet );
+	N:= mil.bind("N");
+	act:= mil.multicast("multivariate_gaussian_pdf_diagcov",dists,isdet,N);
+#  VAR act      := [multivariate_gaussian_pdf_diagcov]( dists, isdet, N );
+	dists := nil;
+#                  dists  := nil;
+	isdet := nil;
+#                  isdet  := nil;
+#
+#
+##line 1331 "../../../src/gmm/gmm.mx"
+#
+	wp_b := find(gmm,"Prior");
+	xp_b := mil.multicast("dbl",wp_b);
+	priors:= join(cIdx,xp_b);
+#  VAR priors   := join( cIdx, [dbl](gmm.find("Prior")) );
+	act := mil.multicast("*",act,priors);
+#  act          := [*]( act, priors );
+	yp_b:= reverse(xIdx);
+	aq_b := join(yp_b,act);
+	s:= mil.setop("",aq_b);
+#  VAR s        := {sum}( xIdx.reverse.join(act) );
+##  s            := [ [>](s,const MIN_S)? s : const MIN_S ];
+##  s            := [ [!=](s,const dbl(0))? s : const 1.0LL ];
+	bq_b := mil.multicast(">",s,MIN_S);
+	cq_b := M2m.ifthen(bq_b,s,1.0LL);
+	dq_b:= M2m.batconstruct1(cq_b);
+	s := dq_b;
+#  s            := [ [>](s,const MIN_S)? s : const 1.0LL ];
+	eq_b := join(xIdx,s);
+	post:= mil.multicast("/",act,eq_b);
+#  VAR post     := [/](act,xIdx.join(s));
+	priors := nil;
+#                  priors := nil;
+	act := nil;
+#                  act    := nil;
+#
+#
+##line 1839 "../../../src/gmm/gmm.mx"
+#
+	pmax:= fetch(post,0);
+#    VAR pmax := post.fetch(0);
+	fq_b:= mirror(post);
+	gq_b := fetch(fq_b,0);
+	hq_b := encode(TCluster,gq_b);
+	res:= project(pmax,hq_b);
+#    VAR res  := pmax.project(const encode(TCluster, post.mirror.fetch(0)));
+	iq_b_cursor := 0:lng;
+barrier	iq_b:= batloop(post,iq_b_cursor);
+	iq_bH := fetchHead(post,iq_b_cursor);
+	iq_bT := fetchTail(post,iq_b_cursor);
+#    post@batloop(){
+	iq_bT:= mil.bind("iq_bT");
+	pcomp:= mil.multicast("<=",iq_bT,pmax);
+#      VAR pcomp := [<=]($t,pmax);
+	jq_b := encode(TCluster,iq_bH);
+	kq_b := M2m.ifthen(pcomp,res,jq_b);
+	lq_b:= M2m.batconstruct1(kq_b);
+	res := lq_b;
+#      res :=  [ pcomp ?  res : const encode(TCluster, $h) ];
+	mq_b := M2m.ifthen(pcomp,pmax,iq_bT);
+	nq_b:= M2m.batconstruct1(mq_b);
+	pmax := nq_b;
+#      pmax := [ pcomp ? pmax : $t ];
+redo	iq_b;
+end	iq_b;
+#    }
+	return res;
+#    RETURN res;
+end function;
+#  }
+#
+#
+##line 1853 "../../../src/gmm/gmm.mx"
+function vectostr(x:bat[any,dbl]):str;
+#  PROC vectostr( BAT[any,dbl] x ): str := {
+	s:= "< ";
+#    VAR s := "< ";
+	oq_b := fetch(x,0);
+	pq_b := sprintf("%4.0lf",oq_b);
+	qq_b := :+=(s,pq_b);
+#    s :+= sprintf( "%4.0lf", x.fetch(0) );
+	rq_b := -(count(x),1);
+	sq_b := slice(x,1,rq_b);
+	tq_b_cursor := 0:lng;
+barrier	tq_b:= batloop(sq_b,tq_b_cursor);
+	tq_bH := fetchHead(sq_b,tq_b_cursor);
+	tq_bT := fetchTail(sq_b,tq_b_cursor);
+#    x.slice(1, x.count - 1)@batloop(){
+	tq_bT:= mil.bind("tq_bT");
+	uq_b := sprintf(", %4.0lf",tq_bT);
+	vq_b := :+=(s,uq_b);
+#      s :+= sprintf( ", %4.0lf", $t );
+redo	tq_b;
+end	tq_b;
+#    }
+	wq_b := :+=(s," >");
+#    s :+= " >";
+	return s;
+#    RETURN s;
+end function;
+#  }
+function vectostr(x:bat[any,flt]):str;
+#  PROC vectostr( BAT[any,flt] x ): str := {
+	s:= "< ";
+#    VAR s := "< ";
+	xq_b := fetch(x,0);
+	yq_b := sprintf("%4.0f",xq_b);
+	ar_b := :+=(s,yq_b);
+#    s :+= sprintf( "%4.0f", x.fetch(0) );
+	br_b := -(count(x),1);
+	cr_b := slice(x,1,br_b);
+	dr_b_cursor := 0:lng;
+barrier	dr_b:= batloop(cr_b,dr_b_cursor);
+	dr_bH := fetchHead(cr_b,dr_b_cursor);
+	dr_bT := fetchTail(cr_b,dr_b_cursor);
+#    x.slice(1, x.count - 1)@batloop(){
+	dr_bT:= mil.bind("dr_bT");
+	er_b := sprintf(", %4.0f",dr_bT);
+	fr_b := :+=(s,er_b);
+#      s :+= sprintf( ", %4.0f", $t );
+redo	dr_b;
+end	dr_b;
+#    }
+	gr_b := :+=(s," >");
+#    s :+= " >";
+	return s;
+#    RETURN s;
+end function;
+#  }
+#
+#  CONST infosep :=
+	infosep := "------------------------------------------------------------";
+#    "------------------------------------------------------------";
+function gmminfo(gmm:bat[str,str]):bat[void,str];
+#  PROC gmminfo( BAT[str,bat] gmm ): BAT[void,str] := {
+	void:= mil.bind("void");
+	str:= mil.bind("str");
+	hr_b := oid(0);
+	ir_b:= new(void,str);
+	s:= seqbase(ir_b,hr_b);
+#    VAR s := new(void,str).seqbase(oid(0));
+	jr_b:= find(gmm,"mImgIdx");
+	imgidx:= reverse(jr_b);
+#    VAR imgidx := gmm.find("mImgIdx").reverse;
+	oldimgid:= fetch(imgidx,0);
+#    VAR oldimgid := imgidx.fetch(0);
+	imgid:= oldimgid;
+#    VAR imgid := oldimgid;
+	kr_b:= find(gmm,"mImgIdx");
+	lr_b:= kunique(kr_b);
+	mr_b := sort(lr_b);
+	nr_b_cursor := 0:lng;
+barrier	nr_b:= batloop(mr_b,nr_b_cursor);
+	nr_bH := fetchHead(mr_b,nr_b_cursor);
+	nr_bT := fetchTail(mr_b,nr_b_cursor);
+#    gmm.find("mImgIdx").kunique.sort@batloop(){
+	nr_bH:= mil.bind("nr_bH");
+	imgid:= nr_bH;
+#      VAR imgid := $h;
+	or_b := +(sprintf("-- Img %3d --",imgid),infosep);
+	pr_b := insert(s,nil,or_b);
+#      s.insert( nil, sprintf("-- Img %3d --", imgid) + infosep );
+#
+	qr_b:= select(imgidx,nr_bH);
+	rr_b:= find(gmm,"mCIdx");
+	sr_b := reverse(rr_b);
+	tr_b:= mirror(qr_b);
+	ur_b:= join(tr_b,sr_b);
+	vr_b:= reverse(ur_b);
+	wr_b := sort(vr_b);
+	xr_b_cursor := 0:lng;
+barrier	xr_b:= batloop(wr_b,xr_b_cursor);
+	xr_bH := fetchHead(wr_b,xr_b_cursor);
+	xr_bT := fetchTail(wr_b,xr_b_cursor);
+#      imgidx.select($h).mirror.join(gmm.find("mCIdx").reverse).reverse.sort@batloop(){
+	xr_bH:= mil.bind("xr_bH");
+	yr_b := find(gmm,"Prior");
+	xr_bT:= mil.bind("xr_bT");
+	as_b := find(yr_b,xr_bT);
+	bs_b := dbl(as_b);
+#	s.insert( nil, sprintf( "prior[%d]: %.3lf\t", $h, dbl(find(gmm.find("Prior"), $t)) ) +
+	cs_b := find(gmm,"Mean");
+	ds_b := mil.multicast("find",cs_b,xr_bT);
+	es_b := vectostr(ds_b);
+	fs_b := +("mean:  ",es_b);
+	gs_b := +(sprintf("prior[%d]: %.3lf\t",xr_bH,bs_b),fs_b);
+	hs_b := insert(s,nil,gs_b);
+#		       "mean:  " + vectostr([find](gmm.find("Mean" ),$t)) );
+	is_b := find(gmm,"Covar");
+	js_b := mil.multicast("find",is_b,xr_bT);
+	ks_b := vectostr(js_b);
+	ls_b := +("            \tcovar: ",ks_b);
+	ms_b := insert(s,nil,ls_b);
+#	s.insert( nil, "            \tcovar: " +vectostr([find](gmm.find("Covar"),$t)) );
+redo	xr_b;
+end	xr_b;
+#      }
+redo	nr_b;
+end	nr_b;
+#    }
+	ns_b := +("-------------",infosep);
+	os_b := insert(s,nil,ns_b);
+#    s.insert( nil, "-------------" + infosep );
+	return s;
+#    RETURN s;
+end function;
+#  }
+#
+function printmodel(gmm:bat[str,str]):void;
+#  PROC printmodel( BAT[str,bat] gmm ): void := {
+	g:= gmminfo(gmm);
+#    VAR g := gmminfo(gmm);
+	ps_b := project(g,"%s\n");
+	qs_b := mil.multicast("printf",ps_b,g);
+#    [printf]( g.project("%s\n"), g );
+end function;
+#  }
+function printmodels(gmma:bat[str,str], gmmb:bat[str,str]):void;
+#  PROC printmodels( BAT[str,bat] gmma, BAT[str,bat] gmmb ): void := {
+	ga:= gmminfo(gmma);
+#    VAR ga := gmminfo(gmma);
+	gb:= gmminfo(gmmb);
+#    VAR gb := gmminfo(gmmb);
+	rs_b := mil.multicast("printf","%s\t|\t%s\n",ga,gb);
+#    [printf]( const "%s\t|\t%s\n", ga, gb );
+end function;
+#  }
+#
+##  printmodels( testmodels.find("src"), 
+##               testmodels.find("final") );
+#
+#
+##line 1909 "../../../src/gmm/gmm.mx"
+function sampleQueries(Nqimg:int, testmodels:bat[str,str]):bat[str,str];
+#  PROC sampleQueries(int Nqimg, BAT[str,bat] testmodels):bat[str,bat] := {
+	str:= mil.bind("str");
+	qgmm:= new(str,str);
+#    VAR qgmm := new(str,bat);
+#    {
+	gmm:= find(testmodels,"src");
+#      VAR gmm   := testmodels.find("src");
+	ss_b:= find(testmodels,"coll");
+	ts_b:= find(ss_b,"I");
+	qimgs:= sample(ts_b,Nqimg);
+#      VAR qimgs := testmodels.find("coll").find("I").sample(Nqimg);
+	us_b := mirror(qimgs);
+	vs_b := find(gmm,"mImgIdx");
+	qimgidx:= join(us_b,vs_b);
+#      VAR qimgidx := join(qimgs.mirror, gmm.find("mImgIdx"));
+#      
+##line 634 "../../../src/gmm/gmm.mx"
+	ws_b := oid(0);
+	xs_b:= reverse(qimgidx);
+	ys_b:= mark(xs_b,ws_b);
+	fIdx:= reverse(ys_b);
+#VAR fIdx           := qimgidx.reverse.mark(oid(0)).reverse;
+#{
+	at_b:= find(gmm,"mImgIdx");
+	bt_b := reverse(at_b);
+	convImgIdx:= join(fIdx,bt_b);
+#  VAR convImgIdx     := join( fIdx, gmm.find("mImgIdx").reverse );
+	ct_b:= find(gmm,"mCIdx");
+	dt_b := reverse(ct_b);
+	convCIdx:= join(fIdx,dt_b);
+#  VAR convCIdx       := join( fIdx, gmm.find("mCIdx").reverse );
+	et_b := reverse(convImgIdx);
+	ft_b := insert(qgmm,"mImgIdx",et_b);
+#  qgmm.insert( "mImgIdx", convImgIdx.reverse );
+	gt_b := reverse(convCIdx);
+	ht_b := insert(qgmm,"mCIdx",gt_b);
+#  qgmm.insert( "mCIdx",   convCIdx.reverse );
+#
+	it_b := find(gmm,"Prior");
+	jt_b := join(fIdx,it_b);
+	kt_b := insert(qgmm,"Prior",jt_b);
+#  qgmm.insert( "Prior", join(fIdx, gmm.find("Prior")) );
+	lt_b := find(gmm,"Mean");
+	mt_b := mil.multicast("join",fIdx,lt_b);
+	nt_b := insert(qgmm,"Mean",mt_b);
+#  qgmm.insert( "Mean",  [join](const fIdx, gmm.find("Mean")) );
+	ot_b := find(gmm,"Covar");
+	pt_b := mil.multicast("join",fIdx,ot_b);
+	qt_b := insert(qgmm,"Covar",pt_b);
+#  qgmm.insert( "Covar", [join](const fIdx, gmm.find("Covar")) );
+#
+	rt_b := find(gmm,"init_variances");
+	st_b := join(fIdx,rt_b);
+	tt_b := insert(qgmm,"init_variances",st_b);
+#  qgmm.insert( "init_variances", join(fIdx, gmm.find("init_variances")) );
+#}
+#
+#
+##line 1915 "../../../src/gmm/gmm.mx"
+#
+	sessionId:= mil.bind("sessionId");
+	ut_b := +(sessionId,"_query");
+	vt_b := +("gmm",ut_b);
+	wt_b := renameGMM(qgmm,vt_b);
+#      renameGMM(qgmm,"gmm" + sessionId + "_query");
+#      
+##line 655 "../../../src/gmm/gmm.mx"
+	xt_b := find(qgmm,"init_variances");
+	BAT_READ:= mil.bind("BAT_READ");
+	yt_b := access(xt_b,BAT_READ);
+#  access( qgmm.find("init_variances"), BAT_READ );
+	au_b := find(qgmm,"Prior");
+	bu_b := access(au_b,BAT_READ);
+#  access( qgmm.find("Prior"), BAT_READ );
+	cu_b := find(qgmm,"mImgIdx");
+	du_b := access(cu_b,BAT_READ);
+#  access( qgmm.find("mImgIdx"), BAT_READ );
+	eu_b := find(qgmm,"mCIdx");
+	fu_b := access(eu_b,BAT_READ);
+#  access( qgmm.find("mCIdx"), BAT_READ );
+	gu_b := find(qgmm,"Mean");
+	hu_b_cursor := 0:lng;
+barrier	hu_b:= batloop(gu_b,hu_b_cursor);
+	hu_bH := fetchHead(gu_b,hu_b_cursor);
+	hu_bT := fetchTail(gu_b,hu_b_cursor);
+	hu_bT:= mil.bind("hu_bT");
+	iu_b := access(hu_bT,BAT_READ);
+redo	hu_b;
+end	hu_b;
+#  qgmm.find("Mean")@batloop{  access($t, BAT_READ); }
+	ju_b := find(qgmm,"Covar");
+	ku_b_cursor := 0:lng;
+barrier	ku_b:= batloop(ju_b,ku_b_cursor);
+	ku_bH := fetchHead(ju_b,ku_b_cursor);
+	ku_bT := fetchTail(ju_b,ku_b_cursor);
+	ku_bT:= mil.bind("ku_bT");
+	lu_b := access(ku_bT,BAT_READ);
+redo	ku_b;
+end	ku_b;
+#  qgmm.find("Covar")@batloop{ access($t, BAT_READ); }
+#
+#
+##line 1917 "../../../src/gmm/gmm.mx"
+#
+#    }
+	return qgmm;
+#    RETURN qgmm;
+end function;
+#  }
+#
+#
+##line 1926 "../../../src/gmm/gmm.mx"
+#  # VAR gmm_q := sampleQueries(4,testmodels);
+#  # VAR gmm_i := testmodels.find("final");
+#
+function RSL(gmm_q:bat[str,str], gmm_i:bat[str,str]):void;
+#  PROC RSL( bat[str,bat] gmm_q, bat[str,bat] gmm_i ):void := {
+	mu_b:= find(gmm_q,"mCIdx");
+	nu_b := reverse(mu_b);
+	ou_b := find(gmm_i,"mCIdx");
+	cqciIdx:= join(nu_b,ou_b);
+#    VAR cqciIdx     := join(gmm_q.find("mCIdx").reverse, gmm_i.find("mCIdx"));
+	ciIdx:= nx(cqciIdx);
+#    VAR ciIdx	    := nx(cqciIdx);
+	pu_b:= xn(cqciIdx);
+	cqIdx:= reverse(pu_b);
+#    VAR cqIdx	    := xn(cqciIdx).reverse;
+#
+	qu_b:= find(gmm_q,"mImgIdx");
+	ru_b := reverse(qu_b);
+#    VAR gqiIdx      := join(gmm_q.find("mImgIdx").reverse, 
+	su_b := find(gmm_q,"mImgIdx");
+	tu_b := reverse(cqIdx);
+	uu_b := join(su_b,tu_b);
+	gqiIdx:= join(ru_b,uu_b);
+#			 join(gmm_q.find("mImgIdx"), cqIdx.reverse));
+	giIdx:= nx(gqiIdx);
+#    VAR giIdx       := nx(gqiIdx);
+#
+	qiIdx:= join(gqiIdx,ciIdx);
+#    VAR qiIdx       := join(gqiIdx, ciIdx);
+	vu_b:= xn(qiIdx);
+	qIdx:= reverse(vu_b);
+#    VAR qIdx        := xn(qiIdx).reverse;
+	iIdx:= nx(qiIdx);
+#    VAR iIdx        := nx(qiIdx);
+#
+#
+##line 1944 "../../../src/gmm/gmm.mx"
+	wu_b := find(gmm_i,"Prior");
+	logpriors_i:= mil.multicast("log",wu_b);
+#    VAR logpriors_i := [log](gmm_i.find("Prior"));
+	covar_i:= find(gmm_i,"Covar");
+#    VAR covar_i     := gmm_i.find("Covar");
+#    
+##line 130 "../../../src/gmm/gmm.mx"
+#VAR det_i;
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+##line 167 "../../../src/gmm/gmm.mx"
+#  {
+	det_i_a:= fetch(covar_i,0);
+	det_i_e:= fetch(covar_i,4);
+#    VAR det_i_a := covar_i.fetch(0);    VAR det_i_e := covar_i.fetch(4);
+	det_i_b:= fetch(covar_i,1);
+	det_i_f:= fetch(covar_i,5);
+#    VAR det_i_b := covar_i.fetch(1);    VAR det_i_f := covar_i.fetch(5);
+	det_i_c:= fetch(covar_i,2);
+	det_i_g:= fetch(covar_i,6);
+#    VAR det_i_c := covar_i.fetch(2);    VAR det_i_g := covar_i.fetch(6);
+	det_i_d:= fetch(covar_i,3);
+	det_i_h:= fetch(covar_i,7);
+#    VAR det_i_d := covar_i.fetch(3);    VAR det_i_h := covar_i.fetch(7);
+#    
+##line 157 "../../../src/gmm/gmm.mx"
+#    # perform four operations det_i_a in parallel
+#    {
+#      {|
+barrier	xu_b:= true;
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations det_i_a in parallel
+#      {
+#	{|
+barrier	yu_b:= true;
+	BAT_WRITE:= mil.bind("BAT_WRITE");
+	av_b:= mil.multicast("*",det_i_a,det_i_b);
+	det_i_a := access(av_b,BAT_WRITE);
+#	   det_i_a := [*](det_i_a,det_i_b).access(BAT_WRITE);
+	det_i_c := mil.multicast("*",det_i_c,det_i_d);
+#	   det_i_c := [*](det_i_c,det_i_d);
+end	yu_b;
+#	 |}
+	bv_b := mil.multicast(":*=",det_i_a,det_i_c);
+#	 [:*=](det_i_a,det_i_c);
+#      }
+#
+#
+##line 160 "../../../src/gmm/gmm.mx"
+#
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations det_i_e in parallel
+#      {
+#	{|
+barrier	cv_b:= true;
+	dv_b:= mil.multicast("*",det_i_e,det_i_f);
+	det_i_e := access(dv_b,BAT_WRITE);
+#	   det_i_e := [*](det_i_e,det_i_f).access(BAT_WRITE);
+	det_i_g := mil.multicast("*",det_i_g,det_i_h);
+#	   det_i_g := [*](det_i_g,det_i_h);
+end	cv_b;
+#	 |}
+	ev_b := mil.multicast(":*=",det_i_e,det_i_g);
+#	 [:*=](det_i_e,det_i_g);
+#      }
+#
+#
+##line 161 "../../../src/gmm/gmm.mx"
+#
+end	xu_b;
+#       |}
+	fv_b := mil.multicast(":*=",det_i_a,det_i_e);
+#       [:*=](det_i_a,det_i_e);      
+#    }
+#
+#
+##line 172 "../../../src/gmm/gmm.mx"
+#
+	det_i := det_i_a;
+#    det_i := det_i_a;
+#  }
+#
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 131 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1946 "../../../src/gmm/gmm.mx"
+#
+	logdet_i:= mil.multicast("log",det_i);
+#    VAR logdet_i    := [log](det_i);
+	ivars_i:= mil.multicast("nestedop","inv",covar_i);
+#    VAR ivars_i     := [nestedop]("inv",covar_i);
+#
+#
+##line 1955 "../../../src/gmm/gmm.mx"
+	qivars_i:= mil.multicast("join",iIdx,ivars_i);
+#    VAR qivars_i    := [join](const iIdx, ivars_i);
+	covar_q:= find(gmm_q,"Covar");
+#    VAR covar_q     := gmm_q.find("Covar");
+	qvars_q:= mil.multicast("join",qIdx,covar_q);
+#    VAR qvars_q     := [join](const qIdx, covar_q);
+	tmp:= mil.multicast("nestedop","*",qvars_q,qivars_i);
+#    VAR tmp         := [nestedop]("*", qvars_q, qivars_i);
+#    
+##line 130 "../../../src/gmm/gmm.mx"
+#VAR traces;
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+##line 167 "../../../src/gmm/gmm.mx"
+#  {
+	traces_a:= fetch(tmp,0);
+	traces_e:= fetch(tmp,4);
+#    VAR traces_a := tmp.fetch(0);    VAR traces_e := tmp.fetch(4);
+	traces_b:= fetch(tmp,1);
+	traces_f:= fetch(tmp,5);
+#    VAR traces_b := tmp.fetch(1);    VAR traces_f := tmp.fetch(5);
+	traces_c:= fetch(tmp,2);
+	traces_g:= fetch(tmp,6);
+#    VAR traces_c := tmp.fetch(2);    VAR traces_g := tmp.fetch(6);
+	traces_d:= fetch(tmp,3);
+	traces_h:= fetch(tmp,7);
+#    VAR traces_d := tmp.fetch(3);    VAR traces_h := tmp.fetch(7);
+#    
+##line 157 "../../../src/gmm/gmm.mx"
+#    # perform four operations traces_a in parallel
+#    {
+#      {|
+barrier	gv_b:= true;
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations traces_a in parallel
+#      {
+#	{|
+barrier	hv_b:= true;
+	iv_b:= mil.multicast("+",traces_a,traces_b);
+	traces_a := access(iv_b,BAT_WRITE);
+#	   traces_a := [+](traces_a,traces_b).access(BAT_WRITE);
+	traces_c := mil.multicast("+",traces_c,traces_d);
+#	   traces_c := [+](traces_c,traces_d);
+end	hv_b;
+#	 |}
+	jv_b := mil.multicast(":+=",traces_a,traces_c);
+#	 [:+=](traces_a,traces_c);
+#      }
+#
+#
+##line 160 "../../../src/gmm/gmm.mx"
+#
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations traces_e in parallel
+#      {
+#	{|
+barrier	kv_b:= true;
+	lv_b:= mil.multicast("+",traces_e,traces_f);
+	traces_e := access(lv_b,BAT_WRITE);
+#	   traces_e := [+](traces_e,traces_f).access(BAT_WRITE);
+	traces_g := mil.multicast("+",traces_g,traces_h);
+#	   traces_g := [+](traces_g,traces_h);
+end	kv_b;
+#	 |}
+	mv_b := mil.multicast(":+=",traces_e,traces_g);
+#	 [:+=](traces_e,traces_g);
+#      }
+#
+#
+##line 161 "../../../src/gmm/gmm.mx"
+#
+end	gv_b;
+#       |}
+	nv_b := mil.multicast(":+=",traces_a,traces_e);
+#       [:+=](traces_a,traces_e);      
+#    }
+#
+#
+##line 172 "../../../src/gmm/gmm.mx"
+#
+	traces := traces_a;
+#    traces := traces_a;
+#  }
+#
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 131 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1959 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1966 "../../../src/gmm/gmm.mx"
+	ov_b := find(gmm_q,"Mean");
+	qmeanq:= mil.multicast("join",qIdx,ov_b);
+#    VAR qmeanq      := [join](const qIdx, gmm_q.find("Mean"));
+	pv_b := find(gmm_i,"Mean");
+	qmeani:= mil.multicast("join",iIdx,pv_b);
+#    VAR qmeani	    := [join](const iIdx, gmm_i.find("Mean"));
+	diffs:= mil.multicast("nestedop","-",qmeanq,qmeani);
+#    VAR diffs       := [nestedop]("-", qmeanq, qmeani);
+	diffs := mil.multicast("square",diffs);
+#    diffs           := [square]( diffs );
+	diffs := mil.multicast("nestedop","*",diffs,qivars_i);
+#    diffs	    := [nestedop]("*", diffs, qivars_i);
+#    
+##line 130 "../../../src/gmm/gmm.mx"
+#VAR Dmaha;
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+##line 167 "../../../src/gmm/gmm.mx"
+#  {
+	Dmaha_a:= fetch(diffs,0);
+	Dmaha_e:= fetch(diffs,4);
+#    VAR Dmaha_a := diffs.fetch(0);    VAR Dmaha_e := diffs.fetch(4);
+	Dmaha_b:= fetch(diffs,1);
+	Dmaha_f:= fetch(diffs,5);
+#    VAR Dmaha_b := diffs.fetch(1);    VAR Dmaha_f := diffs.fetch(5);
+	Dmaha_c:= fetch(diffs,2);
+	Dmaha_g:= fetch(diffs,6);
+#    VAR Dmaha_c := diffs.fetch(2);    VAR Dmaha_g := diffs.fetch(6);
+	Dmaha_d:= fetch(diffs,3);
+	Dmaha_h:= fetch(diffs,7);
+#    VAR Dmaha_d := diffs.fetch(3);    VAR Dmaha_h := diffs.fetch(7);
+#    
+##line 157 "../../../src/gmm/gmm.mx"
+#    # perform four operations Dmaha_a in parallel
+#    {
+#      {|
+barrier	qv_b:= true;
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations Dmaha_a in parallel
+#      {
+#	{|
+barrier	rv_b:= true;
+	sv_b:= mil.multicast("+",Dmaha_a,Dmaha_b);
+	Dmaha_a := access(sv_b,BAT_WRITE);
+#	   Dmaha_a := [+](Dmaha_a,Dmaha_b).access(BAT_WRITE);
+	Dmaha_c := mil.multicast("+",Dmaha_c,Dmaha_d);
+#	   Dmaha_c := [+](Dmaha_c,Dmaha_d);
+end	rv_b;
+#	 |}
+	tv_b := mil.multicast(":+=",Dmaha_a,Dmaha_c);
+#	 [:+=](Dmaha_a,Dmaha_c);
+#      }
+#
+#
+##line 160 "../../../src/gmm/gmm.mx"
+#
+#	
+##line 147 "../../../src/gmm/gmm.mx"
+#      # perform two operations Dmaha_e in parallel
+#      {
+#	{|
+barrier	uv_b:= true;
+	vv_b:= mil.multicast("+",Dmaha_e,Dmaha_f);
+	Dmaha_e := access(vv_b,BAT_WRITE);
+#	   Dmaha_e := [+](Dmaha_e,Dmaha_f).access(BAT_WRITE);
+	Dmaha_g := mil.multicast("+",Dmaha_g,Dmaha_h);
+#	   Dmaha_g := [+](Dmaha_g,Dmaha_h);
+end	uv_b;
+#	 |}
+	wv_b := mil.multicast(":+=",Dmaha_e,Dmaha_g);
+#	 [:+=](Dmaha_e,Dmaha_g);
+#      }
+#
+#
+##line 161 "../../../src/gmm/gmm.mx"
+#
+end	qv_b;
+#       |}
+	xv_b := mil.multicast(":+=",Dmaha_a,Dmaha_e);
+#       [:+=](Dmaha_a,Dmaha_e);      
+#    }
+#
+#
+##line 172 "../../../src/gmm/gmm.mx"
+#
+	Dmaha := Dmaha_a;
+#    Dmaha := Dmaha_a;
+#  }
+#
+#
+##line 127 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 131 "../../../src/gmm/gmm.mx"
+#
+#
+#
+##line 1971 "../../../src/gmm/gmm.mx"
+#
+#
+	tmp:= mil.multicast("+",Dmaha,traces);
+#    VAR tmp         := [+](Dmaha,traces);
+	yv_b := join(iIdx,logdet_i);
+	tmp := mil.multicast("+",yv_b,tmp);
+#    tmp             := [+](iIdx.join(logdet_i), tmp);
+	aw_b := join(iIdx,logpriors_i);
+	compiL:= mil.multicast("-",aw_b,tmp);
+#    VAR compiL	    := [-](iIdx.join(logpriors_i), tmp);
+	bw_b:= reverse(giIdx);
+	cw_b := join(bw_b,compiL);
+	maxcompiL:= mil.setop("",cw_b);
+#    VAR maxcompiL   := {max}(giIdx.reverse.join(compiL));
+#
+	dw_b := find(gmm_q,"Prior");
+	ew_b := join(cqIdx,dw_b);
+	compqL:= mil.multicast("*",ew_b,maxcompiL);
+#    VAR compqL	    := [*](join(cqIdx,gmm_q.find("Prior")), maxcompiL);
+#
+#
+##line 1983 "../../../src/gmm/gmm.mx"
+	fw_b:= find(gmm_q,"mImgIdx");
+	gw_b := reverse(fw_b);
+	imgidx_q:= join(cqIdx,gw_b);
+#    VAR imgidx_q    := join( cqIdx, gmm_q.find("mImgIdx").reverse);
+	hw_b:= find(gmm_i,"mImgIdx");
+	iw_b := reverse(hw_b);
+	imgidx_i:= join(ciIdx,iw_b);
+#    VAR imgidx_i    := join( ciIdx, gmm_i.find("mImgIdx").reverse);
+	gimgidx_q:= CTgroup(imgidx_q);
+#    VAR gimgidx_q   := CTgroup(imgidx_q);
+	gimgidx_i:= CTgroup(gimgidx_q,imgidx_i);
+#    VAR gimgidx_i   := CTgroup(gimgidx_q, imgidx_i);
+#   
+	jw_b := reverse(gimgidx_i);
+	kw_b := join(jw_b,compqL);
+	RSL:= mil.setop("",kw_b);
+#    VAR RSL         := {sum}(join( gimgidx_i.reverse, compqL));
+#
+	lw_b := debug("Results ranked");
+#debug("Results ranked");
+##      VAR printres  := new(void,str);
+##      printres.insert(nil, sprintf( "%3s %3s  %8s\n", "Q", "I", "RSL(Q,I)" ));
+##      printres.insert(nil, sprintf( "================\n" ));
+##      printres.insert([sprintf]( const "%3d,%3d,%8.lf\n", imgidx_q,imgidx_i, RSL));
+##      printres@batloop(){printf("%s",$t);}
+#
+##    VAR minRSL      := {min}(join(gimgidx_q.reverse, RSL));
+end function;
+#}
+#
+#
+#
+##line 2009 "../../../src/gmm/gmm.mx"
+function L2dist(x:bat[any::1,dbl], y:bat[any::1,dbl]):dbl;
+#  PROC L2dist( BAT[any::1,dbl] x, BAT[any::1,dbl] y ): dbl := {
+	dist:= mil.multicast("-",x,y);
+#    VAR dist := [-](x, y);
+	dist := mil.multicast("*",dist,dist);
+#    dist := [*](dist, dist);
+	mw_b := count(dist);
+	dist := /(sum(dist),mw_b);
+#    dist := dist.sum / dist.count;
+	return dist;
+#    RETURN dist;
+end function;
+#  }
+#
+#  # this is really a fitness-join
+function mapnearest(ma:bat[int,int], mb:bat[int,int]):bat[int,int];
+#  PROC mapnearest( BAT[int,bat] ma, BAT[int,bat] mb ): BAT[int,int] := {
+	TCluster:= mil.bind("TCluster");
+	C:= mil.bind("C");
+	cdist:= new(TCluster,TCluster,C);
+#    VAR cdist := new(TCluster,bat,C);
+	cseq:= mil.bind("cseq");
+	nw_b_cursor := 0:lng;
+barrier	nw_b:= batloop(cseq,nw_b_cursor);
+	nw_bH := fetchHead(cseq,nw_b_cursor);
+	nw_bT := fetchTail(cseq,nw_b_cursor);
+#    cseq@batloop(){
+	nw_bH:= mil.bind("nw_bH");
+	csrcoid:= nw_bH;
+#      VAR csrcoid := $h;
+	nw_bT:= mil.bind("nw_bT");
+	csrc:= nw_bT;
+#      VAR csrc := $t;
+	dbl:= mil.bind("dbl");
+	cdist_c:= new(TCluster,dbl);
+#      VAR cdist_c := new(TCluster,dbl);
+	ow_b_cursor := 0:lng;
+barrier	ow_b:= batloop(cseq,ow_b_cursor);
+	ow_bH := fetchHead(cseq,ow_b_cursor);
+	ow_bT := fetchTail(cseq,ow_b_cursor);
+#      cseq@batloop(){
+	ow_bH:= mil.bind("ow_bH");
+	cnewoid:= ow_bH;
+#        VAR cnewoid := $h;
+	ow_bT:= mil.bind("ow_bT");
+	cnew:= ow_bT;
+#	VAR cnew := $t;
+#	cdist_c.insert( cnew, 
+	pw_b := mil.multicast("find",ma,csrcoid);
+#	  L2dist( [find](ma,csrcoid), 
+	qw_b := mil.multicast("find",mb,cnewoid);
+	rw_b := L2dist(pw_b,qw_b);
+	sw_b := insert(cdist_c,cnew,rw_b);
+#		[find](mb,cnewoid) ) ); 
+redo	ow_b;
+end	ow_b;
+#      }
+	tw_b:= reverse(cdist_c);
+	uw_b := order(tw_b);
+	vw_b := insert(cdist,csrc,uw_b);
+#      cdist.insert( csrc, cdist_c.reverse.order );
+redo	nw_b;
+end	nw_b;
+#    }
+	ww_b := mil.multicast("fetch",cdist,0);
+	return ww_b;
+#    RETURN [fetch](cdist, const 0);
+end function;
+#  }
+#
+function testclassify(src_gmm:bat[str,str], gmmnew:bat[str,str]):void;
+#  PROC testclassify( BAT[str,bat] src_gmm, BAT[str,bat] gmmnew ): void := {
+	sampleImg:= mil.bind("sampleImg");
+	xw_b := find(sampleImg,"Samples");
+	c:= classify(xw_b,gmmnew);
+#    VAR c := classify( sampleImg.find("Samples"), gmmnew );
+	yw_b := find(sampleImg,"Clusters");
+	ax_b:= diff(c,yw_b);
+	Nerr:= count(ax_b);
+#    VAR Nerr := diff(c, sampleImg.find("Clusters")).count;
+#
+	Nerrmap:= Nerr;
+#    VAR Nerrmap := Nerr;
+#      # don't know setoriented solution yet
+#      #  VAR cmap := mapnearest( src_gmm.find("Mean"), gmmnew.find("Mean") );
+#      #  VAR Nerrmap := diff(c.join(cmap.reverse),sampleImg.find("Clusters")).count;
+	bx_b := "Estimated # misclassified blocks: %4d (raw: %4d)\n";
+	cx_b := printf(bx_b,Nerrmap,Nerr);
+#    printf("Estimated # misclassified blocks: %4d (raw: %4d)\n", Nerrmap, Nerr);
+end function;
+#  }
+#
+#  # testclassify(src_gmm, gmmnew);
+#
+#
+##line 2052 "../../../src/gmm/gmm.mx"
+function dmahalanobis(x:bat[void,dbl], mu:dbl, variance:dbl):bat[void,dbl];
+#  PROC dmahalanobis( BAT[void,dbl] x, dbl mu, dbl variance ): BAT[void,dbl] := {
+	dist:= mil.multicast("-",x,mu);
+#    VAR dist := [-](x, const mu);
+	dist := mil.multicast("*",dist,dist);
+#    dist := [*](dist, dist);
+	dist := mil.multicast("/",dist,variance);
+#    dist := [/]( dist, const variance );
+	return dist;
+#    RETURN dist;
+end function;
+#  }
+#
+function mvgpdf(d:bat[void,dbl], det:dbl, Ndim:int):bat[void,dbl];
+#  PROC mvgpdf( BAT[void,dbl] d, dbl det, int Ndim ): BAT[void,dbl] := {
+	M_PI:= mil.bind("M_PI");
+	dx_b := *(2,M_PI);
+	ex_b := /(dbl(Ndim),2);
+	fx_b := sqrt(det);
+	gx_b := *(pow(dx_b,ex_b),fx_b);
+	norm:= /(1,gx_b);
+#    VAR norm := 1/(pow((2*M_PI), dbl(Ndim)/2) * sqrt(det) );
+	hx_b := mil.multicast("*",d,-0.5LL);
+	p:= mil.multicast("exp",hx_b);
+#    VAR p := [exp]( [*]( d, -0.5LL ) );
+	ix_b := mil.multicast("*",p,norm);
+	return ix_b;
+#    RETURN [*]( p, const norm );
+end function;
+#  }
+#
+function test():void;
+#  PROC test():void := {
+	jx_b := debug("Testing...");
+#    debug( "Testing..." );
+#
+#
+##line 2070 "../../../src/gmm/gmm.mx"
+	int:= mil.bind("int");
+	dbl:= mil.bind("dbl");
+	mu:= new(int,dbl);
+#    VAR mu := new( int, dbl );
+	mu_1:= mil.bind("mu_1");
+	kx_b := insert(mu,1,mu_1);
+#    mu.insert( 1, mu_1 );
+	mu_2:= mil.bind("mu_2");
+	lx_b := insert(mu,2,mu_2);
+#    mu.insert( 2, mu_2 );
+#    # ...
+	sigma:= new(int,dbl);
+#    VAR sigma := new( int, dbl );
+	sigma_1:= mil.bind("sigma_1");
+	mx_b := insert(sigma,1,sigma_1);
+#    sigma.insert( 1, sigma_1 );
+	sigma_2:= mil.bind("sigma_2");
+	nx_b := insert(sigma,2,sigma_2);
+#    sigma.insert( 2, sigma_2 );
+#    # ...
+#
+#
+##line 2081 "../../../src/gmm/gmm.mx"
+	covar:= mil.multicast("*",sigma,sigma);
+#    VAR covar := [*]( sigma, sigma );
+	det:= prod(covar);
+#    VAR det := prod( covar );
+	ox_b := "Determinant: %lf (%lf)\n";
+	px_b := *(sigma_2,sigma_2);
+	qx_b := *(sigma_1,px_b);
+	rx_b := *(sigma_1,qx_b);
+	sx_b := printf(ox_b,det,rx_b);
+#    printf( "Determinant: %lf (%lf)\n", det, sigma_1 * sigma_1 * sigma_2 * sigma_2 );
+#
+#
+##line 2087 "../../../src/gmm/gmm.mx"
+	void:= mil.bind("void");
+	tx_b := oid(0);
+	ux_b:= new(void,dbl);
+	x_1:= seqbase(ux_b,tx_b);
+#    VAR x_1 := new( void, dbl ).seqbase(oid(0));
+	vx_b := oid(0);
+	wx_b:= new(void,dbl);
+	x_2:= seqbase(wx_b,vx_b);
+#    VAR x_2 := new( void, dbl ).seqbase(oid(0));
+#    # ...
+	i:= 0;
+#    VAR i := 0;
+barrier	xx_b:= true;
+	Nsamples:= mil.bind("Nsamples");
+	ay_b := <(i,Nsamples);
+barrier	yx_b:= ay_b;
+#    WHILE (i < Nsamples) {
+	by_b := ran_gaussian(mu_1,sigma_1);
+	cy_b := insert(x_1,nil,by_b);
+#      x_1.insert( nil, ran_gaussian(mu_1,sigma_1) );
+	dy_b := ran_gaussian(mu_2,sigma_2);
+	ey_b := insert(x_2,nil,dy_b);
+#      x_2.insert( nil, ran_gaussian(mu_2,sigma_2) );
+#      # ...
+	fy_b := :+=(i,1);
+#      i :+= 1;
+redo	xx_b;
+end	yx_b;
+end	xx_b;
+#    }
+#
+#
+##line 2100 "../../../src/gmm/gmm.mx"
+	gy_b := find(mu,1);
+	hy_b := find(covar,1);
+	dist_1:= mil.multicast("dmahalanobis_i_diagcov",x_1,gy_b,hy_b);
+#    VAR dist_1 := [dmahalanobis_i_diagcov]( x_1, mu.find(1), covar.find(1) );
+	iy_b := find(mu,2);
+	jy_b := find(covar,2);
+	dist_2:= mil.multicast("dmahalanobis_i_diagcov",x_2,iy_b,jy_b);
+#    VAR dist_2 := [dmahalanobis_i_diagcov]( x_2, mu.find(2), covar.find(2) );
+#    # ...
+	dist:= mil.multicast("+",dist_1,dist_2);
+#    VAR dist := [+]( dist_1, dist_2 ); # ...
+#
+#
+##line 2108 "../../../src/gmm/gmm.mx"
+	p:= mil.multicast("multivariate_gaussian_pdf_diagcov",dist,det,2);
+#    VAR p := [multivariate_gaussian_pdf_diagcov]( dist, det, 2 );
+#    # print( x_1, x_2, p );
+#
+#
+#
+##line 2114 "../../../src/gmm/gmm.mx"
+	ky_b := find(mu,1);
+	ly_b := find(covar,1);
+	my_b := dmahalanobis(x_1,ky_b,ly_b);
+	thediff:= mil.multicast("-",my_b,dist_1);
+#    VAR thediff := [-]( dmahalanobis(x_1, mu.find(1), covar.find(1) ), dist_1 );
+	ny_b := find(mu,2);
+	oy_b := find(covar,2);
+	py_b := dmahalanobis(x_2,ny_b,oy_b);
+	qy_b := mil.multicast("-",py_b,dist_2);
+	thediff := mil.multicast("+",thediff,qy_b);
+#    thediff := [+]( thediff, [-]( dmahalanobis(x_2, mu.find(2), covar.find(2) ), dist_2 ) );
+barrier	ry_b:= >(sum(thediff),1e-10LL);
+#    IF ( thediff.sum > 1e-10LL ) {
+	sy_b := "!ERROR: difference in Mahalanobis distances (%lf)!\n";
+	ty_b := sum(thediff);
+	uy_b := printf(sy_b,ty_b);
+#      printf( "!ERROR: difference in Mahalanobis distances (%lf)!\n", thediff.sum );
+end	ry_b;
+barrier	vy_b:= not(ry_b);
+	wy_b := printf("Mahalanobis distances ok.\n");
+end	vy_b;
+#    } ELSE printf( "Mahalanobis distances ok.\n" );
+	xy_b := mvgpdf(dist,det,2);
+	thediff := mil.multicast("-",xy_b,p);
+#    thediff := [-]( mvgpdf( dist, det, 2 ), p );
+barrier	yy_b:= >(sum(thediff),1e-10LL);
+#    IF ( thediff.sum > 1e-10LL ) {
+	aa_c := "!ERROR: difference in probabilities (%lf)!\n";
+	ba_c := sum(thediff);
+	ca_c := printf(aa_c,ba_c);
+#      printf( "!ERROR: difference in probabilities (%lf)!\n", thediff.sum );
+end	yy_b;
+barrier	da_c:= not(yy_b);
+	ea_c := printf("Probabilities ok.\n");
+end	da_c;
+#    } ELSE printf( "Probabilities ok.\n" );
+end function;
+#  }
+#
+#
+#
+##line 2127 "../../../src/gmm/gmm.mx"
+	coeffs:= mil.bind("coeffs");
+	coeffs := nil;
+#  coeffs := nil;
+	mImgIdx:= mil.bind("mImgIdx");
+	mImgIdx := nil;
+#  mImgIdx := nil;
+	mCIdx:= mil.bind("mCIdx");
+	mCIdx := nil;
+#  mCIdx := nil;
+#
+##  gmm := nil;
+##  gmmnew := nil;
+#
+	commit:= mil.bind("commit");
+#  commit;
+#
+#
+#
+##line 2140 "../../../src/gmm/gmm.mx"
+#
+	fragsize := 64;
+#  CONST fragsize := 64;
+	imgFrameNr:= mil.bind("imgFrameNr");
+	Nimg:= count(imgFrameNr);
+#  VAR Nimg := imgFrameNr.count;
+	s_tdict:= mil.bind("s_tdict");
+	collidx:= reverse(s_tdict);
+#  VAR collidx := s_tdict.reverse;
+#
+#  
+##line 2224 "../../../src/gmm/gmm.mx"
+#  VAR tmBatIds, tmBatIds_Mean, tmBatIds_Covar;
+#
+#
+##line 2145 "../../../src/gmm/gmm.mx"
+#
+	view_bbp_name:= mil.bind("view_bbp_name");
+	fa_c:= mil.multicast("startsWith",view_bbp_name,"gmm_trained");
+	ga_c:= uselect(fa_c,1);
+barrier	ha_c:= >(count(ga_c),0);
+#  IF ([startsWith](view_bbp_name,"gmm_trained").uselect(true).count > 0) {
+#    
+##line 2229 "../../../src/gmm/gmm.mx"
+#  
+##line 2219 "../../../src/gmm/gmm.mx"
+	str:= mil.bind("str");
+	tmBatIds := new(str,str);
+#  tmBatIds       := new(str,str);
+	int:= mil.bind("int");
+	tmBatIds_Mean := new(int,str);
+#  tmBatIds_Mean  := new(int,str);
+	tmBatIds_Covar := new(int,str);
+#  tmBatIds_Covar := new(int,str);
+#
+#
+##line 2229 "../../../src/gmm/gmm.mx"
+#
+	ia_c := +("gmm_trained","_Prior");
+	ja_c:= reverse(view_bbp_name);
+barrier	ka_c:= exist(ja_c,ia_c);
+	la_c := +("gmm_trained","_Prior");
+	ma_c := insert(tmBatIds,"Prior",la_c);
+#  IF (view_bbp_name.reverse.exist("gmm_trained"+"_Prior"))   tmBatIds.insert("Prior",   "gmm_trained"+"_Prior");
+end	ka_c;
+	na_c := +("gmm_trained","_mCIdx");
+	oa_c:= reverse(view_bbp_name);
+barrier	pa_c:= exist(oa_c,na_c);
+	qa_c := +("gmm_trained","_mCIdx");
+	ra_c := insert(tmBatIds,"mCIdx",qa_c);
+#  IF (view_bbp_name.reverse.exist("gmm_trained"+"_mCIdx"))   tmBatIds.insert("mCIdx",   "gmm_trained"+"_mCIdx");
+end	pa_c;
+	sa_c := +("gmm_trained","_mImgIdx");
+	ta_c:= reverse(view_bbp_name);
+barrier	ua_c:= exist(ta_c,sa_c);
+	va_c := +("gmm_trained","_mImgIdx");
+	wa_c := insert(tmBatIds,"mImgIdx",va_c);
+#  IF (view_bbp_name.reverse.exist("gmm_trained"+"_mImgIdx")) tmBatIds.insert("mImgIdx", "gmm_trained"+"_mImgIdx");
+end	ua_c;
+	xa_c := +("gmm_trained","_init_variances");
+	ya_c:= reverse(view_bbp_name);
+barrier	ab_c:= exist(ya_c,xa_c);
+#  IF (view_bbp_name.reverse.exist("gmm_trained"+"_init_variances")) 
+	bb_c := +("gmm_trained","_init_variances");
+	cb_c := insert(tmBatIds,"init_variances",bb_c);
+#    tmBatIds.insert("init_variances", "gmm_trained"+"_init_variances");
+end	ab_c;
+	nseq:= mil.bind("nseq");
+	db_c_cursor := 0:lng;
+barrier	db_c:= batloop(nseq,db_c_cursor);
+	db_cH := fetchHead(nseq,db_c_cursor);
+	db_cT := fetchTail(nseq,db_c_cursor);
+#  nseq@batloop(){
+	db_cT:= mil.bind("db_cT");
+	eb_c := str(db_cT);
+	fb_c := +("_Mean_",eb_c);
+	gb_c := +("gmm_trained",fb_c);
+	hb_c:= reverse(view_bbp_name);
+barrier	ib_c:= exist(hb_c,gb_c);
+#    IF (view_bbp_name.reverse.exist("gmm_trained" + "_Mean_"  + str($t)))
+	ib_cT:= mil.bind("ib_cT");
+	jb_c := str(ib_cT);
+	kb_c := +("_Mean_",jb_c);
+	lb_c := +("gmm_trained",kb_c);
+	mb_c := insert(tmBatIds_Mean,ib_cT,lb_c);
+#      tmBatIds_Mean.insert( $t, "gmm_trained" + "_Mean_"  + str($t));
+end	ib_c;
+	nb_c := str(db_cT);
+	ob_c := +("_Covar_",nb_c);
+	pb_c := +("gmm_trained",ob_c);
+	qb_c:= reverse(view_bbp_name);
+barrier	rb_c:= exist(qb_c,pb_c);
+#    IF (view_bbp_name.reverse.exist("gmm_trained" + "_Covar_" + str($t)))
+	rb_cT:= mil.bind("rb_cT");
+	sb_c := str(rb_cT);
+	tb_c := +("_Covar_",sb_c);
+	ub_c := +("gmm_trained",tb_c);
+	vb_c := insert(tmBatIds_Covar,rb_cT,ub_c);
+#      tmBatIds_Covar.insert($t, "gmm_trained" + "_Covar_" + str($t));
+end	rb_c;
+redo	db_c;
+end	db_c;
+#  }
+#
+#
+##line 2147 "../../../src/gmm/gmm.mx"
+#
+end	ha_c;
+barrier	wb_c:= not(ha_c);
+#  } ELSE {
+	trainedmodels:= newGMM("gmm_trained",Nimg);
+#    VAR trainedmodels := newGMM("gmm_trained", Nimg);
+#    
+##line 655 "../../../src/gmm/gmm.mx"
+	xb_c := find(trainedmodels,"init_variances");
+	BAT_APPEND:= mil.bind("BAT_APPEND");
+	yb_c := access(xb_c,BAT_APPEND);
+#  access( trainedmodels.find("init_variances"), BAT_APPEND );
+	ac_c := find(trainedmodels,"Prior");
+	bc_c := access(ac_c,BAT_APPEND);
+#  access( trainedmodels.find("Prior"), BAT_APPEND );
+	cc_c := find(trainedmodels,"mImgIdx");
+	dc_c := access(cc_c,BAT_APPEND);
+#  access( trainedmodels.find("mImgIdx"), BAT_APPEND );
+	ec_c := find(trainedmodels,"mCIdx");
+	fc_c := access(ec_c,BAT_APPEND);
+#  access( trainedmodels.find("mCIdx"), BAT_APPEND );
+	gc_c := find(trainedmodels,"Mean");
+	hc_c_cursor := 0:lng;
+barrier	hc_c:= batloop(gc_c,hc_c_cursor);
+	hc_cH := fetchHead(gc_c,hc_c_cursor);
+	hc_cT := fetchTail(gc_c,hc_c_cursor);
+	hc_cT:= mil.bind("hc_cT");
+	ic_c := access(hc_cT,BAT_APPEND);
+redo	hc_c;
+end	hc_c;
+#  trainedmodels.find("Mean")@batloop{  access($t, BAT_APPEND); }
+	jc_c := find(trainedmodels,"Covar");
+	kc_c_cursor := 0:lng;
+barrier	kc_c:= batloop(jc_c,kc_c_cursor);
+	kc_cH := fetchHead(jc_c,kc_c_cursor);
+	kc_cT := fetchTail(jc_c,kc_c_cursor);
+	kc_cT:= mil.bind("kc_cT");
+	lc_c := access(kc_cT,BAT_APPEND);
+redo	kc_c;
+end	kc_c;
+#  trainedmodels.find("Covar")@batloop{ access($t, BAT_APPEND); }
+#
+#
+##line 2150 "../../../src/gmm/gmm.mx"
+#
+#    
+##line 655 "../../../src/gmm/gmm.mx"
+	mc_c := find(trainedmodels,"init_variances");
+	nc_c := persists(mc_c,1);
+#  persists( trainedmodels.find("init_variances"), true );
+	oc_c := find(trainedmodels,"Prior");
+	pc_c := persists(oc_c,1);
+#  persists( trainedmodels.find("Prior"), true );
+	qc_c := find(trainedmodels,"mImgIdx");
+	rc_c := persists(qc_c,1);
+#  persists( trainedmodels.find("mImgIdx"), true );
+	sc_c := find(trainedmodels,"mCIdx");
+	tc_c := persists(sc_c,1);
+#  persists( trainedmodels.find("mCIdx"), true );
+	uc_c := find(trainedmodels,"Mean");
+	vc_c_cursor := 0:lng;
+barrier	vc_c:= batloop(uc_c,vc_c_cursor);
+	vc_cH := fetchHead(uc_c,vc_c_cursor);
+	vc_cT := fetchTail(uc_c,vc_c_cursor);
+	vc_cT:= mil.bind("vc_cT");
+	wc_c := persists(vc_cT,1);
+redo	vc_c;
+end	vc_c;
+#  trainedmodels.find("Mean")@batloop{  persists($t, true); }
+	xc_c := find(trainedmodels,"Covar");
+	yc_c_cursor := 0:lng;
+barrier	yc_c:= batloop(xc_c,yc_c_cursor);
+	yc_cH := fetchHead(xc_c,yc_c_cursor);
+	yc_cT := fetchTail(xc_c,yc_c_cursor);
+	yc_cT:= mil.bind("yc_cT");
+	ad_c := persists(yc_cT,1);
+redo	yc_c;
+end	yc_c;
+#  trainedmodels.find("Covar")@batloop{ persists($t, true); }
+#
+#
+##line 2151 "../../../src/gmm/gmm.mx"
+#
+#    
+##line 655 "../../../src/gmm/gmm.mx"
+	bd_c := find(trainedmodels,"init_variances");
+	STORE_MMAP:= mil.bind("STORE_MMAP");
+	cd_c := mmap(bd_c,STORE_MMAP);
+#  mmap( trainedmodels.find("init_variances"), STORE_MMAP );
+	dd_c := find(trainedmodels,"Prior");
+	ed_c := mmap(dd_c,STORE_MMAP);
+#  mmap( trainedmodels.find("Prior"), STORE_MMAP );
+	fd_c := find(trainedmodels,"mImgIdx");
+	gd_c := mmap(fd_c,STORE_MMAP);
+#  mmap( trainedmodels.find("mImgIdx"), STORE_MMAP );
+	hd_c := find(trainedmodels,"mCIdx");
+	id_c := mmap(hd_c,STORE_MMAP);
+#  mmap( trainedmodels.find("mCIdx"), STORE_MMAP );
+	jd_c := find(trainedmodels,"Mean");
+	kd_c_cursor := 0:lng;
+barrier	kd_c:= batloop(jd_c,kd_c_cursor);
+	kd_cH := fetchHead(jd_c,kd_c_cursor);
+	kd_cT := fetchTail(jd_c,kd_c_cursor);
+	kd_cT:= mil.bind("kd_cT");
+	ld_c := mmap(kd_cT,STORE_MMAP);
+redo	kd_c;
+end	kd_c;
+#  trainedmodels.find("Mean")@batloop{  mmap($t, STORE_MMAP); }
+	md_c := find(trainedmodels,"Covar");
+	nd_c_cursor := 0:lng;
+barrier	nd_c:= batloop(md_c,nd_c_cursor);
+	nd_cH := fetchHead(md_c,nd_c_cursor);
+	nd_cT := fetchTail(md_c,nd_c_cursor);
+	nd_cT:= mil.bind("nd_cT");
+	od_c := mmap(nd_cT,STORE_MMAP);
+redo	nd_c;
+end	nd_c;
+#  trainedmodels.find("Covar")@batloop{ mmap($t, STORE_MMAP); }
+#
+#
+##line 2152 "../../../src/gmm/gmm.mx"
+#
+#    
+##line 2194 "../../../src/gmm/gmm.mx"
+#  # Can be paired with modelfromBatIds(X,tmBatIds)
+#  
+##line 2219 "../../../src/gmm/gmm.mx"
+	tmBatIds := new(str,str);
+#  tmBatIds       := new(str,str);
+	tmBatIds_Mean := new(int,str);
+#  tmBatIds_Mean  := new(int,str);
+	tmBatIds_Covar := new(int,str);
+#  tmBatIds_Covar := new(int,str);
+#
+#
+##line 2195 "../../../src/gmm/gmm.mx"
+#
+	pd_c:= find(trainedmodels,"mCIdx");
+	qd_c:= info(pd_c);
+	rd_c := find(qd_c,"batId");
+	sd_c := insert(tmBatIds,"mCIdx",rd_c);
+#  tmBatIds.insert( "mCIdx",   trainedmodels.find("mCIdx").info.find("batId") );
+	td_c:= find(trainedmodels,"mImgIdx");
+	ud_c:= info(td_c);
+	vd_c := find(ud_c,"batId");
+	wd_c := insert(tmBatIds,"mImgIdx",vd_c);
+#  tmBatIds.insert( "mImgIdx", trainedmodels.find("mImgIdx").info.find("batId") );
+	xd_c:= find(trainedmodels,"Prior");
+	yd_c:= info(xd_c);
+	ae_c := find(yd_c,"batId");
+	be_c := insert(tmBatIds,"Prior",ae_c);
+#  tmBatIds.insert( "Prior",   trainedmodels.find("Prior").info.find("batId") );
+	ce_c:= find(trainedmodels,"init_variances");
+	de_c:= info(ce_c);
+	ee_c := find(de_c,"batId");
+	fe_c := insert(tmBatIds,"init_variances",ee_c);
+#  tmBatIds.insert( "init_variances", trainedmodels.find("init_variances").info.find("batId") );
+	ge_c := find(trainedmodels,"Mean");
+	he_c := mil.multicast("info",ge_c);
+	ie_c := mil.multicast("find",he_c,"batId");
+	je_c := insert(tmBatIds_Mean,ie_c);
+#  tmBatIds_Mean.insert(  [find]([info](trainedmodels.find("Mean")), const "batId") );
+	ke_c := find(trainedmodels,"Covar");
+	le_c := mil.multicast("info",ke_c);
+	me_c := mil.multicast("find",le_c,"batId");
+	ne_c := insert(tmBatIds_Covar,me_c);
+#  tmBatIds_Covar.insert( [find]([info](trainedmodels.find("Covar")), const "batId") );
+#
+#
+##line 2153 "../../../src/gmm/gmm.mx"
+#
+end	wb_c;
+#  }
+	ii:= 55;
+#  VAR ii    := 55; # 0;
+barrier	oe_c:= true;
+	qe_c := *(ii,fragsize);
+	re_c := <(qe_c,Nimg);
+barrier	pe_c:= re_c;
+#  WHILE ( (ii*fragsize) < Nimg ) {
+	se_c := find(collidx,"keyframes_file");
+	te_c := *(ii,fragsize);
+	ue_c := +(ii,1);
+	ve_c := *(ue_c,fragsize);
+	we_c := -(ve_c,1);
+	xe_c:= mil.bat(se_c);
+	frag_i:= slice(xe_c,te_c,we_c);
+#    VAR frag_i := bat(collidx.find("keyframes_file")).slice(ii*fragsize,((ii+1)*fragsize) - 1);
+	ye_c := oid(0);
+	af_c:= mark(frag_i,ye_c);
+	bf_c := find(collidx,"imgBlock");
+	cf_c := mil.bat(bf_c);
+	df_c:= reverse(af_c);
+	ef_c:= join(df_c,cf_c);
+	ff_c := oid(0);
+	gf_c:= reverse(ef_c);
+	hf_c:= mark(gf_c,ff_c);
+	frag_iIdx:= reverse(hf_c);
+#    VAR frag_iIdx := frag_i.mark(oid(0)).reverse.join(bat(collidx.find("imgBlock"))).reverse.mark(oid(0)).reverse;
+#
+	EM_coll:= mil.bind("EM_coll");
+	EM_coll := new(str,str);
+#    EM_coll := new(str,bat);
+	if_c := insert(EM_coll,"I",frag_i);
+#    EM_coll.insert("I",  frag_i);
+	imgBlock:= mil.bind("imgBlock");
+	jf_c := reverse(imgBlock);
+	kf_c:= join(frag_iIdx,jf_c);
+	lf_c := reverse(kf_c);
+	mf_c := insert(EM_coll,"Ib",lf_c);
+#    EM_coll.insert("Ib", frag_iIdx.join(imgBlock.reverse).reverse);
+#
+	coeffs:= new(int,int);
+#    VAR coeffs := new(int,bat);
+	nf_c_cursor := 0:lng;
+barrier	nf_c:= batloop(nseq,nf_c_cursor);
+	nf_cH := fetchHead(nseq,nf_c_cursor);
+	nf_cT := fetchTail(nseq,nf_c_cursor);
+#    nseq@batloop(){
+	nf_cT:= mil.bind("nf_cT");
+	of_c := str(nf_cT);
+	pf_c := +("imgBlockCoeff_",of_c);
+	qf_c := find(collidx,pf_c);
+	rf_c := mil.bat(qf_c);
+	sf_c := join(frag_iIdx,rf_c);
+	tf_c := insert(coeffs,nf_cT,sf_c);
+#      coeffs.insert( $t, frag_iIdx.join(bat(collidx.find("imgBlockCoeff_" + str($t)))) );
+redo	nf_c;
+end	nf_c;
+#    }
+	uf_c := insert(EM_coll,"Coeffs",coeffs);
+#    EM_coll.insert("Coeffs", coeffs);
+	coeffs := nil;
+#    		coeffs := nil;
+	EM_model:= mil.bind("EM_model");
+	EM_model := initGMM(EM_coll);
+#    EM_model := initGMM( EM_coll );
+#
+	gmm:= EM_globalmodel(30);
+#    VAR gmm := EM_globalmodel(30); # 30 iterations for starters
+#
+#    
+##line 2208 "../../../src/gmm/gmm.mx"
+#  # Must be paired with a modelBatIds(tmBatIds,X) in the same context
+	trainedmodels := new(str,str);
+#  trainedmodels := new(str, bat);
+	vf_c := mil.multicast("bat",tmBatIds);
+	wf_c := insert(trainedmodels,vf_c);
+#  trainedmodels.insert( [bat](tmBatIds) );
+	xf_c := mil.multicast("bat",tmBatIds_Mean);
+	yf_c := insert(trainedmodels,"Mean",xf_c);
+#  trainedmodels.insert( "Mean", [bat](tmBatIds_Mean) );
+	ag_c := mil.multicast("bat",tmBatIds_Covar);
+	bg_c := insert(trainedmodels,"Covar",ag_c);
+#  trainedmodels.insert( "Covar", [bat](tmBatIds_Covar) );
+#
+#
+##line 2173 "../../../src/gmm/gmm.mx"
+#
+	cg_c:= find(trainedmodels,"mImgIdx");
+	dg_c := count(cg_c);
+	lastId:= oid(dg_c);
+#    VAR lastId := oid(trainedmodels.find("mImgIdx").count);
+	midx:= find(gmm,"mImgIdx");
+#    VAR midx := gmm.find("mImgIdx");
+#    
+##line 611 "../../../src/gmm/gmm.mx"
+#{
+	eg_c:= reverse(midx);
+	fg_c:= mark(eg_c,lastId);
+	fIdx:= reverse(fg_c);
+#  VAR fIdx := midx.reverse.mark(lastId).reverse;
+#
+	gg_c:= find(gmm,"mImgIdx");
+	hg_c := reverse(gg_c);
+	convImgIdx:= join(fIdx,hg_c);
+#  VAR convImgIdx     := join( fIdx, gmm.find("mImgIdx").reverse );
+	ig_c:= find(gmm,"mCIdx");
+	jg_c := reverse(ig_c);
+	convCIdx:= join(fIdx,jg_c);
+#  VAR convCIdx       := join( fIdx, gmm.find("mCIdx").reverse );
+#        # implementation of batinsert into empty voidbats causes trouble...
+#        debug("<PROPCHECK1 hkey=%s />",     
+	kg_c:= find(trainedmodels,"mImgIdx");
+	lg_c:= info(kg_c);
+	mg_c := find(lg_c,"hkey");
+	ng_c := debug("<PROPCHECK1 hkey=%s />",mg_c);
+#          trainedmodels.find("mImgIdx").info.find("hkey"));
+	og_c := reverse(convImgIdx);
+	pg_c:= find(trainedmodels,"mImgIdx");
+	qg_c := insert(pg_c,og_c);
+#  trainedmodels.find("mImgIdx").insert( convImgIdx.reverse );
+#        debug("<PROPCHECK2 hkey=%s />",    
+	rg_c:= find(trainedmodels,"mImgIdx");
+	sg_c:= info(rg_c);
+	tg_c := find(sg_c,"hkey");
+	ug_c := debug("<PROPCHECK2 hkey=%s />",tg_c);
+#          trainedmodels.find("mImgIdx").info.find("hkey"));
+	vg_c := reverse(convCIdx);
+	wg_c:= find(trainedmodels,"mCIdx");
+	xg_c := insert(wg_c,vg_c);
+#  trainedmodels.find("mCIdx").insert( convCIdx.reverse );
+#
+	yg_c := find(gmm,"Prior");
+	ah_c := join(fIdx,yg_c);
+	bh_c:= find(trainedmodels,"Prior");
+	ch_c := insert(bh_c,ah_c);
+#  trainedmodels.find("Prior").insert( join(fIdx, gmm.find("Prior")) );
+	dh_c := find(trainedmodels,"Mean");
+#  [insert]( trainedmodels.find("Mean"),
+	eh_c := find(gmm,"Mean");
+	fh_c := mil.multicast("join",fIdx,eh_c);
+	gh_c := mil.multicast("insert",dh_c,fh_c);
+#            [join](const fIdx, gmm.find("Mean")) );
+	hh_c := find(trainedmodels,"Covar");
+#  [insert]( trainedmodels.find("Covar"),
+	ih_c := find(gmm,"Covar");
+	jh_c := mil.multicast("join",fIdx,ih_c);
+	kh_c := mil.multicast("insert",hh_c,jh_c);
+#            [join](const fIdx, gmm.find("Covar")) );
+#
+	lh_c := find(gmm,"init_variances");
+	mh_c := join(fIdx,lh_c);
+	nh_c:= find(trainedmodels,"init_variances");
+	oh_c := insert(nh_c,mh_c);
+#  trainedmodels.find("init_variances").insert( join(fIdx, gmm.find("init_variances")) );
+#}
+#
+#
+##line 2176 "../../../src/gmm/gmm.mx"
+#
+#    
+##line 2194 "../../../src/gmm/gmm.mx"
+#  # Can be paired with modelfromBatIds(X,tmBatIds)
+#  
+##line 2219 "../../../src/gmm/gmm.mx"
+	tmBatIds := new(str,str);
+#  tmBatIds       := new(str,str);
+	tmBatIds_Mean := new(int,str);
+#  tmBatIds_Mean  := new(int,str);
+	tmBatIds_Covar := new(int,str);
+#  tmBatIds_Covar := new(int,str);
+#
+#
+##line 2195 "../../../src/gmm/gmm.mx"
+#
+	ph_c:= find(trainedmodels,"mCIdx");
+	qh_c:= info(ph_c);
+	rh_c := find(qh_c,"batId");
+	sh_c := insert(tmBatIds,"mCIdx",rh_c);
+#  tmBatIds.insert( "mCIdx",   trainedmodels.find("mCIdx").info.find("batId") );
+	th_c:= find(trainedmodels,"mImgIdx");
+	uh_c:= info(th_c);
+	vh_c := find(uh_c,"batId");
+	wh_c := insert(tmBatIds,"mImgIdx",vh_c);
+#  tmBatIds.insert( "mImgIdx", trainedmodels.find("mImgIdx").info.find("batId") );
+	xh_c:= find(trainedmodels,"Prior");
+	yh_c:= info(xh_c);
+	ai_c := find(yh_c,"batId");
+	bi_c := insert(tmBatIds,"Prior",ai_c);
+#  tmBatIds.insert( "Prior",   trainedmodels.find("Prior").info.find("batId") );
+	ci_c:= find(trainedmodels,"init_variances");
+	di_c:= info(ci_c);
+	ei_c := find(di_c,"batId");
+	fi_c := insert(tmBatIds,"init_variances",ei_c);
+#  tmBatIds.insert( "init_variances", trainedmodels.find("init_variances").info.find("batId") );
+	gi_c := find(trainedmodels,"Mean");
+	hi_c := mil.multicast("info",gi_c);
+	ii_c := mil.multicast("find",hi_c,"batId");
+	ji_c := insert(tmBatIds_Mean,ii_c);
+#  tmBatIds_Mean.insert(  [find]([info](trainedmodels.find("Mean")), const "batId") );
+	ki_c := find(trainedmodels,"Covar");
+	li_c := mil.multicast("info",ki_c);
+	mi_c := mil.multicast("find",li_c,"batId");
+	ni_c := insert(tmBatIds_Covar,mi_c);
+#  tmBatIds_Covar.insert( [find]([info](trainedmodels.find("Covar")), const "batId") );
+#
+#
+##line 2177 "../../../src/gmm/gmm.mx"
+#
+#    commit;
+#
+	trainedmodels := nil;
+#    trainedmodels := nil;
+	EM_model := nil;
+#    EM_model := nil;
+	EM_coll := nil;
+#    EM_coll  := nil;
+#
+	gmm := nil;
+#    gmm := nil;
+	midx := nil;
+#    midx := nil;
+#
+	oi_c := :+=(ii,1);
+#    ii :+= 1;
+redo	oe_c;
+end	pe_c;
+end	oe_c;
+#  }
+#
+#
+##line 2338 "../../../src/gmm/gmm.mx"
+	GMMdebuglog:= mil.bind("GMMdebuglog");
+	pi_c := fflush(GMMdebuglog);
+#  fflush( GMMdebuglog );
+#  # enum_drop( TCluster );
+#  # fclose( GMMdebuglog );
+#  # quit;
+#
+#
+##line 2346 "../../../src/gmm/gmm.mx"
+function modelIdx(N:int):bat[str,void];
+#PROC modelIdx(int N): BAT[str,void] := {
+	void:= mil.bind("void");
+	qi_c:= new(str,void);
+	ri_c := oid(0);
+	si_c:= reverse(qi_c);
+	ti_c:= seqbase(si_c,ri_c);
+	modelidx:= reverse(ti_c);
+#  VAR modelidx := new(str,void).reverse.seqbase(oid(0)).reverse;
+	ui_c:= Nseq(N);
+	seq:= reverse(ui_c);
+#  VAR seq := Nseq(N).reverse;
+	vi_c := insert(modelidx,"Prior",nil);
+#  modelidx.insert( "Prior", nil );
+	wi_c := project(seq,"Mu_");
+	xi_c := mirror(seq);
+	yi_c := mil.multicast("+",wi_c,xi_c);
+	mu:= _x(yi_c);
+#  VAR mu := _x([+](seq.project("Mu_"), seq.mirror));
+	aj_c := project(seq,"Sigma_");
+	bj_c := mirror(seq);
+	cj_c := mil.multicast("+",aj_c,bj_c);
+	covar:= _x(cj_c);
+#  VAR covar := _x([+](seq.project("Sigma_"), seq.mirror));
+	dj_c := reverse(mu);
+	ej_c := insert(modelidx,dj_c);
+#  modelidx.insert( mu.reverse );
+	fj_c := reverse(covar);
+	gj_c := insert(modelidx,fj_c);
+#  modelidx.insert( covar.reverse );
+	hj_c:= reverse(mu);
+	ij_c:= number(hj_c);
+	jj_c:= reverse(ij_c);
+	mu := join(jj_c,modelidx);
+#  mu := mu.reverse.number.reverse.join(modelidx);
+	kj_c:= reverse(covar);
+	lj_c:= number(kj_c);
+	mj_c:= reverse(lj_c);
+	covar := join(mj_c,modelidx);
+#  covar := covar.reverse.number.reverse.join(modelidx);
+	return modelidx;
+#  RETURN modelidx;
+end function;
+#}
+#
+#

@@ -1,3 +1,4 @@
+@t M2M, MIL to MAL parser
 @a M. L. Kersten
 @v 2.0
 
@@ -46,7 +47,6 @@ to build a parsetree followed by a recursive descend code generation phase.
 
 #include "gdk.h"
 
-
 typedef struct YYSRECORD{
 	int	token, tpe, len;
 	char * 	val;
@@ -55,6 +55,9 @@ typedef struct YYSRECORD{
 #define YYSTYPE yystype
 extern YYSTYPE yylval;
 #define GDKerror(M) 	printf("%s",M) 
+#define multiplexOp(X) (*(X) == '[')
+#define setOp(X) (*(X) == '{')
+extern char *getOperator(char *nme);
 
 extern const char *yylexname(int Y);
 extern void mil_parserror(str msg);
@@ -67,7 +70,9 @@ extern int yylex();
 extern char *newName();
 extern str getLastHead();
 extern str getLastTail();
+extern char *emitExpr(char *msg);
 
+extern int constantdeclaration;
 #endif /* _MIL_PARSER_H */
 @l
 /*
@@ -121,7 +126,7 @@ needed for tracing the parser.
 ("else"|"ELSE")       { Symbol(TOK_ELSE);                                     }
 ("false"|"FALSE")     { Vector(TOK_CONSTANT, TYPE_bit, "0", 1);        }
 ("var"|"VAR")         { Symbol(TOK_VAR);                                      }
-("const"|"CONST")     { Symbol(TOK_OPERATOR);                                    }
+("const"|"CONST")     { constantdeclaration = 1; Symbol(TOK_CONST);}
 ("true"|"TRUE")       { Vector(TOK_CONSTANT, TYPE_bit, "1", 1);        }
 ("module"|"MODULE")   { Symbol(TOK_MODULE);				     }
 ("any"|"ANY")         { Vector(TOK_ANY, TYPE_int,  "-1", 2);               }
@@ -132,21 +137,29 @@ needed for tracing the parser.
 ("$h"|"$H"|"$head"|"$HEAD") { Vector(TOK_ITERTEMP, TYPE_str, getLastHead(), 1);         }
 ("$t"|"$T"|"$tail"|"$TAIL") { Vector(TOK_ITERTEMP, TYPE_str, getLastTail(), 1);         }
 "$"{D}+               { Vector(TOK_TEMPLATE,TYPE_int,yytext+1,yyleng-1);       }
+":="                  { Symbol(TOK_ASSIGNMENT);                               }
+("[:=]")	|
+("[:"{OPER}"=]")	|
+("[:"{IDENT}"=]")	|
+("["{IDENT}"]")	|
+("["{OPER}"]")	| 
+("{:=}") 	| 
+("{"{OPER}"}")	|
+("{"{IDENT}"}")	| 
+({IDENT})	      { yytext[yyleng]=0; Vector(TOK_IDENT, TYPE_str, yytext,yyleng);	      }
+(":"{IDENT}"=")	|
+(":"{OPER}"=")	| 
+({OPER}"="?)	{	yytext[yyleng]=0;
+			if( !yytext[1] && (yytext[0]=='~' ||
+				yytext[0]=='?' || yytext[0]==':')){
+				Symbol(yytext[0]);
+			} else Vector(TOK_OPERATOR, TYPE_str, yytext,yyleng); 
+		}
 "(*"                  { Symbol(TOK_DEREF);                                    }
 "[*"                  { Symbol(TOK_SETOP);                                    }
 "{*"                  { Symbol(TOK_SETAGGR);                                  }
 "@"                   { Symbol(TOK_ITERATION);                                }
-":="                  { Symbol(TOK_ASSIGNMENT);                               }
-("["{OPER}"]")	|
-("["{IDENT}"]")	|
-("{"{OPER}"}")	|
-("{"{IDENT}"}")	|
-("[:=]")	|
-("[:"{OPER}"=]")	|
-("{:=}") 	|
-({IDENT})	      { Vector(TOK_IDENT, TYPE_str, yytext,yyleng);	      }
-(":"{OPER}"=")	|
-({OPER}"="?) 	      { Vector(TOK_OPERATOR, TYPE_str, yytext,yyleng);	      } 
+"@"{S}"["                   { Symbol(TOK_ITERATION_PAR);               }
 ("-")?{D}+"LL"        { Vector(TOK_CONSTANT, TYPE_lng, yytext, yyleng);}
 ("-")?{D}+            { Vector(TOK_CONSTANT, TYPE_int, yytext, yyleng);}
 {D}+"@"{D}+           { Vector(TOK_CONSTANT, TYPE_oid, yytext, yyleng);         }
@@ -282,8 +295,6 @@ Once the input is available parsing runs in a critial section for
 a single client thread.
 
 @c
-static int nameId;
-
 int mil_parse(str buf, int listing){
 	return 0;
 }
@@ -328,7 +339,73 @@ str getLast(char c){
 str getLastHead(){ return getLast('H');}
 str getLastTail(){ return getLast('T');}
 
-@- The Bison Grammar
+@+ Symbol table
+For Monet V 5 there is no automatic resolution of identifiers to
+outer or named scopes. Such variables are explicitly bound by a
+function bind(str nme).
+For the M2m compiler this means we have to keep track on the identifiers
+introduced in a block and issue a bind operation before using them.
+@c
+typedef struct IDS{
+	str nme;
+	struct IDS *peer;
+} *Ids;
+
+Ids ids;
+
+void resetIds() {ids =0;}
+
+void newId(str nme){
+	Ids m;
+	m = (Ids) GDKmalloc(sizeof(*m));
+	m->peer = ids;
+	m->nme = nme;
+	ids= m;
+}
+int fndId(str nme){
+	Ids n,m;
+	for(n = ids; n; n= n->peer){
+		if(strcmp(n->nme,nme)==0) return 1;
+	}
+	newId(nme);
+	return 0;
+}
+
+int bindId(str nme){
+	if( fndId(nme) == 0 && constantdeclaration==0)
+	printf("\t%s:= mil.bind(\"%s\");\n",nme,nme);
+}
+
+char *bindFcn(str nme){
+	char buffer[1024];
+
+	switch(*nme){
+	case '[':
+		nme[strlen(nme)-1]=0;
+		sprintf(buffer,"mil.multicast(\"%s\",", nme+1);
+		break;
+	case '{':
+		nme[strlen(nme)-1]=0;
+		sprintf(buffer,"mil.setop(\"%s\",", nme-1);
+		break;
+	case '(':
+		nme[strlen(nme)-1]=0;
+		sprintf(buffer,"mil.inplace(\"%s\",", nme-1);
+		break;
+	default: if(strchr(nme,'(') ) return nme;
+		sprintf(buffer,"%s(",nme);
+	}
+	return GDKstrdup(buffer);
+}
+char *emitExpr(char *msg){
+	if(strchr(msg,'(') ){
+		char *nme= newName();
+		printf("\t%s := %s;\n",nme,msg);
+		return nme;
+	} 
+	return msg;
+}
+@+ The Bison Grammar
 The grammatica should be context free.
 @y
 %token_table
@@ -340,7 +417,8 @@ The grammatica should be context free.
 #define yyerror(X)      { mil_parserror(X);  }
 
 #define YYPRINT(file,tpe,val)	mil_print(file,tpe,val)
-int yydebug = 0;
+int yydebug = 1;
+int constantdeclaration = 0;
 void debugParser(int i){ yydebug=i; }
 
 yystype accum;
@@ -353,12 +431,13 @@ yystype accum;
 %token TOK_CONST TOK_BAT
 %token TOK_OPERATOR
 %token TOK_SETOP TOK_SETAGGR TOK_PROCDEF
-%token TOK_STRING TOK_ITERATION TOK_ELSE
+%token TOK_STRING TOK_ITERATION TOK_ITERATION_PAR TOK_ELSE
 %token TOK_MODULE 
 %token TOK_ANY TOK_UNDEF TOK_DEREF TOK_ANYNUM
 
 %left TOK_ITERATION
 %left TOK_ASSIGNMENT TOK_OPERATOR
+%left '?' ':'
 %%
 program:
         MIL_session
@@ -370,7 +449,7 @@ MIL_session:
     |   MIL_session session
 
 session:
-        proc_definition
+        proc_definition {resetIds();}
     |   TOK_MODULE '(' module_list ')' ';'
     |   statement
 
@@ -383,13 +462,12 @@ statement_list:
     |   statement_list statement
 
 statement:
-        stmt
-    |   varidents ';'
-    |   constidents ';'
+        stmt { constantdeclaration = 0;}
+    |   varidents ';' { constantdeclaration = 0; }
 
 stmt: ';'
     |   expression ';'
-    |   expression TOK_ITERATION '[' expression ']' iterator
+    |   expression TOK_ITERATION_PAR expression ']' iterator
 	{ $2.val= newName();
 	  pushIterator($2.val);
 	  printf("\t%s_cursor := 0:lng;\n",$2.val);
@@ -426,39 +504,40 @@ stmt: ';'
     |   barrier '(' 
 	{ $2.val= newName();
 	  printf("barrier\t%s:= true;\n",$1.val);
+	  pushIterator($1.val);
 	}
 	 expression ')' 
-	{ printf("barrier\t%s:= %s;\n",$2.val,$4.val); }
+	{ printf("barrier\t%s:= %s;\n",$2.val,$4.val); 
+	  pushIterator($2.val);
+	}
 	stmt
 	{ 
 	  printf("redo\t%s;\n", $1.val);
+	  popIterator();
 	  printf("end\t%s;\n",$2.val);
+	  popIterator();
 	  printf("end\t%s;\n",$1.val);
 	}
 
-    |   ifhead /* TOK_IF '(' expression 
-	{ $1.val = newName();
-	   printf("barrier\t%s:= %s;\n",$1.val,$3.val);
-	}
-	')' */ stmt
-	{ printf("end\t%s;\n",$1.val); }
-    |   ifhead /* TOK_IF '(' expression 
-	{ $1.val = newName();
-	   printf("barrier\t%s:= %s;\n",$1.val,$3.val);
-	}
-	')' */ stmt TOK_ELSE 
+    |   ifhead stmt
+	{ printf("end\t%s;\n",$1.val); popIterator();}
+    |   ifhead stmt TOK_ELSE 
 	{ printf("end\t%s;\n",$1.val); 
-	  $1.val= newName();
-	   printf("barrier\t%s:= %s;\n",$1.val,$3.val);
+	  popIterator();
+	  $3.val= newName();
+	  pushIterator($3.val);
+	   printf("barrier\t%s:= not(%s);\n",$3.val,$1.val);
 	}
 	stmt
-	{ printf("end\t%s;\n",$1.val); }
+	{ printf("end\t%s;\n",$3.val); popIterator();}
     |   TOK_BREAK ';'
-	{ printf("leave\t;\n"); }
+	{ printf("leave\t%s;\n",getLastIterator()); }
 
-ifhead: TOK_IF '(' expression ')'
+ifhead: TOK_IF '(' term ')'
 	{ $1.val = newName();
 	   printf("barrier\t%s:= %s;\n",$1.val,$3.val);
+	  pushIterator($1.val);
+	  $$=$1;
 	}
 
 barrier:
@@ -466,7 +545,6 @@ barrier:
 	{ $$.val= newName();}
 
 iterator :
-	/* fcn_call*/
 	TOK_IDENT '(' ')'
     |	TOK_IDENT
         
@@ -484,7 +562,7 @@ parallel_block:
         TOK_PARBLOCK 
 	{ $1.val= newName(); printf("barrier\t%s:= true;\n",$1.val);}
 	statement_seq TOK_PAREND
-	{ printf("end all\t%s;\n",$1.val);}
+	{ printf("end\t%s;\n",$1.val);}
 
 proc_definition:
         TOK_PROCDEF proc_name proc_header stmt
@@ -499,7 +577,23 @@ proc_definition:
 
 proc_name:
         TOK_IDENT
-	{ printf("function %s(",$1.val);}
+	{
+		switch($1.val[0]){
+		case '[':
+			$1.val[strlen($1.val)-1]=0;
+			printf("function %s_multicast(", $1.val+1);
+			break;
+		case '{':
+			$1.val[strlen($1.val)-1]=0;
+			printf("function %s_setop(", $1.val-1);
+			break;
+		case '(':
+			$1.val[strlen($1.val)-1]=0;
+			printf("function %s_inplace(", $1.val-1);
+			break;
+		default: printf("function %s(",$1.val);
+		}
+	}
     |   TOK_STRING
 	{ printf("function %s(",$1.val);}
     |   TOK_OPERATOR
@@ -516,17 +610,17 @@ mel_header:
 
 mel_range:
         TOK_RANGETEMP mel_type TOK_RANGETEMP
-	{ printf("unknown range");}
+	{ newId($1.val); printf(",%s:%s[]",$1.val,$2.val);}
 
 mel_params:
         mel_type TOK_IDENT
-	{ printf("%s:%s",$2.val,$1.val);}
+	{newId($2.val); printf("%s:%s",$2.val,$1.val);}
     |	TOK_IDENT
-	{ printf("%s:any",$1.val);}
+	{newId($1.val); printf("%s:any",$1.val);}
     |   mel_params ',' mel_type TOK_IDENT
-	{ printf(", %s:%s",$4.val,$3.val);}
+	{newId($4.val); printf(", %s:%s",$4.val,$3.val);}
     |   mel_params ',' TOK_IDENT
-	{ printf("%s:any",$3.val);}
+	{newId($3.val); printf("%s:any",$3.val);}
 
 mel_type:
         TOK_IDENT 
@@ -551,7 +645,7 @@ mel_any:
 	}
     |   TOK_ANY
 	{ $$.val = GDKstrdup("any");
-	  printf("\n# ERROR: 'any' types should be bound to a type variable\n");
+	  /* printf("\n# ERROR: 'any' types should be bound to a type variable\n"); */
 	}
 
 type_var: TOK_CONSTANT
@@ -572,33 +666,40 @@ blk_expression:
     |   parallel_block
 
 expression:
-	term
-	{accum = $1;}
+    constant term 
+	{ $$.val = emitExpr($2.val); }
+    |   constant template TOK_ASSIGNMENT term
+	{ bindId($2.val); 
+	  printf("\t%s := %s;\n", $2.val, $4.val); 
+	  $$=$2;}
+    |   constant TOK_IDENT TOK_ASSIGNMENT term
+	{ bindId($2.val); 
+	  printf("\t%s := %s;\n", $2.val, $4.val); 
+	  $$=$2;}
+
+constant: TOK_CONST
+	| /* empty */
 	
 term :
 	factor
     |	factor TOK_OPERATOR term
-	{ char *nme= newName();
-	  printf("\t%s:= %s(%s,%s);\n",
-		nme,$2.val,$1.val,$3.val);
-	  $$.val=nme;
+	{ char stmt[1024];
+	  $3.val = emitExpr($3.val);
+	  sprintf(stmt,"%s%s,%s)", bindFcn($2.val),$1.val,$3.val);
+	  $$.val=GDKstrdup(stmt);
 	}
     |	TOK_OPERATOR term
-	{ char *nme= newName();
-	  printf("\t%s:= %s(%s);\n",
-		nme,$1.val,$2.val);
-	  $$.val=nme;
+	{ char stmt[1024];
+	  $2.val = emitExpr($2.val);
+	  sprintf(stmt,"%s%s)", bindFcn($1.val),$2.val);
+	  $$.val=GDKstrdup(stmt);
 	}
     |	factor TOK_IDENT term
-	{ char *nme= newName();
-	  printf("\t%s:= %s(%s,%s);\n",
-		nme,$2.val,$1.val,$3.val);
-	  $$.val=nme;
+	{ char stmt[1024];
+	  $3.val = emitExpr($3.val);
+	  sprintf(stmt,"%s%s,%s)", bindFcn($2.val),$1.val,$3.val);
+	  $$.val=GDKstrdup(stmt);
 	}
-    |   template TOK_ASSIGNMENT term
-	{ printf("\t%s := %s;\n", $1.val, $3.val);}
-    |   TOK_IDENT TOK_ASSIGNMENT term
-	{ printf("\t%s := %s;\n", $1.val, $3.val);}
 
 variable_reference:
         template 
@@ -609,12 +710,12 @@ template:
     |   TOK_ITERTEMP
     |   TOK_VARTEMP factor ')'
 	{ char *nme= newName();
-	  printf("\t%s := getVarTemp(%s);\n",nme,$2.val);
+	  printf("\t%s := mil.getVarTemp(%s);\n",nme,$2.val);
 	  $$.val= nme;
 	}
     |   TOK_VARTEMP factor TOK_RANGETEMP ')'
 	{ char *nme= newName();
-	  printf("\t%s := getVarTempRange(%s);\n",nme,$2.val);
+	  printf("\t%s := mil.getVarTempRange(%s);\n",nme,$2.val);
 	  $$.val= nme;
 	}
 
@@ -624,10 +725,11 @@ factor:
     |   TOK_STRING
     |   TOK_BAT
     |  	variable_reference
-    | 	fcn_call
-    |   '[' multiplex_expression ']'
-    |   '(' expression ')'
+	{$$=$1; bindId($1.val);}
+    |   '[' multiplex_expression ']' 
 	{ $$= $2;}
+    | 	fcn_call
+    |   '(' expression ')' { $$= $2;}
 @-
 The separator should be limited to ',' and '~' should be
 added back as an operator symbol.
@@ -636,89 +738,101 @@ multiplex_comma: ',' |  '~'
 
 multiplex_expression:
       multiplex_term multiplex_comma multiplex_term
-	{printf("multiplex expression not supported\n");}
+	{ $$.val= newName();
+	printf("\t%s:= M2m.batconstruct2(%s,%s);\n", $$.val, $1.val, $3.val);}
+    | multiplex_term
+	{ $$.val= newName();
+	printf("\t%s:= M2m.batconstruct1(%s);\n", $$.val, $1.val);}
 
 multiplex_term:
-        TOK_CONST expression 
-    |   bat_expression
+        bat_expression
     |   expression '?' bat_expression ':' bat_expression
+	{$$.val = newName();
+	 printf("\t%s := M2m.ifthen(%s,%s,%s);\n",$$.val,
+		$1.val,$3.val,$5.val);
+	}
 
 bat_expression:
         expression
      |   /* empty */
+	{ $$.val =newName();
+	  printf("\t%s:= nil;\n",$$.val);}
 
 fcn_call: 
      	fcn_hdr '(' expr_list ')'
-	{ char *nme=newName();
-	printf("\t%s:= %s(%s);\n",nme,$1.val,$3.val); $$.val = nme;}
+	{ char stmt[1024];
+	  sprintf(stmt,"%s%s)", bindFcn($1.val),$3.val);
+	  $$.val = GDKstrdup(stmt);}
     |	TOK_OPERATOR '(' expr_list ')'
-	{ char *nme=newName();
-	printf("\t%s:= %s(%s);\n",nme,$1.val,$3.val); $$.val = nme;}
+	{ char stmt[1024];
+	  sprintf(stmt,"%s%s)", bindFcn($1.val),$3.val);
+	  $$.val = GDKstrdup(stmt);}
     |	fcn_hdr '(' ')'
-	{ char *nme=newName();
-	printf("\t%s:= %s();\n",nme,$1.val); $$.val = nme;}
-    | variable_reference '.' fcn_hdr '(' ')'
-	{ char *nme=newName();
-	printf("\t%s:= %s(%s);\n",nme,$3.val,$1.val); $$.val = nme;}
-    | variable_reference '.' fcn_hdr '(' expr_list ')'
-	{ char *nme=newName();
-	printf("\t%s:= %s(%s,%s);\n",nme,$3.val,$1.val,$5.val); $$.val = nme;}
-    | variable_reference '.' variable_reference
-	{ char *nme=newName();
-	printf("\t%s:= %s(%s);\n",nme,$3.val,$1.val); $$.val = nme;}
-    | TOK_CONSTANT '.' fcn_hdr '(' ')'
-	{ char *nme=newName();
-	printf("\t%s:= %s(%s);\n",nme,$3.val,$1.val); $$.val = nme;}
-    | TOK_CONSTANT '.' fcn_hdr '(' expr_list ')'
-	{ char *nme=newName();
-	printf("\t%s:= %s(%s,%s);\n",nme,$3.val,$1.val,$5.val); $$.val = nme;}
-    | TOK_CONSTANT '.' variable_reference
-	{ char *nme=newName();
-	printf("\t%s:= %s(%s);\n",nme,$3.val,$1.val); $$.val = nme;}
-    | '[' multiplex_expression ']' '.' fcn_hdr '(' ')'
-	{ char *nme=newName();
-	printf("\t%s:= %s(%s);\n",nme,$5.val,$2.val); $$.val = nme;}
-    | '[' multiplex_expression ']' '.' fcn_hdr '(' expr_list ')'
-	{ char *nme=newName();
-	printf("\t%s:= %s(%s,%s);\n",nme,$5.val,$2.val,$7.val); $$.val = nme;}
-    | '(' expression ')' '.' fcn_hdr '(' ')'
-	{ char *nme=newName();
-	printf("\t%s:= %s(%s);\n",nme,$5.val,$2.val); $$.val = nme;}
-    | '(' expression ')' '.' fcn_hdr '(' expr_list ')'
-	{ char *nme=newName();
-	printf("\t%s:= %s(%s,%s);\n",nme,$5.val,$2.val,$7.val); $$.val = nme;}
+	{ char stmt[1024];
+	  sprintf(stmt,"%s)", bindFcn($1.val));
+	  $$.val = GDKstrdup(stmt);}
+    | fcn_target fcn_hdr '(' ')'
+	{ char stmt[1024];
+	  sprintf(stmt,"%s%s)", bindFcn($2.val),$1.val);
+	  $$.val = GDKstrdup(stmt);}
+    | fcn_target fcn_hdr '(' expr_list ')'
+	{ char stmt[1024];
+	  sprintf(stmt,"%s%s,%s)", bindFcn($2.val),$1.val,$4.val);
+	  $$.val = GDKstrdup(stmt);}
+    | fcn_target variable_reference
+	{ char stmt[1024];
+	  sprintf(stmt,"%s%s)", bindFcn($2.val),$1.val);
+	  $$.val = GDKstrdup(stmt);}
     | fcn_call '.' fcn_hdr '(' ')'
-	{ char *nme=newName();
-	printf("\t%s:= %s(%s);\n",nme,$3.val,$1.val); $$.val = nme;}
+	{ char stmt[1024];
+	  char *nme= newName();
+	  printf("\t%s:= %s;\n",nme,$1.val);
+	  sprintf(stmt,"%s%s)", bindFcn($3.val),nme);
+	  $$.val = GDKstrdup(stmt);}
     | fcn_call '.' fcn_hdr '(' expr_list ')'
-	{ char *nme=newName();
-	printf("\t%s:= %s(%s,%s);\n",nme,$3.val,$1.val,$5.val); $$.val = nme;}
+	{ char stmt[1024];
+	  char *nme= newName();
+	  printf("\t%s:= %s;\n",nme,$1.val);
+	  sprintf(stmt,"%s%s,%s)", bindFcn($3.val),nme,$5.val);
+	  $$.val = GDKstrdup(stmt);}
     | fcn_call '.' variable_reference
-	{ char *nme=newName();
-	printf("\t%s:= %s(%s);\n",nme,$3.val,$1.val); $$.val = nme;}
+	{ char stmt[1024];
+	  char *nme= newName();
+	  printf("\t%s:= %s;\n",nme,$1.val);
+	  sprintf(stmt,"%s%s)", bindFcn($3.val),nme);
+	  $$.val = GDKstrdup(stmt);}
 
 fcn_hdr: 
        TOK_DEREF factor ')'  
-	{ 
-	  $$.val= glue("dereference.",$2.val);
+	{ char stmt[1024];
+	  $2.val =emitExpr($2.val);
+	  sprintf(stmt,"mil.derefer(%s,",$2.val);
+	  $$.val= GDKstrdup(stmt);
 	}
     |  TOK_SETOP factor ']' 
-	{ 
-	  $$.val= glue("setop.",$2.val);
+	{ char stmt[1024];
+	  $2.val =emitExpr($2.val);
+	  sprintf(stmt,"mil.multicast_deref(%s,",$2.val);
+	  $$.val= GDKstrdup(stmt);
 	}
     |  TOK_SETAGGR factor '}'
-	{ 
-	  $$.val= glue("aggregate.",$2.val);
+	{ char stmt[1024];
+	  $2.val =emitExpr($2.val);
+	  sprintf(stmt,"mil.setop_deref(%s,",$2.val);
+	  $$.val= GDKstrdup(stmt);
 	}
     |  TOK_BAT
 	{ 
-	  $$.val="bat";
+	  $$.val="mil.bat";
 	}
     |  TOK_IDENT	
-	{ 
-	  $$.val = $1.val;
-	}
+	{ $$= $1; }
  
+fcn_target : TOK_CONSTANT '.'
+   |	'[' multiplex_expression ']' '.' { $$.val= $2.val;}
+   |	'(' expression ')' '.' {$$.val= $2.val;}
+   |	variable_reference '.' {$$=$1; bindId($1.val);}
+
 expr_list:
      	expression
 	{$$=$1;}
@@ -736,21 +850,15 @@ modident:
     |   TOK_IDENT
     |   TOK_BAT
 
-constidents:
-        TOK_CONST TOK_IDENT TOK_ASSIGNMENT expression
- 	{ printf("\t%s:= %s;\n",$2.val,$4.val); }
-   |   constidents ',' TOK_IDENT TOK_ASSIGNMENT expression
- 	{ printf("\t%s:= %s;\n",$3.val,$5.val); }
-
 varidents:
         TOK_VAR ident_decl
     |   varidents ',' ident_decl
 
 ident_decl:
         TOK_IDENT 
-	{printf("\t%s:= nil;\n",$1.val);}
-    |   TOK_IDENT TOK_ASSIGNMENT expression
- 	{ printf("\t%s:= %s;\n",$1.val,$3.val); }
+	{newId($1.val); }
+    |   TOK_IDENT TOK_ASSIGNMENT term
+ 	{newId($1.val); printf("\t%s:= %s;\n",$1.val,$3.val); }
 %%
 
 @-
@@ -803,12 +911,24 @@ const char *yylexname(int Y)
 	} 
 	return "char";
 }
-@- Utilities
+@+ Utilities
 Generation of the Mal code block requires
 @c
+static char  nameId[3]= {'a','a','a'};
 char *newName(){
 	char buf[IDLENGTH];
-	sprintf(buf,"_v%d", nameId++);
+	sprintf(buf,"%c%c_%c", nameId[0],nameId[1],nameId[2]);
+	nameId[0]++;
+	if( nameId[0]>='z'){
+		nameId[0]='a';
+		nameId[1]++;
+		if( nameId[1]>='z'){
+			nameId[1]='a';
+			if(nameId[2]>='z'){
+				GDKerror("out of temporary variable names\n");
+			} else nameId[2]++;
+		}
+	}
 	return GDKstrdup(buf);
 }
 char *getName(int i){
@@ -817,5 +937,12 @@ char *getName(int i){
 	return GDKstrdup(buf);
 }
 
+char *getOperator(char *nme){
+	int l = strlen(nme);
+	str n= GDKmalloc(strlen(nme));
+	strncpy(n,nme+1,l-2);
+	n[l-1] = 0;
+	return n;
+}
 @}
 
