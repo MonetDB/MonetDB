@@ -72,6 +72,7 @@ functions.
 
 typedef void    *MT_Lock;
 typedef void    *MT_Sema;
+typedef void    *MT_Cond;
 typedef size_t	MT_Id;
 
 #define THREAD_STACK_SIZE	((size_t)512*1024)
@@ -209,6 +210,27 @@ Dump info about the semaphore named 'name' on stream 'fp'.
 gdk_export void 	MT_dump_sema(MT_Sema s, FILE *fp, char *name);
 
 @-
+Create a thread condition variable.
+@h
+gdk_export MT_Cond	MT_create_cond();     
+
+@-
+Destroy a counting thread semaphore;
+@h
+gdk_export void	MT_destroy_cond(MT_Cond c);     
+
+@-
+Signal a condition variable.
+@h
+gdk_export void	MT_signal_cond(MT_Cond c, char *name);
+ 
+@-
+Wait on the condition variable. This needs a lock to avoid race conditions
+on the condition variable.
+@h
+gdk_export void	MT_wait_cond(MT_Cond c, MT_Lock l, char *name);
+
+@-
 Check if some process is still alive.
 @h
 gdk_export int 	MT_alive(int pid);
@@ -250,9 +272,11 @@ MT_Lock		MT_system_lock = NULL;		/* system administration lock */
 
 pthread_mutex_t	MT_firstlock[MAXLOCKS];
 pthread_sema_t	MT_firstsema[MAXSEMAS];
+pthread_cond_t	MT_firstcond[MAXSEMAS];
 
 int MT_curlock=0, MT_nextlock[MAXLOCKS];
 ptrdiff_t MT_cursema=0, MT_nextsema[MAXSEMAS];
+ptrdiff_t MT_curcond=0, MT_nextcond[MAXSEMAS];
 
 size_t     _MT_pagesize = 0;               /* variable holding memory size */
 size_t     _MT_npages = 0;                 /* variable holding page size */
@@ -307,8 +331,10 @@ void MT_init(void) {
 
 	for(i=1; i<MAXSEMAS; i++) {
 		MT_nextsema[i-1] = (ptrdiff_t) i;
+		MT_nextcond[i-1] = (ptrdiff_t) i;
 	}
 	MT_nextsema[MAXSEMAS-1] = (ptrdiff_t) -1;
+	MT_nextcond[MAXSEMAS-1] = (ptrdiff_t) -1;
 
 	pthread_mutex_init(&l, 0);
 	MT_system_lock = (MT_Lock) &l;
@@ -525,6 +551,56 @@ void 	MT_dump_sema (MT_Sema s, FILE *fp, char *name) {
 	(void) s;
 	fprintf(fp, "%s: MT_dump_sema() not implemented.\n",name);
 }
+
+void MT_signal_cond(MT_Cond c, char *name){
+	(void)pthread_cond_signal((pthread_cond_t*)c);
+    	if (MT_debug &  1024) {
+        	fprintf(MT_out,"MT_signal_cond(" SZFMT "\@%s) " PTRFMT "\n", 
+			(size_t)MT_getpid(), name, PTRFMTCAST (void *)c);
+        	fflush(MT_out);
+    	}
+}
+ 
+void MT_wait_cond(MT_Cond c, MT_Lock l, char *name){
+	(void)pthread_cond_wait((pthread_cond_t*)c, (pthread_mutex_t*)l);
+    	if (MT_debug &  1024) {
+        	fprintf(MT_out,"MT_cond_wait(" SZFMT "\@%s) " PTRFMT 
+			PTRFMT "\n", 
+			(size_t)MT_getpid(), name, PTRFMTCAST (void *)c, 
+			PTRFMTCAST (void *)l);
+        	fflush(MT_out);
+	} 
+}
+
+MT_Cond	MT_create_cond () {
+	pthread_cond_t *new_cond;
+
+	MT_set_lock(MT_system_lock, "MT_create_cond");
+	if (MT_curcond == -1) {
+	    fprintf(MT_out, "MT_create_cond: ran out of condition.\n");
+	    MT_global_exit(-1);
+	}
+	new_cond = MT_firstcond + MT_curcond;
+	MT_curcond = MT_nextcond[MT_curcond];
+	MT_unset_lock(MT_system_lock, "MT_create_cond");
+
+	(void)pthread_cond_init( new_cond, NULL );
+	return (MT_Cond) new_cond;
+}
+
+
+void	MT_destroy_cond (MT_Cond c) {
+	ptrdiff_t idx = ((pthread_cond_t*) c) - MT_firstcond;
+
+	if (c == NULL) return;
+	(void)pthread_cond_destroy( c );
+
+	MT_set_lock(MT_system_lock, "MT_destroy_cond");
+	MT_nextcond[idx] = MT_curcond;
+	MT_curcond = idx;
+	MT_unset_lock(MT_system_lock, "MT_destroy_cond");
+}
+
 
 MT_Id MT_getpid(void){
 	return (MT_Id)(((size_t)pthread_self())+1);

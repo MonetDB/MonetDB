@@ -293,14 +293,15 @@ actions are to go on unlocked while other entries in the BBP may be modified).
 
 #define BBP_unload_on(bid, nme) {						\
 		gdk_set_lock(GDKunloadLock, nme);				\
-		if (BBPunloadCnt++ == 0) gdk_set_lock(GDKunloadBarrier, nme);	\
+		BBPunloadCnt++;							\
 		gdk_unset_lock(GDKunloadLock, nme);				\
 		BBP_status_on(bid, BBPUNLOADING, nme);				}
 
 #define BBP_unload_off(bid, nme) {						\
 		BBP_status_off(bid, BBPUNLOADING, nme);				\
 		gdk_set_lock(GDKunloadLock, nme);				\
-		if (--BBPunloadCnt == 0) gdk_unset_lock(GDKunloadBarrier, nme);	\
+		if (--BBPunloadCnt == 0) gdk_signal_cond(GDKunloadCond, nme);	\
+		assert(BBPunloadCnt >= 0);					\
 		gdk_unset_lock(GDKunloadLock, nme);				}
 @c
 static MT_Id locked_by = 0;
@@ -323,8 +324,10 @@ void BBPlock(str nme) {
 	locked_by = BBP_notrim;
 
 	/* wait for all pending unloads to finish */
-	gdk_set_lock(GDKunloadBarrier, nme);
-	gdk_unset_lock(GDKunloadBarrier, nme);
+	gdk_set_lock(GDKunloadLock, nme);				
+	if (BBPunloadCnt > 0)
+		gdk_wait_cond(GDKunloadCond, GDKunloadLock, nme);
+	gdk_unset_lock(GDKunloadLock, nme);				
 }
 
 void BBPunlock(str nme) {

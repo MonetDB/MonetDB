@@ -1186,7 +1186,7 @@ void GDKprotect(){
 		}
 		GDKcacheLock = MT_create_lock(); 
 		GDKunloadLock = MT_create_lock(); 
-		GDKunloadBarrier = MT_create_lock(); 
+		GDKunloadCond = MT_create_cond(); 
 		GDKtrimLock = MT_create_lock(); 
 		GDKtmLock = MT_create_lock(); 
 		GDKprotected = 1;
@@ -1312,8 +1312,9 @@ MT_Lock		GDKswapLock[BBPLOCKMASK+1];
 MT_Lock		GDKidxLock[BBPLOCKMASK+1]; 
 MT_Lock		GDKhashLock[BBPLOCKMASK+1]; 
 MT_Lock		GDKcacheLock, GDKtrimLock; 
-MT_Lock		GDKunloadLock, GDKunloadBarrier; 
+MT_Lock		GDKunloadLock;
 MT_Lock		GDKtmLock; 
+MT_Cond		GDKunloadCond; 
 
 @+ Concurrency control
 Concurrency control requires actions at several levels of the system.

@@ -251,7 +251,8 @@ BAT *VIEWhead(BAT* b) {
 
 	if (bn == NULL || bm == NULL) return NULL;
         bn->T = &bs->T;
-        *bn->T = *bm->H;
+	if (bn->T != bm->H)
+        	*bn->T = *bm->H;
         bm->H = bn->T;
 	bn->ttype = bm->htype = TYPE_void;
 	bn->tvarsized = bm->hvarsized = 1;
