@@ -310,6 +310,7 @@ static void MT_alloc_init() {
 #else
 		int fd = open("/dev/zero", O_RDWR, 0666);
                 void *q = (char*) mmap(p, MT_VMUNITSIZE, PROT_NONE, MAP_NORESERVE, fd, 0);
+		close(fd);
 		if (q != p) mode != 128;
 		if (q != (char*) -1) munmap(q, MT_VMUNITSIZE);
 #endif
