@@ -1044,9 +1044,9 @@ mapi_setAutocommit(Mapi mid, int autocommit)
 		return MERROR;
 	}
 	if (autocommit)
-		hdl = mapi_query(mid, "set autocommit = true");
+		hdl = mapi_query(mid, "set auto_commit = true");
 	else
-		hdl = mapi_query(mid, "set autocommit = false");
+		hdl = mapi_query(mid, "set auto_commit = false");
 	if (hdl == NULL || mapi_error(mid))
 		return MERROR;
 	return mapi_close_handle(hdl);
@@ -2269,7 +2269,7 @@ mapi_execute_internal(MapiHdl hdl)
 	}
 	if (mid->languageId == LANG_SQL) {
 		/* indicate to server this is a SQL command */
-		stream_write(mid->to, "S", 1, 1);
+		stream_write(mid->to, "s", 1, 1);
 	}
 	stream_write(mid->to, cmd, 1, size);
 	check_stream(mid, mid->to, "write error on stream", "mapi_execute",
@@ -2299,14 +2299,6 @@ mapi_execute(MapiHdl hdl)
 	ret = mapi_execute_internal(hdl);
 	if (ret == MOK)
 		ret = answer_lookahead(hdl);
-	if (ret == MMORE) {
-		Mapi mid = hdl->mid;
-		stream_flush(mid->to);
-		stream_flush(mid->to);
-		check_stream(mid, mid->to, "write error on stream",
-			     "mapi_execute", mid->error);
-		ret = answer_lookahead(hdl);
-	}
 	return ret;
 }
 
@@ -2333,11 +2325,6 @@ mapi_query(Mapi mid, const char *cmd)
 		ret = mapi_execute_internal(hdl);
 	if (ret == MOK)
 		ret = answer_lookahead(hdl);
-	while (ret == MMORE) {
-		stream_flush(mid->to); /* signal that this really was it */
-		check_stream(mid, mid->to, stream_error(mid->to), "mapi_query", hdl);
-		ret = answer_lookahead(hdl);
-	}
 	return hdl;
 }
 
@@ -2364,14 +2351,6 @@ mapi_query_handle(MapiHdl hdl, const char *cmd)
 		ret = mapi_execute_internal(hdl);
 	if (ret == MOK)
 		ret = answer_lookahead(hdl);
-	if (ret == MMORE) {
-		Mapi mid = hdl->mid;
-		stream_flush(mid->to);
-		stream_flush(mid->to);
-		check_stream(mid, mid->to, "write error on stream",
-			     "mapi_execute", mid->error);
-		ret = answer_lookahead(hdl);
-	}
 	return ret;
 }
 
@@ -2390,14 +2369,6 @@ mapi_query_array(Mapi mid, const char *cmd, char **val)
 		ret = mapi_execute_internal(hdl);
 	if (ret == MOK)
 		ret = answer_lookahead(hdl);
-	if (ret == MMORE) {
-		Mapi mid = hdl->mid;
-		stream_flush(mid->to);
-		stream_flush(mid->to);
-		check_stream(mid, mid->to, "write error on stream",
-			     "mapi_execute", hdl);
-		ret = answer_lookahead(hdl);
-	}
 	return hdl;
 }
 
