@@ -882,7 +882,7 @@ main(int ac, char **av)
                {"port", 1, 0, 'p'},
                {"passwd", 1, 0, 'P'},
                {"user", 1, 0, 'u'},
-               {"trace",0, 0, 0},
+               {"trace",0, 0, 't'},
                {0, 0, 0, 0}
              };
 
@@ -892,7 +892,7 @@ main(int ac, char **av)
 	while(1){
 		int option_index = 0;
 
-		int c = getopt_long( ac, av, "c:d::eDh:p:P:u:", 
+		int c = getopt_long( ac, av, "c:d::eDh:p:P:u:t", 
 				long_options, &option_index);
 
 		if (c == -1)
@@ -900,12 +900,7 @@ main(int ac, char **av)
 
 		switch (c){
 		case 0:
-			if (strcmp(long_options[option_index].name,
-						"trace") == 0) {
-				trace = 1;
-				break;
-			}
-			/* all other long options are mapped on their short version */
+			/* all long options are mapped on their short version */
 			printf("option %s", long_options[option_index].name);
 			if (optarg)
 				printf( " with arg %s", optarg );
@@ -947,6 +942,9 @@ main(int ac, char **av)
 			break;
 		case 'u':
 			user = _strdup(optarg);
+			break;
+		case 't':
+			trace = 1;
 			break;
 		case '?':
 			usage(prog);
