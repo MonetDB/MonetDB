@@ -134,9 +134,9 @@ again:  switch( d->d_dir ){
     }
 }
 
-char* 	strndup(src,n)
-char*	src;
-int	n;
+char* 	Strndup(src,n)
+const char*	src;
+size_t	n;
 {
 	char *dst = (char*)Malloc(n+1);
 	strncpy(dst,src,n);
@@ -160,7 +160,7 @@ Tok*	t;
 		case '=': {
 			if (!inside) {
 				if (!cmp)
-					arg[cmp] = strndup(s,(t->t_str-s));
+					arg[cmp] = Strndup(s,(t->t_str-s));
 				s = t->t_str+1;
 				cmp=1;
 			}
@@ -173,7 +173,7 @@ Tok*	t;
 		}; break;
 		}
 	}
-	arg[cmp] = strndup(s,(t->t_str-s));
+	arg[cmp] = Strndup(s,(t->t_str-s));
 	if (cmp)
 		ok = !strcmp(arg[0],arg[1]);
 	else
