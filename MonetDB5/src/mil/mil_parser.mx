@@ -211,7 +211,7 @@ needed for tracing the parser.
 
 %%
 "#"                   { return mil_skipcomment();                              }
-("nil"|"NIL")         { Vector(TOK_CONSTANT, TYPE_void, "nil", 3);   }
+("nil"|"NIL")^({L}|{P})         { Vector(TOK_CONSTANT, TYPE_void, "nil", 3);   }
 ("proc"|"PROC")       { Symbol(TOK_PROCDEF);                                  }
 ("undef"|"UNDEF")     { Symbol(TOK_UNDEF);                                    }
 ("return"|"RETURN")   { Symbol(TOK_RETURN);                                   }
@@ -560,7 +560,7 @@ str bindId(str nme){
 
 	if(fnd==0 &&  fndId(nme) == 0 && constantdeclaration==0){
 #ifdef M2Moffline
-		rem printf("\t%s := mil.take(%s);\n",nme,nme);
+		rem printf("\t%s:= mil.take(\"%s\");\n",nme,nme);
 #else
 	TODO
 #endif
@@ -1289,12 +1289,14 @@ bat_expression:
 
 fcn_call: 
 	fcn_call_A
+/*
     | 	fcn_call '.' tok_ident
 	{ char stmt[1024];
 	  $1.val= emitExpr($1.val);
 	  sprintf(stmt,"%s%s)", bindFcn($3.val),$1.val);
 	  $$.val = GDKstrdup(stmt);
 	}
+*/
     |	fcn_call '.' fcn_call_B
 	{ char stmt[1024], *s;
 	  /* move the result of the function into the second call */
@@ -1316,14 +1318,14 @@ fcn_call_A:
     ;
 
 fcn_call_B:
-     	fcn_hdr '(' expr_list ')'
-	{ char stmt[1024];
-	  sprintf(stmt,"%s%s)", bindFcn($1.val),$3.val);
-	  $$.val = GDKstrdup(stmt); }
-    |	fcn_hdr '(' ')'
+    	fcn_hdr '(' ')'
 	{ char stmt[1024];
 	  sprintf(stmt,"%s)", bindFcn($1.val));
 	  $$.val = GDKstrdup(stmt);}
+     |	fcn_hdr '(' expr_list ')'
+	{ char stmt[1024];
+	  sprintf(stmt,"%s%s)", bindFcn($1.val),$3.val);
+	  $$.val = GDKstrdup(stmt); }
     ;
 
 fcn_hdr: 
