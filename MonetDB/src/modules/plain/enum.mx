@@ -283,10 +283,14 @@ enum_export int enum_load(int *retval, BAT *h) {
 				ATOMproperty(name, "storage", (GDKfcn) TYPE_sht); 
 				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tosht);
 				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].fromsht);
-			} else {
+			} else if (BATcount(h) < 65536) {
 				ATOMproperty(name, "storage", (GDKfcn) TYPE_chr); 
 				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tochr);
 				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].fromchr);
+			} else {
+				MT_unset_lock(enum_lock, "enum_load");
+				GDKerror("enum_load: too many values (%d) for enum types.\n", BATcount(h));
+				return GDK_FAIL;
 			}
 			enum_tpe[i] = *retval = ATOMindex(name);
 			enum_map[i] = h->batCacheid;
