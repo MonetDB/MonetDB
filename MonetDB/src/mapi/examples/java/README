@@ -3,10 +3,10 @@ reference to the MonetDB Java interface library.
 The following commands would be necessary if you run
 them from this location.
 
-> javac -sourcepath ../../clients/java sample0.java
-> java -cp $CLASSPATH:../../clients/java sample0 45123
+> javac -sourcepath ../../clients/java sample.java
+> java -cp $CLASSPATH:../../clients/java sample localhost 45123
 
-The argument for sample0 is the default portnumber
+The argument for sample is the default portnumber
 hardwired in the SQL support module.
 
 The $CLASSPATH should refer to the commonly used class
