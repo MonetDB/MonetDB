@@ -169,11 +169,11 @@ test = (
 ##                    r'^\[ 0\.498039(?:18|21)6 \]$',
 ##                # src/monet/monet_mod_cnt-copy_C:
 ##                    r'^\[ "(?:mapi_params|tmp_62)",\t* *[10],\t* *[10],\t* *0\t* *\]$',
-##                # src/gdk/cast:
-##                    r'^\[ (?:\-|)0 \]$',
+                # src/gdk/cast:
+                    r'^\[ (?:\-|)0 \]$',
 ##                # src/mapi/monet_BATs (on Linux2.4.26.ntv_32-d):
 ##                    r'^\[ "monet_mod_use",\t* *(?:44|66)\t* *\]$',
-##                # Tokens & messages depend on flex/bison
+                # Tokens & messages depend on flex/bison
                     r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
                     r'^ERROR = !ERROR (?:syntax|parse) error at token \([0-9]+\) in statement: ',
 ##                # Intel compiler seems to do some (re-)compilation for src/mapi/examples/C/
@@ -188,11 +188,11 @@ test = (
                     r'^QUERY = (?:\-\-|select|insert|INSERT) ',
 ##                # pathfinder: loader/usage (without BerkeleyDB):
 ##                    r'^     -c: compress node properties \(40% encoding speed\)$',
-##                # Mtest warnings:
-##                    r"^! Socket-Check failed for (?:SQL|MAPI)server on <[a-zA-Z0-9]*:[0-9]+> with #[0-9]+; '.*' !$",
+                # Mtest warnings:
+                    r"^! Socket-Check failed for (?:SQL|MAPI)server on <[a-zA-Z0-9]*:[0-9]+> with #[0-9]+; '.*' !$",
 ##                    r'^! Waiting [0-9]+ seconds \([0-9]/[0-9]\) \.\.\. (?:Done\.)?$',
-##                    r'^! Using new (?:SQL|MAPI)PORT=[0-9]+ !$',
-##                    r'^! (?:SQL|MAPI)PORT was not properly released by Mserver !$',
+                    r'^! Using new (?:SQL|MAPI)PORT=[0-9]+ !$',
+                    r'^! (?:SQL|MAPI)PORT was not properly released by Mserver !$',
                 # ld warnings on IRIX64:
                     r"^ld64: WARNING 84 : ../../../common/.libs/libmutils.so is not used for resolving any symbol.$",
                  ]),  re.MULTILINE)
