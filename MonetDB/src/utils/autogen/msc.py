@@ -376,6 +376,8 @@ def msc_deps(fd, deps, objext, msc):
                         fd.write(getsrc)
                         fd.write('\t$(CXX) $(CXXFLAGS) $(INCLUDES) -DLIB%s -c "%s"\n' %
                                  (name, msc_translate_ext(deplist[0])))
+            if ext == 'res':
+                fd.write("\t$(RC) -fo%s %s\n" % (t, src))
     msc['DEPS'].append("DONE")
 
 # list of scripts to install
@@ -593,6 +595,8 @@ def msc_bins(fd, var, binsmap, msc):
                     srcs = srcs + " " + t + ".tab.obj"
                 elif ext == "yy.o":
                     srcs = srcs + " " + t + ".yy.obj"
+                elif ext == 'res':
+                    srcs = srcs + " " + t + ".res"
                 elif ext in hdrs_ext:
                     HDRS.append(target)
                 elif ext in scripts_ext:
@@ -689,18 +693,20 @@ def msc_library(fd, var, libmap, msc):
         else:
             t, ext = split_filename(target)
             if ext == "o":
-                    srcs = srcs + " " + t + ".obj"
+                srcs = srcs + " " + t + ".obj"
             elif ext == "glue.o":
-                    srcs = srcs + " " + t + ".glue.obj"
+                srcs = srcs + " " + t + ".glue.obj"
             elif ext == "tab.o":
-                    srcs = srcs + " " + t + ".tab.obj"
+                srcs = srcs + " " + t + ".tab.obj"
             elif ext == "yy.o":
-                    srcs = srcs + " " + t + ".yy.obj"
+                srcs = srcs + " " + t + ".yy.obj"
+            elif ext == 'res':
+                srcs = srcs + " " + t + ".res"
             elif ext in hdrs_ext:
-                    HDRS.append(target)
+                HDRS.append(target)
             elif ext in scripts_ext:
-                    if target not in SCRIPTS:
-                            SCRIPTS.append(target)
+                if target not in SCRIPTS:
+                    SCRIPTS.append(target)
     fd.write(srcs + "\n")
     ln = pref + sep + libname
     fd.write("%s.lib: %s%s\n" % (ln, ln, dll))
@@ -777,6 +783,8 @@ def msc_libs(fd, var, libsmap, msc):
                     srcs = srcs + " " + t + ".tab.obj"
                 elif ext == "yy.o":
                     srcs = srcs + " " + t + ".yy.obj"
+                elif ext == 'res':
+                    srcs = srcs + " " + t + ".res"
                 elif ext in scripts_ext:
                     if target not in SCRIPTS:
                         SCRIPTS.append(target)
@@ -989,6 +997,7 @@ BIN = C:\\bin
 # cl -help describes the options
 CC = cl -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -G6
 # optimize use -Ox
+RC = rc
 
 JAVAC = javac
 JAR = jar
