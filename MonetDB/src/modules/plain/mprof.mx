@@ -148,7 +148,7 @@ context of a single thread. This implies using the Mprof intervals should
 be paired in statement blocks when it ran in parallel.
 @m
 
-.ATOM Tms[16,8];
+.FIXED_ATOM Tms;
 	.TOSTR   = Tms_tostr;
 	.FROMSTR = Tms_fromstr;
 	.COMP    = Tms_comp;
@@ -170,7 +170,7 @@ The memory resource information is obtained from the dynamic memory
 allocation resource @%Mallinfo@
 Beware of size differences between platforms.
 @m
-.ATOM Mallinfo[40,8];
+.FIXED_ATOM Mallinfo;
 	.TOSTR   = Ma_tostr;
 	.FROMSTR = Ma_fromstr;
 	.NEQUAL  = Ma_comp;
@@ -199,7 +199,7 @@ The comparison between Rusage objects is defined in terms of total
 number of physical IOs.
 @m
 
-.ATOM Rusage[90,8];
+.FIXED_ATOM Rusage;
 	.TOSTR   = Ru_tostr;
 	.FROMSTR = Ru_fromstr;
 	.NEQUAL  = Ru_comp;		
@@ -458,7 +458,6 @@ proc pDump:= {
 @* Mprof implementation
 The implementation is relatively straight forward.
 @+ Tms Atom Implementation
-Fixed size (16 bytes, aligned on 8 bytes).
 @h
 #ifndef MPROF_H
 #define MPROF_H
@@ -502,6 +501,9 @@ and all its children.
 #include <stdlib.h>
 
 static Tms Tmsnullval;
+
+int Tms_size(){ return sizeof(Tms); }
+int Tms_align(){ return sizeof(double); }
 
 int
 Tms_tostr(
@@ -670,10 +672,11 @@ Tms_subtract(
 	return GDK_SUCCEED;
 }
 @+ Mallinfo Atom Implementation
-fixed size (16 bytes, aligned on 8 bytes).
-It is compiled for the SUN. We loose some space on SGI
 @c
-#define MALLINFOSIZE 40
+
+int Mallinfo_size(){ return sizeof(Mallinfo); }
+int Mallinfo_align(){ return sizeof(double); }
+
 int
 Ma_new(
    Mallinfo* retval  /* put return atom here. */
@@ -749,7 +752,7 @@ Ma_fromstr(
 		}
 	}
 	if (!*M_ptr)
-		*M_ptr = (Mallinfo*) GDKmalloc(MALLINFOSIZE);
+		*M_ptr = (Mallinfo*) GDKmalloc(Mallinfo_size());
 	**M_ptr = m;
 	*len = sizeof(Mallinfo);
 	return c-src;
@@ -853,7 +856,6 @@ Ma_subtract(
 	return GDK_SUCCEED;
 }
 @+ Rusage Implementation
-Fixed size (40 bytes, aligned on 8 bytes).
 @c
 
 #if OSVER < 560 && defined(SOLARIS)
@@ -872,6 +874,8 @@ extern "C" {
 #endif
 
 
+int Rusage_size(){ return sizeof(Rusage); }
+int Rusage_align(){ return sizeof(long); }
 
 int
 Ru_tostr(
