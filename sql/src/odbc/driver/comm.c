@@ -37,6 +37,7 @@
 
 #include <mem.h>
 #include "comm.h"
+#include "ODBCStmt.h"
 
 /* returns a socket descriptor (>= 0) or an error code (< 0) */
 int client(char *host, int port ){
@@ -68,19 +69,59 @@ int client(char *host, int port ){
     return sock;
 }
 
-char *readblock( stream *s ){
+char *readblock( stream *in ){
 	int len = 0;
-	int size = BLOCK + 1;
-	char *buf = NEW_ARRAY(char, size ), *start = buf;
+	bstream *s = bstream_create(in, BLOCK);
+	int size = s->size, eof = 0;
+	char *buf = NEW_ARRAY(char, size+1 ), *start = buf;
 
-	while ((len = s->read(s, start, 1, BLOCK)) == BLOCK){
-		size += BLOCK;
-		buf = RENEW_ARRAY(char, buf, size); 
-		start = buf + size - BLOCK - 1;
-		*start = '\0';
+	while (!eof){
+		if (bstream_read(s, s->size - (s->len - s->pos)) == 0)
+			eof = 1;
+		if ( (size-len) < s->size - (s->len - s->pos)){
+			size += s->size;
+			buf = RENEW_ARRAY(char, buf, size+1); 
+		}
+		memcpy(buf+len, s->buf+s->pos, (s->len-s->pos));
+		len += (s->len-s->pos);
+		buf[len] = '\0';
+		s->pos = s->len;
 	}
-	start += len;
-	*start = '\0';
+	bstream_destroy(s);
 	return buf;
 }
 
+int simple_receive( stream *in, stream *out, int debug ){
+	int flag = 0, res = 0;
+	int nRows;
+
+	if ((res = stream_readInt(in, &flag)) && flag != COMM_DONE){
+		char buf[BLOCK+1], *n = buf;
+		int last = 0;
+		int type;
+		int status;
+
+		stream_readInt(in, &type);
+		stream_readInt(in, &status);
+		if (status < 0){ /* output error */
+			/* skip rest */
+			int nr = bs_read_next(in,buf,&last);
+			while(!last){
+				int nr = bs_read_next(in,buf,&last);
+			}
+			return status;
+		}
+		nRows = status;
+		if (type == QTABLE && nRows > 0){
+			/* skip rest */
+			int nr = bs_read_next(in,buf,&last);
+	
+			while(!last){
+				fwrite( buf, nr, 1, stdout );
+			}
+		}
+	} else if (flag != COMM_DONE){
+		return -flag;
+	}
+	return nRows;
+}

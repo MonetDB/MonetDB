@@ -61,8 +61,9 @@ typedef struct tODBCDRIVERDBC
 
 	/* MonetDB connection handle & status information */
 	int		socket;	/* socket descriptor/handle */
-	context		Mlc;	/* MonetDB connection context */
 	stream *	Mrs;	/* read stream for fetching the execution result set */
+	stream *	Mws;	/* write stream for writing SQL statements */
+	int		Mdebug;
 
 	/* Dbc children: list of ODBC Statement handles created within this Connection */
 	void *		FirstStmt;	/* first in list or NULL */

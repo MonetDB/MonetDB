@@ -56,7 +56,7 @@ SQLRETURN SQLPrepare(
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
-	assert(stmt->Result == NULL);
+	assert(stmt->ResultRows == NULL);
 
 	/* check input parameter */
 	if (szSqlStr == NULL)

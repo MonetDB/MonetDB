@@ -51,6 +51,7 @@ SQLRETURN SQLConnect(
 	char * uid = NULL;
 	char * pwd = NULL;
 	char * database = NULL;
+	char * db = NULL;
 	char * schema = NULL;
 	char * host = NULL;
 	int port = 0;
@@ -76,23 +77,22 @@ SQLRETURN SQLConnect(
 	}
 	assert(dbc->Connected == 0);
 
-
 	/* convert input string parameters to normal null terminated C strings */
 	dsn = copyODBCstr2Cstr(szDataSource, nDataSourceLength);
-	if (dsn == NULL) {
+	if (dsn == NULL || strlen(dsn) == 0) {
 		/* IM002 = Datasource not found */
 		addDbcError(dbc, "IM002", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	uid = copyODBCstr2Cstr(szUID, nUIDLength);
-	if (uid == NULL) {
-		SQLGetPrivateProfileString(dsn, "UID", "", buf, BUFSIZ, ODBC_INI);
+	if (uid == NULL || strlen(uid) == 0) {
+		SQLGetPrivateProfileString(dsn, "USER", "", buf, BUFSIZ, ODBC_INI);
 		uid = GDKstrdup(buf);
 	}
 	pwd = copyODBCstr2Cstr(szPWD, nPWDLength);
-	if (uid == NULL) {
-		SQLGetPrivateProfileString(dsn, "PWD", "", buf, BUFSIZ, ODBC_INI);
+	if (uid == NULL || strlen(pwd) == 0) {
+		SQLGetPrivateProfileString(dsn, "PASSWORD", "", buf, BUFSIZ, ODBC_INI);
 		pwd = GDKstrdup(buf);
 	}
 
@@ -117,48 +117,44 @@ SQLRETURN SQLConnect(
 	if (socket_fd > 0) {
 		stream * rs = NULL;
 		stream * ws = NULL;
-		context * lc = NULL;
 		int  chars_printed;
 		char * login = NULL;
 
 		rs = block_stream(socket_rstream(socket_fd, "sql client read"));
 		ws = block_stream(socket_wstream(socket_fd, "sql client write"));
 
-		chars_printed = snprintf(buf, BUFSIZ, "api(milsql,%d);\n", debug );
+		chars_printed = snprintf(buf, BUFSIZ, "api(sql,%d);\n", debug );
 		ws->write(ws, buf, chars_printed, 1);
 		ws->flush(ws);
 		/* read login. The returned login value is not used yet. */
 		login = (char *)readblock(rs);
 
+		if (login) free(login);
+
 		chars_printed = snprintf(buf, BUFSIZ, "login(%s,%s);\n", uid, pwd);
 		ws->write(ws, buf, chars_printed, 1);
 		ws->flush(ws);
 		/* read schema */
-		schema = (char *)readblock(rs);
-		if (schema) {
-			char * s = strrchr(schema, '\n');
-			if (s)
+		db = (char *)readblock(rs);
+		if (db) {
+			char *s = strrchr(db, ',');
+			if (s){ 
 				*s = '\0';
-		}
-		if (strlen(schema) > 0) {
-			lc = &dbc->Mlc;
-			memset(lc, 0, sizeof(context));
-			sql_init_context(lc, ws, debug, default_catalog_create());
-			catalog_create_stream(rs, lc);
-
-			lc->cat->cc_getschemas(lc->cat, schema, uid);
-			lc->cur = ' ';
-			if (rs->errnr || lc->out->errnr) {
-				/* 08001 = Client unable to establish connection */
-				addDbcError(dbc, "08001", "sockets not opened correctly", 0);
-				rc = SQL_ERROR;
-			} else {
-				/* all went ok, store the connection info */
-				dbc->socket = socket_fd;
-				dbc->Mrs = rs;
-				dbc->Connected = 1;
-				/* TODO: if a database name is set, change the current schema to this database name */
+				schema = s+1;
+				s = strrchr(schema, '\n');
+				if (s){ 
+					*s = '\0';
+				}
 			}
+		}
+		if (schema && strlen(schema) > 0) {
+			/* all went ok, store the connection info */
+			dbc->socket = socket_fd;
+			dbc->Mrs = rs;
+			dbc->Mws = ws;
+			dbc->Connected = 1;
+			dbc->Mdebug = debug;
+			/* TODO: if a database name is set, change the current schema to this database name */
 		} else {
 			/* 08001 = Client unable to establish connection */
 			addDbcError(dbc, "08001", "sockets not opened correctly", 0);

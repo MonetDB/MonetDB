@@ -65,29 +65,18 @@ SQLRETURN SQLDisconnect(SQLHDBC hDbc)
 	{
 		int	chars_printed;
 		stream *	rs = dbc->Mrs;
-		context *	lc = &dbc->Mlc;
-		stream *	ws = lc->out;
+		stream *	ws = dbc->Mws;
+		int 		debug = dbc->Mdebug;
 		int	flag = 0;
 		char	buf[BUFSIZ];
 
-		chars_printed = snprintf(buf, BUFSIZ,
-			"s0 := mvc_commit(myc, 0, \"\");\n");
-		chars_printed += snprintf(buf + chars_printed, BUFSIZ - chars_printed,
-			"result(Output, mvc_type(myc), mvc_status(myc));\n");
+		/*
+		chars_printed = snprintf(buf, BUFSIZ, "COMMIT;\n");
 		ws->write(ws, buf, chars_printed, 1);
 		ws->flush(ws);
+		*/
 
-		if (stream_readInt(rs, &flag)) {
-			int type = 0;
-			int status = 0;
-
-			/* TODO check if flag == COMM_DONE */
-			stream_readInt(rs, &type);
-			stream_readInt(rs, &status);
-			if (status < 0){
-				/* TODO: handle this case */
-			}
-		}
+		simple_receive(rs, ws, debug);
 
 		/* client waves goodbye */
 		buf[0] = EOT;
@@ -96,10 +85,14 @@ SQLRETURN SQLDisconnect(SQLHDBC hDbc)
 
 		rs->close(rs);
 		rs->destroy(rs);
+
+		ws->close(ws);
+		ws->destroy(ws);
 	}
-	sql_exit_context(&dbc->Mlc);
 	dbc->socket = 0;
 	dbc->Mrs = NULL;
+	dbc->Mws = NULL;
+	dbc->Mdebug = 0;
 	dbc->Connected = 0;
 
 	return SQL_SUCCESS;

@@ -72,7 +72,7 @@ SQLRETURN SQLColAttribute(
 		addStmtError(stmt, "HY000", "Cannot return the column info. Query must be executed first", 0);
 		return SQL_ERROR;
 	}
-	if (stmt->Result == NULL) {
+	if (stmt->ResultCols == NULL) {
 		addStmtError(stmt, "HY000", "Cannot return the column info. No result set is available", 0);
 		return SQL_ERROR;
 	}
@@ -85,15 +85,8 @@ SQLRETURN SQLColAttribute(
 		return SQL_ERROR;
 	}
 
-	/* check output parameter */
-	if (pnValue == NULL) {
-		/* HY009 = Invalid use of null pointer */
-		addStmtError(stmt, "HY009", NULL, 0);
-		return SQL_ERROR;
-	}
-
 /* TODO: finish implementation */
-	pColumnHeader = (ColumnHeader*)(stmt->Result)[nCol];
+	pColumnHeader = stmt->ResultCols+nCol;
 
 	switch (nFieldIdentifier)
 	{

@@ -65,7 +65,7 @@ SQLRETURN SQLDescribeCol(
 		return SQL_ERROR;
 	}
 	/* and it should return a result set */
-	if (stmt->Result == NULL) {
+	if (stmt->ResultCols == NULL) {
 		/* 07005 = Prepared statement not a cursor specification */
 		addStmtError(stmt, "07005", NULL, 0);
 		return SQL_ERROR;
@@ -78,8 +78,8 @@ SQLRETURN SQLDescribeCol(
 	}
 
 	/* OK */
-	assert(stmt->Result != NULL);
-	pColumnHeader = (ColumnHeader *)(stmt->Result)[nCol];
+	assert(stmt->ResultCols != NULL);
+	pColumnHeader = stmt->ResultCols+nCol;
 	if (pColumnHeader == NULL)
 	{
 		/* 07009 = Invalid descriptor index */

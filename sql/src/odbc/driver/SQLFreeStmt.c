@@ -57,9 +57,13 @@ SQLRETURN SQLFreeStmt(
 		   SQLCloseCursor(), so be careful when changing the code */
 		{
 			/* close cursor, discard result set, set to prepared */
-			if (stmt->Result) {
-				GDKfree(stmt->Result);
-				stmt->Result = NULL;
+			if (stmt->ResultCols) {
+				GDKfree(stmt->ResultCols);
+				stmt->ResultCols = NULL;
+			}
+			if (stmt->ResultRows) {
+				GDKfree(stmt->ResultRows);
+				stmt->ResultRows = NULL;
 			}
 			stmt->nrCols = 0;
 			stmt->nrRows = 0;

@@ -173,7 +173,7 @@ SQLRETURN SQLGetTypeInfo(
 	if (nSqlDataType != SQL_ALL_TYPES) {
 		/* add the selection condition */
 		char tmp[30];
-		sprintf(tmp, "%d", nSqlDataType);
+		snprintf(tmp, 30, "%d", nSqlDataType);
 		strcat(query, " WHERE SQL_TYPE = ");
 		strcat(query, tmp);
 	}

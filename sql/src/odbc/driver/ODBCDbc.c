@@ -64,8 +64,9 @@ ODBCDbc * newODBCDbc(ODBCEnv * env)
 
 	dbc->Connected = 0;
 	dbc->socket = 0;
-	memset(&dbc->Mlc, 0, sizeof(context));
 	dbc->Mrs = NULL;
+	dbc->Mws = NULL;
+	dbc->Mdebug = 0;
 
 	dbc->FirstStmt = NULL;
 
@@ -114,6 +115,8 @@ void addDbcError(ODBCDbc * dbc, char * SQLState, char * errMsg, int nativeErrCod
 	ODBCError * error = NULL;
 
 	assert(isValidDbc(dbc));
+
+	fprintf(stderr, errMsg);
 
 	error = newODBCError(SQLState, errMsg, nativeErrCode);
 	if (dbc->Error == NULL) {

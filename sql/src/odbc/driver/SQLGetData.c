@@ -94,13 +94,13 @@ SQLRETURN ODBCGetData(
 	}
 
 	/* when no Result or rows are their return SQL_NO_DATA */
-	if (stmt->Result == NULL) {
+	if (stmt->ResultRows == NULL) {
 		return SQL_NO_DATA;
 	}
 	if (stmt->nrRows <= 0) {
 		return SQL_NO_DATA;
 	}
-	if (stmt->currentRow >= stmt->nrRows) {
+	if (stmt->currentRow > stmt->nrRows) {
 		return SQL_NO_DATA;
 	}
 
@@ -111,7 +111,7 @@ SQLRETURN ODBCGetData(
 	/**********************************************************************
 	 * GET pSourceData FOR NORMAL RESULT SETS
 	 **********************************************************************/
-	pSourceData = (stmt->Result)[(stmt->currentRow * stmt->nrCols) + nCol];
+	pSourceData = (stmt->ResultRows)[(stmt->currentRow * stmt->nrCols) + nCol];
 
 	/****************************
 	 * ALL cols are stored as SQL_CHAR... bad for storage... good for code

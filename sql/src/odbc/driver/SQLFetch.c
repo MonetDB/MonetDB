@@ -57,7 +57,7 @@ SQLRETURN SQLFetch(SQLHSTMT hStmt)
 		return SQL_ERROR;
 	}
 
-	if (stmt->Result == NULL) {
+	if (stmt->ResultRows == NULL) {
 		return SQL_NO_DATA;
 	}
 	if (stmt->nrRows <= 0) {

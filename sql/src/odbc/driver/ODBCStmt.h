@@ -110,8 +110,8 @@ typedef struct tODBCDRIVERSTMT
 
 	unsigned int	nrCols;	/* nr of result output columns */
 	unsigned int	nrRows;	/* nr of valid rows in Result */
-	char **		Result; /* 1+nrCols x 1+nrRows of char data pointers */
-				/* col 0 is bookmark column (not used) */
+	ColumnHeader*   ResultCols;  /* 1+nrCols (0 not used) */ 
+	char **		ResultRows; /* 1+nrRows of char data pointers */
 				/* row 0 is not used (count starts at 1) */
 	unsigned int	currentRow;	/* used by SQLFetch() */
 

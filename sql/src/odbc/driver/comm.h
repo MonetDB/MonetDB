@@ -32,5 +32,6 @@
 
 int client(char *host, int port);
 char *readblock( stream *s );
+int simple_receive( stream *rs, stream *out, int debug );
 
 #endif /*_COMM_H_*/

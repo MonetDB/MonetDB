@@ -68,7 +68,8 @@ ODBCStmt * newODBCStmt(ODBCDbc * dbc)
 
 	stmt->nrCols = 0;
 	stmt->nrRows = 0;
-	stmt->Result = NULL;
+	stmt->ResultCols = NULL;
+	stmt->ResultRows = NULL;
 	stmt->currentRow = 0;
 
 	/* add this stmt to the administrative linked stmt list */
@@ -213,8 +214,12 @@ void destroyODBCStmt(ODBCStmt * stmt)
 	destroyOdbcInArray(&(stmt->bindParams));
 	destroyOdbcOutArray(&(stmt->bindCols));
 
-	if (stmt->Result) {
-		GDKfree(stmt->Result);
+	if (stmt->ResultCols) {
+		/* probably we need to free strings in here */
+		GDKfree(stmt->ResultCols);
+	}
+	if (stmt->ResultRows) {
+		GDKfree(stmt->ResultRows);
 	}
 
 	GDKfree(stmt);

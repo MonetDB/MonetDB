@@ -121,8 +121,6 @@ lib_MonetODBC = {
 	SQLTablePrivileges.c \
 	SQLTables.c \
 	SQLTransact.c \
-	catalog_client.c \
-	statement_dump.c \
 	comm.c comm.h \
 	gdk.c 
 	LIBS = \
