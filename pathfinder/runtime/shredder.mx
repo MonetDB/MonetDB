@@ -146,7 +146,7 @@ typedef struct shredBAT {
         shredBATdef     *def; /* pointer to static properties */
         nat             cnt;  /* current #of elements in the BAT */
         nat             dupl; /* the number of duplicate BUNins so far */
-        nat             size; /* current maximum size of the BAT */
+        size_t          size; /* current maximum size of the BAT */
         BAT             *bat; /* the physical BAT */
         /* */
         union { /* cast to perform direct indexex insert in [void,any] BATs */
@@ -160,8 +160,8 @@ typedef struct shredBAT {
 /* the computing context environmentf the shredding process */
 typedef struct shredCtx {
         char*           name;           /* xml document name */
-        int             fileSize;       /* size of the input file */
-        int             estSize;        /* extimated number of pre nodes */
+        size_t          fileSize;       /* size of the input file */
+        size_t          estSize;        /* extimated number of pre nodes */
         shredBAT        dstBAT[SHRED_BATS]; /* all the result BATs */
         BAT*            nslocBAT;       /* the BAT to compress NS and LOC */
         int             nslocDUPL;      /* the number of duplicates nslocs */
@@ -178,7 +178,7 @@ typedef struct shredCtx {
  * process. This is note reentrant. But is it very convenient at the moment */
 static shredCtx* glb_ctx;
 
-static shredCtx *createShredCtx(char* name, int fileSize) {
+static shredCtx *createShredCtx(char* name, size_t fileSize) {
         int i;
 
         shredCtx *res = (shredCtx*)malloc( sizeof(shredCtx) );
@@ -340,7 +340,7 @@ static BAT* finalizeShredCtx(shredCtx* ctx) {
 static int mainSHREDDER(char* xmlFile);
 static char *timer_str (long elapsed);
 
-int fileSize(char* xmlFile) {
+size_t fileSize(char* xmlFile) {
     /* buffer for file I/O status */
     struct stat statbuf;
 
@@ -348,7 +348,7 @@ int fileSize(char* xmlFile) {
         stream_printf(GDKerr,
                  "!ERROR: cannot stat `%s': %s\n",
                  xmlFile, strerror (errno));
-        return -1;
+        return ~(size_t)0;
     } else
         return statbuf.st_size;
 }
@@ -367,9 +367,9 @@ CMDshred2bats(BAT **res2mil, str docname, str opt)
     (void) gettimeofday (&now, 0);
     start = now.tv_sec * 1000000 + now.tv_usec;
     
-    int xmlFileSize;
+    size_t xmlFileSize;
 
-    if ( (xmlFileSize = fileSize(docname)) < 0 )
+    if ( (xmlFileSize = fileSize(docname)) == ~(size_t)0 )
         return GDK_FAIL;
 
     if ( !(ctx = createShredCtx(docname, xmlFileSize)) )
@@ -394,10 +394,10 @@ CMDshred2bats(BAT **res2mil, str docname, str opt)
     return GDK_SUCCEED;
 }
 
-#define CHECK_BAT_SIZE(SB,I)    if ( ((I)>=(SB)->size) && incrBATsize(SB,I)<0) return NIL; 
+#define CHECK_BAT_SIZE(SB,I)    if ( ((size_t)(I)>=(SB)->size) && incrBATsize(SB,I)<0) return NIL; 
 
 static int incrBATsize(shredBAT* sb, nat i) {
-    size_t newsize = MAX(sb->size+MAX(MINCHUNK,sb->size/4),i);
+    size_t newsize = MAX(sb->size+MAX(MINCHUNK,sb->size/4),(size_t)i);
 
     sb->size= newsize;
     if ( !(sb->bat = BATextend(sb->bat,newsize)) ) {
