@@ -685,12 +685,12 @@ public class MonetStatement implements Statement {
 					}
 				} while (monet.getLineType() != MonetSocket.PROMPT1);
 				// check for consistency
-				if (maxLine[0] != Math.min(cacheSize, tupleCount - (curBlock * cacheSize)))
-					throw new SQLException("Aiieeee!!! Inconsistant data! Monet said there were " + tupleCount + " tuples, but it only returned " + maxLine[0]);
 				if (expectHeader) {
 					expectHeader = false;
 					completeHeaders();
 				}
+				if (maxLine[0] != Math.min(cacheSize, tupleCount - (curBlock * cacheSize)))
+					throw new SQLException("Aiieeee!!! Inconsistant data! Monet said there were " + tupleCount + " tuples, but it only returned " + maxLine[0]);
 			}
 		}
 		
