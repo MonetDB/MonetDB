@@ -98,8 +98,12 @@ if [ ! -x bootstrap ] ; then
 	# (additional) system-specific settings
 
 	if [ "${os}" = "Linux" ] ; then
+		# "standard" Linux paths
+		binpath="/soft/local/bin:${binpath}"
+		libpath="/soft/local/lib:${libpath}"
 		if [ "${COMP}" = "ntv" ] ; then
 			# "ntv" on Linux means IntelC++-5.0.1-beta ("icc")
+			# source /soft/IntelC++-5.0.1-beta/bin/iccvars.sh
 			export IA32ROOT=/soft/IntelC++-5.0.1-beta/ia32
 			export INTEL_FLEXLM_LICENSE=/soft/IntelC++-5.0.1-beta/licenses
 			libpath="/soft/IntelC++-5.0.1-beta/ia32/lib"
@@ -114,15 +118,20 @@ if [ ! -x bootstrap ] ; then
 	fi
 
 	if [ "${os}" = "SunOS" ] ; then
-		# "standard: SunOS paths
-		binpath="/opt/SUNWspro/bin:/usr/local/bin:${binpath}"
-		libpath="/usr/local/lib:${libpath}"
+		# "standard" SunOS paths
+		binpath="/opt/SUNWspro/bin:/sw/SunOS/5.8/bin:/usr/local/bin:/usr/java/bin:${binpath}"
+		libpath="/sw/SunOS/5.8/lib:/usr/local/lib:${libpath}"
 		if [ "${BITS}" = "64" ] ; then
 			# propper/extended LD_LIBRAY_PATH for 64bit on SunOS
 			libpath="/usr/lib/sparcv9:/usr/ucblib/sparcv9:${libpath}"
 			# GNU ar in /usr/local/bin doesn't support 64bit
 			export AR='/usr/ccs/bin/ar'
 			export AR_FLAGS='-r -cu'
+		fi
+		if [ "${COMP}${BITS}" = "GNU64" ] ; then
+			# our gcc/g++ is in /soft/local/bin on apps
+			binpath="/var/tmp/soft/local/bin:${binpath}"
+			libpath="/var/tmp/soft/local/lib:${libpath}"
 		fi
 		if [ "${COMP}" = "GNU" ] ; then
 			# required GNU gcc/g++ options for 32 & 64 bit
@@ -134,9 +143,15 @@ if [ ! -x bootstrap ] ; then
 			cc="${cc} -xarch=v9"
 			cxx="${cxx} -xarch=v9"
 		fi
-		# our "fake" /soft/local/bin on apps
-		binpath="/var/tmp/local/bin:${binpath}"
-		libpath="/var/tmp/local/lib:${libpath}"
+		if [ "${BITS}" = "64" ] ; then
+			# our "fake" /soft64/local/bin on apps
+			binpath="/var/tmp/soft64/local/bin:${binpath}"
+			libpath="/var/tmp/soft64/local/lib:${libpath}"
+		  else
+			# our "fake" /soft/local/bin on apps
+			binpath="/var/tmp/soft/local/bin:${binpath}"
+			libpath="/var/tmp/soft/local/lib:${libpath}"
+		fi
 		if [ "${BITS}" = "64" ] ; then
 			conf_opts="${conf_opts} --with-readline=/var/tmp/soft64/local"
 			conf_opts="${conf_opts} --with-getopt=/var/tmp/soft64/local"
@@ -152,7 +167,7 @@ if [ ! -x bootstrap ] ; then
 
 	if [ "${os}" = "IRIX64" ] ; then
 		# propper/extended paths on medusa
-		binpath="/soft64/local/bin:/soft/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin:${binpath}"
+		binpath="/soft/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin:${binpath}"
 		if [ "${COMP}${BITS}" = "GNU32" ] ; then
 			# propper/extended paths on medusa
 			libpath="/soft/local/lib:${libpath}"
@@ -169,7 +184,15 @@ if [ ! -x bootstrap ] ; then
 			cc="${cc} -64"
 			cxx="${cxx} -64"
 		fi
-		# 32 & 64 bit libreadline for IRIX64 are in /soft${BITS}/local"
+		if [ "${BITS}" = "64" ] ; then
+			# our /soft64/local/bin on medusa
+			binpath="/soft64/local/bin:${binpath}"
+			libpath="/soft64/local/lib:${libpath}"
+		  else
+			# our /soft/local/bin on medusa
+			binpath="/soft/local/bin:${binpath}"
+			libpath="/soft/local/lib:${libpath}"
+		fi
 		if [ "${BITS}" = "64" ] ; then
 			conf_opts="${conf_opts} --with-readline=/soft64/local"
 			conf_opts="${conf_opts} --with-getopt=/soft64/local"
@@ -182,6 +205,28 @@ if [ ! -x bootstrap ] ; then
 			conf_opts="${conf_opts} --with-bz2=/soft/local"
 		fi
 	fi
+
+#	# gathered from old scripts, but not used anymore/yet
+#	if [ "${os}" = "AIX" ] ; then
+#		# rs6000.ddi.nl
+#		# gcc/g++ only?
+#		cc="${cc} -mthreads"
+#		cxx="${cxx} -mthreads"
+#	fi
+#	if [ "${os}" = "CYGWIN32_NT" ] ; then
+#		# yalite.ddi.nl
+#		# gcc/g++ only!
+#		cc="${cc} -mno-cygwin"   # ?
+#		cxx="${cxx} -mno-cygwin" # ?
+#		conf_opts="${conf_opts} --with-pthread=/MonetDS/PthreadsWin32"
+#	fi
+#	if [ "${os}" = "CYGWIN_NT-4.0" ] ; then
+#		# VMware
+#		# gcc/g++ only!
+#		cc="${cc} -mno-cygwin"   # ?
+#		cxx="${cxx} -mno-cygwin" # ?
+#		conf_opts="${conf_opts} --with-pthread=/tmp"
+#	fi
 
 	# prepend target bin-dir to PATH
 	binpath="${PREFIX}/bin:${binpath}"
