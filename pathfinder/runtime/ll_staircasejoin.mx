@@ -303,7 +303,6 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
 
     while (fst_BUN < max_BUN)
     {
-        BAT *iter_tmp = NULL, *ctx_tmp = NULL;
         oid    fst_iter = *(oid*)BUNtail(iter_bat, fst_BUN);
         oid    lst_iter = oid_nil;
         oid    max_iter = fst_iter + chunk_size;
@@ -318,11 +317,16 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
         }
         lst_iter = *(oid*)BUNtail(iter_bat, lst_BUN - bun_size);
 
-        iter_tmp = iter_chunk = BATslice(iter_bat, fst_idx, lst_idx);
-        ctx_tmp  = ctx_chunk  = BATslice(ctx_bat,  fst_idx, lst_idx);
-        @:ll_sort_2(ctx_chunk, iter_chunk)@
-        BBPunfix(iter_tmp->batCacheid);
-        BBPunfix(ctx_tmp->batCacheid);
+        iter_chunk = BATslice(iter_bat, fst_idx, lst_idx);
+        ctx_chunk  = BATslice(ctx_bat,  fst_idx, lst_idx);
+
+	if (!(BATtordered(ctx_chunk)&1)  ||  fst_iter != lst_iter) {
+            /* ctx nodes not sorted or more than one iter => sort on ctx & iter */
+            BAT *iter_tmp = iter_chunk, *ctx_tmp = ctx_chunk;
+            @:ll_sort_2(ctx_chunk, iter_chunk)@
+            BBPunfix(iter_tmp->batCacheid);
+            BBPunfix(ctx_tmp->batCacheid);
+	}
 
         if (ll_@1(&res, iter_chunk, ctx_chunk, pre_size_frag, doc_height, fst_iter, lst_iter, self) == GDK_FAIL)
         {
@@ -340,18 +344,24 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
 
 @= ll_reorder_res
 {
-    BAT *iter_tmp = NULL, *ctx_tmp = NULL;
+    oid fst_ctx = *(oid*)BUNtail(res, BUNfirst(res));
+    oid lst_ctx = *(oid*)BUNtail(res, BUNlast(res) - BUNsize(res));
 
-    @:ll_split_bat(res, iter_chunk, ctx_chunk)@
-    BBPreclaim(res);
+    if (!(BAThordered(res)&1)  ||  fst_ctx != lst_ctx) {
+        /* iters not sorted or more than one ctx node => sort on iter & ctx */
+        BAT *iter_tmp = NULL, *ctx_tmp = NULL;
 
-    iter_tmp = iter_chunk;
-    ctx_tmp = ctx_chunk;
-    @:ll_sort_2(iter_chunk, ctx_chunk)@
-    BBPunfix(iter_tmp->batCacheid);
-    BBPunfix(ctx_tmp->batCacheid);
+        @:ll_split_bat(res, iter_chunk, ctx_chunk)@
+        BBPreclaim(res);
 
-    @:ll_merge_bats(iter_chunk, ctx_chunk, res)@
+        iter_tmp = iter_chunk;
+        ctx_tmp = ctx_chunk;
+        @:ll_sort_2(iter_chunk, ctx_chunk)@
+        BBPunfix(iter_tmp->batCacheid);
+        BBPunfix(ctx_tmp->batCacheid);
+
+        @:ll_merge_bats(iter_chunk, ctx_chunk, res)@
+    }
 }
 
 @= ll_end
