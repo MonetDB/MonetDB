@@ -63,7 +63,6 @@ gdk_export void BATSIGcrash(int);
 
 char	GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
 char	GDKdbnameStr[PATHLENGTH] = { 0 };
-char	GDKdirStr[PATHLENGTH] = { 0 };
 
 BAT 	*GDKenv = NULL;
 
@@ -133,9 +132,6 @@ static int GDKenvironment(str dbname, str dbfarm)
 
 	strncpy(GDKdbnameStr, dbname, PATHLENGTH);
 	strncpy(GDKdbfarmStr, dbfarm, PATHLENGTH);
-	snprintf(GDKdirStr, PATHLENGTH, "%s%c%s",
-			GDKdbfarmStr,DIR_SEP,GDKdbnameStr);
-
 	return 1;
 }
 
@@ -972,11 +968,19 @@ normal routines yet. So we have a local fatal here instead of GDKfatal.
 @c
 void GDKlockHome(void) {
 	char *p=0, buf[1024], host[PATHLENGTH];
+	char GDKdirStr[PATHLENGTH];
 @-
 Go there and obtain the global database lock.
 @c
+	/* The DIR_SEP at the end of the path is needed for a succesfull
+	   call to GDKcreatedir */
+
+	snprintf(GDKdirStr, PATHLENGTH, "%s%c%s%c",
+			GDKdbfarmStr, DIR_SEP, GDKdbnameStr, DIR_SEP);
+
 	if (chdir(GDKdirStr) < 0 ){
-	    GDKfatal("GDKlockHome: could not move to %s\n", GDKdirStr);
+	    if (!GDKcreatedir(GDKdirStr) || chdir(GDKdirStr) < 0)
+	        GDKfatal("GDKlockHome: could not move to %s\n", GDKdirStr);
 	}
 	if (GDKrecovery  && unlink(GDKLOCK) < 0) {
 	    GDKfatal("GDKlockHome: unlock DB failed\n"); 
