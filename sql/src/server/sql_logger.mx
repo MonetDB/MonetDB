@@ -136,12 +136,12 @@ compared with the BAT to see if you need to consult the log file.]
 [Martin, this is not done as keeping multiple files open (or opening
 multiple files) has a too great performance impact.]
 @c
-#define LOG_START	1
-#define LOG_END		2
-#define LOG_INSERT 	3
-#define LOG_DELETE	4
-#define LOG_CREATE 	5
-#define LOG_DESTROY	6
+#define SQL_LOG_START	1
+#define SQL_LOG_END		2
+#define SQL_LOG_INSERT 	3
+#define SQL_LOG_DELETE	4
+#define SQL_LOG_CREATE 	5
+#define SQL_LOG_DESTROY	6
 
 typedef struct logformat_t {
 	char flag;
@@ -199,7 +199,7 @@ static void log_read_updates(logger *logger, logformat *l, char *name ){
         if (logger->debug&1)
 		fprintf(stderr, "logger found log_read_updates %s %s %d\n", 
 				name, 
-				(l->flag==LOG_INSERT)?"insert":"delete",
+				(l->flag==SQL_LOG_INSERT)?"insert":"delete",
 				l->nr);
 
         if (b){
@@ -217,9 +217,9 @@ static void log_read_updates(logger *logger, logformat *l, char *name ){
                 for(; l->nr>0; l->nr--){
 			void *h = rh( hv, logger->log, 1);
 			void *t = rt( tv, logger->log, 1);
-                       	if (l->flag == LOG_INSERT)
+                       	if (l->flag == SQL_LOG_INSERT)
                                	BUNins( b, h, t );
-                       	else if (l->flag == LOG_DELETE)
+                       	else if (l->flag == SQL_LOG_DELETE)
                                	BUNdel( b, h, t );
 			cnt++;
 			if (h != hv) _DELETE(h);
@@ -335,7 +335,7 @@ static int logger_readlog( logger *logger, char *filename ){
 	while( log_read_format(logger, &l) ){
 		char *name = NULL;
 
-		if (l.flag != LOG_START && l.flag != LOG_END){
+		if (l.flag != SQL_LOG_START && l.flag != SQL_LOG_END){
 			name = log_read_string(logger);
 
 			if (!name){
@@ -346,12 +346,12 @@ static int logger_readlog( logger *logger, char *filename ){
 			}
 		}
 		switch(l.flag){
-		case LOG_START:
+		case SQL_LOG_START:
 			if (logger->tid != 0)
 				logger_abort(logger);
 			logger->tid = l.nr;
 			break;
-		case LOG_END:
+		case SQL_LOG_END:
 			if (logger->tid == l.nr){
 				logger_commit(logger); 
 			} else {
@@ -359,16 +359,16 @@ static int logger_readlog( logger *logger, char *filename ){
 			}
 			logger->tid = 0;
 			break;
-		case LOG_INSERT:
+		case SQL_LOG_INSERT:
 			log_read_updates(logger, &l, name);
 			break;
-		case LOG_DELETE:
+		case SQL_LOG_DELETE:
 			log_read_updates(logger, &l, name);
 			break;
-		case LOG_CREATE:
+		case SQL_LOG_CREATE:
 			log_read_create(logger, &l, name );
 			break;
-		case LOG_DESTROY:
+		case SQL_LOG_DESTROY:
 			log_read_destroy(logger, &l, name );
 			break;
 		default:
@@ -515,7 +515,7 @@ oid log_bat_persists(logger *logger, BAT *b, char *name )
 	int havevoid = 0;
 
 	oid lbid = bm_add_bat(logger->bm, b->batCacheid, name, logger->tid);
-	l.flag = LOG_CREATE;
+	l.flag = SQL_LOG_CREATE;
 	l.nr = 0;
 	log_write_format( logger, &l );
 	log_write_string(logger, name);
@@ -544,7 +544,7 @@ void log_bat_transient(logger *logger, oid lbid ){
 	logformat l;
 	char *name = bm_lbid2name(logger->bm, lbid);
 
-	l.flag = LOG_DESTROY;
+	l.flag = SQL_LOG_DESTROY;
 	l.nr = 0;
 	log_write_format( logger, &l );
 	log_write_string(logger, name);
@@ -568,7 +568,7 @@ void log_bat(logger *logger, oid lbid, BAT *b ){
 	if (l.nr){
 		void (*wh)(ptr, stream*, size_t) = BATatoms[b->htype].atomWrite;
 		void (*wt)(ptr, stream*, size_t) = BATatoms[b->ttype].atomWrite;
-	    	l.flag = LOG_INSERT;
+	    	l.flag = SQL_LOG_INSERT;
 		log_write_format( logger, &l );
 		log_write_string(logger, name);
 
@@ -592,7 +592,7 @@ void log_bat(logger *logger, oid lbid, BAT *b ){
 	if (l.nr){
 		void (*wh)(ptr, stream*, size_t) = BATatoms[b->htype].atomWrite;
 		void (*wt)(ptr, stream*, size_t) = BATatoms[b->ttype].atomWrite;
-	    	l.flag = LOG_DELETE;
+	    	l.flag = SQL_LOG_DELETE;
 		log_write_format( logger, &l);
 		log_write_string(logger, name);
 	    	for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)){
@@ -612,7 +612,7 @@ void log_tstart( logger *logger )
 {
 	logformat l;
 
-	l.flag = LOG_START;
+	l.flag = SQL_LOG_START;
 	l.nr = ++logger->tid;
 
 	if (logger->debug)
@@ -630,7 +630,7 @@ void log_tend(logger *logger )
 	if (logger->debug)
 		fprintf(stderr, "log_tend %d\n", logger->tid );
 
-	l.flag = LOG_END;
+	l.flag = SQL_LOG_END;
 	l.nr = logger->tid;
 	log_write_format( logger, &l );
 
