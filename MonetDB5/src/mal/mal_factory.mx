@@ -230,7 +230,7 @@ FACTORY chunkStepR(L:bat[:any,:any]):bat[:any,:any];
 
 \end{verbatim}
 }
-Ao far we haven;t re-used the pattern that both legs are
+So far we haven;t re-used the pattern that both legs are
 identical. This could be modeled by a generic chunk factory.
 Choosing a new factory for each query steps reduces the 
 administrative overhead.
@@ -269,7 +269,8 @@ exception to a Factory? implicitly yes.
 mal_export str callFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, 
 		MalStkPtr stk, InstrPtr pci);
 mal_export str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc);
-mal_export str finishFactory(Client cntxt, MalBlkPtr mb);
+mal_export str returnFactory(MalBlkPtr mb, InstrPtr pp, int pc);
+mal_export str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 #endif /*  _MAL_FACTORY_H*/
 @-
 The initial implementation is geared at a central
@@ -316,6 +317,9 @@ str callFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller,
 	(void) cntxt; (void) pci; 
 	(void) mbcaller;
 	plim = plants + lastPlant;
+	/* the lookup can be avoided by handing out the index
+	   upon factory definition. todo
+	*/
 	for(pl = plants; pl< plim; pl++)
 	if( pl->factory == mb )  {
 		lastone= pl;
@@ -394,11 +398,12 @@ suspended until the next request arrives.
 The information in the target list should be delivered
 to the caller stack frame.
 @c
-str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc){
+Plant yieldResult(MalBlkPtr mb, InstrPtr p, int pc){
 	Plant pl, plim=plants + lastPlant;
-	int i;
 	ValPtr lhs, rhs;
+	int i;
 
+	(void) p; (void)pc;
 	for( pl= plants; pl<plim; pl++)
 	if( pl->factory == mb){
 		for(i=0;i < p->retc; i++){
@@ -410,7 +415,15 @@ str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc){
                                 lhs = &pl->env->stk[pl->pci->argv[i]];
                                 VALcopy(lhs,rhs);
                         }
+		return pl;
+	}
+	return NULL;
+}
+str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc){
+	Plant pl;
 
+	pl= yieldResult(mb,p,pc);
+	if(pl) {
 		pl->inuse = 0;
 		pl->pc = pc+1;
 		pl->client = NULL;
@@ -426,20 +439,40 @@ str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc){
 	return throwMessage("yieldFactory","No factory found\n");
 }
 @-
+A return from a factory implies a YIELD action followed
+by closing it.
+@c
+str returnFactory(MalBlkPtr mb, InstrPtr pp, int pc){
+	Plant pl;
+
+	pl= yieldResult(mb,pp,pc);
+	if(pl) 
+		return finishFactory(mb,pp,pc);
+	return throwMessage("yieldFactory","No factory found\n");
+}
+@-
 A return from a factory body implies removal of
 all state information.
 @c
-str closeFactory(Client cntxt, MalBlkPtr mb){
-	Plant p, plim;
+str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc){
+	Plant pl, plim;
 #ifdef DEBUG_MAL_FACTORY
 	stream_printf(GDKout,"closePlant called\n");
 #endif
-	(void) cntxt;
+	(void) pp; (void) pc;
 	plim= plants+lastPlant;
-	for(p=plants; p<plim;p++)
-	if( p->factory == mb){
-		p->factory = 0;
-		p->inuse = 0;
+	for(pl=plants; pl<plim;pl++)
+	if( pl->factory == mb){
+		pl->factory = 0;
+		pl->inuse = 0;
+		pl->client = NULL;
+		pl->caller = NULL;
+		pl->pci = NULL;
+                mal_set_lock(pl->env->stklock,"yieldFactory");
+                pl->env->shares--;
+                pl->env = NULL;
+                mal_unset_lock(pl->env->stklock,"yieldFactory");
+
 	}
 	return MAL_SUCCEED;
 }

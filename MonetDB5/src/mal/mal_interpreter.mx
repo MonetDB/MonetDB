@@ -475,6 +475,8 @@ elements in the value stack.
 	case FACTORYsymbol:
 		break;
 	case ENDDEFsymbol: 
+		if( getInstrPtr(mb,0)->token == FACTORYsymbol)
+			ret= finishFactory(mb, pci, stkpc);
 		@:endProfile@
 		goto MALevalExit;
 	default:
@@ -560,8 +562,15 @@ possible change in the control flow.
 		stkpc++;
 		break;
 	case YIELDsymbol: /* to be defined */
-		return yieldFactory( mb, pci,stkpc);
+		return yieldFactory( mb, pci, stkpc);
 	case RETURNsymbol:
+		/* Return from factory involves cleanup */
+
+		if( getInstrPtr(mb,0)->token == FACTORYsymbol){
+			ret= returnFactory(mb, pci, stkpc);
+			@:endProfile@
+			goto MALevalExit;
+		}
 		/* a fake multi-assignment */
 		if( env != NULL && pcicaller != NULL){
 			InstrPtr pp=pci;
@@ -999,12 +1008,12 @@ cached status message to be dealt with in MAL, or as an error status in Mapi.
 the modules/plain/*.  The number of fatal errors is 26,7, 2, respectively.]
 
 To improve error handling in MAL, we introduce an exception handling
-scheme based on CATCH-END blocks. The CATCH statement identifies a
+scheme based on CATCH-EXIT blocks. The CATCH statement identifies a
 (string-valued) variable, which carries the exception message from
 the originally failed routine or RAISE exception assignment.
-During normal processing CATCH-END blocks are simply skipped.
+During normal processing CATCH-EXIT blocks are simply skipped.
 Upon receiving an exception status from a function call, we set the 
-exception variable and skip to the first associated CATCH-END block associated.
+exception variable and skip to the first associated CATCH-EXIT block associated.
 MAL interpretation then continues until it reaches the end of the block.
 If no exception variable was defined, we should abandon the function
 alltogether searching for a catch block at a higher layer.
