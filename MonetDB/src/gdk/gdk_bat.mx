@@ -841,7 +841,15 @@ last inserted bun (if present) is copied over it.
 			}
 			if (b->tsorted) {
 				b->tsorted = FALSE;
-				b->H->nosorted = idx1;
+				b->T->nosorted = idx1;
+			}
+			if (b->hdense) {
+				b->hdense = FALSE;
+				b->H->nodense = idx1;
+			}
+			if (b->tdense) {
+				b->tdense = FALSE;
+				b->T->nodense = idx1;
 			}
 		}
 		b->batBuns->free -= bs;

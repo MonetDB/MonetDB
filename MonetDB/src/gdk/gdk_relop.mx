@@ -634,7 +634,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
 			hi_pos -= r->hseqbase;
 		else
 			hi_pos = 0;
-		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && BATtvoid(l) && l->tseqbase != oid_nil  =>  bn = BATslice(BATmirror(VIEWhead(BATmirror(r))), lo_pos, hi_pos);\n");
+		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && BATtvoid(l) && l->tseqbase != oid_nil  =>  bn = BATslice(BATmirror(VIEWhead(BATmirror(r))), lo_pos=%d, hi_pos=%d);\n", lo_pos, hi_pos);
                 bn = BATslice(v, lo_pos, hi_pos);
                 if (seqbase != oid_nil) seqbase += lo_val - l->tseqbase;
                 BATseqbase(bn, seqbase);
