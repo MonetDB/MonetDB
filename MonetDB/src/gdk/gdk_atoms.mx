@@ -130,7 +130,7 @@ gdk_export int		strFromStr     (str  src, int* len, str*  dst);
 gdk_export int		strToStr       (str* dst, int* len, str   src);
 gdk_export unsigned int strHash        (str s); 
 gdk_export int		strPut         (Heap* b, int *off, str src);
-gdk_export void 	strHeap        (Heap* d, int cap);
+gdk_export void 	strHeap        (Heap* d, size_t cap);
 gdk_export int		strLen         (str s);
 gdk_export int		strCmp         (str l, str r);
 gdk_export int		strNil         (str s);
@@ -228,13 +228,14 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0,
  		0,			0,
  		0,			0},
+  { "ptr",
 #if SIZEOF_LONG==8
-  { "ptr",  	TYPE_lng, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &lng_nil, 
+  		TYPE_lng, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &lng_nil,
 		(int (*)(str, int*, ptr*)) @`ptrFromStr@5,	(int (*)(str*, int*, ptr)) @`ptrToStr@5,
 	 	(int (*)(ptr, ptr)) lngCmp,		
 		(unsigned int (*)(ptr)) lngHash,	(void (*)(ptr, int)) lngConvert,	
 #else
-  { "ptr",  	TYPE_int, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &int_nil,
+		TYPE_int, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &int_nil,
 		(int (*)(str, int*, ptr*)) @`ptrFromStr@5,	(int (*)(str*, int*, ptr)) @`ptrToStr@5,
 	 	(int (*)(ptr, ptr)) intCmp,		
 		(unsigned int (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,	
@@ -273,7 +274,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	    	(unsigned int (*)(ptr)) strHash,	0,
 		0, 		0,
  		(void (*)(Heap*, int*, ptr)) strPut,		0,
- 		(int (*)(ptr)) strLen,		(int (*)(Heap*, int)) strHeap,
+ 		(int (*)(ptr)) strLen,		strHeap,
  		(void (*)(Heap*, int)) strHeapConvert,	0} ,
 };
 int     GDKatomcnt = TYPE_str + 1;
@@ -378,7 +379,7 @@ void ATOMproperty(str id, str property, int (*arg) ()) {
 
 	    if (strcmp("heap", property) == 0) {
 		BATatoms[t].varsized = 1;
-		atomset(BATatoms[t].atomHeap, (int (*)(Heap *,size_t)) arg); 
+		atomset(BATatoms[t].atomHeap, (void (*)(Heap *,size_t)) arg); 
 	    } else if (strcmp("heapconvert", property) == 0) {
 		atomset(BATatoms[t].atomHeapConvert, (void (*)(Heap *,int)) arg); 
 	    } else if (strcmp("check", property) == 0) {
@@ -671,9 +672,10 @@ int ATOMlen(int t, ptr src) {
 	return (l)?(*l)(src):ATOMsize(t);
 }
 
-int ATOMheap(int t, Heap* hp, size_t cap) {
-	int (*h)(Heap *, size_t) = BATatoms[t].atomHeap;
-	return (h)?(*h)(hp, cap):0;
+void ATOMheap(int t, Heap* hp, size_t cap) {
+	void (*h)(Heap *, size_t) = BATatoms[t].atomHeap;
+	if (h)
+		(*h)(hp, cap);
 }
 
 int ATOMcmp(int t, ptr l, ptr r) {
@@ -1135,7 +1137,7 @@ int strCmpNoNil(unsigned char *l, unsigned char *r) {
         return (*l < *r)?-1:1;
 }
 
-void strHeap(Heap *d, int cap) {
+void strHeap(Heap *d, size_t cap) {
 	int size;
 	int *h, *e; 
 

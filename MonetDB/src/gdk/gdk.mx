@@ -1670,7 +1670,7 @@ int & ATOMconvert     & (int id, ptr v, int direction);\\
 int & ATOMfix         & (int id, ptr v);\\
 int & ATOMunfix       & (int id, ptr v);\\
 \hline
-int & ATOMheap        & (int id, Heap *hp, size_t cap);\\
+void& ATOMheap        & (int id, Heap *hp, size_t cap);\\
 void& ATOMheapconvert & (int id, Heap *hp, int direction);\\
 int & ATOMheapcheck   & (int id, Heap *hp, HeapRepair *hr);\\
 void& ATOMput         & (int id, Heap *hp, BUN pos\_dst, ptr val\_src);\\
@@ -1798,7 +1798,7 @@ typedef struct {
 	void	(*atomPut)		(Heap*, int* off, ptr src); 
 	void	(*atomDel)		(Heap*, int* atom); 
 	int	(*atomLen)		(ptr atom); 
-	int	(*atomHeap)		(Heap*, size_t); 
+	void	(*atomHeap)		(Heap*, size_t); 
 	/* optional functions */
 	void	(*atomHeapConvert)	(Heap*, int direction); 
 	int	(*atomHeapCheck) 	(Heap*, HeapRepair*); 
@@ -1812,7 +1812,7 @@ gdk_export void ATOMproperty  (char* nme, char *property, int (*fcn)());
 gdk_export int  ATOMindex     (char* nme);
 gdk_export int  ATOMdump      ();
 
-gdk_export int  ATOMheap      (int id, Heap *hp, size_t cap); 
+gdk_export void ATOMheap      (int id, Heap *hp, size_t cap); 
 gdk_export str  ATOMname      (int id);
 gdk_export int  ATOMlen       (int id, ptr v);
 gdk_export ptr  ATOMnil	  (int id);
