@@ -119,9 +119,11 @@ typedef ptr Bstream;
 #include "streams.h"
 #include <stdio.h>
 
+/*
 int io_stdin (Stream *ret) { *(stream**)ret = GDKin;  return GDK_SUCCEED; }
 int io_stdout(Stream *ret) { *(stream**)ret = GDKout; return GDK_SUCCEED; }
 int io_stderr(Stream *ret) { *(stream**)ret = GDKerr; return GDK_SUCCEED; }
+*/
 
 @= open_stream
 int

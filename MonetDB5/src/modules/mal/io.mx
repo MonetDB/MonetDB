@@ -187,23 +187,23 @@ obtained from the stack, because the symbol table may actually
 allow for any type to be assigned.
 @c
 str
-io_stdin(stream *ret)
+io_stdin(stream **ret)
 {
-    *(stream **) ret = GDKin;
+    *ret = GDKin;
     return MAL_SUCCEED;
 }
 
 str
-io_stdout(stream *ret)
+io_stdout(stream **ret)
 {
-    *(stream **) ret = GDKout;
+    *ret = GDKout;
     return MAL_SUCCEED;
 }
 
 str
-io_stderr(stream *ret)
+io_stderr(stream **ret)
 {
-    *(stream **) ret = GDKerr;
+    *ret = GDKerr;
     return MAL_SUCCEED;
 }
 str IOprintBoth(
