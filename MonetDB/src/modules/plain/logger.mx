@@ -507,7 +507,11 @@ int logger_set_debug( int *l){
 #define SOCKLEN int
 #else
 #define SOCKPTR struct sockaddr *
+#ifdef HAVE_SOCKLEN_T
 #define SOCKLEN socklen_t
+#else
+#define SOCKLEN int
+#endif
 #endif
 #endif
 #endif

@@ -275,6 +275,9 @@
 #define HAVE_SNPRINTF 1
 #define snprintf _snprintf
 
+/* Define to 1 if the system has the type `socklen_t'. */
+/* #undef HAVE_SOCKLEN_T */
+
 /* Define to 1 if the system has the type `ssize_t'. */
 #define HAVE_SSIZE_T 1
 typedef int ssize_t;
