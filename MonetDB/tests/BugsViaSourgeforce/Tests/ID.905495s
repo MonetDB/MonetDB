@@ -1,0 +1,10 @@
+#!/bin/sh
+
+NAME="$1"
+
+Mlog   "$MSERVER --dbname=$TSTDB $NAME.mil"
+eval    $MSERVER --dbname=$TSTDB $NAME.mil
+
+Mlog   "$MSERVER --dbname=$TSTDB < $NAME.mil"
+eval    $MSERVER --dbname=$TSTDB < $NAME.mil
+
