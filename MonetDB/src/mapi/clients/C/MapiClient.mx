@@ -93,6 +93,8 @@ extern int chdir(const char *);
 
 static FILE *toConsole;
 
+char *command = NULL;
+
 static long t0, t1;		/* used for timing */
 static char *mark, *mark2;
 
@@ -732,7 +734,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 	size_t length;
 	MapiHdl hdl = NULL;
 	MapiMsg rc;
-	int bufsize = 0;
+	int bufsize = 0, offset = command?strlen(command):0;
 
 	if (file == NULL)
 		fp = stdin;
@@ -742,6 +744,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 	}
 
 	bufsize = BUFSIZ * 64;
+	if (bufsize <= offset) bufsize = offset+1;
 	buf = malloc(bufsize);
 	if (!buf) {
 		fprintf(stderr, "cannot allocate memory for send buffer\n");
@@ -750,12 +753,20 @@ doFile(Mapi mid, const char *file, int skipequals)
 		return 1;
 	}
 
+	/* pre-append command to first file */
+	if (offset) {
+		memcpy(buf, command, offset); 
+		buf[offset++] = '\n';
+	}
+
 	timerStart();
 	do {
-		if ((length = fread(buf, 1, bufsize, fp)) == 0) {
+		if ((length = offset + fread(buf+offset, 1, bufsize-offset, fp)) == 0) {
 			/* end of file */
-			if (file != NULL)
+			if (file != NULL) {
 				fclose(fp);
+				file = NULL;
+			}
 			if (hdl == NULL) {
 				/* nothing more to do */
 				timerEnd();
@@ -764,6 +775,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 			}
 			/* hdl != NULL, we should finish the current query */
 		}
+		offset = 0;
 
 		if (hdl == NULL) {
 			hdl = mapi_query_prep(mid);
@@ -813,8 +825,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 	timerEnd();
 
 	free(buf);
-		if (file != NULL)
-			fclose(fp);
+	if (file != NULL) fclose(fp);
 	return 0;
 }
 
@@ -1156,7 +1167,6 @@ main(int argc, char **argv)
 	char *user = NULL;
 	char *passwd = NULL;
 	char *host = NULL;
-	char *command = NULL;
 	int dodump = 0;
 	int trace = 0;
 	int guest = 1;
@@ -1323,6 +1333,9 @@ main(int argc, char **argv)
 		fprintf(stderr, "failed to allocate Mapi structure\n");
 		exit(2);
 	}
+	if (strcmp(language, "xquery") == 0) {
+		mapi_noexplain(mid, "!");
+	}
 	if (mapi_error(mid)) {
 		mapi_explain(mid, stderr);
 		exit(2);
@@ -1343,36 +1356,35 @@ main(int argc, char **argv)
 
 	c = 0;
 
-	if (command)
-		c = doRequest(mid, command);
-
+	/* doFile prefixes first query with command line arguments now */
 	if (optind < argc) {
+		/* execute from file(s) */
 		while (optind < argc) {
 			c |= doFile(mid, argv[optind], strcmp(language, "xquery") == 0);
 			optind++;
 		}
-		if (!interactive)
-			exit(c);
+	} else if (command && !(interactive && strcmp(language, "xquery") != 0)) {
+		/* execute from command-line (interactive xquery does command in doFile) */
+		c = doRequest(mid, command);
 	}
-
-	if (command && !interactive)
-		exit(c);
-
-#ifdef HAVE_LIBREADLINE
-	if (strcmp(language, "xquery") != 0)
-		init_readline(mid, language, save_history);
-#endif
-
-	{
+	if (interactive) {
+		/* execute from stdin */
 		struct stat statb;
 		char *prompt = NULL;
 		char promptbuf[16];
+		int interactive_stdin = 0;
 
 		if (fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode)) {
+			interactive_stdin = 1;
+		}
+		if (interactive_stdin) {
 			if (strcmp(language, "xquery") == 0) {
 				fprintf(stderr, "XQuery cannot be used interactively\n");
 				exit(1);
 			}
+#ifdef HAVE_LIBREADLINE
+			init_readline(mid, language, save_history);
+#endif
 			/* reading from terminal, prepare prompt */
 			sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
 			prompt = promptbuf;
@@ -1381,13 +1393,12 @@ main(int argc, char **argv)
 			c = doFile(mid, NULL, 1);
 		else
 			c = doFileByLines(mid, stdin, prompt, linemode, exit_on_error);
-	}
-
 #ifdef HAVE_LIBREADLINE
-	if (strcmp(language, "xquery") != 0)
-		deinit_readline();
+		if (interactive_stdin) {
+			deinit_readline();
+		}
 #endif
-
+	}
 	mapi_disconnect(mid);
 	return c;
 }

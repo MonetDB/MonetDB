@@ -753,6 +753,7 @@ struct MapiStruct {
 
 	int trace;		/* Trace Mapi interaction */
 	int blocked;		/* blocked mode */
+	char* noexplain;		/* on error, don't explain, only print result */
 	MapiMsg error;		/* Error occurred */
 	char *errorstr;		/* pointer to constant string */
 	const char *action;	/* pointer to constant string */
@@ -896,6 +897,7 @@ mapi_export MapiMsg mapi_ping(Mapi mid);
 
 mapi_export MapiMsg mapi_error(Mapi mid);
 mapi_export char *mapi_error_str(Mapi mid);
+mapi_export void mapi_noexplain(Mapi mid, char* errorprefix);
 mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
 mapi_export MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd);
 mapi_export MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd);
@@ -1106,6 +1108,25 @@ mapi_error_str(Mapi mid)
 }
 
 static void
+clean_print(char *msg, const char *prefix, FILE *fd)
+{
+	int len = strlen(prefix);
+	while(msg && *msg) {
+		/* cut by line */
+		char *p = strchr(msg, '\n');
+		if (p) *p = 0;
+
+		/* skip over prefix */
+		if (strncmp(msg,prefix,len) == 0) msg += len;
+
+		/* output line */
+		fputs(msg, fd); 
+		fputc('\n', fd); 
+		msg = p;
+	}
+}
+
+static void
 indented_print(const char *msg, const char *prefix, FILE *fd)
 {
 	/* for multiline error messages, indent all subsequent
@@ -1131,15 +1152,24 @@ indented_print(const char *msg, const char *prefix, FILE *fd)
 	}
 }
 
+void mapi_noexplain(Mapi mid, char* prefix) {
+	assert(mid);
+	mid->noexplain = prefix;
+}
+
 MapiMsg
 mapi_explain(Mapi mid, FILE *fd)
 {
 	assert(mid);
-	fprintf(fd, "MAPI  = %s\@%s:%d\n", mid->username, mid->hostname, mid->port);
-	if (mid->action)
-		fprintf(fd, "ACTION= %s\n", mid->action);
-	if (mid->errorstr)
-		indented_print(mid->errorstr, "ERROR = ", fd);
+        if (mid->noexplain == NULL) {
+		fprintf(fd, "MAPI  = %s\@%s:%d\n", mid->username, mid->hostname, mid->port);
+		if (mid->action)
+			fprintf(fd, "ACTION= %s\n", mid->action);
+		if (mid->errorstr)
+			indented_print(mid->errorstr, "ERROR = ", fd);
+	} else if (mid->errorstr) {
+		clean_print(mid->errorstr, mid->noexplain, fd);
+	}
 	fflush(fd);
 	mapi_clrError(mid);
 	return MOK;
@@ -1153,13 +1183,17 @@ mapi_explain_query(MapiHdl hdl, FILE *fd)
 	assert(hdl);
 	mid = hdl->mid;
 	assert(mid);
-	fprintf(fd, "MAPI  = %s\@%s:%d\n", mid->username, mid->hostname, mid->port);
-	if (mid->action)
-		fprintf(fd, "ACTION= %s\n", mid->action);
-	if (hdl->query)
-		indented_print(hdl->query, "QUERY = ", fd);
-	if (mid->errorstr)
-		indented_print(mid->errorstr, "ERROR = ", fd);
+        if (mid->noexplain == NULL) {
+		fprintf(fd, "MAPI  = %s\@%s:%d\n", mid->username, mid->hostname, mid->port);
+		if (mid->action)
+			fprintf(fd, "ACTION= %s\n", mid->action);
+		if (hdl->query)
+			indented_print(hdl->query, "QUERY = ", fd);
+		if (mid->errorstr)
+			indented_print(mid->errorstr, "ERROR = ", fd);
+	} else if (mid->errorstr) {
+		clean_print(mid->errorstr, mid->noexplain, fd);
+	}
 	fflush(fd);
 	mapi_clrError(mid);
 	return MOK;
@@ -1177,12 +1211,16 @@ mapi_explain_result(MapiHdl hdl, FILE *fd)
 	assert(hdl->result->errorstr);
 	mid = hdl->mid;
 	assert(mid);
-	fprintf(fd, "MAPI  = %s\@%s:%d\n", mid->username, mid->hostname, mid->port);
-	if (mid->action)
-		fprintf(fd, "ACTION= %s\n", mid->action);
-	if (hdl->query)
-		indented_print(hdl->query, "QUERY = ", fd);
-	indented_print(hdl->result->errorstr, "ERROR = ", fd);
+        if (mid->noexplain == NULL) {
+		fprintf(fd, "MAPI  = %s\@%s:%d\n", mid->username, mid->hostname, mid->port);
+		if (mid->action)
+			fprintf(fd, "ACTION= %s\n", mid->action);
+		if (hdl->query)
+			indented_print(hdl->query, "QUERY = ", fd);
+		indented_print(hdl->result->errorstr, "ERROR = ", fd);
+	} else {
+		clean_print(hdl->result->errorstr, mid->noexplain, fd);
+	}
 	fflush(fd);
 	return MOK;
 }
@@ -1626,6 +1664,7 @@ mapi_new(void)
 	mid->language = strdup("mil");
 	mid->languageId = LANG_MIL;
 	mid->versionId = 4;
+	mid->noexplain = NULL;
 	mid->motd = NULL;
 	mid->mapiversion = strdup("mapi 1.0");
 	mid->username = strdup("anonymous");
@@ -3212,7 +3251,7 @@ mapi_query_done(MapiHdl hdl)
 	ret = mid->error;
 	if (ret == MOK)
 		ret = read_into_cache(hdl, 1);
-	return ret;
+	return ret == MOK && hdl->needmore ? MMORE : ret;
 }
 
 @-
