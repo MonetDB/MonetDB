@@ -105,32 +105,17 @@ properties.
 @mal
 atom resultset:int;
 
-command addColumn(rs:resultset,b:bat[:void,:any],nme:str):resultset
-address RSaddColumn
+command populateColumn(rs:resultset,col:int,b:bat[:void,:any]):resultset
+address RSpopulateColumn
 comment "Add a BAT as column with a name to this ResultSet";
-command setProperty(rs:resultset,nme:str,val:str):resultset
-address RSsetPropertyStrLastCol
-comment "Sets the given property to the given value on the last added column";
-command setProperty(rs:resultset,col:str,nme:str,val:str):resultset
-address RSsetPropertyStrColNme
-comment "Sets the given property to the given value on the first
-column with the given name";
+
 command setProperty(rs:resultset,col:int,nme:str,val:str):resultset
-address RSsetPropertyStrColNum
+address RSsetPropertyStr
 comment "Sets the given property to the given value on the given column";
-command setProperty(rs:resultset,nme:str,val:int):resultset
-address RSsetPropertyIntLastCol
-comment "Sets the given property to the given value on the last added column";
-command setProperty(rs:resultset,col:str,nme:str,val:int):resultset
-address RSsetPropertyIntColNme
-comment "Sets the given property to the given value on the first
-column with the given name";
 command setProperty(rs:resultset,col:int,nme:str,val:int):resultset
-address RSsetPropertyIntColNum
+address RSsetPropertyInt
 comment "Sets the given property to the given value on the given column";
-command findColumn(rs:resultset,nme:str):int
-address RSfindColumn
-comment "Returns the first column that matches the given name";
+
 command setComplete(rs:resultset):resultset
 address RSsetComplete
 comment "Marks this ResultSet as complete and ready for serialisation";
@@ -178,9 +163,10 @@ command destroy():void
 address RSBdestroy
 comment "Destroy the resultset box and all the resultsets it contains";
 
-command create(name:str):resultset
+command create(name:str, columns:int):resultset
 address RSBcreate
-comment "Create a new ResultSet and deposit it in the box";
+comment "Create a new ResultSet with the given number of columns
+and deposit it in the box";
 
 command take(id:str):resultset
 address RSBtake
@@ -240,17 +226,17 @@ typedef struct column_t {
 	int digits;				/* digits of this data type */
 	int scale;				/* scale of this data type */
 	int width;				/* the maximum field width of this column */
-	struct column_t* next;	/* the next column in this list */
 } column;
 
 typedef struct resultset_t {
-	column* firstColumn;	/* head of the linked list of column */
 	unsigned int blocksize;	/* the number of rows per block */
 	size_t length;			/* the number of rows in this ResultSet */
 	size_t pos;				/* the current row position */
 	str id;					/* external reference ID of this ResultSet */
 	char complete;			/* whether this ResultSet can be serialised */
 	char type;				/* type of result */
+	int columnCount;		/* the number of columns this ResultSet has */
+	column** columns;		/* an array of associated columns */
 } resultset;
 
 /* protocol stuff */
@@ -294,6 +280,11 @@ typedef struct resultset_t {
 #define RSB_MAX_ELEMS	20
 /** Array which contains all the resultsets contained in this Set */
 static resultset* elements[RSB_MAX_ELEMS];
+
+static void RSinitColumn(resultset* rs, int* colindex);
+static str RSBgetResultSet(resultset** retval, int* handle);
+static str RSBfreeColumn(column* col);
+static str tailWidth(int* retval, BAT* b);
 
 /**
  * Returns the resultset from an element for a given array slot.
@@ -345,8 +336,11 @@ str RSBdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * ResultSet is immediately deposited in the box, and its
  * handle is returned.
  */
-str RSBcreate(int* retval, str* name) {
-	int i, free = -1;
+str RSBcreate(int* retval, str* name, int* columns) {
+	int i, j, free = -1;
+
+	if (*columns <= 0)
+		throw("rsbox.create", "Number of columns should be a positive non-zero value");
 
 	/* check the given name is a unique id (and find the first free slot) */
 	for (i = 0; i < RSB_MAX_ELEMS; i++) {
@@ -365,6 +359,12 @@ str RSBcreate(int* retval, str* name) {
 				memset(elements[i], 0, sizeof(resultset));
 				/* set the id */
 				elements[i]->id = GDKstrdup(*name);
+				elements[i]->length = -1;
+				elements[i]->columns = GDKmalloc(sizeof(column*) * *columns);
+				memset(elements[i]->columns, 0, sizeof(column*) * *columns);
+				for (j = 0; j < *columns; j++)
+					RSinitColumn(elements[i], &j);
+				elements[i]->columnCount = *columns;
 				free = i;
 			}
 		}
@@ -405,12 +405,11 @@ static str RSBfreeColumn(column* col) {
 	if (col == NULL)
 		throw("resultset.freeColumn", "Column should NOT be NULL");
 	
-	if (col->next != NULL) RSBfreeColumn(col->next);
-	BBPunfix(col->bat->batCacheid);
-	GDKfree(col->name);
-	GDKfree(col->table);
-	GDKfree(col->schema);
-	GDKfree(col->type);
+	if (col->bat) BBPunfix(col->bat->batCacheid);
+	if (col->name) GDKfree(col->name);
+	if (col->table) GDKfree(col->table);
+	if (col->schema) GDKfree(col->schema);
+	if (col->type) GDKfree(col->type);
 	GDKfree(col);
 
 	return(MAL_SUCCEED);
@@ -424,6 +423,7 @@ static str RSBfreeColumn(column* col) {
 str RSBdelete(void* retval, int* handle) {
 	resultset* rs;
 	str tmp;
+	int i;
 	(void)retval;	/* make compiler happy */
 	
 	resolveHandle(&rs, handle);
@@ -431,8 +431,9 @@ str RSBdelete(void* retval, int* handle) {
 	/* hide this resultset */
 	elements[*handle - 1] = NULL;
 	
-	/* first free all columns using a recursive function */
-	RSBfreeColumn(rs->firstColumn);
+	/* first free all columns */
+	for (i = 0; i < rs->columnCount; i++)
+		RSBfreeColumn(rs->columns[i]);
 	GDKfree(rs->id);
 	/* finally free the struct itself */
 	GDKfree(rs);
@@ -615,34 +616,110 @@ static str tailWidth(int* retval, BAT* b) {
 
 
 /**
- * Helper function that sets a property for a column.  If the
+ * Initialises a column struct by setting the default values
+ * for all its members.  Remember that this function is designed
+ * for internal use, and therefore takes a real reference to
+ * a resultset struct instead of a handle.  The arguments are
+ * not checked.  If the column to be initialised is not NULL
+ * it is free'd first.
+ */
+static void RSinitColumn(resultset* rs, int* colindex) {
+	/* free if not empty */
+	if (rs->columns[*colindex]) RSBfreeColumn(rs->columns[*colindex]);
+
+	/* malloc some space */
+	rs->columns[*colindex] = GDKmalloc(sizeof(column));
+	
+	/* initialise all relevant values */
+	memset(rs->columns[*colindex], 0, sizeof(column));
+	rs->columns[*colindex]->width = -1;
+	rs->columns[*colindex]->digits = -1;
+	rs->columns[*colindex]->scale = -1;
+}
+
+/**
+ * Adds a column to the ResultSet and returns its position in
+ * the sequence of columns.  The BAT and name string are taken
+ * and freed upon deletion of the ResultSet.
+ *
+ * @param handle a resultset handle
+ * @param colno the column number to attach the BAT to
+ * @param bat a :void,:any BAT
+ * @return the modified ResultSet
+ */
+str RSpopulateColumn(int* retval, int* handle, int* colno, int* bat) {
+	BAT* b;
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+    if ((b = BATdescriptor(*bat)) == NULL)
+        throw("resultset.populateColumn", "Cannot access BAT descriptor");
+	if (rs->complete)
+		throw("resultset.populateColumn", "Unable to modify a complete ResultSet");
+	if (b->ttype < 0 || b->ttype >= GDKatomcnt ||
+		b->ttype == TYPE_bat || b->ttype == TYPE_ptr)
+		throw("resultset.populateColumn", "Illegal BAT tail type");
+	if (colno == NULL || *colno == int_nil)
+		throw("resultset.populateColumn", "Column index should not be NULL or nil");
+	if (*colno <= 0 || *colno > rs->columnCount)
+		throwf("resultset.populateColumn", "Column index out of bounds (%d)", *colno);
+
+	/* tell the BBP to leave this BAT alone: it's ours! */
+	BBPfix(b->batCacheid);
+
+	if (rs->length != -1) {
+		/* check length of BAT and match it with the known length */
+		if (rs->length != BATcount(b))
+			return(throwMessage("resultset.populateColumn", "BATcount does not match those of previous columns"));
+		/* add the BAT */
+	} else {
+		/* this is the first column that is added, take its length as
+		 * base for all other columns that get added */
+		rs->length = BATcount(b);
+	}
+	rs->columns[*colno - 1]->bat = b;
+
+	*retval = *handle;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Sets a string property/value pair for the xth column.  If the
  * property is not supported, an exception is thrown.  The return
  * value indicates whether a previous value was overwritten.
  * Accepted string properties are:
- * 	name		name of the column
+ *	name		name of the column
  *	table		name of the table this column belongs to
  *	schema		name of the schema this column belongs to
- *  type		name of the type of this column
+ *	type		name of the type of this column
  *
- * @param col the column to set the property for
- * @param nme the name of the property
- * @param val the value of the property
+ * @param handle a resultset struct
+ * @param col the sequence number of the column starting from 1
+ * @param nme a the name of the property
+ * @param val the string value of the property
  * @return true if there was a previous value, false otherwise
  */
-static str RSsetPropertyStrInternal(
-	int* retval,
-	column* col,
-	str* nme,
-	str* val)
-{
+str RSsetPropertyStr(int* retval, int* handle, int* colno, str* nme, str* val) {
+	column* col;
 	int ret = 0;
-
-	if (*nme == NULL || strNil(*nme))
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+	if (rs->complete)
+		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
+	if (colno == NULL || *colno == int_nil)
+		throw("resultset.setProperty", "Column index should not be NULL or nil");
+	if (*colno <= 0 || *colno > rs->columnCount)
+		throwf("resultset.setProperty", "Column index out of bounds (%d)", *colno);
+	if (nme == NULL || *nme == NULL || strNil(*nme))
 		throw("resultset.setProperty", "Property name should not be NULL or nil");
-	if (*val == NULL)
+	if (val == NULL || *val == NULL)
 		throw("resultset.setProperty", "Property value should not be NULL");
 
-@= MX-setPropertyNoNil
+	col = rs->columns[(*colno) - 1];
+@= MX-setPropertyStrNoNil
 	if (strcmp("@1", *nme) == 0) {
 		if (strNil(*val))
 			throw("resultset.setProperty", "@1 property value cannot be nil");
@@ -654,11 +731,11 @@ static str RSsetPropertyStrInternal(
 		col->@1 = GDKstrdup(*val);
 	}
 @c
-	@:MX-setPropertyNoNil(name)@
+	@:MX-setPropertyStrNoNil(name)@
 	else
-	@:MX-setPropertyNoNil(type)@
+	@:MX-setPropertyStrNoNil(type)@
 	else
-@= MX-setProperty
+@= MX-setPropertyStr
 	if (strcmp("@1", *nme) == 0) {
 		if (strNil(*val)) *val = "";
 
@@ -669,9 +746,9 @@ static str RSsetPropertyStrInternal(
 		col->@1 = GDKstrdup(*val);
 	}
 @c
-	@:MX-setProperty(table)@
+	@:MX-setPropertyStr(table)@
 	else
-	@:MX-setProperty(schema)@
+	@:MX-setPropertyStr(schema)@
 	else
 		throwf("resultset.setProperty", "Invalid property '%s'", *nme);
 
@@ -680,7 +757,7 @@ static str RSsetPropertyStrInternal(
 }
 
 /**
- * Helper function that sets a property for a column.  If the
+ * Sets an integer property/value pair for the xth column.  If the
  * property is not supported, an exception is thrown.  The return
  * value indicates whether a previous value was overwritten.
  * Accepted integer properties are:
@@ -688,26 +765,33 @@ static str RSsetPropertyStrInternal(
  *	scale		scale of this data type
  *	width		the maximum width of this column
  *
- * @param col the column to set the property for
- * @param nme the name of the property
- * @param val the value of the property
+ * @param handle a resultset struct
+ * @param col the sequence number of the column starting from 1
+ * @param nme a the name of the property
+ * @param val the int value of the property
  * @return true if there was a previous value, false otherwise
  */
-static str RSsetPropertyIntInternal(
-	int* retval,
-	column* col,
-	str* nme,
-	int* val)
-{
+str RSsetPropertyInt(int* retval, int* handle, int* colno, str* nme, int* val) {
+	column* col;
 	int ret = 0;
-
-	if (*nme == NULL || strNil(*nme))
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+	if (rs->complete)
+		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
+	if (colno == NULL || *colno == int_nil)
+		throw("resultset.setProperty", "Column index should not be NULL or nil");
+	if (*colno <= 0 || *colno > rs->columnCount)
+		throwf("resultset.setProperty", "Column index out of bounds (%d)", *colno);
+	if (nme == NULL || *nme == NULL || strNil(*nme))
 		throw("resultset.setProperty", "Property name should not be NULL or nil");
-	if (*val == int_nil)
+	if (val == NULL || *val == int_nil)
 		throw("resultset.setProperty", "Property value should not be nil");
 	if (*val < 0)
 		throwf("resultset.setProperty", "Property value cannot be a negative value (%d)", *val);
 
+	col = rs->columns[(*colno) - 1];
 @= MX-setPropertyInt
 	if (strcmp("@1", *nme) == 0) {
 		if (col->@1 != -1) {
@@ -729,277 +813,6 @@ static str RSsetPropertyIntInternal(
 }
 
 /**
- * Adds a column to the ResultSet and returns its position in
- * the sequence of columns.  The BAT and name string are taken
- * and freed upon deletion of the ResultSet.
- *
- * @param handle a resultset handle
- * @param bat a :void,:any bat
- * @param nme a string which represents the name of this column
- * @return the modified ResultSet
- */
-str RSaddColumn(int* retval, int* handle, int* bat, str* nme) {
-	column* col;
-	BAT* b;
-	int pos = 0;
-	resultset* rs;
-	str tmp;
-	
-	resolveHandle(&rs, handle);
-    if ((b = BATdescriptor(*bat)) == NULL)
-        throw("resultset.addColumn", "Cannot access BAT descriptor");
-	if (rs->complete)
-		throw("resultset.addColumn", "Unable to modify a complete ResultSet");
-	if (b->ttype < 0 || b->ttype >= GDKatomcnt ||
-		b->ttype == TYPE_bat || b->ttype == TYPE_ptr)
-		throw("resultset.addColumn", "Illegal BAT tail type");
-	if (*nme == NULL || strNil(*nme))
-		throw("resultset.addColumn", "Name should not be NULL or nil");
-
-	/* tell the BBP to leave this BAT alone: it's ours! */
-	BBPfix(b->batCacheid);
-
-	if ((col = rs->firstColumn) != NULL) {
-		/* walk though the linked list till we found the end */
-		while (col->next != NULL) {
-			pos++;
-			col = col->next;
-		}
-		/* pos is at this point equal to the index of the last column */
-		pos++;
-		/* check length of BAT and match it with the known length */
-		if (rs->length != BATcount(b))
-			return(throwMessage("resultset.addColumn", "BATcount does not match those of previous columns"));
-		/* add the column */
-		col = col->next = GDKmalloc(sizeof(column));
-	} else {
-		/* this is the first column that is added, take its length as
-		 * base for all other columns that get added */
-		rs->length = BATcount(b);
-		col = rs->firstColumn = GDKmalloc(sizeof(column));
-	}
-	/* initialise all the values */
-	col->name = GDKstrdup(*nme);
-	col->table = NULL;
-	col->schema = NULL;
-	col->type = NULL;
-	col->bat = b;
-	col->width = -1;
-	col->digits = -1;
-	col->scale = -1;
-
-	*retval = *handle;
-	return(MAL_SUCCEED);
-}
-
-/**
- * Sets a property/value pair for the last added column.
- *
- * @param handle a resultset handle
- * @param nme a the name of the property
- * @param val the value of the string
- * @returns whether a previous value was overwritten
- */
-str RSsetPropertyStrLastCol(int* retval, int* handle, str* nme, str* val) {
-	column* col;
-	resultset* rs;
-	str tmp;
-
-	resolveHandle(&rs, handle);
-	if (rs->complete)
-		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
-	if ((col = rs->firstColumn) == NULL)
-		throw("resultset.setProperty", "No column added yet");
-
-	/* find reference to last column */
-	while (col->next != NULL) col = col->next;
-
-	return(RSsetPropertyStrInternal(retval, col, nme, val));
-}
-
-/**
- * Sets a property/value pair for the last added column.
- *
- * @param handle a resultset handle
- * @param nme a the name of the property
- * @param val the value of the string
- * @returns whether a previous value was overwritten
- */
-str RSsetPropertyIntLastCol(int* retval, int* handle, str* nme, int* val) {
-	column* col;
-	resultset* rs;
-	str tmp;
-
-	resolveHandle(&rs, handle);
-	if (rs->complete)
-		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
-	if ((col = rs->firstColumn) == NULL)
-		throw("resultset.setProperty", "No column added yet");
-
-	/* find reference to last column */
-	while (col->next != NULL) col = col->next;
-
-	return(RSsetPropertyIntInternal(retval, col, nme, val));
-}
-
-/**
- * Sets a property/value pair for the column with the given name.
- * Note that this function can result in an unintented update,
- * as column names are not required to be unique.  The first
- * column that matches the name will be updated.
- *
- * @param handle a resultset struct
- * @param col a string representing the name of the column
- * @param nme a the name of the property
- * @param val the value of the string
- * @returns whether a previous value was overwritten
- */
-str RSsetPropertyStrColNme(int* retval, int* handle, str* col, str* nme, str* val) {
-	column* column;
-	resultset* rs;
-	str tmp;
-	
-	resolveHandle(&rs, handle);
-	if (rs->complete)
-		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
-	if ((column = rs->firstColumn) == NULL)
-		throw("resultset.setProperty", "No column added yet");
-
-	do {
-		if (strcmp(column->name, *col) == 0) break;
-		column = column->next;
-	} while (column != NULL);
-	if (column == NULL)
-		throw("resultset.setProperty", "No such column");
-
-	return(RSsetPropertyStrInternal(retval, column, nme, val));
-}
-
-/**
- * Sets a property/value pair for the column with the given name.
- * Note that this function can result in an unintented update,
- * as column names are not required to be unique.  The first
- * column that matches the name will be updated.
- *
- * @param handle a resultset struct
- * @param col a string representing the name of the column
- * @param nme a the name of the property
- * @param val the value of the string
- * @returns whether a previous value was overwritten
- */
-str RSsetPropertyIntColNme(int* retval, int* handle, str* col, str* nme, int* val) {
-	column* column;
-	resultset* rs;
-	str tmp;
-	
-	resolveHandle(&rs, handle);
-	if (rs->complete)
-		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
-	if ((column = rs->firstColumn) == NULL)
-		throw("resultset.setProperty", "No column added yet");
-
-	do {
-		if (strcmp(column->name, *col) == 0) break;
-		column = column->next;
-	} while (column != NULL);
-	if (column == NULL)
-		throw("resultset.setProperty", "No such column");
-
-	return(RSsetPropertyIntInternal(retval, column, nme, val));
-}
-
-/**
- * Sets a property/value pair for the xth column.
- *
- * @param handle a resultset struct
- * @param col the sequence number of the column starting from 0
- * @param nme a the name of the property
- * @param val the value of the string
- * @returns whether a previous value was overwritten
- */
-str RSsetPropertyStrColNum(int* retval, int* handle, int* col, str* nme, str* val) {
-	column* column;
-	int i;
-	resultset* rs;
-	str tmp;
-	
-	resolveHandle(&rs, handle);
-	if (rs->complete)
-		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
-	if ((column = rs->firstColumn) == NULL)
-		throw("resultset.setProperty", "No column added yet");
-
-	for (i = 0; i < *col; i++) {
-		if ((column = column->next) == NULL)
-			throw("resultset.setProperty", "Column index out of bounds");
-	}
-
-	return(RSsetPropertyStrInternal(retval, column, nme, val));
-}
-
-/**
- * Sets a property/value pair for the xth column.
- *
- * @param handle a resultset struct
- * @param col the sequence number of the column starting from 0
- * @param nme a the name of the property
- * @param val the value of the string
- * @returns whether a previous value was overwritten
- */
-str RSsetPropertyIntColNum(int* retval, int* handle, int* col, str* nme, int* val) {
-	column* column;
-	int i;
-	resultset* rs;
-	str tmp;
-	
-	resolveHandle(&rs, handle);
-	if (rs->complete)
-		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
-	if ((column = rs->firstColumn) == NULL)
-		throw("resultset.setProperty", "No column added yet");
-
-	for (i = 0; i < *col; i++) {
-		if ((column = column->next) == NULL)
-			throw("resultset.setProperty", "Column index out of bounds");
-	}
-
-	return(RSsetPropertyIntInternal(retval, column, nme, val));
-}
-
-/**
- * Returns the number of the first column that matches the given
- * name.  Note that duplicate column names are allowed.
- *
- * @param handle a resultset handle
- * @param col a string representing the name of the column
- * @returns the column number or -1 if not found
- */
-str RSfindColumn(int* retval, int* handle, str* col) {
-	column* column;
-	int pos = 0;
-	resultset* rs;
-	str tmp;
-	
-	resolveHandle(&rs, handle);
-	if ((column = rs->firstColumn) == NULL) {
-		*retval = -1;
-		return(MAL_SUCCEED);
-	}
-	do {
-		if (strcmp(column->name, *col) == 0) break;
-		column = column->next;
-		pos++;
-	} while (column != NULL);
-	if (column == NULL) {
-		*retval = -1;
-		return(MAL_SUCCEED);
-	}
-
-	*retval = pos;
-	return(MAL_SUCCEED);
-}
-
-/**
  * Marks the given ResultSet as being complete.  A ResultSet which
  * is complete, does not allow new columns to be added or properties
  * to be set.  Instead, it does allow serialisation of the ResultSet.
@@ -1011,22 +824,27 @@ str RSfindColumn(int* retval, int* handle, str* col) {
  * @return the same resultset handle
  */
 str RSsetComplete(int* retval, int* handle) {
+	int i;
 	column* col;
 	resultset* rs;
 	str tmp;
 	
 	resolveHandle(&rs, handle);
-	if (rs->firstColumn == NULL)
-		throw("resultset.setComplete", "ResultSet should contain at least one column");
 	
 	/* walk through the columns, and set those properties that are not
 	 * yet set, but are a necessity */
-	col = rs->firstColumn;
-	while (col != NULL) {
-		/* name is forced to be set, so we don't have to check */
+	for (i = 0; i < rs->columnCount; i++) {
+		col = rs->columns[i];
+		
+		if (col->bat == NULL)
+			throw("resultset.setComplete", "ResultSet contains at least one column that has not been populated yet");
+
+		/* name defaults to column_x */
+		if (col->name == NULL) {
+			col->name = GDKmalloc(sizeof(str) * 15);
+			snprintf(col->name, 15, "column_%d", i + 1);
+		}
 		/* table and schema default to an empty string */
-		if (col->table == NULL) col->table = GDKstrdup("");
-		if (col->schema == NULL) col->schema = GDKstrdup("");
 		/* type defaults to the BAT tail type if not set */
 		if (col->type == NULL) {
 			switch (col->bat->ttype) {
@@ -1063,7 +881,6 @@ str RSsetComplete(int* retval, int* handle) {
 					throw("resultset.tailWidth", "Invalid BAT tail type!");
 			}		
 		}
-		
 		/* column width is derived if not set */
 		if (col->width == -1 &&
 			(tmp = tailWidth(&(col->width), col->bat)) != MAL_SUCCEED)
@@ -1071,8 +888,6 @@ str RSsetComplete(int* retval, int* handle) {
 			return(tmp);
 		}
 		/* digits and scale are suppressed in the output if set to -1 */
-
-		col = col->next;
 	}
 
 	rs->complete = (char)1;
@@ -1092,7 +907,7 @@ str RSsetComplete(int* retval, int* handle) {
  * @returns the number of bytes written
  */
 str RSwriteHeader(int* retval, int* handle) {
-	int bytes = 0, bt;
+	int bytes = 0, bt, i;
 	stream* s = GDKout;
 	resultset* rs;
 	column* col;
@@ -1118,20 +933,21 @@ str RSwriteHeader(int* retval, int* handle) {
 	@:MX-writeHeaderLineSingleValue("%s", rs->id == NULL ? "" : rs->id, "id")@
 	@:MX-writeHeaderLineSingleValue("%d", rs->length, "tuplecount")@
 
-	/* serialise the header to the stream */
 @= MX-writeHeaderLine
-	col = rs->firstColumn;	/* setComplete forces this one to be valid */
+	/* serialise the header to the stream */
 	if ((bt = stream_printf(s, "%c%s ", RS_LINE_HEADER, @3)) > 0) {
 		bytes += bt;
-		while (col != NULL) {
-			if ((bt = stream_printf(s, @1, @2)) < 0)
-				throw("resultset.writeHeader", "Error while writing to the stream");
-			bytes += bt;
+		for (i = 0; i < rs->columnCount; i++) {
+			col = rs->columns[i];
 			
-			col = col->next;
-
+			if (@4) {
+				if ((bt = stream_printf(s, @1, @2)) < 0)
+					throw("resultset.writeHeader", "Error while writing to the stream");
+				bytes += bt;
+			}
+			
 			/* write column or row separator */
-			if (stream_write(s, col == NULL ? "\n" : "\t", 1, 1) != 1) {
+			if (stream_write(s, i < (rs->columnCount - 1) ? "\t" : "\n", 1, 1) != 1) {
 				*retval = 0;
 				throw("resultset.writeHeader", "Error while writing to the stream");
 			}
@@ -1143,13 +959,13 @@ str RSwriteHeader(int* retval, int* handle) {
 	}
 @c
 	/* yeah baby!  dirty as hell! */
-	@:MX-writeHeaderLine("%s", col->name, "name")@
-	@:MX-writeHeaderLine("%s", col->table, "table")@
-	@:MX-writeHeaderLine("%s", col->schema, "schema")@
-	@:MX-writeHeaderLine("%s", col->type, "type")@
-	@:MX-writeHeaderLine("%d", col->digits, "digits")@
-	@:MX-writeHeaderLine("%d", col->scale, "scale")@
-	@:MX-writeHeaderLine("%d", col->width, "width")@
+	@:MX-writeHeaderLine("%s", col->name, "name", 1==1)@
+	@:MX-writeHeaderLine("%s", col->table, "table", col->table != NULL)@
+	@:MX-writeHeaderLine("%s", col->schema, "schema", col->schema != NULL)@
+	@:MX-writeHeaderLine("%s", col->type, "type", col->type != NULL)@
+	@:MX-writeHeaderLine("%d", col->digits, "digits", col->digits > -1)@
+	@:MX-writeHeaderLine("%d", col->scale, "scale", col->scale > -1)@
+	@:MX-writeHeaderLine("%d", col->width, "width", col->width > -1)@
 
 	*retval = bytes;
 	return(MAL_SUCCEED);
@@ -1170,7 +986,7 @@ str RSwriteHeader(int* retval, int* handle) {
  * @returns the number of bytes written
  */
 str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
-	int bytes = 0, bt;
+	int bytes = 0, bt, i;
 	column* col;
 	resultset* rs;
 	str tmp;
@@ -1189,20 +1005,19 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 		throw("resultset.writeBlock", "Lower index should be smaller than upper index");
 	
 	/* initialise all column BUN pointers */
-	col = rs->firstColumn;	/* setComplete forces this one to be valid */
-	while (col != NULL) {
+	for (i = 0; i < rs->columnCount; i++) {
+		col = rs->columns[i];
 		col->bun = (BUN)((char *)BUNfirst(col->bat) + BUNsize(col->bat) * *lower);
-		col = col->next;
 	}
 	/* write the desired block of results */
 	for (; low < *upper; low++) {
-		col = rs->firstColumn;
 		if ((bt = stream_printf(s, "%c", RS_LINE_TUPLE)) <= 0) {
 			bytes = 0;
 			break;
 		}
 		bytes += bt;
-		while (col != NULL) {
+		for (i = 0; i < rs->columnCount; i++) {
+			col = rs->columns[i];
 			/* write value */
 			p = (ptr)BUNtail(col->bat, col->bun);
 			if (!p) throw("resultset.writeBlock", "Illegal tail value pointer: NULL");
@@ -1259,10 +1074,9 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 
 			/* advance to the next value in the BAT */
 			col->bun = BUNnext(col->bat, col->bun);
-			col = col->next;
 
 			/* write column or row separator */
-			if (stream_write(s, col == NULL ? "\n" : "\t", 1, 1) != 1) {
+			if (stream_write(s, i < (rs->columnCount - 1) ? "\t" : "\n", 1, 1) != 1) {
 				bytes = 0;
 				break;
 			}

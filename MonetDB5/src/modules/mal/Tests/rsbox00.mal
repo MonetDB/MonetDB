@@ -1,26 +1,27 @@
 include rsbox;
 
-rs := rsbox.create("lost");
-rs := rsbox.create("myid");
+rs := rsbox.create("lost", 1);
+rs := rsbox.create("myid", 2);
+
+resultset.setProperty(rs, 1, "table", "table1");
+resultset.setProperty(rs, 1, "schema", "sys");
+
+resultset.setProperty(rs, 2, "width", 1);
+resultset.setProperty(rs, 2, "table", "table2");
+resultset.setProperty(rs, 2, "schema", "sys");
 
 b1 := bbp.new(:void, :str);
 bat.insert(b1, nil, "test1");
 bat.insert(b1, nil, "test2");
 bat.insert(b1, nil, nil:str);
 
-resultset.addColumn(rs, b1, "col1");
-resultset.setProperty(rs, "name", "table1");
-resultset.setProperty(rs, "schema", "sys");
-
 b2 := bbp.new(:void, :int);
 bat.insert(b2, nil, 2);
 bat.insert(b2, nil, nil:int);
 bat.insert(b2, nil, 5);
 
-resultset.addColumn(rs, b2, "col2");
-resultset.setProperty(rs, "width", 1);
-resultset.setProperty(rs, "name", "table2");
-resultset.setProperty(rs, "schema", "sys");
+resultset.populateColumn(rs, 1, b1);
+resultset.populateColumn(rs, 2, b2);
 
 resultset.setComplete(rs);
 
