@@ -40,9 +40,25 @@ code_extract = { 'mx': [ (mx2mil, '.mil'),
 		  (mx2swig, '.i'), 
 		  (mx2java, '.java'), 
 		  (mx2xsl, '.xsl'), 
+		  (mx2sh, ''), ], 
+ 		'mx.in': [ (mx2mil, '.mil'),
+		  (mx2mel, '.m'), 
+		  (mx2cc, '.cc'), 
+		  (mx2c, '.c'), 
+		  (mx2h, '.h'), 
+		  (mx2y, '.y'), 
+		  (mx2l, '.l'), 
+		  (mx2yy, '.yy'), 
+		  (mx2ll, '.ll'), 
+		  (mx2odl, '.odl'),
+		  (mx2fgr, '.fgr'), 
+		  (mx2tcl, '.tcl'), 
+		  (mx2swig, '.i'), 
+		  (mx2java, '.java'), 
+		  (mx2xsl, '.xsl'), 
 		  (mx2sh, ''), ]  
 }
-end_code_extract = { 'mx': e_mx }
+end_code_extract = { 'mx': e_mx, 'mx.in': e_mx }
 
 code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
 	    'odl': 	[ '_odl.h', '_odl.cc', '_mil.cc', '_odl.m' ],
@@ -60,6 +76,7 @@ code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
 	    'glue.c': 	[ '.glue.o' ],
 	    '.fgr':     [ '_engine.c', '_template.c', '_schema.mil' ],
 	    '.class':   [ '.java' ],
+	    '.mx.in':	[ '.mx' ]
 }
 
 c_inc = "^[ \t]*#[ \t]*include[ \t]*[<\"]\([a-zA-Z0-9\.\_]*\)[>\"]"
