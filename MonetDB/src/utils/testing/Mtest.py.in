@@ -499,7 +499,7 @@ def find_test_dirs(thisdir) :
     return testdirs
 ### find_test_dirs(thisdir) #
 
-def PerformDir(env, testdir, testlist) :
+def PerformDir(env, testdir, testlist, BusyPorts) :
     td = 0
     TSTSRCBASE = env['TSTSRCBASE']
     if testdir == TSTSRCBASE:
@@ -557,7 +557,7 @@ def PerformDir(env, testdir, testlist) :
 
         for TST in testlist:
             os.environ['TST'] = TST
-            tt = RunTest(env, TST)
+            tt = RunTest(env, TST, BusyPorts)
             if tt:
                 t = "%7.3f" % tt
             else:
@@ -579,7 +579,7 @@ def PerformDir(env, testdir, testlist) :
             ApproveOutput(env, TST)
 
     return td
-### PerformDir(env, testdir, testlist) #
+### PerformDir(env, testdir, testlist, BusyPorts) #
 
 def ApproveOutput (env, TST) :
     TSTDB = env['TSTDB']
@@ -742,7 +742,7 @@ def StopAt(ATJOB,ME) :
     #LOG1x at -l >&2
 ### StopAt(ATJOB,ME) #
 
-def RunTest(env, TST) :
+def RunTest(env, TST, BusyPorts) :
     TSTDB = env['TSTDB']
     TSTDIR  = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
@@ -849,6 +849,8 @@ def RunTest(env, TST) :
         SkipTest(env, TST, EXT, "as multiple MapiClients in parallel are currently not supported by "+THISFILE+".")
     elif CALL == "sqlXp":
         SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".")
+    elif SERVER in BusyPorts:
+        SkipTest(env, TST, EXT, "as %sPORT=%s is not available." % (SERVER,env[SERVER+'PORT']))
     else:
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$")
         for f in os.listdir(TSTSRCDIR):
@@ -1119,7 +1121,35 @@ def RunTest(env, TST) :
             AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
 
     return TX
-### RunTest(env, TST) #
+### RunTest(env, TST, BusyPorts) #
+
+def CheckPort(host,port) :
+    busy = 0
+    Serrno = 0
+    Serrstr = ""
+    S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        S.bind((host,port))
+    except socket.error, (Serrno,Serrstr):
+        busy = 1
+    else:
+        S.close()
+    return busy, Serrno, Serrstr
+### CheckPort(host,port) #
+
+def randomPort(l,h) :
+    repeat = 9
+    host = ''
+    port = 0
+    rpt = 0
+    while rpt < repeat:
+	port = random.randrange(l,h,1)
+	if CheckPort(host,port)[0] == 1:
+            rpt = rpt + 1
+        else:
+            break
+    return port
+### randomPort(l,h) #
 
 def CheckSocket(env,SERVER,SrvrErr,LogLine) :
 #       if OS == "SunOS":
@@ -1128,18 +1158,16 @@ def CheckSocket(env,SERVER,SrvrErr,LogLine) :
 #               wait = 61
     wait = 61
     repeat = 5
-    host=''
+    host = ''
     port = 0
     if SERVER == "MAPI":
         port = int(string.splitfields(env['MAPIPORT'],':')[1])
     if SERVER == "SQL":
         port = int(env['SQLPORT'])
-    S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     rpt = 0
     while rpt < repeat:
-        try:
-            S.bind((host,port))
-        except socket.error, (Serrno,Serrstr):
+        busy, Serrno, Serrstr = CheckPort(host,port)
+        if busy == 1:
             rpt = rpt + 1
             Smsg =      "\n! Socket-Check failed for "+SERVER+"server on <"+host+":"+str(port)+"> with #"+str(Serrno)+"; '"+Serrstr+"' !"
             Smsg = Smsg+"\n! Waiting "+str(wait)+" seconds (%d/%d) ... " % (rpt,repeat)
@@ -1149,18 +1177,21 @@ def CheckSocket(env,SERVER,SrvrErr,LogLine) :
             SrvrErr.flush()
             time.sleep(wait)
         else:
-            S.close()
             break
     if rpt != 0:
         SrvrErr.write("Done.\n\n")
         SrvrErr.flush()
-        STDERR.write("Done.\n"+LogLine)
+        STDERR.write("Done.\n"+prompt()+LogLine)
         STDERR.flush()
 ### CheckSocket(env,SERVER,SrvrErr,LogLine) #
 
+def prompt() :
+    return time.strftime('%H:%M:%S> ',time.localtime(time.time()))
+### prompt() #
+
 def Prompt(cmd) :
-    prompt = time.strftime('\n# %H:%M:%S >  ',time.localtime(time.time()))
-    return prompt+prompt+cmd+prompt+"\n\n"
+    prmpt = time.strftime('\n# %H:%M:%S >  ',time.localtime(time.time()))
+    return prmpt+prmpt+cmd+prmpt+"\n\n"
 ### Prompt(cmd) #
 
 def LaunchIt(cmd, TestIn, TestOut, TestErr) :
@@ -1185,11 +1216,15 @@ def RunIt(cmd, TestIn, TestOut, TestErr) :
     CollectIt(pOut, pErr, TestOut, TestErr)
 ### RunIt(cmd, TestIn, TestOut, TestErr) #
 
+def Log() :
+    time.strftime('%H:%M:%S> ',time.localtime(time.time()))
+### Log() #
+
 def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) :
     ATJOB2 = ""
-    LogLine = time.strftime('%H:%M:%S> ',time.localtime(time.time()))+os.path.join(env['TSTDIR'],TST+EXT)+" "+PRELUDE+" ..."
+    LogLine = env['TSTDIR']+os.sep+TST+EXT+' '+PRELUDE+' (<='+str(STIMEOUT+60)+'s) ...'
     STDERR.flush()
-    STDOUT.write(LogLine)
+    STDOUT.write(prompt()+LogLine)
     STDOUT.flush()
     TSTDB = env['TSTDB']
     exe = env['exe']
@@ -1554,8 +1589,8 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         dft['MONETRC']        = "FindMonetConf(env)"
         #dft['MONET_MOD_PATH'] = "''"   #"env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'Monet'"
-        dft['MAPIPORT']       = "HOST+':'+str(random.randrange(50000,59999,1))"
-        dft['SQLPORT']        = "str(random.randrange(50000,59999,1))"
+        dft['MAPIPORT']       = "HOST+':'+str(randomPort(50000,59999))"
+        dft['SQLPORT']        = "str(randomPort(50000,59999))"
         dft['SQLCLIENT']      = "'sql_client --port='+env['SQLPORT']"
         dft['MAPICLIENT']     = "'MapiClient -everything'"
     if THISFILE == "Mprofile.py":
@@ -1862,6 +1897,8 @@ def main(argv) :
         Warn("No tests found in "+str(dirlist)+"!")
         sys.exit(1)
 
+    BusyPorts = []
+
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
 
         if os.name == "nt":
@@ -1890,6 +1927,18 @@ def main(argv) :
         print "Modules: ", env['TST_MODS']
         STDOUT.flush()
 
+        host = ''
+        port = int(string.splitfields(env['MAPIPORT'],':')[1])
+        busy, Serrno, Serrstr = CheckPort(host,port)
+        if busy == 1:
+            Warn("Skipping MAPI tests as MAPIPORT=%s is not available (Error #%d: '%s')!" % (env['MAPIPORT'],Serrno,Serrstr))
+            BusyPorts.append('MAPI')
+        port = int(env['SQLPORT'])
+        busy, Serrno, Serrstr = CheckPort(host,port)
+        if busy == 1:
+            Warn("Skipping SQL tests as SQLPORT=%s is not available (Error #%d: '%s')!" % (env['SQLPORT'],Serrno,Serrstr))
+            BusyPorts.append('SQL')
+
     STDERR.flush()
     t_ = 0
     if len(testdirs) == 1:
@@ -1898,12 +1947,12 @@ def main(argv) :
         else:
             tsts = "all tests"
         print "\nRunning %s in directory %s.\n" % (tsts , testdirs[0])
-        t_ = PerformDir(env, testdirs[0], testlist)
+        t_ = PerformDir(env, testdirs[0], testlist, BusyPorts)
     else:
         testdirs.sort()
         print "\nRunning all tests in directories %s.\n" % str(testdirs)
         for d in testdirs:
-            t_ = t_ + PerformDir(env, d, [])
+            t_ = t_ + PerformDir(env, d, [], BusyPorts)
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
