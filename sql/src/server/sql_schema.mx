@@ -909,7 +909,7 @@ create_column(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, int alter )
 	dlist *l = s->data.lval;
 	char *cname = l->h->data.sval;
 	sql_subtype *ctype = l->h->next->data.typeval;
-	dlist *opt_list = NULL; 
+	dlist *opt_list = NULL;
 	stmt *res = NULL;
 
 	if (l->h->next->next)

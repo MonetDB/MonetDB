@@ -561,9 +561,6 @@ check_types(mvc * sql, sql_subtype * ct, stmt * s, check_type tpe )
 {
 	sql_subtype *st = tail_type(s);
 
-	if (tpe == type_dyncheck && st->fixed == 0)
-		return dyncheck_types(sql, ct, s);
-
 	if (st) {
 		sql_subtype *t;
 
@@ -589,6 +586,12 @@ check_types(mvc * sql, sql_subtype * ct, stmt * s, check_type tpe )
 					ct->digits-ct->scale < 
 						st->digits-st->scale)) 
 				) {
+					if (tpe == type_dyncheck && 
+					    st->fixed == 0) {
+						sql_subfunc_destroy(c);
+						return dyncheck_types(sql, ct, s);
+					}
+
 					if (tpe == type_cast) {
 						s = stmt_unop(s, c);
 						s = sql_truncate(ct, s);
@@ -642,6 +645,8 @@ check_types(mvc * sql, sql_subtype * ct, stmt * s, check_type tpe )
 		    (ct->scale > 0 && ct->digits > 0 
 			&& ct->digits-ct->scale < st->digits-st->scale) 
 		){
+			if (tpe == type_dyncheck && st->fixed == 0)
+				return dyncheck_types(sql, ct, s);
 			if (tpe == type_cast) {
 				s = sql_truncate(ct, s);
 				if (s)

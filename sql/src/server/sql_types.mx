@@ -943,20 +943,20 @@ void sqltypeinit()
 
 	numerical = t;
 
-	OID = *t++ = sql_create_type("OID", 9, 0, 10, 1, 	"oid");
-	/*sql_type("INT", 2, SCALE_FIX, 10, 1, 		"uchr"); */
-	*t++ = sql_create_type("INT", 4, SCALE_FIX, 10, 1,		"sht");
-	INT = *t++ = sql_create_type("INT", 9, SCALE_FIX, 10, 1,	"int");
-	LNG = *t++ = sql_create_type("INT", 19, SCALE_FIX, 10, 1,	"lng");
+	OID = *t++ = sql_create_type("OID", 9, 0, 10, 0, 	"oid");
+	/*sql_type("INT", 2, SCALE_FIX, 10, 0, 		"uchr"); */
+	*t++ = sql_create_type("INT", 4, SCALE_FIX, 10, 0,		"sht");
+	INT = *t++ = sql_create_type("INT", 9, SCALE_FIX, 10, 0,	"int");
+	LNG = *t++ = sql_create_type("INT", 19, SCALE_FIX, 10, 0,	"lng");
 	sql_create_alias(INT->sqlname, "INTEGER");
 
 	decimals = t;
 	/* decimal(d,s) (d indicates nr digits,
 			s scale indicates nr of digits after the dot .) */
 	/*#sql_type("DECIMAL", 2, SCALE_FIX, 10, 		"uchr"); */
-	T = *t++ = sql_create_type("DECIMAL", 4, SCALE_FIX, 10, 1,	"sht");
-	*t++ = sql_create_type("DECIMAL", 9, SCALE_FIX, 10, 1,		"int");
-	*t++ = sql_create_type("DECIMAL", 19, SCALE_FIX, 10, 1,		"lng");
+	T = *t++ = sql_create_type("DECIMAL", 4, SCALE_FIX, 10, 0,	"sht");
+	*t++ = sql_create_type("DECIMAL", 9, SCALE_FIX, 10, 0,		"int");
+	*t++ = sql_create_type("DECIMAL", 19, SCALE_FIX, 10, 0,		"lng");
 
 	sql_create_alias(T->sqlname, "NUMERIC");
 
