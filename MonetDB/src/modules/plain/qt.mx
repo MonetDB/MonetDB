@@ -277,7 +277,7 @@ qt_prelude(void)
   assert(levels);
 
   {
-    int mid = TBL_module_lookup("stats");
+    oid mid = TBL_module_lookup("stats");
     ptr hdl = TBL_module_handle(mid);
     local_stats_histogram_new = (int (*)(ptr *, str, int *, int *, lng *)) DL_sym(hdl, "stats_histogram_new");
     local_stats_add = (int (*)(ptr *, lng *)) DL_sym(hdl, "stats_add");

@@ -33,9 +33,9 @@
 int disclaimer=0;
 char disclaimerfile[256];
 
-static char defaultfile[]="COPYRIGHT";
+static const char defaultfile[]="COPYRIGHT";
 
-static FILE *openDisclaimerFile(char *filename)
+static FILE *openDisclaimerFile(const char *filename)
 {
     FILE *fp;
 
@@ -47,13 +47,14 @@ static FILE *openDisclaimerFile(char *filename)
     return fp;
 }
 
-static void writeDisclaimer(FILE *fp, char *comment_start, char *prefix, 
-                            char *comment_end, char *filename)
+static void writeDisclaimer(FILE *fp, const char *comment_start,
+			    const char *prefix, const char *comment_end,
+			    const char *filename)
 {
 
     FILE *dfile;
     char line[DISC_WIDTH+2];
-    int prefixLength=strlen(prefix),i,ret;
+    size_t prefixLength=strlen(prefix),i,ret;
     
     dfile=openDisclaimerFile(filename);
 
@@ -92,43 +93,40 @@ static void writeDisclaimer(FILE *fp, char *comment_start, char *prefix,
     
 }
 
-#define DISC_SUFFIXES  8
-
 /* format <suffix> <comment_begin> <comment_prefix> <comment_end> */
-static char suffixes[DISC_SUFFIXES*4][128]={
-    "c","/*"," * "," */",
-    "h","/*"," * "," */",
-    MX_CXX_SUFFIX,"/*"," * "," */",
-    "html","<!--"," + "," -->",
-    "tex","","% ","",
-    "mil","","# ","",
-    "m","","# ","",
-    "mx","","@' ",""
+static struct suffixes {
+	const char *suffix;
+	const char *comment_begin;
+	const char *comment_prefix;
+	const char *comment_end;
+} suffixes[] = {
+	{"c","/*"," * "," */",},
+	{"h","/*"," * "," */",},
+	{MX_CXX_SUFFIX,"/*"," * "," */",},
+	{"html","<!--"," + "," -->",},
+	{"tex","","% ","",},
+	{"mil","","# ","",},
+	{"m","","# ","",},
+	{"mx","","@' ",""},
+	{0,},			/* sentinel */
 };
+#define DISC_SUFFIXES  (sizeof(suffixes)/sizeof(siffixes[0]))
 
 void insertDisclaimer(FILE *fp, char *rfilename)
 {
-    int i=0, rlength=strlen(rfilename),sfx;
-    char *suffix=(char *)malloc(strlen(rfilename));
+	struct suffixes *s;
+	char *suffix;
 
-    for (i=rlength;i>=0;i--)
-        if (rfilename[i]=='.') break;
-
-    if (i<0 || i==rlength) return; /* no suffix found => no disclaimer */
-
-    memcpy(suffix,&rfilename[i+1],rlength-i);
-    
-    for (sfx=0;sfx<DISC_SUFFIXES;sfx++)
-        if (!strcmp(suffixes[sfx*4],suffix)) break;
-    
-    if (sfx<DISC_SUFFIXES)
-        {
-            writeDisclaimer(fp,suffixes[sfx*4+1],suffixes[sfx*4+2],
-                            suffixes[sfx*4+3],disclaimerfile);
-/*
-            printf("file=%s sfx=%d suffix=%s sfxb=%s sfxx=%s sfxe=%s\n",
-                   rfilename,sfx,suffix,
-                   suffixes[sfx*4+1],suffixes[sfx*4+2],suffixes[sfx*4+3]);
-                   */
-        }
+	if ((suffix = strrchr(rfilename, '.')) == 0)
+		return;		/* no suffix found => no disclaimer */
+	suffix++;		/* position after "." */
+	for (s = suffixes; s->suffix; s++)
+		if (strcmp(s->suffix, suffix) == 0) {
+			writeDisclaimer(fp,
+					s->comment_begin,
+					s->comment_prefix,
+					s->comment_end,
+					disclaimerfile);
+			break;
+		}
 }

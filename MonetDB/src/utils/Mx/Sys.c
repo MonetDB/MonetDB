@@ -87,7 +87,7 @@ void	Fatal(char *fcn, char *format,...)
 
 
 char *	Malloc(size)
-int	size;
+size_t	size;
 {
 char *	buf;
 

@@ -64,6 +64,7 @@ extern	void	CodeSub ARGS((char*));
 extern	char *	CodeSubBlk ARGS((char*, char**));
 extern	void	CodeLine NOARGS;
 extern	void	UnRef ARGS((char *));
+extern	Tok* 	solveCond ARGS((Tok *));
 
 /* Def.c
  */
@@ -167,9 +168,10 @@ extern  void    HideText NOARGS;
 extern  void    ofile_putc ARGS((char));
 extern  void    ofile_puts ARGS((char*));
 
-extern	char *	Malloc ARGS((int));
+extern	char *	Malloc ARGS((size_t));
 extern	void	Free ARGS((char *));
 extern	char *	StrDup ARGS((char*));
+extern	char *	Strndup ARGS((const char*,size_t));
  
 extern  void    ofile_printf ARGS((char *,...));
 extern	void	Fatal ARGS((char*, char*, ...)); 

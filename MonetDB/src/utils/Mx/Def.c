@@ -472,7 +472,7 @@ char *
 DefBlk()
 {
 	char *	f;
-	int size = 0;
+	size_t size = 0;
 	char *dir;
 	char sep;
 

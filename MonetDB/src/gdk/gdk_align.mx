@@ -198,7 +198,7 @@ with the parent, as they need a modified version.
 @c
 BAT *VIEWcreate_(BAT* b, int stable) {
         BAT *bn = BATcreatedesc(b->htype, b->ttype);
-	int parent = VIEWparent(b);
+	bat parent = VIEWparent(b);
 	
 	if (parent == 0) {
 	    parent = b->batCacheid;

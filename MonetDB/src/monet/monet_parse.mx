@@ -131,7 +131,7 @@ static int ll_skipcomment();
 %pointer
 %%
 "#"                   { return ll_skipcomment();                              }
-("nil"|"NIL")         { Vector(TOK_CONSTANT, TYPE_void, ival, void_nil, 0);   }
+("nil"|"NIL")         { Vector(TOK_CONSTANT, TYPE_void, oval, void_nil, 0);   }
 ("proc"|"PROC")       { Symbol(TOK_PROCDEF);                                  }
 ("undef"|"UNDEF")     { Symbol(TOK_UNDEF);                                    }
 ("return"|"RETURN")   { Symbol(TOK_RETURN);                                   }
@@ -725,7 +725,7 @@ expr_statement:
         ';'
         {   $$ = ll_sugarnode; ll_sugarnode = NULL;                           }
     |   TOK_ITERATION parallel TOK_ITERATOR expression_list
-        {   $$ = (ptr) ll_templates; ll_templates = 1; } nonvar_statement
+        {   $$ = ll_templates ? (YYSTREE)1 /* non-NULL */ : (ptr) 0; ll_templates = 1; } nonvar_statement
         {   ll_templates = ($5 != NULL);
             yylogexpand($3, $6); yylogexpand($3, $4);
             if ($2) yylogexpand($3, $2); $$ = $3;                             }
@@ -753,7 +753,7 @@ parallel:
     ;
 
 sequential_block:
-        '{' { $$=(YYSTREE)ll_modcmds; ll_modcmds=1; } statement_seq '}'
+        '{' { $$=ll_modcmds?(YYSTREE)1:0; ll_modcmds=1; } statement_seq '}'
         {   ll_modcmds = ($2 != NULL);
 	    $$ = $3;
             if ($3->token == TOK_SEQ || $3->token == TOK_SEQBLOCK) {
@@ -765,7 +765,7 @@ sequential_block:
     ;
 
 parallel_block:
-        TOK_PARBLOCK {ll_parblockdepth++; $$=(YYSTREE)ll_modcmds;ll_modcmds=1;}
+        TOK_PARBLOCK {ll_parblockdepth++; $$=ll_modcmds?(YYSTREE)1:0;ll_modcmds=1;}
 	statement_seq TOK_PAREND
         {   ll_modcmds = ($2 != NULL);
 	    if (--ll_parblockdepth == 0) ll_clrids();
@@ -840,7 +840,7 @@ proc_definition:
             $2->token = TOK_CONSTANT;
             $2->yyval.vtype = TYPE_int;                                       }
     |   TOK_UNDEF TOK_PROC ';'
-        {   TBL_delproc(ll_client, $2->yyval.val.sval, -1, TRUE); /* DIRECT */  }
+        {   TBL_delproc(ll_client, $2->yyval.val.sval, oid_nil, TRUE); /* DIRECT */  }
     ;
 
 proc_assign:

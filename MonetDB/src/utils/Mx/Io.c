@@ -47,7 +47,7 @@ FILE *	ofile_index = 0;
 
 char *outputdir;
 char *inputdir;
-int outputdir_len;
+size_t outputdir_len;
 
 FILE *fmustopen(char*,char*);
 int CompareFiles(char*,char*);
@@ -234,17 +234,18 @@ done:	fclose(fp1);
 }
 
 void KillLines(FILE *fp, char* pattern, int killprev){
-	int lastpos=0, curpos=0, patlen=strlen(pattern);
+	long lastpos=0, curpos=0;
+	size_t patlen=strlen(pattern);
 	char line[8192];
 
 	fflush(fp);
 	fseek(fp, 0, SEEK_SET);
 	while(fgets(line, 8192, fp)) {	
-		int newpos = ftell(fp);
+		long newpos = ftell(fp);
 		if (strlen(line)==0) continue;
 		if (strncmp(line, pattern, patlen) == 0) {
-			int killpos = curpos;
-			int killen = newpos-curpos;
+			long killpos = curpos;
+			long killen = newpos-curpos;
 
 			if (killprev && lastpos) {
 				killpos = lastpos;

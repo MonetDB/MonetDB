@@ -107,7 +107,7 @@ are below (in a shortened format). We have macros that copy all
 relevant fields from a (new) 64-bit BAT structure to an (old) 32-bits
 BAT, and vice versa.
 @c
-#if SIZEOF_LONG==8
+#if SIZEOF_OID < SIZEOF_LONG
 #undef _GDK_H_
 #define BAT32IMAGE
 #include "gdk.h"
@@ -257,7 +257,7 @@ have an extension type in their other column.
 		b->hacctype = b->tacctype = 0;
 	}
 	if (b->GDKversion == GDKLIBRARY) {
-#if SIZEOF_LONG==8
+#if SIZEOF_OID < SIZEOF_LONG
 		BATstore_32IMAGE buf, *dst= &buf;
 		@:BATstore_ALL(normal_int,dst,long_int,bs,COPY,save)@
 #else
@@ -273,7 +273,7 @@ have an extension type in their other column.
 @- BATloaddesc 
 @c
 BAT* BATloaddesc(str nme) {
-#if SIZEOF_LONG==8
+#if SIZEOF_OID < SIZEOF_LONG
         BATstore_32IMAGE *src = (BATstore_32IMAGE *) 
 #else
         BATstore *src = (BATstore *) 
@@ -298,7 +298,7 @@ BAT* BATloaddesc(str nme) {
 		conv = FALSE;
                 return NULL;
         }
-#if SIZEOF_LONG==8
+#if SIZEOF_OID < SIZEOF_LONG
 	  else {
 		dst = (BATstore*) GDKmalloc(sizeof(BATstore));
 		if (conv) {

@@ -418,6 +418,7 @@ if test "x$have_pthread" != xno; then
 	  	have_pthread=yes ] , [ have_pthread=no], "-lposix4" )
 	] )
   AC_CHECK_LIB(pthread, pthread_sigmask, AC_DEFINE(HAVE_PTHREAD_SIGMASK, 1, [Define if you have the pthread_sigmask function]))
+  AC_CHECK_LIB(pthread, pthread_kill_other_threads_np, AC_DEFINE(HAVE_PTHREAD_KILL_OTHER_THREADS_NP, 1, [Define if you have the pthread_kill_other_threads_np function]))
   LDFLAGS="$save_LDFLAGS"
 
   if test "x$have_pthread" != xyes; then

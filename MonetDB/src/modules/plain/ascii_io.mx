@@ -414,9 +414,11 @@ static INLINE
 void insert_val( ascii_io *fmt, char *s, char *e ){
 	int c1, c = BATcount(fmt->c);
 	ptr *adt;
-	adt = ADT_fromStr( fmt->adt, strip(s,e) ); 
+	oid on = oid_nil;	/* can't use &oid_nil because of the
+				   way it's defined */
+	adt = ADT_fromStr( fmt->adt, strip(s,e) );
 	
-	BUNins(fmt->c,&int_nil,adt);
+	BUNins(fmt->c,&on,adt);
 	c1 = BATcount(fmt->c);
 	if (c1 != c+1)
 		printf("%ld not inserted %s\n", (long)adt, s);

@@ -682,7 +682,7 @@ static int (*local_enum_sethisto)(int *, BAT *);
 
 void ddbench_prelude(void)
 {
-	int mid = TBL_module_lookup("enum");
+	oid mid = TBL_module_lookup("enum");
 	ptr hdl = TBL_module_handle(mid);
 	local_enum_load = (int (*)(int *, BAT *)) DL_sym(hdl, "enum_load");
 	local_enum_table = (int (*)(BAT **, int *)) DL_sym(hdl, "enum_table");

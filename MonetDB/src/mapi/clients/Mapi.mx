@@ -292,7 +292,11 @@ They have been developed to ease interaction.
 @c
 #include  "Mapi.h"
 
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 #include  <stdio.h>
+#include  <pwd.h>
 #include  <sys/types.h>
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
@@ -459,7 +463,7 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	}
 	
 	if(username) strcpy(mid->username,username);
-	else strcpy(mid->username,(char*)cuserid(NULL));
+	else strcpy(mid->username,getpwuid(geteuid())->pw_name);
 
 	if(password) strcpy(mid->password,password);
 	else strcpy(mid->password,"");

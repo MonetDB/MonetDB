@@ -1078,12 +1078,12 @@ second line with encodingw .=free, *=inuse, X=unusable. On Unix systems,
 *=inuse is not testable (unless with complicated signal stuff). On 64-bits
 systems, this administation is disfunctional. 
 @c
-#if SIZEOF_LONG==4
+#if SIZEOF_VOID_P == 4
 unsigned char MT_alloc_map[49600]= { 0 };
 #endif
 
 int MT_alloc_register(void *addr, unsigned int size, char mode) {
-#if SIZEOF_LONG==4
+#if SIZEOF_VOID_P == 4
         unsigned int p = (unsigned int) addr;
         if (p > 0 && p < 3*((unsigned int) 1024*1024*1024) && size > 0) {
                 unsigned int i, base = p >> 16;
@@ -1098,7 +1098,7 @@ int MT_alloc_register(void *addr, unsigned int size, char mode) {
 #define INUSEMODE(x) ((x >= '0' && x <= ('9'+4)) || (x >= 'A' && x <= 'Z'))
 
 int MT_alloc_print() {
-#if SIZEOF_LONG==4
+#if SIZEOF_VOID_P == 4
 #ifdef WIN32
         char *p = NULL;
 #endif
@@ -1134,7 +1134,7 @@ int MT_alloc_print() {
 }
 
 static void MT_alloc_init() {
-#if SIZEOF_LONG==4
+#if SIZEOF_VOID_P == 4
         char* p = NULL;
         int i;
         for(i=0; i<49600; i++, p+=MT_VMUNITSIZE) {

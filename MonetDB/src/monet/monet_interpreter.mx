@@ -1489,9 +1489,14 @@ ptr interpret_fcn(int ht, int tt, int parallel) {
 	switch(ATOMstorage(ht)) {
 	case TYPE_chr:	@:switch_ht(fchval)@	break;
 	case TYPE_sht:  @:switch_ht(fshval)@	break;
+#if SIZEOF_OID == SIZEOF_INT
 	case TYPE_void:
+#endif
 	case TYPE_int:	
 	case TYPE_flt:	@:switch_ht(fival)@	break;
+#if SIZEOF_OID > SIZEOF_INT
+	case TYPE_void:
+#endif
 	case TYPE_lng: 
         case TYPE_dbl:	@:switch_ht(fdval)@	break;
 	default: if (ATOMvarsized(ht))	@:switch_ht(vpval)@
@@ -1501,9 +1506,14 @@ ptr interpret_fcn(int ht, int tt, int parallel) {
 	switch(ATOMstorage(tt)) {
 	case TYPE_chr: @:switch_tt(@1,fchval)@	break;
 	case TYPE_sht: @:switch_tt(@1,fshval)@	break;
+#if SIZEOF_OID == SIZEOF_INT
 	case TYPE_void:
+#endif
 	case TYPE_int:	
 	case TYPE_flt: @:switch_tt(@1,fival)@	break;
+#if SIZEOF_OID > SIZEOF_INT
+	case TYPE_void:
+#endif
 	case TYPE_lng: 
 	case TYPE_dbl:	@:switch_tt(@1,fdval)@	break;
 	default: if (ATOMvarsized(tt))	@:switch_tt(@1,vpval)@

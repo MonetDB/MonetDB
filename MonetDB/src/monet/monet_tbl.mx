@@ -53,7 +53,7 @@ m_export void  TBL_exitclient(Client c);
             
 m_export void  TBL_newproc(Client c, str nme, 
 			 YYSTREE body, YYSTREE sig, YYSTREE ret);
-m_export void  TBL_delproc(Client client, str nme, int pid, int lock);
+m_export void  TBL_delproc(Client client, str nme, oid pid, int lock);
 
 
 /* old info functions */
@@ -91,8 +91,8 @@ m_export BAT *TBL_mod_use;
 m_export BAT *TBL_mod_load;
 m_export BAT *TBL_mod_drop;
 
-m_export ptr TBL_module_handle(int);
-m_export int TBL_module_lookup(str);
+m_export ptr TBL_module_handle(oid);
+m_export oid TBL_module_lookup(str);
 m_export void *DL_sym(void *, const char *);
 @
 Declarations of Installing interface for modules.
@@ -386,6 +386,7 @@ typedef struct {
 } dltable;
 
 int	 DL_errno = 0;
+static char *DL_errmsg;
 str	 DL_mod[DL_TABLE_MAXLIBS] = { 0 };
 dltable* DL_table[DL_TABLE_MAXLIBS] = { 0 };
 
@@ -419,6 +420,9 @@ void* DL_open(char* nme, int mode) {
 	int i;
 
 	DL_errno = 0;
+#ifndef STATIC
+	DL_errmsg = NULL;
+#endif
 	for(i=0; i<DL_TABLE_MAXLIBS; i++) 
 		if (DL_mod[i] && strcmp(DL_mod[i], nme) == 0) {
 			tbl = DL_table[i];
@@ -426,13 +430,17 @@ void* DL_open(char* nme, int mode) {
 
 	if (tbl == NULL) {
 #ifndef STATIC
-		char *fullname = MSP_locate_module(nme);
-		void* hdl = dlopen(fullname, mode);
-		if (hdl) {
-			tbl = (dltable*) DL_reglib(nme, hdl, 0);
-			tbl->dynamic_handle = hdl;
-		}
-		GDKfree(fullname);
+		char *fullname;
+		if ((fullname = MSP_locate_module(nme)) != NULL) {
+			void *hdl;
+			if ((hdl = dlopen(fullname, mode)) != NULL) {
+				tbl = (dltable*) DL_reglib(nme, hdl, 0);
+				tbl->dynamic_handle = hdl;
+			} else
+				DL_errmsg = dlerror();
+			GDKfree(fullname);
+		} else
+			DL_errmsg = "library not found";
 #else 
 		DL_errno = 1;
 #endif
@@ -488,6 +496,8 @@ static short_str DL_errormsg[3] =
 
 char *DL_error() { 
 #ifndef STATIC
+	if (DL_errmsg != NULL)
+		return DL_errmsg;
 	if (DL_errno == 0) return dlerror();
 #endif
 	return DL_errormsg[DL_errno]; 
@@ -508,20 +518,20 @@ ptr TBL_openmod(Client client, str module) {
 }
 
 
-ptr TBL_module_handle(int mid) {
+ptr TBL_module_handle(oid mid) {
   char *p;
   return (p=BUNfnd(TBL_mod_hdl, &mid))?*(int**)BUNtloc(TBL_mod_hdl,p):0;
 }
 
 
-int TBL_module_lookup(str module) {
+oid TBL_module_lookup(str module) {
   BUN bun; /* stupid temp storage? */
-  int * midp = BUNtailfnd(int, BATmirror(TBL_mod_nme), bun, module);
+  oid * midp = BUNtailfnd(oid, BATmirror(TBL_mod_nme), bun, module);
 
   return midp?*midp:0;
 }
 
-int TBL_M_cinstalled(Client client, int mid) {
+int TBL_M_cinstalled(Client client, oid mid) {
   return (!!(BUNlocate(BATmirror(TBL_mod_use), &client, &mid)));
 }
 
@@ -840,7 +850,7 @@ str TBL_getname(ptr imp) {
 	if ((fid = BUNtailfnd(oid, b, bun, &imp)) == 0) {
 	    GDKerror("TBL_getname: inexistent function %p.\n", imp);
 	} else if ((s = BUNtailfnd(char, TBL_fcn_nme, bun, fid)) == 0) {
-	    GDKerror("TBL_getname: no name for function %d.\n", fid);
+	    GDKerror("TBL_getname: no name for function %ld.\n", (long) *fid);
 	}
 	TBL_unset_readlock();
 	return s;
@@ -905,7 +915,7 @@ oid /* An oid is generated */
 TBL_Install_Info( TBLinstall *inst, str owner, str name) {
   oid mid = 0;
 
-  dlFPRINTF(GDKerr, "  TBL_Install_Info(%s, %s) = %d\n", owner, name, mid);
+  dlFPRINTF(GDKerr, "  TBL_Install_Info(%s, %s) = %ld\n", owner, name, (long) mid);
 @-
 if it is already loaded then we delete it, this implies
 that the TBL_Install_Info is the same as reload (delete)
@@ -1034,9 +1044,9 @@ saved on disk so no commit is needed.
 @c
 oid TBL_M_load(TBLinstall *inst, Client client, str module) {
   ptr hdl;
-  int mid = 0;
+  oid mid = 0;
   char mod_init_name[PATHLENGTH];
-  int (*mod_init)();
+  oid (*mod_init)(TBLinstall *, str);
 
   dlFPRINTF(GDKerr, "  TBL_M_load(%s)\n", module);
   if (!(hdl = TBL_openmod(client, module))) {
@@ -1045,7 +1055,7 @@ oid TBL_M_load(TBLinstall *inst, Client client, str module) {
   }
 
   sprintf(mod_init_name, "%s_Module_Install", module);
-  mod_init = (int(*)())DL_sym(hdl, mod_init_name);
+  mod_init = (oid (*)(TBLinstall *, str))DL_sym(hdl, mod_init_name);
   if (mod_init == NULL) {
     dlFPRINTF(GDKerr, "    No function %s\n", mod_init_name);
     GDKerror("TBL_M_load: %s not a module.\n", module);
@@ -1068,7 +1078,7 @@ oid TBL_M_load(TBLinstall *inst, Client client, str module) {
   return mid;
 }
 
-int TBL_M_client_install(Client client, int mid) {
+int TBL_M_client_install(Client client, oid mid) {
   int i, aid;
   char *nme;
   char s[80];
@@ -1143,24 +1153,24 @@ int TBL_M_directloaded(Client client, oid mid, str module) {
   return FALSE;
 }
 
-int TBL_M_countref(int mid) {
+int TBL_M_countref(oid mid) {
   int xx, yy=0;
   BUN p, q;
 
 /*debug*/
   BATloopFast(TBL_mod_use, p, q, xx) 
-	if (*(int*)BUNhloc(TBL_mod_use,p) == mid) yy++;
+	if (*(oid*)BUNhloc(TBL_mod_use,p) == mid) yy++;
 
   xx = *BUNtailfnd(int, TBL_mod_cnt, p, &mid);
 
 /*debug*/
   if (xx != yy) 
-  GDKwarning("TBL_M_countref: mod(%d) refcnt %d: should be %d.\n",mid,xx,yy);
+  GDKwarning("TBL_M_countref: mod(%ld) refcnt %d: should be %d.\n",(long)mid,xx,yy);
 
   return yy;
 }
 
-int TBL_M_incref(Client client, int mid) {
+int TBL_M_incref(Client client, oid mid) {
   int i = TBL_M_countref(mid);
 
   BUNins(TBL_mod_use, &mid, &client);
@@ -1171,11 +1181,11 @@ int TBL_M_incref(Client client, int mid) {
   return 1;
 }
 
-int TBL_M_decref(Client client, int mid) {
+int TBL_M_decref(Client client, oid mid) {
   int i = TBL_M_countref(mid);
 
   if (i <= 0) {
-	GDKwarning("TBL_M_incref: mod(%d) cannot decrease refcnt\n", mid);
+	GDKwarning("TBL_M_incref: mod(%ld) cannot decrease refcnt\n", (long)mid);
   } else {
 	BUN p = BUNlocate(TBL_mod_use, &mid, &client);
 	BUNdelete(TBL_mod_use, p);
@@ -1216,7 +1226,7 @@ reallocating if it is too short. Since this
 routine is called after "installing" all dependencies
 the order of the substrings (MIL load scripts) will be correct.
 @c
-int TBL_M_initscript(int mid, str *initstr) {
+int TBL_M_initscript(oid mid, str *initstr) {
   char *p = BUNfnd(TBL_mod_load,&mid);
   int i, j;
   BUN b;
@@ -1308,7 +1318,7 @@ Lets do the things in the right order, see above!
     mid = TBL_M_load(&inst, client, module); /* generates a mid! */
     loaded = (mid != 0);
   }
-  dlFPRINTF(GDKerr, "  loaded = %d, mid = %d\n", loaded, mid);
+  dlFPRINTF(GDKerr, "  loaded = %d, mid = %ld\n", loaded, (long)mid);
 
   if (!loaded)
     goto xit;
@@ -1528,7 +1538,7 @@ char *TBL_search(str s, int *t, int command_hint) {
 	if ( name != NULL ) {
 	    p = BUNfnd(c->atomtbl, name);
 	    if (p != NULL) {
-		oid tpe = *((oid *) BUNtail(c->atomtbl, p));
+		int tpe = *((int *) BUNtail(c->atomtbl, p));
 	    	str atm = BATatoms[tpe].name; 
 	    	strcpy(s, atm);
 	    	*t = TOK_ATOM;
@@ -2150,10 +2160,10 @@ void TBL_incproc(Client client) {
 }
 
 @- TBL_delproc
-deletes a MIL procedure. If pid is less than 0 all procs with the 
+deletes a MIL procedure. If pid is nil all procs with the 
 given name are deleted.
 @c
-void TBL_delproc(Client client, str nme, int pid, int lock) {
+void TBL_delproc(Client client, str nme, oid pid, int lock) {
    	int xx, yy = TOK_PROC;
         BAT *sb, *tb, *bb, *cb = BATmirror(client->fcntbl);
 	BUN p,q;
@@ -2166,11 +2176,13 @@ void TBL_delproc(Client client, str nme, int pid, int lock) {
         bb = BATuselect(tb, &yy, &yy);
 	BBPreclaim(tb);
 
-	if (pid < 0){
+	if (pid == oid_nil) {
 	  BATloopFast(bb, p, q, xx) {
-	    oid pid = *(oid*) BUNhloc(bb, p);
-	    BUN s = BUNfnd(cb, &pid);
-	    int cnt = *(int*)BUNtail(TBL_fcn_cnt,BUNfnd(TBL_fcn_cnt, &pid));
+	    BUN s;
+	    int cnt;
+	    pid = *(oid*) BUNhloc(bb, p);
+	    s = BUNfnd(cb, &pid);
+	    cnt = *(int*)BUNtail(TBL_fcn_cnt,BUNfnd(TBL_fcn_cnt, &pid));
 
 	    if (cnt == 1){
 		YYSTREE *x = (YYSTREE*)
@@ -2477,7 +2489,7 @@ TBL_Install_Function(
   int zero = 0;
   oid fid = TBL_oid++;
 
-  dlFPRINTF(GDKerr, "  TBL_Install_Function(%d,%s) = %d\n", mid, name, fid);
+  dlFPRINTF(GDKerr, "  TBL_Install_Function(%ld,%s) = %ld\n", (long) mid, name, (long) fid);
 
   if (name[0] == 'b' && name[1] =='a' && name[2] == 't' && name[3] == 0) {
 	name = "BAT"; /* sorry */ 
@@ -2535,7 +2547,7 @@ void TBL_Deinstall_Function(oid pid) {
 
 /* Called after _Function */
 void TBL_Install_Function_Vararg(oid fid, str tpe) {
-  dlFPRINTF(GDKerr, "    TBL_Install_Function_Vararg(%d,%s)\n", fid, tpe);
+  dlFPRINTF(GDKerr, "    TBL_Install_Function_Vararg(%ld,%s)\n", (long) fid, tpe);
   BUNins(TBL_fcn_pro, &fid, tpe);
 }
 
@@ -2543,13 +2555,13 @@ void TBL_Install_Function_Vararg(oid fid, str tpe) {
 /* Called after _Function / _Vararg 
    This one would have to be called several times, once for each argument */
 void TBL_Install_Function_Arg(oid fid, str tpe) {
-  dlFPRINTF(GDKerr, "    TBL_Install_Function_Arg(%d,%s)\n", fid, tpe);
+  dlFPRINTF(GDKerr, "    TBL_Install_Function_Arg(%ld,%s)\n", (long) fid, tpe);
   BUNins(TBL_fcn_pro, &fid, tpe);
 }
 
 /* After _Arg */
 void TBL_Install_Function_Res(oid fid, str tpe) {
-  dlFPRINTF(GDKerr, "    TBL_Install_Function_Res(%d,%s)\n", fid, tpe);
+  dlFPRINTF(GDKerr, "    TBL_Install_Function_Res(%ld,%s)\n", (long) fid, tpe);
   BUNins(TBL_fcn_pro, &fid, tpe);
 }
 
@@ -2558,11 +2570,11 @@ Used for registering the MIL strings that are executed when a module
 is loaded and dropped.
 @c
 void TBL_Install_LoadMIL(oid mid, str mil) {
-  dlFPRINTF(GDKerr, "  TBL_Install_LoadMIL(%d,%s)\n", mid, mil);
+  dlFPRINTF(GDKerr, "  TBL_Install_LoadMIL(%ld,%s)\n", (long) mid, mil);
   if (mil) BUNins(TBL_mod_load, &mid, mil);
 }
 
 void TBL_Install_DropMIL(oid mid, str mil) {
-  dlFPRINTF(GDKerr, "  TBL_Install_DropMIL(%d,%s)\n", mid, mil);
+  dlFPRINTF(GDKerr, "  TBL_Install_DropMIL(%ld,%s)\n", (long) mid, mil);
   if (mil) BUNins(TBL_mod_drop, &mid, mil);
 }

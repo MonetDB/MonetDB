@@ -649,7 +649,6 @@ mathon:				math=1; ofile_puts("<i>");
 		char *p3 = p2, *p4;
 		while(p3<latexend && !*p3) p3++;
 	        if (i >= TYPE_BIB) { /* get a label or bibname */
-			extern char* inputdir;
 			for(p4=str; *p4++ = *p3; *p3++ = 0);
 			if (i == TYPE_BIB) {
 				strcpy(p4-1, ".bib");

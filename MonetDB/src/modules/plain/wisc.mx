@@ -212,7 +212,8 @@ WISCgenerator(
    int*         cnt    /* pointer to integer.*/
 )
 {
-	int	u1, u2, tmp;
+	int	u1, tmp;
+	oid	u2;
 	int	i;
 	BAT 	*b[16];
 
@@ -237,8 +238,8 @@ WISCgenerator(
 		b[0] = BUNins(b[0], &u2, &u1);
 	}
 	for (u2 = 0; u2 != count; u2++) {
-		u1 = rnd[u2];
-		b[1] = BUNins(b[1], &u2, &u2);
+		u1 = rnd[u2]; tmp = u2;
+		b[1] = BUNins(b[1], &u2, &tmp);
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];tmp = u1%2;
@@ -301,7 +302,7 @@ WISCgenerator(
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		u1 = rnd[u2];
-		b[14] = BUNins(b[14], &u2, rndStr(u2));
+		b[14] = BUNins(b[14], &u2, rndStr((int) u2));
 	}
 	for (u2 = 0; u2 != count; u2++) {
 		b[15] = BUNins(b[15], &u2, rnd4Str(u2));

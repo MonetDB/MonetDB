@@ -367,7 +367,7 @@ ostream &glue::gen_module( ostream &o, const Module &d ){
 	o << "#endif\n\n";
 	o << "typedef int (*fptr)();\n\n";
 
-	o << d.Name() << "_export int " << d.Name();
+	o << d.Name() << "_export oid " << d.Name();
 		o << "_Module_Install( TBLinstall *inst, str user );\n";
 	o << d.Name() << "_export int " << d.Name() << "_Module_Delete( str user );\n";
 
@@ -408,7 +408,7 @@ ostream &glue::gen_module( ostream &o, const Module &d ){
 	o << "    {(NULL)}};\n";
 	delete(l);
 
-	o << "int " << d.Name();
+	o << "oid " << d.Name();
 	o << "_Module_Install( TBLinstall *inst, str user ){\n";
 	o << "   oid mid = TBL_Install_Info( inst, user, \"" << d.Name();	
 	o << "\");\n";

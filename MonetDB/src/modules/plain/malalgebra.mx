@@ -99,8 +99,8 @@ gdk_export BAT* BAThashjoin(BAT* l, BAT* r);
 
 BAT*
 BATmalfetchjoin(BAT *l, BAT *r) {
-  int rfetch = (BAThdense(r) && ATOMstorage(l->ttype) <= TYPE_int);
-  int lfetch = (BATtdense(l) && ATOMstorage(r->htype) <= TYPE_int);
+  int rfetch = (BAThdense(r) && ATOMstorage(l->ttype) <= ATOMstorage(TYPE_oid));
+  int lfetch = (BATtdense(l) && ATOMstorage(r->htype) <= ATOMstorage(TYPE_oid));
 
   if (lfetch && !(rfetch && BATcount(l) < BATcount(r))) {
     return BATfetchjoin(l, r);

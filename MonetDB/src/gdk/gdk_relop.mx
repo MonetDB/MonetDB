@@ -333,20 +333,21 @@ The aftermath -- property setting -- is relatively straightforward here.
 @:SIMPLEput(lng)@
 
 @= bunfastins_nocheck_
-		H@1put(bn, (int*) BUNhloc(bn, dst));
-		T@2put(bn, (int*) BUNtloc(bn, dst));
+		H@1put(bn, BUNhloc(bn, dst));
+		T@2put(bn, BUNtloc(bn, dst));
 @c
 @= fetchjoin
 void densefetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 	BUN l_cur, l_end, r_cur, dst;
-	int xx,yy,zz, base, offset;
+	ptrdiff_t offset;
+	size_t base, xx, yy, zz;
 
         zz = BUNsize(bn);
 	yy = BUNsize(r);
         dst = BUNfirst(bn);
         base = BUNindex(r, BUNfirst(r));
         offset = base - r->hseqbase;
-	r_cur = BUNptr(r, offset + *(unsigned int*) BUNtail(l,BUNfirst(l)));
+	r_cur = BUNptr(r, offset + *(oid*) BUNtail(l,BUNfirst(l)));
 
 	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: densefetchjoin(@1,@2);\n");
 	BATloopFast(l, l_cur, l_end, xx) {
@@ -358,7 +359,8 @@ void densefetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 }
 void orderedfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 	BUN l_cur, l_end, r_cur, dst;
-	int xx,yy,zz, base, offset;
+	ptrdiff_t offset;
+	size_t base, xx, yy, zz;
 
         zz = BUNsize(bn);
         dst = BUNfirst(bn);
@@ -367,7 +369,7 @@ void orderedfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 
         ALGODEBUG THRprintf(GDKout, "BATfetchjoin: orderedfetchjoin(@1,@2);\n");
         BATloopFast(l, l_cur, l_end, xx) {
-                yy = offset + *(unsigned int*) BUNtail(l,l_cur);
+                yy = offset + *(oid*) BUNtail(l,l_cur);
                 r_cur = BUNptr(r, yy);
 		@:bunfastins_nocheck_(@1,@2)@
                 dst += zz;
@@ -376,7 +378,8 @@ void orderedfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 }
 void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 	BUN l_cur, l_end, r_cur, dst;
-	int xx,yy,zz, base, offset, end;
+	ptrdiff_t offset;
+	size_t xx,yy,zz, base, end;
 
         zz = BUNsize(bn);
 
@@ -387,7 +390,7 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 
         ALGODEBUG THRprintf(GDKout, "BATfetchjoin: defaultfetchjoin(@1,@2);\n");
         BATloopFast(l, l_cur, l_end, xx) {
-                yy = offset + *(unsigned int*) BUNtail(l,l_cur);
+                yy = offset + *(oid*) BUNtail(l,l_cur);
                 if (yy < base || yy >= end) {
                         continue;
                 }
@@ -419,10 +422,18 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
                 @1fetchjoin_@2_chr(bn,l,r);
         } else if (ATOMstorage(rtt) == TYPE_sht) {
                 @1fetchjoin_@2_sht(bn,l,r);
-        } else if (rtt != TYPE_bat && (ATOMstorage(rtt) == TYPE_int || ATOMstorage(rtt) == TYPE_flt || ATOMstorage(rtt) == TYPE_oid)) {
+        } else if (rtt != TYPE_bat && (ATOMstorage(rtt) == TYPE_int || ATOMstorage(rtt) == TYPE_flt
+#if SIZEOF_OID == SIZEOF_INT
+		   || ATOMstorage(rtt) == TYPE_oid
+#endif
+		   )) {
 	        /* ensure use of ATOMput for TYPE_bat */
                 @1fetchjoin_@2_int(bn,l,r);
-        } else if (ATOMstorage(rtt) == TYPE_lng || ATOMstorage(rtt) == TYPE_dbl) {
+        } else if (ATOMstorage(rtt) == TYPE_lng || ATOMstorage(rtt) == TYPE_dbl
+#if SIZEOF_OID == SIZEOF_LONG
+		   || ATOMstorage(lht) == TYPE_oid
+#endif
+) {
                 @1fetchjoin_@2_lng(bn,l,r);
         } else if (r->tvarsized) {
                 @1fetchjoin_@2_VATOM(bn,l,r);
@@ -435,10 +446,18 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
                 @:fetchjoin_switch_rtt(@1,chr)@
         } else if (ATOMstorage(lht) == TYPE_sht) {
                 @:fetchjoin_switch_rtt(@1,sht)@
-        } else if (lht != TYPE_bat && (ATOMstorage(lht) == TYPE_int || ATOMstorage(lht) == TYPE_flt || ATOMstorage(lht) == TYPE_oid)) {
+        } else if (lht != TYPE_bat && (ATOMstorage(lht) == TYPE_int || ATOMstorage(lht) == TYPE_flt
+#if SIZEOF_OID == SIZEOF_INT
+		   || ATOMstorage(lht) == TYPE_oid
+#endif
+		   )) {
                 /* ensure use of ATOMput for TYPE_bat */
                 @:fetchjoin_switch_rtt(@1,int)@
-        } else if (ATOMstorage(lht) == TYPE_lng || ATOMstorage(lht) == TYPE_dbl) {
+        } else if (ATOMstorage(lht) == TYPE_lng || ATOMstorage(lht) == TYPE_dbl
+#if SIZEOF_OID == SIZEOF_LONG
+		   || ATOMstorage(lht) == TYPE_oid
+#endif
+		   ) {
                 @:fetchjoin_switch_rtt(@1,lng)@
         } else if (l->hvarsized) {
                 @:fetchjoin_switch_rtt(@1,VATOM)@
@@ -448,10 +467,10 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 @c
 @= densevoidfetchjoin
     ALGODEBUG THRprintf(GDKout, "BATfetchjoin: densevoidfetchjoin(@1,@2,@3);\n");
-    r_cur = BUNptr(r, offset + *(unsigned int*) BUNtloc(l,BUNfirst(l)));
+    r_cur = BUNptr(r, offset + *(oid*) BUNtloc(l,BUNfirst(l)));
     yy = BUNsize(r);
     BATloopFast(l, l_cur, l_end, xx) {
-        @3put(@2, &bn->theap, (int*) dst, BUN@1(r, r_cur));
+        @3put(@2, &bn->theap, dst, BUN@1(r, r_cur));
         r_cur += yy;
         dst += zz;
     }
@@ -460,9 +479,9 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 @= orderedvoidfetchjoin
     ALGODEBUG THRprintf(GDKout, "BATfetchjoin: orderedvoidfetchjoin(@1,@2,@3);\n");
     BATloopFast(l, l_cur, l_end, xx) {
-        yy = offset + *(unsigned int*) BUNtloc(l,l_cur);
+        yy = offset + *(oid*) BUNtloc(l,l_cur);
         r_cur = BUNptr(r, yy);
-        @3put(@2, &bn->theap, (int*) dst, BUN@1(r, r_cur));
+        @3put(@2, &bn->theap, dst, BUN@1(r, r_cur));
         dst += zz;
     }
     bn->batBuns->free = dst - bn->batBuns->base;
@@ -470,7 +489,7 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 @= defaultvoidfetchjoin
     ALGODEBUG THRprintf(GDKout, "BATfetchjoin: defaultvoidfetchjoin(@1,@2,@3);\n");
     BATloopFast(l, l_cur, l_end, xx) {
-        yy = offset + *(unsigned int*) BUNtloc(l,l_cur);
+        yy = offset + *(oid*) BUNtloc(l,l_cur);
         if (yy < base || yy >= end) {
             bn->batBuns->free = dst - bn->batBuns->base;
             BBPreclaim(bn);
@@ -478,7 +497,7 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 	    break;
         }
         r_cur = BUNptr(r, yy);
-        @3put(@2, &bn->theap, (int*) dst, BUN@1(r, r_cur));
+        @3put(@2, &bn->theap, dst, BUN@1(r, r_cur));
         dst += zz;
     }
     if (nondense) {
@@ -488,13 +507,13 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
         dst = BUNfirst(bn);
         zz = BUNsize(bn);
         BATloopFast(l, l_cur, l_end, xx) {
-                yy = offset + *(unsigned int*) BUNtail(l,l_cur);
+                yy = offset + *(oid*) BUNtail(l,l_cur);
                 if (yy < base || yy >= end) {
                         continue;
                 }
                 r_cur = BUNptr(r, yy);
-		ATOMput(bn->htype, &bn->hheap, (int*) BUNhloc(bn, dst), BUNhead(l, l_cur));
-		@3put(  @2,        &bn->theap, (int*) BUNtloc(bn, dst), BUN@1(  r, r_cur));
+		ATOMput(bn->htype, &bn->hheap, BUNhloc(bn, dst), BUNhead(l, l_cur));
+		@3put(  @2,        &bn->theap, BUNtloc(bn, dst), BUN@1(  r, r_cur));
                 dst += zz;
         }    	
     }
@@ -551,7 +570,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
         end = base + BATcount(r);
 	/* only BUNhead crashes on empty bats with TYPE != virtual oid */
 	seqbase = (l->htype == TYPE_void)?l->hseqbase:
-			(BATcount(l)?*(oid*) BUNhead(l,BUNfirst(l)):oid_nil);
+			(BATcount(l)?(l->htype==TYPE_int?(oid)*(int*)BUNhead(l,BUNfirst(l)):(l->htype==TYPE_oid?*(oid*)BUNhead(l,BUNfirst(l)):(l->htype==TYPE_lng?(oid)*(lng*)BUNhead(l,BUNfirst(l)):oid_nil))):oid_nil);
 @
         @:joinestimate(JOIN_EQ, BATfetchjoin(l,r), estimate)@
 @c
@@ -1243,7 +1262,8 @@ This implementation is dirty as it also allows fetches with
 hard integer positions, rather than oid matching on a dense-oid column.
 @c
 BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy) {
-	int denselookup, base, end, offset, xx, yy;
+	int denselookup, base, end, offset, xx;
+	oid yy;
 	BUN l_cur, l_end, r_cur;
         BAT *bn;
 
@@ -1254,7 +1274,7 @@ BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy) {
 	if (denselookup && !BAThdense(r)) {
                 GDKerror("BATfetchsemijoin: left column must be dense.\n");
                 return NULL;
-        } else if (ATOMstorage(l->htype) != TYPE_int) {
+        } else if (ATOMstorage(l->htype) != ATOMstorage(TYPE_oid)) {
 		GDKerror("BATfetchsemijoin: illegal index type %s.\n", ATOMname(l->htype));
                 return NULL;
 	}
@@ -1283,7 +1303,7 @@ BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy) {
 
 	/* iterate r; positional fetch in l */
         BATloopFast(l, l_cur, l_end, xx) {
-		yy = offset + *(int*) BUNhloc(l,l_cur);
+		yy = offset + *(oid*) BUNhloc(l,l_cur);
                	if (yy < base || yy >= end) {
 			continue;
                	}
@@ -1347,8 +1367,8 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATrcopy(l);\n");
 		bn = BATrcopy(l);	
 	} else if ((BAThordered(l)&1) && BAThdense(r)) {
-		int lo = r->hseqbase;
-                int hi = r->hseqbase + countr - 1;
+		oid lo = r->hseqbase;
+                oid hi = r->hseqbase + countr - 1;
 		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATmirror(BATselect(BATmirror(l), &lo, &hi));\n");
 		bn = BATmirror(BATselect(BATmirror(l), &lo, &hi)); 
 	} else if (BAThdense(r)) {

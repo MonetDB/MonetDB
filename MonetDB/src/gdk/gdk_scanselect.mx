@@ -378,7 +378,11 @@ Taking special care of void/oid.
 */
 @= DEFseqscanHTget
 	@:DEFseqscan(@1,@2,@3,@4,@5,void,void,&oid_ctr,)@
+#if SIZEOF_OID == SIZEOF_INT
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,oid,int,&oid_ctr,oid_ctr++;)@
+#else
+	@:DEFseqscanTTput(@1,@2,@3,@4,@5,oid,lng,&oid_ctr,oid_ctr++;)@
+#endif
 	@:DEFseqscanHTput(@1,@2,@3,@4,@5)@
 @= seqscanHTget
         if (BAThvoid(b)) {
@@ -392,7 +396,11 @@ Taking special care of void/oid.
                 @:seqscan(@1,@2,@3,@4,@5,void,void,&oid_ctr,)@
             } else {
                 /* increment instead of compute BUNpos */
+#if SIZEOF_OID == SIZEOF_INT
                 @:seqscanTTput(@1,@2,@3,@4,@5,oid,int,&oid_ctr,oid_ctr++;)@
+#else
+                @:seqscanTTput(@1,@2,@3,@4,@5,oid,lng,&oid_ctr,oid_ctr++;)@
+#endif
             }
         } else {
 	    /* output-head is identical to input-head. */

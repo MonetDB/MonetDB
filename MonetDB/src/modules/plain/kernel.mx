@@ -342,7 +342,7 @@ int CMDsetoid(Cntxt stk, YYSTREE lt, ValPtr res){
         if (lt->cnt == 0) {
             res->val.oval = OIDbase(1);
         } else {
-            int *inc;
+            oid *inc;
             @:builtin_operand(0, TYPE_oid, inc)@
             res->val.oval = OIDbase(*inc);
         }

@@ -37,8 +37,6 @@
 #ifndef SO_EXT
 #define SO_EXT ".so"
 #endif
-static size_t SO_EXT_LEN;	/* length of SO_EXT string, will be
-				   filled in before use */
 
 /* 
  * prototypes 
@@ -62,6 +60,8 @@ char *MSP_next_module();
 #include <sys/param.h>
 #endif
 
+static size_t SO_EXT_LEN;	/* length of SO_EXT string, will be
+				   filled in before use */
 
 struct moddir {
     char *path;
@@ -214,7 +214,8 @@ char *MSP_locate_module(char *mod_name) {
             next_module=MSP_next_module();
             if (!next_module) break;
 	    fulllen = strlen(next_module);
-            if ( next_module[fulllen-len-1] == DIR_SEP &&
+            if ( fulllen > len &&
+		 next_module[fulllen-len-1] == DIR_SEP &&
 		 !strcmp(&next_module[fulllen-len],name))
                 {
 		    if (!SO_EXT_LEN)

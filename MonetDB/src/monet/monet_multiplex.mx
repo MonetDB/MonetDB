@@ -1575,20 +1575,26 @@ call and we have the additional knowledge (through the atom heap trick) that:
 	    nested->batDeleted = nested->batHole = batbuns->base;
 	    nested->batInserted = batbuns->base + bunsize;
         } 
-	if (bunsize == 4) { 
-	    if (b->ttype == TYPE_void) { /* OIDDEPEND */
-	        *(int*) (batbuns->base + batbuns->free) = voiddelta + @2;
-	    } else { 
+	if (bunsize == SIZEOF_OID) {
+		if (b->ttype == TYPE_void) {
+			*(oid*) (batbuns->base + batbuns->free) = voiddelta + @2;
+		} else {
+#if SIZEOF_OID == SIZEOF_INT
+		        *(int*) (batbuns->base + batbuns->free) = *(int*) BUNtloc(b,@1);
+#else
+		        *(lng*) (batbuns->base + batbuns->free) = *(lng*) BUNtloc(b,@1);
+#endif
+		}
+#if SIZEOF_OID != SIZEOF_INT
+	} else if (bunsize == SIZEOF_INT) {
 	        *(int*) (batbuns->base + batbuns->free) = *(int*) BUNtloc(b,@1);
-	    }
-	} else {
-	    if (bunsize > 4) {
+#endif
+	} else if (bunsize > SIZEOF_INT) {
 		memcpy(batbuns->base + batbuns->free, BUNtloc(b,@1), bunsize);
-	    } else if (bunsize == 1) {
+	} else if (bunsize == 1) {
 		*(chr*) (batbuns->base + batbuns->free) = *(chr*) BUNtloc(b,@1);
-	    } else {
+	} else {
 		*(sht*) (batbuns->base + batbuns->free) = *(sht*) BUNtloc(b,@1);
-	    }
 	}
 	batbuns->free += bunsize;
 @}

@@ -137,6 +137,8 @@ of the server before continuing
 	add_history(start_cmd);					\
         *message = 0; m_index = 0;				\
 }
+
+#include <readline/readline.h>
 #else
 #define SEND_MESSAGE(mid)	{				\
 	message[m_index++] = '\n';				\

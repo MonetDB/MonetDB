@@ -196,11 +196,20 @@ INLINE int  batFix(bat* b)     { return BBPpersistent(*b,FALSE); }
 INLINE int  batUnfix(bat* b)   { return BBPtransient(*b,FALSE); }
 
 atomDesc BATatoms[MAXATOMS] = {
-  { "void",  	TYPE_void, 1, 0, /* sizeof(@`void@7) */ 0, 1, (ptr) &int_nil, 
+  { "void",
+#if SIZEOF_OID == SIZEOF_INT
+  		TYPE_void, 1, 0,       /* sizeof(@`void@7) */ 0, 1, (ptr) &int_nil, 
 		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
 		(void *(*)(void *, stream *, size_t)) voidRead, (void (*)(void *, stream *, size_t)) voidWrite,
  		(int (*)(ptr, ptr)) intCmp,
  		(unsigned int (*)(ptr)) intHash, 	0,
+#else
+  		TYPE_void, 1, 0,       /* sizeof(@`void@7) */ 0, 1, (ptr) &lng_nil, 
+		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
+		(void *(*)(void *, stream *, size_t)) voidRead, (void (*)(void *, stream *, size_t)) voidWrite,
+ 		(int (*)(ptr, ptr)) lngCmp,
+ 		(unsigned int (*)(ptr)) lngHash, 	0,
+#endif
  		0,			0,
  		0,			0,
  		0,			0,
@@ -269,18 +278,18 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0,
  		0,			0},
   { "ptr",
-#if SIZEOF_LONG==8
-  		TYPE_lng, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &lng_nil,
-		(int (*)(str, int*, ptr*)) @`ptrFromStr@5,	(int (*)(str*, int*, ptr)) @`ptrToStr@5,
-		(void *(*)(void *, stream *, size_t)) ptrRead, (void (*)(void *, stream*, size_t)) ptrWrite,
-	 	(int (*)(ptr, ptr)) lngCmp,		
-		(unsigned int (*)(ptr)) lngHash,	(void (*)(ptr, int)) lngConvert,	
-#else
+#if SIZEOF_VOID_P == SIZEOF_INT
 		TYPE_int, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &int_nil,
 		(int (*)(str, int*, ptr*)) @`ptrFromStr@5,	(int (*)(str*, int*, ptr)) @`ptrToStr@5,
 		(void *(*)(void *, stream *, size_t)) ptrRead, (void (*)(void *, stream*, size_t)) ptrWrite,
 	 	(int (*)(ptr, ptr)) intCmp,		
 		(unsigned int (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,	
+#else /* SIZEOF_VOID_P == SIZEOF_LONG */
+  		TYPE_lng, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &lng_nil,
+		(int (*)(str, int*, ptr*)) @`ptrFromStr@5,	(int (*)(str*, int*, ptr)) @`ptrToStr@5,
+		(void *(*)(void *, stream *, size_t)) ptrRead, (void (*)(void *, stream*, size_t)) ptrWrite,
+	 	(int (*)(ptr, ptr)) lngCmp,		
+		(unsigned int (*)(ptr)) lngHash,	(void (*)(ptr, int)) lngConvert,	
 #endif
 		0, 		0,
 		0, 		0,
@@ -557,10 +566,10 @@ gdk_export str		str_nil;
 
 /* derived NIL values - OIDDEPEND */
 #define bit_nil	((bit) chr_nil)
-#if SIZEOF_LONG==8
-#define ptr_nil	((ptr) lng_nil)
-#else
+#if SIZEOF_VOID_P == SIZEOF_INT
 #define ptr_nil	((ptr) int_nil)
+#else /* SIZEOF_VOID_P == SIZEOF_LONG */
+#define ptr_nil	((ptr) lng_nil)
 #endif
 #define bat_nil	((bat) int_nil)
 #if SIZEOF_OID == SIZEOF_INT
@@ -1099,10 +1108,10 @@ int ptrFromStr(char* src, int * len, ptr **dst) {
 	return p-src;
 }
 @:atomtostr(ptr,%lx,unsigned long)@
-#if SIZEOF_LONG==8
-@:atom_io(ptr,Lng,lng)@
-#else
+#if SIZEOF_VOID_P == SIZEOF_INT
 @:atom_io(ptr,Int,int)@
+#else /* SIZEOF_VOID_P == SIZEOF_LONG */
+@:atom_io(ptr,Lng,lng)@
 #endif
 
 int dblFromStr(char* src, int* len, dbl **dst) {
@@ -1459,9 +1468,9 @@ int strFromStr(char *src, int *len, char** dst) {
 				   (cur[1] >= '0' && cur[1] <= '7') &&
 				   (cur[2] >= '0' && cur[2] <= '7'))
 			{
-				*p++ =  (cur[2] & 7 	  | 
-				       ((cur[1] & 7) <<3) | 
-				       ((cur[0] & 7) <<6));
+				*p++ =  (cur[2] & 7) 	 | 
+				       ((cur[1] & 7) <<3)| 
+				       ((cur[0] & 7) <<6);
 				cur += 2;
 			} else {
 			        *p++ = *cur;
@@ -1573,7 +1582,7 @@ oid OIDbase(oid o){
 	return o;
 }
 
-oid OIDseed(unsigned int o) {
+oid OIDseed(oid o) {
 	oid t, p = GDKoid;
 
 	MT_set_lock(MT_system_lock, "OIDseed");

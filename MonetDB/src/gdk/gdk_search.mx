@@ -112,13 +112,17 @@ gdk_export int 		HASHlist     (Hash* h, int i) ;
 @:hashfnd(int)@
 @:hashfnd(lng)@
 
-#if SIZEOF_LONG==8 
-#define HASHfnd_ptr(x,y,z)	HASHfnd_lng(x,y,z)
-#else
+#if SIZEOF_VOID_P == SIZEOF_INT
 #define HASHfnd_ptr(x,y,z)	HASHfnd_int(x,y,z)
+#else /* SIZEOF_VOID_P == SIZEOF_LONG */
+#define HASHfnd_ptr(x,y,z)	HASHfnd_lng(x,y,z)
 #endif
 #define HASHfnd_bit(x,y,z)	HASHfnd_chr(x,y,z)
-#define HASHfnd_oid(x,y,z)	HASHfnd_int(x,y,z) /* OIDDEPEND */
+#if SIZEOF_OID == SIZEOF_INT	/* OIDDEPEND */
+#define HASHfnd_oid(x,y,z)	HASHfnd_int(x,y,z)
+#else
+#define HASHfnd_oid(x,y,z)	HASHfnd_lng(x,y,z)
+#endif
 #define HASHfnd_flt(x,y,z)	HASHfnd_int(x,y,z)
 #define HASHfnd_dbl(x,y,z)	HASHfnd_lng(x,y,z)
 #define HASHfnd_any(x,y,z)	HASHfnd(x,y,z)
@@ -137,13 +141,17 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 	h.link[i] = h.hash[_c];\
 	h.hash[_c] = i; }
 
-#if SIZEOF_LONG==8 
-#define HASHins_ptr(h,i,v)	HASHins_lng(h,i,v)
-#else
+#if SIZEOF_VOID_P == SIZEOF_INT
 #define HASHins_ptr(h,i,v)	HASHins_int(h,i,v)
+#else /* SIZEOF_VOID_P == SIZEOF_LONG */
+#define HASHins_ptr(h,i,v)	HASHins_lng(h,i,v)
 #endif
 #define HASHins_bit(h,i,v)	HASHins_chr(h,i,v)
-#define HASHins_oid(h,i,v)	HASHins_int(h,i,v) /* OIDDEPEND */
+#if SIZEOF_OID == SIZEOF_INT	/* OIDDEPEND */
+#define HASHins_oid(h,i,v)	HASHins_int(h,i,v)
+#else
+#define HASHins_oid(h,i,v)	HASHins_lng(h,i,v)
+#endif
 #define HASHins_flt(h,i,v)	HASHins_int(h,i,v)
 #define HASHins_dbl(h,i,v)	HASHins_lng(h,i,v)
 #define HASHins_str(h,i,v)	HASHins(h,i,v)

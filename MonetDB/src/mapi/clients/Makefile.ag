@@ -23,7 +23,7 @@
 
 
 MTSAFE
-INCLUDES = ../../common 
+INCLUDES = ../../common $(READLINE_INCS)
 
 MAPI_LIBS = $(SOCKET_LIBS) 
 
@@ -50,7 +50,7 @@ jar_mapi = {
 
 BINS = {
 	SOURCES = MapiClient.mx
-	LIBS = libMapi $(MAPI_LIBS) \	
+	LIBS = libMapi $(MAPI_LIBS) \
 		../../common/libmutils ../../common/libstream
 	MapiClient_LIBS = libMapi $(MAPI_LIBS) $(READLINE_LIBS) \
 		../../common/libmutils ../../common/libstream

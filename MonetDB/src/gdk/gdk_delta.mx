@@ -160,10 +160,10 @@ BAT *BATcommit(BAT *b) {
 			ptr t = BUNtail(b,p);
 
 			if (hatmdel) {
-				(*hatmdel)(&b->hheap,(int*)(p+b->hloc));
+				(*hatmdel)(&b->hheap,(int*)(h));
 			}
 			if (tatmdel) {
-				(*tatmdel)(&b->theap,(int*)(p+b->tloc));
+				(*tatmdel)(&b->theap,(int*)(t));
 			}
 		}}
 	}

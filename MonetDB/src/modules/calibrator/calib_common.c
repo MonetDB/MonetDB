@@ -27,9 +27,12 @@
 *              COMMON DEFINITIONS AND FUNCTIONS                             *
 \***************************************************************************/
 
+#undef VERSION
 #define VERSION "0.9i"
 
+#undef MIN
 #define	MIN(a,b)	(a<b?a:b)
+#undef MAX
 #define	MAX(a,b)	(a>b?a:b)
 #define NOABS(x)	((calibdbl)x)
 #define FABS		fabs

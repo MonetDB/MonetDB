@@ -422,8 +422,8 @@ below.  The global variables should not be modified directly.
 typedef signed char	bit; 		
 typedef signed char	chr; 		
 typedef short		sht;
-typedef unsigned int	oid; 		
-#define SIZEOF_OID	SIZEOF_INT
+typedef unsigned long	oid; 		
+#define SIZEOF_OID	SIZEOF_LONG
 typedef int		bat; 		/* Index into BBP */
 typedef void*		ptr; 		/* Internal coding of types */
 typedef float		flt; 		
@@ -760,13 +760,13 @@ typedef struct {
 	int		stamp;		/* BAT recent creation stamp */
 	sht		set;  		/* real set semantics */
 	sht		restricted;	/* access priviliges */
-	int 		tid;		/* which thread created it */
+	MT_Id 		tid;		/* which thread created it */
 	unsigned int	lastused;	/* timestamp when last used */
 	chr 		convert;	/* endian-conversion needed? */
 	chr 		dirty;		/* general dirty marker */
         chr             descdirty;  	/* bat descriptor dirty marker */
         chr             bunsdirty;  	/* bun heap dirty marker */
-	int		parentid;	/* cache id of VIEW parent bat */ 
+	bat		parentid;	/* cache id of VIEW parent bat */ 
 } BATrec;
 
 #endif /* !BAT32IMAGE */
@@ -1138,8 +1138,8 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 @h
 #define bunfastins_nocheck(b, p, h, t, s) {\
             (b)->batBuns->free += s;\
-            ATOMput((b)->htype, &(b)->hheap, (int*) BUNhloc(b, p), h);\
-            ATOMput((b)->ttype, &(b)->theap, (int*) BUNtloc(b, p), t);\
+            ATOMput((b)->htype, &(b)->hheap, BUNhloc(b, p), h);\
+            ATOMput((b)->ttype, &(b)->theap, BUNtloc(b, p), t);\
 	}
 
 #define bunfastins(b, h, t) {\
@@ -1852,7 +1852,7 @@ Derived from that:
 gdk_export int      	OIDinit  ();
 gdk_export oid		OIDrand  ();
 gdk_export oid      	OIDbase  (oid base);
-gdk_export oid      	OIDseed  (unsigned int seed);
+gdk_export oid      	OIDseed  (oid seed);
 gdk_export oid      	OIDnew   (int inc);
 gdk_export int      	OIDread  (str buf);
 gdk_export int      	OIDwrite (stream *fp);
@@ -2236,9 +2236,9 @@ gdk_export void*    THRdata[16];
 #ifdef __cplusplus
 extern "C" {
 #endif
-static INLINE int BBPcheck(REGISTER int x, REGISTER str y) {
-	if (x && x != int_nil) {
-	    REGISTER int z = ABS(x);
+static INLINE int BBPcheck(REGISTER bat x, REGISTER str y) {
+	if (x && x != bat_nil) {
+	    REGISTER bat z = ABS(x);
 	    if (z > BBPsize || BBP[z].nme[0] == NULL) {
 		GDKwarning("%s: range error %d\n", y, x);
 	    } else  {
@@ -2248,7 +2248,7 @@ static INLINE int BBPcheck(REGISTER int x, REGISTER str y) {
 	return 0;
 }
 
-static INLINE BAT* BATdescriptor(REGISTER int i) {
+static INLINE BAT* BATdescriptor(REGISTER bat i) {
 	REGISTER BAT *b = NULL;
 	if (BBPcheck(i,"BATdescriptor")) {
 		b = BBP_cache(i);
@@ -2633,10 +2633,10 @@ speed) which already points at the current BUN (i.e. w == @%BUNptr(b,hb)@).
 @:hashloop(oid,lng,simple,lng,hloc)@ /* OIDDEPEND */
 #endif
 @:hashloop(bat,int,simple,int,hloc)@
-#if SIZEOF_LONG==8
-@:hashloop(ptr,lng,simple,lng,hloc)@
-#else
+#if SIZEOF_VOID_P == SIZEOF_INT
 @:hashloop(ptr,int,simple,int,hloc)@
+#else /* SIZEOF_VOID_P == SIZEOF_LONG */
+@:hashloop(ptr,lng,simple,lng,hloc)@
 #endif
 @:hashloop(flt,int,simple,int,hloc)@
 @:hashloop(lng,lng,simple,lng,hloc)@
@@ -2697,6 +2697,7 @@ position after the  last occurence of that value.
 #define IDXend(b,p,q)	for (p = IDXlast(b)-1; p >= q; p--)
 
 /* OIDDEPEND */
+#if SIZEOF_OID == SIZEOF_INT
 #define SORTfnd_oid(b,v)	SORTfnd_int(b,v) 
 #define SORTfndfirst_oid(b,v)	SORTfndfirst_int(b,v) 
 #define SORTfndlast_oid(b,v)	SORTfndlast_int(b,v) 
@@ -2704,6 +2705,15 @@ position after the  last occurence of that value.
 #define IDXfndfirst_oid(b,v)	IDXfndfirst_int(b,v)
 #define IDXfndlast_oid(b,v)	IDXfndlast_int(b,v)
 #define SORTloop_oid(b,p,q,tl,th,s) SORTloop_int(b,p,q,tl,th,s) 
+#else
+#define SORTfnd_oid(b,v)	SORTfnd_lng(b,v) 
+#define SORTfndfirst_oid(b,v)	SORTfndfirst_lng(b,v) 
+#define SORTfndlast_oid(b,v)	SORTfndlast_lng(b,v) 
+#define IDXfnd_oid(b,v)		IDXfnd_lng(b,v)
+#define IDXfndfirst_oid(b,v)	IDXfndfirst_lng(b,v)
+#define IDXfndlast_oid(b,v)	IDXfndlast_lng(b,v)
+#define SORTloop_oid(b,p,q,tl,th,s) SORTloop_lng(b,p,q,tl,th,s) 
+#endif
 #define SORTloop_bit(b,p,q,tl,th,s) SORTloop_chr(b,p,q,tl,th,s) 
 @T
 We should not forget to mention the use of the 

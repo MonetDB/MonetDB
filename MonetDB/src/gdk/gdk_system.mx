@@ -354,7 +354,7 @@ int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
 }
 
 void MT_global_exit(int s) {
-#if 0
+#ifdef HAVE_PTHREAD_KILL_OTHER_THREADS_NP
 	/*(void) kill(0, SIGHUP);*/
 	pthread_kill_other_threads_np();
 #endif
@@ -370,7 +370,7 @@ void MT_exit_thread(int s) {
 
 int MT_kill_thread (MT_Id t) {
 #ifdef HAVE_PTHREAD_KILL
-	long id = (long)t-1;
+	thread_t id = (thread_t)(t-1);
 	return pthread_kill((pthread_t)id, SIGHUP);
 #else
 	return -1;		/* XXX */
@@ -507,7 +507,7 @@ MT_Id MT_getpid(){
 
 int MT_alive(int pid) {
 #ifdef HAVE_GETPGID
-	int st = getpgid(pid);
+	pid_t st = getpgid(pid);
 	return (st >= 0 && st != ESRCH);
 #else
 	return 0;		/* XXX */

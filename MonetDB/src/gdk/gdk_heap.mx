@@ -474,8 +474,8 @@ typedef struct hfblock
    unsigned int next;		/* index of next block 			*/
 } CHUNK;
 @c
-#define roundup_8(x)	(((((x)-1)>>3)+1)<<3)
-#define roundup_4(x)	(((((x)-1)>>2)+1)<<2)
+#define roundup_8(x)	(((((x)-1)>>3)+1)<<3) /* (((x)+7)&~7) */
+#define roundup_4(x)	(((((x)-1)>>2)+1)<<2) /* (((x)+3)&~3) */
 #define callfcn(h,p)    ((((size_t) (h)->sizefcn) < 65536)?(BATSIGcrash(0),0):(*(h)->sizefcn)(p))
 #define blocksize(h,p)	((h)->sizefcn?callfcn(h,p):(p)->size) 
 
@@ -808,7 +808,7 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
    HEADER* hheader = HEAP_index(heap,0,HEADER);
    size_t head = hheader->head, alignshift = 2;
    size_t block, nwords = (heap->free-1)>>7;
-   size_t *freemask, prevblock = 0;
+   unsigned int *freemask, prevblock = 0;
    CHUNK* blockp;
 
    hr->alignment = hheader->alignment;
@@ -831,8 +831,8 @@ int HEAP_check(Heap *heap, HeapRepair *hr) {
    /*
     // Create bitmasks that will hold all valid block positions
     */
-   hr->validmask = (unsigned int*) GDKmalloc(sizeof(size_t) * ++nwords);
-   freemask = (size_t*) GDKmalloc(sizeof(size_t) * nwords);
+   hr->validmask = (unsigned int*) GDKmalloc(sizeof(unsigned int) * ++nwords);
+   freemask = (unsigned int*) GDKmalloc(sizeof(unsigned int) * nwords);
    for(block=0; block<nwords; block++) 
 	freemask[block] = hr->validmask[block] = 0;
 
