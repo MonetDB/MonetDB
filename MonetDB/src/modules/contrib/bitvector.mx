@@ -349,8 +349,8 @@ bitvector_or(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 
   /* Copy the tail, when required */
   if (p1 < q1 || p2 < q2) {
-    BUN p, q;
-    BAT *b_src;
+    BUN p = NULL, q = NULL;
+    BAT *b_src = NULL;
 
     if (p1 < q1) {
       assert(p2 == q2);
