@@ -1,0 +1,4 @@
+stderr of test 'bat_insert` in directory 'monet/src/gdk` itself:
+
+#> Mtest (18:51:37):	milM bat_insert milM
+#> Mtest (18:51:37):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db monet_src_gdk bat_insert.milM
