@@ -5,9 +5,9 @@ stdout of test 'bug-00001` in directory 'src/test/bugs` itself:
 # 16:14:55 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_PREFIX__GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX__GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX__GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX__GNU_32_d__/var/MonetDB/log" --set mapi_port=45373 --set sql_port=50816 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/var/tmp/_BUILD_SQL_GNU_32_d__/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
 # 16:14:55 >  
 
-# Monet Database Server V4.3.19
+# Monet Database Server V4.5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
@@ -24,69 +24,69 @@ Over..
 # 3 # querytype
 #  # table_name
 # single_value # name
-# decimal # type
-# 0 # length
-# 1 # tuplecount
-# 0 # id
-[ 1	]
-# 6 # querytype
-# 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# smallint # type
+# 2 # length
 # 1 # tuplecount
 # 1 # id
 [ 1	]
+# 6 # querytype
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 2 # id
+[ 1	]
+# 4 # querytype
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
+# 1 # tuplecount
+# 3 # id
 [ 1	]
 # 3 # querytype
 #  # table_name
 # single_value # name
-# decimal # type
-# 0 # length
-# 1 # tuplecount
-# 3 # id
-[ 1	]
-# 6 # querytype
-# 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# smallint # type
+# 2 # length
 # 1 # tuplecount
 # 4 # id
 [ 1	]
+# 6 # querytype
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 5 # id
+[ 1	]
+# 4 # querytype
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
+# 1 # tuplecount
+# 6 # id
 [ 1	]
 # 3 # querytype
 # ff,	ff # table_name
 # id,	name # name
-# mediumint,	varchar # type
-# 0,	6 # length
+# int,	varchar # type
+# 11,	6 # length
 # 2,	 # tuplecount
-# 6,	 # id
+# 7,	 # id
 [ 1,	"Tim"	]
 [ 2,	"Jochem"	]
 # 3 # querytype
 #  # table_name
 # sql_sub_single_value # name
-# decimal # type
-# 0 # length
+# smallint # type
+# 2 # length
 # 1 # tuplecount
-# 7 # id
+# 8 # id
 [ 15	]
 # 3 # querytype
 # ptables,	ptables,	ptables,	ptables,	ptables # table_name
@@ -122,45 +122,45 @@ Over..
 # 7 # querytype
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
-# 9 # id
-[ 1	]
-# 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 10 # id
 [ 1	]
+# 4 # querytype
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
+# 1 # tuplecount
+# 11 # id
+[ 1	]
 # 3 # querytype
 # r # table_name
 # i # name
 # int # type
-# 0 # length
+# 11 # length
 # 2 # tuplecount
-# 11 # id
+# 12 # id
 [ 1	]
 [ 2	]
 # 4 # querytype
-#  # table_name
-# count_convert_i # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
 # 1 # tuplecount
-# 12 # id
+# 13 # id
 [ 1	]
 # 3 # querytype
 # r # table_name
 # i # name
 # int # type
-# 0 # length
+# 11 # length
 # 1 # tuplecount
-# 13 # id
+# 14 # id
 [ 1	]
 # 7 # querytype
 # 7 # querytype
@@ -197,76 +197,76 @@ Over..
 [ "s4",	NULL,	true,	false,	false	]
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
-# 15 # id
-[ 1	]
-# 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 16 # id
+[ 1	]
+# 4 # querytype
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
+# 1 # tuplecount
+# 17 # id
 [ 1	]
 # 7 # querytype
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
-# 17 # id
-[ 1	]
-# 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 18 # id
 [ 1	]
 # 4 # querytype
-#  # table_name
-# count_convert_i # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 19 # id
+[ 1	]
+# 4 # querytype
+# affected # table_name
+# rows # name
+# int # type
+# 11 # length
+# 1 # tuplecount
+# 20 # id
 [ 1	]
 # 3 # querytype
 # r # table_name
 # i # name
 # int # type
-# 0 # length
+# 11 # length
 # 1 # tuplecount
-# 20 # id
+# 21 # id
 [ 1	]
 # 7 # querytype
 # 7 # querytype
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
-# 21 # id
+# 22 # id
 [ 1	]
 # 7 # querytype
 # 6 # querytype
 # 7 # querytype
 # 3 # querytype
-# tables,	,	,	 # table_name
+# ptables,	,	,	 # table_name
 # name,	single_value,	single_value,	single_value # name
-# varchar,	decimal,	decimal,	decimal # type
-# 11,	0,	0,	0 # length
-# 21,	,	,	 # tuplecount
-# 22,	,	,	 # id
+# varchar,	smallint,	smallint,	smallint # type
+# 10,	2,	2,	2 # length
+# 25,	,	,	 # tuplecount
+# 23,	,	,	 # id
 [ "modules",	1,	2,	3	]
 [ "schemas",	1,	2,	3	]
 [ "ptables",	1,	2,	3	]
