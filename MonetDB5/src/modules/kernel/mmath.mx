@@ -240,10 +240,8 @@ quit;
 
 @* Implementation Code
 @c
-
 #include "mmath.h"
 #include <math.h>
-#include "mal.h"
 
 extern double sqrt(double x);
 extern double cbrt(double x);
@@ -275,6 +273,82 @@ extern double fabs(double x);
 #define floor_unary(x, z)     *z = floor(*x)
 #define fmod_binary(x, y, z)  *z = fmod(*x,*y)
 
+@:unop(_ACOS,acos)@
+@:unop(_ASIN,asin)@
+@:unop(_ATAN,atan)@
+@:binop(_ATAN2,atan2)@
+@:unop(_COS,cos)@
+@:unop(_SIN,sin)@
+@:unop(_TAN,tan)@
+
+@:unop(_COSH,cosh)@
+@:unop(_SINH,sinh)@
+@:unop(_TANH,tanh)@
+
+@:unop(_EXP,exp)@
+@:unop(_LOG,log)@
+@:unop(_LOG10,log10)@
+
+@:binop(_POW,pow)@
+@:unop(_SQRT,sqrt)@
+
+@:unop(_CEIL,ceil)@
+@:unop(_FABS,fabs)@
+@:unop(_FLOOR,floor)@
+@:binop(_FMOD,fmod)@
+
+@= unop
+int math_unary@1(dbl *res , dbl *a ) {
+#ifdef DEBUG
+	printf( "math_unary@1\n");
+#endif
+   if (*a == dbl_nil) {
+	*res = dbl_nil;
+   } else {
+	@2_unary( a, res );
+   }
+   return(GDK_SUCCEED);
+}
+@
+
+@= binop
+int math_binary@1(dbl *res, dbl *a, dbl *b ) {
+#ifdef DEBUG
+	printf( "math_binary@1\n");
+#endif
+   if (*a == dbl_nil || *b == dbl_nil) {
+	*res = dbl_nil;
+   } else {
+	@2_binary( a, b, res);
+   }
+   return(GDK_SUCCEED);
+}
+@
+
+@c
+int math_binary_ROUND(dbl *res, dbl *x, int *y) {
+  if(*x == dbl_nil || *y == int_nil) {
+    *res = dbl_nil;
+  } else {
+    double factor = pow(10,*y), integral;
+    double tmp = *y>0?modf(*x,&integral):*x;
+
+    tmp *= factor;
+    if(tmp>=0)
+      tmp = floor(tmp+0.5);
+    else
+      tmp = ceil(tmp-0.5);
+    tmp /= factor;
+
+    if(*y>0)
+      tmp += integral;
+
+    *res = tmp;
+  }
+
+  return(GDK_SUCCEED);
+}
+
 #ifdef NATIVE_WIN32
 #include <float.h>
 /* Windows spells these differently */
@@ -291,15 +365,24 @@ extern double fabs(double x);
 #endif
 
 #if defined(HAVE_FPCLASSIFY) || defined(fpclassify)
+
 /* C99 interface: fpclassify */
-#undef isinf
-#undef isnan
-#define isinf(x)	(fpclassify(x) == FP_INFINITE)
-#define isnan(x)	(fpclassify(x) == FP_NAN)
-#define finite(x)	(!isinf(x) && !isnan(x))
+#define MNisinf(x)	(fpclassify(x) == FP_INFINITE)
+#define MNisnan(x)	(fpclassify(x) == FP_NAN)
+#define MNfinite(x)	(!MNisinf(x) && !MNisnan(x))
+
 #else
-#ifndef HAVE_ISINF
-static int isinf(double x)
+
+#define MNisnan(x)	isnan(x)
+#define MNfinite(x)	finite(x)
+
+#ifdef HAVE_ISINF
+
+#define MNisinf(x)	isinf(x)
+
+#else
+
+static int MNisinf(double x)
 {
 #ifdef HAVE_FPCLASS
     int cl = fpclass(x);
@@ -308,73 +391,94 @@ static int isinf(double x)
     return 0;		/* XXX not correct if infinite */
 #endif	/* HAVE_FPCLASS */
 }
+
 #endif	/* HAVE_ISINF */
 #endif	/* HAVE_FPCLASSIFY */
 
-@:unop(_ACOS,acos)@
-@:unop(_ASIN,asin)@
-@:unop(_ATAN,atan)@
-@:binop(_ATAN2,atan2)@
-@:unop(_COS,cos)@
-@:unop(_SIN,sin)@
-@:unop(_TAN,tan)@
+int math_unary_ISNAN(bit *res , dbl *a ) {
+#ifdef DEBUG
+    printf( "math_unary_ISNAN\n");
+#endif
+    if (*a == dbl_nil) {
+	*res = bit_nil;
+    } else {
+	*res = MNisnan(*a);
+    }
+    return(GDK_SUCCEED);
+}
 
-@:unop(_COSH,cosh)@
-@:unop(_SINH,sinh)@
-@:unop(_TANH,tanh)@
+int math_unary_ISINF(int *res , dbl *a ) {
+#ifdef DEBUG
+	printf( "math_unary_ISINF\n");
+#endif
+   if (*a == dbl_nil) {
+	*res = int_nil;
+   } else {
+	if(MNisinf(*a)) {
+        	*res = (*a < 0.0) ? -1 : 1;
+        } else {
+        	*res = 0;
+        }
+   }
+   return(GDK_SUCCEED);
+}
 
-@:unop(_EXP,exp)@
-/*@:unop(_LOG,log)@*/
-/*@:unop(_LOG10,log10)@*/
-
-@:binop(_POW,pow)@
-@:unop(_SQRT,sqrt)@
-
-@:unop(_CEIL,ceil)@
-@:unopbase(_FABS,fabs,dbl)@
-@:unop(_FLOOR,floor)@
-@:binop(_FMOD,fmod)@
-
-@= unopbase
+int math_unary_FINITE(bit *res , dbl *a ) {
+#ifdef DEBUG
+	printf( "math_unary_FINITE\n");
+#endif
+   if (*a == dbl_nil) {
+	*res = bit_nil;
+   } else {
+	*res = MNfinite(*a);
+   }
+   return(GDK_SUCCEED);
+}
+@- Wrapping
+Wrapping around the M4 code base
+@c
+#include "mal.h"
+@-
+@= unopbaseM5
 str MATHunary@1@3(@3 *res , @3 *a ) {
 #ifdef DEBUG
-	printf( "MATHunary@1@3\n");
+        printf( "MATHunary@1@3\n");
 #endif
    dbl tmp1,tmp2;
    if (*a == @3_nil) {
-	*res = @3_nil;
+        *res = @3_nil;
    } else {
-	tmp1= *a;
-	@2_unary( &tmp1, &tmp2 );
-	*res = tmp2;
+        tmp1= *a;
+        @2_unary( &tmp1, &tmp2 );
+        *res = tmp2;
    }
    return MAL_SUCCEED;
 }
-@
-@= unop
-  @:unopbase(@1,@2,dbl)@
-  @:unopbase(@1,@2,flt)@
 
-@= binopbase
+@-
+@= unopM5
+  @:unopbaseM5(@1,@2,dbl)@
+  @:unopbaseM5(@1,@2,flt)@
+
+@= binopbaseM5
 str MATHbinary@1@3(@3 *res, @3 *a, @3 *b ) {
 #ifdef DEBUG
-	printf( "MATHbinary@1\n");
+        printf( "MATHbinary@1\n");
 #endif
    if (*a == @3_nil || *b == @3_nil) {
-	*res = @3_nil;
+        *res = @3_nil;
    } else {
-	double r1 ,a1 = 0.0, b1 = 0.0;
-	@2_binary( &a1, &b1, &r1);
-	*res= r1;
+        double r1 ,a1 = 0.0, b1 = 0.0;
+        @2_binary( &a1, &b1, &r1);
+        *res= r1;
    }
    return MAL_SUCCEED;
 }
-@= binop
-  @:binopbase(@1,@2,dbl)@
-  @:binopbase(@1,@2,flt)@
+@= binopM5
+  @:binopbaseM5(@1,@2,dbl)@
+  @:binopbaseM5(@1,@2,flt)@
 @
-
-@= round
+@= roundM5
 str MATHbinary_ROUND@1(@1 *res, @1 *x, int *y) {
   if(*x == @1_nil || *y == int_nil) {
     *res = @1_nil;
@@ -398,49 +502,46 @@ str MATHbinary_ROUND@1(@1 *res, @1 *x, int *y) {
   return MAL_SUCCEED;
 }
 @c
-@:round(dbl)@
-@:round(flt)@
+@:unopM5(_ACOS,acos)@
+@:unopM5(_ASIN,asin)@
+@:unopM5(_ATAN,atan)@
+@:binopM5(_ATAN2,atan2)@
+@:unopM5(_COS,cos)@
+@:unopM5(_SIN,sin)@
+@:unopM5(_TAN,tan)@
 
+@:unopM5(_COSH,cosh)@
+@:unopM5(_SINH,sinh)@
+@:unopM5(_TANH,tanh)@
 
-str math_unary_ISNAN(bit *res , dbl *a ) {
-#ifdef DEBUG
-    printf( "math_unary_ISNAN\n");
-#endif
-    if (*a == dbl_nil) {
-	*res = bit_nil;
-    } else {
-	*res = isnan(*a);
-    }
-    return MAL_SUCCEED;
-}
+@:unopM5(_EXP,exp)@
+/*@:unopM5(_LOG,log)@*/
+/*@:unopM5(_LOG10,log10)@*/
 
-str math_unary_ISINF(int *res , dbl *a ) {
-#ifdef DEBUG
-	printf( "math_unary_ISINF\n");
-#endif
-   if (*a == dbl_nil) {
-	*res = int_nil;
-   } else {
-	if(isinf(*a)) {
-        	*res = (*a < 0.0) ? -1 : 1;
-        } else {
-        	*res = 0;
-        }
-   }
+@:binopM5(_POW,pow)@
+@:unopM5(_SQRT,sqrt)@
+
+@:unopM5(_CEIL,ceil)@
+@:unopbaseM5(_FABS,fabs,dbl)@
+@:unopM5(_FLOOR,floor)@
+@:binopM5(_FMOD,fmod)@
+
+@:roundM5(dbl)@
+@:roundM5(flt)@
+
+str MATHunary_ISNAN(bit *res , dbl *a ) {
+    math_unary_ISNAN(res,a);
    return MAL_SUCCEED;
 }
 
-str math_unary_FINITE(bit *res , dbl *a ) {
-#ifdef DEBUG
-	printf( "math_unary_FINITE\n");
-#endif
-   if (*a == dbl_nil) {
-	*res = bit_nil;
-   } else {
-	*res = finite(*a);
-   }
+str MATHunary_ISINF(int *res , dbl *a ) {
+    math_unary_ISINF(res,a);
    return MAL_SUCCEED;
 }
 
+str MATHunary_FINITE(bit *res , dbl *a ) {
+    math_unary_FINITE(res,a);
+   return MAL_SUCCEED;
+}
 @}
 

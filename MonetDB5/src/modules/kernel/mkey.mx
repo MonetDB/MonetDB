@@ -5,21 +5,21 @@
 @mal
 module mkey;
 
-command rotate(v:int,nbits:int) :int = CMDrotate
+command rotate(v:int,nbits:int) :int = MKEYrotate
 comment "left-rotate an int by nbits";
 
-command hash(v:any) :int = CMDhash 
+command hash(v:any) :int = MKEYhash 
 comment "compute a hash int number from any value";
-command hash(v:bit) :int = CMDhash_chr;
-command hash(v:chr) :int = CMDhash_chr;
-command hash(v:sht) :int = CMDhash_sht;
-command hash(v:int) :int = CMDhash_int;
-command hash(v:flt) :int = CMDhash_flt;
-command hash(v:dbl) :int = CMDhash_dbl;
-command hash(v:lng) :int = CMDhash_lng;
-command hash(v:str) :int = CMDhash_str;
+command hash(v:bit) :int = MKEYhash_chr;
+command hash(v:chr) :int = MKEYhash_chr;
+command hash(v:sht) :int = MKEYhash_sht;
+command hash(v:int) :int = MKEYhash_int;
+command hash(v:flt) :int = MKEYhash_flt;
+command hash(v:dbl) :int = MKEYhash_dbl;
+command hash(v:lng) :int = MKEYhash_lng;
+command hash(v:str) :int = MKEYhash_str;
 
-command bulk_rotate_xor_hash(h:bat[:oid,:int], nbits:int, b:bat[:oid,:any]) :bat[:oid,:int] = CMDbulk_rotate_xor_hash
+command bulk_rotate_xor_hash(h:bat[:oid,:int], nbits:int, b:bat[:oid,:any]) :bat[:oid,:int] = MKEYbulk_rotate_xor_hash
 comment "pre:  h and b should be synced on head
          post: [:xor=]([:rotate=](h, nbits), [hash](b))";
 
@@ -268,21 +268,10 @@ proc ds_link(bat[str,str] keys) :bat[oid, oid]
   return res;
 }
 
-
-@* Implementation
-@= getBATdescriptor
-        if( BBPcheck(*@2,"@4")==0)
-                return throwMessage("bat.@4", "cannot access bat @2 in bbp");
-        @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0;
-                return throwMessage("bat.@4", "cannot access descriptor @2");
-        }
-        if(*@2 <0) @3 = BATmirror(@3);
 @c
 #include <gdk.h>
-#include "mal.h"
-#include "mal_function.h"
 
+@* Implementation
 @-
 new functionality for the low-resource-consumption ds_link. It will
 first one by one create a hash value out of the multiple attributes.
@@ -290,47 +279,47 @@ This hash value is computed by xoring and rotating individual hash
 values together. We create a hash and rotate command to do this.
 @c
 /* TODO: nil handling. however; we do not want to lose time in bulk_rotate_xor_hash with that */
-str CMDrotate(int *res, int *val, int *n) {
+int CMDrotate(int *res, int *val, int *n) {
     *res = GDK_ROTATE(*val, *n, 32 - *n, (1 << *n) - 1);
-    return MAL_SUCCEED;
+    return GDK_SUCCEED;
 }
 
-str CMDhash_chr(int *res, chr* val) {
+int CMDhash_chr(int *res, chr* val) {
     *res = *(chr*) val;
-    return MAL_SUCCEED;
+    return GDK_SUCCEED;
 }
 
-str CMDhash_sht(int *res, sht* val) {
+int CMDhash_sht(int *res, sht* val) {
     *res = *(sht*) val;
-    return MAL_SUCCEED;
+    return GDK_SUCCEED;
 }
 
-str CMDhash_int(int *res, int* val) {
+int CMDhash_int(int *res, int* val) {
     *res = *(int*) val;
-    return MAL_SUCCEED;
+    return GDK_SUCCEED;
 }
 
-str CMDhash_flt(int *res, flt* val) {
+int CMDhash_flt(int *res, flt* val) {
     *res = *(int*) val;
-    return MAL_SUCCEED;
+    return GDK_SUCCEED;
 }
 
-str CMDhash_lng(int *res, lng* val) {
+int CMDhash_lng(int *res, lng* val) {
     *res = ((int*) val)[0] ^ ((int*) val)[1];
-    return MAL_SUCCEED;
+    return GDK_SUCCEED;
 }
 
-str CMDhash_dbl(int *res, dbl* val) {
+int CMDhash_dbl(int *res, dbl* val) {
     *res = ((int*) val)[0] ^ ((int*) val)[1];
-    return MAL_SUCCEED;
+    return GDK_SUCCEED;
 }
 
-str CMDhash_str(int *res, lng* val) {
+int CMDhash_str(int *res, lng* val) {
     GDK_STRHASH(val, *res);
-    return MAL_SUCCEED;
+    return GDK_SUCCEED;
 }
 
-str CMDhash(int *res, ptr val, int tpe) {
+int CMDhash(int *res, ptr val, int tpe) {
     switch(ATOMstorage(tpe)) {
     case TYPE_void: *res = int_nil; break;
     case TYPE_chr:  *res = *(chr*) val; break;
@@ -342,31 +331,27 @@ str CMDhash(int *res, ptr val, int tpe) {
     case TYPE_str:  GDK_STRHASH(val, *res); break;
     default:        *res = (*BATatoms[tpe].atomHash)(val); 
     }
-    return MAL_SUCCEED;
+    return GDK_SUCCEED;
 }
 
-str CMDbulk_rotate_xor_hash(int *res, int *bnid, int *rotate, int *bid) {
-    BAT *b,*bn;
-    int *dst, tpe;
+int CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b) {
+    int *dst = (int*) BUNtloc(bn, BUNfirst(bn));
+    int tpe = ATOMstorage(b->ttype);
     int lbit = *rotate;
     int rbit = 32 - *rotate;
     int mask = (1 << lbit) - 1;
-    int xx, yy;
-
-    @:getBATdescriptor(res,bid,b,bulk_rotate_xor_hash)@
-    @:getBATdescriptor(res,bnid,bn,bulk_rotate_xor_hash)@
-
-    dst = (int*) BUNtloc(bn, BUNfirst(bn));
-    tpe = ATOMstorage(b->ttype);
-    xx = BUNsize(b);
-    yy = BUNsize(bn);
+    int xx = BUNsize(b);
+    int yy = BUNsize(bn);
   
     if (!ALIGNsynced(bn, b)) { 
-	return throwMessage("mkey.rotate_xor_hash","not synced on head");
+	GDKerror("[:rotate_xor_hash=](%s,%d,%s): not synced on head.\n", bn->batId, *rotate, b->batId);
+	return GDK_FAIL;
     } else if (VIEWparent(bn) || bn->batRestricted) {
-	return throwMessage("mkey.rotate_xor_hash","left operand not writeable");
+	GDKerror("[:rotate_xor_hash=](%s,%d,%s): left operand not writeable.\n", bn->batId, *rotate, b->batId);
+	return GDK_FAIL;
     } else if (*rotate < 0 || *rotate >= 32) {
-	return throwMessage("mkey.rotate_xor_hash","illegal number of bits");
+	GDKerror("[:rotate_xor_hash=](%s,%d,%s): illegal number of rotate bits.\n", bn->batId, *rotate, b->batId);
+	return GDK_FAIL;
     } else if (tpe == TYPE_chr) {
 	chr *cur = (chr*) BUNtloc(b, BUNfirst(b));
 	chr *end = (chr*) BUNtloc(b, BUNlast(b));
@@ -426,10 +411,166 @@ str CMDbulk_rotate_xor_hash(int *res, int *bnid, int *rotate, int *bid) {
 	}
     }
     /* we return an already existing parameter BAT, so we must fix it */
+    *res = bn;
     bn->tsorted = 0;
     if (bn->tkey) BATkey(BATmirror(bn), FALSE);
     BBPfix(bn->batCacheid);
-    *res= bn->batCacheid;
+    return GDK_SUCCEED;
+}
+@-
+new functionality for the low-resource-consumption ds_link. It will
+first one by one create a hash value out of the multiple attributes.
+This hash value is computed by xoring and rotating individual hash
+values together. We create a hash and rotate command to do this.
+@- Wrapping
+The code below wraps around the V4 code base
+@= getBATdescriptor
+        if( BBPcheck(*@2,"@4")==0)
+                return throwMessage("bat.@4", "cannot access bat @2 in bbp");
+        @3= (BAT*) BBPgetdesc(*@2);
+        if( @3 == NULL) { *@1 = 0;
+                return throwMessage("bat.@4", "cannot access descriptor @2");
+        }
+        if(*@2 <0) @3 = BATmirror(@3);
+@c
+#include "mal.h"
+#include "mal_function.h"
+
+@c
+str MKEYrotate(int *res, int *val, int *n) {
+    CMDrotate(res, val, n);
+    return MAL_SUCCEED;
+}
+
+str MKEYhash_chr(int *res, chr* val) {
+    CMDhash_chr(res,val);
+    return MAL_SUCCEED;
+}
+
+str MKEYhash_sht(int *res, sht* val) {
+    CMDhash_sht(res,val);
+    return MAL_SUCCEED;
+}
+
+str MKEYhash_int(int *res, int* val) {
+    CMDhash_int(res,val);
+    return MAL_SUCCEED;
+}
+
+str MKEYhash_flt(int *res, flt* val) {
+    CMDhash_flt(res,val);
+    return MAL_SUCCEED;
+}
+
+str MKEYhash_lng(int *res, lng* val) {
+    CMDhash_lng(res,val);
+    return MAL_SUCCEED;
+}
+
+str MKEYhash_dbl(int *res, dbl* val) {
+    CMDhash_dbl(res,val);
+    return MAL_SUCCEED;
+}
+
+str MKEYhash_str(int *res, lng* val) {
+    CMDhash_str(res,val);
+    return MAL_SUCCEED;
+}
+
+str MKEYhash(int *res, ptr val, int tpe) {
+    CMDhash(res,val,tpe);
+    return MAL_SUCCEED;
+}
+
+str MKEYbulk_rotate_xor_hash(int *res, int *bnid, int *rotate, int *bid) {
+    BAT *b,*bn;
+    int *dst, tpe;
+    int lbit = *rotate;
+    int rbit = 32 - *rotate;
+    int mask = (1 << lbit) - 1;
+    int xx, yy;
+
+    @:getBATdescriptor(res,bid,b,bulk_rotate_xor_hash)@
+    @:getBATdescriptor(res,bnid,bn,bulk_rotate_xor_hash)@
+
+    dst = (int*) BUNtloc(bn, BUNfirst(bn));
+    tpe = ATOMstorage(b->ttype);
+    xx = BUNsize(b);
+    yy = BUNsize(bn);
+/* rest is copied from V4 */
+
+    if (!ALIGNsynced(bn, b)) { 
+	GDKerror("[:rotate_xor_hash=](%s,%d,%s): not synced on head.\n", bn->batId, *rotate, b->batId);
+	return GDK_FAIL;
+    } else if (VIEWparent(bn) || bn->batRestricted) {
+	GDKerror("[:rotate_xor_hash=](%s,%d,%s): left operand not writeable.\n", bn->batId, *rotate, b->batId);
+	return GDK_FAIL;
+    } else if (*rotate < 0 || *rotate >= 32) {
+	GDKerror("[:rotate_xor_hash=](%s,%d,%s): illegal number of rotate bits.\n", bn->batId, *rotate, b->batId);
+	return GDK_FAIL;
+    } else if (tpe == TYPE_chr) {
+	chr *cur = (chr*) BUNtloc(b, BUNfirst(b));
+	chr *end = (chr*) BUNtloc(b, BUNlast(b));
+	while(cur < end) {
+	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ *cur;
+	    cur = (chr*) (((BUN) cur) + xx);
+	    dst = (int*) (((BUN) dst) + yy);
+	}
+    } else if (tpe == TYPE_sht) {
+	sht *cur = (sht*) BUNtloc(b, BUNfirst(b));
+	sht *end = (sht*) BUNtloc(b, BUNlast(b));
+	while(cur < end) {
+	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ *cur;
+	    cur = (sht*) (((BUN) cur) + xx);
+	    dst = (int*) (((BUN) dst) + yy);
+	}
+    } else if (tpe == TYPE_int || tpe == TYPE_flt) {
+	int *cur = (int*) BUNtloc(b, BUNfirst(b));
+	int *end = (int*) BUNtloc(b, BUNlast(b));
+	while(cur < end) {
+	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ *cur;
+	    cur = (int*) (((BUN) cur) + xx);
+	    dst = (int*) (((BUN) dst) + yy);
+	}
+    } else if (tpe == TYPE_lng || tpe == TYPE_dbl) {
+	int *cur = (int*) BUNtloc(b, BUNfirst(b));
+	int *end = (int*) BUNtloc(b, BUNlast(b));
+	while(cur < end) {
+	    int val = cur[0] ^ cur[1];
+	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ val;
+	    cur = (int*) (((BUN) cur) + xx);
+	    dst = (int*) (((BUN) dst) + yy);
+	}
+    } else if (tpe == TYPE_str) { /* TYPE_str */
+	int *cur = (int*) BUNtloc(b, BUNfirst(b));
+	int *end = (int*) BUNtloc(b, BUNlast(b));
+	str base = b->theap.base;
+	while(cur < end) {
+	    int val;
+	    GDK_STRHASH(base + *cur, val);
+	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ val;
+	    cur = (int*) (((BUN) cur) + xx);
+	    dst = (int*) (((BUN) dst) + yy);
+	}
+    } else if (b->ttype == TYPE_void) {
+    	BUN p, q;
+	BATloopFast(b, p, q, xx) {
+	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ *(int*) BUNtail(b,p);
+	    dst = (int*) (((BUN) dst) + yy);
+	}
+    } else {
+	hash_t (*hash)(ptr) = BATatoms[b->ttype].atomHash;
+    	BUN p, q;
+	BATloopFast(b, p, q, xx) {
+	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ (*hash)(BUNtail(b,p));
+	    dst = (int*) (((BUN) dst) + yy);
+	}
+    }
+    /* we return an already existing parameter BAT, so we must fix it */
+    *res = bn->batCacheid;
+    bn->tsorted = 0;
+    if (bn->tkey) BATkey(BATmirror(bn), FALSE);
+    BBPfix(bn->batCacheid);
     return MAL_SUCCEED;
 }
 @}

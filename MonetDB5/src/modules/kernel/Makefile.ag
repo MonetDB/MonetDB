@@ -22,7 +22,7 @@ LIBS = {
 }
 doc_kernel = {
 	DIR = pkgdatadir/docs/modules/kernel
-	SOURCES = kernel_init.mx startup.mx \
+	SOURCES = kernel_init.mx \
 		calc.mx bat.mx algebra.mx system.mx unix.mx \
 		mapi.mx mmath.mx lock.mx alarm.mx \
 		batcalc.mx group.mx mkey.mx aggrX3.mx 
