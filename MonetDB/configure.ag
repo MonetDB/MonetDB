@@ -36,12 +36,6 @@ thread_safe_flag_spec="-D_REENTRANT"
     LEXLIB=-ll
     ;;
   irix*)
-    case "$CC" in
-      *-32|*"-32 ") libsuff="";;
-      "cc -32"|*-n32|*"-n32 ") libsuff=n32;;
-      "cc -64"|*-64|*"-64 ") libsuff=64;;
-      *) libsuff=n32;;
-    esac
     LEXLIB=-ll
     ;;
   aix*)
