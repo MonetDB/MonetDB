@@ -504,8 +504,8 @@ returns matches on tuples from the outer stream with the hash-table.
 @h
 typedef struct {
     BAT *inner;
-    int *hash, *link;
-    int mask, hashnum;
+    unsigned int *hash, *link;
+    unsigned int mask, hashnum;
 } JoinHandle;
 @c
 #define iterator_hashchr(tpe,val,msk) ((unsigned int) (((unsigned char*) val)[0])) 
@@ -875,8 +875,8 @@ int iter_count(int *res, iter *input) {
 Get and set the chunksize parameter. This determines the granularity in
 which tuples flow through an iterator tree.
 @c
-int iter_setchunksize(int *size) { chunksize = *size; return GDK_SUCCEED; };
-int iter_getchunksize(int *size) { *size = chunksize; return GDK_SUCCEED; };
+int iter_setchunksize(int *size) { chunksize = *size; return GDK_SUCCEED; }
+int iter_getchunksize(int *size) { *size = chunksize; return GDK_SUCCEED; }
 
 @+ fix/unfix
 @c
