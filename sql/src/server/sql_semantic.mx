@@ -536,7 +536,7 @@ static stmt *
 sql_truncate(sql_subtype *ct, stmt *s)
 {
 	sql_subtype *st = tail_type(s);
-	sql_subtype *it = sql_bind_localtype("lng");
+	sql_subtype *it = sql_bind_localtype("int");
 	sql_subfunc *c = NULL;
 
 	/* atleast we need equal base types */
