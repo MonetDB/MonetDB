@@ -1,4 +1,6 @@
 
+#include <string.h>
+#include <stdlib.h>
 #include "datetime.h"
 #include "sql.h"
 

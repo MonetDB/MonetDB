@@ -1,4 +1,5 @@
 
+#include <string.h>
 #include "mem.h"
 #include "statement.h"
 

@@ -7,7 +7,7 @@ typedef	enum atomtype {
 	string_value,
 	int_value,
 	float_value,
-	general_value,
+	general_value
 } atomtype;
 
 typedef struct atom {

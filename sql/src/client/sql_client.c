@@ -1,5 +1,7 @@
 
 
+#include <stdlib.h>
+#include <string.h>
 #include "mem.h"
 #include "sqlexecute.h"
 #include <comm.h>

@@ -1,5 +1,6 @@
 
 #include <mem.h>
+#include <string.h>
 #include "catalog.h"
 
 #define OIDRANGE 100

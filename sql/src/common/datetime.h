@@ -10,7 +10,7 @@ typedef enum inttype {
 	iday,
 	ihour,
 	imin,
-	isec,
+	isec
 } itype;
 
 int parse_interval( context *sql, int sign, char *str, struct dlist *pers, int *val );

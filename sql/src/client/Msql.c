@@ -1,10 +1,14 @@
 
 
+#include <stdlib.h>
+#include <string.h>
 #include "mem.h"
 #include <comm.h>
 #include <sys/stat.h>
 
+#ifdef HAVE_GETOPT_H 
 #include <getopt.h>
+#endif
 
 stream *ws = NULL, *rs = NULL;
 

@@ -82,7 +82,7 @@ typedef enum tokens {
 	SQL_ATOM,
 	SQL_USING,
 	SQL_WHEN,
-	SQL_ESCAPE,
+	SQL_ESCAPE
 } tokens;
 
 typedef enum jt {
@@ -90,7 +90,7 @@ typedef enum jt {
 	jt_left = 1,
 	jt_right = 2,
 	jt_full = 3,
-	jt_union = 4,
+	jt_union = 4
 } jt;
 
 extern char *token2string( int token );

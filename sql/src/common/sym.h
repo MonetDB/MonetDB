@@ -12,7 +12,7 @@ typedef enum symtype {
 	type_table,
 	type_aggr,
 	type_func,
-	type_type,
+	type_type
 } symtype;
 
 typedef union symdata {

@@ -51,7 +51,7 @@ typedef enum statement_type {
 	/* used internally only */
 	st_list, 
 	st_insert_list, 
-	st_output,
+	st_output
 } st_type;
 
 typedef enum comp_type {
@@ -60,7 +60,7 @@ typedef enum comp_type {
 	cmp_lt,
 	cmp_lte,
 	cmp_gt,
-	cmp_gte,
+	cmp_gte
 } comp_type;
 
 typedef void (*fdestroy)(void*);
