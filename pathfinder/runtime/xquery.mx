@@ -1,0 +1,588 @@
+# Copyright Notice:
+# -----------------
+# 
+# The contents of this file are subject to the MonetDB Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy of
+# the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+# 
+# Software distributed under the License is distributed on an "AS
+# IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+# implied. See the License for the specific language governing
+# rights and limitations under the License.
+# 
+# The Original Code is the ``Pathfinder'' system. The Initial
+# Developer of the Original Code is the Database & Information
+# Systems Group at the University of Konstanz, Germany. Portions
+# created by U Konstanz are Copyright (C) 2000-2004 University
+# of Konstanz. All Rights Reserved.
+#
+# Contributors:
+#         Torsten Grust <torsten.grust@uni-konstanz.de>
+#         Maurice van Keulen <M.van.Keulen@bigfoot.com>
+#         Jens Teubner <jens.teubner@uni-konstanz.de>
+#
+# $Id$
+
+@f xquery
+@a Jan Flokstra
+@t xquery
+
+@c
+
+/*******************************************
+* xquery.c : xquery command stuff
+*
+*/
+#include <gdk.h>
+
+#define MAXDEPTH        1024
+
+
+typedef struct {
+        int     saxMode;
+        BAT*    Tpre_size;
+        BAT*    Tpre_kind;
+        BAT*    Tpre_prop;
+        BAT*    Tprop_ns;
+        BAT*    Tprop_loc;
+        BAT*    Tprop_text;
+        BAT*    Tprop_com;
+        BAT*    Tprop_tgt;
+        BAT*    Tprop_ins;
+        BAT*    Tattr_own;
+        BAT*    Tattr_ns;
+        BAT*    Tattr_loc;
+        BAT*    Tattr_val;
+        //
+        int     stackPtr;
+        struct {
+                oid     pre;
+                str     ns;
+                str     name;
+        } tagStack[MAXDEPTH];
+        //
+        int     nAttrOnLine;
+} XqueryCtx;
+
+
+void createContext(XqueryCtx* ctx,
+                   str  mode,
+                   BAT* Tpre_size,
+                   BAT* Tpre_kind,
+                   BAT* Tpre_prop,
+                   BAT* Tprop_ns,
+                   BAT* Tprop_loc,
+                   BAT* Tprop_text,
+                   BAT* Tprop_com,
+                   BAT* Tprop_tgt,
+                   BAT* Tprop_ins,
+                   BAT* Tattr_own,
+                   BAT* Tattr_ns,
+                   BAT* Tattr_loc,
+                   BAT* Tattr_val
+        ) {
+        ctx->saxMode   = (strcmp(mode,"sax")==0);
+        ctx->Tpre_size = Tpre_size;
+        ctx->Tpre_kind = Tpre_kind;
+        ctx->Tpre_prop = Tpre_prop;
+        ctx->Tprop_ns  = Tprop_ns;
+        ctx->Tprop_loc = Tprop_loc;
+        ctx->Tprop_text= Tprop_text;
+        ctx->Tprop_com = Tprop_com;
+        ctx->Tprop_tgt = Tprop_tgt;
+        ctx->Tprop_ins = Tprop_ins;
+        ctx->Tattr_own = Tattr_own;
+        ctx->Tattr_ns  = Tattr_ns;
+        ctx->Tattr_loc = Tattr_loc;
+        ctx->Tattr_val = Tattr_val;
+        ctx->stackPtr  = 0;
+}
+
+int moreTags(XqueryCtx* ctx) {
+        return (ctx->stackPtr > 0);
+}
+
+void pushTag(XqueryCtx* ctx, oid pre, str ns, str name) {
+        ctx->tagStack[ctx->stackPtr].pre  = pre;
+        ctx->tagStack[ctx->stackPtr].ns   = strdup(ns); // incomplete
+        ctx->tagStack[ctx->stackPtr].name = strdup(name); // incomplete
+        ctx->stackPtr++;
+}
+
+oid topTag(XqueryCtx* ctx)  { return ctx->tagStack[ctx->stackPtr-1].pre; }
+str topNs(XqueryCtx* ctx)   { return ctx->tagStack[ctx->stackPtr-1].ns; }
+str topName(XqueryCtx* ctx) { return ctx->tagStack[ctx->stackPtr-1].name; }
+
+void popTag(XqueryCtx* ctx) {
+        free( topNs(ctx) );
+        free( topName(ctx) );
+        --ctx->stackPtr;
+}
+
+/*
+ * The emit functions
+ *
+ */
+
+void emit_start() {
+        stream_printf(GDKout,"#-------------------------#\n");
+        stream_printf(GDKout,"# h     SAXtape           #\n");
+        stream_printf(GDKout,"# str   str               #\n");
+        stream_printf(GDKout,"#-------------------------#\n");
+}
+
+
+void emit(char* eventName, char* val) {
+        if ( val )
+                stream_printf(GDKout,"[\"%s\",\t\"%s\"]\n",eventName,val);
+        else
+                stream_printf(GDKout,"[%s,\tnil]\n",eventName);
+}
+
+void emit_end() {
+}
+
+
+/*
+ *
+ * The SAX like handlers
+ *
+ */
+
+#define SAXOPHONE 1
+
+void handle_startDocument(XqueryCtx* ctx) {
+        if (ctx->saxMode ) {
+                if ( SAXOPHONE ) {
+                        emit_start();
+                        // emit(START_DOC, NULL);
+                } else
+                        stream_printf(GDKout,"<S\n");
+        } else { // xmlMode
+                stream_printf(GDKout,"\n");
+        }
+}
+
+void handle_endDocument(XqueryCtx* ctx) {
+        if (ctx->saxMode ) {
+                if ( SAXOPHONE ) {
+                        // emit(END_DOC, NULL);
+                        emit_end();
+                } else 
+                        stream_printf(GDKout,"<E\n");
+        } else { // xmlMode
+                stream_printf(GDKout,"\n\n");
+        }
+}
+
+void handle_attribute(XqueryCtx* ctx, str ns, str name, str value) {
+        if (ctx->saxMode ) {
+                if ( SAXOPHONE ) {
+                        emit(" attribute",name);
+                        if ( ns && (strlen(ns)>0) )
+                                emit(" attribute prefix",ns);
+                        emit(" attribute value",value);
+                } else {
+                        stream_printf(GDKout,"<A %s=\"%s\"\n",name,value);
+                }
+        } else { // xmlMode
+                if ( ns && strlen(ns)>0 ) {
+                        stream_printf(GDKout," %s:%s=\"%s\"",ns,name,value);
+                } else {
+                        stream_printf(GDKout," %s=\"%s\"",name,value);
+                }
+        }
+}
+
+void handle_attributeEnd(XqueryCtx* ctx) {
+        if (ctx->saxMode ) {
+        } else { // xmlMode
+                stream_printf(GDKout,">");
+        }
+
+}
+
+void handle_startElement(XqueryCtx* ctx, str ns, str name /*,str *atts*/) {
+        if (ctx->saxMode ) {
+                if ( SAXOPHONE ) {
+                        emit("startElement",NULL);
+                        if ( ns && (strlen(ns)>0) )
+                                emit(" prefix",ns);
+                        emit(" localname",name);
+                } else {
+                        stream_printf(GDKout,"<s %s\n",name);
+                }
+        } else { // xmlMode
+                if ( ns && strlen(ns)>0 ) {
+                        stream_printf(GDKout,"<%s:%s",ns,name);
+                } else {
+                        stream_printf(GDKout,"<%s",name);
+                }
+        }
+}
+
+void handle_endElement(XqueryCtx* ctx, str ns, str name) {
+        if (ctx->saxMode ) {
+                if ( SAXOPHONE ) {
+                        emit("endElement",NULL);
+                        if ( ns && (strlen(ns)>0) )
+                                emit(" prefix",ns);
+                        emit(" localname",name);
+                } else {
+                        stream_printf(GDKout,"<e %s\n",name);
+                }
+        } else { // xmlMode
+                if ( ns && strlen(ns)>0 ) {
+                        stream_printf(GDKout,"</%s:%s>",ns,name);
+                } else {
+                        stream_printf(GDKout,"</%s>",name);
+                }
+        }
+}
+
+void handle_reference(XqueryCtx* ctx, str name) {
+        if (ctx && name) {};
+}
+
+void handle_characters(XqueryCtx* ctx, str ch) {
+        if (ctx->saxMode ) {
+                if ( SAXOPHONE ) {
+                        emit("characters",NULL);
+                        // emit(" pcdata",ch); INCOMPLETE, Mapi problems with \n 
+                        emit(" pcdata","DATA");
+                } else {
+                        stream_printf(GDKout,"%s\n",ch);
+                }
+        } else { // xmlMode
+                stream_printf(GDKout,"%s",ch);
+        }
+}
+
+void handle_ignorableWhitespace(XqueryCtx* ctx, str ch) {
+        handle_characters(ctx,ch); // dispatch
+}
+
+void handle_comment(XqueryCtx* ctx, str comm) {
+        if (ctx->saxMode ) {
+                // INCOMPLETE
+        } else { // xmlMode
+                stream_printf(GDKout,"<!--%s-->",comm);
+        }
+}
+
+void handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
+        if (ctx->saxMode ) {
+                // INCOMPLETE
+        } else { // xmlMode
+                stream_printf(GDKout,"<?%s %s?>",target,data);
+        }
+}
+
+/*
+ *
+ *
+ */
+
+int helloTEST(BAT** resBAT,str text) {
+        int res = GDK_SUCCEED;
+
+        stream_printf(GDKout,"Hello %s\n",text);
+        // THRprintf(GDKout,"Hello %s\n",text);
+        *resBAT = BATnew(TYPE_void,TYPE_str,10);
+        return res;
+}
+
+ptr indexedTail(BAT* b, oid oid_index) {
+        ptr res;
+
+        if ( BUNsize(b) == 1 ) {
+                // This is a bug in MONET. The else code should work
+                // for all situations but does not work for the 
+                // bat[void,chr] situation
+                BUN bun = BUNfirst(b);
+                res = &bun[oid_index];
+        } else {
+                oid real_index = oid_index + 1; //this one cost me 2 hrs
+
+                BUN bun = BUNptr(b,real_index);
+                res = BUNtail(b,bun);
+        }
+        return res;
+}
+
+void query_attr_print(XqueryCtx* ctx, oid pre) {
+        BAT* b = BATuselect(ctx->Tattr_own,&pre,&pre);
+
+        BUN p, q; 
+        BATloop(b, p, q) {
+                oid id = *(oid*)BUNhead(b, p);
+                str name = (str)indexedTail(ctx->Tattr_loc, id);
+                str val  = (str)indexedTail(ctx->Tattr_val, id);
+                str ns   = (str)indexedTail(ctx->Tattr_ns, id);
+                handle_attribute(ctx,ns,name,val);
+        }
+        handle_attributeEnd(ctx);
+        BATdelete(b);
+}
+
+void xquery_node_print(XqueryCtx* ctx, oid pre) {
+        chr kind = *(chr*)indexedTail(ctx->Tpre_kind,pre);
+        oid prop = *(oid*)indexedTail(ctx->Tpre_prop,pre);
+        switch( kind ) {
+                case (char)0: {// ELEMENT
+                        str name = (str)indexedTail(ctx->Tprop_loc,prop);
+                        str ns   = (str)indexedTail(ctx->Tprop_ns,prop);
+                        handle_startElement(ctx,ns,name);
+                        query_attr_print(ctx,pre);
+
+                        oid offset = *(oid*)indexedTail(ctx->Tpre_size,pre);
+                        pushTag(ctx,pre+offset,ns,name);
+                        break;
+                        }
+                case (char)1: {// TEXT
+                        handle_characters(ctx,(str)indexedTail(ctx->Tprop_text,prop));
+                        break;
+                        }
+                case (char)2: {// COMMENT
+                        handle_comment(ctx,(str)indexedTail(ctx->Tprop_com,prop));
+                        break;
+                        }
+                case (char)3: {// PI
+                        str target = (str)indexedTail(ctx->Tprop_tgt,prop);
+                        str data   = (str)indexedTail(ctx->Tprop_ins,prop);
+                        handle_processingInstruction(ctx,target,data);
+                        break;
+                        }
+                case (char)4: {// DOCUMENT
+                        oid offset = *(oid*)indexedTail(ctx->Tpre_size,pre);
+                        pushTag(ctx,pre+offset,"","");
+                        break;
+                        }
+                default:
+                        stream_printf(GDKout,"Unknow kind IN xquery_node_print");
+        }
+}
+
+void xquery_endtag_print(XqueryCtx* ctx, oid pre) {
+        while( moreTags(ctx) && (pre > topTag(ctx)) ) { //??
+                if ( strlen(topName(ctx)) > 0 )
+                        handle_endElement(ctx,topNs(ctx),topName(ctx));
+                popTag(ctx);
+        }
+}
+
+int xquery_document_main(
+                str  mode,
+                BAT* cs,
+                BAT* Tpre_size,
+                BAT* Tpre_kind,
+                BAT* Tpre_prop,
+                BAT* Tprop_ns,
+                BAT* Tprop_loc,
+                BAT* Tprop_text,
+                BAT* Tprop_com,
+                BAT* Tprop_tgt,
+                BAT* Tprop_ins,
+                BAT* Tattr_own,
+                BAT* Tattr_ns,
+                BAT* Tattr_loc,
+                BAT* Tattr_val
+        ) {
+        XqueryCtx  ctx_struct, *ctx = &ctx_struct;
+        createContext(ctx, mode, Tpre_size, Tpre_kind, Tpre_prop, Tprop_ns,
+                           Tprop_loc, Tprop_text, Tprop_com, Tprop_tgt,
+                           Tprop_ins, Tattr_own, Tattr_ns, Tattr_loc,
+                           Tattr_val);
+        if ( BATcount(cs) == 0 )
+                return GDK_SUCCEED;
+        
+        handle_startDocument(ctx);
+
+        // lastpre := Tpre_size.reverse.fetch(Tpre_size.count - 1);
+        BUN b = BUNptr(ctx->Tpre_size,BATcount(ctx->Tpre_size));
+        oid lastpre = *(oid*)BUNhead(ctx->Tpre_size,b);
+
+        BUN p, q; 
+        BATloop(cs, p, q) {
+                oid pre = *(oid*)BUNhead(cs, p);
+                do {
+                        xquery_node_print(ctx, pre);
+                        xquery_endtag_print(ctx,++pre);
+                } while( moreTags(ctx) && (pre<lastpre) );
+        }
+        if ( moreTags(ctx) ) {
+                // INCOMPLETE, the next line works but WHY? Should work without
+                xquery_endtag_print(ctx,(oid)-1);
+        }
+        handle_endDocument(ctx);
+        //
+        return GDK_SUCCEED;
+}
+
+/*
+ *
+ */
+
+void  seqStart(XqueryCtx* ctx) {
+        if ( ctx->saxMode ) {
+                // INCOMPLETE
+        } else {
+                stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+                stream_printf(GDKout,"<XqueryResult>\n");
+                ctx->nAttrOnLine = 0;
+        }
+}
+
+void  seqEmitNode(XqueryCtx* ctx, oid nv) {
+        if ( ! ctx->saxMode ) {
+                if ( ctx->nAttrOnLine > 0 ) {
+                        stream_printf(GDKout,"\n");
+                        ctx->nAttrOnLine = 0;
+                }
+        }
+        //
+        xquery_node_print(ctx, nv);
+        //
+        if ( ! ctx->saxMode ) {
+                stream_printf(GDKout,"\n");
+        }
+}
+
+void  seqEmitBool(XqueryCtx* ctx, int bv) {
+        if ( ctx->saxMode ) {
+                // INCOMPLETE
+        } else {
+                ctx->nAttrOnLine++;
+                stream_printf(GDKout,"%d ",(bv?"true":"false"));
+        }
+}
+
+void  seqEmitInt(XqueryCtx* ctx, int iv) {
+        if ( ctx->saxMode ) {
+                // INCOMPLETE
+        } else {
+                ctx->nAttrOnLine++;
+                stream_printf(GDKout,"%d ",iv);
+        }
+}
+
+void  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
+        if ( ctx->saxMode ) {
+                // INCOMPLETE
+        } else {
+                ctx->nAttrOnLine++;
+                stream_printf(GDKout,"%f ",dv);
+        }
+}
+
+void  seqEmitStr(XqueryCtx* ctx, str sv) {
+        if ( ctx->saxMode ) {
+                // INCOMPLETE
+        } else {
+                ctx->nAttrOnLine++;
+                stream_printf(GDKout,"\"%s\" ",sv);
+        }
+}
+
+void  seqEnd(XqueryCtx* ctx) {
+        if ( ctx->saxMode ) {
+                // INCOMPLETE
+        } else {
+                stream_printf(GDKout,"\n");
+                stream_printf(GDKout,"</XqueryResult>\n");
+        }
+}
+
+#define DEBUG_BAT       0
+
+int xquery_result_main(
+                str  mode,
+                BAT* item,
+                BAT* kind,
+                BAT* intVAL,
+                BAT* dblVAL,
+                BAT* decVAL,
+                BAT* strVAL,
+                BAT* Tpre_size,
+                BAT* Tpre_kind,
+                BAT* Tpre_prop,
+                BAT* Tprop_ns,
+                BAT* Tprop_loc,
+                BAT* Tprop_text,
+                BAT* Tprop_com,
+                BAT* Tprop_tgt,
+                BAT* Tprop_ins,
+                BAT* Tattr_own,
+                BAT* Tattr_ns,
+                BAT* Tattr_loc,
+                BAT* Tattr_val
+        ) {
+        XqueryCtx  ctx_struct, *ctx = &ctx_struct;
+        createContext(ctx, mode, Tpre_size, Tpre_kind, Tpre_prop, Tprop_ns,
+                           Tprop_loc, Tprop_text, Tprop_com, Tprop_tgt,
+                           Tprop_ins, Tattr_own, Tattr_ns, Tattr_loc,
+                           Tattr_val);
+        //
+        if ( DEBUG_BAT ) {
+                stream_printf(GDKout,"# RAW XQUERY RESULT:\n");
+                stream_printf(GDKout,"# pre\tkind\tvaloid\tval\n");
+                stream_printf(GDKout,"# ---\t----\t------\t---\n");
+        }
+        //
+        seqStart(ctx);
+        //
+        BUN p, q; 
+        BATloop(item, p, q) {
+                oid pre = *(oid*)BUNhead(item, p);
+                oid valoid = *(oid*)BUNtail(item, p);
+                chr k = *(chr*)indexedTail(kind,pre);
+                if ( DEBUG_BAT )
+                        stream_printf(GDKout,"# %d\t%c\t%d\t",pre,k,valoid);
+                switch( k ) {
+                 case 'b': {
+                        if (DEBUG_BAT) stream_printf(GDKout,"%s\n",(valoid?"true":"false"));
+                        seqEmitBool(ctx,valoid);
+                        break;
+                        }
+                 case 'd': {
+                        dbl dv = *(dbl*)indexedTail(dblVAL,valoid);
+                        if (DEBUG_BAT) stream_printf(GDKout,"%f\n",dv);
+                        seqEmitDbl(ctx,dv); // INCOMPLETE
+                        break;
+                        }
+                 case 'e': {
+                        dbl dv = *(dbl*)indexedTail(decVAL,valoid);
+                        if (DEBUG_BAT) stream_printf(GDKout,"%f\n",dv);
+                        seqEmitDbl(ctx,dv);
+                        break;
+                        }
+                 case 'i': {
+                        int iv = *(int*)indexedTail(intVAL,valoid);
+                        if (DEBUG_BAT) stream_printf(GDKout,"%d\n",iv);
+                        seqEmitInt(ctx,iv);
+                        break;
+                        }
+                 case 'n': {
+                        if (DEBUG_BAT) stream_printf(GDKout,"NODE(%d)\n",valoid);
+                        seqEmitNode(ctx, valoid);
+                        break;
+                        }
+                 case 's': {
+                        str sv = (str)indexedTail(strVAL,valoid);
+                        if (DEBUG_BAT) stream_printf(GDKout,"\"%s\"\n",sv);
+                        seqEmitStr(ctx,sv);
+                        break;
+                        }
+                 default:
+                        stream_printf(GDKout,"UNKNOW_TYPE(\"%c\")\n",k);
+                }
+        }
+        //
+        seqEnd(ctx);
+        //
+        return GDK_SUCCEED;
+}
+
+@c
+/* vim:set shiftwidth=4 expandtab: */
