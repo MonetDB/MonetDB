@@ -1,10 +1,10 @@
 stdout of test 'test_02` in directory 'tests/suite_00` itself:
 
-#> Mtest:	milS test_02 milS
-#> Mtest:	Mtimeout -timeout 900 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_02.milS
-# Monet Database Server V4.1
+#> Mtest (20:57:15):	milS test_02 milS
+#> Mtest (20:57:15):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_02.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Sun Feb  6 18:46:25 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:test_02.milS
 
 loaded;
@@ -40,12 +40,12 @@ insert(s,"hello",8);
 printf("#~BeginVariableOutput~#\n"); info(s).print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------------------------------#
-# BAT:				  tmp_25	  #
+# BAT:				  tmp_23	  #
 # (str)				  (str)		  #
 #-------------------------------------------------#
 [ "version",			  "980714"	  ]
-[ "batId",			  "tmp_26"	  ]
-[ "batCacheid",			  "26"		  ]
+[ "batId",			  "tmp_24"	  ]
+[ "batCacheid",			  "24"		  ]
 [ "batParentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
 [ "head",			  "str"		  ]
@@ -79,8 +79,8 @@ printf("#~BeginVariableOutput~#\n"); info(s).print; printf("#~EndVariableOutput~
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
 [ "top",			  "9"		  ]
-[ "batStamp",			  "-74"		  ]
-[ "curStamp",			  "82"		  ]
+[ "batStamp",			  "-72"		  ]
+[ "curStamp",			  "80"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "dirty"	  ]
 [ "batDirtybuns",		  "clean"	  ]
@@ -130,7 +130,7 @@ print(find(s,"cello"));
 delete(s,"cello",3);
 print(s);
 #-------------------------#
-# BAT:		  tmp_26  #
+# BAT:		  tmp_24  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "hello",	  1	  ]
@@ -143,7 +143,7 @@ print(s);
 sn:= select(s,1,5);
 print(sn);
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_23  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "hello",	  1	  ]
@@ -153,7 +153,7 @@ print(sn);
 sn:= semijoin(s.reverse,sn.reverse);
 print(sn);
 #-------------------------#
-# BAT:	  tmp_27	  #
+# BAT:	  tmp_25	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "hello"	  ]
@@ -163,7 +163,7 @@ print(sn);
 x:= join(s,sn);
 print(x);
 #---------------------------------#
-# BAT:		  tmp_25	  #
+# BAT:		  tmp_23	  #
 # (str)		  (str)		  #
 #---------------------------------#
 [ "hello",	  "hello"	  ]

@@ -1,10 +1,10 @@
 stdout of test 'test_03` in directory 'tests/suite_00` itself:
 
-#> Mtest:	milS test_03 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_03.milS
-# Monet Database Server V4.1
+#> Mtest (20:57:16):	milS test_03 milS
+#> Mtest (20:57:16):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_03.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:test_03.milS
 
 loaded;
@@ -35,21 +35,21 @@ b.insert(1,"15");
 
 b.print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_24  #
 # (int)	  (str)	  #
 #-----------------#
 [ 1,	  "15"	  ]
 
 b.reverse.print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_24  #
 # (str)	  (int)	  #
 #-----------------#
 [ "15",	  1	  ]
 
 b.print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_24  #
 # (int)	  (str)	  #
 #-----------------#
 [ 1,	  "15"	  ]

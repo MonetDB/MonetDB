@@ -1,10 +1,10 @@
 stdout of test 'test_15` in directory 'tests/suite_00` itself:
 
-#> Mtest:	milS test_15 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_15.milS
-# Monet Database Server V4.1
+#> Mtest (20:57:21):	milS test_15 milS
+#> Mtest (20:57:21):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_15.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:test_15.milS
 
 loaded;
@@ -43,14 +43,14 @@ b.insert(int(nil),81);
 c:= b.copy;
 t:= b.select(80,int(nil)); print(t);
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ nil,	  81	  ]
 c.access(BAT_WRITE);
 insert(c,t);print(c);
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]
@@ -73,7 +73,7 @@ z.insert(3,9);
 b.replace(z);
 b.print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_24  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
@@ -90,7 +90,7 @@ b.print;
 
 c.reverse.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
 [ 15,	  1	  ]
@@ -108,14 +108,14 @@ c.reverse.print;
 d:= intersect(reverse(c),b);
 print(d);
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_27  #
 # (int)	  (int)	  #
 #-----------------#
 [ nil,	  nil	  ]
 e:= diff(reverse(c),d);
 print(e);
 #-----------------#
-# BAT:	  tmp_30  #
+# BAT:	  tmp_28  #
 # (int)	  (int)	  #
 #-----------------#
 [ 15,	  1	  ]
@@ -132,7 +132,7 @@ print(e);
 f:= union(e,b);
 print(f);
 #-----------------#
-# BAT:	  tmp_31  #
+# BAT:	  tmp_29  #
 # (int)	  (int)	  #
 #-----------------#
 [ 15,	  1	  ]
@@ -161,7 +161,7 @@ print(f);
 marcel:= b.kunion(b);
 marcel.print;
 #-----------------#
-# BAT:	  tmp_32  #
+# BAT:	  tmp_30  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]

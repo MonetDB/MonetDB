@@ -1,10 +1,10 @@
 stdout of test 'test_05` in directory 'tests/suite_00` itself:
 
-#> Mtest:	milS test_05 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_05.milS
-# Monet Database Server V4.1
+#> Mtest (21:36:24):	milS test_05 milS
+#> Mtest (21:36:24):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_05.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:test_05.milS
 
 loaded;
@@ -47,7 +47,7 @@ b.insert(flt(nil),flt(nil));
 b.insert(flt(nil),81.2);
 b.print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_24  #
 # (flt)	  (flt)	  #
 #-----------------#
 [ 1.2,	  15.6	  ]
@@ -82,7 +82,7 @@ b.delete(1.2, 15.6);
 b.delete(flt(nil),81.2);
 b.print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_24  #
 # (flt)	  (flt)	  #
 #-----------------#
 [ nil,	  nil	  ]
@@ -103,7 +103,7 @@ b.count.print;
 # Lets cut out a few sections
 b.select(25.6,64.5).print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_23  #
 # (flt)	  (flt)	  #
 #-----------------#
 [ 5.6,	  25.6	  ]
@@ -112,14 +112,14 @@ b.select(25.6,64.5).print;
 [ 8.9,	  64.5	  ]
 b.select(4.5,15.6).print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_23  #
 # (flt)	  (flt)	  #
 #-----------------#
 [ 2.3,	  4.5	  ]
 [ 1.2,	  15.6	  ]
 b.select(4.5,4.5).print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_23  #
 # (flt)	  (flt)	  #
 #-----------------#
 [ 2.3,	  4.5	  ]
@@ -131,13 +131,13 @@ b.select(4.5,3.4).print;
 #-----------------#
 b.select(81.2,flt(nil)).print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_23  #
 # (flt)	  (flt)	  #
 #-----------------#
 [ nil,	  81.2	  ]
 b.select(flt(nil),flt(nil)).print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_23  #
 # (flt)	  (flt)	  #
 #-----------------#
 [ 2.3,	  4.5	  ]
@@ -152,21 +152,21 @@ b.select(flt(nil),flt(nil)).print;
 # A 2-dimensional cut
 bn:=b.fragment(1.2,5.6,4.5,15.6);bn.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_23  #
 # (flt)	  (flt)	  #
 #-----------------#
 [ 2.3,	  4.5	  ]
 [ 1.2,	  15.6	  ]
 b.fragment(1.2,5.6,16.2,flt(nil)).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (flt)	  (flt)	  #
 #-----------------#
 [ 5.6,	  25.6	  ]
 [ 4.5,	  16.7	  ]
 b.fragment(1.2,flt(nil),16.2,flt(nil)).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (flt)	  (flt)	  #
 #-----------------#
 [ 5.6,	  25.6	  ]
@@ -176,7 +176,7 @@ b.fragment(1.2,flt(nil),16.2,flt(nil)).print;
 [ 4.5,	  16.7	  ]
 b.fragment(flt(nil),flt(nil),16.2,flt(nil)).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (flt)	  (flt)	  #
 #-----------------#
 [ 5.6,	  25.6	  ]
@@ -189,7 +189,7 @@ b.fragment(flt(nil),flt(nil),16.2,flt(nil)).print;
 bn:= b.join(bn.reverse);
 bn.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (flt)	  (flt)	  #
 #-----------------#
 [ 2.3,	  2.3	  ]
@@ -198,7 +198,7 @@ bn.print;
 bn:= b.semijoin(bn);
 bn.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_23  #
 # (flt)	  (flt)	  #
 #-----------------#
 [ 2.3,	  4.5	  ]
@@ -208,7 +208,7 @@ bn.print;
 c:= b.copy;
 bandjoin(b,c,4.5,4.5).print;
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_26  #
 # (flt)	  (flt)	  #
 #-----------------#
 [ nil,	  nil	  ]

@@ -1,10 +1,10 @@
 stdout of test 'test_10` in directory 'tests/suite_00` itself:
 
-#> Mtest:	milS test_10 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_10.milS
-# Monet Database Server V4.1
+#> Mtest (20:57:20):	milS test_10 milS
+#> Mtest (20:57:20):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_10.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:test_10.milS
 
 loaded;
@@ -35,21 +35,21 @@ printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
 sort(s).print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
 [ 2,	  1	  ]
 [ 3,	  3	  ]
-[ 4,	  3	  ]
 [ 4,	  2	  ]
+[ 4,	  3	  ]
 [ 4,	  2	  ]
 [ 5,	  5	  ]
 printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
 sort_ht(s).print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
@@ -68,7 +68,7 @@ printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
 sort(s).print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_24  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
@@ -82,7 +82,7 @@ printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
 sort_ht(s).print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_24  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]

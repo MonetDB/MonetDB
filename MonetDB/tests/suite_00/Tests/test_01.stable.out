@@ -1,10 +1,10 @@
 stdout of test 'test_01` in directory 'tests/suite_00` itself:
 
-#> Mtest:	milS test_01 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_01.milS
-# Monet Database Server V4.1
+#> Mtest (21:36:17):	milS test_01 milS
+#> Mtest (21:36:17):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_01.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:test_01.milS
 
 loaded;
@@ -45,7 +45,7 @@ b.insert("",int(nil));
 b.insert(str(nil),int(nil));
 b.print;
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_24  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "the",	  1	  ]
@@ -81,7 +81,7 @@ b.delete("the",1);
 b.delete(".",10);
 b.print;
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_24  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "",		  nil	  ]
@@ -103,7 +103,7 @@ b.count.print;
 # Lets cut out a few sections
 b.select(2,4).print;
 #-------------------------#
-# BAT:		  tmp_26  #
+# BAT:		  tmp_23  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -111,7 +111,7 @@ b.select(2,4).print;
 [ "fox",	  4	  ]
 b.select(7,int(nil)).print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_23  #
 # (str)	  (int)	  #
 #-----------------#
 [ "lazy", 7	  ]
@@ -120,7 +120,7 @@ b.select(7,int(nil)).print;
 [ ".",	  10	  ]
 b.select(int(nil),int(nil)).print;
 #-------------------------#
-# BAT:		  tmp_26  #
+# BAT:		  tmp_23  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -137,7 +137,7 @@ b.select(int(nil),int(nil)).print;
 # A 2-dimensional cut
 bn:=b.fragment("fox","quick",1,5);bn.print;
 #-------------------------#
-# BAT:		  tmp_26  #
+# BAT:		  tmp_23  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -145,7 +145,7 @@ bn:=b.fragment("fox","quick",1,5);bn.print;
 [ "fox",	  4	  ]
 b.fragment("fox",str(nil),1,5).print;
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_25  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -154,7 +154,7 @@ b.fragment("fox",str(nil),1,5).print;
 [ "the",	  1	  ]
 b.fragment("fox",str(nil),int(nil),int(nil)).print;
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_25  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -165,7 +165,7 @@ b.fragment("fox",str(nil),int(nil),int(nil)).print;
 [ "the",	  1	  ]
 b.fragment(str(nil),"f",int(nil),int(nil)).print;
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_25  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "",		  nil	  ]
@@ -176,7 +176,7 @@ b.fragment(str(nil),"f",int(nil),int(nil)).print;
 [ ".",		  10	  ]
 b.reverse.fragment(int(nil),int(nil),str(nil),"f").print;
 #-------------------------#
-# BAT:	  tmp_27	  #
+# BAT:	  tmp_25	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ nil,	  ""		  ]
@@ -189,7 +189,7 @@ b.reverse.fragment(int(nil),int(nil),str(nil),"f").print;
 bn:= b.join(bn.reverse);
 bn.print;
 #---------------------------------#
-# BAT:		  tmp_27	  #
+# BAT:		  tmp_25	  #
 # (str)		  (str)		  #
 #---------------------------------#
 [ "quick",	  "quick"	  ]
@@ -199,7 +199,7 @@ bn.print;
 bn:= b.semijoin(bn.reverse);
 bn.print;
 #-------------------------#
-# BAT:		  tmp_26  #
+# BAT:		  tmp_23  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -209,25 +209,25 @@ bn.print;
 # testing the like command
 b.reverse.like("ox").print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
 b.reverse.like("fo").print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
 b.reverse.like("fox").print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
 b.reverse.like(" fox").print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (str)	  #
 #-----------------#
 quit;

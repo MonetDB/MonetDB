@@ -1,10 +1,10 @@
 stdout of test 'test_35` in directory 'tests/suite_00` itself:
 
-#> Mtest:	milS test_35 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_35.milS
-# Monet Database Server V4.1
+#> Mtest (20:57:26):	milS test_35 milS
+#> Mtest (20:57:26):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_35.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:test_35.milS
 
 loaded;
@@ -36,7 +36,7 @@ insert(c,4,9);
 insert(c,5,int(nil));
 c.print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_24  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
@@ -54,7 +54,7 @@ insert(d,9,4);
 insert(d,int(nil),5);
 d.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
@@ -66,7 +66,7 @@ d.print;
 z:=c.semijoin(d);
 z.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
@@ -76,7 +76,7 @@ z.print;
 z:=c.reverse.semijoin(d);
 z.print;
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_26  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
@@ -88,7 +88,7 @@ z.print;
 z:=d.semijoin(c);
 z.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
@@ -104,7 +104,7 @@ b.insert(oid(3),"..");
 z:= b.semijoin(b);
 z.print;
 #-------------------------#
-# BAT:	  tmp_29	  #
+# BAT:	  tmp_27	  #
 # (void)  (str)		  #
 #-------------------------#
 [ 1@0,	  "hello"	  ]

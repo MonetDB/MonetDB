@@ -1,10 +1,10 @@
 stdout of test 'test_04` in directory 'tests/suite_00` itself:
 
-#> Mtest:	milS test_04 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_04.milS
-# Monet Database Server V4.1
+#> Mtest (20:57:18):	milS test_04 milS
+#> Mtest (20:57:18):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_04.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:test_04.milS
 
 loaded;
@@ -39,7 +39,7 @@ c.insert(1,4);
 c.insert(2,2);
 b.semijoin(c).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
@@ -48,14 +48,14 @@ b.semijoin(c).print;
 [ 1,	  4	  ]
 c.semijoin(b).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  5	  ]
 [ 1,	  4	  ]
 b.semijoin(b).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 0,	  0	  ]

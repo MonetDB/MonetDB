@@ -1,10 +1,10 @@
 stdout of test 'test_95` in directory 'tests/suite_00` itself:
 
-#> Mtest:	milS test_95 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_95.milS
-# Monet Database Server V4.1
+#> Mtest (20:57:36):	milS test_95 milS
+#> Mtest (20:57:36):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_95.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:test_95.milS
 
 loaded;
@@ -46,7 +46,7 @@ c.insert(8,5);
 
 b.sunique.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  5	  ]
@@ -59,7 +59,7 @@ b.sunique.print;
 [ 9,	  11	  ]
 b.kunique.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  6	  ]
@@ -68,14 +68,14 @@ b.kunique.print;
 [ 9,	  11	  ]
 sintersect(c,b).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  5	  ]
 [ 8,	  10	  ]
 kintersect(c,b).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  10	  ]
@@ -84,7 +84,7 @@ kintersect(c,b).print;
 [ 8,	  5	  ]
 kintersect(b,c).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  5	  ]
@@ -93,14 +93,14 @@ kintersect(b,c).print;
 [ 8,	  11	  ]
 sdiff(c,b).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  10	  ]
 [ 8,	  5	  ]
 kdiff(b,c).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 4,	  5	  ]
@@ -110,7 +110,7 @@ kdiff(b,c).print;
 [ 9,	  11	  ]
 sdiff(b,c).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  6	  ]
@@ -122,7 +122,7 @@ sdiff(b,c).print;
 [ 9,	  11	  ]
 kdiff(b,c).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 4,	  5	  ]
@@ -132,7 +132,7 @@ kdiff(b,c).print;
 [ 9,	  11	  ]
 sunion(c,b).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  10	  ]
@@ -148,7 +148,7 @@ sunion(c,b).print;
 [ 9,	  11	  ]
 kunion(c,b).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  10	  ]
@@ -162,7 +162,7 @@ kunion(c,b).print;
 [ 9,	  11	  ]
 kunion(b,c).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  5	  ]
@@ -180,7 +180,7 @@ c.insert(0,0);
 
 b.sunique.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  5	  ]
@@ -194,7 +194,7 @@ b.sunique.print;
 [ 0,	  0	  ]
 b.kunique.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  5	  ]
@@ -204,7 +204,7 @@ b.kunique.print;
 [ 0,	  0	  ]
 sintersect(c,b).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  5	  ]
@@ -212,7 +212,7 @@ sintersect(c,b).print;
 [ 0,	  0	  ]
 kintersect(c,b).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  10	  ]
@@ -222,7 +222,7 @@ kintersect(c,b).print;
 [ 0,	  0	  ]
 kintersect(b,c).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  5	  ]
@@ -232,14 +232,14 @@ kintersect(b,c).print;
 [ 0,	  0	  ]
 sdiff(c,b).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  10	  ]
 [ 8,	  5	  ]
 kdiff(b,c).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 4,	  5	  ]
@@ -249,7 +249,7 @@ kdiff(b,c).print;
 [ 9,	  11	  ]
 sdiff(b,c).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  6	  ]
@@ -261,7 +261,7 @@ sdiff(b,c).print;
 [ 9,	  11	  ]
 kdiff(b,c).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 4,	  5	  ]
@@ -271,7 +271,7 @@ kdiff(b,c).print;
 [ 9,	  11	  ]
 sunion(c,b).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  10	  ]
@@ -288,7 +288,7 @@ sunion(c,b).print;
 [ 9,	  11	  ]
 kunion(c,b).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  10	  ]
@@ -303,7 +303,7 @@ kunion(c,b).print;
 [ 9,	  11	  ]
 kunion(b,c).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  5	  ]

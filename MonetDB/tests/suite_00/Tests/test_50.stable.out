@@ -1,10 +1,10 @@
 stdout of test 'test_50` in directory 'tests/suite_00` itself:
 
-#> Mtest:	milS test_50 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_50.milS
-# Monet Database Server V4.1
+#> Mtest (20:57:28):	milS test_50 milS
+#> Mtest (20:57:28):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_50.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 19:36:03 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:test_50.milS
 
 loaded;
@@ -36,13 +36,13 @@ insert(b,2,3);
 bd:=b.delta;
 print(bd);
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_26  #
 # (int)	  (int)	  #
 #-----------------#
 a:= b.alpha;
 a.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
@@ -53,7 +53,7 @@ clear(bd);
 commit(b);
 b.alpha.print;
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_27  #
 # (int)	  (int)	  #
 #-----------------#
 
@@ -61,7 +61,7 @@ insert(b,4,5);
 delete(b,2,3);
 print(b);
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_24  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
@@ -69,21 +69,21 @@ print(b);
 bd:=b.delta();
 print(bd);
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_27  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  3	  ]
 a:= b.alpha;
 a.print;
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_26  #
 # (int)	  (int)	  #
 #-----------------#
 [ 4,	  5	  ]
 abort(b);
 print(b);
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_24  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  3	  ]

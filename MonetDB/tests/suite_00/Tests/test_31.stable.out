@@ -1,10 +1,10 @@
 stdout of test 'test_31` in directory 'tests/suite_00` itself:
 
-#> Mtest:	milS test_31 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_31.milS
-# Monet Database Server V4.1
+#> Mtest (20:57:25):	milS test_31 milS
+#> Mtest (20:57:25):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_31.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:test_31.milS
 
 loaded;
@@ -46,7 +46,7 @@ z:= time;
 clo:= closure(c);
 printf("#~BeginVariableOutput~#\nclosure in %d ms cnt %d\n#~EndVariableOutput~#\n",time-z,count(clo));
 #~BeginVariableOutput~#
-closure in 10 ms cnt 400
+closure in 12 ms cnt 400
 #~EndVariableOutput~#
 ## testing traversal on directed acyclic graph
 ## produces the end-points only
@@ -54,7 +54,7 @@ d:= new(int,int);
 d.insert(1,1);
 d.subgraph(c).print;
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_27  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
@@ -463,7 +463,7 @@ d.insert(2,2);
 z:= time;
 e:=d.subgraph(c); printf("#~BeginVariableOutput~#\nsubgraph in %d ms on %d\n#~EndVariableOutput~#\n",time-z,count(e));
 #~BeginVariableOutput~#
-subgraph in 2 ms on 400
+subgraph in 1 ms on 400
 #~EndVariableOutput~#
 d.clear;
 d.insert(2,2);
@@ -492,9 +492,9 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  150	  ]
+[ "user",	  130	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  60	  ]
+[ "system",	  30	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 d.clear;
@@ -503,7 +503,7 @@ z:= time;
 e:=d.subgraph(clo); 
 printf("#~BeginVariableOutput~#\nsubgraph in %d ms on %d\n#~EndVariableOutput~#\n",time-z,count(e));
 #~BeginVariableOutput~#
-subgraph in 2 ms on 400
+subgraph in 1 ms on 400
 #~EndVariableOutput~#
 d.clear;
 ## d.insert(2,2);
@@ -522,7 +522,7 @@ d.insert(4,4);
 z:= time; 
 e:=d.subgraph(clo); printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time-z,count(e));
 #~BeginVariableOutput~#
-subgraph in 1 ms cnt 400
+subgraph in 2 ms cnt 400
 #~EndVariableOutput~#
 
 printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
@@ -532,9 +532,9 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  160	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  70	  ]
-[ "elapsystem",	  10	  ]
+[ "user",	  130	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  30	  ]
+[ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 quit;
