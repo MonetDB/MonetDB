@@ -97,7 +97,7 @@ SQLForeignKeys_(ODBCStmt *stmt,
 		"cast(fks.\"name\" as varchar) as fktable_schem, "
 		"cast(fkt.\"name\" as varchar) as fktable_name, "
 		"cast(fkkc.\"column\" as varchar) as fkcolumn_name, "
-		"cast(fkk.\"type\" + 1 as smallint) as key_seq, "
+		"cast(fkkc.\"nr\" + 1 as smallint) as key_seq, "
 		"cast(%d as smallint) as update_rule, "
 		"cast(%d as smallint) as delete_rule, "
 		"cast(fkk.\"name\" as varchar) as fk_name, "
