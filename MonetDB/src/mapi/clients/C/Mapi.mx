@@ -653,6 +653,7 @@ typedef struct MapiStruct {
 	int active;		/* set when not all rows have been received */
 	char *template;		/* keep parameterized query text around */
 	char *query;
+	int tableid;		/* SQL id of current result set */
 
 	int fieldcnt;		/* the table report section */
 	int rows_affected;	/* mostly unknown */
@@ -2690,7 +2691,7 @@ because the client may wish to perform a mapi_fetch_line();
 @c
 #define keepProp(name, attr)						\
 	do {								\
-		if (strncmp(name, tag, 4) == 0) {			\
+		if (strcmp(name, tag) == 0) {			\
 			char *fld;					\
 									\
 			i = 0;						\
@@ -2724,6 +2725,27 @@ because the client may wish to perform a mapi_fetch_line();
 
 	keepProp("name", columnname);
 	keepProp("type", columntype);
+	if (strcmp("tuplecount", tag) == 0) {
+		char *fld;
+
+		if ((fld = mapi_fetch_field(mid, 0)) != NULL) {
+			mid->rows_affected = atoi(fld);
+			if (mid->trace)
+				printf("got tuplecount %d\n",
+				       mid->rows_affected);
+		}
+		mapi_clrError(mid);
+	}
+	if (strcmp("id", tag) == 0) {
+		char *fld;
+
+		if ((fld = mapi_fetch_field(mid, 0)) != NULL) {
+			mid->tableid = atoi(fld);
+			if (mid->trace)
+				printf("got id %d\n", mid->tableid);
+		}
+		mapi_clrError(mid);
+	}
 	/* restore the markers */
 	*line = '#';
 	*etag = '#';
