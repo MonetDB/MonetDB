@@ -19,19 +19,19 @@ MEL=$(TOPDIR)\src\mel\mel
 MX=$(TOPDIR)\src\utils\Mx\Mx
 
 .mx.h:
-	$(MX) $(MXFLAGS) -x h $<
+	$(MX) $(MXFLAGS) -x h $(SRCDIR)/$<
 
 .mx.c:
-	$(MX) $(MXFLAGS) -x c $<
+	$(MX) $(MXFLAGS) -x c $(SRCDIR)/$<
 
 .mx.cxx:
-	$(MX) $(MXFLAGS) -x C $<
+	$(MX) $(MXFLAGS) -x C $(SRCDIR)/$<
 
 .mx.m:
-	$(MX) $(MXFLAGS) -x m $<
+	$(MX) $(MXFLAGS) -x m $(SRCDIR)/$<
 
 .mx.mil:
-	$(MX) $(MXFLAGS) -x mil $<
+	$(MX) $(MXFLAGS) -x mil $(SRCDIR)/$<
 
 # needed for yacc/lex output generated under unix 
 .cc.cxx:

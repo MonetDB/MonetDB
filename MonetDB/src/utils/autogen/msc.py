@@ -18,11 +18,13 @@ def msc_subdirs(fd, var, values, msc ):
   fd.write("%s = %s\n" % (var,o) )
   fd.write("all-recursive: %s\n" % msc_list2string(values,"","-all ") )
   for v in values:
-    fd.write("%s-all:\n" % v)
-    fd.write("\t$(CD) %s && $(MAKE) /k /f Makefile.msc all\n" % v) 
+    fd.write("%s-all: %s\n" % (v,v))
+    fd.write("\t$(CD) %s && $(MAKE) /k /f ..\\$(SRCDIR)\\%s\\Makefile.msc all SRCDIR=..\\$(SRCDIR)\\%s\n" % (v,v,v)) 
+    fd.write("%s: \n\tif not exist %s $(MKDIR) %s\n" % (v,v,v))
+    fd.write("\t$(INSTALL) $(SRCDIR)\\%s\\Makefile.msc %s\n" % (v,v))
   fd.write("install-recursive: %s\n" % msc_list2string(values,"","-install ") )
   for v in values:
-    fd.write("%s-install:\n" % v)
+    fd.write("%s-install: $(bindir) $(libdir)\n" % v)
     fd.write("\t$(CD) %s && $(MAKE) /k /f Makefile.msc install\n" % v) 
 
 def msc_assignment(fd, var, values, msc ):
@@ -60,7 +62,14 @@ def msc_translate_dir(path,msc):
       elif (d == "srcdir" or d == "builddir"):
           d = "."
       dir = d+ "\\" + rest
-    return regsub.gsub(os.sep, "\\", dir );
+    if (os.sep != "\\"):
+    	return regsub.gsub(os.sep, "\\", dir );
+    return dir
+
+def msc_translate_file(path,msc):
+    if (os.path.isfile(msc['cwd']+ os.sep + path)):
+	return "$(SRCDIR)\\" + path
+    return path
 
 def msc_space_sep_list(l):
   res = ""
@@ -135,9 +144,11 @@ def msc_deps(fd,deps,objext, msc):
   for tar,deplist in deps.items():
     t = msc_translate_ext(tar)
     b,ext = string.split(t,".",1)
-    fd.write( t + ":" )
+    tf = msc_translate_file(t,msc)
+    fd.write( tf + ":" )
     for d in deplist:
-      fd.write( " " + msc_translate_dir(msc_translate_ext(d),msc) )
+      fd.write( " " + msc_translate_dir(\
+		msc_translate_ext(msc_translate_file(d,msc)),msc) )
     fd.write("\n");
     if (ext == "glue.c"):
 	fd.write( "\t$(MEL) $(INCLUDES) -o %s -glue %s.m\n" % (t,b) );
@@ -424,7 +435,6 @@ output_funcs = { 'SUBDIRS': msc_subdirs,
 		 'CXXFLAGS' : msc_cflags,
 		}
 
-
 def output(tree, cwd, topdir):
   fd = open(cwd+os.sep+'Makefile.msc',"w")
 
@@ -465,6 +475,7 @@ CXXEXT = \\\"cxx\\\"
   msc['INSTALL'] = []
   msc['LIBDIR'] = 'lib'
   msc['TREE'] = tree
+  msc['cwd'] = cwd
   
   fd.write("CFLAGS = $(INCLUDES) $(CFLAGS)\n" )
   fd.write("CXXFLAGS = $(CFLAGS)\n" )
@@ -519,8 +530,6 @@ CXXEXT = \\\"cxx\\\"
   #fd.write("\n")
 
   fd.write("all-msc:")
-  if (topdir == cwd):
-    fd.write(" config.h unistd.h sys\\socket.h")
   if (len(msc['LIBS']) > 0):
     for v in msc['LIBS']:
       fd.write(" lib%s.dll" % (v) )
@@ -530,11 +539,6 @@ CXXEXT = \\\"cxx\\\"
       fd.write(" %s.exe" % (v) )
 
   fd.write("\n")
-
-  if (topdir == cwd):
-      fd.write("config.h: winconfig.h\n\t$(INSTALL) winconfig.h config.h\n")
-      fd.write("unistd.h: \n\t$(ECHO) #ifndef UNISTD_H > unistd.h\n\t$(ECHO) #define UNISTD_H >> unistd.h\n\t$(ECHO) #include \"io.h\" >> unistd.h\n\t$(ECHO) #endif >> unistd.h\n")
-      fd.write("sys\\socket.h: \n\tif not exist sys $(MKDIR) sys\n\t$(ECHO) #ifndef SOCKET_H > sys\\socket.h\n\t$(ECHO) #define SOCKET_H >> sys\\socket.h\n\t$(ECHO) #include \"winsock.h\" >> sys\\socket.h\n\t$(ECHO) #endif >> sys\\socket.h\n")
 
   fd.write("install-msc: install-exec install-data\n")
   l = []
