@@ -45,6 +45,44 @@
 #define MAXTAGDEPTH        1024
 
 #define WS_BATS     19
+
+/**
+ *
+ * 0. SMALL UTILITY SECTION
+ *
+ * Here a structure is defined to prevent too much alloc/free actions.
+ * If the size of a string is smaller then SMART_STR_SZ the value is
+ * stored in stack_buff[] within the structure. Otherwise it is strdupped and
+ * freed like usual.
+ */
+
+
+#define SMART_STR_SZ    32
+
+typedef struct {
+        char stack_buff[SMART_STR_SZ];
+        str  val;
+} SmartStrBuff;
+
+static str ssb_alloc(SmartStrBuff* ssb, str s) {
+        if ( s ) {
+                size_t l = strlen(s)+1;
+
+                if ( l <= SMART_STR_SZ )
+                        return ssb->val = memcpy(&ssb->stack_buff,s,l);
+                else
+                        return ssb->val = strdup(s);
+        } else
+                return ssb->val = NULL;
+}
+
+static void ssb_free(SmartStrBuff* ssb) {
+        if ( ssb->val && (ssb->val != (str)&ssb->stack_buff) ) {
+                free( ssb->val );
+        }
+        ssb->val = NULL;
+}
+
 /**
  *
  * I. THE CONTEXT NODE DEFINITION AND USAGE PART
@@ -54,6 +92,7 @@
  * of all BATs containing the XML documents.
  *
  */
+
 typedef struct {
         int     saxMode;        /* Flag, true if printing a Sax-O-Phone stream */
         BAT*    ws;             /* working set BAT */
@@ -66,9 +105,9 @@ typedef struct {
          */
         int     stackPtr;    
         struct {
-                oid     pre;
-                str     ns;
-                str     name;
+                oid             pre;
+                SmartStrBuff    ssb_ns;
+                SmartStrBuff    ssb_name;
         } tagStack[MAXTAGDEPTH];
         /* */
         int     nAttrOnLine; /* used by top result print routine to count the
@@ -87,13 +126,10 @@ static BAT* fetchWsContextBAT(BAT* ws, int batID, int wsID) {
         /* stream_printf(GDKout,"# FETCH WS[%d][%d] \n",batID,wsID); */
         BUN bun = BUNfnd(ws,&batID);
 
-        if ( wsID > 0 && batID==DOC_LOADED )
-                return NULL; /* incomplete:
-                              * The is no valid BATdescriptor for these BAT
-                              * for some reason
-                              */
-        if ( !bun )
+        if ( !bun ) {
               stream_printf(GDKout,"# NOT FOUND BAT[%d] in WS!!!!\n",batID);
+              return NULL;
+        }
         BAT* batbat;
         
         if ( !( batbat = BATdescriptor(*(bat*)bun)) ) {
@@ -105,46 +141,60 @@ static BAT* fetchWsContextBAT(BAT* ws, int batID, int wsID) {
         BUN bbun = BUNfnd(batbat,&wsID);
         BAT *res;
         if ( !bbun ) {
-                res = 0;
-                /* stream_printf(GDKout,"# NOT FOUND BAT[%d][%d] in WS!!!!\n",batID,wsID); */
+                stream_printf(GDKout,"# NOT FOUND BAT[%d][%d] in WS!!!!\n",batID,wsID);
+                return NULL;
         } else {
                 if ( !(res = BATdescriptor(*(bat*)bbun)) ) {
-                        /* incomplete:
-                         * fetch[18(=WS_FRAG)][0] fails often but to no harm
-                         * 
-                         * stream_printf(GDKout,"# FETCH WS[%d][%d] FAILED\n",batID,wsID);
-                         */
+                         stream_printf(GDKout,"# FETCH WS[%d][%d] FAILED\n",batID,wsID);
                 }
         }
         BBPunfix( BBPcacheid( batbat ) );
         return res;
 }
 
+/**
+ * The wsBAT() function is responsible for 'demand-loading' the BAT with index
+ * 'batId in the current working set. No BAT is loaded until it is needed. This
+ * solves some funny problems with loading BAT's which were not needed
+ * anyway.
+ */
+static BAT* wsBAT(XqueryCtx* ctx, int batId) {
+        if ( !ctx->curBAT[batId] ) { 
+                if ( !( ctx->curBAT[batId] = 
+                        fetchWsContextBAT(ctx->ws, batId, ctx->curFRAG)) )
+                        stream_printf(GDKout,"NIL ctx->curBAT[%d]\n",batId);
+        }
+        return ctx->curBAT[batId];
+}
+
+
 static void switchWsContext(XqueryCtx* ctx, int wsID) {
         if ( ctx->curFRAG != wsID ) {
                 int i;
 
                 if ( ctx->curFRAG >= 0 ) {
-                        /* close the old open context */
+                        /* close the old open context BAT's */
                         for(i=0; i<WS_BATS; i++) {
-                                if ( ctx->curBAT[i] )
-                                        BBPunfix( BBPcacheid( ctx->curBAT[i] ) );
+                                if ( ctx->curBAT[i] ) {
+                                        BBPunfix( BBPcacheid(ctx->curBAT[i]));
+                                        ctx->curBAT[i] = NULL;
+                                }
                         }
                 }
                 ctx->curFRAG   = wsID;
-                if ( wsID >= 0 ) {
-                        /* open the new context */
-                        for(i=0; i<WS_BATS; i++) {
-                                ctx->curBAT[i] = fetchWsContextBAT(ctx->ws,i,wsID);
-                        }
-                }
         }
 }
 
 static void createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
+        int i;
+
         ctx->saxMode   = (strcmp(mode,"sax")==0);
         ctx->ws        = ws;
         ctx->curFRAG   = -1; /* empty, no frag loaded */
+        /* initialize with all wsBAT()'s closed */
+        for(i=0; i<WS_BATS; i++) {
+                ctx->curBAT[i] = NULL;
+        }
         /* */
         if ( wsID >= 0 )
                 switchWsContext(ctx, wsID);
@@ -164,27 +214,28 @@ static int moreTags(XqueryCtx* ctx) {
  */
 static void pushTag(XqueryCtx* ctx, oid pre, str ns, str name) {
         ctx->tagStack[ctx->stackPtr].pre  = pre;
-        /* incomplete, 'ns' and 'name' should not be mallod's and free'd */
-        ctx->tagStack[ctx->stackPtr].ns   = strdup(ns);
-        ctx->tagStack[ctx->stackPtr].name = strdup(name);
+        ssb_alloc(&ctx->tagStack[ctx->stackPtr].ssb_ns,   ns);
+        ssb_alloc(&ctx->tagStack[ctx->stackPtr].ssb_name, name);
         ctx->stackPtr++;
 }
 
 /**
  * Three function to retrieve the pre-value, namespace or nodename of the
- * top lement on the stack.
+ * top element on the stack.
  */
 static oid topTag(XqueryCtx* ctx)  {return ctx->tagStack[ctx->stackPtr-1].pre;}
-static str topNs(XqueryCtx* ctx)   {return ctx->tagStack[ctx->stackPtr-1].ns;}
-static str topName(XqueryCtx* ctx) {return ctx->tagStack[ctx->stackPtr-1].name;}
+static str topNs(XqueryCtx* ctx)   {return ctx->tagStack[ctx->stackPtr-1].ssb_ns.val;}
+static str topName(XqueryCtx* ctx) {return ctx->tagStack[ctx->stackPtr-1].ssb_name.val;}
+
 
 /**
  * Pop the top element of the stack. Means that processing the node has
  * finished.
  */
 static void popTag(XqueryCtx* ctx) {
-        free( topNs(ctx) );
-        free( topName(ctx) );
+        /* de-alloc the ns and name strings */
+        ssb_free(&ctx->tagStack[ctx->stackPtr-1].ssb_ns);
+        ssb_free(&ctx->tagStack[ctx->stackPtr-1].ssb_name);
         --ctx->stackPtr;
 }
 
@@ -478,10 +529,11 @@ static ptr idxTV(str name, BAT* b, oid oid_index) {
 /**
  * Reads the index tailvalue in a Working Set BAT
  */
+
 static ptr idxTVinWS(XqueryCtx* ctx, int batId, oid oid_index) {
-        BAT* b = ctx->curBAT[batId];
-        if ( !b ) 
-                stream_printf(GDKout,"NIL ctx->curBAT[%d]\n",batId);
+        BAT* b = wsBAT(ctx, batId);
+        if ( !b )
+                return NULL;
         ptr res = idxTV("tmp",b,oid_index);
         return res;
 }
@@ -509,14 +561,14 @@ static ptr idxTVinWSorFRGN(XqueryCtx* ctx, int fragId, int batId, oid oid_index)
  * function is only called from the xquery_node_print() function.
  */
 static void query_attr_print(XqueryCtx* ctx, oid pre) {
-        BAT* b = BATuselect(ctx->curBAT[ATTR_OWN],&pre,&pre);
+        BAT* b = BATuselect(wsBAT(ctx,ATTR_OWN),&pre,&pre);
 
         BUN p, q; 
         BATloop(b, p, q) {
                 oid id = *(oid*)BUNhead(b, p);
                 /* */
                 oid poid = *(oid*)idxTVinWS(ctx,ATTR_PROP,id);
-                str val = (str)idxTVinWS(ctx,PROP_VAL,poid);
+                str val  = (str)idxTVinWS(ctx,PROP_VAL,poid);
                 /* */
                 oid qoid = *(oid*)idxTVinWS(ctx,ATTR_QN,id);
                 str ns   = (str)idxTVinWS(ctx,QN_NS,qoid);
@@ -613,16 +665,9 @@ static void MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag)
         oid pre = from;
 
         do {
-                if (0) stream_printf(GDKout,"[pb%dp]",pre);
                 xquery_node_print(ctx, pre,pre_frag);
                 xquery_endtag_print(ctx,++pre);
-                if (0) stream_printf(GDKout,"[pe%dp]",pre);
         } while( moreTags(ctx) && (pre<=to) );
-        if (0) stream_printf(GDKout,"[*%d>=%d]",pre,to);
-        if ( 0 && moreTags(ctx) ) {
-                /* INCOMPLETE, see above */
-                xquery_endtag_print(ctx,ALLTAGS);
-        }
 }
 
 /**
@@ -692,7 +737,7 @@ int xquery_print_doc_main(str mode, BAT* ws, str docName) {
         createWsContext(ctx,ws,docIndex,mode);
         /* */
         handle_startDocument(ctx);
-        xquery_pre_range(ctx,ctx->curBAT[PRE_SIZE],0/*start*/,1 /* first is doc ? */);
+        xquery_pre_range(ctx,wsBAT(ctx,PRE_SIZE),0/*start*/,1 /* first is doc ? */);
         handle_endDocument(ctx);
         switchWsContext(ctx,-1); /* close all open context BAT's */
         /* */
@@ -869,7 +914,7 @@ int xquery_print_result_main(
                         int frag = XTRACT_FRAG(cmbn_frag_kind);
                         if (DEBUG_BAT) stream_printf(GDKout,"ELEM(frag=%d,v_oid=%d)\n",frag, valoid);
                         switchWsContext(ctx,frag);
-                        seqEmitNode(ctx, valoid, ctx->curBAT[PRE_FRAG]);
+                        seqEmitNode(ctx, valoid, wsBAT(ctx,PRE_FRAG));
                         break;
                         };
                  case NODE: {
