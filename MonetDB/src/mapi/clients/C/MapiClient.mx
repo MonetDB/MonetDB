@@ -59,13 +59,15 @@ Can be used in scripts, but is insecure.
 #include "Mapi.h"
 #include <stdlib.h>
 #include <ctype.h>
-#ifdef HAVE_LIBREADLINE
 #include <sys/stat.h>
-#endif
 #include <errno.h>
 #include <string.h>
 /* #include <signal.h> */
 #include <stream.h>
+
+#ifndef S_ISCHR
+#define S_ISCHR(m)	(((m) & S_IFMT) == S_IFCHR)
+#endif
 
 #define _strdup( ptr )		strdup((char*)ptr)
 
@@ -199,7 +201,6 @@ simple_prompt(const char *prompt, int maxlen, int echo)
         return destination;
 }
 
-extern int errno;		/* pass errors  */
 char *program;			/* my name */
 
 #define EXIT(x)	{ exit(x); }
@@ -303,12 +304,16 @@ void terminalInput( Mapi mid, char *prompt)
 				return;
 			}
 		} else
-#else
-		(void) prompt; /* pacify compiler */
 #endif
 		{
 			int len;
 			char *buf =(char *)malloc(CHUNK_SIZE);
+#ifndef HAVE_LIBREADLINE
+			if (is_chrsp) {
+				fputs(prompt, stdout);
+				fflush(stdout);
+			}
+#endif
 			if ((line =(char *)fgets(buf,CHUNK_SIZE,stdin))==NULL) {
 				free(buf);
 				return;
@@ -469,9 +474,7 @@ int main(int ac, char **av)
 
 	char *command = NULL;
 
-#ifdef HAVE_LIBREADLINE
 	struct stat st;
-#endif
 	Mapi mid;
 
 	static struct option long_options[] = {
@@ -629,11 +632,9 @@ int main(int ac, char **av)
 			prompt = _strdup(">");
 	}
 
-#ifdef HAVE_LIBREADLINE
 	fstat(fileno(stdin),&st);
 	if (S_ISCHR(st.st_mode))
 		is_chrsp = 1;
-#endif
 /*
 	if (!user)
 		user = simple_prompt("User: ", BUFSIZ, 1 );
