@@ -1,9 +1,9 @@
 
 MTSAFE
 INCLUDES = $(MONET_INCS)
-LIBDIR = pkglib
 
 lib__example = {
+	DIR = pkglibdir
 	SOURCES = example.mx
 	HEADERS = h
 	LIBS = $(MONET_LIBS) 

@@ -26,8 +26,6 @@ INCLUDES = -I../../common -I../../gdk -I../../monet \
 	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS)
 MTSAFE
 
-# install these libs in the pkglibdir
-
 lib__streams = {
 	DIR = pkglibdir
 	SOURCES = streams.mx
