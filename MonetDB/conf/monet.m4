@@ -708,12 +708,26 @@ if test "x$python" != xno; then
     python=no
   fi
 fi
+if test "x$python" != xno; then
+  PYTHON_LIBDIR=`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")' 2>/dev/null`
+  if test ! "$PYTHON_LIBDIR"; then
+    case "$python" in
+    auto)
+      ;;
+    *)
+      AC_MSG_ERROR([No Python library directory found.  Is Python installed properly?])
+      ;;
+    esac
+    python=no
+  fi
+fi
 if test x"$python" != xno; then
 	python=yes
 fi
 AC_MSG_RESULT($python)
 AC_SUBST(PYTHONINC)
 AC_SUBST(PYTHON)
+AC_SUBST(PYTHON_LIBDIR)
 AM_CONDITIONAL(HAVE_PYTHON, test x"$python" != xno)
 AM_CONDITIONAL(HAVE_PYTHON_SWIG, test x"$python" != xno -a x"$SWIG" != xno)
 

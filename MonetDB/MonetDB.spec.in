@@ -18,7 +18,7 @@ Source: %{name}-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 Copyright:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-BuildRequires: php
+BuildRequires: php python
 
 %package client
 Summary: MonetDB clients
@@ -26,6 +26,10 @@ Group: System
 
 %package php
 Summary: MonetDB php interface
+Group: System
+
+%package python
+Summary: MonetDB python interface
 Group: System
 
 %package server
@@ -57,6 +61,11 @@ Requires: %{name}-client
 Requires: php
 %define php_extensiondir %(php-config --extension-dir)
 
+%description python
+Add the MonetDB python description here
+Requires: %{name}-client
+Requires: python
+%define python_libdir %(python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")')
 
 %description server
 Add the MonetDB server description here
@@ -136,6 +145,10 @@ rm -fr $RPM_BUILD_ROOT
 %files php
 %defattr(-,monetdb,monetdb) 
 %{php_extensiondir}/*
+
+%files python
+%defattr(-,monetdb,monetdb) 
+%{prefix}/%{python_libdir}/*
 
 %files server
 %defattr(-,monetdb,monetdb) 

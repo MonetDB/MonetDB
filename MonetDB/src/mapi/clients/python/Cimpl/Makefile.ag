@@ -33,12 +33,12 @@ lib_MapiLib = {
 	NAME = _MapiLib
 	SOURCES = MapiLib.py.i
 	LIBS = ../../C/libMapi
-	DIR = pkgdatadir/python
+	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 
 headers_py = {
 	HEADERS = py
 	SOURCES = MapiLib.py.i CMapi.py
 	TARGETS = MapiLib.py CMapi.py
-	DIR = pkgdatadir/python
+	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
