@@ -55,6 +55,7 @@ Try: modules;                - for other modules.
 !ERROR: interpret: unresolved reference.
 !ERROR: print(param 1): evaluation error.
 [ 3 ]
+!WARNING: interpret: convert identifier 'forward' to string.
 
 # 12:54:27 >  
 # 12:54:27 >  Done.

@@ -170,6 +170,7 @@ Try: modules;                - for other modules.
 [ "nec_big",	  -11220000000000E30,	  -11220000000000E25,	  -11220000000000E35	  ]
 [ "dec_huge",	  22440000000000E9000,	  22440000000000E8995,	  22440000000000E9005	  ]
 [ "nec_huge",	  -2244E9010,		  -2244E9005,		  -2244E9015		  ]
+!WARNING: Overwriting var dec_zero
 #---------------------------------------------------------#
 # BAT:	  decimal1		| raise	| pow		  #
 # (void)  (decimal)		| (int)	| (decimal)	  #

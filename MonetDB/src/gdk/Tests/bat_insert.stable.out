@@ -1,11 +1,16 @@
 stdout of test 'bat_insert` in directory 'src/gdk` itself:
 
-#> Mtest (18:51:37):	milM bat_insert milM
-#> Mtest (18:51:37):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_gdk bat_insert.milM
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for mips-sgi-irix6.5/32bit.
-#script:bat_insert.milM
+
+# 19:47:45 >  
+# 19:47:45 >  Mtimeout -timeout 210 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.20487/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_src_gdk  < bat_insert.milM
+# 19:47:45 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/manegold.GNU_32-d.20487/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
+# dbname:Tests_src_gdk
+# dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.20487/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_src_gdk
 
 loaded;
 #---------------------------------#
@@ -23,5 +28,11 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
+!WARNING: Overwriting var i
+!WARNING: Overwriting var i
+
+# 19:47:46 >  
+# 19:47:46 >  Done.
+# 19:47:46 >  
 
 #You are system administrator (adm)!
