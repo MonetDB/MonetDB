@@ -1076,7 +1076,7 @@ ostream &protoize::gen_epilogue( ostream &o, const Epilogue &d ){
 }
 
 ostream &install::gen_dependency( ostream &o, const Dependency &d ){ 
-	o << "   TBL_Install_Depend(inst, mid, user, \"_"<<d.Name()<<"\");\n";
+	//o << "   TBL_Install_Depend(inst, mid, user, \"_"<<d.Name()<<"\");\n";
 	return o;
 }
 
