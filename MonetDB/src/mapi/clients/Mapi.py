@@ -74,36 +74,11 @@ class server:
         self.cmd_intern(cmd)
         return self.result()
 
-def hostname():
-    try:
-        p = environ['MAPIHOST']
-    except:
-        p = 'localhost'
-    return p
-
-def portnr():
-    try:
-        p = environ['MAPIPORT']
-    except:
-        p = 50000
-    return p
-
-def user():
-    try:
-        p = environ['USER']
-    except:
-        try:
-            p = environ['USERNAME']
-        except:
-            p = ''
-
-    return p
-
 
 if __name__ == '__main__':
     import fileinput;
 
-    s = server( hostname(), portnr(), user())
+    s = server( "localhost" , 50000, environ['USER'])
     fi = fileinput.FileInput()
     sys.stdout.write( s.prompt )
     line= fi.readline()
