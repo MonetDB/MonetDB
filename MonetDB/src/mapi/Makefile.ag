@@ -1,6 +1,8 @@
 
 INCLUDES = -I$(MONET_BUILD)/src/gdk -I$(MONET_BUILD)/src/monet \
-	   -I$(MONET_BUILD)/src/modules/plain
+	   -I$(MONET_BUILD)/src/modules/plain \
+	   -I$(MONET_BUILD)/src/modules/plain/stream 
+		
 
 SUBDIRS = clients
 
