@@ -23,6 +23,7 @@ smallTOC_SHARED_MODS =	\
 	-l_blob	\
 	-l_ddbench	\
 	-l_enum	\
+	-l_mmath	\
 	-l_monettime	\
 	-l_unix	\
 	-l_xtables	\
