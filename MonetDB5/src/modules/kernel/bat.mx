@@ -250,7 +250,7 @@ command isaSet( b:bat[:any,:any]) :bit = BKCisaSet
 comment "return whether the BAT mode is set to unique.";
 
 command setAccess( b:bat[:any$1,:any$2], mode:str) 
-	:bat[:any$1,:any$2] 
+	:void
 address BKCsetAccess
 comment "Try to change the update access priviliges 
 	to this BAT. Mode:
@@ -263,19 +263,19 @@ comment "Try to change the update access priviliges
 	BAT itself.";
 
 command setAppendMode( b:bat[:any$1,:any$2])
-		:bat[:any$1,:any$2] 
+		:void
 address BKCsetAppendMode
 comment "Change access privilige of BAT to 
 	append only";
 
 command setReadMode( b:bat[:any$1,:any$2]) 
-	:bat[:any$1,:any$2] 
+	:void
 address BKCsetReadMode
 comment "Change access privilige of BAT to 
 	read only";
 
 command setWriteMode( b:bat[:any$1,:any$2])
-	:bat[:any$1,:any$2] 
+	:void
 address BKCsetWriteMode
 comment "Change access privilige of BAT to 
 	read and write";
@@ -496,8 +496,7 @@ into a separate module.
 
 @mal
 command setName ( b:bat[:any$1,:any$2] , 
-		s:str) 
-	:bat[:any$1,:any$2] 
+		s:str) :void
 address BKCsetName
 comment "Give a logical name to a BAT. ";
 
@@ -506,21 +505,20 @@ address BKCgetBBPname
 comment "Gives back the logical name of a BAT.";
 
 command setRole( b:bat[:any$1,:any$2], 
-		h:str, t:str)
-	:bat[:any$1,:any$2]
+		h:str, t:str) :void
 address BKCsetRole
 comment "Give a logical name to the columns of 
 	a BAT.";
 
 command setColumn( b:bat[:any$1,:any$2],
 		t:str)
-	:bat[:any$1,:any$2] 
+	:void
 address BKCsetColumn
 comment "Give a logical name to the tail column 
 	of a BAT.";
 command setColumn( b:bat[:any$1,:any$2],
 		h:str, t:str)
-	:bat[:any$1,:any$2]
+	:void
 address BKCsetColumns
 comment "Give both columns of a BAT a new name.";
 
@@ -1575,7 +1573,6 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 str BKCnewBATint(int *res, int *ht, int *tt, int *cap){
 	BAT *b;
 	if( CMDnew(&b,ht,tt, cap) == GDK_SUCCEED){
-		BBPincref(b->batCacheid,TRUE);
 		*res= b->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1586,7 +1583,6 @@ str BKCnewBATlng(int *res, int *ht, int *tt){
 	BAT *b;
 	lng cap =0;
 	if( CMDnew_lng(&b,ht,tt,&cap) == GDK_SUCCEED){
-		BBPincref(b->batCacheid,TRUE);
 		*res= b->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1603,7 +1599,7 @@ str BKCreverse(int *ret, int *bid){
 	@:getBATdescriptor(ret,bid,b,reverse)@
 	CMDreverse(&bn,b);
 	*ret= bn->batCacheid;
-	/* BBPfix(bn->batCacheid);*/
+	BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1611,7 +1607,6 @@ str BKCmirror(int *ret, int *bid){
 	BAT *b, *bn = NULL;
 	@:getBATdescriptor(ret,bid,b,mirror)@
 	if( CMDmirror(&bn, b)== GDK_SUCCEED){
-                /* BBPfix(b->batCacheid);*/
                 *ret = bn->batCacheid;
                 return MAL_SUCCEED;
         }
@@ -1685,6 +1680,7 @@ str BKCinsert_bat(int *r, int *bid, int *sid){
 	@:getBATdescriptor2(r,bid,b,insert)@
 	@:getBATdescriptor2(r,sid,s,insert)@
 	CMDinsert_bat(&bn, b,s);
+	BBPunfix(bn->batCacheid);
 	(void) bn;
 	return MAL_SUCCEED;
 }
@@ -1871,7 +1867,6 @@ str BKCbat_append_void_bat_wrap( int *r, int *bid, int *uid )
 	@:getBATdescriptor2(r,bid,i,append)@
 	@:getBATdescriptor2(r,uid,u,append)@
 	void_append_bat( i, u );
-	/* BBPfix(i->batCacheid);*/
 	*r = i->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -1882,7 +1877,6 @@ str BKCbat_append_oid_bat_wrap( int *r, int *bid, int *uid )
 	@:getBATdescriptor2(r,bid,i,append)@
 	@:getBATdescriptor2(r,uid,u,append)@
 	void_insert_bat( i, u );
-	/* BBPfix(i->batCacheid);*/
 	*r = i->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -1893,7 +1887,6 @@ str BKCbat_append_oidvoid_bat_wrap( int *r, int *bid, int *uid )
 	@:getBATdescriptor2(r,bid,i,append)@
 	@:getBATdescriptor2(r,uid,u,append)@
 	assert(BATcount(i)==0 && BATcount(u) == 0);
-	/* BBPfix(i->batCacheid);*/
 	*r = i->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -1913,7 +1906,6 @@ str BKCoid_bat_append_oid_bat_wrap( int *res, int *bid, int *uid )
 		oid h = *(oid*)BUNhead(u,r) + o;
 		BUNins(i, &h,  BUNtail(u,r));
         }
-	/*BBPfix(i->batCacheid);*/
 	*res = i->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -1929,7 +1921,6 @@ str BKCoid_bat_append_val_wrap( int *r, int *bid, ptr u)
 	o++;
 	@:derefStr(i,t,u)@
 	BUNins( i, (ptr) & o, u );
-	/*BBPfix(i->batCacheid);*/
 	*r = i->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -1943,7 +1934,6 @@ str BKCbat_append_val_wrap( int *r, int *bid, ptr u)
 	h = i->hseqbase + BATcount(i);
 	@:derefStr(i,t,u)@
 	BUNins( i, (ptr) & h, u );
-	/*BBPfix(i->batCacheid);*/
 	*r = i->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -1954,7 +1944,6 @@ str BKCbat_replace_oid_bat_wrap( int *r, int *bod, int *did )
 	@:getBATdescriptor2(r,bod,o,replace)@
 	@:getBATdescriptor2(r,did,d,replace)@
 	void_replace_bat( o, d );
-	/*BBPfix(o->batCacheid);*/
 	*r = o->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -1963,7 +1952,7 @@ str BKCbat_replace_oid_bat_wrap( int *r, int *bod, int *did )
 str BKCgetAlpha(int *r, int *bid) {
 	BAT *b,*c;
 	@:getBATdescriptor(r,bid,b,getInserted)@
-	/*BBPfix(b->batCacheid);*/
+	BBPfix(b->batCacheid);
 	c= BATalpha(b);
 	*r = c->batCacheid;
 	return MAL_SUCCEED;
@@ -1971,7 +1960,7 @@ str BKCgetAlpha(int *r, int *bid) {
 str BKCgetDelta(int *r, int *bid) {
 	BAT *b,*c;
 	@:getBATdescriptor(r,bid,b,getInserted)@
-	/*BBPfix(b->batCacheid);*/
+	BBPfix(b->batCacheid);
 	c= BATdelta(b);
 	*r = c->batCacheid;
 	return MAL_SUCCEED;
@@ -2087,6 +2076,8 @@ str BKCset@1(int *res, int *bid) {
 	(void) bn;
 	@:getBATdescriptor(res,bid,b,set@1)@
 	CMDsetaccess(&bn,b,&param);
+	BBPunfix(bn->batCacheid);
+	*res = 0;
         return MAL_SUCCEED;
 }
 str BKChas@1(bit *res, int *bid) {
@@ -2179,14 +2170,12 @@ str BKCsetRole(int *r, int *bid, str *hname, str *tname){
 	if(*tname== 0) return throwMessage("bat.setRole", "tail name missing");
 	BATroles(b, *hname, *tname);
 	*r= b->batCacheid;
-	/*BBPfix(b->batCacheid);*/
 	return MAL_SUCCEED;
 }
 str BKCsetColumn(int *r, int *bid, str *tname){
 	BAT *b;
 	@:getBATdescriptor(r,bid,b,setColumn)@
 	if(*tname==0) return throwMessage("bat.setColumn", "column name missing");
-	/*BBPfix(b->batCacheid);*/
 	BATroles(b, b->hident,*tname);
 	*r= b->batCacheid;
 	return MAL_SUCCEED;
@@ -2196,7 +2185,6 @@ str BKCsetColumns(int *r, int *bid, str *hname, str *tname){
         @:getBATdescriptor(r,bid,b,setColumns)@
         BATroles(b, *hname, *tname);
         *r= b->batCacheid;
-        /*BBPfix(b->batCacheid);*/
         return MAL_SUCCEED;
 }
 

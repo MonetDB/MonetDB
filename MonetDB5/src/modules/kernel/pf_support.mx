@@ -66,7 +66,6 @@ comment "\"grouped mark\": Produces a new BAT with per group a locally unique de
 #endif
 @c
 #include "pf_support.h"
-#include "mal_exception.h"
 
 @= mark_grp_loop3
 {	BUN p, q;
@@ -153,6 +152,11 @@ bunins_failed:
 	return NULL;
 }
 
+@- Wrappers
+The wrappers to re-use Monet 4 code base
+@c
+#include "mal_exception.h"
+
 str CMDmark_grp(int* res, int *bid, int *gid){
 	BAT *r, *b, *g;
         @:getBATdescriptor(&res,bid,b,mark_grp)@
@@ -162,3 +166,4 @@ str CMDmark_grp(int* res, int *bid, int *gid){
 	else throwMessage("mark_grp","error in group marking");
 	return MAL_SUCCEED;
 }
+

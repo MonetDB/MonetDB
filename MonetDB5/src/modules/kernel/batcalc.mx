@@ -446,7 +446,7 @@ str CMDbataccum@1(int *ret, int *d, int *l, int *r)
 	@:chkSize(dst,left,CMDbataccum@1)@
 	@:chkSize(dst,right,CMDbataccum@1)@
 
-	BBPfix(*ret = dst->batCacheid);
+	*ret = dst->batCacheid;
 	return bataccum@1(dst,left,right);
 }
 str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
@@ -457,7 +457,7 @@ str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
 	@:getBATdescriptor(ret,r,dst,CMDbataccum@1)@
 	@:getBATdescriptor(ret,l,left,CMDbataccum@1)@
 	@:chkSize(dst,left,CMDbataccum@1)@
-	BBPfix(*ret = dst->batCacheid);
+	*ret = dst->batCacheid;
 	@:batinit(1,dst)@
 	@:batinit(2,left)@
 	hend = (str) BUNlast(dst);
@@ -537,7 +537,7 @@ str CMDbataccumMOD(int *ret, int *d, int *l, int *r)
 	@:chkSize(dst,left,CMDbataccumMOD)@
 	@:chkSize(dst,right,CMDbataccumMOD)@
 
-	BBPfix(*ret = dst->batCacheid);
+	*ret = dst->batCacheid;
 	return bataccumMOD(dst,left,right);
 }
 str CMDbataccumMODcst(int *ret, int *r, int *l, void *cst)
@@ -548,7 +548,7 @@ str CMDbataccumMODcst(int *ret, int *r, int *l, void *cst)
 	@:getBATdescriptor(ret,r,dst,CMDbataccumMOD)@
 	@:getBATdescriptor(ret,l,left,CMDbataccumMOD)@
 	@:chkSize(dst,left,CMDbataccumMOD)@
-	BBPfix(*ret = dst->batCacheid);
+	*ret = dst->batCacheid;
 	@:batinit(1,dst)@
 	@:batinit(2,left)@
 	hend = (str) BUNlast(dst);
@@ -699,7 +699,7 @@ str CMDcmpaccum@1(int *ret, int *d, int *l, int *r)
 	@:chkSize(dst,left,CMDcompareaccum@1)@
 	@:chkSize(dst,right,CMDcompareaccum@1)@
 
-	BBPfix(*ret = dst->batCacheid);
+	*ret = dst->batCacheid;
 	return compareaccum@1(dst,left,right);
 }
 @= cmpCstImpl
@@ -711,7 +711,7 @@ str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst)
 	@:getBATdescriptor(ret,r,dst,CMDbataccum@1)@
 	@:getBATdescriptor(ret,l,left,CMDbataccum@1)@
 	@:chkSize(dst,left,CMDbataccum@1)@
-	BBPfix(*ret = dst->batCacheid);
+	*ret = dst->batCacheid;
 	@:batinit(1,dst)@
 	@:batinit(2,left)@
 	hend = (str) BUNlast(dst);
@@ -799,7 +799,7 @@ str CMDbitbataccumNOT(int *ret, int *d, int *l)
 		p1= (ptr)( ((char*)p1) + s1);
 	}
 
-	BBPfix(*ret = dst->batCacheid);
+	*ret = dst->batCacheid;
 	return MAL_SUCCEED;
 }
 str CMDbitbatNOT(int *ret, int *l)
