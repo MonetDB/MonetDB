@@ -1,9 +1,11 @@
 MAL language issues
+- look into the nested bat issues
+- see if it makes sense have in/out variables mentioned twice 
+  in an assignment statement to ease analysis
 - check all routines for proper match return type and actual
 action.
 - Modules should make the expections being thrown explicit
 - Expand the property management infrastructure. tst3K serie
-- Check the cleaned up barrier and catch control structure.
 - Co-routine ('factory') support in the kernel. They 'yield'
   a result on each call and finish upon 'return'
   Factory cloning would then become an issue, they become first
@@ -26,8 +28,6 @@ action.
 
 - Realize mal.include call as a preprocessor step
 - Design a macro expansion facility (with property checks)
-
-- check the validity of constants against their type qualifier.
 
 - printing result tables should be improved.
 - rethink position of enum types
@@ -58,6 +58,11 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20041108 introduced skip list in symbol table (2 % gain)
+	 removed some resolvetype issues (3 % gain)
+20041107 check the validity of constants against their type qualifier.
+	the type qualifier is retained for (numeric) constants
+20041107 Check the cleaned up barrier and catch control structure.
 20040801 The V4 testing scheme has been activated 
 20040805 The constant definitions of MIL should go to a prelude file
 	and not hardwired in the const.mx
