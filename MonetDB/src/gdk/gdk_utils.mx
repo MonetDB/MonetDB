@@ -560,7 +560,7 @@ void GDKmemdump() {
 		}
 	}
 #endif
-#ifdef GDK_VM_KEEPHISTO
+#ifdef GDK_MEM_KEEPHISTO
 	if (GDK_vm_histo) {	
 		BUN p,q;
 		THRprintf(GDKerr, "\n!virtual memory histogram\n");
@@ -945,9 +945,11 @@ int GDKinit(int argc, char** argv) {
 	GDK_nmallocs = ((int*) GDK_mem_histo->batBuns->base) - 6;
 #endif
 #ifdef GDK_VM_KEEPHISTO
-#ifdef __CYGWIN32__
+#ifdef WIN32
+#ifndef WIN32_NATIVE
 	GDKmallidx(i, 67108864);
 	GDK_vm_nallocs[i]++; 
+#endif
 #endif
 	GDK_vm_histo = BATnew(TYPE_lng,TYPE_int,MAX_BIT);
 	BATrename(GDK_vm_histo, "monet_histo_vm");

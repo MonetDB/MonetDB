@@ -43,6 +43,14 @@ functions.
 # include <sys/signal.h>
 #endif
 
+#ifdef HAVE_PTHREAD_H
+# include <pthread.h>
+#endif
+
+#ifdef HAVE_SEMAPHORE_H
+# include <semaphore.h>
+#endif
+
 typedef void    *MT_Lock;
 typedef void    *MT_Sema;
 typedef void    *MT_Id;
@@ -204,11 +212,7 @@ gdk_export int _MT_pagesize;
 @c
 #include "gdk_system.h"
 
-#ifdef HAVE_PTHREAD_H
-# include <pthread.h>
-# include <semaphore.h>
-#endif
-
+#include "gdk_posix.h"
 #include <errno.h>
 
 MT_Lock		MT_system_lock = NULL;		/* system administration lock */
@@ -273,7 +277,9 @@ int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
         (void)sigfillset(&new_mask);
 	MT_thread_sigmask(&new_mask, &orig_mask);
 	pthread_attr_init(&attr);
+#ifdef PTHREAD_CREATE_DETACHED
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+#endif
         pthread_attr_setstacksize(&attr, 1024*1024);
 	ret = pthread_create((pthread_t*)t, &attr, (void*(*)(void*))f, arg);
         if (ret == 0) (*(int*)t)++; /* use pthread-id + 1 */
