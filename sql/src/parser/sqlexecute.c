@@ -21,6 +21,7 @@ void sql_init_context( context *lc , stream *out, int debug, catalog *cat ){
         lc->in = NULL;
         lc->out = out;
         lc->debug = debug;
+        lc->optimize = SQL_FAST_INSERT;
         lc->lineno = 1;
         lc->l = NULL;
         lc->cat = cat;

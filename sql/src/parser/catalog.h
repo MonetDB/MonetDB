@@ -85,7 +85,11 @@ typedef struct catalog {
 	char *cc; /* to put specific catalog data */
 } catalog;
 
-catalog *default_catalog_create( );
-void catalog_destroy ( catalog *cat );
+extern catalog *default_catalog_create( );
+extern void catalog_destroy ( catalog *cat );
+
+extern void catalog_initoid( catalog *cat );
+extern long catalog_getoid( catalog *cat );
+
 
 #endif /*CATALOG_H*/

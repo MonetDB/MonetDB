@@ -87,7 +87,6 @@ void statement_destroy( statement *s ){
 			}
 		}	break;
 		case st_atom: 
-		case st_insert_atom: 
 			atom_destroy( s->op1.aval );
 			break;
 		case st_cast: 
@@ -276,13 +275,6 @@ statement *statement_reorder( statement *s, statement *t, int direction ){
 	return ns;
 }
 
-statement *statement_insert_atom( atom *op1 ){
-	statement *s = statement_create();
-	s->type = st_insert_atom;
-	s->op1.aval = op1;
-	return s;
-}
-
 statement *statement_atom( atom *op1 ){
 	statement *s = statement_create();
 	s->type = st_atom;
@@ -302,12 +294,14 @@ statement *statement_select( statement *op1, statement *op2, comp_type cmptype){
 	statement *s = statement_create();
 	s->type = st_select;
 	if (op1 && op1->type == st_column){
-		s->op1.stval = op1; op1->refcnt++;
-		s->op2.stval = op2; op2->refcnt++;
+		s->op1.stval = op1; 
+		s->op2.stval = op2; 
 	} else {
-		s->op1.stval = op2; op2->refcnt++;
-		s->op2.stval = op1; op1->refcnt++;
+		s->op1.stval = op2; 
+		s->op2.stval = op1; 
 	}
+	op1->refcnt++;
+	op2->refcnt++;
 	assert(cmptype >= cmp_equal && cmptype <= cmp_gte );
 	s->flag = cmptype;
 	s->nrcols = 1;
@@ -495,7 +489,7 @@ statement *statement_name( statement *op1, char *name ){
 }
 
 static 
-char *head_type( statement *st ){
+const char *head_type( statement *st ){
 	switch(st->type){
 	case st_join: return head_type(st->op1.stval);
 	case st_select: return head_type(st->op1.stval);
@@ -504,7 +498,6 @@ char *head_type( statement *st ){
 	case st_unop: return column_type(st->op1.stval);
 	case st_binop: return column_type(st->op1.stval);
 	case st_atom: return atomtype2string(st->op1.aval);
-	case st_insert_atom: return atomtype2string(st->op1.aval);
 	case st_cast: return st->op1.sval;
 	default:
 		fprintf( stderr, "missing head type %d\n", st->type);
@@ -512,7 +505,7 @@ char *head_type( statement *st ){
 	}
 }
 
-char *column_type( statement *st ){
+const char *column_type( statement *st ){
 	switch(st->type){
 	case st_join: return column_type(st->op2.stval);
 	case st_select: return column_type(st->op1.stval);
@@ -522,7 +515,6 @@ char *column_type( statement *st ){
 	case st_unop: return column_type(st->op1.stval);
 	case st_binop: return column_type(st->op1.stval);
 	case st_atom: return atomtype2string(st->op1.aval);
-	case st_insert_atom: return atomtype2string(st->op1.aval);
 	case st_cast: return st->op1.sval;
 	default:
 		fprintf( stderr, "missing type %d\n", st->type);
@@ -540,7 +532,6 @@ column *_basecolumn( statement *st ){
 	case st_unop: return basecolumn(st->op1.stval);
 	case st_binop: return basecolumn(st->op1.stval);
 	case st_atom: 
-	case st_insert_atom: 
 	case st_cast: return NULL;
 	case st_name: return _basecolumn(st->op1.stval);
 	default:
@@ -559,7 +550,6 @@ column *basecolumn( statement *st ){
 	case st_unop: return basecolumn(st->op1.stval);
 	case st_binop: return basecolumn(st->op1.stval);
 	case st_atom: 
-	case st_insert_atom: 
 	case st_cast: return NULL;
 	case st_name: return basecolumn(st->op1.stval);
 	default:

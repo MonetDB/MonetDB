@@ -237,7 +237,22 @@ char *schema_auth( dlist *name_auth ){
 }
 
 static
-statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby ){
+statement *find_subset( statement *subset, table *t ){
+	node *n = subset->op1.lval->h;
+	while(n){
+		statement *s = n->data.stval;
+		if (s->t == t){
+			return s;
+		}
+		n = n->next;
+	}
+	return NULL;
+}
+
+
+static
+statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
+	      statement *subset	){
 	column* c;
 	switch(se->token){
 	case SQL_BINOP: { 
@@ -245,9 +260,9 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby )
 		func *f = sql->cat->bind_func(sql->cat, l->data.sval);
 		if (f){
 			statement *rs = scalar_exp( l->next->data.sym, 
-						sql, tables, groupby);
+						sql, tables, groupby, subset);
 			statement *ls = scalar_exp( l->next->next->data.sym, 
-						sql, tables, groupby);
+						sql, tables, groupby, subset);
 			return statement_binop( rs, ls ,f );
 		} else {
 			printf("Missing binop\n");
@@ -258,7 +273,7 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby )
 		func *f = sql->cat->bind_func(sql->cat, l->data.sval);
 		if (f){
 			statement *rs = scalar_exp( l->next->data.sym, 
-						sql, tables, groupby);
+						sql, tables, groupby, subset);
 			return statement_unop( rs, f );
 		} else {
 			printf("Missing unop\n");
@@ -267,7 +282,14 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby )
 	case SQL_COLUMN: {
 		        c = column_ref( sql->cat, tables, se );
 			if (c){ 
-				return statement_column(c);
+				statement *res = statement_column(c);
+				if (subset){
+					statement *foundsubset = 
+						find_subset(subset, c->table);
+					res = statement_join(foundsubset, res,
+							cmp_equal);
+				} 
+				return res;
 			} else {
 				printf("missing column\n" );
 			}
@@ -280,10 +302,11 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby )
 		statement *s;
 		if (!l->h->next->next->data.sym){
 		    	table *t = ((var*)tables->h->data.sval)->t;
+			/* TODO if subset etc */
 		    	s = statement_column( t->columns->h->data.cval);
 		} else {
 		    	s = scalar_exp( l->h->next->next->data.sym, 
-					sql, tables, groupby);
+					sql, tables, groupby, subset);
 		}
 		if (distinct) s = statement_unique(s);
 		if (s && a){
@@ -306,7 +329,7 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby )
 }
 
 static
-statement *column_exp( context *sql, list *tables, symbol *column_e, symbol *groupby ){
+statement *column_exp( context *sql, list *tables, symbol *column_e, symbol *groupby, statement *subset ){
 
 	switch(column_e->token){
 	case SQL_TABLE: {
@@ -315,13 +338,16 @@ statement *column_exp( context *sql, list *tables, symbol *column_e, symbol *gro
 		table *t = sql->cat->bind_table(sql->cat,  
 				sql->cat->cur_schema, tsym->data.sval );
 
-		/* needs more work */
+		/* needs more work ???*/
 		if (t){
+			statement *foundsubset = find_subset(subset,t);
 			list *columns = list_create();
 			node *n = t->columns->h; 
 			while(n){
 				list_append_statement(columns, 
-					statement_column(n->data.cval) );
+				 	statement_join(foundsubset,
+					statement_column(n->data.cval),
+					cmp_equal) );
 				n = n->next;
 			}
 			return statement_list(columns);
@@ -330,7 +356,7 @@ statement *column_exp( context *sql, list *tables, symbol *column_e, symbol *gro
 	case SQL_COLUMN:
 	{
 		dlist *l = column_e->data.lval;
-		statement *s = scalar_exp(l->h->data.sym, sql, tables, groupby);
+		statement *s = scalar_exp(l->h->data.sym, sql, tables, groupby, subset);
 		if (l->h->next->data.sval){
 			s = statement_name(s, l->h->next->data.sval);
 		} 
@@ -471,18 +497,25 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 			rs = statement_diamond( rs ); 
 		}
 		if (ls->type == st_diamond && rs->type == st_diamond){
+			list *nl = NULL;
 			list_merge( ls->op1.lval, rs->op1.lval );	
-			ls->op1.lval = query_and( sql->cat, ls->op1.lval);
+			statement_destroy(rs);
+			nl = query_and( sql->cat, ls->op1.lval);
+			list_destroy( ls->op1.lval );
+			ls->op1.lval = nl;
 		} else if (ls->type == st_pearl && rs->type == st_diamond){
 			list_map(  ls->op1.lval, 
 				(map_func)&list_map_merge, rs->op1.sval);
+			statement_destroy(rs);
 		} else if (ls->type == st_diamond && rs->type == st_pearl){
 			list_map(  rs->op1.lval, 
 				(map_func)&list_map_merge, ls->op1.sval);
+			statement_destroy(ls);
 			ls = rs;
 		} else if (ls->type == st_pearl && rs->type == st_pearl){
 			list_map(  ls->op1.lval, 
 				(map_func)&list_map_merge, rs->op1.sval);
+			statement_destroy(rs);
 		}
 		return ls;
 	} break;
@@ -497,9 +530,9 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->next->data.sym;
 		char *compare_op = sc->data.lval->h->next->data.sval;
-		statement *rs, *ls = scalar_exp(lo, sql, tables, NULL);
+		statement *rs, *ls = scalar_exp(lo, sql, tables, NULL, NULL);
 		if (ro->token != SQL_SELECT){
-	       		rs = scalar_exp(ro, sql, tables, NULL);
+	       		rs = scalar_exp(ro, sql, tables, NULL, NULL);
 		} else {
 			rs = subquery(sql, ro);
 		}
@@ -548,9 +581,9 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 		symbol *lo  = sc->data.lval->h->data.sym;
 		symbol *ro1 = sc->data.lval->h->next->data.sym;
 		symbol *ro2 = sc->data.lval->h->next->next->data.sym;
-		statement *ls = scalar_exp(lo, sql, tables, NULL);
-		statement *rs1 = scalar_exp(ro1, sql, tables, NULL);
-		statement *rs2 = scalar_exp(ro2, sql, tables, NULL);
+		statement *ls = scalar_exp(lo, sql, tables, NULL, NULL);
+		statement *rs1 = scalar_exp(ro1, sql, tables, NULL, NULL);
+		statement *rs2 = scalar_exp(ro2, sql, tables, NULL, NULL);
 		if (rs1->type != st_atom || rs2->type != st_atom){
 			snprintf(sql->errstr, ERRSIZE, 
 		  	_("Between requires an atom on the right handside"));
@@ -562,9 +595,9 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 		symbol *lo  = sc->data.lval->h->data.sym;
 		symbol *ro1 = sc->data.lval->h->next->data.sym;
 		symbol *ro2 = sc->data.lval->h->next->next->data.sym;
-		statement *ls = scalar_exp(lo, sql, tables, NULL);
-		statement *rs1 = scalar_exp(ro1, sql, tables, NULL);
-		statement *rs2 = scalar_exp(ro2, sql, tables, NULL);
+		statement *ls = scalar_exp(lo, sql, tables, NULL, NULL);
+		statement *rs1 = scalar_exp(ro1, sql, tables, NULL, NULL);
+		statement *rs2 = scalar_exp(ro2, sql, tables, NULL, NULL);
 		if (rs1->type != st_atom || rs2->type != st_atom){
 			snprintf(sql->errstr, ERRSIZE, 
 		  	_("Between requires an atom on the right handside"));
@@ -575,7 +608,7 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 	case SQL_LIKE: {
 		symbol *lo  = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
-		statement *ls = scalar_exp(lo, sql, tables, NULL);
+		statement *ls = scalar_exp(lo, sql, tables, NULL, NULL);
 		atom *a = NULL, *e = NULL;
 		if (!ls) return NULL;
 		if (ro->token == SQL_ATOM){
@@ -599,7 +632,7 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 	case SQL_NOT_LIKE: {
 		symbol *lo  = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
-		statement *ls = scalar_exp(lo, sql, tables, NULL);
+		statement *ls = scalar_exp(lo, sql, tables, NULL, NULL);
 		atom *a = NULL, *e = NULL;
 		if (!ls) return NULL;
 		if (ro->token == SQL_ATOM){
@@ -623,7 +656,7 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 	case SQL_IN: {
 		dlist *l = sc->data.lval;
 		symbol *lo  = l->h->data.sym;
-		statement *ls = scalar_exp(lo, sql, tables, NULL);
+		statement *ls = scalar_exp(lo, sql, tables, NULL, NULL);
 		if (l->h->next->type == type_list){
 			dnode *n = l->h->next->data.lval->h;
 			list *nl = list_create();
@@ -647,7 +680,7 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 	case SQL_NOT_IN: {
 		dlist *l = sc->data.lval;
 		symbol *lo  = l->h->data.sym;
-		statement *ls = scalar_exp(lo, sql, tables, NULL);
+		statement *ls = scalar_exp(lo, sql, tables, NULL, NULL);
 		if (l->h->next->type == type_list){
 			dnode *n = l->h->next->data.lval->h;
 			list *nl = list_create();
@@ -729,6 +762,7 @@ statement *diamond2pivot( context *sql, list *l ){
 						    cmp_equal));
 					  p = p->next;
 				  }
+				  list_destroy(pivots);
 				  pivots = npivots;
 				  n = list_remove( l, n );
 				  break;
@@ -753,6 +787,7 @@ statement *diamond2pivot( context *sql, list *l ){
 					    p->data.stval, cmp_equal));
 					  p = p->next;
 				  }
+				  list_destroy(pivots);
 				  pivots = npivots;
 				  n = list_remove( l, n );
 				  break;
@@ -768,6 +803,7 @@ statement *diamond2pivot( context *sql, list *l ){
 			return NULL;
 		}
 	}
+	list_destroy(l);
 	return statement_list(pivots);
 }
 
@@ -900,7 +936,8 @@ statement *query_orderby( context *sql, list *tables, symbol *orderby, statement
 		    n = n->next;
 	        }
 	    } else {
-		printf("order not of type SQL_COLUMN\n" );
+		snprintf(sql->errstr, ERRSIZE,
+			"order not of type SQL_COLUMN\n" );
 	    }
 	    o = o->next;
 	}
@@ -936,11 +973,10 @@ static
 statement *query( context *sql, int distinct, dlist *selection, dlist *into, 
 		dlist *table_exp , symbol *orderby ) {
 
-  statement *s = NULL;
-
+  statement *s = NULL, *ns = NULL;
   dlist *from = table_exp->h->data.sym->data.lval;
-  list *ftables = NULL;
-  list *rl = list_create();
+  list *ftables = NULL, *rl = list_create();
+
   symbol *where = table_exp->h->next->data.sym;
   symbol *groupby = table_exp->h->next->next->data.sym;
   symbol *having = table_exp->h->next->next->next->data.sym;
@@ -999,12 +1035,17 @@ statement *query( context *sql, int distinct, dlist *selection, dlist *into,
   }
 
   if (s){
-	if (s->type != st_diamond && s->type != st_pearl)
+	if (s->type != st_diamond && s->type != st_pearl){
 		s = statement_diamond(s);
+	}
 	if (s->type == st_pearl){
-		s = pearl2pivot(sql, s->op1.lval);
+		ns = pearl2pivot(sql, s->op1.lval);
+		statement_destroy(s);
+		s = ns;
 	} else {
-	  	s = diamond2pivot(sql, s->op1.lval);
+	  	ns = diamond2pivot(sql, s->op1.lval);
+		statement_destroy(s);
+		s = ns;
 	}
 
   	if (groupby) s = query_groupby(sql, ftables, groupby, s );
@@ -1017,7 +1058,10 @@ statement *query( context *sql, int distinct, dlist *selection, dlist *into,
 		   do the join during  the column_exp */
 	  dnode *n = selection->h;
 	  while (n){
-		statement *cs = column_exp(sql, ftables, n->data.sym, groupby);
+		statement *cs = column_exp(sql, ftables, n->data.sym, groupby, s);
+		list_append_statement(rl, cs);
+				/* todo add ordering /groupby */
+		/*
 		node *m = s->op1.lval->h;
 		while(m){
 			statement *ss = m->data.stval;
@@ -1025,12 +1069,12 @@ statement *query( context *sql, int distinct, dlist *selection, dlist *into,
 				statement *j, *co = cs;
 				while(cs->type != st_column) cs = cs->op1.stval;
 				j = statement_join(ss, cs, cmp_equal );
-				/* todo add ordering /groupby */
 				cs = substitute(co,j);
 				list_append_statement(rl, cs);
 			}
 			m = m->next;
 		}
+		*/
 		n = n->next;
 	  }
   	} else {
@@ -1048,9 +1092,19 @@ statement *query( context *sql, int distinct, dlist *selection, dlist *into,
 		n = n->next;
 	    }
 	}
+	statement_destroy(s);
 	s = statement_list(rl);
   }
 
+  /* cleanup */
+  if (ftables){
+	  node *n = ftables->h;
+	  while(n){
+		_DELETE(n->data.sval);
+		n = n->next;
+	  }
+	  list_destroy(ftables);
+  }
   if (!s && sql->errstr[0] == '\0')
 	  snprintf(sql->errstr, ERRSIZE, _("Subquery result missing")); 
   return s;
@@ -1296,16 +1350,13 @@ statement *check_types( context *sql, column *c, statement *s ){
 				snprintf(sql->errstr, ERRSIZE, 
 	 			_("Types %s and %s are not equal" ), 
 	 			(t)?t->sqlname:"unknown", t1->sqlname);
-				_DELETE(stype);
 				return NULL;
 			} else if (t != st){
-				_DELETE(stype);
 				return statement_cast( t1->name, s );
 			}
 		} else {
 			snprintf(sql->errstr, ERRSIZE, _("Unknown type %s" ), 
 				stype );
-			_DELETE(stype);
 			return NULL;
 		}
 	} else {
@@ -1317,9 +1368,11 @@ statement *check_types( context *sql, column *c, statement *s ){
 
 statement *insert_value( context *sql, column *c, statement *id, symbol *s ){
 	if (s->token == SQL_ATOM){
-		statement *a = statement_insert_atom( atom_dup(s->data.aval) );
-		if (!(/*a = */check_types( sql, c, a ))) return NULL;
-		return statement_insert( c, id, a );
+		statement *n = NULL;
+		statement *a = statement_atom( atom_dup(s->data.aval) );
+		if (!(n = check_types( sql, c, a ))) return NULL;
+		a = statement_insert( c, id, n );
+		return a;
 	} else if (s->token == SQL_NULL) {
 		return statement_insert( c, id, NULL);
 	}
@@ -1365,14 +1418,15 @@ statement *insert_into( context *sql, dlist *qname, dlist *columns,
 	    } else {
 		dnode *n = values->h;
 		node *m = collist->h;
-		list *l = list_create();
 		statement *id = (m)?statement_count( 
 					statement_column(m->data.cval) ):NULL;
+		list *l = list_create();
 		while(n && m && id){
-		  statement *iv = insert_value( sql, m->data.cval, id, n->data.sym);
+		  statement *iv = 
+			  insert_value( sql, m->data.cval, id, n->data.sym);
 
 		  if (iv){
-		  	list_append_statement( l, iv );
+			list_append_statement( l, iv );
 		  } else {
 			  return NULL;
 		  }
@@ -1441,7 +1495,7 @@ statement *update_set( context *sql, dlist *qname,
 			} else {
 				symbol *a = assignment->h->next->data.sym;
                                 statement *sc =
-                                    scalar_exp( a, sql, tables, NULL);
+                                    scalar_exp( a, sql, tables, NULL, NULL);
 
 				sc = check_types( sql, cl, sc );
 				if (!sc) return NULL;

@@ -18,7 +18,6 @@ typedef enum statement_type {
 	st_column,
 	st_reverse,
 	st_atom,
-	st_insert_atom,		/* special insert_atom for optimization */
 	st_cast,
 	st_join,
 	st_semijoin,
@@ -97,7 +96,6 @@ extern statement *statement_output( statement *l );
 extern statement *statement_diamond( statement *s1 );
 extern statement *statement_pearl( list *s1 );
 
-extern statement *statement_insert_atom( atom *op1 );
 extern statement *statement_insert_list( list *l );
 extern statement *statement_insert( column *c, statement *id, statement *v );
 
@@ -124,7 +122,7 @@ extern statement *statement_exists( statement *op1, list *l );
 
 extern statement *statement_name( statement *op1, char *name );
 
-extern char *column_type( statement *st );
+extern const char *column_type( statement *st );
 extern char *column_name( statement *st );
 extern column *basecolumn( statement *st );
 

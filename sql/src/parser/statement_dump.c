@@ -11,6 +11,10 @@ int statement_dump( statement *s, int *nr, context *sql ){
     buf[0] = '\0';
     if (s){
     	if (s->nr) return s->nr;
+
+	if (sql->debug && s->type != st_insert_list)
+		len += snprintf( buf+len, BUFSIZ,"t0 := time();\n");
+
 	switch(s->type){
 	case st_dummy: {
 		len += snprintf( buf+len, BUFSIZ, "0%d\n", *nr);
@@ -156,7 +160,12 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		} else {
 			len += snprintf( buf+len, BUFSIZ, 
 			"s%d := mvc_bind(myc, %ld);\n", *nr, s->op1.cval->id );
+
 			s->nr = (*nr)++;
+			if (sql->debug >= 2){
+				len += snprintf( buf+len, BUFSIZ, 
+				"s%d.print();\n", s->nr );
+			}
 		}
 		break;
 	case st_reverse: {
@@ -330,22 +339,37 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	case st_insert_list: {
 		int l;
 		node *n = s->op1.lval->h;
-		len += snprintf( buf+len, BUFSIZ, "0,%d,", 
-				 	list_length(s->op1.lval) );
-		while(n){
-			statement *r = n->data.stval;
-			len += snprintf( buf+len, BUFSIZ, "%ld,", 
-				r->op1.cval->id );
-			if (r->op3.stval){
-				char *a = atom2string(r->op3.stval->op1.aval);
-				len += snprintf( buf+len, BUFSIZ, "%s,", a);
-				_DELETE(a);
-			} else {
-				len += snprintf( buf+len, BUFSIZ, "NULL,");
+
+		if (!(sql->optimize & SQL_FAST_INSERT)){
+			while(n){
+				statement *r = n->data.stval;
+				statement_dump( r, nr, sql );
+				n = n->next;
 			}
-			n = n->next;
+		} else {
+			len += snprintf( buf+len, BUFSIZ, "0,%d,", 
+				 	list_length(s->op1.lval) );
+			while(n){
+				statement *r = n->data.stval;
+				len += snprintf( buf+len, BUFSIZ, "%ld,", 
+					r->op1.cval->id );
+				if (r->op3.stval){
+					char *s = NULL;
+					statement *a = r->op3.stval;
+					while(a->type == st_cast){
+						a = a->op2.stval;
+					}
+					len += snprintf( buf+len, BUFSIZ, "%s,",
+					   	s = atom2string(a->op1.aval) );
+					_DELETE(s);
+				} else {
+					len += snprintf( buf+len, BUFSIZ, 
+							"NULL,");
+				}
+				n = n->next;
+			}
+			len += snprintf( buf+len, BUFSIZ, "\n" );
 		}
-		len += snprintf( buf+len, BUFSIZ, "\n" );
 		s->nr = l;
 	} break;
 	case st_output: {
@@ -362,14 +386,29 @@ int statement_dump( statement *s, int *nr, context *sql ){
 				n = n->next;
 			}
 			len += snprintf( buf+len, BUFSIZ,");\n");
+			len += snprintf( buf+len, BUFSIZ,"stream_flush(Output);\n");
 		}
 	} break;
 
-	case st_insert_atom: 
-	case st_insert: 
-		printf("ERROR: this type should be handle by st_insert_list\n");
-		exit(1);
+	case st_insert: {
+                int r = statement_dump( s->op2.stval, nr, sql );
+                if (s->op3.stval){
+                        int l = statement_dump( s->op3.stval, nr, sql );
+                        len += snprintf( buf+len, BUFSIZ,
+                        "s%d := mvc_bind(myv, %ld).insert(s%d,s%d);\n",
+                        *nr, s->op1.cval->id, r, l);
+                } else {
+                        len += snprintf( buf+len, BUFSIZ,
+                        "s%d := mvc_bind(myv, %ld).insert(s%d,%s(nil));\n",
+                        *nr, s->op1.cval->id, r, s->op1.cval->tpe->name );
+                }
+                s->nr = (*nr)++;
+        } break;
+
 	}
+	if (sql->debug && s->type != st_insert_list)
+		len += snprintf( buf+len, BUFSIZ,"t1 := time(); printf(\"%d %%d\n\", t1 - t0);\n", s->nr);
+
 	buf[len] = '\0';
 	sql->out->write( sql->out, buf, 1, len );
 	/*

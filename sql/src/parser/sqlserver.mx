@@ -113,21 +113,17 @@ int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
 int sqlserver_read( str *res, stream *S ){
 	stream *s = *(stream**)S;
 	int len = 0;
-	char buf[BUFSIZ + 1], *start = buf;
+	int size = BUFSIZ + 1;
+	char *buf = NEW_ARRAY(char, size ), *start = buf;
 
-	while (s->read(s, start, 1, 1) > 0){
-		if (*start == 1) break;
-		start++;
+	while ((len = s->read(s, start, 1, BUFSIZ)) == BUFSIZ){
+		size += BUFSIZ;
+		buf = RENEW_ARRAY(char, buf, size); 
+		start+= BUFSIZ;
+		*start = '\0';
 	}
-
-	len = start-buf;
-	if (len > 0){
-		*res = NEW_ARRAY(char, len+1);
-
-		buf[len] = '\0';
-		memcpy( *res, buf, len+1);
-	} else {
-		*res = _strdup("");
-	}
+	start += len;
+	*start = '\0';
+	*res = buf;
 	return GDK_SUCCEED;
 }

@@ -109,8 +109,54 @@ oid mvc_create_schema( mvc *c, oid sid, char *name, char *auth){
 	return s;
 }
 
+static
+void drop_column( mvc *c, oid id ){
+	BAT *b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
+				BUNfnd(c->column_bat, (ptr)&id)));
+
+	BBPtransient(b->batCacheid);
+	BUNdelHead(c->column_id, 	(ptr)&id );
+	BUNdelHead(c->column_table, 	(ptr)&id );
+	BUNdelHead(c->column_name, 	(ptr)&id );
+	BUNdelHead(c->column_type, 	(ptr)&id );
+	BUNdelHead(c->column_default, 	(ptr)&id );
+	BUNdelHead(c->column_null, 	(ptr)&id );
+	BUNdelHead(c->column_number, 	(ptr)&id );
+	BUNdelHead(c->column_bat, 	(ptr)&id );
+}
+
+static
+void drop_table( mvc *c, oid id, oid tid ){
+	BAT *columns = BATselect(c->column_table, (ptr)&tid, (ptr)&tid);
+	ptr p,q;
+
+	BATloop(columns, p, q ){
+		drop_column( c, *(oid*)BUNhead(columns,p));
+	}	
+	BBPreclaim(columns);
+
+	BUNdelHead(c->table_id, (ptr)&id );
+	BUNdelHead(c->table_schema, (ptr)&id );
+	BUNdelHead(c->table_name, (ptr)&id );
+	BUNdelHead(c->table_temp, (ptr)&id );
+}
+
 void mvc_drop_schema( mvc *c, oid sid ){
-	printf("not implemented jet\n");
+	BAT *m = BATmirror(c->schema_id);
+	oid id = *(oid*)BUNtail(m, BUNfnd(m, (ptr)&sid));
+	BAT *tables = BATselect(c->table_schema, (ptr)&sid, (ptr)&sid);
+	ptr p,q;
+	
+	BATloop(tables, p, q){
+		drop_table( c, 
+			*(oid*)BUNhead(tables,p), 
+			*(oid*)BUNhead(tables,q));
+	}	
+	BBPreclaim(tables);
+
+	BUNdelHead( c->schema_id, (ptr)&id );
+	BUNdelHead( c->schema_name, (ptr)&id );
+	BUNdelHead( c->schema_auth, (ptr)&id );
 }
 
 oid mvc_create_table( mvc *c, oid tid, oid sid, char *name, bit temp){
@@ -127,7 +173,10 @@ oid mvc_create_table( mvc *c, oid tid, oid sid, char *name, bit temp){
 }
 
 void mvc_drop_table( mvc *c, oid tid, bit cascade ){
-	printf("not implemented jet\n");
+	BAT *m = BATmirror(c->table_id);
+	oid id = *(oid*)BUNtail(m, BUNfnd(m, (ptr)&tid));
+	drop_table(c, id, tid);
+	/* TODO cascade, ie. remove al references to this table */
 }
 
 oid mvc_create_view( mvc *c, oid tid, oid sid, char *name, char *sql){
@@ -164,7 +213,9 @@ oid mvc_create_column( mvc *c, oid cid, oid tid,
 	return cid;
 }
 void mvc_drop_column( mvc *c, oid cid ){
-	printf("not implemented jet\n");
+	BAT *m = BATmirror(c->column_id);
+	oid id = *(oid*)BUNtail(m, BUNfnd(m, (ptr)&cid));
+	drop_column(c, id );
 }
 oid mvc_not_null( mvc *c, oid colid ){
 	BAT *m = BATmirror(c->column_id);
