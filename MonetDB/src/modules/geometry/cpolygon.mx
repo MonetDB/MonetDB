@@ -29,7 +29,6 @@ public:
 
    box bbox() const;
    int dimension() const;
-   void plot() const;
    static cpolygon* null();
    bool hasminitree() const;
 
@@ -300,13 +299,6 @@ bool cpolygon::OK() const
    }
 
    return(true);
-}
-
-void cpolygon::plot() const
-{
-   boundary().plot("red");
-   for(int i=0;i<nholes();++i)
-      hole(i).plot("blue");
 }
 
 cpolygon* cpolygon::null()

@@ -17,6 +17,7 @@ extern BAT* select_dist_point_point(
 @+ Code for ptree accelerator.
 @C
 #include "gis.h"
+#include "opengis.h"
 #include "gisbulk.proto.h"
 #include "rtree.h"
 #include "rtree_point.h"

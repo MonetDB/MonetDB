@@ -35,7 +35,6 @@ public:
    static polyline* create(int npoints);
    class multipoint* boundary() const;
    static polyline* create(const Array<point>& pointlist);
-   void plot(const char* color) const;
    class polygon* interior() const;
    box bbox() const;
    const minitree* minitreeptr() const;
@@ -463,12 +462,6 @@ double polyline::length() const
    for(int i=0;i<nsegments();++i)
       rval += sgmt(i).length();
    return(rval);
-}
-
-void polyline::plot(const char* color) const
-{
-   for(int i=0;i<nsegments();++i)
-      sgmt(i).plot(color);
 }
 
 polyline* polyline::addminitree(const minitree& m) const

@@ -11,6 +11,7 @@ extern BAT* join_inside_polygon_polygon(BAT* left,BAT* right);
 #endif /* __RTREE_POLYGON_H__ */
 @C
 #include "gis.h"
+#include "opengis.h"
 #include "gisbulk.proto.h"
 #include "rtree.h"
 #include "rtree_polygon.h"

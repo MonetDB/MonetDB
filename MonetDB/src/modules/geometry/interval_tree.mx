@@ -42,6 +42,7 @@ interval_leaf* interval_tree_getleaf(Heap* tree,int index);
 #endif /* __INTERVAL_TREE_H__ */
 @C
 #include "gis.h"
+#include "opengis.h"
 #include "gisbulk.proto.h"
 #include "interval_tree.h"
 

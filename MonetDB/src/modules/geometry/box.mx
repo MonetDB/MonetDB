@@ -91,8 +91,6 @@ public:
    void set(coord left,coord top,coord right,coord bottom);
    void set(const point& p);
 
-   void plot(const char* color) const;
-
    void convert_host_to_net();
    void convert_net_to_host();
 };
@@ -550,14 +548,6 @@ bool marginoverlap(const box& b1,const box& b2)
       (b1.left == b2.left) || (b1.right == b2.right) ||
       (b1.top == b2.top) || (b1.bottom == b2.bottom));
    return(rval);
-}
-
-void box::plot(const char* color) const
-{
-   segment(point(left,top),point(right,top)).plot(color);
-   segment(point(right,top),point(right,bottom)).plot(color);
-   segment(point(left,bottom),point(right,bottom)).plot(color);
-   segment(point(left,top),point(left,bottom)).plot(color);
 }
 
 void box::operator -=(const point& p)

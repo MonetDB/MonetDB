@@ -78,12 +78,12 @@ public:
    }
 };
 
-bool operator==(const rpoint& left,const rpoint& right)
+inline bool operator==(const rpoint& left,const rpoint& right)
 {
    return(left.p == right.p);
 }
 
-bool operator<(const rpoint& left,const rpoint& right)
+inline bool operator<(const rpoint& left,const rpoint& right)
 {
    return(left.p < right.p);
 }

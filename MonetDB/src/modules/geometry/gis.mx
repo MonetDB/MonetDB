@@ -502,12 +502,6 @@ The new spatial types have the following syntax:
    .COMMAND dimension(segment):int = dimension_segment; ""
    .COMMAND dimension(triangle):int = dimension_triangle; ""
 
-   .COMMAND plot(segment) = segment_plot; ""
-   .COMMAND plot(polygon) = polygon_plot; ""
-   .COMMAND plot(polyline) = polyline_plot; ""
-   .COMMAND plot(cpolygon) = cpolygon_plot; ""
-   .COMMAND plot(bat[any,segment]) = segments_plot; ""
-
    .COMMAND angle(point,point,point) : dbl = angle_ppp; ""
    .COMMAND angle(dbl,dbl) : dbl = angle_dd; ""
    .COMMAND direction(point,point) : dbl = direction_pp; ""
@@ -830,7 +824,6 @@ void @1_put(Heap* h,int*  bun,@1* val)
 @:heapop(polygon)@
 @:heapop(cpolygon)@
 @:heapop(multipoint)@
-@:heapop(minitree)@
 
 @= heapop
 int @1_heapcheck(
@@ -1723,24 +1716,6 @@ int segment_center(point *rval, segment *s)
    return GDK_SUCCEED;
 }
 
-int segments_plot(BAT *segs)
-{
-   BUN hd,tl;
-
-   BATloop(segs,hd,tl)
-   {
-      segment* s = (segment *)BUNtail(segs, hd);
-      s->plot("red");
-   }
-   return(GDK_SUCCEED);
-}
-
-int segment_plot(segment *s)
-{
-   s->plot("red");
-   return(GDK_SUCCEED);
-}
-
 //
 //================================
 // Wrapper function for polylines.
@@ -1755,14 +1730,6 @@ int polyline_append(
    *rval = append(*p1,*p2);
    return(GDK_SUCCEED);
 }
-
-int polyline_plot(polyline *p)
-{
-   p->plot("blue");
-   GDKwarning("end\n");
-   return(GDK_SUCCEED);
-}
-
 
 int polyline_dest_direction(
    dbl* rval,
@@ -1945,13 +1912,6 @@ int polyline_interior(polygon **rval, polyline *p)
 // Function concerning polygons
 //=============================
 //
-
-int polygon_plot(polygon *p)
-{
-   p->plot("blue");
-   GDKwarning("end\n");
-   return(GDK_SUCCEED);
-}
 
 //
 //  .COMMAND clockwise(polygon) : bit
@@ -2169,11 +2129,6 @@ int cpolygon_info(cpolygon *p)
    return(GDK_SUCCEED);
 }
 
-int cpolygon_plot(cpolygon *p)
-{
-   p->plot();
-   return(GDK_SUCCEED);
-}
 //
 //  .COMMAND npoints(polyline) : int
 //

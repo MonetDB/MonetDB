@@ -161,17 +161,17 @@ BAT* relate_histogram()
 {
    BAT* rval = BATnew(TYPE_str,TYPE_int,15);
 
-   BUNins(rval,"DISJOINT",&relatehistogram[relationship::DISJOINT]);
-   BUNins(rval,"TOUCH",&relatehistogram[relationship::TOUCH]);
-   BUNins(rval,"REINL",&relatehistogram[relationship::REINL]);
-   BUNins(rval,"LEINR",&relatehistogram[relationship::LEINR]);
-   BUNins(rval,"CROSS",&relatehistogram[relationship::CROSS]);
-   BUNins(rval,"EQUAL",&relatehistogram[relationship::EQUAL]);
-   BUNins(rval,"LINR",&relatehistogram[relationship::LINR]);
-   BUNins(rval,"RINL",&relatehistogram[relationship::RINL]);
-   BUNins(rval,"LIN2R",&relatehistogram[relationship::LIN2R]);
-   BUNins(rval,"RIN2L",&relatehistogram[relationship::RIN2L]);
-   BUNins(rval,"OVERLAP",&relatehistogram[relationship::OVERLAP]);
+   BUNins(rval,(void *)"DISJOINT",&relatehistogram[relationship::DISJOINT]);
+   BUNins(rval,(void *)"TOUCH",&relatehistogram[relationship::TOUCH]);
+   BUNins(rval,(void *)"REINL",&relatehistogram[relationship::REINL]);
+   BUNins(rval,(void *)"LEINR",&relatehistogram[relationship::LEINR]);
+   BUNins(rval,(void *)"CROSS",&relatehistogram[relationship::CROSS]);
+   BUNins(rval,(void *)"EQUAL",&relatehistogram[relationship::EQUAL]);
+   BUNins(rval,(void *)"LINR",&relatehistogram[relationship::LINR]);
+   BUNins(rval,(void *)"RINL",&relatehistogram[relationship::RINL]);
+   BUNins(rval,(void *)"LIN2R",&relatehistogram[relationship::LIN2R]);
+   BUNins(rval,(void *)"RIN2L",&relatehistogram[relationship::RIN2L]);
+   BUNins(rval,(void *)"OVERLAP",&relatehistogram[relationship::OVERLAP]);
 
    return(rval);
 }

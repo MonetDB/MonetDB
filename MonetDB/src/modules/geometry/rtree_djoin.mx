@@ -26,6 +26,7 @@ extern BAT* join_squared_dist_box_box(
 #endif /* __RTREE_DJOIN_H__ */
 @C
 #include "gis.h"
+#include "opengis.h"
 #include "rtree.h"
 #include "split.h"
 #include "gisbulk.proto.h"

@@ -30,7 +30,6 @@ public:
    polygon* copy() const;
    polygon* remove_dups() const;
    polygon* lower_res(double n) const;
-   void plot(const char* color) const;
    class cpolygon* tocpolygon() const;
    pie getpie(int i,bool* cw=0) const;
    box bbox() const;
@@ -427,12 +426,6 @@ double polygon::area() const
       rval = - rval;
 
    return(rval);
-}
-
-void polygon::plot(const char* color) const
-{
-   for(int i=0;i<nsegments();++i)
-      sgmt(i).plot(color);
 }
 
 polygon* polygon::fromstr(char *instr,int* parselen,int *buflen,polygon* p)

@@ -201,8 +201,8 @@ inline box bbox(const polygon& p,const minitree& m)
 #include <math.h>
 #include "geometry.h"
 #include "gis.proto.h"
-#include "minitree.h"
 #include "opengis.h"
+#include "minitree.h"
 
 extern "C"
 {
@@ -304,6 +304,14 @@ int minitree_comp(minitree* l,minitree*  r)
       return(-1);
    else
       return(1);
+}
+
+int minitree_heapcheck(
+   Heap*        h,
+   HeapRepair*  hr)
+
+{
+   return(HEAP_check(h,hr));
 }
 
 void minitree_del(Heap* h,int* index)

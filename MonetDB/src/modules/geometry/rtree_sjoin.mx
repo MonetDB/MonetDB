@@ -7,6 +7,7 @@
 #endif /* __RTREE_SJOIN_H__ */
 @C
 #include "gis.h"
+#include "opengis.h"
 #include "gisbulk.proto.h"
 #include "rtree.h"
 #include "rtree_box.h"

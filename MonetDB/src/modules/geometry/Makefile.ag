@@ -1,6 +1,9 @@
 
 MTSAFE
 
+# install these libs in the pkglib
+LIBDIR = pkglib
+
 INCLUDES = -I$(MONET_BUILD)/src/gdk -I$(MONET_BUILD)/src/monet \
 	   -I$(MONET_BUILD)/src/modules/plain
 
@@ -27,6 +30,12 @@ lib__opengis = {
 		LineLineString.mx MultiPointLineString.mx PointPolygon.mx \
 		MultiPointPolygon.mx PointMultiLineString.mx minirealm.mx \
 		PolygonLineString.mx Reverse.mx opengis.mx
+	HEADERS = h m
+	SCRIPTS = mil
+}
+
+lib__blg = {
+	SOURCES = blg.mx
 	HEADERS = h m
 	SCRIPTS = mil
 }
