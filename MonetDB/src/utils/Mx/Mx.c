@@ -210,128 +210,67 @@ char **argv;
 }
 
 Directive str2dir[] = {
-	{"", Continue, "",}
-	,
-	{"0", Index0, "",}
-	,
-	{"1", Index1, "",}
-	,
-	{"2", Index2, "",}
-	,
-	{"3", Index3, "",}
-	,
-	{"4", Index4, "",}
-	,
-	{"5", Index5, "",}
-	,
-	{"6", Index6, "",}
-	,
-	{"7", Index7, "",}
-	,
-	{"8", Index8, "",}
-	,
-	{"9", Index9, "",}
-	,
-	{"f", Ofile, "",}
-	,
-	{"=", Mxmacro, "",}
-	,
-	{"ifdef", Ifdef, "",}
-	,
-	{"else", Ifndef, "",}
-	,
-	{"endif", Endif, "",}
-	,
-	{"a", Author, "",}
-	,
-	{"v", Version, "",}
-	,
-	{"t", Title, "",}
-	,
-	{"d", Date, "",}
-	,
-	{"*", Module, "",}
-	,
-	{"+", Section, "",}
-	,
-	{"-", Subsection, "",}
-	,
-	{".", Paragraph, "",}
-	,
-	{"T", Qtex, "",}
-	,
-	{"texi", Qtexi, "",}
-	,
-	{"C", CCsrc, MX_CXX_SUFFIX,}
-	,
-	{"i", Pimpl, "impl",}
-	,
-	{"s", Pspec, "spec",}
-	,
-	{"h", Cdef, "h",}
-	,
-	{"c", Csrc, "c",}
-	,
-	{"y", Cyacc, "y",}
-	,
-	{"l", Clex, "l",}
-	,
-	{"odl", ODLspec, "odl",}
-	,
-	{"oql", OQLspec, "oql",}
-	,
-	{"sql", SQL, "sql",}
-	,
-	{"p", Prolog, "pl",}
-	,
-	{"hs", Haskell, "hs",}
-	,
-	{"m", Monet, "m",}
-	,
-	{"mal", MALcode, "mal",}
-	,
-	{"mil", MILcode, "mil",}
-	,
-	{"w", HTML, "www",}
-	,
-	{"java", Java, "java",}
-	,
-	{"tcl", Tcl, "tcl",}
-	,
-	{"Qnap", Qnap, "qnp",}
-	,
-	{"pc", ProC, "pc",}
-	,
-	{"sh", Shell, "",}
-	,
-	{"fgr", fGrammar, "fgr",}
-	,
-	{"mcr", Macro, "mcr",}
-	,
-	{"xml", XML, "xml",}
-	,
-	{"dtd", DTD, "dtd",}
-	,
-	{"xsl", XSL, "xsl",}
-	,
-	{"cfg", Config, "cfg",}
-	,
-	{"swig", Swig, "i",}
-	,
-	{"Y", CCyacc, "yy",}
-	,
-	{"L", CClex, "ll",}
-	,
-	{"bib", BibTeX, "bib",}
-	,
-	{"{", InHide, "",}
-	,
-	{"}", OutHide, "",}
-	,
-	{"/", Comment, "",}
-	,
-	{NULL, Nop, NULL,}
-	,
+	{"", Continue, "",},
+	{"0", Index0, "",},
+	{"1", Index1, "",},
+	{"2", Index2, "",},
+	{"3", Index3, "",},
+	{"4", Index4, "",},
+	{"5", Index5, "",},
+	{"6", Index6, "",},
+	{"7", Index7, "",},
+	{"8", Index8, "",},
+	{"9", Index9, "",},
+	{"f", Ofile, "",},
+	{"=", Mxmacro, "",},
+	{"ifdef", Ifdef, "",},
+	{"else", Ifndef, "",},
+	{"endif", Endif, "",},
+	{"a", Author, "",},
+	{"v", Version, "",},
+	{"t", Title, "",},
+	{"d", Date, "",},
+	{"*", Module, "",},
+	{"+", Section, "",},
+	{"-", Subsection, "",},
+	{".", Paragraph, "",},
+	{"T", Qtex, "",},
+	{"texi", Qtexi, "",},
+	{"C", CCsrc, MX_CXX_SUFFIX,},
+	{"i", Pimpl, "impl",},
+	{"s", Pspec, "spec",},
+	{"h", Cdef, "h",},
+	{"c", Csrc, "c",},
+	{"y", Cyacc, "y",},
+	{"l", Clex, "l",},
+	{"odl", ODLspec, "odl",},
+	{"oql", OQLspec, "oql",},
+	{"sql", SQL, "sql",},
+	{"p", Prolog, "pl",},
+	{"hs", Haskell, "hs",},
+	{"m", Monet, "m",},
+	{"mal", MALcode, "mal",},
+	{"mil", MILcode, "mil",},
+	{"w", HTML, "www",},
+	{"java", Java, "java",},
+	{"tcl", Tcl, "tcl",},
+	{"Qnap", Qnap, "qnp",},
+	{"pc", ProC, "pc",},
+	{"sh", Shell, "",},
+	{"fgr", fGrammar, "fgr",},
+	{"mcr", Macro, "mcr",},
+	{"xml", XML, "xml",},
+	{"dtd", DTD, "dtd",},
+	{"xsl", XSL, "xsl",},
+	{"cfg", Config, "cfg",},
+	{"swig", Swig, "i",},
+	{"Y", CCyacc, "yy",},
+	{"L", CClex, "ll",},
+	{"bib", BibTeX, "bib",},
+	{"{", InHide, "",},
+	{"}", OutHide, "",},
+	{"/", Comment, "",},
+	{NULL, Nop, NULL,},
 };
 
 #define NUMEXTENS (sizeof(str2dir)/sizeof(Directive))
