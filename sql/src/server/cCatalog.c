@@ -85,8 +85,10 @@ BAT *mvc_bind( mvc *c, oid colid ){
 		printf("mvc_bind %d, %d\n", colid, cid);
 
 	if (cid > c->size){
+		int oldsz = c->size;
 		c->size = cid + 1024;
 		c->batptrs = RENEW_ARRAY(BAT*,c->batptrs,c->size);
+		memset(c->batptrs+oldsz, 0, (c->size-oldsz)*sizeof(BAT*) );
 	}
 	if (!c->batptrs[cid]){
 		BAT *b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
@@ -114,7 +116,6 @@ void drop_column( mvc *c, oid id ){
 	BAT *b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
 				BUNfnd(c->column_bat, (ptr)&id)));
 
-	BBPtransient(b->batCacheid);
 	BUNdelHead(c->column_id, 	(ptr)&id );
 	BUNdelHead(c->column_table, 	(ptr)&id );
 	BUNdelHead(c->column_name, 	(ptr)&id );
@@ -123,6 +124,7 @@ void drop_column( mvc *c, oid id ){
 	BUNdelHead(c->column_null, 	(ptr)&id );
 	BUNdelHead(c->column_number, 	(ptr)&id );
 	BUNdelHead(c->column_bat, 	(ptr)&id );
+	BATmode(b,TRANSIENT);
 }
 
 static
@@ -200,9 +202,9 @@ oid mvc_create_column( mvc *c, oid cid, oid tid,
 		printf("mvc_crate_column %d %d %s %s  %d\n", 
 					cid, tid, name, sqltype, seqnr);
 
-	BBPpersistent(b->batCacheid);
+	BATmode(b, PERSISTENT);
 
-	snprintf(buf, BUFSIZ, "sql-%ld-%s-%ld\n", tid, name, cid );
+	snprintf(buf, BUFSIZ, "sql_%ld_%s_%ld", tid, name, cid );
 	BATrename(b, buf);
 
 	BUNins(c->column_id, 	(ptr)&ci, (ptr)&cid );
