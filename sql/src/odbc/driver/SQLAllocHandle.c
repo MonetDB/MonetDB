@@ -27,6 +27,7 @@
 #include "ODBCDbc.h"
 #include "ODBCStmt.h"
 #include "ODBCError.h"
+#include "stream.h"
 
 static int odbc_init = 0;
 
