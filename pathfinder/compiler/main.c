@@ -411,6 +411,7 @@
  */
 static struct option long_options[] = {
     { "print-att-dot",                 0, NULL, 'D' },
+    { "print-mil_summer",              0, NULL, 'M' },
     { "optimize",                      0, NULL, 'O' },
     { "print-human-readable",          0, NULL, 'P' },
     { "timing",                        0, NULL, 'T' },
@@ -495,6 +496,7 @@ static const char
 #include "algopt.h"
 #include "milgen.h"       /* MIL tree generation */
 #include "milprint.h"     /* create string representation of MIL tree */
+#include "milprint_summer.h" /* create MILcode directly from the Core tree */
 #include "oops.h"
 #include "mem.h"
 #include "algebra_cse.h"
@@ -632,10 +634,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "DOPTacd:hl:mnpqrst", 
+        c = getopt_long (argc, argv, "DMOPTacd:hl:mnpqrst", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "DOPTacd:hl:mnpqrst");
+        c = getopt (argc, argv, "DMOPTacd:hl:mnpqrst");
 #endif
 
         if (c == -1)
@@ -673,6 +675,8 @@ main (int argc, char *argv[])
                     long_option (opt_buf, ", --%s", 'n'));
             printf ("  -c%s: stop after core language generation\n",
                     long_option (opt_buf, ", --%s", 'c'));
+            printf ("  -M%s: print MIL code (summer version) and stop\n",
+                    long_option (opt_buf, ", --%s", 'M'));
             printf ("  -a%s: stop after algebra tree generation\n",
                     long_option (opt_buf, ", --%s", 'a'));
             printf ("  -r%s: stop after algebra tree rewrite/optimization\n",
@@ -735,6 +739,11 @@ main (int argc, char *argv[])
 
         case 'D':
             PFstate.print_dot = true;
+            break;
+
+        case 'M':
+            if (PFstate.stop_after > phas_mil_summer)
+                PFstate.stop_after = phas_mil_summer;
             break;
 
         case 'P':
@@ -950,6 +959,18 @@ main (int argc, char *argv[])
 
     /* ***** end of temporary unfolding code ***** */
 #endif
+
+    /*
+     * generate temporary MIL Code (summer branch version)
+     */
+    if (PFstate.stop_after == phas_mil_summer) {
+        tm = PFtimer_start ();
+        PFprintMILtemp (stdout, croot);
+
+        if (PFstate.timing)
+            PFlog ("MIL code output:\t %s", PFtimer_str (tm));
+        goto bailout;
+    }
 
     /*
      * map core to algebra tree
