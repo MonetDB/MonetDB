@@ -635,11 +635,32 @@ parseTypeId(Client cntxt, int defaultType)
 		skipSpace(cntxt);
 		return i;
     }  
+	if (strncmp(CURRENT(cntxt), ":col[", 5) == 0) {
+        /* parse :col[:type] */
+        advance(cntxt,5);
+		ht = simpleTypeId(cntxt);
+		if (ht == TYPE_any)
+			kh = typeAlias(cntxt);
+		i = newColType(ht);
+		if (kh > 0)
+			setAnyHeadIndex(i, kh);
+		if (currChar(cntxt) != ']')
+			parseError(cntxt, "']' expected\n");
+		nextChar(cntxt); /* skip ']' */
+		skipSpace(cntxt);
+		return i;
+    }  
     if( strncmp(CURRENT(cntxt),":bat",4)==0){
         /* parse default for :bat[:any,:any] */
         advance(cntxt,4);
         skipSpace(cntxt);
         return newBatType(TYPE_any,TYPE_any);
+    } 
+    if( strncmp(CURRENT(cntxt),":col",4)==0){
+        /* parse default for :col[:any] */
+        advance(cntxt,4);
+        skipSpace(cntxt);
+        return newColType(TYPE_any);
     } 
     ht= simpleTypeId(cntxt);
 	if (ht >= 0)

@@ -595,6 +595,10 @@ message to the user.
 #endif
         m= findModule(scope,moduleName(p));
         while(s1<0 && m!= NULL){
+			if( moduleId(p) == NULL && m->inheritance==0) {
+				m= m->outer;
+				continue;
+			}
             if( m->subscope[(int)(getSubScope(functionName(p)))])
                 s1= findFunctionType(m,mb,p);
             if( moduleId(p)) break;

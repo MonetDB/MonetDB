@@ -85,6 +85,7 @@ management)
 typedef struct SCOPEDEF {
 	struct SCOPEDEF   *outer; /* outer level in the scope tree */
 	str     name;
+	int		inheritance; /* set when it plays a role in inheritance */
 	MALfcn  typeChecker;    /* function address for type checker */
 	Symbol *subscope; /* type dispatcher table */
 	Box box;    /* module related objects */
@@ -103,6 +104,8 @@ mal_export void     freeScope(Scope cur);
 mal_export void     freeScopeList(Scope cur);
 mal_export void     insertSymbol(Scope scope, Symbol prg);
 mal_export void     deleteSymbol(Scope scope, Symbol prg);
+mal_export void		setInheritanceMode(Scope head,int flag);
+mal_export Scope	setInheritance(Scope head,Scope first, Scope second);
 mal_export Scope    findModule(Scope scope, str name);
 mal_export Symbol   findSymbolInModule(Scope v, str fcn);
 mal_export Symbol   findMALSymbol(str mod, str fcn);
@@ -134,6 +137,7 @@ point for the modules to be added later.
 	cur->name = nme;
 	cur->outer = NULL;
 	cur->typeChecker = NULL;
+	cur->inheritance = TRUE;
 	cur->subscope = NULL; 
 	cur->isAtomModule = FALSE;
 
@@ -319,7 +323,55 @@ void deleteSymbol(Scope scope, Symbol prg){
 		}
 }
 
+@+ Inheritance structure 
+The default inheritance sequence is derived from the include order.
+Most recently modules shield older modules, unless the user has specified
+an explicit module name. This dus not work for dynamically loaded modules,
+which may cause existing programs to be falsely bound to new implementations.
 
+The mechanism to control the inheritance structure consists of three features.
+First, a module can be excluded from automatic inheritance by setting a flag.
+This leads to skipping it during function resoluation.
+The second mechanism is to enforce a partial order among the scopes.
+The routine setInheritance(F,S) ensures that module F is inspected
+before module S. In case it does not hold, S is placed just after F.
+
+Since the modules are currently shared between all clients,
+such reshufflings may have drastic side effects.
+To circumvent this, we have to make a private copy of the Scope chain
+and the lookup table. [TODO]
+@c
+void setInheritanceMode(Scope m,int flag){
+	(void) flag;
+	m->inheritance = 0;
+}
+
+Scope setInheritance(Scope h, Scope f, Scope s){
+	Scope fp, sp;
+	int i=0, j=0;
+	sp= h;
+	while(sp->outer && sp->outer->outer !=s) {
+		sp= s;
+		i++;
+	}
+	fp= h;
+	while(fp->outer !=f) {
+		fp= f;
+		j++;
+	}
+	if( j<i) return h;
+
+	if(h==s){
+		h= s->outer; 
+		s->outer= f->outer;
+		f->outer=s;
+	} else {
+		sp->outer=s->outer;
+		s->outer = f->outer;
+		f->outer =s;
+	}
+	return h;
+}
 @+ Searching the scope structure.
 Finding a scope is unrestricted. For modules we explicitly look for
 the start of a new module scope.
