@@ -229,6 +229,7 @@ mal_export void     cleanupClients();
 mal_export void     traceAllClients(int flag);
 mal_export void     traceClient(str nme, int flag);
 
+mal_export bstream *getConsole(Client c);
 mal_export void     pushClientInput(Client c, bstream *new_input, int listing, char *prompt);
 mal_export void     popClientInput(Client c);
 
@@ -272,6 +273,13 @@ int bstreamClient(Client c, str prompt);
 
 ClientRec   mal_clients[MAL_MAXCLIENTS+1];
 
+bstream *getConsole(Client c){
+	ClientInput *x;
+	if( c->bak == 0) return c->fdin;
+	x= c->bak;
+	while(x->next) x= x->next;
+	return x->fdin;
+}
 void pushClientInput(Client c, bstream *new_input, int listing, char *prompt)
 {
     ClientInput *x = (ClientInput*)GDKmalloc(sizeof(ClientInput));

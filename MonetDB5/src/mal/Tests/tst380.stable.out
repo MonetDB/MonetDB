@@ -118,16 +118,16 @@ end main;	# 8
 [ 1,	  "monet_environment",	  "str",  "str",	  30,	  151,	  "dirty",	  "load", "transient",	  1		  ]
 [ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  152,	  "dirty",	  "load", "transient",	  1		  ]
 [ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "load", "transient",	  1		  ]
-[ 4,	  "stat_id_inuse",	  "int",  "int",	  0,	  154,	  "dirty",	  "load", "persistent",	  2		  ]
-[ 5,	  "stat_id_nme",	  "int",  "str",	  0,	  155,	  "dirty",	  "load", "persistent",	  2		  ]
-[ 6,	  "stat_id_expire",	  "int",  "int",	  0,	  156,	  "dirty",	  "load", "persistent",	  2		  ]
-[ 7,	  "stat_id_stamp",	  "int",  "int",	  0,	  157,	  "dirty",	  "load", "persistent",	  2		  ]
-[ 8,	  "stat_id_count",	  "int",  "lng",	  0,	  158,	  "dirty",	  "load", "persistent",	  2		  ]
-[ 9,	  "stat_id_size",	  "int",  "lng",	  0,	  159,	  "dirty",	  "load", "persistent",	  2		  ]
-[ 10,	  "stat_id_min_lng",	  "int",  "lng",	  0,	  160,	  "dirty",	  "load", "persistent",	  2		  ]
-[ 11,	  "stat_id_max_lng",	  "int",  "lng",	  0,	  161,	  "dirty",	  "load", "persistent",	  2		  ]
-[ 12,	  "stat_id_histogram",	  "int",  "str",	  0,	  162,	  "dirty",	  "load", "persistent",	  2		  ]
-[ 13,	  "simplemind",		  "int",  "int",	  0,	  95,	  "dirty",	  "load", "transient",	  0		  ]
+[ 4,	  "stat_id_inuse",	  "int",  "int",	  0,	  154,	  "dirty",	  "load", "persistent",	  1		  ]
+[ 5,	  "stat_id_nme",	  "int",  "str",	  0,	  155,	  "dirty",	  "load", "persistent",	  1		  ]
+[ 6,	  "stat_id_expire",	  "int",  "int",	  0,	  156,	  "dirty",	  "load", "persistent",	  1		  ]
+[ 7,	  "stat_id_stamp",	  "int",  "int",	  0,	  157,	  "dirty",	  "load", "persistent",	  1		  ]
+[ 8,	  "stat_id_count",	  "int",  "lng",	  0,	  158,	  "dirty",	  "load", "persistent",	  1		  ]
+[ 9,	  "stat_id_size",	  "int",  "lng",	  0,	  159,	  "dirty",	  "load", "persistent",	  1		  ]
+[ 10,	  "stat_id_min_lng",	  "int",  "lng",	  0,	  160,	  "dirty",	  "load", "persistent",	  1		  ]
+[ 11,	  "stat_id_max_lng",	  "int",  "lng",	  0,	  161,	  "dirty",	  "load", "persistent",	  1		  ]
+[ 12,	  "stat_id_histogram",	  "int",  "str",	  0,	  162,	  "dirty",	  "load", "persistent",	  1		  ]
+[ 13,	  "simplemind",		  "int",  "int",	  0,	  97,	  "dirty",	  "load", "transient",	  0		  ]
 [ "Get second directory" ]
 #-------------------------#
 # h	tmp_6		  # name
@@ -138,7 +138,7 @@ end main;	# 8
 # tmp_6	tmp_25		htype	ttype	count	heat	dirty		status	kind		refCount		  # name
 # int	str		str	str	lng	int	str		str	str		int		  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ 13,	  "simplemind",	  "int",  "int",  0,	  294,	  "dirty",	  "load", "transient",	  0		  ]
+[ 13,	  "simplemind",	  "int",  "int",  0,	  280,	  "dirty",	  "load", "transient",	  0		  ]
 #
 
 # 11:28:52 >  

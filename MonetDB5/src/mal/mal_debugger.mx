@@ -333,6 +333,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 {
     int m = 1;
     char *b,*c;
+	bstream *oldin;
     stream *out = cntxt->fdout;
     int listing = cntxt->listing;
 	char *oldprompt = cntxt->prompt;
@@ -346,6 +347,8 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		cntxt -> prompt = "mdb>";
 		cntxt -> promptlength = 4;
 	}
+	oldin= cntxt->fdin;
+	cntxt->fdin= getConsole(cntxt);
     cntxt->fdin->pos += cntxt->yycur; 
 	cntxt->yycur = 0;
 	cntxt->fdin->buf[cntxt->fdin->pos] = 0;
@@ -665,6 +668,7 @@ signatures satisfying the pattern.
         	mdbHelp(out);
     	}
     } while(m);
+	cntxt->fdin= oldin;
 	cntxt->prompt = oldprompt;
 	cntxt->promptlength = oldpromptlength;
 }

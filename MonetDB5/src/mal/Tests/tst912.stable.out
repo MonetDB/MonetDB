@@ -37,8 +37,6 @@ exit allways;	# 7  (allways:bit)
     io.printf("#factory done\n");	# 8 IOprint_str ($10:int)<-($11:str)
     return (bb,c):= (false,c);	# 9  (bb:bit)(c:bat[:void,:lng])<-($12:bit)(c:bat[:void,:lng])
 end getChunk;	# 10  
-!WARNING: garbage collection not guaranteed
-!WARNING: garbage collection not guaranteed
 #
 #function choptest(b:bat[:void,:lng], size:lng, base:lng);
 #    t0:= alarm.usec();

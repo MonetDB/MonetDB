@@ -78,7 +78,6 @@ function Admin.welcome4(lim:int) (w:str,i:int);	# 0  (w:str)(i:int)<-(lim:int)
     return (w,i):= "hello";	# 2  unknown (w:str)(i:int)<-($5:str)
 end welcome4;	# 3  
 !ERROR: Multiple assignment mismatch
-!WARNING: garbage collection not guaranteed
 #
 #function welcome5(lim:int)(:str,:int);
 #    i:= 2;
@@ -88,7 +87,6 @@ function Admin.welcome5(lim:int) ($2:str,$3:int);	# 0  ($2:str)($3:int)<-(lim:in
     i := 2;	# 1  (i:int)<-($5:int)
     return (w,i):= ("hello",2);	# 2  (w:str)(i:int)<-($7:str)($5:int)
 end welcome5;	# 3  
-!WARNING: garbage collection not guaranteed
 #
 #y:=welcome1(1);
 #print(y);

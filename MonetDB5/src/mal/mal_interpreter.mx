@@ -250,7 +250,7 @@ of the return statement.
 
             rhs = &env->stk[pci->argv[i]];
             VALcopy(lhs,rhs);
-            @:BATfix(rhs,1)@
+            @:BATfix(rhs)@
         }
         stk->up = env;
         env->down = stk;
@@ -374,10 +374,7 @@ str runMALsequence( malTask *task)
     int stkexception;
     str ret=0;
     ptr argv[MAXARG];
-    ValRecord backup;
     @:performanceVariables@
-    backup.vtype= TYPE_int;
-    backup.val.ival= 0;
 
 MALrestart:
     stkpc = startpc;
@@ -592,7 +589,7 @@ possible change in the control flow.
                 rhs = &stk->stk[pp->argv[i]];
                 lhs = &env->stk[pci->argv[i]];
                 VALcopy(lhs,rhs);
-                @:BATfix(lhs,0)@
+                @:BATfix(lhs)@
             }
             @:garbageTypeCheck@
             goto MALevalExit;
@@ -619,24 +616,17 @@ their. They seem superflous and the way they are used will
 cause errors in multi-assignment statements.
 @-
 @= assignStmt
-{   
-    /*if( pci->beforeCall && pci->afterCall)*/
-    if( garbageControl(mb,getDestVar(pci)) )
-    for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
-        lhs = &stk->stk[pci->argv[k]];
-        rhs = &stk->stk[pci->argv[i]];
-		if( pci->beforeCall)
-			(*pci->beforeCall)(lhs,&backup);
-        VALcopy(lhs,rhs);
-		if( pci->afterCall)
-			(*pci->afterCall)(lhs,&backup);
-    }
-    else
+{	int backup[MAXARG];
+	str sbackup[MAXARG];
+	@:safeTarget@
     for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
         lhs = &stk->stk[pci->argv[k]];
         rhs = &stk->stk[pci->argv[i]];
         VALcopy(lhs,rhs);
+		if( lhs->vtype == TYPE_bat)
+			BBPincref(lhs->val.br.id, TRUE);
     }
+	@:restoreTarget@
     ret = 0;
 }
 @-
@@ -690,12 +680,39 @@ The policy implemented here is to make pin/unpin decisions part of
 the bind(namespace,batname,mode) operation.[todo]
 
 @{
+@= safeTarget
+    if( garbageControl(mb,getDestVar(pci)) ) {
+		for(i=0; i<pci->retc; i++)
+		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat)
+			backup[i]= stk->stk[getArg(pci,i)].val.br.id;
+		else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
+				backup[i]= stk->stk[getArg(pci,i)].len;
+				sbackup[i]= stk->stk[getArg(pci,i)].val.sval;
+		}
+	}
+@= restoreTarget
+    if( garbageControl(mb,getDestVar(pci)) ) {
+		for(i=0; i<pci->retc; i++)
+		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+			if( backup[i] ){
+				BBPdecref(backup[i],TRUE);
+			}
+		} else 
+		if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
+			int a= getArg(pci,i);
+			if( sbackup[i] && sbackup[i]!= stk->stk[a].val.sval){
+				if( backup[i] > 0) 
+					GDKfree(sbackup[i]);
+				backup[i]=0;
+			}
+			/* stk->stk[a].len= 0; should be wrong*/
+		} 
+	}
 @-
 @= commandcall
-    /* if(pci->beforeCall) */
-    if( garbageControl(mb,getDestVar(pci)) )
-        (*pci->beforeCall)(&stk->stk[getDestVar(pci)],
-                   &backup);
+{	int backup[MAXARG];
+	str sbackup[MAXARG];
+	@:safeTarget
     /* improve performance with 20 ms/1M calls*/
     switch(pci->argc){
     case 7: argv[6] =(ptr) getArgReference(stk,pci,6);
@@ -738,18 +755,20 @@ the bind(namespace,batname,mode) operation.[todo]
         ret= raiseException(mb,stkpc,MALexception,
             "too many arguments for command call\n");
     }
+	@:restoreTarget@
     @:resultParameter@
-
+}
 @-
 @= patterncall
     if( pci->fcn== NULL)
         ret= raiseException(mb,stkpc,MALexception,
             "address of pattern missing\n");
-    else {/* patterns should take care of garbage collection themselves? */
-        if( pci->beforeCall) 
-            (*pci->beforeCall)(&stk->stk[getDestVar(pci)],
-                       &backup);
+    else {
+		int backup[MAXARG];
+		str sbackup[MAXARG];
+		@:safeTarget@
         ret = (str) (*pci->fcn)(mb,stk,pci);
+		@:restoreTarget@
         @:resultParameter@
     }
 
@@ -760,10 +779,7 @@ non-returned values.
 
 @-
 @= functioncall
-     /* if( pci->beforeCall) */
-     if( garbageControl(mb,getDestVar(pci)) )
-        (*pci->beforeCall)(&stk->stk[getDestVar(pci)],
-                   &backup);
+{	
     if( pci->blk== NULL)
         ret= raiseException(mb,stkpc,MALexception,
             "reference to MAL function missing\n");
@@ -772,14 +788,12 @@ non-returned values.
         ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
     }
     @:resultParameter@
+}
 @-
 Factory calls are more involved. At this stage it is a synchrononous
 call to the factory manager.
+Factory calls should deal with the reference counting.
 @= factorycall
-     /* if( pci->beforeCall) */
-     if( garbageControl(mb,getDestVar(pci)) )
-        (*pci->beforeCall)(&stk->stk[getDestVar(pci)],
-                   &backup);
     if( pci->blk== NULL)
         ret= raiseException(mb,stkpc,MALexception,
             "reference to MAL function missing\n");
@@ -798,10 +812,6 @@ and we have to do some housekeeping, such as string length adjustment.
 @-
 @= resultParameter
     @:exceptionHndlr@
-    else if( pci->afterCall) 
-    /* if( garbageControl(mb,getDestVar(pci)) )*/
-        (*pci->afterCall)(&stk->stk[getDestVar(pci)],
-                  &backup);
 
 @+ Flow of control statements
 Each assignment (function call) may be part of the initialization
@@ -1217,8 +1227,8 @@ types and possibly user-defined type garbage collector definitions
 require attention. [TAKE CARE OF fixable atoms !!]
 
 All string values are private to the VALrecord, which means they
-have to freed explicitly before a MAL function returns. 
-The first step is to always clear the destination variable
+have to be freed explicitly before a MAL function returns. 
+The first step is to always safe the destination variable
 before a function call is made.
 @{
 @c
@@ -1233,37 +1243,39 @@ void garbageElement(ValPtr v)
     return;
 #endif
     if( v->vtype == TYPE_str) {
-        if( v->val.pval && v->val.pval != str_nil) {
-            if(v->len) GDKfree(v->val.pval);
-            v->len= 0;
-        }
-        v->val.pval= NULL;
+		if(v->len && v->val.pval) {
+			GDKfree(v->val.pval);
+			v->val.pval= NULL;
+		}
+		v->len= 0;
     }
     if( v->vtype== TYPE_bat && v->val.bval) {
+@}
 @-
-When the logical reference count drops to zero
-we can decrement the physical refcount as well.
+All operations are responsible to properly set the
+reference count of the BATs being produced or destroyed.
+The exception are the target BAT variables. Their
+reference is saved until the operation is finished.
+They the reference can be reduced (due to overwrite
+of the target variable) or retained(the operation failed).
+
+Actually, the libraries should not leave the
+physical reference count being set. This is only
+allowed during a GDK operation. All references
+should be logical.
+@{
 @c
         int bid= ABS(v->val.bval);
         /* printf("garbage collecting: %d lrefs=%d refs=%d\n",
             bid, BBP_lrefs(bid),BBP_refs(bid));*/
-        /* logical references do not count from here*/
-        /* watch out for built-ins */
-        if( BBP_refs(bid))
-            BBPunfix(bid);
-            else
+		if( bid == 0) return;
         if( BBP_lrefs(bid) )
             BBPdecref(bid,TRUE);
         v->val.bval =0;
-#ifdef DEBUG_MAL_INTERPRETER
-        else GDKerror("interpreter:bat '%d' disappeared\n",v->val.bval);
-#endif
     }
 }
 @-
 @}
-
-The second major area to be careful, is management of the BAT reference counts.
 
 Before we return from the interpreter, we should free all
 dynamically allocated objects and adjust the BAT reference counts.
@@ -1310,33 +1322,25 @@ stack frame and its parents only.
 @c
 void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 {   int k;
-    ValRecord backup;
-    backup.vtype= TYPE_int;
-    backup.val.ival= 0;
-    (void) backup.vtype;
 
 #ifdef STACKTRACE
     stream_printf(GDKout,"--->release BAT %d \n", bid);
     printStack(GDKout,mb,stk);
 #endif
    do{
-    for(k=0;k<mb->vtop; k++) 
-    if( stk->stk[k].vtype== TYPE_bat && abs(stk->stk[k].val.ival)==bid) {
-        BBPdecref(bid,TRUE);
-        stk->stk[k].val.ival= 0;
-    }
-    /* BBPdecref(bid,TRUE);    OBSOLETE one more because batAfterCall is still in progress */
-    if( BBP_lrefs(bid) == 0){
-        BBPunfix(bid);
-    }
+		for(k=0;k<mb->vtop; k++) 
+		if( stk->stk[k].vtype== TYPE_bat && abs(stk->stk[k].val.br.id)==bid) {
+			BBPdecref(bid,TRUE);
+			stk->stk[k].val.ival= 0;
+		}
 #ifdef STACKTRACE
-    stream_printf(GDKout,"--->stack after release BAT %d\n", bid);
-    printStack(GDKout,mb,stk);
+		stream_printf(GDKout,"--->stack after release BAT %d\n", bid);
+		printStack(GDKout,mb,stk);
 #endif
-    if(stk->up){
-        stk= stk->up;
-        mb= stk->blk;
-    }else break;
+		if(stk->up){
+			stk= stk->up;
+			mb= stk->blk;
+		}else break;
     } while(stk);
 }
 

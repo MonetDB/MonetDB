@@ -321,16 +321,12 @@ instruction in the source.]
 @node Before-after calls, The parser ,Instruction Records, MonetDB Assembler Language
 @+ Before-after calls
 The instruction records contain three optional pointers to functions:
-beforeCall and afterCall. They are bound to the result type.
-All expect a pointer to a VALrecord. The beforeCall is activated
+beforeCall and afterCall.  All are passed the runtime context. 
+The beforeCall is activated
 just before you enter a routine and can be used to initialize
 the stack frame, perform debugging, etc.etc.
 The afterCall is activated after a successful return and can be
 used to finalize the administration.
-Typical use of beforeCall and afterCall are handling of BAT references,
-but they can also be used to update a front-end.
-@-
-[Think, should beforeCall/afterCall also become part of the MAL functions?]
 @menu
 * MAL constants::
 * MAL variables::
@@ -1400,7 +1396,7 @@ retryConstant:
                 (*BATatoms[type].atomFromStr)(val, &vr->len, p);
                 break;
             }
-            if( tonil) vr->val.sval = str_nil;
+            if( tonil) vr->val.sval = GDKstrdup(str_nil);
             else vr->val.sval= (str) GDKstrdup(val);
             vr->len= strlen((str) val);
             break;
@@ -1889,7 +1885,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
         if( i+1==high && p->varargs ) {sprintf(t,"...");break;}
         if( (def=getArgDefault(mb,p,i)) != NULL){
             if( getArgType(mb,p,i)== TYPE_str)
-                if( def== str_nil)
+                if( strcmp(def,str_nil)==0)
                      sprintf(t,"nil%s", pstring);
                 else sprintf(t,"\"%s\"%s", def, pstring);
             else
@@ -2001,62 +1997,5 @@ void printSignature(stream *fd, Symbol s, int flg){
     (void) fcnDefinition(s->def, p,txt, flg);
     stream_printf(fd,"%s\n",txt);
     GDKfree(txt);
-}
-@+ Garbage collection
-Of particular interest is the beforeCall situations for strings and bats.
-Before the interpreter calls a function, it should safeguard the
-value(s) on top of the stack for garbage collection afterwards.
-The before- and after- calls should find a scratch area on the value
-stack to keep the backup information around. Currently, we only
-garbage collect a single return value and use a fixed value record.
-
-@c 
-void strBeforeCall(ValPtr v, ValPtr bak){
-    bak->val.sval= v->val.sval;
-    bak->len = v->len;
-}
-void strAfterCall(ValPtr v, ValPtr bak) {
-    if( v->val.sval != bak->val.sval) {
-        if( bak->val.pval && bak->val.pval != str_nil) {
-            if(bak->len) GDKfree(bak->val.pval);
-            bak->len= 0;
-        }       
-        bak->val.pval= NULL;
-    }
-    v->len= 0;
-}
-
-void batBeforeCall(ValPtr v, ValPtr bak){
-    if( v->vtype== TYPE_bat){
-        bak->val.br.id= v->val.br.id;
-        bak->val.br.stamp= v->val.br.stamp;
-	}
-    /*else stream_printf(GDKout,"batBeforeCall:unexpected BAT value\n");
-       it was garbage for sure */
-}
-@-
-After the expression has been evaluated we can release any
-pending BAT reference, but the logical reference should be
-retained.
-This code base assumes no concurrent actions on the same BAT,
-otherwise dangling pointers could be created.
-@c
-void batAfterCall(ValPtr v, ValPtr bak){
-    if(v->vtype!= TYPE_bat) {
-        /* not ready yet  
-        stream_printf(GDKout,"batAfterCall:unexpected BAT value\n"); */
-        return;
-    }
-    if( v->val.br.id == bak->val.br.id) return;
-    if( v->val.br.id){
-    /* int bid= ABS(v->val.bval);
-       printf("reference counting: %d lrefs=%d refs=%d",
-        bid, BBP_lrefs(bid),BBP_refs(bid)); */
-        BBPincref(v->val.br.id,TRUE);
-        if( BBP_refs(v->val.br.id) )
-            BBPunfix(v->val.br.id);
-    }
-    if( bak->val.br.id)
-        BBPdecref(bak->val.br.id,TRUE);
 }
 @}

@@ -433,6 +433,8 @@ int takeBox(Box box, str name, ValPtr val, int tpe){
         return -1;
     }
     VALcopy(val, &box->val->stk[i]);
+	if( val->vtype == TYPE_bat)
+		BBPincref(val->val.br.id,TRUE);
 #ifdef DEBUG_MAL_BOX
     stream_printf(GDKout,"takeBox:'%s' from '%s'\n",name,box->name);
 #endif
@@ -530,7 +532,8 @@ str getBoxNames(int *bid){
     if( box[i]!= NULL ){
         BUNins(b,&i, box[i]->name);
     }
-    BBPfix(*bid = b->batCacheid);
+    BBPincref(*bid = b->batCacheid,TRUE);
+	BBPunfix(*bid);
     return MAL_SUCCEED;
 }
 @+ Persistency

@@ -433,23 +433,12 @@ This piece of code may be shared by the separate binder
     @:bindFunction@
 @-
 Since we now know the storage type of the receiving variable, we can
-set the before/after/final-Call functions. Actually, we should set
-up a call for each return value. Instead, we rely in this case
-on a user-supplied function [todo].
-@= chkMultiple
-    if( p->retc != 1)
-        GDKwarning("garbage collection not guaranteed\n");
+set the garbagge collection flag.
 @= prepostProcess
     if(isaBatType(s1)){
-        @:chkMultiple@
-        p->beforeCall= (MALfcn) batBeforeCall;
-        p->afterCall= (MALfcn) batAfterCall;
         garbageControl(mb,getArg(p,0)) = TRUE;
     }
     else if( !isPolyType(s1)  && ATOMstorage(s1)== TYPE_str){
-        @:chkMultiple@
-        p->beforeCall= (MALfcn)strBeforeCall;
-        p->afterCall= (MALfcn) strAfterCall;
         garbageControl(mb,getArg(p,0)) = TRUE;
     } 
 @c
