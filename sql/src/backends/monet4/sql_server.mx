@@ -162,6 +162,7 @@ stream.
 		"cast to short and check for overflow"
 	.COMMAND "lng"( str v, int digits ) : lng = str2lng;
 		"cast to short and check for overflow"
+
 	.COMMAND "sht"( sht v, int digits ) : sht = sht_2_sht;
 		"cast to short and check for overflow"
 	.COMMAND "sht"( int v, int digits ) : sht = int_2_sht;
