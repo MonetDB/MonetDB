@@ -351,6 +351,11 @@ void mvc_delete( mvc *c, oid tid, BAT *rids ){
 	int first =  BUNindex(b,BUNfirst(b));
 	signed long base = b->hseqbase-first;
 
+	if (!BATcount(rids))
+		return;
+
+	rids = BATsort(rids); /* we need sorted oids */
+	
 	assert(BAThdense(b));
 
 	/* bats should be void, ie. first translate the rids to 
@@ -369,11 +374,17 @@ void mvc_delete( mvc *c, oid tid, BAT *rids ){
 		b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
 				BUNfnd(c->column_bat, (ptr)&cid)));
 
-		BATloopFast(rids,r,s,sz){
+		/* reverse order scan, since the deleted slots are
+		 * filled with stuff from the top, else the oid is
+		 * already gone
+		 */
+        	sz = BUNsize(rids);
+        	for(r=BUNlast(rids)-sz, s=BUNfirst(rids); r >= s; r -=sz) {
 			oid rid = *(oid*)BUNhead(rids,r);
 			BUNdelete(b,  BUNptr(b, rid-base));
 		}
 	}	
+	BBPunfix(rids->batCacheid);
 }
 
 void mvc_update( mvc *c, oid tid, oid cid, BAT *v ){
@@ -386,6 +397,11 @@ void mvc_update( mvc *c, oid tid, oid cid, BAT *v ){
 	int first =  BUNindex(b,BUNfirst(b));
 	signed long base = b->hseqbase-first;
 
+	if (!BATcount(v))
+		return;
+
+	v = BATsort(v); /* we need sorted oids */
+
 	assert(BAThdense(b));
 	
 	BATloop(columns, p, q ){
@@ -395,25 +411,32 @@ void mvc_update( mvc *c, oid tid, oid cid, BAT *v ){
 		oid nil = oid_nil;
 		BAT *u = v; 
 		oid lcid = *(oid*)BUNhead(columns,p);
+
 		oid thiscid = *(oid*)BUNtail(c->column_id,
-				BUNfnd(c->column_bat, (ptr)&lcid));
+				BUNfnd(c->column_id, (ptr)&lcid));
 
 		b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
 				BUNfnd(c->column_bat, (ptr)&lcid)));
 
 		if (thiscid != cid){
-			/* may need own BATsemijoin or force one which
+			/* may need own BATsemijoin or use one which
 			 * keeps the order, aka fetchjoin
-			 * */
+			 */
 			u = BATsemijoin(b,v);
 		}
-		BATloopFast(u,r,s,sz){
+		/* reverse order scan, since the deleted slots are
+		 * filled with stuff from the top, else the oid is
+		 * already gone
+		 */
+        	sz = BUNsize(u);
+        	for(r=BUNlast(u)-sz, s=BUNfirst(u); r >= s; r -=sz) {
 			oid rid = *(oid*)BUNhead(u,r);
 			BUNdelete(b,  BUNptr(b, rid-base));
 		}
-		BATloopFast(u,r,s,sz){
+		BATloop(u, r, s){
 			oid rid = *(oid*)BUNhead(u,r);
-			BUNins(b,  (ptr)&nil, BUNptr(u, rid-base));
+			BUNins(b,  (ptr)&nil, BUNtail(u,r));
 		}
 	}	
+	BBPunfix(v->batCacheid);
 }

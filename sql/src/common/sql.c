@@ -2601,7 +2601,8 @@ statement *update_set( context *sql, dlist *qname,
 
                                 if (v->nrcols <= 0)
                                         v = statement_const( 
-					  s?s:statement_column(cl,NULL), v);
+					  s?statement_reverse(s):
+					   statement_column(cl,NULL), v);
 
                                 list_append_statement( l,
                                         statement_update( cl, v ));
