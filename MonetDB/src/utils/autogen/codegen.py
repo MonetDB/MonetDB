@@ -133,6 +133,7 @@ code_gen = {'m':       [ '.proto.h', '.glue.c', '.mil' ],
             'h.sed':    [ '.h' ],
             'xsl.in':   [ '.xsl' ],
             'pc.in':    [ '.pc' ],
+            'ini.in':    [ '.ini' ],
             'rc':       [ '.res' ],
 }
 

@@ -22,3 +22,9 @@ scripts_php = {
 	DIR = pkgdatadir/php
 	SOURCES = monetdb.php pear.php next_result_demo.php 
 }
+
+scripts_ini = {
+	EXT = ini
+	DIR = pkgdatadir/php
+	SOURCES = php.ini.in
+}

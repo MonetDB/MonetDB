@@ -206,6 +206,10 @@ class DB_monetdb extends DB_common
     {
         $this->last_query = $query;
         $query = $this->modifyQuery($query);
+        $ismanip = DB::isManip($query);
+        if (!$this->autocommit && $ismanip) {
+            $this->transaction_opcount++;
+        }
         if (defined("MONETDB_DEBUG") && MONETDB_DEBUG) {
             echo "<pre>$query</pre>";
         }
@@ -214,7 +218,7 @@ class DB_monetdb extends DB_common
         if (!$result) {
             return $this->monetdbRaiseError();
         }
-        if (!DB::isManip($query) && is_resource($result)) {
+        if (!$ismanip && is_resource($result)) {
             $numrows = $this->numrows($result);
             if (is_object($numrows)) {
                 return $numrows;
@@ -367,11 +371,12 @@ class DB_monetdb extends DB_common
     function autoCommit($onoff = false)
     {
         if ($onoff === true) {
-            @monetdb_query("SET auto_commit = true;");
+            @monetdb_query("SET auto_commit = true;", $this->connection);
         } else {
-            @monetdb_query("SET auto_commit = false;");
+            @monetdb_query("SET auto_commit = false;", $this->connection);
         }
         $this->autocommit = ($onoff===true) ? true : false;
+        $this->transaction_opcount = 0;
         return DB_OK;
     }
 
@@ -383,12 +388,14 @@ class DB_monetdb extends DB_common
      */
     function commit()
     {
-        if ($this->autocommit) return DB_ERROR_INVALID;
-
         $result = @monetdb_query('COMMIT;', $this->connection);
         if (!$result) {
+            $this->transaction_opcount = 0;
             return $this->monetdbRaiseError();
         }
+        if ($this->autocommit) 
+		$this->autocommit = false;
+        $this->transaction_opcount = 0;
         return DB_OK;
     }
 
@@ -400,12 +407,15 @@ class DB_monetdb extends DB_common
      */
     function rollback()
     {
-        if ($this->autocommit) return DB_ERROR_INVALID;
+	if ( $this->autocommit === true) 
+		return DB_OK;
 
         $result = @monetdb_query('ROLLBACK;', $this->connection);
         if (!$result) {
+            $this->transaction_opcount = 0;
             return $this->monetdbRaiseError();
         }
+        $this->transaction_opcount = 0;
         return DB_OK;
     }
 
@@ -567,21 +577,82 @@ class DB_monetdb extends DB_common
 
     // }}}
     // {{{ tableInfo()
-    function tableInfo($result, $mode = null) {
-	if (is_string($result) && $mode === null) {
-	    $res = $this->getAll("select tables.name as \"table\" ,columns.name,columns.type,type_digits as len,".
-				 "number from tables inner join columns on tables.id=columns.table_id " .
+    /**
+     * Returns information about a table or a result set.
+     *
+     * NOTE: only supports 'table' and 'flags' if <var>$result</var>
+     * is a table name.
+     *
+     * @param object|string  $result  DB_result object from a query or a
+     *                                string containing the name of a table
+     * @param int            $mode    a valid tableInfo mode
+     * @return array  an associative array with the information requested
+     *                or an error object if something is wrong
+     * @access public
+     * @internal
+     * @see DB_common::tableInfo()
+     */
+    function tableInfo($result, $mode = null) 
+    {
+	/* TODO 
+		the 'len' field should hold the types maximum length, but
+		we return the maximum length in the column (values).
+		
+		We do not return primary/foreing key flags. Could be 
+		added in the string case.
+ 	 */
+	$id = $result;
+        if (is_object($result) && isset($result->result)) {
+            /*
+             * Probably received a result object.
+             * Extract the result resource identifier.
+             */
+            $id = $result->result;
+	} elseif (is_string($result)) {
+            $res = array();
+	    $tmp = $this->getAll("select tables.name as \"table\" ,columns.name,columns.type, case columns.\"null\" when true then 'null' else 'not_null' end as flags, type_digits as len,".
+				 "number as number from tables inner join columns on tables.id=columns.table_id " .
 				 "where tables.name='${result}' order by number", DB_FETCHMODE_ASSOC);
-	} elseif (is_resource($result)) {
-        $res = array();
-        for ($i=0; $i<monetdb_num_fields($result); $i++) {
-            $row = array();
-            $row["name"] = @monetdb_field_name($i, $result);
-            $row["type"] = @monetdb_field_type($i, $result);
-            $res[] = $row;
-        }
-    } else
-        return $this->raiseError(DB_ERROR_NOT_CAPABLE);
+            $res['num_fields']= sizeof($tmp);
+	    foreach ( $tmp as $tmprow ) {
+                $row = array();
+		foreach( $tmprow as $key => $val) {
+			if ($key == 'number') {
+                		if ($mode & DB_TABLEINFO_ORDER) {
+                    			$res['order'][$row['name']] = $val;
+                		}
+                		if ($mode & DB_TABLEINFO_ORDERTABLE) {
+                    			$res['ordertable'][$row['table']][$row['name']] = $val;
+                		}
+			} else {
+				$row[$key] = $val;
+			}
+		}
+                $res[] = $row;
+	    }
+	    return $res;
+	} 
+        if (is_resource($id)) {
+	    $count = monetdb_num_fields($id);
+            $res = array();
+            $res['num_fields']= $count;
+            for ($i=0; $i<$count; $i++) {
+                $row = array();
+		$row['table'] = monetdb_field_table($id, $i);
+                $row['name'] = monetdb_field_name($id, $i);
+                $row['type'] = monetdb_field_type($id, $i);
+                $row['len']  = monetdb_field_len($id, $i);
+                if ($mode & DB_TABLEINFO_ORDER) {
+                    $res['order'][$row['name']] = $i;
+                }
+                if ($mode & DB_TABLEINFO_ORDERTABLE) {
+                    $res['ordertable'][$row['table']][$row['name']] = $i;
+                }
+                $res[] = $row;
+            }
+        } else {
+            return $this->raiseError(DB_ERROR_NOT_CAPABLE);
+	}
 	
 	return $res;
     }

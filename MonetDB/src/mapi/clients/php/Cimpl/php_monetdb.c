@@ -91,8 +91,10 @@ function_entry monetdb_functions[] = {
 	    PHP_FE(monetdb_num_rows, NULL)
 	    PHP_FE(monetdb_num_fields, NULL)
 	    PHP_FE(monetdb_next_result, NULL)
+	    PHP_FE(monetdb_field_table, NULL)
 	    PHP_FE(monetdb_field_name, NULL)
 	    PHP_FE(monetdb_field_type, NULL)
+	    PHP_FE(monetdb_field_len, NULL)
 	    PHP_FE(monetdb_errno, NULL)
 	    PHP_FE(monetdb_error, NULL)
 	    PHP_FE(monetdb_fetch_array, NULL)
@@ -499,7 +501,8 @@ PHP_FUNCTION(monetdb_query)
 		RETURN_FALSE;
 	}
 
-	mapi_fetch_all_rows(handle);
+	if (mapi_get_querytype(handle) != 7)
+		mapi_fetch_all_rows(handle);
 
 	/* We need to cache all rows directly, otherwise things get confusing. This is a mapi bug/feature. */
 	/* mapi_fetch_all_rows(handle); */
@@ -603,6 +606,46 @@ PHP_FUNCTION(monetdb_next_result)
 
 /* }}} */
 
+/* {{{ proto string monetdb_field_table(resource handle, int index)
+   return the table name of a specified field (column) */
+PHP_FUNCTION(monetdb_field_table)
+{
+	zval **z_handle = NULL, **z_index = NULL;
+	MapiHdl handle;
+	long index;
+	char *table;
+
+	if ((ZEND_NUM_ARGS() != 2) || (zend_get_parameters_ex(2, &z_handle, &z_index) == FAILURE)) {
+		WRONG_PARAM_COUNT;
+	}
+
+	if (Z_TYPE_PP(z_handle) == IS_RESOURCE && Z_LVAL_PP(z_handle) == 0)
+		RETURN_FALSE;
+
+	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, -1, "MonetDB result handle", le_handle);
+
+	convert_to_long_ex(z_index);
+	index = Z_LVAL_PP(z_index);
+
+	/*~ printf("MON: _field_table: index=%d handle=%p\n", index, handle); */
+
+	if (index >= mapi_get_field_count(handle)) {
+		php_error(E_WARNING, "monetdb_field_table: Accessing field number #%ld, which is out of range", index);
+		/* php_error_docref("function.monetdb_field_table" TSRMLS_CC, E_WARNING, "Accessing field number #%ld, which is out of range", index); */
+		RETURN_FALSE;
+	}
+
+	table = mapi_get_table(handle, index);
+
+	/*~ printf("MON: _field_table: table=%s\n", table); */
+
+	Z_STRLEN_P(return_value) = strlen(table);
+	Z_STRVAL_P(return_value) = estrndup(table, Z_STRLEN_P(return_value));
+	Z_TYPE_P(return_value) = IS_STRING;
+}
+
+/* }}} */
+
 /* {{{ proto string monetdb_field_name(resource handle, int index)
    return a name of a specified field (column) */
 PHP_FUNCTION(monetdb_field_name)
@@ -679,6 +722,44 @@ PHP_FUNCTION(monetdb_field_type)
 	Z_STRLEN_P(return_value) = strlen(type);
 	Z_STRVAL_P(return_value) = estrndup(type, Z_STRLEN_P(return_value));
 	Z_TYPE_P(return_value) = IS_STRING;
+}
+
+/* }}} */
+
+/* {{{ proto string monetdb_field_len(resource handle, int index)
+   return the lenght (as long) of a specified field (column) */
+PHP_FUNCTION(monetdb_field_len)
+{
+	zval **z_handle = NULL, **z_index = NULL;
+	MapiHdl handle;
+	long index;
+	long len;
+
+	if ((ZEND_NUM_ARGS() != 2) || (zend_get_parameters_ex(2, &z_handle, &z_index) == FAILURE)) {
+		WRONG_PARAM_COUNT;
+	}
+
+	if (Z_TYPE_PP(z_handle) == IS_RESOURCE && Z_LVAL_PP(z_handle) == 0)
+		RETURN_FALSE;
+
+	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, -1, "MonetDB result handle", le_handle);
+
+	convert_to_long_ex(z_index);
+	index = Z_LVAL_PP(z_index);
+
+	/*~ printf("MON: _field_len: index=%d handle=%p\n", index, handle); */
+
+	if (index >= mapi_get_field_count(handle)) {
+		php_error(E_WARNING, "monetdb_field_len: Accessing field number #%ld, which is out of range", index);
+		/* php_error_docref("function.monetdb_field_len" TSRMLS_CC, E_WARNING, "Accessing field number #%ld, which is out of range", index); */
+		RETURN_FALSE;
+	}
+
+	len = mapi_get_len(handle, index);
+
+	/*~ printf("MON: _field_len: len=%d\n", len); */
+
+	RETURN_LONG(len);
 }
 
 /* }}} */
