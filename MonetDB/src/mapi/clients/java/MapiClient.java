@@ -36,7 +36,7 @@ public class MapiClient
     public static void main(String argv[]){
 	String hostname = "localhost";
 	int portnr = 50000;
-	String user = "quest";
+	String user = "guest";
 	String password = "anonymous";
 	String lang = "mil";
 	boolean useUTF8 = false;
