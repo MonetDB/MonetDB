@@ -111,17 +111,17 @@ end main;	# 30
 # h	trace_id_ticks	  # name
 # int	int		  # type
 #-------------------------#
-[ 0,	  35		  ]
-[ 1,	  11		  ]
+[ 0,	  39		  ]
+[ 1,	  10		  ]
 [ 2,	  4		  ]
 [ 3,	  4		  ]
 [ 4,	  4		  ]
 [ 5,	  4		  ]
-[ 6,	  4		  ]
-[ 7,	  4		  ]
+[ 6,	  3		  ]
+[ 7,	  3		  ]
 [ 8,	  4		  ]
 [ 9,	  4		  ]
-[ 10,	  4		  ]
+[ 10,	  3		  ]
 #-------------------------------------------------#
 # h	trace_id_statement			  # name
 # int	str					  # type
@@ -141,17 +141,17 @@ end main;	# 30
 # h	trace_id_ticks	trace_id_statement			  # name
 # int	int		str					  # type
 #-----------------------------------------------------------------#
-[ 0,	  35,		  "err := bat.insert(<tmp_13>,1,15);"	  ]
-[ 1,	  11,		  "err := bat.insert(<tmp_13>,2,4);"	  ]
+[ 0,	  39,		  "err := bat.insert(<tmp_13>,1,15);"	  ]
+[ 1,	  10,		  "err := bat.insert(<tmp_13>,2,4);"	  ]
 [ 2,	  4,		  "err := bat.insert(<tmp_13>,3,nil);"	  ]
 [ 3,	  4,		  "err := bat.insert(<tmp_13>,4,16);"	  ]
 [ 4,	  4,		  "err := bat.insert(<tmp_13>,5,25);"	  ]
 [ 5,	  4,		  "err := bat.insert(<tmp_13>,6,36);"	  ]
-[ 6,	  4,		  "err := bat.insert(<tmp_13>,7,49);"	  ]
-[ 7,	  4,		  "err := bat.insert(<tmp_13>,8,64);"	  ]
+[ 6,	  3,		  "err := bat.insert(<tmp_13>,7,49);"	  ]
+[ 7,	  3,		  "err := bat.insert(<tmp_13>,8,64);"	  ]
 [ 8,	  4,		  "err := bat.insert(<tmp_13>,9,nil);"	  ]
 [ 9,	  4,		  "err := bat.insert(<tmp_13>,nil,nil);"  ]
-[ 10,	  4,		  "err := bat.insert(<tmp_13>,nil,81);"	  ]
+[ 10,	  3,		  "err := bat.insert(<tmp_13>,nil,81);"	  ]
 #~EndVariableOutput~#
 
 # 21:45:33 >  

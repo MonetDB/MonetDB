@@ -111,7 +111,7 @@ function qry1();
     sql.column(V124,"avg_price","double",53,0);
     sql.column(V131,"avg_disc","double",53,0);
     sql.column(V132,"count_order","int",0,0);
-    sql.output(V49,V39,V48,V56,V63,V85,V109,V117,V124,V131,V132);
+    sql.output(0,V49,V39,V48,V56,V63,V85,V109,V117,V124,V131,V132);
 end qry1;
 
 optimizer.setDebug();

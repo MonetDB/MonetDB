@@ -32,6 +32,9 @@ print(ltrim);
 rtrim:= batstr.rtrim(S); 
 print(rtrim);
 
+print("Start searches");
+srch:= batstr.search(S,"hello"); 
+print(srch);
 srch:= batstr.search(S,S); 
 print(srch);
 plus:= batstr.+(S,S); 

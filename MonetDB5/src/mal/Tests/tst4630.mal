@@ -82,5 +82,5 @@ exit always;
 end qry1;
 
 
-#optimize("Admin","qry1");
+optimize("Admin","qry1");
 showFunction("Admin","qry1");

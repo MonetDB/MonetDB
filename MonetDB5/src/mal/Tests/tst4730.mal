@@ -1,6 +1,5 @@
 #TPCH query 1
 # the basis for further optimizer tests
-#the code is actually wrong
 include sql;
 
 factory qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):any;
@@ -35,8 +34,7 @@ barrier always := true;
     V57 := algebra.kdiff(V53,V12);
     V58 := algebra.join(V21,V57);
     V59 := aggrX3.sum(V58,V35,V37);
-	V61:= bbp.new(V12);
-    V64 := algebra.kdiff(V61,V12);
+    V64 := algebra.kdiff(V60,V12);
     V65 := algebra.join(V21,V64);
     V66 := aggrX3.sum(V65,V35,V37);
     V72 := calc.lng(A0);
