@@ -1,5 +1,9 @@
 # testing the function resolution on builtin type
+t:= mem_cursize();
+print(t);
 	b:= bat.new(int,int);
+t:= mem_cursize();
+print(t);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
@@ -1001,6 +1005,8 @@
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
+t:= mem_cursize();
+print(t);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
@@ -2002,6 +2008,8 @@
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
+t:= mem_cursize();
+print(t);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
@@ -3003,6 +3011,8 @@
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
+t:= mem_cursize();
+print(t);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
@@ -4004,6 +4014,8 @@
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
+t:= mem_cursize();
+print(t);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
@@ -5005,6 +5017,8 @@
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
+t:= mem_cursize();
+print(t);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
@@ -6006,6 +6020,8 @@
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
+t:= mem_cursize();
+print(t);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
@@ -7007,6 +7023,8 @@
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
+t:= mem_cursize();
+print(t);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
@@ -8008,6 +8026,8 @@
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
+t:= mem_cursize();
+print(t);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
@@ -8109,6 +8129,8 @@
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
+t:= mem_cursize();
+print(t);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
@@ -9110,6 +9132,8 @@
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
+t:= mem_cursize();
+print(t);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
@@ -10000,5 +10024,7 @@
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
+t:= mem_cursize();
+print(t);
 	z:= count(b);
 	z2:= print(z);

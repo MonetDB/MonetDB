@@ -53,12 +53,16 @@ typedef struct MALSTK {
 	struct MALSTK *up;	/* stack trace list */
 	struct MALSTK *down;	/* stack trace list */
 	struct MALBLK *blk;	/* associated definition */
-	ValRecord stk[0];
+	ValRecord stk[1];
 }MalStack, *MalStkPtr;
 
 #define STACKINCR	128
+#define MAXGLOBALS	4 * STACKINCR
 #define stackSize(CNT) (sizeof(ValRecord)*(CNT) + sizeof(MalStack))
 #define newStack(S,CNT)	S= (MalStkPtr) alloca(stackSize(CNT));\
+			memset((void *) S, 0, stackSize(CNT));\
+			(S)->stksize=CNT;
+#define gblStack(S,CNT)	S= (MalStkPtr) GDKmalloc(stackSize(CNT));\
 			memset((void *) S, 0, stackSize(CNT));\
 			(S)->stksize=CNT;
 	

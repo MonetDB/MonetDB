@@ -1,6 +1,8 @@
 # testing the function resolution on builtin type
 
 	i:= 0:lng;
+t:= mem_cursize();
+print(t);
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
@@ -1002,6 +1004,8 @@
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
+t:= mem_cursize();
+print(t);
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
@@ -2003,6 +2007,8 @@
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
+t:= mem_cursize();
+print(t);
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
@@ -3004,6 +3010,8 @@
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
+t:= mem_cursize();
+print(t);
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
@@ -4005,6 +4013,8 @@
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
+t:= mem_cursize();
+print(t);
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
@@ -5006,6 +5016,8 @@
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
+t:= mem_cursize();
+print(t);
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
@@ -6007,6 +6019,8 @@
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
+t:= mem_cursize();
+print(t);
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
@@ -7008,6 +7022,8 @@
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
+t:= mem_cursize();
+print(t);
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
@@ -8009,6 +8025,8 @@
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
+t:= mem_cursize();
+print(t);
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
@@ -9010,6 +9028,8 @@
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
+t:= mem_cursize();
+print(t);
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
@@ -10001,4 +10021,6 @@
 	i:= i+1;
 	i:= i+1;
 	i:= i+1;
-	print(i);
+t:= mem_cursize();
+print(t);
+	printf("answer = %d\n",i);

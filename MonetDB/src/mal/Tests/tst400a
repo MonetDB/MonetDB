@@ -1,7 +1,9 @@
 # simple iterator loop test
 
 	i:= -1:lng;
-barrier v:= iterator.nextElement(i,0:lng,1000000:lng);
+barrier v:= iterator.nextElement(i,0:lng,2:lng);
+	print(i);
+	print(v);
 	redo v;
 end	v;
-	print(i);
+print("end of loop");

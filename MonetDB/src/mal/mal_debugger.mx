@@ -150,8 +150,7 @@ Either one set is sufficient to produce the required action.
 @c
 int MDBmdb(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Client c =getClient();
-	if( c->itrace) c->itrace = 0;
-	else c->itrace =1;
+	c->itrace = ( c->itrace)?0:1; 
 	fprintf(c->fdout,"#Monet Debugger %s\n", (c->itrace?"on":"off"));
 	mdbStep(c, mb, stk, p,'n');
 	return GDK_SUCCEED;
@@ -189,6 +188,8 @@ char mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd){
 	case 'h': mdbHelp(out); break;
 	case 'q': 
 		cntxt->itrace= 0;
+		fprintf(cntxt->fdout,"#Monet Debugger %s\n", 
+				(cntxt->itrace?"on":"off"));
 		return 'q';/* return from this debugger */
 	case 'n': /* next */
 	case 's': /* next */
@@ -359,11 +360,10 @@ Beware that a stack frame need not be initialized with null values.
 Instead, it has been zeroed upon creation.
 @c
 void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s){
-        ValPtr v= s->stk;
         int i = 0;
 
         fprintf(f,"Stack pc=%d size=%d top=%d\n",s->pc,s->stksize,s->stktop);
-        for( ; i<mb->vtop ; i++,v++){
+        for( ; i<mb->vtop ; i++){
 		printStackElm(f, mb->var+i, s->stk+i);
         }
 }

@@ -59,7 +59,7 @@ str runMAL(Client cntxt, MalBlkPtr mbcaller, MalStkPtr env, MalStkPtr glb){
 	MalBlkPtr mb=mbcaller;
 	MalStkPtr stk= NULL;
 	int space = 0,i;
-	ValPtr retval, lhs,rhs;
+	ValPtr retval, lhs,rhs,v;
 	InstrPtr pci=0, stop=0;
 	str ret=0;
 	char 	cmd='n';	/* debugger command */
@@ -77,10 +77,9 @@ str runMAL(Client cntxt, MalBlkPtr mbcaller, MalStkPtr env, MalStkPtr glb){
 	}
 	if( env){
 		/* locate instructions for called function */
-		/* currently the same as the callee */
 		pci= getInstrPtr(mbcaller,env->pc);
 		mb= pci->blk;
-	} 
+	}
 @-
 Prepare a new interpreter call. This involves two steps, (1) allocate
 the minimum amount of stack space needed, some slack resources
@@ -102,7 +101,8 @@ assume here that it aligns with the variable table of the routine.
 		@:safeguardStack@
 	} else {
 		stk = glb;
-		stk->stktop= mb->vtop; 
+		/* stk->stktop= mb->vtop;*/
+		if( mb != stk->blk) GDKerror("runMAL:misalignment of symbols\n");
 	}
 
 	if( env){
@@ -111,6 +111,7 @@ assume here that it aligns with the variable table of the routine.
 Beware, the prelude of the stack frame contains type constants
 and a variable to keep the return value.
 @c
+	 
 		/* printf("recursive MAL function call %s[%d]\n",
 			pci->fcnname,env->pc); */
 		for(k=1; k<pci->argc; k++){
@@ -252,7 +253,7 @@ symbol table and moves it to the stackframe location.
 	lhs = &stk->stk[pci->argv[0]];
 	/* if( isVarConstant(mb,pci->argv[1]))
 		rhs = &getVarConstant(mb,pci->argv[1]);
-	else */ 	rhs = &stk->stk[pci->argv[1]];
+	else */	rhs = &stk->stk[pci->argv[1]];
 	VALcopy(lhs,rhs);
 	ret = 0;
 }
@@ -389,10 +390,10 @@ labeled statemtent. This might be optimized later.
 The upper layers have assured that the result variable is of type boolean.
 
 @= barrierControl
-{ ValPtr v;
+{ 
 	v= &stk->stk[pci->argv[0]];
 	/* skip to end of barrier */
-	if( v->val.bval== FALSE) @:leaveControl@
+	if( v->val.ival == FALSE ) @:leaveControl@
 	stk->pc++;
 	break;
 }
@@ -480,7 +481,6 @@ starts with the exception identifer, followed by contextual details.
 exceptionHdlr:
 if( ret != (str) GDK_SUCCEED && ret != NULL){
 	str msg, nxt;
-	ValPtr v;
 	int symid;
 	msg= strchr(ret,':');
 	if( msg) {
