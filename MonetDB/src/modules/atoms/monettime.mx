@@ -316,8 +316,6 @@ command tzone(s:int):tzone = tzone_create
 comment "Convert the int to a tzone.";
 command tzone(s:lng):tzone = tzone_create
 comment "Convert the int to a tzone.";
-command tzone(m:minutes) : tzone = tzone_create 
-comment "create a tzone as a simple hour difference from GMT. (!DS2.2)";
 command tzone(minutes:int, start:rule, end:rule) : tzone = tzone_create_dst 
 comment "create a tzone as an hour difference from GMT and a DST. (!DS2.2)";
 
