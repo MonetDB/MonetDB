@@ -933,7 +933,10 @@ mvc_bat(struct bm *bm, char *name, int type)
 		if (bs_debug)
 			fprintf(stderr, "mvc_bat created %s bid %d\n", name, id);
 
-		b = bat_new(TYPE_void, type, BUFSIZ, "mvc_bat");
+		if (name[0] == 'U')
+			b = bat_new(TYPE_oid, type, BUFSIZ, "mvc_bat");
+		else
+			b = bat_new(TYPE_void, type, BUFSIZ, "mvc_bat");
 		bm_add_bat(bm, b->batCacheid, name, 0 /* do not use a transaction id */ );
 	} else {
 		if (bs_debug)
