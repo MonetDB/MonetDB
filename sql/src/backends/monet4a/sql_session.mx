@@ -260,24 +260,28 @@ int connect_error(stream *in, stream *out)
 	return GDK_FAIL;
 }
 
-static void
+static int
 error(stream *out, char *str)
 {
 	char *p;
 
 	while ((p = strchr(str, '\n')) != NULL) {
 		if (*str != '!')
-			stream_write(out, "!", 1, 1);
-		stream_write(out, str, 1, p - str);
+			if (stream_write(out, "!", 1, 1) != 1)
+				return -1;
+		if (stream_write(out, str, p - str, 1) != 1)
+			return -1;
 		str = p + 1;
 	}
 	if (str && *str) {
 		if (*str != '!')
-			stream_write(out, "!", 1, 1);
-		stream_write(out, str, 1, strlen(str));
-		stream_write(out, "\n", 1, 1);
+			if (stream_write(out, "!", 1, 1) != 1)
+				return -1;
+		if (stream_write(out, str, strlen(str), 1) != 1 ||
+		    stream_write(out, "\n", 1, 1) != 1) 
+			return -1;
 	}
-	stream_flush(out);
+	return stream_flush(out);
 }
 
 int sqlexecute(backend * be, stream *out, Cntxt stk )
@@ -307,10 +311,6 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 
 		*c->buf = '\0';
 		*c->buf = old;
-
-/*		if (!stream_writeInt( out, Q_DEBUGP ) ||*/
-/*		    !stream_writeInt( out, 1 ))*/
-/*			return -1;*/
 
 		while( buf < c->buf) {
 			int i;
@@ -366,16 +366,19 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 		node *n;
 
 		i = snprintf(buf, BUFSIZ, "sql%d (", q->id );
-		stream_write(be->out, buf, i, 1 );
+		if (stream_write(be->out, buf, i, 1 ) != 1)
+			return -1;
 		if (c->args){
 	  		for (n=c->args->h; n; n = n->next){
 				atom *a = n->data;
 				atom_dump(a, be->out);
-				if (n->next)
-					stream_write(be->out, ",", 1, 1); 
+				if (n->next && 
+					stream_write(be->out, ",", 1, 1) != 1) 
+					return -1;
 			}
 		}
-		stream_write(be->out, ");\n", 3, 1);
+		if (stream_write(be->out, ");\n", 3, 1) != 1)
+			return -1;
 
 		cmd = buffer_get_buf(be->outbuf);
     		stream_flush( be->out );
@@ -422,13 +425,6 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 		if ((/*status =*/ mvc_status(c->mvc)) < 0){
 			error(out, "Error in result");
   		} 
-/*		else if ( (type = mvc_type(c->mvc)) != Q_RESULT ) {
-			if (!stream_writeInt( out, type ) ||
-			    !stream_writeInt( out, status ))
-				return -1;
-			stream_flush( out );
-  		}
-*/
 	}
 	return sqlcleanup(c, cmd, err);
 }
@@ -597,7 +593,6 @@ These lines should be eaten away into the prompt is encountered.
 		/* fprintf(stdout,"mapisqlclient:ready to accept next query\n");*/
 		if( blocked ){
 			int nsize = BUFSIZ;
-			fprintf(stdout,"blocked mode\n");
 			while ((len = stream_read(in, start, 1, nsize)) == nsize){
 				inlen += nsize;
 				nsize *= 4;
@@ -607,7 +602,7 @@ These lines should be eaten away into the prompt is encountered.
 				*start = '\0';
 			}
 			if( len < 0){
-				fprintf(stdout,"mapisqlclient:error 1b\n");
+				/*fprintf(stdout,"mapisqlclient:error 1b\n"); */
 				break;
 			}
 			inlen += len;
@@ -649,14 +644,17 @@ These lines should be eaten away into the prompt is encountered.
 			err = sqlexecute(sql, out, stk);
 			if (err){ /* output error */
 				char *buf = GDKerrbuf;
-				error(out, sqlc->errstr);
+				if (error(out, sqlc->errstr) < 0){
+					go = !go;
+					break;
+				}
 				if (buf && buf[0] &&
 					(stream_write( out, "\n", 1, 1 ) != 1 ||
 					 stream_write( out, buf, strlen(buf), 1 ) !=1)){
 					fprintf(stderr,"error length:%d\n", strlen(buf));
 					fprintf(stderr,"mapisqlclient:error 3\n");
 					fprintf(stderr,"buf:%s\n",buf);
-					go= FALSE;
+					go = !go;
 					break;
 				}
 				buf[0] = 0; /* reset error buf */
