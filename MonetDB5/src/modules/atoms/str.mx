@@ -27,7 +27,7 @@
 @T
 Strings can be created in many ways. Already in the built-in operations
 each atom can be cast to a string using the str(atom) mil command.
-The string module gives the possiblity of construction string as a
+The string module gives the possibility of construction string as a
 substring of the a given string (s). There are two such construction functions.
 The first is the substring from some position (offset) until the end of
 the string. The second start again on the given offset position but only
@@ -49,16 +49,16 @@ chrAt() returns the character at position index in the string s. The
 function will fail when the index is out of range. The range is
 from 0 to length(s)-1.
 
-The startWith and endsWith functions test if the string s starts with or
+The startsWith and endsWith functions test if the string s starts with or
 ends with the given prefix or suffix.
 
 The toLower and toUpper functions cast the string to lower or upper case
 characters.
 
 The search(str,chr) function searches for the first occurrence of a 
-charachter from the begining of the string. The search(chr,str) searches
-for the last occurence (or first from the end of the string). The last
-search function locates the possition of first occurence of the string s2 
+character from the begining of the string. The search(chr,str) searches
+for the last occurrence (or first from the end of the string). The last
+search function locates the possition of first occurrence of the string s2 
 in string s. All search functions return -1 when the search failed.
 Otherwise the position is returned.
 
@@ -66,8 +66,8 @@ All string functions fail when an incorrect string (.NULL pointer) is given.
 In the current implementation, a fail is signaled by returning nil, since
 this facilitates the use of the string module in bulk operations.
 
-All functions in the module have now been converted to unicode. Internally,
-we use UTF-8 to store strings as unicode in zero-terminated byte-sequences.
+All functions in the module have now been converted to Unicode. Internally,
+we use UTF-8 to store strings as Unicode in zero-terminated byte-sequences.
 @* Module Definition
 @mal
 module str;
@@ -311,7 +311,7 @@ quit;
 
 @+ UTF-8 Handling
 @T
-UTF-8 is a way to store unicode strings in zero-terminated byte sequences, which you can e.g.
+UTF-8 is a way to store Unicode strings in zero-terminated byte sequences, which you can e.g.
 strcmp() with old 8-bit Latin-1 strcmp() functions and which then gives the same results as doing
 the strcmp() on equivalent Latin-1 and ASCII character strings stored in simple one-byte sequences.
 These characteristics make UTF-8 an attractive format for upgrading an ASCII-oriented computer 
@@ -320,12 +320,12 @@ program towards one that supports Unicode. That is why we use UTF-8 in Monet.
 For Monet, UTF-8 mostly has no consequences, as strings stored in BATs are regarded as data,
 and it does not matter for the database kernel whether the zero-terminated byte sequence it is 
 processing has UTF-8 or Latin-1 semantics. This module is the only place where explicit string 
-functionality is located. We {\bf do} have to adapt the behaviour of the MIL length(), search(),
-substring() and the like commands to the fact that one (unicode) character is now stored in
+functionality is located. We {\bf do} have to adapt the behavior of the MIL length(), search(),
+substring() and the like commands to the fact that one (Unicode) character is now stored in
 a variable number of bytes (possibly > 1).
 
-One of the things that become more complex in unicode are uppercase/lowercase conversions. The 
-below tables are the simple one-to-one unicode case mappings. We do not support the special casing mappings 
+One of the things that become more complex in Unicode are uppercase/lowercase conversions. The 
+below tables are the simple one-to-one Unicode case mappings. We do not support the special casing mappings 
 (e.g. from one to two letters).
 
 References:
