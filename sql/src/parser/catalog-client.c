@@ -1,7 +1,7 @@
 
+#include <gdk.h>
 #include "mem.h"
 #include "catalog.h"
-#include <gdk.h>
 
 /*
 schema *catalog_schema_create( catalog *cat, char *name, char *user, char *auth);
