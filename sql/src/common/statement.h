@@ -33,6 +33,7 @@ typedef enum statement_type {
 	st_group,
 	st_derive,
 	st_unique,
+	st_ordered,
 	st_order,
 	st_reorder,
 	st_unop,
@@ -117,12 +118,13 @@ extern statement *statement_group( statement *s );
 extern statement *statement_derive( statement *s, statement *t );
 extern statement *statement_unique( statement *s );
 
+extern statement *statement_ordered( statement *order, statement *res );
 extern statement *statement_order( statement *s, int direction );
 extern statement *statement_reorder( statement *s, statement *t, int direction );
 
 extern statement *statement_unop( statement *op1, func *op );
 extern statement *statement_binop( statement *op1, statement *op2, func *op );
-extern statement *statement_aggr( statement *op1, aggr *op, int group );
+extern statement *statement_aggr( statement *op1, aggr *op, statement *group );
 
 extern statement *statement_exists( statement *op1, list *l );
 

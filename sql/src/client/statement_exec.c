@@ -122,28 +122,28 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		int r = statement_dump( s->op2.stval, nr, sql );
 		switch(s->flag){
 		case cmp_equal:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d);\n", *nr, l, r ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d);\n", *nr, l, r ); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_notequal:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d);\n", *nr, l, r ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d);\n", *nr, l, r ); 
 			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.kdiff(s%d);\n", *nr+1, l, *nr );
 			(void)(*nr)++; s->nr = (*nr)++;
 			break;
 		case cmp_lt:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d, \"<\");\n", *nr, l, r ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \"<\");\n", *nr, l, r ); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_lte: /* broken */
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d, \"<=\");\n", *nr, l, r );
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \"<=\");\n", *nr, l, r );
 			s->nr = (*nr)++;
 			break;
 		case cmp_gt: 
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d, \">\" );\n", *nr, l, r); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \">\" );\n", *nr, l, r); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_gte: /* broken */
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d, \">=\" );\n", *nr, l, r);
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \">=\" );\n", *nr, l, r);
 			s->nr = (*nr)++;
 			break;
 		default:
@@ -388,21 +388,47 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		}
 		s->nr = l;
 	} break;
+	case st_ordered: {
+		int l =  statement_dump( s->op1.stval, nr, sql );
+		(void)statement_dump( s->op2.stval, nr, sql );
+		s->nr = l;
+	} break;
 	case st_output: {
-		statement_dump( s->op1.stval, nr, sql );
-		if (s->op1.stval->type == st_list){
-			list *l = s->op1.stval->op1.lval;
+		statement *order = NULL;
+		statement *lst = s->op1.stval;
+		statement_dump( lst, nr, sql );
+		if (sql->debug&32){
+			len += snprintf( buf+len, BUFSIZ,
+			"stream_write(Output,\"0\\n\");stream_flush(Output);\n");
+			break;
+		}
+		if (lst->type == st_ordered){
+			order = lst->op1.stval; 
+			lst = lst->op2.stval; 
+		}
+		if (lst->type == st_list){
+			list *l = lst->op1.lval;
 			node *n = l->h;
 			if (n){
-				len += snprintf( buf+len, BUFSIZ,"output_count(s%d, Output);\n", n->data.stval->nr);
+			  if (!order){
+			    order = n->data.stval;
+			  }
+			  len += snprintf( buf+len, BUFSIZ,
+				"output_count(s%d, Output);\n", order->nr);
 			}
-			len += snprintf( buf+len, BUFSIZ,"server_output(Output ");
+			len += snprintf( buf+len, BUFSIZ,
+				"server_output(Output, s%d ", order->nr);
 			while(n){
-				len += snprintf( buf+len, BUFSIZ,", s%d", n->data.stval->nr);
+				len += snprintf( buf+len, BUFSIZ,
+					", s%d", n->data.stval->nr);
 				n = n->next;
 			}
 			len += snprintf( buf+len, BUFSIZ,");\n");
-			len += snprintf( buf+len, BUFSIZ,"stream_flush(Output);\n");
+			len += snprintf( buf+len, BUFSIZ,
+					"stream_flush(Output);\n");
+		} else {
+			fprintf(stderr, "not a valid output list %d %d %d\n",
+					lst->type, st_list, st_ordered);
 		}
 	} break;
 

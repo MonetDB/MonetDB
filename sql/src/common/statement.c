@@ -24,9 +24,11 @@ statement *statement_create(){
 void statement_destroy( statement *s ){
 	if (--s->refcnt <= 0){
 		switch(s->type){
+			/* statement_destroy  op2 */
 		case st_update: 
 			statement_destroy( s->op2.stval );
 			break;
+			/* statement_destroy  op1 */
 		case st_not_null: 
 		case st_reverse: 
 		case st_count: 
@@ -34,7 +36,6 @@ void statement_destroy( statement *s ){
 		case st_unique: 
 		case st_order: 
 		case st_unop: 
-		case st_aggr: 
 		case st_name: 
 		case st_output: 
 			statement_destroy( s->op1.stval );
@@ -43,6 +44,7 @@ void statement_destroy( statement *s ){
 			statement_destroy( s->op1.stval );
 			list_destroy( s->op2.lval );
 			break;
+			/* statement_destroy  op1 and op2 */
 		case st_default: 
 		case st_like: 
 		case st_semijoin: 
@@ -50,6 +52,7 @@ void statement_destroy( statement *s ){
 		case st_join: 
 		case st_const: 
 		case st_derive: 
+		case st_ordered: 
 		case st_reorder: 
 		case st_binop: 
 		case st_insert_column: 
@@ -73,6 +76,11 @@ void statement_destroy( statement *s ){
 		case st_select: 
 			statement_destroy( s->op1.stval );
 			statement_destroy( s->op2.stval );
+			if (s->op3.stval)
+				statement_destroy( s->op3.stval );
+			break;
+		case st_aggr: 
+			statement_destroy( s->op1.stval );
 			if (s->op3.stval)
 				statement_destroy( s->op3.stval );
 			break;
@@ -246,6 +254,16 @@ statement *statement_unique( statement *s ){
 	ns->op1.stval = s; s->refcnt++;
 	ns->nrcols = s->nrcols;
 	ns->t = s->t;
+	return ns;
+}
+
+statement *statement_ordered( statement *order, statement *res ){
+	statement *ns = statement_create();
+	ns->type = st_ordered;
+	ns->op1.stval = order; order->refcnt++;
+	ns->op2.stval = res; res->refcnt++;
+	ns->nrcols = res->nrcols;
+	ns->t = res->t;
 	return ns;
 }
 
@@ -455,12 +473,14 @@ statement *statement_binop( statement *op1, statement *op2, func *op ){
 	s->nrcols = op1->nrcols;
 	return s;
 }
-statement *statement_aggr( statement *op1, aggr *op, int group ){
+statement *statement_aggr( statement *op1, aggr *op, statement *group ){
 	statement *s = statement_create();
 	s->type = st_aggr;
 	s->op1.stval = op1; op1->refcnt++;
 	s->op2.aggrval = op;
-	s->flag = group;
+	if (group){
+		s->op3.stval = group; group->refcnt++;
+	}
 	s->h = op1->h;
 	return s;
 }

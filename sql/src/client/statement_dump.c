@@ -249,10 +249,12 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	} 	break;
 	case st_aggr: {
 		int l = statement_dump( s->op1.stval, nr, sql );
-		if (s->flag){
-			len += snprintf( buf+len, BUFSIZ, "s%d := {%s}(s%d);\n", 
-					*nr, s->op2.aggrval->imp, l);
-		} else { 
+		if (s->op3.stval){
+			int r = statement_dump( s->op3.stval, nr, sql );
+			len += snprintf( buf+len, BUFSIZ, 
+					"s%d := {%s}(s%d,s%d);\n", 
+					*nr, s->op2.aggrval->imp, r, l);
+		} else {
 			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.%s();\n", 
 					*nr, l, s->op2.aggrval->imp );
 			len += snprintf( buf+len, BUFSIZ, "s%d := new(oid,%s);\n"
@@ -388,26 +390,47 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		}
 		s->nr = l;
 	} break;
+	case st_ordered: {
+		int l =  statement_dump( s->op1.stval, nr, sql );
+		(void)statement_dump( s->op2.stval, nr, sql );
+		s->nr = l;
+	} break;
 	case st_output: {
-		statement_dump( s->op1.stval, nr, sql );
+		statement *order = NULL;
+		statement *lst = s->op1.stval;
+		statement_dump( lst, nr, sql );
 		if (sql->debug&32){
 			len += snprintf( buf+len, BUFSIZ,
 			"stream_write(Output,\"0\\n\");stream_flush(Output);\n");
 			break;
 		}
-		if (s->op1.stval->type == st_list){
-			list *l = s->op1.stval->op1.lval;
+		if (lst->type == st_ordered){
+			order = lst->op1.stval; 
+			lst = lst->op2.stval; 
+		}
+		if (lst->type == st_list){
+			list *l = lst->op1.lval;
 			node *n = l->h;
 			if (n){
-				len += snprintf( buf+len, BUFSIZ,"output_count(s%d, Output);\n", n->data.stval->nr);
+			  if (!order){
+			    order = n->data.stval;
+			  }
+			  len += snprintf( buf+len, BUFSIZ,
+				"output_count(s%d, Output);\n", order->nr);
 			}
-			len += snprintf( buf+len, BUFSIZ,"server_output(Output ");
+			len += snprintf( buf+len, BUFSIZ,
+				"server_output(Output, s%d ", order->nr);
 			while(n){
-				len += snprintf( buf+len, BUFSIZ,", s%d", n->data.stval->nr);
+				len += snprintf( buf+len, BUFSIZ,
+					", s%d", n->data.stval->nr);
 				n = n->next;
 			}
 			len += snprintf( buf+len, BUFSIZ,");\n");
-			len += snprintf( buf+len, BUFSIZ,"stream_flush(Output);\n");
+			len += snprintf( buf+len, BUFSIZ,
+					"stream_flush(Output);\n");
+		} else {
+			fprintf(stderr, "not a valid output list %d %d %d\n",
+					lst->type, st_list, st_ordered);
 		}
 	} break;
 

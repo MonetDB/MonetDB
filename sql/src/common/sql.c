@@ -310,7 +310,15 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
 		}
 		if (distinct) s = statement_unique(s);
 		if (s && a){
-			return statement_aggr(s, a, (groupby)?1:0);
+			if (groupby){
+			  column *c = basecolumn(s);
+			  statement *foundsubset = 
+				find_subset(subset, c->table);
+
+			  return statement_aggr(s, a, foundsubset);
+			} else {
+			  return statement_aggr(s, a, NULL);
+			}
 		} else {
 			printf("aggr %s missing\n", l->h->data.sval );
 		}
@@ -905,6 +913,7 @@ statement *query_groupby( context *sql, list *tables, symbol *groupby, statement
 	    o = o->next;
 	}
 	p = st->op1.lval->h;
+	cur = statement_reverse(cur);
 	while(p){
 		statement *s = p->data.stval;
 		list_append_statement(l, statement_join( cur, s, cmp_equal ));
@@ -915,10 +924,8 @@ statement *query_groupby( context *sql, list *tables, symbol *groupby, statement
 
 static
 statement *query_orderby( context *sql, list *tables, symbol *orderby, statement *st ){
-	list *l = list_create();
 	statement *cur = NULL;
 	dnode *o = orderby->data.lval->h;
-	node *p;
 	while(o){
 	    node *n = st->op1.lval->h;
 	    symbol *order = o->data.sym;
@@ -946,6 +953,9 @@ statement *query_orderby( context *sql, list *tables, symbol *orderby, statement
 	/*
 	cur = statement_mark(cur);
 	*/
+	/*
+	list *l = list_create();
+	node *p;
 	p = st->op1.lval->h;
 	while(p){
 		statement *s = p->data.stval;
@@ -953,6 +963,8 @@ statement *query_orderby( context *sql, list *tables, symbol *orderby, statement
 		p = p->next;
 	}
 	return statement_list(l);
+	*/
+	return cur;
 }
 
 static
@@ -962,7 +974,7 @@ statement *substitute( statement *s, statement *c ){
 	case st_column: return c;
 	case st_atom: return s;
 	case st_aggr: return statement_aggr( substitute( s->op1.stval, c), 
-				      s->op2.aggrval, s->flag );
+				      s->op2.aggrval, s->op3.stval );
 	case st_binop: return statement_binop( substitute( s->op1.stval, c), 
 				       s->op2.stval, s->op3.funcval );
 	default:
@@ -982,6 +994,7 @@ statement *query( context *sql, int distinct, dlist *selection, dlist *into,
   symbol *where = table_exp->h->next->data.sym;
   symbol *groupby = table_exp->h->next->next->data.sym;
   symbol *having = table_exp->h->next->next->next->data.sym;
+  statement *order = NULL;
   (void)having;
 
   if (from){ 
@@ -1051,7 +1064,7 @@ statement *query( context *sql, int distinct, dlist *selection, dlist *into,
 	}
 
   	if (groupby) s = query_groupby(sql, ftables, groupby, s );
-  	if (orderby) s = query_orderby(sql, ftables, orderby, s );
+  	if (orderby) order = query_orderby(sql, ftables, orderby, s );
   }
 
   if (s){
@@ -1093,6 +1106,8 @@ statement *query( context *sql, int distinct, dlist *selection, dlist *into,
   }
   if (!s && sql->errstr[0] == '\0')
 	  snprintf(sql->errstr, ERRSIZE, _("Subquery result missing")); 
+  if (order) 
+	  return statement_ordered(order,s);
   return s;
 }
 

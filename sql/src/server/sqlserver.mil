@@ -15,6 +15,11 @@ proc atom(val):= {
 	return val;
 }
 
+proc avg(BAT b):= {
+	var s := b.sum();
+	return s/b.count();
+}
+
 proc add(x, y):= return x + y;
 proc sub(x, y):= return x - y;
 proc mul(x, y):= return x * y;
