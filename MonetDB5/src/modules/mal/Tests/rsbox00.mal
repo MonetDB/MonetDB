@@ -1,7 +1,7 @@
 include rsbox;
 
-rs := rsbox.create("lost", 1, 7);
-rs := rsbox.create("myid", 2, 3);
+rs := rsbox.create("lost", 1, 11);
+rs := rsbox.create("myid", 2, 1);
 
 resultset.setProperty(rs, 1, "table", "table1");
 resultset.setProperty(rs, 1, "schema", "sys");

@@ -21,7 +21,7 @@
 @* ResultSet support box
 This module acts as a simple box of ResultSet objects.
 A ResultSet is a thin wrapper around a number of BATs that allows
-serialising the values in the BATs to the MonetDB/Five MAPI result
+serialising the values in the BATs to the MonetDB/Five MACI result
 format.  This box allows the user to create, retrieve and destroy
 ResultSets easily.
 
@@ -48,7 +48,7 @@ by defining how to build a ResultSet from BATs and on the other
 hand serialising the given BATs in a predefined format.
 
 The ResultSet is {\em not} meant to be generic, instead it is
-suitable only for MonetDB/Five MAPI server/client communication.
+suitable only for MonetDB/Five MACI server/client communication.
 The exact specification of this protocol can be found in
 [ref:cvs:~fabian/repository:proefschrift/paper3] [(TODO)]
 
@@ -56,46 +56,56 @@ A ResultSet requires all its associated BATs to be of equal
 length and :bat[:void,:any] typed, for this allows efficient
 serialisation.
 
-A new empty ResultSet can be obtained by calling the
-newResultSet() function.  The state of that ResultSet will be
-`uncomplete', which means that BATs can be added as new columns
-on that ResultSet, as well as properties of such columns can be
-set.
-The function addColumn(:resultset,:bat[:void,:any],nme:str) will
-add the given BAT to the ResultSet as a column with the given
-name, if and only if the BAT has the proper length, otherwise
-an exception will be thrown.  Note that the name is not required
-to be unique.  Upon successful addition of the BAT, the sequence
-number of the newly added column is returned, which
-can be used in future setProperty calls.
+A new empty ResultSet can be obtained by calling the create()
+function of the rsbox.  During creation time, the number of
+columns the ResultSet is going to have must be specified.
+The state of such newly created ResultSet will be
+`uncomplete', which means that BATs can be attached to the
+columns of that ResultSet, as well as properties of the columns
+can be set.
+The ResultSet can be composed horizontally, which means that
+column properties can be set before the actual BAT is attached.
+This behaviour helps efficient factorisation.
+The function populateColumn() allows the user to attach a BAT
+to a ResultSet column, if and only if the BAT has the proper
+length, otherwise an exception will be thrown.
+If all columns are populated the ResultSet can be serialised
+using the writeNextPart(), writeHeader() and writeBlock()
+functions.
 
-The setProperty functionality comes in three flavours.  The first
-and most simple form setProperty(:resultset,nme:str,val:str) adds a
-name/value pair to the last added column.  The variants
-setProperty(:resultset,col:str,nme:str,val:str) and
-setProperty(:resultset,col:int,nme:str,val:str) do basically the
-same, but use an explicit reference to a column either as name or
-number.
-The former one is supplied for convenience, but should be avoided
-in general use, as it uses a sequential scan to find the right
-column, and can result in an undesired update if two columns have
-the same name.
-All three methods overwrite previous values, if set.
+Properties for columns can be set using the setProperty()
+function.  This function sets the given property value for
+the given property name on the given column, where the
+column index starts at 1.  If the column index is out of
+bounds, the property name is not valid, or the value is
+not allowed an exception will be thrown.
+The setProperty() function overwrites previous values,
+if set and returns whether it has replaced a value or not.
 
-Before a ResultSet can be serialised, if has to be marked as
-`complete'.  Calling setComplete(:resultset) marks the ResultSet
-as such and disallows any calls to addColumn or setProperty.
-Instead the serialisation functions writeHeader and writeBlock
-are enabled.  Additionally, the setComplete() function will
-auto-complete values for required properties that are not set.
+Calling one of the writeNextPart(), writeHeader() or writeBlock()
+functions, causes the ResultSet to be closed for changes.
+This effectively means that any call to populateColumn() or
+setProperty() will result in an exception.  If a ResultSet
+cannot properly be closed because not all columns have a BAT
+attached, an appropriate exception is thrown.
+When the header is written by the writeHeader() function, all
+property values that are not set, but should have a value, are
+auto-generated.  In most cases this will be convenient for
+quickly serialising some BATs.  Where necessary the otherwise
+auto-generated columns should be set explicitly.
 
-For convenience, the wrapper function writeNextPart
-combines writeHeader and writeBlock such that only the first
+The wrapper function writeNextPart() is a convenience function
+that combines writeHeader and writeBlock such that only the first
 call includes the header and all consecutive calls only include
-results.  The return value of hasNextPart is an int indicating
+results.  The return value of hasNextPart() is an int indicating
 whether there is a next part to write using the function
-writeNextPart.  The size of the blocks can be set using the
-setBlockSize function.
+writeNextPart().  The size of the blocks can be set using the
+setBlockSize() function.
+
+To reuse a ResultSet, it should first be opened again.  The
+function dePopulate() releases all BATs attached to the columns
+of the ResultSet and allows calls to populateColumn() and
+setProperty() again.
 
 Finally, to properly release a ResultSet and all its associated
 resources, the function release(:resultset) should be
@@ -171,7 +181,7 @@ comment "Create a new ResultSet with the given number of columns
 command take(id:str):resultset
 address RSBtake
 comment "Take a resultset with the given id out of the box";
-command deposit(name:str,set:resultset):void 		
+command deposit(name:str,set:resultset):void
 address RSBdeposit
 comment "Store a new resultset into the box (only there to comply
 to the interface, throws an exception, use create instead)";
@@ -187,7 +197,7 @@ command release(id:str):void
 address RSBrelease
 comment "Release the resultset with the given id";
 
-command discard(id:str):void 		
+command discard(id:str):void
 address RSBrelease
 comment "see rsbox.release(id:str)";
 
@@ -255,12 +265,18 @@ typedef struct resultset_t {
 #define RS_LINE_MESSAGE				'#'
 
 /* header types */
-#define RS_TYPE_DEFAULT	0	/* alias for RS_MONET5 */
-#define RS_TYPE_MONET5	0	/* MonetDB/Five MAPI protocol */
-#define RS_TYPE_RAW		2	/* unstructured character data */
-#define	RS_TYPE_BINARY	3	/* binary data, length known */
-#define RS_TYPE_XML		4	/* structured (X)(H)TML formatted character data */
-#define RS_TYPE_SAX		5	/* SAX event stream */
+/* results */
+#define RS_TYPE_R_DEFAULT	0	/* alias for RS_TYPE_R_MONET5 */
+#define RS_TYPE_R_MONET5	0	/* MonetDB/Five MAPI protocol */
+#define RS_TYPE_R_RAW		2	/* unstructured character data */
+#define	RS_TYPE_R_BINARY	3	/* binary data, length known */
+#define RS_TYPE_R_XML		4	/* structured (X)(H)TML formatted character data */
+#define RS_TYPE_R_SAX		5	/* SAX event stream */
+/* updates */
+#define RS_TYPE_U_DEFAULT	10	/* alias for RS_TYPE_U_AFFROW */
+#define RS_TYPE_U_AFFROW	10	/* 1 affected rows count */
+#define RS_TYPE_U_BATCH		11	/* list of affected row counts */
+#define RS_TYPE_U_SUCCESS	12	/* operation successful, no info */
 
 #endif
 @c
@@ -338,14 +354,21 @@ str RSBdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * handle is returned.
  */
 str RSBcreate(int* retval, str* name, int* columns, int* type) {
-	int i, j, free = -1;
+	int i, j, free = -1, tpe;
 
 	if (*columns <= 0)
 		throw("rsbox.create", "Number of columns should be a positive non-zero value");
 	if (*type <= 0)
 		throw("rsbox.create", "ResultSet type should be a positive non-zero value");
+	tpe = *type - 1;
+	if (tpe != RS_TYPE_R_DEFAULT && tpe != RS_TYPE_R_MONET5 &&
+		tpe != RS_TYPE_R_RAW && tpe != RS_TYPE_R_BINARY &&
+		tpe != RS_TYPE_R_XML && tpe != RS_TYPE_R_SAX &&
+		tpe != RS_TYPE_U_AFFROW && tpe != RS_TYPE_U_BATCH &&
+		tpe != RS_TYPE_U_SUCCESS)
+		throwf("rsbox.create", "ResultSet type unknown: %d", *type);
 
-	/* check the given name is a unique id (and find the first free slot) */
+	/* find the first free slot */
 	for (i = 0; i < RSB_MAX_ELEMS; i++) {
 		if (elements[i] != NULL) {
 			if (idMatches(elements[i], *name))
@@ -368,7 +391,7 @@ str RSBcreate(int* retval, str* name, int* columns, int* type) {
 				for (j = 0; j < *columns; j++)
 					RSinitColumn(elements[i], &j);
 				elements[i]->columnCount = *columns;
-				elements[i]->type = *type;
+				elements[i]->type = tpe;
 				free = i;
 			}
 		}
@@ -395,7 +418,7 @@ str RSBtake(int* retval, str* id) {
 			return(MAL_SUCCEED);
 		}
 	}
-	
+
 	throwf("rsbox.take", "No such element with id '%s'", *id);
 }
 
@@ -408,7 +431,7 @@ str RSBtake(int* retval, str* id) {
 static str RSBfreeColumn(column* col) {
 	if (col == NULL)
 		throw("resultset.freeColumn", "Column should NOT be NULL");
-	
+
 	if (col->bat) BBPunfix(col->bat->batCacheid);
 	if (col->name) GDKfree(col->name);
 	if (col->table) GDKfree(col->table);
@@ -429,12 +452,12 @@ str RSBdelete(void* retval, int* handle) {
 	str tmp;
 	int i;
 	(void)retval;	/* make compiler happy */
-	
+
 	resolveHandle(&rs, handle);
-	
+
 	/* hide this resultset */
 	elements[*handle - 1] = NULL;
-	
+
 	/* first free all columns */
 	for (i = 0; i < rs->columnCount; i++)
 		RSBfreeColumn(rs->columns[i]);
@@ -498,7 +521,7 @@ str RSBhasMoreElements(lng* ret1, int* ret2) {
 			}
 		}
 	}
-	
+
 	/* tell there are no more elements */
 	*ret1 = -1;
 	*ret2 = 0;
@@ -526,9 +549,9 @@ str RSBiterator(lng* ret1, int* ret2) {
  */
 str RSBclose() {
 	str tmp;
-	
+
 	if ((tmp = RSBreleaseAll()) != MAL_SUCCEED) return(tmp);
-	
+
 	if (closeBox("rsbox", TRUE) != 0)
 		throw("rsbox.close", "failed to close box");
 
@@ -612,7 +635,7 @@ static str RStailWidth(int* retval, BAT* b) {
 		case TYPE_bat: /* BAT id: index in BBPcache */
 		default:
 			throw("resultset.tailWidth", "Invalid BAT tail type!");
-	}		
+	}
 
 	*retval = max;
 	return(MAL_SUCCEED);
@@ -633,7 +656,7 @@ static void RSinitColumn(resultset* rs, int* colindex) {
 
 	/* malloc some space */
 	rs->columns[*colindex] = GDKmalloc(sizeof(column));
-	
+
 	/* initialise all relevant values */
 	memset(rs->columns[*colindex], 0, sizeof(column));
 	rs->columns[*colindex]->width = -1;
@@ -655,7 +678,7 @@ str RSpopulateColumn(int* retval, int* handle, int* colno, int* bat) {
 	BAT* b;
 	resultset* rs;
 	str tmp;
-	
+
 	resolveHandle(&rs, handle);
     if ((b = BATdescriptor(*bat)) == NULL)
         throw("resultset.populateColumn", "Cannot access BAT descriptor");
@@ -711,7 +734,7 @@ str RSsetPropertyStr(int* retval, int* handle, int* colno, str* nme, str* val) {
 	int ret = 0;
 	resultset* rs;
 	str tmp;
-	
+
 	resolveHandle(&rs, handle);
 	if (rs->complete)
 		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
@@ -782,7 +805,7 @@ str RSsetPropertyInt(int* retval, int* handle, int* colno, str* nme, int* val) {
 	int ret = 0;
 	resultset* rs;
 	str tmp;
-	
+
 	resolveHandle(&rs, handle);
 	if (rs->complete)
 		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
@@ -832,10 +855,10 @@ str RSsetPropertyInt(int* retval, int* handle, int* colno, str* nme, int* val) {
 static str RSsetComplete(resultset* rs) {
 	int i;
 	column* col;
-	
+
 	for (i = 0; i < rs->columnCount; i++) {
 		col = rs->columns[i];
-		
+
 		if (col->bat == NULL)
 			throw("resultset.setComplete", "ResultSet contains at least one column that has not been populated yet");
 	}
@@ -888,13 +911,13 @@ str RSwriteHeader(int* retval, int* handle) {
 	resultset* rs;
 	column* col;
 	str tmp;
-	
+
 	resolveHandle(&rs, handle);
 	if (!rs->complete)
 		if ((tmp = RSsetComplete(rs)) != MAL_SUCCEED) return(tmp);
-	
+
 	/* write start of header */
-	if ((bt = stream_printf(s, "%c%d\n", RS_LINE_START_OF_HEADER, RS_TYPE_DEFAULT)) <= 0) {
+	if ((bt = stream_printf(s, "%c%d\n", RS_LINE_START_OF_HEADER, rs->type)) <= 0) {
 		*retval = 0;
 		throw("resultset.writeHeader", "Error while writing to the stream");
 	}
@@ -906,7 +929,6 @@ str RSwriteHeader(int* retval, int* handle) {
 	bytes += bt;
 @c
 	/* serialise the header to the stream */
-	@:MX-writeHeaderLineSingleValue("%d", rs->type, "querytype")@
 	@:MX-writeHeaderLineSingleValue("%s", rs->id == NULL ? "" : rs->id, "id")@
 	@:MX-writeHeaderLineSingleValue("%d", rs->length, "tuplecount")@
 
@@ -917,7 +939,7 @@ str RSwriteHeader(int* retval, int* handle) {
 		bytes += bt;
 		for (i = 0; i < rs->columnCount; i++) {
 			col = rs->columns[i];
-			
+
 			/* name defaults to column_x */
 			if (col->name == NULL) {
 				if ((bt = stream_printf(s, "column_%d", i + 1)) < 0)
@@ -927,7 +949,7 @@ str RSwriteHeader(int* retval, int* handle) {
 					throw("resultset.writeHeader", "Error while writing to the stream");
 			}
 			bytes += bt;
-			
+
 			/* write column or row separator */
 			if (stream_write(s, i < (rs->columnCount - 1) ? "\t" : "\n", 1, 1) != 1) {
 				*retval = 0;
@@ -945,13 +967,13 @@ str RSwriteHeader(int* retval, int* handle) {
 		bytes += bt;
 		for (i = 0; i < rs->columnCount; i++) {
 			col = rs->columns[i];
-			
+
 			if (@4) {
 				if ((bt = stream_printf(s, @1, @2)) < 0)
 					throw("resultset.writeHeader", "Error while writing to the stream");
 				bytes += bt;
 			}
-			
+
 			/* write column or row separator */
 			if (stream_write(s, i < (rs->columnCount - 1) ? "\t" : "\n", 1, 1) != 1) {
 				*retval = 0;
@@ -972,7 +994,7 @@ str RSwriteHeader(int* retval, int* handle) {
 		bytes += bt;
 		for (i = 0; i < rs->columnCount; i++) {
 			col = rs->columns[i];
-			
+
 			/* type defaults to the BAT tail type if not set */
 			if (col->type == NULL) {
 				switch (col->bat->ttype) {
@@ -1013,7 +1035,7 @@ str RSwriteHeader(int* retval, int* handle) {
 					throw("resultset.writeHeader", "Error while writing to the stream");
 			}
 			bytes += bt;
-			
+
 			/* write column or row separator */
 			if (stream_write(s, i < (rs->columnCount - 1) ? "\t" : "\n", 1, 1) != 1) {
 				*retval = 0;
@@ -1032,7 +1054,7 @@ str RSwriteHeader(int* retval, int* handle) {
 		bytes += bt;
 		for (i = 0; i < rs->columnCount; i++) {
 			col = rs->columns[i];
-			
+
 			/* calculate width if not set */
 			if (col->width == -1) {
 				int width;
@@ -1045,7 +1067,7 @@ str RSwriteHeader(int* retval, int* handle) {
 					throw("resultset.writeHeader", "Error while writing to the stream");
 			}
 			bytes += bt;
-			
+
 			/* write column or row separator */
 			if (stream_write(s, i < (rs->columnCount - 1) ? "\t" : "\n", 1, 1) != 1) {
 				*retval = 0;
@@ -1084,7 +1106,7 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 	stream* s = GDKout;
 	int low = *lower;
 	ptr p;
-	
+
 	resolveHandle(&rs, handle);
 	if (!rs->complete)
 		if ((tmp = RSsetComplete(rs)) != MAL_SUCCEED) return(tmp);
@@ -1094,7 +1116,7 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 		throwf("resultset.writeBlock", "Upper index out of bounds (%d > ResultSet length)", *upper);
 	if (*lower >= *upper)
 		throw("resultset.writeBlock", "Lower index should be smaller than upper index");
-	
+
 	/* initialise all column BUN pointers */
 	for (i = 0; i < rs->columnCount; i++) {
 		col = rs->columns[i];
@@ -1194,11 +1216,11 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 str RSgetLength(int* retval, int* handle) {
 	resultset* rs;
 	str tmp;
-	
+
 	resolveHandle(&rs, handle);
 	if (!rs->complete)
 		throw("resultset.getLength", "Unable to serialise a non-complete ResultSet");
-	
+
 	*retval = rs->length;
 	return(MAL_SUCCEED);
 }
@@ -1213,7 +1235,7 @@ str RSgetLength(int* retval, int* handle) {
 str RSsetBlockSize(int* retval, int* handle, int size) {
 	resultset* rs;
 	str tmp;
-	
+
 	resolveHandle(&rs, handle);
 	/* is this useful?  I don't see any problems now
 	if (!rs->complete)
@@ -1238,7 +1260,7 @@ str RSsetBlockSize(int* retval, int* handle, int size) {
 str RShasNextPart(int* retval, int* handle) {
 	resultset* rs;
 	str tmp;
-	
+
 	resolveHandle(&rs, handle);
 	if (!rs->complete)
 		if ((tmp = RSsetComplete(rs)) != MAL_SUCCEED) return(tmp);
@@ -1267,7 +1289,7 @@ str RSwriteNextPart(int* retval, int* handle) {
 	int upper, lower;
 	resultset* rs;
 	str tmp;
-	
+
 	resolveHandle(&rs, handle);
 	if (!rs->complete)
 		if ((tmp = RSsetComplete(rs)) != MAL_SUCCEED) return(tmp);
@@ -1295,7 +1317,7 @@ str RSwriteNextPart(int* retval, int* handle) {
 	/* write block of results */
 	if ((tmp = RSwriteBlock(&bbytes, handle, &upper, &lower)) != MAL_SUCCEED)
 		return(tmp);
-	
+
 	*retval = hbytes + bbytes;
 	return(MAL_SUCCEED);
 }
@@ -1324,7 +1346,7 @@ str RSfromString(str* src, int *len, resultset* retval) {
 int RStoString(str* retval, int* len, ptr handle) {
 	resultset* rs;
 	str tmp;
-	
+
 	if ((tmp = RSBgetResultSet(&rs, handle)) != MAL_SUCCEED) {
 		if (*retval == NULL) *retval = GDKmalloc(sizeof(str) * 4);
 		strcpy(*retval, "NULL");

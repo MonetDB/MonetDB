@@ -1,6 +1,6 @@
 include rsbox;
 
-rs := rsbox.create("reuse", 1, 3);
+rs := rsbox.create("reuse", 1, 1);
 
 resultset.setProperty(rs, 1, "name", "the_column");
 resultset.setProperty(rs, 1, "table", "table1");
