@@ -494,6 +494,18 @@ process was conducted.
 			 (void**) desc.c, 0);
 	bulkerror_finish(&desc.bulkerror, desc.name);
 @-
+New semantic of multiplexes as required by the SQL frontend:
+In case there were errors, we do not accept the inserted NILs, 
+but rather discard the complete result and return an error.
+@c
+	if (desc.bulkerror.cnt > 0) {
+		if (desc.b != NULL) {
+			BBPreclaim(desc.b);
+			desc.b = NULL;
+		}
+		return -1;
+	}
+@-
 When zero matching elements where there, no execution took place.
 So, what tail-type should the empty return BAT have? Dilemma!
 @c
@@ -527,7 +539,7 @@ Do simply an update for [+=]() kind of operations.
 	}
 	res->vtype = TYPE_bat;
 	res->len = 0;
-	return (desc.bulkerror.cnt > 0) ? -1 : 0;
+	return 0;
 }
 
 @- 
@@ -868,6 +880,18 @@ bunins_failed:
 		BBPreclaim(retb);
 		return -1;
 	}
+/*
+New semantic of multiplexes as required by the SQL frontend:
+In case there were errors, we do not accept the inserted NILs, 
+but rather discard the complete result and return an error.
+*/
+	if (bulkerror.cnt > 0) {
+		if (retb != NULL) {
+			BBPreclaim(retb);
+			retb = NULL;
+		}
+		return -1;
+	}
 
 	if (!assignop) {
 		if (BATcount(retb) == BATcount(bh)) {
@@ -891,7 +915,7 @@ bunins_failed:
 	res->val.bval = retb->batCacheid;
 	res->vtype = TYPE_bat;
 	res->len = 0;
-	return (bulkerror.cnt > 0) ? -1 : 0;
+	return 0;
 }
 
 @- Optimized Multiplex Operators: Ordered Unique case
@@ -1084,6 +1108,19 @@ bunins_failed:
 		BBPreclaim(retb);
 		return -1;
 	}
+/*
+New semantic of multiplexes as required by the SQL frontend:
+In case there were errors, we do not accept the inserted NILs, 
+but rather discard the complete result and return an error.
+*/
+	if (bulkerror.cnt > 0) {
+		if (retb != NULL) {
+			BBPreclaim(retb);
+			retb = NULL;
+		}
+		return -1;
+	}
+
 	if (!assignop) {
 		if (BATcount(retb) == BATcount(b1)) {
 			ALIGNsetH(retb, b1);
@@ -1116,7 +1153,7 @@ bunins_failed:
         res->val.bval = retb->batCacheid;
         res->vtype = TYPE_bat;
 	res->len = 0;
-	return (bulkerror.cnt > 0) ? -1 : 0;
+	return 0;
 }
 
 @- Optimized Special Multiplex Operators
@@ -1681,6 +1718,14 @@ clean up and exit
 @c
 bunins_failed:
 	bulkerror_finish(&bulkerror, "interpret_setaggr");
+@-
+New semantic of multiplexes as required by the SQL frontend:
+In case there were errors, we do not accept the inserted NILs, 
+but rather discard the complete result and return an error.
+@c
+	if (bulkerror.cnt > 0 && ret_val >= 0) {
+		ret_val = -1;
+	}
 	nested->ttype = nested_rev->htype = TYPE_void;
         if (hheap_bak) nested->hheap = *hheap_bak;
         if (nested_bak) *(BATstore*) nested = *nested_bak;
@@ -1701,7 +1746,7 @@ bunins_failed:
 	if (ret_val < 0) {
 		BBPreclaim(ret);
 	}
-	return (bulkerror.cnt > 0) ? -1 : ret_val;
+	return ret_val;
 }
 
 @- quick bunins
