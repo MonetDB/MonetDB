@@ -53,6 +53,8 @@ pkgdatadir = $(datadir)\$(pkg)
 pkglibdir = $(libdir)\$(pkg)
 pkgincludedir = $(includedir)\$(pkg)
 
+NATIVE_WIN32 = 1
+
 #-FI$(TOPDIR)\config.h 
 LIBC_INCS = $(PTHREAD_INCS)
 SOCKET_LIBS = wsock32.lib

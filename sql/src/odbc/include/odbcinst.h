@@ -108,7 +108,9 @@ extern "C" {
 #define EXPORT
 #endif
 
-#define INSTAPI
+#ifdef NATIVE_WIN32
+#define INSTAPI __stdcall
+#endif
 
 /* HIGH LEVEL CALLS */
 BOOL INSTAPI SQLInstallODBC          (HWND       hwndParent,
@@ -227,22 +229,22 @@ BOOL INSTAPI SQLSetConfigMode(UWORD wConfigMode);
 #endif /* ODBCVER >= 0x0300 */
 
 /*	Driver specific Setup APIs called by installer */
-BOOL INSTAPI ConfigDSN (HWND	hwndParent,
-						WORD	fRequest,
-						LPCSTR	lpszDriver,
-						LPCSTR	lpszAttributes);
+EXPORT BOOL ConfigDSN (HWND	hwndParent,
+							   WORD	fRequest,
+							   LPCSTR	lpszDriver,
+							   LPCSTR	lpszAttributes);
 
-BOOL INSTAPI ConfigTranslator (	HWND		hwndParent,
-								DWORD 		*pvOption);
+EXPORT BOOL ConfigTranslator (HWND		hwndParent,
+									  DWORD		*pvOption);
 
 #if (ODBCVER >= 0x0250)
-BOOL INSTAPI ConfigDriver(HWND hwndParent,
-						  WORD fRequest,
-                          LPCSTR lpszDriver,
-				          LPCSTR lpszArgs,
-                          LPSTR  lpszMsg,
-                          WORD   cbMsgMax,
-                          WORD 	*pcbMsgOut);
+EXPORT BOOL ConfigDriver(HWND hwndParent,
+								 WORD fRequest,
+								 LPCSTR lpszDriver,
+								 LPCSTR lpszArgs,
+								 LPSTR  lpszMsg,
+								 WORD   cbMsgMax,
+								 WORD 	*pcbMsgOut);
 #endif
 
 

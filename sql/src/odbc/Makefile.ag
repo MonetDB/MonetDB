@@ -1,2 +1,2 @@
 
-SUBDIRS = include setup driver samples HAVE_SWIG?python
+SUBDIRS = include NATIVE_WIN32?winsetup:setup driver samples HAVE_SWIG?python

@@ -49,12 +49,12 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	/* convert input string parameters to normal null terminated C strings */
 	fixODBCstring(szDataSource, nDataSourceLength, addDbcError, dbc);
 	if (nDataSourceLength == 0) {
-		szDataSource = (SQLCHAR*)"Default";
-		nDataSourceLength = strlen((char*)szDataSource);
+		szDataSource = (SQLCHAR *) "MonetDB";
+		nDataSourceLength = strlen((char *) szDataSource);
 	}
 	dsn = dupODBCstring(szDataSource, (size_t) nDataSourceLength);
-	/* for now we only allow the default data source */
-	if (strcasecmp(dsn, "default") != 0) {
+	/* for now we only allow the MonetDB data source */
+	if (strcasecmp(dsn, "monetdb") != 0) {
 		free(dsn);
 		addDbcError(dbc, "IM002", NULL, 0);
 		return SQL_ERROR;
