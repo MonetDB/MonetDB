@@ -959,7 +959,7 @@ differ significantly.
         if (cpy == l) {
    		BATloopFast(l, lp, lq, xx) {
 			ptr v = BUNh@1(l,lp);
-			if (SORTfndfirst_@2(rr, v)) {
+			if (SORTfnd_@2(rr, v)) {
 				BUNfastins(bn, v, BUNtail(l,lp));
 			}
 		}
