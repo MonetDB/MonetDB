@@ -31,7 +31,17 @@ AC_ARG_WITH(gcc,
 	*)	CC=$withval;;
 	esac])
 
+AC_ARG_WITH(gxx,
+[  --with-gxx=<compiler>   which C++ compiler to use], [
+	case $withval in
+	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
+	*)	CXX=$withval;;
+	esac])
+
 AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_CPP
+AC_PROG_GCC_TRADITIONAL
 
 dnl we use LEXLIB=-ll because this is usually correctly installed 
 dnl and -lfl usually only in the 32bit version
@@ -62,17 +72,6 @@ dnl systems checks
 AC_AIX
 
 dnl Checks for programs.
-
-AC_ARG_WITH(gxx,
-[  --with-gxx=<compiler>   which C++ compiler to use], [
-	case $withval in
-	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
-	*)	CXX=$withval;;
-	esac])
-
-AC_PROG_CXX
-AC_PROG_CPP
-dnl AC_PROG_GCC_TRADITIONAL
 AC_PROG_INSTALL
 AM_PROG_LEX
 AC_PROG_YACC

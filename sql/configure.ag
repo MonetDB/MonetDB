@@ -10,6 +10,28 @@ AC_CANONICAL_HOST
 HOST=[$host]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
 
+dnl check for compiler
+AC_ARG_WITH(gcc,
+[  --with-gcc=<compiler>   which C compiler to use
+  --without-gcc           do not use GCC], [
+	case $withval in
+	no)	CC=cc CXX=CC;;
+	yes)	CC=gcc CXX=g++;;
+	*)	CC=$withval;;
+	esac])
+
+AC_ARG_WITH(gxx,
+[  --with-gxx=<compiler>   which C++ compiler to use], [
+	case $withval in
+	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
+	*)	CXX=$withval;;
+	esac])
+
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_CPP
+AC_PROG_GCC_TRADITIONAL
+
 dnl some dirty hacks
 thread_safe_flag_spec="-D_REENTRANT"
 [ case "$host_os" in
@@ -31,10 +53,6 @@ thread_safe_flag_spec="-D_REENTRANT"
 esac ]
 
 dnl Checks for programs.
-AC_PROG_CC
-AC_PROG_CXX
-AC_PROG_CPP
-AC_PROG_GCC_TRADITIONAL
 AC_PROG_INSTALL
 AM_PROG_LEX
 AC_PROG_YACC
