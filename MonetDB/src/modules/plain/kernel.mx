@@ -237,13 +237,25 @@ any client activity.
 The routines for Monet command interpretation are collected here.
 Each command is passed the parse tree and a pointer where the result
 should be delivered.
-@c
+
+@h
+#ifndef KERNEL_H
+#define KERNEL_H
+
 #include "gdk.h"
 #include "monet.h"
 #include "monet_context.h"
 #include "monet_client.h"
 #include "monet_queue.h"
 #include "kernel.proto.h"
+
+kernel_export int handle_argerror(ValPtr res, int actual, int correct);
+kernel_export int handle_paramerror(ValPtr res, int param, int actual, int correct);
+
+#endif /*KERNEL_H*/
+
+@c
+#include "kernel.h"
 
 @+ Useful Macros 
 The below Mx macros serve to easily  factor out the parameter handling
