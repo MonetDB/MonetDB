@@ -235,6 +235,27 @@ def msc_scripts(fd, var, scripts, msc):
 
     #msc_deps(fd,scripts['DEPS'],"\.o",msc);
 
+# list of headers to install
+def msc_headers(fd, var, headers, msc):
+
+  sd = "HEADERSDIR"
+  if (headers.has_key("DIR")):
+    sd = headers["DIR"][0] # use first name given
+  sd = msc_translate_dir(sd,msc)
+  
+  hdrs_ext = headers['HEADERS']
+  for header in headers['TARGETS']:
+      h,ext = split_filename(header)
+      if (ext in hdrs_ext):
+      	fd.write("%s: $(SRCDIR)\\%s\n" % (header,header))
+      	#fd.write("\t$(INSTALL) $(SRCDIR)\\%s %s\n" % (header,header) )
+      	#fd.write("\tif not exist %s if exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (header,header,header,header) )
+      	fd.write("\tif exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (header,header,header) )
+      	msc['INSTALL'].append((header,header,'',sd))
+
+  #msc_find_ins(msc, headers)
+  #msc_deps(fd,headers['DEPS'],"\.o",msc);
+
 def msc_doc(fd, var, docmap, msc ):
     docmap['TARGETS']=[]
 
@@ -539,6 +560,7 @@ output_funcs = { 'SUBDIRS': msc_subdirs,
                  'CXXFLAGS' : msc_cflags,
                  'smallTOC_SHARED_MODS' : msc_mods_to_libs,
                  'largeTOC_SHARED_MODS' : msc_mods_to_libs,
+                 'HEADERS' : msc_headers,
                 }
 
 def output(tree, cwd, topdir):

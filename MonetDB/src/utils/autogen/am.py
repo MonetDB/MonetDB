@@ -192,6 +192,30 @@ def am_scripts(fd, var, scripts, am):
     am_find_ins(am, scripts)
     am_deps(fd,scripts['DEPS'],"\.o",am);
 
+# list of headers to install
+def am_headers(fd, var, headers, am):
+
+  sd = "HEADERSDIR"
+  if (headers.has_key("DIR")):
+    sd = headers["DIR"][0] # use first name given
+  sd = am_translate_dir(sd,am)
+  
+  hdrs_ext = headers['HEADERS']
+  for header in headers['TARGETS']:
+      h,ext = split_filename(header)
+      if (ext in hdrs_ext):
+      	fd.write("install-exec-local-%s: %s\n" % (header,header))
+     	fd.write("\t-mkdir -p $(DESTDIR)%s\n" % (sd))
+     	fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd,header))
+      	fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n\n" % (sd,header))
+     	fd.write("uninstall-exec-local-%s: \n" % (header))
+      	fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd,header))
+      	am['INSTALL'].append(header)
+      	am['InstallList'].append("\t"+sd+"/"+header+"\n")
+
+  am_find_ins(am, headers)
+  am_deps(fd,headers['DEPS'],"\.o",am);
+
 def am_doc(fd, var, docmap, am ):
 
     name = var[4:]
@@ -494,8 +518,8 @@ output_funcs = { 'SUBDIRS': am_subdirs,
                  'CXXFLAGS' : am_cflags,
                  'smallTOC_SHARED_MODS' : am_mods_to_libs,
                  'largeTOC_SHARED_MODS' : am_mods_to_libs,
+                 'HEADERS' : am_headers,
                 }
-
 
 def output(tree, cwd, topdir):
     fd = open(cwd+os.sep+'Makefile.am',"w")
