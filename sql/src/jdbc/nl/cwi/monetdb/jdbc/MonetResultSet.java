@@ -245,10 +245,9 @@ public class MonetResultSet implements ResultSet {
 			if (result[i].equals("NULL")) {
 				result[i] = null;
 			} else 	if (result[i].startsWith("\"") && result[i].endsWith("\"")) {
-				result[i] = result[i].substring(1, result[i].length() - 1);
 				StringBuffer uesc = new StringBuffer();
 				int len = result[i].length();
-				for (int pos = 0; pos < len; pos++) {
+				for (int pos = 1; pos < len - 1; pos++) {
 					char cur = result[i].charAt(pos);
 					if (cur == '\\' && pos + 1 < len) {
 						cur = result[i].charAt(++pos);
