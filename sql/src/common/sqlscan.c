@@ -77,6 +77,9 @@ void init_keywords()
 	for (i = 0; i < HASH_SIZE; i++)
 		keywords[i] = NULL;
 
+	keywords_insert("false", BOOL_FALSE);
+	keywords_insert("true", BOOL_TRUE);
+
 	keywords_insert("ALL", ALL);
 	keywords_insert("ALTER", ALTER);
 	keywords_insert("ADD", ADD);

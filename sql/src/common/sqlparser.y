@@ -216,6 +216,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	ALL DISTINCT ANY SOME CHECK GLOBAL LOCAL CAST
 	CHARACTER NUMERIC DECIMAL INTEGER SMALLINT FLOAT REAL
 	DOUBLE PRECISION VARCHAR PARTIAL SIMPLE ACTION CASCADE RESTRICT
+	BOOL_FALSE BOOL_TRUE
 
 /*
 OPEN CLOSE FETCH 
@@ -1474,6 +1475,10 @@ literal:
  |  TYPE STRING { $$ = _symbol_create_atom( SQL_ATOM, atom_general(
 		  sql_bind_type($1 ),$2)); 
 	  	  _DELETE($1); }
+ |  BOOL_FALSE  { $$ = _symbol_create_atom( SQL_ATOM, atom_general(
+		  sql_bind_type("BOOL"), "false"));	}
+ |  BOOL_TRUE  { $$ = _symbol_create_atom( SQL_ATOM, atom_general(
+		  sql_bind_type("BOOL"), "true"));	}
  ;
 
 	/* miscellaneous */

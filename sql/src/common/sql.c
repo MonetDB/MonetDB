@@ -3362,7 +3362,7 @@ static stmt *insert_value(context * sql, scope * scp, column * c,
 	if (s->token != SQL_NULL) {
 		stmt *n = NULL;
 		stmt *a = sql_value_exp(sql, scp, s, NULL, NULL);
-		if (!(n = check_types(sql, c->tpe, a)))
+		if (!a || !(n = check_types(sql, c->tpe, a)))
 			return NULL;
 		return n;
 	} else if (s->token == SQL_NULL) {
