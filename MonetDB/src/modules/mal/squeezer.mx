@@ -56,5 +56,5 @@ PATTERN propagateConstants():int = sqzPropagateConstants;
 #include "monet.h"
 
 str sqzPropagateConstants(int *ret){
-	return throwMessage("squeezer.propagateConstants: not yet implemented");
+	return throwMessage("squeezer.propagateConstants","not yet implemented");
 }

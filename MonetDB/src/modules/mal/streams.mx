@@ -86,84 +86,84 @@ command stream_close( s:stream ) = stream_close_stream
 
 str stream_open_rstream( stream *S, str *filename ){
 	if ((*(stream**)S = open_rstream( *filename )) == NULL){
-		return throwMessage("streams.open_rstream:failed"); 
+		return throwMessage("streams.open_rstream","failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
 str stream_open_wstream( stream *S, str *filename ){
 	if ((*(stream**)S = open_wstream( *filename )) == NULL){
-		return throwMessage("streams.open_wstream:failed"); 
+		return throwMessage("streams.open_wstream","failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
 str stream_open_rastream( stream *S, str *filename ){
 	if ((*(stream**)S = open_rastream( *filename )) == NULL){
-		return throwMessage("streams.open_rastream:failed"); 
+		return throwMessage("streams.open_rastream","failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
 str stream_open_wastream( stream *S, str *filename ){
 	if ((*(stream**)S = open_wastream( *filename )) == NULL){
-		return throwMessage("streams.open_wastream:failed"); 
+		return throwMessage("streams.open_wastream","failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
 str stream_socket_rstream( stream *S, int *socket, str *name ){
 	if ((*(stream**)S = socket_rstream( *socket, *name )) == NULL){
-		return throwMessage("streams.socket_rstream:failed"); 
+		return throwMessage("streams.socket_rstream","failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
 str stream_socket_wstream( stream *S, int *socket, str *name ){
 	if ((*(stream**)S = socket_wstream( *socket, *name )) == NULL){
-		return throwMessage("streams.socket_rstream:failed"); 
+		return throwMessage("streams.socket_rstream","failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
 str stream_socket_rastream( stream *S, int *socket, str *name ){
 	if ((*(stream**)S = socket_rastream( *socket, *name )) == NULL){
-		return throwMessage("streams.socket_rastream:failed"); 
+		return throwMessage("streams.socket_rastream","failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
 str stream_socket_wastream( stream *S, int *socket, str *name ){
 	if ((*(stream**)S = socket_wastream( *socket, *name )) == NULL){
-		return throwMessage("streams.socket_wasstream:failed"); 
+		return throwMessage("streams.socket_wasstream","failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
 str stream_file_rstream( stream *S, fstream *file, str *name ){
 	if ((*(stream**)S = file_rstream( *file, *name )) == NULL){
-		return throwMessage("streams.file_rstream:failed"); 
+		return throwMessage("streams.file_rstream","failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
 str stream_file_wstream( stream *S, fstream *file, str *name ){
 	if ((*(stream**)S = file_wstream( *file, *name )) == NULL){
-		return throwMessage("streams.file_wstream:failed"); 
+		return throwMessage("streams.file_wstream","failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
 str stream_file_rastream( stream *S, fstream *file, str *name ){
 	if ((*(stream**)S = file_rastream( *file, *name )) == NULL){
-		return throwMessage("streams.file_rastream:failed"); 
+		return throwMessage("streams.file_rastream","failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
 }
 str stream_file_wastream( stream *S, fstream *file, str *name ){
 	if ((*(stream**)S = file_wastream( *file, *name )) == NULL){
-		return throwMessage("streams.open_wastream:failed"); 
+		return throwMessage("streams.open_wastream","failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}
@@ -190,7 +190,7 @@ str stream_close_stream( stream *S ){
 
 str open_block_stream( stream *S, stream *is ){
 	if ((*(stream**)S = block_stream( *(stream**)is )) == NULL){
-		return throwMessage("streams.block_stream:failed"); 
+		return throwMessage("streams.block_stream","failed"); 
 	} else {
 		return MAL_SUCCEED;
 	}

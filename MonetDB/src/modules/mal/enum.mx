@@ -96,10 +96,10 @@ comment "returns whether ENUMtable(tpe) is a histogram on b's head column";
 Part of the code is copied from the V 4.3 bat.mx file.
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0) 
-		return throwMessage("enum.@4:cannot access bat @2 in bbp");
+		return throwMessage("enum.@4","cannot access bat @2 in bbp");
         @3= (BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) { *@1 = 0; 
-		return throwMessage("enum.@4:cannot access descriptor @2");
+		return throwMessage("enum.@4","cannot access descriptor @2");
         }
 	if( *@2 <0) @3= BATmirror(@3);
 @-
@@ -268,7 +268,7 @@ str ENUMreload(int *retval, int bid) {
 		}
 	}
 	MT_unset_lock(mal_contextLock, "ENUMload");
-	return throwMessage("enum.load: too many active enum types.");
+	return throwMessage("enum.load"," too many active enum types.");
 }
 
 str ENUMcreate(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -309,7 +309,7 @@ str ENUMload(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	retval= (int*) getArgReference(stk,pci,0);
 	*retval= BBPindex(name);
 	if( *retval ==0)
-		return throwMessage("enum.load: encoding BAT does not exist.");
+		return throwMessage("enum.load"," encoding BAT does not exist.");
 	ret= ENUMreload(retval,*retval);
 	GDKfree(name);
 	return ret;
@@ -367,7 +367,7 @@ str ENUMlower(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	dst= (ptr) getArgReference(stk,pci,0);
 	@:enumCheck(tpe,ENUMlower)@
 	if (!ATOMlinear(b->htype))
-	 	return throwMessage("enum.lower: incompatible source type.");
+	 	return throwMessage("enum.lower"," incompatible source type.");
 	if (BAThordered(b)&1) {
 		p = SORTfndlast(BATmirror(b), src);
 		if (p && p > BUNfirst(b))  p -= BUNsize(b);
@@ -416,7 +416,7 @@ str ENUMdecode(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:enumCheck(tpe,ENUMlower)@
 
 	if( b->htype != getArgType(mb,pci,0))
-		return throwMessage("enum.decode:incompatible source type");
+		return throwMessage("enum.decode","incompatible source type");
 	if( ATOMstorage(tpe) == TYPE_chr){
 		if (*(chr*) src == chr_nil) p = ATOMnilptr(b->htype);
 		else p = BUNhead(b, BUNptr(b, 1 + *(unsigned char*)src));
@@ -483,11 +483,11 @@ str ENUMencode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:getBATdescriptor(retval,&bid,src,encode)@
 
 	if (src->ttype != b->htype) 
-	 	return throwMessage("enum.encode: incompatible types");
+	 	return throwMessage("enum.encode"," incompatible types");
 	if (ATOMstorage(tpe) == TYPE_chr) { 
 	    switch(ATOMstorage(src->ttype)) {
 	    case TYPE_void: 
-		return throwMessage("enum.encode: illegal tail type");
+		return throwMessage("enum.encode"," illegal tail type");
 	    case TYPE_chr:	@:encode(chr,char,loc,_chr)@
 	    case TYPE_sht:	@:encode(chr,char,loc,_sht)@
 	    case TYPE_int:	@:encode(chr,char,loc,_int)@
@@ -502,7 +502,7 @@ str ENUMencode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	} else {
 	    switch(ATOMstorage(src->ttype)) {
 	    case TYPE_void: 
-		return throwMessage("enum.encode: illegal tail type");
+		return throwMessage("enum.encode"," illegal tail type");
 	    case TYPE_chr:	@:encode(sht,short,loc,_chr)@
 	    case TYPE_sht:	@:encode(sht,short,loc,_sht)@
 	    case TYPE_int:	@:encode(sht,short,loc,_int)@
@@ -552,7 +552,7 @@ str ENUMdecode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	} else if (ATOMstorage(tpe) == TYPE_sht) { 
 	    @:decode(sht,short)@
 	} else
-	    return throwMessage("enum.decode: illegal tail type.");
+	    return throwMessage("enum.decode"," illegal tail type.");
 	return MAL_SUCCEED;
 }
 

@@ -18,6 +18,7 @@ use "mal/tcpip";
 use "kernel/startup";
 use "mal/io";
 use "mal/streams";
+use "mal/ascii_io";
 use "mal/enum";
 use "mal/mal";
 use "mal/profiler";

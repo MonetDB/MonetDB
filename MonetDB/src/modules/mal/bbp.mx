@@ -201,16 +201,16 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0) 
-		return throwMessage("bbp.@4:cannot access bat @2 in bbp");
+		return throwMessage("bbp.@4","cannot access bat @2 in bbp");
         @3=(BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) { *@1 = 0;  
-		return throwMessage("bbp.@4:cannot access descriptor @2");
+		return throwMessage("bbp.@4","cannot access descriptor @2");
         }
 	if( *@2 <0) @3= BATmirror(@3);
 @= chkIdentifier
 	/* generate exception if string is not an identifier */
         if( isIdentifier(@1))
-                return throwMessage( "bbp.@2:identifier expected");
+                return throwMessage( "bbp.@2","identifier expected");
 
 @h
 /*
@@ -244,24 +244,24 @@ str CMDbbpprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	ValRecord vr;
 	if( openBox("bbp")) return MAL_SUCCEED;
-	return throwMessage( "bbp.prelude:failed to open box");
+	return throwMessage( "bbp.prelude","failed to open box");
 }
 @- Operator implementation
 @c
 str CMDbbpopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if(openBox("bbp") != 0) return MAL_SUCCEED;
-	return throwMessage( "bbp.open:failed to open box");
+	return throwMessage( "bbp.open","failed to open box");
 }
 
 str CMDbbpclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if( closeBox("bbp",TRUE) ==0) return MAL_SUCCEED;
-	return throwMessage( "bbp.close:failed to close 'bbp' box");
+	return throwMessage( "bbp.close","failed to close 'bbp' box");
 }
 str CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	@:OpenBox(destroy)@
 	if( getClient() != mal_clients)
-	return throwMessage( "bbp.destroy:not allowed to destroy 'bbp' box");
+	return throwMessage( "bbp.destroy","not allowed to destroy 'bbp' box");
 	destroyBox("bbp");
 	return MAL_SUCCEED;
 }
@@ -271,7 +271,7 @@ to a named box.
 @= OpenBox
 	box= findBox("bbp");
 	if( box ==0) 
-	return throwMessage("bbp.@1:box is not open");
+	return throwMessage("bbp.@1","box is not open");
 @-
 @c
 str CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -322,7 +322,7 @@ str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			BAT *b;
 			b= (BAT*) BBPgetdesc(lhs->val.bval);
 			if( b ) BBPfix(b->batCacheid);
-			else return throwMessage("bbp.bind:can not access descriptor");
+			else return throwMessage("bbp.bind","can not access descriptor");
 		}
 		return MAL_SUCCEED;
 	}
@@ -404,7 +404,7 @@ str CMDbbptoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	v= &box->val->stk[i];
 	garbageElement(&stk->stk[pci->argv[0]]);
 	if( VALconvert(TYPE_str,v, TRUE) == ILLEGALVALUE) 
-	return throwMessage("bbp.toString:illegal value conversion");
+	return throwMessage("bbp.toString","illegal value conversion");
 	VALcopy(&stk->stk[pci->argv[0]], v);
 	return MAL_SUCCEED;
 }
@@ -418,7 +418,7 @@ str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	cursor= (lng*) getArgValue(stk,pci,0);
 	v= &stk->stk[pci->argv[1]];
 	if( nextBoxElement(box, cursor, v))
-		return throwMessage("bbp.iterator:failed");
+		return throwMessage("bbp.iterator","failed");
 	return MAL_SUCCEED;
 }
 @+ BBP Management, IO
@@ -436,7 +436,7 @@ str CMDbbpsetColumns(int *r, int *bid, str *hname, str *tname){
 str CMDbbpsetColumn(int *r, int *bid, str *tname){
 	BAT *b;
 	@:getBATdescriptor(r,bid,b,setColumn)@
-	if(*tname==0) return throwMessage("bbp.setColumn:column name missing");
+	if(*tname==0) return throwMessage("bbp.setColumn","column name missing");
 	BBPfix(b->batCacheid);
 	BATroles(b,b->hident, *tname);
 	*r= b->batCacheid;
@@ -459,7 +459,7 @@ str CMDbbprename(int *retval, int *bid, str *s){
 	   return throwException(MALEXCEPTION,"bbp.rename",
 			"name too long: '%s'", *s);
         else /* if (ret == BBPRENAME_ALREADY) 
-	   return throwMessage("bbp.rename:renamed already"); */
+	   return throwMessage("bbp.rename","renamed already"); */
 	return MAL_SUCCEED;
 }
 
@@ -514,13 +514,13 @@ str CMDbbpisCached(int *res, int *bid) {
 	BAT *b;
 	@:getBATdescriptor(res,bid,b,isCached)@
 	*res = 0;
-	return throwMessage("bbp.isCached:not yet implemented");
+	return throwMessage("bbp.isCached","not yet implemented");
 }
 str CMDbbpload(int *res, str *input) {
 	int bid= BBPindex(*input);
 	*res = bid;
 	if(bid) return MAL_SUCCEED;
-	return throwMessage("bbp.load:loading failed");
+	return throwMessage("bbp.load","loading failed");
 }
 
 str CMDbbphot(str *input) {
@@ -568,7 +568,7 @@ str CMDbbpmmap(int *res, int *bid, int *bns, int *hhp, int *thp,
 		return MAL_SUCCEED;
 	}
 	*res = FALSE;
-	return throwMessage("bbp.mmap:failed");
+	return throwMessage("bbp.mmap","failed");
 }
 
 str CMDbbpmadvise(int *res, int *bid, int *bns, int *hhp, int *thp, 
@@ -579,7 +579,7 @@ str CMDbbpmadvise(int *res, int *bid, int *bns, int *hhp, int *thp,
 		(*hhp==int_nil)?-1:*hhp, (*thp==int_nil)?-1:*thp, 
 		(*hacc==int_nil)?-1:*hacc, 
 		(*tacc==int_nil)?-1:*tacc);
-	if(*res) return throwMessage("bbp.advise:failed");
+	if(*res) return throwMessage("bbp.advise","failed");
 	return MAL_SUCCEED;
 }
 
@@ -735,7 +735,7 @@ str CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	@:OpenBox(getObjects)@
         b= BATnew(TYPE_int,TYPE_str,BBPsize);
-        if (b == 0) return throwMessage("bbp.getObjects:GDKerror");
+        if (b == 0) return throwMessage("bbp.getObjects","GDKerror");
 	for(i=0;i<box->sym->vtop;i++){
 		v = &box->val->stk[i];
 		BUNins(b, &v->val.bval, getVarName(box->sym,i));

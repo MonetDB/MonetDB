@@ -80,14 +80,14 @@ str BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	name = (str) getArgValue(stk,pci,1);
 	if(openBox(name) != 0) return MAL_SUCCEED;
-	return throwMessage("box.open: failed to open box");
+	return throwMessage("box.open","failed to open box");
 }
 
 str BOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	name = (str) getArgValue(stk,pci,1);
 	if( closeBox(name,FALSE) ==0) return MAL_SUCCEED;
-	return throwMessage("box.close: failed to close box");
+	return throwMessage("box.close","failed to close box");
 }
 str BOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
@@ -103,7 +103,7 @@ to a named box.
 	name = (str) getArgValue(stk,pci,1);
 	box= findBox(name);
 	if( box ==0) 
-	return throwMessage("box.@1: box is not open");
+	return throwMessage("box.@1","box is not open");
 @-
 @c
 str BOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
