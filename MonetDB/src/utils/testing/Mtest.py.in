@@ -61,7 +61,7 @@ Usage:  '''+THISFILE+'''  [options] ( [<dir>] [<tests>] | [<dirs>] )
 		'''+os.getcwd()+os.sep+'''.monet.Mtest.conf                        
 		<TSTSRCBASE>'''+os.sep+'''.monet.Mtest.conf            
 		'''+os.environ['HOME']+os.sep+'''.monet.Mtest.conf                               
-		'''+path("@MONET_PREFIX@/share/Monet/")+'''monet.Mtest.conf                                                                      
+		'''+path(GetMonetConfig('--prefix')+"/share/Monet/")+'''monet.Mtest.conf                                                                      
 ''')
 
 	else: # THISFILE == "Mapprove.py"
@@ -83,9 +83,9 @@ Usage:  '''+THISFILE+'''  [options] ( [<dir>] [<tests>] | [<dirs>] )
  --TSTBLDBASE=<abspath>
  --TSTTRGBASE=<abspath>
          : overrule defaults:
-		MONET_SOURCE=@MONET_SOURCE@
-		MONET_BUILD=@MONET_BUILD@
-		MONET_PREFIX=@MONET_PREFIX@
+		MONET_SOURCE='''+GetMonetConfig('--source')+'''
+		MONET_BUILD='''+GetMonetConfig('--build')+'''
+		MONET_PREFIX='''+GetMonetConfig('--prefix')+'''
 		TSTSRCBASE=<MONET_SOURCE>
 		TSTBLDBASE=<MONET_BUILD>
 		TSTTRGBASE=<MONET_PREFIX>
@@ -97,7 +97,7 @@ Usage:  '''+THISFILE+'''  [options] ( [<dir>] [<tests>] | [<dirs>] )
  <dirs>  : list of directories to be processed; if present, '''+THISFILE+'''
             processes 'All` tests in each directory of <dirs>; -r may be used also
 
-         See  '''+path("@MONET_SOURCE@/src/utils/testing/")+'''README
+         See  '''+path(GetMonetConfig('--source')+"/src/utils/testing/")+'''README
          for details about  '''+THISFILE+'''.
 ''')
 ### Usage () #
@@ -1165,6 +1165,18 @@ def ReadFromMonetConf(env, var) :
 	return value
 ### ReadFromMonetConf(env, var) #
 
+def GetMonetConfig(arg) :
+	value = ""
+	#pOut,pIn = popen2.popen2(THISPATH+os.sep+'monet-config '+arg)
+	pOut,pIn = popen2.popen2('monet-config '+arg)
+	pIn.close()
+	qOut = pOut.readlines()
+	pOut.close()
+	if len(qOut):
+		value = string.strip(qOut[0])
+	return value
+### GetMonetConfig(arg) #
+
 def main(argv) :
 	#TODO:
 	#signal.signal(signal.SIGALRM, AlarmHandler)
@@ -1176,9 +1188,9 @@ def main(argv) :
 
 	# most intuitive (?) default settings
 	dft = {}
-	dft['MONET_SOURCE']   = "'@MONET_SOURCE@'"
-	dft['MONET_BUILD']    = "'@MONET_BUILD@'"
-	dft['MONET_PREFIX']   = "'@MONET_PREFIX@'"	# or THISPATH ?
+	dft['MONET_SOURCE']   = "GetMonetConfig('--source')"
+	dft['MONET_BUILD']    = "GetMonetConfig('--build')"
+	dft['MONET_PREFIX']   = "GetMonetConfig('--prefix')"	# or THISPATH ?
 	dft['TSTSRCBASE']     = "env['MONET_SOURCE']"
 	dft['TSTBLDBASE']     = "env['MONET_BUILD']"
 	dft['TSTTRGBASE']     = "env['MONET_PREFIX']"	# or os.getcwd() ?
