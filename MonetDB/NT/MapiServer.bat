@@ -5,4 +5,4 @@
 @set MONETDB=%MONETDB:~0,-1%
 
 @rem start the real server
-@"%MONETDB%\Mserver.bat" "%MONETDB%\lib\MonetDB\mapi.mil" %*
+@"%MONETDB%\Mserver.bat" --dbinit="module(mapi); mapi_start();" %*
