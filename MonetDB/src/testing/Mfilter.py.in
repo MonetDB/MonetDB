@@ -82,6 +82,7 @@ test = (
         re.compile( r"^!ERROR: module\(.*\): load error.$"
                  ,  re.MULTILINE),
         # differences due to property-checking, which we want to treat as "minor differences"
+        # (split in 2 parts, as otherwise we exceed the limit of 100 named groups per expression...)
         re.compile( r'^synced\(x,[yz]\) := (true|false)$'
                 #dir(): # name                 htype          ttype          count       heat        dirty                      status             kind               refcnt      lrefcnt     #
                 "|" r'^\[ "[A-Za-z0-9_]+",\t* +"[a-z_]+",\t* +"[a-z_]+",\t* +[0-9]+,\t* +[0-9]+,\t* +"(dirty|clean|diffs)",\t* +"(load|disk)",\t* +"(tran|pers)",\t* +[0-9]+,\t* +[0-9]+\t* +\]$'
@@ -119,8 +120,10 @@ test = (
                 "|" r'^\[ "hseqbase",\t* +"0@0",\t* +"0@0",\t* +"(2@0|nil)"\t* +\]$'
                 "|" r'^\[ "tsorted",\t* +"(1|65)",\t* +"(0|65)",\t* +"65"\t* +\]$'
                 "|" r'^\[ "batCopiedtodisk",\t* +"[01]",\t* +"0",\t* +"0"\t* +\]$'
+                 ,  re.MULTILINE),
+        re.compile(
                 # tests/from_Twente/moa/test:
-                "|" r'^\[ [01]@0,\t* +[10]@0\t* +\]$'
+                    r'^\[ [01]@0,\t* +[10]@0\t* +\]$'
                 "|" r'^\[ ([01]@0,\t* +)?(40[89]@0|[89]000)\t* +\]$'
                 "|" r'^\[ ([24]@0,\t* +)?(40[57]@0|[57]000)\t* +\]$'
                 "|" r'^\[ ([58]@0,\t* +)?(40[14]@0|[14]000)\t* +\]$'
@@ -168,8 +171,9 @@ test = (
                 "|" r'^\[ (\-|)0 \]$'
                 # src/mapi/monet_BATs (on Linux2.4.26.ntv_32-d):
                 "|" r'^\[ "monet_mod_use",\t* *(44|66)\t* *\]$'
-                # Tokens depend on flex/bison
+                # Tokens & messages depend on flex/bison
                 "|" r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]'
+                "|" r'^ERROR = !ERROR (syntax|parse) error at token \([0-9]+\) in statement: '
                 # Intel compiler seems to do some (re-)compilation for src/mapi/examples/C/
                 "|" r'^IPO: using IR for .*$'
                 "|" r'^IPO: performing single-file optimizations$'
@@ -220,7 +224,7 @@ def mFilter (FILE, IGNORE) :
         elif test[0].match(iline):
             # potential differences, which we what to ignore; see above
             oline = "#~ " + iline
-        elif test[4].match(iline):
+        elif test[4].match(iline) or test[5].match(iline):
             # differences due to property-checking, which we want to treat as "minor differences"; see above
             if os.name == "nt" and iline[:5] == 'quit;':
                 oline = "#" + iline
