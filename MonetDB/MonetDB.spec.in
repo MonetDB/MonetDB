@@ -139,8 +139,9 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/lib/libmutils.*
 %{prefix}/lib/libMapi.* 
 %{prefix}/lib/libstream.*
-%{prefix}/lib/%{name}/java/*jar
+%{prefix}/share/%{name}/lib/*jar
 %{prefix}/lib/%{name}/Tests/*
+%{prefix}/share/%{name}/Tests/*.class
 
 # fix should be install in script langs subdirs
 %{prefix}/share/%{name}/perl/* 
@@ -163,7 +164,6 @@ rm -fr $RPM_BUILD_ROOT
 %files perl
 %defattr(-,monetdb,monetdb) 
 %{prefix}/%{perl_libdir}/*
-%{prefix}/%{perl_libdir}/DBD/*
 
 %files server
 %defattr(-,monetdb,monetdb) 
