@@ -158,7 +158,7 @@ stdout of test 'tst4500` in directory 'src/mal` itself:
 !ERROR: Error in cloned function
 !ERROR: function mil_algebra_procs.tunique(b:bat[:any,:oid]):bat[:oid,:void];	# 0  (tunique:bat[:oid,:void])<-(b:bat[:any,:oid])
 !ERROR:     qd_a := bat.reverse(b);	# 1 BKCreverse (qd_a:bat[:oid,:any])<-(b:bat[:any,:oid])
-!ERROR:     rd_a := algebra.mark(qd_a,nil);	# 2 ALGmark0 (rd_a:bat[:oid,:oid])<-(qd_a:bat[:oid,:any])($4:void)
+!ERROR:     rd_a := algebra.markTail(qd_a,nil);	# 2 ALGmarkTail0 (rd_a:bat[:oid,:oid])<-(qd_a:bat[:oid,:any])($4:void)
 !ERROR:     return sd_a := algebra.kunique(rd_a);	# 3 ALGkunique (sd_a:bat[:oid,:oid])<-(rd_a:bat[:oid,:oid])
 !ERROR: end tunique;	# 4  
 !ERROR: 'mil_algebra_procs.tunique' undefined in Admin.main[24]
@@ -178,7 +178,7 @@ function Admin.main():int;	# 0  (main:int)
     s12 := bat.reverse(s13);	# 13 BKCreverse (s12:bat[:void,:void])<-(s13:bat[:void,:void])
     ba_a := calc.oid(0);	# 14 CALCint2oid (ba_a:oid)<-($12:int)
     ca_a := bat.reverse(s12);	# 15 BKCreverse (ca_a:bat[:void,:void])<-(s12:bat[:void,:void])
-    da_a := algebra.mark(ca_a,ba_a);	# 16 ALGmark (da_a:bat[:void,:oid])<-(ca_a:bat[:void,:void])(ba_a:oid)
+    da_a := algebra.markTail(ca_a,ba_a);	# 16 ALGmarkTail (da_a:bat[:void,:oid])<-(ca_a:bat[:void,:void])(ba_a:oid)
     s11 := bat.reverse(da_a);	# 17 BKCreverse (s11:bat[:oid,:void])<-(da_a:bat[:void,:oid])
     s18 := sql.bind("sys","lineitem","l_returnflag",0);	# 18 mvc_bind_wrap (s18:bat[:void,:chr])<-($9:str)($10:str)($27:str)($12:int)
     s10 := algebra.join(s11,s18);	# 19 ALGjoin (s10:bat[:oid,:chr])<-(s11:bat[:oid,:void])(s18:bat[:void,:chr])

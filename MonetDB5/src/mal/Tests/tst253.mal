@@ -8,5 +8,5 @@ print(b);
 #materialize header
 c:= reverse(b);
 print(c);
-d:= mark(c);
+d:= markTail(c);
 print(d);

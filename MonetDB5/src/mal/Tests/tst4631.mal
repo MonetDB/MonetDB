@@ -6,7 +6,7 @@ function qry1();
     V9 := bat.reverse(V8);
     V10 := algebra.kdiff(V3,V9);
     V14 := algebra.uselect(V10,nil,nil);
-    V17 := algebra.mark(V14,0@0);
+    V17 := algebra.markTail(V14,0@0);
     V18 := bat.reverse(V17);
     V19 := sql.bind("sys","lineitem","l_returnflag",0);
     V21 := sql.bind_dbat("sys","lineitem",0);

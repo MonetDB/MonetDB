@@ -22,7 +22,7 @@ quit();
 #s11 := s12.reverse().mark(oid(0)).reverse();# lineitem
 	ba_a := oid(0);
 	ca_a := reverse(s12,);
-	da_a := mark(ca_a,ba_a);
+	da_a := markTail(ca_a,ba_a);
 	s11 := reverse(da_a,);
 #s18 := sql.bind("sys",  "lineitem", "l_returnflag"); #lineitem
 	s18:bat[:void,:chr] := sql.bind("sys","lineitem","l_returnflag",0);
