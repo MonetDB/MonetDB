@@ -38,30 +38,6 @@
 /* version 01.02.00 of catalog */
 #define CATALOG_VERSION 10200
 
-#define ISO_READ_UNCOMMITED 1
-#define ISO_READ_COMMITED   2
-#define ISO_READ_REPEAT	    3
-#define ISO_SERIALIZABLE    4
-
-typedef struct sql_trans {
-	char *name;
-	int stime; /* transaction time stamp (aka start time) */
-	int rtime;
-	int wtime;
-	int level; 
-
-	sql_schema *schema;
-	changeset schemas;
-	changeset modules;
-	/* also need a current module, normaly main but during create module
-	 * different */
-	sql_module *module; 
-	struct bm *bm;
-	backend_stack stk;
-
-	struct sql_trans *parent; /* multilevel transaction support */
-} sql_trans;
-
 #define ERRSIZE 1024
 
 typedef enum modes_t {

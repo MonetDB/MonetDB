@@ -37,9 +37,7 @@ for the duration of a session.
 #define _SQL_BACKEND_H_
 
 #include "sql_mem.h"
-
-typedef void *backend_code;
-typedef int backend_stack;
+#include "sql_catalog.h"
 
 typedef void (*freestack_fptr)( backend_stack stk );
 typedef void (*freecode_fptr)( backend_code code, backend_stack stk, int nr );
