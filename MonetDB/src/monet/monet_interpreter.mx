@@ -366,7 +366,7 @@ placing the parameter count in  'argc' and the result values in 'argv[1..argc]'
 @c
 int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme) {
     ValPtr val_array = params+1;
-    int i,j, argc = 1;
+    int j, argc = 1;
 
     params[0].vtype = TYPE_void;
     params[0].val.oval = void_nil;
@@ -381,7 +381,7 @@ int interpret_params(int stk, YYSTREE lt, ValPtr params, str fcn_nme) {
 		tt = tt->yysons[0];
 		param_range = 1;
 	    }
-	    if ((i = interpret(stk, tt, &res)) < 0) {
+	    if (interpret(stk, tt, &res) < 0) {
 		GDKerror("%s(param %d): evaluation error.\n", fcn_nme, j+1);
 		return -argc;
 	    } 
