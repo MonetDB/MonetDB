@@ -305,7 +305,6 @@ m_export char*		monet_prompt;		/* system prompt. */
 m_export int		monet_listing;		/* echo input */
 m_export int		monet_welcome;		/* display welcome message? */
 m_export int		monet_deamon;		/* set server console is deaf */
-m_export int		monet_internet;		/* internet client access? */
 m_export int		monet_singlethreaded;	/* in singlethreaded mode? */
 m_export str		monet_script[MAXSCRIPT];/* batch of requests */
 m_export MT_Lock		monet_critical;		/* critical section queue mgmt*/
@@ -336,7 +335,7 @@ m_export char 		monet_version[PATHLENGTH];
 char            monet_cwd[PATHLENGTH]={0}, *monet_ver=0;
 char            *monet_prompt="\1>\1";
 int             monet_listing=0, monet_welcome=1, monet_deamon=2;
-int             monet_singlethreaded=0, monet_internet=1;
+int             monet_singlethreaded=0;
 str             monet_script[MAXSCRIPT]={0};
 MT_Lock         monet_critical, monet_notifyLock, monet_voidLock;
 MT_Lock		monet_parserLock, monet_contextLock;
@@ -443,9 +442,6 @@ void MILenvironment()
 		if( strcmp(s,"monet_version")==0)
                     monet_ver = val;
 		else
-		if( strcmp(s,"monet_clients")==0)
-		    monet_internet = atoi(val)==0;
-		else
 		if( strcmp(s,"monet_deamon")==0)
                     monet_deamon=yesno(val);
 		else
@@ -460,19 +456,32 @@ void MILenvironment()
 	if( fd != NULL) (void) fclose(fd);
 }
 
+monet_usage(str nme){
+    printf("usage: %s { option }\n", nme);
+    printf("option:\t-db <db-name>\t\tdatabase to open\n");
+    printf("\t-monetrc <file>\t\tsystem variable settings\n");
+    printf("\t<script(s)>\t\texecute MIL files first \n");
+    printf("\t\tdefault is .monet.conf in current/home directory\n");
+}
 static void getoptions(int argc, char **argv){
         int i;
  
         for (i = 1; i < argc; i++) 
 	if( argv[i][0]){
             if (argv[i][0] == '-') {
+		switch(argv[i][1]){
+		case '-': if( argv[i][2]!= 'h') goto explain;
+		case '?':
+		case 'h':
+		    monet_usage(argv[0]);
+		    break;
+		default:
+		explain:
 		    monet_hello();
 		    printf("unknown calling option %s\n", argv[i]);
-                    printf("usage: %s { option }\n", argv[0]);
-		    printf("option:\t-db <db-name>\t\tdatabase to open\n");
-		    printf("\t-monetrc <file>\t\tsystem variable settings\n");
-		    printf("\t<script(s)>\t\texecute MIL files first \n");
+		    monet_usage(argv[0]);
                     exit(-1);
+		}
             } else {
 		int k;
 		for(k=0;monet_script[k]!= 0; k++) ;
@@ -494,7 +503,6 @@ The server process interpreter is directly killed.
 @c
 void monet_exit() {
         PARDEBUG THRprintf(GDKerr, "exit from main process\n");
-	if (monet_internet) (void) THRexit("InternetServer");
 	while (THRexit("Interpreter"));
         GDKexit();
 }

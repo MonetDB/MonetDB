@@ -23,7 +23,7 @@ EXPORTS
 	monet_prompt
 	monet_listing
 	monet_welcome
-	monet_background
+	monet_deamon
 	monet_pid
 	monet_internet
 	monet_singlethreaded

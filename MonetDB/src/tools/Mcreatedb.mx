@@ -38,9 +38,9 @@ If DB contains a '/' it is assumed to be a (relative) path to the directory
 where the database files are to be found.
 
 \item[database initialization]
-{\em initializing a database} means that it is created empty (there are no 
-tables), and user environments are set up for specific users. 
-The access modes of the database directories are set to creator of the database.
+{\em initializing a database} means that it is created empty 
+(there are no tables).  The access modes of the database directories 
+are to be set to the creator of the database.
 
 \item[database users]
 The person who starts up the {\bf Mserver} utility (also dubbed 
@@ -49,11 +49,9 @@ Others accessing the running server, e.g.
 using the {\bf Mclient} utility, are 'normal' users. A separate
 authorization module is required to guard against malicious
 users.
-We take the UNIX username as the default for the Monet username
-in the tools distributed.
 
 On session init, for every user the script {\em monet_prelude} is executed.
-This script typically contains instructions to load modules of
+This script typically contains instructions to load kernel modules of
 general use.
 
 @- Files
@@ -66,7 +64,7 @@ The default assemblage place for databases is 'dbfarm', which can be
 found in the same directory.
 \begin{verbatim}
 
-./scripts/general.mil        # generic obligatory prelude
+.../share/Monet/general.mil  # generic obligatory prelude
 ./dbfarm/$DB/                # default database directory
 ./dbfarm/$DB/bat/            # database tables directory
 ./dbfarm/$DB/bat/BBP.dir     # database BAT directory
@@ -216,31 +214,6 @@ void localmkdir(str nme) {
 		} 
 	}	
 }
-@-
-The copy file utility is a hardcode version of a shell command
-@c
-void copyfile( char *src, char *dst ){
-	int size;
-	char buf[1024];
-	FILE *dfd, *sfd;
-
-	if ((dfd = fopen(dst,"w")) == NULL) {
-		printf("%s: could not open(%s)\n", prog,dst);
-		return;
-	}
-	if ((sfd = fopen(src,"r")) == NULL){
-		printf("%s: could not open(%s)\n", prog, src);
-		fclose(dfd);
-		return;
-	}
-	while( (size=fread(buf, 1, 1024, sfd)) > 0){
-		fwrite(buf, 1, size, dfd);
-	}
-	fclose(sfd);
-	fclose(dfd);
-}
-
-
 void createDB(char *home) {	
 	char buffer[4096];
 	char *u,*r; int i;

@@ -110,6 +110,15 @@ static char name[PATHLENGTH];
 		return GDKstrdup(name);
 	} else return fname;
 }
+void GDKusage(){
+	fprintf(stderr,"usage: <program> [-db <db_name>] [-monetrc <file>]\n");
+	fprintf(stderr,"<program>\tprogram using the GDK library\n");
+	fprintf(stderr,"<db-name>\tdatabase to open\n");
+	fprintf(stderr,"<file>\t\tsystem variable settings\n");
+	fprintf(stderr,"\t\tdefault: .monet.conf in current/home directory\n");
+	fprintf(stderr,"Other arguments are dealt with in the application startup routine\n");
+}
+
 void GDKenvironment(str db, str monetrc)
 {
 	char buf[2*PATHLENGTH];
@@ -179,7 +188,8 @@ void GDKenvironment(str db, str monetrc)
 	}
 	if( fd != NULL) (void) fclose(fd);
 	if( db == NULL && GDKdbnameStr[0]==0) {
-		fprintf(stderr,"GDKenvironment: database path missing\n");
+		fprintf(stderr,"ERROR:database name missing\n");
+		GDKusage();
 		exit(-1);
 	}
 	if( db != NULL) strcpy(GDKdbnameStr,db);
@@ -825,16 +835,12 @@ void GDKvmfree(void* blk, size_t size, size_t maxsize){
 }
 
 @+ Session Initialization
-GDK parameters often come directly from the command line.
-Meaningful parameters are identified and processed.
 The parameter @%db@ is followed by the database name relative to
 the environment variable dbfarm.
-The parameter @%recover@ removes any pending lock file and
-checks the consistency of the database files.
 The parameter @%monetrc@ tells that the system variables setting
 should be overruled by the specification given in the file argument.
 This format is only necessary to temporarely experiment with variable settings,
-without disturbing a system default setting.
+without disturbing a system/site default setting.
 
 The interface code to the operating system is highly dependent on
 the processing environment. It can be filtered away with compiletime flags.
