@@ -59,14 +59,18 @@ malalgebra: loading... done.
   decimal: loading... done.
   ddbench: loading... done.
  counters: loading... done.
+    color: loading... done.
   cluster: loaded.
     calib: loading... done.
      blob: loading... done.
 bitvector: loaded.
    bitset: loading... done.
+bat_mmath: loading... done.
+ bat_cast: loading... done.
 bat_arith: loading... done.
       bat: loaded.
  ascii_io: loading... done.
+    array: loading... done.
     arith: loaded.
   algebra: loaded.
     alarm: loading... done.
@@ -82,14 +86,18 @@ table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
 [ "alarm"	  ]
 [ "algebra"	  ]
 [ "arith"	  ]
+[ "array"	  ]
 [ "ascii_io"	  ]
 [ "bat"		  ]
 [ "bat_arith"	  ]
+[ "bat_cast"	  ]
+[ "bat_mmath"	  ]
 [ "bitset"	  ]
 [ "bitvector"	  ]
 [ "blob"	  ]
 [ "calib"	  ]
 [ "cluster"	  ]
+[ "color"	  ]
 [ "counters"	  ]
 [ "ddbench"	  ]
 [ "decimal"	  ]

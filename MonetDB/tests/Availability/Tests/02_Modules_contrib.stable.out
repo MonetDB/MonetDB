@@ -24,9 +24,13 @@ table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 #-----------------#
 # 13 modules	  #
 #-----------------#
+[ "array"	  ]
+[ "bat_cast"	  ]
+[ "bat_mmath"	  ]
 [ "bitset"	  ]
 [ "bitvector"	  ]
 [ "cluster"	  ]
+[ "color"	  ]
 [ "ddbench"	  ]
 [ "iterator"	  ]
 [ "malalgebra"	  ]
@@ -91,6 +95,42 @@ Plain_mods@batloop {
 	Fnts.delete;
 }
 
+Module: "array"
+
+[ 4 ]
+[ 4 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		type		signature								help									  # name
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "concat",	  "PROC:      ",  "concat(BAT[oid,any::1], BAT[oid,any::1], int) : BAT[oid,any::1]",	  "Adds 'offset' two second arrays indexes and merges tables"		  ]
+[ "cons",	  "PROC:      ",  "cons(int, any::1) : BAT[void,any::1]",				  "generates a bat with a constant column"				  ]
+[ "grid",	  "COMMAND:   ",  "grid(int, int, int, int) : BAT[void,int]",				  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)"	  ]
+[ "print_array",  "COMMAND:   ",  "print_array(BAT[any::1,any], ..BAT[any::1,int]..) : void",		  "Prints an array, using 1 value bat and N aligned index bats"		  ]
+
+Module: "bat_cast"
+
+[ 2 ]
+[ 2 ]
+#---------------------------------------------------------------------------------------------------------------------------------#
+# function		type		signature				help							  # name
+#---------------------------------------------------------------------------------------------------------------------------------#
+[ "[dbl]",	  "COMMAND:   ",  "[dbl](BAT[void,int]) : BAT[void,dbl]", "optimized multiplexed dbl-cast on [void,int] BATs"	  ]
+[ "[oid]",	  "COMMAND:   ",  "[oid](BAT[void,int]) : BAT[void,oid]", "optimized multiplexed oid-cast on [void,int] BATs"	  ]
+
+Module: "bat_mmath"
+
+[ 6 ]
+[ 6 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		type		signature						help								  # name
+#---------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "[exp]",	  "COMMAND:   ",  "[exp](BAT[void,dbl]) : BAT[void,dbl]",		  "optimized multiplexed exp on [void,dbl] BATs"		  ]
+[ "[log]",	  "COMMAND:   ",  "[log](BAT[void,dbl]) : BAT[void,dbl]",		  "optimized multiplexed log on [void,dbl] BATs"		  ]
+[ "[pow]",	  "COMMAND:   ",  "[pow](BAT[void,dbl], BAT[void,dbl]) : BAT[void,dbl]",  "optimized multiplexed pow on head-aligned [void,dbl] BATs"	  ]
+[ "[pow]",	  "COMMAND:   ",  "[pow](BAT[void,dbl], dbl) : BAT[void,dbl]",		  "optimized multiplexed right-scalar pow on [void,dbl] BAT"	  ]
+[ "[pow]",	  "COMMAND:   ",  "[pow](dbl, BAT[void,dbl]) : BAT[void,dbl]",		  "optimized multiplexed left-scalar pow on [void,dbl] BAT"	  ]
+[ "[sqrt]",	  "COMMAND:   ",  "[sqrt](BAT[void,dbl]) : BAT[void,dbl]",		  "optimized multiplexed sqrt on [void,dbl] BATs"		  ]
+
 Module: "bitset"
 
 [ 13 ]
@@ -142,6 +182,23 @@ Module: "cluster"
 [ "acccluster",		  "COMMAND:   ",  "acccluster(BAT[any,any], int) : void",		  "Call the accelerator-specific cluster function to rearrange the\n cause less page faults."																																																																					  ]
 [ "heapclustercopy",	  "COMMAND:   ",  "heapclustercopy(BAT[any,any], BAT[any,any]) : void",	  "Rearrange the *tail* atoms -- that are supposed to of a variable sized\n typle like 'str' -- in the tail heap of the first BAT. They are put in\n order of appearance of the head elements of the second BAT. That is,\n for each head element from the second BAT we look up the appearance of\n this head element in the first BAT, and re-insert the corresponding tail\n element.\n WARNING: the second BAT *must* be a superset of the first, otherwise\n tuples will be lost!\n WARNING: you better work with head-unique BAts for this, otherwise\n the semantics are very vague.\n NOTE: the two BATs may be equal, in which case lookup is trivial."  ]
 [ "order",		  "COMMAND:   ",  "order(BAT[any::1,any::2], int) : BAT[any::1,any::2]",  "Fast order() on BATs that exceed main-memory, using partitioning. Returns b."																																																																						  ]
+
+Module: "color"
+
+[ 9 ]
+[ 9 ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# function		type		signature			help							  # name
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "blue",	  "COMMAND:   ",  "blue(color) : int",		  "Extracts blue component from a color atom"		  ]
+[ "green",	  "COMMAND:   ",  "green(color) : int",		  "Extracts green component from a color atom"		  ]
+[ "hsv",	  "COMMAND:   ",  "hsv(flt, flt, flt) : color",	  "Converts an HSV triplets to a color atom"		  ]
+[ "hue",	  "COMMAND:   ",  "hue(color) : flt",		  "Extracts hue component from a color atom"		  ]
+[ "red",	  "COMMAND:   ",  "red(color) : int",		  "Extracts red component from a color atom"		  ]
+[ "rgb",	  "COMMAND:   ",  "rgb(int, int, int) : color",	  "Converts an RGB triplets to a color atom"		  ]
+[ "saturation",	  "COMMAND:   ",  "saturation(color) : flt",	  "Extracts saturation component from a color atom"	  ]
+[ "test_color",	  "PROC:      ",  "test_color() : void",	  "not available"					  ]
+[ "value",	  "COMMAND:   ",  "value(color) : flt",		  "Extracts value component from a color atom"		  ]
 
 Module: "ddbench"
 

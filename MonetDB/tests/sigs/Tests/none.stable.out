@@ -49,14 +49,18 @@ loaded;
 [ "alarm",	  nil	  ]
 [ "algebra",	  nil	  ]
 [ "arith",	  nil	  ]
+[ "array",	  nil	  ]
 [ "ascii_io",	  nil	  ]
 [ "bat",	  nil	  ]
 [ "bat_arith",	  nil	  ]
+[ "bat_cast",	  nil	  ]
+[ "bat_mmath",	  nil	  ]
 [ "bitset",	  nil	  ]
 [ "bitvector",	  nil	  ]
 [ "blob",	  nil	  ]
 [ "calib",	  nil	  ]
 [ "cluster",	  nil	  ]
+[ "color",	  nil	  ]
 [ "counters",	  nil	  ]
 [ "ddbench",	  nil	  ]
 [ "decimal",	  nil	  ]
@@ -177,12 +181,16 @@ others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE)
 [ "decimal",	  nil	  ]
 [ "ddbench",	  nil	  ]
 [ "counters",	  nil	  ]
+[ "color",	  nil	  ]
 [ "calib",	  nil	  ]
 [ "blob",	  nil	  ]
 [ "bitvector",	  nil	  ]
 [ "bitset",	  nil	  ]
+[ "bat_mmath",	  nil	  ]
+[ "bat_cast",	  nil	  ]
 [ "bat_arith",	  nil	  ]
 [ "ascii_io",	  nil	  ]
+[ "array",	  nil	  ]
 [ "alarm",	  nil	  ]
 [ "aggrX3",	  nil	  ]
 [ "aggr",	  nil	  ]
@@ -1292,7 +1300,45 @@ others@batloop{
 	dropping counters
 
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading color
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "color",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+#-------------------------#
+# h		tmp_45	  # name
+# str		void	  # type
+#-------------------------#
+[ "color",	  nil	  ]
+
+	dropping color
+
+#---------------------------------#
+# module		usage_count	  # name
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -1444,7 +1490,83 @@ others@batloop{
 	dropping bitset
 
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading bat_mmath
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_mmath",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+#-------------------------#
+# h		tmp_45	  # name
+# str		void	  # type
+#-------------------------#
+[ "bat_mmath",	  nil	  ]
+
+	dropping bat_mmath
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading bat_cast
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_cast",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+#-------------------------#
+# h		tmp_48	  # name
+# str		void	  # type
+#-------------------------#
+[ "bat_cast",	  nil	  ]
+
+	dropping bat_cast
+
+#---------------------------------#
+# module		usage_count	  # name
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -1525,7 +1647,45 @@ others@batloop{
 	dropping streams
 
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading array
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "array",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+#-------------------------#
+# h		tmp_43	  # name
+# str		void	  # type
+#-------------------------#
+[ "array",	  nil	  ]
+
+	dropping array
+
+#---------------------------------#
+# module		usage_count	  # name
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
