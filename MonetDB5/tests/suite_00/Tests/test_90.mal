@@ -46,7 +46,7 @@
 	sa_a := print(b);
 	mil.line("var c:= mark(b,oid(20000050));");
 	ta_a := oid(20000050);
-	c := mark(b,ta_a);
+	c := markTail(b,ta_a);
 	mil.line("print(c);");
 	ua_a := print(c);
 	mil.line("var d:=number(b);");

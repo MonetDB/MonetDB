@@ -16,7 +16,7 @@ b.insert("",int(nil));
 b.insert(str(nil),int(nil));
 b.print();
 
-var c:= mark(b,oid(20000050));
+var c:= markTail(b,oid(20000050));
 print(c);
 
 var d:=number(b);
