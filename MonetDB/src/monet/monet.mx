@@ -485,7 +485,7 @@ static void getoptions(int argc, char **argv){
 		case '?':
 		case 'h':
 		    monet_usage(argv[0]);
-		    break;
+		    exit(0);
 		default:
 		explain:
 		    monet_hello();
