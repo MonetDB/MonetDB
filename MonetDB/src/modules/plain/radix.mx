@@ -1808,13 +1808,13 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
 	    size_t *kk = k + h;
 	
 	    if (b->ttype == TYPE_oid) {
-		radix_chunk_oid(bn, prev, lims, p+j, r, p+l[i], q+(j/BUNsize(b))*BUNsize(bn), k, radix[argc], shift, dst, cnt, &maxbits); 
+		radix_chunk_oid(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits); 
 	    } else if (ATOMstorage(b->ttype) == TYPE_int || ATOMstorage(b->ttype) == TYPE_flt) {
-		radix_chunk_int(bn, prev, lims, p+j, r, p+l[i], q+(j/BUNsize(b))*BUNsize(bn), k, radix[argc], shift, dst, cnt, &maxbits); 
+		radix_chunk_int(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits); 
 	    } else if (ATOMstorage(b->ttype) == TYPE_dbl || ATOMstorage(b->ttype) == TYPE_lng) {
-		radix_chunk_lng(bn, prev, lims, p+j, r, p+l[i], q+(j/BUNsize(b))*BUNsize(bn), k, radix[argc], shift, dst, cnt, &maxbits); 
+		radix_chunk_lng(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits); 
 	    } else {
-		radix_chunk_any(bn, prev, lims, p+j, r, p+l[i], q+(j/BUNsize(b))*BUNsize(bn), k, radix[argc], shift, dst, cnt, &maxbits);
+		radix_chunk_any(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits);
 	    }
 	    while(k < kk) *(k++) += j; /* make relative limits absolute ones */
 	}
