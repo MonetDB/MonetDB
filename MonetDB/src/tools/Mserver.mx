@@ -61,8 +61,6 @@ extern "C" {
 #include "monet_process.h"
 #include "monet_options.h"
 
-#include <getopt.h>
-
 extern void		static_module_init(Client c, char buf[]); 
 }
 
