@@ -21,7 +21,7 @@
 @'              Stefan Manegold <Stefan.Manegold@cwi.nl>
 @'              Peter Boncz <Peter.Boncz@cwi.nl>
 
-@a M. Kersten and Peter Boncz and Niels Nes
+@a Sjoerd Mullender, based on code by M. Kersten and Peter Boncz and Niels Nes
 @v 5
 @f MapiClient
 @* The Mapi Client interface (V4+V5)
@@ -31,7 +31,7 @@ interface for non-DBAs.
 
 @+ Manual Page
 @T
-The {\tt MapiClient} program provides textual
+The {\tt MapiClient} program provides a textual
 interface to the Monet server. Unlike the Mserver console, the {\tt MapiClient}
 program is intended not only for the database administrator, but to all other
 users. It is more comfortable than the console, since it provides
@@ -48,18 +48,18 @@ The following options are supported:
 \item {\em -c} Use a different configuration script
 \item {\em -s} Execute a single statement
 \item {\em -u -P} Replace interactive authorization by command line.
-\item{\em -blocked=true} run in (non-)blocked mode
+\item{\em -b true/false} run in (non-)blocked mode
 \item{\em -h} A synopsis of the command line options
 Can be used in scripts, but is insecure.
 \item{\em -trace} produces a trace of the interaction with the server
-\item{\em -t} produce response timings
+\item{\em -T} produce response timings
 \end{itemize}
 @
 
 @{
 @+ Implementation
 @c
-#include <monet_options.h>	/* includes monetdb_config.h */
+#include <monet_options.h>
 #include "Mapi.h"
 #include <unistd.h>
 #include <stdlib.h>
@@ -67,39 +67,22 @@ Can be used in scripts, but is insecure.
 #include <sys/stat.h>
 #include <errno.h>
 #include <string.h>
-/* #include <signal.h> */
+#ifdef HAVE_TERMIOS_H
+#include <termios.h>
+#endif
+#ifdef HAVE_LIBREADLINE
+#include <readline/readline.h>
+#include <readline/history.h>
+#endif
 
 #ifndef S_ISCHR
 #define S_ISCHR(m)	(((m) & S_IFMT) == S_IFCHR)
 #endif
 
-#define _strdup( ptr )		strdup((char*)ptr)
+static FILE *toConsole;
 
-#ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
-#endif
-#ifdef HAVE_ICONV_H
-#include <iconv.h>
-#endif
-#ifdef HAVE_LOCALE_H
-#include <locale.h>
-#endif
-
-#if !defined(HAVE_SETLOCALE) || \
-    !defined(HAVE_ICONV) || \
-    !defined(HAVE_NL_LANGINFO)
-#	define	NO_LOCALE
-#endif
-
-int is_chrsp = 0;
-int exit_on_error =0;
-int blocked= 1;
-int sql_session= 0, mil_session=1;
-char *sql_continue= "---> ";
-char *sql_prompt= "sql> ";
-long usec=0;
-long GDKtime_startsec=0;
-char *mark,*mark2="";
+static long t0, t1;		/* used for timing */
+static char *mark, *mark2;
 
 /* stolen piece */
 #ifdef HAVE_FTIME
@@ -117,76 +100,502 @@ char *mark,*mark2="";
 # endif
 #endif
 
-lng GDKusec(void) {
+static long
+gettime(void)
+{
 #ifdef HAVE_GETTIMEOFDAY
         struct timeval tp;
         gettimeofday(&tp, NULL);
-        return ((lng) (tp.tv_sec-GDKtime_startsec))*
-                (1000000) + (lng) tp.tv_usec;
+        return (long) tp.tv_sec * 1000000 + (long) tp.tv_usec;
 #else
 #ifdef HAVE_FTIME
         struct timeb tb;
         ftime(&tb);
-        return ((lng) (tb.time-GDKtime_startsec))*(1000000) +
-               ((lng) tb.millitm)*(1000);
+        return (long) tb.time * 1000000 + (long) tb.millitm * 1000;
 #endif
 #endif
 }
 
-/* generate the time information if the marker is set */
-long t0,t1;
-void timerStart(){
-	t0= GDKusec();
-}
-void timerEnd(){
-	t1= GDKusec();
-	if(mark){
-		printf("%s %d usec %s\n",mark,t1-t0,mark2);
-	}
-}
-
-#ifdef HAVE_ICONV
-iconv_t to_utf = NULL;
-iconv_t from_utf = NULL;
-
-char *conv( char *org, iconv_t cd)
+static void
+timerStart(void)
 {
-	if (cd){
-		size_t len = strlen(org);
-		size_t size = len * 4;
-		char *buf = malloc(size);
-		char *to = buf;
-		ICONV_CONST char *from = org;
-
-		if (iconv(cd, &from, &len, &to, &size ) == (size_t)(-1)){
-			perror("conv ");
-			fprintf(stderr, "could not convert string %s\n", from );
-			free(buf);
-			exit(1);
-		}
-		*to = 0;
-		return buf;
-	} else {
-		return _strdup(org);
-	}
+	t0 = gettime();
 }
-#else
-#define conv( org, dummy) _strdup(org)
+
+static void
+timerEnd(void)
+{
+	t1 = gettime();
+	if (mark)
+		fprintf(toConsole, "%s %d usec %s\n", mark, t1 - t0, mark2);
+}
+
+static int
+doRequest(Mapi mid, const char *buf)
+{
+	char *rtrn;
+	MapiHdl hdl;
+
+	if ((hdl = mapi_query(mid, buf)) == NULL) {
+		mapi_explain(mid, stderr);
+		return 1;
+	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
+	while ((rtrn = mapi_fetch_line(hdl)) != 0) {
+		fprintf(toConsole, "%s\n", rtrn);
+	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
+	mapi_close_handle(hdl);
+	return 0;
+}
+
+static void
+showCommands(void)
+{
+	fprintf(toConsole, "?\t - show this message\n");
+	fprintf(toConsole, "!\t - shell escape\n");
+	fprintf(toConsole, "<file\t - read input from file\n");
+	fprintf(toConsole, ">file\t - save response in file\n");
+	fprintf(toConsole, ">\t - response to terminal\n");
+	fprintf(toConsole, "cd\t - change directory\n");
+	/*fprintf(toConsole, "\\r\t- run the buffered command\n");*/
+	/*fprintf(toConsole, "\\c\t- clear the command buffer\n");*/
+	fprintf(toConsole, "\\l\t- line is immediately sent\n");
+	fprintf(toConsole, "\\q\t- terminate session\n");
+}
+
+static int
+doFile(Mapi mid, const char *file)
+{
+	FILE *fp;
+	char buf[BUFSIZ];
+	size_t length;
+	MapiHdl hdl;
+	int rc;
+	char *rtrn;
+
+	if ((fp = fopen(file, "r")) == NULL) {
+		fprintf(stderr, "%s: cannot open\n", file);
+		return 1;
+	}
+
+	rc = 0;
+	if ((hdl = mapi_query_prep(mid)) == NULL) {
+		mapi_explain(mid, stderr);
+		return 1;
+	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
+	while ((length = fread(buf, 1, sizeof(buf), fp)) > 0) {
+		mapi_query_part(hdl, buf, length);
+		if (mapi_error(mid)) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			return 1;
+		}
+	}
+	mapi_query_done(hdl);
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
+
+	while ((rtrn = mapi_fetch_line(hdl)) != 0)
+		fprintf(toConsole, "%s\n", rtrn);
+
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		rc = 1;
+	}
+	mapi_close_handle(hdl);
+	fclose(fp);
+	return rc;
+}
+
+static int
+doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
+{
+	int prepared = 0;
+	char *line = NULL;
+	char *buf = NULL;
+	size_t length;
+	MapiHdl hdl;
+
+#ifdef HAVE_LIBREADLINE
+	if (prompt == NULL)
 #endif
+		buf = malloc(BUFSIZ);
 
-@-
-The login procedure has been improved. The default is to ask for
-user name and password (non-displayed). The log procedure is
-started after it has become clear that a server is available at
-the port indicated. This enables more elaborate authentication
-schemes to be deployed in the future.
-@c
-
-#ifdef HAVE_TERMIOS_H
-#include <termios.h>
+	for (;;) {
+#ifdef HAVE_LIBREADLINE
+		if (prompt) {
+			if (buf)
+				free(buf);
+			buf = readline(prompt);
+			/* add a newline to the end since that makes
+			   further processing easier */
+			if (buf) {
+				length = strlen(buf);
+				buf = realloc(buf, length + 2);
+				buf[length++] = '\n';
+				buf[length] = 0;
+			}
+			line = buf;
+		} else
 #endif
+		{
+#ifndef HAVE_LIBREADLINE
+			if (prompt) {
+				fputs(prompt, stdout);
+				fflush(stdout);
+			}
+#endif
+			line = fgets(buf, BUFSIZ, fp);
+		}
+		if (line == NULL) {
+			if (buf)
+				free(buf);
+			return 0;
+		}
+		length = strlen(line);
+		if (length == 0)
+			continue;
 
-char *
+		if (!linemode ||
+		    (!prepared && length > 0 && line[length - 1] == '\n')) {
+			/* test for special commands */
+			while (length > 0 && isspace((int) *line)) {
+				line++;
+				length--;
+			}
+			switch (*line) {
+			case '\0':
+				/* empty line */
+				break;
+			case '\\':
+				switch (line[1]) {
+				case 'q':
+					free(buf);
+					return 0;
+				case 't':
+					mark = "Timer";
+					if (mark2)
+						free(mark2);
+					mark2 = strdup(line + 2);
+					continue;
+				case 'T':
+					mark = NULL;
+					continue;
+				case 'l':
+					linemode = 1;
+					line = "";
+					length = 0;
+					break;
+				case 'b':
+					linemode = 0;
+					continue;
+				default:
+					break;
+				}
+				break;
+			case '<':
+				/* read commands from file */
+				if (line[length - 1] == '\n')
+					line[--length] = 0;
+				if (line[length - 1] == '\r')
+					line[--length] = 0;
+				doFile(mid, line + 1);
+				continue;
+			case '>':
+				/* redirect output to file */
+				line++;
+				length--;
+				if (line[length - 1] == '\n')
+					line[--length] = 0;
+				if (line[length - 1] == '\r')
+					line[--length] = 0;
+				if (toConsole != stdout && toConsole != stderr)
+					fclose(toConsole);
+				if (length == 0 || strcmp(line, "stdout") == 0)
+					toConsole = stdout;
+				else if (strcmp(line, "stderr") == 0)
+					  toConsole = stderr;
+				else if ((toConsole = fopen(line, "w")) == NULL) {
+					toConsole = stdout;
+					fprintf(stderr, "Cannot open %s\n", line);
+				}
+				continue;
+			case 'c': /* cd command? */
+				if (line[1] == 'd' && isspace((int) line[2])) {
+					if (line[length - 1] == '\n')
+						line[--length] = 0;
+					if (line[length - 1] == '\r')
+						line[--length] = 0;
+					if (chdir(line + 3) < 0)
+						perror(line);
+					continue;
+				}
+				break;
+			case '?':
+				showCommands();
+				continue;
+			}
+		}
+
+		if ((length == 0 || line[length - 1] == '\n') && linemode) {
+			char *rtrn;
+
+			/* send rest of or whole query */
+			if (prepared) {
+				assert(hdl != NULL);
+				if (length > 0) {
+					mapi_query_part(hdl, line, length);
+					if (mapi_error(mid))
+						break;
+				}
+				mapi_query_done(hdl);
+				if (mapi_error(mid))
+					break;
+				prepared = 0;
+			} else {
+				assert(hdl == NULL);
+				/* send one complete line */
+				timerStart();
+				hdl = mapi_query(mid, line);
+				if (mapi_error(mid))
+					break;
+#ifdef HAVE_LIBREADLINE
+				if (prompt && length > 1) {
+					line[--length] = 0;
+					add_history(buf);
+				}
+#endif
+			}
+
+			while ((rtrn = mapi_fetch_line(hdl)) != 0)
+				fprintf(toConsole, "%s\n", rtrn);
+			timerEnd();
+
+			if (mapi_error(mid))
+				break;
+			mapi_close_handle(hdl);
+			hdl = NULL;
+		} else {
+			/* send part of query */
+			if (!prepared) {
+				assert(hdl == NULL);
+				timerStart();
+				hdl = mapi_query_prep(mid);
+				if (mapi_error(mid))
+					break;
+				prepared = 1;
+			}
+			if (length > 0) {
+				mapi_query_part(hdl, line, length);
+				if (mapi_error(mid))
+					break;
+			}
+		}
+	}
+	/* only reached on error */
+	if (hdl) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
+	return 1;
+}
+
+static const char *column_format = "select name,type,type_digits,type_scale,"
+	"null,default from columns c,tables t "
+	"where c.table_id = t.id and '%s' = t.name order by c.number;\n"; 
+#define COLUMN 6
+#define C_NAME 0
+#define C_TYPE 1
+#define C_TYPE_DIGITS 2
+#define C_TYPE_SCALE 3
+
+static int 
+dump_table(Mapi mid, char *tname)
+{
+	int cnt = 0, i;
+	MapiHdl hdl;
+	char query[BUFSIZ];
+
+	char *select_count = "select count(*) from %s";
+	char *select_format = "select * from %s";
+	int *string;
+
+	fprintf(toConsole, "CREATE TABLE %s (\n", tname);
+
+	snprintf(query, BUFSIZ, column_format, tname);
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		return 1;
+	}
+
+	while ((mapi_fetch_row(hdl)) != 0) {
+		char *c_name = mapi_fetch_field(hdl, C_NAME);
+		char *c_type = mapi_fetch_field(hdl, C_TYPE);
+		char *c_type_digits = mapi_fetch_field(hdl, C_TYPE_DIGITS);
+		char *c_type_scale = mapi_fetch_field(hdl, C_TYPE_SCALE);
+
+		if (mapi_error(mid)) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			return 1;
+		}
+		if (cnt)
+			fprintf(toConsole, ",\n");
+
+		if (strcmp(c_type_digits, "0") == 0) {
+			fprintf(toConsole, "\t%s %s", c_name, c_type);
+		} else if (strcmp(c_type_scale, "0") == 0) {
+			fprintf(toConsole, "\t%s %s(%s)", c_name, c_type,
+				c_type_digits);
+		} else {
+			fprintf(toConsole, "\t%s %s(%s,%s)", c_name, c_type,
+				c_type_digits, c_type_scale);
+		}
+		cnt++;
+	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
+	fprintf(toConsole, "\n");
+
+	fprintf(toConsole, ");\n");
+	mapi_close_handle(hdl);
+
+	snprintf(query, BUFSIZ, select_count, tname);
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		return 1;
+	}
+	if (mapi_fetch_row(hdl)) {
+		char *cnt = mapi_fetch_field(hdl, 0);
+		fprintf(toConsole, "COPY %s RECORDS INTO %s FROM "
+			"stdin USING DELIMITERS '\\t';\n", cnt, tname);
+	}
+	mapi_close_handle(hdl);
+
+	snprintf(query, BUFSIZ, select_format, tname);
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		return 1;
+	}
+
+	cnt = mapi_get_field_count(hdl);
+	string = malloc(sizeof(int)*cnt);
+	for (i = 0; i < cnt; i++) {
+		string[i] = 0;
+		if (strcmp(mapi_get_type(hdl, i), "char") == 0) 
+			string[i] = 1;
+	}
+	while (mapi_fetch_row(hdl)) {
+		char *format;
+
+		for(i = 0; i < cnt - 1; i++) {
+			format = "%s\t";
+			if (string[i])
+				format = "'%s'\t";
+			fprintf(toConsole, format, mapi_fetch_field(hdl, i));
+		}
+		format = "%s\n";
+		if (string[i])
+			format = "'%s'\n";
+		fprintf(toConsole, format, mapi_fetch_field(hdl, i));
+	}
+	free(string);
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
+	mapi_close_handle(hdl);
+	return 0;
+}
+
+static int
+dump_tables(Mapi mid)
+{
+	const char *tables = "select name from tables where type=0"; 
+	const char *views = "select name,query from tables where type=2";
+	MapiHdl hdl;
+	int rc = 0;
+
+	if ((hdl = mapi_query(mid, tables)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		return 1;
+	}
+
+	while (mapi_fetch_row(hdl) != 0) {
+		char *tname = mapi_fetch_field(hdl, 0);
+
+		rc += dump_table(mid, tname);
+	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
+	mapi_close_handle(hdl);
+
+	if ((hdl = mapi_query(mid, views)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		return 1;
+	}
+	while (mapi_fetch_row(hdl) != 0) {
+		char *vname = mapi_fetch_field(hdl, 0);
+		char *query = mapi_fetch_field(hdl, 1);
+
+		fprintf(toConsole, "CREATE VIEW %s %s\n", vname, query);
+	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
+	mapi_close_handle(hdl);
+
+	return rc;
+}
+
+static char *
 simple_prompt(const char *prompt, int maxlen, int echo)
 {
 	int length = 0;
@@ -206,13 +615,17 @@ simple_prompt(const char *prompt, int maxlen, int echo)
 	termin = fopen("/dev/tty", "r");
 	termout = fopen("/dev/tty", "w");
 
-	if (termin == NULL || termout == NULL){
+	if (termin == NULL || termout == NULL) {
+		if (termin)
+			fclose(termin);
+		if (termout)
+			fclose(termout);
 		termin = stdin;
 		termout = stderr;
 	}
 
 	if (prompt) {
-		fputs( prompt, termout);
+		fputs(prompt, termout);
 		fflush(termout);
 	}
 #ifdef HAVE_TERMIOS_H
@@ -254,788 +667,213 @@ simple_prompt(const char *prompt, int maxlen, int echo)
         return destination;
 }
 
-char *program;			/* my name */
-
-#define EXIT(x)	{ exit(x); }
-#define LINEMODE	23
-#define BLOCKMODE	32
-
-FILE	*toConsole;
-char	*message	= 0;
-int	mode		= LINEMODE;
-char*	sentinel 	= "MapiClient~sentinel";
-
-
-int doRequest(Mapi mid, char *buf )
+static void
+usage(const char *prog)
 {
-	char *rtrn;
-	MapiHdl hdl;
-
-	timerStart();
-	if ((hdl = mapi_query(mid, buf)) == NULL){
-		mapi_explain(mid, stdout);
-		return 0;
-	}
-	if (mapi_error(mid)) {
-		mapi_explain_query(hdl, stdout);
-		mapi_close_handle(hdl);
-		return 0;
-	}
-	while ((rtrn = mapi_fetch_line(hdl)) != 0) {
-		fprintf(toConsole, "%s\n", rtrn);
-	}
-	timerEnd();
-	if (mapi_error(mid)) {
-		mapi_explain_query(hdl, stdout);
-		mapi_close_handle(hdl);
-		return 0;
-	}
-	mapi_close_handle(hdl);
-	return 1;
-}
-@-
-The input for the Monet server is stored in a buffer until
-the forward command is issued.
-In LINEMODE each line is sent and the monitor awaits the prompt
-of the server before continuing.
-For SQL sessions we need to be a little more carefull, because
-the statements easily expand multiple lines. In this case we
-look for the closing ';\n' before sending the request to the server.
-Continuation is indicated with a special prompt '--->'
-@c
-#define CHUNK_SIZE	16*1024
-
-#ifdef HAVE_LIBREADLINE
-
-#include <readline/readline.h>
-#include <readline/history.h>
-
-#define SEND_MESSAGE(mid)	{				\
-	message[m_index] = 0;					\
-	cmd = doRequest(mid, message );				\
-	add_history(start_cmd);					\
-	*message = 0; m_index = 0;				\
-}
-#else
-#define SEND_MESSAGE(mid)	{				\
-	message[m_index] = 0;					\
-	cmd = doRequest(mid, message );				\
-	*message = 0; m_index = 0;				\
-}
-#endif
-
-#define GROW_MESSAGE(x)		{				\
-	m_index += x;						\
-	if (m_size-m_index  < CHUNK_SIZE) {			\
-		message = (char *) realloc(message, m_size*=2);	\
-		memset(message+m_index, 0, m_size-m_index);	\
-	}							\
-}
-
-@-
-The built-in commands are kept to a minimum
-@c
-void showCommands(void)
-{
-	fprintf(toConsole,"?\t - this message\n");
-	fprintf(toConsole,"!\t - shell escape\n");
-	fprintf(toConsole,"<file\t - read input from file\n");
-	fprintf(toConsole,">file\t - save response in file\n");
-	fprintf(toConsole,">\t - response to terminal\n");
-	fprintf(toConsole,"cd\t - change directory\n");
-	fprintf(toConsole,"\\r\t- run the buffered command\n");
-	fprintf(toConsole,"\\c\t- clear the command buffer\n");
-	fprintf(toConsole,"\\l\t- line is immediately sent\n");
-	fprintf(toConsole,"\\q\t- terminate session\n");
-}
-@-
-The lines read are checked for comments, which are silently
-replaced by space.
-@c
-char *trimComment(char *line){
-	int i,lim;
-	char instring=0, incomment=0;
-	lim = strlen(line);
-	for (i=0; i<lim; i++) {
-		if (incomment) {
-			if (line[i] == '\n') {
-				incomment = 0;
-			} else {
-				line[i] = ' ';
-			}
-		} else {
-			switch (line[i]) {
-			case '\\':
-				i++;
-				break;
-			case '\'':
-			case '"':
-				if (!instring) {
-					instring = line[i];
-				} else if (instring == line[i]) {
-					instring = 0;
-				}
-				break;
-			case '#':
-				if (mil_session && !instring) {
-					incomment = (char)1;
-					line[i] = ' ';
-				}
-				break;
-			case '-':
-				if (sql_session && !instring &&
-				      (i+1)<lim && line[i+1]=='-' &&
-				    !((i+4)<lim && line[i+2]=='m' && line[i+3]=='i' && line[i+4]=='l')) {
-					incomment = (char)1;
-					line[i] = line[i+1] = ' ';
-					i++;
-				}
-				break;
-			}
-		}
-	}
-	return line;
-}
-
-void terminalInput( Mapi mid, char *prompt)
-{
-	FILE	*fp;
-	char 	*line=0, *start_cmd, *end_cmd;
-	int	n, m_size=CHUNK_SIZE, m_index=0;
-	char	cmd = 0;
-
-	message = (char *) malloc(CHUNK_SIZE);
-
-	while(cmd != 'q') {
-		if (line ) {
-			free(line);
-		}
-#ifdef HAVE_LIBREADLINE
-		if (is_chrsp){
-			if ((line = (char *) readline(prompt)) == NULL) {
-				return;
-			}
-			line= trimComment(line);
-		} else
-#endif
-		{
-			int len;
-			char *buf =(char *)malloc(CHUNK_SIZE);
-#ifndef HAVE_LIBREADLINE
-			if (is_chrsp) {
-				fputs(prompt, stdout);
-				fflush(stdout);
-			}
-#endif
-			if ((line =(char *)fgets(buf,CHUNK_SIZE-2,stdin))==NULL) {
-				free(buf);
-				return;
-			}
-			line= trimComment(line);
-			len = strlen(line);
-			if( len && line[len-1] == '\n')
-				line[len-1] = '\0';
-		}
-		/* find start and end of the command */
-		for (start_cmd = line;
-		     *start_cmd && isspace((int)(*start_cmd));
-		     start_cmd++)
-			;
-		/* empty lines are meaningfull in some interpreters, like mdb
-		for(end_cmd = line + strlen(line) - 1;
-		    end_cmd > start_cmd && isspace((int)(*end_cmd));
-		    end_cmd--)
-			;
-		*/
-		end_cmd = line + strlen(line) - 1;
-		n = 1 + end_cmd - start_cmd;
-@-
-The MapiClient terminal monitor provides common functionality,
-such as directory changes, reading commands from a file,
-redirection of output to a separate file.
-@c
-		/* is the string a command ? */
-		switch(*start_cmd) {
-		case '\\':
-			switch(*(start_cmd+1)) {
-			case 'r':
-				goto handle_message;
-			case 'q':
-				cmd = 'q';
-				continue;
-			case 'b':
-				mode = BLOCKMODE;
-				continue;
-			case 'l':
-				mode = LINEMODE;
-				/*FALLTHRU*/
-			case 'c':
-				m_index = 0; *message = 0;
-				continue;
-@-
-The timer switch can be used to obtain rudimentary timing
-information. The switch may be follows by a tag to
-simplify subsequent retrieval from the output.
-@c
-			case 'T':
-				mark=0;
-				continue;
-			case 't':
-				if(mark==0) mark= "Timer";
-				mark2= _strdup(start_cmd+2);
-				continue;
-			}
-			break;
-		case '!':
-			system(start_cmd+1);
-			continue;
-		case 'c':
-			if ((start_cmd[1] == 'd') && isspace((int)(start_cmd[2]))) {
-				if (chdir(start_cmd+3)) {
-					char err[200];
-					sprintf(err, "chdir: %s", start_cmd+3);
-					perror(err);
-				} else {
-					fprintf(toConsole,"chdir to %s\n", start_cmd+3);
-				}
-				message[0] = m_index = 0;
-				continue;
-			}
-			break;
-		case '<':
-@-
-The lines of the input file should be consumed as a block.
-All new-lines should be removed before we turn it into
-a single query for the engine.
-@c
-			if ((fp = fopen(start_cmd+1, "r")) != NULL) {
-				char *s;
-				while ((n = fread(message+m_index, 1,
-						  CHUNK_SIZE-2, fp)) != 0) {
-					GROW_MESSAGE(n);
-					message[m_index] = 0;
-				}
-				/* echo to stdout */
-				fwrite(message, 1, strlen(message), stdout);
-				for(s=message; *s; s++)
-				if(*s=='\n') *s=' ';
-			}
-			break;
-@-
-The output should be saved in a different file.
-Ommision of a file name or failure to create it, resets
-the output to the stdout. (Also >>)
-@c
-		case '>':
-			if( n==1) {
-				toConsole = stdout;
-				fprintf(toConsole,"Redirect to standard output\n");
-				continue;
-			}
-			if( strcmp(start_cmd+1,"stdout") == 0) {
-				toConsole = stdout;
-				continue;
-			}
-			if( strcmp(start_cmd+1,"stderr") == 0) {
-				toConsole = stderr;
-				continue;
-			}
-			toConsole = fopen(start_cmd+1,"w");
-			if( toConsole == NULL ){
-				toConsole = stdout;
-				fprintf(toConsole,
-				"! Unable to redirect to %s\n", start_cmd+1);
-			} else
-				printf("output switched to %s\n",start_cmd+1);
-			continue;
-@-
-The commands available in the terminal monitor can be obtained
-using its help operator '?'.
-@c
-		case '?':
-			showCommands();
-			continue;
-		}
-		/* copy the line to the end of the message including '\0' */
-		memcpy(message+m_index, start_cmd, n+1);
-		GROW_MESSAGE(n);
-
-		if (mode == LINEMODE) {
-handle_message:
-			if( sql_session){
-				int k= m_index;
-				char semicolon= message[k-1];
-				if( semicolon!=';'){
-					m_index++;
-					message[k]=' ';
-					message[k+1]=0;
-					prompt= sql_continue;
-					continue;
-				}
-				SEND_MESSAGE(mid);
-				prompt= sql_prompt;
-			} else SEND_MESSAGE(mid);
-		}
-	}
-}
-
-static const char *column_format = "select name,type,type_digits,type_scale,null,default from columns c,tables t where c.table_id = t.id and '%s' = t.name order by c.number;\n"; 
-#define COLUMN 6
-#define C_NAME 0
-#define C_TYPE 1
-#define C_TYPE_DIGITS 2
-#define C_TYPE_SCALE 3
-
-static int 
-dump_table( Mapi mid, char *tname)
-{
-	int cnt = 0, i;
-	MapiHdl hdl;
-	char query[BUFSIZ];
-
-	char *select_count = "select count(*) from %s";
-	char *select_format = "select * from %s";
-	int *string;
-
-	printf("CREATE TABLE %s (\n", tname );
-
-	snprintf(query, BUFSIZ, column_format, tname);
-	if ((hdl = mapi_query(mid, query)) == NULL){
-		mapi_explain(mid,stdout);
-
-		return 0;
-	}
-	while ((mapi_fetch_row(hdl)) != 0) {
-		char *c_name = mapi_fetch_field(hdl, C_NAME);
-		char *c_type = mapi_fetch_field(hdl, C_TYPE);
-		char *c_type_digits = mapi_fetch_field(hdl, C_TYPE_DIGITS);
-		char *c_type_scale = mapi_fetch_field(hdl, C_TYPE_SCALE);
-
-		if (cnt)
-			printf(",\n");
-
-		if (strcmp(c_type_digits, "0") == 0) {
-			printf("\t%s %s", c_name, c_type);
-		} else if (strcmp(c_type_scale, "0") == 0) {
-			printf("\t%s %s(%s)", c_name, c_type, c_type_digits);
-		} else {
-			printf("\t%s %s(%s,%s)", c_name, c_type, c_type_digits,
-				c_type_scale);
-		}
-		cnt ++;
-	}
-	printf("\n");
-
-	printf(");\n" );
-	mapi_close_handle(hdl);
-
-	snprintf(query, BUFSIZ, select_count, tname);
-	if ((hdl = mapi_query(mid, query)) == NULL){
-		mapi_explain(mid,stdout);
-		return 0;
-	}
-	if ((mapi_fetch_row(hdl)) != 0) {
-		const char *copystring =
-	    		"COPY %s RECORDS INTO %s FROM stdin USING DELIMITERS '\\t';\n";
-		char *cnt = mapi_fetch_field(hdl, 0);
-		printf(copystring, cnt, tname);
-	}
-	mapi_close_handle(hdl);
-
-	snprintf(query, BUFSIZ, select_format, tname);
-	if ((hdl = mapi_query(mid, query)) == NULL){
-		mapi_explain(mid, stdout);
-		return 0;
-	}
-	if (mapi_error(mid)) {
-		mapi_explain_query(hdl, stdout);
-		mapi_close_handle(hdl);
-		return 0;
-	}
-
-	cnt = mapi_get_field_count(hdl);
-	string = malloc(sizeof(int)*cnt);
-	for(i=0;i<cnt;i++){
-		string[i] = 0;
-		if (strcmp(mapi_get_type(hdl, i),"char") == 0) 
-			string[i] = 1;
-	}
-	while ((mapi_fetch_row(hdl)) != 0) {
-		char *format;
-
-		for(i=0;i<cnt-1; i++) {
-			format = "%s\t";
-			if (string[i])
-				format = "'%s'\t";
-			fprintf(toConsole, format, mapi_fetch_field(hdl,i));
-		}
-		format = "%s\n";
-		if (string[i])
-			format = "'%s'\n";
-		fprintf(toConsole, format, mapi_fetch_field(hdl,i));
-	}
-	free(string);
-	if (mapi_error(mid)) {
-		mapi_explain_query(hdl, stdout);
-		mapi_close_handle(hdl);
-		return 0;
-	}
-	mapi_close_handle(hdl);
-	return 0;
-}
-
-static int dump_tables( Mapi mid )
-{
-	int cnt = 0;
-	char *tables = "select name from tables where type=0"; 
-	char *views = "select name,query from tables where type=2";
-	MapiHdl hdl;
-
-	if ((hdl = mapi_query(mid, tables)) == NULL){
-		mapi_explain(mid,stdout);
-
-		return 0;
-	}
-	while (mapi_fetch_row(hdl) != 0) {
-		char *tname = mapi_fetch_field(hdl, 0);
-
-		dump_table( mid, tname );
-	}
-	mapi_close_handle(hdl);
-
-	if ((hdl = mapi_query(mid, views)) == NULL){
-		mapi_explain(mid,stdout);
-		return 0;
-	}
-	while (mapi_fetch_row(hdl) != 0) {
-		char *vname = mapi_fetch_field(hdl, 0);
-		char *query = mapi_fetch_field(hdl, 1);
-
-		printf("CREATE VIEW %s %s\n", vname, query );
-	}
-	mapi_close_handle(hdl);
-	
-	return cnt;
-}
-
-void usage( char *prog )
-{
-	(void) prog;
-	fprintf(stderr, "Usage: MapiClient [ options ]\n");
+	fprintf(stderr, "Usage: %s [ options ]\n", prog);
 	fprintf(stderr, "Options are:\n");
+	fprintf(stderr, " -b t/f      | --blocked=true/false /* blocked mode */\n");
 	fprintf(stderr, " -d          | --debug=[level]  /* set debug level */\n");
-	fprintf(stderr, " -h hostname | --host=hostname  /* host to connect to */\n");
-	fprintf(stderr, " -p portnr   | --port=portnr    /* port to connect to */\n");
-	fprintf(stderr, " -l language | --language=lang  /* {mal,sql,mil} */\n");
-	fprintf(stderr, " -u user     | --user=user      /* user id */\n" );
-	fprintf(stderr, " -P passwd   | --passwd=passwd  /* password */\n");
-	fprintf(stderr, " -e          | --error          /* exit on error */\n");
 	fprintf(stderr, " -D          | --dump           /* dump sql database */\n");
+	fprintf(stderr, " -e          | --error          /* exit on error */\n");
+	fprintf(stderr, " -h hostname | --host=hostname  /* host to connect to */\n");
+	fprintf(stderr, " -l language | --language=lang  /* {mal,sql,mil} */\n");
+	fprintf(stderr, " -P passwd   | --passwd=passwd  /* password */\n");
+	fprintf(stderr, " -p portnr   | --port=portnr    /* port to connect to */\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt /* run single statement */\n");
 	fprintf(stderr, " -t          | --trace          /* trace Monet interaction */\n");
+	fprintf(stderr, " -T          | --time           /* time commands */\n");
+	fprintf(stderr, " -u user     | --user=user      /* user id */\n" );
 	fprintf(stderr, " -?          | --help           /* show this usage message */\n");
-	fprintf(stderr, "             | --blocked=true   /* run in (non-)blocked mode */\n");
 	exit(-1);
 }
 
-int main(int ac, char **av)
+int
+main(int argc, char **argv)
 {
-	char *prompt= NULL;
-	char *prog = *av, *config = NULL, *passwd = NULL, *user = NULL;
-	char *host=NULL;
+	opt *set = NULL;
+	int setlen;
+	char *config = NULL;
 #ifdef MONET5
-	char *language = _strdup("mal");
+	char *language = "mal";
 #else
-	char *language = _strdup("mil");
+	char *language = "mil";
 #endif
-	int debug = 0, port = 0, setlen = 0, trace = 0, dump = 0;
-	opt *set= NULL;
-
+	int port = 0;
+	char *user = NULL;
+	char *passwd = NULL;
+	char *host = NULL;
 	char *command = NULL;
-
-	struct stat st;
+	int dodump = 0;
+	int trace = 0;
+	int linemode = 1;
+	int c;
 	Mapi mid;
-
 	static struct option long_options[] = {
-		{"debug", 2, 0, 'd'},
 		{"blocked", 1, 0, 'b'},
-		{"dump", 0, 0, 'D'},
 		{"config", 1, 0, 'c'},
+		{"debug", 2, 0, 'd'},
+		{"dump", 0, 0, 'D'},
 		{"host", 1, 0, 'h'},
-		{"port", 1, 0, 'p'},
-		{"passwd", 1, 0, 'P'},
-		{"user", 1, 0, 'u'},
 		{"language", 1, 0, 'l'},
-		{"error", 1, 0, 'e'},
-		{"statement", 1, 0, 's'},
-		{"trace", 0, 0, 't'},
-		{"time", 0, 0, 'T'},
-		{"help", 0, 0, '?'},
+		{"passwd", 1, 0, 'P'},
+		{"port", 1, 0, 'p'},
 		{"set", 1, 0, 'S'},
+		{"statement", 1, 0, 's'},
+		{"time", 0, 0, 'T'},
+		{"trace", 0, 0, 't'},
+		{"user", 1, 0, 'u'},
 		{0, 0, 0, 0}
 	};
 
-	if (!(setlen = mo_builtin_settings(&set)) )
-		usage(av[0]);
+	toConsole = stdout;
+	mark = NULL;
+	mark2 = NULL;
 
-	while(1){
-		int option_index = 0;
+	if ((setlen = mo_builtin_settings(&set)) == 0)
+		usage(argv[0]);
 
-		int c = getopt_long( ac, av, "c:d::Dh:p:P:u:s:S:l:e:T:t?",
-				long_options, &option_index);
-
-		if (c == -1)
-			break;
-
-		switch (c){
-		case 0:
-			/* all other long options are mapped on their short version */
-			printf("option %s", long_options[option_index].name);
-			if (optarg)
-				printf( " with arg %s", optarg );
-			printf("\n");
-			usage(prog);
-			break;
-		case 'b':
-		{
-			char *t= strchr(optarg,'=');
-			blocked= 1;
-			if( t){
-				t++;
-				if(*t=='t' || *t=='T' ||*t=='1') blocked=1; else
-				if(*t=='f' || *t=='F' ||*t=='0') blocked=0; else
-				fprintf(stderr,"ERROR: wrong format %s\n", optarg);
-			} 
-			break;
-		}
+	while ((c = getopt_long(argc, argv, "c:l:u:P:h:s:DtTd::", long_options, NULL)) != -1) {
+		switch (c) {
 		case 'c':
-			config = _strdup(optarg);
-			break;
-		case 'd':
-			if (optarg){
-				setlen = mo_add_option( &set, setlen,
-					opt_cmdline, "debug", optarg );
-			} else {
-				setlen = mo_add_option( &set, setlen,
-					opt_cmdline, "debug", "2" );
-			}
-			break;
-		case 'D':
-			dump = 1;
-			break;
-		case 'e':
-			exit_on_error=1;
-			break;
-		case 'h':
-			setlen = mo_add_option( &set, setlen,
-					opt_cmdline, "host", optarg );
+			config = optarg;
 			break;
 		case 'l':
-			if (optarg){ 
-				language= _strdup(optarg);
-				sql_session= strcmp(language,"sql")==0;
-				mil_session= strcmp(language,"mil")==0;
-			} else printf("language argument missing\n");
+			language = optarg;
 			break;
-		case 'p':
-			{char *m= _strdup(optarg);
-			port= strtol(m,NULL,10);
-			setlen = mo_add_option( &set, setlen,
-					opt_cmdline, "port", m );
-			}
+		case 'u':
+			user = optarg;
 			break;
 		case 'P':
-			passwd = _strdup(optarg);
+			passwd = optarg;
+			break;
+		case 'h':
+			host = optarg;
+			break;
+		case 'p':
+			port = atoi(optarg);
+			setlen = mo_add_option(&set, setlen, opt_cmdline,
+					       "port", optarg);
 			break;
 		case 's':
-			command= _strdup(optarg);
+			command = optarg;
+			break;
+		case 'D':
+			dodump = 1;
+			break;
+		case 'T':
+			mark = "Timer";
 			break;
 		case 't':
 			trace = 1;
 			break;
-		case 'T':
-			usec= GDKusec();
-			mark= "Timer ";
+		case 'd':
+			setlen = mo_add_option(&set, setlen, opt_cmdline,
+					       "debug", optarg ? optarg : "2");
 			break;
-		case 'u':
-			user = _strdup(optarg);
-			break;
-		case 'S':
-		{
-			/* should add option to a list */
-			char *tmp = strchr(optarg, '=');
+		case 'S': {
+			char *eq = strchr(optarg, '=');
 
-			if (tmp){
-				*tmp = '\0';
-				setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, optarg, tmp+1 );
-			} else {
-				fprintf(stderr, "ERROR: wrong format %s\n", 
-					optarg);
-			}
+			if (eq)
+				*eq = 0;
+			setlen = mo_add_option(&set, setlen, opt_cmdline,
+					       optarg, eq ? eq + 1 : "");
+			if (eq)
+				*eq = '=';
 			break;
 		}
-		case '?':
-			usage(prog);
+		case 'b':
+			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
+				linemode = 0;
+			else if (*optarg == 'f' || *optarg == 'F' || *optarg == '0')
+				linemode = 1;
+			else
+				usage(argv[0]);
+			break;
 		default:
-			printf( "?? getopt returned character code 0%o ??\n",c);
-			usage(prog);
+			usage(argv[0]);
 		}
 	}
 
-#ifndef NO_LOCALE
-	if (setlocale(LC_CTYPE, "") == NULL){/* why is this needed ? */
-		fprintf(stderr, "WARN: cannot set locale\n");
-	} else {
-		char *codeset = NULL;
-		if ((codeset = nl_langinfo(CODESET)) == NULL){
-			fprintf(stderr, "WARN: cannot get codeset\n");
-		} else {
-			to_utf = iconv_open("UTF-8", codeset);
-			from_utf = iconv_open(codeset, "UTF-8" );
-		}
-	}
-#endif
+	if (config)
+		setlen = mo_config_file(&set, setlen, config);
+	else
+		setlen = mo_system_config(&set, setlen);
 
-	if (config){
-		setlen = mo_config_file(&set, setlen, config );
-		free(config);
-	} else {
-		if (!(setlen = mo_system_config(&set, setlen)) )
-			usage(prog);
+	if (port == 0) {
+		char *s;
+
+		if (strcmp(language, "sql") == 0)
+			s = "sql_port";
+		else
+			s = "mapi_port";
+		if ((s = mo_find_option(set, setlen, s)) != NULL)
+			port = strtol(s, NULL, 10);
 	}
 
-	if(debug==0){
-		char *nme;
-		nme=mo_find_option(set, setlen, "mapi_debug");
-		if(nme) debug= strtol(nme, NULL, 10);
-	}
-	if(port==0){
-		char *nme, *prt;
-		if (strcmp(language,"sql")==0) {
-			prt="sql_port";
-		} else {
-			prt="mapi_port";
-		}
-		nme=mo_find_option(set, setlen, prt);
-		if(nme) port= strtol(nme, NULL, 10);
+	if (host == NULL) {
+		host = mo_find_option(set, setlen, "host");
+		if (host == NULL)
+			host = "localhost";
 	}
 
-	host= mo_find_option(set, setlen, "host");
-	if (host == NULL) strcpy(host,"localhost");
-
-
-	prompt = mo_find_option(set, setlen, "prompt");
-	if (!prompt) {
-		if(strcmp(language,"mal")) {
-			char pbuf[256];
-			snprintf(pbuf,sizeof(pbuf),"%s> ",language);
-			prompt = _strdup(pbuf);
-		} else
-			prompt = _strdup(">");
+	if (strcmp(language, "sql") == 0) {
+		if (user == NULL)
+			user = simple_prompt("User: ", BUFSIZ, 1);
+		if (passwd == NULL)
+			passwd = simple_prompt("Password: ", BUFSIZ, 0);
 	}
 
-	fstat(fileno(stdin),&st);
-	if (S_ISCHR(st.st_mode))
-		is_chrsp = 1;
-
-	if(strcmp(language,"sql") == 0) {
-		if (!user)
-			user = simple_prompt("User: ", BUFSIZ, 1 );
-		if (!passwd)
-			passwd = simple_prompt("Password: ", BUFSIZ, 0 );
-	}
-
-	toConsole = stdout;
 	mid = mapi_connect(host, port, user, passwd, language);
 	if (mid == NULL) {
-		fprintf(toConsole, "failed to allocate Mapi structure\n");
-		fflush(toConsole);
+		fprintf(stderr, "failed to allocate Mapi structure\n");
+		exit(2);
+	}
+	if (mapi_error(mid)) {
+		mapi_explain(mid, stderr);
 		exit(2);
 	}
 	mapi_trace(mid, trace);
-	if (mapi_error(mid)) {
-		mapi_explain(mid,toConsole);
-		fflush(toConsole);
-		EXIT(2);
-	}
+
 #ifdef MONET5
-	if( language && strcmp(language,"mal")){
-		char lang[BUFSIZ];
-		snprintf(lang,sizeof(lang),"%s();",language);
-		doRequest(mid, lang);
+	if (strcmp(language, "mal") != 0) {
+		char buf[1024];
+		snprintf(buf, sizeof(buf), "%s();", language);
+		doRequest(mid, buf);
 	}
 #endif
-	
-	if (dump && strcmp(language,"sql") == 0)
-		return dump_tables(mid);
 
-	while(optind < ac){
-		char *ifile = av[optind++];
-		FILE *fp;
-@-
-The lines of the input file should be consumed as a block.
-All new-lines should be removed before we turn it into
-a single query for the engine.
-@c
-		if ((fp = fopen(ifile, "r")) != NULL) {
-			size_t n, m_size = CHUNK_SIZE, m_index = 0;
-			message = malloc(CHUNK_SIZE);
-			if (mapi_is_blocked(mid)) {
-				char *rtrn;
-				MapiHdl hdl;
+	if (dodump && strcmp(language, "sql") == 0) {
+		c = dump_tables(mid);
+		mapi_disconnect(mid);
+		return c;
+	}
 
-				timerStart();
-				hdl = mapi_query_prep(mid);
-				/* just read the whole thing and submit it */
-				while ((n = fread(message, 1,
-						  CHUNK_SIZE, fp)) != 0) {
-					mapi_query_part(hdl, message, n); 
-					/* echo to stdout 
-					fwrite(message, 1, n, stdout);
-					*/
-				}
-				mapi_query_done(hdl); 
-				if (mapi_error(mid)) {
-					mapi_explain_query(hdl, stdout);
-					mapi_close_handle(hdl);
-					return 0;
-				}
-				while ((rtrn = mapi_fetch_line(hdl)) != 0) {
-					fprintf(toConsole, "%s\n", rtrn);
-				}
-				timerEnd();
-				if (mapi_error(mid)) {
-					mapi_explain_query(hdl, stdout);
-					mapi_close_handle(hdl);
-					return 0;
-				}
-				mapi_close_handle(hdl);
-			} else {
-				/* send line by line */
-				while (fgets(message, m_size, fp) != NULL) {
-					n = strlen(message);
-					while (message[n-1] != '\n') {
-						GROW_MESSAGE(n);
-						if (fgets(message + m_index, m_size - m_index, fp) == NULL)
-							break;
-						n = strlen(message);
-					}
-					fwrite(message, 1, strlen(message), stdout);
-					if (message[n - 1] == '\n')
-						message[n - 1] = 0;
-					if (doRequest(mid, message) == 0)
-						break;
-				}
-			}
-			free(message);
-		}
+	while (optind < argc) {
+		doFile(mid, argv[optind]);
+		optind++;
 	}
 
 	if (command) {
-		doRequest(mid, command );
+		c = doRequest(mid, command);
 	} else {
-		terminalInput(mid, prompt);
+		struct stat statb;
+		char *prompt = NULL;
+
+		if (fstat(fileno(stdin), &statb) == 0 &&
+		    S_ISCHR(statb.st_mode)) {
+			prompt = mo_find_option(set, setlen, "prompt");
+			if (prompt == NULL) {
+#ifdef MONET5
+				if (strcmp(language, "mal") == 0)
+					prompt = "mal>";
+				else
+#endif
+					prompt = ">";
+			}
+		}
+		c = doFileByLines(mid, stdin, prompt, linemode);
 	}
-	return 0;
+	mapi_disconnect(mid);
+	return c;
 }
