@@ -204,16 +204,14 @@ getNativeErrorCode(ODBCError *error)
  * Get the pointer to the recNumber'th (starting at 1) ODBCError
  * object or NULL when there no next object.
  *
- * Precondition: error must be valid
+ * Precondition: error must be valid or NULL
  * Returns: the pointer to the next ODBCError object or NULL when
  * the record does not exist.
  */
 ODBCError *
 getErrorRec(ODBCError *error, int recNumber)
 {
-	assert(error);
-
-	while (--recNumber > 0) {
+	while (error && --recNumber > 0) {
 		error = error->next;
 		if (!error)
 			return NULL;
