@@ -302,11 +302,11 @@ str MAPIlisten3(int *ret, int *Port, int *Maxusers, str *Cmd)
 	int    	on = 1;
 	int	i = 0;
 	char	msg[512], host[512];
-	(void) ret;
 
 	int port;
 	int maxusers;
 	char *cmd;
+	(void) ret;
 
 	cmd = Cmd? GDKstrdup(*Cmd): 0;
 	port = (*Port?*Port:MAPIPORT);

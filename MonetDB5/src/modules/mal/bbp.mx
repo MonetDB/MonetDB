@@ -88,6 +88,13 @@ pattern release(b:bat[:any,:any])
 address CMDbbpreleaseBAT
 comment "Remove the BAT from further 
 	consideration";
+pattern destroy(b:bat[:any,:any])
+address CMDbbpdestroyBAT1
+comment "BAT removal at session end";
+pattern destroy(b:bat[:any,:any],immediate:bit)
+address CMDbbpdestroyBAT
+comment "Schedule a BAT for removal at
+	session end or immediately";
 pattern toString(name:str):str 	
 address CMbbptoStr
 comment "Get the string representation of an 
@@ -225,6 +232,7 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #include "mal.h"
 #include "mal_interpreter.h"
 extern str BKCnewBATint(int *res, int *ht, int *tt, int *cap);
+extern str BKCdestroyImmediate(bit *r,int *bid, bit *immediate);
 
 
 str CMDbbpprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -324,7 +332,8 @@ str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	b= (BAT*) BBPgetdesc(i);
 	if( b == 0 ) {
 		/* Simple ignore the binding if you can;t find the bat */
-		return MAL_SUCCEED;
+		return throwException(MALEXCEPTION,"bbp.bind",
+					"failed to find '%s' in box",name);
 	}
 	lhs->vtype = TYPE_bat;
 	lhs->val.bval= i;
@@ -388,6 +397,34 @@ str CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         bid = (int *) getArgValue(stk,pci,1);
 	releaseBAT(mb,stk,*bid);
 	return MAL_SUCCEED;
+}
+@-
+A BAT can be removed forever immediately or at the end of
+a session. The references within the current frame
+should also be zapped.
+@c
+str CMDbbpdestroyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	bit ret=0;
+	int *bid;
+	bit *immediate;
+	str msg;
+        bid = (int *) getArgValue(stk,pci,1);
+        immediate = (bit *) getArgValue(stk,pci,2);
+	msg= BKCdestroyImmediate(&ret,bid,immediate);
+	if( msg== MAL_SUCCEED)
+		msg= CMDbbpreleaseBAT(mb,stk,pci);
+	return msg;
+}
+str CMDbbpdestroyBAT1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	bit ret=0;
+	int *bid;
+	bit immediate= FALSE;
+	str msg;
+        bid = (int *) getArgValue(stk,pci,1);
+	msg= BKCdestroyImmediate(&ret,bid,&immediate);
+	if( msg== MAL_SUCCEED)
+		msg= CMDbbpreleaseBAT(mb,stk,pci);
+	return msg;
 }
 
 str CMDbbpReleasA(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -528,9 +565,12 @@ for inspection.
 
 The most interesting sysbat for end-users is the BID-> NAME mapping,
 because it provides access to the system guaranteed persistent BAT identifier.
+It may be the case that the user alread introduced a BAT with this name,
+it is simply removed first
 @= Pseudo
-	if (BBPindex("@1_@2") <= 0)
-        	BATname(b, "@2");
+	if (BBPindex("@1_@2") > 0) 
+		BATdelete(BBPdescriptor(BBPindex("@1_@2")));
+	/*BATname(b, "@2");*/
         BATroles(b,"@1","@2");
 	BATmode(b,TRANSIENT);
 	BATfakeCommit(b);
@@ -780,6 +820,7 @@ str CMDbbp@2( int *ret){
                 if (BBP_logical(i)) {
                         bn= BATdescriptor(i);
                         if(bn) BUNins(b, &i, BATatoms[BAT@1(bn)].name);
+			BBPunfix(bn->batCacheid);
                 }
         }
         @:Pseudo(bbp,@2)@

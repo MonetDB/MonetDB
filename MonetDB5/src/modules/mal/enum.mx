@@ -240,6 +240,7 @@ int enum@1Tostr(int mapid, str* dst, int* len, @1* src){
 	if (b->htype != TYPE_str) {
 		fcn tostr = BATatoms[b->htype].atomToStr;
 		l= (*tostr)(dst, len, v);
+		BBPunfix(b->batCacheid);
 		return l;
 	}
 	l = strLen(v);
@@ -248,6 +249,7 @@ int enum@1Tostr(int mapid, str* dst, int* len, @1* src){
 		*dst = (char*) GDKmalloc(*len = l);
 	}
 	memcpy(*dst, v, l);
+	BBPunfix(b->batCacheid);
 	return (l-1);  /* return string length excluding eos */
 }
 int enum@1Fromstr(int mapid, str src, int* l1, @1** dst){
@@ -273,6 +275,7 @@ int enum@1Fromstr(int mapid, str src, int* l1, @1** dst){
 		**dst = @1_nil;
 	}
 	if (l) GDKfree(v);
+	BBPunfix(b->batCacheid);
 	return r;
 }
 @-
@@ -588,6 +591,7 @@ str ENUMencode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				@:encode(sht,short,loc,_loc)#
 	    }	    }
 	}
+	BBPincref(b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 } 

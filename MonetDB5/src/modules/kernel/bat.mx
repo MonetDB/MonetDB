@@ -425,15 +425,19 @@ comment "inplace replace values on the
 	given locations";
 
 #end SQL enhancement
-
-command destroy(b:bat[:any,:any]):void
-address BKCdestroy;
-command destroy(b:bat[:any,:any],immediately:bit):void
-address BKCdestroyImmediate;
-command destroy(s:str,immediately:bit):void 
-address BKCdestroy_bat
-comment "Schedule bat for removal upon session 
-	commit";
+@-
+Destroying a BAT should also involve removing references
+maintained in the MAL program structure.
+Therefore it is moved to the bbp module
+@mal
+#command destroy(b:bat[:any,:any]):void
+#address BKCdestroy;
+#command destroy(b:bat[:any,:any],immediately:bit):void
+#address BKCdestroyImmediate;
+#command destroy(s:str,immediately:bit):void 
+#address BKCdestroy_bat
+#comment "Schedule bat for removal upon session 
+	#commit";
 
 command delete(b:bat[:any$1, :any$2], 
 		h:any$1, t:any$2)
@@ -867,6 +871,7 @@ ptr BAT@1(BAT *b, ptr aggr) {
 #include <mal.h>
 
 mal_export str BKCsetRole(int *r, int *bid, str *hname, str *tname);
+mal_export str BKCdestroyImmediate(bit *r,int *bid, bit *immediate);
 
 #endif /*_BAT_H_*/
 @-
@@ -1760,13 +1765,10 @@ str BKCdestroy_bat(bit *r,str *input, bit *immediate) {
 }
 str BKCdestroyImmediate(bit *r,int *bid, bit *immediate) {
 	BAT *b;
+	char buf[512];
 	@:getBATdescriptor2(r,bid,b,destroy)@
-	*bid = 0;
-	BATmode(b, TRANSIENT);
-	if( *immediate == FALSE){
-		b->batKeeparound = 1;
-		b->batDirtydesc = 1;
-	}
+	BBPlogical(b->batCacheid,buf);
+	CMDdestroy(r,buf,immediate);
 	return MAL_SUCCEED;
 }
 str BKCdestroy(bit *r,int *bid) {
@@ -2203,10 +2205,12 @@ str BKCsetColumns(int *r, int *bid, str *hname, str *tname){
 
 
 str BKCsetName(bit *retval, int *bid, str *s){
-	int id= ABS(*bid);
+	int id= *bid;
 	BAT *b;
 	@:getBATdescriptor(retval,&id,b,setName)@
+	b= BATdescriptor(*bid);
 	CMDrename(retval, b, *s);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2388,5 +2392,6 @@ str BKCgetSequenceBase(oid *r, int *bid){
 	*r = b->hseqbase;
 	return MAL_SUCCEED;
 }
+
 @}
 @}

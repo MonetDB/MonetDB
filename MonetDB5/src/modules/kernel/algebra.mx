@@ -1425,8 +1425,10 @@ str ALGminany(ptr result, int *bid) {
 	int res=0;
 	(void) res;
         @:getBATdescriptor(&res,bid,b,minany)@
-	if( CMDminany(result,b) == GDK_SUCCEED)
+	if( CMDminany(result,b) == GDK_SUCCEED){
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
+	}
         return throwMessage("algebra.min", "GDKerror");
 }
 str ALGmaxany(ptr result, int *bid) {
@@ -1434,8 +1436,10 @@ str ALGmaxany(ptr result, int *bid) {
 	int res = 0;
 	(void) res; /* fool compiler */
         @:getBATdescriptor(&res,bid,b,maxany)@
-	if( CMDmaxany(result,b)== GDK_SUCCEED)
+	if( CMDmaxany(result,b)== GDK_SUCCEED){
+	    BBPunfix(b->batCacheid);
             return MAL_SUCCEED;
+	}
         return throwMessage("algebra.max", "GDKerror");
 }
 
