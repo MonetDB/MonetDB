@@ -607,19 +607,26 @@ static void handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
 static ptr idxTV(XqueryCtx* ctx, str name, BAT* b, oid oid_index) {
         ptr res = NULL;
 
-        if ( !b )
-                fatal_err(ctx,"NIL BAT[\"%s\"]\n",name);
-        if (is_fake_project(b)) {
+        if ( !b ) {
+                fatal_err(ctx,"idxTV: NIL BAT[\"%s\"]",name);
+        } else if ( BATcount(b) == 0 ) {
+                fatal_err(ctx,"idxTV: BAT[%s] is empty",name);
+        } else if ( is_fake_project(b) ) {
         	res = BUNtail(b,BUNfirst(b));
         } else {
                 BUN bun = NULL;
-                
+
                 BUNfndVOID(bun, b, &oid_index);
-                if ( bun )
+                if ( bun ) {
                         res = BUNtail(b,bun);
+                } else {
+                        fatal_err(ctx,"idxTV, BAT[%s]: "SZFMT" not within ["SZFMT","SZFMT"]", 
+                                  name, (size_t)oid_index, (size_t)(*(oid*)BUNhead(b,BUNfirst(b))), 
+                                  (size_t)(*(oid*)BUNhead(b,BUNlast(b)-BUNsize(b))));
+                }
         }
         if ( ! res )
-                fatal_err(ctx,"idxTV: BAT[%s][%d], NULL (ptr) result",name,oid_index);
+                fatal_err(ctx,"idxTV: BAT[%s]["SZFMT"], NULL (ptr) result",name,(size_t)oid_index);
         return res;
 }
 
@@ -670,7 +677,7 @@ static void handle_attr_data(XqueryCtx* ctx, int nFRAG, int vFRAG, oid id, int t
         str val      = (str)idxTVinWSorFRGN(ctx,frag,PROP_VAL,prop_oid);
         /* */
         oid qn_oid = *(oid*)idxTVinWSorFRGN(ctx,nFRAG,ATTR_QN,id);
-	if (0) stream_printf(GDKout,"[|nfr=%d,vfr=%d,frag=%d,po=%d|]",nFRAG,vFRAG,frag,prop_oid);
+	if (0) stream_printf(GDKout,"[|nfr=%d,vfr=%d,frag=%d,po="SZFMT"|]",nFRAG,vFRAG,frag,(size_t)prop_oid);
         str ns     = (str)idxTVinWSorFRGN(ctx,frag,QN_NS,qn_oid);
         str name   = (str)idxTVinWSorFRGN(ctx,frag,QN_LOC,qn_oid);
         /* */
@@ -704,7 +711,7 @@ static void xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
                 /* vFRAG = (int)*(oid*)idxTVinWS(ctx,PRE_FRAG,pre); */
                 vFRAG = (int)*(oid*)idxTV(ctx,"par_pre_frag",pre_frag,pre);
 	}
-	if (0) stream_printf(GDKout,"QNP[|xpre=%d,nf=%d,vf=%d|]",pre,ctx->curFRAG,vFRAG);
+	if (0) stream_printf(GDKout,"QNP[|xpre="SZFMT",nf=%d,vf=%d|]",(size_t)pre,ctx->curFRAG,vFRAG);
         switch( kind ) {
                 case (char)0: {/* ELEMENT */
                         str name = (str)idxTVinWSorFRGN(ctx,vFRAG,QN_LOC,prop);
