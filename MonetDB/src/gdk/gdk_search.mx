@@ -1167,9 +1167,7 @@ void ACCunloadall(BAT *b) {
 }
 
 void ACCremoveall(BAT *b) {
-	if (VIEWparent(b)) {
-		return;
-	}
+	VIEWunlink(b);
 	IDXdestroy(b);
 	HASHdestroy(b);
         if (b->hacctype && b->haccelerator.base) {

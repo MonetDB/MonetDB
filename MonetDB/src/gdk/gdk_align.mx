@@ -410,6 +410,8 @@ void VIEWunlink(BAT *b) {
 	BAT *p = BBP_cache(VIEWparent(b));
 	BAT *m = BATmirror(b);
 
+	if (p == NULL) return;
+
 	/* unlink accelerators shared with parent */
 	if (b->hhash_heap && b->hhash_heap == p->hhash_heap) {
 		b->hhash_heap = m->thash_heap = NULL;
@@ -533,11 +535,11 @@ void VIEWdestroy(BAT *v) {
 	BAT *b = BATreset(v);
 	BAT *m = BATmirror(b);
 
-	VIEWunlink(b);
+	ACCremoveall(b);
+
 	/* free memory private to this view */
 	if (m != NULL) {
 		GDKfree(m);
 		BBP_cache(-b->batCacheid) = NULL;
 	}
-	ACCremoveall(b);
 }
