@@ -97,7 +97,8 @@ char	*GDKenvironName[GDKPROP] = {
 extern int gethostname(char *s, int len);
 #endif
 
-#ifdef DEF_SETENV
+#ifndef HAVE_SETENV
+#ifdef HAVE_PUTENV
 int setenv(char *name, char *value, int overwrite) {
         int ret = 0;
         if (overwrite || getenv(name) == NULL) {
@@ -110,6 +111,7 @@ int setenv(char *name, char *value, int overwrite) {
         }
         return ret;
 }
+#endif
 #endif
 
 int GDKhomeScan(str usr, str db, str home) {
@@ -416,6 +418,7 @@ int BATSIGinit() {
 	(void) signal(SIGBUS,  (void (*)()) BATSIGcrash); 
 	(void) signal(SIGSEGV, (void (*)()) BATSIGcrash); 
 	(void) signal(SIGPIPE, (void (*)()) BATSIGpipe); 
+	(void) signal(SIGHUP,  (void (*)()) MT_exit_thread);
 	return 0;
 }
 
@@ -1321,11 +1324,18 @@ Thread THRget(MT_Id tid) {
 	return (GDKthreads+(int)tid-1);
 }
 
+static INLINE 
+unsigned long THRsp(){
+	int l = 0;
+	unsigned long sp = (unsigned long)(&l);
+	
+	return sp;
+}
+
 Thread THRnew(MT_Id pid, str name) {
 	MT_Id tid = 0;
  	Thread 	t;
 	Thread	s; 
-
 
 	MT_set_lock(GDKthreadLock, "THRnew"); 
 	for (s = GDKthreads, t = s + THREADS; s < t; s++) {
@@ -1353,6 +1363,7 @@ Thread THRnew(MT_Id pid, str name) {
 	s->data[0] = stdout; 
 	s->name = name; 
 	s->cleanup = NULL;
+	s->sp = THRsp();
 	PARDEBUG THRprintf(GDKerr, "%lu sp = %lu\n", 
 			(unsigned long) s->tid, (unsigned long) pid, s->sp); 
 	PARDEBUG THRprintf(GDKerr, "nrofthreads %d\n", GDKnrofthreads); 
@@ -1410,8 +1421,13 @@ int THRcnt() {
 	return GDKnrofthreads; 
 }
 
+#define THREAD_STACK_SIZE	((unsigned long) 1024*1024)
 
 int THRhighwater() {
+	unsigned long c = THRsp();
+	Thread s = GDK_find_thread(MT_getpid());
+	unsigned long diff = (c<s->sp)?s->sp-c:c-s->sp;
+	if (diff > 0.9*THREAD_STACK_SIZE);
 	return 0;
 }
 

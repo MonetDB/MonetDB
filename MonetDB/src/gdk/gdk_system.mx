@@ -255,35 +255,18 @@ void MT_init() {
 	MT_system_lock = (MT_Lock) &l;
 }
 
-typedef struct {
-	void (*function)(void *);
-	void *arg;
-} MT_create_thread_t;
-
-void 	MT_create_thread_siginit (void *arg){
-	MT_create_thread_t mt = *(MT_create_thread_t*) arg; 
-	GDKfree(arg);
-	signal(SIGHUP, MT_exit_thread);
-	(*mt.function)(mt.arg);
-}
-
-int	MT_create_thread (MT_Id *t, void (*function)(void *), void *arg) {
-	MT_create_thread_t *mt = (MT_create_thread_t*) \
-					GDKmalloc(sizeof(MT_create_thread_t));
+int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
 	sigset_t new_mask, orig_mask;
 	pthread_attr_t attr;
 	int  ret;
 
-	mt->arg = arg;
-	mt->function = function;
         (void)sigfillset(&new_mask);
         (void)sigdelset(&new_mask, SIGINT);
         (void)sigdelset(&new_mask, SIGQUIT);
         (void)pthread_sigmask(SIG_SETMASK, &new_mask, &orig_mask);
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-	ret = pthread_create((pthread_t*)t, &attr, \
-			&MT_create_thread_siginit,(void*)mt);
+	ret = pthread_create((pthread_t*)t, &attr, (void*(*)(void*))f, arg);
         if (ret == 0) (*(int*)t)++; /* use pthread-id + 1 */
         (void)pthread_sigmask(SIG_SETMASK, &orig_mask, NULL);
 	return ret;

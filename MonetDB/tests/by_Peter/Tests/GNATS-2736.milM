@@ -16,6 +16,7 @@
 # direct_idx_int
 #
 # this script intends to test them all.
+module(aggr);
 
 b_int := bat(int,str).insert(1,"1").insert(2,"2").insert(1,"1");
 b_int.insert(3,"3").insert(4,"4").insert(5,"5").insert(6,"6");

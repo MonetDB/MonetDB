@@ -194,7 +194,7 @@ AC_FUNC_VPRINTF
 AC_FUNC_MEMCMP 
 AC_CHECK_FUNCS(mkdir rmdir getcwd getopt rlimit)
 AC_CHECK_FUNCS(strcspn strdup strstr strtod strtol strerror )
-AC_CHECK_FUNCS(gethostname gettimeofday putenv select getpgid)
+AC_CHECK_FUNCS(gethostname gettimeofday setenv putenv select getpgid)
 
 AC_CHECK_FUNCS(ctime_r)
 ctime_r3=yes
