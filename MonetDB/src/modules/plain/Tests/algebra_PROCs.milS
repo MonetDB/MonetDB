@@ -17,13 +17,13 @@ b.insert(2,2.2);
 b.insert(3,3.3);
 b.print;
 
-thetajoin(a,b,LT).print;
+thetajoin(a,b,LT,lng(nil)).print;
 join(a,b,"loth").print;
 
 b.insert(4,4.4);
 b.print;
 
-thetajoin(a,b,LT).print;
+thetajoin(a,b,LT,lng(nil)).print;
 join(a,b,"loth").print;
 
 select(b,flt(nil),3.4).print;

@@ -1066,7 +1066,7 @@ int CMDunload(bit *res, str input) {
 		BBPfix(bid);
 		b = BBP_cache(bid);
 		if (b && b->batPersistence == SESSION) BATmode(b, TRANSIENT);
-		*res = BBPunfix(bid);
+		*res = BBPunfix(bid) == 0;
 	}
         return GDK_SUCCEED;
 }

@@ -541,9 +541,9 @@ that for the moment are defined as procs.
             var h := $h;
             var t := $t;
             if (swapped) {
-                r@batloop() if ((*fcn)($h,t,$(4..))) bn.insert(h,$t);
+                r@batloop() if ((*fcn)($h,t,$(5..))) bn.insert(h,$t);
             } else {
-                r@batloop() if ((*fcn)(t,$h,$(4..))) bn.insert(h,$t);
+                r@batloop() if ((*fcn)(t,$h,$(5..))) bn.insert(h,$t);
             }
         }
         if (swapped) {
