@@ -36,6 +36,8 @@ values as parameters, and produce new result values, but
 @* Module Definition 
 @m
 .MODULE algebra;
+
+.USE uchr;
 @
 We split between selections that return one value, and selections 
 that return a BAT.
@@ -397,7 +399,7 @@ Give the lowest tail value. Error on empty BATs."
 Give the highest tail value. Error on empty BATs."
 @+ Type-Specific Sum, Max and Min
 @T
-For X $\in$ \{ sht,int,flt,dbl,lng \},  we define (using the {\em aggregate}
+For X $\in$ \{ uchr,sht,int,flt,dbl,lng \},  we define (using the {\em aggregate}
 macro):
 \begin{itemize}
 \item .COMMAND sum(BAT[any,X] : X, 
@@ -409,6 +411,10 @@ macro):
 @= sum_definition
 .COMMAND @1_@4 ( BAT[any,@2] ) : @4 = CMD@1_@2_@4; @3
 @= sum
+@:sum_definition(@1,uchr,@2,uchr)@
+@:sum_definition(@1,uchr,@2,sht)@
+@:sum_definition(@1,uchr,@2,int)@
+@:sum_definition(@1,uchr,@2,lng)@
 @:sum_definition(@1,sht,@2,sht)@
 @:sum_definition(@1,sht,@2,int)@
 @:sum_definition(@1,sht,@2,lng)@
@@ -424,6 +430,7 @@ macro):
 @= aggregate_definition
 .COMMAND @1 ( BAT[any,@2] ) : @2 = CMD@1_@2; @3
 @= aggregate
+@:aggregate_definition(@1,uchr,@2)@
 @:aggregate_definition(@1,sht,@2)@
 @:aggregate_definition(@1,int,@2)@
 @:aggregate_definition(@1,flt,@2)@
@@ -711,11 +718,12 @@ that for the moment are defined as procs.
             "sorts a BAT according to its head (primary) and tail values (secondary).\
              (straight forward hack, not tuned for performance at all, just used for testing.)", "algebra");
 
-    proc sum( bat[any,sht] b ) : sht { return sum_sht(b); }
-    proc sum( bat[any,int] b ) : int { return sum_int(b); }
-    proc sum( bat[any,lng] b ) : lng { return sum_lng(b); }
-    proc sum( bat[any,flt] b ) : flt { return sum_flt(b); }
-    proc sum( bat[any,dbl] b ) : dbl { return sum_dbl(b); }
+    proc sum( bat[any,uchr] b ) : uchr { return sum_uchr(b); }
+    proc sum( bat[any,sht] b )  : sht  { return sum_sht(b); }
+    proc sum( bat[any,int] b )  : int  { return sum_int(b); }
+    proc sum( bat[any,lng] b )  : lng  { return sum_lng(b); }
+    proc sum( bat[any,flt] b )  : flt  { return sum_flt(b); }
+    proc sum( bat[any,dbl] b )  : dbl  { return sum_dbl(b); }
 
 @* Cost Model
 This module contains a full cost model on the algebraic 
@@ -959,6 +967,7 @@ int CMDsum_@1_@2(@2* res, BAT *b) {
 #ifndef ALGEBRA_H
 #define ALGEBRA_H
 
+#include "uchr.h"
 #include "algebra.proto.h"
 
 algebra_export ptr BATmax( BAT *b, ptr res );
@@ -1031,7 +1040,7 @@ ptr BAT@1(BAT *b, ptr aggr) {
 	    @:aggr@1(chr,loc,simple,chr,void)@ 
 	} else {
 	    switch(ATOMstorage(t)) {
-	    case TYPE_chr: @:aggr@1(chr,loc,simple,chr,atom)@ break;
+	    case TYPE_chr: @:aggr@1(uchr,loc,simple,uchr,atom)@ break;
 	    case TYPE_sht: @:aggr@1(sht,loc,simple,sht,atom)@ break;
 	    case TYPE_int: @:aggr@1(int,loc,simple,int,atom)@ break;
 	    case TYPE_flt: @:aggr@1(flt,loc,simple,flt,atom)@ break;
@@ -1049,6 +1058,10 @@ ptr BAT@1(BAT *b, ptr aggr) {
 @:BATaggr(min)@
 @:BATaggr(max)@
 
+@:sum_implementation(uchr,uchr,0)@
+@:sum_implementation(uchr,sht,0)@
+@:sum_implementation(uchr,int,0)@
+@:sum_implementation(uchr,lng,0)@
 @:sum_implementation(sht,sht,0)@
 @:sum_implementation(sht,int,0)@
 @:sum_implementation(sht,lng,0)@
@@ -1059,6 +1072,7 @@ ptr BAT@1(BAT *b, ptr aggr) {
 @:sum_implementation(flt,dbl,0.0)@
 @:sum_implementation(dbl,dbl,0.0)@
 
+@:aggregate_implementation(uchr)@
 @:aggregate_implementation(sht)@
 @:aggregate_implementation(int)@
 @:aggregate_implementation(flt)@

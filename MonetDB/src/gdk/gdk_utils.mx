@@ -981,6 +981,7 @@ Go there and obtain the global database lock.
 	if (chdir(GDKdirStr) < 0 ){
 	    if (!GDKcreatedir(GDKdirStr) || chdir(GDKdirStr) < 0)
 	        GDKfatal("GDKlockHome: could not move to %s\n", GDKdirStr);
+	    GDKwarning("GDKlockHome: created directory %s\n", GDKdirStr);
 	}
 	if (GDKrecovery  && unlink(GDKLOCK) < 0) {
 	    GDKfatal("GDKlockHome: unlock DB failed\n"); 

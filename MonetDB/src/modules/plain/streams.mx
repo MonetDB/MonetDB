@@ -168,62 +168,45 @@ int io_stdin (Stream *ret) { *(stream**)ret = GDKin;  return GDK_SUCCEED; }
 int io_stdout(Stream *ret) { *(stream**)ret = GDKout; return GDK_SUCCEED; }
 int io_stderr(Stream *ret) { *(stream**)ret = GDKerr; return GDK_SUCCEED; }
 
-int stream_open_rstream( Stream *S, str filename ){
-	if ((*(stream**)S = open_rstream( filename )) == NULL){
+@= open_stream
+int stream_open_@1( Stream *S, str filename ){
+	stream *s;
+
+	if ((s = open_@1( filename )) == NULL || s->errnr){
+		if (s) s->destroy(s);
+		GDKerror("Could not open file %s\n", filename );
 		return GDK_FAIL; 
 	} else {
+		*(stream**)S = s;
 		return GDK_SUCCEED;
 	}
 }
-int stream_open_wstream( Stream *S, str filename ){
-	if ((*(stream**)S = open_wstream( filename )) == NULL){
+@c
+@:open_stream(rstream)@
+@:open_stream(wstream)@
+@:open_stream(rastream)@
+@:open_stream(wastream)@
+
+@= open_socket
+int stream_socket_@1( Stream *S, int *socket, str name ){
+	stream *s;
+
+	if ((s = socket_@1( *socket, name )) == NULL || s->errnr){
+		if (s) s->destroy(s);
+		GDKerror("Could not open socket %s\n", name );
 		return GDK_FAIL; 
 	} else {
+		*(stream**)S = s;
 		return GDK_SUCCEED;
 	}
 }
-int stream_open_rastream( Stream *S, str filename ){
-	if ((*(stream**)S = open_rastream( filename )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_open_wastream( Stream *S, str filename ){
-	if ((*(stream**)S = open_wastream( filename )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_socket_rstream( Stream *S, int *socket, str name ){
-	if ((*(stream**)S = socket_rstream( *socket, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_socket_wstream( Stream *S, int *socket, str name ){
-	if ((*(stream**)S = socket_wstream( *socket, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_socket_rastream( Stream *S, int *socket, str name ){
-	if ((*(stream**)S = socket_rastream( *socket, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_socket_wastream( Stream *S, int *socket, str name ){
-	if ((*(stream**)S = socket_wastream( *socket, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
+@c
+@:open_socket(rstream)@
+@:open_socket(wstream)@
+@:open_socket(rastream)@
+@:open_socket(wastream)@
+
+@c
 int stream_write_string( Stream *S, str data ){
 	stream *s = *(stream**)S;
 	s->write( s, data, 1, strlen(data));

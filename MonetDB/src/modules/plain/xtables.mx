@@ -427,8 +427,8 @@ PROC test_xtables() : void := {
 @{
 @* Implementation Code
 @c
-#include "xtables.proto.h"
 #include "algebra.h"
+#include "xtables.proto.h"
 
 @+ HistoLink
 The histolink accelerator establishes a link between a BAT column and a 
