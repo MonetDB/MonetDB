@@ -97,27 +97,37 @@ extern "C" {
 extern void		static_module_init(Client c, char buf[]); 
 }
 
+#ifdef HAVE_NEW
 #include <new>
+#endif
 void *operator new( size_t size ) 
+#ifdef HAVE_NEW
 throw(std::bad_alloc) 
+#endif
 {
         void *ptr = GDKmalloc( size );
         return(ptr);
 }
 void operator delete( void *ptr ) 
+#ifdef HAVE_NEW
 throw() 
+#endif
 {
         GDKfree( ptr );
 }
 #if defined(__GNUC__) && defined(__cplusplus)
 void *operator new[]( size_t size ) 
+#ifdef HAVE_NEW
 throw (std::bad_alloc)
+#endif
 {
         void *ptr = GDKmalloc( size );
         return(ptr);
 }
 void operator delete[]( void *ptr ) 
+#ifdef HAVE_NEW
 throw()
+#endif
 {
         GDKfree( ptr );
 }

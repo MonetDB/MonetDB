@@ -268,6 +268,9 @@
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 /* #undef HAVE_NDIR_H */
 
+/* Define to 1 if you have the <new> header file. */
+#define HAVE_NEW 1
+
 /* Define to 1 if you have the <netdb.h> header file. */
 /* #undef HAVE_NETDB_H */
 
