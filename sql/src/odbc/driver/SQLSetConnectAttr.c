@@ -32,21 +32,19 @@ SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
 
 	clearDbcErrors(dbc);
 
-	if (ValuePtr == NULL) {
-		/* invalid use of null pointer */
-		addDbcError(dbc, "HY009", NULL, 0);
-		return SQL_ERROR;
-	}
-
 	switch (Attribute) {
 	case SQL_ATTR_AUTOCOMMIT:
-		dbc->autocommit = (SQLUINTEGER) (size_t) ValuePtr == SQL_AUTOCOMMIT_ON;
-		if (dbc->mid) {
-			mapi_setAutocommit(dbc->mid, dbc->autocommit);
-			if (dbc->autocommit) {
-				/* trigger autocommit */
-				mapi_close_handle(mapi_query(dbc->mid, ""));
-			}
+		switch ((SQLUINTEGER) (size_t) ValuePtr) {
+		case SQL_AUTOCOMMIT_ON:
+		case SQL_AUTOCOMMIT_OFF:
+			dbc->sql_attr_autocommit = (SQLUINTEGER) (size_t) ValuePtr;
+			if (dbc->mid)
+				mapi_setAutocommit(dbc->mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
+			break;
+		default:
+			/* HY024 Invalid attribute value */
+			addDbcError(dbc, "HY024", NULL, 0);
+			return SQL_ERROR;
 		}
 		return SQL_SUCCESS;
 

@@ -48,8 +48,7 @@ SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 		* (SQLUINTEGER *) ValuePtr = SQL_ASYNC_ENABLE_OFF;
 		break;
 	case SQL_ATTR_AUTOCOMMIT:
-/* TODO: AUTOCOMMIT should be ON by default. This has to be changed including the behavior of SQLExecute(). */
-		* (SQLUINTEGER *) ValuePtr = SQL_AUTOCOMMIT_OFF;
+		* (SQLUINTEGER *) ValuePtr = dbc->sql_attr_autocommit;
 		break;
 	case SQL_ATTR_CONNECTION_TIMEOUT:
 		* (SQLUINTEGER *) ValuePtr = 0;	/* no timeout */

@@ -44,7 +44,7 @@ typedef struct tODBCDRIVERDBC {
 	char *PWD;		/* Password for User ID or NULL */
 	char *DBNAME;		/* Database Name or NULL */
 	int Connected;		/* 1 is Yes, 0 is No */
-	int autocommit;
+	SQLUINTEGER sql_attr_autocommit;
 
 	/* MonetDB connection handle & status information */
 	Mapi mid;		/* connection with server */

@@ -133,7 +133,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		if (dbc->DBNAME != NULL)
 			free(dbc->DBNAME);
 		dbc->DBNAME = schema;
-		mapi_setAutocommit(mid, dbc->autocommit);
+		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
 	}
 
 	return rc;
