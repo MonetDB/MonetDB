@@ -2,7 +2,7 @@ import string
 import regsub
 import os
 
-automake_ext = [ 'c', 'cc', 'h', 'y', 'yy', 'l', 'll' ]
+automake_ext = [ 'c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c' ]
 script_ext = [ 'mil' ]
 
 def msc_subdirs(fd, var, values, msc ):
@@ -113,10 +113,15 @@ def msc_translate_ext( f ):
 def msc_deps(fd,deps,objext, msc):
   for t,deplist in deps.items():
     t = msc_translate_ext(t)
+    b,ext = string.split(t,".",1)
     fd.write( t + ":" )
     for d in deplist:
       fd.write( " " + msc_translate_dir(msc_translate_ext(d),msc) )
     fd.write("\n");
+    if (ext == "glue.h"):
+	fd.write( "\t$(MEL) $(INCLUDES) -o $@ -glue $<\n" );
+    if (ext == "proto.h"):
+	fd.write( "\t$(MEL) $(INCLUDES) -o $@ -proto $<\n" );
 
 def msc_binary(fd, var, binmap, msc ):
 
@@ -163,7 +168,7 @@ def msc_binary(fd, var, binmap, msc ):
       if (target not in SCRIPTS):
         SCRIPTS.append(target)
   fd.write(srcs + "\n")
-  fd.write( "%s.exe: $(%s_OBJS) $(%s_LIBS)\n" % (binname,binname,binname))
+  fd.write( "%s.exe: $(%s_OBJS)\n" % (binname,binname))
   fd.write("\t$(CC) $(CFLAGS) -Fe%s.exe $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /subsystem:console\n\n" % (binname,binname,binname)) 
 
   if (len(SCRIPTS) > 0):
@@ -217,7 +222,7 @@ def msc_bins(fd, var, binsmap, msc ):
           if (target not in SCRIPTS):
             SCRIPTS.append(target)
     fd.write(srcs + "\n")
-    fd.write( "%s.exe: $(%s_OBJS) $(%s_LIBS)\n" % (bin,bin,bin))
+    fd.write( "%s.exe: $(%s_OBJS)\n" % (bin,bin))
     fd.write("\t$(CC) $(CFLAGS) -Fe%s.exe $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /subsystem:console\n\n" % (bin,bin,bin)) 
 
   if (len(SCRIPTS) > 0):
@@ -277,7 +282,7 @@ def msc_library(fd, var, libmap, msc ):
       if (target not in SCRIPTS):
         SCRIPTS.append(target)
   fd.write(srcs + "\n")
-  fd.write( "lib"+sep+libname + ".dll: $(" + libname + "_OBJS) $(lib" +libname+ "_LIBS)\n" )
+  fd.write( "lib"+sep+libname + ".dll: $(" + libname + "_OBJS)\n" )
   fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(%s_OBJS) $(lib%s_LIBS) $(LDFLAGS) \n\n" % (libname,sep,libname,libname))
 
   if (len(SCRIPTS) > 0):
@@ -325,7 +330,7 @@ def msc_libs(fd, var, libsmap, msc ):
           if (target not in SCRIPTS):
             SCRIPTS.append(target)
     fd.write(srcs + "\n")
-    fd.write( "lib"+sep+lib + ".dll: $(lib"+sep+lib+"_OBJS) $(lib"+sep+lib+"_LIBS)\n" )
+    fd.write( "lib"+sep+lib + ".dll: $(lib"+sep+lib+"_OBJS)\n" )
     fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(lib%s%s_OBJS) $(lib%s%s_LIBS) $(LDFLAGS) \n\n" % (sep,lib,sep,lib,sep,lib))
 
   if (len(SCRIPTS) > 0):
@@ -386,6 +391,7 @@ CC = cl -G5 -GF -Ox -W3 -MD -nologo
 LDFLAGS = /link
 INSTALL = copy
 MKDIR = mkdir
+ECHO = echo
 CD = cd
 
 CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H
@@ -459,8 +465,8 @@ CXXEXT = \\\"cxx\\\"
 
   if (topdir == cwd):
       fd.write("config.h: winconfig.h\n\t$(INSTALL) winconfig.h config.h\n")
-      fd.write("unistd.h: \t$(ECHO) \"#ifndef UNISTD_H\n#define UNISTD_H\n#include <io.h>\n#endif\n\" > unistd.h")
-      fd.write("sys\\socket.h: \tmkdir sys\n\t$(ECHO) \"#ifndef SOCKET_H\n#define SOCKET_H\n#include <winsock.h>\n#endif\n\" > sys\\socket.h")
+      fd.write("unistd.h: \n\t$(ECHO) #ifndef UNISTD_H > unistd.h\n\t$(ECHO) #define UNISTD_H >> unistd.h\n\t$(ECHO) #include \"io.h\" >> unistd.h\n\t$(ECHO) #endif >> unistd.h\n")
+      fd.write("sys\\socket.h: \n\tmkdir sys\n\t$(ECHO) #ifndef SOCKET_H > sys\\socket.h\n\t$(ECHO) #define SOCKET_H >> sys\\socket.h\n\t$(ECHO) #include \"winsock.h\" >> sys\\socket.h\n\t$(ECHO) #endif >> sys\\socket.h\n")
 
   fd.write("install-msc: install-exec install-data\n")
   fd.write("install-exec: all\n")

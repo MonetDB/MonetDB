@@ -95,6 +95,15 @@ extern void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t 
 extern struct mallinfo MT_mallinfo();
 
 #ifdef WIN32
+#define RTLD_LAZY	1
+#define RTLD_NOW	2
+#define RTLD_GLOBAL	4
+
+extern void *dlopen (const char *__file, int __mode);
+extern int dlclose (void *__handle);
+extern void *dlsym (void * __handle, const char * __name);
+extern char *dlerror (void);
+
 #include <winsock.h>
 extern int MT_gettimeofday(struct timeval *tv, int *ignore_zone); 
 #define gettimeofday(x,y)	MT_gettimeofday(x,y)

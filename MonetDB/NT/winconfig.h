@@ -171,6 +171,9 @@
 /* Define if you have the <fcntl.h> header file.  */
 #define HAVE_FCNTL_H 1
 
+/* Define if you have the <dlfcn.h> header file.  */
+#define HAVE_DLFCN_H 1
+
 /* Define if you have the <getopt.h> header file.  */
 #undef HAVE_GETOPT_H 
 

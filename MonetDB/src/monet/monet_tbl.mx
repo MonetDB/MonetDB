@@ -313,7 +313,9 @@ int	DL_regfcn(void* tbl, ptr fcnptr, str name);
 @c
 #ifndef STATIC
 
-#include <dlfcn.h>
+#ifdef HAVE_DLFCN_H
+# include <dlfcn.h>
+#endif
 
 #else
 

@@ -28,13 +28,7 @@ MX=$(TOPDIR)\src\utils\Mx\Mx
 .mx.mil:
 	$(MX) $(MXFLAGS) -x mil $<
 
-.m.proto_h:
-	$(MEL) $(INCLUDES) -o $@ -proto $<
-
-.m.glue_c:
-	$(MEL) $(INCLUDES) -o $@ -glue $<
-
-# needed for yacc/lex output generated under unix used 
+# needed for yacc/lex output generated under unix 
 .cc.cxx:
 	rename $< $@
 
