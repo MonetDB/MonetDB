@@ -478,6 +478,12 @@ Some explanation of what mem_usage() and vm_usage() display:
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
 #endif
+
+#ifndef NATIVE_WIN32
+# ifndef HZ
+#  define HZ CLK_TCK
+# endif
+#endif
  
 #define PARAM(x)        (argv+x)
 #define RETVAL          (argv)

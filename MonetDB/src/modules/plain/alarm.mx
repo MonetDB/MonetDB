@@ -167,7 +167,7 @@ void CLKprelude(void){
 void CLKepilogue(void){
 	int k;
 #ifdef SIGALRM
-#if !(defined(LINUX) || defined(WIN32) || defined(CYGWIN32))
+#if !(defined(LINUX) || defined(WIN32) || defined(CYGWIN32) || defined(__MACH__))
         (void) sigignore(SIGALRM);
 #endif
 #endif

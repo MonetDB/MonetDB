@@ -294,8 +294,8 @@ fi
 #	conf_opts="${conf_opts} --with-pthread=/tmp"
 #fi
 
-if [ "${os}" != "Linux"  -a  "${os}" != "CYGWIN" ] ; then
-	# on Linux & CYGWIN, /soft/local is identical with /usr/local
+if [ "${os}" != "Linux"  -a  "${os}" != "CYGWIN"  -a  "${os}" != "Darwin" ] ; then
+	# on Linux, CYGWIN, & Darwin, /soft/local is identical with /usr/local
 	# prepend ${softpath} to ${binpath} & ${libpath}
 	binpath="${softpath}/bin:${binpath}"
 	libpath="${softpath}/lib:${libpath}"

@@ -71,6 +71,9 @@ gdk_export BAT *batcopy(BAT *b, int ht, int tt, int writeable);
 #include "gdk_search.h"
 #include "gdk_utils.h"
 
+#ifdef ALIGN
+#undef ALIGN
+#endif
 #define ALIGN(n,b)	((b)?(b)*(1+(((n)-1)/(b))):n)
 
 BAT *BATcreatedesc(int ht, int tt) {

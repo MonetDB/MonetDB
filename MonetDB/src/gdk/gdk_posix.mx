@@ -801,6 +801,14 @@ int *win_errno(void){
 
 #define MT_PAGESIZE(s)		((((s-1)/MT_pagesize())+1)*MT_pagesize())
 
+#ifdef __MACH__
+#define MMAP_FLAGS MAP_ANON|MAP_PRIVATE
+#define MMAP_FD    -1
+#else
+#define MMAP_FLAGS MAP_PRIVATE
+#define MMAP_FD    fd
+#endif
+
 void *MT_vmalloc(size_t size, size_t *maxsize) {
         int fd = open("/dev/zero", O_RDWR, 0666);
         char *q, *r = (char*) -1;
@@ -812,15 +820,15 @@ void *MT_vmalloc(size_t size, size_t *maxsize) {
         *maxsize = MT_PAGESIZE(*maxsize);
         if (*maxsize > size) {
                 r = (char*) mmap(NULL, *maxsize, PROT_NONE, 
-				MAP_PRIVATE|MAP_NORESERVE, fd, 0);
+				MMAP_FLAGS|MAP_NORESERVE, MMAP_FD, 0);
         }
         if (r == (char*) -1) {
                 *maxsize = size;
                 q = (char*) mmap(NULL, size, PROT_READ|PROT_WRITE, 
-				MAP_PRIVATE, fd, 0);
+				MMAP_FLAGS, MMAP_FD, 0);
         } else {
                 q = (char*) mmap(r, size, PROT_READ|PROT_WRITE, 
-				MAP_PRIVATE|MAP_FIXED, fd, 0);
+				MMAP_FLAGS|MAP_FIXED, MMAP_FD, 0);
         }
         close(fd);
         return (void*) ((q == (char*) -1)?NULL:q);

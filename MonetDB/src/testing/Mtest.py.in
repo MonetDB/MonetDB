@@ -811,10 +811,10 @@ def StartAt(cmd) :
 def StopAt(ATJOB,ME) :
     while  os.path.isfile(path("/tmp/.MkillUsers."+ME)):
         time.sleep(9)
-    if OS == "Linux":
-        ATRM = 'at -d '
-    else:
+    if OS == "IRIX" or OS == "IRIX64":
         ATRM = 'at -r '
+    else:
+        ATRM = 'atrm '
     os.system(ATRM+ATJOB)
     #TODO:
     #LOG1x at -l >&2
