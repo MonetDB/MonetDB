@@ -17,20 +17,20 @@
 
 @f gdk_value
 @a Martin L. Kersten & Peter Boncz
-@v 2.0 
+@v 2.0
 @+ Value representation
 
- 
+
 When manipulating values, MonetDB puts them into value records.
-The built-in types have a direct entry in the union. Others should 
+The built-in types have a direct entry in the union. Others should
 be represented as a pointer of memory in pval or as a string, which
 is basically the same. In such cases the @%len@ field indicates
 the size of this piece of memory.
 
 MonetDB extenders will use value records for passing parameters to
-their new operators. MonetDB algebraic commands receive an 
+their new operators. MonetDB algebraic commands receive an
 (argc, argv) combination, where
-argc is an integer indicating the size of the the argv array of value 
+argc is an integer indicating the size of the the argv array of value
 records. On call, the first record, argv[0], is always empty. The
 routine must place its return value - if any - there. The other
 values are the parameters.
@@ -208,7 +208,7 @@ up with an ILLEGALVALUE.
 	case TYPE_bit:
 	case TYPE_chr:
 		@1 = (@2) t->val.cval[0];
-  		break;
+		break;
 	case TYPE_sht:
 		@1 = (@2) t->val.shval;
 		break;

@@ -45,25 +45,25 @@ so let's (ab?)use it!
 This means
 
 @itemize
-@item	
+@item
 Expanding on whether we created the result BAT (at least) as big as
 	the input BAT, or not (see BAT_select in gdk_batop.mx). In the first
 	case ("nocheck"), we do not have to check for a "BAT overflow" in
 	the inner loop.  Further, we need to set bn->batBuns->free only once
 	we're done.
-@item	
+@item
 Expanding on the output-tail-type which is either identical to
 	input-tail-type or TYPE_void (uselect).
-@item	
+@item
 Expand on output-head-type; usually inherited from input-head-type.
-@item	
+@item
 Expanding on input-head-type for data read.  Taking special care of
 	void/oid.
-@item	
+@item
 Expanding on the type of predicate: either equi, or range.  The
 	latter with both, one, or none of upper bound and lower bound.  In
 	case of a range select we skip all nil.
-@item	
+@item
 Expanding on input-tail-type for data read and comparison.  Most is
 	straight forward.  Taking special care of equi selects on str when
 	there are no doubles in the heap.
@@ -180,19 +180,19 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 	ATOM_PUT_INT(tpe,hp,dst,src)					\
 	ATOM_PUT_LNG(tpe,hp,dst,src)					\
 	if (tpe == TYPE_bat) {						\
-                BBPincref(*(bat*) src, TRUE);				\
+		BBPincref(*(bat*) src, TRUE);				\
 		*(bat*) dst = *(bat*) src;				\
 	} else if (tpe == TYPE_str) {					\
-                if (strPut(hp, (var_t*) dst, (str) src) == 0) {		\
+		if (strPut(hp, (var_t*) dst, (str) src) == 0) {		\
 				goto bunins_failed;			\
 		}							\
 	} else {							\
 		if (BATatoms[tpe].atomPut) {				\
-                	if ((*BATatoms[tpe].atomPut)(hp, (var_t*) dst, (str) src) == 0) { \
+			if ((*BATatoms[tpe].atomPut)(hp, (var_t*) dst, (str) src) == 0) { \
 				goto bunins_failed;			\
 			}						\
 		} else {						\
-                	memcpy(dst, src, ATOMsize(tpe));		\
+			memcpy(dst, src, ATOMsize(tpe));		\
 		}							\
 		ATOMfix(tpe, src);					\
 	}
@@ -201,11 +201,11 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 #define VOID_PUT(tpe,hp,dst,src)   {}
 
 @-
-Type-specific 
-HT_bunfastins_nocheck_noinc, HT_bunfastins_nocheck & HT_bunfastins 
+Type-specific
+HT_bunfastins_nocheck_noinc, HT_bunfastins_nocheck & HT_bunfastins
 should go to gdk.mx, and
-HT_BUNfastins 
-should go to gdk_bat.mx 
+HT_BUNfastins
+should go to gdk_bat.mx
 replacing their generic versions there.
 @h
 @= T_BUNfastins
@@ -321,7 +321,7 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 @-
 With all the expansions enabled, (our) GNU compiler (gcc 3.2.1)
 on medusa (IRIX64) fails to produce (correctly) working 64-bit code.
-Apparently, the jumps from the return statements in the leaves of the 
+Apparently, the jumps from the return statements in the leaves of the
 decision tree to the end of the dispatcher function (BAT_scanselect())
 get too long --- at least the Mserver segfaults on these returns.
 An attempt to use labels and goto's to provide "stepping stones" did not
@@ -334,10 +334,14 @@ Hence, we skip some type-expansions in this very case.
 @= seqscanPrologue
 	BUN p,q;
 	int xx, t = b->ttype;
-        ptr nil = ATOMnilptr(t);
-	(void)nil; (void) tl; (void) th;
+	ptr nil = ATOMnilptr(t);
+
+	(void) nil;
+	(void) tl;
+	(void) th;
 @= seqscanEpilogue
-	if (!bn->batDirty) bn->batDirty = TRUE;
+	if (!bn->batDirty)
+		bn->batDirty = TRUE;
 	return bn;
 bunins_failed:
 	BBPreclaim(bn);
@@ -352,7 +356,7 @@ input BAT, or not (see BAT_select in gdk_batop.mx). In the first case
 Further, we need to set bn->batBuns->free only once we're done.
 
 @c
-/*	@1: input-tail-type for working function name, 
+/*	@1: input-tail-type for working function name,
 	    prefixed with predicate type (eq,lh,ln,nl,nn)
 	@2: output-tail-type for bunfastins macro name
 	@3: "tloc" / "tvar" specifying how to read the tail-input
@@ -363,10 +367,10 @@ Further, we need to set bn->batBuns->free only once we're done.
 	@7: output-head-type for bunfastins macro name
 	@8: how to access the head-input: "BUNhloc(b,p)", "BUNhvar(b,p)",
 	    or the oid counter ("&oid_ctr") in case we generate a void/oid
-	    output-head from a void input-head 
+	    output-head from a void input-head
 	@9: in case we generate a void/oid output-head from a void
-            input-head, this is the statement to inc the oid counter
-            ("oid_ctr++;"),
+	    input-head, this is the statement to inc the oid counter
+	    ("oid_ctr++;"),
 	    otherwise it's empty
 */
 @= DEFseqscan
@@ -375,13 +379,14 @@ Further, we need to set bn->batBuns->free only once we're done.
  * Parameter "str_idx" is only used to hand-over the integer index for
  * equi-str-selects.
  */
-static BAT* seqscan_@1_@2_@3_@6_@7_nocheck_noinc (BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, var_t str_idx)
+static BAT *
+seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, var_t str_idx)
 {
 	REGISTER BUN _p = BUNlast(bn);
-	REGISTER int _bunsize = BUNsize(bn);	
+	REGISTER int _bunsize = BUNsize(bn);
 	@:seqscanPrologue@
 	ALGODEBUG THRprintf(GDKout, "seqscan_@1_@2_@3_@6_@7_nocheck_noinc[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=" SZFMT ", str_idx=" SZFMT ");\n",
-	                             b->batId, bn->batId, (size_t) oid_ctr, (size_t) str_idx);
+				    b->batId, bn->batId, (size_t) oid_ctr, (size_t) str_idx);
 	BATloopFast(b, p, q, xx) {
 		ptr v = BUN@3(b, p);
 		@4 {
@@ -393,11 +398,12 @@ static BAT* seqscan_@1_@2_@3_@6_@7_nocheck_noinc (BAT* b, BAT* bn, ptr tl, ptr t
 	bn->batBuns->free = _p - bn->batBuns->base;
 	@:seqscanEpilogue@
 }
-static BAT* seqscan_@1_@2_@3_@6_@7 (BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, var_t str_idx)
+static BAT *
+seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, var_t str_idx)
 {
 	@:seqscanPrologue@
 	ALGODEBUG THRprintf(GDKout, "seqscan_@1_@2_@3_@6_@7[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=" SZFMT ", str_idx=" SZFMT ");\n",
-	                             b->batId, bn->batId, (size_t) oid_ctr, (size_t) str_idx);
+			    b->batId, bn->batId, (size_t) oid_ctr, (size_t) str_idx);
 	BATloopFast(b, p, q, xx) {
 		ptr v = BUN@3(b, p);;
 		@4 {
@@ -419,7 +425,7 @@ Output-tail-type is either identical to input-tail-type or TYPE_void
 (uselect).
 
 @c
-/*	@1: input-tail-type for working function name, 
+/*	@1: input-tail-type for working function name,
 	    prefixed with predicate type (eq,lh,ln,nl,nn)
 	@2: output-tail-type for bunfastins macro name
 	@3: "tloc" / "tvar" specifying how to read the tail-input
@@ -430,10 +436,10 @@ Output-tail-type is either identical to input-tail-type or TYPE_void
 	@7: output-head-type for bunfastins macro name
 	@8: how to access the head-input: "BUNhloc(b,p)", "BUNhvar(b,p)",
 	    or the oid counter ("&oid_ctr") in case we generate a void/oid
-	    output-head from a void input-head 
+	    output-head from a void input-head
 	@9: in case we generate a void/oid output-head from a void
-            input-head, this is the statement to inc the oid counter
-            ("oid_ctr++;"),
+	    input-head, this is the statement to inc the oid counter
+	    ("oid_ctr++;"),
 	    otherwise it's empty
 */
 @= DEFseqscanTTput
@@ -450,7 +456,7 @@ Output-tail-type is either identical to input-tail-type or TYPE_void
 Expand on output-head-type; usually inherited from input-head-type.
 
 @c
-/*	@1: input-tail-type for working function name, 
+/*	@1: input-tail-type for working function name,
 	    prefixed with predicate type (eq,lh,ln,nl,nn)
 	@2: output-tail-type for bunfastins macro name
 	@3: "tloc" / "var" specifying how to read the tail-input
@@ -461,10 +467,10 @@ Expand on output-head-type; usually inherited from input-head-type.
 	@7: output-head-type for bunfastins macro name
 	@8: how to access the head-input: "BUNhloc(b,p)", "BUNhvar(b,p)",
 	    or the oid counter ("&oid_ctr") in case we generate a void/oid
-	    output-head from a void input-head 
+	    output-head from a void input-head
 	@9: in case we generate a void/oid output-head from a void
-            input-head, this is the statement to inc the oid counter
-            ("oid_ctr++;"),
+	    input-head, this is the statement to inc the oid counter
+	    ("oid_ctr++;"),
 	    otherwise it's empty
 */
 @= DEFseqscanHTput
@@ -498,7 +504,7 @@ Expand on output-head-type; usually inherited from input-head-type.
 #endif	/* NOEXPAND_SHT */
 #ifndef NOEXPAND_INT
 	if (bn->htype != TYPE_bat && (AsHt == TYPE_int || AsHt == TYPE_flt)) {
-	        /* ensure use of ATOMput for TYPE_bat */
+		/* ensure use of ATOMput for TYPE_bat */
 		@:seqscanTTput(@1,@2,@3,@4,@5,int,int,BUNhloc(b,p),)@
 	} else
 #endif	/* NOEXPAND_INT */
@@ -519,7 +525,7 @@ Expanding on input-head-type for data read.
 Taking special care of void/oid.
 
 @c
-/*	@1: input-tail-type for working function name, 
+/*	@1: input-tail-type for working function name,
 	    prefixed with predicate type (eq,lh,ln,nl,nn)
 	@2: output-tail-type for bunfastins macro name
 	@3: "tloc" / "tvar" specifying how to read the tail-input
@@ -538,29 +544,29 @@ Taking special care of void/oid.
 #endif	/* SIZEOF_OID == SIZEOF_INT */
 	@:DEFseqscanHTput(@1,@2,@3,@4,@5)@
 @= seqscanHTget
-        if (BAThvoid(b)) {
-	    /* input-head is void. we decide here, whether output-head
-	     * sould be void or oid, and skip seqscanHTput */
-            oid_ctr = b->hseqbase;
-            if (oid_ctr == oid_nil) {
-                /* avoid computing BUNpos many times over
-                 * output-head is void, hence output-tail cannot be void, 
-		 * hence we can skip seqscanTTput */
-                @:seqscan(@1,@2,@3,@4,@5,void,void,&oid_ctr,)@
-            } else {
-                /* increment instead of compute BUNpos */
+	if (BAThvoid(b)) {
+		/* input-head is void. we decide here, whether output-head
+		 * sould be void or oid, and skip seqscanHTput */
+		oid_ctr = b->hseqbase;
+		if (oid_ctr == oid_nil) {
+			/* avoid computing BUNpos many times over
+			 * output-head is void, hence output-tail cannot be void,
+			 * hence we can skip seqscanTTput */
+			@:seqscan(@1,@2,@3,@4,@5,void,void,&oid_ctr,)@
+		} else {
+			/* increment instead of compute BUNpos */
 #if SIZEOF_OID == SIZEOF_INT && !defined(NOEXPAND_INT)
-                @:seqscanTTput(@1,@2,@3,@4,@5,oid,int,&oid_ctr,oid_ctr++;)@
+			@:seqscanTTput(@1,@2,@3,@4,@5,oid,int,&oid_ctr,oid_ctr++;)@
 #elif SIZEOF_OID == SIZEOF_LNG && !defined(NOEXPAND_LNG)
-                @:seqscanTTput(@1,@2,@3,@4,@5,oid,lng,&oid_ctr,oid_ctr++;)@
+			@:seqscanTTput(@1,@2,@3,@4,@5,oid,lng,&oid_ctr,oid_ctr++;)@
 #else
-                @:seqscanTTput(@1,@2,@3,@4,@5,oid,any,&oid_ctr,oid_ctr++;)@
+			@:seqscanTTput(@1,@2,@3,@4,@5,oid,any,&oid_ctr,oid_ctr++;)@
 #endif
-            }
-        } else {
-	    /* output-head is identical to input-head. */
-            @:seqscanHTput(@1,@2,@3,@4,@5)@
-        }
+		}
+	} else {
+		/* output-head is identical to input-head. */
+		@:seqscanHTput(@1,@2,@3,@4,@5)@
+	}
 @-
 
 Expanding on the type of predicate: either equi, or range.
@@ -575,7 +581,7 @@ In case of a range select we skip all nil.
 	@5: input-tail-type for comparison
 	@6: in case of range selects with lower bound on types where nil != MIN:
 		check for  v != nil
-	    otherwise 
+	    otherwise
 		empty
 	    as then @4_LE(tl ,v,@5) with tl != nil (i.e., tl > nil) already
 	    ensures v != nil
@@ -594,9 +600,9 @@ In case of a range select we skip all nil.
 @= seqscanIF
 	if (equi) {
 		@:seqscanHTget(eq_@1,@2,@3,if ( @4_EQ(tl ,v,@5)                      ),v)@
-	/* rangeselect => we always skip nil 
+	/* rangeselect => we always skip nil
 	 * (explicitely by !@4_EQ(nil,v,@5) or @6
-         *  or implicitely by @4_LE(tl,v,@5)) */
+	 *  or implicitely by @4_LE(tl,v,@5)) */
 	} else if (lval && hval) {
 		if (li && hi) {
 			@:seqscanHTget(LH_@1,@2,@3,if ( @4_LE(tl ,v,@5) && @4_LE(v,th,@5) @6 ),v)@
@@ -658,37 +664,37 @@ Adding test for v != nil for types where nil != MIN.
 #ifndef SKIP_TYPE_EXPANSIONS
 #ifndef NOEXPAND_CHR
 	if (AsTt == TYPE_chr) {
-			@:seqscanIF(chr,chr,tloc,simple,chr,)@
+		@:seqscanIF(chr,chr,tloc,simple,chr,)@
 	} else
 #endif	/* NOEXPAND_CHR */
 #ifndef NOEXPAND_SHT
 	if (AsTt == TYPE_sht) {
-			@:seqscanIF(sht,sht,tloc,simple,sht,)@
+		@:seqscanIF(sht,sht,tloc,simple,sht,)@
 	} else
 #endif	/* NOEXPAND_SHT */
 #ifndef NOEXPAND_INT
 	if (AsTt == TYPE_int && t != TYPE_bat) {
-			/* ensure use of ATOMput for TYPE_bat */
-			@:seqscanIF(int,int,tloc,simple,int,)@
+		/* ensure use of ATOMput for TYPE_bat */
+		@:seqscanIF(int,int,tloc,simple,int,)@
 	} else
 #endif	/* NOEXPAND_INT */
 #ifndef NOEXPAND_FLT
 	if (AsTt == TYPE_flt) {
-			@:seqscanIF(flt,int,tloc,simple,flt,)@
+		@:seqscanIF(flt,int,tloc,simple,flt,)@
 	} else
 #endif	/* NOEXPAND_FLT */
 #ifndef NOEXPAND_DBL
 	if (AsTt == TYPE_dbl) {
-			@:seqscanIF(dbl,lng,tloc,simple,dbl,)@
+		@:seqscanIF(dbl,lng,tloc,simple,dbl,)@
 	} else
 #endif	/* NOEXPAND_DBL */
 #ifndef NOEXPAND_LNG
 	if (AsTt == TYPE_lng) {
-			@:seqscanIF(lng,lng,tloc,simple,lng,)@
+		@:seqscanIF(lng,lng,tloc,simple,lng,)@
 	} else
 #endif	/* NOEXPAND_LNG */
 #endif	/* SKIP_TYPE_EXPANSIONS */
-        if (b->tvarsized) {
+	if (b->tvarsized) {
 		if (equi && t == TYPE_str && strElimDoubles(&b->theap)) {
 			/* Single-valued sequential scans for strings are
 			 * optimized when double elemination is in effect,
@@ -701,7 +707,7 @@ Adding test for v != nil for types where nil != MIN.
 			@:seqscanIF(var,any,tvar,atom,t,&&!atom_EQ(nil,v,t))@
 		}
 	} else {
-			@:seqscanIF(fix,any,tloc,atom,t,&&!atom_EQ(nil,v,t))@
+		@:seqscanIF(fix,any,tloc,atom,t,&&!atom_EQ(nil,v,t))@
 	}
 @-
 

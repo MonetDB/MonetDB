@@ -21,14 +21,14 @@
 @* Search Accelerators
 
 What sets BATs apart from normal arrays is their built-in ability to
-search on both dimensions of the binary association.  The easiest way to 
-implement this is simply walk to the whole table and compare against each 
-element.  This method is of course highly inefficient, much better performance 
+search on both dimensions of the binary association.  The easiest way to
+implement this is simply walk to the whole table and compare against each
+element.  This method is of course highly inefficient, much better performance
 can be obtained if the BATs use some kind of index method to speed up
 searching.
 
 While index methods speed up searching they also have disadvantages.
-In the first place extra storage is needed for the index. Second, 
+In the first place extra storage is needed for the index. Second,
 insertion of data or removing old data requires updating of the index
 structure, which takes extra time.
 
@@ -36,15 +36,15 @@ This means there is a need for both indexed and non-indexed BAT, the
 first to be used when  little or no searching is needed, the
 second to be used when searching is predominant. Also, there is no
 best index method for all cases, different methods have different storage
-needs and different performance. Thus, multiple index methods are provided, 
+needs and different performance. Thus, multiple index methods are provided,
 each suited to particular types of usage.
 
 For query-dominant environments it pays to build a search accelerator.
 The main problems to be solved are:
 @itemize
-@item 
+@item
 avoidance of excessive storage requirements, and
-@item 
+@item
 limited maintenance overhead.
 @end itemize
 @-
@@ -90,18 +90,34 @@ gdk_export hash_t HASHlist(Hash *h, size_t i);
 
 
 @= hashfnd
-#define HASHfnd_@1(x,y,z)	{ hash_t _i; BUN _v; (x) = NULL;\
-        if ((y)->hhash_heap || BAThash((y), 0) || GDKfatal("HASHfnd_@1: hash build failed on %s.\n", BBP_logical((y)->batCacheid)))\
-        HASHloop_@1((y), (y)->hhash, _i, (z), _v) { (x) = _v; break; }\
+#define HASHfnd_@1(x,y,z)	{					\
+	hash_t _i;							\
+	BUN _v;								\
+	(x) = NULL;							\
+	if ((y)->hhash_heap || BAThash((y), 0) || GDKfatal("HASHfnd_@1: hash build failed on %s.\n", BBP_logical((y)->batCacheid))) \
+		HASHloop_@1((y), (y)->hhash, _i, (z), _v) {		\
+			(x) = _v;					\
+			break;						\
+		}							\
 }
 @h
-#define HASHfnd_str(x,y,z)	{ hash_t _i; (x) = NULL;\
-        if ((y)->hhash_heap || BAThash((y), 0) || GDKfatal("HASHfnd_str: hash build failed on %s.\n", BBP_logical((y)->batCacheid)))\
-        HASHloop_str((y), (y)->hhash, _i, (z)) { (x) = BUNptr((y),_i); break; }\
+#define HASHfnd_str(x,y,z)	{					\
+	hash_t _i;							\
+	(x) = NULL;							\
+	if ((y)->hhash_heap || BAThash((y), 0) || GDKfatal("HASHfnd_str: hash build failed on %s.\n", BBP_logical((y)->batCacheid))) \
+		HASHloop_str((y), (y)->hhash, _i, (z)) {		\
+			(x) = BUNptr((y),_i);				\
+			break;						\
+		}							\
 }
-#define HASHfnd(x,y,z)	{ size_t _i; x=NULL;\
-        if ((y)->hhash_heap || BAThash((y), 0) || GDKfatal("HASHfnd: hash build failed on %s.\n", BBP_logical((y)->batCacheid)))\
-        HASHloop((y), (y)->hhash, _i, (z)) { (x) = BUNptr((y),_i); break; }\
+#define HASHfnd(x,y,z)	{						\
+	size_t _i;							\
+	x=NULL;								\
+	if ((y)->hhash_heap || BAThash((y), 0) || GDKfatal("HASHfnd: hash build failed on %s.\n", BBP_logical((y)->batCacheid))) \
+		HASHloop((y), (y)->hhash, _i, (z)) {			\
+			(x) = BUNptr((y),_i);				\
+			break;						\
+		}							\
 }
 @:hashfnd(chr)@
 @:hashfnd(sht)@
@@ -122,27 +138,30 @@ gdk_export hash_t HASHlist(Hash *h, size_t i);
 #define HASHfnd_flt(x,y,z)	HASHfnd_int(x,y,z)
 #define HASHfnd_dbl(x,y,z)	HASHfnd_lng(x,y,z)
 #define HASHfnd_any(x,y,z)	HASHfnd(x,y,z)
-@- 
-A new entry is added with @%HASHins@ using the BAT, the BUN index, 
+@-
+A new entry is added with @%HASHins@ using the BAT, the BUN index,
 and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 
 @= hashins
-#define HASHins_@1(h, i, v) {\
-	hash_t _c = hash_@1(h,v);\
-	h.link[i] = h.hash[_c];\
-	h.hash[_c] = i; }
+#define HASHins_@1(h, i, v) {			\
+	hash_t _c = hash_@1(h,v);		\
+	h.link[i] = h.hash[_c];			\
+	h.hash[_c] = i;				\
+}
 @h
-#define HASHins_str(h,i,v) {\
-	hash_t _c;\
-	GDK_STRHASH(v,_c);\
-	_c &= (h).mask;\
-	h.link[i] = h.hash[_c];\
-	h.hash[_c] = i; }
+#define HASHins_str(h,i,v) {			\
+	hash_t _c;				\
+	GDK_STRHASH(v,_c);			\
+	_c &= (h).mask;				\
+	h.link[i] = h.hash[_c];			\
+	h.hash[_c] = i;				\
+}
 
-#define HASHins(h,i,v) {\
-	hash_t _c = HASHprobe(&h, v);\
-	h.link[i] = h.hash[_c];\
-	h.hash[_c] = i; }
+#define HASHins(h,i,v) {			\
+	hash_t _c = HASHprobe(&h, v);		\
+	h.link[i] = h.hash[_c];			\
+	h.hash[_c] = i;				\
+}
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 #define HASHins_ptr(h,i,v)	HASHins_int(h,i,v)
@@ -166,38 +185,38 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 @:hashins(int)@
 @:hashins(lng)@
 
-#define HASHdel(h, i, v, next) {\
-        if (next && h.link[i+1] == i) {\
-                h.link[i+1] = h.link[i];\
-        } else {\
-		size_t _c = HASHprobe(&h, v);\
-		if (h.hash[_c] == i) {\
-			h.hash[_c] = h.link[i]; \
-		} else\
-		for(_c = h.hash[_c]; _c; _c = h.link[_c]) {\
-			if (h.link[_c] == i) {\
-				h.link[_c] = h.link[i]; \
-				break;\
-			}\
-		}\
-	} h.link[i] = 0;\
+#define HASHdel(h, i, v, next) {					\
+	if (next && h.link[i+1] == i) {					\
+		h.link[i+1] = h.link[i];				\
+	} else {							\
+		size_t _c = HASHprobe(&h, v);				\
+		if (h.hash[_c] == i) {					\
+			h.hash[_c] = h.link[i];				\
+		} else							\
+			for(_c = h.hash[_c]; _c; _c = h.link[_c]) {	\
+				if (h.link[_c] == i) {			\
+					h.link[_c] = h.link[i];		\
+					break;				\
+				}					\
+			}						\
+	} h.link[i] = 0;						\
 }
 
-#define HASHmove(h, i, j, v, next) { \
-        if (next && h.link[i+1] == i) {\
-                h.link[i+1] = j;\
-        } else {\
-		size_t _c = HASHprobe(&h, v); \
-		if (h.hash[_c] == i) {\
-			h.hash[_c] = j; \
-		} else\
-		for(_c = h.hash[_c]; _c; _c = h.link[_c]) {\
-			if (h.link[_c] == i) {\
-				h.link[_c] = j; \
-				break;\
-			}\
-		}\
-	} h.link[j] = h.link[i];\
+#define HASHmove(h, i, j, v, next) {					\
+	if (next && h.link[i+1] == i) {					\
+		h.link[i+1] = j;					\
+	} else {							\
+		size_t _c = HASHprobe(&h, v);				\
+		if (h.hash[_c] == i) {					\
+			h.hash[_c] = j;					\
+		} else							\
+			for(_c = h.hash[_c]; _c; _c = h.link[_c]) {	\
+				if (h.link[_c] == i) {			\
+					h.link[_c] = j;			\
+					break;				\
+				}					\
+			}						\
+	} h.link[j] = h.link[i];					\
 }
 @}
 @- Hash Table Creation
@@ -209,15 +228,15 @@ the same size as BATcapacity(b) (not BATcount(b)). This allows us in the
 BUN insert and delete to assume that there is hash space iff there is BUN
 space. If there is no BUN space, the BATextend now destroys the hash table.
 
-The hash mask size is a power of two, so we can do bitwise AND on the 
-hash (integer) number to quickly find the head of the bucket chain.  
+The hash mask size is a power of two, so we can do bitwise AND on the
+hash (integer) number to quickly find the head of the bucket chain.
 Clearly, the hash mask size is a crucial parameter. If we know that the column
 is unique (hkey), we use direct hashing (mask size ~= BATcount). Otherwise
-we dynamically determine the mask size by starting out with mask size = BATcount/64 
-(just 1.5% of memory storage overhead). Then we start building the hash table 
+we dynamically determine the mask size by starting out with mask size = BATcount/64
+(just 1.5% of memory storage overhead). Then we start building the hash table
 on the first 25% of the BAT. As we aim for max-collisions list length of 4,
 the list on 25% should not exceed length 1. So, if a small number of collisssions
-occurs (mask/2) then we abandon the attempt and restart with a mask that is 4 times 
+occurs (mask/2) then we abandon the attempt and restart with a mask that is 4 times
 larger. This converges after three cycles to direct hashing.
 @{
 @c
@@ -260,26 +279,30 @@ HASHnew(Hash *h, Heap *hp, int tpe, size_t size, hash_t mask)
 }
 
 @= starthash
-	for(xx=BUNsize(b); r < p; r += xx) { 
-		ptr v = BUN@2(b, r); 
+	for (xx = BUNsize(b); r < p; r += xx) {
+		ptr v = BUN@2(b, r);
 		hash_t c = hash_@1((*h), v);
+
 		if (h->hash[c] == 0 && nslots-- == 0) {
 			break; /* mask too full */
 		}
 		h->link[i] = h->hash[c];
 		h->hash[c] = (hash_t) i++;
-	} break; 
+	}
+	break;
 @= finishhash
-	for(xx=BUNsize(b); p < q; p += xx) { 
-		ptr v = BUN@2(b, p); 
+	for (xx = BUNsize(b); p < q; p += xx) {
+		ptr v = BUN@2(b, p);
 		hash_t c = hash_@1((*h), v);
-		h->link[i] = h->hash[c]; 
+
+		h->link[i] = h->hash[c];
 		h->hash[c] = (hash_t) i++;
-	} break; 
-@- 
+	}
+	break;
+@-
 The prime routine for the BAT layer is to create a new hash index.
 Its argument is the element type and the maximum number of BUNs
-be stored under the hash function. 
+be stored under the hash function.
 @c
 BAT *
 BAThash(BAT *b, size_t masksize)
@@ -310,7 +333,7 @@ BAThash(BAT *b, size_t masksize)
 		} else if (b->hkey) {
 			mask = HASHmask(cnt);	/* p = first; so no dynamic scheme */
 		} else {
-			/* dynamic hash: we start with HASHmask(cnt/64); if there are too many collisions 
+			/* dynamic hash: we start with HASHmask(cnt/64); if there are too many collisions
 			 * we try HASHmask(cnt/16), then HASHmask(cnt/4), and finally HASHmask(cnt).  */
 			mask = HASHmask(cnt >> 6);
 			p += (cnt >> 2) * BUNsize(b);	/* try out on first 25% of b */
@@ -393,9 +416,9 @@ BAThash(BAT *b, size_t masksize)
 	return b;
 }
 
-@- 
-The entry on which a value hashes can be calculated with the 
-routine @%HASHprobe@. 
+@-
+The entry on which a value hashes can be calculated with the
+routine @%HASHprobe@.
 @c
 hash_t
 HASHprobe(Hash *h, ptr v)
@@ -498,7 +521,7 @@ HASHdestroy(BAT *b)
 @+  Binary Index Trees
 In this @emph{index} implementation we have chosen for attachment of a sorted list
 of BUNs to a column whenever a primitive warrants its construction to
-speed-up (future) processing. This sorted list is discarded as soon as it 
+speed-up (future) processing. This sorted list is discarded as soon as it
 becomes invalid by an update on the underlying structure.
 This approach favors query dominant environments.
 
@@ -519,7 +542,7 @@ Code compression further reduced it to ca. 300 ms.  ]
 PETER: the whole index tree structure is questionable. I suspect that
 sorting with the monet-internal qsort is much much quicker. Therefore
 there is no justification anymore for index trees. Let's make Monet
-less complicated and kill them all/go for qsort and direct binary search 
+less complicated and kill them all/go for qsort and direct binary search
 instead for accelerating range predicates. (TODO)
 @{
 @- Binary Index Trees
@@ -550,7 +573,7 @@ gdk_export BUN *IDXfndlast_dbl(BAT *b, ptr v);
 gdk_export BUN *IDXfndlast_loc(BAT *b, ptr v);
 gdk_export BUN *IDXfndlast_var(BAT *b, ptr v);
 
-@- 
+@-
 Once a BAT is being destroyed, it should also take care of the indexes
 maintained.
 @c
@@ -581,39 +604,40 @@ IDXdestroy(BAT *b)
 	IDXremove(BATmirror(b));
 }
 
-@- 
-Insertion is straight forward, 
+@-
+Insertion is straight forward,
 The intermediate tree should be built around the hloc directly. This
 can speed-up processing significantly.
 
 @= idxins
-{	Tnode *t = b->hidx.root; 
-	Tnode *f = b->hidx.free; 
-	
-	b->hidx.free++; 
-	f->v = @4;
+	{
+		Tnode *t = b->hidx.root;
+		Tnode *f = b->hidx.free;
 
-	for (;;) {
-		if (t == NULL) {	
-       			b->hidx.root = f; 
-			break;
-		}
-		if (@1_LT(BUNh@3(b,@4), BUNh@3(b,t->v), @2)) {
-			if (t->l == NULL) { 
-				t->l = f;
-		       		break;
-			}
-			t = t->l; 
-		} else {
-			if (t->r == NULL) {
-				t->r = f;
+		b->hidx.free++;
+		f->v = @4;
+
+		for (;;) {
+			if (t == NULL) {
+				b->hidx.root = f;
 				break;
 			}
-			t = t->r; 
+			if (@1_LT(BUNh@3(b,@4), BUNh@3(b,t->v), @2)) {
+				if (t->l == NULL) {
+					t->l = f;
+					break;
+				}
+				t = t->l;
+			} else {
+				if (t->r == NULL) {
+					t->r = f;
+					break;
+				}
+				t = t->r;
+			}
 		}
-       	}
-} 
-@- 
+	}
+@-
 First the pointer-based tree is constructed, thereafter it is
 emptied in the pointer list. This saves significant space.
 
@@ -623,17 +647,23 @@ binary search trees later on.
 @= idxinsloop
 	while (i > 0) {
 		r += rand();
-		j = r % i; 
+		j = r % i;
 		@:idxins(@1,@2,@3,lnk[j])@
-		lnk[j] = lnk[--i]; 
-	} break;
+		lnk[j] = lnk[--i];
+	}
+	break;
 @= idxhistoloop
 	BATloopFast(b, p, q, i) {
 		BUN r = SORTfnd_@1(histo, BUNh@2(b,p));
-		if (!r) { cur = ~(size_t)0 /*(size_t)(-1)*/; break; }
+		if (!r) {
+			cur = ~(size_t)0 /*(size_t)(-1)*/;
+			break;
+		}
 		j = BUNindex(histo, r) - off;
-		*base[j] = p; base[j]++;
-	} break;
+		*base[j] = p;
+		base[j]++;
+	}
+	break;
 @c
 void
 IDXcollect(Index vt, Tnode *t)
@@ -759,7 +789,7 @@ Use randomized order for insert elements to get a nicely balanced tree
 			IDXcollect(&b->hidx, b->hidx.root);
 
 @- many duplicates
-construction in one pass from a sorted histogram 
+construction in one pass from a sorted histogram
 @c
 		} else {
 			size_t off, cur = 0;
@@ -838,46 +868,48 @@ construction in one pass from a sorted histogram
 
 @-
 @}
-Binary searching is used to locate elements in the sorted list. 
+Binary searching is used to locate elements in the sorted list.
 The routine @%IDXfnd@ locates the first element in the list equal to
 the value. A NULL is returned when the value cannot be found.
 
 @{
-Type-optimized versions are available as well. 
+Type-optimized versions are available as well.
 This macro expands to @`IDXfnd_chr@5,  @`IDXfnd_sht@5, @`IDXfnd_int@5,
 @`IDXfnd_flt@5, @`IDXfnd_lng@5, @`IDXfnd_dbl@5, @`IDXfnd_loc@5 and
 @`IDXfnd_var@5.
 
 @= idxfnd
-BUN IDXfnd_@2(BAT *b, ptr v) {
-	int	i, var, loc; 
-	BUN	*low;
-	BUN	*up;
-	BUN	*middle; 
+BUN
+IDXfnd_@2(BAT *b, ptr v)
+{
+	int i, var, loc;
+	BUN *low;
+	BUN *up;
+	BUN *middle;
 
 	var = loc = b->htype;
-	(void)var;
-	(void)loc;
-	low = b->hidx.first; 
-	up = b->hidx.last-1; 
+	(void) var;
+	(void) loc;
+	low = b->hidx.first;
+	up = b->hidx.last-1;
 	do {
-		middle = up - ((up - low) / 2); 
+		middle = up - ((up - low) / 2);
 		i = @1_CMP(v, BUNh@3(b,(*middle)),@2);
 		if (i == 0) {
-			return *middle; 
+			return *middle;
 		}
 		if (i < 0) {
-			up = middle-1; 
-		} else { 
-		       	low = middle + 1; 
+			up = middle-1;
+		} else {
+			low = middle + 1;
 		}
-	} while (low <= up); 
+	} while (low <= up);
 
 	if (i > 0) {
-		middle--; 
+		middle--;
 	}
-       	i = @1_EQ(v, BUNh@3(b,(*middle)),@2);
-	return i?*middle:0; 
+	i = @1_EQ(v, BUNh@3(b,(*middle)),@2);
+	return i ? *middle : 0;
 }
 @c
 @:idxfnd(simple,chr,loc)@
@@ -928,64 +960,68 @@ IDXfnd(BAT *b, ptr v)
 	}
 }
 
-@- 
-To optimize searching, we need a method that calculates the 
-qualifying range within a sorted list. 
+@-
+To optimize searching, we need a method that calculates the
+qualifying range within a sorted list.
 
 @= idxrng
-	low = b->hidx.first; 
-	up = b->hidx.last-1; 
+	low = b->hidx.first;
+	up = b->hidx.last-1;
 	do {
 		middle = up - ((up - low)/2);
 		i = @1_CMP(v, BUNh@3(b,(*middle)),@2);
 		if (i == 0) {
-			break; 
+			break;
 		}
 		if (i < 0) {
 			middle--;
 			up = middle;
 		} else {
 			middle++;
-			low = middle; 
+			low = middle;
 		}
 	} while (low <= up);
 @= idxlasteq
 	if (i == 0) {
 		while (++middle < b->hidx.last)
-			if (!@1_EQ(v, BUNh@3(b, (*middle)), @2)) break; 
+			if (!@1_EQ(v, BUNh@3(b, (*middle)), @2))
+				break;
 	} else if (i < 0) {
 		 middle++;
 	}
-	return middle; 
+	return middle;
 @= idxfirsteq
 	if (i == 0) {
 		while (--middle >= b->hidx.first)
-			if (!@1_EQ(v, BUNh@3(b, (*middle)), @2)) break; 
+			if (!@1_EQ(v, BUNh@3(b, (*middle)), @2))
+				break;
 	} else if (i > 0) {
 		 middle--;
 	}
-	return middle+1; 
+	return middle+1;
 @-
-The @`IDXfndlast@5 operation finds the last BUN equal to a certain value 
-in a column with a binary index (or NULL if not found). Type specific 
-versions are available through macro expansions 
+The @`IDXfndlast@5 operation finds the last BUN equal to a certain value
+in a column with a binary index (or NULL if not found). Type specific
+versions are available through macro expansions
 @`IDXfndlast_chr@5, @`IDXfndlast_sht@5, @`IDXfndlast_int@5, @`IDXfndlast_flt@5,
 @`IDXfndlast_lng@5, @`IDXfndlast_dbl@5, @`IDXfndlast_loc@5 and
 @`IDXfndlast_var@5.
 
-The @`IDXfndfirst@5 operation finds the last BUN equal to a certain value 
-in a column with a binary index (or NULL if not found). Type specific 
-versions are available through macro expansions 
-@`IDXfndfirst_chr@5, @`IDXfndfirst_sht@5, @`IDXfndfirst_int@5, 
-@`IDXfndfirst_flt@5, @`IDXfndfirst_lng@5, @`IDXfndfirst_dbl@5, 
+The @`IDXfndfirst@5 operation finds the last BUN equal to a certain value
+in a column with a binary index (or NULL if not found). Type specific
+versions are available through macro expansions
+@`IDXfndfirst_chr@5, @`IDXfndfirst_sht@5, @`IDXfndfirst_int@5,
+@`IDXfndfirst_flt@5, @`IDXfndfirst_lng@5, @`IDXfndfirst_dbl@5,
 @`IDXfndfirst_loc@5 and @`IDXfndfirst_var@5.
 
 @= idxfndfcn
-BUN *IDXfnd@4_@5(BAT *b, ptr v){
+BUN *
+IDXfnd@4_@5(BAT *b, ptr v)
+{
 	int	i;
 	BUN	*low;
 	BUN	*up;
-	BUN	*middle; 
+	BUN	*middle;
 
 	@:idxrng(@1,@2,@3)@
 	@:idx@4eq(@1,@2,@3)@
@@ -1000,30 +1036,39 @@ BUN *IDXfnd@4_@5(BAT *b, ptr v){
 @:idxfndfcn(atom,b->htype,var,@1,var)@
 @:idxfndfcn(atom,b->htype,loc,@1,loc)@
 
-BUN *IDXfnd@1(BAT *b, ptr v){
-	FATALcheck(b->hidx_heap == NULL, "IDXfnd@1: tree expected"); 
-	FATALcheck(v == NULL, "IDXfnd@1: value expected"); 
+BUN *
+IDXfnd@1(BAT *b, ptr v)
+{
+	FATALcheck(b->hidx_heap == NULL, "IDXfnd@1: tree expected");
+	FATALcheck(v == NULL, "IDXfnd@1: value expected");
 
-	if (BATcount(b) <= 0) return b->H->idx.first;
+	if (BATcount(b) <= 0)
+		return b->H->idx.first;
 
 	switch(ATOMstorage(b->htype)) {
 #ifndef NOEXPAND_CHR
-	case TYPE_chr:	return IDXfnd@1_chr(b,v);
+	case TYPE_chr:
+		return IDXfnd@1_chr(b,v);
 #endif
 #ifndef NOEXPAND_SHT
-	case TYPE_sht:	return IDXfnd@1_sht(b,v);
+	case TYPE_sht:
+		return IDXfnd@1_sht(b,v);
 #endif
 #ifndef NOEXPAND_INT
-	case TYPE_int:	return IDXfnd@1_int(b,v);
+	case TYPE_int:
+		return IDXfnd@1_int(b,v);
 #endif
 #ifndef NOEXPAND_FLT
-	case TYPE_flt:	return IDXfnd@1_flt(b,v);
+	case TYPE_flt:
+		return IDXfnd@1_flt(b,v);
 #endif
 #ifndef NOEXPAND_DBL
-	case TYPE_dbl:	return IDXfnd@1_dbl(b,v);
+	case TYPE_dbl:
+		return IDXfnd@1_dbl(b,v);
 #endif
 #ifndef NOEXPAND_LNG
-	case TYPE_lng:	return IDXfnd@1_lng(b,v);
+	case TYPE_lng:
+		return IDXfnd@1_lng(b,v);
 #endif
 	default:
 		if (b->hvarsized) {
@@ -1084,10 +1129,10 @@ IDXrng(BAT *b, ptr v, ptr w, BUN **p, BUN **q)
 
 @}
 @+ Binary Search on a Sorted BAT
-We have two main routines, @`SORTfndfirst@5(b,v) and @`SORTfndlast@5(b,v), that 
-search for a TAIL value 'v' in a sorted BAT. If the value is present, it 
+We have two main routines, @`SORTfndfirst@5(b,v) and @`SORTfndlast@5(b,v), that
+search for a TAIL value 'v' in a sorted BAT. If the value is present, it
 returns a pointer to its first occurrence; else it returns @%BUNfirst(b)@.
-The latter routine returns a pointer to the BUN just after the last 
+The latter routine returns a pointer to the BUN just after the last
 occurrence of 'v', else it returns @%BUNlast(b)@.
 @
 @
@@ -1095,19 +1140,19 @@ From the above routines we now also defined the @`SORTfnd@5 and @%SORTfnd_tpe@
 routines that look for a certain value and return a (not necessarily the first
 or last) reference to it, or NULL (if the value does not exist).
 
-Note: of the SORTfnd and IDXfnd macros, only @`SORTfndfirst@5(b,v) and 
+Note: of the SORTfnd and IDXfnd macros, only @`SORTfndfirst@5(b,v) and
 @`SORTfndlast@5(b,v) work on the tail of a bat!
 @
 @
 
 @- Range Binary Search
-Type-specific versions of @:SORTfndfirst@ are available using macro 
+Type-specific versions of @:SORTfndfirst@ are available using macro
 expansions. It finds the first BUN larger or equal than a certain
 value and expands to @`SORTfndfirst_chr@5, @`SORTfndfirst_sht@5,
 @`SORTfndfirst_int@5, @`SORTfndfirst_flt@5, @`SORTfndfirst_lng@5,
 @`SORTfndfirst_dbl@5, @`SORTfndfirst_loc@5 and @`SORTfndfirst_var@5.
 
-Type-specific versions of @:SORTfndlast@ are available using macro 
+Type-specific versions of @:SORTfndlast@ are available using macro
 expansions. It finds the first BUN smaller or equal than a certain
 value and expands to @`SORTfndlast_chr@5, @`SORTfndlast_sht@5,
 @`SORTfndlast_int@5, @`SORTfndlast_flt@5, @`SORTfndlast_lng@5,
@@ -1151,106 +1196,128 @@ atoms to be treated in one macro. Main motivation: distrust of gradient
 performance on odmg data and its high mult/div overhead.
 @{
 @= SORTfnd
-BUN SORTfndfirst_@2(BAT *b, ptr v) {
+BUN
+SORTfndfirst_@2(BAT *b, ptr v)
+{
 	BUN end = BUNfirst(b), cur = end;
 	size_t lo = BUNindex(b,end), hi = BUNindex(b,BUNlast(b));
 	int cmp = 1, bunsize = BUNsize(b);
 
 	while (lo < hi) {
-	    size_t mid = (lo+hi)>>1;
-	    cur = BUNptr(b, mid);
-	    cmp = @3_CMP(BUNt@1(b,cur),v,@4);
-	    if (cmp < 0) {
-		lo = ++mid; cur += bunsize;
-	    } else if (cmp > 0) {
-		hi = mid; 
-	    } else {
-		break;
-	    }
-  	}
+		size_t mid = (lo+hi)>>1;
+
+		cur = BUNptr(b, mid);
+		cmp = @3_CMP(BUNt@1(b, cur), v, @4);
+		if (cmp < 0) {
+			lo = ++mid;
+			cur += bunsize;
+		} else if (cmp > 0) {
+			hi = mid;
+		} else {
+			break;
+		}
+	}
 	if (cmp == 0 && b->tkey == 0) {  /* shift over multiple equals */
-	    while((cur-=bunsize) >= end) {
- 		if (!@3_EQ(BUNt@1(b,cur),v,@4)) break;
-	    } cur += bunsize;
+		while((cur-=bunsize) >= end) {
+			if (!@3_EQ(BUNt@1(b,cur),v,@4))
+				break;
+		}
+		cur += bunsize;
 	}
 	return cur;
 }
 
-BUN SORTfndlast_@2(BAT *b, ptr v) {
+BUN
+SORTfndlast_@2(BAT *b, ptr v)
+{
 	BUN end = BUNlast(b), cur = end;
 	size_t lo = BUNindex(b,BUNfirst(b)), hi = BUNindex(b,end);
 	int cmp = 1, bunsize = BUNsize(b);
 
 	while (lo < hi) {
-	    size_t mid = (lo+hi)>>1;
-	    cur = BUNptr(b, mid);
-	    cmp = @3_CMP(BUNt@1(b,cur),v,@4);
-	    if (cmp < 0) {
-		lo = ++mid; cur += bunsize;
-	    } else if (cmp > 0) {
-		hi = mid; 
-	    } else {
-		break;
-	    }
-  	}
+		size_t mid = (lo+hi)>>1;
+		cur = BUNptr(b, mid);
+		cmp = @3_CMP(BUNt@1(b,cur),v,@4);
+		if (cmp < 0) {
+			lo = ++mid;
+			cur += bunsize;
+		} else if (cmp > 0) {
+			hi = mid;
+		} else {
+			break;
+		}
+	}
 	if (cmp == 0 && b->tkey == 0) {  /* shift over multiple equals */
-	    while((cur+=bunsize) < end) {
- 		if (!@3_EQ(BUNt@1(b,cur),v,@4)) break;
-	    }
+		while((cur+=bunsize) < end) {
+			if (!@3_EQ(BUNt@1(b,cur),v,@4))
+				break;
+		}
 	} else if (cmp == 0) {
-	    cur += bunsize;
+		cur += bunsize;
 	}
 	return cur;
 }
 
-BUN SORTfnd_@2(BAT *m, ptr v) {
+BUN
+SORTfnd_@2(BAT *m, ptr v)
+{
 	BAT *b = BATmirror(m);
 	size_t lo = BUNindex(b,BUNfirst(b)), hi = BUNindex(b,BUNlast(b));
 	int cmp = 1, bunsize = BUNsize(b);
 	BUN cur = NULL;
 
 	while (lo < hi) {
-	    size_t mid = (lo+hi)>>1;
-	    cur = BUNptr(b, mid);
-	    cmp = @3_CMP(BUNt@1(b,cur),v,@4);
-	    if (cmp < 0) {
-		lo = ++mid; cur += bunsize;
-	    } else if (cmp > 0) {
-		hi = mid; 
-	    } else {
-		break;
-	    }
-  	}
-	return cmp?NULL:cur;
+		size_t mid = (lo+hi)>>1;
+		cur = BUNptr(b, mid);
+		cmp = @3_CMP(BUNt@1(b,cur),v,@4);
+		if (cmp < 0) {
+			lo = ++mid;
+			cur += bunsize;
+		} else if (cmp > 0) {
+			hi = mid;
+		} else {
+			break;
+		}
+	}
+	return cmp ? NULL : cur;
 }
 
 @= SORTfnd_switch
-BUN SORTfnd@2(BAT *b, ptr v) {
-	if (b && b->@1sorted)
-	switch(ATOMstorage(b->@1type)) {
+BUN
+SORTfnd@2(BAT *b, ptr v)
+{
+	if (b && b->@1sorted) {
+		switch(ATOMstorage(b->@1type)) {
 #ifndef NOEXPAND_CHR
-	case TYPE_chr:	return SORTfnd@2_chr(b,v);
+		case TYPE_chr:
+			return SORTfnd@2_chr(b,v);
 #endif
 #ifndef NOEXPAND_SHT
-	case TYPE_sht:	return SORTfnd@2_sht(b,v);
+		case TYPE_sht:
+			return SORTfnd@2_sht(b,v);
 #endif
 #ifndef NOEXPAND_INT
-	case TYPE_int:	return SORTfnd@2_int(b,v);
+		case TYPE_int:
+			return SORTfnd@2_int(b,v);
 #endif
 #ifndef NOEXPAND_FLT
-	case TYPE_flt:	return SORTfnd@2_flt(b,v);
+		case TYPE_flt:
+			return SORTfnd@2_flt(b,v);
 #endif
 #ifndef NOEXPAND_DBL
-	case TYPE_dbl:	return SORTfnd@2_dbl(b,v);
+		case TYPE_dbl:
+			return SORTfnd@2_dbl(b,v);
 #endif
 #ifndef NOEXPAND_LNG
-	case TYPE_lng:	return SORTfnd@2_lng(b,v);
+		case TYPE_lng:
+			return SORTfnd@2_lng(b,v);
 #endif
-	default:
-		if (b->@1varsized) {
-			return SORTfnd@2_var(b,v);
-		} else {
-			return SORTfnd@2_loc(b,v);
+		default:
+			if (b->@1varsized) {
+				return SORTfnd@2_var(b,v);
+			} else {
+				return SORTfnd@2_loc(b,v);
+			}
 		}
 	}
 	return NULL;
@@ -1273,39 +1340,39 @@ BUN SORTfnd@2(BAT *b, ptr v) {
 @h
 #define MAXACCS	24
 
-#define ACCins(id, b, acc, idx, val)\
-		if (id > ACC_index && BATaccelerators[id].accInsert) {\
-			(*BATaccelerators[id].accInsert)(acc, idx, b, val);\
-			b->haccdirty=TRUE;\
+#define ACCins(id, b, acc, idx, val)					\
+		if (id > ACC_index && BATaccelerators[id].accInsert) {	\
+			(*BATaccelerators[id].accInsert)(acc, idx, b, val); \
+			b->haccdirty=TRUE;				\
 		}
-#define ACCdel(id, b, acc, idx, val)\
-		if (id > ACC_index && BATaccelerators[id].accDelete) {\
-			(*BATaccelerators[id].accDelete)(acc, idx, b, val);\
-			b->haccdirty=TRUE;\
+#define ACCdel(id, b, acc, idx, val)					\
+		if (id > ACC_index && BATaccelerators[id].accDelete) {	\
+			(*BATaccelerators[id].accDelete)(acc, idx, b, val); \
+			b->haccdirty=TRUE;				\
 		}
-#define ACCmove(id, b, acc, from, to, val)\
-		if (id > ACC_index && BATaccelerators[id].accMove) {\
-			(*BATaccelerators[id].accMove)(acc, from, to, b, val);\
-			b->haccdirty=TRUE;\
+#define ACCmove(id, b, acc, from, to, val)				\
+		if (id > ACC_index && BATaccelerators[id].accMove) {	\
+			(*BATaccelerators[id].accMove)(acc, from, to, b, val); \
+			b->haccdirty=TRUE;				\
 		}
-#define ACCsave(id, b, acc)\
-		if (id > ACC_index && BATaccelerators[id].accSave) {\
-			(*BATaccelerators[id].accSave)(acc, b);\
-			 b->haccdirty=TRUE;\
+#define ACCsave(id, b, acc)						\
+		if (id > ACC_index && BATaccelerators[id].accSave) {	\
+			(*BATaccelerators[id].accSave)(acc, b);		\
+			 b->haccdirty=TRUE;				\
 		}
-#define ACCcluster(id, b, acc)\
-		if (id > ACC_index && BATaccelerators[id].accCluster) {\
-			(*BATaccelerators[id].accCluster)(acc, b);\
-			b->haccdirty=TRUE;\
+#define ACCcluster(id, b, acc)						\
+		if (id > ACC_index && BATaccelerators[id].accCluster) {	\
+			(*BATaccelerators[id].accCluster)(acc, b);	\
+			b->haccdirty=TRUE;				\
 		}
-#define ACCbuncluster(id, b, acc)\
-		if (id > ACC_index && BATaccelerators[id].accBuncluster) {\
-      			(*BATaccelerators[id].accBuncluster)(acc, b);\
-			b->dirtyBuns = TRUE;\
+#define ACCbuncluster(id, b, acc)					\
+		if (id > ACC_index && BATaccelerators[id].accBuncluster) { \
+			(*BATaccelerators[id].accBuncluster)(acc, b);	\
+			b->dirtyBuns = TRUE;				\
 		}
-#define ACCrepair(id, b, acc)\
-		((id > ACC_index && BATaccelerators[id].accRepair)?\
-      			(*BATaccelerators[id].accRepair)(acc, b):0)
+#define ACCrepair(id, b, acc)						\
+		((id > ACC_index && BATaccelerators[id].accRepair)?	\
+		 (*BATaccelerators[id].accRepair)(acc, b):0)
 
 gdk_export int ACC_hash;
 gdk_export int ACC_index;

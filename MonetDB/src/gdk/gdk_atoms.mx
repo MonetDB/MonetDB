@@ -557,7 +557,8 @@ ATOMproperty(str id, str property, GDKfcn arg)
 */
 		BATatoms[t].storage = t;	/* critical redefine: undo remapping */
 	}
-      out:gdk_unset_lock(GDKthreadLock, "ATOMproperty");
+  out:
+	gdk_unset_lock(GDKthreadLock, "ATOMproperty");
 }
 
 int
@@ -788,78 +789,91 @@ with atomic types that have logical references (e.g. BATs of BATs but
 also BATs of ODMG odSet) can never be persistent, as this would make
 the commit tremendously complicated.
 @h
-#define ATOMput(P1, P2, p3, p4)				\
-{ int t_ = (P1);                                 	\
-  ptr P3 = (ptr)(p3);					\
-  ptr P4 = (ptr)(p4);					\
-  if (t_ == TYPE_oid || t_ == TYPE_ptr || t_ > TYPE_str)\
-        t_ = ATOMstorage(t_);                           \
-  if (t_ <= TYPE_bat) {					\
-	if (t_ <= TYPE_chr) {				\
-		if (t_ != TYPE_void)			\
-		*(chr *) (P3) = * (chr *) (P4);		\
-	} else if (t_ == TYPE_sht) {			\
-		*(sht *) (P3) = * (sht *) (P4);		\
-	} else if (t_ == TYPE_bat) {			\
-		BBPincref(*(bat*) (P4), TRUE);		\
-		*(bat *) (P3) = * (bat *) (P4); 	\
-	}						\
-  } else {						\
-	if (t_ <= TYPE_flt) {				\
-		*(int *) (P3) = *(int *) (P4); 		\
-	} else if (t_ <= TYPE_lng) {			\
-		*(lng *) (P3) = * (lng *) (P4); 	\
-	} else if (t_ == TYPE_str) {			\
-		if (strPut(P2, (var_t*) (P3), (str) (P4)) == 0) goto bunins_failed;\
-	} else {                                        \
-	    if (BATatoms[t_].atomPut) {			\
-		if ((*BATatoms[t_].atomPut)(P2, (var_t*) P3, P4) == 0) goto bunins_failed;\
-	    } else {					\
-		memcpy(P3, P4, ATOMsize(P1));		\
-	    }						\
-           ATOMfix(t_, P4);                            \
-} }    }
+#define ATOMput(P1, P2, p3, p4)						\
+{									\
+	int t_ = (P1);							\
+	ptr P3 = (ptr) (p3);						\
+	ptr P4 = (ptr) (p4);						\
+									\
+	if (t_ == TYPE_oid || t_ == TYPE_ptr || t_ > TYPE_str)		\
+		t_ = ATOMstorage(t_);					\
+	if (t_ <= TYPE_bat) {						\
+		if (t_ <= TYPE_chr) {					\
+			if (t_ != TYPE_void)				\
+				*(chr *) (P3) = *(chr *) (P4);		\
+		} else if (t_ == TYPE_sht) {				\
+			*(sht *) (P3) = *(sht *) (P4);			\
+		} else if (t_ == TYPE_bat) {				\
+			BBPincref(*(bat *) (P4), TRUE);			\
+			*(bat *) (P3) = *(bat *) (P4);			\
+		}							\
+	} else {							\
+		if (t_ <= TYPE_flt) {					\
+			*(int *) (P3) = *(int *) (P4);			\
+		} else if (t_ <= TYPE_lng) {				\
+			*(lng *) (P3) = *(lng *) (P4);			\
+		} else if (t_ == TYPE_str) {				\
+			if (strPut(P2, (var_t *) (P3), (str) (P4)) == 0) \
+				goto bunins_failed;			\
+		} else {						\
+			if (BATatoms[t_].atomPut) {			\
+				if ((*BATatoms[t_].atomPut) (P2, (var_t *) P3, P4) == 0) \
+					goto bunins_failed;		\
+			} else {					\
+				memcpy(P3, P4, ATOMsize(P1));		\
+			}						\
+			ATOMfix(t_, P4);				\
+		}							\
+	}								\
+}
 
-#define ATOMreplace(P1,	P2, P3, P4)			\
-{ int t_ = (P1);                                 	\
-  if (t_ == TYPE_oid || t_ == TYPE_ptr || t_ > TYPE_str)\
-        t_ = ATOMstorage(t_);                           \
-  if (t_ <= TYPE_bat) {					\
-	if (t_ <= TYPE_chr) {				\
-		if (t_ != TYPE_void)			\
-		*(chr *) (P3) = * (chr *) (P4);		\
-	} else if (t_ == TYPE_sht) {			\
-		*(sht *) (P3) = * (sht *) (P4);		\
-	} else if (t_ == TYPE_bat) {			\
-		BBPincref(*(bat*) (P4), TRUE);		\
-		BBPdecref(*(bat*) (P3), TRUE);		\
-		*(bat *) (P3) = *(bat *) (P4); 		\
-	}						\
-  } else {						\
-	if (t_ <= TYPE_flt) {				\
-		*(int *) (P3) = *(int *) (P4); 		\
-	} else if (t_ <= TYPE_lng) {			\
-		*(lng *) (P3) = * (lng *) (P4); 	\
-	} else if (t_ == TYPE_str) {			\
-		if (strPut(P2, (var_t*) (P3), (str) (P4)) == 0) goto bunins_failed;\
-	} else if (BATatoms[t_].atomPut) {		\
-                var_t loc_ = *(var_t*) (P3);            \
-		if ((*BATatoms[t_].atomPut) (P2, &loc_, P4) == 0) goto bunins_failed;\
-                ATOMunfix(t_, P3);                      \
-	        if (BATatoms[t_].atomDel) {		\
-		   ATOMdel(t_, P2,(var_t*) P3);	        \
-	        } 					\
-		*(P3) = loc_;                           \
-                ATOMfix(t_, P4);                        \
-	} else {					\
-                ATOMunfix(t_, P3);                      \
-		memcpy(P3, P4, ATOMsize(P1));		\
-                ATOMfix(t_, P4);                        \
-} }     }
+#define ATOMreplace(P1,	P2, P3, P4)					\
+{									\
+	int t_ = (P1);							\
+									\
+	if (t_ == TYPE_oid || t_ == TYPE_ptr || t_ > TYPE_str)		\
+		t_ = ATOMstorage(t_);					\
+	if (t_ <= TYPE_bat) {						\
+		if (t_ <= TYPE_chr) {					\
+			if (t_ != TYPE_void)				\
+				*(chr *) (P3) = *(chr *) (P4);		\
+		} else if (t_ == TYPE_sht) {				\
+			*(sht *) (P3) = *(sht *) (P4);			\
+		} else if (t_ == TYPE_bat) {				\
+			BBPincref(*(bat *) (P4), TRUE);			\
+			BBPdecref(*(bat *) (P3), TRUE);			\
+			*(bat *) (P3) = *(bat *) (P4);			\
+		}							\
+	} else {							\
+		if (t_ <= TYPE_flt) {					\
+			*(int *) (P3) = *(int *) (P4);			\
+		} else if (t_ <= TYPE_lng) {				\
+			*(lng *) (P3) = *(lng *) (P4);			\
+		} else if (t_ == TYPE_str) {				\
+			if (strPut(P2, (var_t *) (P3), (str) (P4)) == 0) \
+				goto bunins_failed;			\
+		} else if (BATatoms[t_].atomPut) {			\
+			var_t loc_ = *(var_t *) (P3);			\
+									\
+			if ((*BATatoms[t_].atomPut) (P2, &loc_, P4) == 0) \
+				goto bunins_failed;			\
+			ATOMunfix(t_, P3);				\
+			if (BATatoms[t_].atomDel) {			\
+				ATOMdel(t_, P2, (var_t *) P3);		\
+			}						\
+			*(P3) = loc_;					\
+			ATOMfix(t_, P4);				\
+		} else {						\
+			ATOMunfix(t_, P3);				\
+			memcpy(P3, P4, ATOMsize(P1));			\
+			ATOMfix(t_, P4);				\
+		}							\
+	}								\
+}
 
 #define GDK_STRHASHTABLE	(1<<10)
 #define GDK_STRHASHMASK		(GDK_STRHASHTABLE-1)
-#define GDK_STRHASHSIZE 	(GDK_STRHASHTABLE * sizeof(var_t))
+#define GDK_STRHASHSIZE		(GDK_STRHASHTABLE * sizeof(var_t))
 #define GDK_ELIMDOUBLES(h)	((h)->free < GDK_ELIMLIMIT)
 #define GDK_ELIMLIMIT		(1<<GDK_ELIMPOWER)
 #define GDK_ELIMBASE(x)		(((x) >> GDK_ELIMPOWER) << GDK_ELIMPOWER)
@@ -1008,7 +1022,9 @@ conversion function will then alloc some region for you.
 		*dst = (@1 *) GDKmalloc(*len = @2);
 	}
 @= atomtostr
-int @1ToStr(char ** dst, int *len, @1 *src) {
+int
+@1ToStr(char ** dst, int *len, @1 *src)
+{
 	@:atommem(char,@1Strlen)@
 	if (*src == @1_nil) {
 		strcpy(*dst, "nil");
@@ -1303,48 +1319,55 @@ batWrite(bat *a, stream *s, size_t cnt)
 
 
 @= numfromstr
-int @1FromStr(char* src, int * len, @1 **dst) {
+int
+@1FromStr(char* src, int * len, @1 **dst)
+{
 	int sign = 1, error = 0;
 	@1 base = 0;
 	str q, p = src;
 
 	@:atommem(@1,sizeof(@1))@
-	while(GDKisspace(*p)) p++; 
+	while(GDKisspace(*p))
+		p++; 
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
 		base = @1_nil; p += 3;
 	} else {
-	 	if (*p == '-' || *p == '+') {
-			if (*p++ == '-') sign = -1;
+		if (*p == '-' || *p == '+') {
+			if (*p++ == '-')
+				sign = -1;
 		}
 		if (!num10(*p)) {
-			error = 1; p = src;
+			error = 1;
+			p = src;
 		}
-		while(*p == '0') p++;
-		for(q=p; num10(*p); p++) {
+		while (*p == '0')
+			p++;
+		for (q = p; num10(*p); p++) {
 			base = mult10(base) + base10(*p);
 		}
-		if (p-q > @2  || (p-q == @2 && strncmp(q,"@3",@2) > 0)) {
+		if (p - q > @2 || (p - q == @2 && strncmp(q, "@3", @2) > 0)) {
 			error = 1; /* overflow */
 		}
 		if (sizeof(@1) == 8 && p[0] == 'L' && p[1] == 'L') {
 			p += 2;
 		}
 	}
-	**dst = error?@1_nil:sign*base;
-	return (int) (p-src);
+	**dst = error ? @1_nil : sign * base;
+	return (int) (p - src);
 }
 @c
 
 @= atom_io
- @1 * @1Read(@1 *a, stream *s, size_t cnt) {
+ @1 *@1Read(@1 *a, stream *s, size_t cnt)
+{
 	stream_read@2Array(s, (@3*)a, cnt);
 	return stream_errnr(s) ? NULL : a;
 }
-int @1Write( @1 *a, stream *s, size_t cnt)
+int @1Write(@1 *a, stream *s, size_t cnt)
 {
 	return stream_write@2Array(s, (@3*)a, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
-@c 
+@c
 
 @:numfromstr(sht,5,32767)@
 @:atomtostr(sht,"%hd",sht)@
@@ -1361,12 +1384,14 @@ int @1Write( @1 *a, stream *s, size_t cnt)
 @:atom_io(lng,Lng,lng)@
 
 @
-int lngToStr(char **dst, int *len, lng *src) {
+int
+lngToStr(char **dst, int *len, lng *src)
+{
 	char *p;
 	int l=0;
-    
+   
 	@:atommem(char,lngStrlen)@
-    	if (*src == lng_nil) {
+	if (*src == lng_nil) {
 		strcpy(*dst, "nil");
 		return 3;
 	} 
@@ -1590,10 +1615,10 @@ we have to take corrective action to ensure that str(nil) is the smallest value 
 @h
 #define GDK_STRNIL(s)    ((s) == NULL || *(chr*) (s) == GDK_chr_min)
 #define GDK_STRLEN(s)    ((GDK_STRNIL(s)?1:strlen(s))+1)
-#define GDK_STRCMP(l,r)  (GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1:\
-				(*(unsigned char*)(l) < *(unsigned char*)(r))?-1:\
-                                (*(unsigned char*)(l) > *(unsigned char*)(r))?1:\
-					strCmpNoNil((unsigned char*)(l),(unsigned char*)(r)))
+#define GDK_STRCMP(l,r)  (GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
+			  (*(unsigned char*)(l) < *(unsigned char*)(r))?-1: \
+			  (*(unsigned char*)(l) > *(unsigned char*)(r))?1: \
+			  strCmpNoNil((unsigned char*)(l),(unsigned char*)(r)))
 @c
 int
 strNil(str s)
@@ -1658,11 +1683,12 @@ old bats with these string heaps will still be compatible. TODO: replace by strH
 @h
 #define GDK_ROTATE(x,y,z,m) ((((x) << (y)) & ~(m)) | (((x) >> (z)) & (m)))
 
-#define GDK_STRHASH(x,y) {                   \
-    str _s = (str) (x);                      \
-    for((y)=0; *_s; _s++) {                  \
-        (y) = GDK_ROTATE(y, 4, SIZEOF_OID*8-4, 15) ^ *_s;\
-    }}
+#define GDK_STRHASH(x,y) {						\
+		str _s = (str) (x);					\
+		for((y)=0; *_s; _s++) {					\
+			(y) = GDK_ROTATE(y, 4, SIZEOF_OID*8-4, 15) ^ *_s; \
+		}							\
+	}
 @c
 hash_t
 strHash(str s)
@@ -1959,7 +1985,7 @@ strFromStr(char *src, int *len, char **dst)
 	if ((res = GDKstrFromStr((unsigned char *) *dst, start, cur - start)) >= 0)
 		return res;
 
-      error:
+  error:
 	if (*dst && *dst != str_nil)
 		GDKfree(*dst);
 	*dst = GDKstrdup(str_nil);

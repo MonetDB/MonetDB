@@ -24,7 +24,7 @@ BATs with older descriptor versions may still be around. BAT versions
 are marked in the first field of a BAT. Apart from the current BAT
 format, we keep recognizing two historic formats.
 
-Changes in the BAT image are not only introduced by developers, 
+Changes in the BAT image are not only introduced by developers,
 but also by different systems. Two factors are of influence:
 32- or 64-bit operating systems, and little-endian or big-endian
 hardware. Both issues are resolved by code in this file.
@@ -34,8 +34,8 @@ image. 64-bit versions transform this when they get
 loaded and saved.
 
 The little-endian and big-endian problem is resolved using a lazy approach.
-Intel saves BATs in different format than Sun, but when one loads the other, 
-they do on-the-fly conversions using the new routine @%BATconvert@. 
+Intel saves BATs in different format than Sun, but when one loads the other,
+they do on-the-fly conversions using the new routine @%BATconvert@.
 This routine uses little/big-endian conversion functionality newly
 introduced to the atom ADT (atomConvert and atomHeapConvert).
 @h
@@ -50,10 +50,10 @@ Three BAT formats are currently supported:
 
 @
 If BATs need to be added to an old BBP directory, we might need
-to save BATs in the old format. This is currently controlled 
-by the below function:  
+to save BATs in the old format. This is currently controlled
+by the below function:
 @
-We also use these numbers, which are always the first 32-int the 
+We also use these numbers, which are always the first 32-int the
 BAT image, to check whether the image is in big endian or little endian format.
 @{
 @c
@@ -86,7 +86,7 @@ typedef unsigned int normal_int;
 #define normal_hasht_COPY(x)	x
 #define normal_BUN_COPY(x)	x
 
-#define strcpy_SWAP(x,y)	
+#define strcpy_SWAP(x,y)
 #define normal_bat_SWAP(x)	((bat) normal_int_SWAP((int) x))
 #if SIZEOF_OID == SIZEOF_INT
 #define normal_oid_SWAP(x)	((oid) normal_int_SWAP((int)x))
@@ -210,14 +210,14 @@ BAT, and vice versa.
 	@:COLrec_ALL(@1,&(@2)->T,@3,&(@4)->T,@5)@
 	@:BATrec_ALL(@1,&(@2)->P,@3,&(@4)->P,@5)@
 	@:BUNrec_ALL(@1,&(@2)->U,@3,&(@4)->U,@5)@
-	strcpy_@5((@2)->fullid,@4->fullid)	
+	strcpy_@5((@2)->fullid,@4->fullid)
 
 @- misc remappings
 Absolute pointers need to be mapped to byte offsets when a BAT is saved.
 That is where the DELTA macros are for.
 
 @+ implementations
-@- BATsavedesc 
+@- BATsavedesc
 @c
 int
 BATsavedesc(BAT *b, str nme)
@@ -234,7 +234,7 @@ BATsavedesc(BAT *b, str nme)
 	return (ret < 0) ? ret : 0;
 }
 
-@- BATloaddesc 
+@- BATloaddesc
 @c
 BAT *
 BATloaddesc(str nme)
@@ -282,7 +282,10 @@ This function uses the byte order conversion ADT functions
 to convert a little endian BAT to big endian (or vice versa).
 @{
 @= swap
-{ @2 *_p = (@2*) @3, _i=*_p; *_p = @1_SWAP(_i); }
+	{
+		@2 *_p = (@2*) @3, _i=*_p;
+		*_p = @1_SWAP(_i);
+	}
 @c
 static int
 batswap(BAT *b, int direction)

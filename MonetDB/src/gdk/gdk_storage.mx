@@ -30,9 +30,9 @@ partition. This simplistic assumption should be replaced in the near
 future by a multi-volume version. The intension is to use several
 BAT home locations.
 The files should be owned by the database server. Otherwise, IO operations are
-likely to fail. This is accomplished by setting the GID and UID upon 
+likely to fail. This is accomplished by setting the GID and UID upon
 system start.
-@{ 
+@{
 @h
 #ifndef _GDK_STORAGE_H_
 #define _GDK_STORAGE_H_
@@ -184,7 +184,7 @@ GDKfilelocate(str nme, str mode, str extension)
 
 
 @-
-Unlink the file. 
+Unlink the file.
 @c
 static int
 delete_file(str path)
@@ -259,8 +259,8 @@ GDKsave(str nme, str ext, void *buf, size_t size, int mode)
 @-
 @}
 Only dirty pages must be written to disk. Unchanged block will still be mapped
-on the file, reading those will be cheap.  Only the changed blocks are now 
-mapped to swap space. PUSHED OUT: due to rather horrendous performance 
+on the file, reading those will be cheap.  Only the changed blocks are now
+mapped to swap space. PUSHED OUT: due to rather horrendous performance
 caused by updating the image on disk.
 
 Maybe it is better to make use of @%MT_msync()@. But then, we would need to
@@ -392,9 +392,9 @@ the routine @%BATsave@. This routine reserves disk space and checks
 for name clashes.
 
 Saving and restoring BATs is left to the upper layers. The library merely
-copies the data into place. 
+copies the data into place.
 Failure to read or write the BAT results in a NULL, otherwise
-it returns the BAT pointer. 
+it returns the BAT pointer.
 @{
 @c
 static int
@@ -540,7 +540,7 @@ BATsave(BAT *bd)
 
 @+ NIELS broken needs correction of DELTA status
 	/* try to cut off unused bytes at the start of the heap */
-	if ((!(b->batBuns->storage & STORE_MMAP || b->batRestricted)) && 
+	if ((!(b->batBuns->storage & STORE_MMAP || b->batRestricted)) &&
 	    b->hacctype == 0 && b->tacctype == 0) {
 		size_t remap = (b->batDeleted - b->batBuns->base) / BUNsize(b);
 		if (BUNsize(b) < sizeof(int)) {
@@ -745,8 +745,8 @@ BATload(str nme)
 The new behavior is to let the routine produce warnings but always succeed.
 rationale: on a delete, we must get rid of *all* the files. We do not have to care
 about preserving them or be too much concerned if a file that had to be deleted was
-not found (end result is still that it does not exist). The past behavior to delete 
-some files and then fail was erroneous. The BAT would continue to exist with an 
+not found (end result is still that it does not exist). The past behavior to delete
+some files and then fail was erroneous. The BAT would continue to exist with an
 incorrect disk status, causing havoc later on.
 
 NT forces us to close all files before deleting them; in case of memory mapped
@@ -819,9 +819,9 @@ exploits all possible Monet properties and accelerators. Due
 to this property, the n-ary table printing is quite fast and
 can be used for producing ASCII dumps of large tables.
 
-It all works with hooks.  The multijoin routine finds matching ranges 
+It all works with hooks.  The multijoin routine finds matching ranges
 of rows. For each found match in a column it first calls a value-routine
-hook. This routine we use to format a substring. 
+hook. This routine we use to format a substring.
 For each found match-tuple (the Cartesian product of all matches
 across columns) a match routine hook is called. We use this routine
 to print a line.
@@ -830,26 +830,26 @@ might participate in many lines (due to the Cartesian product).
 
 The multijoin is quite complex, and we use a @%col_format_t@
 struct to keep track of column specific data.
-The multiprint can indicate arbitrary orderings. This is done 
-by passing a pattern-string that matches the following regexp: 
+The multiprint can indicate arbitrary orderings. This is done
+by passing a pattern-string that matches the following regexp:
 
 @verbatim
 	"[X:] Y0 {,Yi}"
 @end verbatim
 
-where X and Yi are column numbers, {\bf starting at 1} for the first 
+where X and Yi are column numbers, {\bf starting at 1} for the first
 BAT parameter.
 
 The table ordering has two aspects:
 @enumerate
 @item (1)
- 	the order in which the matches appear (a.k.a. the major ordering). 
-	This is equivalent to the order of the head values of the BATs 
+ 	the order in which the matches appear (a.k.a. the major ordering).
+	This is equivalent to the order of the head values of the BATs
 	(as we match=multijoin on head value).
 @item (2)
-	within each match, the order in which the Cartesian 
-   	product is produced. This is used to sub-order on 
-	the tail values of the BATs = the columns in the table. 
+	within each match, the order in which the Cartesian
+   	product is produced. This is used to sub-order on
+	the tail values of the BATs = the columns in the table.
 @end enumerate
 
 Concerning (1), the multijoin limits itself to *respecting*
@@ -893,8 +893,7 @@ typedef struct {
 	int len;		/* strlen(buf) */
 } col_format_t;
 
-static
-    int
+static int
 print_nil(char **dst, int *len, ptr dummy)
 {
 	(void) dummy;
@@ -910,8 +909,7 @@ print_nil(char **dst, int *len, ptr dummy)
 #define printfcn(b)	((b->ttype==TYPE_void && b->tseqbase==oid_nil)?\
 			          print_nil:BATatoms[b->ttype].atomToStr)
 
-static
-    int
+static int
 print_tabwidth(BAT *b, str title, col_format_t *c)
 {
 	strFcn tostr = printfcn(b);
@@ -940,8 +938,7 @@ print_tabwidth(BAT *b, str title, col_format_t *c)
 	return 1 + (max - 1) / 8;
 }
 
-static
-    void
+static void
 print_line(stream *s, col_format_t **l)
 {
 	col_format_t *c = *(l++);
@@ -982,8 +979,7 @@ print_line(stream *s, col_format_t **l)
 	stream_printf(s, "  ]\n");
 }
 
-static
-    void
+static void
 print_format(col_format_t *c, ptr v)
 {
 	if (c->format)
@@ -1000,7 +996,7 @@ print_format(col_format_t *c, ptr v)
 	if (stream_errnr(s))
 		return -1;
 @= print_header
- 	k = 1; 
+	k = 1;
 	if (stream_write(s, "# ", 2, 1) != 1)
 		return -1;
 	if (argv[0].format) {
@@ -1010,17 +1006,16 @@ print_format(col_format_t *c, ptr v)
 		@:print_head(@1,k)@
 		if (k++ >= argc)
 			break;
-        } 
+	}
 	if(@1) {
 		if (stream_printf(s, "  # type\n") < 0)
 			return -1;
 	} else {
- 		if (stream_printf(s, "  # name\n") < 0)
+		if (stream_printf(s, "  # name\n") < 0)
 			return -1;
 	}
 @c
-static
-    int
+static int
 print_header(int argc, col_format_t *argv, stream *s)
 {
 	int k;
@@ -1030,7 +1025,7 @@ print_header(int argc, col_format_t *argv, stream *s)
 	return 0;
 }
 
-@- 
+@-
 The simple BAT printing routines make use of the complex case.
 @c
 int
@@ -1048,13 +1043,12 @@ BATprintf(stream *s, BAT *b)
 }
 
 @+ Multi-Bat Printing
-This routines uses the multi-join operation to print 
+This routines uses the multi-join operation to print
 an n-ary table. Such a table is the reconstruction of
-the relational model from Monet's BATs, and consists of 
+the relational model from Monet's BATs, and consists of
 all tail values of matching head-values in n-ary equijoin.
 @c
-static
-    str
+static str
 batname(BAT *b)
 {
 	str sn = BBP_logical(b->batCacheid);

@@ -378,25 +378,31 @@ the quickest way to rebuild an empty user accelerator is to destroy the
 old and build new. The accelerators are only preserved for very small BATs.
 @c
 @{
-BAT *BATclear(BAT *b) {	
-    BATcheck(b, "BATclear");
-    {
-	int hacc, tacc, bs=BUNsize(b);
+BAT *
+BATclear(BAT *b)
+{	
+	int hacc, tacc, bs;
 	BUN p, q;
-	int voidbat = 0;
-	BAT *bm = BATmirror(b);
+	int voidbat;
+	BAT *bm;
 
-        if (BAThdense(b) && b->htype == TYPE_void){
+	BATcheck(b, "BATclear");
+
+	bs = BUNsize(b);
+	voidbat = 0;
+	bm = BATmirror(b);
+
+	if (BAThdense(b) && b->htype == TYPE_void) {
 		voidbat = 1;
-        }
-        if (BATtdense(b) && b->ttype == TYPE_void){
+	}
+	if (BATtdense(b) && b->ttype == TYPE_void) {
 		voidbat = 1;
-        }
+	}
 
 	/* small BAT: delete all elements by hand */
 	if (!voidbat && BATcount(b) < 20) {
 		BATloopDEL(b, p, q, bs) {
-			p = BUNdelete(b,p);
+			p = BUNdelete(b, p);
 		}
 		return b;
 	}
@@ -424,8 +430,7 @@ BAT *BATclear(BAT *b) {
 	/* we must dispose of all inserted atoms */
 	if (b->batDeleted == b->batHole && b->batHole == b->batInserted - bs && 
 	    BATatoms[b->htype].atomDel == NULL && 
-	    BATatoms[b->ttype].atomDel == NULL)
-	{
+	    BATatoms[b->ttype].atomDel == NULL) {
 		Heap hh, th;
 
 		/* no stable elements: we do a quick heap clean */
@@ -434,19 +439,22 @@ BAT *BATclear(BAT *b) {
 		   free > 0
 		*/
 		size_t cap = 0;
+
 		hh.filename = th.filename = NULL;
-		if (b->hheap.free > 0){
-			if (ATOMheap(b->htype, &hh, cap) < 0) return NULL;
+		if (b->hheap.free > 0) {
+			if (ATOMheap(b->htype, &hh, cap) < 0)
+				return NULL;
 		}
 		if (b->theap.free > 0 && ATOMheap(b->ttype, &th, cap) < 0) {
-			if (b->hheap.free > 0) HEAPfree(&hh);
+			if (b->hheap.free > 0)
+				HEAPfree(&hh);
 			return NULL;
 		}
-		if (b->hheap.free > 0){
+		if (b->hheap.free > 0) {
 			HEAPfree(&b->hheap);
 			b->hheap = hh;
 		}
-		if (b->theap.free > 0){
+		if (b->theap.free > 0) {
 			HEAPfree(&b->theap);
 			b->theap = th;
 		}
@@ -455,10 +463,13 @@ BAT *BATclear(BAT *b) {
 		void (*hatmdel)(Heap*,var_t*) = BATatoms[b->htype].atomDel;
 		void (*tatmdel)(Heap*,var_t*) = BATatoms[b->ttype].atomDel;
 
-		if (hatmdel || tatmdel) 
-		for(p=b->batInserted, q=BUNlast(b); p < q; p += bs) {
-			if (hatmdel) (*hatmdel)(&b->hheap, (var_t*) BUNhloc(b,p));
-			if (tatmdel) (*tatmdel)(&b->theap, (var_t*) BUNtloc(b,p));
+		if (hatmdel || tatmdel) {
+			for(p = b->batInserted, q = BUNlast(b); p < q; p += bs) {
+				if (hatmdel)
+					(*hatmdel)(&b->hheap, (var_t*) BUNhloc(b,p));
+				if (tatmdel)
+					(*tatmdel)(&b->theap, (var_t*) BUNtloc(b,p));
+			}
 		}
 	}
 
@@ -476,24 +487,25 @@ BAT *BATclear(BAT *b) {
 	if (tacc && BATaccelerators[tacc].accSave) {
 		ACCbuild(tacc, b, &b->taccelerator, 0);
 	}
-    }
-    return b; 
+	return b; 
 }
 
-int BATfree(BAT *b) {
-    BATcheck(b, "BATfree");
-    {
+int
+BATfree(BAT *b)
+{
+	BATcheck(b, "BATfree");
+
 	/* deallocate all memory for a bat */
 	BATreset(b);
 	ACCunloadall(b);
-        DELTAsave(b); /* convert to disk format */
+	DELTAsave(b);	       /* convert to disk format */
 	HEAPfree(b->batBuns);
 	HEAPfree(&b->theap);
 	HEAPfree(&b->hheap);
 	GDKfree(BATmirror(b));
 	BBP_cache(-b->batCacheid) = NULL;
-    }
-    return 0;
+
+	return 0;
 }
 
 @}
@@ -564,7 +576,7 @@ copy of the valid BUN sequence.
 		ALIGNset(bn, b);
 	}
 	return bn;
-      bunins_failed:
+  bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -611,16 +623,20 @@ around and adapt search accelerator structures.
 #define accins(acc) (acc?BATaccelerators[acc].accInsert:NULL)
 
 @= bun_move
-        if (bs == 8) {
-                *(lng*) @2 = *(lng*) @1;
-        } else if (bs == 4) {
-                *(int*) @2 = *(int*) @1;
-        } else {
-                str _dst=(str)@2, _src=(str)@1, _end=_src+bs;
-                while(_src<_end) *(_dst++) = *(_src++);
-        } 
+	if (bs == 8) {
+		*(lng *) @2 = *(lng *) @1;
+	} else if (bs == 4) {
+		*(int *) @2 = *(int *) @1;
+	} else {
+		str _dst = (str) @2, _src = (str) @1, _end = _src + bs;
+
+		while (_src < _end)
+			*_dst++ = *_src++;
+	}
 @= hacc_update
-{	void (*update)(Heap*, var_t, BAT*, ptr) = acc@1(b->hacctype);
+{
+	void (*update)(Heap*, var_t, BAT*, ptr) = acc@1(b->hacctype);
+
 	if (update) {
 		(*update)(&b->haccelerator, @4, b, BUN@2(b,@3));
 	}
@@ -629,7 +645,9 @@ around and adapt search accelerator structures.
 	}
 } 
 @= tacc_update
-{	void (*update)(Heap*, var_t, BAT*, ptr) = acc@1(b->tacctype);
+{
+	void (*update)(Heap*, var_t, BAT*, ptr) = acc@1(b->tacctype);
+
 	if (update) {
 		(*update)(&b->taccelerator, @4, bm, BUN@2(b,@3));
 	}
@@ -638,7 +656,8 @@ around and adapt search accelerator structures.
 	}
 }
 @= acc_move
-{	void (*update)(Heap*, var_t, BAT*, ptr) = accdel(b->hacctype);
+{
+	void (*update)(Heap*, var_t, BAT*, ptr) = accdel(b->hacctype);
 	void (*hmove)(Heap*, var_t, var_t, BAT*, ptr) = accmov(b->hacctype);
 	void (*tmove)(Heap*, var_t, var_t, BAT*, ptr) = NULL;
 
@@ -696,12 +715,12 @@ Null values should have been obtained at a higher level.
 This code assumes that new elements are appended to the BUN list.
 @c
 @= void_insertbun
-if ((@1) && b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
-    *(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b))))
-{
-      b = BATmaterialize(b, (size_t) ((double)BATcount(b)*1.2));
-      if( b== NULL) return b;
-}
+	if ((@1) && b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
+	    *(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b)))) {
+	      b = BATmaterialize(b, (size_t) ((double)BATcount(b)*1.2));
+	      if (b == NULL)
+		      return b;
+	}
 @c
 BAT *
 BUNins(BAT *b, ptr h, ptr t)
@@ -1013,24 +1032,25 @@ explicitly.
 	ATOMreplace(b->ttype, &b->theap, BUNtloc(b,p), t);
 	@:tacc_update(ins,t@1,p,pit)@
 	if (BATtordered(b)&1) {
-	    int bs = BUNsize(b), tt = b->ttype;
-	    BUN prv = p - bs;
-	    BUN nxt = p + bs;
-	    if (prv <= b->batHole) prv = NULL;
-	    if (nxt > last) nxt = NULL;
+		int bs = BUNsize(b), tt = b->ttype;
+		BUN prv = p - bs;
+		BUN nxt = p + bs;
 
-	    if ((prv && ATOMcmp(tt, t, BUNt@1(b,prv)) < 0) ||
-	        (nxt && ATOMcmp(tt, t, BUNt@1(b,nxt)) > 0)) 
-	    {
-		b->tsorted = FALSE;
-		b->T->nosorted = pit;
-	    } else if (b->ttype != TYPE_void && b->tdense &&
-			((prv && (1+*(oid*) BUNtloc(b,prv)) != *(oid*) t) ||
-			 (nxt && *(oid*) BUNtloc(b,nxt) != (1+*(oid*) t))))
-	    {
-		b->tdense = FALSE;
-		b->T->nodense = pit;
-	    }
+		if (prv <= b->batHole)
+			prv = NULL;
+		if (nxt > last)
+			nxt = NULL;
+
+		if ((prv && ATOMcmp(tt, t, BUNt@1(b,prv)) < 0) ||
+		    (nxt && ATOMcmp(tt, t, BUNt@1(b,nxt)) > 0)) {
+			b->tsorted = FALSE;
+			b->T->nosorted = pit;
+		} else if (b->ttype != TYPE_void && b->tdense &&
+			   ((prv && 1 + *(oid*) BUNtloc(b,prv) != *(oid*) t) ||
+			    (nxt && *(oid*) BUNtloc(b,nxt) != 1 + *(oid*) t))) {
+			b->tdense = FALSE;
+			b->T->nodense = pit;
+		}
 	}
 @c
 BAT *
@@ -1133,10 +1153,13 @@ BUNfnd(BAT *b, ptr v)
 }
 
 @= swapif
-if (@1) {
-	ptr _p=x; x=y; y=_p; 
-	b = BATmirror(b);
-}	
+	if (@1) {
+		ptr _p = x;
+
+		x = y;
+		y = _p; 
+		b = BATmirror(b);
+	}	
 @c
 BUN
 BUNlocate(BAT *b, ptr x, ptr y)
@@ -1523,11 +1546,10 @@ BATmmap(BAT *b, int bns, int hhp, int thp, int hacc, int tacc)
 
 @- BATmadvise
 @= madvise
-	if ((@1 >=0) && (@2)->base && ((@2)->storage&STORE_MMAP)) {
-	    if (MT_madvise((@2)->base, (@2)->free, @1)) {
+	if (@1 >= 0 && (@2)->base && ((@2)->storage&STORE_MMAP) &&
+	    MT_madvise((@2)->base, (@2)->free, @1)) {
 		GDKsyserror("madvise on @2 @1 failed.\n");
 		return -1;
-	    }
 	}
 @= pin
 	if ((@2)->base && ((@2)->storage&STORE_MMAP)) {
@@ -1904,14 +1926,13 @@ does not matter for the heap modes until the commit point is reached. So we do n
 need to do anything with heap modes yet at this point.
 @{
 @= check_type
-        if (ATOMisdescendant(@1, TYPE_ptr) || ATOMisdescendant(@1, TYPE_bat) ||	
-	    BATatoms[@1].atomUnfix || BATatoms[@1].atomFix) 
-	{
-                GDKerror("BATmode: %s type implies that %s[%s,%s] cannot be made persistent.\n",
-			ATOMname(@1), BBP_logical(b->batCacheid),
-			ATOMname(b->htype), ATOMname(b->ttype));
-                return b;
-        }
+	if (ATOMisdescendant(@1, TYPE_ptr) || ATOMisdescendant(@1, TYPE_bat) ||	
+	    BATatoms[@1].atomUnfix || BATatoms[@1].atomFix) {
+		GDKerror("BATmode: %s type implies that %s[%s,%s] cannot be made persistent.\n",
+			 ATOMname(@1), BBP_logical(b->batCacheid),
+			 ATOMname(b->htype), ATOMname(b->ttype));
+		return b;
+	}
 @c
 BAT *
 BATmode(BAT *b, int mode)
@@ -2209,22 +2230,26 @@ Merge scan check to see if head values are sorted (&key)
 	}
 
 @= merge_disprove
-	if (disprove_sorted) while (p < q) {
-		ptr v = BUNh@3(b,p);
-		int ret = @1_CMP(v,last,@2);
-		if (ret < 0) {
-			disprove_sorted = FALSE;
-			b->H->nosorted = BUNindex(b,p);
-			b->batDirtydesc = 1; 
-			break;
-		} else if (ret == 0 && disprove_key) {
-			b->H->nokey[0] = BUNindex(b,p)-1;
-			b->H->nokey[1] = BUNindex(b,p);
-			disprove_key = FALSE;
-			b->batDirtydesc = 1; 
-		} 
-		p += xx; last = v;
-	} break;
+	if (disprove_sorted) {
+		while (p < q) {
+			ptr v = BUNh@3(b,p);
+			int ret = @1_CMP(v,last,@2);
+
+			if (ret < 0) {
+				disprove_sorted = FALSE;
+				b->H->nosorted = BUNindex(b,p);
+				b->batDirtydesc = 1; 
+				break;
+			} else if (ret == 0 && disprove_key) {
+				b->H->nokey[0] = BUNindex(b,p)-1;
+				b->H->nokey[1] = BUNindex(b,p);
+				disprove_key = FALSE;
+				b->batDirtydesc = 1; 
+			} 
+			p += xx; last = v;
+		}
+	}
+	break;
 @-
 @}
 To see if head values are key
@@ -2296,24 +2321,25 @@ for determining which algebra commands set properties sub-optimally.
 	}
 
 @= hash_disprove
-		for(r=BUNfirst(b); r<p; r+=xx, yy++) {
-			HASHins@1(bv->hhash, yy, BUNh@2(bv,r));
+	for (r = BUNfirst(b); r < p; r += xx, yy++) {
+		HASHins@1(bv->hhash, yy, BUNh@2(bv,r));
+	}
+	while (p < q) {
+		ptr v = BUNh@2(bv,p);
+		HASHfnd@1(r,bv,v); /* purify: UMR */
+		if (r != NULL) {
+			b->H->nokey[0] = BUNindex(bv,r);
+			b->H->nokey[1] = yy;
+			disprove_key = FALSE;
+			b->batDirtydesc = 1;
+			break;
 		}
-		while(p < q) {
-			ptr v = BUNh@2(bv,p);
-			HASHfnd@1(r,bv,v); /* purify: UMR */
-			if (r != NULL) {
-				b->H->nokey[0] = BUNindex(bv,r);
-				b->H->nokey[1] = yy;
-				disprove_key = FALSE;
-				b->batDirtydesc = 1;
-				break;
-			}
-			HASHins@1(bv->hhash, yy, v);
-			yy++; p += xx;
-		}
-                if(disprove_key && cnt == lim) isKey = TRUE;
-                break;
+		HASHins@1(bv->hhash, yy, v);
+		yy++; p += xx;
+	}
+	if (disprove_key && cnt == lim)
+		isKey = TRUE;
+	break;
 @-
 failed to disprove on exhaustive check => succeeded to prove
 @c
@@ -2328,7 +2354,8 @@ failed to disprove on exhaustive check => succeeded to prove
 		b->batDirtydesc = b->hdense = TRUE;
 		BATseqbase(b, *(oid *) BUNhloc(b, BUNfirst(b)));
 	}
-      exit:if (mode & BATPROPS_CHECK) {
+      exit:
+	if (mode & BATPROPS_CHECK) {
 		if ((sorted_bak & 1) && !(BAThordered(b) & 1)) {
 			GDKwarning("BATpropcheck: BAT %s was incorrectly marked sorted!\n", b->batId);
 			if (BAThordered(b))

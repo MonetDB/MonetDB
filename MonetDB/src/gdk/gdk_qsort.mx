@@ -113,11 +113,11 @@ typedef struct {
 	size_t _i = (n)/sizeof(TYPE);			\
 	TYPE *_pa = (TYPE*) (((char*) (a)) - buf->loc);	\
 	TYPE *_pb = (TYPE*) (((char*) (b)) - buf->loc);	\
-	do { 						\
+	do {						\
 		TYPE _tmp = *_pa;			\
 		*_pa++ = *_pb;				\
 		*_pb++ = _tmp;				\
-        } while (--_i > 0);				\
+	} while (--_i > 0);				\
 }
 
 #define iterate_SWAP(TYPE, a, b)			\
@@ -161,8 +161,8 @@ typedef lng ptrdiff_t;
 #endif
 #endif
 
-#define offset(p) 		(buf->offst + *(var_t*) (p))
-#define direct(p) 		(p)
+#define offset(p)		(buf->offst + *(var_t*) (p))
+#define direct(p)		(p)
 
 #define any_LE(a,b)		((buf->cmp)(a,b) <= 0)
 #define any_LT(a,b)		((buf->cmp)(a,b) <  0)
@@ -229,15 +229,16 @@ typedef chr any;
 @:qsort_algo(iterate,@1,@2,@3,@4)@
 
 @= qsort_algo
-static 
-void GDKqsort_@1_@2_@3@5(char *a, size_t n, buf_t *buf)
+static void
+GDKqsort_@1_@2_@3@5(char *a, size_t n, buf_t *buf)
 {
 	char *pa, *pb, *pc, *pd, *pl, *pm, *pn;
 	size_t r;
 	int swap_cnt;
 
 	/* Qsort routine from Bentley & McIlroy's "Engineering a Sort Function".  */
-loop:	swap_cnt = 0;
+loop:
+	swap_cnt = 0;
 	if (n < 7) {
 		for (pm = (char *) a + buf->width; pm < (char *) a + MULT_WIDTH(n); pm += buf->width)
 			for (pl = pm; pl > (char *) a && @2_@3_@4E(pl, pl - buf->width);
@@ -251,6 +252,7 @@ loop:	swap_cnt = 0;
 		pn = (char *) a + MULT_WIDTH(n - 1);
 		if (n > 40) {
 			size_t d;
+
 			d = MULT_WIDTH(n >> 3);
 			pl = @2_@3_@4MED3(pl, pl + d, pl + 2 * d, buf);
 			pm = @2_@3_@4MED3(pm - d, pm, pm + d, buf);
@@ -312,23 +314,27 @@ loop:	swap_cnt = 0;
 }
 
 @= call_offset_or_direct_storage
-/* factorization by storage mode */
-if (base) {
-	GDKqsort_@3_offset_@2@1(((char*) a)+loc, n, &buf); /* array of var_t, that are byte-offsets from some base */
-} else {
-	GDKqsort_@3_direct_@2@1(((char*) a)+loc, n, &buf); /* array of fixed-size values */
-} 
+	/* factorization by storage mode */
+	if (base) {
+		GDKqsort_@3_offset_@2@1(((char*) a)+loc, n, &buf); /* array of var_t, that are byte-offsets from some base */
+	} else {
+		GDKqsort_@3_direct_@2@1(((char*) a)+loc, n, &buf); /* array of fixed-size values */
+	} 
 
 @= call_iterate_or_register_swapmethod
-/* factorization by array swap implementation */
-if ((((size_t) a)&7) || width != 8) {
-	@:call_offset_or_direct_storage(@1,@2,iterate)@	/* array is non-aligned or entries are not one 64-bit integer wide */
-} else {
-	@:call_offset_or_direct_storage(@1,@2,register)@	/* we can swap array entries by one 64-bit integer swap */
-} break;
+	/* factorization by array swap implementation */
+	if ((((size_t) a)&7) || width != 8) {
+		/* array is non-aligned or entries are not one 64-bit integer wide */
+		@:call_offset_or_direct_storage(@1,@2,iterate)@
+	} else {
+		/* we can swap array entries by one 64-bit integer swap */
+		@:call_offset_or_direct_storage(@1,@2,register)@
+	}
+	break;
 
 @= qsort
-void GDKqsort@1(void *a, void* base, size_t n, int width, int tpe, int loc)
+void
+GDKqsort@1(void *a, void* base, size_t n, int width, int tpe, int loc)
 {
 	int i = 0;
 	buf_t buf;
@@ -344,31 +350,39 @@ void GDKqsort@1(void *a, void* base, size_t n, int width, int tpe, int loc)
 	do {
 		int mask = 1 << i; 
 		if ((width&mask) && (width & ~mask) == 0) {
-			buf.shift = i; break;
+			buf.shift = i;
+			break;
 		}
-	} while(++i < 32);
+	} while (++i < 32);
 
 	/* factorization by comparsion type */
-	switch(ATOMstorage(tpe)) {
+	switch (ATOMstorage(tpe)) {
 #ifndef NOEXPAND_CHR
-	case TYPE_chr: @:call_iterate_or_register_swapmethod(@1,chr)@
+	case TYPE_chr:
+		@:call_iterate_or_register_swapmethod(@1,chr)@
 #endif
 #ifndef NOEXPAND_SHT
-	case TYPE_sht: @:call_iterate_or_register_swapmethod(@1,sht)@
+	case TYPE_sht:
+		@:call_iterate_or_register_swapmethod(@1,sht)@
 #endif
 #ifndef NOEXPAND_INT
-	case TYPE_int: @:call_iterate_or_register_swapmethod(@1,int)@
+	case TYPE_int:
+		@:call_iterate_or_register_swapmethod(@1,int)@
 #endif
 #ifndef NOEXPAND_FLT
-	case TYPE_flt: @:call_iterate_or_register_swapmethod(@1,flt)@
+	case TYPE_flt:
+		@:call_iterate_or_register_swapmethod(@1,flt)@
 #endif
 #ifndef NOEXPAND_LNG
-	case TYPE_lng: @:call_iterate_or_register_swapmethod(@1,lng)@
+	case TYPE_lng:
+		@:call_iterate_or_register_swapmethod(@1,lng)@
 #endif
 #ifndef NOEXPAND_DBL
-	case TYPE_dbl: @:call_iterate_or_register_swapmethod(@1,dbl)@
+	case TYPE_dbl:
+		@:call_iterate_or_register_swapmethod(@1,dbl)@
 #endif
-	default:       @:call_iterate_or_register_swapmethod(@1,any)@
+	default:
+		@:call_iterate_or_register_swapmethod(@1,any)@
 	}
 }
 @c
@@ -378,19 +392,21 @@ void GDKqsort@1(void *a, void* base, size_t n, int width, int tpe, int loc)
 @ test
 main(int argc, char** argv)
 {
-        int i, n = atoi(argv[1]), m = atoi(argv[2]);
-        float d = 0.0, f = d, *buf = (float*) malloc(2*n*sizeof(float));
+	int i, n = atoi(argv[1]), m = atoi(argv[2]);
+	float d = 0.0, f = d, *buf = (float*) malloc(2*n*sizeof(float));
 
-        for(i=0; i < n; i++) {
-                buf[i+i] = f++;
+	for (i=0; i < n; i++) {
+		buf[i+i] = f++;
 		buf[i+i+1] = d++;
-		if (d > m) d = 0.0;
+		if (d > m)
+			d = 0.0;
 	}
 	printf("start sort\n");
 	GDKqsort(buf, NULL, n, 8, TYPE_flt, 4);
 	printf("end sort\n");
 	for(i=0; i < n; i++) {
-		printf("% 9i [% 9d,% 9d]\n", i, (int) buf[i+i], (int) buf[i+i+1]);
+		printf("% 9i [% 9d,% 9d]\n",
+		       i, (int) buf[i+i], (int) buf[i+i+1]);
 	}
 }
 @}
