@@ -415,7 +415,8 @@ subexelim:
     if (status->print_parse_tree) {
         if (proot) {
             if (status->print_pretty) {
-                printf ("Parse tree %s:\n", phases[status->stop_after]);
+                if (!status->quiet)
+                    printf ("Parse tree %s:\n", phases[status->stop_after]);
                 PFabssyn_pretty (pfout, proot);
             }
             if (status->print_dot)
@@ -430,7 +431,8 @@ subexelim:
     if (status->print_core_tree) {
         if (croot) {
             if (status->print_pretty) {
-                printf ("Core tree %s:\n", phases[status->stop_after]);
+                if (!status->quiet)
+                    printf ("Core tree %s:\n", phases[status->stop_after]);
                 PFcore_pretty (pfout, croot);
             }
             if (status->print_dot)
@@ -445,7 +447,8 @@ subexelim:
     if (status->print_algebra_tree) {
         if (aroot) {
             if (status->print_pretty) {
-                printf ("Algebra tree %s:\n", phases[status->stop_after]);
+                if (!status->quiet)
+                    printf ("Algebra tree %s:\n", phases[status->stop_after]);
                 PFalg_pretty (pfout, aroot);
             }
             if (status->print_dot)

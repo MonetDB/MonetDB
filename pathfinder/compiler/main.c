@@ -397,23 +397,23 @@
  * order of one-character option names.
  */
 static struct option long_options[] = {
-    { "enable-algebra",                0, NULL, 'A' },
-    { "print-att-dot",                 0, NULL, 'D' },
-/*  { "read-haskell-output",           0, NULL, 'H' }, */
-    { "fullhelp",                      0, NULL, 'H' },
-    { "print-mil_summer",              0, NULL, 'M' },
-    { "optimize",                      0, NULL, 'O' },
-    { "print-human-readable",          0, NULL, 'P' },
-    { "timing",                        0, NULL, 'T' },
-    { "print-algebra",                 0, NULL, 'a' },
-    { "print-core-tree",               0, NULL, 'c' },
-    { "help",                          0, NULL, 'h' },
-    { "print-mil-algebra",             0, NULL, 'm' },
-    { "print-parse-tree",              0, NULL, 'p' },
-    { "quiet",                         0, NULL, 'q' },
-    { "stop-after",                    1, NULL, 's' },
-    { "typing",                        0, NULL, 't' },
-    { NULL,                            0, NULL, 0 }
+    { "enable-algebra",               no_argument,    NULL, 'A' },
+    { "print-att-dot",                no_argument,    NULL, 'D' },
+/*  { "read-haskell-output",          no_argument,    NULL, 'H' }, */
+    { "fullhelp",                     no_argument,    NULL, 'H' },
+    { "print-mil_summer",             no_argument,    NULL, 'M' },
+    { "optimize",                  optional_argument, NULL, 'O' },
+    { "print-human-readable",         no_argument,    NULL, 'P' },
+    { "timing",                       no_argument,    NULL, 'T' },
+    { "print-algebra",                no_argument,    NULL, 'a' },
+    { "print-core-tree",              no_argument,    NULL, 'c' },
+    { "help",                         no_argument,    NULL, 'h' },
+    { "print-mil-algebra",            no_argument,    NULL, 'm' },
+    { "print-parse-tree",             no_argument,    NULL, 'p' },
+    { "quiet",                        no_argument,    NULL, 'q' },
+    { "stop-after",                required_argument, NULL, 's' },
+    { "typing",                       no_argument,    NULL, 't' },
+    { NULL,                           no_argument,    NULL, 0 }
 };
 
 /**
@@ -656,7 +656,7 @@ main (int argc, char *argv[])
             break;
 
         case 'O':
-            status->optimize = optarg?atoi(optarg):3;
+            status->optimize = optarg ? atoi(optarg) : 1;
             break;
 
         case 't':
