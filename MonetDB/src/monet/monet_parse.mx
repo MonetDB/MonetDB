@@ -655,7 +655,7 @@ session:
                 for(i = 0; i < lt->cnt; i++)  {
         	    str mod;
                     if (!lt->yysons[i]) continue;
-                    if (lt->yysons[i]->token == monet_tokident) {
+                    if ((int) lt->yysons[i]->token == monet_tokident) {
                             mod = arg(lt, i)->yyval.val.sval;
                     } else {
 			    ValRecord res;
@@ -1496,7 +1496,7 @@ int CMDconstant(Cntxt stk, YYSTREE lt, ValPtr res){
 
         for(t=lt; t; t=t->overflow) {
             for(i=0 ; i<lt->cnt; i++)
-		if (arg(t, i)->token == monet_tokident) {
+		    if ((int) arg(t, i)->token == monet_tokident) {
 		    str nme = arg(t, i)->yyval.val.sval;
 		    int s = stk;
 
