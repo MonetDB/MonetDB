@@ -25,7 +25,7 @@ the result to the proper variable]
 This module contains the actions to construct a MAL program, ready for
 optimization and execution by the Monet V5 kernel.
 
-The code base is modelled directly after its MIL variant, replacing
+The code base is modeled directly after its MIL variant, replacing
 each IO request by instructions to initialize the corresponding MAL data
 structure.
 To speed up the compilation, we may consider keeping a cache of pre-compiled
@@ -36,7 +36,7 @@ should be printed (done). Consider replacing modname/fcnname by
 an integer constant and a global lookup table. This should
 reduce the cost to prepare MAL statements significantly.
 
-A dummymodules is needed to load properly.
+A dummy module is needed to load properly.
 @-
 @h
 #ifndef _SQL2MAL_H
@@ -131,7 +131,7 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe )
 @+ MAL initialization
 Many instructions have a more or less fixed structure, therefore
 they can be assembled in a pre-compiled block. Each time we need it,
-a copy can be extraced and included in the MAL block
+a copy can be extracted and included in the MAL block
 
 The catalog relations should be maintained in a MAL box, which
 provides the handle for transaction management.
@@ -233,7 +233,7 @@ void dump_2(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name){
 }
 @-
 The big code generation switch. The sections are aligned to the
-Monet version4 code generation block for eas of comparison.
+Monet version4 code generation block for ease of comparison.
 @c
 int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
     InstrPtr q = NULL;

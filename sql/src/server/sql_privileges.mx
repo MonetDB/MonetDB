@@ -74,7 +74,7 @@ sql_export int sql_drop_user(mvc *m,  str user);
 
 @-
 The remainder has been taken over from the sql_server mil document.
-The code below provides abstractions to manage the priviliges.
+The code below provides abstractions to manage the privileges.
 @= accessRight
 	p = BUNfnd(BATmirror(auth_name), @1);
 	if(!p) return FALSE;

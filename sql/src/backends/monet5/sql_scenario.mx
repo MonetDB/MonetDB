@@ -19,7 +19,7 @@
 @t SQL catalog management
 @a N. Nes, M.L. Kersten
 @+ SQL scenario
-The SQL scenario imlementation is a derivative of the MAL session scenario.
+The SQL scenario implementation is a derivative of the MAL session scenario.
 
 It is also the first version that uses state records attached to
 the client record. They are initialized as part of the initialization 
@@ -45,7 +45,7 @@ sql_export str SQLengine(Client c);
 #endif /* _SQL_SCENARIO_H_ */
 
 @+ Scenario routines
-Before we are can process SQL statements the global catalogue
+Before we are can process SQL statements the global catalog
 should be initialized. Thereafter, each time a client enters
 we update its context descriptor to denote an SQL scenario.
 @c
@@ -213,7 +213,7 @@ Before we parse the sql statement, we look for any variable settings
 for specific commands.
 The most important one is to prepare code to be handled by the debugger.
 The current analysis is simple and fulfills our short-term needs.
-A future version may analyse the parameter settings in more detail.
+A future version may analyze the parameter settings in more detail.
 @c
 
 #define skip() while(*c->nxt && isspace(*c->nxt) ) c->nxt++;
@@ -241,7 +241,7 @@ void SQLsetExplain(Client c){
 	c->listing = (c->listing & LIST_INPUT) | LIST_MAL_ALL;
 }
 @-
-Analyse the flags and prepare the execution context
+Analyze the flags and prepare the execution context
 @c
 int SQLsetEnvironment(Client c){
         (void) c;
@@ -369,7 +369,7 @@ finalize:
 #endif
 	stream_flush(c->fdout);
 @-
-Gather the statistics for post analysis. It should preferrable
+Gather the statistics for post analysis. It should preferable
 be stored in an SQL table
 @c
         if (explainSQL()){
@@ -444,7 +444,7 @@ Then the SQL history table is just a view over a few basic bats.
 }
 @-
 The SQL front-end required some IO utilities, that may go beyond the
-primitives avaiable in the io.mx module.
+primitives available in the io.mx module.
 @c
 str SQLheader(int *ret,int *i){
 	/*return throwMessage("SQLheader","Not yet defined\n");*/

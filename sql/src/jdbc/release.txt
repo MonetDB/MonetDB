@@ -13,10 +13,10 @@ to be suitable for a majority of application settings.
 
 Below a list of supported features can be found.  Please read this list if you
 intend to use this driver.  If you feel some features are missing, please let
-us know at our sourceforge feature request page:
+us know at our SourceForge feature request page:
 http://sourceforge.net/tracker/?group_id=56967&atid=482471
 
-Feel free to file bugs, when they appear, at our sourceforge bug page as well.
+Feel free to file bugs, when they appear, at our SourceForge bug page as well.
 
 
 Currently implemented:
@@ -24,7 +24,7 @@ Currently implemented:
   * javax.sql.DataSource interface (not tested)
   * java.sql.Connection interface
     The next features are not implemented:
-    - createStatement with resultset holdability
+    - createStatement with result set holdability
     - nativeSQL (there is no query parsing for JDBC escapes yet)
     - prepareCall (CallableStatement not supported)
     - prepareStatement with more than just an SQL prepare statement
@@ -63,7 +63,7 @@ Currently implemented:
     - getAsciiStream, getBinaryStream, getUnicodeStream, getCharacterStream
     - getBlob, getClob
     - getRef, getURL
-    - all methods related to updateable result sets
+    - all methods related to updatable result sets
     * java.sql.ResultSetMetaData interface
       The next features are not implemented:
       - isCaseSensitive
@@ -83,4 +83,4 @@ Currently implemented:
   any given type map.
 - The PreparedStatement is currently a client side simulation of a prepared
   statement.  It does not really prepare on the server side.
-- Auto-commit behaviour is defined by the server which handles the auto-commit.
+- Auto-commit behavior is defined by the server which handles the auto-commit.

@@ -26,15 +26,15 @@ SET <variable>=<boolean>
 SET <variable>=<int>
 
 The SQL engine comes with a limited set of environment variables
-to control its behaviour. 
+to control its behavior. 
 The 'debug' variable takes an integer and sets the Mserver global
 debug flag. (See MonetDB documentation.)
 The 'explain' variable currently takes the values 'plan' or
 'performance'. The 'plan' qualifier produces a relational table with
-the plan derived for execution using the applicable backend and
+the plan derived for execution using the applicable back end and
 optimizer schemes. The 'performance' qualifier produces a performance
 trace of the SQL queries for post analysis. It is available in
-the system table called history. Ommission of either qualifier merely
+the system table called history. Omission of either qualifier merely
 results in a straight execution of the query.
 
 The 'auto_commit' flag takes a boolean and controls automatic commit
@@ -50,7 +50,7 @@ By default all remaining variables are stored as strings and
 any type analysis is up to the user. The can be freely used by the
 SQL programmer for inclusion in his queries. [TODO]
 
-The limited number of builtin variables defined above are 
+The limited number of built-in variables defined above are 
 strongly typed the hard way.
 Moreover, they have a counterpart representation in the 
 MVC structure to ease inspection during query processing.
@@ -360,7 +360,7 @@ They don't survive session boundaries
 }
 
 @-
-Handling of SQL variables is straigtforward.
+Handling of SQL variables is straightforward.
 @c
 int
 sql_session( mvc *m ) 

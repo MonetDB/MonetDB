@@ -18,16 +18,16 @@
 @f sql_backend
 @a N.J. Nes
 @* 
-The backend structure collects the information needed to support
-compilation and execution of the SQL code against a backend engine.
+The back end structure collects the information needed to support
+compilation and execution of the SQL code against a back-end engine.
 Note that any back-end can be called upon by the front-end
-to handle specific tasks, such as catalogue management (sql_mvc)
+to handle specific tasks, such as catalog management (sql_mvc)
 and query execution (sql_qc). For this purpose, the front-end needs
 access to operations defined in the back-end, in particular for
 freeing the stack and code segment.
 
-The front-end should not rely on knowledge how the backend handles 
-the actual query processing. Using the sample backends Monet4 and Monet5
+The front-end should not rely on knowledge how the back end handles 
+the actual query processing. Using the sample back ends Monet4 and Monet5
 are used to find the common ground here. The structure currently is a
 simple functional wrapper. It assumes that a single back-end is used
 for the duration of a session.

@@ -23,7 +23,7 @@ SQL client and the corresponding MIL runtime startup.
 
 The implementation described here is focused on using the Mapi library
 for interaction. This provides a simple textual interface to the server
-based on ascii text.
+based on ASCII text.
 
 It is intended to work directly with any of the MapiClient implementations.
 To avoid clashes with the default port settings, we have hardwired a number

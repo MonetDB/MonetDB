@@ -21,7 +21,7 @@
 @v 1.0
 @T
 @* Introduction
-[Make it a re-useable piece of code if possible, i.e. a module]
+[Make it a re-usable piece of code if possible, i.e. a module]
 In the philosophy of Monet, transaction management overhead should only
 be paid when necessary. Transaction management is for this purpose 
 implemented as a separate module and applications are required to
@@ -34,8 +34,8 @@ transaction commit to include the changes in the log file.
 [Niels, it does not necessarily work upon recovery, because the ADT
 may require an update of the local access structure, e.g. the
 hash table in the string heap.]
-[The alternative storage structure is an ascii dump, using a slightly
-enhanced Monet dumpfile format.
+[The alternative storage structure is an ASCII dump, using a slightly
+enhanced Monet dump file format.
  +batname[hv,tv]	insert the bun
  -batname[hv,tv]	delete the bun
  *batname[headtype,tailtype]	define a bat
@@ -56,7 +56,7 @@ the storage, i.e.
 
 The key decision to be made by the user is the location of the log file.
 Ideally, it should be stored in fail-safe environment, or at least
-the log and databases should be on separate disk volumns.
+the log and databases should be on separate disk columns.
 
 The current setup assumes that the log directory is a mounted file system. (?)
 This file system may reside on the hardware as the database server
@@ -69,11 +69,11 @@ the transaction manager first.
 
 Finding the updates applied to a BAT is relatively easy, because each
 BAT contains a delta structure. On commit these changes are
-writen to the log file and the delta management is reset. Since each 
+written to the log file and the delta management is reset. Since each 
 commit is written to the same log file, the beginning and end are 
 marked by a log identifier.
 
-Shouldn;t you dump the BAT version/timestamp? Updates are only
+Shouldn't you dump the BAT version/timestamp? Updates are only
 allowed when the BAT timestamp does not prohibit this.
 
 A server restart should only (re)process blocks which are completely 
@@ -122,7 +122,7 @@ This means that a client should use the following scheme
 ... update bat B ...
 logger.start()
 logger.safe(B)
-... other BAT updates to be safed.
+... other BAT updates to be saved.
 logger.commit()
 gdk.commit()	# implied by the logger.commit?
 

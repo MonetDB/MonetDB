@@ -19,12 +19,12 @@
 @a N.J. Nes
 @*
 The typing scheme of SQL is quite elaborate. The standard introduces
-several basic typs with a plethora of functions.
+several basic types with a plethora of functions.
 As long as we haven;t implemented a scheme to accept the
 function type signature and relate it to a C-function linked
 with the system, we have to patch the code below.
 
-Given the large number of examplex, it should be relatively
+Given the large number of examples, it should be relatively
 easy to find something akin you intend to enter.
 @h
 #ifndef SQL_TYPES_H

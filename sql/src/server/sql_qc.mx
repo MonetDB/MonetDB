@@ -28,7 +28,7 @@ The scheme used here is based on keeping a hash-key around for
 the original text and subsequently perform a parse-tree comparison.
 This means that only text-identical queries are captured.
 
-The upper layers should consider the cache as an auxillary
+The upper layers should consider the cache as an auxiliary
 structure. There is no guarantee that elements remain in
 the cache forever, nor control features to assure this.
 

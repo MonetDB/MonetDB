@@ -7,13 +7,13 @@
 The MonetDB Mapi protocol knows two modes of communication;
 (1) line mode, (2) block mode. The JDBC driver for MonetDB can
 use both modes when communicating to Monet, having an almost
-transparent result on it's behaviour.
+transparent result on its behavior.
 
 
 \subsection{Line mode protocol}
 
 The line mode protocol of MonetDB is the simplest communication
-method, and very suitable for understanding the dialogues between
+method, and very suitable for understanding the dialogs between
 the server and the driver.
 
 In line mode, each newline character is a separator, indicating
@@ -84,15 +84,15 @@ in line mode by the \textsf{Reader}'s \textsf{readLine} method.
 
 Although the JDBC driver tries to make it transparent to the user, which
 mode is used, there are some differences. There is one difference in
-behaviour and some differences in performance.
+behavior and some differences in performance.
 
 
-\subsection{Behavioural difference}
+\subsection{Behavioral difference}
 
 When using line mode, queries that are sent cannot contain newlines.
 This restriction can be related directly to the line mode protocol, since
 newlines are treated as separators. As a result of this, a user cannot
-send a multiline query. Block mode however, since it does not treat
+send a multi-line query. Block mode however, since it does not treat
 the newline as separator, can handle such queries. Since many
 query applications have graphical enhancements which encourage
 the use of newlines in queries, block mode is an enabler for those
@@ -126,7 +126,7 @@ was used while restoring was done by feeding the dumped file to the
 client using the \textsf{-f} flag.
 
 For each benchmark we (re)started Mserver and ran once the to be
-run test to let the system initialise and cache whatever it liked.
+run test to let the system initialize and cache whatever it liked.
 After this, initial run, we started three tests in sequence.
 
 
@@ -179,7 +179,7 @@ Line mode & 1m33.233s & 1m33.821s & 1m35.651s & 1m34.235s \\
 \end{table}
 
 The average difference between line and block mode is 2 seconds in
-favour of line mode, which is considered to be a very small difference
+favor of line mode, which is considered to be a very small difference
 regarding the amount of data.
 
 

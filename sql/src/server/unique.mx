@@ -20,7 +20,7 @@
 @* Unique Keys
 
 @+
-The unique module add commands to improve monets ability to check Unique keys.
+The unique module adds commands to improve MonetDB's ability to check Unique keys.
 Currently keys could be checked using the CTgroup/CTderive commands from the
 xtables module. CTs suffer from bad performance as they assume the
 result contains only a small number of groups, whereas unique keys should 
@@ -30,8 +30,8 @@ The unique module is optimized for clustered data, a common case for keys.
 Special cases are, array index (cluster with repeats), 
 	and clustered with exceptions. The array index can be stored
 efficient by just remembering the array index function which is a combination
-of a simple two dimentional array index, and some multiplication and addition
-with constant values. A cluster with exceptions can be handeled using a
+of a simple two dimensional array index, and some multiplication and addition
+with constant values. A cluster with exceptions can be handled using a
 cluster hash, which basically is a bat with the cluster values in the head
 and offsets in the tail, where cluster values may repeat!.
 

@@ -38,11 +38,11 @@ jar_MonetDB_JDBC = {
 }
 
 doc_jdbc = {
-	DIR = datadir/MonetDB/docs/SQL/jdbc/
+	DIR = datadir/MonetDB/docs/SQL/jdbc
 	SOURCES = jdbcmanual.tex 
 }
 
 doc_bench = {
-	DIR = datadir/MonetDB/docs/SQL/jdbc/
+	DIR = datadir/MonetDB/docs/SQL/jdbc
 	SOURCES = benchblockmode.tex
 }
