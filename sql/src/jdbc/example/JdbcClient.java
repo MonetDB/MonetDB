@@ -397,7 +397,9 @@ public class JdbcClient {
 					if (qp.isComplete()) {
 						try {
 							// execute the query, let the driver decide what type it is
-							boolean nextRslt = stmt.execute(query);
+							int aff = -1;
+							boolean	nextRslt = stmt.execute(query);
+							if (!nextRslt) aff = stmt.getUpdateCount();
 							do {
 								if (nextRslt) {
 									// we have a ResultSet, print it
@@ -442,15 +444,15 @@ public class JdbcClient {
 
 									out.println(count + " row" + (count != 1 ? "s" : ""));
 									rs.close();
-								} else {
+								} else if (aff >= 0) {
 									// we have an update count
-									out.println("affected rows\n-------------\n" + stmt.getUpdateCount());
+									out.println(aff + " affected row" + (aff != 1 ? "s" : ""));
 								}
 
-								nextRslt = stmt.getMoreResults();
 								out.println();
 								out.flush();
-							} while (nextRslt || (stmt.getUpdateCount() != -1));
+							} while ((nextRslt = stmt.getMoreResults()) ||
+									 (aff = stmt.getUpdateCount()) != -1);
 						} catch (SQLException e) {
 							System.err.println("Error on line " + i + ": " + e.getMessage());
 							System.err.println("Executed query: " + query);
