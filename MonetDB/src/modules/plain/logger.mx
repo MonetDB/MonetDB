@@ -513,11 +513,14 @@ int logger_listen(int *port){
 				char *data;
 
 				if (fread( &nr, sizeof(int), 1, fdin) != 1){
-				    printf("(nr) could not read anything\n");
+				    if (!feof(fdin)){
+				    	printf( "Nothing to read (nr) %s\n", 
+					 	ferror(fdin));
+				    }
 				    break;
 				}
 				if (fread( &id, sizeof(int), 1, fdin) != 1){
-				    printf("(id) could not read anything\n");
+				    printf( "Id missing %s\n",ferror(fdin));
 				    break;
 				}
 				
