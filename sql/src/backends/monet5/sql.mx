@@ -442,18 +442,16 @@ access the BAT descriptor.
 @c
 
 str mvc_bind_single_wrap(int *ret, int *bid, str *name){
-	mvc *m;
 	BAT *b,*bn;
 	int r,res;
 	ptr p;
-
-	@:getContext(m)@
 
 	@:getBATdescriptor(&res,bid,bn,sql.bind)@
 
 	p=  BUNfnd(bn,*name);
 	r= *(int*) BUNtail(bn,p);
 	@:getBATdescriptor(&res,&r,b,sql.bind)@
+	(void)res;
 	*ret = b->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -645,14 +643,10 @@ BAT *mvc_import_table( mvc *m, bstream *bs, char *tname,
 	}
 
 	if (t->columns.set){
-		stream *out = m->scanner.ws;
 		as.nr_attrs = list_length(t->columns.set);
 		as.nr = sz;
 		fmt = as.format =
                     (Column*)GDKmalloc(sizeof(Column) * (as.nr_attrs + 1) );
-
-		if (!isa_block_stream(bs->s))
-			out = NULL;
 
 		for (n = t->columns.set->h, i=0; n; n = n->next, i++)
 		{
