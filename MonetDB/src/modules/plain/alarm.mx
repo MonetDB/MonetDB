@@ -62,9 +62,9 @@ The timer is disabled when no timer events are outstanding.
 #define MAXtimer                200
 
 typedef struct {
-	str action;	/* MIL action (as a string) */
-	MT_Sema sema;	/* barrier */
-	int alarm_time;	/* time when the alarm goes off */
+	str action;		/* MIL action (as a string) */
+	MT_Sema sema;		/* barrier */
+	time_t alarm_time;	/* time when the alarm goes off */
 } monet_timer_t;
 
 @c
@@ -93,7 +93,7 @@ A new alarm is pushed onto the stack using @%CLKalarm@.
 The parameter is the real-time value to be approximated.
 @c
 #ifdef SIGALRM
-MT_Sema CLKalarm(int t, str action){
+MT_Sema CLKalarm(time_t t, str action){
         int     j;
         int     k; 
  
@@ -204,7 +204,7 @@ int CMDalarm(int *secs, str action){
 		GDKerror("CMDalarm: not implemented\n");
 		return GDK_FAIL;
 #else
-                (void) CLKalarm(*secs+time(0), action);
+                (void) CLKalarm(time(0) + *secs, action);
 #endif
         }
         return GDK_SUCCEED;
@@ -222,13 +222,14 @@ int CMDtimers(BAT **retval) {
 	if(*retval == NULL) return GDK_FAIL;
 	BATroles(*retval, "alarm", "action");
 	for (k = 0; k < timerTop; k++) {
+		time_t t = timer[k].alarm_time;
 #ifdef HAVE_CTIME_R3
-		ctime_r((time_t *) &timer[k].alarm_time,buf,26); 
+		ctime_r(&t,buf,26); 
 #else
 #ifdef HAVE_CTIME_R
-		ctime_r((time_t *) &timer[k].alarm_time,buf); 
+		ctime_r(&t,buf); 
 #else
-		ctime((time_t *) &timer[k].alarm_time); 
+		ctime(&t); 
 #endif
 #endif
 		if( buf)
