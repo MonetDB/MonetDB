@@ -1,0 +1,53 @@
+#testing the partition optimizer
+
+a1:= new(:void,:int);
+setSequenceBase(a1,0@0);
+a2:= new(:void,:int);
+setSequenceBase(a2,10@0);
+a3:= new(:void,:int);
+setSequenceBase(a3,20@0);
+b1:= new(:void,:int);
+setSequenceBase(b1,0@0);
+b2:= new(:void,:int);
+setSequenceBase(b2,10@0);
+b3:= new(:void,:int);
+setSequenceBase(b3,20@0);
+
+barrier (go,i):= newRange(0);
+	bat.insert(a1,nil,i);
+	bat.insert(a2,nil,i);
+	bat.insert(a3,nil,i);
+	bat.insert(b1,nil,i);
+	bat.insert(b2,nil,i);
+	bat.insert(b3,nil,i);
+	redo (go,i):= nextElement(1,10);
+exit (go,i);
+#print(a1);
+#print(a2);
+#print(a3);
+
+
+# add it to the BAT partition table
+partitions.deposit(a1);
+partitions.deposit(a1,a2);
+partitions.deposit(a1,a3);
+partitions.deposit(b1);
+partitions.deposit(b1,b2);
+partitions.deposit(b1,b3);
+partitions.dump();
+
+# this query is already tricky because there are
+# two sinks. A naive translation will produce
+# a double nested loop
+function qry(a:bat[:void,:int], b:bat[:void,:int]);
+	print("experiment 3");
+	c:= select(a,0,10);
+	m:= mirror(c);
+	j:= join(m,b);
+	print(j);
+end qry;
+
+optimizer.partitionedQuery("Admin","qry");
+showFunction("Admin","qry");
+print("run experiment");
+qry(a1,b1);
