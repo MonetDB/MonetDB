@@ -312,6 +312,7 @@ upon return;
 @c
 Client initClient(str nme, str passwd, stream *fin, stream *fout){
     Client  c;
+    str prompt;
 
     if( ( c= newClient()) == NULL) {
         if( nme != 0) GDKfree(nme);
@@ -356,8 +357,10 @@ collect the buffer when in use.
     c->errbuf = 0;
 
     c->cwd= GDKstrdup(monet_cwd);
-    c->prompt= GDKstrdup(">");
-    c->promptlength= strlen(c->prompt);
+    prompt= GDKgetenv("monet_prompt");
+    if( prompt== 0) prompt= ">";
+    c->prompt= GDKstrdup(prompt);
+    c->promptlength= strlen(prompt);
     if( isAdministrator(c)) initClientThread(c);
     return c;
 }
