@@ -50,8 +50,6 @@ sql_export void sql_destroy_args( mvc *sql );			/* used in src/server/sql_contex
 #include "sql_symbol.h"
 #include "sql_statement.h"
 #include "sql_scope.h"
-#include "sql_optimize.h"
-#include "sql_rel2bin.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
 
