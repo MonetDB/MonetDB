@@ -9,4 +9,3 @@ mods@batloop(){
 	drop($t);
 }
 
-quit();

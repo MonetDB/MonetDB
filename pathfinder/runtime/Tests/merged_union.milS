@@ -52,6 +52,3 @@ var x := merged_union(a,b,c,d);
 print(x);
 print(fetch(x,0),fetch(x,1));
 
-
-quit();
-

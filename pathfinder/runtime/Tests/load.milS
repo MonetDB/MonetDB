@@ -12,4 +12,3 @@ mods@batloop(){
 	loaded();
 }
 
-quit();
