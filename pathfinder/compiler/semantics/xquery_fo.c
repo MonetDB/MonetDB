@@ -79,6 +79,14 @@
   { .ns = PFns_fn, .loc = "doc",                                         \
     .arity = 1, .par_ty = { PFty_opt (PFty_string ()) },                 \
     .ret_ty = PFty_opt (PFty_doc (PFty_xs_anyNode ())) }                 \
+, /* fn:position () as integer */                                        \
+  { .ns = PFns_fn, .loc = "position",                                    \
+    .arity = 0,                                                          \
+    .ret_ty = PFty_integer () }                                          \
+, /* fn:last () as integer */                                            \
+  { .ns = PFns_fn, .loc = "last",                                        \
+    .arity = 0,                                                          \
+    .ret_ty = PFty_integer () }                                          \
 , /* fn:empty (item*) as boolean  (F&O 14.2.5) */                        \
   { .ns = PFns_fn, .loc = "empty",                                       \
     .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
@@ -90,6 +98,11 @@
 , /* fn:boolean (item*) as boolean */                                    \
   { .ns = PFns_fn, .loc = "boolean",                                     \
     .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
+    .ret_ty = PFty_boolean () }                                          \
+, /* fn:contains (string?, string?) as boolean */                        \
+  { .ns = PFns_fn, .loc = "contains",                                    \
+    .arity = 2, .par_ty = { PFty_opt (PFty_string ()),                   \
+                            PFty_opt (PFty_string ()) },                 \
     .ret_ty = PFty_boolean () }                                          \
 , /* fn:count (item*) as integer */                                      \
   { .ns = PFns_fn, .loc = "count",                                       \
@@ -622,6 +635,11 @@
   { .ns = PFns_pf, .loc = "item-sequence-to-untypedAtomic",              \
     .arity = 1, .par_ty = { PFty_star (PFty_item ())},                   \
     .ret_ty = PFty_untypedAtomic () }                                    \
+  /* FIXME: distinct-values should be changed to anyAtomicType* */       \
+, /* fn:distinct-values (atomic*) as atomic* */                          \
+  { .ns = PFns_fn, .loc = "distinct-values",                             \
+    .arity = 1, .par_ty = { PFty_star (PFty_untypedAtomic ())},          \
+    .ret_ty = PFty_star (PFty_untypedAtomic ()) }                        \
 , /* op:is-same-node (node?, node?) as boolean? */                       \
   { .ns = PFns_op, .loc = "is-same-node",                                \
     .arity = 2, .par_ty = { PFty_opt (PFty_node ()),                     \
@@ -660,11 +678,15 @@
   { .ns = PFns_pf, .loc = "typed-value",                                 \
     .arity = 1, .par_ty = { PFty_node () },                              \
     .ret_ty = PFty_star (PFty_untypedAtomic ()),                         \
-    /* FIXME: does this still fit or is it string-value? */\
+    /* FIXME: does this still fit or is it string-value? */              \
     .alg = PFbui_op_typed_value }                                        \
 , /* pf:string-value (node) as string */                                 \
   { .ns = PFns_pf, .loc = "string-value",                                \
     .arity = 1, .par_ty = { PFty_node () },                              \
+    .ret_ty = PFty_string () }                                           \
+, /* fn:string (item?) as string */                                      \
+  { .ns = PFns_fn, .loc = "string",                                      \
+    .arity = 1, .par_ty = { PFty_opt (PFty_item ()) },                   \
     .ret_ty = PFty_string () }                                           \
 , /* pf:distinct-doc-order (node *) as node* */                          \
   { .ns = PFns_pf, .loc = "distinct-doc-order",                          \

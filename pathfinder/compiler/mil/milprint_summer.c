@@ -40,9 +40,6 @@
 #include "oops.h"
 #include "subtyping.h"
 
-/* FIXME: throw this out asap */
-#include "coreprint.h"
-
 static void
 translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c);
 
@@ -111,7 +108,7 @@ init (FILE *f)
 
             /* reference for empty attribute construction */
             "str_values.insert(0@0,\"\");\n"
-            "const EMPTY_STRING := 0@0;\n"
+            "var EMPTY_STRING := 0@0;\n"
 
              /* variable binding for loop-lifting of the empty sequence */
             "var empty_bat := bat(void,oid).seqbase(0@0);\n"
@@ -320,10 +317,16 @@ print_output (FILE *f)
             "        else ws.fetch(DOC_LOADED).fetch(oid(i)).print;\n"
             "        printf(\"---- attributes ----\\n\");\n"
             "        if (ws.fetch(ATTR_OWN).fetch(i).count < 100) {\n"
-            "                print(ws.fetch(ATTR_OWN).fetch(i), "
-                                  "mposjoin(ws.fetch(ATTR_QN).fetch(i), "
-                                           "ws.fetch(ATTR_FRAG).fetch(i), "
-                                           "ws.fetch(QN_LOC)));\n"
+            "                var attribute := mposjoin(ws.fetch(ATTR_QN).fetch(i), "
+                                                      "ws.fetch(ATTR_FRAG).fetch(i), "
+                                                      "ws.fetch(QN_LOC));\n"
+            "                attribute := attribute.[+](\"='\");\n"
+            "                attribute := attribute.[+](mposjoin(ws.fetch(ATTR_PROP).fetch(i), "
+                                                                "ws.fetch(ATTR_FRAG).fetch(i), "
+                                                                "ws.fetch(PROP_VAL)));\n"
+            "                attribute := attribute.[+](\"'\");\n"
+            "                attribute := attribute.reverse.mark(0@0).reverse;\n"
+            "                print(ws.fetch(ATTR_OWN).fetch(i), attribute);\n"
             "        } else {\n"
             "                print(ws.fetch(ATTR_OWN).fetch(i).count);\n"
             "        }\n"
@@ -1099,21 +1102,23 @@ addValues (FILE *f, char *tablename, char *varname)
  * @param f the Stream the MIL code is printed to
  */
 static void
-createEnumeration (FILE *f)
+createEnumeration (FILE *f, int act_level)
 {
     fprintf(f,
             "{ # createEnumeration ()\n"
             /* the head of item has to be void */
-            "var ints_cE := item.mark(1@0).[int];\n"
-           );
+            "var ints_cE := outer%03u.mark_grp(outer%03u.tunique.project(1@0)).[int];\n",
+            act_level, act_level);
     addValues (f, "int_values", "ints_cE");
     fprintf(f,
             "item := ints_cE.reverse.mark(0@0).reverse;\n"
             "ints_cE := nil;\n"
+            "iter := inner%03u.reverse.mark(0@0).reverse;\n"
+            "pos := iter.project(1@0);\n"
             /* change kind information to int */
             "kind := kind.project(INT);\n"
-            "} # end of createEnumeration ()\n"
-           );
+            "} # end of createEnumeration ()\n",
+            act_level);
 }
 
 /**
@@ -1847,6 +1852,144 @@ translateIfThen (FILE *f, int act_level, int counter,
     act_level--;
 }
 
+static void
+fn_boolean (FILE *f, int act_level, PFty_t input_type)
+{
+    fprintf(f,
+            "{ # translate fn:boolean (item*) as boolean\n"
+            "var iter_count := {count}(iter.reverse, loop%03u.reverse);\n"
+            "var trues := iter_count.[!=](0);\n",
+            act_level);
+
+    if (PFty_subtype (input_type, PFty_star(PFty_integer ())))
+    {
+        fprintf(f,
+                "trues.access(BAT_WRITE);\n"
+                "var test := iter_count.ord_uselect(1).mirror;\n"
+                "test := test.leftjoin(iter.reverse);\n"
+                "var test_item := test.leftfetchjoin(item);\n"
+                "var test_int := test_item.leftfetchjoin(int_values);\n"
+                "var test_falses := test_int.ord_uselect(0);\n"
+                "var falses := test_falses.project(false);\n"
+                "trues.replace(falses);\n"
+                "trues.access(BAT_READ);\n");
+    }
+    else if (PFty_subtype (input_type, PFty_star(PFty_double ())))
+    {
+        fprintf(f,
+                "trues.access(BAT_WRITE);\n"
+                "var test := iter_count.ord_uselect(1).mirror;\n"
+                "test := test.leftjoin(iter.reverse);\n"
+                "var test_item := test.leftfetchjoin(item);\n"
+                "var test_dbl := test_item.leftfetchjoin(dbl_values);\n"
+                "var test_falses := test_dbl.ord_uselect(dbl(0));\n"
+                "var falses := test_falses.project(false);\n"
+                "trues.replace(falses);\n"
+                "trues.access(BAT_READ);\n");
+    }
+    else if (PFty_subtype (input_type, PFty_star(PFty_decimal ())))
+    {
+        fprintf(f,
+                "trues.access(BAT_WRITE);\n"
+                "var test := iter_count.ord_uselect(1).mirror;\n"
+                "test := test.leftjoin(iter.reverse);\n"
+                "var test_item := test.leftfetchjoin(item);\n"
+                "var test_dec := test_item.leftfetchjoin(dec_values);\n"
+                "var test_falses := test_dec.ord_uselect(dbl(0));\n"
+                "var falses := test_falses.project(false);\n"
+                "trues.replace(falses);\n"
+                "trues.access(BAT_READ);\n");
+    }
+    else if (PFty_subtype (input_type, PFty_star(PFty_string ())))
+    {
+        fprintf(f,
+                "trues.access(BAT_WRITE);\n"
+                "var test := iter_count.ord_uselect(1).mirror;\n"
+                "test := test.leftjoin(iter.reverse);\n"
+                "var test_item := test.leftfetchjoin(item);\n"
+                "var test_str := test_item.leftfetchjoin(str_values);\n"
+                "var test_falses := test_str.ord_uselect(\"\");\n"
+                "var falses := test_falses.project(false);\n"
+                "trues.replace(falses);\n"
+                "trues.access(BAT_READ);\n");
+    }
+    else if (PFty_subtype (input_type, PFty_star(PFty_boolean ())))
+    {
+        fprintf(f,
+                "trues.access(BAT_WRITE);\n"
+                "var test := iter_count.ord_uselect(1).mirror;\n"
+                "test := test.leftjoin(iter.reverse);\n"
+                "var test_item := test.leftfetchjoin(item);\n"
+                "var test_falses := test_item.ord_uselect(0@0);\n"
+                "var falses := test_falses.project(false);\n"
+                "trues.replace(falses);\n"
+                "trues.access(BAT_READ);\n");
+
+    }
+    else if (PFty_subtype (input_type, PFty_star(PFty_atomic ())))
+    {
+
+        /* FIXME: rewrite stuff two use only one column instead of oid|oid */
+        fprintf(f,
+                "trues.access(BAT_WRITE);\n"
+                "var test := iter_count.ord_uselect(1).mirror;\n"
+                "iter := iter.reverse;\n"
+                "item := iter.leftfetchjoin(item);\n"
+                "kind := iter.leftfetchjoin(kind);\n"
+                "test := test.leftjoin(kind);\n"
+                "var str_test := test.ord_uselect(STR);\n"
+                "var int_test := test.ord_uselect(INT);\n"
+                "var dbl_test := test.ord_uselect(DBL);\n"
+                "var dec_test := test.ord_uselect(DEC);\n"
+                "var bool_test := test.ord_uselect(BOOL);\n"
+                "test := nil;\n"
+                "str_test := str_test.mirror;\n"
+                "int_test := int_test.mirror;\n"
+                "dbl_test := dbl_test.mirror;\n"
+                "dec_test := dec_test.mirror;\n"
+                "bool_test := bool_test.mirror;\n"
+                "str_test := str_test.leftjoin(item);\n"
+                "int_test := int_test.leftjoin(item);\n"
+                "dec_test := dec_test.leftjoin(item);\n"
+                "dbl_test := dbl_test.leftjoin(item);\n"
+                "bool_test := bool_test.leftjoin(item);\n"
+                "str_test := str_test.leftfetchjoin(str_values);\n"
+                "int_test := int_test.leftfetchjoin(int_values);\n"
+                "dec_test := dec_test.leftfetchjoin(dec_values);\n"
+                "dbl_test := dbl_test.leftfetchjoin(dbl_values);\n"
+                "bool_test := bool_test.ord_uselect(0@0);\n"
+                "str_test := str_test.ord_uselect(\"\");\n"
+                "int_test := int_test.ord_uselect(0);\n"
+                "dec_test := dec_test.ord_uselect(dbl(0));\n"
+                "dbl_test := dbl_test.ord_uselect(dbl(0));\n"
+                "str_test := str_test.project(false);\n"
+                "int_test := int_test.project(false);\n"
+                "dec_test := dec_test.project(false);\n"
+                "dbl_test := dbl_test.project(false);\n"
+                "bool_test := bool_test.project(false);\n"
+                "trues.replace(str_test);\n"
+                "str_test := nil;\n"
+                "trues.replace(int_test);\n"
+                "int_test := nil;\n"
+                "trues.replace(dec_test);\n"
+                "dec_test := nil;\n"
+                "trues.replace(dbl_test);\n"
+                "dbl_test := nil;\n"
+                "trues.replace(bool_test);\n"
+                "bool_test := nil;\n"
+                "trues.access(BAT_READ);\n");
+    }
+    fprintf(f,
+            "trues := trues.leftjoin(bool_map);\n"
+            "iter := iter_count.mark(0@0).reverse;\n"
+            "iter_count := nil;\n"
+            "pos := iter.project(1@0);\n"
+            "kind := iter.project(BOOL);\n"
+            "item := trues.reverse.mark(0@0).reverse;\n"
+            "trues := nil;\n"
+            "} # end of translate fn:boolean (item*) as boolean\n");
+}
+
 /**
  * testCastComplete tests if the result of a Cast
  * also contains empty sequences and produces an
@@ -2259,15 +2402,21 @@ translateCast (FILE *f, int act_level, PFcnode_t *c)
  * @param counter the actual offset of saved variables
  * @param operator the operator which is evaluated
  * @param table the name of the table where the values are saved
+ * @param div enables the test wether a division is made
  */
 static void
-evaluateOp (FILE *f, int counter, char *operator, char *table)
+evaluateOp (FILE *f, int counter, char *operator, char *table, char *div)
 {
     /* FIXME: assume that both intermediate results are aligned 
               otherwise this doesn't work */
     fprintf(f, "item := item.leftfetchjoin(%s);\n", table);
     fprintf(f, "item%03u := item%03u.leftfetchjoin(%s);\n",
             counter, counter, table);
+    if (div)
+        fprintf(f, 
+                "if (item.ord_uselect(%s).count > 0)\n"
+                "   ERROR (\"division by 0 is forbidden\");\n",
+                div);
     /* item%03u is the older (first) argument and has to be the first operand
        for the evaluation */
     fprintf(f, "item := item%03u.[%s](item);\n", counter, operator);
@@ -2286,9 +2435,10 @@ evaluateOp (FILE *f, int counter, char *operator, char *table)
  * @param operator the operator which is evaluated
  * @param table the name of the table where the values are saved
  * @param kind the type of the new intermediate result
+ * @param div enables the test wether a division is made
  */
 static void
-evaluateOpOpt (FILE *f, int counter, char *operator, char *table, char *kind)
+evaluateOpOpt (FILE *f, int counter, char *operator, char *table, char *kind, char *div)
 {
     fprintf(f, "item := item.leftfetchjoin(%s);\n", table);
     fprintf(f, "item := iter.reverse.leftfetchjoin(item);\n");
@@ -2296,6 +2446,11 @@ evaluateOpOpt (FILE *f, int counter, char *operator, char *table, char *kind)
             counter, counter, table);
     fprintf(f, "item%03u := iter%03u.reverse.leftfetchjoin(item%03u);\n",
             counter, counter, counter);
+    if (div)
+        fprintf(f, 
+                "if (item.ord_uselect(%s).count > 0)\n"
+                "   ERROR (\"division with 0 is forbidden\");\n",
+                div);
     /* item%03u is the older (first) argument and has to be the first operand
        for the evaluation */
     fprintf(f, "item := item%03u.[%s](item);\n", counter, operator);
@@ -2317,10 +2472,11 @@ evaluateOpOpt (FILE *f, int counter, char *operator, char *table, char *kind)
  * @param counter the actual offset of saved variables
  * @param operator the operator which is evaluated
  * @args the head of the argument list
+ * @param div enables the test wether a division is made
  */
 static void
 translateOperation (FILE *f, int act_level, int counter, 
-                    char *operator, PFcnode_t *args)
+                    char *operator, PFcnode_t *args, bool div)
 {
     PFty_t expected = args->type;
 
@@ -2333,27 +2489,33 @@ translateOperation (FILE *f, int act_level, int counter,
     /* evaluate the operation */
     if (PFty_eq(expected, PFty_integer()))
     {
-        evaluateOp (f, counter, operator, "int_values");
+        evaluateOp (f, counter, operator,
+                    "int_values", div?"0":0);
     }
     else if (PFty_eq(expected, PFty_double()))
     {
-        evaluateOp (f, counter, operator, "dbl_values");
+        evaluateOp (f, counter, operator,                                                                                                                    
+                    "dbl_values", div?"dbl(0)":0);
     }
     else if (PFty_eq(expected, PFty_decimal()))
     {
-        evaluateOp (f, counter, operator, "dec_values");
+        evaluateOp (f, counter, operator,                                                                                                                    
+                    "dec_values", div?"dbl(0)":0);
     }
     else if (PFty_eq(expected, PFty_opt(PFty_integer())))
     {
-        evaluateOpOpt (f, counter, operator, "int_values", "INT");
+        evaluateOpOpt (f, counter, operator,
+                       "int_values", "INT", div?"0":0);
     }
     else if (PFty_eq(expected, PFty_opt(PFty_double())))
     {
-        evaluateOpOpt (f, counter, operator, "dbl_values", "DBL");
+        evaluateOpOpt (f, counter, operator,                                                                                                                 
+                       "dbl_values", "DBL", div?"dbl(0)":0);
     }
     else if (PFty_eq(expected, PFty_opt(PFty_decimal())))
     {
-        evaluateOpOpt (f, counter, operator, "dec_values", "DEC");
+        evaluateOpOpt (f, counter, operator,                                                                                                                 
+                       "dec_values", "DEC", div?"dbl(0)":0);
     }
     else
         PFlog("thinking error: result type '%s' is not supported",
@@ -2792,6 +2954,8 @@ is2ns (FILE *f, int counter, PFty_t input_type)
             "input_const := res_mu_is2ns.fetch(2);\n"
             "var input_iter := input_order.leftfetchjoin(iter%03u);\n"
             "var result_size := iter%03u.tunique.count + nodes.count + 1;\n"
+            /* doesn't believe, that iter as well as input_order are ordered on h & t */
+            "input_iter.chk_order(false);\n"
             /* apply the rules for the content of element construction */
             "var result_str := combine_text_string "
                               "(input_iter, input_const, input_str, result_size);\n"
@@ -2822,11 +2986,11 @@ is2ns (FILE *f, int counter, PFty_t input_type)
             "res_mu_is2ns := merged_union (res_mu_is2ns.fetch(0), iter_attr, "
                                           "res_mu_is2ns.fetch(1), item_attr, "
                                           "res_mu_is2ns.fetch(2), kind_attr);\n"
-            "iter := res_mu_is2ns.fetch(0);\n"
+            "iter := res_mu_is2ns.fetch(0).leftfetchjoin(iter%03u);\n"
             "item := res_mu_is2ns.fetch(1);\n"
             "kind := res_mu_is2ns.fetch(2);\n"
             "pos := iter.mark_grp(iter.tunique.project(1@0));\n",
-            counter, counter, counter, counter, counter, counter);
+            counter, counter, counter, counter, counter, counter, counter);
     deleteResult (f, counter);
 }
 
@@ -2942,71 +3106,104 @@ translateFunction (FILE *f, int act_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"boolean")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-            
+        fn_boolean (f, act_level, args->type);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"contains")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, act_level, counter, args->child[1]->child[0]);
         fprintf(f,
-                "{ # translate fn:boolean (item*) as boolean\n"
-                "iter := iter.reverse;\n"
-                "var iter_count := {count}(iter,loop%03u.reverse);\n",
-                act_level);
-        /* FIXME: rewrite stuff two use only one column instead of oid|oid */
-        fprintf(f,
-                "var test := iter_count.ord_uselect(1);\n"
-                "var trues := iter_count.[!=](0);\n"
-                "trues.access(BAT_WRITE);\n"
-                "iter_count := nil;\n"
-                "item := iter.leftfetchjoin(item);\n"
-                "kind := iter.leftfetchjoin(kind);\n"
-                "test := test.mirror;\n"
-                "test := test.leftjoin(kind);\n"
-                "var str_test := test.ord_uselect(STR);\n"
-                "var int_test := test.ord_uselect(INT);\n"
-                "var dbl_test := test.ord_uselect(DBL);\n"
-                "var dec_test := test.ord_uselect(DEC);\n"
-                "var bool_test := test.ord_uselect(BOOL);\n"
-                "test := nil;\n"
-                "str_test := str_test.mirror;\n"
-                "int_test := int_test.mirror;\n"
-                "dbl_test := dbl_test.mirror;\n"
-                "dec_test := dec_test.mirror;\n"
-                "bool_test := bool_test.mirror;\n"
-                "str_test := str_test.leftjoin(item);\n"
-                "int_test := int_test.leftjoin(item);\n"
-                "dec_test := dec_test.leftjoin(item);\n"
-                "dbl_test := dbl_test.leftjoin(item);\n"
-                "bool_test := bool_test.leftjoin(item);\n"
-                "str_test := str_test.leftfetchjoin(str_values);\n"
-                "int_test := int_test.leftfetchjoin(int_values);\n"
-                "dec_test := dec_test.leftfetchjoin(dec_values);\n"
-                "dbl_test := dbl_test.leftfetchjoin(dbl_values);\n"
-                "bool_test := bool_test.ord_uselect(0@0);\n"
-                "str_test := str_test.ord_uselect(\"\");\n"
-                "int_test := int_test.ord_uselect(0);\n"
-                "dec_test := dec_test.ord_uselect(dbl(0));\n"
-                "dbl_test := dbl_test.ord_uselect(dbl(0));\n"
-                "str_test := str_test.project(false);\n"
-                "int_test := int_test.project(false);\n"
-                "dec_test := dec_test.project(false);\n"
-                "dbl_test := dbl_test.project(false);\n"
-                "bool_test := bool_test.project(false);\n"
-                "trues.replace(str_test);\n"
-                "str_test := nil;\n"
-                "trues.replace(int_test);\n"
-                "int_test := nil;\n"
-                "trues.replace(dec_test);\n"
-                "dec_test := nil;\n"
-                "trues.replace(dbl_test);\n"
-                "dbl_test := nil;\n"
-                "trues.replace(bool_test);\n"
-                "bool_test := nil;\n"
-            
-                "trues := trues.leftjoin(bool_map);\n"
-                "iter := trues.mark(0@0).reverse;\n"
+                "{ # fn:contains (string?, string?) as boolean\n"
+                "var strings;\n"
+                "var search_strs;\n"
+                "if (iter%03u.count != loop%03u.count)\n"
+                "{\n"
+                "var difference := loop%03u.reverse.kdiff(iter%03u.reverse);\n"
+                "difference := difference.mark(0@0).reverse;\n"
+                "var res_mu := merged_union(iter%03u, difference, item%03u, "
+                                           "difference.project(EMPTY_STRING));\n"
+                "strings := res_mu.fetch(1).leftfetchjoin(str_values);\n"
+                "}\n"
+                "else {\n"
+                "strings := item%03u.leftfetchjoin(str_values);\n"
+                "}\n"
+
+                "if (iter.count != loop%03u.count)\n"
+                "{\n"
+                "var difference := loop%03u.reverse.kdiff(iter.reverse);\n"
+                "difference := difference.mark(0@0).reverse;\n"
+                "var res_mu := merged_union(iter, difference, item, "
+                                           "difference.project(EMPTY_STRING));\n"
+                "search_strs := res_mu.fetch(1).leftfetchjoin(str_values);\n"
+                "}\n"
+                "else {\n"
+                "search_strs := item.leftfetchjoin(str_values);\n"
+                "}\n"
+
+                "item := strings.[search](search_strs).[!=](-1).[oid];\n"
+                "strings := nil;\n"
+                "search_strs := nil;\n"
+                "iter := loop%03u.reverse.mark(0@0).reverse;\n"
                 "pos := iter.project(1@0);\n"
-                "item := trues.reverse.mark(0@0).reverse;\n"
                 "kind := iter.project(BOOL);\n"
-                "trues := nil;\n"
-                "} # end of translate fn:boolean (item*) as boolean\n"
-               );
+                "} # end of fn:contains (string?, string?) as boolean\n",
+                counter, act_level, 
+                act_level, counter,
+                counter, counter,
+                counter,
+                act_level,
+                act_level,
+                act_level);
+        deleteResult (f, counter);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"and")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, act_level, counter, args->child[1]->child[0]);
+        fprintf(f,
+                "item := item.[int].[and](item%03u.[int]).[oid];\n", counter);
+        deleteResult (f, counter);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"or")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, act_level, counter, args->child[1]->child[0]);
+        fprintf(f,
+                "item := item.[int].[or](item%03u.[int]).[oid];\n", counter);
+        deleteResult (f, counter);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"position")))
+    {
+        createEnumeration (f, act_level);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"last")))
+    {
+        fprintf(f,
+                "{ # fn:last ()\n"
+                /* I'm not 100% sure what I actually programmed here, 
+                   but it works at least with the actual translation
+                   of the predicates */
+                "var ints_cE := outer%03u.mark_grp(outer%03u.tunique.project(1@0));\n"
+                "var last_rows := {max}(outer%03u.reverse.[int],outer%03u.reverse).[oid];\n"
+                "last_rows := last_rows.leftfetchjoin(ints_cE);\n"
+                "iter := last_rows.mark(0@0).reverse;\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(INT);\n"
+                "last_rows := last_rows.reverse.mark(0@0).reverse;\n"
+                "var ints_last := last_rows.[int];\n"
+                "last_rows := nil;\n",
+                act_level, act_level, act_level, act_level);
+        addValues (f, "int_values", "ints_last");
+        fprintf(f,
+                "item := ints_last.reverse.mark(0@0).reverse;\n"
+                "ints_last := nil;\n"
+                "} # end of fn:last ()\n");
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"typed-value")))
     {
@@ -3023,33 +3220,52 @@ translateFunction (FILE *f, int act_level, int counter,
         translate2MIL (f, act_level, counter, args->child[0]);
         fn_data (f);
     }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"string")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        typed_value (f, false);
+        translateCast2STR (f, args->type);
+        fprintf(f,
+                "if (iter.count != loop%03u.count)\n"
+                "{\n"
+                "var difference := loop%03u.reverse.kdiff(iter.reverse);\n"
+                "difference := difference.mark(0@0).reverse;\n"
+                "var res_mu := merged_union(iter, difference, item, "
+                                           "difference.project(EMPTY_STRING));\n"
+                "item := res_mu.fetch(1);\n"
+                "iter := loop%03u.reverse.mark(0@0).reverse;\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(STR);\n"
+                "}\n",
+                act_level, act_level, act_level);
+    }
     /* calculation functions just call an extra function with
        their operator argument to avoid code duplication */
     else if (!PFqname_eq(fnQname,PFqname (PFns_op,"plus")))
     {
-        translateOperation (f, act_level, counter, "+", args);
+        translateOperation (f, act_level, counter, "+", args, false);
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_op,"minus")))
     {
-        translateOperation (f, act_level, counter, "-", args);
+        translateOperation (f, act_level, counter, "-", args, false);
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_op,"times")))
     {
-        translateOperation (f, act_level, counter, "*", args);
+        translateOperation (f, act_level, counter, "*", args, false);
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_op,"div")))
     {
-        translateOperation (f, act_level, counter, "/", args);
+        translateOperation (f, act_level, counter, "/", args, true);
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_op,"mod")))
     {
-        translateOperation (f, act_level, counter, "%", args);
+        translateOperation (f, act_level, counter, "%", args, true);
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_op,"idiv")))
     {
         /* the semantics of idiv are a normal div operation
            followed by a cast to integer */
-        translateOperation (f, act_level, counter, "/", args);
+        translateOperation (f, act_level, counter, "/", args, true);
         translateCast2INT (f, args->type);
         testCastComplete(f, act_level, PFty_integer ());
     }
@@ -3090,6 +3306,21 @@ translateFunction (FILE *f, int act_level, int counter,
         fn_data (f);
         translateCast2STR (f, args->type);
         combine_strings (f);
+    }
+    else if (!PFqname_eq(fnQname,
+                         PFqname (PFns_fn,"distinct-values")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        fprintf(f,
+                "{ # translate fn:distinct-values (atomic*) as atomic*\n"
+                "var sorting := CTgroup(iter).CTgroup(item).CTgroup(kind);\n"
+                "sorting := sorting.tunique.mark(0@0).reverse;\n"
+                "iter := sorting.leftfetchjoin(iter);\n"
+                "pos := iter.mark_grp(iter.tunique.project(1@0));\n"
+                "item := sorting.leftfetchjoin(item);\n"
+                "kind := sorting.leftfetchjoin(kind);\n"
+                "sorting := nil;\n"
+                "} # end of translate fn:distinct-values (atomic*) as atomic*\n");
     }
     else 
     {
@@ -3184,7 +3415,7 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
             {
                 /* changes item and kind and inserts if needed
                    new int values to 'int_values' bat */
-                createEnumeration (f);
+                createEnumeration (f, act_level);
                 insertVar (f, act_level, c->child[1]->sem.var->vid);
             }
             /* end of not allowed to overwrite iter,pos,item */
@@ -3431,6 +3662,8 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
             PFlog("typeswitch occured");
         case c_nil:
             PFlog("nil occured");
+        case c_arg:
+            PFlog("arg occured");
         default: 
             PFoops (OOPS_WARNING, "not supported feature is translated");
             break;
@@ -3731,108 +3964,102 @@ simplifyCoreTree (PFcnode_t *c)
         case c_apply:
             /* handle the promotable types explicitly by casting them */
             fun = c->sem.fun;
+            if (fun->arity == 1)
+                simplifyCoreTree (c->child[0]->child[0]);
 
-            c = c->child[0];
-            for (i = 0; i < fun->arity; i++, c = c->child[1])
+            if ((!PFqname_eq(fun->qname,PFqname (PFns_fn,"boolean")) || 
+                 !PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-node-sequence"))) &&
+                PFty_subtype(c->child[0]->type, fun->ret_ty))
             {
-                expected = (fun->par_ty)[i];
-
-                if (expected.type == ty_opt ||
-                    expected.type == ty_star ||
-                    expected.type == ty_plus)
-                    opt_expected = PFty_child (expected);
-                else
-                    opt_expected = expected;
-
-                if (PFty_subtype (opt_expected, PFty_atomic ()) &&
-                    !PFty_eq (c->child[0]->type, expected))
+                /* don't use function - omit apply and arg node */
+                *c = *(c->child[0]->child[0]);
+                simplifyCoreTree (c);
+            }
+            else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-untypedAtomic")) &&
+                     (PFty_subtype (c->child[0]->type, fun->ret_ty) ||
+                      PFty_subtype (c->child[0]->type, PFty_string ())))
+            {
+                /* don't use function - omit apply and arg node */
+                *c = *(c->child[0]->child[0]);
+                simplifyCoreTree (c);
+            }
+            else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"distinct-doc-order")) &&
+                     PFty_subtype (c->child[0]->type, PFty_opt(PFty_node ())))
+            {
+                /* don't use function - omit apply and arg node */
+                *c = *(c->child[0]->child[0]);
+                simplifyCoreTree (c);
+            }
+            else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"empty")) &&
+                     c->child[0]->child[0]->kind == c_ifthenelse &&
+                     PFty_subtype (c->child[0]->child[0]->child[1]->type,
+                                   PFty_atomic ()) &&
+                     PFty_subtype (c->child[0]->child[0]->child[2]->type,
+                                   PFty_empty ()))
+            {
+                c->sem.fun = PFcore_function (PFqname (PFns_fn, "not"));
+                c->child[0]->child[0] = c->child[0]->child[0]->child[0];
+                c->child[0]->type = c->child[0]->child[0]->type;
+                simplifyCoreTree (c);
+            }
+            else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"empty")) &&
+                     c->child[0]->child[0]->kind == c_ifthenelse &&
+                     PFty_subtype (c->child[0]->child[0]->child[1]->type,
+                                   PFty_empty ()) &&
+                     PFty_subtype (c->child[0]->child[0]->child[2]->type,
+                                   PFty_atomic ()))
+            {
+                *c = *(c->child[0]->child[0]->child[0]);
+                simplifyCoreTree (c);
+            }
+            else
+            {
+                c = c->child[0];
+                for (i = 0; i < fun->arity; i++, c = c->child[1])
                 {
-                    c->child[0] = PFcore_seqcast (PFcore_seqtype (expected),
-                                                  c->child[0]);
-                    /* type new code, to avoid multiple casts */
-                    c->type                     =
-                    c->child[0]->type           =
-                    c->child[0]->child[0]->type = expected;
-                    simplifyCoreTree (c->child[0]);
+                    expected = (fun->par_ty)[i];
+ 
+                    if (expected.type == ty_opt ||
+                        expected.type == ty_star ||
+                        expected.type == ty_plus)
+                        opt_expected = PFty_child (expected);
+                    else
+                        opt_expected = expected;
+ 
+                    if (PFty_subtype (opt_expected, PFty_atomic ()) &&
+                        !PFty_eq (c->child[0]->type, expected))
+                    {
+                        c->child[0] = PFcore_seqcast (PFcore_seqtype (expected),
+                                                      c->child[0]);
+                        /* type new code, to avoid multiple casts */
+                        c->type                     =
+                        c->child[0]->type           =
+                        c->child[0]->child[0]->type = expected;
+                        simplifyCoreTree (c->child[0]);
+                    }
                 }
             }
             break;
-        case c_elem:
-            fun = PFcore_function 
-                       (PFqname (PFns_pf,
-                                 "item-sequence-to-node-sequence"));
-
+        case c_ifthenelse:
             simplifyCoreTree (c->child[0]);
             simplifyCoreTree (c->child[1]);
-            /* adds the 'item-sequence-to-node-sequence' function
-               if the content of the element contains other things
-               than nodes */
-            if (!PFty_subtype (c->child[1]->type, PFty_star (PFty_node ())))
-            {
-                /* we are lucky that input is node atomic -
-                   if so apply would have generated a bunch of 
-                   untyped core nodes */
-                new_node = PFcore_apply (fun,
-                                         PFcore_arg (c->child[1],
-                                                     PFcore_nil ()));
-                new_node->type = PFty_star (PFty_node ());
-                new_node->child[0]->type = c->child[1]->type;
-                c->child[1] = new_node;
-            }
-            break;
-        case c_attr:
-            fun = PFcore_function
-                       (PFqname (PFns_pf,
-                                 "item-sequence-to-untypedAtomic"));
+            simplifyCoreTree (c->child[2]);
 
-            simplifyCoreTree (c->child[0]);
-            simplifyCoreTree (c->child[1]);
-            /* adds the 'item-sequence-to-untypedAtomic' function
-               if the content of the attribute contains other things
-               than a string */
-            if (!PFty_subtype (c->child[1]->type, PFty_opt (PFty_string ())) &&
-                !PFty_subtype (c->child[1]->type, PFty_opt (PFty_untypedAtomic ())))
+            if (c->child[0]->kind == c_apply &&
+                !PFqname_eq(c->child[0]->sem.fun->qname,
+                            PFqname (PFns_fn,"not")))
             {
-                /* we are lucky that input is node atomic -
-                   if so apply would have generated a bunch of 
-                   untyped core nodes */
-                new_node = PFcore_apply (fun,
-                                         PFcore_arg (c->child[1],
-                                                     PFcore_nil ()));
-                new_node->type = PFty_untypedAtomic ();
-                new_node->child[0]->type = c->child[1]->type;
+                c->child[0] = c->child[0]->child[0]->child[0];
+                new_node = c->child[2];
+                c->child[2] = c->child[1];
                 c->child[1] = new_node;
             }
             break;
         case c_text:
-            fun = PFcore_function
-                       (PFqname (PFns_pf,
-                                 "item-sequence-to-untypedAtomic"));
-
             simplifyCoreTree (c->child[0]);
             /* substitutes empty text nodes by empty nodes */
             if (c->child[0]->kind == c_empty)
                 *c = *(PFcore_empty ());
-            /* adds the 'item-sequence-to-untypedAtomic' function
-               if the content of the text contains other things
-               than a string */
-            else if (!PFty_subtype (c->child[0]->type,
-                                    PFty_opt (PFty_string ())) &&
-                     !PFty_subtype (c->child[0]->type,
-                                    PFty_opt (PFty_untypedAtomic ())))
-            {
-                /* we are lucky that input is node atomic -
-                   if so apply would have generated a bunch of 
-                   untyped core nodes */
-                new_node = PFcore_apply (fun,
-                                         PFcore_arg (c->child[0],
-                                                     PFcore_nil ()));
-                /* normally the type would be untypedAtomic, but
-                   strings and untypedAtomic are handled the same */
-                new_node->type = PFty_string ();
-                new_node->child[0]->type = c->child[0]->type;
-                c->child[0] = new_node;
-            }
             break;
         default: 
             for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
@@ -3989,15 +4216,18 @@ PFprintMILtemp (FILE *f, PFcnode_t *c)
 
     /* resolves nodes, which are not supported and prunes 
        code which is node needed (e.g. casts, let-bindings) */
-    fprintf(stdout, "# Core tree before simplification:\n");
-    PFcore_pretty (stdout, c);
-
     simplifyCoreTree (c);
 
-    fprintf(stdout, "\n# Core tree after simplification:\n");
-    PFcore_pretty (stdout, c);
-    fprintf(stdout, "\n");
-
+#define TIMINGS 0
+#if TIMINGS
+    fprintf(f,
+            "module(alarm);\n"
+            "var tries := 3;\n"
+            "rep := 0;\n"
+            "while (rep < tries) {\n"
+            "var timer := time();\n"
+            "rep := rep+1;\n");
+#endif
 
     /* some bats and module get initialized, variables get bound */
     init (f);
@@ -4029,8 +4259,20 @@ PFprintMILtemp (FILE *f, PFcnode_t *c)
     /* recursive translation of the core tree */
     translate2MIL (f, 0, 0, c);
 
+#if TIMINGS
+    fprintf(f,
+            "fprintf(stderr(),\"### time for run %%i: %%i msec\\n\", rep, time() - timer);\n"
+            "if (rep = tries)\n"
+            "{\n");
+    print_output (f);
+    fprintf(f,
+            "}\n"
+            "}\n");
+#else
     /* print result in iter|pos|item representation */
     print_output (f);
+#endif
+
 
     fprintf(f, "print(\"mil-programm without crash finished :)\");\n");
 

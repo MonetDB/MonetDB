@@ -432,7 +432,7 @@ PROC mposjoin (BAT[void,oid] pre, BAT[void,oid] frag, BAT[void, bat] ws_item) : 
     frag_pre@batloop () {
         result.insert(nil, ws_item.fetch($h).fetch($t));
     }
-    return result;
+    return result.access(BAT_READ);
 }
 ADDHELP("mposjoin", "tsheyar", "July 2004",
 "PARAMETERS:\n\
@@ -457,7 +457,7 @@ PROC mvaljoin (BAT[void,oid] pre, BAT[void,oid] frag, BAT[void, bat] ws_item) : 
         result.insert(ws_item.fetch($h).select($t).project(void_input).reverse);
 	void_input := oid(int(void_input) + 1);
     }
-    return result;
+    return result.access(BAT_READ);
 }
 ADDHELP("mvaljoin", "tsheyar", "July 2004",
 "PARAMETERS:\n\
@@ -987,7 +987,7 @@ PROC descendant(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[o
                                pre_sizes.fetch($h).count).project($h));
         offset := offset + $t;
     }
-    return result;
+    return result.access(BAT_READ);
 #    return scj_desc(Tpre_size, ctx, Theight, Tpre_size.count);
 }
 ADDHELP("descendant", "rode", "Jan 2004",
@@ -1017,7 +1017,7 @@ PROC descendant_or_self(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws)
                                pre_sizes.fetch($h).count).project($h));
         offset := offset + $t;
     }
-    return result;
+    return result.access(BAT_READ);
 #    return scj_descorself(Tpre_size, ctx, Theight, Tpre_size.count);
 }
 ADDHELP("descendant_or_self", "rode", "Jan 2004",
@@ -1047,7 +1047,7 @@ PROC ancestor(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid
                                pre_sizes.fetch($h).count).project($h));
         offset := offset + $t;
     }
-    return result;
+    return result.access(BAT_READ);
 #    return scj_anc(Tpre_size, ctx, Theight, Tpre_size.count);
 }
 ADDHELP("ancestor", "rode", "Jan 2004",
@@ -1077,7 +1077,7 @@ PROC ancestor_or_self(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) :
                                pre_sizes.fetch($h).count).project($h));
         offset := offset + $t;
     }
-    return result;
+    return result.access(BAT_READ);
 #    return scj_ancorself(Tpre_size, ctx, Theight, Tpre_size.count);
 }
 ADDHELP("ancestor_or_self", "rode", "Jan 2004",
@@ -1106,7 +1106,7 @@ PROC child(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oi
                                pre_levels.fetch($h).count).project($h));
         offset := offset + $t;
     }
-    return result;
+    return result.access(BAT_READ);
 #    return lev_child(Tpre_level, ctx, Theight, Tpre_level.count);
 }
 ADDHELP("child", "rode", "Jan 2004",
@@ -1135,7 +1135,7 @@ PROC parent(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,o
                                pre_levels.fetch($h).count).project($h));
         offset := offset + $t;
     }
-    return result;
+    return result.access(BAT_READ);
 #    return lev_parent(Tpre_level, ctx, Theight, Tpre_level.count);
 }
 ADDHELP("parent", "rode", "Jan 2004",
@@ -1164,7 +1164,7 @@ PROC following_sibling(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) 
                                pre_levels.fetch($h).count).project($h));
         offset := offset + $t;
     }
-    return result;
+    return result.access(BAT_READ);
 #    return lev_fs(Tpre_level, ctx, Theight, Tpre_level.count);
 }
 ADDHELP("following_sibling", "rode", "Jan 2004",
@@ -1193,7 +1193,7 @@ PROC preceding_sibling(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) 
                                pre_levels.fetch($h).count).project($h));
         offset := offset + $t;
     }
-    return result;
+    return result.access(BAT_READ);
 #    return lev_ps(Tpre_level, ctx, Theight, Tpre_level.count);
 }
 ADDHELP("preceding_sibling", "rode", "Jan 2004",
@@ -1234,7 +1234,7 @@ PROC following(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oi
                                pre_sizes.fetch($h).count).project($h));
         offset := offset + $t;
     }
-    return result;
+    return result.access(BAT_READ);
 #    return following_void(Tpre_size, ctx, Tdoc_pre, Theight, Tpre_size.count);
 }
 ADDHELP("following", "rode", "Jan 2004",
@@ -1275,7 +1275,7 @@ PROC preceding(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oi
                                pre_sizes.fetch($h).count).project($h));
         offset := offset + $t;
     }
-    return result;
+    return result.access(BAT_READ);
 #    return preceding_void(Tpre_size, ctx, Tdoc_pre, Theight, Tpre_size.count);
 }
 ADDHELP("preceding", "rode", "Jan 2004",
@@ -1429,7 +1429,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 
    var uniqueIter_count := {count}(iter.reverse, iter.tunique);
    
-   printf("[ \"order: uniqueIter_count %i, iter %i\" ]\n", uniqueIter_count.chk_order(false), iter.chk_order(false));
+   # printf("[ \"order: uniqueIter_count %i, iter %i\" ]\n", uniqueIter_count.chk_order(false), iter.chk_order(false));
 
    if ((and(uniqueIter_count.chk_order(false),4) = 4) or 
        (iter.chk_order(false) >= 4))
@@ -1438,7 +1438,6 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
        iter.print;
        ERROR ("ordering is wrong in scj (concept with slices doesn't work)");
    }	
-
    uniqueIter_count := uniqueIter_count.[-](1);
 
    @5
@@ -1486,7 +1485,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 
    var result_scj;
    @8
-   return result_scj;
+   return result_scj.access(BAT_READ);
 }
 @
 
