@@ -98,27 +98,28 @@ A heuristic is to organize the routines along the types
 (int,lng,sht,bit,oid,flt,...) to reduce number of checks
 at function resoluton. The least interesting one is pushed
 first onto the symbol table stack.
+Default case excluded for the time being
+        @:mal_comp_ops(any::1,any)@
 @= mal_eq_ops
-	command =(left:@1, right:@1) : bit = @2_comp_EQ
+	command =(left:@1, right:@2) : bit = @1@2_comp_EQ
 		comment "left equal to right?";
-	command ==(left:@1, right:@1) : bit = @2_comp_EQ
+	command ==(left:@1, right:@2) : bit = @1@2_comp_EQ
 		comment "left equal to right?";
-	command !=(left:@1, right:@1) : bit = @2_comp_NEQ
+	command !=(left:@1, right:@2) : bit = @1@2_comp_NEQ
 		comment "left unequal to right?";
 @= mal_comp_ops
 	@:mal_eq_ops(@1,@2)@
-	command <(left:@1, right:@1) : bit = @2_comp_LT
+	command <(left:@1, right:@2) : bit = @1@2_comp_LT
 		comment "left smaller than right?";
-	command <=(left:@1, right:@1) : bit = @2_comp_LE
+	command <=(left:@1, right:@2) : bit = @1@2_comp_LE
 		comment "left smaller than right or equal?";
-	command >=(left:@1, right:@1) : bit = @2_comp_GE
+	command >=(left:@1, right:@2) : bit = @1@2_comp_GE
 		comment "left greater than right or equal?)";
-	command >(left:@1, right:@1) : bit = @2_comp_GT
+	command >(left:@1, right:@2) : bit = @1@2_comp_GT
 		comment "left greater than right?";
-	command between(val:@1, low:@1, high:@1) : bit = @2_comp_between
+	command between(val:@1, low:@1, high:@1) : bit = @1_comp_between
 		comment "checks (low <= val <= high)";
 @mal
-        @:mal_comp_ops(any::1,any)@
 
         @:mal_comp_ops(oid,oid)@
         @:mal_comp_ops(flt,flt)@
@@ -800,8 +801,8 @@ int any_binary_@1(ptr ret, ptr v1, int t, ptr v2){
 }
 
 @= c_comp_op
-int @2_comp_@3(bit *retval, @2 *v1, @2 *v2){
-	if (*v1 == @2_nil || *v2 == @2_nil) {
+int @2@3_comp_@4(bit *retval, @2 *v1, @3 *v2){
+	if (*v1 == @2_nil || *v2 == @3_nil) {
 		*retval = bit_nil;
 	} else {
 		*retval = *v1 @1 *v2;	
@@ -809,14 +810,37 @@ int @2_comp_@3(bit *retval, @2 *v1, @2 *v2){
 	return GDK_SUCCEED;
 }
 @= c_comp_ops
-@:c_comp_op(@1,chr,@2)@
-@:c_comp_op(@1,sht,@2)@
-@:c_comp_op(@1,int,@2)@
-@:c_comp_op(@1,oid,@2)@
-@:c_comp_op(@1,flt,@2)@
-@:c_comp_op(@1,dbl,@2)@
-@:c_comp_op(@1,lng,@2)@
-int str_comp_@2(bit *retval, str *s1, str *s2){
+        @:c_comp_op(@1,oid,oid,@2)@
+        @:c_comp_op(@1,flt,flt,@2)@
+        @:c_comp_op(@1,flt,dbl,@2)@
+        @:c_comp_op(@1,dbl,dbl,@2)@
+
+        @:c_comp_op(@1,chr,chr,@2)@
+        @:c_comp_op(@1,chr,sht,@2)@
+        @:c_comp_op(@1,chr,int,@2)@
+        @:c_comp_op(@1,chr,lng,@2)@
+
+        @:c_comp_op(@1,bit,chr,@2)@
+        @:c_comp_op(@1,bit,sht,@2)@
+        @:c_comp_op(@1,bit,int,@2)@
+        @:c_comp_op(@1,bit,lng,@2)@
+
+        @:c_comp_op(@1,sht,chr,@2)@
+        @:c_comp_op(@1,sht,sht,@2)@
+        @:c_comp_op(@1,sht,int,@2)@
+        @:c_comp_op(@1,sht,lng,@2)@
+
+        @:c_comp_op(@1,int,chr,@2)@
+        @:c_comp_op(@1,int,sht,@2)@
+        @:c_comp_op(@1,int,int,@2)@
+        @:c_comp_op(@1,int,lng,@2)@
+
+        @:c_comp_op(@1,lng,chr,@2)@
+        @:c_comp_op(@1,lng,sht,@2)@
+        @:c_comp_op(@1,lng,int,@2)@
+        @:c_comp_op(@1,lng,lng,@2)@
+
+int strstr_comp_@2(bit *retval, str *s1, str *s2){
 	if (strNil(*s1) || strNil(*s2)) {
 		*retval = bit_nil; 
 	} else {

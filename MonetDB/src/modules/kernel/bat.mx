@@ -22,7 +22,7 @@ string values are passed to the module layer as (str *)
 and we have to de-reference them before entering the gdk library.
 This calls for knowlegde on the underlying BAT typs`s
 @= derefStr
-	if( @1->@2type== TYPE_str) @3 = *(str *)@3;
+	if( ATOMstorage(@1->@2type)== TYPE_str) @3 = *(str *)@3;
 @-
 The code speaks for itself
 @mal
@@ -63,13 +63,13 @@ comment "Produce a BAT containing info about a BAT in [attribute,value] format.
  It contains all properties of the BAT record. See the BAT documentation in
  GDK for more information.";
  
-command getCapacity ( bid:int ) : lng = CMDgetCapacity
+command getCapacity ( bid:bat[any,any] ) : lng = CMDgetCapacity
 comment "Returns the current allocation size (in max number of elements) of a BAT.";
 
-command getType ( bid:int ) : int = CMDgetType
+command getType ( bid:bat[any,any] ) : int = CMDgetType
 comment "Returns the type of the head column of a BAT, as an integer type number.";
  
-command getRole ( bid:int ) : str = CMDgetRole
+command getRole ( bid:bat[any,any] ) : str = CMDgetRole
 comment "Returns the rolename of the head column of a BAT.";
  
 command setKey( b:bat[any::1,any::2], mode:bit) :bat[any::1,any::2] = CMDsetkey
@@ -111,22 +111,22 @@ comment "Change access privilige of BAT to read only";
 command setWriteMode( b:bat[any,any]) : int = CMDsetWriteMode
 comment "Change access privilige of BAT to read and write";
 
-command getAccess( b:bat[any::1,any::2]):chr = CMDgetAccess
+command getAccess( b:bat[any,any]):chr = CMDgetAccess
 comment "return the access mode attached to this BAT as a character.";
 
-command hasAppendMode( b:bat[any::1,any::2]):bit = CMDhasAppendMode
+command hasAppendMode( b:bat[any,any]):bit = CMDhasAppendMode
 comment "return true if to this BAT is append only.";
 
-command hasWriteMode( b:bat[any::1,any::2]):bit = CMDhasWriteMode
+command hasWriteMode( b:bat[any,any]):bit = CMDhasWriteMode
 comment "return true if to this BAT is read and write.";
 
-command hasReadMode( b:bat[any::1,any::2]):bit = CMDhasReadMode
+command hasReadMode( b:bat[any,any]):bit = CMDhasReadMode
 comment "return true if to this BAT is read only.";
 
 
-command getSequenceBase( b:bat[void,any::1]): oid = CMDgetSequenceBase
+command getSequenceBase( b:bat[void,any]): oid = CMDgetSequenceBase
 comment "Get the sequence base for the void column of a BAT.";
-command getSequenceBase( b:bat[oid,any::1]): oid = CMDgetSequenceBase;
+command getSequenceBase( b:bat[oid,any]): oid = CMDgetSequenceBase;
 
 command setSequenceBase( b:bat[void,any::1], seqbase:oid):int 
 			= CMDsetSequenceBase
@@ -223,6 +223,9 @@ comment "Give a logical name to the columns of a BAT.";
 
 command setRole( b:bat[any::1,any::2],h:str):bat[any::1,any::2] = CMDsetColumn
 comment "Give a logical name to the head column of a BAT.";
+
+command setColumn(b:bat[any::1,any::2],n:str):bat[any::1,any::2]= CMDsetColumnName
+comment "Give the table a column alias for printing";
 
 command isTransient( b:BAT) :bit = CMDisTransient;
 command setTransient( b:BAT) :bit = CMDsetTransient
@@ -1040,24 +1043,38 @@ int CMDisSynced(bit *ret, int *bid1, int *bid2){
 int CMDsetRoles(int *r, int *bid, str *hname, str *tname){
 	BAT *b;
 	@:batcheck(r,bid,b,"CMDsetRoles")@
+	if(*hname== 0) return GDK_FAIL;
+	if(*tname== 0) return GDK_FAIL;
 	BATroles(b, *hname, *tname);
-	*r= -b->batCacheid;
+	*r= b->batCacheid;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 }
 int CMDsetColumn(int *r, int *bid, str *hname){
 	BAT *b;
 	@:batcheck(r,bid,b,"CMDsetRoles")@
-	*r= -b->batCacheid;
+	if(*hname== 0) return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	BATroles(b, *hname, b->tident);
+	*r= b->batCacheid;
 	return GDK_SUCCEED;
+}
+/* compatibility with V4 */
+int CMDsetColumnName(int *r, int *bid, str *name){
+	BAT *b;
+	int ret;
+	@:batcheck(r,bid,b,"CMDsetRoles")@
+	if(*name== 0) return GDK_FAIL;
+	BBPfix(b->batCacheid);
+	*r= b->batCacheid;
+	return CMDrename(&ret, bid,name);
 }
 
 int CMDrename(bit *retval, int *bid, str *s){
 	BAT *b;
 	int ret;
 	@:batcheck(retval,bid,b,"CMDrename")@
+	if(*s== 0) return GDK_FAIL;
 	ret = BATname(b,*s);
 	*retval = FALSE;
         if (ret == 1) {
@@ -1083,7 +1100,9 @@ int CMDbbpname(str *retval, int *bid){
 }
 
 int CMDunload(bit *res, str *input) {
-        int bid = ABS(BBPindex(*input));
+        int bid;
+	if( *input==0) return GDK_FAIL;
+        bid = ABS(BBPindex(*input));
 	*res = FALSE;
         if (bid > 0) {
 		BBPfix(bid);
@@ -1356,8 +1375,6 @@ int CMDsetIndex(bit *ret, int *bid, bit *prop) {
 	GDKwarning("CMDsetIndex: not yet implemented\n");
 	return GDK_SUCCEED;
 }
-
-
 
 int CMDsetSequenceBase(int *r, int *bid, oid* o){
 	BAT *b;
