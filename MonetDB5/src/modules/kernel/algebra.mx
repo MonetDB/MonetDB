@@ -1439,7 +1439,7 @@ str ALGtopN(int *res, int *bid, lng *top) {
 str ALGcard(lng *result, int *bid) {
 	BAT *b,*bn;
 	@:getBATdescriptor(result,bid,b,card)@
-	bn = (BAT*) BATkunique(BATreverse(b));
+	bn = (BAT*) BATkunique(BATmirror(b));
 	if(bn == NULL){
 		return throwMessage("algebra.card", "GDKerror");
 	}
@@ -1732,7 +1732,7 @@ str ALGmarkTail_default(int *result, int *bid) {
 	BAT *b,  *bn= NULL;
 	@:getBATdescriptor(result,bid,b,mark)@
 	if( CMDmark_default(&bn,b)== GDK_SUCCEED){
-		bn= BATsetaccess(bn,1);
+		bn = BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1742,10 +1742,9 @@ str ALGmarkTail_default(int *result, int *bid) {
 str ALGmarkHead(int *result, int *bid, oid *base) {
 	BAT *b,  *bn= NULL;
 	@:getBATdescriptor(result,bid,b,markHead)@
-	BATreverse(bn);
-	if( CMDmark(&bn,b,base)== GDK_SUCCEED){
-		bn= BATsetaccess(bn,1);
-		BATreverse(bn);
+	if( CMDmark(&bn,BATmirror(b),base)== GDK_SUCCEED){
+		bn = BATmirror(bn);
+		bn = BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
@@ -1753,12 +1752,11 @@ str ALGmarkHead(int *result, int *bid, oid *base) {
 		"marking group failed");
 }
 str ALGmarkHead_default(int *result, int *bid) {
-	BAT *b,  *bn= NULL;
+	BAT *b,  *bn = NULL;
 	@:getBATdescriptor(result,bid,b,markHead)@
-	BATreverse(bn);
-	if( CMDmark_default(&bn,b)== GDK_SUCCEED){
-		bn= BATsetaccess(bn,1);
-		BATreverse(bn);
+	if( CMDmark_default(&bn,BATmirror(b))== GDK_SUCCEED){
+		bn = BATmirror(bn);
+		bn = BATsetaccess(bn,1);
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
