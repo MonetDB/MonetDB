@@ -1676,12 +1676,7 @@ ordering_spec_commalist:
  ;
 
 ordering_spec:
-    intval opt_asc_desc 
-	{ dlist *l = dlist_create();
-	  dlist_append_symbol(l, _symbol_create_int(SQL_INT_VALUE, (int)$1)); 
-	  dlist_append_int(l, $2); 
-	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
- |  column_ref opt_asc_desc 
+    column_ref opt_asc_desc 
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, _symbol_create_list(SQL_COLUMN, $1)); 
 	  dlist_append_int(l, $2); 
