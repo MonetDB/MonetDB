@@ -638,7 +638,7 @@ that for the moment are defined as procs.
     ADDHELP("join", "boncz", "Aug  6 1998",
             "Returns [left.head,right.tail] where (*fcn)(left.tail,right.head,..params..)", "algebra");
 
-	proc find_unescaped_occurrence(str b, chr c) : int {
+	proc find_unescaped_occurrence(str b, chr c, chr esc) : int {
 		var idx := b.search(c);
 		var tmp;
 		
@@ -646,7 +646,7 @@ that for the moment are defined as procs.
 			# check if this char was escaped
 			tmp := idx;
 			while ((tmp :-=1) >= 0) {
-				if ("\\" != b.string(tmp, 1)) {
+				if (esc != b.string(tmp, 1)) {
 					tmp :+= 1;
 					break;
 				}
@@ -671,10 +671,10 @@ that for the moment are defined as procs.
 		return(idx);
     }
     ADDHELP("find_unescaped_occurrence", "groffen", "Sep 26 2004",
-    "finds the first occurrence of c that is not escaped by a \\", "algebra");
+    "finds the first occurrence of c that is not escaped by esc", "algebra");
 
     # SQL LIKE functionality, vectorized MIL implementation
-    PROC likeselect(bat[any::1,str] b, str pat) : bat[any::1,oid]  {
+    PROC like_uselect(bat[any::1,str] b, str pat, chr esc) : bat[any::1,void]  {
         var s;
 		var idxper;
 		var idxund;
@@ -695,8 +695,8 @@ that for the moment are defined as procs.
 		pat := substitute(pat, "%_", "_%", true);
 		pat := substitute(pat, "%%", "%", true);
 		
-		idxper := find_unescaped_occurrence(pat, '%');
-		idxund := find_unescaped_occurrence(pat, '_');
+		idxper := find_unescaped_occurrence(pat, '%', esc);
+		idxund := find_unescaped_occurrence(pat, '_', esc);
 
 		# force matching without position freedom for the first part
 		wasper := false;
@@ -772,11 +772,11 @@ that for the moment are defined as procs.
 
 			# find next match for the last matching char (% or _)
 			if (isper) {
-				idxper := find_unescaped_occurrence(pat, '%');
+				idxper := find_unescaped_occurrence(pat, '%', esc);
 				# correct value of other index
 				if (idxund > 0) idxund :-= idx;
 			} else {
-				idxund := find_unescaped_occurrence(pat, '_');
+				idxund := find_unescaped_occurrence(pat, '_', esc);
 				# correct value of other index
 				if (idxper > 0) idxper :-= idx;
 			}
@@ -801,11 +801,90 @@ that for the moment are defined as procs.
 			}
 		}
 
-        return b.mark(nil);
+        return(b.mark(nil));
     }
-    ADDHELP("likeselect", "groffen", "Sep 26 2004",
+    ADDHELP("like_uselect", "groffen", "Sep 26 2004",
     "does SQL LIKE select which supports % and _ (also understands escapes)", "algebra");
     
+    # SQL LIKE functionality, PCRE implementation
+    PROC like_uselect_pcre(bat[any::1,str] b, str pat, chr esc) : bat[any::1,void]  {
+		# change the SQL wilcards into PCRE wilcards
+		var i, len;
+		var c;
+		var ppat := "";
+		var pesc;
+		var escaped := false;
+
+		# the escape character can be a char is special in a PCRE
+		# if the user used the '+' char as escape and has "++" in
+		# its pattern, then replacing this with "+" is not correct
+		# in the PCRE pattern
+		# we use pesc here so we can replace with the correct
+		# replacement: "\+"
+		if (
+			(esc = '.') or
+			(esc = '+') or
+			(esc = '*') or
+			(esc = '(') or
+			(esc = ')') or
+			(esc = '[') or
+			(esc = ']') or
+			(esc = chr("\\")) # get around stupid MIL bug: '\\' results in nil
+		) {
+			pesc := "\\" + str(esc);
+		} else {
+			pesc := esc;
+		}
+
+		len := length(pat);
+		i := 0;
+		while (i < len) {
+			c := chr(string(pat, i, 1));
+			if (c = esc) {
+				if ((i + 1) = len) return(nil);	# escape char at end of string
+				if (chr(string(pat, i + 1, 1)) = esc) {
+					ppat :+= pesc;
+					i :+= 1;
+					escaped := false;
+				} else {
+					ppat :+= "\\";
+					escaped := true;
+				}
+			} else if (
+				(c = '.') or
+				(c = '+') or
+				(c = '*') or
+				(c = '(') or
+				(c = ')') or
+				(c = '[') or
+				(c = ']') or
+				(c = chr("\\"))
+			) {
+				ppat :+= "\\" + str(c);
+				escaped := false;
+			} else if (c = '%') {
+				if (escaped = true) {
+					ppat :+= str(c);
+				} else {
+					ppat :+= ".*";
+				}
+				escaped := false;
+			} else if (c = '_') {
+				if (escaped = true) {
+					ppat :+= str(c);
+				} else {
+					ppat :+= ".";
+				}
+				escaped := false;
+			}
+			
+			i :+= 1;
+		}
+		
+		return(pcre_uselect(ppat, b));
+    }
+    ADDHELP("like_uselect_pcre", "groffen", "Dec 19 2004",
+    "does SQL LIKE select with use of PCRE", "algebra");
 
     PROC mil_select(bat[any::1,any::2] b, str fcn, ..any..) : bat[any::1,any::2] 
     {

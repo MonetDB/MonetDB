@@ -128,17 +128,21 @@ int pcre_exec_wrap( bit* res, pcre *pattern, str s) {
 int pcre_select( BAT **res, str pattern, BAT *strs ) {
 	const char err[BUFSIZ], *err_p = err;
 	int errpos = 0;
-	BAT *r = BATnew( strs->htype, TYPE_str, BATcount(strs));
+	BAT *r;
 	BUN p,q;
 	pcre *re = NULL;
 
+	if (strs->htype == TYPE_void)
+		r = BATnew( TYPE_oid, TYPE_str, BATcount(strs));
+	else
+		r = BATnew( strs->htype, TYPE_str, BATcount(strs));
 	if ( (re = pcre_compile( pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
 		GDKerror("pcre_select: pcre compile failed\n");
 		return GDK_FAIL;
 	}
 	BATloop(strs, p, q) {
 		str s = BUNtail(strs, p);
-       		if (pcre_exec( re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0){
+		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
 			BUNins(r, BUNhead(strs, p), s);
 		}
 	}
@@ -149,17 +153,21 @@ int pcre_select( BAT **res, str pattern, BAT *strs ) {
 int pcre_uselect( BAT **res, str pattern, BAT *strs ) {
 	const char err[BUFSIZ], *err_p = err;
 	int errpos = 0;
-	BAT *r = BATnew( strs->htype, TYPE_void, BATcount(strs));
+	BAT *r;
 	BUN p,q;
 	pcre *re = NULL;
 
+	if (strs->htype == TYPE_void)
+		r = BATnew( TYPE_oid, TYPE_void, BATcount(strs));
+	else
+		r = BATnew( strs->htype, TYPE_void, BATcount(strs));
 	if ( (re = pcre_compile( pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
 		GDKerror("pcre_select: pcre compile failed\n");
 		return GDK_FAIL;
 	}
 	BATloop(strs, p, q) {
 		str s = BUNtail(strs, p);
-       		if (pcre_exec( re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0){
+		if (pcre_exec( re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0){
 			BUNins(r, BUNhead(strs, p), NULL);
 		}
 	}
