@@ -144,10 +144,14 @@ if test "x$have_readline" != xno; then
   save_LDFLAGS="$LDFLAGS"
   LDFLAGS="$LDFLAGS $READLINE_LIBS"
   AC_CHECK_LIB(readline, readline, 
+	[ READLINE_LIBS="$READLINE_LIBS -lreadline" 
+          AC_DEFINE(HAVE_LIBREADLINE) 
+	  have_readline=yes ]
+	, [ AC_CHECK_LIB(readline, rl_history_search_forward, 
 	[ READLINE_LIBS="$READLINE_LIBS -lreadline -ltermcap" 
           AC_DEFINE(HAVE_LIBREADLINE) 
 	  have_readline=yes ]
-	, have_readline=no, "-ltermcap" )
+	, have_readline=no, "-ltermcap" ) ], )
   LDFLAGS="$save_LDFLAGS"
 
   if test "x$have_readline" != xyes; then
@@ -349,4 +353,19 @@ fi
 AC_SUBST(HWCOUNTERS_LIBS)
 AC_SUBST(HWCOUNTERS_INCS)
 
+AC_CHECK_PROG(LATEX,latex,latex)
+AC_CHECK_PROG(PDFLATEX,pdflatex,pdflatex)
+AC_CHECK_PROG(DVIPS,dvips,dvips)
+AC_CHECK_PROG(FIG2DEV,fig2dev,fig2dev)
+FIG2DEV_EPS=eps
+AC_MSG_CHECKING([$FIG2DEV postscript option])
+[ if [ "$FIG2DEV" ]; then
+        echo "" > $FIG2DEV -L$FIG2DEV_EPS 2>/dev/null
+        if [ $? -ne 0 ]; then
+                FIG2DEV_EPS=ps
+        fi
+fi ]
+AC_MSG_RESULT($FIG2DEV_EPS)
+AC_SUBST(FIG2DEV_EPS)
+AM_CONDITIONAL(DOCTOOLS, test -n "$LATEX" -a -n "$FIG2DEV" -a -n "$DVIPS") 
 ])
