@@ -150,6 +150,7 @@ struct tms
 #    define getcwd		_getcwd
 #    define getpid		_getpid
 #    define access		_access
+#	 define W_OK		1
 #	 define R_OK		1
 #	 define F_OK		0
 #    define open		_open
