@@ -1037,7 +1037,7 @@ These lines should be eaten away into the prompt is encountered.
 	    !sendProperty(out, "schema", schema) ||
 	    stream_flush(out) < 0) {
 		mvc_destroy(m);
-		return GDK_FAIL;
+		return connect_error(in, out);
 	}
 		
 	ret = sqlclient2(m, stk, rs, out, trace, 0 );
