@@ -3743,17 +3743,18 @@ evaluate_join (FILE *f, int act_level, int counter, PFcnode_t *args)
     }
 
     fprintf(f,
+            "join_item1 := join_item1.reverse().leftfetchjoin(iter%03u).reverse();\n"
+            "join_item2 := join_item2.reverse().leftfetchjoin(iter%03u).reverse();\n"
             "var join_result := thetajoin(join_item1, join_item2.reverse(), "
                                          "%s, join_item1.count().lng());\n"
-            "var join_order := join_result.leftfetchjoin(iter%03u)"
-                                         ".reverse().leftfetchjoin(iter%03u).reverse();\n"
-            "join_order := join_order.sort();\n"
+            "var join_order := join_result.sort();\n"
             "var snd_iter := join_order.reverse().mark(0@0).reverse();\n"
             "var fst_iter := join_order.mark(0@0).reverse();\n"
-            "var sorting := fst_iter.CTrefine(snd_iter).reverse().kunique().reverse().mark(0@0).reverse();\n"
+            "var sorting := fst_iter.CTrefine(snd_iter);\n"
+            "sorting := sorting.reverse().kunique().reverse().mark(0@0).reverse();\n"
             "fst_iter := sorting.leftfetchjoin(fst_iter);\n"
             "snd_iter := sorting.leftfetchjoin(snd_iter);\n",
-            comp, snd_res, fst_res);
+            snd_res, fst_res, comp);
 
     if (lev_fst && lev_snd)
     {
@@ -3781,19 +3782,30 @@ evaluate_join (FILE *f, int act_level, int counter, PFcnode_t *args)
                 "}\n"
                 "snd_iter := fst_iter.mark(0@0).reverse().leftfetchjoin(snd_iter);\n"
                 "fst_iter := fst_iter.reverse().mark(0@0).reverse();\n"
-                "var order_fst := fst_iter.leftfetchjoin(inner%03u.reverse());\n"
-                "var order_snd := snd_iter.leftfetchjoin(iter%03u.reverse());\n",
+                "# var order_fst := fst_iter.leftfetchjoin(inner%03u.reverse()); # doesn't needed until now\n"
+                "var order_snd := snd_iter.leftfetchjoin(iter%03u.reverse());\n", 
                 act_level, snd_var);
     }
     else
     {
         fprintf(f,
-                "var order_fst := fst_iter.leftfetchjoin(inner%03u.reverse());\n"
+                "# var order_fst := fst_iter.leftfetchjoin(inner%03u.reverse()); # doesn't needed until now\n"
                 "var order_snd := snd_iter.leftfetchjoin(iter%03u.reverse());\n",
                 act_level, snd_var);
-    
     }
 
+    /* really dirty optimization to speed up xmark query11 */
+    if (res->kind == c_var && res->sem.var == snd->child[0]->sem.var)
+    {
+            fprintf(f,
+                    "item := order_snd.leftfetchjoin(item%03u);\n"
+                    "iter := fst_iter;\n"
+                    "pos := item.project(1@0);\n"
+                    "kind := order_snd.leftfetchjoin(kind%03u);\n",
+                    snd_var, snd_var);
+            fprintf(f, "} # end of evaluate_join\n");
+            return;
+    }
     act_level++;
     fprintf(f, "{  # for-translation\n");
 
@@ -5789,6 +5801,8 @@ static void test_print(PFcnode_t *c, PFarray_t *active_if, PFarray_t *active_vli
 unsigned int i, j;
 var_info vi;
 PFarray_t *reflist;
+
+(void) c;
 
 assert(active_if);
 printf("==========\n");
