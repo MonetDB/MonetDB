@@ -19,9 +19,16 @@ data files.
  * contains some stream info (for now only byteorder). This is 
  * required for proper conversion on different byte order platforms.
  */
+#ifdef HAVE_CONFIG_H 
+#include <config.h>
+#endif
 
 #include <ctype.h>
 #include <stdio.h>
+
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
 
 #ifdef _MSC_VER
 #ifndef LIBSTREAM
@@ -137,6 +144,7 @@ static void stream_destroy( stream *s){
 
 static stream *create_stream( char *filename ){
 	stream *s = (stream*)malloc(sizeof(stream));
+if (!s) printf("malloc NULLLL\n");
 	s->byteorder = 1234;
 	s->filename = strdup(filename); 
 	s->stream_data = NULL;
