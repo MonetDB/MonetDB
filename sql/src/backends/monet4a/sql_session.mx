@@ -548,7 +548,7 @@ Use default setting for trace.
 	if(passwd && strncmp(passwd,":blocked",8)==0){
 		blocked = 1;
 		*passwd=0;
-		fprintf(stdout,"read in blocked mode: %s\n",user);
+		/* fprintf(stdout,"read in blocked mode: %s\n",user);*/
 	} 
 
 	passwd= strchr(user,':');
@@ -557,12 +557,7 @@ Use default setting for trace.
 		passwd++;
 		user= GDKstrdup(buf);
 		passwd= GDKstrdup(passwd);
-	}/* ignore the password info for the time being
-	 else {
-		fprintf(stdout,"mapisqlclient: missing identity\n");
-		return connect_error(in, out);
-	} */
-	else {
+	} else {
 		user= GDKstrdup(buf);
 		passwd= GDKstrdup("monetdb");
 	}
@@ -585,11 +580,11 @@ These lines should be eaten away into the prompt is encountered.
 
 	m = mvc_create(debug);
 	schema = mvc_login( m, user, passwd );
-	/* GDKfree(user);  possible leakage*/
-	/* GDKfree(passwd);*/
+	GDKfree(user); /* possible leakage*/
+	GDKfree(passwd);
 
 	if (!schema){ 
-		fprintf(stderr,"mapisqlclient: schema authorization error %s:%s \n",user,passwd);
+		/* fprintf(stderr,"mapisqlclient: schema authorization error %s:%s \n",user,passwd);*/
 		/* close the connection to the Monet server */
 		if( error(out, "!ERROR:Schema authorization error") == 0 &&
 		    stream_write(out,prompt,promptlength,1) >=0 )
@@ -740,9 +735,11 @@ in the standard.
 				if (buf && buf[0] &&
 					(stream_write( out, "\n", 1, 1 ) != 1 ||
 					 stream_write( out, buf, strlen(buf), 1 ) !=1)){
+/*
 					fprintf(stderr,"error length:%d\n", strlen(buf));
 					fprintf(stderr,"mapisqlclient:error 3\n");
 					fprintf(stderr,"buf:%s\n",buf);
+*/
 					go = !go;
 					break;
 				}
