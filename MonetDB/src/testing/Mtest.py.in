@@ -445,6 +445,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
 
 def AddSubToHtmlIndex (env, TSTDIR) :
     TSTTRGBASE = env['TSTTRGBASE']
+    TSTPREF = env['TSTPREF']
 
     if os.path.isfile(os.path.join(TSTTRGBASE,TSTPREF,TSTDIR,".index.html")):
         BACK = os.getcwd()
@@ -506,6 +507,7 @@ def find_test_dirs(thisdir) :
 def PerformDir(env, testdir, testlist, BusyPorts) :
     td = 0
     TSTSRCBASE = env['TSTSRCBASE']
+    TSTPREF = env['TSTPREF']
     if testdir == TSTSRCBASE:
         TSTDIR = os.curdir
     else:
@@ -634,6 +636,7 @@ def isexecutable(TST) :
 ### isexecutable(TST) #
 
 def GetBitsAndModsAndStatic(env) :
+    TSTPREF = env['TSTPREF']
     pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" --dbname="+TSTPREF)
     pIn.write('''\
 MODs:=sunion([~monet_mod_nme],[~view_modules]).reverse.kunique;printf("\\nModules: ");x:="";MODs@batloop{printf("%s\'%s\'",x,$h);x:=",";}printf("\\n");quit;
@@ -1465,13 +1468,13 @@ def SetExecEnv(exe,verbose) :
 THISFILE = os.path.basename(sys.argv[0])
 THISPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
 if THISFILE == "Mprofile.py":
-    TSTPREF = "Profiles"
+    dftTSTPREF = "Profiles"
     TSTDBG = str(0)
     dftIGNORE = '^[#~]'
 else:
     dftIGNORE = '^#'
     TSTDBG = str(2+8)
-    TSTPREF = "Tests"
+    dftTSTPREF = "Tests"
 TSTSUFF = "Tests"
 
 if os.environ.has_key('HOST'):
@@ -1759,6 +1762,15 @@ def main(argv) :
         else:
             ErrXit("Illegal "+p+": directory '"+env[p]+"' does not exist!")
     os.chdir(BACK)
+
+    if THISFILE == "Mapprove.py" \
+       and not os.path.exists(os.path.join(env['TSTTRGBASE'],dftTSTPREF )) \
+       and     os.path.isfile(os.path.join(env['TSTTRGBASE'],'times.lst')):
+        env['TSTPREF'] = os.path.basename(env['TSTTRGBASE'])
+        env['TSTTRGBASE'] = os.path.dirname(env['TSTTRGBASE'])
+    else:
+        env['TSTPREF'] = dftTSTPREF
+    TSTPREF = env['TSTPREF']
 
     # some relative path's for relocatable HTML output
     if env['TSTSRCBASE'] == env['TSTBLDBASE']  and  env['TSTBLDBASE'] == env['TSTTRGBASE']:
