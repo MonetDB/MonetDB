@@ -33,6 +33,7 @@ phase of the scenario.
 /* #define _SQL_SCENARIO_DEBUG */
 /* #define _SQL_READER_DEBUG */
 /* #define _SQL_PARSER_DEBUG  */
+#define _SQL_OPTIMIZER_DEBUG  
 
 sql_export str SQLexitClient(Client c);
 sql_export str SQLinitClient(Client c);
@@ -51,6 +52,7 @@ we update its context descriptor to denote an SQL scenario.
 @c
 #include "sql_scenario.h"
 #include "sql_gencode.h"
+#include "sql_optimizer.h"
 
 static void pushCatchDefault(MalBlkPtr mb, str nme,int autocommit);
 
@@ -283,11 +285,6 @@ int SQLsetEnvironment(Client c){
 The core part of the SQL interface, parse the query and
 prepare the intermediate code.
 @c
-#define explainMAL() (be->mvc->explain && \
-	strcmp(be->mvc->explain, "plan") == 0)
-#define explainSQL() (be->mvc->explain && \
-	strcmp(be->mvc->explain, "performance") == 0)
-
 str SQLparser(Client c) {
 	str msg=0;
 	int debug=0, err=0,cache= 0,len;
@@ -431,7 +428,6 @@ be stored in an SQL table
 		
 	return msg;
 }
-
 @-
 Execution of the SQL program is delegated to the MALengine.
 @c

@@ -182,6 +182,12 @@ comment "round off the value v to nearests multiple of r";
 #include "sql_scope.h"
 #include "sql_qc.h"
 #include "sql_env.h"
+
+#define explainMAL() (be->mvc->explain && \
+        strcmp(be->mvc->explain, "plan") == 0)
+#define explainSQL() (be->mvc->explain && \
+        strcmp(be->mvc->explain, "performance") == 0)
+
 @-
 The back end structure collects the information needed to support
 compilation and execution of the SQL code against the Monet Version 5

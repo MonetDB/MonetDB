@@ -56,6 +56,7 @@ sql_export void backend_call( backend *be, Client c, char *name, list *args );
 #endif /* _SQL2MAL_H */
 @c
 #include "sql_gencode.h"
+#include "sql_optimizer.h"
 #include "sql_scope.h"
 
 @+ MAL code support
@@ -1055,7 +1056,6 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
         Symbol curPrg = 0;
 	InstrPtr curInstr=0;
 
-	int showit;
 	int i = 0;
 	char fnme[BUFSIZ];
 	node *n;
@@ -1092,21 +1092,7 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
         backend_dumpstmt( be, curBlk, s);
 
 	pushEndInstruction(curBlk);
-        insertSymbol(findScope(c->nspace,"sqlcache"), c->curprg);
-        trimMalBlk(c->curprg->def);
-        c->blkmode =0;
-        chkProgram(c->nspace, c->curprg->def);
-@-
-An error in the compilation should be reported to the user.
-@c
-        showit= TRUE;
-	if(showit ||  c->curprg->def->errors){
-		showErrors(c);
-		if(showit  ||  c->listing )
-			printFunction(c->fdout,c->curprg->def,c->listing);
-		stream_flush(c->fdout);
-	}
-
+        addQueryToCache(c);
         if( c->backup){
         	c->curprg = c->backup;
                 c->backup = 0;
