@@ -198,13 +198,13 @@ INLINE int  batUnfix(bat* b)   { return BBPdecref(*b,TRUE); }
 atomDesc BATatoms[MAXATOMS] = {
   { "void",
 #if SIZEOF_OID == SIZEOF_INT
-  		TYPE_void, 1, 0,       /* sizeof(@`void@7) */ 0, 1, (ptr) &int_nil, 
+  		TYPE_void, 1, 0,       /* sizeof(@`void@7) */ 0, 0, 1, (ptr) &int_nil, 
 		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
 		(void *(*)(void *, stream *, size_t)) voidRead, (void (*)(void *, stream *, size_t)) voidWrite,
  		(int (*)(ptr, ptr)) intCmp,
  		(hash_t (*)(ptr)) intHash, 	0,
 #else
-  		TYPE_void, 1, 0,       /* sizeof(@`void@7) */ 0, 1, (ptr) &lng_nil, 
+  		TYPE_void, 1, 0,       /* sizeof(@`void@7) */ 0, 0, 1, (ptr) &lng_nil, 
 		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
 		(void *(*)(void *, stream *, size_t)) voidRead, (void (*)(void *, stream *, size_t)) voidWrite,
  		(int (*)(ptr, ptr)) lngCmp,
@@ -214,7 +214,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0,
  		0,			0,
  		0,			0},			
-  { "bit",  	TYPE_chr, 1, sizeof(bit), sizeof(@`bit@7), 0, (ptr) &chr_nil, 
+  { "bit",  	TYPE_chr, 1, sizeof(bit), sizeof(@`bit@7), 0, 0, (ptr) &chr_nil, 
 		(int (*)(str, int*, ptr*)) bitFromStr,	(int (*)(str*, int*, ptr)) bitToStr,
 		(void *(*)(void *, stream *, size_t)) bitRead, (void (*)(void *, stream*, size_t)) bitWrite,
  		(int (*)(ptr, ptr)) chrCmp,
@@ -223,7 +223,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		0,			0,
  		0,			0,
  		0,			0},
-  { "chr",  	TYPE_chr, 1, sizeof(chr), sizeof(@`chr@7), 0, (ptr) &chr_nil, 
+  { "chr",  	TYPE_chr, 1, sizeof(chr), sizeof(@`chr@7), 0, 0, (ptr) &chr_nil, 
 		(int (*)(str, int*, ptr*)) @`chrFromStr@5,	(int (*)(str*, int*, ptr)) @`chrToStr@5,
 		(void *(*)(void *, stream *, size_t)) chrRead, (void (*)(void *, stream*, size_t)) chrWrite,
 	 	(int (*)(ptr, ptr)) chrCmp,
@@ -232,7 +232,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		0,			0,
  		0,			0,
  		0,			0},
-  { "sht",	TYPE_sht, 1, sizeof(sht), sizeof(@`sht@7), 0, (ptr) &sht_nil,
+  { "sht",	TYPE_sht, 1, sizeof(sht), sizeof(@`sht@7), 0, 0, (ptr) &sht_nil,
 		(int (*)(str, int*, ptr*)) @`shtFromStr@5,	(int (*)(str*, int*, ptr)) @`shtToStr@5,
 		(void *(*)(void *, stream *, size_t)) shtRead, (void (*)(void *, stream*, size_t)) shtWrite,
  		(int (*)(ptr, ptr)) shtCmp,		
@@ -241,7 +241,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		0,			0,
  		0,			0,
  		0,			0},
-  { "BAT",  	TYPE_int, 1, sizeof(bat), sizeof(@`bat@7), 0, (ptr) &int_nil,
+  { "BAT",  	TYPE_int, 1, sizeof(bat), sizeof(@`bat@7), 0, 0, (ptr) &int_nil,
  		(int (*)(str, int*, ptr*)) batFromStr,	(int (*)(str*, int*, ptr)) batToStr,
 		(void *(*)(void *, stream *, size_t)) batRead, (void (*)(void *, stream*, size_t)) batWrite,
  		(int (*)(ptr, ptr)) intCmp, 		
@@ -250,7 +250,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0,
  		0,			0,
  		0,			0},
-  { "int",  	TYPE_int, 1, sizeof(int), sizeof(@`int@7), 0, (ptr) &int_nil, 
+  { "int",  	TYPE_int, 1, sizeof(int), sizeof(@`int@7), 0, 0, (ptr) &int_nil, 
 		(int (*)(str, int*, ptr*)) intFromStr,	(int (*)(str*, int*, ptr)) @`intToStr@5,
 		(void *(*)(void *, stream *, size_t)) intRead, (void (*)(void *, stream*, size_t)) intWrite,
 	 	(int (*)(ptr, ptr)) intCmp,		
@@ -261,13 +261,13 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0},
   { "oid",
 #if SIZEOF_OID == SIZEOF_INT
-    		TYPE_int, 1, sizeof(oid), sizeof(@`oid@7), 0, (ptr) &int_nil, 
+    		TYPE_int, 1, sizeof(oid), sizeof(@`oid@7), 0, 0, (ptr) &int_nil, 
  		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
 		(void *(*)(void *, stream *, size_t)) intRead, (void (*)(void *, stream*, size_t)) intWrite,
  		(int (*)(ptr, ptr)) intCmp,		
  		(hash_t (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,
 #else
-	  	TYPE_lng, 1, sizeof(oid), sizeof(@`oid@7), 0, (ptr) &lng_nil, 
+	  	TYPE_lng, 1, sizeof(oid), sizeof(@`oid@7), 0, 0, (ptr) &lng_nil, 
  		(int (*)(str, int*, ptr*)) OIDfromStr,	(int (*)(str*, int*, ptr)) OIDtoStr,
 		(void *(*)(void *, stream *, size_t)) lngRead, (void (*)(void *, stream*, size_t)) lngWrite,
  		(int (*)(ptr, ptr)) lngCmp,		
@@ -279,13 +279,13 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0},
   { "ptr",
 #if SIZEOF_VOID_P == SIZEOF_INT
-		TYPE_int, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &int_nil,
+		TYPE_int, 1, sizeof(ptr), sizeof(@`ptr@7), 0, 0, (ptr) &int_nil,
 		(int (*)(str, int*, ptr*)) @`ptrFromStr@5,	(int (*)(str*, int*, ptr)) @`ptrToStr@5,
 		(void *(*)(void *, stream *, size_t)) ptrRead, (void (*)(void *, stream*, size_t)) ptrWrite,
 	 	(int (*)(ptr, ptr)) intCmp,		
 		(hash_t (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,	
 #else /* SIZEOF_VOID_P == SIZEOF_LONG */
-  		TYPE_lng, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &lng_nil,
+  		TYPE_lng, 1, sizeof(ptr), sizeof(@`ptr@7), 0, 0, (ptr) &lng_nil,
 		(int (*)(str, int*, ptr*)) @`ptrFromStr@5,	(int (*)(str*, int*, ptr)) @`ptrToStr@5,
 		(void *(*)(void *, stream *, size_t)) ptrRead, (void (*)(void *, stream*, size_t)) ptrWrite,
 	 	(int (*)(ptr, ptr)) lngCmp,		
@@ -295,7 +295,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		0, 		0,
  		0,			0,
  		0,			0},
-  { "flt",  	TYPE_flt, 1, sizeof(flt), sizeof(@`flt@7), 0, (ptr) &flt_nil, 
+  { "flt",  	TYPE_flt, 1, sizeof(flt), sizeof(@`flt@7), 0, 0, (ptr) &flt_nil, 
 		(int (*)(str, int*, ptr*)) @`fltFromStr@5,	(int (*)(str*, int*, ptr)) @`fltToStr@5,
 		(void *(*)(void *, stream *, size_t)) fltRead, (void (*)(void *, stream*, size_t)) fltWrite,
 	 	(int (*)(ptr, ptr)) fltCmp,		
@@ -304,7 +304,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0,
  		0,			0,
  		0,			0},
-  { "dbl",  	TYPE_dbl, 1, sizeof(dbl), sizeof(@`dbl@7), 0, (ptr) &dbl_nil, 
+  { "dbl",  	TYPE_dbl, 1, sizeof(dbl), sizeof(@`dbl@7), 0, 0, (ptr) &dbl_nil, 
 		(int (*)(str, int*, ptr*)) @`dblFromStr@5,	(int (*)(str*, int*, ptr)) @`dblToStr@5,
 		(void *(*)(void *, stream *, size_t)) dblRead, (void (*)(void *, stream*, size_t)) dblWrite,
 		(int (*)(ptr, ptr)) dblCmp,		
@@ -313,7 +313,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0,
  		0,			0,
  		0,			0},
-  { "lng",  	TYPE_lng, 1, sizeof(lng), sizeof(@`lng@7), 0, (ptr) &lng_nil, 
+  { "lng",  	TYPE_lng, 1, sizeof(lng), sizeof(@`lng@7), 0, 0, (ptr) &lng_nil, 
 		(int (*)(str, int*, ptr*)) lngFromStr,	(int (*)(str*, int*, ptr)) lngToStr,
 		(void *(*)(void *, stream *, size_t)) lngRead, (void (*)(void *, stream*, size_t)) lngWrite,
  		(int (*)(ptr, ptr)) lngCmp,		
@@ -322,7 +322,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		0,			0,
  		0,			0,
  		0,			0},
-  { "str",  	TYPE_str, 1, sizeof(var_t), sizeof(var_t), 1, (ptr) &chr_nil,
+  { "str",  	TYPE_str, 1, sizeof(var_t), sizeof(var_t), 0, 1, (ptr) &chr_nil,
 		(int (*)(str, int*, ptr*)) strFromStr, (int (*)(str*, int*, ptr)) strToStr,
 		(void *(*)(void *, stream *, size_t)) strRead, (void (*)(void *, stream*, size_t)) strWrite,
 		(int (*)(ptr, ptr)) strCmp,
@@ -407,6 +407,7 @@ void ATOMproperty(str id, str property, GDKfcn arg) {
 	    BATatoms[t].align = sizeof(int); /* default */
 	    BATatoms[t].linear = 1; /* default */
 	    BATatoms[t].storage = t;  /* default */
+	    BATatoms[t].deleting = 1; /* not yet usable */
 	}
 	if (strcmp("size", property) == 0) {
 	    if ((int) (long) arg) {

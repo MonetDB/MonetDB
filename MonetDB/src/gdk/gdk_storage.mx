@@ -396,6 +396,17 @@ it returns the BAT pointer.
 Notice that the BAT may have been declared as (de) compressed.
 In that case, we should change the disk layout structure with care.
 @c
+static int DESCatom(str nme) {
+	int tpe = ATOMindex(nme);
+	if (tpe < 0 || BATatoms[tpe].deleting) return -1;
+	return tpe;
+}
+static int DESCacc(str nme) {
+	int tpe = ACCindex(nme);
+	if (tpe < 0 || BATaccelerators[tpe].deleting) return -1;
+	return tpe;
+}
+
 static BAT *DESCload(int i) {
 	str s, nme = BBP_physical(i);
 	BATstore *bs;
@@ -408,14 +419,14 @@ static BAT *DESCload(int i) {
 	if (bs == NULL) return 0;	
 	b = &bs->B;
     
-	if ((*b->hatom && ((b->htype = ATOMindex(s=b->hatom)) < 0)) ||
-            (*b->tatom && ((b->ttype = ATOMindex(s=b->tatom)) < 0))) 
+	if ((*b->hatom && ((b->htype = DESCatom(s=b->hatom)) < 0)) ||
+            (*b->tatom && ((b->ttype = DESCatom(s=b->tatom)) < 0))) 
 	{
                 GDKerror("atom '%s' unknown, in BAT '%s'.\n",s,nme);
                 return 0;
 	}
-    	b->hacctype = (b->hacctype && *b->haccname)?ACCindex(b->haccname):0;
-    	b->tacctype = (b->tacctype && *b->taccname)?ACCindex(b->taccname):0;
+    	b->hacctype = (b->hacctype && *b->haccname)?DESCacc(b->haccname):0;
+    	b->tacctype = (b->tacctype && *b->taccname)?DESCacc(b->taccname):0;
     	if (b->hacctype < 0) {
                 GDKwarning("accelerator '%s' unknown, in BAT '%s'.\n",	
 			b->haccname, nme); *b->haccname = 0; b->hacctype = 0;

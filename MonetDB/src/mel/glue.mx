@@ -1171,7 +1171,7 @@ ostream &install::gen_atom( ostream &o, const Atom &d ){
                         o << ");\n";
                 }
         }
-        o << "   TYPE_" << d.Name() << " = ATOMindex(\"" <<d.Name()<< "\");\n";
+        o << "   BATatoms[TYPE_" << d.Name() << " = ATOMindex(\"" <<d.Name()<< "\")].deleting = 0;\n";
         return o;
 }
 
@@ -1186,7 +1186,7 @@ ostream &install::gen_acc( ostream &o, const Acc &d ){
 			if (s) s->print( this, o );
 		}
 	}
-	o << "   ACC_" << d.Name() << " = ACCindex(\"" <<d.Name()<< "\");\n";
+        o << "   BATaccelerators[TYPE_" << d.Name() << " = ACCindex(\"" <<d.Name()<< "\")].deleting = 0;\n";
    	return o;
 }
 
