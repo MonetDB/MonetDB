@@ -15,3 +15,5 @@ SELECT * FROM (
 		FROM tables, schemas WHERE tables.schema_id = schemas.id AND tables.type = 2
 ) AS tables WHERE 1 = 1
 	ORDER BY TABLE_TYPE, TABLE_SCHEM, TABLE_NAME;
+
+SELECT * FROM top LIMIT 15;

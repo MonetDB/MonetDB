@@ -1450,7 +1450,8 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 */
 	public ResultSet getCatalogs() throws SQLException {
 		String query =
-			"SELECT '' AS TABLE_CAT WHERE 1 = 0";
+			"SELECT 'default' AS TABLE_CAT";
+			// some applications need a database or catalog...
 
 		return(getStmt().executeQuery(query));
 	}

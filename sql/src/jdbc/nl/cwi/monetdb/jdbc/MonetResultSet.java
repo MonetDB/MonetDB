@@ -115,8 +115,13 @@ public class MonetResultSet implements ResultSet {
 
 		// check if there was an error
 		synchronized(cache) {
-			if (cache.hasError())
+			if (cache.hasError()) {
+				// commit the transaction if applicable
+				if (statement.getConnection().getAutoCommit())
+					((MonetConnection)statement.getConnection()).sendRollback();
+
 				throw new SQLException(cache.getError());
+			}
 		}
 
 		if (headers.get("emptyheader") != null) {
