@@ -57,7 +57,7 @@ simple implementation when dealing with line mode.
 \subsection{Block mode}
 
 When using block mode, the JDBC driver has to use \textsf{Stream}s
-for communicating with the server, for there is not only character date
+for communicating with the server, for there is not only character data
 to be read and sent.
 
 The Java virtual machine emulates a big endian machine. On a little
@@ -113,12 +113,17 @@ We benchmarked the JDBC driver using block mode and line mode on
 the VOC database. We dumped the database and restored it.
 
 The system we used was a AMD Athlon XP 2500+, 512MB memory
-and a Maxtor 80 Gb hard disk with 8MB cache. The running operating
+and a Maxtor 80 GB hard disk with 8MB cache. The running operating
 system was Gentoo Linux 2.6.5. The system was just running the
 Gnome display manager and normal daemons. We did not try to
 reduce influence from other processes as much as possible, we just
 closed all running applications and made sure nothing was started
 in between.
+
+In order to dump and restore the database using the JDBC driver, the
+\textsf{JdbcClient} utility was used. For dumping the\textsf{-D} flag
+was used while restoring was done by feeding the dumped file to the
+client using the \textsf{-f} flag.
 
 For each benchmark we (re)started Mserver and ran once the to be
 run test to let the system initialise and cache whatever it liked.
