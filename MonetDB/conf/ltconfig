@@ -682,6 +682,7 @@ else
     linux*)
       ac_cv_prog_cc_pic='-Kpic'
       ac_cv_prog_cc_static='-static'
+      ac_cv_prog_cc_wl='-Qoption,ld,'
       ;;
 
     *)
