@@ -47,6 +47,10 @@ Where options are:
     -u
         Produce a unified diff (smaller).
 
+    -S TEXT
+    --subject-prefix=TEXT
+        Preprend TEXT to the email subject line.
+
     --quiet / -q
         Don't print as much status to stdout.
 
@@ -256,14 +260,16 @@ X-Mailer: Python syncmail %(version)s <http://sf.net/projects/cvs-syncmail>
 def main():
     try:
         opts, args = getopt.getopt(
-            sys.argv[1:], 'hC:cuqf:',
-            ['fromhost=', 'context=', 'cvsroot=', 'help', 'quiet'])
+            sys.argv[1:], 'hC:cuS:qf:',
+            ['fromhost=', 'context=', 'cvsroot=', 'subject-prefix=',
+             'help', 'quiet'])
     except getopt.error, msg:
         usage(1, msg)
 
     # parse the options
     contextlines = 2
     verbose = 1
+    subject_prefix = ""
     fromhost = None
     for opt, arg in opts:
         if opt in ('-h', '--help'):
@@ -277,6 +283,8 @@ def main():
                 contextlines = 2
         elif opt == '-u':
             contextlines = 0
+        elif opt in ('-S', '--subject-prefix'):
+            subject_prefix = arg
         elif opt in ('-q', '--quiet'):
             verbose = 0
         elif opt in ('-f', '--fromhost'):
@@ -288,7 +296,7 @@ def main():
     # $CVSROOT, followed by the list of files that are changing.
     if not args:
         usage(1, 'No CVS module specified')
-    subject = args[0]
+    subject = subject_prefix + args[0]
     specs = string.split(args[0])
     del args[0]
 
@@ -302,7 +310,7 @@ def main():
     if verbose:
         print 'Mailing %s...' % string.join(people, COMMASPACE)
 
-    if specs == ['-', 'Imported', 'sources']:
+    if specs[-3:] == ['-', 'Imported', 'sources']:
         return
     if specs[-3:] == ['-', 'New', 'directory']:
         del specs[-3:]
