@@ -140,7 +140,7 @@ dnl  Only GNU (gcc/g++) and Intel ([ie]cc/[ie]cpc) are done so far.
 X_CFLAGS=''
 X_CXXFLAGS=''
 case $CC-$CXX in
-*gcc-*g++)
+*gcc-*g++*)
 	gcc_ver="`$CC --version | head -1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)\([[^0-9]].*\)*$|\1|'`"
 	dnl  We need more features than the C89 standard offers, but not all
 	dnl  (if any at all) C/C++ compilers implements the complete C99
@@ -302,6 +302,7 @@ yes-aix*-64)
 yes-linux*-x86_64*-64)
 	CC="$CC -m$bits"
 	CXX="$CXX -m$bits"
+	LDFLAGS="$LDFLAGS -L/usr/lib64"
 	;;
 esac
 
@@ -555,7 +556,7 @@ if test "x$enable_warning" = xyes; then
   dnl  Basically, we disable/overule X_C[XX]FLAGS, i.e., "-Werror" and some "-Wno-*".
   dnl  All warnings should be on by default (see above).
   case $CC-$CXX in
-  *gcc-*g++)
+  *gcc-*g++*)
 	X_CFLAGS="-pedantic -Wno-long-long"
 	X_CXXFLAGS="-pedantic -Wno-long-long"
 	;;
