@@ -283,7 +283,7 @@ if test "x$enable_optim" = xyes; then
                       dnl  (Mserver produces tons of incorrect BATpropcheck warnings);
                       dnl  hence, we omit -funroll-all-loops, here.
                       ;;
-      i*86-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -falign-loops=4 -falign-jumps=4 -falign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
+      i*86-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
       *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions"
                       if test "$CC" = "gcc -m64" ; then
                         NO_INLINE_CFLAGS="-O1"
