@@ -1064,7 +1064,6 @@ int interpret_ident(int	stk, YYSTREE lt, ValPtr res)
 		GDKfree(lt->yyval.val.pval);
 		/* resolve only once: TEMPLATE */
         	lt->token = TOK_TEMPLATE; 
-		//lt->yyval.vtype = v->binding.vtype;
 		lt->yyval.vtype = TYPE_ptr;
 		lt->yyval.val.pval = &v->binding;
 		*res = v->binding;
