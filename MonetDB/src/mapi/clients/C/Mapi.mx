@@ -238,7 +238,7 @@ This routine sends the Command to the database server represented by mid.
 It is one of the most common operations.
 If Command is zero it takes the last query string kept around.
 It returns zero upon success, otherwise it indicates a failure of the request.
-The command response is buffered for consumption, e.g. mapi_fetch_row();
+The command response is buffered for consumption, e.g. mapi_fetch_row().
 
 \item[MapiMsg mapi_query_array(Mapi mid, char *Command, char **argv)]:
 This routine sends the Command to the database server replacing
@@ -283,11 +283,11 @@ is returned.
 Read the answer to a query and pass the results verbatim
 to a stream. The result is not analyzed, nor cached.
 
-\item[MapiMsg mapi_seek_row(Mapi mid, int rownr)];
-Reset the row pointer to the requested row number;
+\item[MapiMsg mapi_seek_row(Mapi mid, int rownr)]:
+Reset the row pointer to the requested row number.
 Comments lines are ignored.
 
-\item[MapiMsg mapi_fetch_reset(Mapi mid)];
+\item[MapiMsg mapi_fetch_reset(Mapi mid)]:
 Reset the row pointer to the first line in the cache.
 This need not be a tuple.
 This is mostly used in combination with fetching all tuples at once.
@@ -299,26 +299,26 @@ or error. This can be analyzed in using mapi_error().
 
 \item[char *mapi_fetch_field(Mapi mid, int fnr)]:
 Returns a pointer a C-string representation of the value returned.
-A zero is returned upon encountering an error;
+A zero is returned upon encountering an error.
 This can be analyzed in using mapi_error().
 
-\item[MapiMsg mapi_prepare(Mapi mid, char *Command)];
+\item[MapiMsg mapi_prepare(Mapi mid, char *Command)]:
 Move the query to the connection structure. Possibly interact with the
 back-end to prepare the query for execution.
 
-\item[int mapi_execute(Mapi mid)];
+\item[int mapi_execute(Mapi mid)]:
 The command is shipped to the backend for execution. A single answer
 is pre-fetched to detect any runtime error. MOK is returned upon success.
 
-\item[int mapi_execute_array(Mapi mid, char **argv)];
+\item[int mapi_execute_array(Mapi mid, char **argv)]:
 Similar to mapi_execute but replacing the placeholders for the
 string values provided.
 
-\item[MapiMsg mapi_bind(Mapi mid, int fldnr, char **val)];
+\item[MapiMsg mapi_bind(Mapi mid, int fldnr, char **val)]:
 Bind a string variable with a field in the return table.
 Returns an error if the field identified does not exist.
 
-\item[MapiMsg mapi_bind_var(Mapi mid, int fldnr, int type, void *val)];
+\item[MapiMsg mapi_bind_var(Mapi mid, int fldnr, int type, void *val)]:
 Describe the type and location of the next parameter in a query template.
 The types recognized are {SQL_INT, SQL_LONG, SQL_CHAR, SQL_VARCHAR, SQL_FLOAT,
 SQL_DOUBLE, SQL_TIME, SQL_DATE}.
@@ -327,19 +327,19 @@ Subsequently all rows being fetched also involve delivery of the field
 values in the C-variables using proper conversion. For variable length
 strings a pointer is set into the cache.
 
-\item[MapiMsg mapi_bind_numeric(Mapi mid, int fldnr, int scale, int precision, void *val)];
+\item[MapiMsg mapi_bind_numeric(Mapi mid, int fldnr, int scale, int precision, void *val)]:
 Bind to a numeric variable, internally represented by SQL_INT
 Describe the location of a numeric parameter in a query template.
 
-\item[MapiMsg mapi_param(Mapi mid, int fldnr, char **val)];
+\item[MapiMsg mapi_param(Mapi mid, int fldnr, char **val)]:
 Bind a string variable with the n-th placeholder in the query
 template.
 No conversion takes place.
 
-\item[MapiMsg mapi_param_type(Mapi mid, int fldnr, int type, void *val)];
+\item[MapiMsg mapi_param_type(Mapi mid, int fldnr, int type, void *val)]:
 Similar to mapi_bind_var(), but now binds a parameter.
 
-\item[MapiMsg mapi_paramnumeric(Mapi mid, int fldnr, int scale, int precision, void *val)];
+\item[MapiMsg mapi_paramnumeric(Mapi mid, int fldnr, int scale, int precision, void *val)]:
 Bind to a numeric variable, internally represented by SQL_INT
 
 \item[MapiMsg mapi_cache_limit(Mapi mid, int maxrows)]:
