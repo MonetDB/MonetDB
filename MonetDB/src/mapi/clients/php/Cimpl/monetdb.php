@@ -92,6 +92,8 @@ function print_query($query, $get_type)
 
 $MONETDB_NAME="monetdb";
 
+if (!defined("PHP_SHLIB_SUFFIX")) define("PHP_SHLIB_SUFFIX", "so");
+
 echo "<p>Testing for '$MONETDB_NAME'... ";
 if(!extension_loaded($MONETDB_NAME)) {
 	echo "NOT LOADED, trying to load</p>\n";
