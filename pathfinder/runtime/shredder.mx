@@ -292,7 +292,7 @@ static void printStat(shredCtx* ctx) {
 }
 
 static BAT* finalizeShredCtx(shredCtx* ctx) {
-        int i;
+        oid i;
 
         BAT* res = BATnew(TYPE_oid,TYPE_bat,SHRED_BATS); /* create result BAT */
 
@@ -693,8 +693,9 @@ static nat store_NsLoc(char* nsloc) {
         BUN bun;
         if ( (bun = BUNfnd(glb_ctx->nslocBAT,nsloc)) ) {
                 glb_ctx->nslocDUPL++;
-                return *(nat*)BUNtail(glb_ctx->nslocBAT,bun);
+                return (nat)*(oid*)BUNtail(glb_ctx->nslocBAT,bun);
         }
+	oid res_oid;
 #endif
         nat res;
         char *colon, *nsStr, *locStr;
@@ -715,7 +716,8 @@ static nat store_NsLoc(char* nsloc) {
                 return NIL;
         }
 #ifdef USE_COMPRESSION
-        if ( !BUNins(glb_ctx->nslocBAT,nsloc,&res) ) {
+	res_oid = (oid)res;
+        if ( !BUNins(glb_ctx->nslocBAT,nsloc,&res_oid) ) {
                 stream_printf(GDKerr,"Error:store_NsLoc:compression table insert fails\n");
                 return NIL;
         }
