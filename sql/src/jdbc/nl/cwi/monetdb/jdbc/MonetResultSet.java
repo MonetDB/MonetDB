@@ -1291,8 +1291,6 @@ public class MonetResultSet implements ResultSet {
 		}
 
 		try {
-			cal.setTime(MonetConnection.mTimestamp.parse("1970-01-01 00:00:00.000"));
-
 			switch(dataType) {
 				default:
 					throw new java.text.ParseException("Unsupported data type", 0);
@@ -1311,19 +1309,27 @@ public class MonetResultSet implements ResultSet {
 							monetDate.substring(23, 26) +
 							monetDate.substring(27, 29);
 
-						return(MonetConnection.mTimestampZ.parse(monetDate.substring(0, 23) + tzRFC822));
+						synchronized (MonetConnection.mTimestampZ) {
+							MonetConnection.mTimestamp.setTimeZone(TimeZone.getDefault());
+							return(MonetConnection.mTimestampZ.parse(monetDate.substring(0, 23) + tzRFC822));
+						}
 					} else if (monetDate.length() == 23) {
 						// if there is no time zone information in the database
 						// we have to use the given calendar to construct it
-						cal.setTime(MonetConnection.mTimestamp.parse(monetDate));
-						return(cal.getTime());
+						synchronized (MonetConnection.mTimestampZ) {
+							MonetConnection.mTimestampZ.setTimeZone(cal.getTimeZone());
+							String tz = MonetConnection.mTimestampZ.format(Timestamp.valueOf(monetDate));
+							tz = tz.substring(23);
+							MonetConnection.mTimestampZ.setTimeZone(TimeZone.getDefault());
+							return(MonetConnection.mTimestampZ.parse(monetDate + tz));
+						}
 					}
 				break;
 			}
 		} catch(java.text.ParseException e) {
 			// keep default value
 		}
-		return(cal.getTime());
+		return(Timestamp.valueOf("1970-01-01 00:00:00.000"));
 	}
 
 	/**

@@ -791,10 +791,12 @@ public class MonetPreparedStatement
 	public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
 		throws SQLException
 	{
-		cal.setTime(x);
-		String RFC822 = MonetConnection.mTimestampZ.format(cal.getTime());
-		setValue(parameterIndex, "'" +
-		   	RFC822.substring(0, 26) + ":" + RFC822.substring(26) + "'");
+		synchronized (MonetConnection.mTimestampZ) {
+			MonetConnection.mTimestampZ.setTimeZone(cal.getTimeZone());
+			String RFC822 = MonetConnection.mTimestampZ.format(x);
+			setValue(parameterIndex, "'" +
+				RFC822.substring(0, 26) + ":" + RFC822.substring(26) + "'");
+		}
 	}
 
 	/**
