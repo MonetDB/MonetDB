@@ -274,10 +274,13 @@ static void bun_inplace(BAT *b, oid id, ptr val )
 	BUN p = NULL;
 	BUN oldInserted = b->batInserted;
 
-	assert(b->htype == TYPE_void && b->hseqbase == 0 && BATcount(b) > id );
+	assert(b->htype == TYPE_void);
+	assert(b->hseqbase == 0);
+	assert(BATcount(b) > id);
 
 	b->batInserted = NULL;
 	BUNfndVOID(p, b, (ptr)&id);
+	assert(p >= b->batInserted); /* we don't want delete/ins */
 	(void) BUNinplace(b, p, (ptr)&id, val);
 	b->batInserted = oldInserted;
 }
@@ -1552,9 +1555,7 @@ static void rollforward_table(sql_trans * ctr, sql_schema * gs, sql_table * ct)
                 gt->rtime = ct->rtime;
                 gt->wtime = ct->wtime;
 
-		do { /* TODO move the logic for keeping intersections
-			between I_,U_ and D_ empty into the sql2mil 
-			layer */
+		do { 
 			sql_column *cc = n->data;
 			sql_column *oc = m->data;
 
@@ -1582,8 +1583,8 @@ static void rollforward_table(sql_trans * ctr, sql_schema * gs, sql_table * ct)
 						BATmirror(ds),ins_del));
 					BAT *nups = BATkdiff(ups,ins_del);
 					BBPunfix(ins->batCacheid);
-					BBPunfix(nds->batCacheid);
-					BBPunfix(nups->batCacheid);
+					BBPunfix(ds->batCacheid);
+					BBPunfix(ups->batCacheid);
 					ins = nins;
 					ds = nds;
 					ups = nups;
@@ -1591,10 +1592,10 @@ static void rollforward_table(sql_trans * ctr, sql_schema * gs, sql_table * ct)
 				BBPunfix(ins_del->batCacheid);
 			}
 */
-			/* forward inserts */
+			/* forward inserts (not values directly deleted) */
 			if (BATcount(ins)) {
 
-/* for now keep both updates and inserts
+/* for now keep both updates and inserts (needed for proper void handeling)
 				if (BATcount(ups)){
 					BAT *ups_ins = BATkdiff(ups,ins);
 					BBPunfix(ups->batCacheid);
@@ -1606,7 +1607,9 @@ static void rollforward_table(sql_trans * ctr, sql_schema * gs, sql_table * ct)
 				log_bat(logger, oc->bid, ob);
 			}
 			if (BATcount(ds)) {
-				void_delete_bat(ob, ds);
+				BAT *nds = BATkdiff(BATmirror(ds), ins); 
+				void_delete_bat(ob, BATmirror(nds));
+				BBPunfix(nds->batCacheid);
 			}
 			if (BATcount(ups)) {
 				BAT *oub = bind_ubat(gtr, oc, 1);
@@ -3101,7 +3104,7 @@ ssize_t mvc_import_table( mvc *m, stream *s, char *tname,
 		col = n->data;
 
 		ba = bind_bat(tr, col, 1);
-		in = bat_descriptor(*(bat*)BUNtail(inss, p));
+		in = BATdescriptor(*(bat*)BUNtail(inss, p));
 
 		assert (strcmp(BBPname(ba->batCacheid), BUNhead(inss,p)) == 0 );
 

@@ -34,12 +34,12 @@ extern int sql_drop_user(mvc *m,  str user);
 #include "bm.h"
 #include <algebra.h>
 
+/** broken !!, need to use the sys_* versions from mvc */
 static BAT *desc(char *bname)
 {
 	BAT *res = NULL;
 	bat bid = BBPindex(bname);
 	if (bid){
-		BBPfix(bid);
 		res = BATdescriptor(bid);
 	}
 	assert(res);

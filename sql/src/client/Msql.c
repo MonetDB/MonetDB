@@ -294,10 +294,10 @@ void receive( stream *rs, stream *out, int debug ){
 	fflush(stdout);
 }
 
+static int ins = 0;
 int parse_line( const unsigned char *line )
 {
 	int len = 0;
-	int ins = 0;
 	int esc = 0;
 	int cnt = 0;
 
@@ -311,6 +311,8 @@ int parse_line( const unsigned char *line )
 		} else if (ins &&  *line == '\''){
 			ins = 0;
 		} else if (*line == '\\'){
+			if (!ins && line[1] == 'q')
+				return -1;
 			esc = 1;
 		} else if (*line == '\''){
 			ins = 1;
@@ -349,6 +351,8 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int debug, int trace ){
 		if (!line) break;
 		lineno++;
 		cmdcnt = parse_line((unsigned char*)line);
+		if (cmdcnt < 0)
+			break;
 		if (debug || trace)
 			printf("# %5d: %d %s\n", lineno, cmdcnt, line);
 #ifdef HAVE_ICONV
@@ -360,8 +364,10 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int debug, int trace ){
 #endif
 			ws->write( ws, line, strlen(line), 1 );
 		ws->write( ws, "\n", 1, 1 );
-		if (cmdcnt)
+		if (cmdcnt){
+			ins = 0;
 			ws->flush( ws );
+		}
 
 		for (; cmdcnt > 0; cmdcnt--)
 			receive(rs, ws, debug);
@@ -898,6 +904,7 @@ main(int ac, char **av)
 		struct stat st;
 
 		fprintf(stdout, "SQL  connected to database %s using schema %s\n", db, schema ); 
+		fflush(stdout);
 		if (!dump){
 			fstat(fileno(stdin),&st);
 #ifdef HAVE_LIBREADLINE

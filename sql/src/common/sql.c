@@ -444,15 +444,15 @@ static tvar *sql_subquery_optname(context * sql, scope * scp,
 				  symbol * query)
 {
 	SelectNode *sn = (SelectNode*)query;
-	scope *nscp = scope_open(scp);
+	/*scope *nscp = scope_open(scp);*/
 	tvar *res = NULL;
-	stmt *sq = sql_subquery(sql, nscp, query);
+	stmt *sq = sql_subquery(sql, NULL, query);
 
 	if (!sq)
 		return NULL;
 
 	res = table_optname(sql, scp, sq, sn->s.sql, sn->name);
-	scp = scope_close(nscp);
+	/*scp = scope_close(nscp);*/
 	return res;
 }
 
@@ -2118,7 +2118,7 @@ static stmt *query_orderby(context * sql, scope * scp, symbol * orderby, stmt * 
 			stmt *sc = sql_column_ref(sql, scp, col);
 			if (sc) {
 				stmt *j = NULL;
-				if (sc->type == st_bat) {
+				if (sc->type == st_bat || sc->type == st_ibat) {
 					j = find_pivot(subset, sc->h);
 					if (!j) {
 						return sql_error(sql, 02, "subset not found for orderby column\n");

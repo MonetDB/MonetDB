@@ -1092,6 +1092,7 @@ sql_subtype *tail_type(stmt * st)
 	case st_alias:
 	case st_column_alias:
 	case st_ibat:
+	case st_pivot:
 		return tail_type(st->op1.stval);
 
 	case st_list:
@@ -1140,6 +1141,7 @@ sql_subtype *head_type(stmt * st)
 	case st_insert:
 	case st_replace:
 	case st_temp:
+	case st_pivot:
 		return head_type(st->op1.stval);
 
 	case st_list:
@@ -1184,10 +1186,10 @@ stmt *tail_column(stmt * st)
 	case st_group_ext:
 	case st_union:
 	case st_unique:
+	case st_pivot:
 		return tail_column(st->op1.stval);
 
 	case st_column_alias:
-	case st_pivot:
 	case st_ibat:
 	case st_bat:
 		return st;
@@ -1227,10 +1229,10 @@ stmt *head_column(stmt * st)
 	case st_insert:
 	case st_replace:
 	case st_temp:
+	case st_pivot:
 		return head_column(st->op1.stval);
 
 	case st_column_alias:
-	case st_pivot:
 	case st_ibat:
 	case st_bat:
 		return st;
@@ -1282,6 +1284,7 @@ char *column_name(stmt * st)
 	case st_select2:
 	case st_diff:
 	case st_unique:
+	case st_pivot:
 		return column_name(st->op1.stval);
 
 	case st_op:
@@ -1328,6 +1331,7 @@ char *table_name(stmt * st)
 	case st_diff:
 	case st_aggr:
 	case st_unique:
+	case st_pivot:
 		return table_name(st->op1.stval);
 
 	case st_bat:
@@ -1355,6 +1359,7 @@ column *basecolumn(stmt * st)
 		return basecolumn(head_column(st->op1.stval));
 
 	case st_pivot:
+		return basecolumn(st->op1.stval);
 	case st_bat:
 		return st->op1.cval;
 

@@ -12,11 +12,11 @@ all: $(SRCDIR)\Makefile.msc all-msc unistd.h
 	$(MAKE) /nologo /f $(SRCDIR)\Makefile.msc all
 
 check: $(SRCDIR)\Makefile.msc RunMtest.bat
-	$(MAKE) /nologo /k /i /f $(SRCDIR)\Makefile.msc check
+	$(MAKE) /nologo /i /f $(SRCDIR)\Makefile.msc check
 	call RunMtest.bat
 
-install: targetdirs
-	$(MAKE) /nologo /k /f $(SRCDIR)\Makefile.msc install
+install: targetdirs all
+	$(MAKE) /nologo /f $(SRCDIR)\Makefile.msc install
 
 $(SRCDIR)\Makefile.msc: $(MONET_PREFIX)\lib\autogen\autogen.py \
 	$(MONET_PREFIX)\lib\autogen\codegen.py \
