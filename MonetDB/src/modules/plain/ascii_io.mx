@@ -240,7 +240,7 @@ proc export( BAT[any,any] b, str filename ) {
 #include <ascii_io.proto.h>
 
 
-typedef ptr *(*frStr)( void *extra, int type, char *s, char *e);
+typedef ptr *(*frStr)( void *extra, int type, char *s, char *e, char quote);
 typedef int (*toStr)( void *extra, char **buf, int *len, int type, ptr a);
 
 typedef struct ascii_io_t {
@@ -280,7 +280,7 @@ ascii_io_export int ASCIIoutput_file( ascii *as, BAT *order, stream *s );
 @+ Default from and to string functions
 @h
 ascii_io_export ptr *ASCIIstrFrStr( char *s, char *e);
-ascii_io_export ptr *ASCIIadt_frStr( void *extra, int type, char *s, char *e);
+ascii_io_export ptr *ASCIIadt_frStr( void *extra, int type, char *s, char *e, char quote);
 ascii_io_export int ASCIIadt_toStr( void *extra, char **buf, int *len, int type, ptr a);
 
 #endif
@@ -343,12 +343,12 @@ ptr *ASCIIstrFrStr( char *s, char *e )
 	return res;
 }
 
-ptr *ASCIIadt_frStr( void *extra, int type, char *s, char *e)
+ptr *ASCIIadt_frStr( void *extra, int type, char *s, char *e, char quote)
 {
         ptr *res = NULL;
 
 	(void) extra;
-        if (s == NULL || strcmp(s,"nil") == 0) {
+        if (s == NULL || ( !(type == TYPE_str && quote) && strcmp(s,"nil") == 0) ) {
         	res = (ptr*)ATOMnil(type);
 	} else if (type == TYPE_str) {
 		return ASCIIstrFrStr( s, e ); 
@@ -577,7 +577,7 @@ insert_val( ascii_io *fmt, char *s, char *e, char quote )
 	if (e<s) {
 		e = s;
 	}
-	adt = fmt->frstr( fmt->extra, fmt->adt, s, e );
+	adt = fmt->frstr( fmt->extra, fmt->adt, s, e, quote );
 	
 	if (!adt){
 		GDKerror("%lx not inserted %s\n", (size_t)adt, s);
