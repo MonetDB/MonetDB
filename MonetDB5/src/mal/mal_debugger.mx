@@ -127,6 +127,7 @@ mal_export void mdbHelp(stream *f);
 mal_export void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v,int index, int cnt,int first);
 mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
+mal_export void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra);
 
 mal_export void printBBPinfo(stream *out);
@@ -471,9 +472,6 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
                         cntxt->timer = 0;
         	}
         	break;
-    	case 'T': /* trace instruction calls */
-        	printTraceCall(cntxt,mb,stk,p);
-        	break;
     	case 'v': {	/* show the symbol table and bindings */
 				str modnme, fcnname;
         		Scope fsym;
@@ -629,7 +627,7 @@ signatures satisfying the pattern.
         	Symbol fs;
         	int i, lstng;
 	
-        	lstng = listing | (*b == 'L' ? LIST_MAL_ALL : LIST_MAL_INSTR);
+        	lstng = /* listing |*/ (*b == 'L' ? LIST_MAL_ALL : LIST_MAL_INSTR);
         	skipWord(cntxt,b);
         	if( *b!= 0){
             	modnme=b;
@@ -687,33 +685,13 @@ void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
     switch(stk->cmd){
     case 'c':
         if( (newcmd= isBreakpoint(cntxt,p)) ){
-            if( newcmd == 't') 
-                stream_printf(cntxt->fdout,"show value nyi \n");
             mdbCommand(cntxt,mb,stk,p,pc);
         } 
         break;
     case 's': case 'n':
-        if( cntxt->timer){
-            long n= GDKusec();
-            long l= n - cntxt->timer;
-            stream_printf(cntxt->fdout,"%s[%-3d usec]\n","#mdb ",l);
-        }
         mdbCommand(cntxt,mb,stk,p,pc);
         break;
     case 'r': stk->cmd = 'n';
-        if( cntxt->timer){
-            long l= GDKusec() - cntxt->timer;
-            stream_printf(cntxt->fdout,"[%d usec]",l);
-        }
-        break;
-    case 'T':
-        if( cntxt->timer){
-            long n= GDKusec();
-            long l= n - cntxt->timer;
-            stream_printf(cntxt->fdout,"%s[%-3d usec]\n","#mdb ",l);
-        }
-        stream_printf(cntxt->fdout,"#mdb ");
-        printTraceCall(cntxt,mb,stk,p);
     }
     if( cntxt->timer) cntxt->timer = GDKusec();
     stream_flush(cntxt->fdout);
@@ -945,7 +923,6 @@ void mdbHelp(stream *f){
     stream_printf(f,"down       -- go down the stack\n");
     stream_printf(f,"up         -- go up the stack\n");
     stream_printf(f,"timer      -- produce micro-second response time\n");
-    stream_printf(f,"Trace      -- trace call\n");
     stream_printf(f,"help       -- this message\n");
 }
 @}
