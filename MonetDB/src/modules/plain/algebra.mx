@@ -367,7 +367,13 @@ over it.
 @m
 .COMMAND count ( BAT[any,any] b ) : 
 				int = CMDcount; 
-"Return the number of elements currently in a BAT."
+"Returns the number of elements currently in a BAT."
+
+.COMMAND count ( BAT[any,any] b , bit ignore_nils ) : 
+				int = CMDcount_nil; 
+"Returns the number of elements currently in a BAT;
+ ignores BUNs with nil-tail iff ignore_nils==TRUE."
+
 @- Histogram on Tail 
 @m
 .COMMAND histogram ( BAT[any,any::2] b) : 
@@ -739,6 +745,12 @@ that for the moment are defined as procs.
 @:sumprodavg(lng)@
 @:sumprodavg(flt)@
 @:sumprodavg(dbl)@
+
+    proc count_no_nil(BAT[any,any] b) : int {
+		return count(b,TRUE);
+    }
+    ADDHELP("count_no_nil", "manegold", "Jun 03 2003",
+    "short-cut for count(b,TRUE)", "algebra");
 
 @* Cost Model
 This module contains a full cost model on the algebraic 
@@ -1231,6 +1243,14 @@ int CMD@1(BAT **result, BAT* b, int *param) {
 @:binary(sdiff, BATsdiff)@
 @:binary(kdiff, BATkdiff)@
 @:binaryint(sample, BATsample)@
+
+int CMDcount_nil(int *result, BAT *b, bit *ignore_nils) {
+	if (*ignore_nils)
+		*result = (int) BATcount_no_nil(b);
+	else
+		*result = (int) BATcount(b);
+	return GDK_SUCCEED;
+}
 
 int CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize) {
         return (*result = (BAT *) BATgroup(b, *start, *incr, *grpsize))?GDK_SUCCEED:GDK_FAIL;

@@ -16,7 +16,7 @@ vars;
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_27>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -81,7 +81,7 @@ vars;
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
 [ "bn",			  "BAT",  "liquid",	  "changeable",	  "<tmp_31>"		  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_27>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]

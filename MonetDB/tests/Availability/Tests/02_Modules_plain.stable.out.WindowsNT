@@ -102,9 +102,9 @@ Plain_mods@batloop {
 
 Module: "aggr"
 
-[ 50 ]
-[ 50 ]
-#---------------------------------------------------------------------------------------------------------------------------------#
+[ 52 ]
+[ 52 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature							| help				  #
 #---------------------------------------------------------------------------------------------------------------------------------#
 [ "aggrtst",	  "PROC:      ",  "aggrtst(int, int, str, ..str..) : any",			  "not available"		  ]
@@ -120,7 +120,9 @@ Module: "aggr"
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail average"	  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,uchr], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail average"	  ]
 [ "{card}",	  "PROC:      ",  "{card}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",		  "not available"		  ]
-[ "{count}",	  "COMMAND:   ",  "{count}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",		  "grouped count"		  ]
+[ "{count_no_nil}",	  "PROC:      ",  "{count_no_nil}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",	  "short-cut for {count}(b,e,TRUE)"				  ]
+[ "{count}",		  "COMMAND:   ",  "{count}(BAT[oid,any], BAT[oid,any], bit) : BAT[oid,int]",	  "grouped count; ignores nil values iff ignore_nils==TRUE"	  ]
+[ "{count}",		  "PROC:      ",  "{count}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",		  "short-cut for {count}(b,e,FALSE)"				  ]
 [ "{max}",	  "COMMAND:   ",  "{max}(BAT[oid,any::1], BAT[oid,any]) : BAT[oid,any::1]",	  "grouped tail maximum"	  ]
 [ "{min}",	  "COMMAND:   ",  "{min}(BAT[oid,any::1], BAT[oid,any]) : BAT[oid,any::1]",	  "grouped tail minimum"	  ]
 [ "{prod_dbl}",	  "COMMAND:   ",  "{prod_dbl}(BAT[oid,dbl], BAT[oid,any]) : BAT[oid,dbl]",	  "grouped tail product"	  ]
@@ -160,9 +162,9 @@ Module: "aggr"
 
 Module: "aggrX3"
 
-[ 103 ]
-[ 103 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 107 ]
+[ 107 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature								| help				  #
 #-----------------------------------------------------------------------------------------------------------------------------------------#
 [ "aggrtst",	  "PROC:      ",  "aggrtst(int, int, str, ..str..) : any",				  "not available"		  ]
@@ -185,8 +187,12 @@ Module: "aggrX3"
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,uchr], BAT[oid,oid], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail average on uchr"  ]
 [ "{card}",	  "PROC:      ",  "{card}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",			  "not available"		  ]
 [ "{card}",	  "PROC:      ",  "{card}(BAT[oid,any], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",		  "not available"		  ]
-[ "{count}",	  "COMMAND:   ",  "{count}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",			  "grouped count"		  ]
-[ "{count}",	  "COMMAND:   ",  "{count}(BAT[oid,any], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",	  "grouped count"		  ]
+[ "{count_no_nil}",	  "PROC:      ",  "{count_no_nil}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",			  "short-cut for {count}(b,e,TRUE)"				  ]
+[ "{count_no_nil}",	  "PROC:      ",  "{count_no_nil}(BAT[oid,any], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",	  "short-cut for {count}(b,g,e,TRUE)"				  ]
+[ "{count}",		  "COMMAND:   ",  "{count}(BAT[oid,any], BAT[oid,any], bit) : BAT[oid,int]",			  "grouped count; ignores nil values iff ignore_nils==TRUE"	  ]
+[ "{count}",		  "COMMAND:   ",  "{count}(BAT[oid,any], BAT[oid,oid], BAT[oid,any], bit) : BAT[oid,int]",	  "grouped count; ignores nil values iff ignore_nils==TRUE"	  ]
+[ "{count}",		  "PROC:      ",  "{count}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",				  "short-cut for {count}(b,e,FALSE)"				  ]
+[ "{count}",		  "PROC:      ",  "{count}(BAT[oid,any], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",		  "short-cut for {count}(b,g,e,FALSE)"				  ]
 [ "{max}",	  "COMMAND:   ",  "{max}(BAT[oid,any::1], BAT[oid,any]) : BAT[oid,any::1]",		  "grouped tail maximum"	  ]
 [ "{max}",	  "COMMAND:   ",  "{max}(BAT[oid,any::1], BAT[oid,oid], BAT[oid,any]) : BAT[oid,any::1]", "grouped tail maximum"	  ]
 [ "{min}",	  "COMMAND:   ",  "{min}(BAT[oid,any::1], BAT[oid,any]) : BAT[oid,any::1]",		  "grouped tail minimum"	  ]

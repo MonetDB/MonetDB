@@ -46,12 +46,12 @@ monet_fcntbl.sort@batloop {
 }
 
 Fnts.count.print;
-[ 628 ]
+[ 630 ]
 Fnts.reverse.sort.reverse@batloop {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count.print;
-[ 628 ]
+[ 630 ]
 
 All:=0;
 
@@ -128,8 +128,8 @@ Module: ""
 
 Module: "algebra"
 
-[ 102 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 104 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature										| help																																																															  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "ADDHELP",	  "PROC:      ",  "ADDHELP(str, str, str, str, str) : void",						  "provide helpful info on a command (author, date, help-text)."																																																							  ]
@@ -142,7 +142,9 @@ Module: "algebra"
 [ "bandjoin",	  "COMMAND:   ",  "bandjoin(BAT[any::1,any::2], BAT[any::2,any::3], any::2, any::2) : BAT[any::1,any::3]", "This is a join() for which the predicate is that two BUNs match if\nthe left-tail value is within the range [right-head - minus,\nright-head + plus]\n\nWorks only for the builtin numerical types, and their derivates."																																				  ]
 [ "clear",	  "PROC:      ",  "clear(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Backward compatibility. Does a b.delete()"																																																										  ]
 [ "copy",	  "COMMAND:   ",  "copy(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Returns physical copy of a BAT."																																																											  ]
-[ "count",	  "COMMAND:   ",  "count(BAT[any,any]) : int",								  "Return the number of elements currently in a BAT."																																																									  ]
+[ "count",	  "COMMAND:   ",  "count(BAT[any,any]) : int",								  "Returns the number of elements currently in a BAT."																																																									  ]
+[ "count",	  "COMMAND:   ",  "count(BAT[any,any], bit) : int",									  "Returns the number of elements currently in a BAT;\n ignores BUNs with nil-tail iff ignore_nils==TRUE."																																																							  ]
+[ "count_no_nil", "PROC:      ",  "count_no_nil(BAT[any,any]) : int",						  "short-cut for count(b,TRUE)"																																																										  ]
 [ "diff",	  "PROC:      ",  "diff(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",			  "backward compatibility: use sdiff() explicitly."																																																									  ]
 [ "exist",	  "COMMAND:   ",  "exist(BAT[any::1,any::2], any::1, any::2) : bit",					  "Returns true when 'h,t' occurs as a bun in b."																																																									  ]
 [ "exist",	  "COMMAND:   ",  "exist(BAT[any::1,any], any::1) : bit",						  "Returns whether 'h' occurs as a head value in b."																																																									  ]
@@ -760,7 +762,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",										  "save all persistent BATs"																																										  ]
 
 All.print;
-[ 628 ]
+[ 630 ]
 
 quit;
 

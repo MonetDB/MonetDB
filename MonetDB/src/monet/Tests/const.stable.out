@@ -18,7 +18,7 @@ aaa.print;
 # BAT:	  tmp_25	  #
 # (void)  (BAT)		  #
 #-------------------------#
-[ nil,	  <tmp_27>	  ]
+[ nil,	  <tmp_26>	  ]
 [ nil,	  <tmp_28>	  ]
 aaa.seqbase(0@0);
 bb.seqbase(0@0);

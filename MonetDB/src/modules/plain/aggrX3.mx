@@ -97,10 +97,10 @@ head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
 .COMMAND {max}(BAT[oid,any::1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggrX3_max3; 
 	"grouped tail maximum"
 
-.COMMAND {count}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggrX3_count; 
-	"grouped count"
-.COMMAND {count}(BAT[oid,any] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,int] = CMDaggrX3_count3; 
-	"grouped count"
+.COMMAND {count}(BAT[oid,any] b, BAT[oid,any] e, bit ignore_nils) : BAT[oid,int] = CMDaggrX3_count; 
+	"grouped count; ignores nil values iff ignore_nils==TRUE"
+.COMMAND {count}(BAT[oid,any] b, BAT[oid,oid] g, BAT[oid,any] e, bit ignore_nils) : BAT[oid,int] = CMDaggrX3_count3; 
+	"grouped count; ignores nil values iff ignore_nils==TRUE"
 
 .COMMAND {size}(BAT[oid,bit] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggrX3_size;
 	"grouped count of true values"
@@ -108,6 +108,29 @@ head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
 .END aggrX3;
 
 @mil
+    proc {count}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
+		return {count}(b,e,FALSE);
+    }
+    ADDHELP("{count}", "manegold", "Jun 03 2003",
+    "short-cut for {count}(b,e,FALSE)", "aggrX3");
+
+    proc {count_no_nil}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
+		return {count}(b,e,TRUE);
+    }
+    ADDHELP("{count_no_nil}", "manegold", "Jun 03 2003",
+    "short-cut for {count}(b,e,TRUE)", "aggrX3");
+
+    proc {count}(BAT[oid,any] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,int] {
+		return {count}(b,g,e,FALSE);
+    }
+    ADDHELP("{count}", "manegold", "Jun 03 2003",
+    "short-cut for {count}(b,g,e,FALSE)", "aggrX3");
+
+    proc {count_no_nil}(BAT[oid,any] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,int] {
+		return {count}(b,g,e,TRUE);
+    }
+    ADDHELP("{count_no_nil}", "manegold", "Jun 03 2003",
+    "short-cut for {count}(b,g,e,TRUE)", "aggrX3");
 
     proc size(BAT[any,bit] b) : int {
 	var h := b.histogram;
@@ -241,6 +264,7 @@ PROC test_aggrX3() : void := {
 	aggrtst(5,9,"min","sht","int","lng","flt","dbl","decimal");
 	aggrtst(5,9,"max","sht","int","lng","flt","dbl","decimal");
 	aggrtst(5,9,"count","sht","int","lng","flt","dbl","decimal");
+	aggrtst(5,9,"count_no_nil","sht","int","lng","flt","dbl","decimal");
 	aggrtst(5,9,"card","sht","int","lng","flt","dbl","decimal");
 }
 
@@ -255,6 +279,7 @@ PROC test_aggrX3_uchr() : void := {
 	aggrtst(5,9,"min","uchr");
 	aggrtst(5,9,"max","uchr");
 	aggrtst(5,9,"count","uchr");
+	aggrtst(5,9,"count_no_nil","uchr");
 	aggrtst(5,9,"card","uchr");
 }
 
@@ -888,18 +913,34 @@ int CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e){
 	/* scan b, and increment counts in-place or in cnt-array */
         bhsb = b->hseqbase;
         btt = b->ttype;
-	switch(ATOMstorage(btt)) {
-	 case TYPE_chr:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,chr))@
-	 case TYPE_sht:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,sht))@
-	 case TYPE_int:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,int))@
-	 case TYPE_lng:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,lng))@
-	 case TYPE_flt:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,flt))@
-	 case TYPE_dbl:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,dbl))@
-	 default: if (b->tvarsized) {
-			@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,atom_EQ(BUNtvar(b,p),bt_nil,btt))@
-		  } else {
-		 	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,atom_EQ(BUNtloc(b,p),bt_nil,btt))@
-		  }
+	if (*ignore_nils) {
+		switch(ATOMstorage(btt)) {
+		 case TYPE_chr:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,chr)))@
+		 case TYPE_sht:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,sht)))@
+		 case TYPE_int:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,int)))@
+		 case TYPE_lng:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,lng)))@
+		 case TYPE_flt:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,flt)))@
+		 case TYPE_dbl:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,dbl)))@
+		 default: if (b->tvarsized) {
+				@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!atom_EQ(BUNtvar(b,p),bt_nil,btt)))@
+			  } else {
+			 	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!atom_EQ(BUNtloc(b,p),bt_nil,btt)))@
+			  }
+		}
+	} else {
+		switch(ATOMstorage(btt)) {
+		 case TYPE_chr:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+		 case TYPE_sht:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+		 case TYPE_int:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+		 case TYPE_lng:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+		 case TYPE_flt:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+		 case TYPE_dbl:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+		 default: if (b->tvarsized) {
+				@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+			  } else {
+			 	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,)@
+			  }
+		}
 	}
 	if (@1) {
         	/* copy cnt array to final result */
@@ -911,8 +952,8 @@ int CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e){
 	}
 @c
 /*	aggrX3_count_loop
-	@7:	atom_EQ(BUNt{loc,var}(b,p),bt_nil,btt)		b-tail nil check
-		simple_EQ(BUNtloc(b,p),bt_nil,{chr,sht,int,flt,lng,dbl})
+	@7:	if (!atom_EQ(BUNt{loc,var}(b,p),bt_nil,btt))		b-tail nil check
+		if (!simple_EQ(BUNtloc(b,p),bt_nil,{chr,sht,int,flt,lng,dbl}))
 */
 @= aggrX3_count_loop
 	ALGODEBUG THRprintf(GDKout, "aggrX3_count_loop(@1,@2,@3,@4,@5,@6,@7);\n");
@@ -921,15 +962,15 @@ int CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e){
 
 		@3(r, bn, (oid*)h);
 		if (r) {
-/*			if (!@7) {	*/
+			@7 {
 				int *dst = (int*) @6;
 				(*dst)++;
-/*			}	*/
+			}
 		}
 	} 
 	break;
 @c
-int CMDaggrX3_count(BAT **ret, BAT *b, BAT *e){
+int CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils){
 	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));	
 	int zero = 0, *cnt;
 	BUN p, q, r;
@@ -1720,18 +1761,34 @@ int CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e){
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
 	btt = b->ttype;
-	switch(ATOMstorage(btt)) {
-	 case TYPE_chr:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,chr))@
-	 case TYPE_sht:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,sht))@
-	 case TYPE_int:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,int))@
-	 case TYPE_lng:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,lng))@
-	 case TYPE_flt:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,flt))@
-	 case TYPE_dbl:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,dbl))@
-	 default: if (b->tvarsized) {
-			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,atom_EQ(BUNtvar(b,p),bt_nil,btt))@
-		  } else {
-		 	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,atom_EQ(BUNtloc(b,p),bt_nil,btt))@
-		  }
+	if (*ignore_nils) {
+		switch(ATOMstorage(btt)) {
+		 case TYPE_chr:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,chr)))@
+		 case TYPE_sht:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,sht)))@
+		 case TYPE_int:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,int)))@
+		 case TYPE_lng:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,lng)))@
+		 case TYPE_flt:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,flt)))@
+		 case TYPE_dbl:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(b,p),bt_nil,dbl)))@
+		 default: if (b->tvarsized) {
+				@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!atom_EQ(BUNtvar(b,p),bt_nil,btt)))@
+			  } else {
+			 	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!atom_EQ(BUNtloc(b,p),bt_nil,btt)))@
+			  }
+		}
+	} else {
+		switch(ATOMstorage(btt)) {
+		 case TYPE_chr:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+		 case TYPE_sht:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+		 case TYPE_int:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+		 case TYPE_lng:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+		 case TYPE_flt:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+		 case TYPE_dbl:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+		 default: if (b->tvarsized) {
+				@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+			  } else {
+			 	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,)@
+			  }
+		}
 	}
 	if (@1) {
         	/* copy cnt array to final result */
@@ -1743,8 +1800,8 @@ int CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e){
 	}
 @c
 /*	aggrX3_count3_loop
-	@7:	atom_EQ(BUNt{loc,var}(b,p),bt_nil,btt)		b-tail nil check
-		simple_EQ(BUNtloc(b,p),bt_nil,{chr,sht,int,flt,lng,dbl})
+	@7:	if (!atom_EQ(BUNt{loc,var}(b,p),bt_nil,btt))		b-tail nil check
+		if (!simple_EQ(BUNtloc(b,p),bt_nil,{chr,sht,int,flt,lng,dbl}))
 */
 @= aggrX3_count3_loop
 	ALGODEBUG THRprintf(GDKout, "aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,@7);\n");
@@ -1757,16 +1814,16 @@ int CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e){
 
 			@3(r, bn, (oid*)h);
 			if (r) {
-/*				if (!@7) {	*/
+				@7 {
 					int *dst = (int*) @6;
 					(*dst)++;
-/*				}	*/
+				}
 			}
 		}
 	} 
 	break;
 @c
-int CMDaggrX3_count3(BAT **ret, BAT *b, BAT* g, BAT *e){
+int CMDaggrX3_count3(BAT **ret, BAT *b, BAT* g, BAT *e, bit *ignore_nils){
 	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));	
 	int zero = 0, *cnt;
 	BUN p, q, r;
@@ -1784,7 +1841,7 @@ int CMDaggrX3_count3(BAT **ret, BAT *b, BAT* g, BAT *e){
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_count3: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
-		return CMDaggrX3_count(ret, BATjoin(BATmirror(g),b), e);
+		return CMDaggrX3_count(ret, BATjoin(BATmirror(g),b), e, ignore_nils);
 	}
 
 	/* init: set all counts to zero and calculate min/max oid */

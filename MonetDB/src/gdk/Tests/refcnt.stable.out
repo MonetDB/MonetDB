@@ -116,8 +116,8 @@ res := nil;
 [ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_unicode_case",	  0,	  "load", "tran", 1	  ]
+[ "top",		  0,	  "load", "tran", 0	  ]
 [ "one",		  0,	  "load", "pers", 0	  ]
-[ "top",		  0,	  "load", "tran", 0	  ]
 [ "two",		  0,	  "load", "pers", 0	  ]
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| refcnt  #
@@ -177,8 +177,8 @@ res := nil;
 [ "monet_acctbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_unicode_case",	  0,	  "load", "tran", 1	  ]
-[ "tmp_26",		  0,	  "load", "tran", 0	  ]
 [ "top",		  0,	  "load", "tran", 0	  ]
+[ "tmp_27",		  0,	  "load", "tran", 0	  ]
 [ "two",		  0,	  "load", "pers", 0	  ]
 [ "ten",		  0,	  "load", "pers", 0	  ]
 [ "tmp_32",		  0,	  "load", "tran", 0	  ]

@@ -99,14 +99,26 @@ test scripts were added.
 .COMMAND {max}(BAT[oid,any::1] b, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggr_max; 
 	"grouped tail maximum"
 
-.COMMAND {count}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_count; 
-	"grouped count"
+.COMMAND {count}(BAT[oid,any] b, BAT[oid,any] e, bit ignore_nils) : BAT[oid,int] = CMDaggr_count; 
+	"grouped count; ignores nil values iff ignore_nils==TRUE"
 .COMMAND {size}(BAT[oid,bit] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_size;
 	"grouped count of true values"
 
 .END aggr;
 
 @mil
+    proc {count}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
+		return {count}(b,e,FALSE);
+    }
+    ADDHELP("{count}", "manegold", "Jun 03 2003",
+    "short-cut for {count}(b,e,FALSE)", "aggr");
+
+    proc {count_no_nil}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
+		return {count}(b,e,TRUE);
+    }
+    ADDHELP("{count_no_nil}", "manegold", "Jun 03 2003",
+    "short-cut for {count}(b,e,TRUE)", "aggr");
+
     proc size(BAT[any,bit] b) : int {
 	var h := b.histogram;
 	if (h.exist(true)) 
@@ -246,6 +258,7 @@ PROC test_aggr() : void := {
 	aggrtst(5,9,"min","sht","int","lng","flt","dbl","decimal");
 	aggrtst(5,9,"max","sht","int","lng","flt","dbl","decimal");
 	aggrtst(5,9,"count","sht","int","lng","flt","dbl","decimal");
+	aggrtst(5,9,"count_no_nil","sht","int","lng","flt","dbl","decimal");
 	aggrtst(5,9,"card","sht","int","lng","flt","dbl","decimal");
 }
 
@@ -260,6 +273,7 @@ PROC test_aggr_uchr() : void := {
 	aggrtst(5,9,"min","uchr");
 	aggrtst(5,9,"max","uchr");
 	aggrtst(5,9,"count","uchr");
+	aggrtst(5,9,"count_no_nil","uchr");
 	aggrtst(5,9,"card","uchr");
 }
 
@@ -633,10 +647,10 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 		BUNfndOID(r, bn, h);
 		if (r) {
 			ptr t = BUNtail(b,p);
-/*			if (ATOMcmp(btt,t,bt_nil)) {	*/
+			@1 {
 				int *dst = (int*) BUNtloc(bn, r);
 				(*dst)++;
-/*			}	*/
+			}
 		}
 	} 
 @c
@@ -648,9 +662,9 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 
 		if (h < range) {
 			ptr t = BUNtail(b,p);
-/*			if (ATOMcmp(btt,t,bt_nil)) {	*/
+			@1 {
 				cnt[h]++;
-/*			}	*/
+			}
 		}
 	} 
 	BATloopFast(bn, p, q, xx) {
@@ -660,7 +674,7 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
         GDKfree(cnt);
 @c
 
-int CMDaggr_count(BAT **ret, BAT *b, BAT *e){
+int CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils){
 /* XXX in a large BAT, it is conceivable that there are head elements
    that occur more often than fits in an "int", so the return BAT
    should really have a tail type of size_t.
@@ -696,11 +710,21 @@ int CMDaggr_count(BAT **ret, BAT *b, BAT *e){
 
 	/* scan b, and add increment totals for true values */
 	if (range > SMALL_AGGR_MAX) {
-		ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count\n",(unsigned long)range,SMALL_AGGR_MAX);
-		@:large_aggr_count@
+		if (*ignore_nils) {
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n",(unsigned long)range,SMALL_AGGR_MAX);
+			@:large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))@
+		} else {
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n",(unsigned long)range,SMALL_AGGR_MAX);
+			@:large_aggr_count()@
+		}
 	} else {
-		ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count\n",(unsigned long)range,SMALL_AGGR_MAX);
-		@:small_aggr_count@
+		if (*ignore_nils) {
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n",(unsigned long)range,SMALL_AGGR_MAX);
+			@:small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))@
+		} else {
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n",(unsigned long)range,SMALL_AGGR_MAX);
+			@:small_aggr_count()@
+		}
 	}
 	*ret = bn;
 	return GDK_SUCCEED;

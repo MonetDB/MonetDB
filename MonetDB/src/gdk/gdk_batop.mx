@@ -416,6 +416,41 @@ by bulk copying the heap as well
 
 	return bn; 
 }
+
+@- 
+The @%BATcount_no_nil@ function counts all BUN in a BAT that have a non-nil tail value.
+@= cntloop
+	BATloopFast(b, p, q, xx) {
+		if (!@1_EQ(nil,BUNt@2(b, p),@3)) {
+			cnt++;
+		}
+	}
+	break;
+@c
+size_t BATcount_no_nil(BAT *b) {
+	size_t cnt = (size_t)0;
+	BUN p,q;
+	int xx;
+	hash_t tt = b->ttype;
+	ptr nil = ATOMnilptr(tt);
+
+	BATcheck(b,"BATcnt");
+	switch(ATOMstorage(tt)) {
+	case TYPE_chr:  @:cntloop(simple,loc,chr)@
+	case TYPE_sht:  @:cntloop(simple,loc,sht)@
+	case TYPE_int:  @:cntloop(simple,loc,int)@
+	case TYPE_flt:  @:cntloop(simple,loc,flt)@
+	case TYPE_lng:  @:cntloop(simple,loc,lng)@
+	case TYPE_dbl:  @:cntloop(simple,loc,dbl)@
+	default: if (b->hvarsized) {
+			@:cntloop(atom,var,tt)@
+        	 } else {
+			@:cntloop(atom,loc,tt)@
+        	 }
+	}
+	return cnt;
+}
+
 @}
 @+ BAT Selections
 The BAT selectors are among the most heavily used operators. 

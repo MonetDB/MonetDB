@@ -1309,6 +1309,7 @@ was in there.
 @h
 gdk_export str		BATrename    (BAT *b, str nme); 
 gdk_export size_t	BATcount     (BAT *b); 
+gdk_export size_t	BATcount_no_nil (BAT *b); 
 gdk_export size_t	BATbuncount  (BAT *b); 
 gdk_export size_t	BATguess     (BAT *b); 
 gdk_export size_t	BATgrows     (BAT *b); 
