@@ -206,10 +206,12 @@ extern "C" {
 # include <sys/param.h>
 #endif
 #include <signal.h>
-#ifdef HAVE_SYS_UTIME_H
-# include <sys/utime.h>
-#else
+#ifdef HAVE_UTIME_H
 # include <utime.h>
+#else
+# ifdef HAVE_SYS_UTIME_H
+#  include <sys/utime.h>
+# endif
 #endif
 #include <errno.h>
 #ifdef HAVE_UNISTD_H
