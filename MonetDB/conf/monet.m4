@@ -1182,6 +1182,7 @@ if test "x$have_netcdf" != xno; then
 fi
 AC_SUBST(NETCDF_CFLAGS)
 AC_SUBST(NETCDF_LIBS)
+AM_CONDITIONAL(HAVE_NETCDF, test "x$have_netcdf" = xyes)
 
 dnl check for z (de)compression library (default /usr and /usr/local)
 have_z=auto
