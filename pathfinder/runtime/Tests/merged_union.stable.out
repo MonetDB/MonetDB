@@ -78,8 +78,8 @@ print(x);
 # h	tmp_32		  # name
 # void	BAT		  # type
 #-------------------------#
-[ 0@0,	  <tmp_33>	  ]
-[ 1@0,	  <tmp_34>	  ]
+[ 0@0,	  <tmp_31>	  ]
+[ 1@0,	  <tmp_32>	  ]
 print(fetch(x,0),fetch(x,1));
 #-------------------------#
 # h	tmp_33	tmp_34	  # name
@@ -151,8 +151,8 @@ print(x);
 # h	tmp_32		  # name
 # void	BAT		  # type
 #-------------------------#
-[ 0@0,	  <tmp_34>	  ]
-[ 1@0,	  <tmp_33>	  ]
+[ 0@0,	  <tmp_32>	  ]
+[ 1@0,	  <tmp_31>	  ]
 print(fetch(x,0),fetch(x,1));
 #-------------------------#
 # h	tmp_29	tmp_28	  # name
