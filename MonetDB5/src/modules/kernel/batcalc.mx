@@ -260,25 +260,25 @@ command int(b:bat[:any$1,:str]):bat[:any$1,:int]
 address CMDconvertstr_int
 comment "Coerce an str tail to a bat with a int tail.";
 
-command int(b:bat[:oid,:oid]):bat[:oid,:int] 
-address CMDconvertoid_int
-comment "Materialize the oid into an int";
-
-command oid(b:bat[:void,:any$1]):bat[:oid,:any$1] 
-address CMDconvertOIDclass
-comment "Materialize the virtual oid into an oid";
-
-command oid(b:bat[:oid,:any$1]):bat[:oid,:any$1] 
+command oid(b:bat[:oid,:oid]):bat[:oid,:oid] 
 address CMDconvertOIDclass
 comment "Identity mapping";
 
-command oid(b:bat[:oid,:int]):bat[:oid,:oid] 
-address CMDconvertint_oid
-comment "Materialize the integer into an oid";
+@-
+@= coerce
+command @2(b:bat[:any$1,:@1]):bat[:any$1,:@2] 
+address CMDconvert@1_@2
+comment "Materialize the @1 into an @2";
 
-command oid(b:bat[:void,:int]):bat[:void,:oid] 
-address CMDconvertOIDclass
-comment "Materialize the integer into an oid";
+command @2(b:bat[:void,:@1]):bat[:void,:@2] 
+address CMDconvert@1_@2
+comment "Materialize the @1 into an @2";
+
+@mal
+	@:coerce(oid,int)@
+	@:coerce(int,oid)@
+	@:coerce(oid,lng)@
+@-
 @}
 @+ Scientific routines
 The mmath functions are also overloaded to provide for
@@ -419,6 +419,7 @@ str bataccum@1(BAT *dst, BAT *left, BAT *right)
 
 str CMDbat@1(int *ret, int *l, int *r)
 {	BAT *dst, *left, *right;
+	str msg;
 
 	@:getBATdescriptor(ret,l,left,CMDbat@1)@
 	@:getBATdescriptor(ret,r,right,CMDbat@1)@
@@ -429,9 +430,13 @@ str CMDbat@1(int *ret, int *l, int *r)
 	if( dst == NULL){
 		return throwMessage("batcalc.mod", "no copy available ");
 	}
+	msg= bataccum@1(dst,left,right);
+	if(msg){
+		return msg;
+	}
 	BBPincref(*ret = dst->batCacheid,TRUE);
 	BBPunfix(*ret);
-	return bataccum@1(dst,left,right);
+	return MAL_SUCCEED;
 }
 
 str CMDbataccum@1(int *ret, int *d, int *l, int *r)
@@ -490,7 +495,7 @@ str CMDbat@1cst(int *ret, int *l, void *cst)
 		return msg;
 	}
 	BBPincref(*ret= dst->batCacheid,TRUE);
-	BBPunfix(*ret);
+	BBPunfix(d);
 	return MAL_SUCCEED;
 }
 str CMDcst@1bat(int *ret, void *cst, int *l)
@@ -510,7 +515,7 @@ str CMDcst@1bat(int *ret, void *cst, int *l)
 		return msg;
 	}
 	BBPincref(*ret= dst->batCacheid,TRUE);
-	BBPunfix(*ret);
+	BBPunfix(d);
 	return MAL_SUCCEED;
 }
 @c
@@ -1477,4 +1482,5 @@ printf("name %s %s\n",left->batId,right->batId);
 	printf("execution time for CMD000 %d\n",t1-t0);
 	return MAL_SUCCEED;
 }
+
 @}
