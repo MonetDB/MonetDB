@@ -961,12 +961,12 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					continue;
 				case 't':
 					/* toggle interaction timer */
-					break;
+					continue;
 				case 'l':
 					linemode = 1;
 					line = "";
 					length = 0;
-					break;
+					continue;
 				case 'b':
 					linemode = 0;
 					continue;
