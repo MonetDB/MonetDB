@@ -1014,14 +1014,16 @@ def RunTest(env, TST, BusyPorts) :
 
     os.chdir(TSTTRGDIR)
 
-    NotOnNT = ["src/modules/contrib/salgebra"]
+    NotOnNT = []
+    #["src/modules/contrib/salgebra"]
     #\
     #       ["src/modules/plain/tcpip1", "src/modules/plain/tcpip2"]
     #\
     #       "src/modules/contrib/salgebra", "tests/by_Peter/tst_priv", \
     #       "scripts/gold/tst100", "scripts/gold/tstvoid", "src/gdk/reload", "src/modules/plain/mprof", "src/modules/plain/mprof2", \
     #       "tests/Availability/00_Mserver", "tests/BugReports/no.073", "tests/BugReports/no.089"]
-    NotOnCYG = [ "tests/BugReports/no.147", "tests/by_Peter/recursion" ]
+    NotOnCYG = []
+    #[ "tests/BugReports/no.147", "tests/by_Peter/recursion" ]
     ReqMshdn = ["MAPI"]
 
     if   os.name == "nt"  and  url(TSTDIR)+"/"+TST in NotOnNT:
