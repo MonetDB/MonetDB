@@ -4,6 +4,7 @@
 %define sublevel 4
 %define release 1
 %define version %{major_version}.%{minor_version}.%{sublevel}
+%define prefix /usr
 
 Name: %{name}
 Version: %{version}
@@ -35,9 +36,11 @@ Add the MonetDB client description here
 
 %description server
 Add the MonetDB server description here
+Requires: %{name}-client
 
 %description devel
 Add the MonetDB devel description here
+Requires: %{name}-server
 
 
 %prep
@@ -46,13 +49,55 @@ rm -rf $RPM_BUILD_ROOT
 %setup -q -n %{name}-%{version}
 
 %build
-./configure --prefix=/usr 
+./configure --prefix=$RPM_BUILD_ROOT%{prefix} 
 make
 
 %install
+make install
+
+# Fixes monet config script
+perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
+
+
+%files client
+%defattr(-,monet,monet) 
+%{prefix}/bin/MapiClient 
+%{prefix}/lib/libMapi.so 
+%{prefix}/lib/libstream.so 
 
 %files server
-%defattr(-,monet,monet)
+%defattr(-,monet,monet) 
+%{prefix}/bin/Mserver 
+%{prefix}/bin/Mdestroydb 
+%{prefix}/bin/Mcreatedb
+%{prefix}/bin/Mshutdown
+%{prefix}/bin/monet-config
+
+%{prefix}/lib/libbat.so 
+%{prefix}/lib/libmonet.so
+%{prefix}/lib/MonetDB/*.so 
+
+%files devel
+%defattr(-,monet,monet) 
+%{prefix}/include/*.h
+%{prefix}/include/*/*.[hcm]
+
+%{prefix}/bin/mel
+%{prefix}/bin/calibrator
+%{prefix}/bin/Mx 
+%{prefix}/bin/prefixMxFile 
+%{prefix}/bin/idxmx 
+%{prefix}/bin/epsffit 
+
+%{prefix}/bin/prof.py
+%{prefix}/bin/Mtest.py
+%{prefix}/bin/Mapprove.py
+%{prefix}/bin/Mfilter.py
+%{prefix}/bin/Mprofile.py
+%{prefix}/bin/Mlog
+%{prefix}/bin/Mdiff
+%{prefix}/bin/Mtimeout
+%{prefix}/bin/MkillUsers
 
 %pre server
 adduser monet
