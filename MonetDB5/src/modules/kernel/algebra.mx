@@ -514,6 +514,7 @@ command @1 ( b:bat[any,@2] ) : @2 = CMD@1_@2 comment @3;
 @+ Exented selection predicates
 For SQL convenience we provide a serie of interval selectors.
 @mal
+# Extend select to the cases where we can ignore nils altogether
 function between(b:bat[any::1,any::2], l:any::2, h:any::2):bat[any::1,any::2];
 	k:= select(b,l,h);
 	return k;

@@ -52,17 +52,21 @@ command listen(port:lng):int  = MAPIlisten_port
 	comment "Start a Mapi server with the default settings.";
 command listen(port:int, maxusers:int):int = MAPIlisten
 	comment "Start a Mapi server.";
+
 command stop(id:int):bit = MAPIstop
 	comment "Terminate a specific client identified by index
 		in the client table.";
 command stop(name:str):bit = MAPIstopClient
 	comment "Terminate all sessions held by a client";
+
 command suspend(sessionkey:lng,timeout:lng):void= MAPIsuspend
-	comment "Suspend a client interaction, but return a session key. 
+	comment "Suspend a client interactiont using a user-supplied session key. 
 		The session is broken when the timer (in seconds) for the 
 		reconnect expires.";
+
 command resume(sessionkey:lng):void = MAPIresume
-	comment "resume the interaction with a specific thread";
+	comment "Resume the interaction with a specific client thread";
+
 command trace(nme:str, flag:bit):void = MAPItrace2
 	comment "Trace (on/off) receipt of all messages from a specific user";
 command trace(flag:bit):void = MAPItrace

@@ -81,6 +81,7 @@ html
 #ifndef _MAL_SCOPE_H_
 #define _MAL_SCOPE_H_
 #include "mal_box.h"
+#include "mal_xml.h"
 
 #define MAXSCOPE 256
 
@@ -366,27 +367,8 @@ void dumpManualHeader(stream *f){
 void dumpManualFooter(stream *f){
 	stream_printf(f,"</manual>\n");
 }
-char *xmlChr(str s){
-	static char buf[BUFSIZ+5];
-	char *c=buf, *lim=buf+BUFSIZ;
-	while(s && c<lim && *s){
-		switch(*s){
-		case '_': sprintf(c,"\\_"); c+=2;break;
-		case '$': sprintf(c,"\\$"); c+=2;break;
-		case '%': sprintf(c,"\\%%"); c+= 4; break;
-		case '<': sprintf(c,"$&lt;$"); c+= 6; break;
-		case '>': sprintf(c,"$&gt;$"); c+= 6; break;
-		case '&': sprintf(c,"&amp;"); c+= 5; break;
-		default:
-			*c++= *s;
-		}
-		s++;
-	}
-	*c=0;
-	return buf;
-}
-int cmpModName(Scope f, Scope l){
-	return strcmp(f->name,l->name);
+int cmpModName(Scope *f, Scope *l){
+	return strcmp((*f)->name, (*l)->name);
 }
 void dumpManual(stream *f, Scope s, int recursive){
 	int i,j;
@@ -402,10 +384,8 @@ void dumpManual(stream *f, Scope s, int recursive){
 	list[top++]=s;
 	while(s->outer && recursive){ list[top++]= s->outer;s=s->outer;}
 
-/*
 	if(top>1) qsort(list, top, sizeof(Scope), 
 		(int(*)(const void *, const void *))cmpModName);
-*/
 
 	for(k=0;k<top;k++){
 	s= list[k];

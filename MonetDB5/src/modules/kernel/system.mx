@@ -55,9 +55,6 @@ command quit():void= SYSquit
 command exit():void= SYSquit
 	comment "Terminate the server"'
 
-command kill(n:int):void =SYSkill
-	comment "remove a client instance";
-
 @- Kernel Performance Statistics
 The BATs created below are rather expensive views over the
 GDK kernel. They have been retained for backward compatibility.
@@ -172,30 +169,6 @@ command printf(format:str,val:str):int = SYSprint_formatted_str;
 @{
 @* Implementation Code
 @h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- *		   Peter Boncz <Peter.Boncz@cwi.nl>
- *		   Niels Nes <Niels.Nes@cwi.nl>
- *		   Stefan Manegold  <Stefan.Manegold@cwi.nl>
- */
-
 #ifndef _SYS_H_
 #define _SYS_H_
 #endif
@@ -222,11 +195,6 @@ command printf(format:str,val:str):int = SYSprint_formatted_str;
 #include <stream.h>
 #endif
  
-str SYSkill(int *ret, int *k) {
-	Client c;
-	c= getClient();
-	return throwMessage("system.kill", "not yet implemented");
-}
 str SYSquit(int *ret) {
 	Client c= getClient();
 	c->mode = FINISHING;

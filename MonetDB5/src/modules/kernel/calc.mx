@@ -124,24 +124,15 @@ first onto the symbol table stack.
 Default case excluded for the time being
         @:mal_comp_ops(any::1,any)@
 @= mal_eq_ops
-	command =(left:@1, right:@2) : bit = CALCcompEQ@1@2
-		comment "left equal to right?";
-	command ==(left:@1, right:@2) : bit = CALCcompEQ@1@2
-		comment "left equal to right?";
-	command !=(left:@1, right:@2) : bit = CALCcompNEQ@1@2
-		comment "left unequal to right?";
+	command ==(left:@1, right:@2) : bit = CALCcompEQ@1@2;
+	command !=(left:@1, right:@2) : bit = CALCcompNEQ@1@2;
 @= mal_comp_ops
 	@:mal_eq_ops(@1,@2)@
-	command <(left:@1, right:@2) : bit = CALCcompLT@1@2
-		comment "left smaller than right?";
-	command <=(left:@1, right:@2) : bit = CALCcompLE@1@2
-		comment "left smaller than right or equal?";
-	command >=(left:@1, right:@2) : bit = CALCcompGE@1@2
-		comment "left greater than right or equal?)";
-	command >(left:@1, right:@2) : bit = CALCcompGT@1@2
-		comment "left greater than right?";
-	command between(val:@1, low:@1, high:@1) : bit = CALCcompBetween@1
-		comment "checks (low <= val <= high)";
+	command <(left:@1, right:@2) : bit = CALCcompLT@1@2;
+	command <=(left:@1, right:@2) : bit = CALCcompLE@1@2;
+	command >=(left:@1, right:@2) : bit = CALCcompGE@1@2;
+	command >(left:@1, right:@2) : bit = CALCcompGT@1@2;
+	command between(val:@1, low:@1, high:@1) : bit = CALCcompBetween@1;
 @mal
 
         @:mal_comp_ops(oid,oid)@
@@ -274,7 +265,7 @@ The unary operators include coercion routines for built-in types
 @-
 Coercion functions are typical used in multiplex calls.
 @= mal_coercion
-   	command @1(x:@2): @1 = CALC@2_2_@1 comment "coercion @1 to @2";
+   	command @1(x:@2): @1 = CALC@22@1 comment "coercion @2 to @1";
 @= scalar_coercion
 	@:mal_coercion(@1,oid)@
 	@:mal_coercion(@1,bit)@
@@ -328,33 +319,22 @@ Coercion functions are typical used in multiplex calls.
 
 @- boolean { or, xor, and, not }
 @mal
-	command or(left:bit, right:bit) : bit = CALCbinaryORbit 
-	comment "boolean or";
-	command and(left:bit, right:bit) : bit = CALCbinaryANDbit 
-	comment "boolean and";
-	command xor(left:bit, right:bit) : bit = CALCbinaryXORbit
-	comment "boolean xor";
-	command not(left:bit) : bit = CALCunarybitNOT 
-	comment "boolean negation";
-	command ifthenelse(b:bit, t:any::1, f:any::1) : any::1 = CALCswitchbit 
-	comment "boolean switch: returns b?t:f";
+	command or(left:bit, right:bit) : bit = CALCbinaryORbit;
+	command and(left:bit, right:bit) : bit = CALCbinaryANDbit;
+	command xor(left:bit, right:bit) : bit = CALCbinaryXORbit;
+	command not(left:bit) : bit = CALCunarybitNOT ;
+	command ifthenelse(b:bit, t:any::1, f:any::1) : any::1 = CALCswitchbit;
 
 @- bitwise operations
 Cardinal numerical types (inclusing {\tt chr} can be regarded as a bit
 array. Specific operations work with this interpretation.
 @= mal_bitwise_ops
-	command or(left:@1, right:@1) : @1 = CALCbinaryOR@1@1 
-	comment "bitwise or";
-	command and(left:@1, right:@1) : @1 = CALCbinaryAND@1@1 
-	comment "bitwise and";
-	command xor(left:@1, right:@1) : @1 = CALCbinaryXOR@1@1 
-	comment "bitwise xor";
-	command not(left:@1) : @1 = CALCunary@1NOT 
-	comment "bitwise negation";
-	command <<(left:@1,right:int) : @1 = CALCbinaryLSH@1int
-	comment "shift left" ;
-	command >>(left:@1, right:int) : @1 = CALCbinaryRSH@1int
-	comment "shift right" ;
+	command or(left:@1, right:@1) : @1 = CALCbinaryOR@1@1;
+	command and(left:@1, right:@1) : @1 = CALCbinaryAND@1@1;
+	command xor(left:@1, right:@1) : @1 = CALCbinaryXOR@1@1;
+	command not(left:@1) : @1 = CALCunary@1NOT;
+	command <<(left:@1,right:int) : @1 = CALCbinaryLSH@1int;
+	command >>(left:@1, right:int) : @1 = CALCbinaryRSH@1int;
 @mal
 	@:mal_bitwise_ops(chr)@
 	@:mal_bitwise_ops(sht)@
@@ -373,9 +353,9 @@ with useful functions.
 Those accessible at the MAL command level are introduced below.
 
 @= convertCmd
-command @1(v:str):@1 = CALCstr_2_@1;
-command str(v:@1):str = CALC@1_2_str;
-command @1(v:void) : @1 = CALCnil_2_@1;
+command @1(v:str):@1 = CALCstr2@1;
+command str(v:@1):str = CALC@12str;
+command @1(v:void) : @1 = CALCnil2@1;
 
 @mal
 @:convertCmd(oid)@
@@ -389,11 +369,11 @@ command @1(v:void) : @1 = CALCnil_2_@1;
 @:convertCmd(bat)@
 @:convertCmd(chr)@
 
-command str(v:void) :str = CALCnil_2_str;
-command void(v:void) :void = CALCnil_2_void;
-command void(v:int) :void = CALCint_2_void;
-command void(v:sht) :void = CALCsht_2_void;
-command void(v:lng) :void = CALClng_2_void;
+command str(v:void) :str = CALCnil2str;
+command void(v:void) :void = CALCnil2void;
+command void(v:int) :void = CALCint2void;
+command void(v:sht) :void = CALCsht2void;
+command void(v:lng) :void = CALClng2void;
 
 command setoid(v:int)= intSetoidImpl;
 command setoid(v:lng)= lngSetoidImpl;
@@ -916,7 +896,7 @@ str CALCisnil_@1(bit *retval, @1 val) {
 	*retval = (val == @1_nil);
 	return MAL_SUCCEED;
 }
-str CALCnil_2_@1(@1 *retval, ptr val){
+str CALCnil2@1(@1 *retval, ptr val){
 	memcpy(retval, ATOMnilptr(TYPE_@1), ATOMsize(TYPE_@1));
 	return MAL_SUCCEED;
 }
@@ -936,7 +916,7 @@ str CALCisnil_str(bit *retval, str *val) {
 	*retval = (*val == str_nil);
 	return MAL_SUCCEED;
 }
-str CALCstr_2_nil(str *retval, str *val) {
+str CALCstr2nil(str *retval, str *val) {
 	*retval = ATOMnilptr(TYPE_str);
 	return MAL_SUCCEED;
 }
@@ -1053,7 +1033,7 @@ str CALCbinary@1@3(@3 *res , @3 *a, @3 *b ) {
 @
 Coercions do not check on information loss
 @= mal_coercion_impl2
-str CALC@2_2_@1(@1 *res, @2 *a)
+str CALC@22@1(@1 *res, @2 *a)
 {
 	char buf[1024];
 	sprintf(buf,"%@3",*a);
@@ -1062,7 +1042,7 @@ str CALC@2_2_@1(@1 *res, @2 *a)
 }
 @-
 @= mal_coercion_impl
-str CALC@2_2_@1(@1 *res, @2 *a)
+str CALC@22@1(@1 *res, @2 *a)
 {
 	*res= (@1) *a;
 	return MAL_SUCCEED;
@@ -1128,11 +1108,11 @@ str CALC@2_2_@1(@1 *res, @2 *a)
 
 	@:mal_coercion_impl(ptr,int)@
 
-str CALClng_2_ptr(ptr *res, lng *a)
+str CALClng2ptr(ptr *res, lng *a)
 {
 	return MAL_SUCCEED;
 }
-str CALCptr_2_lng(lng *res, ptr *a)
+str CALCptr2lng(lng *res, ptr *a)
 {
 	return MAL_SUCCEED;
 }
@@ -1147,12 +1127,12 @@ Old stuff, probably wrong
 The conversion routines are relatively easy to define.
 @= convertImpl
 
-str CALCstr_2_@1(@1 *ret, str *val){
+str CALCstr2@1(@1 *ret, str *val){
 	int l = sizeof(@1);
 	(void) @1FromStr(*val, &l, &ret);
 	return MAL_SUCCEED;
 }
-str CALC@1_2_str(str *ret, @1 *val){
+str CALC@12str(str *ret, @1 *val){
 	int l=0;
 
 	if(*ret) l=strlen(*ret);
@@ -1173,33 +1153,33 @@ str voidFromStrImpl(void *ret, str val){
 	memcpy(ret, ATOMnilptr(TYPE_void), ATOMsize(TYPE_void));
 	return MAL_SUCCEED;
 }
-str CALCnil_2_str(str *ret, void *val){
+str CALCnil2str(str *ret, void *val){
 	*ret = ATOMnilptr(TYPE_str);
 	return MAL_SUCCEED;
 }
-str CALCstr_2_oid(oid *ret, str *val){
+str CALCstr2oid(oid *ret, str *val){
 	int l = strlen(*val);
 	(void) OIDfromStr(*val, &l, (ptr) ret);
 	return MAL_SUCCEED;
 }
-str CALCoid_2_str(str *ret, oid *val){
+str CALCoid2str(str *ret, oid *val){
 	int l= sizeof(oid);
 	(void) OIDtoStr(ret,&l, val);
 	return MAL_SUCCEED;
 }
-str CALCnil_2_void(oid *ret, ptr *val){
+str CALCnil2void(oid *ret, ptr *val){
 	*ret = oid_nil;
 	return MAL_SUCCEED;
 }
-str CALClng_2_void(oid *ret, lng *val){
+str CALClng2void(oid *ret, lng *val){
 	*ret = *val;
 	return MAL_SUCCEED;
 }
-str CALCsht_2_void(oid *ret, sht *val){
+str CALCsht2void(oid *ret, sht *val){
 	*ret = *val;
 	return MAL_SUCCEED;
 }
-str CALCint_2_void(oid *ret, int *val){
+str CALCint2void(oid *ret, int *val){
 	*ret = *val;
 	return MAL_SUCCEED;
 }
