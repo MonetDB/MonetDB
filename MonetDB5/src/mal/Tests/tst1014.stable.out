@@ -63,7 +63,6 @@ end main;	# 9
 # int	str		  # type
 #-------------------------#
 [ "test" ]
-bbp.take not yet fully implemented
 #-----------------#
 # h	tmp_5	  # name
 # int	int	  # type
@@ -75,7 +74,6 @@ bbp.take not yet fully implemented
 # int	str		  # type
 #-------------------------#
 [ 5,	  "myfirstbat"	  ]
-bbp.take not yet fully implemented
 #-----------------#
 # h	tmp_5	  # name
 # int	int	  # type

@@ -135,7 +135,6 @@ tst501
 tst5020
 tst550
 tst600
-tst6000
 tst601
 tst602
 tst605
@@ -200,6 +199,7 @@ tst908
 #tst903c
 
 # Old x100 test moved to x100Tests
+#tst6000
 #tst6005
 #tst6010
 #tst6015
