@@ -41,7 +41,7 @@ str absolute_path(str s) {
 
 main(int argc,char ** av)
 {
-        char *buf, *ptr, *prog = *av, *config = NULL;
+        char *buf= (char*) malloc(BUFSIZ), *ptr, *prog = *av, *config = NULL;
         opt *set = NULL;
         int i,debug = 0, setlen = 0, status = 1;
 	int k,len,totlen;
@@ -81,25 +81,28 @@ main(int argc,char ** av)
 			if (strcmp(long_options[option_index].name, 
 						"dbname") == 0){
 				setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "dbname", optarg );
+					opt_cmdline, "gdk_dbname", optarg );
 				break;
 			}
 			if (strcmp(long_options[option_index].name, 
 						"dbfarm") == 0){
 				setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "dbfarm", optarg );
+					opt_cmdline, "gdk_dbfarm", optarg );
 				break;
 			}
 			usage(prog);
 			break;
 		case 'c':
-			config = strdup(optarg);
+			if( *optarg!='/' && *optarg !='.') {
+                                snprintf(buf,BUFSIZ,"%s/%s",mil_cwd,optarg);
+                                config= strdup(buf);
+                        } else config = strdup(optarg);
 			break;
 		case 'd':
 			debug=1;
 			if (optarg){ 
 				setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "debug", optarg );
+					opt_cmdline, "gdk_debug", optarg );
 			}
 			break;
 		case 's': {
@@ -125,7 +128,17 @@ main(int argc,char ** av)
 	}
 
 	if (config){
-		setlen = mo_config_file(&set, setlen, config );
+                int k;
+                setlen = mo_config_file(&set, setlen, config );
+                /* replace the monet_pid option with config */
+                /* update the configuration parameter itself */
+                for(k=0;k<setlen;k++)
+                if( idcmp(set[k].name,"monet_pid")==0){
+                        strcpy(set[k].name,"gdk_config");
+                        set[k].value= absolute_path(config);
+                        break;
+                }
+
 		free(config);
 	} else {
 		if (!(setlen = mo_system_config(&set, setlen)) )
@@ -146,8 +159,8 @@ main(int argc,char ** av)
 #ifdef MSERVER_DEBUG
 	else	mo_print_options(set,setlen);
 #endif
-	dbname = mo_find_option(set, setlen, "dbname");
-	dbfarmval = mo_find_option(set, setlen, "dbfarm");
+	dbname = mo_find_option(set, setlen, "gdk_dbname");
+	dbfarmval = mo_find_option(set, setlen, "gdk_dbfarm");
         strcpy(dbfarm, dbfarmval );
         mo_substitute(set, setlen, dbfarm);
 
@@ -157,7 +170,7 @@ The files are processed as one big program
 @c
 	i=0;
 	len = totlen = 8*8192;
-	ptr = buf = (char *) GDKmalloc(totlen);
+	ptr = buf;
 	for(k=0;mil_script[k]!= 0; k++) {
 		FILE *fd;
 		char fname[PATHLENGTH];
@@ -188,7 +201,7 @@ The files are processed as one big program
 
 mil_code_prelude(){
         printf("# Monet Mil to Mal compiler\n");
-        printf("# Copyright (c) 2001-2002, CWI. ");
+        printf("# Copyright (c) 2001-2003, CWI. ");
         printf("All rights reserved.\n");
 	printf("\n# Predefined code segment\n");
 	advice();
