@@ -1,84 +1,81 @@
 #!/usr/bin/perl -w
-# The Monet DBI driver implementation
+# The Monet DBI driver implementation. New version based on the MapiLib SWIG.
+# by Arjan Scherpenisse <acscherp@science.uva.nl>
+
 package DBD::monet;
 use strict;
 
 use DBI;
 use Carp;
 use vars qw($VERSION $err $errstr $state $drh);
+use sigtrap;
+use Data::Dump qw(dump);
 
-$VERSION = '0.01';
+$VERSION = '0.02';
 $err = 0;
 $errstr = '';
 $state = undef;
 $drh = undef;
 
-sub driver
-{
-	return $drh if $drh;
-
-	my $class = shift;
-	my $attr  = shift;
-	$class .= '::dr';
-
-	$drh = DBI::_new_drh($class, {
-		Name        => 'monet',
-		Version     => $VERSION,
-		Err         => \$DBD::monet::err,
-		Errstr      => \$DBD::monet::errstr,
-		State       => \$DBD::monet::state,
-		Attribution => 'DBD::monet derived from mysqlPP by Hiroyuki OYAMA',
-	}, {});
+sub driver {
+    return $drh if $drh;
+    
+    my $class = shift;
+    my $attr  = shift;
+    $class .= '::dr';
+    
+    $drh = DBI::_new_drh($class, {
+				  Name        => 'monet',
+				  Version     => $VERSION,
+				  Err         => \$DBD::monet::err,
+				  Errstr      => \$DBD::monet::errstr,
+				  State       => \$DBD::monet::state,
+				  Attribution => 'DBD::monet derived from monet.pm by Arjan Scherpenisse',
+				 }, {});
 }
 
 # The monet dsn structure is DBI:monet:host:port:dbname:language
-sub _parse_dsn
-{
-	my $class = shift;
-	my ($dsn, $args) = @_;
-	my($hash, $var, $val);
-	return if ! defined $dsn;
+sub _parse_dsn {
+    my $class = shift;
+    my ($dsn, $args) = @_;
+    my($hash, $var, $val);
+    return if ! defined $dsn;
 
-	while (length $dsn) {
-		if ($dsn =~ /([^:;]*)[:;](.*)/) {
-			$val = $1;
-			$dsn = $2;
-		}
-		else {
-			$val = $dsn;
-			$dsn = '';
-		}
-		if ($val =~ /([^=]*)=(.*)/) {
-			$var = $1;
-			$val = $2;
-			if ($var eq 'hostname' || $var eq 'host') {
-				$hash->{'host'} = $val;
-			}
-			elsif ($var eq 'db' || $var eq 'dbname') {
-				$hash->{'database'} = $val;
-			}
-			else {
-				$hash->{$var} = $val;
-			}
-		}
-		else {
-			for $var (@$args) {
-				if (!defined($hash->{$var})) {
-					$hash->{$var} = $val;
-					last;
-				}
-			}
-		}
+    while (length $dsn) {
+	if ($dsn =~ /([^:;]*)[:;](.*)/) {
+	    $val = $1;
+	    $dsn = $2;
+	} else {
+	    $val = $dsn;
+	    $dsn = '';
 	}
-	return $hash;
+	if ($val =~ /([^=]*)=(.*)/) {
+	    $var = $1;
+	    $val = $2;
+	    if ($var eq 'hostname' || $var eq 'host') {
+		$hash->{'host'} = $val;
+	    } elsif ($var eq 'db' || $var eq 'dbname') {
+		$hash->{'database'} = $val;
+	    } else {
+		$hash->{$var} = $val;
+	    }
+	} else {
+	    for $var (@$args) {
+		if (!defined($hash->{$var})) {
+		    $hash->{$var} = $val;
+		    last;
+		}
+	    }
+	}
+    }
+    return $hash;
 }
 
 
-sub _parse_dsn_host
-{
-	my($class, $dsn) = @_;
-	my $hash = $class->_parse_dsn($dsn, ['host', 'port']);
-	($hash->{'host'}, $hash->{'port'});
+sub _parse_dsn_host {
+    my($class, $dsn) = @_;
+    my $hash = $class->_parse_dsn($dsn, ['host', 'port']);
+    ($hash->{'host'}, $hash->{'port'});
 }
 
 
@@ -87,416 +84,381 @@ package DBD::monet::dr;
 
 $DBD::monet::dr::imp_data_size = 0;
 
-use IO::Socket;
-use IO::Handle;
-use Mapi;
+use MapiLib;
 use strict;
 
 
-sub connect
-{
-	my $drh = shift;
-	my ($dsn, $user, $password, $attrhash) = @_;
+sub connect {
+    my $drh = shift;
+    my ($dsn, $user, $password, $attrhash) = @_;
 
-	my $data_source_info = DBD::monet->_parse_dsn(
-		$dsn, ['host', 'port','database','language'],
-	);
+    my $data_source_info = DBD::monet->_parse_dsn(
+						   $dsn, ['host', 'port','database','language'],
+						  );
 
-	my $lang= $data_source_info->{language};
-	$lang     ||= "mal";
-	if( ! ($lang eq "mal" || $lang eq "sql" || $lang eq "mil") ){
-		die "!ERROR languages permitted are 'sql', 'mal', and 'mil'\n";
-	}
+    my $lang= $data_source_info->{language};
+    $lang     ||= "sql";
+    if ( ! ($lang eq "mal" || $lang eq "sql" || $lang eq "mil") ) {
+	die "!ERROR languages permitted are 'sql', 'mal', and 'mil'\n";
+    }
 
-	#print "host:".$data_source_info->{host}."\n";
-	#print "port:".$data_source_info->{port}."\n";
-	#print "database:".($data_source_info->{database})."\n";
-	#print "language:".$data_source_info->{language}."\n";
-	$user     ||= '';
-	$password ||= '';
-	#print "user: $user\n";
+    $user     ||= 'monetdb';
+    $password ||= 'monetdb';
 
-	my $host = $data_source_info->{host};
-	my $port = $data_source_info->{port};
-	$host	  ||= "localhost";
-	my $server = $host.":".$data_source_info->{port};
-	#print "server ".$server."\n";
-	
-	my $dbh = DBI::_new_dbh($drh, {
-		Name         => $dsn,
-		USER         => $user,
-		CURRENT_USER => $user,
-		Language     => $data_source_info->{language}
-	}, {});
-	eval {
-		my $mapi =  new Mapi($host.':'.$port, $user,$password,$lang)
-			|| die "!ERROR can't connect to $server : $!";
+    my $host  = $data_source_info->{host};
+    my $port  = $data_source_info->{port};
+    $port     ||= ($lang eq "sql")? 45123 : 50000;
+    $host	  ||= "localhost";
 
-		$dbh->STORE(monet_connection => $mapi);
-	};
-	if ($@) {
-		return $dbh->DBI::set_err(1, $@);
-	}
-	return $dbh;
+    my $server = $host.":".$port;
+    my $dbh = DBI::_new_dbh($drh, {
+				   Name         => $dsn,
+				   USER         => $user,
+				   Username     => $user,
+				   CURRENT_USER => $user,
+				   Language     => $lang
+				  }, {});
+    eval {
+	my $mapi = mapi_connect($host, $port, $user, $password, $lang);
+	$dbh->STORE(monet_connection => $mapi);
+    };
+    if ($@) {
+	return $dbh->DBI::set_err(1, $@);
+    }
+    return $dbh;
 }
 
 
-sub data_sources
-{
-	return ("dbi:monet:");
+sub data_sources {
+    return ("dbi:monet:");
 }
 
 
 sub disconnect_all {}
 
-
-
 package DBD::monet::db;
 
 $DBD::monet::db::imp_data_size = 0;
+use MapiLib;
 use strict;
 
 
-sub quote
-{
-	my $dbh = shift;
-	my ($statement, $type) = @_;
-	return 'NULL' unless defined $statement;
+sub quote {
+    my $dbh = shift;
+    my ($statement, $type) = @_;
+    return 'NULL' unless defined $statement;
 
-	for ($statement) {
-		s/	/\\t/g;
-		s/\\/\\\\/g;
-		s/\n/\\n/g;
-		s/\r/\\r/g;
-		s/"/\\"/g;
+    for ($statement) {
+	s/	/\\t/g;
+	s/\\/\\\\/g;
+	s/\n/\\n/g;
+	s/\r/\\r/g;
+	s/"/\\"/g;
+    }
+    return "'$statement'";
+}
+
+sub _count_param {
+    my @statement = split //, shift;
+    my $num = 0;
+
+    while (defined(my $c = shift @statement)) {
+	if ($c eq '"' || $c eq "'") {
+	    my $end = $c;
+	    while (defined(my $c = shift @statement)) {
+		last if $c eq $end;
+		@statement = splice @statement, 2 if $c eq '\\';
+	    }
+	} elsif ($c eq '?') {
+	    $num++;
 	}
-	return "'$statement'";
+    }
+    return $num;
 }
 
-sub _count_param
-{
-	my @statement = split //, shift;
-	my $num = 0;
+sub prepare {
+    my $dbh = shift;
+    my ($statement, @attribs) = @_;
 
-	while (defined(my $c = shift @statement)) {
-		if ($c eq '"' || $c eq "'") {
-			my $end = $c;
-			while (defined(my $c = shift @statement)) {
-				last if $c eq $end;
-				@statement = splice @statement, 2 if $c eq '\\';
-			}
-		}
-		elsif ($c eq '?') {
-			$num++;
-		}
+    my $sth = DBI::_new_sth($dbh, {
+				   Statement => $statement,
+				  });
+    $sth->STORE(monet_handle => $dbh->FETCH('monet_connection'));
+    $sth->STORE(monet_params => []);
+    $sth->STORE(NUM_OF_PARAMS => _count_param($statement));
+    $sth;
+}
+
+
+sub commit {
+    my $dbh = shift;
+    if ($dbh->FETCH('AutoCommit')) {
+	warn 'Commit ineffective while AutoCommit is on';
+    } else {
+	mapi_query($dbh->FETCH('monet_connection'), "commit;");
+    }
+    1;
+}
+
+
+sub rollback {
+    my $dbh = shift;
+    if ($dbh->FETCH('AutoCommit')) {
+	warn 'Rollback ineffective while AutoCommit is on';
+    } else {
+	mapi_query($dbh->FETCH('monet_connection'), ($dbh->FETCH('Language') ne "sql")?"abort;":"rollback;");
+    }
+    1;
+}
+
+
+sub tables {
+    my $dbh = shift;
+    my @args = @_;
+    my $mapi = $dbh->FETCH('monet_connection');
+
+    my @table_list;
+	
+    my $hdl = mapi_query($mapi, ($dbh->FETCH('Language') ne "sql")?"ls;":"SELECT name FROM tables;");
+    die mapi_error_str($mapi) if mapi_error($mapi);
+
+    while (mapi_fetch_row($hdl)) {
+	push @table_list, mapi_fetch_field($hdl, 0);
+    }
+    return mapi_error($mapi)
+      ? undef
+	: @table_list;
+}
+
+
+sub _ListDBs {
+    my $dbh = shift;
+    my @database_list;
+    push @database_list, mapi_get_dbname($dbh->FETCH('monet_connection'));
+    return @database_list;
+}
+
+
+sub _ListTables {
+    my $dbh = shift;
+    return $dbh->tables;
+}
+
+
+sub disconnect {
+    my $dbh = shift;
+    my $mapi = $dbh->FETCH('monet_connection');
+    mapi_disconnect($mapi);
+    return 1;
+}
+
+sub get_info {
+    my ($dbh, $w) = @_;
+    my $mapi = $dbh->FETCH('monet_connection');
+
+    return "MonetDB"
+      if $w == 17;		# "SQL_DBMS_NAME";
+
+    return "4.0"
+      if $w == 18;		# "SQL_DBMS_VER";
+
+    return "\""
+      if $w == 29;		# "SQL_IDENTIFIER_QUOTE_CHAR";
+
+    return "."
+      if $w == 41;		# "SQL_CATALOG_NAME_SEPARATOR";
+
+    return 0
+      if $w == 114;		# "SQL_CATALOG_LOCATION"; # catalogs not supported
+
+    # FIXME: More values (get from sql/src/odbc/SQLGetInfo.c)
+    undef;
+}
+
+sub FETCH {
+    my $dbh = shift;
+    my $key = shift;
+    return $dbh->{$key} if $key =~ /^monet_/;
+    return $dbh->SUPER::FETCH($key);
+}
+
+
+sub STORE {
+    my $dbh = shift;
+    my ($key, $new) = @_;
+
+    if ($key eq 'AutoCommit') {
+	my $old = $dbh->{$key} || 0;
+	if ($new != $old) {
+	    my $mapi = $dbh->FETCH('monet_connection');
+	    mapi_setAutocommit($mapi, $new);
+	    $dbh->{$key} = $new;
 	}
-	return $num;
-}
-
-sub prepare
-{
-	my $dbh = shift;
-	my ($statement, @attribs) = @_;
-
-	# Make sure the instruction finishes with a ';'
-	if( $statement !~ /;$/){
-		$statement = "$statement;";
-	}
-
-	my $sth = DBI::_new_sth($dbh, {
-		Statement => $statement,
-	});
-	$sth->STORE(monet_handle => $dbh->FETCH('monet_connection'));
-	$sth->STORE(monet_params => []);
-	$sth->STORE(NUM_OF_PARAMS => _count_param($statement));
-	$sth->STORE(is_error => 0);
-	$sth;
-}
-
-
-sub commit
-{
-	my $dbh = shift;
-	if ($dbh->FETCH('Warn')) {
-		warn 'Commit ineffective while AutoCommit is on';
-	}
-	1;
-}
-
-
-sub rollback
-{
-	my $dbh = shift;
-	if ($dbh->FETCH('Warn')) {
-		warn 'Rollback ineffective while AutoCommit is on';
-	}
-	1;
-}
-
-
-sub tables
-{
-	my $dbh = shift;
-	my @args = @_;
-	my $mapi = $dbh->FETCH('monet_connection');
-
-	my @database_list;
-	eval {
-		$mapi->wrapup();
-		$mapi->doRequest("select name from tables;");
-		$dbh->{row} = $mapi->getFirstAnswer();
-		$dbh->{errstr} = $mapi->{errstr};
-		$dbh->{err} = $mapi->{error};
-
-		die $mapi->{errstr} if $mapi->{err};
-		while( my $ref = $dbh->fetchrow_arrayref()){
-			push @database_list, $ref->[0];
-		}
-	};
-	if ($@) {
-		warn $mapi->{errstr};
-	}
-	return $mapi->{err}
-		? undef
-		: @database_list;
-}
-
-
-sub _ListDBs
-{
-	my $dbh = shift;
-	my @args = @_;
-	my $mapi = $dbh->FETCH('monet_connection');
-
-	my @database_list;
-	eval {
-		$mapi->wrapup();
-		$mapi->doRequest("show databases;");
-		$dbh->{row} = $mapi->getFirstAnswer();
-		$dbh->{errstr} = $mapi->{errstr};
-		$dbh->{err} = $mapi->{error};
-
-		die $mapi->{errstr} if $mapi->{err};
-		while( my $ref = $dbh->fetchrow_arrayref()){
-			push @database_list, $ref->[0];
-		}
-
-	};
-	if ($@) {
-		warn $mapi->get_error_message;
-	}
-	return $mapi->is_error
-		? undef
-		: @database_list;
-}
-
-
-sub _ListTables
-{
-	my $dbh = shift;
-	return $dbh->tables;
-}
-
-
-sub disconnect
-{
-	my $dbh = shift;
-	my $mapi = $dbh->FETCH('monet_connection');
-	$mapi->disconnect();
 	return 1;
+
+    } elsif ($key =~ /^monet_/) {
+	$dbh->{$key} = $new;
+	return 1;
+    }
+    return $dbh->SUPER::STORE($key, $new);
 }
 
 
-sub FETCH
-{
-	my $dbh = shift;
-	my $key = shift;
-
-	return 1 if $key eq 'AutoCommit';
-	return $dbh->{$key} if $key =~ /^(?:monet_.*)$/;
-	return $dbh->SUPER::FETCH($key);
-}
-
-
-sub STORE
-{
-	my $dbh = shift;
-	my ($key, $value) = @_;
-
-	if ($key eq 'AutoCommit') {
-		die "Can't disable AutoCommit" unless $value;
-		return 1;
-	}
-	elsif ($key =~ /^(?:monet_.*)$/) {
-		$dbh->{$key} = $value;
-		return 1;
-	}
-	return $dbh->SUPER::STORE($key, $value);
-}
-
-
-sub DESTROY
-{
-	my $dbh = shift;
-	my $monet = $dbh->FETCH('monet_connection');
-	$monet->close;
+sub DESTROY {
+    my $dbh = shift;
+    my $mapi = $dbh->FETCH('monet_connection');
+    mapi_destroy($mapi) if $mapi;
 }
 
 
 package DBD::monet::st;
 
 use DBI qw(:sql_types);
+use MapiLib;
+
 
 $DBD::monet::st::imp_data_size = 0;
 
-sub bind_param
-{
-	my $sth = shift;
-	my ($index, $value, $attr) = @_;
-	my $type = (ref $attr) ? $attr->{TYPE} : $attr;
-	if ($type != SQL_INTEGER) {
-		my $dbh = $sth->{Database};
-		$value = $dbh->quote($sth, $type);
-	}
-	my $params = $sth->FETCH('monet_params');
-	my $paramtype = $sth->FETCH('monet_types');
-	#print "converted:".$value." type:".$type."\n";
-	$params->[$index - 1] = $value;
-	$paramtype->[$index - 1] = $type;
-}
-
-sub execute
-{
-	my $sth = shift;
-	my @bind_values = @_;
-	my $mparams = $sth->FETCH('monet_params');
-	my $params = (@bind_values) ?  \@bind_values : $mparams;
-	my $num_param = $sth->FETCH('NUM_OF_PARAMS');
-	if (@$params != $num_param) {
-		# ...
-	}
-	my $statement = $sth->{Statement};
+sub bind_param {
+    my $sth = shift;
+    my ($index, $value, $attr) = @_;
+    my $type = (ref $attr) ? $attr->{TYPE} : $attr;
+    if ($type != SQL_INTEGER) {
 	my $dbh = $sth->{Database};
-	for (my $i = 0; $i < $num_param; $i++) {
-		# decode the parameter type
-		#my $quoted_param = $dbh->quote($params->[$i]);
-		#$statement =~ s/\?/$quoted_param/e;
-		my $val= $mparams->[$i];
-		if( $val == undef) {
-			#print "value undef ";
-			$val = $dbh->quote($bind_values[$i]);
+	$value = $dbh->quote($sth, $type);
+    }
+    my $params = $sth->FETCH('monet_params');
+    my $paramtype = $sth->FETCH('monet_types');
+    #print "converted:".$value." type:".$type."\n";
+    $params->[$index - 1] = $value;
+    $paramtype->[$index - 1] = $type;
+}
+
+sub execute {
+    my($sth, @bind_values) = @_;
+    my $statement = $sth->{Statement};
+    my $dbh = $sth->{Database};
+    my $mapi = $dbh->FETCH('monet_connection');
+    my $hdl;
+
+    my $mparams = $sth->FETCH('monet_params');
+    my $params = (@bind_values) ?  \@bind_values : $mparams;
+    my $num_param = $sth->FETCH('NUM_OF_PARAMS');
+    if (@$params != $num_param) {
+	# ...
+    }
+    for (my $i = 0; $i < $num_param; $i++) {
+	# decode the parameter type
+	my $quoted_param = $dbh->quote($params->[$i]);
+	$statement =~ s/\?/$quoted_param/e;
+    }
+
+    my @data = ();
+
+    my $result = eval {
+
+	$hdl = mapi_query($mapi, $statement);
+
+	# $sth->{row} = $mapi->getFirstAnswer();
+	$sth->STORE(monet_hdl => $hdl);
+	$sth->STORE(errstr => mapi_error_str($mapi));
+	$sth->STORE(err => mapi_error($mapi));
+	$sth->STORE(rows => mapi_rows_affected($hdl));
+	$sth->STORE(monet_querytype => ($hdl));
+
+	my $first = 1;
+	my @names = ();
+	my @types = (); my @precisions = (); my @nullables = ();
+
+	my $numfields = mapi_get_field_count($hdl);
+
+	while (mapi_fetch_row($hdl)) {
+	    my @row = ();
+	    for (my $i=0; $i<$numfields; $i++) {
+		push @row, mapi_fetch_field($hdl, $i);
+		if ($first) {
+		    push @names, mapi_get_name($hdl, $i);
+		    push @types, mapi_get_type($hdl, $i);
+		    push @precisions, mapi_get_len($hdl, $i);
+		    push @nullables, 0;
 		}
-		#print "value used:$val\n";
-		$statement =~ s/\?/$val/e;
-	}
-	my $mapi = $sth->FETCH('monet_handle');
-	my $result = eval {
-		#print "EXE:".$statement."\n";
-		$mapi->wrapup();
-		$mapi->doRequest($statement);
-		$sth->{row} = $mapi->getFirstAnswer();
-		$sth->{errstr} = $mapi->{errstr};
-		$sth->{err} = $mapi->{error};
-		$sth->{rows} = -1;	# no count provided
-		#print "GOT:".$sth->{row}."\n";
-	};
-	if ($@) {
-		$sth->DBI::set_err(
-			$mapi->{error}, $mapi->{row}
-		);
-		return undef;
-	}
-	if( $mapi->{error} ){
-		$sth->DBI::set_err(
-			$mapi->{error}, $mapi->{row}
-		);
+	    }
+	    $first = 0;
+	    push @data, \@row;
 	}
 
-	return $sth->{is_error}
-		? undef : $result
-			? $result : '0E0';
+	$sth->{monet_data} = \@data;
+	$sth->{monet_rows} = @data;
+	$sth->STORE(NUM_OF_FIELDS => $numfields);
+	$sth->STORE(NAME => \@names);
+	# $sth->STORE(TYPE => \@types);
+	# $sth->STORE(PRECISION => \@precisions);
+	# $sth->STORE(NULLABLE => \@nullables);
+    };
+	
+    if ($@ or mapi_error($mapi)) {
+	$sth->DBI::set_err(mapi_error($mapi), mapi_error_str($mapi));
+	return undef;
+    }
+
+    @data || '0E0';
 }
 
 
-sub fetch
-{
-	my $sth = shift;
 
-# next row has already been read, decode it and prepare for next.
 
-	#print "called fetch:".$sth->{row}."\n";
-	my $line = $sth->{row};
-	return undef unless $line;
+sub fetchrow_arrayref  {
 
-        $line =~ s/\[//;
-        $line =~ s/\]//;
-        my @fields = split(/,\t*/,$line);
-	my $fcnt = $sth->FETCH('NUM_OF_FIELDS');
-	if( $fcnt == undef){
-		$sth->STORE(NUM_OF_FIELDS => $#fields+1);
-	}
-        my $i=0;
-        for($i=0; $i<= $#fields; $i++){
-                $fields[$i] =~ s/^ *(.*)/\1/;
-                $fields[$i] =~ s/^\"(.*)\"/\1/;
-                $fields[$i] =~ s/^\'(.*)\'/\1/;
-		#print "target[$i];$fields[$i]\n";
-        }
-	# fetch next row into buffer
-	my $mapi = $sth->FETCH('monet_handle');
-	if( $mapi->{active} ==1) {
-		$mapi->getReply();
-		$sth->{row} = $mapi->{row};
-	}
-	return $sth->_set_fbav(\@fields);
+    my $sth = shift;
+    my $data = $sth->FETCH('monet_data');
+    my $row = shift @$data;
+    
+    if (!$row) {
+	return undef;
+    }
+    
+    if ($sth->FETCH('ChopBlanks')) {
+	map { $_ =~ s/\s+$//; } @$row;
+    }
+    return $sth->_set_fbav($row);
 }
-*fetchrow_arrayref = \&fetch;
 
+*fetch = \&fetchrow_arrayref;
 
-sub rows
-{
-	my $sth = shift;
-	$sth->FETCH('monet_rows');
+sub rows {
+    my $sth = shift;
+    $sth->FETCH('monet_rows');
 }
 
 
-sub FETCH
-{
-	my $dbh = shift;
-	my $key = shift;
-
-	return 1 if $key eq 'AutoCommit';
-	return $dbh->{NAME} if $key eq 'NAME';
-	return $dbh->{$key} if $key =~ /^monet_/;
-	return $dbh->SUPER::FETCH($key);
+sub FETCH {
+    my $sth = shift;
+    my $key = shift;
+    
+    return $sth->{NAME} if $key eq 'NAME';
+    return $sth->{$key} if $key =~ /^monet_/;
+    return $sth->SUPER::FETCH($key);
 }
 
 
-sub STORE
-{
-	my $dbh = shift;
-	my ($key, $value) = @_;
+sub STORE {
+    my $sth = shift;
+    my ($key, $value) = @_;
 
-	if ($key eq 'AutoCommit') {
-		die "Can't disable AutoCommit" unless $value;
-		return 1;
-	}
-	elsif ($key eq 'NAME') {
-		$dbh->{NAME} = $value;
-		return 1;
-	}
-	elsif ($key =~ /^monet_/) {
-		$dbh->{$key} = $value;
-		return 1;
-	}
-	return $dbh->SUPER::STORE($key, $value);
+    if ($key eq 'NAME') {
+	$sth->{NAME} = $value;
+	return 1;
+    } elsif ($key =~ /^monet_/) {
+	$sth->{$key} = $value;
+	return 1;
+    }
+    return $sth->SUPER::STORE($key, $value);
 }
 
 
-sub DESTROY
-{
-	my $dbh = shift;
-
+sub DESTROY {
+    my $sth = shift;
+    mapi_close_handle($sth->FETCH('monet_hdl')) if $sth->FETCH('monet_hdl');
 }
 
 
@@ -505,7 +467,7 @@ __END__
 
 =head1 NAME
 
-DBD::monet - Pure Perl Monet Database driver for the DBI
+DBD::monet - DBD implementation on top of SWIG bindings
 
 =head1 SYNOPSIS
 
@@ -639,7 +601,7 @@ The default host to connect to is 'localhost', i.e. your workstation.
 
 =item port
 
-The port where MonetDB daemon listens to. default for SQL is ???.
+The port where MonetDB daemon listens to. default for SQL is 45123.
 
 =back
 
@@ -799,6 +761,6 @@ Martin Kersten <lt>Martin.Kersten@cwi.nl<gt>
 Copyright (C) 2003-2004 CWI Netherlands. All rights reserved.
 
 This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself. 
+it under the same terms as Perl itself.
 
 =cut
