@@ -33,3 +33,4 @@ scripts_lst = {
 	DIR = pkgdatadir
 	SOURCES = Mprofile-commands.lst
 }
+
