@@ -1682,7 +1682,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"varchar", "varchar", "varchar"
 		};
 
-		String[][] results = new String[0][8];
+		String[][] results = new String[0][columns.length];
 
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
@@ -1737,7 +1737,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"varchar", "varchar", "varchar"
 		};
 
-		String[][] results = new String[0][8];
+		String[][] results = new String[0][columns.length];
 
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
@@ -1789,6 +1789,31 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		boolean nullable
 	) throws SQLException
 	{
+		String query =
+			"SELECT columns.name AS COLUMN_NAME, columns.type AS TYPE_NAME, " +
+			"columns.type_digits AS COLUMN_SIZE, 0 AS BUFFER_LENGTH, " +
+			"columns.type_scale AS DECIMAL_DIGITS, keys.type AS keytype " +
+				"FROM keys, keycolumns, tables, columns, schemas " +
+				"WHERE keys.id = keycolumns.id AND keys.table_id = tables.id " +
+					"AND keys.table_id = columns.table_id " +
+					"AND keycolumns.\"column\" = columns.name " +
+					"AND tables.schema_id = schemas.id " +
+					"AND keys.type IN (0, 1) ";
+
+		// SCOPE, DATA_TYPE, PSEUDO_COLUMN have to be generated with Java logic
+
+		if (schema != null) {
+			query += "AND schemas.name LIKE '" + escapeQuotes(schema) + "' ";
+		}
+		if (table != null) {
+			query += "AND tables.name LIKE '" + escapeQuotes(table) + "' ";
+		}
+		if (!nullable) {
+			query += "AND columns.\"null\" = false ";
+		}
+
+		query += "ORDER BY keytype";
+
 		String columns[] = {
 			"SCOPE", "COLUMN_NAME", "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE",
 			"BUFFER_LENGTH", "DECIMAL_DIGITS", "PSEUDO_COLUMN"
@@ -1799,10 +1824,34 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"mediumint", "mediumint", "mediumint"
 		};
 
-		// now what? huh?
+		String[][] results;
+		ArrayList tmpRes = new ArrayList();
+
+		ResultSet rs = getStmt.executeQuery(query);
+		while (rs.next()) {
+			String[] result = new String[8];
+			result[0]  = "" + DatabaseMetaData.bestRowSession;
+			result[1]  = rs.getString("column_name");
+			result[2]  = "" + driver.getJavaType(rs.getString("type_name"));
+			result[3]  = rs.getString("type_name");
+			result[4]  = rs.getString("column_size");
+			result[5]  = rs.getString("buffer_length");
+			result[6]  = rs.getString("decimal_digits");
+			result[7]  = "" + DatabaseMetaData.bestRowNotPseudo;
+			tmpRes.add(result);
+		}
+		rs.close();
+
+		results = tmpRes.toArray(new String[tmpRes.size()][]);
+
+		try {
+			return(new MonetVirtualResultSet(columns, types, results));
+		} catch (IllegalArgumentException e) {
+			throw new SQLException("Internal driver error: " + e.getMessage());
+		}
 	}
 
-	/*
+	/**
 	 * Get a description of a table's columns that are automatically
 	 * updated when any value in a row is updated.	They are
 	 * unordered.
@@ -1829,50 +1878,37 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @param schema a schema name; "" retrieves those without a schema
 	 * @param table a table name
 	 * @return ResultSet each row is a column description
+	 * @throws SQLException if a database error occurs
 	 */
-	public java.sql.ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException
+	public ResultSet getVersionColumns(
+		String catalog,
+		String schema,
+		String table
+	) throws SQLException
 	{
-		Field f[] = new Field[8];
-		Vector v = new Vector();		// The new ResultSet tuple stuff
+		// I don't know of columns which update themselves, except maybe on the
+		// system tables
 
-		f[0] = new Field(connection, "SCOPE", iInt2Oid, 2);
-		f[1] = new Field(connection, "COLUMN_NAME", iVarcharOid, getMaxNameLength());
-		f[2] = new Field(connection, "DATA_TYPE", iInt2Oid, 2);
-		f[3] = new Field(connection, "TYPE_NAME", iVarcharOid, getMaxNameLength());
-		f[4] = new Field(connection, "COLUMN_SIZE", iInt4Oid, 4);
-		f[5] = new Field(connection, "BUFFER_LENGTH", iInt4Oid, 4);
-		f[6] = new Field(connection, "DECIMAL_DIGITS", iInt2Oid, 2);
-		f[7] = new Field(connection, "PSEUDO_COLUMN", iInt2Oid, 2);
+		String columns[] = {
+			"SCOPE", "COLUMN_NAME", "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE",
+			"BUFFER_LENGTH", "DECIMAL_DIGITS", "PSEUDO_COLUMN"
+		};
 
-		byte tuple[][] = new byte[8][];
+		String types[] = {
+			"mediumint", "varchar", "mediumint", "varchar", "mediumint",
+			"mediumint", "mediumint", "mediumint"
+		};
 
-		/* Postgresql does not have any column types that are
-		 * automatically updated like some databases' timestamp type.
-		 * We can't tell what rules or triggers might be doing, so we
-		 * are left with the system columns that change on an update.
-		 * An update may change all of the following system columns:
-		 * ctid, xmax, xmin, cmax, and cmin.  Depending on if we are
-		 * in a transaction and wether we roll it back or not the
-		 * only guaranteed change is to ctid. -KJ
-		 */
+		String[][] results = new String[0][columns.length];
 
-		tuple[0] = null;
-		tuple[1] = encoding.encode("ctid");
-		tuple[2] = encoding.encode(Integer.toString(connection.getSQLType("tid")));
-		tuple[3] = encoding.encode("tid");
-		tuple[4] = null;
-		tuple[5] = null;
-		tuple[6] = null;
-		tuple[7] = encoding.encode(Integer.toString(java.sql.DatabaseMetaData.versionColumnPseudo));
-		v.addElement(tuple);
-
-		/* Perhaps we should check that the given
-		 * catalog.schema.table actually exists. -KJ
-		 */
-		return (ResultSet) ((BaseStatement)connection.createStatement()).createDriverResultSet(f, v);
+		try {
+			return(new MonetVirtualResultSet(columns, types, results));
+		} catch (IllegalArgumentException e) {
+			throw new SQLException("Internal driver error: " + e.getMessage());
+		}
 	}
 
-	/*
+	/**
 	 * Get a description of a table's primary key columns.  They
 	 * are ordered by COLUMN_NAME.
 	 *
@@ -1891,362 +1927,38 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * without a schema
 	 * @param table a table name
 	 * @return ResultSet each row is a primary key column description
+	 * @throws SQLException if a database error occurs
 	 */
-	public java.sql.ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException
+	public ResultSet getPrimaryKeys(
+		String catalog,
+		String schema,
+		String table
+	) throws SQLException
 	{
-		String select;
-		String from;
-		String where = "";
-		if (connection.haveMinimumServerVersion("7.3")) {
-			select = "SELECT NULL AS TABLE_CAT, n.nspname AS TABLE_SCHEM, ";
-			from = " FROM pg_catalog.pg_namespace n, pg_catalog.pg_class ct, pg_catalog.pg_class ci, pg_catalog.pg_attribute a, pg_catalog.pg_index i ";
-			where = " AND ct.relnamespace = n.oid ";
-			if (schema != null && !"".equals(schema)) {
-				where += " AND n.nspname = '"+escapeQuotes(schema)+"' ";
-			}
-		} else {
-			select = "SELECT NULL AS TABLE_CAT, NULL AS TABLE_SCHEM, ";
-			from = " FROM pg_class ct, pg_class ci, pg_attribute a, pg_index i ";
+		String query =
+			"SELECT null AS TABLE_CAT, schemas.name AS TABLE_SCHEM, " +
+			"tables.name AS TABLE_NAME, keycolumns.\"column\" AS COLUMN_NAME, " +
+			"0 AS KEY_SEQ, keys.name AS PK_NAME " +
+				"FROM keys, keycolumns, tables, schemas " +
+				"WHERE keys.id = keycolumns.id AND keys.table_id = tables.id " +
+					"AND tables.schema_id = schemas.id " +
+					"AND keys.type = 0 ";
+
+		// SCOPE, DATA_TYPE, PSEUDO_COLUMN have to be generated with Java logic
+
+		if (schema != null) {
+			query += "AND schemas.name LIKE '" + escapeQuotes(schema) + "' ";
 		}
-		String sql = select+
-			" ct.relname AS TABLE_NAME, "+
-			" a.attname AS COLUMN_NAME, "+
-			" a.attnum AS KEY_SEQ, "+
-			" ci.relname AS PK_NAME "+
-			from+
-			" WHERE ct.oid=i.indrelid AND ci.oid=i.indexrelid "+
-			" AND a.attrelid=ci.oid AND i.indisprimary ";
-                        if (table != null && !"".equals(table)) {
-			        sql += " AND ct.relname = '"+escapeQuotes(table)+"' ";
-                        }
-			sql += where+
-			" ORDER BY table_name, pk_name, key_seq";
-		return connection.createStatement().executeQuery(sql);
+		if (table != null) {
+			query += "AND tables.name LIKE '" + escapeQuotes(table) + "' ";
+		}
+
+		query += "ORDER BY COLUMN_NAME";
+
+		return(getStmt().executeQuery(query));
 	}
 
 	/**
-	 *
-	 * @param catalog
-	 * @param schema
-	 * @param primaryTable if provided will get the keys exported by this table
-	 * @param foreignTable if provided will get the keys imported by this table
-	 * @return ResultSet
-	 * @throws SQLException
-	 */
-
-	protected java.sql.ResultSet getImportedExportedKeys(String primaryCatalog, String primarySchema, String primaryTable, String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException
-	{
-		Field f[] = new Field[14];
-
-		f[0] = new Field(connection, "PKTABLE_CAT", iVarcharOid, getMaxNameLength());
-		f[1] = new Field(connection, "PKTABLE_SCHEM", iVarcharOid, getMaxNameLength());
-		f[2] = new Field(connection, "PKTABLE_NAME", iVarcharOid, getMaxNameLength());
-		f[3] = new Field(connection, "PKCOLUMN_NAME", iVarcharOid, getMaxNameLength());
-		f[4] = new Field(connection, "FKTABLE_CAT", iVarcharOid, getMaxNameLength());
-		f[5] = new Field(connection, "FKTABLE_SCHEM", iVarcharOid, getMaxNameLength());
-		f[6] = new Field(connection, "FKTABLE_NAME", iVarcharOid, getMaxNameLength());
-		f[7] = new Field(connection, "FKCOLUMN_NAME", iVarcharOid, getMaxNameLength());
-		f[8] = new Field(connection, "KEY_SEQ", iInt2Oid, 2);
-		f[9] = new Field(connection, "UPDATE_RULE", iInt2Oid, 2);
-		f[10] = new Field(connection, "DELETE_RULE", iInt2Oid, 2);
-		f[11] = new Field(connection, "FK_NAME", iVarcharOid, getMaxNameLength());
-		f[12] = new Field(connection, "PK_NAME", iVarcharOid, getMaxNameLength());
-		f[13] = new Field(connection, "DEFERRABILITY", iInt2Oid, 2);
-
-
-		String select;
-		String from;
-		String where = "";
-
-		/*
-		 * The addition of the pg_constraint in 7.3 table should have really
-		 * helped us out here, but it comes up just a bit short.
-		 * - The conkey, confkey columns aren't really useful without
-		 *   contrib/array unless we want to issues separate queries.
-		 * - Unique indexes that can support foreign keys are not necessarily
-		 *   added to pg_constraint.  Also multiple unique indexes covering
-		 *   the same keys can be created which make it difficult to determine
-		 *   the PK_NAME field.
-		 */
-
-		if (connection.haveMinimumServerVersion("7.4")) {
-			String sql = "SELECT NULL::text AS PKTABLE_CAT, pkn.nspname AS PKTABLE_SCHEMA, pkc.relname AS PKTABLE_NAME, pka.attname AS PKCOLUMN_NAME, "+
-			"NULL::text AS FK_TABLE_CAT, fkn.nspname AS FKTABLE_SCHEMA, fkc.relname AS FKTABLE_NAME, fka.attname AS FKCOLUMN_NAME, "+
-			"pos.n AS KEY_SEQ, "+
-			"CASE con.confupdtype "+
-				" WHEN 'c' THEN " + DatabaseMetaData.importedKeyCascade +
-				" WHEN 'n' THEN " + DatabaseMetaData.importedKeySetNull +
-				" WHEN 'd' THEN " + DatabaseMetaData.importedKeySetDefault +
-				" WHEN 'r' THEN " + DatabaseMetaData.importedKeyRestrict +
-				" WHEN 'a' THEN " + DatabaseMetaData.importedKeyNoAction +
-				" ELSE NULL END AS UPDATE_RULE, "+
-			"CASE con.confdeltype "+
-				" WHEN 'c' THEN " + DatabaseMetaData.importedKeyCascade +
-				" WHEN 'n' THEN " + DatabaseMetaData.importedKeySetNull +
-				" WHEN 'd' THEN " + DatabaseMetaData.importedKeySetDefault +
-				" WHEN 'r' THEN " + DatabaseMetaData.importedKeyRestrict +
-				" WHEN 'a' THEN " + DatabaseMetaData.importedKeyNoAction +
-				" ELSE NULL END AS DELETE_RULE, "+
-			"con.conname AS FK_NAME, pkic.relname AS PK_NAME, "+
-			"CASE "+
-				" WHEN con.condeferrable AND con.condeferred THEN " + DatabaseMetaData.importedKeyInitiallyDeferred +
-				" WHEN con.condeferrable THEN " + DatabaseMetaData.importedKeyInitiallyImmediate +
-				" ELSE " + DatabaseMetaData.importedKeyNotDeferrable+
-				" END AS DEFERRABILITY "+
-			" FROM "+
-			" pg_catalog.pg_namespace pkn, pg_catalog.pg_class pkc, pg_catalog.pg_attribute pka, "+
-			" pg_catalog.pg_namespace fkn, pg_catalog.pg_class fkc, pg_catalog.pg_attribute fka, "+
-			" pg_catalog.pg_constraint con, information_schema._pg_keypositions() pos(n), "+
-			" pg_catalog.pg_depend dep, pg_catalog.pg_class pkic "+
-			" WHERE pkn.oid = pkc.relnamespace AND pkc.oid = pka.attrelid AND pka.attnum = con.confkey[pos.n] AND con.confrelid = pkc.oid "+
-			" AND fkn.oid = fkc.relnamespace AND fkc.oid = fka.attrelid AND fka.attnum = con.conkey[pos.n] AND con.conrelid = fkc.oid "+
-			" AND con.contype = 'f' AND con.oid = dep.objid AND pkic.oid = dep.refobjid AND pkic.relkind = 'i' AND dep.classid = 'pg_constraint'::regclass::oid AND dep.refclassid = 'pg_class'::regclass::oid ";
-			if (primarySchema != null && !"".equals(primarySchema)) {
-				sql += " AND pkn.nspname = '"+escapeQuotes(primarySchema)+"' ";
-			}
-			if (foreignSchema != null && !"".equals(foreignSchema)) {
-				sql += " AND fkn.nspname = '"+escapeQuotes(foreignSchema)+"' ";
-			}
-			if (primaryTable != null && !"".equals(primaryTable)) {
-				sql += " AND pkc.relname = '"+escapeQuotes(primaryTable)+"' ";
-			}
-			if (foreignTable != null && !"".equals(foreignTable)) {
-				sql += " AND fkc.relname = '"+escapeQuotes(foreignTable)+"' ";
-			}
-
-			if (primaryTable != null) {
-				sql += " ORDER BY fkn.nspname,fkc.relname,pos.n";
-			} else {
-				sql += " ORDER BY pkn.nspname,pkc.relname,pos.n";
-			}
-
-			return connection.createStatement().executeQuery(sql);
-		} else if (connection.haveMinimumServerVersion("7.3")) {
-			select = "SELECT DISTINCT n1.nspname as pnspname,n2.nspname as fnspname, ";
-			from = " FROM pg_catalog.pg_namespace n1 "+
-				" JOIN pg_catalog.pg_class c1 ON (c1.relnamespace = n1.oid) "+
-				" JOIN pg_catalog.pg_index i ON (c1.oid=i.indrelid) "+
-				" JOIN pg_catalog.pg_class ic ON (i.indexrelid=ic.oid) "+
-				" JOIN pg_catalog.pg_attribute a ON (ic.oid=a.attrelid), "+
-				" pg_catalog.pg_namespace n2 "+
-				" JOIN pg_catalog.pg_class c2 ON (c2.relnamespace=n2.oid), "+
-				" pg_catalog.pg_trigger t1 "+
-				" JOIN pg_catalog.pg_proc p1 ON (t1.tgfoid=p1.oid), "+
-				" pg_catalog.pg_trigger t2 "+
-				" JOIN pg_catalog.pg_proc p2 ON (t2.tgfoid=p2.oid) ";
-			if (primarySchema != null && !"".equals(primarySchema)) {
-				where += " AND n1.nspname = '"+escapeQuotes(primarySchema)+"' ";
-			}
-			if (foreignSchema != null && !"".equals(foreignSchema)) {
-				where += " AND n2.nspname = '"+escapeQuotes(foreignSchema)+"' ";
-			}
-		} else {
-			select = "SELECT DISTINCT NULL::text as pnspname, NULL::text as fnspname, ";
-			from = " FROM pg_class c1 "+
-				" JOIN pg_index i ON (c1.oid=i.indrelid) "+
-				" JOIN pg_class ic ON (i.indexrelid=ic.oid) "+
-				" JOIN pg_attribute a ON (ic.oid=a.attrelid), "+
-				" pg_class c2, "+
-				" pg_trigger t1 "+
-				" JOIN pg_proc p1 ON (t1.tgfoid=p1.oid), "+
-				" pg_trigger t2 "+
-				" JOIN pg_proc p2 ON (t2.tgfoid=p2.oid) ";
-		}
-
-		String sql = select
-			+ "c1.relname as prelname, "
-			+ "c2.relname as frelname, "
-			+ "t1.tgconstrname, "
-			+ "a.attnum as keyseq, "
-			+ "ic.relname as fkeyname, "
-			+ "t1.tgdeferrable, "
-			+ "t1.tginitdeferred, "
-			+ "t1.tgnargs,t1.tgargs, "
-			+ "p1.proname as updaterule, "
-			+ "p2.proname as deleterule "
-			+ from
-			+ "WHERE "
-			// isolate the update rule
-			+ "(t1.tgrelid=c1.oid "
-			+ "AND t1.tgisconstraint "
-			+ "AND t1.tgconstrrelid=c2.oid "
-			+ "AND p1.proname LIKE 'RI\\\\_FKey\\\\_%\\\\_upd') "
-
-			+ "AND "
-			// isolate the delete rule
-			+ "(t2.tgrelid=c1.oid "
-			+ "AND t2.tgisconstraint "
-			+ "AND t2.tgconstrrelid=c2.oid "
-			+ "AND p2.proname LIKE 'RI\\\\_FKey\\\\_%\\\\_del') "
-
-			+ "AND i.indisprimary "
-			+ where;
-
-		if (primaryTable != null) {
-			sql += "AND c1.relname='" + escapeQuotes(primaryTable) + "' ";
-		}
-		if (foreignTable != null) {
-			sql += "AND c2.relname='" + escapeQuotes(foreignTable) + "' ";
-		}
-
-		sql += "ORDER BY ";
-
-		// orderby is as follows getExported, orders by FKTABLE,
-		// getImported orders by PKTABLE
-		// getCrossReference orders by FKTABLE, so this should work for both,
-		// since when getting crossreference, primaryTable will be defined
-
-		if (primaryTable != null) {
-			if (connection.haveMinimumServerVersion("7.3")) {
-				sql += "fnspname,";
-			}
-			sql += "frelname";
-		} else {
-			if (connection.haveMinimumServerVersion("7.3")) {
-				sql += "pnspname,";
-			}
-			sql += "prelname";
-		}
-
-		sql += ",keyseq";
-
-		ResultSet rs = connection.createStatement().executeQuery(sql);
-
-		// returns the following columns
-		// and some example data with a table defined as follows
-
-		// create table people ( id int primary key);
-		// create table policy ( id int primary key);
-		// create table users  ( id int primary key, people_id int references people(id), policy_id int references policy(id))
-
-		// prelname | frelname | tgconstrname | keyseq | fkeyName	 | tgdeferrable | tginitdeferred
-		//	  1		|	 2	   |	  3		  |    4   |	 5		 |		 6		|	 7
-
-		//	people	| users    | <unnamed>	  |    1   | people_pkey |		 f		|	 f
-
-		// | tgnargs |						  tgargs									  | updaterule			 | deleterule
-		// |	8	 |							9										  |    10				 |	  11
-		// |	6	 | <unnamed>\000users\000people\000UNSPECIFIED\000people_id\000id\000 | RI_FKey_noaction_upd | RI_FKey_noaction_del
-
-		Vector tuples = new Vector();
-
-		while ( rs.next() )
-		{
-			byte tuple[][] = new byte[14][];
-
-			tuple[1] = rs.getBytes(1); //PKTABLE_SCHEM
-			tuple[5] = rs.getBytes(2); //FKTABLE_SCHEM
-			tuple[2] = rs.getBytes(3); //PKTABLE_NAME
-			tuple[6] = rs.getBytes(4); //FKTABLE_NAME
-			String fKeyName = rs.getString(5);
-			String updateRule = rs.getString(12);
-
-			if (updateRule != null )
-			{
-				// Rules look like this RI_FKey_noaction_del so we want to pull out the part between the 'Key_' and the last '_' s
-
-				String rule = updateRule.substring(8, updateRule.length() - 4);
-
-				int action = java.sql.DatabaseMetaData.importedKeyNoAction;
-
-				if ( rule == null || "noaction".equals(rule) )
-					action = java.sql.DatabaseMetaData.importedKeyNoAction;
-				if ("cascade".equals(rule))
-					action = java.sql.DatabaseMetaData.importedKeyCascade;
-				else if ("setnull".equals(rule))
-					action = java.sql.DatabaseMetaData.importedKeySetNull;
-				else if ("setdefault".equals(rule))
-					action = java.sql.DatabaseMetaData.importedKeySetDefault;
-				else if ("restrict".equals(rule))
-					action = java.sql.DatabaseMetaData.importedKeyRestrict;
-
-				tuple[9] = encoding.encode(Integer.toString(action));
-
-			}
-
-			String deleteRule = rs.getString(13);
-
-			if ( deleteRule != null )
-			{
-
-				String rule = deleteRule.substring(8, deleteRule.length() - 4);
-
-				int action = java.sql.DatabaseMetaData.importedKeyNoAction;
-				if ("cascade".equals(rule))
-					action = java.sql.DatabaseMetaData.importedKeyCascade;
-				else if ("setnull".equals(rule))
-					action = java.sql.DatabaseMetaData.importedKeySetNull;
-				else if ("setdefault".equals(rule))
-					action = java.sql.DatabaseMetaData.importedKeySetDefault;
-				else if ("restrict".equals(rule))
-					action = java.sql.DatabaseMetaData.importedKeyRestrict;
-				tuple[10] = encoding.encode(Integer.toString(action));
-			}
-
-
-			int keySequence = rs.getInt(6); //KEY_SEQ
-
-			// Parse the tgargs data
-			String fkeyColumn = "";
-			String pkeyColumn = "";
-			String fkName = "";
-			// Note, I am guessing at most of this, but it should be close
-			// if not, please correct
-			// the keys are in pairs and start after the first four arguments
-			// the arguments are seperated by \000
-
-			String targs = rs.getString(11);
-
-			// args look like this
-			//<unnamed>\000ww\000vv\000UNSPECIFIED\000m\000a\000n\000b\000
-			// we are primarily interested in the column names which are the last items in the string
-
-			Vector tokens = tokenize(targs, "\\000");
-			if (tokens.size() > 0) {
-				fkName = (String)tokens.elementAt(0);
-			}
-
-			if (fkName.startsWith("<unnamed>")) {
-				fkName = targs;
-			}
-
-			int element = 4 + (keySequence - 1) * 2;
-			if (tokens.size() > element) {
-				fkeyColumn = (String)tokens.elementAt(element);
-			}
-
-			element++;
-			if (tokens.size() > element) {
-				pkeyColumn = (String)tokens.elementAt(element);
-			}
-
-			tuple[3] = encoding.encode(pkeyColumn); //PKCOLUMN_NAME
-			tuple[7] = encoding.encode(fkeyColumn); //FKCOLUMN_NAME
-
-			tuple[8] = rs.getBytes(6); //KEY_SEQ
-			tuple[11] = encoding.encode(fkName); //FK_NAME this will give us a unique name for the foreign key
-			tuple[12] = rs.getBytes(7); //PK_NAME
-
-			// DEFERRABILITY
-			int deferrability = java.sql.DatabaseMetaData.importedKeyNotDeferrable;
-			boolean deferrable = rs.getBoolean(8);
-			boolean initiallyDeferred = rs.getBoolean(9);
-			if (deferrable)
-			{
-				if (initiallyDeferred)
-					deferrability = java.sql.DatabaseMetaData.importedKeyInitiallyDeferred;
-				else
-					deferrability = java.sql.DatabaseMetaData.importedKeyInitiallyImmediate;
-			}
-			tuple[13] = encoding.encode(Integer.toString(deferrability));
-
-			tuples.addElement(tuple);
-		}
-
-		return (ResultSet) ((BaseStatement)connection.createStatement()).createDriverResultSet(f, tuples);
-	}
-
-	/*
 	 * Get a description of the primary key columns that are
 	 * referenced by a table's foreign key columns (the primary keys
 	 * imported by a table).  They are ordered by PKTABLE_CAT,
@@ -2296,10 +2008,13 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @param table a table name
 	 * @return ResultSet each row is a primary key column description
 	 * @see #getExportedKeys
+	 * @throws SQLException if a database error occurs
 	 */
-	public java.sql.ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException
+	public getImportedKeys(String catalog, String schema, String table)
+		throws SQLException
 	{
-		return getImportedExportedKeys(null,null,null,catalog, schema, table);
+		String query =
+			"SELECT pk.";
 	}
 
 	/*
