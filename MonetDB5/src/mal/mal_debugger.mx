@@ -109,7 +109,7 @@ It should be possible to turn off the feature at compile time.
 
 #define MAXBREAKS 32
 
-int MDBdelay; /* do not immediately react */
+mal_export int MDBdelay; /* do not immediately react */
 typedef struct {
     MalBlkPtr   brkBlock[MAXBREAKS];
     int     brkVar[MAXBREAKS];
@@ -151,6 +151,8 @@ to the user to alter the trace/debugger options.
 #include "mal_scope.h"      /* for showModuleStatistics() */
 #include "mal_parser.h"
 
+
+int MDBdelay; /* do not immediately react */
 
 #define skipBlanc(c,X)    while(*(X) && isspace((int)*X)){ X++; }
 #define skipNonBlanc(c,X) while(*(X) && !isspace((int) *X)){ X++; }
