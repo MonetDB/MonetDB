@@ -340,6 +340,7 @@ int typeMarker(Client cntxt)
 	case 'p': if( keyphrase(cntxt,":ptr",4) ) return TYPE_ptr;break;
 	case 's': if( keyphrase(cntxt,":sht",4) ) return TYPE_sht;
 		  if( keyphrase(cntxt,":str",4) ) return TYPE_str;break;
+	case 't': if( keyphrase(cntxt,":type",5) ) return TYPE_type;break;
 	}
 	return 0;
 }
@@ -766,6 +767,8 @@ tag	: BARRIER | CATCH\\
 expr	: fcncall | [factor  operator] factor \\
 factor	: constant | var | type'('constant')'\\
 
+Factors may designate a type variable. In particular
+for bat[T1,T2] this is a little tricky to parse.
 @= factor
 	if( i= cstLength(cntxt,&lt)){
 		v= cstCopy(cntxt,i);
@@ -782,11 +785,30 @@ factor	: constant | var | type'('constant')'\\
 		idx= newConstant(curBlk,TYPE_str,strCopy(cntxt,i));
 	} else
 	if( i= idLength(cntxt)){
+		if( strncmp(cntxt->nxt,"bat[",4)==0){
+			/* parse bat[type,type */
+			str hd = 0, tl =0;
+			int ht,tt;
+
+			advance(cntxt,4);
+			if( (hd= idCopy(cntxt,idLength(cntxt))) &&
+			    nextChar(cntxt)==',' &&
+			    (tl= idCopy(cntxt,idLength(cntxt))) ){
+				ht = getTypeIndex(hd);
+				tt = getTypeIndex(tl);
+				i= newBatType(ht,tt);
+				v= malTypeName(i);
+				idx= newVariable(curBlk,v,i);
+			}
+			if( nextChar(cntxt) !=']')
+				parseError(cntxt,"']' expected\n");
+			if( hd ) GDKfree(hd);
+			if( tl ) GDKfree(tl);
+		}else
 		if( (idx=findVariableLength(curBlk,cntxt->nxt,i)) == -1){
 			v= idCopy(cntxt,i);
 			idx = newVariable(curBlk, v, malAnyType);
-		} else
-			advance(cntxt,i);
+		} else advance(cntxt,i);
 	} else { 
 		idx= 0;
 		parseError(cntxt,"<factor> expected\n");

@@ -36,6 +36,7 @@ html
 #include "mal_function.h"
 #include "mal_client.h"
 
+mal_export void slash_2_dir_sep(str fname);
 mal_export void malImport(Client c, str fname,int listing);
 mal_export FILE *malOpenSource(str fname);
 mal_export void processInput(Client c,MalStkPtr glb);
@@ -54,23 +55,29 @@ Make sure it is loaded as well.
 @c
 #include "mal_import.h"
 
+void slash_2_dir_sep(str fname){
+	char *s;
+	for(s=fname;*s; s++)
+	if( *s== '/') *s= '/';
+}
 FILE *malOpenSource(str fname){
 	FILE *fd= NULL;
 	char path[PATHLENGTH];
 
-        SLASH_2_DIR_SEP(fname);
-	if ((fd = fopen(fname, "r")) == 0) {
-	    sprintf(path, "%s.mal",fname);
+	strcpy(path,fname);
+        slash_2_dir_sep(path);
+	if ((fd = fopen(path, "r")) == 0) {
+	    sprintf(path, "%s.mal",path);
             if (fname[0] == DIR_SEP) {
-                strcpy(path, fname);
+                strcpy(path, path);
                 fd = fopen(path, "r");
             } else {
                 sprintf(path, "%s/modules/%s.mal",GDKdirStr, fname);
-		SLASH_2_DIR_SEP(path);
+		slash_2_dir_sep(path);
                 fd = fopen(path, "r");
 		if( fd==NULL){
 			sprintf(path, "%s/src/modules/%s.mal",GDKdistrStr, fname);
-			SLASH_2_DIR_SEP(path);
+			slash_2_dir_sep(path);
                 	fd = fopen(path, "r");
 		}
             }

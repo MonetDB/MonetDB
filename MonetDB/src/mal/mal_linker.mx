@@ -143,6 +143,7 @@ static str modulesLoaded[128];
 
 void *loadModuleLibrary(str modname){
 	char buf[MAXPATHLEN];
+	char nme[MAXPATHLEN];
 	void *handle = NULL;
 	str path ="";
 	str library=0;
@@ -152,18 +153,19 @@ void *loadModuleLibrary(str modname){
 	for(i=0;modulesLoaded[i] && i<128;i++)
 	if( strcmp(modulesLoaded[i],modname)==0)
 		return;
-	if( (library=strrchr(modname,DIR_SEP))  != NULL){
+	strcpy(nme,modname);
+	if( (library=strrchr(nme,DIR_SEP))  != NULL){
 		*library=0;
 		library++;
-		path = modname;
-	} else library= modname;
+		path = nme;
+	} else library= nme;
 
 #ifdef DEBUG_MAL_LINKER
 	printf("load module:path=%s, library=%s\n",library,modname);
 #endif
-	if( modname != NULL && modname[0]!='/') {
+	if( modname[0]!='/') {
 		sprintf(buf,"%s/lib/lib_%s.so", GDKdirStr, library);
-		SLASH_2_DIR_SEP(buf);
+		slash_2_dir_sep(buf);
 		if( access(buf,R_OK)== 0) {
 			handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
 			msg =dlerror();
@@ -175,7 +177,7 @@ void *loadModuleLibrary(str modname){
 		}
 	} 
 	sprintf(buf,"%s/%s/lib_%s.so", GDKdistrStr, LIBPATH, library);
-	SLASH_2_DIR_SEP(buf);
+	slash_2_dir_sep(buf);
 	if( access(buf,R_OK) == 0) {
 		handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
 		msg= dlerror();
@@ -211,14 +213,7 @@ command signature files.
 
 @c
 static str preloaded[]={
-	"kernel/arith",
 	"kernel/bat",
-	"kernel/atoms",
-	"kernel/algebra",
-	"kernel/system",
-	"mal/iterator",
-	"mal/squeezer",
-	"atoms/blob",
 	0 };
 
 int isPreloaded(str nme){
@@ -236,7 +231,7 @@ void initLibraries() {
 /*
 	for(i=0;preloaded[i];i++) {
 		printf("loading %s\n",preloaded[i]);
-		malImport(getClient(),preloaded[i],0);
+		loadModuleLibrary(preloaded[i]);
 	}
 */
 }

@@ -471,12 +471,16 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 If we encounter a Monet type name, it is added to the symbol table with proprietary type.
 The makes analyses of patterns like bat(int,str) easier.
 @c
-	l = ATOMindex(name);
-	if( l>= 0){
+	l = getTypeIndex(name);
+	if( l>= 0 && l != malAnyType){
 		if( type != l && type != malAnyType){
 			GDKerror("'%s' type mismatch with %d\n", name, type);
 			GDKfree(name);  
 			name = newTmpName(mb->vtop);
+		}
+		if( isBatType(l)){
+			GDKfree(name);
+			name = malTypeName(l);
 		}
 		type = l;
 		atomary= TRUE;

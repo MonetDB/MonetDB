@@ -43,6 +43,8 @@ html
 typedef int malType;
 #define malVarType -2
 #define malAnyType 255
+#define TYPE_type 254
+
 #define malVARG " malVARG"
 #define TMPMARKER '$'
 
@@ -235,7 +237,7 @@ int getTypeIndex(str nme){
 	i= ATOMindex(nme);
 	/* printf("getTypeIndex %s %d %d\n",nme,i, GDKatomcnt);*/
 	if( idcmp("any",nme)==0 || idcmp("ANY",nme)==0) return malAnyType;
-	if( idcmp("BAT",nme)==0 || idcmp("bat",nme)==0){
+	if( idcmp("bat",nme)==0 || idcmp("BAT",nme)==0){
 /* printf("found a bat[any,any]\n");*/
 		i = newBatType(TYPE_any,TYPE_any);
 /* printf("isAnyexpression? %d\n", isAnyExpression(i));*/

@@ -1,6 +1,6 @@
 @t MAL object binding
 @a M.L. Kersten
-@* MAL object management
+@* MAL object space management
 The key objects managed by Monet are the persistent BATs, which
 call for an efficient scheme to make them accessible for manipulation
 in the MAL procedures taking into account a possibly hostile
@@ -27,8 +27,21 @@ to manage them.
 The approach taken is to mimick a hierarchical organized 
 collection of object spaces. Copies can be obtain using the
 function 'bind' and modifications made to the private copy
-are synchronized with the external version upon a call to 'release'.
-All objects are automatically released upon a transaction commit.
+are synchronized with the external version upon a call to 'release'
+or 'releaseAll'.
+
+Concurrency control, replication services, as well as access
+to remote stores is part of an object space definition.
+Depending on the intended semantics, the object space manager
+(implementations of bind() and release())
+may keep track of the clients holding links to this members, 
+provide a traditional 2-phase
+locking scheme, optimistic control, or check-out/check-in scheme.
+In all cases, these management issues are transparant to the
+main thread (=client) of control, which operates on a temporary
+snapshot. For the time being we realize the managers as critical
+code sections, i.e. one client is permitted access to the space
+at a time.
 
 Example: consider the client function:
 @T
@@ -42,20 +55,33 @@ function myfcn():void;
 	release(user);
 end function;
 @-
-The type parameters in the bind() calls enable early type checking
-of the MAL procedures. Conformity of the bounded object is mandatory.
-For example, sql.bind(bat,"person","age") resolves to
-a single BAT of the required type. Failure to find such a table
-leads to an exception.
-The variable 'user' should exist in the visible object spaces
-as a string variable. Likewise, the bat 'mytable' should exist
-in the database. A reference is obtained, which assures it
-becomes loaded upon access and retains in memory as long as there
-is space available.
+The function obtains a copy from the local persistent bat space,
+much like bat-names are resolved under MIL semantics. The second
+statement uses the default schema to resolve the location of a
+column. The result bat 'd' is temporary and disappears upon garbage
+collection or explicit 'destroy'. The variable 'u' is looked up
+as the string object user.
 
-The type indicator for a bind instruction can be ommitted, but
+The type parameters in the bind() calls enable early type checking
+Failure to find a properly typed object leads to an exception.
+The type indicator for a bind instruction may be ommitted, but
 this defers type resolution to execution time.
 
+Note, possible extensions for the object space technique is
+to introduce e.g. xml.bind() which converts an XML document to a BAT,
+jpeg.bind() similer for an image.
+
+@+ Space management
+Every client receives a single object space (client.bind()) upon initialization.
+This space is placed subordinate to any space introduced by the
+system administrator. It will contain all global client data and is not
+persistent (?)
+
+This is typically part of running startup
+scripts. Variables are added to the object spaces using the export()
+function call, which performs the authorization and possible definition
+clashes.
+@
 @+ BAT reference counting
 A key issue is to deal with temporary BATs in an efficient way.
 Consider the following routine:

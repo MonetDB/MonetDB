@@ -106,7 +106,6 @@ int mal_init(){
 	tstAligned();
 	initScope();
         if( malStartupAdmin(mal_listing) == 0) return -1;
-	initLibraries(FALSE);
 	return 0;
 }
 

@@ -90,6 +90,7 @@ int malStartupAdmin(int listing){
         oldtrace = c->itrace;    /* no debugging in startup ! */
         c->itrace =0;
 	c->nspace= newScope(mal_scope, GDKstrdup("Admin"));
+	initLibraries();
 	startupPrelude(c,SRVINIT,SRVORIGIN);
 	mal_scope = c->nspace->outer;
         c->itrace = oldtrace;
@@ -130,7 +131,10 @@ void closeClientPrg(Client cntxt, int flag){
 	p = getInstrPtr(mb,0);
 	if( !(i==0 && p->token == FUNCTIONsymbol)){
 		insertSymbol(cntxt->nspace,cntxt->curprg);
-	} else return;
+	} else{
+		/* garbage collect prg ? */
+		return;
+	}
 	if( flag){
 		p = getInstrPtr(mb,i);
 		if( p->token != ENDDEFsymbol)
@@ -301,7 +305,6 @@ A stack frame is initialized to keep track of global variables.
 			OIDflushdelta =0;
 			TMcommit();
 			closeClient(c);
-			mal_exit(c);
 		}
 		closeClient(c);
 	}

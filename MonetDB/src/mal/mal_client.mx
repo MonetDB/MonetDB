@@ -407,7 +407,8 @@ void closeClient(Client c) {
 		GDKerror("closeClient:client '%s' is still active\n", k->user);
 		killClient(k);
 	}
-	MT_global_exit(0);
+	mal_exit(c);
+	/* MT_global_exit(0); not needed ?*/
 }
 
 @-
@@ -439,6 +440,7 @@ void killClient(Client c){
 		return;
 	}
 	GDKwarning("killClient:forcing client to stop ...\n");
+	/* the process may hang upon gaining access to the file descriptors */
 	c->mode= FINISHING;
 	(void) fclose(c->fdin);
 	(void) fclose(c->fdout);

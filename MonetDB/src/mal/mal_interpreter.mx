@@ -321,9 +321,14 @@ are determined at compile time.
 	@:resultParameter@
 
 @= patterncall
-	retval=  &stk->stk[pci->argv[0]];
-	retval->vtype = getGDKtype(getVarType(mb,pci->argv[0]));
-	ret = (str) (*pci->fcn)(mb,stk,pci);
+	if( pci->fcn== NULL)
+		ret= raiseException(mb,stk->pc,"MALexception",
+			"address of pattern missing\n");
+	else {
+		retval=  &stk->stk[pci->argv[0]];
+		retval->vtype = getGDKtype(getVarType(mb,pci->argv[0]));
+		ret = (str) (*pci->fcn)(mb,stk,pci);
+	}
 
 @-
 MAL function calls are relatively expensive, because they have to assemble
