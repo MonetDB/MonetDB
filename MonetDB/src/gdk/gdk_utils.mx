@@ -817,7 +817,7 @@ void* GDKmallocmax(size_t size, size_t *maxsize) {
 	if (size > GDK_mem_bigsize) {
 		size_t newsize = size + sizeof(size_t)+sizeof(size_t);
 		size_t newmax = MAX(*maxsize, newsize);
-		s = (ssize_t*) GDKvmalloc(size, &newmax);
+		s = (ssize_t*) GDKvmalloc(newsize, &newmax);
 		MT_alloc_register(s, *maxsize, 'S');
 		s += 2;
 		s[-2] = (ssize_t) newmax;
