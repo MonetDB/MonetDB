@@ -890,6 +890,7 @@ typedef struct bs {
 	int onr;
 	int inr;
 	int itotal;
+	int eob; 
 	char out[BLOCK];
 	char in[BLOCK];
 } bs;
@@ -902,6 +903,7 @@ bs *bs_create( stream *s ){
 	ns->inr = 0;
 	ns->itotal = 0;
 	ns->onr = 0;
+	ns->eob = 0;
 	return ns;
 }
 
@@ -952,6 +954,10 @@ int bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 		s->inr = 0;
 		s->itotal = 0;
 	}
+	if (s->eob){
+		s->eob = 0;
+		return cnt - (todo/elmsize);
+	}
 	while (todo >= BLOCK){
 		stream_readInt( s->s, &nr );
 		s->s->read( s->s, buf, 1, nr);
@@ -964,6 +970,10 @@ int bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 	} 
 	if (todo){
 		stream_readInt( s->s, &nr );
+
+		if (nr < BLOCK)
+			s->eob = 1;
+
 		s->s->read( s->s, s->in, 1, nr);
 		if (nr < todo)
 			memcpy( buf, s->in, nr );
@@ -973,6 +983,7 @@ int bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
                 if (nr <= todo){
                         s->inr = nr;
 			todo -= nr;
+			s->eob = 0;
                 } else {
                         s->inr = todo;
 			todo = 0;
@@ -999,6 +1010,7 @@ int bs_read_next( stream *ss, char *buf, int *last ){
 		*last = (s->itotal != BLOCK);
 		s->inr = 0;
 		s->itotal = 0;
+		s->eob = 0;
 		return rest;
 	} else {
 		stream_readInt( s->s, &nr);
