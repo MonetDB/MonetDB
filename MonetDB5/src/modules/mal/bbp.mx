@@ -147,10 +147,10 @@ pattern new(ht:any$1, tt:any$2, size:lng)
 	:bat[:any$1,:any$2] 	
 address CMDBATnew
 comment "Creates a new BAT and allocate space.";
-pattern new(ht:void, tt:any$2, size:lng) 
+pattern new(ht:void, tt:any$2, size:int) 
 	:bat[:void,:any$2] 	
 address CMDBATnew;
-pattern new(ht:void, tt:any$2, size:int) 
+pattern new(ht:void, tt:any$2, size:lng) 
 	:bat[:void,:any$2] 	
 address CMDBATnew;
 @+ Algebraic operators
