@@ -47,8 +47,8 @@ html
 /*#define DEBUG_MAL_INTERPRETER */
 /*#define STACKTRACE*/
 mal_export void showErrors(Client cntxt);
-mal_export str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env);
-mal_export str setDynamicType(MalBlkPtr mb, MalStkPtr stk, VarPtr v, int tpe);
+mal_export str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller, InstrPtr pcicaller, MalStkPtr env);
+mal_export str setDynamicType(MalBlkPtr mb, MalStkPtr stk, VarPtr v, int tpe,int pc);
 mal_export void garbageElement(ValPtr v);
 mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall);
 #endif /*  _MAL_INTERPRET_H*/
@@ -66,13 +66,13 @@ void showErrors(Client cntxt){
 	}
 }
 
-str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env){
+str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, InstrPtr pcicaller, MalStkPtr env){
 	MalStkPtr stk= NULL;
 	int i,k,firstNewElement=0;
 	ValPtr retval, lhs,rhs,v;
 	ValRecord backup[MAXARG], *bak = backup;
 	InstrPtr pci=0, altpci=0; 
-	int stop=0;
+	int stkpc, stkexception, stop=0;
 	str ret=0;
 	ptr argv[MAXARG];
 	static MalStkPtr oldstk;	/* experiment */
@@ -105,7 +105,7 @@ being called.
 		firstNewElement= stk->stktop;
 		if( mb != stk->blk) 
 			GDKerror("runMAL:misalignment of symbols\n");
-		pci= getInstrPtr(mb,env->pc);
+		pci= pcicaller;
 	} else {
 		newStack(stk,mb->vtop);
 		stk->stktop= mb->vtop; 
@@ -123,10 +123,10 @@ the symbol table and stackframe contains the sequence
 f,a1..an,b1..bn. This slightly complicates the implementation
 of the return statement.
 @c
-		pci= getInstrPtr(mbcaller,env->pc);
+		pci= pcicaller;
 		pp = getInstrPtr(mb, 0);
 		/* printf("recursive MAL function call %s[%d]\n",
-			pci->fcnname,env->pc); */
+			pci->fcnname,pcicaller); */
 		for(k=pp->retc, i= pci->retc; i<pci->argc; i++,k++){
 			lhs = &stk->stk[pp->argv[k]];
 			if( k== pp->argc-1) k--; /* variable args */
@@ -166,14 +166,14 @@ we should first remove garbage.
 	printStack(stdout,mb,stk); fflush(stdout);
 #endif
 MALrestart:
-	stk->pc =1;		/* skip signature instruction */
-	stk->exception = -1;
+	stkpc =1;		/* skip signature instruction */
+	stkexception = -1;
 	stop = mb->stop;
-	while(stk->pc < stop ){
-		pci = getInstrPtr(mb,stk->pc);
+	while(stkpc < stop ){
+		pci = getInstrPtr(mb,stkpc);
 		@:exceptionTest@
 		if( stk->cmd  ) {
-			mdbStep(cntxt,mb,stk,pci);
+			mdbStep(cntxt,mb,stk,stkpc);
 			if( stk->cmd == 'q') goto MALevalExit;
 			if( stk->cmd == 'r') {
 				stk->cmd = 'n';
@@ -188,11 +188,11 @@ MALevalExit:
 	/* pass the debug mode */
 	if(env && stk->cmd!='f') env->cmd = stk->cmd; 
 	/* garbage collect and return */
-	if( stk->exception >= 0) {
+	if( stkexception >= 0) {
 		str nme= MALexception, msg;
-		if(stk->stk[stk->exception].vtype== TYPE_str)
-			msg= stk->stk[stk->exception].val.sval;
-		else { nme= getVarName(mb,stk->exception);
+		if(stk->stk[stkexception].vtype== TYPE_str)
+			msg= stk->stk[stkexception].val.sval;
+		else { nme= getVarName(mb,stkexception);
 			msg= 0;
 		}
 		ret=appendException(mb,stop-1,nme, " propagated", msg);
@@ -237,43 +237,43 @@ elements in the value stack.
 	ret = 0;
 	switch( pci->token){
 	case ASSIGNsymbol:
-		@:assignStmt@ stk->pc++; break;
+		@:assignStmt@ stkpc++; break;
 	case LEAVEsymbol:
-		stk->pc= pci->jump; break;
+		stkpc= pci->jump; break;
 	case REDOsymbol:
 		@:redoControl@ break;
 	case BARRIERsymbol:
-		@:barrierControl@ stk->pc++;break;
+		@:barrierControl@ stkpc++;break;
 	case FORKsymbol:
 		printf("Forking not yet implemented\n");
-		stk->pc++; break;
+		stkpc++; break;
 	case RLRcall:
 	case PATcall:
-		@:patterncall@ stk->pc++; break;
+		@:patterncall@ stkpc++; break;
 	case CMDcall:
-		@:commandcall@ stk->pc++; break;
+		@:commandcall@ stkpc++; break;
 	case FCNcall:
-		@:functioncall@ stk->pc++; break;
+		@:functioncall@ stkpc++; break;
 	case ENDsymbol:
 	case RULEsymbol:
 	case COMMANDsymbol:
 	case FUNCTIONsymbol:
-		if( pci->argv[0] == stk->exception) stk->exception = -1; 
-		stk->pc++; 
+		if( pci->argv[0] == stkexception) stkexception = -1; 
+		stkpc++; 
 		break;
 	case RAISEsymbol:
 		@:raiseControl@
 		break;
 	case CATCHsymbol:
 		/* catch blocks are skipped unless searched for explicitly*/
-		if(stk->exception < 0) { stk->pc= pci->jump; break;}
-		stk->exception = -1;
-		stk->pc++; break;
+		if(stkexception < 0) { stkpc= pci->jump; break;}
+		stkexception = -1;
+		stkpc++; break;
 	case RETURNsymbol:
 		if( env != NULL && mbcaller != NULL){
 			InstrPtr pp=pci;
 			@:endProfile@
-			pci = getInstrPtr(mbcaller,env->pc);
+			pci= pcicaller;
 			for(i=0;i < pci->retc; i++){
 				rhs = &stk->stk[pp->argv[i]];
 				lhs = &env->stk[pci->argv[i]];
@@ -353,7 +353,7 @@ are determined at compile time.
 @= commandcall
 	@:evalParameters@
 	if( pci->fcn== NULL)
-		ret= raiseException(mb,stk->pc,MALexception,
+		ret= raiseException(mb,stkpc,MALexception,
 			"address of function missing\n");
 	else
 	switch(pci->argc){
@@ -369,14 +369,14 @@ are determined at compile time.
 	case 7 : ret = (str) (*pci->fcn)(argv[0],argv[1],argv[2],argv[3],
 				argv[4], argv[5],argv[6]); break;
 	default:
-		ret= raiseException(mb,stk->pc,MALexception,
+		ret= raiseException(mb,stkpc,MALexception,
 				"too many arguments\n");
 	}
 	@:resultParameter@
 
 @= patterncall
 	if( pci->fcn== NULL)
-		ret= raiseException(mb,stk->pc,MALexception,
+		ret= raiseException(mb,stkpc,MALexception,
 			"address of pattern missing\n");
 	else {
 		if( pci->beforeCall) 
@@ -394,9 +394,9 @@ non-returned values.
 	if( pci->beforeCall) 
 		(*pci->beforeCall)(&stk->stk[pci->argv[0]],bak);
 	if( pci->blk== NULL)
-		ret= raiseException(mb,stk->pc,MALexception,
+		ret= raiseException(mb,stkpc,MALexception,
 			"reference to MAL function missing\n");
-	else ret= runMAL(cntxt,pci->blk,mb,stk);
+	else ret= runMAL(cntxt,pci->blk,mb,pci,stk);
 	@:resultParameter@
 @-
 All dynamically linked routines are called with references to their
@@ -430,7 +430,7 @@ the bind(namespace,batname,mode) operation.[todo]
 	case 1: argv[0] =(ptr) getArgReference(stk,pci,0);
 		break;
 	default:
-		ret= raiseException(mb,stk->pc,MALexception,
+		ret= raiseException(mb,stkpc,MALexception,
 				"too many arguments\n");
 	}
 /* old version
@@ -470,19 +470,19 @@ The upper layers have assured that the result variable is of type boolean.
 	switch(v->vtype){
 	case TYPE_bit:
 		if( v->val.cval[0] == FALSE )
-			stk->pc= pci->jump-1;
+			stkpc= pci->jump-1;
 		break;
 	case TYPE_sht:
 		if( v->val.shval == 0)
-			stk->pc= pci->jump-1;
+			stkpc= pci->jump-1;
 		break;
 	case TYPE_int:
 		if( v->val.ival == 0)
-			stk->pc= pci->jump-1;
+			stkpc= pci->jump-1;
 		break;
 	case TYPE_lng:
 		if( v->val.lval == 0)
-			stk->pc= pci->jump-1;
+			stkpc= pci->jump-1;
 	}
 }
 @-
@@ -491,21 +491,21 @@ The return value should be set to pass the error automatically upon
 reaching end of function block.
 @= skipToCatch
 	/* skip to catch block or end */
-	for( stk->pc++; stk->pc<stop; stk->pc++){
-	InstrPtr l= getInstrPtr(mb,stk->pc);
+	for( stkpc++; stkpc<stop; stkpc++){
+	InstrPtr l= getInstrPtr(mb,stkpc);
 	if( l->token == CATCHsymbol && l->argv[0]== @1){
 		break;
 	} }
-	if( stk->pc== stop) { @:endProfile@ goto MALevalExit;}
+	if( stkpc== stop) { @:endProfile@ goto MALevalExit;}
 
 @= raiseControl
-	stk->exception = pci->argv[0];
+	stkexception = pci->argv[0];
 	if( getVarType(mb, pci->argv[0])== TYPE_str){
-	ret= raiseException(mb, stk->pc, getVarName(mb,pci->argv[0]), 
+	ret= raiseException(mb, stkpc, getVarName(mb,pci->argv[0]), 
 				stk->stk[pci->argv[0]].val.sval);
-	} else ret= raiseException(mb,stk->pc, 
+	} else ret= raiseException(mb,stkpc, 
 			    getVarName(mb,pci->argv[0]), "raise exception\n");
-	@:skipToCatch(stk->exception)@
+	@:skipToCatch(stkexception)@
 @-
 Each time we enter a barrier block, we could keep its position in the
 interpreter stack frame. It forms the starting point to issue a redo.
@@ -516,13 +516,13 @@ jumps are re-established.
 
 @= redoControl
 /* change to jump
-	for( stk->pc--; stk->pc>=0; stk->pc--){
-	InstrPtr p= getInstrPtr(mb,stk->pc);
+	for( stkpc--; stkpc>=0; stkpc--){
+	InstrPtr p= getInstrPtr(mb,stkpc);
 	if( p->barrier == BARRIERsymbol && p->argv[0]== pci->argv[0]){
 		break;
 	} }
 */
-	stk->pc = pci->jump;
+	stkpc = pci->jump;
 	@:endProfile@
 	/* semantic validity of redo stmt has been checked already */
 	/* continue re-execution of the barrier statement */
@@ -555,7 +555,7 @@ if( pci->typechk== TYPE_UNKNOWN){
 	@:dynamicTypeCheck@
 	if( pci->typechk== TYPE_UNKNOWN) {
 		@:garbageTypeCheck@
-		ret= raiseException(mb,stk->pc,MALexception,
+		ret= raiseException(mb,stkpc,MALexception,
 				    "Instruction type not fixed\n");
 		@:endProfile@
 		goto MALevalExit;
@@ -583,10 +583,13 @@ starts with the exception identifer, followed by contextual details.
 
 @= exceptionHndlr
 if( ret != MAL_SUCCEED ){
-/*if( ret != MAL_SUCCEED || (cntxt->errbuf && *cntxt->errbuf)){*/
 	str msg = 0, nxt;
 	int symid= -1;
 	if(ret ) msg= strchr(ret,':');
+	if( idcmp("redo statement",ret)==0){
+		GDKfree(ret);
+		continue;
+	} 
 	if( msg) {
 		*msg= 0;
 		symid = findVariable(mb,ret);
@@ -599,23 +602,23 @@ if( ret != MAL_SUCCEED ){
 			} else ret= msg = GDKstrdup("unspecified error\n");
 			symid = findVariable(mb,"GDKerror");
 		} else {
-			stk->exception = pci->argv[0];
-			stk->pc++;
+			stkexception = pci->argv[0];
+			stkpc++;
 			@:endProfile@
 			continue;
 		}
 	}
-	stk->exception = symid; 
+	stkexception = symid; 
 	if( symid == -1){
 		@:endProfile@
 		goto MALevalExit;
 	}
 	msg++;
 	/* assure correct variable type */
-	if( (nxt= (str) setDynamicType(mb,stk,getVar(mb,symid),TYPE_str)) == 0){
+	if( (nxt= (str) setDynamicType(mb,stk,getVar(mb,symid),TYPE_str,stkpc)) == 0){
 		v=  &stk->stk[symid];
 		v->vtype = TYPE_str;
-		v->val.pval= GDKstrdup(locateException(mb,stk->pc,ret));
+		v->val.pval= GDKstrdup(locateException(mb,stkpc,ret));
 		v->len= strlen(v->val.pval);
 		GDKfree(ret);
 		ret = 0;
@@ -681,12 +684,12 @@ During instruction interpretation we may have to be
 assured that the type associated with a destination variable
 is in line with the result of an operation or exceoption.
 @c
-str setDynamicType(MalBlkPtr mb, MalStkPtr stk, VarPtr v, int tpe){
+str setDynamicType(MalBlkPtr mb, MalStkPtr stk, VarPtr v, int tpe, int pc){
 	char buf[1024];
 	if( v->type ==tpe) return 0;
 	sprintf(buf,"variable '%s' has already type %s (!=%s)\n",
 		v->name, malTypeName(v->type), malTypeName(tpe));
-	return raiseException(mb,stk->pc, "setDynamicType",buf);
+	return raiseException(mb,pc, "setDynamicType",buf);
 }
 
 @+ BAT reference counting
@@ -713,7 +716,7 @@ if(@1->vtype == TYPE_bat)
 	b= (BAT*) BBPgetdesc(@1->val.bval);
 	if( b ) {
 		BBPfix(b->batCacheid);
-	} else raiseException(mb,stk->pc,"interpreter",
+	} else raiseException(mb,stkpc,"interpreter",
 		"Can not find bat, internal error\n");
 }
 

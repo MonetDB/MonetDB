@@ -44,10 +44,9 @@ html
 #include "mal.h"
 
 typedef struct MALSTK {
-	int	pc;		/* current instruction */
 	int 	stksize;
 	int	stktop;
-	int	exception;	/* last exception encountered */
+	MT_Lock	stklock;	/* used for parallel processing */
 	char	cmd;		/* debugger communication */
 	struct MALSTK *up;	/* stack trace list */
 	struct MALSTK *down;	/* stack trace list */

@@ -46,8 +46,8 @@ typedef struct {
 
 mal_export void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, str name,char cmd);
 mal_export void mdbShowBreakpoints(Client cntxt);
-mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
+mal_export void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 mal_export void mdbHelp(FILE *f);
 mal_export void printStackElm(FILE *f, MalBlkPtr mb,VarPtr n, ValPtr v,int index);
 mal_export void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s);
@@ -144,11 +144,11 @@ void mdbClrBreakpointName(Client cntxt, str name)
 #define skipNonBlanc(X)	while(!isspace(*X)) X++;
 #define skipWord(X)	skipNonBlanc(X); skipBlanc(X);
 
-void printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk){
+void printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc){
 	InstrPtr p;
 	int k;
 
-	p= getInstrPtr(mb, stk->pc);
+	p= getInstrPtr(mb, pc);
 	if( p != NULL){
 		promptInstruction(cntxt->fdout,mb,p);
 		p= getInstrPtr(mb, 0);
@@ -199,7 +199,7 @@ The commands are self-explanatory.
 
 The prompt string sent to the user indicates the debugger mode.
 @c
-void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 	char *b;
 	FILE *out = cntxt->fdout;
 
@@ -304,7 +304,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		fprintf(out,"%sgo up the stack\n",MDBmarker);
 		stk= stk->up;
 		mb = stk->blk;
-		printCall(cntxt,mb,stk);
+		printCall(cntxt,mb,stk,pc);
 		continue;
 	case 'v': /* variable bindings */
 		printStack(out,mb,stk);
@@ -315,7 +315,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		for(w=stk;w!= NULL; w=w->up){
 			mw = w->blk;
 			fprintf(out,MDBmarker);
-			printCall(cntxt,mw,w);
+			printCall(cntxt,mw,w,pc);
 		}
 		continue;
 	}
@@ -377,15 +377,17 @@ signatures satisfying the pattern.
 	}
 	} while(1);
 }
-void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
+	InstrPtr p;
 	char newcmd;
 
+	p= getInstrPtr(mb,pc);
 	switch(stk->cmd){
 	case 'c':
 		if( newcmd= isBreakpoint(cntxt,p) ){
 			if( newcmd == 't') 
 				fprintf(cntxt->fdout,"show value nyi \n");
-			mdbCommand(cntxt,mb,stk,p);
+			mdbCommand(cntxt,mb,stk,p,pc);
 		} 
 		break;
 	case 's': case 'n':
@@ -394,7 +396,7 @@ void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			long l= n - cntxt->timer;
 			fprintf(cntxt->fdout,"%s[%-3d usec]\n",MDBmarker,l);
 		}
-		mdbCommand(cntxt,mb,stk,p);
+		mdbCommand(cntxt,mb,stk,p,pc);
 		break;
 	case 'r': stk->cmd = 'n';
 		if( cntxt->timer){

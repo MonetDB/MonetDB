@@ -155,12 +155,13 @@ base should respect the integrity of the runtime information,
 such as the program counter.
 
 @= initSqueezes
-	int i,lim,top,ssize;	
+	int i,lim,top,ssize, stkpc;	
 	InstrPtr *new;
 @-
 @= prepareSqueeze
 	lim = getPrgSize(m);
 	top = 0;
+	stkpc= getPC(m,p);
 	ssize= m->ssize+ @1*sizeof(InstrPtr);
 	new = (InstrPtr*) GDKmalloc(ssize);
 	if( new == NULL)
@@ -197,13 +198,12 @@ str sqzPrepare(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	@:prepareSqueeze(0)@
 
 	for(i=0;i<lim;i++){
-		if( i!= s->pc)
+		if( i!= stkpc)
 			new[top++]= m->stmt[i];
 		@:assertSqueeze@
 	}
-	s->pc--;
 	@:finalizeSqueeze@
-	return NULL;
+	return GDKstrdup("redo statement");
 }
 @+ Access control 
 A simple squeezer action is to perform static access control, such
@@ -230,9 +230,9 @@ str sqzAccess(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	symid= findVariable(m,nme);
 	printf("entering sqzAccess blocking %d %s\n",symid,nme);
 	@:prepareSqueeze(10)@
-	for(i=0;i<s->pc;i++)
+	for(i=0;i<stkpc;i++)
 		new[top++]= m->stmt[i];
-	for(i=s->pc+1;i<lim;i++){
+	for(i=stkpc+1;i<lim;i++){
 		pp= getInstrPtr(m,i);
 		for(j=0;j<pp->argc;j++)
 		if( pp->argv[j]== symid){
@@ -260,4 +260,3 @@ str sqzAccessTst(void *res, int *v0){
 	return raiseException(0,0,"IllegalAccess","something is wrong");
 	return NULL; /* No exception */
 }
-
