@@ -109,16 +109,18 @@ int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
   }
 }
 
+#define CHUNK (64*1024)
+
 int sqlserver_read( str *res, stream *S ){
 	stream *s = *(stream**)S;
 	int len = 0;
-	int size = BUFSIZ + 1;
+	int size = CHUNK + 1;
 	char *buf = NEW_ARRAY(char, size ), *start = buf;
 
-	while ((len = s->read(s, start, 1, BUFSIZ)) == BUFSIZ){
-		size += BUFSIZ;
+	while ((len = s->read(s, start, 1, CHUNK)) == CHUNK){
+		size += CHUNK;
 		buf = RENEW_ARRAY(char, buf, size); 
-		start+= BUFSIZ;
+		start = buf + size - CHUNK - 1;
 		*start = '\0';
 	}
 	start += len;
