@@ -127,9 +127,7 @@ tuple will be in the result for this group."
 @mil
 # load modules used in pathfinder.mx
 module(xtables);
-# FIXME: What is `pf_support' supposed to be? No such module exists on my
-#        machine. Everything appears to work fine without this, though.
-#module(pf_support);
+module(pf_support);
 module(malalgebra);
 
 PROC get_type (bat[void,int] kind, int type_) : bat[oid,void]
@@ -458,10 +456,11 @@ creates a new working set and gives back the reference",
 PROC compress_val(str batname) : bat[void,oid]
 {
     var bat1 := bat(batname);
+    bat1.access(BAT_WRITE); # to avoid bat view for 'bat1'
     var grp := CTgroup(bat1);
     var unq := grp.tunique().mark(0@0).reverse();
 
-    { var tmp := unq.join(bat1); bat1.access(BAT_WRITE).delete().insert(tmp); }
+    { var tmp := unq.join(bat1); bat1.delete().insert(tmp).access(BAT_READ); }
 
     return grp.join(unq.reverse());
 }
@@ -471,11 +470,13 @@ PROC compress_val(str batname1, str batname2) : bat[void,oid]
 {
     var bat1 := bat(batname1);
     var bat2 := bat(batname2);
-    var grp := CTgroup(bat1).CTgroup(bat2); # void,old-oid
+    bat1.access(BAT_WRITE); # to avoid bat view for 'bat1'
+    bat2.access(BAT_WRITE); # to avoid bat view for 'bat2'
+    var grp := CTgroup(bat1).CTgroup(bat2);
     var unq := grp.tunique().mark(0@0).reverse(); # void,new-oid 
 
-    { var tmp := unq.join(bat1); bat1.access(BAT_WRITE).delete().insert(tmp); }
-    { var tmp := unq.join(bat2); bat2.access(BAT_WRITE).delete().insert(tmp); }
+    { var tmp := unq.join(bat1); bat1.delete().insert(tmp).access(BAT_READ); }
+    { var tmp := unq.join(bat2); bat2.delete().insert(tmp).access(BAT_READ); }
  
     return grp.leftjoin(unq.reverse());
 }
@@ -507,7 +508,6 @@ PROC compress_properties(str name) : void
     var _newProp_part := pre_newProp_part.reverse().mark(0@0).reverse();
     var tmp := merged_union (_pre, _pre_part, _newProp, _newProp_part);
     pre_oldProp := nil;
-    oldProp_newProp := nil;
     pre_newProp_part := nil;
     _pre_part := nil;
     _newProp_part := nil;
@@ -520,7 +520,7 @@ PROC compress_properties(str name) : void
     # FIXME: leftfetchjoin has to be order preserving to allow such a mark
     attr_newQn := attr_newQn.reverse().mark(0@0).reverse();
     # change the persistent attr_qn bat
-    attr_oldQn.access(BAT_WRITE).delete().insert(attr_newQn);
+    attr_oldQn.access(BAT_WRITE).delete().insert(attr_newQn).access(BAT_READ);
 
     pre_oldProp := pre_kind.ord_uselect(TEXT).mirror().leftfetchjoin(pre_prop); 
     oldProp_newProp := compress_val(("prop_text" + docid));
@@ -530,7 +530,6 @@ PROC compress_properties(str name) : void
     _newProp_part := pre_newProp_part.reverse().mark(0@0).reverse();
     tmp := merged_union (_pre, _pre_part, _newProp, _newProp_part);
     pre_oldProp := nil;
-    oldProp_newProp := nil;
     pre_newProp_part := nil;
     _pre_part := nil;
     _newProp_part := nil;
@@ -562,7 +561,6 @@ PROC compress_properties(str name) : void
     _newProp_part := pre_newProp_part.reverse().mark(0@0).reverse();
     tmp := merged_union (_pre, _pre_part, _newProp, _newProp_part);
     pre_oldProp := nil;
-    oldProp_newProp := nil;
     pre_newProp_part := nil;
     _pre_part := nil;
     _newProp_part := nil;
@@ -571,17 +569,19 @@ PROC compress_properties(str name) : void
     tmp := nil;
 
     # change the persistent pre_prop bat
-    pre_prop.access(BAT_WRITE).delete().insert(_pre.reverse().leftjoin(_newProp));
+    pre_prop.access(BAT_WRITE).delete().insert(_pre.reverse().leftjoin(_newProp)).access(BAT_READ);
     _pre := nil;
     _newProp := nil;
 
     var attr_prop := bat("attr_prop" + docid);
     oldProp_newProp := compress_val(("prop_val" + docid));
     var attr_newProp := attr_prop.leftfetchjoin(oldProp_newProp);
+    oldProp_newProp := nil;
     # FIXME: leftfetchjoin has to be order preserving to allow such a mark
     attr_newProp := attr_newProp.reverse().mark(0@0).reverse();
     # change the persistent attr_prop bat
-    attr_prop.access(BAT_WRITE).delete().insert(attr_newProp);
+    attr_prop.access(BAT_WRITE).delete().insert(attr_newProp).access(BAT_READ);
+    attr_prop := nil;
 
     commit();
     print("Compression completed");
@@ -713,9 +713,9 @@ PROC import_doc(str flnm, str name) : void
     doc_oid := nil;
 
     tmp.find("size").persists(true).bbpname("pre_size" + docid);
-    tmp.find("level").[chr].copy().persists(true).bbpname("pre_level" + docid);
+    tmp.find("level").[chr]().copy().persists(true).bbpname("pre_level" + docid);
     tmp.find("prop").persists(true).bbpname("pre_prop" + docid);
-    tmp.find("kind").[chr].copy().persists(true).bbpname("pre_kind" + docid);
+    tmp.find("kind").[chr]().copy().persists(true).bbpname("pre_kind" + docid);
 
     # load table prop|ns|loc
     tmp := load(tag, seps2, tag_ty, flnm + ".qn", -1);
@@ -973,353 +973,92 @@ Print XML-document with the specified name.",
 
 @) 
 @mil
-
 #############################################
 # MIL WRAPPER for AXIS STEPS 
 #
 # In order to simplify the invocation of the axis steps functions, this
 # interface provides...
 # 
+@:step(descendant,descendant,scj_desc,,@:sizes_code@,,)@
+@:step(descendant_or_self,descendant-or-self,scj_descorself,,@:sizes_code@,,)@
+@:step(ancestor,ancestor,scj_anc,,@:sizes_code@,,)@
+@:step(ancestor_or_self,ancestor-or-self,scj_ancorself,,@:sizes_code@,,)@
 
-PROC descendant(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid]
-{
-    var pre_sizes := ws.fetch(PRE_SIZE);
-    var pre_levels := ws.fetch(PRE_LEVEL);
-    var heights := ws.fetch(HEIGHT);
+@:step(child,child,lev_child,@:level_intro@,@:level_code@,,)@
+@:step(parent,parent,lev_parent,@:level_intro@,@:level_code@,,)@
+@:step(following_sibling,following-sibling,lev_fs,@:level_intro@,@:level_code@,,)@
+@:step(preceding_sibling,preceding-sibling,lev_ps,@:level_intro@,@:level_code@,,)@
 
-    var unq := {count}(frag.reverse(), frag.tunique());
+@:step(following,following,following_void,,@:sizes_code@,@:foll_prec_code@,@:doc_pre@)@
+@:step(preceding,preceding,preceding_void,,@:sizes_code@,@:foll_prec_code@,@:doc_pre@)@
+@
 
-    var result := bat(oid,oid);
-    var offset := 0;
-    var ctx_slice;
-
-    unq@batloop () {
-	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
-	ctx_slice.chk_order(false); # have to check because step expects it sorted
-        result.insert(scj_desc
-                              (pre_sizes.fetch($h),
-                               ctx_slice,
-                               heights.fetch($h),
-                               pre_sizes.fetch($h).count()).project($h));
-        offset := offset + $t;
-    }
-    return result.access(BAT_READ);
-#    return scj_desc(Tpre_size, ctx, Theight, Tpre_size.count());
-}
-ADDHELP("descendant", "rode", "Jan 2004",
-"PARAMETERS:\n\
-BAT[oid,any] ctx context set\n\
-DESCRIPITON:\n\
-returns all nodes on the descendant axis of the ctx-nodes.",
-"pathfinder");
-
-PROC descendant_or_self(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid]
-{
-    var pre_sizes := ws.fetch(PRE_SIZE);
-    var pre_levels := ws.fetch(PRE_LEVEL);
-    var heights := ws.fetch(HEIGHT);
-
-    var unq := {count}(frag.reverse(), frag.tunique());
-
-    var result := bat(oid,oid);
-    var offset := 0;
-    var ctx_slice;
-
-    unq@batloop () {
-	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
-	ctx_slice.chk_order(false); # have to check because step expects it sorted
-        result.insert(scj_descorself
-                              (pre_sizes.fetch($h),
-                               ctx_slice,
-                               heights.fetch($h),
-                               pre_sizes.fetch($h).count()).project($h));
-        offset := offset + $t;
-    }
-    return result.access(BAT_READ);
-#    return scj_descorself(Tpre_size, ctx, Theight, Tpre_size.count());
-}
-ADDHELP("descendant_or_self", "rode", "Jan 2004",
-"PARAMETERS:\n\
-BAT[oid,any] ctx context set\n\
-DESCRIPITON:\n\
-returns all nodes on the descendant-or-self axis of the ctx-nodes.",
-"pathfinder");
-
-PROC ancestor(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid]
-{
-    var pre_sizes := ws.fetch(PRE_SIZE);
-    var pre_levels := ws.fetch(PRE_LEVEL);
-    var heights := ws.fetch(HEIGHT);
-
-    var unq := {count}(frag.reverse(), frag.tunique());
-
-    var result := bat(oid,oid);
-    var offset := 0;
-    var ctx_slice;
-
-    unq@batloop () {
-	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
-	ctx_slice.chk_order(false); # have to check because step expects it sorted
-        result.insert(scj_anc
-                              (pre_sizes.fetch($h),
-                               ctx_slice,
-                               heights.fetch($h),
-                               pre_sizes.fetch($h).count()).project($h));
-        offset := offset + $t;
-    }
-    return result.access(BAT_READ);
-#    return scj_anc(Tpre_size, ctx, Theight, Tpre_size.count());
-}
-ADDHELP("ancestor", "rode", "Jan 2004",
-"PARAMETERS:\n\
-BAT[oid,any] ctx context set\n\
-DESCRIPITON:\n\
-returns all nodes on the ancestor axis of the ctx-nodes.",
-"pathfinder");
-
-PROC ancestor_or_self(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid]
-{
-    var pre_sizes := ws.fetch(PRE_SIZE);
-    var pre_levels := ws.fetch(PRE_LEVEL);
-    var heights := ws.fetch(HEIGHT);
-
-    var unq := {count}(frag.reverse(), frag.tunique());
-
-    var result := bat(oid,oid);
-    var offset := 0;
-    var ctx_slice;
-
-    unq@batloop () {
-	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
-	ctx_slice.chk_order(false); # have to check because step expects it sorted
-        result.insert(scj_ancorself
-                              (pre_sizes.fetch($h),
-                               ctx_slice,
-                               heights.fetch($h),
-                               pre_sizes.fetch($h).count()).project($h));
-        offset := offset + $t;
-    }
-    return result.access(BAT_READ);
-#    return scj_ancorself(Tpre_size, ctx, Theight, Tpre_size.count());
-}
-ADDHELP("ancestor_or_self", "rode", "Jan 2004",
-"PARAMETERS:\n\
-BAT[oid,any] ctx context set\n\
-DESCRIPITON:\n\
-returns all nodes on the ancestor-or-self axis of the ctx-nodes.",
-"pathfinder");
-
-PROC child(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid]
-{
-    var pre_levels := ws.fetch(PRE_LEVEL);
-    var heights := ws.fetch(HEIGHT);
-
-    var unq := {count}(frag.reverse(), frag.tunique());
-
-    var result := bat(oid,oid);
-    var offset := 0;
-    var ctx_slice;
-
-    unq@batloop () {
-	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
-	ctx_slice.chk_order(false); # have to check because step expects it sorted
-        result.insert(lev_child
-                              (pre_levels.fetch($h),
-                               ctx_slice,
-                               heights.fetch($h),
-                               pre_levels.fetch($h).count()).project($h));
-        offset := offset + $t;
-    }
-    return result.access(BAT_READ);
-#    return lev_child(Tpre_level, ctx, Theight, Tpre_level.count());
-}
-ADDHELP("child", "rode", "Jan 2004",
-"PARAMETERS:\n\
-BAT[oid,any] ctx context set\n\
-DESCRIPITON:\n\
-returns all nodes on the child axis of the ctx-nodes.",
-"pathfinder");
-
-PROC parent(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid]
-{
-    var pre_levels := ws.fetch(PRE_LEVEL);
-    var heights := ws.fetch(HEIGHT);
-
-    var unq := {count}(frag.reverse(), frag.tunique());
-
-    var result := bat(oid,oid);
-    var offset := 0;
-    var ctx_slice;
-
-    unq@batloop () {
-	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
-	ctx_slice.chk_order(false); # have to check because step expects it sorted
-        result.insert(lev_parent
-                              (pre_levels.fetch($h),
-                               ctx_slice,
-                               heights.fetch($h),
-                               pre_levels.fetch($h).count()).project($h));
-        offset := offset + $t;
-    }
-    return result.access(BAT_READ);
-#    return lev_parent(Tpre_level, ctx, Theight, Tpre_level.count());
-}
-ADDHELP("parent", "rode", "Jan 2004",
-"PARAMETERS:\n\
-BAT[oid,any] ctx context set\n\
-DESCRIPITON:\n\
-returns all nodes on the parent axis of the ctx-nodes.",
-"pathfinder");
-
-PROC following_sibling(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid]
-{
-    var pre_levels := ws.fetch(PRE_LEVEL);
-    var heights := ws.fetch(HEIGHT);
-
-    var unq := {count}(frag.reverse(), frag.tunique());
-
-    var result := bat(oid,oid);
-    var offset := 0;
-    var ctx_slice;
-
-    unq@batloop () {
-	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
-	ctx_slice.chk_order(false); # have to check because step expects it sorted
-        result.insert(lev_fs
-                              (pre_levels.fetch($h),
-                               ctx_slice,
-                               heights.fetch($h),
-                               pre_levels.fetch($h).count()).project($h));
-        offset := offset + $t;
-    }
-    return result.access(BAT_READ);
-#    return lev_fs(Tpre_level, ctx, Theight, Tpre_level.count());
-}
-ADDHELP("following_sibling", "rode", "Jan 2004",
-"PARAMETERS:\n\
-BAT[oid,any] ctx context set\n\
-DESCRIPITON:\n\
-returns all nodes on the following-sibling axis of the ctx-nodes.",
-"pathfinder");
-
-PROC preceding_sibling(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid]
-{
-    var pre_levels := ws.fetch(PRE_LEVEL);
-    var heights := ws.fetch(HEIGHT);
-
-    var unq := {count}(frag.reverse(), frag.tunique());
-
-    var result := bat(oid,oid);
-    var offset := 0;
-    var ctx_slice;
-
-    unq@batloop () {
-	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
-	ctx_slice.chk_order(false); # have to check because step expects it sorted
-        result.insert(lev_ps
-                              (pre_levels.fetch($h),
-                               ctx_slice,
-                               heights.fetch($h),
-                               pre_levels.fetch($h).count()).project($h));
-        offset := offset + $t;
-    }
-    return result.access(BAT_READ);
-#    return lev_ps(Tpre_level, ctx, Theight, Tpre_level.count());
-}
-ADDHELP("preceding_sibling", "rode", "Jan 2004",
-"PARAMETERS:\n\
-BAT[oid,any] ctx context set\n\
-DESCRIPITON:\n\
-returns all nodes on the preceding-sibling axis of the ctx-nodes.",
-"pathfinder");
-
-PROC following(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid]
-{
-    var pre_sizes := ws.fetch(PRE_SIZE);
-    var pre_levels := ws.fetch(PRE_LEVEL);
-    var heights := ws.fetch(HEIGHT);
-
-    var unq := {count}(frag.reverse(), frag.tunique());
-
-    var result := bat(oid,oid);
-    var offset := 0;
-    var ctx_slice;
-
-    # FIXME: dirty code because, don't want to change scj implementation
+# use size concept
+@= sizes_code
+pre_sizes
+@
+# use level concept
+@= level_intro
+    var pre_levels := ws.fetch(PRE_LEVEL).fetch(frag);
+@
+@= level_code
+pre_levels
+@
+# code for following and preceding steps
+@= foll_prec_code
+    # dirty code to make possible, that old scj still works
     var doc_pre;
-    var default_bat := bat(void,oid).seqbase(0@0).insert(nil,1@0);
+    if (frag = 0@0)
+        { doc_pre := ws.fetch(WS_FRAG); }
+    else
+        { doc_pre := bat(void,oid).seqbase(0@0).insert(nil,1@0); }
+@
+@= doc_pre
+doc_pre,
+@
 
-    unq@batloop () {
-	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
-	ctx_slice.chk_order(false); # have to check because step expects it sorted
-        # FIXME: dirty code because, don't want to change scj implementation
-        if ($h = 0@0)
-            { doc_pre := ws.fetch(WS_FRAG); }
-        else
-            { doc_pre := default_bat; }
-
-        result.insert(following_void
-                              (pre_sizes.fetch($h),
-                               ctx_slice,
-                               doc_pre,
-                               heights.fetch($h),
-                               pre_sizes.fetch($h).count()).project($h));
-        offset := offset + $t;
-    }
-    return result.access(BAT_READ);
-#    return following_void(Tpre_size, ctx, Tdoc_pre, Theight, Tpre_size.count());
-}
-ADDHELP("following", "rode", "Jan 2004",
-"PARAMETERS:\n\
-BAT[oid,any] ctx context set\n\
-DESCRIPITON:\n\
-returns all nodes on the following axis of the ctx-nodes.",
-"pathfinder");
-
-PROC preceding(BAT[void,oid] ctx, BAT[void,oid] frag, BAT[void,bat] ws) : BAT[oid,oid]
+@= step
+PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws) : BAT[oid,oid]
 {
-    var pre_sizes := ws.fetch(PRE_SIZE);
-    var pre_levels := ws.fetch(PRE_LEVEL);
-    var heights := ws.fetch(HEIGHT);
+    var pre_sizes := ws.fetch(PRE_SIZE).fetch(frag);
+    @4
+    var heights := ws.fetch(HEIGHT).fetch(frag);
 
-    var unq := {count}(frag.reverse(), frag.tunique());
+    var unq := {count}(iter.reverse(), iter.tunique());
 
     var result := bat(oid,oid);
     var offset := 0;
     var ctx_slice;
 
-    # FIXME: dirty code because, don't want to change scj implementation
-    var doc_pre;
-    var default_bat := bat(void,oid).seqbase(0@0).insert(nil,1@0);
+    @6
 
     unq@batloop () {
 	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
 	ctx_slice.chk_order(false); # have to check because step expects it sorted
-        # FIXME: dirty code because, don't want to change scj implementation
-        if ($h = 0@0)
-            { doc_pre := ws.fetch(FRAG_PRE); }
-        else
-            { doc_pre := default_bat; }
-
-        result.insert(preceding_void
-                              (pre_sizes.fetch($h),
+        result.insert(@3
+                              (@5,
                                ctx_slice,
-                               doc_pre,
-                               heights.fetch($h),
-                               pre_sizes.fetch($h).count()).project($h));
+			       @7
+                               heights,
+                               pre_sizes.count())
+	              .project($h).reverse());
         offset := offset + $t;
     }
     return result.access(BAT_READ);
-#    return preceding_void(Tpre_size, ctx, Tdoc_pre, Theight, Tpre_size.count());
+#    return @2(Tpre_size, ctx, Theight, Tpre_size.count());
 }
-ADDHELP("preceding", "rode", "Jan 2004",
+ADDHELP("@1", "tsheyar", "Sep 2004",
 "PARAMETERS:\n\
-BAT[oid,any] ctx context set\n\
+BAT[void,any] iter (grouping relation)\n\
+BAT[void,any] ctx (context set)\n\
+oid frag (the current fragment of the ws)\n\
+BAT[void,bat] ws (working set)\n\
 DESCRIPITON:\n\
-returns all nodes on the preceding axis of the ctx-nodes.",
+returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.",
 "pathfinder");
+@
 
-
+@mil
 @:loop_lifted_scj_step1(ancestor)@
 @:loop_lifted_scj_step1(ancestor_or_self)@
 @:loop_lifted_scj_step1(child)@
@@ -1330,29 +1069,6 @@ returns all nodes on the preceding axis of the ctx-nodes.",
 @:loop_lifted_scj_step1(parent)@
 @:loop_lifted_scj_step1(preceding)@
 @:loop_lifted_scj_step1(preceding_sibling)@
-
-# expanding of the return_type
-@= jRetType
-bat[void,bat]
-@= jReturn
-result_scj := bat(void,bat).seqbase(0@0);
-# join is implicitly done in the iterative approach
-result_scj.insert(nil,pruned_item);
-result_scj.insert(nil,ctx_dn_item);
-result_scj.insert(nil,ctx_dn_frag);
-@
-@= unjRetType
-bat[void,bat]
-@= unjReturn
-result_scj := bat(void,bat).seqbase(0@0);
-result_scj.insert(nil,pruned_item);
-result_scj.insert(nil,ctx_dn_item);
-result_scj.insert(nil,ctx_dn_frag);
-@ 
-# expansion of the different return types
-@= loop_lifted_scj_step1
-@:loop_lifted_scj_step2(@1,_joined,@:jRetType@,@:jReturn)@
-@:loop_lifted_scj_step2(@1,_unjoined,@:unjRetType@,@:unjReturn@)@
 @
 #==================================================================
 # expansions of the loop lifted scj
@@ -1362,15 +1078,6 @@ result_scj.insert(nil,ctx_dn_frag);
 # kind argument
 @= kind
 @:comma@chr kind
-@
-# code for kind testing
-@= kindcode
-        kind_scj := mposjoin (item_part, frag_part, ws.fetch(PRE_KIND));
-        temp1_scj := kind_scj.ord_uselect(kind).mark(0@0).reverse();
-	kind_scj := nil;
-        item_part := temp1_scj.leftfetchjoin(item_part);
-        frag_part := temp1_scj.leftfetchjoin(frag_part);
-	temp1_scj := nil;
 @
 # tagname argument
 @= tagname_ns
@@ -1382,156 +1089,170 @@ result_scj.insert(nil,ctx_dn_frag);
 @= tagname_nsloc
 @:comma@str ns@:comma@ str loc
 @
+# code for variable initialisation
+@= ns_loc_vars
+var tmp;
+var pre_frag;
+var pre_prop;
+var qn_loc;
+var qn_ns;
+var kind := ELEMENT;
+var pre_kind;
+@
+@= loc_vars
+var tmp;
+var pre_frag;
+var pre_prop;
+var qn_loc;
+var kind := ELEMENT;
+var pre_kind;
+@
+@= ns_vars
+var tmp;
+var pre_frag;
+var pre_prop;
+var qn_ns;
+var kind := ELEMENT;
+var pre_kind;
+@
+@= kind_vars
+var tmp;
+var pre_kind;
+@
+
 # code for tagname testing
-@= ns_code
-		tmp := ws.fetch(QN_NS).fetch($t).ord_uselect(ns);
+@= ns_loc_code
+		@:kind_code(@1,@2)@
+		pre_frag := mposjoin(result@1_item, result@1_frag, ws.fetch(PRE_FRAG));
+		pre_prop := mposjoin(result@1_item, result@1_frag, ws.fetch(PRE_PROP));
+		qn_loc := mposjoin(pre_prop, pre_frag, ws.fetch(QN_LOC));
+		qn_ns := mposjoin(pre_prop, pre_frag, ws.fetch(QN_NS));
+		pre_frag := nil;
+		pre_prop := nil;
+		tmp := qn_ns.ord_uselect(ns).mirror();
+		tmp := tmp.leftjoin(qn_loc).ord_uselect(loc).mark(0@0).reverse();
+		qn_loc := nil;
+		qn_ns := nil;
+		@:mapping_code(@1,@2)@
 @
 @= loc_code
-		tmp := ws.fetch(QN_LOC).fetch($t).ord_uselect(loc);
+		@:kind_code(@1,@2)@
+		pre_frag := mposjoin(result@1_item, result@1_frag, ws.fetch(PRE_FRAG));
+		pre_prop := mposjoin(result@1_item, result@1_frag, ws.fetch(PRE_PROP));
+		qn_loc := mposjoin(pre_prop, pre_frag, ws.fetch(QN_LOC));
+		pre_frag := nil;
+		pre_prop := nil;
+		tmp := qn_loc.ord_uselect(loc).mark(0@0).reverse();
+		qn_loc := nil;
+		@:mapping_code(@1,@2)@
 @
-@= nsloc_code
-		tmp := ws.fetch(QN_NS).fetch($t).ord_uselect(ns).mark(0@0).reverse();
-		tmp := tmp.leftjoin(ws.fetch(QN_LOC).fetch($t)).ord_uselect(loc);
+@= ns_code
+		@:kind_code(@1,@2)@
+		pre_frag := mposjoin(result@1_item, result@1_frag, ws.fetch(PRE_FRAG));
+		pre_prop := mposjoin(result@1_item, result@1_frag, ws.fetch(PRE_PROP));
+		qn_ns := mposjoin(pre_prop, pre_frag, ws.fetch(QN_NS));
+		pre_frag := nil;
+		pre_prop := nil;
+		tmp := qn_ns.ord_uselect(ns).mark(0@0).reverse();
+		qn_ns := nil;
+		@:mapping_code(@1,@2)@
 @
-@= gettagnames
-	var tagtest_prop;
-	var tagtest_frag;
-	{
-	var tagtest := frag;
-	# FIXME: propably there is a better solution to get all fragments
-	# test if WS is present - if yes add all possible fragments
-	if (frag.ord_uselect(0@0).count() > 0)
-            { tagtest.access(BAT_WRITE).insert(ws.fetch(PRE_FRAG).fetch(WS)); }
-
-	tagtest := tagtest.tunique().mark(0@0).reverse();
-	var result := bat(oid,oid);
-
-	var tmp;
-	tagtest@batloop () {
-		@1
-		result.insert(tmp.project($t).reverse());
-	}
-	tagtest_prop := result.reverse().mark(0@0).reverse();
-	tagtest_frag := result.mark(0@0).reverse();
-	}
+@= kind_code
+		pre_kind := mposjoin(result@1_item, result@1_frag, ws.fetch(PRE_KIND));
+		tmp := pre_kind.ord_uselect(kind).mark(0@0).reverse();
+		pre_kind := nil;
+		@:mapping_code(@1,@2)@
 @
-# code for tagname testing
-@= tagnamecode
-        kind_scj := mposjoin (item_part, frag_part, ws.fetch(PRE_KIND));
-        temp1_scj := kind_scj.ord_uselect(ELEMENT).mark(0@0).reverse();
-	kind_scj := nil;
-        item_part := temp1_scj.leftfetchjoin(item_part);
-        frag_part := temp1_scj.leftfetchjoin(frag_part);
-	temp1_scj := nil;
-
-	# create void|testprop corresponding to item_part
-	temp1_scj := mposjoin(item_part, frag_part, ws.fetch(PRE_FRAG));
-	temp1_scj := temp1_scj.leftjoin(tagtest_frag.reverse());
-	temp1_scj := temp1_scj.leftfetchjoin(tagtest_prop);
-
-	# compare PROP of item_part with testprop
-	bool_scj := temp1_scj.[=](mposjoin (item_part, frag_part, ws.fetch(PRE_PROP)));
-	temp1_scj := bool_scj.ord_uselect(true).mark(0@0).reverse();
-	bool_scj := nil;
-
-        item_part := temp1_scj.leftfetchjoin(item_part);
-        frag_part := temp1_scj.leftfetchjoin(frag_part);
-	temp1_scj := nil;
+@= mapping_code
+		result@1_iter := tmp.leftfetchjoin(result@1_iter);
+		result@1_item := tmp.leftfetchjoin(result@1_item);
+		tmp := nil;
+		result@1_frag := result@1_iter.project(@2);
 @
-# resetting the tagname
-@= resetpropID
-tagtest_prop := nil;
-tagtest_frag := nil;
-@
+
 # expanding the scj for the different tests
-@= loop_lifted_scj_step2
-@:loop_lifted_scj_step3(@1,@2,,@3,,,,@4)@
-@:loop_lifted_scj_step3(@1,_with_kind_test@2,@:kind@,@3,,@:kindcode@,,@4)@
-@:loop_lifted_scj_step3(@1,_with_ns_test@2,@:tagname_ns@,@3,@:gettagnames(@:ns_code)@,@:tagnamecode@,@:resetpropID@,@4)@
-@:loop_lifted_scj_step3(@1,_with_loc_test@2,@:tagname_loc@,@3,@:gettagnames(@:loc_code@)@,@:tagnamecode@,@:resetpropID@,@4)@
-@:loop_lifted_scj_step3(@1,_with_nsloc_test@2,@:tagname_nsloc@,@3,@:gettagnames(@:nsloc_code@)@,@:tagnamecode@,@:resetpropID@,@4)@
+@= loop_lifted_scj_step1
+@:loop_lifted_scj_step2(@1,,,,,)@
+@:loop_lifted_scj_step2(@1,_with_kind_test,@:kind@,@:kind_vars@,@:kind_code(,frag.fetch(0))@,@:kind_code(_part,$h))@
+@:loop_lifted_scj_step2(@1,_with_ns_test,@:tagname_ns@,@:ns_vars@,@:ns_code(,frag.fetch(0))@,@:ns_code(_part,$h))@
+@:loop_lifted_scj_step2(@1,_with_loc_test,@:tagname_loc@,@:loc_vars@,@:loc_code(,frag.fetch(0))@,@:loc_code(_part,$h))@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test,@:tagname_nsloc@,@:ns_loc_vars@,@:ns_loc_code(,frag.fetch(0))@,@:ns_loc_code(_part,$h))@
 @
 #==================================================================
 # actual definition of the scj proc
-@= loop_lifted_scj_step3
-proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws@3) : @4
+@= loop_lifted_scj_step2
+proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws@3) : bat[void,bat]
 {
-   var offset := 0;
-   var pruned_item := bat(void,oid).access(BAT_APPEND).seqbase(0@0);
-   var ctx_dn_item := bat(void,oid).access(BAT_APPEND).seqbase(0@0);
-   var ctx_dn_frag := bat(void,oid).access(BAT_APPEND).seqbase(0@0);
+    var result;
+    var result_iter;
+    var result_item;
+    var result_frag;
+    # variable initialisation for tests
+    @4 
 
-#   # IMPORTANT: input should be sorted on iter|frag|item
-#   # (distinct-doc-order, doc or path step)
-#   # therefore the next 5 lines shouldn't be needed
-#   var sorting := iter.reverse().sort().reverse().mark(0@0).reverse();
-#   iter := sorting.leftfetchjoin(iter);
-#   item := sorting.leftfetchjoin(item);
-#   frag := sorting.leftfetchjoin(frag);
-#   sorting := nil;
+    var uniqueFrag := frag.tunique();
+    if (uniqueFrag.count() = 1) {
+	result := @1 (iter, item, frag.fetch(0), ws);
+	result_iter := result.mark(0@0).reverse();
+	result_item := result.reverse().mark(0@0).reverse();
+	result_frag := result_iter.project(frag.fetch(0));
+	# test
+	@5
+    } else {
+        var result_part_frag := frag.ord_uselect(frag.fetch(0)).mark(0@0).reverse();
+        var result_part_iter := result_part_frag.leftfetchjoin(iter);
+        var result_part_item := result_part_frag.leftfetchjoin(item);
+        var result := @1 (result_part_iter, result_part_item, frag.fetch(0), ws);
+        result_part_iter := nil;
+        result_part_item := nil;
+        result_part_frag := nil;
 
-   var uniqueIter_count := {count}(iter.reverse(), iter.tunique());
-   
-   # printf("[ \"order: uniqueIter_count %i, iter %i\" ]\n", uniqueIter_count.chk_order(false), iter.chk_order(false));
+	result_iter := result.mark(0@0).reverse();
+	result_item := result.reverse().mark(0@0).reverse();
+	result_frag := result_iter.project(frag.fetch(0));
+	# test
+	@5
 
-   if ((and(uniqueIter_count.chk_order(false),4) = 4) or 
-       (iter.chk_order(false) >= 4))
-   {
-       uniqueIter_count.print();
-       iter.print();
-       ERROR ("ordering is wrong in scj (concept with slices doesn't work)");
-   }	
-   uniqueIter_count := uniqueIter_count.[-](1);
+        var res_mu;
 
-   @5
+	uniqueFrag.slice(1,uniqueFrag.count() - 1)@batloop () {
+            result_part_frag := frag.ord_uselect($h).mark(0@0).reverse();
+            result_part_iter := result_part_frag.leftfetchjoin(iter);
+            result_part_item := result_part_frag.leftfetchjoin(item);
+            result := @1 (result_part_iter, result_part_item, $h, ws);
+            result_part_iter := nil;
+            result_part_item := nil;
+            result_part_frag := nil;
 
-   # temporary variables
-   var temp1_scj;
-   var kind_scj;
-   var bool_scj;
+            result_part_iter := result.mark(0@0).reverse();
+            result_part_item := result.reverse().mark(0@0).reverse();
+            result_part_frag := result_part_iter.project($h);
 
-   var item_part;
-   var frag_part;
-   var seqb;
+            # test
+            @6
 
-   uniqueIter_count@batloop ()
-   {
-   	item_part := item.slice(offset, offset + $t).reverse().mark(0@0).reverse();
-   	frag_part := frag.slice(offset, offset + $t).reverse().mark(0@0).reverse();
-	temp1_scj := @1 (item_part, frag_part, ws);
-        item_part := temp1_scj.mark(0@0).reverse();
-        frag_part := temp1_scj.reverse().mark(0@0).reverse();
-	temp1_scj := nil;
+            res_mu := merged_union(result_iter, result_part_iter,
+				   result_item, result_part_item,
+				   result_frag, result_part_frag);
+            result_part_iter := nil;
+            result_part_item := nil;
+            result_part_frag := nil;
+            result_iter := res_mu.fetch(0);
+            result_item := res_mu.fetch(1);
+            result_frag := res_mu.fetch(2);
+            res_mu := nil;
+        }
+    }
+    
+    result_iter.access(BAT_READ);
+    result_item.access(BAT_READ);
+    result_frag.access(BAT_READ);
+    var result_scj := bat(void,bat).seqbase(0@0);
+    result_scj.insert(nil,result_iter);
+    result_scj.insert(nil,result_item);
+    result_scj.insert(nil,result_frag);
 
-	# possible test
-	@6
-
-   	seqb := oid(count(ctx_dn_item));
-   	item_part := item_part.reverse().mark(seqb).reverse();
-   	ctx_dn_item.insert(item_part);
-   	pruned_item.insert(item_part.project($h));
-   	frag_part := frag_part.reverse().mark(seqb).reverse();
-   	ctx_dn_frag.insert(frag_part);
-
-   	offset := offset + $t + 1;
-   }
-
-   offset := nil;
-   item_part := nil;
-   frag_part := nil;
-   seqb := nil;
-   uniqueIter_count := nil;
-   iter := nil;
-   item := nil;
-   @7 # propID := nil;
-
-   ctx_dn_item.access(BAT_READ);
-   pruned_item.access(BAT_READ);
-   ctx_dn_frag.access(BAT_READ);
-
-   var result_scj;
-   @8
-   return result_scj.access(BAT_READ);
+    return result_scj.access(BAT_READ);
 }
 @
 
