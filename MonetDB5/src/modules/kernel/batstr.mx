@@ -258,7 +258,6 @@ str STRbatmatchCst(int  *ret, int *bid, str *pat){
         return throwMessage("batcalc.match", "Cannot access descriptor");
     }
 	bn= BATnew(BAThtype(b), TYPE_bit, BATcount(b));
-	@:tstBat(CMDmatchStr)@
 
 	tpe= BATttype(b);
 	nilptr= ATOMnilptr(tpe);
