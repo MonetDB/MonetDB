@@ -38,8 +38,8 @@
 
 SQLRETURN SQLSetStmtOption(
 	SQLHSTMT	hStmt,
-	UWORD		fOption,
-	UDWORD		vParam )
+	SQLUSMALLINT	fOption,
+	SQLROWCOUNT	vParam )
 {
 	switch (fOption) {
 		/* only the ODBC 1.0 and ODBC 2.0 options */

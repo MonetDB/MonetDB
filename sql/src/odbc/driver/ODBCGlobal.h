@@ -48,20 +48,19 @@
 #define MONETDB_PRODUCT_NAME "MonetDB ODBC driver"
 #define MONETDB_SERVER_NAME  "MonetDB"
 
+#include <sql_config.h>
 
 /* standard ODBC driver include files */
-#include <sqltypes.h>		/* ODBC C typedefs */
+#include <odbc_sqltypes.h>	/* ODBC C typedefs */
 /* Note: sqlext.h includes sql.h so it is not needed here to be included */
 /* Note2: if you include sql.h it will give an error because it will find
 	src/sql/common/sql.h instead, which is not the one we need */
-#include <sqlext.h>		/* ODBC API definitions and prototypes */
-#include <sqlucode.h>		/* ODBC Unicode defs and prototypes */
+#include <odbc_sqlext.h>	/* ODBC API definitions and prototypes */
+#include <odbc_sqlucode.h>	/* ODBC Unicode defs and prototypes */
 
 
 /* standard ODBC driver installer & configurator include files */
-#include <odbcinstext.h>	/* ODBC installer definitions and prototypes */
-#include <ini.h>		/* ODBC configuration defs and prototypes */
-
+#include <odbc_inst.h>		/* ODBC installer definitions and prototypes */
 
 /* MonetDB / SQL frontend include files */
 #include "comm.h"	/* for ??() */

@@ -32,10 +32,10 @@ It is part of the MS ODBC SDK which has become part of the MS MDAC SDK.
 For convenience it is also available in /ufs/dinther/ODBC/
 
 For compilation you need the ODBC API include header files:
-	sqltypes.h	/* ODBC type defines */
-	sql.h		/* ODBC core API functions */
-	sqlext.h	/* ODBC extension (level 1 and 2) API functions */
-	sqlucode.h	/* Unicode versions of the ODBC API functions */
+	odbc_sqltypes.h	/* ODBC type defines */
+	odbc_sql.h	/* ODBC core API functions */
+	odbc_sqlext.h	/* ODBC extension (level 1 and 2) API functions */
+	odbc_sqlucode.h	/* Unicode versions of the ODBC API functions */
 We use the ones distributed with unixODBC.
 At CWI these are located in /usr/include/
 

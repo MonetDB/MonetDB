@@ -7,6 +7,10 @@
 #ifndef __SQL_H
 #define __SQL_H
 
+#ifdef WIN32
+#include <sql.h>
+#else 
+
 /****************************
  * default to 3.51 declare something else before here and you get a whole new ball of wax
  ***************************/
@@ -14,7 +18,7 @@
 #define ODBCVER 0x0351
 #endif
 
-#include "sqltypes.h"
+#include "odbc_sqltypes.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -815,3 +819,4 @@ SQLRETURN   SQLTransact(SQLHENV EnvironmentHandle,
 }
 #endif
 #endif	
+#endif /*not WIN32*/

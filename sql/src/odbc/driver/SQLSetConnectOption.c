@@ -37,9 +37,9 @@
 #include "ODBCDbc.h"
 
 SQLRETURN SQLSetConnectOption(
-	SQLHDBC	hDbc,
-	UWORD	nOption,
-	UDWORD	vParam )
+	SQLHDBC		hDbc,
+	SQLUSMALLINT	nOption,
+	SQLULEN		vParam )
 {
 	/* use mapping as described in ODBC 3 SDK Help file */
 	switch (nOption)

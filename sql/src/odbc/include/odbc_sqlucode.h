@@ -7,6 +7,10 @@
 #ifndef __SQLUCODE_H
 #define __SQLUCODE_H
 
+#ifdef WIN32
+#include <sqlucode.h>
+#else 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -776,10 +780,11 @@ SQLRETURN SQL_API SQLDriversA(
 #endif	/* UNICODE */
 #endif	/* SQL_NOUNICODEMAP	*/
 
-#include <sqlext.h>
+#include <odbc_sqlext.h>
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
+#endif /*not WIN32*/

@@ -9,6 +9,8 @@
  * -----------------------------------------------
  * Peter Harvey		- pharvey@codebydesign.com
  **************************************************/
+#include <sql_config.h>
+#include <mem.h>
 #include <odbcinstext.h>
 
 static const char *aHost[] =

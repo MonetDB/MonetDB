@@ -7,6 +7,9 @@
 #ifndef __SQLEXT_H
 #define __SQLEXT_H
 
+#ifdef WIN32
+#include <sqlext.h>
+#else
 
 /* BEGIN - unixODBC ONLY (programs like ODBCConfig and DataManager use these) */
 
@@ -2083,3 +2086,4 @@ VOID	FireVSDebugEvent(PODBC_VS_ARGS);
 #endif
 
 #endif
+#endif /*not WIN32*/

@@ -1,6 +1,7 @@
 
 INCLUDES = \
 	../include \
+	../../client \
 	$(MONET_INCS) \
 	-I$(top_builddir)
 

@@ -12,6 +12,7 @@
 #ifndef _ODBCINST_H
 #define _ODBCINST_H
 
+#include <sql_config.h>
 #include <unistd.h>
 #ifdef HAVE_PWD_H
 #include <pwd.h>
@@ -21,9 +22,17 @@
 
 #define ODBCVER 0x0351
 
-#include <ini.h>
-#include <log.h>
-#include <odbcinst.h>
+#ifdef _MSC_VER
+#ifndef LIBMONETODBCS
+#define odbc_export extern __declspec(dllimport) 
+#else
+#define odbc_export extern __declspec(dllexport) 
+#endif
+#else
+#define odbc_export extern 
+#endif
+
+#include <odbc_inst.h>
 
 /********************************************************
  * CONSTANTS WHICH DO NOT EXIST ELSEWHERE
@@ -31,173 +40,6 @@
 #ifndef TRUE
 #define FALSE 0;
 #define TRUE 1;
-#endif
-
-/********************************************************
- * PUBLIC API
- ********************************************************/
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-BOOL SQLConfigDataSource(		HWND	hWnd,
-								WORD	nRequest,
-								LPCSTR	pszDriver,
-								LPCSTR	pszAttributes );
-
-BOOL SQLGetConfigMode(          UWORD	*pnConfigMode );
-
-BOOL SQLGetInstalledDrivers(	LPSTR	pszBuf,
-								WORD	nBufMax,
-								WORD	*pnBufOut );
-
-BOOL SQLInstallDriverEx(		LPCSTR	pszDriver,
-								LPCSTR	pszPathIn,
-								LPSTR	pszPathOut,
-								WORD	nPathOutMax,
-								WORD	*nPathOut,
-								WORD	nRequest,
-								LPDWORD	pnUsageCount );
-
-BOOL SQLInstallDriverManager(	LPSTR	pszPath,
-								WORD	nPathMax,
-								WORD	*pnPathOut );
-
-RETCODE SQLInstallerError(		WORD	nError,
-								DWORD	*pnErrorCode,
-								LPSTR	pszErrorMsg,
-								WORD	nErrorMsgMax,
-								WORD	*nErrorMsg );
-
-BOOL SQLManageDataSources(		HWND	hWnd );
-
-BOOL SQLReadFileDSN(			LPCSTR	pszFileName,
-								LPCSTR	pszAppName,
-								LPCSTR	pszKeyName,
-								LPSTR	pszString,
-								WORD	nString,
-								WORD	*pnString );
-
-BOOL SQLRemoveDriver(			LPCSTR	pszDriver,
-								BOOL	nRemoveDSN,
-								LPDWORD	pnUsageCount );
-
-BOOL SQLRemoveDriverManager(	LPDWORD	pnUsageCount );
-
-BOOL SQLRemoveDSNFromIni(		LPCSTR	pszDSN );
-
-BOOL SQLRemoveTranslator(		LPCSTR	pszTranslator,
-								LPDWORD	pnUsageCount );
-
-BOOL SQLSetConfigMode(			UWORD	nConfigMode );
-
-BOOL SQLValidDSN(				LPCSTR	pszDSN );
-
-BOOL SQLWriteDSNToIni(			LPCSTR	pszDSN,
-								LPCSTR	pszDriver );
-
-BOOL SQLWriteFileDSN(			LPCSTR	pszFileName,
-								LPCSTR	pszAppName,
-								LPCSTR	pszKeyName,
-								LPCSTR	pszString );
-
-BOOL SQLWritePrivateProfileString(
-								LPCSTR	pszSection,
-								LPCSTR	pszEntry,
-								LPCSTR	pszString,
-								LPCSTR	pszFileName );
-
-
-
-#ifdef __cplusplus
-}
-#endif
-
-
-/********************************************************
- * PRIVATE API
- ********************************************************/
-#if defined(__cplusplus)
-         extern  "C" {
-#endif
-
-BOOL _odbcinst_UserINI(
-	char *pszFileName,
-	BOOL bVerify );
-
-BOOL _odbcinst_SystemINI(		
-	char *pszFileName,
-	BOOL bVerify );
-
-char * odbcinst_system_file_path( void );
-
-BOOL _odbcinst_ConfigModeINI( 	
-	char *pszFileName );
-
-int _odbcinst_GetSections(	
-	HINI	hIni,
-	LPSTR	pRetBuffer,
-	int		nRetBuffer,
-	int		*pnBufPos );
-
-int _odbcinst_GetEntries(	
-	HINI	hIni,
-	LPCSTR	pszSection,
-	LPSTR	pRetBuffer,
-	int		nRetBuffer,
-	int		*pnBufPos );
-
-int _SQLGetInstalledDrivers(	
-	LPCSTR	pszSection,
-	LPCSTR	pszEntry,
-	LPCSTR	pszDefault,
-	LPCSTR	pRetBuffer,
-	int		nRetBuffer );
-
-BOOL _SQLWriteInstalledDrivers(
-	LPCSTR	pszSection,
-	LPCSTR	pszEntry,
-	LPCSTR	pszString );
-
-int inst_logPushMsg( 
-        char *pszModule, 
-        char *pszFunctionName, 
-        int nLine, 
-        int nSeverity, 
-        int nCode, 
-        char *pszMessage );
-
-int inst_logPopMsg( 
-        char *pszMsgHdr, 
-        int *pnCode, 
-        char *pszMsg );
-
-/*
- * we should look at caching this info, the calls can become expensive
- */
-
-#ifndef DISABLE_INI_CACHING
-
-struct ini_cache
-{
-    char                *fname;
-    char                *section;
-    char                *entry;
-    char                *value;
-    char                *default_value;
-    int                 buffer_size;
-    int                 ret_value;
-    int                 config_mode;
-    long                timestamp;
-    struct ini_cache    *next;
-};
-
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 /*********************************
@@ -253,6 +95,11 @@ struct ini_cache
 #define	ODBCINST_PROMPTTYPE_FILENAME	4
 #define	ODBCINST_PROMPTTYPE_HIDDEN	    5 
 
+#define     INI_MAX_LINE            1000
+#define     INI_MAX_OBJECT_NAME     INI_MAX_LINE
+#define     INI_MAX_PROPERTY_NAME   INI_MAX_LINE
+#define     INI_MAX_PROPERTY_VALUE  INI_MAX_LINE
+
 typedef struct	tODBCINSTPROPERTY
 {
 	struct tODBCINSTPROPERTY *pNext;				/* pointer to next property, NULL if last property										*/
@@ -272,18 +119,8 @@ typedef struct	tODBCINSTPROPERTY
          extern  "C" {
 #endif
 
-/* ONLY IMPLEMENTED IN ODBCINST (not in Driver Setup) */
-int ODBCINSTConstructProperties( char *szDriver, HODBCINSTPROPERTY *hFirstProperty );
-int ODBCINSTSetProperty( HODBCINSTPROPERTY hFirstProperty, char *pszProperty, char *pszValue );
-int ODBCINSTDestructProperties( HODBCINSTPROPERTY *hFirstProperty );
-int ODBCINSTAddProperty( HODBCINSTPROPERTY hFirstProperty, char *pszProperty, char *pszValue );
-
-/* IMPLEMENTED IN ODBCINST AND DRIVER SETUP */
-int ODBCINSTValidateProperty( HODBCINSTPROPERTY hFirstProperty, char *pszProperty, char *pszMessage );
-int ODBCINSTValidateProperties( HODBCINSTPROPERTY hFirstProperty, HODBCINSTPROPERTY hBadProperty, char *pszMessage );
-
 /* ONLY IMPLEMENTED IN DRIVER SETUP (not in ODBCINST) */
-int ODBCINSTGetProperties( HODBCINSTPROPERTY hFirstProperty );
+odbc_export int ODBCINSTGetProperties( HODBCINSTPROPERTY hFirstProperty );
 
 #if defined(__cplusplus)
          }

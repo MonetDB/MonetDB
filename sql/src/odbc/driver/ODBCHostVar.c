@@ -68,11 +68,11 @@ OdbcInHostVar makeOdbcInHostVar(
 
 
 OdbcOutHostVar makeOdbcOutHostVar(
-	UWORD		icol,
-	SWORD		fCType,
-	PTR		rgbValue,
-	SDWORD		cbValueMax,
-	SDWORD *	pcbValue )
+	SQLUSMALLINT		icol,
+	SQLSMALLINT		fCType,
+	SQLPOINTER		rgbValue,
+	SQLINTEGER		cbValueMax,
+	SQLINTEGER *		pcbValue )
 {
 	OdbcOutHostVar this = (OdbcOutHostVar)malloc(sizeof(OdbcOutHostVarRec));
 

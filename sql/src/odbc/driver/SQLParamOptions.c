@@ -33,8 +33,8 @@
 
 SQLRETURN SQLParamOptions(
 	SQLHSTMT	hStmt,
-	UDWORD		nRow,
-	UDWORD *	pnRow )
+	SQLUINTEGER	nRow,
+	SQLUINTEGER *	pnRow )
 {
 	RETCODE rc;
 

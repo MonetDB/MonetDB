@@ -12,12 +12,16 @@
 #ifndef __ODBCINST_H
 #define __ODBCINST_H
 
+#ifdef WIN32
+#include <odbcinst.h>
+#else 
+
 #ifndef BOOL
 #define BOOL	int
 #endif
 
 #ifndef __SQL
-#include "sql.h"
+#include "odbc_sql.h"
 #endif
 
 
@@ -251,3 +255,5 @@ BOOL INSTAPI ConfigDriver(HWND hwndParent,
 #endif
 
 #endif
+
+#endif /*not WIN32*/
