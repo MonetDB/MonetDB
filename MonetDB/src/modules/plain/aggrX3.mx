@@ -236,7 +236,7 @@ proc aggrtst(int num, int fanout, str agg, ..str..) {
 			e.print;
 			var bh := b.mark(0@0).reverse;
 			var bt := b.reverse.mark(0@0).reverse;
-			print(bh,bt,bt.[sht],bt.[int],bt.[lng],bt.[flt],bt.[dbl],bt.[str]);
+			print(bh,bt,bt.[sht],bt.[int],bt.[lng],bt.[flt],bt.[dbl],[decimal]([int](bt)),bt.[str]);
 			printed := TRUE;
 		}
 		var tpe2 := tail(ab);
