@@ -63,9 +63,9 @@ ostream &html::gen_module( ostream &o, const Module &d ){
 	o << "<h3>Dependencies </h3>\n";
 	o << "<ul>\n"; 
 	if (d.Deps()){
-		ListIterator<Symbol> *iter = d.Deps()->iterator();
+		ListIterator *iter = d.Deps()->iterator();
 		Symbol *s = NULL;
-		while(iter->next(s)){
+		while(iter->next((void*)s)){
 			s->print( this, o );
 		}
 	}
@@ -73,9 +73,9 @@ ostream &html::gen_module( ostream &o, const Module &d ){
 	o << "<h3>Definitions </h3>\n";
 	o << "<ul>\n"; 
 	if (d.Defs()){
-		ListIterator<Symbol> *iter = d.Defs()->iterator();
+		ListIterator *iter = d.Defs()->iterator();
 		Symbol *s = NULL;
-		while(iter->next(s)){
+		while(iter->next((void*)s)){
 			s->print( this, o );
 		}
 	}
@@ -178,9 +178,9 @@ ostream &html::gen_command( ostream &o, const Command &d ){
 	   	d.result()->print( this, o );
 	}
 	if (d.args()){
-		ListIterator<Symbol> *iter = d.args()->iterator();
+		ListIterator *iter = d.args()->iterator();
 		Symbol *s = NULL;
-		while(iter->next(s)){
+		while(iter->next((void*)s)){
 			s->print( this, o );
 		}
 	}
@@ -216,9 +216,9 @@ ostream &html::gen_iterator( ostream &o, const Iterator &d ){
 	o << "<p> " << d.hlp() << "\n";
 	o << "<ul>"; 
 	if (d.args()){
-		ListIterator<Symbol> *iter = d.args()->iterator();
+		ListIterator *iter = d.args()->iterator();
 		Symbol *s = NULL;
-		while(iter->next(s)){
+		while(iter->next((void*)s)){
 			s->print( this, o );
 		}
 	}

@@ -11,7 +11,7 @@
 
 class Link: public language {
     private:
-	List<char> *monet_mod_path;
+	List *monet_mod_path;
     public:
 	Link(){ libsfx = strdup(""); }
 	const char *get_name() const{ return "Link"; }
@@ -65,7 +65,7 @@ int Link::generate_code( ostream &o, Symbol *root ){
 
 ostream &Link::gen_module( ostream &o, const Module &d ){ 
 	char *p, *q ,*mod_path = getenv("MONET_MOD_PATH");
-	monet_mod_path = new List<char>(10);
+	monet_mod_path = new List(10);
 	if (mod_path){
 		mod_path = strdup(mod_path);
 		q = mod_path; 
@@ -117,9 +117,9 @@ ostream &Link::gen_dependency( ostream &o, const Dependency &d ){
 	if (monet_mod_path){
 		char *ldir = NULL;
 		int  ldirlen = 0;
-		ListIterator<char> *li = monet_mod_path->iterator();
+		ListIterator *li = monet_mod_path->iterator();
 		char *dir;
-		while(li->next(dir)){
+		while(li->next((void*)dir)){
 			int mlen = matchlen(dir, d.filename());
 			if (mlen >= ldirlen){
 				ldirlen = mlen;

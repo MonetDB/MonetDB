@@ -21,12 +21,12 @@ class Command : public Symbol {
 	Command( int t, char *n, 
 	      char *fcn, int type,
 	      Symbol *result = NULL, 
-	      List<Symbol> *args = NULL,
+	      List *args = NULL,
 	      char *hlp = NULL); 
 
 	char *fcn() const; 
 	Symbol *result() const;
-	List<Symbol> *args() const;
+	List *args() const;
 	char *hlp() const;
 	int type() const;
 	int varargs() const;
@@ -43,7 +43,7 @@ class Command : public Symbol {
 	int _type;
 	int _id;
     protected:
-	List<Symbol> *_args;
+	List *_args;
 };
 #endif 
 
@@ -64,7 +64,7 @@ extern "C" {
 */
 
 Command::Command( int t, char *n, char *fcn, int type, Symbol *result, 
-		List<Symbol> *args, char *hlp ) 
+		List *args, char *hlp ) 
 	: Symbol(t,n) {
 	if (fcn) 
 	   _fcn = strdup(fcn);
@@ -88,9 +88,9 @@ void Command::set_arg_names( const char *base ){
 	   	return;
    	int arg_nr = 0;
 	char *name = new char [strlen(base) + 4];
-	ListIterator<Symbol> *iter = _args->iterator();
+	ListIterator *iter = _args->iterator();
 	Symbol *s = NULL;
-	while(iter->next(s)){
+	while(iter->next((void*)s)){
 		if (!s->Name()){
 			sprintf( name,"%s%d", base, arg_nr);
 			s->Name( name );
@@ -103,9 +103,9 @@ void Command::set_arg_names( const char *base ){
 int Command::varargs() const {
 	int varargs = 0;
 	if (args()){
-		ListIterator<Symbol> *iter = args()->iterator();
+		ListIterator *iter = args()->iterator();
 		Symbol *s = NULL;
-		while(iter->next(s)){
+		while(iter->next((void*)s)){
 			if (s->Token() == MEL_VARARGS)
 				varargs = 1;
 		}
@@ -125,7 +125,7 @@ Symbol *Command::result() const {
 	return _result;
 }
 
-List<Symbol> *Command::args() const {
+List *Command::args() const {
 	return _args;
 }
 

@@ -30,9 +30,9 @@ int depend::generate_code( ostream &o, Symbol *root ){
 
 ostream &depend::gen_module( ostream &o, const Module &d ){ 
 	if (d.Deps()){
-		ListIterator<Symbol> *iter = d.Deps()->iterator();
+		ListIterator *iter = d.Deps()->iterator();
 		Symbol *s = NULL;
-		while(iter->next(s)){
+		while(iter->next((void*)s)){
 			o << d.filename() << ": ";
 			s->print( this, o );
 		}

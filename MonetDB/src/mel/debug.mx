@@ -38,16 +38,16 @@ ostream &debug::gen_module( ostream &o, const Module &d ){
 	o << " */\n"; 
 
 //	if (d.Deps()){
-//		ListIterator<Symbol> *iter = d.Deps()->iterator();
+//		ListIterator *iter = d.Deps()->iterator();
 //		Symbol *s = NULL;
-//		while(iter->next(s)){
+//		while(iter->next((void*)s)){
 //			s->print( this, o );
 //		}
 //	}
 	if (d.Defs()){
-		ListIterator<Symbol> *iter = d.Defs()->iterator();
+		ListIterator *iter = d.Defs()->iterator();
 		Symbol *s = NULL;
-		while(iter->next(s)){
+		while(iter->next((void*)s)){
 			s->print( this, o );
 		}
 	}

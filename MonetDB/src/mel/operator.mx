@@ -34,8 +34,8 @@ class Operator : public Command {
 #include "language.h"
 #include <string.h>
 
-List<Symbol> *oplist(Symbol *op1, Symbol *op2){
-	List<Symbol> *l = new List<Symbol>(3);
+List *oplist(Symbol *op1, Symbol *op2){
+	List *l = new List(3);
 	if (op1) l->insert(op1);
 	if (op2) l->insert(op2);
 	return l;

@@ -280,13 +280,13 @@ int glue::generate_table( ostream &o, Symtable *_tableptr ){
 ostream &glue::gen_command_args( ostream &o, const Command  &d,const char* sep){
 	if (d.args()){
 	   	arg_nr = 1;
-		ListIterator<Symbol> *iter = d.args()->iterator();
+		ListIterator *iter = d.args()->iterator();
 		Symbol *s = NULL;
-		if (iter->next(s)){
+		if (iter->next((void*)s)){
 			s->print( this, o );
 			arg_nr++;
 		}
-		while(iter->next(s)){
+		while(iter->next((void*)s)){
 			o << sep;
 			s->print( this, o );
 			arg_nr++;
@@ -299,12 +299,12 @@ ostream &glue::gen_operator_args( ostream &o, const Operator &d, const char* sep
 	return this->gen_command_args(o, d, sep);
 }
 
-ostream &print_list( ostream &o, List<Symbol> *l, language *u ){
+ostream &print_list( ostream &o, List *l, language *u ){
 
 	if (l){
-		ListIterator<Symbol> *iter = l->iterator();
+		ListIterator *iter = l->iterator();
 		Symbol *s = NULL;
-		while(iter->next(s)){
+		while(iter->next((void*)s)){
 			s->print( u, o );
 		}
 	}
@@ -949,13 +949,13 @@ ostream &forward::gen_command( ostream &o, const Command &d ){
 	if (d.args()){
 	   	if (d.result())
 	      		o << ", ";
-	   	ListIterator<Symbol> *iter = d.args()->iterator();
+	   	ListIterator *iter = d.args()->iterator();
 	   	Symbol *s = NULL;
-	   	if (iter->next(s)){
+	   	if (iter->next((void*)s)){
 			arg_nr++;
 			s->print( this, o );
 	   	}
-	   	while(iter->next(s)){
+	   	while(iter->next((void*)s)){
 			arg_nr++;
 	      		o << ", ";
 			s->print( this, o );

@@ -528,7 +528,7 @@ int main(int argc, char **argv) {
 	struct passwd *pwd = getpwuid(getuid());
 	char	*command = 0;
  	char	*prelude  = 0;  
-	char	*port = (char *) getenv("MONETPORT");
+	char	*port = (char *) getenv("MAPIPORT");
   	int	block = 0;
 	int	debug = 0;
 	int	i;
@@ -546,6 +546,7 @@ int main(int argc, char **argv) {
 
 	program = argv[0];
         strcpy(name, pwd?pwd->pw_name:"guest");
+	if (!port) port = (char *) getenv("MONETPORT");
 	if (port) strcpy(address, port);
  
 	if (argc == 0) {

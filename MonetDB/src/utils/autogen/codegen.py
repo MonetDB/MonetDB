@@ -381,6 +381,7 @@ def codegen(tree, cwd, topdir):
       	    tree.value(i)["TARGETS"] = targets
       	    tree.value(i)["DEPS"] = deps
 		 
+	    # todo fix this stuff
 	    if (i[0:4] == "lib_"):
 	      if (libs.has_key(i[4:]+"_LIBS")):
 	        d = libs[i[4:]+"_LIBS"]

@@ -11,17 +11,17 @@
 class Module : public Symbol {
     public:
 	Module( int t, char *n, char *fn, 
-		    List<Symbol> *deps = NULL,
-		    List<Symbol> *defs = NULL );
-	List<Symbol> *Deps() const ;
-	List<Symbol> *Defs() const ;
+		    List *deps = NULL,
+		    List *defs = NULL );
+	List *Deps() const ;
+	List *Defs() const ;
 	char *filename() const;
 
 	virtual ostream &print( language *l, ostream &o ) const ;
     private:
 	char *_fn;
-	List<Symbol>*	 _deps;
-	List<Symbol>*	 _defs;
+	List*	 _deps;
+	List*	 _defs;
 };
 #endif // _MODULE_H_
 
@@ -32,18 +32,18 @@ class Module : public Symbol {
 
 
 Module::Module( int t, char *n, char *fn,
-		List<Symbol> *deps,
-		List<Symbol> *defs ) : Symbol(t,n) {
+		List *deps,
+		List *defs ) : Symbol(t,n) {
 	_fn = strdup(fn);
 	_deps = deps;
 	_defs = defs;
 }
 
-List<Symbol> *Module::Deps() const {
+List *Module::Deps() const {
 	return _deps;
 }
 
-List<Symbol> *Module::Defs() const {
+List *Module::Defs() const {
 	return _defs;
 }
 

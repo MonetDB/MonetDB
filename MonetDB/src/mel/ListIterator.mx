@@ -5,17 +5,16 @@
 #ifndef _LISTITERATOR_H_
 #define _LISTITERATOR_H_
 
-template<class T>
 class ListIterator {
     public:
-	ListIterator( T **base, int nr )
+	ListIterator( void **base, int nr )
 	{
 	  _base = base;
 	  _nr = nr;
 	  _cur = 0;	
  	}
 
-	int next( T* &obj )
+	int next( void* &obj )
 	{
 		if (_cur < _nr) {
 			obj = _base[_cur++];
@@ -25,7 +24,7 @@ class ListIterator {
 	}
 
     private:
-	T**_base;
+	void**_base;
 	int _nr;
 	int _cur;
 };

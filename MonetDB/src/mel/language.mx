@@ -100,18 +100,18 @@ class language {
 		return o; 
 	}
 
-	ostream &gen_list( ostream &o, List<Symbol> *, const char *sep = "");
+	ostream &gen_list( ostream &o, List *, const char *sep = "");
 };
 
 inline ostream &
-language::gen_list( ostream &o, List<Symbol> *l, const char* sep){ 
+language::gen_list( ostream &o, List *l, const char* sep){ 
 	
 	if (l){
-		ListIterator<Symbol> *iter = l->iterator();
+		ListIterator *iter = l->iterator();
 		Symbol *s = NULL;
-		if(iter->next(s))
+		if(iter->next((void*)s))
 			s->print( this, o );
-		while(iter->next(s)){
+		while(iter->next((void*)s)){
 			o << sep;
 			s->print( this, o );
 		}

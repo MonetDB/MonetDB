@@ -294,8 +294,8 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 ostream &proto::gen_acc( ostream &o, const Acc &d ){
 	acc = (char*)d.Name();
 	if (d.args()){
-		ListIterator<Symbol> *iter = d.args()->iterator();
-		iter->next(acc_arg);
+		ListIterator *iter = d.args()->iterator();
+		iter->next((void*)acc_arg);
 	}
 	
 	o << mod_export << " int\tACC_" << d.Name() << ";\n\n\n";
@@ -440,11 +440,11 @@ ostream &proto::gen_command( ostream &o, const Command &d ){
 	   	if (d.result()){
 		   	o << ", ";
 		}
-		ListIterator<Symbol> *iter = d.args()->iterator();
+		ListIterator *iter = d.args()->iterator();
 		Symbol *s = NULL;
-		if (iter->next(s))
+		if (iter->next((void*)s))
 			s->print( this, o );
-		while(iter->next(s)){
+		while(iter->next((void*)s)){
 		   	o << ", ";
 			s->print( this, o );
 		}
@@ -488,11 +488,11 @@ ostream &proto::gen_iterator( ostream &o, const Iterator &d ){
 	o << " */\n";
 	o << "int " << d.fcn() <<"( ";
 	if (d.args()){
-		ListIterator<Symbol> *iter = d.args()->iterator();
+		ListIterator *iter = d.args()->iterator();
 		Symbol *s = NULL;
-		if (iter->next(s))
+		if (iter->next((void*)s))
 			s->print( this, o );
-		while(iter->next(s)){
+		while(iter->next((void*)s)){
 		   	o << ", ";
 			s->print( this, o );
 		}

@@ -11,16 +11,16 @@
 class Acc : public Symbol {
     public:
 	Acc( int t, char *n, 
-	      List<Symbol> *args = NULL,
+	      List *args = NULL,
 	      Ops **cmds = NULL ); 
 
-	List<Symbol> *args() const;
+	List *args() const;
 	Ops **cmds() const;
 
 	virtual ostream &print( language *l, ostream &o ) const ;
     private:
     	void set_arg_names( const char * base );
-	List<Symbol> *_args;
+	List *_args;
 	Ops **_cmds;
 };
 #endif 
@@ -31,7 +31,7 @@ class Acc : public Symbol {
 #include "language.h"
 #include <string.h>
 
-Acc::Acc( int t, char *n, List<Symbol> *args, Ops **cmds ) : 
+Acc::Acc( int t, char *n, List *args, Ops **cmds ) : 
    	Symbol(t,n) {
 	_args = args;
 	set_arg_names( "Atom" );
@@ -44,9 +44,9 @@ void Acc::set_arg_names( const char *base ){
 	   	return;
    	int arg_nr = 0;
 	char *name = new char [strlen(base) + 4];
-	ListIterator<Symbol> *iter = _args->iterator();
+	ListIterator *iter = _args->iterator();
 	Symbol *s = NULL;
-	while(iter->next(s)){
+	while(iter->next((void*)s)){
 		if (!s->Name()){
 			sprintf( name,"%s%d", base, arg_nr);
 			s->Name( name );
@@ -56,7 +56,7 @@ void Acc::set_arg_names( const char *base ){
 	delete(name);
 }
 
-List<Symbol> *Acc::args() const {
+List *Acc::args() const {
 	return _args;
 }
 

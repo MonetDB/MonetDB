@@ -13,7 +13,7 @@ class FileInfo {
 	FileInfo( FILE *f, int lineno, char *filename, 
 		  char *basename,  FileInfo *parent = NULL);
 	~FileInfo();
-	static char *find_module( char *name, List<char> *dir_list );
+	static char *find_module( char *name, List *dir_list );
 	static FileInfo *open( char *filename, 
 			       char *basename = NULL, 
 			       FileInfo *parent = NULL );
@@ -108,7 +108,7 @@ static char *new_filename( const char *dir, const char *name, const char *ext ){
 	return fn;
 } 
 
-char *FileInfo::find_module( char *name, List<char> *dir_list ){
+char *FileInfo::find_module( char *name, List *dir_list ){
 	char *fn = new_filename( ".", name, ".m" );
 	FILE *fp = fopen(fn, "r" );
 	if (fp){
@@ -117,8 +117,8 @@ char *FileInfo::find_module( char *name, List<char> *dir_list ){
 	} else {
 		delete fn;
 		char *dir = NULL;
-		ListIterator<char> *iter = dir_list->iterator();
-		while (iter->next(dir)){
+		ListIterator *iter = dir_list->iterator();
+		while (iter->next((void*)dir)){
 			fn = new_filename( dir, name, ".m" );
 			fp = fopen(fn, "r" );
 			if (fp){

@@ -148,7 +148,7 @@ typedef union {
         int i;		// integer
         char *s;	// string
 	Symbol *sym;	// symbol
-	List<Symbol> *l;// symbol list
+	List *l;// symbol list
 	Ops **a; 	// symbol array
 	Ops *op; 	// Operation 
 	struct { 
@@ -190,7 +190,7 @@ extern FILE* yyin;
 extern Symtable *table;
 extern Symbol *root;
 extern FileInfo *fileinfo;
-extern List<char> *dirs;
+extern List *dirs;
 
 #endif
 
@@ -218,16 +218,9 @@ char  *outfile = 0;
 Symtable *table = NULL;
 Symbol *root = NULL;
 FileInfo *fileinfo = NULL;
-List<char> *dirs = NULL;
+List *dirs = NULL;
 
 language *l = NULL;
-
-template class List<char>;
-template class List<Symbol>;
-template class ListIterator<char>;
-template class ListIterator<Symbol>;
-#if defined(EXPLICIT_TEMPLATES) && !defined(__CYGWIN32__)
-#endif
 
 const char *token2str( int token ){
         switch (token){
@@ -356,7 +349,7 @@ int main(int argc, char *argv[] ){
          * First general arguments
 	 * second lang specific
  	 */
-	dirs = new List<char>(50);
+	dirs = new List(50);
 	if (!handle_args( argc, argv )){
 	   	exit(EXIT_FAILURE);
 	}
@@ -818,7 +811,7 @@ modulelist:
          if ($3.sym)
 	 	$$.l->insert( $3.sym ); }
     |   modulename
-       { $$.l = new List<Symbol>(50);
+       { $$.l = new List(50);
          if ($1.sym)
 	 	$$.l->insert( $1.sym ); }
 
@@ -853,7 +846,7 @@ ne_definitions:
 	if ($2.sym)
 		$$.l->insert( $2.sym ); }
    |    definition
-      { $$.l = new List<Symbol>(500); 
+      { $$.l = new List(500); 
 	if ($1.sym)
 		$$.l->insert( $1.sym ); }
 
@@ -940,7 +933,7 @@ ne_args:
 	 if ($3.sym)
 	 	$$.l->insert( $3.sym ); }
     |	arg
-       { $$.l = new List<Symbol>(20);
+       { $$.l = new List(20);
 	 if ($1.sym)
 	 	$$.l->insert( $1.sym ); }
 
