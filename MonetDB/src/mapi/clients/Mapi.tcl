@@ -57,7 +57,7 @@ proc ::mapi::connect { server port user } {
 		return 1
 	}
 
-	fconfigure $::mapi::state(socket) -translation binary
+	fconfigure $::mapi::state(socket) -translation binary -encoding utf-8
 	fconfigure $::mapi::state(socket) -blocking no
 
 	mapi::cmd_intern $user
@@ -152,7 +152,7 @@ proc ::mapi::getstring { endchr } {
 	}
 	append str [ string range $::mapi::state(buffer) 0 [ expr $idx - 1 ] ]
 	set ::mapi::state(buffer) [ string range $::mapi::state(buffer) [ expr $idx + 1 ] end ] 
-	return $str
+    return [encoding convertfrom utf-8 $str]
 }
    	
 proc ::mapi::getprompt { } {
