@@ -163,8 +163,10 @@ static void fatal_err(XqueryCtx* ctx, const char *msg, ...) {
 
 static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int batID, int wsID) {
         BUN bun;
+        oid BATid = (oid)batID;
+        oid WSid  = (oid)wsID;
 
-        if ( !(bun = BUNfnd(ws,&batID)) )
+        if ( !(bun = BUNfnd(ws,&BATid)) )
               fatal_err(ctx,"fetchWsContextBAT: NOT FOUND BAT[%d]",batID);
 
         BAT* batbat;
@@ -172,7 +174,7 @@ static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int batID, int wsID) {
         if ( !( batbat = BATdescriptor(*(bat*)bun)) )
                 fatal_err(ctx,"fetchWsContextBAT:FETCH BATBAT for WS[%d][%d] FAILED\n",batID ,wsID);
 
-        BUN bbun = BUNfnd(batbat,&wsID);
+        BUN bbun = BUNfnd(batbat,&WSid);
         BAT *res = NULL;
         if ( !bbun )
                 fatal_err(ctx,"fetchWsContextBAT:NOT FOUND BAT[%d][%d] in WS!!!!\n",batID,wsID);
@@ -756,7 +758,7 @@ static void MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag)
  */
 
 static int ws_documentIndex(BAT* ws, str docName) {
-        int doc_loaded_idx = DOC_LOADED;
+        oid doc_loaded_idx = (oid)DOC_LOADED;
 
         BUN b = BUNfnd(ws,&doc_loaded_idx);
         /*
