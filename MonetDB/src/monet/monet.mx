@@ -501,11 +501,10 @@ than to Monet.
                         monet_prelude = absolute_path(argv[++i]);
                     } else {
 			if ( argv[i][2] != 0 ) {
-			    monet_prompt[0] = '\1';
+			    monet_prompt = strdup("\1\1\1");
 			    monet_prompt[1] = argv[i][2];
-			    monet_prompt[2] = '\1';
 			} else {
-			    monet_prompt = "\1\1";
+			    monet_prompt = strdup("\1\1");
 			}
 		    }
 
