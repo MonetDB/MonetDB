@@ -40,8 +40,14 @@ data files.
 #define stream_export extern 
 #endif
 
+#define EOT 4
+
+#define ST_READ  0
+#define ST_WRITE 1
+
 typedef struct stream {
 	short byteorder;
+	short access;/* read/write */
 	char *filename;
 	char *stream_data;
 	int errnr;
@@ -86,7 +92,40 @@ stream_export stream *file_wstream( FILE *fp, char *name );
 stream_export stream *file_rastream( FILE *fp, char *name );
 stream_export stream *file_wastream( FILE *fp, char *name );
 
+typedef struct buffer {
+	char *buf;
+	int pos;
+	int len;
+} buffer;
+
+stream_export buffer *buffer_create( int size );
+stream_export char *buffer_get_buf( buffer *b );
+stream_export void buffer_destroy( buffer *b );
+
+stream_export stream *buffer_rastream( buffer *b, char *name );
+stream_export stream *buffer_wastream( buffer *b, char *name );
+stream_export buffer *stream_get_buffer( stream *s );
+
+#define BLOCK 8192
+/* 
+   Block stream is a stream which sends data in blocks of a known
+   size (BLOCK size or dynamically changed using CHANGE_BLOCK_SIZE msg).
+
+   A block is writen once more then BLOCK size data has been writen using
+   the write or writeInt commands or when the flush command is send.
+
+   All full blocks together with a single not full block from a major
+   block. Major blocks can be used to synchronize the communication.
+   Example server sends some reply, ie a major block consisting of
+   verious minor blocks. The header of the major block can contain
+   special info which the client can interpert.
+   
+   Each read attempt tries to return the number of bytes. Once a lower number
+   of bytes can be read the end of the major block if found. The next
+   read will then start with a new major block.
+ */
 stream_export stream *block_stream( stream *s );
+stream_export int bs_read_next( stream *s, char *buf, int *last );
 
 #endif /*_STREAM_H_*/
 @c
@@ -144,8 +183,9 @@ static void stream_destroy( stream *s){
 
 static stream *create_stream( char *filename ){
 	stream *s = (stream*)malloc(sizeof(stream));
-if (!s) printf("malloc NULLLL\n");
+	/*assert(s);*/
 	s->byteorder = 1234;
+	s->access = ST_READ;
 	s->filename = strdup(filename); 
 	s->stream_data = NULL;
 	s->errnr = NO__ERROR;
@@ -286,6 +326,7 @@ stream *open_wstream( char *filename ){
 #endif
 	{
 		s = open_stream( filename, "wb");
+		s->access = ST_WRITE;
 		if (s->errnr == NO__ERROR)
 	   		fwrite( (char*)&s->byteorder, sizeof(short), 
 						1, (FILE*)s->stream_data);
@@ -355,6 +396,7 @@ stream *open_wastream( char *filename ){
 #endif
 	{
 		s = open_stream( filename, "wb");
+		s->access = ST_WRITE;
 		return s;
 	}
 }
@@ -417,6 +459,7 @@ stream *open_gzrstream( char *filename ){
 }
 stream *open_gzwstream( char *filename ){
 	stream *s = open_gzstream( filename, "wb");
+	s->access = ST_WRITE;
 	if (s->errnr == NO__ERROR)
 	   gzwrite( (gzFile*)s->stream_data, (char*)&s->byteorder, sizeof(short));
 	return s;
@@ -427,6 +470,7 @@ stream *open_gzrastream( char *filename ){
 }
 stream *open_gzwastream( char *filename ){
 	stream *s = open_gzstream( filename, "wb");
+	s->access = ST_WRITE;
 	return s;
 }
 #endif
@@ -488,6 +532,7 @@ stream *open_bzrstream( char *filename ){
 }
 stream *open_bzwstream( char *filename ){
 	stream *s = open_bzstream( filename, "wb");
+	s->access = ST_WRITE;
 	if (s->errnr == NO__ERROR) BZ2_bzwrite( 
 		(BZFILE*)s->stream_data, (char*)&s->byteorder, sizeof(short) );
 	return s;
@@ -498,6 +543,7 @@ stream *open_bzrastream( char *filename ){
 }
 stream *open_bzwastream( char *filename ){
 	stream *s = open_bzstream( filename, "wb");
+	s->access = ST_WRITE;
 	return s;
 }
 #endif
@@ -529,8 +575,10 @@ static void socket_flush( stream *s ){
 }
 static void socket_close( stream *s ){
 	int fd = (int)s->stream_data;
-	shutdown(fd,2);
-	close(fd);
+	if (s->access == ST_READ)
+		shutdown(fd,0);
+	else
+		shutdown(fd,1);
 }
 static
 stream *socket_open( int socket, char *name ){
@@ -577,6 +625,7 @@ stream *socket_rstream( int socket, char *name ){
 
 stream *socket_wstream( int socket, char *name ){
 	stream *s = socket_open( socket, name );
+	s->access = ST_WRITE;
 	if (s->errnr == NO__ERROR)
 	   	write( socket, (char*)&s->byteorder, sizeof(short));
 	return s;
@@ -587,7 +636,9 @@ stream *socket_rastream( int socket, char *name ){
 }
 
 stream *socket_wastream( int socket, char *name ){
-	return socket_open( socket, name );
+	stream *s = socket_open( socket, name );
+	s->access = ST_WRITE;
+	return s;
 }
 
 stream *file_stream( char *name ){
@@ -617,6 +668,7 @@ stream *file_rstream( FILE *fp, char *name ){
 
 stream *file_wstream( FILE *fp, char *name ){
 	stream *s = file_stream(name);
+	s->access = ST_WRITE;
 	if (fp != NULL){ 
 		s->stream_data = (char*)fp;
 
@@ -643,6 +695,7 @@ stream *file_rastream( FILE *fp, char *name ){
 
 stream *file_wastream( FILE *fp, char *name ){
 	stream *s = file_stream(name);
+	s->access = ST_WRITE;
 	if (fp != NULL){ 
 		s->stream_data = (char*)fp;
 		return s;
@@ -651,7 +704,88 @@ stream *file_wastream( FILE *fp, char *name ){
 	return s;
 } 
 
-#define BLOCK 4096
+buffer *buffer_create( int size ){
+	buffer *b = (buffer*)malloc(sizeof(buffer));
+	b->pos = 0;
+	b->buf = malloc(BUFSIZ);
+	b->len = BUFSIZ;
+	return b;
+}
+
+char *buffer_get_buf( buffer *b ){
+	char *r = malloc(b->pos+1);
+	memcpy(r,b->buf,b->pos);
+	r[b->pos] = '\0';
+	return r;
+}
+
+void buffer_destroy( buffer *b ){
+	free(b->buf);
+	free(b);
+}
+
+buffer *stream_get_buffer( stream *s ){
+	return (buffer*)s->stream_data;
+}
+
+static int buffer_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
+	int size = elmsize*cnt;
+	buffer *b = (buffer*)s->stream_data;
+	if (b->pos+size <= b->len){
+		memcpy(buf,b->buf+b->pos, size );
+		b->pos += size;
+		return size;
+	} else {
+		s->errnr = READ_ERROR;
+		return 0;
+	}
+}
+static int buffer_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
+	int size = elmsize*cnt;
+	buffer *b = (buffer*)s->stream_data;
+	if (b->pos+size > b->len){
+		int ns = b->len;
+		while(b->pos+size > ns) ns *= 2;
+		b->buf = realloc(b->buf, ns);
+		b->len = ns;
+	}
+	memcpy(b->buf+b->pos, buf, size );
+	b->pos += size;
+	return size;
+}
+
+static void buffer_close( stream *s ){ }
+static void buffer_flush( stream *s ){ 
+	buffer *b = (buffer*)s->stream_data;
+	b->pos = 0;
+}
+
+stream *buffer_rastream( buffer *b, char *name ){
+	stream *s = create_stream(name);
+	s->read  = &buffer_read;
+	s->write = &buffer_write;
+	s->readInt  = &stream_readInt;
+	s->writeInt = &stream_writeInt;
+	s->close = &buffer_close;
+	s->error = &stream_error;
+	s->flush = &buffer_flush;
+	s->stream_data = (char*)b;
+	return s;
+}
+
+stream *buffer_wastream( buffer *b, char *name ){
+	stream *s = create_stream(name);
+	s->access = ST_WRITE;
+	s->read  = &buffer_read;
+	s->write = &buffer_write;
+	s->readInt  = &stream_readInt;
+	s->writeInt = &stream_writeInt;
+	s->close = &buffer_close;
+	s->error = &stream_error;
+	s->flush = &buffer_flush;
+	s->stream_data = (char*)b;
+	return s;
+}
 
 typedef struct bs {
 	stream *s;
@@ -686,12 +820,13 @@ int bs_write( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 		s->s->writeInt( s->s, BLOCK);
 		s->s->write( s->s, s->out, 1, BLOCK);
 		s->onr = 0;
-	}
-	while (todo >= BLOCK){
-		s->s->writeInt( s->s, BLOCK);
-		s->s->write( s->s, buf, 1, BLOCK);
-		buf += BLOCK;
-		todo -= BLOCK;
+
+		while (todo >= BLOCK){
+			s->s->writeInt( s->s, BLOCK);
+			s->s->write( s->s, buf, 1, BLOCK);
+			buf += BLOCK;
+			todo -= BLOCK;
+		}
 	}
 	memcpy( s->out+s->onr, buf, todo );
 	s->onr += todo;
@@ -725,6 +860,7 @@ int bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 		buf += nr;
 		todo -= nr;
 		if (nr < BLOCK){
+			s->itotal = s->inr = 0;
 			return cnt - (todo/elmsize);
 		}
 	} 
@@ -752,15 +888,29 @@ int bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 	}
 }
 
-static
-int bs_writeInt( stream *ss, const int res ){
-	printf("writeInt not available \n");
-	return -1;
-}
-static
-int bs_readInt( stream *ss, int *res ){
-	printf("readInt not available \n");
-	return -1;
+extern 
+int bs_read_next( stream *ss, char *buf, int *last ){
+	bs *s = (bs*)ss->stream_data;
+	int nr = 0;
+
+	*last = 0;
+	if (s->itotal > s->inr ){
+		int rest = s->itotal - s->inr;
+		memcpy( buf, s->in + s->inr, rest );
+
+		s->inr = 0;
+		s->itotal = 0;
+		*last = (s->itotal != BLOCK);
+		return rest;
+	} else {
+		s->s->readInt( s->s, &nr);
+		s->s->read( s->s, buf, 1, nr);
+		if (nr < BLOCK){
+			*last = 1;
+			s->itotal = s->inr = 0;
+		} 
+		return nr;
+	} 
 }
 
 static
@@ -791,8 +941,8 @@ stream *block_stream( stream *s ){
 	bs *bs = bs_create(s);
 	ns->read  = &bs_read;
 	ns->write = &bs_write;
-	ns->readInt  = &bs_readInt;
-	ns->writeInt = &bs_writeInt;
+	ns->readInt  = &stream_readInt;
+	ns->writeInt = &stream_writeInt;
 	ns->close = &bs_close;
 	ns->error = &stream_error;
 	ns->flush = &bs_flush;
