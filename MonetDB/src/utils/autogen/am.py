@@ -656,7 +656,7 @@ output_funcs = { 'SUBDIRS': am_subdirs,
 
 def output(tree, cwd, topdir, automake):
     global am_assign
-    if (int(automake) >= int(1005000)):
+    if (int(automake) >= int(1005000) and int(automake) < int(1006000) ):
         am_assign = "="
 
     # use binary mode since automake on Cygwin can't deal with \r\n
