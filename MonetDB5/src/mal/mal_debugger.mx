@@ -468,7 +468,7 @@ signatures satisfying the pattern.
 				for(i=0;i<MAXSCOPE;i++){
 					fs= fsym->subscope[i];
 					while(fs != NULL){
-						printFunction(out,fs->def,cntxt->listing);
+						printFunction(out,fs->def,listing);
 						fs= fs->peer;
 					}
 				}
@@ -486,7 +486,7 @@ signatures satisfying the pattern.
 				stream_printf(out,"%sSymbol '%s.%s' not found\n",
 					"#mdb ",modname,fcnname);
 			} 
-		} else printFunction(out,mb,cntxt->listing);
+		} else printFunction(out,mb,listing);
 		continue;
 	}
 	case 'r': /* reset program counter */
@@ -573,7 +573,12 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
 	}
 	nme= malTypeName(n->type);
 	nmeOnStk= malTypeName(v->vtype);
-	stream_printf(f,":%s %s %s", nme, nmeOnStk, (n->isaconstant?" constant":""));
+	stream_printf(f,":%s", nme);
+	if( strcmp(nmeOnStk,nme) && 
+	    !(isaBatType(n->type) && strcmp(nmeOnStk,"BAT")==0)){
+		stream_printf(f," != %s (%d)", nmeOnStk,v->vtype);
+	}
+	stream_printf(f," %s", (n->isaconstant?" constant":""));
 	GDKfree(nme); GDKfree(nmeOnStk);
 	if(cnt && isaBatType(n->type) && v->val.ival){
 		BAT *b,*bs;
@@ -593,7 +598,8 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
 			stream_printf(f,"Failed to take chunk\n");
 		else BATmultiprintf(f,2,&bs,TRUE,0);
 		BBPunfix(b->batCacheid);
-	} else {
+	} else 
+	if( isaBatType(n->type)){
 		BAT *b;
 		b= BATdescriptor(v->val.ival);
 		if(b){
@@ -601,8 +607,8 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
 				BATcount(b),BBP_refs(b->batCacheid));
 			BBPunfix(b->batCacheid);
 		}
-		stream_printf(f,"\n");
 	}
+	stream_printf(f,"\n");
 }
 void printBatInfo(stream *f, VarPtr n, ValPtr v){
 	if(isaBatType(n->type) && v->val.ival){

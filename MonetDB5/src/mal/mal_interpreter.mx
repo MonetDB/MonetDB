@@ -207,6 +207,9 @@ of the return statement.
 @c
 		pci= pcicaller;
 		pp = getInstrPtr(mb, 0);
+		/* set return type */
+		lhs = &stk->stk[0];
+		lhs->vtype =getGDKtype(getVarType(mb,0));
 		/* stream_printf(GDKout,"recursive MAL function call %s[%d]\n",
 			functionName(pci),pcicaller); */
 		for(k=pp->retc, i= pci->retc; i<pci->argc; i++,k++){
@@ -257,6 +260,7 @@ we should first remove garbage.
 	task.pcicaller=pcicaller;
 	task.pci= 0;
 
+	if(env && stk->cmd!='f') stk->cmd = env->cmd ;
 	ret= runMALsequence(&task);
 
 	@:waitForChildren@
