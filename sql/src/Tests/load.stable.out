@@ -42,7 +42,6 @@ loading module 'sqlserver'
 [ "arith",	  3		  ]
 [ "ascii_io",	  3		  ]
 [ "bat",	  3		  ]
-[ "decimal",	  3		  ]
 [ "kernel",	  3		  ]
 [ "main",	  3		  ]
 [ "mapi",	  3		  ]

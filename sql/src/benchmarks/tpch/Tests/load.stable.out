@@ -15,24 +15,32 @@ quit;
 
 Over..
 
-# 19:02:41 >  
-# 19:02:41 >  Mtimeout -timeout 180 python load.SQL.py load 
-# 19:02:41 >  
+# 16:40:35 >  
+# 16:40:35 >  Mtimeout -timeout 1140 python load.SQL.py load 
+# 16:40:35 >  
 
 
-# 19:02:41 >  
-# 19:02:41 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=55885 --trace
-# 19:02:41 >  
+# 16:40:35 >  
+# 16:40:35 >  Mtimeout -timeout 540 Msql -u monetdb -P monetdb --host=db1 --port=58043 --trace
+# 16:40:35 >  
 
 SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 1 COPY 1500 RECORDS INTO customer from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/customer.tbl' USING DELIMITERS '|', '|\n';
-#     2: 1 COPY 25 RECORDS INTO nation from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/nation.tbl' USING DELIMITERS '|', '|\n';
-#     3: 1 COPY 15000 RECORDS INTO orders from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/orders.tbl' USING DELIMITERS '|', '|\n';
-#     4: 1 COPY 8000 RECORDS INTO partsupp from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/partsupp.tbl' USING DELIMITERS '|', '|\n';
-#     5: 1 COPY 2000 RECORDS INTO part from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/part.tbl' USING DELIMITERS '|', '|\n';
-#     6: 1 COPY 5 RECORDS INTO region from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/region.tbl' USING DELIMITERS '|', '|\n';
-#     7: 1 COPY 100 RECORDS INTO supplier from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/supplier.tbl' USING DELIMITERS '|', '|\n';
-#     8: 1 COPY 70000 RECORDS INTO lineitem from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/lineitem.tbl' USING DELIMITERS '|', '|\n';
+#     1: 1 COPY 1500 RECORDS INTO customer from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/customer.tbl' USING DELIMITERS '|', '|\n';
+SQL  1500 Rows affected
+#     2: 1 COPY 25 RECORDS INTO nation from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/nation.tbl' USING DELIMITERS '|', '|\n';
+SQL  25 Rows affected
+#     3: 1 COPY 15000 RECORDS INTO orders from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/orders.tbl' USING DELIMITERS '|', '|\n';
+SQL  15000 Rows affected
+#     4: 1 COPY 8000 RECORDS INTO partsupp from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/partsupp.tbl' USING DELIMITERS '|', '|\n';
+SQL  8000 Rows affected
+#     5: 1 COPY 2000 RECORDS INTO part from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/part.tbl' USING DELIMITERS '|', '|\n';
+SQL  2000 Rows affected
+#     6: 1 COPY 5 RECORDS INTO region from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/region.tbl' USING DELIMITERS '|', '|\n';
+SQL  5 Rows affected
+#     7: 1 COPY 100 RECORDS INTO supplier from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/supplier.tbl' USING DELIMITERS '|', '|\n';
+SQL  100 Rows affected
+#     8: 1 COPY 70000 RECORDS INTO lineitem from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/lineitem.tbl' USING DELIMITERS '|', '|\n';
+SQL  60175 Rows affected
 #     9: 1 COMMIT;
 
 # 19:03:00 >  
