@@ -1,0 +1,294 @@
+#
+# The contents of this file are subject to the MonetDB Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy of
+# the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+#
+# Software distributed under the License is distributed on an "AS
+# IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+# implied. See the License for the specific language governing
+# rights and limitations under the License.
+# 
+# The Original Code is the ``Pathfinder'' system. The Initial
+# Developer of the Original Code is the Database & Information
+# Systems Group at the University of Konstanz, Germany. Portions
+# created by U Konstanz are Copyright (C) 2000-2003 University
+# of Konstanz. All Rights Reserved.
+#
+# Contributors:
+#         Torsten Grust <torsten.grust@uni-konstanz.de>
+#         Maurice van Keulen <M.van.Keulen@bigfoot.com>
+#         Jens Teubner <jens.teubner@uni-konstanz.de>
+#
+
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(loader/pf-shred.c)
+AC_CONFIG_AUX_DIR(conf)
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+AH_TOP([#include "sysdefs.h"])
+AH_BOTTOM([#include "stddef.h"])
+
+dnl ----------------------
+AM_INIT_AUTOMAKE("pathfinder", 0.1, [no-define])
+AM_CONFIG_HEADER(pf_config.h:conf/config.h.in)
+
+HOST=[$target]
+AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
+
+dnl Check for Monet
+AM_MONET_COMPILER()
+AM_MONET_TOOLS()
+AM_MONET_OPTIONS()
+AM_MONET_LIBS()
+AM_MONET_CLIENT(4.3.14)
+if test "x$have_monet" != xyes; then
+	AC_MSG_ERROR(Monet is not found.)
+fi
+AM_PROG_CC_C_O
+
+dnl And we need twig, otherwise stop here.
+AC_CHECK_PROGS(TWIG, twig)
+
+if test "x$TWIG" = "x"; then
+    AC_MSG_ERROR([Unable to find twig in your current PATH.
+                 Please find a version of twig and install it on your system.
+                 If you think twig should already be installed on your system
+                 please make sure that it can be found in your search PATH.])
+fi
+
+dnl
+dnl We use the m4 macro processor and need an extension that is not
+dnl available prior to the (development) version 1.4o of GNU m4.
+dnl
+dnl We first check if we have m4 at all, then see if it understands
+dnl the 'changesyntax' extension.
+dnl
+AC_CHECK_PROGS(M4, m4)
+
+if test "x$M4" = "x"; then
+    AC_MSG_ERROR([Unable to find the m4 macro expander in your current PATH.
+                 Please install m4 version 1.4o or later, to be found on
+                 ftp://ftp.seindal.dk/pub/rene/gnu/])
+fi
+
+dnl AC_MSG_CHECKING([if m4 understands changesyntax])
+
+dnl [cat >conftest.m4 <<_ACEOF
+dnl changesyntax(\`W<[',\`W]',\`D:')
+dnl define(\`[[',\`__(')
+dnl define(\`]]',\`)__')
+dnl [[ foo ]]
+dnl _ACEOF]
+dnl echo "$as_me:$LINENO: $M4 < conftest.m4 > conftest.m4.result" >&5
+dnl eval $M4 < conftest.m4 > conftest.m4.result
+dnl diff conftest.m4.result - <<_ACEOF
+
+
+
+dnl __( foo )__
+dnl _ACEOF
+dnl have_m4=$?
+dnl rm -f conftest.m4 conftest.m4.result
+
+dnl if test x$have_m4 = "x0"; then
+    dnl AC_MSG_RESULT([yes])
+dnl fi
+
+dnl if test x$have_m4 != "x0"; then
+dnl    AC_MSG_RESULT([no])
+dnl    AC_MSG_ERROR([Your m4 macro processor does not understand the
+dnl                 changesyntax extension. Please install a more current
+dnl                 version of m4, at least 1.4o.])
+dnl fi
+dnl (end of m4 checks)
+
+dnl
+dnl We support the GNU getopt library (and its features for long option
+dnl names) if we find it available. Otherwise we fall back to the standard
+dnl Unix unistd.h version.
+dnl
+dnl Check for standard Unix unistd.h
+AC_CHECK_HEADER([unistd.h], [have_unistd="yes"], [have_unistd="no"])
+
+if test x$have_unistd != "xyes"; then
+    AC_MSG_ERROR([Pathfinder needs the getopt function to parse command
+                 line options. Please check the existence of the header file
+                 unistd.h on your system.])
+fi
+
+dnl Check for GNU Getopt
+AC_CHECK_HEADERS([getopt.h])
+
+
+dnl The user may enter a location of the libxml2 library on the command line
+dnl (with `--with-libxml2=DIR) or disable the libxml2 support.
+dnl
+dnl AC_ARG_WITH makes the --with-xxx available, then we do some checks and
+dnl see if we actually found libxml2.
+have_libxml2="auto"
+AC_ARG_WITH(libxml2,
+    [  --with-libxml2=DIR      libxml2 library is installed in DIR],
+    [have_libxml2="$withval"], [have_libxml2="auto"])
+
+save_CPPFLAGS="$CPPFLAGS"
+if test "x$have_libxml2" != xno; then
+
+    if test "x$have_libxml2" != xauto; then
+        LIBXML2_CFLAGS="-I$have_libxml2/include/libxml2"
+        LIBXML2_LIBS="-L$have_libxml2/lib"
+    fi
+
+    if test "x$have_libxml2" = xauto; then
+        LIBXML2_CFLAGS="-I/usr/include/libxml2"
+        LIBXML2_LIBS=""
+    fi
+
+    CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS $LIBXML2_LIBS"
+    AC_CHECK_HEADER([libxml/parser.h],
+                    [AC_CHECK_LIB(xml2, xmlParseDocument,
+                                  [have_libxml2="yes"], [have_libxml2="no"])])
+fi
+CPPFLAGS="$save_CPPFLAGS"
+
+if test "x$have_libxml2" != xyes; then
+    LIBXML2_CFLAGS=""
+    LIBXML2_LIBS=""
+    LIBXML2_LDADD=""
+    PF_LOADER_PROGRAMS=""
+    AC_DEFINE(HAVE_LIBXML2, 0,
+              [Do we have the libxml2 library available to support XML Schema?])
+    AC_MSG_WARN([The libxml2 XML parsing library was not found or you have
+                requested to not use it.
+                This will disable XML Schema import functionality in the
+                Pathfinder compiler. The XML document loader does not work
+                without the libxml2 library and will not be compiled at all.])
+fi
+
+if test "x$have_libxml2" = xyes; then
+    LIBXML2_LDADD="-lxml2"
+    PF_LOADER_PROGRAMS="pf-shred"
+    AC_DEFINE(HAVE_LIBXML2, 1,
+         [Do we have the libxml2 library available to support XML Schema?])
+    AC_MSG_NOTICE([The following compiler options will be used to integrate
+           the libxml2 XML parsing library:
+           To find the libxml2 include files: $LIBXML2_CFLAGS
+           To find the libxml2 library:       $LIBXML2_LIBS])
+fi
+
+dnl Propagate the stuff to the Makefiles
+AC_SUBST(LIBXML2_CFLAGS, $LIBXML2_CFLAGS)
+AC_SUBST(LIBXML2_LIBS, $LIBXML2_LIBS)
+AC_SUBST(LIBXML2_LDADD, $LIBXML2_LDADD)
+AC_SUBST(PF_LOADER_PROGRAMS, $PF_LOADER_PROGRAMS)
+
+dnl See if we have the Hans Boehm garbage collector available
+dnl
+dnl First allow the user to specify a location on the command line.
+dnl Further down see if we find the library and abort if not.
+have_gc="auto"
+AC_ARG_WITH(gc,
+    [  --with-gc=DIR           Boehm garbage collector library is installed in DIR],
+    [have_gc="$withval"], [have_gc="auto"])
+
+if test "x$have_gc" != xauto; then
+        LIBGC_CFLAGS="-I$have_gc/include"
+        LIBGC_LIBS="-L$have_gc/lib"
+fi
+
+if test "x$have_gc" = xauto; then
+        LIBGC_CFLAGS=""
+        LIBGC_LIBS=""
+fi
+
+save_CPPFLAGS="$CPPFLAGS"
+save_LDFLAGS="$LDFLAGS"
+save_LIBS="$LIBS"
+CPPFLAGS="$CPPFLAGS $LIBGC_CFLAGS"
+LDFLAGS="$LDFLAGS $LIBGC_LIBS"
+LIBS=""
+
+dnl If we have the dl and/or the pthread library, use it
+dnl (dl and/or pthread are required for the garbage collection
+dnl library on some systems.)
+LIBGC_LDADD=""
+AC_CHECK_LIB(dl, dlopen, [LIBGC_LDADD="$LIBGC_LDADD -ldl"])
+AC_CHECK_LIB(pthread, pthread_create, [LIBGC_LDADD="$LIBGC_LDADD -lpthread"])
+
+AC_CHECK_HEADER([gc.h],
+    [ dnl See if we can link in the gc library.
+      dnl If we have found the dl and/or pthread library as well, also use it.
+      dnl If the gc library was not found, clear LIBGC_LDADD.
+      AC_CHECK_LIB(gc, GC_malloc,
+                   [LIBGC_LDADD="$LIBGC_LDADD -lgc"],
+                   [LIBGC_LDADD=""], [$LIBGC_LDADD])])
+
+LIBS="$save_LIBS"
+LDFLAGS="$save_LDFLAGS"
+CPPFLAGS="$save_CPPFLAGS"
+
+if test "x$LIBGC_LDADD" = "x"; then
+    AC_MSG_ERROR([Unable to find the Hans Boehm garbage collector.
+                  Please go get it from
+                  http://www.hpl.hp.com/personal/Hans_Boehm/gc/])
+fi
+
+dnl Propagate the variable to the Makefiles
+AC_SUBST(LIBGC_CFLAGS, $LIBGC_CFLAGS)
+AC_SUBST(LIBGC_LIBS, $LIBGC_LIBS)
+AC_SUBST(LIBGC_LDADD, $LIBGC_LDADD)
+
+dnl The user may enter a location of the BerkeleyDB library on the
+dnl command line (with `--with-berkeleydb=DIR) or disable the
+dnl BerkeleyDB support.
+dnl
+dnl AC_ARG_WITH makes the --with-xxx available, then we do some checks and
+dnl see if we actually found BerkeleyDB.
+have_berkeleydb="auto"
+AC_ARG_WITH(berkeleydb,
+    [  --with-berkeleydb=DIR   BerkeleyDB library is installed in DIR],
+    [have_berkeleydb="$withval"], [have_berkeleydb="auto"])
+
+save_CPPFLAGS="$CPPFLAGS"
+if test "x$have_berkeleydb" != xno; then
+
+    if test "x$have_berkeleydb" != xauto; then
+        LIBDB_CFLAGS="-I$have_berkeleydb/include"
+        LIBDB_LIBS="-L$have_berkeleydb/lib"
+    fi
+
+    CPPFLAGS="$CPPFLAGS $LIBDB_CFLAGS $LIBDB_LIBS"
+    AC_CHECK_HEADER([db.h],
+                    [AC_CHECK_LIB(db, db_create,
+                                  [have_berkeleydb="yes"],
+                                  [have_berkeleydb="no"])])
+fi
+CPPFLAGS="$save_CPPFLAGS"
+
+if test "x$have_berkeleydb" != xyes; then
+    LIBDB_CFLAGS=""
+    LIBDB_LIBS=""
+    AC_DEFINE(HAVE_LIBDB, 0, [Do we have the BerkeleyDB library available?])
+    AC_MSG_WARN([The BerkeleyDB library was not found on your system or you
+                have requested not to use it. This will disable the duplicate
+                removal feature in the XML document loader.])
+    LIBDB_LDADD=""
+fi
+
+if test "x$have_berkeleydb" = xyes; then
+    AC_DEFINE(HAVE_LIBDB, 1, [Do we have the BerkeleyDB library available?])
+    AC_MSG_NOTICE([The following compiler options will be used to integrate
+           the BerkelyDB library:
+           To find the BerkeleyDB include files: $LIBDB_CFLAGS
+           To find the libdb library:            $LIBDB_LIBS])
+    LIBDB_LDADD="-ldb"
+fi
+
+dnl Propagate the stuff to the Makefiles
+AC_SUBST(LIBDB_CFLAGS, $LIBDB_CFLAGS)
+AC_SUBST(LIBDB_LIBS, $LIBDB_LIBS)
+AC_SUBST(LIBDB_LDADD, $LIBDB_LDADD)
+
+dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
+CFLAGS="$CFLAGS \$(X_CFLAGS)"
+CXXFLAGS="$CXXFLAGS \$(X_CXXFLAGS)"

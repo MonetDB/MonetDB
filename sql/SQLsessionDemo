@@ -1,0 +1,210 @@
+This document will help you execute the first SQL query on a Monet
+database backend.
+
+This document assumes that you have compiled and installed both the
+Monet back-end and SQL front-end according to the 'HowToStart' descriptions.
+Furthermore, the sanity test checks included did do not produce fatal errors.
+
+Prerequisites:
+==============
+SQL	You should have a basic understanding of SQL syntax.
+	In particular, the SQL front-end is based on SQL-3
+	standard.
+
+Monet	You should be able to start/stop de Monet database server on
+	a given database. 
+
+Getting started
+==============
+Before you start, make sure that both back-end and front-end can be found.
+The command `which Mserver` and `which Msql` should return the proper path
+to the binaries. Likewise, make sure the database directory exists and you 
+have proper file access permissions.
+
+The Monet server does not contain hardwired knowledge on its SQL frontend.
+It must be initialized and told to accept SQL sessions. In a separate window
+start the server for a new SQL database (named VOC);
+
+$ mkdir -p $PREFIX/var/dbfarm/VOC
+$ Mserver --dbname=VOC 
+# Monet Database Server V4.3.14
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+monet>module(sql_server);
+monet>
+
+Here $PREFIX denotes the path where Monet has been installed.
+All databases are kept in $PREFIX/var/dbfarm unless this location
+has been changed in the monet.conf file.
+
+The server is initialized by loading the SQL module. It will listen
+to a default port for requests.
+
+If you get an error message, e.g. 'port already in use', you might have 
+obsolete Mserver processes hanging around which should be killed first.
+
+SQL Frontends
+============
+The distribution comes with a simple front-end, called Msql. It is
+similar in functionality as Mapiclient, ie it provides
+a textual interface with command-line history features.
+
+To connect to the running Monet SQL server type:
+
+$ Msql
+User:monetdb
+Password:monetdb
+>
+The user name and password are default and provide SQL administrator rights.
+(See SQL authorization)
+
+To be assured of a proper SQL environment, you could inspect the catalog
+tables as follows:
+
+Msql> select name from tables;
+#  Name			]
+#------------------------
+[ "schemas"		]
+[ "tables"		]
+[ "columns"		]
+[ "keys"		]
+[ "keycolumns"		]
+[ "users"		]
+[ "auths"		]
+[ "user_role"		]
+[ "table_privileges"	]
+[ "column_privileges"	]
+10 Rows affected
+Msql> select t.name, c.name, c.type, c.null, c.default from columns c, tables t 
+   where t.name="tables" and  t.id= c.table_id;
+
+The distribution comes with a small sample database for the historical
+multinational VOC (East-Indian Trading Company 1595-1798)
+The schema is kept around in .../src/test/VOC where ... denotes the 
+toplevel directory where you installed the sql frontend.
+
+The single table used in this example is created as follows:
+Msql> create table voyage(
+Msql>         number integer,
+Msql>         trip   integer,
+Msql>	      boatname varchar(25),
+Msql>         master varchar(25),
+Msql>         tonnage integer,
+Msql>         birth   varchar(10),
+Msql>         acquired integer,
+Msql>         yard    varchar(1),
+Msql>         chamber varchar(1),
+Msql>         departure       date,
+Msql>         harbour varchar(12),
+Msql>         cape_arrival date,
+Msql>         cape_departure date,
+Msql>         destination_arrival date,
+Msql>         destination_harbour varchar(12)
+Msql> );
+
+To load the database with a small sample use the command
+Msql> copy 5 records into voyage from '.../src/test/VOC/VOCsample.csv'
+Msql> using delimiters ',','\n';
+ 
+The few tuples added can be shown with
+Msql> select distinct boatname,master from voyage;
+#---------------------
+#| boatname | master |
+#---------------------
+"BRESLAU"       "Jan Kornelis Roos"
+"LES DEUX SOEURS"       "Blankman"
+"POTSDAM"       "Bernard Christiaan Muller"
+"GERECHTIGHEID" "Isaak Segon"
+"MAGDEBURG"     "Asuerus Brinkman"
+SQL  5 Rows affected
+Msql>
+
+The VOC database in its full incarnation contains over 8 thousand
+records. To retrieve part of it, you have to use selection and order
+by predicates. A few illustrative SQL statements are shown.
+
+Msql> select boatname,destination_arrival from voyage order by destination_arrival;
+#----------------------------------
+#| boatname | destination_arrival |
+#----------------------------------
+"LES DEUX SOEURS"       nil
+"BRESLAU"       1783-08-06
+"POTSDAM"       1783-08-09
+"MAGDEBURG"     1783-09-05
+"GERECHTIGHEID" 1783-11-08
+SQL  5 Rows affected
+Msql> create view R as select boatname as boot, tonnage as weight from voyage;
+Msql> select * from R;
+#-----------------
+#| boot | weight |
+#-----------------
+"BRESLAU"       1150
+"LES DEUX SOEURS"       582
+"POTSDAM"       1150
+"GERECHTIGHEID" 1150
+"MAGDEBURG"     nil
+SQL  5 Rows affected
+Msql> select boatname from voyage where tonnage between 0 and 1000;
+#------------
+#| boatname |
+#------------
+"LES DEUX SOEURS"
+SQL  1 Row affected
+Msql> select boatname from voyage where tonnage is null;
+#------------
+#| boatname |
+#------------
+"MAGDEBURG"
+SQL  1 Row affected
+Msql>
+Msql> select sum(tonnage) from voyage;
+#---------------
+#| sum_tonnage |
+#---------------
+SQL  1 Row affected
+Msql> select sum(tonnage) from voyage where tonnage is not null;
+#---------------
+#| sum_tonnage |
+#---------------
+4032
+SQL  1 Row affected
+Msql>
+
+Views
+=====
+The result of a query can be saved in a new table as follows:
+To avoid cluttering the database, we remove all the tuples in R
+(or simply drop the table).
+
+It expects each tuple to be represented on a separate line and
+conforms to the Monet tuple format lexical structure.
+You can specify the column value separator. The defaults is
+
+SQL-3 Limitations:
+============
+The current SQL implementation can be characterised as SQL-92++.
+It is based on the syntax and semantics of SQL-3, but does not
+implement the complete language. In particular, it does not yet
+support ADTs, modules, and triggers. Likewise, some of the functionality
+of extended datatypes (e.g. blobs) are not included in the Monet
+server libraries.
+
+Documentation:
+==============
+
+The documentation starts in <monet_dir>/doc/monet.html
+
+NOTE: the current 'make install' does not yet generate this
+      documentation to do this manually, execute *after* successful
+      'make install'. In the top-level directory of the MonetDB build
+      tree, call
+
+ make html
+
+
+Troubleshooting:
+================
+The current implementation is a beta version, which means that occasionally 
+you encounter bugs reported at the back-end. This may lead to a hanging
+front-end as well. To illustrate, the next statement
+
