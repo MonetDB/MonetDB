@@ -207,7 +207,7 @@ int create_loadformat( ascii *as, BAT *names, BAT *seps, BAT *types ){
 		fmt[p].type = (char*)bun_tail(types, p);
 		fmt[p].adt = ATOMindex( fmt[p].type );
 		if (ascii_io_debug)
-			printf("%s\n", fmt[p] );
+			printf("%s\n", fmt[p].name );
 	}
 	return as->nr_attrs;
 }
@@ -411,9 +411,17 @@ int output_line( char **buf, int *len, ascii_io *fmt, stream *fd, int nr_attrs, 
 	}
 	if ( i == nr_attrs ){
 	    for( i = 0; i<nr_attrs; i++){
-		int l = ADT_toStr(buf, len, fmt[i].adt, 
+		if (fmt[i].adt == TYPE_str){
+			char *s = (char*)BUNtail(fmt[i].c, fmt[i].p);
+			int l = strlen(s);
+			(void)fd->write( fd, "\"", 1, 1 );
+			(void)fd->write( fd, s, 1, l );
+			(void)fd->write( fd, "\"", 1, 1 );
+		} else {
+			int l = ADT_toStr(buf, len, fmt[i].adt, 
 			(char*)BUNtail(fmt[i].c,fmt[i].p));
-		(void)fd->write( fd, *buf, 1, l );
+			(void)fd->write( fd, *buf, 1, l );
+		}
 		(void)fd->write( fd, fmt[i].sep, 1, fmt[i].seplen );
 	    }
 	}
