@@ -924,6 +924,21 @@ ostream &protoize::gen_atom( ostream &o, const Atom &d ){
 }
 
 ostream &exports::gen_atom( ostream &o, const Atom &d ){
+	o << "typedef ";
+	if (d.top_type()) {
+		o << d.top_type()->toString();
+	} else if (d.top_parent()) {
+		o << d.top_parent()->Name();
+	} else {
+		o << "void";
+	}
+ 	o << " " << d.Name() << ";\n";
+/*
+	if (d.size() == 0 && !d.parent() && !d.type() ){
+		o << "extern int " << d.Name() << "_size();\n";
+		o << "extern int " << d.Name() << "_align();\n";
+	}
+*/
 	o << "extern int TYPE_" << d.Name() << ";\n";
 	return o;
 }
