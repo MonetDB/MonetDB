@@ -344,9 +344,9 @@ def do_lib(lib,deps):
                     if ext in lib_map:
                         if b not in true_deps:
                             if len(dirname) > 0 and \
-				(dirname[0] == '$' or os.path.isabs(dirname)):
+                                (dirname[0] == '$' or os.path.isabs(dirname)):
                                 true_deps.append("-l_"+b) 
-				# user should add -L$dirname to the Makefile.ag
+                                # user should add -L$dirname to the Makefile.ag
                             else:
                                 true_deps.append(os.path.join(dirname,"lib_"+b))
                         n_libs = do_lib(d,deps)
@@ -382,7 +382,7 @@ def expand_includes(incdirs):
             incs = string.split(incdir)
             for i in incs:
                 if i[0:2] == "-I":
-           	    i = i[2:]
+                    i = i[2:]
                 dir = i
                 if dir[0:2] == "$(":
                     var, rest = string.split(dir[2:], ')')
@@ -409,14 +409,14 @@ def read_depsfile(incdirs, cwd, topdir):
 
         dirs = expand_includes( [ i ] )
 
-	abs = 0
-	if len(dirs) > 1:
+        abs = 0
+        if len(dirs) > 1:
             abs = 1
             print ("!WARNING: "+i+" is bound to a list of paths!")
             print ("!WARNING: this leads to the use of absolute paths in:")
             print ("!WARNING: "+cwd+os.sep+"Makefile.am")
 
-	for dir in dirs:
+        for dir in dirs:
             if abs > 0:
                 #otherwise, <i> could still be a variable bounded to a list
                 i = dir
