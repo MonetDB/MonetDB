@@ -182,9 +182,8 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 		char *sc, *ec;
 		bstream *bs = bstream_create(rs, BLOCK);
 		int eof = 0;
-		int cur = 1;
 		int id = 0;
-		ColumnHeader *pCol = NULL;
+		ColumnHeader *pCol;
 
 		stream_readInt(rs, &id);
 		nCols = status;
@@ -192,6 +191,7 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 		hstmt->nrCols = nCols;
 		hstmt->ResultCols = NEW_ARRAY(ColumnHeader,(nCols+1));
 		memset( hstmt->ResultCols, 0, (nCols+1)*sizeof(ColumnHeader));
+		pCol = hstmt->ResultCols + 1;
 
 		eof = (bstream_read(bs, bs->size - (bs->len - bs->pos)) == 0);
 		sc = bs->buf + bs->pos;
@@ -235,8 +235,6 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 			type = strdup(s);
 			sc++;
 
-			pCol = hstmt->ResultCols + cur;
-
 			pCol->pszSQL_DESC_BASE_COLUMN_NAME = name;
 			pCol->pszSQL_DESC_BASE_TABLE_NAME = strdup("tablename");
 			pCol->pszSQL_DESC_TYPE_NAME = type;
@@ -249,7 +247,7 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 			pCol->pszSQL_DESC_SCHEMA_NAME = strdup("schema");
 			pCol->pszSQL_DESC_TABLE_NAME = strdup("table");
 			pCol->nSQL_DESC_DISPLAY_SIZE = strlen(name) + 2;
-			cur++;
+			pCol++;
 		}
 		bstream_destroy(bs);
 
