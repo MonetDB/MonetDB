@@ -70,7 +70,7 @@ make install \
 #perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 
 %clean
-rm -fr $RPM_BUILD_ROOT
+rm -rf $RPM_BUILD_ROOT
 
 %files client
 %defattr(-,monetdb,monetdb) 
@@ -80,7 +80,9 @@ rm -fr $RPM_BUILD_ROOT
 %files server
 %defattr(-,monetdb,monetdb) 
 %{prefix}/lib/MonetDB/lib_sql_server*
+%{prefix}/lib/MonetDB/*.mil
 
 %files devel
 %defattr(-,monetdb,monetdb) 
 %{prefix}/include/sql/*.h
+%{prefix}/lib/sql/Tests/odbcsample1
