@@ -290,10 +290,10 @@ end main;	# 94
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 315 ms
+count 1000000 = 285 ms
+count 1000000 = 216 ms
 count 1000000 = 213 ms
-count 1000000 = 212 ms
-count 1000000 = 212 ms
+count 1000000 = 214 ms
 #-------------------------------------------------#
 # h				tmp_6		  # name
 # str				str		  # type
@@ -336,7 +336,7 @@ count 1000000 = 212 ms
 [ "batHole",			  "0"		  ]
 [ "top",			  "1000001"	  ]
 [ "batStamp",			  "33"		  ]
-[ "lastUsed",			  "1000090"	  ]
+[ "lastUsed",			  "1000095"	  ]
 [ "keepAround",			  "0"		  ]
 [ "curStamp",			  "34"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
@@ -383,9 +383,9 @@ count 1000000 = 212 ms
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
 count 1000000 = 290 ms
-count 1000000 = 206 ms
-count 1000000 = 207 ms
-count 1000000 = 207 ms
+count 1000000 = 208 ms
+count 1000000 = 209 ms
+count 1000000 = 210 ms
 #-------------------------------------------------#
 # h				tmp_8		  # name
 # str				str		  # type
@@ -428,7 +428,7 @@ count 1000000 = 207 ms
 [ "batHole",			  "0"		  ]
 [ "top",			  "1000001"	  ]
 [ "batStamp",			  "66"		  ]
-[ "lastUsed",			  "2000184"	  ]
+[ "lastUsed",			  "2000194"	  ]
 [ "keepAround",			  "0"		  ]
 [ "curStamp",			  "68"		  ]
 [ "batCopiedtodisk",		  "0"		  ]

@@ -20,7 +20,6 @@ function Admin.refs():void;	# 0  (refs:void)
     io.print(g,gr,gl);	# 4 IOtable ($4:int)<-(g:bat[:int,:str])(gr:bat[:int,:int])(gl:bat[:int,:int])
 end refs;	# 5  
 #
-#mdb();
 #b:= new(:int,:int);
 ##refs();
 #insert(b,23,32);
@@ -62,59 +61,36 @@ end refs;	# 5
 #exit MALexception;
 #
 function Admin.main():int;	# 0  (main:int)
-    inspect.mdb();	# 1 mdbToggle ($1:void)
-    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($3:int)($4:int)
-    bat.insert(b,23,32);	# 3 BKCinsert_bun ($5:void)<-(b:bat[:int,:int])($6:int)($7:int)
-    bat.setName(b,"tasks");	# 4 BKCsetName ($8:void)<-(b:bat[:int,:int])($9:str)
-    bat.setPersistent(b);	# 5 BKCsetPersistent ($10:bit)<-(b:bat[:int,:int])
-    io.print("open box");	# 6 IOprint_val ($11:int)<-($12:str)
-    bbp.open();	# 7 CMDbbpopen ($13:void)
-    Admin.refs();	# 8  ($14:void)
-    t := bbp.bind("tasks");	# 9 CMDbbpbind (t:bat[:any,:any])<-($9:str)
-    io.print(t);	# 10 IOprint_val ($16:int)<-(t:bat[:any,:any])
-    bbp.release(t);	# 11 CMDbbpreleaseBAT ($17:void)<-(t:bat[:any,:any])
-    Admin.refs();	# 12  ($18:void)
-    io.print(t);	# 13 IOprint_val ($19:int)<-(t:bat[:any,:any])
-catch MALexception;	# 14  (MALexception:any) jump 16
-    io.print("BAT was released");	# 15 IOprint_val ($21:int)<-($22:str)
-exit MALexception;	# 16  (MALexception:any)
-    t := bbp.bind("tasks");	# 17 CMDbbpbind (t:bat[:any,:any])<-($9:str)
-    Admin.refs();	# 18  ($23:void)
-    bbp.destroy(t,true);	# 19 CMDbbpdestroyBAT ($24:void)<-(t:bat[:any,:any])($25:bit)
-    Admin.refs();	# 20  ($26:void)
-    io.print(t);	# 21 IOprint_val ($27:int)<-(t:bat[:any,:any])
-catch MALexception;	# 22  (MALexception:any) jump 24
-    io.print("BAT was destroyed");	# 23 IOprint_val ($28:int)<-($29:str)
-exit MALexception;	# 24  (MALexception:any)
-    z := bbp.bind("tasks");	# 25 CMDbbpbind (z:bat[:any,:any])<-($9:str)
-    io.print(z);	# 26 IOprint_val ($31:int)<-(z:bat[:any,:any])
-catch MALexception;	# 27  (MALexception:any) jump 29
-    io.print("BAT was removed from the box");	# 28 IOprint_val ($32:int)<-($33:str)
-exit MALexception;	# 29  (MALexception:any)
-end main;	# 30  
-#mdb     b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($3:int)($4:int)
-mdb>Client Admin disappeared
-#mdb     bat.insert(b,23,32);	# 3 BKCinsert_bun ($5:void)<-(b:bat[:int,:int])($6:int)($7:int)
-mdb>Client Admin disappeared
-#mdb     bat.setName(b,"tasks");	# 4 BKCsetName ($8:void)<-(b:bat[:int,:int])($9:str)
-mdb>Client Admin disappeared
-#mdb     bat.setPersistent(b);	# 5 BKCsetPersistent ($10:bit)<-(b:bat[:int,:int])
-mdb>Client Admin disappeared
-#mdb     io.print("open box");	# 6 IOprint_val ($11:int)<-($12:str)
-mdb>Client Admin disappeared
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
+    bat.insert(b,23,32);	# 2 BKCinsert_bun ($4:void)<-(b:bat[:int,:int])($5:int)($6:int)
+    bat.setName(b,"tasks");	# 3 BKCsetName ($7:void)<-(b:bat[:int,:int])($8:str)
+    bat.setPersistent(b);	# 4 BKCsetPersistent ($9:bit)<-(b:bat[:int,:int])
+    io.print("open box");	# 5 IOprint_val ($10:int)<-($11:str)
+    bbp.open();	# 6 CMDbbpopen ($12:void)
+    Admin.refs();	# 7  ($13:void)
+    t := bbp.bind("tasks");	# 8 CMDbbpbind (t:bat[:any,:any])<-($8:str)
+    io.print(t);	# 9 IOprint_val ($15:int)<-(t:bat[:any,:any])
+    bbp.release(t);	# 10 CMDbbpreleaseBAT ($16:void)<-(t:bat[:any,:any])
+    Admin.refs();	# 11  ($17:void)
+    io.print(t);	# 12 IOprint_val ($18:int)<-(t:bat[:any,:any])
+catch MALexception;	# 13  (MALexception:any) jump 15
+    io.print("BAT was released");	# 14 IOprint_val ($20:int)<-($21:str)
+exit MALexception;	# 15  (MALexception:any)
+    t := bbp.bind("tasks");	# 16 CMDbbpbind (t:bat[:any,:any])<-($8:str)
+    Admin.refs();	# 17  ($22:void)
+    bbp.destroy(t,true);	# 18 CMDbbpdestroyBAT ($23:void)<-(t:bat[:any,:any])($24:bit)
+    Admin.refs();	# 19  ($25:void)
+    io.print(t);	# 20 IOprint_val ($26:int)<-(t:bat[:any,:any])
+catch MALexception;	# 21  (MALexception:any) jump 23
+    io.print("BAT was destroyed");	# 22 IOprint_val ($27:int)<-($28:str)
+exit MALexception;	# 23  (MALexception:any)
+    z := bbp.bind("tasks");	# 24 CMDbbpbind (z:bat[:any,:any])<-($8:str)
+    io.print(z);	# 25 IOprint_val ($30:int)<-(z:bat[:any,:any])
+catch MALexception;	# 26  (MALexception:any) jump 28
+    io.print("BAT was removed from the box");	# 27 IOprint_val ($31:int)<-($32:str)
+exit MALexception;	# 28  (MALexception:any)
+end main;	# 29  
 [ "open box" ]
-#mdb     bbp.open();	# 7 CMDbbpopen ($13:void)
-mdb>Client Admin disappeared
-#mdb     Admin.refs();	# 8  ($14:void)
-mdb>Client Admin disappeared
-#mdb     g := bbp.getNames();	# 1 CMDbbpNames (g:bat[:int,:str])
-mdb>Client Admin disappeared
-#mdb     gr := bbp.getRefCount();	# 2 CMDbbpRefCount (gr:bat[:int,:int])
-mdb>Client Admin disappeared
-#mdb     gl := bbp.getLRefCount();	# 3 CMDbbpLRefCount (gl:bat[:int,:int])
-mdb>Client Admin disappeared
-#mdb     io.print(g,gr,gl);	# 4 IOtable ($4:int)<-(g:bat[:int,:str])(gr:bat[:int,:int])(gl:bat[:int,:int])
-mdb>Client Admin disappeared
 #---------------------------------------------------------#
 # bbp	name			refcnt	lrefcnt		  # name
 # int	str			int	int		  # type
@@ -123,29 +99,11 @@ mdb>Client Admin disappeared
 [ 2,	  "monet_unicode_case",	  1,	  0		  ]
 [ 3,	  "timezones",		  1,	  0		  ]
 [ 4,	  "tasks",		  0,	  2		  ]
-#mdb end refs;	# 5  
-mdb>Client Admin disappeared
-#mdb     t := bbp.bind("tasks");	# 9 CMDbbpbind (t:bat[:any,:any])<-($9:str)
-mdb>Client Admin disappeared
-#mdb     io.print(t);	# 10 IOprint_val ($16:int)<-(t:bat[:any,:any])
-mdb>Client Admin disappeared
 #-----------------#
 # h	tasks	  # name
 # int	int	  # type
 #-----------------#
 [ 23,	  32	  ]
-#mdb     bbp.release(t);	# 11 CMDbbpreleaseBAT ($17:void)<-(t:bat[:any,:any])
-mdb>Client Admin disappeared
-#mdb     Admin.refs();	# 12  ($18:void)
-mdb>Client Admin disappeared
-#mdb     g := bbp.getNames();	# 1 CMDbbpNames (g:bat[:int,:str])
-mdb>Client Admin disappeared
-#mdb     gr := bbp.getRefCount();	# 2 CMDbbpRefCount (gr:bat[:int,:int])
-mdb>Client Admin disappeared
-#mdb     gl := bbp.getLRefCount();	# 3 CMDbbpLRefCount (gl:bat[:int,:int])
-mdb>Client Admin disappeared
-#mdb     io.print(g,gr,gl);	# 4 IOtable ($4:int)<-(g:bat[:int,:str])(gr:bat[:int,:int])(gl:bat[:int,:int])
-mdb>Client Admin disappeared
 #---------------------------------------------------------#
 # bbp	name			refcnt	lrefcnt		  # name
 # int	str			int	int		  # type
@@ -153,29 +111,7 @@ mdb>Client Admin disappeared
 [ 1,	  "monet_environment",	  1,	  0		  ]
 [ 2,	  "monet_unicode_case",	  1,	  0		  ]
 [ 3,	  "timezones",		  1,	  0		  ]
-#mdb end refs;	# 5  
-mdb>Client Admin disappeared
-#mdb     io.print(t);	# 13 IOprint_val ($19:int)<-(t:bat[:any,:any])
-mdb>Client Admin disappeared
 [ "nil" ]
-#mdb catch MALexception;	# 14  (MALexception:any) jump 16
-mdb>Client Admin disappeared
-#mdb exit MALexception;	# 16  (MALexception:any)
-mdb>Client Admin disappeared
-#mdb     t := bbp.bind("tasks");	# 17 CMDbbpbind (t:bat[:any,:any])<-($9:str)
-mdb>Client Admin disappeared
-#mdb     io.print("BAT was destroyed");	# 23 IOprint_val ($28:int)<-($29:str)
-mdb>Client Admin disappeared
 [ "BAT was destroyed" ]
-#mdb exit MALexception;	# 24  (MALexception:str)
-mdb>Client Admin disappeared
-#mdb     z := bbp.bind("tasks");	# 25 CMDbbpbind (z:bat[:any,:any])<-($9:str)
-mdb>Client Admin disappeared
-#mdb     io.print("BAT was removed from the box");	# 28 IOprint_val ($32:int)<-($33:str)
-mdb>Client Admin disappeared
 [ "BAT was removed from the box" ]
-#mdb exit MALexception;	# 29  (MALexception:str)
-mdb>Client Admin disappeared
-#mdb end main;	# 30  
-mdb>Client Admin disappeared
 >

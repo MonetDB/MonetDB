@@ -33,4 +33,4 @@ print(i);
 #next one doesn;t exist anymore
 #i:= crackers.nextPiece(b,cidx,view,i);
 #print(view);
-dropPiece(view);
+crackers.drop(b);

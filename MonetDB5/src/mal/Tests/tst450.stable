@@ -68,7 +68,6 @@ end main;	# 12
 [ nil,	  "Admin"	  ]
 [ nil,	  "sql"		  ]
 [ nil,	  "transaction"	  ]
-[ nil,	  "crackers"	  ]
 [ nil,	  "chopper"	  ]
 [ nil,	  "optimizer"	  ]
 [ nil,	  "inspect"	  ]
@@ -109,6 +108,7 @@ end main;	# 12
 [ nil,	  "lock"	  ]
 [ nil,	  "sema"	  ]
 [ nil,	  "unix"	  ]
+[ nil,	  "crackers"	  ]
 [ nil,	  "thread"	  ]
 #-------------------------#
 # help	Comment		  # name

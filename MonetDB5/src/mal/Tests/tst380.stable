@@ -116,19 +116,19 @@ end main;	# 8
 # bbp	tmp_8			htype	ttype		count	heat	dirty		status	kind		refCount		  # name
 # int	str			str	str		lng	int	str		str	str		int		  # type
 #---------------------------------------------------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",  "str",	  31,	  151,	  "dirty",	  "load", "transient",	  3		  ]
-[ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  152,	  "dirty",	  "load", "transient",	  3		  ]
-[ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "load", "transient",	  3		  ]
-[ 4,	  "simplemind",		  "int",  "int",	  0,	  36,	  "dirty",	  "load", "transient",	  3		  ]
+[ 1,	  "monet_environment",	  "str",  "str",	  31,	  151,	  "dirty",	  "load", "transient",	  1		  ]
+[ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  152,	  "dirty",	  "load", "transient",	  1		  ]
+[ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "load", "transient",	  1		  ]
+[ 4,	  "simplemind",		  "int",  "int",	  0,	  59,	  "dirty",	  "load", "transient",	  0		  ]
 [ "Get second directory" ]
 #-------------------------#
-# h	tmp_25		  # name
+# h	tmp_6		  # name
 # int	str		  # type
 #-------------------------#
 [ 4,	  "simplemind"	  ]
 #-----------------------------------------------------------------------------------------------------------------#
-# tmp_25	tmp_28		htype	ttype	count	heat	dirty		status	kind		refCount		  # name
+# tmp_6	tmp_26		htype	ttype	count	heat	dirty		status	kind		refCount		  # name
 # int	str		str	str	lng	int	str		str	str		int		  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ 4,	  "simplemind",	  "int",  "int",  0,	  150,	  "dirty",	  "load", "transient",	  5		  ]
+[ 4,	  "simplemind",	  "int",  "int",  0,	  235,	  "dirty",	  "load", "transient",	  0		  ]
 >

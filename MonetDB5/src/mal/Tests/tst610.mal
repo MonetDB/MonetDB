@@ -7,7 +7,6 @@ function refs():void;
     print(g,gr,gl);
 end refs;
 
-mdb();
 b:= new(:int,:int);
 #refs();
 insert(b,23,32);
