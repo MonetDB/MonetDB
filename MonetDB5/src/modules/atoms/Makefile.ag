@@ -5,8 +5,7 @@ MTSAFE
 LIBS = {
 	DIR = pkglibdir
 	SEP = _
-	SOURCES = str.mx blob.mx url.mx mtime.mx \
-		uchr.mx 
+	SOURCES = str.mx blob.mx url.mx mtime.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
@@ -16,13 +15,11 @@ LIBS = {
 }
 doc_atoms = {
 	DIR = pkgdatadir/docs/modules/atoms
-	SOURCES = atoms_init.mx str.mx blob.mx url.mx mtime.mx \
-		uchr.mx 
+	SOURCES = atoms_init.mx str.mx blob.mx url.mx mtime.mx
 }
 scripts_mal = {
 	DIR = pkglibdir
-	SOURCES = atoms_init.mx str.mx blob.mx url.mx mtime.mx \
-		uchr.mx 
+	SOURCES = atoms_init.mx str.mx blob.mx url.mx mtime.mx 
 }
 
 EXTRA_DIST_DIR = Tests
