@@ -106,6 +106,7 @@ mtest_modpath=""
 conf_opts=""
 
 os="`uname | sed 's|_NT-.*$||'`"
+hw="`uname -m`"
 
 # check for not or incorrectly set variables (${what}_BUILD, ${what}_PREFIX, COMP, BITS, LINK)
 
@@ -148,10 +149,14 @@ esac
 # exclude "illegal" combinations
 
 if [ "${os}" = "Linux" ] ; then
-	if [ "${BITS}" = "64" ] ; then
+	if [ "${BITS}" = "64"  -a  "${hw}" != "ia64" ] ; then
 		echo ''
-		echo 'Linux doesn'\''t support 64 bit, yet; hence, using BITS="32".'
+		echo "${hw}"' is 32-bit, only; hence, using BITS="32".'
 		BITS="32"
+	  elif [ "${BITS}" = "32"  -a  "${hw}" = "ia64" ] ; then
+		echo ''
+		echo 'Currently, we do not support 32-bit on '"${hw}"'; hence, using BITS="64".'
+		BITS="64"
 	fi
 fi
 
@@ -190,8 +195,13 @@ fi
 
 if [ "${os}" = "Linux" ] ; then
 	if [ "${COMP}" = "ntv" ] ; then
-		cc="icc"
-		cxx="icc"
+		if [ "${hw}" = "ia64" ] ; then
+			cc="ecc"
+			cxx="ecc"
+		  else
+			cc="icc"
+			cxx="icc"
+		fi
 		if [ "${what}" = "MONET" ] ; then
 			conf_opts="${conf_opts} --with-hwcounters=${softpath}"
 		fi
