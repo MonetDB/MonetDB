@@ -354,6 +354,7 @@ of the symbol stack, it is easy to filter such errors.
     }
 @-
 Mark all variables that are subject to garbage control.
+Beware, this is not yet effectuated in the interpreter.
 @c
     for(i=0;i<p->retc;i++) 
     if( isaBatType(returntype[i]) ||

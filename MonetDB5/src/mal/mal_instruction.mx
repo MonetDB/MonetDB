@@ -2009,8 +2009,10 @@ void strAfterCall(ValPtr v, ValPtr bak) {
 }
 
 void batBeforeCall(ValPtr v, ValPtr bak){
-    if( v->vtype== TYPE_bat)
-        bak->val.bval= v->val.bval;
+    if( v->vtype== TYPE_bat){
+        bak->val.br.id= v->val.br.id;
+        bak->val.br.stamp= v->val.br.stamp;
+	}
     /*else stream_printf(GDKout,"batBeforeCall:unexpected BAT value\n");
        it was garbage for sure */
 }
@@ -2027,16 +2029,16 @@ void batAfterCall(ValPtr v, ValPtr bak){
         stream_printf(GDKout,"batAfterCall:unexpected BAT value\n"); */
         return;
     }
-    if( v->val.bval == bak->val.bval) return;
-    if( v->val.bval){
+    if( v->val.br.id == bak->val.br.id) return;
+    if( v->val.br.id){
     /* int bid= ABS(v->val.bval);
        printf("reference counting: %d lrefs=%d refs=%d",
         bid, BBP_lrefs(bid),BBP_refs(bid)); */
-        BBPincref(v->val.bval,TRUE);
-        if( BBP_refs(v->val.bval) )
-            BBPunfix(v->val.bval);
+        BBPincref(v->val.br.id,TRUE);
+        if( BBP_refs(v->val.br.id) )
+            BBPunfix(v->val.br.id);
     }
-    if( bak->val.bval)
-        BBPdecref(bak->val.bval,TRUE);
+    if( bak->val.br.id)
+        BBPdecref(bak->val.br.id,TRUE);
 }
 @}

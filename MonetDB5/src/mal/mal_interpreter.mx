@@ -618,9 +618,11 @@ cause errors in multi-assignment statements.
     for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
         lhs = &stk->stk[pci->argv[k]];
         rhs = &stk->stk[pci->argv[i]];
-        (*pci->beforeCall)(lhs,&backup);
+		if( pci->beforeCall)
+			(*pci->beforeCall)(lhs,&backup);
         VALcopy(lhs,rhs);
-        (*pci->afterCall)(lhs,&backup);
+		if( pci->afterCall)
+			(*pci->afterCall)(lhs,&backup);
     }
     else
     for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
