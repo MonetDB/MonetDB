@@ -1309,7 +1309,7 @@ ostream &install_fcntbl::gen_var_arg( ostream &o, const VarArg &d ){
 }
 
 ostream &install_prelude::gen_prelude( ostream &o, const Prelude &d ){
-	 o << "   TBL_Install_DropRefs(mid, (bat*)" <<   d.Name() << "());\n";
+	 o << "   TBL_Install_DropRefs(mid, " <<   d.Name() << "());\n";
 	 return o; 
 }
 
