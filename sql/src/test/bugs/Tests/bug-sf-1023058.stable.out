@@ -1,11 +1,11 @@
 stdout of test 'bug-sf-1023058` in directory 'src/test/bugs` itself:
 
 
-# 13:25:59 >  
-# 13:25:59 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=43349 --set sql_port=51318 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/build-sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 13:25:59 >  
+# 13:21:47 >  
+# 13:21:47 >  Mtimeout -timeout 180 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=42732 --set sql_port=53162 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 13:21:47 >  
 
-# Monet Database Server V4.3.19
+# Monet Database Server V4.5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
@@ -17,21 +17,12 @@ quit();
 
 Over..
 
-# 13:26:00 >  
-# 13:26:00 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=51318  < bug-sf-1023058.sql
-# 13:26:00 >  
+# 13:21:48 >  
+# 13:21:48 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=53162  < bug-sf-1023058.sql
+# 13:21:48 >  
 
-# 6 # querytype
-# 6 # querytype
-# 3 # querytype
-# metadata,	metadata,	metadata,	metadata,	metadata,	metadata # table_name
-# artist,	album,	track,	tracknum,	duration,	weightindex # name
-# varchar,	varchar,	varchar,	int,	int,	decimal # type
-# 0,	0,	0,	0,	0,	0 # length
-# 0,	,	,	,	,	 # tuplecount
-# 1,	,	,	,	,	 # id
 
-# 13:26:01 >  
-# 13:26:01 >  Done.
-# 13:26:01 >  
+# 13:21:48 >  
+# 13:21:48 >  Done.
+# 13:21:48 >  
 
