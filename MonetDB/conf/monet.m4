@@ -611,6 +611,46 @@ AC_SUBST(PYTHONINC)
 AC_SUBST(PYTHON)
 AM_CONDITIONAL(HAVE_PYTHON, test x"$python" != xno)
 
+AC_ARG_WITH(perl,
+	AC_HELP_STRING([--with-perl=FILE], [perl is installed as FILE]),
+	perl="$withval",
+	perl=auto)
+case "$perl" in
+yes|auto)
+  PERL=perl;;
+no)
+  ;;
+*)
+  PERL="$perl"
+  perl=yes
+  ;;
+esac
+if test "x$perl" != xno; then
+  PERLINC=`"$PERL" -MConfig -e 'print "$Config{archlibexp}/CORE"'`
+  if test ! "$PERLINC"; then
+    case "$perl" in
+    auto)
+      ;;
+    *)
+      AC_MSG_ERROR([No Perl include directory found.  Is Perl installed properly?])
+      ;;
+    esac
+    perl=no
+  elif test ! -f "$PERLINC/perl.h"; then
+    case "$perl" in
+    auto)
+      ;;
+    *)
+      AC_MSG_ERROR([No perl.h include file found.  Is Perl installed properly?])
+      ;;
+    esac
+    perl=no
+  fi
+fi
+AC_SUBST(PERLINC)
+AC_SUBST(PERL)
+AM_CONDITIONAL(HAVE_PERL, test x"$perl" != xno)
+
 AC_ARG_WITH(swig,
 	AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
 	SWIG="$withval",
