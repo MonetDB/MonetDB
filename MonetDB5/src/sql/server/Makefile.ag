@@ -6,9 +6,9 @@ INCLUDES =  ../parser ../../mal ../../modules/mal \
 
 lib__sql_server = {
 	DIR = pkglibdir
-	SOURCES = sql_privileges.mx sql_logger.mx sql_mvc.mx sql_server.mx  \
+	SOURCES = sql_privileges.mx sql_logger.mx sql_mvc.mx \
 		sql_connect.mx sql_bm.mx \
-		sql_codegen.mx sql.mx sql_scenario.mx
+		sql_codegen.mx sql.mx sql_scenario.mx sql_server.mx
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io
 	LIBS = ../parser/libsql $(MONET_LIBS)
 	LDFLAGS = -module
@@ -16,5 +16,5 @@ lib__sql_server = {
 
 scripts_mal = {
 	DIR = sysconfdir/MonetDB/sql
-	SOURCES = sql_server.mal sql.mal sql_scenario.mal
+	SOURCES = sql.mal sql_scenario.mal sql_server.mal
 }

@@ -10,4 +10,3 @@ the original MIL file.
 /* nothing to add */
 @mal
 # nothing special to do
-mvc.init(0);

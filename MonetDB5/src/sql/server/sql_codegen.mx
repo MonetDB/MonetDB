@@ -1,5 +1,4 @@
 @f sql_codegen
-@= getType
 @t SQL to MAL code generation.
 @a N. Nes, M. Kersten
 @+ MAL Code generation
@@ -140,10 +139,10 @@ The SQL block received is compiled into a MAL block surrounded
 by calls to handle timing and tracing.
 
 @= enterSQLblock
-	@:newStmt("mvc","beforeAction")@
+	@:newStmt("sql","beforeAction")@
 
 @= afterSQLblock
-	@:newStmt("mvc","afterAction")@
+	@:newStmt("sql","afterAction")@
 @-
 
 The catalog relations should be maintained in a MAL box, which
@@ -244,7 +243,7 @@ void dump_header(MalBlkPtr mb, stmt *s, list *l ){
 		name= column_name(s);
                 sql_subtype *type = tail_type(s);
 
-		@:newStmt("sql_server","column")@
+		@:newStmt("sql","column")@
 		@:pushArg(old)@
 		@:pushStr((name)?name:"")@
 		@:pushStr((type)?type->type->sqlname:"")@
@@ -302,14 +301,14 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 	case st_none: break;
 	case st_release: 
 		@:SQLprelude@
-		@:newStmt("mvc","release")@
+		@:newStmt("sql","release")@
 		@:pushStr(s->op1.sval)@
 		@:SQLpostlude@
 		break;
 	case st_commit: {
 		char *name = s->op2.sval;
 		@:SQLprelude@
-		@:newStmt("mvc","commit")@
+		@:newStmt("sql","commit")@
 		@:pushInt(s->op1.ival)@
 		@:pushStr(name?name:"")@
 		@:SQLpostlude@
@@ -317,7 +316,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 	case st_rollback: {
 		char *name = s->op2.sval;
 		@:SQLprelude@
-		@:newStmt("mvc","rollback")@
+		@:newStmt("sql","rollback")@
 		@:pushInt(s->op1.ival)@
 		@:pushStr(name?name:"")@
 		@:SQLpostlude@
@@ -325,7 +324,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 	case st_schema: {
 		@:SQLprelude@
 		schema *sc = s->op1.schema;
-		@:newStmt("mvc","bindSchema")@
+		@:newStmt("sql","bindSchema")@
 		@:pushStr(sc->name)@
 		@:SQLpostlude@
 	} break;
@@ -333,7 +332,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 		int sc = sql2MAL(m,mb, s->op1.stval, sql);
 		table *t = s->op2.tval;
 		@:SQLprelude@
-		@:newStmt("mvc","bindTable")@
+		@:newStmt("sql","bindTable")@
 		@:pushArg(sc)@
 		@:pushStr(t->name)@
 		@:SQLpostlude@
@@ -342,7 +341,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 		int t = sql2MAL(m,mb, s->op1.stval, sql);
 		column *c = s->op2.cval;
 		@:SQLprelude@
-		@:newStmt("mvc","bindColumn")@
+		@:newStmt("sql","bindColumn")@
 		@:pushArg(t)@
 		@:pushStr(c->name)@
 		@:SQLpostlude@
@@ -353,7 +352,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 		node *cc;
 
 		@:SQLprelude@
-		@:newStmt("mvc","bindKey")@
+		@:newStmt("sql","bindKey")@
 		@:pushArg(t)@
 		@:pushStr(k->name)@
 		@:SQLpostlude@
@@ -361,14 +360,14 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 	case st_create_schema: {
 		schema *schema = s->op1.schema;
 		@:SQLprelude@
-		@:newStmt("mvc","createSchema")@
+		@:newStmt("sql","createSchema")@
 		@:pushStr(schema->name)@
 		@:pushStr(schema->auth)@
 		@:SQLpostlude@
 	} break;
 	case st_drop_schema: {
 		@:SQLprelude@
-		@:newStmt("mvc","dropSchema")@
+		@:newStmt("sql","dropSchema")@
 		@:pushStr(s->op1.schema->name)@
 		@:SQLpostlude@
 	} break;
@@ -377,11 +376,11 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 		table *t = s->op2.tval;
 		@:SQLprelude@
 		if (t->sql){
-			@:newStmt("mvc","createView")@
+			@:newStmt("sql","createView")@
 			@:pushStr(t->name)@
 			@:pushStr(t->sql)@
 		} else {
-			@:newStmt("mvc","createTable")@
+			@:newStmt("sql","createTable")@
 			@:pushStr(t->name)@
 			@:pushInt(t->type)@
 		}
@@ -390,7 +389,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 	case st_drop_table: {
 		int sc = sql2MAL(m,mb, s->op1.stval, sql);
 		@:SQLprelude@
-		@:newStmt("mvc","dropTable")@
+		@:newStmt("sql","dropTable")@
 		@:pushStr(s->op2.sval)@
 		@:pushBit((s->flag==0)?"false":"true")@
 		@:SQLpostlude@
@@ -399,7 +398,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 		int t = sql2MAL(m,mb, s->op1.stval, sql);
 		column *c = s->op2.cval;
 		@:SQLprelude@
-		@:newStmt("mvc","createColumn")@
+		@:newStmt("sql","createColumn")@
 		@:pushStr(c->name)@
 		@:pushStr(c->tpe->type->sqlname)@
 		@:pushInt(c->tpe->digits)@
@@ -410,7 +409,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 	case st_null: {
 		int c = sql2MAL(m,mb, s->op1.stval, sql);
 		@:SQLprelude@
-		@:newStmt("mvc","notNull")@
+		@:newStmt("sql","notNull")@
 		@:SQLpostlude@
 	} break;
 	case st_default: {
@@ -420,7 +419,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 		@:newStmt("calc","str")@
 		@:pushArg(d)@
 		@:getReturn(d)@
-		@:newStmt("mvc","mvc_default")@
+		@:newStmt("sql","mvc_default")@
 		@:pushArg(c)@
 		@:pushArg(d)@
 		@:SQLpostlude@
@@ -445,7 +444,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 		}
 		if (s->flag == fkey){
 			int ft = sql2MAL(m,mb, s->op2.stval, sql);
-			@:newStmt("mvc","createKey")@
+			@:newStmt("sql","createKey")@
 			@:pushStr(ky->t->schema->name)@
 			@:pushStr(ky->t->name)@
 			sv= (ky->name)?ky->name:"";
@@ -454,10 +453,10 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 			@:pushArg(ft)@
 		} else {
 			int k;
-			@:newStmt("mvc","sql_key_nil")@
+			@:newStmt("sql","sql_key_nil")@
 			@:getReturn(k)@
 
-			@:newStmt("mvc","createKey")@
+			@:newStmt("sql","createKey")@
 			@:pushStr(ky->t->schema->name)@
 			@:pushStr(ky->t->name)@
 			sv= (ky->name)?ky->name:"";
@@ -469,27 +468,27 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 	} break;
 	case st_create_role:{
 		@:SQLprelude@
-		@:newStmt("mvc","createRole")@
+		@:newStmt("sql","createRole")@
 		@:pushStr(s->op1.sval)@
 		@:pushInt(s->flag)@
 		@:SQLpostlude@
 	} break;
 	case st_drop_role:{
 		@:SQLprelude@
-		@:newStmt("mvc","dropRole")@
+		@:newStmt("sql","dropRole")@
 		@:pushStr(s->op1.sval)@
 		@:SQLpostlude@
 	} break;
 	case st_grant_role:{
 		@:SQLprelude@
-		@:newStmt("mvc","grantRole")@
+		@:newStmt("sql","grantRole")@
 		@:pushStr(s->op1.sval)@
 		@:pushStr(s->op2.sval)@
 		@:SQLpostlude@
 	} break;
 	case st_revoke_role:{
 		@:SQLprelude@
-		@:newStmt("mvc","revokeRole")@
+		@:newStmt("sql","revokeRole")@
 		@:pushStr(s->op1.sval)@
 		@:pushStr(s->op2.sval)@
 		@:SQLpostlude@
@@ -830,7 +829,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
                                 hname = s->h->op1.tval->name;
                         }
 			snprintf(buf,256,"bind%s",type);
-			@:newStmt("mvc",buf)@
+			@:newStmt("sql",buf)@
 			@:pushStr(s->op1.cval->table->schema->name)@
 			@:pushStr(s->op1.cval->table->name)@
 			@:pushStr(s->op1.cval->name)@
@@ -859,7 +858,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 		int k;
 		@:SQLprelude@
 		snprintf(buf,BUFSIZ,"bind%cbat", type);
-		@:newStmt("mvc",buf)@
+		@:newStmt("sql",buf)@
 		@:pushStr(s->op1.tval->schema->name)@
 		@:pushStr(s->op1.tval->name)@
 		@:getReturn(k)@
@@ -1255,7 +1254,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 				@:pushStr(file)@
 			}
 		}
-		@:newStmt("mvc","inputTable")@
+		@:newStmt("sql","inputTable")@
 		@:pushStr(s->op1.tval->name)@
 		@:pushArg(k)@
 		@:pushStr(tsep)@
@@ -1289,7 +1288,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 			}
 			/* first rename the columns for better output*/
 			dump_header(mb,s,l);
-			@:newStmt("sql_server","output")@
+			@:newStmt("sql","output")@
 			if( flg){ @:pushArg(order->nr)@ }
 
 			while(n){
@@ -1299,7 +1298,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 				n = n->next;
 			}
 		} else {
-			@:newStmt("io","print")@
+			@:newStmt("sql","print")@
 			@:pushStr("not a valid output list\n")@
 		}
 	} break;
