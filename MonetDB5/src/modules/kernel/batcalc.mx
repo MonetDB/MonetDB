@@ -534,6 +534,7 @@ str CMDbataccum@1(int *ret, int *d, int *l, int *r)
 	BBPincref(*ret = dst->batCacheid,TRUE);
 	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
 	return msg;
 }
 
