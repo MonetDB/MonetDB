@@ -217,7 +217,7 @@ stdout of test 'no.156` in directory 'tests/BugReports` itself:
 # [ 2@0,    20      ]
 
 setoid(oid(20000000));
-PROC extractBit(any theBitsets,any theBit,any theStr,any loop) {
+PROC extractBit(any theBitsets,any theBit,any theStr,any loop) : void {
         VAR res;
         IF (loop = false) {
 printf("!Before multiplex operation\n");
@@ -234,7 +234,7 @@ printf("!After multiplex operation\n");
         res.print();
 }
 
-PROC bitsetHist(any theEnum,any theBitsets,any loop) {
+PROC bitsetHist(any theEnum,any theBitsets,any loop) : void {
         theEnum@batloop() {
                 VAR c := extractBit(theBitsets,$h,$t,loop);
         }

@@ -37,5 +37,5 @@
 # persistent helps, but well ...
 
 setoid(oid(10000000));
-test1 := new(int,int);
+var test1 := new(int,int);
 test1.insert(1,1);

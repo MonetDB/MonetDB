@@ -6,9 +6,9 @@ w.histogram().print();
 #split w in twee tabellen
 var docid := new( void, oid );
 var tid := new( void, str );
-docid.insert( [w~].reverse() );
+docid.insert( w.mark(nil).reverse() );
 docid.print();
-tid.insert( [~w] );
+tid.insert( w.reverse.mark(nil).reverse );
 tid.print();
 
 docid.seqbase( 1000@0 );

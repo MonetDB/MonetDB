@@ -57,7 +57,7 @@ a.print();
 [ 2@0,	  1000	  ]
 [ 4@0,	  10	  ]
 [ 5@0,	  15	  ]
-a.reverse().accbuild(index);
+a.reverse().accbuild("index");
 a.print();
 #-----------------#
 # BAT:	  tmp_25  #

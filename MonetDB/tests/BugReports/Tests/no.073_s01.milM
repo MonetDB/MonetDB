@@ -1,3 +1,5 @@
+var ab:=bat("ab");
+var ba:=bat("ba");
 ab.print();
 ba.print();
 ab.print();

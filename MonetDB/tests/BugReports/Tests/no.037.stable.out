@@ -59,24 +59,24 @@ ls();
 # str	str	str	lng	int	str		str	str	int	int		  # type
 #-------------------------------------------------------------------------------------------------#
 mem.print();
-!WARNING: interpret: convert identifier 'mem' to string.
-[ "mem" ]
+!ERROR: interpret: unknown variable 'mem'.
+!ERROR: print(param 1): evaluation error.
 printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1622016	  ]
-[ "arena",	  1628400	  ]
-[ "ordblks",	  447		  ]
+[ "memincr",	  1662976	  ]
+[ "arena",	  1668728	  ]
+[ "ordblks",	  437		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1420296	  ]
-[ "fordblks",	  208104	  ]
+[ "uordblks",	  1461192	  ]
+[ "fordblks",	  207536	  ]
 #~EndVariableOutput~#
 quit();
 

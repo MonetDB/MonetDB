@@ -37,5 +37,5 @@ a.insert(1,2);
 a.insert(2,3);
 a.insert(3,4);
 a.seqbase(newoid(a.count()));
-[oid]([a~]).print();
+[oid](a.mark(nil)).print();
 quit();

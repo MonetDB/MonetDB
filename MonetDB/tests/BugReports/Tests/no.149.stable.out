@@ -59,10 +59,10 @@ setoid(oid(20000000));
 
 var b := new (int, str );
 
-proc test1() {
+proc test1() : void {
         var i := 1;
         "   test1".print;
-        s := sprintf("Hallo dit is een string %d", i);
+        var s := sprintf("Hallo dit is een string %d", i);
         s.print();
         b.insert(i,s);
         b.insert(i,sprintf("Hallo %d", i));

@@ -50,7 +50,7 @@ w.histogram().print();
 #split w in twee tabellen
 var docid := new( void, oid );
 var tid := new( void, str );
-docid.insert( [w~].reverse() );
+docid.insert( w.mark(nil).reverse() );
 docid.print();
 #-----------------#
 # BAT:	  tmp_28  #
@@ -71,7 +71,7 @@ docid.print();
 [ nil,	  2@0	  ]
 [ nil,	  2@0	  ]
 [ nil,	  2@0	  ]
-tid.insert( [~w] );
+tid.insert( w.reverse.mark(nil).reverse );
 tid.print();
 #---------------------------------#
 # BAT:	  tmp_29		  #

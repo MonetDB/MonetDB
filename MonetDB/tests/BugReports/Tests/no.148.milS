@@ -198,7 +198,7 @@ proc xtable_test(str title, bat x, bat y, bat z) : void {
     x1yz.xtable_print("CT(x,y,z)", x, y, z);
 }
  
-x := new(oid,chr);
+var x := new(oid,chr);
 x.insert(1@0,'a');
 x.insert(2@0,'a');
 x.insert(3@0,'b');
@@ -208,7 +208,7 @@ x.insert(6@0,'b');
 x.insert(7@0,'c');
 x.insert(8@0,'c');
  
-y:= new(oid,dbl);
+var y:= new(oid,dbl);
 y.insert(1@0,dbl(1.0));
 y.insert(2@0,dbl(3.0));
 y.insert(3@0,dbl(2.0));
@@ -218,7 +218,7 @@ y.insert(6@0,dbl(3.0));
 y.insert(7@0,dbl(1.0));
 y.insert(8@0,dbl(1.0));
  
-z:= new(oid,str);
+var z:= new(oid,str);
 z.insert(1@0,"c");
 z.insert(2@0,"a");
 z.insert(3@0,"b");

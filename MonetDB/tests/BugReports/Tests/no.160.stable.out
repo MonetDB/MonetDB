@@ -69,7 +69,7 @@ dir(1);
 !MAYBE YOU MEAN:
 !	dir(str) : void
 !	dir() : void
-!	dir(BAT[int,str]) : any
+!	dir(BAT[int,str]) : void
 format_fcn_sig(1);
 !ERROR: interpret: no matching MIL operator to 'format_fcn_sig(int)'.
 !MAYBE YOU MEAN:

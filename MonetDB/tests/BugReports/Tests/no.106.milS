@@ -4,9 +4,9 @@ setoid(oid(20000000));
 #split w in twee tabellen
 var docid := new( void, oid );
 var tid := new( void, str );
-docid := [w~].reverse();
+docid := w.mark(nil).reverse();
 docid.print();
-tid := [~w];
+tid := w.reverse.mark(nil).reverse;
 tid.print();
 docid.seqbase( 1000@0 );
 docid.print();

@@ -120,7 +120,7 @@ var b1 := new(int, int);
 b1.insert(0, 0);
 b1.insert(0, 1);
 
-bn := tst(b1);  
+var bn := tst(b1);  
 bn.print();
 
 quit();

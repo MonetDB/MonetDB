@@ -36,7 +36,7 @@ a.insert( oid(2), 1000 );
 a.insert( oid(4), 10 );
 a.insert( oid(5), 15 );
 a.print();
-a.reverse().accbuild(index);
+a.reverse().accbuild("index");
 a.print();
 a.select( 94, 110 ).print();
 quit();
