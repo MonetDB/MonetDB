@@ -103,7 +103,7 @@ rm -rf $RPM_BUILD_ROOT
 %files odbc
 %defattr(-,monetdb,monetdb) 
 %{prefix}/lib/libMonetODBC*
-%{prefix}/share/sql/Tests/odbcsample1
+%{prefix}/lib/sql/Tests/odbcsample1
 
 %files java
 %{prefix}/share/MonetDB/lib/MonetDB_JDBC.jar
@@ -121,6 +121,8 @@ rm -rf $RPM_BUILD_ROOT
 %files devel
 %defattr(-,monetdb,monetdb) 
 %{prefix}/include/sql/*.h
+%{prefix}/include/sql/include/*.h
+%{prefix}/include/sql/storage/*.h
 %{prefix}/lib/pkgconfig/MonetDB-SQL.pc
 
 %if %{DOCTOOLS}
