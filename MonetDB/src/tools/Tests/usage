@@ -1,8 +1,6 @@
 #!/bin/sh
 
-Mlog -x $MTIMEOUT Mserver -monetrc $MONETRC -?
+Mlog -x $MTIMEOUT Mserver --config=$MONETRC -?
 Mlog -x $MTIMEOUT MapiClient -?
-Mlog -x $MTIMEOUT Mcreatedb -?
-Mlog -x $MTIMEOUT Mdestroydb -?
 Mlog -x $MTIMEOUT Mshutdown -?
 

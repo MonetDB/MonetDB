@@ -9,19 +9,19 @@ Loading the database:
 $ Mcreatedb -db gold -user $USER
 $ #Mload test100k -db gold -s 100000 -f format
 $ export TSTTRGDIR=`pwd`
-$ Mserver -db gold < load.mil
+$ Mserver --dbname=gold < load.mil
 $ 
 
 Create the two supportive tables:
 =================================
 
-$ Mserver -db gold < init.mil
+$ Mserver --dbname=gold < init.mil
 $
 
 Running the experiment:
 =======================
 
-$ Mserver -db gold tst100.mil >output
+$ Mserver --dbname=gold tst100.mil >output
 $
  
 Summarize the results:
@@ -37,13 +37,13 @@ In order to use the virtual oid features, first create a vectorized
 database with the void.mil script. Make sure that you have the 
 'str' and 'enum' modules installed!
 
-$ Mserver -db gold < void.mil
+$ Mserver --dbname=gold < void.mil
 $
 
 Rerun the experiment:
 =====================
 
-$ Mserver -db gold tstvoid.mil >output
+$ Mserver --dbname=gold tstvoid.mil >output
 $
  
 Summarize the results:

@@ -2098,11 +2098,11 @@ Mload $ASCII -db bench1 -oid 0 -s 1000000 -f $MONETFARM/mload.spec
 echo "cp -r $MONETFARM/dbfarm/bench1/* $MONETFARM/dbfarm/bench10"
 cp -r $MONETFARM/dbfarm/bench1/* $MONETFARM/dbfarm/bench10
 
-echo "cat scripts/init_par.mil scripts/init_enum.mil scripts/init.mil | Mserver -db bench1"
-cat scripts/init_par.mil scripts/init_enum.mil scripts/init.mil | Mserver -db bench1 
+echo "cat scripts/init_par.mil scripts/init_enum.mil scripts/init.mil | Mserver --dbname=bench1"
+cat scripts/init_par.mil scripts/init_enum.mil scripts/init.mil | Mserver --dbname=bench1 
 
-echo "cat scripts/init_par.mil scripts/init_scale.mil scripts/init.mil | Mserver -db bench10 -mmap 100"
-cat scripts/init_par.mil scripts/init_scale.mil scripts/init.mil | Mserver -db bench10 -mmap 100 
+echo "cat scripts/init_par.mil scripts/init_scale.mil scripts/init.mil | Mserver --dbname=bench10 -mmap 100"
+cat scripts/init_par.mil scripts/init_scale.mil scripts/init.mil | Mserver --dbname=bench10 -mmap 100 
 
 ### 
 ### generate the (scaled) query bodies
@@ -2301,8 +2301,8 @@ TMP=$MONETFARM/$4
 export TMP VF PAR MONETFARM
 
 cat $1.mil $TMP/query.mil > query.mil
-echo "Mserver -db bench$3 $5 $6 $7 $8 $9 < query.mil"
-time Mserver -db bench$3 $5 $6 $7 $8 $9 < query.mil
+echo "Mserver --dbname=bench$3 $5 $6 $7 $8 $9 < query.mil"
+time Mserver --dbname=bench$3 $5 $6 $7 $8 $9 < query.mil
 
 echo export MONETFARM=`pwd`
 echo export PAR=$2

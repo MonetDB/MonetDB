@@ -5,7 +5,7 @@ NAME=$1
 mserver="`echo $MSERVER' ' | sed 's| -d8 | |g'`"
 
 Mlog -x $MLOAD $NAME.data -db $TSTDB -oid 1000000 -f $NAME.format
-Mlog   "$MSERVER -db $TSTDB < $NAME.mil"
-        $MSERVER -db $TSTDB < $NAME.mil
-Mlog   "$mserver -db $TSTDB < $NAME.mil"
-        $mserver -db $TSTDB < $NAME.mil
+Mlog   "$MSERVER --dbname=$TSTDB < $NAME.mil"
+        $MSERVER --dbname=$TSTDB < $NAME.mil
+Mlog   "$mserver --dbname=$TSTDB < $NAME.mil"
+        $mserver --dbname=$TSTDB < $NAME.mil

@@ -16,7 +16,7 @@ pseudo_user () {
 	echo "quit;"
 } 
 
-pseudo_user | Mlog -x $MSERVER -db $TSTDB $PRELUDE
+pseudo_user | Mlog -x $MSERVER --dbname=$TSTDB $PRELUDE
 
 echo
 cat dump.tmp.out
@@ -26,8 +26,8 @@ for i in Dump/* Dump_n/* ; do
 	Mlog -x cat $i
 done
 
-Mlog -x $MCREATEDB -db Dump
-Mlog -x $MCREATEDB -db Dump_n
-Mlog -x $MSERVER -db Dump   -prelude Dump/DBrestore   dump.check.mil
-Mlog -x $MSERVER -db Dump_n -prelude Dump_n/DBrestore dump.check_n.mil
+Mlog -x mkdir -p $GDK_DBFARM/Dump
+Mlog -x mkdir -p $GDK_DBFARM/Dump_n
+Mlog -x $MSERVER --dbname=Dump   Dump/DBrestore   dump.check.mil
+Mlog -x $MSERVER --dbname=Dump_n Dump_n/DBrestore dump.check_n.mil
 

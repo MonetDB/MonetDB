@@ -98,7 +98,7 @@ to access its information.
 @c
 
 void GDKusage(){
-	fprintf(stderr,"usage: <program> [-db <db_name>] [-monetrc <file>]\n");
+	fprintf(stderr,"usage: <program> [--dbname=<db_name>] [--config=<file>]\n");
 	fprintf(stderr,"<program>\tprogram using the GDK library\n");
 	fprintf(stderr,"<db-name>\tdatabase to open\n");
 	fprintf(stderr,"<file>\t\tsystem variable settings\n");

@@ -17,16 +17,16 @@
 
 @set TSTDB=%TSTDB%_%NAME%  
 
-@rem if exists %GDK_DBFARM%\%TSTDB% %MDESTROYDB% -db %TSTDB%
+@rem if exists %GDK_DBFARM%\%TSTDB% rmdir /s/q %GDK_DBFARM%\%TSTDB%
 
-%MCREATEDB%  -db %TSTDB%
+mkdir %GDK_DBFARM%\%TSTDB%
 @rem  %MLOAD% test100k -db %TSTDB% -oid 30000000 -s 100000 -f format
-%MSERVER% -db %TSTDB%         < load.mil
-%MSERVER% -db %TSTDB%         < init.mil
-%MSERVER% -db %TSTDB%         < %NAME%.mil
+%MSERVER% --dbname=%TSTDB%         < load.mil
+%MSERVER% --dbname=%TSTDB%         < init.mil
+%MSERVER% --dbname=%TSTDB%         < %NAME%.mil
 @rem  | tee output
 @rem  PATH=/bin:$PATH ; export PATH
 @rem  sh summary
 
-@rem  %MDESTROYDB% -db %TSTDB%
+@rem  rmdir /s/q %GDK_DBFARM%\%TSTDB%
 

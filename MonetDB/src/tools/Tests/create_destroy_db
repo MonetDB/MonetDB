@@ -1,8 +1,8 @@
 #!/bin/sh
 
-Mlog -x $MCREATEDB -db TestDB1
-Mlog   "echo 'quit;' | $MSERVER -db TestDB1"
-        echo 'quit;' | $MSERVER -db TestDB1
+Mlog -x mkdir -p $GDK_DBFARM/TestDB1
+Mlog   "echo 'quit;' | $MSERVER --dbname=TestDB1"
+        echo 'quit;' | $MSERVER --dbname=TestDB1
 echo
-Mlog -x $MDESTROYDB -db TestDB1
+Mlog -x rm -rf $GDK_DBFARM/TestDB1
 

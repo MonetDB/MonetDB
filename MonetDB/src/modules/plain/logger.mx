@@ -683,26 +683,26 @@ proc logger_update() := {
 #Mdestroydb -db logger
 #Mcreatedb -db logger -user $USER
 
-#Mserver -db logger -prelude logger.mil << EOF
+#Mserver --dbname=logger logger.mil << EOF
 #logger_create;
 #quit;
 #EOF
 
-Mserver -db logger -prelude logger.mil << EOF
+Mserver --dbname=logger logger.mil << EOF
 logging(false);
 #logger_create();
 logger_insert();
 quit;
 EOF
 
-#Mserver -db logger -prelude logger.mil << EOF
+#Mserver --dbname=logger logger.mil << EOF
 #logging(true);
 #logger_update;
 #quit;
 #EOF
 
 # now with out logger
-#Mserver -db logger -prelude logger.mil << EOF
+#Mserver --dbname=logger logger.mil << EOF
 #logger_insert();
 #quit;
 #EOF

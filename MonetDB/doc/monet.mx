@@ -275,7 +275,7 @@ A copy of the VOC database is included in the distribution.
 In your Monet directory start the database server by typing:
 @T
 \begin{verbatim}
-Mserver -db VOC
+Mserver --dbname=VOC
 \end{verbatim}
 
 It should respond with a welcoming message and some advice 
