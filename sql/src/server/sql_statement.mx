@@ -1953,14 +1953,21 @@ static char *func_name(char *n1, char *n2)
 {
 	int l1 = strlen(n1);
 	int l2 = strlen(n2);
-	char *ns = NEW_ARRAY(char, l1 + l2 + 2), *s = ns;
-	strncpy(ns, n1, l1);
-	ns += l1;
-	*ns++ = '_';
-	strncpy(ns, n2, l2);
-	ns += l2;
-	*ns = '\0';
-	return s;
+	if (l2 > 16) { /* only support short names */
+		char *ns = NEW_ARRAY(char, l2 + 1);
+		strncpy(ns, n2, l2);
+		ns[l2] = 0;
+		return ns;
+	} else {
+		char *ns = NEW_ARRAY(char, l1 + l2 + 2), *s = ns;
+		strncpy(ns, n1, l1);
+		ns += l1;
+		*ns++ = '_';
+		strncpy(ns, n2, l2);
+		ns += l2;
+		*ns = '\0';
+		return s;
+	}
 }
 
 char *column_name(stmt * st)
@@ -2041,10 +2048,12 @@ char *table_name(stmt * st)
 	case st_reverse:
 	case st_mirror:
 		return table_name(head_column(st->op1.stval));
+	case st_const:
 	case st_join:
 	case st_outerjoin:
 	case st_derive:
 		return table_name(st->op2.stval);
+	case st_ibat:
 	case st_union:
 	case st_append:
 	case st_mark:
