@@ -1185,9 +1185,9 @@ str CMDifThenElse(int *ret, int *iid, int *tid,int *eid){
 	BUN p,q;
 	bit bnil= bit_nil;
 
-	@:getBATdescriptor(ret,iid,ib,CMDifThen)@
-	@:getBATdescriptor(ret,tid,tb,CMDifThen)@
-	@:getBATdescriptor(ret,eid,eb,CMDifThen)@
+	@:getBATdescriptor(ret,iid,ib,CMDifThenElse)@
+	@:getBATdescriptor(ret,tid,tb,CMDifThenElse)@
+	@:getBATdescriptor(ret,eid,eb,CMDifThenElse)@
 	@:chkSize(ib,tb,CMDifThenElse)@
 	@:chkSize(ib,eb,CMDifThenElse)@
 
@@ -1220,8 +1220,8 @@ str CMDifThenElseCst1(int *ret, int *iid, ptr *val,int *eid){
 	ptr nilptr;
 	int tpe;
 
-	@:getBATdescriptor(ret,iid,ib,CMDifThen)@
-	@:getBATdescriptor(ret,eid,eb,CMDifThen)@
+	@:getBATdescriptor(ret,iid,ib,CMDifThenElse)@
+	@:getBATdescriptor(ret,eid,eb,CMDifThenElse)@
 	@:chkSize(ib,eb,CMDifThenElse)@
 
 	tpe= BATttype(eb);
@@ -1254,8 +1254,8 @@ str CMDifThenElseCst2(int *ret, int *iid, int *tid,ptr *val){
 	ptr nilptr;
 	int tpe;
 
-	@:getBATdescriptor(ret,iid,ib,CMDifThen)@
-	@:getBATdescriptor(ret,tid,tb,CMDifThen)@
+	@:getBATdescriptor(ret,iid,ib,CMDifThenElse)@
+	@:getBATdescriptor(ret,tid,tb,CMDifThenElse)@
 	@:chkSize(ib,tb,CMDifThenElse)@
  
 	tpe= BATttype(tb);
