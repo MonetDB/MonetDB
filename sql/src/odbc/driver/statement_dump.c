@@ -241,14 +241,6 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		}
 		dump(sql,buf,len,-s->nr);
 	} break;
-	case st_add_col: {
-		int k = stmt_dump( s->op1.stval, nr, sql );
-		int c = stmt_dump( s->op2.stval, nr, sql );
-		len = snprintf( buf, BUFSIZ, 
-		    	"s%d := mvc_key_add_column(myc, s%d, s%d);\n", 
-			-s->nr, k, c );
-		dump(sql,buf,len,-s->nr);
-	} break;
 	case st_create_role: {
 		len = snprintf( buf, BUFSIZ, 
 		    	"s%d := mvc_create_role(myc, \"%s\", %d);\n", 

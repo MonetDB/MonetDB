@@ -155,7 +155,6 @@ void stmt_destroy(stmt * s)
 		case st_binop:
 		case st_insert:
 		case st_replace:
-		case st_add_col:
 			stmt_destroy(s->op1.stval);
 			stmt_destroy(s->op2.stval);
 			break;
@@ -257,8 +256,7 @@ void stmt_reset( stmt *s ){
 	case st_diff: case st_intersect: case st_union: case st_join: 
 	case st_outerjoin: 
 	case st_const: case st_derive: case st_ordered: case st_reorder: 
-	case st_binop: case st_insert: case st_add_col:
-	case st_replace: 
+	case st_binop: case st_insert: case st_replace: 
 
 		stmt_reset(s->op1.stval);
 		stmt_reset(s->op2.stval);
@@ -462,16 +460,6 @@ stmt *stmt_key( key *k, stmt *rk )
 	if (rk){
 		s->op2.stval = rk; 
 	}
-	return s;
-}
-
-stmt *stmt_key_add_column( stmt * key, stmt *col )
-{
-	stmt *s = stmt_create();
-	s->type = st_add_col;
-	s->op1.stval = key;
-	s->op2.stval = col;
-	s->flag = ukey;
 	return s;
 }
 
@@ -1300,6 +1288,38 @@ char *column_name(stmt * st)
 		return st->op3.sval;
 	case st_unique:
 		return column_name(st->op1.stval);
+	default:
+		fprintf(stderr, "missing name %d\n", st->type );
+		return NULL;
+	}
+}
+char *table_name(stmt * st)
+{
+	switch (st->type) {
+	case st_reverse:
+		return table_name(head_column(st->op1.stval));
+	case st_join:
+	case st_outerjoin:
+		return table_name(st->op2.stval);
+	case st_union:
+	case st_mark:
+	case st_select:
+	case st_select2:
+		return table_name(st->op1.stval);
+
+	case st_bat:
+		return st->op1.cval->table->name;
+
+	case st_aggr:
+		return table_name(st->op1.stval);
+	case st_alias:
+		return "unknown";
+
+	case st_column_alias:
+		return st->op2.sval;
+
+	case st_unique:
+		return table_name(st->op1.stval);
 	default:
 		fprintf(stderr, "missing name %d\n", st->type );
 		return NULL;

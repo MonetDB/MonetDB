@@ -19,7 +19,9 @@ fi
 $SQL < create.sql
 cat load.sql | sed -e s+PWD+$PWD+ | $SQL 
 
-exit
+$SQL < query_1.sql
+$SQL < query_2.sql
+$SQL < query_3.sql
 
 #Cleanup
 

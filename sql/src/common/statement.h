@@ -30,7 +30,6 @@ typedef enum stmt_type {
 	st_not_null,
 	st_default,
 	st_create_key,
-	st_add_col,
 	st_create_role,
 	st_drop_role,
 	st_grant,
@@ -136,7 +135,6 @@ extern stmt *stmt_not_null(stmt * col);
 extern stmt *stmt_default(stmt * col, stmt * def);
 
 extern stmt *stmt_key(key *k, stmt *rk );  
-extern stmt *stmt_key_add_column(stmt *key, stmt *col );
 
 extern stmt *stmt_create_role(char *name, int admin);
 extern stmt *stmt_drop_role(char *name );
@@ -214,6 +212,7 @@ extern sql_subtype *head_type(stmt * st);
 extern sql_subtype *tail_type(stmt * st);
 
 extern char *column_name(stmt * st);
+extern char *table_name(stmt * st);
 extern stmt *head_column(stmt * st);
 extern stmt *tail_column(stmt * st);
 extern column *basecolumn(stmt *st);

@@ -402,8 +402,9 @@ static tvar *table_optname(context * sql, scope * scp, stmt * sq,
 	if (columnrefs) {
 		dnode *d;
 
-		for (m = sq->op1.lval->h, d = columnrefs->h; d && m; 
-				d = d->next, m = m->next) {
+		for (m = sq->op1.lval->h, d = columnrefs->h; 
+		     d && m; 
+		     d = d->next, m = m->next) {
 			stmt *st = m->data;
 			table_add_column(tv, stmt_dup(st), tname, d->data.sval);
 		}
@@ -420,24 +421,9 @@ static tvar *table_optname(context * sql, scope * scp, stmt * sq,
 		for ( m = sq->op1.lval->h; m; m = m->next) {
 			stmt *st = m->data;
 			char *cname = column_name(st);
-			stmt *bc = tail_column(st);
+			char *tname = table_name(st);
 
-			/*
-			while (bc->type == st_bat &&
-			       (bc->h == NULL || bc->h->tname == NULL) &&
-			       bc->op1.cval->table->name == NULL
-			       && bc->op1.cval->s != NULL) {
-				bc = tail_column(bc->op1.cval->s);
-			}
-			*/
-
-			/*
-			if (bc->h && bc->h->tname) {
-				table_add_column(tv, st, bc->h->tname, cname);
-			} else {
-				table_add_column(tv, st, bc->op1.cval->table-> name, cname);
-			}
-			*/
+			table_add_column(tv, st, tname, cname);
 		}
 	}
 	return tv;
@@ -634,6 +620,7 @@ static stmt *sql_search_case(context * sql, scope * scp, dlist * when_search_lis
 		if (result->nrcols <= 0) {
 			res = stmt_const(res, result);
 		} else {
+			if (res) stmt_destroy(res);
 			res = result;
 		}
 	} else {
@@ -641,8 +628,8 @@ static stmt *sql_search_case(context * sql, scope * scp, dlist * when_search_lis
 	}
 	for (n = conds->h, m = results->h; n && m;
 	     n = n->next, m = m->next) {
-		stmt *cond = n->data;
-		stmt *result = m->data;
+		stmt *cond = stmt_dup(n->data);
+		stmt *result = stmt_dup(m->data);
 
 		/* need more semantic tests here */
 		if (cond->type == st_sets) {
@@ -651,18 +638,21 @@ static stmt *sql_search_case(context * sql, scope * scp, dlist * when_search_lis
 
 			if (k) {
 				list *l1 = k->data;
-				cur = l1->h->data;
+				cur = stmt_dup(l1->h->data);
 				k = k->next;
 				for (; k; k = k->next) {
 					list *l2 = k->data;
 					stmt *st = l2->h->data;
 					cur = stmt_union(cur, st);
 				}
+				if (cond) stmt_destroy(cond);
 				cond = cur;
 			}
 		}
 		if (cond->type == st_set) {
-			cond = cond->op1.lval->h->data;
+			stmt *nc = stmt_dup(cond->op1.lval->h->data);
+			stmt_destroy(cond);
+			cond = nc;
 		}
 		if (result->nrcols <= 0)
 			result = stmt_const(cond, result);
@@ -720,12 +710,19 @@ static stmt *sql_triop(context * sql, scope * scp, symbol * se, group * grp, stm
 	stmt *rs1 = sql_value_exp(sql, scp, l->next->next->data.sym, grp, subset);
 	stmt *rs2 = sql_value_exp(sql, scp, l->next->next->next->data.sym, grp, subset);
 	sql_func *f = NULL;
-	if (!ls || !rs1 || !rs2)
+	if (!ls || !rs1 || !rs2){
+		if (ls) stmt_destroy(ls);
+		if (rs1) stmt_destroy(rs1);
+		if (rs2) stmt_destroy(rs2);
 		return NULL;
+	}
 	f = sql_bind_func(l->data.sval, tail_type(ls), tail_type(rs1), tail_type(rs2));
 	if (f) {
 		return stmt_triop(ls, rs1, rs2, f);
 	} else {
+		stmt_destroy(ls);
+		stmt_destroy(rs1);
+		stmt_destroy(rs2);
 		return sql_error(sql, 02, "operator: %s(%s,%s,%s) unknown", l->data.sval, tail_type(ls)->type->sqlname, tail_type(rs1)->type->sqlname, tail_type(rs2)->type->sqlname);
 	}
 	return NULL;
@@ -737,8 +734,11 @@ static stmt *sql_binop(context * sql, scope * scp, symbol * se, group * grp, stm
 	stmt *ls = sql_value_exp(sql, scp, l->next->data.sym, grp, subset);
 	stmt *rs = sql_value_exp(sql, scp, l->next->next->data.sym, grp, subset);
 	sql_func *f = NULL;
-	if (!ls || !rs)
+	if (!ls || !rs){
+		if (ls) stmt_destroy(ls);
+		if (rs) stmt_destroy(rs);
 		return NULL;
+	}
 	f = sql_bind_func(l->data.sval, tail_type(ls), tail_type(rs), NULL);
 	if (f) {
 		return stmt_binop(ls, rs, f);
@@ -764,6 +764,8 @@ static stmt *sql_binop(context * sql, scope * scp, symbol * se, group * grp, stm
 			}
 			return stmt_binop(ls, rs, f);
 		} else {
+			stmt_destroy(ls);
+			stmt_destroy(rs);
 			return sql_error(sql, 02, "Binary operator: %s(%s,%s) unknown", l->data.sval, tail_type(ls)->type->sqlname, tail_type(rs)->type->sqlname);
 		}
 	}
@@ -781,6 +783,7 @@ static stmt *sql_unop(context * sql, scope * scp, symbol * se, group * grp, stmt
 	if (f) {
 		return stmt_unop(rs, f);
 	} else {
+		stmt_destroy(rs);
 		return sql_error(sql, 02, "Unary operator: %s(%s) unknown", l->data.sval, tail_type(rs)->type->sqlname);
 	}
 	return NULL;
@@ -806,7 +809,7 @@ static stmt *sql_aggrop(context * sql, scope * scp, symbol * se, group * grp, st
 		if (cv && subset) {
 			stmt *foundsubset = find_subset(subset, cv->s);
 
-			s = stmt_join(foundsubset, cv->s, cmp_equal);
+			s = stmt_join(foundsubset, stmt_dup(cv->s), cmp_equal);
 		}
 	} else {
 		s = sql_value_exp(sql, scp, l->h->next->next->data.sym, grp, subset);
@@ -823,7 +826,9 @@ static stmt *sql_aggrop(context * sql, scope * scp, symbol * se, group * grp, st
 	if (a) {
 		return stmt_aggr(s, a, grp_dup(grp));
 	} else {
-		return sql_error(sql, 02, "Aggregate: %s(%s) unknown", l->h->data.sval, tail_type(s)->type->sqlname);
+		char *type = tail_type(s)->type->sqlname;
+		stmt_destroy(s);
+		return sql_error(sql, 02, "Aggregate: %s(%s) unknown", l->h->data.sval, type);
 	}
 	return NULL;
 }
@@ -1378,14 +1383,15 @@ static stmt *sql_join_
 			stmt *ls = find_on_column_name(sql, scp, tv1, nm);
 			stmt *rs = find_on_column_name(sql, scp, tv2, nm);
 			if (!ls || !rs) {
-				if (s)
-					stmt_destroy(s);
+				if (ls) stmt_destroy(ls);
+				if (rs) stmt_destroy(rs);
+				if (s) stmt_destroy(s);
 				return sql_error(sql, 02, "Tables %s and %s do have a matching column %s\n", tv1->tname, tv2->tname, nm);
 			}
 			rs = check_types(sql, tail_type(ls), stmt_reverse(rs));
 			if (!rs) {
-				if (s)
-					stmt_destroy(s);
+				stmt_destroy(ls);
+				if (s) stmt_destroy(s);
 				return NULL;
 			}
 			j = stmt_join(ls, rs, cmp_equal);
@@ -1398,24 +1404,23 @@ static stmt *sql_join_
 		list *matching_columns;
 		node *m;
 
-		matching_columns =
-		    join_on_column_name(sql, scp, tv1, tv2, 0);
+		matching_columns = join_on_column_name(sql, scp, tv1, tv2, 0);
 
-		if (!matching_columns
-		    || list_length(matching_columns) == 0) {
+		if (!matching_columns || list_length(matching_columns) == 0) {
+			if (matching_columns) list_destroy(matching_columns);
 			return sql_error(sql, 02, "No attributes of tables %s and %s match\n", tv1->tname, tv2->tname);
 		}
 
 		for (m = matching_columns->h; m; m = m->next->next) {
 			stmt *j;
-			stmt *ls = m->data;
-			stmt *rs = m->next->data;
+			stmt *ls = stmt_dup(m->data);
+			stmt *rs = stmt_dup(m->next->data);
 
 			rs = check_types(sql, tail_type(ls),
 					 stmt_reverse(rs));
 			if (!rs) {
-				if (s)
-					stmt_destroy(s);
+				if (ls)
+					stmt_destroy(ls);
 				return NULL;
 			}
 			j = stmt_join(ls, rs, cmp_equal);
@@ -1446,6 +1451,8 @@ static stmt *sql_join_
 		stmt *ld = NULL, *rd = NULL;
 
 		if (!fs1 || !fs2) {
+			if (fs1) stmt_destroy(fs1);
+			if (fs2) stmt_destroy(fs2);
 			if (!fs1) {
 		     		return sql_error(sql, 02, "Subset %s not found in join expression", tv1->tname);
 			} else if (!fs2) {
@@ -1460,14 +1467,14 @@ static stmt *sql_join_
 		if (jointype == jt_left || jointype == jt_full) {
 			cvar *cs = t->columns->h->data;
 			/* we need to add the missing oid's */
-			ld = stmt_diff(stmt_dup(cs->s), stmt_reverse(fs1));
+			ld = stmt_diff(stmt_dup(cs->s), stmt_reverse(stmt_dup(fs1)));
 			ld = stmt_mark(stmt_reverse(ld), -1);
 		}
 		t = tv2;
 		if (jointype == jt_right || jointype == jt_full) {
 			cvar *cs = t->columns->h->data;
 			/* we need to add the missing oid's */
-			rd = stmt_diff(stmt_dup(cs->s), stmt_reverse(fs2));
+			rd = stmt_diff(stmt_dup(cs->s), stmt_reverse(stmt_dup(fs2)));
 			rd = stmt_mark(stmt_reverse(rd), -1);
 		}
 		l1 = create_stmt_list();
@@ -1475,14 +1482,16 @@ static stmt *sql_join_
 		for (n = t->columns->h; n; n = n->next) {
 			cvar *cs = n->data;
 
-			list_append(l1, stmt_join(fs1, stmt_dup(cs->s), cmp_equal));
+			list_append(l1, stmt_join(stmt_dup(fs1), stmt_dup(cs->s), cmp_equal));
 		}
 		t = tv2;
 		for (n = t->columns->h; n; n = n->next) {
 			cvar *cs = n->data;
 
-			list_append(l1, stmt_join(fs2, stmt_dup(cs->s), cmp_equal));
+			list_append(l1, stmt_join(stmt_dup(fs2), stmt_dup(cs->s), cmp_equal));
 		}
+		if (fs1) stmt_destroy(fs1);
+		if (fs2) stmt_destroy(fs2);
 		if (jointype == jt_left || jointype == jt_full) {
 			list *l2 = create_stmt_list();
 			node *m = l1->h;
@@ -1491,14 +1500,14 @@ static stmt *sql_join_
 			     n = n->next, m = m->next) {
 				cvar *cs = n->data;
 
-				list_append(l2, stmt_union(m->data, stmt_join (ld, stmt_dup(cs->s), cmp_equal)));
+				list_append(l2, stmt_union(stmt_dup(m->data), stmt_join (stmt_dup(ld), stmt_dup(cs->s), cmp_equal)));
 			}
 			t = tv2;
 			for (n = t->columns->h; n;
 			     n = n->next, m = m->next) {
 				cvar *cs = n->data;
 
-				list_append(l2, stmt_union(m->data, stmt_const (ld, stmt_atom (atom_general (tail_type(cs->s), NULL)))));
+				list_append(l2, stmt_union(stmt_dup(m->data), stmt_const (stmt_dup(ld), stmt_atom (atom_general (tail_type(cs->s), NULL)))));
 			}
 			list_destroy(l1);
 			l1 = l2;
@@ -1511,21 +1520,23 @@ static stmt *sql_join_
 			     n = n->next, m = m->next) {
 				cvar *cs = n->data;
 
-				list_append(l2,
-						 stmt_union(m->data, stmt_const (rd, stmt_atom (atom_general (tail_type(cs->s), NULL)))));
+				list_append(l2, stmt_union(stmt_dup(m->data), stmt_const (stmt_dup(rd), stmt_atom (atom_general (tail_type(cs->s), NULL)))));
 			}
 			t = tv2;
 			for (n = t->columns->h; n;
 			     n = n->next, m = m->next) {
 				cvar *cs = n->data;
 
-				list_append(l2, stmt_union(m->data, stmt_join (rd, stmt_dup(cs->s), cmp_equal)));
+				list_append(l2, stmt_union(stmt_dup(m->data), stmt_join (stmt_dup(rd), stmt_dup(cs->s), cmp_equal)));
 			}
 			list_destroy(l1);
 			l1 = l2;
 		}
+		if (ld) stmt_destroy(ld);
+		if (rd) stmt_destroy(rd);
 		s = stmt_list(l1);
 	}
+	if (subset) stmt_destroy(subset);
 	return s;
 }
 
@@ -1539,8 +1550,7 @@ static stmt *sql_join(context * sql, scope * scp, symbol * q)
 	symbol *tab_ref2 = n->next->next->next->data.sym;
 	symbol *joinspec = n->next->next->next->next->data.sym;
 
-	return sql_join_(sql, scp,
-			 tab_ref1, natural, jointype, tab_ref2, joinspec);
+	return sql_join_(sql, scp, tab_ref1, natural, jointype, tab_ref2, joinspec);
 }
 
 static stmt *sql_cross(context * sql, scope * scp, symbol * q)
@@ -1595,9 +1605,7 @@ static tvar *query_exp_optname(context * sql, scope * scp, symbol * q)
 				printf("empty join result\n");
 				return NULL;
 			}
-			res =
-			    table_optname(sql, scp, tq, q->sql,
-					  q->data.lval->t->data.sym);
+			res = table_optname(sql, scp, tq, q->sql, q->data.lval->t->data.sym);
 			scp = scope_close(nscp);
 			return res;
 		}
@@ -1609,9 +1617,7 @@ static tvar *query_exp_optname(context * sql, scope * scp, symbol * q)
 				printf("empty join result\n");
 				return NULL;
 			}
-			res =
-			    table_optname(sql, scp, tq, q->sql,
-					  q->data.lval->t->data.sym);
+			res = table_optname(sql, scp, tq, q->sql, q->data.lval->t->data.sym);
 			scp = scope_close(nscp);
 			return res;
 		}
@@ -1620,10 +1626,9 @@ static tvar *query_exp_optname(context * sql, scope * scp, symbol * q)
 			scope *nscp = scope_open(scp);
 			node *m;
 			dnode *n = q->data.lval->h;
-			tvar *lv = table_ref(sql, nscp, n->data.sym);
 			int all = n->next->data.ival;
-			tvar *rv =
-			    table_ref(sql, nscp, n->next->next->data.sym);
+			tvar *lv = table_ref(sql, nscp, n->data.sym);
+			tvar *rv = table_ref(sql, nscp, n->next->next->data.sym);
 			list *unions, *matching_columns;
 
 			if (!lv || !rv)
@@ -1635,22 +1640,18 @@ static tvar *query_exp_optname(context * sql, scope * scp, symbol * q)
 			 */
 			/* join all result columns ie join(lh,rh) on column_name */
 
-			matching_columns =
-			    join_on_column_name(sql, nscp, lv, rv, 1);
+			matching_columns = join_on_column_name(sql, nscp, lv, rv, 1);
 
 			if (!matching_columns)
 				return NULL;
 
 			unions = create_stmt_list();
 			for (m = matching_columns->h; m; m = m->next->next) {
-				stmt *l = m->data;
-				stmt *r = m->next->data;
+				stmt *l = stmt_dup(m->data);
+				stmt *r = stmt_dup(m->next->data);
 				list_append(unions, stmt_union(l, r));
 			}
-			res =
-			    table_optname(sql, scp, stmt_list(unions),
-					  q->sql,
-					  q->data.lval->t->data.sym);
+			res = table_optname(sql, scp, stmt_list(unions), q->sql, q->data.lval->t->data.sym);
 			list_destroy(matching_columns);
 			scp = scope_close(nscp);
 			return res;
@@ -2398,8 +2399,10 @@ static stmt *sql_simple_select(context * sql, scope * scp, dlist * selection)
 		while (n) {
 			stmt *cs = sql_column_exp(sql, scp, n->data.sym, NULL, NULL);
 
-			if (!cs)
+			if (!cs) {
+				list_destroy(rl);
 				return NULL;
+			}
 
 			/* t1.* */
 			if (cs->type == st_list && n->data.sym->token == SQL_TABLE) {
@@ -2409,6 +2412,8 @@ static stmt *sql_simple_select(context * sql, scope * scp, dlist * selection)
 				printf("subquery in simple_select\n");
 				stmt_destroy(cs);
 				return NULL;
+			} else if (cs->key == 1){
+				printf("single value\n");
 			} else {
 				list_append(rl, cs);
 			}
@@ -2570,8 +2575,7 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 			}
 
 			/* t1.* */
-			if (cs->type == st_list
-			    && n->data.sym->token == SQL_TABLE){
+			if (cs->type == st_list && n->data.sym->token == SQL_TABLE){
 				list_merge(rl, cs->op1.lval, (fdup)&stmt_dup);
 				stmt_destroy(cs);
 			} else if (cs->type == st_list) {	/* subquery */
@@ -2589,6 +2593,10 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 					list_append(rl, stmt_outerjoin( stmt_outerjoin(ss, stmt_reverse (ids), cmp_equal), stmt_dup(cs->op1.lval->h->data), cmp_equal));
 					stmt_destroy(cs);
 				}
+			} else if (!grp && cs->key == 1){
+				stmt *ss = first_subset(subset);
+				cs = stmt_const(ss,cs);
+				list_append(rl, cs);
 			} else {
 				list_append(rl, cs);
 			}
@@ -2768,8 +2776,7 @@ static stmt *drop_role(context * sql, schema * s, dlist * qname )
 	return stmt_drop_role(role_name);
 }
 
-static stmt *column_constraint_type(context * sql, char *name, 
-			symbol * s, stmt * ss, stmt * ts, stmt * cs, column *c)
+static stmt *column_constraint_type(context * sql, char *name, symbol * s, stmt * ss, stmt * ts, stmt * cs, column *c)
 {
 	stmt *res = NULL;
 
@@ -2778,7 +2785,8 @@ static stmt *column_constraint_type(context * sql, char *name,
 	{
 		key *k = cat_table_add_key(c->table, ukey, name, NULL);
 		cat_key_add_column(k, c);
-		res = stmt_key_add_column(stmt_key(k, NULL), cs);
+		res = stmt_key(k, NULL);
+		stmt_destroy(cs);
 		stmt_destroy(ss);
 		stmt_destroy(ts);
 	} break;
@@ -2786,7 +2794,8 @@ static stmt *column_constraint_type(context * sql, char *name,
 	{
 		key *k = cat_table_add_key(c->table, pkey, name, NULL);
 		cat_key_add_column(k, c);
-		res = stmt_key_add_column(stmt_key(k, NULL), cs);
+		res = stmt_key(k, NULL);
+		stmt_destroy(cs);
 		stmt_destroy(ss);
 		stmt_destroy(ts);
 	} break;
@@ -2807,7 +2816,8 @@ static stmt *column_constraint_type(context * sql, char *name,
 			stmt *fts = stmt_bind_table(ss, ft);
 			stmt *rks = stmt_bind_key(stmt_dup(ss), rk);
 			cat_key_add_column(k, c);
-			res = stmt_key_add_column( stmt_key(k, rks), cs);
+			res = stmt_key(k, rks);
+			stmt_destroy(cs);
 			stmt_destroy(ts);
 		}
 	} break;
@@ -2831,8 +2841,7 @@ static stmt *column_constraint_type(context * sql, char *name,
 column_option: default | column_constraint ;
 */
 
-static stmt *column_option(context * sql, symbol * s, stmt * ss, 
-			   stmt * ts, stmt * cs, column *c)
+static stmt *column_option(context * sql, symbol * s, stmt * ss, stmt * ts, stmt * cs, column *c)
 {
 	stmt *res = NULL;
 	assert(cs);
@@ -2842,19 +2851,15 @@ static stmt *column_option(context * sql, symbol * s, stmt * ss,
 			dlist *l = s->data.lval;
 			char *opt_name = l->h->data.sval;  
 			symbol *sym = l->h->next->data.sym;
-			res = column_constraint_type(sql, opt_name,
-						sym, ss, ts, cs, c);
+			res = column_constraint_type(sql, opt_name, sym, ss, ts, cs, c);
 		}
 		break;
 	case SQL_ATOM: {
 			AtomNode *an = (AtomNode*)s;
 			if (!an->a){
-				res = stmt_default(cs, 
-					stmt_atom( 
-					  atom_general(c->tpe,NULL)));
+				res = stmt_default(cs, stmt_atom(atom_general(c->tpe,NULL)));
 			} else {
-				res = stmt_default(cs, 
-					stmt_atom(atom_dup(an->a)));
+				res = stmt_default(cs, stmt_atom(atom_dup(an->a)));
 			}
 			stmt_destroy(ss);
 			stmt_destroy(ts);
@@ -2868,8 +2873,7 @@ static stmt *column_option(context * sql, symbol * s, stmt * ss,
 	return res;
 }
 
-static stmt *column_options(context * sql, dlist * opt_list, 
-		stmt *ss, stmt * ts, stmt * cs, column *c)
+static stmt *column_options(context * sql, dlist * opt_list, stmt *ss, stmt * ts, stmt * cs, column *c)
 {
 	assert(cs);
 	if (opt_list) {
@@ -2932,25 +2936,21 @@ static stmt *table_foreign_key( context * sql, char *name, symbol * s, stmt * ss
 			return sql_error(sql, 02, "Could not find referenced unique key in table %s\n", ft->name );
 		}
 	       	k = cat_table_add_key(t, fkey, name, rk);
-		fts = stmt_bind_table(ss, ft);
+		fts = stmt_bind_table(stmt_dup(ss), ft);
 		rks = stmt_bind_key(fts, rk);
 		ks = stmt_key(k, rks);
+		res = ks;
 
-		for(fnms = rk->columns->h;
-				nms && fnms; 
-				nms = nms->next, fnms = fnms->next){
+		for(fnms = rk->columns->h; nms && fnms; nms = nms->next, fnms = fnms->next){
 			char *nm = nms->data.sval;
 			column *c = cat_bind_column(cat, t, nm );
-			column *fc = fnms->data;
 
 			if (!c){
 				if (res) stmt_destroy(res);
 				return sql_error(sql, 02, "Table %s has no column %s\n", t->name, nm);
 			}
 			cat_key_add_column(k, c );
-			res = stmt_key_add_column(ks, stmt_bind_column(stmt_dup(ts),c));
 		}
-		stmt_destroy(ts);
 		if (nms || fnms){
 			if (res) stmt_destroy(res);
 			return sql_error(sql, 02, "Not all colunms are handeled in the foreign key\n");
@@ -2959,8 +2959,7 @@ static stmt *table_foreign_key( context * sql, char *name, symbol * s, stmt * ss
 	return res;
 }
 
-static stmt *table_constraint_type( context * sql, char *name, symbol * s, 
-		stmt * ss, stmt *ts, table * t )
+static stmt *table_constraint_type( context * sql, char *name, symbol * s, stmt * ss, stmt *ts, table * t )
 {
 	catalog *cat = sql->cat;
 	stmt *res = NULL;
@@ -2976,14 +2975,13 @@ static stmt *table_constraint_type( context * sql, char *name, symbol * s,
 			for(;nms; nms = nms->next){
 				char *nm = nms->data.sval;
 				column *c = cat_bind_column(cat, t, nm );
-				stmt *cs = stmt_bind_column(ts, c);
 
 				if (!c){
 					return sql_error(sql, 02, "Table %s has no column %s\n", t->name, nm);
 				}
 				cat_key_add_column(k, c);
-				res = stmt_key_add_column(ks, cs);
 			}
+			res = ks;
 		} break;
 		case SQL_FOREIGN_KEY:
 			res = table_foreign_key( sql, name, s, ss, ts, t );
@@ -2997,8 +2995,7 @@ static stmt *table_constraint_type( context * sql, char *name, symbol * s,
 	return res;
 }
 
-static stmt *table_constraint( context * sql, symbol * s, 
-		stmt *ss, stmt * ts, table * table) 
+static stmt *table_constraint( context * sql, symbol * s, stmt *ss, stmt * ts, table * table) 
 {
 	stmt *res = NULL;
 
@@ -3017,8 +3014,7 @@ static stmt *table_constraint( context * sql, symbol * s,
 	return res;
 }
 
-static stmt *table_element(context * sql, symbol * s, 
-			stmt *ss, stmt * ts, table *table)
+static stmt *table_element(context * sql, symbol * s, stmt *ss, stmt * ts, table *table)
 {
 	stmt *res = NULL;
 
@@ -3071,8 +3067,7 @@ static stmt *create_table(context * sql, schema * schema, stmt * ss,
 		dnode *n = columns->h;
 
 		while (n) {
-			list_append(newcolumns, 
-				table_element(sql, n->data.sym, ss, ts, table));
+			list_append(newcolumns, table_element(sql, n->data.sym, ss, ts, table));
 			n = n->next;
 		}
 		return stmt_list(newcolumns);

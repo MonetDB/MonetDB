@@ -1776,7 +1776,7 @@ data_type:
  |  VARCHAR '(' intval ')'	{ $$ = new_subtype("VARCHAR", $3, 0); }
  | datetime_type
  | interval_type		
- | TYPE				{ $$ = new_subtype($1, 0, 0); }
+ | TYPE				{ $$ = new_subtype($1, 0, 0); _DELETE($1); }
  ;
 
 column:	ident ;
