@@ -1561,9 +1561,7 @@ sql_key *mvc_create_key( mvc * m, sql_table *t, int kt, sql_key *rkey )
 { 
 	sql_key *k = NEW(sql_key);
 
-/*
 	if (m->debug)
-*/
 		printf("mvc_create_key %s %d %d\n", t->name, kt, (int)rkey);
 
 	k->id = 0;
@@ -1583,9 +1581,8 @@ sql_key *mvc_create_key( mvc * m, sql_table *t, int kt, sql_key *rkey )
 }
 
 sql_key *mvc_key_add_column( mvc * m, sql_key *k, sql_column *c ){
-/*
+
 	if (m->debug)
-*/
 		printf("mvc_key_add_column %s\n", c->name);
 	list_append(k->columns, c);
 	return k;
