@@ -25,7 +25,7 @@ $(prefix)/doc/MonetDB/TechDocs/Core/Mx/mxdoc.aux:	$(prefix)/doc/MonetDB/TechDocs
 	(cd $(prefix)/doc/MonetDB/TechDocs/Core/Mx; latex mxdoc.tex; latex mxdoc.tex)
 
 $(prefix)/doc/MonetDB/TechDocs/Core/Mx/index.html:	$(prefix)/doc/MonetDB/TechDocs/Core/Mx/mxdoc.aux
-	(cd $(prefix); latex2html -ascii_mode -no_images -address '' -style http://monetdb.cwi.nl/MonetDB.css -dir doc/MonetDB/TechDocs/Core/Mx doc/MonetDB/TechDocs/Core/Mx/mxdoc.tex)
+	(cd $(prefix); latex2html -ascii_mode -no_images -address '' -style http://monetdb.cwi.nl/MonetDB.css -dir doc/MonetDB/TechDocs/Core/Mx doc/MonetDB/TechDocs/Core/Mx/mxdoc.tex -noinfo)
 
 $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation/index.html:	$(top_srcdir)/src/mapi/clients/java/MapiClient.java	\
 					$(top_srcdir)/src/mapi/clients/java/mapi/Mapi.java	\
