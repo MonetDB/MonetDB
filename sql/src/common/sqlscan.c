@@ -194,8 +194,13 @@ void init_keywords()
 
 	keywords_insert("GRANT", GRANT);
 	keywords_insert("REVOKE", REVOKE);
+	keywords_insert("ROLE", ROLE);
+	keywords_insert("ADMIN", ADMIN);
 	keywords_insert("PRIVILEGES", PRIVILEGES);
+	keywords_insert("HIERARCHY", HIERARCHY);
 	keywords_insert("PUBLIC", PUBLIC);
+	keywords_insert("CURRENT_USER", CURRENT_USER);
+	keywords_insert("CURRENT_ROLE", CURRENT_ROLE);
 	/*
 	   keywords_insert("PROCEDURE", PROCEDURE );
 	 */

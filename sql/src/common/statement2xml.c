@@ -15,9 +15,9 @@ char *atom2xml( atom *a){
 	case general_value:
 			if (a->data.sval)
 			  snprintf(buf, BUFSIZ, "%s(\"%s\")", 
-				a->tpe->name, a->data.sval );
+				a->tpe.type->name, a->data.sval );
 			else 
-			  snprintf(buf, BUFSIZ, "%s(nil)", a->tpe->name );
+			  snprintf(buf, BUFSIZ, "%s(nil)", a->tpe.type->name );
 			break;
 	}
 	return _strdup(buf);
@@ -192,9 +192,9 @@ int stmt2xml( stmt *s, int *nr, context *sql ){
 	case st_create_column: {
 		column *c = s->op1.cval;
 		len += snprintf( buf+len, BUFSIZ, 
-			"s%d := mvc_create_column(myc, %ld, %ld, \"%s\", \"%s\", %d);\n",
+			"s%d := mvc_create_column(myc, %ld, %ld, \"%s\", \"%s\", %d, %d, %d);\n",
 			s->nr, c->id, c->table->id, c->name, 
-			c->tpe->sqlname, c->colnr );
+			c->tpe->type->sqlname, c->tpe->size, c->tpe->digits, c->colnr );
 		XNODE("mvc_create_column");
 			xml_field("name", "%s", c->name);
 		FXNODE;
@@ -245,22 +245,22 @@ int stmt2xml( stmt *s, int *nr, context *sql ){
 		case cmp_lt:
 			len += snprintf( buf+len, BUFSIZ, 
 			  "s%d := s%d.mil_select(\"<in>\", %s(nil), s%d);\n", 
-			  s->nr, l, tail_type(s)->name, r ); 
+			  s->nr, l, tail_type(s)->type->name, r ); 
 			break;
 		case cmp_lte:
 			len += snprintf( buf+len, BUFSIZ, 
 			  "s%d := s%d.uselect(%s(nil), s%d);\n", 
-			  s->nr, l, tail_type(s)->name, r ); 
+			  s->nr, l, tail_type(s)->type->name, r ); 
 			break;
 		case cmp_gt:
 			len += snprintf( buf+len, BUFSIZ, 
 			  "s%d := s%d.mil_select(\"<in>\", s%d, %s(nil));\n", 
-			  s->nr, l, r, tail_type(s)->name ); 
+			  s->nr, l, r, tail_type(s)->type->name ); 
 			break;
 		case cmp_gte: 
 			len += snprintf( buf+len, BUFSIZ, 
 			  "s%d := s%d.uselect(s%d, %s(nil));\n", 
-			  s->nr, l, r, tail_type(s)->name ); 
+			  s->nr, l, r, tail_type(s)->type->name ); 
 			break;
 		default:
 			len += snprintf( buf+len, BUFSIZ, "error impossible\n");
@@ -600,7 +600,7 @@ int stmt2xml( stmt *s, int *nr, context *sql ){
 				s->nr, l, s->op2.aggrval->imp );
 			len += snprintf( buf+len, BUFSIZ, 
 				"s%d := new(oid,%s);\n"
-				, *nr+1, s->op2.aggrval->res->name );
+				, *nr+1, s->op2.aggrval->res->type->name );
 			len += snprintf( buf+len, BUFSIZ, 
 				"s%d.insert(oid(0),s%d);\n"
 				, *nr+1, s->nr );
@@ -618,7 +618,7 @@ int stmt2xml( stmt *s, int *nr, context *sql ){
 		n = s->op2.lval->h;
 
 		if (n){
-		  	char *a = (char*)atom_type(n->data)->name;
+		  	char *a = (char*)atom_type(n->data)->type->name;
 			len += snprintf( buf+len, BUFSIZ, 
 				"s%d := new(%s,oid);\n", s->nr, a );
 		}

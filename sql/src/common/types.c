@@ -10,6 +10,22 @@ list *types = NULL;
 list *aggrs = NULL;
 list *funcs = NULL;
 
+sql_subtype *sql_create_subtype( sql_type *t, int s, int d )
+{
+	sql_subtype *res = NEW(sql_subtype);
+	res->type = t;
+	res->size = s;
+	res->digits = d;
+	return res;
+}
+
+sql_subtype *sql_dup_subtype( sql_subtype *t )
+{
+	sql_subtype *res = NEW(sql_subtype);
+	*res = *t;
+	return res;
+}
+
 sql_type *sql_bind_type(char *sqlname)
 {
 	char *name = toLower(sqlname);
@@ -26,7 +42,21 @@ sql_type *sql_bind_type(char *sqlname)
 	return NULL;
 }
 
-sql_aggr *sql_bind_aggr(char *sqlname, char *type)
+static int type_cmp( sql_type *t1, sql_type *t2)
+{
+	if (!t1 || !t2){	
+		return -1;
+	}
+	return strcmp(t1->sqlname, t2->sqlname) == 0;
+}
+
+int subtype_cmp( sql_subtype *t1, sql_subtype *t2 )
+{
+	return type_cmp( t1->type, t2->type);
+}
+
+
+sql_aggr *sql_bind_aggr(char *sqlname, sql_subtype *type)
 {
 	char *name = toLower(sqlname);
 	node *n = aggrs->h;
@@ -34,7 +64,7 @@ sql_aggr *sql_bind_aggr(char *sqlname, char *type)
 		sql_aggr *t = n->data;
 		if (strcmp(t->name, name) == 0 &&
 		    (!t->tpe
-		     || (type && strcmp(t->tpe->sqlname, type) == 0))){
+		     || (type && subtype_cmp(t->tpe, type) == 0))){
 			_DELETE(name);
 			return t;
 		}
@@ -44,20 +74,18 @@ sql_aggr *sql_bind_aggr(char *sqlname, char *type)
 	return NULL;
 }
 
-sql_func *sql_bind_func(char *sqlname, char *tp1, char *tp2, char *tp3)
+sql_func *sql_bind_func(char *sqlname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3)
 {
 	char *name = toLower(sqlname);
 	node *n = funcs->h;
 	while (n) {
 		sql_func *t = n->data;
 		if (strcmp(t->name, name) == 0 &&
-		    strcmp(t->tpe1->sqlname, tp1) == 0 &&
-		    ((tp2 && t->tpe2 && strcmp(t->tpe2->sqlname, tp2) == 0)
-		     || (!tp2 && !t->tpe2)) && ((tp3 && t->tpe3
-						 && strcmp(t->tpe3->
-							   sqlname,
-							   tp3) == 0)
-						|| (!tp3 && !t->tpe3))){
+		    subtype_cmp(t->tpe1, tp1) == 0 &&
+		    ((tp2 && t->tpe2 && subtype_cmp(t->tpe2, tp2) == 0)
+		     || (!tp2 && !t->tpe2)) && 
+		    	((tp3 && t->tpe3 && subtype_cmp(t->tpe3, tp3) == 0)
+			|| (!tp3 && !t->tpe3))){
 			_DELETE(name);
 			return t;
 		}
@@ -67,22 +95,19 @@ sql_func *sql_bind_func(char *sqlname, char *tp1, char *tp2, char *tp3)
 	return NULL;
 }
 
-sql_func *sql_bind_func_result(char *sqlname,
-			   char *tp1, char *tp2, char *tp3, char *res)
+sql_func *sql_bind_func_result(char *sqlname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_subtype *res)
 {
 	char *name = toLower(sqlname);
 	node *n = funcs->h;
 	while (n) {
 		sql_func *t = n->data;
 		if (strcmp(t->name, name) == 0 &&
-		    strcmp(t->tpe1->sqlname, tp1) == 0 &&
-		    ((tp2 && t->tpe2 && strcmp(t->tpe2->sqlname, tp2) == 0)
+		    subtype_cmp(t->tpe1, tp1) == 0 &&
+		    ((tp2 && t->tpe2 && subtype_cmp(t->tpe2, tp2) == 0)
 		     || (!tp2 && !t->tpe2)) && ((tp3 && t->tpe3
-						 && strcmp(t->tpe3->
-							   sqlname,
-							   tp3) == 0)
-						|| (!tp3 && !t->tpe3))
-		    && strcmp(t->res->sqlname, res) == 0){
+			 && subtype_cmp(t->tpe3, tp3) == 0)
+					|| (!tp3 && !t->tpe3))
+		        	&& subtype_cmp(t->res, res) == 0){
 			_DELETE(name);
 			return t;
 		}
@@ -93,15 +118,12 @@ sql_func *sql_bind_func_result(char *sqlname,
 }
 
 
-sql_type *sql_create_type(char *sqlname, char *name, char *cast )
+sql_type *sql_create_type(char *sqlname, char *name)
 {
 	sql_type *t = NEW(sql_type);
 
 	t->sqlname = toLower(sqlname);
 	t->name = _strdup(name);
-	t->cast = NULL;
-	if (strlen(cast) > 0)
-		t->cast = sql_bind_type(cast);
 	t->nr = list_length(types);
 	list_append(types, t);
 	return t;
@@ -121,13 +143,15 @@ sql_aggr *sql_create_aggr(char *name, char *imp, char *tpe, char *res )
 	t->name = toLower(name);
 	t->imp = _strdup(imp);
 	if (strlen(tpe)) {
-		t->tpe = sql_bind_type(tpe);
+		t->tpe = sql_create_subtype(sql_bind_type(tpe), 0, 0);
 		assert(t->tpe);
+		assert(t->tpe->type);
 	} else {
 		t->tpe = NULL;
 	}
-	t->res = sql_bind_type(res);
+	t->res = sql_create_subtype(sql_bind_type(res), 0, 0);
 	assert(t->res);
+	assert(t->res->type);
 	t->nr = list_length(aggrs);
 	list_append(aggrs, t);
 	return t;
@@ -137,6 +161,8 @@ static void aggr_destroy(sql_aggr * t)
 {
 	_DELETE(t->name);
 	_DELETE(t->imp);
+	if (t->tpe) _DELETE(t->tpe);
+	_DELETE(t->res);
 	_DELETE(t);
 }
 
@@ -147,22 +173,26 @@ sql_func *sql_create_func(char *name, char *imp, char *tpe1,
 
 	t->name = toLower(name);
 	t->imp = _strdup(imp);
-	t->tpe1 = sql_bind_type(tpe1);
+	t->tpe1 = sql_create_subtype(sql_bind_type(tpe1), 0, 0);
 	assert(t->tpe1);
+	assert(t->tpe1->type);
 	if (strlen(tpe2)) {
-		t->tpe2 = sql_bind_type(tpe2);
+		t->tpe2 = sql_create_subtype(sql_bind_type(tpe2), 0, 0);
 		assert(t->tpe2);
+		assert(t->tpe2->type);
 	} else {
 		t->tpe2 = NULL;
 	}
 	if (strlen(tpe3)) {
-		t->tpe3 = sql_bind_type(tpe3);
+		t->tpe3 = sql_create_subtype(sql_bind_type(tpe3), 0, 0);
 		assert(t->tpe3);
+		assert(t->tpe3->type);
 	} else {
 		t->tpe3 = NULL;
 	}
-	t->res = sql_bind_type(res);
+	t->res = sql_create_subtype(sql_bind_type(res), 0, 0);
 	assert(t->res);
+	assert(t->res->type);
 	t->nr = list_length(funcs);
 	list_append(funcs, t);
 	return t;
@@ -172,6 +202,10 @@ static void func_destroy(sql_func * t)
 {
 	_DELETE(t->name);
 	_DELETE(t->imp);
+	_DELETE(t->tpe1);
+	if (t->tpe2) _DELETE(t->tpe2);
+	if (t->tpe3) _DELETE(t->tpe3);
+	_DELETE(t->res);
 	_DELETE(t);
 }
 
@@ -198,8 +232,7 @@ void types_export(stream *s){
 	s->write(s, buf, i, 1);
 	for (n = types->h; n; n = n->next){
 		sql_type *t = n->data;
-		i = snprintf(buf, BUFSIZ, "%s,%s,%s\n", 
-			t->sqlname, t->name, (t->cast)?t->cast->sqlname:"" );
+		i = snprintf(buf, BUFSIZ, "%s,%s\n", t->sqlname, t->name );
 		s->write(s, buf, i, 1);
 	}
 	i = snprintf(buf, BUFSIZ, "%d\n", list_length(aggrs) );
@@ -207,7 +240,7 @@ void types_export(stream *s){
 	for (n = aggrs->h; n; n = n->next){
 		sql_aggr *a = n->data;
 		i = snprintf(buf, BUFSIZ, "%s,%s,%s,%s\n", a->name, a->imp, 
-			(a->tpe)?a->tpe->sqlname:"", a->res->sqlname	);
+			(a->tpe)?a->tpe->type->sqlname:"", a->res->type->sqlname	);
 		s->write(s, buf, i, 1);
 	}
 	i = snprintf(buf, BUFSIZ, "%d\n", list_length(funcs) );
@@ -215,15 +248,15 @@ void types_export(stream *s){
 	for (n = funcs->h; n; n = n->next){
 		sql_func *f = n->data;
 		int i = snprintf(buf, BUFSIZ, "%s,%s,%s,%s,%s,%s\n", f->name, f->imp, 
-			(f->tpe1)?f->tpe1->sqlname:"", (f->tpe2)?f->tpe2->sqlname:"", 
-			(f->tpe3)?f->tpe3->sqlname:"", f->res->sqlname	);
+			(f->tpe1)?f->tpe1->type->sqlname:"", (f->tpe2)?f->tpe2->type->sqlname:"", 
+			(f->tpe3)?f->tpe3->type->sqlname:"", f->res->type->sqlname	);
 		s->write(s, buf, i, 1);
 	}
 	s->flush(s);
 }
 
-void sql_new_type( char *sqlname, char *name, char *cast ){
-	(void)sql_create_type( sqlname, name, cast );
+void sql_new_type( char *sqlname, char *name ){
+	(void)sql_create_type( sqlname, name );
 }
 void sql_new_aggr( char *name, char *imp, char *tpe, char *res ){
 	(void)sql_create_aggr( name, imp, tpe, res );

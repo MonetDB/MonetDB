@@ -31,6 +31,12 @@ typedef enum stmt_type {
 	st_default,
 	st_create_key,
 	st_add_col,
+	st_create_role,
+	st_drop_role,
+	st_grant,
+	st_revoke,
+	st_grant_role,
+	st_revoke_role,
 
 	st_commit,
 	st_rollback,
@@ -124,13 +130,30 @@ extern stmt *stmt_bind_table(stmt *schema, table * t);
 extern stmt *stmt_bind_column(stmt *table, column *c);
 extern stmt *stmt_bind_key(stmt *table, key *k);
 
-extern stmt *stmt_drop_schema(schema * s);
+extern stmt *stmt_drop_schema(schema * s, int dropaction);
 extern stmt *stmt_create_schema(schema * s);
 extern stmt *stmt_drop_table(stmt *s, char * name, int drop_action);
 extern stmt *stmt_create_table(stmt *s, table * t);
 extern stmt *stmt_create_column(stmt *t, column * c);
 extern stmt *stmt_not_null(stmt * col);
 extern stmt *stmt_default(stmt * col, stmt * def);
+
+extern stmt *stmt_key(stmt * t, key_type kt, stmt *rk );  
+extern stmt *stmt_key_add_column(stmt *key, stmt *col );
+
+extern stmt *stmt_create_role(char *name, int admin);
+extern stmt *stmt_drop_role(char *name );
+extern stmt *stmt_grant_role(char *authid, char *role);
+extern stmt *stmt_revoke_role(char *authid, char *role);
+
+/*
+extern stmt *stmt_schema_grant(stmt *s, char *authid, int privilege);
+extern stmt *stmt_schema_revoke(stmt *s, char *authid, int privilege);
+extern stmt *stmt_table_grant(stmt *t, char *authid, int privilege);
+extern stmt *stmt_table_revoke(stmt *t, char *authid, int privilege);
+extern stmt *stmt_column_grant(stmt *c, char *authid, int privilege);
+extern stmt *stmt_column_revoke(stmt *c, char *authid, int privilege);
+*/
 
 extern stmt *stmt_cbat(column * c, tvar * basetable, int access, int type);
 extern stmt *stmt_tbat(table * t, int access, int type);
@@ -193,11 +216,8 @@ extern stmt *stmt_exists(stmt * op1, list * l);
 
 extern stmt *stmt_name(stmt * op1, char *name);
 
-extern stmt *stmt_key(stmt * t, key_type kt, stmt *rk );  
-extern stmt *stmt_key_add_column(stmt *key, stmt *col );
-
-extern sql_type *head_type(stmt * st);
-extern sql_type *tail_type(stmt * st);
+extern sql_subtype *head_type(stmt * st);
+extern sql_subtype *tail_type(stmt * st);
 
 extern char *column_name(stmt * st);
 extern stmt *head_column(stmt * st);

@@ -52,7 +52,7 @@
 	.COMMAND types_export( Stream s ) = types_export_wrap;
 		"export the types/aggrs/functions to the stream s"
 
-	.COMMAND sql_type(str sqlname, str name, str cast ) = 
+	.COMMAND sql_type(str sqlname, str name ) = 
 		sql_type_wrap; "Add a new sql type"
 
 	.COMMAND sql_aggr(str name, str imp, str atp, str rtp) = 
@@ -72,8 +72,11 @@
 	.COMMAND mvc_destroy( mvc m ) = mvc_destroy_wrap;
 		"Destroy multi version catalog"
 
-	.COMMAND mvc_login( mvc m, str schema, str user, str passwd ) : int 
+	.COMMAND mvc_login( mvc m, str user, str passwd ) : str 
 		= mvc_login_wrap; "database login"
+
+	.COMMAND mvc_admin_login( mvc m ) : str 
+		= mvc_admin_login_wrap; "an initial passwordless login by the admin is allowed too setup the initial users (only once)"
 
 	.COMMAND mvc_status( mvc m ) : int 
 		= mvc_status_wrap; "return the status of the last mvc operation"
@@ -140,7 +143,7 @@
 	.COMMAND mvc_drop_column( mvc c, sql_table t, str name ) = 
 		mvc_drop_column_wrap; "Drop column"
 
-	.COMMAND mvc_create_column( mvc m, sql_table t, str name, str type, int seqnr ) : sql_column = mvc_create_column_wrap; "Create column"
+	.COMMAND mvc_create_column( mvc m, sql_table t, str name, str type, int type_size, int type_digits, int seqnr ) : sql_column = mvc_create_column_wrap; "Create column"
 
 	.COMMAND mvc_not_null( mvc m, sql_column col ) : 
 		sql_column = mvc_not_null_wrap; "Set column not null"
@@ -211,12 +214,12 @@ int isNil_wrap( bit *b, str s)
 }
 
 
-int sql_create_context( context *res, int *debug, Stream *ws, mvc *m, str schema, str user ){
+int sql_create_context( context *res, int *debug, Stream *ws, mvc *m, str schema, str user){
 	context *lc = NEW(context);
 
 	sql_init_context( lc, *(stream**)ws, *debug, default_catalog_create() );
 	catalog_create( lc, *(mvc**)m );
-	lc->cat->cc_getschemas( lc->cat, schema, user);
+	lc->cat->cc_getschemas( lc->cat, schema, user );
 	*(context**)res = lc;
 	return GDK_SUCCEED;
 }
@@ -262,6 +265,15 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 
 			cmd = buffer_get_buf(stream_get_buffer( lc->out ));
 	    		lc->out->flush( lc->out );
+
+			if (s && s->op1.stval->type == st_copyfrom &&
+				strcmp(stmt_copyfrom_file(s), "stdin") == 0){
+				/*ask_for_data();*/
+				stream_writeInt( out, 0 );
+				stream_writeInt( out, QDATA );
+				stream_writeInt( out, 0 );
+				out->flush( out );
+			}
 			
 			{
 				ValRecord res;
@@ -270,7 +282,10 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 				interpret_str( stk, cmd, &res);
 				/*TODO: we need to cleanup val */
 			}
-			if (cmd) _DELETE(cmd);
+			/* BEWARE to use free instead of _DELETE
+ 			 * as the stream library is build with out libbat 
+ 			 * ie. it cannot use GDKmalloc can be used */
+			if (cmd) free(cmd);
 		}
 		if (s) stmt_destroy(s);
 	}
@@ -298,8 +313,8 @@ int types_export_wrap( Stream *s ){
 	types_export( *(stream**)s );
 	return GDK_SUCCEED;
 }
-int sql_type_wrap( str sqlname, str name, str cast ){
-	sql_new_type( sqlname, name, cast );
+int sql_type_wrap( str sqlname, str name ){
+	sql_new_type( sqlname, name );
 	return GDK_SUCCEED;
 }
 int sql_aggr_wrap( str name, str imp, str atp, str rtp){
@@ -417,10 +432,17 @@ int mvc_destroy_wrap( mvc *c ){
 	return GDK_SUCCEED;
 }
 
-int mvc_login_wrap( int *r, mvc *c, str schema, str user, str passwd  ){
-	*r = mvc_login( *(mvc**)c, schema, user, passwd );
-	if (*r != 0)
-		return GDK_FAIL;
+int mvc_login_wrap( str *r, mvc *c, str user, str passwd  ){
+	*r = mvc_login( *(mvc**)c, user, passwd );
+	if (*r == NULL)
+		*r = _strdup("");
+	return GDK_SUCCEED;
+}
+
+int mvc_admin_login_wrap( str *r, mvc *c ){
+	*r = mvc_admin_login( *(mvc**)c );
+	if (*r == NULL)
+		*r = _strdup("");
 	return GDK_SUCCEED;
 }
 
@@ -540,9 +562,9 @@ int mvc_drop_table_wrap( mvc* c, sql_schema *s, str name, bit* cascade){
 
 
 int mvc_create_column_wrap( sql_column* res, mvc* c, sql_table *t, 
-		str name, str type, int* seqnr){
+		str name, str type, int *ts, int *td, int* seqnr){
 	*(sql_column**)res = 
-	  mvc_create_column( *(mvc**)c, *(sql_table**)t, name, type, *seqnr );
+	  mvc_create_column( *(mvc**)c, *(sql_table**)t, name, type, *ts, *td, *seqnr );
 	return GDK_SUCCEED;
 }
 
@@ -601,38 +623,38 @@ module(aggrX3);
 module(monettime);
 module(sqlserver);
 
-types_init(1);
+var sql_debug := int(monet_environment.find("sql_debug"));
 
-sql_type("OID", "oid", "");
+types_init(sql_debug);
 
-sql_type("BOOL", "bit", "");
+sql_type("OID", "oid" );
+sql_type("BOOL", "bit");
+sql_type("UBYTE", "uchr");
 
-sql_type("UBYTE", "uchr", "");
+sql_type("VARCHAR(1)", "chr");
+sql_type("CHARACTER", "str");
+sql_type("VARCHAR", "str");
+sql_type("STRING", "str");
 
-sql_type("VARCHAR(1)", "chr", "");
-sql_type("CHARACTER", "str", "VARCHAR(1)");
-sql_type("VARCHAR", "str", "CHARACTER");
-sql_type("STRING", "str", "VARCHAR");
+sql_type("NUMERIC", "int");
+sql_type("DECIMAL", "int");
+sql_type("INTEGER", "int");
+sql_type("NUMBER", "int");
+sql_type("MEDIUMINT", "int");
+sql_type("SMALLINT", "sht");
+sql_type("TINYINT", "uchr");
+sql_type("UBYTE", "uchr");
 
-sql_type("NUMERIC", "int", "STRING");
-sql_type("DECIMAL", "int", "NUMERIC");
-sql_type("INTEGER", "int", "DECIMAL");
-sql_type("NUMBER", "int", "INTEGER");
-sql_type("MEDIUMINT", "int", "INTEGER");
-sql_type("SMALLINT", "sht", "INTEGER");
-sql_type("TINYINT", "uchr", "INTEGER");
-sql_type("UBYTE", "uchr", "INTEGER");
+sql_type("FLOAT", "flt");
+sql_type("REAL", "flt");
+sql_type("DOUBLE", "dbl");
 
-sql_type("FLOAT", "flt", "INTEGER");
-sql_type("REAL", "flt", "FLOAT");
-sql_type("DOUBLE", "dbl", "REAL");
-
-sql_type("MONTH_INTERVAL", "int", "INTEGER");
-sql_type("SEC_INTERVAL", "int", "INTEGER");
-sql_type("DATE", "date", "STRING");
-sql_type("TIME", "str", "STRING");
-sql_type("DATETIME", "str", "STRING");
-sql_type("TIMESTAMP", "str", "STRING");
+sql_type("MONTH_INTERVAL", "int");
+sql_type("SEC_INTERVAL", "int");
+sql_type("DATE", "date");
+sql_type("TIME", "str");
+sql_type("DATETIME", "str");
+sql_type("TIMESTAMP", "str");
 
 var strings := new(str,str);
 strings.insert("VARCHAR(1)", "chr");
@@ -730,11 +752,12 @@ sql_func( "strconcat", "+", "VARCHAR", "VARCHAR", "", "VARCHAR");
 
 var dbname := monet_environment.find("gdk_dbname");
 var dbfarm := monet_environment.find("gdk_dbfarm");
-mvc_init(0,dbfarm + "/" + dbname);
+mvc_init(sql_debug,dbfarm + "/" + dbname);
 
 const QPARSE := 1;
 const QTABLE := 2;
 const QUPDATE := 3;
+const QDATA := 4;
 
 const RDONLY := 0;
 const INS := 1;
@@ -742,6 +765,161 @@ const DEL := 2;
 const UPD := 3;
 const UPDATES := 4;
 const DELETES := 5;
+
+proc mvc_bind_( m, schema, Table, column, write_access ){
+	res := mvc_bind(m, schema,Table, column, write_access);
+	if (write_access > 0){
+		res := res.access(BAT_WRITE);
+	} 
+	return res;
+}
+
+proc mvc_bind_dbat_( m, schema, Table, write_access ){
+	res := mvc_bind_dbat(m, schema, Table, write_access);
+	if (write_access > 0){
+		res := res.access(BAT_WRITE);
+	} 
+	return res;
+}
+
+proc mvc_create_role( m, auth, grantor ) {
+	auth_id := mvc_bind_( m, "sys", "auths", "id", 1);
+	auth_name := mvc_bind_( m, "sys", "auths", "name", 1);
+	auth_grantor := mvc_bind_( m, "sys", "auths", "grantor", 1);
+	auth_priv := mvc_bind_( m, "sys", "auths", "privileges", 1);
+	
+	if (auth_name.reverse.exist(auth)) {
+		return false;
+	}
+	if (auth_id.count() > 0)
+		auth_id.insert(nil, auth_id.max()+1);
+	else
+		auth_id.insert(nil, 0);
+	auth_name.insert(nil, auth);
+	auth_grantor.insert(nil, grantor);
+	auth_priv.insert(nil,0); # all privileges are off 
+	print(auth_id,auth_name,auth_grantor,auth_priv);
+	return true;
+} 
+proc mvc_drop_role( m, auth ) {
+	auth_id := mvc_bind_( m, "sys", "auths", "id", 1);
+	auth_name := mvc_bind_( m, "sys", "auths", "name", 1);
+	auth_grantor := mvc_bind_( m, "sys", "auths", "grantor", 1);
+	auth_priv := mvc_bind_( m, "sys", "auths", "privileges", 1);
+	D_auth := mvc_bind_dbat_( m, "sys", "auths", 1);
+	
+	if (not(auth_name.reverse.exist(auth))) {
+		return;
+	}
+	id := auth_name.reverse.find(auth);
+	print(id);
+	auth_id.replace(id, int(nil));
+	auth_name.replace(id, str(nil));
+	auth_grantor.replace(id, int(nil));
+	auth_priv.replace(id, int(nil));
+	print(auth_id,auth_name,auth_grantor,auth_priv);
+	D_auth.insert(nil,id);
+} 
+proc mvc_grant_role( m, grantee, auth ) {
+	auth_ids := mvc_bind_( m, "sys", "auths", "id", 1);
+	auth_name := mvc_bind_( m, "sys", "auths", "id", 1);
+	login_id := mvc_bind_( m, "sys", "user_role", "login_id", 1);
+	role_id := mvc_bind_( m, "sys", "user_role", "role_id", 1);
+
+	if (not(auth_name.reverse.exist(grantee)) or
+	    not(auth_name.reverse.exist(auth))) {
+		return;
+	}
+	auth_id := auth_ids.find(auth_name.reverse.find(auth));
+	grantee_id := auth_ids.find(auth_name.reverse.find(grantee));
+	
+	login_id.insert(nil,grantee_id);
+	role_id.insert(nil,auth_id);
+} 
+
+proc mvc_revoke_role( m, grantee, auth ) {
+	auth_ids := mvc_bind_( m, "sys", "auths", "id", 1);
+	auth_name := mvc_bind_( m, "sys", "auths", "id", 1);
+	login_id := mvc_bind_( m, "sys", "user_role", "login_id", 1);
+	role_id := mvc_bind_( m, "sys", "user_role", "role_id", 1);
+	D_user_role := mvc_bind_dbat_( m, "sys", "user_role", 1);
+
+	if (not(auth_name.reverse.exist(grantee)) or 
+	    not(auth_name.reverse.exist(auth))) {
+		return;
+	}
+	auth_id := auth_ids.find(auth_name.reverse.find(auth));
+	grantee_id := auth_ids.find(auth_name.reverse.find(grantee));
+	
+	role := role_id.select(role_id);
+	logins := login_id.semijoin(role);
+	if (not(logins.reverse.exist(grantee_id)))
+		return;
+	id := logins.reverse.find(grantee_id);
+	print(id);
+	login_id.replace(nil,int(nil));
+	role_id.replace(nil,int(nil));
+	D_user_role.insert(nil,id);
+} 
+
+proc mvc_create_user( m, user, passwd, fullname, schema_name, grantor ) {
+	if (not(mvc_create_role( m, user, grantor )))
+		return; 
+
+	user_name := mvc_bind_( m, "sys", "users", "name", 1);
+	user_passwd := mvc_bind_( m, "sys", "users", "passwd", 1);
+	user_fullname := mvc_bind_( m, "sys", "users", "fullname", 1);
+	user_dschema := mvc_bind_( m, "sys", "users", "default_schema", 1);
+
+	schema_ids := mvc_bind_( m, "sys", "schemas", "id", 1);
+	schema_names := mvc_bind_( m, "sys", "schemas", "name", 1);
+	schema_id := schema_ids.find(schema_names.reverse.find(schema_name));
+
+	user_name.insert(nil, user);
+	user_passwd.insert(nil, passwd);
+	user_fullname.insert(nil, fullname);
+	user_dschema.insert(nil, schema_id);
+
+	print(user_name,user_passwd,user_fullname,user_dschema);
+} 
+
+proc mvc_drop_user( m, user) {
+	user_name := mvc_bind_( m, "sys", "users", "name", 1);
+	user_passwd := mvc_bind_( m, "sys", "users", "passwd", 1);
+	user_fullname := mvc_bind_( m, "sys", "users", "fullname", 1);
+	user_dschema := mvc_bind_( m, "sys", "users", "default_schema", 1);
+	D_user := mvc_bind_dbat_( m, "sys", "users", 1);
+
+	if (not(user_name.reverse.exist(user))) {
+		return;
+	}
+	mvc_drop_role( m, user );
+
+	id := user_name.reverse.find(user);
+	print(id);
+	user_name.replace(id,str(nil));
+	user_passwd.replace(id,str(nil));
+	user_fullname.replace(id,str(nil));
+	user_dschema.replace(id,int(nil));
+	D_user.insert(nil,id);
+}
+
+proc initialize(int debug) {
+	var myc := mvc_create(debug);
+	var schema := mvc_admin_login(myc);
+	
+	if (schema != ""){
+		user_name := mvc_bind_( myc, schema, "users", "name", 1);
+		if (user_name.count() = 0){
+			mvc_create_user( myc, "monetdb", "monetdb", "MonetDB Admin", "sys", 0);
+			# probably needs priv's too 
+			mvc_commit( myc, 0, "");
+		}
+	}
+	mvc_destroy( myc );
+}
+
+initialize(sql_debug);
 
 proc {min}(val,grp, extent) := {
 	return {min}(grp.reverse.join(val), extent);
@@ -813,11 +991,8 @@ proc input( mvc myc, Stream Input, str tname, str fname, str Sep, str rSep, int 
 	print(fname);
 	var s := Input;
 	if (fname != "stdin"){
-		var s := open_rastream( fname );
+		s := open_rastream( fname );
 	} 
-	#if (rSep = "newline"){
-	#	rSep := "\n";
-	#}
 	mvc_import_table( myc, s, tname, Sep, rSep, sz );
 
 	if (fname != "stdin"){
@@ -834,6 +1009,9 @@ proc result( Stream Output, int Type, int status ) := {
 	stream_writeInt( Output, 0 ); # write not done.
 	stream_writeInt( Output, Type ); # write not done.
 	stream_writeInt( Output, status ); # write not done.
+	if (status < 0){
+		stream_write( Output, "Error in result" );
+	}
 	stream_flush( Output );
 }
 
@@ -846,6 +1024,16 @@ proc ascii_io_output( bat Order, bat bats, Stream Output, str Sep ) : int := {
 	seps := seps.reverse.mark(oid(0));
 	bats := bats.reverse.mark(oid(0));
 	return output( Order, seps.reverse, bats.reverse, Output );
+}
+
+proc server_output( Stream Output, int Order, any val) : void := {
+	stream_writeInt( Output, 0 ); # write not done.
+	stream_writeInt( Output, QTABLE ); # type TABLE.
+	stream_writeInt( Output, 1 ); # NR records.
+
+	var p := str(val) + "\n"; 
+	stream_write( Output, p);
+	stream_flush( Output );
 }
 
 proc server_output( Stream Output, bat[oid,any] Order,  ..bat[oid,any]..) : void := {
@@ -865,16 +1053,10 @@ proc server_output( Stream Output, bat[oid,any] Order,  ..bat[oid,any]..) : void
 	stream_flush( Output );
 }
 
-proc SQLclient_sql( Output, Input, cmd, debug ) := {
-	var myc := mvc_create(debug);
-
-	schema := string(cmd,4,search(cmd,')') - 4);
-	print(schema);
-	mvc_login( myc, schema, "monetdb", "nopasswd" );
-
+proc SQLclient_sql( myc, Output, Input, schema, user ) := {
 	var buf := buffer_create( 1024 );
 	var LOutput := buffer_wastream( buf, sprintf("SQLserver-%d", sock ));
-	var c := sql_create_context( 0, LOutput, myc, schema, "monetdb" );
+	var c := sql_create_context( 0, LOutput, myc, schema, user );
 
 	sqlclient( myc, c, Input, Output );
 
@@ -884,10 +1066,8 @@ proc SQLclient_sql( Output, Input, cmd, debug ) := {
 	stream_close( Input );
 }
 
-proc SQLclient_mil( Output, Input, cmd, debug ) := {
-	var myc := mvc_create(debug);
-
-	cmd := stream_read( Input );
+proc SQLclient_mil( myc, Output, Input, schema, user ) := {
+	var cmd := stream_read( Input );
 	while(length(cmd) > 1){
 		sqlexecute(cmd, Output );
 		cmd := stream_read( Input );
@@ -904,19 +1084,46 @@ proc SQLclient_thread( int sock ):= {
 	var Input := block_stream(
 		socket_rstream( sock, sprintf("SQLserver-%d", sock) ));
 
-	var cmd := stream_read( Input ); # info
-	var debug := int(string(cmd,search(cmd, ',') + 1));
-	if (cmd.startsWith("info") = false ){
+	var cmd := stream_read( Input ); # api('api',debug);
+	#print(cmd);
+
+	if (cmd.startsWith("api") = false ){
 		printf("Protocol error: %s\n", cmd);
 		return -1;
 	}
 
-	cmd := stream_read( Input ); # api
-	#print(cmd);
-	if (cmd.startsWith("sql")){
-		SQLclient_sql( Output, Input, cmd, debug );
-	} else {
-		SQLclient_mil( Output, Input, cmd, debug );
+	cmd := string(cmd,search(cmd, '(') + 1);
+	var api := string(cmd,0,search(cmd, ','));
+	cmd := string(cmd,search(cmd, ',') + 1);
+	var debug := string(cmd,0,r_search(cmd, ')'));
+
+	stream_write( Output, "login\n");
+	stream_flush( Output );
+
+	cmd := stream_read( Input ); # login(user,passwd);
+
+	if (cmd.startsWith("login") = false ){
+		printf("Protocol error: %s\n", cmd);
+		return -1;
+	}
+
+	cmd := string(cmd,search(cmd, '(') + 1);
+	var user := string(cmd,0,search(cmd, ','));
+	cmd := string(cmd,search(cmd, ',') + 1);
+	var passwd := string(cmd,0,r_search(cmd, ')'));
+
+	var myc := mvc_create(int(debug));
+	var schema := mvc_login( myc, user, passwd );
+
+	stream_write( Output, schema + "\n");
+	stream_flush( Output );
+
+	if (schema != ""){
+	    if ((api.startsWith("sql"))){
+		SQLclient_sql( myc, Output, Input, schema, user );
+	    } else {
+		SQLclient_mil( myc, Output, Input, schema, user );
+	    }
 	}
 
 	socket_close( sock );
@@ -932,7 +1139,7 @@ proc sqlexecute( str cmd, Stream Output ):= {
 
 proc SQLclient( int sock ) := {
 	dsock := socket_dup(sock);
-	printf("# [ %d %d ]\n",sock, dsock);
+	#printf("# [ %d %d ]\n",sock, dsock);
 	fork(SQLclient_thread(dsock));
 }
 
@@ -957,5 +1164,4 @@ renameFUNC("quit", "old_quit");
 renameFUNC("new_quit", "quit");
 
 sqlserver_start(get_sql_port(), "SQLclient").fork();
-
 

@@ -5,6 +5,7 @@
 #include <comm.h>
 #include <sys/stat.h>
 #include <query.h>
+#include <simple_prompt.h>
 
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
@@ -20,13 +21,54 @@ void usage( char *prog ){
 	fprintf(stderr, "\t\t -h hostname | --host=hostname  /* host to connect to */\n");
 	fprintf(stderr, "\t\t -p portnr   | --port=portnr    /* port to connect to */\n");
 	fprintf(stderr, "\t\t -u user     | --user=user      /* user id */\n" );
-	fprintf(stderr, "\t\t -a api      | --api=api \n"); 
-	fprintf(stderr, " 	/* examples: mil,sql(schema) */\n");
+	fprintf(stderr, "\t\t -P passwd   | --passwd=passwd  /* password */\n");
 	exit(-1);
 }
 
 
-void receive( stream *rs ){
+static char *readblock( stream *s ){
+	int len = 0;
+	int size = BLOCK + 1;
+	char *buf = NEW_ARRAY(char, size ), *start = buf;
+
+	while ((len = s->read(s, start, 1, BLOCK)) == BLOCK){
+		size += BLOCK;
+		buf = RENEW_ARRAY(char, buf, size); 
+		start = buf + size - BLOCK - 1;
+		*start = '\0';
+	}
+	start += len;
+	*start = '\0';
+	return buf;
+}
+
+static void forward_data(stream *out)
+	/* read from stdin */
+{
+	char buf[BUFSIZ];
+	int done = 0;
+
+	while(!done){
+		char *s = fgets(buf, BUFSIZ, stdin);
+		if (!s) {
+			done = 1;
+			break;
+		} else {
+			int len = strlen(s);
+
+		       	if (len == 1){
+				done = 1;
+				break;
+			}
+			out->write(out, buf, 1, len);
+			fwrite(buf, 1, len, stdout);
+		}
+	}
+	out->flush(out);
+}
+
+
+void receive( stream *rs, stream *out ){
 	int flag = 0;
 	if (stream_readInt(rs, &flag) && flag != COMM_DONE){
 		char buf[BLOCK+1], *n = buf;
@@ -65,6 +107,11 @@ void receive( stream *rs ){
 			else 
 				printf("no Rows affected\n" );
 		}
+		if (type == QDATA){
+			printf("forward data \n");
+			forward_data(out);
+			receive(rs, out);
+		}
 	} else if (flag != COMM_DONE){
 		printf("flag %d\n", flag);
 	}
@@ -75,7 +122,9 @@ int parse_line( const char *line )
 	int cnt = 0;
 	int ins = 0;
 	int esc = 0;
+
 	while (isspace(*line)) line++;
+
 	if (*line && *line == '-' && line[1] == '-')
 		return 0;
 	for(;*line != 0; line++){
@@ -129,17 +178,18 @@ void clientAccept( stream *ws, stream *rs ){
 		}
 		cmdcnt = parse_line(line);
 		ws->write( ws, line, strlen(line), 1 );
+		ws->write( ws, "\n", 1, 1 );
 		if (cmdcnt)
 			ws->flush( ws );
 
 		for (; cmdcnt > 0; cmdcnt--)
-			receive(rs);
+			receive(rs, ws);
 	}
 	
 	i = snprintf(buf, BUFSIZ, "COMMIT;\n" );
 	ws->write( ws, buf, i, 1 );
 	ws->flush( ws );
-	receive(rs);
+	receive(rs, ws);
 
 	/* client waves goodbye */
 	buf[0] = EOT; 
@@ -151,8 +201,9 @@ int
 main(int ac, char **av)
 {
 	char buf[BUFSIZ];
-	char *prog = *av, *config = NULL;
-	int debug = 0, fd = 0, port = 0, setlen = 0;
+	char *prog = *av, *config = NULL, *passwd = NULL, *user = NULL;
+	char *login = NULL, *schema = NULL;
+	int i = 0, debug = 0, fd = 0, port = 0, setlen = 0;
 	opt 	*set = NULL;
 
 	static struct option long_options[] =
@@ -161,8 +212,8 @@ main(int ac, char **av)
 	       {"config", 1, 0, 'c'},
                {"host", 1, 0, 'h'},
                {"port", 1, 0, 'p'},
+               {"passwd", 1, 0, 'P'},
                {"user", 1, 0, 'u'},
-               {"api", 1, 0, 'a'},
                {0, 0, 0, 0}
              };
 
@@ -172,7 +223,7 @@ main(int ac, char **av)
 	while(1){
 		int option_index = 0;
 
-		int c = getopt_long( ac, av, "a:c:d::h:p:u:", 
+		int c = getopt_long( ac, av, "c:d::h:p:P:u:", 
 				long_options, &option_index);
 
 		if (c == -1)
@@ -186,10 +237,6 @@ main(int ac, char **av)
 				printf( " with arg %s", optarg );
 			printf("\n");
 			usage(prog);
-			break;
-		case 'a':
-			setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "sql_api", optarg );
 			break;
 		case 'c':
 			config = strdup(optarg);
@@ -211,9 +258,11 @@ main(int ac, char **av)
 			setlen = mo_add_option( &set, setlen, 
 					opt_cmdline, "sql_port", optarg );
 			break;
+		case 'P':
+			passwd=strdup(optarg);
+			break;
 		case 'u':
-			setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "sql_user", optarg );
+			user=strdup(optarg);
 			break;
 		case '?':
 			usage(prog);
@@ -221,14 +270,6 @@ main(int ac, char **av)
 			printf( "?? getopt returned character code 0%o ??\n",c);
 			usage(prog);
 		}
-	}
-
-	if (config){
-		setlen = mo_config_file(&set, setlen, config );
-		free(config);
-	} else {
-		if (!(setlen = mo_system_config(&set, setlen)) )
-			usage(prog);
 	}
 
 	if (optind < ac){
@@ -239,6 +280,16 @@ main(int ac, char **av)
 		usage(prog);
 	}
 
+	if (config){
+		setlen = mo_config_file(&set, setlen, config );
+		free(config);
+	} else {
+		if (!(setlen = mo_system_config(&set, setlen)) )
+			usage(prog);
+	}
+
+	stream_init();
+	debug = strtol(mo_find_option(set, setlen, "sql_debug"), NULL, 10);
 	port = strtol(mo_find_option(set, setlen, "sql_port"), NULL, 10);
 	fd = client( mo_find_option(set, setlen, "host"), port);
 	rs = block_stream(socket_rstream( fd, "client read"));
@@ -247,15 +298,37 @@ main(int ac, char **av)
 		fprintf(stderr, "sockets not opened correctly\n");
 		exit(1);
 	}
-	snprintf(buf, BUFSIZ, "info(\"%s\", %d);\n", 
-			mo_find_option(set,setlen,"sql_user"), debug);
-	ws->write( ws, buf, strlen(buf), 1 );
-	ws->flush( ws );
-	snprintf(buf, BUFSIZ, "%s;\n", mo_find_option(set,setlen, "sql_api") ); 
-	ws->write( ws, buf, strlen(buf), 1 );
-	ws->flush( ws );
+	/*
+	 * New start client sequence
+	 *
+	 * 1) socket connect
+	 * 2) send 'api(char api,int debug)' api("sql",0);
+	 * 3) receive request for login 
+	 * 4) send user/passwd
+	 */
+	if (!user)
+		user = simple_prompt("User: ", BUFSIZ, 1 );
+	if (!passwd)
+		passwd = simple_prompt("Password: ", BUFSIZ, 0 );
 
-	clientAccept( ws, rs );
+	snprintf(buf, BUFSIZ, "api(sql,%d);\n", debug ); 
+	ws->write( ws, buf, strlen(buf), 1 );
+	ws->flush( ws );
+	/* read login */
+	login = readblock( rs );
+
+	i = snprintf(buf, BUFSIZ, "login(%s,%s);\n", user, passwd );
+	ws->write( ws, buf, i, 1 );
+	ws->flush( ws );
+	/* read schema */
+	schema = readblock( rs );
+	if (schema){
+		char *s = strrchr(schema, '\n');
+		if (s) *s = '\0';
+	}
+
+	if (strlen(schema) > 0)
+		clientAccept( ws, rs );
 
 	if (rs){
 	       	rs->close(rs);
@@ -264,6 +337,7 @@ main(int ac, char **av)
 	ws->close(ws);
 	ws->destroy(ws);
 
+	mo_free_options(set,setlen);
 	return 0;
 } /* main */
 

@@ -13,6 +13,7 @@
 #define create_stmt_list() list_create((fdestroy)&stmt_destroy)
 #define create_column_list() list_create((fdestroy)NULL)
 #define create_atom_list() list_create((fdestroy)&atom_destroy)
+#define create_string_list() list_create((fdestroy)&string_destroy)
 
 /* 
  * For debugging purposes we need to be able to convert sql-tokens to 
@@ -27,14 +28,20 @@ const char *token2string(int token)
 		return "Create Table";
 	case SQL_CREATE_VIEW:
 		return "Create View";
+	case SQL_CREATE_ROLE:
+		return "Create ROLE";
 	case SQL_DROP_SCHEMA:
 		return "Drop Schema";
 	case SQL_DROP_TABLE:
 		return "Drop Table";
 	case SQL_DROP_VIEW:
 		return "Drop View";
+	case SQL_DROP_ROLE:
+		return "Drop ROLE";
 	case SQL_ALTER_TABLE:
 		return "Alter Table";
+	case SQL_GRANT_ROLES:
+		return "Grant ROLE";
 	case SQL_NAME:
 		return "Name";
 	case SQL_USER:
@@ -267,9 +274,8 @@ static table *create_table_intern(context * sql, schema * schema,
        	for ( m = sq->op1.lval->h; m; m = m->next ) {
 		stmt *st = m->data;
 		char *cname = column_name(st);
-		char *ctype = tail_type(st)->sqlname;
 		column *col = cat_create_column(cat, 0,
-						table, cname, ctype,
+						table, cname, tail_type(st),
 						"NULL", 1);
 		col->s = st;
 		st_attache(st, NULL);
@@ -285,6 +291,7 @@ static tvar *scope_add_table_columns(scope * scp, table * t, char *tname)
 		column *c = n->data;
 		stmt *sc = stmt_cbat(c, tv, RDONLY, st_bat);
 		table_add_column(tv, c, sc, tv->tname, c->name);
+		stmt_destroy(sc); 
 	}
 	return tv;
 }
@@ -454,45 +461,28 @@ static stmt *first_subset(stmt * subset)
 	return NULL;
 }
 
-static stmt *check_types(context * sql, sql_type * ct, stmt * s)
+static stmt *check_types(context * sql, sql_subtype * ct, stmt * s)
 {
-	sql_type *st = tail_type(s);
+	sql_subtype *st = tail_type(s);
 
 	if (st) {
-		sql_type *t = st;
+		sql_subtype *t = st;
 
-		/* check if the implementation types are the same */
-		while (t && strcmp(t->name, ct->name) != 0) {
-			t = t->cast;
+		/* check if the types are the same */
+		if (t && subtype_cmp(t, ct) != 0) {
+			t = NULL;
 		}
 		if (!t) {	/* try to convert if needed */
-			sql_func *c = sql_bind_func_result("convert",
-						       st->sqlname, NULL,
-						       NULL,
-						       ct->sqlname);
+			sql_func *c = 
+				sql_bind_func_result("convert",st,NULL,NULL,ct);
 			if (c)
 				return stmt_unop(s, c);
 		}
-		if (!t || strcmp(t->name, ct->name) != 0) {
+		if (!t || subtype_cmp(t, ct) != 0) {
 			snprintf(sql->errstr, ERRSIZE,
 				 _("Types %s and %s are not equal"),
-				 st->sqlname, ct->sqlname);
+				 st->type->sqlname, ct->type->sqlname);
 			return NULL;
-		} else if (t != st) {
-
-			sql_func *c = sql_bind_func_result("convert",
-						       st->sqlname, NULL,
-						       NULL,
-						       ct->sqlname);
-
-			if (!c) {
-				snprintf(sql->errstr, ERRSIZE,
-					 _
-					 ("Missing convert function from %s to %s"),
-					 st->sqlname, ct->sqlname);
-				return NULL;
-			}
-			return stmt_unop(s, c);
 		}
 	} else {
 		snprintf(sql->errstr, ERRSIZE,
@@ -515,7 +505,7 @@ static stmt *sql_search_case(context * sql, scope * scp,
 	list *conds = create_stmt_list();
 	list *results = create_stmt_list();
 	dnode *dn = when_search_list->h;
-	sql_type *restype = NULL;
+	sql_subtype *restype = NULL;
 	stmt *res = NULL;
 	node *n, *m;
 
@@ -545,7 +535,7 @@ static stmt *sql_search_case(context * sql, scope * scp,
 		return NULL;
 	}
 	for (dn = dn->next; dn; dn = dn->next) {
-		sql_type *tpe = NULL;
+		sql_subtype *tpe = NULL;
 		dlist *when = dn->data.sym->data.lval;
 		stmt *cond, *result;
 
@@ -569,11 +559,11 @@ static stmt *sql_search_case(context * sql, scope * scp,
 			list_destroy(results);
 			return NULL;
 		}
-		if (restype != tpe) {
+		if (subtype_cmp(restype, tpe) != 0) {
 			snprintf(sql->errstr, ERRSIZE,
 				 _
 				 ("Error: result types %s,%s of case are not compatible"),
-				 restype->sqlname, tpe->sqlname);
+				 restype->type->sqlname, tpe->type->sqlname);
 			list_destroy(conds);
 			list_destroy(results);
 			return NULL;
@@ -593,7 +583,7 @@ static stmt *sql_search_case(context * sql, scope * scp,
 	}
 	if (opt_else) {
 		stmt *result = sql_value_exp(sql, scp, opt_else, grp, subset);
-		sql_type *t;
+		sql_subtype *t;
 
 		if (!result) {
 			list_destroy(conds);
@@ -601,16 +591,14 @@ static stmt *sql_search_case(context * sql, scope * scp,
 			return NULL;
 		}
 		t = tail_type(result);
-		if (restype != t) {
-			sql_func *c = sql_bind_func_result("convert",
-						       t->sqlname, NULL,
-						       NULL,
-						       restype->sqlname);
+		if (subtype_cmp(restype, t) != 0) {
+			sql_func *c = sql_bind_func_result("convert", t, NULL, NULL, restype);
 			if (!c) {
 				snprintf(sql->errstr, ERRSIZE,
 					 _
 					 ("Cast between (%s,%s) not possible"),
-					 t->sqlname, restype->sqlname);
+					 t->type->sqlname, 
+					 restype->type->sqlname);
 				return NULL;
 			}
 			result = stmt_unop(result, c);
@@ -683,20 +671,18 @@ static stmt *sql_cast(context * sql, scope * scp, symbol * se,
 
 	dlist *dl = se->data.lval;
 	symbol *s = dl->h->data.sym;
-	char *tpe = dl->h->next->data.sval;
+	sql_subtype *tpe = dl->h->next->data.typeval;
 
 	stmt *l = sql_value_exp(sql, scp, s, grp, subset);
 
 	if (l) {
-		sql_type *st = tail_type(l);
-		sql_type *rt = sql_bind_type(tpe);
-		sql_func *c = sql_bind_func_result("convert", st->sqlname,
-					       NULL, NULL, rt->sqlname);
+		sql_subtype *st = tail_type(l);
+		sql_func *c = sql_bind_func_result("convert", st, NULL, NULL, tpe);
 
 		if (!c) {
 			snprintf(sql->errstr, ERRSIZE,
 				 _("CAST operator: cast(%s,%s) unknown"),
-				 st->sqlname, tpe);
+				 st->type->sqlname, tpe->type->sqlname);
 			stmt_destroy(l);
 			return NULL;
 		}
@@ -721,10 +707,7 @@ static stmt *sql_triop(context * sql, scope * scp, symbol * se,
 	sql_func *f = NULL;
 	if (!ls || !rs1 || !rs2)
 		return NULL;
-	f = sql_bind_func(l->data.sval,
-			  tail_type(ls)->sqlname,
-			  tail_type(rs1)->sqlname,
-			  tail_type(rs2)->sqlname);
+	f = sql_bind_func(l->data.sval, tail_type(ls), tail_type(rs1), tail_type(rs2));
 	if (f) {
 		return stmt_triop(ls, rs1, rs2, f);
 	} else {
@@ -732,8 +715,9 @@ static stmt *sql_triop(context * sql, scope * scp, symbol * se,
 			 _
 			 ("operator: %s(%s,%s,%s) unknown"),
 			 l->data.sval,
-			 tail_type(ls)->sqlname,
-			 tail_type(rs1)->sqlname, tail_type(rs2)->sqlname);
+			 tail_type(ls)->type->sqlname,
+			 tail_type(rs1)->type->sqlname, 
+			 tail_type(rs2)->type->sqlname);
 	}
 	return NULL;
 }
@@ -750,27 +734,22 @@ static stmt *sql_binop(context * sql, scope * scp, symbol * se,
 	sql_func *f = NULL;
 	if (!ls || !rs)
 		return NULL;
-	f = sql_bind_func(l->data.sval,
-			  tail_type(ls)->sqlname,
-			  tail_type(rs)->sqlname, NULL);
+	f = sql_bind_func(l->data.sval, tail_type(ls), tail_type(rs), NULL);
 	if (f) {
 		return stmt_binop(ls, rs, f);
 	} else {
 		sql_func *c = NULL;
 		int w = 0;
-		sql_type *t1 = tail_type(ls);
-		sql_type *t2 = tail_type(rs);
-		if (t1->nr > t2->nr) {
-			sql_type *s = t1;
+		sql_subtype *t1 = tail_type(ls);
+		sql_subtype *t2 = tail_type(rs);
+		if (t1->type->nr > t2->type->nr) {
+			sql_subtype *s = t1;
 			t1 = t2;
 			t2 = s;
 			w = 1;
 		}
-		c = sql_bind_func_result("convert",
-					 t1->sqlname, NULL,
-					 NULL, t2->sqlname);
-		f = sql_bind_func(l->data.sval,
-				  t2->sqlname, t2->sqlname, NULL);
+		c = sql_bind_func_result("convert", t1, NULL, NULL, t2);
+		f = sql_bind_func(l->data.sval, t2, t2, NULL);
 
 		if (f && c) {
 			if (!w) {
@@ -784,8 +763,8 @@ static stmt *sql_binop(context * sql, scope * scp, symbol * se,
 				 _
 				 ("Binary operator: %s(%s,%s) unknown"),
 				 l->data.sval,
-				 tail_type(ls)->sqlname,
-				 tail_type(rs)->sqlname);
+				 tail_type(ls)->type->sqlname,
+				 tail_type(rs)->type->sqlname);
 		}
 	}
 	return NULL;
@@ -800,15 +779,14 @@ static stmt *sql_unop(context * sql, scope * scp, symbol * se,
 				 grp, subset);
 	if (!rs)
 		return NULL;
-	f = sql_bind_func(l->data.sval,
-			  tail_type(rs)->sqlname, NULL, NULL);
+	f = sql_bind_func(l->data.sval, tail_type(rs), NULL, NULL);
 	if (f) {
 		return stmt_unop(rs, f);
 	} else {
 		snprintf(sql->errstr, ERRSIZE,
 			 _
 			 ("Unary operator: %s(%s) unknown"),
-			 l->data.sval, tail_type(rs)->sqlname);
+			 l->data.sval, tail_type(rs)->type->sqlname);
 	}
 	return NULL;
 }
@@ -852,13 +830,13 @@ static stmt *sql_aggrop(context * sql, scope * scp, symbol * se,
 	}
 	if (!s)
 		return NULL;
-	a = sql_bind_aggr(l->h->data.sval, tail_type(s)->sqlname);
+	a = sql_bind_aggr(l->h->data.sval, tail_type(s));
 	if (a) {
 		return stmt_aggr(s, a, grp);
 	} else {
 		snprintf(sql->errstr, ERRSIZE,
 			 _("Aggregate: %s(%s) unknown"),
-			 l->h->data.sval, tail_type(s)->sqlname);
+			 l->h->data.sval, tail_type(s)->type->sqlname);
 	}
 	return NULL;
 }
@@ -1432,8 +1410,7 @@ static stmt *sql_join_
 					stmt_destroy(s);
 				return NULL;
 			}
-			rs = check_types(sql, tail_type(ls),
-					 stmt_reverse(rs));
+			rs = check_types(sql, tail_type(ls), stmt_reverse(rs));
 			if (!rs) {
 				if (s)
 					stmt_destroy(s);
@@ -1578,15 +1555,7 @@ static stmt *sql_join_
 			     n = n->next, m = m->next) {
 				column *cs = n->data;
 
-				list_append(l2,
-						 stmt_union(m->data,
-							    stmt_const
-							    (ld,
-							     stmt_atom
-							     (atom_general
-							      (cs->
-							       tpe,
-							       NULL)))));
+				list_append(l2, stmt_union(m->data, stmt_const (ld, stmt_atom (atom_general (cs->tpe, NULL)))));
 			}
 			list_destroy(l1);
 			l1 = l2;
@@ -1600,14 +1569,7 @@ static stmt *sql_join_
 				column *cs = n->data;
 
 				list_append(l2,
-						 stmt_union(m->data,
-							    stmt_const
-							    (rd,
-							     stmt_atom
-							     (atom_general
-							      (cs->
-							       tpe,
-							       NULL)))));
+						 stmt_union(m->data, stmt_const (rd, stmt_atom (atom_general (cs->tpe, NULL)))));
 			}
 			t = tv2->t;
 			for (n = t->columns->h; n;
@@ -1887,27 +1849,22 @@ static stmt *sql_compare(context * sql, stmt * ls,
 			/* 
 			 * same table, ie. no join 
 			 * do a [compare_op].select(true) 
-			sql_func *cmp = sql_bind_func(compare_op,
-						  tail_type(ls)->sqlname,
-						  tail_type(rs)->sqlname,
-						  NULL);
+			sql_subtype t;
+			sql_func *cmp = sql_bind_func(compare_op, tail_type(ls), tail_type(rs), NULL);
 
+		       	t.type = sql_bind_type ("BOOL");
+			t.size = t.digits = 0;
 			if (!cmp) {
 				snprintf(sql->errstr, ERRSIZE,
 					 _
 					 ("Binary compare operation %s %s %s missing"),
-					 tail_type(ls)->sqlname,
+					 tail_type(ls)->type->sqlname,
 					 compare_op,
-					 tail_type(rs)->sqlname);
+					 tail_type(rs)->type->sqlname);
 				return NULL;
 			}
 			return
-			    stmt_select(stmt_binop(ls, rs, cmp),
-					stmt_atom(atom_general
-						  (sql_bind_type
-						   ("BOOL"),
-						   _strdup
-						   ("1"))), cmp_equal);
+			    stmt_select(stmt_binop(ls, rs, cmp), stmt_atom(atom_general (&t,"true"), cmp_equal);
 			 */
 			return stmt_select(ls, rs, type);
 		}
@@ -2128,22 +2085,14 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc,
 			/* add check_type */
 			if (symmetric) {
 				stmt *tmp = NULL;
-				sql_func *min = sql_bind_func("min",
-							  tail_type(rs1)->
-							  sqlname,
-							  tail_type(rs2)->
-							  sqlname, NULL);
-				sql_func *max = sql_bind_func("max",
-							  tail_type(rs1)->
-							  sqlname,
-							  tail_type(rs2)->
-							  sqlname, NULL);
+				sql_func *min = sql_bind_func("min", tail_type(rs1), tail_type(rs2), NULL);
+				sql_func *max = sql_bind_func("max", tail_type(rs1), tail_type(rs2), NULL);
 				if (!min || !max) {
 					snprintf(sql->errstr, ERRSIZE,
 						 _
 						 ("min or max operator on types %s %s missing"),
-						 tail_type(rs1)->sqlname,
-						 tail_type(rs2)->sqlname);
+						 tail_type(rs1)->type->sqlname,
+						 tail_type(rs2)->type->sqlname);
 					return NULL;
 				}
 				tmp = stmt_binop(rs1, rs2, min);
@@ -2184,7 +2133,7 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc,
 					 _
 					 ("Wrong type used with LIKE stmt, should be string %s %s"),
 					 atom2string(a),
-					 atom_type(a)->sqlname);
+					 atom_type(a)->type->sqlname);
 				return NULL;
 			}
 			res = stmt_like(ls, stmt_atom(atom_dup(a)));
@@ -2325,10 +2274,14 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc,
 				}
 				return sd;
 			} else {	/* not exists */
-				sql_type *t = sql_bind_type("INTEGER");
-				stmt *a = stmt_atom(atom_int(t, 0));
+				sql_subtype t;
+				stmt *a;
 				node *o = ls->op1.lval->h->next;	/* skip first */
 				stmt *sd, *j, *jr;
+
+				t.size = t.digits = 0;
+			       	t.type = sql_bind_type("INTEGER");
+			       	a = stmt_atom(atom_int(&t, 0));
 
 				j = stmt_const(
 					stmt_diff(head_column(o->data),
@@ -2365,7 +2318,7 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc,
 			    sql_value_exp(sql, scp, cr, grp, subset);
 
 			if (res) {
-				sql_type *tpe = tail_type(res);
+				sql_subtype *tpe = tail_type(res);
 				stmt *a =
 				    stmt_atom(atom_general(tpe, NULL));
 
@@ -2957,11 +2910,10 @@ static stmt *create_view(context * sql, schema * schema, stmt * ss,
 			while (n) {
 				char *cname = n->data.sval;
 				stmt *st = m->data;
-				char *ctype = tail_type(st)->sqlname;
 				column *col = cat_create_column(cat, 0,
 								table,
 								cname,
-								ctype,
+								tail_type(st),
 								"NULL", 1);
 				col->s = st;
 				st_attache(st, NULL);
@@ -2978,6 +2930,30 @@ static stmt *create_view(context * sql, schema * schema, stmt * ss,
 		return stct;
 	}
 	return NULL;
+}
+
+static stmt *create_role(context * sql, schema * s, dlist * qname, int grantor)
+{
+	char *role_name = qname->t->data.sval;
+
+	if (dlist_length(qname) > 2){
+		snprintf(sql->errstr, ERRSIZE,
+		_("qualified role can only have a schema and a role\n") );
+		return NULL;
+	} 
+	return stmt_create_role(role_name, grantor);
+}
+
+static stmt *drop_role(context * sql, schema * s, dlist * qname )
+{
+	char *role_name = qname->t->data.sval;
+
+	if (dlist_length(qname) > 2){
+		snprintf(sql->errstr, ERRSIZE,
+		_("qualified role can only have a schema and a role\n") );
+		return NULL;
+	} 
+	return stmt_drop_role(role_name);
 }
 
 static stmt *column_constraint_type(context * sql, symbol * s, stmt * ss,
@@ -3058,7 +3034,8 @@ static stmt *column_option(context * sql, symbol * s, stmt * ss,
 			AtomNode *an = (AtomNode*)s;
 			if (!an->a){
 				res = stmt_default(cs, 
-					stmt_atom( atom_general(c->tpe,NULL)));
+					stmt_atom( 
+					  atom_general(c->tpe,NULL)));
 			} else {
 				res = stmt_default(cs, 
 					stmt_atom(atom_dup(an->a)));
@@ -3091,13 +3068,11 @@ static stmt *create_column(context * sql, symbol * s, stmt * ss, stmt * ts, tabl
 	catalog *cat = sql->cat;
 	dlist *l = s->data.lval;
 	char *cname = l->h->data.sval;
-	sql_type *ctype = sql_bind_type(l->h->next->data.sval);
+	sql_subtype *ctype = l->h->next->data.typeval;
 	dlist *opt_list = l->h->next->next->data.lval;
 	stmt *res = NULL;
 	if (cname && ctype) {
-		column *c = cat_create_column(cat, 0, table,
-					      cname,
-					      ctype->sqlname,
+		column *c = cat_create_column(cat, 0, table, cname, ctype,
 					      "NULL", 1);
 		res = stmt_create_column(ts, c);
 		c->s = res;
@@ -3335,6 +3310,43 @@ static stmt *alter_table(context * sql, schema *schema, stmt *ss,
 	}
 }
 
+static stmt *grant_roles(context * sql, schema *schema,
+		dlist * roles, dlist * grantees, int admin, int grantor)
+{
+	/* grant roles to the grantees */
+	dnode *r, *g;
+	catalog *cat = sql->cat;
+	list *l = create_stmt_list();
+	
+	for( r = roles->h; r; r = r->next ){
+		char *role = r->data.sval;
+		for( g = grantees->h; g; g = g->next ){
+			char *grantee = g->data.sval;
+			list_append(l, stmt_grant_role(grantee, role) );
+		}
+	}
+	return stmt_list(l);
+}
+
+static stmt *revoke_roles(context * sql, schema *schema,
+		dlist * roles, dlist * grantees, int admin, int grantor)
+{
+	/* grant roles to the grantees */
+	dnode *r, *g;
+	catalog *cat = sql->cat;
+	list *l = create_stmt_list();
+	
+	for( r = roles->h; r; r = r->next ){
+		char *role = r->data.sval;
+		for( g = grantees->h; g; g = g->next ){
+			char *grantee = g->data.sval;
+			list_append(l, stmt_revoke_role(grantee, role) );
+		}
+	}
+	return stmt_list(l);
+}
+
+
 static stmt *create_schema(context * sql, dlist * auth_name,
 			   dlist * schema_elements)
 {
@@ -3379,6 +3391,21 @@ static stmt *create_schema(context * sql, dlist * auth_name,
 			n = n->next;
 		}
 		return stmt_list(schema_objects);
+	}
+}
+
+static stmt *drop_schema(context * sql, dlist * qname, int dropaction)
+{
+	catalog *cat = sql->cat;
+	char *name = schema_name(qname);
+	schema *s = cat_bind_schema(cat, name);
+
+	if (!s) {
+		snprintf(sql->errstr, ERRSIZE,
+			 _("Drop Schema name %s does not exist"), name);
+		return NULL;
+	} else {
+		return stmt_drop_schema(s,dropaction);
 	}
 }
 
@@ -3479,10 +3506,13 @@ static stmt *insert_into(context * sql, dlist * qname,
 
 			for (n = values->h, m = collist->h;
 			     n && m; n = n->next, m = m->next) {
+				stmt *o1, *o2;
 				column *c = m->data;
 				inserts[c->colnr] = stmt_insert(
-				    stmt_cbat(c, tv, INS, st_bat), 
-				       insert_value(sql, NULL, c, n->data.sym));
+				    o1 = stmt_cbat(c, tv, INS, st_bat), 
+				    o2 = insert_value(sql, NULL, c, n->data.sym));
+				if (o1) stmt_destroy(o1);
+				if (o2) stmt_destroy(o2);
 			}
 
 		}
@@ -3603,7 +3633,10 @@ static stmt *delete_searched(context * sql, dlist * qname,
 		stmt *v, *s = NULL;
 		scope *scp;
 		list *l = create_stmt_list();
-		sql_type *to = sql_bind_type("OID");
+		sql_subtype to;
+	       
+		to.size = to.digits = 0;
+		to.type	= sql_bind_type("OID");
 
 		scp = scope_open(NULL);
 		tv = scope_add_table_columns(scp, t, t->name);
@@ -3611,7 +3644,7 @@ static stmt *delete_searched(context * sql, dlist * qname,
 		if (opt_where)
 			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL);
 
-		v = stmt_const( s, stmt_atom(atom_general(to, NULL)));
+		v = stmt_const( s, stmt_atom(atom_general(&to, NULL)));
 		list_append(l, stmt_insert(
 				stmt_tbat(tv->t, INS, st_dbat ), 
 				stmt_reverse( v )));
@@ -3658,9 +3691,17 @@ static stmt *sql_stmt(context * sql, symbol * s)
 	case SQL_CREATE_SCHEMA:
 		{
 			dlist *l = s->data.lval;
-			ret = create_schema(sql, l->h->data.lval,
-					    l->h->next->next->next->data.
-					    lval);
+			ret = create_schema(sql, 
+				l->h->data.lval, /* qname (name.authid) */
+				l->h->next->next->next->data.lval /* schema_elements */);
+		}
+		break;
+	case SQL_DROP_SCHEMA:
+		{
+			dlist *l = s->data.lval;
+			ret = drop_schema(sql, 
+				l->h->data.lval, /* qname */
+				l->h->next->next->data.ival); /* drop_action */
 		}
 		break;
 	case SQL_DROP_TABLE:
@@ -3698,12 +3739,36 @@ static stmt *sql_stmt(context * sql, symbol * s)
 					  ival);
 		}
 		break;
+	case SQL_CREATE_ROLE:
+		{
+			dlist *l = s->data.lval;
+			ret = create_role(sql, cur, 
+				  l->h->data.lval, /* role name */
+				  l->h->next->data.ival); /* role grantor */
+		}
+		break;
+	case SQL_DROP_ROLE:
+		{
+			dlist *l = s->data.lval;
+			ret = drop_role(sql, cur, l); /* role name */
+		}
+		break;
 	case SQL_ALTER_TABLE:
 		{
 			dlist *l = s->data.lval;
 			ret = alter_table(sql, cur, stmt_bind_schema(cur),
 					l->h->data.lval,	/* table name */
 					l->h->next->data.sym);	/* table element */
+		}
+		break;
+	case SQL_GRANT_ROLES:
+		{
+			dlist *l = s->data.lval;
+			ret = grant_roles(sql, cur, 
+			    l->h->data.lval,	/* authids */
+			    l->h->next->data.lval,	/* grantees */
+			    l->h->next->next->data.ival, /* admin? */
+			    l->h->next->next->next->data.ival); /* grantor */
 		}
 		break;
 	case SQL_GRANT:

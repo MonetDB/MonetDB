@@ -68,18 +68,15 @@ void gettypes( catalog *c ){
 
 	tcnt = strtol(n,&n,10); 
 	for(i=0;i<tcnt;i++){
-	    char *sqlname, *name, *cast;
+	    char *sqlname, *name;
 
 	    n = strchr(start = n+1, ','); *n = '\0';
 	    sqlname = start;
 
-	    n = strchr(start = n+1, ','); *n = '\0';
+	    n = strchr(start = n+1, '\n'); *n = '\0';
 	    name = start;
 
-	    n = strchr(start = n+1, '\n'); *n = '\0';
-	    cast = start;
-
-	    sql_create_type( sqlname, name, cast );
+	    sql_create_type( sqlname, name );
 	}
 	/* TODO load proper type cast table */
 
@@ -166,7 +163,8 @@ char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
 		for(j=0;j<cnr;j++){
             		long id = 0;
 	    		char *cname, *ctype, *def;
-	    		int nll;
+	    		int nll, ts, td;
+			sql_subtype *type;
 
 		    	n = strchr(start = n+1, ','); *n = '\0';
 	    		id = strtol(start, (char**)NULL, 10);
@@ -178,12 +176,19 @@ char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
 	    		ctype = start;
 
 	    		n = strchr(start = n+1, ','); *n = '\0';
+	    		ts = atoi(start);
+
+	    		n = strchr(start = n+1, ','); *n = '\0';
+	    		td = atoi(start);
+
+	    		n = strchr(start = n+1, ','); *n = '\0';
 	    		def = start;
 
 	    		n = strchr(start = n+1, '\n'); *n = '\0';
 	    		nll = atoi(start);
 
-	    		cat_create_column( c, id, t, cname, ctype, def, nll );
+			type = new_subtype( ctype, ts, td);
+	    		cat_create_column( c, id, t, cname, type, def, nll );
 		}
 	        if (knr){ /* keys */
 		    int j;
@@ -238,7 +243,6 @@ char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
 }
 
 void getschemas( catalog *c, char *cur_schema_name, char *user ){
-	list *keys = list_create(NULL);
 	stream *s = ((cc*)c->cc)->in;
 	context *lc = ((cc*)c->cc)->lc;
 	int i, tcnt;

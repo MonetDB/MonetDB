@@ -234,6 +234,13 @@ void stmt_destroy(stmt * s)
 		case st_copyfrom:
 			if (s->op2.lval) list_destroy(s->op2.lval);
 			break;
+		case st_create_role:
+		case st_drop_role:
+		case st_grant_role:
+		case st_revoke_role:
+			_DELETE(s->op1.sval);
+			if (s->op2.sval) _DELETE(s->op2.sval);
+			break;
 		}
 		list_destroy(s->uses);
 		_DELETE(s);
@@ -410,11 +417,12 @@ stmt *stmt_create_schema(schema * schema)
 	return s;
 }
 
-stmt *stmt_drop_schema(schema * schema)
+stmt *stmt_drop_schema(schema * schema, int dropaction)
 {
 	stmt *s = stmt_create();
 	s->type = st_drop_schema;
 	s->op1.schema = schema;
+	s->flag = dropaction;
 	return s;
 }
 
@@ -466,6 +474,66 @@ stmt *stmt_default(stmt * col, stmt * def)
 	st_attache(col, s);
 	s->op2.stval = def;
 	st_attache(def, s);
+	return s;
+}
+
+stmt *stmt_key( stmt * t, key_type kt, stmt *rk )
+{
+	stmt *s = stmt_create();
+	s->type = st_create_key;
+	s->op1.stval = t; 
+	st_attache(t, s);
+	if (rk){
+		s->op2.stval = rk; 
+		st_attache(rk, s);
+	}
+	s->flag = kt;
+	return s;
+}
+
+stmt *stmt_key_add_column( stmt * key, stmt *col )
+{
+	stmt *s = stmt_create();
+	s->type = st_add_col;
+	s->op1.stval = key;
+	st_attache(key, s);
+	s->op2.stval = col;
+	st_attache(col, s);
+	s->flag = ukey;
+	return s;
+}
+
+stmt *stmt_create_role(char *name, int admin)
+{
+	stmt *s = stmt_create();
+	s->type = st_create_role;
+	s->op1.sval = _strdup(name);
+	s->flag = admin; 
+	return s;
+}
+
+stmt *stmt_drop_role(char *name ) 
+{
+	stmt *s = stmt_create();
+	s->type = st_drop_role;
+	s->op1.sval = _strdup(name);
+	return s;
+}
+
+stmt *stmt_grant_role(char *authid, char *role)
+{
+	stmt *s = stmt_create();
+	s->type = st_grant_role;
+	s->op1.sval = _strdup(authid);
+	s->op2.sval = _strdup(role);
+	return s;
+}
+stmt *stmt_revoke_role(char *authid, char *role)
+{
+	stmt *s = stmt_create();
+	s->type = st_revoke_role;
+	s->op1.sval = _strdup(authid);
+	s->op2.sval = _strdup(role);
 	return s;
 }
 
@@ -1048,32 +1116,6 @@ stmt *stmt_exists(stmt * op1, list * l)
 	return s;
 }
 
-stmt *stmt_key( stmt * t, key_type kt, stmt *rk )
-{
-	stmt *s = stmt_create();
-	s->type = st_create_key;
-	s->op1.stval = t; 
-	st_attache(t, s);
-	if (rk){
-		s->op2.stval = rk; 
-		st_attache(rk, s);
-	}
-	s->flag = kt;
-	return s;
-}
-
-stmt *stmt_key_add_column( stmt * key, stmt *col )
-{
-	stmt *s = stmt_create();
-	s->type = st_add_col;
-	s->op1.stval = key;
-	st_attache(key, s);
-	s->op2.stval = col;
-	st_attache(col, s);
-	s->flag = ukey;
-	return s;
-}
-
 stmt *stmt_name(stmt * op1, char *name)
 {
 	stmt *s = stmt_create();
@@ -1088,7 +1130,7 @@ stmt *stmt_name(stmt * op1, char *name)
 	return s;
 }
 
-sql_type *tail_type(stmt * st) 
+sql_subtype *tail_type(stmt * st) 
 {
 	switch (st->type) {
 	case st_const:
@@ -1127,7 +1169,7 @@ sql_type *tail_type(stmt * st)
 	}
 }
 
-sql_type *head_type(stmt * st)
+sql_subtype *head_type(stmt * st)
 {
 	switch (st->type) {
 	case st_aggr:

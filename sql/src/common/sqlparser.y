@@ -48,6 +48,7 @@ extern int parse_error(void *lc, char *s);
 	char *		sval;
 	symbol*		sym;
 	dlist*		l;
+	sql_subtype*	type;
 }
 %{
 extern int sqllex( YYSTYPE *yylval, void *lc );
@@ -69,6 +70,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	copyfrom_stmt
 	table_def
 	view_def
+	role_def
 	all_or_any_predicate
 	atom_exp
 	between_predicate
@@ -133,22 +135,27 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_ref_action
 	opt_ref_delete
 	opt_ref_update
+	object_name
+	privileges
+
+%type <type>
+	data_type
+	datetime_type
+	interval_type
 
 %type <sval>
 	any_all_some
 	non_reserved_word
 	ident
 	column
-	user
-	data_type
-	datetime_type
-	interval_type
+	authid
 	grantee
 	opt_column_name
 	opt_to_savepoint
 	opt_using
 
 %type <l>
+	object_privileges
 	schema_name
 	assignment_commalist
 	opt_column_commalist
@@ -164,9 +171,9 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_schema_element_list
 	schema_element_list
 	operation_commalist
-	access_right
 	target_commalist
 	opt_into
+	authid_list
 	grantee_commalist
 	column_def_opt_list
 	opt_column_def_opt_list
@@ -202,14 +209,23 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_nr
 	opt_match
 	opt_match_type
+	opt_grantor
+	opt_from_grantor
+	grantor
 
 %type <bval>
 	opt_trans
 	opt_chain
 	opt_distinct
 	opt_with_check_option
-	opt_with_grant_option
-	opt_grant_option_for
+
+	opt_with_grant
+	opt_with_hierarchy
+	opt_with_admin
+	opt_grant_for
+	opt_hierarchy_for
+	opt_admin_for
+
 	opt_asc_desc
 	tz
 
@@ -218,7 +234,8 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	ALL DISTINCT ANY SOME CHECK GLOBAL LOCAL CAST
 	CHARACTER NUMERIC DECIMAL INTEGER SMALLINT FLOAT REAL
 	DOUBLE PRECISION VARCHAR PARTIAL SIMPLE ACTION CASCADE RESTRICT
-	BOOL_FALSE BOOL_TRUE
+	BOOL_FALSE BOOL_TRUE 
+	CURRENT_USER CURRENT_ROLE
 
 /*
 OPEN CLOSE FETCH 
@@ -265,9 +282,9 @@ UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE 
 %token DEFAULT DISTINCT DROP
 %token FOREIGN 
-%token GRANT REVOKE HAVING INTO
+%token GRANT REVOKE ROLE ADMIN HAVING INTO 
 %token IS KEY ON OPTION OPTIONS
-%token PATH PRIMARY PRIVILEGES 
+%token PATH PRIMARY PRIVILEGES HIERARCHY
 %token<sval> PUBLIC REFERENCES SCHEMA SET
 %token ALTER ADD TABLE TO UNION UNIQUE USER VALUES VIEW WHERE WITH 
 %token<sval> DATE TIME TIMESTAMP INTERVAL
@@ -356,36 +373,130 @@ schema_element_list:
 schema_element: grant | create | drop | alter;
 /* | add */
 
+
+opt_grantor:
+     /* empty */	 { $$ = 0; } 
+ |   WITH ADMIN grantor  { $$ = $3; }
+ ;
+
+grantor:
+    CURRENT_USER	{ $$ = cur_user; }
+ |  CURRENT_ROLE 	{ $$ = cur_role; }
+ ;
+
 grant:
-    GRANT access_right ON qname TO grantee_commalist opt_with_grant_option 			
+    GRANT privileges TO grantee_commalist opt_with_grant
+	 opt_with_hierarchy opt_from_grantor
+	{ dlist *l = dlist_create();
+	  dlist_append_symbol(l, $2);
+	  dlist_append_list(l, $4);
+	  dlist_append_int(l, $5);
+	  dlist_append_int(l, $6);
+	  dlist_append_int(l, $7);
+	$$ = _symbol_create_list( SQL_GRANT, l); }
+
+ |  GRANT authid_list TO grantee_commalist opt_with_admin 
+		opt_from_grantor
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $2);
 	  dlist_append_list(l, $4);
+	  dlist_append_int(l, $5);
+	  dlist_append_int(l, $6);
+	$$ = _symbol_create_list( SQL_GRANT_ROLES, l); }
+ ;
+
+authid_list:
+	authid 		{ $$ = dlist_append_string(dlist_create(), $1); }
+ | 	authid_list ',' authid 	{ $$ = dlist_append_string($1, $3); }
+ ;
+
+grantee:
+    PUBLIC			{ $$ = NULL; }
+ |  authid			{ $$ = $1; }
+ ;
+
+opt_with_grant:
+    /* empty */				{ $$ = 0; }
+ |	WITH GRANT OPTION		{ $$ = 1; }
+ ;
+
+opt_with_hierarchy:
+ 	/* emtpy */		{ $$ = 0; }
+ | 	WITH HIERARCHY OPTION	{ $$ = 1; }
+ ;
+
+opt_with_admin:
+ 	/* emtpy */		{ $$ = 0; }
+ | 	WITH ADMIN OPTION	{ $$ = 1; }
+ ;
+
+
+opt_from_grantor:
+ 	/* empty */	{ $$ = 0; }
+ | 	FROM grantor	{ $$ = $1; }
+ ;
+
+revoke:
+    REVOKE opt_grant_for opt_hierarchy_for privileges FROM grantee_commalist 
+	opt_from_grantor
+	{ dlist *l = dlist_create();
+	  dlist_append_symbol(l, $4);
 	  dlist_append_list(l, $6);
 	  dlist_append_int(l, $7);
-	$$ = _symbol_create_list( SQL_GRANT, l); }
- ;
-revoke:
-    REVOKE opt_grant_option_for access_right ON qname FROM grantee_commalist 
+	  dlist_append_int(l, $2);
+	  dlist_append_int(l, $3);
+	$$ = _symbol_create_list( SQL_REVOKE, l); }
+ |   REVOKE opt_admin_for authid_list FROM grantee_commalist 
+	opt_from_grantor
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $3);
 	  dlist_append_list(l, $5);
-	  dlist_append_list(l, $7);
+	  dlist_append_int(l, $6);
 	  dlist_append_int(l, $2);
 	$$ = _symbol_create_list( SQL_REVOKE, l); }
  ;
 
-opt_with_grant_option:
-    /* empty */				{ $$ = FALSE; }
- |	WITH GRANT OPTION		{ $$ = TRUE; }
+opt_grant_for:
+    	/* empty */			{ $$ = 0; }
+ |	GRANT OPTION FOR		{ $$ = 1; }
  ;
 
-opt_grant_option_for:
-    	/* empty */				{ $$ = FALSE; }
- |	GRANT OPTION FOR		{ $$ = TRUE; }
+opt_hierarchy_for:
+    	/* empty */			{ $$ = 0; }
+ |	HIERARCHY OPTION FOR		{ $$ = 1; }
  ;
 
-access_right:
+opt_admin_for:
+    	/* empty */			{ $$ = 0; }
+ |	ADMIN OPTION FOR		{ $$ = 1; }
+ ;
+
+privileges:
+	object_privileges ON object_name 	
+	{ dlist *l = dlist_create();
+	  dlist_append_list(l, $1);
+	  dlist_append_symbol(l, $3);
+	 $$ = _symbol_create_list( SQL_PRIVILEGES, l); }
+ ;
+
+object_name:
+	opt_table ident			{ $$ = _symbol_create(SQL_TABLE, $2); }
+/* | DOMAIN domain_name
+   | CHARACTER SET char_set_name
+   | COLLATION collation_name
+   | TRANSLATION trans_name 
+   | TYPE udt_name 
+   | TYPE typed_table_name 
+   | function_name
+*/
+ ; 
+
+opt_table:
+	/*empty */	
+ | 	TABLE
+ ;
+
+object_privileges:
     ALL PRIVILEGES			{ $$ = NULL; }
  |  ALL 				{ $$ = NULL; }
  |  operation_commalist			
@@ -397,11 +508,16 @@ operation_commalist:
  ;
 
 operation:
-    SELECT 			    { $$ = _symbol_create(SQL_SELECT,NULL); }
+    SELECT opt_column_commalist	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
  |  INSERT 			    { $$ = _symbol_create(SQL_INSERT,NULL); }
  |  DELETE 			    { $$ = _symbol_create(SQL_DELETE,NULL); }
  |  UPDATE opt_column_commalist     { $$ = _symbol_create_list(SQL_UPDATE,$2); }
  |  REFERENCES opt_column_commalist { $$ = _symbol_create_list(SQL_SELECT,$2); }
+/* | TRIGGER
+   | UNDER 
+   | USAGE
+   | EXECUTE
+*/
  ;
 
 grantee_commalist:			
@@ -411,7 +527,7 @@ grantee_commalist:
 
 grantee:
     PUBLIC			{ $$ = NULL; }
- |  user			{ $$ = $1; }
+ |  authid			{ $$ = $1; }
  ;
 
 /* DOMAIN, TABLE, VIEW, ASSERTION, CHARACTER SET, TRANSLATION, 
@@ -426,7 +542,15 @@ alter:
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
   ;
 
-create:	table_def | view_def ;
+create:	role_def | table_def | view_def ;
+
+role_def:
+    CREATE ROLE qname opt_grantor
+	{ dlist *l = dlist_create();
+	  dlist_append_list(l, $3);
+	  dlist_append_int(l, $4);
+	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
+ ;
 
 table_def:
     CREATE opt_temp TABLE qname table_content_source
@@ -459,7 +583,7 @@ column_def:
     column data_type opt_column_def_opt_list
    	{ dlist *l = dlist_create();
 	  dlist_append_string(l, $1 );
-	  dlist_append_string(l, _strdup($2) );
+	  dlist_append_type(l, $2 );
 	  dlist_append_list(l, $3 );
 	  $$ = _symbol_create_list( SQL_COLUMN, l ); }
  ;
@@ -497,9 +621,13 @@ default:
 /* TODO add auto increment */
 default_value:
     literal 
- |  USER     { $$ = _symbol_create_atom( SQL_ATOM, atom_string( 
-			sql_bind_type("STRING" ), $1)); }
- |  NULLX 	{ $$ = _symbol_create_atom( SQL_ATOM, NULL);  }
+
+ |  USER     
+		{  sql_subtype t; t.size = t.digits = 0;
+		   t.type = sql_bind_type("STRING" ); 
+		   $$ = _symbol_create_atom( SQL_ATOM, atom_string(&t, $1)); }
+ |  NULLX 	
+		{ $$ = _symbol_create_atom( SQL_ATOM, NULL);  }
  ;
 	
 column_constraint:
@@ -650,6 +778,7 @@ drop:
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
 
  |  DROP VIEW qname	  { $$ = _symbol_create_list( SQL_DROP_VIEW, $3 ); }
+ |  DROP ROLE qname	  { $$ = _symbol_create_list( SQL_DROP_ROLE, $3 ); }
  ;
 
 drop_action:
@@ -1320,13 +1449,14 @@ datetime_funcs:
 string_funcs:
     SUBSTRING '(' scalar_exp FROM intval FOR intval ')' 
 				{ dlist *l = dlist_create();
-				  sql_type *t = sql_bind_type("INTEGER");
+				  sql_subtype t; t.size = t.digits = 0;
+				  t.type = sql_bind_type("INTEGER");
   		  		  dlist_append_string(l, _strdup("substring"));
   		  		  dlist_append_symbol(l, $3);
   		  		  dlist_append_symbol(l, _symbol_create_atom(
-					SQL_ATOM, atom_int(t, $5 -1 )));
+					SQL_ATOM, atom_int(&t, $5 -1 )));
   		  		  dlist_append_symbol(l, _symbol_create_atom(
-					SQL_ATOM, atom_int(t, $7 )));
+					SQL_ATOM, atom_int(&t, $7 )));
 		  		  $$ = _symbol_create_list( SQL_TRIOP, l ); }
  |  scalar_exp CONCATSTRING scalar_exp  
 				{ dlist *l = dlist_create();
@@ -1361,8 +1491,11 @@ opt_column_name:
 
 atom:
     literal 	
- |  USER     { $$ = _symbol_create_atom( SQL_ATOM, atom_string( 
-			sql_bind_type("STRING" ), $1)); }
+
+ |  USER     
+		{  sql_subtype t; t.size = t.digits = 0;
+		   t.type = sql_bind_type("STRING" ); 
+		   $$ = _symbol_create_atom( SQL_ATOM, atom_string(&t, $1)); }
  ;
 
 /* change to set function */
@@ -1410,9 +1543,9 @@ time_persision:
  ;
 
 datetime_type:
-    DATE			{ $$ = sql_bind_type("DATE")->sqlname; }
- |  TIME time_persision tz 	{ $$ = sql_bind_type("TIME")->sqlname; }
- |  TIMESTAMP time_persision tz { $$ = sql_bind_type("TIMESTAMP")->sqlname; }
+    DATE			{ $$ = new_subtype("DATE", 0, 0); }
+ |  TIME time_persision tz 	{ $$ = new_subtype("TIME", $2, $3); }
+ |  TIMESTAMP time_persision tz { $$ = new_subtype("TIMESTAMP", $2, $3); }
  ;
 
 non_second_datetime_field:
@@ -1461,47 +1594,75 @@ interval_qualifier:
  ;
 
 interval_type:
-    INTERVAL interval_qualifier	{ $$ = "INTERVAL"; }
+    INTERVAL interval_qualifier	{ 
+		/* TODO: 
+		   usual trick is to have a INTERVAL type per range (YEAR-DAY
+		 * etc, and store the precisions in size/digits */
+		$$ = new_subtype("INTERVAL", 0, 0); }
  ;
 
 literal:
-    STRING   { $$ = _symbol_create_atom( SQL_ATOM, atom_string( 
-			sql_bind_type("STRING" ), $1)); }
- |  intval   { $$ = _symbol_create_atom( SQL_ATOM, atom_int( 
-			sql_bind_type("INTEGER" ), $1)); }
- |  INTNUM   { $$ = _symbol_create_atom( SQL_ATOM, atom_float(
-			sql_bind_type("FLOAT" ), strtod($1,&$1))); }
- |  APPROXNUM{ $$ = _symbol_create_atom( SQL_ATOM, atom_float(
-			sql_bind_type("DOUBLE" ), strtod($1,&$1))); }
- |  DATE STRING { $$ = _symbol_create_atom( SQL_ATOM, atom_general(
-			sql_bind_type("DATE" ),$2));  }
- |  TIME STRING { $$ = _symbol_create_atom( SQL_ATOM, atom_general(
-			sql_bind_type("TIME" ),$2));  }
- |  TIMESTAMP STRING { $$ = _symbol_create_atom( SQL_ATOM, atom_general(
-			sql_bind_type("TIMESTAMP" ),$2));  }
+    STRING   
+		{  sql_subtype t; t.size = t.digits = 0;
+		   t.type = sql_bind_type("STRING" ); 
+		   $$ = _symbol_create_atom( SQL_ATOM, atom_string(&t, $1)); }
+ |  intval   
+		{ sql_subtype t; t.size = t.digits = 0;
+		  t.type = sql_bind_type("INTEGER" );
+		  $$ = _symbol_create_atom( SQL_ATOM, atom_int(&t, $1)); }
+ |  INTNUM   
+		{ sql_subtype t; t.size = t.digits = 0;
+		  t.type = sql_bind_type("FLOAT" );
+		  $$ = _symbol_create_atom( SQL_ATOM, 
+		    atom_float(&t, strtod($1,&$1))); }
+ |  APPROXNUM
+		{ sql_subtype t; t.size = t.digits = 0;
+		  t.type = sql_bind_type("DOUBLE" );
+		  $$ = _symbol_create_atom( SQL_ATOM, 
+		    atom_float(&t, strtod($1,&$1))); }
+ |  DATE STRING 
+		{ sql_subtype t; t.size = t.digits = 0;
+		  t.type = sql_bind_type("DATE" );
+		  $$ = _symbol_create_atom( SQL_ATOM, atom_general(&t, $2)); }
+ |  TIME STRING 
+		{ sql_subtype t; t.size = t.digits = 0;
+		  t.type = sql_bind_type("TIME" );
+		  $$ = _symbol_create_atom( SQL_ATOM, atom_general(&t, $2)); }
+ |  TIMESTAMP STRING 
+		{ sql_subtype t; t.size = t.digits = 0;
+		  t.type = sql_bind_type("TIMESTAMP" );
+		  $$ = _symbol_create_atom( SQL_ATOM, atom_general(&t, $2)); }
  |  INTERVAL opt_sign STRING interval_qualifier
-	{ context *lc = (context*)parm;
-	  int i,tpe;
-	  if ( (tpe = parse_interval( lc, $2, $3, $4, &i)) < 0 ){
-		yyerror("incorrect interval");
-		$$ = NULL;
-	  } else {
-		sql_type *t = NULL;
-		if (tpe == 0){
-			t = sql_bind_type("MONTH_INTERVAL");
-		} else {
-			t = sql_bind_type("SEC_INTERVAL");
+		{ context *lc = (context*)parm;
+	  	  int i,tpe;
+	  	  if ( (tpe = parse_interval( lc, $2, $3, $4, &i)) < 0 ){
+			yyerror("incorrect interval");
+			$$ = NULL;
+	  	  } else {
+			sql_subtype t; t.size = t.digits = 0; 
+			if (tpe == 0){
+				t.type = sql_bind_type("MONTH_INTERVAL");
+			} else {
+				t.type = sql_bind_type("SEC_INTERVAL");
+			}
+	  		$$ = _symbol_create_atom( SQL_ATOM, atom_int(&t,i));
+	  	  }
 		}
-	  	$$ = _symbol_create_atom( SQL_ATOM, atom_int(t,i));
-	  }
-	}
- |  TYPE STRING { $$ = _symbol_create_atom( SQL_ATOM, atom_general(
-		  sql_bind_type($1 ),$2)); 
+ |  TYPE STRING 
+		{ sql_subtype t; t.size = t.digits = 0;
+		  t.type = sql_bind_type($1);
+		  $$ = _symbol_create_atom( SQL_ATOM, atom_general(&t, $2)); 
 	  	  _DELETE($1); }
- |  BOOL_FALSE  { $$ = _symbol_create_atom( SQL_ATOM, atom_general(
-		  sql_bind_type("BOOL"), "false"));	}
- |  BOOL_TRUE  { $$ = _symbol_create_atom( SQL_ATOM, atom_general(
-		  sql_bind_type("BOOL"), "true"));	}
+ |  BOOL_FALSE  
+		{ sql_subtype t; t.size = t.digits = 0;
+		  t.type = sql_bind_type("BOOL" );
+		  $$ = _symbol_create_atom( SQL_ATOM, 
+		  	atom_general(&t, "false")); }
+ |  BOOL_TRUE  
+		{ sql_subtype t; t.size = t.digits = 0;
+		  t.type = sql_bind_type("BOOL" );
+		  $$ = _symbol_create_atom( SQL_ATOM, 
+			atom_general(&t, "true")); }
  ;
 
 	/* miscellaneous */
@@ -1531,7 +1692,7 @@ cast_exp:
      CAST '(' scalar_exp AS data_type ')'
  	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $3);
-	  dlist_append_string(l, _strdup($5));
+	  dlist_append_type(l, $5);
 	  $$ = _symbol_create_list( SQL_CAST, l ); }
  ;
 
@@ -1600,36 +1761,40 @@ opt_else:
 		/* data types, more types to come */
 
 data_type:
-    CHARACTER			{ $$ = "CHARACTER"; }
- |  CHARACTER '(' intval ')'	{ $$ = "CHARACTER"; }
- |  NUMERIC			{ $$ = "NUMERIC"; }
- |  NUMERIC '(' intval ')'		{ $$ = "NUMERIC"; }
- |  NUMERIC '(' intval ',' intval ')' { $$ = "NUMERIC"; }
- |  DECIMAL			{ $$ = "DECIMAL"; }
- |  DECIMAL '(' intval ')'		{ $$ = "DECIMAL"; }
- |  DECIMAL '(' intval ',' intval ')' { $$ = "DECIMAL"; }
- |  INTEGER '(' intval ')'		{ $$ = "INTEGER"; }
- |  INTEGER			{ $$ = "INTEGER"; }
- |  SMALLINT			{ $$ = "SMALLINT"; }
- |  SMALLINT '(' intval ')'	{ $$ = "SMALLINT"; }
- |  FLOAT			{ $$ = "FLOAT"; }
- |  FLOAT '(' intval ')'		{ $$ = "FLOAT"; }
- |  FLOAT '(' intval ',' intval ')'	{ $$ = "FLOAT"; }
- |  REAL			{ $$ = "REAL"; }
- |  DOUBLE 			{ $$ = "DOUBLE"; }
- |  DOUBLE '(' intval ',' intval ')' 	{ $$ = "DOUBLE"; }
- |  DOUBLE PRECISION		{ $$ = "DOUBLE"; }
- |  VARCHAR			{ $$ = "VARCHAR"; }
- |  VARCHAR '(' intval ')'	{ if ($3 == 1) $$ = "VARCHAR(1)";
-				  else $$ = "VARCHAR"; }
+    CHARACTER			{ $$ = new_subtype("CHARACTER", 0, 0); }
+ |  CHARACTER '(' intval ')'	{ $$ = new_subtype("CHARACTER", $3, 0); }
+ |  NUMERIC			{ $$ = new_subtype("NUMERIC", 0, 0); }
+ |  NUMERIC '(' intval ')'	{ $$ = new_subtype("NUMERIC", $3, 0); }
+ |  NUMERIC '(' intval ',' intval ')' 
+				{ $$ = new_subtype("NUMERIC", $3, $5); }
+ |  DECIMAL			{ $$ = new_subtype("DECIMAL", 0, 0); }
+ |  DECIMAL '(' intval ')'	{ $$ = new_subtype("DECIMAL", $3, 0); }
+ |  DECIMAL '(' intval ',' intval ')' 
+				{ $$ = new_subtype("DECIMAL", $3, $5); }
+ |  INT				{ $$ = new_subtype("INTEGER", 0, 0); }
+ |  INTEGER			{ $$ = new_subtype("INTEGER", 0, 0); }
+ |  INTEGER '(' intval ')'	{ $$ = new_subtype("INTEGER", $3, 0); }
+ |  SMALLINT			{ $$ = new_subtype("SMALLINT", 0, 0); }
+ |  SMALLINT '(' intval ')'	{ $$ = new_subtype("SMALLINT", $3, 0); }
+ |  FLOAT			{ $$ = new_subtype("FLOAT", 0, 0); }
+ |  FLOAT '(' intval ')'	{ $$ = new_subtype("FLOAT", $3, 0); }
+ |  FLOAT '(' intval ',' intval ')'	
+				{ $$ = new_subtype("FLOAT", $3, $5); }
+ |  REAL			{ $$ = new_subtype("REAL", 0, 0); }
+ |  DOUBLE 			{ $$ = new_subtype("DOUBLE", 0, 0); }
+ |  DOUBLE '(' intval ',' intval ')' 	
+				{ $$ = new_subtype("DOUBLE", $3, $5); }
+ |  DOUBLE PRECISION		{ $$ = new_subtype("DOUBLE", 0, 0); }
+ |  VARCHAR			{ $$ = new_subtype("VARCHAR", 0, 0); }
+ |  VARCHAR '(' intval ')'	{ $$ = new_subtype("VARCHAR", $3, 0); }
  | datetime_type
- | interval_type
- | TYPE				{ $$ = $1; }
+ | interval_type		
+ | TYPE				{ $$ = new_subtype($1, 0, 0); }
  ;
 
 column:	ident ;
 
-user: 		ident ;
+authid: 		ident ;
 
 ident: 
     IDENT	{ $$ = $1; }	

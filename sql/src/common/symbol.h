@@ -11,6 +11,7 @@ typedef union symbdata {
 	struct atom *aval;
 	struct dlist *lval;
 	struct symbol *sym;
+	struct sql_subtype *typeval;
 	void *symv; /* temp version of symbol which can be easily casted */
 } symbdata;
 

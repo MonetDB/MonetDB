@@ -19,6 +19,7 @@ static void column_destroy(column *c)
 {
 	if (c->name)
 		_DELETE(c->name);
+	_DELETE(c->tpe);
 	_DELETE(c);
 }
 
@@ -164,10 +165,9 @@ void cat_drop_table(catalog * cat, schema * s, char *name)
 }
 
 column *cat_create_column(catalog * cat, long id, table * t, char *colname,
-			  char *sqltype, char *def, int null_check)
+			  sql_subtype *tpe, char *def, int null_check)
 {
 	column *c = NEW(column);
-	sql_type *tpe = sql_bind_type(sqltype);
 
 	assert(c && t);
 
@@ -182,7 +182,7 @@ column *cat_create_column(catalog * cat, long id, table * t, char *colname,
 	list_append(t->columns, c );
 	if (cat_debug)
 		printf("cat_create_column, %ld %s %s %s %d\n", 
-				id, colname, sqltype, def, null_check);
+			id, colname, tpe->type->sqlname, def, null_check);
 	return c;
 }
 

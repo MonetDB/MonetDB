@@ -20,6 +20,8 @@ if test "x$have_monet" != xyes; then
 	AC_MSG_ERROR(Monet is not found.)
 fi
 
+AC_CHECK_HEADERS(termios.h) 
+
 dnl libodbc
 have_odbc=auto
 ODBC_LIBS=""

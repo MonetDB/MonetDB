@@ -8,11 +8,11 @@ fi
 
 #Generate Data...
 
-gcc -o earth earth.c
-./earth
+#gcc -o earth earth.c
+#./earth
 
-gcc -o tomo  tomo.c
-./tomo
+#gcc -o tomo  tomo.c
+#./tomo
 
 #Bulk-Load into SQL server...
 
@@ -23,6 +23,6 @@ exit
 
 #Cleanup
 
-rm earth.tab earth
-rm tomo.tab tomo
+#rm earth.tab earth
+#rm tomo.tab tomo
 

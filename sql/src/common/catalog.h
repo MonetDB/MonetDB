@@ -3,6 +3,9 @@
 
 #include "types.h"
 
+#define cur_user 1
+#define cur_role 2
+
 typedef enum key_type {
 	pkey,
 	ukey,
@@ -42,7 +45,7 @@ typedef struct column {
 	char *name;
 	table *table;
 	char *default_value;
-	sql_type *tpe;
+	sql_subtype *tpe;
 	int null;
 	int colnr;
 	struct stmt *s;
@@ -82,7 +85,7 @@ extern void cat_drop_table(catalog * cat, schema * s, char *name);
 
 extern column *cat_bind_column(catalog * cat, table * t, char *name);
 extern column *cat_create_column(catalog * cat, long id, table * t,
-				 char *name, char *type, char *def,
+				 char *name, sql_subtype *type, char *def,
 				 int null_check);
 
 #endif				/*CATALOG_H */

@@ -98,12 +98,14 @@ Actually, the logger should issue commit statements after each block.
 
 #include <gdk.h>
 
-extern void logger_init(int debug, char *dirname );
+extern int logger_init(int debug, char *dirname );
 extern void logger_exit();
 extern void log_bat(BAT *b);
 extern void log_bat_persists(BAT *b );
 extern void log_bat_transient(BAT *b );
-extern void logger_commit();
+/* for now only one level of transactions is supported */
+extern void log_tstart(int tid);
+extern void log_tend();
 
 #endif /*_LOGGER_H_*/
 @c
@@ -172,6 +174,10 @@ void destroy_buffer( buf_p b ){
 }
 
 #define bwrite(buf,data,len) buffer_write(buf,(char*)data,len)
+#define bwriteInt(buf,data) buffer_write(buf,(char*)&data,sizeof(int))
+
+#define bread(buf,data,len) memcpy((char*)data,buf,len)
+#define breadInt(buf,data) memcpy((char*)&data,buf,sizeof(int))
 
 INLINE static 
 void buffer_write(buf_p buf, char *data, size_t len){
@@ -230,7 +236,11 @@ gdk.commit()	# implied by the logger.commit?
 this simplifies parallel 
 recovery after a crash. Furthermore, the log time stamp can be
 compared with the BAT to see if you need to consult the log file.]
+[Martin, this is not done as keeping multiple files open (or opening
+multiple files) has a to great performance impact.]
 @c
+#define LOG_START	1
+#define LOG_END		2
 #define LOG_INSERT 	3
 #define LOG_DELETE	4
 #define LOG_CREATE 	5
@@ -243,70 +253,59 @@ typedef struct logformat_t {
 
 #define LOGFILE "log"
 
-static int   logger_debug = 1;
+static buf_p logger_buf = NULL;
+static int   logger_debug = 0;
 static int   logger_id = 0;
 static char *logdir 	= NULL;
 static stream *log 	= NULL;
 
 
-static void log_write_string(stream *s, char *n)
+static void log_write_string(buf_p b, char *n)
 {
-	int len = strlen(n);
-	stream_writeInt( s, len);
-	s->write( s, n, len, 1);
+	int len = strlen(n)+1; /* log including EOS */
+	bwriteInt( b, len);
+	bwrite( b, n, len);
 }
 
-static char *log_read_string(stream *s)
-{
-	int len; 
-	char *n;
-	if (!stream_readInt(s, &len)){
-		fprintf(stderr, "log_read_string: can't read int\n");
-		exit(1);
-		return NULL;
-	}
-	n = NEW_ARRAY(char,len+1);
-	s->read( s, n, len, 1);
-	n[len] = 0;
-	return n;
-}
-
-void log_read_updates(stream *s, logformat *l, char *name ){
+char *log_read_updates(char *buf, logformat *l, char *name ){
 	int nr;
-	char *buf = NULL;
 
         if (logger_debug&1)
-		printf("found log_read_updates %s %s %d\n", name, 
+		fprintf(stderr, "found log_read_updates %s %s %d\n", name, 
 				(l->flag==LOG_INSERT)?"insert":"delete",
 				l->nr);
-
-	stream_readInt(s,&nr);
-	nr -= sizeof(int);
-	buf = NEW_ARRAY(char,nr);
 
 	if (!buf){
 		fprintf(stderr, "could not read updates (%s)\n", name);
 	} else {
-		char *end = buf + nr;
 		char *p = buf;
 		BAT *b = BATdescriptor(BBPindex(name));
 		ValRecord hv;
 		ValRecord tv;
 
-                if ( (s->read(s, buf, nr, 1) == 1) && b){
+                if (b){
 			int s1,s2;
-                        for(; l->nr>0 && p<end; l->nr--){
+			int cnt = BATcount(b);
+			if (b->hseqbase != oid_nil)
+				cnt += b->hseqbase;
+			if (b->tseqbase != oid_nil)
+				cnt += b->tseqbase;
+                        for(; l->nr>0; l->nr--){
 				ValPtr h = &hv;
 				ValPtr t = &tv;
                                 s1 = ATOMlen(b->htype, p);
                                 s2 = ATOMlen(b->ttype, p+s1);
-				if (s1 <= sizeof(ValRecord)){
+				if (s1 && s1 <= sizeof(ValRecord)){
 					memcpy(h,p,s1);
+				} else if (!s1){
+					h = &cnt;
 				} else {
 					h = (ValPtr)p;
 				}
-				if (s2 <= sizeof(ValRecord)){
+				if (s2 && s2 <= sizeof(ValRecord)){
 					memcpy(t,p+s1,s2);
+				} else if (!s2){
+					t = &cnt;
 				} else {
 					t = (ValPtr)(p+s1);
 				}
@@ -316,28 +315,35 @@ void log_read_updates(stream *s, logformat *l, char *name ){
                                         BUNdel( b, h, t );
                                 p += s1;
                                 p += s2;
+				cnt++;
                         }
+			BATfakeCommit(b);
 		}
-		BATfakeCommit(b);
+		return p;
 	}
-	_DELETE(buf);
+	return buf;
 }
 
-void log_read_destroy(stream *s, logformat *l, char *name )
+char *log_read_destroy(char *buf, logformat *l, char *name )
 {
 	BAT *b = BATdescriptor(BBPindex(name));
 	if (b){
 		BBPtransient(b->batCacheid, FALSE);
 		BBPunfix(b->batCacheid);
 	}
+	return buf;
 }
 
-void log_read_create(stream *s, logformat *l, char *name )
+char *log_read_create(char *buf, logformat *l, char *name )
 {
-	char *buf = log_read_string(s);
+	int len;
+	char *end;
+
+	breadInt(buf, len); buf += sizeof(int);
+	end = buf + len;
 
         if (logger_debug&1)
-		printf("log_read_create %s\n", name );
+		fprintf(stderr, "log_read_create %s\n", name );
 
 	if (!buf){
 		fprintf(stderr, "could not read create (%s)\n", name);
@@ -347,7 +353,6 @@ void log_read_create(stream *s, logformat *l, char *name )
 		BAT *b;
 		if (!ta){
 			fprintf(stderr, "types are not , seperated (%s)\n",buf);
-			_DELETE(buf);
 			return;
 		}
 		*ta = 0; ta++; /* skip over , */
@@ -371,52 +376,84 @@ void log_read_create(stream *s, logformat *l, char *name )
 			BATseqbase(BATreverse(b),0);
 
 		if (!b){
-			fprintf(stderr, "could not create bat (%s,%s,%s)\n"
-				,name,ha,ta);
-			_DELETE(buf);
+			fprintf(stderr, "could not create bat (%s,%s,%s,%d,%d)\n"
+				,name,ha,ta,ht,tt);
 			return;
 		}
 		BBPpersistent(b->batCacheid, FALSE);
 		BATrename(b, name);
 		BATfakeCommit(b);
-		_DELETE(buf);
 	}
+	return end;
 }
 
-int readlog( char *filename ){
-	logformat l;
+int readlog( char *filename, int *tid ){
+	int nr;
 	stream *s = open_rstream(filename);
+	char *p = NULL;
 
 	/* if the file doesn't exist, there is nothing to be readback */ 
 	if (!s || s->errnr){
 		if (s) s->destroy(s);
 	       	return 0;
 	}
-	while( s->read( s, (char*)&l, sizeof(logformat), 1 ) == 1){
-		char *name = log_read_string(s);
-		if (!name){
-			fprintf(stderr, "could not read name (%d)\n", l.flag );
+	while( stream_readInt( s, &nr )){
+		char *buf = NULL, *end; 
+
+		nr -= sizeof(int);
+		p = buf = NEW_ARRAY(char,nr);
+
+		end = buf + nr;
+
+		if (!buf){
+			fprintf(stderr, 
+				"could not create buffer to hold log\n");
+			if (s) s->destroy(s);
 			return -1;
 		}
-		switch(l.flag){
+		
+                if (! (s->read(s, buf, nr, 1) == 1)){
+			fprintf(stderr, "could not read log\n");
+			if (s) s->destroy(s);
+			return -1;
+		}
+
+		breadInt(buf,tid); buf += sizeof(int);
+
+		while(buf < end){
+			char *name;
+			logformat l;
+			int len;
+
+			bread(buf, &l, sizeof(logformat)); 
+			buf += sizeof(logformat);
+			breadInt(buf,len); buf += sizeof(int);
+			name = buf; buf += len;
+
+			if (!name){
+				fprintf(stderr, 
+					"could not read name (%d)\n", l.flag );
+				return -1;
+			}
+			switch(l.flag){
 			case LOG_INSERT:
-				log_read_updates(s, &l, name);
+				buf = log_read_updates(buf, &l, name);
 				break;
 			case LOG_DELETE:
-				log_read_updates(s, &l, name);
+				buf = log_read_updates(buf, &l, name);
 				break;
 			case LOG_CREATE:
-				log_read_create(s, &l, name );
+				buf = log_read_create(buf, &l, name );
 				break;
 			case LOG_DESTROY:
-				log_read_destroy(s, &l, name );
+				buf = log_read_destroy(buf, &l, name );
 				break;
 			default:
-				fprintf(stderr, "error %d %s\n", l.flag, name);
-				if (name) _DELETE(name);
+				fprintf(stderr, "logger error %d %s\n", l.flag, name);
 				return -2;
+			}
 		}
-		if (name) _DELETE(name);
+		if (p) _DELETE(p);
 	}
 	s->close(s);
 	s->destroy(s);
@@ -427,12 +464,12 @@ int readlog( char *filename ){
 The log files are incrementally numbered. They are processed in the
 same sequence.
 @c
-int readlogs( FILE *fp, char *filename ){
+int readlogs( FILE *fp, char *filename, int *tid ){
 	int res = 0;
 	char id[BUFSIZ];
 
         if (logger_debug&1)
-		printf("readlogs %s\n", filename);
+		fprintf(stderr, "readlogs %s\n", filename);
 
 	while(fgets(id, BUFSIZ, fp) != NULL){
 		char buf[BUFSIZ];
@@ -440,14 +477,15 @@ int readlogs( FILE *fp, char *filename ){
 		logger_id = strtol(id,NULL,10);
 		snprintf(buf, BUFSIZ, "%s.%d", filename, logger_id );
 
-		if ((res = readlog(buf)) != 0){
+		if ((res = readlog(buf,tid)) != 0){
 			break;
 		}
 	}
 	return res;
 }
 
-void logger_init(int debug, char *dirname){
+int logger_init(int debug, char *dirname){
+	int tid = 0;
 	FILE *fp;
 	char filename[BUFSIZ];
 
@@ -458,7 +496,7 @@ void logger_init(int debug, char *dirname){
 			logdir, DIR_SEP, LOGFILE);
 
 	if ( (fp = fopen(filename, "r+")) != NULL){
-		readlogs(fp, filename);
+		readlogs(fp, filename, &tid);
 	} else if ( (fp = fopen(filename, "w")) == NULL){
 		fprintf(stderr, "could not create file %s\n", filename);
 		exit(1);
@@ -470,6 +508,7 @@ void logger_init(int debug, char *dirname){
 	snprintf(filename, BUFSIZ, "%s%c%s.%d", 
 			logdir, DIR_SEP, LOGFILE, logger_id);
 	log = open_wstream(filename);
+	return tid;
 }
 
 void logger_exit(){
@@ -492,8 +531,8 @@ void log_bat_persists(BAT *b ){
 
 	l.flag = LOG_CREATE;
 	l.nr = 0;
-	log->write( log, (char*)&l, sizeof(logformat), 1 );
-	log_write_string(log, name);
+	bwrite( logger_buf, (char*)&l, sizeof(logformat) );
+	log_write_string(logger_buf, name);
 	ha = ATOMname(b->htype);
 	if (b->htype == TYPE_void && BAThdense(b)){
 		ha = "vid";
@@ -504,11 +543,12 @@ void log_bat_persists(BAT *b ){
 		ta = "vid";
 	}
 	len = snprintf(buf, BUFSIZ,"%s,%s", ha, ta );
-	stream_writeInt( log, len );
-	log->write( log, buf, len, 1 );
+	len++; /* include EOS */
+	bwriteInt( logger_buf, len );
+	bwrite( logger_buf, buf, len );
 	
         if (logger_debug&1)
-		printf("new bat %s htype %d ttype %d\n", name,
+		fprintf(stderr, "new bat %s htype %d ttype %d\n", name,
 			b->htype, b->ttype );
 	log_bat(b);
 }
@@ -521,11 +561,11 @@ void log_bat_transient(BAT *b ){
 
 	l.flag = LOG_DESTROY;
 	l.nr = 0;
-	log->write( log, (char*)&l, sizeof(logformat), 1 );
-	log_write_string(log, name);
+	bwrite( logger_buf, (char*)&l, sizeof(logformat) );
+	log_write_string(logger_buf, name);
 	
         if (logger_debug&1)
-		printf("destroyed bat %s htype %d ttype %d\n", name,
+		fprintf(stderr, "destroyed bat %s htype %d ttype %d\n", name,
 			b->htype, b->ttype );
 	BATfakeCommit(b);
 }
@@ -537,46 +577,36 @@ void log_bat(BAT *b ){
 
 	l.nr = BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted);
 	if (l.nr){
-		int nr = 0;
-		buf_p buf = new_buffer();
 		char *name = BBPname(b->batCacheid);
+
 	    	l.flag = LOG_INSERT;
-		log->write( log, (char*)&l, sizeof(logformat), 1 );
-		log_write_string(log, name);
-		bwrite(buf, &nr, sizeof(int));
+		bwrite( logger_buf, (char*)&l, sizeof(logformat) );
+		log_write_string(logger_buf, name);
 	    	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)){
 			int s1,s2;
 			ptr h = BUNhead(b,p);
 			ptr t = BUNtail(b,p);
-			bwrite( buf, h, s1=ATOMlen(b->htype,h) );
-			bwrite( buf, t, s2=ATOMlen(b->ttype,t) );
+			bwrite( logger_buf, h, s1=ATOMlen(b->htype,h) );
+			bwrite( logger_buf, t, s2=ATOMlen(b->ttype,t) );
 	    	}
-		*((int*)buf->root->buf) = buffer_used(buf);
-                buffer_flush(buf, log);
-		destroy_buffer(buf);
 
 		if (logger_debug)
-			printf("Logged %s %d inserts\n", name, l.nr );
+			fprintf(stderr, "Logged %s %d inserts\n", name, l.nr );
 	}
 	l.nr = BUNindex(b, b->batHole) - BUNindex(b, b->batDeleted);
 	if (l.nr){
-		int nr = 0;
-		buf_p buf = new_buffer();
 		char *name = BBPname(b->batCacheid);
+
 	    	l.flag = LOG_DELETE;
-		log->write( log, (char*)&l, sizeof(logformat), 1 );
-		log_write_string(log, name);
-		bwrite(buf, &nr, sizeof(int));
+		bwrite( logger_buf, (char*)&l, sizeof(logformat) );
+		log_write_string(logger_buf, name);
 	    	for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)){
 			int s1,s2;
 			ptr h = BUNhead(b,p);
 			ptr t = BUNtail(b,p);
-			bwrite( buf, h, s1=ATOMlen(b->htype,h) );
-			bwrite( buf, t, s2=ATOMlen(b->ttype,t) );
+			bwrite( logger_buf, h, s1=ATOMlen(b->htype,h) );
+			bwrite( logger_buf, t, s2=ATOMlen(b->ttype,t) );
 	    	}
-		*((int*)buf->root->buf) = buffer_used(buf);
-                buffer_flush(buf, log);
-		destroy_buffer(buf);
 
 	    	if (logger_debug)
 			fprintf(stderr, "Logged %s %d deletes\n", name, l.nr );
@@ -584,9 +614,35 @@ void log_bat(BAT *b ){
 	BATfakeCommit(b);
 }
 
-void logger_commit(){
+static void logger_commit(){
 	int *kills = TMfakeCommit();
 	TMkill(kills);
 }
-	
 
+void log_tstart( int tid )
+{
+	int nr = 0; /* space holder for size */
+	if (logger_debug)
+		fprintf(stderr, "log_tstart %d\n", tid );
+
+	assert(logger_buf == NULL);
+	logger_buf = new_buffer();
+
+	bwriteInt( logger_buf, nr );
+	bwriteInt( logger_buf, tid );
+}
+
+void log_tend( )
+{
+	logger_commit();
+
+	if (logger_debug)
+		fprintf(stderr, "log_tend\n" );
+
+	*((int*)logger_buf->root->buf) = buffer_used(logger_buf);
+        buffer_flush(logger_buf, log);
+
+	destroy_buffer(logger_buf);
+
+	logger_buf = NULL;
+}

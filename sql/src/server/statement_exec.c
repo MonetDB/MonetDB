@@ -23,9 +23,10 @@ static void atom_dump( atom *a, stream *s){
 	case general_value:
 			if (a->data.sval)
 			  i=snprintf(buf, BUFSIZ, "%s(\"%s\")", 
-				a->tpe->name, a->data.sval );
+				a->tpe.type->name, a->data.sval );
 			else 
-			  i=snprintf(buf, BUFSIZ, "%s(nil)", a->tpe->name );
+			  i=snprintf(buf, BUFSIZ, "%s(nil)", 
+				a->tpe.type->name );
 			s->write(s, buf, 1, i);
 			break;
 	default:
@@ -184,8 +185,9 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		int t = stmt_dump( s->op1.stval, nr, sql );
 		column *c = s->op2.cval;
 		len = snprintf( buf, BUFSIZ, 
-		"s%d := mvc_create_column(myc, s%d, \"%s\", \"%s\", %d);\n",
-			-s->nr, t, c->name, c->tpe->sqlname, c->colnr );
+		"s%d := mvc_create_column(myc, s%d, \"%s\", \"%s\", %d, %d, %d);\n",
+			-s->nr, t, c->name, c->tpe->type->sqlname, 
+			c->tpe->size, c->tpe->digits, c->colnr );
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_not_null: {
@@ -224,6 +226,30 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			-s->nr, k, c );
 		dump(sql,buf,len,-s->nr);
 	} break;
+	case st_create_role: {
+		len = snprintf( buf, BUFSIZ, 
+		    	"s%d := mvc_create_role(myc, \"%s\", %d);\n", 
+			-s->nr, s->op1.sval, s->flag );
+		dump(sql,buf,len,-s->nr);
+	} 	break;
+	case st_drop_role: {
+		len = snprintf( buf, BUFSIZ, 
+		    	"s%d := mvc_drop_role(myc, \"%s\");\n", 
+			-s->nr, s->op1.sval );
+		dump(sql,buf,len,-s->nr);
+	} 	break;
+	case st_grant_role: {
+		len = snprintf( buf, BUFSIZ, 
+		    	"s%d := mvc_grant_role(myc, \"%s\", \"%s\");\n", 
+			-s->nr, s->op1.sval, s->op2.sval );
+		dump(sql,buf,len,-s->nr);
+	} 	break;
+	case st_revoke_role: {
+		len = snprintf( buf, BUFSIZ, 
+		    	"s%d := mvc_revoke_role(myc, \"%s\", \"%s\");\n", 
+			-s->nr, s->op1.sval, s->op2.sval );
+		dump(sql,buf,len,-s->nr);
+	} 	break;
 	case st_select: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r = stmt_dump( s->op2.stval, nr, sql );
@@ -259,22 +285,22 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		case cmp_lt:
 			len = snprintf( buf, BUFSIZ, 
 			  "s%d := s%d.mil_select(\"<in>\", %s(nil), s%d);\n", 
-			  -s->nr, l, tail_type(s)->name, r ); 
+			  -s->nr, l, tail_type(s)->type->name, r ); 
 			break;
 		case cmp_lte:
 			len = snprintf( buf, BUFSIZ, 
 			  "s%d := s%d.uselect(%s(nil), s%d);\n", 
-			  -s->nr, l, tail_type(s)->name, r ); 
+			  -s->nr, l, tail_type(s)->type->name, r ); 
 			break;
 		case cmp_gt:
 			len = snprintf( buf, BUFSIZ, 
 			  "s%d := s%d.mil_select(\"<in>\", s%d, %s(nil));\n", 
-			  -s->nr, l, r, tail_type(s)->name ); 
+			  -s->nr, l, r, tail_type(s)->type->name ); 
 			break;
 		case cmp_gte: 
 			len = snprintf( buf, BUFSIZ, 
 			  "s%d := s%d.uselect(s%d, %s(nil));\n", 
-			  -s->nr, l, r, tail_type(s)->name ); 
+			  -s->nr, l, r, tail_type(s)->type->name ); 
 			break;
 		default:
 			len = snprintf( buf, BUFSIZ, 
@@ -608,7 +634,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 				*nr, l, s->op2.aggrval->imp );
 			len += snprintf( buf+len, BUFSIZ-len, 
 				"s%d := new(oid,%s);\n"
-				, -s->nr, s->op2.aggrval->res->name );
+				, -s->nr, s->op2.aggrval->res->type->name );
 			len += snprintf( buf+len, BUFSIZ-len, 
 				"s%d.insert(oid(0),s%d);\n"
 				, -s->nr, *nr );
@@ -622,7 +648,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		n = s->op2.lval->h;
 		write_head(sql,-s->nr);
 		if (n){
-		  	char *a = (char*)atom_type(n->data)->name;
+		  	char *a = (char*)atom_type(n->data)->type->name;
 			len = snprintf( buf, BUFSIZ, 
 				"s%db := new(%s,oid);\n", -s->nr, a );
 			write_part(sql,buf,len);

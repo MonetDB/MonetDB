@@ -3,53 +3,51 @@
 #include "sql.h"
 
 #include "atom.h"
-/* todo, be able to handle generic atom types, also other the SQL parser
-   supports */
 
+/* todo, be able to handle generic atom types */
 static int atom_debug = 0;
 
-atom *atom_int(sql_type * tpe, int val)
+atom *atom_int(sql_subtype * tpe, int val)
 {
 	atom *a = NEW(atom);
-	a->tpe = tpe;
+	a->tpe = *tpe;
 	a->data.ival = val;
 	a->type = int_value;
 	if (atom_debug)
-		fprintf(stderr, "atom_int(%s,%d)\n", tpe->sqlname, val);
+		fprintf(stderr, "atom_int(%s,%d)\n", tpe->type->sqlname, val);
 	return a;
 }
 
-atom *atom_string(sql_type * tpe, char *val)
+atom *atom_string(sql_subtype * tpe, char *val)
 {
 	atom *a = NEW(atom);
-	a->tpe = tpe;
+	a->tpe = *tpe;
 	a->data.sval = val;
 	a->type = string_value;
 	if (atom_debug)
-		fprintf(stderr, "atom_string(%s)\n", val);
+		fprintf(stderr, "atom_string(%s,%s)\n", tpe->type->sqlname,val);
 	return a;
 }
 
-atom *atom_float(sql_type * tpe, double val)
+atom *atom_float(sql_subtype * tpe, double val)
 {
 	atom *a = NEW(atom);
-	a->tpe = tpe;
+	a->tpe = *tpe;
 	a->data.dval = val;
 	a->type = float_value;
 	if (atom_debug)
-		fprintf(stderr, "atom_float(%f)\n", val);
+		fprintf(stderr, "atom_float(%s,%f)\n", tpe->type->sqlname,val);
 	return a;
 }
 
-atom *atom_general(sql_type * tpe, char *val)
+atom *atom_general(sql_subtype * tpe, char *val)
 {
 	atom *a = NEW(atom);
-	a->tpe = tpe;
+	a->tpe = *tpe;
 	a->data.sval = val;
 	a->type = general_value;
 	if (atom_debug)
-		fprintf(stderr, "atom_general(%s,%s)\n", tpe->sqlname,
-			val);
+		fprintf(stderr, "atom_general(%s,%s)\n", tpe->type->sqlname, val);
 	return a;
 }
 
@@ -74,7 +72,7 @@ char *atom2string(atom * a)
 		break;
 	case general_value:
 		if (a->data.sval)
-			sprintf(buf, "%s \'%s\'", a->tpe->name,
+			sprintf(buf, "%s \'%s\'", a->tpe.type->name,
 				a->data.sval);
 		else
 			sprintf(buf, "NULL");
@@ -83,9 +81,9 @@ char *atom2string(atom * a)
 	return _strdup(buf);
 }
 
-sql_type *atom_type(atom * a)
+sql_subtype *atom_type(atom * a)
 {
-	return a->tpe;
+	return &(a->tpe);
 }
 
 atom *atom_dup(atom * a)
