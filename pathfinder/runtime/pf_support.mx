@@ -276,6 +276,9 @@ proc htordered_unique_thetajoin( @1 lx, bat[oid,any::2] l,
 
 PROC fake_project (any::1 c) : bat[void,any::1]
 {
+	if (type(c) = 0) {
+		ERROR("fake_project: argument must not be void; please cast nil properly!\n");
+	}
     	return new(void,type(c),1).seqbase(nil).insert(nil,c).access(BAT_READ);
 }
 
