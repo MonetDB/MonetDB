@@ -227,7 +227,8 @@ that you might well find very useful.
     proc dir(bat[int,str] b) {
         var nme := view_bbp_name;
 	var atm := adm_atomtbl.copy.access(BAT_WRITE).delete("BAT"); #doubly present
-	table(1,b.reverse.sort.reverse.col_name("name"),
+	
+	table(1, b.reverse.sort.reverse.col_name("name"),
 		[htype](b.join(nme.reverse)).outerjoin(atm.reverse).col_name("htype"),	
 		[ttype](b.join(nme.reverse)).outerjoin(atm.reverse).col_name("ttype"),	
 		[count](b.mirror).col_name("count"),	

@@ -1320,9 +1320,9 @@ and @%BATmode@.
 Valid BAT access properties can be set with BATsetaccess and BATgetaccess:
 @T
 \begin{itemize}
-\item {\small BAT_READ}, 
-\item {\small BAT_APPEND}, and 
-\item {\small BAT_WRITE}.
+\item {\small BAT\_READ}, 
+\item {\small BAT\_APPEND}, and 
+\item {\small BAT\_WRITE}.
 \end{itemize}
 @
 BATs can be designated to be read-only. In this case some 
@@ -1867,7 +1867,7 @@ gdk_export ptr  ATOMdup	  (int id, ptr val);
 {\tt \begin{tabular}{|lll|}\hline
 oid  &  OIDseed & (oid seed);\\ 
 oid  &  OIDnew  & (int inc);\\
-oid  &  OIDnewdb  & (int inc, int db_id);\\
+oid  &  OIDnewdb  & (int inc, int db\_id);\\
 \hline\end{tabular}}
 
 OIDs are special kinds of unsigned integers because the system
@@ -1985,7 +1985,7 @@ BAT to an accelerators traversal order, in order to minimize page faults
 in a memory mapped situation. 
 
 \item {\em ACCrepair()} checks the consistency of an accelerator. If it is
-consistent, it returns GDK_SUCCEED, else GDK_FAIL, WHILE BRINGING
+consistent, it returns GDK\_SUCCEED, else GDK\_FAIL, WHILE BRINGING
 THE ACCELERATOR IN A CONSISTENT STATE (most probably by deleting it).
 \end{itemize}
 These functions are just wrappers for the operations one has to
@@ -2099,14 +2099,14 @@ ands system information.
 @- GDK memory management
 @T
 {\tt \begin{tabular}{|lll|}\hline
-void* & GDKmalloc & (size_t size)\\
-void* & GDKrealloc & (void* pold, size_t size)\\
+void* & GDKmalloc & (size\_t size)\\
+void* & GDKrealloc & (void* pold, size\_t size)\\
 void & GDKfree & (void* blk)\\
 str & GDKstrdup & (str s)\\
 \hline
-void* & GDKvmalloc & (size_t size, size_t *maxsize)\\
-void* & GDKvmrealloc & (void* pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *maxsize)\\
-void & GDKvmfree & (void* blk, size_t size, size_t maxsize)\\
+void* & GDKvmalloc & (size\_t size, size\_t *maxsize)\\
+void* & GDKvmrealloc & (void* pold, size\_t oldsize, size\_t newsize, size\_t oldmax, size\_t *maxsize)\\
+void & GDKvmfree & (void* blk, size\_t size, size\_t maxsize)\\
 \hline\end{tabular}}
 @
 These utilities are primarily used to maintain control over critical interfaces
@@ -2436,7 +2436,6 @@ bat  & VIEWparent   & (BAT *b)\\
 BAT* & VIEWhead     & (BAT *b)\\
 BAT* & VIEWreset    & (BAT *b)\\
 BAT* & VIEWcombine  & (BAT *b)\\
-\\
 \hline\end{tabular}}
 @
 Alignments of two columns of a BAT means that the system knows
@@ -2537,21 +2536,21 @@ BATloopDEL & (BAT *b; BUN p; BUN q; int dummy)\\
 DELloop & (BAT *b; BUN p, BUN q, int dummy)\\
 \hline
 HASHloop & (BAT *b; Hash *h, int dummy; ptr value)\\
-HASHloop_bit & (BAT *b; Hash *h, int idx; bit *value, BUN w)\\
-HASHloop_chr & (BAT *b; Hash *h, int idx; char *value, BUN w)\\
-HASHloop_sht & (BAT *b; Hash *h, int idx; sht *value, BUN w)\\
-HASHloop_bat & (BAT *b; Hash *h, int idx; bat *value, BUN w)\\
-HASHloop_ptr & (BAT *b; Hash *h, int idx; ptr *value, BUN w)\\
-HASHloop_int & (BAT *b; Hash *h, int idx; int *value, BUN w)\\
-HASHloop_oid & (BAT *b; Hash *h, int idx; oid *value, BUN w)\\
-HASHloop_flt & (BAT *b; Hash *h, int idx; flt *value, BUN w)\\
-HASHloop_lng & (BAT *b; Hash *h, int idx; lng *value, BUN w)\\
-HASHloop_dbl & (BAT *b; Hash *h, int idx; dbl *value, BUN w)\\
-HASHloop_str & (BAT *b; Hash *h, int idx; str value, BUN w)\\
+HASHloop\_bit & (BAT *b; Hash *h, int idx; bit *value, BUN w)\\
+HASHloop\_chr & (BAT *b; Hash *h, int idx; char *value, BUN w)\\
+HASHloop\_sht & (BAT *b; Hash *h, int idx; sht *value, BUN w)\\
+HASHloop\_bat & (BAT *b; Hash *h, int idx; bat *value, BUN w)\\
+HASHloop\_ptr & (BAT *b; Hash *h, int idx; ptr *value, BUN w)\\
+HASHloop\_int & (BAT *b; Hash *h, int idx; int *value, BUN w)\\
+HASHloop\_oid & (BAT *b; Hash *h, int idx; oid *value, BUN w)\\
+HASHloop\_flt & (BAT *b; Hash *h, int idx; flt *value, BUN w)\\
+HASHloop\_lng & (BAT *b; Hash *h, int idx; lng *value, BUN w)\\
+HASHloop\_dbl & (BAT *b; Hash *h, int idx; dbl *value, BUN w)\\
+HASHloop\_str & (BAT *b; Hash *h, int idx; str value, BUN w)\\
 HASHlooploc & (BAT *b; Hash *h, int idx; ptr value, BUN w)\\
-HASHloopvar & (BAT *b; Hash *h, int idx; ptr value, BUN w)
+HASHloopvar & (BAT *b; Hash *h, int idx; ptr value, BUN w)\\
 \hline
-SORTloop& (BAT *b,p,q,tl,th,s)
+SORTloop& (BAT *b,p,q,tl,th,s) \\
 \hline
 IDXloop & (BAT *b, BUN p, BUN q)\\
 IDXfrom & (BAT *b, BUN p, BUN q)\\
@@ -2564,7 +2563,7 @@ IDXlast & (BAT *b)\\
 The {\em BATloop()} looks like a function call, but is actually a macro. 
 The following example gives an indication of how they are to be used:
 \begin{verbatim}
-void print_a_bat (b)
+void print\_a\_bat (b)
 BAT *b; 
 {
         BUN p, q; 
@@ -2632,11 +2631,11 @@ If so, we can just compare integer index numbers instead of strings:
 The following example shows how the hashloop is used:
 @T
 \begin{verbatim}
-void print_books (author_books, author)
-BAT *author_books; 
+void print\_books (author\_books, author)
+BAT *author\_books; 
 str author;
 {
-        BAT *b = author_books;
+        BAT *b = author\_books;
         int i; 
 
         printf("%s\n==================\n", author);

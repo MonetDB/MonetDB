@@ -8,6 +8,15 @@
 #include <stdio.h>
 #include "list.h"
 
+#include <config.h>
+#ifndef DIR_SEP
+#ifdef NATIVE_WIN32
+#define DIR_SEP '\\'
+#else
+#define DIR_SEP '/'
+#endif
+#endif
+
 class FileInfo {
     public:
 	FileInfo( FILE *f, int lineno, char *filename, 
@@ -102,7 +111,7 @@ static char *new_filename( const char *dir, const char *name, const char *ext ){
 	int len_ext  = strlen(ext);
 	char *fn = new char [len_dir + 1 + len_name + len_ext + 1]; 
 	strcpy( fn, dir );
-	fn[len_dir] = '/';
+	fn[len_dir] = DIR_SEP;
 	strcpy( fn+len_dir+1, name );
 	strcpy( fn+len_dir+1+len_name, ext );
 	return fn;
@@ -141,12 +150,12 @@ char *basename( char *fname ){
 	   if (fname[i]=='.'){
 	      	end = i-1;
 	   }
-	   if (fname[i]=='/'){
+	   if (fname[i]==DIR_SEP){
 	      	start = i+1;
 		break;
 	   }
 	}
-	l  = end - start;
+	l  = end - start + 1 ;
 	char *b = new char [l+1];
 	for (i = 0; i < l; i++ ){
 	   	b[i] = fname[start+i];

@@ -106,13 +106,21 @@ Module: "alarm"
 
 Module: "ascii_io"
 
-[ 2 ]
-[ 2 ]
-#-------------------------------------------------------------------------#
-# function	| type		| signature			| help	  #
-#-------------------------------------------------------------------------#
-[ "dump",	  "COMMAND: ",	  "dump(str, str, int) : void",	  ""	  ]
-[ "load",	  "COMMAND: ",	  "load(str, str, int) : void",	  ""	  ]
+[ 10 ]
+[ 10 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature									| help			  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "ascii_io_debug",	  "COMMAND: ",	  "ascii_io_debug(int) : void",							  ""			  ]
+[ "bat_ttype",		  "PROC: ",	  "bat_ttype(BAT[any,any]) : str",						  "not available"	  ]
+[ "dump",		  "COMMAND: ",	  "dump(BAT[void,str], BAT[void,str], BAT[void,BAT], str, int) : void",		  ""			  ]
+[ "dump_data",		  "PROC: ",	  "dump_data(BAT[str,BAT], str, int) : any",					  "not available"	  ]
+[ "dump_format",	  "PROC: ",	  "dump_format(BAT[void,BAT], str) : BAT[str,BAT]",				  "not available"	  ]
+[ "dump_seps",		  "PROC: ",	  "dump_seps(BAT[void,BAT]) : BAT[void,str]",					  "not available"	  ]
+[ "load",		  "COMMAND: ",	  "load(BAT[void,str], BAT[void,str], BAT[void,str], str, int) : BAT[str,BAT]",	  ""			  ]
+[ "load_data",		  "PROC: ",	  "load_data(BAT[str,BAT], str, int) : BAT[str,BAT]",				  "not available"	  ]
+[ "load_format",	  "PROC: ",	  "load_format(str) : BAT[str,BAT]",						  "not available"	  ]
+[ "make_persistent",	  "PROC: ",	  "make_persistent(BAT[str,BAT]) : any",					  "not available"	  ]
 
 Module: "bitset"
 

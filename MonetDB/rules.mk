@@ -60,7 +60,24 @@ MXFLAGS= -notouch
 %.glue.c: %.m
 	$(MEL) $(INCLUDES) -o $@ -glue $<
 
-SUFFIXES = .m .mx .proto.h .mil .glue.c
-PRECIOUS = .m 
+%.tex: %.mx
+	cat $< > /tmp/doc.mx
+	$(MX) -1 -H$(HIDE) -t /tmp/doc.mx 
+	$(MV) doc.tex $@
 
-all-local: $(BUILT_SOURCES)
+%.pdf: %.tex
+	$(PDFLATEX) $< 
+
+%.dvi: %.tex
+	$(LATEX) $< 
+
+%.ps: %.dvi
+	$(DVIPS) $< -o $@
+
+%.eps: %.fig
+	$(FIG2DEV) -Leps -e $< > $@
+
+%.eps: %.feps
+	$(CP) $< $@
+
+SUFFIXES-local: $(BUILT_SOURCES)

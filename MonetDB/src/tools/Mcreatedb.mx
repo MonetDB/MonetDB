@@ -99,10 +99,10 @@ $MONETHOME/dbfarm/$DB/users/$USER/prelude.mil  # (editable) session prelude
 #include <gdk.h>
 #include "../gdk/gdk_utils.c"
 
-int error, fatal;
-char homes[PATHLENGTH] = {0}, *home=NULL, *dist, *farm, *db=NULL;
-str  prog, user[64] = { 0 };
-char dir=0;
+static int error, fatal;
+static char homes[PATHLENGTH] = {0}, *home=NULL, *dist=NULL, *farm=NULL, *db=NULL;
+static str  prog, user[64] = { 0 };
+static char dir=0;
 
 extern str getenv();
 extern void dbargs(int argc,char **argv);
@@ -367,9 +367,11 @@ void dbargs(int argc,char **argv) {
  	int i, usr=0; 
 	char *s=0;
 
+	prog = argv[0];
 	home=(char *) getenv("MONETHOME");
 	farm=(char *) getenv("MONETFARM");
 	dist=(char *) getenv("MONETDIST");
+	if (home == NULL) home = MONET_PREFIX;
 	if (dist == NULL) dist = home;
 	if (farm == NULL) farm = home;
 
@@ -405,7 +407,6 @@ void dbargs(int argc,char **argv) {
 		fclose(fp);
 	    }
         }
-	prog = argv[0];
 	for(s=prog+strlen(prog)-1; s >= prog; s--)
 		if (*s == '\\' || *s == DIR_SEP) break;  
 	prog = s+1;

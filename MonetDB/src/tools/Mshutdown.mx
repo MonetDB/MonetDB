@@ -19,6 +19,7 @@ The program uses the Mapi interface.
 @c
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "Mapi.h"
 
@@ -57,7 +58,7 @@ int main(int argc, char** argv) {
 		usage();
 	}
 
-	if( address == 0 ) usage();
+	if( address == 0 ) address = strdup("localhost:50000");
 	s = (char *) strchr(address,':');
 	if( s == 0 ){
 		printf("address syntax error: %s\n", address);
