@@ -767,7 +767,6 @@ def GetBitsAndModsAndStatic(env) :
     cmd = '%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF)
     pOut,pIn,pErr = popen2.popen3(cmd)
     pIn.write('''\
-        loaded;
         help("kunion");
         {
             # print a list of all modules found
