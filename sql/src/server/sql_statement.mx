@@ -92,7 +92,6 @@ typedef enum stmt_type {
 	st_filter,
 	st_select,
 	st_select2,
-	st_like,
 	st_semijoin,
 
 	st_reljoin,
@@ -141,7 +140,8 @@ typedef enum comp_type {
 	cmp_lt = 3,
 	cmp_equal = 4,
 	cmp_notequal = 5,
-	cmp_all = 6
+	cmp_like = 6,
+	cmp_all = 7
 } comp_type;
 
 typedef struct stmt {
@@ -249,7 +249,6 @@ extern stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype);
        3 ==   l <= x <= h
        */
 extern stmt *stmt_select2(stmt * op1, stmt * op2, stmt * op3, int cmp);
-extern stmt *stmt_like(stmt * op1, stmt * a);
 extern stmt *stmt_semijoin(stmt * op1, stmt * op2);
 
 extern stmt *stmt_relselect_init();
@@ -391,7 +390,6 @@ const char * st_type2string(st_type type) {
 	case st_select2:	return "st_select2";
 	case st_bulkinsert:	return "st_bulkinsert";
 	case st_export:	return "st_export";
-	case st_like:	return "st_like";
 	case st_append:	return "st_append";
 	case st_insert:	return "st_insert";
 	case st_replace:	return "st_replace";
@@ -631,7 +629,7 @@ void stmt_destroy(stmt * s)
 		case st_group: case st_group_ext:
 
 		case st_filter: case st_select: case st_select2:
-		case st_like: case st_semijoin:
+		case st_semijoin:
 
 		case st_bulkinsert:
 			if (s->op1.stval) stmt_destroy(s->op1.stval);
@@ -1055,17 +1053,6 @@ stmt *stmt_select2(stmt * op1, stmt * op2, stmt * op3, int cmp)
 	s->flag = cmp;
 	s->nrcols = 1;
 	s->h = stmt_dup(s->op1.stval->h);
-	return s;
-}
-
-stmt *stmt_like(stmt * op1, stmt * a)
-{
-	stmt *s = stmt_create(st_like);
-	s->op1.stval = op1;
-	s->op2.stval = a;
-	s->nrcols = 1;
-	s->h = stmt_dup(s->op1.stval->h);
-	s->t = stmt_dup(s->op1.stval->t);
 	return s;
 }
 
@@ -1681,7 +1668,6 @@ stmt *tail_column(stmt * st)
 	case st_binop:
 	case st_Nop:
 	case st_diff:
-	case st_like:
 	case st_filter:
 	case st_select:
 	case st_select2:
@@ -1737,7 +1723,6 @@ stmt *head_column(stmt * st)
 	case st_outerjoin:
 	case st_intersect:
 	case st_semijoin:
-	case st_like:
 	case st_filter:
 	case st_select:
 	case st_select2:

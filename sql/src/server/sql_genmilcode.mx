@@ -465,6 +465,10 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 				-s->nr, op, l, r ); 
 		} else {
 		switch(s->flag){
+		case cmp_like:
+			len = snprintf( buf, BUFSIZ, 
+				"s%d := s%d.likeselect(s%d);\n", -s->nr, l, r ); 
+			break;
 		case cmp_equal:
 			len = snprintf( buf, BUFSIZ, 
 				"s%d := s%d.uselect(s%d);\n", -s->nr, l, r ); 
@@ -527,9 +531,6 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		  -s->nr, l, r1, r2, bits ); 
 		dump(sql,buf,len,-s->nr);
 	} break;
-	case st_like: 
-		dump_2( sql, s, "likeselect", nr );
-		break;
 	case st_semijoin: 
 		dump_2( sql, s, "semijoin", nr );
 		break;

@@ -1867,7 +1867,7 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 			if (!check_types(sql, st, a) ){
 				return sql_error(sql, 02, "Wrong type used with LIKE stmt, should be string" );
 			}
-			res = stmt_like(ls, a);
+			res = stmt_select(ls, a, cmp_like);
 			if (sc->token == SQL_NOT_LIKE)
 				res = stmt_diff(ls, res);
 			return res;

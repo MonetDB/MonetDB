@@ -135,7 +135,6 @@ static int select_count( stmt *s )
 			}
 			return sc;
 		}
-		case st_like:
 		case st_select2:
 		case st_select: return 1;
 		default: return 0;
@@ -895,7 +894,7 @@ stmt *optimize( context *c, stmt *s ){
 
 	case st_temp:
 	case st_filter: 
-	case st_select: case st_select2: case st_like: case st_semijoin: 
+	case st_select: case st_select2: case st_semijoin: 
 	case st_diff: case st_intersect: case st_union: case st_outerjoin:
 	case st_join: 
 	case st_mirror: case st_reverse: case st_const: case st_mark: 

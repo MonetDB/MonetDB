@@ -213,23 +213,17 @@ list *shrink_select_ranges(list *oldsels)
 			/* only one select on this column; simply keep it. */
 			list_append( newsels, stmt_dup(colsels->h->data) );
 		} else {
-			list *l1, *l2, *likesels, *sels2, *sels1[6];
+			list *l1, *l2, *sels2, *sels1[cmp_all];
 			stmt *bound[4] = {NULL, NULL, NULL, NULL};
 			stmt *col[4] = {NULL, NULL, NULL, NULL};
-			comp_type CMP_equal = cmp_equal, CMP_notequal = cmp_notequal, ct;
-			st_type ST_select = st_select, ST_select2 = st_select2, ST_like = st_like;
+			st_type ST_select2 = st_select2;
+			comp_type ct;
 			node *n;
 			int flg, len = 0;
 			
-			/* save all like selects as we cannot handle them here; eliminate duplicates */
-			l1 = list_select( colsels, (void*)&ST_like, (fcmp)&cmp_sel_st_type, (fdup)&stmt_dup );
-			len += list_length(l1);
-			likesels = list_distinct( l1, (fcmp)&cmp_sel_val, (fdup)&stmt_dup );
-			list_destroy(l1);
-
-			/* separate all single-range, equal, & not-equal selects and eliminate duplicates
-			 * (not-equal selects are saved and re-added at the end) */
-			for ( ct = cmp_gt; ct <= cmp_notequal; ct++ ){
+			/* separate all single-range, equal, not-equal, & like selects and eliminate duplicates
+			 * (not-equal & like selects are saved and re-added at the end) */
+			for ( ct = cmp_gt; ct < cmp_all; ct++ ){
 				l1 = list_select( colsels, (void*)&ct, (fcmp)&cmp_sel_comp_type, (fdup)&stmt_dup );
 				len += list_length(l1);
 				sels1[ct] = list_distinct( l1, (fcmp)&cmp_sel_val, (fdup)&stmt_dup );
@@ -360,11 +354,11 @@ list *shrink_select_ranges(list *oldsels)
 			}	
 
 			/* finally collect all saved not-equal and like selects */
-			list_merge( newsels, likesels, (fdup)&stmt_dup );
+			list_merge( newsels, sels1[cmp_like], (fdup)&stmt_dup );
 			list_merge( newsels, sels1[cmp_notequal], (fdup)&stmt_dup );
 
 			list_destroy(sels1[cmp_notequal]);
-			list_destroy(likesels);
+			list_destroy(sels1[cmp_like]);
 		}
 		list_destroy(colsels);
 	}
@@ -462,7 +456,7 @@ stmt *rel2bin( context *c, stmt *s )
 
 	case st_temp:
 	case st_filter: 
-	case st_select: case st_select2: case st_like: case st_semijoin:
+	case st_select: case st_select2: case st_semijoin:
 	case st_diff: case st_intersect: case st_union: case st_outerjoin:
 	case st_join: 
 	case st_mirror: case st_reverse: case st_const: case st_mark: 
