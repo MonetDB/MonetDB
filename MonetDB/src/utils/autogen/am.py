@@ -516,7 +516,7 @@ def am_jar(fd, var, jar, am):
     fd.write("%s_inner_class_files= $(patsubst %%.java,%%\$$*.class,$(%s_java_files))\n" % (name,name))
 
     fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name,name))
-    fd.write("\tCLASSPATH=.:$(CLASSPATH);$(JAVAC) -d . $(JAVACFLAGS) $^\n")
+    fd.write("\t$(JAVAC) -d . -classpath $(CLASSPATH) $(JAVACFLAGS) $^\n")
 
     fd.write("\n%s.jar: $(%s_class_files) $(%s_extra_files)\n" % (name,name,name))
     fd.write("\t$(shell $(JAR) $(JARFLAGS) -cf $@ $(%s_class_files) $(%s_inner_class_files) $(%s_extra_files))\n" % (name,name,name) )
