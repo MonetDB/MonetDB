@@ -1,0 +1,196 @@
+@f streams
+@a Niels Nes
+@* An simple interface to streams 
+This interface can be used to open 'non compressed, gzipped, bz2zipped' 
+data files. It encapsulates the corresponding library managed in 
+.../stream.
+
+@mal
+atom stream : ptr;
+module streams;
+
+command open_rstream( filename:str ) : stream = stream_open_rstream
+	comment "open a file stream for reading";
+command open_wstream( filename:str ) : stream = stream_open_wstream
+	comment "open a file stream for writing";
+command open_rastream( filename:str ) : stream = stream_open_rastream 
+	comment "open ascii file stream for reading";
+command open_wastream( filename:str ) : stream = stream_open_wastream 
+	comment "open ascii file stream for writing";
+
+command socket_rstream( socket:int, name:str ) : stream = stream_socket_rstream
+	comment "open a socket stream for reading";
+command socket_wstream( socket:int, name:str ) : stream = stream_socket_wstream
+	comment "open a socket stream for writing";
+command socket_rastream( socket:int, name:str ) : stream = stream_socket_rastream
+	comment "open ascii socket stream for reading";
+command socket_wastream( socket:int, name:str ) : stream = stream_socket_wastream
+	comment "open ascii socket stream for writing";
+
+command file_rstream( file:fstream, name:str ) : stream = stream_file_rstream
+	comment "open a file stream for reading";
+command file_wstream( file:fstream, name:str ) : stream = stream_file_wstream
+	comment "open a file stream for writing";
+command file_rastream( file:fstream, name:str ) : stream = stream_file_rastream
+	comment "open ascii file stream for reading";
+command file_wastream( file:fstream, name:str ) : stream = stream_file_wastream
+	comment "open ascii file stream for writing";
+
+command block_stream( s:stream ) : stream = open_block_stream
+	comment "open a block based stream";
+
+command stream_write( s:stream, data:str ) = stream_write_string
+	comment "write data on the stream";
+
+command stream_flush( s:stream ) = stream_flush
+	comment "flush the stream";
+
+command stream_close( s:stream ) = stream_close_stream 
+	"close and destroy the stream s";
+
+@h
+
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Niels Nes <Niels.Nes@cwi.nl>
+ */
+
+#ifndef _STREAMS_H_
+#define _STREAMS_H_
+
+#include "stream/stream.h"
+#include <blob.h>
+#include <io.h>
+
+#endif /*_STREAMS_H_*/
+@c
+#include "streams.h"
+#include "monet.h"
+
+str stream_open_rstream( stream *S, str filename ){
+	if ((*(stream**)S = open_rstream( filename )) == NULL){
+		return throwMessage("open_rstream:failed"); 
+	} else {
+		return MAL_SUCCEED;
+	}
+}
+str stream_open_wstream( stream *S, str filename ){
+	if ((*(stream**)S = open_wstream( filename )) == NULL){
+		return throwMessage("open_wstream:failed"); 
+	} else {
+		return MAL_SUCCEED;
+	}
+}
+str stream_open_rastream( stream *S, str filename ){
+	if ((*(stream**)S = open_rastream( filename )) == NULL){
+		return throwMessage("open_rastream:failed"); 
+	} else {
+		return MAL_SUCCEED;
+	}
+}
+str stream_open_wastream( stream *S, str filename ){
+	if ((*(stream**)S = open_wastream( filename )) == NULL){
+		return throwMessage("open_wastream:failed"); 
+	} else {
+		return MAL_SUCCEED;
+	}
+}
+str stream_socket_rstream( stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_rstream( *socket, name )) == NULL){
+		return throwMessage("socket_rstream:failed"); 
+	} else {
+		return MAL_SUCCEED;
+	}
+}
+str stream_socket_wstream( stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_wstream( *socket, name )) == NULL){
+		return throwMessage("socket_rstream:failed"); 
+	} else {
+		return MAL_SUCCEED;
+	}
+}
+str stream_socket_rastream( stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_rastream( *socket, name )) == NULL){
+		return throwMessage("socket_rastream:failed"); 
+	} else {
+		return MAL_SUCCEED;
+	}
+}
+str stream_socket_wastream( stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_wastream( *socket, name )) == NULL){
+		return throwMessage("socket_wasstream:failed"); 
+	} else {
+		return MAL_SUCCEED;
+	}
+}
+str stream_file_rstream( stream *S, fstream *file, str name ){
+	if ((*(stream**)S = file_rstream( *file, name )) == NULL){
+		return throwMessage("file_rstream:failed"); 
+	} else {
+		return MAL_SUCCEED;
+	}
+}
+str stream_file_wstream( stream *S, fstream *file, str name ){
+	if ((*(stream**)S = file_wstream( *file, name )) == NULL){
+		return throwMessage("file_wstream:failed"); 
+	} else {
+		return MAL_SUCCEED;
+	}
+}
+str stream_file_rastream( stream *S, fstream *file, str name ){
+	if ((*(stream**)S = file_rastream( *file, name )) == NULL){
+		return throwMessage("file_rastream:failed"); 
+	} else {
+		return MAL_SUCCEED;
+	}
+}
+str stream_file_wastream( stream *S, fstream *file, str name ){
+	if ((*(stream**)S = file_wastream( *file, name )) == NULL){
+		return throwMessage("open_wastream:failed"); 
+	} else {
+		return MAL_SUCCEED;
+	}
+}
+
+str stream_write_string( stream *S, str data ){
+	stream *s = *(stream**)S;
+	s->write( s, data, 1, strlen(data));
+	return MAL_SUCCEED;
+}
+
+str stream_flush( stream *S ){
+	stream *s = *(stream**)S;
+	s->flush( s );
+	return MAL_SUCCEED;
+}
+
+str stream_close_stream( stream *S ){
+	stream *s = *(stream**)S;
+	s->close( s );
+	s->destroy( s );
+	return MAL_SUCCEED;
+}
+
+str open_block_stream( stream *S, stream *is ){
+	if ((*(stream**)S = block_stream( *(stream**)is )) == NULL){
+		return throwMessage("block_stream:failed"); 
+	} else {
+		return MAL_SUCCEED;
+	}
+}

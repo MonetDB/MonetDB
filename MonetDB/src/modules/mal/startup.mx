@@ -14,6 +14,7 @@ The negative effect is that this module is inspected as part of
 the function resolution scheme.
 
 @mal
+use "mal/streams";
 use "mal/enum";
 use "kernel/startup";
 use "mal/io";

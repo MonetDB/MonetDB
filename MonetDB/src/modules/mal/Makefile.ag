@@ -7,12 +7,13 @@ MTSAFE
 
 # install these libs in the pkglib
 LIBDIR = pkglib
+SUBDIRS = stream
 
 LIBS = {
 	SEP = _
 	SOURCES = squeezer.mx mal.mx startup.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx io.mx \
-		enum.mx 
+		enum.mx  streams.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
@@ -22,6 +23,14 @@ LIBS = {
 scripts_mal = {
         DIR = pkgdatadir
         SOURCES = startup.mal
+}
+
+lib__streams = {
+        SOURCES = streams.mx
+        HEADERS = h m
+        #SCRIPTS = mil ""
+        LIBS = ../../gdk/libbat ../../monet/libmonet ./stream/libstream \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
 
