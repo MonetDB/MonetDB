@@ -125,14 +125,12 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 		*(bat*) dst = *(bat*) src;\
 	} else if (tpe == TYPE_str) {\
                 if (strPut(hp, (var_t*) dst, (str) src) == 0) {\
-			BBPreclaim(bn);\
-			return NULL;\
+				goto bunins_failed;\
 		}\
 	} else {\
 		if (BATatoms[tpe].atomPut) {\
                 	if ((*BATatoms[tpe].atomPut)(hp, (var_t*) dst, (str) src) == 0) {\
-				BBPreclaim(bn);\
-				return NULL;\
+				goto bunins_failed;\
 			}\
 		} else {\
                 	memcpy(dst, src, ATOMsize(tpe));\
@@ -170,8 +168,7 @@ replacing their generic versions there.
             REGISTER int _bunsize = BUNsize(b);\
             if ((b)->batBuns->free + _bunsize > (b)->batBuns->size) {\
                 if (BATextend((b), BATgrows(b)) == NULL) {\
-			BBPreclaim(bn);\
-			return NULL;\
+                        goto bunins_failed;\
 		}\
                 _p = BUNlast(b);\
             }\
@@ -283,6 +280,9 @@ Hence, we skip some type-expansions in this very case.
 @= seqscanEpilogue
 	if (!bn->batDirty) bn->batDirty = TRUE;
 	return bn;
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
 @-
 
 The templates for the inner loops that do the actual work.
