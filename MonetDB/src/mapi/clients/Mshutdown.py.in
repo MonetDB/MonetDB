@@ -34,18 +34,33 @@ else:
 import monet_options
 import Mapi
 
-cmd_options = [
-    ('host',None,'host','hostname','host to connect to (default: localhost)'),
-    ('port',None,'mapi_port','port','port to connect to (default: 50000)'),
-    ]
 
-try:
-    opt, args = monet_options.parse_options(sys.argv[1:], cmd_options)
-except monet_options.Error:
-    # error parsing options
-    sys.exit(1)
+def main(argv) :
 
-s = Mapi.server( opt.get("host","localhost"), int(opt.get("mapi_port",50000)), "adm" )
+    cmd_options = [
+        ('host',None,'host','hostname','host to connect to (default: localhost)'),
+        ('port',None,'mapi_port','port','port to connect to (default: 50000)'),
+        ]
 
-res = s.cmd_intern( "shutdown;\n" )
-s.disconnect()
+    try:
+        opt, args = monet_options.parse_options(sys.argv[1:], cmd_options)
+    except monet_options.Error:
+        # error parsing options
+        sys.exit(1)
+
+    s = Mapi.server( opt.get("host","localhost"), int(opt.get("mapi_port",50000)), "adm" )
+
+    res = s.cmd_intern( "shutdown;\n" )
+    s.disconnect()
+
+### main(argv) #
+
+
+if __name__ == "__main__":
+    if '--trace' in sys.argv:
+        sys.argv.remove('--trace')
+        import trace
+        t = trace.Trace(trace=1, count=0)
+        t.runfunc(main, sys.argv)
+    else:
+        main(sys.argv)
