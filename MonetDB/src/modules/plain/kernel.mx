@@ -1230,6 +1230,11 @@ int print_table(int *order, BAT *arg1, ...) {
         va_start (ap, arg1);
 	piv[argc++] = arg1;
         do {
+		if(argc==MAXPARAMS){
+			va_end (ap);
+			   GDKerror("too many arguments.\n");
+			   return GDK_FAIL;
+		}
 		piv[argc] = va_arg (ap,BAT*) ;
 	} while(piv[argc++]);
         va_end (ap);
@@ -1245,6 +1250,11 @@ int print_table_default(BAT *b, ...) {
 	piv[0] = b;
         va_start (ap, b);
         do {
+		if(argc==MAXPARAMS){
+			   va_end (ap);
+			   GDKerror("too many arguments.\n");
+			   return GDK_FAIL;
+		}
 		piv[argc] = va_arg (ap,BAT*) ;
 	} while(piv[argc++]);
         va_end (ap);
