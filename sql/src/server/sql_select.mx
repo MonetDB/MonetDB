@@ -65,6 +65,7 @@ static stmt *sql_compare_exp( mvc *sql, scope *scp, group *grp, stmt *subset, sy
 
 static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q);
 static tvar *sql_subquery_optname(mvc * sql, scope * scp, symbol * query);
+static stmt *sql_Nop_(mvc * sql, char *fname, stmt *a1, stmt *a2, stmt *a3 );
 
 static void sql_select_cleanup( mvc * sql, stmt *s, stmt *subset, group *grp )
 {
@@ -580,7 +581,7 @@ static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist
 			return NULL;
 		}
 
-		if (result->nrcols <= 0) {
+		if (result->nrcols <= 0 && (f != sql_sel || subset)) {
 			res = stmt_const(res, result);
 		} else {
 			if (res) stmt_destroy(res);
@@ -601,18 +602,23 @@ static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist
 		stmt *cond = stmt_dup(n->data);
 		stmt *result = stmt_dup(m->data);
 
-		if (result->nrcols <= 0)
-			result = stmt_const(cond, result);
-		else 
-			result = stmt_semijoin(result, cond);
+		/* handle single values differently ! */
+		if (f == sql_sel && !subset) {
+			res = sql_Nop_(sql, "ifthenelse", cond, result, res);  
+		} else {
+			if (result->nrcols <= 0)
+				result = stmt_const(cond, result);
+			else	 
+				result = stmt_semijoin(result, cond);
 		
-		if (! (result = check_types(sql, restype, result, type_equal)) ) {
-			list_destroy(conds);
-			list_destroy(results);
-			stmt_destroy(res);
-			return NULL;
+			if (! (result = check_types(sql, restype, result, type_equal)) ) {
+				list_destroy(conds);
+				list_destroy(results);
+				stmt_destroy(res);
+				return NULL;
+			}
+			res = stmt_replace(res, result);
 		}
-		res = stmt_replace(res, result);
 	}
 	list_destroy(conds);
 	list_destroy(results);
@@ -653,6 +659,23 @@ sql_cast(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset, int f)
 	if (l) 
 		return check_types(sql, tpe, l, type_cast);
 	return NULL;
+}
+
+static stmt *sql_Nop_(mvc * sql, char *fname, stmt *a1, stmt *a2, stmt *a3 )
+{
+	list *sl = create_stmt_list();
+	list *tl = list_create(NULL);
+	sql_subfunc *f = NULL;
+
+	list_append( sl, a1); list_append( tl, tail_type(a1));
+	list_append( sl, a2); list_append( tl, tail_type(a2));
+	list_append( sl, a3); list_append( tl, tail_type(a3));
+
+	f = sql_bind_func_(fname, tl);
+	list_destroy(tl);
+	if (f)
+		return stmt_Nop(stmt_list(sl), f);
+	return sql_error(sql, 02, "operator: %s unknown", fname);
 }
 
 static stmt *sql_Nop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset, int fs)
@@ -972,8 +995,15 @@ sql_value_exp(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset, i
 		return sql_aggrop(sql, scp, se, grp, subset, f);
 	case SQL_COLUMN:
 		return sql_column_value(sql, scp, se, grp, subset, f);
-	case SQL_SELECT:
-		return scope_subquery(sql, scp, se);
+	case SQL_SELECT: {
+		stmt *s = scope_subquery(sql, scp, se);
+		if (s->type == st_list && list_length(s->op1.lval) == 1) {
+			stmt *t = stmt_dup(s->op1.lval->h->data);
+			stmt_destroy(s);
+			s = t;
+		}
+		return s;
+	}
 	case SQL_PARAMETER: {
 		char *n = "param";
 		stmt *s;
@@ -2690,6 +2720,12 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 					cs = stmt_dup(cs);
 					list_append(rl, cs);
 				}
+			} else if (cs->aggr == 1 && cs->nrcols >= 2) {
+				/* sub query single value */
+				stmt *ss = ptable_pivots(subset)->h->data;
+				ss = stmt_dup(ss);
+				cs = stmt_dup(cs);
+				list_append(rl, stmt_join (ss, cs, cmp_all));
 			} else {
 				cs = stmt_dup(cs);
 				list_append(rl, cs);

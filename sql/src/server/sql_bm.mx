@@ -298,9 +298,10 @@ void bm_save( bm *bm, FILE *fp )
 			pbid = *(oid*)BUNtail(bm->bat_pbid, z);
 
 	    	if (version > oversion) {	
-	    		char name_version[BUFSIZ];
 			BAT *o = bat_descriptor(bid, "bm_save");
 	    		BAT *b = bat_copy(o, "bm_save");
+#ifdef RENAME
+	    		char name_version[BUFSIZ];
 
 	    		snprintf( name_version, BUFSIZ, "%s_%d", name, version); 
 			if (bm->debug & 1 )
@@ -308,6 +309,7 @@ void bm_save( bm *bm, FILE *fp )
 
 			if (strlen(name_version) < (IDLENGTH-1))
 	    			BATrename(b, name_version);
+#endif
 	    		BATmode(b, PERSISTENT);
 			BATkey(b, o->hkey);
 			BATkey(BATmirror(b), o->tkey);
@@ -508,6 +510,7 @@ void bm_new_version(bm *bm, oid lbid, int version )
 		bm->version = version;
 }
 
+#ifdef RENAME
 static void bat_rename(bat bid, char *name, int version, int mode)
 {	
 	char buf[BUFSIZ];
@@ -517,12 +520,11 @@ static void bat_rename(bat bid, char *name, int version, int mode)
 				name, 
 				(mode==BM_WRITE)?'W':'R', 	
 				version);
-	/*
 	if (strlen(buf) < (IDLENGTH-1))
    		BATrename(b, buf);
-	*/
 	bat_destroy(b);
 }
+#endif
 
 
 static void _bm_new_bat(bm *bm, oid lbid, oid bid )
@@ -552,8 +554,10 @@ oid bm_add_bat(bm *bm, oid bid, char *name, int version)
 	if (!lbid){
 		lbid = bm->lbid++;
 		(void)bm_add_bat_intern(bm, lbid, bid, name, version, BM_WRITE);
+#ifdef RENAME
 		if (!version)
 			bat_rename(bid, name, version, BM_WRITE);
+#endif
 	} else {
 		_bm_new_bat(bm, lbid, bid);
 		bm_new_version(bm, lbid, version);

@@ -256,9 +256,14 @@ sql_subtype *sql_create_subtype( sql_type *t, unsigned int digits, unsigned int 
 	return res;
 }
 
+
+static MT_Lock lock = NULL;
+
 sql_subtype *sql_dup_subtype( sql_subtype *res )
 {
+	MT_set_lock(lock, "sql_dup_subtype");
 	sql_ref_inc( &(res->ref) );
+	MT_unset_lock(lock, "sql_dup_subtype");
 	return res;
 }
 
@@ -315,6 +320,7 @@ void sql_subtype_destroy(sql_subtype * t)
 {
 	int ref = 0;
 
+	MT_set_lock(lock, "sql_subtype_destroy");
 	if ((ref = sql_ref_dec( &(t->ref)) ) == 0){
 		_DELETE(t);
 #ifndef NDEBUG
@@ -325,6 +331,7 @@ void sql_subtype_destroy(sql_subtype * t)
 	(void)ref; /* pacify picky compilers... */
 #endif
 	}
+	MT_unset_lock(lock, "sql_subtype_destroy");
 }
 
 sql_subtype *sql_bind_localtype( char *name )
@@ -933,6 +940,7 @@ void sqltypeinit()
 	sql_type *INT, *LNG, *OID, *BIT, *DBL, *T;
 	sql_type *SECINT, *MONINT, *DTE, *TME, *TMESTAMP; 
 
+	lock = MT_create_lock();
  	t = ts;
 	*t++ = sql_create_type("TABLE", 0, 0, 0, 1, 	 	"bat");
 

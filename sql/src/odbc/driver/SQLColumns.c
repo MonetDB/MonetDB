@@ -53,8 +53,8 @@ static const char *columntypes[NCOLUMNS] = {
 	"varchar",
 	"smallint",
 	"varchar",
-	"integer",
-	"integer",
+	"int",
+	"int",
 	"smallint",
 	"smallint",
 	"smallint",
@@ -62,8 +62,8 @@ static const char *columntypes[NCOLUMNS] = {
 	"varchar",
 	"smallint",
 	"smallint",
-	"integer",
-	"integer",
+	"int",
+	"int",
 	"varchar",
 };
 
@@ -141,7 +141,7 @@ SQLColumns_(ODBCStmt *stmt,
 		"cast(0 as smallint) as sql_data_type, "
 		"cast(0 as smallint) as sql_datetime_sub, "
 		"case c.\"type\" when 'varchar' then cast(c.\"type_digits\" as smallint) else cast(NULL as smallint) end as char_octet_length, "
-		"cast(c.\"number\" as integer) as ordinal_position, "
+		"cast(c.\"number\" + 1 as integer) as ordinal_position, "
 		"case c.\"null\" when true then cast('yes' as varchar) "
 		/* should this be '' instead of 'no'? */
 		"when false then cast('no' as varchar) end as is_nullable "
