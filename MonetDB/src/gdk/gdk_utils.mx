@@ -371,7 +371,7 @@ static int GDK_mem_allocs = 0;
   }\
 }
 
-static volatile ssize_t GDK_heap_estimate = 0;
+static volatile ssize_t GDK_mallocedbytes_estimate = 0;
 static ssize_t GDK_mem_cursize = 0;
 static ssize_t GDK_vm_cursize = 0;
 #ifdef GDK_MEM_TRACE
@@ -381,11 +381,13 @@ static int mtrace = 0;
 size_t GDKvm_heapsize(void) {
 #ifdef _CYGNUS_H_
         return ((size_t) (96<<20));
-#elif defined(__linux__)
-        struct mallinfo m = MT_mallinfo();
-	return GDKmem_heapsize() + m.hblkhd;
 #else
-	return GDKmem_heapsize();
+	size_t ret = GDKmem_heapsize();
+#ifdef __linux__
+	/* on linux, malloc may also use mmapped space, so the bytes-in-malloc may be much bigger than the sbrk() region */
+	ret = MAX(GDK_mallocedbytes_estimate,ret); 
+#endif
+	return ret;
 #endif
 }
 
@@ -397,13 +399,13 @@ size_t GDKmem_heapsize(void) {
 size_t GDKmem_inuse() {
 	/* RAM/swapmem that Monet is really using now */
 	ssize_t mem_cursize = GDK_mem_cursize;
-	ssize_t mem_heap_estimate = GDK_heap_estimate;
+	ssize_t mem_mallocedbytes_estimate = GDK_mallocedbytes_estimate;
 	if (mem_cursize < 0)
 		mem_cursize = GDK_mem_cursize = 0;
-	if (mem_heap_estimate < 0)
-		mem_heap_estimate = GDK_heap_estimate = 0;
+	if (mem_mallocedbytes_estimate < 0)
+		mem_mallocedbytes_estimate = GDK_mallocedbytes_estimate = 0;
 
-	return mem_cursize + mem_heap_estimate;
+	return mem_cursize + mem_mallocedbytes_estimate;
 }
 
 size_t GDKmem_cursize() {
@@ -432,7 +434,7 @@ volatile ssize_t GDK_nmallocs[MAX_BIT] = { 0 };
 #endif
 
 size_t GDKmem_heapinuse(void) {
-	return GDK_heap_estimate;
+	return GDK_mallocedbytes_estimate;
 }
 
 static volatile int GDK_heapcheck_last = 0;
@@ -441,7 +443,7 @@ static INLINE
 void GDKmem_heapcheck(int t) {
 	/* correct heap estimate with the real thing */ 
         struct mallinfo m = MT_mallinfo();
-        GDK_heap_estimate = (size_t) (m.usmblks + m.uordblks + m.hblkhd);
+        GDK_mallocedbytes_estimate = (size_t) (m.usmblks + m.uordblks + m.hblkhd);
 	GDK_heapcheck_last = t;
 }
  
@@ -455,7 +457,7 @@ void GDKmem_heapcheck(int t) {
 		add_mem(memBat,_blk,_idx);
 	}
 #endif
-	GDK_heap_estimate += _memdelta;
+	GDK_mallocedbytes_estimate += _memdelta;
 #ifdef GDK_MEM_KEEPHISTO
 {	int _idx;
 	GDKmallidx(_idx, _memdelta);
@@ -472,11 +474,11 @@ void GDKmem_heapcheck(int t) {
 		del_mem(memBat,_blk);
 	}
 #endif
-	if (_memdelta > GDK_heap_estimate) {
+	if (_memdelta > GDK_mallocedbytes_estimate) {
 		/* clearly, the stats are off: it should never become less-than-zero */
 		GDKmem_heapcheck(GDKms());
 	} else {
-		GDK_heap_estimate -= _memdelta;
+		GDK_mallocedbytes_estimate -= _memdelta;
 	}
 #ifdef GDK_MEM_KEEPHISTO
 {	int _idx;
