@@ -37,7 +37,7 @@ files="`ls -d $* 2>/dev/null`"
 
 if [ ! "$files" ] ; then  exit 0 ; fi
 
-sync ; while [ -f $LOCKFILE ] ; do sleep 9 ; done
+while [ -f $LOCKFILE ] ; do sleep 9 ; done
 touch $LOCKFILE
 
 function  LOG1  () { prompt="\n# `date +%H:%M:%S` >  " ; echo -en "$prompt$prompt$*$prompt\n\n" >&2 ; }

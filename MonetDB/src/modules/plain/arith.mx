@@ -328,12 +328,12 @@ PROC test_arith() : void {
   oid2.print();
  
   # DD/Bug 6389: (i%0) should return nil instead of crashing the server
-  (chr(1)%int(0)).print();
-  (sht(1)%int(0)).print();
-  (int(1)%sht(0)).print();
-  (int(1)%chr(0)).print();
-  (int(1)%int(0)).print();
-  (lng(1)%int(0)).print();
+  CATCH((chr(1)%int(0))).print();
+  CATCH((sht(1)%int(0))).print();
+  CATCH((int(1)%sht(0))).print();
+  CATCH((int(1)%chr(0))).print();
+  CATCH((int(1)%int(0))).print();
+  CATCH((lng(1)%int(0))).print();
   
 @:mil_comp_ops('a','z')@
 @:mil_comp_ops(sht1,sht2)@
@@ -520,8 +520,8 @@ int flt2int(int *r, flt* v) { *r = *(int*) v; return GDK_SUCCEED; }
 @:arith_unop(_ABS,arith_abs,lng)@
 
 #define arith_inv(s) (1/(s))
-@:check_unop(_INV,arith_inv,flt)@
-@:check_unop(_INV,arith_inv,dbl)@
+@:check_unop(_INV,arith_inv,flt,"Cannot take inverse of zero")@
+@:check_unop(_INV,arith_inv,dbl,"Cannot take inverse of zero")@
 
 #define arith_neg(s) (-(s))
 @:arith_unop(_NEG,arith_neg,chr)@
@@ -552,14 +552,14 @@ int flt2int(int *r, flt* v) { *r = *(int*) v; return GDK_SUCCEED; }
 @:arith_macrobinop(_MIN,arith_min,dbl)@
 @:arith_macrobinop(_MIN,arith_min,lng)@
 
-@:check_binop(_MOD,%,chr,int,int)@
-@:check_binop(_MOD,%,sht,sht,sht)@
-@:check_binop(_MOD,%,sht,int,int)@
-@:check_binop(_MOD,%,int,int,int)@
-@:check_binop(_MOD,%,lng,lng,lng)@
-@:check_binop(_MOD,%,lng,int,int)@
-@:check_binop(_MOD,%,int,chr,chr)@
-@:check_binop(_MOD,%,int,sht,sht)@
+@:check_binop(_MOD,%,chr,int,int,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,sht,sht,sht,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,sht,int,int,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,int,int,int,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,lng,lng,lng,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,lng,int,int,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,int,chr,chr,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,int,sht,sht,"Modulo zero is not possible")@
 
 @:c_bitwise_ops(chr)@
 @:c_bitwise_ops(sht)@
@@ -802,7 +802,7 @@ result type.
 @:arith_binop(_ADD,+,@1,@2,@3)@
 @:arith_binop(_SUB,-,@1,@2,@3)@
 @:arith_binop(_MUL,*,@1,@2,@3)@
-@:check_binop(_DIV,/,@1,@2,@3)@
+@:check_binop(_DIV,/,@1,@2,@3,"Division by zero")@
 @
 
 @= arith_unop
@@ -824,7 +824,10 @@ int @3_unary@1(@3 *res , @3 *a ) {
 #ifdef DEBUG
 	printf( "@3_unary@1\n");
 #endif
-   if (*a == 0 || *a == @3_nil) {
+   if (*a == 0) {
+	GDKerror(@4);
+   	return(GDK_FAIL);
+   } else if (*a == @3_nil) {
 	*res = @3_nil;
    } else {
    	*res = @2 (*a);
@@ -852,7 +855,10 @@ int @3@4_checkbinary@1(@5 *res, @3 *a, @4 *b ) {
 #ifdef DEBUG
 	printf( "@3_binary@1\n");
 #endif
-   if (*a == @3_nil || *b == 0 || *b == @4_nil) {
+   if (*b == 0) {
+	GDKerror(@6);
+	return GDK_FAIL;
+   } else if (*a == @3_nil || *b == @4_nil) {
 	*res = @5_nil;
    } else {
    	*res = ((@5)(*a)) @2 ((@5)(*b));

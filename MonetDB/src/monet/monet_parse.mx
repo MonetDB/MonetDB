@@ -41,7 +41,8 @@ O       [0-7]
 L       [_a-zA-Z]
 E       [Ee][-+]?{D}+
 S       [\t\n ]*
-P       [-!\$%\^\*~+|?<>=/\\]
+P       [-!\$%\^\*~+|?<>/\\]
+C       [!<>]
 %{
 
 #include "monet_parse.h"
@@ -158,7 +159,8 @@ static int ll_skipcomment(void);
 "{*"                  { Symbol(TOK_SETAGGR);                                  }
 "@"                   { Symbol(TOK_ITERATION);                                }
 (":"{P}+"=") |
-({P}+)                { int i, l = (int) strlen(yytext);
+({P}+) |
+({C}*"=") 	      { int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l+1);
 			strcpy(t,yytext); /* copy yytext before unput */
 		 	if ((!t[1]) && (*t=='~' || *t=='?' || *t==':')) {
@@ -173,7 +175,7 @@ static int ll_skipcomment(void);
 			    REJECT
                         }                                                     }
 (":"{L}({L}|{D})*"=") |
-({L}({L}|{D})*"="?)  {
+({L}({L}|{D})*)  {
 command:             {  int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l+1);
 			strcpy(t,yytext); /* copy yytext before unput */
@@ -187,11 +189,11 @@ command:             {  int i, l = (int) strlen(yytext);
                         Vector(TOK_IDENT, TYPE_str, sval, s, 0);              }}
 
 ("["{P}+"]") |
+("["{C}*"=]") |
 ("[:"{P}+"=]") |
 ("["{L}({L}|{D})*"]") |
 ("[:"{L}({L}|{D})*"=]") |
-("{"{L}({L}|{D})*"}") |
-("[:"{P}+"=]")      {   int i, l = (int) strlen(yytext);
+("{"{L}({L}|{D})*"}") {   int i, l = (int) strlen(yytext);
 			char *s, *t = (str) alloca(l+1);
 			strcpy(t,yytext); /* copy yytext before unput */
                         if (ll_resolution) {

@@ -413,14 +413,15 @@ def am_binary(fd, var, binmap, am):
         binname = binmap['NAME'][0]
     else:
         binname = name
+    norm_binname = am_normalize(binname)
 
     bd = 'bindir'
     if binmap.has_key("DIR"):
         bd = binmap["DIR"][0] # use first name given
     bd = am_translate_dir(bd, am)
 
-    fd.write("%sdir = %s\n" % (binname, bd))
-    fd.write("%s_PROGRAMS =%s\n" % (binname,  binname))
+    fd.write("%sdir = %s\n" % (norm_binname, bd))
+    fd.write("%s_PROGRAMS =%s\n" % (norm_binname,  binname))
     am['InstallList'].append("\t%s/%s%s\n" % (bd, binname, cond))
 
     if binmap.has_key('MTSAFE'):
@@ -428,18 +429,18 @@ def am_binary(fd, var, binmap, am):
         fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
     if binmap.has_key("LIBS"):
-        fd.write(am_additional_libs(binname, "", "BIN", binmap["LIBS"], am))
+        fd.write(am_additional_libs(norm_binname, "", "BIN", binmap["LIBS"], am))
 
     if binmap.has_key("LDFLAGS"):
-        fd.write(am_additional_flags(binname, "", "BIN", binmap["LDFLAGS"], am))
+        fd.write(am_additional_flags(norm_binname, "", "BIN", binmap["LDFLAGS"], am))
 
     for src in binmap['SOURCES']:
         base, ext = split_filename(src)
         if ext not in automake_ext:
             am['EXTRA_DIST'].append(src)
 
-    nsrcs = "nodist_"+am_normalize(binname)+"_SOURCES ="
-    srcs = "dist_"+am_normalize(binname)+"_SOURCES ="
+    nsrcs = "nodist_"+norm_binname+"_SOURCES ="
+    srcs = "dist_"+norm_binname+"_SOURCES ="
     for target in binmap['TARGETS']:
         t, ext = split_filename(target)
         if ext in scripts_ext:
@@ -455,7 +456,7 @@ def am_binary(fd, var, binmap, am):
     fd.write(nsrcs + "\n")
     fd.write(srcs + "\n")
     if len(SCRIPTS) > 0:
-        fd.write("%s_scripts = %s\n" % (binname, am_list2string(SCRIPTS, " ", "")))
+        fd.write("%s_scripts = %s\n" % (norm_binname, am_list2string(SCRIPTS, " ", "")))
         am['BUILT_SOURCES'].append("$(" + name + "_scripts)")
         fd.write("all-local-%s: $(%s_scripts)\n" % (name, name))
         am['ALL'].append(name)

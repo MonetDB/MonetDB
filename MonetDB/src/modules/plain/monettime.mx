@@ -1001,23 +1001,25 @@ date DATE_MAX, DATE_MIN; /* often used dates; computed once */
 @+ auxiliary functions
 @c
 
-#define tz_isnil(z)	((* (lng *) (ptr) &z) == lng_nil)
-#define ts_isnil(t)	((* (lng *) (ptr) &t) == lng_nil)
+#define tz_isnil(z)   (get_offset(&(z)) == get_offset(tz_nilptr))
+#define ts_isnil(t)   ((t).days == ts_nilptr->days && (t).msecs == ts_nilptr->msecs)
 
-static timestamp ts_nil;
-static tzone tz_nil;
 static timestamp *ts_nilptr = NULL;
 static tzone *tz_nilptr = NULL;
 
 static void date_prelude(void);
 
-bat* monettime_prelude(void){
-	* (lng *) (ptr) &ts_nil = lng_nil;
+bat* monettime_prelude(void)
+{
+	lng ts_nil = lng_nil;
+	lng tz_nil = lng_nil;
+
 	ts_nilptr = (timestamp*)GDKmalloc(sizeof(timestamp));
-	*ts_nilptr = ts_nil;
-	* (lng *) (ptr) &tz_nil = lng_nil;
+	*ts_nilptr = *(timestamp*) (&ts_nil);
+
 	tz_nilptr = (tzone*)GDKmalloc(sizeof(tzone));
-	*tz_nilptr = tz_nil;
+	*tz_nilptr = *(tzone*) (&tz_nil);
+
 	date_prelude();
 	return NULL;
 }
@@ -1438,7 +1440,7 @@ int timestamp_fromstr(str buf, int *len, timestamp **ret) {
 		(*ret)->msecs = daytime_nil;
 	}
 	if (s <= buf || (*ret)->days == date_nil || (*ret)->msecs == daytime_nil) {
-		**ret = ts_nil;
+		**ret = *ts_nilptr;
 	} else {
 	    lng offset = 0;
 
@@ -1474,7 +1476,8 @@ int timestamp_tostr(str* buf, int* len, timestamp *val) {
 	char buf1[128], buf2[128], *s, *s1=buf1, *s2=buf2;
 	timestamp tmp = *val;
 
-	if (timestamp_inside(&tmp, val, &tzone_local, (lng)0)) { 
+	if (!ts_isnil(tmp) &&
+      	     timestamp_inside(&tmp, val, &tzone_local, (lng)0)) { 
 		lng add = (lng)3600000; 
 		timestamp_add(&tmp, &tmp, &add); 
 		off += 60;
@@ -1639,7 +1642,7 @@ int tzone_fromstr(str buf, int *len, tzone **d) {
 		if (*d) GDKfree(*d);
 		*d = (tzone*) GDKmalloc(*len = sizeof(tzone));
 	}
-	**d = tz_nil;
+	**d = *tz_nilptr;
 
 	/* syntax checks */
 	if (fleximatch(cur, "gmt", 0) == 0) {
@@ -1844,7 +1847,7 @@ int daytime_create(daytime* ret, int *hour, int *min, int* sec, int* msec) {
 /* creates a timestamp from (date,daytime) parameters */
 int timestamp_create(timestamp* ret, date *d, daytime* t, tzone *z) {
 	if (*d == date_nil || *t == daytime_nil || tz_isnil(*z)) {
-		*ret = ts_nil;
+		*ret = *ts_nilptr;
 	} else {
 		lng add = get_offset(z) * (lng)-60000;
 		ret->days = *d;
@@ -1984,7 +1987,7 @@ int daytime_extract_milliseconds(int *ret, daytime* v) {
 /* extracts daytime from timestamp */
 int timestamp_extract_daytime(daytime* ret, timestamp* t, tzone *z) {
 	if (ts_isnil(*t) || tz_isnil(*z)) {
-		*ret = int_nil;
+		*ret = daytime_nil;
 	} else {
 		timestamp tmp;
 		if (timestamp_inside(&tmp, t, z, (lng)0)) {
@@ -1992,7 +1995,7 @@ int timestamp_extract_daytime(daytime* ret, timestamp* t, tzone *z) {
 			timestamp_add(&tmp, &tmp, &add);
 		} 
 		if (ts_isnil(tmp)) {
-			*ret = int_nil;
+			*ret = daytime_nil;
 		} else {
 			*ret = tmp.msecs;
 		}
@@ -2007,7 +2010,7 @@ int timestamp_extract_daytime_default(daytime* ret, timestamp* t) {
 /* extracts date from timestamp */
 int timestamp_extract_date(date* ret, timestamp *t, tzone *z) {
 	if (ts_isnil(*t) || tz_isnil(*z)) {
-		*ret = int_nil;
+		*ret = date_nil;
 	} else { 
 		timestamp tmp;
 		if (timestamp_inside(&tmp, t, z, (lng)0)) {
@@ -2015,7 +2018,7 @@ int timestamp_extract_date(date* ret, timestamp *t, tzone *z) {
 			timestamp_add(&tmp, &tmp, &add);
 		} 
 		if (ts_isnil(tmp)) {
-			*ret = int_nil;
+			*ret = date_nil;
 		} else {
 			*ret = tmp.days;
 		}
@@ -2118,11 +2121,11 @@ int timestamp_add(timestamp* ret, timestamp *v, lng *msecs) {
 		if (days) {
 			date_adddays(&ret->days, &ret->days, &days);
 			if (ret->days == int_nil) {
-				*ret = ts_nil;
+				*ret = *ts_nilptr;
 			} 
 		}
 	} else {
-		*ret = ts_nil;
+		*ret = *ts_nilptr;
 	}
 	return GDK_SUCCEED;
 }
@@ -2145,7 +2148,7 @@ int timestamp_inside_dst(bit *ret, timestamp *p, tzone* z) {
 	*ret = FALSE;
 
 	if (tz_isnil(*z)) {
-		*ret = int_nil;
+		*ret = bit_nil;
 	} else if (z->dst) {
 		timestamp tmp;
 		if (timestamp_inside(&tmp, p, z, (lng)0)) {
@@ -2171,7 +2174,7 @@ int rule_create(rule *ret, int *month, int* day, int* weekday, int *minutes) {
 
 /* create a tzone as a simple hour difference from GMT. */
 int tzone_create_dst(tzone *ret, int* minutes, rule* start, rule* end) {
-	*ret = tz_nil;
+	*ret = *tz_nilptr;
 	if (*minutes != int_nil && ABS(*minutes) < 24*60 &&
             start->asint != int_nil && end->asint != int_nil) 
 	{
@@ -2185,7 +2188,7 @@ int tzone_create_dst(tzone *ret, int* minutes, rule* start, rule* end) {
 
 /* create a tzone as an hour difference from GMT and a DST. */
 int tzone_create(tzone *ret, int* minutes) {
-	*ret = tz_nil;
+	*ret = *tz_nilptr;
 	if (*minutes != int_nil && ABS(*minutes) < 24*60) {
 		set_offset(ret, *minutes);
 		ret->dst = FALSE;
@@ -2266,7 +2269,7 @@ int date_sub_month_interval_wrap(date *ret, date* t, int *months) {
 /* compute the date from a rule in a certain year. */
 int compute_rule_foryear(date *ret, rule* val, int *year) {
 	if (*(int*) val == int_nil || *year < YEAR_MIN || *year > YEAR_MAX) {
-		*ret = int_nil;
+		*ret = date_nil;
 	} else {
  		*ret = compute_rule(val, *year);
 	}
