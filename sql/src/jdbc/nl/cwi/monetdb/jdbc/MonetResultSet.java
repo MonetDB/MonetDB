@@ -424,7 +424,11 @@ public class MonetResultSet implements ResultSet {
 		if (decimal == null) {
 			return(null);
 		} else {
-			return(new BigDecimal(decimal));
+			try {
+				return(new BigDecimal(decimal));
+			} catch (NumberFormatException e) {
+				return(new BigDecimal("0"));
+			}
 		}
 	}
 
@@ -445,7 +449,14 @@ public class MonetResultSet implements ResultSet {
 		if (decimal == null) {
 			return(null);
 		} else {
-			return((new BigDecimal(decimal)).setScale(scale));
+			BigDecimal bd;
+			try {
+				bd = new BigDecimal(decimal);
+			} catch (NumberFormatException e) {
+				bd = new BigDecimal("0");
+			}
+			bd.setScale(scale);
+			return(bd);
 		}
 	}
 
@@ -1724,8 +1735,44 @@ public class MonetResultSet implements ResultSet {
 		return(type);
 	}
 
-	public URL getURL(int columnIndex) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
-	public URL getURL(String columnName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a java.net.URL object in the Java
+	 * programming language.
+	 *
+	 * @param columnIndex the index of the column 1 is the first,
+	 *                    2 is the second,...
+	 * @return the column value as a java.net.URL object; if the value
+	 *         is SQL NULL, the value returned is null in the Java
+	 *         programming language
+	 * @throws SQLException if a database access error occurs, or if a
+	 *         URL is malformed
+	 */
+	public URL getURL(int columnIndex) throws SQLException {
+		String url = getString(columnIndex);	
+		if (url == null) return(null);
+		try {
+			return(new URL(url));
+		} catch (MalformedURLException e) {
+			throw new SQLException(e.getMessage());
+		}
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a java.net.URL object in the Java
+	 * programming language.
+	 *
+	 * @param columnName the SQL name of the column
+	 * @return the column value as a java.net.URL object; if the value
+	 *         is SQL NULL, the value returned is null in the Java
+	 *         programming language
+	 * @throws SQLException if a database access error occurs, or if a
+	 *         URL is malformed
+	 */
+	public URL getURL(String columnName) throws SQLException {
+		return(getURL(findColumn(columnName)));
+	}
 
 	/**
 	 * Retrieves the first warning reported by calls on this ResultSet object.
