@@ -125,7 +125,10 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 			memcpy(rbuf,rp,y);
 			for (i=0; i<x; i++) {
 				if (@4 && (rbuf[i] == 0)) {
-					*bnp = @1_nil;
+					GDKerror("[@2] (batbat_@1_@3): Division by Zero!");
+					GDKfree(lbuf);
+					BBPreclaim(bn);
+					return GDK_FAIL;
 				} else if ((lbuf[i] != @1_nil) && (rbuf[i] != @1_nil)) {
 					*bnp = lbuf[i] @2 rbuf[i];
 				} else {
@@ -154,7 +157,10 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 			memcpy(rbuf,rp,z);
 			for (; lbp < lbq; lbp+=bs, rbp+=bs) {
 				if (@4 && (*(@1*)rbp == 0)) {
-					*bnp = @1_nil;
+					GDKerror("[@2] (batbat_@1_@3): Division by Zero!");
+					GDKfree(lbuf);
+					BBPreclaim(bn);
+					return GDK_FAIL;
 				} else if ((*(@1*)lbp != @1_nil) && (*(@1*)rbp != @1_nil)) {
 					*bnp = *(@1*)lbp @2 *(@1*)rbp;
 				} else {
@@ -175,7 +181,9 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 		bnp = (@1*)BUNtloc(bn,BUNlast(bn));
 		for (; lp < lq; lp+=ls, rp+=rs) {
 			if (@4 && (*(@1*)rp == 0)) {
-				*bnp = @1_nil;
+                                GDKerror("[@2] (batbat_@1_@3): Division by Zero!");
+                                BBPreclaim(bn);
+                                return GDK_FAIL;
 			} else if ((*(@1*)lp != @1_nil) && (*(@1*)rp != @1_nil)) {
 				*bnp = *(@1*)lp @2 *(@1*)rp;
 			} else {
@@ -208,7 +216,8 @@ batbat_@1_@3_inplace(BAT **ret, BAT *l, BAT *r)
 	rp = (chr*)BUNtloc(r,BUNfirst(r));
 	for (; lp < lq; lp+=ls, rp+=rs) {
 		if (@4 && (*(@1*)rp == 0)) {
-			*(@1*)lp = @1_nil;
+                        GDKerror("[:@2=] (batbat_@1_@3_inplace): Division by Zero!");
+                        return GDK_FAIL;
 		} else if ((*(@1*)lp != @1_nil) && (*(@1*)rp != @1_nil)) {
 			*(@1*)lp @2= *(@1*)rp;
 		} else {
@@ -247,7 +256,9 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 		for (; bp < bq; bp+=bs) {
 			REGISTER @1 bv = *(@1*)bp;
 			if (@4 && (bv == 0)) {
-				bv = @1_nil;
+                                GDKerror("[@2] (valbat_@1_@3): Division by Zero!");
+                                BBPreclaim(bn);
+                                return GDK_FAIL;
 			} else if (bv != @1_nil) {
 				bv = vv @2 bv;
 			}
@@ -282,7 +293,8 @@ int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 	if (vv != @1_nil) {
 		for (; bp < bq; bp+=bs) {
 			if (@4 && (*(@1*)bp == 0)) {
-				*(@1*)bp = @1_nil;
+                                GDKerror("[:@2=] (valbat_@1_@3_inplace): Division by Zero!");
+                                return GDK_FAIL;
 			} else if (*(@1*)bp != @1_nil) {
 				*(@1*)bp = vv @2 *(@1*)bp;
 			}
@@ -320,10 +332,9 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 	bp = (chr*)BUNtloc(b,BUNfirst(b));
 	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
 	if (@4 && (vv == 0)) {
-		for (; bp < bq; bp+=bs) {
-			*bnp = @1_nil;
-			bnp++;
-		}
+                GDKerror("[@2] (batval_@1_@3): Division by Zero!");
+                BBPreclaim(bn);
+                return GDK_FAIL;
 	} else if (vv != @1_nil) {
 		for (; bp < bq; bp+=bs) {
 			REGISTER @1 bv = *(@1*)bp;
@@ -360,9 +371,8 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
 	bq = (chr*)BUNtloc(b,BUNlast(b));
 	bp = (chr*)BUNtloc(b,BUNfirst(b));
 	if (@4 && (vv == 0)) {
-		for (; bp < bq; bp+=bs) {
-			*(@1*)bp = @1_nil;
-		}
+                GDKerror("[:@2=] (batval_@1_@3_inplace): Division by Zero!");
+                return GDK_FAIL;
 	} else if (vv != @1_nil) {
 		for (; bp < bq; bp+=bs) {
 			if (*(@1*)bp != @1_nil) {
