@@ -1253,8 +1253,8 @@ This is captured as a runtime check in the implementation.
 @c
 str GRPprelude(){
 	/* printf("#init group\n");*/
-	TYPE_mapentry = malAtomFixed(16,4);
-	TYPE_idxentry = malAtomFixed(8,4);
+	TYPE_mapentry = malAtomFixed(sizeof(mapentry_t),sizeof(oid));
+	TYPE_idxentry = malAtomFixed(sizeof(idxentry_t),sizeof(oid));
 	return MAL_SUCCEED;
 }
 str GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize) {
