@@ -1,4 +1,3 @@
-@f bat
 @t Binary Association Tables
 @v 2.0
 @a Peter Boncz, M.L. Kersten
@@ -11,15 +10,6 @@ on BATs have the form of a neat algebra, described in algebra.mx
 All commands needed for BAT updates, property management,
 search accellerator management, basic I/O, persistency, and storage options
 can be found in this module.
-
-BATs are always identified by their reference number in the BAT buffer pool.
-We assume that these references are 'safe', i.e. they denote the intended
-BAT. This means that front-ends should not destroy/remove temporary BATS
-without garbage collection of the references held. The alternative way
-is to call for a fresh reference to a BAT using its (hopefully) unique
-name with the bind() command. A reference can be released using the
-unbind(), but it is up to the buffer pool to actually release the
-storage held.
 
 @* Module Definition
 Type parameters are represented by short integers. The MAL frontend
@@ -46,15 +36,6 @@ The code speaks for itself
 @mal
 
 module bat;
-
-command bind(nme:str): bat[any,any] = CMDbind
-comment "Locates the bat in the current dictionary";
-
-command bind(dictionary:str,nme:str): bat[any,any] = CMDbind2
-comment "Locates the bat in a specific dictionary";
-
-command release(b:bat[any,any]):void = CMDrelease
-comment "Release the BAT from the client pool";
 
 pattern new(ht:any::1, tt:any::2) : bat[any::1,any::2] = CMDBATnew
 comment "Creates a new empty transient BAT, with head- and tail-types as indicated.";
@@ -407,76 +388,6 @@ these 'sync' OIDs with their own propagation rules.
 command isSynced (b1:bat[any,any], b2:bat[any,any]) : bit = CMDsynced
 comment "Tests whether two BATs are synced or not. ";
 
-@- constants for mmap()
-@mil
-    CONST STORE_MEM   := 0;     # load into GDKmalloced memory
-    CONST STORE_MMAP  := 1;     # mmap() into virtual memory
-    CONST STORE_COMPR := 2;     # currently not implemented this way
-
-    PROC mmap(bat[any::1,any::2] b, int memmode) : bat[any::1,any::2] {
-        return mmap(b, memmode, memmode, memmode, memmode, memmode);
-    }
-
-    # overload madvise to pass the same memory mode for all heaps
-    PROC madvise(bat[any::1,any::2] b, int memmode) : bat[any::1,any::2] {
-        return madvise(b, memmode, memmode, memmode, memmode, memmode);
-    }
-
-@- constants for madvise()
-@mil
-    CONST BUF_NORMAL    := 0;   # No further special treatment
-    CONST BUF_RANDOM    := 1;   # Expect random page references
-    CONST BUF_SEQUENTIAL:= 2;   # Expect sequential page references
-    CONST BUF_WILLNEED  := 3;   # Will need these pages
-    CONST BUF_DONTNEED  := 4;   # Don't need these pages
-@- constants for readonly()
-@mil
-    CONST BAT_READ   := 1;      # allow only read access.
-    CONST BAT_APPEND := 2;      # allow reads and insertions of new elements.
-    CONST BAT_WRITE  := 0;      # allow reads, insertions, and updates.
-
-    PROC destroy(bat[any,any] b) : any {
-        b.persists(false);
-        return nil;
-    }
-
-    PROC destroy(str s) : any {
-        var b := bat(s);
-        return b.destroy;
-    }
-
-    PROC capacity(bat[any,any] b) : int 
-	return capacity(int(b));
-
-    PROC save(bat[any::1,any::2] b) : bat[any::1,any::2] {
-	save(b.bbpname);
-	return b;
-    }
-
-    PROC load(str batname) : bat[any,any] 
-	return bat(batname);
-
-    PROC cold(bat[any::1,any::2] b) : void
-	cold(b.bbpname);
-
-    PROC hot(bat[any::1,any::2] b) : void
-	hot(b.bbpname);
-
-    PROC htype(bat[any,any] b) : int 
-	return htype(int(b));
-
-    PROC ttype(bat[any,any] b) : int 
-	return ttype(int(b));
-
-    PROC new(int ht, int tt) : bat[any,any]
-	return bat(ht,tt);
-
-    PROC new(int ht, int tt, int cnt) : bat[any,any]
-	return bat(ht,tt,cnt);
-.END;
-
-.END bat;
-@
 @{
 @{
 @* Implementation Code
@@ -510,27 +421,15 @@ the arguments of BATnew into types.
 @c
 #include "monet.h"
 
-int CMDbind(int *ret, str *nme){
-	GDKerror("bind() not yet implemented\n");
-	return GDK_SUCCEED;
-}
-int CMDbind2(int *ret, str *dict, str *nme){
-	GDKerror("bind() not yet implemented\n");
-	return GDK_SUCCEED;
-}
-int CMDrelease(int *ret, str *nme){
-	GDKerror("release() not yet implemented\n");
-	return GDK_SUCCEED;
-}
 int CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	int ht, tt, cap=0;
 	str hn,tn;
 	BAT *b;
 
-	hn= getArgName(m,p,1);
-	tn= getArgName(m,p,2);
-	ht = ATOMindex(hn);
-	tt = ATOMindex(tn);
+	ht= getArgType(m,p,1);
+	tt= getArgType(m,p,2);
+	/* ht = ATOMindex(hn);
+	tt = ATOMindex(tn); */
 	if( p->argc>3)
 		cap= *(int *) getArgReference(s,p,3);
 	b = BATnew(ht,tt,cap);

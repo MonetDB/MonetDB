@@ -6,7 +6,9 @@ by loading the appropriate modules.
 
 @mal
 #use "mal/startup"; assume already loaded
-use "mil/ mil";
+use "mil/bat";
+use "mil/algebra";
+use "mil/system";
 @c
 
 /*

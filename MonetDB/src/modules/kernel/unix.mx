@@ -21,6 +21,8 @@ comment "Set the environment variable string.";
 command system(nme:str) : int = unix_system
 comment "execute a command and give back the return value";
 
+command getpid():int = unix_getpid
+comment "return process identifier of the thread.";
 @-
 The implementation is relatively straight forward.
 
@@ -44,6 +46,11 @@ int unix_setenv(bit *res, str *varname, str *valname)
 	return GDK_SUCCEED;
 }
 
+int unix_getpid(int *res)
+{
+	*res = getpid();
+	return GDK_SUCCEED;
+}
 int unix_system(int *res, str *command)
 {
 	*res = system(*command);

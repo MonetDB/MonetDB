@@ -72,7 +72,7 @@ can be used as well; note for instance that histogram == \{count\}(b.reverse).
 
 @* Module Definition
 The Monet interface module specification is shown below.
-@m
+@mil
 .MODULE xtables;
 
 .ATOM mapentry[16,4];
@@ -83,7 +83,7 @@ The Monet interface module specification is shown below.
 @-
 basic multi-attribute group operations, that take the incremental approach. 
 CT[re]group and CTderive implement GROUPBY, CTrefine implements ORDERBY.
-@m
+@mil
 .COMMAND CTgroup(BAT[oid,any] attr) : BAT[oid,oid] = CTgroup;
         "Cross tabulation group initialization.
          Returned head values are identical as in 'attr'. Tail values are from
@@ -113,7 +113,7 @@ CT[re]group and CTderive implement GROUPBY, CTrefine implements ORDERBY.
 @-
 histogram support. during group computation we already compute histograms
 for quick re-use. They are attached to the CT by means of a histolink.
-@m
+@mil
 .ACCELERATOR histolink(any);
       .BUILD     = CTbuild_hl;
       .DESTROY   = CTdestroy_hl;
@@ -140,7 +140,7 @@ for quick re-use. They are attached to the CT by means of a histolink.
 @- 
 multi-group: groupings on different bats that produce the same encodings. these
 can be used for multi-attribute join.
-@m
+@mil
 .COMMAND CTmultigroup(BAT[any::1,any]) : BAT[BAT[oid,oid],void] = CTmultigroup;
 	"Group multiple BATs passed in the head of the first parameter.
          Passing is either direct thourgh nested BATs or as string (identified by name); 

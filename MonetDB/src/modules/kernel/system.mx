@@ -201,165 +201,9 @@ command printf(format:str,val:str):int = CMDprint_formatted_str;
 
 pattern print(val:any):int = CMDprint_val
 comment "Print a MIL value between square brackets.";
+pattern printft(val:any):int = CMDprint_ft
+comment "Select default format ";
 
-@+ MIL extensions
-The MIL file below contains a large number of primitives
-that have been helpful in developing Monet applications.
-They are retained as examples of possible Mil-to-mal 
-compilation exercises.
-
-Note that the self help information will be handled differently.
-@mil
-    # self help 
-    ADDHELP("help", "boncz", "Feb  6 1996",
-         "provide help for a MIL construct.", "system");
-
-    PROC setColumn(bat[any::1,any::2] b, str name) : bat[any::1,any::2] := {
-	b.bbpname(name);
-	return b;
-    }
-    PROC rename(bat[any::1,any::2] b, str name) : bat[any::1,any::2] := {
-	if (not(b.bbpname(name))) 
-		ERROR("rename(%s,%s): operation failed", str(b), name);
-	return b;
-    }
-    ADDHELP("rename", "boncz", "Feb  6 1996",
-         "try to name a BAT and fail if it is not possible.", "system");
-
-    PROC modules() : void := view_scope_names.print;
-    ADDHELP("modules", "boncz", "Aug 14 1997",
-	"list all visible modules", "system"); 
-
-    proc dir(bat[int,str] b) {
-        var nme := view_bbp_name;
-	var atm := view_atom_names.copy.setAccess(BAT_WRITE); 
-	
-	table(1, b.reverse.sort.reverse.setColumn("name"),
-		[htype](b.join(nme.reverse)).outerjoin(atm.reverse).setColumn("htype"),	
-		[ttype](b.join(nme.reverse)).outerjoin(atm.reverse).setColumn("ttype"),	
-		[count](b.mirror).setColumn("count"),	
-		view_bbp_heat.setColumn("heat"),
-		view_bbp_dirty.setColumn("dirty"),
-		view_bbp_status.setColumn("status"),
-		view_bbp_kind.setColumn("kind"), 
-		view_bbp_refcnt.setColumn("refcnt"));
-    }
-
-    PROC dir() : void := {
-        var nme := view_bbp_name.copy.setAccess(BAT_WRITE).setColumn("name");
-	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
-	dir(nme.replace(rev));
-    }
-    PROC dir(str substr) : void := {
-        var nme := view_bbp_name.like(substr).setAccess(BAT_WRITE).setColumn("name");
-        var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
-        dir(nme.replace(rev));
-    }
-    ADDHELP("dir", "boncz", "Feb  6 1996", 
-	"list all bats, including system bats. Optionally filter on name with a certain substring", "system"); 
-
-    proc dir_leaks() {
-	var b0 := view_bbp_name.setAccess(BAT_WRITE);
-	b0.replace([*](b0.reverse.select(int(nil),-1),-1).reverse);
-        var b1 := [[startsWith](b0,"tmp_")?b0:].setAccess(BAT_WRITE);
-        var b2 := like(view_var_value, "tmp_");
-        var b3 := bat(int,str,b1.count);
-        b1.delete(int(b0));
-        b1@batloop() { 
-            var pat := "tmp_" + $h;
-            if (like(b2,pat).count = 0) b3.insert($h,$t);
-        }
-        dir(b3);
-    }
-
-    PROC ls() : void := {
-	var nme := view_bbp_name;
-	var prs := nme.semijoin(view_bbp_kind.select("persistent"));
-	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
-	dir(prs.setAccess(BAT_WRITE).setColumn("name").replace(rev));
-    }
-    PROC ls(str substr) : void := {
-        var nme := view_bbp_name.like(substr);
-	var prs := nme.semijoin(view_bbp_kind.select("persistent"));
-	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
-	dir(prs.setAccess(BAT_WRITE).setColumn("name").replace(rev));
-    }
-    ADDHELP("ls", "boncz", "Feb  6 1996", 
-	"list all data bats. Optionally filter on name with a certain substring", "system"); 
-
-    PROC exit() : void := {
-	quit;
-    }
-    ADDHELP("exit", "boncz", "Jan 9 1998", "quit for consultants", "system"); 
-
-    PROC procs() : void := {
-	print("To be implemented");
-    }
-    ADDHELP("procs", "boncz", "Feb  6 1996", "list all defined procs.", "system"); 
-
-    PROC clients() : void :=  table(view_client_name,view_client_login);
-    ADDHELP("clients", "boncz", "Feb  6 1996", 
-	"list all active clients.", "system"); 
-
-    PROC vars() : void := 
-	print(view_var_type, view_var_kind, view_var_constant, view_var_value);
-    ADDHELP("vars", "boncz", "Feb  6 1996", 
-        	"list all MIL variables and their values.", "system"); 
-
-    PROC threads() : void := print(view_gdk_thread); 
-    ADDHELP("threads", "boncz", "Feb  6 1996", 
-		"list all system threads and their function.", "system"); 
-
-    PROC env() : void := print(view_gdk_env);
-    ADDHELP("env", "boncz", "Feb  6 1996", 
-		"list the values of all environment variables", "system"); 
-
-    PROC environment() : bat[str,str] := return view_gdk_env;
-    ADDHELP("environment", "boncz", "Mar 22 1998", "deprecated", "system");
-
-    PROC cpu() : bat[str,int] := RETURN view_gdk_cpu;
-    ADDHELP("cpu", "boncz", "Mar 22 1998", "Global cpu usage info", "system");
-
-    PROC memory() : bat[str,int] := RETURN view_gdk_memory;
-    ADDHELP("memory", "boncz", "Mar 22 1998", "Global memory usage info","system");
-
-    PROC io() : bat[str,int] := RETURN view_gdk_io;
-    ADDHELP("io", "boncz", "Mar 22 1998", "Global IO activity info", "system");
-
-    PROC bbp() : bat[str,int] := RETURN view_gdk_bbp;
-    ADDHELP("bbp", "boncz", "Mar 22 1998", "Global BBP usage info", "system");
-
-    PROC tail(bat[any,any] b) : int := 
-         return view_atom_names.reverse.find(b.ttype);
-    ADDHELP("tail","boncz","Mar 22 1998","Get tail-type as an int","system");
-
-    PROC head(bat[any,any] b) : int:= 
-         return view_atom_names.reverse.find(b.htype);
-    ADDHELP("head","boncz","Mar 22 1998","Get head-type as an int","system");
-
-    PROC readonly( bat[any::1,any::2] b, int mode) : bat[any::1,any::2]
-        := return setAccess(b,mode);
-    ADDHELP("readonly", "boncz", "Aug  6 1998",
-        "deprecated. Use 'b.access' instead.", "system");
- 
-    PROC readonly( bat[any::1,any::2] b) : int := {
-        var s := b.info.find("batRestricted");
-        if (s = "updatable") {
-                return BAT_WRITE;
-        } else if (s = "read-only") {
-                return BAT_READ;
-        } else if (s = "append-only") {
-                return BAT_APPEND;
-        } 
-        ERROR("readonly: unknown mode.");
-    }
-    ADDHELP("readonly", "boncz", "Aug  6 1998",
-        "deprecated. Use 'info.find(batRestricted)' instead.", "system");
-
-    PROC mem_usage() : bat[str,lng] return mem_usage(lng(100000));
-    PROC vm_usage() : bat[str,lng] return vm_usage(lng(100000));
-    PROC mem_usage(int minsize) : bat[str,lng] return mem_usage(lng(minsize));
-    PROC vm_usage(int minsize) : bat[str,lng] return vm_usage(lng(minsize));
 
 @{
 @* Implementation Code
@@ -1291,6 +1135,18 @@ int CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         else  	ATOMprint(tpe, val, fp);
         fputs(" ]\n", fp);
         return GDK_SUCCEED;
+}
+int CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int tpe = getArgType(mb,pci,1);
+	ptr val = getArgReference(stk,pci,1);
+	switch(tpe){
+	case TYPE_str: 
+		ATOMprint(TYPE_str, *(str*)val, GDKout);
+		break;
+	default: ATOMprint(tpe, val, GDKout);
+	}
+	return GDK_SUCCEED;
 }
 
 int CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){

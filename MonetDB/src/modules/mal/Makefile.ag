@@ -1,6 +1,7 @@
 
-INCLUDES = top_builddir/src/gdk top_builddir/src/monet \
-	$(Z_CFLAGS) $(BZ_CFLAGS)
+INCLUDES =  top_builddir/src/gdk top_builddir/src/monet \
+        top_builddir/src/mal $(Z_CFLAGS) $(BZ_CFLAGS)
+
 MTSAFE
 
 # install these libs in the pkglib
