@@ -1132,10 +1132,6 @@ int sem_wait (sem_t * sem) {
 	return (WaitForSingleObject((HANDLE) *sem, (unsigned int) INFINITE) != WAIT_FAILED)?0:-1;
 }
 
-int sem_trywait (sem_t * sem) {
-	return (WaitForSingleObject((HANDLE) *sem, 0) == 0)?0:EBUSY;
-}
-
 int sem_post (sem_t * sem) {
 	return (ReleaseSemaphore((HANDLE) *sem, 1, NULL) == 0)?-1:0;
 }
