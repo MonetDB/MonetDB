@@ -111,6 +111,34 @@
     .arity = 2, .par_ty = { PFty_star (PFty_string ()),                  \
                             PFty_node () },                              \
     .ret_ty = PFty_star (PFty_xs_anyElement ()) }                        \
+, /* pf:distinct-doc-order (node *) as node* */                          \
+  { .ns = PFns_pf, .loc = "distinct-doc-order",                          \
+    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
+    .ret_ty = PFty_star (PFty_node ()),                                  \
+    .alg = PFbui_pf_distinct_doc_order }                                 \
+    /* FIXME: the W3C defined exact-one not so strict, but otherwise
+              the typeswich doesn't work anymore */                      \
+, /* fn:exactly-one (node *) as node */                                  \
+  { .ns = PFns_fn, .loc = "exactly-one",                                 \
+    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
+    .ret_ty = PFty_node () }                                             \
+, /* fn:zero-or-one (node *) as node */                                  \
+  { .ns = PFns_fn, .loc = "zero-or-one",                                 \
+    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
+    .ret_ty = PFty_opt (PFty_node ()) }                                  \
+, /* fn:unordered (item *) as item */                                    \
+  { .ns = PFns_fn, .loc = "unordered",                                   \
+    .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
+    .ret_ty = PFty_opt (PFty_item ()) }                                  \
+                                                                         \
+, /* fn:root () as node */                                               \
+  { .ns = PFns_fn, .loc = "root",                                        \
+    .arity = 0, .par_ty = { PFty_none () },                              \
+    .ret_ty = PFty_node() }                                              \
+, /* fn:root (node?) as node? */                                         \
+  { .ns = PFns_fn, .loc = "root",                                        \
+    .arity = 1, .par_ty = { PFty_opt (PFty_node ()) },                   \
+    .ret_ty = PFty_opt (PFty_node()) }                                   \
 , /* fn:position () as integer */                                        \
   { .ns = PFns_fn, .loc = "position",                                    \
     .arity = 0,                                                          \
@@ -969,34 +997,32 @@
   { .ns = PFns_fn, .loc = "concat",                                      \
     .arity = 2, .par_ty = { PFty_string(), PFty_string() },              \
     .ret_ty = PFty_string () }                                           \
-, /* pf:distinct-doc-order (node *) as node* */                          \
-  { .ns = PFns_pf, .loc = "distinct-doc-order",                          \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()),                                  \
-    .alg = PFbui_pf_distinct_doc_order }                                 \
-    /* FIXME: the W3C defined exact-one not so strict, but otherwise
-              the typeswich doesn't work anymore */                      \
-, /* fn:exactly-one (node *) as node */                                  \
-  { .ns = PFns_fn, .loc = "exactly-one",                                 \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_node () }                                             \
-, /* fn:zero-or-one (node *) as node */                                  \
-  { .ns = PFns_fn, .loc = "zero-or-one",                                 \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_opt (PFty_node ()) }                                  \
-, /* fn:unordered (item *) as item */                                    \
-  { .ns = PFns_fn, .loc = "unordered",                                   \
-    .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
-    .ret_ty = PFty_opt (PFty_item ()) }                                  \
-                                                                         \
-, /* fn:root () as node */                                               \
-  { .ns = PFns_fn, .loc = "root",                                        \
-    .arity = 0, .par_ty = { PFty_none () },                              \
-    .ret_ty = PFty_node() }                                              \
-, /* fn:root (node?) as node? */                                         \
-  { .ns = PFns_fn, .loc = "root",                                        \
-    .arity = 1, .par_ty = { PFty_opt (PFty_node ()) },                   \
-    .ret_ty = PFty_opt (PFty_node()) }                                   \
+, /* fn:starts-with (string?, string?) as boolean */                     \
+  { .ns = PFns_fn, .loc = "starts-with",                                 \
+    .arity = 2, .par_ty = { PFty_opt (PFty_string ()),                   \
+                            PFty_opt (PFty_string ()) },                 \
+    .ret_ty = PFty_boolean () }                                          \
+, /* fn:ends-with (string?, string?) as boolean */                       \
+  { .ns = PFns_fn, .loc = "ends-with",                                   \
+    .arity = 2, .par_ty = { PFty_opt (PFty_string ()),                   \
+                            PFty_opt (PFty_string ()) },                 \
+    .ret_ty = PFty_boolean () }                                          \
+, /* fn:normalize-space () as string */                                  \
+  { .ns = PFns_fn, .loc = "normalize-space",                             \
+    .arity = 0,                                                          \
+    .ret_ty = PFty_string () }                                           \
+, /* fn:normalize-space (string?) as string */                           \
+  { .ns = PFns_fn, .loc = "normalize-space",                             \
+    .arity = 1, .par_ty = { PFty_opt (PFty_string ()) },                 \
+    .ret_ty = PFty_string () }                                           \
+, /* fn:string-length () as integer */                                   \
+  { .ns = PFns_fn, .loc = "string-length",                               \
+    .arity = 0,                                                          \
+    .ret_ty = PFty_integer () }                                          \
+, /* fn:string-length (string?) as integer */                            \
+  { .ns = PFns_fn, .loc = "string-length",                               \
+    .arity = 1, .par_ty = { PFty_opt (PFty_string ()) },                 \
+    .ret_ty = PFty_integer () }                                          \
 , /* pf:node-name-eq (xs:string, xs:string,                          */  \
   /*                  (xs:anyElement | xs:anyAttribute) *)           */  \
   /*     as xs:boolean                                               */  \

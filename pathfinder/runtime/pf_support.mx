@@ -861,51 +861,46 @@ bunins_failed:
 int
 CMDnormSpace(str *res, str string)
 {
-        char *ws, *norm_string, 
-             *strpointer, *token,
-             *simple_ws;
-        size_t n, last;
-        ws = " \f\n\r\t\v";
+        char *ws, *cur, *pointer;
+        size_t n;
 
-        /* FIXME: probably wrong (or missing) allocation */
-        fprintf(stderr, "CMDnormSpace: this code probably kills the Mserver!!!");
-        norm_string = (char *) GDKmalloc (strlen (string) + 1);
-        if (norm_string == NULL) {
+        pointer = GDKstrdup(string);
+        if (pointer == NULL) {
                 GDKerror("combine_text_string: GDKmalloc(" SZFMT ") failed.\n",
                          strlen (string) + 1);
                 return GDK_FAIL;
         }
-        norm_string[0] = '\0';
-        strpointer = string;
-        strpointer += strspn (strpointer, ws);
-        if (strpointer != string)
+
+        *res = pointer;
+
+        cur = string;
+        ws = " \f\n\r\t\v";
+        n = strspn (cur, ws);
+        if (n)
         {
-                simple_ws = " ";
-                last = 1;
-        }
-        else
-        {
-                simple_ws = "";
-                last = 0;
+            *pointer = ' ';
+            pointer++;
+            cur += n;
         }
 
-        while ((n = strcspn (strpointer, ws))) {
-            norm_string = strcat (norm_string, simple_ws);
-            /* string of length n found */
-            token = (char *) GDKmalloc (n+1);
-            memcpy(token, strpointer, n);
-            norm_string = strcat (norm_string, token);
-
-            /* skip over string and ws */
-            strpointer += n;
-            last = strspn (strpointer, ws);
-            strpointer += last;
-            simple_ws = " ";
+        while ((n = strcspn (cur, ws))) {
+            while (n > 0)
+            {
+                *pointer = *cur;
+                pointer++;
+                cur++;
+                n--;
+            }
+            n = strspn (cur, ws);
+            if (n)
+            {
+                *pointer = ' ';
+                pointer++;
+                cur += n;
+            }
         }
-        if (last)
-            norm_string = strcat (norm_string, simple_ws);
-        
-        *res = norm_string;
+        *pointer = '\0';
+
         return GDK_SUCCEED;
 }
 

@@ -51,6 +51,9 @@ bool PFty_eq (PFty_t, PFty_t);
 /** The <: subtype relationship */
 bool PFty_subtype (PFty_t, PFty_t);
 
+/** The equality relationship */
+bool PFty_equality (PFty_t, PFty_t);
+
 /** The || (disjointness) relationship */
 bool PFty_disjoint (PFty_t, PFty_t);
 

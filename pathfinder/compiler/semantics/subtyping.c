@@ -1185,6 +1185,60 @@ char hierarchy[ty_types][ty_types] = {
 };
 
 /**
+ * Encoding of the XQuery type equality relationships
+ *
+ * An entry for @a equality[t1][t2] of
+ * - 0 indicates not (t1 <: t2)
+ * - 1 indicates t1 <: t2
+ * - _ indicates <: must be decided using Antimirov's algorithm.
+ */
+#define _ -1
+
+static
+char equality[ty_types][ty_types] = { 
+    /*  
+                                                  u
+                                                  n
+                                                  t
+                                              u   y
+                                              n   p
+                                              t   e
+                                              y   d n i d     b 
+                                              p a A u n e d s o 
+                            e n               e t t m t c o t o 
+                          n m a             i d o o e e i u r l n e a   t   c
+                          o p m             t A m m r g m b i e o l t d x   o
+                          n t e             e n i i i e a l n a d e t o e p m
+                          e y d ? + * , | & m y c c c r l e g n e m r c t i m*/
+     [ty_none   ]      ={ 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 }
+    ,[ty_empty  ]      ={ 0,1,_,_,_,_,_,_,_,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+    ,[ty_named  ]      ={ _,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_ }
+    ,[ty_opt    ]      ={ 0,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_ }
+    ,[ty_plus   ]      ={ 0,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_ }
+    ,[ty_star   ]      ={ 0,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_ }
+    ,[ty_seq    ]      ={ 0,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_ }
+    ,[ty_choice ]      ={ 0,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_ }
+    ,[ty_all    ]      ={ 0,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_ }
+    ,[ty_item   ]      ={ 0,0,_,_,_,_,_,_,_,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+    ,[ty_untypedAny]   ={ 0,0,_,_,_,_,_,_,_,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+    ,[ty_atomic ]      ={ 0,0,_,_,_,_,_,_,_,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+    ,[ty_untypedAtomic]={ 0,0,_,_,_,_,_,_,_,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+    ,[ty_numeric]      ={ 0,0,_,_,_,_,_,_,_,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0 }
+    ,[ty_integer]      ={ 0,0,_,_,_,_,_,_,_,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0 }
+    ,[ty_decimal]      ={ 0,0,_,_,_,_,_,_,_,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0 }
+    ,[ty_double ]      ={ 0,0,_,_,_,_,_,_,_,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0 }
+    ,[ty_string ]      ={ 0,0,_,_,_,_,_,_,_,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0 }
+    ,[ty_boolean]      ={ 0,0,_,_,_,_,_,_,_,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 }
+    ,[ty_node   ]      ={ 0,0,_,_,_,_,_,_,_,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0 }
+    ,[ty_elem   ]      ={ 0,0,_,_,_,_,_,_,_,0,0,0,0,0,0,0,0,0,0,0,_,0,0,0,0,0 }
+    ,[ty_attr   ]      ={ 0,0,_,_,_,_,_,_,_,0,0,0,0,0,0,0,0,0,0,0,0,_,0,0,0,0 }
+    ,[ty_doc    ]      ={ 0,0,_,_,_,_,_,_,_,0,0,0,0,0,0,0,0,0,0,0,0,0,_,0,0,0 }
+    ,[ty_text   ]      ={ 0,0,_,_,_,_,_,_,_,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0 }
+    ,[ty_pi     ]      ={ 0,0,_,_,_,_,_,_,_,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,_,0 }
+    ,[ty_comm   ]      ={ 0,0,_,_,_,_,_,_,_,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1 }
+};
+
+/**
  * Encoding of the XQuery `can be promoted to' relationship.
  * (see include/types.h).
  *
@@ -1485,6 +1539,23 @@ PFty_subtype (PFty_t t1, PFty_t t2)
     trivial = &hierarchy;
 
     return subtype (t1, t2, ty_pair_set ()); 
+}
+
+/**
+ * The equality relationship.  Test whether @a t1 = @a t2.
+ *
+ * @param t1 first type
+ * @param t2 second type
+ * @return true if @a t1 = @a t2, false otherwise.
+ */
+bool 
+PFty_equality (PFty_t t1, PFty_t t2) 
+{
+    /* trivial subtyping relationships encoded in equality table */
+    trivial = &equality;
+
+    return subtype (t1, t2, ty_pair_set ()) &&
+           subtype (t2, t1, ty_pair_set ()); 
 }
 
 /**

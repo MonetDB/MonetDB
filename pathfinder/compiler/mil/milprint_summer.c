@@ -42,10 +42,6 @@
 #include "subtyping.h"
 #include "mil_opt.h"
 
-/* add some timing results for the code, if set to 1 */ 
-#define TIMINGS 0
-#define WITH_SCRIPT 0
-
 /* accessors to left and right child node */
 #define LEFT_CHILD(p)  ((p)->child[0])
 #define RIGHT_CHILD(p) ((p)->child[1])
@@ -104,9 +100,9 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c);
 static int
 var_is_used (PFvar_t *v, PFcnode_t *e);
 
-/* tests type equality (not only structural like PFty_eq) */
-/* doesn't work with types along a hierarchy (e.g., decimal - decimal|integer) */
-#define TY_EQ(t1,t2) (PFty_subtype (t1,t2) && PFty_subtype (t2,t1))
+/* tests type equality (not only structural 'PFty_eq' 
+   and without hierarchy 'PFty_subtype' */
+#define TY_EQ(t1,t2) (PFty_equality (t1,t2))
 
 /**
  * Test if two types are castable into each other
@@ -119,7 +115,8 @@ static bool
 castable (PFty_t t1, PFty_t t2)
 {
     t2 = PFty_defn (t2);
-
+    /* don't cast seqcast which are not valid (choice) or 
+       are non necessary cast introduced during translation (atomic) */
     if (t2.type == ty_choice ||
         t2.type == ty_atomic || /* avoid problems with ty_atomic */
         (t2.type == ty_opt && ((PFty_child (t2)).type == ty_choice ||
@@ -684,6 +681,35 @@ addValues (opt_t *f,
     /* get the offsets of the values */
     milprintf(f, "%s := %s.leftjoin(%s.reverse());\n", 
             result_var, varname, t_co.table);
+}
+
+/**
+ * add_empty_strings adds an empty string for each missing iteration
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param rcode the kind of the item bat
+ * @param cur_level the level of the for-scope
+ */
+static void
+add_empty_strings (opt_t *f, int rc, int cur_level)  
+{
+    char *item_ext = kind_str(rc);
+    milprintf(f,
+            /* test qname and add "" for each empty item */
+            "if (iter.count() != loop%03u.count())\n"
+            "{ # add empty strings\n"
+            "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
+            "difference := difference.mark(0@0).reverse();\n"
+            "var res_mu := merged_union(iter, difference, item%s, "
+                                       "fake_project(%s));\n"
+            "difference := nil_oid_oid;\n"
+            "item%s := res_mu.fetch(1);\n"
+            "res_mu := nil_oid_bat;\n"
+            "} # end of add empty strings\n",
+            cur_level, cur_level,
+            item_ext,
+            (rc)?"\"\"":"EMPTY_STRING",
+            item_ext);
 }
 
 /**
@@ -5032,11 +5058,10 @@ is2ns_node (opt_t *f, int counter)
 static int
 fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
 {
-    char *empty_string, *item_ext;
+    char *item_ext;
     int rcode, rc;
-    PFty_t input_type = c->type;
+    PFty_t input_type = *PFty_simplify(PFty_defn(c->type));
 
-    empty_string = (code)?"\"\"":"EMPTY_STRING";
     rcode = (code)?STR:NORMAL;
     item_ext = kind_str(rcode);
 
@@ -5049,34 +5074,13 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
     {
         translate2MIL (f, NORMAL, cur_level, counter, c);
         typed_value (f, code, "STR", false);
-    
+        add_empty_strings (f, rcode, cur_level);
         milprintf(f,
-                "if (iter.count() != loop%03u.count())\n"
-                "{\n"
-                "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
-                "difference := difference.mark(0@0).reverse();\n"
-                "var res_mu := merged_union(iter, difference, item%s, "
-                                           "fake_project(%s));\n"
-                "difference := nil_oid_oid;\n",
-                cur_level,
-                cur_level,
-                item_ext,
-                empty_string);
-        if (code)
-        {
-            milprintf(f, "item%s := res_mu.fetch(1);\n", item_ext);
-        }
-        else
-        {
-            addValues (f, str_container(), "res_mu.fetch(1)", "item");
-        }
-        milprintf(f,
-                "res_mu := nil_oid_bat;\n"
                 "iter := loop%03u.reverse().mark(0@0).reverse();\n"
                 "pos := iter.project(1@0);\n"
-                "kind := iter.project(STR);\n"
-                "}\n",
-                cur_level);
+                "kind := iter.project(STR);\n",
+                cur_level,
+                item_ext, item_ext);
 
         return rcode;
     }
@@ -5093,33 +5097,11 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
     }
 
     translateCast2STR (f, rcode, rc, input_type);
-
+    add_empty_strings (f, rcode, cur_level);
     milprintf(f,
-            "if (iter.count() != loop%03u.count())\n"
-            "{\n"
-            "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
-            "difference := difference.mark(0@0).reverse();\n"
-            "var res_mu := merged_union(iter, difference, item%s, "
-                                       "fake_project(%s));\n"
-            "difference := nil_oid_oid;\n",
-            cur_level,
-            cur_level,
-            item_ext,
-            empty_string);
-    if (code)
-    {
-        milprintf(f, "item%s := res_mu.fetch(1);\n", item_ext);
-    }
-    else
-    {
-        addValues (f, str_container(), "res_mu.fetch(1)", "item");
-    }
-    milprintf(f,
-        "res_mu := nil_oid_bat;\n"
         "iter := loop%03u.reverse().mark(0@0).reverse();\n"
         "pos := iter.project(1@0);\n"
-        "kind := iter.project(STR);\n"
-        "}\n",
+        "kind := iter.project(STR);\n",
         cur_level);
 
     return rcode;
@@ -5317,6 +5299,7 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
 {
     char *item_ext = kind_str(STR);
     char *idref = (op)?"REF":"";
+    op = (op)?"ref":"";
     int rc;
 
     rc  = translate2MIL (f, VALUES, cur_level, counter, L(c));
@@ -5331,7 +5314,7 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
             "if (iter%03u.count() != 0) { # fn:id%s\n"
             "var strings := item%s%03u;\n"
             "var frag := kind.get_fragment();\n"
-            "#strings := strings.[normSpace]();\n"
+            "strings := strings.[normSpace]();\n"
             "strings := strings.ll_tokenize(strings.project(\" \"));\n"
             "var id_str := strings.reverse().mark(0@0).reverse();\n"
             "var oid_iter := strings.mark(0@0).reverse().leftfetchjoin(iter%03u);\n"
@@ -5384,6 +5367,40 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
     translateEmpty (f);
     milprintf(f,
             "} # end of fn:id%s\n",
+            op);
+
+    deleteResult_ (f, counter, STR);
+}
+
+static void
+fn_starts_with (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
+{
+    char *item_ext = kind_str(STR);
+    int rc = translate2MIL (f, VALUES, cur_level, counter, L(c));
+    if (!rc)
+        milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+    add_empty_strings (f, STR, cur_level);
+
+    counter++;
+    saveResult_ (f, counter, STR);
+    rc = translate2MIL (f, VALUES, cur_level, counter, RL(c));
+    if (!rc)
+        milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+    add_empty_strings (f, STR, cur_level);
+    milprintf(f,
+            "{ # fn:%s-with\n"
+            "var strings := item%s%03u;\n"
+            "var search_str := item%s;\n"
+            "item := [%sWith](strings, search_str).[oid]();\n"
+            "iter := loop%03u;\n"
+            "pos := iter.project(1@0);\n"
+            "kind := iter.project(BOOL);\n"
+            "} # end of fn:%s-with\n",
+            op, 
+            item_ext, counter,
+            item_ext,
+            op,
+            cur_level,
             op);
 
     deleteResult_ (f, counter, STR);
@@ -6545,6 +6562,81 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 item_ext, item_ext);
         deleteResult_ (f, counter, STR);
         return (code)?STR:NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"starts-with")))
+    {
+        fn_starts_with (f, "starts", cur_level, counter, args);
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"ends-with")))
+    {
+        fn_starts_with (f, "ends", cur_level, counter, args);
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"normalize-space")))
+    {
+        item_ext = kind_str(STR);
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (!rc)
+            milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+        milprintf(f,
+                "{ # fn:normalize-string\n"
+                "item%s := item%s.[normSpace]();\n",
+                item_ext, item_ext);
+        add_empty_strings (f, STR, cur_level);
+        milprintf(f, "var res := item%s;\n", item_ext);
+
+        if (code)
+            milprintf(f, "item%s := res;\n", item_ext);
+        else 
+            addValues (f, str_container(), "res", "item");
+
+        item_ext = (code)?item_ext:"";
+        milprintf(f,
+                "res := nil_oid_str;\n"
+                "item%s := item%s.reverse().mark(0@0).reverse();\n"
+                "iter := loop%03u;\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(STR);\n"
+                "} # end of fn:normalize-string\n",
+                item_ext, item_ext,
+                cur_level);
+
+        return (code)?STR:NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"string-length")))
+    {
+        char *item_ext_int = kind_str(INT);
+        item_ext = kind_str(STR);
+
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (!rc)
+            milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+        add_empty_strings (f, STR, cur_level);
+        milprintf(f,
+                "{ # fn:string-length\n"
+                "item%s := item%s.[length]();\n"
+                "var res := item%s;\n", 
+                item_ext_int, item_ext,
+                item_ext_int);
+
+        if (code)
+            milprintf(f, "item%s := res;\n", item_ext_int);
+        else 
+            addValues (f, int_container(), "res", "item");
+
+        item_ext_int = (code)?item_ext_int:"";
+        milprintf(f,
+                "res := nil_oid_int;\n"
+                "item%s := item%s.reverse().mark(0@0).reverse();\n"
+                "iter := loop%03u;\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(INT);\n"
+                "} # end of fn:string-length\n",
+                item_ext_int, item_ext_int,
+                cur_level);
+
+        return (code)?INT:NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"number")))
     {
@@ -7849,7 +7941,7 @@ simplifyCoreTree (PFcnode_t *c)
             PFlog("cast type: %s",
                   PFty_str (L(c)->sem.type));
             */
-            cast_type = L(c)->sem.type;
+            cast_type = *PFty_simplify(PFty_defn(L(c)->sem.type));
             input_type = R(c)->type;
             opt_cast_type = cast_type;
 
