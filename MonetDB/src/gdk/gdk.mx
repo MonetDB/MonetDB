@@ -864,7 +864,7 @@ typedef struct {
 
 #ifndef BAT32IMAGE
 
-typedef int (*GDKfcn)(ptr);
+typedef int (*GDKfcn)();
 
 /* macros's to hide complexity of BAT structure */
 #define batPersistence	P->persistence	
