@@ -28,7 +28,7 @@ test_mmath();
 [ true ]
 [ Inf ]
 [ 1 ]
-[ -inf ]
+[ -Inf ]
 [ -1 ]
 [ true ]
 [ false ]
