@@ -1602,7 +1602,10 @@ def RunTest(env, TST, BusyPorts, COND) :
         if killed:
             STDOUT.write("(Killed!) ")
         STDOUT.write("\n")
-        STDOUT.flush()
+        try:
+            STDOUT.flush()
+        except IOError, (IOerrNo, IOerrStr):
+            Warn("Flushing STDOUT in RunTest failed with #%d: '%s'." % (IOerrNo, IOerrStr))
 
         if env['exe']['Mtimeout'][0]:
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
