@@ -56,14 +56,23 @@ stderr of test 'bug-sf-953545` in directory 'src/test/bugs` itself:
 # 15:22:34 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=53599  < bug-sf-953545.sql
 # 15:22:34 >  
 
-MAPI  = monetdb@stem:53599
+MAPI  = monetdb@stem:57632
 ACTION= mapi_get_row
-QUERY = commit;
-ERROR = !transaction commit not allowed in auto commit mode
-MAPI  = monetdb@stem:53599
-ACTION= mapi_get_row
-QUERY = rollback;
+QUERY = -- the following statements should all fail
 ERROR = !transaction rollback not allowed in auto commit mode
+MAPI  = monetdb@stem:57632
+ACTION= mapi_get_row
+QUERY = COMMIT;
+ERROR = !transaction commit not allowed in auto commit mode
+MAPI  = monetdb@stem:57632
+ACTION= mapi_get_row
+QUERY = SAVEPOINT failingsavepoint;
+ERROR = !transaction savepoint not allowed in auto commit mode
+MAPI  = monetdb@stem:57632
+ACTION= mapi_get_row
+QUERY = -- this one is incorrect since the savepoint should not exist
+ERROR = !transaction release not allowed in auto commit mode
+        !ERROR: release savepoint failingsavepoint doesn't exists
 
 # 15:22:34 >  
 # 15:22:34 >  Done.
