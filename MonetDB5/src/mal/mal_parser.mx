@@ -902,7 +902,7 @@ MalBlkPtr parseFunction(Client cntxt, int kind){
 }
 
 @-
-Functions and  factoriesend with a labeled end-statement. 
+Functions and  factories end with a labeled end-statement. 
 The routine below checks for misalignment of the closing statements.
 Any instruction parsed after the function block is considered an
 error.

@@ -243,6 +243,16 @@ void chkFlow(MalBlkPtr mb)
                         GDKerror("SYNTAX ERROR: signature misplaced\n!%s\n",msg);
                         GDKfree(msg);
                         mb->errors++;
+		} else
+		if( functionExit(p) && i != mb->stop-1 ){
+			str msg;
+			p= getInstrPtr(mb,i+1);
+			if( p== NULL  )
+				p= getInstrPtr(mb,0);
+			msg = instruction2str(mb,p,TRUE);
+			GDKerror("SYNTAX ERROR: instructions after END %s\n",msg);
+			GDKfree(msg);
+			mb->errors++;
 		}
 	}
 	for(btop--; btop>=0;btop--){
