@@ -226,7 +226,8 @@ def msc_scripts(fd, var, scripts, msc):
   for script in scripts['TARGETS']:
       fd.write("%s: $(SRCDIR)\\%s\n" % (script,script))
       #fd.write("\t$(INSTALL) $(SRCDIR)\\%s %s\n" % (script,script) )
-      fd.write("\tif not exist %s if exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (script,script,script,script) )
+      #fd.write("\tif not exist %s if exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (script,script,script,script) )
+      fd.write("\tif exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (script,script,script) )
       msc['INSTALL'].append((script,script,'',sd))
 
   #msc_deps(fd,scripts['DEPS'],"\.o",msc);
@@ -240,7 +241,13 @@ def msc_binary(fd, var, binmap, msc ):
     name = var[4:]
     if (name == 'SCRIPTS'):
       for i in binmap:
-        msc['INSTALL'].append((i,i,'.exe','$(bindir)'))
+        # TODO
+        # replace this hack by something like configure ...
+        fd.write("%s: $(SRCDIR)\\%s\n" % (i,i))
+        fd.write("\tif exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (i,i,i) )
+        fd.write("$(SRCDIR)\\%s: $(SRCDIR)\\%s.in\n" % (i,i))
+        fd.write("\tif exist $(SRCDIR)\\%s.in $(INSTALL) $(SRCDIR)\\%s.in $(SRCDIR)\\%s\n" % (i,i,i) )
+        msc['INSTALL'].append((i,i,'','$(bindir)'))
     else: # link
       src = binmap[0][4:]
       msc['INSTALL'].append((name,src,'.exe','$(bindir)'))
@@ -483,6 +490,7 @@ def msc_libs(fd, var, libsmap, msc ):
   if (len(SCRIPTS) > 0):
     fd.write("SCRIPTS =" + msc_space_sep_list(SCRIPTS))
     msc['BUILT_SOURCES'].append("$(SCRIPTS)")
+    msc['SCRIPTS'].append("$(SCRIPTS)")
 
   if (libsmap.has_key('HEADERS')):
     HDRS = []
@@ -539,7 +547,7 @@ CC = cl -GF -W3 -MD -nologo -Zi -G6
 
 # No general LDFLAGS needed
 LDFLAGS = /link
-INSTALL = copy
+INSTALL = copy /y
 MKDIR = mkdir
 ECHO = echo
 CD = cd
@@ -554,6 +562,7 @@ CXXEXT = \\\"cxx\\\"
   msc['BUILT_SOURCES'] = []
   msc['EXTRA_DIST'] = []
   msc['LIBS'] = []
+  msc['SCRIPTS'] = []
   msc['BINS'] = []
   msc['HDRS'] = []
   msc['INSTALL'] = []
@@ -630,6 +639,10 @@ CXXEXT = \\\"cxx\\\"
   if (len(msc['BINS']) > 0):
     for v in msc['BINS']:
       fd.write(" %s.exe" % (v) )
+
+  if (len(msc['SCRIPTS']) > 0):
+    for v in msc['SCRIPTS']:
+      fd.write(" %s" % (v) )
 
   fd.write("\n")
 
