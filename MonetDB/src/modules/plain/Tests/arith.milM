@@ -1,3 +1,0 @@
-module("arith");
-test_arith();
-quit;

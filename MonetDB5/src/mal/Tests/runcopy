@@ -1,6 +1,0 @@
-#!/bin/bash
-for f in  `ls tst??? tst1??? tst11?? tst12?? tst2???`
-do
-	echo "---->" $f
-	cp $f.output $f.stable
-done
