@@ -41,9 +41,9 @@ command bytes( s:bat[:void,:str] ) :bat[:void,:int]
 address STRbatBytes
 comment "Return the string length in bytes.";
 
-command chrAt( s:bat[:void,:str], index:bat[:void,:int]) :bat[:void,:chr]
-address STRbatChrAt
-comment "String array lookup operation.";
+#command chrAt( s:bat[:void,:str], index:bat[:void,:int]) :bat[:void,:chr]
+#address STRbatChrAt
+#comment "String array lookup operation.";
 
 command match(b:bat[:void,:str], pat:str):bat[:void,:bit]
 address STRbatmatchCst
@@ -97,9 +97,9 @@ command string(b:bat[:void,:str],offset:bat[:void,:int]) :bat[:void,:str]
 address STRbatTail
 comment "Return the tail s[offset..n] of a string s[0..n].";
 
-command unicodeAt(s:bat[:void,:str], index:bat[:void,:int]) :bat[:void,:int]
-address STRbatWChrAt
-comment "get a unicode character (as an int) from a string position.";
+#command unicodeAt(s:bat[:void,:str], index:bat[:void,:int]) :bat[:void,:int]
+#address STRbatWChrAt
+#comment "get a unicode character (as an int) from a string position.";
 
 @-
 not now
@@ -386,7 +386,7 @@ bunins_failed:
 	@:binarySTRint(Tail,str,strTail,"tail")@
 @-
 	@:binarySTRint(ChrAt,int,strChrAt,"chrAt")@
-
+@c
 str STRbatConcat(int *ret, int *l, int *r)
 {   BAT *bn, *left, *right;
 	BUN o,p,q;
