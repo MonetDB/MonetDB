@@ -607,7 +607,7 @@ typedef struct {
 	int limit;		/* current storage space limit */
 	int writer;
 	int reader;
-	int tuples;		/* actual tuples in cache */
+	int first;		/* row # of first tuple */
 	int *fldcnt;		/* actual number of fields in each row */
 	char **rows;		/* string representation of rows received */
 	int tuplecount;		/* number of tuples in the cache */
@@ -1016,7 +1016,7 @@ mapi_new(void)
 	m->cache.limit = 0;
 	m->cache.writer = 0;
 	m->cache.reader = -1;
-	m->cache.tuples = 0;
+	m->cache.first = 0;
 	m->cache.rows = NULL;
 	m->cache.tuplecount = 0;
 	m->cache.tupleindex = NULL;
@@ -2196,7 +2196,6 @@ mapi_cache_reset(Mapi mid)
 
 	mapi_finish_internal(mid);
 	mid->rows_affected = 0;
-	mid->cache.tuplecount = 0;
 	mid->active = 1;
 	for (i = 0; i < mid->cache.writer; i++)
 		if (mid->cache.rows[i])
@@ -2209,8 +2208,8 @@ mapi_cache_reset(Mapi mid)
 			mid->cache.tuplerev[i] = -1;
 	mid->cache.tuplecount = 0;
 	mid->cache.reader = -1;
-	mid->cache.tuples = 0;
 	mid->cache.writer = 0;
+	mid->cache.first = 0;
 	mid->fieldcnt = 0;
 	memset(mid->cache.fldcnt, 0, sizeof(int) * mid->cache.limit);
 }
@@ -2231,7 +2230,7 @@ mapi_cache_limit(Mapi mid, int limit)
 		}
 	}
 	if (mid->languageId == LANG_SQL) {
-		stream_printf(mid->to, "Xreply_size %d\n", limit);
+		stream_printf(mid->to, "X" "reply_size %d\n", limit);
 		stream_flush(mid->to);
 		mid->active = 1;
 		mapi_finish_internal(mid);
@@ -2263,8 +2262,6 @@ mapi_fetch_reset(Mapi mid)
 MapiMsg
 mapi_seek_row(Mapi mid, int rownr, int whence)
 {
-	int i;
-
 	mapi_check(mid, "mapi_seek_row");
 	switch (whence) {
 	case MAPI_SEEK_SET:
@@ -2273,24 +2270,28 @@ mapi_seek_row(Mapi mid, int rownr, int whence)
 		rownr += mid->cache.tuplerev[mid->cache.reader + 1];
 		break;
 	case MAPI_SEEK_END:
-		if (mid->cache.writer > 0)
-			rownr += mid->cache.tuplerev[mid->cache.writer - 1] + 1;
+		rownr += mid->rows_affected;
 		break;
 	default:
 		return mapi_setError(mid, "Illegal whence value",
 				     "mapi_seek_row");
 	}
-	if (rownr < 0 || rownr > mid->cache.tuplecount)
+	if (rownr < 0 || rownr > mid->rows_affected)
 		return mapi_setError(mid, "Illegal row number",
 				     "mapi_seek_row");
-	if (rownr == mid->cache.tuplecount)
-		i = mid->cache.writer;
-	else
-		i = mid->cache.tupleindex[rownr];
-	if (i < 0)
-		return mapi_setError(mid, "Row not found", "mapi_seek_row");
-	mid->cache.reader = i - 1;
-	return MOK;
+	if (mid->cache.first <= rownr &&
+	    rownr < mid->cache.first + mid->cache.tuplecount) {
+		/* we've got the requested tuple in the cache */
+		mid->cache.reader = mid->cache.tupleindex[rownr - mid->cache.first] - 1;
+		return MOK;
+	}
+	/* we don't have the requested tuple in the cache
+	   reset the cache and at the next fetch we'll get the data */
+	if (mapi_cache_freeup(mid, 100) == MOK) {
+		mid->cache.first = rownr;
+		return MOK;
+	}
+	return mid->error;
 }
 
 #define REALLOC(p,s)	((p) ? realloc((p),(s)) : malloc((s)))
@@ -2350,7 +2351,9 @@ mapi_extend_cache(Mapi mid)
 MapiMsg
 mapi_cache_freeup(Mapi mid, int percentage)
 {
-	int i, k = 0;
+	int i;			/* just a counter */
+	int k;			/* # of cache lines to be deleted from front */
+	int n = 0;		/* # of tuples being deleted from front */
 
 	if (mid->cache.writer == 0 && mid->cache.reader == -1)
 		return MOK;
@@ -2359,9 +2362,13 @@ mapi_cache_freeup(Mapi mid, int percentage)
 	k = (mid->cache.writer * percentage) / 100;
 	if (k < 1)
 		k = 1;
+	mid->cache.tuplecount = 0;
 	for (i = 0; i < mid->cache.writer - k; i++) {
-		if (mid->cache.rows[i])
+		if (mid->cache.rows[i]) {
+			if (mid->cache.rows[i][0] == '[')
+				n++;
 			free(mid->cache.rows[i]);
+		}
 		mid->cache.rows[i] = mid->cache.rows[i + k];
 		mid->cache.rows[i + k] = 0;
 		if (mid->cache.anchors[i])
@@ -2369,10 +2376,21 @@ mapi_cache_freeup(Mapi mid, int percentage)
 		mid->cache.anchors[i] = mid->cache.anchors[i + k];
 		mid->cache.anchors[i + k] = 0;
 		mid->cache.fldcnt[i] = mid->cache.fldcnt[i + k];
+		if (mid->cache.rows[i] && mid->cache.rows[i][0] == '[') {
+			mid->cache.tuplerev[i] = mid->cache.tuplecount;
+			mid->cache.tupleindex[mid->cache.tuplecount++] = i;
+		}
 	}
-	for (i = k; i < mid->cache.limit; i++) {
-		if (mid->cache.rows[i])
+	/* after the previous loop, i == mid->cache.writer - k, and
+	   the last (mid->cache.writer - k) cache entries have been
+	   cleared already , so we don't need to go the Full Monty
+	   here */
+	for (/*i = mid->cache.writer - k*/; i < k /*mid->cache.writer*/; i++) {
+		if (mid->cache.rows[i]) {
+			if (mid->cache.rows[i][0] == '[')
+				n++;
 			free(mid->cache.rows[i]);
+		}
 		mid->cache.rows[i] = 0;
 		if (mid->cache.anchors[i])
 			free(mid->cache.anchors[i]);
@@ -2380,22 +2398,12 @@ mapi_cache_freeup(Mapi mid, int percentage)
 		mid->cache.fldcnt[i] = 0;
 	}
 	mid->cache.reader -= k;
-	if (mid->cache.reader < -1)
+	if (mid->cache.reader < 0)
 		mid->cache.reader = -1;
 	mid->cache.writer -= k;
-	if (mid->cache.writer < 0)
+	if (mid->cache.writer < 0) /* "cannot happen" */
 		mid->cache.writer = 0;
-
-	/* update the tupleindex */
-	mid->cache.tuplecount = 0;
-	for (i = 0; i < mid->cache.writer; i++) {
-		if (mid->cache.rows[i][0] == '#')
-			continue;
-		if (mid->cache.rows[i][0] == '!')
-			continue;
-		mid->cache.tuplerev[i] = mid->cache.tuplecount;
-		mid->cache.tupleindex[mid->cache.tuplecount++] = i;
-	}
+	mid->cache.first += n;
 
 	return MOK;
 }
@@ -2445,13 +2453,14 @@ mapi_fetch_line_internal(Mapi mid)
 	if (mid->cache.writer > 0 && mid->cache.reader + 1 < mid->cache.writer)
 		return mid->cache.rows[++mid->cache.reader];
 
-	if (mid->active == 0)
+	if (!mid->active)
 		return 0;
 	/* get rid of old buffer space */
-	if (mid->cache.writer >= mid->cache.rowlimit && mapi_clear_cache(mid))
+	if (mid->cache.rowlimit > 0 &&
+	    mid->cache.writer >= mid->cache.rowlimit && mapi_clear_cache(mid))
 		return 0;
 
-	/* check if you need to read more blocks to catch a new line */
+	/* check if you need to read more blocks to get a new line */
 	mid->blk.eos = 0;
 	while (!strchr(mid->blk.buf + mid->blk.nxt, '\n') && mid->blk.eos == 0) {
 		char *newbuf;
@@ -2537,7 +2546,6 @@ mapi_fetch_line_internal(Mapi mid)
 	mid->cache.tuplerev[mid->cache.writer] = mid->cache.tuplecount;
 	mid->cache.tuplerev[mid->cache.writer + 1] = mid->cache.tuplecount + 1;
 	if (*reply == '[') {
-		mid->cache.tuples++;
 		mid->cache.tupleindex[mid->cache.tuplecount++] = mid->cache.writer;
 	}
 	mid->cache.writer++;
@@ -3206,6 +3214,15 @@ mapi_fetch_row(Mapi mid)
 	mapi_check(mid, "mapi_fetch_row");
 	if (mapi_get_row(mid) == MOK)
 		return mapi_slice_row(mid);
+	if (!mid->active && mid->rows_affected > 0 &&
+	    mid->cache.first + mid->cache.tuplecount < mid->rows_affected) {
+		mid->active = 1;
+		stream_printf(mid->to, "X" "export %d %d\n", mid->tableid,
+			      mid->cache.first + mid->cache.tuplecount);
+		stream_flush(mid->to);
+		if (mapi_get_row(mid) == MOK)
+			return mapi_slice_row(mid);
+	}
 	return 0;
 }
 
@@ -3217,9 +3234,8 @@ mapi_fetch_all_rows(Mapi mid)
 {
 	mapi_check(mid, "mapi_fetch_all_rows");
 	mid->cache.rowlimit = -1;
-	while (mapi_get_row(mid) == MOK) {
-		mapi_slice_row(mid);
-	}
+	while (mapi_fetch_row(mid) > 0)
+		;
 	mid->cache.reader = -1;
 	return mid->cache.tuplecount;
 }
