@@ -114,10 +114,10 @@ def main(cwd,topdir,automake,incdirsmap):
         for dir in subdirs:
             d = os.path.join(cwd,dir)
             if (os.path.exists(d)):
-    		incdirsmap.append(d,os.path.join('includedir',dir))
+                incdirsmap.append((d,os.path.join('includedir',dir)))
                 print(d)
                 (deltaInstallList, deltaOutList) = \
-			main(d,topdir,automake,incdirsmap)
+                                   main(d,topdir,automake,incdirsmap)
                 InstallList = InstallList + deltaInstallList
                 OutList = OutList + deltaOutList
                 #cmd = "cd " + dir + "; " + sys.argv[0] + " " + topdir
