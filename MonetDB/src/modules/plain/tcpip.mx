@@ -255,7 +255,13 @@ bit socket_gets(int fd, char **buf, int *len){
 			s = *buf + oldlen;
 			end = *buf + *len;
 		}
-		if (read(fd, s, 1) <= 0) {
+		if (
+#ifdef NATIVE_WIN32
+			recv(fd, s, 1, 0)
+#else
+			read(fd, s, 1)
+#endif
+			<= 0) {
 			GDKsyserror("socket_gets: ");
 			return FALSE;
 	    	}
