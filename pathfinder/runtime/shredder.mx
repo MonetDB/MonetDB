@@ -348,7 +348,7 @@ static shredCtxStruct *createShredCtx(char* name, off_t  fileSize) {
                         return NULL;
                 }
                 sb->cnt  = sb->dupl = 0;
-                if ( sb->def->headType == TYPE_str || sb->def->tailType == TYPE_str || sb->def->headType == TYPE_str)
+                if ( sb->def->headType == TYPE_str || sb->def->tailType == TYPE_str)
                         sb->size = MINCHUNK; /* let Monet do the resize self */
                 else 
                         sb->size = (int)(sb->def->sizeFact * res->estSize);
@@ -869,7 +869,10 @@ static nat store_NsLoc(shredCtxStruct* shredCtx, char* nsloc) {
         return res;
 }
 
-int 
+/* forward definition of tokenize_IDREFS() */
+static int tokenize_IDREFS( shredCtxStruct *shredCtx, char* ownerTag, oid pre, str attrTag, str attrVal);
+
+static int 
 handleID_IDREF( shredCtxStruct *shredCtx, 
 		char* ownerTag,
 		oid   pre,
@@ -890,12 +893,32 @@ handleID_IDREF( shredCtxStruct *shredCtx,
 		batIdx = IDREF_PRE;
 	 	break;
 	 case XML_ATTRIBUTE_IDREFS:
-		stream_printf(GDKerr,"handleID_IDREF: unable to handle IDREFS yet\n");
-	 	return 0;
+		return tokenize_IDREFS(shredCtx,ownerTag,pre,attrTag,attrVal);
 	}
 	if ( append_str_oid2bat(shredCtx,batIdx,attrVal,pre) == NIL ) {
 		stream_printf(GDKerr,"append() for handleID_IDREF(own=%s,pre=%d,nsloc=%s,v=\"%s\") = %d FAILED\n",ownerTag,pre,attrTag,attrVal,attrType);
 		return 0;
+	}
+	return 1;
+}
+
+static int 
+tokenize_IDREFS( shredCtxStruct *shredCtx, 
+		 char* ownerTag,
+		 oid   pre,
+		 str   attrTag,
+		 str   attrVal) {
+	/* tokenize IDREFS value attrVal and handle every tokenized value
+	 * as an IDREF.
+	 */ 
+	char* insideStrtok;
+	char* spaces = " \t";
+	char *tok;
+	tok = strtok_r(attrVal,spaces,&insideStrtok);
+	while ( tok ) {
+		if ( !handleID_IDREF(shredCtx,ownerTag,pre,attrTag,tok,XML_ATTRIBUTE_IDREF) )
+			return 0;
+		tok = strtok_r(0,spaces,&insideStrtok);
 	}
 	return 1;
 }
