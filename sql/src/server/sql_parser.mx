@@ -1888,7 +1888,7 @@ atom:
 	  	AtomNode *an = (AtomNode*)$1;
 	  	sql_subtype *t = sql_dup_subtype(atom_type(an->a));
 
-	  	snprintf(name, BUFSIZ, "a%d", len);
+	  	snprintf(name, BUFSIZ, "A%d", len);
 	  	sql_add_param( c, _strdup(name), stmt_var(_strdup(name), t) );
 	  	sql_add_arg( c, atom_dup(an->a));
 	  	/* we miss use SQL_COLUMN also for param's, maybe 
