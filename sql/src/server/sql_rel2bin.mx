@@ -421,7 +421,7 @@ stmt *eliminate_semijoin(stmt *s)
 			case st_select:
 			case st_uselect:
 				/* uselect => select  as semijoin also propagates the left input's tail */
-				ns = stmt_select(stmt_dup(s1), stmt_dup(s2->op2.stval), s2->flag);
+				ns = stmt_select(stmt_dup(s1), stmt_dup(s2->op2.stval), (comp_type)s2->flag);
 				break;
 			case st_select2:
 			case st_uselect2:

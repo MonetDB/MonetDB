@@ -109,7 +109,7 @@ void cmd_add_token(mvc * m, char *token)
 
 	if ((c->sqllen + len + 1) > c->sqlsize) {
 		while( (c->sqllen + len + 1) > c->sqlsize)
-			c->sqlsize *= 2;
+			c->sqlsize *= 4;
 		c->sql = RENEW_ARRAY(char, c->sql, c->sqlsize);
 	}
 	strncpy(c->sql + c->sqllen - 1, token, len);
@@ -123,9 +123,10 @@ void cmd_add_string(mvc * m, char *str)
 {
 	struct scanner *c = &m->scanner;
 	int len = strlen(str);
+
 	if ((c->sqllen + len + 3) > c->sqlsize) {
 		while( (c->sqllen + len + 3) > c->sqlsize)
-			c->sqlsize *= 2;
+			c->sqlsize *= 4;
 		c->sql = RENEW_ARRAY(char, c->sql, c->sqlsize);
 	}
 	c->sql[c->sqllen - 1] = '\'';

@@ -106,8 +106,6 @@ SQLRETURN SQLSetConnectAttr_(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 SQLRETURN SQLSetStmtAttr_(SQLHSTMT hStmt, SQLINTEGER Attribute,
 			  SQLPOINTER Value, SQLINTEGER StringLength);
 
-#define ODBCDEBUG 1
-
 #ifdef ODBCDEBUG
 #define ODBCLOG(...)	do {						\
 				char *s = getenv("ODBCDEBUG");		\

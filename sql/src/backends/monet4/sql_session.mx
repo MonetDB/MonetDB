@@ -445,6 +445,9 @@ int sqlexecute(backend * be, stream *out )
 			q->code = (backend_code)callnode;
 			q->stk = (backend_stack)(ptrdiff_t)procstk;
 		} else {
+			/*
+			monet4_freecode( callnode, (backend_stack)(ptrdiff_t)procstk, q->id);
+			*/
 			backend_freestack( (backend_stack)(ptrdiff_t)procstk );
 		}
 	} else if (q) {
@@ -455,8 +458,8 @@ int sqlexecute(backend * be, stream *out )
  	 * clear query cache after Transaction boundaries (commit/rollback)
 	 * and on schema changes 
 	 */
-	if (c->type == Q_TRANS || c->type == Q_SCHEMA || 
-	    (c->cache && c->qc->id > 10)) {
+	if (c->cache &&
+	   ( c->type == Q_TRANS || c->type == Q_SCHEMA || c->qc->id > 10)) {
 		if (c->qc) qc_destroy(c->qc);
 		c->qc = qc_create();
 	}
@@ -679,6 +682,7 @@ sqlstatement(char *cmd, Cntxt stk )
 	backend_destroy( sql );
 	mvc_commit(m, 0, NULL);
 	mvc_destroy(m);
+	VARdel(stk, v);
 	if (err)
 		return GDK_FAIL;
 	else
@@ -720,7 +724,9 @@ mvc_sql(mvc *c, char *cmd )
 	err = sqlexecute(sql, GDKout );
 	backend_destroy( sql );
 	_DELETE(m->scanner.sql);
+	assert (m->qc == NULL);
 	*m = o;
+	VARdel(stk, v);
 	if (err)
 		return GDK_FAIL;
 	else

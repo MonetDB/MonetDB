@@ -2071,14 +2071,17 @@ literal:
 		}
  |  TYPE string 
 		{ sql_subtype *t = sql_bind_subtype($1, 0, 0);
-		  atom *a = atom_general(t, _strdup($2));
+		  atom *a = atom_general(t, $2);
 		  $$ = NULL;
-	          if (a) $$ = _newAtomNode(a); 
+	          if (a) 
+			$$ = _newAtomNode(a); 
 		  if (!$$) {
 			char buf[BUFSIZ]; 
 
 			snprintf(buf, BUFSIZ, "incorrect %s %s", $1, $2);
 			yyerror(buf);
+			if (a) 
+				atom_destroy(a);
 	  	  	_DELETE($1); 
 			YYABORT;
 		  }

@@ -699,7 +699,7 @@ static stmt *set2pivot(list * l)
 
 	join = (stmt*)list_reduce(l, (freduce)&stmt_smallest, (fdup)&stmt_dup);
 	n = list_find(l, (void*)join, data_cmp);
-	stmt_destroy(join);
+	if (join) stmt_destroy(join);
 	if (!n) {
 		list_destroy(l);
 		list_destroy(pivots);
