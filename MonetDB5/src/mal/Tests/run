@@ -2,9 +2,9 @@
 echo "Initialize database"
 rm -rf /usr/mk/Linux/var/MonetDB/demo/*
 
-for f in  `ls tst??? tst1??? tst2??? tst3???`
+for f in  `ls tst???.mal tst1???.mal tst2???.mal tst3???.mal`
 do
 	echo "---->" $f
-	Mserver -c tst.conf $f </dev/null > $f.output 2>$f.valout
-	diff $f.output $f.stable
+	Mserver -c tst.conf $f </dev/null > `basename $f .mal`.output 
+	diff `basename $f .mal`.output `basename $f .mal`.stable
 done

@@ -1,8 +1,0 @@
-zxx  := 0@0;    
-print(zxx);
-o1x  := 1@0;    
-print(o1x);
-o11  := 1@1;    
-print(o11);
-ox1  := 0@1;    
-print(ox1);
