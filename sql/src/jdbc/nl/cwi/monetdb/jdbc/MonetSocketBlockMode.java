@@ -285,6 +285,16 @@ class MonetSocketBlockMode extends MonetSocket {
 					inputBuffer.rewind();
 					readState = inputBuffer.getInt();
 
+					if (readState == 0) {	// user flush
+						if (debug) {
+							log.write(">> zero block (flush)\n");
+							log.flush();
+						}
+						// skip the rest, it makes no sense to process
+						// zero bytes of data
+						continue;
+					}
+					
 					if (debug) {
 						log.write(">> new block: " + readState + " bytes\n");
 						log.flush();

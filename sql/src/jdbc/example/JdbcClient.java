@@ -510,7 +510,7 @@ public class JdbcClient {
 		String query = "", curLine;
 		boolean wasComplete = true, doProcess;
 		if (!hasFile) {
-			out.print(getPrompt(user, stack));
+			out.print(getPrompt(user, stack, true));
 			out.flush();
 		}
 
@@ -693,7 +693,7 @@ public class JdbcClient {
 					wasComplete = qp.isComplete();
 				}
 			}
-			if (!hasFile) out.print(getPrompt(user, stack));
+			if (!hasFile) out.print(getPrompt(user, stack, wasComplete));
 			out.flush();
 		}
 	}
@@ -1105,10 +1105,12 @@ public class JdbcClient {
 	 *
 	 * @param user the username
 	 * @param stack the current SQLStack
+	 * @param compl whether the statement is complete
 	 * @return a prompt which consist of a username plus the top of the stack
 	 */
-	private static String getPrompt(String user, SQLStack stack) {
-		return(user + (stack.empty() ? "->" : "=" + stack.peek()) + " ");
+	private static String getPrompt(String user, SQLStack stack, boolean compl) {
+		return(user + (compl ? "-" : "=") +
+			(stack.empty() ? ">" : "" + stack.peek()) + " ");
 	}
 
 	/**
