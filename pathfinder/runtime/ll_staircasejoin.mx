@@ -79,7 +79,9 @@ const int PF_SOFTWARE_PREFETCH = 128;
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
     chunk_size = 1000;			/* FIXME: estimate size! */
 @:ll_resultallocation@
+@:ll_desc_tmp_res_alloc@
 @:ll_main(descendant)@
+@:ll_set_res_prop@
 @:ll_end@
 
 /* DESCENDANT-OR-SELF STEP */
@@ -89,7 +91,9 @@ const int PF_SOFTWARE_PREFETCH = 128;
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
     chunk_size = 1000;			/* FIXME: estimate size! */
 @:ll_resultallocation@
+@:ll_desc_tmp_res_alloc@
 @:ll_main(descendant)@
+@:ll_set_res_prop@
 @:ll_end@
 
 /* CHILD STEP */
@@ -105,7 +109,7 @@ const int PF_SOFTWARE_PREFETCH = 128;
 
 @= ll_head
 static int
-ll_@1 (BAT **res, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height, oid fst_iter, oid lst_iter, bit self);
+ll_@1 (BAT **res, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height, oid fst_iter, oid lst_iter, bit self, BAT **tmp_res );
 int
 PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workingset)
 {
@@ -114,6 +118,8 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
     char *name = "PFll_@1";
     bit self = FALSE;
     BAT *res = NULL;
+    BAT **tmp_res = NULL;
+    oid num_tmp_res = 0, j;
     BAT *iter_chunk = NULL, *ctx_chunk = NULL;
     BAT *pre_size_bat = NULL, *pre_size_frag = NULL;
     size_t res_size = 0;
@@ -237,6 +243,33 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
         @:ll_return(GDK_FAIL)@
     }
 
+@= ll_desc_tmp_res_alloc
+{
+    /* temporary results per iter */
+    size_t tmp_size = 0;
+    oid fst_iter = *(oid*)BUNtail(iter_bat, BUNfirst(iter_bat));
+    oid lst_iter = *(oid*)BUNtail(iter_bat, BUNlast(iter_bat) - BUNsize(iter_bat));
+    oid max_num_iters = (lst_iter - fst_iter) + 1;
+    num_tmp_res = MIN(chunk_size, max_num_iters);
+    assert(num_tmp_res > 0);
+    tmp_res = (BAT**)GDKmalloc(num_tmp_res * sizeof(BAT*));
+    if (tmp_res == NULL) {
+        GDKerror("%s: could not allocate BAT array of size %d.\n", name, num_tmp_res);
+        @:ll_return(GDK_FAIL)@
+    }
+    memset(tmp_res, 0, num_tmp_res * sizeof(BAT*));
+    tmp_size = MAX(100, res_size/max_num_iters);	/* FIXME: estimate size! */
+    for (j=0; j<num_tmp_res; j++) {
+    	tmp_res[j] = BATnew(TYPE_void, TYPE_oid, tmp_size);
+        if (tmp_res[j] == NULL) 
+        { 
+            GDKerror("%s: could not allocate result BAT[oid,oid] of size " SZFMT ".\n", name, tmp_size);
+            @:ll_return(GDK_FAIL)@
+        }
+	BATseqbase(tmp_res[j], oid_nil);
+    }
+}
+
 @= ll_sort_2
     /* --------- sort on two criteria (i.e., BAT tails): (major, minor) ------- */
     /* 
@@ -349,7 +382,8 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
             BBP_unfix_reclaim(ctx_tmp);
 	}
 
-        if (ll_@1(&res, iter_chunk, ctx_chunk, pre_size_frag, doc_height, fst_iter, lst_iter, self) == GDK_FAIL)
+        assert((num_tmp_res==0) || (((lst_iter - fst_iter) + 1) <= num_tmp_res));
+        if (ll_@1(&res, iter_chunk, ctx_chunk, pre_size_frag, doc_height, fst_iter, lst_iter, self, tmp_res) == GDK_FAIL)
         {
             @:ll_return(GDK_FAIL)@
         }
@@ -357,11 +391,48 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
         BBP_unfix_reclaim(iter_chunk);
         ctx_chunk = iter_chunk = NULL;
 
+        if (tmp_res) {
+            for (j=0; j<num_tmp_res; j++) {
+                if (tmp_res[j] && (BATcount(tmp_res[j])>0)) {
+                    tmp_res[j]->batBuns->free = BUNfirst(tmp_res[j]) - tmp_res[j]->batBuns->base;
+                }
+            }
+        }
+
         fst_BUN  = lst_BUN;
         fst_idx  = lst_idx;
     }
     
 }   
+
+@= ll_set_res_prop
+{
+    bit trivial = (BATcount(res) < 2);
+    oid fst_iter = *(oid*)BUNtail(res, BUNfirst(res));
+    oid lst_iter = *(oid*)BUNtail(res, BUNlast(res) - BUNsize(res));
+    oid one_iter = (lst_iter == fst_iter);
+    res->batDirty = TRUE;
+    res->hdense = trivial; /* might be TRUE in some more cases... */
+    if (trivial) {
+        if (BATcount(res) == 0) {
+            BATseqbase (res, (oid)0); /* does not really matter */
+        } else {
+            BATseqbase (res, *(oid*)BUNhead(res, BUNfirst(res)));
+        }
+    }
+    res->hsorted = GDK_SORTED;
+    BATkey(res,trivial); /* might be TRUE in some more cases... */
+    res->tdense = trivial; /* might be TRUE in some more cases... */
+    if (trivial) {
+        if (BATcount(res) == 0) {
+            BATseqbase (BATmirror(res), (oid)0); /* does not really matter */
+        } else {
+            BATseqbase (BATmirror(res), *(oid*)BUNtail(res, BUNfirst(res)));
+        }
+    }
+    res->tsorted = (one_iter?GDK_SORTED:0); /* might be TRUE in some more cases... */
+    BATkey(BATmirror(res),(trivial||one_iter)); /* might be TRUE in some more cases... */
+}
 
 @= ll_reorder_res
 {
@@ -398,6 +469,12 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
 @= ll_return
     if (res && (@1 == GDK_FAIL))
         BBP_unfix_reclaim(res);
+    if (tmp_res) {
+        for (j=0; j<num_tmp_res; j++) {
+            if (tmp_res[j]) BBP_unfix_reclaim(tmp_res[j]);
+        }
+        GDKfree(tmp_res);
+    }
     if (iter_chunk && (iter_chunk != iter_bat))
         BBP_unfix_reclaim(iter_chunk);
     if (ctx_chunk && (ctx_chunk != ctx_bat))
@@ -412,12 +489,31 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
 /* ============================== Tools =================================== */
 
 #define PFll_check_BAT_capacity(b,grow) \
-        size_t _bunsize = BUNsize((b));\
-        if ((b)->batBuns->free + ((grow) * _bunsize) > (b)->batBuns->size) {\
-            if (BATextend((b), MAX((grow),BATgrows((b)))) == NULL) {\
+{\
+        size_t _oldcap = BATbuncount(b);\
+        size_t _reqcap = BATcount(b) + grow;\
+        size_t _bunsize = BUNsize(b);\
+        if (_oldcap < _reqcap) {\
+            size_t _newcap = MAX(_reqcap, BATgrows(b));\
+            if (BATextend((b), _newcap) == NULL) {\
+                GDKerror("%s: BATextend of BAT '%s' (#%d) failed "\
+                	 "for " SZFMT " buns (" SZFMT " bytes).\n",\
+                	 __func__, (b)->batId, (b)->batCacheid,\
+                	 _newcap, _newcap * _bunsize);\
                 goto bunins_failed;\
             }\
-        }
+            _newcap = BATbuncount(b);\
+            if (_newcap < _reqcap) {\
+                GDKerror("%s: BATextend of BAT '%s' (#%d) failed: "\
+                	 "required " SZFMT " buns (" SZFMT " bytes), "\
+                	 "got only " SZFMT " buns (" SZFMT " bytes).\n",\
+                	 __func__, (b)->batId, (b)->batCacheid,\
+                	 _reqcap, _reqcap * _bunsize,\
+                	 _newcap, _newcap * _bunsize);\
+                goto bunins_failed;\
+            }\
+        }\
+}
 
 /* ============================== Step implementations ==================== */
 
@@ -433,7 +529,7 @@ struct stack_item_C {
 };
 
 static int
-ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height, oid fst_iter, oid lst_iter, bit self)
+ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height, oid fst_iter, oid lst_iter, bit self, BAT **tmp_res )
 {
     BAT *res = *result;
     si_C *stack = 0;
@@ -445,6 +541,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height,
     (void)fst_iter;
     (void)lst_iter;
     (void)self;
+    (void)tmp_res;
 
     /* stack for context set nodes will never grow over height of doc. tree */
     stack = (si_C*)GDKmalloc(sizeof(si_C) * (height + 1));
@@ -609,10 +706,9 @@ struct stack_item_D {
 #define onstack_get(b)	(onstack[(b)>>OST_shift] &   (((OST)1)<<((b)&OST_mask)))
 
 static int
-ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height, oid fst_iter, oid lst_iter, bit self )
+ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height, oid fst_iter, oid lst_iter, bit self, BAT **tmp_res )
 {
     BAT *res = *result;
-    BAT **tmp_res = NULL;
     si_D *stack = 0;
     OST *onstack = 0;
     int stack_size = 0, onstack_size = 0;
@@ -647,23 +743,6 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     }
     memset(onstack, 0, onstack_size);
 
-    /* temporary results per iter */
-    tmp_res = (BAT**)GDKmalloc(num_iters * sizeof(BAT*));
-    if (tmp_res == NULL) {
-        GDKerror("ll_descendant: could not allocate BAT array of size %d.\n", num_iters);
-        @:ll_fail_descendant@
-    }
-    memset(tmp_res, 0, num_iters * sizeof(BAT*));
-    for (i=0; i<num_iters; i++) {
-    	size_t tmp_size = 100; 					/* FIXME: estimate size! */
-    	tmp_res[i] = BATnew(TYPE_oid, TYPE_oid, tmp_size);
-        if (tmp_res[i] == NULL) 
-        { 
-            GDKerror("ll_descendant: could not allocate result BAT[oid,oid] of size " SZFMT ".\n", tmp_size);
-            @:ll_fail_descendant@
-        }
-    }
-
     /* definition for "array-like" access on size values of given nodes */
     /* ! FIXME: works only if BUNsize(pre_size) == sizeof(int) !!!!!!!! */
     size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - pre_size->hseqbase;
@@ -692,7 +771,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
         onstack_set(iter_idx);
         pre = ctx;
         if (self) {
-            oid iter = iter_idx + fst_iter;
+            oid iter = oid_nil;
             bunfastins(tmp_res[iter_idx], &iter, &pre);
         }
         pre++;
@@ -773,7 +852,6 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     dst = BUNlast(tmp_res[idx]); 
     for ( p = pre ; p <= @1 ; p++ ) {
         /* if ( ANY TEST ) {  */
-            *(oid*)BUNhloc(tmp_res[idx], dst) = iter;
             *(oid*)BUNtloc(tmp_res[idx], dst) = p;
             dst += bunsize;
         /* } */
@@ -796,7 +874,6 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
         /* ... and copy the (new) results from the first iter */
         dst = BUNlast(tmp_res[idx]);
         for ( cur_res = fst_res ; cur_res < lst_res ; cur_res += bunsize0 ) {
-            *(oid*)BUNhloc(tmp_res[idx], dst) = iter;
             *(oid*)BUNtloc(tmp_res[idx], dst) = *(oid*)BUNtloc(tmp_res[idx0], cur_res);
             dst += bunsize;
         }
@@ -816,6 +893,19 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     PFll_check_BAT_capacity(res, grow);
     for ( i=0; i<num_iters; i++ ) {
         if (BATcount(tmp_res[i]) > 0) {
+            oid iter = i + fst_iter;
+            BUN fst_res = BUNfirst(tmp_res[i]);
+            BUN lst_res = BUNlast(tmp_res[i]);
+            size_t bunsize0 = BUNsize(tmp_res[i]);
+            size_t bunsize1 = BUNsize(res);
+            BUN dst = BUNlast(res), cur_res;
+            for ( cur_res = fst_res ; cur_res < lst_res ; cur_res += bunsize0 ) {
+                *(oid*)BUNhloc(res, dst) = iter;
+                *(oid*)BUNtloc(res, dst) = *(oid*)BUNtloc(tmp_res[i], cur_res);
+                dst += bunsize1;
+            }
+            res->batBuns->free = dst - res->batBuns->base;
+#if 0
             bit trivial = (BATcount(tmp_res[i]) < 2);
             tmp_res[i]->batDirty = TRUE;
             tmp_res[i]->hdense = FALSE;
@@ -823,19 +913,18 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
             BATkey(tmp_res[i],trivial);
             tmp_res[i]->tdense = FALSE;
             tmp_res[i]->tsorted = GDK_SORTED;
-            BATkey(BATmirror(tmp_res[i]),trivial); /* might be TRUE in some more cases... */
+            BATkey(BATmirror(tmp_res[i]),TRUE);
             res = BATins(res, tmp_res[i]);
             if (res == NULL) {
                 GDKerror("ll_descendant: BATins failed.\n");
                 @:ll_fail_descendant@
             }
+#endif
         }
-        BBP_unfix_reclaim(tmp_res[i]);
         if (onstack_get(i)) {
             GDKwarning("ll_descendant: iter %d still on stack !??\n", i + fst_iter);
         }
     }
-    GDKfree(tmp_res);
     GDKfree(onstack);
     
     *result = res;    
@@ -848,12 +937,6 @@ bunins_failed:
 @= ll_fail_descendant
     if (stack) GDKfree(stack);
     if (onstack) GDKfree(onstack);
-    if (tmp_res) {
-        for (i=0; i<num_iters; i++) {
-            if (tmp_res[i]) BBP_unfix_reclaim(tmp_res[i]);
-        }
-        GDKfree(tmp_res);
-    }
     *result = res;    
     return GDK_FAIL;
 @
