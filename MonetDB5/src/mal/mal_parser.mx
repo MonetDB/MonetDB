@@ -1000,7 +1000,7 @@ void parseAssign(Client cntxt, int cntrl)
 			type= typeId(cntxt);
 			if( type>0) setVarType(curBlk,varid,type);
 			/* check for any properties */
-			@:propList(curInstr->argv[varid])@
+			@:propList(varid)@
 			setVarInitialized(curBlk,varid);
 			curInstr= pushArgument(curBlk,curInstr, varid);
 			curInstr->retc++;
@@ -1041,7 +1041,7 @@ void parseAssign(Client cntxt, int cntrl)
 				type= typeId(cntxt);
 				if( type>0) setVarType(curBlk,varid,type);
 				/* check for any properties */
-				@:propList(curInstr->argv[0])@
+				@:propList(varid)@
 				setVarInitialized(curBlk,varid);
 				consumed =1;
 				v= cntxt->nxt;
@@ -1078,7 +1078,7 @@ void parseAssign(Client cntxt, int cntrl)
 			@:GETvariable@ 
 			curInstr->argv[0]= varid;
 			/* check for any properties */
-			@:propList(curInstr->argv[0])@
+			@:propList(varid)@
 		}
 	}
 
@@ -1137,7 +1137,7 @@ Get arguments for a call, assume a single result.
 				i= i>=0?i: TYPE_any;
 				idx = newVariable(curBlk, v, i);
 				setVarInitialized(curBlk,idx);
-				@:propList(curInstr->argv[idx])@
+				@:propList(idx)@
 			} else {
 				advance(cntxt,i);
 				i = typeId(cntxt);
@@ -1145,7 +1145,7 @@ Get arguments for a call, assume a single result.
 					parseError(cntxt,"incompatible type\n");
 					return @1;
 				}
-				@:propList(curInstr->argv[idx])@
+				@:propList(idx)@
 			}
 			curInstr= pushArgument(curBlk,curInstr,idx);
 		} else 
@@ -1153,7 +1153,7 @@ Get arguments for a call, assume a single result.
 			i = typeId(cntxt);
 			i = i >=0? i :TYPE_any;
 			idx= newTypeVariable(curBlk, i );
-			@:propList(curInstr->argv[idx])@
+			@:propList(idx)@
 			curInstr= pushArgument(curBlk,curInstr,idx);
 		} else { 
 			idx= 0;

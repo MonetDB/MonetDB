@@ -17,6 +17,6 @@ end dummy;	# 2
 #t:= dummy(a{sorted},b{sequence});
 #
 function Admin.main():int;	# 0  (main:int)
-    t := Admin.dummy(a,b);	# 1  (t:int)<-(a:int)(b:int)
+    t := Admin.dummy(a{sorted},b{sequence});	# 1  (t:int)<-(a:int)(b:int)
 end main;	# 2  
 >
