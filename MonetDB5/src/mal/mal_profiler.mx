@@ -570,15 +570,6 @@ inspect the properties of BATs and their propagation.
         if(b->theapdirty)log( "theapdirty=\"%s\" ", b->theapdirty?"dirty":"clean");
         infoHeapProfile(&b->theap, "theap");
 
-        if(b->hacctype)log( "hacctype=\"%s\" ", ACCname(b->hacctype));
-        if(b->haccdirty)log( "haccdirty=\"%s\" ", b->haccdirty?"dirty":"clean");
-        if(b->haccCopiedtodisk)log( "haccCopiedtodisk\"%d\" ", b->haccCopiedtodisk);
-        infoHeapProfile(&b->haccelerator, "haccelerator");
-
-        if(b->tacctype)log( "tacctype=\"%s\" ", ACCname(b->tacctype));
-        if(b->taccdirty)log( "taccdirty=\"%s\" ", b->taccdirty?"dirty":"clean");
-        if(b->taccCopiedtodisk)log( "taccCopiedtodisk=\"%d\" ", b->taccCopiedtodisk);
-        infoHeapProfile(&b->taccelerator, "taccelerator");
         if (b->hhash_heap) { HASHinfoProfile(&b->hhash, "hhash"); }
         if (b->thash_heap) { HASHinfoProfile(&b->thash, "thash"); }
         BBPunfix(b->batCacheid);

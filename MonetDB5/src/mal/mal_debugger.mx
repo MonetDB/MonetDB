@@ -921,8 +921,6 @@ str memProfileVector(int cells){
 
         @:heapinfo(hheap)@
         @:heapinfo(theap)@
-        @:heapinfo(haccelerator)@
-        @:heapinfo(taccelerator)@
         @:hashinfo(hhash)@
         @:hashinfo(thash)@
         BBPunfix(b->batCacheid);
