@@ -365,6 +365,18 @@ int HEAPdelete(Heap* h, str o, str ext) {
 	if (h->size <= 0) {
 		return 0;
 	}
+	if (h->base) {
+		if (h->storage&STORE_MMAP) {
+                        /* truncate file, so OS does not try to flush dirty data in mmap to file that is deleted anyway */
+                        int fd = GDKfdlocate(h->filename, "rb+", NULL);
+                        IODEBUG THRprintf(GDKerr, "HEAPdelete(%s) GDKfdlocate(\"rb+\") = %d\n", h->filename, fd);
+                        ret = ftruncate(fd, 0LL);
+                        IODEBUG THRprintf(GDKerr, "HEAPdelete(%s) ftruncate(%d,0LL) = %d\n", h->filename, fd, ret);
+                        ret = close(fd);
+                        IODEBUG THRprintf(GDKerr, "HEAPdelete(%s) close(%d) = %d\n", h->filename, fd, ret);
+		} 
+		HEAPfree(h);
+	}
 	ret = GDKunlink(BATDIR, o, ext);
 
 	if (h->storage&STORE_MMAP) {

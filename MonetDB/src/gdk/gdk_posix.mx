@@ -610,16 +610,27 @@ void* MT_mmap(char *path, int mode, off_t off, size_t len, void *fixed){
 
 int MT_munmap(void* p, size_t len) {
 	int ret = munmap(p, len);
+#ifdef MMAP_DEBUG
+	stream_printf(GDKerr, "munmap(%lld,%lld,%d) = %d\n", (long long) p, (long long) len, ret); 
+#endif
 	MT_mmap_del(p, len);
 	return ret;
 } 
 
 int MT_msync(void* p, size_t len, int mode) {
-	return msync(p, len, (mode&MMAP_SYNC)?MS_SYNC:MS_ASYNC);
+	int ret = msync(p, len, (mode&MMAP_SYNC)?MS_SYNC:((mode&MMAP_ASYNC)?MS_ASYNC:MS_INVALIDATE));
+#ifdef MMAP_DEBUG
+	stream_printf(GDKerr, "msync(%lld,%lld,%s) = %d\n", (long long) p, (long long) len, 
+		(mode&MMAP_SYNC)?"MS_SYNC":((mode&MMAP_ASYNC)?"MS_ASYNC":"MS_INVALIDATE"), ret);
+#endif
+	return ret;
 } 
 
 int MT_madvise(void* p, size_t len, int advise) {
 	int ret = posix_madvise(p, len, advise); 
+#ifdef MMAP_DEBUG
+	stream_printf(GDKerr, "posix_madvise(%lld,%lld,%d) = %d\n", (long long) p, (long long) len, advise, ret); 
+#endif
 	if (MT_fadvise(p, len, advise)) ret = -1;
 	return ret;
 }

@@ -688,11 +688,14 @@ enforced now.
 int BATdelete(BAT* b) {
         bat bid = ABS(b->batCacheid);
         str o = BBP_physical(bid);
+	BAT *loaded = BBP_cache(bid);
 
-        if (BBP_cache(bid)) {
-                BATfree(b);
-                b = (BAT*) BBPgetdesc(bid);
-        }
+	if (loaded) {
+		b = loaded;
+        	ACCunloadall(b);
+        	GDKfree(BATmirror(b));
+        	BBP_cache(-b->batCacheid) = NULL;
+	}
 	if (b->batCopiedtodisk) {
 	    	IODEBUG THRprintf(GDKerr, "BATdelete %s\n", o); 
 		if (GDKunlink(BATDIR, o, "desc")) {

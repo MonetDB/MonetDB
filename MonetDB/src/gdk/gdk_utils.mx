@@ -1198,7 +1198,7 @@ void GDKvmtrim(void *limit) {
 	int wait = 1;
 	do {
                 stream *fp = NULL;
-                if (wait) sleep(5);
+                sleep(wait?5:1);
                 MEMDEBUG {
 			fp = GDKerr;
 			THRprintf(fp, "GDKvmtrim(%lld)\n", (long long) *(size_t*) limit);
