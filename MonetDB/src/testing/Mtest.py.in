@@ -1630,13 +1630,13 @@ def SetExecEnv(exe,verbose) :
 THISFILE = os.path.basename(sys.argv[0])
 THISPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
 if THISFILE == "Mprofile.py":
-    dftTSTPREF = "Profiles"
+    dftTSTPREF = "mProfiles"
     TSTDBG = str(0)
     dftIGNORE = '^[#~]'
 else:
     dftIGNORE = '^#'
     TSTDBG = str(2+8)
-    dftTSTPREF = "Tests"
+    dftTSTPREF = "mTests"
 TSTSUFF = "Tests"
 
 if os.environ.has_key('HOST'):

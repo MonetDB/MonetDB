@@ -242,7 +242,7 @@ have changed since my proposal.
 	TSTDIR		current test directory without $TSTSRCBASE/ & /Tests
 	TSTSRCDIR	$TSTSRCBASE/$TSTDIR/Tests
 	TSTBLDDIR	$TSTBLDBASE/$TSTDIR/Tests
-	TSTTRGDIR	$TSTTRGBASE/Tests/$TSTDIR
+	TSTTRGDIR	$TSTTRGBASE/mTests/$TSTDIR
 	MONET_CONF	location of monet.conf (default: $MONET_PREFIX/etc/monet.conf)
 	GDK_DBFARM	as read from $MONET_CONF
 	GDK_DEBUG	debug bitmask for Mserver (default: 10)
@@ -274,7 +274,7 @@ have changed since my proposal.
   For each test directory, a common entry point to the test results is
   created as $TSTTRGDIR/.index.html.  
   For the whole test run, a global entry point to the test results is
-  created as $TSTTRGBASE/Tests/index.html.
+  created as $TSTTRGBASE/mTests/index.html.
 
   
 - Mfilter.py is used to filter out variable date form the test output to
@@ -319,7 +319,7 @@ have changed since my proposal.
 				# ... and check their results
 				check 	$TSTTRGDIR/<names...>.test.{out,err}
 					$TSTTRGDIR/<names...>.{out,err}.diff.html
-					(cf. $TSTTRGBASE/Tests/index.html)
+					(cf. $TSTTRGBASE/mTests/index.html)
 			endloop
 			# approve new/modified correct output of your tests
 			run  Mapprove.py <names...>
@@ -328,7 +328,7 @@ have changed since my proposal.
 		cd $TSTSRCBASE
 		run  Mtest.py -r
 		# ... and check their results
-		check $TSTTRGBASE/Tests/index.html
+		check $TSTTRGBASE/mTests/index.html
 	endloop
 	# approve "intended" impact of your changes on other tests' output
 	run  Mapprove.py <names...>
