@@ -7,15 +7,18 @@
 #include "catalog.h"
 
 typedef enum statement_type {
+	st_dummy,
+	st_create_schema,
+	st_drop_schema,
 	st_create_table,
 	st_drop_table,
 	st_create_column,
 	st_not_null,
 	st_default,
-	st_table,
 	st_column,
 	st_reverse,
 	st_atom,
+	st_insert_atom,		/* special insert_atom for optimization */
 	st_cast,
 	st_join,
 	st_semijoin,
@@ -43,6 +46,7 @@ typedef enum statement_type {
 	st_pearl, 
 	/* used internally only */
 	st_list, 
+	st_insert_list, 
 	st_output,
 } st_type;
 
@@ -69,13 +73,15 @@ typedef struct statement {
 	int refcnt;
 } statement;
 
-extern statement *statement_create_table( char *name, int temp, char *sql );
+extern statement *statement_create_schema( schema *s );
+extern statement *statement_drop_schema( schema *s );
+
+extern statement *statement_create_table( table *t );
 extern statement *statement_drop_table( table *t, int drop_action );
-extern statement *statement_create_column( column *c, statement *table ); 
+extern statement *statement_create_column( column *c ); 
 extern statement *statement_not_null( statement *col );
 extern statement *statement_default( statement *col, statement *def );
 
-extern statement *statement_table( table *t );
 extern statement *statement_column( column *c );
 extern statement *statement_reverse( statement *s );
 extern statement *statement_atom( atom *op1 );
@@ -91,7 +97,10 @@ extern statement *statement_output( statement *l );
 extern statement *statement_diamond( statement *s1 );
 extern statement *statement_pearl( list *s1 );
 
+extern statement *statement_insert_atom( atom *op1 );
+extern statement *statement_insert_list( list *l );
 extern statement *statement_insert( column *c, statement *id, statement *v );
+
 extern statement *statement_insert_column( statement *c, statement *a );
 extern statement *statement_update( column *col, statement *values );
 extern statement *statement_delete( column *col, statement *where );
