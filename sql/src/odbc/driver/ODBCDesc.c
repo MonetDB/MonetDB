@@ -166,7 +166,7 @@ setODBCDescRecCount(ODBCDesc *desc, int count)
 	if (count > desc->sql_desc_count) {
 		int i;
 		memset(desc->descRec + desc->sql_desc_count + 1, 0,
-		       count - desc->sql_desc_count);
+		       (count - desc->sql_desc_count) * sizeof(*desc->descRec));
 		if (isAD(desc)) {
 			for (i = desc->sql_desc_count + 1; i <= count; i++) {
 				desc->descRec[i].sql_desc_concise_type = SQL_C_DEFAULT;
@@ -204,7 +204,7 @@ addODBCDescRec(ODBCDesc *desc, SQLSMALLINT recno)
 	assert(desc);
 	assert(recno > 0);
 
-	if (recno < desc->sql_desc_count)
+	if (desc->sql_desc_count < recno)
 		setODBCDescRecCount(desc, recno);
 	else {
 		assert(desc->descRec != NULL);
