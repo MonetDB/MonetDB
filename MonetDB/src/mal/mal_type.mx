@@ -265,7 +265,7 @@ int getTypeIndex(str nme){
 }
 int getGDKtype(int type){
 	if( isaBatType(type)) return TYPE_bat;
-	if( type == malAnyType) return TYPE_void;
+	if( type == malAnyType) return TYPE_int;
 	return ATOMtype(type);
 }
 str newTmpName(int i){

@@ -212,7 +212,9 @@ and the symbol table should also not be affected.
 Aside from removing instruction, we should also condense the
 variable stack, i.e. removing at least the temporary variables,
 but maybe everything beyond a previous defined pont.
-[also clear the stack! ]
+
+Beware that we have to cleanup the global stack as well. This to avoid
+subsequent calls to find garbage information.
 @c
 void    resetMalBlk(MalBlkPtr mb, MalStkPtr glb){
         InstrPtr p;
@@ -231,7 +233,12 @@ void    resetMalBlk(MalBlkPtr mb, MalStkPtr glb){
 		} else {
 			if(i!=j){
 				copyVar(mb,j,i);
-				if(glb) glb->stk[j]= glb->stk[i];
+				if(glb){
+					glb->stk[j]= glb->stk[i];
+					glb->stk[i].vtype= TYPE_int;
+					glb->stk[i].val.ival= 0;
+					glb->stk[i].len= 0;
+				}
 			}
 			i++; j++;
 		}

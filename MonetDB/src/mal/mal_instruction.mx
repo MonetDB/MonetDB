@@ -107,15 +107,14 @@ typedef struct{
 typedef struct {
 	short	token;		/* instruction type */
 	short	barrier;	/* Begin-end of block indicator*/
-	short	raise;		/* create event */
-	int	typechk;	/* type check status */
+	short	typechk;	/* type check status */
 @-
 For performance analysis we keep track of the number of calls
 and the total time spent while executing the instruction.
 (See mal_profiler.mx)
 @h
 #ifdef MALprofiler
-	int	trace;		/* facilitate event tracing */
+	short	trace;		/* facilitate filter-based profiling */
 	struct  tms timer;	/* clock information */
 	long	clk;		/* microseconds clock */
 	long	counter;
@@ -123,6 +122,7 @@ and the total time spent while executing the instruction.
 #endif
 	GDKfcn	fcn;		/* resolved function address */
 	struct MALBLK *blk;	/* resolved MAL function address */
+	int	jump;		/* controlflow program counter */
 @-
 The MAL instruction representation. The strings should be garbage collected
 upon destruction of the definition.
@@ -192,7 +192,7 @@ mal_export int		newVariable(MalBlkPtr mb, str name,malType type);
 mal_export void		copyVariable(MalBlkPtr dst,MalBlkPtr src, VarPtr v);
 mal_export int		newTmpVariable(MalBlkPtr mb, malType type);
 mal_export void		freeVariable(MalBlkPtr mb, int varid);
-mal_export int		newConstant(MalBlkPtr mb, malType type, str val);
+mal_export int		newConstant(MalBlkPtr mb, malType type, str val, int f);
 mal_export int		isVARG(MalBlkPtr mb, InstrPtr p, int i);
 mal_export int		isaSignature(InstrPtr p);
 
@@ -375,7 +375,6 @@ InstrPtr newInstruction(int kind){
 	p = GDKmalloc(space);
 	p->token = kind;
 	p->barrier= 0;
-	p->raise= 0;
 	p->typechk = TYPE_UNKNOWN;
 	p->modname= NULL;
 	p->fcnname= NULL;
@@ -394,6 +393,7 @@ InstrPtr newInstruction(int kind){
 	p->clk = 0;
 	p->ticks = 0;
 	p->trace= 0;
+	p->jump=0;
 	p->counter= 0;
 #endif
 	return p;
@@ -614,7 +614,7 @@ MAL interpretation.
 @c
 #define MAL_VAR_WINDOW	2*MAXARG
 
-int newConstant(MalBlkPtr mb, malType type, str val){
+int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
 	int i,k,idx,parsetype=type;
 	str s;
 	ValPtr vr;
@@ -646,11 +646,10 @@ coerced type even in the case that a specific type specifier
 has been given at the language level. A Warning is issued
 to make the user aware of this situation.
 @c
-	tonil= strcmp(val,"nil")==0;
+	tonil= niltst && strcmp(val,"nil")==0;
 	 /*switch( BATatoms[type].storage){*/
 retryConstant:
 	switch( parsetype){ 
-	case TYPE_void: VALset(vr,TYPE_void,ATOMnilptr(TYPE_void));break;
 	case TYPE_bit: { int x;
 			 x= val[0]=='t' || val[0]=='T';
 			 vr->vtype= TYPE_bit;
@@ -702,6 +701,7 @@ retryConstant:
 				vr->val.ival= l;
 			}
 			break;}
+	case TYPE_void: 
 	case TYPE_oid: {long l= strtol(val,NULL,10);
 			if( tonil) vr->val.oval = oid_nil;
 			else {
@@ -733,7 +733,7 @@ retryConstant:
 				(*BATatoms[type].atomFromStr)(val, &vr->len, p);
 				break;
 			}
-			if( tonil) vr->val.sval = GDKstrdup(str_nil);
+			if( tonil) vr->val.sval = str_nil;
 			else vr->val.sval= (str) GDKstrdup(val);
 			vr->len= strlen((str) val);
 			break;
@@ -932,6 +932,8 @@ str hiddenInstructionArgs(MalBlkPtr mb,InstrPtr p,str s){
 		GDKfree(tpe);
 	}
 	advance(s);
+	if( p->jump) sprintf(s," jump %d",p->jump);
+	advance(s);
 	return s;
 }
 @-
@@ -941,12 +943,10 @@ beginning of each line.
 
 @= performanceData
 #ifdef MALprofiler
-	if( p->counter && p->trace){
+	if( p->counter ){
 		double avg= (p->ticks+0.0)/p->counter;
 		sprintf(t,"[%7d, %5.2f]\t",p->counter,avg);
-	} else
-	if( p->trace)
-		sprintf(t,"[%7c,%7c]\t",'?','?');
+	} 
 	advance(t);
 #endif
 @-
@@ -1020,9 +1020,6 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 	if( p->barrier){
 		if( p->barrier== BARRIERsymbol)
 			sprintf(t,"barrier"); 
-	} else
-	if( p->raise){
-		sprintf(t,"raise");
 	}
 	advance(t);
 	switch( p->token){

@@ -40,6 +40,7 @@ html
 #include "mal_scope.h"
 
 /* #define DEBUG_MAL_FCN */
+/* #define DEBUG_CLONE*/
 
 mal_export Symbol	newFunction(str nme);
 mal_export void		clearFcn(MalBlkPtr m);
@@ -107,6 +108,11 @@ block.
 Finally, the barrier label may not be used in any assigment other
 then the barrier statement itself. It may be read, though.
 
+To speed-up interpretation of the control statements, we also
+include the program-counter in instruction record. This implies
+that any subsequent change to a program, i.e. squeezers,
+should be followed by a call to this procedure.
+
 @c
 int getPC(MalBlkPtr mb, InstrPtr p)
 {	int i;
@@ -115,7 +121,7 @@ int getPC(MalBlkPtr mb, InstrPtr p)
 	return -1;
 }
 int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
-{	int i, v, endBlk= -1; 
+{	int i,j, v, endBlk= -1; 
 
 	v = pp->argv[0];
 	for(i= begBlk+1; i<mb->stop; i++){
@@ -130,7 +136,21 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 			return i;
 		}  else if(p->barrier) printf("unexpected barrier %s\n", i);
 		if( p->token == ENDsymbol){
-			if( p->argv[0] == v) return i;
+			if( p->argv[0] == v) {
+				pp->jump = i+1;
+				/* retrofit LEAVE/REDO instructions */
+				for(j=begBlk+1; j<i; j++){
+					InstrPtr p1= getInstrPtr(mb,j);
+					if( p1->token == REDOsymbol && 
+						p1->argv[0]==v ) 
+						p1->jump= begBlk;
+
+					if(p1->token== LEAVEsymbol &&
+					   p1->argv[0]==v)
+						p1->jump= i+1;
+				}
+				return i;
+			}
 			mb->errors++;
 			GDKerror("end-label '%s' doesnot match '%s' in %s[%d]\n",
 				getVarName(mb,p->argv[0]),
@@ -139,8 +159,11 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 			return i;
 		} 
 		if( p->argv[0]== v && p != pp){
-			if( p->token== REDOsymbol || p->token== LEAVEsymbol)
+			if( p->token== REDOsymbol ){
+				p->jump= begBlk;
 				continue;
+			}
+			if( p->token== LEAVEsymbol) continue;
 			if( pp->token == CATCHsymbol) continue;
 			GDKerror("label '%s' is readonly in %s[%d]\n",
 				getVarName(mb,v), getFcnName(mb),getPC(mb,p));
@@ -248,8 +271,7 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, malType v, malType t){
 	printf("replace type variable %d by type %d\n",v,t);
 #endif
 	for(i=0;i<p->argc; i++)
-	if( isPolymorphicArgument(mb,p,i)) {
-		x = getArgType(mb,p,i);
+	if( isPolymorphic(x= getArgType(mb,p,i))) {
 #ifdef DEBUG_MAL_FCN
 		printf(" %d x= %d\n",i,x);
 #endif 
@@ -278,22 +300,26 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, malType v, malType t){
 		} 
 	}
 }
-
+@-
+Upon cloning a function we should remove all the polymorphic flags.
+Otherwise we may end up with a recursive clone.
+@c
 Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 	Symbol new;
-	int i;
+	int i,v;
 	InstrPtr pp;
 
-	/* printf("clone the function %s to scope %s\n",
-			proc->name,scope->name);*/
+#ifdef DEBUG_CLONE
+	printf("clone the function %s to scope %s\n",
+			proc->name,scope->name);
+#endif
 	new= newFunction(GDKstrdup(proc->name));
 	new->def = copyMalBlk(proc->def);
 	/* now change the definition of the original proc */
 	pp = getSignature(new);
 	for(i=0;i<pp->argc;i++)
-	if( isPolymorphicArgument(new->def,pp,i) ){
+	if( isPolymorphic(v= getArgType(new->def,pp,i)) ){
 		int t = getArgType(mb,p,i);
-		int v = getArgType(new->def,pp,i);
 
 		if( isaBatType(t) ){
 			int head,tail;
@@ -304,11 +330,17 @@ Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 		} else
 			replaceTypeVar(new->def, pp, getTailIndex(v), t);
 	} /* else printf("%d is %d\n",i,getArgType(mb,pp,i));*/
-	/* check for errors after fixation , TODO*/
 	/* include the function at the proper place in the scope */
-
 	insertSymbol(scope,new);
-#ifdef DEBUG_MAL_FCN
+	/* clear polymorphic */
+	for(i=0;i<new->def->stop;i++) {
+                pp= getInstrPtr(new->def,i);
+		pp->polymorphic= 0;
+	}
+
+	/* check for errors after fixation , TODO*/
+	chkProgram(scope,new->def);
+#ifdef DEBUG_CLONE
 	printf("newly cloned function added to %s %d \n",scope->name,i);
 	printFunction(stdout,new->def);
 #endif

@@ -367,7 +367,7 @@ int typeQualifier(Client cntxt)
 	str hd = 0, tl =0;
 	int i= malAnyType, ht,tt;
 
-	if( *cntxt->nxt!=':') return 0;
+	if( *cntxt->nxt!=':') return -1;
 
 	cntxt->nxt++;
 	skipBlanc(cntxt);
@@ -414,7 +414,7 @@ int typeQualifier(Client cntxt)
 		} 
 		parseError(cntxt,"<type identifier> expected\n");
 	}
-	return 0;
+	return -1;
 }
 @-
 Character constants may be escaped.
@@ -727,7 +727,7 @@ a column of a BAT.
 		type = malAnyType;
 		if( keyphrase2(cntxt,"::")){
 			if( !isdigit(currChar(cntxt)) ){
-				parseError(cntxt,"[0-9] expected\n");
+				parseError(cntxt,"[1-9] expected\n");
 			} else {
 				int k= nextChar(cntxt) - '0';
 				setAnyTailIndex(type,k);
@@ -995,19 +995,19 @@ for bat[T1,T2] this is a little tricky to parse.
 	if( i= cstLength(cntxt,&lt)){
 		v= cstCopy(cntxt,i);
 		i= typeQualifier(cntxt);
-		if(i) lt = i;
-		idx= newConstant(curBlk,lt,v);
+		if(i>=0) lt = i;
+		idx= newConstant(curBlk,lt,v,TRUE);
 	} else
 	if( (v= charCst(cntxt)) ){
 		i= typeQualifier(cntxt);
-		if(i) lt = i; else lt= TYPE_chr;
-		idx= newConstant(curBlk,lt,v);
+		if(i>=0) lt = i; else lt= TYPE_chr;
+		idx= newConstant(curBlk,lt,v,TRUE);
 	} else
 	if( i = stringLength(cntxt) ){
 		str x= strCopy(cntxt,i);
 		i= typeQualifier(cntxt);
-		if(i) lt = i; else lt= TYPE_str;
-		idx= newConstant(curBlk,lt,x);
+		if(i>=0) lt = i; else lt= TYPE_str;
+		idx= newConstant(curBlk,lt,x,FALSE);
 	} else
 	if( i= idLength(cntxt)){
 		/* parse bat[type,type] */
@@ -1033,7 +1033,7 @@ for bat[T1,T2] this is a little tricky to parse.
 		if( (idx=findVariableLength(curBlk,cntxt->nxt,i)) == -1){
 			v= idCopy(cntxt,i);
 			i= typeQualifier(cntxt);
-			i= i?i: malAnyType;
+			i= i>=0?i: malAnyType;
 			idx = newVariable(curBlk, v, i);
 		} else advance(cntxt,i);
 	} else { 
@@ -1115,11 +1115,6 @@ Every target variable may be typed immediately.
 		if( z==0)
 		curInstr->argv[z]= newVariable(curBlk,arg,type);
 	} else {
-		if( curInstr->raise){
-			parseError(cntxt,"':=' expected\n");
-			pushInstruction(curBlk,curInstr);
-			return;
-		}
 		if( curInstr->barrier) {
 			curInstr->argv[z]= newVariable(curBlk,arg,malAnyType);
 			curInstr->token= kind;
@@ -1142,23 +1137,23 @@ This code is used in both positions of the expression
 	if( i= cstLength(cntxt,&lt)){
 		v= cstCopy(cntxt,i);
 		i= typeQualifier(cntxt);
-		if(i) lt = i;
-		i= newConstant(curBlk,lt,v);
+		if(i>=0) lt = i;
+		i= newConstant(curBlk,lt,v,TRUE);
 		pushArgument(curBlk,curInstr,i);
 		goto @1;
 	} 
 	if( (v= charCst(cntxt)) ){
 		i= typeQualifier(cntxt);
-		if(i) lt = i; else lt= TYPE_chr;
-		i= newConstant(curBlk,lt,v);
+		if(i>=0) lt = i; else lt= TYPE_chr;
+		i= newConstant(curBlk,lt,v,TRUE);
 		pushArgument(curBlk,curInstr,i);
 		goto @1;
 	} 
 	if( i = stringLength(cntxt) ){
 		v= strCopy(cntxt,i);
 		lt= typeQualifier(cntxt);
-		if(lt==0)lt= TYPE_str;
-		i= newConstant(curBlk,lt,v);
+		if(lt<0)lt= TYPE_str;
+		i= newConstant(curBlk,lt,v,FALSE);
 		pushArgument(curBlk,curInstr,i);
 		goto @1;
 	}

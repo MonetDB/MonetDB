@@ -45,11 +45,12 @@ html
 #include "mal_profiler.h"
 
 /*#define DEBUG_MAL_INTERPRETER */
+/*#define STACKTRACE*/
 mal_export void showErrors(Client cntxt);
 mal_export str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env);
 mal_export str setDynamicType(MalBlkPtr mb, MalStkPtr stk, VarPtr v, int tpe);
 mal_export void garbageElement(ValPtr v);
-mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk);
+mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall);
 #endif /*  _MAL_INTERPRET_H*/
 @c
 #include "mal_interpreter.h"
@@ -67,7 +68,7 @@ void showErrors(Client cntxt){
 
 str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env){
 	MalStkPtr stk= NULL;
-	int i,k;
+	int i,k,firstNewElement=0;
 	ValPtr retval, lhs,rhs,v;
 	InstrPtr pci=0, altpci=0; 
 	int stop=0;
@@ -100,6 +101,7 @@ being called.
 	/* allocate space for value stack */
 	if( mbcaller== NULL && env != NULL){
 		stk = env;
+		firstNewElement= stk->stktop;
 		if( mb != stk->blk) 
 			GDKerror("runMAL:misalignment of symbols\n");
 		pci= getInstrPtr(mb,env->pc);
@@ -142,24 +144,30 @@ constants are referenced in a function (a gain on tst400a of 20% has been
 observed due the small size of the function).
 
 Moreover, we have to copy the result types to the stack for later
-use. In particular, to enable proper dynamic type analysis.
+use The stack value is cleared to avoid misinterpretation of left-over
+information. In particular, to enable proper dynamic type analysis.
 Since a stack frame may contain values of a previous call,
 we should first remove garbage.
 @c
+	for(i=firstNewElement;i<mb->stop; i++) {
+		pci = getInstrPtr(mb,i);
+		if( pci->argv[0]>=0){
+			retval=  &stk->stk[pci->argv[0]];
+			retval->vtype =getGDKtype(getVarType(mb,pci->argv[0]));
+			/* retval->val.ival =0; tst500 fails */
+		}
+	}
 	for(i= (env && mbcaller)?pci->argc:1; i< mb->vtop; i++)
 	if( isVarConstant(mb,i) && isVarUsed(mb,i) ){
 		lhs = &stk->stk[i];
 		rhs = &getVarConstant(mb,i);
 		VALcopy(lhs,rhs);
 	} 
-	for(i=1;i<mb->stop; i++) {
-		pci = getInstrPtr(mb,i);
-		if( pci->argv[0]>=0){
-			retval=  &stk->stk[pci->argv[0]];
-			retval->vtype =getGDKtype(getVarType(mb,pci->argv[0]));
-		}
-	}
 	/* run the program */
+#ifdef STACKTRACE
+	printf("--->stack before interpreter loop\n");
+	printStack(stdout,mb,stk); fflush(stdout);
+#endif
 MALrestart:
 	stk->pc =0;
 	stk->exception = -1;
@@ -192,7 +200,11 @@ MALevalExit:
 		}
 		ret=appendException(mb,stop-1,nme, " propagated", msg);
 	}
-	if( env != stk ) garbageCollector(mb,stk);
+#ifdef STACKTRACE
+	printf("--->stack after interpreter loop\n");
+	printStack(stdout,mb,stk); fflush(stdout);
+#endif
+	/* if( env != stk ) */ garbageCollector(mb,stk,env != stk);
 	return ret;
 }
 @+ Safeguarding
@@ -230,21 +242,18 @@ elements in the value stack.
 	case ASSIGNsymbol:
 		@:assignStmt@ stk->pc++; break;
 	case LEAVEsymbol:
-		@:leaveControl@ break;
+		stk->pc= pci->jump; break;
 	case REDOsymbol:
 		@:redoControl@ break;
 	case BARRIERsymbol:
-		@:barrierControl@ break;
+		@:barrierControl@ stk->pc++;break;
 	case RLRcall:
 	case PATcall:
-		@:patterncall@ 
-		stk->pc++; break;
+		@:patterncall@ stk->pc++; break;
 	case CMDcall:
-		@:commandcall@ 
-		stk->pc++; break;
+		@:commandcall@ stk->pc++; break;
 	case FCNcall:
-		@:functioncall@ stk->pc++; 
-		break;
+		@:functioncall@ stk->pc++; break;
 	case ENDsymbol:
 	case RULEsymbol:
 	case COMMANDsymbol:
@@ -257,7 +266,7 @@ elements in the value stack.
 		break;
 	case CATCHsymbol:
 		/* catch blocks are skipped unless searched for explicitly*/
-		if(stk->exception < 0) @:leaveControl@
+		if(stk->exception < 0) { stk->pc= pci->jump; break;}
 		stk->exception = -1;
 		stk->pc++; break;
 	case RETURNsymbol:
@@ -301,11 +310,6 @@ is made part of the start-up procedure.
 		@:BATfix(rhs)@
 		VALcopy(lhs,rhs);
 	}
-	if( pci->raise){
-		/* printf("raise exception %s\n", getVarName(mb,pci->argv[0])); 
-		fflush(stdout);*/
-		stk->exception = pci->argv[0];
-	} 
 	ret = 0;
 }
 if( pci->barrier == BARRIERsymbol){
@@ -413,9 +417,25 @@ the bind(namespace,batname,mode) operation.[todo]
 {	int k;
 	retval=  &stk->stk[pci->argv[0]];
 	garbageElement(retval);
+/* improve performance with 20 ms/1M calls*/
+	switch(pci->argc){
+	case 7: argv[6] =(ptr) getArgReference(stk,pci,6);
+	case 6: argv[5] =(ptr) getArgReference(stk,pci,5);
+	case 5: argv[4] =(ptr) getArgReference(stk,pci,4);
+	case 4: argv[3] =(ptr) getArgReference(stk,pci,3);
+	case 3: argv[2] =(ptr) getArgReference(stk,pci,2);
+	case 2: argv[1] =(ptr) getArgReference(stk,pci,1);
+	case 1: argv[0] =(ptr) getArgReference(stk,pci,0);
+		break;
+	default:
+		ret= raiseException(mb,stk->pc,MALexception,
+				"too many arguments\n");
+	}
+/* old version
 	for(k=0;k<pci->argc; k++){
 		argv[k] =(ptr) getArgReference(stk,pci,k);
 	} 
+*/
 }
 @-
 The type dispatching table in getArgValue can be removed if we 
@@ -452,35 +472,22 @@ The upper layers have assured that the result variable is of type boolean.
 	/* skip to end of barrier, depending on the type */
 	switch(v->vtype){
 	case TYPE_bit:
-		if( v->val.cval[0] == FALSE ) {
-			@:leaveControl@
-		}
+		if( v->val.cval[0] == FALSE )
+			stk->pc= pci->jump-1;
 		break;
 	case TYPE_sht:
 		if( v->val.shval == 0)
-		@:leaveControl@
+			stk->pc= pci->jump-1;
 		break;
 	case TYPE_int:
 		if( v->val.ival == 0)
-		@:leaveControl@
+			stk->pc= pci->jump-1;
 		break;
 	case TYPE_lng:
 		if( v->val.lval == 0)
-		@:leaveControl@
+			stk->pc= pci->jump-1;
 	}
-	stk->pc++;
-	break;
 }
-@-
-You can leave a barrier block by searching for the corresponding 'lab'
-by faking an exception.
-
-@= leaveControl
-	for( stk->pc++; stk->pc<stop; stk->pc++){
-	InstrPtr l= getInstrPtr(mb,stk->pc);
-	if( l->token == ENDsymbol && l->argv[0]== pci->argv[0]){
-		break;
-	} }
 @-
 You can skip to a catch block by searching for the corresponding 'lab'
 The return value should be set to pass the error automatically upon
@@ -505,16 +512,20 @@ reaching end of function block.
 @-
 Each time we enter a barrier block, we could keep its position in the
 interpreter stack frame. It forms the starting point to issue a redo.
-Unfortunately, this does not work in the presence of squeezers, which
+Unfortunately, this does not easily work in the presence of squeezers, which
 may change the order/block structure. Therefore, we simple have to search
-the beginning.
+the beginning or ensure that during chkProgram the barrier/redo/leave/catch
+jumps are re-established.
 
 @= redoControl
+/* change to jump
 	for( stk->pc--; stk->pc>=0; stk->pc--){
 	InstrPtr p= getInstrPtr(mb,stk->pc);
 	if( p->barrier == BARRIERsymbol && p->argv[0]== pci->argv[0]){
 		break;
 	} }
+*/
+	stk->pc = pci->jump;
 	@:endProfile@
 	/* semantic validity of redo stmt has been checked already */
 	/* continue re-execution of the barrier statement */
@@ -725,7 +736,7 @@ void garbageElement(ValPtr v)
 		   printf("%d ",v->val.pval);
 		   printf("%s\n",v->val.pval); */
 		
-			GDKfree(v->val.pval);
+			if(v->len) GDKfree(v->val.pval);
 			v->len= 0;
 		}
 		v->val.pval= NULL;
@@ -748,13 +759,23 @@ we should retain the value stack because it acts as a global variables.
 This situation is indicated by the 'global' in the stack frame. 
 Upon termination of the session, the stack should be cleared.
 @c
-void garbageCollector(MalBlkPtr mb, MalStkPtr stk)
+void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall)
 { 	int k;
 	ValPtr v;
 
+#ifdef STACKTRACE
+	printf("--->stack before garbage collector, forceall %d\n",forceall);
+	printStack(stdout,mb,stk);
+#endif
 	for(k=0;k<mb->vtop-1; k++) 
-	if( mb->var[k] )
+	if(forceall || getVarName(mb,k)[0]==TMPMARKER ){
 		garbageElement(&stk->stk[k]);
+		stk->stk[k].vtype= TYPE_int;
+	}
+#ifdef STACKTRACE
+	printf("--->stack after garbage collector, forceall %d\n",forceall);
+	printStack(stdout,mb,stk);
+#endif
 }
 
 @+ Performance section

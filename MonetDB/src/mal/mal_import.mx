@@ -39,7 +39,8 @@ mal_export void malImport(Client c, str fname,int listing);
 mal_export void malImportDirect(str fname);
 mal_export FILE *malOpenSource(str fname);
 mal_export void processInput(Client c,MalStkPtr glb);
-mal_export void runScript(Client c, str fname, int listing);
+mal_export void evalString(Client c, str s, int listing, MalStkPtr stk);
+mal_export void runScript(Client c, str fname, int listing,MalStkPtr stk);
 #endif /*  _MAL_IMPORT_H*/
 @-
 The import context is located. If the module already exists, 
@@ -108,7 +109,7 @@ void malImport(Client c, str fname,int listing){
 	Scope oldscope = c->nspace;
 	Symbol oldprg = c->curprg;
 
-        if ( (fd= malOpenSource(fname)) == 0) {
+        if ( (fd=fopen(fname,"r"))==0 && (fd= malOpenSource(fname)) == 0) {
                 GDKerror("malImport: could not open file: %s\n", fname);
                 return;
         }
@@ -204,35 +205,44 @@ A stack frame is initialized to keep track of global variables.
 The nesting of barrier blocks should ensure detection of the end
 of the hierarchy.
 @c
-void processInput(Client c,MalStkPtr glb)
+void processString(Client c,MalStkPtr glb)
 {	str msg;
 	InstrPtr p;
 	MalBlkPtr mb;
 
 	mb= c->curprg->def;
+	if( glb){
+		glb->stktop =mb->vtop;
+		glb->blk = mb;
+	}
+	if( parseMal(c)) {
+		showErrors(c);
+		resetMalBlk(c->curprg->def,glb);
+		return;
+	}
+	if( mb->stop == 1) return; /* nothing added */
+	p= getInstrPtr(mb, mb->stop-1);
+	pushEndInstruction(mb);
+	chkProgram(c->nspace, c->curprg->def);
+	if( mb->errors == 0){
+		msg= (str) runMAL(c,mb,0,glb);
+		if( msg ){
+			GDKerror(msg);
+			if( !c->listing) 
+				printFunction(c->fdout,mb);
+			GDKfree(msg);
+		}
+	} 
+	showErrors(c);
+	resetMalBlk(mb,glb);
+	if( glb) glb->cmd= c->itrace?'n':0;
+}
+
+void processInput(Client c,MalStkPtr glb)
+{	
 	while(c->mode > FINISHING && readClient(c,c->prompt)){
 		c->nxt= c->input;
-		if( parseMal(c)) {
-			showErrors(c);
-			resetMalBlk(c->curprg->def,glb);
-			continue;
-		}
-		if( mb->stop == 1) continue; /* nothing added */
-		p= getInstrPtr(mb, mb->stop-1);
-		pushEndInstruction(mb);
-		chkProgram(c->nspace, c->curprg->def);
-		if( mb->errors == 0){
-			msg= (str) runMAL(c,mb,0,glb);
-			if( msg ){
-				GDKerror(msg);
-				if( !c->listing) 
-					printFunction(c->fdout,mb);
-				GDKfree(msg);
-			}
-		} 
-		showErrors(c);
-		resetMalBlk(mb,glb);
-		glb->cmd= c->itrace?'n':0;
+		processString(c,glb);
 	}
 }
 @-
@@ -242,18 +252,13 @@ stack frame. Life becomes a little complicated when the script contains
 a definition.
 
 @c
-void runScript(Client c, str fname, int listing)
+void runScript(Client c, str fname, int listing, MalStkPtr glb)
 {	
 	FILE *fd, *oldinput;
 	int oldlisting= c->listing;
 	int oldmode = c->blkmode;
 	str oldprompt = c->prompt;
-	MalStkPtr glb;
 
-        if ( (fd= malOpenSource(fname)) == 0) {
-                GDKerror("malImport: could not open file: %s\n", fname);
-                return;
-        }
 	oldinput= c->fdin;
 	c->fdin = fd;
 	c->listing = listing;
@@ -261,14 +266,37 @@ void runScript(Client c, str fname, int listing)
 	c->prompt = "";	/* do not produce visible prompts */
 	resetClientPrg(c);
 
-	newStack(glb,MAXGLOBALS);
-	glb->stktop = MAXGLOBALS;
-	glb->blk = c->curprg->def;
-
 	GDKerror("runScript is not yet defined\n");
 	c->fdin = oldinput;
 	c->listing = oldlisting;
 	c->blkmode = oldmode;
 	c->prompt = oldprompt;
 	(void) fclose(fd);
+}
+void evalString(Client c, str s, int listing, MalStkPtr stk)
+{	
+	int oldlisting= c->listing;
+	int oldmode = c->blkmode;
+	str oldprompt = c->prompt;
+	str oldnxt = c->nxt;
+	str oldinput= c->input;
+	str oldlimit = c->limit;
+
+	c->listing = listing;
+	c->blkmode = 0;
+	c->prompt = "";	/* do not produce visible prompts */
+	
+	resetClientPrg(c);
+
+	c->limit = s + strlen(s)+1;
+	c->input = s;
+	c->nxt= c->input;
+	processString(c,NULL);
+
+	c->limit= oldlimit;
+	c->nxt= oldnxt;
+	c->input= oldinput;
+	c->listing = oldlisting;
+	c->blkmode = oldmode;
+	c->prompt = oldprompt;
 }

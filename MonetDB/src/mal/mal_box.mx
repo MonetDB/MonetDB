@@ -185,6 +185,7 @@ mal_export int saveBox(Box box,int flag);
 mal_export void loadBox(str nme);
 
 mal_export int depositBox(Box box, str name, ValPtr val);
+mal_export void insertToBox(Box box, str name, str val);
 mal_export int takeBox(Box box, str name, ValPtr val);
 mal_export int bindBAT(Box box, str name, str location);
 mal_export int releaseBox(Box box, str name);
@@ -316,6 +317,13 @@ int depositBox(Box box, str name, ValPtr val){
 #endif
 	return 0;
 }
+void insertToBox(Box box, str nme, str val){
+        ValRecord vr;
+        vr.vtype= TYPE_str;
+        vr.val.pval= val;
+        depositBox(box,nme,&vr);
+}
+
 @-
 Taking an element from a box is only permitted if the type of
 the receiver matches the type of the source.

@@ -123,6 +123,7 @@ the interaction on the system console (sysmon).
 	FILE	*sysmon;		/* trace interaction */
 	FILE	*journal;
 	int	mode;			/* FREECLIENT..BLOCKED */
+	str	cwd;			/* working directory of client */
 @-
 Client records are organized into a two-level dependency
 tree, where children may be created to deal with parallel processing
@@ -284,6 +285,10 @@ collect the buffer when in use.
 		c->prompt= GDKstrdup(">");
 		c->promptlength= strlen(c->prompt);
 		initClientThread(c);
+	}
+	{ char buffer[1024];
+	 	getcwd(buffer,1024);
+		c->cwd= GDKstrdup(buffer);
 	}
 	return c;
 }

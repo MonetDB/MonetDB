@@ -238,6 +238,11 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		debugScope(cntxt->nspace,b);
 		break;
 	case 't': /* trace breakpoint */
+		if( strncmp("type",b,4)==0){
+			skipWord(b); skipBlanc(b);
+			if(strchr(b,'\n')) *strchr(b,'\n')= 0;
+			traceFcnName= GDKstrdup(b);
+		} else
 		if( strncmp("timer",b,5)==0){
 			if( cntxt->timer==0)
 				cntxt->timer = GDKusec();
@@ -415,6 +420,9 @@ void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s){
 void printStackElm(FILE *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index){
 	str nme;
 	fprintf(f,"[%d] %s\t= ",index,n->name);
+	if( n->type == TYPE_nil)
+		fprintf(f,"nil");
+	else
 	if( n->isaconstant) {
 		VALprint(f,&n->value);
 	} else {
