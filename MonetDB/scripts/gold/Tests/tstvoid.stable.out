@@ -1,19 +1,19 @@
 stdout of test 'tstvoid` in directory 'scripts/gold` itself:
 
 
-# 14:26:06 >  
-# 14:26:06 >  Mtimeout -timeout 540 ./tstvoid tstvoid 
-# 14:26:06 >  
+# 14:00:25 >  
+# 14:00:25 >  Mtimeout -timeout 540 ./tstvoid tstvoid 
+# 14:00:25 >  
 
 
-# 14:26:06 >  
-# 14:26:06 >  mkdir -p /ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm/mTests_scripts_gold_tstvoid
-# 14:26:06 >  
+# 14:00:25 >  
+# 14:00:25 >  mkdir -p /ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm/mTests_scripts_gold_tstvoid
+# 14:00:25 >  
 
 
-# 14:26:06 >  
-# 14:26:06 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs --set gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm --set sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log --set mapi_port=55826 --set sql_port=50670 --set monet_prompt= --trace --dbname=mTests_scripts_gold_tstvoid
-# 14:26:06 >  
+# 14:00:25 >  
+# 14:00:25 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs --set gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm --set sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log --set mapi_port=52450 --set sql_port=51629 --set monet_prompt= --trace --dbname=mTests_scripts_gold_tstvoid
+# 14:00:25 >  
 
 # Monet Database Server V4.3.11
 # Copyright (c) 1993-2003, CWI. All rights reserved.
@@ -28,9 +28,9 @@ make_persistent(load_data(load_format(path+"/format"), path+"/test100k", 100000)
 commit;
 quit;
 
-# 14:26:07 >  
-# 14:26:07 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs --set gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm --set sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log --set mapi_port=55826 --set sql_port=50670 --set monet_prompt= --trace --dbname=mTests_scripts_gold_tstvoid
-# 14:26:07 >  
+# 14:00:26 >  
+# 14:00:26 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs --set gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm --set sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log --set mapi_port=52450 --set sql_port=51629 --set monet_prompt= --trace --dbname=mTests_scripts_gold_tstvoid
+# 14:00:26 >  
 
 # Monet Database Server V4.3.11
 # Copyright (c) 1993-2003, CWI. All rights reserved.
@@ -67,9 +67,9 @@ printf("#~BeginVariableOutput~#\n"); t.sample(2).print; printf("#~EndVariableOut
 commit;
 quit;
 
-# 14:26:08 >  
-# 14:26:08 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs --set gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm --set sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log --set mapi_port=55826 --set sql_port=50670 --set monet_prompt= --trace --dbname=mTests_scripts_gold_tstvoid
-# 14:26:08 >  
+# 14:00:27 >  
+# 14:00:27 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs --set gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm --set sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log --set mapi_port=52450 --set sql_port=51629 --set monet_prompt= --trace --dbname=mTests_scripts_gold_tstvoid
+# 14:00:27 >  
 
 # Monet Database Server V4.3.11
 # Copyright (c) 1993-2003, CWI. All rights reserved.
@@ -141,33 +141,33 @@ ls;
 #-------------------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype		| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-------------------------------------------------------------------------------------------------------------------------#
-[ "age_t",		  "int",  "int",	  46,	  0,	  "dirty",	  "load", "pers", 1,	  0		  ]
-[ "car_age",		  "oid",  "int",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  0		  ]
-[ "car_carprice",	  "oid",  "int",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  0		  ]
-[ "car_category",	  "oid",  "str",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  0		  ]
-[ "car_class",		  "oid",  "str",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  0		  ]
-[ "car_gender",		  "oid",  "chr",	  100000, 0,	  "clean",	  "load", "pers", 0,	  0		  ]
-[ "car_neg",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  0		  ]
-[ "car_pos",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  0		  ]
-[ "car_town",		  "oid",  "str",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  0		  ]
-[ "carprice_t",		  "int",  "int",	  9,	  0,	  "dirty",	  "load", "pers", 1,	  0		  ]
-[ "category_t",		  "str",  "int",	  2,	  0,	  "dirty",	  "load", "pers", 1,	  0		  ]
-[ "class_t",		  "str",  "int",	  2,	  0,	  "dirty",	  "load", "pers", 1,	  0		  ]
-[ "town_t",		  "str",  "int",	  10,	  0,	  "dirty",	  "load", "pers", 1,	  0		  ]
-[ "void_age",		  "oid",  "age_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  0		  ]
-[ "void_carprice",	  "oid",  "carprice_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  0		  ]
-[ "void_category",	  "oid",  "category_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  0		  ]
-[ "void_class",		  "oid",  "class_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  0		  ]
-[ "void_gender",	  "oid",  "chr",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  0		  ]
-[ "void_neg",		  "oid",  "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  0		  ]
-[ "void_pos",		  "oid",  "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  0		  ]
-[ "void_town",		  "oid",  "town_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  0		  ]
+[ "age_t",		  "int",  "int",	  46,	  0,	  "dirty",	  "load", "pers", 1,	  1		  ]
+[ "car_age",		  "oid",  "int",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "car_carprice",	  "oid",  "int",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "car_category",	  "oid",  "str",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "car_class",		  "oid",  "str",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "car_gender",		  "oid",  "chr",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1		  ]
+[ "car_neg",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "car_pos",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "car_town",		  "oid",  "str",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "carprice_t",		  "int",  "int",	  9,	  0,	  "dirty",	  "load", "pers", 1,	  1		  ]
+[ "category_t",		  "str",  "int",	  2,	  0,	  "dirty",	  "load", "pers", 1,	  1		  ]
+[ "class_t",		  "str",  "int",	  2,	  0,	  "dirty",	  "load", "pers", 1,	  1		  ]
+[ "town_t",		  "str",  "int",	  10,	  0,	  "dirty",	  "load", "pers", 1,	  1		  ]
+[ "void_age",		  "oid",  "age_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_carprice",	  "oid",  "carprice_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_category",	  "oid",  "category_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_class",		  "oid",  "class_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_gender",	  "oid",  "chr",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_neg",		  "oid",  "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_pos",		  "oid",  "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_town",		  "oid",  "town_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 commit;
 quit;
 
-# 14:26:08 >  
-# 14:26:08 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs --set gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm --set sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log --set mapi_port=55826 --set sql_port=50670 --set monet_prompt= --trace --dbname=mTests_scripts_gold_tstvoid
-# 14:26:08 >  
+# 14:00:28 >  
+# 14:00:28 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs --set gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm --set sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log --set mapi_port=52450 --set sql_port=51629 --set monet_prompt= --trace --dbname=mTests_scripts_gold_tstvoid
+# 14:00:28 >  
 
 # Monet Database Server V4.3.11
 # Copyright (c) 1993-2003, CWI. All rights reserved.
@@ -202,9 +202,9 @@ t0_pos := semijoin(void_age, void_pos).histogram;
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  25	  ]
+[ "user",	  23	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  19	  ]
+[ "system",	  29	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -212,20 +212,20 @@ t0_pos := semijoin(void_age, void_pos).histogram;
 #---------------------------------#
 [ "memincr",	  1527808	  ]
 [ "arena",	  1591264	  ]
-[ "ordblks",	  321		  ]
+[ "ordblks",	  323		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1417432	  ]
-[ "fordblks",	  173832	  ]
+[ "uordblks",	  1417368	  ]
+[ "fordblks",	  173896	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  640	  ]
+[ "minflt",	  641	  ]
 [ "majflt",	  872	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
@@ -250,9 +250,9 @@ t0_pos.count.print; print("end");
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  33	  ]
+[ "user",	  31	  ]
 [ "elapuser",	  7	  ]
-[ "system",	  19	  ]
+[ "system",	  29	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -260,21 +260,21 @@ t0_pos.count.print; print("end");
 #---------------------------------#
 [ "memincr",	  499712	  ]
 [ "arena",	  2090976	  ]
-[ "ordblks",	  293		  ]
+[ "ordblks",	  295		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  401408	  ]
 [ "hblks",	  2		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1949080	  ]
-[ "fordblks",	  141896	  ]
+[ "uordblks",	  1949016	  ]
+[ "fordblks",	  141960	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1190	  ]
-[ "majflt",	  876	  ]
+[ "minflt",	  1191	  ]
+[ "majflt",	  877	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -318,31 +318,31 @@ tmp0 := void_age.select(age_t.encode(19), age_t.encode(24));
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  35	  ]
+[ "user",	  33	  ]
 [ "elapuser",	  1	  ]
-[ "system",	  21	  ]
-[ "elapsystem",	  1	  ]
+[ "system",	  29	  ]
+[ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  2090976	  ]
-[ "ordblks",	  287		  ]
+[ "ordblks",	  291		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  401408	  ]
 [ "hblks",	  2		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1949784	  ]
-[ "fordblks",	  141192	  ]
+[ "uordblks",	  1949656	  ]
+[ "fordblks",	  141320	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1191	  ]
-[ "majflt",	  876	  ]
+[ "minflt",	  1192	  ]
+[ "majflt",	  877	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -372,8 +372,8 @@ t12_pos := semijoin(void_age, pos_4).histogram;
 #-------------------------#
 [ "elapsed",	  0	  ]
 [ "user",	  41	  ]
-[ "elapuser",	  5	  ]
-[ "system",	  23	  ]
+[ "elapuser",	  7	  ]
+[ "system",	  31	  ]
 [ "elapsystem",	  1	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -381,21 +381,21 @@ t12_pos := semijoin(void_age, pos_4).histogram;
 #---------------------------------#
 [ "memincr",	  122880	  ]
 [ "arena",	  2213856	  ]
-[ "ordblks",	  249		  ]
+[ "ordblks",	  251		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  1945600	  ]
 [ "hblks",	  7		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1964248	  ]
-[ "fordblks",	  249608	  ]
+[ "uordblks",	  1964056	  ]
+[ "fordblks",	  249800	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1718	  ]
-[ "majflt",	  878	  ]
+[ "minflt",	  1719	  ]
+[ "majflt",	  880	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -421,7 +421,7 @@ t12_pos.count.print; print("end");
 [ "elapsed",	  0	  ]
 [ "user",	  52	  ]
 [ "elapuser",	  11	  ]
-[ "system",	  23	  ]
+[ "system",	  31	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -429,21 +429,21 @@ t12_pos.count.print; print("end");
 #---------------------------------#
 [ "memincr",	  -12288	  ]
 [ "arena",	  2201568	  ]
-[ "ordblks",	  244		  ]
+[ "ordblks",	  246		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  1945600	  ]
 [ "hblks",	  7		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1979320	  ]
-[ "fordblks",	  222248	  ]
+[ "uordblks",	  1979128	  ]
+[ "fordblks",	  222440	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  2251	  ]
-[ "majflt",	  879	  ]
+[ "minflt",	  2252	  ]
+[ "majflt",	  880	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -487,9 +487,9 @@ t14_pos := semijoin(void_carprice, pos_4).histogram;
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  54	  ]
-[ "elapuser",	  1	  ]
-[ "system",	  23	  ]
+[ "user",	  52	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  31	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -497,21 +497,21 @@ t14_pos := semijoin(void_carprice, pos_4).histogram;
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  2201568	  ]
-[ "ordblks",	  242		  ]
+[ "ordblks",	  244		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  1945600	  ]
 [ "hblks",	  7		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1979984	  ]
-[ "fordblks",	  221584	  ]
+[ "uordblks",	  1979728	  ]
+[ "fordblks",	  221840	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  2252	  ]
-[ "majflt",	  879	  ]
+[ "minflt",	  2253	  ]
+[ "majflt",	  880	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -534,32 +534,32 @@ t14_pos.count.print; print("end");
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  64	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  62	  ]
 [ "elapuser",	  9	  ]
-[ "system",	  23	  ]
-[ "elapsystem",	  0	  ]
+[ "system",	  33	  ]
+[ "elapsystem",	  1	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  -28672	  ]
 [ "arena",	  2172896	  ]
-[ "ordblks",	  221		  ]
+[ "ordblks",	  224		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  1945600	  ]
 [ "hblks",	  7		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2005464	  ]
-[ "fordblks",	  167432	  ]
+[ "uordblks",	  2005200	  ]
+[ "fordblks",	  167696	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  2604	  ]
-[ "majflt",	  879	  ]
+[ "minflt",	  2605	  ]
+[ "majflt",	  880	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -602,10 +602,10 @@ t6_pos := semijoin(void_category, pos_2).histogram;
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  64	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  62	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  23	  ]
+[ "system",	  33	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -613,21 +613,21 @@ t6_pos := semijoin(void_category, pos_2).histogram;
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  2172896	  ]
-[ "ordblks",	  219		  ]
+[ "ordblks",	  222		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  1945600	  ]
 [ "hblks",	  7		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2006128	  ]
-[ "fordblks",	  166768	  ]
+[ "uordblks",	  2005800	  ]
+[ "fordblks",	  167096	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  2605	  ]
-[ "majflt",	  879	  ]
+[ "minflt",	  2606	  ]
+[ "majflt",	  880	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -650,10 +650,10 @@ t6_pos.count.print; print("end");
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  70	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  68	  ]
 [ "elapuser",	  5	  ]
-[ "system",	  23	  ]
+[ "system",	  33	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -661,21 +661,21 @@ t6_pos.count.print; print("end");
 #---------------------------------#
 [ "memincr",	  28672		  ]
 [ "arena",	  2201568	  ]
-[ "ordblks",	  206		  ]
+[ "ordblks",	  212		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  1945600	  ]
 [ "hblks",	  7		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2021208	  ]
-[ "fordblks",	  180360	  ]
+[ "uordblks",	  2020864	  ]
+[ "fordblks",	  180704	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  2739	  ]
-[ "majflt",	  879	  ]
+[ "minflt",	  2740	  ]
+[ "majflt",	  880	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -718,10 +718,10 @@ t19_pos := semijoin(void_town, pos_5).histogram;
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  72	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  70	  ]
 [ "elapuser",	  1	  ]
-[ "system",	  23	  ]
+[ "system",	  33	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -729,21 +729,21 @@ t19_pos := semijoin(void_town, pos_5).histogram;
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  2201568	  ]
-[ "ordblks",	  203		  ]
+[ "ordblks",	  210		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  1945600	  ]
 [ "hblks",	  7		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2021872	  ]
-[ "fordblks",	  179696	  ]
+[ "uordblks",	  2021456	  ]
+[ "fordblks",	  180112	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  2740	  ]
-[ "majflt",	  879	  ]
+[ "minflt",	  2741	  ]
+[ "majflt",	  880	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -766,10 +766,10 @@ t19_pos.count.print; print("end");
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  80	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  78	  ]
 [ "elapuser",	  7	  ]
-[ "system",	  25	  ]
+[ "system",	  35	  ]
 [ "elapsystem",	  1	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -777,21 +777,21 @@ t19_pos.count.print; print("end");
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  2201568	  ]
-[ "ordblks",	  190		  ]
+[ "ordblks",	  195		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  1945600	  ]
 [ "hblks",	  7		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2042136	  ]
-[ "fordblks",	  159432	  ]
+[ "uordblks",	  2041736	  ]
+[ "fordblks",	  159832	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3170	  ]
-[ "majflt",	  879	  ]
+[ "minflt",	  3171	  ]
+[ "majflt",	  880	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -834,10 +834,10 @@ tmp0 := void_age.select(age_t.encode(19), age_t.encode(24));
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
+[ "elapsed",	  1	  ]
 [ "user",	  80	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  25	  ]
+[ "elapuser",	  1	  ]
+[ "system",	  35	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -845,21 +845,21 @@ tmp0 := void_age.select(age_t.encode(19), age_t.encode(24));
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  2201568	  ]
-[ "ordblks",	  183		  ]
+[ "ordblks",	  190		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  1945600	  ]
 [ "hblks",	  7		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2042864	  ]
-[ "fordblks",	  158704	  ]
+[ "uordblks",	  2042408	  ]
+[ "fordblks",	  159160	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3171	  ]
-[ "majflt",	  879	  ]
+[ "minflt",	  3172	  ]
+[ "majflt",	  880	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -884,31 +884,31 @@ t9_pos := semijoin(void_carprice, pos_10).histogram;
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
+[ "elapsed",	  1	  ]
 [ "user",	  85	  ]
 [ "elapuser",	  5	  ]
-[ "system",	  27	  ]
-[ "elapsystem",	  1	  ]
+[ "system",	  35	  ]
+[ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  688128	  ]
 [ "arena",	  2889696	  ]
-[ "ordblks",	  160		  ]
+[ "ordblks",	  171		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  2772992	  ]
 [ "hblks",	  10		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2849576	  ]
-[ "fordblks",	  40120		  ]
+[ "uordblks",	  2849040	  ]
+[ "fordblks",	  40656		  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3418	  ]
+[ "minflt",	  3419	  ]
 [ "majflt",	  883	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
@@ -932,10 +932,10 @@ t9_pos.count.print; print("end");
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
+[ "elapsed",	  1	  ]
 [ "user",	  87	  ]
 [ "elapuser",	  1	  ]
-[ "system",	  27	  ]
+[ "system",	  35	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -943,20 +943,20 @@ t9_pos.count.print; print("end");
 #---------------------------------#
 [ "memincr",	  73728		  ]
 [ "arena",	  2963424	  ]
-[ "ordblks",	  172		  ]
+[ "ordblks",	  179		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  2772992	  ]
 [ "hblks",	  10		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2848968	  ]
-[ "fordblks",	  114456	  ]
+[ "uordblks",	  2848416	  ]
+[ "fordblks",	  115008	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3436	  ]
+[ "minflt",	  3437	  ]
 [ "majflt",	  883	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
@@ -1000,10 +1000,10 @@ t7_pos := semijoin(void_category, pos_9).histogram;
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
+[ "elapsed",	  1	  ]
 [ "user",	  87	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  27	  ]
+[ "system",	  35	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -1011,20 +1011,20 @@ t7_pos := semijoin(void_category, pos_9).histogram;
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  2963424	  ]
-[ "ordblks",	  169		  ]
+[ "ordblks",	  174		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  2772992	  ]
 [ "hblks",	  10		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2849632	  ]
-[ "fordblks",	  113792	  ]
+[ "uordblks",	  2849032	  ]
+[ "fordblks",	  114392	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3437	  ]
+[ "minflt",	  3438	  ]
 [ "majflt",	  883	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
@@ -1048,10 +1048,10 @@ t7_pos.count.print; print("end");
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
+[ "elapsed",	  1	  ]
 [ "user",	  91	  ]
 [ "elapuser",	  3	  ]
-[ "system",	  27	  ]
+[ "system",	  35	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -1059,20 +1059,20 @@ t7_pos.count.print; print("end");
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  2963424	  ]
-[ "ordblks",	  170		  ]
+[ "ordblks",	  178		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  2772992	  ]
 [ "hblks",	  10		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2849040	  ]
-[ "fordblks",	  114384	  ]
+[ "uordblks",	  2848448	  ]
+[ "fordblks",	  114976	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3437	  ]
+[ "minflt",	  3438	  ]
 [ "majflt",	  883	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
@@ -1116,10 +1116,10 @@ t8_pos := semijoin(void_town, pos_9).histogram;
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
+[ "elapsed",	  1	  ]
 [ "user",	  91	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  27	  ]
+[ "system",	  35	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -1127,20 +1127,20 @@ t8_pos := semijoin(void_town, pos_9).histogram;
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  2963424	  ]
-[ "ordblks",	  165		  ]
+[ "ordblks",	  174		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  2772992	  ]
 [ "hblks",	  10		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2849712	  ]
-[ "fordblks",	  113712	  ]
+[ "uordblks",	  2849048	  ]
+[ "fordblks",	  114376	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3438	  ]
+[ "minflt",	  3439	  ]
 [ "majflt",	  883	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
@@ -1158,31 +1158,31 @@ t8_pos.count.print; print("end");
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  91	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  29	  ]
-[ "elapsystem",	  1	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  93	  ]
+[ "elapuser",	  1	  ]
+[ "system",	  35	  ]
+[ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  2963424	  ]
-[ "ordblks",	  168		  ]
+[ "ordblks",	  177		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  2772992	  ]
 [ "hblks",	  10		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2849104	  ]
-[ "fordblks",	  114320	  ]
+[ "uordblks",	  2848424	  ]
+[ "fordblks",	  115000	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3438	  ]
+[ "minflt",	  3439	  ]
 [ "majflt",	  883	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
@@ -1208,10 +1208,10 @@ tmp0 := void_gender.select('f');
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
+[ "elapsed",	  1	  ]
 [ "user",	  93	  ]
-[ "elapuser",	  1	  ]
-[ "system",	  29	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  35	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -1219,20 +1219,20 @@ tmp0 := void_gender.select('f');
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  2963424	  ]
-[ "ordblks",	  166		  ]
+[ "ordblks",	  175		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  2772992	  ]
 [ "hblks",	  10		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2849712	  ]
-[ "fordblks",	  113712	  ]
+[ "uordblks",	  2848968	  ]
+[ "fordblks",	  114456	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3439	  ]
+[ "minflt",	  3440	  ]
 [ "majflt",	  883	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
@@ -1249,10 +1249,10 @@ commit;
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
+[ "elapsed",	  1	  ]
 [ "user",	  95	  ]
 [ "elapuser",	  1	  ]
-[ "system",	  29	  ]
+[ "system",	  35	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
@@ -1260,20 +1260,20 @@ commit;
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  2963424	  ]
-[ "ordblks",	  164		  ]
+[ "ordblks",	  174		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  3108864	  ]
 [ "hblks",	  10		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2873736	  ]
-[ "fordblks",	  89688		  ]
+[ "uordblks",	  2873000	  ]
+[ "fordblks",	  90424		  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3531	  ]
+[ "minflt",	  3532	  ]
 [ "majflt",	  886	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
@@ -1292,31 +1292,31 @@ t0_pos.count.print; print("end");
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
+[ "elapsed",	  1	  ]
 [ "user",	  95	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  29	  ]
-[ "elapsystem",	  0	  ]
+[ "system",	  37	  ]
+[ "elapsystem",	  1	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  2963424	  ]
-[ "ordblks",	  164		  ]
+[ "ordblks",	  174		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  3108864	  ]
 [ "hblks",	  10		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2873920	  ]
-[ "fordblks",	  89504		  ]
+[ "uordblks",	  2873120	  ]
+[ "fordblks",	  90304		  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3532	  ]
+[ "minflt",	  3533	  ]
 [ "majflt",	  886	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
@@ -1342,31 +1342,31 @@ quit;
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  95	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  31	  ]
-[ "elapsystem",	  1	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  97	  ]
+[ "elapuser",	  1	  ]
+[ "system",	  37	  ]
+[ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  2963424	  ]
-[ "ordblks",	  165		  ]
+[ "ordblks",	  175		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  3108864	  ]
 [ "hblks",	  10		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2874432	  ]
-[ "fordblks",	  88992		  ]
+[ "uordblks",	  2873576	  ]
+[ "fordblks",	  89848		  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3533	  ]
+[ "minflt",	  3534	  ]
 [ "majflt",	  886	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
@@ -1375,39 +1375,39 @@ quit;
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
 
-# 14:26:09 >  
-# 14:26:09 >  sh summary
-# 14:26:09 >  
+# 14:00:29 >  
+# 14:00:29 >  sh summary
+# 14:00:29 >  
 
 #~BeginVariableOutput~#
 "elapuser "elapsyst "inblock" "oublock" "majflt", "ninvcsw" "elapsed"
 0	  0	    0	      0		872	  0	    0
-7	  0	    0	      0		876	  0	    0
-1	  1	    0	      0		876	  0	    0
-5	  1	    0	      0		878	  0	    0
-11	  0	    0	      0		879	  0	    0
-1	  0	    0	      0		879	  0	    0
-9	  0	    0	      0		879	  0	    0
-0	  0	    0	      0		879	  0	    0
-5	  0	    0	      0		879	  0	    0
-1	  0	    0	      0		879	  0	    0
-7	  1	    0	      0		879	  0	    0
-0	  0	    0	      0		879	  0	    0
-5	  1	    0	      0		883	  0	    0
-1	  0	    0	      0		883	  0	    0
-0	  0	    0	      0		883	  0	    0
-3	  0	    0	      0		883	  0	    0
-0	  0	    0	      0		883	  0	    0
-0	  1	    0	      0		883	  0	    0
-1	  0	    0	      0		883	  0	    0
-1	  0	    0	      0		886	  0	    0
-0	  0	    0	      0		886	  0	    0
-0	  1	    0	      0		886	  0	    0
+7	  0	    0	      0		877	  0	    0
+1	  0	    0	      0		877	  0	    0
+7	  1	    0	      0		880	  0	    0
+11	  0	    0	      0		880	  0	    0
+0	  0	    0	      0		880	  0	    0
+9	  1	    0	      0		880	  0	    1
+0	  0	    0	      0		880	  0	    1
+5	  0	    0	      0		880	  0	    1
+1	  0	    0	      0		880	  0	    1
+7	  1	    0	      0		880	  0	    1
+1	  0	    0	      0		880	  0	    1
+5	  0	    0	      0		883	  0	    1
+1	  0	    0	      0		883	  0	    1
+0	  0	    0	      0		883	  0	    1
+3	  0	    0	      0		883	  0	    1
+0	  0	    0	      0		883	  0	    1
+1	  0	    0	      0		883	  0	    1
+0	  0	    0	      0		883	  0	    1
+1	  0	    0	      0		886	  0	    1
+0	  1	    0	      0		886	  0	    1
+1	  0	    0	      0		886	  0	    1
 --------- --------- --------- --------- --------- --------- ---------
-58	  6	    0	      0		19373	  0	    0
+61	  4	    0	      0		19385	  0	    16
 #~EndVariableOutput~#
 
-# 14:26:10 >  
-# 14:26:10 >  Done.
-# 14:26:10 >  
+# 14:00:29 >  
+# 14:00:29 >  Done.
+# 14:00:29 >  
 
