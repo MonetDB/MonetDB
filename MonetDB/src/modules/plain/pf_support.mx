@@ -402,7 +402,7 @@ int CMDmerged_union(BAT** res, BAT *L, BAT *R, ...){
 			case TYPE_lng:	@:merged_union_4(lng,tloc)@
 			case TYPE_dbl:	@:merged_union_4(dbl,tloc)@
 			default:
-				if (b[0]->tvarsized) {
+				if (b[i]->tvarsized) {
 					@:merged_union_4(any,tvar)@
 				} else {
 					@:merged_union_4(any,tloc)@
