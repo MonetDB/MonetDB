@@ -107,6 +107,14 @@ DESCRIPITON:
 string_join constructs for each iter one strings by appending the strings
 with the separator for this iter in between."
 
+.COMMAND enumerate( BAT[void,int] startval, BAT[void,int] length) : BAT[oid,int] = CMDenumerate;
+"PARAMETERS:
+BAT[void,oid] - list of start values
+BAT[void,oid] - list of length values
+DESCRIPTION:
+enumerate creates for each input row #length rows with the values beginning
+at startval and increasing by one with every row."
+
 .COMMAND mposjoin( BAT[oid,oid] pre, BAT[oid,oid] frag, BAT[oid, bat] ws_item )
 		: BAT[void,any] = CMDmposjoin;
 "PARAMETERS:
@@ -355,6 +363,7 @@ PROC fake_leftfetchjoin (bat[oid,oid] l, bat[oid,any::3] r) : bat[oid,any::3]
 @c
 #include "pf_support.h"
 #include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
+#include <algebra.h> /* needed for result size estimation in CMDenumerate */
 #include <math.h> /* needed for round_up */
 #if SIZEOF_OID == SIZEOF_INT
 #define oidoid_bunfastins(b,h,t) intint_bunfastins(b,h,t);
@@ -1258,6 +1267,79 @@ bunins_failed:
 cleanup:
 	if (actual_str) GDKfree(actual_str);
 	BBPreclaim(bn);
+	return GDK_FAIL;
+}
+
+int CMDenumerate ( BAT** res, BAT *startval, BAT *length )
+{
+        BAT *bn;
+        BUN cur_bun, length_bun, bun_last;
+        int bs_startval, bs_length, number, counter, result_size;
+        size_t cnt;
+        oid base, head_oid;
+        bit triv_prop;
+
+        /* check arguments */
+
+        BATcheck(startval, "enumerate");
+        BATcheck(length, "enumerate");
+
+        cnt = BATcount(startval);
+        base = startval->hseqbase;
+        ERRORcheck(!BAThdense(startval) || !BAThdense(length), 
+                "enumerate: input BATs (startval, length) must be void-headed with non-nil seqbase.\n");
+        ERRORcheck(BATcount(length)!=cnt || length->hseqbase!=base,
+                "enumerate: input BATs (startval, length) must be head-aligned.\n");
+
+        /* create result BAT */
+        if (CMDsum_int_int(&result_size, length) == GDK_FAIL) {
+                GDKerror("enumerate: summing up 'length' failed.\n");
+                return GDK_FAIL;
+        }
+
+        bn = BATnew(TYPE_oid, TYPE_int, result_size);
+        if (bn == NULL) {
+                GDKerror("enumerate: BATnew(TYPE_oid, TYPE_int, %d) failed.\n", result_size);
+                return GDK_FAIL;
+        }
+
+        /* do the enumerate */
+
+        for (cur_bun = BUNfirst(startval), length_bun = BUNfirst(length),
+             bun_last = BUNlast(startval),
+             bs_startval = BUNsize(startval), bs_length = BUNsize(length);
+             cur_bun < bun_last;
+             cur_bun += bs_startval, length_bun += bs_length)
+        {
+	        head_oid = *(oid*)BUNhead(startval,cur_bun); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
+                number = *(int*) BUNtloc (startval, cur_bun);
+                counter = *(int*) BUNtloc (length, length_bun);
+                while (counter)
+                {
+		        bunfastins(bn, &head_oid, &number);
+                        number++;
+                        counter--;
+                }
+        }
+
+	if (!bn->batDirty) bn->batDirty = TRUE;
+	triv_prop = (BATcount(bn) < 2);
+	BATkey(bn,triv_prop);
+	BATkey(BATmirror(bn),triv_prop);
+	bn->hsorted = GDK_SORTED;
+	bn->tsorted = triv_prop;
+	bn->hdense = triv_prop;
+	bn->tdense = FALSE;
+	if (BATcount(bn) == 0) {
+		BATseqbase(bn, (oid)0);
+	} else if (BATcount(bn) == 1) {
+		BATseqbase(bn, *(oid*)BUNhloc(bn,BUNfirst(bn)));
+	}
+	*res = bn;
+
+	return GDK_SUCCEED;
+bunins_failed:
+	GDKerror("enumerate: bunins failed.\n");
 	return GDK_FAIL;
 }
 

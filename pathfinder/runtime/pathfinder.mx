@@ -381,7 +381,6 @@ const PRE_PROP   :=  2;
 const PRE_KIND   :=  3;
 const PRE_FRAG   :=  4;
 const QN_URI	 :=  5;
-const QN_NS      :=  6; # must be DELETED, is replaced by QN_PREFIX
 const QN_PREFIX  :=  6;
 const QN_LOC     :=  7;
 const PROP_TEXT  :=  8;
@@ -417,7 +416,6 @@ const WS_SIZE     := 30; # must be last!
 #define PRE_KIND     3
 #define PRE_FRAG     4
 #define QN_URI       5
-#define QN_NS        6 /* must be DELETED, is replaced by QN_PREFIX */
 #define QN_PREFIX    6
 #define QN_LOC       7
 #define PROP_TEXT    8
@@ -465,7 +463,7 @@ PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
 	ws.fetch(PRE_KIND).insert(nil,bat("pre_kind" + docid));
 	ws.fetch(PRE_FRAG).insert(nil,fake_project(frag));
 	ws.fetch(QN_URI).insert(nil,bat("qn_uri" + docid));
-	ws.fetch(QN_PREFIX).insert(nil,bat("qn_ns" + docid));
+	ws.fetch(QN_PREFIX).insert(nil,bat("qn_prefix" + docid));
 	ws.fetch(QN_LOC).insert(nil,bat("qn_loc" + docid));
 	ws.fetch(PROP_TEXT).insert(nil,bat("prop_text" + docid));
 	ws.fetch(PROP_COM).insert(nil,bat("prop_com" + docid));
@@ -638,7 +636,12 @@ PROC compress_properties(str name) : void
     var _newProp := pre_oldProp.reverse().mark(0@0).reverse();
 
     pre_oldProp := pre_kind.ord_uselect(ELEMENT).mirror().leftfetchjoin(pre_prop);
-    var oldProp_newProp := compress_val(("qn_ns" + docid), ("qn_loc" + docid));
+    var oldProp_newProp := compress_val(("qn_uri" + docid), ("qn_loc" + docid));
+    var oldProp_newProp := compress_val(("qn_uri" + docid), ("qn_loc" + docid));
+    {
+        var qn_prefix := bat("qn_prefix" + docid);
+        qn_prefix.access(BAT_WRITE).delete().insert(bat("qn_uri" + docid)).access(BAT_READ);
+    }
     # combine the intermediate results
     var pre_newProp_part := pre_oldProp.leftjoin(oldProp_newProp);
     var _pre_part := pre_newProp_part.mark(0@0).reverse();
@@ -895,8 +898,8 @@ PROC import_doc(str flnm, str name) : void
     # load table prop|ns|loc
     tmp := load(tag, seps2, tag_ty, flnm + ".qn", -1);
     # INCOMPLETE, fill the qn_uri in the loader
-    tmp.find("ns").copy().project(str(nil)).persists(true).bbpname("qn_uri" + docid);
-    tmp.find("ns").persists(true).bbpname("qn_ns" + docid);
+    tmp.find("ns").copy().persists(true).bbpname("qn_uri" + docid);
+    tmp.find("ns").persists(true).bbpname("qn_prefix" + docid);
     tmp.find("loc").persists(true).bbpname("qn_loc" + docid);
 
     # load table prop|text
@@ -932,7 +935,7 @@ PROC import_doc(str flnm, str name) : void
 
     if (((bat("pre_kind" + docid).select(ELEMENT).count() +
           bat("attr_own" + docid).count()) = 
-         bat("qn_ns" + docid).count())
+         bat("qn_uri" + docid).count())
         and
 	(bat("pre_kind" + docid).select(TEXT).count() =
         bat("prop_text" + docid).count()))
@@ -1004,7 +1007,7 @@ PROC shred_doc_base(str flnm, str name, bit doCommit, str opt) : BAT[void,bat]
     if ( noCommit ) resBAT.insert(nil,xb);
 
     xb := shredRES.fetch(QN_PREFIX).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("qn_ns" + docid);
+    xb.bbpname("qn_prefix" + docid);
     if ( noCommit ) resBAT.insert(nil,xb);
 
     xb := shredRES.fetch(QN_LOC).mmap(STORE_MMAP).persists(doCommit);
@@ -1123,7 +1126,7 @@ PROC delete_doc(str name) : void
     bat("pre_prop" + docid).persists(false);
     bat("pre_kind" + docid).persists(false);
     bat("qn_uri" + docid).persists(false);
-    bat("qn_ns" + docid).persists(false);
+    bat("qn_prefix" + docid).persists(false);
     bat("qn_loc" + docid).persists(false);
     bat("prop_text" + docid).persists(false);
     bat("prop_com" + docid).persists(false);
@@ -1761,7 +1764,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	if (is_fake_project(pre_frag)) {
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
-		var qn_ns  := ws.fetch(QN_PREFIX).fetch(frag);
+		var qn_ns  := ws.fetch(QN_URI).fetch(frag);
 		    qn_ns  := qn_ns.ord_uselect(ns);
 		var qn_loc := ws.fetch(QN_LOC).fetch(frag);
 		    qn_loc := qn_loc.ord_uselect(loc);
@@ -1801,7 +1804,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		    res_prop := nil;
 		var X_frag   := res_frag.reverse().mark(0@0).reverse();
 		    res_frag := nil;
-		var X_ns     := mposjoin(X_prop, X_frag, ws.fetch(QN_PREFIX));
+		var X_ns     := mposjoin(X_prop, X_frag, ws.fetch(QN_URI));
 		var X_loc    := mposjoin(X_prop, X_frag, ws.fetch(QN_LOC));
 		    X_prop   := nil;
 		    X_frag   := nil;
@@ -1819,7 +1822,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	@:ns_loc_post(qn,loc,QN,LOC,ELEMENT)@
 @
 @= ns_post
-	@:ns_loc_post(qn,ns,QN,NS,ELEMENT)@
+	@:ns_loc_post(qn,ns,QN,URI,ELEMENT)@
 @
 @= target_post
         @:ns_loc_post(prop,tgt,PROP,TGT,1)@
@@ -1918,7 +1921,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	if (is_fake_project(pre_frag)) {
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
-		var qn_ns  := ws.fetch(QN_PREFIX).fetch(frag);
+		var qn_ns  := ws.fetch(QN_URI).fetch(frag);
 		    qn_ns  := qn_ns.ord_uselect(ns);
 		var qn_loc := ws.fetch(QN_LOC).fetch(frag);
 		    qn_loc := qn_loc.ord_uselect(loc);
@@ -1946,7 +1949,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		    pre_prop := nil;
 		var X_frag   := pre_frag.reverse().mark(0@0).reverse();
 		    pre_frag := nil;
-		var X_ns     := mposjoin(X_prop, X_frag, ws.fetch(QN_PREFIX));
+		var X_ns     := mposjoin(X_prop, X_frag, ws.fetch(QN_URI));
 		var X_loc    := mposjoin(X_prop, X_frag, ws.fetch(QN_LOC));
 		    X_prop   := nil;
 		    X_frag   := nil;
@@ -1965,7 +1968,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	@:ns_loc_pre(qn,loc,QN,LOC,ELEMENT)@
 @
 @= ns_pre
-	@:ns_loc_pre(qn,ns,QN,NS,ELEMENT)@
+	@:ns_loc_pre(qn,ns,QN,URI,ELEMENT)@
 @
 @= target_pre
 	@:ns_loc_pre(prop,tgt,PROP,TGT,1)@ 

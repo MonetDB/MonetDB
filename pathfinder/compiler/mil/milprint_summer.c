@@ -1950,7 +1950,7 @@ loop_liftedSCJ (opt_t *f,
             milprintf(f,
                     "temp1_str := mposjoin(mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_QN)), "
                                           "mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_FRAG)), "
-                                          "ws.fetch(QN_NS));\n"
+                                          "ws.fetch(QN_URI));\n"
                     "temp1 := temp1_str.ord_uselect(\"%s\");\n"
                     "temp1_str := nil_oid_str;\n",
                     ns);
@@ -2055,7 +2055,7 @@ loop_liftedSCJ (opt_t *f,
             milprintf(f,
                     "var temp_str := mposjoin(mposjoin(oid_item, oid_frag, ws.fetch(PRE_PROP)), "
                                              "mposjoin(oid_item, oid_frag, ws.fetch(PRE_FRAG)), "
-                                             "ws.fetch(QN_NS));\n"
+                                             "ws.fetch(QN_URI));\n"
                     "temp1 := temp_str.ord_uselect(\"%s\").mark(0@0).reverse();\n"
                     "temp_str := nil_oid_str;\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
@@ -2095,7 +2095,7 @@ loop_liftedSCJ (opt_t *f,
             milprintf(f,
                     "var temp_str := mposjoin(mposjoin(oid_item, oid_frag, ws.fetch(PRE_PROP)), "
                                              "mposjoin(oid_item, oid_frag, ws.fetch(PRE_FRAG)), "
-                                             "ws.fetch(QN_NS));\n"
+                                             "ws.fetch(QN_URI));\n"
                     "temp1 := temp_str.ord_uselect(\"%s\").mark(0@0).reverse();\n"
                     "temp_str := nil_oid_str;\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
@@ -2415,7 +2415,8 @@ castQName (opt_t *f, int rc)
     milprintf(f,
             /* string name is only translated into local name, because
                no URIs for the namespace are available */
-            "var prop_id := ws.fetch(QN_NS).fetch(WS).ord_uselect(\"\");\n"
+            "var prop_id := ws.fetch(QN_URI).fetch(WS).ord_uselect(\"\").mirror();\n"
+            "prop_id := prop_id.leftfetchjoin(ws.fetch(QN_PREFIX).fetch(WS)).ord_uselect(\"\");\n"
             "var prop_name := prop_id.mirror().leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));\n"
             "prop_id := nil_oid_oid;\n"
 
@@ -2428,11 +2429,13 @@ castQName (opt_t *f, int rc)
             /* add the strings as local part of the qname into the working set */
             "ws.fetch(QN_LOC).fetch(WS).insert(oid_str);\n"
             "oid_str := oid_str.project(\"\");\n"
-            "ws.fetch(QN_NS).fetch(WS).insert(oid_str);\n"
+            "ws.fetch(QN_URI).fetch(WS).insert(oid_str);\n"
+            "ws.fetch(QN_PREFIX).fetch(WS).insert(oid_str);\n"
             "oid_str := nil_oid_str;\n"
 
             /* get all the possible matching names from the updated working set */
-            "prop_id := ws.fetch(QN_NS).fetch(WS).ord_uselect(\"\");\n"
+            "prop_id := ws.fetch(QN_URI).fetch(WS).ord_uselect(\"\").mirror();\n"
+            "prop_id := prop_id.leftfetchjoin(ws.fetch(QN_PREFIX).fetch(WS)).ord_uselect(\"\");\n"
             "prop_name := prop_id.mirror().leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));\n"
             "prop_id := nil_oid_oid;\n"
 
@@ -2546,8 +2549,8 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                           they are from different fragments */
                 "if (_r_attr_iter.count() != 0) { # test uniqueness\n"
                 "var sorting := _r_attr_iter.reverse().sort().reverse();\n"
-                "sorting := sorting.CTrefine(_r_attr_qn);\n"
-                "sorting := sorting.CTrefine(_r_attr_frag);\n"
+                "sorting := sorting.CTrefine(mposjoin(_r_attr_qn,_r_attr_frag,ws.fetch(QN_LOC)));\n"
+                "sorting := sorting.CTrefine(mposjoin(_r_attr_qn,_r_attr_frag,ws.fetch(QN_URI)));\n"
                 "var unq_attrs := sorting.tunique();\n"
                 "sorting := nil_oid_oid;\n"
                 /* test uniqueness */
@@ -2840,7 +2843,8 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
     
                 /* set the offset for the new created trees */
                 "{\n"
-                "var seqb := oid(count(ws.fetch(PRE_SIZE).fetch(WS)));\n"
+                "var seqb := oid(count(ws.fetch(PRE_SIZE).fetch(WS))"
+                                "+ int(ws.fetch(PRE_SIZE).fetch(WS).seqbase()));\n"
                 "root_level := root_level.seqbase(seqb);\n"
                 "root_size := root_size.seqbase(seqb);\n"
                 "root_kind := root_kind.seqbase(seqb);\n"
@@ -2972,10 +2976,14 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
         milprintf(f,
                 "{ # create attribute root entries\n"
                 /* use iter, qn and frag to find unique combinations */
+                "var attr_qn_ := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_QN));\n"
+                "var attr_qn_frag := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_FRAG));\n"
                 "var sorting := attr_iter.reverse().sort().reverse();\n"
-                "sorting := sorting.CTrefine(mposjoin(attr_item, attr_frag, ws.fetch(ATTR_QN)));"
-                "sorting := sorting.CTrefine(mposjoin(attr_item, attr_frag, ws.fetch(ATTR_FRAG)));"
+                "sorting := sorting.CTrefine(mposjoin(attr_qn_,attr_qn_frag,ws.fetch(QN_LOC)));\n"
+                "sorting := sorting.CTrefine(mposjoin(attr_qn_,attr_qn_frag,ws.fetch(QN_URI)));\n"
                 "var unq_attrs := sorting.tunique();\n"
+                "attr_qn_ := nil_oid_oid;\n"
+                "attr_qn_frag := nil_oid_oid;\n"
                 "sorting := nil_oid_oid;\n"
                 /* 
                 "var unq_attrs := CTgroup(attr_iter)"
@@ -3055,7 +3063,8 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
         milprintf(f,
             /* set the offset for the new created trees */
             "{\n"
-            "var seqb := oid(count(ws.fetch(PRE_SIZE).fetch(WS)));\n"
+            "var seqb := oid(count(ws.fetch(PRE_SIZE).fetch(WS))"
+                            "+ int(ws.fetch(PRE_SIZE).fetch(WS).seqbase()));\n"
             /* get the new pre values */
  /* attr */ "var preOld_preNew := _elem_size.mark(seqb);\n"
  /* attr */ "_attr_own := _attr_own.leftfetchjoin(preOld_preNew);\n"
@@ -3316,7 +3325,8 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
     else
     {
         milprintf(f,
-                "seqb := oid(ws.fetch(PRE_KIND).fetch(WS).count());\n"
+                "seqb := oid(count(ws.fetch(PRE_KIND).fetch(WS))"
+                            "+ int(ws.fetch(PRE_KIND).fetch(WS).seqbase()));\n"
                 "newPre_prop := newPre_prop.reverse().mark(seqb).reverse();\n"
                 "ws.fetch(PRE_PROP).fetch(WS).insert(newPre_prop);\n"
                 "ws.fetch(PRE_SIZE).fetch(WS).insert(newPre_prop.project(0));\n"
@@ -5558,11 +5568,11 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
         milprintf(f,
                 "var res := mposjoin(qname, qname_frag, ws.fetch(QN_LOC));\n");
     else if (!strcmp(name,"namespace-uri"))
-        milprintf(f, /* should be replaced by QN_URI */
-                "var res := mposjoin(qname, qname_frag, ws.fetch(QN_NS));\n");
+        milprintf(f,
+                "var res := mposjoin(qname, qname_frag, ws.fetch(QN_URI));\n");
     else if (!strcmp(name,"name"))
-        milprintf(f, /* should be replaced by QN_PREFIX */
-                "var prefixes := mposjoin(qname, qname_frag, ws.fetch(QN_NS));\n"
+        milprintf(f,
+                "var prefixes := mposjoin(qname, qname_frag, ws.fetch(QN_PREFIX));\n"
                 "var prefix_bool := prefixes.[=](\"\");\n"
                 "var true_oid := prefix_bool.ord_uselect(true).mark(0@0).reverse();\n"
                 "var false_oid := prefix_bool.ord_uselect(false).mark(0@0).reverse();\n"
@@ -6960,6 +6970,56 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
         return (code)?DBL:NORMAL;
     }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"to")))
+    {
+        int rc2;
+        char *item_int = kind_str(INT);
+        item_ext = (code)?item_int:"";
+
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (!rc)
+        {
+            milprintf(f, "item%s := item%s;\n", item_int, val_join(INT));
+        }
+
+        counter++;
+        saveResult_ (f, counter, INT);
+
+        rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+        if (!rc2)
+        {
+            milprintf(f, "item%s := item%s;\n", item_int, val_join(INT));
+        }
+
+        milprintf(f,
+                "{ # op:to (integer, integer)\n"
+                /* because all values have to be there we can compare the voids
+                   instead of the iter values */
+                "var length := item%s.[-](item%s%03u).[+](1).[max](0);\n"
+                "var res := enumerate(item%s%03u, length);\n"
+                "length := nil_oid_int;\n"
+                "iter := res.mark(0@0).reverse().leftfetchjoin(iter);\n"
+                "res := res.reverse().mark(0@0).reverse();\n",
+                item_int, item_int, counter,
+                item_int, counter);
+        if (code)
+        {
+            milprintf(f,"item%s := res;\n", item_ext);
+        }
+        else
+        {
+            addValues(f, int_container(), "res", "item");
+        }
+        milprintf(f,
+                "res := nil_oid_int;\n"
+                "item%s := item%s.reverse().mark(0@0).reverse();\n"
+                "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+                "kind := iter.project(INT);\n"
+                "} # end of op:to (integer, integer)\n ",
+                item_ext, item_ext);
+        deleteResult_ (f, counter, INT);
+        return (code)?INT:NORMAL;
+    }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"count")))
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
@@ -7423,7 +7483,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 static int
 translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
 {
-    char *ns, *loc, *descending;
+    char *descending;
     int rc, rcode;
 
     assert(c);
@@ -7716,33 +7776,41 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             rc = rcode;
             break;
         case c_tag:
-            ns = c->sem.qname.ns.uri;
-            loc = c->sem.qname.loc;
+            {
+            char *prefix = c->sem.qname.ns.ns;
+            char *uri = c->sem.qname.ns.uri;
+            char *loc = c->sem.qname.loc;
 
             /* translate missing ns as "" */
-            if (!ns)
-                ns = "";
+            if (!prefix)
+                prefix = "";
+            if (!uri)
+                uri = "";
 
             milprintf(f,
                     "{ # tagname-translation\n"
-                    "var propID := ws.fetch(QN_NS).fetch(WS)"
+                    "var propID := ws.fetch(QN_URI).fetch(WS)"
                         ".ord_uselect(\"%s\").mirror();\n"
+                    "propID := propID"
+                        ".leftfetchjoin(ws.fetch(QN_PREFIX).fetch(WS))"
+                                         ".ord_uselect(\"%s\").mirror();\n"
                     "var prop_str := propID"
                         ".leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));\n"
                     "propID := prop_str.ord_uselect(\"%s\");\n"
                     "prop_str := nil_oid_str;\n"
                     "var itemID;\n",
-                    ns, loc);
+                    uri, prefix, loc);
 
             milprintf(f,
                     "if (propID.count() = 0)\n"
                     "{\n"
                     "itemID := oid(ws.fetch(QN_LOC).fetch(WS).count());\n"
-                    "ws.fetch(QN_NS).fetch(WS).insert(itemID,\"%s\");\n"
+                    "ws.fetch(QN_URI).fetch(WS).insert(itemID,\"%s\");\n"
+                    "ws.fetch(QN_PREFIX).fetch(WS).insert(itemID,\"%s\");\n"
                     "ws.fetch(QN_LOC).fetch(WS).insert(itemID,\"%s\");\n"
                     "} else { "
                     "itemID := propID.reverse().fetch(0); }\n",
-                    ns, loc);
+                    uri, prefix, loc);
 
             /* translateConst needs a bound variable itemID */
             translateConst (f, cur_level, "QNAME");
@@ -7752,6 +7820,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                     "} # end of tagname-translation\n"
                    );
             rc = NORMAL;
+            }
             break;
         case c_text:
             rcode = (code == NODE)?NODE:NORMAL;
@@ -9720,6 +9789,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
     milprintf(f,
             "# MODULE DECLARATIONS\n"
             "module(\"pathfinder\");\n"
+            "module(\"pf_support\");\n"
             "module(\"aggrX3\");\n"
             "module(\"xtables\");\n"
             "module(\"malalgebra\");\n"
