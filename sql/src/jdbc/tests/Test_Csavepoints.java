@@ -121,7 +121,7 @@ public class Test_Csavepoints {
 
 			con.rollback();
 		} catch (SQLException e) {
-			System.out.println("failed :( "+ e.getMessage());
+			System.out.println("FAILED :( "+ e.getMessage());
 			System.out.println("ABORTING TEST!!!");
 		}
 

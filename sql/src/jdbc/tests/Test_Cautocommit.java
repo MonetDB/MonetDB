@@ -52,11 +52,14 @@ public class Test_Cautocommit {
 			con2.commit();
 			System.out.println("passed :)");
 			System.out.print("select...");
+			rs = stmt1.executeQuery("SELECT * FROM table_Test_Cautocommit");
+			System.out.println("passed :)");
+			System.out.print("commit...");
 			try {
-				rs = stmt1.executeQuery("SELECT * FROM table_Test_Cautocommit");
-				System.out.println("FAILED :(");
+				con1.commit();
+				System.out.println("PASSED :(");
 			} catch (SQLException e) {
-				System.out.println("passed :)");
+				System.out.println("failed :)");
 			}
 		} catch (SQLException e) {
 			// this means we failed (table not there perhaps?)
