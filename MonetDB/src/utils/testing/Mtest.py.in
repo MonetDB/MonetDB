@@ -773,6 +773,8 @@ def RunTest(env, TST) :
 		SkipTest(env, TST, EXT, "as Mshutdown is not available.")
 	elif SERVER == "MAPI" and  not os.path.isfile(env['MONET_PREFIX']+path("/share/Monet/mapi.mil")):
 		SkipTest(env, TST, EXT, "as "+env['MONET_PREFIX']+path("/share/Monet/mapi.mil")+" is not available.")
+	elif SERVER == "MAPI" and  os.name == "nt":
+		SkipTest(env, TST, EXT, "as Mapi is (currently?) not working on WindowsNT.")
 	elif EXT == ".milC" and  not env['exe']['MapiClient'][0]:
 		SkipTest(env, TST, EXT, "as MapiClient is not available.")
 	elif CALL == "python"  and  not env['exe']['python'][0]:
