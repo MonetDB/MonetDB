@@ -223,7 +223,12 @@ void dump_header(MalBlkPtr mb, stmt *s, list *l ){
 }
 @-
 Some utility routines to generate code
+The equality opertor in MAL is '==' instead of '='.
 @c
+str convertOperator(str op){
+	if(strcmp(op,"=")==0) return "==";
+	return op;
+}
 void dump_1(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name){
 	InstrPtr q;
 	int o1 = backend_dumpstmt(sql,mb, s->op1.stval);
@@ -493,7 +498,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 				GDKerror("Unknown operator");
 	  		} 
 			q= newStmt(mb,"multiplex","tactics");
-			q= pushStr(mb,q,op);
+			q= pushStr(mb,q,convertOperator(op));
 			q= pushArgument(mb,q,l);
 			q= pushArgument(mb,q,r);
 			k= getDestVar(q);
@@ -801,7 +806,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			} else {
 				q= newStmt(mb,"multiplex","tactics");
 				s->nr = getDestVar(q);
-				q= pushStr(mb,q,s->op4.funcval->func->imp);
+				q= pushStr(mb,q,convertOperator(s->op4.funcval->func->imp));
 				q= pushArgument(mb,q,l);
 			}
 		} else {
@@ -817,7 +822,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		@:SQLprelude@
 		if (s->op1.stval->nrcols || s->op2.stval->nrcols ){
 			q= newStmt(mb,"multiplex","tactics");
-			q= pushStr(mb,q,s->op4.funcval->func->imp);
+			q= pushStr(mb,q,convertOperator(s->op4.funcval->func->imp));
 			q= pushArgument(mb,q,l);
 			q= pushArgument(mb,q,r);
 		} else  {
@@ -856,7 +861,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
                         }
 
 			q= newStmt(mb,"multiplex","tactics");
-			q= pushStr(mb,q,s->op4.funcval->func->imp);
+			q= pushStr(mb,q,convertOperator(s->op4.funcval->func->imp));
 			for(i=0;i<opslen;i++){
 				q= pushArgument(mb,q,ops[i]);
 			}
