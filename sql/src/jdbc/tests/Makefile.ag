@@ -77,3 +77,8 @@ java_Test_Sbatching = {
 	DIR = pkglibdir/Tests
 	SOURCES = Test_Sbatching.java
 }
+
+java_Test_Rmetadata = {
+	DIR = pkglibdir/Tests
+	SOURCES = Test_Rmetadata.java
+}
