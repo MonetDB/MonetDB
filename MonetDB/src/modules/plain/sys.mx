@@ -387,7 +387,7 @@ that you might well find very useful.
 #define PARAM(x)        (argv+x)
 #define RETVAL          (argv)
 
-static char* itoa(int i){
+static char* local_itoa(int i){
         static char buf[32];
         sprintf(buf,"%d",i);
         return buf;
@@ -622,7 +622,7 @@ int view_gdk_env(
 		}
         sprintf(prefix, "%dbit%s", sizeof(ptr)*8, monet_arch);
 	BUNins(b, "prefix", prefix); 
-	BUNins(b, "processid", itoa(getpid()));
+	BUNins(b, "processid", local_itoa(getpid()));
 	BUNins(b, "home", monet_dir);
 	BUNins(b, "version", monet_version);
 	@:Pseudo(gdk,env)@
@@ -922,7 +922,7 @@ int view_gdk_mem(BAT **retval) {
 	struct mallinfo m;
 	BAT *b;
 	int i;
-	m = mallinfo();
+	m = MT_mallinfo();
  
 	*retval = b = BATnew(TYPE_str, TYPE_int, 32);
 	if ( b == 0) return GDK_FAIL;
@@ -1146,15 +1146,9 @@ be queried. A default listing is produced by the command @%usagecmd@.
  
 The BAT grows. It should be compacted.
 @c
-#if OSVER < 560 && defined(SOLARIS)
-#include "/usr/ucbinclude/sys/rusage.h"
-#include "/usr/ucbinclude/sys/resource.h"
-
-extern int getrusage (int who, struct rusage *rusage);
-#else
-#include <sys/resource.h>
+#ifdef HAVE_SYS_RESOURCE_H
+# include <sys/resource.h>
 #endif
-
  
 int view_gdk_io(BAT **retval) {
 	struct rusage ru;

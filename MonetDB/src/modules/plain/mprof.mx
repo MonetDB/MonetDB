@@ -678,7 +678,7 @@ int
 Ma_new(
    Mallinfo* retval  /* put return atom here. */
 ){
-	*retval = mallinfo();
+	*retval = MT_mallinfo();
 	return GDK_SUCCEED;
 }
 
@@ -1260,7 +1260,7 @@ pmB_impl(
 
 	if( ! MprofOK) return GDK_SUCCEED;
 
-	m = mallinfo();
+	m = MT_mallinfo();
 	getrusage(RUSAGE_SELF, &ru);
 	times(&t);
 	clk = time(0);
@@ -1315,7 +1315,7 @@ pmE_impl(
 
 	if( ! MprofOK) return GDK_SUCCEED;
 
-	m = mallinfo();
+	m = MT_mallinfo();
 	getrusage(RUSAGE_SELF, &ru);
 	times(&t);
 	clk= time(0);

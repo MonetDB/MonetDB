@@ -40,8 +40,9 @@ The top contains the next timer event to go off.
 The timer is disabled when no timer events are outstanding.
 @h
 #include <monet.h> 
-#include <sys/time.h> 
-#include <sys/signal.h> 
+#ifdef HAVE_SYS_SIGNAL_H
+# include <sys/signal.h> 
+#endif
 #define MAXtimer                200
 
 typedef struct {
@@ -52,7 +53,6 @@ typedef struct {
 
 @c
 #include "alarm.h"
-#include <config.h>
 
 static monet_timer_t            timer[MAXtimer]; 
 static int                      timerTop = 0; 

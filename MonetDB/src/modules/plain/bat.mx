@@ -677,7 +677,7 @@ char* pre(str s1,str s2){
 	strcpy(buf,s1); strcat(buf,s2);
 	return buf;
 }
-static char* itoa(int i){
+static char* local_itoa(int i){
 	static char buf[32];
 	sprintf(buf,"%d",i);
 	return buf;
@@ -695,8 +695,8 @@ void HASHinfo(BAT *bn, Hash *h, str s){
 	char    buf[32];
  
 	BUNins(bn, pre(s,"type"), ATOMname(h->type));
-	BUNins(bn, pre(s,"mask"), itoa(h->mask));
-	BUNins(bn, pre(s,"lim"), itoa(h->lim));
+	BUNins(bn, pre(s,"mask"), local_itoa(h->mask));
+	BUNins(bn, pre(s,"lim"), local_itoa(h->lim));
  
 	for (i = 0; i <= COLLISION + 1; i++) {
 		cnt[i] = 0;
@@ -716,7 +716,7 @@ void HASHinfo(BAT *bn, Hash *h, str s){
  
 	for (i = 0; i <= COLLISION+1; i++)
 	if( cnt[i]) {
-		BUNins(bn, pre(s,itoa(i)), itoa(cnt[i]));
+		BUNins(bn, pre(s,local_itoa(i)), local_itoa(cnt[i]));
 	}
 	sprintf(buf, "%d on %d", largetot, largebuckets);
 	BUNins(bn, pre(s,"collision"), buf);
@@ -727,11 +727,11 @@ static void infoHeap(BAT *bn, Heap *hp, str nme){
 
 	while(*nme) *p++ = *nme++;
 	strcpy(p, "free");
-        BUNins(bn, buf, itoa(hp->free ));
+        BUNins(bn, buf, local_itoa(hp->free ));
 	strcpy(p, "size");
-        BUNins(bn, buf, itoa(hp->size));
+        BUNins(bn, buf, local_itoa(hp->size));
 	strcpy(p, "maxsize");
-        BUNins(bn, buf, itoa(hp->maxsize));
+        BUNins(bn, buf, local_itoa(hp->maxsize));
 	strcpy(p, "storage");
         BUNins(bn, buf, (hp->base==NULL)?"absent":(hp->storage==STORE_MMAP)?
 		(hp->filename?"memory mapped":"anonymous vm"):
@@ -739,7 +739,7 @@ static void infoHeap(BAT *bn, Heap *hp, str nme){
 	strcpy(p, "filename");
         BUNins(bn, buf, hp->filename?hp->filename:"no file");
 	strcpy(p, "offset");
-        BUNins(bn, buf, itoa(hp->offset));
+        BUNins(bn, buf, local_itoa(hp->offset));
 }
 
 int CMDinfo(BAT **retval, BAT *b){
@@ -767,48 +767,48 @@ int CMDinfo(BAT **retval, BAT *b){
 	default:               access="unknown";
 	}
  
-        BUNins(bn, "version", itoa(b->GDKversion));
+        BUNins(bn, "version", local_itoa(b->GDKversion));
         BUNins(bn, "batId", b->batId );
-        BUNins(bn, "batCacheid", itoa(b->batCacheid));
-        BUNins(bn, "batParentid", itoa(b->batParentid));
-        BUNins(bn, "batSharecnt", itoa(b->batSharecnt));
+        BUNins(bn, "batCacheid", local_itoa(b->batCacheid));
+        BUNins(bn, "batParentid", local_itoa(b->batParentid));
+        BUNins(bn, "batSharecnt", local_itoa(b->batSharecnt));
         BUNins(bn, "head", ATOMname(b->htype));
         BUNins(bn, "tail", ATOMname(b->ttype));
         BUNins(bn, "batPersistence", mode);
         BUNins(bn, "batRestricted", access);
-        BUNins(bn, "batRefcnt", itoa(BBP_refs(b->batCacheid)));
+        BUNins(bn, "batRefcnt", local_itoa(BBP_refs(b->batCacheid)));
         BUNins(bn, "batDirty", BATdirty(b)?"dirty":"clean");
-        BUNins(bn, "batSet", itoa(b->batSet));
-        BUNins(bn, "void_tid", itoa(b->void_tid));
-        BUNins(bn, "void_cnt", itoa(b->void_cnt));
+        BUNins(bn, "batSet", local_itoa(b->batSet));
+        BUNins(bn, "void_tid", local_itoa(b->void_tid));
+        BUNins(bn, "void_cnt", local_itoa(b->void_cnt));
  
-        BUNins(bn, "hsorted", itoa(BAThordered(b)));
+        BUNins(bn, "hsorted", local_itoa(BAThordered(b)));
         BUNins(bn, "hident",  b->hident);
-	BUNins(bn, "hdense", itoa(BAThdense(b)));
-	BUNins(bn, "hseqbase", itoa(b->hseqbase));
-        BUNins(bn, "hkey", itoa(b->hkey));
-        BUNins(bn, "hloc", itoa(b->hloc));
-        BUNins(bn, "hvarsized", itoa(b->hvarsized));
-        BUNins(bn, "halign", itoa(b->halign));
-        BUNins(bn, "halignflushed", itoa(b->halignflushed));
+	BUNins(bn, "hdense", local_itoa(BAThdense(b)));
+	BUNins(bn, "hseqbase", local_itoa(b->hseqbase));
+        BUNins(bn, "hkey", local_itoa(b->hkey));
+        BUNins(bn, "hloc", local_itoa(b->hloc));
+        BUNins(bn, "hvarsized", local_itoa(b->hvarsized));
+        BUNins(bn, "halign", local_itoa(b->halign));
+        BUNins(bn, "halignflushed", local_itoa(b->halignflushed));
  
         BUNins(bn, "tident", b->tident);
-	BUNins(bn, "tdense", itoa(BATtdense(b)));
-	BUNins(bn, "tseqbase", itoa(b->tseqbase));
-        BUNins(bn, "tsorted", itoa(BATtordered(b)));
-        BUNins(bn, "tkey", itoa(b->tkey));
-        BUNins(bn, "tloc", itoa(b->tloc));
-        BUNins(bn, "tvarsized", itoa(b->tvarsized));
-        BUNins(bn, "talign", itoa(b->talign));
-        BUNins(bn, "talignflushed", itoa(b->talignflushed));
+	BUNins(bn, "tdense", local_itoa(BATtdense(b)));
+	BUNins(bn, "tseqbase", local_itoa(b->tseqbase));
+        BUNins(bn, "tsorted", local_itoa(BATtordered(b)));
+        BUNins(bn, "tkey", local_itoa(b->tkey));
+        BUNins(bn, "tloc", local_itoa(b->tloc));
+        BUNins(bn, "tvarsized", local_itoa(b->tvarsized));
+        BUNins(bn, "talign", local_itoa(b->talign));
+        BUNins(bn, "talignflushed", local_itoa(b->talignflushed));
  
-        BUNins(bn, "batInserted", itoa(BUNindex(b, b->batInserted)));
-        BUNins(bn, "batDeleted", itoa(BUNindex(b, b->batDeleted)));
-        BUNins(bn, "batHole", itoa(BUNindex(b, b->batHole)));
-        BUNins(bn, "top", itoa(BUNindex(b, (Bunbase(b) + b->batBuns->free))));
-	BUNins(bn, "batStamp", itoa(b->batStamp));
-	BUNins(bn, "curStamp", itoa(BBPcurstamp()));
-        BUNins(bn, "batCopiedtodisk", itoa(b->batCopiedtodisk));
+        BUNins(bn, "batInserted", local_itoa(BUNindex(b, b->batInserted)));
+        BUNins(bn, "batDeleted", local_itoa(BUNindex(b, b->batDeleted)));
+        BUNins(bn, "batHole", local_itoa(BUNindex(b, b->batHole)));
+        BUNins(bn, "top", local_itoa(BUNindex(b, (Bunbase(b) + b->batBuns->free))));
+	BUNins(bn, "batStamp", local_itoa(b->batStamp));
+	BUNins(bn, "curStamp", local_itoa(BBPcurstamp()));
+        BUNins(bn, "batCopiedtodisk", local_itoa(b->batCopiedtodisk));
         BUNins(bn, "batDirtydesc", b->batDirtydesc?"dirty":"clean");
  
         BUNins(bn, "batDirtybuns", b->batDirtybuns?"dirty":"clean");
@@ -822,12 +822,12 @@ int CMDinfo(BAT **retval, BAT *b){
 
         BUNins(bn, "hacctype", ACCname(b->hacctype));
         BUNins(bn, "haccdirty", b->haccdirty?"dirty":"clean");
-        BUNins(bn, "haccCopiedtodisk", itoa(b->haccCopiedtodisk));
+        BUNins(bn, "haccCopiedtodisk", local_itoa(b->haccCopiedtodisk));
 	infoHeap(bn, &b->haccelerator, "haccelerator.");
 
         BUNins(bn, "tacctype", ACCname(b->tacctype));
         BUNins(bn, "taccdirty", b->taccdirty?"dirty":"clean");
-        BUNins(bn, "taccCopiedtodisk", itoa(b->taccCopiedtodisk));
+        BUNins(bn, "taccCopiedtodisk", local_itoa(b->taccCopiedtodisk));
 	infoHeap(bn, &b->taccelerator, "taccelerator.");
  
         /* dump index information */
