@@ -493,6 +493,7 @@ Read the entire file, realloc if necessary.
 		buf = p;
 		p += len;
         }
+	buf[i] = 0;
         fclose(fp);
 	/* normalize line endings: replace CR-LF by space LF,
 	   replace bare CR by LF */
