@@ -157,7 +157,8 @@ public class JdbcClient {
 		if (pass == null) {
 			PasswordField passfield = new PasswordField();
 			try {
-				pass = String.valueOf(passfield.getPassword(System.in, "password: "));
+				char[] tmp = passfield.getPassword(System.in, "password: ");
+				if (tmp != null) pass = String.valueOf(tmp);
 			} catch(IOException ioe) {
 				System.err.println("Invalid password!");
 				System.exit(-1);
