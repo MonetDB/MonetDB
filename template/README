@@ -28,7 +28,7 @@ Obviously, this generates a configured template directory.
 Some dependencies exist that you'd better change manually now.
 
 First, the template assumes there is a file src/template.mx; which should
-identify this package uniquely from the AC_INIT clause in Makefile.ag.
+identify this package uniquely from the AC_INIT clause in configure.ag.
 Similarly, it produces a template_config.h with additional includes.
 
 Change those to your preferences by:
