@@ -167,7 +167,7 @@ public class JdbcClient {
 						} catch (SQLException e) {
 							System.err.println("Error: " + e.getMessage());
 						}
-					} else if (qp.getQuery().toLowerCase().startsWith("commit;")) {
+					} else if (qp.getQuery().toLowerCase().startsWith("commit")) {
 						try {
 							con.commit();
 							// enable JDBC auto commit
@@ -176,7 +176,7 @@ public class JdbcClient {
 						} catch (SQLException e) {
 							System.err.println("Error: " + e.getMessage());
 						}
-					} else if (qp.getQuery().toLowerCase().startsWith("rollback;")) {
+					} else if (qp.getQuery().toLowerCase().startsWith("rollback")) {
 						try {
 							con.rollback();
 							// enable JDBC auto commit
@@ -217,6 +217,7 @@ public class JdbcClient {
 								}
 								System.out.println("+----------");
 								System.out.println(count + " rows");
+								rs.close();
 							} else {
 								// we have an update count
 								System.out.println("affected rows\n-------------\n" + stmt.getUpdateCount());

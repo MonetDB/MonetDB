@@ -488,6 +488,9 @@ public class MonetStatement implements Statement {
 		private boolean finished = false;
 		private boolean onPreFetchStartReading = false;
 		
+		// the headers are stored here as long as we think there are more to come
+		Map tmpHeaders = new HashMap();
+		
 		public void run() {
 			synchronized(fetch) {;
 				while(!finished) {
@@ -582,6 +585,7 @@ public class MonetStatement implements Statement {
 		synchronized void newResult(String query) throws SQLException {
 			synchronized(headers) {
 				headers.clear();
+				tmpHeaders.clear();
 				this.query = query;
 				tupleCount = 0;
 				resultID = null;
@@ -663,7 +667,7 @@ public class MonetStatement implements Statement {
 							for (int i = 0; i < values.length; i++) {
 								values[i] = values[i].trim();
 							}
-							headers.put(
+							tmpHeaders.put(
 								tmpLine.substring(pos + 1).trim(),
 								values
 							);
@@ -706,17 +710,23 @@ public class MonetStatement implements Statement {
 		 */
 		private void completeHeaders() throws SQLException {
 			synchronized(headers) {
-				if (headers.size() != 0) {
+				if (tmpHeaders.size() != 0) {
+					Object tmp = tmpHeaders.get("tuplecount");
+					if (tmp == null) throw new SQLException("Required header missing!");
 					try {
-						Object tmp = headers.get("tuplecount");
-						if (tmp == null) throw new SQLException("Required header missing!");
 						tupleCount = Integer.parseInt(((String[])tmp)[0]);
 						if (maxRows != 0)
 							tupleCount = Math.min(tupleCount, maxRows);
 					} catch (NumberFormatException e) {
 						throw new SQLException("Illegal header, unparsable int for tuplecount: " + ((String[])headers.get("tuplecount"))[0]);
 					}
-					resultID = ((String[])headers.get("id"))[0];
+					tmp = tmpHeaders.get("id");
+					if (tmp == null) throw new SQLException("Required header missing!");
+					resultID = ((String[])tmp)[0];
+					
+					// make headers available for the public :)
+					headers.putAll(tmpHeaders);
+					
 					// make sure the cache size is minimal to
 					// reduce overhead and memory usage
 					cacheSize = Math.min(tupleCount, fetchSize);
@@ -728,7 +738,7 @@ public class MonetStatement implements Statement {
 					// know this is it...
 					headers.put("emptyheader", "true");
 				}
-				headers.notifyAll();
+				headers.notify();
 			}
 		}
 	
@@ -744,18 +754,10 @@ public class MonetStatement implements Statement {
 		 * @throws SQLException if an database error occurs
 		 */
 		String getLine(int row) throws SQLException {
-			synchronized(headers) {
-				while (headers.size() == 0) {
-					try {
-						headers.wait();
-					} catch(InterruptedException e) {
-						// try again!
-					}
-				}
-			}
+			if (headers.size() == 0) throw
+				new SQLException("Cannot retrieve date before headers are retrieved!");
 
 			if (row >= tupleCount || row < 0) return null;
-			//maxLine < cacheSize && !resultSetEmpty
 			
 			int block = row / cacheSize;
 			int blockLine = row % cacheSize;
