@@ -51,6 +51,9 @@ MXFLAGS= -notouch
 %.mil: %.mx
 	$(MX) $(MXFLAGS) -x mil $<
 
+%: %.mx
+	$(MX) $(MXFLAGS) -x sh $<
+
 %.proto.h: %.m
 	$(MEL) $(INCLUDES) -o $@ -proto $<
 
