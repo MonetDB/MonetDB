@@ -34,7 +34,7 @@ a novel database system under development since 1993 at the
 When you start reading this, you are supposed to have downloaded Monet from   
 @[<a href="http://sourceforge.net/projects/monetdb/">sourceforge</a>@ and succesfully compiled following
 the instructions in the file @[<a href="www/HowToStart">HowToStart</a>@ (for Unix) or 
-@[<a href="www/HowToStart-Win32">HowToStart-Win32</a>@ (for Windows). \\
+@[<a href="www/HowToStart-Win32.txt">HowToStart-Win32.txt</a>@ (for Windows). \\
 
 After reading this document,
 the next step to take is to study the @[<a href="mil.html">MIL Reference Manual</a>@.
@@ -261,7 +261,7 @@ in principle a build on any Posix platform should be as simple as {\tt ./bootstr
 As Microsoft Windows lacks configure, the Monet distribution comes with pre-built Windows
 {\tt config.h}, such that making becomes {\tt cd NT; make; make -f Makefile.msc all install}. 
 More details and requirements are explained in the file @[<a href="www/HowToStart">HowToStart</a>@ (for Unix users)
-respectively @[<a href="www/HowToStart-Win32">HowToStart-Win32</a>@ (for Windows users).
+respectively @[<a href="www/HowToStart-Win32.txt">HowToStart-Win32.txt</a>@ (for Windows users).
 Both files are located in the root of the source distribution.
 
 Monet is an open database system that can be extended with new {\bf types} (e.g. point,polygons)
@@ -304,7 +304,7 @@ ODBC3.0 and is available both on Unix and Windows.
 
 As stated before, we assume here you have succesfully built and installed Monet according
 to the indications in the file @[<a href="www/HowToStart">HowToStart</a>@ resp. 
-@[<a href="www/HowToStart-Win32">HowToStart-Win32</a>@.
+@[<a href="www/HowToStart-Win32.txt">HowToStart-Win32.txt</a>@.
 
 @+ System Utilities
 @T

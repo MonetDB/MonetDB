@@ -119,7 +119,7 @@ for f in ['bitset', 'bitvector', 'ddbench', 'mel', 'mprof', 'oo7', 'qt', 'tpcd',
 for f in ['README', 'load.mil', 'init.mil']:
     copyfile(os.path.join(srcdir, 'scripts', 'gold', f),
              os.path.join(dstdir, 'doc', 'www', f))
-for f in ['HowToStart', 'HowToStart-Win32']:
+for f in ['HowToStart', 'HowToStart-Win32.txt']:
     copyfile(os.path.join(srcdir, f),
              os.path.join(dstdir, 'doc', 'www', f))
 
