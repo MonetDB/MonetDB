@@ -157,7 +157,7 @@ typedef struct sql_table {
 
 typedef struct sql_schema {
 	sql_base base;
-	char *auth;
+	int auth_id;
 
 	changeset tables;
 	list *keys; 	/* the names for keys and idxs are global, but */	
@@ -252,6 +252,8 @@ typedef struct mvc {
 } mvc;
 
 
+sql_export sql_schema *find_schema(sql_trans *t, char *sname);
+
 sql_export int mvc_init(int debug, backend_stack stk );
 sql_export void mvc_exit();
 sql_export void mvc_logmanager();
@@ -259,9 +261,6 @@ sql_export void mvc_logmanager();
 sql_export mvc *mvc_create( int cache, backend_stack stk, 
 			    bstream *rs, stream *ws );
 sql_export void mvc_destroy( mvc *c );
-
-sql_export int mvc_set_schema( mvc *m, char *schema );
-sql_export char *mvc_login( mvc *c, char *user, char *passwd );
 
 sql_export ssize_t mvc_status( mvc *c );
 sql_export int mvc_type( mvc *c );
@@ -299,7 +298,7 @@ sql_export sql_module *mvc_create_module( mvc *c, char *name );
 sql_export sql_type * mvc_create_type(mvc * sql, sql_module *m, 
 	        char *sqlname, int digits, int scale, int radix, char *impl );
 sql_export void mvc_drop_schema( mvc *c, char *name );
-sql_export sql_schema *mvc_create_schema( mvc *c, char *name, char *auth);
+sql_export sql_schema *mvc_create_schema( mvc *c, char *name, int auth_id);
 sql_export void mvc_drop_table( mvc *c, sql_schema *s, char *name, int cascade );
 sql_export sql_table *mvc_create_view( mvc *c, sql_schema *s, char *name, char *sql, bit system, bit persists);
 sql_export sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, bit system, bit persists, bit clear, int sz);
@@ -357,7 +356,7 @@ static MT_Lock 	  	mvc_lock = NULL;
 static struct logger 	*logger = NULL;
 static sql_trans 	*gtrans = NULL;
 
-static sql_schema *bootstrap_create_schema(mvc * m, char *name, char *auth);
+static sql_schema *bootstrap_create_schema(mvc * m, char *name, int auth_id);
 static sql_table *bootstrap_create_table(mvc * m, sql_schema *s, char *name, bit clear);
 static sql_column *bootstrap_create_column(mvc * m, sql_table *t, char *name,
 		       char *sqltype, int digits );
@@ -692,7 +691,6 @@ static void table_destroy(sql_table * t)
 static void schema_destroy(sql_schema * s)
 {
 	base_destroy( &s->base );
-	_DELETE(s->auth);
 	list_destroy(s->keys);
 	list_destroy(s->idxs);
 
@@ -797,7 +795,6 @@ find_schema_node(sql_trans *t, char *sname)
 	return cs_find_name( &t->schemas, sname );
 }
 
-static
 sql_schema *find_schema(sql_trans *t, char *sname)
 {
 	node *n = find_schema_node( t, sname );
@@ -1257,7 +1254,7 @@ static sql_schema *load_schema(sql_trans *tr, BAT * schemas, BUN j)
 
 	base_init( &s->base, *(sqlid*) bun_find(schemas, lid),
 		TR_OLD, bun_find(schema_names, lid));
-	s->auth = _strdup(bun_find(schema_auths, lid));
+	s->auth_id = *(sqlid*)bun_find(schema_auths, lid);
 	s->keys = list_create((fdestroy)NULL);
 	s->idxs = list_create((fdestroy)NULL);
 	cs_init( &s->tables, (fdestroy)&table_destroy);
@@ -1536,7 +1533,7 @@ static sql_schema *schema_dup(sql_trans *tr, int flag, sql_schema * os, sql_tran
 	
 	(void)o;
 	base_init( &s->base, os->base.id, tr_flag(&os->base, flag), os->base.name);
-	s->auth = _strdup(os->auth);
+	s->auth_id = os->auth_id;
 	cs_init( &s->tables, (fdestroy)&table_destroy );
 	s->keys = list_create((fdestroy)NULL);
 	s->idxs = list_create((fdestroy)NULL);
@@ -1661,10 +1658,10 @@ static void mvc_init_schema( struct bm *bm )
 {
 	BAT *sql_schema_id = mvc_bat(bm, "schemas_id", TYPE_int);
 	BAT *sql_schema_name = mvc_bat(bm, "schemas_name", TYPE_str);
-	BAT *sql_schema_auth = mvc_bat(bm, "schemas_authorization", TYPE_str);
+	BAT *sql_schema_auth = mvc_bat(bm, "schemas_authorization", TYPE_int);
 	BAT *U_schema_id = mvc_bat(bm, "U_schemas_id", TYPE_int);
 	BAT *U_schema_name = mvc_bat(bm, "U_schemas_name", TYPE_str);
-	BAT *U_schema_auth = mvc_bat(bm, "U_schemas_authorization", TYPE_str);
+	BAT *U_schema_auth = mvc_bat(bm, "U_schemas_authorization", TYPE_int);
 	BAT *D_sql_schema = mvc_bat(bm, "D_schemas", TYPE_oid);
 
 	update_table_bat(sql_schema_id, U_schema_id, D_sql_schema);
@@ -1988,7 +1985,7 @@ int mvc_init(int debug, backend_stack stk)
 		mvc_trans(m);
 		res = 1;
 
-		s = bootstrap_create_schema(m, "sys", "sqladmin");
+		s = bootstrap_create_schema(m, "sys", ROLE_SYSADMIN);
 		t = bootstrap_create_table (m, s, "modules", 0);
 		bootstrap_create_column(m, t, "id", "INT", 9);
 		bootstrap_create_column(m, t, "name", "VARCHAR", 0);
@@ -1996,7 +1993,7 @@ int mvc_init(int debug, backend_stack stk)
 		t = bootstrap_create_table (m, s, "schemas", 0);
 		bootstrap_create_column(m, t, "id", "INT", 9);
 		bootstrap_create_column(m, t, "name", "VARCHAR", 0);
-		bootstrap_create_column(m, t, "authorization", "VARCHAR", 0);
+		bootstrap_create_column(m, t, "authorization", "INT", 9);
 
 		t = bootstrap_create_table(m, s, "ptables", 0);
 		bootstrap_create_column(m, t, "id", "INT", 9);
@@ -2067,7 +2064,7 @@ int mvc_init(int debug, backend_stack stk)
 		mvc_create_column_(m, t, "number", "INT", 9 );
 
 		/* now the authorisation related tables */
-		t = mvc_create_table(m, s, "users", 1, 1, 0, -1 );
+		t = mvc_create_table(m, s, "db_users", 1, 1, 0, -1 );
 		mvc_create_column_(m, t, "name", "VARCHAR", 0);
 		mvc_create_column_(m, t, "passwd", "VARCHAR", 0);
 		mvc_create_column_(m, t, "fullname", "VARCHAR", 0);
@@ -2093,10 +2090,9 @@ int mvc_init(int debug, backend_stack stk)
 		mvc_create_column_(m, t, "grantable", "INT", 9);
 
 		/* add monetdb user */
+		sql_create_role(m, "public", 0); 	/* ROLE_PUBLIC 0 */
+		sql_create_role(m, "sysadmin", 0);	/* ROLE_SYSADMIN 1 */
 		sql_create_user(m, "monetdb", "monetdb", "MonetDB Admin", "sys", 0);
-		sql_create_role(m, "public", 0);
-		sql_create_role(m, "sqladmin", 0);
-
 		sql_create_history(m, s);
 		sql_create_env(m, s);
 
@@ -2121,6 +2117,11 @@ int mvc_init(int debug, backend_stack stk)
 		mvc_create_column_(m, t, "null", "BOOLEAN", 0 );
 		mvc_create_column_(m, t, "number", "INT", 9 );
 
+		t = mvc_create_view(m, s, "users", "select name, fullname, default_schema from sys.db_users;", 1, 1);
+		mvc_create_column_(m, t, "name", "VARCHAR", 0);
+		mvc_create_column_(m, t, "fullname", "VARCHAR", 0);
+		mvc_create_column_(m, t, "default_schema", "INT", 9);
+
 		m->trans->schema = s;
 		if (mvc_commit(m, 0, NULL) <0){
 			fprintf(stderr, "mvc_init: unable to create system tables\n");
@@ -2130,94 +2131,6 @@ int mvc_init(int debug, backend_stack stk)
 		mvc_destroy(m);
 	}
 	return res;
-}
-
-int mvc_set_user( mvc *m, char *user )
-{
-	BUN p;
-	int res = 0;
-	BAT *auth_name = BATmirror(mvc_bind(m, "sys", "auths", "name", 0 ));
-
-	if (mvc_debug)
-		fprintf(stderr, "mvc_set_user %s\n", user);
-
-	if ((p=BUNfnd(auth_name, user)) != NULL){
-		ptr lid = BUNtail(auth_name,p);
-		BAT *auth_id = mvc_bind(m, "sys", "auths", "id", 0 );
-		int id = *(int*)BUNtail(auth_id, BUNfnd(auth_id, lid));
-		m->user_id = m->role_id = id;
-		m->user = _strdup(user);
-		m->role = _strdup(user);
-		res = 1;
-		bat_destroy(auth_id);
-	}
-	bat_destroy(auth_name);
-	return res;
-}
-
-int mvc_set_schema( mvc *m, char *schema )
-{
-	int ret = 0;
-	sql_schema *s = find_schema(m->trans, schema);
-
-	if (s) {
-		if (m->schema)
-			_DELETE(m->schema);
-		m->schema = _strdup(schema);
-		m->status = 0;
-		m->type = Q_TRANS;
-		if (m->trans)
-			m->trans->schema = s;
-		ret = 1;
-	}
-	return ret;
-}
-
-char *mvc_login(mvc *m, char *user, char *passwd)
-{
-	char *schema = NULL;
-	BAT *name_user;
-	BUN p;
-
-	if (mvc_debug)
-		fprintf(stderr, "mvc_login %s\n", user);
-
-	mvc_trans(m);
- 	name_user = BATmirror(mvc_bind(m, "sys", "users", "name", 0 ));
-	if ((p=BUNfnd(name_user, user)) != NULL){
-		ptr userid = BUNtail(name_user, p);
-		BAT *user_pwd = mvc_bind(m, "sys", "users", "passwd", 0 );
-		char *pwd = BUNtail(user_pwd, BUNfnd(user_pwd, userid));
-		
-		if (strcmp(passwd, pwd) == 0){
-			BAT *user_ds = mvc_bind(m, "sys", "users", "default_schema", 0 );
-			BAT *id_schema = BATmirror(mvc_bind(m, "sys", "schemas", "id", 0 ));
-			BAT *schema_name = mvc_bind(m, "sys", "schemas", "name", 0 );
-			ptr schema_id = BUNtail(user_ds, BUNfnd(user_ds, userid)); 
-			ptr lid = BUNtail(id_schema,BUNfnd(id_schema, schema_id));
-			schema = BUNtail(schema_name,BUNfnd(schema_name, lid));
-			if (mvc_set_user(m, user)){ 
-				schema = _strdup(schema);
-			} else { /* only set schema if user is found */
-				schema = NULL;
-			}
-			bat_destroy(id_schema);
-			bat_destroy(schema_name);
-			bat_destroy(user_ds);
-		}
-		bat_destroy(user_pwd);
-	}
-	bat_destroy(name_user);
-
-	if (!schema)
-		return NULL;
-
-	if (!mvc_set_schema( m, schema)) {
-		_DELETE(schema);
-		return NULL;
-	}
-	mvc_rollback(m, 0, NULL);
-	return schema;
 }
 
 void mvc_exit()
@@ -3573,7 +3486,7 @@ static void sys_drop_tables(sql_trans * tr, sql_schema * s)
 }
 
 
-sql_schema *bootstrap_create_schema(mvc * m, char *name, char *auth)
+sql_schema *bootstrap_create_schema(mvc * m, char *name, int auth_id)
 {
 	sql_trans *tr = m->trans;
 	sql_schema *s = NEW(sql_schema);
@@ -3582,10 +3495,11 @@ sql_schema *bootstrap_create_schema(mvc * m, char *name, char *auth)
 	oid rid;
 
 	if (mvc_debug)
-		fprintf(stderr, "bootstrap_create_schema %s %s\n", name, auth);
+		fprintf(stderr, "bootstrap_create_schema %s %d\n", 
+			name, auth_id);
 
 	base_init( &s->base, OIDnew(1), TR_NEW, name);
-	s->auth = _strdup(auth);
+	s->auth_id = auth_id;
 	cs_init( &s->tables, (fdestroy)&table_destroy);
 	s->keys = list_create((fdestroy)NULL);
 	s->idxs = list_create((fdestroy)NULL);
@@ -3598,7 +3512,7 @@ sql_schema *bootstrap_create_schema(mvc * m, char *name, char *auth)
 	b = sys_bat(m->trans->bm, "schemas_name");
 	BUNins(b, (ptr) & rid, (ptr) s->base.name); bat_destroy(b);
 	b = sys_bat(m->trans->bm, "schemas_authorization");
-	BUNins(b, (ptr) & rid, (ptr) s->auth); bat_destroy(b);
+	BUNins(b, (ptr) & rid, (ptr) & s->auth_id); bat_destroy(b);
 
 	s->base.wtime = tr->wtime = tr->stime;
 	return s;
@@ -3703,7 +3617,7 @@ mvc_create_type(mvc * sql, sql_module *m,
 	return t;
 }
 
-sql_schema *mvc_create_schema(mvc * m, char *name, char *auth)
+sql_schema *mvc_create_schema(mvc * m, char *name, int auth_id)
 {
 	sql_trans *tr = m->trans;
 	sql_schema *s = NEW(sql_schema);
@@ -3713,10 +3627,10 @@ sql_schema *mvc_create_schema(mvc * m, char *name, char *auth)
 	oid rid = 0;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_schema %s %s\n", name, auth);
+		fprintf(stderr, "mvc_create_schema %s %d\n", name, auth_id);
 
 	base_init( &s->base, OIDnew(1), TR_NEW, name);
-	s->auth = _strdup(auth);
+	s->auth_id = auth_id;
 	cs_init( &s->tables, (fdestroy)&table_destroy);
 	s->keys = list_create((fdestroy)NULL);
 	s->idxs = list_create((fdestroy)NULL);
@@ -3732,7 +3646,7 @@ sql_schema *mvc_create_schema(mvc * m, char *name, char *auth)
 	b = bind_bat(tr, find_column(sysschema, "name"), UPD);
 	BUNins(b, (ptr) & rid, (ptr) s->base.name); bat_destroy(b);
 	b = bind_bat(tr, find_column(sysschema, "authorization"), UPD);
-	BUNins(b, (ptr) & rid, (ptr) s->auth); bat_destroy(b);
+	BUNins(b, (ptr) & rid, (ptr) & s->auth_id); bat_destroy(b);
 
 	sysschema->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	m->type = Q_SCHEMA;

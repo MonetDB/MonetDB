@@ -967,10 +967,10 @@ void sqltypeinit()
 	/* this requires a type definition */
 
 	floats = t;
-	T = *t++ = sql_create_type("FLOAT", 23, 2, 2, 1, 	"flt");
+	T = *t++ = sql_create_type("FLOAT", 23, SCALE_NOFIX, 2, 1, 	"flt");
 	sql_create_alias(T->sqlname, "REAL");
-	*t++ = sql_create_type("FLOAT", 51, 2, 2, 1, 	"dbl");
-	DBL = *t++ = sql_create_type("DOUBLE", 51, 2, 2, 1, 	"dbl");
+	*t++ = sql_create_type("FLOAT", 51, SCALE_NOFIX, 2, 1, 	"dbl");
+	DBL = *t++ = sql_create_type("DOUBLE", 51, SCALE_NOFIX, 2, 1, 	"dbl");
 
 	dates = t;
 	MONINT = *t++ = sql_create_type("MONTH_INTERVAL", 0, 0, 10, 1, 	"int");

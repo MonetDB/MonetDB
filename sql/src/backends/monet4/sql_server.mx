@@ -153,11 +153,23 @@ stream.
 		"cast to short and check for overflow"
 	.COMMAND "lng"( str v, int digits ) : lng = str2lng;
 		"cast to short and check for overflow"
+	.COMMAND "sht"( sht v, int digits ) : sht = sht_2_sht;
+		"cast to short and check for overflow"
 	.COMMAND "sht"( int v, int digits ) : sht = int_2_sht;
 		"cast to short and check for overflow"
 	.COMMAND "sht"( lng v, int digits ) : sht = lng_2_sht;
 		"cast to short and check for overflow"
+	.COMMAND "int"( sht v, int digits ) : int = sht_2_int;
+		"cast to int and check for overflow"
+	.COMMAND "int"( int v, int digits ) : int = int_2_int;
+		"cast to int and check for overflow"
 	.COMMAND "int"( lng v, int digits ) : int = lng_2_int;
+		"cast to int and check for overflow"
+	.COMMAND "lng"( sht v, int digits ) : lng = sht_2_lng;
+		"cast to int and check for overflow"
+	.COMMAND "lng"( int v, int digits ) : lng = int_2_lng;
+		"cast to int and check for overflow"
+	.COMMAND "lng"( lng v, int digits ) : lng = lng_2_lng;
 		"cast to int and check for overflow"
 .END sql_server;
 
@@ -232,18 +244,18 @@ int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	builtin_operand( stk, lt, 0, (ptr*)&Debug, TYPE_int, res);
 	backend_init( &monet4_freestack, &monet4_freecode, &monet4_parse );
 	if ( (ret = mvc_init(*Debug, (backend_stack)stk )) > 0 ){
-		sqlstatement("GRANT ALL on modules to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on schemas to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on tables to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on columns to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on keys to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on idxs to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on keycolumns to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on types to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on users to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on user_role to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on auths to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on privileges to monetdb with grant option;", stk);
+		sqlstatement("GRANT ALL on modules to PUBLIC with grant option;", stk);
+		sqlstatement("GRANT ALL on schemas to PUBLIC with grant option;", stk);
+		sqlstatement("GRANT ALL on tables to PUBLIC with grant option;", stk);
+		sqlstatement("GRANT ALL on columns to PUBLIC with grant option;", stk);
+		sqlstatement("GRANT ALL on keys to PUBLIC with grant option;", stk);
+		sqlstatement("GRANT ALL on idxs to PUBLIC with grant option;", stk);
+		sqlstatement("GRANT ALL on keycolumns to PUBLIC with grant option;", stk);
+		sqlstatement("GRANT ALL on types to PUBLIC with grant option;", stk);
+		sqlstatement("GRANT ALL on user_role to PUBLIC with grant option;", stk);
+		sqlstatement("GRANT ALL on auths to PUBLIC with grant option;", stk);
+		sqlstatement("GRANT ALL on privileges to PUBLIC with grant option;", stk);
+		sqlstatement("GRANT ALL on users to PUBLIC with grant option;", stk);
 	} else if (ret < 0) {
 		return GDK_FAIL;
 	}
@@ -606,9 +618,15 @@ int @2_2_@1( @1 *res, @2 *v, int *len ){
 	return GDK_SUCCEED;
 }
 @c
+@:numcast(sht,sht)@
 @:numcast(sht,int)@
 @:numcast(sht,lng)@
+@:numcast(int,sht)@
+@:numcast(int,int)@
 @:numcast(int,lng)@
+@:numcast(lng,sht)@
+@:numcast(lng,int)@
+@:numcast(lng,lng)@
 
 @-
 An SQL session needs a minimal set of modules, shown below.

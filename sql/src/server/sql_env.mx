@@ -96,6 +96,7 @@ sql_export int sql_session(mvc *sql);
 #include "sql_select.h"
 #include "sql_updates.h"
 #include "sql_semantic.h"
+#include "sql_privileges.h"
 
 #define SESSION_RW 0
 #define SESSION_RO 1
@@ -295,6 +296,13 @@ int sql_update_var(mvc *m, char *name )
 			GDKwarning("Schema (%s) missing\n", schema);
 			return GDK_FAIL;
 		}
+	} else if (strcmp(name, "current_role") == 0) {
+		char *role = sql_get_str_var(m, "current_role");
+
+		if (!mvc_set_role(m, role)){
+			GDKwarning("Role (%s) missing\n", role);
+			return GDK_FAIL;
+		}
 	} else if (strcmp(name, "current_timezone") == 0) {
 		m->timezone = sql_get_int_var(m, "current_timezone")/60;
 	} else if (strcmp(name, "explain") == 0) {
@@ -423,7 +431,7 @@ sql_session( mvc *m )
 	BUNins(n, (ptr) &h, "current_role" );
 	BUNins(v, (ptr) &h, m->role);
 	BUNins(T, (ptr) &h, "varchar");
-	BUNins(a, (ptr) &h, &ro);
+	BUNins(a, (ptr) &h, &rw);
 	h++;
 
 	BUNins(n, (ptr) &h, "current_timezone" );

@@ -68,6 +68,7 @@ extern int sqlstatement(char *cmd, Cntxt stk );
 #include "sql_gencode.h"	/* for backend_dumpproc() */
 #include <sql_semantic.h>
 #include <sql_optimize.h>
+#include <sql_privileges.h>
 #include <sql_rel2bin.h>
 #include <sql_scope.h>
 #include <sql_qc.h>
@@ -800,7 +801,7 @@ sqlstatement(char *cmd, Cntxt stk )
 
 	m = mvc_create(0, (backend_stack)stk, NULL, GDKout );
 	mvc_trans(m); /* start transaction */
-	m->user_id = m->role_id = 0;
+	m->user_id = m->role_id = USER_MONETDB;
 	m->user = _strdup("monetdb");
 	m->trans->schema = mvc_bind_schema(m, "sys");
         sql = backend_create( 0, m );
@@ -1508,10 +1509,19 @@ static int mvc_export_row( mvc *m, stream *s, res_table *t )
 				break;
 		}
 
-		if (c->type->type->scale == SCALE_FIX){
+		if (c->type->type->scale == SCALE_FIX &&
+	            strcmp(c->type->type->sqlname, "decimal")==0){
 			char *buf = NULL;
 			int len = 0;
 			int l = dec_tostr((void*)(ptrdiff_t)c->type->scale, &buf, &len,
+					c->mtype, c->p);
+			ok = (stream_write(s, buf, l, 1) == 1);
+			_DELETE(buf);
+		} else if (c->type->type->scale == SCALE_FIX &&
+	            strcmp(c->type->type->sqlname, "timestamp")==0){
+			char *buf = NULL;
+			int len = 0;
+			int l = sql_timestamp_tostr((void*)m, &buf, &len,
 					c->mtype, c->p);
 			ok = (stream_write(s, buf, l, 1) == 1);
 			_DELETE(buf);
@@ -1598,12 +1608,13 @@ int mvc_export_table( mvc *m, stream *s, int res_id, unsigned int offset, unsign
                 fmt[i].tostr = &_ASCIIadt_toStr;
                 fmt[i].frstr = &_ASCIIadt_frStr;
                 fmt[i].extra = NULL;
-		if (strcmp(c->type->type->sqlname, "decimal") == 0){
+		if (c->type->type->scale == SCALE_FIX && 
+		    strcmp(c->type->type->sqlname, "decimal") == 0){
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;
 			fmt[i].extra = (void*)(ptrdiff_t)c->type->scale;
-		}
-		if (c->type->scale == 1 && 
+		} else 
+		if (c->type->type->scale == SCALE_FIX && 
 	            strcmp(c->type->type->sqlname, "timestamp")==0){
 			fmt[i].tostr = &sql_timestamp_tostr;
 			fmt[i].frstr = NULL;

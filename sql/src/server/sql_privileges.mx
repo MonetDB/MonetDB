@@ -45,6 +45,14 @@ table or column level) overwrite privileges on higher levels.
 #define PRIV_EXECUTE 16
 #define PRIV_GRANT 32
 
+#define ROLE_PUBLIC   1
+#define ROLE_SYSADMIN 2
+#define USER_MONETDB  3
+
+sql_export int mvc_set_role( mvc *m, char *role );
+sql_export int mvc_set_schema( mvc *m, char *schema );
+sql_export char *mvc_login( mvc *c, char *user, char *passwd );
+
 extern int schema_privs( mvc *m, sql_schema *t, int privs );
 extern int table_privs( mvc *m, sql_table *t, int privs );
 
@@ -80,7 +88,7 @@ The code below provides abstractions to manage the priviliges.
 @c
 int sql_create_role(mvc *m,  str auth, int grantor ) 
 { BAT *auth_id, *auth_name, *auth_grantor;
-  int zero = 0;
+  int one = 1;
   oid onil =oid_nil;
   ptr p;
 	auth_id = mvc_bind( m, "sys", "auths", "id", UPD); 
@@ -97,7 +105,7 @@ int sql_create_role(mvc *m,  str auth, int grantor )
 		ma++;
 		BUNins(auth_id, &onil, &ma);
 	} else {
-		BUNins(auth_id, &onil, &zero);
+		BUNins(auth_id, &onil, &one);
 	}
 	BUNins(auth_name, &onil, auth);
 	BUNins(auth_grantor, &onil, &grantor);
@@ -233,13 +241,14 @@ int sql_create_user( mvc *m, str user, str passwd, str fullname, str schema_name
   	BAT *schema_ids, *schema_names;
   	ptr schema_id;
   	oid onil =oid_nil;
+
 	if (!(sql_create_role( m, user, grantor )))
 		return FALSE; 
 
-	user_name = mvc_bind( m, "sys", "users", "name", UPD);
-	user_passwd = mvc_bind( m, "sys", "users", "passwd", UPD);
-	user_fullname = mvc_bind( m, "sys", "users", "fullname", UPD);
-	user_dschema = mvc_bind( m, "sys", "users", "default_schema", UPD);
+	user_name = mvc_bind( m, "sys", "db_users", "name", UPD);
+	user_passwd = mvc_bind( m, "sys", "db_users", "passwd", UPD);
+	user_fullname = mvc_bind( m, "sys", "db_users", "fullname", UPD);
+	user_dschema = mvc_bind( m, "sys", "db_users", "default_schema", UPD);
 
 	schema_ids = mvc_bind( m, "sys", "schemas", "id", 0);
 	schema_names = mvc_bind( m, "sys", "schemas", "name", 0);
@@ -264,11 +273,11 @@ int sql_drop_user(mvc *m,  str user)
 { BAT *user_name, *user_passwd, *user_fullname, *user_dschema, *D_user;
   ptr id, p;
   oid onil = oid_nil;
-	user_name = mvc_bind( m, "sys", "users", "name", DEL);
-	user_passwd = mvc_bind( m, "sys", "users", "passwd", DEL);
-	user_fullname = mvc_bind( m, "sys", "users", "fullname", DEL);
-	user_dschema = mvc_bind( m, "sys", "users", "default_schema", DEL);
-	D_user = mvc_bind_dbat( m, "sys", "users", INS);
+	user_name = mvc_bind( m, "sys", "db_users", "name", DEL);
+	user_passwd = mvc_bind( m, "sys", "db_users", "passwd", DEL);
+	user_fullname = mvc_bind( m, "sys", "db_users", "fullname", DEL);
+	user_dschema = mvc_bind( m, "sys", "db_users", "default_schema", DEL);
+	D_user = mvc_bind_dbat( m, "sys", "db_users", INS);
 
 	p = BUNfnd(BATmirror(user_name), user);
 	if (!p)
@@ -289,7 +298,7 @@ int sql_drop_user(mvc *m,  str user)
 	return TRUE;
 }
 
-int sql_privilege_( mvc *m, int auth_id, int obj_id, int priv, int sub )
+int sql_privilege( mvc *m, int auth_id, int obj_id, int priv, int sub )
 {
  	BAT *priv_obj = mvc_bind( m, "sys", "privileges", "obj_id", RDONLY);
  	BAT *priv_auth = mvc_bind( m, "sys", "privileges", "auth_id", RDONLY);
@@ -319,32 +328,26 @@ int sql_privilege_( mvc *m, int auth_id, int obj_id, int priv, int sub )
 	return res;
 }
 
-int sql_privilege( mvc *m, int auth_id, int obj_id, int priv, int sub )
-{
-	if (m->user_id == 0)
-		return 1;
-	return sql_privilege_(m, auth_id, obj_id, priv, sub);
-	
-}
-
 int schema_privs( mvc *m, sql_schema *s, int priv )
 {
-	if (sql_privilege( m, m->user_id, s->base.id, priv, 0 ) == 0 ||
-	    sql_privilege( m, m->role_id, s->base.id, priv, 0 ) == 0 ||
-	    sql_privilege( m, 1, s->base.id, priv, 0 ) == 0) {
-		return 0;
+	if (m->user_id == USER_MONETDB || m->role_id == s->auth_id ||
+	    sql_privilege( m, m->user_id, s->base.id, priv, 0 ) == priv ||
+	    sql_privilege( m, m->role_id, s->base.id, priv, 0 ) == priv ||
+	    sql_privilege( m, ROLE_PUBLIC, s->base.id, priv, 0 ) == priv) {
+		return 1;
 	}
-	return 1;
+	return 0;
 }
 
 int table_privs( mvc *m, sql_table *t, int priv )
 {
-	if (sql_privilege( m, m->user_id, t->base.id, priv, 0 ) == 0 ||
-	    sql_privilege( m, m->role_id, t->base.id, priv, 0 ) == 0 ||
-	    sql_privilege( m, 1, t->base.id, priv, 0 ) == 0) {
-		return 0;
+	if (m->user_id == USER_MONETDB || m->role_id == t->s->auth_id ||
+	    sql_privilege( m, m->user_id, t->base.id, priv, 0 ) == priv ||
+	    sql_privilege( m, m->role_id, t->base.id, priv, 0 ) == priv ||
+	    sql_privilege( m, ROLE_PUBLIC, t->base.id, priv, 0 ) == priv) {
+		return 1;
 	}
-	return 1;
+	return 0;
 }
 
 int sql_grantable_( mvc *m, int grantorid, int obj_id, int privs, int sub )
@@ -386,8 +389,120 @@ int sql_grantable_( mvc *m, int grantorid, int obj_id, int privs, int sub )
 
 int sql_grantable( mvc *m, int grantorid, int obj_id, int privs, int sub )
 {
-	if (m->user_id == 0)
+	if (m->user_id == USER_MONETDB) 
 		return 1;
 	return sql_grantable_(m, grantorid, obj_id, privs, sub);
-	
 }
+
+static 
+int mvc_set_user( mvc *m, char *user )
+{
+	BUN p;
+	int res = 0;
+	BAT *auth_name = BATmirror(mvc_bind(m, "sys", "auths", "name", 0 ));
+
+	if (m->debug)
+		fprintf(stderr, "mvc_set_user %s\n", user);
+
+	if ((p=BUNfnd(auth_name, user)) != NULL){
+		ptr lid = BUNtail(auth_name,p);
+		BAT *auth_id = mvc_bind(m, "sys", "auths", "id", 0 );
+		int id = *(int*)BUNtail(auth_id, BUNfnd(auth_id, lid));
+		m->user_id = m->role_id = id;
+		m->user = _strdup(user);
+		m->role = _strdup(user);
+		res = 1;
+		bat_destroy(auth_id);
+	}
+	bat_destroy(auth_name);
+	return res;
+}
+
+int mvc_set_role( mvc *m, char *role )
+{
+	BUN p;
+	int res = 0;
+	BAT *auth_name = BATmirror(mvc_bind(m, "sys", "auths", "name", 0 ));
+
+	if (m->debug)
+		fprintf(stderr, "mvc_set_role %s\n", role);
+
+	if ((p=BUNfnd(auth_name, role)) != NULL){
+		ptr lid = BUNtail(auth_name,p);
+		BAT *auth_id = mvc_bind(m, "sys", "auths", "id", 0 );
+		int id = *(int*)BUNtail(auth_id, BUNfnd(auth_id, lid));
+		/* todo check if user is part of this role */
+		m->role_id = id;
+		m->role = _strdup(role);
+		res = 1;
+		bat_destroy(auth_id);
+	}
+	bat_destroy(auth_name);
+	return res;
+}
+
+int mvc_set_schema( mvc *m, char *schema )
+{
+	int ret = 0;
+	sql_schema *s = find_schema(m->trans, schema);
+
+	if (s) {
+		if (m->schema)
+			_DELETE(m->schema);
+		m->schema = _strdup(schema);
+		m->status = 0;
+		m->type = Q_TRANS;
+		if (m->trans)
+			m->trans->schema = s;
+		ret = 1;
+	}
+	return ret;
+}
+
+char *mvc_login(mvc *m, char *user, char *passwd)
+{
+	char *schema = NULL;
+	BAT *name_user;
+	BUN p;
+
+	if (m->debug)
+		fprintf(stderr, "mvc_login %s\n", user);
+
+	mvc_trans(m);
+ 	name_user = BATmirror(mvc_bind(m, "sys", "db_users", "name", 0 ));
+	if ((p=BUNfnd(name_user, user)) != NULL){
+		ptr userid = BUNtail(name_user, p);
+		BAT *user_pwd = mvc_bind(m, "sys", "db_users", "passwd", 0 );
+		char *pwd = BUNtail(user_pwd, BUNfnd(user_pwd, userid));
+		
+		if (strcmp(passwd, pwd) == 0){
+			BAT *user_ds = mvc_bind(m, "sys", "db_users", "default_schema", 0 );
+			BAT *id_schema = BATmirror(mvc_bind(m, "sys", "schemas", "id", 0 ));
+			BAT *schema_name = mvc_bind(m, "sys", "schemas", "name", 0 );
+			ptr schema_id = BUNtail(user_ds, BUNfnd(user_ds, userid)); 
+			ptr lid = BUNtail(id_schema,BUNfnd(id_schema, schema_id));
+			schema = BUNtail(schema_name,BUNfnd(schema_name, lid));
+			if (mvc_set_user(m, user)){ 
+				schema = _strdup(schema);
+			} else { /* only set schema if user is found */
+				schema = NULL;
+			}
+			bat_destroy(id_schema);
+			bat_destroy(schema_name);
+			bat_destroy(user_ds);
+		}
+		bat_destroy(user_pwd);
+	}
+	bat_destroy(name_user);
+
+	if (!schema)
+		return NULL;
+
+	if (!mvc_set_schema( m, schema)) {
+		_DELETE(schema);
+		return NULL;
+	}
+	mvc_rollback(m, 0, NULL);
+	return schema;
+}
+

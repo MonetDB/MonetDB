@@ -230,12 +230,24 @@ scope_sqlparse(mvc *m, scope *scp, char *query)
 	m->params = NULL;
 	m->args = NULL;
 	m->sym = NULL;
+	m->errstr[0] = '\0';
+	m->status = 0;
 
 	(void)sqlparse(m); /* blindly ignore errors */
 	sq = sql_subquery(m, scp, m->sym, 1);
 
 	symbol_destroy(m->sym);
-	*m = o;
+	if (m->status || m->errstr[0]) {
+		int status = m->status;
+		char errstr[ERRSIZE];
+
+ 		strcpy(errstr, m->errstr);
+		*m = o;
+		m->status = status;
+ 		strcpy(m->errstr, errstr);
+	} else {
+		*m = o;
+	}
 	return sq;
 }
 
@@ -253,12 +265,26 @@ sqlparse_intern(mvc *m, char *query)
 	m->params = NULL;
 	m->args = NULL;
 	m->sym = NULL;
+	m->errstr[0] = '\0';
+	m->status = 0;
+	/* via views we give access to protected objects */
+	m->user_id = USER_MONETDB; 
 
 	(void)sqlparse(m); /* blindly ignore errors */
 	sq = scope_subquery(m, NULL, m->sym);
 
 	symbol_destroy(m->sym);
-	*m = o;
+	if (m->status || m->errstr[0]) {
+		int status = m->status;
+		char errstr[ERRSIZE];
+
+ 		strcpy(errstr, m->errstr);
+		*m = o;
+		m->status = status;
+ 		strcpy(m->errstr, errstr);
+	} else {
+		*m = o;
+	}
 	return sq;
 }
 
@@ -498,38 +524,27 @@ sql_truncate(sql_subtype * ct, stmt * s )
 stmt *
 dyncheck_types(mvc * sql, sql_subtype * ct, stmt * s )
 {
-	sql_subtype *st = tail_type(s);
+	sql_subtype *t = NULL, *st = tail_type(s);
 
-	if (st) {
-		sql_subtype *t = st;
+	/* check if the types are the same */
+	t = st;
+	if (t && subtype_cmp(t, ct) != 0) {
+		t = NULL;
+	}
 
-		/* first try cheap internal (inplace) convertions ! */
-		s = inplace_convert(sql, ct, s); 
- 		t = st = tail_type(s);
+	if (!t) {	/* try to convert if needed */
+		sql_subtype *it = sql_bind_localtype( "int" );
+		sql_subfunc *c;
 
-		/* check if the types are the same */
-		if (t && subtype_cmp(t, ct) != 0) {
-			t = NULL;
-		}
-
-		if (!t) {	/* try to convert if needed */
-			sql_subtype *it = sql_bind_localtype( "int" );
-			sql_subfunc *c;
-
-			c = sql_bind_func_result("convert",st,it,ct);
-			if (c) 
-				return fix_scale(sql, ct, 
-				  stmt_binop(s, stmt_atom_int(ct->digits), c), 
-				  1, (st->type->scale == SCALE_FIX));
-		}
-		if (!t || subtype_cmp(t, ct) != 0) {
-			if (s) stmt_destroy(s);
-			return sql_error(sql, 02, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
-		}
-	} else {
-		assert(0);
-		stmt_destroy(s);
-		return sql_error(sql, 02, "Statement has no type information");
+		c = sql_bind_func_result("convert",st,it,ct);
+		if (c) 
+			return fix_scale(sql, ct, 
+			  stmt_binop(s, stmt_atom_int(ct->digits), c), 
+			  1, (st->type->scale == SCALE_FIX));
+	}
+	if (!t || subtype_cmp(t, ct) != 0) {
+		if (s) stmt_destroy(s);
+		return sql_error(sql, 02, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
 	}
 	if (st) {
 		if ((ct->digits > 0 && ct->scale == 0 
@@ -543,8 +558,9 @@ dyncheck_types(mvc * sql, sql_subtype * ct, stmt * s )
 			c = sql_bind_func_result("convert",st,it,ct);
 			if (c) 
 				return fix_scale(sql, ct, 
-				  stmt_binop(s, stmt_atom_int(ct->digits), c), 
-				  1, 0);
+				  	stmt_binop(s, 
+				 	stmt_atom_int(ct->digits), 
+					c), 1, 0);
 
 			if (s) stmt_destroy(s);
 			return sql_error(sql, 03, "Dynamic Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
@@ -559,104 +575,87 @@ dyncheck_types(mvc * sql, sql_subtype * ct, stmt * s )
 stmt *
 check_types(mvc * sql, sql_subtype * ct, stmt * s, check_type tpe )
 {
-	sql_subtype *st = tail_type(s);
+	sql_subtype *t = NULL, *st = tail_type(s);
 
-	if (st) {
-		sql_subtype *t;
-
-		/* first try cheap internal (inplace) convertions ! */
-		s = inplace_convert(sql, ct, s); 
- 		t = st = tail_type(s);
-
-		/* check if the types are the same */
-		if (t && subtype_cmp(t, ct) != 0) {
-			t = NULL;
-		}
-
-		if (!t) {	/* try to convert if needed */
-			sql_subfunc *c;
-
-			c = sql_bind_func_result("convert",st,NULL,ct);
-			if (c){ 
-				int sc = (ct->type->scale == SCALE_FIX);
-				if (
-				    ((ct->digits > 0 && ct->scale == 0 && 
-					ct->digits < st->digits) ||
-		    		    (sc && ct->scale > 0 && ct->digits > 0 && 
-					ct->digits-ct->scale < 
-						st->digits-st->scale)) 
-				) {
-					if (tpe == type_dyncheck && 
-					    st->fixed == 0) {
-						sql_subfunc_destroy(c);
-						return dyncheck_types(sql, ct, s);
-					}
-
-					if (tpe == type_cast) {
-						s = stmt_unop(s, c);
-						s = sql_truncate(ct, s);
-						if (s)
-							return fix_scale(sql, ct, s, 1, (st->type->scale == SCALE_FIX));
-					} 
-					if (s) stmt_destroy(s);
-					sql_subfunc_destroy(c);
-					return sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
-				}
-				return fix_scale(sql, ct, stmt_unop(s, c), 1,
-					(st->type->scale == SCALE_FIX));
-			} 
-			/* here we need to check if we could convert using
-			   the more complex conversion functions 
-			   (convert(x,int,int) -> y)
-			 */
-			if (st->scale == 0) {
-				sql_subtype *it = sql_bind_localtype( "int" );
-				list *ops = list_create((fdestroy)NULL);
-				list_append(ops, st);
-				list_append(ops, it);
-				list_append(ops, it);
-				c = sql_bind_func_result_( "convert", ops, ct);
-				list_destroy(ops);
-				if (c){ 
-					ops = create_stmt_list();
-					list_append(ops, s);
-					list_append(ops, stmt_atom(
-						atom_int(sql_dup_subtype(it), 
-						ct->digits)));
-					list_append(ops, stmt_atom(
-						atom_int(sql_dup_subtype(it), 
-						ct->scale)));
-					return stmt_Nop(stmt_list(ops), c);
-				}
-			}
-		}
-		if (!t || subtype_cmp(t, ct) != 0) {
-			stmt_destroy(s);
-			return sql_error(sql, 02, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
-		}
-	} else {
+	if (!st) {
 		assert(0);
 		stmt_destroy(s);
 		return sql_error(sql, 02, "Statement has no type information");
 	}
-	if (st) {
-		if ((ct->digits > 0 && ct->scale == 0 
-			&& ct->digits < st->digits) ||
-		    (ct->scale > 0 && ct->digits > 0 
-			&& ct->digits-ct->scale < st->digits-st->scale) 
+
+	/* first try cheap internal (inplace) convertions ! */
+	s = inplace_convert(sql, ct, s); 
+ 	t = st = tail_type(s);
+
+	/* check if the types are the same */
+	if (t && subtype_cmp(t, ct) != 0) {
+		t = NULL;
+	}
+
+	if (!t) {	/* try to convert if needed */
+		sql_subfunc *c = sql_bind_func_result("convert",st,NULL,ct);
+
+		if (c) 
+			s = stmt_unop(s, c);
+
+		/* here we need to check if we could convert using
+		   the more complex conversion functions 
+		   (convert(x,int,int) -> y)
+		 */
+		if (!c && st->scale == 0) {
+			sql_subtype *it = sql_bind_localtype( "int" );
+			list *ops = list_create((fdestroy)NULL);
+			list_append(ops, st);
+			list_append(ops, it);
+			list_append(ops, it);
+			c = sql_bind_func_result_( "convert", ops, ct);
+			list_destroy(ops);
+			if (c){ 
+				ops = create_stmt_list();
+				list_append(ops, s);
+				list_append(ops, 
+					stmt_atom_int(ct->digits));
+				list_append(ops, 
+					stmt_atom_int(ct->scale));
+				return stmt_Nop(stmt_list(ops), c);
+			}
+		}
+		t = tail_type(s);
+	}
+	if (!t || subtype_cmp(t, ct) != 0) {
+		stmt_destroy(s);
+		return sql_error(sql, 02, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
+	}
+	if (st) { 
+		/* types are qual, but the digits and scale 
+		   still need to be checked 
+		 */
+		int sc = (ct->type->scale == SCALE_FIX);
+		if ((ct->digits > 0 && ct->scale == 0 && 
+		     ct->digits < st->digits) ||
+		    (sc && ct->scale > 0 && ct->digits > 0 && 
+		     ct->digits-ct->scale < st->digits-st->scale) 
 		){
-			if (tpe == type_dyncheck && st->fixed == 0)
-				return dyncheck_types(sql, ct, s);
+			if (tpe == type_dyncheck && st->fixed == 0) {
+				s = dyncheck_types(sql, ct, s);
+				if (s)
+					return fix_scale(sql, ct, s, 1, 
+						(st->type->scale == SCALE_FIX));
+			}
 			if (tpe == type_cast) {
 				s = sql_truncate(ct, s);
 				if (s)
-					return fix_scale(sql, ct, s, 1, 0);
+					return fix_scale(sql, ct, s, 1, 
+						(st->type->scale == SCALE_FIX));
 			} 
 			if (s) stmt_destroy(s);
 			return sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
 		}
 	}
-	return fix_scale(sql, ct, s, 1, 0);
+	if (!s)
+		return NULL;
+	return fix_scale(sql, ct, s, 1, 
+			(st->type->scale == SCALE_FIX));
 }
 
 

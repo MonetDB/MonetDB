@@ -205,9 +205,14 @@ grant_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,
 
 		for ( gn = grantees->h; gn; gn = gn->next ) {
 			char *grantee = gn->data.sval;
-			int grantee_id = sql_find_auth(sql, grantee);
+			int grantee_id;
 
-			if (grantee_id < 0){
+			if (grantee)
+				grantee_id = sql_find_auth(sql, grantee);
+			else
+				grantee_id = sql_find_auth(sql, "public");
+
+			if (grantee_id <= 0){
 				list_destroy(l);
 				return sql_error(sql, 02,
 					"User/Role %s unknown", grantee);
@@ -738,7 +743,7 @@ create_user(mvc * sql, char * user, char * passwd, char *fullname, char *schema)
 			 "Schema %s doesn't exist", schema);
 	}
 	l = create_stmt_list();
-	snprintf(buf, BUFSIZ, "insert into sys.users values('%s','%s','%s',%d);", user, passwd, fullname, schema_id );
+	snprintf(buf, BUFSIZ, "insert into sys.db_users values('%s','%s','%s',%d);", user, passwd, fullname, schema_id );
 	list_append(l, stmt_sql(buf));
 	snprintf(buf, BUFSIZ, "insert into sys.auths values(" SZFMT ", '%s', %d);", OIDnew(1), user, sql->user_id);
 	list_append(l, stmt_sql(buf));
@@ -1253,16 +1258,23 @@ create_schema(mvc * sql, dlist * auth_name, dlist * schema_elements)
 {
 	char *name = schema_name(auth_name);
 	char *auth = schema_auth(auth_name);
+	int auth_id = sql->role_id;
 
-	if (auth == NULL) {
-		auth = cur_schema(sql)->auth;
+	if (auth && sql_find_auth( sql, auth) < 0) {
+		return sql_error(sql, 02, 
+			 "Authorizaion %s doesn't exist", auth);
+	}
+	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN){
+		return sql_error(sql, 02, 
+		       	"Current user %s doesn't have CREATE SCHEMA privileges",
+			sql->user);
 	}
 	if (mvc_bind_schema(sql, name)) {
 		return sql_error(sql, 02, 
 			"Create Schema name %s already in use", name);
 	} else {
 		list *table_elements = create_stmt_list();
-		sql_schema *ss = mvc_create_schema(sql, name, auth);
+		sql_schema *ss = mvc_create_schema(sql, name, auth_id);
 
 		dnode *n = schema_elements->h;
 		while (n) {

@@ -103,6 +103,11 @@ static tvar *table_ref(mvc * sql, scope * scp, symbol * tableref)
 		if (!t) {
 			(void) sql_error( sql, 02, "Unknown table %s", tname);
 			return NULL;
+		} else if (!table_privs(sql, t, PRIV_SELECT)) {
+			(void) sql_error(sql, 02, 
+				"User is not allowed to select from table %s", 
+				tname);
+			return NULL;
 		}
 		if (tableref->data.lval->h->next->data.sym) {	/* AS */
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
