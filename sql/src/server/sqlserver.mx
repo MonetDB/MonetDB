@@ -228,14 +228,6 @@ int sql_destroy_context( context *lc ){
 	return GDK_SUCCEED;
 }
 
-void skip(stream *in){
-	char buf;
-	while(in->read(in, &buf, 1, 1) == 1){
-		if (buf == ';')
-			break;
-	}
-}
-
 int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	char buf[BUFSIZ];
 	int err = 0;
@@ -261,7 +253,6 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	while(lc->cur != EOF ){
 		s = sqlnext(lc, in, &err);
 		if (err){ /* output error */
-			skip(in);
 			stream_writeInt( out, 0 );
 			stream_writeInt( out, 0 );
 			stream_writeInt( out, -1 );

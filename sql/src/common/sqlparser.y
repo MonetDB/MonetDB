@@ -20,7 +20,7 @@ extern int parse_error(void *lc, char *s);
 #ifdef yyerror
 #undef yyerror
 #endif
-#define yyerror(s) parse_error(YYLEX_PARAM, s); yyclearin
+#define yyerror(s) parse_error(YYLEX_PARAM, s)
 
 #define FALSE 0
 #define TRUE 1
@@ -316,6 +316,8 @@ sqlstmt:
    sql ';' 		{ context *lc = (context*)parm; 
 			  lc->sym = $$ = $1; YYACCEPT; }
  | /*empty*/		{ context *lc = (context*)parm; 
+			  lc->sym = $$ = NULL; YYACCEPT; }
+ | error ';'		{ context *lc = (context*)parm;
 			  lc->sym = $$ = NULL; YYACCEPT; }
  ;
 

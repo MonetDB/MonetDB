@@ -129,9 +129,8 @@ int parse_line( const char *line )
 	return cnt;
 }
 
-void clientAccept( stream *ws, stream *rs ){
+void clientAccept( stream *ws, stream *rs, char *prompt ){
 	int  i,	is_chrsp	= 0;
-	char *prompt = "> ";
 	char *line = NULL;
 	struct stat st;
 	char buf[BUFSIZ];
@@ -161,7 +160,6 @@ void clientAccept( stream *ws, stream *rs ){
 			}
 		}
 		cmdcnt = parse_line(line);
-		printf("%s\n", line);
 		ws->write( ws, line, strlen(line), 1 );
 		ws->write( ws, "\n", 1, 1 );
 		if (cmdcnt)
@@ -185,6 +183,7 @@ void clientAccept( stream *ws, stream *rs ){
 int
 main(int ac, char **av)
 {
+	char *prompt = NULL;
 	char buf[BUFSIZ];
 	char *prog = *av, *config = NULL, *passwd = NULL, *user = NULL;
 	char *login = NULL, *schema = NULL;
@@ -277,6 +276,9 @@ main(int ac, char **av)
 	debug = strtol(mo_find_option(set, setlen, "sql_debug"), NULL, 10);
 	port = strtol(mo_find_option(set, setlen, "sql_port"), NULL, 10);
 	fd = client( mo_find_option(set, setlen, "host"), port);
+	prompt = mo_find_option(set, setlen, "sql_prompt");
+	if (!prompt) prompt = strdup("Msql> ");
+
 	rs = block_stream(socket_rstream( fd, "client read"));
 	ws = block_stream(socket_wstream( fd, "client write"));
 	if (rs->errnr || ws->errnr){
@@ -315,11 +317,12 @@ main(int ac, char **av)
 	}
 
 	if (strlen(schema) > 0)
-		clientAccept( ws, rs );
+		clientAccept( ws, rs, prompt );
 
 	if (schema) free(schema);
 	if (user) free(user);
 	if (passwd) free(passwd);
+	if (prompt) free(prompt);
 
 	if (rs){
 	       	rs->close(rs);

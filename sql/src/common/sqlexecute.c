@@ -113,4 +113,6 @@ void sql_statement_init(context * lc)
 		fprintf(stderr, "%s\n", lc->sql);
 	lc->sql[0] = '\0';
 	lc->sqllen = 1;
+
+	lc->errstr[0] = '\0';
 }
