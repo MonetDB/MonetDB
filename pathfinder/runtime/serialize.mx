@@ -32,7 +32,7 @@
 @c
 
 /*******************************************
-* xquery.c : xquery command stuff
+* serialize.c : XML serialization
 *
 * TODO:
 * - Decide how to generate output for query results. I propose that we
