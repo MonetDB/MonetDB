@@ -35,8 +35,8 @@ GHCPACKAGES =
 GHCFLAGS = $(GHCPACKAGES)
 GHCIFLAGS = --interactive
 
-SRCS = Algb.hs CSE.hs Compile.hs Core.hs DM.hs DMGraph.hs Dot.hs \
-       Eval.hs Graph.hs GraphFM.hs Item.hs Ty.hs UDF.hs XMark.hs XQuery.hs
+SRCS = Algb.hs CSE.hs Compile.hs Core.hs DM.hs DMGraph.hs Dot.hs Eval.hs \
+       Graph.hs GraphFM.hs Item.hs RelDot.hs Ty.hs UDF.hs XMark.hs XQuery.hs
 OBJS = $(SRCS:.hs=.o)
 HIS  = $(SRCS:.hs=.hi)
 

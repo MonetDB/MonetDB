@@ -66,8 +66,14 @@ dot q = (foldr1 (.)                    $
     do_dot g n = 
         foldr1 (.)                 $
         intersperse (showChar ';') $
-            ([showInt n . lbl]                                             ++
-             map ((showInt n .) . (showString "->" .) . showInt) (suc g n) ++
+            ([showInt n . lbl]                                 ++
+             map (\v -> showInt n       .
+                        showString "->" . 
+                        showInt v       .
+                        showString ("[headlabel=\"" ++
+                                    show v          ++
+				    "\",labelfontcolor=grey]") 
+		 ) (suc g n)                                   ++
              [showString ""]
             )
 	where
