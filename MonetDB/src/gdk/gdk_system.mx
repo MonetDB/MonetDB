@@ -49,7 +49,7 @@ typedef void    *MT_Id;
 
 #define THREAD_STACK_SIZE	((unsigned long)512*1024)
 
-#define MAXLOCKS	128
+#define MAXLOCKS	256
 #define MAXSEMAS	64
 
 @- Environment Specific Defines
