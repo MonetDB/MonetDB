@@ -214,7 +214,8 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	case st_const: {
 		int l = statement_dump( s->op1.stval, nr, sql );
 		int r = statement_dump( s->op2.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := [ s%d ~ s%d ];\n", *nr, l, r);
+		/*len += snprintf( buf+len, BUFSIZ, "s%d := [ s%d ~ s%d ];\n", *nr, l, r);*/
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.project(s%d);\n", *nr, l, r);
 		s->nr = (*nr)++;
 	} 	break;
 	case st_mark: {
@@ -240,7 +241,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	} 	break;
 	case st_unique: {
 		int l = statement_dump( s->op1.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.tunique().mirror();\n", *nr, l);
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.tunique().reverse().mirror();\n", *nr, l);
 		s->nr = (*nr)++;
 	} 	break;
 	case st_order: {
@@ -375,16 +376,16 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		if (n){
 		  	char *a = (char*)atom_type(n->data.aval )->name;
 			len += snprintf( buf+len, BUFSIZ, 
-					"s%d := new(oid,%s);\n", *nr, a );
+					"s%d := new(%s,oid);\n", *nr, a );
 		}
 		k++;
 		while(n){
 			len += snprintf( buf+len, BUFSIZ, "s%d := %s;\n", k, 
 					atom2string(n->data.aval) );
-			len += snprintf( buf+len, BUFSIZ, "s%d.insert(oid(%d), s%d);\n", *nr, r++, k++);
+			len += snprintf( buf+len, BUFSIZ, "s%d.insert(s%d, oid(%d));\n", *nr, k++, r++);
 			n = n->next;
 		}
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.semijoin(s%d);\n", k, l, *nr);
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d);\n", k, l, *nr);
 		*nr = k;
 		s->nr = (*nr)++;
 	} 	break;
@@ -399,10 +400,10 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		s->nr = (*nr)++;
 	} break;
 	case st_update: {
-		int l = statement_dump( s->op2.stval, nr, sql );
+		int l = statement_dump( s->op1.stval, nr, sql );
+		int r = statement_dump( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
-			"s%d := mvc_bind(myc, %ld).replace(s%d);\n", 
-			*nr, s->op1.cval->id, l);
+			"s%d := [oid](s%d.reverse).reverse().access(BAT_WRITE).replace(s%d);\n", *nr, l, r);
 		s->nr = (*nr)++;
 	} break;
 	case st_delete: {
