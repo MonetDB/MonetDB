@@ -730,6 +730,15 @@ public class MonetPreparedStatement
 					setLong(parameterIndex, val);
 				} break;
 				case Types.REAL:
+				{
+					float val;
+					try {
+						val = Float.parseFloat((String)x);
+					} catch (NumberFormatException e) {
+						val = 0;
+					}
+					setFloat(parameterIndex, val);
+				} break;
 				case Types.FLOAT:
 				case Types.DOUBLE:
 				{

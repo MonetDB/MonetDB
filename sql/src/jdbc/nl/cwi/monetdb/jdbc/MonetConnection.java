@@ -390,7 +390,6 @@ public class MonetConnection extends Thread implements Connection {
 	 * SQL statements without parameters are normally executed using Statement
 	 * objects. If the same SQL statement is executed many times, it may be more
 	 * efficient to use a PreparedStatement object.<br />
-	 * <b>A PreparedStatement is not (yet) implemented in this Connection</b>
 	 * <br /><br />
 	 * Result sets created using the returned Statement object will by default
 	 * be type TYPE_FORWARD_ONLY and have a concurrency level of
@@ -1764,6 +1763,12 @@ public class MonetConnection extends Thread implements Connection {
 					///       in memory when dealing with random access to
 					///       reduce memory blow-up
 
+					// set the cache size -> sliding window if forward only
+					if (rstype == ResultSet.TYPE_FORWARD_ONLY) {
+						//if previousResult.getStatistics().fetchedUnInterrupted()
+						//then multiply cachesize by 10 if not explicitly set
+					}
+					
 					// ok, need to fetch cache block first
 					rawr = cachethread.addBlock(this, block);
 					resultBlocks.put("" + block, rawr);
