@@ -756,8 +756,12 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	stream **In, **Out;
 	stream *in, *out;
 	bstream *rs;
+	stream *bkin, *bkout;
 
 	Thread sqlthread = THRget(THRgettid());
+	Client client;
+
+	CNTXTclient( (Cntxt)(ptrdiff_t)stk, &client);
 
   	if (lt->cnt != 2) {
         	return handle_argerror(res, lt->cnt, 2);
@@ -767,6 +771,10 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
   	@:builtin_operand(1,TYPE_Stream,Out)@
 	out = *Out;
 
+	/* Time to adjust the thread IO channels */
+	bkin = client -> fdin;  
+	bkout = client -> fdout;  
+	monetSetChannel(sqlthread,in,out);
 @-
 Start analysis using the mapi-client protocol.
 Use default setting for trace.
@@ -811,6 +819,8 @@ Use default setting for trace.
 	if (blocked){
 		in= block_stream(stream_rstream(in));
 		out= block_stream(stream_wstream(out));
+	
+		monetSetChannel(sqlthread,in,out);
 	}
 								
 	if (out == 0){
@@ -838,8 +848,6 @@ These lines should be eaten away into the prompt is encountered.
 		mvc_destroy(m);
 		return connect_error(in, out);
 	}
-/* Time to adjust the thread IO channels too */
-	monetSetChannel(sqlthread,in,out);
 /* Sent the profile for the client for inspection*/
 @-
 @= sendProperty
@@ -859,6 +867,7 @@ These lines should be eaten away into the prompt is encountered.
 	bstream_destroy(rs);
 	close_stream(in);
 	close_stream(out);
+	monetSetChannel(sqlthread,bkin,bkout);
 	return ret;
 }
 
