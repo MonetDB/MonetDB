@@ -95,7 +95,7 @@ default_options = [
     # long name, short name, GDK option, argument, comment
     ('config','c',None,'config_file', 'read options from the given file'),
     ('help','?',None,None,'print usage message'),
-    ('set','s',None,'option=value', 'set a named options'),
+    ('set','s',None,'option=value', 'set a named option'),
     ]
 cmd_options = [
     ('debug','d','gdk_debug','debug_level', None),
@@ -103,13 +103,15 @@ cmd_options = [
     ('dbfarm',None,'gdk_dbfarm','database_directory', None),
     ]
 
-def usage(cmd_options):
+def usage(cmd_options, cmd = None):
     '''usage(options)
 
     Print usage information.'''
-    sys.stderr.write('Usage: %s [ options ]\n' % os.path.basename(sys.argv[0]))
+    if cmd is None:
+        cmd = '%s [ options ]' % os.path.basename(sys.argv[0])
+    sys.stderr.write('Usage: %s\n' % cmd)
     sys.stderr.write('Options are:\n')
-    for long, short, gdk_opt, argument, comment in cmd_options:
+    for long, short, gdk_opt, argument, comment in default_options + cmd_options:
         arg = []
         if short:
             arg.append('-' + short)
@@ -178,20 +180,20 @@ def print_options(options):
         val = getattr(options, name)
         sys.stderr.write('%s = %s\n' % (name, val))
 
-def parse_options(argv, cmd_options = cmd_options):
+def parse_options(argv, cmd_options = cmd_options, usage = usage):
     '''parse_options(argv) -> options
 
     This is the main interface to this module.
 
     Parse the command line options (argv = sys.argv[1:]) and return a
     class instance describing the options settings.'''
-    cmd_options = default_options + cmd_options
+    all_options = default_options + cmd_options
     debug = 0
     options = ConfigOptions()
     seen_config = False
     getopt_short = ''
     getopt_long = []
-    for long, short, gdk_opt, argument, comment in cmd_options:
+    for long, short, gdk_opt, argument, comment in all_options:
         if short:
             getopt_short = getopt_short + short
             if argument:
@@ -206,14 +208,14 @@ def parse_options(argv, cmd_options = cmd_options):
     for o, a in opts:
         if o[:2] == '--':
             o = o[2:]
-            for long, short, gdk_opt, argument, comment in cmd_options:
+            for long, short, gdk_opt, argument, comment in all_options:
                 if o == long:
                     break
             else:
                 usage(cmd_options)
         else:
             o = o[1:]
-            for long, short, gdk_opt, argument, comment in cmd_options:
+            for long, short, gdk_opt, argument, comment in all_options:
                 if o == short:
                     break
             else:
