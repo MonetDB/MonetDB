@@ -64,7 +64,7 @@ as well as in user defined module implementations.
  * The Original Code is the Monet Database System.
  * 
  * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
  * All Rights Reserved.
  * 
  * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
@@ -125,7 +125,7 @@ char monet_version[PATHLENGTH] = VERSION;
 void monet_hello() {
     if (monet_welcome) {
         printf("# Monet Database Server V%s\n", GDKversionStr);
-        printf("# Copyright (c) 1993-2001, CWI. ");
+        printf("# Copyright (c) 1993-2002, CWI. ");
         printf("All rights reserved.\n");
         printf("# compiled for %s/%dbit.\n", GDKarchStr, sizeof(ptr)*8 );
 	printf("# gdk_dbfarm:%s\n",GDKdbfarmStr);

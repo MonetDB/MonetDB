@@ -312,6 +312,7 @@ int CMDnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	garbageElement(tail); 
 	VALinit( head, getArgType(mb,pci,3),BUNhead(b,p));
 	VALinit( tail, getArgType(mb,pci,4),BUNtail(b,p));
+printf("%s",BUNtail(b,p));
 	return GDK_SUCCEED;
 }
 @-
@@ -336,7 +337,6 @@ int CMDbunstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,1);
 	head = &stk->stk[pci->argv[2]];
 	tail = &stk->stk[pci->argv[3]];
-
 	@:batcheck(ret,bid,b,"CMDnextElement")@
 	limit=  BUNindex(b,BUNlast(b));
 
@@ -544,7 +544,7 @@ Check string printing first !!
 int CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb,pci,1);
-	ptr val = getArgReference(stk,pci,1);
+	ptr val = (ptr) getArgReference(stk,pci,1);
         FILE *fp = GDKout;
 	if( val==NULL) {
 		tpe = TYPE_str;
@@ -561,7 +561,7 @@ int CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return GDK_SUCCEED;
 	}
         fputs("[ ", fp);
-	if( tpe== TYPE_str)
+	if( tpe == TYPE_str)
 		ATOMprint(tpe, *(str*)val, fp);
         else  	ATOMprint(tpe, val, fp);
         fputs(" ]\n", fp);
@@ -570,8 +570,8 @@ int CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 int CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb,pci,1);
-	ptr val = getArgReference(stk,pci,1);
-	switch(tpe){
+	ptr val = (ptr) getArgReference(stk,pci,1);
+	switch(ATOMstorage(tpe)){
 	case TYPE_str: 
 		ATOMprint(TYPE_str, *(str*)val, GDKout);
 		break;
@@ -592,7 +592,7 @@ int CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
 	}
 	for(; i< pci->argc;i++) {
 		tpe = getArgType(mb,pci,i);
-		val = getArgReference(stk,pci,i);
+		val = (ptr) getArgReference(stk,pci,i);
 		if( !isaBatType(tpe)) return GDK_FAIL;
 		b= BATdescriptor(*(int*)val);
 		if(b == NULL) return GDK_FAIL;
@@ -620,7 +620,7 @@ int CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	for(i=pci->retc; i< pci->argc;i++) {
 		tpe = getArgType(mb,pci,i);
-		val = getArgReference(stk,pci,i);
+		val = (ptr) getArgReference(stk,pci,i);
 		if( !isaBatType(tpe)) return GDK_FAIL;
 		b= BATdescriptor(*(int*)val);
 		if(b == NULL) return GDK_FAIL;

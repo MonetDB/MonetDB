@@ -360,8 +360,12 @@ int CMDbbp_bind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	}
 	b= (BAT*) BBPgetdesc(i);
 	if( b == 0 ) {
+		/* Simple ignore the binding if you can;t find the bat */
+		/* 
 		sprintf(msg,"%s:failed to find BAT descriptor\n",name);
 		return (int) raiseException(mb,stk->pc,"bbpException",msg);
+		*/
+		return GDK_FAIL;
 	}
 	lhs->vtype = TYPE_bat;
 	lhs->val.bval= i;
