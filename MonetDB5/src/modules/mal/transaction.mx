@@ -205,6 +205,6 @@ str TRNtrans_alpha(int *ret, int *bid){
 	return BKCgetAlpha(ret,bid);
 }
 str TRNtrans_delta(int *ret, int *bid){
-	eeturn BKCgetDelta(ret,bid);
+	return BKCgetDelta(ret,bid);
 }
 @}
