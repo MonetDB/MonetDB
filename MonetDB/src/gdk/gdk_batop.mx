@@ -1231,8 +1231,8 @@ IDXloop(b, p, q) {
 @- sorting 
 @%BATsort@ returns a sorted copy. @%BATorder@ sorts the BAT itself. 
 @c
-@:sort(1)@
-@:sort(GDK_SORTED,_REV,_rev)@
+@:sort(1,,,_rev)@
+@:sort(GDK_SORTED,_REV,_rev,)@
 
 @= sort
 int BATordered@3(BAT *b) {
@@ -1245,22 +1245,63 @@ BAT *BATsort@3(BAT *b) {
 	int tt = b->ttype;
 
 	BATcheck(b, "BATsort@3: BAT"); 
+	if (b->htype == TYPE_void && b->hseqbase == oid_nil) {
+		/* b's head is void-nil, hence we return a read-only copy/view of b */
+		return BATrcopy(b);
+        } 
 	if (BATordered@3(b)) {
+		/* b is already ordered as desired, hence we return a read-only copy/view of b */
+		return BATrcopy(b);
+        } 
+	if (BATcount(b)<2) {
+		/* with less than 2 BUNs, b is ordered, hence we return a read-only copy/view of b */
+		b->hsorted = (bit)GDK_SORTED@2;
 		return BATrcopy(b);
         } 
 	/* a void tail column 0,1,2,3,... must be materialized to oid before sorting */
 	if (tt == TYPE_void && b->tseqbase != oid_nil) {
 		tt = TYPE_oid;
 	}
+	if (BATordered@4(b)) {
+		/* b is ordered in the opposite direction, hence we return a reverted copy of b */
+		/* a void head column must be materialized to oid before reverting */
+		BAT *bn;
+		int ht = b->htype;
+		if (ht == TYPE_void && b->hseqbase != oid_nil) {
+			ht = TYPE_oid;
+		}
+		bn = BATrevert(batcopy(b, ht, tt, TRUE));
+		bn->hsorted = (bit)GDK_SORTED@2;
+		return bn;
+        } 
 	return BATorder@3(batcopy(b, b->htype, tt, TRUE));
 }
 
 BAT *BATorder@3(BAT *b) {
 	BATcheck(b, "BATorder@3: BAT"); 
+	if (b->htype == TYPE_void && b->hseqbase == oid_nil) {
+		/* b's head is void-nil, hence we return b as is */
+		return BATrcopy(b);
+        } 
         if (BATordered@3(b)) {
+		/* b is already ordered as desired, hence we return b as is */
 		return b;
 	}
-	b->tseqbase = oid_nil; /* ignore the void case here */
+	if (BATcount(b)<2) {
+		/* with less than 2 BUNs, b is ordered, hence we return b as is */
+		b->hsorted = (bit)GDK_SORTED@2;
+		return b;
+        } 
+	if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
+		GDKwarning( "void tail column will become nil during order@3.\nTo keep it, please materialize it to oid, first.\n" );
+		b->tseqbase = oid_nil; /* ignore the void case here */
+	}
+	if (BATordered@4(b)) {
+		/* b is ordered in the opposite direction, hence we revert b */
+		b = BATrevert(b);
+		b->hsorted = (bit)GDK_SORTED@2;
+		return b;
+        } 
 	GDKqsort@3(BUNfirst(b), b->hheap.base, BATcount(b), BUNsize(b), b->htype, b->hloc); 
         ACCremoveall(b);
         ALIGNdel(b, "BATorder@3");
@@ -1284,7 +1325,7 @@ BAT* BATrevert(BAT *b) {
 	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) ||
             (b->ttype == TYPE_void && b->tseqbase != oid_nil)) 
         {
-	  GDKwarning( "Cannot reverse order on void columns.\n" );
+	  GDKwarning( "Cannot reverse order on void columns.\nPlease materialize them to oid, first.\n" );
 	  return b;
 	}
         ALIGNdel(b, "BATrevorder");

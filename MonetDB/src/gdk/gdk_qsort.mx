@@ -313,6 +313,8 @@ void GDKqsort@1(void *a, void* base, size_t n, int width, int tpe, int loc) {
 	int i = 0;
 	buf_t buf;
 
+	assert(tpe != TYPE_void);
+
 	/* init the qsort record */
 	buf.cmp = BATatoms[tpe].atomCmp;
 	buf.offst = base;

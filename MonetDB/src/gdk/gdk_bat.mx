@@ -1525,7 +1525,7 @@ if (mode & BATPROPS_CHECK) {
 	BAT *bm = BATmirror(b);
 	if (BAThvoid(b) && b->hseqbase != bm->tseqbase) {
 		oid o = (b->htype && yy != xx)?*(oid*) BUNhloc(b,BUNfirst(b)):oid_nil;
-		GDKerror("BATpropcheck: BAT %d set inconsistent hseqbase=%d\n", b->batCacheid, o);
+		GDKerror("BATpropcheck: BAT %d set inconsistent hseqbase: %d != %d => %d\n", b->batCacheid, b->hseqbase, bm->tseqbase, o);
 		b->hseqbase = bm->tseqbase = o; b->batDirty = TRUE;
 	}
 	zz = ((b->GDKversion != bm->GDKversion) + (b->U != bm->U) + (b->P != bm->P) +
@@ -1607,7 +1607,7 @@ first propagate already known properties. that will save some effort.
 	if (mode&BATPROPS_CHECK) {
 		dense_bak = BAThdense(b);
 		seq_bak = b->hseqbase;
-		sorted_bak = BAThordered(b);
+		sorted_bak = (BAThordered(b)&1);
 		key_bak = b->hkey;
 		BATkey(b,FALSE);
 		b->hsorted = FALSE;
