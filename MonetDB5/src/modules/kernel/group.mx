@@ -92,6 +92,9 @@ comment "Produces a new BAT with identical head column, and in the tail
 
 command group(attr:bat[:any$2,:any$1] )
 	(histo:bat[:any$1,:int], grp:bat[:any$2,:oid]) 
+address GRPgroup;
+command group(attr:bat[:any$2,:any$1] )
+	(histo:bat[:any$1,:int], grp:bat[:any$2,:void]) 
 address GRPgroup
 comment "Cross tabulation group initialization. Returned head values 
         are identical as in 'attr'. Tail values are from the same 

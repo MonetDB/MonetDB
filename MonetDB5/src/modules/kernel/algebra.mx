@@ -449,7 +449,7 @@ address ALGtmark
 comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 
 command markT( b:bat[:any$1,:any] ) :bat[:any$1,:void] 
-address ALGtmark0
+address ALGtmark_default
 comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 
 command markT( b:bat[:any$1,:any], base:oid ) :bat[:any$1,:void] 
@@ -2074,24 +2074,9 @@ str ALGtmark(int *result, int *bid, oid *base) {
 	return throwMessage("algebra.mark", 
 		"marking group failed");
 }
-str ALGtmark0(int *result, int *bid) {
+str ALGtmark_default(int *result, int *bid) {
 	oid o= oid_nil;
 	return ALGtmark(result,bid,&o);
-}
-str ALGtmark_default(int *result, int *bid) {
-	BAT *b,  *bn= NULL;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("algebra.mark", "Cannot access descriptor");
-    }
-	if( CMDmark_default(&bn,b)== GDK_SUCCEED){
-		BBPunfix(b->batCacheid);
-		bn = BATsetaccess(bn,1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	return throwMessage("algebra.mark", "marking group failed");
 }
 str ALGmarkHead(int *result, int *bid, oid *base) {
 	BAT *b,  *bn= NULL;
@@ -2109,19 +2094,8 @@ str ALGmarkHead(int *result, int *bid, oid *base) {
 	return throwMessage("algebra.mark", "marking group failed");
 }
 str ALGmarkHead_default(int *result, int *bid) {
-	BAT *b,  *bn = NULL;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("algebra.hmark", "Cannot access descriptor");
-    }
-	if( CMDmark_default(&bn,b)== GDK_SUCCEED){
-		BBPunfix(b->batCacheid);
-		bn = BATsetaccess(bn,1);
-		BBPincref(*result = -bn->batCacheid, TRUE);
-		BBPunfix(*result);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	return throwMessage("algebra.mark", "marking group failed");
+	oid o=0;
+	return ALGmarkHead(result,bid,&o);
 }
 str ALGhashsplit(int *result, int *bid, int *nfrag){
 	BAT *b, *bn= NULL;

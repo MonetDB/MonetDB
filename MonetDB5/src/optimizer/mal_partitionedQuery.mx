@@ -49,7 +49,7 @@ operators with their incremental counter part.
 Selection of which variables to expand is left to upper layers,
 e.g. the language specific optimizer. Alternatively, a scheduler
 may decide to rework the plan based on more accurate knowledge
-of the task at head.
+of the task at hand.
 
 @{
 @h
@@ -89,7 +89,7 @@ BPToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @-
 Not all BATs call for iterator expansion. Unfortunately
 we can not check this always at compile time, because
-we need the BAT identifier.  Therefor the user should
+we need the actual BAT identifier.  Therefor the user should
 supply the variable instead.
 We
 @c
@@ -198,14 +198,11 @@ BPTreplacement(MalBlkPtr mb, int *first, int *last, int varid){
 	setModuleId(p,GDKstrdup("partitions"));
 	setFunctionId(p,GDKstrdup("newIterator"));
 	p->barrier= BARRIERsymbol;
-	idx= p->argv[0]= newTmpVariable(mb,TYPE_int);
-	setVarUsed(mb,idx,TRUE);
-	bid= p->argv[1]= newTmpVariable(mb,getVarType(mb,varid));
-	setVarUsed(mb,bid,TRUE);
-	isVarInitialized(mb,bid)=TRUE;
-	p->retc=2;
-	p->argv[2]= varid;
-	p->argc=3;
+	idx= newTmpVariable(mb,TYPE_int);
+	pushReturn(mb,p,idx);
+	bid= newTmpVariable(mb,getVarType(mb,varid));
+	pushReturn(mb,p,bid);
+	pushArgument(mb,p,varid);
 	pushInstruction(mb,p);
 
 	pcf= mb->stop;
@@ -219,23 +216,17 @@ accumulated version.
 @c
 	/* finalize the loop */
 	/* redo (idx,bid):= partitions.hasMoreElements(var); */
-	p= newInstruction(ASSIGNsymbol);
+	p= newInstruction(REDOsymbol);
 	setModuleId(p,GDKstrdup("partitions"));
 	setFunctionId(p,GDKstrdup("hasMoreElements"));
-	p->barrier= REDOsymbol;
-	p->argv[0]= idx;
-	p->argv[1]= bid;
-	p->retc=2;
-	p->argv[2]= varid;
-	p->argc=3;
+	pushReturn(mb,p,idx);
+	pushReturn(mb,p,bid);
+	pushArgument(mb,p,varid);
 	pushInstruction(mb,p);
 	/* exit (idx,bid) */
 	p= newInstruction(EXITsymbol);
-	p->barrier= EXITsymbol;
-	p->argv[0]= idx;
-	p->argv[1]= bid;
-	p->retc=2;
-	p->argc=2;
+	pushReturn(mb,p,idx);
+	pushReturn(mb,p,bid);
 	pushInstruction(mb,p);
 
 	*first= mb->stop;

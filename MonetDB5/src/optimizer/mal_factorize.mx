@@ -161,9 +161,8 @@ str FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* added control block */
     t = newConstant(mb, TYPE_bit, GDKstrdup("true"), 0);
     v = newVariable(mb, GDKstrdup("always"), TYPE_bit);
-    p = newInstruction(ASSIGNsymbol);
-    p->barrier = BARRIERsymbol;
-    p->argv[0] = v;
+    p = newInstruction(BARRIERsymbol);
+	pushReturn(mb,p,v);
     pushArgument(mb, p, t);
 	mb->stmt[k++]= p;
 
@@ -171,17 +170,14 @@ str FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mb->stmt[k++]= second[i];
 
 	/* finalize the factory */
-    p = newInstruction(ASSIGNsymbol);
-    p->barrier = YIELDsymbol;
-    p->argv[0] = v;
+    p = newInstruction(YIELDsymbol);
+	pushReturn(mb,p,v);
     mb->stmt[k++] = p;
-    p = newInstruction(ASSIGNsymbol);
-    p->barrier = REDOsymbol;
-    p->argv[0] = v;
+    p = newInstruction(REDOsymbol);
+	pushReturn(mb,p,v);
     mb->stmt[k++] = p;
-    p = newInstruction(ASSIGNsymbol);
-    p->barrier = EXITsymbol;
-    p->argv[0] = v;
+    p = newInstruction(EXITsymbol);
+	pushReturn(mb,p,v);
     mb->stmt[k++] = p;
 
 	/* add END statement */
