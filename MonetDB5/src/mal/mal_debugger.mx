@@ -226,8 +226,8 @@ void mdbClrBreakpointName(Client cntxt, str name)
     mdb->brkTop = j;
 }
 
-#define skipBlanc(c,X)    while(*(X) && isspace((int)*X)){ X++; c->yycur++; }
-#define skipNonBlanc(c,X) while(*(X) && !isspace((int) *X)){ X++; c->yycur++; }
+#define skipBlanc(c,X)    while(*(X) && isspace((int)*X)){ X++; }
+#define skipNonBlanc(c,X) while(*(X) && !isspace((int) *X)){ X++; }
 #define skipWord(c,X) 	  skipNonBlanc(c,X); skipBlanc(c,X);
 
 @-
@@ -345,11 +345,12 @@ The commands are self-explanatory.
 
 The prompt string sent to the user indicates the debugger mode.
 @c
-void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
+void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
+{
 	int m = 1;
     char *b,*c;
     stream *out = cntxt->fdout;
-    int listing=cntxt->listing;
+    int listing = cntxt->listing;
 	char *oldprompt = cntxt->prompt;
 	int oldpromptlength = cntxt->promptlength;
 
@@ -361,23 +362,32 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 		cntxt -> prompt = "mdb>";
 		cntxt -> promptlength = 4;
 	}
+    cntxt->fdin->pos += cntxt->yycur; 
+	cntxt->yycur = 0;
+	cntxt->fdin->buf[cntxt->fdin->pos] = 0;
     do {
 		char *msg = NULL;
-    	cntxt->fdin->pos += cntxt->yycur; 
-		cntxt->yycur = 0;
-		cntxt->fdin->buf[cntxt->fdin->pos] = 0;
 
-		if (cntxt->phase[READER] && (msg=(*cntxt->phase[READER])(cntxt)) ) {
-			GDKfree(msg);
-        	break;
-		} else if (readClient(cntxt,(cntxt==mal_clients?"mdb>":"\001mdb>\001")) <= 0) {
+		if (cntxt->phase[READER]) {
+ 			if ((msg=(*cntxt->phase[READER])(cntxt)) ) {
+				GDKfree(msg);
+        		break;
+			}
+		} else if (readClient(cntxt, cntxt -> prompt) <= 0) {
         	break;
 		}
     	b = CURRENT(cntxt);
-    	skipBlanc(cntxt,b);
+
         /* terminate the line with zero */
-        c= strchr(b,'\n');
-        if( c) *c =0;
+        c = strchr(b,'\n');
+        if (c) {
+			*c = 0;
+    		cntxt->fdin->pos += (c-b)+1;
+		} else {
+    		cntxt->fdin->pos = cntxt->fdin->len;
+		}
+
+    	skipBlanc(cntxt,b);
     	switch(*b){
     	case 0: 
 			m = 0; 
@@ -395,7 +405,9 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
         	skipWord(cntxt,b);
 			m = 0;
 			break;
-    	case 'h': mdbHelp(out); break;
+    	case 'h': 
+			mdbHelp(out); 
+			break;
     	case 'q': 
         	stk->cmd= 'q';/* return from this debugger */
         	cntxt->itrace= 0;
@@ -624,16 +636,7 @@ signatures satisfying the pattern.
         	stream_printf(out,"%sdebugger command expected\n","#mdb ");
         	mdbHelp(out);
     	}
-	
-		/* skip until end of line */
-		while(*b) {
-			b++;
-			cntxt->yycur++;
-		}
     } while(m);
-    cntxt->fdin->pos += cntxt->yycur; 
-	cntxt->yycur = 0;
-	cntxt->fdin->buf[cntxt->fdin->pos] = 0;
 	cntxt->prompt = oldprompt;
 	cntxt->promptlength = oldpromptlength;
 }
