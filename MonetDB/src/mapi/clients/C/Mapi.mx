@@ -2671,19 +2671,18 @@ slice_row(char *reply, char *null, char ***anchorsp, int length)
 }
 
 static struct MapiResultSet *
-parse_header_line(MapiHdl hdl, char *line)
+parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 {
 	char *tag, *etag;
 	int i, n;
 	char **anchors;
-	struct MapiResultSet *result;
 
 	if (strcmp(line, "#-") == 0) {
 		/* start of new SQL result */
 		return NULL;
 	}
 
-	if ((result = hdl->lastresult) == NULL)
+	if (result == NULL)
 		result = new_result(hdl);
 
 	line = strdup(line);	/* make copy we can play with */
@@ -2951,10 +2950,12 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			if (lookahead < 0)
 				lookahead = 1;
 			copy = strdup(line);
-			result = parse_header_line(hdl, line);
+			result = parse_header_line(hdl, line, result);
 			hdl->active = result;
 			if (result)
 				add_cache(result, copy);
+			else
+				free(copy);
 			break;
 		default:
 			if (result == NULL) {
