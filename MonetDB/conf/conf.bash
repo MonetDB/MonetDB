@@ -222,6 +222,10 @@ if [ "${os}" = "Linux" ] ; then
 			libpath="/home/niels/soft/local/lib:${libpath}"
 		fi
 	fi
+	if [ "${hw}" = "x86_64" ] ; then
+		# specific settings for 64 bit on Opterons (with Debian Linux)
+		libpath="/lib64:${libpath}"
+	fi
 	domain="`domainname`"
 	if [ -x /usr/lib/java/bin/javac  -a  -x /usr/lib/java/bin/jar ] ; then
 		# java in Konstanz
