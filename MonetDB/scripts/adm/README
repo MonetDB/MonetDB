@@ -17,3 +17,12 @@ of your databases, like gdk_dbfarm in monet.conf.
 in a new monet will make it un-destroyable - 
 unless you revert the fix by decreasing the
 plevel count to 1).
+
+Usage findtmpbats.pl:
+
+If the database crashes or something else problematic 
+happens, temporary bats may exist on disk that do not occur
+in the BBP any more.
+While this is being fixed, this workaround perl script removes
+bat files that are not listed in the BBP, possibly
+regaining lots of disk space (just ask Alex).
