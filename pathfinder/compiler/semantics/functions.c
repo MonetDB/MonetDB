@@ -161,7 +161,8 @@ add_ufuns (PFpnode_t *n)
             add_ufun (n->child[0]);
 
             /* and recurse */
-            return add_ufuns (n->child[1]);
+            add_ufuns (n->child[1]);
+            return;
 
         default:
             PFoops_loc (OOPS_FATAL, n->loc, "illegal parse tree node kind");
