@@ -14,13 +14,21 @@
 # 
 
 use File::Find;
+use File::stat qw(:FIELDS);
 
 sub usage() {
-  print "Usage: $0 <dbfarm>\n";
+  print "Usage: $0 [--print-size] <dbfarm>\n";
   exit -1;
 }
 
 my $dbfarm      = shift || usage;
+my $PRINT_SIZE        = 0;
+if ($dbfarm =~ /--print-size/) {
+  $PRINT_SIZE   = 1;
+  $dbfarm = shift || usage;
+}
+
+my $size	= 0;
 my @dbs         = ();
 my %bats        = ();
 
@@ -48,7 +56,13 @@ sub findtmpbats {
   return unless $File::Find::name =~ m|bat/(\d+)|gc;
   my $bat = $1;
   $bat .= $1 while $File::Find::name =~ m|(/\d+)|gc;
-  print $File::Find::name, "\n" if not defined $bats{$bat};
+  if (not defined $bats{$bat}) { 
+    print $File::Find::name, "\n"; 
+    if ($PRINT_SIZE) {
+      stat($File::Find::name);
+      $size += $st_size;
+    }
+  }
 }
 
 #
@@ -61,3 +75,4 @@ find
   }, 
   $dbfarm;
 map { checkBBP $_; } @dbs;
+print STDERR "Total size: ", $size >> 20, "Mb\n" if $PRINT_SIZE;
