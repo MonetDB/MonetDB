@@ -2750,8 +2750,12 @@ position after the  last occurence of that value.
 #define IDXend(b,p,q)	for (p = IDXlast(b)-1; p >= q; p--)
 
 /* OIDDEPEND */
-#define SORTfnd_oid(b,v) SORTfnd_int(b,v) 
-#define IDXfnd_oid(b,v)	IDXfnd_int(b,v)
+#define SORTfnd_oid(b,v)	SORTfnd_int(b,v) 
+#define SORTfndfirst_oid(b,v)	SORTfndfirst_int(b,v) 
+#define SORTfndlast_oid(b,v)	SORTfndlast_int(b,v) 
+#define IDXfnd_oid(b,v)		IDXfnd_int(b,v)
+#define IDXfndfirst_oid(b,v)	IDXfndfirst_int(b,v)
+#define IDXfndlast_oid(b,v)	IDXfndlast_int(b,v)
 #define SORTloop_oid(b,p,q,tl,th,s) SORTloop_int(b,p,q,tl,th,s) 
 #define SORTloop_bit(b,p,q,tl,th,s) SORTloop_chr(b,p,q,tl,th,s) 
 @T

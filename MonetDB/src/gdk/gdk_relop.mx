@@ -1794,8 +1794,8 @@ while(algo) {
 			n->lo = BUNfirst(b); n->nhits = n->size; 
 			n->hi = last; continue;
 	        } else if (n->binsearch) {
-    			n->cur = (BUN) SORTfnd@4(b, h);
-    			if (n->cur == NULL) break; /* NOT FOUND */
+    			n->cur = (BUN) SORTfndfirst@4(BATmirror(b), h);
+    			if (n->cur >= last) break; /* NOT FOUND */
     		} else {
     			int yy = 1;
 		    	for(; n->cur < last; n->cur += xx) 
@@ -1817,7 +1817,7 @@ while(algo) {
     		int yy = -1;
     			
     		if (n->binsearch) {
-    			n->cur = (BUN) IDXfnd@4(b, h);
+    			n->cur = (BUN) IDXfndfirst@4(b, h);
     			if (n->cur == NULL) break; /* NOT FOUND */
     		} else {
 			for(; n->cur < last; n->cur += sizeof(BUN))

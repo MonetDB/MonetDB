@@ -834,7 +834,7 @@ void IDXrng(BAT	*b, ptr	v, ptr w, BUN **p, BUN **q){
 
 @+ Binary Search on a Sorted BAT
 We have two main routines, @`SORTfndfirst@5(b,v) and @`SORTfndlast@5(b,v), that 
-search for a tail value 'v' in a sorted BAT. If the value is present, it 
+search for a TAIL value 'v' in a sorted BAT. If the value is present, it 
 returns a pointer to its first occurence; else it returns @%BUNfirst(b)@.
 The latter routine returns a pointer to the BUN just after the last 
 occurence of 'v', else it returns @%BUNlast(b)@.
@@ -843,6 +843,9 @@ occurence of 'v', else it returns @%BUNlast(b)@.
 From the above routines we now also defined the @`SORTfnd@5 and @%SORTfnd_tpe@
 routines that look vor a certain value and return a (not necesarrily the first
 or last) reference to it, or NULL (if the value does not exist).
+
+Note: of the SORTfnd and IDXfnd macros, only @`SORTfndfirst@5(b,v) and 
+@`SORTfndlast@5(b,v) work on the tail of a bat!
 @
 @
 
