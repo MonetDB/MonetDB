@@ -1,5 +1,7 @@
 char rcsid_map[] = "$Id$";
 
+#include "pf_config.h"
+
 #include <stdio.h>
 #include <string.h>
 #include "b.h"
@@ -54,7 +56,20 @@ hash(ts, mod) Item_Set ts; int mod;
 
 	v = 0;
 	for (; (nt = *r) != 0; r++) {
-		v ^= ((int)p[nt].rule) + (PRINCIPLECOST(p[nt].delta)<<4);
+            /*
+             * Don't know how to pacify compilers here the elegant
+             * way.  This one here should work, but feel free to
+             * modify this.  Jens
+             */
+#if SIZEOF_VOID_P == 4
+		v ^= ((int) p[nt].rule) + (PRINCIPLECOST(p[nt].delta)<<4);
+#else
+#if SIZEOF_VOID_P == 8
+		v ^= ((int) (long long int) p[nt].rule) + (PRINCIPLECOST(p[nt].delta)<<4);
+#else
+#error "We only support 32 or 64 bit machines"
+#endif
+#endif
 	}
 	v >>= 4;
 	v &= (mod-1);

@@ -2,6 +2,7 @@ char rcsid_be[] = "$Id$";
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include "b.h"
 #include "fe.h"
 
@@ -329,7 +330,7 @@ makeLHSmap()
 			fprintf(outfile, "\t0,\n");
 		}
 	}
-	fprintf(outfile, "};\n\n", prefix);
+	fprintf(outfile, "};\n\n");
 }
 
 static int seminal(from, to) int from; int to;
@@ -375,8 +376,7 @@ makeClosureArray()
 	fprintf(outfile, "};\n");
 }
 
-void
-makeCostVector(z,d) int z; DeltaCost d;
+static void makeCostVector (bool z, DeltaCost d)
 {
 	fprintf(outfile, "\t{");
 #ifdef NOLEX
@@ -452,7 +452,7 @@ makeDeltaCostArray()
 	for (s = 0; s < states-1; s++) {
 		fprintf(outfile, "{ /* state #%d: ", s+1);
 		printRepresentative(outfile, sortedStates[s]);
-		fprintf(outfile, " */\n", s+1);
+		fprintf(outfile, " */\n");
 		fprintf(outfile, "\t{0},\n");
 		for (nt = 1; nt < last_user_nonterminal; nt++) {
 			makeCostVector(1, sortedStates[s]->closed[nt].delta);

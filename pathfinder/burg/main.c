@@ -19,8 +19,8 @@ static char version[] = "BURG, Version 1.0";
 
 extern int main ARGS((int argc, char **argv));
 
-/** strdup() is not POSIX. We just implement it ourselves. */
-static char *strdup (const char *);
+/** strdup_() is not POSIX. We just implement it ourselves. */
+static char *strdup_ (const char *);
 
 void doGrammarNts (void);          /* defined in fe.c */
 void makeRuleDescArray (void);     /* defined in be.c */
@@ -90,7 +90,7 @@ main(argc, argv) int argc __attribute__((unused)); char **argv;
 				fprintf(stderr, "Unexpected Filename (%s) after (%s)\n", argv[i], inFileName);
 				exit(1);
 			}
-			inFileName = strdup (argv[i]);
+			inFileName = strdup_ (argv[i]);
 		}
 		if (needInt || needStr) {
 			char *v;
@@ -191,7 +191,7 @@ main(argc, argv) int argc __attribute__((unused)); char **argv;
 }
 
 static char *
-strdup (const char *s) {
+strdup_ (const char *s) {
 
     int   len = strlen (s);
     char *ret = malloc (len);
