@@ -65,8 +65,7 @@ address CLTgetScenario
 comment "Retrieve current scenario name";
 command setScenario(msg:str):str 
 address CLTsetScenario
-comment "Switch to other scenario handler, 
-	return previous one";
+comment "Switch to other scenario handler, return previous one";
 
 command quit():void
 address CLTquit

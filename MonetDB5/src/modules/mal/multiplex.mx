@@ -239,10 +239,12 @@ A polymorphic type is not allowed anymore at this stage,
 					t2,tpe,
 					 functionName(pci), getPC(mb,pci));
 			}
-                        if( t2== TYPE_any || tpe== TYPE_any)
-                                GDKerror("multiplexType:%s[%d]: "
-                                "explicit BAT type required\n",
-				 functionName(pci), getPC(mb,pci));
+/*
+			if( t2== TYPE_any || tpe== TYPE_any)
+					GDKerror("multiplexType:%s[%d]: "
+					"explicit BAT type required\n",
+					 functionName(pci), getPC(mb,pci));
+*/
 		}
 	    } else {
 		tt= getArgType(mb,pci,i);
