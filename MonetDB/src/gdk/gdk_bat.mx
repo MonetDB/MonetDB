@@ -636,7 +636,7 @@ This code assumes that new elements are appended to the BUN list.
 if ((@1) && b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
     *(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b))))
 {
-      b = BATmaterialize(b, (int) (BATcount(b)*1.2));
+      b = BATmaterialize(b, (size_t) (BATcount(b)*1.2));
 }
 @c
 INLINE BAT *BUNinplace(BAT *b, BUN p, ptr h, ptr t);

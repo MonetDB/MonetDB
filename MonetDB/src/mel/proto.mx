@@ -281,7 +281,7 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "int\n";
 	    o << d.Name() << "(\n";
 	    o << "   Heap*\thp,\t/* OUT: heap of " << name << "s. */\n";
-	    o << "   int\t\tsize\t/* IN: #atoms you expect to store.*/\n);\n";
+	    o << "   size_t\t\tsize\t/* IN: #atoms you expect to store.*/\n);\n";
 	    o << "\t/* HEAP: create an empty heap for storing ";
 	    o << name << "s. */\n";
 	    o << "\t/* returns 1 on success 0 on failure */\n\n\n";

@@ -425,7 +425,7 @@ typedef struct {
         return(@1ssize(p->dimension));
     }
 
-    int atom_@1s_heap(Heap *heap, int capacity) {
+    int atom_@1s_heap(Heap *heap, size_t capacity) {
         HEAP_initialize(heap, capacity, 0, @5);
         return 0;
     }

@@ -378,7 +378,7 @@ void ATOMproperty(str id, str property, int (*arg) ()) {
 
 	    if (strcmp("heap", property) == 0) {
 		BATatoms[t].varsized = 1;
-		atomset(BATatoms[t].atomHeap, (int (*)(Heap *,int)) arg); 
+		atomset(BATatoms[t].atomHeap, (int (*)(Heap *,size_t)) arg); 
 	    } else if (strcmp("heapconvert", property) == 0) {
 		atomset(BATatoms[t].atomHeapConvert, (void (*)(Heap *,int)) arg); 
 	    } else if (strcmp("check", property) == 0) {
@@ -671,8 +671,8 @@ int ATOMlen(int t, ptr src) {
 	return (l)?(*l)(src):ATOMsize(t);
 }
 
-int ATOMheap(int t, Heap* hp, int cap) {
-	int (*h)(Heap *, int) = BATatoms[t].atomHeap;
+int ATOMheap(int t, Heap* hp, size_t cap) {
+	int (*h)(Heap *, size_t) = BATatoms[t].atomHeap;
 	return (h)?(*h)(hp, cap):0;
 }
 

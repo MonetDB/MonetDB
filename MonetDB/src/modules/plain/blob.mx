@@ -185,7 +185,7 @@ int blob_length(blob* p)
 }
 
 
-int blob_heap(Heap* heap,int capacity)
+int blob_heap(Heap* heap, size_t capacity)
 {
    HEAP_initialize(heap,capacity,0,4);
    return 0;

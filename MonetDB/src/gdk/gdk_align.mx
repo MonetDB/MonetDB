@@ -302,9 +302,10 @@ The @#BATmaterialize@ routine produces inplace materialized version of
 a void bat (which should have been a VIEW) (later we should add the code 
 for VIEWs).
 @c
-BAT *BATmaterialize(BAT *b, int size){
+BAT *BATmaterialize(BAT *b, size_t size){
 	BAT *bn;
-	int ht = b->htype, tt = b->ttype, head = 0, hole_padding = 0, cnt = 0;
+	int ht = b->htype, tt = b->ttype, head = 0;
+	size_t hole_padding = 0, cnt = 0;
 	Heap buns = *b->batBuns, hh = b->H->heap, th = b->T->heap;
 	int bunwidth = b->dims.bunwidth, hlc = b->hloc, tlc = b->tloc;
 	char *hbase = Hbase(b), *tbase = Tbase(b);
@@ -312,7 +313,7 @@ BAT *BATmaterialize(BAT *b, int size){
 	BUN p = BUNfirst(b), q = BUNlast(b);
 	
     	ALGODEBUG THRprintf(GDKout, 
-			"BATmaterialize(%d,%d);\n", b->batCacheid, size);
+			"BATmaterialize(%d,%u);\n", b->batCacheid, size);
 	if (BAThdense(b) && ht == TYPE_void) {
 		head = 1;
 		ht = TYPE_oid;

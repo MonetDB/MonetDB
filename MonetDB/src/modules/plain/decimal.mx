@@ -1094,7 +1094,7 @@ void decimal_convert(decimal *d, int dummy) {
 	}
 }
 
-int decimal_heap(Heap* h,int capacity) {
+int decimal_heap(Heap* h, size_t capacity) {
 	HEAP_initialize_compact(h, capacity*DECIMAL_AVGSIZE, 0, 0, (int (*)(ptr)) decimal_length);
 	return(0);
 }

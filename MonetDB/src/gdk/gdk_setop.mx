@@ -493,7 +493,7 @@ double elimination.
 #define KEYk	TRUE
 #define KEYs	FALSE
 
-BAT* BATmaterialize_(BAT *b, int size){
+BAT* BATmaterialize_(BAT *b, size_t size){
 	BAT *bn = BATnew(TYPE_oid, ATOMtype(b->ttype), size);
 	BUN p,q; int xx;
 	oid base = b->hseqbase;
