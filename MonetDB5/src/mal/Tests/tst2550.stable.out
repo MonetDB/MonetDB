@@ -23,7 +23,7 @@ factory Admin.random(seed:int) (noes:bit,val:int);	# 0  (noes:bit)(val:int)<-(se
 barrier L := true;	# 2  (L:bit)<-($6:bit) jump 7
     i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-($7:int)(i:int)
     i := calc.%(i,32767);	# 4 CALCbinaryMODintint (i:int)<-(i:int)($8:int)
-    return (noes,val):= (true,i);	# 5  (noes:bit)(val:int)<-($6:bit)(i:int)
+    yield (noes,val):= (true,i);	# 5  (noes:bit)(val:int)<-($6:bit)(i:int)
     redo L;	# 6  (L:bit) jump 3
 exit L;	# 7  (L:bit)
     return (noes,val):= (false,seed);	# 8  (noes:bit)(val:int)<-($9:bit)(seed:int)

@@ -1,6 +1,6 @@
-# The prototypical factory construct
+# Yield commands may only appear in factories
 
-factory random(seed:int):int;
+function random(seed:int):int;
 	i:= seed;
 barrier always:= true;
 	i:= 125 *i;
@@ -10,7 +10,7 @@ barrier always:= true;
 exit always;
 end;
 
-r1:= random(1);
+r1:= random(0);
 print(r1);
-r2:= random(1);
+r2:= random(0);
 print(r2);
