@@ -50,20 +50,20 @@ head-aligned, and to the fetchjoin(reverse(g),b) on-the-fly;
 .MODULE aggrX3;
 
 @= sum_avg_signatures
-.COMMAND {sum}(BAT[oid,@1] b, BAT[oid,any] e) : BAT[oid,@1] = CMDaggrX3_sum_@1; 
+.COMMAND {sum}(BAT[oid,@1] b, BAT[oid,any] e) : BAT[oid,@2] = CMDaggrX3_sum_@1_@2; 
 	"grouped tail sum on @1"
-.COMMAND {avg}(BAT[oid,@1] b, BAT[oid,any] e) : BAT[oid,@1] = CMDaggrX3_avg_@1; 
+.COMMAND {avg}(BAT[oid,@1] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggrX3_avg_@1; 
 	"grouped tail average on @1"
-.COMMAND {sum}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,@1] = CMDaggrX3_sum3_@1; 
+.COMMAND {sum}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,@2] = CMDaggrX3_sum3_@1_@2; 
 	"grouped tail sum on @1"
-.COMMAND {avg}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,@1] = CMDaggrX3_avg3_@1; 
+.COMMAND {avg}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggrX3_avg3_@1; 
 	"grouped tail average on @1"
 @m
-@:sum_avg_signatures(sht)@
-@:sum_avg_signatures(int)@
-@:sum_avg_signatures(lng)@
-@:sum_avg_signatures(flt)@
-@:sum_avg_signatures(dbl)@
+@:sum_avg_signatures(sht,int)@
+@:sum_avg_signatures(int,lng)@
+@:sum_avg_signatures(lng,lng)@
+@:sum_avg_signatures(flt,dbl)@
+@:sum_avg_signatures(dbl,dbl)@
 
 .COMMAND {min}(BAT[oid,any::1] b, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggrX3_min; 
 	"grouped tail minimum"
@@ -94,8 +94,8 @@ head-aligned, and to the fetchjoin(reverse(g),b) on-the-fly;
     proc avg(BAT[any, any::1] b) : any::1 {
 	var cnt := count(b);
         if (cnt = 0) 
-	    return cast(0,ttype(b));
-	return /(sum(b),cast(cnt,ttype(b)));
+	    return dbl(0);
+	return dbl(sum(b))/dbl(cnt);
     }
 
     proc card(BAT[any,any] b) : int {
@@ -122,7 +122,7 @@ proc toset(bat[any,any] b) : str {
         return res + "}";
 }
 
-proc aggrtst(int num, int fanout, str aggr) {
+proc aggrtst(int num, int fanout, str aggr, ..str..) {
 	var p := 3;
 	while((p :+= 1) <= $0) {
 	        var b, e, v := bat(void, int, num);
@@ -252,13 +252,14 @@ HASHfnd_int for void- and hash-lookups, respectively
 
 	@8:	BUNt@7(bn,r)	BUNt@7(bn,r)	&sums[(*(int*)h)-min]	
 								*dst: sum in-place or in sums-array ?
+	@9: 	result type
 */
 @= aggrX3_sum
-	ALGODEBUG THRprintf(GDKout, "aggrX3_sum(@1,@2,@3,@4,@5,@6,@7,@8);\n");
+	ALGODEBUG THRprintf(GDKout, "aggrX3_sum(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 	if (@1) {
 	 	/* create tmp. sums array */
 		size_t i;
-		sums = (@6*) GDKmalloc(range*sizeof(@6));
+		sums = (@9*) GDKmalloc(range*sizeof(@9));
 		for (i = 0; i < range; i++) sums[i] = zero;
 	}
 	if (@2) { (void) BATprepareHash(bn); }
@@ -270,10 +271,10 @@ HASHfnd_int for void- and hash-lookups, respectively
 
 		@3(r, bn, (int*)h);
 		if (r) {
-			@6 *dst = (@6*) @8;
-			if (*dst != @6_nil) {
+			@9 *dst = (@9*) @8;
+			if (*dst != @9_nil) {
 				if (*t == @6_nil) {	
-					*dst = @6_nil;
+					*dst = @9_nil;
 				} else {
 					*dst += *t;
 				}
@@ -284,7 +285,7 @@ HASHfnd_int for void- and hash-lookups, respectively
         	/* copy sums array to final result */
        		BATloopFast(bn, p, q, xx) {
 			oid h = (*(oid*) BUNh@4(bn,p)) - min;
-			*(@6*)BUNt@7(bn, p) = sums[h];
+			*(@9*)BUNt@7(bn, p) = sums[h];
 		}
 	        GDKfree(sums);
 	}
@@ -316,7 +317,7 @@ HASHfnd_int for void- and hash-lookups, respectively
 	if (@1) {
 		/* create tmp. sums array */
 		size_t i;
-		sums = (@6*) GDKmalloc(range*sizeof(@6));
+		sums = (dbl*) GDKmalloc(range*sizeof(dbl));
 		for (i = 0; i < range; i++) sums[i] = zero;
 	}
 	if (@2) { (void) BATprepareHash(bn); }
@@ -330,10 +331,10 @@ HASHfnd_int for void- and hash-lookups, respectively
 
 		@3(r, bn, (int*)h);
 		if (r) {
-			@6 *dst = (@6*) @8;
-			if (*dst != @6_nil) {
+			dbl *dst = (dbl*) @8;
+			if (*dst != dbl_nil) {
 				if (*t == @6_nil) {	
-					*dst = @6_nil;
+					*dst = dbl_nil;
 				} else {
 					*dst += *t;
 				}
@@ -346,9 +347,9 @@ HASHfnd_int for void- and hash-lookups, respectively
 		/* sums in sums-array */
 		BATloopFast(bn, p, q, xx) {
 			oid h = (*(oid*) BUNh@4(bn,p)) - min;
-			@6 *dst = (@6*) BUNt@7(bn, p);
-			if (cnt[h] == 0 || sums[h] == @6_nil) {
-				*dst = @6_nil;
+			dbl *dst = (dbl*) BUNt@7(bn, p);
+			if (cnt[h] == 0 || sums[h] == dbl_nil) {
+				*dst = dbl_nil;
 			} else {
 				*dst = sums[h]/cnt[h];
 			}
@@ -358,10 +359,10 @@ HASHfnd_int for void- and hash-lookups, respectively
 		/* sums in-place */
 		int yy = 0;
 		BATloopFast(bn, p, q, xx) {
-			@6 *dst = (@6*) BUNt@7(bn, p);
+			dbl *dst = (dbl*) BUNt@7(bn, p);
 			if (cnt[yy] == 0) {
-				*dst = @6_nil;
-			} else if (*dst != @6_nil) {
+				*dst = dbl_nil;
+			} else if (*dst != dbl_nil) {
 				*dst /= cnt[yy];
 			}
 			yy++;
@@ -377,42 +378,42 @@ HASHfnd_int for void- and hash-lookups, respectively
 		"var" for varsized b/bn-tail-type	(only loc used currently)
 */
 @= arithpump
-int CMDaggrX3_sum_@1(BAT **ret, BAT *b, BAT *e){
+int CMDaggrX3_sum_@1_@3(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
-	@1 zero = (@1) 0, *sums;
+	@3 zero = (@3) 0, *sums;
 	BUN p, q, r;
 	int xx;
 	size_t range;
 	oid min, max;
 	oid bhsb;
 
-	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_sum_@1[@2](b=%s,e=%s);\n",b->batId,e->batId);
+	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_sum_@1_@3[@2](b=%s,e=%s);\n",b->batId,e->batId);
 	/* init: set all sums to zero and calculate min/max oid */
-	@:init_result(@1)@
+	@:init_result(@3)@
 	range = max - min + 1;
 
 	/* scan b, and calculate sums */
 	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_sum(0,0,BUNfndVOID,var,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r))@
+			@:aggrX3_sum(0,0,BUNfndVOID,var,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r),@3)@
 		} else {
-			@:aggrX3_sum(0,0,BUNfndVOID,var,BUNhloc(b,p),@1,@2,BUNt@2(bn,r))@
+			@:aggrX3_sum(0,0,BUNfndVOID,var,BUNhloc(b,p),@1,@2,BUNt@2(bn,r),@3)@
 		}
 	/* e->htype == TYPE_oid */
 	} else if (range > SMALL_AGGR_MAX) {
 		/* hash lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_sum(0,1,HASHfnd_int,loc,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r))@
+			@:aggrX3_sum(0,1,HASHfnd_int,loc,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r),@3)@
 		} else {
-			@:aggrX3_sum(0,1,HASHfnd_int,loc,BUNhloc(b,p),@1,@2,BUNt@2(bn,r))@
+			@:aggrX3_sum(0,1,HASHfnd_int,loc,BUNhloc(b,p),@1,@2,BUNt@2(bn,r),@3)@
 		}
 	} else {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_sum(1,0,CHKrange,loc,&bhsb; bhsb++,@1,@2,&sums[(*(int*)h)-min])@
+			@:aggrX3_sum(1,0,CHKrange,loc,&bhsb; bhsb++,@1,@2,&sums[(*(int*)h)-min],@3)@
 		} else {
-			@:aggrX3_sum(1,0,CHKrange,loc,BUNhloc(b,p),@1,@2,&sums[(*(int*)h)-min])@
+			@:aggrX3_sum(1,0,CHKrange,loc,BUNhloc(b,p),@1,@2,&sums[(*(int*)h)-min],@3)@
 		}
 	}
 			
@@ -427,13 +428,13 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 	int *cnt;
 	size_t slots, range;
 	oid min, max;
-	@1 zero = (@1) 0, *sums;
+	dbl zero = (dbl) 0, *sums;
 	BUN p, q, r;
 	oid bhsb;
 
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_avg_@1[@2](b=%s,e=%s);\n",b->batId,e->batId);
 	/* init: set all sums & counts to zero and calculate min/max oid */
-	@:init_result(@1)@
+	@:init_result(dbl)@
 	range = max - min + 1;
 
 	/* scan b, calculate sums & counts, derive averages */
@@ -468,11 +469,11 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 	return GDK_SUCCEED;
 }
 @c
-@:arithpump(sht,loc)@
-@:arithpump(int,loc)@
-@:arithpump(lng,loc)@
-@:arithpump(flt,loc)@
-@:arithpump(dbl,loc)@
+@:arithpump(sht,loc,int)@
+@:arithpump(int,loc,lng)@
+@:arithpump(lng,loc,lng)@
+@:arithpump(flt,loc,dbl)@
+@:arithpump(dbl,loc,dbl)@
 
 @- "Extremes" (Min & Max)
 @c
@@ -779,18 +780,22 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 		"&bhsb; bhsb++" for (void) b-head-type		
 
 	@6:		sht / int / lng / flt / dbl		b/bn-tail-type
-	@7:	"loc" for fixsized b/bn-tail-type, 		b/bn-tail-access
-		"var" for varsized b/bn-tail-type		(only loc used currently)
+	
+#	not used any more as the result-type needs an argument
+#	@7:	"loc" for fixsized b/bn-tail-type, 		b/bn-tail-access
+#		"var" for varsized b/bn-tail-type		(only loc used currently)
 
-	@8:	BUNt@7(bn,r)	BUNt@7(bn,r)	&sums[(*(int*)h)-min]	
+	@7:	BUNt@7(bn,r)	BUNt@7(bn,r)	&sums[(*(int*)h)-min]	
 								*dst: sum in-place or in sums-array ?
+	@8:	???
+	@9: 	result type
 */
 @= aggrX3_sum3
         ALGODEBUG THRprintf(GDKout, "aggrX3_sum3(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 	if (@1) {
 	 	/* create tmp. sums array */
 		size_t i;
-		sums = (@6*) GDKmalloc(range*sizeof(@6));
+		sums = (@9*) GDKmalloc(range*sizeof(@9));
 		for (i = 0; i < range; i++) sums[i] = zero;
 	}
 	if (@2) { (void) BATprepareHash(bn); }
@@ -800,20 +805,19 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
 	BATloopFast(b, p, q, xx) {
-		@6 *t = (@6*) BUNt@7(b,p);
+		@6 *t = (@6*) BUNtloc(b,p);
 		oid v = *(oid*) @5;
 
-		
 		w = offset + v;
-		@9 {
+		@8 {
 			oid *h = (oid*) BUNtloc(g, BUNptr(g, w));
 
 			@3(r, bn, (int*)h);
 			if (r) {
-				@6 *dst = (@6*) @8;
-				if (*dst != @6_nil) {
+				@9 *dst = (@9*) @7;
+				if (*dst != @9_nil) {
 					if (*t == @6_nil) {	
-						*dst = @6_nil;
+						*dst = @9_nil;
 					} else {
 						*dst += *t;
 					}
@@ -825,7 +829,7 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
         	/* copy sums array to final result */
        		BATloopFast(bn, p, q, xx) {
 			oid h = (*(oid*) BUNh@4(bn,p)) - min;
-			*(@6*)BUNt@7(bn, p) = sums[h];
+			*(@9*)BUNtloc(bn, p) = sums[h];
 		}
 	        GDKfree(sums);
 	}
@@ -857,7 +861,7 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 	if (@1) {
 		/* create tmp. sums array */
 		size_t i;
-		sums = (@6*) GDKmalloc(range*sizeof(@6));
+		sums = (dbl*) GDKmalloc(range*sizeof(dbl));
 		for (i = 0; i < range; i++) sums[i] = zero;
 	}
 	if (@2) { (void) BATprepareHash(bn); }
@@ -878,10 +882,10 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 
 			@3(r, bn, (int*)h);
 			if (r) {
-				@6 *dst = (@6*) @8;
-				if (*dst != @6_nil) {
+				dbl *dst = (dbl*) @8;
+				if (*dst != dbl_nil) {
 					if (*t == @6_nil) {	
-						*dst = @6_nil;
+						*dst = dbl_nil;
 					} else {
 						*dst += *t;
 					}
@@ -895,9 +899,9 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 		/* sums in sums-array */
 		BATloopFast(bn, p, q, xx) {
 			oid h = (*(oid*) BUNh@4(bn,p)) - min;
-			@6 *dst = (@6*) BUNt@7(bn, p);
-			if (cnt[h] == 0 || sums[h] == @6_nil) {
-				*dst = @6_nil;
+			dbl *dst = (dbl*) BUNt@7(bn, p);
+			if (cnt[h] == 0 || sums[h] == dbl_nil) {
+				*dst = dbl_nil;
 			} else {
 				*dst = sums[h]/cnt[h];
 			}
@@ -907,10 +911,10 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 		/* sums in-place */
 		int yy = 0;
 		BATloopFast(bn, p, q, xx) {
-			@6 *dst = (@6*) BUNt@7(bn, p);
+			dbl *dst = (dbl*) BUNt@7(bn, p);
 			if (cnt[yy] == 0) {
-				*dst = @6_nil;
-			} else if (*dst != @6_nil) {
+				*dst = dbl_nil;
+			} else if (*dst != dbl_nil) {
 				*dst /= cnt[yy];
 			}
 			yy++;
@@ -922,29 +926,32 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 
 /*	arithpump3
 	@6:	sht / int / lng / flt / dbl		b/bn-tail-type
+
+# 	not used in sum anymore
 	@7:	"loc" for fixsized b/bn-tail-type, 	b/bn-tail-access
 		"var" for varsized b/bn-tail-type	(only loc used currently)
+	@9:	result type
 */
 @= arithpump3
 
-BAT* aggrX3_sum3_@1_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, size_t range, oid min, oid max){
-	@1 zero = (@1) 0, *sums;
+BAT* aggrX3_sum3_@1_@3_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, size_t range, oid min, oid max){
+	@3 zero = (@3) 0, *sums;
 	BUN p, q, r;
 	int xx;
 	oid bhsb;
 	size_t base, end, w;
 	ssize_t offset;
 
-        ALGODEBUG THRprintf(GDKout, "aggrX3_sum3_@1_EarrayBvoidGvoid[@2](bn=%s,b=%s,g=%s,e=%s,range=%lu,min=%lu,max=%lu);\n",
+        ALGODEBUG THRprintf(GDKout, "aggrX3_sum3_@1_@3_EarrayBvoidGvoid[@2](bn=%s,b=%s,g=%s,e=%s,range=%lu,min=%lu,max=%lu);\n",
 	                             bn->batId,b->batId,g->batId,e->batId,(unsigned long)range,(unsigned long)min,(unsigned long)max);
-	@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,@2,&sums[(*(int*)h)-min],)@
+	@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,&sums[(*(int*)h)-min],,@3)@
 	
 	return bn;
 }
 
-int CMDaggrX3_sum3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
-	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
-	@1 zero = (@1) 0, *sums;
+int CMDaggrX3_sum3_@1_@3(BAT **ret, BAT *b, BAT *g, BAT *e){
+	BAT *bn = BATnew(e->htype, TYPE_@3, BATcount(e));	
+	@3 zero = (@3) 0, *sums;
 	BUN p, q, r;
 	int xx;
 	size_t range;
@@ -953,16 +960,16 @@ int CMDaggrX3_sum3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 	size_t base, end, w;
 	ssize_t offset;
 
-        ALGODEBUG THRprintf(GDKout, "CMDaggrX3_sum3_@1[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
+        ALGODEBUG THRprintf(GDKout, "CMDaggrX3_sum3_@1_@3[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_sum3_@1: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_sum3_@1: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
-		return CMDaggrX3_sum_@1(ret, BATjoin(BATmirror(g),b), e);
+		return CMDaggrX3_sum_@1_@3(ret, BATjoin(BATmirror(g),b), e);
 	}
 
 	/* init: set all sums to zero and calculate min/max oid */
-	@:init_result(@1)@
+	@:init_result(@3)@
 	range = max - min + 1;
 
 	/* scan b & g, and calculate sums */
@@ -970,35 +977,35 @@ int CMDaggrX3_sum3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 		/* void lookup */
 		if (b->htype == TYPE_void) {
 			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				@:aggrX3_sum3(0,0,BUNfndVOID,var,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r),)@
+				@:aggrX3_sum3(0,0,BUNfndVOID,var,&bhsb; bhsb++,@1,BUNt@2(bn,r),,@3)@
 			} else {
-				@:aggrX3_sum3(0,0,BUNfndVOID,var,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r),if (w >= base && w < end))@
+				@:aggrX3_sum3(0,0,BUNfndVOID,var,&bhsb; bhsb++,@1,BUNt@2(bn,r),if (w >= base && w < end),@3)@
 			}
 		} else {
-			@:aggrX3_sum3(0,0,BUNfndVOID,var,BUNhloc(b,p),@1,@2,BUNt@2(bn,r),if (w >= base && w < end))@
+			@:aggrX3_sum3(0,0,BUNfndVOID,var,BUNhloc(b,p),@1,BUNt@2(bn,r),if (w >= base && w < end),@3)@
 		}
 	/* e->htype == TYPE_oid */
 	} else if (range > SMALL_AGGR_MAX) {
 		/* hash lookup */
 		if (b->htype == TYPE_void) {
 			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				@:aggrX3_sum3(0,1,HASHfnd_int,loc,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r),)@
+				@:aggrX3_sum3(0,1,HASHfnd_int,loc,&bhsb; bhsb++,@1,BUNt@2(bn,r),,@3)@
 			} else {
-				@:aggrX3_sum3(0,1,HASHfnd_int,loc,&bhsb; bhsb++,@1,@2,BUNt@2(bn,r),if (w >= base && w < end))@
+				@:aggrX3_sum3(0,1,HASHfnd_int,loc,&bhsb; bhsb++,@1,BUNt@2(bn,r),if (w >= base && w < end),@3)@
 			}
 		} else {
-			@:aggrX3_sum3(0,1,HASHfnd_int,loc,BUNhloc(b,p),@1,@2,BUNt@2(bn,r),if (w >= base && w < end))@
+			@:aggrX3_sum3(0,1,HASHfnd_int,loc,BUNhloc(b,p),@1,BUNt@2(bn,r),if (w >= base && w < end),@3)@
 		}
 	} else {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
 			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				bn = aggrX3_sum3_@1_EarrayBvoidGvoid (bn, b, g, e, range, min, max);
+				bn = aggrX3_sum3_@1_@3_EarrayBvoidGvoid (bn, b, g, e, range, min, max);
 			} else {
-				@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,@2,&sums[(*(int*)h)-min],if (w >= base && w < end))@
+				@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,&sums[(*(int*)h)-min],if (w >= base && w < end),@3)@
 			}
 		} else {
-			@:aggrX3_sum3(1,0,CHKrange,loc,BUNhloc(b,p),@1,@2,&sums[(*(int*)h)-min],if (w >= base && w < end))@
+			@:aggrX3_sum3(1,0,CHKrange,loc,BUNhloc(b,p),@1,&sums[(*(int*)h)-min],if (w >= base && w < end),@3)@
 		}
 	}
 			
@@ -1007,13 +1014,13 @@ int CMDaggrX3_sum3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 }
 
 int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
-	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
+	BAT *bn = BATnew(e->htype, TYPE_dbl, BATcount(e));	
 	int xx;
 	size_t off = BUNindex(bn,BUNfirst(bn));
 	int *cnt;
 	size_t range; 
 	oid min, max; 
-	@1 zero = (@1) 0, *sums;
+	dbl zero = (dbl) 0, *sums;
 	size_t slots;
 	BUN p, q, r;
 	oid bhsb;
@@ -1029,7 +1036,7 @@ int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 	}
 
 	/* init: set all sums & counts to zero and calculate min/max oid */
-	@:init_result(@1)@
+	@:init_result(dbl)@
 	range = max - min + 1;
 
 	/* scan b & g, calculate sums & counts, derive averages */
@@ -1064,11 +1071,11 @@ int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 	return GDK_SUCCEED;
 }
 @c
-@:arithpump3(sht,loc)@
-@:arithpump3(int,loc)@
-@:arithpump3(lng,loc)@
-@:arithpump3(flt,loc)@
-@:arithpump3(dbl,loc)@
+@:arithpump3(sht,loc,int)@
+@:arithpump3(int,loc,lng)@
+@:arithpump3(lng,loc,lng)@
+@:arithpump3(flt,loc,dbl)@
+@:arithpump3(dbl,loc,dbl)@
 
 @- "Extremes" (Min & Max)
 @c

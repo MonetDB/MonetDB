@@ -35,24 +35,24 @@ test scripts were added.
 @m
 .MODULE aggr;
 
-.COMMAND {sum}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_sum_sht; 
+.COMMAND {sum}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_sht_int; 
 	"grouped tail sum"
-.COMMAND {sum}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_int; 
+.COMMAND {sum}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_sum_int_lng; 
 	"grouped tail sum"
-.COMMAND {sum}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_sum_lng; 
+.COMMAND {sum}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_sum_lng_lng; 
 	"grouped tail sum"
-.COMMAND {sum}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,flt] = CMDaggr_sum_flt; 
+.COMMAND {sum}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_sum_flt_dbl; 
 	"grouped tail sum"
-.COMMAND {sum}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_sum_dbl; 
+.COMMAND {sum}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_sum_dbl_dbl; 
 	"grouped tail sum"
 
-.COMMAND {avg}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_avg_sht; 
+.COMMAND {avg}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_sht; 
 	"grouped tail average"
-.COMMAND {avg}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_avg_int; 
+.COMMAND {avg}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_int; 
 	"grouped tail average"
-.COMMAND {avg}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_avg_lng; 
+.COMMAND {avg}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_lng; 
 	"grouped tail average"
-.COMMAND {avg}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,flt] = CMDaggr_avg_flt; 
+.COMMAND {avg}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_flt; 
 	"grouped tail average"
 .COMMAND {avg}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_dbl; 
 	"grouped tail average"
@@ -75,11 +75,11 @@ test scripts were added.
 	return 0;
     }
 
-    proc avg(BAT[any, any::1] b) : any::1 {
+    proc avg(BAT[any, any::1] b) : dbl {
 	var cnt := count(b);
         if (cnt = 0) 
-	    return cast(0,ttype(b));
-	return /(sum(b),cast(cnt,ttype(b)));
+	    return dbl(0);
+	return dbl(sum(b))/dbl(cnt);
     }
 
     proc card(BAT[any,any] b) : int {
@@ -106,7 +106,7 @@ proc toset(bat[any,any] b) : str {
         return res + "}";
 }
 
-proc aggrtst(int num, int fanout, str aggr) {
+proc aggrtst(int num, int fanout, str aggr, ..str..) {
 	var p := 3;
 	while((p :+= 1) <= $0) {
 	        var b, e, v := bat(void, int, num);
@@ -173,10 +173,10 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 
 		BUNfndOID(r, bn, h);
 		if (r) {
-			@1 *dst = (@1*) BUN@2(bn, r);
-			if (*dst != @1_nil) {
+			@3 *dst = (@3*) BUN@2(bn, r);
+			if (*dst != @3_nil) {
 				if (*t == @1_nil) {	
-					*dst = @1_nil;
+					*dst = @3_nil;
 				} else {
 					*dst += *t;
 				}
@@ -185,17 +185,17 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	} 
 @c
 @= small_aggr_sum
-	sums = (@1*) GDKmalloc(range*sizeof(@1));
+	sums = (@3*) GDKmalloc(range*sizeof(@3));
 	for (i = 0; i < range; i++) sums[i] = zero;
 	BATloopFast(b, p, q, xx) {
 		oid h = (*(oid*) BUNhead(b,p)) - min;
 		@1 *t = (@1*) BUN@2(b,p);
 
 		if (h < range) {
-			@1 *dst = sums + h;
-			if (*dst != @1_nil) {
+			@3 *dst = sums + h;
+			if (*dst != @3_nil) {
 				if (*t == @1_nil) {	
-					*dst = @1_nil;
+					*dst = @3_nil;
 				} else {
 					*dst += *t;
 				}
@@ -204,7 +204,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	} 
 	BATloopFast(bn, p, q, xx) {
 		oid h = (*(oid*) BUNhead(bn,p)) - min;
-		*(@1*)BUN@2(bn, p) = sums[h];
+		*(@3*)BUN@2(bn, p) = sums[h];
 	}
         GDKfree(sums);
 @c
@@ -218,10 +218,10 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 
 		BUNfndOID(r,bn,h);
 		if (r) {
-			@1 *dst = (@1*) BUN@2(bn, r);
-			if (*dst != @1_nil) {
+			dbl *dst = (dbl*) BUN@2(bn, r);
+			if (*dst != dbl_nil) {
 				if (*t == @1_nil) {	
-					*dst = @1_nil;
+					*dst = dbl_nil;
 				} else {
 					*dst += *t;
 				}
@@ -231,17 +231,17 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	} 
 	/* postprocess by dividing sums by counts */
 	BATloopFast(bn, p, q, xx) {
-		@1 *dst = (@1*) BUN@2(bn, p);
+		dbl *dst = (dbl*) BUN@2(bn, p);
 		if (cnt[yy] == 0) {
-			*dst = @1_nil;
-		} else if (*dst != @1_nil) {
+			*dst = dbl_nil;
+		} else if (*dst != dbl_nil) {
 			*dst /= cnt[yy];
 		} yy++;
 	} 
 	GDKfree(cnt);
 @c
 @= small_aggr_avg
-	sums = (@1*) GDKmalloc(range*sizeof(@1));
+	sums = (dbl*) GDKmalloc(range*sizeof(dbl));
 	cnt  = (int*) GDKmalloc(range*sizeof(int));
 	for (i = 0; i < range; i++) sums[i] = zero;
 	memset(cnt, 0, range*sizeof(int));
@@ -250,10 +250,10 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		@1 *t = (@1*) BUN@2(b,p);
 
 		if (h < range) {
-			@1 *dst = sums + h;
-			if (*dst != @1_nil) {
+			dbl *dst = sums + h;
+			if (*dst != dbl_nil) {
 				if (*t == @1_nil) {	
-					*dst = @1_nil;
+					*dst = dbl_nil;
 				} else {
 					*dst += *t;
 				}
@@ -264,9 +264,9 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	/* postprocess by dividing sums by counts */
 	BATloopFast(bn, p, q, xx) {
 		oid h = (*(oid*) BUNhead(bn,p)) - min;
-		@1 *dst = (@1*) BUN@2(bn, p);
-		if (cnt[h] == 0 || sums[h] == @1_nil) {
-			*dst = @1_nil;
+		dbl *dst = (dbl*) BUN@2(bn, p);
+		if (cnt[h] == 0 || sums[h] == dbl_nil) {
+			*dst = dbl_nil;
 		} else {
 			*dst = sums[h]/cnt[h];
 		}
@@ -276,9 +276,9 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 @c
 
 @= arithpump
-int CMDaggr_sum_@1(BAT **ret, BAT *b, BAT *e){
-	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
-	@1 zero = (@1) 0, *sums;
+int CMDaggr_sum_@1_@3(BAT **ret, BAT *b, BAT *e){
+	BAT *bn = BATnew(e->htype, TYPE_@3, BATcount(e));	
+	@3 zero = (@3) 0, *sums;
 	BUN p, q, r;
 	int xx;
 	oid i, range, min, max;
@@ -306,23 +306,23 @@ int CMDaggr_sum_@1(BAT **ret, BAT *b, BAT *e){
 
 	/* scan b, and add values to sums in-place */
 	if (range > SMALL_AGGR_MAX) {
-		ALGODEBUG THRprintf(GDKout, "CMDaggr_sum_@1: range(=%lu) > SMALL_AGGR_MAX(=%d)  => large_aggr_sum\n",(unsigned long) range,SMALL_AGGR_MAX);
-		@:large_aggr_sum(@1,@2)@
+		ALGODEBUG THRprintf(GDKout, "CMDaggr_sum_@1_@3: range(=%lu) > SMALL_AGGR_MAX(=%d)  => large_aggr_sum\n",(unsigned long) range,SMALL_AGGR_MAX);
+		@:large_aggr_sum(@1,@2,@3)@
 	} else {
-		ALGODEBUG THRprintf(GDKout, "CMDaggr_sum_@1: range(=%lu) <= SMALL_AGGR_MAX(=%d)  => small_aggr_sum\n",(unsigned long) range,SMALL_AGGR_MAX);
-		@:small_aggr_sum(@1,@2)@
+		ALGODEBUG THRprintf(GDKout, "CMDaggr_sum_@1_@3: range(=%lu) <= SMALL_AGGR_MAX(=%d)  => small_aggr_sum\n",(unsigned long) range,SMALL_AGGR_MAX);
+		@:small_aggr_sum(@1,@2,@3)@
 	}
 	*ret = bn;
 	return GDK_SUCCEED;
 }
 
 int CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e){
-	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
+	BAT *bn = BATnew(e->htype, TYPE_dbl, BATcount(e));	
 	int xx;
 	size_t yy = 0, off = BUNindex(bn,BUNfirst(bn));
 	int *cnt;
 	oid i, range, min, max; 
-	@1 zero = (@1) 0, *sums;
+	dbl zero = (dbl) 0, *sums;
 	BUN p, q, r;
 
 	/* init sums and counts to zero */
@@ -358,11 +358,11 @@ int CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e){
 	return GDK_SUCCEED;
 }
 @c
-@:arithpump(sht,tloc)@
-@:arithpump(int,tloc)@
-@:arithpump(lng,tloc)@
-@:arithpump(flt,tloc)@
-@:arithpump(dbl,tloc)@
+@:arithpump(sht,tloc,int)@
+@:arithpump(int,tloc,lng)@
+@:arithpump(lng,tloc,lng)@
+@:arithpump(flt,tloc,dbl)@
+@:arithpump(dbl,tloc,dbl)@
 
 @= extreme
 int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
