@@ -843,6 +843,7 @@ def find_test_dirs(thisdir) :
 
 def PerformDir(env, testdir, testlist, BusyPorts) :
     td = 0
+    elem = None
     FdOut = -1
     FdErr = -1
     TSTSRCBASE = env['TSTSRCBASE']
@@ -876,7 +877,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                 testlist.append((tst,cond))
     if not testlist:
         Warn("No tests found in '"+TSTSRCDIR+"`; skipping directory!")
-        return td
+        return td, elem
 
     env['TSTDB']     = TSTDB
     env['TSTDIR']    = TSTDIR
@@ -898,7 +899,6 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     #       print v+" = "+str(env[v])
     #STDOUT.flush()
 
-    elem = None
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         for LogDBvar in 'GDK_DBFARM', 'SQL_LOGDIR':
             LogDBdir = os.path.join(env[LogDBvar],TSTDB)
@@ -913,14 +913,14 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                     Warn(LogDBtxt+"database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
                     #TODO:
                     # add "something" to HTML output
-                    return td
+                    return td, elem
             try:
                 os.makedirs(LogDBdir)
             except:
                 Warn("creating "+LogDBtxt+"database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
                 #TODO:
                 # add "something" to HTML output
-                return td
+                return td, elem
         if not os.path.exists(TSTTRGDIR):
             #TODO: set mode to umask
             os.makedirs(TSTTRGDIR)
@@ -954,7 +954,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     else: # THISFILE == "Mapprove.py"
         if not os.path.exists(TSTTRGDIR):
             Warn("Output directory '"+TSTTRGDIR+"` missing; skipping directory!")
-            return td
+            return td, elem
 
         for TST,COND in testlist:
             td = td + ApproveOutput(env, TST)
@@ -1942,8 +1942,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         Srvr = Srvr+'echo Over..'
 
         pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, '\nprintf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
-        ln=""
-        while len(ln) < 6 or ln[:6] not in ['Ready.','Over..']:
+        ln="dummy"
+        while 0 < len(ln) < 6 or ln[:6] not in ['Ready.','Over..']:
             ln=pSrvrOut.readline()
             SrvrOut.write(ln)
             SrvrOut.flush()
@@ -2049,8 +2049,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             except IOError, (IOerrNo, IOerrStr):
                 EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
                 EpiFailed = EpiFailed+"\n! Probably, Mserver has died before or during. !\n"
-            ln=""
-            while len(ln) < 6 or ln[:6] not in ['Done..','Over..']:
+            ln="dummy"
+            while 0 < len(ln) < 6 or ln[:6] not in ['Done..','Over..']:
                 ln=pSrvrOut.readline()
                 SrvrOut.write(ln)
                 SrvrOut.flush()
