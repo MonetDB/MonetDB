@@ -23,8 +23,31 @@
 
 @f sql_qc
 @a N.J. Nes
-@* 
+@* The query cache
+An effective scheme to speedup processing of an SQL engine is
+to keep a cache of recently executed queries around.
+This cache can be inspected by simply searching for an
+identical query string, or a simple pattern match against
+the sql query tree.  Finding an element saves code generation.
 
+The scheme used here is based on keeping a hash-key around for
+the original text and subsequently perform a parse-tree comparison.
+This means that only text-identical queries are captured.
+
+The upper layers should consider the cache as an auxillary
+structure. There is no guarantee that elements remain in
+the cache forever, nor control features to assure this.
+
+Entries in the cache obtain a unique(?) cache entry number.
+It can be used as an external name.
+
+[todo]
+The information retain for each cached item is back-end specific.
+It should have a hook to update the initialize the cache entry
+and a method to destroy it.
+
+The optimization/processing cost should be kept around and the re-use of
+a cache entry.
 @h
 #ifndef _SQL_QC_H_
 #define _SQL_QC_H_
@@ -35,14 +58,14 @@
 #include <sql_backend.h>
 
 typedef struct cq {
-	struct cq *next;
-	int	type;
-	symbol 	*s;
+	struct cq *next;	/* link them into a queue */
+	int	type;		/* sql_query_t: Q_PARSE,Q_SCHEMA,..*/
+	symbol 	*s;		/* the SQL parse tree */
 	list 	*params;
-	backend_stack	stk;
-	backend_code 	code;
-	int 	id;
-	int 	key;
+	backend_stack	stk;	/* V4 state information */
+	backend_code 	code;	/* V4 state information */
+	int 	id;		/* cache identity */
+	int 	key;		/* the hash key for the query text */
 } cq;
 
 typedef struct qc {

@@ -383,7 +383,7 @@ scanner_init( struct scanner *s, bstream *rs, stream *ws )
 	s->yybak = 0; /* keep backup of char replaced by EOS */
 	s->yycur = 0;
 
-	s->key = 0;	/* keep a hask key of the query */
+	s->key = 0;	/* keep a hash key of the query */
 
 	s->mode = LINE_N;
 }
@@ -399,7 +399,7 @@ scanner_reset( struct scanner *s, char *query )
 	s->yybak = 0; 	/* keep backup of char replaced by EOS */
 	s->yycur = 0;
 
-	s->key = 0;	/* keep a hask key of the query */
+	s->key = 0;	/* keep a hash key of the query */
 }
 
 void
@@ -425,7 +425,7 @@ scanner_query_processed( struct scanner *s )
 		assert( s->rs->pos <= s->rs->len);
 		s->yycur = 0;
 	}
-	s->key = 0;	/* keep a hask key of the query */
+	s->key = 0;	/* keep a hash key of the query */
 }
 
 static int 
