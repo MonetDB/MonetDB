@@ -181,10 +181,11 @@ static int
 doFile(Mapi mid, const char *file)
 {
 	FILE *fp;
-	char buf[BUFSIZ];
+	char *buf = NULL;
 	size_t length;
 	MapiHdl hdl = NULL;
 	MapiMsg rc;
+	int bufsize = 0;
 
 	if ((fp = fopen(file, "r")) == NULL) {
 		fprintf(stderr, "%s: cannot open\n", file);
@@ -192,11 +193,19 @@ doFile(Mapi mid, const char *file)
 	}
 	timerStart();
 
+	bufsize = BUFSIZ * 64;
+	buf = malloc(bufsize);
+	if (!buf) {
+		fprintf(stderr, "cannot allocate memory for send buffer\n");
+		return 1;
+	}
+		
 	do {
-		if ((length = fread(buf, 1, sizeof(buf), fp)) == 0) {
+		if ((length = fread(buf, 1, bufsize, fp)) == 0) {
 			/* end of file */
 			if (hdl == NULL) {
 				/* nothing more to do */
+				free(buf);		
 				return 0;
 			}
 			/* hdl != NULL, we should finish the current query */
@@ -225,6 +234,7 @@ doFile(Mapi mid, const char *file)
 					hdl = NULL;
 				} else
 					mapi_explain(mid, stderr);
+				free(buf);		
 				return 1;
 			}
 		}
@@ -252,6 +262,7 @@ doFile(Mapi mid, const char *file)
 					hdl = NULL;
 				} else
 					mapi_explain(mid, stderr);
+				free(buf);		
 				return 1;
 			}
 		}
@@ -283,6 +294,7 @@ doFile(Mapi mid, const char *file)
 			mapi_explain_query(hdl, stderr);
 			mapi_close_handle(hdl);
 			hdl = NULL;
+			free(buf);		
 			return 1;
 		}
 
@@ -313,6 +325,7 @@ doFile(Mapi mid, const char *file)
 			mapi_explain_query(hdl, stderr);
 			mapi_close_handle(hdl);
 			hdl = NULL;
+			free(buf);		
 			return 1;
 		}
 
@@ -322,6 +335,7 @@ doFile(Mapi mid, const char *file)
 	/* reached on end of file */
 	assert(hdl == NULL);
 
+	free(buf);		
 	return 0;
 }
 
