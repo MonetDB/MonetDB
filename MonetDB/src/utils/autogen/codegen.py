@@ -378,7 +378,7 @@ def read_depsfile(incdirs, cwd, topdir):
             i = i[2:]
         dir = i
         if (dir[0:2] == "$("):
-            var, rest = string.split(dir[2:], ')');
+            var, rest = string.split(dir[2:], ')')
             if (os.environ.has_key( var )):
                 value = os.environ[var]
                 dir = value + rest
@@ -408,7 +408,7 @@ def read_depsfile(incdirs, cwd, topdir):
             if (i[0:2] == "-I"):
                 i = i[2:]
             if (i[0:2] == "$("):
-                var, rest = string.split(i[2:], ')');
+                var, rest = string.split(i[2:], ')')
                 if (os.environ.has_key( var )):
                     value = os.environ[var]
                     i = value + rest
@@ -420,44 +420,44 @@ def read_depsfile(incdirs, cwd, topdir):
     return includes,incmap
 
 def codegen(tree, cwd, topdir):
-  includes = {}
-  incmap = {}
-  if ("INCLUDES" in tree.keys()):
-    includes,incmap = read_depsfile(tree.value("INCLUDES"),cwd, topdir)
- 
-  deps = {}
-  for i in tree.keys():  
-    targets = []
-    if (type(tree.value(i)) == type({}) and tree.value(i).has_key("SOURCES")):
-      for f in tree.value(i)["SOURCES"]:
-        (base,ext) = split_filename(f)
-        do_code_extract(f,base,ext, targets, deps, cwd)
-      if ( i[0:8] != "headers_" ):
-        targets = do_code_gen(targets,deps,code_gen)
-      if ( i[0:4] == "lib_" or i == "LIBS" ):
-        targets = do_code_gen(targets,deps,lib_code_gen)
-      if ( i[0:4] == "bin_" or i == "BINS" ):
-        targets = do_code_gen(targets,deps,bin_code_gen)
-      do_deps(targets,deps,includes,incmap,cwd)
-      libs = do_libs(deps)
-      tree.value(i)["TARGETS"] = targets
-      tree.value(i)["DEPS"] = deps
-		 
-      if (i[0:4] == "lib_"):
-        lib = i[4:] + "_LIBS"
-        if (lib[0] == "_"):
-          lib = lib[1:]
-        if (libs.has_key(lib)):
-          d = libs[lib]
-	  if (tree.value(i).has_key('LIBS')):
-	    for l in d:
-	      tree.value(i)['LIBS'].append(l)
-          else:
-	    tree.value(i)['LIBS'] = d
-      elif (i == "LIBS"):
-        for l,d in libs.items():
-          n,dummy = string.split(l,"_",1)
-          tree.value(i)[n+'_DLIBS'] = d
-      else:
-        for l,d in libs.items():
-          tree.value(i)[l] = d
+    includes = {}
+    incmap = {}
+    if ("INCLUDES" in tree.keys()):
+        includes,incmap = read_depsfile(tree.value("INCLUDES"),cwd, topdir)
+
+    deps = {}
+    for i in tree.keys():
+        targets = []
+        if (type(tree.value(i)) == type({}) and tree.value(i).has_key("SOURCES")):
+            for f in tree.value(i)["SOURCES"]:
+                (base,ext) = split_filename(f)
+                do_code_extract(f,base,ext, targets, deps, cwd)
+            if ( i[0:8] != "headers_" ):
+                targets = do_code_gen(targets,deps,code_gen)
+            if ( i[0:4] == "lib_" or i == "LIBS" ):
+                targets = do_code_gen(targets,deps,lib_code_gen)
+            if ( i[0:4] == "bin_" or i == "BINS" ):
+                targets = do_code_gen(targets,deps,bin_code_gen)
+            do_deps(targets,deps,includes,incmap,cwd)
+            libs = do_libs(deps)
+            tree.value(i)["TARGETS"] = targets
+            tree.value(i)["DEPS"] = deps
+
+            if (i[0:4] == "lib_"):
+                lib = i[4:] + "_LIBS"
+                if (lib[0] == "_"):
+                    lib = lib[1:]
+                if (libs.has_key(lib)):
+                    d = libs[lib]
+                    if (tree.value(i).has_key('LIBS')):
+                        for l in d:
+                            tree.value(i)['LIBS'].append(l)
+                    else:
+                        tree.value(i)['LIBS'] = d
+            elif (i == "LIBS"):
+                for l,d in libs.items():
+                    n,dummy = string.split(l,"_",1)
+                    tree.value(i)[n+'_DLIBS'] = d
+            else:
+                for l,d in libs.items():
+                    tree.value(i)[l] = d

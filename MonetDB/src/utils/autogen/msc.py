@@ -80,7 +80,7 @@ def msc_translate_dir(path,msc):
         dir = "$("+dir+")"
     if (len(rest) > 0):
         dir = dir+ "\\" + rest
-    return regsub.gsub("/", "\\", dir );
+    return regsub.gsub("/", "\\", dir )
 
 def msc_translate_file(path,msc):
     if (os.path.isfile(msc['cwd']+ os.sep + path)):
@@ -146,8 +146,8 @@ def msc_additional_libs(fd,name,sep,type,list,dlibs, msc):
     return add + "\n"
 
 def msc_translate_ext( f ):
-    n = regsub.gsub("\.o", ".obj", f );
-    return regsub.gsub("\.cc", ".cxx", n );
+    n = regsub.gsub("\.o", ".obj", f )
+    return regsub.gsub("\.cc", ".cxx", n )
 
 def msc_find_target(target,msc):
     tree = msc['TREE']
@@ -176,47 +176,47 @@ def msc_deps(fd,deps,objext, msc):
                 dep = msc_translate_dir(msc_translate_ext(msc_translate_file(d,msc)),msc)
                 if (dep != t):
                     fd.write( " " + dep)
-            fd.write("\n");
+            fd.write("\n")
             if (ext == "tab.h"):
                 x,de = split_filename(deplist[0])
                 if (de == 'y'):
-                    fd.write( "\t$(YACC) $(YFLAGS) %s.y\n" % (b) );
+                    fd.write( "\t$(YACC) $(YFLAGS) %s.y\n" % (b) )
                     fd.write( "\tif exist y.tab.c $(DEL) y.tab.c\n" )
                     fd.write( "\tif exist y.tab.h $(MV) y.tab.h %s.tab.h\n" % (b))
                 else:
-                    fd.write( "\t$(YACC) $(YFLAGS) %s.yy\n" % (b) );
+                    fd.write( "\t$(YACC) $(YFLAGS) %s.yy\n" % (b) )
                     fd.write( "\tif exist y.tab.c $(DEL) y.tab.c\n" )
                     fd.write( "\tif exist y.tab.h $(MV) y.tab.h %s.tab.h\n" % (b))
             if (ext == "tab.c"):
-                fd.write( "\t$(YACC) $(YFLAGS) %s.y\n" % (b) );
+                fd.write( "\t$(YACC) $(YFLAGS) %s.y\n" % (b) )
                 fd.write( "\tif exist y.tab.c $(MV) y.tab.c %s.tab.c\n" % (b) )
                 fd.write( "\tif exist y.tab.h $(DEL) y.tab.h\n" )
             if (ext == "tab.cxx"):
-                fd.write( "\t$(YACC) $(YFLAGS) %s.yy\n" % (b) );
+                fd.write( "\t$(YACC) $(YFLAGS) %s.yy\n" % (b) )
                 fd.write( "\tif exist y.tab.c $(MV) y.tab.c %s.tab.cxx\n" % (b) )
                 fd.write( "\tif exist y.tab.h $(DEL) y.tab.h\n" )
             if (ext == "yy.c"):
-                fd.write( "\t$(LEX) $(LFLAGS) %s.l\n" % (b) );
+                fd.write( "\t$(LEX) $(LFLAGS) %s.l\n" % (b) )
                 fd.write( "\tif exist lex.yy.c $(MV) lex.yy.c %s.yy.c\n" % (b) )
             if (ext == "yy.cxx"):
-                fd.write( "\t$(LEX) $(LFLAGS) %s.ll\n" % (b) );
+                fd.write( "\t$(LEX) $(LFLAGS) %s.ll\n" % (b) )
                 fd.write( "\tif exist lex.yy.c $(MV) lex.yy.c %s.yy.cxx\n" % (b) )
 
             if (ext == "glue.c"):
-                fd.write( "\t$(MEL) $(INCLUDES) -o %s -glue %s.m\n" % (t,b) );
+                fd.write( "\t$(MEL) $(INCLUDES) -o %s -glue %s.m\n" % (t,b) )
             if (ext == "proto.h"):
-                fd.write( "\t$(MEL) $(INCLUDES) -o %s -proto %s.m\n" % (t,b) );
+                fd.write( "\t$(MEL) $(INCLUDES) -o %s -proto %s.m\n" % (t,b) )
             if (ext == "obj" or ext == "glue.obj" or ext == "tab.obj" or ext == "yy.obj"):
-                target,name = msc_find_target(tar,msc);
+                target,name = msc_find_target(tar,msc)
                 if (target == "LIB"):
                     d,dext = split_filename(deplist[0])
                     if (dext == "c" or dext == "glue.c"):
                         fd.write( "\t$(CC) $(CFLAGS) $(INCLUDES) -DLIB%s -c %s\n" \
-                            % (name,msc_translate_ext(deplist[0])) );
+                            % (name,msc_translate_ext(deplist[0])) )
                     elif (dext == "cc"):
                         fd.write( "\t$(CXX) $(CXXFLAGS) $(INCLUDES) -DLIB%s -c %s\n" \
-                            % (name,msc_translate_ext(deplist[0])) );
-    msc['DEPS'].append("DONE");
+                            % (name,msc_translate_ext(deplist[0])) )
+    msc['DEPS'].append("DONE")
 
 # list of scripts to install
 def msc_scripts(fd, var, scripts, msc):
@@ -233,28 +233,28 @@ def msc_scripts(fd, var, scripts, msc):
         fd.write("\tif exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (script,script,script) )
         msc['INSTALL'].append((script,script,'',sd))
 
-    #msc_deps(fd,scripts['DEPS'],"\.o",msc);
+    #msc_deps(fd,scripts['DEPS'],"\.o",msc)
 
 # list of headers to install
 def msc_headers(fd, var, headers, msc):
 
-  sd = "HEADERSDIR"
-  if (headers.has_key("DIR")):
-    sd = headers["DIR"][0] # use first name given
-  sd = msc_translate_dir(sd,msc)
+    sd = "HEADERSDIR"
+    if (headers.has_key("DIR")):
+        sd = headers["DIR"][0] # use first name given
+    sd = msc_translate_dir(sd,msc)
   
-  hdrs_ext = headers['HEADERS']
-  for header in headers['TARGETS']:
-      h,ext = split_filename(header)
-      if (ext in hdrs_ext):
-      	fd.write("%s: $(SRCDIR)\\%s\n" % (header,header))
-      	#fd.write("\t$(INSTALL) $(SRCDIR)\\%s %s\n" % (header,header) )
-      	#fd.write("\tif not exist %s if exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (header,header,header,header) )
-      	fd.write("\tif exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (header,header,header) )
-      	msc['INSTALL'].append((header,header,'',sd))
+    hdrs_ext = headers['HEADERS']
+    for header in headers['TARGETS']:
+        h,ext = split_filename(header)
+        if (ext in hdrs_ext):
+            fd.write("%s: $(SRCDIR)\\%s\n" % (header,header))
+##            fd.write("\t$(INSTALL) $(SRCDIR)\\%s %s\n" % (header,header) )
+##            fd.write("\tif not exist %s if exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (header,header,header,header) )
+            fd.write("\tif exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (header,header,header) )
+            msc['INSTALL'].append((header,header,'',sd))
 
-  #msc_find_ins(msc, headers)
-  #msc_deps(fd,headers['DEPS'],"\.o",msc);
+##    msc_find_ins(msc, headers)
+##    msc_deps(fd,headers['DEPS'],"\.o",msc)
 
 def msc_doc(fd, var, docmap, msc ):
     docmap['TARGETS']=[]
@@ -333,7 +333,7 @@ def msc_binary(fd, var, binmap, msc ):
         for h in HDRS:
             msc['HDRS'].append(h)
 
-    msc_deps(fd,binmap['DEPS'],".obj",msc);
+    msc_deps(fd,binmap['DEPS'],".obj",msc)
 
 def msc_bins(fd, var, binsmap, msc ):
 
@@ -394,7 +394,7 @@ def msc_bins(fd, var, binsmap, msc ):
         for h in HDRS:
             msc['HDRS'].append(h)
 
-    msc_deps(fd,binsmap['DEPS'],".obj",msc);
+    msc_deps(fd,binsmap['DEPS'],".obj",msc)
 
 def msc_mods_to_libs(fd, var, modmap, msc ):
     msc_assignment(fd,var,modmap,msc)
@@ -456,7 +456,7 @@ def msc_library(fd, var, libmap, msc ):
                 SCRIPTS.append(target)
     fd.write(srcs + "\n")
     ln = "lib" + sep + libname
-    fd.write( ln + ".lib: " + ln + ".dll\n" );
+    fd.write( ln + ".lib: " + ln + ".dll\n" )
     fd.write( ln + ".dll: $(" + ln + "_OBJS) \n" )
     fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS)\n\n" % (ln,ln,ln))
 
@@ -468,7 +468,7 @@ def msc_library(fd, var, libmap, msc ):
         for h in HDRS:
             msc['HDRS'].append(h)
 
-    msc_deps(fd,libmap['DEPS'],".obj",msc);
+    msc_deps(fd,libmap['DEPS'],".obj",msc)
 
 def msc_libs(fd, var, libsmap, msc ):
 
@@ -516,7 +516,7 @@ def msc_libs(fd, var, libsmap, msc ):
                         SCRIPTS.append(target)
         fd.write(srcs + "\n")
         ln = "lib" + sep + lib
-        fd.write( ln + ".lib: " + ln + ".dll\n" );
+        fd.write( ln + ".lib: " + ln + ".dll\n" )
         fd.write( ln + ".dll: $(" + ln + "_OBJS) \n" )
         fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS)\n\n" % (ln,ln,ln))
 
@@ -533,7 +533,7 @@ def msc_libs(fd, var, libsmap, msc ):
             if (ext in hdrs_ext):
                 msc['HDRS'].append(target)
 
-    msc_deps(fd,libsmap['DEPS'],".obj",msc);
+    msc_deps(fd,libsmap['DEPS'],".obj",msc)
 
 def msc_includes(fd, var, values, msc):
     incs = ""
@@ -685,7 +685,7 @@ CXXEXT = \\\"cxx\\\"
     fd.write("install-msc: install-exec install-data\n")
     l = []
     for (x,y,u,v) in msc['INSTALL']:
-        l.append(x);
+        l.append(x)
     fd.write("install-exec: %s %s %s\n" % ( \
                   msc_list2string(msc['LIBS'], "install_dll_"," "), \
                   msc_list2string(msc['BINS'], "install_bin_"," "), \
