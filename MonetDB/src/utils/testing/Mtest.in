@@ -265,8 +265,11 @@ function InitMaster () {
 	export RECURSIVE=$RECURSIVE ; DEBUG RECURSIVE=$RECURSIVE
 
 	if [ -d "$1" ]
-	  then  EXECDIR=$1 ; shift ; TopShift
-	  else  EXECDIR=$PWD
+	  then  EXECDIR=${1%%/} ; shift ; TopShift
+	  else  EXECDIR=${PWD%%/}
+	fi
+	if [ ! -f $EXECDIR/Tests/All  -a  -f $EXECDIR/All  -a  "${EXECDIR%/Tests}" != "$EXECDIR" ] ; then
+		EXECDIR=${EXECDIR%/Tests}
 	fi
 	DEBUG EXECDIR=$EXECDIR
 	( cd $EXECDIR ;  \
