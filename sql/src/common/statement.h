@@ -8,6 +8,7 @@
 #include "var.h"
 
 typedef enum statement_type {
+	st_none,
 	st_create_schema,
 	st_drop_schema,
 	st_create_table,
@@ -128,7 +129,7 @@ extern statement *statement_mark( statement *s, int id );
 extern statement *statement_remark( statement *s, statement *t, int id );
 extern statement *statement_group( statement *s );
 extern statement *statement_derive( statement *s, statement *t );
-extern statement *statement_unique( statement *s );
+extern statement *statement_unique( statement *s, statement *group );
 
 extern statement *statement_ordered( statement *order, statement *res );
 extern statement *statement_order( statement *s, int direction );

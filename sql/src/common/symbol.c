@@ -24,8 +24,8 @@ symbol *symbol_create( context *lc, int token, char *data){
 	s->data.sval = data;
 	s->type = type_string;
 	if (symbol_debug)
-		fprintf(stderr, "%d = symbol_create_string(%s,%s)\n", 
-		(int)s, token2string(s->token), s->data.sval);
+		fprintf(stderr, "%ld = symbol_create_string(%s,%s)\n", 
+		(long)s, token2string(s->token), s->data.sval);
 	return s;
 }
 symbol *symbol_create_list( context *lc, int token, dlist *data){
@@ -33,8 +33,8 @@ symbol *symbol_create_list( context *lc, int token, dlist *data){
 	s->data.lval = data;
 	s->type = type_list;
 	if (symbol_debug)
-		fprintf(stderr, "%d = symbol_create_list(%s,%d)\n", 
-		(int)s, token2string(s->token), (int)s->data.lval);
+		fprintf(stderr, "%ld = symbol_create_list(%s,%ld)\n", 
+		(long)s, token2string(s->token), (long)s->data.lval);
 	return s;
 }
 symbol *symbol_create_int( context *lc, int token, int data){
@@ -42,8 +42,8 @@ symbol *symbol_create_int( context *lc, int token, int data){
 	s->data.ival = data;
 	s->type = type_int;
 	if (symbol_debug)
-		fprintf(stderr, "%d = symbol_create_int(%s,%d)\n", 
-		(int)s, token2string(s->token), data);
+		fprintf(stderr, "%ld = symbol_create_int(%s,%d)\n", 
+		(long)s, token2string(s->token), data);
 	return s;
 }
 symbol *symbol_create_symbol( context *lc, int token, symbol *data){
@@ -51,8 +51,8 @@ symbol *symbol_create_symbol( context *lc, int token, symbol *data){
 	s->data.sym = data;
 	s->type = type_symbol;
 	if (symbol_debug)
-		fprintf(stderr, "%d = symbol_create_symbol(%s,%s)\n", 
-		(int)s, token2string(s->token), token2string(data->token));
+		fprintf(stderr, "%ld = symbol_create_symbol(%s,%s)\n", 
+		(long)s, token2string(s->token), token2string(data->token));
 	return s;
 }
 symbol *symbol_create_atom( context *lc, int token, atom *data){
@@ -60,8 +60,8 @@ symbol *symbol_create_atom( context *lc, int token, atom *data){
 	s->data.aval = data;
 	s->type = type_atom;
 	if (symbol_debug)
-		fprintf(stderr, "%d = symbol_create_atom(%s,%s)\n", 
-		(int)s, token2string(s->token), atom2string(data) );
+		fprintf(stderr, "%ld = symbol_create_atom(%s,%s)\n", 
+		(long)s, token2string(s->token), atom2string(data) );
 	return s;
 }
 

@@ -66,7 +66,6 @@ char *atom2string( atom *a){
 			else
 				sprintf(buf, "NULL" ); 
 			break;
-	default:
 	}
 	return _strdup(buf);
 }

@@ -292,7 +292,6 @@ static int lex_getc(context *lc ){
 
 int keyword_or_ident(context *lc){
 	keyword *k = NULL;
-	type *t = NULL;
 	char *yytext = lc->yytext;
 	int cur = 0;
 	int yylen = 1;
@@ -310,7 +309,7 @@ int keyword_or_ident(context *lc){
 			k = find_keyword(yytext);
 			if (k){
 				lc->yyval = k->token;
-			} else if ( (t = cat_bind_type( lc->cat, yytext )) != NULL){
+			} else if (cat_bind_type( lc->cat, yytext ) != NULL){
 				lc->yyval = TYPE;
 			} else {
 				lc->yyval = NAME;
@@ -335,7 +334,7 @@ int keyword_or_ident(context *lc){
 	k = find_keyword(yytext);
 	if (k){
 		lc->yyval = k->token;
-	} else if ((t = cat_bind_type( lc->cat, yytext )) != NULL){
+	} else if (cat_bind_type( lc->cat, yytext ) != NULL){
 		lc->yyval = TYPE;
 	} else {
 		lc->yyval = NAME;

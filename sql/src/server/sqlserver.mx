@@ -43,7 +43,7 @@
 @c
 
 int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
-  int port, *Port, sock, fd = 0, i, server_run = 1;
+  int port, *Port, sock, fd = 0, server_run = 1;
   char *cmd, *Cmd;
   struct sockaddr_in server, client;
 
@@ -67,7 +67,7 @@ int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
 
   if (bind (sock, (struct sockaddr *) &server, sizeof (server)) < 0) {
     perror ("could not bind socket");
-    return;
+    return -1;
   }
 
   listen (sock, 5);
@@ -76,7 +76,7 @@ int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
 
   while (monet_running && server_run) {
     int retval;
-    size_t client_len = sizeof (client);
+    int client_len = sizeof (client);
     struct timeval tv;
     fd_set fds;
 
@@ -107,6 +107,7 @@ int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
 	*/
     }
   }
+  return 0;
 }
 
 #define CHUNK (64*1024)

@@ -5,7 +5,7 @@
 static
 statement *statement_create(){
 	statement *s = NEW(statement);
-	s->type = -1;
+	s->type = st_none;
 	s->op1.sval = NULL;
 	s->op2.sval = NULL;
 	s->op3.sval = NULL;
@@ -25,6 +25,7 @@ statement *statement_create(){
 const char *statement2string( statement *s ){
 	if (!s) return "NULL";
 	switch(s->type){
+		cr(st_none,"NOP");
 		cr(st_create_schema,"create_schema");
 		cr(st_drop_schema,"drop_schema");
 		cr(st_create_table,"create_table");
@@ -79,7 +80,6 @@ void statement_destroy( statement *s ){
 		case st_reverse: 
 		case st_count: 
 		case st_group: 
-		case st_unique: 
 		case st_order: 
 		case st_unop: 
 		case st_name: 
@@ -118,6 +118,7 @@ void statement_destroy( statement *s ){
 				statement_destroy( s->op2.stval );
 			break;
 		case st_mark: 
+		case st_unique: 
 			statement_destroy( s->op1.stval );
 			if (s->op2.stval)
 				statement_destroy( s->op2.stval );
@@ -159,7 +160,7 @@ void statement_destroy( statement *s ){
 
 		case st_create_column: 
 		case st_column:
-
+		case st_none:
 			break;
 		}
 		_DELETE(s);
@@ -295,10 +296,13 @@ statement *statement_derive( statement *s, statement *t ){
 	return ns;
 }
 
-statement *statement_unique( statement *s ){
+statement *statement_unique( statement *s, statement *g ){
 	statement *ns = statement_create();
 	ns->type = st_unique;
 	ns->op1.stval = s; s->refcnt++;
+	if (g){
+		ns->op2.stval = g; g->refcnt++;
+	}
 	ns->nrcols = s->nrcols;
 	ns->t = s->t;
 	return ns;

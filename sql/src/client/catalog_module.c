@@ -25,7 +25,6 @@ ptr BUNfind_safe(BAT *b, oid *tid){
 }
 
 static void getfunctions( catalog *c ){
-	int i, tcnt;
 	BUN p,q;
 
 	BAT *sql_type_name = BATdescriptor(BBPindex("type_sql" ));
@@ -78,7 +77,6 @@ static void getfunctions( catalog *c ){
 }
 
 static void getschema( catalog *c, char *schema, char *user ){
-	int i, tcnt, tf;
 	oid *lid, id;
 	BUN p,q;
 	context *lc = ((cc*)c->cc)->lc;
@@ -87,7 +85,7 @@ static void getschema( catalog *c, char *schema, char *user ){
 	/* schema, name */
 	BAT *schema_id; 
 	BAT *schema_name;
-	BAT *schema_auth;
+	/*BAT *schema_auth;*/
 
 	BAT *table_id; /* table, id */
 	BAT *table_name; /* table, name */
@@ -105,7 +103,7 @@ static void getschema( catalog *c, char *schema, char *user ){
 
 	schema_id = BATdescriptor(BBPindex("schema_id"));
 	schema_name = BATdescriptor(BBPindex("schema_name"));
-	schema_auth = BATdescriptor(BBPindex("schema_auth"));
+	/*schema_auth = BATdescriptor(BBPindex("schema_auth"));*/
 
 	table_id = BATdescriptor(BBPindex("table_id"));
 	table_name = BATdescriptor(BBPindex("table_name"));

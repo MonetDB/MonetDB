@@ -266,8 +266,16 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	} 	break;
 	case st_unique: {
 		int l = statement_dump( s->op1.stval, nr, sql );
-		if (s->op1.stval->type == st_group || 
-		    s->op1.stval->type == st_derive){
+		if (s->op2.stval){
+			int r = statement_dump( s->op2.stval, nr, sql );
+		  	len += snprintf( buf+len, BUFSIZ, 
+			"s%d := s%d.group(s%d);\n", (*nr), l, r);
+		  	len += snprintf( buf+len, BUFSIZ, 
+			"s%d := s%d.tunique().mirror().join(s%d);\n", 
+				(*nr)+1, *nr, r);
+			(*nr)++;
+		} else if (s->op1.stval->type == st_group || 
+		           s->op1.stval->type == st_derive){
 			/* dirty optimization, use CThistolinks tunique */
 		  	len += snprintf( buf+len, BUFSIZ, 
 			"s%d := s%d.tunique().mirror();\n", *nr, l);
@@ -487,7 +495,6 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		s->nr = l;
 	} break;
 	case st_insert_list: {
-		int l;
 		node *n = s->op1.lval->h;
 
 		if (!(sql->optimize & SQL_FAST_INSERT)){
@@ -520,7 +527,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 			}
 			len += snprintf( buf+len, BUFSIZ, "\n" );
 		}
-		s->nr = l;
+		s->nr = (*nr)++;
 	} break;
 	case st_ordered: {
 		int l =  statement_dump( s->op1.stval, nr, sql );

@@ -487,7 +487,6 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		s->nr = l;
 	} break;
 	case st_insert_list: {
-		int l;
 		node *n = s->op1.lval->h;
 
 		if (!(sql->optimize & SQL_FAST_INSERT)){
@@ -520,7 +519,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 			}
 			len += snprintf( buf+len, BUFSIZ, "\n" );
 		}
-		s->nr = l;
+		s->nr = (*nr)++;
 	} break;
 	case st_ordered: {
 		int l =  statement_dump( s->op1.stval, nr, sql );

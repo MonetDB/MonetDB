@@ -32,7 +32,7 @@ int parse_interval_intern( context *sql,
 	if (ek != sk){
 		if (*n != sep){
 			snprintf(sql->errstr, ERRSIZE, 
-			_("Interval field seperator '\%c' missing\n"), sep );
+			_("Interval field seperator \'%c\' missing\n"), sep );
 			return -1;
 		}
 		return parse_interval_intern( sql, sign, n+1, sk+1, ek, i );
@@ -43,20 +43,17 @@ int parse_interval_intern( context *sql,
 int parse_interval( context *sql,
 	int sign, char *str, struct dlist *pers, int *val){
 
-	int sp = 0, ep = 0;
 	int sk = iyear, ek = isec;
 
 	if (pers){
 		dlist *s = pers->h->data.lval;
 
 		ek = sk = s->h->data.ival;
-		ep = sp = s->h->next->data.ival;
 
 		if (dlist_length(pers) == 2){
 			dlist *e = pers->h->next->data.lval;
 
 			sk = e->h->data.ival;
-			sp = e->h->next->data.ival;
 		}
 	}
 	*val = 0;
@@ -83,4 +80,5 @@ const char *datetime_field( itype f ){
 	case imin:   return "min";
 	case isec:   return "sec";
 	}
+	return "year";
 }

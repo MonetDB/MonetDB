@@ -701,16 +701,14 @@ statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
 		}
 		if (!s) return NULL;
 
-		if (s && distinct) s = statement_unique(s);
+		if (s && distinct){
+		 	s = statement_unique(s, group);
+		}
 		if (!s) return NULL;
 		a = cat_bind_aggr(sql->cat, l->h->data.sval, 
 				  	tail_type(s)->sqlname );
 		if (a){
-			if (group){
-			  return statement_aggr(s, a, group);
-			} else {
-			  return statement_aggr(s, a, NULL);
-			}
+			return statement_aggr(s, a, group);
 		} else {
 			snprintf(sql->errstr, ERRSIZE, 
 		  		_("Aggregate: %s(%s) unknown"), 
@@ -930,7 +928,9 @@ statement *column_exp( context *sql, scope *scp, symbol *column_e, statement *gr
 		char *tname = column_e->data.lval->h->data.sval;
 		var *tv = scope_bind_table( scp, tname ); 
 
-		if (group) group = statement_reverse(statement_unique(group));
+		if (group) 
+			group = statement_reverse(
+					statement_unique(group,NULL));
 
 		/* needs more work ???*/
 		if (tv){
@@ -957,7 +957,7 @@ statement *column_exp( context *sql, scope *scp, symbol *column_e, statement *gr
 		if (!s) return NULL;
 
 		if (group && s->type != st_aggr){
-			group = statement_reverse(statement_unique(group));
+			group = statement_reverse(statement_unique(group,NULL));
 			s = statement_join( group, s, cmp_equal );
 		}
 
@@ -1060,7 +1060,7 @@ list *query_and( catalog *cat, list *ands ){
 static
 statement *sql_compare( context *sql, statement *ls, statement *rs, char *compare_op ){
 	int join = 0;
-	int type = 0;
+	comp_type type = cmp_equal;
 
 	if (!ls || !rs) return NULL;
 
@@ -1682,7 +1682,7 @@ statement *pearl2pivot( context *sql, list *ll ){
 			m = m->next;
 		}
 		g = statement_reverse( statement_unique( 
-			statement_reverse( g )));
+			statement_reverse( g ), NULL));
 		m = inserts->h;
 		cur = list_create();
 		while(m){
@@ -1743,7 +1743,7 @@ static
 statement *query_orderby( context *sql, scope *scp, symbol *orderby, statement *st, statement *subset, statement *group ){
 	statement *cur = NULL;
 	dnode *o = orderby->data.lval->h;
-	if (group) group = statement_reverse(statement_unique(group));
+	if (group) group = statement_reverse(statement_unique(group,NULL));
 	while(o){
 	    symbol *order = o->data.sym;
 	    if (order->token == SQL_COLUMN){
@@ -1783,7 +1783,7 @@ statement *query_orderby( context *sql, scope *scp, symbol *orderby, statement *
 static
 statement *substitute( statement *s, statement *c ){
 	switch( s->type){
-	case st_unique: return statement_unique( c );
+	case st_unique: return statement_unique( c, NULL );
 	case st_column: return c;
 	case st_atom: return s;
 	case st_aggr: return statement_aggr( substitute( s->op1.stval, c), 
@@ -1997,7 +1997,7 @@ statement *sql_select
 	if (list_length(scp->lifted) > 0){
 		list *vars = scope_unique_lifted_vars( scp );
 		node *o = vars->h;
-		group = statement_reverse(statement_unique(group));
+		group = statement_reverse(statement_unique(group,NULL));
 		while(o){
 	    		var *v = (var*)o->data.sval;
 			statement *foundsubset = find_subset(subset, v);
@@ -2095,7 +2095,7 @@ statement *column_option( context *sql, symbol *s, column *c, statement *cc ){
 			return statement_not_null( cc );
 		  } else {
 			printf("constraint not handled ");
-			printf("(%d)->token = %s\n", (int)s, token2string(s->token));
+			printf("(%ld)->token = %s\n", (long)s, token2string(s->token));
 		  }
 		} break;
 	case SQL_PRIMARY_KEY:
@@ -2106,7 +2106,7 @@ statement *column_option( context *sql, symbol *s, column *c, statement *cc ){
 		}
 		break;
 	default:
-		printf("column_option (%d)->token = %s\n", (int)s, token2string(s->token));
+		printf("column_option (%ld)->token = %s\n", (long)s, token2string(s->token));
 	}
 	return NULL;
 }
@@ -2142,8 +2142,8 @@ statement *create_column( context *sql, symbol *s, int seqnr, table *table ){
 	case SQL_CONSTRAINT:
 		 break;
 	default:
-	  printf("create_column (%d)->token = %s\n", 
-			  (int)s, token2string(s->token));
+	  printf("create_column (%ld)->token = %s\n", 
+			  (long)s, token2string(s->token));
 	}
 	return res;
 }
@@ -2379,7 +2379,7 @@ statement *update_set( context *sql, dlist *qname,
 				statement *scl = statement_column(cl, NULL);
 				symbol *a = assignment->h->next->data.sym;
 				statement *sc = 
-					column_exp( sql, scp, a, NULL,NULL);
+					column_exp( sql, scp, a, NULL, s);
 
 				sc = check_types( sql, cl->tpe, sc );
 				/*
@@ -2521,8 +2521,8 @@ statement *sql_statement( context *sql, symbol *s ){
 			break;
 		default:
 		     	snprintf(sql->errstr, ERRSIZE, 
-				_("sql_statement Symbol(%d)->token = %s"), 
-				(int)s, token2string(s->token));
+				_("sql_statement Symbol(%ld)->token = %s"), 
+				(long)s, token2string(s->token));
 	}
 	return ret;
 }

@@ -54,7 +54,7 @@ list *list_create(){
 	list *l = NEW(list); 
 	l->h = l->t = NULL;
 	l->cnt = 0;
-	l->type = 0;
+	l->type = type_int;
 	return l;
 }
 
