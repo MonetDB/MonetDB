@@ -1243,6 +1243,7 @@ size_t iconv();
 fi
 AC_SUBST(ICONV_LIBS)   
 
+AC_CHECK_PROG(LATEX2HTML,latex2html,latex2html)
 AC_CHECK_PROG(LATEX,latex,latex)
 AC_CHECK_PROG(PDFLATEX,pdflatex,pdflatex)
 AC_CHECK_PROG(DVIPS,dvips,dvips)

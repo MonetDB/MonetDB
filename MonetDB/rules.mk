@@ -146,6 +146,9 @@ HIDE=1
 %.html: %.mx
 	$(MX) -1 -H$(HIDE) -w $<
 
+%.html: %.tex
+	$(LATEX2HTML) -split 0 -noimages -rootdir ./ -norooted -noinfo -nosubdir  $<
+
 %.pdf: %.tex
 	$(PDFLATEX) $< 
 
