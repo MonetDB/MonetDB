@@ -498,3 +498,9 @@ i_o.copy.access(BAT_WRITE).order_rev.print;
 [ 2,	  3@0	  ]
 [ 1,	  9@0	  ]
 [ 0,	  1@0	  ]
+quit();
+
+# 17:57:12 >  
+# 17:57:12 >  Done.
+# 17:57:12 >  
+

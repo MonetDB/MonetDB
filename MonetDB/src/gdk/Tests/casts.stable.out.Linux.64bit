@@ -1563,6 +1563,7 @@ str("").print;
 [ "" ]
 str("random string").print;
 [ "random string" ]
+quit();
 
 # 14:56:01 >  
 # 14:56:01 >  Done.

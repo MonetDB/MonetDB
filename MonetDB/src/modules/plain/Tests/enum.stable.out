@@ -52,6 +52,7 @@ print(y);
 z:= lower(fruit,"grapes");
 print(z);
 [ grapes ]
+quit();
 
 # 00:42:47 >  
 # 00:42:47 >  Done.

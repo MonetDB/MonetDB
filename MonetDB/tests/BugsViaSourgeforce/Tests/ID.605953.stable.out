@@ -69,6 +69,7 @@ t.mark(nil).print;
 [ 5@0,	  nil	  ]
 [ 6@0,	  nil	  ]
 [ 7@0,	  nil	  ]
+quit();
 
 # 11:14:59 >  
 # 11:14:59 >  Done.

@@ -251,7 +251,9 @@ printf("\n#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
 threadcnt(-1);
 
-# 21:53:00 >  
-# 21:53:00 >  Done.
-# 21:53:00 >  
+quit();
+
+# 18:08:45 >  
+# 18:08:45 >  Done.
+# 18:08:45 >  
 

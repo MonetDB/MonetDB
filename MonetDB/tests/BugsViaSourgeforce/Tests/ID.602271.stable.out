@@ -184,7 +184,24 @@ print(insert(access(copy(void_int_bat),BAT_WRITE),
 [ 1@0,	  1	  ]
 [ 10@0,	  10	  ]
 
-# 22:18:35 >  
-# 22:18:35 >  Done.
-# 22:18:35 >  
+#
+# The void-bats behave strange under insertion,
+# Either errors should be given consequently 
+# (as soon as a tuple 'out-of-sequence' is inserted)
+# or void bats should be materialized to oid when needed.
+#
+# I would argue for the latter, as there is no real reason 
+# for a user to expect the bat in this example to be void,
+# (a join result of a [oid,oid] and a [oid,int] bat), yet
+# it behaves differently from what a user would expect from
+# the (expected) [oid,int] bat.
+#
+# The provided stable output has been hand-crafted to 
+# depict that which I argue to be the 'correct' outpu.
+#
+quit();
+
+# 18:07:21 >  
+# 18:07:21 >  Done.
+# 18:07:21 >  
 

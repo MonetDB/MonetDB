@@ -113,6 +113,7 @@ res.slice(0,20).print;
 [ 40@0,	  40@0	  ]
 res.count.print;
 [ 6000 ]
+quit();
 
 # 12:18:10 >  
 # 12:18:10 >  Done.
