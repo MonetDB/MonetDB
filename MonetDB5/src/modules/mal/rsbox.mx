@@ -46,74 +46,217 @@ own ResultSet objects.
 The existing functionality of mal_box allows to store and retrieve
 items somehow.  In the future we might want to switch to those
 supplied tools.  For now we stick with (documented and) simple
-elements such as structs and an array.  As a results, we are NOT
+elements such as structs and an array.  As a result, we are NOT
 thread safe.
 
+@+ The ResultSet atom
+A ResultSet is a container for a set of BATs that form together
+a result of a user query.  The purpose of the ResultSet is to
+hand a uniform interface to both application and foreign client
+by defining how to build a ResultSet from BATs and on the other
+hand serialising the given BATs in a predefined format.
+
+A ResultSet requires all its associated BATs to be of equal
+length and :bat[:void,:any] typed, for this allows efficient
+serialisation.
+
+A new empty ResultSet can be obtained by calling the
+newResultSet() function.  The state of that ResultSet will be
+`uncomplete', which means that BATs can be added as new columns
+on that ResultSet, as well as properties of such column can be
+set.
+The function addColumn(:resultset,:bat[:void,:any],nme:str) will
+add the given BAT to the ResultSet as a column with the given
+name, if and only if the BAT has the proper length, otherwise
+an exception will be thrown.  Note that the name is not required
+to be unique due to SQL semantics.  Upon successful addition of
+the BAT, the number of the newly added column is returned, which
+can be used in future setProperty calls.
+The setProperty functionality comes in three flavours.  The first
+and most simple form setProperty(:resultset,nme:str,val:str) adds a
+name/value pair to the last added column.  The variants
+setProperty(:resultset,col:str,nme:str,val:str) and
+setProperty(:resultset,col:int,nme:str,val:str) do basically the
+same, but use an explicit reference to a column either as name or
+number.
+The former one is supplied for convenience, but should be avoided
+in general use, as it uses a sequential scan to find the right
+column, and can result in an undesired update if two columns have
+the same name.
+All three methods overwrite previous values, if set.  Note that
+certain values are created by default, when adding a new column.
+These defaults include `length', `name' and `type'.
+
+Before a ResultSet can be serialised, if has to be marked as
+`complete'.  Calling setComplete(:resultset) marks the ResultSet
+as such and disallows any calls to addColumn or setProperty.
+Instead the serialisation functions writeHeader and writeBlock
+are enabled.  For convenience, the wrapper function writeNextPart
+combines writeHeader and writeBlock such that only the first
+call includes the header and all consecutive calls only include
+results.  The return value of hasNextPart is an int indicating
+whether there is a next part to write using the function
+writeNextPart.  The size of the blocks can be set using the
+setBlockSize function.
+
+Finally, to properly release a ResultSet and all its associated
+resources, the function delete(:resultset) should be
+called.  This function frees all associated BAT columns and
+properties.
+
 @mal
+atom resultset:int;
+
+command addColumn(rs:resultset,b:bat[:void,:any],nme:str):resultset
+address RSaddColumn
+comment "Add a BAT as column with a name to this ResultSet";
+command setProperty(rs:resultset,nme:str,val:str):resultset
+address RSsetPropertyLastCol
+comment "Sets the given property to the given value on the last added column";
+command setProperty(rs:resultset,col:str,nme:str,val:str):resultset
+address RSsetPropertyColNme
+comment "Sets the given property to the given value on the first
+column with the given name";
+command setProperty(rs:resultset,col:int,nme:str,val:str):resultset
+address RSsetPropertyColNum
+comment "Sets the given property to the given value on the given column";
+command findColumn(rs:resultset,nme:str):int
+address RSfindColumn
+comment "Returns the first column that matches the given name";
+command setComplete(rs:resultset):resultset
+address RSsetComplete
+comment "Marks this ResultSet as complete and ready for serialisation";
+command writeHeader(rs:resultset):int
+address RSwriteHeader
+comment "Writes the header of this ResultSet to the given stream";
+command writeBlock(rs:resultset,upper:int,lower:int):int
+address RSwriteBlock
+comment "Writes the results from upper to lower to the stream";
+command getLength(rs:resultset):int
+address RSgetLength
+comment "Returns the size of this ResultSet as number of rows";
+command setBlockSize(rs:resultset,size:int):resultset
+address RSsetBlockSize
+comment "Sets the block size used by writeNextPart";
+command hasNextPart(rs:resultset):bit
+address RShasNextPart
+comment "Returns whether there is another part to write by writeNextPart";
+command writeNextPart(rs:resultset):int
+address RSwriteNextPart
+comment "Writes the next part to the stream.  If it is the first part,
+the header will be written to the stream first.  The size of the blocks
+is determined by the value supplied via the setBlockSize function.";
+command delete(rs:resultset):void
+address RSdelete
+comment "Release this ResultSet and all its associated resources";
+
+# ResultSets themselves should never be serialised to disk.  The
+# fromStr and toStr functions merely exist to adhere to the interface
+command fromstr():resultset
+address RSfromString
+comment "Discards the string and does nothing (returns nil)";
+command tostr():str
+address RStoString
+comment "Returns a string indicating this is a ResultSet";
+
 module rsbox
 comment "The resultset box implementation provides a store for
 query results";
 
-pattern open():void
+command open():void
 address RSBopen
 comment "Locate and open the resultset box";
-pattern close():void
+command close():void
 address RSBclose
 comment "Close the resultset box";
-pattern destroy():void
+command destroy():void
 address RSBdestroy
 comment "Destroy the resultset box and all the resultsets it contains";
-pattern take(id:str):int
+
+command create(name:str):resultset
+address RSBcreate
+comment "Create a new ResultSet and deposit it in the box";
+
+pattern take(id:str):resultset
 address RSBtake
 comment "Take a resultset with the given id out of the box";
 pattern deposit(name:str,set:resultset):void 		
 address RSBdeposit
 comment "Store a new resultset into the box (only there to comply
 to the interface, throws an exception, use create instead)";
-pattern create(name:str):int
-address RSBcreate
-comment "Create a new ResultSet and deposit it in the box";
-pattern releaseAll():void
+
+command releaseAll():void
 address RSBreleaseAll
 comment "Release all resultsets for this client in the box";
-pattern release(id:str):void
+command release(id:str):void
 address RSBrelease
 comment "Release the resultset with the given id";
+command release(id:resultset):void
+address RSBreleaseHndl
+comment "Release the resultset with the given handle";
 pattern toString(id:str):str 
+
 address RSBtoString
 comment "Get the string representation of an element in the box";
-pattern discard(id:str):void 		
-address RSBrelease
+command discard(id:str):void 		
+address RSBdiscard
 comment "see rsbox.release(id:str)";
-pattern iterator(nme:str):lng
+
+pattern newIterator()(:lng,:resultset)
 address RSBiterator
+comment "Initialize the iterator over the resultset box";
+pattern hasMoreElements()(:lng,:resultset)
+address RSBhasMoreElements
 comment "Locate next resultset in the box";
 
+@-
+The content of the box consists of result sets.
+Their handle is represented by an atom to ease
+type analysis of the resultset box operations.
+@mal
 @{
 @-
 @+ Implementation
 @h
 #ifndef _RSBOX_H
 #define _RSBOX_H 1
-#include <resultset.h>
 
-str RSBgetResultSet(resultset** retval, int* handle);
-
-#endif
-@c
-#include "rsbox.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
-#ifndef _RSBOX_C
-#define _RSBOX_C 1
+typedef struct list_t {
+	BAT* bat;		/* BAT that backs this column */
+	BUN bun;		/* a walker variable */
+	str name;		/* name of the column */
+	str table;		/* name of the table this column belongs to */
+	str schema;		/* name of the schema this column belongs to */
+	str digits;		/* digits of this data type */
+	str scale;		/* scale of this data type */
+	struct list_t* next;	/* the next column in this list */
+	int width;		/* the maximum width of this column */
+} column;
+
+typedef struct resultset_t {
+	column* firstColumn;	/* head of the linked list of column */
+	unsigned int blocksize;	/* the number of rows per block */
+	size_t length;			/* the number of rows in this ResultSet */
+	size_t pos;				/* the current row position */
+	str id;					/* external reference ID of this ResultSet */
+	char complete;			/* whether this ResultSet can be serialised */
+} resultset;
+
+str RSBgetResultSet(resultset** retval, int* handle);
+
 typedef struct rsbox_element {
 	resultset* rs;
 	int clientId;
 	/* PRIMARY KEY (rs->name, clientId) */
 } element;
+
 #endif
+@c
+#include "rsbox.h"
 
 /* convenience macros */
 #define throw(X, Y)		return(throwMessage(X, Y));
@@ -151,9 +294,8 @@ str RSBgetResultSet(resultset** retval, int* handle) {
  * anyone is allowed to have this box.  Access control is done later
  * on.
  */
-str RSBopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	(void)mb; (void)stk; (void)pci; /* make compiler happy */
-
+str RSBopen(int *ret){
+	(void) ret;
 	if (openBox("rsbox") == 0)
 		throw("rsbox.open", "failed to open box");
 
@@ -164,9 +306,8 @@ str RSBopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * Closes the complete box.  This operation should check whether
  * there are ResultSets in the box not owned by the caller.
  */
-str RSBclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	(void)mb; (void)stk; (void)pci; /* make compiler happy */
-
+str RSBclose(int *ret){
+	(void) ret;
 	/* TODO: check that there are no ResultSets that are not
 	 * owned by the caller here! */
 	if (closeBox("rsbox", TRUE) != 0)
@@ -178,8 +319,8 @@ str RSBclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 /**
  * Destroys the complete box.
  */
-str RSBdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	return(RSBclose(mb, stk, pci));
+str RSBdestroy(int *ret){
+	return(RSBclose(ret));
 }
 
 /**
@@ -285,8 +426,9 @@ str RSBtake(int* retval, str* id) {
 	throwf("rsbox.take", "No such element with id '%s'", *id);
 }
 
-str RSBrelease(str* id) {
+str RSBrelease(int *ret, str *id) {
 	int i;
+	(void) ret;
 
 	for (i = 0; i < RSB_MAX_ELEMS; i++) {
 		if (elements[i] != NULL && idMatches(elements[i], *id)) {
@@ -301,11 +443,16 @@ str RSBrelease(str* id) {
 	
 	throwf("rsbox.take", "No such element with id '%s'", *id);
 }
+str RSBreleaseHndl(int *ret, int *id) {
+	(void) ret;
+	(void) id;
+	return throwMessage("rsbox.release", "not yet implemented");
+}
 
-str RSBreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+str RSBreleaseAll(int *ret){
 	Box box;
 
-	(void)mb; (void)stk; (void) pci; /* fool compiler */
+	(void)ret;
 	@:OpenBox(release)@
 	/* this is dirty: we don't catch any exceptions here... */
 	releaseAllBox(box);
@@ -313,15 +460,13 @@ str RSBreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return(MAL_SUCCEED);
 }
 
-str RSBdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str name;
+str RSBdiscard(int *ret, str *name){
 	Box box;
 
-	(void)stk; /* fool compiler */
+	(void) ret;
 	@:OpenBox(discard)@
-	name = (str)getArgName(mb, pci, 1);
-	if (discardBox(box, name) == 0)
-		return throwException(MALEXCEPTION, "rsbox.discard", "failed to discard '%s' from box", name);
+	if (discardBox(box, *name) == 0)
+		return throwException(MALEXCEPTION, "rsbox.discard", "failed to discard '%s' from box", *name);
 
 	return(MAL_SUCCEED);
 }
@@ -360,4 +505,604 @@ str RSBiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	return(MAL_SUCCEED);
 }
+str RSBhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+    Box box;
+    lng *cursor;
+    ValPtr v;
+
+    (void)mb; /* fool compiler */
+    @:OpenBox(iterator)@
+    cursor= (lng*) getArgValue(stk,pci,0);
+    v= &stk->stk[pci->argv[1]];
+    nextBoxElement(box, cursor, v);
+    return MAL_SUCCEED;
+}
+
+@-
+@+ Implementation of the resultset
+@c
+#include <stream.h>
+#include "mal.h"
+#include "mal_exception.h"
+
+/* convenience macros */
+#define throw(X, Y)		return(throwMessage(X, Y));
+#define throwf(X, Y, Z)	return(throwException(MALEXCEPTION, X, Y, Z));
+#define resolveHandle(X, Y)\
+	if ((tmp = RSBgetResultSet(X, Y)) != MAL_SUCCEED) return(tmp);
+
+/**
+ * Helper function that sets a property for a column.  If the
+ * property is not supported, an exception is thrown.  The return
+ * value indicates whether a previous value was overwritten.
+ *
+ * @param col the column to set the property for
+ * @param nme the name of the property
+ * @param val the value of the property
+ * @return true if there was a previous value, false otherwise
+ */
+static str RSsetPropertyInternal(int* retval, column* col, str nme, str val) {
+	int ret = 0;
+	
+	/* the allowed properties are controlled hardcoded here,
+	 * because they are stored explicitly in the struct */
+	if (strcmp(nme, "name") == 0) {
+		if (col->name != NULL) {
+			ret = 1;
+			GDKfree(col->name);
+		}
+		col->name = val;
+	} else if (strcmp(nme, "table") == 0) {
+		if (col->table != NULL) {
+			ret = 1;
+			GDKfree(col->table);
+		}
+		col->table = val;
+	} else if (strcmp(nme, "schema") == 0) {
+		if (col->schema != NULL) {
+			ret = 1;
+			GDKfree(col->schema);
+		}
+		col->schema = val;
+	} else if (strcmp(nme, "digits") == 0) {
+		if (col->digits != NULL) {
+			ret = 1;
+			GDKfree(col->digits);
+		}
+		col->digits = val;
+	} else if (strcmp(nme, "scale") == 0) {
+		if (col->scale != NULL) {
+			ret = 1;
+			GDKfree(col->scale);
+		}
+		col->scale = val;
+	} else {
+		/* throw exception  */
+		throw("resultset.setProperty", "invalid property: not supported");
+	}
+
+	*retval = ret;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Small helper function that calculates the max width of the
+ * tail value of the given BAT.
+ *
+ * @param b the BAT to scan the tail from
+ * @return the max width of the tail
+ */
+static int tailWidth(BAT *b) {
+	BUN p, q;
+	int max = 0;
+
+	BATloop(b, p, q) {
+		char *s = BUNtail(b, p);
+		int l = strlen(s);
+
+		if (l > max) max = l;
+	}
+	return(max);
+}
+
+
+/**
+ * Adds a column to the ResultSet and returns its position in
+ * the sequence of columns.  The BAT and name string are taken
+ * and freed upon deletion of the ResultSet.
+ *
+ * @param handle a resultset handle
+ * @param bat a :void,:any bat
+ * @param nme a string which represents the name of this column
+ * @return the modified ResultSet
+ */
+str RSaddColumn(int* retval, int* handle, int* bat, str* nme) {
+	column* col;
+	BAT* b;
+	int pos = 0;
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+    if ((b = BATdescriptor(*bat)) == NULL)
+        throw("resultset.addColumn", "Cannot access BAT descriptor");
+	if (rs->complete)
+		throw("resultset.addColumn", "Unable to modify a complete ResultSet");
+
+	/* tell the BBP to leave this BAT alone: it's ours! */
+	BBPfix(b->batCacheid);
+
+	if ((col = rs->firstColumn) != NULL) {
+		/* walk though the linked list till we found the end */
+		while (col->next != NULL) {
+			pos++;
+			col = col->next;
+		}
+		/* pos is at this point equal to the index of the last column */
+		pos++;
+		/* check length of BAT and match it with the known length */
+		if (rs->length != BATcount(b))
+			return(throwMessage("resultset.addColumn", "BATcount does not match those of previous columns"));
+		/* add the column */
+		col = col->next = GDKmalloc(sizeof(column));
+	} else {
+		/* this is the first column that is added, take its length as
+		 * base for all other columns that get added */
+		rs->length = BATcount(b);
+		col = rs->firstColumn = GDKmalloc(sizeof(column));
+	}
+	col->bat = b;
+	col->bun = NULL;
+	col->name = GDKstrdup(*nme);
+	col->table = NULL;
+	col->schema = NULL;
+	col->digits = NULL;
+	col->scale = NULL;
+	col->next = NULL;
+	/* TODO: don't do this for all tail types! */
+	col->width = tailWidth(b);
+
+	*retval = *handle;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Sets a property/value pair for the last added column.
+ *
+ * @param handle a resultset handle
+ * @param nme a the name of the property
+ * @param val the value of the string
+ * @returns whether a previous value was overwritten
+ */
+str RSsetPropertyLastCol(int* retval, int* handle, str* nme, str* val) {
+	column* col;
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+	if (rs->complete)
+		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
+	if ((col = rs->firstColumn) == NULL)
+		throw("resultset.setProperty", "No column added yet");
+
+	/* find reference to last column */
+	while (col->next != NULL) col = col->next;
+
+	return(RSsetPropertyInternal(retval, col, *nme, *val));
+}
+
+/**
+ * Sets a property/value pair for the column with the given name.
+ * Note that this function can result in an unintented update,
+ * as column names are not required to be unique.  The first
+ * column that matches the name will be updated.
+ *
+ * @param handle a resultset struct
+ * @param col a string representing the name of the column
+ * @param nme a the name of the property
+ * @param val the value of the string
+ * @returns whether a previous value was overwritten
+ */
+str RSsetPropertyColNme(int* retval, int* handle, str* col, str* nme, str* val) {
+	column* column;
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+	if (rs->complete)
+		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
+	if ((column = rs->firstColumn) == NULL)
+		throw("resultset.setProperty", "No column added yet");
+
+	do {
+		if (strcmp(column->name, *col) == 0) break;
+		column = column->next;
+	} while (column != NULL);
+	if (column == NULL)
+		throw("resultset.setProperty", "No such column");
+
+	return(RSsetPropertyInternal(retval, column, *nme, *val));
+}
+
+/**
+ * Sets a property/value pair for the xth column.
+ *
+ * @param handle a resultset struct
+ * @param col the sequence number of the column starting from 0
+ * @param nme a the name of the property
+ * @param val the value of the string
+ * @returns whether a previous value was overwritten
+ */
+str RSsetPropertyColNum(int* retval, int* handle, int col, str nme, str val) {
+	column* column;
+	int i;
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+	if (rs->complete)
+		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
+	if ((column = rs->firstColumn) == NULL)
+		throw("resultset.setProperty", "No column added yet");
+
+	for (i = 0; i < col; i++) {
+		if ((column = column->next) == NULL)
+			throw("resultset.setProperty", "Column index out of bounds");
+	}
+
+	return(RSsetPropertyInternal(retval, column, nme, val));
+}
+
+/**
+ * Returns the number of the first column that matches the given
+ * name.  Note that duplicate column names are allowed.
+ *
+ * @param handle a resultset handle
+ * @param col a string representing the name of the column
+ * @returns the column number or -1 if not found
+ */
+str RSfindColumn(int* retval, int* handle, str col) {
+	column* column;
+	int pos = 0;
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+	if ((column = rs->firstColumn) == NULL) {
+		*retval = -1;
+		return(MAL_SUCCEED);
+	}
+	do {
+		if (strcmp(column->name, col) == 0) break;
+		column = column->next;
+		pos++;
+	} while (column != NULL);
+	if (column == NULL) {
+		*retval = -1;
+		return(MAL_SUCCEED);
+	}
+
+	*retval = pos;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Marks the given ResultSet as being complete.  A ResultSet which
+ * is complete, does not allow new columns to be added or properties
+ * to be set.  Instead, it does allow serialisation of the ResultSet.
+ * Note that a ResultSet without column is considered to be an error.
+ *
+ * @param handle a resultset handle
+ */
+str RSsetComplete(int* handle) {
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+	if (rs->firstColumn == NULL)
+		throw("resultset.setComplete", "ResultSet should contain at least one column");
+
+	rs->complete = (char)1;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Writes the header for the ResultSet to the given stream.  Note
+ * that the ResultSet should be complete in order for this function
+ * to work.
+ * This function defines the layout of the protocol.
+ *
+ * @param handle a resultset handle
+ * @param s a stream to write to
+ * @returns the number of bytes written
+ */
+str RSwriteHeader(int* retval, int* handle, stream* s) {
+	int bytes = 0;
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+	if (!rs->complete)
+		throw("resultset.writeHeader", "Unable to serialise a non-complete ResultSet");
+	
+	/* serialise the header to the stream */
+	/* TODO */
+	rs = NULL;
+	s = NULL;
+
+	*retval = bytes;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Writes a block of results for the ResultSet to the given stream.
+ * The block of results starts from upper (inclusive) to lower
+ * (exclusive), and will count (upper - lower) rows.  Note
+ * that the ResultSet should be complete in order for this function
+ * to work.
+ * This function defines the layout of the protocol.
+ *
+ * @param handle a resultset handle
+ * @param s a stream to write to
+ * @param upper till which row of the result (exclusive)
+ * @param lower from which row of the result (inclusive)
+ * @returns the number of bytes written
+ */
+str RSwriteBlock(int* retval, int* handle, stream* s, int upper, int lower) {
+	int bytes = 0, btmp;
+	column* col;
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+	if (!rs->complete)
+		throw("resultset.writeBlock", "Unable to serialise a non-complete ResultSet");
+	if (lower < 0)
+		throwf("resultset.writeBlock", "Lower index out of bounds (%d < 0)", lower);
+	if (upper > rs->length)
+		throwf("resultset.writeBlock", "Upper index out of bounds (%d > ResultSet length)", upper);
+	if (lower >= upper)
+		throw("resultset.writeBlock", "Lower index should be smaller than upper index");
+	
+	/* initialise all column BUN pointers */
+	col = rs->firstColumn;	/* setComplete forces this one to be valid */
+	while (col != NULL) {
+		col->bun = (BUN)((char *)BUNfirst(col->bat) + BUNsize(col->bat) * lower);
+		col = col->next;
+	}
+	/* write the desired block of results */
+	for (; lower < upper; lower++) {
+		col = rs->firstColumn;
+		if (stream_write(s, "[ ", 2, 1) != 1) {
+			bytes = 0;
+			break;
+		}
+		bytes += 2;
+		while (col != NULL) {
+			/* write value */
+			btmp = strlen(BUNtail(col->bat, col->bun));
+			if (stream_write(s, BUNtail(col->bat, col->bun), btmp, 1) != 1) {
+				bytes = 0;
+				break;
+			}
+			bytes += btmp;
+			
+			/* advance to the next value in the BAT */
+			col->bun = BUNnext(col->bat, col->bun);
+			col = col->next;
+
+			/* write column or row separator */
+			if (col == NULL) {
+				if (stream_write(s, "\t]\n", 3, 1) != 1) {
+					bytes = 0;
+					break;
+				}
+				bytes += 3;
+			} else {
+				if (stream_write(s, ",\t", 2, 1) != 1) {
+					bytes = 0;
+					break;
+				}
+				bytes += 2;
+			}
+		}
+	}
+
+	*retval = bytes;
+	if (bytes) {
+		return(MAL_SUCCEED);
+	} else {
+		throw("resultset.writeBlock", "Error while writing to the stream");
+	}
+}
+
+/**
+ * Retrieves the length of the ResultSet measured in number of rows.
+ *
+ * @param handle a resultset handle
+ * @returns the number of rows in the ResultSet
+ */
+str RSgetLength(int* retval, int* handle) {
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+	if (!rs->complete)
+		throw("resultset.getLength", "Unable to serialise a non-complete ResultSet");
+	
+	*retval = rs->length;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Sets the block size as used by writeNextPart.
+ *
+ * @param handle a resultset handle
+ * @param size the size
+ * @return the handle
+ */
+str RSsetBlockSize(int* retval, int* handle, int size) {
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+	/* is this useful?  I don't see any problems now
+	if (!rs->complete)
+		return(throwMessage("resultset.setBlockSize", "Unable to serialise a non-complete ResultSet"));
+	*/
+
+	rs->blocksize = size;
+	*retval = *handle;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns the number of blocks that can be retrieved using
+ * writeNextPart.  The number is based on the current internal
+ * position counter and a step size as defined by a setBlockSize
+ * call.  If the block size is 0 (default) an infinite block is
+ * assumed.
+ *
+ * @param handle a resultset handle
+ * @return the number of times writeNextPart can be called
+ */
+str RShasNextPart(int* retval, int* handle) {
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+	if (!rs->complete)
+		throw("resultset.hasNextPart", "Unable to serialise a non-complete ResultSet");
+
+	if (rs->blocksize > 0) {
+		*retval = rs->pos < rs->length ? ((rs->length - rs->pos) / rs->blocksize) + 1 : 0;
+	} else {
+		*retval = rs->pos < rs->length;
+	}
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Writes the next part to the stream.  If it is the first part,
+ * the header will be written to the stream first.  The size of the
+ * blocks is determined by the value supplied via the setBlockSize
+ * function.  If the block size is 0 (default) an infinite block is
+ * assumed.
+ *
+ * @param handle a resultset handle
+ * @param s a stream to write to
+ * @return the number of bytes written
+ */
+str RSwriteNextPart(int* retval, int* handle, stream* s) {
+	int hbytes = 0, bbytes = 0;
+	long upper, lower;
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+	if (!rs->complete)
+		throw("resultset.writeNextPart", "Unable to serialise a non-complete ResultSet");
+
+	if (rs->pos < rs->length) {
+		if (rs->blocksize > 0) {
+			/* serialise the whole result */
+			lower = rs->pos;
+			upper = rs->length;
+		} else {
+			/* serialise only a block */
+			lower = rs->pos;
+			upper = rs->pos + rs->blocksize;
+			if (upper > rs->length) upper = rs->length;
+		}
+	} else {
+		throw("resultset.writeNextPart", "No next part, all rows already serialised");
+	}
+
+	if (rs->pos == 0) {
+		/* write header */
+		if ((tmp = RSwriteHeader(&hbytes, handle, s)) != MAL_SUCCEED) return(tmp);
+	}
+
+	/* write block of results */
+	if ((tmp = RSwriteBlock(&bbytes, handle, s, upper, lower)) != MAL_SUCCEED)
+		return(tmp);
+	
+	*retval = hbytes + bbytes;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Helper function to properly free column structs.  This function
+ * uses recursion to properly free all members of the list.
+ *
+ * @param column the column to free
+ */
+static str freeColumn(column* col) {
+	if (col == NULL)
+		throw("resultset.freeColumn", "Column should NOT be NULL");
+	
+	if (col->next != NULL) freeColumn(col->next);
+	BBPunfix(col->bat->batCacheid);
+	GDKfree(col->name);
+	GDKfree(col->table);
+	GDKfree(col->schema);
+	GDKfree(col->digits);
+	GDKfree(col->scale);
+	GDKfree(col);
+
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Releases the given ResultSet and all its associated rescources.
+ *
+ * @param handle a resultset handle
+ */
+str RSdelete(int* handle) {
+	resultset* rs;
+	str tmp;
+	
+	resolveHandle(&rs, handle);
+	
+	/* first free all columns using a recursive function */
+	freeColumn(rs->firstColumn);
+	/* finally free the struct itself */
+	GDKfree(rs);
+	
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Interface requirement.  The input string is discarded and null
+ * is returned.
+ *
+ * @param val input string
+ * @return always null
+ */
+str RSfromString(str* src, int *len, resultset* retval) {
+	(void)src;	/* make compiler happy */
+	(void)retval;
+	(void)len;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Interface requirement.  Returns a string indicating the given
+ * ResultSet is a ResultSet.
+ *
+ * @param rs input ResultSet
+ * @return "ResultSet"
+ */
+str RStoString(str* retval, int *len, resultset* rs) {
+	rs = NULL;	/* make compiler happy */
+	/* you can do all kinds of fancy things like telling how much
+	 * columns it has, what size it has, and stuff like that...
+	 * but that's not worth the work for now
+	 */
+	*retval = GDKstrdup("ResultSet");
+	*len = 9;
+	return(MAL_SUCCEED);
+}
+
+@}
 @}

@@ -56,7 +56,7 @@ comment "Close the constant box ";
 pattern destroy():void
 address CSTdestroy
 comment "Destroy the box";
-pattern take(name:any):any 
+pattern take(name:str):any 
 address CSTtake
 comment "Take a variable out of the box";
 pattern deposit(name:str,val:any) :void 		
