@@ -55,7 +55,7 @@ int main(int argc,char ** av)
          * however, that's too late for "case 'c'" in the 
 	 * option-checking "while(1)" loop ...
 	 */
-        char *buf = NULL, *ptr, *config = NULL;
+        char *buf = NULL, *ptr;
         opt *set = NULL;
         int i,debug = 0, setlen = 0;
 	int k,len,totlen;
@@ -108,8 +108,12 @@ int main(int argc,char ** av)
 		case 'c':
 			if( *optarg!='/' && *optarg !='.') {
                                 snprintf(buf,BUFSIZ,"%s/%s",mil_cwd,optarg);
-                                config= strdup(buf);
-                        } else config = strdup(optarg);
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "config", buf );
+                        } else { 
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "config", optarg );
+			}
 			break;
 		case 'd':
 			debug=1;
@@ -140,23 +144,8 @@ int main(int argc,char ** av)
 		}
 	}
 
-	if (config){
-                int k;
-                setlen = mo_config_file(&set, setlen, config );
-                /* replace the monet_pid option with config */
-                /* update the configuration parameter itself */
-                for(k=0;k<setlen;k++)
-                if( idcmp(set[k].name,"monet_pid")==0){
-                        strcpy(set[k].name,"gdk_config");
-                        set[k].value= absolute_path(config);
-                        break;
-                }
-
-		free(config);
-	} else {
-		if (!(setlen = mo_system_config(&set, setlen)) )
-			usage();
-	}
+	if (!(setlen = mo_system_config(&set, setlen)))
+		usage();
 
 	i = 0;
 	mil_script[i] = NULL;
