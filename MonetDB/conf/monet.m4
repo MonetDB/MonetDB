@@ -319,6 +319,11 @@ yes-*-*)
 	8.*)	;;
 	*)	CFLAGS="$CFLAGS -ansi"	CXXFLAGS="$CXXFLAGS -ansi";
 	esac
+	dnl Define the same settings as for gcc, as we use the same
+	dnl header files
+	AC_DEFINE(_POSIX_C_SOURCE, 199506L, [Compiler flag])
+	AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
+	AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -c99 -Wall -w2"
 	CXXFLAGS="$CXXFLAGS -c99 -Wall -w2"
