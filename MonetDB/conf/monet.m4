@@ -149,7 +149,6 @@ AC_SUBST(thread_safe_flag_spec)
 have_java=auto
 JAVAC="javac"
 JAR="jar"
-CLASSPATH=""
 AC_ARG_WITH(java,
 [  --with-java=DIR     javac and jar are installed in DIR/bin], have_java="$withval")
 if test "x$have_java" != xno; then
