@@ -776,7 +776,7 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 int aggrX3_@1_@3_@4(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int (*cmp)(ptr,ptr) = BATatoms[bn->ttype].atomCmp;
-	ptr nil = ATOMnilptr(bn->ttype);
+	ptr nil = ATOMnilptr(bn->ttype), zero=nil;
 	int xx;
 	size_t off = BUNindex(bn,BUNfirst(bn));
 	ptr *extremes;
