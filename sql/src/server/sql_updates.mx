@@ -339,7 +339,7 @@ join_idx_insert( sql_idx *i, stmt **inserts )
 				atom_general( sql_dup_subtype(
 				sql_bind_localtype("oid")), NULL ))));
 		}
-		s = stmt_reverse(stmt_order(stmt_reverse(s), 0));
+		s = stmt_reverse(stmt_order(stmt_reverse(s), 1));
 		
 	}
 	stmt_destroy(rts);
