@@ -699,9 +699,9 @@ str RSdelete(resultset* rs) {
  * @return always null
  */
 str RSfromString(str src, int *len, resultset** retval) {
-	src = NULL;	/* make compiler happy */
-	*retval = NULL;
-	*len = 0;
+	(void) src ;	/* make compiler happy */
+	(void) retval ;
+	(void) len ;
 	return(MAL_SUCCEED);
 }
 
