@@ -648,11 +648,12 @@ Module: "stats"
 
 Module: "streams"
 
-[ 14 ]
-[ 14 ]
+[ 16 ]
+[ 16 ]
 #-------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature				| help					  #
 #-------------------------------------------------------------------------------------------------------------------------#
+[ "block_stream",	  "COMMAND: ",	  "block_stream(stream) : stream",	  "open a block based stream"		  ]
 [ "file_rastream",	  "COMMAND: ",	  "file_rastream(fstream, str) : stream", "open ascii file stream for reading"	  ]
 [ "file_rstream",	  "COMMAND: ",	  "file_rstream(fstream, str) : stream",  "open a file stream for reading"	  ]
 [ "file_wastream",	  "COMMAND: ",	  "file_wastream(fstream, str) : stream", "open ascii file stream for writing"	  ]
@@ -666,6 +667,7 @@ Module: "streams"
 [ "socket_wastream",	  "COMMAND: ",	  "socket_wastream(int, str) : stream",	  "open ascii socket stream for writing"  ]
 [ "socket_wstream",	  "COMMAND: ",	  "socket_wstream(int, str) : stream",	  "open a socket stream for writing"	  ]
 [ "stream_close",	  "COMMAND: ",	  "stream_close(stream) : void",	  "close and destroy the stream s"	  ]
+[ "stream_flush",	  "COMMAND: ",	  "stream_flush(stream) : void",	  "flush the stream"			  ]
 [ "stream_write",	  "COMMAND: ",	  "stream_write(stream, str) : void",	  "write data on the stream"		  ]
 
 Module: "tcpip"

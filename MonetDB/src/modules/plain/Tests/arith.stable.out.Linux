@@ -1,12 +1,16 @@
 stdout of test 'arith` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other arith
-#> Mtest:	Mtimeout -timeout 1800 ./arith arith
-#> Mlog:	Mtimeout -timeout 900 Mserver -modulesilent -yaccsilent -d8 -db modules_plain arith.mil
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for Linux2.2.12-20smp/32bit on Thu Mar 23 00:51:04 CET 2000.
-#script:arith.mil
+
+# 12:50:11 >  
+# 12:50:11 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.24020/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_src_modules_plain  < arith.milM
+# 12:50:11 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/manegold.GNU_32-d.24020/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
+# dbname:Tests_src_modules_plain
+# dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.24020/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_src_modules_plain
 
 loaded;
 #---------------------------------#
@@ -24,8 +28,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 [ true ]
 [ false ]
 [ false ]
@@ -124,303 +126,18 @@ Try: modules;                - for other modules.
 [ 0 ]
 [ 4 ]
 [ 1 ]
-!ERROR: interpret: no matching MIL operator to '+(sht, flt)'.
-!MAYBE YOU MEAN:
-!	+(str, any) : str
-!	+(lng, int) : lng
-!	+(lng, lng) : lng
-!	+(dbl, flt) : dbl
-!	+(dbl, int) : dbl
-!	+(dbl, dbl) : dbl
-!	+(flt, dbl) : dbl
-!	+(flt, flt) : flt
-!	+(flt, int) : flt
-!	+(int, lng) : lng
-!	+(int, dbl) : dbl
-!	+(int, flt) : flt
-!	+(int, int) : int
-!	+(int, sht) : int
-!	+(int, chr) : int
-!	+(sht, int) : int
-!	+(sht, sht) : sht
-!	+(sht, chr) : sht
-!	+(chr, int) : int
-!	+(chr, sht) : sht
-!	+(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '-(sht, flt)'.
-!MAYBE YOU MEAN:
-!	-(dbl) : dbl
-!	-(lng) : lng
-!	-(flt) : flt
-!	-(int) : int
-!	-(sht) : sht
-!	-(chr) : chr
-!	-(lng, int) : lng
-!	-(lng, lng) : lng
-!	-(dbl, flt) : dbl
-!	-(dbl, int) : dbl
-!	-(dbl, dbl) : dbl
-!	-(flt, dbl) : dbl
-!	-(flt, flt) : flt
-!	-(flt, int) : flt
-!	-(int, lng) : lng
-!	-(int, dbl) : dbl
-!	-(int, flt) : flt
-!	-(int, int) : int
-!	-(int, sht) : int
-!	-(int, chr) : int
-!	-(sht, int) : int
-!	-(sht, sht) : sht
-!	-(sht, chr) : sht
-!	-(chr, int) : int
-!	-(chr, sht) : sht
-!	-(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '*(sht, flt)'.
-!MAYBE YOU MEAN:
-!	*(lng, int) : lng
-!	*(lng, lng) : lng
-!	*(dbl, flt) : dbl
-!	*(dbl, int) : dbl
-!	*(dbl, dbl) : dbl
-!	*(flt, dbl) : dbl
-!	*(flt, flt) : flt
-!	*(flt, int) : flt
-!	*(int, lng) : lng
-!	*(int, dbl) : dbl
-!	*(int, flt) : flt
-!	*(int, int) : int
-!	*(int, sht) : int
-!	*(int, chr) : int
-!	*(sht, int) : int
-!	*(sht, sht) : sht
-!	*(sht, chr) : sht
-!	*(chr, int) : int
-!	*(chr, sht) : sht
-!	*(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '/(sht, flt)'.
-!MAYBE YOU MEAN:
-!	/(lng, int) : lng
-!	/(lng, lng) : lng
-!	/(dbl, flt) : dbl
-!	/(dbl, int) : dbl
-!	/(dbl, dbl) : dbl
-!	/(flt, dbl) : dbl
-!	/(flt, flt) : flt
-!	/(flt, int) : flt
-!	/(int, lng) : lng
-!	/(int, dbl) : dbl
-!	/(int, flt) : flt
-!	/(int, int) : int
-!	/(int, sht) : int
-!	/(int, chr) : int
-!	/(sht, int) : int
-!	/(sht, sht) : sht
-!	/(sht, chr) : sht
-!	/(chr, int) : int
-!	/(chr, sht) : sht
-!	/(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '+(sht, dbl)'.
-!MAYBE YOU MEAN:
-!	+(str, any) : str
-!	+(lng, int) : lng
-!	+(lng, lng) : lng
-!	+(dbl, flt) : dbl
-!	+(dbl, int) : dbl
-!	+(dbl, dbl) : dbl
-!	+(flt, dbl) : dbl
-!	+(flt, flt) : flt
-!	+(flt, int) : flt
-!	+(int, lng) : lng
-!	+(int, dbl) : dbl
-!	+(int, flt) : flt
-!	+(int, int) : int
-!	+(int, sht) : int
-!	+(int, chr) : int
-!	+(sht, int) : int
-!	+(sht, sht) : sht
-!	+(sht, chr) : sht
-!	+(chr, int) : int
-!	+(chr, sht) : sht
-!	+(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '-(sht, dbl)'.
-!MAYBE YOU MEAN:
-!	-(dbl) : dbl
-!	-(lng) : lng
-!	-(flt) : flt
-!	-(int) : int
-!	-(sht) : sht
-!	-(chr) : chr
-!	-(lng, int) : lng
-!	-(lng, lng) : lng
-!	-(dbl, flt) : dbl
-!	-(dbl, int) : dbl
-!	-(dbl, dbl) : dbl
-!	-(flt, dbl) : dbl
-!	-(flt, flt) : flt
-!	-(flt, int) : flt
-!	-(int, lng) : lng
-!	-(int, dbl) : dbl
-!	-(int, flt) : flt
-!	-(int, int) : int
-!	-(int, sht) : int
-!	-(int, chr) : int
-!	-(sht, int) : int
-!	-(sht, sht) : sht
-!	-(sht, chr) : sht
-!	-(chr, int) : int
-!	-(chr, sht) : sht
-!	-(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '*(sht, dbl)'.
-!MAYBE YOU MEAN:
-!	*(lng, int) : lng
-!	*(lng, lng) : lng
-!	*(dbl, flt) : dbl
-!	*(dbl, int) : dbl
-!	*(dbl, dbl) : dbl
-!	*(flt, dbl) : dbl
-!	*(flt, flt) : flt
-!	*(flt, int) : flt
-!	*(int, lng) : lng
-!	*(int, dbl) : dbl
-!	*(int, flt) : flt
-!	*(int, int) : int
-!	*(int, sht) : int
-!	*(int, chr) : int
-!	*(sht, int) : int
-!	*(sht, sht) : sht
-!	*(sht, chr) : sht
-!	*(chr, int) : int
-!	*(chr, sht) : sht
-!	*(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '/(sht, dbl)'.
-!MAYBE YOU MEAN:
-!	/(lng, int) : lng
-!	/(lng, lng) : lng
-!	/(dbl, flt) : dbl
-!	/(dbl, int) : dbl
-!	/(dbl, dbl) : dbl
-!	/(flt, dbl) : dbl
-!	/(flt, flt) : flt
-!	/(flt, int) : flt
-!	/(int, lng) : lng
-!	/(int, dbl) : dbl
-!	/(int, flt) : flt
-!	/(int, int) : int
-!	/(int, sht) : int
-!	/(int, chr) : int
-!	/(sht, int) : int
-!	/(sht, sht) : sht
-!	/(sht, chr) : sht
-!	/(chr, int) : int
-!	/(chr, sht) : sht
-!	/(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '+(sht, lng)'.
-!MAYBE YOU MEAN:
-!	+(str, any) : str
-!	+(lng, int) : lng
-!	+(lng, lng) : lng
-!	+(dbl, flt) : dbl
-!	+(dbl, int) : dbl
-!	+(dbl, dbl) : dbl
-!	+(flt, dbl) : dbl
-!	+(flt, flt) : flt
-!	+(flt, int) : flt
-!	+(int, lng) : lng
-!	+(int, dbl) : dbl
-!	+(int, flt) : flt
-!	+(int, int) : int
-!	+(int, sht) : int
-!	+(int, chr) : int
-!	+(sht, int) : int
-!	+(sht, sht) : sht
-!	+(sht, chr) : sht
-!	+(chr, int) : int
-!	+(chr, sht) : sht
-!	+(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '-(sht, lng)'.
-!MAYBE YOU MEAN:
-!	-(dbl) : dbl
-!	-(lng) : lng
-!	-(flt) : flt
-!	-(int) : int
-!	-(sht) : sht
-!	-(chr) : chr
-!	-(lng, int) : lng
-!	-(lng, lng) : lng
-!	-(dbl, flt) : dbl
-!	-(dbl, int) : dbl
-!	-(dbl, dbl) : dbl
-!	-(flt, dbl) : dbl
-!	-(flt, flt) : flt
-!	-(flt, int) : flt
-!	-(int, lng) : lng
-!	-(int, dbl) : dbl
-!	-(int, flt) : flt
-!	-(int, int) : int
-!	-(int, sht) : int
-!	-(int, chr) : int
-!	-(sht, int) : int
-!	-(sht, sht) : sht
-!	-(sht, chr) : sht
-!	-(chr, int) : int
-!	-(chr, sht) : sht
-!	-(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '*(sht, lng)'.
-!MAYBE YOU MEAN:
-!	*(lng, int) : lng
-!	*(lng, lng) : lng
-!	*(dbl, flt) : dbl
-!	*(dbl, int) : dbl
-!	*(dbl, dbl) : dbl
-!	*(flt, dbl) : dbl
-!	*(flt, flt) : flt
-!	*(flt, int) : flt
-!	*(int, lng) : lng
-!	*(int, dbl) : dbl
-!	*(int, flt) : flt
-!	*(int, int) : int
-!	*(int, sht) : int
-!	*(int, chr) : int
-!	*(sht, int) : int
-!	*(sht, sht) : sht
-!	*(sht, chr) : sht
-!	*(chr, int) : int
-!	*(chr, sht) : sht
-!	*(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '/(sht, lng)'.
-!MAYBE YOU MEAN:
-!	/(lng, int) : lng
-!	/(lng, lng) : lng
-!	/(dbl, flt) : dbl
-!	/(dbl, int) : dbl
-!	/(dbl, dbl) : dbl
-!	/(flt, dbl) : dbl
-!	/(flt, flt) : flt
-!	/(flt, int) : flt
-!	/(int, lng) : lng
-!	/(int, dbl) : dbl
-!	/(int, flt) : flt
-!	/(int, int) : int
-!	/(int, sht) : int
-!	/(int, chr) : int
-!	/(sht, int) : int
-!	/(sht, sht) : sht
-!	/(sht, chr) : sht
-!	/(chr, int) : int
-!	/(chr, sht) : sht
-!	/(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
+[ 7.4 ]
+[ -3.4 ]
+[ 10.8 ]
+[ 0.37037 ]
+[ 56.0046 ]
+[ -52.0046 ]
+[ 108.009 ]
+[ 0.0370339 ]
+[ 5400456791 ]
+[ -5400456787 ]
+[ 10800913578 ]
+[ 0 ]
 [ 10 ]
 [ 0 ]
 [ 25 ]
@@ -441,105 +158,10 @@ Try: modules;                - for other modules.
 [ -5400456784 ]
 [ 27002283945 ]
 [ 0 ]
-!ERROR: interpret: no matching MIL operator to '+(flt, sht)'.
-!MAYBE YOU MEAN:
-!	+(str, any) : str
-!	+(lng, int) : lng
-!	+(lng, lng) : lng
-!	+(dbl, flt) : dbl
-!	+(dbl, int) : dbl
-!	+(dbl, dbl) : dbl
-!	+(flt, dbl) : dbl
-!	+(flt, flt) : flt
-!	+(flt, int) : flt
-!	+(int, lng) : lng
-!	+(int, dbl) : dbl
-!	+(int, flt) : flt
-!	+(int, int) : int
-!	+(int, sht) : int
-!	+(int, chr) : int
-!	+(sht, int) : int
-!	+(sht, sht) : sht
-!	+(sht, chr) : sht
-!	+(chr, int) : int
-!	+(chr, sht) : sht
-!	+(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '-(flt, sht)'.
-!MAYBE YOU MEAN:
-!	-(dbl) : dbl
-!	-(lng) : lng
-!	-(flt) : flt
-!	-(int) : int
-!	-(sht) : sht
-!	-(chr) : chr
-!	-(lng, int) : lng
-!	-(lng, lng) : lng
-!	-(dbl, flt) : dbl
-!	-(dbl, int) : dbl
-!	-(dbl, dbl) : dbl
-!	-(flt, dbl) : dbl
-!	-(flt, flt) : flt
-!	-(flt, int) : flt
-!	-(int, lng) : lng
-!	-(int, dbl) : dbl
-!	-(int, flt) : flt
-!	-(int, int) : int
-!	-(int, sht) : int
-!	-(int, chr) : int
-!	-(sht, int) : int
-!	-(sht, sht) : sht
-!	-(sht, chr) : sht
-!	-(chr, int) : int
-!	-(chr, sht) : sht
-!	-(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '*(flt, sht)'.
-!MAYBE YOU MEAN:
-!	*(lng, int) : lng
-!	*(lng, lng) : lng
-!	*(dbl, flt) : dbl
-!	*(dbl, int) : dbl
-!	*(dbl, dbl) : dbl
-!	*(flt, dbl) : dbl
-!	*(flt, flt) : flt
-!	*(flt, int) : flt
-!	*(int, lng) : lng
-!	*(int, dbl) : dbl
-!	*(int, flt) : flt
-!	*(int, int) : int
-!	*(int, sht) : int
-!	*(int, chr) : int
-!	*(sht, int) : int
-!	*(sht, sht) : sht
-!	*(sht, chr) : sht
-!	*(chr, int) : int
-!	*(chr, sht) : sht
-!	*(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '/(flt, sht)'.
-!MAYBE YOU MEAN:
-!	/(lng, int) : lng
-!	/(lng, lng) : lng
-!	/(dbl, flt) : dbl
-!	/(dbl, int) : dbl
-!	/(dbl, dbl) : dbl
-!	/(flt, dbl) : dbl
-!	/(flt, flt) : flt
-!	/(flt, int) : flt
-!	/(int, lng) : lng
-!	/(int, dbl) : dbl
-!	/(int, flt) : flt
-!	/(int, int) : int
-!	/(int, sht) : int
-!	/(int, chr) : int
-!	/(sht, int) : int
-!	/(sht, sht) : sht
-!	/(sht, chr) : sht
-!	/(chr, int) : int
-!	/(chr, sht) : sht
-!	/(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
+[ 7.5 ]
+[ -2.5 ]
+[ 12.5 ]
+[ 0.5 ]
 [ 4.5 ]
 [ 0.5 ]
 [ 5 ]
@@ -552,204 +174,14 @@ Try: modules;                - for other modules.
 [ -51.5046 ]
 [ 135.011 ]
 [ 0.0462924 ]
-!ERROR: interpret: no matching MIL operator to '+(flt, lng)'.
-!MAYBE YOU MEAN:
-!	+(str, any) : str
-!	+(lng, int) : lng
-!	+(lng, lng) : lng
-!	+(dbl, flt) : dbl
-!	+(dbl, int) : dbl
-!	+(dbl, dbl) : dbl
-!	+(flt, dbl) : dbl
-!	+(flt, flt) : flt
-!	+(flt, int) : flt
-!	+(int, lng) : lng
-!	+(int, dbl) : dbl
-!	+(int, flt) : flt
-!	+(int, int) : int
-!	+(int, sht) : int
-!	+(int, chr) : int
-!	+(sht, int) : int
-!	+(sht, sht) : sht
-!	+(sht, chr) : sht
-!	+(chr, int) : int
-!	+(chr, sht) : sht
-!	+(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '-(flt, lng)'.
-!MAYBE YOU MEAN:
-!	-(dbl) : dbl
-!	-(lng) : lng
-!	-(flt) : flt
-!	-(int) : int
-!	-(sht) : sht
-!	-(chr) : chr
-!	-(lng, int) : lng
-!	-(lng, lng) : lng
-!	-(dbl, flt) : dbl
-!	-(dbl, int) : dbl
-!	-(dbl, dbl) : dbl
-!	-(flt, dbl) : dbl
-!	-(flt, flt) : flt
-!	-(flt, int) : flt
-!	-(int, lng) : lng
-!	-(int, dbl) : dbl
-!	-(int, flt) : flt
-!	-(int, int) : int
-!	-(int, sht) : int
-!	-(int, chr) : int
-!	-(sht, int) : int
-!	-(sht, sht) : sht
-!	-(sht, chr) : sht
-!	-(chr, int) : int
-!	-(chr, sht) : sht
-!	-(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '*(flt, lng)'.
-!MAYBE YOU MEAN:
-!	*(lng, int) : lng
-!	*(lng, lng) : lng
-!	*(dbl, flt) : dbl
-!	*(dbl, int) : dbl
-!	*(dbl, dbl) : dbl
-!	*(flt, dbl) : dbl
-!	*(flt, flt) : flt
-!	*(flt, int) : flt
-!	*(int, lng) : lng
-!	*(int, dbl) : dbl
-!	*(int, flt) : flt
-!	*(int, int) : int
-!	*(int, sht) : int
-!	*(int, chr) : int
-!	*(sht, int) : int
-!	*(sht, sht) : sht
-!	*(sht, chr) : sht
-!	*(chr, int) : int
-!	*(chr, sht) : sht
-!	*(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '/(flt, lng)'.
-!MAYBE YOU MEAN:
-!	/(lng, int) : lng
-!	/(lng, lng) : lng
-!	/(dbl, flt) : dbl
-!	/(dbl, int) : dbl
-!	/(dbl, dbl) : dbl
-!	/(flt, dbl) : dbl
-!	/(flt, flt) : flt
-!	/(flt, int) : flt
-!	/(int, lng) : lng
-!	/(int, dbl) : dbl
-!	/(int, flt) : flt
-!	/(int, int) : int
-!	/(int, sht) : int
-!	/(int, chr) : int
-!	/(sht, int) : int
-!	/(sht, sht) : sht
-!	/(sht, chr) : sht
-!	/(chr, int) : int
-!	/(chr, sht) : sht
-!	/(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '+(dbl, sht)'.
-!MAYBE YOU MEAN:
-!	+(str, any) : str
-!	+(lng, int) : lng
-!	+(lng, lng) : lng
-!	+(dbl, flt) : dbl
-!	+(dbl, int) : dbl
-!	+(dbl, dbl) : dbl
-!	+(flt, dbl) : dbl
-!	+(flt, flt) : flt
-!	+(flt, int) : flt
-!	+(int, lng) : lng
-!	+(int, dbl) : dbl
-!	+(int, flt) : flt
-!	+(int, int) : int
-!	+(int, sht) : int
-!	+(int, chr) : int
-!	+(sht, int) : int
-!	+(sht, sht) : sht
-!	+(sht, chr) : sht
-!	+(chr, int) : int
-!	+(chr, sht) : sht
-!	+(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '-(dbl, sht)'.
-!MAYBE YOU MEAN:
-!	-(dbl) : dbl
-!	-(lng) : lng
-!	-(flt) : flt
-!	-(int) : int
-!	-(sht) : sht
-!	-(chr) : chr
-!	-(lng, int) : lng
-!	-(lng, lng) : lng
-!	-(dbl, flt) : dbl
-!	-(dbl, int) : dbl
-!	-(dbl, dbl) : dbl
-!	-(flt, dbl) : dbl
-!	-(flt, flt) : flt
-!	-(flt, int) : flt
-!	-(int, lng) : lng
-!	-(int, dbl) : dbl
-!	-(int, flt) : flt
-!	-(int, int) : int
-!	-(int, sht) : int
-!	-(int, chr) : int
-!	-(sht, int) : int
-!	-(sht, sht) : sht
-!	-(sht, chr) : sht
-!	-(chr, int) : int
-!	-(chr, sht) : sht
-!	-(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '*(dbl, sht)'.
-!MAYBE YOU MEAN:
-!	*(lng, int) : lng
-!	*(lng, lng) : lng
-!	*(dbl, flt) : dbl
-!	*(dbl, int) : dbl
-!	*(dbl, dbl) : dbl
-!	*(flt, dbl) : dbl
-!	*(flt, flt) : flt
-!	*(flt, int) : flt
-!	*(int, lng) : lng
-!	*(int, dbl) : dbl
-!	*(int, flt) : flt
-!	*(int, int) : int
-!	*(int, sht) : int
-!	*(int, chr) : int
-!	*(sht, int) : int
-!	*(sht, sht) : sht
-!	*(sht, chr) : sht
-!	*(chr, int) : int
-!	*(chr, sht) : sht
-!	*(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '/(dbl, sht)'.
-!MAYBE YOU MEAN:
-!	/(lng, int) : lng
-!	/(lng, lng) : lng
-!	/(dbl, flt) : dbl
-!	/(dbl, int) : dbl
-!	/(dbl, dbl) : dbl
-!	/(flt, dbl) : dbl
-!	/(flt, flt) : flt
-!	/(flt, int) : flt
-!	/(int, lng) : lng
-!	/(int, dbl) : dbl
-!	/(int, flt) : flt
-!	/(int, int) : int
-!	/(int, sht) : int
-!	/(int, chr) : int
-!	/(sht, int) : int
-!	/(sht, sht) : sht
-!	/(sht, chr) : sht
-!	/(chr, int) : int
-!	/(chr, sht) : sht
-!	/(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
+[ 5.40046e+09 ]
+[ -5.40046e+09 ]
+[ 1.35011e+10 ]
+[ 4.62924e-10 ]
+[ 2.5 ]
+[ -7.5 ]
+[ -12.5 ]
+[ -0.5 ]
 [ -0.500001 ]
 [ -4.5 ]
 [ -5 ]
@@ -762,406 +194,26 @@ Try: modules;                - for other modules.
 [ -56.5046 ]
 [ -135.011 ]
 [ -0.0462924 ]
-!ERROR: interpret: no matching MIL operator to '+(dbl, lng)'.
-!MAYBE YOU MEAN:
-!	+(str, any) : str
-!	+(lng, int) : lng
-!	+(lng, lng) : lng
-!	+(dbl, flt) : dbl
-!	+(dbl, int) : dbl
-!	+(dbl, dbl) : dbl
-!	+(flt, dbl) : dbl
-!	+(flt, flt) : flt
-!	+(flt, int) : flt
-!	+(int, lng) : lng
-!	+(int, dbl) : dbl
-!	+(int, flt) : flt
-!	+(int, int) : int
-!	+(int, sht) : int
-!	+(int, chr) : int
-!	+(sht, int) : int
-!	+(sht, sht) : sht
-!	+(sht, chr) : sht
-!	+(chr, int) : int
-!	+(chr, sht) : sht
-!	+(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '-(dbl, lng)'.
-!MAYBE YOU MEAN:
-!	-(dbl) : dbl
-!	-(lng) : lng
-!	-(flt) : flt
-!	-(int) : int
-!	-(sht) : sht
-!	-(chr) : chr
-!	-(lng, int) : lng
-!	-(lng, lng) : lng
-!	-(dbl, flt) : dbl
-!	-(dbl, int) : dbl
-!	-(dbl, dbl) : dbl
-!	-(flt, dbl) : dbl
-!	-(flt, flt) : flt
-!	-(flt, int) : flt
-!	-(int, lng) : lng
-!	-(int, dbl) : dbl
-!	-(int, flt) : flt
-!	-(int, int) : int
-!	-(int, sht) : int
-!	-(int, chr) : int
-!	-(sht, int) : int
-!	-(sht, sht) : sht
-!	-(sht, chr) : sht
-!	-(chr, int) : int
-!	-(chr, sht) : sht
-!	-(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '*(dbl, lng)'.
-!MAYBE YOU MEAN:
-!	*(lng, int) : lng
-!	*(lng, lng) : lng
-!	*(dbl, flt) : dbl
-!	*(dbl, int) : dbl
-!	*(dbl, dbl) : dbl
-!	*(flt, dbl) : dbl
-!	*(flt, flt) : flt
-!	*(flt, int) : flt
-!	*(int, lng) : lng
-!	*(int, dbl) : dbl
-!	*(int, flt) : flt
-!	*(int, int) : int
-!	*(int, sht) : int
-!	*(int, chr) : int
-!	*(sht, int) : int
-!	*(sht, sht) : sht
-!	*(sht, chr) : sht
-!	*(chr, int) : int
-!	*(chr, sht) : sht
-!	*(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '/(dbl, lng)'.
-!MAYBE YOU MEAN:
-!	/(lng, int) : lng
-!	/(lng, lng) : lng
-!	/(dbl, flt) : dbl
-!	/(dbl, int) : dbl
-!	/(dbl, dbl) : dbl
-!	/(flt, dbl) : dbl
-!	/(flt, flt) : flt
-!	/(flt, int) : flt
-!	/(int, lng) : lng
-!	/(int, dbl) : dbl
-!	/(int, flt) : flt
-!	/(int, int) : int
-!	/(int, sht) : int
-!	/(int, chr) : int
-!	/(sht, int) : int
-!	/(sht, sht) : sht
-!	/(sht, chr) : sht
-!	/(chr, int) : int
-!	/(chr, sht) : sht
-!	/(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '+(lng, sht)'.
-!MAYBE YOU MEAN:
-!	+(str, any) : str
-!	+(lng, int) : lng
-!	+(lng, lng) : lng
-!	+(dbl, flt) : dbl
-!	+(dbl, int) : dbl
-!	+(dbl, dbl) : dbl
-!	+(flt, dbl) : dbl
-!	+(flt, flt) : flt
-!	+(flt, int) : flt
-!	+(int, lng) : lng
-!	+(int, dbl) : dbl
-!	+(int, flt) : flt
-!	+(int, int) : int
-!	+(int, sht) : int
-!	+(int, chr) : int
-!	+(sht, int) : int
-!	+(sht, sht) : sht
-!	+(sht, chr) : sht
-!	+(chr, int) : int
-!	+(chr, sht) : sht
-!	+(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '-(lng, sht)'.
-!MAYBE YOU MEAN:
-!	-(dbl) : dbl
-!	-(lng) : lng
-!	-(flt) : flt
-!	-(int) : int
-!	-(sht) : sht
-!	-(chr) : chr
-!	-(lng, int) : lng
-!	-(lng, lng) : lng
-!	-(dbl, flt) : dbl
-!	-(dbl, int) : dbl
-!	-(dbl, dbl) : dbl
-!	-(flt, dbl) : dbl
-!	-(flt, flt) : flt
-!	-(flt, int) : flt
-!	-(int, lng) : lng
-!	-(int, dbl) : dbl
-!	-(int, flt) : flt
-!	-(int, int) : int
-!	-(int, sht) : int
-!	-(int, chr) : int
-!	-(sht, int) : int
-!	-(sht, sht) : sht
-!	-(sht, chr) : sht
-!	-(chr, int) : int
-!	-(chr, sht) : sht
-!	-(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '*(lng, sht)'.
-!MAYBE YOU MEAN:
-!	*(lng, int) : lng
-!	*(lng, lng) : lng
-!	*(dbl, flt) : dbl
-!	*(dbl, int) : dbl
-!	*(dbl, dbl) : dbl
-!	*(flt, dbl) : dbl
-!	*(flt, flt) : flt
-!	*(flt, int) : flt
-!	*(int, lng) : lng
-!	*(int, dbl) : dbl
-!	*(int, flt) : flt
-!	*(int, int) : int
-!	*(int, sht) : int
-!	*(int, chr) : int
-!	*(sht, int) : int
-!	*(sht, sht) : sht
-!	*(sht, chr) : sht
-!	*(chr, int) : int
-!	*(chr, sht) : sht
-!	*(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '/(lng, sht)'.
-!MAYBE YOU MEAN:
-!	/(lng, int) : lng
-!	/(lng, lng) : lng
-!	/(dbl, flt) : dbl
-!	/(dbl, int) : dbl
-!	/(dbl, dbl) : dbl
-!	/(flt, dbl) : dbl
-!	/(flt, flt) : flt
-!	/(flt, int) : flt
-!	/(int, lng) : lng
-!	/(int, dbl) : dbl
-!	/(int, flt) : flt
-!	/(int, int) : int
-!	/(int, sht) : int
-!	/(int, chr) : int
-!	/(sht, int) : int
-!	/(sht, sht) : sht
-!	/(sht, chr) : sht
-!	/(chr, int) : int
-!	/(chr, sht) : sht
-!	/(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
+[ 5.40046e+09 ]
+[ -5.40046e+09 ]
+[ -1.35011e+10 ]
+[ -4.62924e-10 ]
+[ -8999999999995 ]
+[ -9000000000005 ]
+[ -45000000000000 ]
+[ -1800000000000 ]
 [ -8999999999998 ]
 [ -9000000000002 ]
 [ -18000000000000 ]
 [ -4500000000000 ]
-!ERROR: interpret: no matching MIL operator to '+(lng, flt)'.
-!MAYBE YOU MEAN:
-!	+(str, any) : str
-!	+(lng, int) : lng
-!	+(lng, lng) : lng
-!	+(dbl, flt) : dbl
-!	+(dbl, int) : dbl
-!	+(dbl, dbl) : dbl
-!	+(flt, dbl) : dbl
-!	+(flt, flt) : flt
-!	+(flt, int) : flt
-!	+(int, lng) : lng
-!	+(int, dbl) : dbl
-!	+(int, flt) : flt
-!	+(int, int) : int
-!	+(int, sht) : int
-!	+(int, chr) : int
-!	+(sht, int) : int
-!	+(sht, sht) : sht
-!	+(sht, chr) : sht
-!	+(chr, int) : int
-!	+(chr, sht) : sht
-!	+(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '-(lng, flt)'.
-!MAYBE YOU MEAN:
-!	-(dbl) : dbl
-!	-(lng) : lng
-!	-(flt) : flt
-!	-(int) : int
-!	-(sht) : sht
-!	-(chr) : chr
-!	-(lng, int) : lng
-!	-(lng, lng) : lng
-!	-(dbl, flt) : dbl
-!	-(dbl, int) : dbl
-!	-(dbl, dbl) : dbl
-!	-(flt, dbl) : dbl
-!	-(flt, flt) : flt
-!	-(flt, int) : flt
-!	-(int, lng) : lng
-!	-(int, dbl) : dbl
-!	-(int, flt) : flt
-!	-(int, int) : int
-!	-(int, sht) : int
-!	-(int, chr) : int
-!	-(sht, int) : int
-!	-(sht, sht) : sht
-!	-(sht, chr) : sht
-!	-(chr, int) : int
-!	-(chr, sht) : sht
-!	-(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '*(lng, flt)'.
-!MAYBE YOU MEAN:
-!	*(lng, int) : lng
-!	*(lng, lng) : lng
-!	*(dbl, flt) : dbl
-!	*(dbl, int) : dbl
-!	*(dbl, dbl) : dbl
-!	*(flt, dbl) : dbl
-!	*(flt, flt) : flt
-!	*(flt, int) : flt
-!	*(int, lng) : lng
-!	*(int, dbl) : dbl
-!	*(int, flt) : flt
-!	*(int, int) : int
-!	*(int, sht) : int
-!	*(int, chr) : int
-!	*(sht, int) : int
-!	*(sht, sht) : sht
-!	*(sht, chr) : sht
-!	*(chr, int) : int
-!	*(chr, sht) : sht
-!	*(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '/(lng, flt)'.
-!MAYBE YOU MEAN:
-!	/(lng, int) : lng
-!	/(lng, lng) : lng
-!	/(dbl, flt) : dbl
-!	/(dbl, int) : dbl
-!	/(dbl, dbl) : dbl
-!	/(flt, dbl) : dbl
-!	/(flt, flt) : flt
-!	/(flt, int) : flt
-!	/(int, lng) : lng
-!	/(int, dbl) : dbl
-!	/(int, flt) : flt
-!	/(int, int) : int
-!	/(int, sht) : int
-!	/(int, chr) : int
-!	/(sht, int) : int
-!	/(sht, sht) : sht
-!	/(sht, chr) : sht
-!	/(chr, int) : int
-!	/(chr, sht) : sht
-!	/(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '+(lng, dbl)'.
-!MAYBE YOU MEAN:
-!	+(str, any) : str
-!	+(lng, int) : lng
-!	+(lng, lng) : lng
-!	+(dbl, flt) : dbl
-!	+(dbl, int) : dbl
-!	+(dbl, dbl) : dbl
-!	+(flt, dbl) : dbl
-!	+(flt, flt) : flt
-!	+(flt, int) : flt
-!	+(int, lng) : lng
-!	+(int, dbl) : dbl
-!	+(int, flt) : flt
-!	+(int, int) : int
-!	+(int, sht) : int
-!	+(int, chr) : int
-!	+(sht, int) : int
-!	+(sht, sht) : sht
-!	+(sht, chr) : sht
-!	+(chr, int) : int
-!	+(chr, sht) : sht
-!	+(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '-(lng, dbl)'.
-!MAYBE YOU MEAN:
-!	-(dbl) : dbl
-!	-(lng) : lng
-!	-(flt) : flt
-!	-(int) : int
-!	-(sht) : sht
-!	-(chr) : chr
-!	-(lng, int) : lng
-!	-(lng, lng) : lng
-!	-(dbl, flt) : dbl
-!	-(dbl, int) : dbl
-!	-(dbl, dbl) : dbl
-!	-(flt, dbl) : dbl
-!	-(flt, flt) : flt
-!	-(flt, int) : flt
-!	-(int, lng) : lng
-!	-(int, dbl) : dbl
-!	-(int, flt) : flt
-!	-(int, int) : int
-!	-(int, sht) : int
-!	-(int, chr) : int
-!	-(sht, int) : int
-!	-(sht, sht) : sht
-!	-(sht, chr) : sht
-!	-(chr, int) : int
-!	-(chr, sht) : sht
-!	-(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '*(lng, dbl)'.
-!MAYBE YOU MEAN:
-!	*(lng, int) : lng
-!	*(lng, lng) : lng
-!	*(dbl, flt) : dbl
-!	*(dbl, int) : dbl
-!	*(dbl, dbl) : dbl
-!	*(flt, dbl) : dbl
-!	*(flt, flt) : flt
-!	*(flt, int) : flt
-!	*(int, lng) : lng
-!	*(int, dbl) : dbl
-!	*(int, flt) : flt
-!	*(int, int) : int
-!	*(int, sht) : int
-!	*(int, chr) : int
-!	*(sht, int) : int
-!	*(sht, sht) : sht
-!	*(sht, chr) : sht
-!	*(chr, int) : int
-!	*(chr, sht) : sht
-!	*(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
-!ERROR: interpret: no matching MIL operator to '/(lng, dbl)'.
-!MAYBE YOU MEAN:
-!	/(lng, int) : lng
-!	/(lng, lng) : lng
-!	/(dbl, flt) : dbl
-!	/(dbl, int) : dbl
-!	/(dbl, dbl) : dbl
-!	/(flt, dbl) : dbl
-!	/(flt, flt) : flt
-!	/(flt, int) : flt
-!	/(int, lng) : lng
-!	/(int, dbl) : dbl
-!	/(int, flt) : flt
-!	/(int, int) : int
-!	/(int, sht) : int
-!	/(int, chr) : int
-!	/(sht, int) : int
-!	/(sht, sht) : sht
-!	/(sht, chr) : sht
-!	/(chr, int) : int
-!	/(chr, sht) : sht
-!	/(chr, chr) : chr
-!ERROR: print(param 1): evaluation error.
+[ -9e+12 ]
+[ -9e+12 ]
+[ -4.86e+13 ]
+[ -1.66667e+12 ]
+[ -9e+12 ]
+[ -9e+12 ]
+[ -4.86041e+14 ]
+[ -1.66653e+11 ]
 [ -8994599543211 ]
 [ -9005400456789 ]
 [ 3059533224668508160 ]
@@ -1184,23 +236,39 @@ Try: modules;                - for other modules.
 !ERROR: interpret: no matching MIL operator to '+(oid, oid)'.
 !MAYBE YOU MEAN:
 !	+(str, any) : str
-!	+(lng, int) : lng
+!	+(lng, dbl) : dbl
+!	+(lng, flt) : dbl
 !	+(lng, lng) : lng
-!	+(dbl, flt) : dbl
-!	+(dbl, int) : dbl
+!	+(lng, int) : lng
+!	+(lng, sht) : lng
+!	+(lng, chr) : lng
 !	+(dbl, dbl) : dbl
+!	+(dbl, flt) : dbl
+!	+(dbl, lng) : dbl
+!	+(dbl, int) : dbl
+!	+(dbl, sht) : dbl
+!	+(dbl, chr) : dbl
 !	+(flt, dbl) : dbl
 !	+(flt, flt) : flt
+!	+(flt, lng) : flt
 !	+(flt, int) : flt
-!	+(int, lng) : lng
+!	+(flt, sht) : flt
+!	+(flt, chr) : flt
 !	+(int, dbl) : dbl
 !	+(int, flt) : flt
+!	+(int, lng) : lng
 !	+(int, int) : int
 !	+(int, sht) : int
 !	+(int, chr) : int
+!	+(sht, dbl) : dbl
+!	+(sht, flt) : flt
+!	+(sht, lng) : lng
 !	+(sht, int) : int
 !	+(sht, sht) : sht
 !	+(sht, chr) : sht
+!	+(chr, dbl) : dbl
+!	+(chr, flt) : flt
+!	+(chr, lng) : lng
 !	+(chr, int) : int
 !	+(chr, sht) : sht
 !	+(chr, chr) : chr
@@ -1213,80 +281,125 @@ Try: modules;                - for other modules.
 !	-(int) : int
 !	-(sht) : sht
 !	-(chr) : chr
-!	-(lng, int) : lng
+!	-(lng, dbl) : dbl
+!	-(lng, flt) : dbl
 !	-(lng, lng) : lng
-!	-(dbl, flt) : dbl
-!	-(dbl, int) : dbl
+!	-(lng, int) : lng
+!	-(lng, sht) : lng
+!	-(lng, chr) : lng
 !	-(dbl, dbl) : dbl
+!	-(dbl, flt) : dbl
+!	-(dbl, lng) : dbl
+!	-(dbl, int) : dbl
+!	-(dbl, sht) : dbl
+!	-(dbl, chr) : dbl
 !	-(flt, dbl) : dbl
 !	-(flt, flt) : flt
+!	-(flt, lng) : flt
 !	-(flt, int) : flt
-!	-(int, lng) : lng
+!	-(flt, sht) : flt
+!	-(flt, chr) : flt
 !	-(int, dbl) : dbl
 !	-(int, flt) : flt
+!	-(int, lng) : lng
 !	-(int, int) : int
 !	-(int, sht) : int
 !	-(int, chr) : int
+!	-(sht, dbl) : dbl
+!	-(sht, flt) : flt
+!	-(sht, lng) : lng
 !	-(sht, int) : int
 !	-(sht, sht) : sht
 !	-(sht, chr) : sht
+!	-(chr, dbl) : dbl
+!	-(chr, flt) : flt
+!	-(chr, lng) : lng
 !	-(chr, int) : int
 !	-(chr, sht) : sht
 !	-(chr, chr) : chr
 !ERROR: print(param 1): evaluation error.
 !ERROR: interpret: no matching MIL operator to '*(oid, oid)'.
 !MAYBE YOU MEAN:
-!	*(lng, int) : lng
+!	*(lng, dbl) : dbl
+!	*(lng, flt) : dbl
 !	*(lng, lng) : lng
-!	*(dbl, flt) : dbl
-!	*(dbl, int) : dbl
+!	*(lng, int) : lng
+!	*(lng, sht) : lng
+!	*(lng, chr) : lng
 !	*(dbl, dbl) : dbl
+!	*(dbl, flt) : dbl
+!	*(dbl, lng) : dbl
+!	*(dbl, int) : dbl
+!	*(dbl, sht) : dbl
+!	*(dbl, chr) : dbl
 !	*(flt, dbl) : dbl
 !	*(flt, flt) : flt
+!	*(flt, lng) : flt
 !	*(flt, int) : flt
-!	*(int, lng) : lng
+!	*(flt, sht) : flt
+!	*(flt, chr) : flt
 !	*(int, dbl) : dbl
 !	*(int, flt) : flt
+!	*(int, lng) : lng
 !	*(int, int) : int
 !	*(int, sht) : int
 !	*(int, chr) : int
+!	*(sht, dbl) : dbl
+!	*(sht, flt) : flt
+!	*(sht, lng) : lng
 !	*(sht, int) : int
 !	*(sht, sht) : sht
 !	*(sht, chr) : sht
+!	*(chr, dbl) : dbl
+!	*(chr, flt) : flt
+!	*(chr, lng) : lng
 !	*(chr, int) : int
 !	*(chr, sht) : sht
 !	*(chr, chr) : chr
 !ERROR: print(param 1): evaluation error.
 !ERROR: interpret: no matching MIL operator to '/(oid, oid)'.
 !MAYBE YOU MEAN:
-!	/(lng, int) : lng
+!	/(lng, dbl) : dbl
+!	/(lng, flt) : dbl
 !	/(lng, lng) : lng
-!	/(dbl, flt) : dbl
-!	/(dbl, int) : dbl
+!	/(lng, int) : lng
+!	/(lng, sht) : lng
+!	/(lng, chr) : lng
 !	/(dbl, dbl) : dbl
+!	/(dbl, flt) : dbl
+!	/(dbl, lng) : dbl
+!	/(dbl, int) : dbl
+!	/(dbl, sht) : dbl
+!	/(dbl, chr) : dbl
 !	/(flt, dbl) : dbl
 !	/(flt, flt) : flt
+!	/(flt, lng) : flt
 !	/(flt, int) : flt
-!	/(int, lng) : lng
+!	/(flt, sht) : flt
+!	/(flt, chr) : flt
 !	/(int, dbl) : dbl
 !	/(int, flt) : flt
+!	/(int, lng) : lng
 !	/(int, int) : int
 !	/(int, sht) : int
 !	/(int, chr) : int
+!	/(sht, dbl) : dbl
+!	/(sht, flt) : flt
+!	/(sht, lng) : lng
 !	/(sht, int) : int
 !	/(sht, sht) : sht
 !	/(sht, chr) : sht
+!	/(chr, dbl) : dbl
+!	/(chr, flt) : flt
+!	/(chr, lng) : lng
 !	/(chr, int) : int
 !	/(chr, sht) : sht
 !	/(chr, chr) : chr
 !ERROR: print(param 1): evaluation error.
 [ 5@0 ]
 [ 2@0 ]
-[ 0 ]
-[ 0 ]
 [ 0.185185 ]
 [ 0.018517 ]
-[ 0 ]
 [ 1 ]
 [ 20 ]
 [ 1 ]
@@ -1299,3 +412,8 @@ Try: modules;                - for other modules.
 [ true ]
 [ true ]
 [ 479142414 ]
+
+# 12:50:12 >  
+# 12:50:12 >  Done.
+# 12:50:12 >  
+
