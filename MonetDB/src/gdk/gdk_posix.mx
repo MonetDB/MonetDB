@@ -446,6 +446,7 @@ static void MT_mmap_del(void* base, size_t len) {
 			MT_mmap_tab[victim].next = MT_mmap_free;
 			MT_mmap_empty(victim);
 			MT_mmap_free = victim;
+			(void)ret;
 		}
 		(void)pthread_mutex_unlock(&MT_mmap_lock);
 	}

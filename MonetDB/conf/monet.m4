@@ -359,6 +359,11 @@ yes-*-*)
 	;;
 -pgcc*-linux*)
 	dnl  Portland Group (PGI) (pgcc/pgCC on Linux)
+	dnl Define the same settings as for gcc, as we use the same
+	dnl header files
+	AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
+	AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
+	AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 	dnl  required for "scale" in module "decimal"
 	CFLAGS="$CFLAGS -Msignextend"
 	CFLAGS="$CFLAGS -c9x"
