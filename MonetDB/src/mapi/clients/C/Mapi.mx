@@ -1103,6 +1103,9 @@ mapi_close_handle(MapiHdl hdl)
 	if (hdl == NULL)
 		return MERROR;
 	if (hdl->tableid >= 0) {
+		if (hdl->mid->active &&
+		    read_until_prompt(hdl->mid->active) != MOK)
+			return MERROR;
 		hdl->mid->active = hdl;
 		if (stream_printf(hdl->mid->to, "X" "close %d\n",
 				  hdl->tableid) < 0 ||
@@ -1114,6 +1117,8 @@ mapi_close_handle(MapiHdl hdl)
 			mapi_finish_internal(hdl);
 		hdl->tableid = -1;
 	}
+	if (hdl->mid->active == hdl && read_until_prompt(hdl) != MOK)
+		return MERROR;
 	if (hdl->fields)
 		free(hdl->fields);
 	hdl->fields = NULL;
@@ -1984,6 +1989,9 @@ mapi_prepare_handle(MapiHdl hdl, const char *cmd)
 {
 	mapi_hdl_check(hdl, "mapi_prepare");
 	if (hdl->tableid >= 0) {
+		if (hdl->mid->active &&
+		    read_until_prompt(hdl->mid->active) != MOK)
+			return MERROR;
 		hdl->mid->active = hdl;
 		if (stream_printf(hdl->mid->to, "X" "close %d\n", hdl->tableid) < 0 ||
 		    stream_flush(hdl->mid->to))
@@ -2211,21 +2219,22 @@ read_until_prompt(MapiHdl hdl)
 	/* read until prompt (and cache result) so that a new query
 	   can be sent */
 	int oldrd;
-	MapiMsg rc;
+	Mapi mid = hdl->mid;
+	MapiMsg rc = MOK;
 
-	do {
+	while (mid->error == MOK && mid->active && rc == MOK) {
 		oldrd = hdl->cache.reader;
 		do {
 			rc = mapi_get_row(hdl);
-		} while (rc == MOK && hdl->mid->active &&
+		} while (rc == MOK && mid->active &&
 			 hdl->cache.writer + 1 < hdl->cache.limit);
 		hdl->cache.reader = oldrd;
-		if (hdl->mid->active)
+		if (mid->active)
 			mapi_extend_cache(hdl);
-	} while (hdl->mid->error == MOK && hdl->mid->active && rc == MOK);
-	if (hdl->mid->trace)
-		printf("read_until_prompt return:%d\n", hdl->mid->error);
-	return rc == MMORE ? MMORE : hdl->mid->error;
+	}
+	if (mid->trace)
+		printf("read_until_prompt return:%d\n", mid->error);
+	return rc == MMORE ? MMORE : mid->error;
 }
 
 static MapiMsg
@@ -2334,6 +2343,9 @@ mapi_query_handle(MapiHdl hdl, const char *cmd)
 
 	mapi_hdl_check(hdl, "mapi_query_handle");
 	if (hdl->tableid >= 0) {
+		if (hdl->mid->active &&
+		    read_until_prompt(hdl->mid->active) != MOK)
+			return MERROR;
 		hdl->mid->active = hdl;
 		if (stream_printf(hdl->mid->to, "X" "close %d\n", hdl->tableid) < 0 ||
 		    stream_flush(hdl->mid->to))
@@ -2557,6 +2569,9 @@ mapi_cache_limit(Mapi mid, int limit)
 /* 	} */
 	if (mid->languageId == LANG_SQL) {
 		MapiHdl hdl = mapi_new_handle(mid);
+
+		if (mid->active && read_until_prompt(mid->active) != MOK)
+			return MERROR;
 		if (stream_printf(mid->to, "X" "reply_size %d\n", limit) < 0 ||
 		    stream_flush(mid->to))
 			check_stream(mid, mid->to, stream_error(mid->to), "mapi_cache_limit", mid->error);
