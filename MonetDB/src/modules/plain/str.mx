@@ -1758,7 +1758,8 @@ int
 chrSplit(BAT **Res, str s)
 {
 	char * d = s;
-	BAT *res = BATnew(TYPE_void, TYPE_chr, BUFSIZ);
+	BAT *res = BATnew(TYPE_void, TYPE_chr, strlen(s));
+	BATseqbase(res,(oid) 0);
 	oid n = oid_nil;
 	if (res == NULL)
 		return GDK_FAIL;
