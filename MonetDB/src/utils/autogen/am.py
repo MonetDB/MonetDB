@@ -111,6 +111,7 @@ def am_scripts(fd, var, scripts, am):
   
   for script in scripts['TARGETS']:
       fd.write("install-exec-local-%s: %s\n" % (script,script))
+      fd.write("\t-mkdir -p $(DESTDIR)%s\n" % (sd))
       fd.write("\t$(RM) $(DESTDIR)%s/%s\n" % (sd,script))
       fd.write("\t$(INSTALL) %s $(DESTDIR)%s/%s\n\n" % (script,sd,script))
       fd.write("uninstall-exec-local-%s: \n" % (script))

@@ -17,6 +17,7 @@ mx2yy = "^@Y[ \t\r\n]+"
 mx2ll = "^@L[ \t\r\n]+"
 mx2odl = "^@odl[ \t\r\n]+"
 mx2fgr = "^@fgr[ \t\r\n]+"
+mx2cfg = "^@cfg[ \t\r\n]+"
 mx2tcl = "^@tcl[ \t\r\n]+"
 mx2swig = "^@swig[ \t\r\n]+"
 mx2java = "^@java[ \t\r\n]+"
@@ -35,6 +36,7 @@ code_extract = { 'mx': [ (mx2mil, '.mil'),
 		  (mx2yy, '.yy'), 
 		  (mx2ll, '.ll'), 
 		  (mx2odl, '.odl'),
+		  (mx2cfg, '.cfg'), 
 		  (mx2fgr, '.fgr'), 
 		  (mx2tcl, '.tcl'), 
 		  (mx2swig, '.i'), 
@@ -52,6 +54,7 @@ code_extract = { 'mx': [ (mx2mil, '.mil'),
 		  (mx2ll, '.ll'), 
 		  (mx2odl, '.odl'),
 		  (mx2fgr, '.fgr'), 
+		  (mx2cfg, '.cfg'), 
 		  (mx2tcl, '.tcl'), 
 		  (mx2swig, '.i'), 
 		  (mx2java, '.java'), 
@@ -74,9 +77,9 @@ code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
 	    'c': 	[ '.o' ],
 	    'i':	[ '_wrap.c' ],
 	    'glue.c': 	[ '.glue.o' ],
-	    '.fgr':     [ '_engine.c', '_template.c', '_schema.mil' ],
-	    '.class':   [ '.java' ],
-	    '.mx.in':	[ '.mx' ]
+	    'fgr':     [ '_engine.c', '_proto.h' ],
+	    'class':   [ '.java' ],
+	    'mx.in':	[ '.mx' ]
 }
 
 c_inc = "^[ \t]*#[ \t]*include[ \t]*[<\"]\([a-zA-Z0-9\.\_]*\)[>\"]"
