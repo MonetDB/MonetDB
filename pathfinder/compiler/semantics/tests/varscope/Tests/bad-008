@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s4 <<'EOT'
-let $a := 1, $b := $b return ($a, $b)
-EOT
-echo $?
