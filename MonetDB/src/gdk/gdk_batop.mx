@@ -1267,7 +1267,9 @@ BAT *BATorder@3(BAT *b) {
         } 
 	if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
 		GDKwarning( "void tail column will become nil during order@3.\nTo keep it, please materialize it to oid, first.\n" );
-		b->tseqbase = oid_nil; /* ignore the void case here */
+		/* ignore the void case here */
+		b->tseqbase = oid_nil; 
+		BATmirror(b)->hseqbase = oid_nil; 
 	}
 	if (BATordered@4(b)) {
 		/* b is ordered in the opposite direction, hence we revert b */
@@ -1464,11 +1466,11 @@ Use the histogram to determine good split boundaries on b.
 	}
 	seps[yy] = nilval;
         BBPreclaim(histo);
-	if (n != yy +1) {
+
+	if (n > 1 && n != yy +1) {
 		GDKwarning("rangesplit: delivering %lu instead of %lu fragments\n", yy+1, n); 
 		n = yy + 1;
 	}
-
 @- 
 CASE 1: just one bucket.
 This is done without copying b.
