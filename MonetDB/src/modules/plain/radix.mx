@@ -1057,6 +1057,7 @@ var b4 := radix_cluster(b2, cnt.bbpname, 1.0, 1, 7);
 b4.info.find("tsorted").print;
 radix_cluster(attr_int,  
 
+@f radix
 @* Implementation
 @c
 #include<math.h>
