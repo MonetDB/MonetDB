@@ -35,7 +35,7 @@ function Admin.main():int;	# 0  (main:int)
     io.print(b);	# 7 IOprint_val ($15:int)<-(b:bat[:void,:int])
     bat.replace(b,k,3);	# 8 BKCreplace_bun ($16:bat[:void,:int])<-(b:bat[:void,:int])(k:oid)($17:int)
     io.print(b);	# 9 IOprint_val ($18:int)<-(b:bat[:void,:int])
-    bat.delete(b,k);	# 10 BKCdelete_head ($19:bat[:any,:int])<-(b:bat[:void,:int])(k:oid)
+    bat.delete(b,k);	# 10 BKCdelete ($19:bat[:any,:int])<-(b:bat[:void,:int])(k:oid)
     io.print(b);	# 11 IOprint_val ($20:int)<-(b:bat[:void,:int])
 end main;	# 12  
 #-----------------#
