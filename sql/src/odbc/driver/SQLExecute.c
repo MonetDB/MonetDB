@@ -86,6 +86,7 @@ ODBCInitResult(ODBCStmt *stmt)
 	}
 	nrCols = mapi_get_field_count(hdl);
 	stmt->querytype = mapi_get_querytype(hdl);
+	stmt->rowcount = (unsigned int) mapi_rows_affected(hdl);
 #ifdef ODBCDEBUG
 	ODBCLOG("ODBCInitResult: querytype %d\n", stmt->querytype);
 #endif
@@ -94,16 +95,11 @@ ODBCInitResult(ODBCStmt *stmt)
 	case 3:			/* Q_TABLE */
 		/* result set generating query */
 		assert(nrCols > 0);
-		stmt->rowcount = (unsigned int) nrCols;
 		stmt->State = EXECUTED1;
 		break;
 	case 4:			/* Q_UPDATE */
 		/* result count generating query */
 		assert(nrCols == 1);
-		mapi_fetch_row(hdl);
-		nrCols = atoi(mapi_fetch_field(hdl, 0));
-		assert(nrCols >= 0);
-		stmt->rowcount = (unsigned int) nrCols;
 		nrCols = 0;
 		stmt->State = EXECUTED0;
 		break;
