@@ -175,22 +175,24 @@ bat[any::1,oid]
 bat[oid,any::3]
 @mil
 
-@:htordered_unique_thetajoin( void           , void           , oid   , oid   ,               ,               ,              ,              ,                        )@
+@:htordered_unique_thetajoin( void           , void           , oid   , oid   ,                              ,                            ,                                               )@
 
-@:htordered_unique_thetajoin( @:bat_any1_oid@, void           , any::1, oid   , @:lx_join_opt@,               , @:lx_join(l)@,              ,                        )@
+@:htordered_unique_thetajoin( @:bat_any1_oid@, void           , any::1, oid   , @:lx_join_opt@               , @:lx_join(l)@              , @:lx_join(join_order)@                        )@
 
-@:htordered_unique_thetajoin( void           , @:bat_oid_any3@, oid   , any::3,               , @:rx_join_opt@,              , @:rx_join(r)@, @:rx_join(join_order)@ )@
+@:htordered_unique_thetajoin( void           , @:bat_oid_any3@, oid   , any::3,                @:rx_join_opt@,               @:rx_join(r)@,                        @:rx_join(join_order)@ )@
 
-@:htordered_unique_thetajoin( @:bat_any1_oid@, @:bat_oid_any3@, any::1, any::3, @:lx_join_opt@, @:rx_join_opt@, @:lx_join(l)@, @:rx_join(r)@, @:rx_join(join_order)@ )@
+@:htordered_unique_thetajoin( @:bat_any1_oid@, @:bat_oid_any3@, any::1, any::3, @:lx_join_opt@ @:rx_join_opt@, @:lx_join(l)@ @:rx_join(r)@, @:lx_join(join_order)@ @:rx_join(join_order)@ )@
 
 @= lx_join_opt
     # try to reduce footprint, first:
+    # join with lx only if it's smaller than l
     if (htype(lx) <= 3) { # <= sht  hence  < oid
         @:lx_join(l)@
     }
 @
 @= rx_join_opt
     # try to reduce footprint, first:
+    # join with rx only if it's smaller than r
     if (htype(rx) <= 3) { # <= sht  hence  < oid
         @:rx_join(r)@
     }
@@ -203,11 +205,8 @@ bat[oid,any::3]
 @
 @= rx_join
     if (not(isnil(rx))) {
-        # if rx is not tail-ordered, it has to wait until after the CTrefine ...
-        if (force_rx_join or ordered(reverse(rx))) {
-            @1 := leftfetchjoin(@1,rx);
-            rx := nil;
-        }
+        @1 := leftfetchjoin(@1,rx);
+        rx := nil;
     }
 @mil
 
@@ -216,13 +215,9 @@ proc htordered_unique_thetajoin( @1 lx, bat[oid,any::2] l,
                                  int mode,
                                  bat[any::2,oid] r, @2 rx ) : bat[@3,@4]
 {
-    # if rx is not tail-ordered, it has to wait until after the CTrefine ...
-    var force_rx_join := FALSE;
-
     if ((int(l).count() = 0LL) or (int(r).count() = 0LL)) { 
-        force_rx_join := TRUE;
-        @7
-        @8
+        # if present, join with lx/rx
+        @6
         return l.join(r); 
     }
     if (not(l.ordered()) or not(r.reverse().ordered())) {
@@ -230,8 +225,9 @@ proc htordered_unique_thetajoin( @1 lx, bat[oid,any::2] l,
     }
 
     if (mode != EQ) {
+        # try to reduce footprint, first:
+        # join with lx/rx only if smaller than l/r
         @5
-        @6
         # trick: as we eliminate double matches anyway, let's not generate them to start with
         # pumps are efficient because merge-based
         if ((mode = GT) or (mode = GE)) {
@@ -245,19 +241,12 @@ proc htordered_unique_thetajoin( @1 lx, bat[oid,any::2] l,
         var cnt := nlthetajoin(r.reverse(), l.sample(16).reverse(), mode, int(l).count());
         cnt := int(cnt).count();
         if (cnt > (int(r).count() / 16LL)) {
-            force_rx_join := TRUE;
-            @7
-            @8
+            # if not done, yet, join with lx/rx
+            @6
             # a large intermediate result is better handled with nested loop
             return nlthetajoin(l, r, mode, (cnt / 16LL)*int(l).count()); # no reordering necessary!!
         }
     }
-    # lx, can be done in any case;
-    # unless it is tail-ordered, rx has to wait until after the CTrefine ...
-    # (or should actually both wait,
-    #  as the CTrefine might become too expensive with types > oid ?)
-    @7
-    @8
     var join_order := leftthetajoin(l, r, mode);
     var snd_iter := join_order.reverse().mark(0@0).reverse();
     var fst_iter := join_order.mark(0@0).reverse();
@@ -266,9 +255,10 @@ proc htordered_unique_thetajoin( @1 lx, bat[oid,any::2] l,
         # the output of CTrefine allows to easily check if it is kunique
         sorting := sorting.reverse().kunique().reverse(); # merge-based kunique
     }
-    force_rx_join := TRUE;
-    @9
-    return join_order.fetch(sorting); # this may hurt as well
+    join_order := join_order.fetch(sorting); # this may hurt as well
+    # joins with lx/rx can only be done after the CTrefine() and kunique()
+    @7
+    return join_order;
 }
 @mil
 
