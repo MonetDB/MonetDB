@@ -973,9 +973,10 @@ int mapi_get_row(Mapi mid) {
 	mid->error = MOK;
 
 	while(mid->active || mid->cache.reader < mid->cache.writer ){
-		reply= mapi_fetch_line(mid);
-		mid->cache.reader++;
-		if( reply == 0) return MERROR;
+		if( mid->active){
+			reply= mapi_fetch_line(mid);
+			if( reply == 0) return MERROR;
+		} else reply = mid->cache.rows[++mid->cache.reader];
 		
 		switch(reply[0]){
 		case '!': {
@@ -1135,7 +1136,7 @@ simplify access later on.
 int mapi_fetch_row(Mapi mid){
 	if( mapi_get_row(mid)== MOK)
 		return mapi_slice_row(mid);
-	return MERROR;
+	return 0;
 }
 int mapi_fetch_row_all(Mapi mid){
 	return MERROR;
