@@ -427,7 +427,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 %left <sval> COMPARISON /* <> < > <= >= */
 %left <operation> '='
 %left <operation> '+' '-'
-%left <operation> '*' '/'
+%left <operation> '*' '/' '%'
 %left <operation> SUBSTRING CONCATSTRING
 %right UMINUS
 
@@ -1765,6 +1765,12 @@ scalar_exp:
  |  scalar_exp '/' scalar_exp
 				{ dlist *l = dlist_create();
 				  dlist_append_string(l, _strdup("sql_div"));
+	  			  dlist_append_symbol(l, $1);
+	  			  dlist_append_symbol(l, $3);
+	  			  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp '%' scalar_exp
+				{ dlist *l = dlist_create();
+				  dlist_append_string(l, _strdup("sql_mod"));
 	  			  dlist_append_symbol(l, $1);
 	  			  dlist_append_symbol(l, $3);
 	  			  $$ = _symbol_create_list( SQL_BINOP, l ); }

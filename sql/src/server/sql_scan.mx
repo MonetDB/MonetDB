@@ -729,6 +729,7 @@ int lex_symbol(mvc * c)
 		}
 		lc->cur = next;
 		return context_yychar(lc, cur);
+	case '%':
 	case '+':
 	case '*':
 	case '/':
@@ -801,14 +802,12 @@ int sqllex(YYSTYPE * yylval, void *parm)
 
 	if (!token) {
 		lc->yylen = 0;
-		lc->yytext[0] = 0;
 
 		token = tokenize(c);
 		yylval->sval = lc->yytext;
 
 		if (token == UNION) {
 			lc->yylen = 0;
-			lc->yytext[0] = 0;
 			token = tokenize(c);
 			yylval->sval = lc->yytext;
 			if (token == JOIN) {

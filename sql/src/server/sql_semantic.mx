@@ -3767,6 +3767,7 @@ static stmt *sql_insert(mvc * sql, sql_table *t, stmt **inserts, int len)
 	sql_subaggr_destroy( cnt );
 	for (i = 0; i < len; i++) 
 		list_append(l, inserts[i]);
+	/* TODO rows = stmt_dup(inserts[0]) */
 	return stmt_list(l);
 }
 
@@ -4064,6 +4065,7 @@ static stmt *update_table(mvc * sql, dlist * qname,
 			updates[c->colnr] = stmt_replace( stmt_cbat(c, stmt_dup(tv->s), UPD, st_bat), v);
 			list_append(l, updates[c->colnr] );
 			list_append(l, stmt_insert( stmt_cbat(c, stmt_dup(tv->s), UPD, st_ubat), stmt_dup(v)));
+			/* TODO rows = count(stmt_dup(v)) */
 		}
 		if (s) stmt_destroy(s);
 	
@@ -4128,6 +4130,7 @@ sql_delete( mvc *sql, tvar *tv, sql_table *t, stmt *s )
 			stmt_atom(atom_general(sql_dup_subtype(c->type), NULL)));
 		list_append(l, stmt_replace( stmt_cbat(c, stmt_dup(tv->s), DEL, st_bat), v));
 	}
+	/* TODO rows = count(stmt_dup(v)) */
 
 	if (t->idxs.set && !sql_delete_idxs(sql, t, s, l )){
 		list_destroy(l);

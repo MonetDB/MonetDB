@@ -788,20 +788,6 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		int r = backend_dumpstmt_( s->op2.stval, nr, sql );
 		buf = NEW_ARRAY(char, BUFSIZ+1);
 		if (s->op1.stval->nrcols || s->op2.stval->nrcols ){
-/*
-		  	if (!s->op1.stval->nrcols){
-				int n = (*nr)++; 
-		  		len += snprintf( buf+len, BUFSIZ-len, 
-		    		"var s%d := [s%d ~ s%d];\n", n, r, l ); 
-				l = n;
-		  	}
-		  	if (!s->op2.stval->nrcols){
-				int n = (*nr)++; 
-		  		len += snprintf( buf+len, BUFSIZ-len, 
-		    		"var s%d := [s%d ~ s%d];\n", n, l, r ); 
-				r = n;
-		  	}
-*/
 		  	len += snprintf( buf+len, BUFSIZ-len, 
 		    	"var s%d := [%s](s%d,s%d);\n", 
 			-s->nr, s->op4.funcval->func->imp, l, r );
@@ -833,14 +819,6 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		    for (n = s->op1.stval->op1.lval->h; n; n=n->next){
 			stmt *op = n->data;
 			int n = op->nr;
-/*
-		  	if (!op->nrcols){
-				n = (*nr)++; 
-		  		len = snprintf( buf, BUFSIZ, 
-		    		"var s%d := [ s%d ~ s%d];\n", n, h->nr, op->nr); 
-				write_part(sql,buf,len);
-		  	}
-*/
 			opslen += snprintf(ops+opslen, BUFSIZ-opslen, 
 			 "%cs%d", (opslen)?',':' ', n);
 		    }
@@ -915,17 +893,9 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		int l = backend_dumpstmt_( s->op1.stval, nr, sql );
 		int r = backend_dumpstmt_( s->op2.stval, nr, sql );
 		buf = NEW_ARRAY(char, BUFSIZ+1);
-		/*
-		if (s->op2.stval->nrcols){
-		*/
-			len = snprintf( buf, BUFSIZ, 
-		  	"var s%d := append(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
-		/*
-		} else {
-			len = snprintf( buf, BUFSIZ, 
-		  	"var s%d := append(s%d,s%d);\n", -s->nr, l, r);
-		}
-		*/
+		len = snprintf( buf, BUFSIZ, 
+		   	"var s%d := append(s%d.access(BAT_WRITE),s%d);\n", 
+			-s->nr, l, r);
 		dump(sql,buf,len,-s->nr);
 		_DELETE(buf);
 	} break;

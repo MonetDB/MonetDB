@@ -853,6 +853,7 @@ void sqltypeinit()
 		sql_create_func("sql_div","/", *t, *t, *t, SCALE_SUB);
 		sql_create_func("sql_max","max", *t, *t, *t, SCALE_FIX);
 		sql_create_func("sql_min","min", *t, *t, *t, SCALE_FIX);
+		sql_create_func("sql_mod","%", *t, *t, *t, SCALE_FIX);
 		sql_create_func("and","and", *t, *t, *t, SCALE_FIX);
 		sql_create_func("or","or", *t, *t, *t, SCALE_FIX);
 		sql_create_func("xor","xor", *t, *t, *t, SCALE_FIX);

@@ -388,7 +388,7 @@ int parse_line( unsigned char *line )
 			while (*line && isdigit(*line)) 
 				line++;
 			esc = 0;
-		} else if (ins &&  *line == '\''){
+		} else if (*line == '\'' && ins){
 			ins = 0;
 		} else if (*line == '\\'){
 			if (!ins && line[1] == 'q')

@@ -2604,6 +2604,7 @@ static void clean_table_result(res_table *t)
 void mvc_clean_result( mvc *m, res_table *t)
 {
 	res_table *r = m->results;
+
 	if (r == t){
 		m->results = t->next;
 	} else {
