@@ -527,6 +527,8 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 					go = !go;
 					break;
 				}
+				if (ibuf != sqlc->buf)
+					sqlc->buf[-1] = '\0';
 				while (ibuf[0] == '\n') ibuf++;
 				if ( stream_write( out, ibuf, strlen(ibuf), 1) != 1){
 					go = !go;
