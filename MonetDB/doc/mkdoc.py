@@ -11,7 +11,14 @@ dstdir is the top of the installation tree.''' % sys.argv[0]
 srcdir = sys.argv[1]
 dstdir = sys.argv[2]
 
-mx = os.path.join(dstdir, 'bin', 'Mx')
+# Here a hack to make this work on Windows:
+# The command name cannot have any spaces, not even quoted, so we
+# can't use (as we used to) os.path.join(dstdir, 'bin', 'Mx') for the
+# value of mx.  Instead we add the bin directory to the beginning of
+# the command search path.  We assume there is a PATH in the
+# environment, but that doesn't seem like to big an assumption.
+os.environ['PATH'] = os.path.join(dstdir, 'bin') + os.pathsep + os.environ['PATH']
+mx = 'Mx'
 
 # figure out a place for temporary files
 import tempfile
