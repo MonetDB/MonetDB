@@ -227,18 +227,18 @@ is the default in V5.
 @c
 		if (cmd==NULL) {
 			int i=0;
-			char *name = (char*) GDKmalloc(BLOCK), *user = name,*s;
+			char *cmd = (char*) GDKmalloc(BLOCK), *user = cmd,*s;
 			int blocked=0;
 			stream *fdin = socket_rastream(msgsock, "Mserver mapi read");
 			stream *fdout= NULL;
 
-			assert(name);
-			memset(name,0,BLOCK);
+			assert(cmd);
+			memset(cmd,0,BLOCK);
 			if (fdin == 0 || stream_errnr(fdin) ){
 				GDKsyserror("MAPIlisten:fdin problems\n");
 				continue;
 			}
-			/* get user name */
+			/* get user:[key:]passwd:lang[:blocked] cmd */
 			stream_read(fdin, user, 1, 1);
 			for(i=0; !stream_errnr(fdin) && i<BLOCK && *user != '\n'; i++){
 				user++;
@@ -252,33 +252,29 @@ is the default in V5.
 			}
 			*user=0;
 #ifdef DEBUG_MAPI
-                        printf("mapi:Client accepted %s\n", name);fflush(stdout);
+            printf("mapi:Client accepted %s\n", cmd);fflush(stdout);
 #endif
-                        s= strrchr(name,':');
-                        blocked= s && strncmp(s,":blocked",8)==0;
-                        if( blocked){
+            s= strrchr(cmd,':');
+            blocked= s && strncmp(s,":blocked",8)==0;
+            if( blocked){
 #ifdef DEBUG_MAPI
-                                printf("mapi:use blocked mode\n");fflush(stdout);
+            	printf("mapi:use blocked mode\n");fflush(stdout);
 #endif
-                                *s=0;
-                                fdin= block_stream(stream_rstream(fdin));
-                                fdout= block_stream(socket_wstream(msgsock, "Mserver mapi write"));
-                        } else
-                                fdout= socket_wastream(msgsock,"Mserver mapi write");
-			/* remove password (eventually we have to
-			   check the password, for now ignore it) */
-			s = strchr(name, ':');
-			if (s != NULL)
-				*s = 0;
+                *s=0;
+                fdin= block_stream(stream_rstream(fdin));
+                fdout= block_stream(socket_wstream(msgsock, "Mserver mapi write"));
+            } else {
+                fdout= socket_wastream(msgsock,"Mserver mapi write");
+			}
 
 			if (fdout == 0){
 				GDKsyserror("MAPIlisten:fdout problems\n");
 				continue;
 			}
 #ifdef DEBUG_MAPI
-			THRprintf(GDKerr,"MAPIlisten:client accepted %s\n", name);
+			THRprintf(GDKerr,"MAPIlisten:client accepted %s\n", cmd);
 #endif
-			scheduleClient(name,fdin,fdout);
+			scheduleClient(cmd,bstream_create(fdin,blocked?128*BLOCK:0),fdout);
 			/* sent commend to client */
 		} else {
 @-
