@@ -18,8 +18,6 @@ var pre  := view_bbp_name.copy.rename("pre");
 # on both the original BAT and the view BAT
 b.histogram.print;
 c.histogram.print;
-b.accbuild(hash);
-c.accbuild(hash);
 
 # remove both the view BAT and the original BAT
 c := 0;

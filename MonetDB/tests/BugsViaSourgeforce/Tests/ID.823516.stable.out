@@ -10,14 +10,14 @@ stdout of test 'ID.823516` in directory 'tests/BugsViaSourgeforce` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 module(xtables);
 
-var b := new(oid, int);
+var b := new(oid, int).rename("b");
 b.insert(oid(1), 1);
 b.insert(oid(2), 2);
 b.insert(oid(3), 3);
 b.access(BAT_READ);
 
 # Create a view bat
-var c := b.select(int(nil), int(nil));
+var c := b.select(int(nil), int(nil)).rename("c");
 
 print(b.info,c.info);
 #-----------------------------------------------------------------#
@@ -25,7 +25,7 @@ print(b.info,c.info);
 # (str)				  (str)		| (str)		  #
 #-----------------------------------------------------------------#
 [ "version",			  "980714",	  "980714"	  ]
-[ "batId",			  "tmp_29",	  "tmp_30"	  ]
+[ "batId",			  "b",		  "c"		  ]
 [ "batCacheid",			  "29",		  "30"		  ]
 [ "batParentid",		  "0",		  "29"		  ]
 [ "batSharecnt",		  "1",		  "1"		  ]
@@ -61,7 +61,7 @@ print(b.info,c.info);
 [ "batHole",			  "0",		  "0"		  ]
 [ "top",			  "4",		  "4"		  ]
 [ "batStamp",			  "-175",	  "-176"	  ]
-[ "lastUsed",			  "4006",	  "4044"	  ]
+[ "lastUsed",			  "4006",	  "4053"	  ]
 [ "keepAround",			  "0",		  "0"		  ]
 [ "curStamp",			  "177",	  "180"		  ]
 [ "batCopiedtodisk",		  "0",		  "0"		  ]
@@ -109,7 +109,7 @@ print(b.info,c.info);
 [ "tail_index",			  "absent",	  "absent"	  ]
 
 # save the list of BATs
-var pre  := view_bbp_name.copy;
+var pre  := view_bbp_name.copy.rename("pre");
 
 # build a histogram (accellerator) 
 # on both the original BAT and the view BAT
@@ -135,17 +135,17 @@ c := 0;
 b := 0;
 
 # check, which BATs still exist
-var post := view_bbp_name.copy;
+var post := view_bbp_name.copy.rename("post");
 
 # both the original BAT and the view BAT
 # are gone. correct.
 kdiff(pre,post).print;
-#-------------------------#
-# BAT:	  tmp_29	  #
-# (int)	  (str)		  #
-#-------------------------#
-[ 29,	  "tmp_29"	  ]
-[ 30,	  "tmp_30"	  ]
+#-----------------#
+# h	tmp_29	  # name
+# int	str	  # type
+#-----------------#
+[ 29,	  "b"	  ]
+[ 30,	  "c"	  ]
 
 # the post BAT is new. correct.
 # the histogram-accellerator BAT of the view 
@@ -155,7 +155,7 @@ kdiff(post,pre).print;
 # BAT:	  tmp_29	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 28,	  "tmp_28"	  ]
+[ 28,	  "pre"		  ]
 
 # 17:26:11 >  
 # 17:26:11 >  Done.
