@@ -264,12 +264,10 @@ dlist *dlist_append_symbol(dlist * l, symbol * data)
 dlist *dlist_append_atom(dlist * l, atom * data)
 {
 	dnode *n = dnode_create_atom(data);
-	printf("dlist_append_atom\n");
 	return dlist_append_default(l, n);
 }
 dlist *dlist_append_type(dlist * l, sql_subtype * data)
 {
 	dnode *n = dnode_create_type(data);
-	printf("dlist_append_type\n");
 	return dlist_append_default(l, n);
 }
