@@ -58,7 +58,7 @@ include "chopper";
 include "transaction";
 #include "sql_server";
 #include "sql";
-include "mil_algebra_procs";
+include "mil_schema";
 @-
 In practice, we have to introduce different startup for each
 client group or database.

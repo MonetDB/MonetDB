@@ -119,8 +119,8 @@ c tails and stores it in b. This case is detected by operatorModifier();
 #include "multiplex.h"
 #define REALLY_REALLY_BIG	2000000000
 
-/* #define DEBUG_MULTIPLEX */
-/* #define TRACE_MULTIPLEX  */
+/* #define DEBUG_MULTIPLEX  */
+/* #define TRACE_MULTIPLEX   */
 static int multiplexDebug=0;
 
 static int batcalcTypeCheck(str operator, int type);
@@ -209,7 +209,6 @@ Constants passed into the multiplex operator are a special case.
 			if( getHeadType(t) != TYPE_any) {
 				first= FALSE;
 				tpe= getHeadType(t);
-				if ( tpe== TYPE_void) tpe= TYPE_oid;
 			}
 		} else{
 @-
@@ -218,10 +217,12 @@ They are conformable in the current implementation with respect to
 join compatability
 @c
 			int t2= getHeadType(t);
-			if( t2 == TYPE_void) t2 = TYPE_oid;
-			if( t2 != tpe)
-			GDKerror("multiplexType:BAT head types differ in %s[%d]\n",
-				 functionName(pci), getPC(mb,pci));
+			if( !( (tpe == TYPE_void && t2 == TYPE_oid) ||
+			       (tpe == TYPE_oid && t2 == TYPE_void) ) ){
+				if( t2 != tpe)
+				GDKerror("multiplexType:BAT head types differ in %s[%d]\n",
+					 functionName(pci), getPC(mb,pci));
+			}
 		}
 		tt = getTailType(t);
 	    } else {

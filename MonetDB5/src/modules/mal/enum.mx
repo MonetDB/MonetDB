@@ -316,7 +316,7 @@ str ENUMreload(int *retval, int bid) {
 	BAT *h;
 
 	@:getBATdescriptor(retval,&bid,h,load)@
-	MT_set_lock(mal_contextLock, "ENUMload");
+	mal_set_lock(mal_contextLock, "ENUMload");
 	for(i=0; i<MAX_ENUM; i++) {
 		if (ENUMmap[i] == 0) {
 			char *name = h->batId;
@@ -333,11 +333,11 @@ str ENUMreload(int *retval, int bid) {
 			ENUMmap[i] = h->batCacheid;
 			BBPfix(h->batCacheid);
 			*retval = h->batCacheid;
-			MT_unset_lock(mal_contextLock, "ENUMload");
+			mal_unset_lock(mal_contextLock, "ENUMload");
 			return MAL_SUCCEED;
 		}
 	}
-	MT_unset_lock(mal_contextLock, "ENUMload");
+	mal_unset_lock(mal_contextLock, "ENUMload");
 	return throwMessage("enum.load"," too many active enum types.");
 }
 
@@ -391,13 +391,13 @@ str ENUMdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) stk; /* fool compiler */
 	tpe= getArgType(mb,pci,1);
 	@:enumCheck(tpe, ENUMdestroy)@
-	MT_set_lock(mal_contextLock, "ENUMdestroy");
+	mal_set_lock(mal_contextLock, "ENUMdestroy");
 	ATOMdelete(tpe);
 	BBPunfix(ENUMmap[xx]);
 	ENUMhisto[xx] = 0;
 	ENUMmap[xx] = 0;
 	ENUMtpe[xx] = 0;
-	MT_unset_lock(mal_contextLock, "ENUMdestroy");
+	mal_unset_lock(mal_contextLock, "ENUMdestroy");
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
