@@ -28,7 +28,7 @@ dir("tmp");
 # name		| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-----------------------------------------------------------------------------------------------------------------#
 [ "tmp_29",	  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
-[ "tmp_30",	  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_30",	  "void", "int",  1000000,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 
 i := 0;
 mem_maxsize(lng(10*1024*1024));
@@ -51,91 +51,91 @@ while(i < 10) {
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "b_1",  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "b_1",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 [ "DIR" ]
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "b_1",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_2",  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_2",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 [ "DIR" ]
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "b_1",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_2",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_3",  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_3",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 [ "DIR" ]
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "b_1",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_2",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_3",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_4",  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_4",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 [ "DIR" ]
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "b_1",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_2",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_3",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_4",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_5",  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_4",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_5",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 [ "DIR" ]
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "b_1",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_2",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_3",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_4",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_5",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_6",  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_4",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_5",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_6",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 [ "DIR" ]
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "b_1",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_2",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_3",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_4",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_5",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_6",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_7",  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_4",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_5",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_6",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_7",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 [ "DIR" ]
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "b_1",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_2",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_3",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_4",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_5",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_6",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_7",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_8",  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_4",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_5",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_6",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_7",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_8",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 [ "DIR" ]
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "b_1",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_2",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_3",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_4",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_5",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_6",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_7",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_8",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_9",  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_4",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_5",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_6",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_7",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_8",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_9",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 
 proc countall {
@@ -150,16 +150,16 @@ dir("b_");
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "b_1",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_10", "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
-[ "b_2",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_3",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_4",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_5",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_6",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_7",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_8",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_9",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_10", "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_4",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_5",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_6",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_7",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_8",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_9",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 
 countall(b_1,b_2,b_3,b_4);
 [ 1000000 ]
@@ -171,16 +171,16 @@ dir("b_");
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "b_1",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_10", "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
-[ "b_2",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_3",  "oid",  "int",  1000000,	  0,	  "clean",	  "load", "pers", 0,	  1		  ]
-[ "b_4",  "oid",  "int",  1000000,	  0,	  "clean",	  "load", "pers", 0,	  1		  ]
-[ "b_5",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_6",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_7",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_8",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_9",  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_10", "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "load", "pers", 0,	  1		  ]
+[ "b_4",  "void", "int",  1000000,	  0,	  "clean",	  "load", "pers", 0,	  1		  ]
+[ "b_5",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_6",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_7",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_8",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_9",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 
 quit;
 
