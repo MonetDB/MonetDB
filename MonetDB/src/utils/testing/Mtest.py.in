@@ -47,88 +47,88 @@ Usage:  '''+THISFILE+'''  [options] ( [<dir>] [<tests>] | [<dirs>] )
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         print("""\
--I<exp> : ignore lines matching <exp> during diff (default: -I'"""+dftIGNORE+"""')
--c<num> : use <num> lines of context during diff (default: -c1)
--a<num> : accuracy for diff: 0=lines, 1=words, 2=chars (default: -a1)
+ -I<exp> : ignore lines matching <exp> during diff (default: -I'"""+dftIGNORE+"""')
+ -c<num> : use <num> lines of context during diff (default: -c1)
+ -a<num> : accuracy for diff: 0=lines, 1=words, 2=chars (default: -a1)
 """)
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         print('''\
--t<sec> : timeout: kill (hanging) tests after <sec> seconds;
-    -t0 means no timeout (default: -t60)
--r      : proceed in subdirectories as well (implies 'All`)
+ -t<sec> : timeout: kill (hanging) tests after <sec> seconds;
+            -t0 means no timeout (default: -t60)
+ -r      : proceed in subdirectories as well (implies 'All`)
 
---monetrc=<path>
---MONETRC=<path>
- : location of .monet.conf file; default is the first found of
-        '''+os.getcwd()+os.sep+".monet."+string.split(THISFILE,'.')[0]+'''.conf
-        <TSTSRCBASE>'''+os.sep+".monet."+string.split(THISFILE,'.')[0]+'''.conf
-        '''+os.environ['HOME']+os.sep+".monet."+string.split(THISFILE,'.')[0]+'''.conf
-        '''+path(GetMonetConfig('--prefix')+"/share/Monet/")+"monet."+string.split(THISFILE,'.')[0]+'''.conf
+ --monetrc=<path>
+ --MONETRC=<path>
+         : location of .monet.conf file; default is the first found of
+		'''+os.getcwd()+os.sep+".monet."+string.split(THISFILE,'.')[0]+'''.conf                        
+		<TSTSRCBASE>'''+os.sep+".monet."+string.split(THISFILE,'.')[0]+'''.conf            
+		'''+os.environ['HOME']+os.sep+".monet."+string.split(THISFILE,'.')[0]+'''.conf                               
+		'''+path(GetMonetConfig('--prefix')+"/share/Monet/")+"monet."+string.split(THISFILE,'.')[0]+'''.conf                                                                      
 ''')
 
     if THISFILE == "Mprofile.py":
         print('''\
---CMDLST=<path>
- : location of .Mprofile-commands.lst file; default is the first found of
-        '''+os.getcwd()+os.sep+'''.Mprofile-commands.lst
-        <TSTSRCBASE>'''+os.sep+'''.Mprofile-commands.lst
-        '''+os.environ['HOME']+os.sep+'''.Mprofile-commands.lst
-        '''+path(GetMonetConfig('--prefix')+"/share/Monet/")+'''Mprofile-commands.lst
+ --CMDLST=<path>
+         : location of .Mprofile-commands.lst file; default is the first found of
+		'''+os.getcwd()+os.sep+'''.Mprofile-commands.lst                        
+		<TSTSRCBASE>'''+os.sep+'''.Mprofile-commands.lst            
+		'''+os.environ['HOME']+os.sep+'''.Mprofile-commands.lst                               
+		'''+path(GetMonetConfig('--prefix')+"/share/Monet/")+'''Mprofile-commands.lst                                                                      
 ''')
 
     if THISFILE == "Mapprove.py":
         print('''\
--x<ext> : consider only output files *.<ext><sys> (<ext> = 'out' or 'err')
-    (default: <ext> = 'out' & 'err')
--s<sys> : consider only output files *.<ext><sys>
-    (<sys> = '', '.'''+OS+"', '."+OSVER+"', '."+OSVER+'''.(32|64)bit,'
-             or any of these plus suffix '.STATIC')
-    (default: <sys> = '')
--r      : proceed in subdirectories as well (implies 'All`)
+ -x<ext> : consider only output files *.<ext><sys> (<ext> = 'out' or 'err')
+            (default: <ext> = 'out' & 'err')
+ -s<sys> : consider only output files *.<ext><sys> 
+            (<sys> = '', '.'''+OS+"', '."+OSVER+"', '."+OSVER+'''.(32|64)bit,'
+                     or any of these plus suffix '.STATIC')
+            (default: <sys> = '')
+ -r      : proceed in subdirectories as well (implies 'All`)
 ''')
 
     print('''\
---MONET_SOURCE=<abspath>
---MONET_BUILD=<abspath>
---MONET_PREFIX=<abspath>
---SQL_PREFIX=<abspath>
---TSTSRCBASE=<abspath>
---TSTBLDBASE=<abspath>
---TSTTRGBASE=<abspath>
-     : overrule defaults:
-            MONET_SOURCE='''+GetMonetConfig('--source')+'''
-            MONET_BUILD='''+GetMonetConfig('--build')+'''
-            MONET_PREFIX='''+GetMonetConfig('--prefix')+'''
-            SQL_PREFIX='''+SQLprefix+'''
-            TSTSRCBASE=<MONET_SOURCE>
-            TSTBLDBASE=<MONET_BUILD>
-            TSTTRGBASE=<MONET_PREFIX>
+ --MONET_SOURCE=<abspath>
+ --MONET_BUILD=<abspath>
+ --MONET_PREFIX=<abspath>
+ --SQL_PREFIX=<abspath>
+ --TSTSRCBASE=<abspath>
+ --TSTBLDBASE=<abspath>
+ --TSTTRGBASE=<abspath>
+         : overrule defaults:
+		MONET_SOURCE='''+GetMonetConfig('--source')+'''
+		MONET_BUILD='''+GetMonetConfig('--build')+'''
+		MONET_PREFIX='''+GetMonetConfig('--prefix')+'''
+		SQL_PREFIX='''+SQLprefix+'''
+		TSTSRCBASE=<MONET_SOURCE>
+		TSTBLDBASE=<MONET_BUILD>
+		TSTTRGBASE=<MONET_PREFIX>
 ''')
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         print('''\
---MAPICLIENT=<mapi-client program call>
---SQLCLIENT=<sql-client program call>
---MAPIPORT=<host-name:port-no.>
---SQLPORT=<portno.>
- : overrule defaults:
-        MAPICLIENT='''+dft['MAPICLIENT']+'''
-        SQLCLIENT='''+dft['SQLCLIENT']+'''
-        MAPIPORT='''+dft['MAPIPORT']+'''
-        SQLPORT='''+dft['SQLPORT']+'''
+ --MAPICLIENT=<mapi-client program call>
+ --SQLCLIENT=<sql-client program call>
+ --MAPIPORT=<host-name:port-no.>
+ --SQLPORT=<portno.>
+         : overrule defaults:
+		MAPICLIENT='''+dft['MAPICLIENT']+'''
+		SQLCLIENT='''+dft['SQLCLIENT']+'''
+		MAPIPORT='''+dft['MAPIPORT']+'''
+		SQLPORT='''+dft['SQLPORT']+'''
 ''')
 
     print('''\
-<dir>   : if present, '''+THISFILE+''' behaves as if called in <dir>
-<tests> : list of tests to be processed; if none or 'All` is given,
-        all tests listed in 'Tests/All` are processed
-        (defaults to 'All` if -r is used)
-<dirs>  : list of directories to be processed; if present, '''+THISFILE+'''
-        processes 'All` tests in each directory of <dirs>; -r may be used also
+ <dir>   : if present, '''+THISFILE+''' behaves as if called in <dir>
+ <tests> : list of tests to be processed; if none or 'All` is given,
+            all tests listed in 'Tests/All` are processed
+            (defaults to 'All` if -r is used)
+ <dirs>  : list of directories to be processed; if present, '''+THISFILE+'''
+            processes 'All` tests in each directory of <dirs>; -r may be used also
 
-     See  '''+path(GetMonetConfig('--source')+"/src/utils/testing/")+'''README
-     for details about  '''+THISFILE+'''.
+         See  '''+path(GetMonetConfig('--source')+"/src/utils/testing/")+'''README
+         for details about  '''+THISFILE+'''.
 ''')
 ### Usage () #
 
@@ -212,8 +212,8 @@ def CreateHtmlIndex (env) :
             f.write("<FONT COLOR=#000000>"+OSVER+"</FONT>")
             #TODO ?
             #f.write("""\
-            #<A HREF='.$THISFILE.Master.Log.OutErr' TARGET='${OSVER}_${TSTDIR}_body'><FONT COLOR=#000000>$OSVER</FONT></A>
-            #""")
+			#<A HREF='.$THISFILE.Master.Log.OutErr' TARGET='${OSVER}_${TSTDIR}_body'><FONT COLOR=#000000>$OSVER</FONT></A>
+			#""")
         f.write("</FONT></TH>\n")
         for l in BODY:
             f.write(l)
@@ -324,11 +324,11 @@ of
 in
 <A HREF='./' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>"""+TSTDIR+"""</A>
 (<A HREF='"""+URLPREFIX+url(TSTDIR)+"/"+TSTSUFF+URLSUFFIX_D+"""' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>CVS</A>,
-<A HREF='"""+url(env['RELSRCDIR'])+"""' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>SRC</A>""")
+ <A HREF='"""+url(env['RELSRCDIR'])+"""' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>SRC</A>""")
     for d in env['RELBLDDIR'], os.path.dirname(env['RELBLDDIR']), env['RELBLDBASE']:
         if os.path.isdir(d):
             f.write(""",
-<A HREF='"""+url(d)+"""' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>BLD</A>""")
+ <A HREF='"""+url(d)+"""' TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>BLD</A>""")
     f.write(""").
 </FONT>
 </CENTER>
@@ -351,7 +351,7 @@ def CreateSrcIndex (env, TST, EXT) :
 <FRAMESET ROWS='54,*' FRAMEBORDER=yes BORDER=1 BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
 <FRAME SRC='."""+TST+""".src.index.head.html' SCROLLING=auto NAME='"""+OSVER+"_"+TSTDIR+"_"+TST+"""_head' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
 <FRAME SRC='"""+URLPREFIX+url(TSTDIR)+"/"+TSTSUFF+"/"+TST+EXT+URLSUFFIX_F+"""'
-SCROLLING=auto NAME='"""+OSVER+"_"+TSTDIR+"_"+TST+"""_body' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
+  SCROLLING=auto NAME='"""+OSVER+"_"+TSTDIR+"_"+TST+"""_body' FRAMEBORDER=yes BORDERCOLOR=#ffffff MARGINWIDTH=0 MARGINHEIGHT=0>
 </FRAMESET>
 </HTML>
 """)
@@ -370,8 +370,8 @@ SCROLLING=auto NAME='"""+OSVER+"_"+TSTDIR+"_"+TST+"""_body' FRAMEBORDER=yes BORD
         if len(s) >= len(TST)  and  s[:len(TST)] == TST:
             f.write("""\
 <TD><FONT FACE='helvetica, arial'>
-<A HREF='"""+URLPREFIX+url(TSTDIR)+"/"+TSTSUFF+"/"+s+URLSUFFIX_F+"""'
-TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_body'>"+s+"""</A></FONT></TD>
+  <A HREF='"""+URLPREFIX+url(TSTDIR)+"/"+TSTSUFF+"/"+s+URLSUFFIX_F+"""'
+    TARGET='"""+OSVER+"_"+TSTDIR+"_"+TST+"_body'>"+s+"""</A></FONT></TD>
 """)
     f.write("""\
 </TR>
@@ -1919,31 +1919,31 @@ def main(argv) :
         if failed:
             print("""\
 
-!ERROR:  Testing FAILED !
+ !ERROR:  Testing FAILED ! 
 
-First, check the testing results in  """+env['TSTTRGBASE']+os.sep+TSTPREF+os.sep+"index.html"+"""  !
+ First, check the testing results in  """+env['TSTTRGBASE']+os.sep+TSTPREF+os.sep+"index.html"+"""  ! 
 
-Then, fix the problems by:
-- fixing sources and test scripts
-- fixing stable output by hand
-- approving test output by Mapprove.py (cf. Mapprove.py -?)
+ Then, fix the problems by: 
+  - fixing sources and test scripts 
+  - fixing stable output by hand 
+  - approving test output by Mapprove.py (cf. Mapprove.py -?) 
 
-After that, re-run Mtest.
+ After that, re-run Mtest. 
 """)
         else:
             print("""\
 
-No differences encountered during testing.
+ No differences encountered during testing. 
 
-If necessary, you can checkin your modifications, now.
+ If necessary, you can checkin your modifications, now. 
 """)
 
     if THISFILE == "Mapprove.py":
         print("""\
 
-First, run 'cvs -q diff` to check what you have changed.
+ First, run 'cvs -q diff` to check what you have changed.
 
-Then, re-run Mtest.py.
+ Then, re-run Mtest.py.
 """)
 ### main(argv) #
 
