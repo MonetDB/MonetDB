@@ -6,7 +6,7 @@ stdout of test 'trim` in directory 'tests/by_Peter` itself:
 # 00:48:13 >  
 
 # Monet Database Server V4.3.13
-# Copyright (c) 1993-2003, CWI. All rights reserved.
+# Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 var k1 := new(void,int,1000);
 var i := 0;

@@ -35,7 +35,7 @@ quit;
 # 14:00:26 >  
 
 # Monet Database Server V4.3.11
-# Copyright (c) 1993-2003, CWI. All rights reserved.
+# Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(10000000));
 t:= car_class.select("damage");
@@ -74,7 +74,7 @@ quit;
 # 14:00:27 >  
 
 # Monet Database Server V4.3.11
-# Copyright (c) 1993-2003, CWI. All rights reserved.
+# Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 module(enum,str);
 
@@ -172,7 +172,7 @@ quit;
 # 14:00:28 >  
 
 # Monet Database Server V4.3.11
-# Copyright (c) 1993-2003, CWI. All rights reserved.
+# Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 module(enum);

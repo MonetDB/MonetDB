@@ -6,7 +6,7 @@ stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 # 18:31:54 >  
 
 # Monet Database Server V4.3.13
-# Copyright (c) 1993-2003, CWI. All rights reserved.
+# Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #
 # This program should select the valuesA that are larger than 20 and smaller

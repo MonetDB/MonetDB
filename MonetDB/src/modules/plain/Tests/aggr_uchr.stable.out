@@ -6,7 +6,7 @@ stdout of test 'aggr_uchr` in directory 'src/modules/plain` itself:
 # 17:45:02 >  
 
 # Monet Database Server V4.3.9
-# Copyright (c) 1993-2003, CWI. All rights reserved.
+# Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 module("aggr");
 test_aggr_uchr();

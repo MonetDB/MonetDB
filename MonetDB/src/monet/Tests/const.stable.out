@@ -6,7 +6,7 @@ stdout of test 'const` in directory 'src/monet` itself:
 # 18:26:24 >  
 
 # Monet Database Server V4.3.13
-# Copyright (c) 1993-2003, CWI. All rights reserved.
+# Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 PROC plus( int a, int b ) : int {RETURN a + b; }
 PROC PLUS( bat[void,int] a, bat[void,int] b ): bat[void,int] {RETURN [plus](a, b); }

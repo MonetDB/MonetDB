@@ -6,7 +6,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 # 16:53:23 >  
 
 # Monet Database Server V4.3.9
-# Copyright (c) 1993-2003, CWI. All rights reserved.
+# Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(20000000);
 
