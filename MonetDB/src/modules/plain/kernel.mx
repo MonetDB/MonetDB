@@ -22,11 +22,11 @@
 
 @* Introduction
 Apart from its grammatical structure, described in the
-@[<a href="../../../FrontEnds/mil/index.html">MIL Manual</a>@, MIL is just a set 
-of commands. When MIL is bootstrapped, this set of commands 
-is the empty set. 
+@[<a href="../../../FrontEnds/mil/index.html">MIL Manual</a>@, MIL is just a set
+of commands. When MIL is bootstrapped, this set of commands
+is the empty set.
 
-Commands are introduced by extension modules. 
+Commands are introduced by extension modules.
 This module is loaded at server startup, and is always
 present. The commands it defines are of type BUILTIN and
 cannot be overloaded. Several other modules are loaded
@@ -38,9 +38,9 @@ their commands @%can@ be overloaded.
 
 This module
 contains built-in primitives that cannot be overloaded. They are
-mostly meta operations on MIL, or concern themselves with thread 
+mostly meta operations on MIL, or concern themselves with thread
 or MIL session management. And of course, the commands for
-loading and unloading new modules. 
+loading and unloading new modules.
 
 @* MEL Definition
 @m
@@ -48,7 +48,7 @@ loading and unloading new modules.
 
 @+ Module management
 @m
-.BUILTIN module(str modname, ...str...) = CMDmodule; 
+.BUILTIN module(str modname, ...str...) = CMDmodule;
 "Loads Monet extension modules (previously installed with Minstall)
  into a running Mserver.
  After this, you will be able to use new Atoms (e.g. polygon), Search
@@ -56,36 +56,36 @@ loading and unloading new modules.
  (e.g. B.nearloop(rect) {}).
  You can either load modules installed by yourself or by the system
  administrator (adm)
- 
+
  In command-line mode, you can save typing the \" (providing the
  resulting identifier does not collide with another MIL keyword)."
 
 .BUILTIN drop(str modname, ...str...) = CMDdrop;
 "Unloads Monet extension modules (previously loaded with MODULE())
  You can only unload modules installed by yourself.
- 
+
  In command-line mode, you can save typing the \" (though this often
  will collide with a MIL keyword)."
 
 .BUILTIN mod() : str = CMDmodule_peek;
-"During module loading a module stack is kept. This function returns the top module" 
+"During module loading a module stack is kept. This function returns the top module"
 
 .BUILTIN module_push(str modname) = CMDmodule_enter;
-"During module loading a variable module is set to the current module name. The previous module is pushed onto a stack" 
+"During module loading a variable module is set to the current module name. The previous module is pushed onto a stack"
 
 .BUILTIN module_pop() = CMDmodule_exit;
-"During module loading a variable module is set to the current module name. At the end of a module load the enclosing module is popped from a stack" 
+"During module loading a variable module is set to the current module name. At the end of a module load the enclosing module is popped from a stack"
 
 @+ Basic Value Manipulation
 @m
-.BUILTIN type(any v) : int = CMDtype; 
+.BUILTIN type(any v) : int = CMDtype;
 "Return the type of a value (expression). Returns an type number.
  TIP: use the monet_atomtbl BAT to translate type numbers to strings."
 
-.BUILTIN "[cast]" (bat[any::1,any] v, int type_specifier) : bat[any::1,any] = CMDbatcast; 
+.BUILTIN "[cast]" (bat[any::1,any] v, int type_specifier) : bat[any::1,any] = CMDbatcast;
 "Cast values explicitly, using an integer-expression as type specifier."
 
-.BUILTIN cast(any v, int type_specifier) : any = CMDcast; 
+.BUILTIN cast(any v, int type_specifier) : any = CMDcast;
 "Cast values explicitly, using an integer-expression as type specifier."
 
 .BUILTIN newoid(int range) : oid = CMDnewoid;
@@ -102,7 +102,7 @@ loading and unloading new modules.
 .BUILTIN varval(str) : any = CMDvarval;
 "(invoked on a simple variable): returns the variable name."
 
-.BUILTIN constant(IDENT varname, ..IDENT... ) = CMDconstant; 
+.BUILTIN constant(IDENT varname, ..IDENT... ) = CMDconstant;
 "Fix both type and value of a number of MIL variables."
 
 .BUILTIN freeze(IDENT varname, ..IDENT...) = CMDfreeze;
@@ -112,22 +112,22 @@ loading and unloading new modules.
 "assign (introduce) a variable by string name."
 
 @+ Session Management
-The Monet server operates a number of interpreter threads that server client 
-request. Clients connect to the database, allocating interpreter resources 
-(variable stacks, client session records, computation time on the 
+The Monet server operates a number of interpreter threads that server client
+request. Clients connect to the database, allocating interpreter resources
+(variable stacks, client session records, computation time on the
 interpreter threads).
-Every new client session implicitly creates a new thread. Every ending 
+Every new client session implicitly creates a new thread. Every ending
 client session kills one implicitly. Note that there is
-a difference between killing a client session (kill(client)) and killing a 
-thread (threadcnt(-1)). The first action deletes a number of jobs from the 
-jobqueue, and interrupts the threads serving a client, whereas the killing 
-of a threads just decreases the number of workers; it does not delete 
-any client activity. 
+a difference between killing a client session (kill(client)) and killing a
+thread (threadcnt(-1)). The first action deletes a number of jobs from the
+jobqueue, and interrupts the threads serving a client, whereas the killing
+of a threads just decreases the number of workers; it does not delete
+any client activity.
 @m
 .BUILTIN prompt(str prompt) = CMDprompt;
 "Change the MIL client prompt string."
 
-.BUILTIN clientid() : int = CMDclientid; 
+.BUILTIN clientid() : int = CMDclientid;
 "Returns your integer session id. On the Mserver console, this returns 0."
 
 @- Session Manipulations
@@ -143,22 +143,22 @@ any client activity.
  WARNING: if BAT-modifying operations are killed, we do not
  garuantee *anything*!!"
 
-.BUILTIN fork(STATEMENT) : int = CMDfork; 
-"Open a new client session to execute this request.  
+.BUILTIN fork(STATEMENT) : int = CMDfork;
+"Open a new client session to execute this request.
  FUTURE: forks on remote Mservers.
  Returns new client id."
 
 @- Thread Management
 @m
-.BUILTIN threadcnt(int inc) : int = CMDthreadcnt; 
+.BUILTIN threadcnt(int inc) : int = CMDthreadcnt;
 "Increases or decreases the number of active interpreter threads.
  returns the number of active threads."
 
-.BUILTIN threadid() : int = CMDthreadid; 
+.BUILTIN threadid() : int = CMDthreadid;
 "Returns your the id of the thread running your MIL interpreter."
 
 .BUILTIN runon(STATEMENT, int threadno) = CMDrunon;
-"A statement can be designated to a particular thread 
+"A statement can be designated to a particular thread
  using the runon command."
 
 @+ Queue Management Commands
@@ -174,7 +174,7 @@ any client activity.
 @{
 @{
 @
-.BUILTIN enqueue(STATEMENT) : int 
+.BUILTIN enqueue(STATEMENT) : int
 		= CMDenqueue;
 "Put a piece of MIL into the MIL-queue. Returns the new job-number"
 
@@ -230,7 +230,7 @@ any client activity.
 .BUILTIN whack(int i) : int = CMDwhack;
 "Cut the reference from a BAT in the BBPcache; return its BUN heap pointer."
 
-@- Printing 
+@- Printing
 @m
 .COMMAND print(ANY value) = CMDprint_val;
 "Print a MIL value between square brackets."
@@ -252,15 +252,15 @@ any client activity.
 
 .COMMAND table(INT order, BAT[any::1,any], ...BAT[any::1,any]...) = print_table;
 	"Print an n-ary table. Use the ordering of param [1..argc]"
-	
+
 .COMMAND multitable(BAT[any,bat]) = CMDprint_multitable;
 	"Print an n-ary table contained within a BAT of BATs"
 
 .COMMAND printf(str format, ...) = print_format;
-	"Print a formatted string on the standard client output." 
+	"Print a formatted string on the standard client output."
 
 .COMMAND sprintf(str format, ...) : str = print_str;
-	"Print a formatted string on the standard client output." 
+	"Print a formatted string on the standard client output."
 
 
 .END kernel;
@@ -290,11 +290,11 @@ kernel_export int handle_paramerror(ValPtr res, int param, int actual, int corre
 @c
 #include "kernel.h"
 
-@+ Useful Macros 
+@+ Useful Macros
 The below Mx macros serve to easily  factor out the parameter handling
 in the Monet Command implementations. Since there are two types of commands:
  -- builtin commands, which receive raw YYTREE parse trees as parameters.
- -- standard commands, which receive already evaluated things, i.e. value 
+ -- standard commands, which receive already evaluated things, i.e. value
   records as parameters.
 
 @c
@@ -326,26 +326,28 @@ handle_paramerror(ValPtr res, int param, int actual, int correct)
 @-
 Builtin command argument check.
 @= builtin_args
-if (lt->cnt != @1) {
-	return handle_argerror(res,lt->cnt,@1);
-}
+	if (lt->cnt != @1) {
+		return handle_argerror(res,lt->cnt,@1);
+	}
 
 @= builtin_operand
-{	int _k = interpret(stk, arg(lt, @1), res);
+{
+	int _k = interpret(stk, arg(lt, @1), res);
+
 	if (_k < 0) {
 		return _k;
 	}
 	@3 = VALconvert(@2, res);
 	if (((ptr) @3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
 		return handle_paramerror(res,@1,res->vtype,@2);
-	} 
+	}
 }
 @= return_void
 	res->vtype = TYPE_void;
 	res->val.oval = void_nil;
 
 @+ Module Management
-The builtin command @%CMDmodule@ loads a Monet extension module for 
+The builtin command @%CMDmodule@ loads a Monet extension module for
 that user. Functions and types defined in that module, can then be
 accessed by him her (but not by other users!). The operation
 may involve dynamic loading and linking of extra object code.
@@ -610,7 +612,7 @@ CMDdebug(int stk, YYSTREE lt, ValPtr res)
 }
 
 @- whack a bat
-DEBUGGING ONLY: whack removes the bat reference; to be used in purify 
+DEBUGGING ONLY: whack removes the bat reference; to be used in purify
 sessions to see who created it.
 @c
 int
@@ -676,7 +678,7 @@ CMDfreeze(Cntxt stk, YYSTREE lt, ValPtr res)
 
 
 @- Process Control
-You can now kill clients.They are identified by their number. 
+You can now kill clients.They are identified by their number.
 This is a necessary command for background jobs, but can also
 be used to stop out-of-hand jobs. There is no protection system yet!
 @c
@@ -954,7 +956,7 @@ CMDstop(Cntxt stk, YYSTREE lt, ValPtr res)
 
 
 @+ Session control
-The quit command terminates a session of a single user. 
+The quit command terminates a session of a single user.
 If we are running in embedded mode we may accept a new
 client again.
 @c
@@ -968,7 +970,7 @@ CMDquit(Cntxt stk, YYSTREE lt, ValPtr res)
 	while (c->father >= 0) {
 		c = monet_clients + c->father;
 	}
-/* non-DD semantics! 
+/* non-DD semantics!
 	TMcommit();
 */
 	if (c == monet_clients) {

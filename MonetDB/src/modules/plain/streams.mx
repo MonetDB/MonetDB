@@ -17,9 +17,9 @@
 
 @f streams
 @a Niels Nes
-@* An simple interface to IO streams 
-This interface can be used to open 'non compressed, gzipped, bz2zipped' 
-data files. 
+@* An simple interface to IO streams
+This interface can be used to open 'non compressed, gzipped, bz2zipped'
+data files.
 
 @m
 .MODULE streams;
@@ -27,7 +27,7 @@ data files.
     .ATOM Stream = ptr;
     .END;
 
-.COMMAND stdin() : Stream = io_stdin; 
+.COMMAND stdin() : Stream = io_stdin;
 	"return the input stream to the database client"
 .COMMAND stderr() : Stream = io_stderr;
 	"return the error stream for the database console"
@@ -38,9 +38,9 @@ data files.
 	"open a file stream for reading"
 .COMMAND open_wstream( str filename ) : Stream = stream_open_wstream;
 	"open a file stream for writing"
-.COMMAND open_rastream( str filename ) : Stream = stream_open_rastream; 
+.COMMAND open_rastream( str filename ) : Stream = stream_open_rastream;
 	"open ascii file stream for reading"
-.COMMAND open_wastream( str filename ) : Stream = stream_open_wastream; 
+.COMMAND open_wastream( str filename ) : Stream = stream_open_wastream;
 	"open ascii file stream for writing"
 
 .COMMAND stream_rstream( Stream s ) : Stream = stream_stream_rstream;
@@ -48,16 +48,16 @@ data files.
 .COMMAND stream_wstream( Stream s ) : Stream = stream_stream_wstream;
 	"convert an ascii stream to binary"
 
-.COMMAND socket_rstream( int socket, str name ) : Stream = 
+.COMMAND socket_rstream( int socket, str name ) : Stream =
 	stream_socket_rstream; "open a socket stream for reading"
-.COMMAND socket_wstream( int socket, str name ) : Stream = 
+.COMMAND socket_wstream( int socket, str name ) : Stream =
 	stream_socket_wstream; "open a socket stream for writing"
-.COMMAND socket_rastream( int socket, str name ) : Stream = 
+.COMMAND socket_rastream( int socket, str name ) : Stream =
 	stream_socket_rastream; "open ascii socket stream for reading"
-.COMMAND socket_wastream( int socket, str name ) : Stream = 
+.COMMAND socket_wastream( int socket, str name ) : Stream =
 	stream_socket_wastream; "open ascii socket stream for writing"
 
-.COMMAND block_stream( Stream s ) : Stream = 
+.COMMAND block_stream( Stream s ) : Stream =
 	open_block_stream; "open a block based stream"
 
 .COMMAND stream_write( Stream s, str data ) = stream_write_string;
@@ -75,37 +75,37 @@ data files.
 .COMMAND stream_flush( Stream s ) = stream_flush_stream;
 	"flush the stream"
 
-.COMMAND stream_close( Stream s ) = stream_close_stream; 
+.COMMAND stream_close( Stream s ) = stream_close_stream;
 	"close and destroy the stream s"
 
     .ATOM Bstream = ptr;
     .END;
 
-.COMMAND bstream_create( Stream s, int bufsize ) : Bstream = bstream_create_wrap; 
+.COMMAND bstream_create( Stream s, int bufsize ) : Bstream = bstream_create_wrap;
 	"create a buffered stream"
 
 .COMMAND bstream_destroy( Bstream s ) = bstream_destroy_wrap;
 	"destroy bstream"
 
-.COMMAND bstream_read( Bstream s, int size ) : int = bstream_read_wrap; 
+.COMMAND bstream_read( Bstream s, int size ) : int = bstream_read_wrap;
 	"read atleast size bytes into the buffer of s"
 
-    .COMMAND fprintf( Stream filep, str format, ... ) = io_fprintf; 
+    .COMMAND fprintf( Stream filep, str format, ... ) = io_fprintf;
 	"See: man fprintf"
 
-    .COMMAND ftable( Stream filep, ...BAT[any::1,any]... ) = io_ftable_default; 
+    .COMMAND ftable( Stream filep, ...BAT[any::1,any]... ) = io_ftable_default;
 	"Print an n-ary table to a file."
 
-    .COMMAND ftable( Stream filep, int orderspec, ...BAT[any::1,any]... ) = io_ftable; 
+    .COMMAND ftable( Stream filep, int orderspec, ...BAT[any::1,any]... ) = io_ftable;
 	"Print an n-ary table to a file, using order of BAT [1..argc]."
 
     .COMMAND fwrite( Stream filep, str buf, int nbytes ) = io_fwrite;
 	"See: man fwrite"
 
-    .COMMAND fgets( Stream filep ): str = io_fgets; 
+    .COMMAND fgets( Stream filep ): str = io_fgets;
 	"See: man fgets"
 
-    .COMMAND fgetc( Stream filep ): int = io_fgetc; 
+    .COMMAND fgetc( Stream filep ): int = io_fgetc;
 	"See: man fgetc"
 
 .END streams;
@@ -122,7 +122,7 @@ data files.
 			return open_rastream(filename);
 		} else if (mode.startsWith("w")) {
 			return open_wastream(filename);
-		} 
+		}
 		return Stream(ptr(0));
 	}
 @-
@@ -169,13 +169,16 @@ io_stderr(Stream *ret)
 }
 
 @= open_stream
-int stream_open_@1( Stream *S, str filename ){
+int
+stream_open_@1(Stream *S, str filename)
+{
 	stream *s;
 
-	if ((s = open_@1( filename )) == NULL || stream_errnr(s)){
-		if (s) stream_destroy(s);
-		GDKerror("stream_open: could not open file %s\n", filename );
-		return GDK_FAIL; 
+	if ((s = open_@1( filename )) == NULL || stream_errnr(s)) {
+		if (s)
+			stream_destroy(s);
+		GDKerror("stream_open: could not open file %s\n", filename);
+		return GDK_FAIL;
 	} else {
 		*(stream**)S = s;
 		return GDK_SUCCEED;
@@ -188,7 +191,8 @@ int stream_open_@1( Stream *S, str filename ){
 @:open_stream(wastream)@
 
 @= stream_stream
-int stream_stream_@1(Stream *Sout, Stream *Sin)
+int
+stream_stream_@1(Stream *Sout, Stream *Sin)
 {
 	*(stream**)Sout = stream_@1(*(stream**)Sin);
 	return GDK_SUCCEED;
@@ -198,13 +202,16 @@ int stream_stream_@1(Stream *Sout, Stream *Sin)
 @:stream_stream(wstream)@
 
 @= open_socket
-int stream_socket_@1( Stream *S, int *socket, str name ){
+int
+stream_socket_@1(Stream *S, int *socket, str name)
+{
 	stream *s;
 
-	if ((s = socket_@1( *socket, name )) == NULL || stream_errnr(s)){
-		if (s) stream_destroy(s);
+	if ((s = socket_@1( *socket, name )) == NULL || stream_errnr(s)) {
+		if (s)
+			stream_destroy(s);
 		GDKerror("Could not open socket %s\n", name );
-		return GDK_FAIL; 
+		return GDK_FAIL;
 	} else {
 		*(stream**)S = s;
 		return GDK_SUCCEED;

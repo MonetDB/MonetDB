@@ -31,24 +31,24 @@ the pseudo BAT to a variable.
 
 @- useful procedures
 
-The commands here return BATs that can be easily reused in scripts. 
-For @%interactive use@ there is a collection of 
+The commands here return BATs that can be easily reused in scripts.
+For @%interactive use@ there is a collection of
 @[<a href=#mod_2_1_0><bf>predefined procedures</bf></a>@
 that you might well find very useful.
 
-@* Module Definition 
+@* Module Definition
 @m
 .MODULE sys;
 
 @- Performance Stats
 @m
-.COMMAND view_gdk_cpu() : BAT[str,int] = view_gdk_cpu; 	
+.COMMAND view_gdk_cpu() : BAT[str,int] = view_gdk_cpu;
 	"Global cpu usage info"
-.COMMAND view_gdk_memory(): BAT[str,int] = view_gdk_mem; 
+.COMMAND view_gdk_memory(): BAT[str,int] = view_gdk_mem;
 	"Global memory usage info"
-.COMMAND view_gdk_io(): BAT[str,int] = view_gdk_io; 
+.COMMAND view_gdk_io(): BAT[str,int] = view_gdk_io;
 	"Global IO activityinfo"
-.COMMAND view_gdk_bbp(): BAT[str,int] = view_gdk_bbp; 
+.COMMAND view_gdk_bbp(): BAT[str,int] = view_gdk_bbp;
 	"Global BBP usage info"
 .COMMAND view_gdk_mem_histo() : BAT[lng,lng] = view_gdk_mem_histo;
 	"Global memory histogram"
@@ -75,7 +75,7 @@ C - in use as MIL context buffer (i.e. anonymous virtual memory)
 c - free (last usage was c)
 \end{verbatim}
 On Linux, the malloc library appears to be using anonymous virtual memory, which goes undetected.
-If you want to see all your memory in the map, lower the gdk\_mem\_bigsize threshold in MonetDB.conf to a 
+If you want to see all your memory in the map, lower the gdk\_mem\_bigsize threshold in MonetDB.conf to a
 low value (say 64KB).
 @m
 .COMMAND mem_cursize() : lng = get_mem_cursize;
@@ -102,7 +102,7 @@ low value (say 64KB).
  	"get a split-up of how much memory blocks are in use."
 .COMMAND vm_usage(lng minsize) : BAT[str,lng] = get_vm_usage;
 	"get a split-up of how much virtual memory blocks are in use."
-.COMMAND vm_trim(lng maxsize) : void = vm_trim; 
+.COMMAND vm_trim(lng maxsize) : void = vm_trim;
 	"flush memory maps"
 @T
 Some explanation of what mem\_usage() and vm\_usage() display:
@@ -124,56 +124,56 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 [ "_tot/bbp",            98866 ] BBP metadata structure
 [ "_tot/mil",           102400 ] MIL interpreter stack space
 [ "_tot/found",        2590144 ] buns+head+tail+bbp+mil
-[ "_tot/malloc_heap",  2956048 ] in malloc heap 
+[ "_tot/malloc_heap",  2956048 ] in malloc heap
 [ "_tot/malloc",       2956048 ] total consumed via malloc
-[ "_tot/valloc",        201266 ] total consumed via virtualalloc 
-[ "_tot/mem",          3157314 ] total RAM+swap-file consumption  
+[ "_tot/valloc",        201266 ] total consumed via virtualalloc
+[ "_tot/mem",          3157314 ] total RAM+swap-file consumption
 >
 > vm_usage.print;
 #------------------------------#
 # BAT:               tmp_42    #
 # (str)              (lng)     #
 #------------------------------#
-[ "_tot/bbp",        50331648  ] 50MB reserved (100KB claimed) 
+[ "_tot/bbp",        50331648  ] 50MB reserved (100KB claimed)
 [ "_tot/mil",        16777216  ] 16MB reserved (100KB claimed)
 [ "_tot/found",      67108864  ] bbp+mil
-[ "_tot/vm",         71244560  ] total address space consumption 
+[ "_tot/vm",         71244560  ] total address space consumption
 >
 \end{verbatim}
 
 @- BAT Buffer Pool
 @m
-.COMMAND view_bbp_name(): BAT[int,str] = view_bbp_name; 
+.COMMAND view_bbp_name(): BAT[int,str] = view_bbp_name;
 	"Pseudo bat to map a BAT id into its name"
-.COMMAND view_bbp_htype(): BAT[int,str] = view_bbp_htype; 
+.COMMAND view_bbp_htype(): BAT[int,str] = view_bbp_htype;
 	"Pseudo bat to map a BAT id into its head type"
-.COMMAND view_bbp_ttype(): BAT[int,str] = view_bbp_ttype; 
+.COMMAND view_bbp_ttype(): BAT[int,str] = view_bbp_ttype;
 	"Pseudo bat to map a BAT id into its tail type"
-.COMMAND view_bbp_count(): BAT[int,lng] = view_bbp_count; 
+.COMMAND view_bbp_count(): BAT[int,lng] = view_bbp_count;
 	"Pseudo bat to map a BAT id into its count"
-.COMMAND view_bbp_refcnt(): BAT[int,int] = view_bbp_refcnt; 
+.COMMAND view_bbp_refcnt(): BAT[int,int] = view_bbp_refcnt;
 	"Pseudo bat to map a BAT id into its reference count"
-.COMMAND view_bbp_lrefcnt(): BAT[int,int] = view_bbp_lrefcnt; 
+.COMMAND view_bbp_lrefcnt(): BAT[int,int] = view_bbp_lrefcnt;
 	"Pseudo bat to map a BAT id into its logical reference count"
-.COMMAND view_bbp_location(): BAT[int,str] = view_bbp_location; 
+.COMMAND view_bbp_location(): BAT[int,str] = view_bbp_location;
 	"Pseudo bat to map a BAT id into its disk location"
-.COMMAND view_bbp_heat(): BAT[int,int] = view_bbp_heat; 
+.COMMAND view_bbp_heat(): BAT[int,int] = view_bbp_heat;
 	"Pseudo bat to map a BAT id into its name"
-.COMMAND view_bbp_dirty(): BAT[int,str] = view_bbp_dirty; 
+.COMMAND view_bbp_dirty(): BAT[int,str] = view_bbp_dirty;
 	"Pseudo bat to map a BAT id into its dirty/diffs/clean status"
-.COMMAND view_bbp_status(): BAT[int,str] = view_bbp_status; 
+.COMMAND view_bbp_status(): BAT[int,str] = view_bbp_status;
 	"Pseudo bat to map a BAT id into its disk/load status"
-.COMMAND view_bbp_kind(): BAT[int,str] = view_bbp_kind; 
+.COMMAND view_bbp_kind(): BAT[int,str] = view_bbp_kind;
 	"Pseudo bat to map a BAT id into its type"
 
 .COMMAND check_bbp_size() : lng = check_bbp_size;
 	"Walk the BBP directories, delete leftovers and return total size"
 
-@- GDK status 
+@- GDK status
 @m
-.COMMAND view_gdk_env( ): BAT[str,str] = view_gdk_env; 
+.COMMAND view_gdk_env( ): BAT[str,str] = view_gdk_env;
 	"List the values of all environment variables"
-.COMMAND view_gdk_thread( ): BAT[int,str] = view_gdk_thread; 
+.COMMAND view_gdk_thread( ): BAT[int,str] = view_gdk_thread;
 	"Pseudo bat to map thread to name"
 @- ATOM table status
 @m
@@ -186,34 +186,34 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 
 @- Monet Client Data
 @m
-.COMMAND view_client_name( ): BAT[int,str] = view_client_name; 
+.COMMAND view_client_name( ): BAT[int,str] = view_client_name;
 	"Pseudo bat to map client identifier to its name"
-.COMMAND view_client_login( ): BAT[int,str] = view_client_login; 
+.COMMAND view_client_login( ): BAT[int,str] = view_client_login;
 	"Pseudo bat to map client identifier to its login time"
-.COMMAND view_client_tree( ): BAT[int,str] = view_client_tree; 
+.COMMAND view_client_tree( ): BAT[int,str] = view_client_tree;
 	"Pseudo bat to map client identifier to its current active tree"
 
 @- Monet Variables
 @m
-.BUILTIN view_var_name() : BAT[int,str] = view_var_name; 
+.BUILTIN view_var_name() : BAT[int,str] = view_var_name;
 	"Pseudo bat to map variable id to its name."
-.BUILTIN view_var_type() : BAT[int,str] = view_var_type; 
+.BUILTIN view_var_type() : BAT[int,str] = view_var_type;
 	"Pseudo bat to map variable id to its type (as a string)."
-.BUILTIN view_var_kind() : BAT[int,str] = view_var_kind; 
+.BUILTIN view_var_kind() : BAT[int,str] = view_var_kind;
 	"Pseudo bat to map variable id to frozen/liquid"
-.BUILTIN view_var_constant() : BAT[int,str] = view_var_constant; 
+.BUILTIN view_var_constant() : BAT[int,str] = view_var_constant;
 	"Pseudo bat to map variable id to constant/changeable"
-.BUILTIN view_var_value() : BAT[int,str] = view_var_value; 
+.BUILTIN view_var_value() : BAT[int,str] = view_var_value;
 	"Pseudo bat to map variable id to its value (as a string)."
 
 @- Monet Modules
 @m
 .COMMAND view_modules() : BAT[int,str] = view_modules;
-	"Pseudo bat with all currently available modules" 
+	"Pseudo bat with all currently available modules"
 .COMMAND module_name(str) : str = get_mod_name;
-	"extract module name from module string" 
+	"extract module name from module string"
 .COMMAND module_db(str) : str = get_mod_db;
-	"extract database name from module string" 
+	"extract database name from module string"
 .COMMAND format_fcn_sig(oid) : str = format_fcn_sig;
 	"print a function signature"
 
@@ -230,7 +230,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	ELSE IF (tpe = TOK_ITERATOR) RETURN "ITERATOR:  ";
 	RETURN "OPERATOR:  ";
     }
- 
+
     PROC help_sig(oid fid) : void {
 	printf("%s%s\n",
             help_tpe(monet_fcn_tpe.find(fid)), format_fcn_sig(fid));
@@ -251,7 +251,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	    printf("no text available\n");
         }
     }
- 
+
     PROC help():void{}; # forward decl
     PROC help(str fcn) : void {
 	IF (monet_fcn_nme.reverse().exist(fcn)) monet_fcn_nme.reverse()@hashloop(fcn) {
@@ -278,23 +278,23 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 
     PROC modules() : void {
 	var b := view_modules().reverse().kunique().reverse();
-	table(1,[module_name](b).reverse().sort().reverse().col_name("name"), 
+	table(1,[module_name](b).reverse().sort().reverse().col_name("name"),
 		[module_db](b).col_name("database"));
-	
+
     }
     ADDHELP("modules", "boncz", "Aug 14 1997",
-	"list all installed modules, plus owner and db restrictions", "sys"); 
-	
+	"list all installed modules, plus owner and db restrictions", "sys");
+
     PROC loaded() : void {
         var hidden := monet_mod_nme.semijoin(monet_mod_nme.[startsWith]("_").uselect(true));
 	var mods := monet_mod_use.select(clientid()).reverse().histogram();
         var nmes := mods.mirror().join(monet_mod_nme).kdiff(hidden).access(BAT_WRITE);
         var disappeared := hidden.reverse().kdiff([+]("_",nmes).reverse()).reverse();
-	table(1, nmes.insert(disappeared).reverse().sort().reverse().col_name("module"), 
+	table(1, nmes.insert(disappeared).reverse().sort().reverse().col_name("module"),
                  mods.col_name("usage_count"));
     }
-    ADDHELP("loaded", "boncz", "Feb  6 1996", 
-	"list all loaded modules, and the number of active users.", "sys"); 
+    ADDHELP("loaded", "boncz", "Feb  6 1996",
+	"list all loaded modules, and the number of active users.", "sys");
 
     PROC atoms():void {
 	table(1,view_atom_name().col_name("atom type"),
@@ -323,7 +323,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
   	    ERROR("sigs: module does not exist.\n");
 	}
     }
-    ADDHELP("sigs", "boncz", "Aug  2 1996",  
+    ADDHELP("sigs", "boncz", "Aug  2 1996",
 	"Show all signatures of the functions in a module.", "sys");
 
     proc dir(bat[int,str] b) : void {
@@ -331,7 +331,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	var ht  := view_bbp_htype();
 	var tt  := view_bbp_ttype();
 	var cnt  := view_bbp_count();
-	
+
         var heat :=  view_bbp_heat(); heat.col_name("heat");
         var dirty :=  view_bbp_dirty(); dirty.col_name("dirty");
         var status :=  view_bbp_status(); status.col_name("status");
@@ -348,7 +348,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
     }
 
     PROC dir() : void {
-        var nme := view_bbp_name().copy().access(BAT_WRITE); 
+        var nme := view_bbp_name().copy().access(BAT_WRITE);
 	    nme.col_name("name");
 	var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
 	dir(nme.replace(rev));
@@ -359,8 +359,8 @@ Some explanation of what mem\_usage() and vm\_usage() display:
         var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
         dir(nme.replace(rev));
     }
-    ADDHELP("dir", "boncz", "Feb  6 1996", 
-	"list all bats, including system bats. Optionally filter on name with a certain substring", "sys"); 
+    ADDHELP("dir", "boncz", "Feb  6 1996",
+	"list all bats, including system bats. Optionally filter on name with a certain substring", "sys");
 
     proc dir_leaks() : void {
 	var b0 := view_bbp_name().access(BAT_WRITE);
@@ -369,7 +369,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
         var b2 := like(view_var_value(), "tmp_");
         var b3 := bat(int,str,b1.count());
         b1.delete(int(b0));
-        b1@batloop() { 
+        b1@batloop() {
             var pat := "tmp_" + $h;
             if (like(b2,pat).count() = 0) b3.insert($h,$t);
         }
@@ -383,8 +383,8 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	prs.access(BAT_WRITE); prs.col_name("name"); prs.replace(rev);
 	dir(prs);
     }
-    ADDHELP("ls", "boncz", "Feb  6 1996", 
-	"list all data bats. Optionally filter on name with a certain substring", "sys"); 
+    ADDHELP("ls", "boncz", "Feb  6 1996",
+	"list all data bats. Optionally filter on name with a certain substring", "sys");
 
     PROC ls(str substr) : void {
         var nme := view_bbp_name();
@@ -395,47 +395,47 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	prs.replace(rev);
 	dir(prs.like(substr));
     }
-    ADDHELP("ls", "arjen", "Jun 12 2001", 
-	"list all data bats filtered on name with some substring", "sys"); 
+    ADDHELP("ls", "arjen", "Jun 12 2001",
+	"list all data bats filtered on name with some substring", "sys");
 
     PROC exit() : void {
 	quit();
     }
-    ADDHELP("exit", "boncz", "Jan 9 1998", "quit for consultants", "sys"); 
+    ADDHELP("exit", "boncz", "Jan 9 1998", "quit for consultants", "sys");
 
     PROC procs() : void {
 	   var a := [format_fcn_sig](monet_fcntbl.reverse().
 			semijoin(monet_fcn_tpe.select(TOK_PROC)).reverse());
 	   table(1,a.reverse().sort().reverse().col_name("MIL Procedure"));
     }
-    ADDHELP("procs", "boncz", "Feb  6 1996", "list all defined procs.", "sys"); 
+    ADDHELP("procs", "boncz", "Feb  6 1996", "list all defined procs.", "sys");
 
-    PROC clients() : void { 
+    PROC clients() : void {
 	var tree := view_client_tree().access(BAT_WRITE);
 	tree.replace(clientid(), "clients()");
 	print(view_client_name(),view_client_login(),tree.col_name("mil"));
-    } 
-    ADDHELP("clients", "boncz", "Feb  6 1996", 
-	"list all active clients by their number.", "sys"); 
+    }
+    ADDHELP("clients", "boncz", "Feb  6 1996",
+	"list all active clients by their number.", "sys");
 
     PROC vars() : void  {
-	table(view_var_name().kdiff([startsWith](view_var_name(), ".").uselect(true)), 
+	table(view_var_name().kdiff([startsWith](view_var_name(), ".").uselect(true)),
               view_var_type(), view_var_kind(), view_var_constant(), view_var_value());
     }
     PROC vars(str substr) : void {
 	table(view_var_name().like(substr),
               view_var_type(), view_var_kind(), view_var_constant(), view_var_value());
     }
-    ADDHELP("vars", "boncz", "Feb  6 1996", 
-        	"list all Monet variables and their values. Optionally filter on name with a certain substring", "sys"); 
+    ADDHELP("vars", "boncz", "Feb  6 1996",
+        	"list all Monet variables and their values. Optionally filter on name with a certain substring", "sys");
 
     PROC threads() : void { print(view_gdk_thread()); }
-    ADDHELP("threads", "boncz", "Feb  6 1996", 
-		"list all system threads and their function.", "sys"); 
+    ADDHELP("threads", "boncz", "Feb  6 1996",
+		"list all system threads and their function.", "sys");
 
     PROC env() : void { print(view_gdk_env());}
-    ADDHELP("env", "boncz", "Feb  6 1996", 
-		"list the values of all environment variables", "sys"); 
+    ADDHELP("env", "boncz", "Feb  6 1996",
+		"list the values of all environment variables", "sys");
 
     PROC environment() : bat[str,str] { return view_gdk_env();}
     ADDHELP("environment", "boncz", "Mar 22 1998", "deprecated", "sys");
@@ -457,7 +457,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
     }
     ADDHELP("readonly", "boncz", "Aug  6 1998",
         "deprecated. Use 'b.access' instead.", "sys");
- 
+
     PROC readonly( BAT[any::1,any::2] b) : int {
         var s := b.info().find("batRestricted");
         if (s = "updatable") {
@@ -466,7 +466,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
                 return BAT_READ;
         } else if (s = "append-only") {
                 return BAT_APPEND;
-        } 
+        }
         ERROR("readonly: unknown mode.\n");
     }
     ADDHELP("readonly", "boncz", "Aug  6 1998",
@@ -516,7 +516,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 @+ BBP status
 The BAT buffer pool data structures describe the memory resident information
 on the whereabouts of the BATs. The three predominant tables are made accessible
-for inspection. 
+for inspection.
 
 The most interesting sysbat for end-users is the BID-> NAME mapping,
 because it provides access to the system guaranteed persistent BAT identifier.
@@ -527,7 +527,7 @@ because it provides access to the system guaranteed persistent BAT identifier.
 	BATmode(b,TRANSIENT);
 	BATfakeCommit(b);
 	*retval= b;
-	
+
 @c
 int
 view_bbp_name(BAT **retval	/* put pointer to BAT[int,str] record here. */
@@ -561,21 +561,23 @@ view_bbp_name(BAT **retval	/* put pointer to BAT[int,str] record here. */
 Finding all head/tail types is similar
 @= bbp_types
 int
-view_bbp_@1(
-   BAT**        retval  /* put pointer to BAT[int,str] record here. */
-){       
+view_bbp_@1(BAT** retval)	/* put pointer to BAT[int,str] record here. */
+{
 	BAT*    b;
         int     i;
 
         b= BATnew(TYPE_int,TYPE_str,BBPsize);
-        if (b == 0) return GDK_FAIL;
+        if (b == 0)
+		return GDK_FAIL;
 
 	BBPlock("view_bbp_@1");
-        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
-		BAT *bn = (BAT*) BBPgetdesc(ABS(i));
-        	if (bn ) { 
-			str tpe = ATOMname(bn->@1);
-			BUNins(b, &i, tpe);
+        for (i = 1; i < BBPsize; i++) {
+		if (i != b->batCacheid) {
+			BAT *bn = (BAT*) BBPgetdesc(ABS(i));
+			if (bn ) {
+				str tpe = ATOMname(bn->@1);
+				BUNins(b, &i, tpe);
+			}
 		}
 	}
 	BBPunlock("view_bbp_@1");
@@ -1220,13 +1222,13 @@ get_mod_db(str *res, str src)
 @- Performance
 To obtain a good impression of the Monet performance we need timing information.
 The most detailed information is best obtained with the system profiler.
- 
+
 However, the direct approach is to enable the user to read the timers maintained
-internally. This is done with the CPU, IO, MEMORY, and BBP command which 
+internally. This is done with the CPU, IO, MEMORY, and BBP command which
 displays the elapsed time in seconds, user- and system-cpu time in milliseconds
-since its last invocation and the amount of space in use.  The process 
+since its last invocation and the amount of space in use.  The process
 identifier is used to differentiate among the possible processes.
- 
+
 Note that in multi threaded mode the routine prints the elapsed
 time since the beginning of each process.
 @{
@@ -1328,7 +1330,7 @@ view_gdk_mem(BAT **retval)
 
 @-
 To avoid complains about signed/unsigned comparisons between lng & size_t,
-we cast  lng *num  to  size_t sze, 
+we cast  lng *num  to  size_t sze,
 after checking that there is no under-/overflow.
 @c
 @= num2sze
@@ -1430,11 +1432,12 @@ set_vm_maxsize(lng *num)
 
 
 @= heap
-sz = HEAP@1size(@2);
-if (sz > *minsize) {
-	sprintf(buf, "@3/%s", s); 
-	BUNins(bn, buf, &sz);
-} @3 += sz; tot += sz;
+	sz = HEAP@1size(@2);
+	if (sz > *minsize) {
+		sprintf(buf, "@3/%s", s);
+		BUNins(bn, buf, &sz);
+	}
+	@3 += sz; tot += sz;
 @c
 
 int
@@ -1511,7 +1514,7 @@ get_mem_usage(BAT **ret, lng *minsize)
 	tot += sz;
 	BUNins(bn, "_tot/found", &tot);
 
-	/* now look at what the global statistics report (to see if it coincides) 
+	/* now look at what the global statistics report (to see if it coincides)
 	 */
 
 	/* how much *used* bytes in heap? */
@@ -1601,13 +1604,13 @@ get_vm_usage(BAT **ret, lng *minsize)
 @-
 Additional information on the process utilization is given by
 the io command. The following information is obtained.
- 
+
 @T
 \begin{tabular}{| l| l|}\hline
 maxrss     &the maximum resident set size utilized (in kilobytes).\\
 minflt     &the number of page faults serviced without any I/O\\
 	 &activity; here I/O activity is avoided by "reclaiming" a\\
- 
+
 	 &activity; here I/O activity is avoided by "reclaiming" a\\
 	 &page frame from the list of pages awaiting reallocation.\\
 majflt     &the number of page faults serviced that required I/O\\
@@ -1628,7 +1631,7 @@ nivcsw     &the number of times a context switch resulted due to a\\
 The resource statistics are collected in a BAT. It can then
 be queried. A default listing is produced by the command @%usagecmd@.
 (which should be moved to Monet)
- 
+
 The BAT grows. It should be compacted.
 @c
 #ifdef HAVE_SYS_RESOURCE_H

@@ -20,7 +20,7 @@
 @a M. Kersten
 @v 1.1
 @* The URL module
-The URL module contains a collection of commands to manipulate 
+The URL module contains a collection of commands to manipulate
 Uniform Resource Locators - a resource on the World Wide Web-
 represented as a string in Monet. The URL can represent
 anything from a file, a directory or a complete movie.
@@ -30,14 +30,14 @@ A complementary module can be used to gain access.[IOgate]
 The core of the extension involves several operators to extract
 portions of the URLs for further manipulation.
 In particular, the domain, the server, and the protocol, and the file
-extension can be extracted without copying the complete URL from the heap 
+extension can be extracted without copying the complete URL from the heap
 into a string variable first.
 
 The commands provided are based on the corresponding Java class.
 
 A future version should use a special atom, because this may save
 considerable space. Alternatively, break the URL strings into components
-and represent them with a bunch of BATs. 
+and represent them with a bunch of BATs.
 An intermediate step would be to refine the atom STR, then it would be
 possible to redefine hashing.
 
@@ -47,46 +47,46 @@ possible to redefine hashing.
 .ATOM url = str;
 .END;
 
-.COMMAND getAnchor(url) : str        = url_getAnchor; 
+.COMMAND getAnchor(url) : str        = url_getAnchor;
 	"Extract the anchor (reference) from the URL"
-.COMMAND getBasename(url) : str        = url_getBasename; 
+.COMMAND getBasename(url) : str        = url_getBasename;
 	"Extract the base file name of the URL"
-.COMMAND getContent(url)   : str        = url_getContent; 
+.COMMAND getContent(url)   : str        = url_getContent;
 	"Get the URL resource in a local file"
-.COMMAND getContext(url)   : str        = url_getContext; 
+.COMMAND getContext(url)   : str        = url_getContext;
 	"Get the path context of a URL "
-.COMMAND getDirectory(url) : bat[int,str]  = url_getDirectory; 
+.COMMAND getDirectory(url) : bat[int,str]  = url_getDirectory;
 	"Extract the directory names from the URL"
-.COMMAND getDomain(url) : str        = url_getDomain; 
+.COMMAND getDomain(url) : str        = url_getDomain;
 	"Extract the Internet domain from the URL"
-.COMMAND getExtension(url) : str        = url_getExtension; 
+.COMMAND getExtension(url) : str        = url_getExtension;
 	"Extract the file extension of the URL"
-.COMMAND getFile(url) : str        = url_getFile; 
+.COMMAND getFile(url) : str        = url_getFile;
 	"Extract the last file name of the URL"
-.COMMAND getHost(url)   : str        = url_getHost; 
+.COMMAND getHost(url)   : str        = url_getHost;
 	"Extract the server identity from the URL"
-.COMMAND getPort(url) : str        = url_getPort; 
+.COMMAND getPort(url) : str        = url_getPort;
 	"Extract the port id from the URL"
-.COMMAND getProtocol(url) : str        = url_getProtocol; 
+.COMMAND getProtocol(url) : str        = url_getProtocol;
 	"Extract the protocol from the URL"
-.COMMAND getQuery(url) : str        = url_getQuery; 
+.COMMAND getQuery(url) : str        = url_getQuery;
 	"Extract the query string from the URL"
-.COMMAND getQueryArg(url) : bat[str,str]  = url_getQueryArg; 
+.COMMAND getQueryArg(url) : bat[str,str]  = url_getQueryArg;
 	"Extract the argument mappings from the URL"
-.COMMAND getUser(url) : str        = url_getUser; 
+.COMMAND getUser(url) : str        = url_getUser;
 	"Extract the user identity from the URL"
-.COMMAND getRobotURL(url) : str        = url_getRobotURL; 
+.COMMAND getRobotURL(url) : str        = url_getRobotURL;
 	"Extract the location of the robot control file"
-.COMMAND isaURL(url)   : bit        = url_isaURL; 
+.COMMAND isaURL(url)   : bit        = url_isaURL;
 	"Check conformity of the URL syntax"
-.COMMAND newurl(str,str,int,str)   : url        = url_new4; 
+.COMMAND newurl(str,str,int,str)   : url        = url_new4;
 	"Construct a URL from protocol, host,port,and file"
-.COMMAND newurl(str,str,str)   : url        = url_new3; 
+.COMMAND newurl(str,str,str)   : url        = url_new3;
 	"Construct a URL from protocol, host,and file"
 .END url;
 
 @{
-@* URL command implementation 
+@* URL command implementation
 The URLs are stored as strings without further optimization.
 A more compact representation is feasible, but not considered yet to
 invest energy.
@@ -345,7 +345,7 @@ url_getFile(str *retval, url t)
 
 @+ Url_getHost
 Extract the server identity from the URL
-SIGNATURE: getHost(str) : str; 
+SIGNATURE: getHost(str) : str;
 @c
 int
 url_getHost(str *retval,	/* is GDKfree needed ? */
@@ -386,7 +386,7 @@ url_getHost(str *retval,	/* is GDKfree needed ? */
 }
 
 @+ url_getPort
- Extract the port id from the URL SIGNATURE: getPort(str) : str; 
+ Extract the port id from the URL SIGNATURE: getPort(str) : str;
 @c
 int
 url_getPort(str *retval, url t)

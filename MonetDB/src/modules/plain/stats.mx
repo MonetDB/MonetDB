@@ -23,14 +23,14 @@
 
 This module implements a statistics object.  Once created, the object
 maintains state to generate a bunch of useful statistics on results.
-The state of the object can be altered by `adding' values to the object 
+The state of the object can be altered by `adding' values to the object
 with stats_add.  A results file can be created through stats_report.
 
 TODO: stats should become an ATOM, and group functions should be added.
 ex: .COMMAND {stats}(values, groups, ext)
 for each group id in ext find the group from groups, get the element
 values from values and calculate the stats.
-@* Module Definition 
+@* Module Definition
 @m
 .MODULE stats;
 

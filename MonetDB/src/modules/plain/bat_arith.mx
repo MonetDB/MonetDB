@@ -17,7 +17,7 @@
 
 @f bat_arith
 @t Optimized Multiplexed Basic Arithmetics on BATs
-@a S. Manegold, N. Nes 
+@a S. Manegold, N. Nes
 @v 1.0
 @* Introduction
 
@@ -25,7 +25,7 @@ This module provides optimized code-expanded implementations of multiplexed
 basic arithmetics ([+],[-],[*],[/],[%]) on void-headed, head-aligned BATs.
 Only the standard types sht, int, lng, flt, dbl are supported.
 
-@* Module Definition 
+@* Module Definition
 @m
 .MODULE bat_arith;
 
@@ -33,7 +33,7 @@ Only the standard types sht, int, lng, flt, dbl are supported.
 \begin{verbatim}
 	signatures
 	@1:	sht, int, lng, flt, dbl	arithmetic type
-	@2:	+,   -,   *,   /,   %	basic arithmetic operator
+	@2:	+,   -,	  *,   /,   %	basic arithmetic operator
 	@3:	add, sub, mul, div, mod	basic arithmetic operator name
 \end{verbatim}
 @= signatures
@@ -85,20 +85,23 @@ Only the standard types sht, int, lng, flt, dbl are supported.
 @c
 /*	implementation
 	@1:	sht, int, lng, flt, dbl	arithmetic type
-	@2:	+,   -,   *,   /,   %	basic arithmetic operator
+	@2:	+,   -,	  *,   /,   %	basic arithmetic operator
 	@3:	add, sub, mul, div, mod	basic arithmetic operator name
 */
 @= implementations
-int batbat_@1_@3(BAT **ret, BAT *l, BAT *r) {
+int
+batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
+{
 	REGISTER @1 *bnp;
 	BAT *bn;
 
-        ALGODEBUG THRprintf(GDKout, "batbat_@1_@3[@2](l=%s,r=%s);\n",l->batId,r->batId);
- 	ERRORcheck((l->htype!=TYPE_void)||(r->htype!=TYPE_void)||(l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
- 	           "batbat_@1_@3: BATs l & r must be void-headed and head-aligned.\n");
+	ALGODEBUG THRprintf(GDKout, "batbat_@1_@3[@2](l=%s,r=%s);\n",l->batId,r->batId);
+	ERRORcheck((l->htype!=TYPE_void)||(r->htype!=TYPE_void)||(l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
+		   "batbat_@1_@3: BATs l & r must be void-headed and head-aligned.\n");
 
 	bn = BATnew(TYPE_void, l->ttype, BATcount(l));
-	if( bn == NULL) return GDK_FAIL;
+	if (bn == NULL)
+		return GDK_FAIL;
 	BATseqbase(bn,l->hseqbase);
 	bn->tsorted = 0;
 
@@ -128,7 +131,7 @@ int batbat_@1_@3(BAT **ret, BAT *l, BAT *r) {
 				bnp++;
 			}
 		}
-	        GDKfree(lbuf);
+		GDKfree(lbuf);
 	} else if ((BUNsize(l)==BUNsize(r))) {
 		REGISTER chr *lp, *lq, *rp;
 		REGISTER int bs = BUNsize(l);
@@ -155,7 +158,7 @@ int batbat_@1_@3(BAT **ret, BAT *l, BAT *r) {
 				bnp++;
 			}
 		}
-	        GDKfree(lbuf);
+		GDKfree(lbuf);
 	} else {
 		REGISTER chr *lp, *lq, *rp;
 		REGISTER int ls = BUNsize(l);
@@ -175,20 +178,22 @@ int batbat_@1_@3(BAT **ret, BAT *l, BAT *r) {
 		}
 	}
 
-        bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
-        if (!bn->batDirty) bn->batDirty = TRUE;
+	bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
+	if (!bn->batDirty) bn->batDirty = TRUE;
 
-        *ret = bn;
-        return GDK_SUCCEED;
+	*ret = bn;
+	return GDK_SUCCEED;
 }
-int batbat_@1_@3_inplace(BAT **ret, BAT *l, BAT *r) {
+int
+batbat_@1_@3_inplace(BAT **ret, BAT *l, BAT *r)
+{
 	REGISTER chr *lp, *lq, *rp;
 	REGISTER int ls = BUNsize(l);
 	REGISTER int rs = BUNsize(r);
 
-        ALGODEBUG THRprintf(GDKout, "batbat_@1_@3_inplace[@2](l=%s,r=%s);\n",l->batId,r->batId);
- 	ERRORcheck((l->htype!=TYPE_void)||(r->htype!=TYPE_void)||(l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
- 	           "batbat_@1_@3_inplace: BATs l & r must be void-headed and head-aligned.\n");
+	ALGODEBUG THRprintf(GDKout, "batbat_@1_@3_inplace[@2](l=%s,r=%s);\n",l->batId,r->batId);
+	ERRORcheck((l->htype!=TYPE_void)||(r->htype!=TYPE_void)||(l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
+		   "batbat_@1_@3_inplace: BATs l & r must be void-headed and head-aligned.\n");
 
 	l->tsorted = 0;
 	lq = (chr*)BUNtloc(l,BUNlast(l));
@@ -201,26 +206,29 @@ int batbat_@1_@3_inplace(BAT **ret, BAT *l, BAT *r) {
 			*(@1*)lp = @1_nil;
 		}
 	}
-        if (!l->batDirty) l->batDirty = TRUE;
+	if (!l->batDirty) l->batDirty = TRUE;
 
 	BBPfix(l->batCacheid);
-        *ret = l;
-        return GDK_SUCCEED;
+	*ret = l;
+	return GDK_SUCCEED;
 }
-int valbat_@1_@3(BAT **ret, @1 *v, BAT *b) {
+int
+valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
+{
 	REGISTER chr *bp, *bq;
 	REGISTER @1 *bnp;
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	REGISTER int bs = BUNsize(b);
 	BAT *bn;
 
-        ALGODEBUG THRprintf(GDKout, "valbat_@1_@3[@2](v,b=%s);\n",b->batId);
- 	ERRORcheck((b->htype!=TYPE_void),
- 	           "valbat_@1_@3: BAT b must be void-headed.\n");
+	ALGODEBUG THRprintf(GDKout, "valbat_@1_@3[@2](v,b=%s);\n",b->batId);
+	ERRORcheck((b->htype!=TYPE_void),
+		   "valbat_@1_@3: BAT b must be void-headed.\n");
 	/* todo for commutative operators call batval (ie. for * and /) */
 
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
-	if( bn == NULL) return GDK_FAIL;
+	if (bn == NULL)
+		 return GDK_FAIL;
 	BATseqbase(bn,b->hseqbase);
 	bn->tsorted = 0;
 	bq = (chr*)BUNtloc(b,BUNlast(b));
@@ -241,20 +249,20 @@ int valbat_@1_@3(BAT **ret, @1 *v, BAT *b) {
 			bnp++;
 		}
 	}
-        bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
-        if (!bn->batDirty) bn->batDirty = TRUE;
+	bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
+	if (!bn->batDirty) bn->batDirty = TRUE;
 
-        *ret = bn;
-        return GDK_SUCCEED;
+	*ret = bn;
+	return GDK_SUCCEED;
 }
 int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 	REGISTER chr *bp, *bq;
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	REGISTER int bs = BUNsize(b);
 
-        ALGODEBUG THRprintf(GDKout, "valbat_@1_@3_inplace[@2](v,b=%s);\n",b->batId);
- 	ERRORcheck((b->htype!=TYPE_void),
- 	           "valbat_@1_@3_inplace: BAT b must be void-headed.\n");
+	ALGODEBUG THRprintf(GDKout, "valbat_@1_@3_inplace[@2](v,b=%s);\n",b->batId);
+	ERRORcheck((b->htype!=TYPE_void),
+		   "valbat_@1_@3_inplace: BAT b must be void-headed.\n");
 	/* todo for commutative operators call batval (ie. for * and /) */
 
 	b->tsorted = 0;
@@ -271,25 +279,28 @@ int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 			*(@1*)bp = vv;
 		}
 	}
-        if (!b->batDirty) b->batDirty = TRUE;
+	if (!b->batDirty) b->batDirty = TRUE;
 
 	BBPfix(b->batCacheid);
-        *ret = b;
-        return GDK_SUCCEED;
+	*ret = b;
+	return GDK_SUCCEED;
 }
-int batval_@1_@3(BAT **ret, BAT *b, @1 *v) {
+int
+batval_@1_@3(BAT **ret, BAT *b, @1 *v)
+{
 	REGISTER chr *bp, *bq;
 	REGISTER @1 *bnp;
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	REGISTER int bs = BUNsize(b);
 	BAT *bn;
 
-        ALGODEBUG THRprintf(GDKout, "batval_@1_@3[@2](v,b=%s);\n",b->batId);
- 	ERRORcheck((b->htype!=TYPE_void),
- 	           "batval_@1_@3: BAT b must be void-headed.\n");
+	ALGODEBUG THRprintf(GDKout, "batval_@1_@3[@2](v,b=%s);\n",b->batId);
+	ERRORcheck((b->htype!=TYPE_void),
+		   "batval_@1_@3: BAT b must be void-headed.\n");
 
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
-	if( bn == NULL) return GDK_FAIL;
+	if( bn == NULL)
+		return GDK_FAIL;
 	BATseqbase(bn,b->hseqbase);
 	bn->tsorted = 0;
 	bq = (chr*)BUNtloc(b,BUNlast(b));
@@ -310,20 +321,22 @@ int batval_@1_@3(BAT **ret, BAT *b, @1 *v) {
 			bnp++;
 		}
 	}
-        bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
-        if (!bn->batDirty) bn->batDirty = TRUE;
+	bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
+	if (!bn->batDirty) bn->batDirty = TRUE;
 
-        *ret = bn;
-        return GDK_SUCCEED;
+	*ret = bn;
+	return GDK_SUCCEED;
 }
-int batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v) {
+int
+batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
+{
 	REGISTER chr *bp, *bq;
 	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
 	REGISTER int bs = BUNsize(b);
 
-        ALGODEBUG THRprintf(GDKout, "batval_@1_@3_inplace[@2](v,b=%s);\n",b->batId);
- 	ERRORcheck((b->htype!=TYPE_void),
- 	           "batval_@1_@3_inplace: BAT b must be void-headed.\n");
+	ALGODEBUG THRprintf(GDKout, "batval_@1_@3_inplace[@2](v,b=%s);\n",b->batId);
+	ERRORcheck((b->htype!=TYPE_void),
+		   "batval_@1_@3_inplace: BAT b must be void-headed.\n");
 
 	b->tsorted = 0;
 	bq = (chr*)BUNtloc(b,BUNlast(b));
@@ -339,11 +352,11 @@ int batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v) {
 			*(@1*)bp = vv;
 		}
 	}
-        if (!b->batDirty) b->batDirty = TRUE;
+	if (!b->batDirty) b->batDirty = TRUE;
 
 	BBPfix(b->batCacheid);
-        *ret = b;
-        return GDK_SUCCEED;
+	*ret = b;
+	return GDK_SUCCEED;
 }
 @c
 @:implementations(sht,+,add)@

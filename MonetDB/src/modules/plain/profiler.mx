@@ -38,8 +38,8 @@ and dump the accumulated information at a convenient time.
 This is supported by the routine startProfiler, which also
 sets the default filters.
 
-@* Module Definition 
-.BUILTIN view_var_name() : BAT[int,str] = view_var_name; 
+@* Module Definition
+.BUILTIN view_var_name() : BAT[int,str] = view_var_name;
 	"Pseudo bat to map variable id to its name."
 @m
 .MODULE profiler;
@@ -209,13 +209,13 @@ setFilterCmd(int *res, str left, str right)
 }
 
 @-
- 
+
 @T
 \begin{tabular}{| l| l|}\hline
 maxrss     &the maximum resident set size utilized (in kilobytes).\\
 minflt     &the number of page faults serviced without any I/O\\
 	 &activity; here I/O activity is avoided by "reclaiming" a\\
- 
+
 	 &activity; here I/O activity is avoided by "reclaiming" a\\
 	 &page frame from the list of pages awaiting reallocation.\\
 majflt     &the number of page faults serviced that required I/O\\
@@ -232,6 +232,6 @@ nivcsw     &the number of times a context switch resulted due to a\\
 	 &higher priority process becoming runnable or because the\\
 	 &current process exceeded its time slice.\\
 \end{tabular}
- 
+
 @
 @}

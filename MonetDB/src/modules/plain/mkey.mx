@@ -44,7 +44,7 @@
 
 @- The Problem
 When creating a join, we want to make a unique key of the attributes on both
-sides and then join these keys.  
+sides and then join these keys.
 
 Example :
 @T
@@ -79,10 +79,10 @@ c_hnr.insert(3@0,2).insert(4@0,1).insert(5@0,9).insert(6@0,7);
 
 \section{solution}
 
-The current approach is designed to take minimal memory, as our previous 
+The current approach is designed to take minimal memory, as our previous
 solutions to the problem did not scale well. In case of singular keys,
-the link is executed by a simple MIL join. Before going into the join, we 
-make sure the end result size is not too large, which is done by looking 
+the link is executed by a simple MIL join. Before going into the join, we
+make sure the end result size is not too large, which is done by looking
 at relation sizes (if the other key is unique) or, if that is not possible,
 by computing the exact join size:
 
@@ -94,7 +94,7 @@ region of sufficient size. This also reduces the ds\_link memory requirements.
 
 For compound keys, those that consist of multiple attributes, we now compute
 a derived column that contains an integer hash value derived from all
-key columns. 
+key columns.
 This is done by computing a hash value for each individual key column
 and combining those by bitwise XOR and left-rotation. That is, for each
 column,we rotate the working hash value by N bits and XOR the hash value
@@ -110,7 +110,7 @@ One complication of this procedure are nil values:
 \begin{itemize}
 \item it may happen that the final hash-value (an int formed by a
 random bit pattern) accidentally has the value of int(nil).
-Notice that MIL join never matches nil values. 
+Notice that MIL join never matches nil values.
 Hence these accidental nils must be replaced by a begin value (currently: 0).
 \item in case any of the compound key values is nil, our nil semantics
 require us that those tuples may never match on a join. Consequently,
@@ -141,11 +141,11 @@ In this way the memory requirements of this phase are kept low.
 In fact, the most memory demanding part of the join is the int-join
 on hash number, which takes N*24 bytes (where N= |L| = |R|).
 In comparison, the previous CTmultigroup/CTmultiderive approach
-took N*48 bytes. Additionally, by making it possible to use merge-sort, 
-it avoids severe performance degradation (memory thrashing) as produced 
+took N*48 bytes. Additionally, by making it possible to use merge-sort,
+it avoids severe performance degradation (memory thrashing) as produced
 by the old ds\_link when the inner join relation would be larger than memory.
 
-If ds\_link performance is still an issue, the sort-merge join used here 
+If ds\_link performance is still an issue, the sort-merge join used here
 could be replaced by partitioned hash-join with radix-cluster/decluster.
 
 @mil
@@ -189,7 +189,7 @@ proc ds_eq(BAT[void,oid] l_slice, bat lb, BAT[void,oid] r_slice, bat rb) : BAT[v
   var r := join(r_slice,bat(rb));
   return [=](l.ds_sort(true),r.ds_sort(true));
 }
- 
+
 proc ds_link(BAT[oid,any::1] l1, BAT[oid,any::1] r1, ..BAT[oid,any]..) : BAT[oid, oid] {
 	var n := $0;
 	if (bit(n % 2)) {
@@ -206,13 +206,13 @@ proc ds_link(BAT[oid,any::1] l1, BAT[oid,any::1] r1, ..BAT[oid,any]..) : BAT[oid
 	}
 }
 
-proc ds_link(BAT[bat,bat] keys) : BAT[oid, oid] 
+proc ds_link(BAT[bat,bat] keys) : BAT[oid, oid]
 {
   var res;
   {
     var l, r;
     # get left and right join relations
-    # The sort is added by Peter Boncz, so that for large bats the merge-join algorithms 
+    # The sort is added by Peter Boncz, so that for large bats the merge-join algorithms
     # can be used (thus avoiding random access pattern of the hash-join)
 
     if (keys.count() <= 1) {

@@ -22,73 +22,73 @@
 
 @* Introduction
 
-This module introduces algorithms that enhance performance of 
+This module introduces algorithms that enhance performance of
 generic join processing in Monet, by optimizing both memory and CPU
 resources in modern hardware. We now shortly discuss the problems at
-hand, and in the next section go into detail on how these algorithms 
+hand, and in the next section go into detail on how these algorithms
 are applied in Monet's join processing strategy.
 
 @+ The Memory Story
 @T
 Computer RAM carries the acronym Random Access Memory, indicating that
 the memory access speed is independent of memory location. While this
-is still (mostly) true, the imbalance in speed improvements between CPU 
-speed and access speed of the most common memory type DRAM has caused the 
-situation that reading a byte of memory takes 100 CPU cycles (e.g. given a 
-1GHz processor and 100ns memory latency). Load instructions are frequent in 
-most programs (sometimes one in four instructions references memory), and in 
-order not to let the CPU stall for 100 cycles too often, the memory subsystem 
-of a computer therefore does not solely consist of DRAM chips anymore, but also 
-has various levels of "cache memory" built from more speedy SRAM chips. A typical modern 
-computer has at least an L1 (level-one) cache (typical size 16-32KB, typical latency 5-10ns) 
-and a L2 (level-two) cache (typical size 256-2MB, typical latency 10-30ns). The L1 
-and sometimes even the L2 are now located on the CPU chip itself in order to reduce latency. 
+is still (mostly) true, the imbalance in speed improvements between CPU
+speed and access speed of the most common memory type DRAM has caused the
+situation that reading a byte of memory takes 100 CPU cycles (e.g. given a
+1GHz processor and 100ns memory latency). Load instructions are frequent in
+most programs (sometimes one in four instructions references memory), and in
+order not to let the CPU stall for 100 cycles too often, the memory subsystem
+of a computer therefore does not solely consist of DRAM chips anymore, but also
+has various levels of "cache memory" built from more speedy SRAM chips. A typical modern
+computer has at least an L1 (level-one) cache (typical size 16-32KB, typical latency 5-10ns)
+and a L2 (level-two) cache (typical size 256-2MB, typical latency 10-30ns). The L1
+and sometimes even the L2 are now located on the CPU chip itself in order to reduce latency.
 
 Cache memories are organized in {\em cache lines} of a fixed width. A typical width for
-an L1 line is 32 bytes, whereas a line L2 can be 32-128 bytes long. A cache line 
+an L1 line is 32 bytes, whereas a line L2 can be 32-128 bytes long. A cache line
 is the smallest unit of transfer, which means that on a miss, the memory system fetches
-all bytes of the line from the lower levels of the memory hierarchy in one go. 
+all bytes of the line from the lower levels of the memory hierarchy in one go.
 This simultaneous transfer often happens through a wide bus where each line in the
 bus gets one bit from a DRAM chip in parallel. In reality, transfer is not fully simultaneous,
-as the different bytes of a cache line arrive in a sequential burst, but the total difference 
-in arrival-time tends to be no more than 4 cycles apart from first to last byte.  This design of 
-the memory caches (on all levels, but with varying size and line width parameters) has consequences 
-for application performance, whose severity depend on what kind of {\em memory access patterns} 
-the application exhibits. Reading (or writing) a memory location that is not in the cache, causes 
-a miss, and the CPU is forced for waiting the latency period. It is obvious that subsequent 
-reading of this exact same data will not cause sub-sequent cache misses, and be fast -- because 
-this data is already in cache.  But what happens with a sequential access pattern to data that 
-is not in the cache? Again, the first read causes a cache miss. However, subsequent reads 
+as the different bytes of a cache line arrive in a sequential burst, but the total difference
+in arrival-time tends to be no more than 4 cycles apart from first to last byte.  This design of
+the memory caches (on all levels, but with varying size and line width parameters) has consequences
+for application performance, whose severity depend on what kind of {\em memory access patterns}
+the application exhibits. Reading (or writing) a memory location that is not in the cache, causes
+a miss, and the CPU is forced for waiting the latency period. It is obvious that subsequent
+reading of this exact same data will not cause sub-sequent cache misses, and be fast -- because
+this data is already in cache.	But what happens with a sequential access pattern to data that
+is not in the cache? Again, the first read causes a cache miss. However, subsequent reads
 to adjacent bytes access the same cache line that is already loaded and therefore
-do {\em not} cause any cache misses. This is the reason why sequential memory access 
+do {\em not} cause any cache misses. This is the reason why sequential memory access
 is cheaper than random access, as the latter pattern may cause a cache miss on every
 read (considering the access is to an uncached memory region).
 
 In all, costs of memory access can be high (up to 100 cycles, and rising),
-may occur frequently (up to one in four CPU instructions), and are strongly 
-dependent on the access pattern of the application (is the access repetitive, 
-sequential or random, and to how large a total region). This is not just a 
-theoretical exercise for DBMS designers, since measurements on the 
-memory performance of data-intensive operations like query processing in 
-relational DBMS products has indeed shown that CPUs are stalled for most of 
+may occur frequently (up to one in four CPU instructions), and are strongly
+dependent on the access pattern of the application (is the access repetitive,
+sequential or random, and to how large a total region). This is not just a
+theoretical exercise for DBMS designers, since measurements on the
+memory performance of data-intensive operations like query processing in
+relational DBMS products has indeed shown that CPUs are stalled for most of
 their time on memory cache misses.
 
 @- Optimizing Memory Access during Join
 @T
-We focus here on improving the memory access performance of the join 
-operator in order to gain performance. This is relevant, because the 
-most popular main-memory join algorithm is hash-join, which exhibits a 
+We focus here on improving the memory access performance of the join
+operator in order to gain performance. This is relevant, because the
+most popular main-memory join algorithm is hash-join, which exhibits a
 random access pattern to a hash-table that is used to find values in an
 "inner" relation, while an "outer" relation is scanned sequentially.
 
 Concerning memory access, this algorithm works fine only as long as
 the inner relation plus its hash-table can be cached at all levels
-of the memory hierarchy. As soon as it does not fit the smallest cache 
-anymore, (multiple) cache misses will appear for each random access to 
-this inner relation and hash table (at least one miss to the hash-table and 
-one to the relation itself). The CPU stalls caused by these misses can soon 
-start to dominate overall join costs, which can be in Monet -- without cache 
-misses -- as low as 20 cycles per tuple (hence two 100 cycle misses every 
+of the memory hierarchy. As soon as it does not fit the smallest cache
+anymore, (multiple) cache misses will appear for each random access to
+this inner relation and hash table (at least one miss to the hash-table and
+one to the relation itself). The CPU stalls caused by these misses can soon
+start to dominate overall join costs, which can be in Monet -- without cache
+misses -- as low as 20 cycles per tuple (hence two 100 cycle misses every
 tuple seriously damage performance).
 
 The idea of the radix-algorithms implemented in this module is to change
@@ -96,45 +96,45 @@ the access pattern of the join operation, in such a way that the overall
 number of cache misses is reduced. This is typically achieved by doing
 extra CPU work and/or by making additional sequential passes over the
 memory. In particular, the {\em partitioned-join} strategy first partitions
-(or clusters) both inner and outer relations into small clusters, such that 
+(or clusters) both inner and outer relations into small clusters, such that
 each cluster fits the smallest memory cache. The partitioned-join then only
 has to combine tuples from corresponding clusters. This module provides two
 partitioned-join algorithms:
 \begin{itemize}
-\item the {\em phash join} algorithm that performs hash-join on the matching clusters. 
+\item the {\em phash join} algorithm that performs hash-join on the matching clusters.
 \item as an alternative, we provide {\em radix join} that performs nested loop
-join on the matching clusters. 
+join on the matching clusters.
 \end{itemize}
-Phash join needs clusters where the clusters of the inner relation plus hash 
-table fit the smallest cache. If we assume that tuples in the inner relation 
-(plus hash table) occupy 16 bytes and the L1 cache is 16KB, we need clusters 
-of (less than) 1000 tuples.  Radix join needs even smaller clusters, that consist 
+Phash join needs clusters where the clusters of the inner relation plus hash
+table fit the smallest cache. If we assume that tuples in the inner relation
+(plus hash table) occupy 16 bytes and the L1 cache is 16KB, we need clusters
+of (less than) 1000 tuples.  Radix join needs even smaller clusters, that consist
 of just 8 tuple to perform well.
 
 Partitioning/clustering into such small cluster sizes can become a memory access
 problem in itself; due to the high number of clusters required for a large relation.
 A straightforward clustering algorithm that creates H clusters, would allocate
-H output buffers and scan the input relation once, inserting each tuple into the 
+H output buffers and scan the input relation once, inserting each tuple into the
 cluster where it belongs. Hence there are H different "output cursors" that should
-reside in the cache to perform well. But, a 16KB L1 cache with 32 byte lines only 
+reside in the cache to perform well. But, a 16KB L1 cache with 32 byte lines only
 holds 500 lines, hence when H exceeds 500, the "output cursors" cannot be cached and
-the cluster operation itself will start to generate a huge number of cache misses. 
-This reduces the efficiency of partitioned join. 
+the cluster operation itself will start to generate a huge number of cache misses.
+This reduces the efficiency of partitioned join.
 
-The {\em radix-cluster} algorithm proposed 
-here solves this problem by making multiple passes; in each pass the relation is 
-subclustered on a number of radix-bits.  Radix-bits are a subsequence of bits taken
-from a {\em radix-number}, which usually is the integer result of hashing the value on which 
-we want to cluster. The first pass of the radix-cluster algorithm puts all tuples with an 
-equal bit-pattern in the higher H1 radix-bits together in a cluster. The second pass starts 
-where the previous left off, and subdivides each cluster on the second-highest H2 bits.  
-This process repeats for p passes such that H1*..*HP=H. By keeping Hi lower than the 
-total amount of cache lines, high cache miss ratios can be avoided.  
+The {\em radix-cluster} algorithm proposed
+here solves this problem by making multiple passes; in each pass the relation is
+subclustered on a number of radix-bits.	 Radix-bits are a subsequence of bits taken
+from a {\em radix-number}, which usually is the integer result of hashing the value on which
+we want to cluster. The first pass of the radix-cluster algorithm puts all tuples with an
+equal bit-pattern in the higher H1 radix-bits together in a cluster. The second pass starts
+where the previous left off, and subdivides each cluster on the second-highest H2 bits.
+This process repeats for p passes such that H1*..*HP=H. By keeping Hi lower than the
+total amount of cache lines, high cache miss ratios can be avoided.
 
 On platforms that implement "software TLB" management (Transition Lookaside Buffer;
 the "cache" of most-recent translations of virtual memory addresses from logical to
 physical form), TLB misses are also an expensive, and heavily influence performance.
-As the number of TLB entries is typically limited to 64, on such platforms the TLB 
+As the number of TLB entries is typically limited to 64, on such platforms the TLB
 poses an even lower bound on the size of Hi than the number of cache lines.
 This makes radix-cluster even more beneficial on those platforms.
 
@@ -143,77 +143,77 @@ This makes radix-cluster even more beneficial on those platforms.
 Modern CPUs are called {\em super-scalar}, by which is meant that the CPU
 has two mechanisms for parallel processing:
 \begin{enumerate}
-\item CPU instruction execution is chopped into as many as 10-25 different 
-stages, which can be executed one after the other by different pieces of hardware. 
-These pieces of hardware form a pipeline, so each cycle a new instruction can enter 
+\item CPU instruction execution is chopped into as many as 10-25 different
+stages, which can be executed one after the other by different pieces of hardware.
+These pieces of hardware form a pipeline, so each cycle a new instruction can enter
 the pipeline, while at the other end one leaves (or "graduates").
-The more stages the pipeline has, less tasks have to be performed per stage, 
-hence the quicker the hardware can execute a stage, hence the higher the overall 
-clock speed of the CPU can be. The search of ever higher CPU clock speeds hence 
+The more stages the pipeline has, less tasks have to be performed per stage,
+hence the quicker the hardware can execute a stage, hence the higher the overall
+clock speed of the CPU can be. The search of ever higher CPU clock speeds hence
 explains the trend of ever longer pipelines found in modern CPUs.
-\item multiple independent pipelines may be implemented, meaning that 
-two CPU instructions that are independent can be pushed each cycle into two 
+\item multiple independent pipelines may be implemented, meaning that
+two CPU instructions that are independent can be pushed each cycle into two
 different hardware pipelines for execution. Modern CPUs have at least
-2 and possibly up to 9 replicated pipelines (often separated in integer and 
+2 and possibly up to 9 replicated pipelines (often separated in integer and
 floating-point pipelines).
 This second trend is driven by the ever smaller process technology, which gives
 CPU designers the possibility to use ever more circuits on a single CPU. As
 a consequence these circuits are used to create replicated execution units
-organized in pipelines whose parallel activity is supposed to increase the 
+organized in pipelines whose parallel activity is supposed to increase the
 performance of the CPU.
 \end{enumerate}
 
-All this complexity comes at a price though, which is performance vulnerability. 
-Application code must at all times have three totally independent instructions 
+All this complexity comes at a price though, which is performance vulnerability.
+Application code must at all times have three totally independent instructions
 ready for execution to keep three replicated pipelines busy. This is probably
-only true for specific scientific computation code, other applications will 
-leave the replicated pipelines mostly without use. Additionally, pipelined execution 
-itself poses the challenge that before the previous execution is finished executing, 
+only true for specific scientific computation code, other applications will
+leave the replicated pipelines mostly without use. Additionally, pipelined execution
+itself poses the challenge that before the previous execution is finished executing,
 the CPU has to guess correctly what the next instruction will be.
-That is, when one instruction enters the pipeline, at the next CPU cycle, 
+That is, when one instruction enters the pipeline, at the next CPU cycle,
 it is only past stage one of typically 10-20 stages that have to pass for
-it to be fully executed, we have to push a next instruction into the pipeline. 
+it to be fully executed, we have to push a next instruction into the pipeline.
 
 This turns nasty on if-then-else code like:
 \begin{verbatim}
 if (A)
 then B
-else C  
+else C
 \end{verbatim}
-The basic problem is that just after entering "if A" in the pipeline at stage 1, 
-the CPU does not yet know whether this instruction will evaluate to true or false, 
-hence it does not know whether the next instruction will be B or C. Modern CPUs 
-resort in this situation to {\em speculative execution}, by e.g. putting B in the 
-pipeline just because that taking the then-branch is default (a poor estimator) 
-or because in a high percentage of the previous cases this piece of code was executed, 
+The basic problem is that just after entering "if A" in the pipeline at stage 1,
+the CPU does not yet know whether this instruction will evaluate to true or false,
+hence it does not know whether the next instruction will be B or C. Modern CPUs
+resort in this situation to {\em speculative execution}, by e.g. putting B in the
+pipeline just because that taking the then-branch is default (a poor estimator)
+or because in a high percentage of the previous cases this piece of code was executed,
 "if A" turned out to evaluate to true (which is a better estimator).
 
 Clearly, the CPU will turn out to guess wrong in a certain percentage of cases
-(called the {\em mis-prediction rate}). Mis-predicting execution has performance 
-consequences, as the real outcome of "if A" only comes to light when the instruction 
+(called the {\em mis-prediction rate}). Mis-predicting execution has performance
+consequences, as the real outcome of "if A" only comes to light when the instruction
 is already deep into the pipeline, and many instructions have already been inserted
-after it. That work has to be thrown away. Suppose now C would have been the correct 
-next instruction instead of B, then the whole pipeline up to the stage where "if A" 
-is then, needs to be flushed. Also, corrective action needs also to be taken in order 
-to e.g. undo all effect of executing B and all other flushed instructions (e.g. by 
-restoring CPU flags and registers) and we need to start over with C in stage 1. Notice 
-that a mis-prediction rate as low as 5\% on a 20-stage pipeline will typically cause 50% 
-of the pipeline to be thrown away, which already decreases performance below the level 
+after it. That work has to be thrown away. Suppose now C would have been the correct
+next instruction instead of B, then the whole pipeline up to the stage where "if A"
+is then, needs to be flushed. Also, corrective action needs also to be taken in order
+to e.g. undo all effect of executing B and all other flushed instructions (e.g. by
+restoring CPU flags and registers) and we need to start over with C in stage 1. Notice
+that a mis-prediction rate as low as 5\% on a 20-stage pipeline will typically cause 50%
+of the pipeline to be thrown away, which already decreases performance below the level
 where a 20-stage pipeline at that speed is actually useful (i.e. some code would do better
 at a lower speed with a shorter pipeline).
 
 The mis-prediction rate is obviously dependent on the type of code being executed.
 Code that contains many if-statements typically suffers a high mis-prediction
 rate (as explained above, correctly predicting 95% of the if-branches can still give
-awful performance), whereas scientific code that does millions of independent 
-scalar operations in a matrix multiplication is highly predictable and will suffer 
-almost none. In addition, such scientific code contains sufficient independent 
-instructions to keep a whole array of independent pipelines busy (assuming, for a 
-minute, that we solved our first problem, memory access). 
+awful performance), whereas scientific code that does millions of independent
+scalar operations in a matrix multiplication is highly predictable and will suffer
+almost none. In addition, such scientific code contains sufficient independent
+instructions to keep a whole array of independent pipelines busy (assuming, for a
+minute, that we solved our first problem, memory access).
 
 @- The CPU optimization problem
 @T
-Many independent studies show that CPU resource usage during most DBMS loads is awful, 
+Many independent studies show that CPU resource usage during most DBMS loads is awful,
 plagued by low prediction rates (and high number of cache misses). This indicates that
 typical DBMS software has a nature of being full of if-statements and branches,
 much different from scientific code used for matrix processing.
@@ -221,36 +221,36 @@ much different from scientific code used for matrix processing.
 We think that that is not necessary. DBMS tasks typically process millions of
 independent tuples that could well profit from the parallel capabilities of
 modern CPUs, just like scientific matrix code does. The question is: what needs to
-be done in DBMS code to make it CPU-wise efficient? 
+be done in DBMS code to make it CPU-wise efficient?
 
 In Monet, we apply two techniques:
 \begin{itemize}
-\item macro-driven (explicit) loop unrolling. This is often dubbed code-expansion. 
+\item macro-driven (explicit) loop unrolling. This is often dubbed code-expansion.
 Loop unrolling is a well-known technique to improve the pipelined performance
 of code that processes a bulk data structure. Regrettably, compilers can only
 detect opportunity for loop unrolling when the bounds of the bulk structure (array)
 are known. The sizes of arrays that store database tables are not known
 at compile time, hence the compiler needs to be helped a bit.
-\item factoring-out function calls. Function calls are an important source of 
+\item factoring-out function calls. Function calls are an important source of
 dependence among subsequent instructions. In a language like C, a function call
 may modify any reachable memory location, hence the compiler must generate code to
-reload many values that are cached in registers. On top of that, executing a function 
-call carries substantial stack management overhead (e.g. 20 cycles) and decreases 
+reload many values that are cached in registers. On top of that, executing a function
+call carries substantial stack management overhead (e.g. 20 cycles) and decreases
 the prediction-rate of the CPU.
 \end{itemize}
 
 We provide our radix-algorithms in such versions that they can be experimented with
 with and without these optimization techniques enabled in order to monitor
-their effectiveness. 
+their effectiveness.
 
 @* Join Processing Optimized for Memory/CPU cost
 @T
 We now address the issue of optimizing generic join processing for optimal usage of
-CPU resources and memory hardware on super-scalar CPUs featuring long pipelines and 
-out-of-order speculative execution and memory subsystems that consist of deep hierarchies 
+CPU resources and memory hardware on super-scalar CPUs featuring long pipelines and
+out-of-order speculative execution and memory subsystems that consist of deep hierarchies
 with various levels of memory cache.
 
-We specifically want to compare the effectiveness of the 'Monet-approach' with a standard 
+We specifically want to compare the effectiveness of the 'Monet-approach' with a standard
 'relational approach'. We consider the generic join query:
 
 \begin{verbatim}
@@ -258,18 +258,18 @@ SELECT larger.a1, .., larger.aY, smaller.b1, .., smaller.bZ
 FROM   larger, smaller
 WHERE  larger.key = smaller.key
 \end{verbatim}
-Without loss of generality we assume that the "larger" table has the same amount or more 
-tuples than the "smaller" table.  
+Without loss of generality we assume that the "larger" table has the same amount or more
+tuples than the "smaller" table.
 
-@+ The Monet Approach 
+@+ The Monet Approach
 @T
 In the standard approach this query would be executed in Monet with the following MIL statements:
 \begin{verbatim}
 01
 02  # join is either positional-, merge- or hash-join.
 03  res_join := join(larger_key, smaller_key.reverse);
-04  res_larger := res_join.mark(0@0).reverse; 
-05  res_smaller := res_join.reverse.mark(0@0).reverse; 
+04  res_larger := res_join.mark(0@0).reverse;
+05  res_smaller := res_join.reverse.mark(0@0).reverse;
 
     # positional-join projected columns from smaller table into result
 A1  res_a1 := join(res_smaller, smaller_a1);
@@ -290,40 +290,40 @@ a value in a VOID column, as the value you look up (e.g. 3@0) already tells its 
 The positional join algorithms joins an outer BAT[any,oid] with an inner BAT[void,any]
 by scanning over the inner-BAT and performing positional lookup into the outer BAT.
 
-In a typical data warehouse, the join at line 03 would be positional if the "key" 
+In a typical data warehouse, the join at line 03 would be positional if the "key"
 columns are foreign keys between tables with a 1-1, 1-N or N-1 relationship (in those cases,
-one of the key columns would be of type VOID). However, if the columns are a N-M relationship, 
+one of the key columns would be of type VOID). However, if the columns are a N-M relationship,
 or if they do not form a foreign key at all, the join
 would become a merge-join or a hash-join. Merge-join is only taken if both
-smaller\_key and larger\_key are already be sorted on key (tail column). As this cannot 
+smaller\_key and larger\_key are already be sorted on key (tail column). As this cannot
 generally be assumed, normally a hash-join would be the implementation chosen by Monet.
-A hash-join performs well as long as the smaller\_key BAT plus its associated hash-table 
-(which adds about 8 bytes per tuple), is smaller than the memory cache. 
+A hash-join performs well as long as the smaller\_key BAT plus its associated hash-table
+(which adds about 8 bytes per tuple), is smaller than the memory cache.
 
-The latter phase of the query (lines A0-AY,B0-BZ) fetches column values from the projected columns 
-using positional join.  This performs fine up until table sizes of the larger table when one 
+The latter phase of the query (lines A0-AY,B0-BZ) fetches column values from the projected columns
+using positional join.	This performs fine up until table sizes of the larger table when one
 larger\_bX column BAT starts to exceed the size of the memory cache.
 
-We now turn our attention to what happens if these sizes exceed. First, we discuss what happens 
+We now turn our attention to what happens if these sizes exceed. First, we discuss what happens
 if the larger\_bX BATs (which for simplicity we assume all have approximately the same size)
 do not fit the memory cache. Then, we discuss what happens if even the smaller\_key BAT plus
 its hash-table does not fit anymore.
 
 @- The Role of Sorting in improving Memory Access
 @T
-If the BATs storing the columns of the "larger" table do not fit the memory cache anymore, 
+If the BATs storing the columns of the "larger" table do not fit the memory cache anymore,
 the positional joins in the last Y statements of the MIL script will start to generate cache
-misses. This is caused by the fact that the OIDs in the tail of the res\_larger BATs are 
+misses. This is caused by the fact that the OIDs in the tail of the res\_larger BATs are
 not sorted; hence the access to the larger\_bX column BATs is random.
 
 This problem can be solved, by sorting the result of the join first on the OIDs that point
-to the "larger" table (the head column of res\_join): 
+to the "larger" table (the head column of res\_join):
 
 \begin{verbatim}
 ..
 03  res_join := join(larger_key, smaller_key.reverse).sort;
-04  res_larger_sorted := res_join.mark(0@0).reverse; 
-05  res_smaller := res_join.reverse.mark(0@0).reverse; 
+04  res_larger_sorted := res_join.mark(0@0).reverse;
+05  res_smaller := res_join.reverse.mark(0@0).reverse;
 ..
     # positional-join projected columns from larger table into result
 B1  res_b1 := join(res_larger_sorted, larger_b1);
@@ -336,25 +336,25 @@ columns will cause a nice sequential access to both res\_larger (as it is scanne
 "outer" join operand) and larger\_bX (due to the fact that the lookup values from res\_larger are
 now sorted). We must, however, take into account that res\_join
 may be a BAT that itself is larger than the memory cache, in which case the sorting operation
-itself could cause a great many cache misses itself, and therefore perform badly.  Let us therefore 
+itself could cause a great many cache misses itself, and therefore perform badly.  Let us therefore
 shortly discuss the memory access properties of Monet's sorting algorithms.
 
 Monet uses a CPU-optimized quicksort algorithm for sorting large relations. The CPU-optimizations
 reduce the amount of function calls, by doing all value-comparison and data movement in line,
 using C macros. In this sense it differs from the standard Unix library call qsort(), as that
-routine compares values with a user-provided function, and (often) moves values with memcpy().  
+routine compares values with a user-provided function, and (often) moves values with memcpy().
 
 The memory access pattern of the Monet quicksort consists of one sequential scan per recursion
 level (walking two cursors simultaneously, one from the start of the BAT forward, as well as another
-from the end of the BAT backward, until both meet in the middle). Quicksort is binary recursive and 
-therefore takes log2(ntuples) recursion levels to sort a BAT, hence its total memory access consists of log2(ntuples) 
-sequential scans.  However, since quicksort zooms into ever smaller sub-chunks of the BAT, there will 
-be cache re-use in the deeper recursion levels as soon as such a chunk fits the memory cache, which 
-happens when sizeof(chunk) = sizeof(BAT)/(2\^level) <= sizeof(cache).  Hence, the total memory cost of 
-quicksort is log2(ntuples)-log2(sizeof(cache)/sizeof(tuple)) sequential scans.  
+from the end of the BAT backward, until both meet in the middle). Quicksort is binary recursive and
+therefore takes log2(ntuples) recursion levels to sort a BAT, hence its total memory access consists of log2(ntuples)
+sequential scans.  However, since quicksort zooms into ever smaller sub-chunks of the BAT, there will
+be cache re-use in the deeper recursion levels as soon as such a chunk fits the memory cache, which
+happens when sizeof(chunk) = sizeof(BAT)/(2\^level) <= sizeof(cache).  Hence, the total memory cost of
+quicksort is log2(ntuples)-log2(sizeof(cache)/sizeof(tuple)) sequential scans.
 
-In all, the Monet quicksort implementation behaves quite good both concerning CPU efficiency and 
-memory access pattern. Still, for some simple data types (in particular columns containing OIDs) one 
+In all, the Monet quicksort implementation behaves quite good both concerning CPU efficiency and
+memory access pattern. Still, for some simple data types (in particular columns containing OIDs) one
 can further improve the memory access performance by using {\em radix-sort} instead of quicksort.
 
 Radix-sort is essentially a radix-cluster on all bits, hence we do:
@@ -367,38 +367,38 @@ Radix-sort is essentially a radix-cluster on all bits, hence we do:
 
 Where p is a suitable number of passes and R=R1+..+Rp is the total number of "significant bits"
 (the most significant bit in a collection of integer values is the highest bit set in all values).
-The head column of the join(larger\_key, smaller\_key.reverse) is of type OID, and contains 
+The head column of the join(larger\_key, smaller\_key.reverse) is of type OID, and contains
 the OIDs from the matching tuples in the larger table. Table-OID are automatically generated by
-the VOID columns of Monet, and therefore these integer values are from the range [0,...,N], where N 
+the VOID columns of Monet, and therefore these integer values are from the range [0,...,N], where N
 is the number of tuples in the "larger" table. We call such an integer
-sub-domain a "dense" domain. As a result, the number of significant bits is minimal (i.e. R=log2(N), 
-there are no "spoiled" values), and we do not expect skew in such a column. This motivates our choice 
-to implement radix-cluster for the OID type by getting radix bits {\em without} hashing (for all other 
-types, we hash first). Hashing is not necessary due to absence of value-skew on OID columns, and 
+sub-domain a "dense" domain. As a result, the number of significant bits is minimal (i.e. R=log2(N),
+there are no "spoiled" values), and we do not expect skew in such a column. This motivates our choice
+to implement radix-cluster for the OID type by getting radix bits {\em without} hashing (for all other
+types, we hash first). Hashing is not necessary due to absence of value-skew on OID columns, and
 absence of hashing allows us to use radix-cluster as radix-sort.
 
 @- Partitioned Hash Join
 @T
 We now discuss the case that even the smaller\_key BAT with its hash structure does not fit the
-smallest cache. What happens then in the join-phase? Since the hash-join algorithm exhibits a random 
-access pattern, compulsory cache misses will start to appear up to the point that each access to 
-the hash-table will be a miss. Even in the direct hashing employed by Monet, this amounts to at least 
-3 misses per tuple in the "larger" table (one in the hash-mask, at least one in the BAT, and at least 
-one in the hash-link list to conclude that this is the last match).  To these memory cost, we should 
-also add the cost of constructing the hash table, which amount to (at least) one miss per tuple in 
+smallest cache. What happens then in the join-phase? Since the hash-join algorithm exhibits a random
+access pattern, compulsory cache misses will start to appear up to the point that each access to
+the hash-table will be a miss. Even in the direct hashing employed by Monet, this amounts to at least
+3 misses per tuple in the "larger" table (one in the hash-mask, at least one in the BAT, and at least
+one in the hash-link list to conclude that this is the last match).  To these memory cost, we should
+also add the cost of constructing the hash table, which amount to (at least) one miss per tuple in
 the "smaller" table. As cache misses can be as expensive as 100 CPU cycles, and pure CPU costs for
-direct hashing in Monet can be as low as 20 cycles per tuple, such a high cache miss ratio 
+direct hashing in Monet can be as low as 20 cycles per tuple, such a high cache miss ratio
 tremendously slows down the join (e.g. by a factor 10).
 
 In the situation mentioned above, performance can be improved by using partitioned hash-join,
-as presented earlier in this module, instead of simple hash-join. The partitioned hash-join uses 
-radix-cluster to quickly cluster both the smaller\_key and larger\_key BATs into clusters that fit 
-the memory cache, and then repeatedly performs hash-join on the corresponding clusters. In this way, 
-the random access is restricted to areas that fit the memory cache, hence the expensive cache misses 
+as presented earlier in this module, instead of simple hash-join. The partitioned hash-join uses
+radix-cluster to quickly cluster both the smaller\_key and larger\_key BATs into clusters that fit
+the memory cache, and then repeatedly performs hash-join on the corresponding clusters. In this way,
+the random access is restricted to areas that fit the memory cache, hence the expensive cache misses
 disappear (mostly).
 
 This is realized in Monet by using radix-clustering both relations on H bits, e.g. larger\_key
-in l passes, and smaller\_key in s passes, such that H = L1+..+Ll = S1+..+Ss: 
+in l passes, and smaller\_key in s passes, such that H = L1+..+Ll = S1+..+Ss:
 \begin{verbatim}
 00  # first radix cluster both key columns on H bits (maybe different number of passes and bit settings)
 01  cluster_larger := radix_cluster(larger_key, L1,..,Ll);
@@ -415,10 +415,10 @@ Line 03 above uses phash\_join, but could alternatively use radix-join:
 ..
 \end{verbatim}
 
-From this point on, the same code as in the previous MIL script could be applied to fetch the column 
+From this point on, the same code as in the previous MIL script could be applied to fetch the column
 values for columns a1..aY from "smaller" and b1..bZ from "larger". The remaining problem here is that both
-the larger\_bX *and* the smaller\_aX BATs will tend to be bigger than the smallest memory cache (though this 
-also depends on the join hit-ratio, but let use suppose it is >= 1). 
+the larger\_bX *and* the smaller\_aX BATs will tend to be bigger than the smallest memory cache (though this
+also depends on the join hit-ratio, but let use suppose it is >= 1).
 
 To improve this, we can sort on the OIDs from the "larger" table, like described in the previous section.
 This will enhance the access pattern of the subsequent positional joins to the larger\_bX column BATs:
@@ -427,36 +427,36 @@ This will enhance the access pattern of the subsequent positional joins to the l
 ..
     # partitioned hash join on clusters of H radix-bits, followed by radix-sort on head column.
 03  res_join := phash_join(cluster_larger, cluster_smaller.reverse, H).reverse.radix_cluster(R1,..,Rp).reverse;
-04  res_larger_sorted := res_join.mark(0@0).reverse; 
-05  res_smaller := res_join.reverse.mark(0@0).reverse; 
+04  res_larger_sorted := res_join.mark(0@0).reverse;
+05  res_smaller := res_join.reverse.mark(0@0).reverse;
 ..
 \end{verbatim}
 
-Now, as the smaller\_aX column BATs probably are also larger than the memory cache, we would like to do 
+Now, as the smaller\_aX column BATs probably are also larger than the memory cache, we would like to do
 the same for the "smaller" table. But, we then cannot sort res\_join twice. We could sort res\_smaller on tail
 after line 05:
 \begin{verbatim}
 ..
-05  res_smaller := res_join.reverse.mark(0@0).reverse.radix_cluster(R1,..,Rp); 
+05  res_smaller := res_join.reverse.mark(0@0).reverse.radix_cluster(R1,..,Rp);
 ..
 \end{verbatim}
-However, this approach of the problem only transfers the problem to later phases of query processing. 
+However, this approach of the problem only transfers the problem to later phases of query processing.
 The positional joins would run fine, but as a tail-sorted res\_smaller would be a BAT[oid,oid] (i.e.
-it would no longer have a VOID head column), the result of the positional joins with the smaller\_aX 
-BAT[void,T]s would be of the form BAT[oid,T]. These results would not only take more space than the 
-desired form BAT[void,T], but would also create a problem in further use of the query result, as these 
-res\_aX BATs will not be sorted on head. Join access to them would go to the hash-join rather than the 
-positional join, and due to the random access this would pose a memory caching problem as these 
-res\_aX BATs tend to be larger than the memory cache. 
+it would no longer have a VOID head column), the result of the positional joins with the smaller\_aX
+BAT[void,T]s would be of the form BAT[oid,T]. These results would not only take more space than the
+desired form BAT[void,T], but would also create a problem in further use of the query result, as these
+res\_aX BATs will not be sorted on head. Join access to them would go to the hash-join rather than the
+positional join, and due to the random access this would pose a memory caching problem as these
+res\_aX BATs tend to be larger than the memory cache.
 
-Therefore, for these projection joins, we propose the use of a new memory-conscious join algorithm that is 
+Therefore, for these projection joins, we propose the use of a new memory-conscious join algorithm that is
 called {\em clustered positional join} which implements a join(BAT[void,oid] L, BAT[void,T] R) : BAT[void,T]
 
 This algorithm consists of three phases, of which we already know the first two:
 \begin{description}
-\item[partial radix-cluster] 
+\item[partial radix-cluster]
 First, the res\_smaller is {\em partially} radix-clustered on tail-OID. That is, the relation L (= res\_smaller in
-the positional joins to the column BATs smaller\_aX) is clustered on some number of highest significant 
+the positional joins to the column BATs smaller\_aX) is clustered on some number of highest significant
 radix-bits, but not on all radix-bits. Because the radix-cluster on OIDs does not use a hash-function,
 clustering an OID column on all significant bits radix-sorts it, or - as in this case - on a subset of the
 highest significant bits, partially orders it. The partial ordering of OIDs in chunks is done in such a way that the
@@ -464,28 +464,28 @@ size of the corresponding chunk in R (remember R is a BAT[void,T] and has all OI
 the memory cache.
 \item[positional join]
 The purpose of the radix-clustering in the previous phase L is to accelerate the positional join between L and R
-(i.e. res\_smaller and smaller\_aX).  Because the OIDs in the tail of L are now partially sorted, each chunk in L 
-will only randomly access data from one chunk in R.  Therefore, during positional join, these chunks in R stay 
+(i.e. res\_smaller and smaller\_aX).  Because the OIDs in the tail of L are now partially sorted, each chunk in L
+will only randomly access data from one chunk in R.  Therefore, during positional join, these chunks in R stay
 memory resident, accelerating performance with respect to to doing the same with a non-clustered L (where each access to
-R would be a cache miss). 
+R would be a cache miss).
 \item[radix decluster]
 The result of the positional join is a BAT[oid,T]. Still, we know that the head column, when sorted, would
-form an void column. What is now the fastest way to sort it and convert it back to a void BAT? One special property 
-of the radix-cluster algorithm is that when we cluster on tail column, each result chunk will have the head-values 
-in order. In this case, the clustered version of L (res\_smaller\_clustered, see below) has the head OIDs in order {\em within the 
-chunk}. This sub-ordering is also carried over by the positional join to result of the positional join: in each 
+form an void column. What is now the fastest way to sort it and convert it back to a void BAT? One special property
+of the radix-cluster algorithm is that when we cluster on tail column, each result chunk will have the head-values
+in order. In this case, the clustered version of L (res\_smaller\_clustered, see below) has the head OIDs in order {\em within the
+chunk}. This sub-ordering is also carried over by the positional join to result of the positional join: in each
 'virtual chunk' in the BAT[oid,T], the OIDs appear in order. Therefore, we can perform an merge operation to merge
 all BAT[oid,T] chunks into a BAT[void,T] result. Normally, the cost of a merge is at least O(log(P)*N), where N
-is the total number of tuples, and P is the number of chunks. By using the special property that eventually, 
+is the total number of tuples, and P is the number of chunks. By using the special property that eventually,
 the merged OIDs form a densely ascending sequence (0@0, 1@0,..,N@0), we can bring this cost back to O(N)! This {\em radix decluster}
 algorithm keeps a windows open of OIDs [windowStart, windowStart+1, ..., windowStart+windowSize-1] during the
-merge. Each iteration of the algorithm finds all the next windowSize OIDs in the chunks and inserts them 
-in the result BAT[void,T]. This is done by going to through all (not yet empty) chunks and inserting from the top of 
+merge. Each iteration of the algorithm finds all the next windowSize OIDs in the chunks and inserts them
+in the result BAT[void,T]. This is done by going to through all (not yet empty) chunks and inserting from the top of
 each chunk all elements whose OID fits into the window. Due to the fact that all chunks are sorted, we are
 sure to have found all OIDs after having processed all chunks. Then, the window is shifted windowSize positions
-and the process repeats. The windowSize is typically a multiple of the number of chunks, such that per iteration 
+and the process repeats. The windowSize is typically a multiple of the number of chunks, such that per iteration
 in each chunk multiple tuples fall into the window. Because these multiple tuples are accessed sequentially
-in the chunk, the chunk cache lines will be re-used and performance will be good. The only restriction on the windowSize 
+in the chunk, the chunk cache lines will be re-used and performance will be good. The only restriction on the windowSize
 is that the insertion window on the output BAT must fit the memory cache. This will only start to exceed on very
 large table sizes (a possible remedy is then to perform the merge in multiple passes).
 \end{description}
@@ -493,8 +493,8 @@ large table sizes (a possible remedy is then to perform the merge in multiple pa
 In all, in Monet this join strategy is expressed in the following MIL:
 \begin{verbatim}
 ..
-    # subcluster on Rs significant radix-bits, ignoring lowest Ri bits 
-05  res_smaller_clustered := res_join.reverse.mark(0@0).reverse.radix_cluster(-Ri, Rs); 
+    # subcluster on Rs significant radix-bits, ignoring lowest Ri bits
+05  res_smaller_clustered := res_join.reverse.mark(0@0).reverse.radix_cluster(-Ri, Rs);
 
     # positional-join and decluster projected columns from smaller table into result
 A0  borders_smaller := res_smaller_clustered.radix_count(Ri, Rs);
@@ -504,16 +504,16 @@ AY  res_aY := join(res_smaller_clustered, smaller_aY).radix_decluster(borders_sm
 ..
 \end{verbatim}
 
-Possibly, one could consider to use this approach as well for the projections on the larger table 
-(instead of the sort). However, sorting once (with radix-sort by radix-clustering on all significant 
-bits) is probably faster than one-time partial radix-cluster, followed by multiple times positional decluster 
-operations (one for each projected column). Therefore, it is best to do one of the set of projections 
+Possibly, one could consider to use this approach as well for the projections on the larger table
+(instead of the sort). However, sorting once (with radix-sort by radix-clustering on all significant
+bits) is probably faster than one-time partial radix-cluster, followed by multiple times positional decluster
+operations (one for each projected column). Therefore, it is best to do one of the set of projections
 with the sort/join strategy and the other with the clustered positional join strategy.
-The decision to do which (sort on the smaller or on the larger table?), could also be made in function of the 
-number of projection attributes needed from the "smaller" and "larger" tables. That is, one could choose to do 
+The decision to do which (sort on the smaller or on the larger table?), could also be made in function of the
+number of projection attributes needed from the "smaller" and "larger" tables. That is, one could choose to do
 the clustered positional join on the table with least projections, and sort/join on the other.
 
-The full MIL script when the individual BATs of both the "smaller" and "larger" tables as well as 
+The full MIL script when the individual BATs of both the "smaller" and "larger" tables as well as
 the (N-M) join result, exceed the memory cache becomes:
 \begin{verbatim}
     # first radix cluster both key columns on H bits (maybe different number of passes and bit settings)
@@ -522,10 +522,10 @@ the (N-M) join result, exceed the memory cache becomes:
 
     # partitioned hash join on clusters of H radix-bits, followed by radix-sort on head column.
 03  res_join := phash_join(cluster_larger, cluster_smaller.reverse, H).reverse.radix_cluster(R1,..,Rp).reverse;
-04  res_larger_sorted := res_join.mark(0@0).reverse; 
+04  res_larger_sorted := res_join.mark(0@0).reverse;
 
-    # subcluster on Rs significant radix-bits, ignoring lowest Ri bits 
-05  res_smaller_clustered := res_join.reverse.mark(0@0).reverse.radix_cluster(-Ri, Rs); 
+    # subcluster on Rs significant radix-bits, ignoring lowest Ri bits
+05  res_smaller_clustered := res_join.reverse.mark(0@0).reverse.radix_cluster(-Ri, Rs);
 
     # positional-join and decluster projected columns from smaller table into result
 A0  borders_smaller := res_smaller_clustered.radix_count(Ri, Rs);
@@ -541,25 +541,25 @@ BZ  res_bZ := join(res_larger_sorted, larger_bZ);
 
 @+ The Relational Approach
 @T
-A cache-conscious join in a relational DBMS would first radix-cluster both the smaller and larger table, 
-where in the process it would project on just the selected columns. As the relational model does not 
+A cache-conscious join in a relational DBMS would first radix-cluster both the smaller and larger table,
+where in the process it would project on just the selected columns. As the relational model does not
 separate its algebraic actions by column, as Monet in MIL does, it cannot use the technique of type-expansion
 and have primitives that are optimized for a specific type. In other words, the join operator in a relational
 DBMS must be able to handle tables of variable number of columns with variable constellations of column types.
-This is either implemented in the kernel of a relational DBMS by using ADT interfaces with functions dereferenced 
+This is either implemented in the kernel of a relational DBMS by using ADT interfaces with functions dereferenced
 from a type table, or through late-binding style C++ overloaded methods to handle data values of variable types.
-That means that, e.g. during the radix-cluster, for each projected column, at least one function call is executed 
-to move a data value from the source record to the destination record. 
+That means that, e.g. during the radix-cluster, for each projected column, at least one function call is executed
+to move a data value from the source record to the destination record.
 
-To model this extra function calling overhead, we use the integerX Monet types, that were created specifically 
-for these experiments.  An integerX value models a relational tuple that stores X simple integer column values.  
+To model this extra function calling overhead, we use the integerX Monet types, that were created specifically
+for these experiments.	An integerX value models a relational tuple that stores X simple integer column values.
 Through some tricks, copying one integer8 value in Monet is actually done by copying 8 integers width memcpy(),
 which closely mimics what happens in a typical relational DBMS.
 
-In order to give a concrete example, we suppose "smaller" and "larger" each have 128 columns, and 
-the projection widths are Y=Z=8; we emulate relational storage of both tables in Monet by storing 
-them as BAT[integer128,integer], where the tail columns contain the "key" value and the head contains 
-all other columns.  
+In order to give a concrete example, we suppose "smaller" and "larger" each have 128 columns, and
+the projection widths are Y=Z=8; we emulate relational storage of both tables in Monet by storing
+them as BAT[integer128,integer], where the tail columns contain the "key" value and the head contains
+all other columns.
 
 The entire MIL sequence are then the following 5 statements:
 \begin{verbatim}
@@ -575,17 +575,17 @@ The entire MIL sequence are then the following 5 statements:
 \end{verbatim}
 
 Notice that the fact that smaller\_view and larger\_view are MIL views on the base BATs
-smaller\_all and larger\_all, means that the projection is never materialized. Projecting 
-is done on the fly during the first pass of radix cluster, just like what would happen in 
+smaller\_all and larger\_all, means that the projection is never materialized. Projecting
+is done on the fly during the first pass of radix cluster, just like what would happen in
 a relational system. What is more, the copying of each integer8 (view) value from its
 storage as integer128 is done with 8 memcpy() calls that fetch values at regular intervals
-(i.e. at positions 0, 16, 32, 48, 64,  80, 96 and 112). In practice, this means that 
-each memcpy() causes a memory cache miss. 
+(i.e. at positions 0, 16, 32, 48, 64,  80, 96 and 112). In practice, this means that
+each memcpy() causes a memory cache miss.
 
 We expect that the relational strategy will have a different performance characteristic than
-Monet. First, there will be many more cache misses due to the reasons described above. 
-Even radix-cluster cannot avoid those cache misses, as it is inherent to the relational 
-storage format of base data. Second, there will be much more CPU cost, due to the fact that 
+Monet. First, there will be many more cache misses due to the reasons described above.
+Even radix-cluster cannot avoid those cache misses, as it is inherent to the relational
+storage format of base data. Second, there will be much more CPU cost, due to the fact that
 function-call overhead cannot be eliminated. In Monet algorithms, CPU optimizations cause
 a 5-fold performance improvement.
 
@@ -603,11 +603,11 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
 
 .COMMAND radix_cluster(bat[any::1,any::2] b, str limits, flt perc, int radix1, ...int...) :
 		bat[any::1,any::2] = radix_cluster;
-"do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters. First pass uses 
- the last radix parameter, and so on backwards. Partial radix cluster (i.e. skipping lower 
- significant bits) can be indicated by passing a negative number of bits as first parameter. 
+"do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters. First pass uses
+ the last radix parameter, and so on backwards. Partial radix cluster (i.e. skipping lower
+ significant bits) can be indicated by passing a negative number of bits as first parameter.
 
- If you pass an appendable, empty, limits bat, a radix_count2 result with the resulting cluster 
+ If you pass an appendable, empty, limits bat, a radix_count2 result with the resulting cluster
  boundaries is returned in it. Note that you pass a batname of b, as returned by b.bbpname().
 
  If you pass a non-empty limits bat, it is used for resuming the clustering. The operation
@@ -618,7 +618,7 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
  and will also be overwritten with the new cluster boundaries"
 
 .COMMAND radix_bits(bat[any,any] b) : int = radix_bits;
-"return the number of bits on which the head column is radix clustered." 
+"return the number of bits on which the head column is radix clustered."
 
 .COMMAND radix_count(bat[oid,oid] b, int shift, int radix) : bat[int,int] = radix_count;
 "return a histogram [radix-pattern,bucket-size] for the tail values of some BAT b.
@@ -628,25 +628,25 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
  radix-bits and (2) the head values are ascending"
 
 .COMMAND radix_count2(bat[any,oid] b, int shift, int radix) : bat[int,int] = radix_count2;
-"generates a bat with in head the dense ascending sequence 0..((1 << radix) - 1), and in tail 
+"generates a bat with in head the dense ascending sequence 0..((1 << radix) - 1), and in tail
 the count of all tail value in b with these radix bits, ignoring the lowmost ones passed in shift"
 
-.COMMAND radix_decluster(bat[oid,any::1] b, bat[int,int] radix_cnt, int multiplier) : 
-         bat[void,any::1] = radix_decluster;
+.COMMAND radix_decluster(bat[oid,any::1] b, bat[int,int] radix_cnt, int multiplier) :
+	 bat[void,any::1] = radix_decluster;
 "merge a (partially) radix-clustered dense collection of oids back to their original void
  position.  second bat *must* be result of b.radix_count(x,y). Third parameter is a multiplier
  that tells how many times the number of chunks the matching-window-size should be."
 
-.COMMAND radix_decluster2(bat[any::2,oid] b, bat[any::2,any::1] a, bat[int,int] radix_cnt, int multiplier) : 
-         bat[void,any::1] = radix_decluster2; ""
+.COMMAND radix_decluster2(bat[any::2,oid] b, bat[any::2,any::1] a, bat[int,int] radix_cnt, int multiplier) :
+	 bat[void,any::1] = radix_decluster2; ""
 
-.COMMAND radix_decluster3(bat[any::2,oid] b, bat[any::2,any::1] a, bat[int,int] radix_cnt, int multiplier) : 
-         bat[void,any::1] = radix_decluster3; ""
+.COMMAND radix_decluster3(bat[any::2,oid] b, bat[any::2,any::1] a, bat[int,int] radix_cnt, int multiplier) :
+	 bat[void,any::1] = radix_decluster3; ""
 
-.COMMAND radix_decluster4(bat[any::2,oid] b, bat[any::2,any::1] a, bat[int,int] radix_cnt, int multiplier) : 
-         bat[void,any::1] = radix_decluster4; ""
+.COMMAND radix_decluster4(bat[any::2,oid] b, bat[any::2,any::1] a, bat[int,int] radix_cnt, int multiplier) :
+	 bat[void,any::1] = radix_decluster4; ""
 
-.COMMAND radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate) : 
+.COMMAND radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int hitrate) :
 	bat[any,any] = radix_join;
 "nested-loop join on radix clustered inputs"
 
@@ -654,17 +654,17 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 	bat[any,any] = phash_join;
 "partitioned hash-join on radix clustered inputs"
 
-.COMMAND jivejoin0(BAT[oid,oid] proj, BAT[void,any::1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,any::1] = jivejoin0; 
+.COMMAND jivejoin0(BAT[oid,oid] proj, BAT[void,any::1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,any::1] = jivejoin0;
 "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
 
-.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,any::1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,any::1] = jivejoin1; 
+.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,any::1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,any::1] = jivejoin1;
 "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
 
-.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,any::1] attr) : BAT[void,any::1] = jivejoin2; 
+.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,any::1] attr) : BAT[void,any::1] = jivejoin2;
 "positional join that creates a void head by inserting the join result positionally"
 
 @= integer
-.ATOM integer@1[@2,4]; 
+.ATOM integer@1[@2,4];
       .COMP    = integer@1Cmp;
       .TOSTR   = integer@1ToStr;
       .FROMSTR = integer@1FromStr;
@@ -688,23 +688,23 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 .COMMAND [IntX](BAT[any::1,integer@1] b) : BAT[any::1,Int@1] = BATintX;
 "convert an integer@1 to Int@1"
 
-.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,integer@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,Int@1] = jivejoin1; 
+.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,integer@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,Int@1] = jivejoin1;
 "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
 
-.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,pax@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,Int@1] = jivejoin1; 
+.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,pax@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,Int@1] = jivejoin1;
 "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
 
-.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,integer@1] attr) : BAT[void,Int@1] = jivejoin2; 
+.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,integer@1] attr) : BAT[void,Int@1] = jivejoin2;
 "positional join that creates a void head by inserting the join result positionally"
 
-.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,pax@1] attr) : BAT[void,Int@1] = jivejoin2; 
+.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,pax@1] attr) : BAT[void,Int@1] = jivejoin2;
 "positional join that creates a void head by inserting the join result positionally"
 
 .COMMAND posjoin(BAT[void,oid] proj, BAT[void,integer@1] attr) : BAT[void,Int@1] = posjoin_tuple;
-"positional join with built-in NSM projection" 
+"positional join with built-in NSM projection"
 
 .COMMAND posjoin(BAT[void,oid] proj, BAT[void,pax@1] attr) : BAT[void,Int@1] = posjoin_tuple;
-"positional join with built-in PAX projection" 
+"positional join with built-in PAX projection"
 
 .COMMAND radix_cluster(bat[integer@1,any::2] b, str limits, flt perc, int radix1, ...int...) :
 		bat[Int@1,any::2] = radix_cluster; ""
@@ -725,7 +725,7 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 @:tpe(int)@
 
 .COMMAND posjoin(BAT[void,oid] c, BAT[void,any::1] v,
-                 int radix_bits, int stride, int vector_size) : BAT[void,any::1] = posjoin_clustered;
+		 int radix_bits, int stride, int vector_size) : BAT[void,any::1] = posjoin_clustered;
 "perform a positional join that exploits radix-clusteredness for prefetching"
 
 
@@ -738,7 +738,7 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 .COMMAND normal(oid base, int size, int domain, int stddev, int mean) : bat[oid,int] = BATnormal;
 "create a random bat of certain size, head values unique, tail values
  from a normal distribution between [0..domain].
- default values: base = 0@0, mean = size/2, stddev = size/10, domain=size." 
+ default values: base = 0@0, mean = size/2, stddev = size/10, domain=size."
 
 .COMMAND [integer](BAT[any::1,int] b, int width) : BAT[any::1,any] = BATinteger;
 "create a view that makes tail column appear as an integerX column for some width=X"
@@ -755,11 +755,11 @@ proc normal(int s, int d, int v) : bat[oid,int] { return normal(0@0,s,d,v); }
 proc normal(oid base, int s, int d) : bat[oid,int] { return normal(0@0,s,d,d/10); }
 proc normal(int s, int d) : bat[oid,int] { return normal(0@0,s,d); }
 proc normal(int s) : bat[oid,int] {return normal(s,s); }
-proc radix_cluster(bat[any::1,any::2] b, int radix1, ..int..) : 
+proc radix_cluster(bat[any::1,any::2] b, int radix1, ..int..) :
 	bat[any::1,any::2] { return radix_cluster(b, "tmp_0", 1.0, $(2..)); }
-proc radix_cluster(bat[any::1,any::2] b, str limits, int radix1, ..int..) : 
+proc radix_cluster(bat[any::1,any::2] b, str limits, int radix1, ..int..) :
 	bat[any::1,any::2] { return radix_cluster(b, limits, 1.0, $(3..)); }
-proc radix_cluster(bat[any::1,any::2] b, flt perc, int radix1, ..int..) : 
+proc radix_cluster(bat[any::1,any::2] b, flt perc, int radix1, ..int..) :
 	bat[any::1,any::2] { return radix_cluster(b, "tmp_0", perc, $(3..)); }
 proc radix_join(bat[any::1,any::2] l, bat[any::2,any::3] r) : bat[any::1,any::3]
 	{return radix_join(l,r, min(l.reverse().radix_bits(), r.radix_bits()), 1);}
@@ -771,7 +771,7 @@ proc radix_decluster(bat[oid,any::1] b, bat[int,int] radix_cnt) : bat[void,any::
 	return radix_decluster(b,radix_cnt,4);
 }
 proc "[integer]"(bat[any::1,int] b) : bat[any::1,integer1]{
-        return [integer](b, 1);
+	return [integer](b, 1);
 }
 proc pax_blocksize() : int {
 	return pax_blocksize(int(nil));
@@ -793,18 +793,18 @@ proc posjoin(bat[void,oid] c, bat[void,any::1] v, int radixbits) : BAT[void,any:
 
 proc log2(int i) : int {
   var n := 0;
-  while(i > 1)  {
+  while(i > 1)	{
      i >>= 1;
      n :+= 1;
   }
-  return n; 
+  return n;
 }
 
 proc radix_cluster2(BAT[void,oid] b, int npasses, int nbits, int nignore) : BAT[oid,oid] {
   var maxpasses := min(4, nbits);
   if (npasses > maxpasses) npasses := maxpasses;
-  var quota := nbits / npasses; 
-  var rest := nbits - (quota * (npasses - 1)); 
+  var quota := nbits / npasses;
+  var rest := nbits - (quota * (npasses - 1));
   if (nignore = 0) {
     nignore := rest;
     rest := quota;
@@ -813,15 +813,15 @@ proc radix_cluster2(BAT[void,oid] b, int npasses, int nbits, int nignore) : BAT[
     npasses :+= 1;
   }
   if (npasses = 5) {
-      return radix_cluster(b, nignore, rest, quota, quota, quota); 
+      return radix_cluster(b, nignore, rest, quota, quota, quota);
   } else if (npasses = 4) {
-      return radix_cluster(b, nignore, rest, quota, quota); 
+      return radix_cluster(b, nignore, rest, quota, quota);
   } else if (npasses = 3) {
-      return radix_cluster(b, nignore, rest, quota); 
+      return radix_cluster(b, nignore, rest, quota);
   } else if (npasses = 2) {
-      return radix_cluster(b, nignore, rest); 
+      return radix_cluster(b, nignore, rest);
   }
-  return radix_cluster(b, nignore); 
+  return radix_cluster(b, nignore);
 }
 
 proc cache_join(BAT[void,oid] left, BAT[void,any::1] right) : BAT[void,any::1] {
@@ -832,11 +832,11 @@ proc cache_join(BAT[void,oid] left, BAT[void,any::1] right) : BAT[void,any::1] {
     var nignore := max(0, (1 + log2(right.count())) - nbits);
     var npasses := 1 + (nbits + 1) / log2(CACHE_LINES);
 
-    var cluster := left.radix_cluster2(npasses, nbits, nignore); 
-    var borders := cluster.radix_count(nignore, nbits); 
+    var cluster := left.radix_cluster2(npasses, nbits, nignore);
+    var borders := cluster.radix_count(nignore, nbits);
     var cluster_values := cluster.reverse().mark(0@0).reverse();
     var cluster_ids := cluster.mark(0@0).reverse();
-    cluster_values := cluster_values.join(right); 
+    cluster_values := cluster_values.join(right);
     var ret := radix_decluster2(cluster_ids, cluster_values, borders, 8);
     return ret;
   }
@@ -855,16 +855,16 @@ var b := view_bbp_name.reverse();
 if (not(b.exist("smaller_key")))
   uniform(1000000,1000000).reverse().mark(0@0).reverse().rename("smaller_key").persists(true).mmap(1);
 if (not(b.exist("smaller_a1")))
-  smaller_key.mirror().copy().rename("smaller_a1").persists(true).mmap(1);  
+  smaller_key.mirror().copy().rename("smaller_a1").persists(true).mmap(1);
 if (not(b.exist("smaller_aY")))
-  smaller_key.copy().rename("smaller_aY").persists(true).mmap(1);  
+  smaller_key.copy().rename("smaller_aY").persists(true).mmap(1);
 
 if (not(b.exist("larger_key")))
   bat(void,int,2000000).insert(smaller_key).insert(smaller_key.copy().seqbase(oid(int(smaller_key.seqbase()) + smaller_key.count()))).rename("larger_key").persists(true).mmap(1);
 if (not(b.exist("larger_b1")))
-  larger_key.mirror().copy().rename("larger_b1").persists(true).mmap(1);  
+  larger_key.mirror().copy().rename("larger_b1").persists(true).mmap(1);
 if (not(b.exist("larger_bZ")))
-  larger_key.copy().rename("larger_bZ").persists(true).mmap(1);  
+  larger_key.copy().rename("larger_bZ").persists(true).mmap(1);
 
 if (not(b.exist("smaller_all")))
    [integer]([int]([integer](smaller_key,1).reverse()),16).reverse().rename("smaller_all").persists(true).mmap(1);
@@ -875,16 +875,16 @@ if (not(b.exist("larger_all")))
 # ======================
 #
 # SELECT smaller.a1, smaller.aY, larger.b1, larger.bZ
-# FROM   smaller, larger
-# where  smaller.key = larger.key
+# FROM	 smaller, larger
+# where	 smaller.key = larger.key
 
 # 1) cache-conscious-monet-join-strategy, optimized for a 256KB L2 cache of 32 bytes line width
 # =============================================================================================
 #
 # first radix cluster both key columns on H bits (maybe different number of passes and bit settings)
 #
-# We have a 256KB cache, but want to fit comfortable in 128KB. Given a 8-byte relation width an 8-byte hash table, the 
-# chunk size is 128KB/16 = 8192, and since we have a 1M inner relation this leads to 7 bits clustering, wich we do in 2 
+# We have a 256KB cache, but want to fit comfortable in 128KB. Given a 8-byte relation width an 8-byte hash table, the
+# chunk size is 128KB/16 = 8192, and since we have a 1M inner relation this leads to 7 bits clustering, wich we do in 2
 # passes (4+3) to fit the 64-entry TLB
 #
 cluster_larger := radix_cluster(larger_key, 4, 3);
@@ -898,7 +898,7 @@ cluster_smaller := radix_cluster(smaller_key, 4, 3);
 #
 res_join := phash_join(cluster_larger, cluster_smaller.reverse(), 7, 2, false).reverse().radix_cluster(7,7,7).reverse();
 #2.7
-res_larger_sorted := res_join.mark(0@0).reverse(); 
+res_larger_sorted := res_join.mark(0@0).reverse();
 
 # no longer needed
 cluster_larger := 0;
@@ -913,11 +913,11 @@ res_bZ := join(res_larger_sorted, larger_bZ);
 # no longer needed
 res_larger_sorted := 0;
 
-# Given a 128KB of 'comfortable' L2, and 4-byte tuples in smaller_aX, we want chunk sizes of 32768. As we have a 
-# cardinality of 2M, we create 64 chunks by partial radix-cluster on 6 bits. The maximum value is 1M, hence there 
+# Given a 128KB of 'comfortable' L2, and 4-byte tuples in smaller_aX, we want chunk sizes of 32768. As we have a
+# cardinality of 2M, we create 64 chunks by partial radix-cluster on 6 bits. The maximum value is 1M, hence there
 # are 20 significant bits, so we ignore the lower 20-6=14 bits.
 #
-res_smaller_clustered := res_join.reverse().mark(0@0).reverse().radix_cluster(-14,6); 
+res_smaller_clustered := res_join.reverse().mark(0@0).reverse().radix_cluster(-14,6);
 #589
 #344
 
@@ -926,8 +926,8 @@ res_join := 0;
 
 # positional-join and decluster projected columns from smaller table into result
 #
-# The window size of the matching window is again the comfortable 128KB, with 4 byte wide tuples its tuple size is 
-# 32768. As we have 64 clusters, we can use a multiplier of 512. With 64 cluster, TLB trouble is avoided as well. 
+# The window size of the matching window is again the comfortable 128KB, with 4 byte wide tuples its tuple size is
+# 32768. As we have 64 clusters, we can use a multiplier of 512. With 64 cluster, TLB trouble is avoided as well.
 #
 borders_smaller := res_smaller_clustered.radix_count(14, 6);
 res_a1 := join(res_smaller_clustered, smaller_a1).radix_decluster(borders_smaller, 512);
@@ -945,7 +945,7 @@ res_aY := 0;
 res_b1 := 0;
 res_bZ := 0;
 
-# 2) cache-conscious-relational-join-strategy 
+# 2) cache-conscious-relational-join-strategy
 # ===========================================
 
 smaller_view := [integer](smaller_all.reverse(), 2).reverse();
@@ -960,7 +960,7 @@ res_join := phash_join(cluster_larger, cluster_smaller.reverse(), 8, 2, false);
 # no longer needed
 cluster_smaller := 0;
 cluster_larger := 0;
- 
+
 print(res_join.slice(1000000,1000100));
 res_join.count().print();
 
@@ -995,22 +995,22 @@ proc tst(bat[oid,oid] res_join, int nbits) {
     var res_smaller_clustered := res_join.reverse().mark(0@0).reverse();
     var skip := 24 - nbits;
     if (nbits > 7) {
-    	res_smaller_clustered := res_smaller_clustered.radix_cluster(-1 * skip, nbits - nbits/2, nbits/2);
+	res_smaller_clustered := res_smaller_clustered.radix_cluster(-1 * skip, nbits - nbits/2, nbits/2);
     } else {
-    	res_smaller_clustered := res_smaller_clustered.radix_cluster(-1 * skip, nbits);
+	res_smaller_clustered := res_smaller_clustered.radix_cluster(-1 * skip, nbits);
     }
     borders_smaller := res_smaller_clustered.radix_count(skip, nbits);
-    cl_new := res_smaller_clustered.mark(0@0).reverse(); 
-    cl_old := res_smaller_clustered.reverse().mark(0@0).reverse(); 
+    cl_new := res_smaller_clustered.mark(0@0).reverse();
+    cl_old := res_smaller_clustered.reverse().mark(0@0).reverse();
 
     t := time(); cl_tmp := join(cl_old, tab_attr); print(time() - t);
 
     var res_a1;
     available@batloop() {
-    	var e := bat(void,int).insert(nil,$h);
-        CATCH(pcl_start(e,1));
-        t := time(); res_a1 := radix_decluster2(cl_new, cl_tmp, borders_smaller, 32);
-        printf("% 6dms === % 15lld %s\n",  time() - t, pcl_stop(e).mark(0@0).reverse().find(0@0), pcl_events.reverse().find($h));
+	var e := bat(void,int).insert(nil,$h);
+	CATCH(pcl_start(e,1));
+	t := time(); res_a1 := radix_decluster2(cl_new, cl_tmp, borders_smaller, 32);
+	printf("% 6dms === % 15lld %s\n",  time() - t, pcl_stop(e).mark(0@0).reverse().find(0@0), pcl_events.reverse().find($h));
     }
     res_a1.slice(3343424, 3343444).print();
 }
@@ -1036,7 +1036,7 @@ proc jivetest(BAT[oid,oid] proj, BAT[void,any] attr, int nbits) {
 	cnt.sum().print();
 	var b1, b3, b2 := bat(void,oid,1+proj.count());
 	{ var t := time(); b1 := jivejoin1(b2, proj, attr, cnt, shift, nbits); print(time() - t); }
-	var c := b2.mirror().[int].[and](mask).[>>](shift); 
+	var c := b2.mirror().[int].[and](mask).[>>](shift);
 	c.slice(0,7).print();
 	c.histogram().max().print();
 	{ var t := time(); b3 := b2.jivejoin2(attr); print(time() - t); }
@@ -1058,13 +1058,13 @@ jivetest(proj, attr_int, 12);
 
 var cnt := radix_count2(proj, 8, 12);
 var b2 := bat(void,oid,proj.count());
-var b1 := jivejoin1(b2, proj, attr_int, cnt, 8, 12); 
+var b1 := jivejoin1(b2, proj, attr_int, cnt, 8, 12);
 b2.slice(0,30).print();
-var b3 := radix_cluster(b2, cnt.bbpname(), 1.0, -1, 7); 
+var b3 := radix_cluster(b2, cnt.bbpname(), 1.0, -1, 7);
 b3.info().find("tsorted").print();
-var b4 := radix_cluster(b2, cnt.bbpname(), 1.0, 1, 7); 
+var b4 := radix_cluster(b2, cnt.bbpname(), 1.0, 1, 7);
 b4.info().find("tsorted").print();
-radix_cluster(attr_int,  
+radix_cluster(attr_int,
 
 @-
 @{
@@ -1221,7 +1221,9 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 @- data types for relational simulation
 @= integerdef
 #define integer@1 int
-size_t integer@1Copy(void *dst, void *src, size_t size){
+size_t
+integer@1Copy(void *dst, void *src, size_t size)
+{
 	(void) size;
 	*(int*) dst = *(int*) src;
 	return sizeof(int);
@@ -1411,16 +1413,16 @@ pax_blocksize(int *ret, int *size)
 @T
 In radix cluster we want to deliver one new BAT that consists
 of a consecutive memory area (like all BATs do) with the tuples
-clustered on a certain radix. To do this correctly in one scan 
+clustered on a certain radix. To do this correctly in one scan
 we would need perfect information on how large each cluster is.
 Only then we can initialize the correct buffer boundaries.
 
-Such perfect information could be obtained by a 'histogram' scan; that 
+Such perfect information could be obtained by a 'histogram' scan; that
 would prelude the real clustering scan. On uniform data (and as the radix is
 taken from a hashed number -- that is what we hope to encounter) two
 scans is a waste, though.
 
-In this approach we start assuming perfect uniformity and continue 
+In this approach we start assuming perfect uniformity and continue
 clustering till one of the cluster buffers overflows. If this happens
 when N (with N near 100) percent of data is clustered; we just have to
 do the histogram on 100-N percent of the data; and subsequently
@@ -1432,22 +1434,22 @@ TODO (easy): make N tunable
 functions:
 \begin{itemize}
 \item radix\_buns()	does the basic clustering stuff (95% of effort)
-\item cnt\_buns() 	is the histogram scan that is triggered when we need 
+\item cnt\_buns()	is the histogram scan that is triggered when we need
 			to move data
-\item move\_buns() 	does the moving work. This is tricky; as copy 
- 		        dependencies bind you to a certain schedule.
-\item radix\_chunk()	is the main routine that does one radix scan and 
-			produces a new (chunk of a) bat. Does so by first going 
-			for uniform distributions and executing radix\_buns(). 
-			If a buffer overflows, this stops and cnt\_buns() is 
+\item move\_buns()	does the moving work. This is tricky; as copy
+			dependencies bind you to a certain schedule.
+\item radix\_chunk()	is the main routine that does one radix scan and
+			produces a new (chunk of a) bat. Does so by first going
+			for uniform distributions and executing radix\_buns().
+			If a buffer overflows, this stops and cnt\_buns() is
 			done. The buffers are then moved into correct position
-   			by move\_buns(). Clustering is then finished by again 
+			by move\_buns(). Clustering is then finished by again
 			radix\_buns().
-\item radix\_cluster() 	is the multilevel radix cluster routine. On the first 
-			level; it processes 1 chunk and produced N1 new ones. 
+\item radix\_cluster()	is the multilevel radix cluster routine. On the first
+			level; it processes 1 chunk and produced N1 new ones.
 			On the second level, N1 chunks are processed and divided
 			each in N2 new ones (making for N1*N2 clusters), etc.
-   			For clustering each chunk, it calls radix\_chunk().
+			For clustering each chunk, it calls radix\_chunk().
 \end{itemize}
 @c
 #define any_RADIX(p,rd) ((hash_t)((*BATatoms[any].atomHash)(p) & rd))
@@ -1480,7 +1482,7 @@ quickbat(BAT *b, size_t cap)
 }
 
 /* take care: block sequences that are copied to the right should be done from
- *            right to left; and vice versa! Otherwise you overwrite blocks.
+ *	      right to left; and vice versa! Otherwise you overwrite blocks.
  */
 void
 move_chunks(move_t *mov, BUN base, size_t from, size_t end)
@@ -1595,53 +1597,60 @@ sample_buns(BAT *bn, BAT *b, BUN src, BUN cur, BUN end, size_t * dst, size_t * l
 
 
 @= radix_buns
-BUN radix_buns_@1(BAT *bn, BAT *b, BUN start, BUN end, BUN base, 
-		   size_t* cur, size_t* lim, size_t mask, int shift, oid *maxbits) 
+BUN
+radix_buns_@1(BAT *bn, BAT *b, BUN start, BUN end, BUN base,
+	      size_t* cur, size_t* lim, size_t mask, int shift, oid *maxbits)
 {
-    /* this accounts for 95% of processing cost; so it is optimized */
-    int dst_bunsize = BUNsize(bn);
-    int src_bunsize = BUNsize(b); 
-    int htpe = ATOMstorage(bn->htype);
-    BUN src = start;
+	/* this accounts for 95% of processing cost; so it is optimized */
+	int dst_bunsize = BUNsize(bn);
+	int src_bunsize = BUNsize(b);
+	int htpe = ATOMstorage(bn->htype);
+	BUN src = start;
 
-    if (b->htype == TYPE_void) {
- 	oid o = *(oid*) BUNhead(b,src); /* void => oid materialization */
-        while(src < end) {
-	    ptr p = BUNtloc(b,src);
-    	    hash_t x = @1_RADIX(p,mask) >> shift;
-	    BUN dst = base + cur[x];
-    	    if (cur[x] == lim[x]) break;
-	    *(oid*) BUNhloc(bn,dst) = o; 
-	    if (o != oid_nil) o++;
-	    *(@1*) BUNtloc(bn,dst) = *(@1*) p;
-	    cur[x] += dst_bunsize; src += src_bunsize;
-	    @1_CHECK(*maxbits, p);
-        } 
-    } else if (htpe == TYPE_int) { /* most common case */
-        while(src < end) {
-	    ptr p = BUNtloc(b,src);
-    	    hash_t x = @1_RADIX(p,mask) >> shift;
-	    BUN dst = base + cur[x];
-    	    if (cur[x] == lim[x]) break;
-	    *(int*) BUNhloc(bn,dst) = *(int*) BUNhloc(b,src);
-	    *(@1*) BUNtloc(bn,dst) = *(@1*) p;
-	    cur[x] += dst_bunsize; src += src_bunsize;
-	    @1_CHECK(*maxbits, p);
-	} 
-    } else 
-    while(src < end) {
-	ptr p = BUNtloc(b,src);
-    	hash_t x = @1_RADIX(p,mask) >> shift;
-	BUN dst = base + cur[x];
-    	if (cur[x] == lim[x]) break;
-        ATOMput(htpe, &bn->hheap, BUNhloc(bn,dst), BUNhead(b,src));
-	*(@1*) BUNtloc(bn,dst) = *(@1*) p;
-	cur[x] += dst_bunsize; src += src_bunsize;
-	@1_CHECK(*maxbits, p);
-    }
-    return src;
-bunins_failed:
-    return NULL;
+	if (b->htype == TYPE_void) {
+		oid o = *(oid*) BUNhead(b,src);	/* void => oid materialization */
+		while(src < end) {
+			ptr p = BUNtloc(b,src);
+			hash_t x = @1_RADIX(p,mask) >> shift;
+			BUN dst = base + cur[x];
+
+			if (cur[x] == lim[x])
+				break;
+			*(oid*) BUNhloc(bn,dst) = o;
+			if (o != oid_nil) o++;
+			*(@1*) BUNtloc(bn,dst) = *(@1*) p;
+			cur[x] += dst_bunsize; src += src_bunsize;
+			@1_CHECK(*maxbits, p);
+		}
+	} else if (htpe == TYPE_int) {	     /* most common case */
+		while(src < end) {
+			ptr p = BUNtloc(b,src);
+			hash_t x = @1_RADIX(p,mask) >> shift;
+			BUN dst = base + cur[x];
+
+			if (cur[x] == lim[x])
+				break;
+			*(int*) BUNhloc(bn,dst) = *(int*) BUNhloc(b,src);
+			*(@1*) BUNtloc(bn,dst) = *(@1*) p;
+			cur[x] += dst_bunsize; src += src_bunsize;
+			@1_CHECK(*maxbits, p);
+		}
+	} else
+		while(src < end) {
+			ptr p = BUNtloc(b,src);
+			hash_t x = @1_RADIX(p,mask) >> shift;
+			BUN dst = base + cur[x];
+
+			if (cur[x] == lim[x])
+				break;
+			ATOMput(htpe, &bn->hheap, BUNhloc(bn,dst), BUNhead(b,src));
+			*(@1*) BUNtloc(bn,dst) = *(@1*) p;
+			cur[x] += dst_bunsize; src += src_bunsize;
+			@1_CHECK(*maxbits, p);
+		}
+	return src;
+  bunins_failed:
+	return NULL;
 }
 @c
 #define lng_CHECK(dst,v) dst = 0	/* dummy */
@@ -1699,17 +1708,18 @@ radix_buns_any(BAT *bn, BAT *b, BUN src, BUN end, BUN base, size_t * dst, size_t
 }
 
 @= cnt_buns
-void cnt_buns_@1(BAT *bn, BAT *b, BUN src, BUN end, size_t *cnt, 
-              	  size_t mask, int shift) 
+void
+cnt_buns_@1(BAT *bn, BAT *b, BUN src, BUN end, size_t *cnt,
+	    size_t mask, int shift)
 {
-    int dst_bunsize = BUNsize(bn);
-    int src_bunsize = BUNsize(b); 
+	int dst_bunsize = BUNsize(bn);
+	int src_bunsize = BUNsize(b);
 
-    /* count what's left for each chunk */
-    for(src += b->tloc, end += b->tloc; src < end; src += src_bunsize) {
-    	hash_t x = @1_RADIX(src,mask) >> shift;
-	cnt[x] += dst_bunsize; 
-    }
+	/* count what's left for each chunk */
+	for(src += b->tloc, end += b->tloc; src < end; src += src_bunsize) {
+		hash_t x = @1_RADIX(src,mask) >> shift;
+		cnt[x] += dst_bunsize;
+	}
 }
 @c
 @:cnt_buns(oid)@
@@ -1732,56 +1742,59 @@ cnt_buns_any(BAT *bn, BAT *b, BUN src, BUN end, size_t * cnt, size_t mask, int s
 }
 
 @= radix_chunk
-int radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, BUN out, 
-			size_t *lim, int nbits, int shift, size_t *dst, size_t *cnt, oid *maxbits) 
+int
+radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, BUN out,
+	       size_t *lim, int nbits, int shift, size_t *dst, size_t *cnt, oid *maxbits)
 {
-    BUN lo_limit, hi_limit, cur;
-    size_t ntuples = BUNindex(b,end)-BUNindex(b,start);
-    size_t nchunks = 1<<nbits;
-    size_t chunksize = ntuples/nchunks;
-    size_t i;
-    size_t mask = (nchunks-1) << shift;
-    move_t buf[512], *mov = (nchunks>512)?(move_t*)GDKmalloc(nchunks*sizeof(move_t)):buf;
+	BUN lo_limit, hi_limit, cur;
+	size_t ntuples = BUNindex(b,end)-BUNindex(b,start);
+	size_t nchunks = 1<<nbits;
+	size_t chunksize = ntuples/nchunks;
+	size_t i;
+	size_t mask = (nchunks-1) << shift;
+	move_t buf[512], *mov = (nchunks>512)?(move_t*)GDKmalloc(nchunks*sizeof(move_t)):buf;
 
-    /* kick off with uniform boundaries */
-    for(i=0; i<nchunks; i++) {
-	lim[i] = chunksize*BUNsize(bn); 
-	ntuples -= chunksize;
-    }
-    for(i=0; ntuples > 0; ntuples--) {
-	lim[i] += BUNsize(bn);	
-	if  (++i >= nchunks) i = 0;
-    }
-    for(dst[0]=0,i=1; i<nchunks; i++) {
-	dst[i] = lim[i-1];
-	lim[i] += dst[i];
-    }
-    lo_limit = start + MAX((size_t) (0.1*(double)(init-start)), 20*nchunks*BUNsize(bn));
-    hi_limit = MIN(start + (size_t) (0.9*(double)lim[i-1]), end - 32768); 
-
-    cur = radix_buns_@1(bn, b, start, init, out, dst, lim, mask, shift, maxbits);
-
-    /* out of memory in some bucket: sample and continue */
-    if (cur && cur < hi_limit && cur > lo_limit && limits == NULL) {
-        sample_buns(bn, b, start, cur, end, dst, lim, cnt, nchunks); 
-	rearrange_chunks(bn, NULL, mov, out, dst, lim, cnt, nchunks);
-        cur = radix_buns_@1(bn, b, cur, end, out, dst, lim, mask, shift, maxbits);
-    }
-    
-    /* out of memory in some bucket: count and finish */
-    if (cur) {
-	if (cur < end) {
-   	    memset(cnt, 0, nchunks*sizeof(size_t));
-	    cnt_buns_@1(bn, b, cur, end, cnt, mask, shift);
-	    rearrange_chunks(bn, limits, mov, out, dst, lim, cnt, nchunks);
-            radix_buns_@1(bn, b, cur, end, out, dst, lim, mask, shift, maxbits);
-	} else if (limits) {
-	    memset(cnt, 0, nchunks*sizeof(size_t));
-	    rearrange_chunks(bn, limits, mov, out, dst, lim, cnt, nchunks);
+	/* kick off with uniform boundaries */
+	for (i=0; i<nchunks; i++) {
+		lim[i] = chunksize*BUNsize(bn);
+		ntuples -= chunksize;
 	}
-    }
-    if (nchunks>512) GDKfree(mov);
-    return cur?0:-1;
+	for (i=0; ntuples > 0; ntuples--) {
+		lim[i] += BUNsize(bn);
+		if (++i >= nchunks)
+			i = 0;
+	}
+	for (dst[0]=0,i=1; i<nchunks; i++) {
+		dst[i] = lim[i-1];
+		lim[i] += dst[i];
+	}
+	lo_limit = start + MAX((size_t) (0.1*(double)(init-start)), 20*nchunks*BUNsize(bn));
+	hi_limit = MIN(start + (size_t) (0.9*(double)lim[i-1]), end - 32768);
+
+	cur = radix_buns_@1(bn, b, start, init, out, dst, lim, mask, shift, maxbits);
+
+	/* out of memory in some bucket: sample and continue */
+	if (cur && cur < hi_limit && cur > lo_limit && limits == NULL) {
+		sample_buns(bn, b, start, cur, end, dst, lim, cnt, nchunks);
+		rearrange_chunks(bn, NULL, mov, out, dst, lim, cnt, nchunks);
+		cur = radix_buns_@1(bn, b, cur, end, out, dst, lim, mask, shift, maxbits);
+	}
+
+	/* out of memory in some bucket: count and finish */
+	if (cur) {
+		if (cur < end) {
+			memset(cnt, 0, nchunks*sizeof(size_t));
+			cnt_buns_@1(bn, b, cur, end, cnt, mask, shift);
+			rearrange_chunks(bn, limits, mov, out, dst, lim, cnt, nchunks);
+			radix_buns_@1(bn, b, cur, end, out, dst, lim, mask, shift, maxbits);
+		} else if (limits) {
+			memset(cnt, 0, nchunks*sizeof(size_t));
+			rearrange_chunks(bn, limits, mov, out, dst, lim, cnt, nchunks);
+		}
+	}
+	if (nchunks>512)
+		GDKfree(mov);
+	return cur?0:-1;
 }
 @c
 @:radix_chunk(oid)@
@@ -1972,7 +1985,7 @@ radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...)
 @+ Radix Statistics
 
 @- radix bits
-@c 
+@c
 int
 radix_bits(int *nbits, BAT *b)
 {
@@ -2084,10 +2097,10 @@ radix_count2(BAT **res, BAT *b, int *shift, int *radix)
 
 @+ Phash Join
 @T
-Joins two clustered inputs with partitioned hash-join. The main innovation of this 
-implementation is to avoid the (int % mask) and replace it with shifts and masks. 
-The % takes 40 cycles in modern CPUs while the >>, and, xor take one. Moreover; 
-there is independence of various operators, so the below hash function may well 
+Joins two clustered inputs with partitioned hash-join. The main innovation of this
+implementation is to avoid the (int % mask) and replace it with shifts and masks.
+The % takes 40 cycles in modern CPUs while the >>, and, xor take one. Moreover;
+there is independence of various operators, so the below hash function may well
 take less than 7 cycles on a RISC cpu featuring speculative execution.
 
 One consequence is that the number of buckets is always a power of two.
@@ -2100,29 +2113,29 @@ as the mask and link list for all phash invocations.
 
 #define bunfastINSERT(b,h,t,dummy1,dummy2,dummy3,dummy4) bunfastins(b,h,t)
 #define intfastINSERT(b,h,t,dummy1,dummy2,dummy3,dummy4) {\
-            if (_dst >= _end) {\
+	    if (_dst >= _end) {\
 		ALGODEBUG THRprintf(GDKout, "phash_join: intfastINSERT: BATextend!\n");\
 		b->batBuns->free = ((BUN) _dst) - b->batBuns->base;\
-                if (BATextend((b), BATgrows(b)) == NULL) goto bunins_failed;\
-                _dst = (int*) (b->batBuns->base + b->batBuns->free);\
-                _end = (int*) (b->batBuns->base + b->batBuns->size);\
-            }\
+		if (BATextend((b), BATgrows(b)) == NULL) goto bunins_failed;\
+		_dst = (int*) (b->batBuns->base + b->batBuns->free);\
+		_end = (int*) (b->batBuns->base + b->batBuns->size);\
+	    }\
 	    _dst[0] = *(int*) h;\
 	    _dst[1] = *(int*) t;\
 	    _dst += 2;\
 }
 
 #define NOTSOfastINSERT(b, dummy1, dummy2, hb, hp, tb, tp) { \
-            REGISTER BUN _p = BUNlast(b);\
-            REGISTER int _bunsize = BUNsize(b);\
-            if ((b)->batBuns->free + _bunsize > (b)->batBuns->size) {\
-                if (BATextend((b), BATgrows(b)) == NULL) goto bunins_failed;\
-                _p = BUNlast(b);\
-            }\
-            (b)->batBuns->free += _bunsize;\
+	    REGISTER BUN _p = BUNlast(b);\
+	    REGISTER int _bunsize = BUNsize(b);\
+	    if ((b)->batBuns->free + _bunsize > (b)->batBuns->size) {\
+		if (BATextend((b), BATgrows(b)) == NULL) goto bunins_failed;\
+		_p = BUNlast(b);\
+	    }\
+	    (b)->batBuns->free += _bunsize;\
 	    integerCopy((int*) BUNhloc(b,_p), hb, hp, width1, distance1);\
 	    integerCopy((int*) BUNtloc(b,_p), BATmirror(tb), tp, width2, distance2);\
-        }
+	}
 
 int
 hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi, BAT *r, BUN rlo, BUN rhi, int rd, int cutoff)
@@ -2203,26 +2216,26 @@ hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi, BAT *r, BUN rlo, BUN rhi, 
 }
 
 @= hash_join
-    ALGODEBUG THRprintf(GDKout, "phash_join: hash_join[@1,@2,@3,@4,@5,@6,@7,@8]\n");
-    /* build phase */
-    for(xx=BUNsize(r); rlo<rhi; rlo+=xx) {
-	ptr p = BUN@2(r,rlo);
-        if (!@4_EQ(p, nil, @1)) {
-	    hash_t v = hash_@4(@1_RADIX(p,mask)>>rd);
-	    h->link[yy] = h->hash[v];
-	    h->hash[v] = yy++;
+	ALGODEBUG THRprintf(GDKout, "phash_join: hash_join[@1,@2,@3,@4,@5,@6,@7,@8]\n");
+	/* build phase */
+	for (xx=BUNsize(r); rlo<rhi; rlo+=xx) {
+		ptr p = BUN@2(r,rlo);
+		if (!@4_EQ(p, nil, @1)) {
+			hash_t v = hash_@4(@1_RADIX(p,mask)>>rd);
+			h->link[yy] = h->hash[v];
+			h->hash[v] = yy++;
+		}
 	}
-    }
-    /* probe phase */
-    for(xx=BUNsize(l); llo<lhi; llo+=xx) {
-	ptr v = BUN@3(l,llo);
-        for(yy=h->hash[hash_@4(@1_RADIX(v,mask)>>rd)]; yy!=~(hash_t)0; yy=h->link[yy]) {
-            rlo = BUNptr(r,yy+zz);
-            if (@4_EQ(BUN@2(r,rlo),v,@1)) {
-		@5fastINSERT(bn, BUN@6(l,llo), BUN@7(r,rlo), l, llo, r, rlo); @8
-	    }
+	/* probe phase */
+	for (xx=BUNsize(l); llo<lhi; llo+=xx) {
+		ptr v = BUN@3(l,llo);
+		for(yy=h->hash[hash_@4(@1_RADIX(v,mask)>>rd)]; yy!=~(hash_t)0; yy=h->link[yy]) {
+			rlo = BUNptr(r,yy+zz);
+			if (@4_EQ(BUN@2(r,rlo),v,@1)) {
+				@5fastINSERT(bn, BUN@6(l,llo), BUN@7(r,rlo), l, llo, r, rlo); @8
+												      }
+		}
 	}
-    } 
 @c
 int
 phash_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate, bit *cutoff)
@@ -2285,7 +2298,8 @@ phash_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate, bit *cutoff)
 			} else {
 				int any = r->htype;
 				@:hash_merge(any,head,tail)@
-		}}
+			}
+		}
 	      xit:
 		GDKfree(h.hash);
 		ALGODEBUG THRprintf(GDKout, "%s(%d);\n", bn->batId, (int) bn->batCacheid);
@@ -2297,47 +2311,50 @@ phash_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate, bit *cutoff)
 
 
 @= hash_merge
-if (rd == 0) {
-    /* with zero bits, it is fairer not to perform a radix merge */
-    hash_join(&h, bn, l, l_cur, l_last, r, r_cur, r_last, *radix, rcut);
-} else {
-    hash_t y = @1_RADIX(BUN@2(r,r_cur),rd);
-    
-    /* merge join on phash number */ 
-    while(l_cur < l_last) {
-        /* find l range */
-        hash_t x = @1_RADIX(BUN@3(l,l_cur),rd);
-        for(l_end=l_cur+xx; l_end < l_last; l_end += xx) {
-            ptr v = BUN@3(l,l_end);
-            if (@1_RADIX(v,rd) != x) break;
-        }
-    
-        /* find matching r */
-        while (y < x) {
-            ptr v;
-            if ((r_cur += yy) >= r_last) goto xit;
-            v = BUN@2(r,r_cur);
-            y = @1_RADIX(v,rd);
-        } 
-    
-        if (x == y) {  /* phash hits found */
-            /* find r range */
-            for(r_end=r_cur+yy; r_end < r_last; r_end += yy) {
-                ptr v = BUN@2(r,r_end);
-                y = @1_RADIX(v,rd); 
-                if (y != x) break;
-            }
-            if (hash_join(&h, bn, l, l_cur, l_end, r, r_cur, r_end, *radix, rcut) < 0) {
-		BBPreclaim(bn);
-		bn = NULL;
-		goto xit;
-	    }
-            r_cur = r_end;
-        } 
-        l_cur = l_end;
-    }
-}
-	
+	if (rd == 0) {
+		/* with zero bits, it is fairer not to perform a radix merge */
+		hash_join(&h, bn, l, l_cur, l_last, r, r_cur, r_last, *radix, rcut);
+	} else {
+		hash_t y = @1_RADIX(BUN@2(r,r_cur),rd);
+
+		/* merge join on phash number */
+		while(l_cur < l_last) {
+			/* find l range */
+			hash_t x = @1_RADIX(BUN@3(l,l_cur),rd);
+			for(l_end=l_cur+xx; l_end < l_last; l_end += xx) {
+				ptr v = BUN@3(l,l_end);
+				if (@1_RADIX(v,rd) != x)
+					break;
+			}
+
+			/* find matching r */
+			while (y < x) {
+				ptr v;
+				if ((r_cur += yy) >= r_last)
+					goto xit;
+				v = BUN@2(r,r_cur);
+				y = @1_RADIX(v,rd);
+			}
+
+			if (x == y) {  /* phash hits found */
+				/* find r range */
+				for (r_end=r_cur+yy; r_end < r_last; r_end += yy) {
+					ptr v = BUN@2(r,r_end);
+					y = @1_RADIX(v,rd);
+					if (y != x)
+						break;
+				}
+				if (hash_join(&h, bn, l, l_cur, l_end, r, r_cur, r_end, *radix, rcut) < 0) {
+					BBPreclaim(bn);
+					bn = NULL;
+					goto xit;
+				}
+				r_cur = r_end;
+			}
+			l_cur = l_end;
+		}
+	}
+
 @+ Radix Join
 this is a nested-loop join on the matching clusters (inputs should be radix clustered)
 @c
@@ -2421,41 +2438,49 @@ radix_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate)
 }
 
 @= radix_join
-    hash_t y = @1_RADIX(BUN@3(r,r_cur),rd);
+	hash_t y = @1_RADIX(BUN@3(r,r_cur),rd);
 
-    /* merge join on radix number */ 
-    while(l_cur < l_last) {
-	/* find l range */
-	hash_t x = @1_RADIX(BUN@2(l,l_cur),rd);
-	for(l_end=l_cur+xx; l_end < l_last; l_end += xx) {
-	    if (@1_RADIX(BUN@2(l,l_end),rd) != x) break;
+	/* merge join on radix number */
+	while(l_cur < l_last) {
+		/* find l range */
+		hash_t x = @1_RADIX(BUN@2(l,l_cur),rd);
+		for(l_end=l_cur+xx; l_end < l_last; l_end += xx) {
+			if (@1_RADIX(BUN@2(l,l_end),rd) != x)
+				break;
+		}
+
+		/* find matching r */
+		while (y < x) {
+			if ((r_cur += yy) >= r_last)
+				return GDK_SUCCEED;
+			y = @1_RADIX(BUN@3(r,r_cur),rd);
+		}
+
+		if (x == y) {		 /* radix hits found */
+			/* find r range */
+			for (r_end=r_cur+yy; r_end < r_last; r_end += yy) {
+				y = @1_RADIX(BUN@3(r,r_end),rd);
+				if (y != x)
+					break;
+			}
+
+			/* filter the radix hits; L1 gushes with oil */
+			while (l_cur < l_end) {
+				BUN r_var = r_cur;
+				ptr p = BUN@2(l,l_cur);
+				if (!@4_EQ(p, nil, @1))
+					while (r_var < r_end) {
+						if (@4_EQ(p, BUN@3(r,r_var), @1)) {
+							@5fastINSERT(bn, BUN@6(l,l_cur), BUN@7(r,r_var), l, l_cur, r, r_var);
+						}
+						r_var += yy;
+					}
+				l_cur += xx;
+			}
+			r_cur = r_end;
+		}
+		l_cur = l_end;
 	}
-
-        /* find matching r */
-	while (y < x) {
-	    if ((r_cur += yy) >= r_last) return GDK_SUCCEED; 
-	    y = @1_RADIX(BUN@3(r,r_cur),rd);
-        } 
-
-	if (x == y) {  /* radix hits found */
-	    /* find r range */
-	    for(r_end=r_cur+yy; r_end < r_last; r_end += yy) {
-	        y = @1_RADIX(BUN@3(r,r_end),rd); 
-		if (y != x) break;
-	    }
-
-	    /* filter the radix hits; L1 gushes with oil */
-	    while(l_cur < l_end) {
-		BUN r_var = r_cur;
-		ptr p = BUN@2(l,l_cur);
-                if (!@4_EQ(p, nil, @1)) while(r_var < r_end) {
-		    if (@4_EQ(p, BUN@3(r,r_var), @1)) {
-		 	@5fastINSERT(bn, BUN@6(l,l_cur), BUN@7(r,r_var), l, l_cur, r, r_var);
-		    } r_var += yy;
-	        } l_cur += xx;
-	    } r_cur = r_end;
-        } l_cur = l_end;
-    }
 
 
 @+ Radix Decluster
@@ -2467,31 +2492,34 @@ at those values but directly take the cluster boundaries as an input parameter. 
 parameter is a radix\_count BAT that must have been created with the radix\_count command.
 
 @= radix_decluster
-{   @1 *dst = (@1*) BUNfirst(bn);
-    while(lim < lst) {
-        lim += mult;
-        yy = 0;
-        while((size_t) yy < cnt) {
-            p = src + cnk[yy].cur;
-            q = src + cnk[yy].end;
-            for (;;) {
-                if (p >= q) {
-		    ssize_t nxt = cnk[yy].nxt;
-		    if (nxt < 0) nxt = --cnt;
-                    cnk[yy] = cnk[nxt];
-                    break; /* cluster exhausted; overwrite with last; start over */
-                }
-                cur = *(oid*) BUNhloc(b,p);
-                if (cur >= lim) {
-                    cnk[yy++].cur = p - src;
-                    break; /* value exceeds current limit, go to next cluster */
-                }
-                @2_put(dst[cur], @1, BUN@3(b,p));
-		p += xx;
-            }
-        }
-    } break;
-} 
+{
+	@1 *dst = (@1*) BUNfirst(bn);
+	while (lim < lst) {
+		lim += mult;
+		yy = 0;
+		while ((size_t) yy < cnt) {
+			p = src + cnk[yy].cur;
+			q = src + cnk[yy].end;
+			for (;;) {
+				if (p >= q) {
+					ssize_t nxt = cnk[yy].nxt;
+					if (nxt < 0)
+						nxt = --cnt;
+					cnk[yy] = cnk[nxt];
+					break; /* cluster exhausted; overwrite with last; start over */
+				}
+				cur = *(oid*) BUNhloc(b,p);
+				if (cur >= lim) {
+					cnk[yy++].cur = p - src;
+					break; /* value exceeds current limit, go to next cluster */
+				}
+				@2_put(dst[cur], @1, BUN@3(b,p));
+				p += xx;
+			}
+		}
+	}
+	break;
+}
 @c
 #define simple_put(var,tpe,val) var = *(tpe*) val
 #define atom_put(var,tpe,val) ATOMput(any, &bn->theap, &var, val)
@@ -2625,7 +2653,7 @@ radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 
 @- radix_decluster
 @T
-intends to improve performance by using a cheaper positional join: 
+intends to improve performance by using a cheaper positional join:
 	join(bat[void,oid], bat[void,T])
 instead of
 	join(bat[oid,oid], bat[void,T])
@@ -2633,107 +2661,110 @@ instead of
 price paid are two parameters to radix\_decluster.
 
 @= radix_decluster2
-{   @1 *dst = ((@1*) BUNfirst(bn)) - lim;
-    while(lim < lst) {
-        lim += mult;
-        yy = 0;
-        while((size_t) yy < cnt) {
-            p = src1 + cnk[yy].cur1;
-            q = src1 + cnk[yy].end1;
-            r = src2 + cnk[yy].cur2;
-            for (;;) {
-                if (p >= q) {
-		    ssize_t nxt = cnk[yy].nxt;
-		    if (nxt < 0) 
-			nxt = --cnt;
-		    if (nxt >= 0)
-                    	cnk[yy] = cnk[nxt];
-                    break; /* cluster exhausted; overwrite with last; start over */
-                }
-                cur = *(oid*) BUNtloc(b,p);
-                if (cur >= lim) {
-                    cnk[yy].cur2 = r - src2;
-                    cnk[yy++].cur1 = p - src1;
-                    break; /* value exceeds current limit, go to next cluster */
-                }
-		p += xx;
-                @2_put(dst[cur], @1, BUN@3(a,r));
-		r += zz;
-            }
-        }
-    } 
-    break;
-} 
+{
+	@1 *dst = ((@1*) BUNfirst(bn)) - lim;
+	while (lim < lst) {
+		lim += mult;
+		yy = 0;
+		while ((size_t) yy < cnt) {
+			p = src1 + cnk[yy].cur1;
+			q = src1 + cnk[yy].end1;
+			r = src2 + cnk[yy].cur2;
+			for (;;) {
+				if (p >= q) {
+					ssize_t nxt = cnk[yy].nxt;
+					if (nxt < 0)
+						nxt = --cnt;
+					if (nxt >= 0)
+						cnk[yy] = cnk[nxt];
+					break; /* cluster exhausted; overwrite with last; start over */
+				}
+				cur = *(oid*) BUNtloc(b,p);
+				if (cur >= lim) {
+					cnk[yy].cur2 = r - src2;
+					cnk[yy++].cur1 = p - src1;
+					break; /* value exceeds current limit, go to next cluster */
+				}
+				p += xx;
+				@2_put(dst[cur], @1, BUN@3(a,r));
+				r += zz;
+			}
+		}
+	}
+	break;
+}
 @= radix_decluster3
-{   @1 *dst = (@1*) BUNfirst(bn);
-/*    int prev,all=0,bad=0; */
-    while(lim < lst) {
-/*	prev = lim; */
-        lim += mult;
-        yy = 0;
-        while((size_t) yy < cnt) {
-	    ssize_t nxt = yy;
-	    do { 
-	    ssize_t yyy = nxt;
-	    nxt = cnk[yyy].nxt;
-            p = src1 + cnk[yyy].cur1;
-            q = src1 + cnk[yyy].end1;
-            r = src2 + cnk[yyy].cur2;
-            for(;p < q; p += xx, r += zz) {
-                cur = *(oid*) BUNtloc(b,p);
-                if (cur >= lim) {
-                    break; /* value exceeds current limit, go to next cluster */
-                }
-                @2_put(dst[cur], @1, BUN@3(a,r));
+{
+	@1 *dst = (@1*) BUNfirst(bn);
+	/* int prev,all=0,bad=0; */
+	while (lim < lst) {
+		/* prev = lim; */
+		lim += mult;
+		yy = 0;
+		while ((size_t) yy < cnt) {
+			ssize_t nxt = yy;
+			do {
+				ssize_t yyy = nxt;
+				nxt = cnk[yyy].nxt;
+				p = src1 + cnk[yyy].cur1;
+				q = src1 + cnk[yyy].end1;
+				r = src2 + cnk[yyy].cur2;
+				for (; p < q; p += xx, r += zz) {
+					cur = *(oid*) BUNtloc(b,p);
+					if (cur >= lim) {
+						break; /* value exceeds current limit, go to next cluster */
+					}
+					@2_put(dst[cur], @1, BUN@3(a,r));
 /*
-		all++;
-		if (prev > cur || cur > lim)
-			bad++;
+					all++;
+					if (prev > cur || cur > lim)
+						bad++;
 */
-/*			printf("3: %9d %9d %9d\n", prev, cur, lim ); */
-            }
-	    /* cluster exhausted; overwrite with last; start over*/
-            cnk[yyy].cur2 = r - src2;
-            cnk[yyy].cur1 = p - src1;
-	    } while(nxt>=0);
-	    yy++;
-        }
-    } 
+					/* printf("3: %9d %9d %9d\n", prev, cur, lim ); */
+				}
+				/* cluster exhausted; overwrite with last; start over*/
+				cnk[yyy].cur2 = r - src2;
+				cnk[yyy].cur1 = p - src1;
+			} while (nxt>=0);
+			yy++;
+		}
+	}
 /*    if (bad) printf("3: %d/%d = %f% miss-located writes!\n",bad,all,(flt)bad/(flt)all); */
-    break;
-} 
+	break;
+}
 @= radix_decluster4
-{   @1 *dst = (@1*) BUNfirst(bn);
-/*    int prev,all=0,bad=0; */
-    while(lim < lst) {
-/*	prev = lim; */
-        lim += mult;
-        yy = 0;
-        while((size_t) yy < cnt) {
-            p = src1 + cnk[yy].cur1;
-            q = src1 + cnk[yy].end1;
-            r = src2 + cnk[yy].cur2;
-            cur = cnk[yy].nxt;
-	    while ((p < q) && (cur < lim)) {
+{
+	@1 *dst = (@1*) BUNfirst(bn);
+	/* int prev,all=0,bad=0; */
+	while (lim < lst) {
+		/* prev = lim; */
+		lim += mult;
+		yy = 0;
+		while ((size_t) yy < cnt) {
+			p = src1 + cnk[yy].cur1;
+			q = src1 + cnk[yy].end1;
+			r = src2 + cnk[yy].cur2;
+			cur = cnk[yy].nxt;
+			while ((p < q) && (cur < lim)) {
 /*
-		all++;
-		if (prev > cur || cur > lim)
-			bad++;
+				all++;
+				if (prev > cur || cur > lim)
+					bad++;
 */
-/*			printf("4: %9d %9d %9d\n", prev, cur, lim ); */
-                @2_put(dst[cur], @1, BUN@3(a,r));
-		p += xx;
-		r += zz;
-                cur = *(oid*) BUNtloc(b,p);
-            }
-            cnk[yy].nxt = cur;
-            cnk[yy].cur2 = r - src2;
-            cnk[yy++].cur1 = p - src1;
-        }
-    } 
-/*    if (bad) printf("4: %d/%d = %f% miss-located writes!\n",bad,all,(flt)bad/(flt)all); */
-    break;
-} 
+				/* printf("4: %9d %9d %9d\n", prev, cur, lim ); */
+				@2_put(dst[cur], @1, BUN@3(a,r));
+				p += xx;
+				r += zz;
+				cur = *(oid*) BUNtloc(b,p);
+			}
+			cnk[yy].nxt = cur;
+			cnk[yy].cur2 = r - src2;
+			cnk[yy++].cur1 = p - src1;
+		}
+	}
+	/* if (bad) printf("4: %d/%d = %f% miss-located writes!\n",bad,all,(flt)bad/(flt)all); */
+	break;
+}
 @c
 typedef struct {
 	size_t cur1, end1, cur2;
@@ -3156,33 +3187,34 @@ posjoin_tuple(BAT **res, BAT *proj, BAT *attr)
 @+ jivejoin
 
 First phase of jivejoin does a positional join of join index with the left table.
-Its output is clustered inline on left head-oid in a single pass and consists of two separate 
+Its output is clustered inline on left head-oid in a single pass and consists of two separate
 (synced on void head) bats, one with the attribute values, the other with the other table oids.
 
 @= jivejoin0
-if (@6 || proj->ttype != TYPE_void) {
-	size_t off = BUNindex(attr, BUNfirst(attr)) - attr->hseqbase;
-	if (proj->htype == TYPE_oid) {
-		BATloopFast(proj, p, q, xx) {
-			oid curoid = *(oid*) BUN@3(proj,p);
-			size_t clusterid = (curoid&yy) >> zz;
-			r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
-			s = BUNptr(bn,cluster[clusterid]);
-			*(oid*) BUNhloc(bn,s) = *(oid*) BUNhloc(proj,p);
-			@2put(@1, &bn->theap, BUNtloc(bn,s), @5); 
-			cluster[clusterid]++;
+	if (@6 || proj->ttype != TYPE_void) {
+		size_t off = BUNindex(attr, BUNfirst(attr)) - attr->hseqbase;
+		if (proj->htype == TYPE_oid) {
+			BATloopFast(proj, p, q, xx) {
+				oid curoid = *(oid*) BUN@3(proj,p);
+				size_t clusterid = (curoid&yy) >> zz;
+				r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
+				s = BUNptr(bn,cluster[clusterid]);
+				*(oid*) BUNhloc(bn,s) = *(oid*) BUNhloc(proj,p);
+				@2put(@1, &bn->theap, BUNtloc(bn,s), @5);
+				cluster[clusterid]++;
+			}
+		} else {
+			BATloopFast(proj, p, q, xx) {
+				oid curoid = *(oid*) BUN@3(proj,p);
+				size_t clusterid = (curoid&yy) >> zz;
+				r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
+				s = BUNptr(bn,cluster[clusterid]);
+				@2put(@1, &bn->theap, s, @5);
+				cluster[clusterid]++;
+			}
 		}
-	} else {
-		BATloopFast(proj, p, q, xx) {
-			oid curoid = *(oid*) BUN@3(proj,p);
-			size_t clusterid = (curoid&yy) >> zz;
-			r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
-			s = BUNptr(bn,cluster[clusterid]);
-			@2put(@1, &bn->theap, s, @5); 
-			cluster[clusterid]++;
-		}
-	} break;
-}
+		break;
+	}
 @c
 #define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
 
@@ -3267,17 +3299,18 @@ jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nb
 }
 
 @= jivejoin1
-if (@6 || (proj->htype != TYPE_void && proj->ttype != TYPE_void)) {
-	size_t off = BUNindex(attr, BUNfirst(attr)) - attr->hseqbase;
-	BATloopFast(proj, p, q, xx) {
-		oid curoid = *(oid*) BUN@3(proj,p);
-		size_t clusterid = (curoid&yy) >> zz;
-		r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
-		*(oid*) BUNptr(bo,cluster[clusterid]) = curoid;
-		@2put(@1, &bn->theap, BUNptr(bn,cluster[clusterid]), @5); 
-		cluster[clusterid]++;
-	} break;
-}
+	if (@6 || (proj->htype != TYPE_void && proj->ttype != TYPE_void)) {
+		size_t off = BUNindex(attr, BUNfirst(attr)) - attr->hseqbase;
+		BATloopFast(proj, p, q, xx) {
+			oid curoid = *(oid*) BUN@3(proj,p);
+			size_t clusterid = (curoid&yy) >> zz;
+			r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
+			*(oid*) BUNptr(bo,cluster[clusterid]) = curoid;
+			@2put(@1, &bn->theap, BUNptr(bn,cluster[clusterid]), @5);
+			cluster[clusterid]++;
+		}
+		break;
+	}
 @c
 int
 jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits)
@@ -3390,13 +3423,14 @@ jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift
 }
 
 @= jivejoin2
-if (@6 || proj->ttype != TYPE_void) {
-	ssize_t off = (ssize_t) (BUNindex(attr, BUNfirst(attr)) - attr->hseqbase);
-	BATloopFast(proj, p, q, xx) {
-		r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
-		@2put(@1, &bn->theap, BUNptr(bn, *(oid*) BUN@3(proj,p)), @5); 
-	} break;
-}
+	if (@6 || proj->ttype != TYPE_void) {
+		ssize_t off = (ssize_t) (BUNindex(attr, BUNfirst(attr)) - attr->hseqbase);
+		BATloopFast(proj, p, q, xx) {
+			r = BUNptr(attr, off + *(oid*) BUN@4(proj, p));
+			@2put(@1, &bn->theap, BUNptr(bn, *(oid*) BUN@3(proj,p)), @5);
+		}
+		break;
+	}
 @c
 int
 jivejoin2(BAT **res, BAT *proj, BAT *attr)
@@ -3465,7 +3499,7 @@ jivejoin2(BAT **res, BAT *proj, BAT *attr)
 @+ Prefetching
 Seems hardware prefetching isn't up to its take on most platforms (P4 being the exception). Therefore we implement
 software prefetching optimized per platform. A default implementation just sums int with cacheline strides.
-For AMD Athlon systems backward read of 'movl's is optimal (see www.amd.com).  For systems without hardware 
+For AMD Athlon systems backward read of 'movl's is optimal (see www.amd.com).  For systems without hardware
 prefetching, a software prefetch is implemented, ie a simple prefetch loop.
 
 @c
@@ -3493,7 +3527,7 @@ Mem2Cache(int *__r from, size_t size)
 		"subl $128, %%esi\n\t"
 		"dec %%eax\n\t"
 		"jnz 1b\n\t"
-                :  : "r" (from), "r" (size), "r" (cnt) : "memory",  "%eax", "%edx", "%esi");
+		:  : "r" (from), "r" (size), "r" (cnt) : "memory",  "%eax", "%edx", "%esi");
 	return cnt;
 }
 #else
@@ -3576,13 +3610,14 @@ prefetch(ssize_t n, int stride, dbl *__r src)
 }
 
 @= posjoin
-static int posjoin_@1(int pf, @1*__r p1, 
-int oidhead, ssize_t n, @1*__r res, oid*__r pos, @1*__r val) {
+static int
+posjoin_@1(int pf, @1*__r p1, int oidhead, ssize_t n, @1*__r res, oid*__r pos, @1*__r val)
+{
 	@1 tot1 = 0, tot2 = 0, tot3 = 0, tot4 = 0;
 	ssize_t i;
 	if (p1) {
 		if (oidhead) {
-			/* pos = tail of BAT[oid,oid] 
+			/* pos = tail of BAT[oid,oid]
 			for(i=0; i+7<n; i+=4) {
 				res[i] = val[pos[i+i]];
 				tot1 += p1[0];
@@ -3595,13 +3630,13 @@ int oidhead, ssize_t n, @1*__r res, oid*__r pos, @1*__r val) {
 				p1 += pf+pf+pf+pf;
 			}
 */
-			for(i=0; i<n; i++) {
+			for (i=0; i<n; i++) {
 				res[i] = val[pos[i+i]];
 				tot1 += *p1;
 				p1 += pf;
 			}
 		} else {
-			/* pos = tail of BAT[void,oid] 
+			/* pos = tail of BAT[void,oid]
 			for(i=0; i+3<n; i+=4) {
 				res[i] = val[pos[i]];
 				tot1 += p1[0];
@@ -3614,7 +3649,7 @@ int oidhead, ssize_t n, @1*__r res, oid*__r pos, @1*__r val) {
 				p1 += pf+pf+pf+pf;
 			}
 */
-			for(i=0; i<n; i++) {
+			for (i=0; i<n; i++) {
 				res[i] = val[pos[i]];
 				tot1 += *p1;
 				p1 += pf;
@@ -3623,24 +3658,24 @@ int oidhead, ssize_t n, @1*__r res, oid*__r pos, @1*__r val) {
 	} else {
 		if (oidhead) {
 			/* pos = tail of BAT[oid,oid] */
-			for(i=0; i+7<n; i+=4) {
+			for (i=0; i+7<n; i+=4) {
 				res[i] = val[pos[i+i]];
 				res[i+1] = val[pos[i+i+2]];
 				res[i+2] = val[pos[i+i+4]];
 				res[i+3] = val[pos[i+i+6]];
 			}
-			for(i=0; i<n; i++) {
+			for (i=0; i<n; i++) {
 				res[i] = val[pos[i+i]];
 			}
 		} else {
 			/* pos = tail of BAT[void,oid] */
-			for(i=0; i+3<n; i+=4) {
+			for (i=0; i+3<n; i+=4) {
 				res[i] = val[pos[i]];
 				res[i+1] = val[pos[i+1]];
 				res[i+2] = val[pos[i+2]];
 				res[i+3] = val[pos[i+3]];
 			}
-			for(i=0; i<n; i++) {
+			for (i=0; i<n; i++) {
 				res[i] = val[pos[i]];
 			}
 		}

@@ -22,35 +22,35 @@
 
 @* Introduction
 @T
-With this module you can establish TCP/IP connections between Mservers, 
-and pass BATs {\em or any other MIL value} asynchronously between them. 
+With this module you can establish TCP/IP connections between Mservers,
+and pass BATs {\em or any other MIL value} asynchronously between them.
 Mode of operation:
 \begin{itemize}
 \item first you start, on at least one side of the network, the {\bf TCP/IP
 listening thread} with the {\tt listen(port)} command.
-\item you can then {\bf connect on the other side} using 
-{\tt open("<host>:<port") : int}. The returned integer number is the 
+\item you can then {\bf connect on the other side} using
+{\tt open("<host>:<port") : int}. The returned integer number is the
 {\em connection number}. Connections are bidirectional channels to pass values.
 \item {\tt <conn-id>.export(<value>);} {\bf sends a value} to the other side.
 It will be stored in the cache there.
-\item {\tt import("<name>") : <value>} waits for a certain named value to 
-come in {\em from any open connection}. If the value is already cached, this 
+\item {\tt import("<name>") : <value>} waits for a certain named value to
+come in {\em from any open connection}. If the value is already cached, this
 command returns immediately. If not, it {\bf blocks till the value arrives}.
-\item the {\tt <conn-id>.mil(<mil-str>)} command {\bf evaluates a 
+\item the {\tt <conn-id>.mil(<mil-str>)} command {\bf evaluates a
 MIL script} on the other end.
-\item the {\tt <conn-id>.rpc(<fcn-str>, ..subst-param..) : value} command 
+\item the {\tt <conn-id>.rpc(<fcn-str>, ..subst-param..) : value} command
 {\bf evaluates a MIL command} on the other end. It takes care of
 the correct transportation of the parameter values, and returns the
-result value of the expression. The command is given as a string 
+result value of the expression. The command is given as a string
 containing a "cmd(...)", with "\%s" patterns where local parameters
 are substituted.
 \item the {\tt <conn-id>.close()} command {\bf closes the connection}.
 \item the {\tt terminate(<port>)} command {\bf kills the listening thread}.
-\item {\bf status monitoring}: the {\tt waits, conns} and {\tt cache} 
+\item {\bf status monitoring}: the {\tt waits, conns} and {\tt cache}
 commands all return a BAT, that contain (a copy of) the internal
 connection administration tables.
 \end{itemize}
-If two Mservers simultaneously try to open a connection to each other, 
+If two Mservers simultaneously try to open a connection to each other,
 only one will be created.
 
 @* Module Definition
@@ -103,7 +103,7 @@ only one will be created.
  Returns the remote return value."
 
 .COMMAND mil(int conn_id, str fcn_call, ... any ...) : void = TCParpc;
-"remote MIL evaluation with parameter transport, similary to rpc. 
+"remote MIL evaluation with parameter transport, similary to rpc.
  Does NOT return a result value."
 .COMMAND mil(int conn_id, str name) : void = TCPmil;
 "remote MIL string evaluation. String can be just any legal mil script
@@ -282,7 +282,7 @@ socket_gets(int fd, char **buf, int *len)
 The @%atom_type@ routine checks whether we know a certain
 MIL atomic type, by its name. We accept only standard atoms,
 and extension atoms installed by the database administrator
-(no user atoms!). This is for simplicity; users can have many 
+(no user atoms!). This is for simplicity; users can have many
 different names..
 @c
 static int
@@ -348,7 +348,7 @@ the connections, and receive data. This data is cached locally till it
 is needed. The cache maintains a list of cached data items and their names.
 
 @- BAT cache_idx
-The @%cache_idx@ BAT[str,ptr] is non-volatile and contains a list of names, and 
+The @%cache_idx@ BAT[str,ptr] is non-volatile and contains a list of names, and
 pointers to @%cache_t@ records.
 @c
 BAT *cache_idx = 0;
@@ -555,18 +555,18 @@ cache_error(cache_t *c)
 The connection table shows all currently open TCP/IP connections.
 Connections are always either initiated at the one end, or the other,
 with a @%TCPopen@ call. On the answering end, there the listener.
-Afterwards the connection is bidirectional.  This asymmetry on how 
+Afterwards the connection is bidirectional.  This asymmetry on how
 a connection was created, shows up in the connection administration table.
 @c
 typedef struct {
 	int me;			/* port number of the local listening thread
-				 * to which was connected by the remote party; 
+				 * to which was connected by the remote party;
 				 * -1 if the connection was initiated locally */
 	int valid;		/* is the connection still valid */
 	char hostname[128];	/* remote hostname */
 	int port;		/* remote listening thread port; -1 if none */
 	int sock;		/* socket number */
-	Thread waiter;		/* process id of waiter thread on this 
+	Thread waiter;		/* process id of waiter thread on this
 				 * connection */
 } conn_t;
 
@@ -718,13 +718,13 @@ a volatile BAT from it, and placing it in the local cache.
 \item a request to {\em cache some other value}. Assemble
 the value; this is simpler than for BATs, of course.
 \item a request to {\em execute a MIL statement}. The result
-value of the MIL expression is to be sent back, using some 
+value of the MIL expression is to be sent back, using some
 system-generated cache name. Depending on the evaluation identifier,
-a possible result is sent back, or not. The result will be sent with 
+a possible result is sent back, or not. The result will be sent with
 the standard @%TCPexport@ mechanism.
 The evaluation identifier is also used for generating error messages.
 \end{itemize}
-@c 
+@c
 #define M_TCPIP_ALIGN(n,b) ((b)?(b)*(1+(((n)-1)/(b))):n)
 
 static void
@@ -848,7 +848,7 @@ Insert an empty value into the cache.
 				MT_unset_lock(TCPlock, "conn_waiter");
 
 @- err:<name>:<len>
-Name is the id of a 'mil' request. 
+Name is the id of a 'mil' request.
 The error message is stored in the 'errbuf' field of the cache item.
 @c
 				if (strcmp(tp, "err") == 0) {
@@ -1200,7 +1200,7 @@ Register ourselves
 	ports[port_no] = *port;
 	listeners++;
 	MT_unset_lock(TCPlock, "TCPlisten");
-@- 
+@-
 create the socket
 @c
 	if (sock < 0) {
@@ -1221,7 +1221,7 @@ create the socket
 		GDKsyserror("TCPlisten(%d): getting socket name\n", *port);
 	} else
 		while ((msgsock = accept(sock, (SOCKPTR) & client, &client_len)) > 0) {
-@- 
+@-
 the listener heard something...
 @c
 #ifdef SO_KEEPALIVE
@@ -1248,7 +1248,7 @@ the listener heard something...
 				close(msgsock);
 				continue;
 			} else if (strncmp(line, "stop", 4) == 0) {
-@- 
+@-
 This is the special command to shut down the listener.
 @c
 				GDKwarning("TCPlisten(%d): stopped.\n", *port);
@@ -1257,8 +1257,8 @@ This is the special command to shut down the listener.
 			} else if ((p = strchr(line, '\n')) != NULL) {
 				*p = 0;
 			}
-@- 
-a new connection is born 
+@-
+a new connection is born
 @c
 			MT_set_lock(TCPlock, "TCPlisten");
 			conn_insert(line, client.sin_port, *port, msgsock);
@@ -1316,7 +1316,7 @@ TCPterminate_default(void)
 }
 
 @* Connection Management
-@+ open(str) : int 
+@+ open(str) : int
 Open a connection to another TCP/IP server.
 @c
 int
@@ -1561,7 +1561,7 @@ Lookup or create (if it did not exist) a cache item by this name.
 		c->barrier = MT_create_sema(0);
 	}
 	MT_unset_lock(TCPlock, "TCPimport");
-@- 
+@-
 Try to pass the barrier. This makes you wait till the BAT arrived.
 @c
 	if (c->barrier != NULL)
@@ -1633,7 +1633,7 @@ TCPimport_default(ptr retval, int *rettpe, str name)
 static int evalnr = 0;
 
 @+ mil(int, str) : void
-Evaluate a MIL expression or script on the other side of the connection, 
+Evaluate a MIL expression or script on the other side of the connection,
 without giving back a return value.
 @c
 int
@@ -1675,7 +1675,7 @@ Import the resulting expression using the standard mechanism.
 
 @+ rpc(int, str, ...any...) : any
 Evaluate a MIL command on the other side of the connection, and
-give back a result value. The second parameter is a function call 
+give back a result value. The second parameter is a function call
 possibly with '%a' in the parameter list indicating local parameters
 that have to be transported;
 
@@ -1688,7 +1688,7 @@ result_bat := fd.rpc("join(remote_bat, %s)", local_bat);
 
 Implementation is taken together for both @%TCPrpc@ and @%TCParpc@
 (a variant which does not expect a return). This variant is actually
-available as a complex variant of the 'mil' command (for remote MIL 
+available as a complex variant of the 'mil' command (for remote MIL
 invocation).
 
 @- rpc client implementation
@@ -1704,110 +1704,115 @@ It move the cmd pointer to the "current" position.
 @= rpc_imp
 {
 	str fcn_cur;
-    
+
 	if (*conn_id<0 || *conn_id>=MAX_CONN || !connections[*conn_id].me) {
-	    GDKerror("TCP@1: invalid connection.\n");
-	    return GDK_FAIL;
+		GDKerror("TCP@1: invalid connection.\n");
+		return GDK_FAIL;
 	} else {
-	    int eval_id, ok = 0, nparam = 0, totlen = 0, buflen = 4096;
-	    char *buf = (char*) GDKmalloc(buflen), *cmd=buf;
-	    int fd = connections[*conn_id].sock;
-	    ptr val;
+		int eval_id, ok = 0, nparam = 0, totlen = 0, buflen = 4096;
+		char *buf = (char*) GDKmalloc(buflen), *cmd=buf;
+		int fd = connections[*conn_id].sock;
+		ptr val;
 
-	    /* Find start in the pattern.
-	     */
-	    while(GDKisspace(*fcn_start)) 
-		fcn_start++;
-	    fcn_cur = fcn_start;
+		/* Find start in the pattern. */
+		while(GDKisspace(*fcn_start))
+			fcn_start++;
+		fcn_cur = fcn_start;
 
-	    /* Make an unique name for retrieving the result 
-	     * of this expression.
-	     */
-	    MT_set_lock(TCPlock, "TCP@1");
-	    eval_id = evalnr++;
-	    MT_unset_lock(TCPlock, "TCP@1");
-	    sprintf(id, "@1%08d", eval_id);
-
-	    /* Like TCPmil, we use the "mil:name:expr" protocol. 
-	     * The difference is in <name> in that if it starts with "rpc",
-             * the conn_waiter() will send back a result.
-	     */
-	    sprintf(cmd, "mil:%s:", id);
-	    INC_BUFLEN(strlen(cmd)); 
-
-	    /* For all local parameters passed for substitution.....
-	     */
-	    while((val = va_arg(ap, ptr)) != NULL) {
-		int tpe = va_arg(ap, int);
-	    /* .....look for the place where it should be substituted 
- 	     * 	    (marked by %s).
-	     */
-		int instr=0, esc=0;
-
-	        while(fcn_cur[0] && (instr || esc ||
-		      (fcn_cur[0] != '%' && GDKisprint(fcn_cur[1])))) 
-		{
-		    if (!esc) {
-		        esc = (*fcn_cur == '\\');
-		        if (instr) instr = (*fcn_cur != '"'); 
-		        else instr = (*fcn_cur == '"'); 
-		    } else esc = 0;
-	  	    INC_BUFLEN(1);
-		    *cmd = *fcn_cur++; /* COPY THROUGH */ 
-		}
-		nparam++;
-		if (*fcn_cur == 0) { /* %s NOT FOUND */
-		    GDKwarning("TCP@1: ignore param %d and beyond.\n", nparam);
-		    break;
-		}
-	        fcn_cur += 2; /* STEP OVER %s */
-		/* The local values have to be transported to the other side. 
-		 * Simple values are best printed as a string inside the 
-		 * command. Complex types or whole BATs must be transported 
-		 * with the export mechanism. In the function call they are 
-		 * replaced by import expressions. We also optimize when 
-		 * user-defined types are derived from standard types (then we 
-		 * send a cast from the standard type). 
+		/* Make an unique name for retrieving the result
+		 * of this expression.
 		 */
-		if (tpe == TYPE_str) { 
-		    INC_BUFLEN(strlen(val)+2);
-		    sprintf(cmd, "\"%s\"", (str) val);
-		} else if (ATOMstorage(tpe) == TYPE_str) { 
-		    str t = ATOMname(tpe);
-		    INC_BUFLEN(strlen(t)+strlen(val)+4);
-		    sprintf(cmd, "%s(\"%s\")", t, (str) val);
-		} else if ((tpe == TYPE_bat) || ATOMextern(tpe)) {
-	            char export_id[17];
-	    	    sprintf(export_id, "p%02d%08d", nparam, eval_id);
-		    if (!TCPexport(conn_id, val, tpe, export_id)) {
-			goto fail;
-		    }
-		    INC_BUFLEN(21); /* len of >import("id")< */
-		    sprintf(cmd, "import(\"%s\")", export_id);
-		} else {
-		    str s = NULL, t = ATOMname(tpe);
-		    ATOMformat(ATOMstorage(tpe), val, &s); 
-		    INC_BUFLEN(strlen(s)+strlen(t)+2);
-		    sprintf(cmd, "%s(%s)", t, s); 
-		    GDKfree(s);
+		MT_set_lock(TCPlock, "TCP@1");
+		eval_id = evalnr++;
+		MT_unset_lock(TCPlock, "TCP@1");
+		sprintf(id, "@1%08d", eval_id);
+
+		/* Like TCPmil, we use the "mil:name:expr" protocol.
+		 * The difference is in <name> in that if it starts
+		 * with "rpc", the conn_waiter() will send back a
+		 * result.
+		 */
+		sprintf(cmd, "mil:%s:", id);
+		INC_BUFLEN(strlen(cmd));
+
+		/* For all local parameters passed for substitution.....
+		 */
+		while((val = va_arg(ap, ptr)) != NULL) {
+			int tpe = va_arg(ap, int);
+			/* .....look for the place where it should be
+			 * substituted (marked by %s).
+			 */
+			int instr=0, esc=0;
+
+			while (fcn_cur[0] &&
+			       (instr || esc ||
+				(fcn_cur[0] != '%' && GDKisprint(fcn_cur[1])))) {
+				if (!esc) {
+					esc = (*fcn_cur == '\\');
+					if (instr)
+						instr = *fcn_cur != '"';
+					else
+						instr = *fcn_cur == '"';
+				} else
+					esc = 0;
+				INC_BUFLEN(1);
+				*cmd = *fcn_cur++; /* COPY THROUGH */
+			}
+			nparam++;
+			if (*fcn_cur == 0) { /* %s NOT FOUND */
+				GDKwarning("TCP@1: ignore param %d and beyond.\n", nparam);
+				break;
+			}
+			fcn_cur += 2; /* STEP OVER %s */
+			/* The local values have to be transported to the other side.
+			 * Simple values are best printed as a string inside the
+			 * command. Complex types or whole BATs must be transported
+			 * with the export mechanism. In the function call they are
+			 * replaced by import expressions. We also optimize when
+			 * user-defined types are derived from standard types (then we
+			 * send a cast from the standard type).
+			 */
+			if (tpe == TYPE_str) {
+				INC_BUFLEN(strlen(val)+2);
+				sprintf(cmd, "\"%s\"", (str) val);
+			} else if (ATOMstorage(tpe) == TYPE_str) {
+				str t = ATOMname(tpe);
+				INC_BUFLEN(strlen(t)+strlen(val)+4);
+				sprintf(cmd, "%s(\"%s\")", t, (str) val);
+			} else if ((tpe == TYPE_bat) || ATOMextern(tpe)) {
+				char export_id[17];
+				sprintf(export_id, "p%02d%08d", nparam, eval_id);
+				if (!TCPexport(conn_id, val, tpe, export_id)) {
+					goto fail;
+				}
+				INC_BUFLEN(21);			    /* len of >import("id")< */
+				sprintf(cmd, "import(\"%s\")", export_id);
+			} else {
+				str s = NULL, t = ATOMname(tpe);
+				ATOMformat(ATOMstorage(tpe), val, &s);
+				INC_BUFLEN(strlen(s)+strlen(t)+2);
+				sprintf(cmd, "%s(%s)", t, s);
+				GDKfree(s);
+			}
 		}
-            }
-            va_end(ap);
+		va_end(ap);
 
-	    /* Copy the function call to our send buffer.
-	     * Close the call with ')' if this exists in the calling prototype.
-	     * (zero parameter functions don't need () in MIL). It is already
-	     * expected to be finished off with semicolon. Newline is added.
-	     */
-  	    INC_BUFLEN(strlen(fcn_cur)+1);
-	    strcat(buf, fcn_cur);
-	    strcat(buf, "\n");
+		/* Copy the function call to our send buffer.
+		 * Close the call with ')' if this exists in the calling prototype.
+		 * (zero parameter functions don't need () in MIL). It is already
+		 * expected to be finished off with semicolon. Newline is added.
+		 */
+		INC_BUFLEN(strlen(fcn_cur)+1);
+		strcat(buf, fcn_cur);
+		strcat(buf, "\n");
 
-	    /* Now we send it to the other end
-	     */
-	    ok = socket_write(fd, strlen(buf), buf, "MIL command");
-fail:	    GDKfree(buf);
-	    if (!ok) return GDK_FAIL;
+		/* Now we send it to the other end
+		 */
+		ok = socket_write(fd, strlen(buf), buf, "MIL command");
+	fail:
+		GDKfree(buf);
+		if (!ok)
+			return GDK_FAIL;
 	}
 }
 
@@ -1846,7 +1851,7 @@ TCParpc(int *conn_id, str fcn_start, ...)
 @f standalone
 @* Standalone TCP/IP send
 This is a minimal example program that can make contact with the
-listener thread of a TCP/IP equipped Mserver, and sends a table 
+listener thread of a TCP/IP equipped Mserver, and sends a table
 to the Mserver, that can be used there as a BAT.
 @c
 #define TABLE_SIZE 10000
@@ -1865,7 +1870,7 @@ main(void)
 
 @-
 Init the connection
-@c 
+@c
 	fprintf(fp, "connection identifier\n");
 @-
 Send one BAT.

@@ -21,10 +21,10 @@
 @d 06/06/2001
 @v 0.2
 
-@T 
+@T
 @* Unix stdlib
 
-Provides access to some of the C stdlib.h functions. 
+Provides access to some of the C stdlib.h functions.
 
 @* Module Definition
 @m

@@ -16,12 +16,12 @@
 @' All Rights Reserved.
 
 @f aggr
-@a P. Boncz, S. Manegold 
+@a P. Boncz, S. Manegold
 @t Aggregates Module
 @v 1.0
 
-This module contains some efficient aggregate functions that compute their 
-result in one scan, rather than in the iterative manner of the generic 
+This module contains some efficient aggregate functions that compute their
+result in one scan, rather than in the iterative manner of the generic
 MIL aggr_ implementations.
 
 The implementation code is derived from the already existing tpcd module and some
@@ -29,49 +29,49 @@ test scripts were added.
 @m
 .MODULE aggr;
 
-.COMMAND {sum_sht}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_sum_sht_sht; 
+.COMMAND {sum_sht}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_sum_sht_sht;
 	"grouped tail sum"
-.COMMAND {sum_int}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_sht_int; 
+.COMMAND {sum_int}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_sht_int;
 	"grouped tail sum"
-.COMMAND {sum_int}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_int_int; 
+.COMMAND {sum_int}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_int_int;
 	"grouped tail sum"
-.COMMAND {sum_lng}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_sum_int_lng; 
+.COMMAND {sum_lng}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_sum_int_lng;
 	"grouped tail sum"
-.COMMAND {sum_lng}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_sum_lng_lng; 
+.COMMAND {sum_lng}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_sum_lng_lng;
 	"grouped tail sum"
-.COMMAND {sum_flt}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,flt] = CMDaggr_sum_flt_flt; 
+.COMMAND {sum_flt}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,flt] = CMDaggr_sum_flt_flt;
 	"grouped tail sum"
-.COMMAND {sum_dbl}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_sum_flt_dbl; 
+.COMMAND {sum_dbl}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_sum_flt_dbl;
 	"grouped tail sum"
-.COMMAND {sum_dbl}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_sum_dbl_dbl; 
+.COMMAND {sum_dbl}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_sum_dbl_dbl;
 	"grouped tail sum"
 
-.COMMAND {prod_sht}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_prod_sht_sht; 
+.COMMAND {prod_sht}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_prod_sht_sht;
 	"grouped tail product"
-.COMMAND {prod_int}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_prod_sht_int; 
+.COMMAND {prod_int}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_prod_sht_int;
 	"grouped tail product"
-.COMMAND {prod_int}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_prod_int_int; 
+.COMMAND {prod_int}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_prod_int_int;
 	"grouped tail product"
-.COMMAND {prod_lng}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_prod_int_lng; 
+.COMMAND {prod_lng}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_prod_int_lng;
 	"grouped tail product"
-.COMMAND {prod_lng}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_prod_lng_lng; 
+.COMMAND {prod_lng}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_prod_lng_lng;
 	"grouped tail product"
-.COMMAND {prod_flt}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,flt] = CMDaggr_prod_flt_flt; 
+.COMMAND {prod_flt}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,flt] = CMDaggr_prod_flt_flt;
 	"grouped tail product"
-.COMMAND {prod_dbl}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_prod_flt_dbl; 
+.COMMAND {prod_dbl}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_prod_flt_dbl;
 	"grouped tail product"
-.COMMAND {prod_dbl}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_prod_dbl_dbl; 
+.COMMAND {prod_dbl}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_prod_dbl_dbl;
 	"grouped tail product"
 
-.COMMAND {avg}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_sht; 
+.COMMAND {avg}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_sht;
 	"grouped tail average"
-.COMMAND {avg}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_int; 
+.COMMAND {avg}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_int;
 	"grouped tail average"
-.COMMAND {avg}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_lng; 
+.COMMAND {avg}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_lng;
 	"grouped tail average"
-.COMMAND {avg}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_flt; 
+.COMMAND {avg}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_flt;
 	"grouped tail average"
-.COMMAND {avg}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_dbl; 
+.COMMAND {avg}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_avg_dbl;
 	"grouped tail average"
 
 .COMMAND {variance}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_variance_sht;
@@ -85,12 +85,12 @@ test scripts were added.
 .COMMAND {variance}(BAT[oid,dbl] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_variance_dbl;
         "grouped tail variance"
 
-.COMMAND {min}(BAT[oid,any::1] b, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggr_min; 
+.COMMAND {min}(BAT[oid,any::1] b, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggr_min;
 	"grouped tail minimum"
-.COMMAND {max}(BAT[oid,any::1] b, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggr_max; 
+.COMMAND {max}(BAT[oid,any::1] b, BAT[oid,any] e) : BAT[oid,any::1] = CMDaggr_max;
 	"grouped tail maximum"
 
-.COMMAND {count}(BAT[oid,any] b, BAT[oid,any] e, bit ignore_nils) : BAT[oid,int] = CMDaggr_count; 
+.COMMAND {count}(BAT[oid,any] b, BAT[oid,any] e, bit ignore_nils) : BAT[oid,int] = CMDaggr_count;
 	"grouped count; ignores nil values iff ignore_nils==TRUE"
 .COMMAND {size}(BAT[oid,bit] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_size;
 	"grouped count of true values"
@@ -121,7 +121,7 @@ test scripts were added.
 
     proc size(BAT[any,bit] b) : int {
 	var h := b.histogram();
-	if (h.exist(true)) 
+	if (h.exist(true))
 	    return h.find(true);
 	return 0;
     }
@@ -168,19 +168,19 @@ test scripts were added.
 	}
 	var s := [*](b,b).sum();
 	var a := b.avg();
-	return ((s / c) - (a * a)).cast(b.ttype()); 
+	return ((s / c) - (a * a)).cast(b.ttype());
     }
 
 @{
 @{
 @+ Implementation
 These implementations need just one scan and a simple hash-maintained data
-structure to compute a group of common aggregates. 
+structure to compute a group of common aggregates.
 @c
 #include <gdk.h>
 #include "aggr.proto.h"
 
-/* 
+/*
 with group OIDs spanning a range of less SMALL_AGGR_MAX (the actual number
 of groups might be even less, in case there are "holes" in the group OID
 range), we use a simple array as temporary sum/cnt table on order to benefit
@@ -202,18 +202,19 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		if (r) {
 			@3 *dst = (@3*) BUN@2(bn, r);
 			if (*dst != @3_nil) {
-				if (*t == @1_nil) {	
+				if (*t == @1_nil) {
 					*dst = @3_nil;
 				} else {
 					*dst += *t;
 				}
-			} 
+			}
 		}
-	} 
+	}
 @c
 @= small_aggr_sum
 	sums = (@3*) GDKmalloc(range*sizeof(@3));
-	for (i = 0; i < range; i++) sums[i] = zero;
+	for (i = 0; i < range; i++)
+		sums[i] = zero;
 	BATloopFast(b, p, q, xx) {
 		oid h = (*(oid*) BUNhead(b,p)) - min;
 		@1 *t = (@1*) BUN@2(b,p);
@@ -221,14 +222,14 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		if (h < range) {
 			@3 *dst = sums + h;
 			if (*dst != @3_nil) {
-				if (*t == @1_nil) {	
+				if (*t == @1_nil) {
 					*dst = @3_nil;
 				} else {
 					*dst += *t;
 				}
-			} 
+			}
 		}
-	} 
+	}
 	BATloopFast(bn, p, q, xx) {
 		oid h = (*(oid*) BUNhead(bn,p)) - min;
 		*(@3*)BUN@2(bn, p) = sums[h];
@@ -248,18 +249,19 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		if (r) {
 			@3 *dst = (@3*) BUN@2(bn, r);
 			if (*dst != @3_nil) {
-				if (*t == @1_nil) {	
+				if (*t == @1_nil) {
 					*dst = @3_nil;
 				} else {
 					*dst *= *t;
 				}
-			} 
+			}
 		}
-	} 
+	}
 @c
 @= small_aggr_prod
 	prods = (@3*) GDKmalloc(range*sizeof(@3));
-	for (i = 0; i < range; i++) prods[i] = one;
+	for (i = 0; i < range; i++)
+		prods[i] = one;
 	BATloopFast(b, p, q, xx) {
 		oid h = (*(oid*) BUNhead(b,p)) - min;
 		@1 *t = (@1*) BUN@2(b,p);
@@ -267,14 +269,14 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		if (h < range) {
 			@3 *dst = prods + h;
 			if (*dst != @3_nil) {
-				if (*t == @1_nil) {	
+				if (*t == @1_nil) {
 					*dst = @3_nil;
 				} else {
 					*dst *= *t;
 				}
-			} 
+			}
 		}
-	} 
+	}
 	BATloopFast(bn, p, q, xx) {
 		oid h = (*(oid*) BUNhead(bn,p)) - min;
 		*(@3*)BUN@2(bn, p) = prods[h];
@@ -297,15 +299,15 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		if (r) {
 			dbl *dst = (dbl*) BUN@2(bn, r);
 			if (*dst != dbl_nil) {
-				if (*t == @1_nil) {	
+				if (*t == @1_nil) {
 					*dst = dbl_nil;
 				} else {
 					*dst += *t;
 				}
 				cnt[BUNindex(bn,r)-off]++;
-			} 
+			}
 		}
-	} 
+	}
 	/* postprocess by dividing sums by counts */
 	BATloopFast(bn, p, q, xx) {
 		dbl *dst = (dbl*) BUN@2(bn, p);
@@ -314,13 +316,14 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		} else if (*dst != dbl_nil) {
 			*dst = (dbl) (*dst / cnt[yy]);
 		} yy++;
-	} 
+	}
 	GDKfree(cnt);
 @c
 @= small_aggr_avg
 	sums = (dbl*) GDKmalloc(range*sizeof(dbl));
 	cnt  = (size_t*) GDKmalloc(range*sizeof(size_t));
-	for (i = 0; i < range; i++) sums[i] = zero;
+	for (i = 0; i < range; i++)
+		sums[i] = zero;
 	memset(cnt, 0, range*sizeof(size_t));
 	BATloopFast(b, p, q, xx) {
 		oid h = (*(oid*) BUNhead(b,p)) - min;
@@ -329,15 +332,15 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 		if (h < range) {
 			dbl *dst = sums + h;
 			if (*dst != dbl_nil) {
-				if (*t == @1_nil) {	
+				if (*t == @1_nil) {
 					*dst = dbl_nil;
 				} else {
 					*dst += *t;
 				}
 				cnt[h]++;
-			} 
+			}
 		}
-	} 
+	}
 	/* postprocess by dividing sums by counts */
 	BATloopFast(bn, p, q, xx) {
 		oid h = (*(oid*) BUNhead(bn,p)) - min;
@@ -353,14 +356,17 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 @c
 
 @= arithsumprod
-int CMDaggr_sum_@1_@3(BAT **ret, BAT *b, BAT *e){
-	BAT *bn = BATnew(e->htype, TYPE_@3, BATcount(e));	
+int
+CMDaggr_sum_@1_@3(BAT **ret, BAT *b, BAT *e)
+{
+	BAT *bn = BATnew(e->htype, TYPE_@3, BATcount(e));
 	@3 zero = (@3) 0, *sums;
 	BUN p, q, r;
 	int xx;
 	oid i, range, min, max;
 
-	if( bn == NULL) return GDK_FAIL;
+	if (bn == NULL)
+		return GDK_FAIL;
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
@@ -381,9 +387,10 @@ int CMDaggr_sum_@1_@3(BAT **ret, BAT *b, BAT *e){
 				return GDK_FAIL;
 			}
 			i = *(oid*)BUNhead(e, p);
-			if (i < min) min = i;
-			else
-			if (i > max) max = i;
+			if (i < min)
+				min = i;
+			else if (i > max)
+				max = i;
 		}
 	}
 	range = max - min + 1;
@@ -400,14 +407,17 @@ int CMDaggr_sum_@1_@3(BAT **ret, BAT *b, BAT *e){
 	return GDK_SUCCEED;
 }
 
-int CMDaggr_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
-	BAT *bn = BATnew(e->htype, TYPE_@3, BATcount(e));	
+int
+CMDaggr_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
+{
+	BAT *bn = BATnew(e->htype, TYPE_@3, BATcount(e));
 	@3 one = (@3) 1, *prods;
 	BUN p, q, r;
 	int xx;
 	oid i, range, min, max;
 
-	if( bn == NULL) return GDK_FAIL;
+	if (bn == NULL)
+		return GDK_FAIL;
 	/* init: set all prods to one */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
@@ -428,9 +438,10 @@ int CMDaggr_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
 				return GDK_FAIL;
 			}
 			i = *(oid*)BUNhead(e, p);
-			if (i < min) min = i;
-			else
-			if (i > max) max = i;
+			if (i < min)
+				min = i;
+			else if (i > max)
+				max = i;
 		}
 	}
 	range = max - min + 1;
@@ -458,16 +469,19 @@ int CMDaggr_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
 @:arithsumprod(dbl,tloc,dbl)@
 
 @= arithavg
-int CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e){
-	BAT *bn = BATnew(e->htype, TYPE_dbl, BATcount(e));	
+int
+CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e)
+{
+	BAT *bn = BATnew(e->htype, TYPE_dbl, BATcount(e));
 	int xx;
 	size_t yy = 0, off ;
 	size_t *cnt;
-	oid i, range, min, max; 
+	oid i, range, min, max;
 	dbl zero = (dbl) 0, *sums;
 	BUN p, q, r;
 
-	if( bn == NULL) return GDK_FAIL;
+	if (bn == NULL)
+		return GDK_FAIL;
 	off = BUNindex(bn,BUNfirst(bn));
 	/* init sums and counts to zero */
 	bn->tsorted = bn->hsorted = 0;
@@ -489,9 +503,10 @@ int CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e){
 				return GDK_FAIL;
 			}
 			i = *(oid*)BUNhead(e, p);
-			if (i < min) min = i;
-			else
-			if (i > max) max = i;
+			if (i < min)
+				min = i;
+			else if (i > max)
+				max = i;
 		}
 	}
 	range = max - min + 1;
@@ -515,13 +530,15 @@ int CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e){
 @:arithavg(dbl,tloc)@
 
 @-
-this was imported in the DD merge. 
+this was imported in the DD merge.
 TODO: add ALGODEBUG and optimize further?
 
 @= arithvar
-int CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e) {
+int
+CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
+{
 	int nElements = BATcount(e);
-	BAT *bn = *ret = BATnew(e->htype, BATttype(b), nElements);	
+	BAT *bn = *ret = BATnew(e->htype, BATttype(b), nElements);
 	int xx, off, idx=0;
 	int *cnt ;
 	dbl *sum ;
@@ -530,21 +547,22 @@ int CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e) {
 	BUN p, q, r;
 	oid previousOid = oid_nil;
 
-	if(bn == NULL) return GDK_FAIL;
+	if (bn == NULL)
+		return GDK_FAIL;
 	off = BUNindex(e,BUNfirst(e));
-	cnt = (int*) GDKmalloc(nElements*sizeof(int)); 
-	if(cnt == NULL){
+	cnt = (int*) GDKmalloc(nElements*sizeof(int));
+	if (cnt == NULL) {
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	sum = (dbl*) GDKmalloc(nElements*sizeof(dbl)); 
-	if(sum == NULL){
+	sum = (dbl*) GDKmalloc(nElements*sizeof(dbl));
+	if (sum == NULL) {
 		BBPreclaim(bn);
 		GDKfree(cnt);
 		return GDK_FAIL;
 	}
-	sumsquares = (dbl*) GDKmalloc(nElements*sizeof(dbl)); 
-	if( sumsquares == NULL){
+	sumsquares = (dbl*) GDKmalloc(nElements*sizeof(dbl));
+	if (sumsquares == NULL) {
 		BBPreclaim(bn);
 		GDKfree(cnt);
 		GDKfree(sum);
@@ -567,7 +585,7 @@ int CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e) {
 
 	BATloopFast(b, p, q, xx) {
 		oid *h = (oid*) BUNhead(b,p);
-		if(*h != previousOid) {
+		if (*h != previousOid) {
 			previousOid = *h;
 			BUNfndOID(r,e,h);
 			if(!r) continue;
@@ -593,17 +611,20 @@ int CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e) {
 	BATloopFast(e, p, q, xx) {
 		if (cnt[idx] == int_nil) {
 			if (BUNfastins(bn, BUNhead(e,p), &@1_nil) == NULL) {
-				*ret = NULL; break;
+				*ret = NULL;
+				break;
 			}
 		} else if (cnt[idx] <= 1) {
 			if (BUNfastins(bn, BUNhead(e,p), &zero) == NULL) {
-				*ret = NULL; break;
+				*ret = NULL;
+				break;
 			}
 		} else {
 			dbl avg = (sum[idx] / cnt[idx]);
 			@1 variance = (@1) (sumsquares[idx] / cnt[idx] - (avg * avg));
 			if (BUNfastins(bn, BUNhead(e,p), &variance) == NULL) {
-				*ret = NULL; break;
+				*ret = NULL;
+				break;
 			}
 		}
 		idx++;
@@ -627,8 +648,10 @@ int CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e) {
 
 
 @= extreme
-int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
-	BAT *bn = *ret = BATnew(e->htype, BATttype(b), BATcount(e));	
+int
+CMDaggr_@1(BAT **ret, BAT *b, BAT *e)
+{
+	BAT *bn = *ret = BATnew(e->htype, BATttype(b), BATcount(e));
 	int (*cmp)(ptr,ptr);
 	ptr nil;
 	int xx;
@@ -636,18 +659,19 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 	ptr *extremes;
 	BUN p, q, r;
 
-	if( bn == NULL) return GDK_FAIL;
+	if (bn == NULL)
+		return GDK_FAIL;
 	cmp= BATatoms[bn->ttype].atomCmp;
 	nil = ATOMnilptr(bn->ttype);
 	off = BUNindex(e,BUNfirst(e));
-	extremes = (ptr*) GDKmalloc(BATcount(e)*sizeof(ptr)); 
-	if( extremes == NULL) {
+	extremes = (ptr*) GDKmalloc(BATcount(e)*sizeof(ptr));
+	if (extremes == NULL) {
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	
+
 	/* init: set all extremes to the zero pointer */
-	memset(extremes, 0, BATcount(e)*sizeof(ptr)); 
+	memset(extremes, 0, BATcount(e)*sizeof(ptr));
 
 	/* scan b and replace totals by the extreme value (just pointers to vals in b) */
 	if (BATprepareHash(e)) {
@@ -670,14 +694,15 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 				}
 			}
 		}
-	} 
+	}
 	/* insert the extreme values into the result */
 	BATloopFast(e, p, q, xx) {
 		ptr val = extremes[yy++];
 		if (BUNfastins(bn, BUNhead(e,p), val?val:nil) == NULL) {
-			*ret = NULL; break;
+			*ret = NULL;
+			break;
 		}
-	} 
+	}
 	GDKfree(extremes);
 	if (!*ret) {
 		BBPreclaim(bn);
@@ -708,7 +733,7 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 				(*dst)++;
 			}
 		}
-	} 
+	}
 @c
 @= small_aggr_count
 	cnt  = (int*) GDKmalloc(range*sizeof(int));
@@ -723,7 +748,7 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 				cnt[h]++;
 			}
 		}
-	} 
+	}
 	BATloopFast(bn, p, q, xx) {
 		oid h = (*(oid*) BUNhead(bn,p)) - min;
 		*(int*)BUNtloc(bn, p) = cnt[h];
@@ -865,66 +890,73 @@ CMDsize(int *ret, BAT *b)
 #define CARD_INC_UNBOUNDED(x,y) ++(x)
 
 @= card_bound_tpe
-if (BATtordered(b)&1) {
-	/* the sorted algorithm: scan */
-	ptr prev =  (ptr) BUNt@2(b, BUNfirst(b));
-	cursize = 1; /* start counting unique elements... (at one) */
-	BATloopFast(b, p, q, xx) {
-		ptr cur =  (ptr) BUNt@2(b, p);
-		if (!@1_EQ(prev, cur, @3)) {
-			CARD_INC_@4(cursize, maxsize);
-			prev = cur;
-		} 
+	if (BATtordered(b)&1) {
+		/* the sorted algorithm: scan */
+		ptr prev =  (ptr) BUNt@2(b, BUNfirst(b));
+		cursize = 1; /* start counting unique elements... (at one) */
+		BATloopFast(b, p, q, xx) {
+			ptr cur =  (ptr) BUNt@2(b, p);
+			if (!@1_EQ(prev, cur, @3)) {
+				CARD_INC_@4(cursize, maxsize);
+				prev = cur;
+			}
+		}
+	} else {
+		/* default algorithm is hash based */
+		int yy = BUNindex(b, BUNfirst(b));
+		BAT *v = VIEWcreate(BATmirror(b));
+		Heap *hp = (Heap*) GDKmalloc(sizeof(Heap));
+		str nme = BBP_physical(v->batCacheid);
+		hp->filename = (str) GDKmalloc(strlen(nme)+12);
+		sprintf(hp->filename, "%s.%chash", nme, v->batCacheid>0?'h':'t');
+		if (HASHnew(&v->hhash, hp, any, BATcapacity(b), HASHmask(BATcount(b))) == NULL) {
+			BBPreclaim(v);
+			return GDK_FAIL;
+		}
+		v->hhash_heap = BATmirror(v)->thash_heap = hp;
+		cursize = 0; /* start counting unique elements... (at zero) */
+		BATloopFast(b, p, q, xx) {
+			ptr cur =  (ptr) BUNt@2(b, p);
+			HASHfnd_@3(r, v, cur);
+			if (r == NULL) {
+				CARD_INC_@4(cursize, maxsize);
+				HASHins_@3(v->hhash, yy, cur);
+			}
+			yy++;
+		}
+		BBPreclaim(v); /* free view and hash table */
 	}
-} else {
-	/* default algorithm is hash based */
-	int yy = BUNindex(b, BUNfirst(b));
-	BAT *v = VIEWcreate(BATmirror(b));
-	Heap *hp = (Heap*) GDKmalloc(sizeof(Heap));
-	str nme = BBP_physical(v->batCacheid);
-	hp->filename = (str) GDKmalloc(strlen(nme)+12);
-	sprintf(hp->filename, "%s.%chash", nme, v->batCacheid>0?'h':'t');
-	if (HASHnew(&v->hhash, hp, any, BATcapacity(b), HASHmask(BATcount(b))) == NULL) {
-		BBPreclaim(v); 
-		return GDK_FAIL;
-	}
-	v->hhash_heap = BATmirror(v)->thash_heap = hp;
-	cursize = 0; /* start counting unique elements... (at zero) */
-	BATloopFast(b, p, q, xx) {
-		ptr cur =  (ptr) BUNt@2(b, p);
-		HASHfnd_@3(r, v, cur);
-		if (r == NULL) {
-			CARD_INC_@4(cursize, maxsize);
-			HASHins_@3(v->hhash, yy, cur); 
-		} 
-		yy++;
-	}
-	BBPreclaim(v); /* free view and hash table */
-} break;
+	break;
 @= card_bound
-{	int any = tpe; /* name chosen for convenience in atom macros */
-	switch(ATOMstorage(any)) {
+	{
+		int any = tpe;	/* name chosen for convenience in atom macros */
+		switch(ATOMstorage(any)) {
 #ifdef NOEXPAND_CHR
-	case TYPE_chr:  @:card_bound_tpe(simple,loc,chr,@1)@
+		case TYPE_chr:
+			@:card_bound_tpe(simple,loc,chr,@1)@
 #endif
 #ifndef NOEXPAND_SHT
-	case TYPE_sht:  @:card_bound_tpe(simple,loc,sht,@1)@
+		case TYPE_sht:
+			@:card_bound_tpe(simple,loc,sht,@1)@
 #endif
 #if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
-	case TYPE_int:
-	case TYPE_flt:  @:card_bound_tpe(simple,loc,int,@1)@
+		case TYPE_int:
+		case TYPE_flt:
+			@:card_bound_tpe(simple,loc,int,@1)@
 #endif
 #if !defined(NOEXPAND_LNG) || !defined(NOEXPAND_DBL)
-	case TYPE_lng: 
-	case TYPE_dbl:  @:card_bound_tpe(simple,loc,lng,@1)@
+		case TYPE_lng:
+		case TYPE_dbl:
+			@:card_bound_tpe(simple,loc,lng,@1)@
 #endif
-	default: if (b->tvarsized) {
-			@:card_bound_tpe(atom,var,any,@1)@
-		 } else {
-			@:card_bound_tpe(atom,loc,any,@1)@
-		 }
+		default:
+			if (b->tvarsized) {
+				@:card_bound_tpe(atom,var,any,@1)@
+			} else {
+				@:card_bound_tpe(atom,loc,any,@1)@
+			}
+		}
 	}
-}
 @c
 
 int

@@ -23,7 +23,7 @@
 @T
 This module handles various signaling/timer functionalities.
 The Monet interface supports two timer commands: {\tt alarm} and {\tt sleep}.
-Their argument is the number of seconds to wait before the timer goes off. 
+Their argument is the number of seconds to wait before the timer goes off.
 The {\tt sleep} command blocks till the alarm goes off.
 The {\tt alarm} command continues directly, executes off a MIL
 string when it goes off.
@@ -76,8 +76,8 @@ static monet_timer_t timer[MAXtimer];
 static int timerTop = 0;
 
 @
-@- 
-The timer is awakened by a clock interrupt. The interrupt granularity 
+@-
+The timer is awakened by a clock interrupt. The interrupt granularity
 is OS-dependent. The timer should be initialized as long as there
 are outstanding timer events.
 @c
@@ -93,7 +93,7 @@ CLKinitTimer(int sec, int usec)
 	alarm(i);
 }
 #endif
-@- 
+@-
 A new alarm is pushed onto the stack using @%CLKalarm@.
 The parameter is the real-time value to be approximated.
 @c
@@ -130,7 +130,7 @@ CLKalarm(time_t t, str action)
 	return timer[k].sema;
 }
 #endif
-@- 
+@-
 Once a timer interrupt occurs, we should inspect the timer queue and
 emit a notify signal.
 @c
@@ -238,7 +238,7 @@ CMDalarm(int *secs, str action)
 Problem with CMDtimers is that they use static buffers that
 may be overwritten under parallel processing.
 Therefore, the code below is dangerous (!) and the re-entrant code
-should be used. 
+should be used.
 @c
 int
 CMDtimers(BAT **retval)

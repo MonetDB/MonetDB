@@ -189,7 +189,7 @@ TODO
 add pcl_cpu_info! (void,str bat) (max counters?)
 later add low level api
 
-  
+
 @+ Implementation
 @c
 #include "gdk.h"

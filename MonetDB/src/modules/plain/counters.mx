@@ -19,23 +19,23 @@
 @a S. Manegold, P. Boncz
 @t Performance Counters
 @T
-This is a memory/cpu performance measurement tool for 
+This is a memory/cpu performance measurement tool for
 the following processor (families).
 \begin{tabular}{l}
 MIPS R10000/R12000 (IP27)\\
-Sun UltraSparcI/II (sun4u)\\ 
+Sun UltraSparcI/II (sun4u)\\
 Intel Pentium (i586/P5) \\
 Intel PentiumPro/PentiumII/PentiumIII/Celeron (i686/P6)\\
 AMD Athlon (i686/K7)\\
 Intel Itanium/Itanium2 (ia64)\\
 \end{tabular}
 
-It uses 
-libperfex (IRIX) for R10000/R12000, 
-@[<a href="http://www.cse.msu.edu/~enbody/perfmon.html"> libperfmon </a>@  
+It uses
+libperfex (IRIX) for R10000/R12000,
+@[<a href="http://www.cse.msu.edu/~enbody/perfmon.html"> libperfmon </a>@
 (Solaris <= 7) by Richard Enbody,
-libcpc (Solaris >= 8) for UltraSparcI/II, 
-@[<a href="http://qso.lanl.gov/~mpg/pperf.html"> libpperf </a>@ 
+libcpc (Solaris >= 8) for UltraSparcI/II,
+@[<a href="http://qso.lanl.gov/~mpg/pperf.html"> libpperf </a>@
 (Linux-i?86 <= 2.2), by M. Patrick Goda and Michael S. Warren,
 @[<a href="http://www.csd.uu.se/~mikpe/linux/perfctr/"> libperfctr </a>@
 (Linux-i?86 >= 2.4), by M. Pettersson for Pentiums \& Athlons.
@@ -44,7 +44,7 @@ libcpc (Solaris >= 8) for UltraSparcI/II,
 
 Module counters provides similar interface and facilities as Peter's
 R10000 perfex module, but it offers no multiplexing of several events;
-only two events can be monitored at a time. 
+only two events can be monitored at a time.
 On non-Linux/x86, non-Solaris/UltraSparc, and non-IRIX/R1x000 systems,
 only the elapsed time in microseconds is measured.
 
@@ -52,8 +52,8 @@ only the elapsed time in microseconds is measured.
 @m
 .MODULE counters;
 
-.ATOM counter[64,8]; 
-.COMP = compare_counter; 
+.ATOM counter[64,8];
+.COMP = compare_counter;
 .END;
 
 .COMMAND start_count(int event0, int event1) : counter = start_count;
@@ -158,7 +158,7 @@ ADDHELP("counter2str", "manegold", "Mar 16 2002",
 	"cast counter to string.",
 	"counters");
 @{
-@+ Implementation 
+@+ Implementation
 @h
 #include "gdk.h"
 
@@ -166,7 +166,7 @@ typedef struct {
 	lng status;		/* counter status */
 	lng generation;		/* IRIX                 : counter id
 				   SunOS      + Perfmon : file descriptor
-				   Linux-i?86 + Perfctr : struct vperfctr* 
+				   Linux-i?86 + Perfctr : struct vperfctr*
 				   Linux-ia64 + Pfm     : pfmInfo_t*
 				 */
 	lng usec;		/* microseconds of elapsed time */
@@ -249,7 +249,7 @@ event_t *X_event = NO_event;
      *  100 = Count Nothing
      *  101 = Count Clocks while CPL = 0,1,2
      *  110 = Count Clocks while CPL = 3
-     *  111 = Count Clocks while CPL = 0,1,2,3 
+     *  111 = Count Clocks while CPL = 0,1,2,3
      *  Here we only use 000, 001, 010 and 011.
      */
 typedef union {
@@ -1637,7 +1637,7 @@ start_count(counter *retval, int *event0, int *event1)
 			GDKerror("start_count: Can't create PFM context %s\n", strerror(errno));
 			return GDK_FAIL;
 		}
-		/* 
+		/*
 		 * Must be done before any PMD/PMD calls (unfreeze PMU). Initialize
 		 * PMC/PMD to safe values. psr.up is cleared.
 		 */
@@ -1803,14 +1803,14 @@ stop_count(counter *retval, counter *c)
 
 		pfm_stop();
 
-		/* 
+		/*
 		 * now read the results
 		 */
 		if (perfmonctl(pfmInfo->pid, PFM_READ_PMDS, pfmInfo->pd, pfmInfo->evt.pfp_event_count) == -1) {
 			GDKerror("stop_count: perfmonctl error READ_PMDS errno %d: %s\n", errno, strerror(errno));
 			return GDK_FAIL;
 		}
-		/* 
+		/*
 		 * print the results
 		 *
 		 * It is important to realize, that the first event we specified may not
@@ -1820,7 +1820,7 @@ stop_count(counter *retval, counter *c)
 		 */
 		count0 = (lng) pfmInfo->pd[0].reg_value;
 		count1 = (lng) pfmInfo->pd[1].reg_value;
-		/* 
+		/*
 		 * let's stop this now
 		 */
 		if (perfmonctl(pfmInfo->pid, PFM_DESTROY_CONTEXT, NULL, 0) == -1) {

@@ -22,9 +22,9 @@
 @T
 @* Introduction
 In the philosophy of Monet, transaction management overhead should only
-be paid when necessary. Transaction management is for this purpose 
+be paid when necessary. Transaction management is for this purpose
 implemented as a module.
-TODO: move simple 2-phase locking transaction code from ODMG to this module. 
+TODO: move simple 2-phase locking transaction code from ODMG to this module.
 
 @* Module Definition
 @m
@@ -57,7 +57,7 @@ TODO: move simple 2-phase locking transaction code from ODMG to this module.
 .END trans;
 
 @{
-@* Implementation Code 
+@* Implementation Code
 @c
 #include "trans.proto.h"
 

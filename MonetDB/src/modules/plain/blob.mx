@@ -22,8 +22,8 @@
 
 @* Introduction
 Monet support for blob. It is the generic form of a variable
-sized extension atom. Easy to derive from. Its memory layout 
-consists of first 4 bytes containing the bytes-size of the 
+sized extension atom. Easy to derive from. Its memory layout
+consists of first 4 bytes containing the bytes-size of the
 blob (excluding the integer), and then just binary data.
 
 @* Module Definition
@@ -54,7 +54,7 @@ blob (excluding the integer), and then just binary data.
 Manipulation functions to extract strings from blobs and vice versa.
 Not to be confused with blob parsing and printing.
 @m
-   .COMMAND tostr(blob) : str = fromblob; 
+   .COMMAND tostr(blob) : str = fromblob;
 	"get the bytes from blob as a string, till the first 0 byte
          or the end of the blob"
    .COMMAND tostr(blob, int index) : str = fromblob_idx;
@@ -602,7 +602,7 @@ Pad with blanks.
 	      decod:for (bp = &buf[c = len]; c < CODEDLN; c++, bp++)
 			*bp = ' ';
 @-
-Output a group of 3 bytes (4 input characters).  The input chars are pointed 
+Output a group of 3 bytes (4 input characters).  The input chars are pointed
 to by p, they are to be output to file f.  n is used to tell us not to
 output all of them at the end of the file.
 @c

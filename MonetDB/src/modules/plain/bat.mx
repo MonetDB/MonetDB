@@ -20,13 +20,13 @@
 @a Peter Boncz, M.L. Kersten
 @* Binary Association Tables
 @T
-This module contains all commands that are of use when managing Binary 
+This module contains all commands that are of use when managing Binary
 Association Tables (BATs). The relational operations you can execute
-on BATs have the form of a @[<a href="../algebra/index.html">neat algebra</a>@. 
+on BATs have the form of a @[<a href="../algebra/index.html">neat algebra</a>@.
 
 But a database system needs more that just this algebra, since often it
-is crucial to do table-updates (this would not be permitted in a strict 
-algebra). 
+is crucial to do table-updates (this would not be permitted in a strict
+algebra).
 
 All commands needed for BAT updates, property management,
 search accelerator management, I/O, persistency, and storage options
@@ -69,129 +69,129 @@ can be found in this module.
 
 @- BAT updates
 @m
-.COMMAND insert(BAT[any::1, any::2], any::1 h, any::2 t) 
-				: BAT[any::1,any::2] = CMDinsert_bun; 
-"Insert one BUN[h,t] in a BAT. 
+.COMMAND insert(BAT[any::1, any::2], any::1 h, any::2 t)
+				: BAT[any::1,any::2] = CMDinsert_bun;
+"Insert one BUN[h,t] in a BAT.
  Returns the modified BAT."
 
-.COMMAND insert(BAT[any::1, any::2], BAT[any::1,any::2]) 
+.COMMAND insert(BAT[any::1, any::2], BAT[any::1,any::2])
 				: BAT[any::1,any::2] = CMDinsert_bat;
-"Insert all BUNs of the second BAT into the first. 
+"Insert all BUNs of the second BAT into the first.
  Returns the modified BAT."
 
-.COMMAND replace(BAT[any::1, any::2], any::1 h, any::2 t) 
-				: BAT[any::1,any::2] = CMDreplace_bun; 
-"Replace the tail value of one BUN that has some head value. 
+.COMMAND replace(BAT[any::1, any::2], any::1 h, any::2 t)
+				: BAT[any::1,any::2] = CMDreplace_bun;
+"Replace the tail value of one BUN that has some head value.
  Returns the modified BAT."
 
-.COMMAND replace(BAT[any::1, any::2], BAT[any::1,any::2]) 
+.COMMAND replace(BAT[any::1, any::2], BAT[any::1,any::2])
 				: BAT[any::1,any::2] = CMDreplace_bat;
 "Perform replace for all BUNs of the second BAT into the first.
  Returns the modified BAT."
 
-.COMMAND delete(BAT[any::1, any::2], any::1 h, any::2 t) 
+.COMMAND delete(BAT[any::1, any::2], any::1 h, any::2 t)
 				: BAT[any::1,any::2] = CMDdelete_bun;
-"Delete one specific BUN. 
+"Delete one specific BUN.
  Returns the modified BAT."
 
-.COMMAND delete(BAT[any::1, any::2], any::1 h) 
+.COMMAND delete(BAT[any::1, any::2], any::1 h)
 				: BAT[any::1,any::2] = CMDdelete_head;
-"Delete all BUNs with a certain head value. 
+"Delete all BUNs with a certain head value.
  Returns the modified BAT."
 
-.COMMAND delete(BAT[any::1, any::2]) 
+.COMMAND delete(BAT[any::1, any::2])
 				: BAT[any::1,any::2] = CMDdelete_all;
-"Delete all BUNs in a BAT. 
+"Delete all BUNs in a BAT.
  Returns the modified BAT."
 
-.COMMAND delete(BAT[any::1, any::2] b, BAT[any::1,any] bn) 
+.COMMAND delete(BAT[any::1, any::2] b, BAT[any::1,any] bn)
 				: BAT[any::1,any::2] = CMDdelete_bat_head;
 "Delete from the first BAT all BUNs with a head value that is in the second.
- Returns the modified BAT." 
+ Returns the modified BAT."
 
-.COMMAND deleteBuns(BAT[any::1, any::2], BAT[any::1,any::2]) 
+.COMMAND deleteBuns(BAT[any::1, any::2], BAT[any::1,any::2])
 				: BAT[any::1,any::2] = CMDdelete_bat_bun;
 "Delete from the first BAT all BUNs with a corresponding BUN in the second.
- Returns the modified BAT." 
+ Returns the modified BAT."
 
 @+ void bats
 To prevent void bats to convert to oid bats we need overloaded insert and
 replace commands. These operations should at a later stage be moved to the
 kernel libraries, e.g. bat.mx
 @m
- 	.COMMAND append( BAT[oid,any::1] i, any::1 u ) : BAT[oid,any::1] = oid_bat_append_val_wrap; "append the value u to i"
+	.COMMAND append( BAT[oid,any::1] i, any::1 u ) : BAT[oid,any::1] = oid_bat_append_val_wrap; "append the value u to i"
 
- 	.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = oid_bat_append_oid_bat_wrap; "append the content of u to i (renumbers u-oids' to unique numbers)"
+	.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = oid_bat_append_oid_bat_wrap; "append the content of u to i (renumbers u-oids' to unique numbers)"
 
- 	.COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = bat_append_val_wrap; "append the value u to i"
+	.COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = bat_append_val_wrap; "append the value u to i"
 
- 	.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = bat_append_void_bat_wrap; "append the content of u to i"
+	.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = bat_append_void_bat_wrap; "append the content of u to i"
 
- 	.COMMAND append( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = bat_append_oid_bat_wrap; "append the content of u to i"
+	.COMMAND append( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = bat_append_oid_bat_wrap; "append the content of u to i"
 
- 	.COMMAND append( BAT[oid,void] i, BAT[oid,void] u ) : BAT[oid,void] = bat_append_oidvoid_bat_wrap; "Special case append for empty bats, works around impossible void,void case"
+	.COMMAND append( BAT[oid,void] i, BAT[oid,void] u ) : BAT[oid,void] = bat_append_oidvoid_bat_wrap; "Special case append for empty bats, works around impossible void,void case"
 
 	.COMMAND replace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
 
-@- BAT properties 
+@- BAT properties
 @T
-Monet maintains a number of {\em properties} on each BAT that is used to steer tactical 
+Monet maintains a number of {\em properties} on each BAT that is used to steer tactical
 query optimization (i.e. choosing a good algorithms for a particular algebra command).
 
 These properties can be inspected with the {\tt info(BAT[any,any]) : BAT[str,str] } command:
 \begin{verbatim}
 > car_age.info.print;
 #---------------------------------#
-# BAT:               tmp_31       #
-# (str)              (str)        #
+# BAT:		     tmp_31	  #
+# (str)		     (str)	  #
 #---------------------------------#
-[ "batId",           "car_age"    ] # logical bat name
-[ "batCacheid",      "26"         ] # BBP index
-[ "batParentid",     "0"          ] # set if a BAT is a view
-[ "head",            "void"       ] # physical head-type
-[ "tail",            "int"        ] # physical tail-type
+[ "batId",	     "car_age"	  ] # logical bat name
+[ "batCacheid",	     "26"	  ] # BBP index
+[ "batParentid",     "0"	  ] # set if a BAT is a view
+[ "head",	     "void"	  ] # physical head-type
+[ "tail",	     "int"	  ] # physical tail-type
 [ "batPersistence",  "persistent" ] # transient/session/persistent
 [ "batRestricted",   "updatable"  ] # read-only/append-only/updatable
-[ "batDirty",        "clean"      ] # clean/dirty
-[ "batRefcnt",       "1"          ] # physical refcount
-[ "batLRefcnt",      "1"          ] # logical refcount (total)
-[ "batPlevel",       "1"          ] # logical refcount (persistent part) 
-[ "batSet",          "0"          ] # [head,tail] combinations are unique
-[ "batCopiedtodisk", "1"          ] # has been saved or not
+[ "batDirty",	     "clean"	  ] # clean/dirty
+[ "batRefcnt",	     "1"	  ] # physical refcount
+[ "batLRefcnt",	     "1"	  ] # logical refcount (total)
+[ "batPlevel",	     "1"	  ] # logical refcount (persistent part)
+[ "batSet",	     "0"	  ] # [head,tail] combinations are unique
+[ "batCopiedtodisk", "1"	  ] # has been saved or not
 \end{verbatim}
 
 The above are global BAT properties. The properties {\tt batPersistence},
 {\tt batRestricted} and {\tt batDirty} will be explained in the next section,
 and the various reference counts in the section that follows it.
 
-Per column, a number of properties are kept. We only show the head-properties; the tail properties 
+Per column, a number of properties are kept. We only show the head-properties; the tail properties
 have the first character of their named replaced by 't' ({\tt sorted}, {\tt tdense}, etc.):
 
 \begin{verbatim}
-[ "hsorted",         "1"          ] # column is known to be sorted
-[ "hdense",          "1"          ] # column is known to be densely ascended 
-[ "hseqbase",        "0@0"        ] # if densely ascending (i.e. 0@0, 1@0, @,0, ...): first value
-[ "hacctype",        "null"       ] # name of user-defined accelerator
-[ "hindex",          "absent"     ] # name of built-in accelerator: hash or index (T-tree) 
+[ "hsorted",	     "1"	  ] # column is known to be sorted
+[ "hdense",	     "1"	  ] # column is known to be densely ascended
+[ "hseqbase",	     "0@0"	  ] # if densely ascending (i.e. 0@0, 1@0, @,0, ...): first value
+[ "hacctype",	     "null"	  ] # name of user-defined accelerator
+[ "hindex",	     "absent"	  ] # name of built-in accelerator: hash or index (T-tree)
 \end{verbatim}
 
 As described in the @[<a href="../../gdk/index.html#mod_1_3_0">GDK Technical Reference</a>@,
 BATs store their data in one to five heaps, of which at least one called {\tt batBuns}
-is present always. For each column type that is {\em variable-sized} - like {\tt str} - another 
-heap might be present ({\tt hheap} and {\tt theap}). If a column has a user-defined search 
-accelerator, more heaps may be present (({\tt haccelerator} and {\tt taccelerator}). 
+is present always. For each column type that is {\em variable-sized} - like {\tt str} - another
+heap might be present ({\tt hheap} and {\tt theap}). If a column has a user-defined search
+accelerator, more heaps may be present (({\tt haccelerator} and {\tt taccelerator}).
 
 \begin{verbatim}
-[ "batBuns.free",    "400004"     ] # occupied size in bytes
-[ "batBuns.size",    "400012"     ] # allocated size in bytes
-[ "batBuns.maxsize", "400012"     ] # reserver virtual memory in bytes
-[ "batBuns.storage", "malloced"   ] # malloced/mmap/priv
+[ "batBuns.free",    "400004"	  ] # occupied size in bytes
+[ "batBuns.size",    "400012"	  ] # allocated size in bytes
+[ "batBuns.maxsize", "400012"	  ] # reserver virtual memory in bytes
+[ "batBuns.storage", "malloced"	  ] # malloced/mmap/priv
 \end{verbatim}
 
 Properties steer the algorithms that Monet uses to execute algebra command. For instance,
 the {\tt find(BAT[any::1,any::2] b, any:;1) : any::2) that looks up a tail value by head,
 uses binary search if and only if the head column is sorted (in other cases, hash-lookup
-and scan are execution options). 
+and scan are execution options).
 
 Sometimes new (extension) code contains bugs in the property management, leaving false
 properties on produced BATs. You can imagine that later on, this leads to additional
@@ -202,11 +202,11 @@ To make problem detection easier, the MIL interpreter contains property checking
 that is set with via the  {\tt debugmask(int)} command:
 \begin{description}
 \item[2] {\tt debugmask(debugmask() and 2)} causes that all properties on
-newly created BATs to be checked. You must realize that finding out that a column is sorted 
+newly created BATs to be checked. You must realize that finding out that a column is sorted
 ({\tt hsorted/tsorted}) costs a full scan, and finding out that it contains unique values
-({\tt hkeyed/tkeyed}) costs a full scan plus the creation of a full hash index.  
+({\tt hkeyed/tkeyed}) costs a full scan plus the creation of a full hash index.
 \item[8] {\tt debugmask(debugmask() and 8)} causes that all properties on
-{\bf all} BATs handled by the MIL interpreter to be checked. This will catch all property errors. 
+{\bf all} BATs handled by the MIL interpreter to be checked. This will catch all property errors.
 \end{description}
 
 By default, both bits in the {\tt debugmask} are off, which gives fastest performance.
@@ -221,44 +221,44 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
 "Produce a BAT containing info about a BAT in \"attribute\",\"value\" format.
  It contains all properties of the BAT record. See the BAT documentation in
  GDK for more information."
- 
+
 .COMMAND head ( int bid ) : str = CMDhead;
 "Returns the type of the head column of a BAT, as a string."
- 
+
 .COMMAND tail ( int bid ) : str = CMDtail;
 "Returns the type of the tail column of a BAT, as a string."
 
-.COMMAND key( BAT[any::1,any::2] b, bit mode) 
+.COMMAND key( BAT[any::1,any::2] b, bit mode)
 				: BAT[any::1,any::2] = CMDsetkey;
-"Sets the 'key' property of the head column to 'mode'. In 'key' mode, 
+"Sets the 'key' property of the head column to 'mode'. In 'key' mode,
  the kernel will silently block insertions that cause a duplicate entries
- in the head column. 
- KNOWN BUG: when 'key' is set to TRUE, this function does not automatically 
+ in the head column.
+ KNOWN BUG: when 'key' is set to TRUE, this function does not automatically
  eliminate duplicates. Use b := b.kunique;"
 
 .COMMAND key( BAT[any::1,any::2] b) : bit = CMDgetkey;
 "return whether the head column of a BAT is unique (key)."
 
-.COMMAND set( BAT[any::1,any::2] b, bit mode) 
+.COMMAND set( BAT[any::1,any::2] b, bit mode)
 				: BAT[any::1,any::2] = CMDsetset;
-"Sets the 'set' property on this BAT to 'mode'. In 'set' mode, the kernel 
+"Sets the 'set' property on this BAT to 'mode'. In 'set' mode, the kernel
  will silently block insertions that cause a duplicate BUN [head,tail] entries
- in the BAT. 
- KNOWN BUG: when 'set' is set to TRUE, this function does not automatically 
+ in the BAT.
+ KNOWN BUG: when 'set' is set to TRUE, this function does not automatically
  eliminate duplicates. Use b := b.sunique;
  Returns the BAT itself."
 
-.COMMAND access( BAT[any::1,any::2] b, int mode) 
+.COMMAND access( BAT[any::1,any::2] b, int mode)
 				: BAT[any::1,any::2] = CMDsetaccess;
 "Try to change the update access priviliges to this BAT. Mode:
  BAT_READ   - allow only read access.
  BAT_APPEND - allow reads and insertions of new elements.
  BAT_WRITE  - allow reads, insertions, and updates.
- BATs are updateable by default. On making a BAT readonly, all 
+ BATs are updateable by default. On making a BAT readonly, all
  subsequent updates fail with an error message.
- Returns the BAT itself." 
+ Returns the BAT itself."
 
-.COMMAND access( BAT[any::1,any::2] b) : int = CMDgetaccess; 
+.COMMAND access( BAT[any::1,any::2] b) : int = CMDgetaccess;
 "Return the update access privilige of a BAT."
 
 .COMMAND seqbase( BAT[oid,any::1] b ) : oid = CMDget_seqbase;
@@ -267,10 +267,10 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
 .COMMAND seqbase( BAT[void,any::1] b ) : oid = CMDget_seqbase;
 "Get the sequence base for the void vcolumn of a BAT."
 
-.COMMAND seqbase( BAT[void,any::1] b, oid seqbase) 
+.COMMAND seqbase( BAT[void,any::1] b, oid seqbase)
 				: BAT[void,any::1] = CMDset_seqbase;
 "Set the sequence base for the void vcolumn of a BAT.
- Returns the BAT itself." 
+ Returns the BAT itself."
 
 .COMMAND ordered(BAT[any,any]) : bit = CMDordered;
 "Returns whether a BAT is ordered on head or not."
@@ -308,13 +308,13 @@ The BAT Buffer Pool (BBP) manages all known BATs. It administers
 their logical and physical names and a reference count. BATs can
 be {\em persistent}, {\em transient} or {\em session}. The BBP also manages
 swapping on a BAT level: a BAT is either loaded entirely or not.
-MIL variables of type {\tt bat} can either be loaded or not. When 
+MIL variables of type {\tt bat} can either be loaded or not. When
 the Monet server is started, all BATs are swapped out. If an unloaded
-bat-variable is used as an operand in a command, it is automatically 
-loaded.  The BBP applies a simple but effective LRU based swapping 
-algorithm. BATs have a {\em heat}, which drops over time, and is 
-increased when a BAT is used by some command.  If the size of the 
-allocated arena gets to be large, BATs may be swapped out. 
+bat-variable is used as an operand in a command, it is automatically
+loaded.	 The BBP applies a simple but effective LRU based swapping
+algorithm. BATs have a {\em heat}, which drops over time, and is
+increased when a BAT is used by some command.  If the size of the
+allocated arena gets to be large, BATs may be swapped out.
 @m
 .COMMAND bbpname ( BAT[any,any] , str s) : BIT = CMDrename;
 "Give a logical name to a BAT. This can fail if a BAT with name 's' already
@@ -323,14 +323,14 @@ allocated arena gets to be large, BATs may be swapped out.
 .COMMAND bbpname ( BAT[any,any]) : STR = CMDname;
 "Gives back the logical name of a BAT."
 
-.COMMAND roles ( BAT[any::1,any::2] , str h, str t) 
+.COMMAND roles ( BAT[any::1,any::2] , str h, str t)
 				: BAT[any::1,any::2] = CMDroles;
 "Give a logical name to the columns of a BAT.
  Returns the BAT itself."
 
 .COMMAND persists( BAT[any::1,any::2], bit mode) : BAT[any::1,any::2] = CMDpersists;
 "Make the BAT persistent (mode = TRUE), transient (mode = FALSE).
- or session (mode = bit(nil)). Returns the BAT itself." 
+ or session (mode = bit(nil)). Returns the BAT itself."
 
 .COMMAND destroy(str nme, bit immediately) : bit = CMDdestroy;
 "Destroys the BAT."
@@ -347,11 +347,11 @@ allocated arena gets to be large, BATs may be swapped out.
  Returns whether the unload indeed happened. "
 
 .COMMAND hot(str name) : void = CMDhot;
-"Makes a BAT very hot for the BBP. The chance of being chosen for swapout is 
+"Makes a BAT very hot for the BBP. The chance of being chosen for swapout is
  small, afterwards.  Returns the BAT itself."
 
 .COMMAND cold(str nme) : void = CMDcold;
-"Makes a BAT very cold for the BBP. The chance of being choses for swapout is 
+"Makes a BAT very cold for the BBP. The chance of being choses for swapout is
  big, afterwards.  Returns the BAT itself."
 
 .COMMAND heat(str nme) : int = CMDheat;
@@ -362,25 +362,25 @@ allocated arena gets to be large, BATs may be swapped out.
 @T
 BATs are stored in memory in a number of Heap objects. A heap is nothing
 more than a contiguous range of memory. Bats are saved to disk by just writing
-away their image. This approach without pointer swizzling makes it possible 
-to either load an image into an alloced range of memory (STORE\_MEM), or 
+away their image. This approach without pointer swizzling makes it possible
+to either load an image into an alloced range of memory (STORE\_MEM), or
 memory-map (STORE\_MMAP) an image into virtual memory.
 
-The heap images of a BAT are stored in the {\tt $MONETHOME/dbfarm/$DB/bat/} 
+The heap images of a BAT are stored in the {\tt $MONETHOME/dbfarm/$DB/bat/}
 directory.  For each bat X, the following heaps are stored:
 \begin{description}
 \item[X.buns] an array with all the fixed-size parts of all BUNs.
 \item[X.hheap] if the head column contains a variable sized atoms (e.g. str),
-then the fixed-size part of a BUN contains an integer byte-offset into 
-the heap. String values themselves are stored in this the X.hheap. 
+then the fixed-size part of a BUN contains an integer byte-offset into
+the heap. String values themselves are stored in this the X.hheap.
 \item[X.theap] similar to X.hheap, but for the tail column.
 \item[X.hacc]. On each column, you might create {\em persistent accelerator
 structures}. Monet has two built-in accelerators (index and hash), but they
 are normally constructed on the fly. They are transient. Only hash-tables
 you can be made persistent. User-defined accelerators are always persistent.
-Only one persistent accelerator can exist per head column. It is stored in 
+Only one persistent accelerator can exist per head column. It is stored in
 the X.hacc heap.
-\item[X.tacc] similar to X.hacc, but for the tail column. 
+\item[X.tacc] similar to X.hacc, but for the tail column.
 \end{description}
 
 Each of these heaps can be {\bf compressed} using the Unix {\tt compress}
@@ -392,20 +392,20 @@ A final file present for each t in the BAT directory is:
 \item[X.desc] the BAT descriptor. Stores most of the properties of a BAT.
 \end{description}
 @
-For more technical information on BATs, we refer to the 
+For more technical information on BATs, we refer to the
 @[<a href="../../gdk/index.html">GDK</a>@
 documentation.
 @m
-.COMMAND mmap(BAT[any::1,any::2], int buns_mode, int hheap_mode, int theap_mode, 
+.COMMAND mmap(BAT[any::1,any::2], int buns_mode, int hheap_mode, int theap_mode,
 	     int hacc_mode, int tacc_mode) : BAT[any::1,any::2] = CMDmmap;
-"For each individual heap, you can change the allocation mode to 
+"For each individual heap, you can change the allocation mode to
  either STORE_MEM or STORE_MMAP. Passing an int(nil) means: no change.
- Changing a dirty STORE_MEM heap into STORE_MMAP, will cause a BAT save 
- (this has to happen before the heap can be mapped into virtual memory). 
+ Changing a dirty STORE_MEM heap into STORE_MMAP, will cause a BAT save
+ (this has to happen before the heap can be mapped into virtual memory).
  These modes are persistent. "
 
-.COMMAND madvise(BAT[any::1,any::2], int buns_mode, int hheap_mode, 
-		int theap_mode, int hacc_mode, int tacc_mode) 
+.COMMAND madvise(BAT[any::1,any::2], int buns_mode, int hheap_mode,
+		int theap_mode, int hacc_mode, int tacc_mode)
 					: BAT[any::1,any::2] = CMDmadvise;
 "Modern Operating Systems allow users to influence the buffer management
  policy of virtual memory. This is a crucial feature for database systems,
@@ -418,22 +418,22 @@ documentation.
 
 @- BAT Accelerators
 @T
-Search accelerators are data structures that are used to speed up 
+Search accelerators are data structures that are used to speed up
 access to data in BATs. Monet comes with the built-in accelerators
-{\tt index}, meaning binary tree index, and {\tt hash} meaning 
+{\tt index}, meaning binary tree index, and {\tt hash} meaning
 bucket-chained hash table. The extension facilities of Monet allow
 more accelerators to be defined by users. Examples are the {\tt rtree}
-and {\tt datavector}. The system variable {\tt monet\_acctbl} contains 
+and {\tt datavector}. The system variable {\tt monet\_acctbl} contains
 a list of all currently known accelerator types.
 
 \begin{verbatim}
 >monet_acctbl.print;
 #-------------------------#
-# h             | t       #
+# h		| t	  #
 #-------------------------#
-[ "hash",         1       ]
-[ "index",        2       ]
-[ "datavector",   3       ]
+[ "hash",	  1	  ]
+[ "index",	  2	  ]
+[ "datavector",	  3	  ]
 \end{verbatim}
 @
 More info on how to write new search accelerators can be found in the
@@ -443,7 +443,7 @@ More info on how to write new search accelerators can be found in the
 "Build an accelerator on the head column of b. The builtin accelerator
  types index and hash will be created as transient accelerators. They
  will not be saved on disk. User-defined accelerators must always be
- persistent." 
+ persistent."
 
 .COMMAND accbuild(BAT[any,any] b, str acctype, any param) = CMDaccbuild;
 "like accbuild(BAT[any,any] b, int acctype), but with a parameter that
@@ -451,13 +451,13 @@ More info on how to write new search accelerators can be found in the
 
 .COMMAND accdestroy(BAT[any,any] b, str acctype) = CMDaccdestroy;
 "Destroy the accelerator of type 'acctype'  that is present on
- the head-type of b." 
+ the head-type of b."
 
 .COMMAND accpresent(BAT[any,any] b ) : str = CMDaccpresent;
-"Returns the accelerator type of the *persistent* accelerator present 
+"Returns the accelerator type of the *persistent* accelerator present
  on the head column of b. Note that index and hash accelerators are
  generally *not* persistent, and will not be returned by this function!"
-  
+
 
 @- Synced BATs
 The binary model of Monet has important advantages when working in
@@ -470,7 +470,7 @@ kernel with knowledge about the correspondence of these parts, we
 can greatly limit the amount of work to be done.
 
 When two BATs effectively contain the same sequence of head elements,
-we call them 'synced'. This is implemented by storing a very large 
+we call them 'synced'. This is implemented by storing a very large
 OID for each column. An update to the column destroys this OID.
 By comparing two OIDs the Monet kernel can very quickly decide that
 two columns are exactly equal. All BAT algebra operations propagate
@@ -505,41 +505,41 @@ these 'sync' OIDs with their own propagation rules.
     CONST monet_mod_proc := bat("monet_mod_proc");
     CONST monet_mod_use := bat("monet_mod_use");
     CONST monet_mod_var := bat("monet_mod_var");
-     
+
 @- constants for mmap()
 @mil
-    CONST STORE_MEM   := 0;     # load into GDKmalloced memory
-    CONST STORE_MMAP  := 1;     # mmap() into virtual memory
-    CONST STORE_COMPR := 2;     # currently not implemented this way
+    CONST STORE_MEM   := 0;	# load into GDKmalloced memory
+    CONST STORE_MMAP  := 1;	# mmap() into virtual memory
+    CONST STORE_COMPR := 2;	# currently not implemented this way
 
     PROC mmap(bat[any::1,any::2] b, int memmode) : bat[any::1,any::2] {
-        return mmap(b, memmode, memmode, memmode, memmode, memmode);
+	return mmap(b, memmode, memmode, memmode, memmode, memmode);
     }
 
     # overload madvise to pass the same memory mode for all heaps
     PROC madvise(bat[any::1,any::2] b, int memmode) : bat[any::1,any::2] {
-        return madvise(b, memmode, memmode, memmode, memmode, memmode);
+	return madvise(b, memmode, memmode, memmode, memmode, memmode);
     }
 
 @- constants for madvise()
 @mil
-    CONST BUF_NORMAL    := 0;   # No further special treatment
-    CONST BUF_RANDOM    := 1;   # Expect random page references
-    CONST BUF_SEQUENTIAL:= 2;   # Expect sequential page references
-    CONST BUF_WILLNEED  := 3;   # Will need these pages
-    CONST BUF_DONTNEED  := 4;   # Don't need these pages
+    CONST BUF_NORMAL	:= 0;	# No further special treatment
+    CONST BUF_RANDOM	:= 1;	# Expect random page references
+    CONST BUF_SEQUENTIAL:= 2;	# Expect sequential page references
+    CONST BUF_WILLNEED	:= 3;	# Will need these pages
+    CONST BUF_DONTNEED	:= 4;	# Don't need these pages
 @- constants for readonly()
 @mil
-    CONST BAT_READ   := 1;      # allow only read access.
-    CONST BAT_APPEND := 2;      # allow reads and insertions of new elements.
-    CONST BAT_WRITE  := 0;      # allow reads, insertions, and updates.
+    CONST BAT_READ   := 1;	# allow only read access.
+    CONST BAT_APPEND := 2;	# allow reads and insertions of new elements.
+    CONST BAT_WRITE  := 0;	# allow reads, insertions, and updates.
 
     PROC destroy(str s) : bit {
-        return destroy(s,true);
+	return destroy(s,true);
 	}
 
     PROC destroy(bat[any,any] b) : bit{
-        return destroy(str(b),true);
+	return destroy(str(b),true);
 	}
 
     PROC capacity(bat[any,any] b) : lng {
@@ -572,12 +572,12 @@ these 'sync' OIDs with their own propagation rules.
 	}
 
     PROC ttype(any b) : int   {
-         return monet_atomtbl.find(b.tail());
+	 return monet_atomtbl.find(b.tail());
     }
 #    ADDHELP("ttype","boncz","Apr 07 2004","Get tail-type as an integer","bat");
 
     PROC htype(any b) : int   {
-         return monet_atomtbl.find(b.head());
+	 return monet_atomtbl.find(b.head());
     }
 #    ADDHELP("htype","boncz","Apr 07 2004","Get head-type as an integer","bat");
 
@@ -877,7 +877,7 @@ bat_append_oid_bat_wrap(BAT **res, BAT *i, BAT *u)
 int
 bat_append_oidvoid_bat_wrap(BAT **res, BAT *i, BAT *u)
 {
-	/*(void)u; fake usage to fool compilers in case assertions are disabled 
+	/*(void)u; fake usage to fool compilers in case assertions are disabled
 	   assert (!BATcount(i));
 	 */
 	*res = i;
@@ -1084,7 +1084,7 @@ CMDordered_rev(bit *result, BAT *input)
 int
 CMDgetkey(bit *ret, BAT *b)
 {
-	/* we must take care of the special case of a nil column (TYPE_void,seqbase=nil) 
+	/* we must take care of the special case of a nil column (TYPE_void,seqbase=nil)
 	 * such nil columns never set hkey (and BUNins will never invalidate it if set) yet
 	 * a nil column of a BAT with <= 1 entries does not contain doubles => return TRUE.
 	 */
@@ -1534,9 +1534,11 @@ CMDsave(bit *res, str input)
 
 
 @= change_heap
-{	int mode = (@2).storage;
-	if (mode == STORE_MMAP && (@2).filename == NULL) 
-		mode = STORE_MEM;  
+{
+	int mode = (@2).storage;
+
+	if (mode == STORE_MMAP && (@2).filename == NULL)
+		mode = STORE_MEM;
 	if ((@2).base == NULL || *@1 == int_nil || *@1 == mode) {
 		*@1 = -1;
 	}
@@ -1616,11 +1618,14 @@ CMDaccpresent(str *retval, BAT *b)
 @= hashiter
 	if (b->tvarsized) {
 		HASHloop@1(b, b->hhash, idx, v, p)
-			if ((i = ITERATE(v, BUNtvar(b,p), h)) < 0) return i;
+			if ((i = ITERATE(v, BUNtvar(b,p), h)) < 0)
+				return i;
 	} else {
 		HASHloop@1(b, b->hhash, idx, v, p)
-			if ((i = ITERATE(v, BUNtloc(b,p), h)) < 0) return i;
-	} break;
+			if ((i = ITERATE(v, BUNtloc(b,p), h)) < 0)
+				return i;
+	}
+	break;
 @c
 int
 CMDhashloop(BAT *b, ptr *handle, ptr v)

@@ -21,19 +21,19 @@
 @* Ascii io Module
 
 A database cannot live with out bulk load/store operations. The ASCII io
-module can be used bulk load from an ASCII file or dump to one. 
-The file can plain ASCII, gzipped or bzipped, decided by the extension 
+module can be used bulk load from an ASCII file or dump to one.
+The file can plain ASCII, gzipped or bzipped, decided by the extension
 (none, gz or bz2).
 
 The load operation is for bulk loading a table, each column will be loaded
 into its own bat. The arguments are void-aligned bats describing the
-input, ie the name of the column, the tuple separator and the type.  
+input, ie the name of the column, the tuple separator and the type.
 The nr argument can be -1 (The input (datafile) is read until the end)
 or a maximum.
 
 The dump operation is for dumping a set of bats, which are aligned.
-Again with void-aligned arguments, with name (currently not used), 
-tuple separator (the last is the record separator) and bat to be dumped. 
+Again with void-aligned arguments, with name (currently not used),
+tuple separator (the last is the record separator) and bat to be dumped.
 With the nr argument the dump can be limited (-1 for unlimited).
 
 The output operation is for ordered output. A bat (possibly form the collection)
@@ -41,11 +41,11 @@ gives the order. For each element in the order bat the values in the bats are
 searched, if all are found they are output in the datafile, with the given
 separators.
 
-The scripts from the ascii_io.mil file are all there too for backward 
-compatibility with the old Mload format files. 
+The scripts from the ascii_io.mil file are all there too for backward
+compatibility with the old Mload format files.
 
 The load_format loads the format file, since the old format file was
-in a table format it can be loaded with the load command. 
+in a table format it can be loaded with the load command.
 
 The result from load_format can be used with load_data to load the data
 into a set of new bats.
@@ -53,11 +53,11 @@ into a set of new bats.
 These bats can be made persistent with the make_persistent script or
 merge with existing bats with the merge_data script.
 
-The dump_format scripts dump a format file for a given set of 
+The dump_format scripts dump a format file for a given set of
 to be dumped bats. These bats can be dumped with dump_data.
 
 @d 12/01/2001
-@m 
+@m
 .MODULE ascii_io;
 
 .USE streams;
@@ -164,7 +164,7 @@ proc dump_format( BAT[void,BAT] bats, str fmt ) : BAT[str,BAT] {
 	names.insert(nil,"seps");seps.insert(nil,",");
 	names.insert(nil,"types");seps.insert(nil,"\n");
 	dump(names, seps, fmtbats, fmt, 1000);
-	names.insert(nil,"bats"); 
+	names.insert(nil,"bats");
 	fmtbats.insert(nil,bats);
 	return names.reverse().join(fmtbats);
 }
@@ -184,7 +184,7 @@ proc dump_data( BAT[str,BAT] fmt, str data, int cnt) : void {
 proc dump_data( BAT[str,BAT] fmt, BAT[str,BAT] bats, str data, int cnt) : void {
 	var names := fmt.find("names");
 	var seps := fmt.find("seps");
-	
+
 	dump( names, seps, names.join(bats).reverse().mark().reverse(), data, cnt );
 }
 
@@ -262,7 +262,7 @@ ascii_io_export BAT *ASCIIinput(BAT *names, BAT *seps, BAT *types, bstream *s, s
 ascii_io_export size_t ASCIIoutput(BAT *order, BAT *seps, BAT *bats, stream *s);
 extern void ASCIIdump(BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr);
 
-@+ low level interface 
+@+ low level interface
 @h
 ascii_io_export int ASCIIcreate_bats(ascii *as);
 ascii_io_export size_t ASCIIassign_BATs(ascii *as, BAT *bats);
@@ -912,7 +912,7 @@ ASCIIload_file(ascii *as, bstream *b, stream *out)
 				s = end;
 			} else {
 				if (!done) {	/* nothing found in current buf
-						 * ie. need to enlarge 
+						 * ie. need to enlarge
 						 */
 					int size = b->size;
 

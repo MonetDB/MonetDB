@@ -23,16 +23,16 @@
 @+ Introduction
 @T
 This module introduces the decimal atom to monet. Decimals are intended to
-represent highly complex decimal numbers in a flexible way. Decimal 
+represent highly complex decimal numbers in a flexible way. Decimal
 numbers consist of a {\em sign}, {\em number} and {\em scale} in the following
-format: 
+format:
 \begin{verbatim}
 format:  ['-'|'+'] number [ 'E' ['-'|'+'] scale ]
     or:  ['-'|'+'] [ number ] '.' number [ 'E' ['-'|'+'] scale ]
 \end{verbatim}
-where 
+where
 \begin{description}
-\item[number] is an integer consisting of maximally 16384 digits. Float notation with a dot 
+\item[number] is an integer consisting of maximally 16384 digits. Float notation with a dot
 is also allowed (e.g. 42.3E15 = 423E14).
 \item[scale] an integer from the range [-16384,16384].  If omitted, its default value is 0.
 \item[precision] is the number of digits of which {\bf number} consists.
@@ -55,7 +55,7 @@ maximum of each of the decimal parameters of the operator. When reducing precisi
 we use truncation.
 
 In the implementation, specific care was taken in order to make bulk operations
-(like hash-join and sorting) fast, as one of the foreseeable applications of 
+(like hash-join and sorting) fast, as one of the foreseeable applications of
 decimal columns is their use as foreign key on tables imported from another DBMS
 (for imported tables, as in Monet we would preferably use the oid type as key).
 
@@ -112,8 +112,8 @@ decimal columns is their use as foreign key on tables imported from another DBMS
       where: N1 = is the number of digits before the decimal point (default = 0)
              N2 = is the number of digits after the decimal point (default = 1)
              N3 = the number of digits to use for the scale (default = 2)
-      A zero will be printed with only one zero digit (left space-padded), unless N1 has a 
-      leading zero, in which case a zero-padded number of width N1 is produced. 
+      A zero will be printed with only one zero digit (left space-padded), unless N1 has a
+      leading zero, in which case a zero-padded number of width N1 is produced.
       If the plus at start is specified, positive numbers start with a plus. "
 
 @- comparison
@@ -127,11 +127,11 @@ decimal columns is their use as foreign key on tables imported from another DBMS
 .OPERATOR0 (decimal) ">=" (decimal) : bit = decimal_ge; "decimal greater-or-equal test (!DS2.2)"
 
 @- arithmetic
-All operators return a result decimal whose value is exactly the value of the operation, 
-when applied to the value of both decimal arguments. Only for division this is not possible; 
+All operators return a result decimal whose value is exactly the value of the operation,
+when applied to the value of both decimal arguments. Only for division this is not possible;
 as an infinite precision would in some cases be needed to describe an exact result. division
 therefore truncates the result to a precision specified by the caller.
-The result of all operations are always normalized by deleting all leading and trailing zeros 
+The result of all operations are always normalized by deleting all leading and trailing zeros
 (and adapting the scale correspondingly).
 @m
 .OPERATOR (decimal val1) "+" (decimal val2) : decimal = decimal_plus;
@@ -150,9 +150,9 @@ The result of all operations are always normalized by deleting all leading and t
      "Returns a decimal whose value is exactly (val1 * val2)."
 
 .OPERATOR1 (decimal val1) "/" (decimal val2) : decimal = decimal_divide_default;
-     "Returns a decimal whose value is val1 DIV val2, (scale=0) like in C integer division. 
-      This operator can implement MOD as MOD(x,y) = x - y*DIV(d,y). 
-      Use the tertiary divide(num,div,prec) command for dividing with arbitrary precision. 
+     "Returns a decimal whose value is val1 DIV val2, (scale=0) like in C integer division.
+      This operator can implement MOD as MOD(x,y) = x - y*DIV(d,y).
+      Use the tertiary divide(num,div,prec) command for dividing with arbitrary precision.
       Division by zero returns decimal(nil)."
 
 .COMMAND divide(decimal val1, decimal val2, int precision) : decimal = decimal_divide;
@@ -161,7 +161,7 @@ The result of all operations are always normalized by deleting all leading and t
 
 .COMMAND pow(decimal val1, int val2, int precision) : decimal = decimal_pow;
      "Raises a decimal to the power of some integer.
-      The precision argument determines the maximum precision of the result (!DS2.2)." 
+      The precision argument determines the maximum precision of the result (!DS2.2)."
 
 .COMMAND pow(decimal val1, int val2) : decimal = decimal_pow_default;
      "Raises a decimal to the power of some integer.
@@ -189,13 +189,13 @@ The result of all operations are always normalized by deleting all leading and t
       to the left (delta < 0) or right (delta > 0) (!DS2.2)."
 
 @- internal
-These commands are internal to the procedures in the load section. 
+These commands are internal to the procedures in the load section.
 @m
-.COMMAND bulkdivide(bat[any::1,decimal] b, decimal d, int p) : bat[any::1,decimal] 
+.COMMAND bulkdivide(bat[any::1,decimal] b, decimal d, int p) : bat[any::1,decimal]
 		= decimal_bulkdivide; "(!DS2.2)"
-.COMMAND bulkdivide(bat[any::1,decimal] b, decimal d) : bat[any::1,decimal] 
+.COMMAND bulkdivide(bat[any::1,decimal] b, decimal d) : bat[any::1,decimal]
 		= decimal_bulkdivide_default; "(!DS2.2)"
-.COMMAND istenfold(decimal d) : bit = decimal_istenfold; 
+.COMMAND istenfold(decimal d) : bit = decimal_istenfold;
 	"returns whether decimal is an exact multiple of 10 (!DS2.2)."
 .COMMAND decimal_minrepeat(int x) : void = decimal_setminrepeat;
 	"set number of repeating characters after which to condense decimals (!DS2.2)."
@@ -230,7 +230,7 @@ These commands are internal to the procedures in the load section.
         } else if (istenfold(div)) {
                 var dec := 1 - (getprecision(div) + getscale(div));
                 return [setprecision]([addscale](b,dec),prec);
-        } 
+        }
         return bulkdivide(b, div, prec);
     }
 
@@ -240,7 +240,7 @@ These commands are internal to the procedures in the load section.
         } else if (istenfold(div)) {
                 var dec := 1 - (getprecision(div) + getscale(div));
 		return [setscale]([addscale](b,dec),0);
-        } 
+        }
         return bulkdivide(b, div);
     }
 
@@ -256,26 +256,26 @@ decimals as fixed-size atoms therefore would yield a very large object, that
 in general will not be used fully. Hence the choice for a variable-size atom.
 
 \item[binary or decimal storage]
-we chose to represent decimals in 4-bits (i.e. 2 digits per byte) as this is both 
+we chose to represent decimals in 4-bits (i.e. 2 digits per byte) as this is both
 reasonably compact and facilitates implementation of operators that are digit-oriented.
-Examples of such operators are: parsing from a string input and formatting to string 
+Examples of such operators are: parsing from a string input and formatting to string
 output, and substring operators (for instance those that modify the precision of a number).
-It is also much easier with decimal storage to implement clear rules about the precision 
+It is also much easier with decimal storage to implement clear rules about the precision
 that is delivered by the various arithmetic operators.
 Downside is the performance of computation operators (like *, /, -, +). An alternative
 would have been storage in an array of binary integers. This would perform better
 on the arithmetic side, but much worse on the digit-oriented tasks. Import time of
 decimals from string was deemed to be very important, hence the choice for
-a digit-oriented representation.  
+a digit-oriented representation.
 
 \item[join efficiency]
-decimals will be often used as join columns on imported tables. This means that sorting, 
-merge-join and hash-join should run quickly.  These operations in turn depend on the 
+decimals will be often used as join columns on imported tables. This means that sorting,
+merge-join and hash-join should run quickly.  These operations in turn depend on the
 efficiency of the ADT compare and hash operators. To achieve efficiency, we implemented
-decimal-compare and decimal-hash such that they work on 32-bits integers at-a-time. Decimals 
-are stored in an array of integers, where the first integer in the array holds the 
-digits with highest significance, etc, and within each integer, the four highest bits hold 
-the highest significant digit, etc.  This storage regime makes it possible to use integer 
+decimal-compare and decimal-hash such that they work on 32-bits integers at-a-time. Decimals
+are stored in an array of integers, where the first integer in the array holds the
+digits with highest significance, etc, and within each integer, the four highest bits hold
+the highest significant digit, etc.  This storage regime makes it possible to use integer
 comparison when comparing decimals of the same precision; comparing 8 digits at a time.
 \end{description}
 @h
@@ -294,19 +294,19 @@ typedef struct {
 
 @-
 @T
-Valid numbers have minimally 1 and maximally 16384 digits.  The valid scales are between 
+Valid numbers have minimally 1 and maximally 16384 digits.  The valid scales are between
 [-16384,16384]. There are two special values:
 \begin{description}
-\item[zero = +0e-32768] in order to simplify many operators, trailing zeros are removed from 
-decimal numbers (in that case, the number of digits is an indicator for the value of a decimal). 
-This has as a consequence that a zero number would not be permitted. Hence zero is treated as 
-a special case. Whenever a zero value decimal has to be produced, it is normalized to one canonical 
-form: the smallest possible positive number. This representation of zero has the benefit of that 
+\item[zero = +0e-32768] in order to simplify many operators, trailing zeros are removed from
+decimal numbers (in that case, the number of digits is an indicator for the value of a decimal).
+This has as a consequence that a zero number would not be permitted. Hence zero is treated as
+a special case. Whenever a zero value decimal has to be produced, it is normalized to one canonical
+form: the smallest possible positive number. This representation of zero has the benefit of that
 zero does not have to be treated as a special case in the comparison operator.
 
 \item[nil = -0xAe32767] this representation as a negative number with precision 1 consisting of
 a single false digit of value 10 and an impossibly high scale, forces the nil value to be smaller
-than any other decimal (again avoiding having to treat it as a special case in the compare). 
+than any other decimal (again avoiding having to treat it as a special case in the compare).
 \end{description}
 @c
 #include "decimal.h"
@@ -503,11 +503,11 @@ decimal_alloc(int precision, int scale, int sign, decimal *d, int *size)
 }
 
 @-
-Remove both leading and optionally the trailing zeros into a new decimal d (d==v is allowed). 
+Remove both leading and optionally the trailing zeros into a new decimal d (d==v is allowed).
 The new decimal may be optionally truncated or enlarged (padded with trailing zeros), if
 so specified in the third parameter. When trailing zeros have to be deleted, we do this in
-one go and adapt the scale accordingly (10 becomes 1E1).  A special case caught here is the 0 
-value, which is required to have precision 1 and sign positive (this will override a given 
+one go and adapt the scale accordingly (10 becomes 1E1).  A special case caught here is the 0
+value, which is required to have precision 1 and sign positive (this will override a given
 minimum precision parameter).
 @c
 static INLINE void
@@ -678,7 +678,7 @@ decimal_fromstr(str buf, int *len, decimal **ret)
 		cpy[0] = '0';
 	}
 #if 0
-/* delete trailing zeros 
+/* delete trailing zeros
 	else if (last && precision > 0) {
 		precision -= dst - last;
 		comma -= dst - last;
@@ -857,19 +857,19 @@ decimal_format(str *ret, decimal *d, str format)
 }
 
 @-
-Hash and compare are made fast by implementing them as integer operations. That is, they 
+Hash and compare are made fast by implementing them as integer operations. That is, they
 look at the digit string as if it as an array of integers. In fact, each integer contains
 8 digits. The digits are placed in such a way that integer comparison can be used to compare
 8 digits substrings (by placing the first digit in the highest 4-bits of the integer, etc).
 
 Hash and compare are tricky as we need ensure that numbers with the same *value* are
-seen as equal and get the same hash value. Note that 10E1 == 100E0, etc. This behavior 
-is obtained by adding precision and base as start hash value (i.e. the number of digits 
-before the comma, which is both 2 for 10E1 and 100).  Important to know is that we ensure 
-that a decimal has never leading zeros (except for the 0 value, which is always represented 
+seen as equal and get the same hash value. Note that 10E1 == 100E0, etc. This behavior
+is obtained by adding precision and base as start hash value (i.e. the number of digits
+before the comma, which is both 2 for 10E1 and 100).  Important to know is that we ensure
+that a decimal has never leading zeros (except for the 0 value, which is always represented
 with scale=0, precision=1 and negative=0), So, equal numbers have the same starting digit
-string, but may only differ by trailing zeros. The hash function ignores series of zero 
-digits, hence is immune for such differences. The compare function adds imaginary zeros at 
+string, but may only differ by trailing zeros. The hash function ignores series of zero
+digits, hence is immune for such differences. The compare function adds imaginary zeros at
 the shorter digit string to obtain the same effect.
 @c
 hash_t
@@ -1097,7 +1097,9 @@ decimal_epilogue(void)
 }
 
 @= decimal_cmp
-int decimal_@1(bit *ret, decimal *v1, decimal *v2) {
+int
+decimal_@1(bit *ret, decimal *v1, decimal *v2)
+{
         if (decimal_compare(v1, decimal_nil) && decimal_compare(v2, decimal_nil)) {
                 *ret = (decimal_compare(v1, v2) @2 0);
         } else {
@@ -1426,17 +1428,17 @@ decimal_istenfold(bit *ret, decimal *val)
 @- arithmetic
 @T
 Computer hardware does not provide built-in support for arbitrarily large numbers.
-The iterative algorithms employed here stem directly from Peter's primary school. 
+The iterative algorithms employed here stem directly from Peter's primary school.
 
 @- plus and minus
 @T
-plus and minus algorithms assume positive numbers. Other cases are handled 
+plus and minus algorithms assume positive numbers. Other cases are handled
 as follows:
 \begin{verbatim}
    -x + -y => -decimal_plus(x,y)     -x - -y => -decimal_minus(x,y);
     x + -y => decimal_minus(x,y)      x - -y => decimal_plus(x,y)
    -x +  y => decimal_minus(y,x)     -x -  y => decimal_plus(-x,-y)
-\end{verbatim} 
+\end{verbatim}
 @c
 /* auxiliary function: assumes equal sign and scale and no overflow */
 static INLINE void
@@ -1620,7 +1622,7 @@ decimal_minus(decimal **ret, decimal *v1, decimal *v2)
 	return GDK_SUCCEED;
 }
 
-@- multiply 
+@- multiply
 @c
 /* Returns a decimal whose value is (val1 * val2). */
 int
@@ -1677,7 +1679,7 @@ decimal_multiply(decimal **ret, decimal *v1, decimal *v2)
 		v1 = tmp;	/* swap if necessary */
 	}
 
-	/* for each digit in the lower number, we multiply the above number by that digit 
+	/* for each digit in the lower number, we multiply the above number by that digit
 	 * in tmp -- each time with one more trailing zero, and add tmp to tot (initially 0).
 	 */
 	tmp = decimal_create(v1_precision + v2_precision, 0, 0);
@@ -1735,13 +1737,14 @@ decimal_mult_table(decimal *div, decimal *mult[10])
 	}
 }
 
-#define CONCAT_DIGIT(dst, src, y) { /* append a digit from src[y] to dst */   \
-		int pos = y;						      \
+#define CONCAT_DIGIT(dst, src, y) { /* append a digit from src[y] to dst */ \
+		int pos = y;						\
 		unsigned int val = (pos < PREC(src))?GETNUM(src,pos):0U; \
-		if (val || PREC(dst)) {				      \
-			SETNUM(dst, PREC(dst), val);		      \
-			dst->precision++;				      \
-		}}
+		if (val || PREC(dst)) {					\
+			SETNUM(dst, PREC(dst), val);			\
+			dst->precision++;				\
+		}							\
+	}
 
 /* the guts of the "staartdeling" implementation of division */
 static INLINE void

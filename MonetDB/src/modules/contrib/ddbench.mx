@@ -1478,99 +1478,100 @@ the fourth param is the array-index operator({\small\tt \[i\]}).
 	/* optimized versions are only tried if there is no head column to care
            about and the start of the values in the BAT is integer-aligned */
 	if (BUNsize(b) == ATOMsize(b->ttype) && (((size_t) p)&3) == 0) {
-	if (ATOMstorage(b->ttype) == TYPE_chr) {
-		int *src = (int*) p;
-		/* treat 32 tuples = 32 (=2^5) bytes per iteration */
-		int *end = src + (((q-p) >> 5) << 3); 
+		if (ATOMstorage(b->ttype) == TYPE_chr) {
+			int *src = (int*) p;
+			/* treat 32 tuples = 32 (=2^5) bytes per iteration */
+			int *end = src + (((q-p) >> 5) << 3); 
 
-		@3 @:INIT@2(unsigned char,@4)@
+			@3 @:INIT@2(unsigned char,@4)@
 
-		while(src < end) {
-			/* silly code spelled out to make SPARC feel good */
-			int cur = src[0];
-			NEXT@1
-			@3 @:BIT@1(TST@2,cur&255,CHR01,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR02,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR03,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur,    CHR04,@4)@ cur = src[1]; 
-			@3 @:BIT@1(TST@2,cur&255,CHR05,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR06,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR07,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur,    CHR08,@4)@ cur = src[2]; 
-			@3 @:BIT@1(TST@2,cur&255,CHR09,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR10,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR11,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur,    CHR12,@4)@ cur = src[3]; 
-			@3 @:BIT@1(TST@2,cur&255,CHR13,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR14,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR15,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur,    CHR16,@4)@ cur = src[4]; 
-			@3 @:BIT@1(TST@2,cur&255,CHR17,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR18,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR19,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur,    CHR20,@4)@ cur = src[5]; 
-			@3 @:BIT@1(TST@2,cur&255,CHR21,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR22,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR23,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur,    CHR24,@4)@ cur = src[6]; 
-			@3 @:BIT@1(TST@2,cur&255,CHR25,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR26,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR27,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur,    CHR28,@4)@ cur = src[7]; 
-			@3 @:BIT@1(TST@2,cur&255,CHR29,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR30,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur&255,CHR31,@4)@ SHIFT(cur,8); 
-			@3 @:BIT@1(TST@2,cur,    CHR32,@4)@ src += 8;
-			@3 { *dst@4++ = vector@4; vector@4 = 0; } 
+			while(src < end) {
+				/* silly code spelled out to make SPARC feel good */
+				int cur = src[0];
+				NEXT@1
+				@3 @:BIT@1(TST@2,cur&255,CHR01,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR02,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR03,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR04,@4)@ cur = src[1]; 
+				@3 @:BIT@1(TST@2,cur&255,CHR05,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR06,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR07,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR08,@4)@ cur = src[2]; 
+				@3 @:BIT@1(TST@2,cur&255,CHR09,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR10,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR11,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR12,@4)@ cur = src[3]; 
+				@3 @:BIT@1(TST@2,cur&255,CHR13,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR14,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR15,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR16,@4)@ cur = src[4]; 
+				@3 @:BIT@1(TST@2,cur&255,CHR17,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR18,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR19,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR20,@4)@ cur = src[5]; 
+				@3 @:BIT@1(TST@2,cur&255,CHR21,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR22,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR23,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR24,@4)@ cur = src[6]; 
+				@3 @:BIT@1(TST@2,cur&255,CHR25,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR26,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR27,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR28,@4)@ cur = src[7]; 
+				@3 @:BIT@1(TST@2,cur&255,CHR29,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR30,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur&255,CHR31,@4)@ SHIFT(cur,8); 
+				@3 @:BIT@1(TST@2,cur,    CHR32,@4)@ src += 8;
+				@3 { *dst@4++ = vector@4; vector@4 = 0; } 
+			}
+			p = (BUN) end;
+		} else if (ATOMstorage(b->ttype) == TYPE_sht) {
+			int *src = (int*) p;
+			/* treat 32 tuples = 32*2 = 64 (=2^6) bytes per iteration */
+			int *end = src + (((q-p) >> 6) << 4);
+
+			@3 @:INIT@2(unsigned short,@4)@
+
+			while(src < end) {
+				int cur = src[0];
+				/* silly code spelled out to make SPARC feel good */
+				NEXT@1
+				@3 @:BIT@1(TST@2,cur&65535,SHT01,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT02,@4)@ cur = src[1];
+				@3 @:BIT@1(TST@2,cur&65535,SHT03,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT04,@4)@ cur = src[2];
+				@3 @:BIT@1(TST@2,cur&65535,SHT05,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT06,@4)@ cur = src[3];
+				@3 @:BIT@1(TST@2,cur&65535,SHT07,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT08,@4)@ cur = src[4];
+				@3 @:BIT@1(TST@2,cur&65535,SHT09,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT10,@4)@ cur = src[5];
+				@3 @:BIT@1(TST@2,cur&65535,SHT11,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT12,@4)@ cur = src[6];
+				@3 @:BIT@1(TST@2,cur&65535,SHT13,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT14,@4)@ cur = src[7];
+				@3 @:BIT@1(TST@2,cur&65535,SHT15,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT16,@4)@ cur = src[8];
+				@3 @:BIT@1(TST@2,cur&65535,SHT17,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT18,@4)@ cur = src[9];
+				@3 @:BIT@1(TST@2,cur&65535,SHT19,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT20,@4)@ cur = src[10];
+				@3 @:BIT@1(TST@2,cur&65535,SHT21,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT22,@4)@ cur = src[11];
+				@3 @:BIT@1(TST@2,cur&65535,SHT23,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT24,@4)@ cur = src[12];
+				@3 @:BIT@1(TST@2,cur&65535,SHT25,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT26,@4)@ cur = src[13];
+				@3 @:BIT@1(TST@2,cur&65535,SHT27,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT28,@4)@ cur = src[14];
+				@3 @:BIT@1(TST@2,cur&65535,SHT29,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT30,@4)@ cur = src[15];
+				@3 @:BIT@1(TST@2,cur&65535,SHT31,@4)@ SHIFT(cur,16); 
+				@3 @:BIT@1(TST@2,cur,      SHT32,@4)@ src += 16;
+				@3 { *dst@4++ = vector@4; vector@4 = 0; } 
+			}
+			p = (BUN) end;
 		}
-		p = (BUN) end;
-	} else if (ATOMstorage(b->ttype) == TYPE_sht) {
-		int *src = (int*) p;
-		/* treat 32 tuples = 32*2 = 64 (=2^6) bytes per iteration */
-		int *end = src + (((q-p) >> 6) << 4);
-
-		@3 @:INIT@2(unsigned short,@4)@
-
-		while(src < end) {
-			int cur = src[0];
-			/* silly code spelled out to make SPARC feel good */
-			NEXT@1
-			@3 @:BIT@1(TST@2,cur&65535,SHT01,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT02,@4)@ cur = src[1];
-			@3 @:BIT@1(TST@2,cur&65535,SHT03,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT04,@4)@ cur = src[2];
-			@3 @:BIT@1(TST@2,cur&65535,SHT05,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT06,@4)@ cur = src[3];
-			@3 @:BIT@1(TST@2,cur&65535,SHT07,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT08,@4)@ cur = src[4];
-			@3 @:BIT@1(TST@2,cur&65535,SHT09,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT10,@4)@ cur = src[5];
-			@3 @:BIT@1(TST@2,cur&65535,SHT11,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT12,@4)@ cur = src[6];
-			@3 @:BIT@1(TST@2,cur&65535,SHT13,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT14,@4)@ cur = src[7];
-			@3 @:BIT@1(TST@2,cur&65535,SHT15,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT16,@4)@ cur = src[8];
-			@3 @:BIT@1(TST@2,cur&65535,SHT17,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT18,@4)@ cur = src[9];
-			@3 @:BIT@1(TST@2,cur&65535,SHT19,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT20,@4)@ cur = src[10];
-			@3 @:BIT@1(TST@2,cur&65535,SHT21,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT22,@4)@ cur = src[11];
-			@3 @:BIT@1(TST@2,cur&65535,SHT23,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT24,@4)@ cur = src[12];
-			@3 @:BIT@1(TST@2,cur&65535,SHT25,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT26,@4)@ cur = src[13];
-			@3 @:BIT@1(TST@2,cur&65535,SHT27,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT28,@4)@ cur = src[14];
-			@3 @:BIT@1(TST@2,cur&65535,SHT29,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT30,@4)@ cur = src[15];
-			@3 @:BIT@1(TST@2,cur&65535,SHT31,@4)@ SHIFT(cur,16); 
-			@3 @:BIT@1(TST@2,cur,      SHT32,@4)@ src += 16;
-			@3 { *dst@4++ = vector@4; vector@4 = 0; } 
-		}
-		p = (BUN) end;
-	}}
+	}
 
 	/* process any tuples left with a slower (generic) implementation */
 	@3 {
