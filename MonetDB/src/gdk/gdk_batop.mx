@@ -541,6 +541,8 @@ We have to do it: create a new BAT and put everything into it.
 	}
         bn->hsorted = BAThordered(b);
         bn->tsorted = BATtordered(b);
+	BATkey(bn, BAThkey(b));
+	BATkey(BATmirror(bn), BATtkey(b));
 	if (BAThdense(b)) {
 		BATseqbase(bn, b->hseqbase+low); 
 	}
