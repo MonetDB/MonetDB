@@ -771,6 +771,17 @@ BUNins(BAT *b, ptr h, ptr t)
 						b->H->nodense = i;
 						b->hdense = FALSE;
 					}
+					/* as nil < any, we only need to 
+					 * check on second BUNins if the 
+					 * first was nil */
+					if (i == 2 && cmp > 0) {
+						int ht = b->htype;
+						cmp = atom_CMP(prv, ATOMnilptr(ht), ht);
+						if (cmp == 0) {
+							b->H->nosorted = 1;
+							b->hsorted = FALSE;
+						}
+					}
 				}
 				if (b->hkey == TRUE && cmp <= 0) {
 					b->H->nokey[0] = i - 1;
@@ -791,6 +802,17 @@ BUNins(BAT *b, ptr h, ptr t)
 					} else if (cmp && b->tdense && *(oid *) t != 1 + *(oid *) prv) {
 						b->T->nodense = i;
 						b->tdense = FALSE;
+					}
+					/* as nil < any, we only need to 
+					 * check on second BUNins if the 
+					 * first was nil */
+					if (i == 2 && cmp > 0) {
+						int tt = b->ttype;
+						cmp = atom_CMP(prv, ATOMnilptr(tt), tt);
+						if (cmp == 0) {
+							b->T->nosorted = 1;
+							b->tsorted = FALSE;
+						}
 					}
 				}
 				if (b->tkey == TRUE && cmp <= 0) {
