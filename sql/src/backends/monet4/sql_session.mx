@@ -544,7 +544,7 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out,
 
 		if (in->pos >= in->len) {
 			ssize_t rd;
-			if (in->eof) {
+			if (in->eof || !isa_block_stream(in->s)) {
 				language = 0;
 				if (stream_write(out,prompt,promptlength,1) != 1 ||
 				    stream_flush(out)) {
