@@ -44,7 +44,7 @@ import java.net.*;
  * line query, and should be less intensive for the server.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 2.0
+ * @version 2.1
  */
 class MonetSocketBlockMode extends MonetSocket {
 	/** Stream from the Socket for reading */
@@ -93,7 +93,7 @@ class MonetSocketBlockMode extends MonetSocket {
 	 * @see #writeln(String data)
 	 */
 	public void write(String data) throws IOException {
-		write(data.getBytes());
+		write(data.getBytes("UTF-8"));
 	}
 
 	/**
@@ -113,7 +113,7 @@ class MonetSocketBlockMode extends MonetSocket {
 			// but ignoring it can be nasty as well, so it is decided to
 			// let it go so there is feedback about something going wrong
 			if (debug) {
-				log.write("<< " + new String(data) + "\n");
+				log.write("<< " + new String(data, "UTF-8") + "\n");
 			}
 
 			// reset the lineType variable, since we've sent data now and
@@ -159,12 +159,14 @@ class MonetSocketBlockMode extends MonetSocket {
 			// In the same way as we read chunks from the socket, we write
 			// chunks to the socket, so the server can start processing while
 			// sending the rest of the input.
-			int len = data.length();
+			byte[] block = null;
+			byte[] bytes = data.getBytes("UTF-8");
+			int len = bytes.length;
 			int todo = len;
 			int blocksize;
 			while (todo > 0) {
 				// write the length of this block
-				blocksize = Math.min(todo, capacity);
+				blocksize = todo < capacity ? todo : capacity;
 				outputBuffer.rewind();
 				outputBuffer.putInt(blocksize);
 
@@ -172,11 +174,21 @@ class MonetSocketBlockMode extends MonetSocket {
 				outputBuffer.get(blklen);
 
 				toMonetRaw.write(blklen);
-				toMonetRaw.write(data.substring(len - todo, (len - todo) + blocksize).getBytes());
+
+				// write the actual block
+				if (blocksize == len) {
+					// in this case the data that needs to be send is fits in one block
+					// this will often be the case, so we can avoid an array copy here
+					block = bytes;
+				} else {
+					// copy the part of the bytes array that we are going to send here
+					System.arraycopy(bytes, len - todo, block, 0, blocksize);
+				}
+				toMonetRaw.write(block);
 				
 				if (debug) {
 					log.write("<< write block: " + blocksize + " bytes\n");
-					log.write(data.substring(len - todo, (len - todo) + blocksize) + "\n");
+					log.write(new String(block, "UTF-8") + "\n");
 				}
 
 				todo -= blocksize;
@@ -215,7 +227,7 @@ class MonetSocketBlockMode extends MonetSocket {
 			// but ignoring it can be nasty as well, so it is decided to
 			// let it go so there is feedback about something going wrong
 			if (debug) {
-				log.write(">> " + (new String(data)).substring(0, size) + "\n");
+				log.write(">> " + (new String(data, "UTF-8")).substring(0, size) + "\n");
 				log.flush();
 			}
 
@@ -261,7 +273,7 @@ class MonetSocketBlockMode extends MonetSocket {
 					}
 				}
 				// 'continue' fetching current block
-				byte[] data = new byte[Math.min(capacity, readState)];
+				byte[] data = new byte[capacity < readState ? capacity : readState];
 				int size = fromMonetRaw.read(data);
 				if (size == -1) throw
 					new IOException("End of stream reached");
@@ -269,13 +281,19 @@ class MonetSocketBlockMode extends MonetSocket {
 				// update the state
 				readState -= size;
 
+				// because the bytes in the array are not necessarily the same
+				// length as the (unicode) string representation, we have to
+				// get rid of unused bytes before converting to a String.
+				if (size < data.length) {
+					System.arraycopy(data, 0, data, 0, size);
+				}
 				// append the stuff to the buffer; let String do the charset
 				// conversion stuff
-				readBuffer.append((new String(data)).substring(0, size));
+				readBuffer.append(new String(data, "UTF-8"));
 
 				if (debug) {
 					log.write(">> read chunk: " + size + " bytes, left: " + readState + " bytes\n");
-					log.write((new String(data)).substring(0, size) + "\n");
+					log.write(new String(data, "UTF-8") + "\n");
 					log.flush();
 				}
 			}
