@@ -1,12 +1,12 @@
 stdout of test 'client` in directory 'src/tools` itself:
 
 
-# 10:57:36 >  
-# 10:57:36 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_src_tools --set mapi_port=57556 /ufs/niels/data/monet/Linux/share/MonetDB/mapi.mil ; echo  ; echo Over..
-# 10:57:36 >  
+# 12:58:28 >  
+# 12:58:28 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_tools" --set mapi_port=50660 "/ufs/niels/data/Linux-i686/share/MonetDB/mapi.mil" ; echo ; echo Over..
+# 12:58:28 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.9
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 printf("\nReady.\n");
 
@@ -14,9 +14,9 @@ Ready.
 
 Over..
 
-# 10:57:36 >  
-# 10:57:36 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --host=stem --port=57556 < client.milC
-# 10:57:36 >  
+# 12:58:29 >  
+# 12:58:29 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --host=norma --port=50660 < client.milC
+# 12:58:29 >  
 
 Start of MIL script.
 [ 1 ]
@@ -93,8 +93,8 @@ Start of MIL script.
 [ "ls() : void"										  ]
 [ "ls(str) : void"									  ]
 [ "madvise(BAT[any::1,any::2], int) : BAT[any::1,any::2]"				  ]
-[ "map_stream_read(Stream) : str"							  ]
 [ "mapi_server(int, int) : any"								  ]
+[ "mapi_stream_read(Stream) : str"							  ]
 [ "mem_usage() : BAT[str,lng]"								  ]
 [ "mem_usage(int) : BAT[str,lng]"							  ]
 [ "memory() : BAT[str,int]"								  ]
@@ -325,7 +325,7 @@ Start of MIL script.
 [ "todisk",	  0	  ]
 [ "fromdisk",	  0	  ]
 #-----------------------------------------#
-# BAT:			  tmp_32	  #
+# BAT:			  tmp_33	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
 [ "port",		  "changeable"	  ]
@@ -397,7 +397,7 @@ Start of MIL script.
 [ "monet_fcn_imp",	  "constant"	  ]
 [ "monet_fcn_fcn",	  "constant"	  ]
 #-----------------------------------------#
-# BAT:			  tmp_34	  #
+# BAT:			  tmp_35	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
 [ "port",		  "liquid"	  ]
@@ -469,7 +469,7 @@ Start of MIL script.
 [ "monet_fcn_imp",	  "frozen"	  ]
 [ "monet_fcn_fcn",	  "frozen"	  ]
 #---------------------------------#
-# BAT:			  tmp_32  #
+# BAT:			  tmp_33  #
 # (str)			  (str)	  #
 #---------------------------------#
 [ "port",		  "int"	  ]
@@ -619,13 +619,13 @@ Start of MIL script.
 #-----------------------------------------------------------------------------------------#
 # type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "port",		  "int",  "liquid",	  "changeable",	  "54245"		  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "50660"		  ]
 [ "maxusers",		  "int",  "liquid",	  "changeable",	  "5"			  ]
 [ "cmd",		  "str",  "liquid",	  "changeable",	  "\"\""		  ]
-[ "port",		  "int",  "liquid",	  "changeable",	  "54245"		  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "50660"		  ]
 [ "maxusers",		  "int",  "liquid",	  "changeable",	  "5"			  ]
 [ "l",			  "int",  "liquid",	  "changeable",	  "0"			  ]
-[ "port",		  "int",  "liquid",	  "changeable",	  "54245"		  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "50660"		  ]
 [ "nr",			  "int",  "liquid",	  "changeable",	  "5"			  ]
 [ "mapi_params",	  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
 [ "_params",		  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
@@ -652,53 +652,13 @@ Start of MIL script.
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "'Å'"		  ]
-[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  "''"		  ]
-[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
-[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
-[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
-[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
-[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
-[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
-[ "adm_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
-[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_31>"		  ]
-[ "adm_acctbl",		  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_29>"		  ]
-[ "adm_fcntbl",		  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_30>"		  ]
-[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
-[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
-[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
-[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
-[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
-[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
-[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
-[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
-[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
-[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
-[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
-[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
-[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
-[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
-[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
-[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
-[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
-[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
-[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
-[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-##------------------------------------------------------------------#
-## req      | tid      | status   | wakeup | action                 #
-##------------------------------------------------------------------#
-#[      2,         1,   running,         0, "mapi_server(get_mapi_port#"                            ]
-#[      3,         2,   running,         0, "!ERROR: TBL_getname: inexistent function 0x4003439c.
 
-# 10:57:37 >  
-# 10:57:37 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --host=stem --port=57556
-# 10:57:37 >  
+# 12:58:29 >  
+# 12:58:29 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --host=norma --port=50660
+# 12:58:29 >  
 
 
-# 10:57:37 >  
-# 10:57:37 >  Done.
-# 10:57:37 >  
+# 12:58:31 >  
+# 12:58:31 >  Done.
+# 12:58:31 >  
 
