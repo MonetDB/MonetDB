@@ -159,24 +159,30 @@ supported by the cost model or optimizer.
 @-
 We use knowledge on generation of bind() instructions.
 @c
-				if( ( strcmp(functionName(p),"bind_dbat")==0 ||
-					  strcmp(functionName(p),"bind")==0 ) &&
-					isConstant(mb,p->argv[1]) &&
-					isConstant(mb,p->argv[2]) &&
-					isConstant(mb,p->argv[3]) ){
-@-
-			!!This code produces an error in mvc_bind, look at it later
-					backend *be = ((backend*)c->state[PARSER]);
-					BAT *b= NULL;
-					str sname= getVarLiteral(mb, p->argv[1]);
-					str tname= getVarLiteral(mb, p->argv[2]);
-					str cname= getVarLiteral(mb, p->argv[3]);
-					/* int l=0; */
+				if( strcmp(functionName(p),"bind_dbat")==0  ||
+				    (strcmp(functionName(p),"bind")==0  ) ){
+					int l=0;
 					InstrPtr qc;
-					/* char bufi[BUFSIZ];*/
+					char bufi[BUFSIZ];
+					BAT *b= NULL;
+@-
+Watch out bind_dbat needs different binding. [costed me a day]
+@c
+					backend *be = ((backend*)c->state[PARSER]);
 
+					if( strcmp(functionName(p), "bind_dbat")== 0)
+						b= mvc_bind_dbat( be->mvc, 
+							getVarLiteral(mb, p->argv[1]),
+							getVarLiteral(mb, p->argv[2]), 0 );
+					else
+						b= mvc_bind( be->mvc, 
+							getVarLiteral(mb, p->argv[1]),
+							getVarLiteral(mb, p->argv[2]),
+							getVarLiteral(mb, p->argv[3]), 0 );
 
-					b= mvc_bind( be->mvc, sname, tname, cname, 0 );
+@-
+Empty BATs can be symbolically optimized. Disabled for a while.
+@c
 					if( b== NULL /* || (l= BATcount(b)) == 0 */) {
 						qc= newInstruction(ASSIGNsymbol);
 						setModuleId(qc,GDKstrdup("optimizer"));
@@ -187,18 +193,12 @@ We use knowledge on generation of bind() instructions.
 						ns[k++] = qc;
 						continue;
 					}
-
-					qc= newInstruction(ASSIGNsymbol);
-					setModuleId(qc,GDKstrdup("costmodel"));
-					setFunctionId(qc,GDKstrdup("setCount"));
-					qc->argv[0]= newTmpVariable(mb,TYPE_void);
-					snprintf(bufi,BUFSIZ,"%d",l);
-					qc->argv[1]= p->argv[0];
-					qc->argv[2]= newConstant(mb,TYPE_lng,_strdup(bufi),TRUE);
-					qc->argc= 3;
-					isVarUsed(mb,qc->argv[2])= TRUE;
-					ns[k++] = qc;
+@-
+Play around with setting a property.
 @c
+					snprintf(bufi,BUFSIZ,"%d",l);
+					setVarProperty(mb,p->argv[0],0,"count",
+						TYPE_str, GDKstrdup(bufi));
 				}
 			}
 		if( setWriteMode && p->fcn == setWriteMode) {
