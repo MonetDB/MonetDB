@@ -25,7 +25,7 @@ import java.net.*;
  * line query, and should be less intensive for the server.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 1.0
+ * @version 2.0
  */
 class MonetSocketBlockMode extends MonetSocket {
 	/** Stream from the Socket for reading */
@@ -53,12 +53,10 @@ class MonetSocketBlockMode extends MonetSocket {
 		toMonetRaw = new BufferedOutputStream(con.getOutputStream());
 
 		outputBuffer = ByteBuffer.allocateDirect(4);
-		// put the buffer in native byte order
-		outputBuffer.order(ByteOrder.nativeOrder());
-
 		inputBuffer = ByteBuffer.allocateDirect(4);
 		// leave the buffer byte-order as is, it can be modified later
 		// by using setByteOrder()
+
 		readBuffer = new StringBuffer();
 
 		// set the blocksize, use hardcoded default on 0 or negative
@@ -88,10 +86,6 @@ class MonetSocketBlockMode extends MonetSocket {
 	public synchronized void write(byte[] data) throws IOException {
 		toMonetRaw.write(data);
 
-		// reset the lineType variable, since we've sent data now and the last
-		// line isn't valid anymore
-		lineType = UNKNOWN;
-
 		// it's a bit nasty if an exception is thrown from the log,
 		// but ignoring it can be nasty as well, so it is decided to
 		// let it go so there is feedback about something going wrong
@@ -99,8 +93,12 @@ class MonetSocketBlockMode extends MonetSocket {
 		// but ignoring it can be nasty as well, so it is decided to
 		// let it go so there is feedback about something going wrong
 		if (debug) {
-			log.write("<< " + new String(data));
+			log.write("<< " + new String(data) + "\n");
 		}
+
+		// reset the lineType variable, since we've sent data now and the last
+		// line isn't valid anymore
+		lineType = UNKNOWN;
 	}
 
 	/**
@@ -125,6 +123,7 @@ class MonetSocketBlockMode extends MonetSocket {
 
 	private final static byte[] BLK_TERMINATOR =
 		{(byte)0, (byte)0, (byte)0, (byte)0};
+	private byte[] len = new byte[4];
 	/**
 	 * writeln puts the given string on the stream
 	 * and flushes the stream afterwards so the data will actually be sent
@@ -135,18 +134,28 @@ class MonetSocketBlockMode extends MonetSocket {
 	public synchronized void writeln(String data) throws IOException {
 		// write the length of this block
 		outputBuffer.rewind();
-		outputBuffer.putInt(data.length() + 1);
+		outputBuffer.putInt(data.length());
 
-		byte[] len = new byte[4];
 		outputBuffer.rewind();
 		outputBuffer.get(len);
 
-		write(len);
-		write(data + "\n");
+		toMonetRaw.write(len);
+		toMonetRaw.write(data.getBytes());
 
-		// the server wants an empty int as termination, as it seems
-		write(BLK_TERMINATOR);
+		// the server wants an empty int as termination
+		toMonetRaw.write(BLK_TERMINATOR);
 		flush();
+
+		if (debug) {
+			log.write("<< write block: " + data.length() + " bytes\n");
+			log.write(data + "\n");
+			log.write("<< zero block\n");
+			log.flush();
+		}
+
+		// reset the lineType variable, since we've sent data now and the last
+		// line isn't valid anymore
+		lineType = UNKNOWN;
 	}
 
 	/**
@@ -159,7 +168,6 @@ class MonetSocketBlockMode extends MonetSocket {
 	public synchronized int read(byte[] data) throws IOException {
 		// read the data
 		int size = fromMonetRaw.read(data);
-		// note: this catches also end of stream (-1)
 		if (size == -1) throw
 			new IOException("End of stream reached");
 
@@ -191,8 +199,11 @@ class MonetSocketBlockMode extends MonetSocket {
 			if (readState == 0) {
 				// read next four bytes (int)
 				byte[] data = new byte[4];
-				int size = read(data);
-				if (size < 4) throw new AssertionError("Illegal start of block");
+				int size = fromMonetRaw.read(data);
+				if (size == -1) throw
+					new IOException("End of stream reached");
+				if (size < 4) throw
+					new AssertionError("Illegal start of block");
 
 				// start with a new block
 				inputBuffer.rewind();
@@ -201,10 +212,17 @@ class MonetSocketBlockMode extends MonetSocket {
 				// get the int-value and store it in the state
 				inputBuffer.rewind();
 				readState = inputBuffer.getInt();
+
+				if (debug) {
+					log.write(">> new block: " + readState + " bytes\n");
+					log.flush();
+				}
 			}
 			// 'continue' fetching current block
 			byte[] data = new byte[Math.min(capacity, readState)];
-			int size = read(data);
+			int size = fromMonetRaw.read(data);
+			if (size == -1) throw
+				new IOException("End of stream reached");
 
 			// update the state
 			readState -= size;
@@ -212,6 +230,12 @@ class MonetSocketBlockMode extends MonetSocket {
 			// append the stuff to the buffer; let String do the charset
 			// conversion stuff
 			readBuffer.append((new String(data)).substring(0, size));
+
+			if (debug) {
+				log.write(">> read chunk: " + size + " bytes, left: " + readState + " bytes\n");
+				log.write((new String(data)).substring(0, size) + "\n");
+				log.flush();
+			}
 		}
 		// fill line, excluding newline
 		line = readBuffer.substring(0, nl);
