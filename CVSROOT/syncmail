@@ -234,7 +234,7 @@ rfc822_specials_re = re.compile(r'[\(\)\<\>\@\,\;\:\\\"\.\[\]]')
 
 def quotename(name):
     if name and rfc822_specials_re.search(name):
-        return '"%s"' % name.replace('"', '\\"')
+        return '"%s"' % string.replace(name, '"', '\\"')
     else:
         return name
 
