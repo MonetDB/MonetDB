@@ -170,10 +170,14 @@ function InitMaster () {
 		fi
 		fLOG1 LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 	fi
-	for mdhp in $MonetDistHomePrefix ; do
-		PATH="$mdhp/bin:$PATH"
-	done
-	export PATH=${PATH%:}
+	if [ ! "$MONETPATH" ] ; then
+		for mdhp in $MonetDistHomePrefix ; do
+			MONETPATH="$mdhp/bin:$MONETPATH"
+		done
+		export MONETPATH=${MONETPATH%:}
+	fi
+	fLOG1 MONETPATH=$MONETPATH
+	export PATH=$MONETPATH:$PATH
 	fLOG1 PATH=$PATH
 
 	RECURSIVE=NO

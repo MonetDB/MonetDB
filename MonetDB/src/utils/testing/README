@@ -105,7 +105,8 @@ have changed since my proposal.
 	TSTSRCBASE	$MONETHOME			base of (test) source tree
 	TSTTRGBASE	$MONETHOMEPREFIX		base for test output
 	MONETPORT	$HOST:[10000..65536]		depending on pid
-	MONET_MOD_PATH	$MONET{DIST,HOME}PREFIX/lib
+	MONETPATH	$MONET{DIST,HOME}PREFIX/bin	search-path for executables
+	MONET_MOD_PATH	$MONET{DIST,HOME}PREFIX/lib	search-path for modules
 	LD_LIBRARY_PATH	$MONET_MOD_PATH
   + Further environment variables that Mtest exports (to be used in test scripts) are:
   	name		description
