@@ -172,15 +172,10 @@ tst908
 #
 # no stable output available (yet?)
 #
+#optimizer test scripts
 #tst4000
 #tst4001
 #tst4002
-#tst400a2
-#tst400bHuge
-#tst400bHuge2
-#tst400cHuge
-#tst400cHuge2
-#tst400f
 #tst4010
 #tst4015
 #tst4020
@@ -188,11 +183,15 @@ tst908
 #tst4028
 #tst4030
 #tst4500
-#tst6005
-#tst6010
-#tst6015
-#tst6020
-#tst6903
+
+# performance tests
+
+#tst400a2
+#tst400bHuge
+#tst400bHuge2
+#tst400cHuge
+#tst400cHuge2
+#tst400f
 #tst901a
 #tst901b
 #tst901c
@@ -200,17 +199,17 @@ tst908
 #tst903a
 #tst903b
 #tst903c
+
+# Old x100 test moved to x100Tests
+#tst6005
+#tst6010
+#tst6015
+#tst6020
+#tst6903
 #
-# .mil
+# .mil to be included in the future
 #
 #tst1300
 #tst1550
 #tst910
 #
-# ?
-#
-#tst204system
-#
-# stable output but no test script!?
-#
-#tst390
