@@ -96,8 +96,8 @@ Fill in basic column info
 	strcpy(bn->tident,"t");
 	strcpy(bn->hatom, ATOMname(ht));
 	strcpy(bn->tatom, ATOMname(tt));
-	bn->halignflushed = bn->halign = OIDnew(2); 
-	bn->talignflushed = bn->talign = bn->halign+1;
+	bn->halign = OIDnew(2); 
+	bn->talign = bn->halign+1;
 	bn->hseqbase = (ht == TYPE_void)?oid_nil:0;
 	bn->tseqbase = (tt == TYPE_void)?oid_nil:0;
 	bn->batPersistence = TRANSIENT;

@@ -1187,7 +1187,11 @@ int CMDinfo(BAT **retval, BAT *b){
         BUNins(bn, "hloc", local_itoa(b->hloc));
         BUNins(bn, "hvarsized", local_itoa(b->hvarsized));
         BUNins(bn, "halign", local_utoa(b->halign));
-        BUNins(bn, "halignflushed", local_utoa(b->halignflushed));
+        BUNins(bn, "hnosorted", local_utoa(b->H->nosorted));
+        BUNins(bn, "hnosorted_rev", local_utoa(b->H->nosorted_rev));
+        BUNins(bn, "hnodense", local_utoa(b->H->nodense));
+        BUNins(bn, "hnokey[0]", local_utoa(b->H->nokey[0]));
+        BUNins(bn, "hnokey[1]", local_utoa(b->H->nokey[1]));
  
         BUNins(bn, "tident", b->tident);
 	BUNins(bn, "tdense", local_itoa(BATtdense(b)));
@@ -1197,7 +1201,11 @@ int CMDinfo(BAT **retval, BAT *b){
         BUNins(bn, "tloc", local_itoa(b->tloc));
         BUNins(bn, "tvarsized", local_itoa(b->tvarsized));
         BUNins(bn, "talign", local_utoa(b->talign));
-        BUNins(bn, "talignflushed", local_utoa(b->talignflushed));
+        BUNins(bn, "tnosorted", local_utoa(b->T->nosorted));
+        BUNins(bn, "tnosorted_rev", local_utoa(b->T->nosorted_rev));
+        BUNins(bn, "tnodense", local_utoa(b->T->nodense));
+        BUNins(bn, "tnokey[0]", local_utoa(b->T->nokey[0]));
+        BUNins(bn, "tnokey[1]", local_utoa(b->T->nokey[1]));
  
         BUNins(bn, "batInserted", local_utoa(BUNindex(b, b->batInserted)));
         BUNins(bn, "batDeleted", local_utoa(BUNindex(b, b->batDeleted)));

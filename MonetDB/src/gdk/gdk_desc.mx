@@ -160,7 +160,7 @@ BAT, and vice versa.
              (@2)->acctype = short_int_@5((@4)->acctype);
               (@2)->sorted = (@4)->sorted;
                (@2)->align = normal_oid_@5((@4)->align);
-        (@2)->alignflushed = normal_oid_@5((@4)->alignflushed);
+        (@2)->nosorted_rev = normal_oid_@5((@4)->nosorted_rev);
             (@2)->nokey[0] = normal_sizet_@5((@4)->nokey[0]);
             (@2)->nokey[1] = normal_sizet_@5((@4)->nokey[1]);
             (@2)->nosorted = normal_sizet_@5((@4)->nosorted);

@@ -86,19 +86,11 @@ int ALIGNcommit(BAT *b) {
 	if (!b->talign) {
                 b->talign = OIDnew(1);
 	}
-	b->halignflushed = b->halign;
-	b->talignflushed = b->talign;
 	return 0;
 }
 
 int ALIGNundo(BAT *b) {
 	BATcheck(b,"ALIGNundo: bat required");
-	if (b->halignflushed != b->halign) {
-		b->halign = OIDnew(1);
-	}
-	if (b->talignflushed != b->talign) {
-		b->talign = OIDnew(1);
-	}
 	return 0;
 }
 
@@ -123,8 +115,6 @@ int ALIGNsetH(BAT *b1, BAT *b2) {
 	b1->hsorted = BAThordered(b2);
         b1->halign = b2->halign; 
 	b1->batDirtydesc = TRUE;
-	if (!DELTAdirty(b1)) b1->halignflushed = b1->halign;
-	if (!DELTAdirty(b2)) b2->halignflushed = b2->halign;
 	return 0;
 }
 

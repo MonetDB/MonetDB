@@ -741,7 +741,6 @@ typedef struct {
           bit    hsorted;          /* are head values currently ordered? */
           bit    hvarsized;        /* for speed: head type is varsized? */
 	  oid	 halign;	   /* alignment OID for head. */
-	  oid	 halignflushed;	   /* alignment in previous transaction */
           bit    hheapdirty;       /* head heap specific dirty flag */
           bit    haccdirty;        /* head accelerator specific dirty flag */
           /* Head storage */
@@ -760,7 +759,6 @@ typedef struct {
           bit    tsorted;          /* are tail values currently ordered? */
           bit    tvarsized;        /* for speed: tail type is varsized? */
 	  oid	 talign;	   /* alignment OID for head. */
-	  oid	 talignflushed;	   /* alignment in previous transaction */
           bit    theapdirty;       /* tail heap specific dirty flag */
           bit    taccdirty;        /* tail accelerator specific dirty flag */
           /* Tail storage */
@@ -865,7 +863,7 @@ typedef struct {
         bit             sorted;         /* 0=false, 1=true; */
         bit             dense;          /* 0=false, 1=true; */
 	oid		align;		/* OID for sync alignment */
-	oid		alignflushed;	/* OID for sync alignment */
+	oid		nosorted_rev;	/* OID for sync alignment */
 	size_t		nokey[2]; 	/* positions that prove key ==FALSE */
 	size_t		nosorted; 	/* position that proves sorted==FALSE */
 	size_t		nodense; 	/* position that proves dense==FALSE */
@@ -974,8 +972,6 @@ typedef int (*GDKfcn)();
 #define tatom		T->atom
 #define halign		H->align
 #define talign		T->align
-#define halignflushed	H->alignflushed
-#define talignflushed	T->alignflushed
 
 #define batMapdirty	U->map_dirty
 #define batMapbuns	U->map_buns
