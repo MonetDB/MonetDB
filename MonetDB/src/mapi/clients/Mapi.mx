@@ -296,7 +296,9 @@ They have been developed to ease interaction.
 # include <unistd.h>
 #endif
 #include  <stdio.h>
+#ifdef HAVE_PWD_H
 #include  <pwd.h>
+#endif
 #include  <sys/types.h>
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
@@ -463,7 +465,15 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	}
 	
 	if(username) strcpy(mid->username,username);
-	else strcpy(mid->username,getpwuid(geteuid())->pw_name);
+	else {
+#if HAVE_GETPWUID && HAVE_GETEUID
+		struct passwd *p = getpwuid(geteuid());
+		char *name = p ? p->pw_name : "anonymous";
+#else
+		char *name = "anonymous";
+#endif
+		strcpy(mid->username,name);
+	}
 
 	if(password) strcpy(mid->password,password);
 	else strcpy(mid->password,"");
