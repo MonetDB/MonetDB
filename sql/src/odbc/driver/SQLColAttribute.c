@@ -111,7 +111,6 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 	case SQL_DESC_COUNT:
 		if (valueptr)
 			*valueptr = stmt->ImplRowDescr->sql_desc_count;
-
 		break;
 	case SQL_DESC_DISPLAY_SIZE:
 		if (valueptr)
@@ -230,7 +229,6 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 	default:
 		/* HY091 = Invalid descriptor field identifier */
 		addStmtError(stmt, "HY091", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
