@@ -155,10 +155,12 @@ AC_ARG_WITH(java,
 if test "x$have_java" != xno; then
   AC_PATH_PROG(JAVAC,javac,,$withval/bin:$PATH)
   AC_PATH_PROG(JAR,jar,,$withval/bin:$PATH)
-  if test "x$JAVAC" != x; then
-     have_java=yes
-  else
+  if test "x$JAVAC" = "x"; then
      have_java=no
+  elif test "x$JAR" = "x"; then
+     have_java=no
+  else
+     have_java=yes
   fi
 
   if test "x$have_java" != xyes; then
