@@ -275,11 +275,19 @@ command:	     {	int i, l = (int) strlen(yytext);
 "'"\\0{O}({O})?({O})?"'" {unsigned int i; sscanf(yytext+2, "%o", &i);
 			BEGIN(idconst);
 			Vector(TOK_CONSTANT, TYPE_chr, cval[0], i, 0);	      }
-[\"\']		      { int len;
+\"		      { int len;
 			str s = ll_getstr(*yytext, &len);
 			BEGIN(0);
 			len = strFromStr(s, &len, &s);
 			Vector(TOK_STRING, TYPE_str, sval, s, len);
+		      }
+\'		      { int len;
+			str s = ll_getstr(*yytext, &len);
+			char val, *p = &val;
+			BEGIN(idconst);
+			len = chrFromStr(s, &len, (ptr) &p);
+			GDKfree(s);
+			Vector(TOK_CONSTANT, TYPE_chr, cval[0], val, 0);
 		      }
 "{|"		      { BEGIN(0); Symbol(TOK_PARBLOCK);			      }
 "|}"		      { BEGIN(0); Symbol(TOK_PAREND);			      }
