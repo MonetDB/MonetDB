@@ -6,5 +6,11 @@ EXTRA_DIST_DIR = NT
 
 EXTRA_HEADERS = sql_config.h
 
+headers_pc = {
+	HEADERS = pc
+	SOURCES	= MonetDB-SQL.pc.in
+	DIR = libdir/pkgconfig
+}
+
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
