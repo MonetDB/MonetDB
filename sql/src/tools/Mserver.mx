@@ -42,8 +42,9 @@ on the port number specified in the parameter file.
 \begin{verbatim}
 Mserver { [ --dbname <db-name> ] 
 	  [ --dbfarm <dbfarm> ]
+          [ --dbinit <stmt>]
           [ -c|--config <config-file> ] 
-          [ -d|--debug [value]
+          [ -d|--debug value]
           [ -s|--set [option=value] set option can be given multiple times
                                     to override verious options
         } [ <mil-script> ]
@@ -51,7 +52,7 @@ Mserver { [ --dbname <db-name> ]
 
 Since the console has no command-line history nor file name completion,
 you are {\bf recommended} to use the 
-@[<a href="MapiClient.html">Mclient</a>@ program for interactive sessions
+@[<a href="../MapiClient/index.html">MapiClient</a>@ program for interactive sessions
 instead.
 
 The options have the following meaning:
@@ -62,7 +63,7 @@ The options have the following meaning:
 	where to find the environment settings
 \end{description}
 
-
+@{
 @+ Implementation
 @h
 #ifndef _MONET_GLOBAL_H_
@@ -172,6 +173,7 @@ void usage( char *prog ){
 	fprintf(stderr, "usage: %s\n", prog);
 	fprintf(stderr, "[--dbname database_name ]\n" );
 	fprintf(stderr, "[--dbfarm database_directory ]\n" ); 
+	fprintf(stderr, "[--dbinit stmt ]\n" );
 	fprintf(stderr, "[-d or --debug [debug_level] ]\n" );
 	fprintf(stderr, "[-? or --help ]\n" );
 	fprintf(stderr, "[-c or --config config_file ]\n" );
@@ -260,7 +262,8 @@ int main(int argc, char **av)
 	Client c;
 	char buf[BUFSIZ], *prog = *av, *config = NULL;
 	opt *set = NULL;
-	int i,debug = 0, setlen = 0, status = 1;
+	int idx=0,debug = 0, setlen = 0, status = 1;
+	char *initFile=0;
 
 @-
 We give malloc advice here. Main goal: prevent fragmentation.
@@ -288,13 +291,21 @@ capabilities depend on the malloc implementation used at run time.
 	}
 	malloc_init=0;
 @
+#ifndef __linux__
+/* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
+/* for (Red Hat) Linux (8) unused and fails at least as of glibc-2.2.93-5 */
 	    if (mallopt(M_NLBLKS, 16)) {
 		fprintf(stderr, "monet: mallopt(M_NLBLKS,16) fails.\n");
 	    }
+#endif
+#ifndef __linux__
+/* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
+/* for (Red Hat) Linux (8) unused and fails at least as of glibc-2.2.93-5 */
 	    if (mallopt(M_GRAIN, 32)) {
 		fprintf(stderr, "monet: mallopt(M_GRAIN,32) fails.\n");
             
 	    }
+#endif
 @C
 #ifdef NATIVE_WIN32
 	set_terminate( Mserver_abort );
@@ -313,6 +324,7 @@ capabilities depend on the malloc implementation used at run time.
                {"config", 1, 0, 'c'},
                {"dbname", 1, 0, 0},
                {"dbfarm", 1, 0, 0},
+               {"dbinit", 1, 0, 0},
                {"debug", 2, 0, 'd'},
                {"help", 0, 0, '?'},
                {"set", 1, 0, 's'},
@@ -327,6 +339,9 @@ capabilities depend on the malloc implementation used at run time.
 
 	if (!(setlen = mo_builtin_settings(&set)) )
 		usage(prog);
+
+	monet_script = (str*)GDKmalloc( sizeof(str) * (argc-optind+5) );
+	monet_script[idx] = NULL;
 
 	for (;;){
 		int option_index = 0;
@@ -349,6 +364,29 @@ capabilities depend on the malloc implementation used at run time.
 						"dbfarm") == 0){
 				setlen = mo_add_option( &set, setlen, 
 					opt_cmdline, "gdk_dbfarm", optarg );
+				break;
+			}
+			if(strcmp(long_options[option_index].name,
+                                                "dbinit") == 0){
+				FILE *f;
+				/* single initialization statement*/
+				if(initFile == 0){
+					initFile= "/tmp/Mserver.init";
+					f= fopen(initFile,"w");
+					monet_script[idx] = initFile;
+					monet_script[idx+1] = NULL;
+					idx++;
+				} else f= fopen(initFile,"a");
+				if(f == 0) {
+					fprintf(stderr, "ERROR: could not access %s\n", initFile);
+				} else {
+					if (optarg){
+						fprintf(f,"%s;\n",optarg);
+						fflush(f);
+						fclose(f);
+					} else
+					fprintf(stderr, "ERROR: init statement missing\n");
+				}
 				break;
 			}
 			if (strcmp(long_options[option_index].name,
@@ -398,15 +436,12 @@ capabilities depend on the malloc implementation used at run time.
 			usage(prog);
 	}
 
-	i = 0;
-	monet_script = (str*)GDKmalloc( sizeof(str) * (argc-optind+1) );
-	monet_script[i] = NULL;
 	while(optind < argc){
 		monet_listing = 1;
-		monet_script[i] = absolute_path(av[optind]);
-		monet_script[i+1] = NULL;
+		monet_script[idx] = absolute_path(av[optind]);
+		monet_script[idx+1] = NULL;
 		optind++;
-		i++;
+		idx++;
 	}
 
 	if (debug)
