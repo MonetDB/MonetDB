@@ -1,0 +1,11 @@
+ ## integers from -25 to 24
+var a := bat(void, int,50).seqbase(0@0).rename("a");
+var i := -25;
+while(i < 25) a.insert(nil, (i :+= 1));
+
+## reverse sort and split into 2 chunks
+a := a.sort_rev.reverse.mark(0@0).reverse;
+VAR sliced := a.rangesplit(2);
+
+sliced.fetch(0).print;
+sliced.fetch(1).print;
