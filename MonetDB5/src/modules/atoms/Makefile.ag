@@ -22,4 +22,4 @@ scripts_mal = {
 	SOURCES = atoms_init.mx str.mx blob.mx url.mx mtime.mx 
 }
 
-EXTRA_DIST_DIR = Tests
+#EXTRA_DIST_DIR = Tests
