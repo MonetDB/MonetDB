@@ -37,6 +37,8 @@ struct passwd {
 /* first dummy, later in sys/wait.h */
 #define waitpid(pid,statusp,sig) 0
 
+#include <direct.h>
+
 /* define some more signals */ 
 #include <signal.h>
 #define SIGPIPE SIGTERM
@@ -149,13 +151,14 @@ struct tms
 #define drand48()  (double)rand()
 
 /* not for cplusplus else problems with open and close of streams */
-#ifndef  __cplusplus
 #    define getcwd		_getcwd
 #    define getpid		_getpid
 #    define access		_access
 #	 define W_OK		1
 #	 define R_OK		1
 #	 define F_OK		0
+
+#ifndef  __cplusplus
 #    define open		_open
 #    define read		_read
 #    define write		_write
