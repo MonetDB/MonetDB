@@ -2302,6 +2302,7 @@ cast_exp:
 cast_value:
 	scalar_exp
  | 	NULLX	 { $$ = _newAtomNode(NULL); }
+ ;
 
 case_exp: 
      NULLIF '(' scalar_exp ',' scalar_exp ')' 
