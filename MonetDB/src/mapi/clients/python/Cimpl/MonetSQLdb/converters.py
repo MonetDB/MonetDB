@@ -204,6 +204,7 @@ def escape(x, conv=None):
 
 
 def monet2python(value, typestr, conv=None):
+    if value is None: return None
     if conv is None: conv = conversions
     if conv.has_key(typestr):
         return conv[typestr](value)
