@@ -381,9 +381,11 @@ static int mtrace = 0;
 size_t GDKvm_heapsize(void) {
 #ifdef _CYGNUS_H_
         return ((size_t) (96<<20));
-#else
+#elif defined(HW_Linux)
         struct mallinfo m = MT_mallinfo();
 	return GDKmem_heapsize() + m.hblkhd;
+#else
+	return GDKmem_heapsize();
 #endif
 }
 
@@ -525,16 +527,24 @@ void GDKmemdump(void) {
 #endif
 }
 
+
+static int lastmallinfo = 0;
+
 void GDKmemchk(int memchk, int vmchk) {
         size_t memtarget, vmtarget;
-
-	/* correct heap estimate with the real thing */ 
-        struct mallinfo m = MT_mallinfo();
-        GDK_heap_estimate = (size_t) (m.usmblks + m.uordblks + m.hblkhd);
+	int t = GDKms();
 
 	memtarget = GDKmem_inuse();
         vmtarget = GDKvm_cursize();
 
+	if ((t - lastmallinfo) > 10000) {
+		/* at most once each ten seconds, correct heap estimate with the real thing */ 
+        	struct mallinfo m = MT_mallinfo();
+        	GDK_heap_estimate = (size_t) (m.usmblks + m.uordblks + m.hblkhd);
+		memtarget = GDKmem_inuse();
+        	vmtarget = GDKvm_cursize();
+		lastmallinfo = t;
+	}
         MEMDEBUG {
           /* Protect from being called recursivly because THRprintf
              allocates memory */
