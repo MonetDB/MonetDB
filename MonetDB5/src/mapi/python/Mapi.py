@@ -58,6 +58,8 @@ class server:
         result = self.getstring()
         if trace > 0:
             print result.encode('utf-8')
+	if self.prompt == result :
+		return ''
         self.getprompt()
         return result
 
@@ -72,7 +74,7 @@ class server:
                     print self.buffer
                 str = str + self.buffer
                 self.buffer = self.socket.recv(8096)
-                idx = string.find(self.buffer, "\1\n")
+                idx = string.find(self.buffer, "\1")
 
             str = str + self.buffer[0:idx]
             self.buffer = self.buffer[idx+1:]
@@ -125,7 +127,6 @@ if __name__ == '__main__':
     line = fi.readline()
     while line and line != "quit;\n":
         res = s.cmd(line)
-        print res
         sys.stdout.write(s.prompt)
         line = fi.readline()
     s.disconnect()
