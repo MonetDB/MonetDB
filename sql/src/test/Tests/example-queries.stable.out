@@ -27,12 +27,12 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	1e-04
+8	"texxst"	0.0001
 1	"test"	0.1
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	1e-04
+8	"texxst"	0.0001
 SQL  10 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -41,12 +41,12 @@ SQL  10 Rows affected
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	1e-04
+8	"texxst"	0.0001
 1	"test"	0.1
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	1e-04
+8	"texxst"	0.0001
 SQL  10 Rows affected
 
 # 20:07:27 >  

@@ -27,7 +27,7 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -36,7 +36,7 @@ SQL  5 Rows affected
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 
 # 15:05:38 >  
@@ -51,12 +51,12 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 1	"test"	0.1
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  10 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -65,12 +65,12 @@ SQL  10 Rows affected
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 1	"test"	0.1
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  10 Rows affected
 
 # 15:05:38 >  
@@ -83,18 +83,18 @@ SQL  connected to database mTests_src_test using schema sys
 #----------------------
 5	"xtest"	0.9
 9	"testx"	9.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 5	"xtest"	0.9
 9	"testx"	9.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  6 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
 9	"testx"	9.1
 9	"testx"	9.1
-8	"texxst"	0.0001
-8	"texxst"	0.0001
+8	"texxst"	1e-04
+8	"texxst"	1e-04
 SQL  4 Rows affected
 
 # 15:05:38 >  
@@ -115,7 +115,7 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -124,7 +124,7 @@ SQL  5 Rows affected
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 
 # 15:05:38 >  
@@ -139,7 +139,7 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -166,7 +166,7 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -175,7 +175,7 @@ SQL  5 Rows affected
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 
 # 15:05:38 >  
@@ -190,7 +190,7 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -198,14 +198,14 @@ SQL  5 Rows affected
 1	"test"	0.1
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  4 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
 1	"test"	0.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  3 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -232,7 +232,7 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -241,7 +241,7 @@ SQL  5 Rows affected
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 
 # 15:05:38 >  
@@ -256,7 +256,7 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -284,7 +284,7 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -293,7 +293,7 @@ SQL  5 Rows affected
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 
 # 15:05:39 >  
@@ -308,7 +308,7 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -338,7 +338,7 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -347,7 +347,7 @@ SQL  5 Rows affected
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 
 # 15:05:39 >  
@@ -362,7 +362,7 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -371,7 +371,7 @@ SQL  5 Rows affected
 -5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -380,7 +380,7 @@ SQL  5 Rows affected
 -5	"xtest"	0.9
 -5	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -389,7 +389,7 @@ SQL  5 Rows affected
 -5	"xtest"	0.9
 -5	"testx"	9.1
 0	"texst"	99999.1
--5	"texxst"	0.0001
+-5	"texxst"	1e-04
 SQL  5 Rows affected
 
 # 15:05:39 >  
@@ -410,7 +410,7 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -419,7 +419,7 @@ SQL  5 Rows affected
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 
 # 15:05:39 >  
@@ -434,7 +434,7 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -443,7 +443,7 @@ SQL  5 Rows affected
 5	"xtest"	0.9
 9	"updated"	9.1
 0	"texst"	99999.1
-8	"updated"	0.0001
+8	"updated"	1e-04
 SQL  5 Rows affected
 
 # 15:05:39 >  
@@ -464,7 +464,7 @@ SQL  connected to database mTests_src_test using schema sys
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 #----------------------
 #| val1 | val2 | val3 |
@@ -473,7 +473,7 @@ SQL  5 Rows affected
 5	"xtest"	0.9
 9	"testx"	9.1
 0	"texst"	99999.1
-8	"texxst"	0.0001
+8	"texxst"	1e-04
 SQL  5 Rows affected
 
 # 15:05:39 >  
