@@ -46,6 +46,7 @@ table. This can reduce the number of malloc/free calls significantly.
 
 - The garbage control is too complicated and consumes too much power.
   before/after calls are only focussed on the first destination argument.
+  the patch into the direction of symbol table lookup made it worse
 
 API issues
 - Japi should be aligned with latest Mapi 
