@@ -72,10 +72,10 @@ main(int argc, char **argv)
 {
 	SQLHANDLE env;
 	SQLHANDLE dbc;
-	SQLHANDLE stmt;
-	SQLCHAR *host = (SQLCHAR*)"Default";
-	SQLCHAR *user = (SQLCHAR*)"monetdb";
-	SQLCHAR *pass = (SQLCHAR*)"monetdb";
+	SQLHANDLE stmt, stmt2;
+	char *host = "Default";
+	char *user = "monetdb";
+	char *pass = "monetdb";
 	SQLRETURN ret;
 	int i;
 	SQLSMALLINT f1;
@@ -85,11 +85,11 @@ main(int argc, char **argv)
 	SQL_TIME_STRUCT f5;
 
 	if (argc > 1)
-		host = (SQLCHAR*)argv[1];
+		host = argv[1];
 	if (argc > 2)
-		user = (SQLCHAR*)argv[2];
+		user = argv[2];
 	if (argc > 3)
-		pass = (SQLCHAR*)argv[3];
+		pass = argv[3];
 	if (argc > 4 || *host == '-') {
 		fprintf(stderr, "Usage: %s [ host [ user [ password ] ] ]\n",
 			argv[0]);
@@ -104,7 +104,8 @@ main(int argc, char **argv)
 	ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);
 	check(ret, SQL_HANDLE_ENV, env, "SQLAllocHandle");
 
-	ret = SQLConnect(dbc, host, SQL_NTS, user, SQL_NTS, pass, SQL_NTS);
+	ret = SQLConnect(dbc, (SQLCHAR *) host, SQL_NTS,
+			 (SQLCHAR *) user, SQL_NTS, (SQLCHAR *) pass, SQL_NTS);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLConnect");
 
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
@@ -147,16 +148,39 @@ main(int argc, char **argv)
 			       SQL_TYPE_TIME, 0, 0, &f5, sizeof(f5), NULL);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter");
 
-	for (i = 0; i < 200; i++) {
+	f4.year = 2003;
+	f4.month = 1;
+	f4.day = 1;
+	f5.hour = 0;
+	f5.minute = 0;
+	f5.second = 0;
+	for (i = 0; i < 2000; i++) {
 		f1 = i;
 		snprintf(f2, sizeof(f2), "value %d", i);
 		f3 = i * 1.5;
-		f4.year = 2003;
-		f4.month = i % 12 + 1;
-		f4.day = i / 12 + 1;
-		f5.hour = i % 24;
-		f5.minute = i / 24;
-		f5.second = 25;
+		f4.day++;
+		if ((f4.day == 29 && f4.month == 2) ||
+		    (f4.day == 31 && (f4.month == 4 || f4.month == 6 ||
+				      f4.month == 9 || f4.month == 11)) ||
+		    f4.day == 32) {
+			f4.day = 1;
+			f4.month++;
+			if (f4.month == 13) {
+				f4.month = 1;
+				f4.year++;
+			}
+		}
+		f5.second++;
+		if (f5.second == 60) {
+			f5.second = 0;
+			f5.minute++;
+			if (f5.minute == 60) {
+				f5.minute = 0;
+				f5.hour++;
+				if (f5.hour == 25)
+					f5.hour = 0;
+			}
+		}
 		ret = SQLExecute(stmt);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLExecute");
 	}
@@ -167,7 +191,7 @@ main(int argc, char **argv)
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle");
 
-	ret = SQLPrepare(stmt, (SQLCHAR*)"SELECT * FROM test", SQL_NTS);
+	ret = SQLPrepare(stmt, (SQLCHAR*)"SELECT * FROM test WHERE 2*(i/2) = i", SQL_NTS);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLPrepare");
 
 	ret = SQLBindCol(stmt, 1, SQL_C_SSHORT, &f1, sizeof(f1), NULL);
@@ -184,6 +208,26 @@ main(int argc, char **argv)
 	ret = SQLExecute(stmt);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecute");
 
+	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt2);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle");
+
+	ret = SQLPrepare(stmt2, (SQLCHAR*)"SELECT * FROM test WHERE 2*(i/2) <> i", SQL_NTS);
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLPrepare");
+
+	ret = SQLBindCol(stmt2, 1, SQL_C_SSHORT, &f1, sizeof(f1), NULL);
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLBindCol");
+	ret = SQLBindCol(stmt2, 2, SQL_C_CHAR, &f2, sizeof(f2), NULL);
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLBindCol");
+	ret = SQLBindCol(stmt2, 3, SQL_C_DOUBLE, &f3, sizeof(f3), NULL);
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLBindCol");
+	ret = SQLBindCol(stmt2, 4, SQL_C_TYPE_DATE, &f4, sizeof(f4), NULL);
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLBindCol");
+	ret = SQLBindCol(stmt2, 5, SQL_C_TYPE_TIME, &f5, sizeof(f5), NULL);
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLBindCol");
+
+	ret = SQLExecute(stmt2);
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLExecute");
+
 	for (;;) {
 		ret = SQLFetch(stmt);
 		if (ret == SQL_NO_DATA)
@@ -193,10 +237,22 @@ main(int argc, char **argv)
 		printf("%d %s %g %04d:%02d:%02d %02d-%02d-%02d\n",
 		       f1, f2, f3, f4.year, f4.month, f4.day,
 		       f5.hour, f5.minute, f5.second);
+
+		ret = SQLFetch(stmt2);
+		if (ret == SQL_NO_DATA)
+			break;
+		check(ret, SQL_HANDLE_STMT, stmt2, "SQLFetch");
+
+		printf("%d %s %g %04d:%02d:%02d %02d-%02d-%02d\n",
+		       f1, f2, f3, f4.year, f4.month, f4.day,
+		       f5.hour, f5.minute, f5.second);
 	}
 
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle");
+
+	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt2);
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLFreeHandle");
 
 	ret = SQLDisconnect(dbc);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLDisconnect");
