@@ -1,0 +1,68 @@
+@t Atom administration
+@a M.L. Kersten
+@* Introduction
+The Monet Assembler Language recognizes the definition of a new
+atom type by replacing the MODULE keyword with ATOM MODULE.
+Atoms definitions require special care, because their definition and 
+properties should be communicated with the GDK kernel library.
+The commands defined in an ATOM MODULE block are screened as of interest 
+to the gdk_atom library. This involves both a check on the function name and
+the type signature required. 
+All commands are entered in the symbol table structure and thereby
+become accessible for programming.
+
+@h
+#ifndef _MAL_ATOM_H
+#define _MAL_ATOM_H
+
+#include "mal_instruction.h"
+extern void malAtomDef(str name);
+
+#endif /*  _MAL_ATOM_H*/
+@+
+@c
+#include "mal_atom.h"
+
+int isAtomCandidate(str name){
+	switch(name[0]){
+	case 'a': if( strcmp("align",name)==0) return 1;
+	case 'd': if( strcmp("del",name)==0) return 1;
+	case 'c': if( strcmp("cmp",name)==0) return 1;
+		  if( strcmp("convert",name)==0) return 1;
+	case 'f': if( strcmp("fromstr",name)==0) return 1;
+		  if( strcmp("fix",name)==0) return 1;
+	case 'h': if( strcmp("heap",name)==0) return 1;
+		  if( strcmp("heapconvert",name)==0) return 1;
+		  if( strcmp("hash",name)==0) return 1;
+	case 'l': if( strcmp("length",name)==0) return 1;
+		  if( strcmp("linear",name)==0) return 1;
+	case 'n': if( strcmp("null",name)==0) return 1;
+	case 'p': if( strcmp("put",name)==0) return 1;
+	case 's': if( strcmp("size",name)==0) return 1;
+		  if( strcmp("storage",name)==0) return 1;
+	case 't': if( strcmp("tostr",name)==0) return 1;
+	case 'u': if( strcmp("unfix",name)==0) return 1;
+	}
+	return 0;
+}
+@-
+Atoms are constructed incrementally in the kernel using the
+ATOMproperty function.
+The most tedisous work is to check the signature types of the functions
+acceptable for the kernel.
+@c
+
+void malAtomDef(str name){
+	if( ATOMindex(name)>=0){
+		char buf[1024];
+		sprintf(buf,"ERROR: Redefinition of atom '%s'\n", name);
+		GDKerror(buf);
+		return;
+	}
+	printf("introduce a new atom type '%s' in the kernel\n",name);
+	/* ATOMproperty(name,GDKstrdup(""),0); */
+}
+void defAtomCommand(InstrPtr p){
+	printf("atom candidate '%s' ?\n", p->fcnname,
+		(isAtomCandidate(p->fcnname)?"yes":"no"));
+}

@@ -1,0 +1,576 @@
+@t MAL Interpretation
+@a M. Kersten
+@v 0.0
+@+ MAL interpretation
+The MAL interpreter always works in the context of a single user session,
+which provides for storage access to global variables and modules.
+
+Runtime storage for variables are allocated on the stack of the
+interpreter thread. ( physical stack is often limited in size)
+This calls for safeguarding their value and garbage collection before returning.
+A malicious procedure or implementation will lead to memory leakage.
+
+A system command (linked C-routine) may be interested in extending the
+stack. This is precluded, because it would interfere with the recursive
+calling sequence of procedures. To accommodate the (rare) case, the routine
+should issue an exception to be handled by the interpreter before retrying.
+All other errors are turned into an exception, followed by continuing
+at the exception handling block of the MAL procedure.
+
+@h
+#ifndef _MAL_INTERPRET_H
+#define _MAL_INTERPRET_H
+
+#include "mal_instruction.h"
+#include "mal_stack.h"
+#include "mal_function.h"
+#include "mal_debugger.h"
+
+/*#define DEBUG_MAL_INTERPRETER */
+extern str runMAL(MalBlkPtr mbcaller, MalStkPtr env, FILE *in, FILE *out, int trace);
+#endif /*  _MAL_INTERPRET_H*/
+@c
+#include "mal_interpreter.h"
+
+str runMAL(MalBlkPtr mbcaller, MalStkPtr env, FILE *in, FILE *out, int trace){
+	MalBlkPtr mb=mbcaller;
+	MalStkPtr stk= NULL;
+	ValPtr retval;
+	InstrPtr pci=0;
+	int exception = -1;
+	str ret=0;
+	char 	cmd='n';	/* debugger command */
+	ptr argv[MAXARG];
+	@:performanceVariables@
+	@:garbageCollectorVariables@
+
+	if( mbcaller->errors){
+		char buf[1024];
+		sprintf(buf,"'%s.%s' contains errors\n",
+			getModName(mb),getFcnName(mb));
+		GDKerror(buf);
+		return raiseException("SyntaxError",buf);
+	}
+	@:safeguardStack@
+	/* allocate space for value stack */
+	newStack(stk,STACKINCR);
+
+@-
+Prepare a new interpreter call. The env stackframe is only set when
+a MAL function is called recursively.
+@c
+	if( env){
+		int k;
+		pci= getInstrPtr(mbcaller,env->pc);
+		mb= pci->blk;
+		if( mb == NULL){
+			GDKerror("runMAL: MAL instruction list not defined\n");
+			return 0;
+		}
+		/* printf("recursive MAL function call %s[%d]\n",
+			pci->fcnname,env->pc); */
+		for(k=0;k<pci->argc;k++){
+			ValPtr lhs,rhs;
+			lhs = &stk->stk[k];
+			if( isVarConstant(mbcaller,pci->argv[k]))
+				rhs = &getVarConstant(mbcaller,pci->argv[k]);
+			else	rhs = &env->stk[pci->argv[k]];
+			VALcopy(lhs,rhs);
+		}
+		stk->up = env;
+		env->down = stk;
+		stk->pc = 0;
+		cmd = env->cmd;
+	} else mb = mbcaller;
+
+	stk->blk= mb;
+	stk->stktop= mb->vtop; /* check for overflow !*/
+	/* run the program */
+MALrestart:
+	stk->pc =0;
+	while(stk->pc < mb->stop ){
+		pci = getInstrPtr(mb,stk->pc);
+		@:exceptionTest@
+
+		if( trace) {
+			if( cmd == 'q') goto MALevalExit;
+			cmd = gdbStep(mb,stk,pci,in,out,cmd);
+			if( cmd == 'r'){
+				exception = -1;
+				continue;
+			}
+		}
+		@:performance@
+		@:MALinterpret@
+	}
+MALevalExit:
+	if( trace && cmd!='q'){
+		gdbPrompt(); printf("End of function reached\n");
+		do{
+			cmd= gdbCommand(mb,stk,0,in,out,cmd);
+			switch(cmd){
+			case 'r':
+				cmd = 'n';
+				fprintf(out,"restart with current stack\n");
+				goto MALrestart;
+			case 'l': case 'L':
+			case 'p': case 'v':
+			case 'h': case 'b':
+			case 'd': 
+				continue;
+			}
+		} while( cmd!='q');
+	}
+	/* garbage collect and return */
+	@:cleanupStack@
+	return ret;
+}
+@+ Safeguarding
+The physical stack for each thread is an operating system parameter.
+We do not want recursive programs crashing the server, so once in
+a while we check whether we are running dangerously low on available
+stack space.
+@= safeguardStack
+    if (THRhighwater()) {
+        GDKerror("interpret: running out of physical stack space!\n");
+        goto MALevalExit;
+    }
+
+@+ The interpreter loop
+The interpreter is geared towards execution a MAL procedure together
+with all its decendant invocations. As such, it provides the 
+MAL abtract machine processor.
+
+The value-stack frame of the surrounding scope is needed to resolve
+binding values.  Getting (putting) a value from (into) a surrounding
+scope should be guarded with the exclusive access lock.
+This situation is encapsulated by a bind() function call, whose parameters
+contain the access mode required.
+
+The formal procedure arguments are assumed to always occupy the first
+elements in the value stack.
+@+ The major switch
+
+@= MALinterpret
+	ret = 0;
+	switch( pci->token){
+	case ASSIGNsymbol:
+		@:assignStmt@ stk->pc++; break;
+	case LEAVEsymbol:
+		@:leaveControl@ break;
+	case REDOsymbol:
+		@:redoControl@ break;
+	case BARRIERsymbol:
+		@:barrierControl@ break;
+	case RLRcall:
+		@:rulecall@ stk->pc++; break;
+	case CMDcall:
+		@:commandcall@ stk->pc++; break;
+	case FCNcall:
+		stk->cmd= cmd;
+		@:functioncall@ stk->pc++; 
+		cmd = stk->cmd;
+		break;
+	case RULERsymbol:
+	case COMMANDsymbol:
+	case FUNCTIONsymbol:
+	case RAISEsymbol:
+	case ENDsymbol:
+		stk->pc++; break;
+	case CATCHsymbol:
+		exception = pci->argv[0]; /* skip it */
+		stk->pc++; break;
+	case RETURNsymbol:
+		if( env != NULL){
+			ValPtr lhs,rhs;
+			rhs = &stk->stk[pci->argv[0]];
+			pci = getInstrPtr(mbcaller,env->pc);
+			lhs = &env->stk[pci->argv[0]];
+			VALcopy(lhs,rhs);
+			@:cleanupStack@
+			if(env) env->cmd = cmd; /* save debugger command */
+			return 0;
+		}
+	case ENDDEFsymbol: 
+		goto MALevalExit;
+	default:
+		GDKerror("ERROR:MALeval:unkown operation type\n");
+		goto MALevalExit;
+	}
+
+@+ Assignment command
+The assignment statement copies values around on the stack frame.
+Pushing constants/initial values onto the stack is a separate operation.
+It takes the constant value discovered at compile time and stored in the
+symbol table and moves it to the stackframe location.
+@= assignStmt
+{	ValPtr lhs, rhs;
+	lhs = &stk->stk[pci->argv[0]];
+	if( lhs->vtype== TYPE_str && !isVarConstant(mb,pci->argv[0]) )
+		@:keepString(lhs->val.pval)@
+	if( isVarConstant(mb,pci->argv[1]))
+		rhs = &getVarConstant(mb,pci->argv[1]);
+	else	rhs = &stk->stk[pci->argv[1]];
+	VALcopy(lhs,rhs);
+	@:releaseString@
+	ret = 0;
+}
+if( pci->barrier == RAISEsymbol){
+	exception= pci->argv[0];
+} else {
+	@:barrierControl@
+}
+
+@+ MAL API
+The linkage between MAL interpreter and compiled C-routines
+is kept as simple as possible.
+Basically we distinguish four kinds of calling conventions:
+CMDcall, FCNcall, THRDcall, and  RLRcall.
+The FCNcall indicates calling a MAL procedure, which leads
+to a recursive call to the interpreter. 
+
+CMDcall initiates calling a linked function, passing pointers 
+to the parameters and result variable, i.e.  f(ptr a0,..., ptr aN)
+The function returns a 1 (GDK_SUCCEED upon success and <=0 to indicate failure.
+Failure leads to raiseing an exception in the interpreter loop,
+by either looking up the relevant exception message in the module
+administration or construction of a standard string.
+Upon successfull return, we update the ValRecord with length indications.
+
+The THRDcall initiates a separate thread of control, which 
+receives requests for execution through a event-pool.
+[details later]
+
+The RLRcall initiates a call which contains the MAL context.
+i.e. f(MalBlkPtr mb, MalStkPtr stk, int argc, int argv[])
+The blk provides access to the code definitions. It is primarilly
+used by routines intended to manipulate the code base itself, such
+as the squeezers. The Mal stack frame pointer provides access
+to the values maintained. The arguments passed are offsets
+into the stack frame rather than pointers to the actual value.
+
+The argument list and their location on the runtime stack frame
+are determined at compile time.
+The first offset in the arg list denotes the location of the return value.
+Although the MAL interpreter should already give a warning when
+a function can not be resolved, this is the latest moment to check
+
+@= preparecall
+	if( pci->fcn == NULL){
+		char buf[1024];
+		sprintf(buf,"ERROR:mal_interpreter address %s.%s unknown\n",
+			pci->modname,pci->fcnname);
+		GDKerror(buf);
+		ret= raiseException("GDKerror",buf);
+		goto MALevalExit;
+	} 
+	@:evalParameters@
+
+@= commandcall
+	@:preparecall@
+	switch(pci->argc){
+	case 0 : ret = (str) (*pci->fcn)(); break;
+	case 1 : ret = (str) (*pci->fcn)(argv[0]); break;
+	case 2 : ret = (str) (*pci->fcn)(argv[0],argv[1]); break;
+	case 3 : ret = (str) (*pci->fcn)(argv[0],argv[1],argv[2]); break;
+	case 4 : ret = (str) (*pci->fcn)(argv[0],argv[1],argv[2],argv[3]); break;
+	case 5 : ret = (str) (*pci->fcn)(argv[0],argv[1],argv[2],argv[3],
+				argv[4]); break;
+	case 6 : ret = (str) (*pci->fcn)(argv[0],argv[1],argv[2],argv[3],
+				argv[4], argv[5]); break;
+	case 7 : ret = (str) (*pci->fcn)(argv[0],argv[1],argv[2],argv[3],
+				argv[4], argv[5],argv[6]); break;
+	default:
+		GDKerror("too many arguments in function call\n");
+		ret = 0;
+	}
+	@:resultParameter@
+
+@= rulecall
+	@:preparecall@
+	ret = (str) (*pci->fcn)(mb,stk,pci->argc,argv);
+
+@-
+MAL function calls are relatively expensive, because they have to assemble
+a new stack frame and do housekeeping, such as garbagecollection of all
+non-returned values.
+
+@= functioncall
+	ret= runMAL(mb,stk,in,out,trace);
+@-
+All dynamically linked routines are called with references to their
+parameter values. They are assembled below by inspecting the argument list.
+For rules and procedures we pass the original
+MIL context and it is up to c-body implementation to access the 
+parameter values and leave the result in a proper place.
+
+BAT parameters require some care. Ideally, a BAT should not be kept
+around long. This would mean that each time we access a BAT it has to be
+pinned in memory and upon leaving the function, it is unpinned.
+This degrades performance significantly. 
+
+The policy implemented here is to make pin/unpin decisions part of
+the bind(namespace,batname,mode) operation.[todo]
+
+@= evalParameters
+{ int k;
+ValPtr v;
+retval=  &stk->stk[pci->argv[0]];
+retval->vtype = mb->var[pci->argv[0]].type;
+for(k=0;k<pci->argc; k++){
+	int j = pci->argv[k];
+	if( isVarConstant(mb,j) )
+		v= &getVarConstant(mb,j);
+	else {
+		v= &stk->stk[j];
+	}
+	switch(ATOMstorage(v->vtype)){
+	case TYPE_void: argv[k]= (ptr) & v->val.ival; break;
+	case TYPE_bit: argv[k]= (ptr) & v->val.bval; break;
+	case TYPE_chr: argv[k]= (ptr) & v->val.cval[0]; break;
+	case TYPE_sht: argv[k]= (ptr) & v->val.shval; break;
+	case TYPE_bat: 
+		if( k==0 && v == &stk->stk[j]) @:keepBAT(v)@
+		argv[k]= (ptr) BATdescriptor(v->val.br.id);
+		break;
+	case TYPE_int: argv[k]= (ptr) & v->val.ival; break;
+	case TYPE_oid: argv[k]= (ptr) & v->val.oval; break;
+	case TYPE_ptr: argv[k]= (ptr) v->val.pval; break;
+	case TYPE_flt: argv[k]= (ptr) & v->val.fval; break;
+	case TYPE_dbl: argv[k]= (ptr) & v->val.dval; break;
+	case TYPE_lng: argv[k]= (ptr) & v->val.lval; break;
+	case TYPE_str: argv[k]= (ptr) v->val.sval; 
+		if( k==0 && v == &stk->stk[j]) @:keepString(argv[k])@
+		break;
+	default:
+		GDKerror("evalParameters:unknown value type\n");
+	}
+} }
+@-
+The type dispatching table can be removed if we determine at compile
+time the address offset within a ValRecord. 
+We leave this optimization for the future, it leads to about 10%
+improvement (100ms for 1M calls).
+@-
+Upon return of the function we may be interested in the result
+and we have to do some housekeeping.
+@= resultParameter
+	@:exceptionHndlr@
+	switch(ATOMstorage(retval->vtype)){
+	case TYPE_bat: 
+		@:releaseBAT@
+		break;
+	case TYPE_str: 
+		if(retval->val.pval == NULL){
+			char buf[1024];
+			sprintf(buf,"%s.%s returns NULL string.\n",
+				pci->modname,pci->fcnname);
+			ret= raiseException("GDKerror",buf);
+			@:exceptionHndlr@
+		} else {
+			retval->len= ATOMlen(TYPE_str,retval->val.pval);
+			@:releaseString@
+		}
+	}
+	@:barrierControl@
+
+@+ Flow of control statements
+Each assignment (function call) may be part of the initialization
+of a barrier- block. In that case we have to test the
+outcome of the operation and possibly skip the block altogether.
+The latter is implemented as a linear scan for the corresponding
+labeled statemtent. This might be optimized later.
+The upper layers have assured that the result variable is of type boolean.
+
+@= barrierControl
+if( pci->barrier==BARRIERsymbol){
+ValPtr v;
+	v= &stk->stk[pci->argv[0]];
+	/* skip to end of barrier */
+	if( v->val.bval== FALSE) @:leaveControl@
+	stk->pc++;
+	break;
+}
+@-
+You can leave a barrier block by searching for the corresponding 'lab'
+by faking an exception.
+
+@= leaveControl
+	exception= pci->argv[0];
+@-
+Each time we enter a barrier block, we could keep its position in the
+interpreter stack frame. It forms the starting point to issue a redo.
+Unfortunately, this does not work in the presence of squeezers, which
+may change the order/block structure. Therefore, we simple have to search
+the beginning.
+
+@= redoControl
+	for( stk->pc--; stk->pc>=0; stk->pc--){
+	InstrPtr p= getInstrPtr(mb,stk->pc);
+	if( p->barrier == BARRIERsymbol && p->argv[0]== pci->argv[0]){
+		break;
+	} }
+	/* semantic validity of redo stmt has been checked already */
+	/* continue re-execution of the barrier statement */
+	continue;
+
+@+ Exception handling
+Calling a built-in or user-defined routine may lead to an error, 
+which in Monet 4.x leads to a message on the user's console,
+cached status message to be dealt with in MAL,
+or as an error status in Mapi.
+[there are about 55 GDKerror calls in gdk, 91 in monet, and 167 in 
+the modules/plain/*.  The number of fatal errors is 26,7, 2, respectively.]
+
+To improve error handling in MAL, we introduce an exception handling
+scheme based on CATCH-END blocks. The CATCH statement identifies a
+(string-valued) variable, which carries the exception message from
+the originally failed routine or RAISE exception assignment.
+During normal processing CATCH-END blocks are simply skipped.
+Upon receiving an exception status from a function call, we set the 
+exception variable and skip to the first associated CATCH-END block associated.
+MAL interpretation then continues until it reaches the end of the block.
+If no exception variable was defined, we should abandon the function
+alltogether searching for a catch block at a higher layer.
+
+@= exceptionTest
+	if( exception >=0){
+		if( pci->barrier== CATCHsymbol && pci->argv[0]==exception)
+			exception = -1; 
+		if( pci->token  == ENDsymbol && pci->argv[0]==exception)
+			exception = -1; 
+		stk->pc++;
+		continue;
+	}
+@-
+Exceptions raised within a linked-in function requires some care.
+First, the called procedure does not know anything about the MAL
+interpreter context. Thus, we need to return all relevant information
+upon leaving the linked library routine.
+
+Second, exceptional cases can be handled deeply in the recursion, where they
+may also be handled, i.e. by issueing an GDKerror message.The upper layers
+merely receive a negative integer value to indicate occurrence of an
+error somewhere in the calling sequence.
+
+We have to look into the GDKerror messages to see if they can be
+recognized.
+
+The policy for the time being realized in the new module structure is
+to require all functions to return a string-pointer. Upon successfull
+call, this string function is NULL. Otherwise it contains an
+encoding of the exceptional state encountered. This message
+starts with the exception identifer, followed by contextual details.
+
+@= exceptionHndlr
+	if( ret != NULL && ret != (str) GDK_SUCCEED){
+		str msg;
+		ValPtr v;
+		int symid;
+		msg= strchr(ret,':');
+		if( msg== NULL){
+			GDKerror("syntax error in exception message");
+			stk->pc++;
+			continue;
+		}
+		*msg= 0;
+		symid = findVariable(mb,ret);
+		if( symid == -1){
+			printf("No catch block for this exception here\n");
+			/* terminate this block */
+			*msg=':';
+			goto MALevalExit;
+		}
+		msg++;
+		v=  &stk->stk[symid];
+		v->vtype = TYPE_str;
+		v->val.pval= GDKstrdup(msg);
+		v->len= strlen(msg);
+		exception = symid;
+		GDKfree(ret);
+		ret = 0;
+	}
+@-
+@+ Garbage collection
+Garbage collection is relatively straightforward, because most values are
+retained on the stackframe of an interpreter call. However, two storage
+type requires and possible user-defined garbage collector definitions
+require attention.
+
+@- String management
+All string values are private to the VALrecord, which means they
+have to freed explicitly before a MAL function returns. 
+Moreover, each time a string-variable is assigned a value, the old one
+should be freed. This can not be done before the function returns, because
+an exception may be raised instead.
+The solution choosen is to set an interpreter variable freeValue, before
+the operator is called. Then upon return we know what to disgard.
+
+@= garbageCollectorVariables
+ptr freeValue = NULL;
+batrec freeBat={ 0,0};
+
+@= keepString
+{	freeValue = @1;
+	/* printf("keep %s\n",(str)freeValue);*/
+}
+@= releaseString
+	/* printf("release string? %s\n",freeValue?"yes":"no");*/
+	if( freeValue != NULL){
+		GDKfree(freeValue);
+		freeValue = NULL;
+	}
+
+@- BAT reference counting
+The second major area to be careful, is management of the BAT reference counts.
+The technique is the same as for bats. We introduce a freeBATindex variable,
+which is set to the BAT to be de-referenced after an assignment.
+Especially, when hard pointers are maintained to BAT descriptors, it may
+happen that the underlying systems re-assigns it to another.
+
+@= keepBAT
+freeBat = @1->val.br;
+if( freeBat.id >0){
+printf("fix the bat\n");
+}
+@-
+
+@= releaseBAT
+if( freeBat.id >0){
+printf("unfix the bat\n");
+}
+@-
+Before we return from the interpreter, we should free all
+dynamically allocated objects and adjust the BAT reference counts.
+@= cleanupStack
+{ 	int k;
+	ValPtr v;
+
+	for(k=0;k<mb->vtop;k++) {
+		v= &stk->stk[getVarOffset(mb,k)];
+		switch(ATOMstorage(v->vtype)){
+		case TYPE_bat:
+			printf("clean out bat\n");
+			break;
+		case TYPE_str:
+			if( v->val.pval){
+				/* printf("clean out string %s\n",
+					 (str)v->val.pval); */
+				GDKfree(v->val.pval);
+			}
+		}
+	}
+}
+	/* to be done */
+@+ Performance section
+This will be dealt with at a later stage.
+@= performanceVariables
+#ifdef PROFILER
+	int oldclk=0,newclk=0;
+#endif
+@= performance
+#ifdef PROFILER
+	pci->count++;
+	pci->ticks += newclk-oldclk;
+	oldclk=newclk;
+#endif

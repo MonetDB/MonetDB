@@ -1,0 +1,807 @@
+@t MAL instruction blocks
+@a M. Kersten
+@v 0.0
+@+ MAL instruction layout
+MAL instruction sequences have a simple format.
+The operation is either an assignment "variable := module.fcn(a1..a32)"
+where the actual function arguments are references to variables on the
+runtime variable stack,
+or a MAL control statement, i.e. RAISE, CATCH, RETURN, BARRIER,
+LEAVE,REDO
+
+A sequence of instructions is represented by a variable, instruction,
+and program stmt block.
+The variable block is the symbol table associated with the 
+instruction sequence.
+Each quintuple contain a reference to the argument name ,
+a reference to a lexical value when it denotes a constant,
+an instruction offset into the procedure where it is first defined,
+its associated Mal type identifier, 
+and the offset into the runtime stack.
+Upon procedure return, the variable block is inspected to find
+objects eligable for garbage collection (e.g. strings).
+
+The instruction block is a large linear integer string overlaid with the
+instruction pattern InstrPattern. This method leads to a large
+allocated block, which can be easily freed, and
+pattern makes it possible to accommodate a variable argument list.
+The argument list starts with a reference to the destination variable. 
+
+An array of byte-offsets into the stream provides for fast
+access to any statement.
+
+Instruction-, variable- and stmt- block together describe the
+static part of a MAL procedure. It carries carry enough information to produce
+a listing and to aid symbolic debugging. Ideally, the listing
+of a MAL program is identical to the non-commented source.
+This costs some space, but will improve readability and permits
+instruction sequences generated internally also to be kept
+around as ascii text for later inclusion.
+
+WARNING. The way we lay out the instructions means that 
+you can prepare only one instruction at a time, because you don't
+know how many arguments may be needed.
+
+A variable binding may become CONSTANT for the duration of its
+life time, or the type can be FROZEN after the first assignment.
+The symbol table structure is defined here, because it is cross-referenced
+from the instruction record.
+@h
+#ifndef _MAL_INSTR_H
+#define _MAL_INSTR_H
+
+#include "mal_type.h"
+
+#define DEBUG_MAL_INSTR
+#define MAXARG 64
+
+typedef struct SYMDEF {
+        struct SYMDEF   *peer;  /* where to look next */
+        struct SYMDEF   *outer; /* outer level in the scope tree */
+        struct SYMDEF   *scope; /* beginning of scope level */
+        str             name;
+        str             help;   /* supportive commentary */
+	str		binding;/* related C-function */
+        int             kind;
+        struct MALBLK   *def;    /* the details */
+        struct SYMDEF   **subscope; /* type dispatcher */
+} *Symbol, SymDefinition;
+
+typedef struct{
+	str     name;	/* argname or lexical value repr */
+	malType	type;	/* internal type signature */
+        bit	isaconstant;	/* value cannot change */
+	int	accessmode;	/* for external scope */
+	short	offset;	/* offset in stack */
+	str	value;	/* initial value -> ValRecord */
+	ValRecord cstvalue;
+} *VarPtr, VarRecord;
+
+typedef struct {
+	short	token;		/* instruction type */
+	short	barrier;	/* Begin-end of block */
+	short	pc;		/* instruction index in current proc */
+	short	gdbinfo;	/* debugger control field */
+@-
+For performance analysis we keep track of the number of calls
+and the total time spent while executing the instruction.
+(See mal_performance.mx)
+@h
+	int	count;
+	int	ticks;		/* micro seconds */
+	GDKfcn	fcn;		/* resolved function address */
+	struct MALBLK *blk;	/* resolved MAL function address */
+@-
+The MAL instruction representation. The strings should be garbage collected
+upon destruction of the definition.
+@h
+	struct SYMDEF  *sym;	/* pointer to enclosing proc symbol */
+	str	modname;	/* module context */
+	str	fcnname;	/* function name */
+	int	argc;
+	int	argv[1];	/* at least one entry */
+} *InstrPtr, InstrRecord;
+
+typedef struct MALBLK{
+	struct SYMDEF  *sym;	/* pointer to enclosing proc symbol */
+	int	  vtop;		/* next free slot */
+	int	  vsize;	/* byte size of arena */
+	VarRecord  *var;	/* Variable table */
+	int	  ctop;		/* next free slot */
+	int	  csize;	/* byte size of arena */
+	char	  *code;	/* Instruction encoding */
+	int	  stop;		/* next free slot */
+	int	  ssize;	/* byte size of arena */
+	int	  *stmt;	/* Instruction location */
+	int	  errors;	/* left over errors */
+} *MalBlkPtr, MalBlkRecord;
+@-
+Allocation of space assumes a rather exotic number of arguments.
+@h
+#define getInstrPtr(M,I)	((InstrPtr)((M)->code + (M)->stmt[I]))
+#define getSignature(S)		getInstrPtr((S)->def,0)
+#define getFcnName(M)	getInstrPtr(M,0)->fcnname
+#define getModName(M)	getInstrPtr(M,0)->modname 
+#define getDestName(M,P)  (M)->var[(P)->argv[0]].name
+#define getDestType(M,P)  (M)->var[(P)->argv[0]].type
+#define getArgName(M,P,I)  (M)->var[(P)->argv[I]].name
+#define getArgType(M,P,I)  (M)->var[(P)->argv[I]].type
+#define getArgDef(M,P,I)  (M)->var[(P)->argv[I]].def
+#define getArgOffset(M,P,I)  (M)->var[(P)->argv[I]].offset
+#define getArgValue(M,P,I)  (M)->var[(P)->argv[I]].value
+#define getPrgSize(M)	(M)->stop
+#define getVarName(M,I)  (M)->var[I].name
+#define getVarType(M,I)  (M)->var[I].type
+#define getVarOffset(M,I)  (M)->var[I].offset
+#define getVarValue(M,I)  (M)->var[I].value
+#define isVarConstant(M,I) ((M)->var[I].isaconstant)
+#define getVarConstant(M,I)  ((M)->var[I].cstvalue)
+#define getVarAccess(M,I) (M)->var[I].accessmode
+#define getRetType(S)	getDestType(((S).def),0)
+
+extern InstrPtr newInstruction(MalBlkPtr mb, int kind);
+extern MalBlkPtr newMalBlk();
+extern MalBlkPtr copyMalBlk(MalBlkPtr);
+extern void freeInstruction(InstrPtr p);
+extern void freeVariable(MalBlkPtr mb, int varid);
+extern int findVariable(MalBlkPtr mb, str name);
+extern malType getType(MalBlkPtr mb, str nme);
+extern int newVariable(MalBlkPtr mb, str name,malType type);
+extern int newTmpVariable(MalBlkPtr mb, malType type);
+extern str newConstant(MalBlkPtr mb, malType type, str val);
+extern int isPolymorphic(MalBlkPtr mb, InstrPtr p, int i);
+extern int chkPolyType(malType p1, malType a1);
+extern int chkPolyTypePair(malType p1, malType a1, malType p2, malType a2);
+extern malType getPolyReturn(MalBlkPtr cmd, InstrPtr pp, 
+			     MalBlkPtr mb, InstrPtr p);
+extern str newTmpName(int i);
+extern MalBlkPtr copyMalBlk(MalBlkPtr old);
+extern void pushInstruction(MalBlkPtr mb, InstrPtr p);
+extern void pushArgument(InstrPtr p, int varid);
+extern void setReturnArgument(InstrPtr p, int varid);
+extern void printInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
+extern void promptInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
+extern void freeMalBlk(MalBlkPtr mb);
+extern str raiseException(str name, str msg);
+extern void setXlisting(int i);
+
+#endif /*  _MAL_INSTR_H*/
+@c
+#include "mal_instruction.h"
+
+
+MalBlkPtr newMalBlk(){
+	MalBlkPtr mb;
+	VarPtr v;
+	char *c;
+	int *n,*o;
+
+	v = (VarPtr)GDKmalloc(sizeof(VarRecord) * MAXARG);
+	if( v== NULL )
+		GDKfatal("newMalBlk:could not get variable storage\n");
+	c = (char *)GDKmalloc(4096);
+	if( c== NULL )
+		GDKfatal("newMalBlk:could not get code storage\n");
+	o = (int *)GDKmalloc(sizeof(int) * MAXARG);
+	if( o== NULL )
+		GDKfatal("newMalBlk:could not get instruction storage\n");
+	n = (int *)GDKmalloc(sizeof(int) * MAXARG);
+	if( n== NULL )
+		GDKfatal("newMalBlk:could not get instruction storage\n");
+	mb = (MalBlkPtr) GDKmalloc(sizeof(MalBlkRecord));
+	if( mb== NULL )
+		GDKfatal("newMalBlk:could not get storage\n");
+
+	mb->var = v; mb->vtop = 0; mb->vsize = MAXARG;
+	mb->code = c; mb->ctop = 0; mb->csize= 4096;
+	mb->stmt = n; mb->stop = 0; mb->ssize = MAXARG;
+	mb->errors = 0;
+	return mb;
+}
+void freeMalBlk(MalBlkPtr mb){
+	int i;
+	for(i=0;i<mb->stop; i++)
+		freeInstruction(getInstrPtr(mb, i));
+	GDKfree(mb->stmt); mb->stop = mb->ssize = 0; mb->stmt= 0;
+	GDKfree(mb->code); mb->ctop = mb->csize = 0; mb->code= 0;
+	GDKfree(mb->var); mb->vtop = mb->vsize = 0; mb->var= 0;
+	mb->errors=0;
+}
+@-
+The routine below should assure that all referenced structures
+are private. The copying is memory conservative.
+@c
+MalBlkPtr copyMalBlk(MalBlkPtr old){
+	MalBlkPtr mb;
+	int i;
+
+	mb = (MalBlkPtr) GDKmalloc(sizeof(MalBlkRecord));
+	if( mb== NULL )
+		GDKfatal("newMalBlk:could not get storage\n");
+	mb->sym= old->sym;
+	mb->var = (VarPtr)GDKmalloc(sizeof(VarRecord) * old->vsize);
+	mb->vtop = old->vtop;
+	mb->vsize = old->vsize;
+	memcpy((char*) mb->var, old->var, sizeof(VarRecord) * old->vsize);
+	if( mb->var== NULL )
+		GDKfatal("newMalBlk:could not get variable storage\n");
+	for(i=0;i<mb->vtop;i++){
+		if( mb->var[i].name)
+			mb->var[i].name = GDKstrdup(mb->var[i].name);
+		if( mb->var[i].value)
+			mb->var[i].value = GDKstrdup(mb->var[i].value);
+	}
+
+	mb->code = (char *)GDKmalloc( mb->csize = old->csize);
+	mb->ctop = old->ctop;
+	memcpy((char*) mb->code, old->code, old->csize);
+	if( mb->code== NULL )
+		GDKfatal("newMalBlk:could not get code storage\n");
+
+	mb->stmt = (int *)GDKmalloc(sizeof(int) * old->ssize);
+	mb->stop = old->stop;
+	mb->ssize = old->ssize;
+	memcpy((char*) mb->stmt, old->stmt, old->ssize);
+	if( mb->stmt== NULL )
+		GDKfatal("newMalBlk:could not get instruction storage\n");
+
+	for(i=0;i<mb->stop;i++){
+		InstrPtr p= getInstrPtr(mb,i);
+		if( p->modname) p->modname= GDKstrdup(p->modname);
+		if( p->fcnname) p->fcnname= GDKstrdup(p->fcnname);
+	}
+	mb->errors= old->errors;
+	return mb;
+}
+InstrPtr newInstruction(MalBlkPtr mb, int kind){
+	InstrPtr p;
+	int space;
+
+	space = MAXARG * sizeof(int)+ sizeof(InstrRecord);
+	if( mb->csize-mb->ctop <= space){
+		char *newblk= GDKmalloc(mb->csize + 4096);
+		if( newblk== NULL){
+			mb->errors++;
+			GDKerror("ERROR:newInstruction:no storage left\n");
+			return getInstrPtr(mb,mb->stop-1);
+		}
+		memcpy(newblk,mb->code,mb->ctop);
+		mb->code = newblk;
+		mb->csize += 4096;
+	}
+	p= (InstrPtr) (mb->code+mb->ctop);
+	mb->ctop += sizeof(InstrRecord);
+
+	bzero((str)p, sizeof(InstrRecord));
+	p->sym = mb->sym;
+	p->token = kind;
+	p->barrier= 0;
+	p->modname= NULL;
+	p->fcnname= NULL;
+	p->argc= 1;
+	p->argv[0] = -1;
+	p->pc=0;
+	return p;
+}
+
+void freeInstruction(InstrPtr p){
+	if(p->modname) GDKfree(p->modname);
+	if(p->fcnname) GDKfree(p->fcnname);
+	p->modname= NULL;
+	p->fcnname= NULL;
+}
+
+str raiseException(str name, str msg){
+        char buf[1024];
+        if( strlen(name)+strlen(msg)+2 <1024)
+                sprintf(buf,"%s:%s",name,msg);
+        else    sprintf(buf,"%s:...",name);
+        return GDKstrdup(buf);
+}
+
+@-
+Beware that the first signature slot is reserved for the function
+return type , which should be equal to the destination variable type.
+
+VarRecords are allocated on the variable stack.
+Their index is returned for future reference.
+@c
+str newTmpName(int i){
+	char buf[128];
+	sprintf(buf,"$%d",i);
+	return GDKstrdup(buf);
+}
+int findVariable(MalBlkPtr mb, str name){
+	int i;
+	for(i= mb->vtop-1;i>=0;i--)
+	if( strcmp(name, getVarName(mb,i))==0)
+		return i;
+	return -1;
+}
+malType getType(MalBlkPtr mb, str nme){
+	int i;
+	i= findVariable(mb,nme);
+	if( i< 0) return getTypeIndex(nme);
+	if( i>=0) return getVarType(mb,i);
+	return malVarType;
+}
+@-
+All variables are implicitly declared upon their first
+assignment. Their type is then derived from the function return value.
+Lexical constants require some care. They typically appear as arguments
+in operator/function calls. To simplify program analysis later on,
+we stick to the situation that function/operator arguments are always
+references to variables. 
+@c
+int newVariable(MalBlkPtr mb, str name, malType type){
+        int n;
+        
+	if( mb->vtop+1 >= mb->vsize){
+		VarRecord *new;
+		int s= mb->vtop + MAXARG;
+		new= (VarPtr) GDKmalloc(s*sizeof(VarRecord));
+		if( new== NULL ){
+			mb->errors++;
+			GDKerror("ERROR:newMalBlk:no storage left\n");
+			return mb->vtop;
+		}
+		memcpy(new,mb->var, sizeof(VarRecord)*mb->vtop);
+		GDKfree(mb->var);
+		mb->vsize= s;
+	}
+	n= findVariable(mb,name);
+	if( n>=0){
+		if( getVarType(mb,n) != malAnyType &&
+		    getVarType(mb,n) != type){
+			char buf[1024];
+			sprintf(buf,"ERROR:'%s' variable type mismatch\n",name);
+			GDKerror(buf);
+		}
+		return n;
+	}
+	n = mb->vtop;
+	getVarName(mb,n) = name;
+	getVarType(mb,n) = type;
+	getVarOffset(mb,n) = n;
+	getVarValue(mb,n)= NULL;
+	isVarConstant(mb,n) = 0;
+	getVarAccess(mb,n) = 0;
+	mb->vtop++;
+	return n;
+} 
+int newTmpVariable(MalBlkPtr mb, malType type){
+	str name = newTmpName(mb->vtop);
+	return newVariable(mb,name,type);
+}
+void freeVariable(MalBlkPtr mb, int varid){
+	VarRecord v;
+	v= mb->var[varid];
+	if( v.name) GDKfree(v.name); v.name = 0;
+	if( v.value) GDKfree(v.value); v.value= 0;
+}
+@-
+A first optimization is applied by looking around for
+a similar (constant) definition. Then the name is simply re-used.
+This method helps in reading back the output produced by
+mal_instruction.printInstruction
+
+Beware that the string representation does not elicit the precise
+basic type. In particular, integer constants appear in  several
+kinds. The most precise one should be defined to make type
+analysis work properly.
+
+The final step is to prepare a GDK value record, from which
+the internal representation can be obtained during
+MAL interpretation.
+@c
+str newConstant(MalBlkPtr mb, malType type, str val){
+	int i,k;
+	str s;
+	ValPtr vr;
+	char buf[1024];
+
+	for(i= mb->vtop-1; i>=0;i--){
+		VarPtr v= mb->var+i;
+		if( v->value &&
+		    v->type == type &&
+		    strcmp(v->value,val)==0 
+		  ) {
+			GDKfree(val);
+			return GDKstrdup(v->name);
+		 }
+	}
+	k= newVariable(mb, s=newTmpName(mb->vtop), type);
+	getVarValue(mb,k)= val;
+	isVarConstant(mb,k) = 1;
+	getVarAccess(mb,k) = 0;
+	vr = &getVarConstant(mb,k);
+@-
+The current GDK layer does not perform a value range check.
+Since constants are dealt with only once, it is performed here
+as part of the parsing overhead.
+@c
+	switch( type){
+	case TYPE_void: VALset(vr,TYPE_void,ATOMnilptr(TYPE_void));break;
+	case TYPE_bit: { int x;
+			 /* parser guarantees true/false conversion */
+			 x= val[0]=='t' || val[0]=='T';
+			 vr->vtype= TYPE_bit;
+			 vr->val.bval= x;
+			 break;
+			}
+	case TYPE_chr: 
+			vr->vtype= TYPE_chr;
+			vr->val.cval[0]= val[1];
+			vr->val.cval[1]= 0;
+			vr->val.cval[2]= 0;
+			vr->val.cval[3]= 0;
+			break;
+	case TYPE_sht: {long l= strtol(val,NULL,0);
+			if( l>256 || l<0) {
+				sprintf(buf,"newConstant:sht conversion error\n");
+				GDKerror(buf);
+				vr->vtype= TYPE_sht;
+				vr->val.shval= *(sht *) ATOMnil(TYPE_sht);
+			} else {
+				vr->vtype= TYPE_sht;
+				vr->val.shval= l;
+			}
+			break; }
+	case TYPE_int: {long l= strtol(val,NULL,0);
+			if( l>= (2<<16) || l <= (-1<<16)){
+				sprintf(buf,"newConstant:int conversion error\n");
+				GDKerror(buf);
+				vr->vtype= TYPE_int;
+				vr->val.ival= *(int*) ATOMnil(TYPE_int);
+			} else {
+				vr->vtype= TYPE_int;
+				vr->val.ival= l;
+			}
+			break;}
+	case TYPE_oid: {long l= strtol(val,NULL,0);
+			/* parser guarantees syntax correctness */
+			vr->vtype= TYPE_oid;
+			vr->val.oval= l;
+			break; }
+	case TYPE_flt: {double d= strtod(val,NULL); 
+			/* parser guarantees syntax correctness */
+			vr->vtype= TYPE_flt;
+			vr->val.fval= d;
+			break; }
+	case TYPE_dbl: {double d= strtod(val,NULL);
+			/* parser guarantees syntax correctness */
+			vr->vtype= TYPE_dbl;
+			vr->val.dval= d;
+			break;}
+	case TYPE_lng: {long l= strtol(val,NULL,0);
+			/* parser guarantees syntax correctness */
+			vr->vtype= TYPE_lng;
+			vr->val.lval= l;
+			break; }
+	case TYPE_str: 
+			vr->vtype= TYPE_str;
+			vr->val.sval= (str) val;
+			vr->len= strlen((str) val);
+			break;
+	default:{ 
+		s= malTypeName(type);
+		sprintf(buf,"newConstant:unknown constant type %s\n", s);
+		GDKerror(buf);
+		GDKfree(s);
+		}
+	}
+	return GDKstrdup(s);
+}
+@- Type analysis
+MAL provides for type variables of the form any::N. This feature
+supports polymorphic types, but also complicates the subsequent
+analysis.
+@c
+int isPolymorphic(MalBlkPtr mb, InstrPtr p, int i){
+	malType t= getArgType(mb,p,i);
+	if( isAnyExpression(t)) return 1;
+	if( t== malAnyType) return 1;
+	return 0;
+}
+@- 
+The polymorphic type p1 should be compatible with the
+acutal type a1. Errors are flagged as non-zero values;
+@c
+int chkPolyType(malType p1, malType a1){
+	if( getTailType(p1)!= malAnyType && 
+	    getTailType(p1)!= getTailType(a1))
+		return -1;
+
+	if( isBatType(p1)){
+		if( !isBatType(a1) ) return -1;
+		if( getHeadType(p1)!= malAnyType && 
+		    getHeadType(p1)!= getHeadType(a1))
+			return -1;
+	} 
+	return 0;
+}
+@- 
+The polymorphic type p1 and its actual realization a1 should not
+contradict the information of p2 with a2;
+@c
+int chkPolyTypePair(malType p1, malType a1, malType p2, malType a2){
+	int h1,t1, h2, t2;
+	malType htype1, ttype1, htype2, ttype2;
+
+	if( chkPolyType(p1,a1) || chkPolyType(p2,a2)) return -1;
+	if( p1==p2 && a1==a2) return 0;
+	t1= getTailIndex(p1);
+	ttype1= getTailType(a1);
+	h1= getHeadIndex(p1);
+	htype1= getHeadType(a1);
+
+	t2= getTailIndex(p2);
+	ttype2= getTailType(a2);
+	if( t1 == t2 && ttype1 != ttype2) return -1;
+	if( isBatType(p1) && h1==t2 && htype1!=ttype2) return -1;
+
+	if( isBatType(p2)){
+		h2= getHeadIndex(p2);
+		htype2= getHeadType(p2);
+		if(h2 == h1 && htype2 != htype1) return -1;
+		if(h2 == t1 && htype2 != ttype1) return -1;
+	}
+	return 0;
+}
+@-
+For a polymorphic commands we do not generate a cloned version.
+It suffices to determine the actual return value taking into
+account the type variable constraints.
+@c
+malType getPolyReturn(MalBlkPtr cmd, InstrPtr pp, MalBlkPtr mb, InstrPtr p){
+	int hi,ti,i;
+	int head= malAnyType, tail = malAnyType;
+	malType t= getArgType(cmd,pp,0), t2;
+
+	if( !isPolymorphic(cmd,pp,0)) return t;
+	hi = getHeadIndex(t);
+	ti = getTailIndex(t);
+	for(i=1;i<pp->argc;i++){
+		t2= getArgType(cmd,pp,i);
+		if( t2 == t) return getArgType(mb,p,i);
+		if( isBatType(t2) ){
+			if( ti == getHeadIndex(t2)) 
+				tail = getArgType(mb,p,i); 
+			if( hi == getHeadIndex(t2)) 
+				head = getArgType(mb,p,i);
+		} 
+		if( ti == getTailIndex(t2)) 
+			tail = getArgType(mb,p,i); 
+		if( hi == getTailIndex(t2)) 
+			head = getArgType(mb,p,i);
+	}
+	if( isBatType(t))
+		return newBatType(head,tail);
+	return malAnyType;
+}
+@- Argument handling
+The number of arguments for procedures is currently limited
+@c
+void pushArgument(InstrPtr p, int varid){
+	MalBlkPtr m= p->sym->def;
+        int n;
+        
+        n = p->argc;
+        if( n == MAXARG-2){
+		m->errors++;
+                GDKerror("too many arguments\n");
+		p->argc--;
+        } 
+	p->argc++;
+	p->argv[n] = varid;
+	p->argv[p->argc] = -1;
+	m->ctop += sizeof(int);
+} 
+void setReturnArgument(InstrPtr p, int varid){
+	p->argv[0]= varid;
+}
+
+void pushInstruction(MalBlkPtr mb, InstrPtr p){
+	int i;
+
+	i= mb->stop;
+	if( i+1 >= mb->ssize){
+		int *newblk= (int *) GDKmalloc( (mb->ssize + MAXARG)*sizeof(int));
+		if( newblk== NULL){
+			mb->errors++;
+			GDKerror("ERROR:pushInstruction:no storage left\n");
+			return;
+		}
+		memcpy(newblk,mb->stmt,mb->stop*sizeof(int));
+		mb->ssize += MAXARG;
+		GDKfree(mb->stmt);
+		mb->stmt = newblk;
+	}
+	p->pc= i;
+	mb->stmt[i]= ((char *) p)-((char*)mb->code);
+	mb->stop++;
+	(void) resolveTypes(p);
+}
+@-
+The internal representation should be such that it becomes
+easy to re-produce the original textual input, possibly annotated with
+system debugging information in additional commentary blocks.
+
+The hiddenInstruction operator assumes a sufficiently large block
+to leave information on the signature behind.
+@c
+#define advance(X)  while(*(X))(X)++;
+
+static int xlisting;
+void setXlisting(int i){ xlisting=i;}
+
+str hiddenInstructionArgs(MalBlkPtr mb,InstrPtr p,str s){
+	int i;
+	
+	sprintf(s,"\t#%d:",p->pc);
+	advance(s);
+	for(i=0;i<p->argc;i++)
+	if( p->argv[i] >=0){
+		str tpe= malTypeName(getArgType(mb,p,i));
+		advance(s);
+		sprintf(s,"(%s:%s->%d)", 
+			(getArgName(mb,p,i)?getArgName(mb,p,i):"nil"),
+			tpe, getArgOffset(mb,p,i));
+		GDKfree(tpe);
+	}
+	advance(s);
+	return s;
+}
+str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
+	int i;
+	str t,tpe;
+
+	t=s;
+	if( p->token== FUNCTIONsymbol)
+		sprintf(t,"FUNCTION "); 
+	else if( p->token == COMMANDsymbol)
+	 	sprintf(t,"COMMAND ");
+	else sprintf(t,"RULER ");
+
+	advance(t);
+	if( p->modname) sprintf(t,"%s.",p->modname);
+	advance(t);
+	sprintf(t,"%s(",p->fcnname);
+	for(i=1;i<p->argc;i++){
+		tpe= malTypeName(getArgType(mb,p,i));
+		advance(t);
+		sprintf(t,"%s:%s",getArgName(mb,p,i),tpe);
+		advance(t);
+		if( i<p->argc-1) sprintf(t,",");
+		GDKfree(tpe);
+	}
+	advance(t);
+	tpe= malTypeName(getArgType(mb,p,0));
+	sprintf(t,"):%s",tpe);
+	GDKfree(tpe);
+	advance(t);
+	if(mb->sym->binding)
+		sprintf(t," = %s;",mb->sym->binding);
+	else	sprintf(t,";");
+#ifdef DEBUG_MAL_INSTR
+	if( xlisting){
+		advance(t);
+		hiddenInstructionArgs(mb,p,t);
+	}
+#endif
+	advance(t);
+	sprintf(t,"\n");
+	return GDKstrdup(s);
+}
+
+str instruction2str(MalBlkPtr mb,InstrPtr p){
+	int i,len=0;
+	str s,t,nme;
+
+	len = (p->modname?strlen(p->modname):0) +
+	      (p->fcnname?strlen(p->fcnname):0) +
+	      2*8196;
+	s= alloca(len);
+	s[0]=0;
+	t=s;
+	if( getDestName(mb,p) ) nme= getDestName(mb,p); else nme="";
+	advance(t);
+	if( p->barrier){
+		if( p->barrier== BARRIERsymbol)
+			sprintf(t,"BARRIER"); 
+		else if( p->barrier == RAISEsymbol)
+			sprintf(t,"RAISE");
+	}
+	advance(t);
+	switch( p->token){
+		case FCNcall:
+		case RLRcall:
+		case CMDcall:
+		case ASSIGNsymbol:
+			sprintf(t,"\t%s := ",nme); break;
+		case REDOsymbol:
+			sprintf(t,"\tREDO %s ",nme); break;
+		case LEAVEsymbol:
+			sprintf(t,"\tLEAVE %s",nme); break;
+		case RETURNsymbol:
+			sprintf(t,"\tRETURN %s",nme); break;
+		case CATCHsymbol:
+			sprintf(t,"CATCH\t%s",nme); break;
+		case ENDDEFsymbol:
+			switch(getInstrPtr(mb,0)->token){
+			case FUNCTIONsymbol: nme = "FUNCTION"; break;
+			case RULERsymbol: nme = "RULER"; break;
+			default: nme = "unknown";
+			}
+			sprintf(t,"END %s",nme);
+			break;
+		case ENDsymbol:
+			sprintf(t,"END\t%s",nme); break;
+		case RULERsymbol:
+		case COMMANDsymbol:
+		case FUNCTIONsymbol:
+			return fcnDefinition(mb,p,s); break;
+		case BARRIERsymbol:
+		case RAISEsymbol:
+			sprintf(t,"\t%s",nme);
+			break;
+		default:
+			sprintf(t," ?%d? ",p->token); 
+	}
+	advance(t);
+	if( p->modname) sprintf(t,"%s.",p->modname);
+	advance(t);
+	if( p->fcnname) sprintf(t,"%s(",p->fcnname);
+	for(i=1;i<p->argc;i++){
+		advance(t);
+		if( getArgValue(mb,p,i) != NULL){
+			if( getArgType(mb,p,i)== TYPE_str)
+				sprintf(t,"\"%s\"", getArgValue(mb,p,i));
+			else	sprintf(t,"%s", getArgValue(mb,p,i));
+		} else sprintf(t,"%s", getArgName(mb,p,i));
+		advance(t);
+		if( strcmp("bat",getArgName(mb,p,i))==0 ){
+			str d1=malTypeName(getHeadType( getArgType(mb,p,i))),
+			    d2 =malTypeName(getTailType(getArgType(mb,p,i)));
+			sprintf(t,"[%s,%s]",d1,d2);
+			GDKfree(d1); GDKfree(d2);
+			advance(t);
+		}
+		if(i<p->argc-1) sprintf(t,",");
+	}
+	advance(t);
+	if(p->fcnname) sprintf(t,")");
+	advance(t);
+	sprintf(t,";");
+#ifdef DEBUG_MAL_INSTR
+	if( xlisting){
+		advance(t);
+		t= hiddenInstructionArgs(mb,p,t);
+	}
+#endif
+	advance(t);
+	sprintf(t,"\n");
+	if(t-s >len)
+		GDKfatal("instruction2str:");
+	return GDKstrdup(s);
+}
+void promptInstruction(FILE *fd, MalBlkPtr mb, InstrPtr p){
+	str ps;
+	if( fd == 0) GDKfatal("printInstruction:no file\n");
+	ps= instruction2str(mb,p);
+	ps[strlen(ps)-1] = 0; /* remove '\n' */
+	fprintf(fd,"%s",ps);
+	GDKfree(ps);
+}
+void printInstruction(FILE *fd, MalBlkPtr mb, InstrPtr p){
+	promptInstruction(fd,mb,p);
+	fprintf(fd,"\n");
+}
+
+void printSignature(FILE *fd, Symbol s){
+	char txt[1024];
+	InstrPtr p;
+	p= getSignature(s);
+	(void) fcnDefinition(s->def, p,txt);
+	fprintf(fd,"%s",txt);
+}

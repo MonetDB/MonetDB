@@ -1,0 +1,76 @@
+@f mal_stack
+@a M. L. Kersten
+
+@* MAL runtime stack
+The runtime context of a MAL procedure is allocated on the runtime stack
+of the corresponding interpreter.
+Access to the elements in the stack are through index offsets,
+determined during MAL procedure parsing.
+
+Unlike Monet Version 4, the scope administration for MAL procedures is
+decoupled from their actual runtime behavior. This means we are
+more relaxed on space allocation, because the size is determined
+by the number of MAL procedure definitions instead of the runtime
+calling behavior. (See mal_interpreter for details on value stack
+management)
+
+The variable names and types are kept in the stack to ease debugging.
+The underlying string value need not be garbage collected.
+@h
+#ifndef _MAL_STACK_H_
+#define _MAL_STACK_H_
+#include "mal_type.h"
+#include "mal_instruction.h"
+
+typedef struct MALSTK {
+	int	pc;		/* current instruction */
+	int 	stksize;
+	int	stktop;
+	char	cmd;		/* debugger communication */
+	struct MALSTK *up;	/* stack trace list */
+	struct MALSTK *down;	/* stack trace list */
+	struct MALBLK *blk;	/* associated definition */
+	ValRecord stk[0];
+}MalStack, *MalStkPtr;
+
+#define STACKINCR	512
+#define stackSize(CNT) (sizeof(ValRecord)*(CNT) + sizeof(MalStack))
+#define newStack(S,CNT)	S= (MalStkPtr) alloca(stackSize(CNT));\
+			memset((void *) S, 0, CNT);\
+			(S)->stksize=CNT;
+	
+#define newFrame(S,Ssize,Top,Cnt) S= reallocStack(S,&(Ssize),Top,Cnt)
+
+
+#define VARfreeze(X)	if(X){X->frozen=TRUE;}
+#define VARfixate(X)	if(X){X->constant=TRUE;}
+
+#endif /* _MAL_STACK_H_ */
+@-
+The clearStack operation throws away any space occupied by variables
+Freeing the stack itself is automatic upon return from the interpreter
+context.
+@c
+#include "mal_stack.h"
+
+MalStkPtr reallocStack(MalStkPtr s, int cnt){
+	int k= s->stksize;
+	MalStkPtr old= s; 
+
+	if( s->stksize - s->stktop >cnt ) return s;
+	k = k+ ((cnt/STACKINCR)+1) * STACKINCR;
+	newStack(s, k);
+	memcpy(s, old, stackSize(s->stksize)); 
+	s->stksize = k;
+	GDKfree(old);
+	return s;
+}
+void clearStack(MalStkPtr s){
+	ValPtr v;
+	int i = s->stktop;
+
+	for( v= s->stk; i >=0; i--, v++)
+	if (ATOMextern(v->vtype) && v->val.pval) {
+                GDKfree(v->val.pval);
+        }
+}

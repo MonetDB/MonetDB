@@ -1,0 +1,255 @@
+@t MAL Type resolution
+@a M. Kersten
+@v 0.0
+@+ MAL type resolution
+The code below manages function resolution over MAL instructions. 
+The policy is described in mal_symbol.mx
+@h
+#ifndef _MAL_RESOLVE_H
+#define _MAL_RESOLVE_H
+
+#include "mal_function.h"
+
+/* #define DEBUG_MAL_RESOLVE*/
+extern void resolveTypes(InstrPtr p);
+extern int resolveFunction(Symbol prg);
+
+#endif /*  _MAL_RESOLVE_H*/
+@+ Function call resolution
+Search the first definition of the operator in the visible scopes
+and check the parameter types.
+For a polymorphic MAL procedure we make a fully instantiated clone, but
+only at the service layer. This effectively overloads the MAL procedure.
+It will be prepended to the symbol list as it is more restrictive.
+[think, proc M.p(any::1 a,...) is copied to the service layer as p(any::1 a).
+But this may interfere with any p(...) define below M. Furthermore, how
+to easily recognize a second instantiation of p(...)]
+@c
+#include "mal_resolve.h"
+
+@-
+A function may be characterised by its module, i.e. the location to
+start the search. Ommision of the module name implies searching from
+the service layer upward.
+After fixation of the module starting point, the argument type of
+the first parameter is used to isolate a subscope.
+@c
+malType findFunctionType(Symbol scope, MalBlkPtr mb, InstrPtr p){
+	Symbol s,m;
+	InstrPtr sig;
+	int donetwice=0, i,j,polymorphic, unmatched = 0, s1;
+
+@-
+@-
+Walk your way through the scope levels first to find the module
+related symbols. Within the module find the type scope.
+If we have fixed the scope level, locate the element in its list
+of symbols.
+@c
+	m= s= findScope(scope,p->modname);
+	if( s== NULL) m= s= scope;
+	s= m->subscope[getSubScope(mb,p)];
+redosearch:
+	while(s != NULL){	/* single scope elements */
+	if( strcmp(p->fcnname,s->name ) ){
+		s= s->peer; continue;
+	}
+@-
+Perform a strong type-check on the actual arguments. If it turns
+out to be polymorphic, we have to clone the procedure or module. 
+Provided the actual/formal parameters are compliant throughout
+the function call.
+@c
+	sig = getSignature(s); 
+	if( sig->argc!= p->argc) {s= s->peer; continue;}
+
+	polymorphic = 0;
+	unmatched = 0;
+	for(i=1;i<p->argc;i++){
+		if( isPolymorphic(s->def,sig,i) ){
+			polymorphic++;
+
+			for(j=i+1;j<p->argc;j++)
+			if( isPolymorphic(s->def,sig,j) &&
+			    chkPolyTypePair(
+				   getArgType(s->def,sig,j),
+				   getArgType(mb,p,j),
+				   getArgType(s->def,sig,i),
+				   getArgType(mb,p,i)) ){
+					unmatched++;
+					break;
+			}
+			continue;
+		}
+@-
+It is possible that you may have to coerce the value to another type.
+We assume that coercions are explicit at the MAL
+level. (e.g. var2:= var0:int). This avoids repeated type analysis
+just before you execute a function.
+At a later stage we may automatically insert such coercion requests.
+@c
+		if( getArgType(mb,p,i) != getArgType(s->def,sig,i) ){
+			unmatched= i;
+			break;
+		}
+	}
+	if( unmatched) { s= s->peer; continue; }
+	if( polymorphic){
+		if( s->kind == COMMANDsymbol)
+			s1= getPolyReturn(s->def,sig,mb,p);
+		else {
+			s = cloneFunction(scope, s, mb,p);
+			s1 = getDestType(s->def,getSignature(s));
+		}
+	} else
+		s1= getDestType(s->def,sig);
+#ifdef DEBUG_MAL_RESOLVE
+	printf("found%s definition of %s with type %d\n",
+		(polymorphic?" polymorphic":""),
+		p->fcnname,s1);
+#endif
+@-
+We found the proper function. Copy some properties. In particuler,
+determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall
+@c
+	switch(getSignature(s)->token){
+	case COMMANDsymbol: 
+		p->token = CMDcall; 
+		p->fcn = getSignature(s)->fcn;
+		break;
+	case RULERsymbol: 
+		p->token = RLRcall; 
+		p->fcn = getSignature(s)->fcn;
+		break;
+	case FUNCTIONsymbol: 
+		p->token = FCNcall; 
+		p->blk = s->def;
+		break;
+	default:
+		GDKerror("findFunctionType: unknown type\n");
+		p->token= FCNcall;
+	}
+	getDestType(mb,p)= s1;
+	p->modname= GDKstrdup(m->name);
+	return s1;
+	} /* while */
+@-
+We haven;t found the function. Try the scope attached to its
+first type (provided the module was not explictly given.
+Note that we have to also check the typescope with the polymorphic functions.
+@c
+	if( p->argc>1){
+		if(donetwice==0){
+			s= m->subscope[MAXSCOPE-1];
+			donetwice++;
+			goto redosearch;
+		}
+	}
+	return -3;
+}
+
+void resolveTypes(InstrPtr p){
+	Symbol prg= p->sym;
+	Symbol scope = prg->scope;
+	MalBlkPtr mb= prg->def;
+	int s1, i, errors=0;
+	char buf[256];
+@-
+A function call is only resolved when all the parameters are
+already strongly typed. 
+Polymorphic types require extra checks. In particular, the
+type variables should be bound to the same underlying type.
+@c
+	for(i=1;i<p->argc;i++){
+		if( isPolymorphic(mb,p,i)){
+			mb->errors++;
+			sprintf(buf,"ERROR:%d: type unknown for '%s'\n",
+					p->pc,
+					getArgName(mb,p,i));
+			GDKerror(buf);
+			errors++;
+		}
+	}
+	if(p->token == FUNCTIONsymbol || p->token==COMMANDsymbol) return;
+@-
+Choicepoint. We either enforce that the Mal instructions contain the 
+relevant module or we have to provide for a controlled search through
+the collection of all known operations.
+The current policy is to start at the module level and inspect
+the outer scopes when the symbol is not found. This may lead
+to ambigous behavior though. If a module M imports K for its function K.f()
+then it clashes with L.f() when the initialization script calls for
+import K,L,M. This can be recognized by inspecting the code produced
+
+A function search should inspect all modules unless a specific module
+is given. Preference is given to the lower scopes.
+@c
+	if( p->fcnname){
+		s1= findFunctionType(scope,mb,p);
+		if( s1 <0){
+			Symbol m= findScope(scope,p->modname);
+			if(m == scope) m= m->outer;
+			while(s1<0 && m!= NULL){
+				s1= findFunctionType(m,mb,p);
+				m= m->outer;
+			}
+			if(s1>=0) return;
+			mb->errors++;
+			s1= malAnyType;
+		} else return;
+		if( errors==0){
+			sprintf(buf,"ERROR: type error, unknown operator '%s'\n",
+				p->fcnname);
+			GDKerror(buf);
+		}
+		return;
+	}
+@-
+When we arrive here the operator is either an assignment or
+procedure call without arguments and no module name.
+@c
+	if( p->argc==1)
+		s1 = getDestType(mb,p);
+	else
+	if( p->argc==2){
+		s1= getArgType(mb,p,1);
+	} 
+	if( s1== malAnyType && p->argc>1 && errors==0){
+		mb->errors++;
+		sprintf(buf,"ERROR: type error, unknown operator '%s'\n",
+			p->fcnname);
+		GDKerror(buf);
+		s1= malAnyType;
+	}
+	getDestType(mb,p)= s1;
+}
+
+@-
+Function block resolution.
+@c
+int resolveFunction(Symbol prg){
+	MalBlkPtr mb= prg->def;
+	InstrPtr p;
+	int i;
+
+	for(i=0;i<mb->stop;i++) {
+		p= getInstrPtr(mb,i);
+		if(p== NULL) continue;
+		switch(p->token){
+		case ENDsymbol:
+			chkBarrier(mb,p);
+			break;
+		case CATCHsymbol:
+			chkCatch(mb,p);
+			break;
+		case LEAVEsymbol:
+		case REDOsymbol:
+			chkLabel(mb,p);
+		}
+		if( p->barrier == BARRIERsymbol)
+			chkBarrier(mb,p);
+		if( p->barrier == RAISEsymbol)
+			chkRaise(mb,p);
+	}
+	return 0;
+}

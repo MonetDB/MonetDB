@@ -1,0 +1,82 @@
+@t MAL import
+@a M. Kersten
+@v 0.0
+@+ MAL import
+The import statement simple switches the parser to a new input file, which
+takes precedence. The context for which the file should be interpreted
+is determined by the module name supplied.
+Typically this involves a module, whose definitions are stored at 
+a known location.
+@h
+#ifndef _MAL_IMPORT_H
+#define _MAL_IMPORT_H
+
+#include "mal_symbol.h"
+
+extern Symbol malImport(Symbol cntxt, str nme, str fname,int listing);
+#endif /*  _MAL_IMPORT_H*/
+@-
+The import context is located. If it already exists, we should silently skip
+parsing the file. This is handled at the parser level.
+The files are extracted from a default location,
+namely the DBHOME/modules directory.
+
+If the string starts with '/' or '~' the context is not changed.
+
+Every IMPORT statement denotes a possible dynamic load library.
+Make sure it is loaded as well.
+@c
+#include "mal_import.h"
+
+Symbol malImport(Symbol cntxt, str nme, str fname,int listing){
+	FILE *fd;
+	long i,len;
+	char *buf;
+	Symbol	prg;
+	char path[PATHLENGTH];
+
+	if ((fd = fopen(fname, "r")) == 0) {
+
+            if (fname[0] == '/') {
+                strcpy(path, fname);
+                fd = fopen(path, "r");
+            } else {
+                sprintf(path, "modules/%s", fname);
+                fd = fopen(path, "r");
+		if( fd==NULL){
+			sprintf(path,"modules/%s.mal",fname);
+                	fd = fopen(path, "r");
+		}
+            }
+        }
+        if (fd == 0) {
+                GDKerror("ERROR:malImport: could not open file: %s\n", fname);
+                return 0;
+        }
+        (void) fseek(fd,0L,SEEK_END);
+        i = 0; len = ftell(fd)+2;
+        (void) fseek(fd,0L,0);
+        buf = (char *) GDKmalloc(len);
+        if( buf == 0){
+                sprintf(buf,"ERROR:unable to allocate %ld bytes\n",len);
+		GDKerror(buf);
+                return 0;
+        }
+
+        i=fread(buf, 1, len, fd);
+        if( i != len-2) {
+                GDKerror("ERROR:not enough bytes read \n");
+        }
+        fclose(fd);
+        buf[i] = 0;
+@-
+Load any associated module first, because this sets the context for
+resolving addresses. 
+@c
+	(void) loadModuleLibrary(NULL,fname);
+
+	prg= mal_parse(cntxt,buf,listing);
+	/* execute main procedure of module */
+	return prg;
+}
+

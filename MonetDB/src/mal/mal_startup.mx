@@ -1,0 +1,77 @@
+@t MAL startup
+@a M. Kersten
+@v 0.0
+@+ MAL startup
+Startup of the Monet engine consists of two a few. First, the
+system kernel libraries are loaded.
+The global symbol table is initialized with pre-compiled routines.
+Second, for each service thread we execute a script with predefined
+MAL procedures.
+
+The information for the first phase consists of commands 
+signatures bound to actual routine implementations.
+The corresponding libraries may be statically linked or dynamically loaded.
+Failure to find the startup-files terminates to session, because
+there is no way to activate a linked procedure.
+
+After this initialization phase, the system prohibits dynamic loading of
+C- modules by casual users. For the time being we even forbid it,
+it should be part of the system startup.
+The rational behind this design decision is that the free load/drop
+feature of Monet V4 was hardly used and severely complicates the code.
+In particular, upon each access to the global symbol table we have to be
+prepaired that concurrent threads my be actively changing its structure.
+Especially, dropping modules may cause sever problems by not being
+able to detect references kept around.
+This danger required all accesses to global information to be packaged
+in a critical section, which was known to be a performance hindrence.
+
+The current implementation provides each service thread with a privately
+owned scope level. It is used to store MAL scripts including those
+attached to the core modules.
+
+The global scope and private scopes are separated by an a priori known
+scope name "MAL_scope". 
+
+The new MEL compiler should emit two files for each module, named
+<module>.global.mal and <module>.mal. The former only contains the signatures
+of commands and their help information. It is included in the core
+and shared amongst all users.
+The latter file contains initialization code to be run for each
+service thread separately. It includes all MAL procedures, because they
+may be optimized differently depending on the context of execution.
+@h
+#ifndef _MAL_STARTUP_H
+#define _MAL_STARTUP_H
+
+#include "mal_symbol.h"
+#include "mal_import.h"
+
+#define SRVINIT "startup.mal"
+
+extern Symbol malStartupGlobal(str dbname, int listing);
+extern Symbol malStartupService(Symbol cntxt);
+#endif /*  _MAL_STARTUP_H*/
+@-
+The startup script for databases recides in the administrator's
+directory of each database. Upon need, it can be overruled at system
+restart with a command argument.
+If initialization of the server is successful, then the MAL_scope symbol
+position is being returned.
+
+@c
+#include "mal_startup.h"
+
+Symbol malStartupGlobal(str dbname,int listing){
+	Symbol scope;
+	
+	/* if( initLibraries(dbname) == 0) return NULL;*/
+	scope = initScope();
+	if( malImport(scope,"MAL",SRVINIT,0) == NULL){
+		return NULL;
+	}
+	MAL_scope = scope;
+	scope= newScope(scope,GDKstrdup("Service"));
+
+	return scope;
+}

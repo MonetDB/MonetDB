@@ -1,0 +1,420 @@
+@t MAL functions
+@a M. Kersten
+@v 0.0
+@+ MAL functions
+Mal instructions are represented by MAL instruction lists.
+The first instruction contains the signature in the form of
+the function call information.
+
+The representation of the MAL functions is rather traditional,
+using C-structure to collect the necessary information.
+Moreover, we assume that MAL functions are relatively small, up to
+a few hundred of instructions. This assumption makes us to rely on
+linear scans as it comes to locating information of interest.
+
+The information maintained for each MAL function should both
+be geared towards fast execution and to ease symbolic debugging.
+
+All other variables are initialized upon first assignment.
+Ignoring flow of control instructions, each variable should be
+initialized before its use.
+Beware that the function signatures contain variable declarations
+in the form of arguments. They are initialized on the runtime stack
+upon function call.
+@h
+#ifndef _MAL_FCN_H
+#define _MAL_FCN_H
+
+#include "mal_symbol.h"
+
+/* #define DEBUG_MAL_FCN */
+
+extern Symbol	newFunction(Symbol scope, str nme);
+extern InstrPtr newFcnCall(MalBlkPtr m, str modname, str fcnname);
+extern InstrPtr newCmdCall(MalBlkPtr m, str modname, str fcnname);
+extern InstrPtr newRulerCall(MalBlkPtr m, str modname, str fcnname);
+extern void 	pushArgumentId(InstrPtr p,str name);
+extern void	chkBarrier(MalBlkPtr mb, InstrPtr pp);
+extern void	chkRaise(MalBlkPtr mb, InstrPtr pp);
+extern void	chkCatch(MalBlkPtr mb, InstrPtr pp);
+extern void 	chkLabel(MalBlkPtr mb, InstrPtr p);
+extern Symbol 	cloneFunction(Symbol scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
+extern void	safeFunction(Symbol proc);
+extern void	restoreFunction(Symbol proc);
+extern malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p);
+extern str 	reverseOperator(Symbol scope, MalBlkPtr mb,str nme);
+extern void 	printFunction(FILE *fd, MalBlkPtr mb);
+
+
+#endif /*  _MAL_FCN_H*/
+@-
+The MAL functions are constructed while parsing the source.
+@c
+#include "mal_function.h"
+#define MAXINSTR 200
+
+Symbol newFunction(Symbol scope, str nme){
+	Symbol s;
+	InstrPtr c;
+	MalBlkPtr mb;
+
+	s = newSymbolDefinition(nme,FUNCTIONsymbol);
+	s->scope = scope;
+	s->def->sym = s;
+	c = newInstruction(s->def, FUNCTIONsymbol);
+	c->fcnname = GDKstrdup(nme);
+	c->argv[0]= newVariable(s->def,GDKstrdup(nme),malAnyType);
+	/* there is always room at the beginning */
+	mb= s->def;
+	c->pc= mb->stop;
+	mb->stmt[c->pc] = ((char *) c)-((char*)mb->code);
+        mb->stop++;
+	return s;
+}
+InstrPtr newCall(MalBlkPtr m, str modname, str fcnname, int kind){
+	InstrPtr p;
+	p= newInstruction(m,kind);
+	p->modname= GDKstrdup(modname);
+	p->fcnname= GDKstrdup(fcnname);
+	return p;
+}
+InstrPtr newCmdCall(MalBlkPtr m, str modname, str fcnname){
+	return newCall(m,modname,fcnname, CMDcall);
+}
+InstrPtr newFcnCall(MalBlkPtr m, str modname, str fcnname){
+	return newCall(m,modname,fcnname, FCNcall);
+}
+InstrPtr newRulerCall(MalBlkPtr m, str modname, str fcnname){
+	return newCall(m,modname,fcnname, RLRcall);
+}
+@-
+Check barrier should ensure that both end-points of a block for the
+variable referenced in 'pp' exists. In addition, we should ensure
+proper weaveing of the begin-end pairs. This can simply be checked by
+counting the begin/end pairs. It should balance for every block.
+Finally, the destination variable type should be of type 'bit'
+@c
+void chkBarrier(MalBlkPtr mb, InstrPtr pp)
+{	int i, v, begBlk = -1, endBlk = -1, cnt;
+	char buf[1024],*lab;
+
+	v = pp->argv[0];
+	lab = getVarName(mb,v);
+	if( v>=0)
+	for(i=0; i<mb->stop;i++){
+	InstrPtr p= getInstrPtr(mb,i);
+	if( (p->barrier == BARRIERsymbol || p->barrier == CATCHsymbol) &&
+	     p->argv[0] == v){
+		if( begBlk != -1){
+		mb->errors++;
+		sprintf(buf,"ERROR:%d: duplicate labeled block '%s'\n",
+			i, lab);
+		GDKerror(buf);
+		p->argv[0]= newTmpVariable(mb, malAnyType);
+		} 
+		begBlk = i;
+	}
+	if( p->token == ENDsymbol && p->argv[0] == v){
+		if( endBlk != -1){
+		mb->errors++;
+		sprintf(buf,"ERROR:%d: duplicate labeled block '%s'\n",
+			i, lab);
+		GDKerror(buf);
+		p->argv[0]= newTmpVariable(mb, malAnyType);
+		}
+		endBlk = i;
+	}
+	}
+	if( getArgType(mb,pp,0) != TYPE_bit && pp->token==BARRIERsymbol){
+		mb->errors++;
+		sprintf(buf,"ERROR: barrier '%s' should be of type bit\n",
+			getVarName(mb,v));
+		GDKerror(buf);
+	}
+	if( endBlk<0 && begBlk>=0){
+		mb->errors++;
+		sprintf(buf,"ERROR: begin-label '%s' without end-label\n", 
+			getVarName(mb,v));
+		GDKerror(buf);
+		return;
+	}
+	if( endBlk>=0 && endBlk<begBlk){
+		mb->errors++;
+		sprintf(buf,"ERROR: end-label '%s' before begin-label\n", 
+			getVarName(mb,v));
+		GDKerror(buf);
+		return;
+	}
+	if( pp->token != ENDsymbol) return;
+	/* balance check */
+	cnt =0;
+/* printf("balance check %d %d",begBlk,endBlk);*/
+	for(i= begBlk; i<=endBlk;i++){
+	InstrPtr p= getInstrPtr(mb,i);
+	if( p->barrier == BARRIERsymbol || p->barrier == CATCHsymbol ) cnt++;
+	if( p->token == ENDsymbol ) cnt--;
+	}
+	if(cnt){
+		mb->errors++;
+		sprintf(buf,"ERROR: BARRIER/CATCH '%s' is not balanced\n",
+			getVarName(mb,v));
+		GDKerror(buf);
+	}
+/* printf(" result %d\n",cnt);*/
+}
+@-
+Exception blocks start with a CATCH statement and end with the
+first occurrence of the corresponding END symbol.
+The exception variable should be of type string
+and introduced in any of the visible modules.
+@c
+void chkCatch(MalBlkPtr mb, InstrPtr pp)
+{	int i, v, begBlk = -1, endBlk = -1;
+	char buf[1024],*lab;
+
+	v = pp->argv[0];
+	lab = getVarName(mb,v);
+	if( v>=0)
+	for(i=0; i<mb->stop;i++){
+	InstrPtr p= getInstrPtr(mb,i);
+	if( pp==p && p->barrier ==CATCHsymbol && p->argv[0] == v){
+		begBlk = i;
+	}
+	if( p->token == ENDsymbol && p->argv[0] == v){
+		if( begBlk == -1){
+		mb->errors++;
+		sprintf(buf,"ERROR:%d: missing start of exception block '%s'\n",
+			i, lab);
+		GDKerror(buf);
+		return;
+		}
+		return;
+	}
+	}
+	if( endBlk<0 && begBlk>=0){
+		mb->errors++;
+		sprintf(buf,"ERROR: CATCH '%s' without end statement\n", 
+			getVarName(mb,v));
+		GDKerror(buf);
+	}
+}
+@-
+A RAISE statement is allowed as long as it does not appear within the
+block in which it is being handled.
+@c
+void chkRaise(MalBlkPtr mb, InstrPtr pp)
+{	int i, v, begBlk = -1;
+	char buf[1024],*lab;
+
+	v = pp->argv[0];
+	lab = getVarName(mb,v);
+	if( v>=0)
+	for(i=0; i<mb->stop;i++){
+		InstrPtr p= getInstrPtr(mb,i);
+		if( p->barrier == CATCHsymbol && p->argv[0] == v){
+			begBlk = i;
+		}
+		if (p==pp && begBlk != -1){
+		sprintf(buf,"ERROR: recursive exception '%s' not allowed\n", 
+			getVarName(mb,v));
+		GDKerror(buf);
+		mb->errors++;
+		}
+		if( p->token == ENDsymbol && p->argv[0] == v){
+			begBlk = -1;
+		}
+	}
+}
+@-
+
+The chkLabel routine assures that redo, leaves and ends are
+properly contained within a single guarded- or iterator- block.
+Thus, upon encountering an error we simply introduce a new variable.
+@c
+void chkLabel(MalBlkPtr mb, InstrPtr pp)
+{	int i,k, begBlk = -1, endBlk = -1;
+	char buf[1024];
+	str lab;
+
+	k= pp->argv[0];
+	lab = getVarName(mb,k);
+	for(i=0; i<mb->stop;i++){
+		InstrPtr p= getInstrPtr(mb,i);
+		if( p->barrier == BARRIERsymbol && p->argv[0]==k){
+			begBlk = i;
+		}
+		if( p->token == ENDsymbol && p->argv[0]==k) endBlk = i; 
+	}
+#ifdef DEBUG_MAL_FCN
+	printf("check %s [%d-%d]\n",lab,begBlk,endBlk);
+#endif
+	if( begBlk>= 0 && endBlk>=0  ){
+		if(pp->pc >=begBlk && pp->pc<=endBlk) return;
+	}
+	mb->errors++;
+	sprintf(buf,"ERROR:%d:label '%s' not in guarded block\n",
+		pp->pc,lab);
+	GDKerror(buf);
+}
+@-
+Store the information of a destination variable in the signature structure of
+each instruction. This code is largely equivalent to pushArgument,
+but it is more efficient in searching and collecting the information.
+[todo]
+@c
+void pushArgumentId(InstrPtr p,str name){
+	MalBlkPtr mb= p->sym->def;
+        int v;
+
+	v= findVariable(mb,name);
+	if( v<0) v= newVariable(mb,name,getTypeIndex(name));
+	pushArgument(p,v);
+}
+@-
+Create an instruction to reverse a bat variable and return its identity.
+@c
+str reverseOperator(Symbol scope, MalBlkPtr mb,str nme){
+	InstrPtr p;
+	malType v;
+	int k;
+
+	v = getType(mb,nme);
+	if( !isBatType(v) ){
+		GDKerror("MALparser:'`' illegal operation\n");
+	}
+#ifdef DEBUG_MAL_FCN
+	{ str d1= malTypeName(newBatType(getHeadType(v),getTailType(v))),
+		d2= malTypeName(newBatType(getTailType(v),getHeadType(v)));
+	printf("reverseOperator %d %s %s\n",v,d1,d2);
+	GDKfree(d1); GDKfree(d2);
+	}
+#endif
+	p = newInstruction(mb,ASSIGNsymbol);
+	p->pc= mb->stop;
+	p->modname = GDKstrdup("bat");
+	p->fcnname = GDKstrdup("reverse");
+	k = newTmpVariable(mb,reverseBatType(v));
+	pushArgument(p,k);
+	pushInstruction(mb,p);
+	return GDKstrdup(getVarName(mb,k));
+}
+@+ Function cloning
+MAL supports functions defined with type variables.
+Each time such a MAL routine is called, a complete copy of
+the polymorphic routine is generated, whereafter the type
+variables are replaced with concrete types.
+
+Commands should not be cloned, because the alternative interpretations
+are handled by the underlying code fragments.
+
+The function body should be immediately type checked and if
+a correct clone can be obtained, returns success by
+returning the symbol with the instantiated function.
+
+Beware that polymorphic type variables should be propagated.
+This may imply propagation of a type to a component type of
+a BAT.
+Replace a particular variable, indexed by v
+@c
+void replaceTypeVar(MalBlkPtr mb, InstrPtr p, malType v, malType t){
+	int i,x;
+	for(i=0;i<p->argc; i++){
+		x = getArgType(mb,p,i);
+		if( isBatType(x)){
+			int head,tail;
+			int hx,tx;
+			head = getHeadType(x);
+			tail = getTailType(x);
+			hx = getHeadIndex(x);
+			tx = getTailIndex(x);
+			if( hx == v && head == malAnyType){
+				hx =0;
+				head =t;
+			}
+			if( tx == v && tail == malAnyType){
+				tx= 0;
+				tail = t;
+			}
+			x= newBatType(head,tail);
+			setAnyHeadIndex(x,hx);
+			setAnyTailIndex(x,tx);
+			getArgType(mb,p,i)=x;
+		} else
+		if( getTailIndex(x) == v){
+			getArgType(mb,p,i) = t;
+		} 
+	}
+}
+
+Symbol 	cloneFunction(Symbol scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
+	Symbol new;
+	int i;
+	InstrPtr pp;
+
+	/* printf("clone the function %s\n",proc->name);*/
+	new= newFunction(scope,proc->name);
+	insertSymbol(scope,new);
+	new->def = copyMalBlk(proc->def);
+	/* now change the definition of the original proc */
+	pp = getSignature(new);
+	for(i=1;i<pp->argc;i++)
+	if( isPolymorphic(new->def,pp,i) ){
+		int t = getArgType(mb,p,i);
+		int v = getArgType(new->def,pp,i);
+
+		if( isBatType(t) ){
+			int head,tail;
+			head = getHeadType(t);
+			tail = getTailType(t);
+			replaceTypeVar(new->def, pp, getHeadIndex(v), head);
+			replaceTypeVar(new->def, pp, getTailIndex(v), tail);
+		} else
+			replaceTypeVar(new->def, pp, getTailIndex(v), t);
+	}
+	/* check polymorphic errors */
+	/* include the function at the proper place in the scope */
+
+	i= getSubScope(mb,p);
+	new->peer = scope->subscope[i];
+	scope->subscope[i] = new;
+#ifdef DEBUG_MAL_FCN
+	printf("newly cloned function added to %s %d \n",scope->name,i);
+	printFunction(stdout,new->def);
+#endif
+	return new;
+}
+@-
+During the lifetime of a MAL function, it may be subject to
+manipulation by squeezer modules. They inspect the code and
+are allowed to enhance it to improve interpretation. Since the
+optimization schemes deployed during a session, or even between
+successive calls of a function, we should forbid changes to
+the symbol table and original instruction sequence.
+The routines below ensure safeguarding  and restoring the state.
+@c
+void	safeFunction(Symbol proc){
+#ifdef DEBUG_MAL_FCN
+	printf("safeFunction %s\n", proc->name);
+#endif
+}
+void	restoreFunction(Symbol proc){
+#ifdef DEBUG_MAL_FCN
+	printf("restoreFunction %s\n", proc->name);
+#endif
+}
+@-
+For commands we do not have to clone the routine. We merely have to
+assure that the type-constraints are obeyed. The resulting type
+is returned.
+@c
+malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p){
+	return malAnyType;
+}
+@- Utilities
+@c
+void printFunction(FILE *fd, MalBlkPtr mb){
+	int i;
+	for(i=0;i<mb->stop;i++)
+	printInstruction(fd,mb, getInstrPtr(mb,i));
+}
+

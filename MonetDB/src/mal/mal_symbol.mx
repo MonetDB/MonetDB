@@ -1,0 +1,303 @@
+@f mal_symbol
+@a M. L. Kersten
+
+@* MAL runtime name space
+
+The MAL name spaces are organized in a hierarchy of module scopes.
+Each module scope itself is organized as a list of subscopes
+characterised by the type of the first argument. Parameterless
+functions are grouped under the module name directly. 
+
+To simplify function call resolution, each scope level is organized 
+as a linked list of symbols. The symbol kind is determined from the
+first instruction, i.e. COMMAND, FUNCTION, or RULER.
+
+A function call mod.fcn(T0 A0, ..) is resolved as follows. We traverse the
+nested scopes towards the root to locate the MODULE symbol named 'mod'.
+From there we search the subscope T0 and try to resolve the procedure.
+If it fails and 'mod' was not given we continue our search in outer
+scopes.
+
+This method provides overloading, which can be enforced from a particular
+level. For example, the user can introduce a module M with the function F,
+but still force resolution within the body of F to start at an outer level.
+(using MAL.F to indicate resolution in shared outerscope).
+The main benefit for overloading is to introduce enhanced versions of
+predefined modules, such as for traceing, accellerator maintenance,...
+
+This implementation scheme limits the number of comparisons to find 
+the relevant collection of function signatures to a handfull.
+For the time being it is not worthwhile to implement a more complex
+scope lookup scheme, for 1) the number of languages,
+2) the number of modules/language, and 3) the routines per module/type
+are limited
+
+The global organization of the namespace consists of a core, language
+and a service
+layer. The core layer contains all pre-compiled and linkable functions.
+The next layer is bound to a particular front-end language, e.g. MIL or SQL
+and contains a scope level for each module imported.
+Such language scopes may be nested, e.g. MAL->MIL->SQL.
+
+The service layer is formed by service specific scopes. It typically
+contains a collection of private MAL-procedures.
+
+The bottom scope level is the service session scope and
+contains a procedure 'main' to be executed by default. 
+Moreover, the symbol table and its binding is retained over successive
+calls to provide for a global variable context.
+
+Unlike Monet V4, a procedure scope is privately assigned to a single service
+thread. Moreover, all dynamically loaded functions remain in existing
+for the duration of the server session. Therefore, we do not have
+to lock the dictionary table while traversing it for information.
+Global (private) variables can be realized keeping the symbol table
+and runtime stack around between requests.
+
+Unlike Monet Version 4, administration for MAL procedures is
+decoupled from their actual runtime behavior. This means we are
+more relaxed on space allocation, because the size is determined
+by the number of MAL procedure definitions instead of the runtime
+calling behavior. (See mal_interpreter for details on value stack
+management)
+
+The name and kind information is replicated from the MAL blocks.
+The name is a shared string and need not be garbage collected here.
+The symbol/instruction kinds are introduced here instead of reusing the defines 
+derived from the parser to avoid a loop in the define-structure.
+The type dispatching table is only required for SCOPYsymbols, a union
+structure would have been better.
+@h
+#ifndef _MAL_NAMESPACE_H_
+#define _MAL_NAMESPACE_H_
+#include "mal_instruction.h"
+
+#define MAXSCOPE 258
+
+extern Symbol mal_scope;	/* the root of the tree */
+extern Symbol MAL_scope;		/* the bottom of the imported scopes */
+
+extern Symbol	initScope();
+extern Symbol 	newScope(Symbol cntxt, str nme);
+extern Symbol	insertSymbol(Symbol cntxt, Symbol prg);
+extern Symbol	findScope(Symbol cntxt, str name);
+extern Symbol	findTypeScope(Symbol cntxt, MalBlkPtr mb, InstrPtr sig);
+extern int	getSubScope(MalBlkPtr mb, InstrPtr sig);
+extern Symbol	fixateScope(Symbol cntxt, str nme);
+extern Symbol 	findSymbol(str mod, str fcn);
+
+extern Symbol 	newSymbolDefinition(str nme, int kind);
+extern Symbol	newSymbol(str nme, int kind, Symbol outer);
+extern void	freeSymbol  (Symbol cur);
+extern void 	freeAllSymbols();
+
+#endif /* _MAL_NAMESPACE_H_ */
+@-
+Upon system restart, the global scope is created. It is called "_root" and
+does not contain any symbol definitions. It merely functions as an anchor
+point for the modules to be added later.
+
+@= newsymbol
+	if( nme == NULL){
+		GDKfatal("@1:unexpected name (=null)\n");
+	}
+        cur = (Symbol) GDKmalloc(sizeof(SymDefinition));
+	if( cur == NULL){
+		GDKfatal("@1: cannot initialize scope\n");
+	}
+	bzero((str)cur,sizeof(SymDefinition));
+	cur->name = nme;
+	cur->kind = kind;
+	cur->outer = NULL;
+	cur->peer = NULL;
+	cur->help = NULL;
+	cur->def = newMalBlk();
+	cur->subscope = NULL; 
+
+@c
+#include "mal_symbol.h"
+
+Symbol mal_scope;	/* the root of the tree */
+Symbol MAL_scope;		/* the bottom of the imported scopes */
+
+void newSubScope(Symbol cntxt){
+	int len = (MAXSCOPE)*sizeof(Symbol);
+	cntxt->subscope = (Symbol *) GDKmalloc(len);
+	bzero((char*)cntxt->subscope, len);
+}
+Symbol	initScope()
+{	Symbol cur;
+	str nme= GDKstrdup("root");
+	int kind= SCOPEsymbol;
+	@:newsymbol(initScope)@
+	newSubScope(cur);
+	mal_scope = cur;
+	return cur;
+}
+@-
+After filling in a structure it is added to the multi-level
+symbol table. Beware that malType values are in the range -2 .. 256.
+The polymorphic types are stored at entry 257 and the parameterless
+functions at 256.
+@c
+int getSubScope(MalBlkPtr mb, InstrPtr sig){
+	int t;
+	if( sig== NULL) return 257;
+	if( sig->argc==1) return 256;
+	if( !isPolymorphic(mb,sig,1) ){ 
+		t = getTailType(getArgType(mb,sig,1));
+		if( t<0 || t>257) GDKerror("illegal type in getSubScope");
+		return (int) t;
+	}
+	return 257;
+}
+Symbol insertSymbol(Symbol cntxt, Symbol prg){
+        InstrPtr sig;
+        int t;
+
+        sig = getSignature(prg);
+        t = getSubScope(prg->def, sig);
+        if( cntxt->subscope == NULL){
+		newSubScope(cntxt);
+                cntxt->subscope[t] = prg;
+        } else {
+                prg->peer= cntxt->subscope[t];
+                cntxt->subscope[t] = prg;
+        }
+        return prg;
+}
+
+@-
+Finding a scope is unrestricted. for modules we explicitly look for
+the start of a new module scope.
+The routine findTypeScope returns the subscope starting point.
+@c
+Symbol findScope(Symbol cntxt, str name){
+	if( cntxt->name==NULL) return NULL;
+	if( name==NULL) return cntxt;
+        while(cntxt != NULL){
+                if( strcmp(name,cntxt->name)== 0 )
+                        break;
+                cntxt= cntxt->outer;
+        }
+        return cntxt;
+}
+@-
+Searching can be speedup using the type identifier rather then the name.
+todo
+@c
+Symbol findTypeScope(Symbol cntxt, MalBlkPtr mb, InstrPtr sig){
+	Symbol cur ;
+
+	if( cntxt->subscope == 0) return NULL;
+	cur= cntxt->subscope[sig->argc>1? getArgType(mb,sig,0): 0];
+        return cur;
+}
+
+@-
+Every module scope is under the control of a single thread.
+However, definition of a new module scope may interfere with concurrent
+actions of multiple threads. This calls for a secure update 
+of the scope tree structure. 
+
+Symbol definitions without an explicit scope are allocated to the root.
+@c
+
+Symbol newSymbolDefinition(str nme, int kind){
+	Symbol cur;
+	@:newsymbol(newSymbolDefinition)@
+	return cur;
+}
+Symbol newScope(Symbol cntxt, str nme){
+	Symbol cur;
+	int kind= SCOPEsymbol;
+	if( cntxt == NULL){
+		GDKfatal("@1:unexpected outer scope (=null)\n");
+	}
+	@:newsymbol(newScope)@
+	newSubScope(cur);
+	if( cntxt != NULL){
+		cur->outer = cntxt->outer;
+		cntxt->outer= cur;
+	}
+	return cur;
+}
+@-
+Reading a module often calls for opening a scope level
+if it didn't exist.
+@c
+Symbol fixateScope(Symbol cntxt, str nme){
+	Symbol cur;
+	/* printf("fixate the scope %s ",nme);*/
+	cur = findScope(cntxt,nme);
+	if( cur!= NULL) { /* printf("found\n"); */ return cur;}
+	/* printf("new module \n");*/
+	return newScope(cntxt, GDKstrdup(nme));
+}
+
+void  printScope(Symbol cntxt, int tab)
+{
+	int i,j;
+	Symbol s=cntxt,t;
+
+	while(s!= NULL){
+		for(i=0;i<tab;i++) printf("    ");
+		printf("%s",s->name);
+		if( s->subscope)
+		for(j=0;j<MAXSCOPE;j++)
+		if(s->subscope[j]){
+			printf("[%d]",j);
+			for(t= s->subscope[j];t!=NULL;t=t->peer)
+			printf(" %s",t->name);
+		}
+		printf("\n");
+		s= s->peer;
+	}
+	if( cntxt->outer) printScope(cntxt->outer,tab+1);
+}
+@-
+The freeSymbol operation throws away a symbol without
+concerns on it whereabouts in the scope structure.
+This routine therefore assumes care in use.
+The final action of the system is to remove all
+instructions and procedures. This forcefull action
+helps in localization of memory leakages.
+@c
+void freeSymbol(Symbol s){
+	if(s==NULL) return;
+	if(s->peer != NULL) freeSymbol(s->peer);
+	if( s->name) GDKfree(s->name);
+	if( s->help) GDKfree(s->help);
+	if( s->def) freeMalBlk(s->def);
+	GDKfree(s);
+}
+
+void freeAllSymbols(){
+	freeSymbol(mal_scope);
+	mal_scope =0;
+
+}
+@+ Searching the scope structure.
+The routine @%findSymbol@ starts at a scope level and searches 
+an element amongst the peers. If it fails, it will recursively
+inspect the outer scopes.
+
+In principal, external variables are subject to synchronization actions
+to avoid concurrency conflicts. This also implies, that any parallel
+block introduces a temporary scope.
+@c
+Symbol findSymbol(str mod, str fcn){
+	Symbol v, s;
+	int i;
+
+	v= findScope(MAL_scope, mod);
+	if( v == NULL) return NULL;
+	for(i=0;i<MAXSCOPE;i++){
+		s= v->subscope[i];
+		while(s!=NULL){
+			if( strcmp(s->name,fcn)==0 ) return s;
+			s= s->peer;
+		}
+	}
+	return NULL;
+}

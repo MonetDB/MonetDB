@@ -12,7 +12,6 @@ is to be included in the Mclient front-end or
 the applications at a later stage.
 
 @c
-#include <stdio.h>
 #include <gdk.h>
 
 extern int yyparse();
@@ -24,18 +23,28 @@ main(int argc,char ** argv)
 	int i =1;
 	int len, totlen;
 	char *ptr,*buf;
+	char cwd[PATHLENGTH];
 
 	if( argc ==1){
-		printf("usage:%s <file.mil>\n",argv[0]);
+		printf("usage:M2M <file.mil>\n");
 		exit(-1);
 	}
-	if( argv[1][0]=='-') {debugParser(1); i++;}
-	fd = fopen(argv[i],"rb");
+
+        if (getcwd(cwd, PATHLENGTH-1)  == NULL ){
+                perror("pwd");
+                printf("mil_init: could not determine current directory\n");
+        }
+
+	GDKinit(argc,argv);
+	for(i=1;i<argc && argv[i][0]==0; i++) ;
+
+	sprintf(buf,"%s/%s",cwd,argv[i]);
+	fd = fopen(buf,"rb");
 	if (fd == 0) {
 		printf("M2M: could not open file: %s\n", argv[1]);
 		exit (-1);
 	}
-	i = 0; len = totlen = 8192;
+	i = 0; len = totlen = 8*8192;
 	ptr = buf = (char *) GDKmalloc(totlen);
 
 	while((i+=fread(ptr, 1, len , fd)) == totlen) {
@@ -46,8 +55,7 @@ main(int argc,char ** argv)
 		buf = ptr; ptr += len;
 	}
 	fclose(fd);
-	printf("chars %d\n",i);
 	buf[i] = 0;
 	mil_push(buf);	/*no need to copy here */
-	printf("yyparse:%d",yyparse());
+	yyparse();
 }

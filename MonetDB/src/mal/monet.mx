@@ -1,0 +1,310 @@
+@f monet
+@T
+% define titlepage
+@t The Monet Database System
+@v Version 5.0
+@a Martin L. Kersten & Peter Boncz
+
+% create table of contents 
+\newpage
+\tableofcontents
+\newpage
+ 
+@* Monet
+The Goblin Database Kernel library is complemented by a textual interface, 
+called @%Monet@.  This interface is easy to interpret, versatile and 
+flexible to accommodate system debugging and application tool development.
+Although a textual interface potentially leads to a performance degradation, 
+our experience with earlier systems, e.g. Troll and PRISMA,
+showed that the overhead can be kept within acceptable limits.
+Moreover, a textual interface reduces the programming
+effort otherwise needed to develop test and application programs.
+
+[describe the thread structure]
+
+In single-thread mode, there is only one user active on the database,
+presumably with administrator permissions.
+In multi-thread mode, each client has its own thread of control to interact
+with the system.
+
+@+ Critical sections and semaphores
+Monet is implemented as a collection of threads. This calls for extreme
+care in coding. At several places locks and semaphores are necessary
+to achieve predictable results. In particular, after they are created
+and when they are inspected or being modified to take decisions.
+ 
+In the current implementation the following list of locks and semaphores
+is used in the Monet layer:
+@T
+\begin{tabular}{|l | l | l |}\hline
+Name & Used in & Protects\\
+monet_contextLock       & monet.mx      & {\em created  }\\
+monet_started   & monet_init    & {\em created}\\\\hline
+\end{tabular}
+ 
+@+ Monet Basic Definitions 
+Definitions that need to included in every file of the Monet system,
+as well as in user defined module implementations.
+@h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ *		   Peter Boncz <Peter.Boncz@cwi.nl>
+ *		   Niels Nes <Niels.Nes@cwi.nl>
+ */
+#ifndef _MONET_H_
+
+#define _MONET_H_
+
+#include "gdk.h"
+
+#ifdef _MSC_VER
+#ifndef LIBMONET
+#define m_export extern __declspec(dllimport) 
+#else
+#define m_export extern __declspec(dllexport) 
+#endif
+#else
+#define m_export extern 
+#endif
+
+#define MONET_ADMIN	"adm"
+
+@+ Monet Calling Options
+The number of invocation arguments is kept to a minimum.
+The listing flag is set automatically
+when statements are read from a file.
+@T
+\begin{itemize}
+\item
+A dataset within the database server can be selected with the {\tt
+-db} option.
+\end{itemize}
+
+The input file for commands is standard input.
+See the monet.conf file for additional system variable settings
+@
+@h
+#include "mal_startup.h"
+#include "mal_parser.h"
+#include "mal_interpreter.h"
+
+#define MAXSCRIPT 64
+
+@h
+#endif /* _MONET_H_ */
+@c 
+#include "monet.h"
+
+char            monet_cwd[PATHLENGTH]={0}, *monet_ver=0;
+char            *monet_prompt="\1>\1";
+int             monet_listing=0, monet_welcome=1, monet_deamon=2;
+int             monet_singlethreaded=0, monet_maxclients=1;
+str             monet_script[MAXSCRIPT]={0};
+str		monet_rc =0;
+
+MT_Lock		monet_contextLock;
+
+@-
+A welcoming message is displayed to inform the user about recent
+changes. 
+@c
+char monet_arch[PATHLENGTH] = HOST;
+char monet_version[PATHLENGTH] = VERSION;
+
+void monet_hello() {
+    if (monet_welcome) {
+        printf("# Monet Database Server V%s\n", monet_version);
+        printf("# Copyright (c) 1993-2001, CWI. ");
+        printf("All rights reserved.\n");
+        printf("# compiled for %s/%dbit.\n", 
+			monet_arch, sizeof(ptr)*8 );
+	printf("# dbfarm:%s\n",GDKdbfarmStr);
+	printf("# dbname:%s\n",GDKdbnameStr);
+	printf("# dbdir:%s\n",GDKdirStr);
+    }
+}
+
+#define MT_path_absolute(x) (*(x) == '/')
+
+static str absolute_path(str s) {
+        if (!MT_path_absolute(s)) {
+                str ret = GDKmalloc(strlen(s) + strlen(monet_cwd) + 2);
+                sprintf(ret, "%s%c%s", monet_cwd, DIR_SEP, s);
+                return ret;
+        }
+        return GDKstrdup(s);
+}
+@- Monet configuration
+The parameters controlling the Monet server are obtained from a
+configuration file, which resides in the current directory, the
+$HOME directory, or a file passed as a parameter of -monetrc.
+
+The code fragment below is copied from the GDK_util section 
+and processes this file, looking for monet related variable settings.
+It assumes that it is called after GDKenvironment, which will
+set the GDKmonetrcStr.
+
+The net effect of this operation is that calling Monet is now triggered
+by much less variables, because the default setting should work
+for most cases.
+@c
+int yesno(str n){
+	if( strcmp("yes",n)==0) return 1;
+	if( strcmp("no",n)==0) return 0;
+	GDKerror("MILenvironment:(yes/no) value error\n");
+	return 0;
+}
+void MILenvironment()
+{
+	char buf[2*PATHLENGTH];
+	FILE *fd= NULL;
+
+	if( GDKmonetrcStr[0]==0) return;
+	fd= fopen(GDKmonetrcStr ,"r");
+	while(fd!=NULL && fgets(buf,2*PATHLENGTH,fd) != NULL){
+		str s,t, val;
+
+		for(s=buf; *s && isspace(*s); s++) ;
+		if( *s== 0) continue;   /* empty line */
+		if( *s=='#') continue;	/* commentary */
+		
+		val = strchr(s,'=');
+		if( val == NULL) {
+			GDKerror("MILenvironment:syntax error in monetrc\n");
+			continue;
+		}
+		*val=0;
+
+		for(t=s; *t && !isspace(*t); t++) ;
+		*t =0;
+
+		/* skip any leading blancs in the value part */
+		for(val++; *val && isspace(*val) ;val++) ;
+		/* search first blanc, rest is commentary */
+		for(t=val;*t;t++) if( isspace(*t) || *t=='#') break;
+		*t=0;
+
+		/* This list may be extended later */
+		if( strcmp(s,"monet_welcome")==0)
+                    monet_welcome = yesno(val);
+		else
+		if( strcmp(s,"monet_version")==0)
+                    monet_ver = val;
+		else
+		if( strcmp(s,"monet_clients")==0)
+		    monet_maxclients = atoi(val)==0;
+		else
+		if( strcmp(s,"monet_deamon")==0)
+                    monet_deamon=yesno(val);
+		else
+		if( strcmp(s,"monet_prompt")==0){
+			if( val[0]!= 0){
+			    monet_prompt = strdup("\1\1\1");
+			    monet_prompt[1] = val[0];
+			} else {
+			    monet_prompt = strdup("\1\1");
+		}	}
+	}
+	if( fd != NULL) (void) fclose(fd);
+}
+
+static void getoptions(int argc, char **argv){
+        int i;
+ 
+        for (i = 1; i < argc; i++) 
+	if( argv[i][0]){
+            if (argv[i][0] == '-') {
+		    monet_hello();
+		    printf("unknown calling option %s\n", argv[i]);
+                    printf("usage: %s { option }\n", argv[0]);
+		    printf("option:\t-db <db-name>\t\tdatabase to open\n");
+		    printf("\t-monetrc <file>\t\tsystem variable settings\n");
+		    printf("\t<script>\t\texecute MIL file and exit\n");
+                    exit(-1);
+            } else {
+		int k;
+		for(k=0;monet_script[k]!= 0; k++) ;
+
+		if( k< MAXSCRIPT-1){
+			monet_listing = 1;
+			monet_script[k] = absolute_path(argv[i]);
+			monet_script[k+1]=0;
+		} else
+		printf("argument list too long, too many script files \n");
+            } 
+        }
+	MILenvironment(GDKmonetrcStr);
+}
+
+@- Monet Exit
+The client threads are already killed upon closing their input file.
+The server process interpreter is directly killed.
+@c
+void monet_exit() {
+        PARDEBUG THRprintf(GDKerr, "exit from main process\n");
+	if (monet_maxclients) (void) THRexit("InternetServer");
+	while (THRexit("Interpreter"));
+        GDKexit();
+}
+
+extern BAT *TBL_mod_load;
+
+@- Monet Init
+Startup the monet server by preparing the argument list for the GDK kernel.
+
+@c
+ptr monet_init(int argc, char **argv ){
+        if (getcwd(monet_cwd, PATHLENGTH-1)  == NULL ){
+                perror("pwd");
+                GDKfatal("monet_init: could not determine current directory\n");
+        }
+
+        /* determine Monet's kernel settings. */
+	GDKinit(argc,argv);
+        getoptions(argc, argv);
+#ifdef IRIX
+        setbuffer(stdout, GDKmalloc(4096), 4096);
+#endif
+        monet_contextLock= MT_create_lock();
+	return 0;
+}
+
+@* Example Monet Library Application 
+This is just a simple example that uses the monet library.
+Name the binary to your database and just type MIL in the
+command line arguments.
+@c
+#ifdef MAIN
+main(int argc, char** argv){
+    int restype;
+    char *mal_string;
+
+    if (argc < 2) {
+	fprintf(stderr, "usage: %s { monet-options } <mil-string>\n", argv[0]);
+	return -1;
+    }
+
+    mal_string = argv[--argc];
+    monet_init(argc, argv);
+    monet_eval(mil_string,&restype);
+    monet_exit();
+}
+#endif
+@

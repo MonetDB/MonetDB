@@ -1,0 +1,290 @@
+@t The MAL debugger
+@a M.L. Kersten
+@* Introduction
+To enable ease of debugging and performance monitoring, the MAL interpreter
+comes with a gdb-like debugger.
+The debugger assumes a direct IO channel to a user.
+
+
+@h
+#ifndef _MAL_DEBUGGER_H
+#define _MAL_DEBUGGER_H
+
+#include "mal_instruction.h"
+#include "mal_stack.h"
+#include "mal_function.h"
+
+extern char gdbCommand(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, FILE *in, FILE *out,char cmd);
+extern char gdbStep(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, FILE *in, FILE *out,char cmd);
+extern void gdbHelp(FILE *f);
+extern void printStackElm(FILE *f, VarPtr n, ValPtr v);
+extern void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s);
+
+#define gdbPrompt() fprintf(out,"mdb> ")
+
+#endif /* _MAL_DEBUGGER_h */
+@+ Debugger framework
+Before the interpreter is allowed to proceed we give control
+to the user to alter the trace/debugger options.
+@c
+#include "mal_debugger.h"
+
+void gdbSetBreakpoints(MalBlkPtr mb, str name, char cmd, FILE *out){
+	int i;
+	char *c=name;
+	InstrPtr p;
+
+	while(*c && (isalnum(*c) ||*c=='$')) c++;
+	*c = 0;
+	fprintf(out,"breakpoints for %s\n",name);
+	for(i=0;i<mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if(p->argc && p->token!=ENDDEFsymbol &&
+		   strcmp(getDestName(mb,p),name)==0){
+			p->gdbinfo = cmd;
+			fprintf(out,"breakpoint %s #%d\n",
+				(cmd?"set at":"deleted from"),i);
+		}
+	}
+}
+#define skip(X)	while(!isspace(*X)) X++; while(isspace(*X)) X++;
+
+void printCall(MalBlkPtr mb, MalStkPtr stk, FILE *out){
+	InstrPtr p;
+	int k;
+
+	p= getInstrPtr(mb, stk->pc);
+	if( p != NULL){
+		gdbPrompt();
+		promptInstruction(out,mb,p);
+		p= getInstrPtr(mb, 0);
+		fprintf(out," at #%d in %s(",
+			stk->pc,getInstrPtr(mb,0)->fcnname);
+		for(k=1; k<p->argc; k++){
+			VALprint(out, &stk->stk[p->argv[k]]);
+			if( k < p->argc-1 ) fprintf(out,",");
+		}
+		fprintf(out,")\n");
+	}
+}
+
+@-
+The debugger structure is inherited from GDB.
+The commands are self-explanatory.
+@c
+char gdbCommand(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, FILE *in, FILE *out,char cmd){
+	char buf[1024],*b;
+
+	if( p!= NULL){
+		fprintf(out,"mdb> ");
+		printInstruction(out,mb,p);
+	}
+	do{
+	gdbPrompt();
+	fflush(out);
+	if( fgets(buf,1024,in)== NULL || feof(in) ){
+		return 'q';
+	}
+	b= buf;
+	while(isspace(*b)) b++;
+	switch(*b){
+	case 0: return cmd;
+	case 'c': return 'c';
+	case 'h': gdbHelp(out); break;
+	case 'q': return 'q';/* return from this procedure */
+	case 'n': /* next */
+	case 's': /* next */
+		return buf[0];
+	case 'b':
+		skip(b);
+		if( !isspace(*b) && *b != 0){
+			/* set breakpoints by name */
+			gdbSetBreakpoints(mb,b,'b',out);
+		} else {
+			p->gdbinfo = 'b'; 
+			gdbPrompt();
+			fprintf(out,"breakpoint set\n");
+		}
+		continue;
+	case 'd':
+		/* get rid of break point */
+		if( strncmp(b,"do",2)==0 && stk->down!= NULL){
+			printf("go down the stack\n");
+			stk= stk->down;
+			mb = stk->blk;
+			break;
+		}
+		skip(b);
+		if( !isspace(*b)){
+			/* set breakpoints by name */
+			gdbSetBreakpoints(mb,b,0,out);
+		} else {
+			p->gdbinfo = 0; 
+			gdbPrompt();
+			fprintf(out,"breakpoint deleted\n");
+		}
+		continue;
+	case 'p':
+	{	 int i;
+		char *t;
+		skip(b);
+		t=b;
+		while(!isspace(*t)) t++;
+		*t = 0;
+		/* search the symbol */
+		i = findVariable(mb,b);
+		if( i<0){
+			fprintf(out,"Symbol not found\n");
+		} else{
+			printStackElm(out,mb->var+i,stk->stk+i);
+		}
+		continue;
+	}
+	case 'u':
+		if( stk->up == NULL) break;
+		printf("go up the stack\n");
+		stk= stk->up;
+		mb = stk->blk;
+		printCall(mb,stk,out);
+		continue;
+	case 'v': /* variable bindings */
+		gdbPrompt();
+		if( p != NULL){
+			fprintf(out,"mdb> at %s:#%d ",
+				getInstrPtr(mb,0)->fcnname, p->pc);
+			printInstruction(out,mb,p);
+		}
+		printStack(out,mb,stk);
+		continue;
+	case 'w':
+	{	MalStkPtr w;
+		MalBlkPtr mw=mb;
+		for(w=stk;w!= NULL; w=w->up){
+			mw = w->blk;
+			printCall(mw,w,out);
+		}
+		continue;
+	}
+@-
+While debugging it should be possible to inspect the symbol 
+table using the 'module.function' name. The default is to list the
+current function.
+[to do, list module signatures only]
+@c
+	case 'L': (void) setXlisting(1);
+	case 'l': /* list the current code block */
+	{	str modname, fcnname;
+		Symbol fsym,fs;
+		int i;
+
+		skip(b);
+		if( *b!= 0){
+			b[strlen(b)-1] =0;
+			modname=b;
+			fcnname= strchr(b,'.');
+			if( fcnname == NULL){
+				fsym= findScope(MAL_scope,modname);
+				if( fsym==0) {
+					fprintf(out,"scope not found\n");
+					continue;
+				}
+				for(i=0;i<MAXSCOPE;i++){
+					fs= fsym->subscope[i];
+					while(fs != NULL){
+						printSignature(out,fs);
+						fs= fs->peer;
+					}
+				}
+				continue;
+			} else {
+				*fcnname = 0;
+				fcnname ++;
+			}
+			/* search the symbol */
+			fsym= findSymbol(modname,fcnname);
+			if( fsym==NULL){
+				fprintf(out,"Symbol '%s.%s' not found\n",
+					modname,fcnname);
+				continue;
+			} 
+			printFunction(out,fsym->def);
+			continue;
+		}
+		printFunction(out,mb);
+		continue;
+	}
+	case 'r': /* reset program counter */
+		return 'r';
+	case 't': /* trace stream */
+		continue;
+	default:
+		gdbPrompt();
+		fprintf(out,"debugger command expected\n");
+		gdbHelp(out);
+	}
+	} while(1);
+	return 0;
+}
+char gdbStep(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, FILE *in, FILE *out,char cmd){
+	switch(cmd){
+	case 'c':
+		if( p->gdbinfo== 'b')
+			cmd= gdbCommand(mb,stk,p, in,out, cmd);
+		break;
+	case 's':
+	case 'n':
+		cmd= gdbCommand(mb,stk,p,in,out,cmd);
+		break;
+	case 'r': stk->pc = 0;
+		  fprintf(out,"restart with current stack\n");
+	}
+	return cmd;
+
+}
+@+ Utilities
+DUmping a stack on a file is primarilly used for debugging.
+Printing the stack requires access to both the symbol table and
+the stackframes.
+@c
+void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s){
+        ValPtr v= s->stk;
+        int i = 0;
+
+        fprintf(f,"Stack pc=%d size=%d top=%d\n",s->pc,s->stksize,s->stktop);
+        for( ; i<s->stktop ; i++,v++){
+		printStackElm(f, mb->var+i, v);
+        }
+}
+
+void printStackElm(FILE *f, VarPtr n, ValPtr v){
+	str nme;
+	fprintf(f,"[%d] %s\t= ",n->offset,n->name);
+	if( n->isaconstant) {
+		VALprint(f,&n->cstvalue);
+		nme= malTypeName(n->cstvalue.vtype);
+	} else {
+	 	VALprint(f, v);
+		nme= malTypeName(v->vtype);
+	}
+	fprintf(f,":%s%s%s", nme, (n->accessmode?" protected":""),
+			(n->isaconstant?" constant":""));
+	printf("\n");
+	GDKfree(nme);
+}
+@-
+Some utilities for the debugger 
+@c
+void gdbHelp(FILE *f){
+	fprintf(f,"next	-- Advance to next statement\n");
+	fprintf(f,"continue -- Continue program being debugged\n");
+	fprintf(f,"break -- set breakpoint on current instruction\n");
+	fprintf(f,"break <var> -- break on assignment to <var>\n");
+	fprintf(f,"step -- advance to next MAL instruction\n");
+	fprintf(f,"quit -- leaver debugger\n");
+	fprintf(f,"list -- list current program block\n");
+	fprintf(f,"variables -- print variable bindings\n");
+	fprintf(f,"where -- print stack trace\n");
+	fprintf(f,"print <var> -- display value of a variable\n");
+	fprintf(f,"run -- restart current procedure\n");
+	fprintf(f,"help -- this message\n");
+}

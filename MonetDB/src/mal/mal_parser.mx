@@ -1,21 +1,35 @@
-@f mal_parser
 @a M. L. Kersten
 @v 1.0
 
 @* Monet Assembler Language
 As of Version 5.0 the primary interface for interaction with the Monet kernel
-is based on a simple, assembler-like language called MAL. The language reflects the
-internal administration of instructions fed to the kernel interpreter.
-A key design issue is further to make pattern matching for the MAL-squeezer
-as fast as possible.
+is based on a simple, assembler-like language called MAL. 
+
+The language reflects the virtual machine architecture around the
+gdk library and has been designed for speed of interpretation,
+ease of analysis, and ease of compilation by applications.
+The key research issue is to realize the first just-in-time multi-query
+optimizer.
 
 This module contains a small footprint MAL parser for Monet Version 5.
 This parser assumes availability of a complete MAL block upfront
-as a string to be parsed. 
-The parser produced is intended to be thread safe.
+as a string to be parsed and executed. 
+Unike Monet V4, no module management operations are allowed within the
+context of a procedure. They are considered global commands.
+
+Futhermore, the parser produced is intended to be thread safe.[todo]
+
+The syntax layout of a MAL program consists of a module name,
+a list of import commands, a list of function/ruler/agent
+definitions and, concludes with the statements to be executed as
+the main body of the program.  All components are optional.
+The default module is the client scope.
+
+The parser can also parse the MEL signature files to built a knowledge
+base of externally known functions.
 
 The stand-alone version of this parser (Mal) can be used 
-to check any MAL procedure for syntactic errors.
+to check any MAL procedure for syntactic errors in a front-end.
 
 @+ The lexical analyzer
 The lexical analyzer is generated using Flex, the preferred tool in Monet.
@@ -24,125 +38,144 @@ The implementation of the lexical analyzer is straightforward:
 the input is taken from a client message buffer. It is assumed that
 this buffer contains the complete MIL structure to be parsed.
 This input buffer may be screwed up in the process, which implies
-that front-ends may have to make a copy first.
+that front-ends may have to make a private copy first.
 
-The lexical analyzer and parser are prefixed with "mil", which ensures that
+The lexical analyzer and parser are prefixed with "mal", which ensures that
 other language analyzers can safely be added
 (provided they run not inparallel). The lexical analyzer should
-not maintain a linenumber. This aspect is made explicit in the rules
+not maintain a linenumber. This aspect is made explicit in the rulers
 any way.
 
 The lexical analyser returns simple triples to the parser.
-They include the token identifier, the Monet type-id, and a string
+They include the token identifier, the Mal type signature, and a string
 representation.
 
+Note, the separator collection deals with the ^M for Microsoft's Windows
+environments.
+
+The code produced by Flex is tweaked to ensure thread-safe processing
+of this block of C-code.
 @h
 #ifndef _MAL_PARSER_H
 #define _MAL_PARSER_H
 
-#include "gdk.h"
+#include "mal_resolve.h"
+#include "mal_import.h"
 
-typedef struct YYSRECORD{
-	int	token, tpe, len;
+@-
+The information returned by the lexical analyser includes an
+ascii version, because this might later be used for debugging.
+@h
+typedef struct LEXRECORD{
+	int	token, len;
+	malType tpe;
 	char * 	val;
- } yystype, *yystypeptr;
+ } lextoken;
 
-#define YYSTYPE yystype
+typedef union{
+	InstrPtr  stmt;
+	Symbol	  sym;
+	lextoken  lex;
+} yyunion;
+
+#define YYSTYPE yyunion
 extern YYSTYPE yylval;
-/* this should be  dependent on context of parser */
-#define GDKerror(M) 	printf("%s",M) /* no threads here */
-#ifdef GDKout
-#undef GDKout
-#endif
-#define GDKout stdout
 
-extern char *mallexname(int Y);
+extern Symbol	curPrg,curScope;
+extern MalBlkPtr curBlk;
+extern InstrPtr	curInstr;
+
+/* this should be  dependent on context of parser*/
+
+extern int getListing();
+extern const char *mallexname(int Y);
 extern void mal_parserror(str msg);
 extern void mal_flushbuffer();
 extern str mal_lastline();
 extern int mal_position();
 extern int mal_skipcomment();
 extern int mal_getch();
-extern int yylex();
+extern int mallex();
+extern int mal_push(str s,int listing);
+extern int mal_pop();
+extern int mal_print(FILE *f, char tpe, YYSTYPE v);
+extern Symbol mal_parse(Symbol cntxt, str buf, int listing);
+extern void freeStringStack();
+extern void debugParser(int i);
+extern int getTypeIndex(str nme);
 
 #endif /* _MAL_PARSER_H */
 @l
+/*
 %option noyylineno
 %option never-interactive
-%option noyywrap
 %option nomain
+*/
 
 D       [0-9]
 O       [0-7]
 L       [_a-zA-Z]
 E       [Ee][-+]?{D}+
-S       [\t\n ]*
-P       [-!\$%\^\*~+|?<>=/\\]
-IDENT	{L}({L}|{D})*
+S       [\t\n\r ]*
+P       [-!\$%\^\*~+&|<>=/\\]
+IDENT	("$"|{L})(({L}|{D})*)
 OPER	{P}+
 %{
 
 #include "mal_parser.h"
 @-
-The Bison parser generator will produce the table with token names
-needed for tracing the parser.
+The Bison parser generator can be traced by calling debugparser(1)
 @l
 #include "mal_parser.tab.h"
 
-#define RETURN(Y)       { PARSEDEBUG {\
-                                THRprintf(GDKerr, "%s %s\n", mallexname(Y), yytext);\
-                          } return Y; }
-
-
 #define YY_INPUT(buf,result,max_size)   { int c = mal_getch();\
                            result = (c==0) ? YY_NULL: (buf[0] = (char)c,1);}
-#define Symbol(X)       { Vector(X,TYPE_void,0,0); }
-#define Vector(X,Y,V,L)	{ yylval.token= X;	\
-			yylval.tpe  = Y;	\
+#define Symbol(X)       { yylval.lex.token= X;	\
+			yylval.lex.tpe  = TYPE_void;	\
+			return(X); }
+#define Vector(X,Y,V,L)	{ yylval.lex.token= X;	\
+			yylval.lex.tpe  = Y;	\
 			if( V != 0 ) \
-			yylval.val = GDKstrdup(V);  	\
-			yylval.len = L;	\
-			RETURN (X); }
-#define YY_USE_PROTOS
+			yylval.lex.val = GDKstrdup(V);  	\
+			yylval.lex.len = L;	\
+			return(X); }
 %}
 
 %%
-"#"                   { return mal_skipcomment();                              }
+"#"                   { return mal_skipcomment();                      }
+("atom"|"ATOM")		{ Symbol(TOK_ATOM);}
 ("nil"|"NIL")         { Vector(TOK_CONSTANT, TYPE_void, "nil", 3);   }
 ("end"|"END")       { Symbol(TOK_END);                                  }
-("proc"|"PROC")       { Symbol(TOK_PROC);                                  }
-("rule"|"RULE")       { Symbol(TOK_RULE);                                  }
-("prop"|"PROP")       { Symbol(TOK_PROP);                                  }
-("catch"|"CATCH")     { Symbol(TOK_CATCH);                                    }
-("return"|"RETURN")   { Symbol(TOK_RETURN);                                   }
-("raise"|"RAISE")     { Symbol(TOK_RAISE);                                    }
-("goto"|"GOTO")     { Symbol(TOK_GOTO);                                    }
-("label"|"LABEL")	{ Symbol(TOK_LABEL);                                }
-("false"|"FALSE")     { Vector(TOK_CONSTANT, TYPE_bit, "0", 1);        }
-("true"|"TRUE")       { Vector(TOK_CONSTANT, TYPE_bit, "1", 1);        }
-("module"|"MODULE")   { Symbol(TOK_MODULE);				     }
-("import"|"IMPORT")   { Symbol(TOK_IMPORT);				     }
-("any"|"ANY")         { Vector(TOK_ANY, TYPE_int,  "-1", 2);               }
-("bat"|"BAT")         { Symbol(TOK_BAT);				      }
-"$$"                  { Symbol(TOK_RETVAR);                                  }
-"$"({IDENT})	      { Vector(TOK_VARID,TYPE_str,yytext+1,yyleng-1);	}
-"$"{D}+               { Vector(TOK_VARID,TYPE_int,yytext+1,yyleng-1);       }
-".."                  { Symbol(TOK_RANGETEMP);                                }
-"<<"                  { Symbol(TOK_PRECEEDS);                                }
-("any"|"ANY")"::"{D}+           { Vector(TOK_ANY,TYPE_str,yytext+2,yyleng-2);		 }
-":="                  { Symbol(TOK_ASSIGNMENT);                               }
-("["{OPER}"]")	|
-("["{IDENT}"]")	|
-("{"{OPER}"}")	|
-("{"{IDENT}"}")	|
-("[:=]")	|
-("[:"{OPER}"=]")	|
-("{:=}") 	|
-({IDENT})	      { Vector(TOK_IDENT, TYPE_str, yytext,yyleng);	      }
+("function"|"FUNCTION")	{ Symbol(TOK_FCN);                              }
+("end"|"END"){S}+("function"|"FUNCTION")	{ Symbol(TOK_END_FCN); }
+("command"|"COMMAND")       { Symbol(TOK_COMMAND);                   }
+("ruler"|"RULER")       { Symbol(TOK_RULER);                              }
+("end"|"END"){S}("ruler"|"RULER")	{ Symbol(TOK_END_RULER); }
+("agent"|"AGENT")       { Symbol(TOK_AGENT);                   }
+("end"|"END"){S}+("agent"|"AGENT")	{ Symbol(TOK_END_AGENT); }
+("catch"|"CATCH")     { Symbol(TOK_CATCH);                             }
+("raise"|"RAISE")     { Symbol(TOK_RAISE);                          }
+("exception"|"EXCEPTION")	{Symbol(TOK_EXCEPTION);			}
+("return"|"RETURN")   { Symbol(TOK_RETURN);                            }
+("barrier"|"BARRIER")     { Symbol(TOK_BARRIER);                       }
+("redo"|"REDO")     { Symbol(TOK_REDO);         }
+("leave"|"LEAVE")     { Symbol(TOK_LEAVE);                             }
+("false"|"FALSE")     { Vector(TOK_CONSTANT, TYPE_bit, "false", 1);        }
+("true"|"TRUE")       { Vector(TOK_CONSTANT, TYPE_bit, "true", 1);        }
+("module"|"MODULE")   { Symbol(TOK_MODULE);			     }
+("use"|"USE")   { Symbol(TOK_USE);			     }
+":="                  { Symbol(TOK_ASSIGN);                         }
+"any"{S}"::"{S}[1-9]{D}*	{ Vector(TOK_ANY_VAR,TYPE_str,yytext,yyleng);}
+"ANY"{S}"::"{S}[1-9]{D}*	{ Vector(TOK_ANY_VAR,TYPE_str,yytext,yyleng);}
+"`"                   { Symbol(TOK_REVERSE);                         }
+"."                   { Symbol(TOK_DOT);                         }
+{IDENT}		      { Vector(TOK_IDENT, TYPE_str, yytext,yyleng);	      }
 (":"{OPER}"=")	|
-({OPER}"="?) 	      { Vector(TOK_OPERATOR, TYPE_str, yytext,yyleng);	      } 
+({OPER}"="?) 	      { Vector(TOK_OPERATOR, TYPE_str, yytext,yyleng);	      }
+("-")?{D}+(":lng") 	|
 ("-")?{D}+"LL"        { Vector(TOK_CONSTANT, TYPE_lng, yytext, yyleng);}
-("-")?{D}+            { Vector(TOK_CONSTANT, TYPE_int, yytext, yyleng);}
+("-")?{D}+(":int")?	{ Vector(TOK_CONSTANT, TYPE_int, yytext, yyleng);}
+("-")?{D}+(":sht")	{ Vector(TOK_CONSTANT, TYPE_sht, yytext, yyleng);}
 {D}+"@"{D}+           { Vector(TOK_CONSTANT, TYPE_oid, yytext, yyleng);         }
 ("-")?{D}+"."{D}+({E})?"LL" |
 ("-")?"."{D}+({E})?"LL"     |
@@ -151,7 +184,7 @@ needed for tracing the parser.
 ("-")?"."{D}+({E})?     |
 ("-")?{D}+{E}         { Vector(TOK_CONSTANT, TYPE_flt,  yytext, yyleng);         }
 "'"\\0{O}({O})?({O})?"'" {Vector(TOK_CONSTANT, TYPE_chr, yytext, yyleng);        }
-\"[^\n"]*\"		{
+\"[^"]*\"		{
                         if (yytext[yyleng-1] != '\\') {
 				yytext[yyleng-1]=0;
                                 Vector(TOK_CONSTANT, TYPE_str, yytext+1, yyleng-2);
@@ -160,7 +193,7 @@ needed for tracing the parser.
 			}					                     }
 \'[^\n\']*\'            { 
                         if (yytext[yyleng-1] != '\\') {
-                                Vector(TOK_CONSTANT, TYPE_chr, yytext+1, yyleng-2);
+                                Vector(TOK_CONSTANT, TYPE_chr, yytext, yyleng-1);
                         } else {
                                 yymore(); 
                         }                                                     }
@@ -169,7 +202,7 @@ needed for tracing the parser.
 %%
 int mal_skipcomment() { 
 	char c; 
-	while ((c=input()) && (c != '\n')); 
+	while ((c=input()) && (c != '\n') && (c != EOF)); 
 	return yylex();
 }
 int yywrap(){ return 1;}
@@ -180,31 +213,50 @@ void mal_flushbuffer() {
 
 @
 @- Input management
-The parser reads its input from a string buffer space, organized as a
-stack to permit easy escapes to "included" MIL programs (module inits).
-After parsing the string buffer space is freed by the parser as well.
+The parser reads its input from a string buffer space.
+Unlike MIL, we assure that 'import' statements are top
+level commands. They do not occur within a procedure.
+Furthermore, there is no real reason to produce a listing, because
+this is a property of the client interface. It would also
+delay processing when run in a critical section.
+For the time being we keep it as a debugging option.
 
-[These variables should be local to a parsing thread.]
 @c
+#include "mal_type.h"
 #include "mal_parser.h"
+#include "mal_function.h"
+#include "mal_linker.h"
+#include "mal_atom.h"
+
+#define MAL_TRACE
 
 typedef struct _strstack_t {
 	str buf, cptr, prevline, nxtline;
-	int listing;		/* trace line consumption*/
+#ifdef MAL_TRACE
+	int listing;		/* trace line consumption */
+#endif
 	struct _strstack_t *up;
 } strstack;
 
 static strstack  *mal_stack = NULL;
 
-int mal_push(str s, int l) {
+int getListing(){ return mal_stack->listing;}
+
+int mal_push(str s,int listing) {
 	strstack *sp = (strstack*) GDKmalloc(sizeof(strstack));
-	sp->listing = 1;
+#ifdef MAL_TRACE
+	sp->listing = listing;
+#endif
 	sp->cptr = sp->nxtline= sp->prevline = sp->buf = s;  
 	sp->up = mal_stack;
 	mal_stack = sp;
 	return 1;
 }
 
+void freeStringStack(){
+	GDKfree(mal_stack);
+	mal_stack = NULL;
+}
 int mal_pop() {
 	strstack *sp = mal_stack;
 	if (mal_stack) {
@@ -219,19 +271,24 @@ int mal_pop() {
 @-
 The next character is retrieved from the string pool
 using the routine mal_getch. The position of the last
-newline is retained to gain quick access.
+newline is retained to gain quick access for debugging.
 @c
 int mal_getch() {
         char ch;
 	ch = *mal_stack->cptr;
-        if (ch == '\n') {
+        if (ch == '\n' || mal_stack->cptr==mal_stack->buf) {
+#ifdef MAL_TRACE
                 if (mal_stack->listing) { 
-                        *mal_stack->cptr = 0;
-                        fputs(mal_stack->nxtline, GDKout);
+			char *c= mal_stack->cptr;
+			if( ch=='\n') c++;
+			fputs("#",GDKout);
+			while(*c && *c != '\n'){
+				fputc(*c++,GDKout);
+			}
                         fputc('\n', GDKout);
                         fflush(GDKout);
-                        /* *mal_stack->cptr = '\n'; */
                 }
+#endif
 		mal_stack->prevline= mal_stack->nxtline;
                 mal_stack->nxtline = mal_stack->cptr + 1;
         } 
@@ -241,7 +298,7 @@ int mal_getch() {
 
 @-
 For error reporting we have to find the start of the previous line,
-which, ofcourse, is easy.
+which, ofcourse, is now easy.
 @c
 str mal_lastline(){ 
 	if( mal_stack->nxtline == 0)
@@ -252,11 +309,6 @@ int mal_position()
 {
 	return (int)(mal_stack->cptr)- (int)mal_stack->nxtline;
 }
-@-
-Long strings are in this version easier to handle, because the input is
-already concatenated by the front-end. This means that a string literal may not
-extend beyond end-of-line.
-REWORKED
 
 @+ The Parser
 Unlike Monet V4.3 the client is responsible to collect the
@@ -264,14 +316,30 @@ input for parsing in a single string before calling the parser.
 Once the input is available parsing runs in a critial section for
 a single client thread.
 
+Each call to the parser produces a MAL procedure in the current
+session module. The parser should be supplied the complete string
+to be parsed, because it runs in a critical section and can not
+retain information between calls for the same client.
+
+The curScope determines the context for insertion of new
+procedure and command definitions. 
+It provides the anchor for traversing the scope lists.
 @c
-int mal_parse(str buf, int listing){
-	return 0;
+
+Symbol mal_parse(Symbol cntxt, str buf, int listing){
+	curScope= cntxt;
+	mal_push(buf,listing);
+	if( yyparse()) {
+		printf("ok?");
+	}
+	mal_pop();
+	return curPrg;
 }
 @- The Bison Grammar
-The grammatica should be context free.
+The grammar has been designed for simplicity and it is straight forward.
 @y
 %token_table
+/* %pure_parser */
 
 %{
 #include "mal_parser.h"
@@ -282,160 +350,481 @@ The grammatica should be context free.
 #undef yyerror
 #define yyerror(X)      { mal_parserror(X);  }
 
-#define YYPRINT(file,tpe,val)	mal_print(file,tpe,val)
+#define YYPRINT(file,chr,val)	mal_print(file,chr,val)
 int yydebug = 0;
 void debugParser(int i){ yydebug=i; }
+
+@-
+The variables below represent the state of the parsing process.
+It is a 'path' through the symbol table structure.
+They should be saved and restored when parsing is interrupted
+to handle import statements.
+@y
+Symbol	curScope,curPrg;
+MalBlkPtr curBlk;
+InstrPtr curInstr;
+int atomModule = FALSE;
 %}
 
-%token TOK_PROC TOK_RULE TOK_PROP TOK_END 
-%token TOK_LABEL TOK_GOTO TOK_RAISE TOK_CATCH
-%token TOK_RANGETEMP
-%token TOK_CONSTANT TOK_ASSIGNMENT 
-%token TOK_IDENT TOK_VARID TOK_RETVAR 
-%token TOK_RETURN
-%token TOK_BAT
-%token TOK_OPERATOR TOK_PRECEEDS
-%token TOK_MODULE TOK_IMPORT
-%token TOK_ANY
+%type <stmt>	stmt fcnCall 
+%type <lex>	pathHdr rulerProc factor term assign modList melElement
+%type <lex>	TOK_IDENT TOK_OPERATOR TOK_CONSTANT TOK_ANY_VAR 
+%type <lex>	melType fcnType fcnNameId cntrl modfile importPath
 
-%left TOK_ASSIGNMENT TOK_OPERATOR
+%token TOK_FCN TOK_RULER TOK_AGENT TOK_END TOK_ANY_VAR  TOK_RETURN
+%token TOK_BARRIER TOK_REDO TOK_LEAVE TOK_RAISE TOK_CATCH TOK_EXCEPTION
+%token TOK_CONSTANT TOK_IDENT 
+%token TOK_DOT TOK_REVERSE TOK_OPERATOR TOK_PRECEEDS TOK_ASSIGN 
+%token TOK_MODULE TOK_ATOM TOK_USE TOK_COMMAND
+%token TOK_END_FCN TOK_END_RULER TOK_END_AGENT
+
+%left TOK_BARRIER TOK_ASSIGN TOK_OPERATOR TOK_PRECEEDS
+%left TOK_REVERSE
+%left TOK_DOT
 %%
 MAL_program:
-        MAL_session
-    |   error ';' { yyerrok; yyclearin; return 1; }
-    |   /* empty */
+	module defineList
+	{ curPrg= newFunction(curScope,GDKstrdup("main"));
+	  curBlk = curPrg->def;
+	  curInstr = getSignature(curPrg);
+	  curInstr->modname= GDKstrdup(curScope->name);
+	  insertSymbol(curScope,curPrg);
+	}
+	stmtList
+	{ curInstr= newInstruction(curBlk,ENDDEFsymbol);
+	  curInstr->argc =0;
+	  pushInstruction(curBlk,curInstr);
+	  safeFunction(curPrg);
+	  if(getListing()) printFunction(stdout, curBlk);}
+    |	module
+	{ curPrg= newFunction(curScope,GDKstrdup("main"));
+	  curBlk = curPrg->def;
+	  curInstr = getSignature(curPrg);
+	  curInstr->modname= GDKstrdup(curScope->name);
+	  insertSymbol(curScope,curPrg);
+	}
+	stmtList
+	{ curInstr= newInstruction(curBlk,ENDDEFsymbol);
+	  curInstr->argc =0;
+	  pushInstruction(curBlk,curInstr);
+	  safeFunction(curPrg);
+	  if(getListing()) printFunction(stdout, curBlk);}
+@-
+The module and import commands have immediate effect.
+The module statement switches the location for symbol table update
+to a specific named area. The effect is that all definitions may become
+globally known (?) and symbol table should be temporarilly locked
+for updates by concurrent users.
+@y
+module:
+      	moduleModifier TOK_MODULE modfile ';'
+	{ 
+	  if( findScope(curScope,$3.val) != NULL){
+		char buf[1024];
+		sprintf(buf,"ERROR: duplicate module load '%s' ignored\n",
+			$3.val);
+		GDKerror(buf);
+		GDKfree($3.val);
+		/* cleanup input */
+		YYACCEPT;
+	  } else {
+		curScope = fixateScope(curScope, $3.val);
+		GDKfree($3.val);
+	  }
+	}
+	exceptionList
+   | 	/* empty, default module */
 
-MAL_session:
-        session
-    |   MAL_session session
+moduleModifier: TOK_ATOM { atomModule = TRUE;}
+	| /* empty */	{ atomModule = FALSE;}
+modfile: TOK_IDENT 
+	{
+		if( atomModule) malAtomDef($1.val);
+		$$= $1;
+	}
+   |	TOK_CONSTANT
 
-session:
-        module_definition
-    |   proc_definition
-    |   rule_definition
-    |   prop_definition
-    |   gstmt
+defineList:   defineStmt
+    |	defineList defineStmt
 
-module_definition:
-	TOK_MODULE TOK_IDENT exceptions';'
+defineStmt : functionDef {if(getListing()) printFunction(stdout,curBlk);}
+    |	commandDefinition 
+	{if(getListing()) printFunction(stdout,curBlk);}
+    |   rulerDefinition 
+	{ if(getListing()) printFunction(stdout,curBlk);}
+    |	importStmt
 
-exceptions :
-	TOK_RAISE TOK_IDENT
-    | 	exceptions ',' TOK_IDENT
+exceptionList: TOK_EXCEPTION TOK_IDENT ';'
+	| /* empty */
 
-proc_definition :
-	TOK_PROC proc_header
-		statement_list
-	TOK_END TOK_PROC
+importStmt:
+    	TOK_USE importPath ';'
+	{ Symbol    oldScope= curScope,oldPrg=curPrg;
+	  MalBlkPtr oldBlk=curBlk;
+	  InstrPtr oldInstr=curInstr;
+	  (void) malImport(curScope,$2.val,$2.val,getListing());
+	  yyclearin; yyerrok;
+	  curScope = oldScope;
+	  curPrg = oldPrg;
+	  curBlk = oldBlk;
+	  curInstr = oldInstr;
+	  GDKfree($2.val);
+	}
+importPath: TOK_IDENT
+   |	importPath TOK_OPERATOR TOK_IDENT
+@-
+The statements scattered between definitions are appended and collected
+in a 'main' procedure. This procedure definition should be
+re-used to avoid overhead in procedure declaration for each individual
+instruction obtained from the used.
+@y
 
-rule_definition :
-	TOK_RULE rule_header
-		statement_list
-	TOK_END TOK_RULE
+commandDefinition:
+	TOK_COMMAND fcnHeader ';' helpInfo 
+	{ getInstrPtr(curBlk,0)->token= COMMANDsymbol;
+	  curPrg->kind = COMMANDsymbol;
+	  resolveFunction(curPrg);
+	  insertSymbol(curScope,curPrg);
+	}
+   |    TOK_RULER fcnHeader ';' helpInfo 
+	{ getInstrPtr(curBlk,0)->token= RULERsymbol;
+	  curPrg->kind = RULERsymbol;
+	  resolveFunction(curPrg);
+	  insertSymbol(curScope,curPrg);
+	}
 
-prop_definition :
-	TOK_PROP rule_header
-		statement_list
-	TOK_END TOK_PROP
+functionDef :
+	TOK_FCN fcnHeader ';' helpInfo 
+	{ insertSymbol(curScope,curPrg); }
+	statements TOK_END_FCN ';' 
+	{ curInstr= newInstruction(curBlk,ENDDEFsymbol);
+	  pushInstruction(curBlk,curInstr);
+	  safeFunction(curPrg);
+	}
 
-statement_list:
-        gstmt
-    |   statement_list gstmt
 
-gstmt:
-	stmt ';'
-    |	stmt '?' condition ';'
+helpInfo: TOK_CONSTANT
+	{ curPrg->help= $1.val;}
+    |	/* empty */
 
-stmt:
-	var_path TOK_ASSIGNMENT expression
-    |   TOK_RETURN ret_value
-    |   TOK_LABEL factor
-    |   TOK_GOTO  factor
-    |	TOK_RAISE factor
-    |   TOK_CATCH factor
-    |   TOK_IMPORT factor
-    |	fcn_call
+stmtList :
+	statements
+	{ resolveFunction(curPrg); }
+    |	/* none */
 
-ret_value:
-        expression
-    |       /* empty */
+statements:
+        stmt ';'
+	{ pushInstruction(curBlk,curInstr);  
+	  curInstr=0;
+	}
+    |   statements stmt ';'
+	{ pushInstruction(curBlk,curInstr); 
+	  curInstr=0; 
+	}
+    |	error TOK_IDENT  
+	{ GDKfree($2.val);
+	  printf("parse error\n");
+	}
+    |	error TOK_CONSTANT  
+	{ GDKfree($2.val);
+	  printf("parse error\n");
+	}
+    |	error TOK_OPERATOR  
+	{ GDKfree($2.val);
+	  printf("parse error\n");
+	}
+    |   error ';' { yyerrok; yyclearin; 
+	 if(curInstr){
+		/* printf("RECOVER:");*/
+		printInstruction(stdout,curBlk,curInstr);
+		freeInstruction(curInstr);
+		curInstr = 0;
+	} }
 
-rule_header:
+stmt: assign  expression
+	{ int i;
+	  if( (i=findVariable(curBlk,$1.val)) == -1){
+		i= newVariable(curBlk, $1.val,malAnyType);
+	  } else GDKfree($1.val);
+	  curInstr->argv[0]= i;
+	}
+    |	cntrl TOK_IDENT
+	{ int i;
+	  curInstr= newInstruction(curBlk,$1.token);
+	  i = findVariable(curBlk,$2.val);
+	  if( i<0)
+		i= newVariable(curBlk, $2.val,malAnyType);
+	  else GDKfree($2.val);
+	  curInstr->argv[0]= i;
+	}
+    |	TOK_CATCH TOK_IDENT
+	{ int i;
+	  curInstr= newInstruction(curBlk,CATCHsymbol);
+	  i = findVariable(curBlk,$2.val);
+	  if( i<0)
+		i= newVariable(curBlk, $2.val,TYPE_str);
+	  else	GDKfree($2.val);
+	  curInstr->argv[0]= i;
+	  curInstr->barrier= CATCHsymbol;
+	}
+   |	TOK_BARRIER TOK_IDENT
+	{ int i;
+	  curInstr= newInstruction(curBlk,BARRIERsymbol); 
+	  i = findVariable(curBlk,$2.val);
+	  if( i<0)
+		i= newVariable(curBlk, $2.val,TYPE_bit);
+	  else GDKfree($2.val);
+	  curInstr->argv[0]= i;
+	  curInstr->barrier= BARRIERsymbol;
+	}
+   |	TOK_RAISE TOK_IDENT
+	{ int i;
+ 	  curInstr= newInstruction(curBlk,RAISEsymbol); 
+	  i = findVariable(curBlk,$2.val);
+	  if( i<0)
+		i= newVariable(curBlk, $2.val,TYPE_str);
+	  else GDKfree($2.val);
+	  curInstr->argv[0]= i;
+	  curInstr->barrier= RAISEsymbol;
+	}
+
+cntrl: TOK_END {$$.token= ENDsymbol;}
+   |	TOK_LEAVE {$$.token= LEAVEsymbol;}
+   |	TOK_REDO {$$.token= REDOsymbol;}
+   |	TOK_RETURN {$$.token= RETURNsymbol;}
+
+assign:
+	TOK_IDENT  TOK_ASSIGN 
+	{ curInstr = newInstruction(curBlk,ASSIGNsymbol); $$=$1; }
+    |	TOK_BARRIER TOK_IDENT TOK_ASSIGN
+	{ curInstr= newInstruction(curBlk,ASSIGNsymbol); $$=$2;
+	  curInstr->barrier= BARRIERsymbol;
+	}
+    |	TOK_RAISE TOK_IDENT TOK_ASSIGN
+	{ curInstr= newInstruction(curBlk,ASSIGNsymbol); $$=$2;
+	  curInstr->barrier= RAISEsymbol;
+	}
+@-
+Each procedure definition opens a structure in which the
+information is gathered. The enclosing module is statically
+determined.
+
+A proc-header translates into a single MAL instruction.
+Since no recursive rules are included, we can stick to
+using a single global variable to accummulate the
+properties.
+@y
+fcnHeader: 
+	fcnName fcnParamList fcnType fcnBinding
+
+fcnParamList:
+	'(' fcnParams ')' 
+    |	'(' ')' 
+
+fcnType:
+	':' melType		{ getVarType(curBlk,0)= $2.tpe;}
+	| ':' '(' melType properties ')' {getVarType(curBlk,0)=$3.tpe;}
+    	| /* empty, default */ 	{ getVarType(curBlk,0)= malAnyType; }
+@-
+Variables will later be extended with a (boolean?) property list to enable
+squeezers to make decisions. An example is :(int, key, notnull) for
+a column of a BAT.
+@y
+properties: propList
+   |	 /* empty */
+
+propList: ',' TOK_IDENT
+    |	propList ',' TOK_IDENT
+	
+
+fcnName:
+	fcnNameId
+	{ curPrg = newFunction(curScope,$1.val);
+	  curBlk = curPrg->def;
+	  curInstr = getInstrPtr(curBlk,0);
+	}
+
+fcnParams:
+        binding
+    |   fcnParams ',' binding
+
+fcnBinding :
+	TOK_OPERATOR TOK_IDENT
+	{int i;
+	  if( strcmp($1.val,"=") )
+		mal_parserror("'=' operator expected\n");
+	  i= newVariable(curBlk,$2.val,curBlk->var[0].type);
+	  curInstr->argv[0]=i;
+	  curInstr->modname = GDKstrdup(curScope->name);
+	  curInstr->fcn = getAddress($2.val);
+	  curPrg->binding = GDKstrdup($2.val);
+	  if( atomModule)
+		defAtomCommand(curInstr);
+	}
+    | /* empty */
+@- 
+Rule construction follows much the same route as procedure
+declarations. They are only interpreted differently.
+[Rules should be dealt with differently]
+@y
+rulerDefinition :
+	rulerHeader rulerParams ';' statements 
+	{ safeFunction(curPrg); }
+	TOK_END_RULER ';'
+    |	rulerHeader rulerParams '?' term ';' statements 
+	{ safeFunction(curPrg); }
+	TOK_END_RULER ';'
+
+rulerHeader: TOK_RULER TOK_IDENT
+	{ curPrg = newFunction(curScope,$2.val); 
+	  curBlk = curPrg->def;
+	  curInstr = newInstruction(curBlk,RULERsymbol); 
+	  curInstr->fcnname= GDKstrdup($2.val);
+	  insertSymbol(curScope,curPrg);
+	  pushInstruction(curBlk, curInstr); } 
+
+rulerParams:
 	pattern
-    | 	rule_header TOK_PRECEEDS pattern
+    | 	rulerParams TOK_PRECEEDS pattern
 
 pattern:
 	binding
-    |	TOK_IDENT TOK_ASSIGNMENT fcn_call
+	{}
+    |	rulerStart rulerProc fcnParamList fcnType
+	{}
 
-proc_header: 
-	proc_name '(' proc_params ')' ':' mel_type ';'
-    |	proc_name '(' ')' ':' mel_type ';'
+rulerStart:
+	TOK_IDENT TOK_ASSIGN
+	{ GDKfree($1.val);}
 
-proc_name:
-        TOK_IDENT
-    |   TOK_OPERATOR
+rulerProc: TOK_IDENT 
+	{ GDKfree($1.val);}
+	| TOK_OPERATOR
+	{}
 
-proc_params:
-        params ',' param_range
-    |   params 
-    |   param_range
-
-param_range:
-        TOK_IDENT ':' mel_type TOK_RANGETEMP
-
-params:
-        binding
-    |   params ',' binding
-
+@-
+MAL variables are statically/dynamically typed.
+Function and procedure arguments should always be typed.
+We do not permit polymorphism at this interpretation level.
+@y
 binding:
-	TOK_IDENT ':' mel_type
+	TOK_IDENT ':' melType 
+	{ pushArgument(curInstr, newVariable(curBlk,$1.val, $3.tpe)); }
+@-
+The type information maintained simplifies analysis of 
+BAT results. If the underlying type is not known, then it
+may be replaced once during execution of a MAL instruction
+typically as a side-effect of calling a bat-returning function.
+@y
+melType:
+        melElement
+	{  $$=$1;}
+    |   TOK_IDENT '[' melElement ',' melElement ']'
+	{ 
+	  if( strcmp($1.val,"bat")!= 0 && strcmp($1.val,"BAT")!= 0 )
+		  mal_parserror("Bat expected\n");
+	  $$.tpe = malAnyBatType($3.tpe,$5.tpe);
+	  GDKfree($1.val);
+	  $$.val =0;
+	}
 
-mel_type:
+melElement:
         TOK_IDENT 
-    |   TOK_BAT
-    |   TOK_BAT '[' mel_atom ',' mel_atom ']'
-    |   TOK_ANY
+	{ $$.tpe = getTypeIndex($$.val);
+	  GDKfree($1.val);
+	  $$.val = 0; }
+    |   TOK_ANY_VAR
+	{ int i= atoi(rindex($1.val,':')+1);
+	  $$.tpe= malAnyType;
+	  setAnyTailIndex($$.tpe,i);
+	  GDKfree($1.val);
+	  $$.val = 0; }
+@-
+The curInstr always has to point to the last instruction generated.
+All other information is passed around as a variable identifier
+in the semantic part.
+@y
+expression: 
+	term	{}
+    |	fcnCall	{}
 
-mel_atom:
-        TOK_IDENT
-    | 	TOK_BAT
-    |   TOK_ANY
-
-expression:
-	term
-    |	fcn_call
-	
 term :
 	factor
-    |	factor TOK_OPERATOR term
+	{ pushArgumentId(curInstr, $1.val); $$=$1; }
+    |	factor TOK_OPERATOR factor
+	{ curInstr->fcnname = $2.val;
+	  pushArgumentId(curInstr, $1.val);
+	  pushArgumentId(curInstr, $3.val);
+	}
     |	TOK_OPERATOR factor
-    | 	factor TOK_OPERATOR
-    |   '(' term ')'
+	{ curInstr->fcnname = $1.val;
+	  pushArgumentId(curInstr, $2.val);
+	}
 
 factor:
         TOK_CONSTANT
-    |  	var_path
-   
-var_path :
-      	variable 
-    | 	var_path '.' TOK_IDENT
-variable:
-	TOK_IDENT
-    |	TOK_VARID
-    |	TOK_RETVAR
+	{ $$.val= newConstant(curBlk,$1.tpe,$1.val);
+	  $$.tpe= $1.tpe;
+	}
+     | TOK_CONSTANT ':' melType
+	{ int i,j;
+	  $$.val= newConstant(curBlk,$1.tpe,$1.val);
+	  /* enforce coercion if needed */
+	  i= findVariable(curBlk,$$.val);
+	  if( (j=coercion(getVarType(curBlk,i),$3.tpe)) == malAnyType){
+		GDKerror("ERROR: illegal coercion\n");
+	  } else getVarType(curBlk,i)= j;
+	  $$.tpe= j;
+	}
+    |  	pathHdr
+	{ $$.val= $1.val;
+	  $$.tpe= getType(curBlk,$1.val);
+	}
 
-fcn_call :
-	var_path '(' var_list ')'
-    |	var_path '(' ')'
+pathHdr :
+      	TOK_IDENT 
+	{$$=$1;}
+    |	TOK_REVERSE TOK_IDENT
+	{ $$.val = reverseOperator(curScope,curBlk,$2.val);
+	  $$.tpe = getType(curBlk,$$.val); 
+	}
+
+
+fcnCall :
+	fcnNameId fcnArg
+	{ curInstr->fcnname= $1.val; 
+	}
+	| modList TOK_DOT fcnNameId fcnArg
+	{ curInstr->fcnname= $3.val;
+	  curInstr->modname= $1.val;
+	}
  
-var_list:
+modList : TOK_IDENT
+    |	modList TOK_DOT TOK_IDENT
+	{ char buf[2000]; strcpy(buf,$1.val); GDKfree($1.val);
+	  strcat(buf,$3.val); GDKfree($3.val); $1.val= GDKstrdup(buf); 
+	  $$ = $1; }
+	
+fcnArg : '(' ')'
+	{ curInstr->argc =1 ;}
+	| '(' varList ')'
+	{}
+
+fcnNameId: TOK_IDENT | TOK_OPERATOR
+
+varList:
      	factor
-    |	var_list ',' factor
-
-condition:
-	term
-
+	{ pushArgumentId(curInstr, $1.val);}
+    |	varList ',' factor
+	{ pushArgumentId(curInstr, $3.val); }
+    |   TOK_IDENT '[' TOK_IDENT ',' TOK_IDENT ']'
+	{ if( strcmp($1.val,"bat") != 0 && strcmp($1.val,"BAT")!=0 ){
+		mal_parserror("bat[X,Y] expected\n");
+	  }
+	  pushArgument(curInstr, newVariable(curBlk,$1.val,
+		  newBatType( getTypeIndex($3.val), getTypeIndex($5.val)) ));
+	  GDKfree($3.val); GDKfree($5.val);
+	}
 %%
 
 @-
@@ -446,52 +835,48 @@ we should also copy the input .
 @{
 @y
 void mal_parserror(str msg){
-        static char buf[1024];
-        char *s=buf, *t, *l = mal_lastline();
-        int i = strlen(GDKERROR);
-	strcpy(buf,GDKERROR); s+= i;
+	char buf[1024];
+	char *s=buf, *t, *l = mal_lastline();
+	int i = strlen(GDKERROR);
+	strcpy(buf,GDKERROR); s+= i; 
 
-        mal_flushbuffer(); /* flush the lexer's buffer */
-
-        *s++ = '"';
+	if(curBlk) curBlk->errors++;
+	/* accidental %s directives in the lastline can
+	   crash the vfsprintf later => escape them */
         for(t=l; *t && *t!='\n'; t++) {
-                /* accidental %s directives in the lastline can
-                   crash the vfsprintf later => escape them */
                 if (*t == '%') *s++ = '%';
                 *s++ = *t;
         }
-        *s++ = '"'; *s++ = '\n';
+        *s++ = '\n';
 
-	/* produce the position marker */
-        for(*s++ = '!'; i > 0; i--) *s++ = ' ';
+	/* produce the position marker*/
+        for(*s++ = '!'; --i > 0; ) *s++ = ' ';
 	i = mal_position();
         for(; i > 0; i--) {
-        /* for (; *l && *l!='\n'; l++) { */
-                *s++ = (*l != '\t')?' ':'\t';
+                *s++ = (*l++ != '\t')?' ':'\t';
         }
         *s++ = '^'; *s++ = '\n'; *s = 0;
-	/* include bison message */
-        if (msg) {
-                sprintf(s, "! %s.\n", msg);
-        } else {
-                sprintf(s, "! "); s += 2;
-                if (*s == 0) sprintf(s,"can't help you here, sorry.\n");
-        }
+
+	/* include bison message*/
+        if (msg == 0)
+		msg = "can't help you here, sorry.\n";
+	if( strlen(msg)+strlen(buf) < 1020)
+		sprintf(s, "! %s.\n", msg);
         GDKerror(buf);
+
+	mal_flushbuffer(); /* flush the lexer's buffer */
 }
 
-int mal_print(FILE *f, int tpe, YYSTYPE v)
+int mal_print(FILE *f, char tpe, YYSTYPE v)
 {
-	if( v.len >0) fprintf(f," %s ", v.val);
+	if( v.lex.len >0) fprintf(f," %s ", v.lex.val);
 	return 0;
 }
-
-char *mallexname(int Y)           
-{ 	if (Y >= TOK_PROC && Y <= TOK_ANY) {
-		return (char*)yytname[Y-TOK_PROC];
+const char *mallexname(int Y)           
+{ 	if (Y >= TOK_FCN && Y <= TOK_AGENT) {
+		return yytname[Y-TOK_FCN];
 	} 
-	return (char*)"char";
+	return "char";
 }
-@
 @}
 
