@@ -1,5 +1,11 @@
 @echo off
 
+if not "%1"=="" goto skip
+call %0 -r
+goto end
+
+:skip
+
 set builddir=@MONET_BUILD@
 set srcdir=@MONET_SOURCE@
 
@@ -12,4 +18,6 @@ set PATH=%MOD_PATH%;%builddir%\src\common;%builddir%\src\gdk;%builddir%\src\mapi
 REM execute Mtest.py in the source directory
 cd %srcdir%
 
-call python "%builddir%\src\testing\Mtest.py" "--monet_mod_path=%MOD_PATH%" "--config=%builddir%\conf\monet.conf" -r "--dbfarm=%builddir%\dbfarm" "--TSTTRGBASE=%builddir%"
+call python "%builddir%\src\testing\Mtest.py" "--monet_mod_path=%MOD_PATH%" "--config=%builddir%\conf\monet.conf" "--dbfarm=%builddir%\dbfarm" "--TSTTRGBASE=%builddir%" %*
+
+:end
