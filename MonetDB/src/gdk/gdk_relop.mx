@@ -1620,6 +1620,144 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 }
 
 
+@* Cross Product
+@T
+This operation computes the cross product of two BATs, returning only the
+head-value from the 'left' operand and then tail-value from the 'right'
+operand.
+
+@= cross2
+BAT* cross_@1_@2( BAT *bn, BAT *l, BAT *r ){
+	BUN l_cur, l_end, r_cur, r_end, dst;
+	int l_sz, r_sz, bn_sz;
+
+        bn_sz = BUNsize(bn);
+        dst = BUNfirst(bn);
+
+	ALGODEBUG THRprintf(GDKout, "BATcross: cross_@1_@2();\n");
+	BATloopFast(l, l_cur, l_end, l_sz) {
+		BATloopFast(r, r_cur, r_end, r_sz) {
+			@:bunfastins_nocheck_(@1,@2)@
+			dst += bn_sz;
+		}
+	}
+	bn->batBuns->free = dst - bn->batBuns->base;
+	return bn;
+
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+@= cross1
+	@:cross2(@1,chr)@
+	@:cross2(@1,sht)@
+	@:cross2(@1,int)@
+	@:cross2(@1,lng)@
+	@:cross2(@1,VATOM)@
+	@:cross2(@1,LATOM)@
+@c
+	@:cross1(chr)@
+	@:cross1(sht)@
+	@:cross1(int)@
+	@:cross1(lng)@
+	@:cross1(VATOM)@
+	@:cross1(LATOM)@
+@c
+
+@= cross_switch_rtt
+{
+	int rtt = r->ttype;
+	int rts = ATOMstorage(rtt);
+	if (rts == TYPE_chr) {
+                bn = cross_@1_chr(bn,l,r);
+        } else if (rts == TYPE_sht) {
+                bn = cross_@1_sht(bn,l,r);
+        } else if (rtt != TYPE_bat && (rts == TYPE_int || rts == TYPE_flt
+#if SIZEOF_OID == SIZEOF_INT
+		   || rts == TYPE_oid
+#endif
+		   )) {
+	        /* ensure use of ATOMput for TYPE_bat */
+                bn = cross_@1_int(bn,l,r);
+        } else if (rts == TYPE_lng || rts == TYPE_dbl
+#if SIZEOF_OID == SIZEOF_LNG 
+		   || ATOMstorage(lht) == TYPE_oid
+#endif
+) {
+                bn = cross_@1_lng(bn,l,r);
+        } else if (r->tvarsized) {
+                bn = cross_@1_VATOM(bn,l,r);
+        } else {
+                bn = cross_@1_LATOM(bn,l,r);
+        }
+}
+@c
+@= cross_switch_lht
+{
+	int lht = l->htype;
+	int lhs = ATOMstorage(lht);
+        if (lhs == TYPE_chr) {
+                @:cross_switch_rtt(chr)@
+        } else if (lhs == TYPE_sht) {
+                @:cross_switch_rtt(sht)@
+        } else if (lht != TYPE_bat && (lhs == TYPE_int || lhs == TYPE_flt
+#if SIZEOF_OID == SIZEOF_INT
+		   || lhs == TYPE_oid
+#endif
+		   )) {
+                /* ensure use of ATOMput for TYPE_bat */
+                @:cross_switch_rtt(int)@
+        } else if (lhs == TYPE_lng || lhs == TYPE_dbl
+#if SIZEOF_OID == SIZEOF_LNG
+		   || lhs == TYPE_oid
+#endif
+		   ) {
+                @:cross_switch_rtt(lng)@
+        } else if (l->hvarsized) {
+                @:cross_switch_rtt(VATOM)@
+        } else {
+                @:cross_switch_rtt(LATOM)@
+        }
+}
+@c
+BAT *BATcross(BAT *l, BAT *r) {
+	BAT *bn;
+	size_t lc, rc, estimate;
+
+        ERRORcheck(l == NULL, "BATcross: invalid left operand");
+        ERRORcheck(r == NULL, "BATcross: invalid right operand");
+        lc = BATcount(l);
+        rc = BATcount(r);
+	estimate = lc * rc;
+
+	if (estimate > 0) {
+		/* try to keep void columns where possible */
+		if (rc == 1)
+			return BATconst(l, BATttype(r), BUNtail(r,BUNfirst(r)));
+		if (lc == 1)
+			return BATmirror(BATconst(BATmirror(r), BAThtype(l), BUNhead(l,BUNfirst(l))));
+	}
+
+	@:joinbat(0, 0, estimate)@
+	if (estimate == 0)
+		return bn;
+	
+	@:cross_switch_lht@
+
+	if (bn) {
+		bn->hsorted = l->hsorted;
+		bn->tsorted = (lc==1?r->tsorted:FALSE);
+		bn->hdense = (rc==1?l->hdense:FALSE);
+		bn->tdense = (lc==1?r->tdense:FALSE);
+		BATkey(bn,(rc==1?l->hkey:FALSE));
+		BATkey(BATmirror(bn),(lc==1?r->tkey:FALSE));
+		if (!bn->batDirty) bn->batDirty = TRUE;
+	}
+
+	return bn;
+}
+
+
 @* MultiColumn Join 
 @T
 Computes the n-ary equijoin over the head columns of multiple BATs.
