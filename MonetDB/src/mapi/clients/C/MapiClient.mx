@@ -231,21 +231,24 @@ int doRequest(Mapi mid, char *buf )
 	fflush(toConsole);
 */
 	if ((hdl = mapi_query(mid, buf)) == NULL){
-		mapi_explain(mid,stdout);
+		mapi_explain(mid, stdout);
 		return 0;
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stdout);
+		mapi_close_handle(hdl);
 		return 0;
 	}
 	while ((rtrn = mapi_fetch_line(hdl)) != 0) {
-		fprintf(toConsole, "%s\n",rtrn);
+		fprintf(toConsole, "%s\n", rtrn);
 	}
 	if (mapi_error(mid)) {
-		mapi_explain_query(hdl,stdout);
+		mapi_explain_query(hdl, stdout);
+		mapi_close_handle(hdl);
+		return 0;
 	}
 	mapi_close_handle(hdl);
-	return 0;
+	return 1;
 }
 @-
 The input for the Monet server is stored in a buffer until
@@ -769,19 +772,36 @@ All new-lines should be removed before we turn it into
 a single query for the engine.
 @c
 		if ((fp = fopen(ifile, "r")) != NULL) {
-			char *s;
-			int	n, m_size=CHUNK_SIZE, m_index=0;
-			message = (char *) malloc(CHUNK_SIZE);
-			while ((n = fread(message+m_index, 1,
-					  CHUNK_SIZE, fp)) != 0) {
-				GROW_MESSAGE(n);
-				message[m_index] = 0;
+			size_t n, m_size = CHUNK_SIZE, m_index = 0;
+			message = malloc(CHUNK_SIZE);
+			if (mapi_is_blocked(mid)) {
+				/* just read the whole thing and submit it */
+				while ((n = fread(message+m_index, 1,
+						  CHUNK_SIZE, fp)) != 0) {
+					GROW_MESSAGE(n);
+					message[m_index] = 0;
+				}
+				/* echo to stdout */
+				fwrite(message, 1, strlen(message), stdout);
+				doRequest(mid, message);
+			} else {
+				/* send line by line */
+				while (fgets(message, m_size, fp) != NULL) {
+					n = strlen(message);
+					while (message[n-1] != '\n') {
+						GROW_MESSAGE(n);
+						if (fgets(message + m_index, m_size - m_index, fp) == NULL)
+							break;
+						n = strlen(message);
+					}
+					fwrite(message, 1, strlen(message), stdout);
+					if (message[n - 1] == '\n')
+						message[n - 1] = 0;
+					if (doRequest(mid, message) == 0)
+						break;
+				}
 			}
-			/* echo to stdout */
-			fwrite(message, 1, strlen(message), stdout);
-			for(s=message; *s; s++)
-			if(*s=='\n') *s=' ';
-			doRequest(mid,message);
+			free(message);
 		}
 	}
 
