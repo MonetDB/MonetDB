@@ -105,6 +105,9 @@ Look at the related ANSI-C/POSIX manual pages to get the needed information.
     .COMMAND ftell( fstream filep ) : int = io_ftell; 
 	"See: man ftell"
 
+    .COMMAND fsize( str filename ) : int = io_fsize;
+	"Return the filesize, or -1 when there was some error"
+
     .COMMAND fprint( fstream filep, ... ) = io_fprint; 
 	"Print a (comma seperated) list of arguments"
 
@@ -329,6 +332,20 @@ int io_ftell(int *res, fstream *filepp ){
    }
    return(GDK_SUCCEED);
 }
+
+int io_fsize(int* res, str filename){
+#ifdef HAVE_FSTAT
+	struct stat buf;
+	if (stat(filename,&buf))
+		*res = -1;
+	else
+		*res = (int)buf.st_size;
+#else
+        *res = -1;
+#endif
+	return(GDK_SUCCEED);
+}
+
 
 int io_fprintf(fstream *filepp, str format,  ...){
         va_list ap;
