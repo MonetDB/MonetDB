@@ -117,7 +117,7 @@ typedef ptr Buffer;
 
 #endif /*_STREAMS_H_*/
 @c
-#include <gdk.h>
+#include <monet.h>
 #include "streams.h"
 #include <stdio.h>
 

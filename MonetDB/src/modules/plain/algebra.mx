@@ -1160,7 +1160,7 @@ int CMDfetchbat(BAT** ret, BAT *b, BAT *s){
 
 int CMDfetch(ptr ret, BAT *b, int *pos){
 	int i = *pos;
-        if ((i < 0) || (i >= BATcount(b))) {
+        if ((i < 0) || ((size_t) i >= BATcount(b))) {
                 GDKerror("CMDfetch: idx out of range\n");
                 return GDK_FAIL;
         }

@@ -595,7 +595,7 @@ int JoinGuess(ITER *it) {
     ITER *outer = (ITER*) it->input;
     flt lsize = (flt) (*outer->guess)(outer);
     flt rsize = (flt) BATcount(it->hdl.join.inner);
-    flt div = MAX(1.0,lsize/MAX(1.0, rsize));
+    flt div = (flt) MAX(1.0,lsize/MAX(1.0, rsize));
     if (it->next == JoinNextVoid) {
 	return (int) lsize;
     }

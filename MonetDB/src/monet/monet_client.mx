@@ -514,7 +514,8 @@ bracket structure within string and character constants.
 The system should use the low level read primitives to ensure that
 the client reader does not hang too long on terminal I/O.
 @c
-again: 		s = c->top; *s = 0;
+/* again: */
+ 		s = c->top; *s = 0;
 		while ((i = c->fdin->read(c->fdin, c->top, 1, 1)) > 0) {
 			PARSEDEBUG THRprintf(GDKerr, "%c (%d)", *c->top, i);
 #ifdef WIN32

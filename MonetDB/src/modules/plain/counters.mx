@@ -686,12 +686,12 @@ int init_counters() {
 
 
 int compare_counter(counter *c1, counter* c2) {
-	return c1->usec - c2->usec; /* compare on time in usecs */
+	return (int) (c1->usec - c2->usec); /* compare on time in usecs */
 }
 
 
 int start_count(counter *retval, int *event0, int *event1) {
-    int rtrn, e0 = *event0, e1 = *event1, ee = NoEvent;
+    int e0 = *event0, e1 = *event1, ee = NoEvent;
 
     /* create the resulting counter object */
     memset(retval, 0, sizeof(counter));
@@ -713,6 +713,7 @@ int start_count(counter *retval, int *event0, int *event1) {
     retval->event1 = (lng)(e1);
     if ((e0 != NoEvent) || (e1 != NoEvent)) {
  #if ( defined(HW_Linux) && defined(HAVE_LIBPPERF) )
+	int rtrn;
         if ((rtrn = start_counters(event[e0].id0,CPL,event[e1].id1,CPL)) != 0) {
             GDKerror("start_count: start_counters failed with return value %d, errno %d.\n", 
                      rtrn,errno);
@@ -725,6 +726,7 @@ int start_count(counter *retval, int *event0, int *event1) {
         struct perfctr_sum_ctrs before;
  	struct vperfctr_control control;
         struct vperfctr *Self;
+	int rtrn;
         if (!(Self = vperfctr_open())) {
             GDKerror("start_count: vperfctr_open failed with return value %d, error %d.\n",
                      (int)Self,errno);
@@ -768,6 +770,7 @@ int start_count(counter *retval, int *event0, int *event1) {
         retval->count1 = (lng)before.pmc[1];
         retval->clocks = (lng)before.tsc;
  #elif defined(HW_IRIX64)
+	int rtrn;
         if ((rtrn = start_counters(event[e0].id0,event[e1].id1)) < 0) {
             GDKerror("start_count: start_counters failed with return value %d, errno %d\n", 
                      rtrn,errno);
@@ -777,6 +780,7 @@ int start_count(counter *retval, int *event0, int *event1) {
         retval->generation = (lng)rtrn;
  #elif ( defined(HW_SunOS) && defined(HAVE_LIBPERFMON) )
         unsigned long long set = 0, val = 0;
+	int rtrn;
         if ((rtrn = processor_bind(P_PID, P_MYID, 0, NULL)) < 0) {
             GDKerror("start_count: processor_bind failed with return value %d, errno %d\n", 
                      rtrn,errno);
@@ -807,6 +811,7 @@ int start_count(counter *retval, int *event0, int *event1) {
  #elif ( defined(HW_SunOS) && defined(HAVE_LIBCPC) )
         cpc_event_t evnt;
         char spec[100];
+	int rtrn;
  	sprintf(spec,"pic0=%s,pic1=%s",event[e0].spec,event[e1].spec);
         if ((rtrn = cpc_strtoevent(CPUver,spec,&evnt)) != 0) {
             GDKerror("start_count: cpc_strtoevent failed with return value %d, errno %d\n", 
@@ -842,7 +847,6 @@ int stop_count(counter *retval, counter *c) {
     lng usec = GDKusec() - c->usec;
     lng count0 = -1, count1 = -1, clocks = -1, noclocks = -1;
     dbl notimer = -1.0;
-    int rtrn;
 
     if (c->status != 1) {
         GDKerror("stop_count: counter not started or already stopped.\n");
@@ -851,6 +855,7 @@ int stop_count(counter *retval, counter *c) {
 #if defined(HWCOUNTERS)
     if ((c->event0 != NoEvent) || (c->event1 != NoEvent)) {
  #if ( defined(HW_Linux) && defined(HAVE_LIBPPERF) )
+	int rtrn;
         clocks = rdtsc() - c->clocks;
         if ((rtrn = read_counters(&count0,&count1,&notimer,&noclocks)) != 0) {
             GDKerror("stop_count: read_counters failed with return value %d, errno %d.\n", 
@@ -862,6 +867,7 @@ int stop_count(counter *retval, counter *c) {
  #elif ( defined(HW_Linux) && defined(HAVE_LIBPERFCTR) )
         struct perfctr_sum_ctrs after;
         struct vperfctr *Self = (struct vperfctr *)c->generation;
+	int rtrn;
         vperfctr_read_ctrs(Self,&after);
         count0 = (lng)after.pmc[0] - c->count0;
         count1 = (lng)after.pmc[1] - c->count1;
@@ -880,6 +886,7 @@ int stop_count(counter *retval, counter *c) {
         }
         vperfctr_close(Self);
  #elif defined(HW_IRIX64)
+	int rtrn;
         if ((rtrn = read_counters((int)(event[c->event0].id0),&count0,
                                   (int)(event[c->event1].id1),&count1)) < 0) {
             GDKerror("stop_count: read_counters failed with return value %d, errno %d\n", 
@@ -903,6 +910,7 @@ int stop_count(counter *retval, counter *c) {
         close((int)c->generation);
  #elif ( defined(HW_SunOS) && defined(HAVE_LIBCPC) )
         cpc_event_t evnt;
+	int rtrn;
         if ((rtrn = cpc_take_sample(&evnt)) != 0) {
             GDKerror("start_count: cpc_take_sample failed with return value %d, errno %d\n",
                      rtrn,errno);
