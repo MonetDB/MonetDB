@@ -15,7 +15,7 @@
 @v 1.0
 @* MAL syntax summary
 The MAL syntax is summarized below in extended BNF.
-Alternative constructs are seperated by '|' and grouped
+Alternative constructs are seperated by | and grouped
 by parenthesis.
 Optional parts are marked with square brackets.
 A repetition is marked with either '+' or '*' to
@@ -108,17 +108,19 @@ Lexical tokens are illustrated in small capitals.
 @item varlist		
 @tab : variable 
 @item
-@tab |  '(' variable {',' variable}* ')' 
+@tab |  '(' variable @{',' variable@}* ')' 
 @item variable	
 @tab : identifier propQualifier 
 @item
 @item expr    	
-@tab: fcncall | [factor  operator] factor 
+@tab : fcncall 
+@item
+@tab : [factor  operator] factor 
 @item factor  	
-@tab: constant | var 
+@tab : constant | var 
 @item
 @item constant	
-@tab : @code{ literal\_constant} | @code{ nil}
+@tab : @code{ literal_constant} | @code{ nil}
 @end multitable
 
 @-

@@ -1074,30 +1074,26 @@ is safe.
 
 [redo]
 
-@multitable @columnfractions .2 .8
-@item y:= reverse(x); 
-@itemx z:= semijoin(R,x);
-@tab z:= revsemijoin(x,R) 
-@item y:= reverse(x); 
-@itemx z:= select(R,l,h);
-@tab z:= revselect(x,R,l,h) 
-@item y:= semijoin(R,x); 
-@itemx z:= select(y,l,h);
-@tab z:= semiseselect(R,x,l,h) 
-@item y:= revsemijoin(x,R); \n
-@itemx z:= select(y,l,h);
-@tab z:= revsemiselect(R,x,l,h) 
-@item y:= join(R,S); 
-@itemx z:= semiselect(y,R,l,h);
-@tab y:= select(R,l,h)
-@tab z:= join(y,S)
-@item y:= join(R,S);
-@itemx z:= revsemiselect(y,S,l,h);
-@tab y:= select(S,l,h):\n
-@itemx                  z:= join(R,y) 
-@item y:= join(R,S);
-@itemx z:= semiselect(y,Z,l,h);
-@end multitable
+@example
+@verbatim
+y:= reverse(x); 
+z:= semijoin(R,x);          z:= revsemijoin(x,R) 
+y:= reverse(x); 
+z:= select(R,l,h);          z:= revselect(x,R,l,h) 
+y:= semijoin(R,x); 
+z:= select(y,l,h);          z:= semiseselect(R,x,l,h) 
+y:= revsemijoin(x,R); \n
+z:= select(y,l,h);          z:= revsemiselect(R,x,l,h) 
+y:= join(R,S); 
+z:= semiselect(y,R,l,h);    y:= select(R,l,h)
+                            z:= join(y,S)
+y:= join(R,S);
+z:= revsemiselect(y,S,l,h); y:= select(S,l,h):\n
+z:= join(R,y) 
+y:= join(R,S);
+z:= semiselect(y,Z,l,h);
+@end verbatim
+@end example
 
 @-
 During a final pass through the program, we can convert all combinators 

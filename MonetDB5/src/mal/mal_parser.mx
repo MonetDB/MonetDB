@@ -374,7 +374,7 @@ The syntax structure is
 @item typeQualifier  
 @tab : typeName propQualifier 
 @item typeName       
-@tab : scalarType $|$ collectionType $|$ anyType
+@tab : scalarType | collectionType | anyType
 @item scalarType     
 @tab :  ':' @code{ identifier} 
 @item collectionType 
@@ -382,9 +382,9 @@ The syntax structure is
 @item anyType        
 @tab :  ':' @code{ any} [typeAlias] 
 @item col            
-@tab :  scalarType $|$ anyType 
+@tab :  scalarType | anyType 
 @item propQualifier  
-@tab :  ['\{' property '\}']
+@tab :  ['@{' property '@}']
 @end multitable
 
 The type ANY matches any type specifier.
@@ -632,7 +632,9 @@ non-terminated definitions.
 @tab : moduleStmt | includeStmt 
 @item
 @tab  |  commandStmt | patternStmt 
+@item
 @tab  | functionStmt | factoryStmt
+@item
 @tab  | includeStmt
 @end multitable
 
@@ -971,11 +973,13 @@ modified with a barrier/catch tag.
 @item
 @tab |  @code{ leave} | @code{ redo} | 
 @item expr            
-@tab :  fcncall | [factor  operator] factor 
+@tab :  fcncall 
+@item
+@tab : [factor  operator] factor 
 @item varlist         
 @tab :  variable 
 @item
-@tab |  '(' variable {',' variable}* ')' 
+@tab |  '(' variable @{',' variable@}* ')' 
 @item variable        
 @tab :  identifier propQualifier 
 @item factor          

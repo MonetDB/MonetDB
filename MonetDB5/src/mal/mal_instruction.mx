@@ -112,7 +112,7 @@ They mark the end of a function call and return one or more results
 to the calling environment. 
 The @code{ return} and @code{ yield} are followed by a target list
 or an assignment, which is executed first.
-The @code{ end} marker identifies the end of functional abstraction. 
+The @code{end} marker identifies the end of functional abstraction. 
 Anything beyond it is ignored.
 
 The flow of control within a MAL program block can be changed by
@@ -121,14 +121,14 @@ tagging an assignment with either
 The @code{ barrier} and @code{ exit} mark a block
 to be interpreted when the barrier can be taken.
 
-The @code{ barrier}, @code{ leave} and @code{ redo} are conditional 
+The @code{barrier}, @code{leave} and @code{redo} are conditional 
 flow modifiers, because they use the value of the first target 
 variable after the expression has been evaluated to decide
 on the action to be taken.
 Built-in barrier controls exists for booleans and numeric values.
 The barrier is opened when the first target variable holds
 true, when its numeric value $>=$ 0, when it is a non-empty
-string. The {\sc nil} value blocks entry in all cases.
+string. The @code{ nil} value blocks entry in all cases.
 
 
 Once inside the barrier you have an option to prematurely
@@ -189,7 +189,7 @@ exit elsepart;
 
 Note that both guarded blocks can be interchanged without
 affecting the outcome. Moreover, neither block would
-have been entered if the variable happens to be assigned {\sc nil }
+have been entered if the variable happens to be assigned @code{ nil }
 
 Beware that @code{ redo} is a flow modifier attached to an instruction.
 The generic form of an iterator looks like
@@ -206,13 +206,13 @@ exit i:= exitIterator(T);
 @end example
 
 The semantics obeyed by the implementations should be as follows.
-The redo expression updates the target variable {\em i} and control
+The redo expression updates the target variable @emph{ i} and control
 proceeds at the first statement after the barrier when the
-barrier is opened by {\em i}. If the barrier could not be
+barrier is opened by @emph{ i}. If the barrier could not be
 re-opened, execution proceeds with the first statement after
 the redo.
 Likewise, the leave control statement skips to the exit
-when the control variable {\em i} shows a closed barrier block.
+when the control variable @emph{ i} shows a closed barrier block.
 Otherwise, it continues with the next instruction.
 Note, in both failed cases the control variable is 
 possibly changed.

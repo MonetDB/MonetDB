@@ -194,7 +194,7 @@ The signature provides several handles to attach properties.
 Each formal parameter could come with a list of 'desirable/necessary'
 properties. Likewise, the return values have a property set.
 This leads to the extended signature
-function fcn(A:T{P1},....,B:T{Pn}): (C:T{Pk}...D:T{Pm})
+function fcn(A:T@{P1@},....,B:T@{Pn@}): (C:T@{Pk@}...D:T@{Pm@})
 where each Pi denotes a property set.
 Properties P1..Pn can be used to select the proper function variant.
 At its worst, several signatures of fcn() should be inspected at
@@ -208,13 +208,13 @@ The function is applicable when a (simple conjuntive) predicate over
 the properties of the actual arguments holds. A side-effect of execution
 of the function leads to an update of the property set associated with
 the actual arguments. An example:
-@T
-\begin{verbatim}
+@example
+@verbatim
 function fcn (A:int,B:bat[int,int],C:int):int
-        ?{A.read=true, B.count<1000}
-        {fcn.write:=true;}
-\end{verbatim}
-@-
+        ?@{A.read=true, B.count<1000@}
+        @{fcn.write:=true;@}
+@end verbatim
+@end example
 
 [Try 3] Organize property management by the processor involved, e.g.
 a cost-based optimizer or a access control enforcer.
@@ -226,9 +226,9 @@ Can you drop properties? It seems possible, but since property operations
 occur before actual execution there is no guarantee that they actually
 take place.
 
-[case: how to handle sort(b:bat{P}):bat{+sorted} as a means to propagate  ]
+[case: how to handle sort(b:bat@{P@}):bat@{+sorted@} as a means to propagate  ]
 [actually we need an expression language to indicate the propety set,
-e.g. sort(b:bat):bat{sorted,+b} which first obtains the properties of b and
+e.g. sort(b:bat):bat@{sorted,+b@} which first obtains the properties of b and
 extends it with sorted. A nested structure emerge
 
 Is it necessary to construct the property list intersection?
@@ -247,29 +247,31 @@ This calls for gaining access and update.
 For example, the following snippet shows how properties
 are used in a code block.
 
-@T
-\begin{verbatim}
+@example
+@verbatim
 B := new(int,int);
-I := properties.has(B,{hsorted}); 
-J := properties.get(B,{cost});
+I := properties.has(B,@{hsorted@}); 
+J := properties.get(B,@{cost@});
 print(J);
 
-properties.set(B,{cost},2315); 
-barrier properties.has(B,{sorted});
+properties.set(B,@{cost@},2315); 
+barrier properties.has(B,@{sorted@});
 exit;
-\begin{verbatim}
+@end verbatim
+@end example
 @-
 These example illustrate that the property manipulations are
 executed throug patterns, which also accept a stack frame.
 
 Sample problem with dropping properties:
-@T
-\begin{verbatim}
+@example
+@verbatim
     B := new(int,int);
 barrier tst:= randomChoice()
     I := properties.drop(B,{hsorted}); 
 exit	tst;
-\end{verbatim}
+@end verbatim
+@end example
 
 @+ The cost model problem
 An important issue for property management is to be able to pre-calculate
@@ -279,25 +281,26 @@ dataflow semantics, and
 
 For example, selectivity estimations can be based on a histogram associated
 with a BAT. The code for this could look like
-@T
-\begin{verbatim}
+@example
+@verbatim
     B:= new(int,int);
     properties.add(B,{min,max,histogram});
     Z:= select(B,1,100);
-\end{verbatim}
+@end verbatim
+@end example
 Addition of a property may trigger its evaluation, provided enough
 information is available (e.g. catalog). The instruction triggers the
-calls properties.set(B,{min}), properties.set(B,{max}), and 
-properties.set(B,{histogram})
+calls properties.set(B,@{min@}), properties.set(B,@{max@}), and 
+properties.set(B,@{histogram@})
 once a property evaluation engine is ran against the code block.
 After assignment to Z, we have to propagate properties
-properties.update(B,{min}).
+properties.update(B,@{min@}).
 @+ SQL case
 To study the use of properties in the complete pipeline SQL-execution
 we contrive a small SQL problem. The person table is sorted by name,
 the car table is unsorted.
-@T
-\begin{verbatim}
+@example
+@verbatim
 create table person(name varchar not null, 
 		address varchar);
 create table car(name varchar, 
@@ -307,7 +310,8 @@ select distinct name, model, milage
 from person, car
 where car.name= person.name 
   and milage>60000;
-\end{verbatim}
+@end verbatim
+@end example
 @+ Implementation rules
 Properties can be associated with variables, MAL blocks, and MAL instructions.
 This property list is only initialized upon explicit request, e.g. by
@@ -343,12 +347,14 @@ once and to cache the result for the remainder of the objects life time.
 
 @+ Predefined properties
 The MAL language uses a few defaults, recognizable as properties
-@T
-\begin{tabular}{l l}
-unsafe & function has side effects.Default, unsafe=off\\
-read & data can be read but not updated\\
-append & data can be appended\\
-\end{tabular}
+@multitable @columnfractions .1 .8
+@item unsafe 
+@tab function has side effects.Default, unsafe=off
+@item read 
+@tab data can be read but not updated
+@item append 
+@tab data can be appended
+@end multitable
 @-
 A poperty set contains a multi-list of (name,value) pairs.
 Each list corresponds to an element in the corresponding group, e.g.
