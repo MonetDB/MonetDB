@@ -441,10 +441,6 @@ public class MonetResultSet implements ResultSet {
 	   not implemented for now */
 	public InputStream 	getAsciiStream(int columnIndex) { return(null); }
 	public InputStream 	getAsciiStream(String columnName) { return(null); }
-	public BigDecimal 	getBigDecimal(int columnIndex) { return(null); }
-	public BigDecimal 	getBigDecimal(int columnIndex, int scale) { return(null); }
-	public BigDecimal 	getBigDecimal(String columnName) { return(null); }
-	public BigDecimal 	getBigDecimal(String columnName, int scale) { return(null); }
 	public InputStream 	getBinaryStream(int columnIndex) { return(null); }
 	public InputStream 	getBinaryStream(String columnName) { return(null); }
 	public InputStream 	getUnicodeStream(int columnIndex) { return(null); }
@@ -456,6 +452,73 @@ public class MonetResultSet implements ResultSet {
 	public Clob 	getClob(int i) { return(null); }
 	public Clob 	getClob(String colName) { return(null); }
 
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a java.math.BigDecimal with full precision.
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @return the column value (full precision); if the value is SQL NULL,
+	 *         the value returned is null in the Java programming language.
+	 * @throws SQLException if a database access error occurs
+	 */
+	public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
+		String decimal = getString(columnIndex);
+		if (decimal == null) {
+			return(null);
+		} else {
+			return(new BigDecimal(decimal));
+		}
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a java.math.BigDecimal with full precision.
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @param scale the number of digits to the right of the decimal point
+	 * @return the column value (full precision); if the value is SQL NULL,
+	 *         the value returned is null in the Java programming language.
+	 * @throws SQLException if a database access error occurs
+	 */
+	public BigDecimal getBigDecimal(int columnIndex, int scale)
+		throws SQLException
+	{
+		String decimal = getString(columnIndex);
+		if (decimal == null) {
+			return(null);
+		} else {
+			return((new BigDecimal(decimal)).setScale(scale));
+		}
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a java.math.BigDecimal with full precision.
+	 *
+	 * @param columnName the SQL name of the column
+	 * @return the column value (full precision); if the value is SQL NULL,
+	 *         the value returned is null in the Java programming language.
+	 * @throws SQLException if a database access error occurs
+	 */
+	public BigDecimal getBigDecimal(String columnName) throws SQLException {
+		return(getBigDecimal(findColumn(columnName)));
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a java.math.BigDecimal with full precision.
+	 *
+	 * @param columnName the SQL name of the column
+	 * @param scale the number of digits to the right of the decimal point
+	 * @return the column value (full precision); if the value is SQL NULL,
+	 *         the value returned is null in the Java programming language.
+	 * @throws SQLException if a database access error occurs
+	 */
+	public BigDecimal getBigDecimal(String columnName, int scale)
+		throws SQLException
+	{
+		return(getBigDecimal(findColumn(columnName), scale));
+	}
 
 	/**
 	 * Retrieves the value of the designated column in the current row of this
@@ -925,30 +988,34 @@ public class MonetResultSet implements ResultSet {
 		}
 
 		/**
-		 * This is somewhat badly implemented, but at the moment we simply
-		 * do not support all getters available. Also the types are a little
-		 * bit a big mess...
+		 * This switch returns the types as objects according to table B-3 from
+		 * Sun's JDBC specification 3.0
 		 */
 		switch(MonetDriver.getJavaType(types[i - 1])) {
-			case Types.ARRAY:
-			case Types.OTHER:
-			case Types.NUMERIC:
-			case Types.DECIMAL:
 			case Types.CHAR:
 			case Types.VARCHAR:
 			case Types.LONGVARCHAR:
-			default:
 				return(getString(i));
+			case Types.NUMERIC:
+			case Types.DECIMAL:
+				return(getBigDecimal(i));
+			case Types.BIT: // we don't use type BIT, it's here for completeness
 			case Types.BOOLEAN:
 				return(Boolean.valueOf(getBoolean(i)));
+			case Types.TINYINT:
+			case Types.SMALLINT:
 			case Types.INTEGER:
+				return(new Integer(getInt(i)));
+			case Types.BIGINT:
 				return(new Long(getLong(i)));
-			case Types.FLOAT:
-				return(new Float(getFloat(i)));
-			case Types.DOUBLE:
 			case Types.REAL:
+				return(new Float(getFloat(i)));
+			case Types.FLOAT:
+			case Types.DOUBLE:
 				return(new Double(getDouble(i)));
-			case Types.BLOB:
+			case Types.BINARY:
+			case Types.VARBINARY:
+			case Types.LONGVARBINARY:	// we don't have any of the above three
 				// luckily, an array is an object ;-)
 				return(getString(i).getBytes());
 			case Types.DATE:
@@ -957,6 +1024,17 @@ public class MonetResultSet implements ResultSet {
 				return(getTime(i));
 			case Types.TIMESTAMP:
 				return(getTimestamp(i));
+
+			case Types.DISTINCT: // all below are currently not implemented and used
+			case Types.CLOB:
+			case Types.BLOB:
+			case Types.ARRAY:
+			case Types.STRUCT:
+			case Types.REF:
+			case Types.DATALINK:
+			case Types.OTHER:
+			default:
+				return(getString(i));
 		}
 	}
 

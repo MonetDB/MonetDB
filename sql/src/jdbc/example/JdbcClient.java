@@ -22,6 +22,7 @@ public class JdbcClient {
 		String host = "localhost";
 		String port = "45123";
 		String database = "default";
+		String dump = null;
 		// we leave checking if this is a valid number to the driver
 
 		// look for a file called .monetdb in the users homedir
@@ -46,7 +47,7 @@ public class JdbcClient {
 
 		// parse the arguments
 		boolean hasFile = false, hasUser = false, hasHost = false,
-				hasPort = false, debug = false;
+				hasPort = false, hasDump = false, debug = false;
 		for (int i = 0; i < args.length; i++) {
 			if (!hasFile && args[i].equals("-f") && i + 1 < args.length) {
 				file = args[i + 1];
@@ -63,10 +64,12 @@ public class JdbcClient {
 				user = args[i + 1];
 				i++;
 				hasUser = true;
+				pass = null;
 			} else if (!hasUser && args[i].startsWith("-u")) {
 				user = args[i].substring(2);
 				if (user.equals("")) user = null;
 				hasUser = true;
+				pass = null;
 			} else if (!hasHost && args[i].equals("-h") && i + 1 < args.length) {
 				host = args[i + 1];
 				i++;
@@ -91,12 +94,21 @@ public class JdbcClient {
 				hasPort = true;
 			} else if (!debug && args[i].equals("-d")) {
 				debug = true;
+			} else if (!hasHost && args[i].equals("-D") && i + 1 < args.length) {
+				dump = args[i + 1];
+				i++;
+				hasDump = true;
+			} else if (!hasHost && args[i].startsWith("-D")) {
+				dump = args[i].substring(2);
+				if (host.equals("")) dump = null;
+				hasDump = true;
 			} else if (args[i].equals("--help")) {
-				System.out.println("Usage java -jar MonetJDBC.jar [-h host[:port]] [-p port] [-f file] [-u user] [-d]");
+				System.out.println("Usage java -jar MonetJDBC.jar [-h host[:port]] [-p port] [-f file] [-u user] [-d] [-D [table]]");
 				System.out.println("where arguments may be written directly after the option like -hlocalhost.");
 				System.out.println("If no host and port are given, localhost 45123 are assumed. The program will ask");
 				System.out.println("for the username if not given but the -u flag specified. If no input file is given,");
 				System.out.println("an interactive session is started on the terminal. The -d option creates a debug log.");
+				System.out.println("The -D option can be used for dumping database tables. If no table is given all are assumed");
 				System.exit(-1);
 			} else {
 				System.out.println("Ignoring unknown argument: " + args[i]);
@@ -138,6 +150,24 @@ public class JdbcClient {
 		// Monet itself can't access multiple databases.
 		Connection con = DriverManager.getConnection("jdbc:monetdb://" + host + "/" + database, user, pass);
 		DatabaseMetaData dbmd = con.getMetaData();
+		Statement stmt = con.createStatement();
+
+		if (hasDump) {
+			System.out.println("START TRANSACTION;");
+			if (dump != null) {
+				describe(dbmd, stmt, dump, true);
+			} else {
+				// dump all
+				String[] types = {"TABLE", "VIEW"};
+				ResultSet tbl = dbmd.getTables(null, null, null, types);
+				// dump all tables that are returned
+				while (tbl.next()) {
+					describe(dbmd, stmt, tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME"), true);
+				}
+			}
+			System.out.println("COMMIT;");
+			System.exit(0);
+		}
 
 		BufferedReader fr;
 		if (hasFile) {
@@ -156,9 +186,6 @@ public class JdbcClient {
 			System.out.println("Type \\q to quit, \\h for a list of available commands");
 			System.out.println("auto commit mode: on");
 		}
-
-		// get a statement to execute on
-		Statement stmt = con.createStatement();
 
 		SQLStack stack = new SQLStack();
 		QueryPart qp;
@@ -185,38 +212,19 @@ public class JdbcClient {
 					} else if (qp.getQuery().startsWith("\\d")) {
 						String object = qp.getQuery().substring(2).trim().toLowerCase();
 						if (object.endsWith(";")) object = object.substring(0, object.length() - 1);
-						ResultSet tbl;
 						if (!object.equals("")) {
-							tbl = dbmd.getTables(null, null, null, null);
-							// we have an object, see is we can describe it
-							boolean found = false;
-							while (tbl.next()) {
-								if (tbl.getString("TABLE_NAME").equalsIgnoreCase(object) ||
-									(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object)) {
-									// we found it, describe it
-									if (tbl.getString("TABLE_TYPE").equals("VIEW")) {
-										System.out.println("CREATE VIEW " + tbl.getString("TABLE_NAME") + " AS " + tbl.getString("REMARKS").trim());
-									} else {
-										System.out.print(createTable(dbmd, tbl.getString("TABLE_CAT"),
-											tbl.getString("TABLE_SCHEM"), tbl.getString("TABLE_NAME"),
-											tbl.getString("TABLE_TYPE")));
-									}
-									found = true;
-									break;
-								}
-							}
-							if (!found) System.out.println("Unknown table or view: " + object);
+							describe(dbmd, stmt, object, false);
 						} else {
 							String[] types = {"TABLE", "VIEW"};
-							tbl = dbmd.getTables(null, null, null, types);
+							ResultSet tbl = dbmd.getTables(null, null, null, types);
 							// give us a list with tables
 							while (tbl.next()) {
 								System.out.println(tbl.getString("TABLE_TYPE") + "\t" +
 									tbl.getString("TABLE_SCHEM") + "." +
 									tbl.getString("TABLE_NAME"));
 							}
+							tbl.close();
 						}
-						tbl.close();
 					} else if (qp.getQuery().toLowerCase().startsWith("start transaction") ||
 						qp.getQuery().toLowerCase().startsWith("begin transaction")) {
 						try {
@@ -301,6 +309,34 @@ public class JdbcClient {
 		fr.close();
 	}
 
+	private static void describe(
+		DatabaseMetaData dbmd,
+		Statement stmt,
+		String object,
+		boolean dump
+	) throws SQLException {
+		ResultSet tbl = dbmd.getTables(null, null, null, null);
+		// we have an object, see is we can find it
+		boolean found = false;
+		while (tbl.next()) {
+			if (tbl.getString("TABLE_NAME").equalsIgnoreCase(object) ||
+				(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object)) {
+				// we found it, describe it
+				if (tbl.getString("TABLE_TYPE").equals("VIEW")) {
+					System.out.println("CREATE VIEW " + tbl.getString("TABLE_NAME") + " AS " + tbl.getString("REMARKS").trim());
+				} else {
+					System.out.print(createTable(dbmd, tbl.getString("TABLE_CAT"),
+						tbl.getString("TABLE_SCHEM"), tbl.getString("TABLE_NAME"),
+						tbl.getString("TABLE_TYPE")));
+					if (dump) dumpTable(System.out, stmt, tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME"));
+				}
+				found = true;
+				break;
+			}
+		}
+		if (!found) System.out.println("Unknown table or view: " + object);
+	}
+
 	private static String createTable(
 		DatabaseMetaData dbmd,
 		String cat,
@@ -308,73 +344,205 @@ public class JdbcClient {
 		String table,
 		String tableType
 	) throws SQLException {
+		StringBuffer ret = new StringBuffer();
+		String comment = null;
+		int i;
+		ret.append("CREATE ").append(tableType).append(" ").append(schem);
+		ret.append(".").append(table).append(" (\n");
+		// put all columns with their type in place
 		ResultSet cols = dbmd.getColumns(cat, schem, table, null);
-		String ret = "";
-		ret += "CREATE " + tableType + " " + schem + "." + table + " (\n";
-		while (cols.next()) {
-			ret += "\t" + cols.getString("COLUMN_NAME") +
-				"\t" + cols.getString("TYPE_NAME") + "(" +
-				cols.getString("COLUMN_SIZE") +
-				(cols.getInt("DATA_TYPE") == Types.DECIMAL ? "," + cols.getString("DECIMAL_DIGITS") : "") +
-				")" + (cols.getInt("NULLABLE") == DatabaseMetaData.columnNoNulls ? "\tNOT NULL" : "") +
-				",\n";
-		}
-		cols.close();
-		ret += "\n";
-		cols = dbmd.getPrimaryKeys(cat, schem, table);
-		ret += "\tPRIMARY KEY (";
-		while (cols.next()) {
-			 ret += cols.getString("COLUMN_NAME") + ", ";
-		}
-		if (!ret.endsWith("\tPRIMARY KEY (")) {
-			ret = ret.substring(0, ret.length() - 2) + "), -- " + cols.getString("PK_NAME") + "\n";
-		} else {
-			ret = ret.substring(0, ret.length() - 14);
-		}
-		cols.close();
-		cols = dbmd.getIndexInfo(cat, schem, table, true, true);
-		String lastIdxName = "";
-		while (cols.next()) {
-			if (lastIdxName.equals(cols.getString("INDEX_NAME"))) {
-				ret += ", " + cols.getString("COLUMN_NAME");
-			} else {
-				if (lastIdxName != "") ret += "), -- " + lastIdxName + "\n";
-				ret += "\tUNIQUE (" + cols.getString("COLUMN_NAME");
+		for (i = 0; cols.next(); i++) {
+			int type = cols.getInt("DATA_TYPE");
+			if (i > 0) ret.append(",\n");
+			ret.append("\t").append(cols.getString("COLUMN_NAME"));
+		 	ret.append("\t").append(cols.getString("TYPE_NAME"));
+		 	if (type != Types.REAL &&
+				type != Types.DOUBLE &&
+				type != Types.FLOAT &&
+				type != Types.TIMESTAMP &&
+				type != Types.DATE &&
+				type != Types.TIME)
+			{
+		 		ret.append("(").append(cols.getString("COLUMN_SIZE"));
+		 		if (cols.getInt("DATA_TYPE") == Types.DECIMAL)
+					ret.append(",").append(cols.getString("DECIMAL_DIGITS"));
+				ret.append(")");
 			}
-			lastIdxName = cols.getString("INDEX_NAME");
+			if (cols.getInt("NULLABLE") == DatabaseMetaData.columnNoNulls)
+				ret.append("\tNOT NULL");
 		}
-		if (lastIdxName != "") ret += "), -- " + lastIdxName + "\n";
 		cols.close();
+
+		// the primary key constraint
+		cols = dbmd.getPrimaryKeys(cat, schem, table);
+		for (i = 0; cols.next(); i++) {
+			if (i == 0) ret.append(",\n\n\tPRIMARY KEY (");
+			if (i > 0) ret.append(", ");
+			ret.append(cols.getString("COLUMN_NAME"));
+		}
+		if (i != 0) {
+			ret.append(")");
+			comment = cols.getString("PK_NAME");
+		}
+		cols.close();
+
+		// unique constraints
+		cols = dbmd.getIndexInfo(cat, schem, table, true, true);
+		while (cols.next()) {
+			ret.append(",");
+			if (comment != null) ret.append(" -- ").append(comment);
+			ret.append("\n");
+			ret.append("\tUNIQUE (").append(cols.getString("COLUMN_NAME"));
+			comment = cols.getString("INDEX_NAME");
+
+			while (cols.next() && comment != null &&
+				comment.equals(cols.getString("INDEX_NAME")))
+			{
+				ret.append(", ").append(cols.getString("COLUMN_NAME"));
+			}
+			// go back one
+			cols.previous();
+
+			ret.append(")");
+		}
+		cols.close();
+
+		// foreign keys
 		cols = dbmd.getImportedKeys(cat, schem, table);
 		while (cols.next()) {
-			ret += "\tFOREIGN KEY (" + cols.getString("FKCOLUMN_NAME") + ") " +
-					"REFERENCES " + cols.getString("PKTABLE_SCHEM") + "." +
-					cols.getString("PKTABLE_NAME") + "(" +
-					cols.getString("PKCOLUMN_NAME") + "), -- " + cols.getString("FK_NAME") + "\n";
+			ret.append(",");
+			if (comment != null) ret.append(" -- ").append(comment);
+			ret.append("\n");
+			ret.append("\tFOREIGN KEY (");
+			ret.append(cols.getString("FKCOLUMN_NAME")).append(") ");
+			ret.append("REFERENCES ").append(cols.getString("PKTABLE_SCHEM"));
+		 	ret.append(".").append(cols.getString("PKTABLE_NAME"));
+			ret.append("(").append(cols.getString("PKCOLUMN_NAME"));
+		 	ret.append(")");
+			comment = cols.getString("FK_NAME");
 		}
 		cols.close();
-		if (ret.endsWith(",\n\n")) ret = ret.substring(0, ret.length() - 3) + "\n";
-		else if (ret.endsWith(",\n")) ret = ret.substring(0, ret.length() - 2) + "\n";
-		ret += ");\n";
+		// if a comment needs to be added, do it now
+		if (comment != null) ret.append(" -- ").append(comment);
+		ret.append("\n");
+		// end the create statement
+		ret.append(");\n");;
 
+		// create indexes
 		cols = dbmd.getIndexInfo(cat, schem, table, false, true);
-		lastIdxName = "";
+		comment = null;
 		while (cols.next()) {
 			if (!cols.getBoolean("NON_UNIQUE")) {
 				// we already covered this one as UNIQUE
 				continue;
-			} else if (lastIdxName.equals(cols.getString("INDEX_NAME"))) {
-				ret += ", " + cols.getString("COLUMN_NAME");
 			} else {
-				if (lastIdxName != "") ret += ");\n";
-				ret += "CREATE INDEX " + cols.getString("INDEX_NAME") + " ON " +
-					cols.getString("TABLE_NAME") + " (" + cols.getString("COLUMN_NAME");
+				ret.append(",\n");
+				ret.append("CREATE INDEX ");
+				ret.append(cols.getString("INDEX_NAME"));
+				ret.append(" ON ").append(cols.getString("TABLE_NAME"));
+				ret.append(" (").append(cols.getString("COLUMN_NAME"));
+				comment = cols.getString("INDEX_NAME");
+
+				while (cols.next() && comment != null &&
+					comment.equals(cols.getString("INDEX_NAME")))
+				{
+					ret.append(", ").append(cols.getString("COLUMN_NAME"));
+				}
+				// go back one
+				cols.previous();
+
+				ret.append(");");
 			}
-			lastIdxName = cols.getString("INDEX_NAME");
 		}
-		if (lastIdxName != "") ret += ");\n";
 		cols.close();
-		return(ret);
+		return(ret.toString());
+	}
+
+	private final static int AS_IS = 0;
+	private final static int QUOTE = 1;
+	private final static int TIMESTAMP = 2;
+	private final static int TIME = 3;
+	private final static int DATE = 4;
+
+	public static void dumpTable(PrintStream out, Statement stmt, String table)
+		throws SQLException
+	{
+		ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
+		ResultSetMetaData rsmd = rs.getMetaData();
+		String statement = "INSERT INTO " + table + " VALUES (";
+		int cols = rsmd.getColumnCount();
+		int[] types = new int[cols];
+		for (int i = 0; i < cols; i++) {
+			switch (rsmd.getColumnType(i + 1)) {
+				case Types.CHAR:
+				case Types.VARCHAR:
+				case Types.LONGVARCHAR:
+					types[i] = QUOTE;
+				break;
+				case Types.NUMERIC:
+				case Types.DECIMAL:
+				case Types.BIT: // we don't use type BIT, it's here for completeness
+				case Types.BOOLEAN:
+				case Types.TINYINT:
+				case Types.SMALLINT:
+				case Types.INTEGER:
+				case Types.BIGINT:
+				case Types.REAL:
+				case Types.FLOAT:
+				case Types.DOUBLE:
+					types[i] = AS_IS;
+				break;
+				case Types.DATE:
+					types[i] = DATE;
+				break;
+				case Types.TIME:
+					types[i] = TIME;
+				break;
+				case Types.TIMESTAMP:
+					types[i] = TIMESTAMP;
+				break;
+
+				default:
+					types[i] = AS_IS;
+			}
+		}
+
+		while (rs.next()) {
+			out.print(statement);
+			for (int i = 1; i <= cols; i++) {
+				if (i > 1) out.print(", ");
+				if (rs.getString(i) == null) {
+					out.print("NULL");
+					continue;
+				}
+				switch (types[i - 1]) {
+					case AS_IS:
+						out.print(rs.getString(i));
+					break;
+					case QUOTE:
+						out.print("'");
+						out.print(rs.getString(i).replaceAll("\\\\", "\\\\\\\\").replaceAll("\\\'", "\\\\\'"));
+						out.print("'");
+					break;
+					case TIMESTAMP:
+						out.print("timestamp '");
+						out.print(rs.getTimestamp(i));
+						out.print("'");
+					break;
+					case TIME:
+						out.print("time '");
+						out.print(rs.getTime(i));
+						out.print("'");
+					break;
+					case DATE:
+						out.print("date '");
+						out.print(rs.getDate(i));
+						out.print("'");
+					break;
+				}
+			}
+			out.println(");");
+		}
 	}
 
 
