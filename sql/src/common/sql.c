@@ -118,10 +118,8 @@ const char *token2string(int token)
 		return "From";
 	case SQL_UNION:
 		return "Union";
-	case SQL_UPDATE_SET:
-		return "Update Set";
-	case SQL_INSERT_INTO:
-		return "Insert Into";
+	case SQL_UPDATE:
+		return "Update";
 	case SQL_INSERT:
 		return "Insert";
 	case SQL_DELETE:
@@ -2819,25 +2817,22 @@ static stmt *column_constraint_type(context * sql, symbol * s, stmt * ss,
 		char *tname = table_name(n->data.lval);
 		char *cname = n->data.lval->h->data.sval;
 		table *ft = cat_bind_table(sql->cat, c->table->schema, tname);
-		column *fc = cat_bind_column(sql->cat, ft, cname);
+		key *rk = cat_table_bind_sukey(ft, cname);
 
 		if (!ft) {
 			snprintf(sql->errstr, ERRSIZE,
 				_("table %s unknown\n"), tname);
-		} else if (!fc) {
-			snprintf(sql->errstr, ERRSIZE,
-				_("table %s has no column %s\n"), tname, cname);
+			return NULL;
+		} else if (!rk) {
+			snprintf(sql->errstr, ERRSIZE, 
+				_("Could not find referenced unique key in table %s\n"), ft->name );
+			return NULL;
 		} else {
-			key *fk = cat_table_add_key(ft, rkey, NULL);
-			key *k = cat_table_add_key(c->table, fkey, fk);
+			key *k = cat_table_add_key(c->table, fkey, rk);
 			stmt *fts = stmt_bind_table(ss, ft);
-			stmt *fcs = stmt_bind_column(fts, fc);
+			stmt *rks = stmt_bind_key(ss, rk);
 			cat_key_add_column(k, c);
-			cat_key_add_column(fk, fc);
-			res = stmt_key_add_column(
-					stmt_key(fts, rkey, NULL), fcs);
-			res = stmt_key_add_column(
-					stmt_key(ts, fkey, res), cs);
+			res = stmt_key_add_column( stmt_key(ts, fkey, rks), cs);
 		}
 	} break;
 	case SQL_NOT_NULL:
@@ -2935,21 +2930,36 @@ static stmt *table_foreign_key( context * sql, symbol * s, stmt * ss, stmt * ts,
 		snprintf(sql->errstr, ERRSIZE, _("Table %s unknown\n"), tname );
 		return NULL;
 	} else {
-		key *fk = cat_table_add_key(ft, fkey, NULL);
-		key *k = cat_table_add_key(t, fkey, fk);
-		stmt *fts = stmt_bind_table(ss, ft);
-		stmt *ks = stmt_key(fts, rkey, NULL);
-		stmt *rks = stmt_key(ts, fkey, ks);
+		stmt *fts, *rks, *ks;
+		key *k, *rk = cat_table_bind_pkey(ft);
 		dnode *nms = n->next->data.lval->h;
-		dnode *fnms = n->next->data.lval->h;
-		if (n->next->next)
-			fnms = n->next->next->data.lval->h;
+		node *fnms;
 
-		for(;nms && fnms; nms = nms->next, fnms = fnms->next){
+		if (n->next->next->data.lval){ /* find unique referenced key */
+			dnode *fnms = n->next->next->data.lval->h;
+			list *cols = list_create(NULL);
+
+			for( ;fnms; fnms = fnms->next)
+				list_append(cols,fnms->data.sval);
+
+			rk = cat_table_bind_ukey(ft, cols);
+			list_destroy(cols);
+		}
+		if (!rk){
+			snprintf(sql->errstr, ERRSIZE, _("Could not find referenced unique key in table %s\n"), ft->name );
+			return NULL;
+		}
+	       	k = cat_table_add_key(t, fkey, rk);
+		fts = stmt_bind_table(ss, ft);
+		rks = stmt_bind_key(fts, rk);
+		ks = stmt_key(ts, fkey, rks);
+
+		for(fnms = rk->columns->h;
+				nms && fnms; 
+				nms = nms->next, fnms = fnms->next){
 			char *nm = nms->data.sval;
-			char *fnm = fnms->data.sval;
 			column *c = cat_bind_column(cat, t, nm );
-			column *fc = cat_bind_column(cat, ft, fnm );
+			column *fc = fnms->data;
 
 			if (!c){
 				snprintf(sql->errstr, ERRSIZE,
@@ -2957,16 +2967,8 @@ static stmt *table_foreign_key( context * sql, symbol * s, stmt * ss, stmt * ts,
 				if (res) stmt_destroy(res);
 				return NULL;
 			}
-			if (!fc){
-				snprintf(sql->errstr, ERRSIZE,
-				_("Table %s has no column %s\n"), ft->name,fnm);
-				if (res) stmt_destroy(res);
-				return NULL;
-			}
-			cat_key_add_column(fk, fc );
 			cat_key_add_column(k, c );
-			res = stmt_key_add_column(ks, stmt_bind_column(fts,fc));
-			res = stmt_key_add_column(rks, stmt_bind_column(ts,c));
+			res = stmt_key_add_column(ks, stmt_bind_column(ts,c));
 		}
 		if (nms || fnms){
 			snprintf(sql->errstr, ERRSIZE,
@@ -3011,7 +3013,7 @@ static stmt *table_constraint_type( context * sql, symbol * s,
 			res = table_foreign_key( sql, s, ss, ts, t );
 		 	break;
 	}
-	if (!res){
+	if (!res && sql->errstr[0] == '\0') {
 		snprintf(sql->errstr, ERRSIZE,
 			 _("Table Constraint Type: wrong token (%ld) = %s\n"),
 			 (long) s, token2string(s->token));
@@ -3485,7 +3487,7 @@ static stmt *sql_stmt(context * sql, symbol * s)
 				       l->h->next->next->next->data.ival);
 		}
 		break;
-	case SQL_INSERT_INTO:
+	case SQL_INSERT:
 		{
 			dlist *l = s->data.lval;
 			ret = insert_into(sql,
@@ -3494,7 +3496,7 @@ static stmt *sql_stmt(context * sql, symbol * s)
 					  l->h->next->next->data.sym);
 		}
 		break;
-	case SQL_UPDATE_SET:
+	case SQL_UPDATE:
 		{
 			dlist *l = s->data.lval;
 			ret = sql_update(sql,

@@ -6,8 +6,7 @@
 typedef enum key_type {
 	pkey,
 	ukey,
-	fkey,
-	rkey
+	fkey
 } key_type;
 
 typedef struct key {
@@ -74,6 +73,10 @@ extern table *cat_create_table(catalog * cat, long id, schema * s,
 
 extern key *cat_table_add_key(table *t, key_type kt, key *rk );
 extern key *cat_key_add_column(key *k, column *c );
+
+#define cat_table_bind_pkey(t) t->pkey
+extern key *cat_table_bind_ukey(table *t, list *colnames);
+extern key *cat_table_bind_sukey(table *t, char *cname);
 
 extern void cat_drop_table(catalog * cat, schema * s, char *name);
 

@@ -94,7 +94,6 @@ void init_keywords()
 	keywords_insert("SYMMETRIC", SYMMETRIC);
 	keywords_insert("ASYMMETRIC", ASYMMETRIC);
 	keywords_insert("BY", BY);
-	keywords_insert("CASCADE", CASCADE);
 	keywords_insert("CAST", CAST);
 	keywords_insert("CHAR", CHARACTER);
 	keywords_insert("CHARACTER", CHARACTER);
@@ -122,7 +121,6 @@ void init_keywords()
 	   keywords_insert("DECLARE", DECLARE );
 	 */
 	keywords_insert("DEFAULT", DEFAULT);
-	keywords_insert("DELETE", DELETE);
 	keywords_insert("DESC", DESC);
 	keywords_insert("DISTINCT", DISTINCT);
 	keywords_insert("DOUBLE", DOUBLE);
@@ -140,7 +138,20 @@ void init_keywords()
 	   keywords_insert("FOUND", FOUND );
 	 */
 	keywords_insert("FROM", FROM);
+	keywords_insert("REFERENCES", REFERENCES);
+
+	keywords_insert("MATCH", MATCH);
 	keywords_insert("FULL", FULL);
+	keywords_insert("PARTIAL", PARTIAL);
+	keywords_insert("SIMPLE", SIMPLE);
+
+	keywords_insert("INSERT", INSERT);
+	keywords_insert("UPDATE", UPDATE);
+	keywords_insert("DELETE", DELETE);
+
+	keywords_insert("ACTION", ACTION);
+	keywords_insert("CASCADE", CASCADE);
+	keywords_insert("RESTRICT", RESTRICT);
 	/*
 	   keywords_insert("GO", GO );
 	 */
@@ -150,7 +161,6 @@ void init_keywords()
 	keywords_insert("HAVING", HAVING);
 	keywords_insert("IN", IN);
 	keywords_insert("INNER", INNER);
-	keywords_insert("INSERT", INSERT);
 	keywords_insert("INT", INTEGER);
 	keywords_insert("INTEGER", INTEGER);
 	keywords_insert("INTO", INTO);
@@ -188,8 +198,6 @@ void init_keywords()
 	 */
 	keywords_insert("PUBLIC", PUBLIC);
 	keywords_insert("REAL", REAL);
-	keywords_insert("REFERENCES", REFERENCES);
-	keywords_insert("RESTRICT", RESTRICT);
 	keywords_insert("RIGHT", RIGHT);
 	keywords_insert("SCHEMA", SCHEMA);
 	keywords_insert("SELECT", SELECT);
@@ -209,7 +217,6 @@ void init_keywords()
 	 */
 	keywords_insert("UNION", UNION);
 	keywords_insert("UNIQUE", UNIQUE);
-	keywords_insert("UPDATE", UPDATE);
 	keywords_insert("USER", USER);
 	keywords_insert("USING", USING);
 	keywords_insert("VALUES", VALUES);

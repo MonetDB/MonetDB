@@ -12,6 +12,7 @@ typedef enum stmt_type {
 	st_schema,
 	st_table,
 	st_column,
+	st_key,
 	st_bat,
 	st_drop_schema,
 	st_create_schema,
@@ -20,7 +21,7 @@ typedef enum stmt_type {
 	st_create_column,
 	st_not_null,
 	st_default,
-	st_key,
+	st_create_key,
 	st_add_col,
 
 	st_commit,
@@ -115,6 +116,7 @@ extern stmt *stmt_release(char *name);
 extern stmt *stmt_bind_schema(schema * sc);
 extern stmt *stmt_bind_table(stmt *schema, table * t);
 extern stmt *stmt_bind_column(stmt *table, column *c);
+extern stmt *stmt_bind_key(stmt *table, key *k);
 
 extern stmt *stmt_drop_schema(schema * s);
 extern stmt *stmt_create_schema(schema * s);

@@ -110,6 +110,7 @@ extern int mvc_login( mvc *c, char *schema, char *user, char *passwd );
 
 extern int mvc_status( mvc *c );
 extern int mvc_type( mvc *c );
+
 /* since Savepoints and transactions related the 
  * statement commit function includes the savepoint creation.
  * And rollbacks can be eigther full or until a given savepoint. 
@@ -124,6 +125,7 @@ extern BAT *mvc_bind( mvc *c, char *tname, char *cname );
 extern sql_schema *mvc_bind_schema( mvc *c, char *sname );
 extern sql_table *mvc_bind_table( mvc *c, sql_schema *s, char *tname );
 extern sql_column *mvc_bind_column( mvc *c, sql_table *t, char *cname );
+extern sql_key *mvc_bind_key( mvc *c, sql_table *t, va_list ap );
 
 extern void mvc_drop_schema( mvc *c, char *name );
 extern sql_schema *mvc_create_schema( mvc *c, char *name, char *auth);
@@ -370,6 +372,7 @@ static void load_add_column(BAT * columns, BUN j, sql_key *k )
 
 static sql_key *load_key(BAT * keys, BUN j, sql_table *t)
 {
+	sql_trans *tr = gtrans;
 	int ccnt;
 	BAT *cols, *rcols;
 	sql_key *nk = NEW(sql_key);
@@ -400,17 +403,14 @@ static sql_key *load_key(BAT * keys, BUN j, sql_table *t)
 			load_add_column(cols, p, nk);
 	}
 	BBPunfix(cols->batCacheid);
-	if (nk->type == fkey || nk->type == rkey){
-		sql_trans *tr = gtrans;
+	if (nk->type == fkey){
 		node *n = list_find(tr->keys, &rkey, (fcmp)&key_cmp);
 		if (n){
 			sql_key *rk = n->data;
 			nk->rkey = rk;
-			rk->rkey = nk;
-	  		list_remove_node(tr->keys, n); 
-		} else {
-			list_append(tr->keys, nk);
 		}
+	} else { /* add pkey and ukey */
+		list_append(tr->keys, nk);
 	}
 	return nk;
 }
@@ -515,6 +515,7 @@ static sql_trans *load_trans()
 	sql_trans *t = NEW(sql_trans);
 	BUN p,q;
 
+	gtrans = t; /* need this because gtrans is used when loading keys */
 	t->name = NULL;
 	t->rtime = 0;
 	t->wtime = 0;
@@ -527,7 +528,7 @@ static sql_trans *load_trans()
 	t->schemas = list_create((fdestroy)&schema_destroy);
 	t->dschemas = NULL;
 	t->nschema = NULL;
-	t->keys = list_create((fdestroy)&key_destroy);
+	t->keys = list_create(NULL);
 
 	BATloop(sql_schema_id,p,q)
 		list_append(t->schemas, load_schema(sql_schema_id, p));
@@ -553,16 +554,14 @@ static sql_key *key_dup(sql_trans *tr, sql_key *k, sql_table *t)
 		sql_column *c = find_column(t,oc->name); 
 		list_append(nk->columns,c);
 	}
-	if (nk->type == fkey || nk->type == rkey){
+	if (nk->type == fkey){
 		node *n = list_find(tr->keys, &k->rkey->id, (fcmp)&key_cmp);
 		if (n){
 			sql_key *rk = n->data;
 			nk->rkey = rk;
-			rk->rkey = nk;
-	  		list_remove_node(tr->keys, n); 
-		} else {
-			list_append(tr->keys, nk);
 		}
+	} else { /* add pkey and ukey */
+		list_append(tr->keys, nk);
 	}
 	return nk;
 }
@@ -658,7 +657,7 @@ static sql_trans *trans_dup(sql_trans *ot, char *newname ){
 	t->schemas = list_create((fdestroy)&schema_destroy);
 	t->dschemas = NULL;
 	t->nschema = NULL;
-	t->keys = list_create((fdestroy)&key_destroy);
+	t->keys = list_create(NULL);
 	if (newname)
 		t->name = _strdup(newname);
 	else 
@@ -1307,6 +1306,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 
 	m->trans = trans_dup(tr,NULL);
 	m->trans->level = level;
+	m->trans->status = res;
 	return res;
 }
 
@@ -1329,6 +1329,7 @@ int mvc_rollback(mvc * m, int chain, char *name)
 		m->trans = trans_dup(tr,NULL);
 	}
 	m->trans->level = level;
+	m->trans->status = 0;
 	return res;
 }
 
@@ -1346,14 +1347,15 @@ int mvc_release(mvc * m, char *name)
 
 	tr->parent = p; 
 	m->trans = tr; /* restart at savepoint */
+	m->trans->status = res;
 	return res;
 }
 
 int mvc_set_iso_level(mvc * m, int level)
 {
-	int res = 0;
-	(void) mvc_commit(m,1,NULL);
+	int res = mvc_commit(m,1,NULL);
 	m->trans->level = level;
+	m->trans->status = res;
 	return res;
 }
 
@@ -1424,6 +1426,49 @@ sql_column *mvc_bind_column(mvc * m, sql_table * t, char *cname )
 		printf("mvc_bind_column %s.%s\n", t->name, cname );
 
 	return c;
+}
+
+
+sql_key *mvc_bind_key(mvc * m, sql_table * t, va_list ap )
+{
+	sql_key *k = NULL;
+	list *l;
+	char *p;
+	node *kn, *nn;
+	int len;
+
+	if (!t->keys)
+		return NULL;
+
+ 	l = list_create(NULL);
+	while(p = va_arg(ap,char*)){
+		list_append(l,p);
+	}
+	len = list_length(l);
+	
+	for(kn = t->keys->h; !k && kn; kn = kn -> next){
+		k = kn->data;
+		if (list_length(k->columns) == len){
+			node *cc;
+			for(cc = k->columns->h, nn = l->h; cc && nn; 
+				cc = cc -> next, nn = nn -> next){
+				sql_column *c = cc->data;
+				if (strcmp(c->name, nn->data) != 0){
+					k = NULL;
+					break;
+				}
+			}
+		} else {
+			k = NULL;
+		}
+	}
+	list_destroy(l);
+
+	if (m->debug)
+		printf("mvc_bind_key %s.(%s..)\n", t->name, 
+		 	((sql_column*)k->columns->h->data)->name );
+
+	return k;
 }
 
 
@@ -1516,14 +1561,17 @@ sql_key *mvc_create_key( mvc * m, sql_table *t, int kt, sql_key *rkey )
 { 
 	sql_key *k = NEW(sql_key);
 
+/*
 	if (m->debug)
+*/
 		printf("mvc_create_key %s %d %d\n", t->name, kt, (int)rkey);
 
 	k->id = 0;
 	k->type = kt;
 	k->t = t;
 	k->columns = list_create(NULL);
-	k->rkey = rkey;
+	if (k->type == fkey)
+		k->rkey = rkey;
 
 	if (kt == pkey) t->pkey = k;
 	if (!t->nkey) t->nkey = k;
@@ -1535,7 +1583,9 @@ sql_key *mvc_create_key( mvc * m, sql_table *t, int kt, sql_key *rkey )
 }
 
 sql_key *mvc_key_add_column( mvc * m, sql_key *k, sql_column *c ){
+/*
 	if (m->debug)
+*/
 		printf("mvc_key_add_column %s\n", c->name);
 	list_append(k->columns, c);
 	return k;
@@ -1997,11 +2047,13 @@ int mvc_import_table( mvc *m, stream *s, char *tname,
 
 	if (!t){
 		fprintf(stderr,"ERROR: table %s not found\n", tname );
-		return;
+		tr->status = -1;
+		return -1;
 	}
 	if (!s || s->errnr){
 		fprintf(stderr,"ERROR: stream not open %d\n", s->errnr );
-		return;
+		tr->status = -1;
+		return  -1;
 	}
 
 	bats = BATnew( TYPE_void, TYPE_bat, cnt );
@@ -2076,5 +2128,6 @@ int mvc_import_table( mvc *m, stream *s, char *tname,
 	BBPreclaim(nmes);
 	BBPreclaim(seps);
 	BBPreclaim(tpes);
+	tr->status = nr;
 	return nr;
 }

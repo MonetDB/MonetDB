@@ -77,12 +77,11 @@ key *cat_table_add_key(table *t, key_type kt, key *fk)
 	if (!t->keys)
 		t->keys = list_create((fdestroy)&key_destroy);
 	list_append(t->keys, k);
-	if (pkey)
+	if (kt == pkey)
 		t->pkey = k;
 	k->columns = list_create(NULL); 
 	if (fk){
 		k->rkey = fk;
-		fk->rkey = k;
 	}
 	return k;
 }
@@ -90,6 +89,54 @@ key *cat_table_add_key(table *t, key_type kt, key *fk)
 key *cat_key_add_column( key *k, column *c ){
 	list_append(k->columns, c);
 	return k;
+}
+
+int uniqueKey(key *k){
+	return (k->type == pkey || k->type == ukey);
+}
+
+key *cat_table_bind_ukey( table *t, list *colnames )
+{
+	node *cn;
+	node *cur;
+	key * res = NULL;
+	int len = list_length(colnames);
+
+	if (t->keys) for ( cur = t->keys->h; cur; cur = cur -> next ){ 
+		node *cc;
+		key *k = cur->data;
+		if (uniqueKey(k) && list_length(k->columns) == len){
+			res = k;
+		   	for ( cc = k->columns->h, cn = colnames->h; 
+				cc && cn; cc = cc -> next, cn = cn -> next ){
+				column *c = cc->data;
+				char *n = cn->data;
+				if (strcmp(c->name, n) != 0){
+					res = NULL;
+					break;
+				}
+			}
+			if (res) 
+				break;
+		}
+	}
+	return res;
+}
+
+key *cat_table_bind_sukey( table *t, char *cname)
+{
+	node *cur;
+
+	if (t->keys) for ( cur = t->keys->h; cur; cur = cur -> next ){ 
+		key *k = cur->data;
+		if (uniqueKey(k) && list_length(k->columns) == 1){
+			column *c = k->columns->h->data;
+			if (strcmp(c->name, cname) == 0){
+				return k;
+			}
+		}
+	}
+	return NULL;
 }
 
 void cat_drop_schema(schema * s)

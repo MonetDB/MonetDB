@@ -128,6 +128,9 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	when_search
 	opt_else
 	table_name
+	opt_ref_action
+	opt_ref_delete
+	opt_ref_update
 
 %type <sval>
 	any_all_some
@@ -184,6 +187,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 
 %type <ival>
 	drop_action 
+	ref_action 
 	join_type
 	outer_join_type
 	time_persision
@@ -194,6 +198,8 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_all
 	intval
 	opt_nr
+	opt_match
+	opt_match_type
 
 %type <bval>
 	opt_trans
@@ -206,9 +212,9 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 
 %token <sval> 
 	IDENT TYPE STRING AMMSC INT INTNUM APPROXNUM USER USING
-	ALL DISTINCT ANY SOME CHECK GLOBAL LOCAL CASCADE CAST RESTRICT
+	ALL DISTINCT ANY SOME CHECK GLOBAL LOCAL CAST
 	CHARACTER NUMERIC DECIMAL INTEGER SMALLINT FLOAT REAL
-	DOUBLE PRECISION VARCHAR 
+	DOUBLE PRECISION VARCHAR PARTIAL SIMPLE ACTION CASCADE RESTRICT
 
 /*
 OPEN CLOSE FETCH 
@@ -220,7 +226,7 @@ OPEN CLOSE FETCH
 %token <operation> '+' '-' '*' '/'
 %token <sval> LIKE BETWEEN ASYMMETRIC SYMMETRIC ORDER BY
 %token <operation> IN EXISTS ESCAPE HAVING GROUP NULLX 
-%token <operation> FROM FOR
+%token <operation> FROM FOR MATCH
 
 /* datetime operations */
 %token <operation> EXTRACT
@@ -374,7 +380,7 @@ operation:
     SELECT 			    { $$ = _symbol_create(SQL_SELECT,NULL); }
  |  INSERT 			    { $$ = _symbol_create(SQL_INSERT,NULL); }
  |  DELETE 			    { $$ = _symbol_create(SQL_DELETE,NULL); }
- |  UPDATE opt_column_commalist     { $$ = _symbol_create_list(SQL_UPDATE_SET,$2); }
+ |  UPDATE opt_column_commalist     { $$ = _symbol_create_list(SQL_UPDATE,$2); }
  |  REFERENCES opt_column_commalist { $$ = _symbol_create_list(SQL_SELECT,$2); }
  ;
 
@@ -501,15 +507,52 @@ opt_constraint_name:
  |  CONSTRAINT qname 		{ $$ = $2; }
  ;
 
+ref_action:
+	NO ACTION		{ $$ = 0; }
+ | 	CASCADE			{ $$ = 1; }
+ | 	RESTRICT		{ $$ = 2; }
+ | 	SET NULLX		{ $$ = 3; }
+ | 	SET DEFAULT		{ $$ = 4; }
+ ;
+
+opt_ref_delete:
+    /* empty */			{ $$ = NULL; }
+ | ON DELETE ref_action		{ $$ = _symbol_create_int(SQL_DELETE, $3); }
+ ;
+
+opt_ref_update:
+    /* empty */			{ $$ = NULL; }
+ | ON UPDATE ref_action		{ $$ = _symbol_create_int(SQL_UPDATE, $3); }
+ ;
+
+opt_ref_action:
+ 	opt_ref_delete opt_ref_update
+ |	opt_ref_update opt_ref_delete
+ ;
+
+opt_match_type:
+    /* empty */			{ $$ = 0; }
+ | FULL				{ $$ = 1; }
+ | PARTIAL			{ $$ = 2; }
+ | SIMPLE			{ $$ = 0; }
+ ;
+
+opt_match:
+    /* empty */			{ $$ = 0; }
+ | MATCH opt_match_type	 	{ $$ = $2; }
+ ;
+
 column_constraint_type:
     NOT NULLX	{ $$ = _symbol_create( SQL_NOT_NULL, NULL); }
  |  UNIQUE	{ $$ = _symbol_create( SQL_UNIQUE, NULL ); }
  |  PRIMARY KEY	{ $$ = _symbol_create( SQL_PRIMARY_KEY, NULL ); }
- |  REFERENCES qname '(' column_ref ')'
+ |  REFERENCES qname '(' column_ref ')' opt_match opt_ref_action
 
 			{ dlist *l = dlist_create();
 			  dlist_append_list(l, $2 );
 			  dlist_append_list(l, $4 );
+			  dlist_append_int(l, $6 );
+			  dlist_append_symbol(l, $7 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
  | domain_constraint_type
  ;
@@ -519,20 +562,26 @@ table_constraint_type:
 			{ $$ = _symbol_create_list( SQL_UNIQUE, $2); }
  |  PRIMARY KEY column_commalist_parens 
 			{ $$ = _symbol_create_list( SQL_PRIMARY_KEY, $3); }
- |  FOREIGN KEY column_commalist_parens REFERENCES qname 
+ |  FOREIGN KEY column_commalist_parens 
+    REFERENCES qname opt_match opt_ref_action
 
 			{ dlist *l = dlist_create();
 			  dlist_append_list(l, $5 );
 			  dlist_append_list(l, $3 );
+			  dlist_append_list(l, NULL );
+			  dlist_append_int(l, $6 );
+			  dlist_append_symbol(l, $7 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
 
  |  FOREIGN KEY column_commalist_parens 
-    REFERENCES qname column_commalist_parens 
+    REFERENCES qname column_commalist_parens opt_match opt_ref_action
 
 			{ dlist *l = dlist_create();
 			  dlist_append_list(l, $5 );
 			  dlist_append_list(l, $3 );
 			  dlist_append_list(l, $6 );
+			  dlist_append_int(l, $7 );
+			  dlist_append_symbol(l, $8 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
 
  |  domain_constraint_type
@@ -691,7 +740,7 @@ update_stmt:
 	  dlist_append_list(l, $2);
 	  dlist_append_list(l, $4);
 	  dlist_append_symbol(l, $5);
-	  $$ = _symbol_create_list( SQL_UPDATE_SET, l ); }
+	  $$ = _symbol_create_list( SQL_UPDATE, l ); }
  ;
 
 
@@ -702,7 +751,7 @@ insert_stmt:
 	  dlist_append_list(l, $3);
 	  dlist_append_list(l, NULL);
 	  dlist_append_symbol(l, $4);
-	  $$ = _symbol_create_list( SQL_INSERT_INTO, l ); }
+	  $$ = _symbol_create_list( SQL_INSERT, l ); }
 
  |  INSERT INTO qname column_commalist_parens values_or_query_spec
 
@@ -710,7 +759,7 @@ insert_stmt:
 	  dlist_append_list(l, $3);
 	  dlist_append_list(l, $4);
 	  dlist_append_symbol(l, $5);
-	  $$ = _symbol_create_list( SQL_INSERT_INTO, l ); }
+	  $$ = _symbol_create_list( SQL_INSERT, l ); }
  ;
 
 values_or_query_spec:

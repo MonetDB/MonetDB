@@ -19,6 +19,7 @@ sql_type("STRING", "str", "VARCHAR");
 sql_type("NUMERIC", "int", "STRING");
 sql_type("DECIMAL", "int", "NUMERIC");
 sql_type("INTEGER", "int", "DECIMAL");
+sql_type("NUMBER", "int", "INTEGER");
 sql_type("SMALLINT", "int", "INTEGER");
 sql_type("UBYTE", "uchr", "INTEGER");
 
@@ -43,6 +44,7 @@ numerical.insert("UBYTE", "uchr");
 numerical.insert("NUMERIC", "int");
 numerical.insert("DECIMAL", "int");
 numerical.insert("INTEGER", "int");
+numerical.insert("NUMBER", "int");
 numerical.insert("SMALLINT", "int");
 numerical.insert("UBYTE", "uchr");
 numerical.insert("FLOAT", "flt");

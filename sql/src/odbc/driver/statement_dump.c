@@ -96,6 +96,20 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			"s%d := mvc_bind_column(myc, s%d, \"%s\");\n", 
 			-s->nr, t, c->name );
 	} break;
+	case st_key: {
+		int t = stmt_dump( s->op1.stval, nr, sql );
+		key *k = s->op2.kval;
+		node *cc;
+
+		len += snprintf( buf+len, BUFSIZ-len, 
+			"s%d := mvc_bind_key(myc, s%d", -s->nr, t);
+		for (cc = k->columns->h; cc; cc = cc->next){
+			column *c = cc->data;
+		  	len += snprintf( buf+len, BUFSIZ-len, 
+		  		", \"%s\"", c->name );
+		}
+		len += snprintf( buf+len, BUFSIZ-len, ");\n"); 
+	} break;
 	case st_create_schema: {
 		schema *schema = s->op1.schema;
 		len += snprintf( buf+len, BUFSIZ-len, 
@@ -146,7 +160,8 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		len += snprintf( buf+len, BUFSIZ-len, 
 		    "s%d := default_val(myc, s%d, s%d );\n", -s->nr, c, d );
 	} break;
-	case st_key: {
+	/* todo: change to simple mvc_create_key(myc, key, list_of_string); */
+	case st_create_key: {
 		int t = stmt_dump( s->op1.stval, nr, sql );
 		if (s->flag == fkey){
 			int ft = stmt_dump( s->op2.stval, nr, sql );

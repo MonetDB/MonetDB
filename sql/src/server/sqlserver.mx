@@ -105,6 +105,9 @@
 	.COMMAND mvc_bind_column( mvc c, sql_table t, str cname ) : sql_column = 
 		mvc_bind_column_wrap; "Bind column, t.cname"
 
+	.COMMAND mvc_bind_key( mvc c, sql_table t, ...str... ) : sql_key = 
+		mvc_bind_key_wrap; "Bind key, t.(cols)"
+
 	.COMMAND mvc_drop_schema( mvc c, str name ) = mvc_drop_schema_wrap;
 		"Drop schema"
 
@@ -263,6 +266,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 				ValRecord res;
 				ptr val = &res.val.ival;
         			res.vtype = TYPE_void; 
+				printf("%d\n", cmd);
 				interpret_str( stk, cmd, &res);
 				/*TODO: we need to cleanup val */
 			}
@@ -473,6 +477,16 @@ int mvc_bind_column_wrap( sql_column* res, mvc* c, sql_table *t, str col){
 	return GDK_SUCCEED;
 }
 
+int mvc_bind_key_wrap( sql_key* res, mvc* c, sql_table *t, ...){
+	va_list ap;
+
+	va_start(ap,t);
+	*(sql_key**)res = mvc_bind_key( *(mvc**)c, *(sql_table**)t, ap);
+	va_end(ap);
+	return GDK_SUCCEED;
+}
+
+
 int mvc_create_schema_wrap( sql_schema *s, mvc* c, str name, str auth){
 	*(sql_schema**)s = mvc_create_schema( *(mvc**)c, name, auth );
 	return GDK_SUCCEED;
@@ -522,7 +536,11 @@ int mvc_default_wrap( sql_column* res, mvc* c, sql_column* col, str val){
 }
 
 int mvc_create_key_wrap( sql_key* res, mvc* c, sql_table* t, int *kt, sql_key *fk){
-	*(sql_key**)res = mvc_create_key( *(mvc**)c, *(sql_table**)t, *kt, *(sql_key**)fk);
+	if (*(ptr*)fk == ptr_nil){
+		*(sql_key**)res = mvc_create_key( *(mvc**)c, *(sql_table**)t, *kt, NULL);
+	} else {
+		*(sql_key**)res = mvc_create_key( *(mvc**)c, *(sql_table**)t, *kt, *(sql_key**)fk);
+	}
 	return GDK_SUCCEED;
 }
 
@@ -763,7 +781,7 @@ proc SQLclient_thread( int sock ):= {
 }
 
 proc sqlexecute( str cmd, stream Output ):= {
-	#printf("sqlexecute %s\n", cmd);
+	printf("sqlexecute %s\n", cmd);
 	eval(cmd);
 }
 
