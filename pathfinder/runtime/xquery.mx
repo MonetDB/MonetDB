@@ -605,17 +605,18 @@ static void handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
  * [void,any] BAT indexed by oid_index. 
  */
 static ptr idxTV(XqueryCtx* ctx, str name, BAT* b, oid oid_index) {
-        ptr res;
+        ptr res = NULL;
 
         if ( !b )
                 fatal_err(ctx,"NIL BAT[\"%s\"]\n",name);
         if (is_fake_project(b)) {
         	res = BUNtail(b,BUNfirst(b));
         } else {
-                oid real_index = oid_index + BUNindex(b,BUNfirst(b));
-
-                BUN bun = BUNptr(b,real_index);
-                res = BUNtail(b,bun);
+                BUN bun = NULL;
+                
+                BUNfndVOID(bun, b, &oid_index);
+                if ( bun )
+                        res = BUNtail(b,bun);
         }
         if ( ! res )
                 fatal_err(ctx,"idxTV: BAT[%s][%d], NULL (ptr) result",name,oid_index);
