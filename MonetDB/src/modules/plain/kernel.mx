@@ -663,11 +663,16 @@ int CMDfork(Cntxt stk, YYSTREE lt, ValPtr res){
 	Client c;
 
 	@:builtin_args(1)@;
-	if (monet_embedded  > 1) {
+	if (GDKembedded && monet_forks != 0  ) {
 		GDKerror("CMDfork: cannot execute twice in -embedded mode.\n");
 		return -1;
 	} 
-	if( monet_embedded==1 ) monet_embedded++;
+	if( GDKembedded ) 
+		monet_forks++;
+	else
+	if( monet_forks > 0 && GDKprotected ==0){
+		printf("fork need protected entry\n");
+	}
 @-
 Create a shadow client. This is necessary in order not to mangle
 cntxt record administration between running jobs. They need to belong
@@ -703,9 +708,13 @@ enough threads to satisfy the client access [TODO]
 int CMDthreadcnt(Cntxt stk, YYSTREE lt, ValPtr res){
 	int *i;
 
-	if (monet_embedded > 1 ) {
+	if (GDKembedded && monet_forks > 0 ) {
 		GDKerror("CMDfork: cannot execute in -embedded mode.\n");
 		return -1;
+	} else
+	if( monet_forks > 0 && GDKprotected ==0){
+		printf("threadcnt need protected entry\n");
+		monet_forks++;
 	} 
 	@:builtin_args(1)@;
 	@:builtin_operand(0, TYPE_int, i)@
@@ -898,7 +907,7 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
 		stream_destroy(GDKout);
 		MT_global_exit(*statusp);
 	}
-	if( monet_embedded >1) return 0;
+	if( GDKembedded && monet_forks > 0) return 0;
 	q = topRequest(c);
 	if (q) {
 		q->ev_kill = 1 + c->stk;

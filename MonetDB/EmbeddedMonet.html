@@ -11,11 +11,10 @@ performance improvements.
 The embedded version can also be used as a Mserver instance
 with a single client. The server should be started as follows:
 <pre>
- Mserver --dbinit="module(mapi);listen();" --set monet_embedded=yes&
+ Mserver --set gdk_embedded=yes --dbinit="module(mapi);listen();" &
 </pre>
-
-Thereafter a single MapiClient can connect to the server.
-
+It will start the server in 'daemon' mode, loads the mapi module,
+and starts listening for the first, and only client.
 </p>
 <p>
 The Embedded MonetDB is made available as a library to be linked 
@@ -48,4 +47,6 @@ the server into a daemon process.
 The minimal footprint of MonetDB V4.4 is about 15 Mb (+ ca 4Mb for SQL).
 After module loading the space quickly grows to about 60Mb.
 This footprint should be reduced.
+</p>
+<p>
 </p>

@@ -29,7 +29,7 @@ collection.
 #define _GDK_ATOMS_H_
 #include "gdk.h"
  
-#define MAXATOMS	1024
+#define MAXATOMS	64
 
 @- comparison macro's
 In order to get maximum performance, we extensively use out-factoring

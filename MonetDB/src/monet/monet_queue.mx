@@ -323,15 +323,13 @@ Request getRequest(Request barrier){
 			}
 		}
 
-	if (monet_singlethreaded ==0 || q == 0) {
-		PARDEBUG QMprint();
-		monet_up_sema(monet_available, "getRequest");
-		monet_unset_lock(monet_critical, "getRequest");
+	PARDEBUG QMprint();
+	monet_up_sema(monet_available, "getRequest");
+	monet_unset_lock(monet_critical, "getRequest");
+	return 0;
 
-		/* we did not find anything because what is available is for another process */
-		/* all because of braindead queue impl. => parallel blocks should allocate a private semaphore of course! */ 
-		return 0;
-	}
+/* we did not find anything because what is available is for another process */
+/* all because of braindead queue impl. => parallel blocks should allocate a private semaphore of course! */ 
 getReq0:
 	q->ev_status = EVRUNNING;
 	PARDEBUG QMprint();

@@ -119,6 +119,7 @@ Client initClient(str nme, str prompt, int thread)
 {
 	Client 	c;
 
+
 	/* find an empty client slot. The console entry (0) is reserved. */
 	monet_set_lock(monet_contextLock, "initClient");
 	for(c = monet_clients; c < monet_clients+MAXCLIENTS; c++) {
@@ -160,6 +161,11 @@ Client initClient(str nme, str prompt, int thread)
 	*c->top = 0;
 	c->mode = BLOCKMODE;
 
+        if( GDKprotected ==0) 
+		if( protectMonet(FALSE)) {
+			killClient(c, TRUE); 
+			return NULL;
+		}
 	return c;
 }
 
@@ -728,7 +734,7 @@ int serveClient(Cntxt stk, YYSTREE lt, ValPtr res)
 	} else {
 		Request q;
 
-		if( monet_embedded >1) monet_embedded=1;
+		if(monet_forks > 0) monet_forks--;
 		q = thisRequest();
 		q->ev_kill = c->stk + 1;
 	}

@@ -1529,6 +1529,7 @@ int interpret_parblock(int stk, YYSTREE lt, int scope)
 
 	PARDEBUG THRprintf(GDKerr, "parallel block\n");
 
+	if( protectMonet(TRUE)) return GDK_FAIL;
 	CNTXTclient(stk,&c);
 
 	if (scope) {

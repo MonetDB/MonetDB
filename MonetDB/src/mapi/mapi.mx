@@ -366,7 +366,7 @@ Get the new information for the server socket and start listening.
 				continue;
 			}
 			/* in embedded mode we allow just one client */
-			if( monet_embedded > 1 ){
+			if( GDKembedded && monet_forks > 0 ){
 				stream_close(fdin);
 				stream_destroy(fdin);
 				continue;

@@ -30,6 +30,7 @@ gdk_export void GDKlog       (const char *format, ...);
 gdk_export void GDKlockHome  (void);
 gdk_export void GDKunlockHome(void);
 gdk_export int  GDKgetHome   (void);
+gdk_export void GDKprotect();
 
 gdk_export lng  GDKusec      (void);
 gdk_export int  GDKms        (void);
@@ -1166,9 +1167,26 @@ int GDKtime_startsec, GDKrecovery = 0;
 @h
 gdk_export int GDKinit(char *dbname, char *dbfarm, int alloc_map);
 @c
+void GDKprotect(){
+	int i;
+	if( GDKthreadLock == 0) { 
+		TMDEBUG printf("# GDKlocks created\n");
+		GDKthreadLock = MT_create_lock(); 
+		for(i=0; i<= BBPLOCKMASK; i++) {
+			GDKstatusLock[i] = MT_create_lock(); 
+			GDKswapLock[i] = MT_create_lock(); 
+			GDKidxLock[i] = MT_create_lock(); 
+			GDKhashLock[i] = MT_create_lock(); 
+		}
+		GDKcacheLock = MT_create_lock(); 
+		GDKunloadLock = MT_create_lock(); 
+		GDKunloadBarrier = MT_create_lock(); 
+		GDKtrimLock = MT_create_lock(); 
+		GDKtmLock = MT_create_lock(); 
+		GDKprotected = 1;
+	} 
+}
 int GDKinit(char *dbname, char *dbfarm, int alloc_map) {
-	int 	i;
-
 	gdk_alloc_map = alloc_map;
 	errno = 0;
 	if (!GDKenvironment(dbname, dbfarm))
@@ -1197,20 +1215,7 @@ int GDKinit(char *dbname, char *dbfarm, int alloc_map) {
 #endif
 #endif
 
-	if( GDKembedded == 0) {
-		GDKthreadLock = MT_create_lock(); 
-		for(i=0; i<= BBPLOCKMASK; i++) {
-			GDKstatusLock[i] = MT_create_lock(); 
-			GDKswapLock[i] = MT_create_lock(); 
-			GDKidxLock[i] = MT_create_lock(); 
-			GDKhashLock[i] = MT_create_lock(); 
-		}
-		GDKcacheLock = MT_create_lock(); 
-		GDKunloadLock = MT_create_lock(); 
-		GDKunloadBarrier = MT_create_lock(); 
-		GDKtrimLock = MT_create_lock(); 
-		GDKtmLock = MT_create_lock(); 
-	}
+	if( GDKembedded ) GDKprotected = 0;
 
 	/* Mserver intends to rob 85% of all memory as a default */
  	GDK_mem_maxsize = (size_t) ((double)MT_npages() * (double)MT_pagesize() * 0.85); 
@@ -1272,6 +1277,7 @@ They are initialized during system initialization.
 @c
 int		GDKdebug = 0; 
 int		GDKembedded = 0;
+int		GDKprotected = 0;
 
 MT_Lock		GDKthreadLock = NULL; 
 MT_Lock		GDKstatusLock[BBPLOCKMASK+1]; 

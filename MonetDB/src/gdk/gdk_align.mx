@@ -203,7 +203,7 @@ BAT *VIEWcreate_(BAT* b, int slice_view) {
 	if (parent < 0) parent = -parent;
 
 	BBPshare(parent);
-    	MT_set_lock(GDKhashLock[ABS(parent)&BBPLOCKMASK], "VIEWcreate_");
+    	gdk_set_lock(GDKhashLock[ABS(parent)&BBPLOCKMASK], "VIEWcreate_");
 @-
 the H and T column descriptors are fully copied. We need copies
 because in case of a mark, we are going to override a column with 
@@ -242,7 +242,7 @@ use a copy.
 		bn->hidx_heap = b->hidx_heap; 
 		bn->tidx_heap = b->tidx_heap; 
 	}
-        MT_unset_lock(GDKhashLock[ABS(parent)&BBPLOCKMASK], "VIEWcreate_");
+        gdk_unset_lock(GDKhashLock[ABS(parent)&BBPLOCKMASK], "VIEWcreate_");
         BBPcacheit(bn);
 	return bn;
 }

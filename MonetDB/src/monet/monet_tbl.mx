@@ -43,6 +43,7 @@ extern "C" {
 
 /* Generic initialization/cleanup routines */
 m_export void  TBL_init(void);
+m_export void  TBL_protect();
 m_export void  TBL_initclient(Client c, Client father);
 m_export void  TBL_exitclient(Client c);
 
@@ -1264,13 +1265,15 @@ Since all code will move to modules this function will be come obsolute.
 @= TBL_create
  	TBL_@1_@2 = TBL_create(monet_clients,"@1_@2",@5,TYPE_@3,TYPE_@4,@6,@7);
 @c
-void TBL_init(void) {
-	if( monet_embedded == 0) {
+void TBL_protect(){
+	if( TBL_protector == NULL){
+		TMDEBUG printf("# TBL locks created\n");
 		TBL_protector = MT_create_lock();
 		TBL_writelock = MT_create_lock();
 		TBL_barrier = MT_create_sema(0);
 	}
-
+}
+void TBL_init(void) {
 	TBL_M_lock(NULL);
 
 @- Empty the function table.

@@ -2263,13 +2263,19 @@ gdk_export MT_Lock		GDKtmLock;
 gdk_export int		GDKnrofthreads; 
 gdk_export int		GDKdebug; 
 gdk_export int		GDKembedded; 
+gdk_export int		GDKprotected; 
 @-
-The embedded version can live with less control.
+The GDKembedded variable is a property set in the configuration file
+to indicate that the kernel is only allowed to run as a single process.
+This can be used to remove all locking overhead. 
+The actual state of affairs is maintained in GDKprotected, which
+is set when locking is required, e.g. when multiple threads become
+active.
 @h
-#define gdk_set_lock(X,Y)   if(GDKembedded == 0) MT_set_lock(X,Y)
-#define gdk_unset_lock(X,Y) if(GDKembedded == 0) MT_unset_lock(X,Y)
-#define gdk_up_sema(X,Y)    if(GDKembedded == 0) MT_up_sema(X,Y)
-#define gdk_down_sema(X,Y)  if(GDKembedded == 0) MT_down_sema(X,Y)
+#define gdk_set_lock(X,Y)   if(GDKprotected ) MT_set_lock(X,Y)
+#define gdk_unset_lock(X,Y) if(GDKprotected ) MT_unset_lock(X,Y)
+#define gdk_up_sema(X,Y)    if(GDKprotected ) MT_up_sema(X,Y)
+#define gdk_down_sema(X,Y)  if(GDKprotected ) MT_down_sema(X,Y)
 @}
 @-
 The kernel maintains a central table of all active threads.

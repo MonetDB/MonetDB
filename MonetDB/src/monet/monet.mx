@@ -43,10 +43,8 @@ effort otherwise needed to develop test and application programs.
     \end{figure}
 
 The above figure shows the different components of the Monet system. The
-{\tt processes} module offers support for single- and multi-threading. 
-In single-thread mode the server cycles through the request queue and
-processes MIL statements.
-In multi-thread mode, the interpreter thread runs independent of the
+{\tt processes} module offers support for multi-threading. 
+In this mode, the interpreter thread runs independent of the
 initial thread. Moreover, a thread is started to accepts requests from the
 internet. Each client can indicate the interpreter to interact with.
 For example, one can envision a thread dedicated to the parsing and execution
@@ -249,6 +247,7 @@ typedef struct {
 
 m_export int 	monet_running;
 m_export Client	monet_init	(void);
+m_export int 	protectMonet	(int force);
 m_export str	monet_load_script(str file, str module);
 m_export ptr	monet_eval	(str mil_script, int *ret_type);
 m_export int	monet_exec	(str mil_script);
@@ -295,8 +294,9 @@ m_export char		monet_cwd[PATHLENGTH];	/* where the server started */
 m_export int 		monet_nostalgic;	/* do not require () on empty parameters */
 m_export int		monet_listing;		/* echo input */
 m_export int		monet_daemon;		/* set server console is deaf */
-m_export int		monet_singlethreaded;	/* in singlethreaded mode? */
-m_export int		monet_embedded;		/* allow just one client */
+m_export int		monet_forks;		/* count interpreter threads */
+m_export int		monet_upgrade_needed;	/* wait for locks */
+m_export int		monet_upgrade_done;	/* finshed it */
 m_export str		*monet_script; 		/* batch of requests */
 m_export str		monet_dbinit; 		/* initialization statement */
 m_export str		monet_general ;
@@ -325,10 +325,10 @@ m_export char 		monet_version[PATHLENGTH];
 Locking in an embedded situation can be relaxed.
 Ideally, they are all removed.
 @h
-#define monet_set_lock(X,Y)   if(monet_embedded == 0) MT_set_lock(X,Y)
-#define monet_unset_lock(X,Y) if(monet_embedded == 0) MT_unset_lock(X,Y)
-#define monet_up_sema(X,Y)    if(monet_embedded == 0) MT_up_sema(X,Y)
-#define monet_down_sema(X,Y)  if(monet_embedded == 0) MT_down_sema(X,Y)
+#define monet_set_lock(X,Y)   if(GDKprotected) MT_set_lock(X,Y)
+#define monet_unset_lock(X,Y) if(GDKprotected) MT_unset_lock(X,Y)
+#define monet_up_sema(X,Y)    if(GDKprotected) MT_up_sema(X,Y)
+#define monet_down_sema(X,Y)  if(GDKprotected) MT_down_sema(X,Y)
 #endif /* _MONET_H_ */
 @c 
 #include "monet.h"
@@ -337,8 +337,8 @@ int 		monet_nostalgic = 0;
 int 		monet_running = 0;
 char            monet_cwd[PATHLENGTH]={0}, *monet_ver=0;
 int             monet_listing=0, monet_daemon=0;
-int             monet_singlethreaded=0;
-int		monet_embedded=0;
+int		monet_forks = 0;
+int		monet_upgrade_needed= 0, monet_upgrade_done =0;
 str             *monet_script = NULL;
 str		monet_dbinit = NULL; 		
 str		monet_general =0;
@@ -414,23 +414,62 @@ provided to make inclusion of new modules a piece of cake.
 }
 
 @c
+int protectMonet(int force){
+	/* int cnt = 0;*/
+	if( monet_forks > 0 || force ) {
+		TMDEBUG printf("# protectMonet: upgrade protection %d>0\n",
+				monet_forks);
+		if( monet_critical == NULL ){
+		/* wait for safe point 
+			if( force == 0){
+				monet_upgrade_needed = 1;
+				while( monet_upgrade_needed && cnt < 60) {
+					sleep(1);
+					cnt++;
+				}
+				if( monet_upgrade_needed){
+				GDKerror("waiting too long for lock upgrade\n");
+				return -1;
+				}
+			}
+		*/
+
+			TMDEBUG printf("# Monet locks created\n");
+			monet_critical   = MT_create_lock();
+			monet_contextLock= MT_create_lock();
+			monet_parserLock = MT_create_lock();
+			monet_notifyLock = MT_create_lock();
+			monet_voidLock   = MT_create_lock();
+			monet_started    = MT_create_sema(0);
+			monet_available  = MT_create_sema(0);
+			monet_forksync   = MT_create_sema(0);
+			TBL_protect();
+			GDKprotect();
+			monet_upgrade_done =0;
+		}
+	}
+	return 0;
+}
+@-
+The client that notices the request for an upgrade is put on halt.
+This client could be running processing a MIL program or awaiting
+input from the user. 
+@c
+void protectMonetClient(){
+	if(monet_upgrade_needed == 0 ) return;
+	monet_upgrade_done =1;
+	monet_upgrade_needed = 0;
+	while(monet_upgrade_done){
+		sleep(1);
+	}
+}
 Client monet_init(void){
         Client  c;
 
 	monet_running = 1;
 
         ll_init();
-	if(monet_embedded == 0) {
-		monet_critical   = MT_create_lock();
-		monet_contextLock= MT_create_lock();
-		monet_parserLock = MT_create_lock();
-		monet_notifyLock = MT_create_lock();
-		monet_voidLock   = MT_create_lock();
-		monet_started    = MT_create_sema(0);
-		monet_available  = MT_create_sema(0);
-		monet_forksync   = MT_create_sema(0);
-	}
-
+ 
 	if (GDKgetenv_isyes("monet_nostalgic")) {
 		monet_nostalgic = 1;
 	}

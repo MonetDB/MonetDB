@@ -614,7 +614,7 @@ int enum_ishisto(bit* ret, int* enum_t, BAT* column) {
 }
 
 bat* enum_prelude(void) {
-	if( GDKembedded == 0)
+	if( GDKprotected == 0)
 		enum_lock = MT_create_lock();
 	return NULL;
 }
