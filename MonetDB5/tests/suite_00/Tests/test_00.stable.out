@@ -327,11 +327,11 @@ end main;	# 136
 ##b.roles("head","tail"); roles was removed from the kernel ops
 #printf("#~BeginVariableOutput~#\n"); b.info().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#-------------------------------------------------#
-# BAT:				  tmp_29	  #
-# (str)				  (str)		  #
-#-------------------------------------------------#
-[ "version",			  "980714"	  ]
+#-----------------------------------------#
+# h			tmp_14		  # name
+# str			str		  # type
+#-----------------------------------------#
+[ "version",		  "20696"	  ]
 [ "batId",			  "tmp_13"	  ]
 [ "batCacheid",			  "13"		  ]
 [ "batParentid",		  "0"		  ]
@@ -368,7 +368,6 @@ end main;	# 136
 [ "top",			  "1"		  ]
 [ "batStamp",			  "13"		  ]
 [ "lastUsed",			  "163"		  ]
-[ "keepAround",			  "0"		  ]
 [ "curStamp",			  "14"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "clean"	  ]
@@ -378,41 +377,18 @@ end main;	# 136
 [ "batBuns.maxsize",		  "424"		  ]
 [ "batBuns.storage",		  "malloced"	  ]
 [ "batBuns.filename",		  "13.buns"	  ]
-[ "batBuns.offset",		  "0"		  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "hheap.free",			  "0"		  ]
 [ "hheap.size",			  "0"		  ]
 [ "hheap.maxsize",		  "0"		  ]
 [ "hheap.storage",		  "absent"	  ]
 [ "hheap.filename",		  "no file"	  ]
-[ "hheap.offset",		  "0"		  ]
 [ "theapdirty",			  "clean"	  ]
 [ "theap.free",			  "0"		  ]
 [ "theap.size",			  "0"		  ]
 [ "theap.maxsize",		  "0"		  ]
 [ "theap.storage",		  "absent"	  ]
 [ "theap.filename",		  "no file"	  ]
-[ "theap.offset",		  "0"		  ]
-[ "hacctype",			  "null"	  ]
-[ "haccdirty",			  "clean"	  ]
-[ "haccCopiedtodisk",		  "0"		  ]
-[ "haccelerator.free",		  "0"		  ]
-[ "haccelerator.size",		  "0"		  ]
-[ "haccelerator.maxsize",	  "0"		  ]
-[ "haccelerator.storage",	  "absent"	  ]
-[ "haccelerator.filename",	  "no file"	  ]
-[ "haccelerator.offset",	  "0"		  ]
-[ "tacctype",			  "null"	  ]
-[ "taccdirty",			  "clean"	  ]
-[ "taccCopiedtodisk",		  "0"		  ]
-[ "taccelerator.free",		  "0"		  ]
-[ "taccelerator.size",		  "0"		  ]
-[ "taccelerator.maxsize",	  "0"		  ]
-[ "taccelerator.storage",	  "absent"	  ]
-[ "taccelerator.filename",	  "no file"	  ]
-[ "taccelerator.offset",	  "0"		  ]
-[ "head_index",			  "absent"	  ]
-[ "tail_index",			  "absent"	  ]
 #~EndVariableOutput~#
 #b.insert(1,15);
 #b.insert(2,4);
@@ -609,11 +585,11 @@ end main;	# 136
 # BAT:	  tmp_31  #
 # (int)	  (int)	  #
 #-----------------#
+[ 2,	  nil	  ]
 [ 2,	  25	  ]
 [ 2,	  36	  ]
 [ 2,	  49	  ]
 [ 2,	  64	  ]
-[ 2,	  nil	  ]
 #quit();
 
 # 15:33:19 >  

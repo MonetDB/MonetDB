@@ -142,11 +142,11 @@ end main;	# 53
 #insert(s,"hello",8);
 #printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#-------------------------------------------------#
-# BAT:				  tmp_29	  #
-# (str)				  (str)		  #
-#-------------------------------------------------#
-[ "version",			  "980714"	  ]
+#-----------------------------------------#
+# h			tmp_14		  # name
+# str			str		  # type
+#-----------------------------------------#
+[ "version",		  "20696"	  ]
 [ "batId",			  "tmp_13"	  ]
 [ "batCacheid",			  "13"		  ]
 [ "batParentid",		  "0"		  ]
@@ -183,7 +183,6 @@ end main;	# 53
 [ "top",			  "9"		  ]
 [ "batStamp",			  "13"		  ]
 [ "lastUsed",			  "163"		  ]
-[ "keepAround",			  "0"		  ]
 [ "curStamp",			  "14"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "clean"	  ]
@@ -193,41 +192,18 @@ end main;	# 53
 [ "batBuns.maxsize",		  "424"		  ]
 [ "batBuns.storage",		  "malloced"	  ]
 [ "batBuns.filename",		  "13.buns"	  ]
-[ "batBuns.offset",		  "0"		  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "hheap.free",			  "4180"	  ]
 [ "hheap.size",			  "4724"	  ]
 [ "hheap.maxsize",		  "4724"	  ]
 [ "hheap.storage",		  "malloced"	  ]
 [ "hheap.filename",		  "13.hheap"	  ]
-[ "hheap.offset",		  "0"		  ]
 [ "theapdirty",			  "clean"	  ]
 [ "theap.free",			  "0"		  ]
 [ "theap.size",			  "0"		  ]
 [ "theap.maxsize",		  "0"		  ]
 [ "theap.storage",		  "absent"	  ]
 [ "theap.filename",		  "no file"	  ]
-[ "theap.offset",		  "0"		  ]
-[ "hacctype",			  "null"	  ]
-[ "haccdirty",			  "clean"	  ]
-[ "haccCopiedtodisk",		  "0"		  ]
-[ "haccelerator.free",		  "0"		  ]
-[ "haccelerator.size",		  "0"		  ]
-[ "haccelerator.maxsize",	  "0"		  ]
-[ "haccelerator.storage",	  "absent"	  ]
-[ "haccelerator.filename",	  "no file"	  ]
-[ "haccelerator.offset",	  "0"		  ]
-[ "tacctype",			  "null"	  ]
-[ "taccdirty",			  "clean"	  ]
-[ "taccCopiedtodisk",		  "0"		  ]
-[ "taccelerator.free",		  "0"		  ]
-[ "taccelerator.size",		  "0"		  ]
-[ "taccelerator.maxsize",	  "0"		  ]
-[ "taccelerator.storage",	  "absent"	  ]
-[ "taccelerator.filename",	  "no file"	  ]
-[ "taccelerator.offset",	  "0"		  ]
-[ "head_index",			  "absent"	  ]
-[ "tail_index",			  "absent"	  ]
 #~EndVariableOutput~#
 #print(find(s,"cello"));
 [ 3 ]
