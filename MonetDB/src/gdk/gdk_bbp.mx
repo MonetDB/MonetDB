@@ -815,31 +815,6 @@ bat BBPentry(str dirname, str batname, int mode) {
 	return i;
 }
 
-void BBPmode(bat i, int mode) {
-	MT_Id pid = MT_getpid_();
-	if (i < 0) i = -i;
-
-	if (BBPcheck(i, "BBPmode")) {
-		if (pid != locked_by)
-			MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPmode"); 
-		if (mode == PERSISTENT) {
-			BAT *b = BBP_cache(i);
-			if (b == NULL || b->batCopiedtodisk) 
-				BBP_status_on(i, BBPTMP, "BBPmode");
-			if (!(BBP_status(i)&BBPNEW))
-				BBP_status_on(i, BBPDELETED, "BBPmode");
-			BBP_status_off(i, BBPPERSISTENT, "BBPmode");
-		} else {
-			/* TRANSIENT */
-			if (!(BBP_status(i)&BBPDELETED))
-				BBP_status_on(i, BBPNEW, "BBPmode");
-			BBP_status_off(i, BBPDELETED|BBPTMP, "BBPmode");
-		}
-		if (pid != locked_by)
-			MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPmode"); 
-	}
-}
-
 void BBPcacheit(BAT* b) {
 	MT_Id pid = MT_getpid_();
         bat i = 0;
@@ -1112,7 +1087,7 @@ int BBPdecref(bat i, int logical) {
 	}
 	if (i < 0) i = -i;
         if(pid != locked_by) 
-		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPunfix");
+		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPdecref");
 
 	/* decrement references by one */
 	if (logical) {
@@ -1137,17 +1112,17 @@ int BBPdecref(bat i, int logical) {
 		if (sec > BBPLASTUSED(BBP_lastused(i))) BBP_lastused(i) = sec;
         } else if (b && b->batKeeparound == TRUE) {
                 /* bat could have been swapped out but user requested not to do so. Also renew its last usage stamp. */
-                MEMDEBUG THRprintf(GDKerr, "BBPunfix: keeping %s for resurrection (mode=%d).\n", BBPname(b->batCacheid), b->batPersistence);
+                MEMDEBUG THRprintf(GDKerr, "BBPdecref: keeping %s for resurrection (mode=%d).\n", BBPname(b->batCacheid), b->batPersistence);
                 BBP_lastused(i) = BBPLASTUSED(GDKcsec());
 	} else if (b || (BBP_status(i)&BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit while locked so no other thread thinks its available anymore */
-		BBP_status_on(i, BBPUNLOADING, "BBPunfix");
+		BBP_status_on(i, BBPUNLOADING, "BBPdecref");
 		swap = TRUE;
 	}
         
 	/* unlock before re-locking in unload; as saving a dirty persistent bat may take a long time */
 	if (pid != locked_by) 
-		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPunfix");
+		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPdecref");
 
         if (swap) {
                 b = BBPquickdesc(i, TRUE);
@@ -1467,7 +1442,7 @@ unloaded (or even destroyed, if the BAT is not persistent).
 int BBPfree(BAT *b) {
 	int ret;
 	bat bid = ABS(b->batCacheid), parent = VIEWparent(b);
-	int destroy = (BBP_lrefs(bid)) == 0 && (BBP_status(bid)&BBPDELETED) == 0;
+	int destroy = BBP_lrefs(bid) == 0 && (BBP_status(bid)&BBPDELETED) == 0;
 
 	assert(BBPswappable(b));
 	if (!parent)
@@ -1629,7 +1604,7 @@ static bat BBPtrim_scan(int mem, int vm, int descs, bat bbppos, bat bbplim) {
 		int i;
 		GDKqsort(bbptrim, NULL, bbptrimlast, sizeof(bbptrim_t), TYPE_int, 0);
 		for(i = bbptrimfirst = 0; i < bbptrimlast; i++) {
-			MEMDEBUG THRprintf(GDKerr, "TRIMSCAN: % 11d%c % 9d=%s\t(#%d)\n", BBPLASTUSED(bbptrim[i].lastused), 
+			MEMDEBUG THRprintf(GDKerr, "TRIMSCAN: %11d%c %9d=%s\t(#%d)\n", BBPLASTUSED(bbptrim[i].lastused), 
 						(bbptrim[i].lastused&(1<<31))?'*':' ', i, BBPname(bbptrim[i].bid), bbptrim[i].cnt);   
 			bbptrim[i].next = i+1;
 		}
@@ -1813,7 +1788,7 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
 
 		for(i=bbpunload; i!=BBPMAXTRIM; i = bbptrim[i].next) {
 			BAT *b = BBP_cache(bbptrim[i].bid);
-			MEMDEBUG THRprintf(GDKerr, "BBPTRIM: % 9u % 7d %s\n",
+			MEMDEBUG THRprintf(GDKerr, "BBPTRIM: %9u %7d %s\n",
 					bbptrim[i].lastused, bbptrim[i].bid,
 					BBPname(bbptrim[i].bid));
 			bats_written += (b->batPersistence != TRANSIENT && BATdirty(b));
