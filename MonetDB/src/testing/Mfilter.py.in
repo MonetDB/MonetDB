@@ -149,7 +149,6 @@ test = (
                 "|" r'^\[ 2\.094395102393195[73] \]$'
                 # src/modules/plain/aggr[X3]:
                 "|" r'^\[ .*(,\t* ? "?2\.562203[64]3e\+13"?)+\t* ? \]$'
-                "|" r'^\[ .*(,\t* ? "?7\.65432(119|072)"?)+\t* ? \]$'
                 "|" r'^\[ .*(,\t* ? "?7\.6543209876543(2([13]2?|21)|195)"?)+\t* ? \]$'
                 "|" r'^\[ .*(,\t* ? "?6\.6666666666666(572|67)"?)+\t* ? \]$'
                 "|" r'^\[ .*(,\t* ? "?6\.6666666666666(288|67)"?)+\t* ? \]$'
@@ -219,10 +218,7 @@ def mFilter (FILE, IGNORE) :
             oline = "#~ " + iline
         elif test[4].match(iline):
             # differences due to property-checking, which we want to treat as "minor differences"; see above
-            if os.name == "nt" and iline[:5] == 'quit;':
-                oline = "#" + iline
-            else:
-                oline = "=" + iline
+            oline = "=" + iline
         elif len(ftmp) > 2              and \
              test[3].match(iline)       and \
              test[2].match(ftmp[-1])    and \

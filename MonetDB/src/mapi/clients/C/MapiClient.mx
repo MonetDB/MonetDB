@@ -126,15 +126,14 @@ static void
 timerEnd(void)
 {
 	t1 = gettime();
-	if (mark )
-		fprintf(toConsole, "%s %d usec %s\n", 
-			mark, t1 - t0, mark2?mark2:"");
+	if (mark)
+		fprintf(toConsole, "%s %d usec %s\n", mark, t1 - t0, mark2);
 }
 
 static int
 doRequest(Mapi mid, const char *buf)
 {
-	/* char *rtrn;*/
+	char *rtrn;
 	MapiHdl hdl;
 
 	if ((hdl = mapi_query(mid, buf)) == NULL) {
@@ -146,12 +145,9 @@ doRequest(Mapi mid, const char *buf)
 		mapi_close_handle(hdl);
 		return 1;
 	}
-	mapi_quick_response(hdl,toConsole);
-/*
 	while ((rtrn = mapi_fetch_line(hdl)) != 0) {
 		fprintf(toConsole, "%s\n", rtrn);
 	}
-*/
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
@@ -184,13 +180,12 @@ doFile(Mapi mid, const char *file)
 	size_t length;
 	MapiHdl hdl;
 	int rc;
-	/* char *rtrn;*/
+	char *rtrn;
 
 	if ((fp = fopen(file, "r")) == NULL) {
 		fprintf(stderr, "%s: cannot open\n", file);
 		return 1;
 	}
-	timerStart();
 
 	rc = 0;
 	if ((hdl = mapi_query_prep(mid)) == NULL) {
@@ -217,17 +212,13 @@ doFile(Mapi mid, const char *file)
 		return 1;
 	}
 
-	mapi_quick_response(hdl,toConsole);
-/*
 	while ((rtrn = mapi_fetch_line(hdl)) != 0)
 		fprintf(toConsole, "%s\n", rtrn);
-*/
 
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		rc = 1;
 	}
-	timerEnd();
 	mapi_close_handle(hdl);
 	fclose(fp);
 	return rc;
@@ -236,6 +227,7 @@ doFile(Mapi mid, const char *file)
 static int
 doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 {
+	int prepared = 0;
 	char *line = NULL;
 	char *buf = NULL;
 	size_t length;
@@ -251,11 +243,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 		if (prompt) {
 			if (buf)
 				free(buf);
-			buf = readline(hdl ? "more>" : prompt);
+			buf = readline(prompt);
 			/* add a newline to the end since that makes
 			   further processing easier */
 			if (buf) {
-				add_history(buf);
 				length = strlen(buf);
 				buf = realloc(buf, length + 2);
 				buf[length++] = '\n';
@@ -267,7 +258,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 		{
 #ifndef HAVE_LIBREADLINE
 			if (prompt) {
-				fputs(hdl ? "more>" : prompt, stdout);
+				fputs(prompt, stdout);
 				fflush(stdout);
 			}
 #endif
@@ -283,7 +274,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 			continue;
 
 		if (!linemode ||
-		    (hdl == NULL && length > 0 && line[length - 1] == '\n')) {
+		    (!prepared && length > 0 && line[length - 1] == '\n')) {
 			/* test for special commands */
 			while (length > 0 && isspace((int) *line)) {
 				line++;
@@ -363,112 +354,59 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 			}
 		}
 
-		if (hdl == NULL) {
-			timerStart();
-			hdl = mapi_query_prep(mid);
-			switch (mapi_error(mid)) {
-			case MOK:
-				/* everything A OK */
-				break;
-			case MERROR:
-				/* some error, but try to continue */
-				if (hdl) {
-					mapi_explain_query(hdl, stderr);
-					mapi_close_handle(hdl);
-					hdl = NULL;
-				} else
-					mapi_explain(mid, stderr);
-				continue;
-			case MTIMEOUT:
-				/* lost contact with the server */
-				if (hdl) {
-					mapi_explain_query(hdl, stderr);
-					mapi_close_handle(hdl);
-					hdl = NULL;
-				} else
-					mapi_explain(mid, stderr);
-				return 1;
-			}
-		}
-		if (length > 0) {
-			assert(hdl != NULL);
-			mapi_query_part(hdl, line, length);
-			switch (mapi_error(mid)) {
-			case MOK:
-				/* everything A OK */
-				break;
-			case MERROR:
-				/* some error, but try to continue */
-				if (hdl) {
-					mapi_explain_query(hdl, stderr);
-					mapi_close_handle(hdl);
-					hdl = NULL;
-				} else
-					mapi_explain(mid, stderr);
-				continue;
-			case MTIMEOUT:
-				/* lost contact with the server */
-				if (hdl) {
-					mapi_explain_query(hdl, stderr);
-					mapi_close_handle(hdl);
-					hdl = NULL;
-				} else
-					mapi_explain(mid, stderr);
-				return 1;
-			}
-		}
 		if ((length == 0 || line[length - 1] == '\n') && linemode) {
-			/* char *rtrn;*/
+			char *rtrn;
 
-			assert(hdl != NULL);
-			if (mapi_query_done(hdl) == MMORE)
-				continue; /* get more data */
-
-			switch (mapi_error(mid)) {
-			case MOK:
-				/* everything A OK */
-				break;
-			case MERROR:
-				/* some error, but try to continue */
-				mapi_explain_query(hdl, stderr);
-				mapi_close_handle(hdl);
-				hdl = NULL;
-				continue;
-			case MTIMEOUT:
-				/* lost contact with the server */
-				mapi_explain_query(hdl, stderr);
-				mapi_close_handle(hdl);
-				hdl = NULL;
-				return 1;
+			/* send rest of or whole query */
+			if (prepared) {
+				assert(hdl != NULL);
+				if (length > 0) {
+					mapi_query_part(hdl, line, length);
+					if (mapi_error(mid))
+						break;
+				}
+				mapi_query_done(hdl);
+				if (mapi_error(mid))
+					break;
+				prepared = 0;
+			} else {
+				assert(hdl == NULL);
+				/* send one complete line */
+				timerStart();
+				hdl = mapi_query(mid, line);
+				if (mapi_error(mid))
+					break;
+#ifdef HAVE_LIBREADLINE
+				if (prompt && length > 1) {
+					line[--length] = 0;
+					add_history(buf);
+				}
+#endif
 			}
 
-			mapi_quick_response(hdl,toConsole);
-/*
 			while ((rtrn = mapi_fetch_line(hdl)) != 0)
 				fprintf(toConsole, "%s\n", rtrn);
-*/
-
-			switch (mapi_error(mid)) {
-			case MOK:
-				/* everything A OK */
-				break;
-			case MERROR:
-				/* some error, but try to continue */
-				mapi_explain_query(hdl, stderr);
-				mapi_close_handle(hdl);
-				hdl = NULL;
-				continue;
-			case MTIMEOUT:
-				/* lost contact with the server */
-				mapi_explain_query(hdl, stderr);
-				mapi_close_handle(hdl);
-				hdl = NULL;
-				return 1;
-			}
-
 			timerEnd();
+
+			if (mapi_error(mid))
+				break;
 			mapi_close_handle(hdl);
 			hdl = NULL;
+		} else {
+			/* send part of query */
+			if (!prepared) {
+				assert(hdl == NULL);
+				timerStart();
+				hdl = mapi_query_prep(mid);
+				if (mapi_error(mid))
+					break;
+				prepared = 1;
+			}
+			if (length > 0) {
+				mapi_query_part(hdl, line, length);
+				if (mapi_error(mid))
+					break;
+			}
 		}
 	}
 	/* only reached on error */
@@ -796,7 +734,7 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "c:l:u:p:P:h:s:DtTd::?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "c:l:u:P:h:s:DtTd::?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'c':
 			config = optarg;

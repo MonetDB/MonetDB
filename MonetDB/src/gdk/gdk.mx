@@ -1095,7 +1095,7 @@ gdk_export BAT*		BATextend  (BAT *b, size_t newcap);
 
 		/* internal */
 gdk_export BAT*		BATnewstorage (int ht, int tt, size_t cap);
-gdk_export BAT*		BATcreatedesc (int ht, int tt, int heapnames); 
+gdk_export BAT*		BATcreatedesc (int ht, int tt); 
 gdk_export int 		BATfree       (BAT *b);
 gdk_export int 		BATelmshift   (BAT *b);
 gdk_export void 		BATsetdims    (BAT *b);
@@ -2522,7 +2522,6 @@ gdk_export BAT*	VIEWcombine	(BAT *b);
 gdk_export BAT*	VIEWreset	(BAT *b);
 gdk_export BAT*	BATmaterialize	(BAT *b, size_t size);
 gdk_export void	VIEWdestroy	(BAT *b);
-gdk_export void	VIEWunlink	(BAT *b);
 
 /* low level functions */
 gdk_export int      ALIGNundo       (BAT *b);

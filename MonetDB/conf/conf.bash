@@ -222,6 +222,19 @@ if [ "${os}" = "Linux" ] ; then
 			libpath="/home/niels/soft/local/lib:${libpath}"
 		fi
 	fi
+	#
+	# Doesn't work (yet?):
+	# The libreadline in /lib64 seem to have a symbol/function "readline", 
+	# but no "rl_history_search_forward", while on all other platform 
+	# we seem to have "rl_history_search_forward", but no "readline".
+	# With "readline" instead of "rl_history_search_forward", 
+	# 64-bit MapiClient makes 64-bit Mserver crash on connect on spin...
+	#
+	#if [ "${hw}" = "x86_64" ] ; then
+	#	# specific settings for 64 bit on Opterons (with Debian Linux)
+	#	libpath="/lib64:${libpath}"
+	#fi
+	#
 	domain="`domainname`"
 	if [ -x /usr/lib/java/bin/javac  -a  -x /usr/lib/java/bin/jar ] ; then
 		# java in Konstanz

@@ -1082,7 +1082,6 @@ int ACC_hash = 1;
 int ACC_index = 2;
 
 int ACCbuild(int id, BAT *b, Heap* acc, ptr extra) {
-	str nme = BBP_physical(b->batCacheid);
 	if (id == ACC_hash) {
 		return BAThash(b, extra)?0:-1;
 	} else if (id == ACC_index) {
@@ -1095,7 +1094,6 @@ int ACCbuild(int id, BAT *b, Heap* acc, ptr extra) {
 		GDKwarning("ACCbuild: destroying %s first\n", ACCname(b->hacctype));
 		ACCdestroy(b->hacctype, b, acc);
 	} 
-	sprintf(b->haccelerator.filename = (str) GDKmalloc(strlen(nme)+12), "%s.%cacc", nme, (b->batCacheid>0)?'h':'t');
 	if (BATaccelerators[id].accBuild) {
 		str nme = BBP_physical(b->batCacheid);
 		b->haccelerator.filename = (str) GDKmalloc(strlen(nme)+12);
@@ -1120,10 +1118,6 @@ int ACCunload(int id, BAT *b, Heap *acc) {
         	return -1;
 	} else if (BATaccelerators[id].accDestroy) { 
 		(*BATaccelerators[id].accDestroy)(acc, b);
-		if (b->haccelerator.filename) {
-			GDKfree(b->haccelerator.filename);
-			b->haccelerator.filename = NULL;
-		}
 	}
 	return 0;
 }
@@ -1173,7 +1167,9 @@ void ACCunloadall(BAT *b) {
 }
 
 void ACCremoveall(BAT *b) {
-	VIEWunlink(b);
+	if (VIEWparent(b)) {
+		return;
+	}
 	IDXdestroy(b);
 	HASHdestroy(b);
         if (b->hacctype && b->haccelerator.base) {

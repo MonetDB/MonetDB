@@ -55,10 +55,6 @@ stderr of test 'client` in directory 'src/tools` itself:
 # 19:58:18 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --host=octans --port=52330 < client.milC
 # 19:58:18 >  
 
-MAPI  = monetdb@draco:44895
-ACTION= mapi_fetch_line
-QUERY = quit();
-ERROR = Connection terminated
 
 # 19:58:18 >  
 # 19:58:18 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --host=octans --port=52330
@@ -68,4 +64,7 @@ ERROR = Connection terminated
 # 19:58:19 >  
 # 19:58:19 >  Done.
 # 19:58:19 >  
+
+
+
 

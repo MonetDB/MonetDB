@@ -63,8 +63,6 @@ that you might well find very useful.
 
 .COMMAND mem_printmap() : void = print_mem_map;
         "print a map of all memory that is in use"
-.COMMAND mem_colormap() : void = print_color_map;
-        "print a color map of all memory that is in use"
 @T
 For each 64KB block in the first 3GB of the virtual memory {\tt mem_printmap()} prints a character:
 \begin{verbatim}
@@ -78,7 +76,7 @@ p - free (last usage was P)
 M - in use as memory mapped region
 m - free (last usage was M)
 C - in use as MIL context buffer (i.e. anonymous virtual memory)
-c - free (last usage was c)
+c - free (last usage was M)
 \end{verbatim}
 On Linux, the malloc library appears to be using anonymous virtual memory, which goes unetected.
 If you want to see all your memory in the map, lower the gdk\_mmap threshold in monet.conf to a 
@@ -797,12 +795,12 @@ view_client_login(
         for(i=0; i < MAXCLIENTS; i++)
 	if( monet_clients[i].user) {
 		time_t logintime=(time_t)monet_clients[i].login;
-		struct tm localt;
 
-#ifdef HAVE_LOCALTIME_R
-		(void) localtime_r(&logintime,&localt);
+#ifdef CYGWIN32
+		localtime(&logintime);
 #else
-		localt = *localtime(&logintime);
+		struct tm localt;
+		localtime_r(&logintime,&localt);
 #endif
 
 #ifdef HAVE_CTIME_R3
@@ -1485,10 +1483,6 @@ int format_fcn_sig(str *sig, oid *fid){
 
 int print_mem_map() {
         MT_alloc_print();
-        return GDK_SUCCEED;
-}
-int print_color_map() {
-        MT_alloc_table();
         return GDK_SUCCEED;
 }
 @

@@ -113,10 +113,5 @@ typedef lng ptrdiff_t;
 #define HAVE_PTRDIFF_T 1
 #endif
 
-/* prompts for MAPI protocol */
-#define PROMPTBEG	'\001'		/* start prompt bracket */
-#define PROMPT1		"\001\001\n"	/* prompt: ready for new query */
-#define PROMPT2		"\001\002\n"	/* prompt: more data needed */
-
 #endif /* _MU_H_ */
 

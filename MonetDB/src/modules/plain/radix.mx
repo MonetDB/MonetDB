@@ -730,11 +730,6 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 @:tpe(integer)@
 @:tpe(int)@
 
-.COMMAND posjoin(BAT[void,oid] c, BAT[void,any::1] v,
-                 int radix_bits, int stride, int vector_size) : BAT[void,any::1] = posjoin_clustered;
-"perform a positional join that exploits radix-clusteredness for prefetching"
-
-
 .COMMAND pax_blocksize(int) : int = pax_blocksize; "get/set the pax blocksize"
 
 .COMMAND uniform(oid base, int size, int domain) : bat[oid,int] = BATuniform;
@@ -786,11 +781,6 @@ proc phash_join_new(bat[any::1,any::2] l, bat[any::2,any::3] r, int radix, int h
 
 var CACHE_SIZE := 256*1024;
 proc CACHE_LINES() : int { return CACHE_SIZE/32; }
-
-proc posjoin(bat[void,oid] c, bat[void,any::1] v, int radixbits, int stride) : BAT[void,any::1] 
-	return posjoin(c, v, radixbits, stride, 512);
-proc posjoin(bat[void,oid] c, bat[void,any::1] v, int radixbits) : BAT[void,any::1] 
-	return posjoin(c, v, radixbits, 128);
 
 proc log2(int i) : int {
   var n := 0;
@@ -1094,11 +1084,6 @@ radix_cluster(attr_int,
 #define integer256 int
 
 #include "radix.proto.h"
-
-#if defined(ia64) && !defined(__GNUC__)
-/* constants for use with _mm_prefetch */
-#include <xmmintrin.h>
-#endif
 
 /* math.h files do not have M_PI/M_E defined */
 #ifndef M_PI
@@ -1430,9 +1415,8 @@ BAT* quickbat(BAT *b, size_t cap) {
  *            right to left; and vice versa! Otherwise you overwrite blocks.
  */
 void move_chunks(move_t *mov, BUN base, size_t from, size_t end) {
-    assert(((ssize_t)end) >= 0); /* make sure that cop=(ssize_t)from does not overflow */
     while (from < end) {
-	ssize_t cur, cop = (ssize_t)from;
+	size_t cur, cop = from;
 
 	while(++from < end) {
 	    if (mov[from].src >= mov[from].dst) break;
@@ -1823,13 +1807,13 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
 	    size_t *kk = k + h;
 	
 	    if (b->ttype == TYPE_oid) {
-		radix_chunk_oid(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits); 
+		radix_chunk_oid(bn, prev, lims, p+j, r, p+l[i], q+(j/BUNsize(b))*BUNsize(bn), k, radix[argc], shift, dst, cnt, &maxbits); 
 	    } else if (ATOMstorage(b->ttype) == TYPE_int || ATOMstorage(b->ttype) == TYPE_flt) {
-		radix_chunk_int(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits); 
+		radix_chunk_int(bn, prev, lims, p+j, r, p+l[i], q+(j/BUNsize(b))*BUNsize(bn), k, radix[argc], shift, dst, cnt, &maxbits); 
 	    } else if (ATOMstorage(b->ttype) == TYPE_dbl || ATOMstorage(b->ttype) == TYPE_lng) {
-		radix_chunk_lng(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits); 
+		radix_chunk_lng(bn, prev, lims, p+j, r, p+l[i], q+(j/BUNsize(b))*BUNsize(bn), k, radix[argc], shift, dst, cnt, &maxbits); 
 	    } else {
-		radix_chunk_any(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits);
+		radix_chunk_any(bn, prev, lims, p+j, r, p+l[i], q+(j/BUNsize(b))*BUNsize(bn), k, radix[argc], shift, dst, cnt, &maxbits);
 	    }
 	    while(k < kk) *(k++) += j; /* make relative limits absolute ones */
 	}
@@ -3144,277 +3128,5 @@ int jivejoin2(BAT **res, BAT *proj, BAT *attr) {
 	BATseqbase(bn,0);
 	bn->tsorted = BAThordered(proj)&BATtordered(proj)&BATtordered(attr)&1;
 	if (proj->tkey && attr->tkey) BATkey(BATmirror(bn), TRUE); 
-	return GDK_SUCCEED;
-}
-
-@+ Prefetching
-Seems hardware prefetching isn't up to its take on most platforms (P4 being the exception). Therefore we implement
-software prefetching optimized per platform. A default implementation just sums int with cacheline strides.
-For AMD Athlon systems backward read of 'movl's is optimal (see www.amd.com).  For systems without hardware 
-prefetching, a software prefetch is implemented, ie a simple prefetch loop.
-
-@c
-#ifdef HAVE_RESTRICT
-#define __r	restrict
-#else
-#ifdef HAVE___RESTRICT__
-#define __r	__restrict__
-#else
-#define __r
-#endif
-#endif
-
-#if defined(ATHLON) 
-static inline int Mem2Cache(int*__r from, size_t size )
-{
-	int cnt = size/128;
-	__asm__ __volatile__ (
-		"movl %2, %%eax\n\t"
-		"movl %0, %%esi\n\t"
-		"addl %1, %%esi\n\t"
-		"1: movl -128(%%esi), %%edx\n\t"
-		"movl -64(%%esi), %%edx\n\t"
-		"subl $128, %%esi\n\t"
-		"dec %%eax\n\t"
-		"jnz 1b\n\t"
-                :  : "r" (from), "r" (size), "r" (cnt) : "memory",  "%eax", "%edx", "%esi" );
-	return cnt;
-}
-#else
-
-#if defined(ia64)
-/* L2 has 128 byte cachelines */
-static inline int Mem2Cache(int*__r from, size_t size )
-{
-	char *data = (char*) from;
-	int i;
-	for(i=0; i<size; i += 64){
-#ifndef __GNUC__
-        	_mm_prefetch(data, _MM_HINT_NTA );
-#else
-        	__builtin_prefetch(data);
-#endif
-		data += 64;
-	}
-	return i;
-}
-#else
-
-#define CACHELINE (128)
-#define INTCACHELINE (CACHELINE/sizeof(int))
-
-static inline int Mem2Cache(int*__r p, size_t size){
-	size_t sum0 = 0, sum1 = 0, i = 0;
-	size /= sizeof(int);
-
-	while(i+(8*INTCACHELINE) < size){
-		sum0 += p[i+0*INTCACHELINE];
-		sum1 += p[i+1*INTCACHELINE];
-		sum0 += p[i+2*INTCACHELINE];
-		sum1 += p[i+3*INTCACHELINE];
-		sum0 += p[i+4*INTCACHELINE];
-		sum1 += p[i+5*INTCACHELINE];
-		sum0 += p[i+6*INTCACHELINE];
-		sum1 += p[i+7*INTCACHELINE];
-		i += INTCACHELINE*8;
-	}
-	return sum0+sum1;
-}
-
-#endif
-#endif
-
-@+ clustered positional join
-@c
-static
-dbl prefetch(ssize_t n, int stride, dbl*__r src) {  
-	dbl tot = 0;
-	ssize_t i;
-	n >>= 3;
-	if (stride == 1) {
-		Mem2Cache((int*) src, n);
-	} else if (stride == 32) {
-		for(i=0; i+16<n; i+=16) 
-			tot += src[i] + src[i+4] + src[i+8] + src[i+12];
-	} else if (stride == 64) { 
-		for(i=0; i+32<n; i+=32) 
-			tot += src[i] + src[i+8] + src[i+16] + src[i+24];
-	} else if (stride == 128) { 
-		for(i=0; i+64<n; i+=64) 
-			tot += src[i] + src[i+16] + src[i+32] + src[i+48];
-	} else if (stride == 256) { 
-		for(i=0; i+128<n; i+=128) 
-			tot += src[i] + src[i+32] + src[i+64] + src[i+96];
-	} else if (stride > 8) {
-		for(i=0; i<n; i+=stride) 
-			tot += src[i];
-	}
-	return tot;
-}
-
-@= posjoin
-static int posjoin_@1(int pf, @1*__r p1, 
-int oidhead, ssize_t n, @1*__r res, oid*__r pos, @1*__r val) {
-	@1 tot1 = 0, tot2 = 0, tot3 = 0, tot4 = 0;
-	ssize_t i;
-	if (p1) {
-		if (oidhead) {
-			/* pos = tail of BAT[oid,oid] 
-			for(i=0; i+7<n; i+=4) {
-				res[i] = val[pos[i+i]];
-				tot1 += p1[0];
-				res[i+1] = val[pos[i+i+2]];
-				tot2 += p1[pf];
-				res[i+2] = val[pos[i+i+4]];
-				tot3 += p1[pf+pf];
-				res[i+3] = val[pos[i+i+6]];
-				tot4 += p1[pf+pf+pf];
-				p1 += pf+pf+pf+pf;
-			}
-*/
-			for(i=0; i<n; i++) {
-				res[i] = val[pos[i+i]];
-				tot1 += *p1;
-				p1 += pf;
-			}
-		} else {
-			/* pos = tail of BAT[void,oid] 
-			for(i=0; i+3<n; i+=4) {
-				res[i] = val[pos[i]];
-				tot1 += p1[0];
-				res[i+1] = val[pos[i+1]];
-				tot2 += p1[pf];
-				res[i+2] = val[pos[i+2]];
-				tot3 += p1[pf+pf];
-				res[i+3] = val[pos[i+3]];
-				tot4 += p1[pf+pf+pf];
-				p1 += pf+pf+pf+pf;
-			}
-*/
-			for(i=0; i<n; i++) {
-				res[i] = val[pos[i]];
-				tot1 += *p1;
-				p1 += pf;
-			}
-		}
-	} else {
-		if (oidhead) {
-			/* pos = tail of BAT[oid,oid] */
-			for(i=0; i+7<n; i+=4) {
-				res[i] = val[pos[i+i]];
-				res[i+1] = val[pos[i+i+2]];
-				res[i+2] = val[pos[i+i+4]];
-				res[i+3] = val[pos[i+i+6]];
-			}
-			for(i=0; i<n; i++) {
-				res[i] = val[pos[i+i]];
-			}
-		} else {
-			/* pos = tail of BAT[void,oid] */
-			for(i=0; i+3<n; i+=4) {
-				res[i] = val[pos[i]];
-				res[i+1] = val[pos[i+1]];
-				res[i+2] = val[pos[i+2]];
-				res[i+3] = val[pos[i+3]];
-			}
-			for(i=0; i<n; i++) {
-				res[i] = val[pos[i]];
-			}
-		}
-	}
-	return (int) (tot1 + tot2 + tot3 + tot4);
-}
-@c
-@:posjoin(chr)@
-@:posjoin(sht)@
-@:posjoin(int)@
-@:posjoin(dbl)@
-
-int posjoin_clustered(BAT** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
-	ssize_t n, c_cnt = BATcount(c), v_cnt = BATcount(v);
-	int prev_bits = -1, radix_shift, radix_bits = *rb;
-	int oidhead = (BUNsize(c) != sizeof(oid));
-	ssize_t width = BUNsize(v), i = MAX(1, BATcount(v) - 1);
-	ssize_t vectorsize = *vs, stride = *st;
-	oid *pos, radix_mask;
-	BUN res, cur_prefetch = NULL, vf = BUNfirst(v);
-	dbl skiprate;
-	BAT *bn;
-
-	if (BUNsize(v) != ATOMsize(v->ttype)) {
-		GDKerror("posjoin: %s does not have a void head column.\n", BBP_logical(v->batCacheid));
-		return GDK_FAIL;
-	}
-	bn = *r = BATnew(TYPE_void, v->ttype, c_cnt);
-	pos = (oid*) BUNtloc(c,BUNfirst(c));
-	res = (BUN) BUNtloc(bn,BUNfirst(bn));
-
-	for(n=0; i > 0 ; n++) {
-		i >>= 1;
-	}
-	radix_shift = n - radix_bits;
-	radix_mask = ((1 << radix_bits) - 1) << radix_shift;
-	bn->batBuns->free += c_cnt*BUNsize(bn);
-
-	/* compute skiprate and if set, prefetch full first cluster */
-	skiprate = ((dbl)v_cnt)/c_cnt;
-	if (stride < 0) {
-		cur_prefetch = (char*) vf + width*MIN(v_cnt,1<<radix_shift);
-		prefetch(cur_prefetch - vf, 128, (dbl*) vf);
-	}
-
-	for(i=0; i<c_cnt; i+=vectorsize) {
-		ssize_t probe = MIN(i+vectorsize,c_cnt)-1;
-		size_t cur_bits = pos[probe<<oidhead]&radix_mask;
-
-		n = MIN(c_cnt-i,vectorsize);
-
-		/* handle prefetching of the next cluster */
-		if (cur_prefetch) {
-			/* increment concurrent prefetch pointer */
-			size_t prefetch_pos = (i*skiprate) + (1 << radix_shift);
-			cur_prefetch = vf + width * prefetch_pos;
-			if (cur_prefetch + n*width*((int) skiprate) > BUNlast(v)) 
-				cur_prefetch = NULL; /* prefetch would cause SEGV */  
-		} else if (stride >= 0) {
-			/* handle sequential prefetching if applicable */
-			if (prev_bits != cur_bits && radix_shift > 3) {
-				size_t length = width*MIN(v_cnt-cur_bits,1<<radix_shift);
-				(void) prefetch(length, stride, (dbl*) (vf+cur_bits*width));
-				if (skiprate*width > 128) {
-					(void) prefetch(length, stride, (dbl*) (vf+cur_bits*width));
-				}
-			}
-		}
-		/* do the join for this vector */
-		switch(ATOMstorage(v->ttype)){
-		case TYPE_chr: 
-			(void) posjoin_chr(skiprate, (chr*) cur_prefetch, 
-					   oidhead, n, (chr*) res, pos+(i<<oidhead), (chr*) vf); 
-			break;
-		case TYPE_sht: 
-			(void) posjoin_sht(skiprate, (sht*) cur_prefetch, 
-					   oidhead, n, (sht*) res, pos+(i<<oidhead), (sht*) vf); 
-			break;
-		case TYPE_int:	
-		case TYPE_flt: 
-			(void) posjoin_int(skiprate, (int*) cur_prefetch, 
-				  	   oidhead, n, (int*) res, pos+(i<<oidhead), (int*) vf); 
-			break;
-		case TYPE_lng:	
-		case TYPE_dbl: 
-			(void) posjoin_dbl(skiprate, (dbl*) cur_prefetch, 
-					   oidhead, n, (dbl*) res, pos+(i<<oidhead), (dbl*) vf); 
-			break;
-		default: 
-			GDKerror("posjoin: type %s not implemented\n", ATOMname(v->ttype));
-			bn->batBuns->free -= c_cnt*BUNsize(bn);
-			break;
-		}
-		prev_bits = cur_bits;
-		res += vectorsize * BUNsize(bn);
-	}
-	BATseqbase(bn, c->hseqbase);
-	bn->tsorted = 0;
 	return GDK_SUCCEED;
 }

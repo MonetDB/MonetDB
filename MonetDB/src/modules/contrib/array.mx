@@ -287,7 +287,7 @@ ADDHELP("cons", "A.R. van Ballegooij", "Sep 20 2003",
 "generates a bat with a constant column", "array");
 
 PROC concat(bat[oid,any::1] a,bat[oid,any::1] b,int o) : bat[oid,any::1] {
-    return access(insert(access(copy(a),BAT_WRITE),
+    access(insert(access(copy(a),BAT_WRITE),
                   reverse([oid]([+]([int](reverse(b)),o))))
           ,BAT_READ);
 }

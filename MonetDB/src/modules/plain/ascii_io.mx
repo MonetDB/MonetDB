@@ -103,17 +103,11 @@ proc make_persistent( BAT[str,BAT] bats ) := {
 			var b := keybat.reverse().join($t);
 			b.rename($h);
 			b.persists(true);
-			if (b.count() > 1000000) {
-				b.mmap(STORE_MMAP);
-			}
 		}
 	} else {
 		bats@batloop(){
 			$t.rename($h);
 			$t.persists(true);
-			if ($t.count() > 1000000) {
-				$t.mmap(STORE_MMAP);
-			}
 		}
 	}
 }
@@ -528,7 +522,6 @@ BAT *ASCIIcollect_bats( ascii *as ){
 
 	for (i=0; i<as->nr_attrs; i++){
 		BUNins(bats,(ptr)fmt[i].name, (ptr)&fmt[i].c->batCacheid);
-		BATsetaccess(fmt[i].c, BAT_READ);
 		if (cnt != BATcount(fmt[i].c)){
 		        GDKerror("Error: counts are not equal\n");
 			return NULL;

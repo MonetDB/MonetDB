@@ -350,10 +350,10 @@ void freeClient(Client c)
 		monetSetChannel(t, bkin, bkout);
        		TBL_exitclient(c); /* module drops */
 		/* GDKlog("Mserver: %s session ends", c->user); */
-		stream_close(c->fdout);
-		stream_destroy(c->fdout);
 		stream_close(c->fdin);
 		stream_destroy(c->fdin);
+		stream_close(c->fdout);
+		stream_destroy(c->fdout);
 	}
 	GDKfree(c->input);
 	GDKfree(c->output);
@@ -494,19 +494,14 @@ int readClient(Client c)
 	blocked = isa_block_stream(c->fdin);
 	do {
 		if (instring != '"') {
+			size_t l = strlen(c->prompt);
 			if (c == monet_clients) {
-				if (c->prompt && *c->prompt &&
-				    stream_write(fd, c->prompt,
-						 strlen(c->prompt), 1) != 1)
-					return 0;
-			} else if (c->top == c->input) {
-				if (stream_write(fd, PROMPT1,
-						 sizeof(PROMPT1) - 1, 1) != 1)
-					return 0;
-			} else {
-				if (stream_write(fd, PROMPT2,
-						 sizeof(PROMPT2) - 1, 1) != 1)
-					return 0;
+				for(s = c->prompt; *s; s++)
+					if (isprint((int) *s))
+						if (stream_write(fd, s, 1, 1) != 1)
+							return 0;
+			} else if (stream_write(fd, c->prompt, l, 1) != 1) {
+				return 0;
 			}
 			if (stream_flush(fd))
 				return 0;
@@ -537,7 +532,7 @@ int readClient(Client c)
 		PARSEDEBUG THRprintf(GDKerr, "%.*s", c->top - (c->input + offset), c->input+offset);
 		/* this loop wil check whether we got enough data for
 		   a complete MIL statement, and in addition will
-		   normalize line endings. */
+		   remove all comments and normalize line endings. */
 		for (s = p = c->input + offset; s < c->top; s++) {
 			switch (*s) {
 			case '\r':

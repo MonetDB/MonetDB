@@ -268,9 +268,9 @@ Get the new information for the server socket and start listening.
 			continue;
 		}
 		if (STREQ(cmd,"")) {
-			int i=0;
+			int i=0, mpl;
 			char *name = (char*) GDKmalloc(BLOCK), *user = name,*s;
-			char *mp;
+			char *mp, *nmp;
 			int blocked=0;
 			stream *fdin = socket_rastream(msgsock, "Mserver mapi read");
 			stream *fdout= NULL;
@@ -312,19 +312,27 @@ Get the new information for the server socket and start listening.
 			}
 			*user = 0;
 			mp = GDKgetenv("monet_prompt");
-			c = initClient(name, mp, FALSE);
+			mpl = strlen(mp);
+			nmp = GDKmalloc(mpl +4);
+			nmp[0] = '\1';
+			strncpy(nmp+1,mp,mpl);
+			nmp[mpl+1] = '\1';
+			nmp[mpl+2] = '\n';
+			nmp[mpl+3] = '\0';
+			c = initClient(name, nmp, FALSE);
+			GDKfree(nmp);
 			if (c == 0) {
 				stream_printf(fdout, "MAPIlisten:Failed to init client for user %s\n", name );
 				GDKfree(name);
 
-				/* Make sure that the write- (from-) stream is closed first,
-				 * as the related read- (in-) stream closes the shared
+				/* Make sure that the read- (in-) stream is closed first,
+				 * as the related write- (out-) stream closes the shared
 				 * socket; see also src/common/stream.mx:socket_close .
 				 */
-				stream_close(fdout);
-				stream_destroy(fdout);
 				stream_close(fdin);
 				stream_destroy(fdin);
+				stream_close(fdout);
+				stream_destroy(fdout);
 				continue;
 			}
 			GDKfree(name);
@@ -634,9 +642,9 @@ Get the new information for the server socket and start listening.
 		}
 
 		if (STREQ(cmd,"")) {
-			int i=0;
+			int i=0, mpl;
 			char *name = (char*) GDKmalloc(BLOCK), *user = name,*s;
-			char *mp;
+			char *mp, *nmp;
 			int blocked=0;
 			stream *fdin = ssl_rastream(ssl, "Mserver mapi read");
 			stream *fdout= NULL;
@@ -683,19 +691,27 @@ Get the new information for the server socket and start listening.
 			}
 			*user = 0;
 			mp = GDKgetenv("monet_prompt");
-			c = initClient(name, mp, FALSE);
+			mpl = strlen(mp);
+			nmp = GDKmalloc(mpl +4);
+			nmp[0] = '\1';
+			strncpy(nmp+1,mp,mpl);
+			nmp[mpl+1] = '\1';
+			nmp[mpl+2] = '\n';
+			nmp[mpl+3] = '\0';
+			c = initClient(name, nmp, FALSE);
+			GDKfree(nmp);
 			if (c == 0) {
 				stream_printf(fdout, "MAPIlistenSSL:Failed to init client for user %s\n", name );
 				GDKfree(name);
 
-				/* Make sure that the write- (out-) stream is closed first,
-				 * as the related read- (in-) stream closes the shared
+				/* Make sure that the read- (in-) stream is closed first,
+				 * as the related write- (out-) stream closes the shared
 				 * socket; see also src/common/stream.mx:ssl_close .
 				 */
-				stream_close(fdout);
-				stream_destroy(fdout);
 				stream_close(fdin);
 				stream_destroy(fdin);
+				stream_close(fdout);
+				stream_destroy(fdout);
 				continue;
 			}
 			GDKfree(name);
