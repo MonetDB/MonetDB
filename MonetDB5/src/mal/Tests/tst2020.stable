@@ -27,7 +27,7 @@ exit yy;	# 6  (yy:any)
 exit b1;	# 8  (b1:int)
     system.printf("end of program, wait for child\n");	# 9 SYSprint_str ($7:int)<-($8:str)
 end main;	# 10  
-end of program, wait for child
 start thread
 finish thread
+end of program, wait for child
 >

@@ -202,8 +202,8 @@ exit sj_b;	# 59  (sj_b:bit)
     io.print(zinfo);	# 93 CMDprint_val ($45:int)<-(zinfo:bat[str,str])
 end main;	# 94  
 #-------------------------------------------------#
-# BAT:				  tmp_5		  #
-# (str)				  (str)		  #
+# h				tmp_5		  # name
+# str				str		  # type
 #-------------------------------------------------#
 [ "version",			  "980714"	  ]
 [ "batId",			  "tmp_4"	  ]
@@ -227,7 +227,7 @@ end main;	# 94
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "1"		  ]
 [ "halign",			  "0"		  ]
-[ "halignflushed",		  "1000068"	  ]
+[ "halignflushed",		  "1000072"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "nil"		  ]
@@ -235,8 +235,8 @@ end main;	# 94
 [ "tkey",			  "0"		  ]
 [ "tloc",			  "0"		  ]
 [ "tvarsized",			  "0"		  ]
-[ "talign",			  "1000069"	  ]
-[ "talignflushed",		  "1000069"	  ]
+[ "talign",			  "1000073"	  ]
+[ "talignflushed",		  "1000073"	  ]
 [ "batInserted",		  "1"		  ]
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
@@ -248,23 +248,23 @@ end main;	# 94
 [ "batDirtybuns",		  "clean"	  ]
 [ "batBuns.free",		  "8"		  ]
 [ "batBuns.size",		  "8000024"	  ]
-[ "batBuns.maxsize",		  "8069120"	  ]
-[ "batBuns.storage",		  "anonymous vm"  ]
-[ "batBuns.filename",		  "no file"	  ]
+[ "batBuns.maxsize",		  "8000024"	  ]
+[ "batBuns.storage",		  "malloced"	  ]
+[ "batBuns.filename",		  "4.buns"	  ]
 [ "batBuns.offset",		  "0"		  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "hheap.free",			  "0"		  ]
 [ "hheap.size",			  "0"		  ]
 [ "hheap.maxsize",		  "0"		  ]
 [ "hheap.storage",		  "absent"	  ]
-[ "hheap.filename",		  "no file"	  ]
+[ "hheap.filename",		  "4.hheap"	  ]
 [ "hheap.offset",		  "0"		  ]
 [ "theapdirty",			  "clean"	  ]
 [ "theap.free",			  "0"		  ]
 [ "theap.size",			  "0"		  ]
 [ "theap.maxsize",		  "0"		  ]
 [ "theap.storage",		  "absent"	  ]
-[ "theap.filename",		  "no file"	  ]
+[ "theap.filename",		  "4.theap"	  ]
 [ "theap.offset",		  "0"		  ]
 [ "hacctype",			  "null"	  ]
 [ "haccdirty",			  "clean"	  ]
@@ -286,13 +286,13 @@ end main;	# 94
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 485 ms
+count 1000000 = 490 ms
+count 1000000 = 384 ms
 count 1000000 = 382 ms
-count 1000000 = 390 ms
-count 1000000 = 402 ms
+count 1000000 = 389 ms
 #-------------------------------------------------#
-# BAT:				  tmp_10	  #
-# (str)				  (str)		  #
+# h				tmp_10		  # name
+# str				str		  # type
 #-------------------------------------------------#
 [ "version",			  "980714"	  ]
 [ "batId",			  "tmp_9"	  ]
@@ -315,8 +315,8 @@ count 1000000 = 402 ms
 [ "hkey",			  "1"		  ]
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "0"		  ]
-[ "halign",			  "1000126"	  ]
-[ "halignflushed",		  "1000126"	  ]
+[ "halign",			  "1000130"	  ]
+[ "halignflushed",		  "1000130"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "nil"		  ]
@@ -324,8 +324,8 @@ count 1000000 = 402 ms
 [ "tkey",			  "0"		  ]
 [ "tloc",			  "4"		  ]
 [ "tvarsized",			  "0"		  ]
-[ "talign",			  "1000127"	  ]
-[ "talignflushed",		  "1000127"	  ]
+[ "talign",			  "1000131"	  ]
+[ "talignflushed",		  "1000131"	  ]
 [ "batInserted",		  "1"		  ]
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
@@ -337,23 +337,23 @@ count 1000000 = 402 ms
 [ "batDirtybuns",		  "clean"	  ]
 [ "batBuns.free",		  "8000008"	  ]
 [ "batBuns.size",		  "8421072"	  ]
-[ "batBuns.maxsize",		  "8486912"	  ]
-[ "batBuns.storage",		  "anonymous vm"  ]
-[ "batBuns.filename",		  "no file"	  ]
+[ "batBuns.maxsize",		  "8421072"	  ]
+[ "batBuns.storage",		  "malloced"	  ]
+[ "batBuns.filename",		  "9.buns"	  ]
 [ "batBuns.offset",		  "0"		  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "hheap.free",			  "0"		  ]
 [ "hheap.size",			  "0"		  ]
 [ "hheap.maxsize",		  "0"		  ]
 [ "hheap.storage",		  "absent"	  ]
-[ "hheap.filename",		  "no file"	  ]
+[ "hheap.filename",		  "9.hheap"	  ]
 [ "hheap.offset",		  "0"		  ]
 [ "theapdirty",			  "clean"	  ]
 [ "theap.free",			  "0"		  ]
 [ "theap.size",			  "0"		  ]
 [ "theap.maxsize",		  "0"		  ]
 [ "theap.storage",		  "absent"	  ]
-[ "theap.filename",		  "no file"	  ]
+[ "theap.filename",		  "9.theap"	  ]
 [ "theap.offset",		  "0"		  ]
 [ "hacctype",			  "null"	  ]
 [ "haccdirty",			  "clean"	  ]
@@ -375,13 +375,13 @@ count 1000000 = 402 ms
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 430 ms
-count 1000000 = 315 ms
-count 1000000 = 336 ms
-count 1000000 = 315 ms
+count 1000000 = 3180 ms
+count 1000000 = 1636 ms
+count 1000000 = 328 ms
+count 1000000 = 343 ms
 #-------------------------------------------------#
-# BAT:				  tmp_16	  #
-# (str)				  (str)		  #
+# h				tmp_16		  # name
+# str				str		  # type
 #-------------------------------------------------#
 [ "version",			  "980714"	  ]
 [ "batId",			  "tmp_15"	  ]
@@ -404,8 +404,8 @@ count 1000000 = 315 ms
 [ "hkey",			  "1"		  ]
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "0"		  ]
-[ "halign",			  "1000192"	  ]
-[ "halignflushed",		  "1000192"	  ]
+[ "halign",			  "1000196"	  ]
+[ "halignflushed",		  "1000196"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "nil"		  ]
@@ -413,8 +413,8 @@ count 1000000 = 315 ms
 [ "tkey",			  "0"		  ]
 [ "tloc",			  "8"		  ]
 [ "tvarsized",			  "0"		  ]
-[ "talign",			  "1000193"	  ]
-[ "talignflushed",		  "1000193"	  ]
+[ "talign",			  "1000197"	  ]
+[ "talignflushed",		  "1000197"	  ]
 [ "batInserted",		  "1"		  ]
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
@@ -426,23 +426,23 @@ count 1000000 = 315 ms
 [ "batDirtybuns",		  "clean"	  ]
 [ "batBuns.free",		  "16000016"	  ]
 [ "batBuns.size",		  "16842144"	  ]
-[ "batBuns.maxsize",		  "16908288"	  ]
-[ "batBuns.storage",		  "anonymous vm"  ]
-[ "batBuns.filename",		  "no file"	  ]
+[ "batBuns.maxsize",		  "16842144"	  ]
+[ "batBuns.storage",		  "malloced"	  ]
+[ "batBuns.filename",		  "15.buns"	  ]
 [ "batBuns.offset",		  "0"		  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "hheap.free",			  "0"		  ]
 [ "hheap.size",			  "0"		  ]
 [ "hheap.maxsize",		  "0"		  ]
 [ "hheap.storage",		  "absent"	  ]
-[ "hheap.filename",		  "no file"	  ]
+[ "hheap.filename",		  "15.hheap"	  ]
 [ "hheap.offset",		  "0"		  ]
 [ "theapdirty",			  "clean"	  ]
 [ "theap.free",			  "0"		  ]
 [ "theap.size",			  "0"		  ]
 [ "theap.maxsize",		  "0"		  ]
 [ "theap.storage",		  "absent"	  ]
-[ "theap.filename",		  "no file"	  ]
+[ "theap.filename",		  "15.theap"	  ]
 [ "theap.offset",		  "0"		  ]
 [ "hacctype",			  "null"	  ]
 [ "haccdirty",			  "clean"	  ]

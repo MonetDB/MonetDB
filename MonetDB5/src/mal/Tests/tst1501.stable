@@ -93,8 +93,8 @@ function Admin.main():int;	# 0  (main:int)
     io.table(o,x,y,z);	# 41 CMDttable ($72:int)<-(o:bat[oid,oid])(x:bat[oid,chr])(y:bat[oid,dbl])(z:bat[oid,str])
 end main;	# 42  
 #-------------------------#
-# BAT:	  tmp_4	| tmp_5	  #
-# (oid)	  (chr)	| (dbl)	  #
+# h	tmp_4	tmp_5	  # name
+# oid	chr	dbl	  # type
 #-------------------------#
 [ 1@0,	  a,	  1	  ]
 [ 2@0,	  a,	  2	  ]
@@ -105,7 +105,8 @@ end main;	# 42
 [ 7@0,	  c,	  1	  ]
 [ 8@0,	  c,	  1	  ]
 #-----------------#
-# tmp_8	| tmp_5	  #
+# tmp_8	tmp_5	  # name
+# oid	dbl	  # type
 #-----------------#
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]
@@ -116,7 +117,8 @@ end main;	# 42
 [ 7@0,	  1	  ]
 [ 8@0,	  1	  ]
 #-------------------------#
-# tmp_8	| tmp_4	| tmp_5	  #
+# tmp_8	tmp_4	tmp_5	  # name
+# oid	chr	dbl	  # type
 #-------------------------#
 [ 1@0,	  a,	  1	  ]
 [ 2@0,	  a,	  2	  ]
@@ -127,8 +129,8 @@ end main;	# 42
 [ 7@0,	  c,	  1	  ]
 [ 8@0,	  c,	  1	  ]
 #---------------------------------#
-# BAT:	  tmp_4	| tmp_5	| tmp_6	  #
-# (oid)	  (chr)	| (dbl)	| (str)	  #
+# h	tmp_4	tmp_5	tmp_6	  # name
+# oid	chr	dbl	str	  # type
 #---------------------------------#
 [ 1@0,	  a,	  1,	  "c"	  ]
 [ 2@0,	  a,	  2,	  "a"	  ]
@@ -139,7 +141,8 @@ end main;	# 42
 [ 7@0,	  c,	  1,	  "c"	  ]
 [ 8@0,	  c,	  1,	  "a"	  ]
 #---------------------------------#
-# tmp_8	| tmp_4	| tmp_5	| tmp_6	  #
+# tmp_8	tmp_4	tmp_5	tmp_6	  # name
+# oid	chr	dbl	str	  # type
 #---------------------------------#
 [ 1@0,	  a,	  1,	  "c"	  ]
 [ 2@0,	  a,	  2,	  "a"	  ]

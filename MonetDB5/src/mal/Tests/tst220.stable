@@ -95,8 +95,8 @@ function Admin.main():int;	# 0  (main:int)
 end main;	# 28  
 refcount =1
 #-------------------------#
-# BAT:	  tmp_4		  #
-# (int)	  (str)		  #
+# h	tmp_4		  # name
+# int	str		  # type
 #-------------------------#
 [ 1,	  "bat B"	  ]
 refcount =1
@@ -104,8 +104,8 @@ after assignment refcount =1
 after 2nd assignment refcount =1
 after 3rd assignment refcount =1
 #-------------------------#
-# BAT:	  tmp_6		  #
-# (int)	  (str)		  #
+# h	tmp_6		  # name
+# int	str		  # type
 #-------------------------#
 [ 1,	  "bat B"	  ]
 after 4rd assignment refcount =1

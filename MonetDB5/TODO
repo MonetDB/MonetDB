@@ -21,6 +21,8 @@ MAL language issues
 - rethink position of enum types
 - use a process buffer pool to avoid expensive client starts.
 
+- keep the list of profile filters in server and update after each resolve call
+
 API issues
 - The Japi variant should in be re-vived
 - The java front-end terminal and profiler should be re-vived

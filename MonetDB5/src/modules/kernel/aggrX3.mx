@@ -2249,7 +2249,12 @@ if (BATtordered(b)&1) {
 	/* default algorithm is hash based */
 	int yy = BUNindex(b, BUNfirst(b));
 	BAT *v = VIEWcreate(BATmirror(b));
-	Heap *hp = HASHnew(&v->hhash, any, BATcapacity(b), HASHmask(BATcount(b)));
+	Heap *hp = (Heap*) GDKmalloc(sizeof(Heap));
+	str nme = BBP_physical(v->batCacheid);
+        hp->filename = (str) GDKmalloc(strlen(nme)+12);
+        sprintf(hp->filename, "%s.%chash", nme, v->batCacheid>0?'h':'t');
+        HASHnew(&v->hhash, hp, any, BATcapacity(b), HASHmask(BATcount(b)));
+
 	v->hhash_heap = BATmirror(v)->thash_heap = hp;
 	cursize = 0; /* start counting unique elements... (at zero) */
 	BATloopFast(b, p, q, xx) {

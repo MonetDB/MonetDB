@@ -51,8 +51,8 @@ exit v;	# 6  (v:bit)
     io.print(z);	# 20 CMDprint_val ($21:int)<-(z:bat[lng,bit])
 end main;	# 21  
 #-----------------#
-# BAT:	  tmp_5	  #
-# (lng)	  (lng)	  #
+# h	tmp_5	  # name
+# lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
 [ 1,	  1	  ]
@@ -65,8 +65,8 @@ end main;	# 21
 [ 8,	  8	  ]
 [ 9,	  9	  ]
 #-----------------#
-# BAT:	  tmp_6	  #
-# (lng)	  (lng)	  #
+# h	tmp_6	  # name
+# lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
 [ 1,	  2	  ]
@@ -79,8 +79,8 @@ end main;	# 21
 [ 8,	  16	  ]
 [ 9,	  18	  ]
 #-----------------#
-# BAT:	  tmp_7	  #
-# (lng)	  (lng)	  #
+# h	tmp_7	  # name
+# lng	lng	  # type
 #-----------------#
 [ 0,	  1	  ]
 [ 1,	  2	  ]
@@ -93,8 +93,8 @@ end main;	# 21
 [ 8,	  9	  ]
 [ 9,	  10	  ]
 #-----------------#
-# BAT:	  tmp_8	  #
-# (lng)	  (lng)	  #
+# h	tmp_8	  # name
+# lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
 [ 1,	  1	  ]
@@ -107,8 +107,8 @@ end main;	# 21
 [ 8,	  64	  ]
 [ 9,	  81	  ]
 #-----------------#
-# BAT:	  tmp_9	  #
-# (lng)	  (bit)	  #
+# h	tmp_9	  # name
+# lng	bit	  # type
 #-----------------#
 [ 0,	  true	  ]
 [ 1,	  true	  ]
@@ -121,8 +121,8 @@ end main;	# 21
 [ 8,	  true	  ]
 [ 9,	  true	  ]
 #-----------------#
-# BAT:	  tmp_10  #
-# (lng)	  (bit)	  #
+# h	tmp_10	  # name
+# lng	bit	  # type
 #-----------------#
 [ 0,	  true	  ]
 [ 1,	  true	  ]
@@ -135,8 +135,8 @@ end main;	# 21
 [ 8,	  false	  ]
 [ 9,	  false	  ]
 #-----------------#
-# BAT:	  tmp_11  #
-# (lng)	  (bit)	  #
+# h	tmp_11	  # name
+# lng	bit	  # type
 #-----------------#
 [ 0,	  false	  ]
 [ 1,	  false	  ]

@@ -65,26 +65,26 @@ end main;	# 26
 bbp.take not yet fully implemented
 [ "FIRST ROUND" ]
 #-----------------#
-# BAT:	  tmp_4	  #
-# (int)	  (int)	  #
+# h	tmp_4	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
 [ "SECOND ROUND" ]
 #-------------------------#
-# BAT:	  objects	  #
-# (int)	  (str)		  #
+# bbp	objects		  # name
+# int	str		  # type
 #-------------------------#
 [ 4,	  "myfirstbat"	  ]
 bbp.take not yet fully implemented
 [ "got myfirstbat?" ]
 #-----------------#
-# BAT:	  tmp_4	  #
-# (int)	  (int)	  #
+# h	tmp_4	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
 #---------------------------------#
-# BAT:	  name			  #
-# (int)	  (str)			  #
+# bbp	name			  # name
+# int	str			  # type
 #---------------------------------#
 [ 1,	  "monet_environment"	  ]
 [ 2,	  "monet_unicode_case"	  ]

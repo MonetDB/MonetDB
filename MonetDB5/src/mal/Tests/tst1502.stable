@@ -91,8 +91,8 @@ function Admin.main():int;	# 0  (main:int)
 end main;	# 43  
 [ "sort x" ]
 #-----------------#
-# BAT:	  tmp_7	  #
-# (void)  (chr)	  #
+# h	tmp_7	  # name
+# void	chr	  # type
 #-----------------#
 [ 1@0,	  a	  ]
 [ 2@0,	  a	  ]
@@ -104,8 +104,8 @@ end main;	# 43
 [ 8@0,	  c	  ]
 [ "sort xrev" ]
 #-----------------#
-# BAT:	  tmp_8	  #
-# (chr)	  (void)  #
+# h	tmp_8	  # name
+# chr	void	  # type
 #-----------------#
 [ a,	  1@0	  ]
 [ a,	  2@0	  ]

@@ -215,8 +215,10 @@ monet_options.mx.in
 	if ((p=GDKgetenv("gdk_debug")) )
 		GDKdebug = strtol(p,NULL,10);
 
+/*
 	if ((p=GDKgetenv("gdk_mmap")) )
 		GDKmem_bigsize() = strtol(p,NULL,10);
+*/
 
 	/* you don;t need the commandline arguments anymore */
 	/* mo_free_options(set,setlen); GDK library can not deal with this*/

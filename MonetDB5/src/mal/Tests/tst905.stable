@@ -28,8 +28,8 @@ exit v;	# 6  (v:bit)
     io.print(x);	# 9 CMDprint_val ($14:int)<-(x:bat[lng,lng])
 end main;	# 10  
 #-----------------#
-# BAT:	  tmp_6	  #
-# (lng)	  (lng)	  #
+# h	tmp_6	  # name
+# lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
 [ 1,	  2	  ]

@@ -43,8 +43,8 @@ function Admin.main():int;	# 0  (main:int)
     io.print(cr);	# 16 CMDprint_val ($26:int)<-(cr:int)
 end main;	# 17  
 #-----------------#
-# BAT:	  tmp_4	  #
-# (int)	  (int)	  #
+# h	tmp_4	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  15	  ]
 [ 2,	  4	  ]

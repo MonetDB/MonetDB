@@ -22,13 +22,13 @@ function Admin.main():int;	# 0  (main:int)
     io.print(b);	# 6 CMDprint_val ($12:int)<-(b:bat[int,int])
 end main;	# 7  
 #-----------------#
-# BAT:	  tmp_4	  #
-# (int)	  (int)	  #
+# h	tmp_4	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  1	  ]
 #-----------------#
-# BAT:	  myhome  #
-# (int)	  (int)	  #
+# first	last	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  1	  ]
 >

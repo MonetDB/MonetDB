@@ -42,8 +42,8 @@ end main;	# 8
 [ "perftst" ]
 [ 1 ]
 #-----------------#
-# BAT:	  tmp_5	  #
-# (lng)	  (lng)	  #
+# h	tmp_5	  # name
+# lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
 [ 1,	  1	  ]

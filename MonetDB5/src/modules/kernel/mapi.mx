@@ -214,7 +214,7 @@ Get the new information for the server socket and start listening.
 	THRprintf(GDKerr, "Internet started at %d\n", server.sin_port);
 #endif
 	gethostname(host,(int)512);
-	snprintf(msg,(int)512,"#Ready to accept connections on %s:%d",host,*port);
+	snprintf(msg,(int)512,"#Ready to accept connections on %s:%d\n",host,*port);
 	stream_printf(GDKout,"%s",msg);
 	return MAL_SUCCEED;
 }

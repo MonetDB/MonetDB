@@ -114,8 +114,8 @@ function Admin.main():int;	# 0  (main:int)
     io.print(x,A,x4);	# 58 CMDtable ($87:int)<-(x:bat[oid,bit])(A:bat[oid,bit])(x4:bat[oid,bit])
 end main;	# 59  
 #-----------------#
-# BAT:	  tmp_5	  #
-# (oid)	  (bit)	  #
+# h	tmp_5	  # name
+# oid	bit	  # type
 #-----------------#
 [ 1@0,	  true	  ]
 [ 2@0,	  false	  ]
@@ -128,40 +128,40 @@ end main;	# 59
 [ "count" ]
 [ 8 ]
 #-----------------#
-# BAT:	  tmp_6	  #
-# (oid)	  (bit)	  #
+# h	tmp_6	  # name
+# oid	bit	  # type
 #-----------------#
 [ 1@0,	  true	  ]
 [ 2@0,	  false	  ]
 [ 3@0,	  true	  ]
 [ 4@0,	  false	  ]
 #-----------------#
-# BAT:	  tmp_7	  #
-# (oid)	  (bit)	  #
+# h	tmp_7	  # name
+# oid	bit	  # type
 #-----------------#
 [ 1@0,	  true	  ]
 [ 2@0,	  true	  ]
 [ 3@0,	  false	  ]
 [ 4@0,	  false	  ]
 #-------------------------#
-# BAT:	  tmp_6	| tmp_8	  #
-# (oid)	  (bit)	| (bit)	  #
+# h	tmp_6	tmp_8	  # name
+# oid	bit	bit	  # type
 #-------------------------#
 [ 1@0,	  true,	  false	  ]
 [ 2@0,	  false,  true	  ]
 [ 3@0,	  true,	  false	  ]
 [ 4@0,	  false,  true	  ]
 #-------------------------#
-# BAT:	  tmp_6	| tmp_9	  #
-# (oid)	  (bit)	| (bit)	  #
+# h	tmp_6	tmp_9	  # name
+# oid	bit	bit	  # type
 #-------------------------#
 [ 1@0,	  true,	  true	  ]
 [ 2@0,	  false,  false	  ]
 [ 3@0,	  true,	  false	  ]
 [ 4@0,	  false,  false	  ]
 #-------------------------#
-# BAT:	  tmp_6	| tmp_10  #
-# (oid)	  (bit)	| (bit)	  #
+# h	tmp_6	tmp_10	  # name
+# oid	bit	bit	  # type
 #-------------------------#
 [ 1@0,	  true,	  true	  ]
 [ 2@0,	  false,  true	  ]
@@ -169,36 +169,36 @@ end main;	# 59
 [ 4@0,	  false,  false	  ]
 [ "ifthen group" ]
 #-------------------------#
-# BAT:	  tmp_6	| tmp_11  #
-# (oid)	  (bit)	| (bit)	  #
+# h	tmp_6	tmp_11	  # name
+# oid	bit	bit	  # type
 #-------------------------#
 [ 1@0,	  true,	  true	  ]
 [ 3@0,	  true,	  true	  ]
 #-------------------------#
-# BAT:	  tmp_6	| tmp_12  #
-# (oid)	  (bit)	| (bit)	  #
+# h	tmp_6	tmp_12	  # name
+# oid	bit	bit	  # type
 #-------------------------#
 [ 1@0,	  true,	  false	  ]
 [ 3@0,	  true,	  false	  ]
 #-----------------------------------------#
-# BAT:	  tmp_6	| tmp_6	| tmp_8	| tmp_13  #
-# (oid)	  (bit)	| (bit)	| (bit)	| (bit)	  #
+# h	tmp_6	tmp_6	tmp_8	tmp_13	  # name
+# oid	bit	bit	bit	bit	  # type
 #-----------------------------------------#
 [ 1@0,	  true,	  true,	  false,  true	  ]
 [ 2@0,	  false,  false,  true,	  true	  ]
 [ 3@0,	  true,	  true,	  false,  true	  ]
 [ 4@0,	  false,  false,  true,	  true	  ]
 #---------------------------------#
-# BAT:	  tmp_6	| tmp_6	| tmp_14  #
-# (oid)	  (bit)	| (bit)	| (bit)	  #
+# h	tmp_6	tmp_6	tmp_14	  # name
+# oid	bit	bit	bit	  # type
 #---------------------------------#
 [ 1@0,	  true,	  true,	  true	  ]
 [ 2@0,	  false,  false,  true	  ]
 [ 3@0,	  true,	  true,	  true	  ]
 [ 4@0,	  false,  false,  true	  ]
 #-------------------------#
-# BAT:	  tmp_6	| tmp_15  #
-# (oid)	  (bit)	| (int)	  #
+# h	tmp_6	tmp_15	  # name
+# oid	bit	int	  # type
 #-------------------------#
 [ 1@0,	  true,	  1	  ]
 [ 2@0,	  false,  2	  ]
@@ -206,24 +206,24 @@ end main;	# 59
 [ 4@0,	  false,  2	  ]
 [ "accumulators" ]
 #-------------------------#
-# BAT:	  tmp_6	| tmp_6	  #
-# (oid)	  (bit)	| (bit)	  #
+# h	tmp_6	tmp_6	  # name
+# oid	bit	bit	  # type
 #-------------------------#
 [ 1@0,	  false,  false	  ]
 [ 2@0,	  true,	  true	  ]
 [ 3@0,	  false,  false	  ]
 [ 4@0,	  true,	  true	  ]
 #---------------------------------#
-# BAT:	  tmp_6	| tmp_7	| tmp_16  #
-# (oid)	  (bit)	| (bit)	| (bit)	  #
+# h	tmp_6	tmp_7	tmp_16	  # name
+# oid	bit	bit	bit	  # type
 #---------------------------------#
 [ 1@0,	  false,  true,	  false	  ]
 [ 2@0,	  true,	  true,	  true	  ]
 [ 3@0,	  false,  false,  false	  ]
 [ 4@0,	  true,	  false,  false	  ]
 #---------------------------------#
-# BAT:	  tmp_6	| tmp_7	| tmp_17  #
-# (oid)	  (bit)	| (bit)	| (bit)	  #
+# h	tmp_6	tmp_7	tmp_17	  # name
+# oid	bit	bit	bit	  # type
 #---------------------------------#
 [ 1@0,	  false,  true,	  true	  ]
 [ 2@0,	  true,	  true,	  true	  ]

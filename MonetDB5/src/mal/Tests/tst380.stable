@@ -111,21 +111,18 @@ function Admin.main():int;	# 0  (main:int)
     Admin.dir("simple");	# 7  ($12:void)<-($13:str)
 end main;	# 8  
 [ "Get first directory" ]
-#-------------------------------------------------------------------------------------------------------------------------#
-# bbp	| tmp_8			| htype	| ttype		| count	| heat	| dirty		| status| kind		| refcnt  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",  "str",	  31,	  151,	  "dirty",	  "load", "transient",	  3	  ]
-[ 2,	  "monet_unicode_case",	  "int",  "int",	  685,	  152,	  "dirty",	  "load", "transient",	  3	  ]
-[ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "load", "transient",	  3	  ]
-[ 4,	  "simplemind",		  "int",  "int",	  0,	  45,	  "dirty",	  "load", "transient",	  3	  ]
+#-------------------------------------------------------------------------------------------------#
+# bbp	tmp_8			htype	ttype	count	heat	dirty	status	kind	refcnt	  # name
+# int	str			str	str	lng	int	str	str	str	int	  # type
+#-------------------------------------------------------------------------------------------------#
 [ "Get second directory" ]
 #-------------------------#
-# BAT:	  tmp_25	  #
-# (int)	  (str)		  #
+# h	tmp_25		  # name
+# int	str		  # type
 #-------------------------#
 [ 4,	  "simplemind"	  ]
-#---------------------------------------------------------------------------------------------------------#
-# tmp_25| tmp_28	| htype	| ttype	| count	| heat	| dirty		| status| kind		| refcnt  #
-#---------------------------------------------------------------------------------------------------------#
-[ 4,	  "simplemind",	  "int",  "int",  0,	  189,	  "dirty",	  "load", "transient",	  5	  ]
+#-----------------------------------------------------------------------------------------#
+# tmp_25	tmp_28		htype	ttype	count	heat	dirty	status	kind	refcnt	  # name
+# int	str		str	str	lng	int	str	str	str	int	  # type
+#-----------------------------------------------------------------------------------------#
 >

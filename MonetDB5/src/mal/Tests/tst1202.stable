@@ -96,8 +96,8 @@ function Admin.main():int;	# 0  (main:int)
 end main;	# 17  
 [ "start" ]
 #-------------------------#
-# BAT:	  tmp_4		  #
-# (oid)	  (tzone)	  #
+# h	tzone		  # name
+# oid	tzone		  # type
 #-------------------------#
 [ 8@0,	  GMT-23:36	  ]
 [ 9@0,	  GMT		  ]

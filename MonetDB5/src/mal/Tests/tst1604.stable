@@ -18,7 +18,7 @@ function Admin.main():int;	# 0  (main:int)
     io.print(t,u);	# 4 CMDtable ($9:int)<-(t:bat[int,str])(u:bat[int,str])
 end main;	# 5  
 #-------------------------#
-# BAT:	  first	| tmp_5	  #
-# (int)	  (str)	| (str)	  #
+# h	first	tmp_5	  # name
+# int	str	str	  # type
 #-------------------------#
 >

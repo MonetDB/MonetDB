@@ -103,8 +103,8 @@ barrier w := bbp.bunStream(d,hs,ts);	# 38 CMDbunStream (w:lng)<-(d:bat[str,str])
 exit w;	# 42  (w:lng)
 end main;	# 43  
 #-----------------#
-# BAT:	  tmp_4	  #
-# (int)	  (int)	  #
+# h	tmp_4	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  15	  ]
 [ 2,	  4	  ]
@@ -129,8 +129,8 @@ end main;	# 43
 [ nil,nil]
 [ nil,81]
 #-------------------------#
-# BAT:	  tmp_5		  #
-# (int)	  (str)		  #
+# h	tmp_5		  # name
+# int	str		  # type
 #-------------------------#
 [ 1,	  "hello"	  ]
 [ 2,	  "brave"	  ]
@@ -145,8 +145,8 @@ end main;	# 43
 [5,nil]
 [6,!]
 #-------------------------#
-# BAT:	  tmp_6		  #
-# (str)	  (str)		  #
+# h	tmp_6		  # name
+# str	str		  # type
 #-------------------------#
 [ "one",  "red"		  ]
 [ "two",  "green"	  ]

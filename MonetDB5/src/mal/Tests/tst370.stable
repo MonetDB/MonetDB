@@ -26,8 +26,8 @@ function Admin.main():int;	# 0  (main:int)
     io.print(r);	# 2 CMDprint_val ($5:int)<-(r:bat[any,any])
 end main;	# 3  
 #---------------------------------#
-# BAT:	  names			  #
-# (int)	  (str)			  #
+# bbp	name			  # name
+# int	str			  # type
 #---------------------------------#
 [ 1,	  "monet_environment"	  ]
 [ 2,	  "monet_unicode_case"	  ]

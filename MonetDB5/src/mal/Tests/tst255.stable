@@ -25,15 +25,15 @@ function Admin.main():int;	# 0  (main:int)
     io.print(o);	# 8 CMDprint_val ($15:int)<-(o:bat[oid,int])
 end main;	# 9  
 #-----------------#
-# BAT:	  tmp_4	  #
-# (void)  (int)	  #
+# h	tmp_4	  # name
+# void	int	  # type
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]
 #-----------------#
-# BAT:	  tmp_5	  #
-# (oid)	  (int)	  #
+# h	tmp_5	  # name
+# oid	int	  # type
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]

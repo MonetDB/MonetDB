@@ -30,8 +30,8 @@ barrier v := bbp.bunStream(b,h,t);	# 5 CMDbunStream (v:lng)<-(b:bat[str,str])(h:
 exit v;	# 9  (v:lng)
 end main;	# 10  
 #-------------------------#
-# BAT:	  tmp_4		  #
-# (str)	  (str)		  #
+# h	tmp_4		  # name
+# str	str		  # type
 #-------------------------#
 [ "one",  "red"		  ]
 [ "two",  "green"	  ]

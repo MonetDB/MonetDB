@@ -43,10 +43,10 @@ thread hdl;	# 1  (hdl:int) jump 5
 exit hdl;	# 5  (hdl:int)
     system.printf("Wait for child to exit too\n");	# 6 SYSprint_str ($8:int)<-($9:str)
 end main;	# 7  
-Wait for child to exit too
-#Start thread with id 16387
+#Start thread with id 1083972913
 start clock 
 tick
+Wait for child to exit too
 tick
 About to exit child
 >

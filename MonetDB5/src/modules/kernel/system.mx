@@ -201,13 +201,13 @@ str SYSquit(int *ret) {
 	c->mode = FINISHING;
 	return MAL_SUCCEED;
 }
-
+extern lng GDKcur_cursize();
 str SYSgetmem_cursize(lng *num) {
 	*num = GDKmem_cursize();
 	return MAL_SUCCEED;
 }
 str SYSgetmem_maxsize(lng *num) {
-	*num = GDKmem_maxsize();
+	*num = GDK_mem_maxsize;
 	return MAL_SUCCEED;
 }
 str set_mem_maxsize(lng *num) {
@@ -219,7 +219,7 @@ str SYSgetvm_cursize(lng *num) {
 	return MAL_SUCCEED;
 }
 str SYSgetvm_maxsize(lng *num) {
-	*num = GDKvm_maxsize();
+	*num = GDK_vm_maxsize;
 	return MAL_SUCCEED;
 }
 str SYSsetvm_maxsize(lng *num) {
@@ -563,7 +563,7 @@ str SYSmem_usage(int *ret, lng *minsize) {
 */
 	sz = GDKmem_heapinuse();
 	if (sz) BUNins(bn, "_tot/malloc", &sz);
-	sz = sz + GDK_mem_cursize - tot;
+	sz = sz + GDKmem_cursize() - tot;
 	if (sz) BUNins(bn, "_tot/malloc_unknown", &sz);
 	sz = GDKmem_cursize();
 	if (sz) BUNins(bn, "_tot/all", &sz);

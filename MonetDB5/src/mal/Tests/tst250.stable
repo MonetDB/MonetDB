@@ -49,8 +49,8 @@ barrier v := bbp.bunStream(b,h,t);	# 15 CMDbunStream (v:lng)<-(b:bat[int,int])(h
 exit v;	# 19  (v:lng)
 end main;	# 20  
 #-----------------#
-# BAT:	  tmp_4	  #
-# (int)	  (int)	  #
+# h	tmp_4	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  15	  ]
 [ 2,	  4	  ]

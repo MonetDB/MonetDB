@@ -67,8 +67,8 @@ function Admin.main():int;	# 0  (main:int)
     io.print(z);	# 27 CMDprint_val ($50:int)<-(z:fruit)
 end main;	# 28  
 #-------------------------#
-# BAT:	  tmp_4		  #
-# (int)	  (str)		  #
+# h	tmp_4		  # name
+# int	str		  # type
 #-------------------------#
 [ 0,	  "apples"	  ]
 [ 1,	  "oranges"	  ]
@@ -79,8 +79,8 @@ end main;	# 28
 [ 7,	  "apples"	  ]
 [ "located fruit" ]
 #-------------------------#
-# BAT:		  fruit	  #
-# (str)		  (int)	  #
+# h		fruit	  # name
+# str		int	  # type
 #-------------------------#
 [ "apples",	  4	  ]
 [ "grapes",	  2	  ]

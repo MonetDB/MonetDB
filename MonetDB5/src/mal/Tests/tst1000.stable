@@ -24,13 +24,13 @@ function Admin.main():int;	# 0  (main:int)
     io.print(x);	# 7 CMDprint_val ($12:int)<-(x:bat[int,str])
 end main;	# 8  
 #-----------------#
-# BAT:	  mybat	  #
-# (int)	  (int)	  #
+# h	mybat	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
 #---------------------------------#
-# BAT:	  name			  #
-# (int)	  (str)			  #
+# bbp	name			  # name
+# int	str			  # type
 #---------------------------------#
 [ 1,	  "monet_environment"	  ]
 [ 2,	  "monet_unicode_case"	  ]

@@ -47,8 +47,8 @@ exit w;	# 17  (w:lng)
     io.print(d);	# 18 CMDprint_val ($22:int)<-(d:bat[lng,lng])
 end main;	# 19  
 #-----------------#
-# BAT:	  tmp_6	  #
-# (lng)	  (lng)	  #
+# h	tmp_6	  # name
+# lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
 [ 1,	  2	  ]

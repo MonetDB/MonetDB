@@ -53,21 +53,21 @@ function Admin.main():int;	# 0  (main:int)
 end main;	# 7  
 [ "test" ]
 #-------------------------#
-# BAT:	  objects	  #
-# (int)	  (str)		  #
+# bbp	objects		  # name
+# int	str		  # type
 #-------------------------#
 [ "test" ]
 bbp.take not yet fully implemented
 #-----------------#
-# BAT:	  tmp_5	  #
-# (int)	  (int)	  #
+# h	tmp_5	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
 [ "continue" ]
 bbp.take not yet fully implemented
 #-----------------#
-# BAT:	  tmp_5	  #
-# (int)	  (int)	  #
+# h	tmp_5	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
 >

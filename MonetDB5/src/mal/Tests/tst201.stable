@@ -262,8 +262,8 @@ exit MALexception;	# 33  (MALexception:str)
     _v85 := io.print(_v84);	# 93 CMDprint_val (_v85:int)<-(_v84:bat[int,str])
 end main;	# 94  
 #-------------------------#
-# BAT:		  tmp_4	  #
-# (str)		  (int)	  #
+# h		tmp_4	  # name
+# str		int	  # type
 #-------------------------#
 [ "the",	  1	  ]
 [ "quick",	  2	  ]
@@ -282,8 +282,8 @@ end main;	# 94
 [ nil ]
 [ "MALexception:Admin.main[29]:algebra.find:value not found\n" ]
 #-------------------------#
-# BAT:		  tmp_4	  #
-# (str)		  (int)	  #
+# h		tmp_4	  # name
+# str		int	  # type
 #-------------------------#
 [ "",		  nil	  ]
 [ "quick",	  2	  ]
@@ -296,23 +296,23 @@ end main;	# 94
 [ nil,		  9	  ]
 [ 12 ]
 #-------------------------#
-# BAT:		  tmp_5	  #
-# (str)		  (int)	  #
+# h		tmp_5	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "brown",	  3	  ]
 [ "fox",	  4	  ]
 #-----------------#
-# BAT:	  tmp_6	  #
-# (str)	  (int)	  #
+# h	tmp_6	  # name
+# str	int	  # type
 #-----------------#
 [ "lazy", 7	  ]
 [ "dog",  8	  ]
 [ nil,	  9	  ]
 [ ".",	  10	  ]
 #-------------------------#
-# BAT:		  tmp_7	  #
-# (str)		  (int)	  #
+# h		tmp_7	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "brown",	  3	  ]
@@ -325,23 +325,23 @@ end main;	# 94
 [ "the",	  1	  ]
 [ ".",		  10	  ]
 #-------------------------#
-# BAT:		  tmp_8	  #
-# (str)		  (int)	  #
+# h		tmp_8	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
 #-------------------------#
-# BAT:		  tmp_9	  #
-# (str)		  (int)	  #
+# h		tmp_9	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
 #-------------------------#
-# BAT:		  tmp_10  #
-# (str)		  (int)	  #
+# h		tmp_10	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
@@ -350,8 +350,8 @@ end main;	# 94
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
 #-------------------------#
-# BAT:		  tmp_11  #
-# (str)		  (int)	  #
+# h		tmp_11	  # name
+# str		int	  # type
 #-------------------------#
 [ "",		  nil	  ]
 [ "brown",	  3	  ]
@@ -360,8 +360,8 @@ end main;	# 94
 [ nil,		  9	  ]
 [ ".",		  10	  ]
 #-------------------------#
-# BAT:	  tmp_12	  #
-# (int)	  (str)		  #
+# h	tmp_12		  # name
+# int	str		  # type
 #-------------------------#
 [ nil,	  ""		  ]
 [ 3,	  "brown"	  ]
@@ -370,36 +370,36 @@ end main;	# 94
 [ 9,	  nil		  ]
 [ 10,	  "."		  ]
 #---------------------------------#
-# BAT:		  tmp_13	  #
-# (str)		  (str)		  #
+# h		tmp_13		  # name
+# str		str		  # type
 #---------------------------------#
 [ "quick",	  "quick"	  ]
 [ "jumps",	  "jumps"	  ]
 [ "fox",	  "fox"		  ]
 #-------------------------#
-# BAT:		  tmp_14  #
-# (str)		  (int)	  #
+# h		tmp_14	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
 #-----------------#
-# BAT:	  tmp_15  #
-# (int)	  (str)	  #
+# h	tmp_15	  # name
+# int	str	  # type
 #-----------------#
 [ 4,	  "fox"	  ]
 #-----------------#
-# BAT:	  tmp_16  #
-# (int)	  (str)	  #
+# h	tmp_16	  # name
+# int	str	  # type
 #-----------------#
 [ 4,	  "fox"	  ]
 #-----------------#
-# BAT:	  tmp_17  #
-# (int)	  (str)	  #
+# h	tmp_17	  # name
+# int	str	  # type
 #-----------------#
 [ 4,	  "fox"	  ]
 #-----------------#
-# BAT:	  tmp_18  #
-# (int)	  (str)	  #
+# h	tmp_18	  # name
+# int	str	  # type
 #-----------------#
 >

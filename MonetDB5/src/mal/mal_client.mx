@@ -351,8 +351,9 @@ the proper IO descriptors.
 		GDKerror("Failed to initialize client\n");
 		resetProfiler(c->fdout);
 		stream_flush(c->fdout);
-		(void) stream_close(c->fdout);
-		(void) stream_close(c->fdin);
+		if( c->fdin) (void) stream_close(c->fdin);
+		if( c->fdout) (void) stream_close(c->fdout);
+		/* if( c->socket) close(c->socket);*/
 		return ;
 	}
 	t->data[1] = c->fdin;
@@ -765,6 +766,10 @@ printf("bstreamClient:read block\n"); fflush(stdout);
 		}
                 s= c->input+len;
         }
+	if( len <0){
+		/* end of stream */
+		return 0;
+	}
 	s[len]=0;
 	c->nxt= c->input+ln;
 	s= strrchr(c->nxt,'\n');

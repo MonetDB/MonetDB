@@ -32,8 +32,8 @@ function Admin.main():int;	# 0  (main:int)
 end main;	# 11  
 refcount =1
 #-------------------------#
-# BAT:	  tmp_4		  #
-# (int)	  (str)		  #
+# h	tmp_4		  # name
+# int	str		  # type
 #-------------------------#
 [ 1,	  "bat B"	  ]
 refcount =1

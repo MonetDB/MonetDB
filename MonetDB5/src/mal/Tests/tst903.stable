@@ -232,17 +232,17 @@ exit v;	# 8  (v:bit)
     d0 := calc.-(t1,t0);	# 109 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     system.printf("#multiplex.tactics(+) %d\n",d0);	# 110 SYSprint_formatted_lng ($78:int)<-($79:str)(d0:lng)
 end main;	# 111  
-#copy 38111#count 1000000
-#select none 22447 count 0
-#select all 55881 count 1000000
-#select 0.05 47244 count 50004
-#select 0.1 50653 count 100016
-#select 0.2 50887 count 199929
-#select 0.4 61589 count 399791
-#select 0.6 71828 count 600237
-#select 0.8 79875 count 799837
-#select 1.0 55683 count 999999
-#tail sort 912861 count 1000000
-#multiplex.script(+) 2984954
-#multiplex.tactics(+) 73694
+#copy 46237#count 1000000
+#select none 350240 count 0
+#select all 59578 count 1000000
+#select 0.05 40328 count 50004
+#select 0.1 42537 count 100016
+#select 0.2 48665 count 199929
+#select 0.4 61189 count 399791
+#select 0.6 70388 count 600237
+#select 0.8 76076 count 799837
+#select 1.0 55604 count 999999
+#tail sort 884703 count 1000000
+#multiplex.script(+) 12141382
+#multiplex.tactics(+) 852694
 >

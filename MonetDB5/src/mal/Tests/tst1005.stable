@@ -56,7 +56,7 @@ end main;	# 19
 [ "v" ]
 [ "getObjects" ]
 #-------------------------#
-# BAT:	  objects	  #
-# (int)	  (str)		  #
+# bbp	objects		  # name
+# int	str		  # type
 #-------------------------#
 >

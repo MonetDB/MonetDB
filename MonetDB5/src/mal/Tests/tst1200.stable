@@ -901,8 +901,8 @@ exit lf_a;	# 203  (lf_a:bit)
 end main;	# 328  
 [ "ma_a,oa_a,qa_a,sa_a,ua_a" ]
 #---------------------------------------------------------------------------------------------------------#
-# BAT:	  rule						| month	| weekday	| day	| minutes	  #
-# (str)	  (rule)					| (int)	| (int)		| (int)	| (int)		  #
+# h	rule						month	weekday		day	minutes		  # name
+# str	rule						int	int		int	int		  # type
 #---------------------------------------------------------------------------------------------------------#
 [ "jan",  first monday from start of january@01:15,	  1,	  2,		  1,	  75		  ]
 [ "feb",  nil,						  nil,	  nil,		  nil,	  nil		  ]
@@ -918,8 +918,8 @@ end main;	# 328
 [ "dec",  nil,						  nil,	  nil,		  nil,	  nil		  ]
 [ "wa_a,ya_a,db_a,fb_a,jb_a,lb_a,pb_a" ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
-# BAT:	  rule						| 2001		| 2001		| 1999		| 1999		| 1992		| 1992		  #
-# (str)	  (rule)					| (date)	| (str)		| (date)	| (str)		| (date)	| (str)		  #
+# h	rule						2001		2001		1999		1999		1992		1992		  # name
+# str	rule						date		str		date		str		date		str		  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "jan",  first monday from start of january@01:15,	  2001-01-01,	  "monday",	  1999-01-04,	  "monday",	  1992-01-06,	  "monday"	  ]
 [ "feb",  nil,						  nil,		  nil,		  nil,		  nil,		  nil,		  nil		  ]
@@ -935,8 +935,8 @@ end main;	# 328
 [ "dec",  nil,						  nil,		  nil,		  nil,		  nil,		  nil,		  nil		  ]
 [ "rb_a,tb_a,xb_a,ac_a,ec_a,gc_a,kc_a" ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
-# BAT:	  rule						| 1572		| 1572		| 1		| 1		| -2000		| -2000		  #
-# (str)	  (rule)					| (date)	| (str)		| (date)	| (str)		| (date)	| (str)		  #
+# h	rule						1572		1572		1		1		-2000		-2000		  # name
+# str	rule						date		str		date		str		date		str		  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "jan",  first monday from start of january@01:15,	  1572-01-03,	  "monday",	  1-01-01,	  "monday",	  -2000-01-01,	  "monday"	  ]
 [ "feb",  nil,						  nil,		  nil,		  nil,		  nil,		  nil,		  nil		  ]
@@ -951,8 +951,8 @@ end main;	# 328
 [ "nov",  last wednesday on or before november 10@01:15,  1572-11-08,	  "wednesday",	  1-11-07,	  "wednesday",	  -2000-11-07,	  "wednesday"	  ]
 [ "dec",  nil,						  nil,		  nil,		  nil,		  nil,		  nil,		  nil		  ]
 #-----------------------------------------------------------------------------------------------------------------#
-# BAT:	  tzone													  #
-# (oid)	  (tzone)												  #
+# h	tzone													  # name
+# oid	tzone													  # type
 #-----------------------------------------------------------------------------------------------------------------#
 [ 0@0,	  GMT													  ]
 [ 1@0,	  GMT+01:00												  ]
@@ -970,8 +970,8 @@ end main;	# 328
 [ 13@0,	  nil													  ]
 [ 15@0,	  nil													  ]
 #-------------------------------------------------------------------------------------------------------------------------#
-# BAT:	  minutes	| start_dst					| end_dst					  #
-# (oid)	  (int)		| (rule)					| (rule)					  #
+# h	minutes		start_dst					end_dst						  # name
+# oid	int		rule						rule						  # type
 #-------------------------------------------------------------------------------------------------------------------------#
 [ 0@0,	  0,		  nil,						  nil						  ]
 [ 1@0,	  60,		  nil,						  nil						  ]
@@ -989,8 +989,8 @@ end main;	# 328
 [ 13@0,	  nil,		  nil,						  nil						  ]
 [ 15@0,	  nil,		  nil,						  nil						  ]
 #---------------------------------------------------------------------------------#
-# BAT:	  date		| year		| day	| monthname	| monthnum	  #
-# (oid)	  (date)	| (int)		| (int)	| (str)		| (int)		  #
+# h	date		year		day	monthname	monthnum		  # name
+# oid	date		int		int	str		int		  # type
 #---------------------------------------------------------------------------------#
 [ 0@0,	  2000-01-01,	  2000,		  1,	  "january",	  1		  ]
 [ 1@0,	  5000-01-01,	  5000,		  1,	  "january",	  1		  ]
@@ -1014,8 +1014,8 @@ end main;	# 328
 [ 19@0,	  nil,		  nil,		  nil,	  nil,		  nil		  ]
 [ 20@0,	  nil,		  nil,		  nil,	  nil,		  nil		  ]
 #-------------------------------------------------#
-# BAT:	  date		| min100y	| diff	  #
-# (oid)	  (date)	| (date)	| (int)	  #
+# h	date		min100y		diff	  # name
+# oid	date		date		int	  # type
 #-------------------------------------------------#
 [ 0@0,	  2000-01-01,	  1900-01-01,	  -36524  ]
 [ 1@0,	  5000-01-01,	  4900-01-01,	  -36524  ]
@@ -1039,8 +1039,8 @@ end main;	# 328
 [ 19@0,	  nil,		  nil,		  nil	  ]
 [ 20@0,	  nil,		  nil,		  nil	  ]
 #-------------------------------------------------#
-# BAT:	  date		| plus1m	| diff	  #
-# (oid)	  (date)	| (date)	| (int)	  #
+# h	date		plus1m		diff	  # name
+# oid	date		date		int	  # type
 #-------------------------------------------------#
 [ 0@0,	  2000-01-01,	  2000-02-01,	  31	  ]
 [ 1@0,	  5000-01-01,	  5000-02-01,	  31	  ]
@@ -1065,8 +1065,8 @@ end main;	# 328
 [ 20@0,	  nil,		  nil,		  nil	  ]
 [ "rf_a,tf_a,wf_a,bg_a,dg_a" ]
 #---------------------------------------------------------------------------------#
-# BAT:	  date		| weekofyear	| dayofweek	| num	| dayofyear	  #
-# (int)	  (date)	| (int)		| (str)		| (int)	| (int)		  #
+# h	date		weekofyear	dayofweek	num	dayofyear	  # name
+# int	date		int		str		int	int		  # type
 #---------------------------------------------------------------------------------#
 [ -374,	  1998-12-23,	  51,		  "wednesday",	  4,	  357		  ]
 [ -373,	  1998-12-24,	  51,		  "thursday",	  5,	  358		  ]
@@ -1819,8 +1819,8 @@ end main;	# 328
 [ 374,	  2001-01-09,	  2,		  "tuesday",	  3,	  9		  ]
 [ "ah_a,ch_a,eh_a,gh_a,ih_a" ]
 #---------------------------------------------------------------------------------#
-# BAT:	  daytime	| hours	| minutes	| seconds	| milliseconds	  #
-# (oid)	  (daytime)	| (int)	| (int)		| (int)		| (int)		  #
+# h	daytime		hours	minutes		seconds		milliseconds	  # name
+# oid	daytime	int	int		int		int		  # type
 #---------------------------------------------------------------------------------#
 [ 0@0,	  23:59:59.999,	  23,	  59,		  59,		  999		  ]
 [ 1@0,	  23:59:00.000,	  23,	  59,		  0,		  0		  ]
@@ -1843,8 +1843,8 @@ end main;	# 328
 [ 18@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]
 [ 19@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]
 #-------------------------------------------------------------------------#
-# BAT:	  timestamp			| date		| daytime	  #
-# (oid)	  (timestamp)			| (date)	| (daytime)	  #
+# h	timestamp			date		daytime		  # name
+# oid	timestamp			date		daytime	  # type
 #-------------------------------------------------------------------------#
 [ 0@0,	  2000-01-01 23:59:59.999,	  2000-01-01,	  23:59:59.999	  ]
 [ 1@0,	  5000-01-01 22:59:00.000,	  5000-01-01,	  23:59:00.000	  ]
@@ -1862,8 +1862,8 @@ end main;	# 328
 [ 13@0,	  nil,				  nil,		  nil		  ]
 [ 15@0,	  nil,				  nil,		  nil		  ]
 #-------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  timezones											  #
-# (str)			  (tzone)											  #
+# h			timezones											  # name
+# str			tzone												  # type
 #-------------------------------------------------------------------------------------------------------------------------#
 [ "Wake Island",	  GMT+12:00											  ]
 [ "Melbourne/Australia",  GMT+11:00											  ]
@@ -1890,8 +1890,8 @@ end main;	# 328
 [ "Mountain/USA",	  GMT-07:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01]	  ]
 [ "Alaska/USA",		  GMT-09:00-DST[first sunday from end of march@02:01,first sunday from end of october@02:01]	  ]
 #---------------------------------------------------------------------------------------------------------#
-# BAT:	  timestamp			| Wake Island	| tmp_66	| American Samoa| tmp_68	  #
-# (oid)	  (timestamp)			| (date)	| (daytime)	| (date)	| (daytime)	  #
+# h	timestamp			Wake Island	tmp_66		American Samoa	tmp_68		  # name
+# oid	timestamp			date		daytime	date		daytime	  # type
 #---------------------------------------------------------------------------------------------------------#
 [ 0@0,	  2000-01-01 23:59:59.999,	  2000-01-02,	  11:59:59.999,	  2000-01-01,	  12:59:59.999	  ]
 [ 1@0,	  5000-01-01 22:59:00.000,	  5000-01-02,	  10:59:00.000,	  5000-01-01,	  11:59:00.000	  ]
@@ -1909,8 +1909,8 @@ end main;	# 328
 [ 13@0,	  nil,				  nil,		  nil,		  nil,		  nil		  ]
 [ 15@0,	  nil,				  nil,		  nil,		  nil,		  nil		  ]
 #-----------------------------------------------------------------------------------------------------------------#
-# BAT:	  timestamp			| plus23			| min1				| diff	  #
-# (oid)	  (timestamp)			| (timestamp)			| (timestamp)			| (lng)	  #
+# h	timestamp			plus23				min1				diff	  # name
+# oid	timestamp			timestamp			timestamp			lng	  # type
 #-----------------------------------------------------------------------------------------------------------------#
 [ 0@0,	  2000-01-01 23:59:59.999,	  2000-01-02 22:59:59.999,	  2000-01-01 23:58:59.999,	  23	  ]
 [ 1@0,	  5000-01-01 22:59:00.000,	  5000-01-02 21:59:00.000,	  5000-01-01 22:58:00.000,	  23	  ]
@@ -1928,8 +1928,8 @@ end main;	# 328
 [ 13@0,	  nil,				  nil,				  nil,				  nil	  ]
 [ 15@0,	  nil,				  nil,				  nil,				  nil	  ]
 #-------------------------------------------------------------------------------------------------------------------------#
-# BAT:	  date		| day		| West/Europe			| dst	| Andes/Brazil			| dst	  #
-# (int)	  (date)	| (str)		| (timestamp)			| (bit)	| (timestamp)			| (bit)	  #
+# h	date		day		West/Europe			dst	Andes/Brazil			dst	  # name
+# int	date		str		timestamp			bit	timestamp			bit	  # type
 #-------------------------------------------------------------------------------------------------------------------------#
 [ -374,	  1998-12-23,	  "wednesday",	  1998-12-23 22:59:59.999,	  false,  1998-12-24 02:59:59.999,	  true	  ]
 [ -373,	  1998-12-24,	  "thursday",	  1998-12-24 22:59:59.999,	  false,  1998-12-25 02:59:59.999,	  true	  ]

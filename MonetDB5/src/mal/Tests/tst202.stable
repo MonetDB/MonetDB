@@ -41,16 +41,16 @@ catch GDKerror;	# 10  (GDKerror:str) jump 12
 exit GDKerror;	# 12  (GDKerror:str)
 end main;	# 13  
 #-----------------#
-# BAT:	  mybat	  #
-# (int)	  (int)	  #
+# first	second	  # name
+# int	int	  # type
 #-----------------#
 #-----------------#
-# BAT:	  mybat	  #
-# (int)	  (str)	  #
+# h	mybat	  # name
+# int	str	  # type
 #-----------------#
 #-----------------#
-# BAT:	  mybat	  #
-# (int)	  (str)	  #
+# h	mybat	  # name
+# int	str	  # type
 #-----------------#
 catched anything?
 >

@@ -127,7 +127,7 @@ mal_export str startProfiling();
 mal_export str stopProfiling();
 
 mal_export int instrFilter(InstrPtr pci, str mod, str fcn);
-mal_export void eventFilter(Scope cntxt, str mod, str fcn);
+mal_export void setFilter(Scope cntxt, str mod, str fcn);
 mal_export void resetFilter(Scope cntxt, str mod, str fcn);
 
 mal_export void profileReport(Scope cntxt,int outer, stream *out);
@@ -243,14 +243,10 @@ void profilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 The online processing structure is the easiest. We merely have to
 produce a correct tuple format for the front-end.
 @c
-#define log(X,Y) stream_printf(eventstream,X,Y);\
-		fprintf(stderr,X,Y)
-#define log0(X)	stream_printf(eventstream,X);\
-		fprintf(stderr,X)
-#define log2(X,Y,Z) stream_printf(eventstream,X,Y,Z);\
-		fprintf(stderr,X,Y)
-#define flushLog() stream_flush(eventstream);\
-		fflush(stderr);
+#define log(X,Y) stream_printf(eventstream,X,Y);
+#define log0(X)	stream_printf(eventstream,X);
+#define log2(X,Y,Z) stream_printf(eventstream,X,Y,Z);
+#define flushLog() stream_flush(eventstream);
 
 #ifdef MALprofiler
 
@@ -294,7 +290,7 @@ void onlineProfilerHeader(){
 		log0("context switch,\t");
 		log0("involunarty switch,\t");
 	}
-	log0("\t# name\n");
+	log0("event\t# name\n");
 	flushLog();
 	MT_unset_lock(profileLock,"profileLock");
 }
@@ -302,6 +298,7 @@ void onlineProfilerHeader(){
 void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	static struct mallinfo prevMalloc;
 	static struct rusage   prevUsage;
+	static int eventcounter;
 	struct tms newTms;
         struct mallinfo infoMalloc;
         struct rusage   infoUsage;
@@ -377,7 +374,8 @@ void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		log("%d,\t", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
 		prevUsage = infoUsage;
 	}
-	log0(" ]\n");
+	log("%d ]\n",eventcounter);
+	eventcounter++;
 	flushLog();
 	MT_unset_lock(profileLock,"profileLock");
 }
@@ -703,7 +701,6 @@ should wait for the next instruction the stream
 is initiated. This is controlled by a delay-switch
 @c
 str startProfiling(){
-fprintf(stderr,"start Profiling\n");
 	if( eventstream != NULL){
 		malProfileMode= TRUE;
 		delayswitch=1;
@@ -711,7 +708,6 @@ fprintf(stderr,"start Profiling\n");
 	return MAL_SUCCEED;
 }
 str stopProfiling(){
-fprintf(stderr,"stop Profiling\n");
 	stream_flush(eventstream);
 	malProfileMode= FALSE;
 	return MAL_SUCCEED;
@@ -729,7 +725,7 @@ void resetProfiler(stream *fdout){
 @-
 Performance tracing is triggered on an instruction basis
 or a the global flag 'profileAll' being set.
-Calling eventFilter(M,F) switches the performance tracing
+Calling setFilter(M,F) switches the performance tracing
 bit in the instruction record. The routine resetFilter
 clears all performance bits.
 
@@ -752,7 +748,7 @@ int instrFilter(InstrPtr pci, str mod, str fcn){
 	return 0;
 }
 
-void eventFilter(Scope cntxt, str mod, str fcn){
+void setFilter(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
         int j,k,moduleOnly=0;
         Scope s=cntxt;
@@ -772,7 +768,8 @@ void eventFilter(Scope cntxt, str mod, str fcn){
 				moduleOnly = moduleId(p) && strcmp(moduleName(p),mod)==0;
 				for(k=0;k<t->def->stop;k++){
 					p= getInstrPtr(t->def,k);
-					p->trace= moduleOnly || instrFilter(p,mod,fcn);
+					p->trace= p->trace || moduleOnly 
+						|| instrFilter(p,mod,fcn);
 				}
                         }
                 }

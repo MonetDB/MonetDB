@@ -35,29 +35,29 @@ function Admin.main():int;	# 0  (main:int)
     io.print(i);	# 11 CMDprint_val ($18:int)<-(i:bat[int,int])
 end main;	# 12  
 #-----------------#
-# BAT:	  tmp_4	  #
-# (int)	  (int)	  #
+# h	tmp_4	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  1	  ]
 [ 2,	  4	  ]
 [ 3,	  9	  ]
 #-----------------#
-# BAT:	  tmp_5	  #
-# (int)	  (flt)	  #
+# h	tmp_5	  # name
+# int	flt	  # type
 #-----------------#
 [ 1,	  1	  ]
 [ 2,	  4	  ]
 [ 3,	  9	  ]
 #-----------------#
-# BAT:	  tmp_6	  #
-# (int)	  (lng)	  #
+# h	tmp_6	  # name
+# int	lng	  # type
 #-----------------#
 [ 1,	  1	  ]
 [ 2,	  4	  ]
 [ 3,	  9	  ]
 #-----------------#
-# BAT:	  tmp_7	  #
-# (int)	  (int)	  #
+# h	tmp_7	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  1	  ]
 [ 2,	  4	  ]

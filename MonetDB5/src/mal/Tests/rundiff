@@ -1,5 +1,5 @@
 #!/bin/bash
-for f in  `ls tst??? tst1??? tst2???`
+for f in  `ls tst???.mal tst1???.mal tst2???.mal`
 do
 	echo "---->" $f
 	diff `basename $f .mal`.output `basename $f .mal`.stable

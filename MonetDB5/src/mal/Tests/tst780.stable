@@ -48,8 +48,8 @@ end main;	# 2
 stack depth 2
 simulated error
 #---------------------------------------------------------#
-# BAT:	  stmt						  #
-# (int)	  (str)						  #
+# fcn	stmt						  # name
+# int	str						  # type
 #---------------------------------------------------------#
 [ 0,	  "function Admin.test(age:int,nme:str):int;"	  ]
 [ 1,	  "    d := inspect.getStackDepth();"		  ]
@@ -64,8 +64,8 @@ simulated error
 [ 10,	  "    Admin.level();"				  ]
 [ 11,	  "end test;"					  ]
 #-----------------------------------------#
-# BAT:	  frame				  #
-# (str)	  (str)				  #
+# stk	frame				  # name
+# str	str				  # type
 #-----------------------------------------#
 [ "test", "0"				  ]
 [ "age",  "12"				  ]
@@ -82,8 +82,8 @@ simulated error
 [ "$12",  "0"				  ]
 [ "$13",  "0@0"				  ]
 #-------------------------#
-# BAT:	  frame		  #
-# (str)	  (str)		  #
+# stk	frame		  # name
+# str	str		  # type
 #-------------------------#
 [ "test", "0@0"		  ]
 [ "age",  "0"		  ]
@@ -91,10 +91,10 @@ simulated error
 [ "d",	  "\"jj\""	  ]
 [ "dubble depth\\n" ]
 #---------------------------------------------------------#
-# BAT:	  trace						  #
-# (int)	  (str)						  #
+# stk	trace						  # name
+# int	str						  # type
 #---------------------------------------------------------#
-[ 0,	  "inspect.getStackTrace() at #2 in level"	  ]
-[ 1,	  "Admin.level() at #10 in test"		  ]
-[ 2,	  "Admin.test(12,\"jj\") at #1 in main"		  ]
+[ 0,	  "inspect.getStackTrace(); at #2 in level"	  ]
+[ 1,	  "Admin.level(); at #10 in test"		  ]
+[ 2,	  "Admin.test(12,\"jj\"); at #1 in main"	  ]
 >
