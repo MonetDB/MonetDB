@@ -498,7 +498,7 @@ address ALGouterjoinestimate
 @mal
 command thetajoin( left:bat[:any$1,:any$2], 
 		right:bat[:any$2,:any$3],
-		opname:str) :bat[:any$1,:any$3] 
+		opname:int) :bat[:any$1,:any$3] 
 address ALGthetajoin
 comment "Theta join on for 'mode' in { LE, LT, 
 	EQ, GT, GE }.  JOIN_EQ is just the same 
@@ -509,7 +509,7 @@ comment "Theta join on for 'mode' in { LE, LT,
 	binary search trees on the join columns. ";
 command thetajoin( left:bat[:any$1,:any$2], 
 		right:bat[:any$2,:any$3],
-		opname:str,estimate:lng) 
+		opname:int,estimate:lng) 
 		:bat[:any$1,:any$3] 
 address ALGthetajoinEstimate
 @- Theta Join with inner columns
@@ -1582,25 +1582,23 @@ static int operatorCode(str opname){
 	GDKerror("Illegal operator code, EQ assumed\n");
 	return 0;
 }
-str ALGthetajoinEstimate(int *result, int *lid, int *rid, str *opname,lng *estimate) {
+str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc,lng *estimate) {
 	BAT *left, *right, *bn= NULL;
-	int opc= operatorCode(*opname);
 	@:getBATdescriptor(result,lid,left,thetajoin)@
 	@:getBATdescriptor(result,rid,right,thetajoin)@
-	CMDthetajoin(&bn,left,right,&opc,estimate);
+	CMDthetajoin(&bn,left,right,opc,estimate);
 	if( bn ) {
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.thetajoin", "GDKerror");
 }
-str ALGthetajoin(int *result, int *lid, int *rid, str *opname) {
-	return ALGthetajoinEstimate(result,lid,rid,opname,&lng_nil);
+str ALGthetajoin(int *result, int *lid, int *rid, int *opc) {
+	return ALGthetajoinEstimate(result,lid,rid,opc,&lng_nil);
 }
 
-str ALGtheta(int *iid, int *oi, int *lid, int *rid, str *opname) {
+str ALGtheta(int *iid, int *oi, int *lid, int *rid, int opc) {
 	BAT *ib, *ob, *lb, *rb;
-	int opc= operatorCode(*opname);
 	int result=0;
 	(void) result;
 	@:getBATdescriptor(&result,iid,ib,theta)@
