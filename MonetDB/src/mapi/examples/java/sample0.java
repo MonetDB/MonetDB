@@ -1,5 +1,7 @@
 // A sample java program to interact with MonetDB
 // Make sure you have the Mapi.java package in your path
+import mapi.*;
+
 class sample0
 {
 public static void main(String args[]){
