@@ -192,9 +192,9 @@ your system.
 \begin{enumerate}
 \item the compressed tarfile containing the 
 @[<a href="http://www.monetsolutins.com/">binary Monet</a>@ distribution.
-\item a Sun Solaris (SUNOS_5-8), Silicon Graphics IRIX (IRIX_6-3),
-Windows NT (NT_5.0), AIX, 
-or x86 Linux machine (Linux_2-4).
+\item a Sun Solaris (SUNOS\_5-8), Silicon Graphics IRIX (IRIX\_6-3),
+Windows NT (NT\_5.0), AIX, 
+or x86 Linux machine (Linux\_2-4).
 \end{enumerate}
 
 
