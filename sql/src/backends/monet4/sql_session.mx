@@ -219,11 +219,10 @@ int backend_fastpath( Cntxt procstk, YYSTREE procnode, list *args )
 }
 
 
-int connect_error(stream *in, stream *out, int sock)
+int connect_error(stream *in, stream *out)
 {
 	close_stream(in);
 	close_stream(out);
-	close(sock);
 	return GDK_FAIL;
 }
 
@@ -383,28 +382,31 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 
 
 int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
-	int debug = 0, trace = 0, reply_size = 100, l = 0, sock, *Sock, go = TRUE;
+	int debug = 0, trace = 0, reply_size = 100, l = 0, go = TRUE;
 	ssize_t i = 0;
 	char buf[BUFSIZ+1], *errbuf;
 	char *user, *passwd, *schema, *dbname;
 	Variable v;
 
 	mvc *m;
+	stream **In, **Out;
 	stream *in, *out;
 	context *sqlc;
 	backend *sql;
 
-  	if (lt->cnt != 1) {
-        	return handle_argerror(res, lt->cnt, 1);
+  	if (lt->cnt != 2) {
+        	return handle_argerror(res, lt->cnt, 2);
   	}
-  	@:builtin_operand(0,TYPE_int,Sock)@
-	sock = *Sock;
+  	@:builtin_operand(0,TYPE_Stream,In)@
+  	@:builtin_operand(1,TYPE_Stream,Out)@
+	in = *In;
+	out = *Out;
 
-	out = block_stream( socket_wstream( sock, "SQLSERVER" ));
-	in  = block_stream( socket_rstream( sock, "SQLSERVER" ));
+	out = block_stream( stream_wstream( out ));
+	in  = block_stream( stream_rstream( in ));
 
 	if ((i = stream_read(in, buf, 1, BUFSIZ)) < 0)
-		return connect_error(in, out, sock);
+		return connect_error(in, out);
 	buf[i] = 0;
 	/* expect api(sql,debug); */
 	l = strlen("api(sql,");
@@ -423,26 +425,26 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 
 	i=snprintf(buf, BUFSIZ, "login\n" );
 	if (stream_write(out, buf, 1, i) != i)
-		return connect_error(in, out, sock);
+		return connect_error(in, out);
 	stream_flush(out);
 
 	if ((i = stream_read(in, buf, 1, BUFSIZ)) < 0)
-		return connect_error(in, out, sock);
+		return connect_error(in, out);
 	buf[i] = 0;
 	/* expect login(user,passwd); */
 	l = strlen("login(");
 	if (i > l+1 ){
 		char *s, *e = strchr(buf+l,',');
-		if (!e) return connect_error(in, out, sock);
+		if (!e) return connect_error(in, out);
 		*e = 0;
 		s = e+1; /* skip comma */
 		e = strrchr(s, ')');
-		if (!e) return connect_error(in, out, sock);
+		if (!e) return connect_error(in, out);
 		*e = 0;
 		user = GDKstrdup(buf+l);
 		passwd = GDKstrdup(s);
 	} else {
-		return connect_error(in, out, sock);
+		return connect_error(in, out);
 	}
 
 	m = mvc_create(debug);
@@ -457,7 +459,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 
 	if (!schema){ 
 		mvc_destroy(m);
-		return connect_error(in, out, sock);
+		return connect_error(in, out);
 	} else {
 		GDKfree(schema);
 	}
@@ -551,7 +553,6 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	backend_destroy( sql );
 	close_stream(in);
 	close_stream(out);
-	close(sock);
 	return GDK_SUCCEED;
 }
 

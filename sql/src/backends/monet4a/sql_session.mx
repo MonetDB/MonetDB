@@ -222,11 +222,10 @@ int backend_fastpath( Cntxt procstk, YYSTREE procnode, list *args )
 A connection error means that not only the channels to the database should
 be reset, but also this client should be terminated immediately.
 @c
-int connect_error(stream *in, stream *out, int sock)
+int connect_error(stream *in, stream *out)
 {
 	close_stream(in);
 	close_stream(out);
-	close(sock);
 	return GDK_FAIL;
 }
 
@@ -401,13 +400,14 @@ the DBA.
 @c
 int mapisqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 {
-	int debug = 0, trace = 0, reply_size = 100, sock, *Sock, go = TRUE;
+	int debug = 0, trace = 0, reply_size = 100, go = TRUE;
 	ssize_t i=0;
 	char buf[BUFSIZ+1], *errbuf;
 	char *user, *passwd, *schema;
 	int blocked=0;
 	Variable v;
 	mvc *m;
+	stream **In, **Out;
 	stream *in, *out;
 	context *sqlc;
 	backend *sql;
@@ -419,32 +419,35 @@ int mapisqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	int inlen;
 	ssize_t len;
 
-  	if (lt->cnt != 1) {
-        	return handle_argerror(res, lt->cnt, 1);
+  	if (lt->cnt != 2) {
+        	return handle_argerror(res, lt->cnt, 2);
   	}
-  	@:builtin_operand(0,TYPE_int,Sock)@
-	sock = *Sock;
+  	@:builtin_operand(0,TYPE_Stream,In)@
+  	@:builtin_operand(1,TYPE_Stream,Out)@
+	in = *In;
+	out = *Out;
 
 @-
 Start analysis using the mapi-client protocol.
 Use default setting for trace and reply_size.
 @c
-	in = socket_rastream(sock, "mapisqlclient-r");
-	out= NULL;
-
 	if (in == 0){
 		GDKsyserror("mapisqlclient:stream-r problems\n");
-		return connect_error(in, out, sock);
+		return connect_error(in, out);
+	}
+	if (out == 0){
+		GDKsyserror("mapisqlclient:stream-w problems\n");
+		return connect_error(in, out);
 	}
 	/* get user name */
 	memset(buf,0,BUFSIZ);
 	user= buf;
 	if( stream_read(in, user, 1, 1) <0)
-		return connect_error(in, out, sock);
+		return connect_error(in, out);
 	for(i=0; i<BUFSIZ && *user != '\n'; i++){
 		user++;
 		if( stream_read(in, user, 1, 1) <0)
-			return connect_error(in, out, sock);
+			return connect_error(in, out);
 	}
 	*user=0;
 	fprintf(stdout,"mapisqlclient: connection:%s\n",buf);
@@ -466,7 +469,7 @@ Use default setting for trace and reply_size.
 	}/* ignore the password info for the time being
 	 else {
 		fprintf(stdout,"mapisqlclient: missing identity\n");
-		return connect_error(in, out, sock);
+		return connect_error(in, out);
 	} */
 	else {
 		user= GDKstrdup(buf);
@@ -474,17 +477,15 @@ Use default setting for trace and reply_size.
 	}
 
 	if( blocked){
-		stream_destroy(in); /* don't close */
-		in= block_stream(socket_rstream(sock,"mapisqlclient read"));
-		out= block_stream(socket_wstream(sock,"mapisqlclient write"));
-	}else
-		out= socket_wastream(sock,"mapisqlclient write");
+		in= block_stream(stream_rstream(in));
+		out= block_stream(stream_wstream(out));
+	}
 								
 	if (out == 0){
 		GDKsyserror("mapisqlclient:stream-w problems\n");
 		GDKfree(user);
 		GDKfree(passwd);
-		return connect_error(in, out, sock);
+		return connect_error(in, out);
 	}
 @-
 The server should emit an identity message, e.g. the Mserver version
@@ -504,13 +505,13 @@ These lines should be eaten away into the prompt is encountered.
 		    stream_write(out,prompt,promptlength,1) >=0 )
 		    stream_flush(out);
 		mvc_destroy(m);
-		return connect_error(in, out, sock);
+		return connect_error(in, out);
 	}
 /* Sent the profile for the client for inspection*/
 @-
 @= sendProperty
 	if( stream_write(out, @1, 1, strlen(@1))<0)
-		return connect_error(in,out,sock);
+		return connect_error(in,out);
 @c
 	@:sendProperty("[ \"version\",	\"4.3\"	]\n")@
 	@:sendProperty("[ \"language\",	\"sql\"	]\n")@
@@ -644,7 +645,6 @@ End of echo */
 	backend_destroy( sql );
 	close_stream(in);
 	close_stream(out);
-	close(sock);
 	/*fprintf(stderr,"mapisqlclient finished\n");*/
 	return GDK_SUCCEED;
 }

@@ -47,7 +47,7 @@ SQL client and the corresponding MIL runtime startup.
 	.ATOM sql_idx = ptr;
 	.END;
 	
-	.BUILTIN sqlclient( int sock ) = 
+	.BUILTIN sqlclient( Stream s_in, Stream s_out ) = 
 		sqlclient;
 		"parse the next sql command and convert this to mil code"
 
@@ -628,9 +628,9 @@ module(mapi); # mapi_listen
 
 mvc_init(int(monet_environment.find("sql_debug")));
 
-proc SQLclient( int sock ) := {
-	dsock := socket_dup(sock);
-	fork(sqlclient(dsock));
+proc SQLclient( Stream s_in, Stream s_out ) := {
+	# dsock := socket_dup(sock);
+	fork(sqlclient(s_in, s_out));
 }
 
 mapi_listen(int(monet_environment.find("sql_port")), 5, "SQLclient").fork();

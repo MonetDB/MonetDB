@@ -55,7 +55,7 @@ for the time being.
 	.ATOM sql_idx = ptr;
 	.END;
 	
-	.BUILTIN mapisqlclient( int sock ) = 
+	.BUILTIN mapisqlclient( Stream s_in, Stream s_out ) = 
 		mapisqlclient;
 		"parse the next sql command and convert this to mil code"
 
@@ -623,6 +623,7 @@ module(monettime);
 module(mmath);
 module(mkey);
 module(mapi); # mapi_listen 
+module(streams);
 
 # low memory usage for testing unloading
 #mem_maxsize(0LL);
@@ -630,9 +631,8 @@ module(mapi); # mapi_listen
 
 mvc_init(int(monet_environment.find("sql_debug")));
 
-proc SQLmapiclient( int sock ) := {
-	dsock := socket_dup(sock);
-	fork(mapisqlclient(dsock));
+proc SQLmapiclient( Stream s_in, Stream s_out ) := {
+	fork(mapisqlclient(s_in, s_out));
 }
 
 # temporary patch to assure that this implementation does not clash
