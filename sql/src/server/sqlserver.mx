@@ -38,7 +38,7 @@
     	.COMMAND sql_destroy_context( context c ) = 
 		sql_destroy_context; "destroy the sql interpreter context"
 
-	.BUILTIN sqlclient( mvc m,  context *c, Stream *in, Stream *out ) = 
+	.BUILTIN sqlclient( mvc m,  context c, Stream in, Stream out ) = 
 		sqlclient;
 		"parse the next sql command and convert this to mil code"
 
@@ -289,7 +289,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 					stream_writeInt( out, i );
 					out->write( out, errstr, strlen(errstr), 1 );
 					out->flush( out );
-				} else if ((status=mvc_status(m))){
+				} else if ((status=mvc_status(m)) < 0){
 					char *errstr = "Error in result";
 					stream_writeInt( out, 0 );
 					stream_writeInt( out, mvc_type(m) );
@@ -670,7 +670,10 @@ sql_type("UBYTE", "uchr");
 sql_type("VARCHAR(1)", "chr");
 sql_type("CHARACTER", "str");
 sql_type("VARCHAR", "str");
+sql_type("TEXT", "str");
+sql_type("TINYTEXT", "str");
 sql_type("STRING", "str");
+
 
 sql_type("NUMERIC", "int");
 sql_type("DECIMAL", "int");
@@ -831,6 +834,7 @@ const QPARSE := 1;
 const QTABLE := 2;
 const QUPDATE := 3;
 const QDATA := 4;
+const QHEADER := 5;
 
 const RDONLY := 0;
 const INS := 1;
@@ -1060,7 +1064,6 @@ proc bat_name(b):= return str(b);
 proc bat_type(b):= return monet_atomtbl.reverse.find(b.ttype());
 
 proc input( mvc myc, Stream Input, str tname, BAT fnames, str Sep, str rSep, int sz ):={
-	print(fnames);
 	var s := Input;
 	if (fnames.count() > 0){
 		fnames@batloop(){
@@ -1099,11 +1102,22 @@ proc ascii_io_output( bat Order, bat bats, Stream Output, str Sep ) : int := {
 	return output( Order, seps.reverse, bats.reverse, Output );
 }
 
+proc output_header( Stream Output, int nrcols ) : void := {
+	stream_writeInt( Output, 0 ); # write not done.
+	stream_writeInt( Output, QHEADER ); # type TABLE.
+	stream_writeInt( Output, nrcols ); # NR columns.
+}
+
+proc output_column( Stream Output, str name, str tpe ) : void := {
+	var p := name + "," + tpe + "\n";
+	stream_write( Output, p);
+}
+
+
 proc server_output( Stream Output, any Order, any val, ..any.. ) : void := {
 	stream_writeInt( Output, 0 ); # write not done.
 	stream_writeInt( Output, QTABLE ); # type TABLE.
 	stream_writeInt( Output, 1 ); # NR records.
-
 
 	cnt := $0;
 	var p := str(val);

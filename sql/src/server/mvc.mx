@@ -1312,6 +1312,7 @@ void mvc_init(int debug, char *dirname)
 
 		mvc_create_schema(m, "default-schema", "sqladmin");
 
+		m->trans->schema = s;
 		mvc_commit(m, 0, NULL);
 		mvc_destroy(m);
 	}
@@ -1681,6 +1682,7 @@ static void rollforward_tables(sql_trans *tr, sql_schema * s)
 		sql_table *nt, *ot = n->data;
 
 		if (ot->type != tt_temp && ot->type != tt_session){
+			printf ("%s %d\n", ot->name, ot->type);
 			mvc_forward_create_table(tr, os, nt = table_dup(gtr, os, ot));
 			list_append(os->tables, nt);
 		}
@@ -1801,10 +1803,12 @@ static int validate(sql_trans *tr)
 
 int mvc_commit(mvc * m, int chain, char *name)
 {
+	char *schema = NULL;
 	sql_trans *tr = m->trans;
 	int level = (chain)?tr->level:ISO_SERIALIZABLE;
 	int res = -1;
 
+	assert(tr);
 	if (m->debug)
 		fprintf(stderr, "mvc_commit\n");
 
@@ -1813,7 +1817,11 @@ int mvc_commit(mvc * m, int chain, char *name)
 	if (name && name[0] != '\0'){
 		if (m->debug)
 			fprintf(stderr, "mvc_savepoint\n");
+		schema = _strdup(m->trans->schema->name);
+		assert(schema);
 		m->trans = trans_dup(m->trans, name);
+		m->trans->schema = find_schema(m->trans, schema);
+		_DELETE(schema);
 		return 0;
 	}
 
@@ -1843,12 +1851,17 @@ int mvc_commit(mvc * m, int chain, char *name)
 	MT_unset_lock(mvc_lock, "mvc_commit");
 
 	tr = m->trans;
+	assert(tr->schema);
+	schema = _strdup(tr->schema->name);
+	assert(schema);
 	while(tr->parent) 
 		tr = trans_destroy(tr);
 
 	m->trans = trans_dup(tr,NULL);
 	m->trans->level = level;
 	m->trans->status = res;
+	m->trans->schema = find_schema(m->trans, schema);
+	_DELETE(schema);
 	return res;
 }
 
@@ -2324,6 +2337,7 @@ static sql_table *create_table_intern( mvc *m, char *name, int type)
 
 sql_key *mvc_create_key( mvc * m, char *sname, char *tname, char *name, int kt, BAT *columns, sql_key *rkey )
 { 
+/* can only have keys between persistent tables */
 	char bname[BUFSIZ];
 	BUN p,q;
 	int nr, cnt = BUFSIZ, neg = -1;
@@ -2341,6 +2355,9 @@ sql_key *mvc_create_key( mvc * m, char *sname, char *tname, char *name, int kt, 
 	if (m->debug)
 		fprintf(stderr, "mvc_create_key %s %d %d\n",
 		 t->name, kt, (int)rkey);
+
+	if (t->type == tt_temp && t->type == tt_session)
+		return NULL;
 
 	nk->id = OIDnew(1);
 	nk->type = kt;
@@ -2435,7 +2452,9 @@ void mvc_drop_key(mvc * m, sql_table *t, char *name)
 	if (m->debug)
 		fprintf(stderr, "mvc_drop_key %s %s\n", t->name, name);
 
-	sys_drop_key(tr, k);
+	if (t->type != tt_temp && t->type != tt_session)
+		sys_drop_key(tr, k);
+
 	if (k->flag == TR_NEW) {
 		if (t->nkey == k){
 			if (n->next)
@@ -2520,19 +2539,22 @@ sql_table *mvc_create_table(mvc * m, sql_schema *s, char *name, int type)
 	t->dbid = bm_add_bat(tr->bm, d->batCacheid, bname, 0);
 	bat_destroy(d);
 
-	b = bind_bat(tr, find_column(systable, "id"), 1);
-	rid = BATcount(b);
-	BUNins(b, (ptr)&rid, & t->id ); BBPunfix(b->batCacheid);
-	b = bind_bat(tr, find_column(systable, "schema_id"), 1);
-	BUNins(b, (ptr)&rid, & s->id ); BBPunfix(b->batCacheid);
-	b = bind_bat(tr, find_column(systable, "name"), 1);
-	BUNins(b, (ptr)&rid, t->name ); BBPunfix(b->batCacheid);
-	b = bind_bat(tr, find_column(systable, "type"), 1);
-	BUNins(b, (ptr)&rid, & t->type ); BBPunfix(b->batCacheid);
-	b = bind_bat(tr, find_column(systable, "query"), 1);
-	BUNins(b, (ptr)&rid, t->query ); BBPunfix(b->batCacheid);
+	if (t->type != tt_temp && t->type != tt_session){
+		b = bind_bat(tr, find_column(systable, "id"), 1);
+		rid = BATcount(b);
+		BUNins(b, (ptr)&rid, & t->id ); BBPunfix(b->batCacheid);
+		b = bind_bat(tr, find_column(systable, "schema_id"), 1);
+		BUNins(b, (ptr)&rid, & s->id ); BBPunfix(b->batCacheid);
+		b = bind_bat(tr, find_column(systable, "name"), 1);
+		BUNins(b, (ptr)&rid, t->name ); BBPunfix(b->batCacheid);
+		b = bind_bat(tr, find_column(systable, "type"), 1);
+		BUNins(b, (ptr)&rid, & t->type ); BBPunfix(b->batCacheid);
+		b = bind_bat(tr, find_column(systable, "query"), 1);
+		BUNins(b, (ptr)&rid, t->query ); BBPunfix(b->batCacheid);
+		systable->wtime = tr->stime;
+	}
 
-	systable->wtime = t->wtime = s->wtime = tr->wtime = tr->stime;
+	t->wtime = s->wtime = tr->wtime = tr->stime;
 	return t;
 }
 
@@ -2579,7 +2601,8 @@ void mvc_drop_table(mvc * m, sql_schema *s, char *name, bit cascade)
 	if (m->debug)
 		fprintf(stderr, "mvc_drop_table %s %s\n", s->name, name);
 
-	sys_drop_table(tr, t);
+	if (t->type != tt_temp && t->type != tt_session)
+		sys_drop_table(tr, t);
 
 	if (t->flag == TR_NEW) {
 		if (s->ntable == t){
@@ -2684,6 +2707,10 @@ static sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
 	snprintf(bname, BUFSIZ, "U_%s_%s", col->t->name, col->name );
 	col->ubid = bm_add_bat(tr->bm, u->batCacheid, bname, 0);
 
+	col->wtime = t->wtime = tr->wtime = tr->stime;
+	if (t->type == tt_temp || t->type == tt_session)
+		return col;
+
 	b = bind_bat(tr, find_column(syscolumn, "id"), 1);
 	rid = BATcount(b);
 	BUNins(b, (ptr) & rid, (ptr) & col->id); BBPunfix(b->batCacheid);
@@ -2704,7 +2731,7 @@ static sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
 	b = bind_bat(tr, find_column(syscolumn, "number"), 1);
 	BUNins(b, (ptr) & rid, (ptr) & col->colnr); BBPunfix(b->batCacheid);
 
-	syscolumn->wtime = col->wtime = t->wtime = tr->wtime = tr->stime;
+	syscolumn->wtime = tr->stime;
 	return col;
 }
 
@@ -2739,7 +2766,9 @@ void mvc_drop_column(mvc * m, sql_table *t, char *name)
 	if (m->debug)
 		fprintf(stderr, "mvc_drop_column %s %s\n", t->name, name);
 
-	sys_drop_column(tr, col);
+	if (t->type != tt_temp && t->type != tt_session)
+		sys_drop_column(tr, col);
+
 	if (col->flag == TR_NEW) {
 		if (t->ncolumn == col){
 			if (n->next)

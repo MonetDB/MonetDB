@@ -1,5 +1,6 @@
 
 
+#include "Msql.h"
 #include "mem.h"
 #include <monet_options.h>
 #include <comm.h>
@@ -13,6 +14,7 @@
 #endif
 
 stream *ws = NULL, *rs = NULL;
+int is_chrsp = 0;
 
 void usage( char *prog ){
 	fprintf(stderr, "Msql\n");
@@ -25,36 +27,147 @@ void usage( char *prog ){
 	exit(-1);
 }
 
+static char *sql_readline( char *prompt ){
+	char *line = NULL;
+#ifdef HAVE_LIBREADLINE
+	if (is_chrsp){
+        	if ((line = (char *) readline(prompt)) != NULL) {
+			add_history(line);
+		}
+	} else 
+#endif
+	{
+		int len;
+	   	char *buf =(char *)malloc(BUFSIZ);
+        	if ((line =(char *)fgets(buf,BUFSIZ,stdin))==NULL) {
+		   	free(buf);
+			return line;
+		}
+		/* seems some fgets implementations don't replace the newline
+		 * with a EOS marker
+		 */
+		len = strlen(line);
+		if (len && line[len-1] == '\n') 
+			line[len-1] = '\0';
+	}		
+	return line;
+}
 
-static void forward_data(stream *out)
+
+static void receive( stream *rs, stream *out, int debug );
+
+static void forward_data(stream *out, int debug)
 	/* read from stdin */
 {
-	char buf[BUFSIZ];
 	int done = 0;
 
+	if (debug)
+		printf("forward data\n");
 	while(!done){
-		char *s = fgets(buf, BUFSIZ, stdin);
+		char *s = sql_readline("");
 		if (!s) {
 			done = 1;
 			break;
 		} else {
 			int len = strlen(s);
 
-		       	if (len == 1){
+		       	if (len <= 1){
+				out->write(out, "\n", 1, 1);
+				if (debug)
+					fwrite("\n", 1, 1, stdout);
 				done = 1;
 				break;
 			}
-			out->write(out, buf, 1, len);
-			fwrite(buf, 1, len, stdout);
+			out->write(out, s, 1, len);
+			out->write(out, "\n", 1, 1 );
+			if (debug){
+				fwrite(s, 1, len, stdout);
+				fwrite("\n", 1, 1, stdout);
+				fflush(stdout);
+			}
 		}
+		if (s) free(s);
 	}
 	out->flush(out);
+	if (debug) fflush(stdout);
+
+	receive(rs, out, debug);
 }
 
+int column_info( char *buf, int len, Msql_col *cols, int cur ){
+	char *end = buf + len;
 
-void receive( stream *rs, stream *out ){
-	int flag = 0;
-	if (stream_readInt(rs, &flag) && flag != COMM_DONE){
+	while(buf<end){
+		char *s = buf;
+		while(buf<end && *buf != ','){
+			buf++;
+		}
+		if (buf>=end) 
+			return cur;
+		*buf = 0;
+		cols[cur].name = strdup(s);
+		s = buf++;
+		while(buf<end && *buf != '\n'){
+			buf++;
+		}
+		if (buf>=end) 
+			return cur;
+		*buf = 0;
+		cols[cur].type = strdup(s);
+		buf++;
+
+		cur++;
+	}
+	return cur;
+}
+
+void header_data( stream *rs, stream *out, int nCols, int debug ){
+	Msql_col *cols = (Msql_col*)malloc(sizeof(Msql_col) * nCols);
+	int cur = 0;
+	int flag = 0, res = 0;
+	int i, len = 0;
+
+	memset(cols, 0, nCols*sizeof(Msql_col));
+	if (debug)
+		printf("read header data %d\n", nCols);
+
+	if (nCols > 0){ 
+		char buf[BLOCK+1];
+		int last = 0;
+		int nr = bs_read_next(rs,buf,&last);
+
+		cur = column_info(buf, nr, cols, cur);
+		while(!last){
+			int nr = bs_read_next(rs,buf,&last);
+			cur = column_info(buf,nr, cols, cur);
+		}
+	}
+	for (i=0; i<nCols; i++){
+		if (cols[i].name){
+			int l =	strlen(cols[i].name); 
+	        	len += l;
+			printf("%s %d\n", cols[i].name, l);
+		}
+		len += 3;
+	} len ++;
+
+	for (i=0; i<len; i++){ printf("-"); } printf("\n");
+	for (i=0; i<nCols; i++){ 
+		printf("| %s ", cols[i].name?cols[i].name:""); 
+	} printf("|\n");
+	for (i=0; i<len; i++){ printf("-"); } printf("\n");
+
+	for (i=0; i<nCols; i++){
+		if (cols[i].name) free(cols[i].name);
+		if (cols[i].type) free(cols[i].type);
+	}
+	free(cols);
+	receive(rs, out, debug);
+}
+
+void receive( stream *rs, stream *out, int debug ){
+	int flag = 0, res = 0;
+	if ((res = stream_readInt(rs, &flag)) && flag != COMM_DONE){
 		char buf[BLOCK+1], *n = buf;
 		int last = 0;
 		int type;
@@ -83,7 +196,11 @@ void receive( stream *rs, stream *out ){
 				fwrite( buf, nr, 1, stdout );
 			}
 		}
-		if (type == QTABLE || type == QUPDATE){
+		if (type == QHEADER) {
+			header_data(rs, out, nRows, debug);
+		} else if (type == QDATA) {
+			forward_data(out, debug);
+		} else if (type == QTABLE || type == QUPDATE){
 			if (nRows > 1)
 				printf("SQL  %d Rows affected\n", nRows );
 			else if (nRows == 1)
@@ -91,21 +208,17 @@ void receive( stream *rs, stream *out ){
 			else 
 				printf("SQL  no Rows affected\n" );
 		}
-		if (type == QDATA){
-			printf("forward data \n");
-			forward_data(out);
-			receive(rs, out);
-		}
 	} else if (flag != COMM_DONE){
-		printf("flag %d\n", flag);
+		printf("flag %d, %d , %d\n", res, flag, rs->errnr);
 	}
+	fflush(stdout);
 }
 
 int parse_line( const char *line )
 {
-	int cnt = 0;
 	int ins = 0;
 	int esc = 0;
+	int cnt = 0;
 
 	while (isspace(*line)) line++;
 
@@ -122,57 +235,42 @@ int parse_line( const char *line )
 			esc = 1;
 		} else if (*line == '\''){
 			ins = 1;
-		} else if (*line == ';'){
+		} else if (!ins && *line == ';'){
 			cnt++;
 		}
 	}
 	return cnt;
 }
 
-void clientAccept( stream *ws, stream *rs, char *prompt ){
-	int  i,	is_chrsp	= 0;
+void clientAccept( stream *ws, stream *rs, char *prompt, int debug ){
+	int  i;
 	char *line = NULL;
-	struct stat st;
 	char buf[BUFSIZ];
 
-	fstat(fileno(stdin),&st);
-	if (S_ISCHR(st.st_mode))
-	   is_chrsp = 1;
 
 	while(!feof(stdin)){
 		int cmdcnt = 0;
 		if (line) {
 			free(line);
 		}
-#ifdef HAVE_LIBREADLINE
-		if (is_chrsp){
-	        	if ((line = (char *) readline(prompt)) == NULL) {
-	               		break;
-			}
-			add_history(line);
-		} else 
-#endif
-		{
-		   	char *buf =(char *)malloc(BUFSIZ);
-	        	if ((line =(char *)fgets(buf,BUFSIZ,stdin))==NULL) {
-			   	free(buf);
-	                	break;
-			}
-		}
+		line = sql_readline(prompt);
+		if (!line) break;
 		cmdcnt = parse_line(line);
+		if (debug)
+			printf("%d %s\n", cmdcnt, line);
 		ws->write( ws, line, strlen(line), 1 );
 		ws->write( ws, "\n", 1, 1 );
 		if (cmdcnt)
 			ws->flush( ws );
 
 		for (; cmdcnt > 0; cmdcnt--)
-			receive(rs, ws);
+			receive(rs, ws, debug);
 	}
 	
 	i = snprintf(buf, BUFSIZ, "COMMIT;\n" );
 	ws->write( ws, buf, i, 1 );
 	ws->flush( ws );
-	receive(rs, ws);
+	receive(rs, ws, debug);
 
 	/* client waves goodbye */
 	buf[0] = EOT; 
@@ -328,7 +426,11 @@ main(int ac, char **av)
 
 	if (strlen(schema) > 0){
 		fprintf(stdout, "SQL  connected to database %s using schema %s\n", db, schema ); 
-		clientAccept( ws, rs, prompt );
+		struct stat st;
+		fstat(fileno(stdin),&st);
+		if (S_ISCHR(st.st_mode))
+	   		is_chrsp = 1;
+		clientAccept( ws, rs, prompt, debug );
 	}
 
 	if (db) free(db); /* db + schema */

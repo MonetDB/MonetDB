@@ -33,7 +33,7 @@ smallTOC_SHARED_MODS =	\
 	\
 	../server/lib_sqlserver
 
-EXTRA_DIST = static_modules.mx 
+EXTRA_DIST = static_modules.mx mysqldump2bulkload.py
 
 bin_Mserver = {
 	SOURCES = Mserver.mx initmodules.mx 

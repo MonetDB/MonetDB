@@ -234,7 +234,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 %token <sval> 
 	IDENT TYPE STRING AGGR INT INTNUM APPROXNUM USER USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL LOCAL CAST
-	CHARACTER NUMERIC DECIMAL INTEGER SMALLINT FLOAT REAL
+	CHARACTER NUMERIC DECIMAL INTEGER FLOAT REAL
 	DOUBLE PRECISION VARCHAR PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE 
 	CURRENT_USER CURRENT_ROLE CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME
@@ -1812,8 +1812,6 @@ data_type:
  |  INT				{ $$ = new_subtype("INTEGER", 0, 0); }
  |  INTEGER			{ $$ = new_subtype("INTEGER", 0, 0); }
  |  INTEGER '(' intval ')'	{ $$ = new_subtype("INTEGER", $3, 0); }
- |  SMALLINT			{ $$ = new_subtype("SMALLINT", 0, 0); }
- |  SMALLINT '(' intval ')'	{ $$ = new_subtype("SMALLINT", $3, 0); }
  |  FLOAT			{ $$ = new_subtype("FLOAT", 0, 0); }
  |  FLOAT '(' intval ')'	{ $$ = new_subtype("FLOAT", $3, 0); }
  |  FLOAT '(' intval ',' intval ')'	
@@ -1828,6 +1826,7 @@ data_type:
  | datetime_type
  | interval_type		
  | TYPE				{ $$ = new_subtype($1, 0, 0); _DELETE($1); }
+ | TYPE '(' intval ')'		{ $$ = new_subtype($1, $3, 0); _DELETE($1); }
  ;
 
 column:	ident ;
@@ -1837,6 +1836,7 @@ authid: 		ident ;
 ident: 
     IDENT	{ $$ = $1; }	
  |  TYPE	{ $$ = $1; }
+ |  AGGR	{ $$ = $1; }
  |  non_reserved_word
  ;
 
@@ -1845,7 +1845,6 @@ non_reserved_word:
 | NUMERIC 	{ $$ = _strdup("numeric"); }
 | DECIMAL 	{ $$ = _strdup("decimal"); }
 | INTEGER 	{ $$ = _strdup("integer"); }
-| SMALLINT 	{ $$ = _strdup("smallint"); }
 | FLOAT 	{ $$ = _strdup("float"); }
 | REAL 		{ $$ = _strdup("real"); }
 | DOUBLE 	{ $$ = _strdup("double"); }

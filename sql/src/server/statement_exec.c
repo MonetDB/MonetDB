@@ -98,6 +98,26 @@ static int dump( context *sql, char *buf, int len, int nr )
 	write_tail(sql,nr);
 }
 
+void dump_header( context *sql, list *l ){
+	char buf[BUFSIZ+1];
+	int len = 0;
+	node *n;
+
+	len += snprintf(buf+len, BUFSIZ-len, "output_header(Output,%d);\n",
+			list_length(l));
+	for (n=l->h; n; n = n->next){
+		stmt *s = n->data;
+		char *name = column_name(s);
+		sql_subtype *type = tail_type(s);
+
+		len += snprintf(buf+len, BUFSIZ-len,
+			"output_column(Output,\"%s\", \"%s\");\n",
+			(name)?name:"",(type)?type->type->sqlname:"");
+	}
+	len += snprintf(buf+len, BUFSIZ-len, "stream_flush(Output);\n");
+	write_part(sql,buf,len);
+}
+
 int stmt_dump( stmt *s, int *nr, context *sql ){
     char buf[BUFSIZ+1];
     int len = 0;
@@ -799,6 +819,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		stmt *lst = s->op1.stval;
 		stmt_dump( lst, nr, sql );
 
+		write_head(sql,-s->nr);
 		if (sql->debug&1){
 			if (lst->type == st_list){
 				list *l = lst->op1.lval;
@@ -837,6 +858,8 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			}
 			break;
 		}
+		if (len) write_part(sql,buf,len);
+		len = 0;
 		if (lst->type == st_ordered){
 			order = lst->op1.stval; 
 			lst = lst->op2.stval; 
@@ -844,6 +867,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		if (lst->type == st_list){
 			list *l = lst->op1.lval;
 
+			dump_header(sql,l);
 			n = l->h;
 			if (n){
 			  if (!order){
@@ -863,7 +887,8 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			fprintf(stderr, "not a valid output list %d %d %d\n",
 					lst->type, st_list, st_ordered);
 		}
-		dump(sql,buf,len,-s->nr);
+		write_part(sql,buf,len);
+		write_tail(sql,-s->nr);
 	} break;
 	case st_result: {
 		stmt *k = s->op1.stval;

@@ -4,6 +4,8 @@
 #include "list.h"
 #include <stream.h>
 
+/* todo add type aliases, ie sqlname1 -> sqlname 2 */
+
 typedef struct sql_type {
 	char *sqlname;
 	char *name;

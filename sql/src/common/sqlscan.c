@@ -209,7 +209,6 @@ void init_keywords()
 	keywords_insert("SCHEMA", SCHEMA);
 	keywords_insert("SELECT", SELECT);
 	keywords_insert("SET", SET);
-	keywords_insert("SMALLINT", SMALLINT);
 	keywords_insert("SOME", SOME);
 	/*
 	   keywords_insert("SQLCODE", SQLCODE );
@@ -217,7 +216,7 @@ void init_keywords()
 	keywords_insert("STRING", VARCHAR);
 	keywords_insert("TABLE", TABLE);
 	keywords_insert("TEMPORARY", TEMPORARY);
-	keywords_insert("TEXT", VARCHAR);
+	keywords_insert("TEMP", TEMPORARY);
 	keywords_insert("TO", TO);
 	/*
 	   keywords_insert("UNDER", UNDER );
