@@ -32,6 +32,7 @@ use sigtrap;
 $VERSION = '0.03';
 $drh = undef;
 
+require DBD::monetdb::GetInfo;
 require DBD::monetdb::TypeInfo;
 
 
@@ -238,13 +239,7 @@ sub rollback {
 }
 
 
-sub get_info {
-    my($dbh, $info_type) = @_;
-    require DBD::monetdb::GetInfo;
-    my $v = $DBD::monetdb::GetInfo::info{int($info_type)};
-    $v = $v->($dbh) if ref $v eq 'CODE';
-    return $v;
-}
+*get_info = \&DBD::monetdb::GetInfo::get_info;
 
 
 sub monetdb_catalog_info {
