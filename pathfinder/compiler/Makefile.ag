@@ -23,7 +23,9 @@
 
 SUBDIRS = daemon schema debug mem parser semantics core mil include
 
-INCLUDES = include $(MONET_INCS) 
+INCLUDES = include $(MONET_INCS) $(LIBGC_CFLAGS)
+
+LDFLAGS = $(LIBGC_LIBS)
 
 bin_pf = {
 	LIBS = \
