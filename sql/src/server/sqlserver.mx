@@ -242,6 +242,12 @@ proc write_output( stream Output, str v ) := {
 	stream_write(Output, buf );
 }
 
+proc client_commit( mvc myc, stream Output ) := {
+	var buf := str(mvc_commit(myc)) + "\n";
+	stream_write(Output, buf );
+	stream_flush( Output );
+}
+
 proc output_count( bat b, stream Output ) := {
 	write_output( Output, str(b.count()) );
 }

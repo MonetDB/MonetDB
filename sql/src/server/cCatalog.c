@@ -91,8 +91,8 @@ void mvc_begin( mvc *c ){
 	/* if started already commit the changes */
 	printf( "TODO: time to implement BEGIN Transaction\n");
 }
-void mvc_commit( mvc *c ){
-	printf( "TODO: time to implement COMMIT Transaction\n");
+int mvc_commit( mvc *c ){
+	return 1;
 }
 void mvc_rollback( mvc *c ){
 	printf( "TODO: time to implement ROLLBACK Transaction\n");
@@ -265,7 +265,7 @@ oid mvc_create_column( mvc *c, oid cid, oid tid,
 
 	/*snprintf(buf, BUFSIZ, "sql_%ld_%s_%ld", tid, name, cid );*/
 	snprintf(buf, BUFSIZ, "sql_%s_%s", tname, name );
-	BATrename(b, buf);
+	/*BATrename(b, buf);*/
 
 	BUNins(c->column_id, 	(ptr)&ci, (ptr)&cid );
 	BUNins(c->column_table, 	(ptr)&ci, (ptr)&tid );

@@ -17,13 +17,13 @@
 .COMMAND mvc_create( int debug ) : mvc = mvc_create_wrap;
 	"Create multi version catalog"
 
-.COMMAND mvc_trans_begin( ) : mvc = mvc_begin_wrap;
+.COMMAND mvc_begin( mvc ) = mvc_begin_wrap;
 	"Begin transaction"
 
-.COMMAND mvc_trans_commit( ) : mvc = mvc_commit_wrap;
+.COMMAND mvc_commit( mvc ) : int = mvc_commit_wrap;
 	"Commit current transaction"
 
-.COMMAND mvc_trans_rollback( ) : mvc = mvc_rollback_wrap;
+.COMMAND mvc_rollback( mvc ) = mvc_rollback_wrap;
 	"Rollback current transaction"
 
 .COMMAND mvc_create_schema( mvc c, int sid, str name, str auth) : int = mvc_create_schema_wrap; 
@@ -80,8 +80,8 @@ int mvc_begin_wrap( mvc *c ){
 	return GDK_SUCCEED;
 }
 
-int mvc_commit_wrap( mvc *c ){
-	mvc_commit( *(mvc**)c );
+int mvc_commit_wrap( int *res, mvc *c ){
+	*res = mvc_commit( *(mvc**)c );
 	return GDK_SUCCEED;
 }
 
