@@ -34,7 +34,7 @@ SQLColumnPrivileges_(ODBCStmt *stmt,
 	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG(" \".*s\" \".*s\" \".*s\" \".*s\"\n",
+	ODBCLOG(" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
 		nCatalogNameLength, szCatalogName,
 		nSchemaNameLength, szSchemaName,
 		nTableNameLength, szTableName,

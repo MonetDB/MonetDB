@@ -56,7 +56,7 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	}
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\".*s\" \".*s\" \".*s\"\n",
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
 		nCatalogNameLength, szCatalogName,
 		nSchemaNameLength, szSchemaName,
 		nTableNameLength, szTableName);

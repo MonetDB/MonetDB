@@ -28,7 +28,7 @@ SQLSetCursorName_(ODBCStmt *stmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 	fixODBCstring(szCursor, nCursorLength, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\".*s\"\n", nCursorLength, szCursor);
+	ODBCLOG("\"%.*s\"\n", nCursorLength, szCursor);
 #endif
 
 	/* TODO: implement the requested behavior */

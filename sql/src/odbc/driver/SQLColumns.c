@@ -50,7 +50,7 @@ SQLColumns_(ODBCStmt *stmt,
 	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG(" \".*s\" \".*s\" \".*s\" \".*s\"\n",
+	ODBCLOG(" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
 		nCatalogNameLength, szCatalogName,
 		nSchemaNameLength, szSchemaName,
 		nTableNameLength, szTableName,
@@ -114,7 +114,7 @@ SQLColumns_(ODBCStmt *stmt,
 		SQL_NULLABLE, SQL_NO_NULLS);
 	query_end += strlen(query_end);
 
-	/* dependent on the input parameter values we must add a
+	/* depending on the input parameter values we must add a
 	   variable selection condition dynamically */
 
 	/* Construct the selection condition query part */
@@ -217,10 +217,14 @@ SQLColumnsW(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szCatalogName, nCatalogNameLength, catalog, addStmtError, stmt, goto exit);
-	fixWcharIn(szSchemaName, nSchemaNameLength, schema, addStmtError, stmt, goto exit);
-	fixWcharIn(szTableName, nTableNameLength, table, addStmtError, stmt, goto exit);
-	fixWcharIn(szColumnName, nColumnNameLength, column, addStmtError, stmt, goto exit);
+	fixWcharIn(szCatalogName, nCatalogNameLength, catalog,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(szSchemaName, nSchemaNameLength, schema,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(szTableName, nTableNameLength, table,
+		   addStmtError, stmt, goto exit);
+	fixWcharIn(szColumnName, nColumnNameLength, column,
+		   addStmtError, stmt, goto exit);
 
 	rc = SQLColumns_(stmt, catalog, SQL_NTS, schema, SQL_NTS,
 			 table, SQL_NTS, column, SQL_NTS);

@@ -55,7 +55,7 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	fixODBCstring(szFKTableName, nFKTableNameLength, addStmtError, stmt);
 
 #ifdef ODCBDEBUG
-	ODBCLOG("\".*s\" \".*s\" \".*s\" \".*s\" \".*s\" \".*s\"\n",
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
 		nPKCatalogNameLength, szPKCatalogName,
 		nPKSchemaNameLength, szPKSchemaName,
 		nPKTableNameLength, szPKTableName,

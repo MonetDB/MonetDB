@@ -43,7 +43,7 @@ SQLProcedures_(ODBCStmt *stmt,
 	fixODBCstring(szProcName, nProcNameLength, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\".*s\" \".*s\" \".*s\"\n",
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
 		nCatalogNameLength, szCatalogName,
 		nSchemaNameLength, szSchemaName,
 		nProcNameLength, szProcName);

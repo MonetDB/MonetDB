@@ -31,14 +31,15 @@ SQLRETURN
 SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 	    SQLSMALLINT nCompletionType)
 {
-	ODBCEnv *env = (ODBCEnv *) nHandle;
-	ODBCDbc *dbc = (ODBCDbc *) nHandle;
+	ODBCEnv *env = NULL;
+	ODBCDbc *dbc = NULL;
 	SQLHANDLE hStmt;
 	RETCODE rc;
 
 	/* check parameters nHandleType and nHandle for validity */
 	switch (nHandleType) {
 	case SQL_HANDLE_DBC:
+		dbc = (ODBCDbc *) nHandle;
 		if (!isValidDbc(dbc))
 			return SQL_INVALID_HANDLE;
 		clearDbcErrors(dbc);
@@ -47,13 +48,12 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 			addDbcError(dbc, "08003", NULL, 0);
 			return SQL_ERROR;
 		}
-		env = NULL;
 		break;
 	case SQL_HANDLE_ENV:
+		env = (ODBCEnv *) nHandle;
 		if (!isValidEnv(env))
 			return SQL_INVALID_HANDLE;
 		clearEnvErrors(env);
-		dbc = NULL;
 
 		if (env->sql_attr_odbc_version == 0) {
 			addEnvError(env, "HY010", NULL, 0);
