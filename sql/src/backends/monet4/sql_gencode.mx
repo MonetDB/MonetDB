@@ -191,6 +191,8 @@ static void backend_dump_nil( backend *sql, stmt *s )
 #define BUFLEN 32
 			char buf[BUFLEN];
 			size_t len = 0;
+
+			assert(s->nr >= 0);
 			len = snprintf( buf, BUFLEN-1,
 				"s%d := nil;\n", s->nr);
 			assert(len < BUFLEN);
@@ -966,7 +968,9 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		_DELETE(buf);
 		backend_dump_nil( sql, s->op1.stval );
 		backend_dump_nil( sql, s->op2.stval );
+		/* FIX: just reset op3 ie nil checking fails 
 		backend_dump_nil( sql, s->op3.stval );
+		*/
 		break;
 	}
 	case st_alias: 

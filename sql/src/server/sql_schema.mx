@@ -618,7 +618,7 @@ create_view(mvc * sql, sql_schema * ss, dlist * qname, dlist * column_spec,
 		if (column_spec) {
 			dnode *n = column_spec->h;
 			node *m = sq->op1.lval->h;
-			sql_table *t = mvc_create_view(sql, ss, name, subquery);
+			sql_table *t = mvc_create_view(sql, ss, name, subquery, 0, 1);
 
 			for (; n; n = n->next, m = m->next) {
 				char *cname = n->data.sval;
@@ -630,7 +630,7 @@ create_view(mvc * sql, sql_schema * ss, dlist * qname, dlist * column_spec,
 			}
 		} else {
 			node *m;
-			sql_table *t = mvc_create_view(sql, ss, name, subquery);
+			sql_table *t = mvc_create_view(sql, ss, name, subquery, 0, 1);
 
        			for ( m = sq->op1.lval->h; m; m = m->next) {
 				stmt *st = m->data;
@@ -657,7 +657,7 @@ static stmt *drop_view(mvc * sql, dlist * qname )
 
 	if (!t) {
 		return sql_error(sql, 02, "Drop View, view %s unknown", tname);
-	} else if (t->type == tt_view){
+	} else if (!t->table){
 		mvc_drop_table(sql, ss, t->base.name, 0);
 		return stmt_none();
 	} else {
@@ -1145,8 +1145,7 @@ create_table(mvc * sql, sql_schema * ss,
 	} else {
 		char buf[BUFSIZ];
 
-		table_type type = (temp)?tt_session:tt_base; 
-		sql_table *t = mvc_create_table(sql, ss, name, type, size);
+		sql_table *t = mvc_create_table(sql, ss, name, 0, !temp, 0, size);
 		list *new_columns = create_stmt_list();
 		dnode *n;
 
@@ -1188,11 +1187,11 @@ drop_table(mvc * sql, dlist * qname, int drop_action)
 			}
 		}
 	} 
-	if (t->type != tt_view){
+	if (t->table){
 		node *n, *m;
 		for (n = t->s->tables.set->h; n; n = n->next ) {
 			sql_table *ot = n->data;
-			if (ot->type == tt_view) {
+			if (!ot->table) {
 				scope *scp = scope_open(NULL);
 				stmt *s = scope_sqlparse(sql, scp, ot->query);
 				

@@ -224,10 +224,10 @@ static char *tmp_table_name()
 }
 
 static sql_table *create_table_intern(mvc * sql, sql_schema * schema,
-				  char *name, char *query, stmt * sq, table_type type)
+				  char *name, char *query, stmt * sq )
 {
 	node *m;
-	sql_table *table = mvc_create_table(sql, schema, name, type, -1);
+	sql_table *table = mvc_create_table(sql, schema, name, 0, 0, 0, -1);
 	(void) query; /* Stefan: unused!? */
 
        	for ( m = sq->op1.lval->h; m; m = m->next ) {
@@ -257,7 +257,7 @@ static tvar *table_optname(mvc * sql, scope * scp, stmt * sq,
 	} else {	
 		tmpname = tmp_table_name();
 	}
-	(void)create_table_intern(sql, schema, tmpname, query, sq, tt_temp);
+	(void)create_table_intern(sql, schema, tmpname, query, sq);
 	tv = scope_add_table(scp, sq, tname, NULL);
 	if (columnrefs) {
 		dnode *d;
@@ -2243,6 +2243,26 @@ orderby_column_ref(mvc * sql, symbol * column_r, stmt *s)
 				_DELETE(cn);
 				return stmt_dup(t);
 			}
+			_DELETE(cn);
+		}
+		return sql_error( sql, 02, "Unknown column name (%s) in order by", name );
+	}
+	if (dlist_length(l) == 2) {
+		char *tname = l->h->data.sval;
+		char *name = l->h->next->data.sval;
+		node *n;
+
+ 		for (n = s->op1.lval->h; n; n = n->next) {
+			stmt *t = n->data;
+			char *tn = table_name(t);
+			char *cn = column_name(t);
+
+			if (strcmp(tn, tname) == 0 && strcmp(cn, name) == 0){
+				_DELETE(tn);
+				_DELETE(cn);
+				return stmt_dup(t);
+			}
+			_DELETE(tn);
 			_DELETE(cn);
 		}
 		return sql_error( sql, 02, "Unknown column name (%s) in order by", name );

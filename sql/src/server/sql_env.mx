@@ -61,7 +61,7 @@ Moreover, they have a counterpart representation in the MVC structure to ease
 inspection during query processing.
 
 The variables and their type definition are assembled in a system table
-called 'session'.
+called 'sessions'.
 @{
 @h
 #ifndef _SQL_ENV_H_
@@ -77,9 +77,9 @@ sql_export int mvc_debug_on( mvc *m, int flag);
 sql_export stmt *sql_set_var(mvc *sql, symbol *s );
 sql_export int sql_set_var_value(mvc *sql, char *name, char *value );
 
-sql_export int sql_create_var(mvc *sql, sql_schema *s);
 sql_export int sql_create_env(mvc *sql, sql_schema *s);
 sql_export int sql_create_history(mvc *sql, sql_schema *s);
+sql_export int sql_session(mvc *sql);
 
 #endif /* _SQL_ENV_H_ */
 @c
@@ -88,10 +88,6 @@ sql_export int sql_create_history(mvc *sql, sql_schema *s);
 #include "sql_scope.h"
 #include "sql_select.h"
 #include "sql_semantic.h"
-/*
-TODO use virtual columns, ie only create (fill) the bats of the 'session' table
-when they are queried. 
- */
 
 int mvc_debug_on( mvc *m, int flg)
 {
@@ -105,8 +101,8 @@ int mvc_debug_on( mvc *m, int flg)
 static char * 
 sql_get_var( mvc *sql, char *name )
 {
-	BAT *n = mvc_bind( sql, "sys", "session", "name", 0); 
-	BAT *v = mvc_bind( sql, "sys", "session", "value", 0); 
+	BAT *n = mvc_bind( sql, "sys", "sessions", "name", 0); 
+	BAT *v = mvc_bind( sql, "sys", "sessions", "value", 0); 
 	char *val = NULL;
 	BUN p;
 
@@ -231,8 +227,8 @@ sql_set_var( mvc *sql, symbol *s )
 				name, st_type2string(v->type), v->type);
 		}
 
-		n = mvc_bind( sql, "sys", "session", "name", 0); 
-		t = mvc_bind( sql, "sys", "session", "type", 0); 
+		n = mvc_bind( sql, "sys", "sessions", "name", 0); 
+		t = mvc_bind( sql, "sys", "sessions", "type", 0); 
 		if (!(p=BUNfnd(BATmirror(n), name))) {
 			bat_destroy(n);
 			bat_destroy(t);
@@ -275,8 +271,8 @@ int
 sql_set_var_value( mvc *sql, char *name, char *value )
 {
 	int res = -1;
-	BAT *n = mvc_bind( sql, "sys", "session", "name", 0); 
-	BAT *v = mvc_bind( sql, "sys", "session", "value", 1); 
+	BAT *n = mvc_bind( sql, "sys", "sessions", "name", 0); 
+	BAT *v = mvc_bind( sql, "sys", "sessions", "value", 1); 
 	BUN p;
 	
 	if ((p=BUNfnd(BATmirror(n), name))) {
@@ -292,22 +288,16 @@ sql_set_var_value( mvc *sql, char *name, char *value )
 Handling of SQL variables is straigtforward.
 @c
 int
-sql_create_var( mvc *m, sql_schema *sys ) 
+sql_session( mvc *m ) 
 {
 	char buf[BUFSIZ];
 	BAT *n,*v,*T;
 
 	oid h = 0;
-	sql_table *t;
 
-	t = mvc_create_table(m, sys, "session", tt_session, -1 );
-	mvc_create_column_(m, t, "name", "VARCHAR");
-	mvc_create_column_(m, t, "value", "VARCHAR");
-	mvc_create_column_(m, t, "type", "VARCHAR");
-
-	n = mvc_bind( m, "sys", "session", "name", 1 );
-	v = mvc_bind( m, "sys", "session", "value", 1 );
-	T = mvc_bind( m, "sys", "session", "type", 1 );
+	n = mvc_bind( m, "sys", "sessions", "name", 1 );
+	v = mvc_bind( m, "sys", "sessions", "value", 1 );
+	T = mvc_bind( m, "sys", "sessions", "type", 1 );
 
 	BUNins(n, (ptr) &h, "debug" );
 	snprintf(buf, BUFSIZ, "%d", m->debug );
@@ -350,7 +340,14 @@ sql_create_env( mvc *m, sql_schema *s )
 	BUN p,q;
 	BAT *n,*v;
 
-	sql_table *t = mvc_create_table(m, s, "env", tt_system, -1 );
+	sql_table *t;
+
+	t = mvc_create_table(m, s, "sessions", 1, 1, 1, -1 );
+	mvc_create_column_(m, t, "name", "VARCHAR");
+	mvc_create_column_(m, t, "value", "VARCHAR");
+	mvc_create_column_(m, t, "type", "VARCHAR");
+
+	t = mvc_create_table(m, s, "env", 1, 1, 0, -1 );
 	mvc_create_column_(m, t, "name", "VARCHAR");
 	mvc_create_column_(m, t, "value", "VARCHAR");
 
@@ -379,7 +376,7 @@ the MonetDB kernel profier, e.g. using Mknife
 int
 sql_create_history( mvc *m, sql_schema *s ) 
 {
-	sql_table *t = mvc_create_table(m, s, "history", tt_system, -1 );
+	sql_table *t = mvc_create_table(m, s, "history", 1, 1, 0, -1 );
 
 	mvc_create_column_(m, t, "start", "TIMESTAMP");
 	mvc_create_column_(m, t, "query", "VARCHAR");

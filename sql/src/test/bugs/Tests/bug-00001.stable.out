@@ -42,26 +42,38 @@ Over..
 # 1 # tuplecount
 # 3 # id
 [ 15	]
-# id,	name,	schema_id,	query,	type # name
-# mediumint,	varchar,	mediumint,	varchar,	mediumint # type
-# 16,	,	,	,	 # tuplecount
-# 4,	,	,	,	 # id
-[ 1005558,	"modules",	1005548,	"",	1	]
-[ 1005603,	"schemas",	1005548,	"",	1	]
-[ 1005607,	"tables",	1005548,	"",	1	]
-[ 1005613,	"columns",	1005548,	"",	1	]
-[ 1005623,	"keys",	1005548,	"",	1	]
-[ 1005629,	"idxs",	1005548,	"",	1	]
-[ 1005634,	"keycolumns",	1005548,	"",	1	]
-[ 1005639,	"types",	1005548,	"",	1	]
-[ 1005647,	"users",	1005548,	"",	1	]
-[ 1005670,	"user_role",	1005548,	"",	1	]
-[ 1005693,	"auths",	1005548,	"",	1	]
-[ 1005711,	"privileges",	1005548,	"",	1	]
-[ 1005740,	"history",	1005548,	"",	1	]
-[ 1005778,	"env",	1005548,	"",	1	]
-[ 1007047,	"foo",	1005548,	"",	0	]
-[ 1007212,	"ff",	1005548,	"",	0	]
+# wall-clock: 1 ms
+# id,	name,	schema_id,	query,	type,	system,	clear # name
+# mediumint,	varchar,	mediumint,	varchar,	boolean,	boolean,	boolean # type
+# 19,	,	,	,	,	,	 # tuplecount
+# 4,	,	,	,	,	,	 # id
+[ 1005652,	"modules",	1005642,	"",	true,	true,	false	]
+[ 1005703,	"schemas",	1005642,	"",	true,	true,	false	]
+[ 1005707,	"tables",	1005642,	"",	true,	true,	false	]
+[ 1005715,	"columns",	1005642,	"",	true,	true,	false	]
+[ 1005725,	"keys",	1005642,	"",	true,	true,	false	]
+[ 1005731,	"idxs",	1005642,	"",	true,	true,	false	]
+[ 1005736,	"keycolumns",	1005642,	"",	true,	true,	false	]
+[ 1005741,	"types",	1005642,	"",	true,	true,	false	]
+[ 1005749,	"tmp_tables",	1005642,	"",	true,	true,	true	]
+[ 1005787,	"tmp_columns",	1005642,	"",	true,	true,	true	]
+[ 1005835,	"users",	1005642,	"",	true,	true,	false	]
+[ 1005858,	"user_role",	1005642,	"",	true,	true,	false	]
+[ 1005881,	"auths",	1005642,	"",	true,	true,	false	]
+[ 1005899,	"privileges",	1005642,	"",	true,	true,	false	]
+[ 1005928,	"history",	1005642,	"",	true,	true,	false	]
+[ 1005966,	"sessions",	1005642,	"",	true,	true,	true	]
+[ 1005984,	"env",	1005642,	"",	true,	true,	false	]
+[ 1008390,	"foo",	1005642,	"",	true,	false,	false	]
+[ 1008577,	"ff",	1005642,	"",	true,	false,	false	]
+# wall-clock: 2 ms
+# wall-clock: 2 ms
+# wall-clock: 6 ms
+# wall-clock: 0 ms
+# wall-clock: 2 ms
+# wall-clock: 6 ms
+# wall-clock: 1 ms
+# wall-clock: 0 ms
 # i # name
 # int # type
 # 2 # tuplecount
@@ -73,27 +85,44 @@ Over..
 # 1 # tuplecount
 # 7 # id
 [ 1	]
-# id,	name,	schema_id,	query,	type # name
-# mediumint,	varchar,	mediumint,	varchar,	mediumint # type
-# 17,	,	,	,	 # tuplecount
-# 7,	,	,	,	 # id
-[ 1005558,	"modules",	1005548,	"",	1	]
-[ 1005603,	"schemas",	1005548,	"",	1	]
-[ 1005607,	"tables",	1005548,	"",	1	]
-[ 1005613,	"columns",	1005548,	"",	1	]
-[ 1005623,	"keys",	1005548,	"",	1	]
-[ 1005629,	"idxs",	1005548,	"",	1	]
-[ 1005634,	"keycolumns",	1005548,	"",	1	]
-[ 1005639,	"types",	1005548,	"",	1	]
-[ 1005647,	"users",	1005548,	"",	1	]
-[ 1005670,	"user_role",	1005548,	"",	1	]
-[ 1005693,	"auths",	1005548,	"",	1	]
-[ 1005711,	"privileges",	1005548,	"",	1	]
-[ 1005740,	"history",	1005548,	"",	1	]
-[ 1005778,	"env",	1005548,	"",	1	]
-[ 1007047,	"foo",	1005548,	"",	0	]
-[ 1007212,	"ff",	1005548,	"",	0	]
-[ 1007468,	"s4",	1005548,	"",	0	]
+# wall-clock: 1 ms
+# wall-clock: 0 ms
+# wall-clock: 0 ms
+# id,	name,	schema_id,	query,	type,	system,	clear # name
+# mediumint,	varchar,	mediumint,	varchar,	boolean,	boolean,	boolean # type
+# 20,	,	,	,	,	,	 # tuplecount
+# 7,	,	,	,	,	,	 # id
+[ 1005652,	"modules",	1005642,	"",	true,	true,	false	]
+[ 1005703,	"schemas",	1005642,	"",	true,	true,	false	]
+[ 1005707,	"tables",	1005642,	"",	true,	true,	false	]
+[ 1005715,	"columns",	1005642,	"",	true,	true,	false	]
+[ 1005725,	"keys",	1005642,	"",	true,	true,	false	]
+[ 1005731,	"idxs",	1005642,	"",	true,	true,	false	]
+[ 1005736,	"keycolumns",	1005642,	"",	true,	true,	false	]
+[ 1005741,	"types",	1005642,	"",	true,	true,	false	]
+[ 1005749,	"tmp_tables",	1005642,	"",	true,	true,	true	]
+[ 1005787,	"tmp_columns",	1005642,	"",	true,	true,	true	]
+[ 1005835,	"users",	1005642,	"",	true,	true,	false	]
+[ 1005858,	"user_role",	1005642,	"",	true,	true,	false	]
+[ 1005881,	"auths",	1005642,	"",	true,	true,	false	]
+[ 1005899,	"privileges",	1005642,	"",	true,	true,	false	]
+[ 1005928,	"history",	1005642,	"",	true,	true,	false	]
+[ 1005966,	"sessions",	1005642,	"",	true,	true,	true	]
+[ 1005984,	"env",	1005642,	"",	true,	true,	false	]
+[ 1008390,	"foo",	1005642,	"",	true,	false,	false	]
+[ 1008577,	"ff",	1005642,	"",	true,	false,	false	]
+[ 1008845,	"s4",	1005642,	"",	true,	false,	false	]
+# wall-clock: 2 ms
+# wall-clock: 3 ms
+# wall-clock: 8 ms
+# wall-clock: 0 ms
+# wall-clock: 0 ms
+# wall-clock: 0 ms
+# wall-clock: 2 ms
+# wall-clock: 6 ms
+# wall-clock: 1 ms
+# wall-clock: 0 ms
+# wall-clock: 1 ms
 # i # name
 # int # type
 # 1 # tuplecount
@@ -111,11 +140,14 @@ Over..
 [ "idxs",	1,	2,	3	]
 [ "keycolumns",	1,	2,	3	]
 [ "types",	1,	2,	3	]
+[ "tmp_tables",	1,	2,	3	]
+[ "tmp_columns",	1,	2,	3	]
 [ "users",	1,	2,	3	]
 [ "user_role",	1,	2,	3	]
 [ "auths",	1,	2,	3	]
 [ "privileges",	1,	2,	3	]
 [ "history",	1,	2,	3	]
+[ "sessions",	1,	2,	3	]
 [ "env",	1,	2,	3	]
 [ "foo",	1,	2,	3	]
 [ "ff",	1,	2,	3	]

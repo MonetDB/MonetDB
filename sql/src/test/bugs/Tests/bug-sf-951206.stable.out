@@ -25,7 +25,8 @@ Over..
 # mediumint # type
 # 1 # tuplecount
 # 0 # id
-[ 14	]
+[ 22	]
+# wall-clock: 2 ms
 # x # name
 # varchar # type
 # 14 # tuplecount
@@ -38,14 +39,23 @@ Over..
 [ "idxs"	]
 [ "keycolumns"	]
 [ "types"	]
+[ "tmp_tables"	]
+[ "tmp_columns"	]
 [ "users"	]
 [ "user_role"	]
 [ "auths"	]
 [ "privileges"	]
 [ "history"	]
+[ "sessions"	]
 [ "env"	]
+[ "foo"	]
+[ "ff"	]
+[ "s4"	]
+[ "r"	]
+[ "test"	]
+# wall-clock: 2 ms
 
-# 16:05:54 >  
-# 16:05:54 >  Done.
-# 16:05:54 >  
+# 10:24:44 >  
+# 10:24:44 >  Done.
+# 10:24:44 >  
 

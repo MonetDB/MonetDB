@@ -25,7 +25,9 @@ Over..
 # mediumint # type
 # 1 # tuplecount
 # 0 # id
-[ 14	]
+[ 22	]
+# wall-clock: 1 ms
+# wall-clock: 1 ms
 # count_name # name
 # mediumint # type
 # 1 # tuplecount
@@ -35,7 +37,9 @@ Over..
 # mediumint # type
 # 1 # tuplecount
 # 2 # id
-[ 14	]
+[ 22	]
+# wall-clock: 1 ms
+# wall-clock: 1 ms
 # count_name # name
 # mediumint # type
 # 1 # tuplecount

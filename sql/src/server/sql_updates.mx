@@ -1122,7 +1122,7 @@ sql_delete( mvc *sql, tvar *tv, sql_table *t, stmt *s, int all )
 	stmt *v;
 
 	if (all && !t->idxs.set && (t->base.flag == TR_NEW || 
-	    t->type == tt_temp || t->type == tt_session) ){
+	    !t->persists || t->clear) ){
 		BAT *d;
 		for(n = t->columns.set->h; n; n = n->next){
 			sql_column *c = n->data;

@@ -37,12 +37,21 @@ Over..
 [ "idxs"	]
 [ "keycolumns"	]
 [ "types"	]
+[ "tmp_tables"	]
+[ "tmp_columns"	]
 [ "users"	]
 [ "user_role"	]
 [ "auths"	]
 [ "privileges"	]
 [ "history"	]
+[ "sessions"	]
 [ "env"	]
+[ "foo"	]
+[ "ff"	]
+[ "s4"	]
+[ "r"	]
+[ "test"	]
+# wall-clock: 1 ms
 # name # name
 # varchar # type
 # 14 # tuplecount
@@ -55,12 +64,21 @@ Over..
 [ "idxs"	]
 [ "keycolumns"	]
 [ "types"	]
+[ "tmp_tables"	]
+[ "tmp_columns"	]
 [ "users"	]
 [ "user_role"	]
 [ "auths"	]
 [ "privileges"	]
 [ "history"	]
+[ "sessions"	]
 [ "env"	]
+[ "foo"	]
+[ "ff"	]
+[ "s4"	]
+[ "r"	]
+[ "test"	]
+# wall-clock: 1 ms
 # name # name
 # varchar # type
 # 14 # tuplecount
@@ -73,12 +91,21 @@ Over..
 [ "idxs"	]
 [ "keycolumns"	]
 [ "types"	]
+[ "tmp_tables"	]
+[ "tmp_columns"	]
 [ "users"	]
 [ "user_role"	]
 [ "auths"	]
 [ "privileges"	]
 [ "history"	]
+[ "sessions"	]
 [ "env"	]
+[ "foo"	]
+[ "ff"	]
+[ "s4"	]
+[ "r"	]
+[ "test"	]
+# wall-clock: 3 ms
 # name # name
 # varchar # type
 # 0 # tuplecount

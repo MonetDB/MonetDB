@@ -9,8 +9,8 @@ WHERE    a.id < b.id AND
 GROUP BY a.id, b.id
 HAVING COUNT(*) >= 1;
 
-select name from tables where "type" = 1 having 1=1;
-select name from tables where "type" = 1 having 1=0;
+select name from tables where "istable" = true having 1=1;
+select name from tables where "istable" = true having 1=0;
 
-select name from tables where "type" = 1 group by name having 1=1;
-select name from tables where "type" = 1 group by name having 1=0;
+select name from tables where "istable" = true group by name having 1=1;
+select name from tables where "istable" = true group by name having 1=0;
