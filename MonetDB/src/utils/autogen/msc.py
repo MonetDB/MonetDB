@@ -79,28 +79,28 @@ def create_subdir(fd, dir):
     res = ""
     # HACK to keep uncompilable stuff out of Windows makefiles.
     if dir == 'calibrator':
-	return None
+        return None
 
     if string.find(dir, "?") > -1:
-   	parts = string.split(dir, "?")
-    	if len(parts) == 2:
+        parts = string.split(dir, "?")
+        if len(parts) == 2:
             dirs = string.split(parts[1], ":")
             fd.write("!IFDEF %s\n" % parts[0])
             if len(dirs) > 0 and string.strip(dirs[0]) != "":
-		create_dir(fd, dirs[0],parts[0])
+                create_dir(fd, dirs[0],parts[0])
             else:
-		empty_dir(fd, parts[0])
+                empty_dir(fd, parts[0])
             if len(dirs) > 1 and string.strip(dirs[1]) != "":
                 fd.write("!ELSE\n")
-		create_dir(fd, dirs[1],parts[0])
+                create_dir(fd, dirs[1],parts[0])
             else:
                 fd.write("!ELSE\n")
-		empty_dir(fd, parts[0])
+                empty_dir(fd, parts[0])
             fd.write("!ENDIF\n")
-	res = parts[0]
+        res = parts[0]
     else:
-	create_dir(fd, dir,dir)
-	res = dir
+        create_dir(fd, dir,dir)
+        res = dir
     return res
 
 def msc_subdirs(fd, var, values, msc):
@@ -110,9 +110,9 @@ def msc_subdirs(fd, var, values, msc):
     nvalues = []
     for dir in values:
         i = i + 1
-	val = create_subdir(fd, dir)
-	if val:
-	    nvalues.append(val)
+        val = create_subdir(fd, dir)
+        if val:
+            nvalues.append(val)
 
     fd.write("all-recursive: %s\n" % msc_list2string(nvalues, '"', '-all" '))
     fd.write("check-recursive: %s\n" % msc_list2string(nvalues, '"', '-check" '))
@@ -806,15 +806,15 @@ def msc_includes(fd, var, values, msc):
     fd.write("INCLUDES = " + incs + "\n")
 
 def gen_mkdir(fd, name, d):
-	i = string.rfind(d, '\\')
-	if i >= 0:
-		dir = d[:i]
-		fd.write('%s: %s\n' % (name, dir) ) 
-    		fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (d, d))
-		gen_mkdir(fd, dir,dir)
-	else:
-    		fd.write('%s:\n' % name)
-    		fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (d, d))
+    i = string.rfind(d, '\\')
+    if i >= 0:
+        dir = d[:i]
+        fd.write('%s: %s\n' % (name, dir) ) 
+        fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (d, d))
+        gen_mkdir(fd, dir,dir)
+    else:
+        fd.write('%s:\n' % name)
+        fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (d, d))
 
 def msc_jar(fd, var, jar, msc):
 
@@ -832,22 +832,22 @@ def msc_jar(fd, var, jar, msc):
 
     if jar.has_key("MANIFEST") and len(jar['MANIFEST']) == 1:
         fd.write("%s_manifest_file= %s\n" % (name, msc_translate_dir(jar['MANIFEST'][0],msc)))
-	manifest_flag='m'
+        manifest_flag='m'
     else:
         fd.write("%s_manifest_file= \n" % name)
-	manifest_flag=''
+        manifest_flag=''
 
     fd.write("%s_java_files= " % (name))
     for j in jar['SOURCES']:
         s,ext = rsplit_filename(j)
         if ext == 'in':
-		fd.write('%s ' % s)
-	else:
-		fd.write('$(SRCDIR)\\%s ' % msc_translate_dir(j,msc))
+            fd.write('%s ' % s)
+        else:
+            fd.write('$(SRCDIR)\\%s ' % msc_translate_dir(j,msc))
 
     fd.write("\n%s_class_files= " % (name))
     for j in jar['TARGETS']:
-	fd.write('"%s" ' % msc_translate_dir(j,msc))
+        fd.write('"%s" ' % msc_translate_dir(j,msc))
 
     fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
     fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $(%s_java_files)\n" % name)
@@ -888,13 +888,13 @@ def msc_java(fd, var, java, msc):
     for j in java['SOURCES']:
         s,ext = rsplit_filename(j)
         if ext == 'in':
-		fd.write('%s ' % s)
-	else:
-		fd.write('$(SRCDIR)\\%s ' % msc_translate_dir(j,msc))
+            fd.write('%s ' % s)
+        else:
+            fd.write('$(SRCDIR)\\%s ' % msc_translate_dir(j,msc))
 
     fd.write("\n%s_class_files= " % (name))
     for j in java['TARGETS']:
-	fd.write('"%s" ' % msc_translate_dir(j,msc))
+        fd.write('"%s" ' % msc_translate_dir(j,msc))
 
     fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
     fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $(%s_java_files)\n" % name)

@@ -259,87 +259,87 @@ def do_code_gen(targets, deps, code_map):
 # tokenize java file
 
 class java_parser:
-	def __init__(self):
-		self.status = None
-		self.count = 0
-		self.classes = []
-		self.pclass = None
-		self.package = None
-		self.anonnr = 1
+    def __init__(self):
+        self.status = None
+        self.count = 0
+        self.classes = []
+        self.pclass = None
+        self.package = None
+        self.anonnr = 1
 
-	def ptoken(self, type, token, (srow, scol), (erow, ecol), line): 
+    def ptoken(self, type, token, (srow, scol), (erow, ecol), line): 
 
-    		if token == '{':
-			self.count = self.count + 1
-    		if token == '}':
-			self.count = self.count - 1
-		# handle packeges 
-    		if self.status == 'package':
-			if token == ';':
-				self.status = None
-			elif token != '.':
-				if self.package:
-					self.package = os.path.join(self.package,token)
-				else:
-					self.package = token
-    		if self.status == None and token == 'package':
-			self.status = 'package'
-		# handle anonymous classes 
-		if self.status == None and token == 'new':
-			self.status = 'new'
-		if self.status == 'new' and token == '(':
-			self.status = 'new('
-		if self.status == 'new(' and token == ')':
-			self.status = 'new()'
-		if self.status == 'new()' and token == '{':
-			self.classes.append(self.pclass + "$$%d" % self.anonnr)
-			self.anonnr = self.anonnr + 1
-			self.status = None
-		if (self.status == 'new' or self.status == 'new(' or self.status == 'new()') \
-			and token == ';':
-			self.status = None
-		# handle reall classes 
-    		if self.status == 'class':
-			if self.count > 0:
-				tmp = self.pclass + '$$' + token
-				self.classes.append(tmp)
-			else:
-				self.pclass = token
-				self.classes.append(self.pclass)
-			self.status = None
-    		if self.status == None and token == 'class':
-			self.status = 'class'
-		# handle simple comments
-    		if self.status == None and token == '//':
-			self.status = 'line comment'
-    		if self.status == 'start comment' and token == '/':
-			self.status = 'line comment'
-    		if self.status == 'line comment' and type == NL:
-			self.status = None
-		# handle complex comments
-    		if self.status == 'start comment' and (token == '*' or token == '**'):
-			self.status = 'comment'
-    		if self.status == 'start comment' and not(token == '*' or token == '**'):
-			self.status = None
-    		if self.status == None and token == '/':
-			self.status = 'start comment'
-    		if self.status == 'end comment' and token == '/':
-			self.status = None
-    		if self.status == 'end comment' and token != '/':
-			self.status = 'comment'
-    		if self.status == 'comment' and (token == '*' or token == '**'):
-			self.status = 'end comment'
-    		#print(self.status,type,token)
+        if token == '{':
+            self.count = self.count + 1
+        if token == '}':
+            self.count = self.count - 1
+        # handle packeges 
+        if self.status == 'package':
+            if token == ';':
+                self.status = None
+            elif token != '.':
+                if self.package:
+                    self.package = os.path.join(self.package,token)
+                else:
+                    self.package = token
+        if self.status == None and token == 'package':
+            self.status = 'package'
+        # handle anonymous classes 
+        if self.status == None and token == 'new':
+            self.status = 'new'
+        if self.status == 'new' and token == '(':
+            self.status = 'new('
+        if self.status == 'new(' and token == ')':
+            self.status = 'new()'
+        if self.status == 'new()' and token == '{':
+            self.classes.append(self.pclass + "$$%d" % self.anonnr)
+            self.anonnr = self.anonnr + 1
+            self.status = None
+        if (self.status == 'new' or self.status == 'new(' or self.status == 'new()') \
+               and token == ';':
+            self.status = None
+        # handle reall classes 
+        if self.status == 'class':
+            if self.count > 0:
+                tmp = self.pclass + '$$' + token
+                self.classes.append(tmp)
+            else:
+                self.pclass = token
+                self.classes.append(self.pclass)
+            self.status = None
+        if self.status == None and token == 'class':
+            self.status = 'class'
+        # handle simple comments
+        if self.status == None and token == '//':
+            self.status = 'line comment'
+        if self.status == 'start comment' and token == '/':
+            self.status = 'line comment'
+        if self.status == 'line comment' and type == NL:
+            self.status = None
+        # handle complex comments
+        if self.status == 'start comment' and (token == '*' or token == '**'):
+            self.status = 'comment'
+        if self.status == 'start comment' and not(token == '*' or token == '**'):
+            self.status = None
+        if self.status == None and token == '/':
+            self.status = 'start comment'
+        if self.status == 'end comment' and token == '/':
+            self.status = None
+        if self.status == 'end comment' and token != '/':
+            self.status = 'comment'
+        if self.status == 'comment' and (token == '*' or token == '**'):
+            self.status = 'end comment'
+        #print(self.status,type,token)
 
-	def parse(self, f):
-		try:
-			if os.path.exists(f):
-				tokenize(open(f).readline, self.ptoken)
-			else:
-				tokenize(open(f+'.in').readline, self.ptoken)
-		except:
-			pass
-		return self.package,self.classes
+    def parse(self, f):
+        try:
+            if os.path.exists(f):
+                tokenize(open(f).readline, self.ptoken)
+            else:
+                tokenize(open(f+'.in').readline, self.ptoken)
+        except:
+            pass
+        return self.package,self.classes
 
 # java specific implementation of one source file to multiple targets
 def do_java_code_gen(targets, deps, cwd):
@@ -348,30 +348,28 @@ def do_java_code_gen(targets, deps, cwd):
         ntargets = []
         changes = 0
         for f in targets:
-	    filename = f
+            filename = f
             base,ext = split_filename(f)
-	    dir = ""
-    	    if string.find(base,os.sep) >= 0:
-      	    	dir,base = os.path.split(base)
+            dir = ""
+            if string.find(base,os.sep) >= 0:
+                dir,base = os.path.split(base)
 
             if ext == 'java': 
-		j = java_parser();
-		#print(f)
-		package,classes = j.parse(os.path.join(cwd,filename))
-		#print(classes)
+                j = java_parser();
+                package,classes = j.parse(os.path.join(cwd,filename))
                 changes = 1
-		for cls in classes:
-			newtarget = cls + '.class'
-			if package != None:
-				newtarget = os.path.join(package,newtarget)
-                    	ntargets.append(newtarget)
-                    	if deps.has_key(newtarget):
-                       		if (f not in deps[newtarget]):
-                       			deps[newtarget].append(f)
-                    	else:
-                       		deps[newtarget] = [ f ]
+                for cls in classes:
+                    newtarget = cls + '.class'
+                    if package != None:
+                        newtarget = os.path.join(package,newtarget)
+                    ntargets.append(newtarget)
+                    if deps.has_key(newtarget):
+                        if (f not in deps[newtarget]):
+                            deps[newtarget].append(f)
+                    else:
+                        deps[newtarget] = [ f ]
             else:
-               	 ntargets.append(f)
+                ntargets.append(f)
         targets = ntargets
     return targets
 
