@@ -106,24 +106,29 @@ SQLStatistics_(ODBCStmt *stmt,
 	   VARCHAR	filter_condition
 	*/
 	/* TODO: finish the SQL query */
-	strcpy(query_end,
-	       "select "
-	       "cast('' as varchar) as table_cat, "
-	       "cast(s.name as varchar) as table_schem, "
-	       "cast(t.name as varchar) as table_name, "
-	       "cast(1 as smallint) as non_unique, "
-	       "cast(null as varchar) as index_qualifier, "
-	       "cast(null as varchar) as index_name, "
-	       "cast(0 as smallint) as type, "
-	       "cast(null as smallint) as ordinal_position, "
-	       "cast(c.name as varchar) as column_name, "
-	       "cast('a' as varchar) as asc_or_desc, "
-	       "cast(null as integer) as cardinality, "
-	       "cast(null as integer) as pages, "
-	       "cast(null as varchar) as filter_condition "
-	       "from sys.schemas s, sys.tables t, columns c "
-	       "where s.id = t.schema_id and t.id = c.table_id and "
-	       "t.id = k.table_id");
+	sprintf(query_end,
+		"select "
+		"cast(null as varchar) as table_cat, "
+		"cast(s.name as varchar) as table_schem, "
+		"cast(t.name as varchar) as table_name, "
+		"case when k.name is null then cast(1 as smallint) "
+		"else cast(0 as smallint) end as non_unique, "
+		"cast(null as varchar) as index_qualifier, "
+		"cast(i.name as varchar) as index_name, "
+		"case i.type when 0 then cast(%d as smallint) "
+		"else cast(%d as smallint) end as type, "
+		"cast(kc.nr as smallint) as ordinal_position, "
+		"cast(c.name as varchar) as column_name, "
+		"cast(null as char(1)) as asc_or_desc, "
+		"cast(null as integer) as cardinality, "
+		"cast(null as integer) as pages, "
+		"cast(null as varchar) as filter_condition "
+		"from sys.idxs i, sys.schemas s, sys.tables t, "
+		"sys.columns c,  sys.keycolumns kc, sys.keys k "
+		"where i.table_id = t.id and t.schema_id = s.id and "
+		"i.id = kc.id and t.id = c.table_id and "
+		"kc.\"column\" = c.name and (k.type is null or k.type = 1)",
+		SQL_INDEX_HASHED, SQL_INDEX_OTHER);
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
@@ -142,7 +147,7 @@ SQLStatistics_(ODBCStmt *stmt,
 
 	/* add the ordering */
 	strcpy(query_end,
-	       " order by non_unique, type, index_quallifier, index_name, "
+	       " order by non_unique, type, index_qualifier, index_name, "
 	       "ordinal_position");
 	query_end += strlen(query_end);
 

@@ -70,16 +70,15 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	 */
 	strcpy(query_end,
 	       "select "
-	       "cast('' as varchar) as table_cat, "
+	       "cast(null as varchar) as table_cat, "
 	       "cast(s.name as varchar) as table_schem, "
 	       "cast(t.name as varchar) as table_name, "
-	       "cast(c.name as varchar) as column_name, "
-	       "cast(kc.ordinal_position as smallint) as key_seq, "
-	       "cast(k.key_name as varchar) as pk_name "
-	       "from sys.schemas s, sys.tables t, columns c, keys k, keycolumns kc "
-	       "where s.id = t.schema_id and t.id = c.table_id and "
-	       "t.id = k.table_id and c.id = kc.column_id and "
-	       "kc.key_id = k.key_id and k.is_primary = 1");
+	       "cast(kc.\"column\" as varchar) as column_name, "
+	       "cast(k.type + 1 as smallint) as key_seq, "
+	       "cast(k.name as varchar) as pk_name "
+	       "from sys.schemas s, sys.tables t, sys.keys k, sys.keycolumns kc "
+	       "where k.id = kc.id and k.table_id = t.id and "
+	       "t.schema_id = s.id and k.type = 0");
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
@@ -97,7 +96,7 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	}
 
 	/* add the ordering */
-	strcpy(query_end, " order by table_cat, table_schem, table_name, key_seq");
+	strcpy(query_end, " order by table_schem, table_name, key_seq");
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */

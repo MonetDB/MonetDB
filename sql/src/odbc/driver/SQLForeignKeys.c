@@ -59,9 +59,9 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	/* dependent on the input parameter values we must add a
 	   variable selection condition dynamically */
 
-	/* first create a string buffer (1000 extra bytes is plenty:
-	   we actually need under 600) */
-	query = (char *) malloc(1000 + nPKSchemaNameLength +
+	/* first create a string buffer (1200 extra bytes is plenty:
+	   we actually need just over 1000) */
+	query = (char *) malloc(1200 + nPKSchemaNameLength +
 				nPKTableNameLength + nFKSchemaNameLength +
 				nFKTableNameLength);
 	assert(query);
@@ -87,31 +87,36 @@ SQLForeignKeys_(ODBCStmt *stmt,
 /* XXX this query is bogus: it should contain s2,t2,c2 in addition to
  * s1,t1,c1 in the select part, k should perhaps be kc, and all of the
  * above should be used in the from and where clauses.  */
-	strcpy(query_end,
-	       "select "
-	       "cast('' as varchar) as pktable_cat, "
-	       "cast(s1.name as varchar) as pktable_schem, "
-	       "cast(t1.name as varchar) as pktable_name, "
-	       "cast(c1.name as varchar) as pkcolumn_name, "
-	       "cast('' as varchar) as fktable_cat, "
-	       "cast(s1.name as varchar) as fktable_schem, "
-	       "cast(t1.name as varchar) as fktable_name, "
-	       "cast(c1.name as varchar) as fkcolumn_name, "
-	       "cast(kc.ordinal_position as smallint) as key_seq, "
-	       "cast(k.update_rule as smallint) as update_rule, "
-	       "cast(k.delete_rule as smallint) as delete_rule, "
-	       "cast(k.fk_name as varchar) as fk_name, "
-	       "cast(k.pk_name as varchar) as pk_name, "
-	       "cast(k.deferrability as smallint) as deferrability "
-	       "from sys.schemas s, sys.tables t, columns c "
-	       "where s.id = t.schema_id and t.id = c.table_id");
+	sprintf(query_end,
+		"select "
+		"cast(null as varchar) as pktable_cat, "
+		"cast(pks.name as varchar) as pktable_schem, "
+		"cast(pkt.name as varchar) as pktable_name, "
+		"cast(pkkc.\"column\" as varchar) as pkcolumn_name, "
+		"cast(null as varchar) as fktable_cat, "
+		"cast(fks.name as varchar) as fktable_schem, "
+		"cast(fkt.name as varchar) as fktable_name, "
+		"cast(fkkc.\"column\" as varchar) as fkcolumn_name, "
+		"cast(fkk.type + 1 as smallint) as key_seq, "
+		"cast(%d as smallint) as update_rule, "
+		"cast(%d as smallint) as delete_rule, "
+		"cast(fkk.name as varchar) as fk_name, "
+		"cast(pkk.name as varchar) as pk_name, "
+		"cast(%d as smallint) as deferrability "
+		"from sys.schemas fks, sys.tables fkt, keycolumns fkkc, "
+		"sys.schemas pks, sys.tables pkt, keycolumns pkkc "
+		"where fkt.id = fkk.table_id and pkt.id = pkk.table_id and "
+		"fkk.id = fkkc.id and pkk.id = pkkc.id and "
+		"fks.id = fkt.schema_id and pks.id = pkt.schema_id and "
+		"fkk.rkey > -1 and fkk.rkey = pkk.id",
+		SQL_NO_ACTION, SQL_NO_ACTION, SQL_NOT_DEFERRABLE);
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
 	if (szPKSchemaName != NULL && nPKSchemaNameLength > 0) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and s1.name = '%.*s'",
+		sprintf(query_end, " and pks.name = '%.*s'",
 			nPKSchemaNameLength, szPKSchemaName);
 		query_end += strlen(query_end);
 	}
@@ -119,7 +124,7 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	if (szPKTableName != NULL && nPKTableNameLength > 0) {
 		/* filtering requested on table name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and t1.name = '%.*s'",
+		sprintf(query_end, " and pkt.name = '%.*s'",
 			nPKTableNameLength, szPKTableName);
 		query_end += strlen(query_end);
 	}
@@ -127,7 +132,7 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	if (szFKSchemaName != NULL && nFKSchemaNameLength > 0) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and s2.name = '%.*s'",
+		sprintf(query_end, " and fks.name = '%.*s'",
 			nFKSchemaNameLength, szFKSchemaName);
 		query_end += strlen(query_end);
 	}
@@ -135,7 +140,7 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	if (szFKTableName != NULL && nFKTableNameLength > 0) {
 		/* filtering requested on table name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and t2.name = '%.*s'",
+		sprintf(query_end, " and fkt.name = '%.*s'",
 			nFKTableNameLength, szFKTableName);
 		query_end += strlen(query_end);
 	}
@@ -147,8 +152,7 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	/* if szPKTableName != NULL, selection on primary key, order
 	   on FK output columns, else order on PK output columns */
 	sprintf(query_end,
-		" order by %stable_cat, %stable_schem, %stable_name, key_seq",
-		szPKTableName != NULL ? "fk" : "pk",
+		" order by %stable_schem, %stable_name, key_seq",
 		szPKTableName != NULL ? "fk" : "pk",
 		szPKTableName != NULL ? "fk" : "pk");
 	query_end += strlen(query_end);
