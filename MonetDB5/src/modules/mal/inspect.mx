@@ -107,6 +107,28 @@ command getAtomSizes():bat[:int,:int]
 address INSPECTatom_sizes
 comment "Collect a BAT with the atom sizes";
 
+@+ Exception message
+The exception message produced by the modules
+adhire to the structure:
+<variable>:<context>:<reason>
+These components can be extracted for
+analysis.
+@mal
+command getExceptionVariable(s:str):str
+address INSPECTgetExceptionVariable
+comment "extrace the variable name from
+	the exception message";
+
+command getExceptionReason(s:str):str
+address INSPECTgetExceptionReason
+comment "extrace the reason from
+	the exception message";
+
+command getExceptionContext(s:str):str
+address INSPECTgetExceptionContext
+comment "extrace the context string from
+	the exception message";
+
 @+ Display code
 A key tool for analysis of the MAL code is being able to dump
 any routine, module. For queries, it is also illustrative to display
@@ -498,9 +520,47 @@ str INSPECTtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 @c
 
-str INSPECTraise(str *ret,  str *msg){
+str INSPECTgetExceptionVariable(str *ret,  str *msg){
+	str tail;
+	tail = strchr(*msg,':');
+	if( tail == 0)
+		return throwMessage("inspect.getExceptionVariable",
+			"Could not find it\n");
+		
+	*tail = 0;
 	*ret= GDKstrdup(*msg);
-	return GDKstrdup(*msg);
+	*tail = ':';
+	return MAL_SUCCEED;
+}
+str INSPECTgetExceptionContext(str *ret,  str *msg){
+	str tail, tail2;
+	tail = strchr(*msg,':');
+	if( tail == 0)
+		return throwMessage("inspect.getExceptionContext",
+			"Could not find it\n");
+	tail2 = strchr(tail+1,':');
+	if( tail2 == 0)
+		return throwMessage("inspect.getExceptionContext",
+			"Could not find it\n");
+		
+	*tail2 = 0;
+	*ret= GDKstrdup(tail+1);
+	*tail2 = ':';
+	return MAL_SUCCEED;
+}
+str INSPECTgetExceptionReason(str *ret,  str *msg){
+	str tail;
+	tail = strchr(*msg,':');
+	if( tail == 0)
+		return throwMessage("inspect.getExceptionReason",
+			"Could not find it\n");
+	tail = strchr(tail+1,':');
+	if( tail == 0)
+		return throwMessage("inspect.getExceptionReason",
+			"Could not find it\n");
+		
+	*ret= GDKstrdup(tail+1);
+	return MAL_SUCCEED;
 }
 str INSPECTmanual(int *ret, str *fname, str *mod,int *recursive){
 	stream *fs;

@@ -260,7 +260,7 @@ str CMDevalFile(int *ret, str *fnme){
 		strcat(buffer,"/");
 	}
 	strcat(buffer,s);
-	malImport(getClient(),buffer,0,FALSE);
+	malInclude(getClient(),buffer,0,FALSE);
 	return MAL_SUCCEED;
 }
 str CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

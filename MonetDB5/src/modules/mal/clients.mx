@@ -51,14 +51,14 @@ comment "Pseudo bat of users logged in";
 command getLogins( ):bat[:int,:str] 
 address CLTLogin
 comment "Pseudo bat of client login time";
-command info( ):bat[:int,:str] 
-address CLTInfo
-comment "Pseudo bat with client attributes";
 
-command getClientId():int
+command getId():int
 address CLTgetClientId
 comment "return a number that unique represents
   	the current client";
+command getInfo( ):bat[:int,:str] 
+address CLTInfo
+comment "Pseudo bat with client attributes";
 
 command getScenario():str 
 address CLTgetScenario
@@ -149,7 +149,8 @@ static char* local_itoa(int i){
 str CLTInfo(int *ret){       
 	Client c= getClient();
 	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
-        if (b == 0) return throwMessage("catalog.clientInfo", "failed to create BAT");
+        if (b == 0) return throwMessage("catalog.clientInfo", 
+				"failed to create BAT");
 
 	BUNins(b,"user", c->user);
 	BUNins(b,"password", (c->password?c->password:""));
@@ -165,9 +166,10 @@ str CLTLogin(int *ret){
 	int i;
 	char s[26];
 
-        if (b == 0) return throwMessage("catalog.clientLogin", "failed to create BAT");
+        if (b == 0) return throwMessage("catalog.clientLogin", 
+				"failed to create BAT");
         for(i=0; i < MAL_MAXCLIENTS; i++)
-        if(mal_clients[i].mode== CLAIMED && mal_clients[i].user) {
+        if(mal_clients[i].mode >= CLAIMED && mal_clients[i].user) {
                 time_t logintime=(time_t)mal_clients[i].login;
 
 #ifdef CYGWIN32
@@ -202,9 +204,9 @@ str CLTusers(int *ret){
         if (b == 0) 
 		return throwMessage("clients.users", "failed to create BAT");
         for(i=0; i < MAL_MAXCLIENTS; i++)
-        if(mal_clients[i].mode== CLAIMED && mal_clients[i].user)
-                BUNins(b, &i, mal_clients[i].user);
-	@:Pseudo(client,login)@
+        if(mal_clients[i].mode >= CLAIMED && mal_clients[i].user)
+                b= BUNins(b, &i, mal_clients[i].user);
+	@:Pseudo(client,users)@
 	return MAL_SUCCEED;
 }
 
