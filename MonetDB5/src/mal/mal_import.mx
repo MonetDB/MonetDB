@@ -24,7 +24,7 @@
 
 @a M. Kersten
 @v 0.0
-@+ MAL import
+@+ Module import
 The import statement simple switches the parser to a new input file, which
 takes precedence. The context for which the file should be interpreted
 is determined by the module name supplied.

@@ -57,7 +57,7 @@ call has a global effect,
 all concurrent users are affected by the performance overhead.
 Therefore, it is of primary interest to single user sessions.
 
-@-The profiler event cache.
+@+ The profiler event cache.
 The events can be cached in a dynamic structure under exclusive control
 of the profiler. The alternative, storing everyting into BATs leads
 to a loophole in performance measuring using e.g. kcachegrind.

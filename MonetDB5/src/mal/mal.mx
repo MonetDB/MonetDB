@@ -23,12 +23,6 @@
 
 @f mal
 @T
-% define titlepage
-@t The Monet Database System
-@v Version 5.0
-@a Martin L. Kersten 
-
-% create table of contents 
 \newpage
 \tableofcontents
 \newpage

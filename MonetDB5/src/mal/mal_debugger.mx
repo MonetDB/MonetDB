@@ -31,30 +31,32 @@ Also if there is no apparent console from which the debugger can be controlled.
 
 @- The debugger instruction set
 @T
-<table>
-<tr><td>next		</td><td> Advance to next statement</td></tr>
-<tr><td>continue 	</td><td> Continue program being debugged</td></tr>
-<tr><td>bbp 		</td><td> BBP memory layout</td></tr>
-<tr><td>break 		</td><td> set breakpoint on current instruction</td></tr>
-<tr><td>break <var> 	</td><td> break on assignment to <var></td></tr>
-<tr><td>delete <var> 	</td><td> remove break point <var></td></tr>
-<tr><td>step 		</td><td> advance to next MAL instruction</td></tr>
-<tr><td>module 	</td><td> display the module [scopes] </td></tr>
-<tr><td>finish 	</td><td> finish current call</td></tr>
-<tr><td>quit 		</td><td> leave debugger</td></tr>
-<tr><td>list 		</td><td> list current program block</td></tr>
-<tr><td>List 		</td><td> list with type information</td></tr>
-<tr><td>variables 	</td><td> print variable bindings</td></tr>
-<tr><td>print <var> 	</td><td> display value of a variable</td></tr>
-<tr><td>print <var> <cnt>[<first>] </td><td> display BAT chunk</td></tr>
-<tr><td>info <var> 	</td><td> display bat variable properties</td></tr>
-<tr><td>run 		</td><td> restart current procedure</td></tr>
-<tr><td>where 		</td><td> print stack trace</td></tr>
-<tr><td>down  		</td><td> go down the stack</td></tr>
-<tr><td>up  		</td><td> go up the stack</td></tr>
-<tr><td>timer 		</td><td> produce micro-second response time</td></tr>
-<tr><td>help 		</td><td> the help message</td></tr>
-</table>
+{\small
+\begin{tabular} {l l}
+next		& Advance to next statement\\
+continue 	& Continue program being debugged\\
+bbp 		& BBP memory layout\\
+break 		& set breakpoint on current instruction\\
+break $<$var$>$ 	& break on assignment to $<$var$>$\\
+delete $<$var$>$ 	& remove break point $<$var$>$\\
+step 		& advance to next MAL instruction\\
+module 	& display the module [scopes] \\
+finish 	& finish current call\\
+quit 		& leave debugger\\
+list 		& list current program block\\
+List 		& list with type information\\
+variables 	& print variable bindings\\
+print $<$var$>$ 	& display value of a variable\\
+print $<$var$>$ $<$cnt$>$[$<$first$>$] & display BAT chunk\\
+info $<$var$>$ 	& display bat variable properties\\
+run 		& restart current procedure\\
+where 		& print stack trace\\
+down  		& go down the stack\\
+up  		& go up the stack\\
+timer 		& produce micro-second response time\\
+help 		& the help message\\
+\end{tabular}
+}
 @- Breakpoint tables
 A powerful mechanism for debugging a program is to set breakpoints.
 In MAL the breakpoints are designated by the <module>.<variable> name.

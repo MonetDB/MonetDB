@@ -209,11 +209,11 @@ the properties of the actual arguments holds. A side-effect of execution
 of the function leads to an update of the property set associated with
 the actual arguments. An example:
 @T
-<pre>
+\begin{verbatim}
 function fcn (A:int,B:bat[int,int],C:int):int
-	?{A.read=true, B.count<1000}
-	{fcn.write:=true;}
-</pre>
+        ?{A.read=true, B.count<1000}
+        {fcn.write:=true;}
+\end{verbatim}
 @-
 
 [Try 3] Organize property management by the processor involved, e.g.
@@ -248,7 +248,7 @@ For example, the following snippet shows how properties
 are used in a code block.
 
 @T
-<pre>
+\begin{verbatim}
 B := new(int,int);
 I := properties.has(B,{hsorted}); 
 J := properties.get(B,{cost});
@@ -257,19 +257,19 @@ print(J);
 properties.set(B,{cost},2315); 
 barrier properties.has(B,{sorted});
 exit;
-</pre>
+\begin{verbatim}
 @-
 These example illustrate that the property manipulations are
 executed throug patterns, which also accept a stack frame.
 
 Sample problem with dropping properties:
 @T
-<pre>
-	B := new(int,int);
+\begin{verbatim}
+    B := new(int,int);
 barrier tst:= randomChoice()
-	I := properties.drop(B,{hsorted}); 
+    I := properties.drop(B,{hsorted}); 
 exit	tst;
-</pre>
+\end{verbatim}
 
 @+ The cost model problem
 An important issue for property management is to be able to pre-calculate
@@ -280,11 +280,11 @@ dataflow semantics, and
 For example, selectivity estimations can be based on a histogram associated
 with a BAT. The code for this could look like
 @T
-<pre>
-	B:= new(int,int);
-	properties.add(B,{min,max,histogram});
-	Z:= select(B,1,100);
-</pre>
+\begin{verbatim}
+    B:= new(int,int);
+    properties.add(B,{min,max,histogram});
+    Z:= select(B,1,100);
+\end{verbatim}
 Addition of a property may trigger its evaluation, provided enough
 information is available (e.g. catalog). The instruction triggers the
 calls properties.set(B,{min}), properties.set(B,{max}), and 
@@ -297,14 +297,13 @@ To study the use of properties in the complete pipeline SQL-execution
 we contrive a small SQL problem. The person table is sorted by name,
 the car table is unsorted.
 @T
-<pre>
+\begin{verbatim}
 create table person(name varchar not null, address varchar);
 create table car(name varchar, model varchar, milage int not null);
 select distinct name, model, milage
 from person, car
 where car.name= person.name and milage>60000;
-</pre>
-@-
+\end{verbatim}
 @+ Implementation rules
 Properties can be associated with variables, MAL blocks, and MAL instructions.
 This property list is only initialized upon explicit request, e.g. by

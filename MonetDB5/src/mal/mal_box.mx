@@ -96,17 +96,17 @@ at a time.
 @-
 Example: consider the client function:
 @T
-<pre>
+\begin{verbatim}
 function myfcn():void;
-	b:bat[oid,int] := bbp.take("mytable");
-	c:bat[int,str] := sql.take("person","age");
-	d:= intersect(b,c);
-	print(d);
-	u:str:= client.take("user");
-	print(u);
-	client.release("user");
+    b:bat[oid,int] := bbp.take("mytable");
+    c:bat[int,str] := sql.take("person","age");
+    d:= intersect(b,c);
+    print(d);
+    u:str:= client.take("user");
+    print(u);
+    client.release("user");
 end function;
-</pre>
+\end{verbatim}
 @-
 The function obtains a copy from the local persistent bat space,
 much like bat-names are resolved under MIL semantics. The second
@@ -147,15 +147,15 @@ At the end of a session they are closed, which means that they are
 saved in persistent store until the next session starts.
 For example:
 @T
-<pre>
+\begin{verbatim}
 function m():void;
-	box.open("client_name");
-	box.deposit("client_name","pi",3.417:flt);
-	f:flt := box.take("client_name","pi");
-	print(t);
-	box.close("client_name");
+    box.open("client_name");
+    box.deposit("client_name","pi",3.417:flt);
+    f:flt := box.take("client_name","pi");
+    print(t);
+    box.close("client_name");
 end function;
-</pre>
+\end{verbatim}
 @-
 Every client has a private session scope, which also provides an object box.
 In the namespace it is placed subordinate to any space introduced by the

@@ -25,6 +25,7 @@
 @a M. Kersten
 @v 0.0
 @* Mal type utilities
+@T
 The MAL type module overloads the atom structure managed in the GDK
 library. In particular, it encodes bat type information in a single
 long to safe space. Actually, it makes sense to include the built-in
@@ -32,8 +33,8 @@ type BAT in GDK.
 
 For the time being we assume GDK to support at most 255 different
 atomic types. If this grows, then the encoding scheme presented
-below permits 2^15 different bat types at most
-Beware the TYPE_any is a speudo type known within MAL only.
+below permits $2^15$ different bat types at most
+Beware the TYPE\_any is a speudo type known within MAL only.
 @{
 @h
 #ifndef MAL_TYPE_H

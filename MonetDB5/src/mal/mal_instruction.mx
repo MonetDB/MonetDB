@@ -24,15 +24,22 @@
 
 @a M. Kersten
 @v 0.0
+@* Monet Assembler Language
+The primary interface to the Monet kernel
+is a simple, assembler-like language, called MAL. 
+
+The language reflects the virtual machine architecture around the
+kernel libraries and has been designed for speed of interpretation,
+ease of analysis, and ease of target compilation by 
+query compilers.
+
 @+ MAL instruction blocks
-@T
-<p>
 MAL instruction sequences have a simple format.
 The operation is either an assigment "variable := module.fcn(a1..a32)"
 where the actual function arguments are references to variables on the
 runtime variable stack, or reference to a MAL control statement, 
 i.e. RAISE, CATCH, RETURN, BARRIER, LEAVE,REDO
-</p><p>
+@+ MAL descriptor
 A sequence of instructions is represented by a variable, instruction,
 and program stmt block.
 The variable block is the symbol table associated with the instruction sequence.
@@ -41,13 +48,13 @@ a reference to a lexical value when it denotes a constant,
 its associated Mal type identifier.
 Upon procedure return, the variable block is inspected to find
 objects eligable for garbage collection (e.g. strings).
-</p><p>
+@-
 The instruction is a code byte string overlaid with the
 instruction pattern. This method leads to a large
 allocated block, which can be easily freed, and
 pattern makes it possible to accommodate a variable argument list.
 Each argument list starts with a reference to the destination variable. 
-</p><p>
+@-
 Variable- and stmt- block together describe the
 static part of a MAL procedure. It carries carry enough information to produce
 a listing and to aid symbolic debugging. Ideally, the listing
@@ -55,14 +62,14 @@ of a MAL program is identical to the non-commented source.
 This costs some space, but will improve readability and permits
 instruction sequences generated internally also to be kept
 around as ascii text for later inclusion.
-</p><p>
+@-
 WARNING. The way we lay out the instructions means that 
 you can prepare only one instruction at a time, because you don't
-know how many arguments may be needed.
-</p><p>
+know how many arguments may be needed upfront.
+@-
 A variable binding may become CONSTANT for the duration of its
 life time.
-</p><p>
+@-
 The instruction records contain three optional pointers to functions:
 beforeCall, afterCall, and finalCall. They are bound to the result type.
 All expect a pointer to a VALrecord. The beforeCall is activated
@@ -74,36 +81,36 @@ Typical use of beforeCall and afterCall are handling of BAT references,
 but they can also be used to update a front-end.
 The finalCall is activated when the scope in which the object is
 used is terminated. This may require garbage collection actions.
-</p><p>
+@-
 [Think, should beforeCall/afterCall also become part of the MAL functions?]
-</p><p>
+@-
 The procedural abstraction comes in two forms, FUNCTION and STREAM.
 The former behaves as a normal function, it computes one or more results
 and terminates. Contrary, the STREAM call leads to an independent thread
 of control that waits for a re-activation request. Stream operations are
 primarilly interesting within code blocks that are executed repeatedly.
 To illustrate, the program below generates a stream of random numbers.
-</p>
-<pre>
+@T
+\begin{verbatim}
 stream random(seed:int):(z:bit,v:int);
-	i:= seed;
+        i:= seed;
 barrier L:= true;
-	i:= 125 *i;
-	i:= i % 32767;
-	return (true,i);
-	# continue here upon next call from same source
-	redo L;
+        i:= 125 *i;
+        i:= i % 32767;
+        return (true,i);
+        # continue here upon next
+        # call from same source
+        redo L;
 exit L;
-	return (false,0);
+        return (false,0);
 end;
 
 #main block
 barrier (Z,val):=random(1);
-	print(val);
-	redo Z;
+        print(val);
+       	redo Z;
 exit Z;
-	
-</pre>
+\end{verbatim}
 @{
 @h
 /*
