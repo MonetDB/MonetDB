@@ -50,6 +50,7 @@ sql_export int sql_create_history(mvc *sql, sql_schema *s);
 #include "sql_env.h"
 #include "sql_bm.h"
 #include "sql_scope.h"
+#include "sql_select.h"
 #include "sql_semantic.h"
 /*
 TODO use virtual columns, ie only create (fill) the bats of the 'session' table

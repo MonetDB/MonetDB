@@ -40,7 +40,7 @@
 #define tr_writable 	2
 #define tr_serializable 4
 
-sql_export stmt *transaction( mvc * sql, symbol * sym);
+sql_export stmt *transactions( mvc * sql, symbol * sym);
 
 #endif /*_SQL_TRANS_H_*/
 
@@ -51,7 +51,7 @@ sql_export stmt *transaction( mvc * sql, symbol * sym);
 #include "sql_env.h"
 
 stmt *
-transaction(mvc * sql, symbol * s) 
+transactions(mvc * sql, symbol * s) 
 {
 	int ret = 0;
 	switch (s->token) {
