@@ -40,9 +40,9 @@ stdout of test 'no.150` in directory 'tests/BugReports` itself:
 
 setoid(oid(20000000));
 module("jabberwocky");
-!ERROR: module(jabberwocky): load error.
+!ERROR: moduleClient: module(jabberwocky) load error.
 module("_jabberwocky");
-!ERROR: module(_jabberwocky): load error.
+!ERROR: moduleClient: module(_jabberwocky) load error.
 quit();
 
 # 17:07:22 >  
