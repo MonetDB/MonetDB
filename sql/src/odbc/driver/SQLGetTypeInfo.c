@@ -51,7 +51,7 @@ static const char *columnnames[NCOLUMNS] = {
 static const char *columntypes[NCOLUMNS] = {
 	"varchar",
 	"smallint",
-	"integer",
+	"mediumint",
 	"varchar",
 	"varchar",
 	"varchar",
@@ -66,7 +66,7 @@ static const char *columntypes[NCOLUMNS] = {
 	"smallint",
 	"smallint",
 	"smallint",
-	"integer",
+	"mediumint",
 	"smallint",
 };
 
