@@ -8,7 +8,7 @@ stdout of test 'tst120` in directory 'src/mal` itself:
 # Visit http://monetdb.cwi.nl for further information.
 ##define 2 modules and check location of routines
 #
-#use tst120a;	# lookup DBHOME/mal/tst120a.mal
-MALexception:malImport:could not open file: tst120a
+#include tst120a;	# lookup DBHOME/mal/tst120a.mal
+MALexception:malInclude:could not open file: tst120a
 
 >
