@@ -30,6 +30,7 @@ def am_libdir(fd, var, values, am ):
 
 def am_mtsafe(fd, var, values, am ):
   fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
+  fd.write("CXXFLAGS+=$(thread_safe_flag_spec)\n")
 
 def am_list2string(l,pre,post):
   res = ""
@@ -128,6 +129,7 @@ def am_binary(fd, var, binmap, am ):
   am['BINS'].append(binname)
   if (binmap.has_key('MTSAFE')):
     fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
+    fd.write("CXXFLAGS+=$(thread_safe_flag_spec)\n")
 
   if (binmap.has_key("LIBS")):
     fd.write(am_additional_libs(binname, "", "BIN", binmap["LIBS"],am))
@@ -174,6 +176,7 @@ def am_bins(fd, var, binsmap, am ):
     name = binsmap["NAME"][0] # use first name given
   if (binsmap.has_key('MTSAFE')):
     fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
+    fd.write("CXXFLAGS+=$(thread_safe_flag_spec)\n")
   for binsrc in binsmap['SOURCES']:
     SCRIPTS = []
     bin,ext = string.split(binsrc,".", 1) 	
@@ -235,6 +238,7 @@ def am_library(fd, var, libmap, am ):
   am['LIBS'].append(sep+libname)
   if (libmap.has_key('MTSAFE')):
     fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
+    fd.write("CXXFLAGS+=$(thread_safe_flag_spec)\n")
 
 # temporarily switched off, the by libtool created scripts cause problems
 # for so-so linking
@@ -278,6 +282,7 @@ def am_libs(fd, var, values, am ):
 
   if (values.has_key('MTSAFE')):
     fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
+    fd.write("CXXFLAGS+=$(thread_safe_flag_spec)\n")
 
   for libsrc in values['SOURCES']:
     SCRIPTS = []
