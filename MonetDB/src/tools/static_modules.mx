@@ -12,7 +12,9 @@
 @:install_module(mapi)@
 /* plain */
 @:install_module(aggr)@
+@:install_module(aggrX3)@
 @:install_module(alarm)@
+@:install_module(bat_arith)@
 @:install_module(bitset)@
 @:install_module(bitvector)@
 @:install_module(blob)@

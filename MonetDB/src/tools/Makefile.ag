@@ -16,7 +16,9 @@ STATIC_MODS = \
 smallTOC_SHARED_MODS =	\
 	../mapi/lib_mapi	\
 	../modules/plain/lib_aggr	\
+	../modules/plain/lib_aggrX3	\
 	../modules/plain/lib_alarm	\
+	../modules/plain/lib_bat_arith	\
 	../modules/plain/lib_bitset	\
 	../modules/plain/lib_bitvector	\
 	../modules/plain/lib_blob	\
