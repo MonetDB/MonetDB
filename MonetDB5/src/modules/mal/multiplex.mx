@@ -267,7 +267,7 @@ A polymorphic type is not allowed anymore at this stage,
 		printInstruction(GDKout,m,p,LIST_MAL_ALL);
 	}
 #endif
-	typeChecker(getClient()->nspace,m,p);
+	typeChecker(getClient()->nspace,m,p,TRUE);
 #ifdef DEBUG_MULTIPLEX
 	if(multiplexDebug ){
 		printf("After typeChecker instruction type\n");
@@ -371,7 +371,7 @@ int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
 Safe the old type of the destination because we may have to restore it later on.
 @c
 	oldtpe= getArgType(mb,pci,0);
-	typeChecker(cntxt->nspace,mb,p);
+	typeChecker(cntxt->nspace,mb,p,TRUE);
 #ifdef DEBUG_MULTIPLEX
 	if(multiplexDebug ){
 		printf("Tactics typeChecker instruction type\n");
