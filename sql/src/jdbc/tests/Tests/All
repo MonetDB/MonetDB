@@ -5,3 +5,4 @@ Test_PStimedate
 Test_Rbooleans
 Test_Rpositioning
 Test_Sbatching
+Test_JdbcClient
