@@ -25,6 +25,18 @@ view_bbp_heat().print();
 
 printf("#~BeginVariableOutput~#\n");
 
+var skiplist:= new(void,str);
+skiplist.insert(nil,"config");
+skiplist.insert(nil,"monet_pid");
+skiplist.insert(nil,"prefix");
+skiplist.insert(nil,"exec_prefix");
+skiplist.insert(nil,"gdk_dbfarm");
+skiplist.insert(nil,"monet_mod_path");
+skiplist.insert(nil,"mapi_port");
+skiplist.insert(nil,"sql_port");
+skiplist.insert(nil,"sql_logdir");
+skiplist.insert(nil,"monet_cwd");
+
 debugmask().print();
 vars();
 queue();
@@ -32,8 +44,7 @@ threadid().print();
 
 clients();
 cpu().print();
-env();
-environment().print();
+environment().kdiff(skiplist.reverse()).print();
 io().print();
 memory().print();
 threads();
