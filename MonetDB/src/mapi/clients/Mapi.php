@@ -26,75 +26,55 @@
 <?php
 
 class Mapi {
-	
-  Function init ($server, $port, $user) {
-    $this->server = $server;
-    $this->port = $port;
-    $this->user = $user;
-    $this->socket = fsockopen( $server, $port );
+	function Mapi($server, $port, $user) {
+		$this->server = $server;
+		$this->port = $port;
+		$this->user = $user;
+		$this->socket = socket_create(AF_INET, SOCK_STREAM, 0);
+		if (!socket_connect($this->socket, $server, $port))
+			echo "server refuses access\n";
 
-    socket_set_blocking($this->socket, false);
+		$this->buf = "";
+		$this->prompt = "";
+		$this->cmd_intern("$user\n");
+		$this->result();
+	}
 
-    $this->buf = "";
-    $this->prompt = "";
-    $this->cmd_intern("$user\n");
-    $this->result();
-    return $this;
-  }
+	function disconnect() {
+		$this->cmd_intern("quit;\n");
+		socket_close($this->socket);
+	}
 
-  Function mapiport_intern () {
-    $mapiport = 'localhost:50000';
-    if (getenv("MAPIPORT")) $mapiport = getenv("MAPIPORT"); 
-    return $mapiport;
-  }
+	function cmd_intern($cmd) {
+		socket_write($this->socket, $cmd, strlen($cmd));
+	}
 
-  Function hostname () {
-    ereg("([a-zA-Z_]*)(:[0-9]*|$)", $this->mapiport_intern(), $res);
-    $hostname = $res[1];
-    if ( $hostname == '' ) $hostname = 'localhost';
-    return $hostname;
-  }
+	function getstring() {
+		$str = "";
+		while (!($index = strpos($this->buf, "\001"))) {
+			$str .= $this->buf;
+			$len = 4096;
+			$this->buf = socket_recv($this->socket, $len, 4096, 0);
+		}
+		$str .= substr($this->buf, 0, $index);
+		$this->buf = substr($this->buf, $index + 1, strlen($this->buf));
+		return $str;
+	}
 
-  Function portnr () {
-    ereg("([a-zA-Z_]*)(:[0-9]*|$)", $this->mapiport_intern(), $res);
-    $portnr = $res[2];
-    if ( $portnr == '' ) $portnr = 50000;
-    else $portnr = substr($portnr,1, strlen($portnr) - 1);
-    return $portnr;
-  }
+	function result() {
+		$res = $this->getstring();
+		$this->getprompt();
+		return $res;
+	}
 
-  Function disconnect () {
-    $this->cmd_intern("quit;\n");
-    close($this->socket);
-  }
+	function getprompt() {
+		$prompt = $this->getstring();
+	}
 
-  Function cmd_intern ($cmd) {
-    fputs($this->socket, $cmd, strlen($cmd) ); 
-  }
-
-  Function getstring () {
-    while( ($index = strpos( $this->buf, "\001" )) === false){ 
-	$this->buf .= fgets( $this->socket, 4096 ); 
-    }
-    $result = substr( $this->buf, 0, $index);
-    $this->buf = substr( $this->buf, $index + 1, strlen($this->buf)); 
-    return $result;
-  }
-
-  Function result () {
-    $res = $this->getstring();
-    $this->getprompt();
-    return $res;
-  }
-
-  Function getprompt () {
-    $prompt = $this->getstring();
-  }
-
-  Function cmd ( $cmd ) {
-    $cmd = "$cmd\n";
-    $this->cmd_intern($cmd);
-    return $this->result();
-  }
+	function cmd($cmd) {
+		$cmd = "$cmd\n";
+		$this->cmd_intern($cmd);
+		return $this->result();
+	}
 }
 ?>

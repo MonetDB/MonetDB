@@ -22,78 +22,96 @@
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 import string
-from socket import *
-from os import *
+from socket import socket, AF_INET, SOCK_STREAM
+import os, sys
 
 trace=          0
 interactive=    0
 
 class server:
-    def cmd_intern( self, cmd ):
-        try:
-            self.socket.send(cmd)
-            if (trace>0):
-                print 'cmd ', cmd
-        except IOError:
-            print 'IO error '
-
-    def result(self):
-        result = self.getstring()
-        self.getprompt()
-        if (trace>0):
-            print result
-        return result
-
-    def getstring(self):
-        try:
-            idx = string.find( self.buffer, "\1" )
-            if (trace>1):
-                self.buffer
-            str = ""
-            while (idx < 0):
-                if (trace>1):
-                    print self.buffer
-                str = str + self.buffer
-                self.buffer = self.socket.recv(8096)
-                idx = string.find( self.buffer, "\1" )
-
-            str = str + self.buffer[0:idx]
-            self.buffer = self.buffer[idx+1:]
-            if (trace>1):
-                print str
-            return str
-        except IOError:
-            print 'IO error '
-        except error:
-            print 'end of file'
-            sys.exit(1)
-        return ''
-
-    def getprompt(self):
-        self.prompt = self.getstring()
-        if (interactive==1):
-            print self.prompt
-
-    def __init__ ( self, server, port, user ):
+    def __init__(self, server, port, user):
         try:
             self.socket = socket(AF_INET, SOCK_STREAM)
             self.socket.connect((server, port))
-            self.prompt = ''
+            self.prompt = u''
             self.buffer = ''
         except IOError:
             print 'server refuses access'
 
         self.cmd_intern(user+'\n')
         self.result()
-        if (trace>0):
+        if trace > 0:
             print 'connected ', self.socket
 
-    def disconnect( self ):
-        self.result = self.cmd_intern( 'quit;\n' )
+    def cmd_intern(self, cmd):
+        # convert to UTF-8 encoding
+        if type(cmd) is type(u''):
+            cmd = cmd.encode('utf-8')
+        try:
+            self.socket.send(cmd)
+            if trace > 0:
+                print 'cmd ', cmd
+        except IOError:
+            print 'IO error '
+
+    def result(self):
+        result = self.getstring()
+        if trace > 0:
+            print result.encode('utf-8')
+        self.getprompt()
+        return result
+
+    def getstring(self):
+        try:
+            idx = string.find(self.buffer, "\1")
+            if trace > 1:
+                print self.buffer
+            str = ""
+            while idx < 0:
+                if trace > 1:
+                    print self.buffer
+                str = str + self.buffer
+                self.buffer = self.socket.recv(8096)
+                idx = string.find(self.buffer, "\1")
+
+            str = str + self.buffer[0:idx]
+            self.buffer = self.buffer[idx+1:]
+            if trace > 1:
+                print str
+            try:
+                str = unicode(str, 'utf-8')
+            except UnicodeDecodeError:
+                print 'Error decoding result'
+            return str
+        except IOError:
+            print 'IO error '
+        except OSError:
+            print 'end of file'
+            sys.exit(1)
+        return u''
+
+    def getprompt(self):
+        self.prompt = self.getstring()
+        if interactive:
+            print self.prompt.encode('utf-8')
+
+    def disconnect(self):
+        """disconnect()
+        Disconnect from the Monet server.
+        """
+        self.result = self.cmd_intern('quit;\n')
         self.socket.close()
         self.socket = 0
 
-    def cmd( self, cmd ):
+    def cmd(self, cmd):
+        """cmd(MIL-command) -> result.
+        Main interface to Mapi server.  Sends MIL-command (a Unicode
+        or UTF-8-encoded string to the Monet server, waits for the
+        result, and returns it, converted to unicode.
+        """
+        # add linefeed if missing
+        if cmd[-1:] != '\n':
+            cmd = cmd + '\n'
         self.cmd_intern(cmd)
         return self.result()
 
@@ -101,13 +119,13 @@ class server:
 if __name__ == '__main__':
     import fileinput
 
-    s = server( "localhost" , 50000, environ['USER'])
+    s = server("localhost" , 50000, os.environ['USER'])
     fi = fileinput.FileInput()
-    sys.stdout.write( s.prompt )
-    line= fi.readline()
-    while( line != "quit;\n" ):
-        res = s.cmd( line )
-        print(res)
-        sys.stdout.write( s.prompt )
+    sys.stdout.write(s.prompt)
+    line = fi.readline()
+    while line and line != "quit;\n":
+        res = s.cmd(line)
+        print res
+        sys.stdout.write(s.prompt)
         line = fi.readline()
     s.disconnect()

@@ -26,9 +26,41 @@
 <?php
 require("Mapi.php");
 
-$monet = new Mapi;
-$monet->init( $monet->hostname(), $monet->portnr(), "niels" );
-	echo $monet->cmd($HTTP_POST_VARS["cmd"]);
+class MapiClient extends Mapi {
+	function MapiClient() {
+		$this->Mapi($this->hostname(), $this->portnr(), "niels");
+	}
+
+	function mapiport_intern() {
+		$mapiport = 'localhost:50000';
+		if (getenv("MAPIPORT"))
+			$mapiport = getenv("MAPIPORT"); 
+		return $mapiport;
+	}
+
+	function hostname() {
+		ereg("([a-zA-Z_]*)(:[0-9]*|$)",
+		     $this->mapiport_intern(), $res);
+		$hostname = $res[1];
+		if ($hostname == '')
+			$hostname = 'localhost';
+		return $hostname;
+	}
+
+	function portnr() {
+		ereg("([a-zA-Z_]*)(:[0-9]*|$)",
+		     $this->mapiport_intern(), $res);
+		$portnr = $res[2];
+		if ($portnr == '')
+			$portnr = 50000;
+		else
+			$portnr = substr($portnr,1, strlen($portnr) - 1);
+		return $portnr;
+	}
+}
+
+$monet = new MapiClient;
+echo $monet->cmd($HTTP_POST_VARS["cmd"]);
 $monet->disconnect();
 ?>
 

@@ -25,13 +25,13 @@
 import sys
 import os
 
-if os.environ.has_key('MONET_PREFIX'):
-    sys.path.append(os.environ['MONET_PREFIX']+os.sep+'share'+os.sep+'MonetDB'+os.sep+'python')
-else:
-    sys.path.append('@Qprefix@'+os.sep+'share'+os.sep+'@PACKAGE@'+os.sep+'python')
+sys.path.append(os.path.join(os.environ.get('MONET_PREFIX','@Qprefix@'),
+                             'share',
+                             '@PACKAGE@',
+                             'python'))
 
 import monet_options
-from Mapi import *
+from Mapi import server
 
 import fileinput
 
@@ -46,18 +46,23 @@ except monet_options.Error:
     # error parsing options
     sys.exit(1)
 
-s = server( opt.get("host","localhost"), int(opt.get("mapi_port",50000)), environ['USER'])
-print("#MapiClient (python) connected to %s:%d as %s" % (opt.get("host","localhost"), int(opt.get("mapi_port",50000)), environ['USER']))
+s = server(opt.get("host", "localhost"),
+           int(opt.get("mapi_port", 50000)),
+           os.environ['USER'])
+print "#MapiClient (python) connected to %s:%d as %s" % \
+      (opt.get("host", "localhost"),
+       int(opt.get("mapi_port", 50000)),
+       os.environ['USER'])
 
 #fi = fileinput.FileInput()
 fi = sys.stdin
 
-sys.stdout.write( s.prompt )
-line= fi.readline()
-while( line != "quit;\n" ):
-    res = s.cmd( line )
-    print(res)
-    sys.stdout.write( s.prompt )
+sys.stdout.write(s.prompt)
+line = fi.readline()
+while line and line != "quit;\n":
+    res = s.cmd(line)
+    print res
+    sys.stdout.write(s.prompt.encode('utf-8'))
     line = fi.readline()
 
 s.disconnect()

@@ -34,7 +34,7 @@ sub new {
     $self->{USER} = $user;
     $self->{SOCKET} = new IO::Socket::INET( $server )
 	|| die "can't connect to $server : $!";
-	bless($self);
+    bless($self);
     $self->{BUF} = "";
     $self->{PROMPT} = "";
     $self->cmd_intern("$user\n");
