@@ -122,7 +122,6 @@ import java.applet.Applet;
 import java.applet.*;
 import java.io.*;
 import java.net.Socket;
-import java.util.regex.*;
 
 public class Mapi 
 {
@@ -200,9 +199,6 @@ public class Mapi
 	private BufferedReader fromMonet;
 	private DataOutputStream traceLog;
 	
-	/* Monet 4.3 header type info regexp */
-	private static Pattern p = Pattern.compile("^.*?\\((.+?)\\).*$");
-
 private void check(String action){
 	if( !connected) setError("Connection lost",action);
 	clrError();
@@ -1403,26 +1399,6 @@ private void headerDecoder() {
 			if (trace)
 				System.out.println("column["+i+"].type="+columns[i].columntype);
 		}
-	} else if (line.startsWith("# (")) {
-		/* extract Monet 4.3 type info */
-		String  s = line;
-		Matcher m = p.matcher(s);
-		int i = 0;
-		while (m.matches()) {
-			/* found the first type */
-			if (columns[i]==null)
-				columns[i] = new Column();
-			columns[i].columntype = m.group(1);
-			if (trace)
-				System.out.println("(4.3)column["+i+"].type="+columns[i].columntype);
-			i++;
-
-			/* look in the remainder for more types */
-			s = s.substring(m.end(1));
-			m.reset(s);
-		}
-		if (i > fieldcnt)
-			fieldcnt = i;
 	} else if (trace)
 		System.out.println("Unrecognized header tag "+tag);
 	//REST LATER
