@@ -1629,28 +1629,28 @@ BAT *BATsetaccess(BAT *b, int mode) {
 	    } else {
 		if (mode == BAT_WRITE) {
 		    m1 = HEAPsetpriv(b->batBuns, committed, &remap, &reload);
-		} else {
+		} else if (b->batBuns->storage == BAT_WRITE) {
 		    m1 = HEAPsetmmap(b->batBuns, &remap);
 		}
 		if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->htype, &b->hheap))) {
 		    m2 = HEAPsetpriv(&b->hheap, committed, &remap, &reload);
-		} else {
+		} else if (b->hheap.storage == BAT_WRITE) {
 		    m2 = HEAPsetmmap(&b->hheap, &remap);
 		}
 		if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->ttype, &b->theap))) {
 		    m3 = HEAPsetpriv(&b->theap, committed, &remap, &reload);
-		} else {
+		} else if (b->theap.storage == BAT_WRITE) {
 		    m3 = HEAPsetmmap(&b->theap, &remap);
 		}
-		if (mode != BAT_READ) {
+		if (mode != BAT_READ && b->haccelerator.storage == BAT_READ) {
 		    m4 = HEAPsetpriv(&b->haccelerator, committed, &remap, &reload);
-		} else {
+		} else if (mode == BAT_READ && b->haccelerator.storage != BAT_READ) {
 		    m4 = HEAPsetmmap(&b->haccelerator, &remap);
 		}
-		if (mode != BAT_READ) {
+		if (mode != BAT_READ && b->taccelerator.storage == BAT_READ) {
 		    m5 = HEAPsetpriv(&b->taccelerator, committed, &remap, &reload);
-	 	} else { /* BAT_APPEND || BAT_WRITE */
-		    m5 = HEAPsetmmap(&b->taccelerator, &remap);
+	 	} else if (mode == BAT_READ && b->taccelerator.storage != BAT_READ) { 
+		    m5 = HEAPsetmmap(&b->taccelerator, &remap); 
 		}
 	    }
 	    if (remap && b->batCopiedtodisk && dirty) {
