@@ -445,7 +445,7 @@ No new ones are created. Nothing really happens in the GDK world of BATs.
 	switch(lt->token) {
 	case TOK_ITERTEMP:
 	case TOK_TEMPLATE:
-		if (!lt->yyval.val.pval || (lt->yyval.vtype == TYPE_int &&
+		if (!lt->yyval.val.pval && !(lt->yyval.vtype == TYPE_int &&
 		  (lt->yyval.val.ival > 0) && (lt->yyval.val.ival < MAXPARAMS)))
 		{
 		      	GDKerror("interpret: unresolved reference vtype %d ival %d.\n", lt->yyval.vtype, lt->yyval.val.ival);
