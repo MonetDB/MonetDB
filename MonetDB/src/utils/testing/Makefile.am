@@ -4,8 +4,6 @@
 
 BUILT_SOURCES = 
 
-CFLAGS += -DUNIX -DMX_CXX_SUFFIX=\"$(CXXSFX)\"
-
 EXTRA_DIST =  Mtest.in Mlog.in Mfilter.in MkillUsers.in Mlimit.c
 
 #-version-info $(LT_VERSION)

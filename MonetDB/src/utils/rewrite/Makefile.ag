@@ -1,0 +1,4 @@
+
+BINS = {
+	SOURCES = rewrite.c
+}

@@ -1,0 +1,12 @@
+
+MTSAFE
+
+lib_gdk = { 
+	NAME = bat
+	SOURCES = \
+		gdk.mx gdk_batop.mx gdk_desc.mx gdk_search.mx gdk_tm.mx \
+		gdk_align.mx gdk_bbp.mx gdk_heap.mx gdk_setop.mx gdk_utils.mx \
+		gdk_atoms.mx gdk_compress.mx gdk_qsort.mx gdk_storage.mx \
+		gdk_bat.mx gdk_delta.mx gdk_relop.mx gdk_system.mx
+	HEADERS = h
+}

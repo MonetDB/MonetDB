@@ -1,0 +1,15 @@
+
+INCLUDES = $(top_builddir)/src/gdk
+
+YFLAGS = -d
+
+MTSAFE
+
+lib_monet = { 
+	SOURCES = \
+		monet.mx monet_interpreter.mx monet_queue.mx yytree.mx \
+		monet_client.mx   monet_multiplex.mx    monet_tbl.mx \
+		monet_context.mx  monet_parse.mx        monet_tem.mx \
+		monet_deparse.mx  monet_process.mx      searchpath.mx
+	HEADERS = h
+}
