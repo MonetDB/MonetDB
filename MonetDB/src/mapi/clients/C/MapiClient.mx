@@ -36,23 +36,27 @@ interface to the Monet server. Unlike the Mserver console, the {\tt MapiClient}
 program is intended not only for the database administrator, but to all other
 users. It is more comfortable than the console, since it provides
 a command history and automatic file name completion.
+The default authorization for SQL interaction is the user 'monetdb'.
 
 \begin{verbatim}
-MapiClient [-h HOST] [-p PORT] [-d] [-e] [-u username] [-P password] [inputfile+]
+MapiClient [options] [inputfile+]
 \end{verbatim}
 
 The following options are supported:
-\begin{itemize}
-\item {\em -h -p} Connect to Mserver on machine HOST with tcp port PORT.
-\item {\em -d} Debug internal working.
-\item {\em -c} Use a different configuration script
-\item {\em -s} Execute a single statement
-\item {\em -u -P} Replace interactive authorization by command line.
-\item{\em -b true/false} run in (non-)blocked mode
-\item{\em -h} A synopsis of the command line options
-Can be used in scripts, but is insecure.
-\item{\em -trace} produces a trace of the interaction with the server
-\item{\em -T} produce response timings
+\begin{tabular} {l l l}
+ -b t/f      & --blocked=true/false& blocked mode \\
+ -d          & --debug=[level]  & set debug level \\
+ -D          & --dump           & dump sql database \\
+ -e          & --error          & exit on error \\
+ -h hostname & --host=hostname  & host to connect to \\
+ -l language & --language=lang  & {mal,sql,mil} \\
+ -P passwd   & --passwd=passwd  & password \\
+ -p portnr   & --port=portnr    & port to connect to \\
+ -s stmt     & --statement=stmt & run single statement \\
+ -t          & --trace          & trace Monet interaction \\
+ -T          & --time           & time commands \\
+ -u user     & --user=user      & user id \\
+ -?          & --help           & show this usage message \\
 \end{itemize}
 @
 
@@ -701,7 +705,7 @@ dump_tables(Mapi mid)
 }
 
 static char *
-simple_prompt(const char *prompt, int maxlen, int echo)
+simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 {
 	int length = 0;
 	char *destination = NULL;
@@ -730,7 +734,9 @@ simple_prompt(const char *prompt, int maxlen, int echo)
 	}
 
 	if (prompt) {
-		fputs(prompt, termout);
+		if( def)
+			fprintf(termout,"%s(%s):",prompt,def);
+		else	fprintf(termout,"%s:",prompt);
 		fflush(termout);
 	}
 #ifdef HAVE_TERMIOS_H
@@ -769,6 +775,7 @@ simple_prompt(const char *prompt, int maxlen, int echo)
 	if (termout != stdout)
 		fclose(termout);
 #endif
+	if( destination[0]==0 && def) strcpy(destination,def);
         return destination;
 }
 
@@ -811,6 +818,7 @@ main(int argc, char **argv)
 	char *command = NULL;
 	int dodump = 0;
 	int trace = 0;
+	int guest = 0;
 	int linemode = 1;
 	int c;
 	Mapi mid;
@@ -845,12 +853,15 @@ main(int argc, char **argv)
 			config = optarg;
 			break;
 		case 'l':
+			guest= !( user!= NULL || passwd!=NULL);
 			language = optarg;
 			break;
 		case 'u':
+			guest= 0;
 			user = optarg;
 			break;
 		case 'P':
+			guest= 0;
 			passwd = optarg;
 			break;
 		case 'h':
@@ -926,10 +937,12 @@ main(int argc, char **argv)
 	}
 
 	if (strcmp(language, "sql") == 0) {
+		if (guest) user= "monetdb"; else
 		if (user == NULL)
-			user = simple_prompt("User: ", BUFSIZ, 1);
+			user = simple_prompt("User ", BUFSIZ, 1, "monetdb");
+		if (guest) passwd= "monetdb"; else
 		if (passwd == NULL)
-			passwd = simple_prompt("Password: ", BUFSIZ, 0);
+			passwd = simple_prompt("Password ", BUFSIZ, 0, "monetdb");
 	}
 
 	mid = mapi_connect(host, port, user, passwd, language);
