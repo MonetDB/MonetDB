@@ -148,7 +148,7 @@ while test $# -gt 0; do
         ;;
 
     --classpath)
-        echo 	$pkglibdir/java/mapi.jar
+        echo 	$pkgdatadir/lib/mapi.jar
         ;;
 
     *)
