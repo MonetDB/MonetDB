@@ -210,6 +210,25 @@ main(int ac, char **av)
 
 	ws->close(ws);
 	ws->destroy(ws);
+
+/*
+libstream.so requires GDK{realloc,malloc,free}  and they are provided by
+gdk.[co], here. 
+Intel's "C++ Compiler for 32-bit applications, Version 5.0.1 Build
+010730D0", however, doesn't see the implementations of
+GDK{realloc,malloc,free}, and complains about "undefined references in
+libstream.so", unless there are references to GDK{realloc,malloc,free}
+in main(). Hence, we add such "fake" references, here.
+(See also the "alloca-story" in sql_client.)
+*/
+#if ( defined(__INTEL_COMPILER) && (!defined(STATIC)) )
+	if(0){
+		(void)GDKrealloc(0,0);
+		(void)GDKmalloc(0);
+		(void)GDKfree(0);
+	}
+#endif
+
 	return 0;
 } /* main */
 
