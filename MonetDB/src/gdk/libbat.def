@@ -17,6 +17,7 @@ EXPORTS
 	BATrcopy
 	BATmark
 	BATnumber
+	BATgroup
 	BATload
 	BATload_intern
 	BATsave

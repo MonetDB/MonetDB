@@ -1411,6 +1411,7 @@ gdk_export BAT* 		BATcopy   (BAT *b);
 gdk_export BAT* 		BATrcopy  (BAT *b); 
 gdk_export BAT*		BATmark   (BAT *b, oid base); 
 gdk_export BAT*		BATnumber (BAT *b); 
+gdk_export BAT*		BATgroup (BAT *b, int start, int incr, int grpsize); 
 @-
 Retain old-style source-level funcionality where the BAT reversal 
 induced a state change of the BAT parameter to it.
