@@ -179,30 +179,32 @@ comment "Returns physical copy of a BAT.";
 command sort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address ALGsort
 comment "Returns a BAT copy sorted on the head column.";
-command sort_reverse( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+command tsort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address ALGsort_rev
 comment "Returns a BAT copy sorted on the tail column.";
-
 command htsort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address ALGhtsort
 comment "Returns a lexicographically sorted copy.";
+
 @+ Set operations
 Sets in Monet can be viewed in two ways:
 (1) by looking at both columns of a BAT together (Set-, or s-operators).
 (2) by looking at the head column only (Key- or k-operators).
-For this reason, all standard set operations come in two flavors:
-k-@emph{operand} series, which look only at the head column, and
+(3) by looking at the tail column only (Tail key- or t-operators).
+For this reason, all standard set operations come in three flavors:
+k-@emph{operand} series, which look only at the head column, 
+t-@emph{operand} series, which look only at the tail column, and
 s-@emph{operand} series, that look at the whole BUN.
 
 @noindent Operands provided are:
 @itemize
-@item [s,k]unique(bat[:any$1,:any$2]) :bat[:any$1,:any$2]
+@item [s,k,t]unique(bat[:any$1,:any$2]) :bat[:any$1,:any$2]
 produces a copy of the bat, with double elimination
-@item [s,k]union(bat[:any$1,:any$2],bat[:any$1,:any$2]) :bat[:any$1,:any$2]
+@item [s,k,t]union(bat[:any$1,:any$2],bat[:any$1,:any$2]) :bat[:any$1,:any$2]
 bat union.
-@item [s,k]diff(bat[:any$1,:any$2],bat[:any$1,:any$2]) :bat[:any$1,:any$2]
+@item [s,k,t]diff(bat[:any$1,:any$2],bat[:any$1,:any$2]) :bat[:any$1,:any$2]
 bat difference.
-@item [s,k]intersection(bat[:any$1,:any$2],bat[:any$1,:any$2]) :bat[:any$1,:any$2]
+@item [s,k,t]intersection(bat[:any$1,:any$2],bat[:any$1,:any$2]) :bat[:any$1,:any$2]
 bat intersection.
 @end itemize
 Implementations typically take two forms: if the input relation(s) is/are
@@ -220,6 +222,8 @@ Operations with double-elimination can be formed by performing
 The kintersect(l,r) is used also as implementation for the
 @emph{semijoin()}.
 
+The t-@emph{operand} series are cast into a k-@emph{operand}
+expression enclosing it with a BATmirror.
 @- Bun-unique elements
 @mal
 command unique (b:bat[:any$1,:any$2] ) :bat[:any$1,:any$2] 
@@ -234,16 +238,14 @@ comment "Select unique tuples from the input BAT. Double elimination is
 command kunique ( b:bat[:any$1,:any$2] ) :bat[:any$1,:any$2] 
 address ALGkunique
 comment "Select unique tuples from the input BAT.  Double elimination is 
-        done only looking at the head column. Result is a BAT with
-	property hkeyed() == true.";
+        done only looking at the head column. The result is a BAT with
+		property hkeyed() == true.";
 
-function tunique ( b:bat[:any$1,:any$2] ) 
-		:bat[:any$1,:any$2];
-	r:= bat.reverse(b);
-	u:= kunique(r);
-	k:= bat.reverse(u);
-	return k;
-end tunique;
+command tunique (b:bat[:any$1,:any$2] ) :bat[:any$1,:any$2] 
+address ALGtunique
+comment "Select unique tuples from the input BAT. Double elimination is 
+        done over the BUNs tail. The result is a BAT with property
+		tkeyd()== true";
 
 @- Bun-intersecting elements
 @mal
@@ -256,8 +258,8 @@ address ALGsintersect
 comment "Returns the intersection taken over *both* columns of two BATs. 
         Results in all BUNs of 'left' that are also in 'right'. Does *not* 
         do double-elimination over the 'left' BUNs, If you want this, use:
-	 'sintersect(left.sunique,right.sunique)' 
-	or: 'sintersect(left,right).sunique'.";
+	 'sintersect(sunique(left),sunique(right))' 
+	or: 'sunique(sintersect(left,right))'.";
 
 @- Head-intersecting elements (a.k.a. semijoin)
 @mal
@@ -267,9 +269,8 @@ address ALGsemijoin
 comment "Returns the intersection taken over only the *head* columns of 
         two BATs.  Results in all BUNs of 'left' that are also in 'right'. 
         Does *not* do double-elimination over the 'left' BUNs. 
-	If you want this, use:
-	 'kintersect(left.kunique,right.kunique)' 
-	or: 'kintersect(left,right).kunique'.";
+		If you want this, use: 'kintersect(kunique(left),kunique(right))' 
+	or: 'kunique(kintersect(left,right))'.";
 
 command semijoin( left:bat[:void,:any$2], right:bat[:oid,:any] ) 
 		:bat[:oid,:any$2] 
@@ -282,9 +283,8 @@ address ALGsemijoin
 comment "Returns the intersection taken over only the *head* columns of two BATs. 
 	Results in all BUNs of 'left' that are also in 'right'. 
         Does *not* do double- elimination over the 'left' BUNs.
-	If you want this, use:
-	 'kintersect(left.kunique,right.kunique)' 
-	or: 'kintersect(left,right).kunique'.";
+		If you want this, use: 'kintersect(kunique(left),kunique(right))' 
+	or: 'kunique(kintersect(left,right))'.";
 @- Bun-differing elements
 @mal
 command diff( left:bat[:any$1,:any$2], right:bat[:any$1,:any$2] ) 
@@ -1829,6 +1829,18 @@ str ALG@1(int *result, int* bid, int *param) {
 @:ALGbinaryint(sample)@
 
 /* add item missing in the kernel */
+str ALGtunique(int *result, int *bid) {
+	BAT *b,*bn;
+	@:getBATdescriptor(result,bid,b,tunique)@
+	CMDkunique(&bn,BATmirror(b));
+	if( bn ) {
+		bn= BATsetaccess(BATmirror(bn),1);
+		BBPfix(*result = bn->batCacheid);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("algebra.tunique", "GDKerror");
+}
+
 str ALGhtsort(int *result, int *lid ) {
 	BAT *b, *bc, *bk, *bn= NULL;
 	size_t cnt;
