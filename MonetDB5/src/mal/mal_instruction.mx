@@ -1491,8 +1491,7 @@ void setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe)
         GDKwarning("setArgType:array bound error\n");
         return;
     }
-    getDestVar(p) = i;
-    mb->var[getDestVar(p)]->type = tpe;
+    mb->var[getArg(p,i)]->type = tpe;
 }
 void setReturnArgument(InstrPtr p, int i)
 {

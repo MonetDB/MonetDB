@@ -488,8 +488,8 @@ int parseTypeId(Client cntxt, int defaultType)
     return defaultType;
 }
 
-int typeElm(Client cntxt){
-    int type= parseTypeId(cntxt,-1);
+int typeElm(Client cntxt, int def){
+    int type= parseTypeId(cntxt,def);
     int k;
     if( type == TYPE_any && (k= typeAlias(cntxt)) >=0)
             setAnyTailIndex(type,k);
@@ -726,7 +726,7 @@ We simply keep track of the number of arguments added and
 during the final phase reshuffle the return values to the beginning (?)
 */
     skipSpace(cntxt);
-    type= typeElm(cntxt);
+    type= typeElm(cntxt,-1);
     if( type >=0 ){
         setVarType(curBlk,curInstr->argv[0],type);
         if( isPolymorphic(type))
@@ -790,7 +790,7 @@ The common theme in definitions is to parse the argument list.
     if( l>0)
         arg = idCopy(cntxt,l);
     else arg= 0;
-    type= typeElm(cntxt);
+    type= typeElm(cntxt,-1);
     if( arg == 0){
          varid= newTmpVariable(curBlk,TYPE_any);
     } else varid= newVariable(curBlk,arg,type);
@@ -1037,7 +1037,7 @@ void parseAssign(Client cntxt, int cntrl)
                 return;
             }
             @:GETvariable@
-            type= parseTypeId(cntxt,-1);
+            type= typeElm(cntxt,-1);
             if( type>0) setVarType(curBlk,varid,type);
             /* check for any properties */
             @:propList(varid)@
@@ -1079,7 +1079,7 @@ void parseAssign(Client cntxt, int cntrl)
                 cntxt->nxt=v;
                 @:GETvariable@
                 curInstr->argv[0]= varid;
-                type= parseTypeId(cntxt,-1);
+                type= typeElm(cntxt,-1);
                 if( type>0) setVarType(curBlk,varid,type);
                 /* check for any properties */
                 @:propList(varid)@
@@ -1139,7 +1139,7 @@ This code is used in both positions of the expression
     if( (i= cstLength(cntxt,&lt))){
         str bak= cntxt->nxt;
         v= cstCopy(cntxt,i);
-        i= parseTypeId(cntxt,-1);
+        i= typeElm(cntxt,-1);
         if(i>=0) {
             int newlength = cntxt->nxt - bak;
             lt = i;
@@ -1148,19 +1148,23 @@ This code is used in both positions of the expression
             cntxt->nxt = bak;
             v= idCopy(cntxt,newlength);
         }
+        if( isPolymorphic(lt) ){
+            GDKerror("Constant can not be polymorphic\n");
+            lt= TYPE_any;
+        }
         i= newConstant(curBlk,lt,v,TRUE);
         curInstr= pushArgument(curBlk,curInstr,i);
         @1;
     } else 
     if( (v= charCst(cntxt)) ){
-        lt = parseTypeId(cntxt,TYPE_chr);
+        lt = typeElm(cntxt,TYPE_chr);
         i= newConstant(curBlk,lt,v,TRUE);
         curInstr= pushArgument(curBlk,curInstr,i);
         @1;
     } else 
     if( (i = stringLength(cntxt)) ){
         v= strCopy(cntxt,i);
-        lt= parseTypeId(cntxt,TYPE_str);
+        lt= typeElm(cntxt,TYPE_str);
         i= newConstant(curBlk,lt,v,FALSE);
         curInstr= pushArgument(curBlk,curInstr,i);
         @1;
@@ -1174,13 +1178,13 @@ The parameter of parseArguments is the return value of the enclosing function.
         if( (i= idLength(cntxt))){
             if( (idx=findVariableLength(curBlk,cntxt->nxt,i)) == -1){
                 v= idCopy(cntxt,i);
-                i= parseTypeId(cntxt,TYPE_any);
+                i= typeElm(cntxt,TYPE_any);
                 idx = newVariable(curBlk, v, i);
                 setVarInitialized(curBlk,idx);
                 @:propList(idx)@
             } else {
                 advance(cntxt,i);
-                i = parseTypeId(cntxt,-1);
+                i = typeElm(cntxt,-1);
                 if(i>=0 && getVarType(curBlk,idx)!= i){
                     parseError(cntxt,"incompatible type\n");
                     return @1;
@@ -1190,7 +1194,7 @@ The parameter of parseArguments is the return value of the enclosing function.
             curInstr= pushArgument(curBlk,curInstr,idx);
         } else 
         if( *cntxt->nxt==':' ){
-            i = parseTypeId(cntxt,TYPE_any);
+            i = typeElm(cntxt,TYPE_any);
             idx= newTypeVariable(curBlk, i );
             @:propList(idx)@
             curInstr= pushArgument(curBlk,curInstr,idx);

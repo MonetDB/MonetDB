@@ -401,8 +401,11 @@ This piece of code may be shared by the separate binder
         case COMMANDsymbol: 
             p->token = CMDcall; 
             p->fcn = getSignature(s)->fcn;
-            if( p->fcn == 0) 
+            if( p->fcn == 0) {
                 p->typechk= TYPE_UNKNOWN;
+                mb->errors++;
+                return -3;
+            }
             break;
         case PATTERNsymbol: 
             p->token = PATcall; 
@@ -440,7 +443,7 @@ on a user-supplied function [todo].
         p->afterCall= (MALfcn) batAfterCall;
         garbageControl(mb,getArg(p,0)) = TRUE;
     }
-    else if( s1 != TYPE_any && ATOMstorage(s1)== TYPE_str){
+    else if( !isPolyType(s1)  && ATOMstorage(s1)== TYPE_str){
         @:chkMultiple@
         p->beforeCall= (MALfcn)strBeforeCall;
         p->afterCall= (MALfcn) strAfterCall;

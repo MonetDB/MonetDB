@@ -46,7 +46,7 @@ a collection of query optimizer transformers (QOT),
 each targeted at a specific task.
 Furthermore, they are assembled in scenarios to support specific application
 domains or achieve a desired behavior. Such scenarios are selected on a
-session bases, a query basis, or dynamically at
+session basis, a query basis, or dynamically at
 runtime; they are part of the query plan.
 
 The query transformer list below is under consideration for development.

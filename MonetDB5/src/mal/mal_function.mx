@@ -315,16 +315,18 @@ a BAT.
 @{
 @c
 void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
-    int i,x;
+    int j,i,x,y;
 #ifdef DEBUG_MAL_FCN
-    stream_printf(GDKout,"replace type variable %d by type %s\n",v,
+    stream_printf(GDKout,"replace type $%d by type %s\n",v,
         getTypeName(t));
 #endif
+    for(j=0; j<mb->stop; j++){
+    p= getInstrPtr(mb,j);
+#ifdef DEBUG_MAL_FCN
+        printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif 
     for(i=0;i<p->argc; i++)
     if( isPolymorphic(x= getArgType(mb,p,i))) {
-#ifdef DEBUG_MAL_FCN
-        stream_printf(GDKout," %d x= %s polymorphic\n",i,getTypeName(x));
-#endif 
         if( isaBatType(x)){
             int head,tail;
             int hx,tx;
@@ -340,18 +342,29 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
                 tx= 0;
                 tail = t;
             }
-            x= newBatType(head,tail);
-            setAnyHeadIndex(x,hx);
-            setAnyTailIndex(x,tx);
-            setArgType(mb,p,i,x);
+            y= newBatType(head,tail);
+            setAnyHeadIndex(y,hx);
+            setAnyTailIndex(y,tx);
+            setArgType(mb,p,i,y);
+#ifdef DEBUG_MAL_FCN
+        stream_printf(GDKout," %d replaced %s->%s \n",i,getTypeName(x),getTypeName(y));
+#endif 
         } else
-        if( getTailIndex(x) == v){
+        if(v>0 &&  getTailIndex(x) == v){
+#ifdef DEBUG_MAL_FCN
+        stream_printf(GDKout," replace x= %s polymorphic\n",getTypeName(x));
+#endif 
             setArgType(mb,p,i,t);
         } 
+#ifdef DEBUG_MAL_FCN
+        else 
+        stream_printf(GDKout," non x= %s %d\n",getTypeName(x),getTailIndex(x));
+#endif 
     }
 #ifdef DEBUG_MAL_FCN
-    else    stream_printf(GDKout," %d x= %s \n",i,getTypeName(x));
+        printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif 
+    }
 }
 @-
 Upon cloning a function we should remove all the polymorphic flags.
@@ -399,17 +412,18 @@ Symbol  cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
     /* clear type fixations */
     for(i=0;i< new->def->vtop; i++)
         new->def->var[i]->fixtype=0;
-    new->def->errors= 0;
     /* check for errors after fixation , TODO*/
     /* beware, we should now ignore any cloning */
-    chkProgram(scope,new->def);
-    if( new->def->errors){
-        str err;
-        GDKerror("Error in cloned function\n");
-        err= function2str(new->def,LIST_MAL_ALL);
-        GDKerror("%s",err);
-        GDKfree(err);
-        showErrors();
+    if(proc->def->errors == 0) {
+        chkProgram(scope,new->def);
+        if( new->def->errors){
+            str err;
+            GDKerror("Error in cloned function\n");
+            err= function2str(new->def,LIST_MAL_ALL);
+            GDKerror("%s",err);
+            GDKfree(err);
+            showErrors();
+        }
     }
 #ifdef DEBUG_CLONE
     stream_printf(GDKout,"newly cloned function added to %s %d \n",scope->name,i);

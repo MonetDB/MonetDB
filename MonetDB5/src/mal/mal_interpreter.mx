@@ -1035,7 +1035,7 @@ The policy is to pass the first recognized exception to a context
 in which it can be handled.
 @{
 @= exceptionTypeTest
-if( pci->typechk != TYPE_UNKNOWN) 
+if( pci->typechk == TYPE_FIXED ) 
     /* mostly true */ ;
 else {
     @:dynamicTypeCheck@
