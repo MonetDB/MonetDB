@@ -83,20 +83,14 @@ extern int errno;                       /* pass errors  */
 char *program;                          /* my name */
 
 #define EXIT(x)	{ exit(x); }
-#undef max
-#define max(a,	b)       ((a)>(b)?(a):(b))
 #define LINEMODE	23
 #define BLOCKMODE	32
-#define MONETPROMPT	1
 
 FILE	*toConsole;
-int	MonetId;
-int	MonetTrace	= 0;
 char 	*message	= 0;
 int 	mode		= LINEMODE;
-char*	sentinel = "Mclient~sentinel"; 
-int	sessionkey	= 0;
-int	is_chrsp		= 0;
+char*	sentinel 	= "Mclient~sentinel"; 
+int	is_chrsp	= 0;
 
 
 int doRequest(Msession mid, char *buf ){
@@ -311,6 +305,7 @@ int main(int argc, char **argv) {
 	char 	user[80];
 	char 	address[80]	= ":50000"; 
         Msession mid;
+	int	sessionkey	= 0;
 
 	toConsole = stdout;
 	fstat(fileno(stdin),&st);

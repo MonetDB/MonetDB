@@ -181,6 +181,7 @@ be notified, and {\bf no} BAT will have an entry for the tuple.
 @+ Implemenation
 @c
 #include <monet.h>
+#include "rootdir.h"
 @c
 #define CHUNK	100
 

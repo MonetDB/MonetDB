@@ -9,6 +9,8 @@ AC_CANONICAL_HOST
 
 HOST=[$host]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
+PREFIX=[$prefix]
+AC_DEFINE_UNQUOTED(MONET_PREFIX, "$PREFIX", [directory prefix])
 
 dnl we use LEXLIB=-ll because this is usually correctly installed 
 dnl and -lfl usually only in the 32bit version
@@ -57,6 +59,8 @@ dnl AC_PROG_CC_STDC
 AC_PROG_LN_S
 AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
+AC_CHECK_PROG(LATEX,latex,latex)
+AC_CHECK_PROG(PDFLATEX,pdflatex,pdflatex)
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH:/bin:/usr/bin:/usr/local/bin)
 
 dnl to shut up automake (.m files are used for mel not for objc)
