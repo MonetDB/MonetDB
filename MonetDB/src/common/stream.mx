@@ -197,10 +197,10 @@ stream_export buffer *stream_get_buffer(stream *s);
    block. Major blocks can be used to synchronize the communication.
    Example server sends some reply, ie a major block consisting of
    verious minor blocks. The header of the major block can contain
-   special info which the client can interpert.
+   special info which the client can interpret.
 
    Each read attempt tries to return the number of bytes. Once a lower number
-   of bytes can be read the end of the major block if found. The next
+   of bytes can be read the end of the major block is found. The next
    read will then start with a new major block.
  */
 stream_export stream *block_stream(stream *s);
