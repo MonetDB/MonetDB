@@ -460,7 +460,7 @@ the memory consumption.
 @c
 /* default setting to administer everything */
 #define GDK_MEM_NULLALLOWED
-#ifndef DDI_PATCH
+#ifdef DDI_PATCH
 #define GDK_MEM_KEEPHISTO
 #define GDK_VM_KEEPHISTO
 #endif
