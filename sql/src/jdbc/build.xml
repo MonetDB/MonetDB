@@ -86,16 +86,15 @@
   -->
   <target name="driver" depends="prepare,check_driver" unless="driver.uptodate">
     <!-- Some defaults -->
-    <filter token="MAJORVERSION" value="${major}" />
-    <filter token="MINORVERSION" value="${minor}" />
-    <filter token="DEF_MPORT" value="${def_mport}" />
-    <filter token="VERSIONSUFFIX" value="${version_suffix}" />
+    <filter token="JDBC_MAJOR" value="${JDBC_MAJOR}" />
+    <filter token="JDBC_MINOR" value="${JDBC_MINOR}" />
+    <filter token="JDBC_DEF_PORT" value="${JDBC_DEF_PORT}" />
+    <filter token="JDBC_VER_SUFFIX" value="${JDBC_VER_SUFFIX}" />
 
-     <fail unless="major" message="'major' undefined. Please follow the directions in build.properties."/>
-     <fail unless="minor" message="'minor' undefined. Please follow the directions in build.properties."/>
-     <fail unless="def_mport" message="'def_mport' undefined. Please follow the directions in build.properties."/>
-     <fail unless="enable_debug" message="'enable_debug' undefined. Please follow the directions in build.properties."/>
-     <fail unless="version_suffix" message="'version_suffix' undefined. Please follow the directions in build.properties."/>
+     <fail unless="JDBC_MAJOR" message="'JDBC_MAJOR' undefined. Please follow the directions in build.properties."/>
+     <fail unless="JDBC_MINOR" message="'JDBC_MINOR' undefined. Please follow the directions in build.properties."/>
+     <fail unless="JDBC_DEF_PORT" message="'JDBC_DEF_PORT' undefined. Please follow the directions in build.properties."/>
+     <fail unless="JDBC_VER_SUFFIX" message="'JDBC_VER_SUFFIX' undefined. Please follow the directions in build.properties."/>
 
     <!-- Put a check for the current version here -->
 
@@ -105,7 +104,7 @@
           tofile="${package}/MonetDriver.java"
           filtering="yes" />
 
-    <echo message="Configured build for the ${major}.${minor} ${version_suffix} edition driver" />
+    <echo message="Configured build for the ${JDBC_MAJOR}.${JDBC_MINOR} ${JDBC_VER_SUFFIX} edition driver" />
   </target>
 
 

@@ -17,24 +17,24 @@ import java.util.Properties;
  * This Driver supports Monet database URLs. MonetDB URLs are defined as:<br />
  * <tt>jdbc:monetdb://&lt;host&gt;[:&lt;port&gt]/&lt;database&gt;</tt><br />
  * where [:&lt;port&gt] denotes that a port is optional. If not given the default
- * of which @DEF_MPORT@ will be used.
+ * of which @JDBC_DEF_PORT@ will be used.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version @MAJORVERSION@.@MINORVERSION@ (@VERSIONSUFFIX@)
+ * @version @JDBC_MAJOR@.@JDBC_MINOR@ (@JDBC_VER_SUFFIX@)
  */
 public class MonetDriver implements Driver {
 	// the url kind will be jdbc:monetdb://<host>[:<port>]/<database>
 	// Chapter 9.2.1 from Sun JDBC 3.0 specification
 	private static final String MONETURL = "jdbc:monetdb://";
 	// this is a real beta release (we decide not to follow Sun's rule here)
-	private static final int DRIVERMAJOR = @MAJORVERSION@;
-	private static final int DRIVERMINOR = @MINORVERSION@;
-	private static final String DRIVERVERSIONSUFFIX = "@VERSIONSUFFIX@";
+	private static final int DRIVERMAJOR = @JDBC_MAJOR@;
+	private static final int DRIVERMINOR = @JDBC_MINOR@;
+	private static final String DRIVERVERSIONSUFFIX = "@JDBC_VER_SUFFIX@";
 	// I don't dare to even think of calling it compliant yet ;)
 	private static final boolean MONETJDBCCOMPLIANT = false;
 
 	// Monet default port to connect to
-	private static final int PORT = @DEF_MPORT@;
+	private static final int PORT = @JDBC_DEF_PORT@;
 
 	// Monet prompts
 	final static String prompt1 = "" + (char)1 + (char)1;
@@ -160,7 +160,7 @@ public class MonetDriver implements Driver {
 	 */
 	public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) {
 		if (!acceptsURL(url)) return(null);
-		
+
 		DriverPropertyInfo[] dpi = new DriverPropertyInfo[2];
 		dpi[0] = new DriverPropertyInfo("user", info.getProperty("user"));
 		dpi[0].required = true;
@@ -169,7 +169,7 @@ public class MonetDriver implements Driver {
 		dpi[1] = new DriverPropertyInfo("password", info.getProperty("password"));
 		dpi[1].required = true;
 		dpi[1].description = "The password to use when authenticating on the database";
-		
+
 		return(dpi);
 	}
 
@@ -251,7 +251,7 @@ public class MonetDriver implements Driver {
 			return(Types.OTHER);
 		}
 	}
-	
+
 	/**
 	 * Returns a touched up identifying version string of this driver.
 	 *
