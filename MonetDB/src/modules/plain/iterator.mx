@@ -199,7 +199,7 @@ typedef union {
     SelectHandle sel;
 } OperatorHandle;
 
-typedef struct _ITER {
+struct _ITER {
     str        		name;
     int        		tuples_seen;
     /* result tuple buffer (BAT slice of max chunksize) */
