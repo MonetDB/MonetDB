@@ -139,6 +139,7 @@ extern void mil_flushbuffer();
 extern str mil_lastline();
 extern long mil_position();
 extern int mil_skipcomment();
+extern int str_escaped();
 extern void mil_push(str s);	/* used in src/mil/M2m.c */
 extern int mil_getch();
 extern int yylex();
@@ -260,7 +261,7 @@ needed for tracing the parser.
 (":"{OPER}"=")	{	yytext[yyleng]=0;
 			Vector(TOK_OPERATOR, TYPE_str, yytext,yyleng); 
 		}
-{OPER}		{	yytext[yyleng]=0;
+{OPER}+		{	yytext[yyleng]=0;
 			if( yyleng==1 && yytext[0]=='='){
 				yytext[1]='=';
 				yytext[2]=0;
@@ -288,13 +289,10 @@ needed for tracing the parser.
 ("-")?{D}+{E}         { Vector(TOK_CONSTANT, TYPE_flt,  yytext, yyleng);         }
 "'"\\0{O}({O})?({O})?"'" {Vector(TOK_CONSTANT, TYPE_chr, yytext, yyleng);        }
 \"[^\n"]*\"		{
-                        if ( yytext[yyleng-2] == '\\') {
-				if( yytext[yyleng-3]=='\\'){
-                                Vector(TOK_CONSTANT, TYPE_str, yytext, yyleng);
-				} else {
+			yytext[yyleng]=0;
+			if( str_escaped(yytext)){
 					unput('"');
 					yymore(); 
-				}
                         } else {
                                 Vector(TOK_CONSTANT, TYPE_str, yytext, yyleng);
 			}					                     }
@@ -316,6 +314,14 @@ int mil_skipcomment() {
 	char c; 
 	while ((c=input()) && (c != '\n')); 
 	return yylex();
+}
+int str_escaped(char *s){
+	int quoted = 0;
+	for(; s && *s; s++){
+		quoted=  *s== '\\';
+		if( quoted) s++;
+	}
+	return quoted;
 }
 int yywrap(){ return 1;}
 
@@ -787,10 +793,12 @@ stmt: ';'
     |   expression TOK_ITERATION_PAR expression ']' iterator
 	{ char local[100];
 	  $2.val= newName();
+	  sprintf(local,"%s := bunStream(%s,%sH,%sT)",
+			$2.val,$4.val,$2.val,$2.val);
 	  pushIterator($2.val);
+	  $4.val= GDKstrdup(local);
 #ifdef M2Moffline
-	rem; printf("barrier\t%s := bunStream(%s,%sH,%sT);\n",
-		$2.val,$4.val,$2.val,$2.val);
+	rem; printf("barrier\t%s;\n", local);
 #else
 	TODO
 #endif
@@ -800,7 +808,7 @@ stmt: ';'
 	stmt
 	{
 #ifdef M2Moffline
-	  printf("redo\t%s;\n", $2.val);
+	  printf("redo\t%s;\n", $4.val);
 	  printf("exit\t%s;\n",$2.val);
 #else
 	TODO
@@ -811,9 +819,11 @@ stmt: ';'
 	{ char local[100];
 	  $2.val= newName();
 	  pushIterator($2.val);
+	  sprintf(local,"%s := bunStream(%s,%sH,%sT)",
+			$2.val,$1.val,$2.val,$2.val);
+	$1.val= GDKstrdup(local);
 #ifdef M2Moffline
-	rem; printf("barrier\t%s := bunStream(%s,%sH,%sT);\n",
-		$2.val,$1.val,$2.val,$2.val);
+	rem; printf("barrier\t%s;\n",local);
 #else
 	TODO
 #endif
@@ -823,7 +833,7 @@ stmt: ';'
 	stmt
 	{
 #ifdef M2Moffline
-	  printf("redo\t%s;\n", $2.val);
+	  printf("redo\t%s;\n", $1.val);
 	  printf("exit\t%s;\n",$2.val);
 #else
 	TODO
