@@ -229,12 +229,16 @@ static void MT_alloc_init(void);
 # include <fcntl.h>
 #endif
 
-#ifndef HAVE_MADVISE
-# define madvise(x,y,z)	0
-# ifndef MADV_RANDOM
-#  define MADV_RANDOM	0
-# endif
-#endif 
+#ifdef HAVE_POSIX_MADVISE
+# define madvise posix_madvise
+#else
+# ifndef HAVE_MADVISE
+#  define madvise(x,y,z)	0
+#  ifndef MADV_RANDOM
+#   define MADV_RANDOM	0
+#  endif
+# endif 
+#endif
 
 #ifndef MAP_NORESERVE
 # define MAP_NORESERVE 		MAP_PRIVATE
