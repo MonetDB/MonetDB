@@ -51,43 +51,43 @@ that return a BAT.
 module algebra;
 
 command exist(b:bat[:any$1,:any], h:any$1):bit 
-address CMDexist
+address ALGexist
 comment "Returns whether 'h' occurs as a head 
 	value in b.";
 
 command exist(b:bat[:any$1,:any$2], 
 		h:any$1, t:any$2):bit 
-address CMDexistBUN
+address ALGexistBUN
 comment "Returns true when 'h,t' occurs as a 
 	bun in b.";
 
 command find(b:bat[:any$1,:any$2], 
 	h:any$1):any$2 
-address CMDfind
+address ALGfind
 comment "Returns the tail value 't' for which 
 	some [h,t] BUN exists in b.  If no such
 	BUN exists, an error occurs." ;
 
 command position(b:bat[:any$1,:any],
 		v:any$1):int
-address CMDposition
+address ALGposition
 comment "Returns BAT position [0.. b.count]
 	of 'v' in the head column of b. It
 	Return an error if 'v' does not exist.";
 
 command position(b:bat[:any$1,:any$2], 
 		val:any$1, tval:any$2) :int 
-address CMDpositionBUN
+address ALGpositionBUN
 comment "Returns the position of the value pair
 	 It returns an error if 'val' does not 
 	exist.";
 
 command fetch(b:bat[:any,:any$1], x:oid) :any$1 
-address CMDfetchoid
+address ALGfetchoid
 comment "Returns the tail value of the BUN at 
 	 x-th position with 0 <= x < b.count";
 command fetch(b:bat[:any,:any$1], x:lng) :any$1 
-address CMDfetch
+address ALGfetch
 comment "Returns the tail value of the BUN at 
 	 x-th position with 0 <= x < b.count";
 
@@ -97,26 +97,26 @@ comment "Returns the tail value of the BUN at
 command fetch(b:bat[:any$1,:any$2], 
 		s:bat[:int,:any])
 	:bat[:any$1,:any$2] 
-address CMDfetchbat
+address ALGfetchbat
 comment "Returns a positional selection of b 
 	by the integer head values of s";
 command fetch(b:bat[:any$1,:any$2],
 		s:bat[:lng,:any] ) 
 	:bat[:any$1,:any$2] 
-address CMDfetchbat
+address ALGfetchbat
 comment "Returns a positional selection of b 
 	by the integer head values of s";
 command fetch(b:bat[:any$1,:any$2],
 		s:bat[:oid,:any]) 
 	:bat[:any$1,:any$2] 
-address CMDfetchbat
+address ALGfetchbat
 comment "Returns a positional selection of b 
 	by the oid head values of s";
 @- Range selections
 @mal
 command select (b:bat[:any$1,:any$2], low:any$2, 
 	high:any$2) :bat[:any$1,:any$2] 
-address CMDselect
+address ALGselect
 comment "Select all BUNs that have tail 
 	values: {v| low <= v <= high}.
 NIL boundary values have a special meaning.
@@ -132,7 +132,7 @@ NOTE 2: as the 'nil' element has no clear place
 	the range select.";
 command select(b:bat[:any$1,:any$2],value:any$2)
 		:bat[:any$1,:any$2] 
-address CMDselect1
+address ALGselect1
 comment "Select all BUNs of a BAT with a certain 
 	tail value. Selection on NIL is also 
 	possible (it should be properly casted, 
@@ -142,11 +142,11 @@ command fragment ( b:bat[:any$1,:any$2],
 		hlow:any$1, hhigh:any$1,
 		tlow:any$2, thigh:any$2 ) 
 	:bat[:any$1,:any$2] 
-address CMDfragment
+address ALGfragment
 comment "Select both on head and tail range.";
 command slice(b:bat[:any$1,:any$2], 
 	x:int, y:int) :bat[:any$1,:any$2] 
-address CMDslice
+address ALGslice
 comment "Return the slice with the BUNs at 
 	position x till y.";
 @- Select and project
@@ -154,52 +154,52 @@ comment "Return the slice with the BUNs at
 command uselect(b:bat[:any$1,:any$2], 
 		low:any$2, high:any$2) 
 	:bat[:any$1,:void] 
-address CMDuselect
+address ALGuselect
 comment "Select on tail, returning only the head 
 	values. SEE ALSO: select(bat,low,high).";
 command uselect(b:bat[:any$1,:any$2], 
 	value:any$2) :bat[:any$1,:void] 
-address CMDuselect1
+address ALGuselect1
 comment "Value select, but returning only the 
 	head values. SEE ALSO:select(bat,val)";
 @- Random sampling
 @mal
 command sample ( b:bat[:any$1,:any$2], num:int ) 
 		:bat[:any$1,:any$2] 
-address CMDsample
+address ALGsample
 comment "Produce a random selection of size 'num' 
 	from the input BAT.";
 @- Substring selection
 @mal
 command like(b:bat[:any$1,:str], substr:str) 
 	:bat[:any$1,:str] 
-address CMDlike
+address ALGlike
 comment "Selects all elements that have 
 	'substr' as in the tail.";
 @+ BAT copying
 @mal
 command copy( b:bat[:any$1,:any$2]) 
 	:bat[:any$1,:any$2] 
-address CMDcopy
+address ALGcopy
 comment "Returns physical copy of a BAT.";
 @- sorted copy
 @mal
 command sort( b:bat[:any$1,:any$2]) 
 	:bat[:any$1,:any$2] 
-address CMDsort
+address ALGsort
 comment "Returns a BAT copy sorted on 
 	the head column.";
 
 #command sort_ht( b:bat[:any$1,:any$2]) 
 #		:bat[:any$1,:any$2] 
-#address CMDsort_ht
+#address ALGsort_ht
 #comment "Returns a lexicographically sorted copy.";
 @- vertical projection
 This operation has been moved to module mal, because it requires access
 the type identifier for the second argument.
 to the context.
 #pattern project( b:bat[:any$1,:any], val:any$2) :bat[:any$1,:any$2] 
-#address CMDproject
+#address ALGproject
 #comment "Fill the tail column with a constant value.";
 @+ Sets
 @T
@@ -252,10 +252,10 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 @mal
 command unique (b:bat[:any$1,:any$2] ) 
 		:bat[:any$1,:any$2] 
-address CMDsunique;
+address ALGsunique;
 command sunique (b:bat[:any$1,:any$2] ) 
 		:bat[:any$1,:any$2] 
-address CMDsunique
+address ALGsunique
 comment "Select unique tuples from the input BAT.
 	Double elimination is done over BUNs as 
 	a whole (head and tail).  Result is a BAT 
@@ -264,7 +264,7 @@ comment "Select unique tuples from the input BAT.
 @mal
 command kunique ( b:bat[:any$1,:any$2] ) 
 		:bat[:any$1,:any$2] 
-address CMDkunique
+address ALGkunique
 comment "Select unique tuples from the input BAT.
 	Double elimination is done only looking 
 	at the head column. Result is a BAT with
@@ -272,7 +272,7 @@ comment "Select unique tuples from the input BAT.
 
 command tunique ( b:bat[:any$1,:any$2] ) 
 		:bat[:any$1,:any$2] 
-address CMDtunique
+address ALGtunique
 comment "Select unique tail tuples from the BAT.
 	Equivalent to revers().kunique() ";
 
@@ -281,11 +281,11 @@ comment "Select unique tail tuples from the BAT.
 command intersect ( left:bat[:any$1,:any$2], 
 		   right:bat[:any$1,:any$2]) 
 		:bat[:any$1,:any$2] 
-address CMDsintersect;
+address ALGsintersect;
 command sintersect ( left:bat[:any$1,:any$2], 
 		right:bat[:any$1,:any$2]) 
 		:bat[:any$1,:any$2] 
-address CMDsintersect
+address ALGsintersect
 comment "Returns the intersection taken over 
 	*both* columns of two BATs. Results in 
 	all BUNs of 'left' that are also in 
@@ -300,7 +300,7 @@ comment "Returns the intersection taken over
 command semijoin( left:bat[:any$1,:any$2], 
 		right:bat[:any$1,:any] ) 
 		:bat[:any$1,:any$2] 
-address CMDsemijoin
+address ALGsemijoin
 comment "Returns the intersection taken over only 
 	the *head* columns of two BATs. Results in 
 	all BUNs of 'left' that are also in 'right'. 
@@ -312,13 +312,13 @@ comment "Returns the intersection taken over only
 command semijoin( left:bat[:void,:any$2], 
 		  right:bat[:oid,:any] ) 
 		:bat[:oid,:any$2] 
-address CMDsemijoin
+address ALGsemijoin
 comment "Patch to enable semijoin over void/oid columns";
 
 command kintersect( left:bat[:any$1,:any$2], 
 		     right:bat[:any$1,:any] ) 
 		:bat[:any$1,:any$2] 
-address CMDsemijoin
+address ALGsemijoin
 comment "Returns the intersection taken over only 
 	the *head* columns of two BATs. Results in 
 	all BUNs of 'left' that are also in 'right'.
@@ -331,11 +331,11 @@ comment "Returns the intersection taken over only
 command diff( left:bat[:any$1,:any$2], 
 		right:bat[:any$1,:any$2] ) 
 		:bat[:any$1,:any$2] 
-address CMDsdiff;
+address ALGsdiff;
 command sdiff( left:bat[:any$1,:any$2], 
 		right:bat[:any$1,:any$2] ) 
 		:bat[:any$1,:any$2] 
-address CMDsdiff
+address ALGsdiff
 comment "Returns the difference taken over 
 	*both* columns of two BATs. Results in 
 	all BUNs of 'left' that are *not* in 
@@ -349,7 +349,7 @@ comment "Returns the difference taken over
 command kdiff ( left:bat[:any$1,:any$2], 
 		right:bat[:any$1,:any] ) 
 		:bat[:any$1,:any$2] 
-address CMDkdiff
+address ALGkdiff
 comment "Returns the difference taken over only 
 	the *head* columns of two BATs.  Results 
 	in all BUNs of 'left' that are *not* in 
@@ -362,11 +362,11 @@ comment "Returns the difference taken over only
 command union ( left:bat[:any$1,:any$2], 
 		right:bat[:any$1,:any$2]) 
 		:bat[:any$1,:any$2] 
-address CMDsunion;
+address ALGsunion;
 command sunion ( left:bat[:any$1,:any$2], 
 		right:bat[:any$1,:any$2]) 
 		:bat[:any$1,:any$2] 
-address CMDsunion
+address ALGsunion
 comment "Returns the union of two BATs; looking 
 	at both columns of both BATs. Results in 
 	all BUNs of 'left' that are  not in 
@@ -380,7 +380,7 @@ comment "Returns the union of two BATs; looking
 command kunion ( left:bat[:any$1,:any$2], 
 		right:bat[:any$1,:any$2])
 		:bat[:any$1,:any$2] 
-address CMDkunion
+address ALGkunion
 comment "Returns the union of two BATs; looking 
 	at head-columns only. Results in all BUNs 
 	of 'left' that are  not in 'right', plus 
@@ -400,7 +400,7 @@ Note that joins over void columns are handled as if they are oids.
 command join( left:bat[:any$1,:any$2], 
 		right:bat[:any$2,:any$3])
 		:bat[:any$1,:any$3] 
-address CMDjoin
+address ALGjoin
 comment "Returns all BUNs, consisting of a 
 	head-value from 'left' and a tail-value 
 	from 'right' for which there are BUNs 
@@ -411,53 +411,53 @@ comment "Returns all BUNs, consisting of a
 command join( left:bat[:any$1,:void], 
 		right:bat[:oid,:any$3])
 		:bat[:any$1,:any$3] 
-address CMDjoin;
+address ALGjoin;
 command join( left:bat[:any$1,:oid], 
 		right:bat[:void,:any$3])
 		:bat[:any$1,:any$3] 
-address CMDjoin;
+address ALGjoin;
 
 command join( left:bat[:any$1,:any$2], 
 		right:bat[:any$2,:any$3],
 		estimate:lng)
 		:bat[:any$1,:any$3] 
-address CMDjoinestimate;
+address ALGjoinestimate;
 command join( left:bat[:any$1,:void], 
 		right:bat[:oid,:any$3],
 		estimate:lng)
 		:bat[:any$1,:any$3] 
-address CMDjoinestimate;
+address ALGjoinestimate;
 command join( left:bat[:any$1,:oid], 
 		right:bat[:void,:any$3],
 		estimate:lng)
 		:bat[:any$1,:any$3] 
-address CMDjoinestimate;
+address ALGjoinestimate;
 
 command fetchjoin ( left:bat[:any$1,:any$2],
 		right:bat[:any$2,:any$3] )
 		:bat[:any$1,:any$3] 
-address CMDfetchjoin
+address ALGfetchjoin
 comment "Hook directly into the fetch 
 	implementation of the join.";
 
 command mergejoin (left:bat[:any$1,:any$2], 
 		right:bat[:any$2,:any$3])
 		:bat[:any$1,:any$3] 
-address CMDmergejoin
+address ALGmergejoin
 comment "Hook directly into the merge 
 	implementation of the join.";
 
 command hashjoin ( left:bat[:any$1,:any$2], 
 		right:bat[:any$2,:any$3])
 		:bat[:any$1,:any$3] 
-address CMDhashjoin
+address ALGhashjoin
 comment "Hook directly into the hash 
 	implementation of the join.";
 
 command indexjoin ( left:bat[:any$1,:any$2], 
 		right:bat[:any$2,:any$3])
 		:bat[:any$1,:any$3] 
-address CMDindexjoin
+address ALGindexjoin
 comment "Hook directly into the index 
 	implementation of the join.";
 
@@ -466,7 +466,7 @@ comment "Hook directly into the index
 command outerjoin( outer:bat[:any$1,:any$2], 
 		inner:bat[:any$2,:any$3]) 
 		:bat[:any$1,:any$3] 
-address CMDouterjoin
+address ALGouterjoin
 comment "Returns all the result of a join, 
 	plus the BUNS formed NIL in the tail 
 	and the head-values of 'outer' whose 
@@ -476,14 +476,14 @@ command outerjoin( outer:bat[:any$1,:any$2],
 		inner:bat[:any$2,:any$3],
 		estimate:lng) 
 		:bat[:any$1,:any$3] 
-address CMDouterjoinestimate
+address ALGouterjoinestimate
 
 @- Theta Join
 @mal
 command thetajoin( left:bat[:any$1,:any$2], 
 		right:bat[:any$2,:any$3],
 		opname:str) :bat[:any$1,:any$3] 
-address CMDthetajoin
+address ALGthetajoin
 comment "Theta join on for 'mode' in { LE, LT, 
 	EQ, GT, GE }.  JOIN_EQ is just the same 
 	as join(). All other options do merge
@@ -495,7 +495,7 @@ command thetajoin( left:bat[:any$1,:any$2],
 		right:bat[:any$2,:any$3],
 		opname:str,estimate:lng) 
 		:bat[:any$1,:any$3] 
-address CMDthetajoinEstimate
+address ALGthetajoinEstimate
 @- Theta Join with inner columns
 @mal
 command theta ( inner_result:bat[:any$2,:any$2],
@@ -503,7 +503,7 @@ command theta ( inner_result:bat[:any$2,:any$2],
 		left:bat[:any$1,:any$2],
 		right:bat[:any$2,:any$3], opname:str )
 				
-address CMDtheta
+address ALGtheta
 comment "Theta join, just as simple thetajoin(l,r), the difference
 is that it returns two values, which are added to the first params
 'inner_result' and 'outer_result', 'inner_result' gets all matching
@@ -515,7 +515,7 @@ command bandjoin( outer:bat[:any$1,:any$2],
 		   inner:bat[:any$2,:any$3],
 		   minus:any$2 , plus:any$2 ) 
 		:bat[:any$1,:any$3] 
-address CMDbandjoin
+address ALGbandjoin
 comment "This is a join() for which the predicate 
 	is that two BUNs match if the left-tail 
 	value is within the range [right-head - 
@@ -529,19 +529,19 @@ initiated OID columns, for representing n-ary (intermediary) relations.
 @- OID head column
 @mal
 command mark( b:bat[:any$1,:any] ) :bat[:any$1,:oid] 
-address CMDmark_default
+address ALGmark_default
 comment "Produces a new BAT with fresh unique OIDs 
 	in the tail.";
 
 command mark( b:bat[:any$1,:any],base:void )
 		:bat[:any$1,:oid] 
-address CMDmark_default
+address ALGmark_default
 comment "Produces a new BAT with fresh unique OIDs 
 	in the tail.";
 
 command mark( b:bat[:any$1,:any], base:oid ) 
 		:bat[:any$1,:oid] 
-address CMDmark
+address ALGmark
 comment "Produces a new BAT with fresh unique dense 
 	sequense of OIDs in the tail that starts 
 	at base (i.e. [base,..base+b.count()-1] ).";
@@ -549,7 +549,7 @@ comment "Produces a new BAT with fresh unique dense
 @mal
 command number( b:bat[:any$1,:any] ) 
 		:bat[:any$1,:int]  
-address CMDnumber
+address ALGnumber
 comment "Produces a new BAT with identical head 
 	column, and consecutively increasing 
 	integers (start at 0) in the tail column.";
@@ -562,7 +562,7 @@ The commands below is temporarilly postponed
 command hashsplit( b:bat[:any$1,:any$2] ,
 		   buckects:int ) 
 		:bat[:int,bat[:any$1,:any$2]] 
-address CMDhashsplit
+address ALGhashsplit
 comment "Split a BAT on tail column according 
 	(hash-value MOD buckets). Returns a 
 	recursive BAT, containing the fragments 
@@ -572,14 +572,14 @@ comment "Split a BAT on tail column according
 command uhashsplit ( b:bat[:any$1,:any$2], 
 		buckets:int ) 
 		:bat[:int,bat[:any$1,:any$2]] 
-address CMDuhashsplit
+address ALGuhashsplit
 comment "Same as hashsplit, but only collect the 
 	head values in the fragments";
 @- Range Split
 command rangesplit ( b:bat[:any$1,:any$2], 
 		ranges:int ) 
 		:bat[:any$2,bat[:any$1,:any$2]] 
-address CMDrangesplit
+address ALGrangesplit
 comment "Split a BAT on tail column in 'ranges' 
 	equally sized consecutive ranges. Returns
 	a recursive BAT, containing the fragments 
@@ -590,7 +590,7 @@ comment "Split a BAT on tail column in 'ranges'
 command urangesplit( b:bat[:any$1,:any$2], 
 		ranges:int ) 
 		:bat[:any$2,bat[:any$1,:void]] 
-address CMDurangesplit
+address ALGurangesplit
 comment "Same as rangesplit, but only collect 
 	the head values in the fragments" ;
 
@@ -599,24 +599,24 @@ These operations examine a BAT, and compute some simple aggregate result
 over it.
 @- BAT size
 @mal
-command count( b:bat[:any,:any] ) :int 
-address CMDcount_bat
+command count( b:bat[:any,:any] ) :lng 
+address ALGcount_bat
 comment "Return the current size (in number of 
 	elements) in a BAT.";
 command count ( b:bat[:any,:any], ignore_nils:bit )
 	:int 
-address CMDcount_nil
+address ALGcount_nil
 comment "Return the number of elements currently 
 	in a BAT
 ignores BUNs with nil-tail iff ignore_nils==TRUE.";
 command topN ( b:bat[:any,:any], top:lng ) :int 
-address CMDtopN
+address ALGtopN
 comment "Trim all but the top N tuples.";
 @- Histogram on Tail
 @mal
 command histogram ( b:bat[:any,:any$2]) 
 		:bat[:any$2,:int] 
-address CMDhistogram
+address ALGhistogram
 comment "Produce a BAT containing the histogram 
 	of the tail values.  bat.histogram() 
 	@= {count}(bat.reverse)";
@@ -625,7 +625,7 @@ comment "Produce a BAT containing the histogram
 command out of order right now. Should become an optimization pattern
 group.count -> histogram(bat.reverse)
 command {count} ( b:bat[:any$2,:any]) :bat[:any$2,int] 
-address CMDhistogram_rev
+address ALGhistogram_rev
 comment "Count the number of groups.
  It has fast implementation: histogram(bat.reverse)";
 
@@ -637,12 +637,12 @@ The type-specific routines defined later are faster, and will
 override these any implementations.
 @mal
 command card ( b:bat[:any,:any] ) :lng 
-address CMDcard
+address ALGcard
 comment "Return the cardinality of the BAT 
 	tail values.";
 
 command size ( b:bat[:any,:any] ) :int 
-address CMDBATsize
+address ALGBATsize
 comment "Return the current size (in number of 
 	elements) of a BAT.";
 
@@ -656,12 +656,12 @@ override these any implementations.
 @- 
 @mal
 command min(b:bat[:any$1,:any$2]):any$2 
-address CMDminany
+address ALGminany
 comment "Give the lowest tail value. Error 
 	on empty BATs.";
 
 command max(b:bat[:any$1,:any$2]):any$2 
-address CMDmaxany
+address ALGmaxany
 comment "Give the highest tail value. Error 
 	on empty BATs.";
 @+ Type-Specific Sum, Prod, Max and Min
@@ -677,10 +677,10 @@ macro):
 @-
 @= sum_definition
 command sum (b:bat[:any,:@1] ) :@2 
-address CMDsum_@1_@2
+address ALGsum_@1_@2
 comment "Gives the sum of all tail values";
 command prod(b:bat[:any,:@1] ) :@2 
-address CMDprod_@1_@2
+address ALGprod_@1_@2
 comment "Gives the produc of all tail values";
 @mal
 @:sum_definition(uchr,uchr)@
@@ -699,7 +699,7 @@ comment "Gives the produc of all tail values";
 @-
 @= aggregate_definition
 command @1 ( b:bat[:any,:@2] ) :@2 
-address CMD@1_@2 comment @3;
+address ALG@1_@2 comment @3;
 @= aggregate
 @:aggregate_definition(@1,uchr,@2)@
 @:aggregate_definition(@1,sht,@2)@
@@ -834,7 +834,7 @@ The routines below assumes that the caller knows what type
 is large enough to prevent overflow.
 
 @= sum_implementation
-str CMDsum_@1_@2(@2* res, int *bid) {
+str ALGsum_@1_@2(@2* res, int *bid) {
 	BAT *b;
         BUN p,q;
         int xx;
@@ -855,7 +855,7 @@ str CMDsum_@1_@2(@2* res, int *bid) {
 }
 
 @= prod_implementation
-int CMDprod_@1_@2(@2* res, BAT *b) {
+int ALGprod_@1_@2(@2* res, BAT *b) {
         BUN p,q;
         int xx;
         @2 result=@3;
@@ -919,7 +919,7 @@ extern ptr BATmax(BAT *b, ptr aggr);
 @:prod_implementation(dbl,dbl,1.0)@
 @-
 @= aggregate_implementation
-str CMDmin_@1(@1* res, int *bid) {
+str ALGmin_@1(@1* res, int *bid) {
         BAT *b;
 	int result = 0;
 	(void) result; /* fool compiler */
@@ -929,7 +929,7 @@ str CMDmin_@1(@1* res, int *bid) {
         if( BATmin(b, res)) return MAL_SUCCEED;
         return throwMessage("algebra.min", "GDKerror");
 }
-str CMDmax_@1(@1* res, int *bid) {
+str ALGmax_@1(@1* res, int *bid) {
         BAT *b;
 	int result= 0;
 	(void) result; /* fool compiler */
@@ -946,13 +946,13 @@ str CMDmax_@1(@1* res, int *bid) {
 @:aggregate_implementation(dbl)@
 @:aggregate_implementation(lng)@
 
-str CMDminany(ptr result, int *bid) {
+str ALGminany(ptr result, int *bid) {
         BAT *b;
 	int res = 0;
 	(void) res; /* fool compiler */
         @:getBATdescriptor(&res,bid,b,minany)@
         if (!ATOMlinear(b->ttype))
-            return throwMessage("CMDminANY","atom cannot be ordered linearly\n");
+            return throwMessage("ALGminANY","atom cannot be ordered linearly\n");
         if (ATOMvarsized(b->ttype)){
             *(ptr*) result = BATmin(b, NULL);
 	    return MAL_SUCCEED;
@@ -964,13 +964,13 @@ str CMDminany(ptr result, int *bid) {
         }
         return throwMessage("algebra.min", "GDKerror");
 }
-str CMDmaxany(ptr result, int *bid) {
+str ALGmaxany(ptr result, int *bid) {
         BAT *b;
 	int res = 0;
 	(void) res; /* fool compiler */
         @:getBATdescriptor(&res,bid,b,maxany)@
         if (!ATOMlinear(b->ttype))
-            return throwMessage("CMDminANY","atom cannot be ordered linearly\n");
+            return throwMessage("ALGminANY","atom cannot be ordered linearly\n");
         if (ATOMvarsized(b->ttype)){
             *(ptr*) result = BATmax(b, NULL);
 	    return MAL_SUCCEED;
@@ -984,7 +984,7 @@ str CMDmaxany(ptr result, int *bid) {
 }
 
 
-str CMDtopN(int *res, int *bid, lng *top) {
+str ALGtopN(int *res, int *bid, lng *top) {
         if (BBPcheck(*bid, "BATsize")) {
                 BAT *b = (BAT*) BBPgetdesc(*bid);
                 if (b == NULL) {
@@ -994,7 +994,7 @@ str CMDtopN(int *res, int *bid, lng *top) {
         }
         return MAL_SUCCEED;
 }
-str CMDBATsize(int *res, int *bid) {
+str ALGBATsize(int *res, int *bid) {
         if (BBPcheck(*bid, "BATsize")) {
                 BAT *b = (BAT*) BBPgetdesc(*bid);
                 if (b == NULL) {
@@ -1010,7 +1010,7 @@ str CMDBATsize(int *res, int *bid) {
         return MAL_SUCCEED;
 }
 
-str CMDcard(int *result, int *bid) {
+str ALGcard(int *result, int *bid) {
 	BAT *b,*bn;
 	@:getBATdescriptor(result,bid,b,card)@
 	bn = (BAT*) BATkunique(BATreverse(b));
@@ -1021,7 +1021,7 @@ str CMDcard(int *result, int *bid) {
 	return MAL_SUCCEED;
 }
 
-str CMDBATminimum(ptr *result, int *bid) {
+str ALGBATminimum(ptr *result, int *bid) {
 	BAT *b;
 
 	@:getBATdescriptor(result,bid,b,min)@
@@ -1041,7 +1041,7 @@ str CMDBATminimum(ptr *result, int *bid) {
 	}
 	return throwMessage("algebra.min", "GDKerror");
 }
-str CMDBATmaximum(ptr *result, int *bid) {
+str ALGBATmaximum(ptr *result, int *bid) {
 	BAT *b;
 
 	@:getBATdescriptor(result,bid,b,max)@
@@ -1061,7 +1061,7 @@ str CMDBATmaximum(ptr *result, int *bid) {
 	}
 	return throwMessage("algebra.max", "GDKerror");
 }
-str CMDselect1(int *result, int *bid, ptr value) {
+str ALGselect1(int *result, int *bid, ptr value) {
 	BAT *b, *bn;
 	@:getBATdescriptor(result,bid,b,select)@
 	@:derefStr(b,t,value)@
@@ -1073,7 +1073,7 @@ str CMDselect1(int *result, int *bid, ptr value) {
 	return throwMessage("algebra.select", "GDKerror");
 }
 
-str CMDuselect1(int *result, int *bid, ptr value) {
+str ALGuselect1(int *result, int *bid, ptr value) {
 	BAT *b, *bn;
 	@:getBATdescriptor(result,bid,b,uselect)@
 	@:derefStr(b,t,value)@
@@ -1085,7 +1085,7 @@ str CMDuselect1(int *result, int *bid, ptr value) {
 	return throwMessage("algebra.uselect", "GDKerror");
 }
 
-str CMDselect(int *result, int *bid, ptr low, ptr high) {
+str ALGselect(int *result, int *bid, ptr low, ptr high) {
 	BAT *b, *bn;
 	@:getBATdescriptor(result,bid,b,select)@
 	@:derefStr(b,t,low)@
@@ -1097,7 +1097,7 @@ str CMDselect(int *result, int *bid, ptr low, ptr high) {
 	}
 	return throwMessage("algebra.select", "GDKerror");
 }
-str CMDuselect(int *result, int *bid, ptr low, ptr high) {
+str ALGuselect(int *result, int *bid, ptr low, ptr high) {
 	BAT *b, *bn;
 	@:getBATdescriptor(result,bid,b,uselect)@
 	@:derefStr(b,t,low);@
@@ -1109,7 +1109,7 @@ str CMDuselect(int *result, int *bid, ptr low, ptr high) {
 	}
 	return throwMessage("algebra.uselect", "GDKerror");
 }
-str CMDfragment(int *result, int *bid,
+str ALGfragment(int *result, int *bid,
 		ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 {
 	BAT *b, *bn;
@@ -1135,7 +1135,7 @@ static int operatorCode(str opname){
 	GDKerror("Illegal operator code, EQ assumed\n");
 	return 0;
 }
-str CMDthetajoinEstimate(int *result, int *lid, int *rid, str *opname,lng *estimate) {
+str ALGthetajoinEstimate(int *result, int *lid, int *rid, str *opname,lng *estimate) {
 	BAT *left, *right, *bn;
 	int opc= operatorCode(*opname);
 	@:getBATdescriptor(result,lid,left,thetajoin)@
@@ -1147,11 +1147,11 @@ str CMDthetajoinEstimate(int *result, int *lid, int *rid, str *opname,lng *estim
 	}
 	return throwMessage("algebra.thetajoin", "GDKerror");
 }
-str CMDthetajoin(int *result, int *lid, int *rid, str *opname) {
-	return CMDthetajoinEstimate(result,lid,rid,opname,&lng_nil);
+str ALGthetajoin(int *result, int *lid, int *rid, str *opname) {
+	return ALGthetajoinEstimate(result,lid,rid,opname,&lng_nil);
 }
 
-str CMDtheta(int *iid, int *oi, int *lid, int *rid, str *opname) {
+str ALGtheta(int *iid, int *oi, int *lid, int *rid, str *opname) {
 	BAT *inner,*outer, *left, *right;
 	int result= 0, opc= operatorCode(*opname);
 	(void) result; /* fool compiler */
@@ -1162,7 +1162,7 @@ str CMDtheta(int *iid, int *oi, int *lid, int *rid, str *opname) {
 	BATtheta(inner, outer, left, right, opc);
 	return MAL_SUCCEED;
 }
-str CMDbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus) {
+str ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus) {
 	BAT *left, *right, *bn;
 	@:getBATdescriptor(result,lid,left,bandjoin)@
 	@:getBATdescriptor(result,rid,right,bandjoin)@
@@ -1177,7 +1177,7 @@ str CMDbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus) {
 @-
 Let cut this text down with some Mx macro's
 @= unary
-str CMD@1(int *result, int *bid) {
+str ALG@1(int *result, int *bid) {
 	BAT *b,*bn;
 	@:getBATdescriptor(result,bid,b,@1)@
 	*result = 0;
@@ -1189,7 +1189,7 @@ str CMD@1(int *result, int *bid) {
 	return throwMessage("algebra.@1", "GDKerror");
 }
 @= unaryint
-str CMD@1(int *result, int *bid) {
+str ALG@1(int *result, int *bid) {
 	BAT *b;
 	*result = 0;
 	@:getBATdescriptor(result,bid,b,@1)@
@@ -1197,7 +1197,7 @@ str CMD@1(int *result, int *bid) {
 	return MAL_SUCCEED;
 }
 @= binary
-str CMD@1(int *result, int *lid, int *rid) {
+str ALG@1(int *result, int *lid, int *rid) {
 	BAT *left, *right,*bn;
 	*result = 0;
 	@:getBATdescriptor(result,lid,left,@1)@
@@ -1210,7 +1210,7 @@ str CMD@1(int *result, int *lid, int *rid) {
 	return throwMessage("algebra.@1", "GDKerror");
 }
 @= binaryint
-str CMD@1(int *result, int* bid, int *param) {
+str ALG@1(int *result, int* bid, int *param) {
 	BAT *b, *bn;
 	*result = 0;
 	@:getBATdescriptor(result,bid,b,@1)@
@@ -1222,7 +1222,7 @@ str CMD@1(int *result, int* bid, int *param) {
 	return throwMessage("algebra.@1", "GDKerror");
 }
 @= binaryestimate
-str CMD@1estimate(int *result, int *lid, int *rid, lng *estimate) {
+str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate) {
 	BAT *left, *right,*bn;
 	*result = 0;
 	@:getBATdescriptor(result,lid,left,@1)@
@@ -1234,8 +1234,8 @@ str CMD@1estimate(int *result, int *lid, int *rid, lng *estimate) {
 	}
 	return throwMessage("algebra.@1", "GDKerror");
 }
-str CMD@1(int *result, int* bid, int *param) {
-	return CMD@1estimate(result,bid,param,&lng_nil);
+str ALG@1(int *result, int* bid, int *param) {
+	return ALG@1estimate(result,bid,param,&lng_nil);
 }
 @c
 @:unary(histogram, BAThistogram)@
@@ -1266,8 +1266,8 @@ static void unlock_desc(bat bid) {
         BBPunfix(bid);
 }
 
-str CMDcount_bat(lng *res, int *bid) {
-        if (BBPcheck((bat) *bid, "CMDcount_bat")) {
+str ALGcount_bat(lng *res, int *bid) {
+        if (BBPcheck((bat) *bid, "ALGcount_bat")) {
                 BAT *b = lock_desc((bat) *bid);
                 if (b == NULL) {
                         *res = lng_nil;
@@ -1282,7 +1282,7 @@ str CMDcount_bat(lng *res, int *bid) {
         return MAL_SUCCEED;
 }
 
-str CMDcount_nil(int *result, int *bid, bit *ignore_nils) {
+str ALGcount_nil(int *result, int *bid, bit *ignore_nils) {
 	BAT *b;
 	@:getBATdescriptor(result,bid,b,count_nil)@
 	if (*ignore_nils)
@@ -1293,7 +1293,7 @@ str CMDcount_nil(int *result, int *bid, bit *ignore_nils) {
 }
 
 
-str CMDfetchjoin(int *result, int *lid, int *rid) {
+str ALGfetchjoin(int *result, int *lid, int *rid) {
 	BAT *left, *right,*bn=0;
 	int rfetch,lfetch;
 
@@ -1313,7 +1313,7 @@ str CMDfetchjoin(int *result, int *lid, int *rid) {
 	}
 	return throwMessage("algebra.fetchjoin", "can not perform a fetchjoin");
 }
-str CMDhashjoin(int *result, int *lid, int *rid) {
+str ALGhashjoin(int *result, int *lid, int *rid) {
 	BAT *left, *right,*bn;
 	int lsize,rsize;
 
@@ -1336,7 +1336,7 @@ str CMDhashjoin(int *result, int *lid, int *rid) {
 	return throwMessage("algebra.hashjoin", "can not perform a hashjoin");
 }
 
-str CMDmergejoin(int *result, int *lid, int *rid) {
+str ALGmergejoin(int *result, int *lid, int *rid) {
 	BAT *left, *right,*bn;
 
 	@:getBATdescriptor(result,lid,left,mergejoin)@
@@ -1356,7 +1356,7 @@ str CMDmergejoin(int *result, int *lid, int *rid) {
 	return throwMessage("algebra.mergejoin", "can not perform a mergejoin");
 }
 
-str CMDindexjoin(int *result, int *lid, int *rid) {
+str ALGindexjoin(int *result, int *lid, int *rid) {
 	BAT *left, *right,*bn;
 
 	@:getBATdescriptor(result,lid,left,indexjoin)@
@@ -1369,7 +1369,7 @@ str CMDindexjoin(int *result, int *lid, int *rid) {
 	}
 	return throwMessage("algebra.indexjoin", "can not perform a indexjoin");
 }
-str CMDtunique(int *result, int *bid) {
+str ALGtunique(int *result, int *bid) {
 	BAT *b,*bn;
 	@:getBATdescriptor(result,bid,b,tunique)@
 	*result = 0;
@@ -1381,7 +1381,7 @@ str CMDtunique(int *result, int *bid) {
 	return throwMessage("algebra.tunique", "GDKerror");
 }
 
-str CMDmark(int *result, int *bid, oid *base){
+str ALGmark(int *result, int *bid, oid *base){
 	BAT *b, *bn;
 	@:getBATdescriptor(result,bid,b,mark)@
 	bn= BATmark(b, *base);
@@ -1391,14 +1391,14 @@ str CMDmark(int *result, int *bid, oid *base){
 	}
 	return throwMessage("algebra.mark", "GDKerror");
 }
-str CMDmark_default(int *result, int *bid){
+str ALGmark_default(int *result, int *bid){
 	oid base;
 	BAT *b;
 	@:getBATdescriptor(result,bid,b,mark)@
 	base = OIDnew(BATcount(b));
-	return CMDmark(result, bid, &base);
+	return ALGmark(result, bid, &base);
 }
-str CMDhashsplit(int *result, int *bid, int *nfrag){
+str ALGhashsplit(int *result, int *bid, int *nfrag){
 	BAT *b, *bn;
 	@:getBATdescriptor(result,bid,b,hashsplit)@
 	bn= BAThashsplit(b, *nfrag, FALSE);
@@ -1408,7 +1408,7 @@ str CMDhashsplit(int *result, int *bid, int *nfrag){
 	}
 	return throwMessage("algebra.hashsplit", "GDKerror");
 }
-str CMDuhashsplit(int *result, int *bid, int *nfrag){
+str ALGuhashsplit(int *result, int *bid, int *nfrag){
 	BAT *b, *bn;
 	@:getBATdescriptor(result,bid,b,uhashsplit)@
 	bn= BAThashsplit(b, *nfrag, TRUE);
@@ -1418,7 +1418,7 @@ str CMDuhashsplit(int *result, int *bid, int *nfrag){
 	}
 	return throwMessage("algebra.uhashsplit", "GDKerror");
 }
-str CMDrangesplit(int *result, int *bid, int *nfrag){
+str ALGrangesplit(int *result, int *bid, int *nfrag){
 	BAT *b, *bn;
 	@:getBATdescriptor(result,bid,b,rangesplit)@
 	bn= BATrangesplit(b, *nfrag, FALSE);
@@ -1428,7 +1428,7 @@ str CMDrangesplit(int *result, int *bid, int *nfrag){
 	}
 	return throwMessage("algebra.rangesplit", "GDKerror");
 }
-str CMDurangesplit(int *result, int *bid, int *nfrag){
+str ALGurangesplit(int *result, int *bid, int *nfrag){
 	BAT *b, *bn;
 	@:getBATdescriptor(result,bid,b,urangesplit)@
 	bn= BATrangesplit(b, *nfrag, TRUE);
@@ -1439,7 +1439,7 @@ str CMDurangesplit(int *result, int *bid, int *nfrag){
 	return throwMessage("algebra.urangesplit", "GDKerror");
 }
 
-str CMDhistogram_rev(int *result, int *bid) {
+str ALGhistogram_rev(int *result, int *bid) {
 	BAT *b, *bn;
 	@:getBATdescriptor(result,bid,b,histogram)@
 	bn =BAThistogram(BATmirror(b));
@@ -1479,7 +1479,7 @@ int ylen;
         return 0;
 }
 
-str CMDlike(int *ret, int *bid, str *k) {
+str ALGlike(int *ret, int *bid, str *k) {
 	BAT *c, *b;
 	str	t,s;
 	BUN	u, v;
@@ -1509,7 +1509,7 @@ str CMDlike(int *ret, int *bid, str *k) {
 
 @- BAT slice
 @c
-str CMDslice(int *ret, bat *bid, int *start, int *end){
+str ALGslice(int *ret, bat *bid, int *start, int *end){
 	BAT *b, *br;
 	@:getBATdescriptor(ret,bid,b,slice)@
 	br = BATslice(b, *start, *end);
@@ -1523,7 +1523,7 @@ str CMDslice(int *ret, bat *bid, int *start, int *end){
 
 @- BUN Get/Fetch
 @c
-str CMDposition(int *retval, int *bid, ptr val){
+str ALGposition(int *retval, int *bid, ptr val){
 	BAT *b;
 	ptr v;
 
@@ -1535,7 +1535,7 @@ str CMDposition(int *retval, int *bid, ptr val){
         *retval = BUNindex(b, v)- BUNindex(b, BUNfirst(b));
         return MAL_SUCCEED;
 }
-str CMDpositionBUN(int *retval, int *bid, ptr val, ptr tval){
+str ALGpositionBUN(int *retval, int *bid, ptr val, ptr tval){
 	BAT *b;
 	ptr v;
 
@@ -1549,7 +1549,7 @@ str CMDpositionBUN(int *retval, int *bid, ptr val, ptr tval){
         return MAL_SUCCEED;
 }
 
-str CMDfetchbat(int * ret, int *bid, int *sid){
+str ALGfetchbat(int * ret, int *bid, int *sid){
 	BAT *b, *s, *bn;
 	@:getBATdescriptor(ret,bid,b,fetch)@
 	@:getBATdescriptor(ret,sid,s,fetch)@
@@ -1562,7 +1562,7 @@ str CMDfetchbat(int * ret, int *bid, int *sid){
 	return throwMessage("algebra.fetchbat", "GDKerror");
 }
 
-str doCMDfetch(ptr ret, BAT *b, lng *pos){
+str doALGfetch(ptr ret, BAT *b, lng *pos){
 	lng i = *pos;
         if ((i < 0) || (i >= BATcount(b)))
                 return throwMessage("algebra.fetch", " idx out of range");
@@ -1598,25 +1598,25 @@ str doCMDfetch(ptr ret, BAT *b, lng *pos){
 @c
         return MAL_SUCCEED;
 }
-str CMDfetchoid(int * ret, int *bid, oid *pos){
+str ALGfetchoid(int * ret, int *bid, oid *pos){
 	BAT *b;
 	@:getBATdescriptor(ret,bid,b,fetchoid)@
 
 	if( b->hseqbase == oid_nil)
 		return throwMessage("algebra.fetchoid",
 			"void lookup on uninitialized column");
-	return doCMDfetch((ptr) ret,b,(lng*)(((oid *)*pos)-b->hseqbase));
+	return doALGfetch((ptr) ret,b,(lng*)(((oid *)*pos)-b->hseqbase));
 }
 
-str CMDfetch(ptr ret, int *bid, lng *pos){
+str ALGfetch(ptr ret, int *bid, lng *pos){
 	BAT *b;
 	int result= 0;
 	(void) result; /* fool compiler */
 
 	@:getBATdescriptor(&result,bid,b,fetch);
-	return doCMDfetch(ret,b,pos);
+	return doALGfetch(ret,b,pos);
 }
-str CMDexist(bit *ret, int *bid, ptr val){
+str ALGexist(bit *ret, int *bid, ptr val){
 	BAT *b;
 	BUN q;
 	int result= 0;
@@ -1628,7 +1628,7 @@ str CMDexist(bit *ret, int *bid, ptr val){
 	*ret = q?1:0;
         return MAL_SUCCEED;
 }
-str CMDexistBUN(bit *ret, int *bid, ptr val, ptr tval){
+str ALGexistBUN(bit *ret, int *bid, ptr val, ptr tval){
 	BAT *b;
 	BUN q;
 	int result= 0;
@@ -1642,7 +1642,7 @@ str CMDexistBUN(bit *ret, int *bid, ptr val, ptr tval){
         return MAL_SUCCEED;
 }
 
-str CMDfind(ptr ret, int *bid, ptr val){
+str ALGfind(ptr ret, int *bid, ptr val){
 	BAT *b;
 	BUN q;
 	int result= 0;

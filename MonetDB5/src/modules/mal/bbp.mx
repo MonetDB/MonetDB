@@ -178,8 +178,12 @@ pattern getTail(b:bat[:any,:any$1],i:lng):any$1
 address CMDgetTail
 comment "return the BUN tail value using the 
 	cursor.";
-
+command getBATrefcnt(b:bat[:any,:any]) :int
+address CMDgetBATrefcnt
+comment "Utility for debugging MAL interpreter";
+                                                                                
 @+ BAT buffer pool
+
 The following list of operations permits inspection of the
 buffer pool
 @mal
@@ -241,7 +245,7 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #include "mal_client.h"
 #include "mal.h"
 #include "mal_interpreter.h"
-extern str CMDnewBat2(int *res, int *ht, int *tt, size_t *cap);
+extern str BKCnewBATint(int *res, int *ht, int *tt, int *cap);
 
 
 str CMDbbpprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -450,7 +454,7 @@ The code to enhance thekernel
 @c
 str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
         int ht, tt;
-	size_t cap=0;
+	int cap=0;
         int *res;
 
         ht= getArgType(m,p,1);
@@ -459,7 +463,7 @@ str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
                 cap= *(int *) getArgReference(s,p,3);
         res= (int *) getArgReference(s,p,0);
 
-        return (str) CMDnewBat2(res,&ht,&tt,&cap);
+        return (str) BKCnewBATint(res,&ht,&tt,&cap);
 }
 
 str CMDproject (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -719,7 +723,6 @@ because it provides access to the system guaranteed persistent BAT identifier.
 	BATmode(b,TRANSIENT);
 	BATfakeCommit(b);
 	*ret = b->batCacheid;
-	
 @c
 str CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT*    b;
@@ -919,6 +922,12 @@ str CMDbbpRefcnt(int *ret){
 	@:Pseudo(bbp,lrefcnt)@
         return MAL_SUCCEED;
 }
+str CMDgetBATrefcnt(int *res, int *bid) {
+        BAT *b;
+        @:getBATdescriptor(res,bid,b,setSet)@
+        *res = BBP_refs(b->batCacheid);
+        return MAL_SUCCEED;
+}
 
 
 @-
@@ -943,4 +952,3 @@ str CMDbbp@2( int *ret){
 @c
         @:headtailProperty(htype,HeadType)@
         @:headtailProperty(ttype,TailType)@
-

@@ -239,6 +239,21 @@ command printf(val:str):int
 address SYSprint_str;
 command printf(format:str,val:str):int
 address SYSprint_formatted_str;
+@- ASCII import, export
+The below commands load and save a BAT from/to an ASCII dump. These
+functions are efficient but work only for binary tables. For printing
+ASCII n-ary tables you can use the @#print@(bat1,bat2,..) command
+from the system.mx module.
+@mal
+command export(b:bat[:any,:any], filepath:str):bit  = SYSexport
+comment "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
+ is put into the .../dbfarm/$DB directory. Success of failure is indicated.";
+
+command import(b:bat[:any,:any], filepath:str) :bit = SYSimport
+comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
+ parameter BAT. You have to create it! Its signature must match the dump,
+ else parsing errors will occur and FALSE is returned.";
+
 @-
 @{
 @- MIL initializations 
@@ -869,4 +884,164 @@ str SYSprint_formatted_bit(int *ret, ptr fmt, bit *s){
  	@:printFormatted(lng,d)@
  	@:printFormatted(flt,f)@
  	@:printFormatted(dbl,f)@
+@-
+@+ Bulk export/loading
+To simplify conversion between versions and to interface with other
+applications, we use a simple import/export operation.
+
+The conversion routine assumes space in the buffer for storing the result.
+@{
+@c
+@-
+A BAT can be saved in Monet format using the export command.
+It is of particular use in preparing an ascii version for migration.
+The exported file is saved in the context of the directory
+where the server was started unless an absolute file name was
+presented.
+@c
+str SYSexport(int *ret, int *bid, str *fnme) {
+	BAT *b;
+	stream  *s = open_wastream(*fnme);
+	@:getBATdescriptor(ret,bid,b,export)@
+	if (s== NULL || stream_errnr(s) ) {
+		*ret = FALSE;
+		return throwException(MALEXCEPTION,"bat.export",
+			"could not open %s",*fnme);
+	}
+	BATprintf(s,b);
+	stream_close(s);
+	stream_destroy(s);
+	*ret = TRUE;
+	return MAL_SUCCEED;
+}
+
+@
+The import command reads a single BAT from an ascii file. It assumes
+a layout compatible with that produced by print or export.
+                                                                                 
+@= getBATdescriptor
+        if( BBPcheck(*@2,"@4")==0)
+                return throwMessage("bat.@4",
+                        "cannot access bat @2 in bbp");
+        @3= (BAT*) BBPgetdesc(*@2);
+        if( @3 == NULL) { *@1 = 0;
+                return throwMessage("bat.@4",
+                        "cannot access descriptor @2");
+        }
+        if(*@2 <0) @3 = BATmirror(@3);
+
+@c
+str SYSimport(int *ret, int *bid, str *fnme) {
+	BAT *b;
+	int	(*hconvert)(str, int*, ptr*), (*tconvert)(str, int*, ptr*);
+	size_t	bufsize = 2048; /* NIELS:tmp change used to be 1024 */
+	char	*base, *cur, *end;
+	char	*buf = (char *) GDKmalloc(bufsize);
+	ptr	*h = 0, *t = 0;
+	int	lh = 0,	lt = 0;
+	FILE	*fp = fopen(*fnme, "r");
+
+	@:getBATdescriptor(ret,bid,b,export)@
+	hconvert = BATatoms[BAThtype(b)].atomFromStr;
+	tconvert = BATatoms[BATttype(b)].atomFromStr;
+@-
+Open the file. Memory map it to minimize buffering problems.
+@c
+        if (fp == NULL)
+	return throwException(MALEXCEPTION,"bat.import",
+		"could not open file %s",fnme);
+	else {
+		int fn;
+	    	struct stat st;
+                if ((fn=fileno(fp)) <= 0) {
+                        return throwMessage("SYSimport","fileno fails\n");
+                }
+                if (fstat(fn, &st) != 0) {
+                        return throwMessage("SYSimports","fstat fails\n");
+                }
+
+		(void)fclose(fp);
+		if (st.st_size <= 0)
+                        return throwMessage("SYSimports",
+				"file empty or fstat broken?\n");
+            	base = cur = (char*)MT_mmap(*fnme, MMAP_SEQUENTIAL, 0, st.st_size, NULL);
+		end = cur + st.st_size;
+                if (cur == (char*) -1) {
+                        return throwMessage("SYSimport", "MT_mmap failed\n");
+                }
+
+	}
+@-
+Parse a line. Copy it into a buffer. Concat broken lines with a slash.
+@c
+	while(cur < end) {
+		str dst = buf, src = cur, p = strchr(cur, '\n');
+		size_t l = p - cur;
+
+		if (!p) {
+			p = end;
+		} else while(src[l-1] == '\\') {
+			@:memcpy@
+			dst += l-1; src += l+1;
+			if ((p = strchr(src, '\n')) == 0) {
+				p = end; break;
+			}
+			l = p - src;
+		}
+		@:memcpy@
+@-
+@= memcpy
+		if (buf+bufsize < dst+l) {
+		        int len = dst - buf;
+			size_t inc = (size_t) ((dst+l) - buf);
+			buf = (char*) GDKrealloc((void*) buf, bufsize = MAX(inc,bufsize)*2);
+			dst = buf + len;
+		}
+		memcpy(dst, src, l-1);
+@c
+		dst[l] = 0;
+		cur = p+1;
+@-
+Parse the line, and insert a BUN.
+@c
+		for(p = buf; *p && GDKisspace(*p); p++);
+		if (*p == '#') continue;
+@-
+@= parsevalue
+	       	for (;*p && ((int) *p) != @2; p++);
+		if (*p) for (p++; *p && GDKisspace(*p); p++);
+       		if (*p == 0){
+			*ret= FALSE;
+		       	return throwException(MALEXCEPTION,"bat.import",
+				"error in %s",buf);
+       		}
+       		p += @1(p, @3, @4);			
+@c
+		@:parsevalue(hconvert, '[', &lh, (ptr *) &h)@
+		@:parsevalue(tconvert, 44, &lt, (ptr *)&t)@
+		BUNins(b, h, t);
+		
+@-
+Unmap already parsed memory, to keep the memory usage low.
+@c
+#ifndef WIN32
+#define MAXBUF 40*MT_pagesize()
+		if ( (unsigned)(cur - base) > MAXBUF) {
+			MT_munmap(base, MAXBUF);
+			base += MAXBUF;
+		}
+#endif
+	}
+@-
+Cleanup and exit. Return the filled BAT.
+@c
+	if (h) GDKfree(h);
+	if (t) GDKfree(t);
+	GDKfree(buf);
+	MT_munmap(base, end-base);
+	BBPfix(b->batCacheid);
+	*ret = TRUE;
+	return MAL_SUCCEED;
+}
+
 @}
