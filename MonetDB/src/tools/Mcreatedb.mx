@@ -343,11 +343,16 @@ It enforces a common starting environment.
 		}
 	}
 }
+#ifdef WIN32
+#define RM "del"
+#else
+#define RM "rm -f"
+#endif
 void initDB(char *home, char *db) {	
         char buffer[2048];
         int ret;
         printf("Mcreatedb: calling 'Mserver -db %s' for the first time..\n",db);
-        sprintf(buffer,"Mserver -single -home %s -db %s %s%cscripts%cinit.mil\n", 
+        sprintf(buffer,"Mserver -single -home %s -db %s %s%cscripts%cinit.mil 2>.Merr 1>.Mout\n", 
 			farm, db, dist, DIR_SEP, DIR_SEP);
         ret = system(buffer);
 #ifndef WIN32
@@ -356,6 +361,8 @@ void initDB(char *home, char *db) {
         else
 #endif
             printf("Mcreatedb: database '%s' has been initialized succesfully!\n",db);
+	sprintf(buffer, "%s .Mout .Merr", RM );
+	(void)system(buffer);
 }
 
 @- Common utilities
