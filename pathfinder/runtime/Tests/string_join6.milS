@@ -15,6 +15,10 @@ var bar := bat(oid,str)
 .insert(1@0, ", ")
 .insert(2@0," _____ ")
 .insert(3@0," muh ")
-.insert(5@0, "");
+.insert(4@0, "")
+.insert(5@0, "foobar")
+.insert(5@0, "foobar")
+.insert(6@0, "-")
+.insert(6@0, "foobar");
 string_join(blub, bar).print();
 

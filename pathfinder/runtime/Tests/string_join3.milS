@@ -1,7 +1,3 @@
 module(pf_support);
-var blub := bat(void,str).seqbase(0@0).insert(nil, "foo").insert(nil, "foo").insert(nil, "foo").insert(nil, "bar").insert(nil, "baz").insert(nil, "foo").insert(nil, "bar").insert(nil, "baz").insert(nil, "foo").insert(nil, "bar").insert(nil, "baz");
-var baz := bat (void,oid).seqbase(0@0).insert(nil, 1@0).insert(nil, 1@0).insert(nil, 1@0).insert(nil, 1@0).insert(nil, 2@0).insert(nil, 3@0).insert(nil, 3@0).insert(nil, 4@0).insert(nil, 6@0).insert(nil, 6@0).insert(nil, 6@0);
-var bar := bat(oid,str).insert(1@0, ", ").insert(2@0," _____ ").insert(3@0," muh ").insert(5@0, "");
-var foo := bat(oid,str).insert(1@0, ", ").insert(2@0," _____ ").insert(3@0," muh ").insert(4@0, "").insert(6@0, "-");
 string_join(bat(oid,str), bat(oid,str)).print();
 

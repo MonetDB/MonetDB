@@ -681,7 +681,7 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 	BUN bun_iter_str, bun_sep, last_iter_str, last_sep;
 	int bs_iter_str, bs_sep;
 	size_t len, sep_len, strsize = 1024;
-	oid i, i0, sep_oid;
+	oid i, i0, sep_oid, sep0;
 	str s, sep, actual_str = NULL;
 	bit triv_prop, first_string;
 	
@@ -730,13 +730,19 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 		*res = bn;
  	       	return GDK_SUCCEED;
 	}
-	else if (bun_iter_str == last_iter_str || bun_sep == last_sep) {
-		GDKerror("string_join: oids in iter_str (%i rows) and "
-			 "separator (%i rows) are not aligned.\n",
-			 BATcount(iter_str), BATcount(separator));
+	else if (bun_sep == last_sep) {
+		GDKerror("string_join: expected oid %i@0 in iter_str "
+                         "is missing in separator (0 rows).",
+                         *(oid*)BUNhead(iter_str,bun_iter_str));
 		return GDK_FAIL;
 	}
-		
+	else if (bun_iter_str == last_iter_str) {
+		sep0 = oid_nil;
+		sep_oid = *(oid*)BUNhead(separator,bun_sep);
+		@:append_sep_and_set_props@
+ 	       	return GDK_SUCCEED;
+	}
+
 @= alloc_str
 	/* allocate str buffer */
 	@1 = (str)GDKmalloc(strsize);
@@ -751,6 +757,7 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 
 	i0 = *(oid*)BUNhead(iter_str,bun_iter_str); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 	first_string = 1;
+	sep0 = oid_nil;
 
 @= get_next_separator
 	/* - goes to the next row in the separator bat
@@ -758,14 +765,24 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 	   - produces an error if oids are not aligned */
 	sep_oid = *(oid*)BUNhead(separator,bun_sep);
 
+	while (i0 > sep_oid && bun_sep != last_sep) {
+		if (sep0 == sep_oid) {
+			GDKerror("string_join: the head of separator has to be keyed.");
+			return GDK_FAIL;
+		}
+		bunfastins(bn, &sep_oid, "");
+		sep0 = sep_oid;
+		bun_sep += bs_sep;
+	        sep_oid = *(oid*)BUNhead(separator,bun_sep);
+	}
 	if (i0 == sep_oid && bun_sep != last_sep) {
 		sep = (str)BUNtvar(separator,bun_sep);
 		sep_len = strlen(sep);
 	}
 	else {
-		GDKerror("string_join: oids in iter_str and separator "
-			 "are not aligned. (expected: %i@0; got: %i@0)\n",
-			 i0, sep_oid);
+		GDKerror("string_join: expected oid %i@0 in iter_str "
+			 "is missing in separator.",
+			 i0);
 		return GDK_FAIL;
 	}
 @c
@@ -784,6 +801,7 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 			i0 = i;
 			first_string = 1;
 
+			sep0 = sep_oid;
 			bun_sep += bs_sep;
 			@:get_next_separator@
 		}
@@ -816,6 +834,20 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 
 	if (len > 0) {
 		bunfastins(bn, &i0, actual_str);
+		sep0 = sep_oid;
+		bun_sep += bs_sep;
+	}
+
+@= append_sep_and_set_props
+	while (bun_sep != last_sep) {
+	        sep_oid = *(oid*)BUNhead(separator,bun_sep);
+		if (sep0 == sep_oid) {
+			GDKerror("string_join: the head of separator has to be keyed.");
+			return GDK_FAIL;
+		}
+		bunfastins(bn, &sep_oid, "");
+		sep0 = sep_oid;
+		bun_sep += bs_sep;
 	}
 
 	GDKfree(actual_str);
@@ -836,6 +868,8 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 		BATseqbase(bn, *(oid*)BUNhloc(bn,BUNfirst(bn)));
 	}
 	*res = bn;
+@c
+	@:append_sep_and_set_props@
 
 	return GDK_SUCCEED;
 bunins_failed:
