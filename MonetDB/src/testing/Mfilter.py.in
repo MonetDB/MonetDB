@@ -159,6 +159,8 @@ test = (
 		"|" r'^\[ "[dn]ec_num",\t* +4488E15\t* +\]$'
 		"|" r'^\[ "[dn]ec_big",\t* +1122E40\t* +\]$'
 		"|" r'^\[ "[dn]ec_huge",\t* +2244E9010\t* +\]$'
+		# src/modules/plain/color:
+		"|" r'^\[ 0\.498039(18|21)6 \]$'
                 # src/monet/monet_mod_cnt-copy_C:
                 "|" r'^\[ "(mapi_params|tmp_62)",\t* *[10],\t* *[10],\t* *0\t* *\]$'
                 # src/gdk/cast:
@@ -172,7 +174,7 @@ test = (
                 "|" r'^ERROR = (Connection terminated|Lost connection with server)$'
                 "|" r'^ERROR = (communication line broken|Connection lost)$'
                 # pathfinder: loader/usage (without BerkeleyDB):
-                "|" r'^     -c: compress node properties (40% encoding speed)$"
+                "|" r'^     -c: compress node properties (40% encoding speed)$'
                 # Mtest warnings:
                 "|" r'^Over\.\.$'
                 "|" r'^(quit)?;$'

@@ -49,18 +49,23 @@ loaded;
 [ "alarm",	  nil	  ]
 [ "algebra",	  nil	  ]
 [ "arith",	  nil	  ]
+[ "array",	  nil	  ]
 [ "ascii_io",	  nil	  ]
 [ "bat",	  nil	  ]
 [ "bat_arith",	  nil	  ]
+[ "bat_cast",	  nil	  ]
+[ "bat_mmath",	  nil	  ]
 [ "bitset",	  nil	  ]
 [ "bitvector",	  nil	  ]
 [ "blob",	  nil	  ]
 [ "calib",	  nil	  ]
 [ "cluster",	  nil	  ]
+[ "color",	  nil	  ]
 [ "counters",	  nil	  ]
 [ "ddbench",	  nil	  ]
 [ "decimal",	  nil	  ]
 [ "enum",	  nil	  ]
+[ "image",	  nil	  ]
 [ "iterator",	  nil	  ]
 [ "kernel",	  nil	  ]
 [ "lock",	  nil	  ]
@@ -73,6 +78,7 @@ loaded;
 [ "mprof",	  nil	  ]
 [ "oo7",	  nil	  ]
 [ "pcl",	  nil	  ]
+[ "profiler",	  nil	  ]
 [ "qt",		  nil	  ]
 [ "radix",	  nil	  ]
 [ "salgebra",	  nil	  ]
@@ -160,6 +166,7 @@ others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE)
 [ "salgebra",	  nil	  ]
 [ "radix",	  nil	  ]
 [ "qt",		  nil	  ]
+[ "profiler",	  nil	  ]
 [ "pcl",	  nil	  ]
 [ "oo7",	  nil	  ]
 [ "mprof",	  nil	  ]
@@ -171,16 +178,21 @@ others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE)
 [ "malalgebra",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "iterator",	  nil	  ]
+[ "image",	  nil	  ]
 [ "enum",	  nil	  ]
 [ "decimal",	  nil	  ]
 [ "ddbench",	  nil	  ]
 [ "counters",	  nil	  ]
+[ "color",	  nil	  ]
 [ "calib",	  nil	  ]
 [ "blob",	  nil	  ]
 [ "bitvector",	  nil	  ]
 [ "bitset",	  nil	  ]
+[ "bat_mmath",	  nil	  ]
+[ "bat_cast",	  nil	  ]
 [ "bat_arith",	  nil	  ]
 [ "ascii_io",	  nil	  ]
+[ "array",	  nil	  ]
 [ "alarm",	  nil	  ]
 [ "aggrX3",	  nil	  ]
 [ "aggr",	  nil	  ]
@@ -560,7 +572,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
+[ "uchr",	  3		  ]
 #-------------------------#
 # BAT:		  tmp_33  #
 # (str)		  (void)  #
@@ -659,7 +671,45 @@ others@batloop{
 
 #BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading profiler
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "profiler",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+#-------------------------#
+# h		tmp_38	  # name
+# str		void	  # type
+#-------------------------#
+[ "profiler",	  nil	  ]
+
+	dropping profiler
+
+#---------------------------------#
+# module		usage_count	  # name
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -1088,7 +1138,50 @@ others@batloop{
 
 #BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading image
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "image",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+[ "url",	  1		  ]
+#-------------------------#
+# h		tmp_48	  # name
+# str		void	  # type
+#-------------------------#
+[ "image",	  nil	  ]
+[ "url",	  nil	  ]
+
+	dropping image
+
+
+	dropping url
+
+#---------------------------------#
+# module		usage_count	  # name
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -1264,7 +1357,45 @@ others@batloop{
 
 #BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading color
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "color",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+#-------------------------#
+# h		tmp_47	  # name
+# str		void	  # type
+#-------------------------#
+[ "color",	  nil	  ]
+
+	dropping color
+
+#---------------------------------#
+# module		usage_count	  # name
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -1418,7 +1549,83 @@ others@batloop{
 
 #BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading bat_mmath
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_mmath",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+#-------------------------#
+# h		tmp_47	  # name
+# str		void	  # type
+#-------------------------#
+[ "bat_mmath",	  nil	  ]
+
+	dropping bat_mmath
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading bat_cast
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_cast",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+#-------------------------#
+# h		tmp_52	  # name
+# str		void	  # type
+#-------------------------#
+[ "bat_cast",	  nil	  ]
+
+	dropping bat_cast
+
+#---------------------------------#
+# module		usage_count	  # name
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -1500,7 +1707,45 @@ others@batloop{
 
 #BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading array
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "array",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+#-------------------------#
+# h		tmp_51	  # name
+# str		void	  # type
+#-------------------------#
+[ "array",	  nil	  ]
+
+	dropping array
+
+#---------------------------------#
+# module		usage_count	  # name
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
