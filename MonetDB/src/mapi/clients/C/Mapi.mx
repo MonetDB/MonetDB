@@ -332,16 +332,17 @@ Returns an error if the field identified does not exist.
 
 \item[MapiMsg mapi_bind_var(Mapi mid, int fldnr, int type, void *val)]:
 Describe the type and location of the next parameter in a query template.
-The types recognized are {SQL_TINY, SQL_UTINY, SQL_SHORT, SQL_USHORT, SQL_INT,
-SQL_UINT, SQL_LONG, SQL_ULONG, SQL_LONGLONG, SQL_ULONGLONG, SQL_CHAR,
-SQL_VARCHAR, SQL_FLOAT, SQL_DOUBLE, SQL_DATE, SQL_TIME, SQL_DATETIME}.
+The types recognized are {MAPI_TINY, MAPI_UTINY, MAPI_SHORT, MAPI_USHORT,
+MAPI_INT, MAPI_UINT, MAPI_LONG, MAPI_ULONG, MAPI_LONGLONG, MAPI_ULONGLONG,
+MAPI_CHAR, MAPI_VARCHAR, MAPI_FLOAT, MAPI_DOUBLE, MAPI_DATE, MAPI_TIME,
+MAPI_DATETIME}.
 The binding operations should be performed after the mapi_execute command.
 Subsequently all rows being fetched also involve delivery of the field
 values in the C-variables using proper conversion. For variable length
 strings a pointer is set into the cache.
 
 \item[MapiMsg mapi_bind_numeric(Mapi mid, int fldnr, int scale, int precision, void *val)]:
-Bind to a numeric variable, internally represented by SQL_INT
+Bind to a numeric variable, internally represented by MAPI_INT
 Describe the location of a numeric parameter in a query template.
 
 \item[MapiMsg mapi_param(Mapi mid, int fldnr, char **val)]:
@@ -353,7 +354,7 @@ No conversion takes place.
 Similar to mapi_bind_var(), but now binds a parameter.
 
 \item[MapiMsg mapi_param_numeric(Mapi mid, int fldnr, int scale, int precision, void *val)]:
-Bind to a numeric variable, internally represented by SQL_INT
+Bind to a numeric variable, internally represented by MAPI_INT
 
 \item[MapiMsg mapi_cache_limit(Mapi mid, int maxrows)]:
 A limited number of tuples are pre-fetched after each execute().
@@ -503,25 +504,25 @@ MERROR  & Mapi internal error.\\
 #define MAPINAMELEN	256
 #define MAPIBLKSIZE	256	/* minimum buffer shipped */
 
-#define SQL_AUTO	0	/* automatic type detection */
-#define SQL_TINY	1
-#define SQL_UTINY	2
-#define SQL_SHORT	3
-#define SQL_USHORT	4
-#define SQL_INT		5
-#define SQL_UINT	6
-#define SQL_LONG	7
-#define SQL_ULONG	8
-#define SQL_LONGLONG	9
-#define SQL_ULONGLONG	10
-#define SQL_CHAR	11
-#define SQL_VARCHAR	12
-#define SQL_FLOAT	13
-#define SQL_DOUBLE	14
-#define SQL_DATE	15
-#define SQL_TIME	16
-#define SQL_DATETIME	17
-#define SQL_NUMERIC	18
+#define MAPI_AUTO	0	/* automatic type detection */
+#define MAPI_TINY	1
+#define MAPI_UTINY	2
+#define MAPI_SHORT	3
+#define MAPI_USHORT	4
+#define MAPI_INT	5
+#define MAPI_UINT	6
+#define MAPI_LONG	7
+#define MAPI_ULONG	8
+#define MAPI_LONGLONG	9
+#define MAPI_ULONGLONG	10
+#define MAPI_CHAR	11
+#define MAPI_VARCHAR	12
+#define MAPI_FLOAT	13
+#define MAPI_DOUBLE	14
+#define MAPI_DATE	15
+#define MAPI_TIME	16
+#define MAPI_DATETIME	17
+#define MAPI_NUMERIC	18
 
 #define PLACEHOLDER	'?'
 
@@ -674,19 +675,19 @@ extern "C" {
 #endif
 
 /* three structures used for communicating date/time information */
-typedef struct {		/* used by SQL_DATE */
+typedef struct {		/* used by MAPI_DATE */
 	int year;
 	unsigned short month;
 	unsigned short day;
 } MapiDate;
 
-typedef struct {		/* used by SQL_TIME */
+typedef struct {		/* used by MAPI_TIME */
 	unsigned short hour;
 	unsigned short minute;
 	double second;
 } MapiTime;
 
-typedef struct {		/* used by SQL_DATETIME */
+typedef struct {		/* used by MAPI_DATETIME */
 	MapiDate date;
 	MapiTime time;
 } MapiDateTime;
@@ -1287,14 +1288,14 @@ for bulk interacting with a server.
 MapiMsg mapi_bind(Mapi mid, int fnr, char **ptr) {
 	@:testField(mid->error,"mapi_bind")@
 	mid->fields[fnr].outparam= ptr;
-	mid->fields[fnr].outtype= SQL_AUTO;
+	mid->fields[fnr].outtype= MAPI_AUTO;
 	return MOK;
 }
 
 MapiMsg mapi_bind_var(Mapi mid, int fnr, int type, void *ptr) {
 	@:testField(mid->error,"mapi_bind_var")@
 	mid->fields[fnr].outparam= ptr;
-	if( type>=0 && type < SQL_NUMERIC)
+	if( type>=0 && type < MAPI_NUMERIC)
 		mid->fields[fnr].outtype= type;
 	else
 		return mapi_setError(mid,"Illegal SQL type identifier",
@@ -1302,7 +1303,7 @@ MapiMsg mapi_bind_var(Mapi mid, int fnr, int type, void *ptr) {
 	return MOK;
 }
 MapiMsg mapi_bind_numeric(Mapi mid, int fnr, int scale,int prec, void *ptr) {
-	if( mapi_bind_var(mid,fnr, SQL_NUMERIC,ptr) )
+	if( mapi_bind_var(mid,fnr, MAPI_NUMERIC,ptr) )
 		return mid->error;
 	mid->fields[fnr].scale= scale;
 	mid->fields[fnr].precision= prec;
@@ -1311,14 +1312,14 @@ MapiMsg mapi_bind_numeric(Mapi mid, int fnr, int scale,int prec, void *ptr) {
 MapiMsg mapi_param(Mapi mid, int fnr, char **ptr) {
 	@:testField(mid->error,"mapi_param")@
 	mid->fields[fnr].inparam= ptr;
-	mid->fields[fnr].intype= SQL_AUTO;
+	mid->fields[fnr].intype= MAPI_AUTO;
 	return MOK;
 }
 
 MapiMsg mapi_param_type(Mapi mid, int fnr, int type, void *ptr) {
 	@:testField(mid->error,"mapi_param_type")@
 	mid->fields[fnr].inparam= ptr;
-	if( type>=0 && type < SQL_NUMERIC)
+	if( type>=0 && type < MAPI_NUMERIC)
 		mid->fields[fnr].intype= type;
 	else
 		return mapi_setError(mid,"Illegal SQL type identifier",
@@ -1326,7 +1327,7 @@ MapiMsg mapi_param_type(Mapi mid, int fnr, int type, void *ptr) {
 	return MOK;
 }
 MapiMsg mapi_param_numeric(Mapi mid, int fnr, int scale,int prec, void *ptr) {
-	if( mapi_param_type(mid,fnr, SQL_NUMERIC,ptr) )
+	if( mapi_param_type(mid,fnr, MAPI_NUMERIC,ptr) )
 		return mid->error;
 	mid->fields[fnr].scale= scale;
 	mid->fields[fnr].precision= prec;
@@ -1459,13 +1460,13 @@ MapiMsg mapi_prepare_array_internal(Mapi mid, char *cmd, char **val)
 	/* first get rid of previous bindings */
 	for(i=0;i<mid->fieldcnt;i++){
 		mid->fields[i].inparam= 0;
-		mid->fields[i].intype= SQL_AUTO;
+		mid->fields[i].intype= MAPI_AUTO;
 	}
 	for(i=0; val[i];i++){
 		if( i >= mid->maxfields)
 			mapi_extend_fields(mid, i+1);
 		mid->fields[i].inparam= val[i];
-		mid->fields[i].intype= SQL_AUTO;
+		mid->fields[i].intype= MAPI_AUTO;
 	}
 	return ret;
 }
@@ -1524,76 +1525,76 @@ static void mapi_param_store(Mapi mid)
 			void *src = mid->fields[i].inparam; /* abbrev */
 
 			switch(mid->fields[i].intype) {
-			case SQL_TINY:
+			case MAPI_TINY:
 				@:checkSpace(5)@
 				sprintf(mid->query+k, "%d",
 					*(signed char *)src);
 				break;
-			case SQL_UTINY:
+			case MAPI_UTINY:
 				@:checkSpace(5)@
 				sprintf(mid->query+k, "%u",
 					*(unsigned char *)src);
 				break;
-			case SQL_SHORT:
+			case MAPI_SHORT:
 				@:checkSpace(10)@
 				sprintf(mid->query+k, "%d", *(short *)src);
 				break;
-			case SQL_USHORT:
+			case MAPI_USHORT:
 				@:checkSpace(10)@
 				sprintf(mid->query+k, "%u",
 					*(unsigned short *)src);
 				break;
-			case SQL_INT:
+			case MAPI_INT:
 				@:checkSpace(20)@
 				sprintf(mid->query+k, "%d", *(int *)src);
 				break;
-			case SQL_UINT:
+			case MAPI_UINT:
 				@:checkSpace(20)@
 				sprintf(mid->query+k, "%u",
 					*(unsigned int *)src);
 				break;
-			case SQL_LONG: 
+			case MAPI_LONG: 
 				@:checkSpace(20)@
 				sprintf(mid->query+k, "%ld", *(long *)src);
 				break;
-			case SQL_ULONG:
+			case MAPI_ULONG:
 				@:checkSpace(20)@
 				sprintf(mid->query+k, "%lu",
 					*(unsigned long *)src);
 				break;
-			case SQL_LONGLONG: 
+			case MAPI_LONGLONG: 
 				@:checkSpace(30)@
 				sprintf(mid->query+k, LLFMT,
 					*(mapi_int64 *)src);
 				break;
-			case SQL_ULONGLONG: 
+			case MAPI_ULONGLONG: 
 				@:checkSpace(30)@
 				sprintf(mid->query+k, ULLFMT,
 					*(mapi_uint64 *)src);
 				break;
-			case SQL_FLOAT:
+			case MAPI_FLOAT:
 				@:checkSpace(30)@
 				sprintf(mid->query+k, "%.9g", *(float *)src);
 				break;
-			case SQL_DOUBLE:
+			case MAPI_DOUBLE:
 				@:checkSpace(20)@
 				sprintf(mid->query+k, "%.17g", *(double *)src);
 				break;
-			case SQL_DATE:
+			case MAPI_DATE:
 				@:checkSpace(40)@
 				sprintf(mid->query+k, "%d-%u-%u",
 					((MapiDate *) src)->year,
 					((MapiDate *) src)->month,
 					((MapiDate *) src)->day);
 				break;
-			case SQL_TIME:
+			case MAPI_TIME:
 				@:checkSpace(50)@
 				sprintf(mid->query+k, "%u:%u:%.17g",
 					((MapiTime *) src)->hour,
 					((MapiTime *) src)->minute,
 					((MapiTime *) src)->second);
 				break;
-			case SQL_DATETIME:
+			case MAPI_DATETIME:
 				@:checkSpace(90)@
 				sprintf(mid->query+k, "%d-%u-%u %u:%u:%.17g",
 					((MapiDateTime *) src)->date.year,
@@ -1603,7 +1604,7 @@ static void mapi_param_store(Mapi mid)
 					((MapiDateTime *) src)->time.minute,
 					((MapiDateTime *) src)->time.second);
 				break;
-			case SQL_CHAR:
+			case MAPI_CHAR:
 				buf[0] =*(char*)src;
 				buf[1]=0;
 				val= mapi_quote(buf);
@@ -1611,7 +1612,7 @@ static void mapi_param_store(Mapi mid)
 				sprintf(mid->query+k, "'%s'",val);
 				free(val);
 				break;
-			case SQL_VARCHAR:
+			case MAPI_VARCHAR:
 				val= mapi_quote((char*)src);
 				@:checkSpace(strlen(val))@
 				sprintf(mid->query+k, "'%s'",val);
@@ -2481,67 +2482,67 @@ void mapi_store_bind(Mapi mid)
 			}
 			/* auto convert to C-type */
 			switch(mid->fields[i].outtype){
-			case SQL_TINY:
+			case MAPI_TINY:
 				*(signed char *)dst = (signed char) strtol(val,NULL,0);
 				break;
-			case SQL_UTINY:
+			case MAPI_UTINY:
 				*(unsigned char *)dst = (unsigned char) strtoul(val,NULL,0);
 				break;
-			case SQL_SHORT:
+			case MAPI_SHORT:
 				*(short *)dst = (short) strtol(val,NULL,0);
 				break;
-			case SQL_USHORT:
+			case MAPI_USHORT:
 				*(unsigned short *)dst = (unsigned short) strtoul(val,NULL,0);
 				break;
-			case SQL_NUMERIC:
-			case SQL_INT:
+			case MAPI_NUMERIC:
+			case MAPI_INT:
 				*(int *)dst = (int) strtol(val,NULL,0);
 				break;
-			case SQL_UINT:
+			case MAPI_UINT:
 				*(unsigned int *)dst = (unsigned int) strtoul(val,NULL,0);
 				break;
-			case SQL_LONG:
+			case MAPI_LONG:
 				*(long *)dst = strtol(val,NULL,0);
 				break;
-			case SQL_ULONG:
+			case MAPI_ULONG:
 				*(unsigned long *)dst = strtoul(val,NULL,0);
 				break;
 #ifdef HAVE_STRTOLL
-			case SQL_LONGLONG:
+			case MAPI_LONGLONG:
 				*(mapi_int64 *)dst = strtoll(val,NULL,0);
 				break;
 #endif
 #ifdef HAVE_STRTOULL
-			case SQL_ULONGLONG:
+			case MAPI_ULONGLONG:
 				*(mapi_uint64 *)dst = strtoull(val,NULL,0);
 				break;
 #endif
-			case SQL_CHAR:
+			case MAPI_CHAR:
 				*(char *)dst = *val;
 				break;
 #ifdef HAVE_STRTOF
-			case SQL_FLOAT:
+			case MAPI_FLOAT:
 				*(float *)dst = strtof(val,NULL);
 				break;
 #endif
 #ifdef HAVE_STRTOD
-			case SQL_DOUBLE:
+			case MAPI_DOUBLE:
 				*(double *)dst = strtod(val,NULL);
 				break;
 #endif
-			case SQL_DATE:
+			case MAPI_DATE:
 				sscanf(val, "%d-%hu-%hu",
 				       &((MapiDate *) dst)->year,
 				       &((MapiDate *) dst)->month,
 				       &((MapiDate *) dst)->day);
 				break;
-			case SQL_TIME:
+			case MAPI_TIME:
 				sscanf(val, "%hu:%hu:%lf",
 				       &((MapiTime *) dst)->hour,
 				       &((MapiTime *) dst)->minute,
 				       &((MapiTime *) dst)->second);
 				break;
-			case SQL_DATETIME:
+			case MAPI_DATETIME:
 				sscanf(val, "%d-%hu-%hu %hu:%hu:%lf",
 				       &((MapiDateTime *) dst)->date.year,
 				       &((MapiDateTime *) dst)->date.month,
@@ -2550,8 +2551,8 @@ void mapi_store_bind(Mapi mid)
 				       &((MapiDateTime *) dst)->time.minute,
 				       &((MapiDateTime *) dst)->time.second);
 				break;
-			case SQL_AUTO:
-			case SQL_VARCHAR:
+			case MAPI_AUTO:
+			case MAPI_VARCHAR:
 			default:
 				*(char **)dst = val;
 			}
