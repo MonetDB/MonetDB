@@ -167,8 +167,9 @@ mapi_get_dbname()	&	Database being served\\
 mapi_get_host()	&	Host name of server\\
 mapi_get_language()	& Query language name\\
 mapi_get_user()	&	Current user name\\
-mapi_get_version()	& Monet version name\\
-mapi_get_versionId()	& Monet version identifier\\
+mapi_get_mapi_version()	& Mapi version name\\
+mapi_get_monet_version()	& Monet version name\\
+mapi_get_monet_versionId()	& Monet version identifier\\
 mapi_get_field_count()	& Number of fields in current row\\
 mapi_get_row_count()	&	Number of rows in cache or -1\\
 mapi_ping()	&	Test server for accessibility\\
@@ -594,7 +595,8 @@ typedef struct{
 } BlockCache;
 
 typedef struct MapiStruct {
-	char server[MAPINAMELEN];	/* server version message */
+	char server[MAPINAMELEN];	/* server version*/
+	char mapiversion[MAPINAMELEN];	/* mapi version */
 	char hostname[MAPINAMELEN];
 	int  port;
 	char username[MAPINAMELEN];
@@ -912,6 +914,7 @@ static Mapi mapi_new(void)
 	m->languageId= LANG_MIL;
 	m->versionId= 4;
 #endif
+	strcpy(m->mapiversion,"mapi 1.0");
 	strcpy(m->username,"anonymous");
 	strcpy(m->password,"unknown");
 	/* default prompt */
@@ -2654,12 +2657,17 @@ char *mapi_get_lang(Mapi mid)
 	return mid->language;
 }
 
-char *mapi_get_version(Mapi mid)
+char *mapi_get_mapi_version(Mapi mid)
 {
-	mapi_check0(mid,"mapi_get_version");
+	mapi_check0(mid,"mapi_get_mapi_version");
+	return mid->mapiversion;
+}
+char *mapi_get_monet_version(Mapi mid)
+{
+	mapi_check0(mid,"mapi_get_monet_version");
 	return mid->server;
 }
-int mapi_get_versionId(Mapi mid)
+int mapi_get_monet_versionId(Mapi mid)
 {
 	return mid->versionId;
 }
