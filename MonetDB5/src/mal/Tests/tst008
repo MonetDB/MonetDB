@@ -1,3 +1,0 @@
-i:=32;
-printi;
-print(i);

@@ -1,6 +1,0 @@
-# check classification of functions in the proper module
-
-module bat;
-command new(any::1 h,any::2 t):bat[any::1,any::2]= GDKbatnew;
-
-b:= bat.new(str,int);
