@@ -213,6 +213,8 @@ def am_binary(fd, var, binmap, am ):
   if (len(SCRIPTS) > 0):
     fd.write("%s_scripts = %s\n" % (binname,am_list2string(SCRIPTS," ","")))
     am['BUILT_SOURCES'].append("$(" + name + "_scripts)")
+    fd.write("all-local-%s: $(%s_scripts)\n" % (name,name))
+    am['ALL'].append(name)
 
   am_find_hdrs(am, binmap)
 
@@ -256,6 +258,8 @@ def am_bins(fd, var, binsmap, am ):
     if (len(SCRIPTS) > 0):
       fd.write("%s_scripts = %s\n\n" % (name,am_list2string(SCRIPTS," ","")))
       am['BUILT_SOURCES'].append("$(" + name + "_scripts)")
+      fd.write("all-local-%s: $(%s_scripts)\n" % (name,name))
+      am['ALL'].append(name)
 
   if (binsmap.has_key('HEADERS')):
     HDRS = []
@@ -312,6 +316,8 @@ def am_library(fd, var, libmap, am ):
   if (len(SCRIPTS) > 0):
     fd.write("%s_scripts = %s\n" % (libname,am_list2string(SCRIPTS," ","")))
     am['BUILT_SOURCES'].append("$(" + libname + "_scripts)")
+    fd.write("all-local-%s: $(%s_scripts)\n" % (libname,libname))
+    am['ALL'].append(libname)
 
   am_find_hdrs(am, libmap)
 
@@ -361,6 +367,8 @@ def am_libs(fd, var, libsmap, am ):
     if (len(SCRIPTS) > 0):
       fd.write("%s_scripts = %s\n\n" % (lib,am_list2string(SCRIPTS," ","")))
       am['BUILT_SOURCES'].append("$(" + lib + "_scripts)")
+      fd.write("all-local-%s: $(%s_scripts)\n" % (lib,lib))
+      am['ALL'].append(lib)
 
   if (libsmap.has_key('HEADERS')):
     HDRS = []
