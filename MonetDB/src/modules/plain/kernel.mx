@@ -494,20 +494,21 @@ int CMDcast(Cntxt stk, YYSTREE lt, ValPtr res){
 
 int CMDbatcast(Cntxt stk, YYSTREE lt, ValPtr res){
 	ValRecord argv[2];
-        int i, bid;
+        int i, tpe, bid;
 
         @:builtin_args(2)@
         i = interpret(stk, lt->yysons[1], argv);
-        if (argv[0].vtype != TYPE_int || argv[0].val.ival < 0 || argv[0].val.ival > GDKatomcnt) {
+	tpe = argv[0].val.ival;
+        if (i < 0 || argv[0].vtype != TYPE_int || tpe < 0 || tpe > GDKatomcnt) {
         	GDKerror("[batcast]: 2nd parameter should be INT type specifier.\n");
         	return -1;
         }
-        i = interpret(stk, lt->yysons[0], argv+1);
-	if (i < 0 || argv[1].vtype != TYPE_bat || !BATdescriptor(bid = argv[1].val.bval)) {
+        i = interpret(stk, lt->yysons[0], argv);
+	if (i < 0 || argv[0].vtype != TYPE_bat || !BATdescriptor(bid = argv[0].val.bval)) {
         	GDKerror("[batcast]: first parameter should be a valid bat.\n");
 		return -1;
 	}
-	i = interpret_batcast(ATOMname(argv[0].val.ival), 2, argv, res);
+	i = interpret_batcast(ATOMname(tpe), 2, argv, res);
 	BBPunfix(bid);
 	return i;
 }
