@@ -737,8 +737,9 @@ public class JdbcClient {
 	/**
 	 * scans the given string and tries to discover if it is a complete query
 	 * or that there needs something to be added. If a string doesn't end with
-	 * a ; it is considered not to be complete. SQL string quotation using ' is
-	 * taken into account when scanning a string this way.
+	 * a ; it is considered not to be complete. SQL string quotation using ' and
+	 * SQL identifier quotation using " is taken into account when scanning a
+	 * string this way.
 	 * Additionally, this method removes comments from the SQL statements,
 	 * identified by -- and removes white space where appropriate.
 	 *
@@ -747,8 +748,10 @@ public class JdbcClient {
 	 */
 	private static QueryPart scanQuery(String query, SQLStack stack) {
 		// examine string, char for char
-		boolean inString = (stack.peek() == '\''), escaped = false;
-		boolean wasInString = inString;
+		boolean inString = (stack.peek() == '\'');
+		boolean inIdentifier = (stack.peek() == '"');
+		boolean escaped = false;
+		boolean wasInString = inString, wasInIdentifier = inIdentifier;
 		int len = query.length();
 		for (int i = 0; i < len; i++) {
 			switch(query.charAt(i)) {
@@ -760,43 +763,61 @@ public class JdbcClient {
 				break;
 				case '\'':
 					/**
-					 * If all strings are wrapped between two quotes, a \" can
-					 * never exist outside a string. Thus if we believe that we
-					 * are not within a string, we can safely assume we're about
-					 * to enter a string if we find a quote.
-					 * If we are in a string we should stop being in a string if
-					 * we find a quote which is not prefixed by a \, for that
-					 * would be an escaped quote. However, a nasty situation can
-					 * occur where the string is like "test \\" as obvious, a
-					 * test for a \ in front of a " doesn't hold here for all
-					 * cases. Because "test \\\"" can exist as well, we need to
+					 * We can not be in a string if we are in an identifier. So
+					 * If we find a ' and are not in an identifier, and not in
+					 * a string we can safely assume we will be now in a string.
+					 * If we are in a string already, we should stop being in a
+					 * string if we find a quote which is not prefixed by a \,
+					 * for that would be an escaped quote. However, a nasty
+					 * situation can occur where the string is like 'test \\'.
+					 * As obvious, a test for a \ in front of a ' doesn't hold
+					 * here. Because 'test \\\'' can exist as well, we need to
 					 * know if a quote is prefixed by an escaping slash or not.
 					 */
-					if (!inString) {
-						inString = true;
-						stack.push('\'');
-					} else if (!escaped) {
-						inString = false;
-						if (stack.peek() == '\'') stack.pop();
+					if (!inIdentifier) {
+						if (!inString && !escaped) {
+							// although it makes no sense to escape a quote
+							// outside a string, it is escaped, thus not meant
+							// as quote for us, apparently
+							inString = true;
+							stack.push('\'');
+						} else if (!escaped && stack.peek() == '\'') {
+							inString = false;
+							stack.pop();
+						}
+					} else {
+						// reset escaped flag
+						escaped = false;
 					}
-
-					// reset escaped flag
-					escaped = false;
+				break;
+				case '"':
+					if (!inString) {
+						if (!inIdentifier && !escaped) {
+							inIdentifier = true;
+							stack.push('"');
+						} else if (!escaped && stack.peek() == '"') {
+							inIdentifier = false;
+							stack.pop();
+						}
+					} else {
+						// reset escaped flag
+						escaped = false;
+					}
 				break;
 				case '-':
-					if (!inString && i + 1 < len && query.charAt(i + 1) == '-') {
+					if (!escaped && !(inString || inIdentifier) && i + 1 < len && query.charAt(i + 1) == '-') {
 						len = i;
 					}
 					escaped = false;
 				break;
 				case '(':
-					if (!inString) {
+					if (!escaped && !(inString || inIdentifier)) {
 						stack.push('(');
 					}
 					escaped = false;
 				break;
 				case ')':
-					if (!inString && stack.peek() == '(') {
+					if (!escaped && !(inString || inIdentifier) && stack.peek() == '(') {
 						stack.pop();
 					}
 					escaped = false;
@@ -805,12 +826,12 @@ public class JdbcClient {
 		}
 
 		int start = 0;
-		if (!wasInString && len > 0) {
+		if (!wasInString && !wasInIdentifier && len > 0) {
 			// trim spaces at the start of the string
 			for (; start < len && Character.isWhitespace(query.charAt(start)); start++);
 		}
 		int stop = len - 1;
-		if (!inString && stop > start) {
+		if (!inString && !wasInIdentifier && stop > start) {
 			// trim spaces at the end of the string
 			for (; stop >= start && Character.isWhitespace(query.charAt(stop)); stop--);
 		}
@@ -818,8 +839,8 @@ public class JdbcClient {
 
 		if (start == stop) {
 			// we have an empty string
-			return(new QueryPart(false, null, inString));
-		} else if (inString) {
+			return(new QueryPart(false, null, inString || inIdentifier));
+		} else if (inString || inIdentifier) {
 			// we have an open quote
 			return(new QueryPart(false, query.substring(start, stop), true));
 		} else {
