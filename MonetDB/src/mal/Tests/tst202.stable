@@ -10,13 +10,13 @@
 ## or ignoring.
 ## a typical case is to try to rename an existing (persistent) bat
 #
-#	b:= bat.new(int,int);
-#	rename(b,"mybat");
+#	b:= new(int,int);
+#	setName(b,"mybat");
 #	#setPersistent(b);
-#	roles(b,"first","second");
+#	setColumn(b,"first","second");
 #	print(b);
-#	c:= bat.new(int,str);
-#	rename(c,"mybat");
+#	c:= new(int,str);
+#	setName(c,"mybat");
 #	print(c);
 #	#setPersistent(c);
 #	print(c);
@@ -29,14 +29,14 @@
 #	#destroy(c);
 #
 function Admin.main():int;	#0:void (main:int)
-	b := bat.new(int,int);	#1:BAT (b:bat[int,int])(int:int)(int:int)
-	bat.rename(b,"mybat");	#2:void ($3:any)(b:bat[int,int])($4:str)
-	bat.roles(b,"first","second");	#3:int ($5:int)(b:bat[int,int])($6:str)($7:str)
-	system.print(b);	#4:int ($8:int)(b:bat[int,int])
-	c := bat.new(int,str);	#5:BAT (c:bat[int,str])(int:int)(str:str)
-	bat.rename(c,"mybat");	#6:void ($11:any)(c:bat[int,str])($4:str)
-	system.print(c);	#7:int ($12:int)(c:bat[int,str])
-	system.print(c);	#8:int ($13:int)(c:bat[int,str])
+	b := mal.new(int,int);	#1:BAT (b:bat[int,int])(int:int)(int:int)
+	bat.setName(b,"mybat");	#2:void ($3:any)(b:bat[int,int])($4:str)
+	bat.setColumn(b,"first","second");	#3:BAT ($5:bat[int,int])(b:bat[int,int])($6:str)($7:str)
+	mal.print(b);	#4:int ($8:int)(b:bat[int,int])
+	c := mal.new(int,str);	#5:BAT (c:bat[int,str])(int:int)(str:str)
+	bat.setName(c,"mybat");	#6:void ($11:any)(c:bat[int,str])($4:str)
+	mal.print(c);	#7:int ($12:int)(c:bat[int,str])
+	mal.print(c);	#8:int ($13:int)(c:bat[int,str])
 	system.printf("catched anything?\n");	#9:int ($14:int)($15:str)
 catch	GDKerror;	#10:str (GDKerror:str)
 	system.printf("Catched the renaming exception\n");	#11:int ($17:int)($18:str)

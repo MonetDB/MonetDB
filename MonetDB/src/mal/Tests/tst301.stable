@@ -17,7 +17,7 @@
 function Admin.main():int;	#0:void (main:int)
 	IllegalAccess := 1234;	#1:int (IllegalAccess:int)($2:int)
 	raise IllegalAccess;	#2:int (IllegalAccess:int)
-	system.print("should not come here\n");	#3:int ($3:int)($4:str)
+	mal.print("should not come here\n");	#3:int ($3:int)($4:str)
 catch	IllegalAccess;	#4:int (IllegalAccess:int)
 	system.printf("catched %d\n",IllegalAccess);	#5:int ($5:int)($6:str)(IllegalAccess:int)
 end	IllegalAccess;	#6:int (IllegalAccess:int)

@@ -33,7 +33,7 @@ end function;	#9:void
 function Admin.main():int;	#0:void (main:int)
 	a := "hello";	#1:str (a:str)($2:str)
 	z := Admin.pl(a);	#2:int (z:int)(a:str)
-	system.print("done");	#3:int ($4:int)($5:str)
+	mal.print("done");	#3:int ($4:int)($5:str)
 end function;	#4:void 
 [ "done" ]
 >

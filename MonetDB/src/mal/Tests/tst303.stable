@@ -21,14 +21,14 @@
 function Admin.main():int;	#0:void (main:int)
 	IllegalAccess := "an exception";	#1:str (IllegalAccess:str)($2:str)
 	raise IllegalAccess;	#2:str (IllegalAccess:str)
-	system.print("should not come here\n");	#3:int ($3:int)($4:str)
+	mal.print("should not come here\n");	#3:int ($3:int)($4:str)
 catch	IllegalAccess;	#4:str (IllegalAccess:str)
 	system.printf("catched %s\n",IllegalAccess);	#5:int ($5:int)($6:str)(IllegalAccess:str)
 	IllegalAccess := "a second exception raise";	#6:str (IllegalAccess:str)($7:str)
 	raise IllegalAccess;	#7:str (IllegalAccess:str)
-	system.print("should not come here either\n");	#8:int ($8:int)($9:str)
+	mal.print("should not come here either\n");	#8:int ($8:int)($9:str)
 end	IllegalAccess;	#9:str (IllegalAccess:str)
-	system.print("should not be done");	#10:int ($10:int)($11:str)
+	mal.print("should not be done");	#10:int ($10:int)($11:str)
 end function;	#11:void 
 catched an exception
 !ERROR: IllegalAccess:Admin.main[7]:a second exception raise

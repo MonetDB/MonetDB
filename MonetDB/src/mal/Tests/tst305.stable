@@ -18,7 +18,7 @@
 function Admin.myException():any;	#0 polymorphic:void (myException:any)
 	IllegalAccess := "new exception";	#1:str (IllegalAccess:str)($2:str)
 	raise IllegalAccess;	#2:str (IllegalAccess:str)
-	system.print("should have left function ");	#3:int ($3:int)($4:str)
+	mal.print("should have left function ");	#3:int ($3:int)($4:str)
 end function;	#4:void 
 #
 #	myException();
@@ -26,7 +26,7 @@ end function;	#4:void
 #
 function Admin.main():int;	#0:void (main:int)
 	Admin.myException();	#1:void ($1:any)
-	system.print("should not come here");	#2:int ($2:int)($3:str)
+	mal.print("should not come here");	#2:int ($2:int)($3:str)
 end function;	#3:void 
 !ERROR: IllegalAccess:Admin.myException[2]:new exception
 MALexception:Admin.myException[4]:propagated

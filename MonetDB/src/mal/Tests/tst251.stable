@@ -10,19 +10,19 @@
 ## The first and foremost BAT operations
 #
 #b:= new(int,int);
-#err := insert(b,1,15);
-#err := insert(b,2,4);
+#insert(b,1,15);
+#insert(b,2,4);
 #n0  := int(nil);
-#err := insert(b,3,n0);
-#err := insert(b,4,16);
-#err := insert(b,5,25);
-#err := insert(b,6,36);
-#err := insert(b,7,49);
-#err := insert(b,8,64);
-#err := insert(b,9,n0);
-#err := insert(b,n0,n0);
-#err := insert(b,n0,81);
-#err := print(b);
+#insert(b,3,n0);
+#insert(b,4,16);
+#insert(b,5,25);
+#insert(b,6,36);
+#insert(b,7,49);
+#insert(b,8,64);
+#insert(b,9,n0);
+#insert(b,n0,n0);
+#insert(b,n0,81);
+#print(b);
 #i := -1:int;
 #h:= 0:int;
 #t:= 0:int;
@@ -38,13 +38,13 @@
 #
 ## String stuff
 #c:= new(int,str);
-#err:= insert(c,1,"hello");
-#err:= insert(c,2,"brave");
-#err:= insert(c,3,"world");
-#err:= insert(c,4,"");
+#insert(c,1,"hello");
+#insert(c,2,"brave");
+#insert(c,3,"world");
+#insert(c,4,"");
 #x:= str(nil);
-#err:= insert(c,5,x);
-#err:= insert(c,6,"!");
+#insert(c,5,x);
+#insert(c,6,"!");
 #print(c);
 #i := -1:int;
 #ts:= "";
@@ -57,46 +57,46 @@
 #
 #
 function Admin.main():int;	#0:void (main:int)
-	b := bat.new(int,int);	#1:BAT (b:bat[int,int])(int:int)(int:int)
-	err := bat.insert(b,1,15);	#2:int (err:int)(b:bat[int,int])($4:int)($5:int)
-	err := bat.insert(b,2,4);	#3:int (err:int)(b:bat[int,int])($6:int)($7:int)
-	n0 := atoms.int(nil);	#4:int (n0:int)($9:void)
-	err := bat.insert(b,3,n0);	#5:int (err:int)(b:bat[int,int])($10:int)(n0:int)
-	err := bat.insert(b,4,16);	#6:int (err:int)(b:bat[int,int])($7:int)($11:int)
-	err := bat.insert(b,5,25);	#7:int (err:int)(b:bat[int,int])($12:int)($13:int)
-	err := bat.insert(b,6,36);	#8:int (err:int)(b:bat[int,int])($14:int)($15:int)
-	err := bat.insert(b,7,49);	#9:int (err:int)(b:bat[int,int])($16:int)($17:int)
-	err := bat.insert(b,8,64);	#10:int (err:int)(b:bat[int,int])($18:int)($19:int)
-	err := bat.insert(b,9,n0);	#11:int (err:int)(b:bat[int,int])($20:int)(n0:int)
-	err := bat.insert(b,n0,n0);	#12:int (err:int)(b:bat[int,int])(n0:int)(n0:int)
-	err := bat.insert(b,n0,81);	#13:int (err:int)(b:bat[int,int])(n0:int)($21:int)
-	err := system.print(b);	#14:int (err:int)(b:bat[int,int])
-	i := -1;	#15:int (i:int)($23:int)
-	h := 0;	#16:int (h:int)($25:int)
-	t := 0;	#17:int (t:int)($25:int)
+	b := mal.new(int,int);	#1:BAT (b:bat[int,int])(int:int)(int:int)
+	bat.insert(b,1,15);	#2:BAT ($3:bat[int,int])(b:bat[int,int])($4:int)($5:int)
+	bat.insert(b,2,4);	#3:BAT ($6:bat[int,int])(b:bat[int,int])($7:int)($8:int)
+	n0 := arith.int(nil);	#4:int (n0:int)($10:void)
+	bat.insert(b,3,n0);	#5:BAT ($11:bat[int,int])(b:bat[int,int])($12:int)(n0:int)
+	bat.insert(b,4,16);	#6:BAT ($13:bat[int,int])(b:bat[int,int])($8:int)($14:int)
+	bat.insert(b,5,25);	#7:BAT ($15:bat[int,int])(b:bat[int,int])($16:int)($17:int)
+	bat.insert(b,6,36);	#8:BAT ($18:bat[int,int])(b:bat[int,int])($19:int)($20:int)
+	bat.insert(b,7,49);	#9:BAT ($21:bat[int,int])(b:bat[int,int])($22:int)($23:int)
+	bat.insert(b,8,64);	#10:BAT ($24:bat[int,int])(b:bat[int,int])($25:int)($26:int)
+	bat.insert(b,9,n0);	#11:BAT ($27:bat[int,int])(b:bat[int,int])($28:int)(n0:int)
+	bat.insert(b,n0,n0);	#12:BAT ($29:bat[int,int])(b:bat[int,int])(n0:int)(n0:int)
+	bat.insert(b,n0,81);	#13:BAT ($30:bat[int,int])(b:bat[int,int])(n0:int)($31:int)
+	mal.print(b);	#14:int ($32:int)(b:bat[int,int])
+	i := -1;	#15:int (i:int)($34:int)
+	h := 0;	#16:int (h:int)($36:int)
+	t := 0;	#17:int (t:int)($36:int)
 barrier	v := mal.batloop(i,b,h,t);	#18:bit (v:bit)(i:int)(b:bat[int,int])(h:int)(t:int)
-	system.printf("[%d,",i);	#19:int ($28:int)($29:str)(i:int)
+	system.printf("[%d,",i);	#19:int ($39:int)($40:str)(i:int)
 	h := mal.getHead(i,b);	#20:int (h:int)(i:int)(b:bat[int,int])
-	system.printf("%d,",h);	#21:int ($30:int)($31:str)(h:int)
+	system.printf("%d,",h);	#21:int ($41:int)($42:str)(h:int)
 	t := mal.getTail(i,b);	#22:int (t:int)(i:int)(b:bat[int,int])
-	system.printf("%d]\n",t);	#23:int ($32:int)($33:str)(t:int)
+	system.printf("%d]\n",t);	#23:int ($43:int)($44:str)(t:int)
 	redo v ;	#24:bit (v:bit)
 end	v;	#25:bit (v:bit)
-	c := bat.new(int,str);	#26:BAT (c:bat[int,str])(int:int)(str:str)
-	err := bat.insert(c,1,"hello");	#27:int (err:int)(c:bat[int,str])($4:int)($36:str)
-	err := bat.insert(c,2,"brave");	#28:int (err:int)(c:bat[int,str])($6:int)($37:str)
-	err := bat.insert(c,3,"world");	#29:int (err:int)(c:bat[int,str])($10:int)($38:str)
-	err := bat.insert(c,4,"");	#30:int (err:int)(c:bat[int,str])($7:int)($39:str)
-	x := atoms.str(nil);	#31:str (x:str)($9:void)
-	err := bat.insert(c,5,x);	#32:int (err:int)(c:bat[int,str])($12:int)(x:str)
-	err := bat.insert(c,6,"!");	#33:int (err:int)(c:bat[int,str])($14:int)($41:str)
-	system.print(c);	#34:int ($42:int)(c:bat[int,str])
-	i := -1;	#35:int (i:int)($23:int)
-	ts := "";	#36:str (ts:str)($39:str)
+	c := mal.new(int,str);	#26:BAT (c:bat[int,str])(int:int)(str:str)
+	bat.insert(c,1,"hello");	#27:BAT ($47:bat[int,str])(c:bat[int,str])($48:int)($49:str)
+	bat.insert(c,2,"brave");	#28:BAT ($50:bat[int,str])(c:bat[int,str])($51:int)($52:str)
+	bat.insert(c,3,"world");	#29:BAT ($53:bat[int,str])(c:bat[int,str])($54:int)($55:str)
+	bat.insert(c,4,"");	#30:BAT ($56:bat[int,str])(c:bat[int,str])($57:int)($58:str)
+	x := arith.str(nil);	#31:str (x:str)($60:void)
+	bat.insert(c,5,x);	#32:BAT ($61:bat[int,str])(c:bat[int,str])($62:int)(x:str)
+	bat.insert(c,6,"!");	#33:BAT ($63:bat[int,str])(c:bat[int,str])($64:int)($65:str)
+	mal.print(c);	#34:int ($66:int)(c:bat[int,str])
+	i := -1;	#35:int (i:int)($67:int)
+	ts := "";	#36:str (ts:str)($58:str)
 barrier	v := mal.batloop(i,c,h,ts);	#37:bit (v:bit)(i:int)(c:bat[int,str])(h:int)(ts:str)
-	system.printf("[%d,",i);	#38:int ($44:int)($29:str)(i:int)
-	system.printf("%d,",h);	#39:int ($45:int)($31:str)(h:int)
-	system.printf("%s]\n",ts);	#40:int ($46:int)($47:str)(ts:str)
+	system.printf("[%d,",i);	#38:int ($69:int)($40:str)(i:int)
+	system.printf("%d,",h);	#39:int ($70:int)($42:str)(h:int)
+	system.printf("%s]\n",ts);	#40:int ($71:int)($72:str)(ts:str)
 	redo v ;	#41:bit (v:bit)
 end	v;	#42:bit (v:bit)
 end function;	#43:void 

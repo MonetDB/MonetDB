@@ -9,7 +9,7 @@
 ## check in-compatible polmorphic types
 #
 #command f(a:any::1,b:any::2, c:any::1) :bat[any::1,any::2] = f;
-!ERROR: address of function 'f' not found
+!ERROR: address of 'f' not found
 command Admin.f(a:any::1,b:any::2,c:any::1):bat[any::1,any::2] = f;	#0 polymorphic:void (f:bat[any::1,any::2])(a:any::1)(b:any::2)(c:any::1)
 #
 #b:= f(1,2,"help");

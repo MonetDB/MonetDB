@@ -2,13 +2,13 @@
 # or ignoring.
 # a typical case is to try to rename an existing (persistent) bat
 
-	b:= bat.new(int,int);
-	rename(b,"mybat");
+	b:= new(int,int);
+	setName(b,"mybat");
 	#setPersistent(b);
-	roles(b,"first","second");
+	setColumn(b,"first","second");
 	print(b);
-	c:= bat.new(int,str);
-	rename(c,"mybat");
+	c:= new(int,str);
+	setName(c,"mybat");
 	print(c);
 	#setPersistent(c);
 	print(c);

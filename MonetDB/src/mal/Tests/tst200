@@ -2,16 +2,16 @@
 # The first and foremost BAT operations
 
 o:=oid(20000000);
-err:=setoid(o);
+setoid(o);
 #test basic functionality of the BAT library.
 #focussed on integers
 #it includes insertions,deletions,selections, and joins.
 
 b:= new(int,int);
-err:= printf("#~BeginVariableOutput~#\n"); 
+printf("#~BeginVariableOutput~#\n"); 
 #binfo:= info(b);
 #err:= print(binfo); 
-err:= printf("#~EndVariableOutput~#\n");
+printf("#~EndVariableOutput~#\n");
 
 err := insert(b,1,15);
 err := insert(b,2,4);
@@ -25,5 +25,5 @@ err := insert(b,8,64);
 err := insert(b,9,n0);
 err := insert(b,n0,n0);
 err := insert(b,n0,81);
-err := print(b);
-err := print(b,b,b);
+print(b);
+print(b,b,b);

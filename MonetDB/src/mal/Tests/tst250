@@ -14,7 +14,7 @@ err := insert(b,8,64);
 err := insert(b,9,n0);
 err := insert(b,n0,n0);
 err := insert(b,n0,81);
-err := print(b);
+print(b);
 i := -1:int;
 barrier v:= batloop(i,b);
 	print(i);

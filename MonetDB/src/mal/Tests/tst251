@@ -2,19 +2,19 @@
 # The first and foremost BAT operations
 
 b:= new(int,int);
-err := insert(b,1,15);
-err := insert(b,2,4);
+insert(b,1,15);
+insert(b,2,4);
 n0  := int(nil);
-err := insert(b,3,n0);
-err := insert(b,4,16);
-err := insert(b,5,25);
-err := insert(b,6,36);
-err := insert(b,7,49);
-err := insert(b,8,64);
-err := insert(b,9,n0);
-err := insert(b,n0,n0);
-err := insert(b,n0,81);
-err := print(b);
+insert(b,3,n0);
+insert(b,4,16);
+insert(b,5,25);
+insert(b,6,36);
+insert(b,7,49);
+insert(b,8,64);
+insert(b,9,n0);
+insert(b,n0,n0);
+insert(b,n0,81);
+print(b);
 i := -1:int;
 h:= 0:int;
 t:= 0:int;
@@ -30,13 +30,13 @@ end v;
 
 # String stuff
 c:= new(int,str);
-err:= insert(c,1,"hello");
-err:= insert(c,2,"brave");
-err:= insert(c,3,"world");
-err:= insert(c,4,"");
+insert(c,1,"hello");
+insert(c,2,"brave");
+insert(c,3,"world");
+insert(c,4,"");
 x:= str(nil);
-err:= insert(c,5,x);
-err:= insert(c,6,"!");
+insert(c,5,x);
+insert(c,6,"!");
 print(c);
 i := -1:int;
 ts:= "";

@@ -8,7 +8,7 @@
 # monetrc:/ufs/mk/.monet.conf
 ## more complex typechecking, it should not complain at compile time
 #command lookup(nme:str):bat[str,str] = CMDlookup;
-!ERROR: address of function 'CMDlookup' not found
+!ERROR: address of 'CMDlookup' not found
 command Admin.lookup(nme:str):bat[str,str] = CMDlookup;	#0:void (lookup:bat[str,str])(nme:str)
 #function sample(nme:str, val:any):bit;
 #   b := lookup(nme); #find a bat

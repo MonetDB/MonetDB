@@ -16,7 +16,7 @@
 #
 function Admin.main():int;	#0:void (main:int)
 	i := 1;	#1:int (i:int)($2:int)
-	system.print(i);	#2:int ($3:int)(i:int)
+	mal.print(i);	#2:int ($3:int)(i:int)
 catch	GDKerror;	#3:str (GDKerror:str)
 	system.printf("GDKerror, do something\n");	#4:int ($5:int)($6:str)
 end	GDKerror;	#5:str (GDKerror:str)
