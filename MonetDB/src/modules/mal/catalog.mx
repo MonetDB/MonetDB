@@ -40,9 +40,9 @@ MAL block.
 pattern varType() : bat[str,str] = CATALOGVarType
 	comment "Collect variables types";
 pattern varUsed() : bat[str,str] = CATALOGVarUsed
-	comment "Collect variable access modes";
+	comment "Collect variable used";
 pattern varConstant() : bat[str,str] = CATALOGVarConstant
-	comment "Collect variable constant/changeable property";
+	comment "Collect constant variables";
 
 pattern stkDepth():int = CATALOGStkDepth
 	comment "Return the depth of the calling stack.";
@@ -185,28 +185,28 @@ compliance only.
 function modules():void;
         t:= scopeNames();
         print(t);
-end function;
+end modules;
 
 function env():void;
         t:= gdkEnv();
         print(t);
-end function;
+end env;
 function environment():void;
         t:= gdkEnv();
         print(t);
-end function;
+end environment;
 function cpu():bat[str,int];
         return gdkCPU();
-end function;
+end cpu;
 function memory():bat[str,int];
         return gdkMemory();
-end function;
+end memory;
 function io():bat[str,int];
         return gdkIO();
-end function;
+end io;
 function bbp():bat[str,int];
         return gdkBBP();
-end function;
+end bbp;
 
 function dir(b:bat[int,str]):void;
 	atm:= catalog.atomNames();
@@ -237,18 +237,18 @@ function dir(b:bat[int,str]):void;
 	bRef:= join(brev,bref);
 	setName(bRef,"refcnt");
 	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
-end function;
+end dir;
 
 function dir(s:str):void;
 	t:= catalog.bbpNames();
 	tn:= like(t,s);
 	print(tn);
 	dir(tn);
-end function;
+end dir;
 function dir():void;
 	t:= catalog.bbpNames();
 	dir(t);
-end function;
+end dir;
 
 function ls():void;
 	nme:= catalog.bbpNames();
@@ -264,7 +264,7 @@ function ls():void;
 	ad_a := setColumn(yc_a,"name");
 	bd_a := replace(ad_a,rev);
 	cd_a := dir(bd_a);
-end function;
+end ls;
 
 function ls(substr:str):void;
 	dd_a := catalog.bbpNames();
@@ -281,7 +281,7 @@ function ls(substr:str):void;
 	ld_a := setColumn(kd_a,"name");
 	md_a := replace(ld_a,rev);
 	nd_a := dir(md_a);
-end function;
+end ls;
 @+ Implementation
 @h
 /*
@@ -342,21 +342,23 @@ str CATALOGVarType(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 }
 str CATALOGVarUsed(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {	int i, *ret= (int*) getArgReference(s,p,0);
-	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_str, TYPE_void, 256);
 	if (b == 0) return throwMessage("catalog.varUsed", "failed to create BAT");
 
 	for(i=0 ; i<s->stktop ; i++)
-		BUNins(b,getVarName(m,i),(isVarUsed(m,i)? "used":""));
+	if( isVarUsed(m,i))
+		BUNins(b,getVarName(m,i), &int_nil);
 	@:Pseudo(var,used)@
 	return MAL_SUCCEED;
 }
 str CATALOGVarConstant(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {	int i, *ret= (int*) getArgReference(s,p,0);
-	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_str, TYPE_void, 256);
 	if (b == 0) return throwMessage("catalog.varConstant", "failed to create BAT");
 
 	for(i=0 ; i<s->stktop ; i++)
-		BUNins(b,getVarName(m,i),(isVarConstant(m,i)? "constant":""));
+	if(isVarConstant(m,i))
+		BUNins(b,getVarName(m,i),&int_nil);
 	@:Pseudo(var,constant)@
 	return MAL_SUCCEED;
 }

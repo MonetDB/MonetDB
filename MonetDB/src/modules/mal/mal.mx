@@ -161,14 +161,14 @@ function timestamp(secs:lng):timestamp;
         d2:= secs *1000:lng;
         d3:= d1+d2;
         return d3
-end function;
+end timestamp;
 function epoch():timestamp
         comment "unix-time (epoch) support: seconds since 1-jan-1970 GMT";
         d0:= date(1970,1,1);
         d1:=daytime(0,0,0,0);
         d2:=tzone("GMT");
         d4:=timestamp(d0,d1,d2);
-end function;
+end epoch;
 #inline
 function epoch(t:timestamp):lng;
         e := epoch();
@@ -177,26 +177,26 @@ function epoch(t:timestamp):lng;
         d0:= t0/e0;
         d1:= t0/1000:lng;
         return d1;
-end function;
+end epoch;
 # rule creation synonyms
 function rule(m:int,d:int,w:int,h:int,min:int):rule;
         d0:= h*60;
         d1:= d0+min;
         r:= rule(m,d,w,d1);
         return r;
-end function;
+end rule;
 function rule(m:int,d:str,w:int,h:int,min:int):rule;
         dy:= daynum(d);
         d0:= h*60:int;
         d1:= d0+min;
         r:= rule(m,dy,w,d1);
         return r;
-end function;
+end rule;
 function rule(m:int,d:str,w:int,min:int):rule;
         dy:= daynum(d);
         r:= rule(m,dy,w,min);
         return r;
-end function;
+end rule;
 
 @-
 Some compiled old module load stuff from decimal:

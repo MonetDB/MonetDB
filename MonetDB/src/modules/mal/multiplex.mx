@@ -53,8 +53,9 @@ or to derived a fast C-based implementation.
 @mal
 module multiplex check = CMDmultiplexTypeCheck;
 
+command debug(b:bit):void = CMDmultiplexDebug;
 pattern tactics(CMD:str, a:any...):any = CMDmultiplexScript
-comment "Tactical optimizer for mutiplexed instructions.";
+comment "Tactical optimizer for multiplexed instructions.";
 
 pattern script(CMD:str, a:any...):any = CMDmultiplexScript
 comment "Generic processor for mutiplexed instructions.";
@@ -89,8 +90,8 @@ comment "Generic processor for mutiplexed instructions.";
 #include "mal_resolve.h"
 #include "mal_client.h"
 
-/* #define DEBUG_MULTIPLEX 
-#define TRACE_MULTIPLEX   */
+#define DEBUG_MULTIPLEX 
+/* #define TRACE_MULTIPLEX   */
 
 mal_export int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci);
 mal_export str CMDmultiplexScript(MalBlkPtr m, MalStkPtr s, InstrPtr p);
@@ -110,7 +111,12 @@ c tails and stores it in b. This case is detected by operatorModifier();
 @c
 #include "multiplex.h"
 #define REALLY_REALLY_BIG	2000000000
+static int multiplexDebug=0;
 
+str CMDmultiplexDebug(int *ret, int *b){
+	multiplexDebug= *b;
+	return MAL_SUCCEED;
+}
 int operatorModifier(str name, str fcnname){
 	int i, inplace= FALSE;
 	if( fcnname[0]==':'){
@@ -134,7 +140,7 @@ int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 
 	if( !isVarConstant(mb,pci->argv[1]) || getArgType(mb,pci,1)!=TYPE_str){
 #ifdef DEBUG_MULTIPLEX
-		printInstruction(stdout,mb,pci);
+	if( multiplexDebug) printInstruction(stdout,mb,pci);
 #endif
 		GDKerror("multiplexType:string constant expected in %s[%d]\n",
 			getFcnName(mb), getPC(mb,pci));
@@ -146,6 +152,7 @@ int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 	k = newVariable(m, newTmpName(0),TYPE_any);
 	p->argv[0]= k;
 #ifdef DEBUG_MULTIPLEX
+	if( multiplexDebug) 
 	printf("multiplex against operator %s (original %s)\n",
 		name,pci->fcnname);
 #endif
@@ -181,7 +188,7 @@ Constants passed into the multiplex operator are a special case.
 
 	typeChecker(getClient()->nspace,m,p,TYPE_FIXED);
 #ifdef DEBUG_MULTIPLEX
-	if( p->typechk== TYPE_UNKNOWN){
+	if(multiplexDebug && p->typechk== TYPE_UNKNOWN){
 		printf("Can not resolve instruction type\n");
 		printInstruction(stdout,m,p);
 	}
@@ -199,7 +206,7 @@ Constants passed into the multiplex operator are a special case.
 	tpe= newBatType(tpe,tt);
 	i= typeConformance(mb,pci,tpe);
 #ifdef DEBUG_MULTIPLEX
-	if( i<0){
+	if( multiplexDebug && i<0){
 		printf("Type conformance on %d failed\n",tpe);
 		printInstruction(stdout,mb,pci);
 	}
@@ -215,12 +222,13 @@ Constants passed into the multiplex operator are a special case.
 	pci->modname= fcnname;
 	pci->typechk= p->typechk;
 #ifdef DEBUG_MULTIPLEX
+	if(multiplexDebug){
 	printf("--> multiplex instruction\n");
 	printInstruction(stdout,m,p);
 	printf("--> modified instruction\n");
 	printInstruction(stdout,mb,pci);
 	printf("return code %d\n",i);
-
+	}
 #endif
 	return i;
 }
@@ -284,9 +292,11 @@ Check out type of the operands for use with batcalc
 	clrInstruction(pci);
 	moveInstruction(pci,p);
 #ifdef DEBUG_MULTIPLEX
+	if( multiplexDebug){
 	printf("--> modified trial instruction\n");
 	printInstruction(stdout,mb,p);
 	printf("return code %d\n",getArgType(mb,pci,0));
+	}
 #endif
 	freeInstruction(p);
 	return getArgType(mb,pci,0);
@@ -294,12 +304,18 @@ Check out type of the operands for use with batcalc
 
 int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci)
 {
-	int i;
+	int i= -1;
 	MalBlkPtr m= newMalBlk();
 	InstrPtr p = newInstruction(ASSIGNsymbol);
 
-	i= multiplexTactics(scope,mb,pci);
-	if(i< 0) i= multiplexType(scope,mb,pci,m,p);
+	if( idcmp("debug",pci->fcnname)==0){
+		if(pci->modname==0) pci->modname= GDKstrdup("multiplex");
+		pci->fcn= (GDKfcn) CMDmultiplexDebug;
+		pci->token = CMDcall;
+		i= 1;
+	}
+	if( i<0) i= multiplexTactics(scope,mb,pci);
+	if( i<0) i= multiplexType(scope,mb,pci,m,p);
 	freeMalBlk(m);
 	return i;
 }
@@ -325,7 +341,7 @@ end	MALexception;
 	redo mloop;
 end mloop;
 	return resB;
-end function;
+end CMD000;
 \end
 @
 This script is generated on the fly, because we do not a priori
@@ -334,6 +350,10 @@ known the number/type of arguments.
 The algorithm consists of two phases: phase one deals with
 collecting the relevant information, phase two is the actual
 code construction.
+@= malInstr
+	q= newInstruction(@1symbol);
+	q->argv[0]= @2 ;
+	pushInstruction(m,q);
 @c
 str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int i,k,l,x,mloop,cursor,refBat=0,resB,refType,bt=0,cr;
@@ -362,9 +382,11 @@ str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	m= newMalBlk();
 
 #ifdef DEBUG_MULTIPLEX
+	if(multiplexDebug){
 	printf("calling the multiplex script routine\n");
 	printf("multiplex against operator %s (%d):%s\n",
 		p->fcnname,assignop, malTypeName(refType));
+	}
 #endif
 @-
 Determine the reference BAT for the loop and make it known
@@ -456,12 +478,14 @@ find the actule arguments at the proper place of the callee.
 	q->argc= 4;
 	pushInstruction(m,q);
 #ifdef TRACE_MULTIPLEX
+	if(multiplexDebug){
 	q= newInstruction(ASSIGNsymbol);
 	q->argv[0]= newTmpVariable(m,TYPE_any);
 	q->fcnname= GDKstrdup("print");
 	q->argv[1] = zz;
 	q->argc=2;
 	pushInstruction(m,q);
+	}
 #endif
 	
 
@@ -584,39 +608,21 @@ find the actule arguments at the proper place of the callee.
 	q->argc=2;
 	pushInstruction(m,q);
 #endif
-
-	/* end     MALexception; */
-	q= newInstruction(ENDsymbol);
-	q->argv[0]= k;
-	pushInstruction(m,q);
-
-	/* redo mloop; */
-	q= newInstruction(REDOsymbol);
-	q->argv[0]= mloop;
-	pushInstruction(m,q);
-
-	/* end mloop; */
-	q= newInstruction(ENDsymbol);
-	q->argv[0]= mloop;
-	pushInstruction(m,q);
-
-        /* return resB; */
-	q= newInstruction(RETURNsymbol);
-	q->argv[0]= resB;
-	pushInstruction(m,q);
-
-	/* end function; */
-	q= newInstruction(ENDDEFsymbol);
-	pushInstruction(m,q);
-
+	@:malInstr(END,k)@	/* end  MALexception; */
+	@:malInstr(REDO,mloop)@	/* redo mloop; */
+	@:malInstr(END,mloop)@	/* end mloop; */
+	@:malInstr(RETURN,resB)@/* return resB; */
+	@:malInstr(ENDDEF,0)@/* end function ; */
 @-
 It is time to type check the code and request for any optimization.
 @c
 	chkProgram(getClient()->nspace,m);
 #ifdef DEBUG_MULTIPLEX
+	if(multiplexDebug){
 	printf("# multiplex function generated\n");
 	printFunction(stdout,m);
 	fflush(stdout);
+	}
 #endif
 @-
 After all the preparatory work has been finished, it is time to

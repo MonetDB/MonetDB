@@ -1,0 +1,89 @@
+@f threads
+@t MAL thread management
+@a Martin Kersten
+@v 0.1
+@* MAL Thread
+Upon receiving a MAL program from the client it is handed
+to the default client thread for interpretation.
+However, the MAL virtual machine also supports running multiple threads
+concurrently. Thread creation, control, inspection, and finalization
+can be encoded in MAL programs directly. 
+
+The thread management package is kept as simple as possible.
+It is inspired by the facilities in Java.lang.thread
+@mal
+module threads;
+
+pattern fork(fcn:str,arg:any...):int = THREADfork
+comment "Run a mal function in a separate process thread";
+
+pattern join(nme:int):str = THREADjoin
+comment "Wait for the named thread to die";
+
+pattern join(nme:int, delay:lng):str = THREADjoinDelay
+comment "Wait for the named thread to die for a short delay";
+
+pattern suspend(nme:int):str= THREADsuspend
+comment "suspend a processing thread";
+
+pattern resume(nme:int):str= THREADresume
+comment "Resume processing of a process thread";
+
+pattern stop(nme:int):str= THREADstop
+comment "Stop thread at next convenient point";
+
+pattern kill(nme:int):str= THREADkill
+comment "Forced termination an executing thread";
+@h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ */
+#ifndef _MAL_THREADS_H
+#include "monet.h"
+#endif /* _MAL_THREADS_H */
+@c
+#include "threads.h"
+str THREADfork(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return MAL_SUCCEED;
+}
+
+str THREADjoinDelay(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return MAL_SUCCEED;
+}
+
+str THREADjoin(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return MAL_SUCCEED;
+}
+
+str THREADsuspend(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return MAL_SUCCEED;
+}
+
+str THREADresume(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return MAL_SUCCEED;
+}
+
+str THREADstop(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return MAL_SUCCEED;
+}
+
+str THREADkill(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	return MAL_SUCCEED;
+}
