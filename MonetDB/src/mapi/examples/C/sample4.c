@@ -17,7 +17,7 @@ int main(int argc, char **argv){
 	dbh= mapi_connect(argv[1],"guest",0,argv[2]);
 	if(mapi_error(dbh)) die(dbh);
 
-	mapi_cache_limit(dbh,2);
+	mapi_cache_limit(dbh,2,-1);
 	mapi_trace_log(dbh,"/tmp/mapilog");
 	/* mapi_trace(dbh,1);*/
 	if(strcmp(argv[2],"sql")==0){

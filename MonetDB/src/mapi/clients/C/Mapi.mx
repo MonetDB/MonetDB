@@ -160,11 +160,12 @@ mapi_fetch_reset()	&	Set the cache reader to the begining\\
 mapi_fetch_row()	&	Fetch row of values\\
 mapi_fetch_all_rows()	&	Fetch all answers from server into cache\\
 mapi_finish()	&	Terminate the current query\\
+mapi_get_dbname()	&	Database being served\\
 mapi_get_host()	&	Host name of server\\
 mapi_get_language()	& Query language name\\
+mapi_get_user()	&	Current user name\\
 mapi_get_version()	& Monet version name\\
 mapi_get_versionId()	& Monet version identifier\\
-mapi_get_user()	&	Current user name\\
 mapi_get_field_count()	& Number of fields in current row\\
 mapi_get_row_count()	&	Number of rows in cache or -1\\
 mapi_ping()	&	Test server for accessibility\\
@@ -178,6 +179,7 @@ mapi_quote()	& Escape characters\\
 mapi_reconnect()	& Reconnect with a clean session context\\
 mapi_rows_affected()	& Obtain number of rows changed\\
 mapi_quick_response()	&	Quick pass response to stream\\
+mapi_stream_query()	& Send query and prepare for reading tuple stream\\
 mapi_seek_row()	&	Move row reader to specific location in cache\\
 mapi_table()	&	Get current table name\\
 mapi_timeout()	&	Set timeout for long-running queries[TODO]\\
@@ -252,6 +254,12 @@ not analyzed, but shipped immediately to the file indicated.
 \item[MapiMsg mapi_quick_query_array(Mapi mid, char *Command, char **argv, FILE *fd)]:
 Similar to mapi_query, except that the response of the server is
 not analyzed, but shipped immediately to the file indicated.
+
+\item[MapiMsg mapi_stream_query(Mapi mid, char *Command, int windowsize)]:
+Sent the request for processing and fetch a limited number of
+tuples (determined by the window size) to assess any erroneous situation.
+Thereafter, prepare for continual reading of tuples from the stream, until
+an error occurs. Each time a tuple arrives, the cache is shifted one.
 
 \item[int mapi_num_fields(Mapi mid)]:
 Return the number of fields in the current row.
@@ -342,10 +350,13 @@ Similar to mapi_bind_var(), but now binds a parameter.
 \item[MapiMsg mapi_paramnumeric(Mapi mid, int fldnr, int scale, int precision, void *val)]:
 Bind to a numeric variable, internally represented by SQL_INT
 
-\item[MapiMsg mapi_cache_limit(Mapi mid, int maxrows)]:
+\item[MapiMsg mapi_cache_limit(Mapi mid, int maxrows, int shuffle)]:
 A limited number of tuples are pre-fetched after each execute().
 If maxrows is negative, all rows will be fetched before the
-application is permitted to continue.
+application is permitted to continue. Once the cache is filled, 
+a number of tuples are shuffled to make room for new ones.
+Making maxrows==shuffle (default) leads to paging behaviour,
+while shuffle==1 leads to a sliding window over a tuple stream.
 
 \item[MapiMsg mapi_finish(Mapi mid)]:
 This routine is used in the rare cases that consumption of the
@@ -383,6 +394,7 @@ table output returned from the server.
 \item[ int mapi_get_type(Mapi mid, int fnr)]:
 \item[ int mapi_get_len(Mapi mid, int fnr)]:
 
+\item[ char *mapi_get_dbname(Mapi mid)]:
 \item[ char *mapi_get_host(Mapi mid)]:
 \item[ char *mapi_get_user(Mapi mid)]:
 \item[ char *mapi_get_lang(Mapi mid)]:
@@ -539,6 +551,7 @@ considered a single field.
 @c
 typedef struct {
 	int rowlimit;	/* maximal number of rows to cache */
+	int shuffle;	/*number of rows to shuffle upon overflow */
 	int limit;	/* current storage space limit */
 	int writer;
 	int reader;
@@ -562,7 +575,7 @@ typedef struct MapiStruct {
 	char username[MAPINAMELEN];
 	char password[MAPINAMELEN];
 	char language[MAPINAMELEN];
-	char database[MAPINAMELEN];
+	char database[MAPINAMELEN]; /* to obtain from server */
 	int languageId;
 	int versionId;		/* Monet 4 or 5 */
 	char prompt[MAPINAMELEN];
@@ -641,7 +654,8 @@ mapi_export MapiMsg mapi_query(Mapi mid,char *cmd);
 mapi_export MapiMsg mapi_quick_query(Mapi mid, char* cmd, FILE *fd);
 mapi_export MapiMsg mapi_query_array(Mapi mid,char *cmd, char **val);
 mapi_export MapiMsg mapi_quick_query_array(Mapi mid, char* cmd, char **val, FILE *fd);
-mapi_export MapiMsg mapi_cache_limit(Mapi mid,int limit);
+mapi_export MapiMsg mapi_stream_query(Mapi mid, char* cmd, int windowsize);
+mapi_export MapiMsg mapi_cache_limit(Mapi mid,int limit, int shuffle);
 mapi_export MapiMsg mapi_quick_response(Mapi mid, FILE *fd);
 mapi_export MapiMsg mapi_seek_row(Mapi mid, int rowne);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
@@ -658,6 +672,7 @@ mapi_export char *mapi_fetch_field(Mapi mid, int fnr);
 mapi_export char **mapi_fetch_field_array(Mapi mid);
 mapi_export char * mapi_fetch_line(Mapi mid);
 mapi_export char *mapi_get_lang(Mapi mid);
+mapi_export char *mapi_get_dbname(Mapi mid);
 mapi_export char *mapi_get_host(Mapi mid);
 mapi_export char *mapi_get_user(Mapi mid);
 mapi_export char *mapi_get_version(Mapi mid);
@@ -792,6 +807,7 @@ static Mapi mapi_new(void)
 	memset(m->fields,0, 64 * sizeof(MapiField));
 	assert(m->fields);
 	m->cache.rowlimit= 100;
+	m->cache.shuffle= 0;	/* derive from rowlimit */
 	m->cache.limit= 0;
 	m->cache.writer= 0;
 	m->cache.reader= -1;
@@ -1476,6 +1492,24 @@ MapiMsg mapi_quick_query_array(Mapi mid, char* cmd, char **val, FILE *fd)
 	return ret;
 }
 
+@-
+Stream queries are request to the database engine that produce a stream
+of answers of indefinite length. Elements are eaten away using the normal way.
+The stream ends with encountering the prompt.
+A stream query can not rely on upfront caching.
+The stream query also ensures that the cache contains a window
+over the stream by shuffling tuples once it is filled.
+@c
+MapiMsg mapi_stream_query(Mapi mid, char* cmd, int windowsize)
+{
+	mapi_check(mid,"mapi_stream_query");
+
+	mapi_query(mid,cmd);
+	if(mid->error) return MERROR;
+	mapi_cache_reset(mid);
+	mapi_cache_limit(mid,windowsize,-1);
+	return MOK;
+}
 static void mapi_cache_reset(Mapi mid)
 {
 	int i;
@@ -1492,11 +1526,12 @@ static void mapi_cache_reset(Mapi mid)
 	memset(mid->cache.fldcnt,0, sizeof(int)* mid->cache.limit);
 }
 
-MapiMsg mapi_cache_limit(Mapi mid, int limit)
+MapiMsg mapi_cache_limit(Mapi mid, int limit, int shuffle)
 {
 	/* clean out superflous space TODO */
 	mapi_check(mid,"mapi_cache_limit");
 	mid->cache.rowlimit= limit;
+	mid->cache.shuffle= shuffle;
 	return MOK;
 }
 
@@ -1619,7 +1654,7 @@ char * mapi_fetch_line_internal(Mapi mid)
 	if( mid->active == 0)
 		return 0;
 	/* get rid of old buffer space */
-	if (mid->cache.writer== mid->cache.limit && mapi_clear_cache(mid))
+	if (mid->cache.writer== mid->cache.rowlimit && mapi_clear_cache(mid))
 		return 0;
 
 	/* check if you need to read more blocks to catch a new line */
@@ -1706,6 +1741,7 @@ char * mapi_fetch_line_internal(Mapi mid)
 
 	mid->cache.rows[mid->cache.writer]= reply;
 	mid->cache.writer++;
+	if( *reply== '[') mid->cache.tuples++;
 	if( mid->trace)
 		printf("mapi_fetch_line:%s\n", reply);
 	return mid->cache.rows[++mid->cache.reader];
@@ -1818,6 +1854,8 @@ In passing, it interprets comment lines to detect table headers.
 It returns with 0 upon encountering the prompt
 (MOK) or an error. The row cache buffer is extended until the limit
 is reached.
+
+TODO, header line does not appear in cache, reuse of old line is erroneous
 @c
 static
 void mapi_header(Mapi mid, char *line)
@@ -1905,8 +1943,6 @@ int mapi_get_row(Mapi mid)
 			return mapi_get_row(mid);
 			}
 			break;
-		case '[':
-			mid->cache.tuples++;
 		default:
 			return MOK;
 		}
@@ -1920,7 +1956,7 @@ of the unquoted part section.
 static
 void unquote(char *msg, char **start, char **next)
 {
-	char *p= msg, *s;
+	char *p= msg, *s,*t;
 	char quote;
 
 	while(*p && isspace((int)(*p)))
@@ -1928,8 +1964,10 @@ void unquote(char *msg, char **start, char **next)
 	*start =p;
 	quote= *p;
 	if( quote=='\'' || quote=='"'){
-		/* get quoted string */
+		/* get quoted string and remove trailing bracket first */
 		p++; *start=p;
+		t= strrchr(p,quote);
+		if(t) *t=0;
 		s= p;
 		while(*p && *p != quote){
 			if(*p=='\\') {
@@ -2223,6 +2261,11 @@ int mapi_rows_affected(Mapi mid)
 	return mid->rows_affected;
 }
 
+char *mapi_get_dbname(Mapi mid)
+{
+	mapi_check0(mid,"mapi_get_dbname");
+	return mid->database;
+}
 char *mapi_get_host(Mapi mid)
 {
 	mapi_check0(mid,"mapi_get_host");

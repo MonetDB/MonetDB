@@ -1,5 +1,27 @@
+/* 
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ *		   Peter Boncz <Peter.Boncz@cwi.nl>
+ *		   Niels Nes <Niels.Nes@cwi.nl>
+ *		   Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-/* The Monet Application Programming Interface
+The Monet Application Programming Interface
 Author M.L. Kersten
 
 The easiest way to extend the functionality of Monet is to construct
@@ -46,7 +68,8 @@ getDBname() 	&       Get current database name
 getTable()    	&       Get current table name
 getColumnCount()& 	Number of columns in current row
 getColumnName()	& 	Get columns name
-getRowCount() 	&       Number of rows in cache or -1
+getRowCount() 	&       Number of lines in cache or -1
+getTupleCount()	&       Number of tuples in cache or -1
 gotError()    	&       Test for error occurrence
 ping()     	&       Test server for accessibility
 prepareQuery() 	&       Prepare a query for execution
@@ -59,6 +82,7 @@ quote()    	& 	Escape characters
 reconnect()	&	Restart with a clean session
 rows_affected() & 	Obtain number of rows changed
 quickResponse()	&       Quick pass response to stream
+initStream()	&	Prepare for reading a stream of answers
 seekRow() 	&       Move row reader to specific location in cache
 timeout()  	&       Set timeout for long-running queries[TODO]
 trace()    	&       Set trace flag
@@ -139,7 +163,7 @@ public class Mapi
 	private String dbname= "unknown";
 	
 	private boolean everything = false;
-	private boolean trace = true;
+	private boolean trace = false;
 	private boolean connected= false;
 	private boolean active= false;
 	private boolean eos = false;
@@ -156,12 +180,13 @@ public class Mapi
 	private String prompt;
 	
 	// Tabular cache
+	private boolean	headerFound= false;
 	private int fieldcnt= 0;
 	private int maxfields= 32;
 	private int minfields= 0;
 	private int rows_affected =0;
 	private RowCache cache= new RowCache();
-	private Columns columns[]= new Columns[32];
+	private Column columns[]= new Column[32];
 	
 	private Socket socket;
 	private DataOutputStream toMonet;
@@ -324,6 +349,15 @@ public static Mapi connectSSL( String host, int port, String user, String pwd, S
 }
 
 /**
+ * Establish a secondary access structure to the same server
+*/
+public Mapi(Mapi m)
+throws MapiException
+{
+	connect(m.host, m.port, m.username, m.password, m.language);
+}
+
+/**
  * The user can create multiple Mapi objects to keep pre-canned queries around.
  * @param src the Mapi connection to be duplicated
  * @return a duplicate connection
@@ -458,12 +492,12 @@ public int bindNumeric(int fnr, int scale, int prec, Object o){
  * Columns management realizes the tabular display structure envisioned.
 */
 private int extendColumns(int mf){
+	if(mf<maxfields) return MOK;
 	int nm= maxfields+32;
 	if( nm <= mf)
 		nm= mf+32;
-	//if( trace) 
-	System.out.println("extendColumns:"+nm);
-	Columns nf[]= new Columns[nm];
+	if( trace) System.out.println("extendColumns:"+nm);
+	Column nf[]= new Column[nm];
 	System.arraycopy(columns,0,nf,0,maxfields);
 	columns= nf;
 	maxfields= nm;
@@ -498,8 +532,12 @@ private void storeBind(){
  * The slice row constructs a list of string field values.
  * It trims the string quotes but nothing else.
 */
-private int sliceRow(){
+public int sliceRow(){
 	int cr= cache.reader;
+	if(cr<0){
+		setError("Current row missing","sliceRow");
+		return 0;
+	}
 	String s= cache.rows[cr];
 	if( s== null){
 		setError("Current row missing","sliceRow");
@@ -507,10 +545,15 @@ private int sliceRow(){
 	}
 	if( cache.fldcnt[cr]>0) return cache.fldcnt[cr];
 	if( s.length()==0) return 0;
-	if(trace) System.out.println("sliceRow:"+s);
 	char p[]= s.toCharArray();
 	if( p == null)
 		setError("Current row missing","sliceRow");
+	if( p[0]=='!'){
+		String olderr= errortext;
+		clrError();
+		setError(olderr+s,"sliceRow");
+		return 0;
+	}
 	boolean single = p[0]!= '[';
 	int i=0;
 	int f=1,l;
@@ -520,7 +563,7 @@ private int sliceRow(){
 		while(f<p.length )
 		if( p[f]=='\t' || p[f] ==' ') f++; else break; 
 		if( p[f]==']') break;
-		if( trace) System.out.println("slice:"+f);
+		//if( trace) System.out.println("slice:"+f);
 
 		if(i== maxfields){
 			if( extendColumns(maxfields+32) != MOK)
@@ -534,7 +577,7 @@ private int sliceRow(){
 		if( p[l]=='\t' || p[l] ==']') break; else l++;
 
 		String fld= unquote(s.substring(f, l));
-		if(trace) System.out.println("field ["+cr+"]["+i+"]"+fld);
+		//if(trace) System.out.println("field ["+cr+"]["+i+"]"+fld);
 		cache.fields[cr][i]= fld;
 
 		f= l;
@@ -555,7 +598,7 @@ public int fetchRow(){
 }
 public int fetchAllRows(){
 	check("fetchAllRows");
-	cacheLimit(-1);
+	cacheLimit(-1,-1);
 	cache.tuples=0;
 	while( getRow()== MOK)
 		sliceRow();
@@ -573,7 +616,10 @@ public String fetchField(int fnr){
 		}
 		if( fnr < cache.fldcnt[cr])
 			return cache.fields[cr][fnr];
-	}
+	} 
+	if( fnr== -1)
+		// fetch complete tuple
+		return cache.rows[cr];
 	setError("Illegal field","fetchField");
 	return null;
 }
@@ -587,7 +633,7 @@ public String[] fetchFieldArray(int fnr){
 }
 public int getColumnCount(){
 	check("getColumnCount");
-	return fieldcnt;
+	return headerFound? fieldcnt-1:fieldcnt;
 }
 public String getColumnName(int i){
 	check("getColumnName");
@@ -866,8 +912,32 @@ public int quickQueryArray(String cmd, String arg[], DataOutputStream fd){
 	if(trace && error !=MOK) System.out.println("query returns error");
 	return error;
 }
+/**
+ * Stream queries are request to the database engine that produce a stream
+ * of answers of indefinite length. Elements are eaten away using the normal way.
+ * The stream ends with encountering the prompt. 
+ * A stream query can not rely on upfront caching.
+ * The stream query also ensures that the cache contains a sliding window
+ * over the stream by shuffling tuples once it is filled.
+ * @param cmd - the query to be executed
+ *        window- the window size to be maintained in the cache
+*/
+public int initStream(String cmd, int windowsize){
+	check("initStream");
+	query(cmd);
+	if( gotError()) return error;
+	// reset the active flag to enable continual reads
+	cacheReset();
+	cacheLimit(windowsize,1);
+	return error;
+}
 
 // -------------------- Cache Management ------------------
+/**
+ * CacheReset throws away any tuples left in the cache and
+ * prepares it for the next sequence;
+ * It should re-size the cache too.
+*/
 private void cacheReset()
 {
 	finish_internal();
@@ -884,6 +954,7 @@ private void cacheReset()
 		} else cache.fields[i]= new String[maxfields];
 	}
 	cache.reader= -1;
+	headerFound= false;
 	fieldcnt=0;
 	cache.writer=0;
 	cache.tuples= 0;
@@ -892,9 +963,11 @@ private void cacheReset()
 /**
  * Users may change the cache size limit
  * @param limit - new limit to be obeyed
+ *	shuffle - amount of tuples to be shuffled upon full cache.
 */
-public int cacheLimit(int limit){
+public int cacheLimit(int limit, int shuffle){
 	cache.rowlimit= limit;
+	cache.shuffle= shuffle;
 	return MOK;
 }
 
@@ -916,7 +989,7 @@ public int fetchReset(){
  */
 public int seekRow(int rownr){
 	check("seekRow");
-	int i;
+	int i, sr=rownr;
 	cache.reader= -1;
 	if( rownr<0) return setError("Illegal row number","seekRow");
 	for(i=0; rownr>=0 && i<cache.writer; i++){
@@ -924,7 +997,7 @@ public int seekRow(int rownr){
 		if( cache.rows[i].indexOf("!")==0 ) continue;
 		if( --rownr <0) break;
 	}
-	if( rownr>=0) return setError("Row not fount","seekRow");
+	if( rownr>=0) return setError("Row not found "+sr+" tuples "+cache.tuples,"seekRow");
 	cache.reader= i;
 	return MOK;
 }
@@ -932,11 +1005,13 @@ public int seekRow(int rownr){
  * These are the lowest level operations to retrieve a single line from the 
  * server. If something goes wrong the application may try to skip input to 
  * the next synchronization point.
+ * If the cache is full we reshuffle some tuples to make room.
 */
 private void extendCache(){
-	int oldsize= cache.writer;
+	int oldsize= cache.limit;
 	if( oldsize == cache.rowlimit){
 		setError("Row cache limit reached","extendCache");
+		// shuffle the cache content
 	}
 	int incr = oldsize /10;
 	int newsize = oldsize +(incr<100? 100: incr);
@@ -947,10 +1022,25 @@ private void extendCache(){
 	if(oldsize>0){
 		System.arraycopy(cache.rows,0,newrows,0,oldsize);
 		cache.rows= newrows;
+		//if(trace) System.out.println("Extend the cache.rows storage");
 	}
 	    
-	// anchor stuff
-	// field stuff
+	int newfldcnt[]= new int[newsize];
+	if(oldsize>0){
+		System.arraycopy(cache.fldcnt,0,newfldcnt,0,oldsize);
+		cache.fldcnt= newfldcnt;
+		//if(trace) System.out.println("Extend the cache.fldcnt storage");
+		for(int i=oldsize;i<newsize;i++) cache.fldcnt[i]=0;
+	}
+	String newfields[][]= new String[newsize][];
+	if(oldsize>0){
+		System.arraycopy(cache.fields,0,newfields,0,oldsize);
+		cache.fields= newfields;
+		//if(trace) System.out.println("Extend the cache.fields storage");
+		for(int i=oldsize;i<newsize;i++) 
+			cache.fields[i]= new String[maxfields];
+	}
+	cache.limit= newsize;
 }
 
 private int clearCache(){
@@ -980,7 +1070,7 @@ public String fetchLineInternal() throws MapiException {
 	if( ! active) return null;
 	error= MOK;
 	// get rid of the old buffer space
-	if( cache.writer ==cache.limit && clearCache()!= 0) return null;
+	if( cache.writer ==cache.rowlimit && clearCache()!= 0) return null;
 
 	// check if you need to read more blocks to read a line
 	blk.eos= false;
@@ -1005,9 +1095,13 @@ public String fetchLineInternal() throws MapiException {
 		connected= false;
 		return null;
 	}
-	if( blk.buf.length()>0 && blk.buf.charAt(0)== PROMPTBEG){
-		promptMonet();
-		return null;
+	if( blk.buf.length()>0){
+		switch( blk.buf.charAt(0)){
+		case PROMPTBEG:
+			promptMonet();
+			return null;
+		case '[': cache.tuples++;
+		}
 	}	    
 
 	// we have at least one complete line in the buffer
@@ -1054,26 +1148,46 @@ public int quickResponse(DataOutputStream fd){
 private void keepProp(String name, String colname){
 }
 
-private void header(String line){
+// analyse the header row, but make sure it is restored in the end.
+// Note that headers received contains an addition column with
+// type information. It should be ignored while reading the tuples.
+private void headerDecoder(){
+	String line= cache.rows[cache.reader];
 	if( trace) System.out.print("header:"+line);
-	int etag= line.indexOf("#");
+	int etag= line.lastIndexOf("#");
 	if( etag==0 || etag== line.length()) return;
+	String tag= line.substring(etag);
 
-	// analyse the header row, but make sure it is restored in the end.
-	String old= cache.rows[cache.reader];
-	//cache.rows[cache.reader][0]='[';
-	//cache.rows[cache.reader][etag]=']';
-	
+
+	cache.rows[cache.reader]="[ "+ cache.rows[cache.reader].substring(1);
+	int cnt= sliceRow();
+	if(trace) System.out.println("columns "+cnt);
+	extendColumns(cnt);
+	if( tag.equals("# name") ){
+		for(int i=0;i<cnt;i++){
+			if(columns[i]==null) columns[i]= new Column();
+			columns[i].columnname= fetchField(i);
+		}
+	} else	
+	if( tag.equals("# type") ){
+		for(int i=0;i<cnt;i++){
+			if(columns[i]==null) columns[i]= new Column();
+			columns[i].columntype= fetchField(i);
+		}
+	} else	
+	if( trace) System.out.println("Unrecognized header tag "+tag);
 	//REST LATER
-	cache.rows[cache.reader]= old;
+
+	cache.rows[cache.reader]= line;
+	headerFound= true;
 }
 
 // Extract the next row from the cache.
 private int getRow(){
         String reply= "";
 
-	if( trace) System.out.println("getRow:active:"+active+
-		" reader:"+(cache.reader+1)+" writer:"+cache.writer);
+	//if( trace) System.out.println("getRow:active:"+active+
+		//" reader:"+(cache.reader+1)+" writer:"+cache.writer);
         while( active ||cache.reader+1< cache.writer){
 		if( active){
 			try{  
@@ -1091,7 +1205,7 @@ private int getRow(){
 		switch(reply.charAt(0)){
 		    case '#': 
 			if( !(languageId>= LANG_SQL && reply.charAt(1)!='(')){
-				header(reply.toString());
+				headerDecoder();
 				return getRow();
 			} 
 		    case '!': 
@@ -1100,8 +1214,6 @@ private int getRow(){
 			clrError();
 			setError(olderr+reply.toString(),"getRow");
 			return getRow();
-		    case '[': 
-			cache.tuples++;
 		    default:
 			return MOK;
 		}
@@ -1112,8 +1224,13 @@ private int getRow(){
 /** The java context provides a table abstraction 
  * the methods below provide access to the relevant Mapi components
 */
-public int getRowCnt(){
-	return cache.tuples;
+public int getTupleCount(){
+	int cnt=0;
+	for(int i=0;i<cache.writer;i++){
+		if(cache.rows[i].charAt(0)=='[') cnt++;
+	}
+	//System.out.println("counted "+cnt+" maintained "+cache.tuples);
+	return cnt;
 }
 /**
  * unquoteInternal() squeezes a character array to expand
@@ -1146,12 +1263,12 @@ public String unquote(String msg){
 	while(f<p.length && p[f]==' ') f++;
 	if( f<p.length) bracket = p[f];
 	if( bracket == '"' || bracket== '\''){
-		for(l= ++f; l<p.length && !( p[l]==bracket); l++){
+		l= msg.lastIndexOf(bracket);
+		if( l<0){
+			if(trace) System.out.println("closing "+bracket+" not found:"+msg);
+			l= p.length-1;
 		}
-		if( l==p.length)
-			System.out.println("closing bracket "+bracket+" not found:"+msg);
-
-		return msg.substring(f,l);
+		return msg.substring(f+1,l);
 	} else 
 	// get rid of comma except when it is a literal char
 	if( p[f]!=',' && p[p.length-1]==',') msg= msg.substring(f,p.length-1);
@@ -1225,6 +1342,7 @@ class IoCache
 }
 class RowCache{
     int rowlimit= -1;   /* maximal number of rows to cache */
+    int shuffle= 0;	/* number of tuples to shuffle upon overflow */
     int limit=100;      /* current storage space limit */
     int writer= 0;
     int reader= -1;
@@ -1238,10 +1356,10 @@ class RowCache{
 	}
     }
 }
-class Columns{
-    String tablename;
-    String columnname;
-    String columntype;
+class Column{
+    String tablename=null;
+    String columnname=null;
+    String columntype=null;
     int  colwidth;
     int  coltype;
     int  precision;
