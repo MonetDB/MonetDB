@@ -1098,7 +1098,7 @@ TCPlisten(int *port)
 	char *p, *line = GDKmalloc(lineLength);
 
 @-
-Administrate yourself
+Register ourselves
 @c
 	MT_set_lock(TCPlock, "TCPlisten");
 	while(ports[port_no]) port_no++;
