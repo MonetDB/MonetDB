@@ -33,9 +33,6 @@ A rudimentatry authroization scheme should be  enforced.
 @mal
 module clients;
 
-command setPrompt(s:str):void= CLTsetPrompt
-        comment "Change the prompt for the current user.";
-
 command setListing(flg:int):void= CLTsetListing
         comment "Turn on/off echoing of MAL instructions";
 
@@ -96,13 +93,6 @@ str CLTsetListing(int *ret, int *flag) {
         Client c;
         c= getClient();
         c->listing = *flag;
-        return MAL_SUCCEED;
-}
-str CLTsetPrompt(int *ret, str *prompt) {
-        Client c;
-        c= getClient();
-        c->prompt = GDKstrdup(*prompt);
-        c->promptlength = strlen(c->prompt);
         return MAL_SUCCEED;
 }
 
