@@ -15,6 +15,13 @@
 #f := flt(3.4);
 #j := sht("1");
 #
+#d0 := dbl(1.0);
+#d1 := dbl(2.0);
+#z:= <(d0,2.0:dbl);
+#print(z);
+#z:= <(d1,2.0:dbl);
+#print(z);
+#
 function Admin.main():int;	#0:(main:int)
 	o := calc.oid("999@0");	#1:(o:oid)<-($2:str)
 	os := calc.str(o);	#2:(os:str)<-(o:oid)
@@ -22,5 +29,13 @@ function Admin.main():int;	#0:(main:int)
 	l := calc.lng(2);	#4:(l:lng)<-($7:int)
 	f := calc.flt(3.4);	#5:(f:flt)<-($9:flt)
 	j := calc.sht("1");	#6:(j:sht)<-($11:str)
-end function;	#7:
+	d0 := calc.dbl(1.0);	#7:(d0:dbl)<-($13:flt)
+	d1 := calc.dbl(2.0);	#8:(d1:dbl)<-($15:flt)
+	z := calc.<(d0,2.0);	#9:(z:bit)<-(d0:dbl)($17:dbl)
+	io.print(z);	#10:($18:int)<-(z:bit)
+	z := calc.<(d1,2.0);	#11:(z:bit)<-(d1:dbl)($17:dbl)
+	io.print(z);	#12:($19:int)<-(z:bit)
+end function;	#13:
+[ true ]
+[ false ]
 >

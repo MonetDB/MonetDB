@@ -53,7 +53,7 @@ end	v;	#6:(v:bit)
 	io.print(z);	#20:($20:int)<-(z:bat[lng,bit])
 end function;	#21:
 #-----------------#
-# BAT:	  tmp_4	  #
+# BAT:	  tmp_10  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]
@@ -67,7 +67,7 @@ end function;	#21:
 [ 8,	  8	  ]
 [ 9,	  9	  ]
 #-----------------#
-# BAT:	  tmp_5	  #
+# BAT:	  tmp_11  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]
@@ -81,7 +81,7 @@ end function;	#21:
 [ 8,	  16	  ]
 [ 9,	  18	  ]
 #-----------------#
-# BAT:	  tmp_6	  #
+# BAT:	  tmp_12  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  1	  ]
@@ -95,7 +95,7 @@ end function;	#21:
 [ 8,	  9	  ]
 [ 9,	  10	  ]
 #-----------------#
-# BAT:	  tmp_7	  #
+# BAT:	  tmp_13  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]
@@ -109,7 +109,7 @@ end function;	#21:
 [ 8,	  64	  ]
 [ 9,	  81	  ]
 #-----------------#
-# BAT:	  tmp_8	  #
+# BAT:	  tmp_14  #
 # (lng)	  (bit)	  #
 #-----------------#
 [ 0,	  true	  ]
@@ -123,7 +123,7 @@ end function;	#21:
 [ 8,	  true	  ]
 [ 9,	  true	  ]
 #-----------------#
-# BAT:	  tmp_9	  #
+# BAT:	  tmp_15  #
 # (lng)	  (bit)	  #
 #-----------------#
 [ 0,	  true	  ]
@@ -137,17 +137,17 @@ end function;	#21:
 [ 8,	  false	  ]
 [ 9,	  false	  ]
 #-----------------#
-# BAT:	  tmp_10  #
+# BAT:	  tmp_16  #
 # (lng)	  (bit)	  #
 #-----------------#
 [ 0,	  false	  ]
-[ 0,	  false	  ]
-[ 0,	  true	  ]
-[ 0,	  true	  ]
-[ 0,	  true	  ]
-[ 0,	  true	  ]
-[ 0,	  true	  ]
-[ 0,	  true	  ]
-[ 0,	  true	  ]
-[ 0,	  true	  ]
+[ 1,	  false	  ]
+[ 2,	  true	  ]
+[ 3,	  true	  ]
+[ 4,	  true	  ]
+[ 5,	  true	  ]
+[ 6,	  true	  ]
+[ 7,	  true	  ]
+[ 8,	  true	  ]
+[ 9,	  true	  ]
 >

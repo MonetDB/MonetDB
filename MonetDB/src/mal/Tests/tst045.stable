@@ -1,0 +1,23 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## test variable scope resolution
+#
+#pi:= 3.147:flt;
+#
+#function dummy();
+#	pi:=0:int;
+#end function;
+function Admin.dummy():any;	#0 polymorphic:(dummy:any)
+	pi := 0;	#1:(pi:int)<-($2:int)
+end function;	#2:
+#
+function Admin.main():int;	#0:(main:int)
+	pi := 3.147;	#1:(pi:flt)<-($2:flt)
+end function;	#2:
+>
