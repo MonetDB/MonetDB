@@ -299,10 +299,10 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		if (s->op2.stval){
 			int r = statement_dump( s->op2.stval, nr, sql );
 		  	len += snprintf( buf+len, BUFSIZ, 
-			"s%d := s%d.group(s%d);\n", (s->nr), l, r);
+			"s%d := s%d.group(s%d);\n", (*nr)+1, l, r);
 		  	len += snprintf( buf+len, BUFSIZ, 
 			"s%d := s%d.tunique().mirror().join(s%d);\n", 
-				(*nr)+1, s->nr, r);
+				s->nr, (*nr)+1, r);
 			(*nr)++;
 		} else if (s->op1.stval->type == st_group || 
 		           s->op1.stval->type == st_derive){
