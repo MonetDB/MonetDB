@@ -45,8 +45,11 @@ standard software development tools
 
 gc (the Hans Boehm garbage collector)
 	Pathfinder also requires the Hans Boehm garbage collector (gc).  In
-	case it is nt installed be default on your system, please get it
+	case it is not installed be default on your system, please get it
 	from http://www.hpl.hp.com/personal/Hans_Boehm/gc/ .
+
+	Note that in order to enable server-size xquery compilation 
+        (recommended), you need to compile MonetDB as well with --enable-gc.
 
 dlcompat (MacOS X/Darwin, only)
 	MacOS X/Darwin itself does not support dlopen, however, there's
@@ -231,14 +234,20 @@ Usage:
 The MonetDB/Pathfinder system consists of two components:
 
  - the MonetDB database server/backend (aka. "Mserver")
- - the XQuery compiler (aka. "pf")
+ - the XQuery compiler (aka. "pf"). It is available as a stand-alone
+   utility, but is also contained in the "pathfinder" server module.
 
 For further information about then MonetDB database server see the
 respective documentation.
 
 The XQuery compiler ("pf") is a stand-alone program, that translates XQuery
 into the query language of the respective database backend. In our case,
-that is MonetDB's Interface Language MIL.
+that is MonetDB's Interface Language MIL. See the MonetDB documentation
+how to execute MIL scripts.
+
+We prefer you to use the XQuery compiler through the pathfinder module,
+though. This means that the MonetDB query client "MapiClient" is used
+to send xquery requests to the server. 
 
 To use the Pathfinder front end, you first need to start a MonetDB server
 ("Mserver") with pathfinder support. To do so, first make sure, that your
@@ -248,12 +257,12 @@ Installation" above.
 In case the install- (i.e., prefix-) directories of MonetDB and
 Pathfinder are identical, simply call
 
- Mserver --dbinit="module(pathfinder,mapi); mapi_start();'
+ Mserver --dbinit="module(pathfinder,mapi); pfstart();'
 
 In case you use different install- (i.e., prefix-) directories for MonetDB
 and Pathfinder, call
 
- Mserver --set monet_mod_path=<monetdb-prefix>/lib/MonetDB:<pathfinder-prefix>/lib/MonetDB --dbinit="module(pathfinder,mapi); mapi_start();"
+ Mserver --set monet_mod_path=<monetdb-prefix>/lib/MonetDB:<pathfinder-prefix>/lib/MonetDB --dbinit="module(pathfinder,mapi); pfstart();"
 
 Then, in a second shell, set up the same environment to prepare the following steps:
 
@@ -261,8 +270,11 @@ Then, in a second shell, set up the same environment to prepare the following st
 Loading an XML document:
 ------------------------
 
-To load an XML document (persistently) into the database, you need to start
-an Mserver as described above. Then, there are two alternatives:
+You may avoid explicit shredding using the document cache (see next section).
+
+To explicitly ask MonetDB to load an XML document (persistently) into the 
+database, you need to start an Mserver as described above, and type some MIL. 
+There are two alternatives:
 
 1) On the Mserver's MIL console, type
 
@@ -276,50 +288,89 @@ an Mserver as described above. Then, there are two alternatives:
 
     shred_doc("/MyPath/MyDoc.xml","MyDoc.xml");
 
-Note, the first parameter of "shred_doc" must be the *absolute* path to the
-XML document. The second parameter is the name that can then be used to
-refer the document using XQuery's built-in "doc" function.
+Note, the first parameter of "shred_doc" must be an absolute URI.
+The (optional) second parameter is a logical name ("alias") that can 
+be used to refer the document using XQuery's built-in "fc:doc()" 
+function.
 
 Once "shred_doc" has successfully finished, the document is persistently
 loaded into the database, hence, it will still be available after stopping
 and restarting the Mserver.
 
+The Document Cache
+------------------
+
+Mserver allows te use of any URI in the fn:doc() xquery function,
+such that you can query XML documents in local files, on FTP sites, 
+on web sites, etc..
+
+Such documents are automatically transferred to the Mserver machine,
+shredded, and stored in the document cache. The cache keeps track
+of the "last-modified" time, which is checked on each request.
+
+It is a cache, thus if full, the least frequently used documents
+are unloaded from it. The default cache size is 100MB of disk space 
+(can be modified using the xquery_cacheMB setting in the MonetDB.conf
+configuration file of MonetDB).
+
+
+Security (or the lack thereof)
+------------------------------
+
+As a security restriction, XML documents without explicityly created 
+alias are currently *only* accessible when the requests are issued 
+from the same machine where Mserver runs (i.e. either on the Mserver 
+console in MIL, or through a MapiClient that runs on the local machine).
+
+SECURITY WARNING: anybody logged into the Mserver machine, who 
+normally has no read file permissions for files of the user that 
+started Mserver, may now read all those files through MonetDB!! 
+
+Please be aware that MonetDB is not a commercial product, and
+is provided AS IS; explicitly disclaiming all responsibility for 
+security issues that arise from its use. 
+
+In the future, a (better) security mechanism including user 
+authentication and SSL will be added to MonetDB.
+
 
 Executing XQuery queries:
 -------------------------
 
-The XQuery compiler ("pf") read XQuery queries (for now only one at a time)
-either from a file or from standard input, and outputs the respective MIL
-code on standard output.
+Use the xquery language setting of MapiClient (-lxquery or short -lx):
 
-To execute XQuery queries, first start an Mserver as described above, and
-load XML documents as necessary/desired.
+MapiClient -lx [files]
 
-Then, there are several alternatives, e.g.:
-(All following commands are to be executed in a second shell, next to the
-running Mserver.)
+This executes a *single* xquery found in the file (or multiple files, which are concatenated),
+or on standard input (if no file is passed), and prints the serialized result. 
 
-- To type and run a single XQuery query interactively, start
+In case of standard input, interactive mode is not allowed. You must pipe in a script:
 
-   pf | MapiClient
+MapiClient -lx < file.xq
 
-  type your query followed by a newline (enter/return) and a "Ctrl-D".
+You may request timing information with the MapiClient --time (-T) option, in which case extra 
+lines are appended to the output, that split out execution time:
 
-- You can also echo your XQuery query into pf:
+[Trans] XQuery-to-MIL translation time 
+[Fetch] XML document load time (for XML files on the web)
+[Shred] shredding time (including disk I/O)
+[Query] execution time
+[Print] serialization time
+[Timer] total time 
 
-   echo 'for $a in (1,2) return $a' | pf | MapiClient
+The Shred time is zero, if the document was already cached on the server (or if your
+query does not involve any documents). The total time may be larger than the sum of the 
+other times; the difference then is communication time between MapiClient and the Mserver.
 
-- Or read you XQuery query from a file MyQuery.xq:
+The default mode ("dm") for xquery output results are pretty-printed sequences. 
+You may enforce all output to be valid XML, with the MapiClient option "-s xml". 
+Your output will then be enclosed by <XQueryResult> root tags. 
 
-   pf MyQuery.xq | MapiClient
+The output mode (dm or xml) may be set with the xquery_output setting in the
+MonetDB.conf file.
 
-- ...
-
-See
-
- pf -h
-
-for more information about the XQuery compiler.
+The standard TCP server port for xquery is 45789. If clashes occur, you may
+change it, using the xquery_port setting in the MonetDB.conf file.
 
 
 Troubleshooting:

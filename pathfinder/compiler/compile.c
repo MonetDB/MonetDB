@@ -122,6 +122,8 @@ PFstate_t PFstate = {
     .genType             = PF_GEN_XML
 };
 
+jmp_buf PFexitPoint;
+
 PFquery_t PFquery = {
     .version            = "1.0",
     .encoding           = NULL,
@@ -313,14 +315,13 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     if (status->summer_branch) {
         char *prologue = NULL, *query = NULL, *epilogue = NULL;
         tm = PFtimer_start ();
-        PFprintMILtemp (croot, status, &prologue, &query, &epilogue);
+        PFprintMILtemp (croot, status, tm, &prologue, &query, &epilogue);
         if (prologue && query && epilogue) {
                 fputs(prologue, pfout);
                 fputs(query, pfout);
                 /* epilogue is not necessary for standalone scripts */ 
         }
         tm = PFtimer_stop (tm);
-
         if (status->timing)
             PFlog ("MIL code output:\t %s", PFtimer_str (tm));
         goto bailout;
@@ -507,19 +508,22 @@ subexelim:
  * This interface fixes the second issue. For the moment, the MonetDB
  * Runtime environment uses a lock to stay stable under concurrent requests. 
  */
-void
+char*
 pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char** epilogue)
 {
 	PFpnode_t  *proot  = NULL;
 	PFcnode_t  *croot  = NULL;
+        long tm = PFtimer_start ();
 
         PFstate.invocation = invoke_monetdb;
         PFstate.summer_branch = true;
         PFstate.genType = PF_GEN_NONE;
 
         if (strncmp(mode,"timing",6) == 0 ) {
-                PFstate.timing = 1;
+                PFstate.timing = 1 + (PFtimer_start()/1000);
                 mode += 7;
+        } else {
+                PFstate.timing = 0;
         }
         if (strncmp(mode,"debug",5) == 0 ) {
                 PFstate.debug = 1;
@@ -527,18 +531,21 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         }
         if ( strcmp(mode,"dm") == 0 ) {
                 PFstate.genType = PF_GEN_DM;
-        } else if ( strcmp(mode,"mapi-dm") == 0 ) {
+        } else if ( strcmp(mode,"dm-mapi") == 0 ) {
                 PFstate.genType = PF_GEN_DM_MAPI;
         } else if ( strcmp(mode,"sax") == 0 ) {
                 PFstate.genType = PF_GEN_SAX;
         } else if ( strcmp(mode,"xml") == 0 ) {
                 PFstate.genType = PF_GEN_XML;
-        } else if ( strcmp(mode,"mapi-xml") == 0 ) {
+        } else if ( strcmp(mode,"xml-mapi") == 0 ) {
                 PFstate.genType = PF_GEN_XML_MAPI;
         } else if ( strcmp(mode,"org") == 0 ) {
                 PFstate.genType = PF_GEN_ORG;
         } else if ( strcmp(mode,"none") ) {
                 fprintf(stderr,"pf_compile_interface: unkown output mode \"%s\", using \"xml\".\n",mode);
+        }
+        if (setjmp(PFexitPoint) != 0 ) {
+                return PFerrbuf;
         }
 	/* repeat pf_compile, which we can't reuse as we don't want to deal with files here */
         PFparse (xquery, &proot);
@@ -553,7 +560,7 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         croot = PFsimplify (croot);
         croot = PFty_check (croot);
     	croot = PFcoreopt (croot);
-        PFprintMILtemp (croot, &PFstate, prologue, query, epilogue);
+        return PFprintMILtemp (croot, &PFstate, tm, prologue, query, epilogue);
 }
 
 #if HAVE_SIGNAL_H

@@ -239,12 +239,12 @@ static int createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
         if ( strcmp(mode,"dm")==0 ) {
             ctx->saxMode = 0;
             ctx->dmMode = 1;
-        } else if ( strcmp(mode,"mapi-dm")==0 ) {
+        } else if ( strcmp(mode,"dm-mapi")==0 ) {
             ctx->saxMode = 0;
             ctx->dmMode = ctx->mapiMode = 1;
         } else if ( strcmp(mode,"xml")==0 ) {
             ctx->saxMode = 0;
-        } else if ( strcmp(mode,"mapi-xml")==0 ) {
+        } else if ( strcmp(mode,"xml-mapi")==0 ) {
             ctx->saxMode = 0;
             ctx->mapiMode = 1;
         }

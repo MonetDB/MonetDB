@@ -74,9 +74,6 @@ extern YYLTYPE pflloc;
 /* input buffer */
 extern char *pfinput;
 
-/** increment row and column numbers (required in YY_USER_ACTION) */
-static int i;
-
 /** how many spaces make up one tabstop */
 #define TAB_STEP 8
 
@@ -89,6 +86,7 @@ static int i;
  */ 
 #define YY_USER_ACTION                                      \
  do {                                                       \
+   int i;                                                   \
    pflloc.first_col = pflloc.last_col + 1;                  \
    pflloc.first_row = pflloc.last_row;                      \
                                                             \
@@ -128,14 +126,15 @@ static PFarray_t *lexical_stack = NULL;
 static unsigned int lexical_sp = 0;
 
 /** initialize the lexical state stack when scanner starts up */
-#define YY_USER_INIT (lexical_stack = PFarray (sizeof (int)))
+#define YY_USER_INIT lexical_sp = 0; lexical_stack = PFarray (sizeof (int))
+
    
 static void
 popState (void)
 {
     if (lexical_sp == 0) {
         PFoops (OOPS_PARSE, "parsing problem: stack empty\n");
-        exit (-1);
+        PFexit(-1);
     }
         
 #ifdef DEBUG_LEXSTATE
@@ -165,6 +164,17 @@ gotoState (int s)
 #endif
 
     BEGIN (s);
+}
+
+void
+pfStart( char* buf) {
+    if (pfinput) {
+        YY_FLUSH_BUFFER;
+        gotoState(0);
+    }
+    *PFerrbuf = 0;
+    pfinput = buf;
+    pflineno = 1;
 }
 
 /* forward declarations */

@@ -39,6 +39,7 @@
 #include "array.h"
 #include "pfstrings.h"
 #include "oops.h"
+#include "timer.h"
 #include "subtyping.h"
 #include "mil_opt.h"
 
@@ -9695,12 +9696,11 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
  * @param f the Stream the MIL code is printed to
  * @param c the root of the core tree
  */
-void
-PFprintMILtemp (PFcnode_t *c, PFstate_t *status, char** prologue, char** query, char** epilogue)
+char*
+PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char** query, char** epilogue)
 {
     PFarray_t *way, *counter;
-    opt_t *f = (opt_t*) PFmalloc(sizeof(opt_t));
-    opt_open(f, status->optimize);
+    opt_t *f = opt_open(status->optimize);
 
     way = PFarray (sizeof (int));
     counter = PFarray (sizeof (int));
@@ -9796,13 +9796,13 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, char** prologue, char** query, 
       milprintf(f, "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       break;
      case PF_GEN_XML_MAPI:
-      milprintf(f, "print_result(\"mapi-xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
+      milprintf(f, "print_result(\"xml-mapi\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       break;
      case PF_GEN_DM:
       milprintf(f, "print_result(\"dm\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       break;
      case PF_GEN_DM_MAPI:
-      milprintf(f, "print_result(\"mapi-dm\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
+      milprintf(f, "print_result(\"dm-mapi\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       break;
      case PF_GEN_SAX:
       milprintf(f, "print_result(\"sax\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
@@ -9812,14 +9812,17 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, char** prologue, char** query, 
      default:
       milprintf(f, "** ERROR: PFprintMILtemp(): PF_GEN_* excpected!\n");
     }
-    if (status->timing) 
+    if (status->timing) {
+        tm = PFtimer_stop(tm);
         milprintf(f, 
             "\ntime_print := time() - time_print;\n"
-            "printf(\"= %%d read, %%d shred, %%d exec, %%d print\\n\","
-            "       time_shred, time_shred, time_exec, time_print);\n\n");
+            "printf(\"\\nTrans % 7d.%03d msec\\nFetch %% 7d.000 msec\\nShred %% 7d.000 msec\\nQuery %% 7d.000 msec\\nPrint %% 7d.000 msec\\n\","
+            "       time_shred, time_shred, time_exec, time_print);\n\n", tm/1000, tm%1000);
+    }
 
     milprintf(f, "}\n\n# MIL EPILOGUE\n");
     opt_close(f, prologue, query, epilogue);
+    return NULL;
 }
 
 /* vim:set shiftwidth=4 expandtab: */

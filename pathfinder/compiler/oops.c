@@ -79,11 +79,10 @@ static char *oops_msg[] = {
     ,[-OOPS_WARN_VARREUSE]     = "warning: variable reuse"
 };
 
-/** 
- * Maximum length of error message strings (messages will be
- *  truncated if necessary) 
+/**
+ * global buffer for collecting all errors 
  */
-#define OOPS_SIZE   1024
+char PFerrbuf[OOPS_SIZE] = { 0 };
 
 /**
  * Log message to compiler log file. This function actually does the
@@ -95,29 +94,14 @@ static char *oops_msg[] = {
 static void
 log_worker (const char *msg, va_list msgs)
 {
-    char buf[OOPS_SIZE];
-    int n;
-
-    /* generate time stamp and write to log file */
-
-    /* printing time stamps only complicates testing. So
-     * we better don't do it.
-     *
-    time_t now;
-    char *anow;
-
-    (void) time (&now);
-    anow = asctime (localtime (&now));
-    anow[strlen (anow) - 1] = '\0';
-
-    n = snprintf (buf, OOPS_SIZE, "%s: ", anow);
-    write (fileno (stderr), buf, n < OOPS_SIZE ? n : OOPS_SIZE - 1);
-    */
-    
-    n = vsnprintf (buf, OOPS_SIZE, msg, msgs);
-    write (fileno (stderr), buf, n < OOPS_SIZE ? n : OOPS_SIZE - 1);
-
-    write (fileno (stderr), "\n", 1);
+    int len = strlen(PFerrbuf);
+    if (len+2 < OOPS_SIZE) {
+        int n = vsnprintf (PFerrbuf+len, OOPS_SIZE-(len+2), msg, msgs);
+        if (n >= 0) {
+            PFerrbuf[len+n] = '\n';
+            PFerrbuf[len+n+1] = 0;
+        }
+    }
 }
 
 /**
@@ -174,8 +158,7 @@ oops (PFrc_t rc, bool halt,
 	(void)func;
 	(void)line;
 #endif
-
-        exit (-rc);
+        PFexit(-rc);
     }
 }
 
@@ -211,7 +194,7 @@ PFoops_ (PFrc_t rc,
     /* does not return */
     oops (rc, true, file, func, line, msg, args);
     
-    exit (EXIT_FAILURE);
+    PFexit(EXIT_FAILURE);
 }
 
 /**
@@ -235,7 +218,7 @@ PFoops_loc_ (PFrc_t rc, PFloc_t loc,
     /* does not return */
     oops (rc, true, file, func, line, buf, args);
 
-    exit (EXIT_FAILURE);
+    PFexit(EXIT_FAILURE);
 }
 
 /**

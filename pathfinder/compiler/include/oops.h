@@ -35,6 +35,18 @@
 #define OOPS_H
 
 /**
+ * Maximum length of error message strings (messages will be
+ *  truncated if necessary)
+ */
+#define OOPS_SIZE 4096
+extern char PFerrbuf[OOPS_SIZE];
+
+/**
+ * exit compilation (not necessarily the entire process)
+ */
+#define PFexit(status) longjmp(PFexitPoint, status)
+
+/**
  * If you add error codes here, remember to update
  * the #oops_msg[] table in file oops.c!
  */

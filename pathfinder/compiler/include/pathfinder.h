@@ -38,6 +38,7 @@
 #if HAVE_CONFIG_H
 #include <pf_config.h>
 #endif
+#include <setjmp.h>
 
 #ifndef NULL
 /** Make sure we have NULL available */
@@ -108,8 +109,12 @@ struct PFstate_t {
     enum PFinvocation_t invocation;
 };
 
-/** global state of the compiler */
+
+/** global state of the compiler (regrettably not the *only* global state..) */
 extern PFstate_t PFstate;
+
+/** fatalities now lead to a longjump instead of exit() */
+extern jmp_buf PFexitPoint;       
 
 enum PFempty_order_t {
       greatest

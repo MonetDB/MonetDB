@@ -686,6 +686,11 @@ main (int argc, char *argv[])
         }
     }
 
+    if (setjmp(PFexitPoint) != 0 ) {
+        fputs(PFerrbuf, stderr);
+        goto failure;
+    }
+
     /* Now call the main compiler driver */
     if ( pf_compile(pfin, stdout, status) < 0 )
         goto failure;

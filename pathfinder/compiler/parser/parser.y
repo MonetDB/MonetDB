@@ -2214,8 +2214,9 @@ void pferror (const char *s)
                 s, pflineno);
 }
 
-char* pfinput; /* standard input of scanner, used by flex */
+char* pfinput = NULL; /* standard input of scanner, used by flex */
 YYLTYPE pflloc; /* why ? */
+extern pfStart(char*);
 
 /**
  * Parse an XQuery coming in on stdin (or whatever stdin might have
@@ -2224,7 +2225,7 @@ YYLTYPE pflloc; /* why ? */
 void
 PFparse (char* input, PFpnode_t **r)
 {
-    pfinput = input;
+    pfStart(input);
 #if YYDEBUG
     pfdebug = 1;
 #endif

@@ -32,6 +32,7 @@
 #include "mil_opt.h"
 #include "mem.h"
 #include <string.h>
+#include <stdlib.h>
 
 /* ----------------------------------------------------------------------------
  * dead MIL code eliminator (two-day hack by Peter Boncz)
@@ -53,7 +54,7 @@ static void opt_append(opt_t* o, char* stmt, int sec) {
 	int len = strlen(stmt);
 	if (o->off[sec] + len >= o->len[sec]) {
 		o->len[sec] += o->len[sec] + len+1;
-		o->buf[sec] = PFrealloc(o->len[sec], o->buf[sec]);
+		o->buf[sec] = (char*) realloc(o->buf[sec], o->len[sec]);
 	}
 	memcpy(o->buf[sec] + o->off[sec], stmt, len+1);
 	o->off[sec] += len;
@@ -158,8 +159,11 @@ static void opt_purgestmt(opt_t* o, unsigned int stmt) {
 				buf[1] = 0;
 				opt_append(o, buf, o->stmts[stmt].sec);
 			}
+			if (o->stmts[stmt].cleanup) {
+				free(o->stmts[stmt].cleanup);
+			}
 		}
-		o->stmts[stmt].mil = NULL;
+		o->stmts[stmt].cleanup = o->stmts[stmt].mil = NULL;
 	}
 }
 
@@ -275,14 +279,16 @@ static void opt_end_else(opt_t *o) {
 
 /* opt_open(): set up our administration.
  */
-void opt_open(opt_t* o, int optimize) {
+opt_t *opt_open(int optimize) {
+	opt_t *o = (opt_t*) malloc(sizeof(opt_t));
 	memset(o, 0, sizeof(opt_t));
 	o->optimize = optimize;
 	opt_setname("if", &name_if);
 	opt_setname("else", &name_else);
-	o->buf[0] = (char*) PFmalloc(o->len[0] = 1024*1024);
-	o->buf[1] = (char*) PFmalloc(o->len[1] = 1024*1024);
-	o->buf[2] = (char*) PFmalloc(o->len[2] = 1024);
+	o->buf[0] = (char*) malloc(o->len[0] = 1024);
+	o->buf[1] = (char*) malloc(o->len[1] = 2048*1024);
+	o->buf[2] = (char*) malloc(o->len[2] = 1024);
+ 	return o;
 }
 
 /* opt_close(): flush all output stmts; and clean up
@@ -299,6 +305,7 @@ void opt_close(opt_t *o, char** prologue, char** query, char** epilogue) {
 	*prologue = o->buf[OPT_SEC_PROLOGUE];
 	*query = o->buf[OPT_SEC_QUERY];
 	*epilogue = o->buf[OPT_SEC_EPILOGUE];
+	free(o);
 }
 
 /* opt_mil(): accept a chunk of unoptimized MIL.
@@ -319,6 +326,7 @@ void opt_mil(opt_t *o, char* milbuf) {
 		unsigned int var_statement = 0;
 		opt_purgestmt(o, curstmt); /* make room if necessary */
 		o->stmts[curstmt].mil = p;
+		o->stmts[curstmt].cleanup = NULL; 
 		o->stmts[curstmt].used = 0;
 		o->stmts[curstmt].inactive = 0;
 		o->stmts[curstmt].refs = 0;
@@ -412,8 +420,11 @@ void opt_mil(opt_t *o, char* milbuf) {
 			if (assign.prefix[0]) opt_assign(o, &assign, curstmt); /* it was an assigment statement */
 			assign.prefix[0] = 0;
 		}
+
 		/* separate MIL statements by replacing last char with 0 */
-		if (*p != ':') {
+		if (*p == 0) {
+			o->stmts[curstmt].cleanup = milbuf; 
+		} else if (*p != ':') {
 			o->stmts[curstmt].delchar = *p;
 			*p++ = 0; 
 		}

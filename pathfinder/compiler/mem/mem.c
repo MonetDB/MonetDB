@@ -64,7 +64,7 @@ PFmalloc_ (size_t n, const char *file, const char *func, const int line)
         /* don't use PFoops () here as it tries to allocate even more memory */
         PFlog ("fatal error: insufficient memory in %s (%s), line %d", 
                 file, func, line);
-        exit (-OOPS_FATAL);
+        PFexit(-OOPS_FATAL);
     }
 
     return mem;
@@ -84,7 +84,7 @@ PFrealloc_ (size_t n, void *mem,
         /* don't use PFoops () here as it tries to allocate even more memory */
         PFlog ("fatal error: insufficient memory in %s (%s), line %d", 
                 file, func, line);
-        exit (-OOPS_FATAL);
+        PFexit(-OOPS_FATAL);
     }
 
     return mem;

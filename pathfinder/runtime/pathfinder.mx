@@ -167,8 +167,15 @@ tuple will be in the result for this group."
 @mil
 # load modules used in pathfinder.mx
 module(alarm);
-module(pf_support);
+module(aggrX3);
+module(xtables);
 module(malalgebra);
+module(mmath);
+module(mapi);
+
+PROC pfstart() : void {
+        mapi_listen(int(monet_environment.find("xquery_port")), 5, "xquery_server").fork();
+}
 
 PROC get_type (bat[void,int] kind, int type_) : bat[oid,void]
 {
@@ -2271,20 +2278,49 @@ void pathfinder_epilogue() {
  */
 int
 CMDxquery(char *mode, char* xquery) {
-    char *prologue = NULL, *query = NULL, *epilogue = NULL;
-
+    char *prologue = NULL, *query = NULL, *epilogue = NULL, *err = NULL;
+    int len = 0, ret = GDK_FAIL;
+     
     MT_set_lock(pathfinder_lock, "CMDxquery");
-    pf_compile_MonetDB(xquery, mode, &prologue, &query, &epilogue);
+#ifdef HAVE_GC
+    /* only if MonetDB is also compiled with gc (HAVE_GC) we allow server-side xquery */
+    err = pf_compile_MonetDB(xquery, mode, &prologue, &query, &epilogue);
+#endif
+    if (err && strstr(mode, "mapi")) {
+	/* put ! before error lines */
+	char *p = err, *q = err;
+	len = strlen(err);
+	while(*p) { if (*p++ == '\n') len++; }
+	err = (char*) alloca(len);
+	*err = '!'; 
+	for(p=err+1; *q; q++) {
+		*p++ = *q;
+		if (*q == '\n') *p++ = '!'; 
+	}
+	/* guard against errors that do not terminate in a newline */
+        if (*q && *q != '\n') *p++ = '\n';
+  	else if (p[-1] == '!') p--;  
+	p[1] = 0;
+	len = p - err;
+    }
     MT_unset_lock(pathfinder_lock, "CMDxquery");
 
-    if (prologue && query && epilogue &&
+    if (err) {
+    	stream_write(GDKout, err, len, 1);
+    } else if (prologue && query && epilogue &&
         monet_exec(prologue) >= 0 &&
         monet_exec(query) >= 0 &&
         monet_exec(epilogue) >= 0)
     {
-	return GDK_SUCCEED;
+	ret = GDK_SUCCEED;
     }
-    return GDK_FAIL;
+#ifdef HAVE_GC
+    /* what comes out of PF is alloced differently */
+    if (prologue) free(prologue);
+    if (query) free(query);
+    if (epilogue) free(epilogue);
+#endif
+    return ret;
 }
 
 @= builtin_operand
@@ -2317,6 +2353,8 @@ connect_error(stream *in, stream *out)
 	return GDK_FAIL;
 }
 
+#define XQUERY_CHALLENGE "::mserver_xquery:4\n"
+
 /*
  * read xquery from input stream; execute and print on output stream 
  */  
@@ -2328,9 +2366,9 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 	stream *bkin, *bkout;
 	Thread XQthread = THRget(THRgettid());
 	Client client;
-	size_t curlen = 0, maxlen = 1024;
-	char *xquery, *buf = GDKmalloc(maxlen + 1); /* one extra for terminator */
-	int ret = GDK_FAIL;
+	size_t curlen = 0, maxlen = BUFSIZ;
+	char *xquery, *user, *buf = GDKmalloc(maxlen + 1); /* one extra for terminator */
+	int i, ret = GDK_FAIL;
 
 	if (lt->cnt != 2)
 		return handle_argerror(res, lt->cnt, 2);
@@ -2344,6 +2382,30 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 	bkin = client->fdin;
 	bkout = client->fdout;
 	monetSetChannel(XQthread, in, out);
+
+	/* send challenge */
+        snprintf(buf, 100, "%2d%s", strlen(XQUERY_CHALLENGE), XQUERY_CHALLENGE);
+        if (stream_write(out, buf, strlen(buf), 1) < 0) 
+		return connect_error(in, out);
+
+        /* get user name (ignored later), and mapiclient mode */
+        memset(buf, 0, BUFSIZ);
+        user = buf;
+        if (stream_read(in, user, 1, 1) < 0)
+                return connect_error(in, out);
+        for (i = 0; i < BUFSIZ && *user != '\n'; i++) {
+                user++;
+                if (stream_read(in, user, 1, 1) < 0)
+                        return connect_error(in, out);
+        }
+        *user = 0;
+
+	/* check for blocked mode */
+	if (strncmp(buf + i - 8, ":blocked", 8) == 0) {
+                in = block_stream(stream_rstream(in));
+                out = block_stream(stream_wstream(out));
+		monetSetChannel(XQthread, in, out);
+	}
 
 	/* use the MAPI protocol to read as much xquery buffer as possible */
 	if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
@@ -2385,7 +2447,9 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 		GDKfree(buf);
 	}
 
-	/* cleanup */
+	/* end of session */
+	stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1);
+	stream_flush(out);
 	close_stream(out);
 	close_stream(in);
 	monetSetChannel(XQthread, bkin, bkout);
