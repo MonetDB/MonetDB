@@ -20,6 +20,24 @@ char *atom_dump( atom *a){
 	return _strdup(buf);
 }
 
+static
+char *atom_dump_fast( atom *a){
+	char buf[1024];
+	switch (a->type){
+	case int_value: sprintf(buf, "%d", a->data.ival); break;
+	case string_value: sprintf(buf, "%s", a->data.sval); break;
+	case float_value: sprintf(buf, "%f", a->data.dval); break;
+	case general_value:
+			if (a->data.sval)
+			  sprintf(buf, "%s", 
+				a->tpe->name, a->data.sval );
+			else 
+			  sprintf(buf, "nil", a->tpe->name );
+			break;
+	}
+	return _strdup(buf);
+}
+
 
 int statement_dump( statement *s, int *nr, context *sql ){
     char buf[BUFSIZ+1];
@@ -541,7 +559,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 				n = n->next;
 			}
 		} else {
-			len += snprintf( buf+len, BUFSIZ, "0,%d,", 
+			len += snprintf( buf+len, BUFSIZ, "mvc_insert(myc, \"%d,", 
 				 	list_length(s->op1.lval) );
 			while(n){
 				statement *r = n->data.stval;
@@ -554,7 +572,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 						a = a->op1.stval;
 					}
 					len += snprintf( buf+len, BUFSIZ, "%s,",
-					   	s = atom_dump(a->op1.aval) );
+					   	s = atom_dump_fast(a->op1.aval) );
 					_DELETE(s);
 				} else {
 					len += snprintf( buf+len, BUFSIZ, 
@@ -562,7 +580,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 				}
 				n = n->next;
 			}
-			len += snprintf( buf+len, BUFSIZ, "\n" );
+			len += snprintf( buf+len, BUFSIZ, "\");\n" );
 		}
 		s->nr = (*nr)++;
 	} break;
