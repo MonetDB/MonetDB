@@ -249,10 +249,11 @@ void printCrackMap(int bid){
 }
 str initCrackMap(CrackMap *map, int *bid){
 	BAT *b;
-	int result;
 
-	@:getBATdescriptor(&result,bid,b,initCrackMap)@
-	(void) result;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("crackers.initCrackMap",
+					"Cannot access descriptor");
+    }
 @-
 The target BAT should not be modified by the applications,
 otherwise the partitioning scheme becomes void
@@ -269,7 +270,7 @@ already. [todo]
 	map->pieces[0].middle = -1;
 	map->pieces[0].right = -1;
 	map->freepiece= 1;
-
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -356,7 +357,6 @@ First experiment is a simple partitioning on the tail value.
 str CRKcrackRange(int *partid, int *bid, int *low, int *hgh)
 {	
 	BAT *b;
-	int result;
 	Piece *piece, *npiece;
 	int xx;
 	ptr p;
@@ -367,8 +367,10 @@ str CRKcrackRange(int *partid, int *bid, int *low, int *hgh)
 
 	if( *(int*) low > *(int*) hgh)
 		return throwMessage("crackers.crack","illegal range");
-	@:getBATdescriptor(&result,bid,b,CRKcrackRange)@
-	(void) result;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("crackers.crackRange",
+					"Cannot access descriptor");
+    }
 	m= findCrackMap(*bid);
 @-
 Inspect the value range table to only further crack qualifying fragments.
@@ -526,6 +528,7 @@ the ranges of the outer partitions as well.
 #ifdef DEBUG_CRACKERS
 	printf("pid returned %d\n",pid);
 #endif
+	BBPunfix(b->batCacheid);
 	*partid= pid;
 	return MAL_SUCCEED;
 }
@@ -559,15 +562,16 @@ int CRKsetBounds(BAT *b, BAT *view, int mid, int pid){
 str CRKnewIterator(lng *newpid, int *vid, int *bid) 
 {
 	BAT *b, *view;
-	int m,i,result=0;
+	int m,i;
 
-        @:getBATdescriptor(&result,bid,b,Piece)@
-	(void) result;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("crackers.newIterator",
+					"Cannot access descriptor");
+    }
 	m= findCrackMap(*bid);
 
 	b->batRestricted= BAT_READ;
 	view= VIEWcreate_(b,TRUE);
-	BBPincref(*vid=  view->batCacheid,TRUE);
 
 	*newpid= -1;
 	for(i=0; i<crackMap[m].freepiece; i++)
@@ -575,21 +579,31 @@ str CRKnewIterator(lng *newpid, int *vid, int *bid)
 		*newpid = CRKsetBounds(b,view,m,i);
 		break;
 	}
+	BBPunfix(b->batCacheid);
+	BBPincref(*vid=  view->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 str CRKhasMoreElements(lng *pid, int *vbid, int *bid) 
 {
 	BAT *b, *vid;
-	int m,i, result=0;
+	int m,i;
 
-        @:getBATdescriptor(&result,bid,b,hasMoreElements)@
-        @:getBATdescriptor(&result,vbid,vid,hasMoreElements)@
-	(void) result;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("crackers.hasMoreElements",
+					"Cannot access descriptor");
+    }
+    if( (vid= BATdescriptor(*vbid)) == NULL ){
+		BBPunfix(b->batCacheid);
+        return throwMessage("crackers.hasMoreElements",
+					"Cannot access descriptor");
+    }
 	m= findCrackMap(*bid);
 
 	/* test validity of pid  [todo] */
 	if( *pid >crackMap[m].freepiece ){
 		*pid= -1;
+		BBPunfix(b->batCacheid);
+		BBPunfix(vid->batCacheid);
 		return MAL_SUCCEED;
 	}
 	if( *pid<=0 ){
@@ -600,9 +614,13 @@ str CRKhasMoreElements(lng *pid, int *vbid, int *bid)
 	for( i= *pid; i< crackMap[m].freepiece; i++)
 	if( crackMap[m].pieces[i].kind == LEAF) {
 		*pid = CRKsetBounds(b,vid,m,i);
+		BBPunfix(b->batCacheid);
+		BBPunfix(vid->batCacheid);
 		return MAL_SUCCEED;
-	}
+	} 
 	*pid= -1;
+	BBPunfix(b->batCacheid);
+	BBPunfix(vid->batCacheid);
 	return MAL_SUCCEED;
 }
 @-
@@ -614,24 +632,41 @@ str CRKgetPiece0(int *vbid, int *bid, int *piece)
 	int  m;
 	lng result = 0;
 
-        @:getBATdescriptor(&result,bid,b,getPiece)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("crackers.getPiece",
+					"Cannot access descriptor");
+    }
 	CRKnewIterator( &result, vbid, bid);
 	m= result;
-        @:getBATdescriptor(&result,&m,vid,getPiece)@
+    if( (vid= BATdescriptor(m)) == NULL ){
+		BBPunfix(b->batCacheid);
+         return throwMessage("crackers.getPiece",
+					"Cannot access descriptor");
+    }
 	m= findCrackMap(*vbid);
 	CRKsetBounds(b,vid,m,*piece);
+	BBPunfix(b->batCacheid);
+	BBPunfix(vid->batCacheid);
 	return MAL_SUCCEED;
 }
 str CRKgetPiece1(int *newpid, int *bid, int *vbid, int *piece) 
-{	int m, result;
+{	int m;
 	BAT *b, *vid;
 
-        @:getBATdescriptor(&result,bid,b,getPiece)@
-        @:getBATdescriptor(&result,vbid,vid,getPiece)@
-	(void) result;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("crackers.getPiece",
+					"Cannot access descriptor");
+    }
+    if( (vid= BATdescriptor(*vbid)) == NULL ){
+		BBPunfix(b->batCacheid);
+        return throwMessage("crackers.getPiece",
+					"Cannot access descriptor");
+    }
 	m= findCrackMap(*bid);
 	/* test validity of piece */
 	CRKsetBounds(b,vid,m,*piece);
+	BBPunfix(b->batCacheid);
+	BBPunfix(vid->batCacheid);
 	*newpid = 0;
 	return MAL_SUCCEED;
 }
@@ -686,7 +721,10 @@ str CRKselectNew(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
 	int left, right;
 	(void)li; (void) hi ;
 
-        @:getBATdescriptor(vid,bid,b,Piece)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("crackers.selectPiece",
+					"Cannot access descriptor");
+    }
 	m= findCrackMap(*bid);
 
 	b->batRestricted= BAT_READ;
@@ -698,6 +736,7 @@ str CRKselectNew(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
 		VIEWbounds(view, 
 			crackMap[m].pieces[left].idx_first, 
 			crackMap[m].pieces[right].idx_last);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -708,7 +747,10 @@ str CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
 	int idxlow= -1,idxhgh= -1;
 	(void)li; (void) hi ;
 
-        @:getBATdescriptor(vid,bid,b,Piece)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("crackers.selectPiece",
+					"Cannot access descriptor");
+    }
 	m= findCrackMap(*bid);
 
 	b->batRestricted= BAT_READ;
@@ -782,6 +824,7 @@ Select an interval with a desirable value to start the gluing process
 		printf("glued %d leftover %d\n", glued,leftover);
 #endif
 	}while(leftover);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @-
@@ -817,21 +860,26 @@ too.
 @c
 str CRKdropPiece(int *newpid, int *bid){
 	BAT *b;
-	int result=0,m;
+	int m;
 	(void) newpid;
-	(void) result;
-        @:getBATdescriptor(&result,bid,b,dropPiece)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("crackers.dropPiece",
+					"Cannot access descriptor");
+    }
 	m= findCrackMap(*bid);
 	freeCrackMap(m);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 } 
 str CRKdropView(int *newpid, int *bid){
 	BAT *b;
-	int result=0;
 	(void) newpid;
-	(void) result;
-        @:getBATdescriptor(&result,bid,b,dropPiece)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("crackers.dropPiece",
+					"Cannot access descriptor");
+    }
 	/* VIEWdestroy(b);*/
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 } 
 @-

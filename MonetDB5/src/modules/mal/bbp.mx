@@ -122,7 +122,7 @@ the BAT library. In particular when the type information is needed
 to steer the process.
 @mal
 pattern new(ht:any$1, tt:any$2, b:bat[:any,:any]) :bat[:any$1,:any$2] 	
-address CMDBATClone
+address CMDBATclone
 comment "Creates a new empty transient BAT
 	by cloning another";
 pattern new(ht:any$1, tt:any$2) :bat[:any$1,:any$2] 	
@@ -273,7 +273,8 @@ str CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	@:OpenBox(deposit)@
 	name = (str) getArgValue(stk,pci,1);
-	@:chkIdentifier(name,deposit)@
+	if( isIdentifier(name))
+			return throwMessage( "bbp.deposit","identifier expected");
 	v = &stk->stk[pci->argv[2]];
 	flg= findVariable(box->sym,name)>=0;
 	if(depositBox(box,name,v) ) 
@@ -292,8 +293,10 @@ str CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:OpenBox(bind)@
 	name = (str) getArgValue(stk,pci,1);
 	loc = (str) getArgValue(stk,pci,2);
-	@:chkIdentifier(name,bind)@
-	@:chkIdentifier(loc,bind)@
+	if( isIdentifier(name))
+			return throwMessage( "bbp.bind","identifier expected");
+	if( isIdentifier(name))
+			return throwMessage( "bbp.bind","identifier expected");
 	if(bindBAT(box,name,loc) )
 	return throwException(MALEXCEPTION,"bbp.bind",
 		"failed to bind '%s' ",name);
@@ -309,7 +312,8 @@ str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) mb; /* fool compiler */
 	lhs= &stk->stk[pci->argv[0]];
 	name = (str) getArgValue(stk,pci,1);
-	@:chkIdentifier(name,bind)@
+	if( isIdentifier(name))
+			return throwMessage( "bbp.bind","identifier expected");
 	box= findBox("bbp");
 	if(box && (i= findVariable(box->sym, name))>=0){
 		rhs= &box->val->stk[i];
@@ -363,7 +367,8 @@ str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) mb; /* fool compiler */
 	@:OpenBox(take)@
 	name = (str) getArgValue(stk,pci,1);
-	@:chkIdentifier(name,take)@
+	if( isIdentifier(name))
+			return throwMessage( "bbp.take","identifier expected");
 	v = &stk->stk[pci->argv[0]];
 	if(takeBox(box,name,v, (int) getArgType(mb,pci,0)))  {
 		int bid = BBPindex(name);
@@ -420,24 +425,29 @@ CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *bid;
 	Box box;
 	BAT *b;
-	int result;
 
 	(void) mb;
 	@:OpenBox(release)@
 	bid = (int *) getArgValue(stk,pci,1);
-	@:getBATdescriptor(&result,bid,b,bbp.garbage)@
-	if( BBP_lrefs(*bid) ==0)
+    if( (b= BATdescriptor(*bid)) == NULL ){ 
+         return throwMessage("bbp.garbage", "Cannot access descriptor");
+	}
+
+	if( BBP_lrefs(*bid) ==0){
+		BBPunfix(b->batCacheid);
 		return throwMessage("bbp.garbage","Bat already gone");
+	}
 	if( BBP_lrefs(*bid) == 2 && b->batPersistence == PERSISTENT){
 		/* release BAT from pool altogether */
 		BBPdecref(*bid,TRUE);
 		*bid =0;
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	} 
 	if( *bid)
 		BBPdecref(*bid,TRUE);
 	*bid = 0;
-	/* releaseBAT(mb,stk,*bid);*/
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @-
@@ -533,19 +543,21 @@ str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @+ BAT enhancements
 The code to enhance thekernel
 @c
-str CMDBATClone(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+str CMDBATclone(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	BAT *b;
-	int bid=0,cap, ht,tt, result=0;
-        int *res;
+	int bid=0,cap, ht,tt;
+	int *res;
 	(void) m;
-	(void) result;
 
 	bid= *(int *) getArgReference(s,p,3);
-	@:getBATdescriptor(&result,&bid,b,bbp.new)@
+    if( (b= BATdescriptor(bid)) == NULL ){ 
+         return throwMessage("bbp.new", "Cannot access descriptor");
+	}
 	res= (int *) getArgReference(s,p,0);
 	ht= getArgType(m,p,1);
 	tt= getArgType(m,p,2);
 	cap= BATcount(b)+64;
+	BBPunfix(b->batCacheid);
 	return (str) BKCnewBATint(res,&ht,&tt,&cap);
 }
 str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
@@ -568,10 +580,14 @@ str CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	int cap=0;
 	int *res;
 	BAT *b;
+	str msg;
 	(void) m;
 
 	bid= *(int *) getArgReference(s,p,1);
-	@:getBATdescriptor(&res,&bid,b,bbp.new)@
+    if( (b= BATdescriptor(bid)) == NULL ){ 
+         return throwMessage("bbp.new", "Cannot access descriptor");
+	}
+
 	if( bid>0){
 		ht= b->htype;
 		tt= b->ttype;
@@ -579,11 +595,14 @@ str CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 		tt= b->htype;
 		ht= b->ttype;
 	}
+	BBPunfix(b->batCacheid);
+
 	if( p->argc>2)
 		cap= *(int *) getArgReference(s,p,2);
 	res= (int *) getArgReference(s,p,0);
+	msg= (str) BKCnewBATint(res,&ht,&tt,&cap);
 
-        return (str) BKCnewBATint(res,&ht,&tt,&cap);
+	return msg;
 }
 str CMDBATnewint(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	int ht, tt;
@@ -607,7 +626,10 @@ str CMDBBPproject (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid= (int*) getArgReference(stk,pci,1);
 	p= (ptr*) getArgReference(stk,pci,2);
 	tt=  getArgType(mb,pci,2);
-	@:getBATdescriptor(result,bid,b,bbp.project)@
+    if( (b= BATdescriptor(*bid)) == NULL ){ 
+         return throwMessage("bbp.project", "Cannot access descriptor");
+	}
+
  	if( tt >= TYPE_str ){ 
 		if(p== 0 || *(str*)p==0) 
 			p = (ptr*)str_nil;
@@ -615,8 +637,9 @@ str CMDBBPproject (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			p = *(ptr**)p; 
 	}
 	bn= BATconst(b, tt, p);
+	BBPunfix(b->batCacheid);
 	if( bn ) {
-	   *result = bn->batCacheid;
+		BBPincref(*result = bn->batCacheid,TRUE);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("mal.project","GDKerror");
@@ -624,11 +647,14 @@ str CMDBBPproject (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 str CMDBBPprojectNil(int *ret, int *bid){
 	BAT *b,*bn;
-	@:getBATdescriptor(ret,bid,b,bbp.project)@
+    if( (b= BATdescriptor(*bid)) == NULL ){ 
+         return throwMessage("bbp.project", "Cannot access descriptor");
+	}
 
 	bn= BATconst(b,TYPE_void, &int_nil);
+	BBPunfix(b->batCacheid);
 	if( bn ) {
-	   *ret = bn->batCacheid;
+		BBPincref(*ret = bn->batCacheid,TRUE);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("mal.project","GDKerror");
@@ -898,14 +924,20 @@ str CMDbbpLRefCount(int *ret){
 }
 str CMDgetBATrefcnt(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,bbp.getBATrefcnt)@
+    if( (b= BATdescriptor(*bid)) == NULL ){ 
+         return throwMessage("bbp.getRefCount", "Cannot access descriptor");
+	}
 	*res = BBP_refs(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDgetBATlrefcnt(int *res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,bbp.getBATrefcnt)@
+    if( (b= BATdescriptor(*bid)) == NULL ){ 
+         return throwMessage("bbp.getLRefCount", "Cannot access descriptor");
+	}
 	*res = BBP_lrefs(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 

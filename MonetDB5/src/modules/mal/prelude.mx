@@ -3,20 +3,9 @@ The Mx macro below is used in many places throughout the code base to
 access the BAT descriptor.
 
 @= getBATdescriptor
-   if( BBPcheck(*@2,"@4")==0) 
-        return throwMessage("@4","cannot access bat '@2' in bbp");
-   if( *@2 < 0) {
-        /* reverse descriptor should be explicitly loaded */
-        @3=BATdescriptor(*@2); BBPunfix(*@2);
-   } else @3= (BAT*) BBPgetdesc(*@2);
-   if( @3 == NULL) { *@1 = 0;
-         return throwMessage("@4",
-                 "cannot access descriptor @2");
+	if( (@3= BATdescriptor(*@2)) == NULL ){ *@1 = 0;
+		 return throwMessage("@4", "cannot access descriptor @2");
    }
-@= chkIdentifier
-    /* generate exception if string is not an identifier */
-    if( isIdentifier(@1))
-                return throwMessage( "@4","identifier expected");
 @= Pseudo
     if (BBPindex("@1_@2_@3") <= 0)
             BATname(b, "@1_@2_@3");

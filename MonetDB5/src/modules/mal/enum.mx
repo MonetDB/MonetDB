@@ -286,7 +286,10 @@ str ENUMreload(int *retval, int bid) {
 	int i;
 	BAT *h;
 
-	@:getBATdescriptor(retval,&bid,h,enum.load)@
+    if( (h= BATdescriptor(bid)) == NULL ){
+         return throwMessage("enum.load", "Cannot access descriptor");
+    }
+
 	mal_set_lock(mal_contextLock, "ENUMload");
 	for(i=0; i<MAX_ENUM; i++) {
 		if (ENUMmap[i] == 0) {
@@ -305,10 +308,12 @@ str ENUMreload(int *retval, int bid) {
 			BBPincref(h->batCacheid,TRUE);
 			*retval = h->batCacheid;
 			mal_unset_lock(mal_contextLock, "ENUMload");
+			BBPunfix(h->batCacheid);
 			return MAL_SUCCEED;
 		}
 	}
 	mal_unset_lock(mal_contextLock, "ENUMload");
+	BBPunfix(h->batCacheid);
 	return throwMessage("enum.load"," too many active enum types.");
 }
 
@@ -323,7 +328,9 @@ str ENUMcreate(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tpe= getArgType(mb,pci,1);
 	bid= *(int*) getArgReference(stk,pci,2);
 	name= getTypeName(tpe);
-	@:getBATdescriptor(retval,&bid,b,enum.create)@
+    if( (b= BATdescriptor(bid)) == NULL ){
+         return throwMessage("enum.create", "Cannot access descriptor");
+    }
 	h = BAThistogram(b);
 	nil = ATOMnilptr(b->htype);
 	BUNdelHead(h, nil);
@@ -336,6 +343,7 @@ str ENUMcreate(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	hid= h->batCacheid;
 	ret= ENUMreload(retval, hid);
 	GDKfree(name);
+	BBPunfix(b->batCacheid);
 	return ret;
 }
 str ENUMload(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -529,16 +537,21 @@ str ENUMencode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:enumCheck(tpe,ENUMencode_multi)@
 	bid= *(int*) getArgReference(stk,pci,2);
 	retval= (int*) getArgReference(stk,pci,0);
-	@:getBATdescriptor(retval,&bid,src,enum.encode)@
+    if( (src= BATdescriptor(bid)) == NULL ){
+         return throwMessage("enum.encode", "Cannot access descriptor");
+    }
 
 	if (src->ttype != b->htype) {
-		if(b) BBPunfix(b->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(src->batCacheid);
 	 	return throwMessage("enum.encode"," incompatible types");
 	}
 	if (ATOMstorage(tpe) == TYPE_chr) { 
 	    switch(ATOMstorage(src->ttype)) {
 	    case TYPE_void: 
-		return throwMessage("enum.encode"," illegal tail type");
+			BBPunfix(b->batCacheid);
+			BBPunfix(src->batCacheid);
+			return throwMessage("enum.encode"," illegal tail type");
 	    case TYPE_chr:	@:encode(chr,char,loc,_chr)@
 	    case TYPE_sht:	@:encode(chr,char,loc,_sht)@
 	    case TYPE_int:	@:encode(chr,char,loc,_int)@
@@ -553,8 +566,9 @@ str ENUMencode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	} else {
 	    switch(ATOMstorage(src->ttype)) {
 	    case TYPE_void: 
-		if(b) BBPunfix(b->batCacheid);
-		return throwMessage("enum.encode"," illegal tail type");
+			BBPunfix(b->batCacheid);
+			BBPunfix(src->batCacheid);
+			return throwMessage("enum.encode"," illegal tail type");
 	    case TYPE_chr:	@:encode(sht,short,loc,_chr)@
 	    case TYPE_sht:	@:encode(sht,short,loc,_sht)@
 	    case TYPE_int:	@:encode(sht,short,loc,_int)@
@@ -569,6 +583,7 @@ str ENUMencode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	}
 	BBPincref(b->batCacheid,TRUE);
 	BBPunfix(b->batCacheid);
+	BBPunfix(src->batCacheid);
 	return MAL_SUCCEED;
 } 
 
@@ -598,7 +613,9 @@ str ENUMdecode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) mb; /* fool compiler */
 	bid= (int*) getArgReference(stk,pci,1);
 	retval= (int*) getArgReference(stk,pci,0);
-	@:getBATdescriptor(retval,bid,src,enum.encode)@
+    if( (src= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("enum.decode", "Cannot access descriptor");
+    }
 	tpe= src->ttype;
 	@:enumCheck(tpe,ENUMencode_multi)@
 	if(b) BBPunfix(b->batCacheid);
@@ -608,6 +625,7 @@ str ENUMdecode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	    @:decode(sht,short)@
 	} else
 	    return throwMessage("enum.decode"," illegal tail type.");
+	BBPunfix(src->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -644,10 +662,13 @@ str ENUMtable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str isEnum(bit *ret, int *bid){
 	BAT *b;
 	int i;
-	@:getBATdescriptor(ret,bid,b,enum.isEnum)@
 	*ret= FALSE;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("enum.isEnum", "Cannot access descriptor");
+    }
 	for(i=0; i<MAX_ENUM; i++)
 		if (ENUMmap[i] == b->batCacheid) { *ret= TRUE;break;}
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -663,16 +684,19 @@ str ENUMsethisto( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	retval= (int*) getArgReference(stk,pci,0);
 
 	tname= getTypeName(xx=getArgType(mb,pci,1));
-        b= (BAT*) BBPgetdesc(BBPindex(tname));
-        if( b == NULL)
+	b= (BAT*) BBPgetdesc(BBPindex(tname));
+	if( b == NULL)
 		return throwMessage("enum.setHisto","cannot access type table");
-	@:getBATdescriptor(retval,&bid,column,sethisto)@
+    if( (column= BATdescriptor(bid)) == NULL ){
+         return throwMessage("enum.setHisto", "Cannot access descriptor");
+    }
 	if (column->halign == 0) {
 		column->halign = OIDnew(1);
 		column->batDirtydesc = TRUE;
 	}
 	ENUMhisto[xx] = column->halign;
 	BBPunfix(b->batCacheid);
+	BBPunfix(column->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -689,10 +713,15 @@ str ENUMishisto(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	retval= (bit*) getArgReference(stk,pci,0);
 
 	tname= getTypeName(xx= getArgType(mb,pci,1));
-        b= (BAT*) BBPgetdesc(BBPindex(tname));
-        if( b == NULL)
+	b= (BAT*) BBPgetdesc(BBPindex(tname));
+	if( b == NULL)
 		return throwMessage("enum.setHisto","cannot access type table");
-	@:getBATdescriptor(retval,bid,column,ishisto)@
+    if( (column= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("enum.isHisto", "Cannot access descriptor");
+    }
+    if( (column= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("enum.isEnum", "Cannot access descriptor");
+    }
 	*retval = (ENUMhisto[xx] == column->halign);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

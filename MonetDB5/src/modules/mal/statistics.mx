@@ -505,10 +505,16 @@ str STATdeposit(int *ret, int *bid)
 {
 	BAT *b;
 	Box box;
+	str msg;
 
-	@:getBATdescriptor(ret,bid,b,statistics.deposit)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("statistics.deposit", "Cannot access descriptor");
+    }
+
 	@:OpenBox(deposit)@
-	return STATenroll(ret,&b->batId);
+	msg= STATenroll(ret,&b->batId);
+	BBPunfix(b->batCacheid);
+	return msg;
 }
 
 str STATtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -528,8 +534,12 @@ str STATtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str STATrelease(int *ret, int *bid){
 	BAT *b;
 	Box box;
+	(void) ret;
 	@:OpenBox(release)@
-	@:getBATdescriptor(ret,bid,b,statistics.release)@
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("statistics.release", "Cannot access descriptor");
+    }
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str STATreleaseStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -540,8 +550,8 @@ str STATreleaseStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:OpenBox(release)@
 	name = (str) getArgName(mb,pci,1);
 	if( releaseBox(box,name))
-	return throwException(MALEXCEPTION,"statistics.release",
-		"failed to release '%s' from box",name);
+		return throwException(MALEXCEPTION,"statistics.release",
+			"failed to release '%s' from box",name);
 	return MAL_SUCCEED;
 }
 @-
@@ -572,10 +582,17 @@ str STATdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str STATdiscard2(int *ret, int *bid){
 	BAT *b;
 	Box box;
+	str msg;
 
+	(void) ret;
 	@:OpenBox(discard)@
-	@:getBATdescriptor(ret,bid,b,statistics.discard)@
-	return STATdrop(b->batId);
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("statistics.discard", "Cannot access descriptor");
+    }
+
+	msg= STATdrop(b->batId);
+	BBPunfix(b->batCacheid);
+	return msg;
 }
 str STATtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;

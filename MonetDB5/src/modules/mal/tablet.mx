@@ -602,10 +602,12 @@ str TABsetPivot(int *ret, int *bid){
 	int rnr= c-mal_clients;
 	BAT *b;
 	(void) ret; /* fool compiler */
-	@:getBATdescriptor(ret,bid,b,tablet.setPivot)@
-	if( b==0)
-		return throwMessage("tablet.setPivot","Pivot bat missing");
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("tablet.setPivot", "Pivot BAT missing");
+    }
+
 	tableReports[rnr]->pivot = b;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str TABsetDelimiter(int *ret, str *sep){
@@ -1400,50 +1402,103 @@ str CMDtablet_load(int *ret, int *nameid, int *sepid, int *typeid,
 	str *filename, int *nr){
 	BAT *names, *seps, *types, *bn;
 
-	@:getBATdescriptor(ret,nameid,names,tablet.load)@
-	@:getBATdescriptor(ret,sepid,seps,tablet.load)@
-	@:getBATdescriptor(ret,typeid,types,tablet.load)@
+    if( (names= BATdescriptor(*nameid)) == NULL ){
+         return throwMessage("tablet.load", "BAT missing");
+    }
+    if( (seps= BATdescriptor(*sepid)) == NULL ){
+		BBPunfix(names->batCacheid);
+        return throwMessage("tablet.load", "BAT missing");
+    }
+    if( (types= BATdescriptor(*typeid)) == NULL ){
+		BBPunfix(names->batCacheid);
+		BBPunfix(seps->batCacheid);
+        return throwMessage("tablet.load", "BAT missing");
+    }
 
 	tablet_load( &bn, names, seps, types, *filename, nr);
 	if( bn== NULL)
 		return throwMessage("tablet.load","failed to load");
 	BBPincref(*ret, TRUE);
 	*ret= bn->batCacheid;
+	BBPunfix(names->batCacheid);
+	BBPunfix(seps->batCacheid);
+	BBPunfix(types->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDtablet_dump(int *ret, int *nameid, int *sepid, int *bids,
 	str *filename, int *nr){
 	BAT *names, *seps, *bats;
-
-	@:getBATdescriptor(ret,nameid,names,tablet.dump)@
-	@:getBATdescriptor(ret,sepid,seps,tablet.dump)@
-	@:getBATdescriptor(ret,bids,bats,tablet.dump)@
+	(void) ret;
+	
+    if( (names= BATdescriptor(*nameid)) == NULL ){
+         return throwMessage("tablet.dump", "BAT missing");
+    }
+    if( (seps= BATdescriptor(*sepid)) == NULL ){
+		BBPunfix(names->batCacheid);
+        return throwMessage("tablet.dump", "BAT missing");
+    }
+    if( (bats= BATdescriptor(*bids)) == NULL ){
+		BBPunfix(names->batCacheid);
+		BBPunfix(seps->batCacheid);
+        return throwMessage("tablet.dump", "BAT missing");
+    }
 
 	tablet_dump( names, seps, bats, *filename, nr);
+	BBPunfix(names->batCacheid);
+	BBPunfix(seps->batCacheid);
+	BBPunfix(bats->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid,
 	stream *s, int *nr){
 	BAT *names, *seps, *types, *bn;
 
-	@:getBATdescriptor(ret,nameid,names,tablet.input)@
-	@:getBATdescriptor(ret,sepid,seps,tablet.input)@
-	@:getBATdescriptor(ret,typeid,types,tablet.input)@
+    if( (names= BATdescriptor(*nameid)) == NULL ){
+         return throwMessage("tablet.load", "BAT missing");
+    }
+    if( (seps= BATdescriptor(*sepid)) == NULL ){
+		BBPunfix(names->batCacheid);
+        return throwMessage("tablet.load", "BAT missing");
+    }
+    if( (types= BATdescriptor(*typeid)) == NULL ){
+		BBPunfix(names->batCacheid);
+		BBPunfix(seps->batCacheid);
+        return throwMessage("tablet.load", "BAT missing");
+    }
 
 	tablet_input(&bn,names, seps, types, (void **)s, nr);
-	if( bn== NULL)
+	if( bn== NULL){
+		BBPunfix(names->batCacheid);
+		BBPunfix(seps->batCacheid);
+		BBPunfix(types->batCacheid);
 		return throwMessage("tablet.load","failed to load");
+	}
 	BBPincref(*ret,TRUE);
 	*ret= bn->batCacheid;
+	BBPunfix(names->batCacheid);
+	BBPunfix(seps->batCacheid);
+	BBPunfix(types->batCacheid);
 	return MAL_SUCCEED;
 }
 str CMDtablet_output(int *ret, int *nameid, int *sepid, int *bids, void **s){
 	BAT *names, *seps, *bats;
 
-	@:getBATdescriptor(ret,nameid,names,tablet.output)@
-	@:getBATdescriptor(ret,sepid,seps,tablet.output)@
-	@:getBATdescriptor(ret,bids,bats,tablet.output)@
+    if( (names= BATdescriptor(*nameid)) == NULL ){
+         return throwMessage("tablet.output", "BAT missing");
+    }
+    if( (seps= BATdescriptor(*sepid)) == NULL ){
+		BBPunfix(names->batCacheid);
+        return throwMessage("tablet.output", "BAT missing");
+    }
+    if( (bats= BATdescriptor(*bids)) == NULL ){
+		BBPunfix(names->batCacheid);
+		BBPunfix(seps->batCacheid);
+        return throwMessage("tablet.output", "BAT missing");
+    }
 	*ret= tablet_output(names, seps, bats, s );
+	BBPunfix(names->batCacheid);
+	BBPunfix(seps->batCacheid);
+	BBPunfix(bats->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1566,9 +1621,12 @@ static str bindVariable(Tablet *t, unsigned int anr, str nme, int tpe, ptr val, 
 
 	if(tpe == TYPE_bat){
 		BAT *b;
-		int ret=0, bid= *(int*)val;
-		(void) ret; /* fool compiler */
-		@:getBATdescriptor(&ret,&bid,b,tablet.bindVariable)@
+		int bid= *(int*)val;
+		if( (b= BATdescriptor(bid)) == NULL ){
+			 return throwMessage("tablet.bindVariable",
+					"Cannot access descriptor");
+		}
+
 		c->bval=b;
 		/* the first column should take care of leader text size*/
 		if( c->bval) setTabwidth(c);
@@ -1593,6 +1651,7 @@ static str bindVariable(Tablet *t, unsigned int anr, str nme, int tpe, ptr val, 
 	c->tabs= 1+(c->width)/8;
 	t->rowwidth += 8 * c->tabs;
 	*k= c->width;
+	BBPunfix(c->bval->batCacheid);
 	return NULL;
 }
 @+ Actual printing

@@ -308,7 +308,10 @@ PCREselect(int *res, str *pattern, int *bid)
 	BUN p, q;
 	pcre *re = NULL;
 
-	@:getBATdescriptor(&errpos,bid,strs,pcre.select)@
+    if( (strs= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("pcre.select", "Cannot access descriptor");
+    }
+
 	if (strs->htype == TYPE_void)
 		bn = BATnew(TYPE_oid, TYPE_str, BATcount(strs));
 	else
@@ -325,7 +328,9 @@ PCREselect(int *res, str *pattern, int *bid)
 		}
 	}
 	my_pcre_free(re);
-	*res = bn->batCacheid;
+	BBPincref(*res = bn->batCacheid,TRUE);
+	BBPunfix(bn->batCacheid);
+	BBPunfix(strs->batCacheid);
 #endif
 	return MAL_SUCCEED;
 }
@@ -342,13 +347,16 @@ PCREuselect(int *res, str *pattern, int *bid)
 	BUN p, q;
 	pcre *re = NULL;
 
-	@:getBATdescriptor(&errpos,bid,strs,pcre.select)@
+    if( (strs= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("pcre.select", "Cannot access descriptor");
+    }
 	if (strs->htype == TYPE_void)
 		bn = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
 	else
 		bn = BATnew(strs->htype, TYPE_void, BATcount(strs));
 	re = pcre_compile(*pattern, PCRE_UTF8, &err_p, &errpos, NULL);
 	if ( re == NULL) {
+		BBPunfix(strs->batCacheid);
 		throwMessage("pcre_select", "pcre compile of pattern failed\n");
 		return GDK_FAIL;
 	}
@@ -361,7 +369,9 @@ PCREuselect(int *res, str *pattern, int *bid)
 		}
 	}
 	my_pcre_free(re);
-	*res = bn->batCacheid;
+	BBPincref(*res = bn->batCacheid, TRUE);
+	BBPunfix(bn->batCacheid);
+	BBPunfix(strs->batCacheid);
 	return MAL_SUCCEED;
 #endif
 }
