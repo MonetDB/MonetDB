@@ -49,6 +49,7 @@ subs = [
     ('@prefix@',            prefix),
     ('@MONET_BUILD@',       build),
     ('@MONET_SOURCE@',      source),
+    ('@NO_X_CFLAGS@',       ''),
 ]
 
 for key, val in subs[:]:
