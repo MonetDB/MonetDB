@@ -58,6 +58,10 @@ m_sep = regex.compile(m_sep)
 scan_map = { 'c': [ c_inc, None, '' ], 
 	 'cc': [ c_inc, None, '' ], 
 	 'h': [ c_inc, None, '' ], 
+	 'y': [ c_inc, None, '' ], 
+	 'yy': [ c_inc, None, '' ], 
+	 'l': [ c_inc, None, '' ], 
+	 'll': [ c_inc, None, '' ], 
 	 'm': [ m_use, m_sep, '.m' ]
 }
 
@@ -125,7 +129,7 @@ def do_code_gen(targets, deps):
 	  newtarget = base + newext  
           ntargets.append(newtarget)
 	  if (deps.has_key(newtarget)):
-		deps[newtarget] = deps[newtarget].append(f)
+		deps[newtarget].append(f)
 	  else:
 	  	deps[newtarget] = [ f ]
       else:
@@ -292,11 +296,12 @@ def codegen(tree, cwd, topdir):
   incmap = {}
   if ("INCLUDES" in tree.keys()):
     includes,incmap = read_depsfile(tree.value("INCLUDES"),cwd, topdir)
+ 
+  deps = {}
   for i in tree.keys():  
     if ( i[0:4] == "lib_" or i[0:4] == "bin_" or i[0:4] == "mod_" or \
 	 i == "LIBS" or i == "BINS" or i == "MODS" ):
 	  targets = []
-	  deps = {}
  	  if (type(tree.value(i)) == type({}) ):
 	    for f in tree.value(i)["SOURCES"]:
 	      (base,ext) = string.split(f,".", 1)

@@ -50,8 +50,39 @@ Sorting that makes use of double elimination, and using partitioning.
 int CMD@1(BAT **retval, BAT *b){
 	return (*retval = @2(b))?GDK_SUCCEED:GDK_FAIL;
 }
+@= idxloop
+IDXloop(b, p, q) {
+        if (*p) BUNfastins(c, BUNh@1(b, (*p)), BUNt@2(b, (*p)));
+}
 @c
 #include <gdk.h>
+
+BAT *BATsort_insert(BAT *c, BAT *b) {
+        BUN     *p;
+        BUN     *q;
+        BATcheck(c, "BATsort: BAT c");
+        BATcheck(b, "BATsort: BAT b");
+        if (!BATidx(b, NULL)) {
+                GDKfatal("BATsort_insert: failed to make index.\n");
+                return c;
+        }
+        p = IDXfirst(b);
+        q = IDXlast(b);
+        if (b->hvarsized){
+                if (b->tvarsized){
+                        @:idxloop(var,var)@
+                } else {
+                        @:idxloop(var,loc)@
+                }
+        } else {
+                if (b->tvarsized){
+                        @:idxloop(loc,var)@
+                } else {
+                        @:idxloop(loc,loc)@
+                }
+        }
+        return c;
+}
 
 @- Sorting with Partitioning
 If the BAT to be sorted is >> larger than main-memory, it pays to

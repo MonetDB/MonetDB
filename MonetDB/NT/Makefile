@@ -35,7 +35,7 @@ src:
 	if not exist src $(KDIR) src
 	$(INSTALL) ..\src\Makefile.msc src\Makefile
 
-install: install-msc install-recursive
+install: install-recursive
 
 install-recursive: install-src-recursive
 
