@@ -31,17 +31,17 @@ have changed since my proposal.
     * a Python script                                      (TST.py)
     * a MIL script to be executed by Mserver               (TST.milM) (',^)
     * a MIL script to be executed by Mserver -single       (TST.milS) (',^)
-    * a MIL script to be executed by Mclient               (TST.milC) (",^)
-      (Mclient is currently not supported on Windows)
+    * a MIL script to be executed by MapiClient            (TST.milC) (",^)
+      (MapiClient is currently not supported on Windows)
    (') For Mserver, if several files are present named
         TST_sXX.mil(M|S) (XX={00,01,...,99})
         these are executed by subsequently calling Mserver
-   (") For Mclient, if several files are present named
+   (") For MapiClient, if several files are present named
         (1) TST_sXX.(milC|java) (XX={00,01,...,99})
             these are executed subsequently using the same Mserver
         (2) TST_pXX.(milC|java) (XX={00,01,...,99})
             these are executed cuncurrently using the same Mserver
-   (^) For single-script Mserver- & Mclient- tests, if a file called
+   (^) For single-script Mserver- & MapiClient- tests, if a file called
 	TST.mil(M|C|S).src  exists instead of a  TST.mil(M|S|C),
 	TST.mil(M|C|S).src  is expected to contain a single line
 	giving the original location of the MIL script to be used.
@@ -49,7 +49,7 @@ have changed since my proposal.
 		$TSTBLDDIR/arith.mil
 	in order to use the MIL script extracted from
 	src/modules/plain/arith.mx  as test script.
-  + a MIL script to be used as prelude for Mserver/Mclient
+  + a MIL script to be used as prelude for Mserver/MapiClient
      (optional)                                            (TST.prelude)
   + a file that contains a list of modules (one per line)
      required by the test  (optional)                      (TST.modules)
@@ -74,7 +74,7 @@ have changed since my proposal.
   * Mserver -db TSTDB [-prelude TST.prelude] < TST.milM
   * Mserver -db TSTDB -single [-prelude TST.prelude] < TST.milS
   * Mserver -db TSTDB -prelude $MONETDIST/share/Monet/mapi.mil -background &
-    Mclient [-prelude TST.prelude] < TST[_(s|p)XX].milC
+    MapiClient [-prelude TST.prelude] < TST[_(s|p)XX].milC
     Mshutdown
   (On Unix, all M<tool>'s are started with "Mtimeout -timeout TIMEOUT
    M<tool> ..." to kill (probably) hanging M<tool>'s after a certain
@@ -145,7 +145,7 @@ have changed since my proposal.
   	TSTDB		name of default test database, unique for each directory
 	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
 	MSERVER		"$MTIMEOUT Mserver -modulesilent -yaccsilent -d8"
-	MCLIENT		"$MTIMEOUT Mclient"
+	MAPICLIENT	"$MTIMEOUT MapiClient"
 	MCREATEDB	"$MTIMEOUT Mcreatedb -user $USER"
 	MDESTROYDB	"$MTIMEOUT Mdestroydb"
 	MLOAD		"$MTIMEOUT Mload"
