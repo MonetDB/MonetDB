@@ -54,19 +54,14 @@ Can be used in scripts, but is insecure.
 
 @{
 @+ Implementation
-@h
-#ifndef _MapiClient_H_
-#define _MapiClient_H_
-#include "Mapi.h"
-#endif /* _MapiClient_H_*/
 @c
-#include <monet_options.h>
-#include "MapiClient.h"
+#include <monet_options.h>	/* includes config.h */
+#include "Mapi.h"
 #include <stdlib.h>
 #include <ctype.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#ifdef HAVE_LIBREADLINE
 #include <sys/stat.h>
+#endif
 #include <errno.h>
 #include <string.h>
 /* #include <signal.h> */
@@ -455,7 +450,9 @@ int main(int ac, char **av)
 
 	char *command = NULL;
 
+#ifdef HAVE_LIBREADLINE
 	struct stat st;
+#endif
 	Mapi mid;
 
 	static struct option long_options[] = {
@@ -603,8 +600,8 @@ int main(int ac, char **av)
 			prompt = _strdup(">");
 	}
 
-	fstat(fileno(stdin),&st);
 #ifdef HAVE_LIBREADLINE
+	fstat(fileno(stdin),&st);
 	if (S_ISCHR(st.st_mode))
 		is_chrsp = 1;
 #endif

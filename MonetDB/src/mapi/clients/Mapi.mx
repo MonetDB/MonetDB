@@ -413,7 +413,6 @@ MERROR  & Mapi internal error.\\
 @{
 @+ Implementation
 @h
-
 /*#define MONET5*/
 #define BLOCKED
 
@@ -428,7 +427,6 @@ MERROR  & Mapi internal error.\\
 #include  <sys/types.h>
 #include  <stream.h>
 
-#include  <sys/types.h>
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif
@@ -450,11 +448,6 @@ MERROR  & Mapi internal error.\\
 # else
 #  include <time.h>
 # endif
-#endif
-
-#ifdef NATIVE_WIN32
-char user_name = "win32";
-#define cuserid(x)      user_name
 #endif
 
 #define NAMELEN	256
@@ -649,25 +642,8 @@ The Monet application interface commands are described below.
 They have been developed to ease interaction.
 
 @c
-#include <config.h>
+#include "config.h"
 #include   "Mapi.h"
-
-#include  <stdio.h>
-#include  <sys/types.h>
-#include  <sys/socket.h>
-
-#include  <unistd.h>
-
-#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
 
 static void promptMonet(Mapi mid);
 static void mapi_cache_reset(Mapi mid);
@@ -678,6 +654,10 @@ static int mapi_get_row(Mapi mid) ;
 static int mapi_extend_fields(Mapi mid,int minfields);
 static int mapi_slice_row(Mapi mid);
 static int mapi_setError(Mapi mid, char *msg, char *action);
+
+#ifndef HAVE_GETLOGIN
+#define getlogin() "win32"
+#endif
 
 @+ Channel constructor
 The first call of an application is to establish a connection with

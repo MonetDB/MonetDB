@@ -111,6 +111,9 @@
 /* Define to 1 if you have the `gethostname' function. */
 #define HAVE_GETHOSTNAME 1
 
+/* Define to 1 if you have the `getlogin' function. */
+/* #undef HAVE_GETLOGIN */
+
 /* Define to 1 if you have the `getopt' function. */
 /* #undef HAVE_GETOPT */
 
@@ -135,6 +138,9 @@
 /* Define to 1 if you have the `getuid' function. */
 /* #undef HAVE_GETUID */
 
+/* Define to 1 if you have the <iconv.h> header file. */
+/* #undef HAVE_ICONV_H */
+
 /* Define to 1 if you have the <ieeefp.h> header file. */
 /* #undef HAVE_IEEEFP_H */
 
@@ -149,6 +155,9 @@
 
 /* Define to 1 if you have the `kill' function. */
 /* #undef HAVE_KILL */
+
+/* Define to 1 if you have the <langinfo.h> header file. */
+/* #undef HAVE_LANGINFO_H */
 
 /* Define if you have the bz2 library */
 /* #undef HAVE_LIBBZ2 */
@@ -192,6 +201,9 @@
 /* Define to 1 if you have the <limits.h> header file. */
 #define HAVE_LIMITS_H 1
 
+/* Define to 1 if you have the <locale.h> header file. */
+#define HAVE_LOCALE_H 1
+
 /* Define to 1 if you have the `lockf' function. */
 /* #undef HAVE_LOCKF */
 
@@ -227,6 +239,9 @@
 
 /* Define to 1 if you have the <netdb.h> header file. */
 /* #undef HAVE_NETDB_H */
+
+/* Define to 1 if you have the `nl_langinfo' function. */
+/* #undef HAVE_NL_LANGINFO */
 
 /* Define to 1 if you have the <perfmon.h> header file. */
 /* #undef HAVE_PERFMON_H */
@@ -267,6 +282,9 @@
 
 /* Define to 1 if you have the `setenv' function. */
 /* #undef HAVE_SETENV */
+
+/* Define to 1 if you have the `setlocale' function. */
+#define HAVE_SETLOCALE 1
 
 /* Define to 1 if you have the <signal.h> header file. */
 #define HAVE_SIGNAL_H 1
