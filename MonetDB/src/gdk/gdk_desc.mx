@@ -277,7 +277,6 @@ BATloaddesc(str nme)
 	b->batCopiedtodisk = 1;
 	b->batElmshift = BATelmshift(b);
 	b->batConvert = conv;
-	DELTAload(b);
 
 	return b;
 }
