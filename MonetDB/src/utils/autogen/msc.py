@@ -369,13 +369,11 @@ def msc_deps(fd, deps, objext, msc):
                 if target == "LIB":
                     d, dext = split_filename(deplist[0])
                     if dext in ("c", "glue.c", "yy.c", "tab.c"):
-                        fd.write(getsrc)
-                        fd.write('\t$(CC) $(CFLAGS) $(INCLUDES) -DLIB%s -c "%s"\n' %
-                                 (name, msc_translate_ext(deplist[0])))
+                        fd.write('\t$(CC) $(CFLAGS) $(INCLUDES) -DLIB%s "-Fo%s" -c "%s"\n' %
+                                 (name, t, src))
                     elif dext == "cc":
-                        fd.write(getsrc)
-                        fd.write('\t$(CXX) $(CXXFLAGS) $(INCLUDES) -DLIB%s -c "%s"\n' %
-                                 (name, msc_translate_ext(deplist[0])))
+                        fd.write('\t$(CXX) $(CXXFLAGS) $(INCLUDES) -DLIB%s "-Fo%s" -c "%s"\n' %
+                                 (name, t, src))
             if ext == 'res':
                 fd.write("\t$(RC) -fo%s %s\n" % (t, src))
     msc['DEPS'].append("DONE")
