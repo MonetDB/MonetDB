@@ -5,5 +5,5 @@ var path:=getenv("TSTTRGDIR");
 make_persistent(load_data(load_format(path+"/format"), path+"/test100k", 100000));
 # test dump
 #dump_data(load_format(path+"/format"), path+"/test100k.dat.bz2", -1);
-commit;
-quit;
+commit();
+quit();

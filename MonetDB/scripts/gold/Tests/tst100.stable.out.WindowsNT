@@ -27,8 +27,8 @@ var path:=getenv("TSTTRGDIR");
 make_persistent(load_data(load_format(path+"/format"), path+"/test100k", 100000));
 # test dump
 #dump_data(load_format(path+"/format"), path+"/test100k.dat.bz2", -1);
-commit;
-quit;
+commit();
+quit();
 
 # 17:04:35 >  
 # 17:04:35 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/MonetDB/_PREFIX_d_/etc/monet.conf --debug=10 --set monet_mod_path=/var/tmp/MonetDB/_PREFIX_d_/lib/MonetDB --dbfarm /var/tmp/MonetDB/_PREFIX_d_/var/dbfarm --set monet_prompt= /ufs/manegold/tmp/Tests-d10/Tests/trace.mil --dbname=Tests_scripts_gold_tst100
@@ -38,10 +38,10 @@ quit;
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(10000000));
-t:= car_class.select("damage");
+var t:= bat("car_class").select("damage");
 t.persists(true);
 t.rename("car_pos");
-t.count.print;
+t.count().print();
 [ 50000 ]
 printf("#~BeginVariableOutput~#\n"); t.sample(2).print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -52,10 +52,10 @@ printf("#~BeginVariableOutput~#\n"); t.sample(2).print; printf("#~EndVariableOut
 [ 20269@0,	  "damage"	  ]
 [ 39383@0,	  "damage"	  ]
 #~EndVariableOutput~#
-t:= car_class.select("no damage");
+t:= bat("car_class").select("no damage");
 t.persists(true);
 t.rename("car_neg");
-t.count.print;
+t.count().print();
 [ 50000 ]
 printf("#~BeginVariableOutput~#\n"); t.sample(2).print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -66,15 +66,30 @@ printf("#~BeginVariableOutput~#\n"); t.sample(2).print; printf("#~EndVariableOut
 [ 79692@0,	  "no damage"	  ]
 [ 92777@0,	  "no damage"	  ]
 #~EndVariableOutput~#
-commit;
-quit;
+commit();
+quit();
 
+# 11:35:18 >  
+# 11:35:18 >  Mtimeout -timeout 60 Mserver --config=/ufs/sjoerd/src/MonetDB/build/conf/MonetDB.conf --debug=10 --set monet_mod_path=/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs --set gdk_dbfarm=/ufs/sjoerd/src/MonetDB/build/dbfarm --set sql_logdir=/ufs/sjoerd/src/MonetDB/build/log --set mapi_port=48927 --set sql_port=50073 --set monet_prompt= --trace --dbname=mTests_scripts_gold_tst100
+# 11:35:18 >  
+
+# Monet Database Server V4.3.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+var t0_pos, t1_pos, t2_pos, t3_pos, t4_pos, t5_pos, t6_pos, t7_pos, t8_pos, t9_pos;
+var t10_pos, t11_pos, t12_pos, t13_pos, t14_pos, t15_pos, t16_pos, t17_pos, t18_pos, t19_pos;
+var t0_neg, t1_neg, t2_neg, t3_neg, t4_neg, t5_neg, t6_neg, t7_neg, t8_neg, t9_neg;
+var t10_neg, t11_neg, t12_neg, t13_neg, t14_neg, t15_neg, t16_neg, t17_neg, t18_neg, t19_neg;
+var tmp0, tmp1, tmp2, tmp3, tmp4;
+var pos_1, pos_2, pos_3, pos_4, pos_5, pos_6, pos_8, pos_9, pos_10, pos_11;
+var neg_1, neg_2, neg_3, neg_4, neg_5, neg_6, neg_8, neg_9, neg_10, neg_11;
 
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
-cpu;
+cpu();
 load("car_age");
 load("car_carprice");
 load("car_category");
@@ -82,6 +97,13 @@ load("car_gender");
 load("car_town");
 load("car_pos");
 load("car_neg");
+var car_age := bat("car_age");
+var car_carprice := bat("car_carprice");
+var car_category := bat("car_category");
+var car_gender := bat("car_gender");
+var car_town := bat("car_town");
+var car_pos := bat("car_pos");
+var car_neg := bat("car_neg");
 # car_age.hash;
 # car_carprice.hash;
 # car_category.hash;
@@ -89,1127 +111,1127 @@ load("car_neg");
 # car_town.hash;
 # car_pos.hash;
 # car_neg.hash;
-commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+commit();  printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  190	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  630	  ]
+[ "user",	  320	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  1220	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1617920	  ]
-[ "arena",	  1624688	  ]
-[ "ordblks",	  499		  ]
+[ "memincr",	  1548288	  ]
+[ "arena",	  1683456	  ]
+[ "ordblks",	  397		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1437216	  ]
-[ "fordblks",	  187472	  ]
+[ "uordblks",	  1468608	  ]
+[ "fordblks",	  214848	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  646	  ]
-[ "majflt",	  812	  ]
+[ "minflt",	  1522	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  6	  ]
+[ "ninvcsw",	  261	  ]
 #~EndVariableOutput~#
-t0_pos := semijoin(car_age, car_pos).histogram; t0_neg := semijoin(car_age, car_neg).histogram;
-t2_pos := semijoin(car_carprice, car_pos).histogram; t2_neg := semijoin(car_carprice, car_neg).histogram;
-t3_pos := semijoin(car_category, car_pos).histogram; t3_neg := semijoin(car_category, car_neg).histogram;
-t1_pos := semijoin(car_gender, car_pos).histogram; t1_neg := semijoin(car_gender, car_neg).histogram;
-t4_pos := semijoin(car_town, car_pos).histogram; t4_neg := semijoin(car_town, car_neg).histogram;
- printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t0_pos := semijoin(car_age, car_pos).histogram(); t0_neg := semijoin(car_age, car_neg).histogram();
+t2_pos := semijoin(car_carprice, car_pos).histogram(); t2_neg := semijoin(car_carprice, car_neg).histogram();
+t3_pos := semijoin(car_category, car_pos).histogram(); t3_neg := semijoin(car_category, car_neg).histogram();
+t1_pos := semijoin(car_gender, car_pos).histogram(); t1_neg := semijoin(car_gender, car_neg).histogram();
+t4_pos := semijoin(car_town, car_pos).histogram(); t4_neg := semijoin(car_town, car_neg).histogram();
+ printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  300	  ]
-[ "elapuser",	  110	  ]
-[ "system",	  640	  ]
+[ "user",	  370	  ]
+[ "elapuser",	  50	  ]
+[ "system",	  1230	  ]
 [ "elapsystem",	  10	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  147456	  ]
-[ "arena",	  1772144	  ]
-[ "ordblks",	  428		  ]
+[ "memincr",	  561152	  ]
+[ "arena",	  2244608	  ]
+[ "ordblks",	  338		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  6406144	  ]
-[ "hblks",	  18		  ]
+[ "hblkhd",	  2547712	  ]
+[ "hblks",	  8		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1576344	  ]
-[ "fordblks",	  195800	  ]
+[ "uordblks",	  1988880	  ]
+[ "fordblks",	  255728	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1980	  ]
-[ "majflt",	  815	  ]
+[ "minflt",	  2257	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  6	  ]
+[ "ninvcsw",	  292	  ]
 #~EndVariableOutput~#
-t0_pos.count.print; print("end");
+t0_pos.count().print(); print("end");
 [ 46 ]
 [ "end" ]
-t0_neg.count.print; print("end");
+t0_neg.count().print(); print("end");
 [ 46 ]
 [ "end" ]
-t2_pos.count.print; print("end");
+t2_pos.count().print(); print("end");
 [ 9 ]
 [ "end" ]
-t2_neg.count.print; print("end");
+t2_neg.count().print(); print("end");
 [ 9 ]
 [ "end" ]
-t3_pos.count.print; print("end");
+t3_pos.count().print(); print("end");
 [ 2 ]
 [ "end" ]
-t3_neg.count.print; print("end");
+t3_neg.count().print(); print("end");
 [ 2 ]
 [ "end" ]
-t1_pos.count.print; print("end");
+t1_pos.count().print(); print("end");
 [ 2 ]
 [ "end" ]
-t1_neg.count.print; print("end");
+t1_neg.count().print(); print("end");
 [ 2 ]
 [ "end" ]
-t4_pos.count.print; print("end");
+t4_pos.count().print(); print("end");
 [ 10 ]
 [ "end" ]
-t4_neg.count.print; print("end");
+t4_neg.count().print(); print("end");
 [ 10 ]
 [ "end" ]
-commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print; 
+commit;  printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print(); 
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  300	  ]
+[ "user",	  370	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  640	  ]
-[ "elapsystem",	  0	  ]
+[ "system",	  1240	  ]
+[ "elapsystem",	  10	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1772144	  ]
-[ "ordblks",	  418		  ]
+[ "arena",	  2244608	  ]
+[ "ordblks",	  336		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  6406144	  ]
-[ "hblks",	  18		  ]
+[ "hblkhd",	  2547712	  ]
+[ "hblks",	  8		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1577760	  ]
-[ "fordblks",	  194384	  ]
+[ "uordblks",	  1989488	  ]
+[ "fordblks",	  255120	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1981	  ]
-[ "majflt",	  816	  ]
+[ "minflt",	  2258	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  6	  ]
+[ "ninvcsw",	  334	  ]
 #~EndVariableOutput~#
 tmp0 := car_age.select(19, 24); pos_1 := semijoin(tmp0, car_pos); neg_1 := semijoin(tmp0, car_neg);
 tmp1 := car_gender.select('f'); pos_2 := semijoin(tmp1, car_pos); neg_2 := semijoin(tmp1, car_neg);
 tmp2 := car_gender.select('m'); pos_3 := semijoin(tmp2, car_pos); neg_3 := semijoin(tmp2, car_neg);
 tmp3 := car_category.select("lease"); pos_4 := semijoin(tmp3, car_pos); neg_4 := semijoin(tmp3, car_neg);
 tmp4 := car_age.select(25, 33); pos_5 := semijoin(tmp4, car_pos); neg_5 := semijoin(tmp4, car_neg);
-commit; printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+commit; printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  340	  ]
-[ "elapuser",	  40	  ]
-[ "system",	  650	  ]
+[ "user",	  420	  ]
+[ "elapuser",	  50	  ]
+[ "system",	  1240	  ]
+[ "elapsystem",	  0	  ]
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  118784	  ]
+[ "arena",	  2363392	  ]
+[ "ordblks",	  294		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  3792896	  ]
+[ "hblks",	  12		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  2135032	  ]
+[ "fordblks",	  228360	  ]
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  0	  ]
+[ "minflt",	  2615	  ]
+[ "majflt",	  0	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  6	  ]
+[ "ninvcsw",	  370	  ]
+#~EndVariableOutput~#
+t12_pos := semijoin(car_age, pos_4).histogram(); t12_neg := semijoin(car_age, neg_4).histogram();
+t8_pos := semijoin(car_age, pos_3).histogram(); t8_neg := semijoin(car_age, neg_3).histogram();
+t4_pos := semijoin(car_age, pos_2).histogram(); t4_neg := semijoin(car_age, neg_2).histogram();
+t9_pos := semijoin(car_carprice, pos_3).histogram(); t9_neg := semijoin(car_carprice, neg_3).histogram();
+t1_pos := semijoin(car_carprice, pos_1).histogram(); t1_neg := semijoin(car_carprice, neg_1).histogram();
+ printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  490	  ]
+[ "elapuser",	  70	  ]
+[ "system",	  1250	  ]
 [ "elapsystem",	  10	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  315392	  ]
-[ "arena",	  2087536	  ]
-[ "ordblks",	  366		  ]
+[ "memincr",	  12288		  ]
+[ "arena",	  2375680	  ]
+[ "ordblks",	  274		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  7794688	  ]
-[ "hblks",	  23		  ]
+[ "hblkhd",	  3792896	  ]
+[ "hblks",	  12		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1919232	  ]
-[ "fordblks",	  168304	  ]
+[ "uordblks",	  2019360	  ]
+[ "fordblks",	  356320	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3363	  ]
-[ "majflt",	  820	  ]
+[ "minflt",	  3098	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  6	  ]
+[ "ninvcsw",	  378	  ]
 #~EndVariableOutput~#
-t12_pos := semijoin(car_age, pos_4).histogram; t12_neg := semijoin(car_age, neg_4).histogram;
-t8_pos := semijoin(car_age, pos_3).histogram; t8_neg := semijoin(car_age, neg_3).histogram;
-t4_pos := semijoin(car_age, pos_2).histogram; t4_neg := semijoin(car_age, neg_2).histogram;
-t9_pos := semijoin(car_carprice, pos_3).histogram; t9_neg := semijoin(car_carprice, neg_3).histogram;
-t1_pos := semijoin(car_carprice, pos_1).histogram; t1_neg := semijoin(car_carprice, neg_1).histogram;
- printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t12_pos.count().print(); print("end");
+[ 46 ]
+[ "end" ]
+t12_neg.count().print(); print("end");
+[ 46 ]
+[ "end" ]
+t8_pos.count().print(); print("end");
+[ 46 ]
+[ "end" ]
+t8_neg.count().print(); print("end");
+[ 46 ]
+[ "end" ]
+t4_pos.count().print(); print("end");
+[ 46 ]
+[ "end" ]
+t4_neg.count().print(); print("end");
+[ 46 ]
+[ "end" ]
+t9_pos.count().print(); print("end");
+[ 9 ]
+[ "end" ]
+t9_neg.count().print(); print("end");
+[ 9 ]
+[ "end" ]
+t1_pos.count().print(); print("end");
+[ 9 ]
+[ "end" ]
+t1_neg.count().print(); print("end");
+[ 9 ]
+[ "end" ]
+commit;  printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  360	  ]
-[ "elapuser",	  20	  ]
-[ "system",	  660	  ]
+[ "user",	  490	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  1250	  ]
+[ "elapsystem",	  0	  ]
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  0		  ]
+[ "arena",	  2375680	  ]
+[ "ordblks",	  273		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  3792896	  ]
+[ "hblks",	  12		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  2019968	  ]
+[ "fordblks",	  355712	  ]
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  0	  ]
+[ "minflt",	  3099	  ]
+[ "majflt",	  0	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  7	  ]
+[ "ninvcsw",	  378	  ]
+#~EndVariableOutput~#
+t14_pos := semijoin(car_carprice, pos_4).histogram(); t14_neg := semijoin(car_carprice, neg_4).histogram();
+t5_pos := semijoin(car_carprice, pos_2).histogram(); t5_neg := semijoin(car_carprice, neg_2).histogram();
+t17_pos := semijoin(car_carprice, pos_5).histogram(); t17_neg := semijoin(car_carprice, neg_5).histogram();
+t18_pos := semijoin(car_category, pos_5).histogram(); t18_neg := semijoin(car_category, neg_5).histogram();
+t10_pos := semijoin(car_category, pos_3).histogram(); t10_neg := semijoin(car_category, neg_3).histogram();
+ printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  1	  ]
+[ "user",	  580	  ]
+[ "elapuser",	  90	  ]
+[ "system",	  1250	  ]
+[ "elapsystem",	  0	  ]
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  233472	  ]
+[ "arena",	  2609152	  ]
+[ "ordblks",	  241		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  4333568	  ]
+[ "hblks",	  14		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  2285480	  ]
+[ "fordblks",	  323672	  ]
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  0	  ]
+[ "minflt",	  3343	  ]
+[ "majflt",	  0	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  7	  ]
+[ "ninvcsw",	  381	  ]
+#~EndVariableOutput~#
+t14_pos.count().print(); print("end");
+[ 9 ]
+[ "end" ]
+t14_neg.count().print(); print("end");
+[ 9 ]
+[ "end" ]
+t5_pos.count().print(); print("end");
+[ 9 ]
+[ "end" ]
+t5_neg.count().print(); print("end");
+[ 9 ]
+[ "end" ]
+t17_pos.count().print(); print("end");
+[ 9 ]
+[ "end" ]
+t17_neg.count().print(); print("end");
+[ 9 ]
+[ "end" ]
+t18_pos.count().print(); print("end");
+[ 2 ]
+[ "end" ]
+t18_neg.count().print(); print("end");
+[ 2 ]
+[ "end" ]
+t10_pos.count().print(); print("end");
+[ 2 ]
+[ "end" ]
+t10_neg.count().print(); print("end");
+[ 2 ]
+[ "end" ]
+commit;  printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  1	  ]
+[ "user",	  580	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  1260	  ]
 [ "elapsystem",	  10	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  352256	  ]
-[ "arena",	  2439792	  ]
-[ "ordblks",	  350		  ]
+[ "memincr",	  0		  ]
+[ "arena",	  2609152	  ]
+[ "ordblks",	  238		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  8200192	  ]
-[ "hblks",	  25		  ]
+[ "hblkhd",	  4333568	  ]
+[ "hblks",	  14		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2210400	  ]
-[ "fordblks",	  229392	  ]
+[ "uordblks",	  2286088	  ]
+[ "fordblks",	  323064	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3858	  ]
-[ "majflt",	  821	  ]
+[ "minflt",	  3344	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  7	  ]
+[ "ninvcsw",	  381	  ]
 #~EndVariableOutput~#
-t12_pos.count.print; print("end");
-[ 46 ]
-[ "end" ]
-t12_neg.count.print; print("end");
-[ 46 ]
-[ "end" ]
-t8_pos.count.print; print("end");
-[ 46 ]
-[ "end" ]
-t8_neg.count.print; print("end");
-[ 46 ]
-[ "end" ]
-t4_pos.count.print; print("end");
-[ 46 ]
-[ "end" ]
-t4_neg.count.print; print("end");
-[ 46 ]
-[ "end" ]
-t9_pos.count.print; print("end");
-[ 9 ]
-[ "end" ]
-t9_neg.count.print; print("end");
-[ 9 ]
-[ "end" ]
-t1_pos.count.print; print("end");
-[ 9 ]
-[ "end" ]
-t1_neg.count.print; print("end");
-[ 9 ]
-[ "end" ]
-commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t6_pos := semijoin(car_category, pos_2).histogram(); t6_neg := semijoin(car_category, neg_2).histogram();
+t2_pos := semijoin(car_category, pos_1).histogram(); t2_neg := semijoin(car_category, neg_1).histogram();
+t16_pos := semijoin(car_gender, pos_5).histogram(); t16_neg := semijoin(car_gender, neg_5).histogram();
+t13_pos := semijoin(car_gender, pos_4).histogram(); t13_neg := semijoin(car_gender, neg_4).histogram();
+t0_pos := semijoin(car_gender, pos_1).histogram(); t0_neg := semijoin(car_gender, neg_1).histogram();
+ printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  360	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  660	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  640	  ]
+[ "elapuser",	  60	  ]
+[ "system",	  1260	  ]
+[ "elapsystem",	  0	  ]
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  225280	  ]
+[ "arena",	  2834432	  ]
+[ "ordblks",	  230		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  4870144	  ]
+[ "hblks",	  16		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  2480704	  ]
+[ "fordblks",	  353728	  ]
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  0	  ]
+[ "minflt",	  3449	  ]
+[ "majflt",	  0	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  7	  ]
+[ "ninvcsw",	  383	  ]
+#~EndVariableOutput~#
+t6_pos.count().print(); print("end");
+[ 2 ]
+[ "end" ]
+t6_neg.count().print(); print("end");
+[ 2 ]
+[ "end" ]
+t2_pos.count().print(); print("end");
+[ 2 ]
+[ "end" ]
+t2_neg.count().print(); print("end");
+[ 2 ]
+[ "end" ]
+t16_pos.count().print(); print("end");
+[ 2 ]
+[ "end" ]
+t16_neg.count().print(); print("end");
+[ 2 ]
+[ "end" ]
+t13_pos.count().print(); print("end");
+[ 2 ]
+[ "end" ]
+t13_neg.count().print(); print("end");
+[ 2 ]
+[ "end" ]
+t0_pos.count().print(); print("end");
+[ 2 ]
+[ "end" ]
+t0_neg.count().print(); print("end");
+[ 2 ]
+[ "end" ]
+commit;  printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  1	  ]
+[ "user",	  650	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  1260	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  2439792	  ]
-[ "ordblks",	  349		  ]
+[ "arena",	  2834432	  ]
+[ "ordblks",	  229		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  8200192	  ]
-[ "hblks",	  25		  ]
+[ "hblkhd",	  4870144	  ]
+[ "hblks",	  16		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2211840	  ]
-[ "fordblks",	  227952	  ]
+[ "uordblks",	  2481320	  ]
+[ "fordblks",	  353112	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3859	  ]
-[ "majflt",	  821	  ]
+[ "minflt",	  3450	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  7	  ]
+[ "ninvcsw",	  383	  ]
 #~EndVariableOutput~#
-t14_pos := semijoin(car_carprice, pos_4).histogram; t14_neg := semijoin(car_carprice, neg_4).histogram;
-t5_pos := semijoin(car_carprice, pos_2).histogram; t5_neg := semijoin(car_carprice, neg_2).histogram;
-t17_pos := semijoin(car_carprice, pos_5).histogram; t17_neg := semijoin(car_carprice, neg_5).histogram;
-t18_pos := semijoin(car_category, pos_5).histogram; t18_neg := semijoin(car_category, neg_5).histogram;
-t10_pos := semijoin(car_category, pos_3).histogram; t10_neg := semijoin(car_category, neg_3).histogram;
- printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t19_pos := semijoin(car_town, pos_5).histogram(); t19_neg := semijoin(car_town, neg_5).histogram();
+t15_pos := semijoin(car_town, pos_4).histogram(); t15_neg := semijoin(car_town, neg_4).histogram();
+t7_pos := semijoin(car_town, pos_2).histogram(); t7_neg := semijoin(car_town, neg_2).histogram();
+t11_pos := semijoin(car_town, pos_3).histogram(); t11_neg := semijoin(car_town, neg_3).histogram();
+t3_pos := semijoin(car_town, pos_1).histogram(); t3_neg := semijoin(car_town, neg_1).histogram();
+ printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  400	  ]
-[ "elapuser",	  40	  ]
-[ "system",	  670	  ]
-[ "elapsystem",	  10	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  770	  ]
+[ "elapuser",	  120	  ]
+[ "system",	  1260	  ]
+[ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  765952	  ]
-[ "arena",	  3205744	  ]
-[ "ordblks",	  328		  ]
+[ "memincr",	  569344	  ]
+[ "arena",	  3403776	  ]
+[ "ordblks",	  209		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  8974336	  ]
-[ "hblks",	  28		  ]
+[ "hblkhd",	  5947392	  ]
+[ "hblks",	  20		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2769984	  ]
-[ "fordblks",	  435760	  ]
+[ "uordblks",	  3041744	  ]
+[ "fordblks",	  362032	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  4143	  ]
-[ "majflt",	  821	  ]
+[ "minflt",	  3817	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  7	  ]
+[ "ninvcsw",	  387	  ]
 #~EndVariableOutput~#
-t14_pos.count.print; print("end");
-[ 9 ]
+t19_pos.count().print(); print("end");
+[ 10 ]
 [ "end" ]
-t14_neg.count.print; print("end");
-[ 9 ]
+t19_neg.count().print(); print("end");
+[ 10 ]
 [ "end" ]
-t5_pos.count.print; print("end");
-[ 9 ]
+t15_pos.count().print(); print("end");
+[ 10 ]
 [ "end" ]
-t5_neg.count.print; print("end");
-[ 9 ]
+t15_neg.count().print(); print("end");
+[ 10 ]
 [ "end" ]
-t17_pos.count.print; print("end");
-[ 9 ]
+t7_pos.count().print(); print("end");
+[ 10 ]
 [ "end" ]
-t17_neg.count.print; print("end");
-[ 9 ]
+t7_neg.count().print(); print("end");
+[ 10 ]
 [ "end" ]
-t18_pos.count.print; print("end");
-[ 2 ]
+t11_pos.count().print(); print("end");
+[ 10 ]
 [ "end" ]
-t18_neg.count.print; print("end");
-[ 2 ]
+t11_neg.count().print(); print("end");
+[ 10 ]
 [ "end" ]
-t10_pos.count.print; print("end");
-[ 2 ]
+t3_pos.count().print(); print("end");
+[ 10 ]
 [ "end" ]
-t10_neg.count.print; print("end");
-[ 2 ]
+t3_neg.count().print(); print("end");
+[ 10 ]
 [ "end" ]
-commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+commit;  printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print(); 
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  400	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  670	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  780	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  1260	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  3205744	  ]
-[ "ordblks",	  325		  ]
+[ "arena",	  3403776	  ]
+[ "ordblks",	  207		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  8974336	  ]
-[ "hblks",	  28		  ]
+[ "hblkhd",	  5947392	  ]
+[ "hblks",	  20		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2771416	  ]
-[ "fordblks",	  434328	  ]
+[ "uordblks",	  3042344	  ]
+[ "fordblks",	  361432	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  4144	  ]
-[ "majflt",	  821	  ]
+[ "minflt",	  3818	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
-#~EndVariableOutput~#
-t6_pos := semijoin(car_category, pos_2).histogram; t6_neg := semijoin(car_category, neg_2).histogram;
-t2_pos := semijoin(car_category, pos_1).histogram; t2_neg := semijoin(car_category, neg_1).histogram;
-t16_pos := semijoin(car_gender, pos_5).histogram; t16_neg := semijoin(car_gender, neg_5).histogram;
-t13_pos := semijoin(car_gender, pos_4).histogram; t13_neg := semijoin(car_gender, neg_4).histogram;
-t0_pos := semijoin(car_gender, pos_1).histogram; t0_neg := semijoin(car_gender, neg_1).histogram;
- printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  cpu	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  440	  ]
-[ "elapuser",	  40	  ]
-[ "system",	  670	  ]
-[ "elapsystem",	  0	  ]
-#---------------------------------#
-# BAT:		  mem		  #
-# (str)		  (int)		  #
-#---------------------------------#
-[ "memincr",	  196608	  ]
-[ "arena",	  3402352	  ]
-[ "ordblks",	  314		  ]
-[ "smblks",	  0		  ]
-[ "hblkhd",	  9510912	  ]
-[ "hblks",	  30		  ]
-[ "usmblks",	  0		  ]
-[ "fsmblks",	  0		  ]
-[ "uordblks",	  3157168	  ]
-[ "fordblks",	  245184	  ]
-#-------------------------#
-# BAT:		  io	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  4277	  ]
-[ "majflt",	  821	  ]
-[ "nswap",	  0	  ]
-[ "inblock",	  0	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
-#~EndVariableOutput~#
-t6_pos.count.print; print("end");
-[ 2 ]
-[ "end" ]
-t6_neg.count.print; print("end");
-[ 2 ]
-[ "end" ]
-t2_pos.count.print; print("end");
-[ 2 ]
-[ "end" ]
-t2_neg.count.print; print("end");
-[ 2 ]
-[ "end" ]
-t16_pos.count.print; print("end");
-[ 2 ]
-[ "end" ]
-t16_neg.count.print; print("end");
-[ 2 ]
-[ "end" ]
-t13_pos.count.print; print("end");
-[ 2 ]
-[ "end" ]
-t13_neg.count.print; print("end");
-[ 2 ]
-[ "end" ]
-t0_pos.count.print; print("end");
-[ 2 ]
-[ "end" ]
-t0_neg.count.print; print("end");
-[ 2 ]
-[ "end" ]
-commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  cpu	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  440	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  670	  ]
-[ "elapsystem",	  0	  ]
-#---------------------------------#
-# BAT:		  mem		  #
-# (str)		  (int)		  #
-#---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  3402352	  ]
-[ "ordblks",	  314		  ]
-[ "smblks",	  0		  ]
-[ "hblkhd",	  9510912	  ]
-[ "hblks",	  30		  ]
-[ "usmblks",	  0		  ]
-[ "fsmblks",	  0		  ]
-[ "uordblks",	  3158608	  ]
-[ "fordblks",	  243744	  ]
-#-------------------------#
-# BAT:		  io	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  4278	  ]
-[ "majflt",	  821	  ]
-[ "nswap",	  0	  ]
-[ "inblock",	  0	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
-#~EndVariableOutput~#
-t19_pos := semijoin(car_town, pos_5).histogram; t19_neg := semijoin(car_town, neg_5).histogram;
-t15_pos := semijoin(car_town, pos_4).histogram; t15_neg := semijoin(car_town, neg_4).histogram;
-t7_pos := semijoin(car_town, pos_2).histogram; t7_neg := semijoin(car_town, neg_2).histogram;
-t11_pos := semijoin(car_town, pos_3).histogram; t11_neg := semijoin(car_town, neg_3).histogram;
-t3_pos := semijoin(car_town, pos_1).histogram; t3_neg := semijoin(car_town, neg_1).histogram;
- printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  cpu	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  520	  ]
-[ "elapuser",	  80	  ]
-[ "system",	  670	  ]
-[ "elapsystem",	  0	  ]
-#---------------------------------#
-# BAT:		  mem		  #
-# (str)		  (int)		  #
-#---------------------------------#
-[ "memincr",	  1306624	  ]
-[ "arena",	  4708976	  ]
-[ "ordblks",	  305		  ]
-[ "smblks",	  0		  ]
-[ "hblkhd",	  10682368	  ]
-[ "hblks",	  35		  ]
-[ "usmblks",	  0		  ]
-[ "fsmblks",	  0		  ]
-[ "uordblks",	  4265704	  ]
-[ "fordblks",	  443272	  ]
-#-------------------------#
-# BAT:		  io	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  4653	  ]
-[ "majflt",	  821	  ]
-[ "nswap",	  0	  ]
-[ "inblock",	  0	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
-#~EndVariableOutput~#
-t19_pos.count.print; print("end");
-[ 10 ]
-[ "end" ]
-t19_neg.count.print; print("end");
-[ 10 ]
-[ "end" ]
-t15_pos.count.print; print("end");
-[ 10 ]
-[ "end" ]
-t15_neg.count.print; print("end");
-[ 10 ]
-[ "end" ]
-t7_pos.count.print; print("end");
-[ 10 ]
-[ "end" ]
-t7_neg.count.print; print("end");
-[ 10 ]
-[ "end" ]
-t11_pos.count.print; print("end");
-[ 10 ]
-[ "end" ]
-t11_neg.count.print; print("end");
-[ 10 ]
-[ "end" ]
-t3_pos.count.print; print("end");
-[ 10 ]
-[ "end" ]
-t3_neg.count.print; print("end");
-[ 10 ]
-[ "end" ]
-commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print; 
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  cpu	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  520	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  670	  ]
-[ "elapsystem",	  0	  ]
-#---------------------------------#
-# BAT:		  mem		  #
-# (str)		  (int)		  #
-#---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  4708976	  ]
-[ "ordblks",	  303		  ]
-[ "smblks",	  0		  ]
-[ "hblkhd",	  10682368	  ]
-[ "hblks",	  35		  ]
-[ "usmblks",	  0		  ]
-[ "fsmblks",	  0		  ]
-[ "uordblks",	  4267136	  ]
-[ "fordblks",	  441840	  ]
-#-------------------------#
-# BAT:		  io	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  4654	  ]
-[ "majflt",	  821	  ]
-[ "nswap",	  0	  ]
-[ "inblock",	  0	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  7	  ]
+[ "ninvcsw",	  387	  ]
 #~EndVariableOutput~#
 tmp0 := car_age.select(19, 24); pos_6 := semijoin(tmp0, pos_3); neg_6 := semijoin(tmp0, neg_3);
 tmp1 := car_age.select(19, 24); pos_8 := semijoin(tmp1, pos_4); neg_8 := semijoin(tmp1, neg_4);
 tmp2 := car_age.select(30, 33); pos_9 := semijoin(tmp2, pos_2); neg_9 := semijoin(tmp2, neg_2);
 tmp3 := car_gender.select('f'); pos_10 := semijoin(tmp3, pos_5); neg_10 := semijoin(tmp3, neg_5);
-commit; printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+commit; printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  550	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  810	  ]
 [ "elapuser",	  30	  ]
-[ "system",	  670	  ]
-[ "elapsystem",	  0	  ]
+[ "system",	  1270	  ]
+[ "elapsystem",	  10	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1208320	  ]
-[ "arena",	  5917296	  ]
-[ "ordblks",	  274		  ]
+[ "memincr",	  864256	  ]
+[ "arena",	  4268032	  ]
+[ "ordblks",	  176		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  11096064	  ]
-[ "hblks",	  36		  ]
+[ "hblkhd",	  6361088	  ]
+[ "hblks",	  21		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  5677056	  ]
-[ "fordblks",	  240240	  ]
+[ "uordblks",	  4047904	  ]
+[ "fordblks",	  220128	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  5392	  ]
-[ "majflt",	  824	  ]
+[ "minflt",	  4057	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  7	  ]
+[ "ninvcsw",	  390	  ]
 #~EndVariableOutput~#
-t9_pos := semijoin(car_carprice, pos_10).histogram; t9_neg := semijoin(car_carprice, neg_10).histogram;
-t6_pos := semijoin(car_carprice, pos_9).histogram; t6_neg := semijoin(car_carprice, neg_9).histogram;
-t4_pos := semijoin(car_carprice, pos_8).histogram; t4_neg := semijoin(car_carprice, neg_8).histogram;
-t0_pos := semijoin(car_carprice, pos_6).histogram; t0_neg := semijoin(car_carprice, neg_6).histogram;
-t10_pos := semijoin(car_category, pos_10).histogram; t10_neg := semijoin(car_category, neg_10).histogram;
- printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t9_pos := semijoin(car_carprice, pos_10).histogram(); t9_neg := semijoin(car_carprice, neg_10).histogram();
+t6_pos := semijoin(car_carprice, pos_9).histogram(); t6_neg := semijoin(car_carprice, neg_9).histogram();
+t4_pos := semijoin(car_carprice, pos_8).histogram(); t4_neg := semijoin(car_carprice, neg_8).histogram();
+t0_pos := semijoin(car_carprice, pos_6).histogram(); t0_neg := semijoin(car_carprice, neg_6).histogram();
+t10_pos := semijoin(car_category, pos_10).histogram(); t10_neg := semijoin(car_category, neg_10).histogram();
+ printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  570	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  830	  ]
 [ "elapuser",	  20	  ]
-[ "system",	  670	  ]
+[ "system",	  1270	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  299008	  ]
-[ "arena",	  6216304	  ]
-[ "ordblks",	  286		  ]
+[ "memincr",	  172032	  ]
+[ "arena",	  4440064	  ]
+[ "ordblks",	  185		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  10018816	  ]
-[ "hblks",	  32		  ]
+[ "hblkhd",	  5283840	  ]
+[ "hblks",	  17		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  5980584	  ]
-[ "fordblks",	  235720	  ]
+[ "uordblks",	  4165328	  ]
+[ "fordblks",	  274736	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  5410	  ]
-[ "majflt",	  824	  ]
+[ "minflt",	  4079	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  7	  ]
+[ "ninvcsw",	  396	  ]
 #~EndVariableOutput~#
-t9_pos.count.print; print("end");
+t9_pos.count().print(); print("end");
 [ 9 ]
 [ "end" ]
-t9_neg.count.print; print("end");
+t9_neg.count().print(); print("end");
 [ 9 ]
 [ "end" ]
-t6_pos.count.print; print("end");
+t6_pos.count().print(); print("end");
 [ 9 ]
 [ "end" ]
-t6_neg.count.print; print("end");
+t6_neg.count().print(); print("end");
 [ 9 ]
 [ "end" ]
-t4_pos.count.print; print("end");
+t4_pos.count().print(); print("end");
 [ 9 ]
 [ "end" ]
-t4_neg.count.print; print("end");
+t4_neg.count().print(); print("end");
 [ 9 ]
 [ "end" ]
-t0_pos.count.print; print("end");
+t0_pos.count().print(); print("end");
 [ 9 ]
 [ "end" ]
-t0_neg.count.print; print("end");
+t0_neg.count().print(); print("end");
 [ 9 ]
 [ "end" ]
-t10_pos.count.print; print("end");
+t10_pos.count().print(); print("end");
 [ 2 ]
 [ "end" ]
-t10_neg.count.print; print("end");
+t10_neg.count().print(); print("end");
 [ 2 ]
 [ "end" ]
-commit; printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+commit; printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  570	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  830	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  670	  ]
+[ "system",	  1270	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  6216304	  ]
-[ "ordblks",	  284		  ]
+[ "arena",	  4440064	  ]
+[ "ordblks",	  183		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  10018816	  ]
-[ "hblks",	  32		  ]
+[ "hblkhd",	  5283840	  ]
+[ "hblks",	  17		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  5982016	  ]
-[ "fordblks",	  234288	  ]
+[ "uordblks",	  4165936	  ]
+[ "fordblks",	  274128	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  5411	  ]
-[ "majflt",	  824	  ]
+[ "minflt",	  4080	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  7	  ]
+[ "ninvcsw",	  396	  ]
 #~EndVariableOutput~#
-t7_pos := semijoin(car_category, pos_9).histogram; t7_neg := semijoin(car_category, neg_9).histogram;
-t1_pos := semijoin(car_category, pos_6).histogram; t1_neg := semijoin(car_category, neg_6).histogram;
-t3_pos := semijoin(car_gender, pos_8).histogram; t3_neg := semijoin(car_gender, neg_8).histogram;
-t11_pos := semijoin(car_town, pos_10).histogram; t11_neg := semijoin(car_town, neg_10).histogram;
-t2_pos := semijoin(car_town, pos_6).histogram; t2_neg := semijoin(car_town, neg_6).histogram;
- printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t7_pos := semijoin(car_category, pos_9).histogram(); t7_neg := semijoin(car_category, neg_9).histogram();
+t1_pos := semijoin(car_category, pos_6).histogram(); t1_neg := semijoin(car_category, neg_6).histogram();
+t3_pos := semijoin(car_gender, pos_8).histogram(); t3_neg := semijoin(car_gender, neg_8).histogram();
+t11_pos := semijoin(car_town, pos_10).histogram(); t11_neg := semijoin(car_town, neg_10).histogram();
+t2_pos := semijoin(car_town, pos_6).histogram(); t2_neg := semijoin(car_town, neg_6).histogram();
+ printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  590	  ]
-[ "elapuser",	  20	  ]
-[ "system",	  670	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  860	  ]
+[ "elapuser",	  30	  ]
+[ "system",	  1270	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  294912	  ]
-[ "arena",	  6511216	  ]
-[ "ordblks",	  294		  ]
+[ "memincr",	  360448	  ]
+[ "arena",	  4800512	  ]
+[ "ordblks",	  194		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  8941568	  ]
-[ "hblks",	  28		  ]
+[ "hblkhd",	  4206592	  ]
+[ "hblks",	  13		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  6111848	  ]
-[ "fordblks",	  399368	  ]
+[ "uordblks",	  4194216	  ]
+[ "fordblks",	  606296	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  5449	  ]
-[ "majflt",	  824	  ]
+[ "minflt",	  4114	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  8	  ]
+[ "ninvcsw",	  401	  ]
 #~EndVariableOutput~#
-t7_pos.count.print; print("end");
+t7_pos.count().print(); print("end");
 [ 2 ]
 [ "end" ]
-t7_neg.count.print; print("end");
+t7_neg.count().print(); print("end");
 [ 2 ]
 [ "end" ]
-t1_pos.count.print; print("end");
+t1_pos.count().print(); print("end");
 [ 2 ]
 [ "end" ]
-t1_neg.count.print; print("end");
+t1_neg.count().print(); print("end");
 [ 2 ]
 [ "end" ]
-t3_pos.count.print; print("end");
+t3_pos.count().print(); print("end");
 [ 2 ]
 [ "end" ]
-t3_neg.count.print; print("end");
+t3_neg.count().print(); print("end");
 [ 2 ]
 [ "end" ]
-t11_pos.count.print; print("end");
+t11_pos.count().print(); print("end");
 [ 10 ]
 [ "end" ]
-t11_neg.count.print; print("end");
+t11_neg.count().print(); print("end");
 [ 10 ]
 [ "end" ]
-t2_pos.count.print; print("end");
+t2_pos.count().print(); print("end");
 [ 10 ]
 [ "end" ]
-t2_neg.count.print; print("end");
+t2_neg.count().print(); print("end");
 [ 10 ]
 [ "end" ]
-commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+commit;  printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  590	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  860	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  670	  ]
+[ "system",	  1270	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  6511216	  ]
-[ "ordblks",	  294		  ]
+[ "arena",	  4800512	  ]
+[ "ordblks",	  193		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  8941568	  ]
-[ "hblks",	  28		  ]
+[ "hblkhd",	  4206592	  ]
+[ "hblks",	  13		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  6113272	  ]
-[ "fordblks",	  397944	  ]
+[ "uordblks",	  4194816	  ]
+[ "fordblks",	  605696	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  5450	  ]
-[ "majflt",	  824	  ]
+[ "minflt",	  4115	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  8	  ]
+[ "ninvcsw",	  402	  ]
 #~EndVariableOutput~#
-t8_pos := semijoin(car_town, pos_9).histogram; t8_neg := semijoin(car_town, neg_9).histogram;
-t5_pos := semijoin(car_town, pos_8).histogram; t5_neg := semijoin(car_town, neg_8).histogram;
- printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t8_pos := semijoin(car_town, pos_9).histogram(); t8_neg := semijoin(car_town, neg_9).histogram();
+t5_pos := semijoin(car_town, pos_8).histogram(); t5_neg := semijoin(car_town, neg_8).histogram();
+ printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  590	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  670	  ]
-[ "elapsystem",	  0	  ]
-#---------------------------------#
-# BAT:		  mem		  #
-# (str)		  (int)		  #
-#---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  6511216	  ]
-[ "ordblks",	  295		  ]
-[ "smblks",	  0		  ]
-[ "hblkhd",	  8941568	  ]
-[ "hblks",	  28		  ]
-[ "usmblks",	  0		  ]
-[ "fsmblks",	  0		  ]
-[ "uordblks",	  6253824	  ]
-[ "fordblks",	  257392	  ]
-#-------------------------#
-# BAT:		  io	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  5465	  ]
-[ "majflt",	  824	  ]
-[ "nswap",	  0	  ]
-[ "inblock",	  0	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
-#~EndVariableOutput~#
-t8_pos.count.print; print("end");
-[ 10 ]
-[ "end" ]
-t8_neg.count.print; print("end");
-[ 10 ]
-[ "end" ]
-t5_pos.count.print; print("end");
-[ 10 ]
-[ "end" ]
-t5_neg.count.print; print("end");
-[ 10 ]
-[ "end" ]
-commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print; 
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  cpu	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  600	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  870	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  670	  ]
+[ "system",	  1270	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  6511216	  ]
-[ "ordblks",	  293		  ]
+[ "arena",	  4800512	  ]
+[ "ordblks",	  193		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  8941568	  ]
-[ "hblks",	  28		  ]
+[ "hblkhd",	  4206592	  ]
+[ "hblks",	  13		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  6255248	  ]
-[ "fordblks",	  255968	  ]
+[ "uordblks",	  4294152	  ]
+[ "fordblks",	  506360	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  5466	  ]
-[ "majflt",	  824	  ]
+[ "minflt",	  4119	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  8	  ]
+[ "ninvcsw",	  404	  ]
+#~EndVariableOutput~#
+t8_pos.count().print(); print("end");
+[ 10 ]
+[ "end" ]
+t8_neg.count().print(); print("end");
+[ 10 ]
+[ "end" ]
+t5_pos.count().print(); print("end");
+[ 10 ]
+[ "end" ]
+t5_neg.count().print(); print("end");
+[ 10 ]
+[ "end" ]
+commit;  printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print(); 
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  1	  ]
+[ "user",	  880	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  1270	  ]
+[ "elapsystem",	  0	  ]
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  0		  ]
+[ "arena",	  4800512	  ]
+[ "ordblks",	  191		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  4206592	  ]
+[ "hblks",	  13		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  4294760	  ]
+[ "fordblks",	  505752	  ]
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  0	  ]
+[ "minflt",	  4120	  ]
+[ "majflt",	  0	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  8	  ]
+[ "ninvcsw",	  405	  ]
 #~EndVariableOutput~#
 tmp0 := car_gender.select('f'); pos_11 := semijoin(tmp0, pos_8); neg_11 := semijoin(tmp0, neg_8);
- printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+ printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  610	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  890	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  670	  ]
+[ "system",	  1270	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  6511216	  ]
-[ "ordblks",	  292		  ]
+[ "arena",	  4800512	  ]
+[ "ordblks",	  185		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  9355264	  ]
-[ "hblks",	  29		  ]
+[ "hblkhd",	  4620288	  ]
+[ "hblks",	  14		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  6164992	  ]
-[ "fordblks",	  346224	  ]
+[ "uordblks",	  4203776	  ]
+[ "fordblks",	  596736	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  5965	  ]
-[ "majflt",	  828	  ]
+[ "minflt",	  4255	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  8	  ]
+[ "ninvcsw",	  406	  ]
 #~EndVariableOutput~#
 commit;
-t0_pos := semijoin(car_carprice, pos_11).histogram; t0_neg := semijoin(car_carprice, neg_11).histogram;
-t1_pos := semijoin(car_town, pos_11).histogram; t1_neg := semijoin(car_town, neg_11).histogram;
- printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t0_pos := semijoin(car_carprice, pos_11).histogram(); t0_neg := semijoin(car_carprice, neg_11).histogram();
+t1_pos := semijoin(car_town, pos_11).histogram(); t1_neg := semijoin(car_town, neg_11).histogram();
+ printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  620	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  900	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  670	  ]
-[ "elapsystem",	  0	  ]
+[ "system",	  1280	  ]
+[ "elapsystem",	  10	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  6511216	  ]
-[ "ordblks",	  300		  ]
+[ "arena",	  4800512	  ]
+[ "ordblks",	  194		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  9355264	  ]
-[ "hblks",	  29		  ]
+[ "hblkhd",	  4620288	  ]
+[ "hblks",	  14		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  6096848	  ]
-[ "fordblks",	  414368	  ]
+[ "uordblks",	  4120336	  ]
+[ "fordblks",	  680176	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  5966	  ]
-[ "majflt",	  828	  ]
+[ "minflt",	  4256	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  8	  ]
+[ "ninvcsw",	  407	  ]
 #~EndVariableOutput~#
-t0_pos.count.print; print("end");
+t0_pos.count().print(); print("end");
 [ 9 ]
 [ "end" ]
-t0_neg.count.print; print("end");
+t0_neg.count().print(); print("end");
 [ 9 ]
 [ "end" ]
-t1_pos.count.print; print("end");
+t1_pos.count().print(); print("end");
 [ 10 ]
 [ "end" ]
-t1_neg.count.print; print("end");
+t1_neg.count().print(); print("end");
 [ 10 ]
 [ "end" ]
-commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+commit;  printf("#~BeginVariableOutput~#\n"); cpu().print();memory.print();io.print(); printf("#~EndVariableOutput~#\n"); # bbp().print();
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  620	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  900	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  670	  ]
+[ "system",	  1280	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  6511216	  ]
-[ "ordblks",	  300		  ]
+[ "arena",	  4800512	  ]
+[ "ordblks",	  191		  ]
 [ "smblks",	  0		  ]
-[ "hblkhd",	  9355264	  ]
-[ "hblks",	  29		  ]
+[ "hblkhd",	  4620288	  ]
+[ "hblks",	  14		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  6098280	  ]
-[ "fordblks",	  412936	  ]
+[ "uordblks",	  4120944	  ]
+[ "fordblks",	  679568	  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  5967	  ]
-[ "majflt",	  828	  ]
+[ "minflt",	  4257	  ]
+[ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
+[ "nvcsw",	  9	  ]
+[ "ninvcsw",	  407	  ]
 #~EndVariableOutput~#
-quit;
+quit();
 
 # 17:04:37 >  
 # 17:04:37 >  Done.
