@@ -516,9 +516,9 @@ module(mapi); # mapi_listen
 # low memory usage for testing unloading
 #mem_maxsize(0LL);
 #vm_maxsize(0LL);
-err := CATCH( mvc_init(int(monet_environment.find("sql_debug"))) );
+var err := CATCH( mvc_init(int(monet_environment.find("sql_debug"))) );
 
-proc SQLclient( Stream s_in, Stream s_out ) := {
+proc SQLclient( Stream s_in, Stream s_out ) : void {
 	fork(sqlclient(s_in, s_out));
 }
 
