@@ -394,7 +394,7 @@ int MT_try_sema (MT_Sema s){
 		fflush(MT_out);
 	}
 	if (s == NULL) return 0;
-	return (sem_wait(s));
+	return (sem_trywait(s));
 }
 
 

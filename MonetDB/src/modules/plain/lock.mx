@@ -20,7 +20,8 @@ as already present in the Monet system.
 .COMMAND lock_set(lock) = set_lock;
 	"try to set a lock; if set, block till it is freed"
 .COMMAND lock_try(lock) : int = try_lock;
-	"try a lock, if free set it, if not return EBUSY"
+	"try a lock, if free set it and return 0, 
+		if not return EBUSY"
 .COMMAND lock_unset(lock) = unset_lock;
 	"unset a lock"
 .COMMAND lock_destroy(lock) = destroy_lock;
@@ -36,7 +37,8 @@ as already present in the Monet system.
 .COMMAND sema_down(sema) = down_sema;
 	"decrease the semaphpore if >0; else block"
 .COMMAND sema_try(sema) : int = try_sema;
-	"try the semaphpore"
+	"try the semaphpore, if >0 decrease and return 0, 
+		if not return EBUSY"
 .COMMAND sema_up(sema) = up_sema;
 	"increase the semaphore"
 .COMMAND sema_destroy(sema) = destroy_sema;
@@ -69,7 +71,7 @@ int set_lock(monet_lock *l){
 }
 
 int try_lock(int* res, monet_lock* l){
-	*res = MT_try_lock((MT_Lock) *l);
+	*res = MT_try_lock((MT_Lock) *l)?EBUSY:0;
 	return GDK_SUCCEED;
 }
 
@@ -94,7 +96,7 @@ int up_sema(monet_sema *s){
 }
 
 int try_sema(int *res, monet_sema *s){
-	*res = MT_try_sema((MT_Sema) *s)?0:EBUSY;
+	*res = MT_try_sema((MT_Sema) *s)?EBUSY:0;
 	return GDK_SUCCEED;
 }
 
