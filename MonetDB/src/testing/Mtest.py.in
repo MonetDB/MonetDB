@@ -188,13 +188,6 @@ def url(str) :
     return string.replace(str, os.sep, '/')
 ### url(str) #
 
-def rmtree(path) :
-    if os.name == "nt":
-        os.system("rmdir /s/q %s" % path)
-    else:
-        os.system("rm -rf %s" % path)
-### rmtree(path) #
-
 def CreateHtmlIndex (env) :
     TSTDIR=env['TSTDIR']
     TSTTRGBASE=env['TSTTRGBASE']
@@ -553,7 +546,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         if os.path.exists(os.path.join(env['GDK_DBFARM'],TSTDB)):
             try:
-                rmtree(os.path.join(env['GDK_DBFARM'],TSTDB))
+                shutil.rmtree(os.path.join(env['GDK_DBFARM'],TSTDB))
             except:
                 Warn("database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
                 #TODO:
@@ -1156,8 +1149,8 @@ def randomPort(l,h) :
     port = 0
     rpt = 0
     while rpt < repeat:
-	port = random.randrange(l,h,1)
-	if CheckPort(host,port)[0] == 1:
+        port = random.randrange(l,h,1)
+        if CheckPort(host,port)[0] == 1:
             rpt = rpt + 1
         else:
             break
@@ -1728,10 +1721,11 @@ def main(argv) :
             env[v] = eval(dft[v])
             #TODO:
             # make sure, that PATHs ar absolute
-    if env['MONET_MOD_PATH']:
-        env['setMONET_MOD_PATH'] = eval(dft['setMONET_MOD_PATH'])
-    else:
-        env['setMONET_MOD_PATH'] = ''
+    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+        if env['MONET_MOD_PATH']:
+            env['setMONET_MOD_PATH'] = eval(dft['setMONET_MOD_PATH'])
+        else:
+            env['setMONET_MOD_PATH'] = ''
 
     if ( THISFILE in ["Mtest.py", "Mprofile.py"] )  and  not env['MONET_CONF']:
         Usage()
@@ -1789,7 +1783,7 @@ def main(argv) :
     # export and display env
     STDERR.flush()
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars_ + ['GDK_DBFARM']
+        vars_ = vars_ + ['GDK_DBFARM','setMONET_MOD_PATH'] 
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
@@ -1935,14 +1929,17 @@ def main(argv) :
                     shutil.copy(f,"D:"+os.sep+"Tools")
 
         if os.path.exists(os.path.join(env['TSTTRGBASE'],TSTPREF)):
-            shutil.rmtree(os.path.join(env['TSTTRGBASE'],TSTPREF))
+            try:
+                shutil.rmtree(os.path.join(env['TSTTRGBASE'],TSTPREF))
+            except:
+                ErrXit("Failed to remove %s" % os.path.join(env['TSTTRGBASE'],TSTPREF))
         if not os.path.exists(env['GDK_DBFARM']):
             #TODO: set mode to umask
             os.makedirs(env['GDK_DBFARM'])
 
         if os.path.exists(os.path.join(env['GDK_DBFARM'],TSTPREF)):
             try:
-                rmtree(os.path.join(env['GDK_DBFARM'],TSTPREF))
+                shutil.rmtree(os.path.join(env['GDK_DBFARM'],TSTPREF))
             except:
                 ErrXit("Failed to remove %s" % os.path.join(env['GDK_DBFARM'],TSTPREF))
         try:
@@ -1958,7 +1955,7 @@ def main(argv) :
         STDOUT.flush()
 
         host = ''
-	for S in 'MAPI', 'SQL':
+        for S in 'MAPI', 'SQL':
             port = int(env[S+'PORT'])
             busy, Serrno, Serrstr = CheckPort(host,port)
             if busy == 1:
