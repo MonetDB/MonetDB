@@ -1080,9 +1080,6 @@ int ACCbuild(int id, BAT *b, Heap* acc, ptr extra) {
 	} else if (b->hacctype == id) {
 		GDKwarning("ACCbuild: accelerator already present\n");
 		return 0;
-	} else if (VIEWparent(b)) {
-		GDKwarning("ACCbuild: cannot create on a view BAT.\n");
-		return 0;
 	} else if (b->hacctype) {
 		GDKwarning("ACCbuild: destroying %s first\n", ACCname(b->hacctype));
 		ACCdestroy(b->hacctype, b, acc);
@@ -1106,8 +1103,6 @@ int ACCunload(int id, BAT *b, Heap *acc) {
 	} else if (b->hacctype != id) {
         	GDKerror("ACCunload: invalid accelerator '%s'.\n",ACCname(id));
         	return -1;
-	} else if (VIEWparent(b)) {
-		GDKwarning("ACCunload: cannot destroy on a view BAT.\n");
 	} else if (BATaccelerators[id].accDestroy) { 
 		(*BATaccelerators[id].accDestroy)(acc, b);
 	}
