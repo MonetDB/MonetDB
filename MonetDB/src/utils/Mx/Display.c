@@ -219,6 +219,7 @@ void	PrPrelude(char *file)
 
 	    mx_out = 7; 
 	    ofile_printf("<HTML>\n<HEAD>\n");
+	    ofile_printf("<LINK REL=STYLESHEET HREF=/MonetDB.css>\n");
 	    mx_out = 4;
 	    ofile_printf("\n<BASE target=\"_parent\">\n");
 	    mx_out = 7; 

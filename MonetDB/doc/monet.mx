@@ -500,17 +500,17 @@ will establish a MIL session with the Monet server, so we get a prompt:
 \begin{verbatim}
 $ MapiClient --host localhost --port 45678
 > ls;
-#-----------------------------------------------------------------------------------------------------------------#
-# name          | htype | ttype | count | heat  | dirty         | status| kind  | refcnt| lrefcnt       | plevel  #
-#-----------------------------------------------------------------------------------------------------------------#
-[ "car_age",      "oid",  "int",  100000, 0,      "clean",        "disk", "pers", 0,      1,              1       ]
-[ "car_carprice", "oid",  "int",  100000, 0,      "clean",        "disk", "pers", 0,      1,              1       ]
-[ "car_gender",   "oid",  "chr",  100000, 0,      "clean",        "disk", "pers", 0,      1,              1       ]
-[ "car_category", "oid",  "str",  100000, 0,      "clean",        "load", "pers", 0,      1,              1       ]
-[ "car_class",    "oid",  "str",  100000, 0,      "clean",        "load", "pers", 0,      1,              1       ]
-[ "car_town",     "oid",  "str",  100000, 0,      "clean",        "load", "pers", 0,      1,              1       ]
-[ "car_neg",      "oid",  "str",  50000,  0,      "clean",        "disk", "pers", 0,      1,              1       ]
-[ "car_pos",      "oid",  "str",  50000,  0,      "clean",        "disk", "pers", 0,      1,              1       ]
+#-------------------------------------------------------------------------------------------------------#
+# name          | htype | ttype | count | heat  | dirty         | status| kind  | refcnt| lrefcnt       #
+#-------------------------------------------------------------------------------------------------------#
+[ "car_age",      "oid",  "int",  100000, 0,      "clean",        "disk", "pers", 0,      1,            ]
+[ "car_carprice", "oid",  "int",  100000, 0,      "clean",        "disk", "pers", 0,      1,            ]
+[ "car_gender",   "oid",  "chr",  100000, 0,      "clean",        "disk", "pers", 0,      1,            ]
+[ "car_category", "oid",  "str",  100000, 0,      "clean",        "load", "pers", 0,      1,            ]
+[ "car_class",    "oid",  "str",  100000, 0,      "clean",        "load", "pers", 0,      1,            ]
+[ "car_town",     "oid",  "str",  100000, 0,      "clean",        "load", "pers", 0,      1,            ]
+[ "car_neg",      "oid",  "str",  50000,  0,      "clean",        "disk", "pers", 0,      1,            ]
+[ "car_pos",      "oid",  "str",  50000,  0,      "clean",        "disk", "pers", 0,      1,            ]
 >
 \end{verbatim}
 A common command is {\tt @[<a href="www/modules/sys.html#mod_2_1_0">ls()</a>@} which lists all persistent BATs. You can pass a 
@@ -657,11 +657,7 @@ the MIL interpreter increases the reference counts of its BAT parameters, and af
 \item[{\tt lrefcnt}] 
 logical reference counts may be either MIL variables with a BAT value, or nested BATs (BATs of BATs that contain values).
 A logical reference will not prevent a BAT from being unloaded, but will prevent it from being destroyed.
-
-\item[{\tt plevel}] 
-the subset of logical references that is persistent: those from within persistent nested BATs.  Remark that at the end of 
-the MIL session, all non-persistent nested BATs are destroyed and all MIL variables are cleaned up, and thus all their 
-BAT references disappear.
+Making a BAT persistent, will increment its lrefcnt by one (and making it transient decreses it by one).
 \end{description}
 
 The BBP LRU policy is steerable by applications using the {\tt @[<a href="www/modules/bat.html#mod_2_0_5">hot(BAT)</a>@} and

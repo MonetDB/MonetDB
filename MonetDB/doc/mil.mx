@@ -1142,7 +1142,7 @@ As of version 4.1 MIL has 7 standard modules, that are always loaded.
 	Automatic creation of enumeration types. Used for space compression.
 \item[@[<a href="www/modules/mmath.html">mmath</a>@]
 	Mathematic operations a la  {\tt math.h}.
-\item[@[<a href="www/modules/ascii_io.html">ascii\_io</a>@]
+\item[@[<a href="www/modules/ascii_io.html">ascii_io</a>@]
 	Bulk loading.
 \end{description}
 
