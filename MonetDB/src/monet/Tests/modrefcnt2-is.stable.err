@@ -56,12 +56,10 @@ stderr of test 'modrefcnt2-is` in directory 'src/monet` itself:
 # 15:28:40 >  
 
 MAPI  = anonymous@draco:58320
-ACTION= read_into_cache
 QUERY = test.print;
 ERROR = !ERROR: interpret: MIL operator invocation of 'print(BAT[int,lock])' with illegal types.
 
 MAPI  = anonymous@draco:58320
-ACTION= read_into_cache
 QUERY = test.count.print;
 ERROR = !ERROR: interpret: MIL operator invocation of 'count(BAT[int,lock])' with illegal types.
         !ERROR: print(param 1): evaluation error.
@@ -71,18 +69,15 @@ ERROR = !ERROR: interpret: MIL operator invocation of 'count(BAT[int,lock])' wit
 # 15:28:40 >  
 
 MAPI  = anonymous@draco:58320
-ACTION= read_into_cache
 QUERY = test.print;
 ERROR = !ERROR: interpret: MIL operator invocation of 'print(BAT[int,lock])' with illegal types.
 
 MAPI  = anonymous@draco:58320
-ACTION= read_into_cache
 QUERY = test.count.print;
 ERROR = !ERROR: interpret: MIL operator invocation of 'count(BAT[int,lock])' with illegal types.
         !ERROR: print(param 1): evaluation error.
 
 MAPI  = anonymous@draco:58320
-ACTION= read_into_cache
 QUERY = drop("lock");
 ERROR = !ERROR: TBL_unloadmod: lock was not loaded.
 

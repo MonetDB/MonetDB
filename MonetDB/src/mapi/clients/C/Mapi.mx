@@ -740,7 +740,10 @@ struct MapiStatement {
 	struct MapiBinding *bindings;
 	int maxparams;
 	struct MapiParam *params;
-	struct MapiResultSet *result, *active;
+	struct MapiResultSet *result, *active, *lastresult;
+	int needmore;		/* need more input */
+	int *pending_close;
+	int npending_close;
 	MapiHdl prev, next;
 };
 
@@ -1211,17 +1214,22 @@ mapi_setAutocommit(Mapi mid, int autocommit)
 static struct MapiResultSet *
 new_result(MapiHdl hdl)
 {
-	struct MapiResultSet **presult, *result;
+	struct MapiResultSet *result;
+
+	assert((hdl->lastresult == NULL && hdl->result == NULL) ||
+	       (hdl->result != NULL && hdl->lastresult != NULL && hdl->lastresult->next == NULL));
 
 	if (hdl->mid->trace)
 		printf("allocating new result set\n");
 	/* append a newly allocated struct to the end of the linked list */
-	presult = &hdl->result;
-	while (*presult != NULL)
-		presult = &(*presult)->next;
 	result = malloc(sizeof(*result));
 	result->next = NULL;
-	*presult = result;
+	if (hdl->lastresult == NULL)
+		hdl->result = hdl->lastresult = result;
+	else {
+		hdl->lastresult->next = result;
+		hdl->lastresult = result;
+	}
 
 	result->hdl = hdl;
 	result->tableid = -1;
@@ -1252,37 +1260,72 @@ new_result(MapiHdl hdl)
 
 /* close a result set, discarding any unread results */
 static MapiMsg
-close_result(struct MapiResultSet **presult)
+close_result(MapiHdl hdl)
 {
-	struct MapiResultSet *result = *presult;
-	MapiHdl hdl;
+	struct MapiResultSet *result;
+	Mapi mid;
 	int i;
 
+	result = hdl->result;
 	if (result == NULL)
 		return MERROR;
-	hdl = result->hdl;
-	if (hdl->mid->trace)
+	mid = hdl->mid;
+	assert(mid != NULL);
+	if (mid->trace)
 		printf("closing result set\n");
 	if (result->tableid >= 0) {
-		assert(hdl->mid != NULL);
-		if (hdl->mid->active &&
-		    read_into_cache(hdl->mid->active, 0) != MOK)
+		if (mid->active && !mid->active->needmore &&
+		    read_into_cache(mid->active, 0) != MOK)
 			return MERROR;
-		hdl->mid->active = hdl;
-		if (hdl->mid->to &&
-		    (stream_printf(hdl->mid->to, "X" "close %d\n",
-				   result->tableid) < 0 ||
-		     stream_flush(hdl->mid->to))) {
-			close_connection(hdl->mid);
-			mapi_setError(hdl->mid, stream_error(hdl->mid->to),
-				      "mapi_close_handle", MTIMEOUT);
-		} else
-			read_into_cache(hdl, 0);
+		assert(hdl->npending_close == 0 ||
+		       (hdl->npending_close > 0 &&
+			hdl->pending_close != NULL));
+		if (mid->active) {
+			/* can't write "X" commands now, so save for later */
+			REALLOC(hdl->pending_close, hdl->npending_close + 1);
+			hdl->pending_close[hdl->npending_close] =
+				result->tableid;
+			hdl->npending_close++;
+		} else if (mid->to != NULL) {
+			/* first close saved up to-be-closed tables */
+			for (i = 0; i < hdl->npending_close; i++) {
+				mid->active = hdl;
+				if (stream_printf(mid->to, "X" "close %d\n",
+						  hdl->pending_close[i]) < 0 ||
+				    stream_flush(mid->to)) {
+					close_connection(mid);
+					mapi_setError(mid,
+						      stream_error(mid->to),
+						      "mapi_close_handle",
+						      MTIMEOUT);
+					break;
+				}
+				read_into_cache(hdl, 0);
+			}
+			hdl->npending_close = 0;
+			if (hdl->pending_close)
+				free(hdl->pending_close);
+			hdl->pending_close = NULL;
+			if (mid->to != NULL) {
+				mid->active = hdl;
+				if (stream_printf(mid->to, "X" "close %d\n",
+						  result->tableid) < 0 ||
+				    stream_flush(mid->to)) {
+					close_connection(mid);
+					mapi_setError(mid,
+						      stream_error(mid->to),
+						      "mapi_close_handle",
+						      MTIMEOUT);
+				} else
+					read_into_cache(hdl, 0);
+			}
+		}
 		result->tableid = -1;
 	}
-	if (hdl->mid->active == hdl && read_into_cache(hdl, 0) != MOK)
+	if (mid->active == hdl && hdl->active == result &&
+	    read_into_cache(hdl, -1) != MOK)
 		return MERROR;
-	assert(hdl->active == NULL);
+	assert(hdl->active != result);
 	if (result->fields) {
 		for (i = 0; i < result->maxfields; i++) {
 			if (result->fields[i].tablename)
@@ -1323,7 +1366,9 @@ close_result(struct MapiResultSet **presult)
 		free(result->errorstr);
 	result->errorstr = NULL;
 	result->hdl = NULL;
-	*presult = result->next;
+	hdl->result = result->next;
+	if (hdl->result == NULL)
+		hdl->lastresult = NULL;
 	result->next = NULL;
 	free(result);
 	return MOK;
@@ -1348,14 +1393,15 @@ mapi_result_error(MapiHdl hdl)
 
 /* Go to the next result set, if any, and close the current result
    set.  This function returns 1 if there are more result sets after
-   the one that was closed, otherwise it returns MOK (0). */
+   the one that was closed, otherwise, if more input is needed, return
+   MMORE, else, return MOK */
 MapiMsg
 mapi_next_result(MapiHdl hdl)
 {
 	mapi_hdl_check(hdl, "mapi_next_result");
 
 	while (hdl->result != NULL) {
-		if (close_result(&hdl->result) != MOK)
+		if (close_result(hdl) != MOK)
 			return MERROR;
 		if (hdl->result &&
 		    (hdl->result->querytype == -1 ||
@@ -1364,7 +1410,7 @@ mapi_next_result(MapiHdl hdl)
 		     hdl->result->errorstr != NULL))
 			return 1;
 	}
-	return MOK;
+	return hdl->needmore ? MMORE : MOK;
 }
 
 int
@@ -1379,9 +1425,14 @@ mapi_more_results(MapiHdl hdl)
 		return 0;
 	}
 	if (result->querytype == 3 /* result set */ &&
-	    hdl->mid->active != NULL) {
+	    hdl->mid->active == hdl) {
 		/* read until next result (if any) */
 		read_into_cache(hdl, -1);
+	}
+	if (hdl->needmore) {
+		/* assume the application will provide more data and
+		   that we will then have a result */
+		return 1;
 	}
 	while (result->next) {
 		result = result->next;
@@ -1417,7 +1468,11 @@ mapi_new_handle(Mapi mid)
 	hdl->maxparams = 0;
 	hdl->params = NULL;
 	hdl->result = NULL;
+	hdl->lastresult = NULL;
 	hdl->active = NULL;
+	hdl->needmore = 0;
+	hdl->pending_close = NULL;
+	hdl->npending_close = 0;
 	/* add to doubly-linked list */
 	hdl->prev = NULL;
 	hdl->next = mid->first;
@@ -1431,13 +1486,54 @@ mapi_new_handle(Mapi mid)
 static MapiMsg
 finish_handle(MapiHdl hdl)
 {
+	Mapi mid;
+	int i;
+
 	if (hdl == NULL)
 		return MERROR;
-	if (hdl->mid->active == hdl && read_into_cache(hdl, 0) != MOK)
+	mid = hdl->mid;
+	if (mid->active == hdl && read_into_cache(hdl, 0) != MOK)
 		return MERROR;
-	while (hdl->result)
-		if (close_result(&hdl->result) != MOK)
+	if (mid->to) {
+		if (hdl->needmore) {
+			assert(mid->active == NULL || mid->active == hdl);
+			hdl->needmore = 0;
+			mid->active = hdl;
+			stream_flush(mid->to);
+			check_stream(mid, mid->to, "write error on stream",
+				     "finish_handle", mid->error);
+			read_into_cache(hdl, 0);
+		}
+		for (i = 0; i < hdl->npending_close; i++) {
+			mid->active = hdl;
+			if (stream_printf(mid->to, "X" "close %d\n",
+					  hdl->pending_close[i]) < 0 ||
+			    stream_flush(mid->to)) {
+				close_connection(mid);
+				mapi_setError(mid, stream_error(mid->to),
+					      "finish_handle", MTIMEOUT);
+				break;
+			}
+			read_into_cache(hdl, 0);
+		}
+	}
+	hdl->npending_close = 0;
+	if (hdl->pending_close)
+		free(hdl->pending_close);
+	hdl->pending_close = NULL;
+	while (hdl->result) {
+		if (close_result(hdl) != MOK)
 			return MERROR;
+		if (hdl->needmore) {
+			assert(mid->active == NULL || mid->active == hdl);
+			hdl->needmore = 0;
+			mid->active = hdl;
+			stream_flush(mid->to);
+			check_stream(mid, mid->to, "write error on stream",
+				     "finish_handle", mid->error);
+			read_into_cache(hdl, 0);
+		}
+	}
 	return MOK;
 }
 
@@ -1450,6 +1546,10 @@ mapi_close_handle(MapiHdl hdl)
 
 	if (finish_handle(hdl) != MOK)
 		return MERROR;
+	hdl->npending_close = 0;
+	if (hdl->pending_close)
+		free(hdl->pending_close);
+	hdl->pending_close = NULL;
 	if (hdl->bindings)
 		free(hdl->bindings);
 	hdl->bindings = NULL;
@@ -2524,12 +2624,8 @@ parse_header_line(MapiHdl hdl, char *line)
 		return new_result(hdl);
 	}
 
-	if ((result = hdl->result) == NULL)
+	if ((result = hdl->lastresult) == NULL)
 		result = new_result(hdl);
-	else {
-		while (result->next)
-			result = result->next;
-	}
 
 	line = strdup(line);	/* make copy we can play with */
 
@@ -2756,6 +2852,8 @@ read_into_cache(MapiHdl hdl, int lookahead)
 	struct MapiResultSet *result;
 
 	mid = hdl->mid;
+	assert(mid->active == hdl);
+	assert(hdl->needmore == 0);
 	if ((result = hdl->active) == NULL)
 		result = hdl->result; /* may also be NULL */
 	for (;;) {
@@ -2764,9 +2862,10 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			return mid->error;
 		switch (*line) {
 		case PROMPTBEG:
-			mid->active = 0;
-			hdl->active = 0;
-			/* return MMORE if line equals PROMPT2 up to newline */
+			mid->active = NULL;
+			hdl->active = NULL;
+			/* set needmore flag if line equals PROMPT2 up
+			   to newline */
 			copy = PROMPT2;
 			while (*line) {
 				if (*line != *copy)
@@ -2774,8 +2873,10 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				line++;
 				copy++;
 			}
-			if (*copy == '\n' || *copy == 0)
-				return MMORE;
+			if (*copy == '\n' || *copy == 0) {
+				hdl->needmore = 1;
+				mid->active = hdl;
+			}
 			return mid->error;
 		case '!':
 			if (result == NULL) {
@@ -2961,6 +3062,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	if (mid->trace) {
 		printf("mapi_query_part:" SZFMT ":%.*s\n", size, size, query);
 	}
+	hdl->needmore = 0;
 	stream_write(mid->to, (char*)query, 1, size);
 	check_stream(mid, mid->to, "write error on stream", "mapi_query_part",
 		     mid->error);
@@ -2977,6 +3079,7 @@ mapi_query_done(MapiHdl hdl)
 	mid = hdl->mid;
 	assert(mid->active == NULL || mid->active == hdl);
 	mid->active = hdl;
+	hdl->needmore = 0;
 	stream_flush(mid->to);
 	check_stream(mid, mid->to, "write error on stream", "mapi_query_done",
 		     mid->error);
@@ -3077,6 +3180,8 @@ mapi_cache_limit(Mapi mid, int limit)
 
 		if (mid->active && read_into_cache(mid->active, 0) != MOK)
 			return MERROR;
+		if (mid->active)
+			return MOK;
 		if (stream_printf(mid->to, "s" "set reply_size=%d;\n", limit) < 0 ||
 		    stream_flush(mid->to))
 			check_stream(mid, mid->to, stream_error(mid->to), "mapi_cache_limit", mid->error);
@@ -3181,40 +3286,30 @@ The content received is analyzed further by mapi_getRow()
 
 @c
 static char *
-mapi_fetch_line_internal(MapiHdl hdl, int *wantmore)
+mapi_fetch_line_internal(MapiHdl hdl)
 {
 	Mapi mid;
 	struct MapiResultSet *result;
 	char *reply;
 
-	*wantmore = 0;
-
 	/* try to read a line from the cache */
 	if ((result = hdl->result) == NULL || result->cache.writer <= 0 ||
 	    result->cache.reader + 1 >= result->cache.writer) {
 		mid = hdl->mid;
-		if (mid->active == NULL)
-			return 0;
+		if (mid->active != hdl || hdl->needmore)
+			return NULL;
 
-		switch (read_into_cache(hdl, 1)) {
-		case MMORE:
-			*wantmore = 1;
+		if (read_into_cache(hdl, 1) != MOK)
 			return NULL;
-		case MOK:
-			if ((result = hdl->result) == NULL ||
-			    result->cache.writer <= 0 ||
-			    result->cache.reader + 1 >= result->cache.writer)
-				return NULL;
-			break;
-		default:	/* MERROR */
+		if ((result = hdl->result) == NULL ||
+		    result->cache.writer <= 0 ||
+		    result->cache.reader + 1 >= result->cache.writer)
 			return NULL;
-		}
 	}
 	reply = result->cache.rows[++result->cache.reader];
-	if (hdl->bindings) {
+	if (hdl->bindings && *reply == '[') {
 		mapi_slice_row(result, result->cache.reader);
-		if (*reply == '[')
-			mapi_store_bind(result, result->cache.reader);
+		mapi_store_bind(result, result->cache.reader);
 	}
 	return reply;
 }
@@ -3224,15 +3319,9 @@ mapi_fetch_line(MapiHdl hdl)
 {
 	char *reply;
 	struct MapiResultSet *result;
-	int wantmore;
 
 	mapi_hdl_check0(hdl, "mapi_fetch_line");
-	reply = mapi_fetch_line_internal(hdl, &wantmore);
-	if (reply == NULL && wantmore) {
-		/* we want more input */
-		hdl->mid->error = MMORE;
-		return NULL;
-	}
+	reply = mapi_fetch_line_internal(hdl);
 	if (reply == NULL && (result = hdl->result) != NULL &&
 	    hdl->mid->languageId == LANG_SQL &&
 	    hdl->mid->active == NULL && result->rows_affected > 0 &&
@@ -3242,7 +3331,7 @@ mapi_fetch_line(MapiHdl hdl)
 		if (stream_printf(hdl->mid->to, "X" "export %d %d\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
 		    stream_flush(hdl->mid->to))
 			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_fetch_line", NULL);
-		reply = mapi_fetch_line_internal(hdl, &wantmore);
+		reply = mapi_fetch_line_internal(hdl);
 	}
 	return reply;
 }
@@ -3268,35 +3357,6 @@ mapi_quick_query(), otherwise we are forced to first
 empty the row cache.
 
 @c
-/* TODO: need to handle PROMPT2 */
-#define handlePart(sz, mid, hdl, fd)					\
-	do {								\
-		char *s;						\
-		mid->blk.buf[mid->blk.nxt + sz] = 0;			\
-		s = strchr(mid->blk.buf + mid->blk.nxt, PROMPTBEG);	\
-		if (s) {						\
-			ptrdiff_t len = s - (mid->blk.buf + mid->blk.nxt); \
-			if (len > 0) {					\
-				fwrite(mid->blk.buf + mid->blk.nxt, 1, len, fd); \
-				mid->blk.nxt += len;			\
-			}						\
-			s = strchr(mid->blk.buf + mid->blk.nxt, '\n');	\
-			len = s - (mid->blk.buf + mid->blk.nxt);	\
-			mid->blk.nxt += len + 1;			\
-			mid->active = NULL;				\
-			hdl->active = NULL;				\
-			if (mid->trace)					\
-				printf("prompt\n");			\
-			return MOK;					\
-		} else if (sz > 0) {					\
-			fwrite(mid->blk.buf + mid->blk.nxt, 1, sz, fd);	\
-			mid->blk.nxt = 0;				\
-		}							\
-		if (ferror(fd))						\
-			return mapi_setError(mid, "Error writing file",	\
-					     "mapi.response", MERROR);	\
-	} while (0)
-
 MapiMsg
 mapi_quick_response(MapiHdl hdl, FILE *fd)
 {
@@ -3308,12 +3368,9 @@ mapi_quick_response(MapiHdl hdl, FILE *fd)
 			mapi_explain_result(hdl, fd);
 		while ((line = mapi_fetch_line(hdl)) != NULL)
 			fprintf(fd, "%s\n", line);
-		if (hdl->mid->error == MMORE) {
-			hdl->mid->error = MOK;
-			return MMORE;
-		}
 	} while (mapi_next_result(hdl) == 1);
-	return hdl->mid->error;
+	return hdl->mid->error ? hdl->mid->error :
+		(hdl->needmore ? MMORE : MOK);
 }
 
 @-
