@@ -223,6 +223,7 @@ _level++;
 			break;
 		case T_BEGARCHIVE:
 			t = SkipTok(t,T_ENDARCHIVE);
+			CodeLine();
 			break;
 		case T_ENDARCHIVE:
 		case T_BEGHIDE:
