@@ -1219,7 +1219,7 @@ TCPopen(int *retval, str address)
 	char *p, host[128];
 	
 	if ((p = strchr(address,':')) != NULL) {
-		if (p - address >= sizeof(host)) {
+		if (p - address >= (int)sizeof(host)) {
 			/* address does not fit in host */
 			return GDK_FAIL;
 		}
