@@ -61,7 +61,7 @@ comment "Binary BAT calculator function with accumulator BAT result";
 @-
 We need instantiations for the accumulator code,
 but should limit modulo functions to integer-based types.
-[tobedone]
+@mal
 	@:calcGrp(%,oid,MOD)@
 	@:calcGrp(%,sht,MOD)@
 	@:calcGrp(%,int,MOD)@
@@ -72,6 +72,7 @@ but should limit modulo functions to integer-based types.
 	@:calculations(-,MIN)@
 	@:calculations(+,ADD)@
 @- Comparison routines
+The command signatures are similar to those above, producing a bit result.
 @= comparison
 command @1(b:bat[any::1,@2],c:bat[any::1,@2]): bat[any::1,bit]= CMDcmp@3;
 command @1(a:bat[any::1,bit],b:bat[any::1,@2],
@@ -81,7 +82,7 @@ command @1(a:bat[any::1,bit],b:bat[any::1,@2],cst:@2): bat[any::1,bit]
 	= CMDcmpaccum@3cst;
 
 @= compareGrp
-	@:comparison(<,@1,LE)@
+	@:comparison(<,@1,LT)@
 	@:comparison(==,@1,EQ)@
 	@:comparison(>,@1,GT)@
 	@:comparison(<=,@1,LE)@
@@ -94,6 +95,9 @@ command @1(a:bat[any::1,bit],b:bat[any::1,@2],cst:@2): bat[any::1,bit]
 	@:compareGrp(sht)@
 	@:compareGrp(int)@
 	@:compareGrp(lng)@
+
+	@:comparison(and,bit,AND)@
+	@:comparison(or,bit,OR)@
 @- Boolean operations
 The command signature can mostly be borrowed from the arithmetic.
 
@@ -105,26 +109,42 @@ command not(a:bat[any::1,bit],b:bat[any::1,bit]):bat[any::1,bit]
 	= CMDbitbataccumNOT
 comment "Return a BAT with the negated tail";
 
-command ifthen(b:bat[any::1,bit], t:bat[any::1,any::2]): bat[any::1,any::2] = CMDifThen
-comment "Ifthen operation to assemble a conditional result ";
-
-command ifthen(b:bat[any::1,bit], v:any::2): bat[any::1,any::2] = CMDifThenCst
-comment "Ifthen operation to assemble a conditional result ";
-
-command ifthenelse(b:bat[any::1,bit], t:bat[any::1,any::2], e:bat[any::1,any::2]): bat[any::1,any::2] = CMDifThenElse
-comment "If-then-else operation to assemble a conditional result ";
-
 command ifthenelse(b:bat[any::1,bit],e:any::2, t:bat[any::1,any::2]): bat[any::1,any::2] = CMDifThenElseCst1
 comment "If-then-else operation to assemble a conditional result ";
 
 command ifthenelse(b:bat[any::1,bit], t:bat[any::1,any::2], e:any::2): bat[any::1,any::2] = CMDifThenElseCst2
 comment "If-then-else operation to assemble a conditional result ";
 
-command fill(b:bat[any::1,any],v:any::2): bat[any::1,any::2] = CMDfill
-comment "Set the tail value of a bat to a constant";
+command ifthen(b:bat[any::1,bit], t:bat[any::1,any::2]): bat[any::1,any::2] = CMDifThen
+comment "Ifthen operation to assemble a conditional result ";
 
-	@:calcGrp(&&,bit,AND)@
-	@:calcGrp(||,bit,OR)@
+command ifthenelse(b:bat[any::1,bit], t:bat[any::1,any::2], e:bat[any::1,any::2]): bat[any::1,any::2] = CMDifThenElse
+comment "If-then-else operation to assemble a conditional result ";
+
+@-
+@= ifthenGrp
+command fill(v:@1,b:bat[any,any::1]): bat[@1,any::1] = CMDfillhead_@1
+comment "Fill the head with a constant.";
+
+command fill(b:bat[any::1,any], v:@1): bat[any::1,@1] = CMDfilltail_@1
+comment "Fill the tail with a constant.";
+
+command ifthen(b:bat[any::1,bit], v:@1): bat[any::1,@1] = CMDifThenCst_@1
+comment "Ifthen operation to assemble a conditional result ";
+
+command ifthenelse(b:bat[any::1,bit], v:@1,w:@1): bat[any::1,@1] = CMDifThenElseCst_@1
+comment "Ifthen operation to assemble a conditional result ";
+@mal
+	@:ifthenGrp(bit)@
+	@:ifthenGrp(chr)@
+	@:ifthenGrp(str)@
+	@:ifthenGrp(oid)@
+	@:ifthenGrp(int)@
+	@:ifthenGrp(sht)@
+	@:ifthenGrp(lng)@
+	@:ifthenGrp(flt)@
+	@:ifthenGrp(dbl)@
+
 @- Coercion routines
 The coercion routines over BATs can not easily speed up using
 an accumulator approach, because they often require enlarged storage space. 
@@ -196,7 +216,7 @@ command @1(x:bat[any::1,dbl],y:@2)  :bat[any::1,dbl] = CMDscience_@1;
  * The Original Code is the Monet Database System.
  * 
  * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
  * All Rights Reserved.
  * 
  * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
@@ -228,14 +248,15 @@ out occurrences of the nil-tst on the constant provided.
 This has been left out.
 @= accumCst
 	while( p1 < hend ){
-		if( *(@1 *)p2 == @1_nil ) *(@1*)p1 = @1_nil;
+		if(*(@1 *)p2 == @1_nil || *(@1*)cst == @1_nil)
+			*(@1*)p1= @1_nil;
 		else *(@1*)p1 = *(@1*) p2 @2 *(@1 *) cst;
 		p1+= s1; p2+= s2;
 	}
 @-
 The following utility extracts the BATdescriptor
 @= getBATdescriptor
-        if( BBPcheck(*@2,@5)==0) return GDK_FAIL;
+        if( BBPcheck(*@2,@4)==0) return GDK_FAIL;
         @3= (BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) { *@1 = 0; return GDK_FAIL; }
         if( *@2 <0){ /* BAT reverse */ @3 = BATmirror(@3); }
@@ -254,9 +275,7 @@ but in essence the structure is relatively simple.
 The BAT loops to cover the cases for arithmetic are
 collected in bataccum<operator>. Initialization of the
 two primary command structures are dealt with in the CMD* alternatives.
-
-The similar code base is produced for dealing with a constant
-argument. Yeh, it is largely the same as the code above.
+The similar code base is produced for dealing with a constant argument. 
 @= arithmeticImpl
 int bataccum@1(BAT *dst, BAT *left, BAT *right)
 {	int s1,s2,s3;
@@ -282,8 +301,8 @@ int bataccum@1(BAT *dst, BAT *left, BAT *right)
 int CMDbat@1(int *ret, int *l, int *r)
 {	BAT *dst, *left, *right;
 
-	@:getBATdescriptor(ret,l,left,1,"CMDbat@1")@
-	@:getBATdescriptor(ret,r,right,2,"CMDbat@1")@
+	@:getBATdescriptor(ret,l,left,"CMDbat@1")@
+	@:getBATdescriptor(ret,r,right,"CMDbat@1")@
 
 	@:chkSize(left,right,CMDbat@1)@
 
@@ -295,9 +314,9 @@ int CMDbat@1(int *ret, int *l, int *r)
 int CMDbataccum@1(int *ret, int *d, int *l, int *r)
 {	BAT *dst, *left, *right;
 
-	@:getBATdescriptor(ret,d,dst,1,"CMDbataccum@1")@
-	@:getBATdescriptor(ret,l,left,2,"CMDbataccum@1")@
-	@:getBATdescriptor(ret,r,right,3,"CMDbataccum@1")@
+	@:getBATdescriptor(ret,d,dst,"CMDbataccum@1")@
+	@:getBATdescriptor(ret,l,left,"CMDbataccum@1")@
+	@:getBATdescriptor(ret,r,right,"CMDbataccum@1")@
 
 	@:chkSize(dst,left,CMDbataccum@1)@
 	@:chkSize(dst,right,CMDbataccum@1)@
@@ -310,8 +329,8 @@ int CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
 	int s1,s2;
 	str p1,p2, hend;
 
-	@:getBATdescriptor(ret,r,dst,1,"CMDbataccum@1")@
-	@:getBATdescriptor(ret,l,left,2,"CMDbataccum@1")@
+	@:getBATdescriptor(ret,r,dst,"CMDbataccum@1")@
+	@:getBATdescriptor(ret,l,left,"CMDbataccum@1")@
 	@:chkSize(dst,left,CMDbataccum@1)@
 	BBPfix(*ret = dst->batCacheid);
 	@:batinit(1,dst)@
@@ -335,13 +354,11 @@ int CMDbat@1cst(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
 	int d;
 
-	@:getBATdescriptor(ret,l,left,1,"CMDbat@1")@
+	@:getBATdescriptor(ret,l,left,"CMDbat@1")@
 	dst= BATcopy(left);
 	d= dst->batCacheid;
 	return CMDbataccum@1cst(ret, &d,l,cst);
 }
-@- left over
-	@:arithCstImpl(MOD,%)@
 @c
 #include "batcalc.h"
 
@@ -350,9 +367,89 @@ int CMDbat@1cst(int *ret, int *l, void *cst)
 	@:arithmeticImpl(MUL,*)@
 	@:arithmeticImpl(DIV,/)@
 
-@- 
+@-  Modulo arithmetic
 The Modulo function doesn;t work on all types. Therefore we 
-define here the necessary implementations separately
+define here the necessary implementations separately by copying
+the arithmeticImpl block and removing elements not required.
+@c
+int bataccumMOD(BAT *dst, BAT *left, BAT *right)
+{	int s1,s2,s3;
+	str p1,p2,p3, hend;
+
+	@:batinit(1,dst)@
+	@:batinit(2,left)@
+	@:batinit(3,right)@
+	hend = (str) BUNlast(dst);
+	switch(BATttype(dst)){
+	case TYPE_oid: @:accum(oid,%)@ break;
+	case TYPE_sht: @:accum(sht,%)@ break;
+	case TYPE_int: @:accum(int,%)@ break;
+	case TYPE_lng: @:accum(lng,%)@ break;
+	default: GDKerror("unexpected type in bataccumMOD\n");
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+int CMDbatMOD(int *ret, int *l, int *r)
+{	BAT *dst, *left, *right;
+
+	@:getBATdescriptor(ret,l,left,"CMDbatMOD")@
+	@:getBATdescriptor(ret,r,right,"CMDbatMOD")@
+
+	@:chkSize(left,right,CMDbatMOD)@
+
+	dst= BATcopy(left);
+	BBPfix(*ret = dst->batCacheid);
+	return bataccumMOD(dst,left,right);
+}
+
+int CMDbataccumMOD(int *ret, int *d, int *l, int *r)
+{	BAT *dst, *left, *right;
+
+	@:getBATdescriptor(ret,d,dst,"CMDbataccumMOD")@
+	@:getBATdescriptor(ret,l,left,"CMDbataccumMOD")@
+	@:getBATdescriptor(ret,r,right,"CMDbataccumMOD")@
+
+	@:chkSize(dst,left,CMDbataccumMOD)@
+	@:chkSize(dst,right,CMDbataccumMOD)@
+
+	BBPfix(*ret = dst->batCacheid);
+	return bataccumMOD(dst,left,right);
+}
+int CMDbataccumMODcst(int *ret, int *r, int *l, void *cst)
+{	BAT *dst, *left;
+	int s1,s2;
+	str p1,p2, hend;
+
+	@:getBATdescriptor(ret,r,dst,"CMDbataccumMOD")@
+	@:getBATdescriptor(ret,l,left,"CMDbataccumMOD")@
+	@:chkSize(dst,left,CMDbataccumMOD)@
+	BBPfix(*ret = dst->batCacheid);
+	@:batinit(1,dst)@
+	@:batinit(2,left)@
+	hend = (str) BUNlast(dst);
+
+	switch(BATttype(left)){
+	case TYPE_oid: @:accumCst(oid,%)@ break;
+	case TYPE_sht: @:accumCst(sht,%)@ break;
+	case TYPE_int: @:accumCst(int,%)@ break;
+	case TYPE_lng: @:accumCst(lng,%)@ break;
+	default: GDKerror("unexpected type in bataccumMOD\n");
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+int CMDbatMODcst(int *ret, int *l, void *cst)
+{	BAT *dst, *left;
+	int d;
+
+	@:getBATdescriptor(ret,l,left,"CMDbatMOD")@
+	dst= BATcopy(left);
+	d= dst->batCacheid;
+	return CMDbataccumMODcst(ret, &d,l,cst);
+}
 
 @- Implementation of comparisons
 The structure of this code is copied from the arithmetic scheme.
@@ -367,7 +464,8 @@ The structure of this code is copied from the arithmetic scheme.
 @-
 @= cmpLoopCst
 	while( p1 < hend ){
-		if( *(@1 *)p2 == @1_nil ) *(bit*)p1 = bit_nil;
+		if(*(@1 *)p2 == @1_nil || *(@1*)cst == @1_nil)
+			*(bit*)p1= bit_nil;
 		else *(bit*)p1 = *(@1*) p2 @2 *(@1 *) cst;
 		p1+= s1; p2+= s2;
 	}
@@ -396,23 +494,27 @@ int compareaccum@1(BAT *dst, BAT *left, BAT *right){
 }
 int CMDcmp@1(int *ret, int *l, int *r)
 {	BAT *dst, *left, *right;
-	int s0;
-	str p0, hend;
+	int s1,xx;
+	ptr p1, hend;
 	bit bn= bit_nil;
+	BUN p,q;
 
-	@:getBATdescriptor(ret,l,left,1,"CMDcompare@1")@
-	@:getBATdescriptor(ret,r,right,2,"CMDcompare@1")@
+	@:getBATdescriptor(ret,l,left,"CMDcompare@1")@
+	@:getBATdescriptor(ret,r,right,"CMDcompare@1")@
 
 	@:chkSize(left,right,CMDcompare@1)@
 
 	dst= BATnew(BAThtype(left),TYPE_bit, BATcount(left));
 
-	@:batinit(0,left);
-	hend = (str) BUNlast(left);
-	while( p0 < hend ){
-		bunfastins(dst, p0, &bn);
-		p0+= s0; 
+	s1= BUNsize(dst);
+	p1= BUNfirst(dst);
+	 
+	BATloopFast(left,p,q,xx){
+		ptr h= BUNhead(left,p);
+		bunfastins_nocheck(dst,p1,h,&bn,s1);
+		p1+= s1;
 	}
+	dst->hsorted= BAThordered(left);
 	BBPfix(*ret = dst->batCacheid);
 	return compareaccum@1(dst,left,right);
 }
@@ -420,9 +522,9 @@ int CMDcmp@1(int *ret, int *l, int *r)
 int CMDcmpaccum@1(int *ret, int *d, int *l, int *r)
 {	BAT *dst, *left, *right;
 
-	@:getBATdescriptor(ret,d,dst,1,"CMDbcompareaccum@1")@
-	@:getBATdescriptor(ret,l,left,2,"CMDcompareaccum@1")@
-	@:getBATdescriptor(ret,r,right,3,"CMDcompareaccum@1")@
+	@:getBATdescriptor(ret,d,dst,"CMDbcompareaccum@1")@
+	@:getBATdescriptor(ret,l,left,"CMDcompareaccum@1")@
+	@:getBATdescriptor(ret,r,right,"CMDcompareaccum@1")@
 
 	@:chkSize(dst,left,CMDcompareaccum@1)@
 	@:chkSize(dst,right,CMDcompareaccum@1)@
@@ -436,8 +538,8 @@ int CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst)
 	int s1,s2;
 	str p1,p2, hend;
 
-	@:getBATdescriptor(ret,r,dst,1,"CMDbataccum@1")@
-	@:getBATdescriptor(ret,l,left,2,"CMDbataccum@1")@
+	@:getBATdescriptor(ret,r,dst,"CMDbataccum@1")@
+	@:getBATdescriptor(ret,l,left,"CMDbataccum@1")@
 	@:chkSize(dst,left,CMDbataccum@1)@
 	BBPfix(*ret = dst->batCacheid);
 	@:batinit(1,dst)@
@@ -460,10 +562,25 @@ int CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst)
 
 int CMDcmp@1cst(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
-	int d;
+	int s1,d,xx;
+	ptr p1, hend;
+	bit bn= bit_nil;
+	BUN p,q;
 
-	@:getBATdescriptor(ret,l,left,1,"CMDbat@1")@
+	@:getBATdescriptor(ret,l,left,"CMDcompare@1")@
+
 	dst= BATnew(BAThtype(left),TYPE_bit, BATcount(left));
+
+	s1= BUNsize(dst);
+	p1= BUNfirst(dst);
+	 
+	BATloopFast(left,p,q,xx){
+		ptr h= BUNhead(left,p);
+		bunfastins_nocheck(dst,p1,h,&bn,s1);
+		p1+= s1;
+	}
+	dst->hsorted= BAThordered(left);
+	
 	d= dst->batCacheid;
 	return CMDcmpaccum@1cst(ret,&d,l,cst);
 }
@@ -483,137 +600,13 @@ int CMDcmp@1cst(int *ret, int *l, void *cst)
 
 @- Implementations of boolean operators
 The code base is straightforward.
-@= bitoperation
-int CMDbat@1(int *ret, int *l, int *r)
-{	BAT *dst, *left, *right;
-	int s1,s2;
-	str p1,p2, hend;
-	bit bn= bit_nil;
-
-	@:getBATdescriptor(ret,l,left,1,"CMDbat@1")@
-	@:getBATdescriptor(ret,r,right,2,"CMDbat@1")@
-	@:chkSize(left,right,CMDcompare@1)@
-
-	dst= BATnew(BAThtype(left),TYPE_bit, BATcount(left));
-
-	@:batinit(1,left);
-	@:batinit(2,right);
-	hend = (str) BUNlast(left);
-	while( p1 < hend ){
-		/* this code is better as x?nil:y */
-		if(*(bit *)p1 == bit_nil || *(bit*)p2 == bit_nil)
-			bn = bit_nil;
-		else bn = * (bit*) p1 @2 *(bit *) p2;
-		bunfastins(dst, p1, &bn);
-		p1+= s1; p2+= s2; 
-	}
-	BBPfix(*ret = dst->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int CMDbataccum@1(int *ret, int *d, int *l, int *r)
-{	BAT *dst, *left, *right;
-	int s1,s2,s3;
-	str p1,p2,p3, hend;
-	bit bn= bit_nil;
-
-	@:getBATdescriptor(ret,d,dst,3,"CMDbataccum@1")@
-	@:getBATdescriptor(ret,l,left,1,"CMDbataccum@1")@
-	@:getBATdescriptor(ret,r,right,2,"CMDbataccum@1")@
-
-	@:chkSize(dst,left,CMDbataccum@1)@
-	@:chkSize(dst,right,CMDbataccum@1)@
-	@:batinit(1,left);
-	@:batinit(2,right);
-	@:batinit(3,dst);
-	hend = (str) BUNlast(left);
-	while( p1 < hend ){
-		/* this code is better as x?nil:y */
-		if(*(bit *)p1 == bit_nil || *(bit*)p2 == bit_nil)
-			*(bit*)p3 = bit_nil;
-		else *(bit*) p3 = * (bit*) p1 @2 *(bit *) p2;
-		p1+= s1; p2+= s2; p3+=s3;
-	}
-
-	BBPfix(*ret = dst->batCacheid);
-	return GDK_SUCCEED;
-}
-int CMDbat@1cst(int *ret, int *l, bit *r)
-{	BAT *dst, *left;
-	int s1;
-	str p1, hend;
-	bit bn= bit_nil;
-
-	@:getBATdescriptor(ret,l,left,1,"CMDbat@1")@
-
-	dst= BATnew(BAThtype(left),TYPE_bit, BATcount(left));
-
-	@:batinit(1,left);
-	hend = (str) BUNlast(left);
-	while( p1 < hend ){
-		/* this code is better as x?nil:y */
-		if(*(bit *)p1 == bit_nil || *(bit*)r == bit_nil)
-			bn = bit_nil;
-		else bn = * (bit*) p1 @2 *(bit *) r;
-		bunfastins(dst, p1, &bn);
-		p1+= s1; 
-	}
-	BBPfix(*ret = dst->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int CMDbataccum@1cst(int *ret, int *d, int *l, bit *r)
-{	BAT *dst, *left;
-	int s1,s2,s3;
-	str p1,p2,p3, hend;
-	bit bn= bit_nil;
-
-	@:getBATdescriptor(ret,d,dst,3,"CMDbataccum@1")@
-	@:getBATdescriptor(ret,l,left,1,"CMDbataccum@1")@
-
-	@:chkSize(dst,left,CMDbataccum@1)@
-	@:batinit(1,left);
-	@:batinit(3,dst);
-	hend = (str) BUNlast(left);
-	while( p1 < hend ){
-		/* this code is better as x?nil:y */
-		if(*(bit *)p1 == bit_nil || *(bit*)r == bit_nil)
-			*(bit*)p3 = bit_nil;
-		else *(bit*) p3 = * (bit*) p1 @2 *(bit *) r;
-		p1+= s1; p3+=s3;
-	}
-
-	BBPfix(*ret = dst->batCacheid);
-	return GDK_SUCCEED;
-}
 @-
 The expanded code for the binary and boolean operations.
 @c
-	@:bitoperation(AND,&&)@
-	@:bitoperation(OR,||)@
-
-int CMDbitbatNOT(int *ret, int *l)
-{	BAT *dst, *left;
-	int s1;
-	str p1, ph, hend;
-	bit bn= bit_nil;
-
-	@:getBATdescriptor(ret,l,left,1,"CMDbitbat@1")@
-
-	dst= BATnew(BAThtype(left),TYPE_bit, BATcount(left));
-	@:batinit(1,left);
-	ph = BUNfirst(left);
-	hend = (str) BUNlast(left);
-	while( p1 < hend ){
-		/* this code is better as x?nil:y */
-		if(*(bit *)p1 == bit_nil ) bn = bit_nil;
-		else bn = ! * (bit*) p1;
-		bunfastins(dst, ph, &bn);
-		p1+= s1; 
-	}
-	BBPfix(*ret = dst->batCacheid);
-	return GDK_SUCCEED;
-}
+	@:compareImpl(AND,&&)@
+	@:compareImpl(OR,||)@
+	@:cmpCstImpl(AND,&&)@
+	@:cmpCstImpl(OR,||)@
 
 int CMDbitbataccumNOT(int *ret, int *d, int *l)
 {	BAT *dst, *left;
@@ -621,8 +614,8 @@ int CMDbitbataccumNOT(int *ret, int *d, int *l)
 	str p1,p2, hend;
 	bit bn= bit_nil;
 
-	@:getBATdescriptor(ret,d,dst,3,"CMDbitbataccum@1")@
-	@:getBATdescriptor(ret,l,left,1,"CMDbitbataccum@1")@
+	@:getBATdescriptor(ret,d,dst,"CMDbitbataccum@1")@
+	@:getBATdescriptor(ret,l,left,"CMDbitbataccum@1")@
 
 	@:chkSize(dst,left,CMDbitbataccum@1)@
 	@:batinit(1,left);
@@ -639,6 +632,30 @@ int CMDbitbataccumNOT(int *ret, int *d, int *l)
 	BBPfix(*ret = dst->batCacheid);
 	return GDK_SUCCEED;
 }
+int CMDbitbatNOT(int *ret, int *l)
+{	BAT *dst, *left;
+	int s1,xx,d;
+	ptr p1, hend;
+	bit bn= bit_nil;
+	BUN p,q;
+
+	@:getBATdescriptor(ret,l,left,"CMDcompare@1")@
+
+	dst= BATnew(BAThtype(left),TYPE_bit, BATcount(left));
+
+	s1= BUNsize(dst);
+	p1= BUNfirst(dst);
+	 
+	BATloopFast(left,p,q,xx){
+		ptr h= BUNhead(left,p);
+		bunfastins_nocheck(dst,p1,h,&bn,s1);
+		p1+= s1;
+	}
+	dst->hsorted= BAThordered(left);
+	d= dst->batCacheid;
+	return CMDbitbataccumNOT(ret,&d,l);
+}
+
 @- Implementation of coercions
 The coercion code can not be improved much, because we do not have
 the space to re-use. Therefore, the code block is actually a hardwired
@@ -717,10 +734,7 @@ int CMDscience_@1(int *ret, int *bid){
 	int xx;
 	BUN p,q;
 
-	if( BBPcheck(*bid,"CMDscience_@1")==0) return GDK_FAIL;
-	b= (BAT*) BBPgetdesc(*bid);
-	if( b== NULL){ *ret= 0; return GDK_FAIL; }
-        if( *bid <0){ /* BAT reverse */ b = BATmirror(b); }
+	@:getBATdescriptor(ret,bid,b,"CMDscience_@1")@
 
 	bn= CMDnewBATresult(b, TYPE_dbl);
 	if( bn== NULL) {*ret= 0; return GDK_FAIL;}
@@ -739,10 +753,7 @@ int CMDscience_@1(int *ret, int *bid, @2 *d){
 	int xx;
 	BUN p,q;
 
-	if( BBPcheck(*bid,"CMDscience_@1")==0) return GDK_FAIL;
-	b= (BAT*) BBPgetdesc(*bid);
-	if( b== NULL){ *ret= 0; return GDK_FAIL; }
-        if( *bid <0){ /* BAT reverse */ b = BATmirror(b); }
+	@:getBATdescriptor(ret,bid,b,"CMDscience_@1")@
 
 	bn= CMDnewBATresult(b, TYPE_dbl);
 	if( bn== NULL) {*ret= 0; return GDK_FAIL;}
@@ -760,29 +771,234 @@ int CMDscience_@1(int *ret, int *bid, @2 *d){
 The conditional multiplex operations .
 @c
 int CMDifThen(int *ret, int *iid, int *tid){
-	GDKerror("ifthen not yet implemented\n");
+	BAT *ib, *tb, *bn;
+	int xx;
+	BUN p,q;
+	bit bnil= bit_nil;
+
+	@:getBATdescriptor(ret,iid,ib,"CMDifThen")@
+	@:getBATdescriptor(ret,tid,tb,"CMDifThen")@
+	@:chkSize(ib,tb,CMDifThen)@
+
+	bn= BATnew(BAThtype(ib),BATttype(tb),BATcount(ib));
+	if( bn== NULL) {*ret= 0; return GDK_FAIL;}
+	BATloopFast(ib, p, q, xx) {
+		ptr h = BUNhead(ib,p);
+		ptr t = BUNtail(ib,p);
+		int idx = BUNindex(ib,p);
+
+		if( *(bit*) t== bit_nil) {
+			bunfastins(bn, h, &bnil);
+		} else
+		if( *(bit*) t ) {
+			t= BUNtail(tb,BUNptr(tb,idx));
+			bunfastins(bn, h, t);
+		} 
+	}
+	BBPfix( *ret= bn->batCacheid);
 	return GDK_SUCCEED;
 }
-int CMDifThenCst(int *ret, int *iid, ptr *eid){
-	GDKerror("ifthen not yet implemented\n");
+@-
+The constant versions are typed by the parser
+@= ifthencstImpl
+int CMDifThenCst_@1(int *ret, int *iid, ptr *eid){
+	BAT *ib, *bn;
+	int xx;
+	BUN p,q;
+	@1 bnil= @1_nil;
+
+	@:getBATdescriptor(ret,iid,ib,"CMDifThen_@1")@
+
+	bn= BATnew(BAThtype(ib),TYPE_@1,BATcount(ib));
+	if( bn== NULL) {*ret= 0; return GDK_FAIL;}
+	BATloopFast(ib, p, q, xx) {
+		ptr h = BUNhead(ib,p);
+		ptr t = BUNtail(ib,p);
+
+		if( *(bit*) t== bit_nil) {
+			bunfastins(bn, h, &bnil);
+		} else
+		if( *(bit*) t ) {
+			bunfastins(bn, h, eid);
+		} 
+	}
+	BBPfix( *ret= bn->batCacheid);
 	return GDK_SUCCEED;
 }
+int CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid){
+	BAT *ib, *bn;
+	int xx;
+	BUN p,q;
+	@1 bnil= @1_nil;
+
+	@:getBATdescriptor(ret,iid,ib,"CMDifThen_@1")@
+
+	bn= BATnew(BAThtype(ib),TYPE_@1,BATcount(ib));
+	if( bn== NULL) {*ret= 0; return GDK_FAIL;}
+	BATloopFast(ib, p, q, xx) {
+		ptr h = BUNhead(ib,p);
+		ptr t = BUNtail(ib,p);
+
+		if( *(bit*) t== bit_nil) {
+			bunfastins(bn, h, &bnil);
+		} else
+		if( *(bit*) t ) {
+			bunfastins(bn, h, tid);
+		} else {
+			bunfastins(bn, h, eid);
+		} 
+	}
+	BBPfix( *ret= bn->batCacheid);
+	return GDK_SUCCEED;
+}
+int CMDfilltail_@1(int *ret, int *iid, ptr *val){
+	BAT *ib, *bn;
+	int xx;
+	BUN p,q;
+	@1 bnil= @1_nil;
+
+	@:getBATdescriptor(ret,iid,ib,"CMDfilltail_@1")@
+
+	bn= BATnew(BAThtype(ib),TYPE_@1,BATcount(ib));
+	if( bn== NULL) {*ret= 0; return GDK_FAIL;}
+	BATloopFast(ib, p, q, xx) {
+		ptr v = BUNhead(ib,p);
+		bunfastins(bn, v, val);
+	}
+	BBPfix( *ret= bn->batCacheid);
+	return GDK_SUCCEED;
+}
+int CMDfillhead_@1(int *ret,ptr *val, int *iid){
+	BAT *ib, *bn;
+	int xx;
+	BUN p,q;
+	@1 bnil= @1_nil;
+
+	@:getBATdescriptor(ret,iid,ib,"CMDfillhead_@1")@
+
+	bn= BATnew(BAThtype(ib),TYPE_@1,BATcount(ib));
+	if( bn== NULL) {*ret= 0; return GDK_FAIL;}
+	BATloopFast(ib, p, q, xx) {
+		ptr v = BUNtail(ib,p);
+		bunfastins(bn, val,v);
+	}
+	BBPfix( *ret= bn->batCacheid);
+	return GDK_SUCCEED;
+}
+@-
+@c
+	@:ifthencstImpl(int)@
+	@:ifthencstImpl(sht)@
+	@:ifthencstImpl(lng)@
+	@:ifthencstImpl(oid)@
+	@:ifthencstImpl(flt)@
+	@:ifthencstImpl(dbl)@
+	@:ifthencstImpl(str)@
+	@:ifthencstImpl(chr)@
+	@:ifthencstImpl(bit)@
+
 int CMDifThenElse(int *ret, int *iid, int *tid,int *eid){
-	GDKerror("ifthen not yet implemented\n");
+	BAT *ib, *tb, *eb, *bn;
+	int xx;
+	BUN p,q;
+	bit bnil= bit_nil;
+
+	@:getBATdescriptor(ret,iid,ib,"CMDifThen")@
+	@:getBATdescriptor(ret,tid,tb,"CMDifThen")@
+	@:getBATdescriptor(ret,eid,eb,"CMDifThen")@
+	@:chkSize(ib,tb,CMDifThenElse)@
+	@:chkSize(ib,eb,CMDifThenElse)@
+
+	bn= BATnew(BAThtype(ib),BATttype(tb),BATcount(ib));
+	if( bn== NULL) {*ret= 0; return GDK_FAIL;}
+	BATloopFast(ib, p, q, xx) {
+		ptr h = BUNhead(ib,p);
+		ptr t = BUNtail(ib,p);
+		int idx = BUNindex(ib,p);
+
+		if( *(bit*) t== bit_nil) {
+			bunfastins(bn, h, &bnil);
+		} else
+		if( *(bit*) t ) {
+			t= BUNtail(tb,BUNptr(tb,idx));
+			bunfastins(bn, h, t);
+		} else{
+			t= BUNtail(eb,BUNptr(eb,idx));
+			bunfastins(bn, h, t);
+		}
+	}
+	BBPfix( *ret= bn->batCacheid);
 	return GDK_SUCCEED;
 }
 int CMDifThenElseCst1(int *ret, int *iid, ptr *val,int *eid){
-	GDKerror("ifthen not yet implemented\n");
+	BAT *ib, *eb, *bn;
+	int xx;
+	BUN p,q;
+	ptr nilptr;
+	int tpe;
+
+	@:getBATdescriptor(ret,iid,ib,"CMDifThen")@
+	@:getBATdescriptor(ret,eid,eb,"CMDifThen")@
+	@:chkSize(ib,eb,CMDifThenElse)@
+
+	tpe= BATttype(eb);
+	nilptr= ATOMnilptr(tpe);
+	bn= BATnew(BAThtype(ib),tpe,BATcount(ib));
+	if( bn== NULL) {*ret= 0; return GDK_FAIL;}
+	BATloopFast(ib, p, q, xx) {
+		ptr h = BUNhead(ib,p);
+		ptr t = BUNtail(ib,p);
+		int idx = BUNindex(ib,p);
+
+		if( ATOMcmp(tpe, t, nilptr)==0 ){
+			bunfastins(bn, h, t);
+		} else
+		if( *(bit*) t ) {
+			bunfastins(bn, h, val);
+		} else{
+			t= BUNtail(eb,BUNptr(eb,idx));
+			bunfastins(bn, h, t);
+		}
+	}
+	BBPfix( *ret= bn->batCacheid);
 	return GDK_SUCCEED;
 }
 int CMDifThenElseCst2(int *ret, int *iid, int *tid,ptr *val){
-	GDKerror("ifthen not yet implemented\n");
+	BAT *ib, *tb, *bn;
+	int xx;
+	BUN p,q;
+	ptr nilptr;
+	int tpe;
+
+	@:getBATdescriptor(ret,iid,ib,"CMDifThen")@
+	@:getBATdescriptor(ret,tid,tb,"CMDifThen")@
+	@:chkSize(ib,tb,CMDifThenElse)@
+ 
+	tpe= BATttype(tb);
+	nilptr= ATOMnilptr(tpe);
+	bn= BATnew(BAThtype(ib),tpe,BATcount(ib));
+	if( bn== NULL) {*ret= 0; return GDK_FAIL;}
+	BATloopFast(ib, p, q, xx) {
+		ptr h = BUNhead(ib,p);
+		ptr t = BUNtail(ib,p);
+		int idx = BUNindex(ib,p);
+
+		if( ATOMcmp(tpe, t, nilptr)==0 ){
+			bunfastins(bn, h, t);
+		} else
+		if( *(bit*) t ) {
+			t= BUNtail(tb,BUNptr(tb,idx));
+			bunfastins(bn, h, t);
+		} else{
+			bunfastins(bn, h, val);
+		}
+	}
+	BBPfix( *ret= bn->batCacheid);
+	return GDK_SUCCEED;
+	GDKerror("ifthenelseCst2 not yet implemented\n");
 	return GDK_SUCCEED;
 }
-int CMDfill(int *ret, int *iid, ptr *eid){
-	GDKerror("[bat,val] not yet implemented\n");
-	return GDK_SUCCEED;
-}
+
 @+ Test environment
 Here follows a sample of the code that can easily
 be derived from MAL.

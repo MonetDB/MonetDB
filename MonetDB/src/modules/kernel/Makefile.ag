@@ -1,7 +1,9 @@
 
 INCLUDES = top_builddir/src/gdk top_builddir/src/monet \
 	top_builddir/include/atoms \
-	top_builddir/src/mal $(Z_CFLAGS) $(BZ_CFLAGS)
+	top_builddir/src/mal 
+#$(Z_CFLAGS) $(BZ_CFLAGS)
+
 MTSAFE
 
 # install these libs in the pkglib
@@ -12,6 +14,7 @@ LIBS = {
 	SOURCES = calc.mx bat.mx algebra.mx system.mx unix.mx \
 		mapi.mx startup.mx mmath.mx lock.mx alarm.mx \
 		batcalc.mx group.mx 
+#ascii_io.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""

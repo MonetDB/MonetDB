@@ -521,13 +521,11 @@ Generate both 'normal' CTgroup and parameterized CTgroups.
 
 @= returnvalue
         @1 =
-@= batcheck
+@= getBATdescriptor
         if( BBPcheck(*@2,@4)==0) return GDK_FAIL;
         @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) {
-                *@1 = 0;
-                return GDK_FAIL;                                                        }
-
+	if( @3 == NULL) { *@1 = 0; return GDK_FAIL; } 
+	if(*@2 < 0) @3 = BATmirror(@3);
 @c
 
 @:wrappedgroupouter(STANDARD)@
@@ -578,7 +576,7 @@ CTgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
         declare_mask_@1 
 	BAT *histo= 0, *bn=0;
 	BAT *b;
-	@:batcheck(retbid,bid,b,"CTgroup")@
+	@:getBATdescriptor(retbid,bid,b,"CTgroup")@
 	bn = BATnew(b->htype, TYPE_oid, BATcount(b));
 
 	/* Poor man's clustered test: sorted & !keyed => clustered  */
@@ -642,7 +640,7 @@ CTmultigroup(int *retid, int *bmid){
         BUN p,q;
 	bat bid;
 
-	@:batcheck(retid,bmid,bm,"CTmultigroup")@
+	@:getBATdescriptor(retid,bmid,bm,"CTmultigroup")@
 
 	if (bm->htype == TYPE_str) {
 		attrfix = TRUE;
@@ -858,8 +856,8 @@ int CTregroup(int* retid, int* ctid, int* bid) {
 	BAT** retval, *dummy, * ct, * b;
 	int ret;
 
-	@:batcheck(retid,ctid,ct,"CTderive")@
-	@:batcheck(retid,bid,b,"CTderive")@
+	@:getBATdescriptor(retid,ctid,ct,"CTderive")@
+	@:getBATdescriptor(retid,bid,b,"CTderive")@
 	BBPfix(ct->batCacheid);
 	retval= & dummy;
 	ret= regroup(retval, ct, b, tailtype(b, TRUE), NULL);
@@ -872,8 +870,8 @@ int CTderive(int* mapid, int* retid, int  *ctid, int* bid) {
 	BAT *bn = NULL;
 	int ret;
 
-	@:batcheck(retid,ctid,ct,"CTderive")@
-	@:batcheck(retid,bid,b,"CTderive")@
+	@:getBATdescriptor(retid,ctid,ct,"CTderive")@
+	@:getBATdescriptor(retid,bid,b,"CTderive")@
 	if (tailtype(ct, TRUE) != TYPE_int) {
 		/* if (!CTgroup(&bn, ct)) return GDK_FAIL;*/
 		int rethisto,retbid, bid= ct->batCacheid;
@@ -1018,7 +1016,7 @@ BAT *multiderive(BAT* bm, int overwrite) {
 
 int CTmultiderive(int* retid, int* bmid) {
 	BAT *retval, *bm;
-	@:batcheck(retid,bmid,bm,"CTmultiderive")@
+	@:getBATdescriptor(retid,bmid,bm,"CTmultiderive")@
 	retval = multiderive(bm, FALSE);
 	if( retval) *retid= retval->batCacheid;
 	return retval?GDK_SUCCEED:GDK_FAIL;
@@ -1026,7 +1024,7 @@ int CTmultiderive(int* retid, int* bmid) {
 
 int CTmultiregroup(int* retid, int* bmid) {
 	BAT *retval, *bm;
-	@:batcheck(retid,bmid,bm,"CTmultiregroup")@
+	@:getBATdescriptor(retid,bmid,bm,"CTmultiregroup")@
 	retval = multiderive(bm, TRUE);
 	if( retval) *retid= retval->batCacheid;
 	return retval?GDK_SUCCEED:GDK_FAIL;
@@ -1044,8 +1042,8 @@ CThistosum(int *retid, int *bid, int *cid){
         int xx,i,*z;
         oid ot,oh;
 
-	@:batcheck(retid,bid,b,"CThistosum")@
-	@:batcheck(retid,cid,c,"CThistosum")@
+	@:getBATdescriptor(retid,bid,b,"CThistosum")@
+	@:getBATdescriptor(retid,cid,c,"CThistosum")@
 
         res = BATnew(TYPE_oid,TYPE_int, BATcount(b));
 
@@ -1083,9 +1081,9 @@ int CTsubhisto(int *retid, int *selid, int *grpid, int *domid) {
         BUN p, q;
 	BAT *bn;
 
-	@:batcheck(retid,selid,sel,"CTsubhisto")@
-	@:batcheck(retid,grpid,grp,"CTsubhisto")@
-	@:batcheck(retid,domid,dom,"CTsubhisto")@
+	@:getBATdescriptor(retid,selid,sel,"CTsubhisto")@
+	@:getBATdescriptor(retid,grpid,grp,"CTsubhisto")@
+	@:getBATdescriptor(retid,domid,dom,"CTsubhisto")@
 
 	filter = (bit*) BUNtloc(sel,BUNfirst(sel));
         size=BATcount(dom); yy=3; zz=BUNsize(sel);
@@ -1164,8 +1162,8 @@ int CTrefine(int *retid, int *bid, int *aid) {
     BAT *b, *a;
     BAT *bn;
 
-    @:batcheck(retid,bid,b,"CTrefine")@
-    @:batcheck(retid,aid,a,"CTrefine")@
+    @:getBATdescriptor(retid,bid,b,"CTrefine")@
+    @:getBATdescriptor(retid,aid,a,"CTrefine")@
 
     if (b->tkey) { /* if key, no further refinements can take place */
 	bn = BATmark(b, 0);
@@ -1282,7 +1280,7 @@ aggrtst(16,160,"{count}","sht","int","lng","flt","dbl","decimal");
 @+ Implementation
 These implementations need just one scan and a simple hash-maintained data
 structure to compute a group of common aggregates. 
-@= batcheck
+@= getBATdescriptor
         if( BBPcheck(*@2,@4)==0) return GDK_FAIL;
         @3= (BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) {
@@ -1297,8 +1295,8 @@ int CMDgroup_sum_@1(int *retval, int *bid,int  *eid){
 	BUN p, q, r;
 	int xx;
 
-	@:batcheck(retval,bid,b,"CMDgroup_sum")@
-	@:batcheck(retval,eid,e,"CMDgroup_sum")@
+	@:getBATdescriptor(retval,bid,b,"CMDgroup_sum")@
+	@:getBATdescriptor(retval,eid,e,"CMDgroup_sum")@
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
@@ -1335,8 +1333,8 @@ int CMDgroup_avg_@1(int *retval, int *bid,int  *eid){
 	@1 zero = (@1) 0;
 	BUN p, q, r;
 
-	@:batcheck(retval,bid,b,"CMDgroup_avg")@
-	@:batcheck(retval,eid,e,"CMDgroup_avg")@
+	@:getBATdescriptor(retval,bid,b,"CMDgroup_avg")@
+	@:getBATdescriptor(retval,eid,e,"CMDgroup_avg")@
 	/* init sums and counts to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
@@ -1393,8 +1391,8 @@ int CMDgroup_@1(int *retval, int *bid,int  *eid){
 	ptr *extremes;
 	BUN p, q, r;
 
-	@:batcheck(retval,bid,b,"CMDgroup_avg")@
-	@:batcheck(retval,eid,e,"CMDgroup_avg")@
+	@:getBATdescriptor(retval,bid,b,"CMDgroup_@1")@
+	@:getBATdescriptor(retval,eid,e,"CMDgroup_@1")@
 
 	bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	cmp = BATatoms[bn->ttype].atomCmp;
@@ -1445,8 +1443,8 @@ int CMDgroup_count(int *retval, int *bid,int  *eid){
 	BUN p, q, r;
 	int xx;
 
-	@:batcheck(retval,bid,b,"CMDgroup_avg")@
-	@:batcheck(retval,eid,e,"CMDgroup_avg")@
+	@:getBATdescriptor(retval,bid,b,"CMDgroup_count")@
+	@:getBATdescriptor(retval,eid,e,"CMDgroup_count")@
 	/* init: set all sums to zero */
 	bn = BATnew(e->htype, TYPE_int, BATcount(e));	
 	bn->tsorted = bn->hsorted = 0;
@@ -1476,8 +1474,8 @@ int CMDgroup_size(int *retval, int *bid,int  *eid){
 	BUN p, q, r;
 	int xx;
 
-	@:batcheck(retval,bid,b,"CMDgroup_avg")@
-	@:batcheck(retval,eid,e,"CMDgroup_avg")@
+	@:getBATdescriptor(retval,bid,b,"CMDgroup_size")@
+	@:getBATdescriptor(retval,eid,e,"CMDgroup_size")@
 	bn = BATnew(e->htype, TYPE_int, BATcount(e));	
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;

@@ -415,19 +415,19 @@ bat-name or batCacheid
 In most cases we pass a BAT identifier, which should be unified
 with a BAT descriptor. Upon failure we can simply abort the function.
 
-@= batcheck
+@= getBATdescriptor
 	if( BBPcheck(*@2,@4)==0) return GDK_FAIL;
 	@3= (BAT*) BBPgetdesc(*@2);
 	if( @3 == NULL) {
 		*@1 = 0;
 		return GDK_FAIL;
 	}
-@= batcheck2
-	if( BBPcheck(*@2,@4)== 0 ) {
-		return *@1 = GDK_FAIL;
-	}
+	if(*@2 <0) @3 = BATmirror(@3);
+@= getBATdescriptor2
+	if( BBPcheck(*@2,@4)== 0 ) return *@1 = GDK_FAIL;
 	@3= (BAT*) BBPgetdesc(*@2);
 	if( @3 == NULL) return *@1 = GDK_FAIL;
+	if(*@2 <0) @3 = BATmirror(@3);
 @-
 At this stage of the game, we should translate
 the arguments of BATnew into types.
@@ -467,7 +467,7 @@ int CMDnewBat2(int *res, int *ht, int *tt, int *cap){
 
 int CMDreverse(int *ret, int *bid){
 	BAT *b;
-	@:batcheck(ret,bid,b,"CMDreverse")@
+	@:getBATdescriptor(ret,bid,b,"CMDreverse")@
 	*ret= -b->batCacheid;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -475,7 +475,7 @@ int CMDreverse(int *ret, int *bid){
 
 int CMDmirror(int *ret, int *bid){
 	BAT *b, *v;
-	@:batcheck(ret,bid,b,"CMDmirror")@
+	@:getBATdescriptor(ret,bid,b,"CMDmirror")@
 	v = VIEWcombine(b);
 	if (b->batRestricted == BAT_WRITE) {
 		BAT *bc = BATrcopy(v);
@@ -493,7 +493,7 @@ int CMDmirror(int *ret, int *bid){
 
 int CMDconvert(int *ret, int *bid){
 	BAT *b;
-	@:batcheck(ret,bid,b,"CMDconvert")@
+	@:getBATdescriptor(ret,bid,b,"CMDconvert")@
 	BATconvert(b,CONV_HTON);
 	BBPfix(b->batCacheid);
 	*ret = b->batCacheid;
@@ -502,7 +502,7 @@ int CMDconvert(int *ret, int *bid){
 
 int CMDrevert(int *ret, int *bid){
 	BAT *b;
-	@:batcheck(ret,bid,b,"CMDrevert")@
+	@:getBATdescriptor(ret,bid,b,"CMDrevert")@
 	BATrevert(b);
 	BBPfix(b->batCacheid);
 	*ret = b->batCacheid;
@@ -511,7 +511,7 @@ int CMDrevert(int *ret, int *bid){
 
 int CMDorder(int *ret, int *bid){
 	BAT *b;
-	@:batcheck(ret,bid,b,"CMDorder")@
+	@:getBATdescriptor(ret,bid,b,"CMDorder")@
 	BATorder(b);
 	BBPfix(b->batCacheid);
 	*ret = b->batCacheid;
@@ -531,7 +531,7 @@ if (b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
 @c
 int CMDinsert_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b;
-	@:batcheck2(r,bid,b,"CMDinsert_bun")@
+	@:getBATdescriptor2(r,bid,b,"CMDinsert_bun")@
 	@:void_insertbun(h)@
 	@:void_insertbun(t)@
 	@:derefStr(b,h,h)@
@@ -544,8 +544,8 @@ int CMDinsert_bun(int *r, int *bid, ptr h, ptr t) {
 
 int CMDinsert_bat(int *r, int *bid, int *sid){
 	BAT *b, *s;
-	@:batcheck2(r,bid,b,"CMDinsert_bat")@
-	@:batcheck2(r,sid,s,"CMDinsert_bat")@
+	@:getBATdescriptor2(r,bid,b,"CMDinsert_bat")@
+	@:getBATdescriptor2(r,sid,s,"CMDinsert_bat")@
 	BATins(b,s);
 	BBPfix(b->batCacheid);
 	*r = b->batCacheid;
@@ -564,7 +564,7 @@ int CMDinsert_bat(int *r, int *bid, int *sid){
 @c
 int CMDreplace_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b;
-	@:batcheck2(r,bid,b,"CMDreplace_bat")@
+	@:getBATdescriptor2(r,bid,b,"CMDreplace_bat")@
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	@:void_append_only(CMDreplace_bun)@
@@ -576,8 +576,8 @@ int CMDreplace_bun(int *r, int *bid, ptr h, ptr t) {
 
 int CMDreplace_bat(int *r, int *bid, int *sid){
 	BAT *b,*s;
-	@:batcheck2(r,bid,b,"CMDreplace_bat")@
-	@:batcheck2(r,sid,s,"CMDreplace_bat")@
+	@:getBATdescriptor2(r,bid,b,"CMDreplace_bat")@
+	@:getBATdescriptor2(r,sid,s,"CMDreplace_bat")@
 	@:void_append_only(CMDreplace_bat)@
 	BATreplace(b,s);
 	BBPfix(b->batCacheid);
@@ -587,7 +587,7 @@ int CMDreplace_bat(int *r, int *bid, int *sid){
 
 int CMDdestroy_bat(int *r, int *bid) {
 	BAT *b;
-	@:batcheck2(r,bid,b,"CMDdelete_bun")@
+	@:getBATdescriptor2(r,bid,b,"CMDdelete_bun")@
 	BATpropcheck(b);
 	BATpropcheck(BATmirror(b));
 	BATmode(b, TRANSIENT);
@@ -595,7 +595,7 @@ int CMDdestroy_bat(int *r, int *bid) {
 } 
 int CMDdelete_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b;
-	@:batcheck2(r,bid,b,"CMDdelete_bun")@
+	@:getBATdescriptor2(r,bid,b,"CMDdelete_bun")@
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	@:void_append_only(CMDdelete_bun)@
@@ -607,7 +607,7 @@ int CMDdelete_bun(int *r, int *bid, ptr h, ptr t) {
 
 int CMDdelete_head(int *r, int *bid, ptr h) {
 	BAT *b;
-	@:batcheck2(r,bid,b,"CMDdelete_head")@
+	@:getBATdescriptor2(r,bid,b,"CMDdelete_head")@
 	@:derefStr(b,h,h)@
 	@:void_append_only(CMDdelete_head)@
 	BUNdelHead(b, @:batconvert(b,h)@);
@@ -618,7 +618,7 @@ int CMDdelete_head(int *r, int *bid, ptr h) {
 
 int CMDdelete_all(int *r, int *bid) {
 	BAT *b;
-	@:batcheck2(r,bid,b,"CMDdelete_all")@
+	@:getBATdescriptor2(r,bid,b,"CMDdelete_all")@
 	BATclear(b);
 	BBPfix(b->batCacheid);
 	*r = b->batCacheid;
@@ -627,8 +627,8 @@ int CMDdelete_all(int *r, int *bid) {
 
 int CMDdelete_bat_bun(int *r, int *bid, int *sid){
 	BAT *b,*s;
-	@:batcheck2(r,bid,b,"CMDdelete_bat_bun")@
-	@:batcheck2(r,sid,s,"CMDdelete_bat_bun")@
+	@:getBATdescriptor2(r,bid,b,"CMDdelete_bat_bun")@
+	@:getBATdescriptor2(r,sid,s,"CMDdelete_bat_bun")@
 	@:void_append_only(CMDdelete_bat_bun)@
 	BATdel(b,s);
 	BBPfix(b->batCacheid);
@@ -638,8 +638,8 @@ int CMDdelete_bat_bun(int *r, int *bid, int *sid){
 
 int CMDdelete_bat_head(int *r, int *bid, int *sid){
 	BAT *b,*s;
-	@:batcheck2(r,bid,b,"CMDdelete_bat_head")@
-	@:batcheck2(r,sid,s,"CMDdelete_bat_head")@
+	@:getBATdescriptor2(r,bid,b,"CMDdelete_bat_head")@
+	@:getBATdescriptor2(r,sid,s,"CMDdelete_bat_head")@
 	@:void_append_only(CMDdelete_bat_head)@
 	BATdelHead(b,s);
 	BBPfix(b->batCacheid);
@@ -649,7 +649,7 @@ int CMDdelete_bat_head(int *r, int *bid, int *sid){
 
 int CMDgetAlpha(int *r, int *bid) {
 	BAT *b,*c;
-	@:batcheck(r,bid,b,"CMDgetInserted")@
+	@:getBATdescriptor(r,bid,b,"CMDgetInserted")@
 	BBPfix(b->batCacheid);
 	c= BATalpha(b);
 	*r = c->batCacheid;
@@ -657,7 +657,7 @@ int CMDgetAlpha(int *r, int *bid) {
 } 
 int CMDgetDelta(int *r, int *bid) {
 	BAT *b,*c;
-	@:batcheck(r,bid,b,"CMDgetInserted")@
+	@:getBATdescriptor(r,bid,b,"CMDgetInserted")@
 	BBPfix(b->batCacheid);
 	c= BATdelta(b);
 	*r = c->batCacheid;
@@ -667,27 +667,27 @@ int CMDgetDelta(int *r, int *bid) {
 @c
 int CMDgetCapacity(lng *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDgetCapacity")@
+	@:getBATdescriptor(res,bid,b,"CMDgetCapacity")@
 	*res = BATcapacity(b);
 	return GDK_SUCCEED;
 }
 
 int CMDgetType(int *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDgetType")@
+	@:getBATdescriptor(res,bid,b,"CMDgetType")@
 	*res = (*bid > 0)?BAThtype(b):BATttype(b);
 	return GDK_SUCCEED;
 }
 int CMDgetRole(str *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDgetType")@
+	@:getBATdescriptor(res,bid,b,"CMDgetType")@
 	*res = GDKstrdup((*bid > 0)?b->hident:b->tident);
 	return GDK_SUCCEED;
 }
 
 int CMDsetkey(int *res, int *bid, bit *param) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDsetkey")@
+	@:getBATdescriptor(res,bid,b,"CMDsetkey")@
 	BATkey(b, *param?BOUND2BTRUE:FALSE);
 	BBPfix(b->batCacheid);
 	*res = b->batCacheid;
@@ -696,7 +696,7 @@ int CMDsetkey(int *res, int *bid, bit *param) {
 
 int CMDsetset(int *res, int *bid, bit *param) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDsetset")@
+	@:getBATdescriptor(res,bid,b,"CMDsetset")@
 	BATset(b, *param?BOUND2BTRUE:FALSE);
 	BBPfix(b->batCacheid);
 	*res = b->batCacheid;
@@ -704,21 +704,21 @@ int CMDsetset(int *res, int *bid, bit *param) {
 }
 int CMDisaSet(int *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDsetset")@
+	@:getBATdescriptor(res,bid,b,"CMDsetset")@
 	*res = b->batSet;
         return GDK_SUCCEED;
 }
 
 int CMDsetSorted(bit *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDisSorted")@
+	@:getBATdescriptor(res,bid,b,"CMDisSorted")@
 	BATorder(b);
         *res = BATordered(b)?1:0;
         return GDK_SUCCEED;
 }
 int CMDisSorted(bit *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDisSorted")@
+	@:getBATdescriptor(res,bid,b,"CMDisSorted")@
         *res = BATordered(b)?1:0;
         return GDK_SUCCEED;
 }
@@ -730,7 +730,7 @@ a nil column of a BAT with <= 1 entries does not contain doubles => return TRUE.
 
 int CMDgetkey(bit *ret, int *bid) {
 	BAT *b;
-	@:batcheck(ret,bid,b,"CMDgetkey")@
+	@:getBATdescriptor(ret,bid,b,"CMDgetkey")@
 	if (BATcount(b) <= 1) {
 		*ret = TRUE;
 	} else {
@@ -744,7 +744,7 @@ int CMDgetkey(bit *ret, int *bid) {
 
 int CMDsetPersistent(int *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDsetPersistence")@
+	@:getBATdescriptor(res,bid,b,"CMDsetPersistence")@
 	BATpropcheck(b);
 	BATpropcheck(BATmirror(b));
 	BATmode(b, PERSISTENT);
@@ -752,7 +752,7 @@ int CMDsetPersistent(int *res, int *bid) {
 }
 int CMDisPersistent(int *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDsetPersistence")@
+	@:getBATdescriptor(res,bid,b,"CMDsetPersistence")@
 	BATpropcheck(b);
 	BATpropcheck(BATmirror(b));
 	BATmode(b, PERSISTENT);
@@ -761,13 +761,13 @@ int CMDisPersistent(int *res, int *bid) {
 }
 int CMDsetTransient(int *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDsetTransient")@
+	@:getBATdescriptor(res,bid,b,"CMDsetTransient")@
 	BATmode(b, TRANSIENT);
         return *res= GDK_SUCCEED;
 }
 int CMDisTransient(bit *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDsetTransient")@
+	@:getBATdescriptor(res,bid,b,"CMDsetTransient")@
 	*res= b->batPersistence & TRANSIENT;
         return GDK_SUCCEED;
 }
@@ -776,7 +776,7 @@ int CMDisTransient(bit *res, int *bid) {
 @= accessMode
 int CMDset@1(int *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDset@1")@
+	@:getBATdescriptor(res,bid,b,"CMDset@1")@
 	BATsetaccess(b, @2);
 	BBPfix(b->batCacheid);
 	*res = b->batCacheid;
@@ -784,7 +784,7 @@ int CMDset@1(int *res, int *bid) {
 }
 int CMDhas@1(bit *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDset@1")@
+	@:getBATdescriptor(res,bid,b,"CMDset@1")@
 	*res = BATgetaccess(b)=='@3';
         return GDK_SUCCEED;
 }
@@ -797,7 +797,7 @@ int CMDhas@1(bit *res, int *bid) {
 int CMDsetAccess(int *res, int *bid, str *param) {
 	BAT *b;
 	int m;
-	@:batcheck(res,bid,b,"CMDsetAccess")@
+	@:getBATdescriptor(res,bid,b,"CMDsetAccess")@
 	switch(*param[0]){
 	case 'r': m= 1; break;
 	case 'a': m= 2; break;
@@ -814,7 +814,7 @@ int CMDsetAccess(int *res, int *bid, str *param) {
 
 int CMDgetAccess(char *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDgetAccess")@
+	@:getBATdescriptor(res,bid,b,"CMDgetAccess")@
 	switch(BATgetaccess(b)){
 	case 1: *res= 'r'; break;
 	case 2: *res= 'a'; break;
@@ -824,7 +824,7 @@ int CMDgetAccess(char *res, int *bid) {
 }
 int CMDgetBATrefcnt(int *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDsetset")@
+	@:getBATdescriptor(res,bid,b,"CMDsetset")@
 	*res = BBP_refs(b->batCacheid);
         return GDK_SUCCEED;
 }
@@ -1011,7 +1011,7 @@ int CMDbatsize(int *tot, int *bid){
 	int blksize = MT_pagesize();
 	int size = ROUND_UP(sizeof(BATstore),blksize);
 
-	@:batcheck(tot,bid,b,"CMDbatsize")@
+	@:getBATdescriptor(tot,bid,b,"CMDbatsize")@
 	if (!VIEWparent(b)) {
 		int cnt = BATcapacity(b);
 		size += ROUND_UP(b->batBuns->size, blksize);
@@ -1032,8 +1032,8 @@ int CMDbatsize(int *tot, int *bid){
 @c
 int CMDisSynced(bit *ret, int *bid1, int *bid2){
 	BAT *b1, *b2;
-	@:batcheck(ret,bid1,b1,"CMDisSynced")@
-	@:batcheck(ret,bid2,b2,"CMDisSynced")@
+	@:getBATdescriptor(ret,bid1,b1,"CMDisSynced")@
+	@:getBATdescriptor(ret,bid2,b2,"CMDisSynced")@
 	*ret = ALIGNsynced(b1,b2)?1:0;
 	return GDK_SUCCEED;
 }
@@ -1042,7 +1042,7 @@ int CMDisSynced(bit *ret, int *bid1, int *bid2){
 @c
 int CMDsetRoles(int *r, int *bid, str *hname, str *tname){
 	BAT *b;
-	@:batcheck(r,bid,b,"CMDsetRoles")@
+	@:getBATdescriptor(r,bid,b,"CMDsetRoles")@
 	if(*hname== 0) return GDK_FAIL;
 	if(*tname== 0) return GDK_FAIL;
 	BATroles(b, *hname, *tname);
@@ -1052,7 +1052,7 @@ int CMDsetRoles(int *r, int *bid, str *hname, str *tname){
 }
 int CMDsetColumn(int *r, int *bid, str *hname){
 	BAT *b;
-	@:batcheck(r,bid,b,"CMDsetRoles")@
+	@:getBATdescriptor(r,bid,b,"CMDsetRoles")@
 	if(*hname== 0) return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	BATroles(b, *hname, b->tident);
@@ -1063,7 +1063,7 @@ int CMDsetColumn(int *r, int *bid, str *hname){
 int CMDsetColumnName(int *r, int *bid, str *name){
 	BAT *b;
 	int ret;
-	@:batcheck(r,bid,b,"CMDsetRoles")@
+	@:getBATdescriptor(r,bid,b,"CMDsetRoles")@
 	if(*name== 0) return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	*r= b->batCacheid;
@@ -1073,7 +1073,7 @@ int CMDsetColumnName(int *r, int *bid, str *name){
 int CMDrename(bit *retval, int *bid, str *s){
 	BAT *b;
 	int ret;
-	@:batcheck(retval,bid,b,"CMDrename")@
+	@:getBATdescriptor(retval,bid,b,"CMDrename")@
 	if(*s== 0) return GDK_FAIL;
 	ret = BATname(b,*s);
 	*retval = FALSE;
@@ -1094,7 +1094,7 @@ int CMDrename(bit *retval, int *bid, str *s){
 
 int CMDbbpname(str *retval, int *bid){
 	BAT *b;
-	@:batcheck(retval,bid,b,"CMDbbpname")@
+	@:getBATdescriptor(retval,bid,b,"CMDbbpname")@
 	*retval = GDKstrdup(BBPname(b->batCacheid));
 	return GDK_SUCCEED;
 }
@@ -1112,7 +1112,7 @@ int CMDunload(bit *res, str *input) {
 }
 int CMDisCached(int *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDisCached")@
+	@:getBATdescriptor(res,bid,b,"CMDisCached")@
 	*res = 0;
 	GDKerror("CMDisCached:not yet implemented\n");
         return GDK_SUCCEED;
@@ -1149,7 +1149,7 @@ int CMDsave(bit *res, str *input) {
 }
 int CMDsave2(bit *res, int *bid) {
 	BAT *b;
-	@:batcheck2(res,bid,b,"CMDsave")@
+	@:getBATdescriptor2(res,bid,b,"CMDsave")@
 	if (b && BATdirty(b)) { 
 		if (BBPsave(b) == 0) *res = TRUE;
 	}
@@ -1170,7 +1170,7 @@ int CMDsave2(bit *res, int *bid) {
 int CMDmmap(int *res, int *bid, int *bns, int *hhp, int *thp,
 			int *hacc, int *tacc)
 {	BAT *b;
-	@:batcheck(res,bid,b,"CMDmmap")@
+	@:getBATdescriptor(res,bid,b,"CMDmmap")@
 	@:change_heap(bns,(*b->batBuns))@
 	@:change_heap(hhp,b->hheap)@
 	@:change_heap(thp,b->theap)@
@@ -1185,7 +1185,7 @@ int CMDmmap(int *res, int *bid, int *bns, int *hhp, int *thp,
 int CMDmadvise(int *res, int *bid, int *bns, int *hhp, int *thp, 
 		 	        int *hacc, int *tacc)
 {	BAT *b;
-	@:batcheck(res,bid,b,"CMDmadvice")@
+	@:getBATdescriptor(res,bid,b,"CMDmadvice")@
 	return *res= BATmadvise(b, (*bns==int_nil)?-1:*bns, 
 		(*hhp==int_nil)?-1:*hhp, (*thp==int_nil)?-1:*thp, 
 		(*hacc==int_nil)?-1:*hacc, 
@@ -1209,7 +1209,7 @@ presented.
 int CMDexport(int *ret, int *bid, str *fnme) {
 	BAT *b;
 	FILE	*f = fopen(*fnme, "w");
-	@:batcheck(ret,bid,b,"CMDexport")@
+	@:getBATdescriptor(ret,bid,b,"CMDexport")@
 	if (f == NULL) {
 		GDKsyserror("CMDexport: could not open file %s\n",*fnme);
 		return *ret= GDK_FAIL;
@@ -1233,7 +1233,7 @@ int CMDimport(int *ret, int *bid, str *fnme) {
 	int	lh = 0,	lt = 0;
 	FILE	*fp = fopen(*fnme, "r");
 
-	@:batcheck(ret,bid,b,"CMDimport")@
+	@:getBATdescriptor(ret,bid,b,"CMDimport")@
 	hconvert = BATatoms[BAThtype(b)].atomFromStr;
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
 @-
@@ -1320,7 +1320,7 @@ Cleanup and exit. Return the filled BAT.
 @c
 int CMDaccbuild(int *ret, int *bid, int* acc, ptr *param){
 	BAT *b;
-	@:batcheck(ret,bid,b,"CMDaccbuild")@
+	@:getBATdescriptor(ret,bid,b,"CMDaccbuild")@
 	ACCbuild(*acc, b, &b->haccelerator, *param); 
 	return *ret = GDK_SUCCEED;
 }
@@ -1331,14 +1331,14 @@ int CMDaccbuild_std(int *ret, int *bid, int* acc){
 
 int CMDaccdestroy(int *ret, int *bid, int *acc) {
 	BAT *b;
-	@:batcheck(ret,bid,b,"CMDaccdestroy")@
+	@:getBATdescriptor(ret,bid,b,"CMDaccdestroy")@
 	ACCdestroy(*acc, b, &b->haccelerator);
 	return *ret = GDK_SUCCEED;
 }
 
 int CMDaccpresent(int *ret, int *bid) {
 	BAT *b;
-	@:batcheck(ret,bid,b,"CMDaccpresent")@
+	@:getBATdescriptor(ret,bid,b,"CMDaccpresent")@
 	*ret = 0;
 	if (b->hacctype) {
 	    int (*check)() = BATaccelerators[b->hacctype].accRepair;
@@ -1351,40 +1351,40 @@ int CMDaccpresent(int *ret, int *bid) {
 
 int CMDhasHash(bit *ret, int *bid) {
 	BAT *b;
-	@:batcheck(ret,bid,b,"CMDhasHash")@
+	@:getBATdescriptor(ret,bid,b,"CMDhasHash")@
 	*ret = b->hacctype == 1;
 	return GDK_SUCCEED;
 }
 int CMDsetHash(bit *ret, int *bid, bit *prop) {
 	BAT *b;
-	@:batcheck(ret,bid,b,"CMDsetHash")@
+	@:getBATdescriptor(ret,bid,b,"CMDsetHash")@
 printf("bat cacheid %d\n",b->batCacheid);
 	BAThash(b,0);
 	return GDK_SUCCEED;
 }
 int CMDhasIndex(bit *ret, int *bid) {
 	BAT *b;
-	@:batcheck(ret,bid,b,"CMDhasIndex")@
+	@:getBATdescriptor(ret,bid,b,"CMDhasIndex")@
 	*ret = b->hacctype == 2;
 	GDKwarning("CMDhasIndex: not yet implemented\n");
 	return GDK_SUCCEED;
 }
 int CMDsetIndex(bit *ret, int *bid, bit *prop) {
 	BAT *b;
-	@:batcheck(ret,bid,b,"CMDsetIndex")@
+	@:getBATdescriptor(ret,bid,b,"CMDsetIndex")@
 	GDKwarning("CMDsetIndex: not yet implemented\n");
 	return GDK_SUCCEED;
 }
 
 int CMDsetSequenceBase(int *r, int *bid, oid* o){
 	BAT *b;
-	@:batcheck(r,bid,b,"CMDseqbase")@
+	@:getBATdescriptor(r,bid,b,"CMDseqbase")@
 	BATseqbase(b, *o);
 	return *r= GDK_SUCCEED;
 }
 int CMDgetSequenceBase(oid *r, int *bid){
 	BAT *b;
-	@:batcheck(r,bid,b,"CMDseqbase")@
+	@:getBATdescriptor(r,bid,b,"CMDseqbase")@
 	*r = b->hseqbase;
 	return GDK_SUCCEED;
 }
