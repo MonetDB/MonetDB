@@ -824,17 +824,6 @@ def msc_includes(fd, var, values, msc):
                    + msc_add_srcdir(i, msc, " -I")
     fd.write("INCLUDES = " + incs + "\n")
 
-def gen_mkdir(fd, name, d):
-    i = string.rfind(d, '\\')
-    if i >= 0:
-        dir = d[:i]
-        fd.write('"%s": "%s"\n' % (name, dir) )
-        fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (d, d))
-        gen_mkdir(fd, dir,dir)
-    else:
-        fd.write('"%s":\n' % name)
-        fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (d, d))
-
 def msc_jar(fd, var, jar, msc):
 
     name = var[4:]
@@ -880,10 +869,9 @@ def msc_jar(fd, var, jar, msc):
     fd.write("%s.jar: $(%s_class_files) $(%s_manifest_file)\n" % (name, name, name))
     fd.write("\t$(JAR) $(JARFLAGS) -cf%s $@ $(%s_manifest_file) $(%s_class_files)\n" % (manifest_flag, name, name))
 
-    fd.write('install_%s: %s.jar %s-dir\n' % (name, name, name))
+    fd.write('install_%s: %s.jar\n' % (name, name))
+    fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (jd, jd))
     fd.write('\tif exist %s.jar $(INSTALL) %s.jar "%s\\%s.jar"\n' % (name, name, jd, name))
-
-    gen_mkdir(fd, name + '-dir', jd)
 
     fd.write('%s: %s.jar\n' % (name, name))
 
@@ -926,10 +914,9 @@ def msc_java(fd, var, java, msc):
     fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
     fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $(%s_java_files)\n" % name)
 
-    fd.write('install_%s: $(%s_class_files) %s-dir\n' % (name, name, name))
+    fd.write('install_%s: $(%s_class_files)\n' % (name, name))
+    fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (jd, jd))
     fd.write('\tif exist $(%s_class_files) $(INSTALL) $(%s_class_files) "%s\\$(%s_class_files)"\n' % (name, name, jd, name))
-
-    gen_mkdir(fd, name+'-dir',jd)
 
     fd.write('%s: $(%s_class_files)\n' % (name, name))
 
