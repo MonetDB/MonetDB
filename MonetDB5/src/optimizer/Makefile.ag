@@ -8,7 +8,8 @@ lib_optimizer = {
 	DIR = pkglibdir
 	SEP = _
 	SOURCES = mal_optimizer.mx optimizer.mx  mal_factorize.mx \
-		mal_garbageCollector.mx mal_strengthReduction.mx
+		mal_garbageCollector.mx mal_strengthReduction.mx \
+		mal_commonExpressions.mx
 
 	HEADERS = h 
 	SCRIPTS = mal

@@ -190,6 +190,7 @@ str FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     GDKfree(varused);
     GDKfree(first);
     GDKfree(second);
+	optimizerCheck(mb,"factorize");
     /* remove the FToptimizer request */
     return NULL;
 }

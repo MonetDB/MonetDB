@@ -155,11 +155,15 @@ optimizer.prelude();
 #ifndef _OPTIMIZER_H
 #define _OPTIMIZER_H
 /* #define OPTIMIZER_DEBUG*/
+
+#include "mal_optimizer.h"
+
 #endif /* _OPTIMIZER_H*/
 @c
 #include "optimizer.h"
 #include "mal_interpreter.h"
-#include "mal_optimizer.h"
+#include "mal_commonExpressions.h"
+#include "mal_garbageCollector.h"
 #include "mal_factorize.h"
 #include "mal_strengthReduction.h"
 #include "mal_scenario.h"

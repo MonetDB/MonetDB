@@ -466,10 +466,17 @@ Properties are kept with the variables, but for explanatory
 and analysis purposes we also need to maintain the property transitions
 with the statements.
 
-@+ Optimizer focus
-The first implementation of this optimizer is geared at a SQL front-end.
-See for SQL specific optimization rules the corresponding source code,
-called sql_optimizer.
+@+ Optimizer implementation hints
+Breaking up the optimizer into different components and
+grouping them together in arbitrary sequences calls for
+careful programming.
+
+The rule applied for all optimizers is to not-return
+before checking the state of the MAL program,
+and to assure the dataflow and variable scopes are properly set.
+It costs some performance, but the difficulties
+that arise from optimizer interference are very hard
+to debug.
 @{
 @h
 #include "mal.h"
@@ -485,16 +492,18 @@ called sql_optimizer.
                   (M)->var[I]->endLifespan)
 
 mal_export str MALoptimizer(Client c);
+mal_export int optimizerCheck(MalBlkPtr mb, str name);
 mal_export str optimizeMALBlock(MalBlkPtr mb);
 mal_export str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export int ARoptimizerStep(MalBlkPtr mb, int pc);
 mal_export str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str SPoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RXemptyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RXalignedBATs(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -502,6 +511,13 @@ mal_export void setLifespan(MalBlkPtr mb);
 mal_export void debugLifespan(MalBlkPtr mb);
 mal_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
 mal_export int isUnsafeInstruction(InstrPtr q);
+mal_export int isUnsafeFunction(MalBlkPtr mb,  InstrPtr q);
+mal_export int safetyBarrier(MalBlkPtr mb,InstrPtr p, InstrPtr q);
+mal_export int hasSameSignature(InstrPtr p, InstrPtr q);
+mal_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
+mal_export int isUpdated(MalBlkPtr mb, int pc);
+mal_export int hasCommonResults(InstrPtr p, InstrPtr q);
+mal_export int hasSideEffects(InstrPtr p);
 
 @+ Optimizer scenario
 The large number of query transformers calls for a flexible scheme for
@@ -526,28 +542,34 @@ that a designated function is selected for optimization (e.g.
 CXoptimizer(Admin,qry)) the pc is assumed 0. The first instruction always
 denotes the signature and can not be removed.
 
-@+ Rescheduling optimizers
-@= optimizerCleanup
-        if(@1) {
-			removeInstruction(mb,@1);
-            chkFlow(mb);
-			chkDeclarations(mb,TRUE);
-        }
 @c
 #include "mal_optimizer.h"
 #include "mal_interpreter.h"    /* for showErrors() */
 
 int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
-int hasSideEffects(InstrPtr p);
-int hasCommonResults(InstrPtr p, InstrPtr q);
 
 str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Client cntxt= getClient();
 	(void) stk;
 
     cntxt->debugOptimizer= cntxt->debugOptimizer? FALSE: TRUE;
-	@:optimizerCleanup(pci)@
+	if(pci) 
+		removeInstruction(mb,pci);
 	return MAL_SUCCEED;
+}
+
+int optimizerCheck(MalBlkPtr mb, str name){
+	chkFlow(mb);
+	chkTypes(getClient()->nspace,mb);
+	chkDeclarations(mb,TRUE);
+	setLifespan(mb);
+	/* debugLifespan(mb);*/
+	if( mb->errors){
+		showErrors();
+		stream_printf(GDKout,"Optimizer %s failed\n", name);
+		printFunction(GDKout,mb,LIST_MAL_ALL);
+	}
+	return mb->errors;
 }
 @-
 Limit the loop count in the optimizer.
@@ -562,7 +584,6 @@ str optimizeMALBlock(MalBlkPtr mb)
 #endif
 
     do{
-		setLifespan(mb);
         qot=0;
         for(pc=0; pc< mb->stop; pc++ ){
             p= getInstrPtr(mb,pc);
@@ -784,7 +805,8 @@ int ARoptimizerStep(MalBlkPtr mb, int pc)
     if(kn == p->retc)
     {
         /* all target variables pushed through */
-		@:optimizerCleanup(p)@
+		if(p) 
+			removeInstruction(mb,p);
         return pc-1;
     }
     return pc;
@@ -795,7 +817,9 @@ str ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     for(i=1;i< mb->stop; i++)
         i= ARoptimizerStep(mb,i);
     /* remove the ARoptimizer request */
-	@:optimizerCleanup(pci)@
+	if(pci) 
+		removeInstruction(mb,pci);
+	optimizerCheck(mb,"aliasRemoval");
     return NULL;
 }
 @+ Access Mode optimizer
@@ -818,10 +842,12 @@ int AMoptimizerStep(MalBlkPtr mb, int pc)
         if( p->barrier) return pc;
         if( p->fcn != AMsetWriteMode) continue;
         if( getArg(p,1) == kn){
-			@:optimizerCleanup(p)@
+			if(p) 
+				removeInstruction(mb,p);
             return pc-1;
         }
     }
+	optimizerCheck(mb,"accessMode");
     return pc;
 }
 str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -835,7 +861,8 @@ str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     for(i=1;i< mb->stop; i++)
         i= AMoptimizerStep(mb,i);
     /* remove the AMoptimizer request */
-	@:optimizerCleanup(pci)@
+	if(pci) 
+		removeInstruction(mb,pci);
     return MAL_SUCCEED;
 }
 
@@ -1015,71 +1042,6 @@ int isUpdated(MalBlkPtr mb, int pc)
     }
     return FALSE;
 }
-@-
-The common subexpression optimizer locates backwards the identical 
-instructions. 
-It stops as soon as it has found an identical one. Before we can replace the 
-expression with the variable(s) of the previous one, we should assure that
-we haven;t passed a safety barrier.
-
-The implementation below is rather expensive for large MAL block.
-The search can be improved significantly when a dataflow graph
-is maintained for all variables. For, equality of instruction implies that
-all variables have been used before in a similar context.
-
-Note, we skip the first instruction because it signifies the signature.
-The last instruction signifies the end.
-@c
-str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{   int i,j,k;
-    InstrPtr p,q;
-	(void) stk;
-
-    for(i=1; i< mb->stop-1; i++){
-        p= getInstrPtr(mb,i);
-        if( p->retc!= p->argc)
-        for(j= i-1; j>=1; j--) {
-            if( safetyBarrier(mb,p,q=getInstrPtr(mb,j)) )
-                goto nxtCommonSubExpression;
-#ifdef DEBUG_MAL_OPTIMIZER2
-    printf("%d, %d  %d %d ",i,j, hasSameSignature(p,q), hasSameArguments(mb,p,q) );
-    printf(" :%d %d %d \n", !isUpdated(mb,i), !hasCommonResults(p,q), !hasSideEffects(p));
-
-#endif
-            if( hasSameSignature(p,q) && 
-                hasSameArguments(mb,p,q) &&
-               !isUpdated(mb,i) &&
-               !hasCommonResults(p,q) &&
-               !hasSideEffects(p) ){
-#ifdef DEBUG_MAL_OPTIMIZER
-				if( getClient()->debugOptimizer){
-					stream_printf(GDKout,"Found a common expression "
-						"%d <-> %d\n",j,i);
-					printInstruction(GDKout,mb,q,LIST_MAL_ALL);
-					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-				}
-#endif
-                clrFunction(p);
-                p->token= ASSIGNsymbol;
-                p->argc= p->retc+q->retc;
-                for(k=0; k<q->retc; k++)
-                p->argv[p->retc+k]= q->argv[k];
-#ifdef DEBUG_MAL_OPTIMIZER
-				if( getClient()->debugOptimizer){
-					stream_printf(GDKout,"common expression");
-					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-				}
-#endif
-                i= ARoptimizerStep(mb,i);
-                goto nxtCommonSubExpression;
-            } 
-        }
-        nxtCommonSubExpression: ;
-    }
-    /* remove the CXoptimizer request */
-	@:optimizerCleanup(pci)@
-    return MAL_SUCCEED;
-}
 @+ Dead Coder Removal
 Dead code fragments are recognized by assignments to variables
 whose value is not consumed any more. Note that the DCR should
@@ -1185,6 +1147,7 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     mb->stop=j; 
     GDKfree(varused);
     GDKfree(pcused);
+	optimizerCheck(mb,"deadCodeRemoval");
     /* remove the DCoptimizer request */
     return NULL;
 }
@@ -1352,7 +1315,9 @@ str SPoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     }
 
     /* remove the SPoptimizer request */
-	@:optimizerCleanup(pci)@
+	if(pci) 
+		removeInstruction(mb,pci);
+	optimizerCheck(mb,"selectPushDown");
     return NULL;
 }
 @-
@@ -1379,6 +1344,7 @@ str RRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     InstrPtr q,p;
 	(void) stk;
 
+	optimizerCheck(mb,"reverseReverse");
 	pc= getPC(mb,pci);
     for(i=1; i< mb->stop; i++){
         p = getInstrPtr(mb,i);
@@ -1408,7 +1374,9 @@ str RRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
             }
         }
     }
-	@:optimizerCleanup(pci)@
+	if(pci) 
+		removeInstruction(mb,pci);
+	optimizerCheck(mb,"reverseReverse");
     return MAL_SUCCEED;
 }
 @+ Flow analysis
@@ -1622,7 +1590,8 @@ the same operation.
 			}
 		}
 	}
-	@:optimizerCleanup(pci)@
+	if(pci) 
+		removeInstruction(mb,pci);
 	return MAL_SUCCEED;
 }
 str RXalignedBATs(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -1631,7 +1600,8 @@ str RXalignedBATs(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 #ifdef DEBUG_MAL_OPTIMIZER
 	stream_printf(GDKout,"Relational expression optimizer, aligned BATs\n");
 #endif
-	@:optimizerCleanup(pci)@
+	if(pci) 
+		removeInstruction(mb,pci);
 	return MAL_SUCCEED;
 }
 @+ Operator Reduction
@@ -1706,6 +1676,8 @@ at the end of the optimization attempt.
 	olderr= alloca(errlen);
 	if( errlen) strncpy(olderr,cntxt->errbuf,errlen);
 	if( errlen) strncpy(cntxt->errbuf,olderr,errlen);
+	
+	optimizerCheck(mb,"expressionAccumulation");
     for(i=1; i<mb->stop; i++){
         VarPtr v;
         p= getInstrPtr(mb,i);
@@ -1783,15 +1755,12 @@ at the end of the optimization attempt.
 		}
     } 
 	if( errlen) strncpy(cntxt->errbuf,olderr,errlen);
-	chkDeclarations(mb,TRUE);
-	chkProgram(scope,mb);
-	/* debugLifespan(mb);*/
     /* remove the ORoptimizer request */
+	optimizerCheck(mb,"expressionAccumulation");
 	if( mb->errors) {
 		showErrors();
 		return throwMessage("ORoptimizer","Optimization raised errors");
 	}
-	@:optimizerCleanup(pci)@
     return MAL_SUCCEED;
 }
 @}
