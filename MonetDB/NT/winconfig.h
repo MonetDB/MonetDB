@@ -147,6 +147,9 @@
 /* Define to 1 if you have the `isinf' function. */
 /* #undef HAVE_ISINF */
 
+/* Define to 1 if you have the `kill' function. */
+/* #undef HAVE_KILL */
+
 /* Define if you have the bz2 library */
 /* #undef HAVE_LIBBZ2 */
 

@@ -501,6 +501,10 @@ MT_Id MT_getpid(void){
 }
 
 int MT_alive(int pid) {
+#ifdef HAVE_KILL
 	return kill(pid, 0) == 0;
+#else
+	return 0;
+#endif
 }
 
