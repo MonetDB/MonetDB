@@ -108,7 +108,7 @@ class Connection:
         if not kwargs.has_key('lang'): kwargs['lang'] = 'sql'
 
         self.lang = kwargs['lang']
-        
+
         if kwargs.has_key('cursorclass'):
             self.cursorclass = kwargs['cursorclass']
         else:
@@ -119,7 +119,7 @@ class Connection:
         else:
             self.converter = converters.conversions
 
-        
+
         self._mapi = Mapi(kwargs['host'], kwargs['port'],
                          kwargs['user'], kwargs['password'], kwargs['lang'])
 
@@ -132,15 +132,15 @@ class Connection:
             self._mapi.query('commit();')
         else:
             self._mapi.query("COMMIT")
-            
+
     def rollback(self):
         """Rollback the current transaction."""
         if self.lang == 'mil':
             self._mapi.query('abort();')
         else:
             self._mapi.query("ROLLBACK")
-    
-                      
+
+
     def cursor(self, cursorclass=None):
         """
         Create a cursor on which queries may be performed. The
@@ -149,7 +149,7 @@ class Connection:
         used.
         """
         return (cursorclass or self.cursorclass)(self)
-        
+
     def literal(self, o):
         """
 
@@ -163,7 +163,7 @@ class Connection:
         return converters.escape(o, self.converter)
 
     errorhandler = defaulterrorhandler
-        
+
 
 __all__ = [ 'BINARY', 'Binary', 'Connect', 'Connection', 'DATE',
     'Date', 'Time', 'Timestamp', 'DateFromTicks', 'TimeFromTicks',

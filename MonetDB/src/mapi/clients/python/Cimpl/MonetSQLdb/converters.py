@@ -35,7 +35,7 @@ Conversion function:
 
 Key: Python type object (from types) or class
 Conversion function:
-     Arguments: Python object of indicated type or class AND 
+     Arguments: Python object of indicated type or class AND
                 conversion dictionary
      Returns: SQL literal value
      Notes: Most conversion functions can ignore the dictionary, but
@@ -94,7 +94,7 @@ def Instance2Str(o, d):
     converter. If the exact class is not found in d, it will use the
     first class it can find for which o is an instance.
     """
-    
+
     if d.has_key(o.__class__):
         return d[o.__class__](o, d)
     cl = filter(lambda x,o=o:
@@ -168,7 +168,7 @@ conversions = {
     "chr": str,
     "flt": float,
     "dbl": float,
-    "oid": str    
+    "oid": str
     }
 
 
@@ -182,7 +182,7 @@ def escape(x, conv=None):
     """ Escapes """
 
     if conv is None: conv = conversions
-    
+
     if type(x) is types.ListType or type(x) is types.TupleType:
         y = []
         for a in x:
@@ -209,4 +209,3 @@ def monet2python(value, typestr, conv=None):
     if conv.has_key(typestr):
         return conv[typestr](value)
     return value
-    

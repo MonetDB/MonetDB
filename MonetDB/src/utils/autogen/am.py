@@ -3,23 +3,23 @@
 # except in compliance with the License. You may obtain a copy of
 # the License at
 # http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-# 
+#
 # Software distributed under the License is distributed on an "AS
 # IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
 # implied. See the License for the specific language governing
 # rights and limitations under the License.
-# 
+#
 # The Original Code is the Monet Database System.
-# 
+#
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-2004 CWI.
 # All Rights Reserved.
-# 
+#
 # Contributor(s):
-# 		Martin Kersten <Martin.Kersten@cwi.nl>
-# 		Peter Boncz <Peter.Boncz@cwi.nl>
-# 		Niels Nes <Niels.Nes@cwi.nl>
-# 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+#		Martin Kersten <Martin.Kersten@cwi.nl>
+#		Peter Boncz <Peter.Boncz@cwi.nl>
+#		Niels Nes <Niels.Nes@cwi.nl>
+#		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 import string
 import os
@@ -69,27 +69,27 @@ def am_sort_libs(libs, tree):
     res = []
     for (pref,lib,sep) in libs:
         after = -1
-        # does lib depend on a other library 
+        # does lib depend on a other library
         if tree.has_key('lib_'+ lib):
             v = tree['lib_'+lib]
             if v.has_key("LIBS"):
-                for l in v['LIBS']: 
+                for l in v['LIBS']:
                     if len(l) > 3:
                         l = l[3:] # strip lib prefix
                     if l in res:
                         pos = res.index(l)
                         if pos > after:
-                            after = pos 
+                            after = pos
         elif tree.has_key('LIBS'):
             v = tree['LIBS']
             if v.has_key(lib[1:] + "_DLIBS"):
-                for l in v[lib[1:] + '_DLIBS']: 
+                for l in v[lib[1:] + '_DLIBS']:
                     if len(l) > 3:
                         l = l[3:] # strip lib prefix
                     if l in res:
                         pos = res.index(l)
                         if pos > after:
-                            after = pos 
+                            after = pos
         res.insert(after + 1, (pref, lib, sep))
     return res
 
@@ -244,7 +244,7 @@ def am_deps(fd, deps, objext, am):
                 if not os.path.isabs(d):
                     fd.write(" " + am_translate_dir(d, am))
                 else:
-                    print("!WARNING: dropped absolute dependency " + d) 
+                    print("!WARNING: dropped absolute dependency " + d)
             fd.write("\n")
     am['DEPS'].append("DONE")
 
@@ -256,7 +256,7 @@ def am_scripts(fd, var, scripts, am):
     s, ext = string.split(var, '_', 1);
     ext = [ ext ]
     if scripts.has_key("EXT"):
-        ext = scripts["EXT"] # list of extentions 
+        ext = scripts["EXT"] # list of extentions
 
     sd = "SCRIPTSDIR"
     if scripts.has_key("DIR"):
@@ -304,7 +304,7 @@ def am_headers(fd, var, headers, am):
     if headers.has_key("DIR"):
         sd = headers["DIR"][0] # use first name given
     sd = am_translate_dir(sd, am)
-  
+
     hdrs_ext = headers['HEADERS']
     for header in headers['TARGETS']:
         h, ext = split_filename(header)
@@ -322,12 +322,12 @@ def am_headers(fd, var, headers, am):
     am_find_ins(am, headers)
     am_deps(fd, headers['DEPS'], "\.o", am)
     for src in headers['SOURCES']:
-            am['EXTRA_DIST'].append(src)
+        am['EXTRA_DIST'].append(src)
 
 def am_doc(fd, var, docmap, am):
     docdir = "pkgdatadir"
     if docmap.has_key("DIR"):
-    	docdir = docmap["DIR"][0] # use first name given
+        docdir = docmap["DIR"][0] # use first name given
     docdir = am_translate_dir(docdir, am)
 
     name = var[4:]
@@ -516,12 +516,12 @@ def am_bins(fd, var, binsmap, am):
             am['ALL'].append(name)
 
     if (len(lbins) > 0):
-          bd = binsmap["DIR"][0] # use first name given
-          bd = am_translate_dir(bd, am)
-          fd.write("%sdir = %s\n" % (bin, bd)) 
-          fd.write("%s_PROGRAMS =%s\n" % (bin,  am_list2string(lbins, " ", "") ))
-          for bn in lbins:
-              am['InstallList'].append("\t%s/%s\n" % (bd, bn))
+        bd = binsmap["DIR"][0] # use first name given
+        bd = am_translate_dir(bd, am)
+        fd.write("%sdir = %s\n" % (bin, bd))
+        fd.write("%s_PROGRAMS =%s\n" % (bin,  am_list2string(lbins, " ", "") ))
+        for bn in lbins:
+            am['InstallList'].append("\t%s/%s\n" % (bd, bn))
 
     if binsmap.has_key('HEADERS'):
         HDRS = []
@@ -910,7 +910,7 @@ CXXEXT = \\\"cc\\\"
     am['BUILT_SOURCES'] = []
     am['EXTRA_DIST'] = []
     am['LIBS'] = []     # all libraries (am_libs and am_library)
-    am['NLIBS'] = []     # all libraries which are not installed 
+    am['NLIBS'] = []     # all libraries which are not installed
     am['BINS'] = []
     am['BIN_SCRIPTS'] = []
     am['INSTALL'] = []

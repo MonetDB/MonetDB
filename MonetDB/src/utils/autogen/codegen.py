@@ -3,23 +3,23 @@
 # except in compliance with the License. You may obtain a copy of
 # the License at
 # http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-# 
+#
 # Software distributed under the License is distributed on an "AS
 # IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
 # implied. See the License for the specific language governing
 # rights and limitations under the License.
-# 
+#
 # The Original Code is the Monet Database System.
-# 
+#
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-2004 CWI.
 # All Rights Reserved.
-# 
+#
 # Contributor(s):
-# 		Martin Kersten <Martin.Kersten@cwi.nl>
-# 		Peter Boncz <Peter.Boncz@cwi.nl>
-# 		Niels Nes <Niels.Nes@cwi.nl>
-# 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+#		Martin Kersten <Martin.Kersten@cwi.nl>
+#		Peter Boncz <Peter.Boncz@cwi.nl>
+#		Niels Nes <Niels.Nes@cwi.nl>
+#		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 import string
 import re
@@ -75,7 +75,7 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2sh, ''),
                   (mx2tex, '.tex'),
                   (mx2tex, '.bdy.tex'),
-                  (mx2html, '.html'), 
+                  (mx2html, '.html'),
                   (mx2tex, '.bdy.html'), ],
                 'mx.in': [ (mx2mil, '.mil'),
                   (mx2mal, '.mal'),
@@ -97,7 +97,7 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2sh, ''),
                   (mx2tex, '.tex'),
                   (mx2tex, '.bdy.tex'),
-                  (mx2html, '.html'), 
+                  (mx2html, '.html'),
                   (mx2tex, '.bdy.html'), ]
 }
 end_code_extract = { 'mx': e_mx, 'mx.in': e_mx }
@@ -138,7 +138,7 @@ code_gen = {'m':       [ '.proto.h', '.glue.c', '.mil' ],
             'h.sed':    [ '.h' ],
             'xsl.in':   [ '.xsl' ],
             'pc.in':    [ '.pc' ],
-            'rc':	[ '.res' ],
+            'rc':       [ '.res' ],
 }
 
 
@@ -273,9 +273,9 @@ class java_parser:
         self.pcount = []
         self.package = None
         self.anonnr = 1
-	self.member = 0
+        self.member = 0
 
-    def ptoken(self, type, token, (srow, scol), (erow, ecol), line): 
+    def ptoken(self, type, token, (srow, scol), (erow, ecol), line):
         if token == '{':
             self.count = self.count + 1
             self.ncount = self.ncount + 1
@@ -286,7 +286,7 @@ class java_parser:
             if len(self.pclass) > 0 and self.count == self.pcount[len(self.pcount)-1]:
                 del self.pclass[len(self.pclass)-1]
                 del self.pcount[len(self.pcount)-1]
-        # handle packages 
+        # handle packages
         if self.status == 'package':
             if token == ';':
                 self.status = None
@@ -297,7 +297,7 @@ class java_parser:
                     self.package = token
         if self.status == None and token == 'package':
             self.status = 'package'
-        # handle anonymous classes 
+        # handle anonymous classes
         if self.status == None and token == 'new':
             self.status = 'new'
         if self.status == 'new' and token == '(':
@@ -312,7 +312,7 @@ class java_parser:
         if (self.status == 'new' or self.status == 'new(' or self.status == 'new()') \
                and token == ';':
             self.status = None
-        # handle real classes 
+        # handle real classes
         if self.status == 'class':
             if self.count > 0:
                 # handle inner class
@@ -376,7 +376,7 @@ def do_java_code_gen(targets, deps, cwd):
             if string.find(base,os.sep) >= 0:
                 dir,base = os.path.split(base)
 
-            if ext == 'java': 
+            if ext == 'java':
                 j = java_parser();
                 package,classes = j.parse(os.path.join(cwd,filename))
                 changes = 1
@@ -405,7 +405,7 @@ def find_org(deps,f):
 # based on the includes (or alike)
 #
 # incs contains the includes of the local directory, and will be stored
-# in a .incs.ag file. And after translating to the install include dirs 
+# in a .incs.ag file. And after translating to the install include dirs
 # also in .incs.in
 
 def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
@@ -443,7 +443,7 @@ def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
                         mlen = m.end()
                         subsrc = src
                         subins = install
-                                        
+
                 if mlen > 0:
                     inc = re.sub(subsrc, re.sub('includedir','..',subins),inc)
                 nvals.append(inc)
@@ -559,7 +559,7 @@ def do_lib(lib,deps):
                         if b not in true_deps:
                             if len(dirname) > 0 and \
                                 (dirname[0] == '$' or os.path.isabs(dirname)):
-                                true_deps.append("-l_"+b) 
+                                true_deps.append("-l_"+b)
                                 # user should add -L$dirname to the Makefile.ag
                             else:
                                 true_deps.append(os.path.join(dirname,"lib_"+b))
@@ -586,38 +586,38 @@ def do_libs(deps):
 
 def expand_env(i):
     if i[0] == '$' and i[1] in ('(','{'):
-      sep = '}'
-      if i[1] == '(':
-        sep = ')'
-      var, rest = string.split(i[2:], sep)
+        sep = '}'
+        if i[1] == '(':
+            sep = ')'
+        var, rest = string.split(i[2:], sep)
 
-      if os.environ.has_key( var ):
-        value = os.environ[var]
-        value = re.sub('{', '(', value)
-        value = re.sub('}', ')', value)
-        return value + rest
+        if os.environ.has_key( var ):
+            value = os.environ[var]
+            value = re.sub('{', '(', value)
+            value = re.sub('}', ')', value)
+            return value + rest
     return None
 
 def expand_incdir(i,topdir):
     if i[0:2] == "-I":
-      i = i[2:]
+        i = i[2:]
     incdir = expand_env(i)
     if (incdir != None):
         return incdir
     dir = i
     if string.find(i,os.sep) >= 0:
-      d,rest = string.split(i,os.sep, 1)
-      if d == "top_srcdir" or d == "top_builddir":
-        dir = os.path.join(topdir, rest)
-      elif d == "srcdir" or d == "builddir":
-        dir = rest
+        d,rest = string.split(i,os.sep, 1)
+        if d == "top_srcdir" or d == "top_builddir":
+            dir = os.path.join(topdir, rest)
+        elif d == "srcdir" or d == "builddir":
+            dir = rest
     return dir
 
 def expand_includes(i,topdir):
     if i[0:2] == "-I":
-      i = i[2:]
+        i = i[2:]
     if os.path.isabs(i):
-      print("!WARNING: it's not portable to use absolute paths: " + i)
+        print("!WARNING: it's not portable to use absolute paths: " + i)
     incdir = expand_env(i)
     if (incdir != None):
         incs = string.split(incdir)
@@ -646,43 +646,43 @@ def collect_includes(incdirs, cwd, topdir):
     dirs = expand_incdirs( incdirs, topdir )
 
     for dir,org in dirs:
-            if os.path.isabs(dir):
-                f = os.path.join(dir, ".incs.ag")
-                if not os.path.exists(f):
-                    f = os.path.join(dir, ".incs.in")
-            else:
-                f = os.path.join(cwd, dir, ".incs.ag")
-                if not os.path.exists(f):
-                    f = os.path.join(cwd, dir, ".incs.in")
+        if os.path.isabs(dir):
+            f = os.path.join(dir, ".incs.ag")
+            if not os.path.exists(f):
+                f = os.path.join(dir, ".incs.in")
+        else:
+            f = os.path.join(cwd, dir, ".incs.ag")
+            if not os.path.exists(f):
+                f = os.path.join(cwd, dir, ".incs.in")
 
-            if os.path.exists(f):
-                incs = shelve.open(f)
-                for file in incs.keys():
-                    incfiles = []
-                    for inc in incs[file]:
-                        if not os.path.isabs(inc) and inc[0] != '$':
-                            inc = os.path.join(org,inc)
-                        incfiles.append(inc)
-                    includes[os.path.join(org,file)] = incfiles
-                    incmap[file] = org
-                incs.close()
-            else:
-                if os.path.exists(dir):
-                    for inc in os.listdir(dir):
-                        includes[os.path.join(org,inc)] = [ os.path.join(org,inc) ]
-                        incmap[inc] = org
+        if os.path.exists(f):
+            incs = shelve.open(f)
+            for file in incs.keys():
+                incfiles = []
+                for inc in incs[file]:
+                    if not os.path.isabs(inc) and inc[0] != '$':
+                        inc = os.path.join(org,inc)
+                    incfiles.append(inc)
+                includes[os.path.join(org,file)] = incfiles
+                incmap[file] = org
+            incs.close()
+        else:
+            if os.path.exists(dir):
+                for inc in os.listdir(dir):
+                    includes[os.path.join(org,inc)] = [ os.path.join(org,inc) ]
+                    incmap[inc] = org
 
     return includes,incmap
 
-# includes is an association between an include file (full path) and 
+# includes is an association between an include file (full path) and
 # the list of files it includes (full path).
 
-# incmap is an association between an include file (basename) to directory 
+# incmap is an association between an include file (basename) to directory
 # where the include file can be found.
 
 # deps is an association between an target file and the files it depends on
 # these should for portability be relative or given using an environment
-# variable 
+# variable
 
 def codegen(tree, cwd, topdir, incdirsmap):
     includes = {}

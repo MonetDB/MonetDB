@@ -409,4 +409,3 @@ class MapiQuery:
         if self.__mid.error():
             raise IOError(self.__mid.error_str())
         return ret
-

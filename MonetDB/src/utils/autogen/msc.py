@@ -3,23 +3,23 @@
 # except in compliance with the License. You may obtain a copy of
 # the License at
 # http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-# 
+#
 # Software distributed under the License is distributed on an "AS
 # IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
 # implied. See the License for the specific language governing
 # rights and limitations under the License.
-# 
+#
 # The Original Code is the Monet Database System.
-# 
+#
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-2004 CWI.
 # All Rights Reserved.
-# 
+#
 # Contributor(s):
-# 		Martin Kersten <Martin.Kersten@cwi.nl>
-# 		Peter Boncz <Peter.Boncz@cwi.nl>
-# 		Niels Nes <Niels.Nes@cwi.nl>
-# 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+#		Martin Kersten <Martin.Kersten@cwi.nl>
+#		Peter Boncz <Peter.Boncz@cwi.nl>
+#		Niels Nes <Niels.Nes@cwi.nl>
+#		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 import string
 import os
@@ -60,9 +60,9 @@ def create_dir(fd, v,n):
     # Stupid Windows/nmake cannot cope with single-letter directory names;
     # apparently, it treats it as a drive-letter, unless we explicitely call it ".\?".
     if len(v) == 1:
-            vv = '.\\%s' % v
+        vv = '.\\%s' % v
     else:
-            vv = v
+        vv = v
     fd.write('%s-all: "%s-dir" "%s-Makefile"\n' % (n, n, n))
     fd.write('\t$(CD) "%s" && $(MAKE) /nologo "prefix=$(prefix)" all \n' % vv)
     fd.write('%s-dir: \n\tif not exist "%s" $(MKDIR) "%s"\n' % (n, vv, vv))
@@ -386,7 +386,7 @@ def msc_scripts(fd, var, scripts, msc):
     s, ext = string.split(var, '_', 1);
     ext = [ ext ]
     if scripts.has_key("EXT"):
-        ext = scripts["EXT"] # list of extentions 
+        ext = scripts["EXT"] # list of extentions
 
     sd = "SCRIPTSDIR"
     if scripts.has_key("DIR"):
@@ -493,9 +493,9 @@ def msc_binary(fd, var, binmap, msc):
 
     if binmap.has_key("DIR"):
         bd = binmap["DIR"][0] # use first name given
-        fd.write("%sdir = %s\n" % (binname, msc_translate_dir(bd,msc)) ); 
+        fd.write("%sdir = %s\n" % (binname, msc_translate_dir(bd,msc)) );
     else:
-        fd.write("%sdir = $(bindir)\n" % (binname) ); 
+        fd.write("%sdir = $(bindir)\n" % (binname) );
 
     msc['BINS'].append(binname)
 
@@ -565,9 +565,9 @@ def msc_bins(fd, var, binsmap, msc):
 
         if binsmap.has_key("DIR"):
             bd = binsmap["DIR"][0] # use first name given
-            fd.write("%sdir = %s\n" % (bin, msc_translate_dir(bd,msc)) ); 
+            fd.write("%sdir = %s\n" % (bin, msc_translate_dir(bd,msc)) );
         else:
-            fd.write("%sdir = $(bindir)\n" % (bin) ); 
+            fd.write("%sdir = $(bindir)\n" % (bin) );
 
         msc['BINS'].append(bin)
 
@@ -832,7 +832,7 @@ def gen_mkdir(fd, name, d):
     i = string.rfind(d, '\\')
     if i >= 0:
         dir = d[:i]
-        fd.write('%s: %s\n' % (name, dir) ) 
+        fd.write('%s: %s\n' % (name, dir) )
         fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (d, d))
         gen_mkdir(fd, dir,dir)
     else:
