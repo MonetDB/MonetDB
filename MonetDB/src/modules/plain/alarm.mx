@@ -84,15 +84,18 @@ The timer is awakened by a clock interrupt. The interrupt granularity
 is OS-dependent. The timer should be initialized as long as there
 are outstanding timer events.
 @c
+#ifdef SIGALRM
 void CLKinitTimer(int sec, int usec){
 	int i = sec - time(0);
 	TRGDEBUG THRprintf(GDKerr, "CLKinitTimer: set timer to %d secs \n", i); 
         alarm(i);
 }
+#endif
 @- 
 A new alarm is pushed onto the stack using @%CLKalarm@.
 The parameter is the real-time value to be approximated.
 @c
+#ifdef SIGALRM
 MT_Sema CLKalarm(int t, str action){
         int     j;
         int     k; 
@@ -120,10 +123,12 @@ MT_Sema CLKalarm(int t, str action){
         }
         return timer[k].sema; 
 }
+#endif
 @- 
 Once a timer interrupt occurs, we should inspect the timer queue and
 emit a notify signal.
 @c
+#ifdef SIGALRM
 void CLKsignal(int nr){
 	int restype;
 	int k=timerTop;
@@ -151,16 +156,21 @@ void CLKsignal(int nr){
                 CLKinitTimer(timer[timerTop-1].alarm_time, 0); 
         }
 }
+#endif
 
 int CLKprelude(){
+#ifdef SIGALRM
         (void) signal(SIGALRM, (void (*)()) CLKsignal);
+#endif
 	return GDK_SUCCEED;
 }
 
 int CLKepilogue(){
 	int k;
+#ifdef SIGALRM
 #if !(defined(LINUX) || defined(WIN32) || defined(CYGWIN32))
         (void) sigignore(SIGALRM);
+#endif
 #endif
 	for (k = 0; k < timerTop; k++) {
 		if (timer[k].action) GDKfree(timer[k].action);
@@ -192,7 +202,12 @@ int CMDalarm(int *secs, str action){
                 GDKerror("alarm: negative delay\n");
         	return GDK_FAIL;
         } else {
+#ifndef SIGALRM
+		GDKerror("alarm: not implemented\n");
+		return GDK_FAIL;
+#else
                 (void) CLKalarm(*secs+time(0), action);
+#endif
         }
         return GDK_SUCCEED;
 }
