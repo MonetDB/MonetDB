@@ -844,6 +844,7 @@ others@batloop{
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
+[ "alarm",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
@@ -860,8 +861,12 @@ others@batloop{
 # (str)		  (void)  #
 #-------------------------#
 [ "monettime",	  nil	  ]
+[ "alarm",	  nil	  ]
 
 	dropping monettime
+
+
+	dropping alarm
 
 #---------------------------------#
 # module	| usage_count	  #
