@@ -1179,9 +1179,29 @@ int CMDuselect(BAT **result, BAT *b, ptr low, ptr high) {
 	return (*result = BATuselect(b, low, high))?GDK_SUCCEED:GDK_FAIL;
 }
 int CMDselect_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_in) {
+	int tt = b->ttype;
+	ptr nil = ATOMnilptr(tt);
+	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) {
+		GDKerror("select: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
+		return GDK_FAIL;
+	}
+	if (*h_in == bit_nil && ATOMcmp(tt, high, nil)) {
+		GDKerror("select: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
+		return GDK_FAIL;
+	}
 	return (*result = BATselect_(b, low, high, *l_in, *h_in))?GDK_SUCCEED:GDK_FAIL;
 }
 int CMDuselect_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_in) {
+	int tt = b->ttype;
+	ptr nil = ATOMnilptr(tt);
+	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) {
+		GDKerror("uselect: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
+		return GDK_FAIL;
+	}
+	if (*h_in == bit_nil && ATOMcmp(tt, high, nil)) {
+		GDKerror("uselect: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
+		return GDK_FAIL;
+	}
 	return (*result = BATuselect_(b, low, high, *l_in, *h_in))?GDK_SUCCEED:GDK_FAIL;
 }
 int CMDfragment(BAT **result, BAT *b, ptr hlow, ptr hhigh, ptr tlow, ptr thigh) 
