@@ -435,7 +435,6 @@ void* DL_open(char* nme, int mode) {
 			void *hdl;
 			if ((hdl = dlopen(fullname, mode)) != NULL) {
 				tbl = (dltable*) DL_reglib(nme, hdl, 0);
-				tbl->dynamic_handle = hdl;
 			} else
 				DL_errmsg = dlerror();
 			GDKfree(fullname);
@@ -1044,19 +1043,28 @@ saved on disk so no commit is needed.
 @+ Loading and Dropping Modules
 @c
 oid TBL_M_load(TBLinstall *inst, Client client, str module) {
-  ptr hdl;
+  ptr hdl = NULL;
   oid mid = 0;
   char mod_init_name[PATHLENGTH];
-  oid (*mod_init)(TBLinstall *, str);
-
-  dlFPRINTF(GDKerr, "  TBL_M_load(%s)\n", module);
-  if (!(hdl = TBL_openmod(client, module))) {
-    GDKerror("TBL_loadmod: module load %s cancelled.\n", module);
-    return 0;
-  }
+  oid (*mod_init)(TBLinstall *, str) = NULL;;
 
   sprintf(mod_init_name, "%s_Module_Install", module);
-  mod_init = (oid (*)(TBLinstall *, str))DL_sym(hdl, mod_init_name);
+#ifndef STATIC
+  mod_init = (oid (*)(TBLinstall *, str))dlsym(NULL, mod_init_name);
+#endif
+
+  if (mod_init){
+    hdl = DL_reglib(module, NULL, 0);
+  } else {
+    dlFPRINTF(GDKerr, "  TBL_M_load(%s)\n", module);
+    if (!(hdl = TBL_openmod(client, module))) {
+      GDKerror("TBL_loadmod: module load %s cancelled.\n", module);
+      return 0;
+    }
+  
+    sprintf(mod_init_name, "%s_Module_Install", module);
+    mod_init = (oid (*)(TBLinstall *, str))DL_sym(hdl, mod_init_name);
+  }
   if (mod_init == NULL) {
     dlFPRINTF(GDKerr, "    No function %s\n", mod_init_name);
     GDKerror("TBL_M_load: %s not a module.\n", module);
