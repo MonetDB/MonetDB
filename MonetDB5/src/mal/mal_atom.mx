@@ -141,7 +141,6 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
     if( tpe<0 || tpe>= GDKatomcnt)
         GDKfatal("malAtomProperty:illegal type name:%s",name);
     switch(name[0]){
-    case 'a': GDKwarning("illegal atom property:%s",name); break;
     case 'd': 
         if( idcmp("del",name)==0 && pci->argc==1){
             BATatoms[tpe].atomDel= (void (*)()) pci->fcn;
