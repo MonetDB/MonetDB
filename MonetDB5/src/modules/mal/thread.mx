@@ -56,7 +56,7 @@ comment "Wait for all threads to be finished";
 
 pattern isDead(pid:int):bit 
 address CMDthreadIsDead
-commnet "Check availability of a child thread";
+comment "Check availability of a child thread";
 
 pattern kill(pid:int):void 
 address CMDthreadKill

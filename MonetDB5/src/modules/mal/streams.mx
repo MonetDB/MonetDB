@@ -79,7 +79,7 @@ comment "flush the stream";
 
 command close( s:stream )
 address stream_close_stream
-	"close and destroy the stream s";
+comment "close and destroy the stream s";
 @-
 @{
 @h

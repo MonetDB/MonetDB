@@ -55,7 +55,7 @@ pattern SPoptimizer():str
 address QOTSPoptimizer;
 pattern SPoptimizer(mod:any, fcn:any):str 
 address QOTSPoptimizerCALL
-coment "Selection push-down optimizer";
+comment "Selection push-down optimizer";
 
 pattern RRoptimizer():str 
 address QOTRRoptimizer;
@@ -76,23 +76,23 @@ The macro processors are also be called during optimizer time
 @mal
 pattern MEoptimizer():void 
 address QOTMEoptimizer
-coment "Inliner of any function";
+comment "Inliner of any function";
 pattern MEoptimizer(mod:str):void 
 address QOTMEoptimizerModule
-coment "Inliner of functions in a specific module";
+comment "Inliner of functions in a specific module";
 pattern MEoptimizer(mod:str, fcn:str):void
 address QOTMEoptimizerSymbol
-coment "Inliner of a specific function";
+comment "Inliner of a specific function";
 
 pattern MCoptimizer():void
 address QOTMCoptimizer
-coment "Inliner of any function";
+comment "Inliner of any function";
 pattern MCoptimizer(mod:str):void
 address QOTMCoptimizerModule
-coment "Inliner of functions in a specific module";
+comment "Inliner of functions in a specific module";
 pattern MCoptimizer(mod:str, fcn:str):void
 address QOTMCoptimizerSymbol
-coment "Inliner of a specific function";
+comment "Inliner of a specific function";
 
 @-
 The remainder of this file contains dynamic optimization

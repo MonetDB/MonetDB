@@ -95,7 +95,7 @@ comment "Merge the instructions stored in the
 
 pattern Mcc(mod:str, fcn:str):void
 address MCdynamicCompiler
-coment "MAL to C compiler for functions";
+comment "MAL to C compiler for functions";
 @-
 @{
 @+ Dummy code 

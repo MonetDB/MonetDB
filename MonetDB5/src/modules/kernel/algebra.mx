@@ -509,7 +509,7 @@ command outerjoin( outer:bat[:any$1,:any$2],
 		inner:bat[:any$2,:any$3],
 		estimate:lng) 
 		:bat[:any$1,:any$3] 
-address ALGouterjoinestimate
+address ALGouterjoinestimate;
 
 @- Theta Join
 @mal
@@ -528,7 +528,7 @@ command thetajoin( left:bat[:any$1,:any$2],
 		right:bat[:any$2,:any$3],
 		opname:int,estimate:lng) 
 		:bat[:any$1,:any$3] 
-address ALGthetajoinEstimate
+address ALGthetajoinEstimate;
 @- Theta Join with inner columns
 @mal
 command theta ( inner_result:bat[:any$2,:any$2],

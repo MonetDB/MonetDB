@@ -107,7 +107,7 @@ comment "Cross tabulation group initialization.
 	 'attr' tail column.";
 command group(attr:bat[:any$2,:any$1] )
 	:bat[:any$2,:oid] 
-address GRPgroup2
+address GRPgroup2;
 
 command group(attr:bat[:any$2,:any$1], N:int, rng:int)
 	(histo:bat[:any$1,:int],grp:bat[:any$2,:oid]) 
