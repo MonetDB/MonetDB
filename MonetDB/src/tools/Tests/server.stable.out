@@ -1,10 +1,10 @@
 stdout of test 'server` in directory 'src/tools` itself:
 
-#> Mtest:	milM server milM -prelude server.prelude
-#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db src_tools -prelude server.prelude server.milM
-# Monet Database Server V4.1
+#> Mtest (21:13:10):	milM server milM -prelude server.prelude
+#> Mtest (21:13:10):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_tools -prelude server.prelude server.milM
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Tue May 23 05:50:46 MET DST 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:server.milM
 #prelude:server.prelude
 
@@ -555,97 +555,95 @@ queue();
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[     49,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5fe20cf0.
-unknown(0)#"                   ]
-#[     50,         2,   running,        49, "queue()#"                      ]
+#[     49,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003a5ac.
+unknown(0)#"                            ]
+#[     50,         1,   running,        49, "queue()#"                            ]
 threadid().print();
-[ 2 ]
+[ 1 ]
 
 clients();
 #---------------------------------------------------------#
 # name	| login				| mil		  #
 #---------------------------------------------------------#
-[ "adm",  "Tue May 23 06:15:54 2000",	  "clients()"	  ]
+[ "adm",  "Mon Sep 11 21:13:10 2000",	  "clients()"	  ]
 cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  190	  ]
+[ "user",	  130	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  40	  ]
+[ "system",	  20	  ]
 [ "elapsystem",	  0	  ]
 env();
-#---------------------------------------------------------------------------------#
-# BAT:		  env								  #
-# (str)		  (str)								  #
-#---------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"							  ]
-[ "server",	  "medusa"							  ]
-[ "port",	  "12091"							  ]
-[ "directory",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"							  ]
-[ "prefix",	  "32bitIRIX646.5"						  ]
-[ "processid",	  "5920081"							  ]
-[ "home",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5"			  ]
-[ "version",	  "4.1"								  ]
+#-----------------------------------------------------------------#
+# BAT:		  env						  #
+# (str)		  (str)						  #
+#-----------------------------------------------------------------#
+[ "dbname",	  "src_tools"					  ]
+[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
+[ "port",	  "50072"					  ]
+[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
+[ "owner",	  "niels"					  ]
+[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
+[ "processid",	  "27616"					  ]
+[ "home",	  "/home/niels/new/monet/Linux"			  ]
+[ "version",	  "4.2"						  ]
 environment().print();
-#---------------------------------------------------------------------------------#
-# BAT:		  env								  #
-# (str)		  (str)								  #
-#---------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"							  ]
-[ "server",	  "medusa"							  ]
-[ "port",	  "12091"							  ]
-[ "directory",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"							  ]
-[ "prefix",	  "32bitIRIX646.5"						  ]
-[ "processid",	  "5920081"							  ]
-[ "home",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5"			  ]
-[ "version",	  "4.1"								  ]
+#-----------------------------------------------------------------#
+# BAT:		  env						  #
+# (str)		  (str)						  #
+#-----------------------------------------------------------------#
+[ "dbname",	  "src_tools"					  ]
+[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
+[ "port",	  "50072"					  ]
+[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
+[ "owner",	  "niels"					  ]
+[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
+[ "processid",	  "27616"					  ]
+[ "home",	  "/home/niels/new/monet/Linux"			  ]
+[ "version",	  "4.2"						  ]
 io().print();
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  4032	  ]
-[ "minflt",	  37	  ]
-[ "majflt",	  0	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  346	  ]
+[ "majflt",	  469	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  1	  ]
-[ "ninvcsw",	  2	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1417216	  ]
-[ "arena",	  1466352	  ]
-[ "ordblks",	  170		  ]
-[ "smblks",	  8048		  ]
-[ "hblkhd",	  16096		  ]
-[ "hblks",	  503		  ]
-[ "usmblks",	  382560	  ]
-[ "fsmblks",	  416672	  ]
-[ "uordblks",	  442560	  ]
-[ "fordblks",	  208464	  ]
+[ "memincr",	  1150976	  ]
+[ "arena",	  1166916	  ]
+[ "ordblks",	  595		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  688012	  ]
+[ "fordblks",	  478904	  ]
 threads();
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
 view_client_login().print();
 #-----------------------------------------#
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Tue May 23 06:15:54 2000"	  ]
+[ 0,	  "Mon Sep 11 21:13:10 2000"	  ]
 view_client_name().print();
 #-----------------#
 # BAT:	  name	  #
@@ -658,60 +656,58 @@ view_gdk_cpu().print();
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  200	  ]
+[ "user",	  140	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  40	  ]
+[ "system",	  20	  ]
 [ "elapsystem",	  0	  ]
 view_gdk_env().print();
-#---------------------------------------------------------------------------------#
-# BAT:		  env								  #
-# (str)		  (str)								  #
-#---------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"							  ]
-[ "server",	  "medusa"							  ]
-[ "port",	  "12091"							  ]
-[ "directory",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"							  ]
-[ "prefix",	  "32bitIRIX646.5"						  ]
-[ "processid",	  "5920081"							  ]
-[ "home",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5"			  ]
-[ "version",	  "4.1"								  ]
+#-----------------------------------------------------------------#
+# BAT:		  env						  #
+# (str)		  (str)						  #
+#-----------------------------------------------------------------#
+[ "dbname",	  "src_tools"					  ]
+[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
+[ "port",	  "50072"					  ]
+[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
+[ "owner",	  "niels"					  ]
+[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
+[ "processid",	  "27616"					  ]
+[ "home",	  "/home/niels/new/monet/Linux"			  ]
+[ "version",	  "4.2"						  ]
 view_gdk_io().print();
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  4032	  ]
-[ "minflt",	  37	  ]
-[ "majflt",	  0	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  346	  ]
+[ "majflt",	  470	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  1	  ]
-[ "ninvcsw",	  2	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 view_gdk_memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1466352	  ]
-[ "ordblks",	  169		  ]
-[ "smblks",	  8048		  ]
-[ "hblkhd",	  16096		  ]
-[ "hblks",	  503		  ]
-[ "usmblks",	  382400	  ]
-[ "fsmblks",	  416832	  ]
-[ "uordblks",	  442032	  ]
-[ "fordblks",	  208992	  ]
+[ "arena",	  1166916	  ]
+[ "ordblks",	  603		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  687260	  ]
+[ "fordblks",	  479656	  ]
 view_gdk_thread().print();
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
 
 printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
@@ -1247,97 +1243,95 @@ queue();
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[    132,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5fe20cf0.
-unknown(0)#"                   ]
-#[    133,         2,   running,       132, "queue()#"                      ]
+#[    132,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003a5ac.
+unknown(0)#"                            ]
+#[    133,         1,   running,       132, "queue()#"                            ]
 threadid().print();
-[ 2 ]
+[ 1 ]
 
 clients();
 #---------------------------------------------------------#
 # name	| login				| mil		  #
 #---------------------------------------------------------#
-[ "adm",  "Tue May 23 06:15:54 2000",	  "clients()"	  ]
+[ "adm",  "Mon Sep 11 21:13:10 2000",	  "clients()"	  ]
 cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  250	  ]
-[ "elapuser",	  50	  ]
-[ "system",	  40	  ]
+[ "user",	  170	  ]
+[ "elapuser",	  30	  ]
+[ "system",	  20	  ]
 [ "elapsystem",	  0	  ]
 env();
-#---------------------------------------------------------------------------------#
-# BAT:		  env								  #
-# (str)		  (str)								  #
-#---------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"							  ]
-[ "server",	  "medusa"							  ]
-[ "port",	  "12091"							  ]
-[ "directory",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"							  ]
-[ "prefix",	  "32bitIRIX646.5"						  ]
-[ "processid",	  "5920081"							  ]
-[ "home",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5"			  ]
-[ "version",	  "4.1"								  ]
+#-----------------------------------------------------------------#
+# BAT:		  env						  #
+# (str)		  (str)						  #
+#-----------------------------------------------------------------#
+[ "dbname",	  "src_tools"					  ]
+[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
+[ "port",	  "50072"					  ]
+[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
+[ "owner",	  "niels"					  ]
+[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
+[ "processid",	  "27616"					  ]
+[ "home",	  "/home/niels/new/monet/Linux"			  ]
+[ "version",	  "4.2"						  ]
 environment().print();
-#---------------------------------------------------------------------------------#
-# BAT:		  env								  #
-# (str)		  (str)								  #
-#---------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"							  ]
-[ "server",	  "medusa"							  ]
-[ "port",	  "12091"							  ]
-[ "directory",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"							  ]
-[ "prefix",	  "32bitIRIX646.5"						  ]
-[ "processid",	  "5920081"							  ]
-[ "home",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5"			  ]
-[ "version",	  "4.1"								  ]
+#-----------------------------------------------------------------#
+# BAT:		  env						  #
+# (str)		  (str)						  #
+#-----------------------------------------------------------------#
+[ "dbname",	  "src_tools"					  ]
+[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
+[ "port",	  "50072"					  ]
+[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
+[ "owner",	  "niels"					  ]
+[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
+[ "processid",	  "27616"					  ]
+[ "home",	  "/home/niels/new/monet/Linux"			  ]
+[ "version",	  "4.2"						  ]
 io().print();
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  4032	  ]
-[ "minflt",	  37	  ]
-[ "majflt",	  0	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  347	  ]
+[ "majflt",	  471	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  1	  ]
-[ "ninvcsw",	  2	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1466352	  ]
-[ "ordblks",	  169		  ]
-[ "smblks",	  8048		  ]
-[ "hblkhd",	  16096		  ]
-[ "hblks",	  503		  ]
-[ "usmblks",	  387040	  ]
-[ "fsmblks",	  412192	  ]
-[ "uordblks",	  442560	  ]
-[ "fordblks",	  208464	  ]
+[ "arena",	  1166916	  ]
+[ "ordblks",	  607		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  691028	  ]
+[ "fordblks",	  475888	  ]
 threads();
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
 view_client_login().print();
 #-----------------------------------------#
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Tue May 23 06:15:54 2000"	  ]
+[ 0,	  "Mon Sep 11 21:13:10 2000"	  ]
 view_client_name().print();
 #-----------------#
 # BAT:	  name	  #
@@ -1350,60 +1344,58 @@ view_gdk_cpu().print();
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  260	  ]
+[ "user",	  180	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  50	  ]
-[ "elapsystem",	  10	  ]
+[ "system",	  20	  ]
+[ "elapsystem",	  0	  ]
 view_gdk_env().print();
-#---------------------------------------------------------------------------------#
-# BAT:		  env								  #
-# (str)		  (str)								  #
-#---------------------------------------------------------------------------------#
-[ "dbname",	  "src_tools"							  ]
-[ "server",	  "medusa"							  ]
-[ "port",	  "12091"							  ]
-[ "directory",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5/dbfarm/src_tools"	  ]
-[ "owner",	  "monet"							  ]
-[ "prefix",	  "32bitIRIX646.5"						  ]
-[ "processid",	  "5920081"							  ]
-[ "home",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5"			  ]
-[ "version",	  "4.1"								  ]
+#-----------------------------------------------------------------#
+# BAT:		  env						  #
+# (str)		  (str)						  #
+#-----------------------------------------------------------------#
+[ "dbname",	  "src_tools"					  ]
+[ "server",	  "apollo-hrn0615.multiweb.net"			  ]
+[ "port",	  "50072"					  ]
+[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/src_tools"  ]
+[ "owner",	  "niels"					  ]
+[ "prefix",	  "32biti686-pc-linux-gnu"			  ]
+[ "processid",	  "27616"					  ]
+[ "home",	  "/home/niels/new/monet/Linux"			  ]
+[ "version",	  "4.2"						  ]
 view_gdk_io().print();
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  4032	  ]
-[ "minflt",	  37	  ]
-[ "majflt",	  0	  ]
+[ "maxrss",	  0	  ]
+[ "minflt",	  347	  ]
+[ "majflt",	  471	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  1	  ]
-[ "ninvcsw",	  2	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
 view_gdk_memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1466352	  ]
-[ "ordblks",	  169		  ]
-[ "smblks",	  8048		  ]
-[ "hblkhd",	  16096		  ]
-[ "hblks",	  503		  ]
-[ "usmblks",	  386880	  ]
-[ "fsmblks",	  412352	  ]
-[ "uordblks",	  442032	  ]
-[ "fordblks",	  208992	  ]
+[ "arena",	  1166916	  ]
+[ "ordblks",	  614		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  690276	  ]
+[ "fordblks",	  476640	  ]
 view_gdk_thread().print();
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
 
 printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
