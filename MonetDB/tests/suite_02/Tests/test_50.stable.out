@@ -8,16 +8,23 @@ stdout of test 'test_50` in directory 'tests/suite_02` itself:
 #script:test_50.milS
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(2000000));
+# Testing effect on join ordering
+load("k10_unique1");
+c:= k10_unique1.select(0,9); 
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  170	  ]
+[ "user",	  110	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  380	  ]
+[ "system",	  100	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
@@ -25,16 +32,16 @@ stdout of test 'test_50` in directory 'tests/suite_02` itself:
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1110016	  ]
-[ "arena",	  1138216	  ]
-[ "ordblks",	  493		  ]
+[ "memincr",	  1232896	  ]
+[ "arena",	  1288576	  ]
+[ "ordblks",	  523		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  742848	  ]
-[ "fordblks",	  395368	  ]
+[ "uordblks",	  1032224	  ]
+[ "fordblks",	  256352	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -42,41 +49,52 @@ stdout of test 'test_50` in directory 'tests/suite_02` itself:
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  344	  ]
-[ "majflt",	  447	  ]
+[ "minflt",	  392	  ]
+[ "majflt",	  506	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+k10_unique1.join(c).count.print;commit;
 [ 10 ]
+k10_unique1.join(c);commit;
+k10_unique1.join(c);commit;
+k10_unique1.join(c);commit;
+k10_unique1.join(c);commit;
+k10_unique1.join(c);commit;
+k10_unique1.join(c);commit;
+k10_unique1.join(c);commit;
+k10_unique1.join(c);commit;
+k10_unique1.join(c);commit; 
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  180	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  380	  ]
-[ "elapsystem",	  0	  ]
+[ "user",	  140	  ]
+[ "elapuser",	  30	  ]
+[ "system",	  110	  ]
+[ "elapsystem",	  10	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  1138216	  ]
-[ "ordblks",	  496		  ]
+[ "memincr",	  139264	  ]
+[ "arena",	  1427840	  ]
+[ "ordblks",	  501		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  816464	  ]
-[ "fordblks",	  321752	  ]
+[ "uordblks",	  1367616	  ]
+[ "fordblks",	  60224		  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -84,41 +102,54 @@ stdout of test 'test_50` in directory 'tests/suite_02` itself:
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  345	  ]
-[ "majflt",	  456	  ]
+[ "minflt",	  436	  ]
+[ "majflt",	  509	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+
+
+c.join(k10_unique1).count.print;commit;
 [ 10 ]
+c.join(k10_unique1).count;commit;
+c.join(k10_unique1).count;commit;
+c.join(k10_unique1).count;commit;
+c.join(k10_unique1).count;commit;
+c.join(k10_unique1).count;commit;
+c.join(k10_unique1).count;commit;
+c.join(k10_unique1).count;commit;
+c.join(k10_unique1).count;commit;
+c.join(k10_unique1).count;commit;
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  190	  ]
+[ "user",	  150	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  380	  ]
-[ "elapsystem",	  0	  ]
+[ "system",	  130	  ]
+[ "elapsystem",	  20	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  1138216	  ]
-[ "ordblks",	  493		  ]
+[ "memincr",	  335872	  ]
+[ "arena",	  1763712	  ]
+[ "ordblks",	  480		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  890088	  ]
-[ "fordblks",	  248128	  ]
+[ "uordblks",	  1703040	  ]
+[ "fordblks",	  60672		  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -126,11 +157,17 @@ stdout of test 'test_50` in directory 'tests/suite_02` itself:
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  346	  ]
-[ "majflt",	  458	  ]
+[ "minflt",	  528	  ]
+[ "majflt",	  512	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+quit;
+
+# 17:09:08 >  
+# 17:09:08 >  Done.
+# 17:09:08 >  
+

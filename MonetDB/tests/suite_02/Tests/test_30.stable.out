@@ -8,7 +8,13 @@ stdout of test 'test_30` in directory 'tests/suite_02` itself:
 #script:test_30.milS
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(2000000));
+# load a few wisconsin tables and produce histograms
+h1:= W10k_evenOnePercent.histogram;
+h1.sort.print;
 #-----------------#
 # BAT:	  tmp_61  #
 # (int)	  (int)	  #
@@ -63,15 +69,16 @@ stdout of test 'test_30` in directory 'tests/suite_02` itself:
 [ 94,	  200	  ]
 [ 96,	  200	  ]
 [ 98,	  200	  ]
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  170	  ]
+[ "user",	  80	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  360	  ]
+[ "system",	  120	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
@@ -79,16 +86,16 @@ stdout of test 'test_30` in directory 'tests/suite_02` itself:
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1110016	  ]
-[ "arena",	  1138216	  ]
-[ "ordblks",	  492		  ]
+[ "memincr",	  1118208	  ]
+[ "arena",	  1173888	  ]
+[ "ordblks",	  523		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  702064	  ]
-[ "fordblks",	  436152	  ]
+[ "uordblks",	  991432	  ]
+[ "fordblks",	  182456	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -96,14 +103,16 @@ stdout of test 'test_30` in directory 'tests/suite_02` itself:
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  344	  ]
-[ "majflt",	  455	  ]
+[ "minflt",	  363	  ]
+[ "majflt",	  507	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+h2:= W10k_tenPercent.histogram;
+h2.sort.print;
 #-----------------#
 # BAT:	  tmp_62  #
 # (int)	  (int)	  #
@@ -118,15 +127,16 @@ stdout of test 'test_30` in directory 'tests/suite_02` itself:
 [ 7,	  1000	  ]
 [ 8,	  1000	  ]
 [ 9,	  1000	  ]
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  170	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  360	  ]
+[ "user",	  90	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  120	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
@@ -134,16 +144,16 @@ stdout of test 'test_30` in directory 'tests/suite_02` itself:
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  1138216	  ]
-[ "ordblks",	  491		  ]
+[ "memincr",	  40960		  ]
+[ "arena",	  1214848	  ]
+[ "ordblks",	  520		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  745568	  ]
-[ "fordblks",	  392648	  ]
+[ "uordblks",	  1034920	  ]
+[ "fordblks",	  179928	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -151,11 +161,17 @@ stdout of test 'test_30` in directory 'tests/suite_02` itself:
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  344	  ]
-[ "majflt",	  466	  ]
+[ "minflt",	  373	  ]
+[ "majflt",	  507	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+quit;
+
+# 17:09:06 >  
+# 17:09:06 >  Done.
+# 17:09:06 >  
+

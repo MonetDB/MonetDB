@@ -8,6 +8,42 @@ stdout of test 'test_60` in directory 'tests/suite_00` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(20000000));
+# For distributed processing it should be possible
+# split and re-distribute BATs.
+# This is supported by hashsplit, rangesplit,  and groupby operations.
+
+PROC groupby(b, rng) := {
+ VAR r := rng.reverse.number.reverse;
+ VAR l := rng.number.reverse;
+ RETURN [select]([l~const b],l,r);
+}
+
+
+b:= new(int,int);
+b.insert(1,15);
+b.insert(2,4);
+b.insert(3,int(nil));
+b.insert(4,16);
+b.insert(5,25);
+b.insert(6,36);
+b.insert(7,49);
+b.insert(8,64);
+b.insert(9,int(nil));
+b.insert(int(nil),int(nil));
+b.insert(int(nil),81);
+b.rename("b");
+
+rng:= new(int,int);
+rng.insert(1,1);
+rng.insert(1,9);
+rng.insert(int(nil),9);
+rng.insert(1,int(nil));
+rng.insert(9,9);
+rng.insert(3,5);
+
+bb := b.groupby(rng);
+bb.print;
 #-------------------------#
 # BAT:	  tmp_33	  #
 # (int)	  (BAT)		  #
@@ -18,6 +54,7 @@ stdout of test 'test_60` in directory 'tests/suite_00` itself:
 [ 3,	  <tmp_37>	  ]
 [ 4,	  <tmp_38>	  ]
 [ 5,	  <tmp_39>	  ]
+bb@batloop() $t.print;
 #-----------------#
 # BAT:	  tmp_34  #
 # (int)	  (int)	  #
@@ -53,6 +90,24 @@ stdout of test 'test_60` in directory 'tests/suite_00` itself:
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
+
+# other values;
+x:= new(int,chr);
+x.insert(1,'a');
+x.insert(2,'a');
+x.insert(3,'b');
+x.insert(4,'b');
+x.insert(5,'b');
+x.insert(6,'b');
+x.insert(7,'c');
+x.insert(8,'c');
+
+t := new(chr,chr);
+t.insert('a','b');
+t.insert('c','c');
+t.insert('b','b');
+xx:= x.groupby(t);
+xx.print;
 #-------------------------#
 # BAT:	  tmp_42	  #
 # (int)	  (BAT)		  #
@@ -60,6 +115,7 @@ stdout of test 'test_60` in directory 'tests/suite_00` itself:
 [ 0,	  <tmp_43>	  ]
 [ 1,	  <tmp_44>	  ]
 [ 2,	  <tmp_45>	  ]
+xx@batloop() $t.print;
 #-----------------#
 # BAT:	  tmp_43  #
 # (int)	  (chr)	  #
@@ -84,6 +140,25 @@ stdout of test 'test_60` in directory 'tests/suite_00` itself:
 [ 4,	  'b'	  ]
 [ 5,	  'b'	  ]
 [ 6,	  'b'	  ]
+
+# other values;
+x:= new(int,str);
+x.insert(1,"a");
+x.insert(2,"a");
+x.insert(3,"b");
+x.insert(4,"b");
+x.insert(5,"b");
+x.insert(6,"b");
+x.insert(7,"c");
+x.insert(8,"c");
+
+t:= new(str,str);
+t.rename("t");
+t.insert("a","b");
+t.insert("c","c");
+t.insert("b","b");
+xx:= x.groupby(t);
+xx.print;
 #-------------------------#
 # BAT:	  tmp_46	  #
 # (int)	  (BAT)		  #
@@ -91,6 +166,7 @@ stdout of test 'test_60` in directory 'tests/suite_00` itself:
 [ 0,	  <tmp_47>	  ]
 [ 1,	  <tmp_48>	  ]
 [ 2,	  <tmp_49>	  ]
+xx@batloop() $t.print;
 #-----------------#
 # BAT:	  tmp_47  #
 # (int)	  (str)	  #
@@ -115,6 +191,7 @@ stdout of test 'test_60` in directory 'tests/suite_00` itself:
 [ 4,	  "b"	  ]
 [ 5,	  "b"	  ]
 [ 6,	  "b"	  ]
+quit;
 
 # 11:44:24 >  
 # 11:44:24 >  Done.

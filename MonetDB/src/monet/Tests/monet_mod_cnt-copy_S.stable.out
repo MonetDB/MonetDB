@@ -8,6 +8,7 @@ stdout of test 'monet_mod_cnt-copy_S` in directory 'src/monet` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+monet_mod_cnt.print;
 #---------------------------------#
 # BAT:		  monet_mod_cnt	  #
 # (oid)		  (int)		  #
@@ -19,6 +20,7 @@ stdout of test 'monet_mod_cnt-copy_S` in directory 'src/monet` itself:
 [ 10415@0,	  1		  ]
 [ 10493@0,	  1		  ]
 [ 10572@0,	  1		  ]
+monet_mod_cnt.copy.print;
 #-------------------------#
 # BAT:		  tmp_28  #
 # (oid)		  (int)	  #
@@ -30,6 +32,10 @@ stdout of test 'monet_mod_cnt-copy_S` in directory 'src/monet` itself:
 [ 10415@0,	  1	  ]
 [ 10493@0,	  1	  ]
 [ 10572@0,	  1	  ]
+a:=view_bbp_name.reverse.mirror.[bat].[count];
+b:=view_bbp_name.reverse.mirror.[bat].[copy].[count];
+c:=a.[-](b);
+print(a.col_name("count"),b.col_name("copy.count"),c.col_name("diff"));
 #---------------------------------------------------------#
 # BAT:			  count	| copy.count	| diff	  #
 # (str)			  (int)	| (int)		| (int)	  #

@@ -8,11 +8,37 @@ stdout of test 'test_31` in directory 'tests/suite_00` itself:
 #script:test_31.milS
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(20000000));
+## Performance test for closure and traversals
+module("oo7");
+module("alarm");
+
+proc fill(size) := {
+    c:= new(int,int);
+    i := 1;
+    while(i < size) 
+      insert(c,i,i:=i+1);
+    insert(c,i,1);
+    return c;
+}
+    
+c := closure(fill(20)); 
+count(c).print;
 [ 400 ]
+z:= time;
+clo:= closure(c);
+printf("#~BeginVariableOutput~#\nclosure in %d ms cnt %d\n#~EndVariableOutput~#\n",time-z,count(clo));
 #~BeginVariableOutput~#
 closure in 11 ms cnt 400
 #~EndVariableOutput~#
+## testing traversal on directed acyclic graph
+## produces the end-points only
+d:= new(int,int);
+d.insert(1,1);
+d.subgraph(c).print;
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #
@@ -417,43 +443,89 @@ closure in 11 ms cnt 400
 [ 2,	  5	  ]
 [ 2,	  4	  ]
 [ 2,	  3	  ]
+## The alternative is to extract a subgraph as a set
+d.clear;
+d.insert(2,2);
+z:= time;
+e:=d.subgraph(c); printf("#~BeginVariableOutput~#\nsubgraph in %d ms on %d\n#~EndVariableOutput~#\n",time-z,count(e));
 #~BeginVariableOutput~#
 subgraph in 1 ms on 400
 #~EndVariableOutput~#
+d.clear;
+d.insert(2,2);
+d.insert(3,3);
+z:= time; 
+e:=d.subgraph(c); printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time-z,count(e));
 #~BeginVariableOutput~#
 subgraph in 1 ms cnt 400
 #~EndVariableOutput~#
+d.clear;
+d.insert(2,2);
+d.insert(3,3);
+d.insert(4,4);
+d.insert(5,5);
+z:= time; 
+e:=d.subgraph(c); printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time-z,count(e));
 #~BeginVariableOutput~#
-subgraph in 2 ms cnt 400
+subgraph in 1 ms cnt 400
 #~EndVariableOutput~#
+
+## LARGE TEST
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  220	  ]
+[ "user",	  120	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  350	  ]
+[ "system",	  130	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+d.clear;
+d.insert(2,2);
+z:= time;
+e:=d.subgraph(clo); 
+printf("#~BeginVariableOutput~#\nsubgraph in %d ms on %d\n#~EndVariableOutput~#\n",time-z,count(e));
 #~BeginVariableOutput~#
 subgraph in 1 ms on 400
 #~EndVariableOutput~#
+d.clear;
+## d.insert(2,2);
+d.insert(3,3);
+z:= time; 
+e:=d.subgraph(clo); 
+printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time-z,count(e));
 #~BeginVariableOutput~#
 subgraph in 1 ms cnt 400
 #~EndVariableOutput~#
+d.clear;
+##d.insert(2,2);
+##d.insert(3,3);
+d.insert(4,4);
+##d.insert(5,5);
+z:= time; 
+e:=d.subgraph(clo); printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time-z,count(e));
 #~BeginVariableOutput~#
 subgraph in 1 ms cnt 400
 #~EndVariableOutput~#
+
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  230	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  350	  ]
+[ "user",	  120	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  130	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+quit;
+
+# 17:08:48 >  
+# 17:08:48 >  Done.
+# 17:08:48 >  
+

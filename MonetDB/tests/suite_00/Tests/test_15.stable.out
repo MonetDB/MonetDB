@@ -8,12 +8,33 @@ stdout of test 'test_15` in directory 'tests/suite_00` itself:
 #script:test_15.milS
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(20000000));
+#testing the set operations;
+b:= new(int,int);
+b.insert(1,15);
+b.insert(2,4);
+b.insert(3,int(nil));
+b.insert(4,16);
+b.insert(5,25);
+b.insert(6,36);
+b.insert(7,49);
+b.insert(8,64);
+b.insert(9,int(nil));
+b.insert(int(nil),int(nil));
+b.insert(int(nil),81);
+
+c:= b.copy;
+t:= b.select(80,int(nil)); print(t);
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ nil,	  81	  ]
+c.access(BAT_WRITE);
+insert(c,t);print(c);
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
@@ -30,6 +51,13 @@ stdout of test 'test_15` in directory 'tests/suite_00` itself:
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
 [ nil,	  81	  ]
+
+z:= new(int,int);
+b.replace(1,1);
+z.insert(2,4);
+z.insert(3,9);
+b.replace(z);
+b.print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
@@ -45,6 +73,8 @@ stdout of test 'test_15` in directory 'tests/suite_00` itself:
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
+
+c.reverse.print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
@@ -61,11 +91,15 @@ stdout of test 'test_15` in directory 'tests/suite_00` itself:
 [ nil,	  nil	  ]
 [ 81,	  nil	  ]
 [ 81,	  nil	  ]
+d:= intersect(reverse(c),b);
+print(d);
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #
 #-----------------#
 [ nil,	  nil	  ]
+e:= diff(reverse(c),d);
+print(e);
 #-----------------#
 # BAT:	  tmp_28  #
 # (int)	  (int)	  #
@@ -81,6 +115,8 @@ stdout of test 'test_15` in directory 'tests/suite_00` itself:
 [ nil,	  9	  ]
 [ 81,	  nil	  ]
 [ 81,	  nil	  ]
+f:= union(e,b);
+print(f);
 #-----------------#
 # BAT:	  tmp_29  #
 # (int)	  (int)	  #
@@ -107,6 +143,9 @@ stdout of test 'test_15` in directory 'tests/suite_00` itself:
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
+# specials
+marcel:= b.kunion(b);
+marcel.print;
 #-----------------#
 # BAT:	  tmp_30  #
 # (int)	  (int)	  #
@@ -122,3 +161,9 @@ stdout of test 'test_15` in directory 'tests/suite_00` itself:
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
+quit;
+
+# 17:08:46 >  
+# 17:08:46 >  Done.
+# 17:08:46 >  
+

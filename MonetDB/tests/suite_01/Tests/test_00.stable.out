@@ -5,6 +5,13 @@ stdout of test 'test_00` in directory 'tests/suite_01` itself:
 # 02:10:59 >  Mtimeout -timeout 60 Mserver --config=/dbfarm/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/IRIX646.5/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_tests_suite_01  < test_00.milS
 # 02:10:59 >  
 
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(20000000));
+#problem: Monet -prelude fatal sometimes leaves a monet thread behind.
+b:= new(int,str,0);
+vars;
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
@@ -67,6 +74,8 @@ stdout of test 'test_00` in directory 'tests/suite_01` itself:
 [ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
+bn:= fragment(b,1,5,str(nil),str(nil));
+vars;
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
@@ -130,10 +139,12 @@ stdout of test 'test_00` in directory 'tests/suite_01` itself:
 [ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
+print(bn);
 #-----------------#
 # BAT:	  tmp_29  #
 # (int)	  (str)	  #
 #-----------------#
+quit;
 
 # 06:08:56 >  
 # 06:08:56 >  Done.

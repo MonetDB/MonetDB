@@ -8,6 +8,79 @@ stdout of test 'no.166` in directory 'tests/BugReports` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+
+# >Number:         166
+# >Category:       MIL
+# >Synopsis:       loading module enum in a block, proc or batloop fails
+# >Confidential:   no
+# >Severity:       serious
+# >Priority:       medium
+# >Responsible:    boncz (Peter Boncz)
+# >State:          open
+# >Class:          sw-bug
+# >Submitter-Id:   unknown
+# >Arrival-Date:   Thu Aug 13 17:51:39 1998
+# >Originator:     manegold@cwi.nl
+# >Organization:
+# CWI
+# >Release:        980101
+# >Environment:
+# any
+# >Description:
+# loading module enum in a block, proc or batloop
+# stops the evaluation of the very block immediately.
+#
+# ========
+# test script
+# --------
+# loaded;
+#
+# {
+# printf("\nloading '%s' ... ","enum");
+# module("enum");
+# printf("done.\n\n");
+# loaded;
+# printf("\ndropping '%s' ... ","enum");
+# drop("enum");
+# printf("done.\n\n");
+# loaded;
+# }
+#
+# quit;
+#
+# ========
+# output
+# --------
+# loaded;
+# #---------------------------------#
+# # module        | usage_count     #
+# #---------------------------------#
+# [ "kernel",       1               ]
+# [ "arith",        1               ]
+# [ "bat",          1               ]
+# [ "algebra",      1               ]
+# [ "sys",          1               ]
+# [ "trans",        1               ]
+#
+# {
+# printf("\nloading '%s' ... ","enum");
+# module("enum");
+# printf("done.\n\n");
+# loaded;
+# printf("\ndropping '%s' ... ","enum");
+# drop("enum");
+# printf("done.\n\n");
+# loaded;
+# }
+#
+# loading 'enum' ... 
+# quit;
+#
+# --------
+
+setoid(oid(20000000));
+
+loaded;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -18,6 +91,17 @@ stdout of test 'no.166` in directory 'tests/BugReports` itself:
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+
+{
+printf("\nloading '%s' ... ","enum");
+module("enum");
+printf("done.\n\n");
+loaded;
+printf("\ndropping '%s' ... ","enum");
+drop("enum");
+printf("done.\n\n");
+loaded;
+}
 
 loading 'enum' ... done.
 
@@ -47,7 +131,9 @@ dropping 'enum' ... done.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-# 11:18:20 >  
-# 11:18:20 >  Done.
-# 11:18:20 >  
+quit;
+
+# 17:07:30 >  
+# 17:07:30 >  Done.
+# 17:07:30 >  
 

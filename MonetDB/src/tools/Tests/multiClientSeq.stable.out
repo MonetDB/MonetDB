@@ -605,13 +605,13 @@ Start of MIL script.
 #-----------------------------------------------------------------------------------------#
 # type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "port",		  "int",  "liquid",	  "changeable",	  "58278"		  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "57146"		  ]
 [ "maxusers",		  "int",  "liquid",	  "changeable",	  "5"			  ]
 [ "cmd",		  "str",  "liquid",	  "changeable",	  "\"\""		  ]
-[ "port",		  "int",  "liquid",	  "changeable",	  "58278"		  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "57146"		  ]
 [ "maxusers",		  "int",  "liquid",	  "changeable",	  "5"			  ]
 [ "l",			  "int",  "liquid",	  "changeable",	  "0"			  ]
-[ "port",		  "int",  "liquid",	  "changeable",	  "58278"		  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "57146"		  ]
 [ "nr",			  "int",  "liquid",	  "changeable",	  "5"			  ]
 [ "mapi_params",	  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
 [ "_params",		  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
@@ -1269,13 +1269,13 @@ Start of MIL script.
 #-----------------------------------------------------------------------------------------#
 # type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "port",		  "int",  "liquid",	  "changeable",	  "58278"		  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "57146"		  ]
 [ "maxusers",		  "int",  "liquid",	  "changeable",	  "5"			  ]
 [ "cmd",		  "str",  "liquid",	  "changeable",	  "\"\""		  ]
-[ "port",		  "int",  "liquid",	  "changeable",	  "58278"		  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "57146"		  ]
 [ "maxusers",		  "int",  "liquid",	  "changeable",	  "5"			  ]
 [ "l",			  "int",  "liquid",	  "changeable",	  "0"			  ]
-[ "port",		  "int",  "liquid",	  "changeable",	  "58278"		  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "57146"		  ]
 [ "nr",			  "int",  "liquid",	  "changeable",	  "5"			  ]
 [ "mapi_params",	  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
 [ "_params",		  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]

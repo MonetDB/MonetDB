@@ -8,6 +8,9 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 # Monet Database Server V4.3.3
 # Copyright (c) 1993-2001, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(20000000);
+
+loaded;
 # dbfarm:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm
 # dbname:Tests_tests_sigs
 # dbdir:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_tests_sigs
@@ -22,6 +25,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[~monet_mod_nme].reverse.sort.print;
 #-------------------------#
 # BAT:		  tmp_23  #
 # (str)		  (void)  #
@@ -33,6 +37,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "str",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
+[~view_modules].reverse.kunique.sort.print;
 #-------------------------#
 # BAT:		  tmp_26  #
 # (str)		  (void)  #
@@ -82,6 +87,9 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "vector",	  nil	  ]
 [ "wisc",	  nil	  ]
 [ "xtables",	  nil	  ]
+
+module("cluster");
+loaded;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -93,6 +101,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[~monet_mod_nme].reverse.sort.print;
 #-------------------------#
 # BAT:		  tmp_26  #
 # (str)		  (void)  #
@@ -105,6 +114,13 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "str",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
+
+# # module("Meta");
+# # loaded;
+# # [~monet_mod_nme].reverse.sort.print;
+
+fix:=monet_mod_nme.reverse.copy;
+[fix~].print;
 #-------------------------#
 # BAT:		  tmp_25  #
 # (str)		  (void)  #
@@ -117,6 +133,10 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
 [ "cluster",	  nil	  ]
+
+mprof:=view_modules.select("mprof").reverse.kunique;
+others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRITE).delete("mprof").sort.access(BAT_WRITE).revert.insert(mprof);
+[others~].print;
 #-------------------------#
 # BAT:		  tmp_27  #
 # (str)		  (void)  #
@@ -158,6 +178,19 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "aggrX3",	  nil	  ]
 [ "aggr",	  nil	  ]
 [ "mprof",	  nil	  ]
+
+others@batloop{
+	printf("\n\tloading %s\n\n",$h);
+	module($h);
+	loaded;
+	off:=kdiff(monet_mod_nme.reverse,fix);
+	[off~].print;
+	off@batloop{
+		printf("\n\tdropping %s\n\n",$h);
+	}
+	drop($h);
+	loaded;
+}
 
 	loading xtables
 
@@ -1472,6 +1505,7 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+quit;
 
 	loading aggr
 

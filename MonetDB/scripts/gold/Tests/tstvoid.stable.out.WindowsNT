@@ -15,9 +15,13 @@ stdout of test 'tstvoid` in directory 'scripts/gold` itself:
 # dbname=Tests_scripts_gold_tstvoid
 # dbdir=/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid
 # distr=/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
 # /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid 
 # /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid/bat 
 Mcreatedb: calling 'Mserver -initonly -db /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf' for the first time..
+module(ascii_io,unix);
+# should run if you set TSTTRGDIR to pwd
 Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid' has been initialized succesfully!
 
 # 01:15:42 >  
@@ -26,7 +30,13 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 
 # Monet Database Server V4.3.3
 # Copyright (c) 1993-2001, CWI. All rights reserved.
+setoid(oid(10000000));
+t:= car_class.select("damage");
+t.persists(true);
+t.rename("car_pos");
+t.count.print;
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+printf("#~BeginVariableOutput~#\n"); t.sample(2).print; printf("#~EndVariableOutput~#\n");
 # dbfarm:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
 # dbname:Tests_scripts_gold_tstvoid
 # dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid
@@ -35,7 +45,12 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 # 01:15:45 >  
 # 01:15:45 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_scripts_gold_tstvoid < init.mil
 # 01:15:45 >  
+t:= car_class.select("no damage");
+t.persists(true);
+t.rename("car_neg");
+t.count.print;
 
+printf("#~BeginVariableOutput~#\n"); t.sample(2).print; printf("#~EndVariableOutput~#\n");
 # Monet Database Server V4.3.3
 # Copyright (c) 1993-2001, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
@@ -44,6 +59,8 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 # dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_scripts_gold_tstvoid
 
 [ 50000 ]
+commit;
+quit;
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  tmp_31	  #
@@ -52,6 +69,70 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 [ 30016838@0,	  "damage"	  ]
 [ 30022596@0,	  "damage"	  ]
 #~EndVariableOutput~#
+module(enum,str);
+
+o := car_age.reverse.fetch(0);
+
+proc maketype(title) := {
+    var histoname := sprintf("%s_t", title);
+    if (not(view_bbp_name.reverse.exist(histoname))) {
+        var batname := sprintf("car_%s", title);
+        var b := bat(batname);
+        var histo := b.histogram.sort;
+        histo.rename(histoname);
+        histo.persists(true);
+    } 
+    return enum_load(histoname);
+}
+
+var age_t := maketype("age");
+var carprice_t := maketype("carprice");
+var category_t := maketype("category");
+var town_t := maketype("town");
+var class_t := maketype("class");
+
+proc void_encode(tpe, title) := {
+    var b := bat(sprintf("car_%s", title));
+    var bn := tpe.[encode]([~b]); 
+    bn.rename(sprintf("void_%s", title));
+    bn.persists(true);
+    bn.seqbase(o);
+    return bn;
+}
+
+proc void_create := {
+    void_encode(age_t,"age");
+    void_encode(carprice_t,"carprice");
+    void_encode(category_t,"category");
+    void_encode(town_t,"town");
+    void_encode(class_t,"class");
+    void_neg := [car_neg~].copy;
+    void_neg.rename("void_neg");
+    void_neg.persists(true);
+    void_pos := [car_pos~].copy;
+    void_pos.rename("void_pos");
+    void_pos.persists(true);
+    void_gender := [~car_gender].copy;
+    void_gender.rename("void_gender");
+    void_gender.persists(true);
+    void_gender.seqbase(o);
+}
+
+proc print_car(low,high) := {
+    car_age.slice(low,high).table(car_gender, car_carprice, car_category, 
+                          car_town, car_class);
+}
+
+proc print_void(low,high) := {
+    void_age.slice(low,high).table(void_gender, void_carprice, void_category, 
+                          void_town, void_class);
+}
+
+if (not(view_bbp_name.reverse.exist("void_age"))) {
+    void_create();
+}
+
+ls;
 [ 50000 ]
 #~BeginVariableOutput~#
 #---------------------------------#
@@ -76,6 +157,8 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 #-----------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype		| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
 #-----------------------------------------------------------------------------------------------------------------#
+commit;
+quit;
 [ "age_t",		  "int",  "int",	  46,	  0,	  "dirty",	  "load", "pers", 1,	  1	  ]
 [ "car_age",		  "oid",  "int",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1	  ]
 [ "car_carprice",	  "oid",  "int",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1	  ]
@@ -84,6 +167,30 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 [ "car_gender",		  "oid",  "chr",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1	  ]
 [ "car_neg",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  2	  ]
 [ "car_pos",		  "oid",  "str",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1	  ]
+setoid(oid(20000000));
+module(enum);
+var age_t := enum_load("age_t");
+var carprice_t := enum_load("carprice_t");
+var category_t := enum_load("category_t");
+var town_t := enum_load("town_t");
+var class_t := enum_load("class_t");
+cpu;
+load("car_age");
+load("car_carprice");
+load("car_category");
+load("car_gender");
+load("car_town");
+load("car_pos");
+load("car_neg");
+# void_age.hash;
+# void_carprice.hash;
+# void_category.hash;
+# void_gender.hash;
+# void_town.hash;
+# void_pos.hash;
+# void_neg.hash;
+commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t0_pos := semijoin(void_age, void_pos).histogram; 
 [ "car_town",		  "oid",  "str",	  100000, 0,	  "clean",	  "load", "pers", 0,	  1	  ]
 [ "carprice_t",		  "int",  "int",	  9,	  0,	  "dirty",	  "load", "pers", 1,	  1	  ]
 [ "category_t",		  "str",  "int",	  2,	  0,	  "dirty",	  "load", "pers", 1,	  1	  ]
@@ -121,6 +228,17 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 [ "elapsystem",	  40	  ]
 #---------------------------------#
 # BAT:		  mem		  #
+t0_neg := semijoin(void_age, void_neg).histogram;
+t2_pos := semijoin(void_carprice, void_pos).histogram; 
+t2_neg := semijoin(void_carprice, void_neg).histogram;
+t3_pos := semijoin(void_category, void_pos).histogram; 
+t3_neg := semijoin(void_category, void_neg).histogram;
+t1_pos := semijoin(void_gender, void_pos).histogram; 
+t1_neg := semijoin(void_gender, void_neg).histogram;
+t4_pos := semijoin(void_town, void_pos).histogram; 
+t4_neg := semijoin(void_town, void_neg).histogram;
+ printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t0_pos.count.print; print("end");
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  1835008	  ]
@@ -160,24 +278,35 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
+t0_neg.count.print; print("end");
 [ "memincr",	  925696	  ]
 [ "arena",	  2801648	  ]
+t2_pos.count.print; print("end");
 [ "ordblks",	  6737		  ]
 [ "smblks",	  2700		  ]
+t2_neg.count.print; print("end");
 [ "hblkhd",	  864		  ]
 [ "hblks",	  27		  ]
+t3_pos.count.print; print("end");
 [ "usmblks",	  56008		  ]
 [ "fsmblks",	  3992		  ]
+t3_neg.count.print; print("end");
 [ "uordblks",	  2642288	  ]
 [ "fordblks",	  98496		  ]
+t1_pos.count.print; print("end");
 #-------------------------#
 # BAT:		  io	  #
+t1_neg.count.print; print("end");
 # (str)		  (int)	  #
 #-------------------------#
+t4_pos.count.print; print("end");
 [ "maxrss",	  4032	  ]
 [ "minflt",	  462	  ]
+t4_neg.count.print; print("end");
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
+commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print; 
+tmp0 := void_age.select(age_t.encode(19), age_t.encode(24)); 
 [ "inblock",	  0	  ]
 [ "oublock",	  7	  ]
 [ "nvcsw",	  3448	  ]
@@ -215,6 +344,22 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 [ "elapsystem",	  10	  ]
 #---------------------------------#
 # BAT:		  mem		  #
+pos_1 := semijoin(tmp0, void_pos); 
+neg_1 := semijoin(tmp0, void_neg);
+tmp1 := void_gender.select('f'); 
+pos_2 := semijoin(tmp1, void_pos); 
+neg_2 := semijoin(tmp1, void_neg);
+tmp2 := void_gender.select('m'); 
+pos_3 := semijoin(tmp2, void_pos); 
+neg_3 := semijoin(tmp2, void_neg);
+tmp3 := void_category.select(category_t.encode("lease")); 
+pos_4 := semijoin(tmp3, void_pos); 
+neg_4 := semijoin(tmp3, void_neg);
+tmp4 := void_age.select(age_t.encode(25), age_t.encode(33)); 
+pos_5 := semijoin(tmp4, void_pos); 
+neg_5 := semijoin(tmp4, void_neg);
+commit; printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t12_pos := semijoin(void_age, pos_4).histogram; 
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  24576		  ]
@@ -252,6 +397,17 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 [ "elapsystem",	  20	  ]
 #---------------------------------#
 # BAT:		  mem		  #
+t12_neg := semijoin(void_age, neg_4).histogram;
+t8_pos := semijoin(void_age, pos_3).histogram; 
+t8_neg := semijoin(void_age, neg_3).histogram;
+t4_pos := semijoin(void_age, pos_2).histogram; 
+t4_neg := semijoin(void_age, neg_2).histogram;
+t9_pos := semijoin(void_carprice, pos_3).histogram; 
+t9_neg := semijoin(void_carprice, neg_3).histogram;
+t1_pos := semijoin(void_carprice, pos_1).histogram; 
+t1_neg := semijoin(void_carprice, neg_1).histogram;
+ printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t12_pos.count.print; print("end");
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  73728		  ]
@@ -291,24 +447,35 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
+t12_neg.count.print; print("end");
 [ "memincr",	  90112		  ]
 [ "arena",	  2990064	  ]
+t8_pos.count.print; print("end");
 [ "ordblks",	  7494		  ]
 [ "smblks",	  2700		  ]
+t8_neg.count.print; print("end");
 [ "hblkhd",	  864		  ]
 [ "hblks",	  27		  ]
+t4_pos.count.print; print("end");
 [ "usmblks",	  56248		  ]
 [ "fsmblks",	  3752		  ]
+t4_neg.count.print; print("end");
 [ "uordblks",	  2789704	  ]
 [ "fordblks",	  139496	  ]
+t9_pos.count.print; print("end");
 #-------------------------#
 # BAT:		  io	  #
+t9_neg.count.print; print("end");
 # (str)		  (int)	  #
 #-------------------------#
+t1_pos.count.print; print("end");
 [ "maxrss",	  8256	  ]
 [ "minflt",	  462	  ]
+t1_neg.count.print; print("end");
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
+commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t14_pos := semijoin(void_carprice, pos_4).histogram; 
 [ "inblock",	  0	  ]
 [ "oublock",	  8	  ]
 [ "nvcsw",	  3452	  ]
@@ -346,6 +513,17 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
+t14_neg := semijoin(void_carprice, neg_4).histogram;
+t5_pos := semijoin(void_carprice, pos_2).histogram; 
+t5_neg := semijoin(void_carprice, neg_2).histogram;
+t17_pos := semijoin(void_carprice, pos_5).histogram; 
+t17_neg := semijoin(void_carprice, neg_5).histogram;
+t18_pos := semijoin(void_category, pos_5).histogram; 
+t18_neg := semijoin(void_category, neg_5).histogram;
+t10_pos := semijoin(void_category, pos_3).histogram; 
+t10_neg := semijoin(void_category, neg_3).histogram;
+ printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t14_pos.count.print; print("end");
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
@@ -385,24 +563,35 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
+t14_neg.count.print; print("end");
 [ "memincr",	  253952	  ]
 [ "arena",	  3244016	  ]
+t5_pos.count.print; print("end");
 [ "ordblks",	  7946		  ]
 [ "smblks",	  2700		  ]
+t5_neg.count.print; print("end");
 [ "hblkhd",	  864		  ]
 [ "hblks",	  27		  ]
+t17_pos.count.print; print("end");
 [ "usmblks",	  56416		  ]
 [ "fsmblks",	  3584		  ]
+t17_neg.count.print; print("end");
 [ "uordblks",	  2888936	  ]
 [ "fordblks",	  294216	  ]
+t18_pos.count.print; print("end");
 #-------------------------#
 # BAT:		  io	  #
+t18_neg.count.print; print("end");
 # (str)		  (int)	  #
 #-------------------------#
+t10_pos.count.print; print("end");
 [ "maxrss",	  9488	  ]
 [ "minflt",	  462	  ]
+t10_neg.count.print; print("end");
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
+commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t6_pos := semijoin(void_category, pos_2).histogram; 
 [ "inblock",	  0	  ]
 [ "oublock",	  8	  ]
 [ "nvcsw",	  3456	  ]
@@ -440,6 +629,17 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
+t6_neg := semijoin(void_category, neg_2).histogram;
+t2_pos := semijoin(void_category, pos_1).histogram; 
+t2_neg := semijoin(void_category, neg_1).histogram;
+t16_pos := semijoin(void_gender, pos_5).histogram; 
+t16_neg := semijoin(void_gender, neg_5).histogram;
+t13_pos := semijoin(void_gender, pos_4).histogram; 
+t13_neg := semijoin(void_gender, neg_4).histogram;
+t0_pos := semijoin(void_gender, pos_1).histogram; 
+t0_neg := semijoin(void_gender, neg_1).histogram;
+ printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t6_pos.count.print; print("end");
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
@@ -479,24 +679,35 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
+t6_neg.count.print; print("end");
 [ "memincr",	  90112		  ]
 [ "arena",	  3334128	  ]
+t2_pos.count.print; print("end");
 [ "ordblks",	  8398		  ]
 [ "smblks",	  2800		  ]
+t2_neg.count.print; print("end");
 [ "hblkhd",	  896		  ]
 [ "hblks",	  28		  ]
+t16_pos.count.print; print("end");
 [ "usmblks",	  56456		  ]
 [ "fsmblks",	  5144		  ]
+t16_neg.count.print; print("end");
 [ "uordblks",	  2977864	  ]
 [ "fordblks",	  293768	  ]
+t13_pos.count.print; print("end");
 #-------------------------#
 # BAT:		  io	  #
+t13_neg.count.print; print("end");
 # (str)		  (int)	  #
 #-------------------------#
+t0_pos.count.print; print("end");
 [ "maxrss",	  9936	  ]
 [ "minflt",	  462	  ]
+t0_neg.count.print; print("end");
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
+commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t19_pos := semijoin(void_town, pos_5).histogram; 
 [ "inblock",	  0	  ]
 [ "oublock",	  8	  ]
 [ "nvcsw",	  3456	  ]
@@ -534,6 +745,17 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
+t19_neg := semijoin(void_town, neg_5).histogram;
+t15_pos := semijoin(void_town, pos_4).histogram; 
+t15_neg := semijoin(void_town, neg_4).histogram;
+t7_pos := semijoin(void_town, pos_2).histogram; 
+t7_neg := semijoin(void_town, neg_2).histogram;
+t11_pos := semijoin(void_town, pos_3).histogram; 
+t11_neg := semijoin(void_town, neg_3).histogram;
+t3_pos := semijoin(void_town, pos_1).histogram; 
+t3_neg := semijoin(void_town, neg_1).histogram;
+ printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t19_pos.count.print; print("end");
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
@@ -573,24 +795,35 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
+t19_neg.count.print; print("end");
 [ "memincr",	  81920		  ]
 [ "arena",	  3416048	  ]
+t15_pos.count.print; print("end");
 [ "ordblks",	  8850		  ]
 [ "smblks",	  2800		  ]
+t15_neg.count.print; print("end");
 [ "hblkhd",	  896		  ]
 [ "hblks",	  28		  ]
+t7_pos.count.print; print("end");
 [ "usmblks",	  56616		  ]
 [ "fsmblks",	  4984		  ]
+t7_neg.count.print; print("end");
 [ "uordblks",	  3071960	  ]
 [ "fordblks",	  281592	  ]
+t11_pos.count.print; print("end");
 #-------------------------#
 # BAT:		  io	  #
+t11_neg.count.print; print("end");
 # (str)		  (int)	  #
 #-------------------------#
+t3_pos.count.print; print("end");
 [ "maxrss",	  11264	  ]
 [ "minflt",	  462	  ]
+t3_neg.count.print; print("end");
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
+commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print; 
+tmp0 := void_age.select(age_t.encode(19), age_t.encode(24)); 
 [ "inblock",	  0	  ]
 [ "oublock",	  8	  ]
 [ "nvcsw",	  3456	  ]
@@ -628,6 +861,19 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
+pos_6 := semijoin(tmp0, pos_3); 
+neg_6 := semijoin(tmp0, neg_3);
+tmp1 := void_age.select(age_t.encode(19), age_t.encode(24)); 
+pos_8 := semijoin(tmp1, pos_4); 
+neg_8 := semijoin(tmp1, neg_4);
+tmp2 := void_age.select(age_t.encode(30), age_t.encode(33)); 
+pos_9 := semijoin(tmp2, pos_2); 
+neg_9 := semijoin(tmp2, neg_2);
+tmp3 := void_gender.select('f'); 
+pos_10 := semijoin(tmp3, pos_5); 
+neg_10 := semijoin(tmp3, neg_5);
+commit; printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t9_pos := semijoin(void_carprice, pos_10).histogram; 
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
@@ -665,6 +911,17 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 [ "elapsystem",	  10	  ]
 #---------------------------------#
 # BAT:		  mem		  #
+t9_neg := semijoin(void_carprice, neg_10).histogram;
+t6_pos := semijoin(void_carprice, pos_9).histogram; 
+t6_neg := semijoin(void_carprice, neg_9).histogram;
+t4_pos := semijoin(void_carprice, pos_8).histogram; 
+t4_neg := semijoin(void_carprice, neg_8).histogram;
+t0_pos := semijoin(void_carprice, pos_6).histogram; 
+t0_neg := semijoin(void_carprice, neg_6).histogram;
+t10_pos := semijoin(void_category, pos_10).histogram; 
+t10_neg := semijoin(void_category, neg_10).histogram;
+ printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t9_pos.count.print; print("end");
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  655360	  ]
@@ -704,24 +961,35 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
+t9_neg.count.print; print("end");
 [ "memincr",	  163840	  ]
 [ "arena",	  4235248	  ]
+t6_pos.count.print; print("end");
 [ "ordblks",	  9569		  ]
 [ "smblks",	  2800		  ]
+t6_neg.count.print; print("end");
 [ "hblkhd",	  896		  ]
 [ "hblks",	  28		  ]
+t4_pos.count.print; print("end");
 [ "usmblks",	  56504		  ]
 [ "fsmblks",	  5096		  ]
+t4_neg.count.print; print("end");
 [ "uordblks",	  3990208	  ]
 [ "fordblks",	  182544	  ]
+t0_pos.count.print; print("end");
 #-------------------------#
 # BAT:		  io	  #
+t0_neg.count.print; print("end");
 # (str)		  (int)	  #
 #-------------------------#
+t10_pos.count.print; print("end");
 [ "maxrss",	  12608	  ]
 [ "minflt",	  464	  ]
+t10_neg.count.print; print("end");
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
+commit; printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t7_pos := semijoin(void_category, pos_9).histogram; 
 [ "inblock",	  0	  ]
 [ "oublock",	  8	  ]
 [ "nvcsw",	  3458	  ]
@@ -759,6 +1027,17 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
+t7_neg := semijoin(void_category, neg_9).histogram;
+t1_pos := semijoin(void_category, pos_6).histogram; 
+t1_neg := semijoin(void_category, neg_6).histogram;
+t3_pos := semijoin(void_gender, pos_8).histogram; 
+t3_neg := semijoin(void_gender, neg_8).histogram;
+t11_pos := semijoin(void_town, pos_10).histogram; 
+t11_neg := semijoin(void_town, neg_10).histogram;
+t2_pos := semijoin(void_town, pos_6).histogram; 
+t2_neg := semijoin(void_town, neg_6).histogram;
+ printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t7_pos.count.print; print("end");
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
@@ -798,24 +1077,35 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
+t7_neg.count.print; print("end");
 [ "memincr",	  40960		  ]
 [ "arena",	  4276208	  ]
+t1_pos.count.print; print("end");
 [ "ordblks",	  10007		  ]
 [ "smblks",	  2800		  ]
+t1_neg.count.print; print("end");
 [ "hblkhd",	  896		  ]
 [ "hblks",	  28		  ]
+t3_pos.count.print; print("end");
 [ "usmblks",	  56256		  ]
 [ "fsmblks",	  5344		  ]
+t3_neg.count.print; print("end");
 [ "uordblks",	  4063600	  ]
 [ "fordblks",	  150112	  ]
+t11_pos.count.print; print("end");
 #-------------------------#
 # BAT:		  io	  #
+t11_neg.count.print; print("end");
 # (str)		  (int)	  #
 #-------------------------#
+t2_pos.count.print; print("end");
 [ "maxrss",	  12656	  ]
 [ "minflt",	  464	  ]
+t2_neg.count.print; print("end");
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
+commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t8_pos := semijoin(void_town, pos_9).histogram; 
 [ "inblock",	  0	  ]
 [ "oublock",	  8	  ]
 [ "nvcsw",	  3458	  ]
@@ -853,6 +1143,11 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
+t8_neg := semijoin(void_town, neg_9).histogram;
+t5_pos := semijoin(void_town, pos_8).histogram; 
+t5_neg := semijoin(void_town, neg_8).histogram;
+ printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t8_pos.count.print; print("end");
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
@@ -892,12 +1187,17 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
+t8_neg.count.print; print("end");
 [ "memincr",	  0		  ]
 [ "arena",	  4276208	  ]
+t5_pos.count.print; print("end");
 [ "ordblks",	  10295		  ]
 [ "smblks",	  2800		  ]
+t5_neg.count.print; print("end");
 [ "hblkhd",	  896		  ]
 [ "hblks",	  28		  ]
+commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print; 
+tmp0 := void_gender.select('f'); 
 [ "usmblks",	  56120		  ]
 [ "fsmblks",	  5480		  ]
 [ "uordblks",	  4116080	  ]
@@ -935,6 +1235,10 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 [ "elapsystem",	  0	  ]
 #---------------------------------#
 # BAT:		  mem		  #
+pos_11 := semijoin(tmp0, pos_8); 
+neg_11 := semijoin(tmp0, neg_8);
+ printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+commit;
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
@@ -972,6 +1276,12 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 [ "elapsystem",	  10	  ]
 #---------------------------------#
 # BAT:		  mem		  #
+t0_pos := semijoin(void_carprice, pos_11).histogram; 
+t0_neg := semijoin(void_carprice, neg_11).histogram;
+t1_pos := semijoin(void_town, pos_11).histogram; 
+t1_neg := semijoin(void_town, neg_11).histogram;
+ printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+t0_pos.count.print; print("end");
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
@@ -1011,12 +1321,17 @@ Mcreatedb: database '/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GN
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
+t0_neg.count.print; print("end");
 [ "memincr",	  8192		  ]
 [ "arena",	  4284400	  ]
+t1_pos.count.print; print("end");
 [ "ordblks",	  10635		  ]
 [ "smblks",	  2800		  ]
+t1_neg.count.print; print("end");
 [ "hblkhd",	  896		  ]
 [ "hblks",	  28		  ]
+commit;  printf("#~BeginVariableOutput~#\n"); cpu.print;memory.print;io.print; printf("#~EndVariableOutput~#\n"); # bbp.print;
+quit;
 [ "usmblks",	  56224		  ]
 [ "fsmblks",	  5376		  ]
 [ "uordblks",	  4196544	  ]

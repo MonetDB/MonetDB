@@ -1926,6 +1926,7 @@ def main(argv) :
             if not os.path.isfile(sqlserver_mil):
                 sqlserver_mil = ''
         env['SQLSERVER_MIL'] = sqlserver_mil
+	env['TRACE_MIL'] = os.path.join(env['TSTTRGBASE'],TSTPREF,"trace.mil")
 
     # export and display env
     STDERR.flush()
@@ -1974,7 +1975,7 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         exe = {}
         exe['Mtimeout']    = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s --set monet_prompt=' % (opts.config, env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'])
+        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s --set monet_prompt= %s' % (opts.config, env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'], env['TRACE_MIL'])
         exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py "--config=%s" --host=%s --port=%s' % (opts.config, HOST, env['MAPIPORT'])
         exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']      = CheckExec('python')       , 'python'
@@ -2093,6 +2094,9 @@ def main(argv) :
             os.makedirs(os.path.join(env['GDK_DBFARM'],TSTPREF))
         except:
             ErrXit("Failed to create %s" % os.path.join(env['GDK_DBFARM'],TSTPREF))
+
+	os.makedirs(os.path.join(env['TSTTRGBASE'],TSTPREF))
+	open(env['TRACE_MIL'],"w").close()
         if Check(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]   +" --dbname="+TSTPREF, "quit;\n"):
             sys.exit(1)
         GetBitsAndModsAndStatic(env)

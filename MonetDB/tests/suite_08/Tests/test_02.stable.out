@@ -8,7 +8,52 @@ stdout of test 'test_02` in directory 'tests/suite_08` itself:
 #script:test_02.milS
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(20000000));
+
+x := new(oid,chr);
+x.insert(oid(1),'a');
+x.insert(oid(2),'a');
+x.insert(oid(3),'b');
+x.insert(oid(4),'b');
+x.insert(oid(5),'b');
+x.insert(oid(6),'b');
+x.insert(oid(7),'c');
+x.insert(oid(8),'c');
+x.rename("x");
+x.roles("oid","x");
+x.persists(true);
+
+y:= new(oid,chr);
+y.insert(oid(1),'a');
+y.insert(oid(2),'c');
+y.insert(oid(3),'b');
+y.insert(oid(4),'b');
+y.insert(oid(5),'b');
+y.insert(oid(6),'c');
+y.insert(oid(7),'a');
+y.insert(oid(8),'a');
+y.rename("y");
+y.roles("oid","y");
+y.persists(true);
+
+z:= new(oid,chr);
+z.insert(oid(1),'c');
+z.insert(oid(2),'a');
+z.insert(oid(3),'b');
+z.insert(oid(4),'c');
+z.insert(oid(5),'a');
+z.insert(oid(6),'a');
+z.insert(oid(7),'c');
+z.insert(oid(8),'a');
+z.rename("z");
+y.roles("oid","z");
+z.persists(true);
+
+module(xtables);
+print(x,y,z);
 #---------------------------------#
 # BAT:	  x	| y	| z	  #
 # (oid)	  (chr)	| (chr)	| (chr)	  #
@@ -21,6 +66,9 @@ stdout of test 'test_02` in directory 'tests/suite_08` itself:
 [ 6@0,	  'b',	  'c',	  'a'	  ]
 [ 7@0,	  'c',	  'a',	  'c'	  ]
 [ 8@0,	  'c',	  'a',	  'a'	  ]
+
+t1 := x.CTgroup;
+t1.print;
 #-----------------#
 # BAT:	  tmp_28  #
 # (oid)	  (oid)	  #
@@ -33,6 +81,8 @@ stdout of test 'test_02` in directory 'tests/suite_08` itself:
 [ 6@0,	  3@0	  ]
 [ 7@0,	  7@0	  ]
 [ 8@0,	  7@0	  ]
+t2 := t1.CTderive(y);
+t2.print;
 #-----------------#
 # BAT:	  tmp_30  #
 # (void)  (oid)	  #
@@ -45,6 +95,8 @@ stdout of test 'test_02` in directory 'tests/suite_08` itself:
 [ 6@0,	  6@0	  ]
 [ 7@0,	  7@0	  ]
 [ 8@0,	  7@0	  ]
+t2 := t1.CTgroup(y);
+t2.print;
 #-----------------#
 # BAT:	  tmp_32  #
 # (void)  (oid)	  #
@@ -57,3 +109,28 @@ stdout of test 'test_02` in directory 'tests/suite_08` itself:
 [ 6@0,	  6@0	  ]
 [ 7@0,	  7@0	  ]
 [ 8@0,	  7@0	  ]
+#print(t2.histogram,x,y);
+#CTprint(t2.histogram,y);
+
+
+#x1y := CTderive(x1,y);
+#h := x1y.histogram;
+#h.roles("count","oid");
+#print(h.reverse,x,y);
+#
+#x1yz := CTderive(x1y,z);
+#h := x1yz.histogram;
+#h.roles("count","oid");
+#print(h.reverse,x,y,z);
+#
+#
+#CThistogram(x1).print;
+#CThistogram(x1y).print;
+#CThistogram(x1yz).print;
+
+quit;
+
+# 17:09:15 >  
+# 17:09:15 >  Done.
+# 17:09:15 >  
+

@@ -8,7 +8,23 @@ stdout of test 'void` in directory 'src/gdk` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+
+
+print("First keep void tests");
 [ "First keep void tests" ]
+var a := bat(void,int,10);
+a.insert(nil,1);
+a.insert(nil,4);
+a.insert(nil,7);
+a.insert(nil,2);
+a.insert(nil,8);
+a.insert(nil,1);
+a.insert(nil,4);
+a.insert(nil,5);
+a.insert(nil,8);
+a.insert(nil,3);
+a.seqbase(oid(10));
+a.print;
 #-----------------#
 # BAT:	  tmp_27  #
 # (void)  (int)	  #
@@ -23,7 +39,14 @@ stdout of test 'void` in directory 'src/gdk` itself:
 [ 17@0,	  5	  ]
 [ 18@0,	  8	  ]
 [ 19@0,	  3	  ]
+
+var b := a.copy();
+
+print("insert tests");
 [ "insert tests" ]
+#insert in order
+a.insert(oid(20),8);
+a.print;
 #-----------------#
 # BAT:	  tmp_27  #
 # (void)  (int)	  #
@@ -39,7 +62,12 @@ stdout of test 'void` in directory 'src/gdk` itself:
 [ 18@0,	  8	  ]
 [ 19@0,	  3	  ]
 [ 20@0,	  8	  ]
+
+print("replace tests");
 [ "replace tests" ]
+# replace uncommited no need to change to oid
+a.replace(oid(15),9);
+a.print;
 #-----------------#
 # BAT:	  tmp_27  #
 # (void)  (int)	  #
@@ -55,6 +83,10 @@ stdout of test 'void` in directory 'src/gdk` itself:
 [ 18@0,	  8	  ]
 [ 19@0,	  3	  ]
 [ 20@0,	  8	  ]
+
+# replace last no need to change to oid
+a.replace(oid(20),9);
+a.print;
 #-----------------#
 # BAT:	  tmp_27  #
 # (void)  (int)	  #
@@ -70,6 +102,10 @@ stdout of test 'void` in directory 'src/gdk` itself:
 [ 18@0,	  8	  ]
 [ 19@0,	  3	  ]
 [ 20@0,	  9	  ]
+
+# replace last + 1, noting needed
+a.replace(oid(20),9);
+a.print;
 #-----------------#
 # BAT:	  tmp_27  #
 # (void)  (int)	  #
@@ -85,14 +121,38 @@ stdout of test 'void` in directory 'src/gdk` itself:
 [ 18@0,	  8	  ]
 [ 19@0,	  3	  ]
 [ 20@0,	  9	  ]
+
+print("delete tests");
 [ "delete tests" ]
+# delete uncommited from the top
+a.delete(oid(20));
+a.delete(oid(19));
+a.delete(oid(18));
+a.delete(oid(17));
+a.delete(oid(16));
+a.delete(oid(15));
+a.delete(oid(14));
+a.delete(oid(13));
+a.delete(oid(12));
+a.delete(oid(11));
+# only 1 left and still void
+a.print;
 #-----------------#
 # BAT:	  tmp_27  #
 # (void)  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
+
+# now the convert to oid test
+print("convert void to oid tests");
 [ "convert void to oid tests" ]
+a := b.copy().access(BAT_WRITE);
+
+print("insert tests");
 [ "insert tests" ]
+#insert in out of order
+a.insert(oid(21),8);
+a.print;
 #-----------------#
 # BAT:	  tmp_28  #
 # (oid)	  (int)	  #
@@ -108,6 +168,10 @@ stdout of test 'void` in directory 'src/gdk` itself:
 [ 18@0,	  8	  ]
 [ 19@0,	  3	  ]
 [ 21@0,	  8	  ]
+
+# use oid bat (test if its a properly made bat)
+a.delete(oid(21));
+a.reverse().join(b).print;
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #
@@ -122,7 +186,20 @@ stdout of test 'void` in directory 'src/gdk` itself:
 [ 5,	  5	  ]
 [ 8,	  8	  ]
 [ 3,	  3	  ]
+
+print("replace tests");
 [ "replace tests" ]
+#replace commited bun
+a := b.copy().access(BAT_WRITE);
+a.commit();
+
+# replace commited 
+a.replace(oid(15),-3);
+# replace last (or used to be last)
+a.replace(oid(19),-1);
+# replace something not there
+a.replace(oid(20),-2);
+a.print;
 #-----------------#
 # BAT:	  tmp_27  #
 # (oid)	  (int)	  #
@@ -137,14 +214,34 @@ stdout of test 'void` in directory 'src/gdk` itself:
 [ 17@0,	  5	  ]
 [ 18@0,	  8	  ]
 [ 15@0,	  -3	  ]
+
+# delete commited 
+print("delete tests");
 [ "delete tests" ]
+a := b.copy().access(BAT_WRITE);
+a.commit();
+
+a.delete(oid(20));
+a.delete(oid(19));
+a.delete(oid(18));
+a.delete(oid(17));
+a.delete(oid(16));
+a.delete(oid(15));
+a.delete(oid(14));
+a.delete(oid(13));
+a.delete(oid(12));
+a.delete(oid(11));
+# only 1 left and still void
+a.print;
 #-----------------#
 # BAT:	  tmp_28  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 10@0,	  1	  ]
 
-# 13:38:53 >  
-# 13:38:53 >  Done.
-# 13:38:53 >  
+quit;
+
+# 17:04:55 >  
+# 17:04:55 >  Done.
+# 17:04:55 >  
 

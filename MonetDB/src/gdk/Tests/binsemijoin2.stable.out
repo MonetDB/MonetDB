@@ -8,6 +8,19 @@ stdout of test 'binsemijoin2` in directory 'src/gdk` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Test provided as bug-report by 
+# Maurice van Keulen <keulen@fmi.uni-konstanz.de>
+# Torsten Grust <grust@fmi.uni-konstanz.de>
+
+var left:=new(void,oid).seqbase(0@0);
+var right:=new(oid,void);
+
+var i:=0;
+while (i<12) { left.insert(nil,oid(i)); i+=1; }
+i:=0;
+while (i<200) { right.insert(oid(i*2),nil); i+=1; }
+
+left.print;
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -24,6 +37,7 @@ stdout of test 'binsemijoin2` in directory 'src/gdk` itself:
 [ 9@0,	  9@0	  ]
 [ 10@0,	  10@0	  ]
 [ 11@0,	  11@0	  ]
+right.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (oid)	  (void)  #
@@ -228,6 +242,9 @@ stdout of test 'binsemijoin2` in directory 'src/gdk` itself:
 [ 394@0,  nil	  ]
 [ 396@0,  nil	  ]
 [ 398@0,  nil	  ]
+
+right.order;
+right.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (oid)	  (void)  #
@@ -432,6 +449,8 @@ stdout of test 'binsemijoin2` in directory 'src/gdk` itself:
 [ 394@0,  nil	  ]
 [ 396@0,  nil	  ]
 [ 398@0,  nil	  ]
+
+left.semijoin(right).print;
 #-----------------#
 # BAT:	  tmp_27  #
 # (oid)	  (oid)	  #

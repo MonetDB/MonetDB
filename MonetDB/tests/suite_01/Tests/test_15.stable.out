@@ -8,32 +8,46 @@ stdout of test 'test_15` in directory 'tests/suite_01` itself:
 #script:test_15.milS
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(20000000));
+commit; printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  339	  ]
-[ "majflt",	  437	  ]
+[ "minflt",	  354	  ]
+[ "majflt",	  498	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+commit; commit; commit; commit; commit; commit; commit; commit; commit; commit; 
+commit; commit; commit; commit; commit; commit; commit; commit; commit; commit; 
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  340	  ]
-[ "majflt",	  439	  ]
+[ "minflt",	  355	  ]
+[ "majflt",	  499	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+
+quit;
+
+# 17:08:57 >  
+# 17:08:57 >  Done.
+# 17:08:57 >  
+

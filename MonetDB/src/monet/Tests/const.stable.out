@@ -5,28 +5,39 @@ stdout of test 'const` in directory 'src/monet` itself:
 # 13:33:17 >  Mtimeout -timeout 432 Mserver -p -modulesilent -yaccsilent -d8 -db Tests_src_monet  < const.milM
 # 13:33:17 >  
 
-# Monet Database Server V4.3
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+PROC plus( int a, int b ) : int {RETURN a + b; }
+PROC PLUS( bat[void,int] a, bat[void,int] b ): bat[void,int] {RETURN [plus](a, b); }
 
+bb := new( void, int ).insert(nil, 10).insert(nil,20);
+aaa := new( void, bat ).insert(nil, bb).insert(nil,[plus](bb, const 30));
+aaa.print;
 #-------------------------#
 # BAT:	  tmp_25	  #
 # (void)  (BAT)		  #
 #-------------------------#
 [ nil,	  <tmp_26>	  ]
 [ nil,	  <tmp_27>	  ]
+aaa.seqbase(0@0);
+bb.seqbase(0@0);
+
+[PLUS](aaa, const bb ).print;
 #-------------------------#
 # BAT:	  tmp_28	  #
 # (void)  (BAT)		  #
 #-------------------------#
 [ 0@0,	  <tmp_29>	  ]
 [ 1@0,	  <tmp_30>	  ]
+[PLUS](aaa,aaa.project(bb)).print;
 #-------------------------#
 # BAT:	  tmp_30	  #
 # (oid)	  (BAT)		  #
 #-------------------------#
 [ 0@0,	  <tmp_29>	  ]
 [ 1@0,	  <tmp_31>	  ]
+quit;
 
 # 13:33:17 >  
 # 13:33:17 >  Done.

@@ -12,13 +12,21 @@ stdout of test 'printf_nil` in directory 'src/monet` itself:
 # dbname:Tests_src_monet
 # dbdir:/net/peddel/export/scratch1/arjen/monet/monet/Linux/dbfarm/Tests_src_monet
 
+printf("%5d\n", int(nil) );
   nil
+printf("%d\n", int(nil) );
 nil
+printf("%s\n", str(nil) );
 nil
+printf("%lf\n",dbl(nil) );
 nil
+
+printf("%+5.4f and %s\n", flt(nil), str(nil) );
   nil and nil
 
-# 01:07:07 >  
-# 01:07:07 >  Done.
-# 01:07:07 >  
+quit;
+
+# 17:06:23 >  
+# 17:06:23 >  Done.
+# 17:06:23 >  
 

@@ -26,9 +26,9 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  510	  ]
+[ "user",	  300	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  380	  ]
+[ "system",	  140	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
@@ -37,16 +37,16 @@ printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  2019328	  ]
-[ "arena",	  2047528	  ]
-[ "ordblks",	  200		  ]
+[ "memincr",	  2318336	  ]
+[ "arena",	  2374016	  ]
+[ "ordblks",	  485		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  876544	  ]
 [ "hblks",	  1		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1902432	  ]
-[ "fordblks",	  145096	  ]
+[ "uordblks",	  2140856	  ]
+[ "fordblks",	  233160	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -55,8 +55,8 @@ printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n")
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1832	  ]
-[ "majflt",	  1663	  ]
+[ "minflt",	  1986	  ]
+[ "majflt",	  1122	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -71,8 +71,8 @@ printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n")
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1833	  ]
-[ "majflt",	  1663	  ]
+[ "minflt",	  1987	  ]
+[ "majflt",	  1122	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -86,9 +86,9 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  510	  ]
+[ "user",	  300	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  390	  ]
+[ "system",	  150	  ]
 [ "elapsystem",	  10	  ]
 #~EndVariableOutput~#
 wisc("W100k",100000);
@@ -99,11 +99,11 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  2	  ]
-[ "user",	  1740	  ]
-[ "elapuser",	  1230	  ]
-[ "system",	  420	  ]
-[ "elapsystem",	  30	  ]
+[ "elapsed",	  0	  ]
+[ "user",	  1160	  ]
+[ "elapuser",	  860	  ]
+[ "system",	  160	  ]
+[ "elapsystem",	  10	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -112,15 +112,15 @@ printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  2047528	  ]
-[ "ordblks",	  177		  ]
+[ "arena",	  2374016	  ]
+[ "ordblks",	  451		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  8110080	  ]
 [ "hblks",	  20		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1917184	  ]
-[ "fordblks",	  130344	  ]
+[ "uordblks",	  2155632	  ]
+[ "fordblks",	  218384	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -129,8 +129,8 @@ printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n")
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3774	  ]
-[ "majflt",	  1663	  ]
+[ "minflt",	  3928	  ]
+[ "majflt",	  1122	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -145,8 +145,8 @@ printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n")
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  3775	  ]
-[ "majflt",	  1663	  ]
+[ "minflt",	  3929	  ]
+[ "majflt",	  1122	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -159,10 +159,15 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  2	  ]
-[ "user",	  1750	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  490	  ]
-[ "elapsystem",	  70	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  1160	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  200	  ]
+[ "elapsystem",	  40	  ]
 #~EndVariableOutput~#
 quit;
+
+# 17:09:05 >  
+# 17:09:05 >  Done.
+# 17:09:05 >  
+

@@ -9,25 +9,104 @@ stdout of test 'no.089` in directory 'tests/BugReports` itself:
 #script:no.089.1.mil
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# >Number:         89
+# >Category:       Mserver
+# >Synopsis:       abort doesn't work right when BATs are unloaded
+# >Confidential:   no
+# >Severity:       serious
+# >Priority:       high
+# >Responsible:    boncz
+# >State:          open
+# >Class:          sw-bug
+# >Submitter-Id:   unknown
+# >Arrival-Date:   Mon Dec  1 14:49:04 1997
+# >Originator:     windhouw
+# >Organization:
+# UvA
+# >Release:        971007
+# >Environment:
+# 
+# >Description:
+# The following problem occurs:
+# - I'm running a "transaction";
+# - I abort the transaction;
+# - the updates and inserts seems to be reversed;
+# - I quit Mserver and restart it;
+# - the updates and inserts are back again.
+# 
+# It seems to be that BATs that are swapped out of
+# memory, don't take part in the abort.
+# 
+# I replayed this scene by explicitly swapping the BAT
+# to disk:
+# #You are system administrator (adm)!
+# >module(url);
+# >Server := new(oid,url);
+# >Server.persists(true);
+# >Server.rename("Server");
+# >Server.insert(oid(1),url("http://www.cwi.nl/")); 
+# >Server.print;
+# #---------------------------------#
+# # oid   | Server                  #
+# #---------------------------------#
+# [ 1@0,    http://www.cwi.nl/      ]
+# >Server.unload;
+# >abort;
+# >Server.print;
+# #-----------------#
+# # oid   | Server  #
+# #-----------------#
+# ... QUIT & RESTART ...
+# #You are system administrator (adm)!
+# >module(url);
+# >Server.print;
+# #---------------------------------#
+# # oid   | Server                  #
+# #---------------------------------#
+# [ 1@0,    http://www.cwi.nl/      ]
+# 
+# As this problem frequently occurs while testing my
+# application, my database gets inconsistent which
+# leads to runtime errors in the odmg packages (like
+# oid not found in the extent), while abort should
+# give me the possibilty to get back to the previous
+# consistent state of the database.
+
+module(url);
+new(oid,url).persists(true).rename("Server");
+commit;
+Server.insert(oid(1),url("http://www.cwi.nl/")); 
+Server.print;
 #---------------------------------#
 # BAT:	  Server		  #
 # (oid)	  (url)			  #
 #---------------------------------#
 [ 1@0,	  "http://www.cwi.nl/"	  ]
+unload("Server");
+abort;
+Server.print;
 #-----------------#
 # BAT:	  Server  #
 # (oid)	  (url)	  #
 #-----------------#
-#> Mlog (18:17:20):	Mtimeout -timeout 210 Mserver -p -modulesilent -yaccsilent -d8 -db tests_BugReports
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
-#script:no.089.2.mil
+quit;
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+module(url);
+Server.print;
 #-----------------#
 # BAT:	  Server  #
 # (oid)	  (url)	  #
 #-----------------#
+quit;
+
+# 17:06:53 >  
+# 17:06:53 >  Done.
+# 17:06:53 >  
+

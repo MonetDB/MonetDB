@@ -8,7 +8,29 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 #script:test_95.milS
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(20000000));
+# test the new set operations
+
+b := new(int,int);
+c := new(int,int);
+b.insert(3,5);
+b.insert(3,6);
+b.insert(4,5);
+b.insert(4,6);
+b.insert(8,10);
+b.insert(8,11);
+b.insert(9,10);
+b.insert(9,11);
+b.insert(9,11);
+c.insert(3,10);
+c.insert(3,5);
+c.insert(8,10);
+c.insert(8,5);
+
+b.sunique.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -21,6 +43,7 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 8,	  11	  ]
 [ 9,	  10	  ]
 [ 9,	  11	  ]
+b.kunique.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -29,12 +52,14 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 4,	  6	  ]
 [ 8,	  11	  ]
 [ 9,	  11	  ]
+sintersect(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  5	  ]
 [ 8,	  10	  ]
+kintersect(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -43,6 +68,7 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 3,	  5	  ]
 [ 8,	  10	  ]
 [ 8,	  5	  ]
+kintersect(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -51,12 +77,14 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 3,	  6	  ]
 [ 8,	  10	  ]
 [ 8,	  11	  ]
+sdiff(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  10	  ]
 [ 8,	  5	  ]
+kdiff(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -66,6 +94,7 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
+sdiff(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -77,6 +106,7 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
+kdiff(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -86,21 +116,7 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  10	  ]
-[ 3,	  5	  ]
-[ 8,	  10	  ]
-[ 8,	  5	  ]
-[ 3,	  6	  ]
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 8,	  11	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-[ 9,	  11	  ]
+sunion(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -109,11 +125,28 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 3,	  5	  ]
 [ 8,	  10	  ]
 [ 8,	  5	  ]
+[ 3,	  6	  ]
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 8,	  11	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+[ 9,	  11	  ]
+kunion(c,b).print;
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  10	  ]
+[ 3,	  5	  ]
+[ 8,	  10	  ]
+[ 8,	  5	  ]
 [ 4,	  5	  ]
 [ 4,	  6	  ]
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
+kunion(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -127,6 +160,11 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
+
+b.insert(0,0);
+c.insert(0,0);
+
+b.sunique.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -140,6 +178,7 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 0,	  0	  ]
+b.kunique.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -149,6 +188,7 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 8,	  10	  ]
 [ 9,	  10	  ]
 [ 0,	  0	  ]
+sintersect(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -156,6 +196,7 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 3,	  5	  ]
 [ 8,	  10	  ]
 [ 0,	  0	  ]
+kintersect(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -165,6 +206,7 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 8,	  10	  ]
 [ 8,	  5	  ]
 [ 0,	  0	  ]
+kintersect(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -174,12 +216,14 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 8,	  10	  ]
 [ 8,	  11	  ]
 [ 0,	  0	  ]
+sdiff(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
 #-----------------#
 [ 3,	  10	  ]
 [ 8,	  5	  ]
+kdiff(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -189,6 +233,7 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
+sdiff(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -200,6 +245,7 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
+kdiff(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -209,22 +255,7 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
-#-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
-#-----------------#
-[ 3,	  10	  ]
-[ 3,	  5	  ]
-[ 8,	  10	  ]
-[ 8,	  5	  ]
-[ 0,	  0	  ]
-[ 3,	  6	  ]
-[ 4,	  5	  ]
-[ 4,	  6	  ]
-[ 8,	  11	  ]
-[ 9,	  10	  ]
-[ 9,	  11	  ]
-[ 9,	  11	  ]
+sunion(c,b).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -234,11 +265,29 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 8,	  10	  ]
 [ 8,	  5	  ]
 [ 0,	  0	  ]
+[ 3,	  6	  ]
+[ 4,	  5	  ]
+[ 4,	  6	  ]
+[ 8,	  11	  ]
+[ 9,	  10	  ]
+[ 9,	  11	  ]
+[ 9,	  11	  ]
+kunion(c,b).print;
+#-----------------#
+# BAT:	  tmp_25  #
+# (int)	  (int)	  #
+#-----------------#
+[ 3,	  10	  ]
+[ 3,	  5	  ]
+[ 8,	  10	  ]
+[ 8,	  5	  ]
+[ 0,	  0	  ]
 [ 4,	  5	  ]
 [ 4,	  6	  ]
 [ 9,	  10	  ]
 [ 9,	  11	  ]
 [ 9,	  11	  ]
+kunion(b,c).print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -253,3 +302,10 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 [ 9,	  11	  ]
 [ 9,	  11	  ]
 [ 0,	  0	  ]
+
+quit;
+
+# 17:08:55 >  
+# 17:08:55 >  Done.
+# 17:08:55 >  
+

@@ -9,17 +9,45 @@ stdout of test 'mmath` in directory 'src/modules/plain` itself:
 #script:mmath.mil
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+
+#line 129 "/var/tmp/MonetDB/src/modules/plain/mmath.mx"
+module(mmath);
+setoid(oid(20000000));
+asin(sin(M_PI)).print;
 [ 1.22461e-16 ]
+acos(cos(M_PI)).print;
 [ 3.14159 ]
+atan(tan(M_PI_2)).print;
 [ 1.5708 ]
+atan(tan(M_PI_4)).print;
 [ 0.785398 ]
+tan(atan2(dbl(0.1),dbl(1.0))).print;
 [ 0.1 ]
+sqrt(pow(dbl(2),dbl(2))).print;
 [ 2 ]
+
+exp(dbl(10)).print;
 [ 22026.5 ]
+log(dbl(10)).print;
 [ 2.30259 ]
+log10(dbl(10)).print;
 [ 1 ]
+
+ceil(dbl(1.2)).print;
 [ 2 ]
+fabs(dbl(1.2)).print;
 [ 1.2 ]
+floor(dbl(1.2)).print;
 [ 1 ]
+fmod(dbl(15.2),dbl(2.5)).print;
 [ 0.2 ]
+
+quit;
+
+# 17:05:13 >  
+# 17:05:13 >  Done.
+# 17:05:13 >  
+

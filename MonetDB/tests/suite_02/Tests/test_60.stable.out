@@ -8,16 +8,23 @@ stdout of test 'test_60` in directory 'tests/suite_02` itself:
 #script:test_60.milS
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(2000000));
+# Testing effect on semijoin ordering
+load("k10_unique1");
+c:= k10_unique1.select(0,9);
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  120	  ]
+[ "user",	  80	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  420	  ]
+[ "system",	  120	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
@@ -25,16 +32,16 @@ stdout of test 'test_60` in directory 'tests/suite_02` itself:
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1110016	  ]
-[ "arena",	  1138216	  ]
-[ "ordblks",	  493		  ]
+[ "memincr",	  1232896	  ]
+[ "arena",	  1288576	  ]
+[ "ordblks",	  523		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  742848	  ]
-[ "fordblks",	  395368	  ]
+[ "uordblks",	  1032224	  ]
+[ "fordblks",	  256352	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -42,81 +49,51 @@ stdout of test 'test_60` in directory 'tests/suite_02` itself:
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  344	  ]
-[ "majflt",	  447	  ]
+[ "minflt",	  392	  ]
+[ "majflt",	  506	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+k10_unique1.semijoin(c);commit;
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  120	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  420	  ]
-[ "elapsystem",	  0	  ]
-#~EndVariableOutput~#
-#~BeginVariableOutput~#
-#---------------------------------#
-# BAT:		  mem		  #
-# (str)		  (int)		  #
-#---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  1138216	  ]
-[ "ordblks",	  495		  ]
-[ "smblks",	  0		  ]
-[ "hblkhd",	  0		  ]
-[ "hblks",	  0		  ]
-[ "usmblks",	  0		  ]
-[ "fsmblks",	  0		  ]
-[ "uordblks",	  742840	  ]
-[ "fordblks",	  395376	  ]
-#~EndVariableOutput~#
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  io	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  345	  ]
-[ "majflt",	  453	  ]
-[ "nswap",	  0	  ]
-[ "inblock",	  0	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
-#~EndVariableOutput~#
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  cpu	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  130	  ]
+[ "user",	  90	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  420	  ]
-[ "elapsystem",	  0	  ]
+[ "system",	  140	  ]
+[ "elapsystem",	  20	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  1138216	  ]
-[ "ordblks",	  494		  ]
+[ "memincr",	  65536		  ]
+[ "arena",	  1354112	  ]
+[ "ordblks",	  502		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  742840	  ]
-[ "fordblks",	  395376	  ]
+[ "uordblks",	  1293992	  ]
+[ "fordblks",	  60120		  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -124,11 +101,71 @@ stdout of test 'test_60` in directory 'tests/suite_02` itself:
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  345	  ]
-[ "majflt",	  453	  ]
+[ "minflt",	  418	  ]
+[ "majflt",	  511	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+
+
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+c.semijoin(k10_unique1);commit;
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  90	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  160	  ]
+[ "elapsystem",	  20	  ]
+#~EndVariableOutput~#
+#~BeginVariableOutput~#
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  262144	  ]
+[ "arena",	  1616256	  ]
+[ "ordblks",	  482		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  1555792	  ]
+[ "fordblks",	  60464		  ]
+#~EndVariableOutput~#
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  0	  ]
+[ "minflt",	  492	  ]
+[ "majflt",	  511	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
+#~EndVariableOutput~#
+quit;
+
+# 17:09:09 >  
+# 17:09:09 >  Done.
+# 17:09:09 >  
+

@@ -8,6 +8,12 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(20000000));
+# Test for the 'sys' module.
+module(sys);
+
+# Pseudo bat to map a BAT id into its name
+view_bbp_name.print;
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
@@ -36,6 +42,9 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 [ 22,	  "monet_fcntbl"	  ]
 [ 23,	  "monet_acctbl"	  ]
 [ 24,	  "monet_atomtbl"	  ]
+
+# Pseudo bat to map a BAT id into its refcnt
+view_bbp_refcnt.print;
 #-----------------#
 # BAT:	  refcnt  #
 # (int)	  (int)	  #
@@ -64,6 +73,9 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 [ 22,	  1	  ]
 [ 23,	  1	  ]
 [ 24,	  1	  ]
+
+# Pseudo bat to map a BAT id into its disk location
+view_bbp_location.print;
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -92,6 +104,9 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 [ 22,	  "22"		  ]
 [ 23,	  "23"		  ]
 [ 24,	  "24"		  ]
+
+# Pseudo bat to map a BAT id into its heat
+view_bbp_heat.print;
 #-----------------#
 # BAT:	  heat	  #
 # (int)	  (int)	  #
@@ -120,6 +135,9 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 [ 22,	  0	  ]
 [ 23,	  0	  ]
 [ 24,	  0	  ]
+
+# Pseudo bat to map a BAT id into its dirty status
+view_bbp_dirty.print;
 #-------------------------#
 # BAT:	  dirty		  #
 # (int)	  (str)		  #
@@ -148,6 +166,9 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 [ 22,	  "dirty"	  ]
 [ 23,	  "dirty"	  ]
 [ 24,	  "dirty"	  ]
+
+# Pseudo bat to map a BAT id into its disk/loaded/dirty status
+view_bbp_status.print;
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -176,6 +197,9 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 [ 22,	  "load"  ]
 [ 23,	  "load"  ]
 [ 24,	  "load"  ]
+
+# Pseudo bat to map a BAT id into its type
+view_bbp_kind.print;
 #-----------------#
 # BAT:	  kind	  #
 # (int)	  (str)	  #
@@ -204,40 +228,54 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 [ 22,	  "tran"  ]
 [ 23,	  "tran"  ]
 [ 24,	  "tran"  ]
+
+# Pseudo bat with statistics on the use of BAT buffer pool
+"view_bbp_info".print;
 [ "view_bbp_info" ]
+
+# Pseudo bat to map an atom type id into its name
+"view_atom_name".print;
 [ "view_atom_name" ]
+
+# Pseudo bat with variable settings for GDK
+"view_gdk_env".print;
 [ "view_gdk_env" ]
+printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------------------------------------------------------------------------------#
-# BAT:			  monet_environment								  #
-# (str)			  (str)										  #
-#---------------------------------------------------------------------------------------------------------#
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"							  ]
-[ "gdk_version",	  "4.3.5"									  ]
-[ "monet_pid",		  "5707"									  ]
-[ "prefix",		  "/ufs/niels/data/monet/Linux"							  ]
-[ "exec_prefix",	  "/ufs/niels/data/monet/Linux"							  ]
-[ "gdk_dbname",		  "Tests_tests_suite_08"							  ]
-[ "gdk_dbfarm",		  "/ufs/niels/data/monet/Linux/var/dbfarm"					  ]
-[ "gdk_debug",		  "10"										  ]
-[ "gdk_mmap",		  "33554432"									  ]
-[ "monet_admin",	  "adm"										  ]
-[ "monet_prompt",	  ""										  ]
-[ "monet_welcome",	  "yes"										  ]
-[ "monet_mod_path",	  "/ufs/niels/data/monet/Linux/lib/MonetDB"					  ]
-[ "monet_deamon",	  "no"										  ]
-[ "host",		  "localhost"									  ]
-[ "mapi_port",		  "50000"									  ]
-[ "mapi_noheaders",	  "no"										  ]
-[ "mapi_debug",		  "0"										  ]
-[ "sql_port",		  "45123"									  ]
-[ "sql_debug",		  "0"										  ]
-[ "sql_api",		  "sql(default-schema)"								  ]
-[ "sql_user",		  "monetdb"									  ]
-[ "sql_schema",		  "default-schema"								  ]
-[ "monet_cwd",		  "/net/stem.ins.cwi.nl/export/scratch1/niels/monet/Linux/Tests/tests/suite_08"	  ]
+#---------------------------------------------------------------------------------#
+# BAT:			  monet_environment					  #
+# (str)			  (str)							  #
+#---------------------------------------------------------------------------------#
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"				  ]
+[ "gdk_version",	  "4.3.5"						  ]
+[ "monet_pid",		  "21271"						  ]
+[ "prefix",		  "/var/tmp/MonetDB/_PREFIX_d_"				  ]
+[ "exec_prefix",	  "/var/tmp/MonetDB/_PREFIX_d_"				  ]
+[ "gdk_dbname",		  "Tests_tests_suite_08"				  ]
+[ "gdk_dbfarm",		  "/var/tmp/MonetDB/_PREFIX_d_/var/dbfarm"		  ]
+[ "gdk_debug",		  "10"							  ]
+[ "gdk_mmap",		  "33554432"						  ]
+[ "monet_admin",	  "adm"							  ]
+[ "monet_prompt",	  ""							  ]
+[ "monet_welcome",	  "yes"							  ]
+[ "monet_mod_path",	  "/var/tmp/MonetDB/_PREFIX_d_/lib/MonetDB"		  ]
+[ "monet_deamon",	  "no"							  ]
+[ "host",		  "localhost"						  ]
+[ "mapi_port",		  "50000"						  ]
+[ "mapi_noheaders",	  "no"							  ]
+[ "mapi_debug",		  "0"							  ]
+[ "sql_port",		  "45123"						  ]
+[ "sql_debug",		  "0"							  ]
+[ "sql_api",		  "sql(default-schema)"					  ]
+[ "sql_user",		  "monetdb"						  ]
+[ "sql_schema",		  "default-schema"					  ]
+[ "monet_cwd",		  "/ufs/manegold/tmp/Tests-d10/Tests/tests/suite_08"	  ]
 #~EndVariableOutput~#
+
+# Pseudo bat to map thread to name
+"view_gdk_thread".print;
 [ "view_gdk_thread" ]
+printf("#~BeginVariableOutput~#\n"); view_gdk_thread.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -245,25 +283,51 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 #-------------------------#
 [ 1,	  "Interpreter"	  ]
 #~EndVariableOutput~#
+
+# Pseudo bat to map client identifier to its name
+view_client_name.print;
 #-----------------#
 # BAT:	  name	  #
 # (int)	  (str)	  #
 #-----------------#
 [ 0,	  "adm"	  ]
+
+# Pseudo bat to map client identifier to its login time
+printf("#~BeginVariableOutput~#\n"); view_client_login.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-----------------------------------------#
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Fri Aug 30 12:15:48 2002"	  ]
+[ 0,	  "Wed Sep 11 17:09:14 2002"	  ]
 #~EndVariableOutput~#
+
+# Pseudo bat to map client identifier to its current active tree
+view_client_tree.print;
 #-----------------------------------------#
 # BAT:	  tree				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
 [ 0,	  "print(view_client_tree())"	  ]
 
-# 12:15:48 >  
-# 12:15:48 >  Done.
-# 12:15:48 >  
+# Pseudo bat to map module name to their functions
+#view_mod_fcn.print;
+
+# Pseudo bat to map queue entry to its action
+#view_queue_action.print;
+
+# Pseudo bat to gain access to all visible variables
+view_var_type = view_var_type; 
+
+# Pseudo bat to map variable name to frozen/liquid
+view_var_kind = view_var_kind; 
+
+# Pseudo bat to map variable name to constant/changeable
+view_var_constant = view_var_constant; 
+
+quit;
+
+# 17:09:14 >  
+# 17:09:14 >  Done.
+# 17:09:14 >  
 

@@ -8,23 +8,37 @@ stdout of test 'test_02` in directory 'tests/suite_00` itself:
 #script:test_02.milS
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(20000000));
+s:= new(str,int);
+insert(s,"hello",1);
+print(find(s,"hello"));
 [ 1 ]
+insert(s,"bello",2);
+insert(s,"cello",3);
+insert(s,"dello",4);
+insert(s,"eello",5);
+insert(s,"fello",6);
+insert(s,"gello",7);
+insert(s,"hello",8);
+printf("#~BeginVariableOutput~#\n"); info(s).print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------------------------------#
 # BAT:				  tmp_23	  #
 # (str)				  (str)		  #
 #-------------------------------------------------#
 [ "version",			  "980714"	  ]
-[ "batId",			  "tmp_24"	  ]
-[ "batCacheid",			  "24"		  ]
+[ "batId",			  "tmp_26"	  ]
+[ "batCacheid",			  "26"		  ]
 [ "batParentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
 [ "head",			  "str"		  ]
 [ "tail",			  "int"		  ]
 [ "batPersistence",		  "transient"	  ]
 [ "batRestricted",		  "updatable"	  ]
-[ "batRefcnt",			  "2"		  ]
+[ "batRefcnt",			  "1"		  ]
 [ "batDirty",			  "dirty"	  ]
 [ "batSet",			  "0"		  ]
 [ "void_tid",			  "0"		  ]
@@ -32,7 +46,7 @@ stdout of test 'test_02` in directory 'tests/suite_00` itself:
 [ "hsorted",			  "0"		  ]
 [ "hident",			  "h"		  ]
 [ "hdense",			  "0"		  ]
-[ "hseqbase",			  "-2147483648"	  ]
+[ "hseqbase",			  "nil"		  ]
 [ "hkey",			  "0"		  ]
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "1"		  ]
@@ -40,7 +54,7 @@ stdout of test 'test_02` in directory 'tests/suite_00` itself:
 [ "halignflushed",		  "20000000"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
-[ "tseqbase",			  "-2147483648"	  ]
+[ "tseqbase",			  "nil"		  ]
 [ "tsorted",			  "65"		  ]
 [ "tkey",			  "1"		  ]
 [ "tloc",			  "4"		  ]
@@ -51,8 +65,8 @@ stdout of test 'test_02` in directory 'tests/suite_00` itself:
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
 [ "top",			  "9"		  ]
-[ "batStamp",			  "-73"		  ]
-[ "curStamp",			  "81"		  ]
+[ "batStamp",			  "-139"	  ]
+[ "curStamp",			  "147"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "dirty"	  ]
 [ "batDirtybuns",		  "clean"	  ]
@@ -97,7 +111,10 @@ stdout of test 'test_02` in directory 'tests/suite_00` itself:
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
 #~EndVariableOutput~#
+print(find(s,"cello"));
 [ 3 ]
+delete(s,"cello",3);
+print(s);
 #-------------------------#
 # BAT:		  tmp_24  #
 # (str)		  (int)	  #
@@ -109,6 +126,8 @@ stdout of test 'test_02` in directory 'tests/suite_00` itself:
 [ "eello",	  5	  ]
 [ "fello",	  6	  ]
 [ "gello",	  7	  ]
+sn:= select(s,1,5);
+print(sn);
 #-------------------------#
 # BAT:		  tmp_23  #
 # (str)		  (int)	  #
@@ -117,6 +136,8 @@ stdout of test 'test_02` in directory 'tests/suite_00` itself:
 [ "bello",	  2	  ]
 [ "dello",	  4	  ]
 [ "eello",	  5	  ]
+sn:= semijoin(s.reverse,sn.reverse);
+print(sn);
 #-------------------------#
 # BAT:	  tmp_25	  #
 # (int)	  (str)		  #
@@ -125,6 +146,8 @@ stdout of test 'test_02` in directory 'tests/suite_00` itself:
 [ 2,	  "bello"	  ]
 [ 4,	  "dello"	  ]
 [ 5,	  "eello"	  ]
+x:= join(s,sn);
+print(x);
 #---------------------------------#
 # BAT:		  tmp_23	  #
 # (str)		  (str)		  #
@@ -133,3 +156,9 @@ stdout of test 'test_02` in directory 'tests/suite_00` itself:
 [ "bello",	  "bello"	  ]
 [ "dello",	  "dello"	  ]
 [ "eello",	  "eello"	  ]
+quit;
+
+# 17:08:42 >  
+# 17:08:42 >  Done.
+# 17:08:42 >  
+

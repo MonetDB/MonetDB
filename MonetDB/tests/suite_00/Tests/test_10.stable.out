@@ -8,8 +8,18 @@ stdout of test 'test_10` in directory 'tests/suite_00` itself:
 #script:test_10.milS
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(20000000));
+# Sorting activities
+# left->right shift + left boundary;
+s:=new(int,int);
+insert(s,5,5);insert(s,3,3);insert(s,4,2);insert(s,2,1);
+insert(s,1,1);insert(s,4,2); insert(s,4,3);
+printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
+sort(s).print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
@@ -21,7 +31,9 @@ stdout of test 'test_10` in directory 'tests/suite_00` itself:
 [ 4,	  2	  ]
 [ 4,	  3	  ]
 [ 5,	  5	  ]
+printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
+sort_ht(s).print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
@@ -33,7 +45,14 @@ stdout of test 'test_10` in directory 'tests/suite_00` itself:
 [ 4,	  2	  ]
 [ 4,	  3	  ]
 [ 5,	  5	  ]
+
+# right->left shift + right boundary;
+s:=new(int,int);
+insert(s,2,1);insert(s,4,1); insert(s,3,1); insert(s,5,1);
+insert(s,6,1);insert(s,4,2);insert(s,1,1);
+printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
+sort(s).print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
@@ -45,7 +64,9 @@ stdout of test 'test_10` in directory 'tests/suite_00` itself:
 [ 4,	  1	  ]
 [ 5,	  1	  ]
 [ 6,	  1	  ]
+printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
+sort_ht(s).print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
@@ -57,3 +78,9 @@ stdout of test 'test_10` in directory 'tests/suite_00` itself:
 [ 4,	  2	  ]
 [ 5,	  1	  ]
 [ 6,	  1	  ]
+quit;
+
+# 17:08:45 >  
+# 17:08:45 >  Done.
+# 17:08:45 >  
+

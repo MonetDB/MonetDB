@@ -5,48 +5,58 @@ stdout of test 'test_50` in directory 'tests/suite_01` itself:
 # 06:09:11 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_tests_suite_01  < test_50.milS
 # 06:09:11 >  
 
-# Monet Database Server V4.3.3
-# Copyright (c) 1993-2001, CWI. All rights reserved.
-# compiled for sparc-sun-solaris2.8/64bit; dynamically linked.
-# dbfarm:/var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/dbfarm
-# dbname:Tests_tests_suite_01
-# dbdir:/var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_tests_suite_01
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(20000000));
+#advanced features BATs as primitives.
 
+c:= new(int,bat);
+#c.insert(1,gdk_cpu_stat);
+c.insert(1,cpu);
+c.insert(2,c);
+c.print;
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
 [ 2,	  <tmp_26>	  ]
+
+printf("#~BeginVariableOutput~#\n"); c.find(1).print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  190	  ]
+[ "user",	  90	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  500	  ]
+[ "system",	  100	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+c.print;
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
 [ 2,	  <tmp_26>	  ]
+c.find(2).print;
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
 [ 2,	  <tmp_26>	  ]
+c.print;
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
 [ 2,	  <tmp_26>	  ]
+quit;
 
 # 06:09:11 >  
 # 06:09:11 >  Done.

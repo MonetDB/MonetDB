@@ -8,78 +8,99 @@ stdout of test 'test_80` in directory 'tests/suite_02` itself:
 #script:test_80.milS
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(2000000));
+#determine cost components of a join
+# load("k10_unique1");
+
+b:=k10_unique1.copy;
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");c:=join(b.reverse,k10_unique1);
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  230	  ]
+[ "user",	  90	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  300	  ]
+[ "system",	  110	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  230	  ]
+[ "user",	  90	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  300	  ]
+[ "system",	  110	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+d:=join(b.reverse,k10_unique1);
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  240	  ]
+[ "user",	  100	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  300	  ]
+[ "system",	  110	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+commit;
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  250	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  300	  ]
+[ "user",	  100	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  110	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1257472	  ]
-[ "arena",	  1285672	  ]
-[ "ordblks",	  522		  ]
+[ "memincr",	  1470464	  ]
+[ "arena",	  1526144	  ]
+[ "ordblks",	  535		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  977304	  ]
-[ "fordblks",	  308368	  ]
+[ "uordblks",	  1296360	  ]
+[ "fordblks",	  229784	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  377	  ]
-[ "majflt",	  451	  ]
+[ "minflt",	  451	  ]
+[ "majflt",	  510	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+quit;
+
+# 17:09:10 >  
+# 17:09:10 >  Done.
+# 17:09:10 >  
+

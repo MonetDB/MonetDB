@@ -8,25 +8,78 @@ stdout of test 'no.037` in directory 'tests/BugReports` itself:
 #script:no.037.milS
 
 
-#You are system administrator (adm)!
-#---------------------------------------------------------------------------------#
-# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
-#---------------------------------------------------------------------------------#
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# >Number:         37
+# >Category:       Mserver
+# >Synopsis:       built-in bats
+# >Confidential:   no
+# >Severity:       serious
+# >Priority:       high
+# >Responsible:    mk
+# >State:          feedback
+# >Class:          sw-bug
+# >Submitter-Id:   unknown
+# >Arrival-Date:   Tue Oct  7 17:45:11 1997
+# >Originator:     mk
+# >Organization:
+# >Release:        970101
+# >Environment:
+# 
+# >Description:
+# "mem" is not properly handled (like  "cpu")
+# 
+# >ls;
+# #---------------------------------------------------------#
+# # name          | heat  | status| group | role            #
+# #---------------------------------------------------------#
+# [ "car_age",      0,      "disk", "h",    "t"             ]
+# [ "car_gender",   0,      "disk", "h",    "t"             ]
+# [ "car_price",    0,      "disk", "h",    "t"             ]
+# [ "car_category", 0,      "disk", "h",    "t"             ]
+# [ "car_city",     0,      "disk", "h",    "t"             ]
+# [ "car_damage",   0,      "disk", "h",    "t"             ]
+# [ "a_b",          0,      "disk", "h",    "t"             ]
+# [ "telephone",    0,      "disk", "h",    "t"             ]
+# [ "p_name",       0,      "disk", "h",    "t"             ]
+# [ "p_gender",     0,      "disk", "h",    "t"             ]
+# [ "p_age",        0,      "disk", "h",    "t"             ]
+# [ "p_city",       0,      "disk", "h",    "t"             ]
+# [ "p_kind",       0,      "disk", "h",    "t"             ]
+# [ "mem",          0,      "disk", "h",    "t"             ]
+# [ "io",           0,      "disk", "h",    "t"             ]
+# [ "cpu",          0,      "disk", "h",    "t"             ]
+# >mem.print;
+# !ERROR: atom 'monet_Mallinfo' unknown, in BAT 'mem'.!ERROR: BATprintf: BAT expected
+
+ls;
+#---------------------------------------------------------------------------------------------------------#
+# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
+#---------------------------------------------------------------------------------------------------------#
+mem.print;
 !WARNING: interpret: convert identifier 'mem' to string.
 [ "mem" ]
+printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1220608	  ]
-[ "arena",	  1261552	  ]
-[ "ordblks",	  3263		  ]
-[ "smblks",	  2000		  ]
-[ "hblkhd",	  640		  ]
-[ "hblks",	  20		  ]
-[ "usmblks",	  24008		  ]
-[ "fsmblks",	  19192		  ]
-[ "uordblks",	  677040	  ]
-[ "fordblks",	  540672	  ]
+[ "memincr",	  1093632	  ]
+[ "arena",	  1149312	  ]
+[ "ordblks",	  546		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  943024	  ]
+[ "fordblks",	  206288	  ]
 #~EndVariableOutput~#
+quit;
+
+# 17:06:48 >  
+# 17:06:48 >  Done.
+# 17:06:48 >  
+

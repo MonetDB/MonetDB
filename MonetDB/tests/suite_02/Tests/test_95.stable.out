@@ -8,33 +8,56 @@ stdout of test 'test_95` in directory 'tests/suite_02` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(2000000));
+# This sequence is conflict free
+#load(k10_unique1); load(k10_unique2);
+qtrace(1);
+t1:= k10_unique1.copy;
+t2:= k10_unique1.copy;
+t3:= k10_unique1.copy;
+t4:= k10_unique1.copy;
+t5:= k10_unique1.copy;
+s1:= k10_unique2.copy;
+s2:= k10_unique2.copy;
+s3:= k10_unique2.copy;
+s4:= k10_unique2.copy;
+s5:= k10_unique2.copy;
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  110	  ]
+[ "user",	  100	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  210	  ]
+[ "system",	  120	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+join(t1,s1.reverse).count.print;
 [ 10000 ]
+join(t2,s2.reverse).count.print;
 [ 10000 ]
+join(t3,s3.reverse).count.print;
 [ 10000 ]
+join(t4,s4.reverse).count.print;
 [ 10000 ]
+join(t5,s5.reverse).count.print;
 [ 10000 ]
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  120	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  210	  ]
+[ "user",	  130	  ]
+[ "elapuser",	  30	  ]
+[ "system",	  120	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+var i1,i2,i3,i4,i5;
+printf("#~BeginVariableOutput~#\n"); qstat; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 ##------------------------------------------------------------------------#
 ## key   | put   | get  | wakeup  | enter | start | duration | action     #
@@ -78,41 +101,60 @@ stdout of test 'test_95` in directory 'tests/suite_02` itself:
 #[    40,      1,      1,     39,     117,     117,       0, "var i1,i2,i3,i4,i5;"]
 #[    39,      1,      1,     42,     117,     117,       0, "readCmd;"]
 #~EndVariableOutput~#
+qtrace(0);qtrace(1);
+threadcnt(4);printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  120	  ]
+[ "user",	  130	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  210	  ]
+[ "system",	  120	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+{|	
+	i1:=join(t1,s1.reverse).count;
+	i2:=join(t2,s2.reverse).count;
+	i3:=join(t3,s3.reverse).count;
+	i4:=join(t4,s4.reverse).count;
+	i5:=join(t5,s5.reverse).count;
+|}
+printf("#~BeginVariableOutput~#\n"); qstat; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 ##------------------------------------------------------------------------#
 ## key   | put   | get  | wakeup  | enter | start | duration | action     #
 ##------------------------------------------------------------------------#
-#[    44,      1,      1,     43,     120,     120,       0, "qtrace(0);qtrace(1);"]
-#[    43,      1,      1,     46,     120,     120,       0, "readCmd;"]
-#[    46,      1,      1,     45,     120,     120,       1, "threadcnt(4);printf("#~BeginVariableOutput~#\n"); cpu.print; pr"]
-#[    45,      1,      2,     48,     120,     121,       0, "readCmd;"]
-#[    50,      4,      1,     49,     121,     121,       4, "[0]"]
-#[    51,      4,      1,     49,     121,     125,       4, "[1]"]
-#[    52,      4,      3,     49,     121,     129,       4, "[2]"]
-#[    53,      4,      2,     49,     121,     129,       5, "[3]"]
-#[    54,      4,      5,     49,     121,     133,       4, "[4]"]
-#[    49,      4,      4,      0,     121,     137,       0, ""]
-#[    48,      2,      4,     47,     121,     121,      16, "{|	"]
-#[    47,      2,      3,     56,     121,     137,       0, "readCmd;"]
+#[    45,      1,      1,     44,    1078,    1078,       0, "qtrace(0);qtrace(1);"]
+#[    44,      1,      1,     47,    1078,    1078,       0, "readCmd;"]
+#[    47,      1,      1,     46,    1078,    1078,       1, "threadcnt(4);printf("#~BeginVariableOutput~#\n"); cpu.print; pr"]
+#[    46,      1,      3,     49,    1078,    1079,       1, "readCmd;"]
+#[    51,      4,      1,     50,    1080,    1080,       4, "[0]"]
+#[    52,      4,      3,     50,    1080,    1082,       7, "[1]"]
+#[    53,      4,      1,     50,    1080,    1084,       5, "[2]"]
+#[    54,      4,      2,     50,    1080,    1086,       9, "[3]"]
+#[    55,      4,      5,     50,    1080,    1088,       8, "[4]"]
+#[    50,      4,      4,      0,    1080,    1096,       0, ""]
+#[    49,      3,      4,     48,    1080,    1080,      16, "{|	"]
+#[    48,      3,      3,     57,    1079,    1096,       1, "readCmd;"]
 #~EndVariableOutput~#
+qtrace(0);
+print(i1);
 [ 10000 ]
+print(i2);
 [ 10000 ]
+print(i3);
 [ 10000 ]
+print(i4);
 [ 10000 ]
+print(i5);
 [ 10000 ]
+print("done parallel");
 [ "done parallel" ]
+"pseudo_thread_name".print;
 [ "pseudo_thread_name" ]
+printf("#~BeginVariableOutput~#\n"); view_gdk_thread.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -124,47 +166,50 @@ stdout of test 'test_95` in directory 'tests/suite_02` itself:
 [ 4,	  "Interpreter"	  ]
 [ 5,	  "Interpreter"	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------------------------------------------------------------------------------#
-# BAT:			  monet_environment								  #
-# (str)			  (str)										  #
-#---------------------------------------------------------------------------------------------------------#
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"							  ]
-[ "gdk_version",	  "4.3.5"									  ]
-[ "monet_pid",		  "5334"									  ]
-[ "prefix",		  "/ufs/niels/data/monet/Linux"							  ]
-[ "exec_prefix",	  "/ufs/niels/data/monet/Linux"							  ]
-[ "gdk_dbname",		  "Tests_tests_suite_02"							  ]
-[ "gdk_dbfarm",		  "/ufs/niels/data/monet/Linux/var/dbfarm"					  ]
-[ "gdk_debug",		  "10"										  ]
-[ "gdk_mmap",		  "33554432"									  ]
-[ "monet_admin",	  "adm"										  ]
-[ "monet_prompt",	  ""										  ]
-[ "monet_welcome",	  "yes"										  ]
-[ "monet_mod_path",	  "/ufs/niels/data/monet/Linux/lib/MonetDB"					  ]
-[ "monet_deamon",	  "no"										  ]
-[ "host",		  "localhost"									  ]
-[ "mapi_port",		  "50000"									  ]
-[ "mapi_noheaders",	  "no"										  ]
-[ "mapi_debug",		  "0"										  ]
-[ "sql_port",		  "45123"									  ]
-[ "sql_debug",		  "0"										  ]
-[ "sql_api",		  "sql(default-schema)"								  ]
-[ "sql_user",		  "monetdb"									  ]
-[ "sql_schema",		  "default-schema"								  ]
-[ "monet_cwd",		  "/net/stem.ins.cwi.nl/export/scratch1/niels/monet/Linux/Tests/tests/suite_02"	  ]
+#---------------------------------------------------------------------------------#
+# BAT:			  monet_environment					  #
+# (str)			  (str)							  #
+#---------------------------------------------------------------------------------#
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"				  ]
+[ "gdk_version",	  "4.3.5"						  ]
+[ "monet_pid",		  "21143"						  ]
+[ "prefix",		  "/var/tmp/MonetDB/_PREFIX_d_"				  ]
+[ "exec_prefix",	  "/var/tmp/MonetDB/_PREFIX_d_"				  ]
+[ "gdk_dbname",		  "Tests_tests_suite_02"				  ]
+[ "gdk_dbfarm",		  "/var/tmp/MonetDB/_PREFIX_d_/var/dbfarm"		  ]
+[ "gdk_debug",		  "10"							  ]
+[ "gdk_mmap",		  "33554432"						  ]
+[ "monet_admin",	  "adm"							  ]
+[ "monet_prompt",	  ""							  ]
+[ "monet_welcome",	  "yes"							  ]
+[ "monet_mod_path",	  "/var/tmp/MonetDB/_PREFIX_d_/lib/MonetDB"		  ]
+[ "monet_deamon",	  "no"							  ]
+[ "host",		  "localhost"						  ]
+[ "mapi_port",		  "50000"						  ]
+[ "mapi_noheaders",	  "no"							  ]
+[ "mapi_debug",		  "0"							  ]
+[ "sql_port",		  "45123"						  ]
+[ "sql_debug",		  "0"							  ]
+[ "sql_api",		  "sql(default-schema)"					  ]
+[ "sql_user",		  "monetdb"						  ]
+[ "sql_schema",		  "default-schema"					  ]
+[ "monet_cwd",		  "/ufs/manegold/tmp/Tests-d10/Tests/tests/suite_02"	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  10	  ]
-[ "elapuser",	  -110	  ]
-[ "system",	  0	  ]
-[ "elapsystem",	  -210	  ]
+[ "user",	  0	  ]
+[ "elapuser",	  -130	  ]
+[ "system",	  10	  ]
+[ "elapsystem",	  -110	  ]
 #~EndVariableOutput~#
+quit;
 
 # 12:12:54 >  
 # 12:12:54 >  Done.

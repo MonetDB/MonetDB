@@ -8,6 +8,21 @@ stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for mips-sgi-irix6.5/64bit; dynamically linked.
+setoid(oid(20000000));
+
+Static_fcn:=monet_fcntbl.reverse.copy;
+Static_mod:=monet_mod_nme.reverse.copy;
+
+Fname:=new(oid,str);Fname.col_name("function");
+FnameS:=new(oid,str);FnameS.col_name("function");
+Ftype:=new(oid,str);Ftype.col_name("type");
+Fsig:=new(oid,str);Fsig.col_name("signature");
+Fhelp:=new(oid,str);Fhelp.col_name("help");
+Fnts:=new(oid,str);
+
+#Plain_mods:=MODULES.select("plain").sort.copy;
+Plain_mods:=MODULES.select("plain").copy.access(BAT_WRITE).delete("mprof","plain").sort.copy.access(BAT_WRITE).insert("mprof","plain");
+table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 #-----------------#
 # 35 modules	  #
 #-----------------#
@@ -24,7 +39,6 @@ stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
 [ "ddbench"	  ]
 [ "decimal"	  ]
 [ "enum"	  ]
-[ "io"		  ]
 [ "iterator"	  ]
 [ "lock"	  ]
 [ "logger"	  ]
@@ -49,6 +63,55 @@ stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
 [ "wisc"	  ]
 [ "xtables"	  ]
 [ "mprof"	  ]
+Plain_mods@batloop {
+	The_mod:=$h;
+	printf("\nModule: \"%s\"\n\n",The_mod);
+	module($h);
+
+	Add_mod:=sdiff(monet_mod_nme.reverse,Static_mod).access(BAT_WRITE).delete(The_mod);
+
+	Mod_fcn:=sdiff(monet_fcntbl.reverse,Static_fcn).reverse;
+	Mod_fcn.sort@batloop {
+	    addThis:=false;
+	    if (not(monet_fcn_mid.exist($t))) {
+		addThis:=true;
+	    } else if (monet_mod_nme.find(monet_fcn_mid.find($t))=The_mod) {
+		addThis:=true;
+	    }
+	    if (addThis) {
+		Tname:=$h;
+		Ttype:=help_tpe(monet_fcn_tpe.find($t));
+		Tsig:=format_fcn_sig($t);
+		Thelp:="";
+		if (monet_fcn_dsc.exist($t)) {
+			Thelp:=monet_fcn_dsc.find($t);
+		} else {
+			Thelp:="not available";
+		}
+		Fname.insert($t,Tname);
+		Ftype.insert($t,Ttype);
+		Fsig.insert($t,Tsig);
+		Fhelp.insert($t,Thelp);
+		Fnts.insert($t,sprintf("%s %s %s",Tname,Ttype,Tsig));
+	    }
+	}
+
+	Static_fcn:=sunion(Static_fcn,monet_fcntbl.reverse);
+
+	Fnts.count.print;
+	Fnts.reverse.sort.reverse@batloop {
+		FnameS.insert($h,Fname.find($h));
+	}
+	FnameS.count.print; table(1,FnameS,Ftype,Fsig,Fhelp);
+
+	Fname.delete;
+	FnameS.delete;
+	Ftype.delete;
+	Fsig.delete;
+	Fhelp.delete;
+	Fnts.delete;
+	drop($h);
+}
 
 Module: "aggr"
 
@@ -407,47 +470,14 @@ Module: "enum"
 [ "enum_ishisto",	  "COMMAND:   ",  "enum_ishisto(int, BAT[any,any]) : bit",				  "returns whether enum_table(tpe) is a histogram on b's head column"		  ]
 [ "enum_load",		  "COMMAND:   ",  "enum_load(BAT[any,int]) : int",					  "load/activate a previously created enumeration type."			  ]
 [ "enum_load",		  "PROC:      ",  "enum_load(str) : any",						  "activate an enumeration type from a histogram bat."				  ]
-[ "enum_print",		  "COMMAND:   ",  "enum_print(fstream, BAT[any,int], BAT[any,any]) : void",		  "quick file print of 2 synced bats, an int and enumerated string tail"	  ]
-[ "enum_print",		  "COMMAND:   ",  "enum_print(fstream, BAT[any,int], BAT[any,any], BAT[any,any]) : void", "quick file print of 3 synced bats, and int tail and two enumerated strings"	  ]
+[ "enum_print",		  "COMMAND:   ",  "enum_print(Stream, BAT[any,int], BAT[any,any]) : void",		  "quick file print of 2 synced bats, an int and enumerated string tail"	  ]
+[ "enum_print",		  "COMMAND:   ",  "enum_print(Stream, BAT[any,int], BAT[any,any], BAT[any,any]) : void",  "quick file print of 3 synced bats, and int tail and two enumerated strings"	  ]
 [ "enum_sethisto",	  "COMMAND:   ",  "enum_sethisto(int, BAT[any,any]) : void",				  "registers the fact that enum_table(tpe) is a histogram on b's head column"	  ]
 [ "enum_table",		  "COMMAND:   ",  "enum_table(int) : BAT[any,any]",					  "return the enumeration BAT of an enum type"					  ]
 [ "enum_trick",		  "PROC:      ",  "enum_trick(BAT[oid,any], BAT[any,int]) : BAT[oid,any]",		  "create a view on a BAT with a diffrent enum map."				  ]
 [ "isenum",		  "COMMAND:   ",  "isenum(int) : bit",							  "returns true iff tpe is an enumerated type"					  ]
 [ "lower",		  "COMMAND:   ",  "lower(int, any) : any",						  "encode to the lowest value in the encoded domain that is larger than v"	  ]
 [ "upper",		  "COMMAND:   ",  "upper(int, any) : any",						  "encode to the hightes value in the encoded domain that is smaller than v"	  ]
-
-Module: "io"
-
-[ 25 ]
-[ 25 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature						| help									  #
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "fclose",	  "COMMAND:   ",  "fclose(fstream) : void",				  "See: man fclose"							  ]
-[ "fdpipe",	  "COMMAND:   ",  "fdpipe(bipipe, bit, str) : fstream",			  "Open a fstream in one direction through a pipe."			  ]
-[ "feof",	  "COMMAND:   ",  "feof(fstream) : bit",				  "See: man feof"							  ]
-[ "ferror",	  "COMMAND:   ",  "ferror() : str",					  "returns last error message. str(nil) if none. "			  ]
-[ "fflush",	  "COMMAND:   ",  "fflush(fstream) : void",				  "See: man fflush"							  ]
-[ "fgetc",	  "COMMAND:   ",  "fgetc(fstream) : chr",				  "See: man fgetc"							  ]
-[ "fgets",	  "COMMAND:   ",  "fgets(fstream) : str",				  "See: man fgets"							  ]
-[ "fopen",	  "COMMAND:   ",  "fopen(str, str) : fstream",				  "See: man fopen. Returns fstream, or fstream(nil) on failure."	  ]
-[ "fprint",	  "COMMAND:   ",  "fprint(fstream, ..any..) : void",			  "Print a (comma seperated) list of arguments"				  ]
-[ "fprintf",	  "COMMAND:   ",  "fprintf(fstream, str, ..any..) : void",		  "See: man fprintf"							  ]
-[ "fputc",	  "COMMAND:   ",  "fputc(int, fstream) : void",				  "See: man fputs"							  ]
-[ "fputs",	  "COMMAND:   ",  "fputs(str, fstream) : void",				  "See: man fputs"							  ]
-[ "fread",	  "COMMAND:   ",  "fread(fstream, int) : blob",				  "See: man fread"							  ]
-[ "freopen",	  "COMMAND:   ",  "freopen(str, str, fstream) : fstream",		  "See: man freopen. Returns fstream, or fstream(nil) on failure."	  ]
-[ "fseek",	  "COMMAND:   ",  "fseek(fstream, int, int) : int",			  "See: man fseek"							  ]
-[ "fsize",	  "COMMAND:   ",  "fsize(str) : int",					  "Return the filesize, or -1 when there was some error"		  ]
-[ "ftable",	  "COMMAND:   ",  "ftable(fstream, ..BAT[any::1,any]..) : void",	  "Print an n-ary table to a file."					  ]
-[ "ftable",	  "COMMAND:   ",  "ftable(fstream, int, ..BAT[any::1,any]..) : void",	  "Print an n-ary table to a file, using order of BAT [1..argc]."	  ]
-[ "ftell",	  "COMMAND:   ",  "ftell(fstream) : int",				  "See: man ftell"							  ]
-[ "fwrite",	  "COMMAND:   ",  "fwrite(fstream, blob, int) : void",			  "See: man fwrite"							  ]
-[ "fwrite",	  "COMMAND:   ",  "fwrite(fstream, str, int) : void",			  "See: man fwrite"							  ]
-[ "popen",	  "COMMAND:   ",  "popen() : bipipe",					  "Open a bidirectional pipe. See: man pipe"				  ]
-[ "stderr",	  "COMMAND:   ",  "stderr() : fstream",					  "return the error fstream for the database console"			  ]
-[ "stdin",	  "COMMAND:   ",  "stdin() : fstream",					  "return the input fstream to the database client"			  ]
-[ "stdout",	  "COMMAND:   ",  "stdout() : fstream",					  "return the output fstream for the database client"			  ]
 
 Module: "iterator"
 
@@ -541,10 +571,10 @@ Module: "mapi"
 [ "listen",	  "PROC:      ",  "listen(int, str) : any",				  "Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
 [ "listen",	  "PROC:      ",  "listen(str) : any",					  "Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called."										  ]
 [ "mapi_listen",  "BUILTIN:   ",  "mapi_listen(int port, int maxusers, str cmd) ",	  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
-[ "stream_line",  "PROC:      ",  "stream_line(stream) : str",				  "Read a string from <S> until a newline."																		  ]
-[ "stream_read",  "PROC:      ",  "stream_read(stream) : str",				  "Read a string from <S> until a '1' character."																	  ]
-[ "stream_strip", "PROC:      ",  "stream_strip(stream, str) : str",			  "Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string."											  ]
-[ "stream_until", "COMMAND:   ",  "stream_until(stream, str) : str",			  "read a string from <S> until the <stop> word"																	  ]
+[ "stream_line",  "PROC:      ",  "stream_line(Stream) : str",				  "Read a string from <S> until a newline."																		  ]
+[ "stream_read",  "PROC:      ",  "stream_read(Stream) : str",				  "Read a string from <S> until a '1' character."																	  ]
+[ "stream_strip", "PROC:      ",  "stream_strip(Stream, str) : str",			  "Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string."											  ]
+[ "stream_until", "COMMAND:   ",  "stream_until(Stream, str) : str",			  "read a string from <S> until the <stop> word"																	  ]
 
 Module: "mel"
 
@@ -751,7 +781,6 @@ Module: "salgebra"
 [ "ujoin",	  "COMMAND:   ",  "ujoin(clusterhash, BAT[any,any]) : BAT[oid,void]",		  "Return join(ch, b).mark(nil) with propagated clustering."		  ]
 [ "uselect",	  "COMMAND:   ",  "uselect(clusterhash, any) : BAT[oid,void]",			  "Return select(ch, v).mark(nil) with propagated clustering."		  ]
 [ "usortedjoin",  "COMMAND:   ",  "usortedjoin(clusterhash, BAT[any,any]) : BAT[oid,void]",	  "Return join(ch, b).mark(nil).sort with propagated clustering."	  ]
-#BBPreclaim: bat(33) view=0 mod=0 ref=2 stat=129
 
 Module: "stats"
 
@@ -768,34 +797,36 @@ Module: "stats"
 
 Module: "streams"
 
-[ 22 ]
-[ 22 ]
-#---------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature					| help					  #
-#---------------------------------------------------------------------------------------------------------------------------------#
-[ "block_stream",	  "COMMAND:   ",  "block_stream(stream) : stream",		  "open a block based stream"		  ]
-[ "buffer_create",	  "COMMAND:   ",  "buffer_create(int) : buffer",		  "create a buffer of the given size"	  ]
-[ "buffer_destroy",	  "COMMAND:   ",  "buffer_destroy(buffer) : void",		  "destroy buffer"			  ]
-[ "buffer_rastream",	  "COMMAND:   ",  "buffer_rastream(buffer, str) : stream",	  "create a buffer read stream"		  ]
-[ "buffer_wastream",	  "COMMAND:   ",  "buffer_wastream(buffer, str) : stream",	  "create a buffer write stream"	  ]
-[ "file_rastream",	  "COMMAND:   ",  "file_rastream(fstream, str) : stream",	  "open ascii file stream for reading"	  ]
-[ "file_rstream",	  "COMMAND:   ",  "file_rstream(fstream, str) : stream",	  "open a file stream for reading"	  ]
-[ "file_wastream",	  "COMMAND:   ",  "file_wastream(fstream, str) : stream",	  "open ascii file stream for writing"	  ]
-[ "file_wstream",	  "COMMAND:   ",  "file_wstream(fstream, str) : stream",	  "open a file stream for writing"	  ]
-[ "open_rastream",	  "COMMAND:   ",  "open_rastream(str) : stream",		  "open ascii file stream for reading"	  ]
-[ "open_rstream",	  "COMMAND:   ",  "open_rstream(str) : stream",			  "open a file stream for reading"	  ]
-[ "open_wastream",	  "COMMAND:   ",  "open_wastream(str) : stream",		  "open ascii file stream for writing"	  ]
-[ "open_wstream",	  "COMMAND:   ",  "open_wstream(str) : stream",			  "open a file stream for writing"	  ]
-[ "socket_rastream",	  "COMMAND:   ",  "socket_rastream(int, str) : stream",		  "open ascii socket stream for reading"  ]
-[ "socket_rstream",	  "COMMAND:   ",  "socket_rstream(int, str) : stream",		  "open a socket stream for reading"	  ]
-[ "socket_wastream",	  "COMMAND:   ",  "socket_wastream(int, str) : stream",		  "open ascii socket stream for writing"  ]
-[ "socket_wstream",	  "COMMAND:   ",  "socket_wstream(int, str) : stream",		  "open a socket stream for writing"	  ]
-[ "stream_close",	  "COMMAND:   ",  "stream_close(stream) : void",		  "close and destroy the stream s"	  ]
-[ "stream_flush",	  "COMMAND:   ",  "stream_flush(stream) : void",		  "flush the stream"			  ]
-[ "stream_read",	  "COMMAND:   ",  "stream_read(stream) : str",			  "read data from the stream"		  ]
-[ "stream_write",	  "COMMAND:   ",  "stream_write(stream, str) : void",		  "write data on the stream"		  ]
-[ "stream_writeInt",	  "COMMAND:   ",  "stream_writeInt(stream, int) : void",	  "write an integer on the stream"	  ]
-#BBPreclaim: bat(26) view=0 mod=0 ref=2 stat=129
+[ 25 ]
+[ 25 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature						| help									  #
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "block_stream",	  "COMMAND:   ",  "block_stream(Stream) : Stream",			  "open a block based stream"						  ]
+[ "buffer_create",	  "COMMAND:   ",  "buffer_create(int) : Buffer",			  "create a buffer of the given size"					  ]
+[ "buffer_destroy",	  "COMMAND:   ",  "buffer_destroy(Buffer) : void",			  "destroy buffer"							  ]
+[ "buffer_rastream",	  "COMMAND:   ",  "buffer_rastream(Buffer, str) : Stream",		  "create a buffer read stream"						  ]
+[ "buffer_wastream",	  "COMMAND:   ",  "buffer_wastream(Buffer, str) : Stream",		  "create a buffer write stream"					  ]
+[ "fprintf",		  "COMMAND:   ",  "fprintf(Stream, str, ..any..) : void",		  "See: man fprintf"							  ]
+[ "ftable",		  "COMMAND:   ",  "ftable(Stream, ..BAT[any::1,any]..) : void",		  "Print an n-ary table to a file."					  ]
+[ "ftable",		  "COMMAND:   ",  "ftable(Stream, int, ..BAT[any::1,any]..) : void",	  "Print an n-ary table to a file, using order of BAT [1..argc]."	  ]
+[ "open_rastream",	  "COMMAND:   ",  "open_rastream(str) : Stream",			  "open ascii file stream for reading"					  ]
+[ "open_rstream",	  "COMMAND:   ",  "open_rstream(str) : Stream",				  "open a file stream for reading"					  ]
+[ "open_wastream",	  "COMMAND:   ",  "open_wastream(str) : Stream",			  "open ascii file stream for writing"					  ]
+[ "open_wstream",	  "COMMAND:   ",  "open_wstream(str) : Stream",				  "open a file stream for writing"					  ]
+[ "socket_rastream",	  "COMMAND:   ",  "socket_rastream(int, str) : Stream",			  "open ascii socket stream for reading"				  ]
+[ "socket_rstream",	  "COMMAND:   ",  "socket_rstream(int, str) : Stream",			  "open a socket stream for reading"					  ]
+[ "socket_wastream",	  "COMMAND:   ",  "socket_wastream(int, str) : Stream",			  "open ascii socket stream for writing"				  ]
+[ "socket_wstream",	  "COMMAND:   ",  "socket_wstream(int, str) : Stream",			  "open a socket stream for writing"					  ]
+[ "stderr",		  "COMMAND:   ",  "stderr() : Stream",					  "return the error stream for the database console"			  ]
+[ "stdin",		  "COMMAND:   ",  "stdin() : Stream",					  "return the input stream to the database client"			  ]
+[ "stdout",		  "COMMAND:   ",  "stdout() : Stream",					  "return the output stream for the database client"			  ]
+[ "stream_close",	  "COMMAND:   ",  "stream_close(Stream) : void",			  "close and destroy the stream s"					  ]
+[ "stream_flush",	  "COMMAND:   ",  "stream_flush(Stream) : void",			  "flush the stream"							  ]
+[ "stream_read",	  "COMMAND:   ",  "stream_read(Stream) : str",				  "read data from the stream"						  ]
+[ "stream_readInt",	  "COMMAND:   ",  "stream_readInt(Stream) : int",			  "write an integer on the stream"					  ]
+[ "stream_write",	  "COMMAND:   ",  "stream_write(Stream, str) : void",			  "write data on the stream"						  ]
+[ "stream_writeInt",	  "COMMAND:   ",  "stream_writeInt(Stream, int) : void",		  "write an integer on the stream"					  ]
 
 Module: "tcpip"
 
@@ -888,7 +919,6 @@ Module: "unix"
 [ "run",	  "COMMAND:   ",  "run(blob, str, ..str..) : blob",	  "Execute a command, passing the optional strings as commandline arguments.\nThis function pipes the blob data to its childs stdin.\nThe data from the childs stdout is caught and returned as a blob."  ]
 [ "setenv",	  "COMMAND:   ",  "setenv(str, str) : bit",		  "Set the environment variable string."																				  ]
 [ "system",	  "COMMAND:   ",  "system(str) : int",			  "Execute a command and give back the return value"																			  ]
-#BBPreclaim: bat(33) view=0 mod=0 ref=2 stat=129
 
 Module: "url"
 
@@ -915,7 +945,6 @@ Module: "url"
 [ "isaURL",	  "COMMAND:   ",  "isaURL(url) : bit",			  "Check conformity of the URL syntax"			  ]
 [ "newurl",	  "COMMAND:   ",  "newurl(str, str, int, str) : url",	  "Construct a URL from protocol, host,port,and file"	  ]
 [ "newurl",	  "COMMAND:   ",  "newurl(str, str, str) : url",	  "Construct a URL from protocol, host,and file"	  ]
-#BBPreclaim: bat(33) view=0 mod=0 ref=2 stat=129
 
 Module: "vector"
 
@@ -1047,7 +1076,6 @@ Module: "vector"
 [ "variance2",			  "COMMAND:   ",  "variance2(flts) : dbl",					  "Calculates the squared variance of the vector elements."					  ]
 [ "variance2",			  "COMMAND:   ",  "variance2(int_vector64) : dbl",				  "Calculates the squared variance of the vector elements."					  ]
 [ "variance2",			  "COMMAND:   ",  "variance2(ints) : dbl",					  "Calculates the squared variance of the vector elements."					  ]
-#BBPreclaim: bat(33) view=0 mod=0 ref=2 stat=129
 
 Module: "wisc"
 
@@ -1086,7 +1114,6 @@ Module: "xtables"
 [ "tunique",		  "COMMAND:   ",  "tunique(BAT[oid,any::1]) : BAT[any::1,void]",				  "get all unique tail values. Optimized for getting all unique\n         oids from a cross-table computed by CTgroup."																								  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[oid,bit], BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[void,bit], BAT[void,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
-#BBPreclaim: bat(33) view=0 mod=0 ref=2 stat=129
 
 Module: "mprof"
 
@@ -1127,7 +1154,8 @@ Module: "mprof"
 [ "pmStart",		  "COMMAND:   ",  "pmStart() : void",				  "Initializes the mprof bats"				  ]
 [ "pmSummary",		  "PROC:      ",  "pmSummary(..any..) : any",			  "not available"					  ]
 [ "pmTag",		  "COMMAND:   ",  "pmTag(str, str) : void",			  "Add comment to a timing period"			  ]
-#BBPreclaim: bat(33) view=0 mod=0 ref=2 stat=129
+
+quit;
 
 # 13:45:17 >  
 # 13:45:17 >  Done.

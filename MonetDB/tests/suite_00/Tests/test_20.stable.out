@@ -8,12 +8,22 @@ stdout of test 'test_20` in directory 'tests/suite_00` itself:
 #script:test_20.milS
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(20000000));
+# test single column BATs
+a:= new(int,void);
+a.insert(1,void(nil));
+a.print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (void)  #
 #-----------------#
 [ 1,	  nil	  ]
+a.insert(2,void(nil));
+a.insert(int(nil),void(nil));
+a.print;
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (void)  #
@@ -21,11 +31,18 @@ stdout of test 'test_20` in directory 'tests/suite_00` itself:
 [ 1,	  nil	  ]
 [ 2,	  nil	  ]
 [ nil,	  nil	  ]
+
+b:= new(void,int);
+b.insert(void(nil),1);
+b.print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (void)  (int)	  #
 #-----------------#
 [ nil,	  1	  ]
+b.insert(void(nil),2);
+b.insert(void(nil),int(nil));
+b.print;
 #-----------------#
 # BAT:	  tmp_23  #
 # (void)  (int)	  #
@@ -33,3 +50,9 @@ stdout of test 'test_20` in directory 'tests/suite_00` itself:
 [ nil,	  1	  ]
 [ nil,	  2	  ]
 [ nil,	  nil	  ]
+quit;
+
+# 17:08:46 >  
+# 17:08:46 >  Done.
+# 17:08:46 >  
+

@@ -13,6 +13,17 @@ stdout of test 'refcnt` in directory 'src/monet` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# restart gives correct refcnt b from 0 to 1 
+# since b is part of a and persistent expected refcnt should be 2
+b:=new(int,int);
+b.rename("b");
+b.persists(true);
+a:=new(int,bat);
+a.rename("a");
+a.persists(true);
+a.insert(1,b);
+commit;
+quit;   
  restart gives correct refcnt b from 0 to 1 
  since b is part of a and persistent expected refcnt should be 2 
 
@@ -23,22 +34,30 @@ stdout of test 'refcnt` in directory 'src/monet` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+ls;
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
 #---------------------------------------------------------------------------------------------------------#
 [ "a",	  "int",  "bat",  1,	  0,	  "clean",	  "disk", "pers", 0,	  1,		  1	  ]
 [ "b",	  "int",  "int",  0,	  0,	  "clean",	  "disk", "pers", 0,	  2,		  2	  ]
+a.print;
 #-----------------#
 # BAT:	  a	  #
 # (int)	  (BAT)	  #
 #-----------------#
 [ 1,	  <b>	  ]
+b.print;
 #-----------------#
 # BAT:	  b	  #
 # (int)	  (int)	  #
 #-----------------#
+# tidy up
+a.persists(false); 
+b.persists(false); 
+commit;
+quit;   
 
-# 09:44:46 >  
-# 09:44:46 >  Done.
-# 09:44:46 >  
+# 17:06:21 >  
+# 17:06:21 >  Done.
+# 17:06:21 >  
 

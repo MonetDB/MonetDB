@@ -8,6 +8,32 @@ stdout of test 'trim` in directory 'tests/by_Peter` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+var k1 := new(void,int,1000);
+var i := 0;
+while(i < 1000) {
+        k1.insert(nil,i);
+        i :+= 1;
+}
+
+var m1 := new(void,int,1000000);
+i := 0;
+while(i < 1000) {
+        m1.insert(k1);
+        i :+= 1;
+}
+m1.seqbase(0@0);
+
+i := 0;
+mem_maxsize(lng(10*1024*1024));
+#vm_maxsize(lng(100*1024*1024));
+while(i < 10) {
+        #mem_usage(100000).print;
+	dir;
+        #vm_usage(100000).print;
+        print("COPY");
+        var b := m1.copy.rename(sprintf("b%d",i :+= 1));
+        b.persists(true).commit;
+}
 #---------------------------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
 #---------------------------------------------------------------------------------------------------------------------------------#
@@ -353,6 +379,16 @@ stdout of test 'trim` in directory 'tests/by_Peter` itself:
 [ "tmp_25",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 0,	  1,		  0	  ]
 [ "tmp_26",		  "void", "int",  1000,		  0,	  "diffs",	  "disk", "tran", 0,	  1,		  0	  ]
 [ "COPY" ]
+
+proc countall {
+  var i := 0;
+  while(i < $0) {
+     i :+= 1;
+     $(i).count.print;
+  }
+}
+
+dir;
 #---------------------------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
 #---------------------------------------------------------------------------------------------------------------------------------#
@@ -392,10 +428,14 @@ stdout of test 'trim` in directory 'tests/by_Peter` itself:
 [ "monet_mod_use",	  "oid",  "ptr",  7,		  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "tmp_25",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 0,	  1,		  0	  ]
 [ "tmp_26",		  "void", "int",  1000,		  0,	  "diffs",	  "disk", "tran", 0,	  1,		  0	  ]
+
+countall(b1,b2,b3,b4);
 [ 1000000 ]
 [ 1000000 ]
 [ 1000000 ]
 [ 1000000 ]
+
+dir;
 #---------------------------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
 #---------------------------------------------------------------------------------------------------------------------------------#
@@ -436,7 +476,9 @@ stdout of test 'trim` in directory 'tests/by_Peter` itself:
 [ "tmp_25",		  "oid",  "int",  1000000,	  0,	  "diffs",	  "disk", "tran", 0,	  1,		  0	  ]
 [ "tmp_26",		  "void", "int",  1000,		  0,	  "diffs",	  "disk", "tran", 0,	  1,		  0	  ]
 
-# 11:29:28 >  
-# 11:29:28 >  Done.
-# 11:29:28 >  
+quit;
+
+# 17:07:49 >  
+# 17:07:49 >  Done.
+# 17:07:49 >  
 

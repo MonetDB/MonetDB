@@ -8,56 +8,119 @@ stdout of test 'str` in directory 'src/modules/plain` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+
+#line 124 "/var/tmp/MonetDB/src/modules/plain/str.mx"
+setoid(oid(20000000));
+
+i1 := "This is a test";
+i2 := "of the str atomic type";
+
+(("concat an int "+1)+" with a string "+i1+(" with an dbl "+dbl(1.0))).print; 
 [ "concat an int 1 with a string This is a test with an dbl 1" ]
+(("concat an int "+1) + " with a string").print; 
 [ "concat an int 1 with a string" ]
+
+length( i1 ).print;
 [ 14 ]
+sres := (i1 + " ") + i2;
+sres.print;
 [ "This is a test of the str atomic type" ]
+len := length(sres);
+string( sres, 10).print;
 [ "test of the str atomic type" ]
+string( sres, -10).print;
 [ "tomic type" ]
+string( sres, 10, len - 10 ).print;
 [ "test of the str atomic type" ]
+string( sres, 10, 10 ).print;
 [ "test of th" ]
+string( sres, -10, 10 ).print;
 [ "tomic type" ]
+string( sres, -10, 20 ).print;
 [ "tomic type" ]
+string( sres, 10, len).print;
 [ "test of the str atomic type" ]
+string( sres, len, 10).print;
 [ "" ]
+string( sres, -(len), 10).print; 
 [ "This is a " ]
+string( sres, -(len + 5), 10).print; 
 [ "This " ]
+chrAt( sres, 5 ).print;
 [ 'i' ]
+chrAt( sres, -3).print;
 [ nil ]
+chrAt( sres, len + 20).print;
 [ nil ]
+chrAt( sres, len).print;
 [ nil ]
+chrAt( sres, len - 1).print;
 [ 'e' ]
+chrAt( sres, 0).print;
 [ 'T' ]
+startsWith( i2, "of the" ).print;
 [ true ]
+startsWith( i2, i2 ).print;
 [ true ]
+startsWith( i2, "k" ).print;
 [ false ]
+endsWith( i2, "type" ).print;
 [ true ]
+endsWith( i2, i2 ).print;
 [ true ]
+endsWith( i2, "k" ).print;
 [ false ]
+toLower( i1 ).print;
 [ "this is a test" ]
+toUpper( i1 ).print;
 [ "THIS IS A TEST" ]
+search( "Hello this is a test for search", 'a' ).print;
 [ 14 ]
+r_search( "Hello this is a test for search", 'a' ).print;
 [ 27 ]
+search( "Hello this is a test for search", "ar" ).print;
 [ 27 ]
+r_search( "Hello this is a test for search", "ar" ).print;
 [ 27 ]
+search( "Hello this is a test for search", "is" ).print;
 [ 8 ]
+r_search( "Hello this is a test for search", "is" ).print;
 [ 11 ]
+search( "Hello this is a test for search", "Hello" ).print;
 [ 0 ]
+r_search( "Hello this is a test for search", "Hello" ).print;
 [ 0 ]
+search( "Hello this is a test for search", "arch" ).print;
 [ 27 ]
+r_search( "Hello this is a test for search", "arch" ).print;
 [ 27 ]
+search( "Hello this is a test for search", "xxx" ).print;
 [ -1 ]
+r_search( "Hello this is a test for search", "yyy" ).print;
 [ -1 ]
+
+
+trim("   f ").print;
 [ "f" ]
+trim("abc").print;
 [ "abc" ]
+trim("   x").print;
 [ "x" ]
+trim("x   ").print;
 [ "x" ]
+trim("").print;
 [ "" ]
+trim(str(nil)).print;
 [ nil ]
+
+substitute("A.B.C",".","\\.",false).print;
 [ "A\\.B.C" ]
+substitute("A.B.C",".","\\.",true).print;
 [ "A\\.B\\.C" ]
 
-# 17:05:50 >  
-# 17:05:50 >  Done.
-# 17:05:50 >  
+quit;
+
+# 17:05:16 >  
+# 17:05:16 >  Done.
+# 17:05:16 >  
 

@@ -8,202 +8,258 @@ stdout of test 'test_20` in directory 'tests/suite_02` itself:
 #script:test_20.milS
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(2000000));
+# analyse selection using indexing
+print(count(k10_unique1));
 [ 10000 ]
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  180	  ]
+[ "user",	  90	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  350	  ]
+[ "system",	  110	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  180	  ]
+[ "user",	  90	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  350	  ]
+[ "system",	  110	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1110016	  ]
-[ "arena",	  1138216	  ]
-[ "ordblks",	  534		  ]
+[ "memincr",	  1200128	  ]
+[ "arena",	  1255808	  ]
+[ "ordblks",	  543		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  736064	  ]
-[ "fordblks",	  402152	  ]
+[ "uordblks",	  1029000	  ]
+[ "fordblks",	  226808	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  344	  ]
-[ "majflt",	  468	  ]
+[ "minflt",	  375	  ]
+[ "majflt",	  507	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+
+#Index first to speed-up selection
+accbuild(k10_unique1,find(monet_acctbl,"index"));
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  200	  ]
-[ "elapuser",	  20	  ]
-[ "system",	  350	  ]
-[ "elapsystem",	  0	  ]
-#~EndVariableOutput~#
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  cpu	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  210	  ]
+[ "user",	  100	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  350	  ]
+[ "system",	  110	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
-#~BeginVariableOutput~#
-#---------------------------------#
-# BAT:		  mem		  #
-# (str)		  (int)		  #
-#---------------------------------#
-[ "memincr",	  -106496	  ]
-[ "arena",	  1031720	  ]
-[ "ordblks",	  533		  ]
-[ "smblks",	  0		  ]
-[ "hblkhd",	  0		  ]
-[ "hblks",	  0		  ]
-[ "usmblks",	  0		  ]
-[ "fsmblks",	  0		  ]
-[ "uordblks",	  776128	  ]
-[ "fordblks",	  255592	  ]
-#~EndVariableOutput~#
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  io	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  347	  ]
-[ "majflt",	  470	  ]
-[ "nswap",	  0	  ]
-[ "inblock",	  0	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
-#~EndVariableOutput~#
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+t:=fragment(k10_unique1,0,10,int(nil),int(nil));
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  210	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  350	  ]
+[ "user",	  110	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  110	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  32768		  ]
+[ "arena",	  1288576	  ]
+[ "ordblks",	  542		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  1069056	  ]
+[ "fordblks",	  219520	  ]
+#~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  io	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "maxrss",	  0	  ]
+[ "minflt",	  414	  ]
+[ "majflt",	  510	  ]
+[ "nswap",	  0	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  0	  ]
+[ "ninvcsw",	  0	  ]
+#~EndVariableOutput~#
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  110	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  110	  ]
+[ "elapsystem",	  0	  ]
+#~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1031720	  ]
-[ "ordblks",	  535		  ]
+[ "arena",	  1288576	  ]
+[ "ordblks",	  542		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  776120	  ]
-[ "fordblks",	  255600	  ]
+[ "uordblks",	  1069056	  ]
+[ "fordblks",	  219520	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  347	  ]
-[ "majflt",	  470	  ]
+[ "minflt",	  423	  ]
+[ "majflt",	  510	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+
+#index the tail
+accbuild(reverse(k10_unique1),find(monet_acctbl,"index"));
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  230	  ]
-[ "elapuser",	  20	  ]
-[ "system",	  350	  ]
-[ "elapsystem",	  0	  ]
-#~EndVariableOutput~#
-#~BeginVariableOutput~#
-#-------------------------#
-# BAT:		  cpu	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  240	  ]
+[ "user",	  120	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  350	  ]
+[ "system",	  110	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+t:=fragment(k10_unique1,int(nil),int(nil),0,10);
+printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------#
+# BAT:		  cpu	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "elapsed",	  0	  ]
+[ "user",	  130	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  110	  ]
+[ "elapsystem",	  0	  ]
+#~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); memory.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  40960		  ]
-[ "arena",	  1072680	  ]
-[ "ordblks",	  530		  ]
+[ "arena",	  1329536	  ]
+[ "ordblks",	  541		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  816208	  ]
-[ "fordblks",	  256472	  ]
+[ "uordblks",	  1109112	  ]
+[ "fordblks",	  220424	  ]
 #~EndVariableOutput~#
+printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  387	  ]
-[ "majflt",	  470	  ]
+[ "minflt",	  462	  ]
+[ "majflt",	  510	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
+quit;
+
+# 17:09:05 >  
+# 17:09:05 >  Done.
+# 17:09:05 >  
+

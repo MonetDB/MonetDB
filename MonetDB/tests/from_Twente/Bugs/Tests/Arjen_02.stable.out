@@ -8,6 +8,19 @@ stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+#
+# Another interesting bug in our newest (=august) Monet release:
+# 
+#  Arjen (arjen@cs.utwente.nl)
+# 
+
+setoid(2000@0);
+
+a := new( void, int );
+a.insert( nil, 0 );
+a.insert( nil, 1 );
+a.insert( nil, 2 );
+a.seqbase(0@0).print;
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (int)	  #
@@ -15,6 +28,9 @@ stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]
+
+A := 0;
+aA := [=]( a, A );   aA.print;
 #-----------------#
 # BAT:	  tmp_25  #
 # (void)  (bit)	  #
@@ -22,11 +38,14 @@ stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 [ 0@0,	  true	  ]
 [ 1@0,	  false	  ]
 [ 2@0,	  false	  ]
+aA2 := uselect(aA, true).mark(0@0);   aA2.print;
 #-----------------#
 # BAT:	  tmp_28  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
+
+print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_name("aA"),aA2.info.col_name("aA2"));
 #---------------------------------------------------------------------------------#
 # BAT:				  a		| aA		| aA2		  #
 # (str)				  (str)		| (str)		| (str)		  #
@@ -112,6 +131,9 @@ stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 [ "taccelerator.offset",	  "0",		  "0",		  "0"		  ]
 [ "head_index",			  "absent",	  "absent",	  "absent"	  ]
 [ "tail_index",			  "absent",	  "absent",	  "absent"	  ]
+
+A := 1;
+aA := [=]( a, A );   aA.print;
 #-----------------#
 # BAT:	  tmp_31  #
 # (void)  (bit)	  #
@@ -119,11 +141,14 @@ stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 [ 0@0,	  false	  ]
 [ 1@0,	  true	  ]
 [ 2@0,	  false	  ]
+aA2 := uselect(aA, true).mark(0@0);   aA2.print;
 #-----------------#
 # BAT:	  tmp_30  #
 # (oid)	  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
+
+print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_name("aA"),aA2.info.col_name("aA2"));
 #---------------------------------------------------------------------------------#
 # BAT:				  a		| aA		| aA2		  #
 # (str)				  (str)		| (str)		| (str)		  #
@@ -209,6 +234,11 @@ stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 [ "taccelerator.offset",	  "0",		  "0",		  "0"		  ]
 [ "head_index",			  "absent",	  "absent",	  "absent"	  ]
 [ "tail_index",			  "absent",	  "absent",	  "absent"	  ]
+
+# BUT...
+
+A := 2;
+aA := [=]( a, A );   aA.print;
 #-----------------#
 # BAT:	  tmp_29  #
 # (void)  (bit)	  #
@@ -216,11 +246,14 @@ stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 [ 0@0,	  false	  ]
 [ 1@0,	  false	  ]
 [ 2@0,	  true	  ]
+aA2 := uselect(aA, true).mark(0@0);   aA2.print;
 #-----------------#
 # BAT:	  tmp_31  #
 # (void)  (void)  #
 #-----------------#
 [ 2@0,	  0@0	  ]
+
+print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_name("aA"),aA2.info.col_name("aA2"));
 #---------------------------------------------------------------------------------#
 # BAT:				  a		| aA		| aA2		  #
 # (str)				  (str)		| (str)		| (str)		  #
@@ -307,7 +340,11 @@ stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 [ "head_index",			  "absent",	  "absent",	  "absent"	  ]
 [ "tail_index",			  "absent",	  "absent",	  "absent"	  ]
 
-# 13:54:26 >  
-# 13:54:26 >  Done.
-# 13:54:26 >  
+# interesting...
+
+quit;
+
+# 17:08:34 >  
+# 17:08:34 >  Done.
+# 17:08:34 >  
 

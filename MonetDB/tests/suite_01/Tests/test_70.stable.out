@@ -8,9 +8,31 @@ stdout of test 'test_70` in directory 'tests/suite_01` itself:
 #script:test_70.milS
 
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(20000000));
+# The Monet interpreter supports type casts
+p:=  int("21");
+p.print;
 [ 21 ]
+p:= flt("23");
+p.print;
 [ 23 ]
+p:= bit(1);
+p.print;
 [ true ]
+z:= int(p);
+z.print;
 [ 1 ]
+p:= bit(0);
+p.print;
 [ false ]
+
+p:= str(1);
+quit;
+
+# 17:09:02 >  
+# 17:09:02 >  Done.
+# 17:09:02 >  
+
