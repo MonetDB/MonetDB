@@ -1026,7 +1026,7 @@ int fleximatch(str s, str pat, int min) {
 
 static INLINE
 int parse_substr(int* ret, str s, int min, str list[], int size) {
-	int j, i = 0;
+	int j = 0, i = 0;
 	*ret = int_nil;
 	while(++i <= size) {
 		if ((j = fleximatch(s, list[i], min)) > 0) {
@@ -1295,7 +1295,8 @@ int timestamp_fromstr(str buf, int *len, timestamp **ret) {
 		   ((s[6] == ':' && GDKisdigit(s[8])) || GDKisdigit(s[pos=6])))
 	    {
 		offset = (((s[4] - '0')*(lng)10 + (s[5] - '0'))*(lng)60 + 
-		              (s[pos] - '0')*(lng)10 + (s[++pos] - '0'))*(lng)60000;
+		              (s[pos] - '0')*(lng)10 + (s[pos+1] - '0'))*(lng)60000;
+		pos++;
 		if (s[3] != '-') offset = -offset;
 		s += pos;
 	    } else {
@@ -1404,7 +1405,8 @@ int rule_fromstr(str buf, int *len, rule **d) {
 	}
 	if (pos && cur[pos++] == ' ') {
 		/* now we must see a weekday */
-		cur += parse_substr(&weekday, cur += pos, 3, DAYS, 7);
+		cur += pos;
+		cur += parse_substr(&weekday, cur, 3, DAYS, 7);
 		if (weekday == int_nil) {
 			return 0; /* syntax error */
 		} 
