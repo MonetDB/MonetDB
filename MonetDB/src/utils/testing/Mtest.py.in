@@ -721,6 +721,18 @@ def StartAt(cmd) :
 	return ATJOB
 ### StartAt(cmd) #
 
+def StopAt(ATJOB,ME) :
+	while  os.path.isfile(path("/tmp/.MkillUsers."+ME)):
+		time.sleep(9)
+	if OS == "Linux":
+		ATRM = 'at -d '
+	else:
+		ATRM = 'at -r '
+	os.system(ATRM+ATJOB)
+	#TODO:
+	#LOG1x at -l >&2
+### StopAt(ATJOB,ME) #
+
 def RunTest(env, TST) :
 	TSTDB = env['TSTDB']
 	TSTDIR  = env['TSTDIR']
@@ -945,7 +957,6 @@ def RunTest(env, TST) :
 
 		ME = ""
 		ATJOB1 = ""
-		ATJOB2 = ""
 		MkillUsers = ""
 		if os.name != "nt":
 			for f in TST+".KILLED.out", TST+".KILLED.err":
@@ -974,24 +985,14 @@ def RunTest(env, TST) :
 		TestErr.write("stderr of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
 
 		t0 = time.time()
-		ATJOB2 = DoIt (env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers)
+		DoIt (env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME)
 		t1 = time.time()
 		TX = t1 - t0
 		STDOUT.write(" %7.3fs\n" % TX)
 		STDOUT.flush()
 
 		if os.name != "nt":
-			while  os.path.isfile(path("/tmp/.MkillUsers."+ME)):
-				time.sleep(9)
-			if OS == "Linux":
-				ATRM = 'at -d '
-			else:
-				ATRM = 'at -r '
-			if ATJOB2:
-				os.system(ATRM+ATJOB2)
-			os.system(ATRM+ATJOB1)
-			#TODO:
-			#LOG1x at -l >&2
+			StopAt(ATJOB1,ME)
 
 		n = TST+".KILLED."
 		for (x,p) in [("out",TestOut),("err",TestErr)]:
@@ -1124,7 +1125,7 @@ def RunIt(cmd, TestIn, TestOut, TestErr) :
 	CollectIt(pOut, pErr, TestOut, TestErr)
 ### RunIt(cmd, TestIn, TestOut, TestErr) #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) :
 	ATJOB2 = ""
 	STDERR.flush()
 	STDOUT.write(time.strftime('%H:%M:%S> ',time.localtime(time.time()))+env['TSTDIR']+os.sep+TST+EXT+" "+PRELUDE+" ...")
@@ -1264,6 +1265,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 		if os.name != "nt":
 			ATJOB2 = StartAt(MkillUsers)
 		CollectIt(pSrvrOut, pSrvrErr, SrvrOut, SrvrErr)
+		if os.name != "nt":
+			StopAt(ATJOB2,ME)
 
 		if SERVER == "MAPI":
 			AllOut = [SrvrOut, ClntOut, ShwnOut]
@@ -1288,8 +1291,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 
 	TestOut.write(Prompt('Done.')) ; TestOut.flush()
 	TestErr.write(Prompt('Done.')) ; TestErr.flush()
-	return ATJOB2
-### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers) #
+### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) #
 
 def Check(command, input) :
 	pOut,pIn,pErr = popen2.popen3(command+" || echo ! Exit 1")
@@ -1464,7 +1466,7 @@ def main(argv) :
 		'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'  , \
 		'SQL_PREFIX'                                   ]
 	if THISFILE in ["Mtest.py", "Mprofile.py"]:
-		vars = vars + ['MONETRC', 'MONET_MOD_PATH', 'MAPIPORT', 'SQLPORT', 'SQLCLIENT', 'MAPICLIENT' ]
+		vars = vars + ['MONETRC', 'MAPIPORT', 'SQLPORT', 'SQLCLIENT', 'MAPICLIENT' ]	#, 'MONET_MOD_PATH' ]
 	if THISFILE == "Mprofile.py":
 		vars = vars + ['CMDLST']
 
@@ -1478,7 +1480,7 @@ def main(argv) :
 	dft['TSTTRGBASE']     = "env['MONET_PREFIX']"	# or os.getcwd() ?
 	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		dft['MONETRC']        = "FindMonetConf(env)"
-		dft['MONET_MOD_PATH'] = "env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'Monet'"
+		#dft['MONET_MOD_PATH'] = "''"	#"env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'Monet'"
 		dft['MAPIPORT']       = "HOST+':'+str(random.randrange(50000,59999,1))"
 		dft['SQLPORT']        = "str(random.randrange(50000,59999,1))"
 		dft['SQLCLIENT']      = "'sql_client --port='+env['SQLPORT']"
@@ -1656,32 +1658,32 @@ def main(argv) :
 		print(v+" = "+env[v])
 	STDOUT.flush()
 
-	# set/extend PATH & LD_LIBRARY_PATH
-	bp = ""	#env['MONET_PREFIX']+os.sep+"bin"
-	if THISFILE in ["Mtest.py", "Mprofile.py"]:
-		lp = env['MONET_MOD_PATH']
-	else: # THISFILE == "Mapprove.py"
-		lp = ""
-	if os.name == "nt"  and  lp:
-		if bp:
-			bp = bp+os.pathsep+lp
-		else:
-			bp = lp
-	if os.environ.has_key('PATH'):
-		if bp:
-			bp = bp+os.pathsep+os.environ['PATH']
-		else:
-			bp = os.environ['PATH']
-	os.environ['PATH'] = bp
-	print("PATH = "+bp)
-	if os.name == "posix":
-		if os.environ.has_key('LD_LIBRARY_PATH'):
-			if lp:
-				lp = lp+os.pathsep+os.environ['LD_LIBRARY_PATH']
-			else:
-				lp = os.environ['LD_LIBRARY_PATH']
-		os.environ['LD_LIBRARY_PATH'] = lp
-		print("LD_LIBRARY_PATH = "+lp)
+	## set/extend PATH & LD_LIBRARY_PATH
+	#bp = ""	#env['MONET_PREFIX']+os.sep+"bin"
+	#if THISFILE in ["Mtest.py", "Mprofile.py"]:
+	#	lp = env['MONET_MOD_PATH']
+	#else: # THISFILE == "Mapprove.py"
+	#	lp = ""
+	#if os.name == "nt"  and  lp:
+	#	if bp:
+	#		bp = bp+os.pathsep+lp
+	#	else:
+	#		bp = lp
+	#if os.environ.has_key('PATH'):
+	#	if bp:
+	#		bp = bp+os.pathsep+os.environ['PATH']
+	#	else:
+	#		bp = os.environ['PATH']
+	#os.environ['PATH'] = bp
+	#print("PATH = "+bp)
+	#if os.name == "posix":
+	#	if os.environ.has_key('LD_LIBRARY_PATH'):
+	#		if lp:
+	#			lp = lp+os.pathsep+os.environ['LD_LIBRARY_PATH']
+	#		else:
+	#			lp = os.environ['LD_LIBRARY_PATH']
+	#	os.environ['LD_LIBRARY_PATH'] = lp
+	#	print("LD_LIBRARY_PATH = "+lp)
 
 	if not startswith(os.getcwd()+os.sep, env['TSTSRCBASE']+os.sep):
 		Warn("Current directory "+os.getcwd()+" is no descendant of TSTSRCBASE="+env['TSTSRCBASE']+";")
