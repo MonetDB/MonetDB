@@ -27,9 +27,9 @@ function RM () {
 	fi
 
 	x=N
-	n=`ls -A $L $* | egrep -v "^total [0-9]*$|^$|^[^ ]*:$" | wc -l | sed 's|^ *||'` 
+	n=`ls -A $L $* 2>/dev/null | egrep -v "^total [0-9]*$|^$|^[^ ]*:$" | wc -l | sed 's|^ *||'` 
 	if [ $n != '0' ]; then
-		ls -lAF $L $* | egrep -v "$G^total [0-9]*$|^$"
+		ls -lAF $L $* 2>/dev/null | egrep -v "$G^total [0-9]*$|^$" 
 		echo "Delete these $n files/directories? (y/N) \c"
 		read x 
 		if [ "x$x" = 'xy' ]; then
