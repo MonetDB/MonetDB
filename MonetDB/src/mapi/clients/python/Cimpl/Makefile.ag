@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 SWIGFLAGS = -I../../C
-INCLUDES = -I../../C -I@PYTHONINC@
+INCLUDES = -I../../C -I../../../../common -I@PYTHONINC@
 
 # we need this flag to allow for a name that does not start with "lib"
 _MapiLib_la_LDFLAGS = -module
