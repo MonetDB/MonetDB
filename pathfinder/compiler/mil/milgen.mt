@@ -126,10 +126,24 @@ BatExpr:     insert_ (BatExpr, AtomExpr, AtomExpr)
 
         $$->varname = new_var ();
 
-        execute (assgn (var ($$->varname),
-                        insert (access (copy (var ($1$->varname)),
-                                        BAT_APPEND),
-                                var ($2$->varname), var ($3$->varname))));
+        /*
+         * If we share our child with some other operator, we need
+         * to copy it first.
+         */
+        if ($$->refctr == $1$->refctr)
+            execute (assgn (var ($$->varname),
+                            access (insert (access (var ($1$->varname),
+                                                    BAT_APPEND),
+                                            var ($2$->varname),
+                                            var ($3$->varname)),
+                                     BAT_READ)));
+        else
+            execute (assgn (var ($$->varname),
+                            access (insert (access (copy (var ($1$->varname)),
+                                                    BAT_APPEND),
+                                            var ($2$->varname),
+                                            var ($3$->varname)),
+                                    BAT_READ)));
     }
     ;
 
@@ -137,10 +151,6 @@ BatExpr:     insert_ (BatExpr, AtomExpr, AtomExpr)
 BatExpr:     seqbase (BatExpr, AtomExpr)
     =
     {
-        /*
-         * FIXME: We should find something smarter than copying the
-         *        BAT before we set the seqbase.
-         */
         if ($$->varname)
             break;
 
@@ -149,9 +159,17 @@ BatExpr:     seqbase (BatExpr, AtomExpr)
 
         $$->varname = new_var ();
 
-        execute (assgn (var ($$->varname),
-                        seqbase (copy (var ($1$->varname)),
-                                 var ($2$->varname))));
+        /*
+         * If we share our child with some other operator, we need
+         * to copy it first.
+         */
+        if ($$->refctr == $1$->refctr)
+            execute (assgn (var ($$->varname),
+                            seqbase (var ($1$->varname), var ($2$->varname))));
+        else
+            execute (assgn (var ($$->varname),
+                            seqbase (copy (var ($1$->varname)),
+                                     var ($2$->varname))));
     }
     ;
 
@@ -334,13 +352,21 @@ BatExpr:     append (BatExpr, BatExpr)
         $$->varname = new_var ();
 
         /*
-         * FIXME: We should find something smarter than copying the
-         *        BAT before we do the insert.
+         * If we share our child with some other operator, we need
+         * to copy it first.
          */
-        execute (assgn (var ($$->varname),
-                        binsert (access (copy (var ($1$->varname)),
-                                         BAT_APPEND),
-                                 var ($2$->varname))));
+        if ($$->refctr == $1$->refctr)
+            execute (assgn (var ($$->varname),
+                            access (binsert (access (var ($1$->varname),
+                                                     BAT_APPEND),
+                                             var ($2$->varname)),
+                                    BAT_READ)));
+        else
+            execute (assgn (var ($$->varname),
+                            access (binsert (access (copy (var ($1$->varname)),
+                                                     BAT_APPEND),
+                                             var ($2$->varname)),
+                                    BAT_READ)));
     }
     ;
 

@@ -112,6 +112,67 @@ static int TWIG_ID[] = {
 #include "mil_mnemonic.h"
 
 /**
+ * Set reference counter of all algebra nodes to 0. See #set_refctr().
+ *
+ * @param n Current node.
+ */
+static void
+zero_refctr (PFma_op_t *n)
+{
+    int i;
+
+    n->refctr = 0;
+
+    for (i = 0; i < MILALGEBRA_MAXCHILD && n->child[i]; i++)
+        zero_refctr (n->child[i]);
+}
+
+/**
+ * Walk through algebra tree and increment the reference counter of
+ * each node. Common subtrees will be visited more than once, resulting
+ * in a reference count non-equal to 1. (Note that physically the algebra
+ * is not actually a tree.)
+ *
+ * @param n Current node.
+ */
+static void
+inc_refctr (PFma_op_t *n)
+{
+    int i;
+
+    n->refctr++;
+
+    for (i = 0; i < MILALGEBRA_MAXCHILD && n->child[i]; i++)
+        inc_refctr (n->child[i]);
+}
+
+/**
+ * Set reference counter of each algebra tree node.
+ *
+ * While on the logic level, we think of the algebra as an expression
+ * @b tree, we physically implement it as a directed @b graph. Generated
+ * algebra expressions will contain many common subexpressions. During
+ * the generation, we will map all common subtrees to the same physical
+ * node. When generating the MIL code from the algebra, we will evaluate
+ * each subtree only once. Later references to that expression will use
+ * that same result. A reference counter gives us the information, how
+ * many references we have to each node - an information we will use to
+ * correctly clean up variables that are no longer used in MIL.
+ *
+ * @param root Root of the algebra tree.
+ */
+static void
+set_refctr (PFma_op_t *root)
+{
+    /* first set all reference counters to zero (play safe) */
+    zero_refctr (root);
+
+    /* now, during a tree-walk, increment the counter for each visit. */
+    inc_refctr (root);
+}
+
+
+/**
  * We collect the MIL program during compilation here.
  */
 static PFmil_t *milprog = NULL;
@@ -162,23 +223,6 @@ new_var (void)
     return ret;
 }
 
-#if 0
-static PFmil_t *
-literal (PFma_val_t v)
-{
-    switch (v.kind) {
-        case v_oid:    return lit_oid (v.val.o);
-        case v_int:    return lit_int (v.val.i);
-        case v_dbl:    return lit_dbl (v.val.d);
-        case v_str:    return lit_str (v.val.s);
-        case v_bit:    return lit_bit (v.val.b);
-    }
-
-    PFoops (OOPS_FATAL,
-            "illegal value in PFma_val_t.kind");
-}
-#endif
-
 /**
  * Compile MIL Algebra expression tree into MIL command tree
  *
@@ -189,11 +233,8 @@ PFmilgen (PFma_op_t *a)
 {
     assert (a);
 
-    /* set reference counters and clear usage counters */
-    /* FIXME
+    /* set reference counters */
     set_refctr (a);
-    clear_usectr (a);
-    */
 
     /* initialize variable milprog, with a `no operation' node */
     milprog = nop ();

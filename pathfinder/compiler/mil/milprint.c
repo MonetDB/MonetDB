@@ -197,6 +197,8 @@ print_statements (PFmil_t * n)
 static void
 print_statement (PFmil_t * n)
 {
+    unsigned int i;
+
     switch (n->kind) {
 
         /* statement : 'var' variable ':=' expression
@@ -221,7 +223,7 @@ print_statement (PFmil_t * n)
 
         case m_serialize:
             milprintf ("serialize (");
-            for (unsigned int i = 0; i < 7; i++) {
+            for (i = 0; i < 7; i++) {
                 if (i)
                     milprintf (", ");
                 print_expression (n->child[i]);

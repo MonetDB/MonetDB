@@ -305,10 +305,6 @@ alg_op_leaf (PFalg_op_kind_t kind)
     ret->schema.count = 0;
     ret->schema.items = NULL;
 
-    ret->refctr = 0;
-    ret->usectr = 0;
-    ret->bat_prefix = NULL;
-
     for (i = 0; i < PFALG_OP_MAXCHILD; i++)
         ret->child[i] = NULL;
 

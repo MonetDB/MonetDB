@@ -437,13 +437,6 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
             break;
     }
 
-    /*
-     * print variable name used in the MIL program to represent this
-     * expression if available
-     */
-    if (n->bat_prefix)
-        PFarray_printf (dot, "\\n%s", n->bat_prefix);
-
     /* close up label */
     PFarray_printf (dot, "\", color=%s ];\n", color[n->kind]);
 

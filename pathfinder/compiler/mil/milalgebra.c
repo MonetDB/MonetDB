@@ -45,7 +45,8 @@
 static PFma_op_t *
 leaf (enum PFma_kind_t kind, PFma_type_t t)
 {
-    PFma_op_t *ret = PFmalloc (sizeof (PFma_op_t));
+    unsigned int  i;
+    PFma_op_t    *ret = PFmalloc (sizeof (PFma_op_t));
 
     /* [void,void] BATs are not allowed in MonetDB */
     assert (t.kind == type_atom
@@ -58,7 +59,7 @@ leaf (enum PFma_kind_t kind, PFma_type_t t)
     ret->usectr = 0;
     ret->varname = NULL;
 
-    for (unsigned int i = 0; i < MILALGEBRA_MAXCHILD; i++)
+    for (i = 0; i < MILALGEBRA_MAXCHILD; i++)
         ret->child[i] = NULL;
 
     return ret;

@@ -116,34 +116,10 @@ struct enventry_t {
 };
 typedef struct enventry_t enventry_t;
 
-#if 0
 /**
- * Store a MIL algebra expression in the environment @a env (under
- * the attribute/type combination @a att/@a ty).  Modifies the
- * environment @a env.  If there already is an entry for this
- * attribute/type combination, it will be updated to the new
- * MIL algebra expression.
+ * Allocate a new environment
  */
-static void
-store (PFarray_t *env,
-       PFalg_att_t att, PFalg_simple_type_t ty, PFma_op_t *ma)
-{
-    unsigned int i;
-
-    assert (env);
-
-    /* if there already is an entry for this key, update it */
-    for (i = 0; i < PFarray_last (env); i++)
-        if (!strcmp (((enventry_t *) PFarray_at (env, i))->att, att)
-            && ((enventry_t *) PFarray_at (env, i))->ty == ty)
-            break;
-
-    *((enventry_t *) PFarray_at (env, i))
-        = (enventry_t) { .att = att, .ty  = ty, .ma  = ma };
-}
-#endif
-
-static inline PFarray_t *
+static PFarray_t *
 new_env (void)
 {
     return PFarray (sizeof (enventry_t));
