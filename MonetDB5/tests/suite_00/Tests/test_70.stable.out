@@ -278,8 +278,8 @@ end main;	# 91
 [ 5,	  30	  ]
 #var d:= [<](b,c);
 !ERROR: MALexception:batcalc.CMDcompareLT:requires bats of identical size
->
-# 10:37:51 >  
-# 10:37:51 >  Done.
-# 10:37:51 >  
+
+# 15:37:28 >  
+# 15:37:28 >  Done.
+# 15:37:28 >  
 
