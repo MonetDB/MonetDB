@@ -252,6 +252,14 @@ if [ "${os}" = "Linux" ] ; then
 fi
 
 if [ "${os}" = "CYGWIN" ] ; then
+	if [ -x /cygdrive/c/j2ee14/jdk/bin/javac  -a  -x /cygdrive/c/j2ee14/jdk/bin/jar ] ; then
+		# java on winxp
+		binpath="/cygdrive/c/j2ee14/jdk/bin:${binpath}"
+	fi
+	if [ -x /cygdrive/c/Sun/AppServer/jdk/bin/javac  -a  -x /cygdrive/c/Sun/AppServer/jdk/bin/jar ] ; then
+		# java on winxp01
+		binpath="/cygdrive/c/Sun/AppServer/jdk/bin:${binpath}"
+	fi
 	if [ -x ${softpath}/bin/twig ] ; then
 		# twig on winxp
 		binpath="${softpath}/bin:${binpath}"
