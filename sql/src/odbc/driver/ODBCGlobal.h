@@ -64,47 +64,13 @@
 /* these functions are called from within the library */
 SQLRETURN SQLAllocHandle_(SQLSMALLINT nHandleType, SQLHANDLE nInputHandle,
 			  SQLHANDLE *pnOutputHandle);
-SQLRETURN SQLBindParameter_(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
-			    SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
-			    SQLSMALLINT ParameterType, SQLUINTEGER ColumnSize,
-			    SQLSMALLINT DecimalDigits,
-			    SQLPOINTER ParameterValuePtr,
-			    SQLINTEGER BufferLength,
-			    SQLINTEGER *StrLen_or_IndPtr);
-SQLRETURN SQLColAttribute_(SQLHSTMT hStmt, SQLUSMALLINT nCol,
-			   SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue,
-			   SQLSMALLINT nValueLengthMax,
-			   SQLSMALLINT *pnValueLength, SQLPOINTER pnValue);
-SQLRETURN SQLConnect_(SQLHDBC hDbc,
-		      SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
-		      SQLCHAR *szUID, SQLSMALLINT nUIDLength,
-		      SQLCHAR *szPWD, SQLSMALLINT nPWDLength);
 SQLRETURN SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 		      SQLSMALLINT nCompletionType);
-SQLRETURN SQLExecDirect_(SQLHSTMT hStmt, SQLCHAR *szSqlStr,
-			 SQLINTEGER nSqlStr);
-SQLRETURN SQLExecute_(SQLHSTMT hStmt);
-SQLRETURN SQLFetch_(SQLHSTMT hStmt);
-SQLRETURN SQLFetchScroll_(SQLHSTMT hStmt, SQLSMALLINT nOrientation,
-			  SQLINTEGER nOffset);
 SQLRETURN SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle);
-SQLRETURN SQLFreeStmt_(SQLHSTMT handle, SQLUSMALLINT option);
-SQLRETURN SQLGetConnectAttr_(SQLHDBC hDbc, SQLINTEGER Attribute,
-			     SQLPOINTER ValuePtr, SQLINTEGER BufferLength,
-			     SQLINTEGER *StringLength);
 SQLRETURN SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle,
 			 SQLSMALLINT recNumber, SQLCHAR *sqlState,
 			 SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText,
 			 SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr);
-SQLRETURN SQLGetStmtAttr_(SQLHSTMT hStmt, SQLINTEGER Attribute,
-			  SQLPOINTER Value, SQLINTEGER BufferLength,
-			  SQLINTEGER *StringLength);
-SQLRETURN SQLPrepare_(SQLHSTMT hStmt, SQLCHAR *szSqlStr,
-		      SQLINTEGER nSqlStrLength);
-SQLRETURN SQLSetConnectAttr_(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
-			     SQLPOINTER ValuePtr, SQLINTEGER StringLength);
-SQLRETURN SQLSetStmtAttr_(SQLHSTMT hStmt, SQLINTEGER Attribute,
-			  SQLPOINTER Value, SQLINTEGER StringLength);
 
 #ifdef ODBCDEBUG
 #define ODBCLOG(...)	do {						\

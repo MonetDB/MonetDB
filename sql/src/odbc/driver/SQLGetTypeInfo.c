@@ -214,7 +214,7 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 
 	/* query the MonetDb data dictionary tables */
 	assert(query);
-	rc = SQLExecDirect_(hStmt, (SQLCHAR *) query, SQL_NTS);
+	rc = SQLExecDirect_(stmt, (SQLCHAR *) query, SQL_NTS);
 
 	free(query);
 

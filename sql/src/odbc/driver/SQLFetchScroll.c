@@ -24,10 +24,8 @@
 
 
 SQLRETURN
-SQLFetchScroll_(SQLHSTMT hStmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
+SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -81,5 +79,5 @@ SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
 	ODBCLOG("SQLFetchScroll\n");
 #endif
 
-	return SQLFetchScroll_(hStmt, nOrientation, nOffset);
+	return SQLFetchScroll_((ODBCStmt *) hStmt, nOrientation, nOffset);
 }

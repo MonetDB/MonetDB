@@ -28,7 +28,7 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 	       SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	ColumnHeader *pColumnHeader = NULL;
+	ODBCDescRec *pColumnHeader = NULL;
 	char *colName = NULL;
 	int colNameLen = 0;
 
@@ -48,21 +48,21 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 		return SQL_ERROR;
 	}
 	/* and it should return a result set */
-	if (stmt->ResultCols == NULL) {
+	if (stmt->ImplRowDescr->descRec == NULL) {
 		/* 07005 = Prepared statement not a cursor specification */
 		addStmtError(stmt, "07005", NULL, 0);
 		return SQL_ERROR;
 	}
-	if (nCol < 1 || nCol > stmt->nrCols) {
+	if (nCol < 1 || nCol > stmt->ImplRowDescr->sql_desc_count) {
 		/* 07009 = Invalid descriptor index */
 		addStmtError(stmt, "07005", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	/* OK */
-	pColumnHeader = stmt->ResultCols + nCol;
+	pColumnHeader = stmt->ImplRowDescr->descRec + nCol;
 
-	colName = pColumnHeader->pszSQL_DESC_NAME;
+	colName = pColumnHeader->sql_desc_name;
 	if (colName)
 		colNameLen = strlen(colName);
 
@@ -75,16 +75,16 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 		*pnColNameLength = colName ? colNameLen : SQL_NULL_DATA;
 
 	if (pnSQLDataType)
-		*pnSQLDataType = pColumnHeader->nSQL_DESC_TYPE;
+		*pnSQLDataType = pColumnHeader->sql_desc_type;
 
 	if (pnColSize)
-		*pnColSize = pColumnHeader->nSQL_DESC_LENGTH;
+		*pnColSize = pColumnHeader->sql_desc_length;
 
 	if (pnDecDigits)
-		*pnDecDigits = pColumnHeader->nSQL_DESC_SCALE;
+		*pnDecDigits = pColumnHeader->sql_desc_scale;
 
 	if (pnNullable)
-		*pnNullable = pColumnHeader->nSQL_DESC_NULLABLE;
+		*pnNullable = pColumnHeader->sql_desc_nullable;
 
 	if (colNameLen >= nColNameMax) {
 		/* 01004 = String data, right truncation */

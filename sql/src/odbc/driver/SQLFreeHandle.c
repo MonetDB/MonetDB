@@ -93,7 +93,7 @@ SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 		/* check if statement is not active */
 		if (stmt->State == EXECUTED) {
 			/* should be closed first */
-			int res = SQLFreeStmt_(stmt, SQL_CLOSE);
+			SQLRETURN res = SQLFreeStmt_(stmt, SQL_CLOSE);
 
 			if (res != SQL_SUCCESS)
 				return res;
@@ -104,9 +104,34 @@ SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 		return SQL_SUCCESS;
 	}
 	case SQL_HANDLE_DESC:
-		/* This handle type is not supported (yet).
-		 */
-		return SQL_INVALID_HANDLE;
+	{
+		ODBCDesc *desc = (ODBCDesc *) handle;
+		ODBCStmt *stmt;
+
+		/* check it's validity */
+		if (!isValidDesc(desc))
+			return SQL_INVALID_HANDLE;
+
+		/* check if descriptor is implicitly allocated */
+		if (desc->sql_desc_alloc_type == SQL_DESC_ALLOC_AUTO) {
+			/* Invalid use of an automatically allocated descriptor handle */
+			addDescError(desc, "HY017", NULL, 0);
+			return SQL_ERROR;
+		}
+
+		/* all statements using this handle revert to
+		   implicitly allocated descriptor handles */
+		for (stmt = desc->Dbc->FirstStmt; stmt; stmt = stmt->next) {
+			if (desc == stmt->ApplRowDescr)
+				stmt->ApplRowDescr = stmt->AutoApplRowDescr;
+			if (desc == stmt->ApplParamDescr)
+				stmt->ApplParamDescr = stmt->AutoApplParamDescr;
+		}
+
+		/* Ready to destroy the desc handle */
+		destroyODBCDesc(desc);
+		return SQL_SUCCESS;
+	}
 	default:
 		return SQL_INVALID_HANDLE;
 	}
@@ -118,7 +143,7 @@ SQLRETURN
 SQLFreeHandle(SQLSMALLINT handleType, SQLHANDLE handle)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFreeHandle\n");
+	ODBCLOG("SQLFreeHandle %d\n", handleType);
 #endif
 
 	return SQLFreeHandle_(handleType, handle);

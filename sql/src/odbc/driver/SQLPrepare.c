@@ -23,9 +23,8 @@
 
 
 SQLRETURN
-SQLPrepare_(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
+SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	char *query;
 	MapiMsg ret;
 
@@ -82,5 +81,5 @@ SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	ODBCLOG("SQLPrepare\n");
 #endif
 
-	return SQLPrepare_(hStmt, szSqlStr, nSqlStrLength);
+	return SQLPrepare_((ODBCStmt *) hStmt, szSqlStr, nSqlStrLength);
 }

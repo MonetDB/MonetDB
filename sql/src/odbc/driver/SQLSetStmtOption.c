@@ -24,6 +24,8 @@
 SQLRETURN
 SQLSetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLROWCOUNT vParam)
 {
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetStmtOption\n");
 #endif
@@ -44,11 +46,8 @@ SQLSetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLROWCOUNT vParam)
 	case SQL_RETRIEVE_DATA:
 	case SQL_USE_BOOKMARKS:
 		/* use mapping as described in ODBC 3.0 SDK Help */
-		return SQLSetStmtAttr_(hStmt, fOption, &vParam, 0);
+		return SQLSetStmtAttr_(stmt, fOption, &vParam, 0);
 	default:
-	{
-		ODBCStmt *stmt = (ODBCStmt *) hStmt;
-
 		if (!isValidStmt(stmt))
 			 return SQL_INVALID_HANDLE;
 
@@ -58,7 +57,6 @@ SQLSetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLROWCOUNT vParam)
 		addStmtError(stmt, "HY092", NULL, 0);
 
 		return SQL_ERROR;
-	}
 	}
 
 	return SQL_ERROR;

@@ -21,18 +21,18 @@
 #include "ODBCStmt.h"
 
 SQLRETURN
-SQLExecDirect_(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
+SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 {
 	RETCODE rc;
 
-	if (!isValidStmt((ODBCStmt *) hStmt))
+	if (!isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
 
 	/* prepare SQL command */
-	rc = SQLPrepare_(hStmt, szSqlStr, nSqlStr);
+	rc = SQLPrepare_(stmt, szSqlStr, nSqlStr);
 	if (rc == SQL_SUCCESS) {
 		/* execute prepared statement */
-		rc = SQLExecute_(hStmt);
+		rc = SQLExecute_(stmt);
 	}
 
 	/* Do not set errors here, they are set in SQLPrepare() and/or SQLExecute() */
@@ -47,5 +47,5 @@ SQLExecDirect(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 	ODBCLOG("SQLExecDirect\n");
 #endif
 
-	return SQLExecDirect_(hStmt, szSqlStr, nSqlStr);
+	return SQLExecDirect_((ODBCStmt *) hStmt, szSqlStr, nSqlStr);
 }

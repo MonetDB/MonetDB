@@ -22,13 +22,12 @@
 
 
 SQLRETURN
-SQLColAttribute_(SQLHSTMT hStmt, SQLUSMALLINT nCol,
+SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 		 SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue,
 		 SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength,
 		 SQLPOINTER pnValue)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	ColumnHeader *pColumnHeader;
+	ODBCDescRec *pColumnHeader;
 	int *valueptr = (int *) pnValue;
 
 	if (!isValidStmt(stmt))
@@ -55,7 +54,7 @@ SQLColAttribute_(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 			     0);
 		return SQL_ERROR;
 	}
-	if (stmt->ResultCols == NULL) {
+	if (stmt->ImplRowDescr->descRec == NULL) {
 		addStmtError(stmt, "HY000",
 			     "Cannot return the column info. No result set is available",
 			     0);
@@ -63,170 +62,170 @@ SQLColAttribute_(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 	}
 
 	/* check input parameter */
-	if (nCol < 1 || nCol > stmt->nrCols) {
+	if (nCol < 1 || nCol > stmt->ImplRowDescr->sql_desc_count) {
 		/* 07009 = Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
 		return SQL_ERROR;
 	}
 
 /* TODO: finish implementation */
-	pColumnHeader = stmt->ResultCols + nCol;
+	pColumnHeader = stmt->ImplRowDescr->descRec + nCol;
 
 	switch (nFieldIdentifier) {
 	case SQL_DESC_AUTO_UNIQUE_VALUE:
 		if (valueptr)
-			*valueptr = pColumnHeader->bSQL_DESC_AUTO_UNIQUE_VALUE;
+			*valueptr = pColumnHeader->sql_desc_auto_unique_value;
 		break;
 	case SQL_DESC_BASE_COLUMN_NAME:
 		if (pszValue)
 			strncpy(pszValue,
-				pColumnHeader->pszSQL_DESC_BASE_COLUMN_NAME,
+				pColumnHeader->sql_desc_base_column_name,
 				nValueLengthMax);
 		if (pnValueLength)
-			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_BASE_COLUMN_NAME);
+			*pnValueLength = strlen(pColumnHeader->sql_desc_base_column_name);
 		break;
 	case SQL_DESC_BASE_TABLE_NAME:
 		if (pszValue)
 			strncpy(pszValue,
-				pColumnHeader->pszSQL_DESC_BASE_TABLE_NAME,
+				pColumnHeader->sql_desc_base_table_name,
 				nValueLengthMax);
 		if (pnValueLength)
-			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_BASE_TABLE_NAME);
+			*pnValueLength = strlen(pColumnHeader->sql_desc_base_table_name);
 		break;
 	case SQL_DESC_CASE_SENSITIVE:
 		if (valueptr)
-			*valueptr = pColumnHeader->bSQL_DESC_CASE_SENSITIVE;
+			*valueptr = pColumnHeader->sql_desc_case_sensitive;
 		break;
 	case SQL_DESC_CATALOG_NAME:
 		if (pszValue)
 			strncpy(pszValue,
-				pColumnHeader->pszSQL_DESC_CATALOG_NAME,
+				pColumnHeader->sql_desc_catalog_name,
 				nValueLengthMax);
 		if (pnValueLength)
-			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_CATALOG_NAME);
+			*pnValueLength = strlen(pColumnHeader->sql_desc_catalog_name);
 		break;
 	case SQL_DESC_CONCISE_TYPE:
 		if (valueptr)
-			*valueptr = pColumnHeader->nSQL_DESC_CONCISE_TYPE;
+			*valueptr = pColumnHeader->sql_desc_concise_type;
 		break;
 	case SQL_DESC_COUNT:
 		if (valueptr)
-			*valueptr = stmt->nrCols;
+			*valueptr = stmt->ImplRowDescr->sql_desc_count;
 
 		break;
 	case SQL_DESC_DISPLAY_SIZE:
 		if (valueptr)
-			*valueptr = pColumnHeader->nSQL_DESC_DISPLAY_SIZE;
+			*valueptr = pColumnHeader->sql_desc_display_size;
 		break;
 	case SQL_DESC_FIXED_PREC_SCALE:
 		if (valueptr)
-			*valueptr = pColumnHeader->bSQL_DESC_FIXED_PREC_SCALE;
+			*valueptr = pColumnHeader->sql_desc_fixed_prec_scale;
 		break;
 	case SQL_COLUMN_NAME:
 	case SQL_DESC_LABEL:
 		if (pszValue)
-			strncpy(pszValue, pColumnHeader->pszSQL_DESC_LABEL,
+			strncpy(pszValue, pColumnHeader->sql_desc_label,
 				nValueLengthMax);
 		if (pnValueLength)
-			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_LABEL);
+			*pnValueLength = strlen(pColumnHeader->sql_desc_label);
 		break;
 	case SQL_DESC_LENGTH:
 	case SQL_COLUMN_LENGTH:
 		if (valueptr)
-			*valueptr = pColumnHeader->nSQL_DESC_LENGTH + 20;
+			*valueptr = pColumnHeader->sql_desc_length + 20;
 		break;
 	case SQL_DESC_LITERAL_PREFIX:
 		if (pszValue)
 			strncpy(pszValue,
-				pColumnHeader->pszSQL_DESC_LITERAL_PREFIX,
+				pColumnHeader->sql_desc_literal_prefix,
 				nValueLengthMax);
 		if (pnValueLength)
-			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_LITERAL_PREFIX);
+			*pnValueLength = strlen(pColumnHeader->sql_desc_literal_prefix);
 		break;
 	case SQL_DESC_LITERAL_SUFFIX:
 		if (pszValue)
 			strncpy(pszValue,
-				pColumnHeader->pszSQL_DESC_LITERAL_SUFFIX,
+				pColumnHeader->sql_desc_literal_suffix,
 				nValueLengthMax);
 		if (pnValueLength)
-			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_LITERAL_SUFFIX);
+			*pnValueLength = strlen(pColumnHeader->sql_desc_literal_suffix);
 		break;
 	case SQL_DESC_LOCAL_TYPE_NAME:
 		if (pszValue)
 			strncpy(pszValue,
-				pColumnHeader->pszSQL_DESC_LOCAL_TYPE_NAME,
+				pColumnHeader->sql_desc_local_type_name,
 				nValueLengthMax);
 		if (pnValueLength)
-			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_LOCAL_TYPE_NAME);
+			*pnValueLength = strlen(pColumnHeader->sql_desc_local_type_name);
 		break;
 	case SQL_DESC_NAME:
 		if (pszValue)
-			strncpy(pszValue, pColumnHeader->pszSQL_DESC_NAME,
+			strncpy(pszValue, pColumnHeader->sql_desc_name,
 				nValueLengthMax);
 		if (pnValueLength)
-			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_NAME);
+			*pnValueLength = strlen(pColumnHeader->sql_desc_name);
 		break;
 	case SQL_DESC_NULLABLE:
 		if (valueptr)
-			*valueptr = pColumnHeader->nSQL_DESC_NULLABLE;
+			*valueptr = pColumnHeader->sql_desc_nullable;
 		break;
 	case SQL_DESC_NUM_PREC_RADIX:
 		if (valueptr)
-			*valueptr = pColumnHeader->nSQL_DESC_NUM_PREC_RADIX;
+			*valueptr = pColumnHeader->sql_desc_num_prec_radix;
 		break;
 	case SQL_DESC_OCTET_LENGTH:
 		if (valueptr)
-			*valueptr = pColumnHeader->nSQL_DESC_OCTET_LENGTH;
+			*valueptr = pColumnHeader->sql_desc_octet_length;
 		break;
 	case SQL_DESC_PRECISION:
 		if (valueptr)
-			*valueptr = pColumnHeader->nSQL_DESC_PRECISION;
+			*valueptr = pColumnHeader->sql_desc_precision;
 		break;
 	case SQL_DESC_SCALE:
 		if (valueptr)
-			*valueptr = pColumnHeader->nSQL_DESC_SCALE;
+			*valueptr = pColumnHeader->sql_desc_scale;
 		break;
 	case SQL_DESC_SCHEMA_NAME:
 		if (pszValue)
-			strncpy(pszValue, pColumnHeader->pszSQL_DESC_SCHEMA_NAME,
+			strncpy(pszValue, pColumnHeader->sql_desc_schema_name,
 				nValueLengthMax);
 		if (pnValueLength)
-			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_SCHEMA_NAME);
+			*pnValueLength = strlen(pColumnHeader->sql_desc_schema_name);
 		break;
 	case SQL_DESC_SEARCHABLE:
 		if (valueptr)
-			*valueptr = pColumnHeader->nSQL_DESC_SEARCHABLE;
+			*valueptr = pColumnHeader->sql_desc_searchable;
 		break;
 	case SQL_DESC_TABLE_NAME:
 		if (pszValue)
 			strncpy(pszValue,
-				pColumnHeader->pszSQL_DESC_TABLE_NAME,
+				pColumnHeader->sql_desc_table_name,
 				nValueLengthMax);
 		if (pnValueLength)
-			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_TABLE_NAME);
+			*pnValueLength = strlen(pColumnHeader->sql_desc_table_name);
 		break;
 	case SQL_DESC_TYPE:
 		if (valueptr)
-			*valueptr = pColumnHeader->nSQL_DESC_TYPE;
+			*valueptr = pColumnHeader->sql_desc_type;
 		break;
 	case SQL_DESC_TYPE_NAME:
 		if (pszValue)
-			strncpy(pszValue, pColumnHeader->pszSQL_DESC_TYPE_NAME,
+			strncpy(pszValue, pColumnHeader->sql_desc_type_name,
 				nValueLengthMax);
 		if (pnValueLength)
-			*pnValueLength = strlen(pColumnHeader->pszSQL_DESC_TYPE_NAME);
+			*pnValueLength = strlen(pColumnHeader->sql_desc_type_name);
 		break;
 	case SQL_DESC_UNNAMED:
 		if (valueptr)
-			*valueptr = pColumnHeader->nSQL_DESC_UNNAMED;
+			*valueptr = pColumnHeader->sql_desc_unnamed;
 		break;
 	case SQL_DESC_UNSIGNED:
 		if (valueptr)
-			*valueptr = pColumnHeader->bSQL_DESC_UNSIGNED;
+			*valueptr = pColumnHeader->sql_desc_unsigned;
 		break;
 	case SQL_DESC_UPDATABLE:
 		if (valueptr)
-			*valueptr = pColumnHeader->nSQL_DESC_UPDATABLE;
+			*valueptr = pColumnHeader->sql_desc_updatable;
 		break;
 	default:
 		/* HY091 = Invalid descriptor field identifier */
@@ -248,6 +247,7 @@ SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 	ODBCLOG("SQLColAttribute %d\n", nFieldIdentifier);
 #endif
 
-	return SQLColAttribute_(hStmt, nCol, nFieldIdentifier, pszValue,
-				nValueLengthMax, pnValueLength, pnValue);
+	return SQLColAttribute_((ODBCStmt *) hStmt, nCol, nFieldIdentifier,
+				pszValue, nValueLengthMax, pnValueLength,
+				pnValue);
 }

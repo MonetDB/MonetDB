@@ -146,7 +146,7 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		addDbcError(dbc, "IM010", NULL, 0);
 		rc = SQL_ERROR;
 	} else {
-		rc = SQLConnect_(hDbc, dsn, SQL_NTS, uid, SQL_NTS,
+		rc = SQLConnect_(dbc, dsn, SQL_NTS, uid, SQL_NTS,
 				 pwd, SQL_NTS);
 	}
 

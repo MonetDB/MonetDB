@@ -14,6 +14,7 @@
  **********************************************************************/
 
 #include "ODBCGlobal.h"
+#include "ODBCStmt.h"
 
 SQLRETURN
 SQLGetDescRec(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
@@ -22,23 +23,61 @@ SQLGetDescRec(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 	      SQLSMALLINT *SubType, SQLINTEGER *Length, SQLSMALLINT *Precision,
 	      SQLSMALLINT *Scale, SQLSMALLINT *Nullable)
 {
+	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
+	ODBCDescRec *rec;
+
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDescRec\n");
+	ODBCLOG("SQLGetDescRec %d\n", RecordNumber);
 #endif
 
-	(void) DescriptorHandle;	/* Stefan: unused!? */
-	(void) RecordNumber;	/* Stefan: unused!? */
-	(void) Name;		/* Stefan: unused!? */
-	(void) BufferLength;	/* Stefan: unused!? */
-	(void) StringLength;	/* Stefan: unused!? */
-	(void) Type;		/* Stefan: unused!? */
-	(void) SubType;		/* Stefan: unused!? */
-	(void) Length;		/* Stefan: unused!? */
-	(void) Precision;	/* Stefan: unused!? */
-	(void) Scale;		/* Stefan: unused!? */
-	(void) Nullable;	/* Stefan: unused!? */
+	if (!isValidDesc(desc))
+		return SQL_INVALID_HANDLE;
 
-	/* We have not implemented Descriptors (yet) */
-	/* Hence we can not return an error, such as "IM001: driver not capable". */
-	return SQL_INVALID_HANDLE;
+	if (RecordNumber <= 0) {
+		addDescError(desc, "07009", NULL, 0);
+		return SQL_ERROR;
+	}
+/*
+	if (isIRD(desc) &&
+	    (desc->Stmt->State == PREPARED || desc->Stmt->State == EXECUTED) && no open cursor)
+		return SQL_NO_DATA;
+*/
+	if (isIRD(desc) && desc->Stmt->State != PREPARED &&
+	    desc->Stmt->State != EXECUTED) {
+		/* Associated statement is not prepared */
+		addDescError(desc, "HY007", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	if (RecordNumber > desc->sql_desc_count)
+		return SQL_NO_DATA;
+
+	rec = &desc->descRec[RecordNumber];
+
+	if (Type)
+		*Type = rec->sql_desc_type;
+	if (SubType)
+		*SubType = rec->sql_desc_datetime_interval_code;
+	if (Length)
+		*Length = rec->sql_desc_octet_length;
+	if (Precision)
+		*Precision = rec->sql_desc_precision;
+	if (Scale)
+		*Scale = rec->sql_desc_scale;
+	if (Nullable && isID(desc))
+		*Nullable = rec->sql_desc_nullable;
+
+	if (isID(desc)) {
+		size_t length = strlen(rec->sql_desc_name);
+		if (BufferLength > 0 && Name)
+			strncpy((char *) Name, (char *) rec->sql_desc_name, BufferLength);
+		if (StringLength)
+			*StringLength = (SQLSMALLINT) length;;
+		if (length >= BufferLength) {
+			addDescError(desc, "01004", NULL, 0);
+			return SQL_SUCCESS_WITH_INFO;
+		}
+	}
+
+	return SQL_SUCCESS;
 }

@@ -122,5 +122,14 @@ ODBCError *getDbcError(ODBCDbc *dbc);
  */
 void destroyODBCDbc(ODBCDbc *dbc);
 
+SQLRETURN SQLConnect_(ODBCDbc *dbc,
+		      SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
+		      SQLCHAR *szUID, SQLSMALLINT nUIDLength,
+		      SQLCHAR *szPWD, SQLSMALLINT nPWDLength);
+SQLRETURN SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
+			     SQLPOINTER ValuePtr, SQLINTEGER BufferLength,
+			     SQLINTEGER *StringLength);
+SQLRETURN SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
+			     SQLPOINTER ValuePtr, SQLINTEGER StringLength);
 
 #endif

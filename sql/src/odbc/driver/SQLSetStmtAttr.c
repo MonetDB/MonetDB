@@ -22,14 +22,9 @@
 
 
 SQLRETURN
-SQLSetStmtAttr_(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
+SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 		SQLINTEGER StringLength)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-
-	(void) Value;		/* Stefan: unused!? */
-	(void) StringLength;	/* Stefan: unused!? */
-
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -38,12 +33,96 @@ SQLSetStmtAttr_(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	/* TODO: check parameters: Value and StringLength */
 
 	switch (Attribute) {
-	/* TODO: implement requested behavior */
+#define desc ((ODBCDesc *) Value) /* abbrev. */
 	case SQL_ATTR_APP_PARAM_DESC:
+		if (Value == SQL_NULL_HDESC ||
+		    desc == stmt->AutoApplParamDescr) {
+			stmt->ApplParamDescr = stmt->AutoApplParamDescr;
+			return SQL_SUCCESS;
+		}
+		if (!isValidDesc(desc)) {
+			addStmtError(stmt, "HY024", NULL, 0);
+			return SQL_ERROR;
+		}
+		if (desc->sql_desc_alloc_type == SQL_DESC_ALLOC_AUTO) {
+			addStmtError(stmt, "HY017", NULL, 0);
+			return SQL_ERROR;
+		}
+		stmt->ApplParamDescr = desc;
+		return SQL_SUCCESS;
 	case SQL_ATTR_APP_ROW_DESC:
-	case SQL_ATTR_FETCH_BOOKMARK_PTR:
+		if (Value == SQL_NULL_HDESC ||
+		    desc == stmt->AutoApplRowDescr) {
+			stmt->ApplRowDescr = stmt->AutoApplRowDescr;
+			return SQL_SUCCESS;
+		}
+		if (!isValidDesc(desc)) {
+			addStmtError(stmt, "HY024", NULL, 0);
+			return SQL_ERROR;
+		}
+		if (desc->sql_desc_alloc_type == SQL_DESC_ALLOC_AUTO) {
+			addStmtError(stmt, "HY017", NULL, 0);
+			return SQL_ERROR;
+		}
+		stmt->ApplRowDescr = desc;
+		return SQL_SUCCESS;
+#undef desc
 	case SQL_ATTR_IMP_PARAM_DESC:
 	case SQL_ATTR_IMP_ROW_DESC:
+		addStmtError(stmt, "HY017", NULL, 0);
+		return SQL_ERROR;
+
+	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
+		return SQLSetDescField_(stmt->ApplParamDescr, 0,
+					SQL_DESC_BIND_OFFSET_PTR,
+					Value, StringLength);
+	case SQL_ATTR_PARAM_BIND_TYPE:
+		return SQLSetDescField_(stmt->ApplParamDescr, 0,
+					SQL_DESC_BIND_TYPE,
+					Value, StringLength);
+	case SQL_ATTR_PARAM_OPERATION_PTR:
+		return SQLSetDescField_(stmt->ApplParamDescr, 0,
+					SQL_DESC_ARRAY_STATUS_PTR,
+					Value, StringLength);
+	case SQL_ATTR_PARAM_STATUS_PTR:
+		return SQLSetDescField_(stmt->ImplParamDescr, 0,
+					SQL_DESC_ARRAY_STATUS_PTR,
+					Value, StringLength);
+	case SQL_ATTR_PARAMS_PROCESSED_PTR:
+		return SQLSetDescField_(stmt->ImplParamDescr, 0,
+					SQL_DESC_ROWS_PROCESSED_PTR,
+					Value, StringLength);
+	case SQL_ATTR_PARAMSET_SIZE:
+		return SQLSetDescField_(stmt->ApplParamDescr, 0,
+					SQL_DESC_ARRAY_SIZE,
+					Value, StringLength);
+	case SQL_ATTR_ROW_ARRAY_SIZE:
+		return SQLSetDescField_(stmt->ApplRowDescr, 0,
+					SQL_DESC_ARRAY_SIZE,
+					Value, StringLength);
+	case SQL_ATTR_ROW_BIND_OFFSET_PTR:
+		return SQLSetDescField_(stmt->ApplRowDescr, 0,
+					SQL_DESC_BIND_OFFSET_PTR,
+					Value, StringLength);
+	case SQL_ATTR_ROW_BIND_TYPE:
+		return SQLSetDescField_(stmt->ApplRowDescr, 0,
+					SQL_DESC_BIND_TYPE,
+					Value, StringLength);
+	case SQL_ATTR_ROW_OPERATION_PTR:
+		return SQLSetDescField_(stmt->ApplRowDescr, 0,
+					SQL_DESC_ARRAY_STATUS_PTR,
+					Value, StringLength);
+	case SQL_ATTR_ROW_STATUS_PTR:
+		return SQLSetDescField_(stmt->ImplRowDescr, 0,
+					SQL_DESC_ARRAY_STATUS_PTR,
+					Value, StringLength);
+	case SQL_ATTR_ROWS_FETCHED_PTR:
+		return SQLSetDescField_(stmt->ImplRowDescr, 0,
+					SQL_DESC_ROWS_PROCESSED_PTR,
+					Value, StringLength);
+
+	/* TODO: implement requested behavior */
+	case SQL_ATTR_FETCH_BOOKMARK_PTR:
 	case SQL_ATTR_ASYNC_ENABLE:
 	case SQL_ATTR_CONCURRENCY:
 	case SQL_ATTR_CURSOR_SCROLLABLE:
@@ -55,21 +134,9 @@ SQLSetStmtAttr_(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	case SQL_ATTR_MAX_ROWS:
 	case SQL_ATTR_METADATA_ID:
 	case SQL_ATTR_NOSCAN:
-	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
-	case SQL_ATTR_PARAM_BIND_TYPE:
-	case SQL_ATTR_PARAM_OPERATION_PTR:
-	case SQL_ATTR_PARAM_STATUS_PTR:
-	case SQL_ATTR_PARAMS_PROCESSED_PTR:
-	case SQL_ATTR_PARAMSET_SIZE:
 	case SQL_ATTR_QUERY_TIMEOUT:
 	case SQL_ATTR_RETRIEVE_DATA:
-	case SQL_ATTR_ROW_ARRAY_SIZE:
-	case SQL_ATTR_ROW_BIND_OFFSET_PTR:
-	case SQL_ATTR_ROW_BIND_TYPE:
 	case SQL_ATTR_ROW_NUMBER:
-	case SQL_ATTR_ROW_OPERATION_PTR:
-	case SQL_ATTR_ROW_STATUS_PTR:
-	case SQL_ATTR_ROWS_FETCHED_PTR:
 	case SQL_ATTR_SIMULATE_CURSOR:
 	case SQL_ATTR_USE_BOOKMARKS:
 		/* return error: Optional feature not supported */
@@ -92,5 +159,6 @@ SQLSetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	ODBCLOG("SQLSetStmtAttr\n");
 #endif
 
-	return SQLSetStmtAttr_(hStmt, Attribute, Value, StringLength);
+	return SQLSetStmtAttr_((ODBCStmt *) hStmt, Attribute, Value,
+			       StringLength);
 }

@@ -27,7 +27,7 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	   SQLINTEGER *pnLengthOrIndicator)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	int mapitype;
+	ODBCDesc *desc;		/* Application Row Descriptor */
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLBindCol %d %d\n", nCol, nTargetType);
@@ -56,80 +56,29 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 		return SQL_ERROR;
 	}
 
-	ODBCdelbindcol(stmt, nCol);
+	desc = stmt->ApplRowDescr;
+	if (pTargetValue == NULL && nCol == desc->sql_desc_count) {
+		int i = desc->sql_desc_count - 1;
 
-	switch (nTargetType) {
-	case SQL_C_CHAR:
-#ifdef SQL_C_XML
-	case SQL_C_XML:
-#endif
-	case SQL_C_VARBOOKMARK:
-		/* mapi_store_field doesn't copy the data but only the
-		   pointer to the data */
-		mapitype = MAPI_VARCHAR;
-		pTargetValue = ODBCaddbindcol(stmt, nCol, pTargetValue, nTargetValueMax, pnLengthOrIndicator);
-		break;
-	case SQL_C_LONG:
-	case SQL_C_SLONG:
-		mapitype = MAPI_LONG;
-		break;
-	case SQL_C_ULONG:
-		mapitype = MAPI_ULONG;
-		break;
-	case SQL_C_SHORT:
-	case SQL_C_SSHORT:
-		mapitype = MAPI_SHORT;
-		break;
-	case SQL_C_USHORT:
-		mapitype = MAPI_USHORT;
-		break;
-	case SQL_C_BIT:
-	case SQL_C_TINYINT:
-	case SQL_C_STINYINT:
-		mapitype = MAPI_TINY;
-		break;
-	case SQL_C_UTINYINT:
-		mapitype = MAPI_UTINY;
-		break;
-	case SQL_C_SBIGINT:
-		mapitype = MAPI_LONGLONG;
-		break;
-	case SQL_C_UBIGINT:
-		mapitype = MAPI_ULONGLONG;
-		break;
-	case SQL_C_FLOAT:
-		mapitype = MAPI_FLOAT;
-		break;
-	case SQL_C_DOUBLE:
-		mapitype = MAPI_DOUBLE;
-		break;
-	case SQL_C_TYPE_DATE:
-		mapitype = MAPI_DATE;
-		break;
-	case SQL_C_TYPE_TIME:
-		mapitype = MAPI_TIME;
-		break;
-	case SQL_C_TYPE_TIMESTAMP:
-		mapitype = MAPI_DATETIME;
-		break;
-	default:
-/* TODO: finish implementation */
-		/* unimplemented conversion */
-		/* HY003 = Invalid application buffer type */
-		addStmtError(stmt, "HY003", NULL, 0);
-		return SQL_ERROR;
+		while (i > 0 && desc->descRec[i].sql_desc_data_ptr == NULL)
+			i--;
+		setODBCDescRecCount(desc, i);
+	} else {
+		ODBCDescRec *rec;
+		SQLRETURN rc;
+
+		if (nCol > desc->sql_desc_count)
+			setODBCDescRecCount(desc, nCol);
+		rc = SQLSetDescField_(desc, nCol, SQL_DESC_CONCISE_TYPE,
+				      (SQLPOINTER) (ssize_t) nTargetType, 0);
+		if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+			return rc;
+		rec = &desc->descRec[nCol];
+		rec->sql_desc_octet_length = nTargetValueMax;
+		rec->sql_desc_data_ptr = pTargetValue;
+		rec->sql_desc_indicator_ptr = pnLengthOrIndicator;
+		rec->sql_desc_octet_length_ptr = pnLengthOrIndicator;
 	}
-
-	if (pTargetValue != NULL && nTargetValueMax <= 0 &&
-	    (nTargetType == SQL_C_CHAR || nTargetType == SQL_C_BINARY ||
-	     nTargetType == SQL_C_NUMERIC)) {
-		/* for variable length data we need a buffer length */
-		/* HY090 = Invalid string or buffer length */
-		addStmtError(stmt, "HY090", NULL, 0);
-		return SQL_ERROR;
-	}
-
-	mapi_bind_var(stmt->hdl, nCol - 1, mapitype, pTargetValue);
 
 	return SQL_SUCCESS;
 }

@@ -20,10 +20,10 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-struct sql_types {
+struct msql_types {
 	char *name;
 	int type;
-} sql_types[] = {
+} msql_types[] = {
 	{"bit", SQL_C_BIT},
 	{"uchr", SQL_C_UTINYINT},
 	{"char", SQL_C_CHAR},
@@ -40,87 +40,91 @@ struct sql_types {
 };
 
 SQLRETURN
-SQLExecute_(SQLHSTMT hStmt)
+SQLExecute_(ODBCStmt *stmt)
 {
-	ODBCStmt *hstmt = (ODBCStmt *) hStmt;
 	int i = 0;
-	ColumnHeader *pCol;
+	int nrCols;
+	ODBCDescRec *pCol;
 	MapiHdl hdl;
 
-	if (!isValidStmt(hstmt))
+	if (!isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
 
-	clearStmtErrors(hstmt);
+	clearStmtErrors(stmt);
 
 	/* check statement cursor state, query should be prepared */
-	if (hstmt->State != PREPARED) {
+	if (stmt->State != PREPARED) {
 		/* 24000 = Invalid cursor state */
-		addStmtError(hstmt, "24000", NULL, 0);
+		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	/* internal state correctness checks */
-	assert(hstmt->ResultCols == NULL);
+	assert(stmt->ImplRowDescr->descRec == NULL);
 
-	assert(hstmt->Dbc);
-	assert(hstmt->Dbc->mid);
-	hdl = hstmt->hdl;
+	assert(stmt->Dbc);
+	assert(stmt->Dbc->mid);
+	hdl = stmt->hdl;
 	assert(hdl);
 
 	/* Have the server execute the query */
 	if (mapi_execute(hdl) != MOK) {
 		/* 08S01 Communication link failure */
-		addStmtError(hstmt, "08S01", mapi_error_str(hstmt->Dbc->mid), 0);
+		addStmtError(stmt, "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	}
 
 	/* now get the result data and store it to our internal data structure */
 
 	/* initialize the Result meta data values */
-	hstmt->nrCols = mapi_get_field_count(hdl);
-	hstmt->currentRow = 0;
-	hstmt->retrieved = 0;
-	hstmt->currentCol = 0;
+	nrCols = mapi_get_field_count(hdl);
+	stmt->currentRow = 0;
+	stmt->retrieved = 0;
+	stmt->currentCol = 0;
 
-	if (hstmt->nrCols == 0 && mapi_get_row_count(hdl) == 0) {
-		hstmt->State = PREPARED;
+	if (nrCols == 0 && mapi_get_row_count(hdl) == 0) {
+		stmt->State = PREPARED;
 		return SQL_SUCCESS;
 	}
 
-	hstmt->ResultCols = malloc((hstmt->nrCols + 1) * sizeof(*hstmt->ResultCols));
-	memset(hstmt->ResultCols, 0, (hstmt->nrCols + 1) * sizeof(*hstmt->ResultCols));
-	pCol = hstmt->ResultCols + 1;
-	for (i = 0; i < hstmt->nrCols; i++) {
-		struct sql_types *p;
+	setODBCDescRecCount(stmt->ImplRowDescr, nrCols);
+	if (stmt->ImplRowDescr->descRec == NULL) {
+		addStmtError(stmt, "HY001", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	pCol = stmt->ImplRowDescr->descRec + 1;
+	for (i = 0; i < nrCols; i++) {
+		struct msql_types *p;
 		char *s;
 
 		s = mapi_get_name(hdl, i);
-		pCol->pszSQL_DESC_BASE_COLUMN_NAME = strdup(s);
-		pCol->pszSQL_DESC_LABEL = strdup(s);
-		pCol->pszSQL_DESC_NAME = strdup(s);
-		pCol->nSQL_DESC_DISPLAY_SIZE = strlen(s) + 2;
+		pCol->sql_desc_base_column_name = strdup(s);
+		pCol->sql_desc_label = strdup(s);
+		pCol->sql_desc_name = strdup(s);
+		pCol->sql_desc_display_size = strlen(s) + 2;
 
 		s = mapi_get_type(hdl, i);
-		pCol->pszSQL_DESC_TYPE_NAME = strdup(s);
-		for (p = sql_types; p->name; p++) {
+		pCol->sql_desc_type_name = strdup(s);
+		for (p = msql_types; p->name; p++) {
 			if (strcmp(p->name, s) == 0) {
-				pCol->nSQL_DESC_TYPE = p->type;
+				pCol->sql_desc_type = p->type;
 				break;
 			}
 		}
 
-		pCol->pszSQL_DESC_BASE_TABLE_NAME = strdup("tablename");
-		pCol->pszSQL_DESC_LOCAL_TYPE_NAME = strdup("Mtype");
-		pCol->pszSQL_DESC_CATALOG_NAME = strdup("catalog");
-		pCol->pszSQL_DESC_LITERAL_PREFIX = strdup("pre");
-		pCol->pszSQL_DESC_LITERAL_SUFFIX = strdup("suf");
-		pCol->pszSQL_DESC_SCHEMA_NAME = strdup("schema");
-		pCol->pszSQL_DESC_TABLE_NAME = strdup("table");
+		pCol->sql_desc_base_table_name = strdup("tablename");
+		pCol->sql_desc_local_type_name = strdup("Mtype");
+		pCol->sql_desc_catalog_name = strdup("catalog");
+		pCol->sql_desc_literal_prefix = strdup("pre");
+		pCol->sql_desc_literal_suffix = strdup("suf");
+		pCol->sql_desc_schema_name = strdup("schema");
+		pCol->sql_desc_table_name = strdup("table");
 
 		pCol++;
 	}
 
-	hstmt->State = EXECUTED;
+	stmt->State = EXECUTED;
 	return SQL_SUCCESS;
 }
 
@@ -131,5 +135,5 @@ SQLExecute(SQLHSTMT hStmt)
 	ODBCLOG("SQLExecute\n");
 #endif
 
-	return SQLExecute_(hStmt);
+	return SQLExecute_((ODBCStmt *) hStmt);
 }

@@ -32,6 +32,8 @@ lib_MonetODBC = {
 	SOURCES = \
 	ODBCDbc.c \
 	ODBCDbc.h \
+	ODBCDesc.c \
+	ODBCDesc.h \
 	ODBCEnv.c \
 	ODBCEnv.h \
 	ODBCError.c \

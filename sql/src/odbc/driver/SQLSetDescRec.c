@@ -14,6 +14,7 @@
  **********************************************************************/
 
 #include "ODBCGlobal.h"
+#include "ODBCStmt.h"
 
 SQLRETURN
 SQLSetDescRec(SQLHDESC hDescriptorHandle, SQLSMALLINT nRecordNumber,
@@ -21,11 +22,15 @@ SQLSetDescRec(SQLHDESC hDescriptorHandle, SQLSMALLINT nRecordNumber,
 	      SQLSMALLINT nPrecision, SQLSMALLINT nScale, SQLPOINTER pData,
 	      SQLINTEGER *pnStringLength, SQLINTEGER *pnIndicator)
 {
+	ODBCDesc *desc = (ODBCDesc *) hDescriptorHandle;
+
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetDescRec\n");
 #endif
 
-	(void) hDescriptorHandle;	/* Stefan: unused!? */
+	if (!isValidDesc(desc))
+		return SQL_INVALID_HANDLE;
+
 	(void) nRecordNumber;	/* Stefan: unused!? */
 	(void) nType;		/* Stefan: unused!? */
 	(void) nSubType;	/* Stefan: unused!? */
@@ -36,8 +41,7 @@ SQLSetDescRec(SQLHDESC hDescriptorHandle, SQLSMALLINT nRecordNumber,
 	(void) pnStringLength;	/* Stefan: unused!? */
 	(void) pnIndicator;	/* Stefan: unused!? */
 
-	/* no Descriptors supported (yet) */
-	/* no Descriptor handle support, so not possible to set an error */
-	/* so return Invalid Handle */
-	return SQL_INVALID_HANDLE;
+	/* IM001: driver not capable */
+	addDescError(desc, "IM001", NULL, 0);
+	return SQL_ERROR;
 }

@@ -85,17 +85,13 @@ SQLAllocHandle_(SQLSMALLINT nHandleType, SQLHANDLE nInputHandle,
 		return SQL_SUCCESS;
 	case SQL_HANDLE_DBC:
 		*pnOutputHandle = (SQLHANDLE *) newODBCDbc((ODBCEnv *) nInputHandle);
-		return SQL_SUCCESS;
+		return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
 	case SQL_HANDLE_STMT:
 		*pnOutputHandle = (SQLHANDLE *) newODBCStmt((ODBCDbc *) nInputHandle);
-		return SQL_SUCCESS;
+		return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
 	case SQL_HANDLE_DESC:
-		/* TODO: implement this handle type.
-		 * For now, report an error.
-		 */
-		addDbcError((ODBCDbc *) nInputHandle, "HYC00", NULL, 0);
-		*pnOutputHandle = SQL_NULL_HDESC;
-		return SQL_ERROR;
+		*pnOutputHandle = (SQLHANDLE *) newODBCDesc((ODBCDbc *) nInputHandle);
+		return *pnOutputHandle == NULL ? SQL_ERROR : SQL_SUCCESS;
 	}
 
 	return SQL_INVALID_HANDLE;

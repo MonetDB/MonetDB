@@ -135,7 +135,7 @@ SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	query_end += strlen(query_end);
 
 	/* query the MonetDb data dictionary tables */
-	rc = SQLExecDirect_(hStmt, (SQLCHAR *) query,
+	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
 			    (SQLINTEGER) (query_end - query));
 
 	free(query);

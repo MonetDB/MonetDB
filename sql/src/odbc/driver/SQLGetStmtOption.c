@@ -24,6 +24,8 @@
 SQLRETURN
 SQLGetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLPOINTER pvParam)
 {
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetStmtOption\n");
 #endif
@@ -46,11 +48,8 @@ SQLGetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLPOINTER pvParam)
 /*		case SQL_GET_BOOKMARKS:	is deprecated in ODBC 3.0+ */
 	case SQL_ROW_NUMBER:
 		/* use mapping as described in ODBC 3.0 SDK Help */
-		return SQLGetStmtAttr_(hStmt, fOption, pvParam, 0, NULL);
+		return SQLGetStmtAttr_(stmt, fOption, pvParam, 0, NULL);
 	default:
-	{
-		ODBCStmt *stmt = (ODBCStmt *) hStmt;
-
 		if (!isValidStmt(stmt))
 			 return SQL_INVALID_HANDLE;
 
@@ -60,7 +59,6 @@ SQLGetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLPOINTER pvParam)
 		addStmtError(stmt, "HY092", NULL, 0);
 
 		return SQL_ERROR;
-	}
 	}
 
 	return SQL_ERROR;

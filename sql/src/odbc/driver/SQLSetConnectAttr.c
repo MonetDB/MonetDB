@@ -22,11 +22,9 @@
 
 
 SQLRETURN
-SQLSetConnectAttr_(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
+SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
 		   SQLPOINTER ValuePtr, SQLINTEGER StringLength)
 {
-	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
-
 	(void) StringLength;	/* Stefan: unused!? */
 
 	if (!isValidDbc(dbc))
@@ -88,6 +86,6 @@ SQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 	ODBCLOG("SQLSetConnectAttr\n");
 #endif
 
-	return SQLSetConnectAttr_(ConnectionHandle, Attribute, ValuePtr,
-				  StringLength);
+	return SQLSetConnectAttr_((ODBCDbc *) ConnectionHandle, Attribute,
+				  ValuePtr, StringLength);
 }

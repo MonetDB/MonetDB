@@ -24,10 +24,8 @@
 #include "ODBCStmt.h"
 
 SQLRETURN
-SQLFreeStmt_(SQLHSTMT handle, SQLUSMALLINT option)
+SQLFreeStmt_(ODBCStmt *stmt, SQLUSMALLINT option)
 {
-	ODBCStmt *stmt = (ODBCStmt *) handle;
-
 	/* Check parameter handle */
 	if (!isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
@@ -39,8 +37,7 @@ SQLFreeStmt_(SQLHSTMT handle, SQLUSMALLINT option)
 		/* Note: this option is also called from SQLCancel() and
 		   SQLCloseCursor(), so be careful when changing the code */
 		/* close cursor, discard result set, set to prepared */
-		ODBCfreeResultCol(stmt);
-		stmt->nrCols = 0;
+		setODBCDescRecCount(stmt->ImplRowDescr, 0);
 		stmt->currentRow = 0;
 
 		if (stmt->State == EXECUTED)
@@ -49,10 +46,9 @@ SQLFreeStmt_(SQLHSTMT handle, SQLUSMALLINT option)
 		/* Important: do not destroy the bind parameters and columns! */
 		return SQL_SUCCESS;
 	case SQL_DROP:
-		return SQLFreeHandle_(SQL_HANDLE_STMT, handle);
+		return SQLFreeHandle_(SQL_HANDLE_STMT, (SQLHANDLE) stmt);
 	case SQL_UNBIND:
-		mapi_clear_bindings(stmt->hdl);
-		ODBCfreebindcol(stmt);
+		setODBCDescRecCount(stmt->ApplRowDescr, 0);
 		return SQL_SUCCESS;
 	case SQL_RESET_PARAMS:
 		mapi_clear_params(stmt->hdl);
@@ -72,5 +68,5 @@ SQLFreeStmt(SQLHSTMT handle, SQLUSMALLINT option)
 	ODBCLOG("SQLFreeStmt\n");
 #endif
 
-	return SQLFreeStmt_(handle, option);
+	return SQLFreeStmt_((ODBCStmt *) handle, option);
 }

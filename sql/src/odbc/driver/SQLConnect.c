@@ -26,11 +26,10 @@
 #endif
 
 SQLRETURN
-SQLConnect_(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
+SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	    SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD,
 	    SQLSMALLINT nPWDLength)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	SQLRETURN rc = SQL_SUCCESS;
 	char *dsn = NULL;
 	char *uid = NULL;
@@ -143,6 +142,6 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	ODBCLOG("SQLConnect\n");
 #endif
 
-	return SQLConnect_(hDbc, szDataSource, nDataSourceLength,
+	return SQLConnect_((ODBCDbc *) hDbc, szDataSource, nDataSourceLength,
 			   szUID, nUIDLength, szPWD, nPWDLength);
 }

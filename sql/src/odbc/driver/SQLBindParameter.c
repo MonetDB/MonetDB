@@ -26,13 +26,13 @@
 #include "ODBCStmt.h"
 
 SQLRETURN
-SQLBindParameter_(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
+SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 		  SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
 		  SQLSMALLINT ParameterType, SQLUINTEGER ColumnSize,
 		  SQLSMALLINT DecimalDigits, SQLPOINTER ParameterValuePtr,
 		  SQLINTEGER BufferLength, SQLINTEGER *StrLen_or_IndPtr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+	ODBCDescRec *rec;
 	MapiMsg rc = MOK;
 
 	(void) ColumnSize;
@@ -60,6 +60,8 @@ SQLBindParameter_(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
 			     "Output parameters are not supported", 0);
 		return SQL_ERROR;
 	}
+
+	rec = addODBCDescRec(stmt->ImplParamDescr, ParameterNumber);
 
 	switch (ValueType) {
 	case SQL_C_CHAR:
@@ -157,8 +159,8 @@ SQLBindParameter(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
 		DecimalDigits);
 #endif
 
-	return SQLBindParameter_(hStmt, ParameterNumber, InputOutputType,
-				 ValueType, ParameterType, ColumnSize,
-				 DecimalDigits, ParameterValuePtr,
+	return SQLBindParameter_((ODBCStmt *) hStmt, ParameterNumber,
+				 InputOutputType, ValueType, ParameterType,
+				 ColumnSize, DecimalDigits, ParameterValuePtr,
 				 BufferLength, StrLen_or_IndPtr);
 }

@@ -27,42 +27,10 @@
 #include "ODBCHostVar.h"
 #include "ODBCError.h"
 #include "ODBCDbc.h"
+#include "ODBCDesc.h"
 
 /* some statement related ODBC driver defines */
 #define MONETDB_MAX_BIND_COLS	8192
-
-
-/* utility struct to decribe result set column info */
-typedef struct tColumnHeader {
-	/* COLUMN DESCRIPTION (used by SQLColAttribute()) */
-	int bSQL_DESC_AUTO_UNIQUE_VALUE;	/* IS AUTO INCREMENT COL? */
-	char *pszSQL_DESC_BASE_COLUMN_NAME;	/* empty string if N/A */
-	char *pszSQL_DESC_BASE_TABLE_NAME;	/* empty string if N/A */
-	int bSQL_DESC_CASE_SENSITIVE;	/* IS CASE SENSITIVE COLUMN? */
-	char *pszSQL_DESC_CATALOG_NAME;	/* empty string if N/A */
-	int nSQL_DESC_CONCISE_TYPE;	/* ie SQL_CHAR, SQL_TYPE_TIME... */
-	int nSQL_DESC_DISPLAY_SIZE;	/* max digits required to display */
-	int bSQL_DESC_FIXED_PREC_SCALE;	/* has data source specific precision? */
-	char *pszSQL_DESC_LABEL;	/* display label, col name or empty string */
-	int nSQL_DESC_LENGTH;	/* strlen or bin size */
-	char *pszSQL_DESC_LITERAL_PREFIX;	/* empty string if N/A */
-	char *pszSQL_DESC_LITERAL_SUFFIX;	/* empty string if N/A */
-	char *pszSQL_DESC_LOCAL_TYPE_NAME;	/* empty string if N/A */
-	char *pszSQL_DESC_NAME;	/* col alias, col name or empty string */
-	int nSQL_DESC_NULLABLE;	/* SQL_NULLABLE, _NO_NULLS or _UNKNOWN */
-	int nSQL_DESC_NUM_PREC_RADIX;	/* 2, 10, or if N/A... 0 */
-	int nSQL_DESC_OCTET_LENGTH;	/* max size */
-	int nSQL_DESC_PRECISION;	/* */
-	int nSQL_DESC_SCALE;	/* */
-	char *pszSQL_DESC_SCHEMA_NAME;	/* empty string if N/A */
-	int nSQL_DESC_SEARCHABLE;	/* can be in a filter ie SQL_PRED_NONE... */
-	char *pszSQL_DESC_TABLE_NAME;	/* empty string if N/A */
-	int nSQL_DESC_TYPE;	/* SQL data type ie SQL_CHAR, SQL_INTEGER.. */
-	char *pszSQL_DESC_TYPE_NAME;	/* DBMS data type ie VARCHAR, MONEY... */
-	int nSQL_DESC_UNNAMED;	/* qualifier for SQL_DESC_NAME ie SQL_NAMED */
-	int bSQL_DESC_UNSIGNED;	/* if signed FALSE else TRUE */
-	int nSQL_DESC_UPDATABLE;	/* ie SQL_ATTR_READONLY, SQL_ATTR_WRITE... */
-} ColumnHeader;
 
 
 typedef enum {
@@ -90,15 +58,18 @@ typedef struct tODBCDRIVERSTMT {
 	StatementState State;	/* needed to detect invalid cursor state */
 	MapiHdl hdl;
 
-	unsigned int nrCols;	/* nr of result output columns */
-	ColumnHeader *ResultCols;	/* 1+nrCols (0 not used) */
-	/* row 0 is not used (count starts at 1) */
 	unsigned int currentRow;	/* used by SQLFetch() */
 	unsigned int currentCol; /* used by SQLGetData() */
 	SQLINTEGER retrieved;	/* amount of data retrieved */
 
-	ODBCBIND *bindings;
-	int maxbindings;
+	ODBCDesc *ApplRowDescr;	/* Application Row Descriptor (ARD) */
+	ODBCDesc *ApplParamDescr; /* Application Parameter Descriptor (APD) */
+	ODBCDesc *ImplRowDescr;	/* Implementation Row Descriptor (IRD) */
+	ODBCDesc *ImplParamDescr; /* Implementation Parameter Descriptor (IPD) */
+
+	ODBCDesc *AutoApplRowDescr; /* Auto-allocated ARD */
+	ODBCDesc *AutoApplParamDescr; /* Auto-allocated APD */
+
 	/* Stmt children: none yet */
 } ODBCStmt;
 
@@ -179,12 +150,36 @@ SQLRETURN ODBCGetData(ODBCStmt *stmt, SQLUSMALLINT nCol,
 		      SQLINTEGER *pnLengthOrIndicator);
 
 
-void *ODBCaddbindcol(ODBCStmt *stmt, SQLUSMALLINT nCol,
-		     SQLPOINTER pTargetValue, SQLINTEGER nTargetValueMax,
-		     SQLINTEGER *pnLengthOrIndicator);
-void ODBCdelbindcol(ODBCStmt *stmt, SQLUSMALLINT nCol);
-void ODBCfreebindcol(ODBCStmt *stmt);
+SQLRETURN ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
+		    SQLPOINTER pTarget, SQLINTEGER nTargetLength,
+		    SQLINTEGER *pnLength, SQLINTEGER *pnIndicator,
+		    SQLSMALLINT precision, SQLSMALLINT scale,
+		    SQLINTEGER datetime_interval_precision);
 
-void ODBCfreeResultCol(ODBCStmt *stmt);
+SQLRETURN SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
+			    SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
+			    SQLSMALLINT ParameterType, SQLUINTEGER ColumnSize,
+			    SQLSMALLINT DecimalDigits,
+			    SQLPOINTER ParameterValuePtr,
+			    SQLINTEGER BufferLength,
+			    SQLINTEGER *StrLen_or_IndPtr);
+SQLRETURN SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
+			   SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue,
+			   SQLSMALLINT nValueLengthMax,
+			   SQLSMALLINT *pnValueLength, SQLPOINTER pnValue);
+SQLRETURN SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr,
+			 SQLINTEGER nSqlStr);
+SQLRETURN SQLExecute_(ODBCStmt *stmt);
+SQLRETURN SQLFetch_(ODBCStmt *stmt);
+SQLRETURN SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT nOrientation,
+			  SQLINTEGER nOffset);
+SQLRETURN SQLFreeStmt_(ODBCStmt *stmt, SQLUSMALLINT option);
+SQLRETURN SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute,
+			  SQLPOINTER Value, SQLINTEGER BufferLength,
+			  SQLINTEGER *StringLength);
+SQLRETURN SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr,
+		      SQLINTEGER nSqlStrLength);
+SQLRETURN SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute,
+			  SQLPOINTER Value, SQLINTEGER StringLength);
 
 #endif

@@ -65,7 +65,7 @@ SQLNumResultCols(SQLHSTMT hStmt, SQLSMALLINT *pnColumnCount)
 
 	/* We can now set the "number of output columns" value */
 	/* Note: row count can be 0 (for non SELECT queries) */
-	*pnColumnCount = mapi_get_field_count(stmt->hdl);
+	*pnColumnCount = stmt->ImplRowDescr->sql_desc_count;
 
 	return SQL_SUCCESS;
 }

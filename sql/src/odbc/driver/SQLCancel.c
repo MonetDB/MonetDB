@@ -19,12 +19,14 @@
 SQLRETURN
 SQLCancel(SQLHSTMT hStmt)
 {
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLCancel\n");
 #endif
 
-	if (!isValidStmt(hStmt))
+	if (!isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
 
-	return SQLFreeStmt_(hStmt, SQL_CLOSE);
+	return SQLFreeStmt_(stmt, SQL_CLOSE);
 }

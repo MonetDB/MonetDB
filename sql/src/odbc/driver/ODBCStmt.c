@@ -41,6 +41,12 @@ newODBCStmt(ODBCDbc *dbc)
 	assert(dbc);
 	assert(dbc->mid);
 
+	if (stmt == NULL) {
+		/* HY001: Memory allocation error */
+		addDbcError(dbc, "HY001", NULL, 0);
+		return NULL;
+	}
+
 	stmt->Dbc = dbc;
 	stmt->Error = NULL;
 	stmt->RetrievedErrors = 0;
@@ -49,16 +55,32 @@ newODBCStmt(ODBCDbc *dbc)
 	stmt->hdl = mapi_new_handle(dbc->mid);
 	assert(stmt->hdl);
 
-	stmt->nrCols = 0;
-	stmt->ResultCols = NULL;
 	stmt->currentRow = 0;
-
-	stmt->maxbindings = 0;
-	stmt->bindings = NULL;
 
 	/* add this stmt to the administrative linked stmt list */
 	stmt->next = dbc->FirstStmt;
 	dbc->FirstStmt = stmt;
+
+	stmt->ApplRowDescr = newODBCDesc(dbc);
+	stmt->ApplParamDescr = newODBCDesc(dbc);
+	stmt->ImplRowDescr = newODBCDesc(dbc);
+	stmt->ImplParamDescr = newODBCDesc(dbc);
+	stmt->AutoApplRowDescr = stmt->ApplRowDescr;
+	stmt->AutoApplParamDescr = stmt->ApplParamDescr;
+	if (stmt->ApplRowDescr == NULL ||
+	    stmt->ApplParamDescr == NULL ||
+	    stmt->ImplRowDescr == NULL ||
+	    stmt->ImplParamDescr == NULL) {
+		destroyODBCStmt(stmt);
+		return NULL;
+	}
+
+	stmt->ApplRowDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
+	stmt->ApplParamDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
+	stmt->ImplRowDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
+	stmt->ImplParamDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
+	stmt->ImplRowDescr->Stmt = stmt;
+	stmt->ImplParamDescr->Stmt = stmt;
 
 	stmt->Type = ODBC_STMT_MAGIC_NR;	/* set it valid */
 
@@ -131,44 +153,6 @@ getStmtError(ODBCStmt *stmt)
 
 
 
-void
-ODBCfreeResultCol(ODBCStmt *stmt)
-{
-	if (stmt->ResultCols) {
-		ColumnHeader *pCol;
-
-		for (pCol = stmt->ResultCols + 1;
-		     pCol <= stmt->ResultCols + stmt->nrCols;
-		     pCol++) {
-			if (pCol->pszSQL_DESC_BASE_COLUMN_NAME)
-				free(pCol->pszSQL_DESC_BASE_COLUMN_NAME);
-			if (pCol->pszSQL_DESC_LABEL)
-				free(pCol->pszSQL_DESC_LABEL);
-			if (pCol->pszSQL_DESC_NAME)
-				free(pCol->pszSQL_DESC_NAME);
-			if (pCol->pszSQL_DESC_TYPE_NAME)
-				free(pCol->pszSQL_DESC_TYPE_NAME);
-			if (pCol->pszSQL_DESC_BASE_TABLE_NAME)
-				free(pCol->pszSQL_DESC_BASE_TABLE_NAME);
-			if (pCol->pszSQL_DESC_LOCAL_TYPE_NAME)
-				free(pCol->pszSQL_DESC_LOCAL_TYPE_NAME);
-			if (pCol->pszSQL_DESC_CATALOG_NAME)
-				free(pCol->pszSQL_DESC_CATALOG_NAME);
-			if (pCol->pszSQL_DESC_LITERAL_PREFIX)
-				free(pCol->pszSQL_DESC_LITERAL_PREFIX);
-			if (pCol->pszSQL_DESC_LITERAL_SUFFIX)
-				free(pCol->pszSQL_DESC_LITERAL_SUFFIX);
-			if (pCol->pszSQL_DESC_SCHEMA_NAME)
-				free(pCol->pszSQL_DESC_SCHEMA_NAME);
-			if (pCol->pszSQL_DESC_TABLE_NAME)
-				free(pCol->pszSQL_DESC_TABLE_NAME);
-		}
-		free(stmt->ResultCols);
-		stmt->ResultCols = NULL;
-	}
-
-}
-
 /*
  * Destroys the ODBCStmt object including its own managed data.
  *
@@ -205,75 +189,13 @@ destroyODBCStmt(ODBCStmt *stmt)
 	/* cleanup own managed data */
 	deleteODBCErrorList(&stmt->Error);
 
-	ODBCfreebindcol(stmt);
+	destroyODBCDesc(stmt->ImplParamDescr);
+	destroyODBCDesc(stmt->ImplRowDescr);
+	destroyODBCDesc(stmt->AutoApplParamDescr);
+	destroyODBCDesc(stmt->AutoApplRowDescr);
+
 	if (stmt->hdl)
 		mapi_close_handle(stmt->hdl);
 
-	ODBCfreeResultCol(stmt);
-
 	free(stmt);
-}
-
-void *
-ODBCaddbindcol(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLPOINTER pTargetValue,
-	       SQLINTEGER nTargetValueMax, SQLINTEGER *pnLengthOrIndicator)
-{
-	int i, f = -1;
-
-	for (i = 0; i < stmt->maxbindings; i++) {
-		if (stmt->bindings[i].column == nCol)
-			break;
-		if (stmt->bindings[i].column == 0)
-			f = i;
-	}
-	if (i == stmt->maxbindings) {
-		/* not found */
-		if (f >= 0)
-			i = f;	/* use free entry */
-		else if (stmt->maxbindings > 0)
-			stmt->bindings = realloc(stmt->bindings, ++stmt->maxbindings * sizeof(ODBCBIND));
-		else
-			stmt->bindings = malloc(++stmt->maxbindings * sizeof(ODBCBIND));
-	}
-
-	stmt->bindings[i].column = nCol;
-	stmt->bindings[i].pTargetValue = pTargetValue;
-	stmt->bindings[i].pnLengthOrIndicator = pnLengthOrIndicator;
-	stmt->bindings[i].nTargetValueMax = nTargetValueMax;
-	/* allocate space for a char * so that we're safe against the
-	   realloc above (we need a space where a char * is put that
-	   we can give to MAPI and that has to stay fixed until
-	   released, possibly many calls to this function later) */
-	stmt->bindings[i].ppszTargetStr = malloc(sizeof(char *));
-
-	return stmt->bindings[i].ppszTargetStr;
-}
-
-void
-ODBCdelbindcol(ODBCStmt *stmt, SQLUSMALLINT nCol)
-{
-	int i;
-
-	for (i = 0; i < stmt->maxbindings; i++)
-		if (stmt->bindings[i].column == nCol) {
-			if (stmt->bindings[i].ppszTargetStr)
-				free(stmt->bindings[i].ppszTargetStr);
-			memset(&stmt->bindings[i], 0, sizeof(ODBCBIND));
-			break;
-		}
-}
-
-void
-ODBCfreebindcol(ODBCStmt *stmt)
-{
-	int i;
-
-	if (stmt->bindings) {
-		for (i = 0; i < stmt->maxbindings; i++)
-			if (stmt->bindings[i].ppszTargetStr)
-				free(stmt->bindings[i].ppszTargetStr);
-		free(stmt->bindings);
-	}
-	stmt->bindings = NULL;
-	stmt->maxbindings = 0;
 }

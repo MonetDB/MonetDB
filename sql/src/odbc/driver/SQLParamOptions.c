@@ -15,10 +15,12 @@
  **********************************************************************/
 
 #include "ODBCGlobal.h"
+#include "ODBCStmt.h"
 
 SQLRETURN
 SQLParamOptions(SQLHSTMT hStmt, SQLUINTEGER nRow, SQLUINTEGER *pnRow)
 {
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	RETCODE rc;
 
 #ifdef ODBCDEBUG
@@ -26,9 +28,9 @@ SQLParamOptions(SQLHSTMT hStmt, SQLUINTEGER nRow, SQLUINTEGER *pnRow)
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	rc = SQLSetStmtAttr_(hStmt, SQL_ATTR_PARAMSET_SIZE, &nRow, 0);
+	rc = SQLSetStmtAttr_(stmt, SQL_ATTR_PARAMSET_SIZE, &nRow, 0);
 	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
-		rc = SQLSetStmtAttr_(hStmt, SQL_ATTR_PARAMS_PROCESSED_PTR,
+		rc = SQLSetStmtAttr_(stmt, SQL_ATTR_PARAMS_PROCESSED_PTR,
 				     pnRow, 0);
 	}
 	return rc;

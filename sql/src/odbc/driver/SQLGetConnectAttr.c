@@ -22,11 +22,9 @@
 
 
 SQLRETURN
-SQLGetConnectAttr_(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
+SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 		   SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
-	ODBCDbc *dbc = (ODBCDbc *) hDbc;
-
 	(void) BufferLength;	/* Stefan: unused!? */
 	(void) StringLength;	/* Stefan: unused!? */
 
@@ -100,6 +98,6 @@ SQLGetConnectAttr(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 	ODBCLOG("SQLGetConnectAttr\n");
 #endif
 
-	return SQLGetConnectAttr_(hDbc, Attribute, ValuePtr, BufferLength,
-				  StringLength);
+	return SQLGetConnectAttr_((ODBCDbc *) hDbc, Attribute, ValuePtr,
+				  BufferLength, StringLength);
 }

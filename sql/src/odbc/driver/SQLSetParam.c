@@ -19,6 +19,7 @@
  ********************************************************************/
 
 #include "ODBCGlobal.h"
+#include "ODBCStmt.h"
 
 SQLRETURN
 SQLSetParam(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
@@ -31,7 +32,7 @@ SQLSetParam(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
 #endif
 
 	/* map this call to SQLBindParameter as described in ODBC 3.0 SDK help */
-	return SQLBindParameter_(hStmt, ParameterNumber,
+	return SQLBindParameter_((ODBCStmt *) hStmt, ParameterNumber,
 				 SQL_PARAM_INPUT_OUTPUT, ValueType,
 				 ParameterType, LengthPrecision,
 				 ParameterScale, ParameterValue,

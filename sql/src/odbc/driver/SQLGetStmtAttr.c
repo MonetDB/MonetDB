@@ -22,15 +22,9 @@
 
 
 SQLRETURN
-SQLGetStmtAttr_(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
+SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
-	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-
-	(void) Value;		/* Stefan: unused!? */
-	(void) BufferLength;	/* Stefan: unused!? */
-	(void) StringLength;	/* Stefan: unused!? */
-
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -39,13 +33,70 @@ SQLGetStmtAttr_(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	/* TODO: check parameters: Value, BufferLength and StringLength */
 
 	switch (Attribute) {
-		/* TODO: implement requested behavior */
 	case SQL_ATTR_APP_PARAM_DESC:
+		* (SQLHANDLE *) Value = stmt->ApplParamDescr;
+		return SQL_SUCCESS;
 	case SQL_ATTR_APP_ROW_DESC:
-	case SQL_ATTR_FETCH_BOOKMARK_PTR:
+		* (SQLHANDLE *) Value = stmt->ApplRowDescr;
+		return SQL_SUCCESS;
 	case SQL_ATTR_IMP_PARAM_DESC:
+		* (SQLHANDLE *) Value = stmt->ImplParamDescr;
+		return SQL_SUCCESS;
 	case SQL_ATTR_IMP_ROW_DESC:
+		* (SQLHANDLE *) Value = stmt->ImplRowDescr;
+		return SQL_SUCCESS;
 
+	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
+		return SQLGetDescField_(stmt->ApplParamDescr, 0,
+					SQL_DESC_BIND_OFFSET_PTR,
+					Value, BufferLength, StringLength);
+	case SQL_ATTR_PARAM_BIND_TYPE:
+		return SQLGetDescField_(stmt->ApplParamDescr, 0,
+					SQL_DESC_BIND_TYPE,
+					Value, BufferLength, StringLength);
+	case SQL_ATTR_PARAM_OPERATION_PTR:
+		return SQLGetDescField_(stmt->ApplParamDescr, 0,
+					SQL_DESC_ARRAY_STATUS_PTR,
+					Value, BufferLength, StringLength);
+	case SQL_ATTR_PARAM_STATUS_PTR:
+		return SQLGetDescField_(stmt->ImplParamDescr, 0,
+					SQL_DESC_ARRAY_STATUS_PTR,
+					Value, BufferLength, StringLength);
+	case SQL_ATTR_PARAMS_PROCESSED_PTR:
+		return SQLGetDescField_(stmt->ImplParamDescr, 0,
+					SQL_DESC_ROWS_PROCESSED_PTR,
+					Value, BufferLength, StringLength);
+	case SQL_ATTR_PARAMSET_SIZE:
+		return SQLGetDescField_(stmt->ApplParamDescr, 0,
+					SQL_DESC_ARRAY_SIZE,
+					Value, BufferLength, StringLength);
+	case SQL_ATTR_ROW_ARRAY_SIZE:
+		return SQLGetDescField_(stmt->ApplRowDescr, 0,
+					SQL_DESC_ARRAY_SIZE,
+					Value, BufferLength, StringLength);
+	case SQL_ATTR_ROW_BIND_OFFSET_PTR:
+		return SQLGetDescField_(stmt->ApplRowDescr, 0,
+					SQL_DESC_BIND_OFFSET_PTR,
+					Value, BufferLength, StringLength);
+	case SQL_ATTR_ROW_BIND_TYPE:
+		return SQLGetDescField_(stmt->ApplRowDescr, 0,
+					SQL_DESC_BIND_TYPE,
+					Value, BufferLength, StringLength);
+	case SQL_ATTR_ROW_OPERATION_PTR:
+		return SQLGetDescField_(stmt->ApplRowDescr, 0,
+					SQL_DESC_ARRAY_STATUS_PTR,
+					Value, BufferLength, StringLength);
+	case SQL_ATTR_ROW_STATUS_PTR:
+		return SQLGetDescField_(stmt->ImplRowDescr, 0,
+					SQL_DESC_ARRAY_STATUS_PTR,
+					Value, BufferLength, StringLength);
+	case SQL_ATTR_ROWS_FETCHED_PTR:
+		return SQLGetDescField_(stmt->ImplRowDescr, 0,
+					SQL_DESC_ROWS_PROCESSED_PTR,
+					Value, BufferLength, StringLength);
+
+	/* TODO: implement requested behavior */
+	case SQL_ATTR_FETCH_BOOKMARK_PTR:
 	case SQL_ATTR_ASYNC_ENABLE:
 	case SQL_ATTR_CONCURRENCY:
 	case SQL_ATTR_CURSOR_SCROLLABLE:
@@ -57,21 +108,9 @@ SQLGetStmtAttr_(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	case SQL_ATTR_MAX_ROWS:
 	case SQL_ATTR_METADATA_ID:
 	case SQL_ATTR_NOSCAN:
-	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
-	case SQL_ATTR_PARAM_BIND_TYPE:
-	case SQL_ATTR_PARAM_OPERATION_PTR:
-	case SQL_ATTR_PARAM_STATUS_PTR:
-	case SQL_ATTR_PARAMS_PROCESSED_PTR:
-	case SQL_ATTR_PARAMSET_SIZE:
 	case SQL_ATTR_QUERY_TIMEOUT:
 	case SQL_ATTR_RETRIEVE_DATA:
-	case SQL_ATTR_ROW_ARRAY_SIZE:
-	case SQL_ATTR_ROW_BIND_OFFSET_PTR:
-	case SQL_ATTR_ROW_BIND_TYPE:
 	case SQL_ATTR_ROW_NUMBER:
-	case SQL_ATTR_ROW_OPERATION_PTR:
-	case SQL_ATTR_ROW_STATUS_PTR:
-	case SQL_ATTR_ROWS_FETCHED_PTR:
 	case SQL_ATTR_SIMULATE_CURSOR:
 	case SQL_ATTR_USE_BOOKMARKS:
 		/* return error: Optional feature not supported */
@@ -94,6 +133,6 @@ SQLGetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	ODBCLOG("SQLGetStmtAttr %d\n", Attribute);
 #endif
 
-	return SQLGetStmtAttr_(hStmt, Attribute, Value, BufferLength,
-			       StringLength);
+	return SQLGetStmtAttr_((ODBCStmt *) hStmt, Attribute, Value,
+			       BufferLength, StringLength);
 }

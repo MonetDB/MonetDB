@@ -173,7 +173,7 @@ SQLTables(SQLHSTMT hStmt,
 
 	/* query the MonetDb data dictionary tables */
 
-	rc = SQLExecDirect_(hStmt, (SQLCHAR *) query, SQL_NTS);
+	rc = SQLExecDirect_(stmt, (SQLCHAR *) query, SQL_NTS);
 
 	free(query);
 
