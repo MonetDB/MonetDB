@@ -33,12 +33,12 @@ Mserver prologue: This is what Mserver says before MapiClient connects.
 [ "monet_mod_acc",	  0	  ]
 [ "monet_mod_atm",	  4	  ]
 [ "monet_mod_cnt",	  20	  ]
-[ "monet_mod_dep",	  1	  ]
+[ "monet_mod_dep",	  10	  ]
 [ "monet_mod_drop",	  0	  ]
 [ "monet_mod_hdl",	  10	  ]
 [ "monet_mod_load",	  0	  ]
 [ "monet_mod_nme",	  20	  ]
-[ "monet_mod_use",	  42	  ]
+[ "monet_mod_use",	  44	  ]
 #---------------------------------#
 # BAT:		  adm_acctbl	  #
 # (str)		  (int)		  #
@@ -1559,12 +1559,12 @@ Mserver epilogue: This is what Mserver says after MapiClient has disconnected.
 [ "monet_mod_acc",	  0	  ]
 [ "monet_mod_atm",	  4	  ]
 [ "monet_mod_cnt",	  20	  ]
-[ "monet_mod_dep",	  1	  ]
+[ "monet_mod_dep",	  10	  ]
 [ "monet_mod_drop",	  0	  ]
 [ "monet_mod_hdl",	  10	  ]
 [ "monet_mod_load",	  0	  ]
 [ "monet_mod_nme",	  20	  ]
-[ "monet_mod_use",	  42	  ]
+[ "monet_mod_use",	  44	  ]
 #---------------------------------#
 # BAT:		  adm_acctbl	  #
 # (str)		  (int)		  #
@@ -3058,12 +3058,12 @@ MapiClient: This is what MapiClient says.
 [ "monet_mod_acc",	  0	  ]
 [ "monet_mod_atm",	  4	  ]
 [ "monet_mod_cnt",	  20	  ]
-[ "monet_mod_dep",	  1	  ]
+[ "monet_mod_dep",	  10	  ]
 [ "monet_mod_drop",	  0	  ]
 [ "monet_mod_hdl",	  10	  ]
 [ "monet_mod_load",	  0	  ]
 [ "monet_mod_nme",	  20	  ]
-[ "monet_mod_use",	  63	  ]
+[ "monet_mod_use",	  66	  ]
 #---------------------------------#
 # BAT:		  adm_acctbl	  #
 # (str)		  (int)		  #
