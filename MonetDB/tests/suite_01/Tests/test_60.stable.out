@@ -1,26 +1,20 @@
 stdout of test 'test_60` in directory 'tests/suite_01` itself:
 
 
-# 06:09:12 >  
-# 06:09:12 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_tests_suite_01  < test_60.milS
-# 06:09:12 >  
+# 12:10:27 >  
+# 12:10:27 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_tests_suite_01  < test_60.milS
+# 12:10:27 >  
 
-# Monet Database Server V4.3.3
-# Copyright (c) 1993-2001, CWI. All rights reserved.
-# compiled for sparc-sun-solaris2.8/64bit; dynamically linked.
-# dbfarm:/var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/dbfarm
-# dbname:Tests_tests_suite_01
-# dbdir:/var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_tests_suite_01
-
-!ERROR: interpret: no matching MIL operator to 'newid(str, str)'.
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #-----------------------------------------------------------------------------------------#
-# BAT:			  type	| type_status	| value_status	| value_value		  #
-# (str)			  (str)	| (str)		| (str)		| (str)			  #
+# type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "y",			  "str",  "liquid",	  "changeable",	  "\"hello\""		  ]
-[ "x",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
+[ "local",		  "str",  "liquid",	  "changeable",	  "\"b1\""		  ]
+[ "C",			  "str",  "liquid",	  "changeable",	  "\"1\""		  ]
+[ "B",			  "str",  "liquid",	  "changeable",	  "\"b\""		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -79,14 +73,77 @@ stdout of test 'test_60` in directory 'tests/suite_01` itself:
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
 #-----------------------------------------------------------------------------------------#
-# BAT:			  type	| type_status	| value_status	| value_value		  #
-# (str)			  (str)	| (str)		| (str)		| (str)			  #
+# type			| type	| type_status	| value_status	| value_value		  #
+#-----------------------------------------------------------------------------------------#
+[ "y",			  "str",  "liquid",	  "changeable",	  "\"hello\""		  ]
+[ "x",			  "int",  "liquid",	  "changeable",	  "35"			  ]
+[ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
+[ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
+[ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
+[ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
+[ "LT",			  "int",  "liquid",	  "constant",	  "-1"			  ]
+[ "EQ",			  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "BAT_WRITE",		  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "BAT_APPEND",		  "int",  "liquid",	  "constant",	  "2"			  ]
+[ "BAT_READ",		  "int",  "liquid",	  "constant",	  "1"			  ]
+[ "BUF_DONTNEED",	  "int",  "liquid",	  "constant",	  "4"			  ]
+[ "BUF_WILLNEED",	  "int",  "liquid",	  "constant",	  "3"			  ]
+[ "BUF_SEQUENTIAL",	  "int",  "liquid",	  "constant",	  "2"			  ]
+[ "BUF_RANDOM",		  "int",  "liquid",	  "constant",	  "1"			  ]
+[ "BUF_NORMAL",		  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "STORE_COMPR",	  "int",  "liquid",	  "constant",	  "2"			  ]
+[ "STORE_MMAP",		  "int",  "liquid",	  "constant",	  "1"			  ]
+[ "STORE_MEM",		  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "LNG_MIN",		  "lng",  "liquid",	  "constant",	  "-9223372036854775807"  ]
+[ "LNG_MAX",		  "lng",  "liquid",	  "constant",	  "9223372036854775807"	  ]
+[ "INT_MIN",		  "int",  "liquid",	  "constant",	  "-2147483647"		  ]
+[ "INT_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
+[ "SHT_MIN",		  "sht",  "liquid",	  "constant",	  "-32767"		  ]
+[ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
+[ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
+[ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
+[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
+[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
+[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
+[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
+[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
+[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
+[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
+[ "adm_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "adm_acctbl",		  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "adm_fcntbl",		  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
+[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
+[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
+[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
+[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
+[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
+[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
+[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
+[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
+[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
+[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
+[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
+[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
+[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
+[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
+[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
+[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
+[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
+[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
+[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
+#-----------------------------------------------------------------------------------------#
+# type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
 [ "z",			  "int",  "liquid",	  "changeable",	  "35"			  ]
 [ "y",			  "str",  "liquid",	  "changeable",	  "\"hello\""		  ]
 [ "x",			  "int",  "liquid",	  "changeable",	  "35"			  ]
 [ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -145,13 +202,15 @@ stdout of test 'test_60` in directory 'tests/suite_01` itself:
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
 [ 35 ]
-!ERROR: interpret: no matching MIL operator to 'newid(chr, str)'.
 #-----------------------------------------------------------------------------------------#
-# BAT:			  type	| type_status	| value_status	| value_value		  #
-# (str)			  (str)	| (str)		| (str)		| (str)			  #
+# type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
+[ "Nh",			  "str",  "liquid",	  "changeable",	  "\"r_hsh\""		  ]
+[ "Ahsh",		  "BAT",  "liquid",	  "changeable",	  "<r_hsh>"		  ]
+[ "A",			  "BAT",  "liquid",	  "changeable",	  "<r>"			  ]
+[ "N",			  "str",  "liquid",	  "changeable",	  "\"r\""		  ]
 [ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -210,13 +269,74 @@ stdout of test 'test_60` in directory 'tests/suite_01` itself:
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
 #-----------------------------------------------------------------------------------------#
-# BAT:			  type	| type_status	| value_status	| value_value		  #
-# (str)			  (str)	| (str)		| (str)		| (str)			  #
+# type			| type	| type_status	| value_status	| value_value		  #
+#-----------------------------------------------------------------------------------------#
+[ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
+[ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
+[ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
+[ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
+[ "LT",			  "int",  "liquid",	  "constant",	  "-1"			  ]
+[ "EQ",			  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "BAT_WRITE",		  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "BAT_APPEND",		  "int",  "liquid",	  "constant",	  "2"			  ]
+[ "BAT_READ",		  "int",  "liquid",	  "constant",	  "1"			  ]
+[ "BUF_DONTNEED",	  "int",  "liquid",	  "constant",	  "4"			  ]
+[ "BUF_WILLNEED",	  "int",  "liquid",	  "constant",	  "3"			  ]
+[ "BUF_SEQUENTIAL",	  "int",  "liquid",	  "constant",	  "2"			  ]
+[ "BUF_RANDOM",		  "int",  "liquid",	  "constant",	  "1"			  ]
+[ "BUF_NORMAL",		  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "STORE_COMPR",	  "int",  "liquid",	  "constant",	  "2"			  ]
+[ "STORE_MMAP",		  "int",  "liquid",	  "constant",	  "1"			  ]
+[ "STORE_MEM",		  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "LNG_MIN",		  "lng",  "liquid",	  "constant",	  "-9223372036854775807"  ]
+[ "LNG_MAX",		  "lng",  "liquid",	  "constant",	  "9223372036854775807"	  ]
+[ "INT_MIN",		  "int",  "liquid",	  "constant",	  "-2147483647"		  ]
+[ "INT_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
+[ "SHT_MIN",		  "sht",  "liquid",	  "constant",	  "-32767"		  ]
+[ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
+[ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
+[ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
+[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
+[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
+[ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
+[ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
+[ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
+[ "TOK_PROC",		  "int",  "frozen",	  "constant",	  "283"			  ]
+[ "TOK_BUILTIN",	  "int",  "frozen",	  "constant",	  "277"			  ]
+[ "adm_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
+[ "adm_acctbl",		  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
+[ "adm_fcntbl",		  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
+[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
+[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
+[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
+[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
+[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
+[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
+[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
+[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
+[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
+[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
+[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
+[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
+[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
+[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
+[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
+[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
+[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
+[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
+[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
+[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
+#-----------------------------------------------------------------------------------------#
+# type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
 [ "high",		  "int",  "liquid",	  "changeable",	  "10"			  ]
 [ "low",		  "int",  "liquid",	  "changeable",	  "0"			  ]
 [ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -274,19 +394,14 @@ stdout of test 'test_60` in directory 'tests/suite_01` itself:
 [ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-!WARNING: interpret: convert identifier 'tenk1_unique1' to string.
-!ERROR: interpret: no matching MIL operator to 'select(str, int, int)'.
-!MAYBE YOU MEAN:
-!	select(BAT[any::1,any::2], any::2) : BAT[any::1,any::2]
-!	select(BAT[any::1,any::2], any::2, any::2) : BAT[any::1,any::2]
+[ 1 ]
 #-----------------------------------------------------------------------------------------#
-# BAT:			  type	| type_status	| value_status	| value_value		  #
-# (str)			  (str)	| (str)		| (str)		| (str)			  #
+# type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
 [ "high",		  "int",  "liquid",	  "changeable",	  "11"			  ]
 [ "low",		  "int",  "liquid",	  "changeable",	  "0"			  ]
 [ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -344,19 +459,14 @@ stdout of test 'test_60` in directory 'tests/suite_01` itself:
 [ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-!WARNING: interpret: convert identifier 'tenk1_unique1' to string.
-!ERROR: interpret: no matching MIL operator to 'select(str, int, int)'.
-!MAYBE YOU MEAN:
-!	select(BAT[any::1,any::2], any::2) : BAT[any::1,any::2]
-!	select(BAT[any::1,any::2], any::2, any::2) : BAT[any::1,any::2]
+[ 1 ]
 #-----------------------------------------------------------------------------------------#
-# BAT:			  type	| type_status	| value_status	| value_value		  #
-# (str)			  (str)	| (str)		| (str)		| (str)			  #
+# type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
 [ "high",		  "int",  "liquid",	  "changeable",	  "99"			  ]
 [ "low",		  "int",  "liquid",	  "changeable",	  "0"			  ]
 [ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -414,19 +524,14 @@ stdout of test 'test_60` in directory 'tests/suite_01` itself:
 [ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-!WARNING: interpret: convert identifier 'tenk1_unique1' to string.
-!ERROR: interpret: no matching MIL operator to 'select(str, int, int)'.
-!MAYBE YOU MEAN:
-!	select(BAT[any::1,any::2], any::2) : BAT[any::1,any::2]
-!	select(BAT[any::1,any::2], any::2, any::2) : BAT[any::1,any::2]
+[ 8 ]
 #-----------------------------------------------------------------------------------------#
-# BAT:			  type	| type_status	| value_status	| value_value		  #
-# (str)			  (str)	| (str)		| (str)		| (str)			  #
+# type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
 [ "high",		  "int",  "liquid",	  "changeable",	  "999"			  ]
 [ "low",		  "int",  "liquid",	  "changeable",	  "0"			  ]
 [ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_26>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tenk1_unique1>"	  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -484,13 +589,9 @@ stdout of test 'test_60` in directory 'tests/suite_01` itself:
 [ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
 [ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
 [ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
-!WARNING: interpret: convert identifier 'tenk1_unique1' to string.
-!ERROR: interpret: no matching MIL operator to 'select(str, int, int)'.
-!MAYBE YOU MEAN:
-!	select(BAT[any::1,any::2], any::2) : BAT[any::1,any::2]
-!	select(BAT[any::1,any::2], any::2, any::2) : BAT[any::1,any::2]
+[ 8 ]
 
-# 06:09:12 >  
-# 06:09:12 >  Done.
-# 06:09:12 >  
+# 12:10:28 >  
+# 12:10:28 >  Done.
+# 12:10:28 >  
 
