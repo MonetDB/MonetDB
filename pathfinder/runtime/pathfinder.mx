@@ -406,7 +406,7 @@ PROC compress_properties(str name) : void :=
 	ERROR("Document %s does not exist\n",name);
     var docid := str(int(doc_name.reverse.find(name)));
 
-    printf(">>> Compress properties of loaded document '%s'\n",name);
+    printf("[ \">>> Compress properties of loaded document '%s'\" ]\n",name);
     
     # eliminate property duplicates in each BAT prop_*
     # (in case of tag-names and PIs every unique combination of
@@ -478,7 +478,7 @@ PROC compress_properties(str name) : void :=
     attr_prop.access(BAT_WRITE).delete.insert(attr_newProp);
 
     commit;
-    printf("Compression completed\n");
+    print("Compression completed");
 }
 ADDHELP("compress_properties", "tsheyar", "Juli 2004",
 "PARAMETERS:\n\
@@ -504,7 +504,7 @@ PROC import_doc(str flnm, str name) : void :=
 
     module("ascii_io");
 
-    printf(">>> Importing '%s' with name '%s'\n",flnm,name);
+    printf("[ \">>> Importing '%s' with name '%s'\" ]\n",flnm,name);
 
     # column/line separators (4 columns)
     var seps4 := new (void, str);
@@ -640,7 +640,7 @@ PROC import_doc(str flnm, str name) : void :=
 
     # save all persistent BATs
     commit;
-    printf("Document successfully imported\n");
+    print("Document successfully imported");
 
     if (((bat("pre_kind" + docid).select(ELEMENT).count +
           bat("attr_own" + docid).count) = 
@@ -649,8 +649,8 @@ PROC import_doc(str flnm, str name) : void :=
 	(bat("pre_kind" + docid).select(TEXT).count =
         bat("prop_text" + docid).count))
     {
-        printf("The properties of the file '%s' are propably not compressed!\n", flnm);
-	printf("You can compress the loaded instance '%s' with: 'compress_properties(\"%s\");'\n", name, name);
+        printf("[ \"The properties of the file '%s' are propably not compressed!\" ]\n", flnm);
+	printf("[ \"You can compress the loaded instance '%s' with: 'compress_properties(\"%s\");'\" ]\n", name, name);
     }
 }
 ADDHELP("import_doc", "rode", "Nov 2003",
@@ -698,7 +698,7 @@ delete the persistent BATS that store the document.",
 PROC delete_all_docs() : void :=
 {
     if (not(view_bbp_name.reverse.exist("doc_name")))
-	printf("no documents to delete\n");
+	print("no documents to delete");
     else {
         bat("doc_name")@batloop () {
             delete_doc($t);
@@ -1330,7 +1330,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 
    var uniqueIter_count := {count}(iter.reverse, iter.tunique);
    
-   printf("order: uniqueIter_count %i, iter %i\n", uniqueIter_count.chk_order(false), iter.chk_order(false));
+   printf("[ \"order: uniqueIter_count %i, iter %i\" ]\n", uniqueIter_count.chk_order(false), iter.chk_order(false));
 
    if ((and(uniqueIter_count.chk_order(false),4) = 4) or 
        (iter.chk_order(false) >= 4))
