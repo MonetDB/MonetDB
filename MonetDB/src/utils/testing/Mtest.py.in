@@ -107,8 +107,8 @@ Usage:  '''+THISFILE+'''  [options] ( [<dir>] [<tests>] | [<dirs>] )
 
 	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		print('''\
- --MAPICLIENT=<name of mapi-client program>
- --SQLCLIENT=<name of sql-client program>
+ --MAPICLIENT=<mapi-client program call>
+ --SQLCLIENT=<sql-client program call>
  --MAPIPORT=<host-name:port-no.>
  --SQLPORT=<portno.>
          : overrule defaults:
@@ -791,8 +791,8 @@ def RunTest(env, TST) :
 		SkipTest(env, TST, EXT, "as "+env['MONET_PREFIX']+path("/share/Monet/mapi.mil")+" is not available.")
 	elif SERVER == "MAPI" and  os.name == "nt":
 		SkipTest(env, TST, EXT, "as Mapi is (currently?) not working on WindowsNT.")
-	elif EXT == ".milC" and  not env['exe']['MapiClient'][0]:
-		SkipTest(env, TST, EXT, "as "+env['MAPICLIENT']+" is not available.")
+	elif EXT == ".milC" and  not env['exe']['Mapi_Client'][0]:
+		SkipTest(env, TST, EXT, "as "+string.split(env['MAPICLIENT'])[0]+" is not available.")
 	elif CALL == "python"  and  not env['exe']['python'][0]:
 		SkipTest(env, TST, EXT, "as python is not available.")
 		#TODO:
@@ -807,8 +807,8 @@ def RunTest(env, TST) :
 		SkipTest(env, TST, EXT, "as "+env['SQL_PREFIX']+path("/share/sql/catalog.mil")+" is not available.")
 	elif SERVER == "SQL" and  not os.path.isfile(env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")):
 		SkipTest(env, TST, EXT, "as "+env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")+" is not available.")
-	elif EXT == ".sql" and  not env['exe']['SQLclient'][0]:
-		SkipTest(env, TST, EXT, "as "+env['SQLCLIENT']+" is not available.")
+	elif EXT == ".sql" and  not env['exe']['SQL_client'][0]:
+		SkipTest(env, TST, EXT, "as "+string.split(env['SQLCLIENT'])[0]+" is not available.")
 	elif MissingMods:
 		SkipTest(env, TST, EXT, "as modules '"+str(MissingMods)+"` are missing.")
 	elif MissingBATs:
@@ -1169,7 +1169,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 			if test.match(f):
 				TSTs.append(f)
 
-		Clnt = MTO+str(TOT)+" "+exe['MapiClient'][1]+" "+PRELUDE+" < "
+		Clnt = MTO+str(TOT)+" "+exe['Mapi_Client'][1]+" "+PRELUDE+" < "
 		for f in TSTs:
 			RunIt(Clnt+f, "", ClntOut, ClntErr)
 		
@@ -1188,7 +1188,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 			if test.match(f):
 				TSTs.append(f)
 
-		Clnt = MTO+str(TOT)+" "+exe['SQLclient'][1]+" "+PRELUDE+" < "
+		Clnt = MTO+str(TOT)+" "+exe['SQL_client'][1]+" "+PRELUDE+" < "
 		for f in TSTs:
 			RunIt(Clnt+f, "", ClntOut, ClntErr)
 
@@ -1418,8 +1418,8 @@ def main(argv) :
 		dft['MONET_MOD_PATH'] = "env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'Monet'"
 		dft['MAPIPORT']       = "HOST+':'+str(random.randrange(50000,59999,1))"
 		dft['SQLPORT']        = "str(random.randrange(50000,59999,1))"
-		dft['SQLCLIENT']      = "'sql_client'"
-		dft['MAPICLIENT']     = "'MapiClient'"
+		dft['SQLCLIENT']      = "'sql_client --port='+env['SQLPORT']"
+		dft['MAPICLIENT']     = "'MapiClient -everything'"
 	if THISFILE == "Mprofile.py":
 		dft['CMDLST']         = "FindCmdLst(env)"
 	env = {}
@@ -1628,15 +1628,15 @@ def main(argv) :
 	# check for executables, set their standard options and export them
 	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		exe = {}
-		exe['Mtimeout']    = CheckExec('Mtimeout')       , 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
-		exe['Mserver']     = CheckExec('Mserver')        , 'Mserver -monetrc '+env['MONETRC']
-		exe['MapiClient']  = CheckExec(env['MAPICLIENT']), env['MAPICLIENT']+' -everything'
-		exe['Mcreatedb']   = CheckExec('Mcreatedb')      , 'Mcreatedb -monetrc '+env['MONETRC']
-		exe['Mdestroydb']  = CheckExec('Mdestroydb')     , 'Mdestroydb -monetrc '+env['MONETRC']
-		exe['Mshutdown']   = CheckExec('Mshutdown')      , 'Mshutdown'
-		exe['Mdiff']       = CheckExec('Mdiff')          , 'Mdiff'
-		exe['python']      = CheckExec('python')         , 'python'
-		exe['SQLclient']   = CheckExec(env['SQLCLIENT']) , env['SQLCLIENT']+' --port='+env['SQLPORT']
+		exe['Mtimeout']    = CheckExec('Mtimeout')   , 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
+		exe['Mserver']     = CheckExec('Mserver')    , 'Mserver -monetrc '+env['MONETRC']
+		exe['Mcreatedb']   = CheckExec('Mcreatedb')  , 'Mcreatedb -monetrc '+env['MONETRC']
+		exe['Mdestroydb']  = CheckExec('Mdestroydb') , 'Mdestroydb -monetrc '+env['MONETRC']
+		exe['Mshutdown']   = CheckExec('Mshutdown')  , 'Mshutdown'
+		exe['Mdiff']       = CheckExec('Mdiff')      , 'Mdiff'
+		exe['python']      = CheckExec('python')     , 'python'
+		exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), env['MAPICLIENT']
+		exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , env['SQLCLIENT']
 		if not exe['Mtimeout'][0]:
 			exe['Mtimeout'] = '', ''
 		if os.name == "nt":
