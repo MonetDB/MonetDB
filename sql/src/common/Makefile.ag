@@ -8,7 +8,7 @@ INCLUDES = \
 lib_sql = {
 	SOURCES = \
 		sqlparser.y sqlscan.c sqlscan.h sqlexecute.c sqlexecute.h \
-		sql.c sql.h optimize.h optimize.c \
+		sql.c sql.h optimize.h optimize.c rel2bin.h rel2bin.c \
 		catalog.c catalog.h types.c types.h \
 		list.c list.h symbol.c symbol.h sym.h \
 		statement.c statement.h \

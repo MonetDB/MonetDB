@@ -47,6 +47,7 @@ const char * st_type2string(st_type type) {
 	case st_intersect:	return "st_intersect";
 	case st_union:	return "st_union";
 	case st_filter:	return "st_filter";
+	case st_relselect:	return "st_relselect";
 	case st_select:	return "st_select";
 	case st_select2:	return "st_select2";
 	case st_bulkinsert:	return "st_bulkinsert";
@@ -223,6 +224,9 @@ void stmt_destroy(stmt * s)
 		case st_create_key:
 			if (s->op2.stval)
 				stmt_destroy(s->op2.stval);
+			break;
+		case st_relselect:
+			list_destroy(s->op1.lval);
 			break;
 		case st_reljoin:
 			list_destroy(s->op1.lval);
@@ -698,6 +702,31 @@ stmt *stmt_filter(stmt * sel )
 	s->op1.stval = sel;
 	s->nrcols = 1;
 	s->h = stmt_dup(s->op1.stval->h);
+	return s;
+}
+
+stmt *stmt_relselect_init()
+{
+	stmt *s = stmt_create();
+	s->type = st_relselect;
+	s->op1.lval = list_create((fdestroy)&stmt_destroy);
+	s->nrcols = 1;
+	return s;
+}
+
+void stmt_relselect_fill(stmt *rs, stmt *sel)
+{
+	list_append(rs->op1.lval, sel);
+	if (!rs->h) rs->h = stmt_dup(((stmt*)(rs->op1.lval->h->data))->h);
+}
+
+stmt *stmt_relselect(list * sels)
+{
+	stmt *s = stmt_create();
+	s->type = st_relselect;
+	s->op1.lval = sels;
+	s->nrcols = 1;
+	s->h = stmt_dup(((stmt*)(s->op1.lval->h->data))->h);
 	return s;
 }
 
@@ -1270,6 +1299,7 @@ sql_subtype *tail_type(stmt * st)
 	case st_temp:
 		return st->op4.typeval;
 
+	case st_relselect:
 	default:
 		fprintf(stderr, "missing tail type %d: %s\n", st->type, st_type2string(st->type) );
 		return NULL;
@@ -1301,6 +1331,7 @@ sql_subtype *head_type(stmt * st)
 	case st_replace:
 	case st_partial_pivot: case st_pivot:
 		return head_type(st->op1.stval);
+	case st_relselect:
 	case st_reljoin:
 		return head_type(st->op1.lval->h->data);
 
@@ -1366,6 +1397,7 @@ stmt *tail_column(stmt * st)
 	case st_list:
 		return tail_column(st->op1.lval->h->data);
 
+	case st_relselect:
 	default:
 		fprintf(stderr, "missing tail column %d: %s\n", st->type, st_type2string(st->type) );
 		assert(0);
@@ -1401,6 +1433,7 @@ stmt *head_column(stmt * st)
 	case st_partial_pivot: case st_pivot:
 	case st_mirror:
 		return head_column(st->op1.stval);
+	case st_relselect:
 	case st_reljoin:
 		return head_column(st->op1.lval->h->data);
 
@@ -1486,6 +1519,7 @@ char *column_name(stmt * st)
 			return atom2string(st->op1.aval);
 		return strdup("single_value");
 
+	case st_relselect:
 	case st_reljoin:
 	default:
 		fprintf(stderr, "missing column name %d: %s\n", st->type, st_type2string(st->type) );
@@ -1529,6 +1563,7 @@ char *table_name(stmt * st)
 			return atom2string(st->op1.aval);
 		assert(0);
 
+	case st_relselect:
 	case st_reljoin:
 	default:
 		fprintf(stderr, "missing table name %d: %s\n", st->type, st_type2string(st->type) );

@@ -1040,13 +1040,15 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		write_tail(sql,-s->nr);
 	} break;
 
+	/* should not appear here */
+	case st_relselect:
 	/* todo */
 	case st_basetable: 
 	case st_grant:
 	case st_revoke:
 	case st_ptable:
 	case st_pivot:
-		printf("not implemented stmt\n");
+		printf("stmt_dump: not implemented stmt %s\n", st_type2string(s->type));
 		assert(0);
 	}
 

@@ -8,6 +8,7 @@
 #include "sqlscan.h"
 #include "symbol.h"
 #include "optimize.h"
+#include "rel2bin.h"
 #include <string.h>
 #include <stream.h>
 #include <statement.h>
@@ -71,7 +72,8 @@ stmt *sqlnext(context * lc, stream * in, int *err)
 		if (res){
 			stmt *opt = optimize(lc, res);
 			stmt_destroy(res);
-			res = opt;
+			res = rel2bin(lc, opt);
+			stmt_destroy(opt);
 		}
 		if (!res && lc->status){
 			*err = 1;
@@ -99,7 +101,8 @@ stmt *sqlexecute(context * lc, char *buf, int *err)
 		if (res){
 			stmt *opt = optimize(lc, res);
 			stmt_destroy(res);
-			res = opt;
+			res = rel2bin(lc, opt);
+			stmt_destroy(opt);
 		}
 		if (!res && lc->status){
 			*err = 1;

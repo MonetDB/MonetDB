@@ -58,6 +58,7 @@ typedef enum stmt_type {
 	st_intersect,
 	st_union,
 	st_filter,
+	st_relselect,
 	st_select,
 	st_select2,
 	st_find,
@@ -196,6 +197,9 @@ extern stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype);
        */
 extern stmt *stmt_select2(stmt * op1, stmt * op2,
 				    stmt * op3, int cmp);
+extern stmt *stmt_relselect_init();
+extern void stmt_relselect_fill(stmt *relselect, stmt *select);
+extern stmt *stmt_relselect(list * sels);
 
 extern stmt *stmt_like(stmt * op1, stmt * a);
 extern stmt *stmt_reljoin1(list * joins);

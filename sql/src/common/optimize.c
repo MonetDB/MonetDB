@@ -89,7 +89,16 @@ static int select_count( stmt *s )
 		*/
 		case st_semijoin: return select_count(s->op1.stval) +
 					select_count(s->op2.stval);
+		case st_relselect: {
+			int sc = 0;
+			node *n = NULL;
+			for (n = s->op1.lval->h; n; n = n->next) {
+				sc += select_count(n->data);
+			}
+			return sc;
+		}
 		case st_like:
+		case st_select2:
 		case st_select: return 1;
 		default: return 0;
 	}
@@ -181,6 +190,14 @@ static stmt *stmt_push_down_head(stmt * join, stmt * select){
 		    stmt_destroy(join);
 		    return res;
 		}
+	} else if (join->type == st_relselect){
+		list *l = create_stmt_list();
+		node *n;
+		for (n = join->op1.lval->h; n; n = n->next) {
+			l = list_append(l, stmt_push_down_head(stmt_dup(n->data), select));
+		}
+		stmt_destroy(join);
+		return stmt_relselect(l);
 	} else if (join->type == st_bat || join->type == st_column_alias){
 		return stmt_semijoin(join, select);
 	} else {
@@ -308,6 +325,14 @@ static stmt *stmt_push_join_head(stmt * s, stmt * join){
 			stmt_destroy(s);
 			return res;
 		}
+	} else if (s->type == st_relselect){
+		list *l = create_stmt_list();
+		node *n;
+		for (n = s->op1.lval->h; n; n = n->next) {
+			l = list_append(l, stmt_push_join_head( stmt_dup(n->data), join));
+		}
+		stmt_destroy(s);
+		return stmt_relselect(l);
 	} else {
 		printf("= TODO: common/optimize.c: push join head %s\n", st_type2string(s->type));
 	}
@@ -408,8 +433,7 @@ static list *push_selects_down(list * con){
 	djoins = list_distinct( joins, (fcmp)&stmt_cmp_head_tail, (fdup)&stmt_dup );
 	for( n = dsels->h; n; n = n->next){
 		list *esels = list_select(sels, n->data, (fcmp)&stmt_cmp_head_tail, (fdup)&stmt_dup );
-		stmt *sel = (stmt*)list_reduce(esels, (freduce)&stmt_semijoin, (fdup)&stmt_dup );
-		list_destroy(esels);
+		stmt *sel = stmt_relselect(esels);
 		/* todo check for foreign key selects */
 		list_append(rsel, sel);
 	}
@@ -800,6 +824,19 @@ stmt *optimize( context *c, stmt *s ){
 		for(n1 = s->op1.lval->h, n2 = s->op2.lval->h; n1 && n2; n1 = n1->next, n2 = n2->next ){
 			n1->data = optimize(c, n1->data);
 			n2->data = optimize(c, n2->data);
+		}
+		s->optimized = 1;
+		return stmt_dup(s);
+	}}
+
+	case st_relselect: {
+		if (s->optimized) 
+			return stmt_dup(s);
+
+	{	node *n;
+
+		for(n = s->op1.lval->h; n; n = n->next ){
+			n->data = optimize(c, n->data);
 		}
 		s->optimized = 1;
 		return stmt_dup(s);

@@ -181,6 +181,22 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 		}
 
 		if (cmd){
+
+/*
+			if (lc->debug&4096) {
+				char *sqzd_cmd = NULL;
+				int misq_x = 0;
+				CMDsqueezeStr2Str(&sqzd_cmd, cmd, &misq_x);
+				if (sqzd_cmd && (sqzd_cmd != str_nil)) {
+					if (cmd == inbuf)
+						_DELETE(cmd);
+					else if (cmd)
+						free(cmd);
+					cmd = sqzd_cmd;
+				}
+			}
+*/
+
 			if (lc->debug&64){
 				stream_writeInt( out, QDEBUG );
 				stream_writeInt( out, lc->debug );
