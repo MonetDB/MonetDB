@@ -1,8 +1,8 @@
 module("pathfinder");
 module("unix");
 
-var TSTTRGDIR := getenv("TSTTRGDIR");
+var TSTSRCDIR := getenv("TSTSRCDIR");
 
-import_doc(TSTTRGDIR + "/" + "auctions116KB.xml", "auctions116KB.xml");
+shred_doc(TSTSRCDIR + "/" + "auctions116KB.xml", "auctions116KB.xml");
 
 commit();

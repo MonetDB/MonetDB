@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-test -e auctions116KB.xml || Mlog -x ln -s $RELSRCDIR/auctions116KB.xml .
-
-Mlog -x pf-shred auctions116KB.xml
-

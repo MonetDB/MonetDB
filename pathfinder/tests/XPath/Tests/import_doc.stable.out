@@ -12,13 +12,10 @@ stdout of test 'import_doc` in directory 'tests/XPath` itself:
 module("pathfinder");
 module("unix");
 
-var TSTTRGDIR := getenv("TSTTRGDIR");
+var TSTSRCDIR := getenv("TSTSRCDIR");
 
-import_doc(TSTTRGDIR + "/" + "auctions116KB.xml", "auctions116KB.xml");
-# ">>> Importing '/var/tmp/_4.4.0_PREFIX_PATHFINDER_GNU_32_d_--enable-debug_/mTests/tests/XPath/auctions116KB.xml' with name 'auctions116KB.xml'"
-[ "Document successfully imported" ]
-# "The properties of the file '/var/tmp/_4.4.0_PREFIX_PATHFINDER_GNU_32_d_--enable-debug_/mTests/tests/XPath/auctions116KB.xml' are propably not compressed!"
-# "You can compress the loaded instance 'auctions116KB.xml' with: 'compress_properties("auctions116KB.xml");'"
+shred_doc(TSTSRCDIR + "/" + "auctions116KB.xml", "auctions116KB.xml");
+# Shredded XML doc("auctions116KB.xml"), total time after commit=0.18s
 
 commit();
 quit();
