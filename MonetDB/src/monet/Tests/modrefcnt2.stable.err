@@ -69,7 +69,7 @@ MAPI  = anonymous@draco:58320
 ACTION= mapi_get_row
 QUERY = test.count.print;
 ERROR = !ERROR: interpret: MIL operator invocation of 'count(BAT[int,lock])' with illegal types.
-!ERROR: print(param 1): evaluation error.
+        !ERROR: print(param 1): evaluation error.
 
 # 15:28:40 >  
 # 15:28:40 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --host=octans --port=55437 < modrefcnt2_s01.milC
@@ -89,7 +89,7 @@ MAPI  = anonymous@draco:58320
 ACTION= mapi_get_row
 QUERY = test.count.print;
 ERROR = !ERROR: interpret: MIL operator invocation of 'count(BAT[int,lock])' with illegal types.
-!ERROR: print(param 1): evaluation error.
+        !ERROR: print(param 1): evaluation error.
 
 MAPI  = anonymous@draco:58320
 ACTION= mapi_get_row
