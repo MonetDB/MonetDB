@@ -1,11 +1,11 @@
 stdout of test '99_Modules_ALL` in directory 'tests/Availability` itself:
 
 
-# 11:06:14 >  
-# 11:06:14 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_tests_Availability  < 99_Modules_ALL.milS
-# 11:06:14 >  
+# 13:58:47 >  
+# 13:58:47 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs" --dbfarm "/ufs/sjoerd/src/MonetDB/build/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_Availability  < 99_Modules_ALL.milS
+# 13:58:47 >  
 
-# Monet Database Server V4.3.5
+# Monet Database Server V4.3.7
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
@@ -58,7 +58,7 @@ malalgebra: loading... done.
  counters: loading... done.
   cluster: loaded.
     calib: loading... done.
-     blob: loaded.
+     blob: loading... done.
 bitvector: loaded.
    bitset: loading... done.
 bat_arith: loading... done.
@@ -169,7 +169,7 @@ table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod
 
 quit;
 
-# 17:06:43 >  
-# 17:06:43 >  Done.
-# 17:06:43 >  
+# 13:58:48 >  
+# 13:58:48 >  Done.
+# 13:58:48 >  
 

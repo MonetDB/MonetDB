@@ -1,11 +1,11 @@
 stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
 
 
-# 15:18:03 >  
-# 15:18:03 >  Mtimeout -timeout 60 Mserver "--config=/export/scratch1/sjoerd/Monet/etc/monet.conf" --debug=10 --set "monet_mod_path=/export/scratch1/sjoerd/Monet/lib/MonetDB" --dbfarm "/export/scratch1/sjoerd/Monet/var/dbfarm" --set monet_prompt= "/export/scratch1/sjoerd/Monet/Tests/trace.mil" --dbname=Tests_tests_Availability  < 02_Modules_plain.milS
-# 15:18:03 >  
+# 13:58:43 >  
+# 13:58:43 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs" --dbfarm "/ufs/sjoerd/src/MonetDB/build/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_Availability  < 02_Modules_plain.milS
+# 13:58:43 >  
 
-# Monet Database Server V4.3.5
+# Monet Database Server V4.3.7
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
@@ -976,7 +976,6 @@ Module: "tcpip"
 [ "terminate",	  "COMMAND:   ",  "terminate() : void",			  "stop a TCP/IP server"																				  ]
 [ "terminate",	  "COMMAND:   ",  "terminate(int) : void",		  "stop a TCP/IP server"																				  ]
 [ "waits",	  "COMMAND:   ",  "waits() : BAT[int,int]",		  "a BAT with all current waiting threads."																		  ]
-!WARNING: TCPepilogue: terminate 0 listeners
 
 Module: "tpcd"
 
@@ -1030,15 +1029,13 @@ Module: "uchr"
 
 Module: "unix"
 
-[ 4 ]
-[ 4 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature				| help																									  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "getenv",	  "COMMAND:   ",  "getenv(str) : str",			  "Get the environment variable string."																				  ]
-[ "run",	  "COMMAND:   ",  "run(blob, str, ..str..) : blob",	  "Execute a command, passing the optional strings as commandline arguments.\nThis function pipes the blob data to its childs stdin.\nThe data from the childs stdout is caught and returned as a blob."  ]
-[ "setenv",	  "COMMAND:   ",  "setenv(str, str) : bit",		  "Set the environment variable string."																				  ]
-[ "system",	  "COMMAND:   ",  "system(str) : int",			  "Execute a command and give back the return value"																			  ]
+[ 2 ]
+[ 2 ]
+#---------------------------------------------------------------------------------------------------------#
+# function	| type		| signature			| help					  #
+#---------------------------------------------------------------------------------------------------------#
+[ "getenv",	  "COMMAND:   ",  "getenv(str) : str",		  "Get the environment variable string."  ]
+[ "setenv",	  "COMMAND:   ",  "setenv(str, str) : bit",	  "Set the environment variable string."  ]
 
 Module: "url"
 
@@ -1277,7 +1274,7 @@ Module: "mprof"
 
 quit;
 
-# 15:18:05 >  
-# 15:18:05 >  Done.
-# 15:18:05 >  
+# 13:58:46 >  
+# 13:58:46 >  Done.
+# 13:58:46 >  
 
