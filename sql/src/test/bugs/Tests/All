@@ -37,4 +37,5 @@ trimtest-bug-sf-1023588
 bug-sf-1024615
 bug-sf-1041324_MapiClient
 HAVE_JAVA?bug-sf-1041324_JdbcClient
+unique-bug-sf-1043512
 # like-bug-sf-1043521  # covered by like_tests
