@@ -1,2 +1,2 @@
 
-SUBDIRS = include setup driver samples
+SUBDIRS = include setup driver samples HAVE_SWIG?python
