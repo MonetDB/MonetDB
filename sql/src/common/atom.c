@@ -63,7 +63,6 @@ char *atom2string( atom *a){
 			sprintf(buf, "%s%s(\"%s\")", 
 				atom_prefix, a->tpe->name, a->data.sval ); 
 			break;
-	default:
 	}
 	return _strdup(buf);
 }
