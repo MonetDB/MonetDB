@@ -61,8 +61,6 @@ typedef struct PFcnode_t PFcnode_t;
  *   (primarily in switch() statements or array initializers).
  *   If you make modifications to this enum, make sure you also
  *   adapt
- *    - the twig grammar rules in core/simplify.mt
- *    - the twig grammar rules in semantics/typecheck.mt
  *    - #c_id in debug/coreprint.c
  *    - #core2mil() in mil/core2mil.c
  */

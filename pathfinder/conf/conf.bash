@@ -240,10 +240,6 @@ if [ "${os}" = "Linux" ] ; then
 		# java in Konstanz
 		binpath="/net/lin_local/java/j2sdk1.4.2/bin:${binpath}"
 	fi
-	if [ -x /net/lin_local/twig/twig ] ; then
-		# twig in Konstanz
-		binpath="/net/lin_local/twig:${binpath}"
-	fi
 	if [ "${what}" = "PATHFINDER"  -a  -d /net/lin_local/libgc-devel ] ; then
 		# libgc in Konstanz
 		conf_opts="${conf_opts} --with-gc=/net/lin_local/libgc-devel"
@@ -268,10 +264,6 @@ if [ "${os}" = "CYGWIN" ] ; then
 	if [ -x /cygdrive/c/Sun/AppServer/jdk/bin/javac  -a  -x /cygdrive/c/Sun/AppServer/jdk/bin/jar ] ; then
 		# java on winxp01
 		binpath="/cygdrive/c/Sun/AppServer/jdk/bin:${binpath}"
-	fi
-	if [ -x ${softpath}/bin/twig ] ; then
-		# twig on winxp
-		binpath="${softpath}/bin:${binpath}"
 	fi
 	if [ "${what}" = "PATHFINDER"  -a  -d ${softpath} ] ; then
 		# libgc on winxp

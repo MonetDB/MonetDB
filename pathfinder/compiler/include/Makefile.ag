@@ -65,7 +65,6 @@ EXTRA_DIST = \
 	simplify.h \
 	subtyping.h \
 	timer.h \
-	twig.h \
 	typecheck.h \
 	types.h \
 	variable.h \

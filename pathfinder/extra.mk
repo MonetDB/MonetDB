@@ -23,28 +23,6 @@
 
 # extra make rules for Pathfinder
 
-# Twig checks its argument to end in `.mt'. Unfortunately
-# it does that the wrong way and will fail if the pathname
-# of the argument contains dots (which is the case in the
-# automated test environment).
-# We thus copy the source file into the ``safe'' filename
-# `tmp.mt' and run twig on that. The proper solution would
-# of course be fixing Twig.
-%.symbols.h %.c : %.mt
-	$(LOCKFILE) waiting_for_twig
-	$(CP) $< tmp.mt
-	$(TWIG) -t tmp.mt
-	mv -f symbols.h $*.symbols.h
-	sed 's/^short\(.*\)=/static short\1=/' walker.c > $*.c
-	$(RM) walker.c
-	$(RM) tmp.mt
-	$(RM) waiting_for_twig
-
-% :: %.m4
-	$(RM) -f $@
-	$(M4) $< >$@
-	chmod =r $@
-
 %.c : %.brg
 	$(RM) -f $@
 	$(top_builddir)/burg/burg -c 1000 -d -I -p PF$* $< -o $@
@@ -60,22 +38,6 @@
                   $(top_srcdir)/compiler/mil/ma_opt.c \
                   $(top_srcdir)/compiler/mil/milgen.c
 
-
-# Some files need to be preprocessed with the stream editor `sed'.
-# The required sed expressions are contained in the source files
-# themselves; they carry a special marker that we use during the
-# build.
-# We first ``grep'' for all lines in the source file that contain
-# the marker. We translate this marker into an sed expression
-# (using sed; we map `*!sed 'pattern'' to `-e 'pattern'', as it
-# can be passed to sed on the command line). The resulting sed
-# expression is the used as the sed command line argument when
-# we feed the source file through sed.
-% :: %.sed
-	$(RM) -f $@
-	sed `grep '\*!sed' $< | \
-	  sed 's/\*!sed *'\''\(.*\)'\''/\-e \1/g'` $< > $@
-	chmod =r $@
 
 .PHONY: doc html
 

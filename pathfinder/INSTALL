@@ -25,11 +25,6 @@ REQUIREMENTS
       If you experience problems with other compilers, please let us
       know.
 
-   -- twig (tree pattern matcher generator)
-      The Twig tree pattern matcher is currently in the process of
-      going ``Open Source''. If you cannot find it, contact the
-      Pathfinder development team
-
    -- MonetDB (the MonetDB main-memory database system)
       Pathfinder is quite tightly coupled to the MonetDB database system.
       It depends on a version that is at least 4.3.14.

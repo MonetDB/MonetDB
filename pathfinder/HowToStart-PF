@@ -43,12 +43,6 @@ standard software development tools
 	 - GNU make ("gmake") (native make's on, e.g., IRIX and Solaris
 	   usually don't work)
 
-twig (tree pattern matcher generator)
-	Pathfinder uses twig to facilitate tree pattern matching in the
-	XQuery compiler. In case you do not have twig installed on your
-	system, and you cannot find it anywhere else, please feel free to
-	contact us.
-
 gc (the Hans Boehm garbage collector)
 	Pathfinder also requires the Hans Boehm garbage collector (gc).  In
 	case it is nt installed be default on your system, please get it
