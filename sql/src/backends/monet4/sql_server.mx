@@ -125,7 +125,7 @@ stream.
 
 	.COMMAND sql_mark( BAT[any::1,any] b , oid base) :
 				BAT[any::1,OID] = sql_mark;
-		"Produces a new BAT with fresh unique dense sequense of OIDs in the tail that starts at base (i.e. [base,base+1,..base+b.count()-1] )."
+		"Produces a new BAT with fresh unique dense sequence of OIDs in the tail that starts at base (i.e. [base,base+1,..base+b.count()-1] )."
 
 	.COMMAND hash( any::1 v, int sh ) : int = hash_wrap; "calculate a hash value and shift left"
 
