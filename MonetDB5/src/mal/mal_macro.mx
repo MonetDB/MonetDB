@@ -184,6 +184,8 @@ str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 @c
 int malMatch(InstrPtr p1, InstrPtr p2){
 int i,j;
+    if( functionId(p1) == 0 && functionId(p2)!=0) return 0;
+    if( moduleId(p1) == 0 && moduleId(p2)!=0) return 0;
     if( idcmp(moduleName(p1), moduleName(p2)) ) return 0;
     if( idcmp(functionName(p1),functionName(p2)) ) return 0;
     if( p1->retc!= p2->retc) return 0;
@@ -202,6 +204,9 @@ The isomorphism can be determined after-wards using a single scan.
 The candidate block is matched with mb starting at a given pc.
 The candidate block is expected to defined as a function, including
 a signature and end-statement. They are ignored in the comparison
+
+Beware, the variables in the block being removed, could be
+used furtheron in the program. [tricky to detect, todo]
 @c
 int malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc){
     int i,j,k,lim;
