@@ -28,7 +28,7 @@
 
 This module contains the primitives to inspect and adjust
 the client records maintained during a Mserver session.
-A rudimentatry authroization scheme should be  enforced.
+A rudimentatry authorization scheme should be provided[todo].
 @mal
 module clients;
 
@@ -46,14 +46,18 @@ address CLTsetScenario
 comment "Switch to other scenario handler, 
 	return previous one";
 
+#command setPassword(s:str)
+#address CLTsetPassword
+#comment "Change the password for the client";
+
 command clearDebug(flg:int):void
 address CLTclearDebug
 comment "Clear the flag in the debugging bitset";
 
-command users( ):bat[:int,:str] 
+command getUsers( ):bat[:int,:str] 
 address CLTusers
 comment "Pseudo bat of users logged in";
-command login( ):bat[:int,:str] 
+command getLogins( ):bat[:int,:str] 
 address CLTLogin
 comment "Pseudo bat of client login time";
 command info( ):bat[:int,:str] 

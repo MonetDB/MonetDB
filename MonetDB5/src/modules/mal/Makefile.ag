@@ -13,7 +13,7 @@ LIBS = {
 		atoms.mx profiler.mx const.mx mil.mx bbp.mx io.mx \
 		enum.mx streams.mx inspect.mx crackers.mx \
 		thread.mx optimizer.mx clients.mx tablet.mx \
-		transaction.mx
+		transaction.mx reference.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
@@ -28,7 +28,7 @@ doc_mal = {
 		atoms.mx profiler.mx const.mx mil.mx bbp.mx io.mx \
 		enum.mx streams.mx inspect.mx crackers.mx \
 		chopper.mx thread.mx optimizer.mx clients.mx tablet.mx \
-		transaction.mx
+		transaction.mx reference.mx
 }
 
 scripts_mal = {
@@ -37,7 +37,7 @@ scripts_mal = {
 		atoms.mx profiler.mx const.mx mil.mx bbp.mx  \
 		enum.mx streams.mx inspect.mx crackers.mx io.mal \
 		chopper.mx thread.mx optimizer.mx clients.mx tablet.mx \
-		transaction.mx
+		transaction.mx reference.mx
 }
 
 #EXTRA_DIST_DIR = Tests

@@ -36,6 +36,7 @@ The negative effect is that this module is inspected as part of
 the function resolution scheme.
 
 @mal
+include "reference";
 include "thread";
 include "crackers";
 include "kernel_init";

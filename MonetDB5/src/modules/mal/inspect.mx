@@ -14,19 +14,13 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f inspect
 @a Martin Kersten
 @v 1
-@* Monet Runtime Inspection
+@* Runtime Inspection
 This document introduces a series of bats and commands that provide access
-to information stored within the Monet Version 5 interpreter data structures.
+to information stored within the interpreter data structures.
 In all cases, the pseudo BAT operation returns a transient BAT that
 should be garbage collected after being used.
 
@@ -112,9 +106,6 @@ command getAtoms():bat[:int,:str]
 address INSPECTatom_names
 comment "Collect a BAT with the atom names";
 
-command getClients( ):bat[:int,:str] 
-address INSPECTclients
-comment "Map client ids to their name";
 @- Display code
 A key tool for analysis of the MAL code is being able to dump
 any routine, module. For queries, it is also illustrative to display
@@ -272,19 +263,6 @@ str INSPECTsymbolFind(int *ret,int kind)
 str INSPECTfunctionNames(int *ret){ return INSPECTsymbolFind(ret,FUNCTIONsymbol); }
 str INSPECTpatternNames(int *ret){ return INSPECTsymbolFind(ret,PATTERNsymbol); }
 str INSPECTcommandNames(int *ret){ return INSPECTsymbolFind(ret,COMMANDsymbol); }
-str INSPECTclients(int *ret){
-        int i;
-        BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-        if (b == 0) return throwMessage("catalog.clientNames", "failed to create BAT");
-
-        for(i=0; i < MAL_MAXCLIENTS; i++)
-        if(mal_clients[i].mode>= CLAIMED && mal_clients[i].user) {
-                BUNins(b, &i, mal_clients[i].user);
-        }
-
-        @:Pseudo(client,name)@
-        return MAL_SUCCEED;
-}
 
 str INSPECTsymbolDef(int *ret, str *nme, str *fcn)
 {	Symbol s;

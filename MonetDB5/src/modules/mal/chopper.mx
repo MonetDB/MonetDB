@@ -52,15 +52,15 @@ are interesting for time-series query processing. (See another module)
 @mal
 module chopper;
 
-command newIterator(b:bat[:any$1,:any$2], size:lng)
+command newChunkIterator(b:bat[:any$1,:any$2], size:lng)
 	(:lng,:bat[:any$1,:any$2])
-address CHPnewIterator
+address CHPnewChunkIterator
 comment " Create an iterator with fixed granule size.
 	  The result is a view.";
 
-command hasMoreElements(b:bat[:any$1,:any$2], size:lng)
+command hasMoreChunks(b:bat[:any$1,:any$2], size:lng)
 	(:lng, :bat[:any$1,:any$2])
-address CHPhasMoreElements
+address CHPhasMoreChunks
 comment "Produce the next chunk for processing.";
 
 pattern newIterator(b:bat[:any$1,:any$2])
@@ -138,23 +138,24 @@ to determine how far to advance when the next chunk is retrieved.
 The number of elements in the chunk is limited by the granule
 size.
 @c
-str CHPnewIterator(int *res, int *vid, int *bid, int *granule){
+str CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule){
 	BAT *b, *view;
 	int ret=0;
-	size_t cnt;
-	@:getBATdescriptor(&ret,bid,b,newIterator)@
+	size_t cnt,first;
+	@:getBATdescriptor(&ret,bid,b,newChunkIterator)@
 	if( *vid ){
 		@:getBATdescriptor(&ret,vid,view,newIterator)@
 		/* it has the correct type, but does it also
 		   refer to the same BAT */
 	}
 	cnt = BATcount(b);
+	first = BUNindex(b,BUNfirst(b));
 	view= VIEWcreate_(b,TRUE);
 	BBPfix(*vid=  view->batCacheid);
-	printf("set bat chunk bound to %d - %d \n",
-		0, MIN(cnt,(size_t) granule));
-	VIEWbounds(view,(size_t) 0, MIN(cnt,(size_t) granule));
-	*res = 0 ;
+	/*  printf("set bat chunk bound to %d %d - %d\n",
+		*granule, first, MIN(cnt,(size_t) *granule)); */
+	VIEWbounds(view,(size_t) first, first + MIN(cnt,(size_t) *granule)-1);
+	*res = first ;
 	return MAL_SUCCEED;
 }
 @-
@@ -162,17 +163,21 @@ The hasMoreElements version advances the chunk reader,
 which also means that the view descriptor is alread available.
 The granule size may differ in each call.
 @c
-str CHPhasMoreElements(int *res, int *vid, int *bid, int *granule){
+str CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule){
 	BAT *b, *view;
 	int ret=0;
 	size_t cnt, i;
-	@:getBATdescriptor(&ret,bid,b,hasMoreElements)@
-	@:getBATdescriptor(&ret,vid,view,hasMoreElements)@
+	@:getBATdescriptor(&ret,bid,b,hasChunkMoreElements)@
+	@:getBATdescriptor(&ret,vid,view,hasChunkMoreElements)@
 	cnt = BATcount(b);
 	i = *res + BATcount(view);
-	printf("set bat chunk bound to %d - %d \n",
-		i, i+MIN(cnt-i,(size_t) granule));
-	VIEWbounds(view, i, i+MIN(cnt-i,(size_t) granule));
+	if( i >= BUNindex(b,BUNlast(b)) ){
+		*res = -1;
+		return MAL_SUCCEED;
+	}
+	/* printf("set bat chunk bound to %d - %d \n",
+		i, i+(size_t) *granule-1); */
+	VIEWbounds(view, i, i+(size_t) *granule-1);
 	*res = i;
 	return MAL_SUCCEED;
 }

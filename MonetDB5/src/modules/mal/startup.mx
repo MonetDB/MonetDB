@@ -16,6 +16,7 @@ the function resolution scheme.
 use "mal/tcpip";
 use "mal/threads";
 use "kernel/startup";
+use "mal/chopper";
 use "mal/io";
 use "mal/streams";
 use "mal/ascii_io";

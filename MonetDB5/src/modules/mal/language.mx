@@ -65,42 +65,6 @@ command raise(msg:str) :str
 address CMDraise
 comment "Raise an exception labelled 
 	with a specific message.";
-@- Monet help system
-All procedural abstractions may contain a string with commentary text.
-This information is retained in the symbol table for subsequent use.
-Often, it is more appropriate to extract the comments into a BAT
-for subsequent analysis.
-@mal
-command help(k:str):bat[:str,:str] 
-address CMDhelp
-comment "Search the commentary strings for 
-	one matching the keyword";
-command help(mod:str,fcn:str)
-	:bat[:int,:str] 
-address CMDhelp2
-comment "Collect the comments for a given 
-	function pattern";
-@- Monet Manual construction
-The manual operations ease offline inspection of the all the Monet function.
-It purposely generates an XML organized file, because we expect external
-tools to massage it further for presentation. The envisioned 
-tagging structure becomes
-@-
-@mal
-command manual(file:str,mod:str)
-address CMDmanual2
-comment "Generate a synopsis of a module";
-command manual(file:str,mod:str,recursive:int)
-address CMDmanual
-comment "Generate a recursive module synopsis";
-command manual(mod:str)
-address CMDmanual1
-comment "Generate a synopsis of a module";
-command manual()
-address CMDmanual0
-comment "Produces a XML-formatted manual 
-	over all modules loaded.";
-
 @+ Macro expansion
 Running a script stored in a file is interpreted as
 It is typically used to initialize a context, therefore we need
@@ -305,83 +269,10 @@ str CMDdebug(int *ret, int *flg){
 	if( *flg) GDKdebug = *flg;
 	return MAL_SUCCEED;
 }
-str CMDmanual(int *ret, str *fname, str *mod,int *recursive){
-	stream *fs;
-	(void) ret; /* fool compiler */
-	fs= open_wastream(*fname);
-	if( fs== NULL) return throwMessage("mal.manual","Could not open file\n");
-	dumpManualHeader(fs);
-	dumpManual(fs, findScope(getClient()->nspace,*mod),*recursive);
-	dumpManualFooter(fs);
-	return MAL_SUCCEED;
-}
-str CMDmanual2(int *ret, str *fname, str *mod,int *recursive){
-	int r= 0;
-	(void) recursive; /* fool compiler */
-	return CMDmanual(ret,fname,mod,&r);
-}
-str CMDmanual1(int *ret, str *mod){
-	(void) ret; /* fool compiler */
-	dumpManualHeader(GDKout);
-	dumpManual(GDKout, findScope(getClient()->nspace,*mod),0);
-	dumpManualFooter(GDKout);
-	return MAL_SUCCEED;
-}
-str CMDmanual0(int *ret){
-	(void) ret; /* fool compiler */
-	dumpManualHeader(GDKout);
-	dumpManual(GDKout, getClient()->nspace,1);
-	dumpManualFooter(GDKout);
-	return MAL_SUCCEED;
-}
 str CMDsetCwd(str *ret, str *fnme){
 	Client c= getClient();
 	*ret = c->cwd;
 	c->cwd= GDKstrdup(*fnme);
-	return MAL_SUCCEED;
-}
-str CMDhelp(int *ret, str *mod) 
-{	Client cntxt= getClient();
-	Scope m;
-	Symbol s;
-	str msg;
-	int i;
-	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
-        if (b == 0) return throwMessage("catalog.help", "failed to create BAT");
-        return throwMessage("catalog.help", "Search by keyword not yet available");
-
-	m= findScope(cntxt->nspace,*mod);
-	if(m)
-	for(i=0;i<256;i++){
-		s= m->subscope[i];
-		while(s!= NULL){
-			msg= s->def->help;
-			if( msg){
-				BUNins(b,s->name,msg);
-			}
-			s= s->peer;
-		}
-	}
-	@:Pseudo(help,Comment)@
-	return MAL_SUCCEED;
-}
-str CMDhelp2(int *ret, str *mod, str *fcn) 
-{	Symbol s;
-	str msg;
-
-	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
-        if (b == 0) return throwMessage("catalog.helpComment", "failed to create BAT");
-
-	s= findSymbol(*mod,*fcn);
-	while(s!= NULL){
-		if(idcmp(s->name,*fcn)==0){
-			msg= s->def->help;
-			if(msg== NULL) msg= str_nil;
-			BUNins(b,s->name,msg);
-		}
-		s= s->peer;
-	}
-	@:Pseudo(help,Comment)@
 	return MAL_SUCCEED;
 }
 
