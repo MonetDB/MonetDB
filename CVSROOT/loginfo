@@ -24,3 +24,6 @@
 #DEFAULT (echo ""; id; echo %s; date; cat) >> $CVSROOT/CVSROOT/commitlog
 # or
 #DEFAULT (echo ""; id; echo %{sVv}; date; cat) >> $CVSROOT/CVSROOT/commitlog
+
+CVSROOT $CVSROOT/CVSROOT/syncmail -q -u %{sVv} sjoerd@users.sourceforge.net
+#DEFAULT $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-checkins@lists.sourceforge.net
