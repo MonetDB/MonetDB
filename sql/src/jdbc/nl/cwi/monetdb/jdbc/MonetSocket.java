@@ -39,7 +39,7 @@ import java.net.*;
  * "TX".
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 1.5
+ * @version 1.6
  */
 class MonetSocket {
 	/** Reader from the Socket */
@@ -73,6 +73,10 @@ class MonetSocket {
 	/** a line starting with #- indicates the start of a header block */
 	final static int SOHEADER = 6;
 
+	/** The maximum size of the chunks when we fetch data from the stream */
+	final int readcapacity;
+	/** The maximum size of the chunks when we push data to the stream */
+	final int writecapacity;
 
 
 	// MonetDB prompts
@@ -87,13 +91,20 @@ class MonetSocket {
 	MonetSocket(String host, int port) throws IOException {
 		con = new Socket(host, port);
 		fromMonet = new BufferedReader(
-			new InputStreamReader(con.getInputStream()));
+			new InputStreamReader(con.getInputStream(), "UTF-8"));
 		toMonet = new BufferedWriter(
-			new OutputStreamWriter(con.getOutputStream()));
+			new OutputStreamWriter(con.getOutputStream(), "UTF-8"));
+		
+		// set the blocksize, use socket defaul
+		readcapacity = con.getReceiveBufferSize();
+		writecapacity = con.getSendBufferSize();
 	}
 
-	protected MonetSocket(Socket con) {
+	protected MonetSocket(Socket con) throws IOException {
 		this.con = con;
+		// set the blocksize, use socket default
+		readcapacity = con.getReceiveBufferSize();
+		writecapacity = con.getSendBufferSize();
 	}
 
 	/**
