@@ -53,6 +53,13 @@ Tok *	t;
 Tok *	NxtTok(Tok *t)
 {
   int inside=0;
+
+/* since NxtTok() is only called in FstTok (see above) and in two for-loop
+   in Form.C & Code.c that do roughly the following: for(t=FstTok(blk); t; t=NxtTok(t)) ,
+   we assume, we can savely ignore NULL arguments, here.... 
+*/
+	if (t==NULL) return t;
+
 /* Restore */
 	t->t_nxt[0]= t->t_chr;
 	if( t->t_dir ) {
