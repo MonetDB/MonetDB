@@ -899,7 +899,7 @@ the routine @%shutdown@ issued by the database owner.
 The current implementation assumes an emergency stop and
 simply stops the system. 
 Future versions should include a @%stop@ and @%resume@
-command, which blocks and further input  and reactivates them later.
+command, which blocks any further input  and reactivates them later.
 @c
 int CMDshutdown(Cntxt stk, YYSTREE lt, ValPtr res){
 	Client c;
