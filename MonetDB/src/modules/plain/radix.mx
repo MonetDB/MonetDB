@@ -3168,7 +3168,7 @@ prefetching, a software prefetch is implemented, ie a simple prefetch loop.
 #endif
 
 #if defined(ATHLON) 
-static inline int Mem2Cache(int*__r from, size_t size )
+static INLINE int Mem2Cache(int*__r from, size_t size )
 {
 	int cnt = size/128;
 	__asm__ __volatile__ (
@@ -3187,7 +3187,7 @@ static inline int Mem2Cache(int*__r from, size_t size )
 
 #if defined(ia64)
 /* L2 has 128 byte cachelines */
-static inline int Mem2Cache(int*__r from, size_t size )
+static INLINE int Mem2Cache(int*__r from, size_t size )
 {
 	char *data = (char*) from;
 	int i;
@@ -3206,7 +3206,7 @@ static inline int Mem2Cache(int*__r from, size_t size )
 #define CACHELINE (128)
 #define INTCACHELINE (CACHELINE/sizeof(int))
 
-static inline int Mem2Cache(int*__r p, size_t size){
+static INLINE int Mem2Cache(int*__r p, size_t size){
 	size_t sum0 = 0, sum1 = 0, i = 0;
 	size /= sizeof(int);
 
