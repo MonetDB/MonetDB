@@ -14,38 +14,29 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Pieces created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@'
-@' Contributor(s):
-@'              Martin Kersten <Martin.Kersten@cwi.nl>
-@'              Peter Boncz <Peter.Boncz@cwi.nl>
-@'              Niels Nes <Niels.Nes@cwi.nl>
-@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
  
 @f crackers
 @a Martin Kersten
+@d October 2004
 @* Crackers
-This module contains the experimental code to play with cracked tables.
-It supports int-based bats for the time being.
 
-A cracker is a logically partitioned bat. The partitions are
-administered using separate administration BATs.
+A cracker is a logically partitioned bat.  Its partitions are 
+administered in a cracker index, a volatile data structure.
 The partitions are mostly derived from ordered, tail values.
 However, a derived fragmentation based on the (v)oid heads
-is foreseen.
+is also used.
 
-Each time we issue a scan against a cracked BAT we split all partitions
+A table is explicitly cracked further, each time we issue a select.
+It will scan the cracker index and will split all partitions
 accordingly and retain their location. In this process we
 re-shuffle BUNs around to produce dense range lists.
-It can be used in subsequent scans to speed up the search.
+The cracker index can be used in subsequent scans to speed up the search.
 
-The implementation currently requires all auxillary BATs to
-be passed around to the cracker routines. It should be
-replaced in the future by a generic administration for
-cracked tables.
-
-Furthermore, we keep a copy of the value ranges.
-It is the basis for selecting the pieces for subsequent
-processing.
+This module contains the experimental code to play with cracked tables.
+It supports int-based bats for the time being only.
+The current implementation uses an unprotected cracker
+index. This limits the interface at slightly more overhead
+of searching the cracker index upon each call.
 
 [todo] Cracking a BAT should be bounded by either the
 number of pieces already obtained or the granularity
@@ -64,14 +55,35 @@ command new(b:bat[:int,:int])
 address CRKnew
 comment "Create the index tables for a cracked
 	table.";
+command new(b:bat[:int,:int], granule:int) 
+address CRKnewGranule
+comment "Create the index tables for a cracked
+	table. Set the minimum granularity";
 
+@-
+For debugging we provide a simple routine to dump
+the cracker index. Future versions should provide
+a BAT-like access to this internal information.
+@mal
 command info(b:bat[:int,:int])
 address CRKinfo
 comment "Print the cracker index administration";
 
+@-
+The cracker comes in two variants. One to split the
+table using an inclusive range over its tail, and a second to 
+bi-partite two bats using a join over its tail
+[TODO mirroring information should be kept around]
+@mal
 command crack(b:bat[:int,:int],low:int,hgh:int) :int
-address CRKcrackNaive
-comment "Break the partitions into smaller pieces";
+address CRKcrackRange
+comment "Break the partitions into smaller pieces
+	using a range over the tail";
+
+command crack(b:bat[:int,:int],c:bat[:int,:int]) :int
+address CRKcrackJoin
+comment "Break the partitions into smaller pieces
+	using a join over the tail";
 @-
 A cracker partition is indicated by the index in the cidx
 table. It can be used to initialize a BATview to represent
@@ -132,8 +144,6 @@ comment	"Garbage collect the piece representation.
 The implementation is geared at early experimentation
 without all the details to make the code robust and
 ultra fast.
-Furthermore, the administration is purposely maintained in
-BATs to exploits the cracker features lated in query processing.
 
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0)
@@ -183,6 +193,10 @@ typedef struct{
 During initialization of the crackers structure we already
 shuffle the data around to have a first assessment of
 the value ranges supported.
+
+Note, this implementation does not protect the crackMap
+administration. This is necesary in a concurrent version.
+The granularity can be used to limit the number of pieces.
 @c
 #include "mal.h"
 #include "mal_exception.h"
@@ -192,6 +206,7 @@ the value ranges supported.
 
 static CrackMap *crackMap;
 static int maxCrackMap=0;
+static int minGranule= 2;
 
 int findCrackMap(int bid){
 	int i,freemap= -1, units=1024;
@@ -207,7 +222,7 @@ int findCrackMap(int bid){
 
 	if( i== maxCrackMap){
 		CrackMap *x;
-		if(maxCrackMap >0) units *= 1.2;
+		if(maxCrackMap >0) units = 1.2 * maxCrackMap;
 		x= (CrackMap*) GDKmalloc(sizeof(CrackMap) * units);
 		bzero(x,sizeof(CrackMap) * units);
 		if(crackMap){
@@ -255,13 +270,7 @@ void printCrackMap(int bid){
 }
 str initCrackMap(CrackMap *map, int *bid){
 	BAT *b;
-	BUN /*kmin=NULL,*/ vmin=NULL, /* kmax=NULL,*/ vmax=NULL;
-	BUN p;
-	/* BUN q;
-	ptr v;
-	int xx; */
 	int result;
-	char buf[128]; /* scratch space */
 
         @:getBATdescriptor(&result,bid,b,initCrackMap)@
 	(void) result;
@@ -270,26 +279,7 @@ The target BAT should not be modified by the applications,
 otherwise the partitioning scheme becomes void
 already. [todo]
 @c
-	p= BUNfirst(b);
-	/*kmax= kmin= p;*/
-	vmax= vmin= p;
 	
-/* initialize the buffers with the max bounderies
-	BATloopFast(b,p,q,xx){
-		v= BUNhead(b,p);
-		if( *(int *)v < *(int *)BUNhead(b,kmin)) kmin = p;
-		if( *(int *)v > *(int *)BUNhead(b,kmax)) kmax = p;
-		v= BUNtail(b,p);
-		if( *(int *)v < *(int *)BUNtail(b,vmin)) vmin = p;
-		if( *(int *)v > *(int *)BUNtail(b,vmax)) vmax = p;
-	}
-@-
-Initialize the index tables and reshuffle the BUNs
-according to the tail value;
-@c
-	map->pieces[0].rng_min= *(int*)BUNtail(b,vmin);
-	map->pieces[0].rng_max= *(int*)BUNtail(b,vmax);
-*/
 	map->pieces[0].rng_min= INT_MIN;
 	map->pieces[0].rng_max= INT_MAX;
 	map->pieces[0].idx_first = BUNindex(b,BUNfirst(b));
@@ -301,12 +291,6 @@ according to the tail value;
 	map->pieces[0].right = -1;
 	map->freepiece= 1;
 
-	assert(BUNsize(b)<128);
-	p= BUNfirst(b);
-	if(p!= vmin) @:exchange(p,vmin)@
-	if( p == vmax) vmax= vmin;
-	p= BUNlast(b)- BUNsize(b);
-	if(vmax!=p) @:exchange(vmax,p)@
 	return MAL_SUCCEED;
 }
 
@@ -319,6 +303,10 @@ str CRKnew(int *cret, int *bid){
 	stream_printf(GDKout,"crackMap created\n");
 #endif
 	return MAL_SUCCEED;
+}
+str CRKnewGranule(int *cret, int *bid, int *gran){
+	minGranule= *gran;
+	return CRKnew(cret,bid);
 }
 str CRKinfo(int *k, int *bid)
 {	
@@ -385,7 +373,7 @@ First experiment is a simple partitioning on the tail value.
 	@2->left= @2->middle= @2->right = -1;
 	crackMap[@1].freepiece++;
 @c
-str CRKcrackNaive(int *partid, int *bid, int *low, int *hgh)
+str CRKcrackRange(int *partid, int *bid, int *low, int *hgh)
 {	
 	BAT *b;
 	int result;
@@ -399,7 +387,7 @@ str CRKcrackNaive(int *partid, int *bid, int *low, int *hgh)
 
 	if( *(int*) low > *(int*) hgh)
                 return throwMessage("crackers.crack","illegal range");
-        @:getBATdescriptor(&result,bid,b,CRKcrackNaive)@
+        @:getBATdescriptor(&result,bid,b,CRKcrackRange)@
 	(void) result;
 	m= findCrackMap(*bid);
 @-
@@ -559,6 +547,14 @@ the ranges of the outer partitions as well.
 	printf("pid returned %d\n",pid);
 #endif
 	*partid= pid;
+	return MAL_SUCCEED;
+}
+str CRKcrackJoin(int *partid, int *bid, int *cid)
+{
+	(void) bid;
+	(void) cid;
+	GDKerror("CRKcrackJoin:not yet implemented\n");
+	*partid = 0;
 	return MAL_SUCCEED;
 }
 @- 
