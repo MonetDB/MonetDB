@@ -1804,6 +1804,7 @@ non_reserved_word:
 | TIME 		{ $$ = _strdup("time"); }
 | TIMESTAMP	{ $$ = _strdup("timestamp"); }
 | PATH		{ $$ = _strdup("path"); }
+| ROLE		{ $$ = _strdup("role"); }
 ;
 
 name_commalist:

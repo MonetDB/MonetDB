@@ -1972,12 +1972,9 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 			    sc->data.lval->h->next->next->data.sym;
 			symbol *ro2 =
 			    sc->data.lval->h->next->next->next->data.sym;
-			stmt *ls =
-			    sql_value_exp(sql, scp, lo, grp, subset);
-			stmt *rs1 =
-			    sql_value_exp(sql, scp, ro1, grp, subset);
-			stmt *rs2 =
-			    sql_value_exp(sql, scp, ro2, grp, subset);
+			stmt *ls = sql_value_exp(sql, scp, lo, grp, subset);
+			stmt *rs1 = sql_value_exp(sql, scp, ro1, grp, subset);
+			stmt *rs2 = sql_value_exp(sql, scp, ro2, grp, subset);
 			if (!ls || !rs1 || !rs2)
 				return NULL;
 			if (rs1->nr > 0 || rs2->nr > 0) {
@@ -3222,16 +3219,25 @@ static stmt *copyfrom(context * sql, dlist * qname, char *file, dlist *seps, int
 
 static stmt *insert_value(context * sql, scope * scp, column * c, symbol * s)
 {
-	if (s->token != SQL_NULL) {
+	if (s->token == SQL_NULL) {
+		return stmt_atom(atom_general(c->tpe, NULL));
+	} else {
 		stmt *n = NULL;
 		stmt *a = sql_value_exp(sql, scp, s, NULL, NULL);
 		if (!a || !(n = check_types(sql, c->tpe, a)))
 			return NULL;
 		return n;
-	} else if (s->token == SQL_NULL) {
-		return stmt_atom(atom_general(c->tpe, NULL));
 	}
 	return NULL;
+}
+
+static void cleanup_inserts(stmt **inserts, int cnt){
+	int i;
+	for (i=0; i<cnt; i++){
+		if (inserts[i])
+			stmt_destroy(inserts[i]);
+	}
+	_DELETE(inserts);
 }
 
 static stmt *insert_into(context * sql, dlist * qname,
@@ -3290,7 +3296,13 @@ static stmt *insert_into(context * sql, dlist * qname,
 			for (n = values->h, m = collist->h;
 			     n && m; n = n->next, m = m->next) {
 				column *c = m->data;
-				inserts[c->colnr] = stmt_insert( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), insert_value(sql, NULL, c, n->data.sym));
+				stmt *ins = insert_value(sql, NULL, c, n->data.sym);
+				if (!ins){
+					cleanup_inserts(inserts, len);
+					return NULL;
+				}
+					
+				inserts[c->colnr] = stmt_insert( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), ins );
 			}
 
 		}
@@ -3299,12 +3311,14 @@ static stmt *insert_into(context * sql, dlist * qname,
 
 		if (!s){
 			scp = scope_close(scp);
+			cleanup_inserts(inserts, len);
 			return NULL;
 		}
 		if (list_length(s->op1.lval) != list_length(collist)) {
 			if (s) 
-				stmt_dup(s);
+				stmt_destroy(s);
 			scp = scope_close(scp);
+			cleanup_inserts(inserts, len);
 			return sql_error(sql, 02, 
 				 "Inserting into table %s, query result doesn't match number of columns", tname);
 		} else {
