@@ -149,6 +149,12 @@ This module contains a simple interface for internet connections.
 #endif
 #endif
 
+#ifdef WIN32
+#define s_close closesocket
+#else
+#define s_close close
+#endif
+
 @= builtin_operand
 {       int _k = interpret(stk, arg(lt, @1), res);
         if (_k < 0) {
@@ -292,7 +298,7 @@ Get the new information for the server socket and start listening.
 				fdout->destroy(fdout);
 				fdout->close(fdin);
 				fdout->destroy(fdin);
-				close(msgsock);
+				s_close(msgsock);
 				continue;
 			}
 			GDKfree(name);
@@ -317,7 +323,7 @@ Get the new information for the server socket and start listening.
 			snprintf( buf, BUFSIZ, "%s(%d);\n", cmd, msgsock );
 			res.vtype = TYPE_void; 
 			interpret_str( stk, buf, &res);
-			if ((cres = close(msgsock)) < 0){
+			if ((cres = s_close(msgsock)) < 0){
 				GDKerror("Error closing socket %d\n", cres );
 				return GDK_FAIL;
 			}
@@ -357,12 +363,22 @@ int stream_read_until(str *res, Stream *S , str stop){
 }
 
 int socket_close_wrap( int *s ){
-	close(*s);
+	s_close(*s);
 	return GDK_SUCCEED;
 }
 
 int socket_dup_wrap( int *res, int *s ){
+#ifdef WIN32
+  	HANDLE process = GetCurrentProcess();
+  	DuplicateHandle(process, 
+	       (HANDLE) *s, process,
+	       (HANDLE*) res,
+	       0, 
+	       TRUE, 
+	       DUPLICATE_SAME_ACCESS);
+#else
 	*res = dup(*s);
+#endif
 	return GDK_SUCCEED;
 }
 

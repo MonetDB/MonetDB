@@ -204,7 +204,7 @@ int TMabort(void) {
 				b = BATload_intern(i);
 			}
 			if (b) {
-				BBP_plevel(i)--; 
+				BBP_plevel(i)--;
 				b->batDirtydesc = 1;
 			}
 		}
@@ -216,7 +216,7 @@ int TMabort(void) {
 				b = BATload_intern(i);
 			}
 			ALIGNundo(b);
-			BATundo(b); 
+			BATundo(b);
 			if (BBP_status(i)&BBPDELETED) {
 				BBP_status_on(i, BBPEXISTING, "TMabort");
 				BBP_plevel(i)++; 
