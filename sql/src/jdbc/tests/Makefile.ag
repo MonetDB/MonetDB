@@ -50,3 +50,8 @@ java_Test_Rtimedate = {
 	DIR = pkglibdir/Tests
 	SOURCES = Test_Rtimedate.java
 }
+
+java_Test_Sbatching = {
+	DIR = pkglibdir/Tests
+	SOURCES = Test_Sbatching.java
+}
