@@ -174,7 +174,7 @@ PROC get_fragment (bat[void,int] kind) : bat[void,oid]
         return kind.[>>](6).[oid]();
 }
 
-PROC get_kind (bat[void,oid] frag, int type_) : bat[void,int]
+PROC set_kind (bat[void,oid] frag, int type_) : bat[void,int]
 {
         return frag.[int]().[<<](6).[or](type_);
 }
@@ -184,12 +184,12 @@ PROC get_types (bat[void,int] kind) : bat[void,int]
         return kind.[and](63); # 63 = 2^6 - 1
 }
 
-#PROC get_kind (bat[void,oid] frag, bat[void,int] type_) : bat[void,int]
+#PROC set_kind (bat[void,oid] frag, bat[void,int] type_) : bat[void,int]
 #{
 #        return frag.[int]().[<<](6).[or](type_);
 #}
 
-#PROC get_kind (int frag, bat[void,int] type_) : bat[void,int]
+#PROC set_kind (int frag, bat[void,int] type_) : bat[void,int]
 #{
 #        return type_.[or](frag<<6);
 #}
@@ -1146,7 +1146,7 @@ PROC xml_print(BAT[void,bat] ws) : void
 {
     xml_print(ws, 
 	      ws.fetch(PRE_SIZE).fetch(0).mirror(),
-              fake_project(0@0).get_kind(ELEM),
+              fake_project(0@0).set_kind(ELEM),
 	      bat(void,int),
               bat(void,dbl),
               bat(void,dbl),
@@ -1165,7 +1165,7 @@ PROC xml_print(BAT[void,bat] ws, str name) : void
     var docid := int(ws.fetch(DOC_LOADED).reverse().find(name));
     xml_print(ws, 
 	      ws.fetch(PRE_SIZE).fetch(docid).slice(0,0).mirror(),
-              fake_project(oid(docid)).get_kind(ELEM),
+              fake_project(oid(docid)).set_kind(ELEM),
 	      bat(void,int),
               bat(void,dbl),
               bat(void,dbl),
