@@ -149,7 +149,6 @@ barrier (b2,sf):= chopper.newChunkIterator(s,1024);
 	wi:= +(p,4);
 	vc:= sum(wi);
 	v:= v+vc;
-	insert(w,wi)
 redo (b2,sf):= chopper.hasMoreChunks(s,1024);
 redo (b1,rf):= chopper.hasMoreChunks(r,1024);
 exit b2;
