@@ -28,6 +28,7 @@
 #ifndef _SYMBOL_H_
 #define _SYMBOL_H_
 
+#include <config.h>
 #ifdef HAVE_IOSTREAM
 #include <iostream>
 #else
