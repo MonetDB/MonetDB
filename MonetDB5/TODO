@@ -10,7 +10,7 @@ action.
 - Modules should make the expections being thrown explicit
 - Expand the property management infrastructure. tst3K serie
 
-- consider type catalog at MAL layer only.
+- consider statistics/type catalog at MAL layer only.
 - derive multiplex implementations variants automatically?
 - insert(b,2) should work on bat(void,int)
 
@@ -40,6 +40,9 @@ spending its time on copying bats all the time.
 - store also the module and function name on the MAL block symbol
 table. This can reduce the number of malloc/free calls significantly.
 [estimate about >15% speed] 
+
+Optimizer
+- the lifespan analyses should take care of nested blocks
 
 - The garbage control is too complicated and consumes too much power.
   before/after calls are only focussed on the first destination argument.
