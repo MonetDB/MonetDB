@@ -1205,6 +1205,13 @@ atom_t atomtbl[8] = /* a simulated ADT lookup table */
 
 int PAX_INT_PER_BLOCK=1024;
 
+int int_type(char *src) {
+	char dst[32];
+	while(*src && (*src < '0' || *src > '9')) src++;
+	sprintf(dst, "int%s", src);
+	return ATOMindex(dst);
+}
+
 void integerCopy(int *dst, BAT *b, BUN p, int width, int distance) {
 	int *src = (int*) BUNhloc(b,p);
 	if (b->hatom[0] == 'p' && b->hatom[1] == 'a' && b->hatom[2] == 'x') {
@@ -1355,13 +1362,6 @@ typedef struct {
 	int dst;  /* offset of chunk where it should go */
 	int size; /* size of chunk (in bytes) */
 } move_t;
-
-int int_type(char *src) {
-	char dst[32];
-	while(*src && (*src < '0' || *src > '9')) src++;
-	sprintf(dst, "int%s", src);
-	return ATOMindex(dst);
-}
 
 #define HTYPE(b) ((b->htype >= TYPE_integer1 && b->htype <= TYPE_pax256)?int_type(b->hatom):BAThtype(b))
 #define TTYPE(b) HTYPE(BATmirror(b))

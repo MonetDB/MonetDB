@@ -315,7 +315,7 @@ WISCgenerator(
 The tables created for the Wisconsin database can be easily removed
 by giving their base name only.
 @c
-WISCdestroy(str nme)
+int WISCdestroy(str nme)
 {
 	int	i;
 	BAT	*b;

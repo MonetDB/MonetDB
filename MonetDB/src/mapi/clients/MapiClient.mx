@@ -79,6 +79,9 @@ The following options are supported:
 #include <monet_options.h> 
 #include <ctype.h> 
 #include <sys/types.h> 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif
@@ -139,6 +142,7 @@ of the server before continuing
 }
 
 #include <readline/readline.h>
+#include <readline/history.h>
 #else
 #define SEND_MESSAGE(mid)	{				\
 	message[m_index++] = '\n';				\

@@ -244,8 +244,8 @@ int stream_readInt_wrap( int *data, Stream *S ){
 #define CHUNK (64*1024)
 int stream_read_string( str *res, Stream *S ){
 	stream *s = *(stream**)S;
-	int len = 0;
-	int size = CHUNK + 1;
+	size_t len = 0;
+	size_t size = CHUNK + 1;
 	char *buf = GDKmalloc(size), *start = buf;
 
 	while ((len = s->read(s, start, 1, CHUNK)) == CHUNK){
@@ -285,7 +285,7 @@ int open_block_stream( Stream *S, Stream *is ){
 }
 
 int buffer_create_wrap( Buffer *b, int *size){
-	if ((*(buffer**)b = buffer_create( *size )) == NULL){
+	if ((*(buffer**)b = buffer_create( (size_t) *size )) == NULL){
 		return GDK_FAIL; 
 	} else {
 		return GDK_SUCCEED;
@@ -311,7 +311,7 @@ int buffer_wastream_wrap( Stream *S, Buffer *b, str name ){
 }
 
 int bstream_create_wrap( Bstream *BS, Stream *S, int *bufsize ){
-	if ((*(bstream**)BS = bstream_create( *(stream**)S, *bufsize )) == NULL){
+	if ((*(bstream**)BS = bstream_create( *(stream**)S, (size_t) *bufsize )) == NULL){
 		return GDK_FAIL; 
 	} else {
 		return GDK_SUCCEED;
@@ -324,7 +324,7 @@ int bstream_destroy_wrap( Bstream *BS ){
 }
 
 int bstream_read_wrap( int *res, Bstream *BS, int *size ){
-	*res = bstream_read( *(bstream**)BS, *size ); 
+	*res = bstream_read( *(bstream**)BS, (size_t) *size ); 
 	return GDK_SUCCEED;
 }
 
@@ -425,7 +425,7 @@ int io_fgetc(int *res, Stream *S){
 
 int io_fgets(str *res, Stream *S){
 	stream *s = *(stream**)S;
-	int size, len = 123;
+	size_t size, len = 123;
 	char *buf = (char*) GDKmalloc(1+len);
 
 	for(size=0; s->read(s, buf + size, 1, 1) > 0; size++){

@@ -96,8 +96,8 @@ typedef struct stream {
 	char *name;
 	void *stream_data;
 	int errnr;
-	int (*read)( struct stream *s, char *buf, size_t elmsize, size_t cnt );
-	int (*write)( struct stream *s, char *buf, size_t elmsize, size_t cnt );
+	size_t (*read)( struct stream *s, char *buf, size_t elmsize, size_t cnt );
+	size_t (*write)( struct stream *s, char *buf, size_t elmsize, size_t cnt );
 	void (*close)( struct stream *s);
 	char *(*error)( struct stream *s );
 	void (*destroy)( struct stream *s );
@@ -155,11 +155,11 @@ stream_export stream *file_wastream( FILE *fp, char *name );
 
 typedef struct buffer {
 	char *buf;
-	int pos;
-	int len;
+	size_t pos;
+	size_t len;
 } buffer;
 
-stream_export buffer *buffer_create( int size );
+stream_export buffer *buffer_create( size_t size );
 stream_export char *buffer_get_buf( buffer *b );
 stream_export void buffer_destroy( buffer *b );
 
@@ -186,7 +186,7 @@ stream_export buffer *stream_get_buffer( stream *s );
    read will then start with a new major block.
  */
 stream_export stream *block_stream( stream *s );
-stream_export int bs_read_next( stream *s, char *buf, int *last );
+stream_export size_t bs_read_next( stream *s, char *buf, int *last );
 
 @+ buffered streams
 
@@ -199,15 +199,15 @@ buffer.
 typedef struct bstream {
 	stream *s;
 	char *buf; 
-	int size; /* size of buf */
-	int pos;  /* the data cursor (ie read uptil pos) */
-	int len;  /* len of the data (could < size but usually == size) */
+	size_t size; /* size of buf */
+	size_t pos; /* the data cursor (ie read uptil pos) */
+	size_t len; /* len of the data (could < size but usually == size) */
 	int eof;
 } bstream;
 
-stream_export bstream *bstream_create( stream *rs, int chunk_size );
+stream_export bstream *bstream_create( stream *rs, size_t chunk_size );
 stream_export void bstream_destroy( bstream *s );
-stream_export int bstream_read( bstream *s, int size );
+stream_export size_t bstream_read( bstream *s, size_t size );
 
 @+ bstream functions
 The bstream_create gets a read stream (rs) as input and the initial chunk size
@@ -250,6 +250,10 @@ it is resized. The spare byte is kept.
 #include <io.h>
 #endif
 
+#ifndef HAVE_SSIZE_T
+typedef int ssize_t;
+#endif
+
 typedef enum steam_errors {
 	NO__ERROR = 0,
 	OPEN_ERROR,
@@ -266,7 +270,7 @@ int stream_init(void){
 		return -1;
 	}
 	if ( setsockopt(INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE, 
-		(char*)&sockopt, sizeof(sockopt)) < 0){
+		(void*)&sockopt, sizeof(sockopt)) < 0){
 		WSACleanup();
 		return -1;
 	}
@@ -323,15 +327,15 @@ static char *stream_error( stream *s ){
 	return strdup("Unkonwn error");
 }
 
-static int stream_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
+static size_t stream_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	FILE *fp = (FILE*)s->stream_data;
 	if (!feof(fp))
 		return fread( buf, elmsize, cnt, fp);
-	return -1;
+	return 0;
 }
 
-static int stream_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
-	int res = fwrite( buf, elmsize, cnt, (FILE*)s->stream_data);
+static size_t stream_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
+	size_t res = fwrite( buf, elmsize, cnt, (FILE*)s->stream_data);
 	fflush( (FILE*)s->stream_data );
 	return res;
 }
@@ -513,13 +517,13 @@ stream *open_wastream( char *filename ){
 
 
 #ifdef HAVE_LIBZ
-static int stream_gzread( stream *s, char *buf, size_t elmsize, size_t cnt ){
+static size_t stream_gzread( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	int size = elmsize*cnt;
 	size = gzread( (gzFile*)s->stream_data, buf, size );
 	if (size) return size/elmsize;
 	return 0;
 }
-static int stream_gzwrite( stream *s, char *buf, size_t elmsize, size_t cnt ){
+static size_t stream_gzwrite( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	int size = elmsize*cnt;
 	size = gzwrite( (gzFile*)s->stream_data, buf, size );
 	if (size) return size/elmsize;
@@ -576,13 +580,13 @@ stream *open_gzwastream( char *filename ){
 #endif
 
 #ifdef HAVE_LIBBZ2
-static int stream_bzread( stream *s, char *buf, size_t elmsize, size_t cnt ){
+static size_t stream_bzread( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	int size = elmsize*cnt;
 	size = BZ2_bzread( (BZFILE*)s->stream_data, buf, size );
 	if (size) return size/elmsize;
 	return 0;
 }
-static int stream_bzwrite( stream *s, char *buf, size_t elmsize, size_t cnt ){
+static size_t stream_bzwrite( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	int size = elmsize*cnt;
 	size = BZ2_bzwrite( (BZFILE*)s->stream_data, buf, size );
 	if (size) return size/elmsize;
@@ -638,18 +642,23 @@ stream *open_bzwastream( char *filename ){
 }
 #endif
 
-static int socket_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
-	int size = elmsize*cnt;
+static size_t socket_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
+	size_t size = elmsize*cnt;
 #ifdef NATIVE_WIN32
-	size = send( (int)s->stream_data, buf, size, 0 );
+	int sz = send( (int)s->stream_data, buf, size, 0 );
 #else
-	size = write( (int)s->stream_data, buf, size );
+	ssize_t sz = write( (int)s->stream_data, buf, size );
 #endif
-	if (size) return size/elmsize;
+	if (sz > 0) return (size_t)sz/elmsize;
 	return 0;
 }
-static int socket_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
-	int res = 0, size = elmsize*cnt, nr = 0;
+static size_t socket_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
+#ifdef NATIVE_WIN32
+	int nr = 0;
+#else
+	ssize_t nr = 0;
+#endif
+	size_t res = 0, size = elmsize*cnt;
 	while( res < size && (
 #ifdef NATIVE_WIN32
 		(nr = recv( (int)s->stream_data, buf+res, size-res, 0 ))
@@ -690,7 +699,7 @@ stream *socket_open( int socket, char *name ){
 
 #ifdef SO_KEEPALIVE
 	{ int opt = 0; 
-	setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (char *) &opt,
+	setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (void *) &opt,
 			                   sizeof(opt)); }
 #endif
 #ifdef IPTOS_THROUGHPUT
@@ -804,7 +813,7 @@ stream *file_wastream( FILE *fp, char *name ){
 	return s;
 } 
 
-buffer *buffer_create( int size ){
+buffer *buffer_create( size_t size ){
 	buffer *b = (buffer*)malloc(sizeof(buffer));
 	b->pos = 0;
 	b->buf = malloc(BUFSIZ);
@@ -828,8 +837,8 @@ buffer *stream_get_buffer( stream *s ){
 	return (buffer*)s->stream_data;
 }
 
-static int buffer_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
-	int size = elmsize*cnt;
+static size_t buffer_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
+	size_t size = elmsize*cnt;
 	buffer *b = (buffer*)s->stream_data;
 	if (b->pos+size <= b->len){
 		memcpy(buf,b->buf+b->pos, size );
@@ -840,11 +849,11 @@ static int buffer_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
 		return 0;
 	}
 }
-static int buffer_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
-	int size = elmsize*cnt;
+static size_t buffer_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
+	size_t size = elmsize*cnt;
 	buffer *b = (buffer*)s->stream_data;
 	if (b->pos+size > b->len){
-		int ns = b->len;
+		size_t ns = b->len;
 		while(b->pos+size > ns) ns *= 2;
 		b->buf = realloc(b->buf, ns);
 		b->len = ns;
@@ -908,11 +917,11 @@ bs *bs_create( stream *s ){
 }
 
 static
-int bs_write( stream *ss, char *buf, size_t elmsize, size_t cnt ){
+size_t bs_write( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 	bs *s = (bs*)ss->stream_data;
-	int todo = cnt * elmsize;
+	size_t todo = cnt * elmsize;
 	if (s->onr + todo >= BLOCK){
-		int rest = BLOCK - s->onr;
+		size_t rest = BLOCK - s->onr;
 		memcpy( s->out+s->onr, buf, rest );
 		buf += rest;
 		todo -= rest;
@@ -934,11 +943,11 @@ int bs_write( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 }
 
 static
-int bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
+size_t bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 	bs *s = (bs*)ss->stream_data;
 	int nr = 0;
 
-	int todo = cnt * elmsize;
+	size_t todo = cnt * elmsize;
 	if (todo < s->itotal - s->inr){
 		memcpy( buf, s->in + s->inr, todo );
 
@@ -946,7 +955,7 @@ int bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 		return cnt;
 	}
 	if (todo >= s->itotal - s->inr ){
-		int rest = s->itotal - s->inr;
+		size_t rest = s->itotal - s->inr;
 		memcpy( buf, s->in + s->inr, rest );
 		buf += rest;
 		todo -= rest;
@@ -960,7 +969,7 @@ int bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 	}
 	while (todo >= BLOCK){
 		stream_readInt( s->s, &nr );
-		s->s->read( s->s, buf, 1, nr);
+		s->s->read( s->s, buf, 1, (size_t) nr);
 		buf += nr;
 		todo -= nr;
 		if (nr < BLOCK){
@@ -974,9 +983,9 @@ int bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 		if (nr < BLOCK)
 			s->eob = 1;
 
-		s->s->read( s->s, s->in, 1, nr);
+		s->s->read( s->s, s->in, 1, (size_t) nr);
 		if (nr < todo)
-			memcpy( buf, s->in, nr );
+			memcpy( buf, s->in, (size_t) nr );
 		else
 			memcpy( buf, s->in, todo );
 		s->itotal = nr;
@@ -998,13 +1007,13 @@ int bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 }
 
 extern 
-int bs_read_next( stream *ss, char *buf, int *last ){
+size_t bs_read_next( stream *ss, char *buf, int *last ){
 	bs *s = (bs*)ss->stream_data;
 	int nr = 0;
 
 	*last = 0;
 	if (s->itotal > s->inr ){
-		int rest = s->itotal - s->inr;
+		size_t rest = s->itotal - s->inr;
 		memcpy( buf, s->in + s->inr, rest );
 
 		*last = (s->itotal != BLOCK);
@@ -1014,12 +1023,12 @@ int bs_read_next( stream *ss, char *buf, int *last ){
 		return rest;
 	} else {
 		stream_readInt( s->s, &nr);
-		s->s->read( s->s, buf, 1, nr);
+		s->s->read( s->s, buf, (size_t) 1, (size_t) nr);
 		if (nr < BLOCK){
 			*last = 1;
 			s->itotal = s->inr = 0;
 		} 
-		return nr;
+		return (size_t) nr;
 	} 
 }
 
@@ -1086,13 +1095,13 @@ extern int stream_readInt( stream *s, int *val ){
 	return ok;
 }
 extern int stream_writeInt( stream *s, const int val ){
-	int ok = s->write(s, (char*)&val, sizeof(int), 1)==1;
+	int ok = s->write(s, (char*)&val, sizeof(int), (size_t)1)==1;
 	if (!ok) s->errnr = WRITE_ERROR;
 	return ok;
 }
 
 int stream_readLng( stream *s, lng *val ){
-	int ok = s->read(s, (char*)val, sizeof(lng), 1) == 1;
+	int ok = s->read(s, (char*)val, sizeof(lng), (size_t)1) == 1;
 	if (!ok) s->errnr = READ_ERROR;
 	if (s->byteorder != 1234)
 		*val = long_long_SWAP(*val);	
@@ -1100,7 +1109,7 @@ int stream_readLng( stream *s, lng *val ){
 }
 
 int stream_writeLng( stream *s, const lng val ){
-	int ok = s->write(s, (char*)&val, sizeof(lng), 1)==1;
+	int ok = s->write(s, (char*)&val, sizeof(lng), (size_t)1)==1;
 	if (!ok) s->errnr = WRITE_ERROR;
 	return ok;
 }
@@ -1109,9 +1118,9 @@ int stream_readShtArray( stream *s, short *val, size_t cnt ){
 	int ok = s->read(s, (char*)val, sizeof(short), cnt) == cnt;
 	if (!ok) s->errnr = READ_ERROR;
 	if (s->byteorder != 1234){
-		int i= 0;
-		for(i = 0; i<cnt; i++)
-			val[i] = short_int_SWAP(val[i]);	
+		size_t i;
+		for(i = 0; i<cnt; i++, val++)
+			*val = short_int_SWAP(*val);	
 	}
 	return ok;
 }
@@ -1126,9 +1135,9 @@ extern int stream_readIntArray( stream *s, int *val, size_t cnt ){
 	int ok = s->read(s, (char*)val, sizeof(int), cnt) == cnt;
 	if (!ok) s->errnr = READ_ERROR;
 	if (s->byteorder != 1234){
-		int i= 0;
-		for(i = 0; i<cnt; i++)
-			val[i] = normal_int_SWAP(val[i]);	
+		size_t i;
+		for(i = 0; i<cnt; i++, val++)
+			*val = normal_int_SWAP(*val);	
 	}
 	return ok;
 }
@@ -1142,9 +1151,9 @@ int stream_readLngArray( stream *s, lng *val, size_t cnt ){
 	int ok = s->read(s, (char*)val, sizeof(lng), cnt) == cnt;
 	if (!ok) s->errnr = READ_ERROR;
 	if (s->byteorder != 1234){
-		int i= 0;
-		for(i = 0; i<cnt; i++)
-			val[i] = long_long_SWAP(val[i]);	
+		size_t i;
+		for(i = 0; i<cnt; i++, val++)
+			*val = long_long_SWAP(*val);	
 	}
 	return ok;
 }
@@ -1158,7 +1167,8 @@ int stream_writeLngArray( stream *s, const lng *val, size_t cnt ){
 extern int stream_printf( stream *s, const char *format, ...)
 {
 	char buf[BUFSIZ], *bf = buf;
-	int i = 0, bfsz = BUFSIZ;
+	int i = 0;
+	size_t bfsz = BUFSIZ;
 	va_list ap; 
 
 @= stream_printf_va_vsnprintf
@@ -1169,20 +1179,21 @@ extern int stream_printf( stream *s, const char *format, ...)
 	@:stream_printf_va_vsnprintf@
 	while ((i < 0) || (i >= bfsz)) {
 		if (i >= 0)		/* glibc 2.1 */
-			bfsz = i+1;	/* precisely what is needed */
+			bfsz = (size_t)i+1; /* precisely what is needed */
 		else			/* glibc 2.0 */
 			bfsz *= 2;	/* twice the old size */
 		if (bf != buf) free(bf);
-		assert(bf = (char*) malloc (bfsz));
+		bf = (char*) malloc (bfsz);
+		assert(bf != NULL);
 		@:stream_printf_va_vsnprintf@
 	}
-	s->write(s, bf, i, 1);
+	s->write(s, bf, (size_t) i, (size_t) 1);
 	if (bf != buf) free(bf);
 	return i;
 }
 
 
-bstream *bstream_create( stream *s, int size )
+bstream *bstream_create( stream *s, size_t size )
 {
 	bstream *b = (bstream*)malloc(sizeof(bstream));
 	b->s = s;
@@ -1194,10 +1205,10 @@ bstream *bstream_create( stream *s, int size )
 	return b;
 }
 
-int bstream_read( bstream *s, int size )
+size_t bstream_read( bstream *s, size_t size )
 {
-	int len = 0, rd = 0;
-	int used = s->len - s->pos;
+	size_t len = 0, rd = 0;
+	size_t used = s->len - s->pos;
 	if (s->eof)
 		return 0;
 	while( size+used > s->size){

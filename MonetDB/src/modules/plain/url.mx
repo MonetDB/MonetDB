@@ -445,7 +445,7 @@ url_getProtocol(
 	return GDK_SUCCEED;
 }
 
-url_getQuery(
+int url_getQuery(
    str*         retval, 
    url         Str1   
 ){
