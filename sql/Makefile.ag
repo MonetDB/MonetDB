@@ -30,10 +30,10 @@ headers_pc = {
 	DIR = libdir/pkgconfig
 }
 
-doc_sql = {
-	DIR = datadir/MonetDB/docs/SQL
-	SOURCES = SQLfeatures.tex mknife.gif
-}
+#doc_sql = {
+#	DIR = datadir/MonetDB/docs/SQL
+#	SOURCES = SQLfeatures.tex mknife.gif
+#}
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
