@@ -801,7 +801,6 @@ public class JdbcClient {
 		 	if (size != 0 &&
 				type != Types.REAL &&
 				type != Types.DOUBLE &&
-				type != Types.FLOAT &&
 				type != Types.BOOLEAN &&
 				type != Types.TIMESTAMP &&
 				type != Types.DATE &&
