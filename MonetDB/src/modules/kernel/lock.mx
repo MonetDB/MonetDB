@@ -20,6 +20,8 @@ command unset(l:lock) = unset_lock
 	comment "unset a lock";
 command destroy(l:lock) = destroy_lock
 	comment "destroy a lock";
+command tostr(l:lock) = lockToStr
+	comment "Overloaded atom function";
 
 @- semaphores
 @mal
@@ -94,6 +96,14 @@ int destroy_lock(int *res, monet_lock *l){
 	return GDK_SUCCEED;
 }
 
+int lockToStr(char **dst, int *len, ptr *src){
+	if( src == ptr_nil){
+		strcpy(*dst,"nil");
+		return 3;
+	}
+	sprintf(*dst,"%o", *src);
+	return strlen(*dst);
+}
 int create_sema(monet_sema *s, int *init){
 	*s = MT_create_sema(*init);
 	return GDK_SUCCEED;

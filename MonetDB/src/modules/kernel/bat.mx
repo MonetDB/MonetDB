@@ -1329,13 +1329,13 @@ int CMDhasHash(bit *ret, int *bid) {
 	BAT *b;
 	@:batcheck(ret,bid,b,"CMDhasHash")@
 	*ret = b->hacctype == 1;
-	GDKwarning("CMDhasHash: not yet implemented\n");
 	return GDK_SUCCEED;
 }
 int CMDsetHash(bit *ret, int *bid, bit *prop) {
 	BAT *b;
 	@:batcheck(ret,bid,b,"CMDsetHash")@
-	GDKwarning("CMDsetHash: not yet implemented\n");
+printf("bat cacheid %d\n",b->batCacheid);
+	BAThash(b,0);
 	return GDK_SUCCEED;
 }
 int CMDhasIndex(bit *ret, int *bid) {
