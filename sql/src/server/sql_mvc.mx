@@ -1489,7 +1489,6 @@ static sql_trans *trans_dup(backend_stack stk, sql_trans *ot, char *newname ){
 	node *n;
 	sql_trans *t = NEW(sql_trans);
 
-	MT_set_lock(mvc_lock, "trans_dup");
 	t->wtime = t->rtime = 0;
 	t->stime = timestamp();
 	t->level = ot->level;
@@ -1510,7 +1509,6 @@ static sql_trans *trans_dup(backend_stack stk, sql_trans *ot, char *newname ){
 	if (ot->schemas.set) for (n = ot->schemas.set->h; n; n = n->next) {
 		cs_add( &t->schemas, schema_dup(t, TR_OLD, n->data, t), TR_OLD);
 	}
-	MT_unset_lock(mvc_lock, "trans_dup");
 	return t;
 }
 
@@ -2538,6 +2536,7 @@ int mvc_trans(mvc * m)
 	int res = Q_TRANS;
 	assert(!m->trans); /* can only start a new transaction */
 				
+	MT_set_lock(mvc_lock, "mvc_commit");
 	m->trans = trans_dup(m->stk, gtrans, NULL);
 	m->trans->level = ISO_SERIALIZABLE;
 	m->type = res;
@@ -2545,6 +2544,7 @@ int mvc_trans(mvc * m)
 		m->trans->schema = find_schema(m->trans, m->schema);
 		sql_create_var(m, find_schema(m->trans, "sys"));
 	}
+	MT_unset_lock(mvc_lock, "mvc_commit");
 	return res;
 }
 
@@ -2600,10 +2600,15 @@ int mvc_commit(mvc * m, int chain, char *name)
 
 	/* if there is nothing to commit reuse the current transaction */
 	if (tr->wtime == 0) {
-		if (mvc_debug)
-			fprintf(stderr, "no changes\n");
-		tr->stime = timestamp();
-		return 0;
+		if (chain) {
+			if (mvc_debug)
+				fprintf(stderr, "no changes\n");
+			tr->stime = timestamp();
+			return 0;
+		} else {
+			trans_destroy(tr);
+			m->trans = NULL;
+		}
 	}
 
 	MT_set_lock(mvc_lock, "mvc_commit");
@@ -2619,15 +2624,16 @@ int mvc_commit(mvc * m, int chain, char *name)
 		if (mvc_debug)
 			fprintf(stderr, "done forwarding changes\n");
 		res = Q_TRANS;
+		MT_unset_lock(mvc_lock, "mvc_commit");
 	} else {
+		MT_unset_lock(mvc_lock, "mvc_commit");
 		GDKerror("Cannot commit this transaction because of concurency conflicts will abort instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
 
-	MT_unset_lock(mvc_lock, "mvc_commit");
-
 	if (chain) {
+		MT_set_lock(mvc_lock, "trans_dup");
 		assert(tr->schema);
 		schema = _strdup(tr->schema->base.name);
 		assert(schema);
@@ -2639,6 +2645,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 		m->trans->schema = find_schema(m->trans, schema);
 		sql_create_var(m, find_schema(m->trans, "sys"));
 		_DELETE(schema);
+		MT_unset_lock(mvc_lock, "trans_dup");
 	} else {
 		m->trans = NULL;
 	}
@@ -2674,17 +2681,19 @@ mvc_rollback(mvc * m, int chain, char *name)
 	} else {
 		while(tr->parent) 
 	       		tr = trans_destroy(tr);
-		m->trans = trans_dup(tr->stk, tr,NULL);
 	}
 	m->status = 0;
 	if (chain) {
+		MT_set_lock(mvc_lock, "trans_dup");
+		m->trans = trans_dup(tr->stk, tr,NULL);
 		m->trans->level = level;
 		m->trans->schema = find_schema(m->trans, schema);
 		sql_create_var(m, find_schema(m->trans, "sys"));
-		_DELETE(schema);
+		MT_unset_lock(mvc_lock, "trans_dup");
 	} else {
 		m->trans = NULL;
 	}
+	_DELETE(schema);
 	m->type = Q_TRANS;
 	return res;
 }

@@ -260,6 +260,9 @@ extern stmt *stmt_output(stmt * l);
 extern sql_subtype *head_type(stmt * st);
 sql_export sql_subtype *tail_type(stmt * st);
 
+/* return max(s1.nrcols, .. , sn.nrcols where si in l ) */
+extern int stmt_list_nrcols(list *l);
+
 sql_export char *column_name(stmt * st);
 extern char *table_name(stmt * st);
 sql_export sql_column *basecolumn(stmt *st);
@@ -1488,6 +1491,20 @@ sql_subtype *head_type(stmt * st)
 		fprintf(stderr, "missing head type %d: %s\n", st->type, st_type2string(st->type) );
 		return NULL;
 	}
+}
+
+int 
+stmt_list_nrcols( list *l )
+{
+	int nrcols = 0;
+	node *n;
+
+	for(n = l->h; n; n = n->next) {
+		stmt *s = n->data;
+		if (s->nrcols > nrcols)
+			nrcols = s->nrcols;
+	}
+	return nrcols;
 }
 
 static stmt *head_column(stmt * st);

@@ -653,18 +653,17 @@ static stmt *check_types(mvc * sql, sql_subtype * ct, stmt * s )
 				}
 				return fix_scale(sql, ct, stmt_unop(s, c), 1,
 					(st->type->scale == SCALE_FIX));
-			}
+			} 
 			/* here we need to check if we could convert using
 			   the more complex conversion functions 
 			   (convert(x,int,int) -> y)
 			 */
 			if (st->scale == 0) {
 				sql_subtype *it = sql_bind_localtype( "int" );
-				list *ops = list_create((fdestroy)&
-					sql_subtype_destroy);
-				list_append(ops, sql_dup_subtype(st));
-				list_append(ops, sql_dup_subtype(it));
-				list_append(ops, sql_dup_subtype(it));
+				list *ops = list_create((fdestroy)NULL);
+				list_append(ops, st);
+				list_append(ops, it);
+				list_append(ops, it);
 				c = sql_bind_func_result_( "convert", ops, ct);
 				list_destroy(ops);
 				if (c){ 
@@ -851,12 +850,12 @@ static stmt *sql_case(mvc * sql, scope * scp, symbol *opt_cond, dlist * when_sea
 			return sql_error(sql, 02, "Error: result type missing");
 		}
 		tpe = supertype(restype, tpe);
+		sql_subtype_destroy( restype );
 		if (!tpe) {
 			list_destroy(conds);
 			list_destroy(results);
 			return sql_error(sql, 02, "Error: result types %s,%s of case are not compatible", restype->type->sqlname, tpe->type->sqlname);
 		}
-		sql_subtype_destroy( restype );
 		restype = tpe;
 	}
 	if (subset) {
@@ -1089,6 +1088,7 @@ static stmt *sql_unop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * s
 	sql_subfunc *f = NULL;
 	sql_subtype *rt = NULL;
 	stmt *rs = sql_value_exp(sql, scp, l->next->data.sym, grp, subset);
+
 	if (!rs)
 		return NULL;
 	rt = tail_type(rs);
@@ -1102,10 +1102,13 @@ static stmt *sql_unop(mvc * sql, scope * scp, symbol * se, group * grp, stmt * s
 			}
 			return stmt_unop(rs, f);
 		} else {
+			stmt *res;
 			sql_arg *a = f->func->ops->h->data;
 			sql_add_param(sql, _strdup(a->name), rs );
 
-			return sqlparse_intern(sql, f->func->imp);
+			res = sqlparse_intern(sql, f->func->imp);
+			sql_subfunc_destroy(f);
+			return res;
 		}
 	} else {
 		char *type = tail_type(rs)->type->sqlname;
@@ -1124,6 +1127,7 @@ static stmt *sql_aggrop(mvc * sql, scope * scp, symbol * se, group * grp, stmt *
 	int distinct = l->h->next->data.ival;
 	stmt *s = NULL;
 	char *aggrstr = l->h->data.sval;
+
 	if (!l->h->next->next->data.sym) {	/* count(*) case */
 		cvar *cv;
 		if (strcmp(aggrstr, "count") != 0) {
@@ -1900,6 +1904,7 @@ static stmt *sql_and(mvc * sql, stmt * ls, stmt * rs)
 	}
 	if (ls->type == st_set && rs->type == st_set) {
 		list_merge( ls->op1.lval, rs->op1.lval,(fdup)&stmt_dup);
+		ls->nrcols = stmt_list_nrcols( ls->op1.lval );
 		stmt_destroy(rs);
 		res = ls;
 	} else if (ls->type == st_sets && rs->type == st_set) {
@@ -2114,10 +2119,13 @@ static stmt *sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, s
 						 	stmt_reverse(ls), 
 						 	stmt_reverse(temp)));
 					} else { /* boolean expression */
+						/* TODO handle selection case */
+						/* needs [exists](x,temp) */
 						return stmt_exist(
 							stmt_reverse(temp),ls);
 					}
 				} else { /* SQL_NOT_IN */
+					/* TODO handle boolean expression */
 					return stmt_diff(
 						stmt_dup(ls), stmt_join(
 						 ls, 
@@ -2884,62 +2892,21 @@ insert_check_fkey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 	(void)sql; /* unused! */
 
 	if (inserts[0]->op2.stval->key){
-		stmt *cur = NULL;
-		/*
-		sql_subtype *bt = sql_bind_localtype( "bit" );
-		sql_subfunc *or = sql_bind_func_result("or", bt, bt, bt);
-		sql_subfunc *not = sql_bind_func_result("not", bt, NULL, bt);
-		sql_subfunc *cnv = sql_bind_func_result("convert", bt, NULL, it);
-		node *m;
-
-		for(m = k->columns->h; m; m = m->next) {
-			sql_kc *c = m->data;
-			if (c->c->null) {
-				sql_subfunc *isnil = sql_bind_func(
-					"isnull", c->c->type, NULL );
-				stmt *ins = stmt_dup(inserts[c->c->colnr]->op2.stval);
-				ins = stmt_unop(ins, isnil);
-				if (!cur) {
-					cur = ins;
-				} else {
-					cur = stmt_binop(cur, ins, or);
-				}
-				cur = stmt_unop( stmt_unop(cur, not),  cnv);
-			}
-		}
-		*/
-		if (!cur)
-			cur = stmt_atom_int(1);
-
 		s = stmt_binop(
-			stmt_aggr(stmt_dup(idx_inserts), NULL, cnt), cur, ne);
+			stmt_aggr(stmt_dup(idx_inserts), NULL, cnt), 
+			stmt_atom_int(1), ne);
 	} else {
 		/* reljoin.count <> inserts[col1].count */
-		stmt *cur = stmt_dup(inserts[0]->op2.stval);
-		/*
-		node *m;
-
-		for(m = k->columns->h; m; m = m->next) {
-			sql_kc *c = m->data;
-			if (c->c->null) {
-				stmt *ins;
-				ins = stmt_dup(inserts[c->c->colnr]->op2.stval);
-				ins = stmt_uselect(ins, stmt_atom( atom_general(
-					sql_dup_subtype(c->c->type), NULL)), 
-					cmp_equal);
-				cur = stmt_semijoin(cur,ins);
-			}
-		}
-		*/
+		stmt *ins = stmt_dup(inserts[0]->op2.stval);
 
 		s = stmt_binop( 
 			stmt_aggr(stmt_dup(idx_inserts), NULL, cnt), 
-			stmt_aggr(cur, NULL, sql_dup_aggr(cnt)) , ne);
+			stmt_aggr(ins, NULL, sql_dup_aggr(cnt)) , ne);
 	}
 
 	/* s should be empty */
 	snprintf(buf, BUFSIZ, 
-		"key constraint %s.%s failed", k->t->base.name, k->base.name ); 
+	 "foreign key constraint %s.%s failed", k->t->base.name, k->base.name );
 	return stmt_exception( s, buf, 00001 );
 }
 
@@ -3007,7 +2974,11 @@ join_idx_insert( sql_idx *i, stmt **inserts )
 	stmt *s = NULL, *rts = stmt_basetable(ri->t);
 
 	if (inserts[0]->op2.stval->key){
+		sql_subtype *bt = sql_bind_localtype( "bit" );
+		sql_subfunc *or = sql_bind_func_result("or", bt, bt, bt);
 		int nulls = 0;
+		stmt *cond = NULL;
+
 		s = stmt_relselect_init();
 	    	for(m = i->columns->h, o = ri->columns->h; m && o; 
 			m = m->next, o = o->next) {
@@ -3017,13 +2988,32 @@ join_idx_insert( sql_idx *i, stmt **inserts )
 				stmt_dup(stmt_cbat(rc->c, stmt_dup(rts), 0, st_bat)), 
 				stmt_dup(inserts[c->c->colnr]->op2.stval),
 				cmp_equal));
-			if (c->c->null)
+
+			if (c->c->null) {
+				sql_subfunc *isnil = sql_bind_func(
+					"isnull", c->c->type, NULL );
+				stmt *ins = stmt_dup(inserts[c->c->colnr]->op2.stval);
+				ins = stmt_unop(ins, isnil);
+				if (!cond) {
+					cond = ins;
+				} else {
+					cond = stmt_binop(cond, ins, sql_dup_func(or));
+				}
+
 				nulls = 1;
+			}
 		}
+		sql_subfunc_destroy(or);
+
 		s = stmt_mark(stmt_reverse(s), 0);
 		/* add missing nulls (and NULLs only (SIMPLE MATCH)) */
 		if (nulls) {
-			s = stmt_union(s, stmt_diff(stmt_append(stmt_temp(sql_dup_subtype(tail_type(s))), stmt_atom(atom_general( sql_dup_subtype(tail_type(s)), NULL ))), s));
+			s = stmt_predicate( cond, s, 
+				stmt_append(stmt_temp(
+					sql_dup_subtype(tail_type(s))), 
+					stmt_atom(atom_general( 
+						sql_dup_subtype(tail_type(s)), 
+						NULL ))));
 		}
 	} else {
 		int nulls = 0;
@@ -3238,39 +3228,17 @@ update_check_fkey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 	sql_subtype *bt = sql_bind_localtype( "bit" );
 	sql_subfunc *ne = sql_bind_func_result("<>", it, it, bt);
 	stmt *cur;
-	node *m;
 
 	(void)sql; /* unused! */
 	/* reljoin.count <> updates[updcol].count */
-
 	cur = stmt_dup(updates[updcol]->op2.stval);
-	for(m = k->columns->h; m; m = m->next) {
-		sql_kc *c = m->data;
-		if (c->c->null) {
-			stmt *upd;
-			if (updates[c->c->colnr]){
-				upd = stmt_dup(updates[c->c->colnr]->op2.stval);
-			} else {
-				stmt *ts = stmt_basetable(k->t);
-				upd = stmt_dup(updates[updcol]->op2.stval);
-				upd = stmt_semijoin(
-					stmt_cbat(c->c, ts, RDONLY, st_bat), 
-					upd);
-			}
-			upd = stmt_uselect(upd, stmt_atom(atom_general(
-				sql_dup_subtype(c->c->type), NULL)), cmp_equal);
-			cur = stmt_semijoin(cur,upd);
-		}
-	}
-
 	s = stmt_binop( 
 		stmt_aggr(stmt_dup(idx_updates), NULL, cnt), 
-		stmt_aggr(cur, NULL, 
-			sql_dup_aggr(cnt)), ne);
+		stmt_aggr(cur, NULL, sql_dup_aggr(cnt)), ne);
 
 	/* s should be empty */
 	snprintf(buf, BUFSIZ, 
-		"key constraint %s.%s failed", k->t->base.name, k->base.name ); 
+	 "foreign key constraint %s.%s failed", k->t->base.name, k->base.name );
 	return stmt_exception( s, buf, 00001 );
 }
 
@@ -3332,6 +3300,7 @@ join_idx_update( sql_idx *i, stmt **updates, int updcol )
 	node *m, *o;
 	sql_idx *ri = ((sql_fkey*)i->key)->rkey->k.idx;
 	stmt *s = NULL, *rts = stmt_basetable(i->t), *ts;
+	stmt *null = NULL;
 
 	ts = stmt_basetable(i->t);
 	s = stmt_reljoin_init();
@@ -3349,15 +3318,26 @@ join_idx_update( sql_idx *i, stmt **updates, int updcol )
 				stmt_cbat(c->c, stmt_dup(ts), RDONLY, st_bat), 
 				upd);
 		}
-		if (c->c->null)
+		if (c->c->null) { /* new nulls (MATCH SIMPLE) */
+			stmt *nn = stmt_dup( upd );
+			nn = stmt_uselect(nn, stmt_atom(atom_general(
+				sql_dup_subtype(c->c->type), NULL)), 
+				cmp_equal);
+			if (null)
+				null = stmt_semijoin(null,nn);
+			else
+				null = nn;
 			nulls = 1;
+		}
 		stmt_reljoin_fill( s, upd,
 			stmt_dup(stmt_cbat(rc->c, stmt_dup(rts), 0, st_bat)));
 
 	}
 	/* add missing nulls */
 	if (nulls) 
-		s = stmt_union(s, stmt_const(stmt_semijoin(stmt_dup(updates[updcol]->op2.stval), stmt_dup(s)), stmt_atom(atom_general( sql_dup_subtype(tail_type(s)), NULL ))));
+		s = stmt_union(s, stmt_const(null, 
+			stmt_atom(atom_general( sql_dup_subtype(tail_type(s)), 
+			NULL ))));
 
 	stmt_destroy(ts);
 	stmt_destroy(rts);
@@ -3651,6 +3631,7 @@ static stmt *sql_update(mvc * sql, sql_table *t, stmt **updates, list *l )
 	sql_subaggr *cnt = sql_bind_aggr("count", NULL);
 
 	if (!sql_update_idxs(sql, t, updates, l)){
+		sql_subaggr_destroy( cnt );
 		return sql_error(sql, 02, 
 			"Updating indexes failed for table %s",
 			t->base.name);
