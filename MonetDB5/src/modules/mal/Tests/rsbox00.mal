@@ -1,5 +1,6 @@
 include rsbox;
 
+rs := rsbox.create("lost");
 rs := rsbox.create("myid");
 
 b1 := bbp.new(:void, :str);
@@ -25,3 +26,25 @@ resultset.setProperty(rs, "schema", "sys");
 resultset.setComplete(rs);
 
 resultset.writeNextPart(rs);
+
+#barrier (v,res) := rsbox.newIterator();
+#	io.print(res);
+#redo (v,res) := rsbox.hasMoreElements();
+#exit v;
+
+rsbox.release(rs);
+
+#barrier (v,res) := rsbox.newIterator();
+#	io.print(res);
+#redo (v,res) := rsbox.hasMoreElements();
+#exit v;
+
+rsbox.releaseAll();
+
+#barrier (v,res) := rsbox.newIterator();
+#	io.print(res);
+#redo (v,res) := rsbox.hasMoreElements();
+#exit v;
+
+# we did not open, it so why close it?
+#rsbox.close();

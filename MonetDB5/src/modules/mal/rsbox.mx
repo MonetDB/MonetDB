@@ -146,9 +146,6 @@ address RSwriteNextPart
 comment "Writes the next part to the stream.  If it is the first part,
 the header will be written to the stream first.  The size of the blocks
 is determined by the value supplied via the setBlockSize function.";
-command delete(rs:resultset):void
-address RSdelete
-comment "Release this ResultSet and all its associated resources";
 
 # ResultSets themselves should never be serialised to disk.  The
 # fromStr and toStr functions merely exist to adhere to the interface
@@ -188,18 +185,16 @@ to the interface, throws an exception, use create instead)";
 command releaseAll():void
 address RSBreleaseAll
 comment "Release all resultsets for this client in the box";
+command release(rs:resultset):void
+address RSBdelete
+comment "Release this ResultSet and all its associated resources from
+the box";
 command release(id:str):void
 address RSBrelease
 comment "Release the resultset with the given id";
-command release(id:resultset):void
-address RSBreleaseHndl
-comment "Release the resultset with the given handle";
-pattern toString(id:str):str 
 
-address RSBtoString
-comment "Get the string representation of an element in the box";
 command discard(id:str):void 		
-address RSBdiscard
+address RSBrelease
 comment "see rsbox.release(id:str)";
 
 pattern newIterator()(:lng,:resultset)
@@ -263,12 +258,17 @@ typedef struct rsbox_element {
 #endif
 @c
 #include "rsbox.h"
+#include <stream.h>
+#include "mal.h"
+#include "mal_exception.h"
 
 /* convenience macros */
 #define throw(X, Y)		return(throwMessage(X, Y));
 #define throwf(X, Y, Z)	return(throwException(MALEXCEPTION, X, Y, Z));
 #define idMatches(X, Y)	((X)->clientId == getClient()->idx && \
-						 strcmp((X)->rs->id, Y) == 0)
+	strcmp((X)->rs->id, Y) == 0)
+#define resolveHandle(X, Y) \
+	if ((tmp = RSBgetResultSet(X, Y)) != MAL_SUCCEED) return(tmp);
 
 /** How many elements we can handle at a time */
 #define RSB_MAX_ELEMS	20
@@ -280,15 +280,23 @@ static element* elements[RSB_MAX_ELEMS];
  * An exception is thrown if the array slot is empty or out of
  * bounds.
  */
-str RSBgetResultSet(resultset** retval, int* handle) {
+static str RSBgetResultSet(resultset** retval, int* handle) {
+	resultset* rs;
+	
 	if (handle == NULL)
 		throw("rsbox.getResultSet", "Handle should not be NULL");
-	if (*handle < 0 || *handle >= RSB_MAX_ELEMS)
+	if (*handle < 0 || *handle > RSB_MAX_ELEMS)
 		throw("rsbox.getResultSet", "Handle index out of bounds");
-	if (elements[*handle] == NULL)
+	if (*handle == 0)
+		throw("rsbox.getResultSet", "Invalid handle: not initialised");
+	if (elements[*handle - 1] == NULL)
 		throw("rsbox.getResultSet", "Handle points to an empty slot");
 
-	*retval = elements[*handle]->rs;
+	rs = elements[*handle - 1]->rs;
+	if (elements[*handle - 1]->clientId != getClient()->idx)
+		throw("rsbox.getResultSet", "Access denied");
+	
+	*retval = rs;
 	return(MAL_SUCCEED);
 }
 
@@ -306,27 +314,6 @@ str RSBopen(int *ret){
 		throw("rsbox.open", "failed to open box");
 
 	return(MAL_SUCCEED);
-}
-
-/**
- * Closes the complete box.  This operation should check whether
- * there are ResultSets in the box not owned by the caller.
- */
-str RSBclose(int *ret){
-	(void) ret;
-	/* TODO: check that there are no ResultSets that are not
-	 * owned by the caller here! */
-	if (closeBox("rsbox", TRUE) != 0)
-		throw("rsbox.close", "failed to close box");
-
-	return(MAL_SUCCEED);
-}
-
-/**
- * Destroys the complete box.
- */
-str RSBdestroy(int *ret){
-	return(RSBclose(ret));
 }
 
 /**
@@ -380,36 +367,9 @@ str RSBcreate(int* retval, str* name) {
 	elements[free]->rs = rs;
 
 	/* and return the index as handle */
-	*retval = free;
+	*retval = free + 1;
 	return(MAL_SUCCEED);
 }
-
-@-
-Access to a box calls for resolving the first parameter
-to a named box.
-Warning: we don't use the underlying box at the moment
-@= OpenBox
-	box = findBox("rsbox");
-	if (box == 0) 
-		return(throwMessage("rsbox.@1", "box is not open"));
-@-
-@c
-
-/* do we need this fancy reflection alike stuff?
-str RSBtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str name;
-	Box box;
-	ValPtr v;
-
-	@:OpenBox(take)@
-	name = (str)getArgName(mb, pci, 1);
-	v = &stk->stk[pci->argv[0]];
-	if (takeBox(box, name, v, (int)getArgType(mb, pci, 0)))
-		throwf("rsbox.take", "failed to take '%s' from box", name);
-
-	return(MAL_SUCCEED);
-}
-*/
 
 /**
  * Returns for the given id, the corresponding ResultSet handle.
@@ -421,7 +381,7 @@ str RSBtake(int* retval, str* id) {
 
 	for (i = 0; i < RSB_MAX_ELEMS; i++) {
 		if (elements[i] != NULL && idMatches(elements[i], *id)) {
-			*retval = i;
+			*retval = i + 1;
 			return(MAL_SUCCEED);
 		}
 	}
@@ -429,110 +389,164 @@ str RSBtake(int* retval, str* id) {
 	throwf("rsbox.take", "No such element with id '%s'", *id);
 }
 
-str RSBrelease(int *ret, str *id) {
+/**
+ * Helper function to properly free column structs.  This function
+ * uses recursion to properly free all members of the list.
+ *
+ * @param column the column to free
+ */
+static str RSBfreeColumn(column* col) {
 	int i;
-	(void) ret;
+	
+	if (col == NULL)
+		throw("resultset.freeColumn", "Column should NOT be NULL");
+	
+	if (col->next != NULL) RSBfreeColumn(col->next);
+	BBPunfix(col->bat->batCacheid);
+	GDKfree(col->name);
+	for (i = 0; i < RS_MAX_PROPERTIES; i++)
+		if (col->properties[i] != NULL) GDKfree(col->properties[i]);
+	GDKfree(col);
+
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Releases the given ResultSet and all its associated rescources.
+ *
+ * @param handle a resultset handle
+ */
+str RSBdelete(void* retval, int* handle) {
+	int i;
+	resultset* rs;
+	str tmp;
+	element* elem;
+	(void)retval;	/* make compiler happy */
+	
+	resolveHandle(&rs, handle);
+	
+	elem = elements[*handle - 1];
+	elements[*handle - 1] = NULL;
+	
+	/* first free all columns using a recursive function */
+	RSBfreeColumn(rs->firstColumn);
+	GDKfree(rs->id);
+	for (i = 0; i < RS_MAX_PROPERTIES; i++)
+		if (rs->propertynames[i] != NULL) GDKfree(rs->propertynames[i]);
+		else break;
+	/* finally free the struct itself */
+	GDKfree(rs);
+
+	GDKfree(elem);
+	
+	*handle = 0;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Releases the given ResultSet and all its associated rescources.
+ *
+ * @param id a resultset id
+ */
+str RSBrelease(void* retval, str* id) {
+	str tmp;
+	int handle;
+	(void)retval;	/* make compiler happy */
+
+	if ((tmp = RSBtake(&handle, id)) != MAL_SUCCEED) return(tmp);
+	return(RSBdelete(NULL, &handle));
+}
+
+/**
+ * Releases all the ResultSets that are associated to the user.
+ */
+str RSBreleaseAll() {
+	str tmp;
+	int i, handle;
 
 	for (i = 0; i < RSB_MAX_ELEMS; i++) {
-		if (elements[i] != NULL && idMatches(elements[i], *id)) {
-			resultset* rs = elements[i]->rs;
-			GDKfree(elements[i]);
-			elements[i] = NULL;
-			/* TODO: free the rs struct */
-			rs = NULL;
-			return(MAL_SUCCEED);
+		if (elements[i] != NULL && elements[i]->clientId == getClient()->idx) {
+			handle = i + 1;
+			if ((tmp = RSBdelete(NULL, &handle)) != MAL_SUCCEED) return(tmp);
+		}
+	}
+
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Increases the cursor by one and returns the next resultset handle,
+ * if available.
+ *
+ * @return ret1 iterator cursor
+ * @return ret2 resultset handle
+ */
+str RSBhasMoreElements(lng* ret1, int* ret2) {
+	int pos, handle;
+
+	if (*ret1 + 1 < RSB_MAX_ELEMS) {
+		pos = ((int)*ret1) + 1;
+		for (; pos < RSB_MAX_ELEMS; pos++) {
+			if (elements[pos] != NULL && elements[pos]->clientId == getClient()->idx) {
+				handle = pos + 1;
+				*ret1 = (lng)pos;
+				*ret2 = handle;
+				return(MAL_SUCCEED);
+			}
 		}
 	}
 	
-	throwf("rsbox.take", "No such element with id '%s'", *id);
-}
-str RSBreleaseHndl(int *ret, int *id) {
-	(void) ret;
-	(void) id;
-	return throwMessage("rsbox.release", "not yet implemented");
+	/* tell there are no more elements */
+	*ret1 = -1;
+	*ret2 = 0;
+	return(MAL_SUCCEED);
 }
 
-str RSBreleaseAll(int *ret){
-	Box box;
+/**
+ * Iterator thinghy that returns the starting point of an
+ * iteration over all ResultSets stored in the box that are
+ * owned by the caller.
+ *
+ * @return ret1 iterator cursor
+ * @return ret2 resultset handle
+ */
+str RSBiterator(lng* ret1, int* ret2) {
+	*ret1 = -1;
+	return(RSBhasMoreElements(ret1, ret2));
+}
 
-	(void)ret;
-	@:OpenBox(release)@
-	/* this is dirty: we don't catch any exceptions here... */
-	releaseAllBox(box);
+/**
+ * Closes the complete box.  This operation should checks whether
+ * there are ResultSets in the box not owned by the caller.  If
+ * this is the case, the ResultSets owned by the caller are removed
+ * and an exception is thrown.
+ */
+str RSBclose() {
+	str tmp;
+	int i;
+	
+	if ((tmp = RSBreleaseAll()) != MAL_SUCCEED) return(tmp);
+	
+	for (i = 0; i < RSB_MAX_ELEMS; i++)
+		if (elements[i] != NULL)
+			throw("rsbox.close", "Unable to close: there are still ResultSets in the box not owned by you");
+
+	if (closeBox("rsbox", TRUE) != 0)
+		throw("rsbox.close", "failed to close box");
 
 	return(MAL_SUCCEED);
 }
 
-str RSBdiscard(int *ret, str *name){
-	Box box;
-
-	(void) ret;
-	@:OpenBox(discard)@
-	if (discardBox(box, *name) == 0)
-		return throwException(MALEXCEPTION, "rsbox.discard", "failed to discard '%s' from box", *name);
-
-	return(MAL_SUCCEED);
-}
-
-str RSBtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	Box box;
-	int i,len=0;
-	ValPtr v;
-	str nme,s=0;
-
-	(void)mb; /* fool compiler */
-	@:OpenBox(toString)@
-	nme = (str) getArgValue(stk,pci,1);
-	i= findVariable(box->sym,nme);
-	if( i <0) return throwException(MALEXCEPTION,"const.toString",
-			"failed to take '%s' from box",nme);
-
-	v= &box->val->stk[i];
-	if( v->vtype== TYPE_str) s= v->val.sval;
-	else (*BATatoms[v->vtype].atomToStr)(&s,&len,v);
-	if(s== NULL) return throwMessage("const.toString","illegal value");
-	VALset(&stk->stk[pci->argv[0]], TYPE_str,s);
-	return MAL_SUCCEED;
-}
-
-str RSBiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	Box box;
-	lng *cursor;
-	ValPtr v;
-
-	(void)mb; /* make compiler happy */
-	@:OpenBox(iterator)@
-	cursor = (lng*)getArgValue(stk,pci,0);
-	v = &stk->stk[pci->argv[2]];
-	nextBoxElement(box, cursor, v);
-
-	return(MAL_SUCCEED);
-}
-str RSBhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-    Box box;
-    lng *cursor;
-    ValPtr v;
-
-    (void)mb; /* fool compiler */
-    @:OpenBox(iterator)@
-    cursor= (lng*) getArgValue(stk,pci,0);
-    v= &stk->stk[pci->argv[1]];
-    nextBoxElement(box, cursor, v);
-    return MAL_SUCCEED;
+/**
+ * Destroys the complete box.
+ */
+str RSBdestroy(int *ret){
+	return(RSBclose(ret));
 }
 
 @-
 @+ Implementation of the resultset
 @c
-#include <stream.h>
-#include "mal.h"
-#include "mal_exception.h"
-
-/* convenience macros */
-#define throw(X, Y)		return(throwMessage(X, Y));
-#define throwf(X, Y, Z)	return(throwException(MALEXCEPTION, X, Y, Z));
-#define resolveHandle(X, Y)\
-	if ((tmp = RSBgetResultSet(X, Y)) != MAL_SUCCEED) return(tmp);
 
 /**
  * Small helper function that calculates the max width of the
@@ -831,7 +845,7 @@ str RSsetPropertyColNum(int* retval, int* handle, int* col, str* nme, str* val) 
  * @param col a string representing the name of the column
  * @returns the column number or -1 if not found
  */
-str RSfindColumn(int* retval, int* handle, str col) {
+str RSfindColumn(int* retval, int* handle, str* col) {
 	column* column;
 	int pos = 0;
 	resultset* rs;
@@ -843,7 +857,7 @@ str RSfindColumn(int* retval, int* handle, str col) {
 		return(MAL_SUCCEED);
 	}
 	do {
-		if (strcmp(column->name, col) == 0) break;
+		if (strcmp(column->name, *col) == 0) break;
 		column = column->next;
 		pos++;
 	} while (column != NULL);
@@ -863,8 +877,9 @@ str RSfindColumn(int* retval, int* handle, str col) {
  * Note that a ResultSet without column is considered to be an error.
  *
  * @param handle a resultset handle
+ * @return the same resultset handle
  */
-str RSsetComplete(int* handle) {
+str RSsetComplete(int* retval, int* handle) {
 	resultset* rs;
 	str tmp;
 	
@@ -873,6 +888,8 @@ str RSsetComplete(int* handle) {
 		throw("resultset.setComplete", "ResultSet should contain at least one column");
 
 	rs->complete = (char)1;
+
+	*retval = *handle;
 	return(MAL_SUCCEED);
 }
 
@@ -1181,43 +1198,6 @@ str RSwriteNextPart(int* retval, int* handle) {
 }
 
 /**
- * Helper function to properly free column structs.  This function
- * uses recursion to properly free all members of the list.
- *
- * @param column the column to free
- */
-static str freeColumn(column* col) {
-	if (col == NULL)
-		throw("resultset.freeColumn", "Column should NOT be NULL");
-	
-	if (col->next != NULL) freeColumn(col->next);
-	BBPunfix(col->bat->batCacheid);
-	GDKfree(col->name);
-	GDKfree(col);
-
-	return(MAL_SUCCEED);
-}
-
-/**
- * Releases the given ResultSet and all its associated rescources.
- *
- * @param handle a resultset handle
- */
-str RSdelete(int* handle) {
-	resultset* rs;
-	str tmp;
-	
-	resolveHandle(&rs, handle);
-	
-	/* first free all columns using a recursive function */
-	freeColumn(rs->firstColumn);
-	/* finally free the struct itself */
-	GDKfree(rs);
-	
-	return(MAL_SUCCEED);
-}
-
-/**
  * Interface requirement.  The input string is discarded and null
  * is returned.
  *
@@ -1235,11 +1215,11 @@ str RSfromString(str* src, int *len, resultset* retval) {
  * Interface requirement.  Returns a string indicating the given
  * ResultSet is a ResultSet.
  *
- * @param rs input ResultSet
+ * @param handle input ResultSet handle
  * @return "ResultSet"
  */
-str RStoString(str* retval, int *len, resultset* rs) {
-	rs = NULL;	/* make compiler happy */
+str RStoString(str* retval, int* len, int* handle) {
+	(void)handle;	/* make compiler happy */
 	/* you can do all kinds of fancy things like telling how much
 	 * columns it has, what size it has, and stuff like that...
 	 * but that's not worth the work for now
