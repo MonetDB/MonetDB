@@ -240,14 +240,14 @@ yes-*-*)
 	*-irix*|*-cygwin*|*-darwin*|2.*-*)
 		;;
 	3.3*-*)
-		AC_DEFINE(_POSIX_C_SOURCE, 199506L, [Compiler flag])
+		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
 		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
 		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 		CFLAGS="$CFLAGS -std=c99"
 		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
 	3.*-*)	
-		AC_DEFINE(_POSIX_C_SOURCE, 199506L, [Compiler flag])
+		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
 		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
 		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 		CFLAGS="$CFLAGS -ansi -std=c99"
@@ -321,7 +321,7 @@ yes-*-*)
 	esac
 	dnl Define the same settings as for gcc, as we use the same
 	dnl header files
-	AC_DEFINE(_POSIX_C_SOURCE, 199506L, [Compiler flag])
+	AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
 	AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
 	AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
