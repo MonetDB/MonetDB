@@ -183,6 +183,7 @@ if it didn't exist.
 @c
 Scope fixateScope(Scope scope, str nme, int len){
 	Scope s= scope;
+	str n;
 	if( nme == NULL) return scope;
 	if( s->name != NULL) {
 		if( scopeJump[(int)(*nme)][(int)(*(nme+1))]) 
@@ -193,7 +194,10 @@ Scope fixateScope(Scope scope, str nme, int len){
 			s= s->outer;
 		}
 	}
-	return newScope(scope, GDKstrndup(nme,len));
+	n= (str) GDKmalloc(len+1);
+	strncpy(n,nme,len);
+	n[len]=0;
+	return newScope(scope, n);
 }
 @-
 The freeScope operation throws away a symbol without
