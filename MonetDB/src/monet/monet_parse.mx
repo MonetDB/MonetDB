@@ -293,7 +293,7 @@ command:	     {	int i, l = (int) strlen(yytext);
 "|}"		      { BEGIN(0); Symbol(TOK_PAREND);			      }
 {S}		      ;
 ")"		      { BEGIN(idconst); Symbol(*yytext);		      }
-.		      { BEGIN(0); Symbol(*yytext);			      }
+.		      { BEGIN(0); Symbol((int) (unsigned char) *yytext);      }
 %%
 int
 ll_skipcomment(void)
@@ -696,6 +696,7 @@ program:
 	  ll_lastval=0; }
     |	error ';' { ll_clrids(); yyerrok; yyclearin; ll_lastval=0; return 1;  }
     |	/* empty */
+	{ $$ = NULL; }
     ;
 
 monet_session:
@@ -715,7 +716,7 @@ session:
 	{   $$ = 0 ;							      }
     |	statement
 	{   $$ = $1;							      }
-    |	TOK_MODULE { ll_resolution = 0; } '(' modidents ')' ';'
+    |	TOK_MODULE { $$ = NULL; ll_resolution = 0; } '(' modidents ')' ';'
 	{   YYSTREE lt = $4;
 	    str initstr;
 	    str parmod = ll_parent_module();
@@ -796,8 +797,8 @@ statement:
     ;
 
 nonvar_statement:
-	simple_expression { ll_firstnode = $1; } expr_rest
-	{ ll_sugarnode = $3; } expr_statement
+	simple_expression { $$ = NULL; ll_firstnode = $1; } expr_rest
+	{ $$ = NULL; ll_sugarnode = $3; } expr_statement
 	{    $$ = $5;							      }
     |	blk_expression
 	{    $$ = $1;							      }
@@ -822,7 +823,8 @@ expr_statement:
 	{   $$ = ll_templates ? (YYSTREE)(size_t)1 /* non-NULL */ : (ptr) 0; ll_templates = 1; } nonvar_statement
 	{   ll_templates = ($5 != NULL);
 	    Myylogexpand($3, $6); Myylogexpand($3, $4);
-	    if ($2) Myylogexpand($3, $2); $$ = $3;			      }
+	    if ($2) Myylogexpand($3, $2);
+	    $$ = $3;							      }
     ;
 
 else_statement:
@@ -900,7 +902,7 @@ variable_reference:
 
 proc_definition:
 	TOK_PROCDEF proc_name proc_header
-	proc_assign { ll_templates = ll_modcmds = 1; } sequential_block
+	proc_assign { $$ = NULL; ll_templates = ll_modcmds = 1; } sequential_block
 
 	{   YYSTREE sig = (YYSTREE) ($3?$3->yyval.val.pval:NULL);
 	    YYSTREE ret = (YYSTREE) (sig?sig->yyval.val.pval:NULL);
@@ -929,17 +931,19 @@ proc_definition:
 	    if (ret) { yylogfree(ret); }
 	    ll_modcmds = ll_templates = 0;				      }
     |	TOK_PROCDEF proc_name ';'
-	{   Myylogout($2);
+	{   $$ = NULL;
+	    Myylogout($2);
 	    TBL_newproc(ll_client, $2->yyval.val.sval, ll_parent_module(), $2, $2, NULL);
 	    $2->token = TOK_CONSTANT;
 	    $2->yyval.vtype = TYPE_int;					      }
     |	TOK_UNDEF TOK_IDENT ';'
-	{   TBL_delproc(ll_client, $2->yyval.val.sval); }
+	{   $$ = NULL; TBL_delproc(ll_client, $2->yyval.val.sval); }
     ;
 
 proc_assign:
 	TOK_ASSIGNMENT
     |	/* empty */
+	{ $$ = NULL; }
     ;
 
 proc_name:
@@ -1071,11 +1075,12 @@ mel_return:
 	':' mel_type
 	{ if ($2->token == TOK_ANY && $2->yyval.val.ival == 0) {
 	      yylogfree($2); $2 = NULL;
-	  } $$ = $2;							      }
+	  }
+	  $$ = $2;							      }
     ;
 
 expression:
-	simple_expression { ll_firstnode = $1; } expr_rest
+	simple_expression { $$ = NULL; ll_firstnode = $1; } expr_rest
 	{   $$ = $3;							      }
     |	blk_expression
 	{   $$ = $1;							      }
@@ -1089,10 +1094,10 @@ blk_expression:
     ;
 
 expr_rest:
-	'.' {ll_sugarnode = ll_firstnode; } command_or_ident_expression
-	{ ll_firstnode = $3; } expr_rest
+	'.' {$$ = NULL; ll_sugarnode = ll_firstnode; } command_or_ident_expression
+	{ $$ = NULL; ll_firstnode = $3; } expr_rest
 	{   $$ = $5;							      }
-    |	operator_expression { ll_firstnode = $1; } expr_rest
+    |	operator_expression { $$ = NULL; ll_firstnode = $1; } expr_rest
 	{   $$ = $3;							      }
     |	/* empty */
 	{   $$ = ll_firstnode;						      }
@@ -1105,7 +1110,7 @@ simple_expression:
 	{   $$ = $1;							      }
     |	variable_reference
 	{   $$ = $1;							      }
-    |	{ ll_sugarnode = NULL; } command_expression
+  |	{ $$ = NULL; ll_sugarnode = NULL; } command_expression
 	{   $$ = $2;							      }
     ;
 
@@ -1125,15 +1130,17 @@ deref_or_simple_expression:
 
 temptok:
 	TOK_TEMPLATE
-	{   if (!ll_templates) {
+	{   $$ = $1;
+	    if (!ll_templates) {
 		ll_parserror("template not in procedure body");
 		$$->token = TOK_CONSTANT;
-	    } else { $$ = (YYSTREE) $1; }				      }
+	    }								      }
     |	TOK_ITERTEMP
-	{   if (!ll_templates) {
+	{   $$ = $1;
+	    if (!ll_templates) {
 		ll_parserror("template not in iterator body");
 		$$->token = TOK_CONSTANT;
-	    } else { $$ = (YYSTREE) $1; }				      }
+	    }								      }
     ;
 
 template:
@@ -1194,7 +1201,8 @@ command_expression:
 
 operator_expression:
 	operator
-	{   if (ll_firstnode) Myylogexpand($1, ll_firstnode);		      }
+	{   $$ = NULL;
+	    if (ll_firstnode) Myylogexpand($1, ll_firstnode);		      }
 	expression
 	{   Myylogexpand($1, $3);
 	    $1->token = ($1->token == TOK_ASSIGNOP)?TOK_ASSIGNOP:TOK_FUNCTION;
@@ -1315,7 +1323,7 @@ initialization:
     ;
 
 ident_decl:
-	{ ll_resolution = 0; } TOK_IDENT { ll_resolution = 1; } initialization
+	{ $$ = NULL; ll_resolution = 0; } TOK_IDENT { $$ = NULL; ll_resolution = 1; } initialization
 	{    $$ = $2; $2->yyval.len = 0;
 	     if ($4) {
 		 Myylogexpand($$, Myylognode(TOK_TEMPLATE, 0));

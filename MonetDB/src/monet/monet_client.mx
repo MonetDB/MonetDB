@@ -615,7 +615,11 @@ readClient(Client c)
 				*p++ = *s;
 				break;
 			default:
-				if (!incomment && !isspace((int) *s))
+				/* some implementations of isspace
+				 * only handle ASCII, so check for
+				 * non-ASCII-ness separately */
+				if (!incomment &&
+				    ((*s & ~0x7F) != 0 || !isspace((int) *s)))
 					doflush = 0;
 				escaped = 0;
 				*p++ = *s;

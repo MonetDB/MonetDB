@@ -130,10 +130,13 @@ for f in ['monet.gif', 'mel.gif']:
 runMx(os.path.join(srcdir, 'src', 'mel'), 'mel',
       os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', 'mel'), '-tool')
 
+for f in ['bat.png', 'bat1.png', 'bat2.png']:
+    copyfile(os.path.join(srcdir, 'src', 'gdk', f),
+             os.path.join(tmpdir, f))
 for f in ['gdk', 'gdk_atoms']:
     runMxTexi(os.path.join(srcdir, 'src', 'gdk'), f,
               os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core'))
-for f in ['bat.gif', 'bat1.gif', 'bat2.gif']:
+for f in ['bat.png', 'bat1.png', 'bat2.png']:
     copyfile(os.path.join(srcdir, 'src', 'gdk', f),
              os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', 'gdk', f))
 

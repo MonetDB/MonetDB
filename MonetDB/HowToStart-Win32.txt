@@ -42,6 +42,8 @@ Pthreads for Win32
 	"include" & "lib" directory from C:\Pthreads\prebuilt to 
 	C:\Pthreads, or set "PTHREAD = C:\Pthreads\prebuilt" in
 	"NT\rules.msc".
+	note: MonetDB is known not to compile against the latest 
+	Pthreads libraries. Use for instance Pthreads_2003-09-18.
 
 UnxUtils for Win32
 	(http://UnxUtils.sourceforge.net/)
