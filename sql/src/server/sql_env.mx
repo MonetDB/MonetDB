@@ -179,14 +179,17 @@ sql_set_var( mvc *sql, symbol *s )
 
 		char *name = l->h->data.sval;
 		stmt *v = sql_value_exp( sql, scp, val, NULL, NULL, sql_sel);
-		sql_subtype *ctype, *valtype = tail_type(v);
+		sql_subtype *ctype, *valtype;
 		str typename;
 		BAT *n, *t;
 		char *atom;
 
 		scope_close(scp);
 
-		if (!v || !simple_type(v)) {
+		if (!v)
+			return NULL;
+		if (!simple_type(v)) {
+			
 			return sql_error(sql, 02, "Can only set %s=simple_value (%s,%d)\n", name, st_type2string(v->type), v->type);
 		}
 
@@ -208,6 +211,7 @@ sql_set_var( mvc *sql, symbol *s )
 			ints (sht,int,lng)
 			str
 		 */
+ 		valtype = tail_type(v);
 		if (!ctype || (strcmp(ctype->type->base.name, valtype->type->base.name) != 0 && (inttype(valtype, ctype)) == 0 )) {
 			sql_subtype_destroy(ctype);
 			stmt_destroy(v);
@@ -252,9 +256,9 @@ sql_create_var( mvc *m, sql_schema *sys )
 	sql_table *t;
 
 	t = mvc_create_table(m, sys, "session", tt_session, -1 );
-	mvc_create_column(m, t, "name", "VARCHAR",0,0);
-	mvc_create_column(m, t, "value", "VARCHAR",0,0);
-	mvc_create_column(m, t, "type", "VARCHAR",0,0);
+	mvc_create_column_(m, t, "name", "VARCHAR");
+	mvc_create_column_(m, t, "value", "VARCHAR");
+	mvc_create_column_(m, t, "type", "VARCHAR");
 
 	n = mvc_bind( m, "sys", "session", "name", 1 );
 	v = mvc_bind( m, "sys", "session", "value", 1 );
@@ -302,8 +306,8 @@ sql_create_env( mvc *m, sql_schema *s )
 	BAT *n,*v;
 
 	sql_table *t = mvc_create_table(m, s, "env", tt_system, -1 );
-	mvc_create_column(m, t, "name", "VARCHAR",0,0);
-	mvc_create_column(m, t, "value", "VARCHAR",0,0);
+	mvc_create_column_(m, t, "name", "VARCHAR");
+	mvc_create_column_(m, t, "value", "VARCHAR");
 
 	n = mvc_bind( m, "sys", "env", "name", 1 );
 	v = mvc_bind( m, "sys", "env", "value", 1 );
@@ -327,13 +331,13 @@ sql_create_history( mvc *m, sql_schema *s )
 {
 	sql_table *t = mvc_create_table(m, s, "history", tt_system, -1 );
 
-	mvc_create_column(m, t, "start", "TIMESTAMP",0,0);
-	mvc_create_column(m, t, "query", "VARCHAR",0,0);
-	mvc_create_column(m, t, "parse", "MEDIUMINT",0,0);
-	mvc_create_column(m, t, "mil", "MEDIUMINT",0,0);
-	mvc_create_column(m, t, "exec", "MEDIUMINT",0,0);
-	mvc_create_column(m, t, "total", "MEDIUMINT",0,0);
-	mvc_create_column(m, t, "user", "VARCHAR",0,0);
+	mvc_create_column_(m, t, "start", "TIMESTAMP");
+	mvc_create_column_(m, t, "query", "VARCHAR");
+	mvc_create_column_(m, t, "parse", "MEDIUMINT");
+	mvc_create_column_(m, t, "mil", "MEDIUMINT");
+	mvc_create_column_(m, t, "exec", "MEDIUMINT");
+	mvc_create_column_(m, t, "total", "MEDIUMINT");
+	mvc_create_column_(m, t, "user", "VARCHAR");
 
 	return 0;
 }

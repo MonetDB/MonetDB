@@ -227,11 +227,10 @@ static sql_table *create_table_intern(mvc * sql, sql_schema * schema,
 
        	for ( m = sq->op1.lval->h; m; m = m->next ) {
 		stmt *st = m->data;
-		sql_subtype *tp = tail_type(st);
+		sql_subtype *tp = sql_dup_subtype(tail_type(st));
 		char *cname = column_name(st);
 
-		(void)mvc_create_column(sql, table, cname, 
-			tp->type->sqlname, tp->digits, tp->scale);
+		(void)mvc_create_column(sql, table, cname, tp );
 		_DELETE(cname);
 	}
 	return table;

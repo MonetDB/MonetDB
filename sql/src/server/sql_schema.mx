@@ -621,11 +621,10 @@ create_view(mvc * sql, sql_schema * ss, dlist * qname, dlist * column_spec,
 			for (; n; n = n->next, m = m->next) {
 				char *cname = n->data.sval;
 				stmt *st = m->data;
-				sql_subtype *tp = tail_type(st);
+				sql_subtype *tp = 
+					sql_dup_subtype(tail_type(st));
 
-				mvc_create_column(sql, t, cname, 
-					tp->type->sqlname, 
-					tp->digits, tp->scale);
+				mvc_create_column(sql, t, cname, tp );  
 			}
 		} else {
 			node *m;
@@ -634,11 +633,10 @@ create_view(mvc * sql, sql_schema * ss, dlist * qname, dlist * column_spec,
        			for ( m = sq->op1.lval->h; m; m = m->next) {
 				stmt *st = m->data;
 				char *cname = column_name(st);
-				sql_subtype *tp = tail_type(st);
+				sql_subtype *tp = 
+					sql_dup_subtype(tail_type(st));
 
-				mvc_create_column(sql, t, cname, 
-					tp->type->sqlname, 
-					tp->digits, tp->scale);
+				mvc_create_column(sql, t, cname, tp );  
 			}
 		}
 		stmt_destroy(sq);
@@ -917,8 +915,10 @@ create_column(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, int alter )
 
 	if (cname && ctype) {
 		list *l = create_stmt_list();
-		sql_column *cs = mvc_create_column(sql, t, cname, 
-			ctype->type->sqlname, ctype->digits, ctype->scale);
+		sql_column *cs = NULL;
+
+		ctype = sql_dup_subtype(ctype);
+		cs = mvc_create_column(sql, t, cname, ctype );
 
 		if (column_options(sql, opt_list, l, ss, t, cs) < 0) {
 			list_destroy(l);
@@ -1116,7 +1116,9 @@ table_element(mvc * sql, symbol * s, sql_schema *ss, sql_table *t, int alter )
 
 			for (n = ot->columns.set->h; n; n = n->next ){ 
 				sql_column *oc = n->data;
-				(void)mvc_create_column( sql, t, oc->base.name, oc->type->type->sqlname, oc->type->digits, oc->type->scale); 
+				sql_subtype *tpe = sql_dup_subtype( oc->type );
+
+				(void)mvc_create_column( sql, t, oc->base.name, tpe );
 			}
 			res = stmt_none();
 		} break;

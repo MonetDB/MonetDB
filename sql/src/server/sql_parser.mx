@@ -2224,7 +2224,7 @@ literal:
 		  }
 	  	  _DELETE($1); 
 		}
- |  type_alias string 
+ | type_alias string 
 		{ sql_subtype *t = sql_bind_subtype($1, 0, 0);
 		  atom *a = atom_general(t, $2);
 		  $$ = NULL;
@@ -2239,6 +2239,27 @@ literal:
 				atom_destroy(a);
 			YYABORT;
 		  }
+		}
+ | IDENT string 
+		{ mvc *m = (mvc*)parm;
+		  sql_type *t = mvc_bind_type(m, $1); 
+		  atom *a;
+
+		  $$ = NULL;
+		  if (t) { 
+			a = atom_general( sql_create_subtype(t, 0, 0), $2);
+	          	if (a) 
+				$$ = _newAtomNode(a); 
+		  }
+		  if (!t || !$$) {
+			char buf[BUFSIZ]; 
+
+			snprintf(buf, BUFSIZ, "Type (%s) unknown", $1);
+			yyerror(buf);
+			_DELETE($1); 
+			YYABORT;
+		  }
+		  _DELETE($1); 
 		}
  ;
 

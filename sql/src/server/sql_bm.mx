@@ -105,7 +105,6 @@ typedef struct bm {
 } bm;
 
 static int bm_debug = 0;
-static BAT *bats = NULL;
 
 void bat_destroy(BAT *b)
 {
@@ -114,15 +113,6 @@ void bat_destroy(BAT *b)
 			b->batCacheid, BBPrefs(b->batCacheid));
 	if (b)
 		BBPunfix(b->batCacheid);
-}
-
-static void new_bat( bat bid, char *func )
-{
-	if (!BUNfnd(bats, &bid )){
-		BUNins( bats, (ptr)&bid, func);
-	} else {
-		BUNreplace( bats, (ptr)&bid, func);
-	}
 }
 
 BAT *bat_descriptor(bat bid, char *func)
@@ -138,10 +128,8 @@ BAT *bat_copy(BAT *b, char *func)
 {
 	BAT *nb = BATcopy(b);
 
-	if (bm_debug){
-		new_bat(nb->batCacheid, func);
+	if (bm_debug)
 		printf("bat_copy(%s) %d (%d)\n", func, nb->batCacheid, BBPrefs(nb->batCacheid));
-	}
 	return nb;
 }
 
@@ -149,10 +137,8 @@ BAT *bat_new(int ht, int tt, size_t size, char *func)
 {
 	BAT *nb = BATnew(ht, tt, size);
 
-	if (bm_debug){
-		new_bat(nb->batCacheid, func);
+	if (bm_debug)
 		printf("bat_new(%s) %d (%d)\n", func, nb->batCacheid, BBPrefs(nb->batCacheid));
-	}
 	return nb;
 }
 
@@ -234,9 +220,6 @@ bm_create(int debug )
 	bm->lbid = 1;
 	bm->version = 0;
 
-	if (!bats){
-		bats = BATnew(TYPE_int,TYPE_str, BUFSIZ);
-	}
 	bm->bat_name = bm_create_bat(TYPE_oid,TYPE_str,BUFSIZ); 
 	bm->bat_bid = bm_create_bat(TYPE_oid,TYPE_oid,BUFSIZ); 
 	bm->bat_lbid = bm_create_bat(TYPE_oid,TYPE_oid,BUFSIZ); 
