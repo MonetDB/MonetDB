@@ -480,7 +480,7 @@ int readClient(Client c)
 	int bracket = 0;
 	int incomment = 0;
 	stream *fd = GDKout;
-	str  s;
+	str  s, p;
 	int blocked;
 	size_t offset = 0;
  
@@ -522,11 +522,6 @@ int readClient(Client c)
 		} else {
 			/* read to end of line */
 			do {
-#ifdef WIN32
-				/* filter out ^M */
-				if (c->top > c->input && c->top[-1] == '\r')
-					c->top--;
-#endif
 				if (c->limit - c->top <= 1)
 					enlargebuffer(c);
 				i = stream_read(c->fdin, c->top, 1, 1);
@@ -535,24 +530,38 @@ int readClient(Client c)
 			} while (*c->top++ != '\n');
 		}
 		PARSEDEBUG THRprintf(GDKerr, "%.*s", c->top - (c->input + offset), c->input+offset);
-		for (s = c->input + offset; s < c->top; s++) {
+		/* this loop wil check whether we got enough data for
+		   a complete MIL statement, and in addition will
+		   remove all comments and normalize line endings. */
+		for (s = p = c->input + offset; s < c->top; s++) {
 			switch (*s) {
+			case '\r':
+				if (s + 1 < c->top && s[1] == '\n') /* Windows format line ending? */
+					break;
+				/* else Mac format line ending: fall through */
 			case '\n':
 				incomment = 0;
 				if (s > c->input && s[-1] != '\\')
 					instring = 0;
+				*p++ = '\n';
 				break;
 			case '\0':
+				*p++ = *s;
+				c->top = p;
 				return 0;
 			case '#':
 				if (!instring)
 					incomment++;
+				else
+					*p++ = *s;
 				break;
 			case '{':
 				if (!incomment && !instring) {
 					bracket++;
 					doflush = 0;
 				}
+				if (!incomment)
+					*p++ = *s;
 				break;
 			case '}':
 				if (!incomment && !instring) {
@@ -560,6 +569,8 @@ int readClient(Client c)
 					if (bracket == 0)
 						doflush = 1;
 				}
+				if (!incomment)
+					*p++ = *s;
 				break;
 			case '\'':
 			case '"':
@@ -571,17 +582,24 @@ int readClient(Client c)
 						instring = *s;
 					doflush = 0;
 				}
+				if (!incomment)
+					*p++ = *s;
 				break;
 			case ';':
 				if (!incomment && !instring)
 					doflush = 1;
+				if (!incomment)
+					*p++ = *s;
 				break;
 			default:
 				if (!incomment && !isspace((int) *s))
 					doflush = 0;
+				if (!incomment)
+					*p++ = *s;
 				break;
 			}
 		}
+		c->top = p;
 		offset = c->top - c->input; /* where we left off checking */
 	} while (!doflush || bracket > 0);
 
