@@ -175,7 +175,7 @@ def readfilepart(f,ext):
 # The do_code_extract also tracks the files from which to extract
 # these targets , ie. the dependencies.
 def do_code_extract(f,base,ext, targets, deps, cwd):
-    file = cwd+os.sep+f
+    file = os.path.join(cwd,f)
     if os.path.exists(file):
         if (code_extract.has_key(ext)):
             b = readfile(file)
@@ -231,7 +231,7 @@ def do_deps(targets,deps,includes,incmap,cwd):
     do_scan(targets,deps,incmap,cwd,cache)
     do_dep_rules(deps,cwd,cache)
     do_dep_combine(deps,includes,cwd,cache)
-    cachefile = cwd + os.sep + '.cache'
+    cachefile = os.path.join(cwd, '.cache')
     if os.path.exists( cachefile ):
         os.unlink(cachefile)
     cache_store = shelve.open( cachefile, "c")
@@ -289,7 +289,7 @@ def do_scan_target(target,targets,deps,incmap,cwd,cache):
     if (not cache.has_key(target)):
         inc_files = []
         if (scan_map.has_key(ext)):
-            org = cwd+os.sep+find_org(deps,target)
+            org = os.path.join(cwd,find_org(deps,target))
             if os.path.exists(org):
                 b = readfilepart(org,ext)
                 pat,sep,depext = scan_map[ext]
@@ -308,7 +308,7 @@ def do_scan_target(target,targets,deps,incmap,cwd,cache):
                                     inc_files.append(fnd1+depext)
                             elif (incmap.has_key(fnd1+depext)):
                                 if (fnd1+depext not in inc_files):
-                                    inc_files.append(incmap[fnd1+depext]+os.sep+fnd1+depext)
+                                    inc_files.append(os.path.join(incmap[fnd1+depext],fnd1+depext))
                             n = sep.search(fnd,p+1)
                         fnd = fnd[p:]
                     if (deps.has_key(fnd+depext) or fnd+depext in targets):
@@ -316,7 +316,7 @@ def do_scan_target(target,targets,deps,incmap,cwd,cache):
                             inc_files.append(fnd+depext)
                     elif (incmap.has_key(fnd+depext)):
                         if (fnd+depext not in inc_files):
-                            inc_files.append(incmap[fnd+depext]+os.sep+fnd+depext)
+                            inc_files.append(os.path.join(incmap[fnd+depext],fnd+depext))
                     #else:
                         #print(fnd + depext + " not in deps and incmap " )
                     m = pat.search(b,m+1)
@@ -385,13 +385,13 @@ def read_depsfile(incdirs, cwd, topdir):
         if (string.find(i,os.sep) >= 0):
             d,rest = string.split(i,os.sep, 1)
             if (d == "top_srcdir" or d == "top_builddir"):
-                dir = topdir + os.sep + rest
+                dir = os.path.join(topdir, rest)
             elif (d == "srcdir" or d == "builddir"):
                 dir = rest
         if (dir[0:2] == ".."):
-            f = cwd + os.sep + dir + os.sep + ".cache"
+            f = os.path.join(cwd, dir, ".cache")
         else:
-            f = dir + os.sep + ".cache"
+            f = os.path.join(dir, ".cache")
         lineno = 0
         if os.path.exists(f):
             cache = shelve.open(f)
@@ -399,9 +399,9 @@ def read_depsfile(incdirs, cwd, topdir):
                 inc = []
                 for dep in cache[d]:
                     if (string.find(dep,os.sep) < 0):
-                        dep = i+os.sep+dep
+                        dep = os.path.join(i,dep)
                     inc.append(dep)
-                includes[i+os.sep+d] = inc
+                includes[os.path.join(i,d)] = inc
                 incmap[d] = i
             cache.close()
         else:
@@ -414,7 +414,7 @@ def read_depsfile(incdirs, cwd, topdir):
                     i = value + rest
             if os.path.exists(i):
                 for dep in os.listdir(i):
-                    includes[i+os.sep+dep] = [ i+os.sep+dep ]
+                    includes[os.path.join(i,dep)] = [ os.path.join(i,dep) ]
                     incmap[dep] = i
 
     return includes,incmap

@@ -83,7 +83,7 @@ def msc_translate_dir(path,msc):
     return regsub.gsub("/", "\\", dir )
 
 def msc_translate_file(path,msc):
-    if (os.path.isfile(msc['cwd']+ os.sep + path)):
+    if (os.path.isfile(os.path.join(msc['cwd'], path))):
         return "$(SRCDIR)\\" + path
     return path
 
@@ -564,7 +564,7 @@ output_funcs = { 'SUBDIRS': msc_subdirs,
                 }
 
 def output(tree, cwd, topdir):
-    fd = open(cwd+os.sep+'Makefile.msc',"w")
+    fd = open(os.path.join(cwd,'Makefile.msc'),"w")
 
     fd.write('''
 ## Use: nmake -f makefile.msc install
@@ -612,15 +612,15 @@ CXXEXT = \\\"cxx\\\"
 
     prefix = os.path.commonprefix([cwd,topdir])
     d = cwd[len(prefix):]
-    reldir = "."
+    reldir = os.curdir
     srcdir = d
-    if (len(d) > 1 and d[0] == os.sep):
-        d = d[1:]
-        while(len(d) > 0):
-            reldir = reldir + os.sep + ".."
+    if len(d) > 1 and d[0] == os.sep:
+        d = d[len(os.sep):]
+        while len(d) > 0:
+            reldir = os.path.join(reldir, os.pardir)
             d,t = os.path.split(d)
 
-    fd.write("TOPDIR = %s\n" % regsub.gsub("/", "\\", reldir))
+    fd.write("TOPDIR = %s\n" % reldir)
     fd.write("SRCDIR = $(TOPDIR)\\..%s\n" % regsub.gsub("/", "\\", srcdir))
     fd.write("!INCLUDE $(TOPDIR)\\rules.msc\n")
     if ("SUBDIRS" in tree.keys()):

@@ -72,7 +72,7 @@ class parser:
 
 def read_makefile(p,cwd):
     lineno = 0
-    for line in fileinput.input(cwd + os.sep + 'Makefile.ag'):
+    for line in fileinput.input(os.path.join(cwd, 'Makefile.ag')):
         if (line[0] != "#"):
             for token in string.split(line):
                 p.parse(token,lineno,line)
@@ -109,7 +109,7 @@ def main(cwd,topdir):
     if ('SUBDIRS' in p.curvar.keys()):
         subdirs = expand_subdirs(p.curvar.value('SUBDIRS'))
         for dir in subdirs:
-            d = cwd+os.sep+dir
+            d = os.path.join(cwd,dir)
             if (os.path.exists(d)):
                 print(d)
                 (deltaInstallList, deltaOutList) = main(d,topdir)
