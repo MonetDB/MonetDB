@@ -20,6 +20,6 @@ MTSAFE
 CLASSPATH = ../../clients/java
 
 java_sample = {
-	DIR = pkglibdir/Tests
+	DIR = pkgdatadir/Tests
 	SOURCES = sample.java
 }
