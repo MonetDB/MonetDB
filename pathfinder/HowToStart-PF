@@ -257,7 +257,7 @@ Installation" above.
 In case the install- (i.e., prefix-) directories of MonetDB and
 Pathfinder are identical, simply call
 
- Mserver --dbinit="module(pathfinder,mapi); pfstart();'
+ Mserver --dbinit='module(pathfinder,mapi); pfstart();'
 
 In case you use different install- (i.e., prefix-) directories for MonetDB
 and Pathfinder, call
