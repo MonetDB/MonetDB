@@ -1,4 +1,4 @@
-stdout of test 'bug-sf-953560` in directory 'src/test/bugs` itself:
+stdout of test 'savepoint_release-bug-sf-953560` in directory 'src/test/bugs` itself:
 
 
 # 16:15:50 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 16:15:50 >  
-# 16:15:50 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=50816  < bug-sf-953560.sql
+# 16:15:50 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=50816  < savepoint_release-bug-sf-953560.sql
 # 16:15:50 >  
 
 # 7 # querytype

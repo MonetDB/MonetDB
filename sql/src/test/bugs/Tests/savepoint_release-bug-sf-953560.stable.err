@@ -1,4 +1,4 @@
-stderr of test 'bug-sf-953560` in directory 'src/test/bugs` itself:
+stderr of test 'savepoint_release-bug-sf-953560` in directory 'src/test/bugs` itself:
 
 
 # 00:22:41 >  
@@ -53,7 +53,7 @@ stderr of test 'bug-sf-953560` in directory 'src/test/bugs` itself:
 # cmdline opt 	gdk_dbname = mTests_src_test_bugs
 
 # 00:22:41 >  
-# 00:22:41 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=localhost --port=50785  < bug-sf-953560.sql
+# 00:22:41 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=localhost --port=50785  < savepoint_release-bug-sf-953560.sql
 # 00:22:41 >  
 
 

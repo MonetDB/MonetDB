@@ -1,4 +1,4 @@
-stdout of test 'bug-sf-960166` in directory 'src/test/bugs` itself:
+stdout of test 'date_parsing-bug-sf-960166` in directory 'src/test/bugs` itself:
 
 
 # 13:21:16 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 13:21:17 >  
-# 13:21:17 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=59875  < bug-sf-960166.sql
+# 13:21:17 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=59875  < date_parsing-bug-sf-960166.sql
 # 13:21:17 >  
 
 # 3 # querytype
