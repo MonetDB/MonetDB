@@ -638,42 +638,75 @@ def runtest(env, TST) :
 				PRELUDE = "-prelude "+PRELUDE
 		else:
 			PRELUDE = ""
+		
+		TIMEOUTED = "Mtimeout"
+		for v in env['exe'].keys():
+			TIMEOUTED = TIMEOUTED+"|"+string.upper(v)
+		test = re.compile("^.*("+TIMEOUTED+").*$")
+		TIMEOUT = par['TIMEOUT']
+		XTIMEOUT = 0
+		if   CALL == "other"  or  CALL == "python":
+			XTIMEOUT = XTIMEOUT + 60
+			for l in fileinput.input(TST+EXT):
+				if test.match(l):
+					XTIMEOUT = XTIMEOUT + TIMEOUT
+		elif CALL in ["milMXs", "milSXs", "milCXs"]:
+			test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$")
+			d = os.listdir(os.getcwd())
+			for f in d:
+				if test.match(f):
+					XTIMEOUT = XTIMEOUT + TIMEOUT
+		elif CALL in ["milM", "milS", "milC"]:
+			XTIMEOUT = XTIMEOUT + TIMEOUT
+		if  CALL in ["milC", "milCXs"]:
+			XTIMEOUT = XTIMEOUT + TIMEOUT + 60
+
+		ME = ""
+		ATJOB = ""
+		if os.name != "nt":
+			ME = str(os.getpid())
+			WAIT = str(int(XTIMEOUT / 60) + 2)
+			FILES = TSTTRGDIR+os.sep+TST+" "+TSTTRGDIR+os.sep+TST+".*"
+			for f in ["bat/\\*", '.gdk_lock']:
+				FILES = FILES+" "+env['GDK_DBFARM']+os.sep+TSTDB+os.sep+path(f)
+			WHAT = THISPATH+os.sep+"MkillUsers -l"+ME+" "+FILES+" \\>"+TSTTRGDIR+os.sep+TST+".KILLED.out 2\\>"+TSTTRGDIR+os.sep+TST+".KILLED.err"
+			WHEN = "now + "+WAIT+" minutes"
+			cmd  = "echo  "+WHAT+"  2>/dev/null | at "+WHEN+" 2>&1 | awk '/^[Jj]ob/{print $2}'" 
+			pOut,pIn,pErr = popen2.popen3(cmd)
+			pIn.close()
+			ATJOB = string.strip(pOut.readline())
+			pOut.readlines()
+			pErr.readlines()
+			pOut.close()
+			pErr.close()
+			#TODO:
+			#LOG1x at -l >&2
 
 		TestOut = open(TST+".test.out","w")
 		TestErr = open(TST+".test.err","w")
 		TestOut.write("stdout of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
 		TestErr.write("stderr of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
 
-		#TODO:
-		##(
-		##	if [ ! "$EXT" ] ; then
-		##		X="`egrep -cw "($TIMEOUTED)" $TST`"
-		##		if [ ! "$X" ] ; then  X=1 ; fi
-		##		TIMEOUTX=$[($X+1)*$TIMEOUT]
-		##		CALL="$CALL $TIMEOUTX"
-		##	  else
-		##		TIMEOUTX=$TIMEOUT
-		##	fi
-		##	WAIT=$[($TIMEOUTX/60)+1]
+		DoIt (env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT)
 
-		##	if [ "$OS" = CYGWIN32_NT ] ; then
-		##		fLOG2x $CALL "$PRELUDE"
-		##	  else
-		##		fLOG2x $CALL "$PRELUDE" &
-
-		##		WHAT=" $THISDIR/MkillUsers -l$TSTTRGDIR/$LOGFILE-$$ $MONETFARM/dbfarm/$TSTDB/{users/*/*,bat/*,.gdk_lock} $TSTTRGDIR/$TST{.*,}"
-		##		WHEN=" now + $WAIT minutes "
-		##		LOG1  at $WHEN $WHAT
-		##		ATJOB="`echo "$WHAT 2>/dev/null" | at $WHEN 2>&1 | awk '/^[Jj]ob/{print $2}'`" 
-		##		LOG1x at -l >&2
-		##		LOG1x wait
-		##		if [ -f /tmp/.MkillUsers.$$.out  -o  -f /tmp/.MkillUsers.$$.err ] ; then  LOG1x sleep 9 ; fi
-		##		LOG1x $ATRM $ATJOB >&2
-		##		LOG1x at -l >&2
-		##	fi
-		##)
-
-		DoIt (env, CALL, TST, EXT, PRELUDE, TestOut, TestErr)
+		if os.name != "nt":
+			while  os.path.isfile(path("/tmp/.MkillUsers."+ME)):
+				time.sleep(9)
+			if OS == "Linux":
+				ATRM = 'at -d '
+			else:
+				ATRM = 'at -r '
+			os.system(ATRM+ATJOB)
+			#TODO:
+			#LOG1x at -l >&2
+			f = TST+".KILLED.out"
+			if  os.path.isfile(f):
+				for l in fileinput.input(f):
+					TestOut.write("! "+l)
+			f = TST+".KILLED.err"
+			if  os.path.isfile(f):
+				for l in fileinput.input(f):
+					TestErr.write("! "+l)
 
 		#TODO:
 		##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
@@ -763,7 +796,7 @@ def RunIt(cmd, TestIn, TestOut, TestErr):
 	pIn.close()
 	CollectIt(pOut, pErr, TestOut, TestErr)
 
-def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr) :
+def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 	STDERR.flush()
 	print(env['TSTDIR']+os.sep+TST+EXT+" "+PRELUDE)
 	STDOUT.flush()
@@ -771,18 +804,20 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr) :
 	exe = env['exe']
 	if exe['Mtimeout'][0]:
 		MTO = "Mtimeout -timeout "
-		TIO = par['TIMEOUT']
+		TOT = TIMEOUT
+		XTO = XTIMEOUT
 	else:
 		MTO = ""
-		TIO = ""
+		TOT = ""
+		XTO = ""
 	if   CALL == "other":
-		cmd = MTO+str(TIO)+" ."+os.sep+TST+" "+TST+" "+PRELUDE
+		cmd = MTO+str(XTO)+" ."+os.sep+TST+" "+TST+" "+PRELUDE
 		RunIt(cmd, "", TestOut, TestErr)
 	elif CALL == "python":
-		cmd = MTO+str(TIO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
+		cmd = MTO+str(XTO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
 		RunIt(cmd, "", TestOut, TestErr)
 	elif CALL in ["milM", "milS", "milMXs", "milSXs"]:
-		cmd = MTO+str(TIO)+" "+exe['Mserver'][1]
+		cmd = MTO+str(TOT)+" "+exe['Mserver'][1]
 		cmd = cmd+" -db "+TSTDB+" "+PRELUDE+" < "
 		if CALL in ["milM", "milS"]:
 			X=""
@@ -807,10 +842,10 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr) :
 			if test.match(f):
 				TSTs.append(f)
 
-		Srvr = MTO+str(TIO*(len(TSTs)+2))+" "+exe['Mserver'][1]+" -db "+TSTDB+" "+env['MONET_PREFIX']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")+" "
+		Srvr = MTO+str(XTO)+" "+exe['Mserver'][1]+" -db "+TSTDB+" "+env['MONET_PREFIX']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")+" "
 		#-background"
-		Clnt = MTO+str(TIO)+" "+exe['MapiClient'][1]+" "+PRELUDE+" < "
-		Shwn = MTO+str(TIO)+" "+exe['Mshutdown'][1]
+		Clnt = MTO+str(TOT)+" "+exe['MapiClient'][1]+" "+PRELUDE+" < "
+		Shwn = MTO+str(TOT)+" "+exe['Mshutdown'][1]
 
 		SrvrOut = open(TST+".server.out","w")
 		SrvrErr = open(TST+".server.err","w")
@@ -827,7 +862,7 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr) :
 			RunIt(Clnt+f, "", ClntOut, ClntErr)
 
 		#TODO:
-		#Clnt = MTO+str(TIO)+" "+exe['MapiClient'][1]
+		#Clnt = MTO+str(TOT)+" "+exe['MapiClient'][1]
 		#RunIt(Clnt, "shutdown;\n", ClntOut, ClntErr)
 
 		RunIt(Shwn, "", ShwnOut, ShwnErr)
@@ -1101,7 +1136,7 @@ def main(argv) :
 		Warn("changing to TSTSRCBASE="+env['TSTSRCBASE']+", now.")
 		os.chdir(env['TSTSRCBASE'])
 
-	# check for execuatables, set their standard options and export them
+	# check for executables, set their standard options and export them
 	exe = {}
 	exe['Mtimeout']   = CheckExec('Mtimeout')  , 'Mtimeout -timeout '+str(par['TIMEOUT'])
 	exe['Mserver']    = CheckExec('Mserver')   , 'Mserver -monetrc '+env['MONETRC']
@@ -1116,8 +1151,15 @@ def main(argv) :
 		V = string.upper(v)
 		# TODO ?
 		# if exe[v][0]:
-		os.environ[V] = exe[v][1]
-		print(V+" = "+exe[v][0]+" "+exe[v][1])
+		if os.name == "nt":
+			CALL = "call "
+		else:
+			CALL = ""
+		if  v != 'Mtimeout'  and  exe['Mtimeout'][0]:
+			os.environ[V] = CALL+exe['Mtimeout'][1]+" "+exe[v][1]
+		else:
+			os.environ[V] = CALL+exe[v][1]
+		print(V+" = "+exe[v][0]+" : "+exe[v][1])
 	STDOUT.flush()
 	env['exe'] = exe
 
