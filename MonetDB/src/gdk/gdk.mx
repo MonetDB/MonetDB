@@ -2119,32 +2119,20 @@ and are checked on inconsistent frees and memory leaks.
 gdk_export void *GDKmmap(char* path, int mode, off_t off, size_t len, void *fixed);
 gdk_export int	GDKmunmap(void* addr, size_t len);
 
-gdk_export      	ptr     GDK_mem_start;          /* sbrk(0) at start of the program */
-gdk_export		size_t 	GDK_mem_maxsize;	/* max allowed size of committed memory */
+gdk_export              ptr     GDK_mem_start;          /* sbrk(0) at start of the program */
 gdk_export		size_t 	GDK_mem_bigsize;	/* size after which we use VM rather than heap */
+gdk_export		size_t	GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export		size_t 	GDK_vm_minsize;		/* smallest size allowed for a vm block */
 gdk_export		size_t 	GDK_vm_maxsize;		/* max allowed size of reserverd vm */
-gdk_export volatile 	size_t  GDK_heap_cursize;       /* bytes in use in the malloc heap */
-gdk_export volatile	size_t 	GDK_mem_cursize;	/* committed bytes outside the heap */
-gdk_export volatile	size_t 	GDK_vm_cursize;		/* reserved vm in bytes */
-#ifdef GDK_MEM_KEEPHISTO
-gdk_export volatile	size_t	GDK_nmallocs[];         /* memory histogram */
-#endif
-#ifdef GDK_VM_KEEPHISTO
-gdk_export volatile	size_t	GDK_vm_nallocs[];       /* virtual memory histogram */
-#endif
 
 #define GDKvm_maxsize()		GDK_vm_maxsize		/* BBPunload threshold for VM address space usage */
 #define GDKvm_minsize()		GDK_vm_minsize		/* minimum size for a VM heap */
 #define GDKmem_bigsize()	GDK_mem_bigsize		/* see above */
 #define GDKmem_maxsize()	GDK_mem_maxsize		/* see above */
-#define GDKmem_inuse()		(GDK_mem_cursize + GDKmem_heapinuse())
-							/* RAM/swapmem that Monet is really using now */
-#define GDKmem_cursize()	(GDK_mem_cursize + GDKmem_heapsize())
-							/* RAM/swapmem that Monet has claimed from OS */
-#define GDKvm_cursize()		(GDK_vm_cursize + GDKvm_heapsize())
-							/* current Monet VM address space usage */
 
+gdk_export size_t	GDKmem_inuse(void); /* RAM/swapmem that Monet is really using now */
+gdk_export size_t	GDKmem_cursize(void); /* RAM/swapmem that Monet has claimed from OS */
+gdk_export size_t	GDKvm_cursize(void); /* current Monet VM address space usage */
 gdk_export size_t 	GDKvm_heapsize(void);
 gdk_export size_t 	GDKmem_heapsize(void);
 gdk_export size_t 	GDKmem_heapinuse(void);
