@@ -55,18 +55,32 @@ were you can find the source and a detailled description of PCL
 including a description of performance counters on various
 microprocessors.
 
+TODO
+
+add pcl_cpu_info! (void,str bat) (max counters?)
+later add low level api
+
 @+ Module Definition
 @m
 .MODULE pcl;
 
-.COMMAND pcl_start(BAT[void,int] events, int mode) = pcl_start;
+.COMMAND pcl_start(BAT[int,any] events, int mode) = pcl_start;
   "start counting the given events"
 
-.COMMAND pcl_stop(BAT[void,int] events) : BAT[lng,dbl] = pcl_stop;
-  "stop counting and return the counts for the given events. Some counters return integer values and some floating point values. The result bat will have integer, 0.0 or -1, double."
+.COMMAND pcl_stop(BAT[int,any] events) : BAT[int,lng] = pcl_stop;
+  "stop counting and return the counts for the given events."
 
-.COMMAND pcl_query(BAT[void,int] events, int mode) : BAT[int,int] = pcl_query;
+.COMMAND pcl_start_rates(BAT[int,any] rates, int mode) = pcl_start_rates;
+  "start counting the events needed for the given rates"
+
+.COMMAND pcl_stop_rates(BAT[int,any] rates) : BAT[int,dbl] = pcl_stop_rates;
+  "stop event counters and return the requested rates."
+
+.COMMAND pcl_query(BAT[int,any] events, int mode) : BAT[int,int] = pcl_query;
   "query for existing events"
+
+.COMMAND pcl_try(BAT[int,any] events, int mode) : bit = pcl_try;
+  "try wheter the events could be started together on this CPU"
 
 .PRELUDE = pcl_init;
 .EPILOGUE = pcl_exit;
@@ -170,6 +184,8 @@ pcl_events.insert( "PCL_L1DCACHE_MISSRATE",       58);
 pcl_events.insert( "PCL_L2DCACHE_MISSRATE",       59);
 pcl_events.insert( "PCL_MEM_FP_RATIO",            60);
 
+pcl_events := pcl_events.reverse;
+
 .END;
 
 .END pcl;
@@ -182,9 +198,29 @@ pcl_events.insert( "PCL_MEM_FP_RATIO",            60);
 
 void pcl_init(){ }
 void pcl_exit(){ }
+
 int pcl_start(BAT *event, int *mode){ return GDK_SUCCEED; }
-int pcl_stop(BAT **result, BAT *event){ return GDK_SUCCEED; }
-int pcl_query(BAT **result, BAT *event, int *mode){ return GDK_SUCCEED; }
+int pcl_start_rates(BAT *event, int *mode){ return GDK_SUCCEED; }
+
+int pcl_stop(BAT **result, BAT *event){ 
+	*result = NULL; 
+	return GDK_SUCCEED; 
+}
+
+int pcl_stop_rates(BAT **result, BAT *event){ 
+	*result = NULL; 
+	return GDK_SUCCEED; 
+}
+
+int pcl_query(BAT **result, BAT *event, int *mode){ 
+	*result = NULL; 
+	return GDK_SUCCEED; 
+}
+
+int pcl_try(bit *result, BAT *event, int *mode){ 
+	*result = FALSE; 
+	return GDK_SUCCEED; 
+}
 #else
 
 #include "pcl.proto.h"
@@ -215,13 +251,40 @@ int pcl_start(BAT *event, int *mode){
 		return GDK_FAIL;
 	}
 	BATloop(event,p,q){
-		clist[i] = *(int*)BUNtloc(event,p);
-		/* printf("event %d\n", clist[i]); */
-		i++;
+		int ev = *(int*)BUNhloc(event,p);
+		if (PCL_EVENT_IS_INT(ev)){
+			clist[i] = ev;
+			i++;
+		}
 	}
 	res = PCLstart(pcl_desc, clist, i, *mode);
 	if (res != PCL_SUCCESS){
-		printf("pcl_start failed with %d\n", res);
+		GDKwarning("pcl_start failed with %d\n", res);
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+int pcl_start_rates(BAT *event, int *mode){
+	int clist[PCL_MAX_EVENT_PER_CALL];
+	int res, i = 0, cnt = BATcount(event);
+	BUN p,q;
+
+	if (cnt > PCL_MAX_EVENT_PER_CALL){
+		GDKwarning("Can only start %d events per call\n", 
+			PCL_MAX_EVENT_PER_CALL);
+		return GDK_FAIL;
+	}
+	BATloop(event,p,q){
+		int ev = *(int*)BUNhloc(event,p);
+		if (!PCL_EVENT_IS_INT(ev)){
+			clist[i] = ev;
+			i++;
+		}
+	}
+	res = PCLstart(pcl_desc, clist, i, *mode);
+	if (res != PCL_SUCCESS){
+		GDKwarning("pcl_start failed with %d\n", res);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -232,8 +295,6 @@ int pcl_stop(BAT **result, BAT *event){
 	PCL_FP_CNT_TYPE flist[PCL_MAX_EVENT_PER_CALL];
 	int res, i = 0, cnt = BATcount(event);
 	BUN p,q;
-	lng iz = -1;
-	dbl dz = 0.0;
 
 	if (cnt > PCL_MAX_EVENT_PER_CALL){
 		GDKwarning("Can only start %d events per call\n", 
@@ -244,15 +305,39 @@ int pcl_stop(BAT **result, BAT *event){
 	if (res != PCL_SUCCESS){
 		return GDK_FAIL;
 	}
-	*result = BATnew(TYPE_lng, TYPE_dbl, cnt);
+	*result = BATnew(TYPE_int, TYPE_lng, cnt);
 	BATloop(event,p,q){
-		int ev = *(int*)BUNtloc(event,p);
+		int ev = *(int*)BUNhloc(event,p);
 		if (PCL_EVENT_IS_INT(ev)){
 			lng h = ilist[i];
-			BUNins(*result, &h, &dz);
-		} else {
-			dbl t = flist[i];
-			BUNins(*result, &iz, &t);
+			BUNins(*result, &ev, &h);
+		}
+		i++;
+	}
+	return GDK_SUCCEED;
+}
+
+int pcl_stop_rates(BAT **result, BAT *event){
+	PCL_CNT_TYPE ilist[PCL_MAX_EVENT_PER_CALL];
+	PCL_FP_CNT_TYPE flist[PCL_MAX_EVENT_PER_CALL];
+	int res, i = 0, cnt = BATcount(event);
+	BUN p,q;
+
+	if (cnt > PCL_MAX_EVENT_PER_CALL){
+		GDKwarning("Can only start %d events per call\n", 
+			PCL_MAX_EVENT_PER_CALL);
+		return GDK_FAIL;
+	}
+	res = PCLstop(pcl_desc, ilist, flist, cnt);
+	if (res != PCL_SUCCESS){
+		return GDK_FAIL;
+	}
+	*result = BATnew(TYPE_int, TYPE_dbl, cnt);
+	BATloop(event,p,q){
+		int ev = *(int*)BUNhloc(event,p);
+		if (!PCL_EVENT_IS_INT(ev)){
+			dbl h = flist[i];
+			BUNins(*result, &ev, &h);
 		}
 		i++;
 	}
@@ -266,7 +351,7 @@ int pcl_query(BAT **result, BAT *event, int *mode){
 
 	*result = BATnew(TYPE_int,TYPE_int,cnt);
 	BATloop(event,p,q){
-		int ev = *(int*)BUNtloc(event,p);
+		int ev = *(int*)BUNhloc(event,p);
 		clist[0] = ev;
 		res = PCLquery(pcl_desc, clist, 1, *mode);
 		BUNins(*result, &ev, &res);
@@ -274,6 +359,28 @@ int pcl_query(BAT **result, BAT *event, int *mode){
 	return GDK_SUCCEED;
 }
 
+int pcl_try(bit *result, BAT *event, int *mode){
+	int i, res, cnt = BATcount(event);
+	int clist[PCL_MAX_EVENT_PER_CALL];
+	BUN p,q;
+
+	if (cnt > PCL_MAX_EVENT_PER_CALL){
+		GDKwarning("Can only start %d events per call\n", 
+			PCL_MAX_EVENT_PER_CALL);
+		return GDK_FAIL;
+	}
+	BATloop(event,p,q){
+		int ev = *(int*)BUNhloc(event,p);
+		clist[i] = ev;
+		i++;
+	}
+	res = PCLquery(pcl_desc, clist, i, *mode);
+	if (res == PCL_SUCCESS)
+	 	*result = TRUE;
+	else
+	 	*result = FALSE;
+	return GDK_SUCCEED;
+}
 #endif
 
 @mil
