@@ -1,11 +1,16 @@
 stdout of test 'test_60` in directory 'tests/suite_01` itself:
 
-#> Mtest:	milS test_60 milS
-#> Mtest:	Mtimeout -timeout 900 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_01 -single test_60.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Wed Jan 19 11:06:12 MET 2000.
-#script:test_60.milS
+
+# 06:09:12 >  
+# 06:09:12 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_tests_suite_01  < test_60.milS
+# 06:09:12 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for sparc-sun-solaris2.8/64bit; dynamically linked.
+# dbfarm:/var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/dbfarm
+# dbname:Tests_tests_suite_01
+# dbdir:/var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_tests_suite_01
 
 loaded;
 #---------------------------------#
@@ -23,8 +28,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 !ERROR: interpret: no matching MIL operator to 'newid(str, str)'.
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
@@ -33,7 +36,7 @@ Try: modules;                - for other modules.
 [ "y",			  "str",  "liquid",	  "changeable",	  "\"hello\""		  ]
 [ "x",			  "int",  "liquid",	  "changeable",	  "35"			  ]
 [ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_24>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_23>"		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -89,7 +92,7 @@ Try: modules;                - for other modules.
 [ "y",			  "str",  "liquid",	  "changeable",	  "\"hello\""		  ]
 [ "x",			  "int",  "liquid",	  "changeable",	  "35"			  ]
 [ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_24>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_23>"		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -144,7 +147,7 @@ Try: modules;                - for other modules.
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
 [ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_24>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_23>"		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -199,7 +202,7 @@ Try: modules;                - for other modules.
 [ "high",		  "int",  "liquid",	  "changeable",	  "10"			  ]
 [ "low",		  "int",  "liquid",	  "changeable",	  "0"			  ]
 [ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_24>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_23>"		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -259,7 +262,7 @@ Try: modules;                - for other modules.
 [ "high",		  "int",  "liquid",	  "changeable",	  "11"			  ]
 [ "low",		  "int",  "liquid",	  "changeable",	  "0"			  ]
 [ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_24>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_23>"		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -319,7 +322,7 @@ Try: modules;                - for other modules.
 [ "high",		  "int",  "liquid",	  "changeable",	  "99"			  ]
 [ "low",		  "int",  "liquid",	  "changeable",	  "0"			  ]
 [ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_24>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_23>"		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -379,7 +382,7 @@ Try: modules;                - for other modules.
 [ "high",		  "int",  "liquid",	  "changeable",	  "999"			  ]
 [ "low",		  "int",  "liquid",	  "changeable",	  "0"			  ]
 [ "a",			  "int",  "liquid",	  "changeable",	  "35"			  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_24>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_23>"		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -432,3 +435,8 @@ Try: modules;                - for other modules.
 !MAYBE YOU MEAN:
 !	select(BAT[any::1,any::2], any::2) : BAT[any::1,any::2]
 !	select(BAT[any::1,any::2], any::2, any::2) : BAT[any::1,any::2]
+
+# 06:09:12 >  
+# 06:09:12 >  Done.
+# 06:09:12 >  
+

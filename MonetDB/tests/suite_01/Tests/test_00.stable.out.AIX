@@ -1,11 +1,16 @@
 stdout of test 'test_00` in directory 'tests/suite_01` itself:
 
-#> Mtest:	milS test_00 milS
-#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_01 -single test_00.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for CYGWIN32_NT4.0/32bit on Fri Feb 25 14:25:27  2000.
-#script:test_00.milS
+
+# 20:00:59 >  
+# 20:00:59 >  Mtimeout -timeout 210 Mserver -monetrc /data/manegold/tmp/manegold.GNU_32-s.6489/monet/.GNU_32-s/AIX4.3/share/Monet/monet.Mtest.conf -db Tests_tests_suite_01  < test_00.milS
+# 20:00:59 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for powerpc-ibm-aix4.3.3.0/32bit; statically linked.
+# dbfarm:/data/manegold/tmp/manegold.GNU_32-s.6489/monet/.GNU_32-s/AIX4.3/dbfarm
+# dbname:Tests_tests_suite_01
+# dbdir:/data/manegold/tmp/manegold.GNU_32-s.6489/monet/.GNU_32-s/AIX4.3/dbfarm/Tests_tests_suite_01
 
 loaded;
 #---------------------------------#
@@ -23,13 +28,11 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_24>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_23>"		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -82,7 +85,7 @@ Try: modules;                - for other modules.
 # (str)			  (str)	| (str)		| (str)		| (str)			  #
 #-----------------------------------------------------------------------------------------#
 [ "bn",			  "BAT",  "liquid",	  "changeable",	  "<tmp_27>"		  ]
-[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_24>"		  ]
+[ "b",			  "BAT",  "liquid",	  "changeable",	  "<tmp_23>"		  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -134,3 +137,8 @@ Try: modules;                - for other modules.
 # BAT:	  tmp_29  #
 # (int)	  (str)	  #
 #-----------------#
+
+# 06:08:56 >  
+# 06:08:56 >  Done.
+# 06:08:56 >  
+

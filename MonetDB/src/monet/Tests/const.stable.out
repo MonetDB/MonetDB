@@ -25,13 +25,11 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #-------------------------#
 # BAT:	  tmp_25	  #
 # (void)  (BAT)		  #
 #-------------------------#
-[ nil,	  <tmp_26>	  ]
+[ nil,	  <tmp_25>	  ]
 [ nil,	  <tmp_27>	  ]
 #-------------------------#
 # BAT:	  tmp_28	  #

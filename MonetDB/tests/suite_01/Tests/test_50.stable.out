@@ -1,11 +1,16 @@
 stdout of test 'test_50` in directory 'tests/suite_01` itself:
 
-#> Mtest:	milS test_50 milS
-#> Mtest:	Mtimeout -timeout 900 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_01 -single test_50.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Wed Jan 19 11:06:12 MET 2000.
-#script:test_50.milS
+
+# 06:09:11 >  
+# 06:09:11 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_tests_suite_01  < test_50.milS
+# 06:09:11 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for sparc-sun-solaris2.8/64bit; dynamically linked.
+# dbfarm:/var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/dbfarm
+# dbname:Tests_tests_suite_01
+# dbdir:/var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_tests_suite_01
 
 loaded;
 #---------------------------------#
@@ -23,23 +28,21 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_24>	  ]
+[ 2,	  <tmp_23>	  ]
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  170	  ]
+[ "user",	  160	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  360	  ]
+[ "system",	  80	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #-------------------------#
@@ -47,16 +50,21 @@ Try: modules;                - for other modules.
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_24>	  ]
+[ 2,	  <tmp_23>	  ]
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_24>	  ]
+[ 2,	  <tmp_23>	  ]
 #-------------------------#
 # BAT:	  tmp_26	  #
 # (int)	  (BAT)		  #
 #-------------------------#
 [ 1,	  <cpu>		  ]
-[ 2,	  <tmp_24>	  ]
+[ 2,	  <tmp_23>	  ]
+
+# 06:09:11 >  
+# 06:09:11 >  Done.
+# 06:09:11 >  
+
