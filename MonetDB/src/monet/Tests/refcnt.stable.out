@@ -1,12 +1,21 @@
 stdout of test 'refcnt` in directory 'src/monet` itself:
 
-#> Mtest:	other refcnt 1629
-#> Mtest:	Mtimeout -timeout 1629 ./refcnt refcnt
-#> Mlog:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db src_monet refcnt.1.mil
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Sun Mar  5 04:35:19 MET 2000.
-#script:refcnt.1.mil
+
+# 11:23:23 >  
+# 11:23:23 >  Mtimeout -timeout 1788 ./refcnt refcnt 
+# 11:23:23 >  
+
+
+# 11:23:24 >  
+# 11:23:24 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.5370/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_src_monet < refcnt.1.mil
+# 11:23:24 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/manegold.GNU_32-d.5370/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
+# dbname:Tests_src_monet
+# dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.5370/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_src_monet
 
 loaded;
 #---------------------------------#
@@ -24,15 +33,19 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
  restart gives correct refcnt b from 0 to 1 
  since b is part of a and persistent expected refcnt should be 2 
-#> Mlog:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db src_monet refcnt.2.mil
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Sun Mar  5 04:35:19 MET 2000.
-#script:refcnt.2.mil
+
+# 11:23:25 >  
+# 11:23:25 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.5370/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_src_monet < refcnt.2.mil
+# 11:23:25 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/manegold.GNU_32-d.5370/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
+# dbname:Tests_src_monet
+# dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.5370/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_src_monet
 
 loaded;
 #---------------------------------#
@@ -50,13 +63,11 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
-#---------------------------------------------------------------------------------#
-# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
-#---------------------------------------------------------------------------------#
-[ "a",	  "int",  "bat",  1,	  0,	  "clean",	  "load", "pers", 0	  ]
-[ "b",	  "int",  "int",  0,	  0,	  "clean",	  "disk", "pers", 1	  ]
+#-----------------------------------------------------------------------------------------#
+# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
+#-----------------------------------------------------------------------------------------#
+[ "a",	  "int",  "bat",  1,	  0,	  "clean",	  "disk", "pers", 0,	  1	  ]
+[ "b",	  "int",  "int",  0,	  0,	  "clean",	  "disk", "pers", 0,	  2	  ]
 #-----------------#
 # BAT:	  a	  #
 # (int)	  (BAT)	  #
@@ -66,3 +77,8 @@ Try: modules;                - for other modules.
 # BAT:	  b	  #
 # (int)	  (int)	  #
 #-----------------#
+
+# 11:23:26 >  
+# 11:23:26 >  Done.
+# 11:23:26 >  
+
