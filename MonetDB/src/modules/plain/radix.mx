@@ -653,6 +653,9 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
 .ATOM pax@1 = integer@1;
 .END;
 
+.COMMAND jivejoin(BAT[oid,oid], BAT[void,integer@1] attr, BAT[int,int] cnt, int shift, int nbits) : bat[oid,integer@1] = jivejoin_tuple; 
+"positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
+
 .COMMAND posjoin(BAT[void,oid] proj, BAT[void,integer@1] attr) : BAT[void,integer@1] = posjoin_tuple;
 "positional join with built-in NSM projection" 
 
@@ -790,7 +793,7 @@ proc cache_join(BAT[void,oid] left, BAT[void,any::1] right) : BAT[void,any::1] {
 .END radix;
 
 @mil
-module(radix);
+module(radix,alarm);
 
 var b := view_bbp_name.reverse;
 
@@ -939,6 +942,22 @@ t := time; res_a1 := radix_decluster2(cl_new, cl_old, borders_smaller, 32);print
 
 t := time; b := join(res_smaller_clustered,  smaller_a1); print(time - t);
 t := time; res_a1 := radix_decluster(b, borders_smaller, 16);print(time - t);
+
+proc log2(int n) : int { var ret := 0; while((n :/= 2) > 0) ret :+= 1; return ret; }
+
+jivejoin
+========
+
+attr := larger_all.mark(0@0).reverse;
+proj := sample(attr.mark(0@0).reverse, 100000);
+nbits := 12; 
+shift := max(0, 1 + log2(attr.count) - nbits);
+shift := 0;
+mask := ((1 << nbits) - 1) << shift;
+mask.print;
+cnt := [>>]([and]([int](proj), mask), shift).histogram.sort;
+b := jivejoin(proj, attr, cnt, shift, nbits);
+c := b.mirror.[int].[and](mask).[>>](shift);
 
 @* Implementation
 @c
@@ -2320,23 +2339,19 @@ int posjoin_tuple(BAT **res, BAT *proj, BAT *attr) {
 	BAT *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
 	int tt = ((attr->tatom[0] == 'p' && attr->tatom[1] == 'a' && attr->tatom[2] == 'x') ? attr->ttype - 1 : attr->ttype);
 	BAT *bn = BATnew(TYPE_void, tt, BATcount(proj));
+	BAT *bm = BATmirror(attr);
         int width = ATOMsize(attr->ttype) >> 2;
         int distance = 1 << ((parent->ttype - attr->ttype) >> 1);
 	BUN p, q, r;
 	int xx;
 
 	if (bn == NULL) {
-		GDKerror("posjoin_nsm: could not alloc BAT[void,%s] of size %d.\n", ATOMname(attr->ttype), BATcount(proj));
+		GDKerror("posjoin_tuple: could not alloc BAT[void,%s] of size %d.\n", ATOMname(attr->ttype), BATcount(proj));
 		return GDK_FAIL;
 	}
 	BATloopFast(proj, p, q, xx) {
-		r = BUNfnd(attr, BUNtail(proj, p));
-		if (r == NULL) {
-			GDKerror("posjoin_nsm: did not find value %d in %s.\n", *(oid*) BUNtail(proj,p), attr->batId);
-			BBPreclaim(bn);
-			return GDK_FAIL;
-		}
-		integerCopy((int*) BUNhloc(bn,BUNlast(bn)), BATmirror(attr), r, width, distance);
+		BUNfndVOID(r, attr, BUNtail(proj, p));
+		integerCopy((int*) BUNtloc(bn,BUNlast(bn)), BATmirror(attr), r, width, distance);
 		bn->batBuns->free += BUNsize(bn);
 	}
 	BATseqbase(bn, proj->hseqbase);
@@ -2345,3 +2360,39 @@ int posjoin_tuple(BAT **res, BAT *proj, BAT *attr) {
 	*res = bn;
 	return GDK_SUCCEED;
 }
+
+int jivejoin_tuple(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits) {
+	BAT *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
+	BAT *bn = *res = BATnew(TYPE_oid, attr->ttype, BATcount(proj));
+	BAT *bm = BATmirror(attr);
+        int width = ATOMsize(attr->ttype) >> 2;
+        int distance = 1 << (parent->ttype - attr->ttype);
+	int xx, yy = 1 << *nbits, zz = *shift, mask = (yy-1) << zz;
+	BUN* off = (BUN*) GDKmalloc(yy*sizeof(BUN));
+	BUN p, q, r;
+
+	if (bn == NULL || off == NULL) {
+		GDKerror("jivejoin_tuple: could not alloc BAT[void,%s] of size %d.\n", ATOMname(attr->ttype), BATcount(proj));
+		return GDK_FAIL;
+	}
+	/* find the destination byte-offsets using the radix-count bat */
+	for(xx=0; xx<yy; xx++) off[xx] = 0;
+	BATloopFast(radix_count, p, q, xx) {
+		off[*(int*) BUNhloc(radix_count,p)] += *(int*) BUNtloc(radix_count,p);
+	}
+	off[0] = BUNfirst(bn) + BUNsize(bn)*((size_t*) off)[0];
+	for(xx=1; xx<yy; xx++) off[xx] = off[xx-1] + BUNsize(bn)*((size_t*) off)[xx];
+	bn->batBuns->free += BATcount(proj)*(yy=BUNsize(bn));
+
+	BATloopFast(proj, p, q, xx) {
+		oid curoid = *(oid*) BUNhead(proj,p);
+		int clusterid = (curoid&mask) >> zz;
+		BUNfndVOID(r, attr, BUNtail(proj, p));
+		*(oid*) BUNhloc(bn,off[clusterid]) = curoid;
+		integerCopy((int*) BUNtloc(bn,off[clusterid]), bm, r, width, distance);
+		off[clusterid] += yy;
+	}
+	bn->hsorted = *nbits << 1;
+	bn->tsorted = 0;
+	return GDK_SUCCEED;
+} 
