@@ -34,7 +34,9 @@ AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
 AM_INIT_AUTOMAKE("MonetDB", 5.0)
-AM_CONFIG_HEADER(config.h:conf/config.h.in)
+AM_CONFIG_HEADER(monetdb_config.h:conf/config.h.in)
+CONFIG_H=monetdb_config.h
+AC_SUBST(CONFIG_H)
 
 HOST=[$target]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
@@ -117,6 +119,15 @@ dnl AC_CHECK_PROG(CP,cp,cp -f)
 dnl AC_CHECK_PROG(MKDIR,mkdir,mkdir -p)
 dnl AC_CHECK_PROG(TAGS,ctags,ctags)
 
+AC_C_CONST()
+case $GCC-$host_os in
+-aix*)	dnl  Somehow, the autoconf inline-check fails with the native AIX compiler (xlc),
+	dnl  but the compiler seems to handle the default "inline" quite well, hence, we
+	dnl  simply skip this test.
+	;;
+*)	AC_C_INLINE();;
+esac
+
 dnl get monet compiler options (debug,warning,optimize,profiling,instrument)
 
 dnl Checks for header files.
@@ -180,14 +191,6 @@ then
 fi
 
 dnl Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST()
-case $GCC-$host_os in
--aix*)	dnl  Somehow, the autoconf inline-check fails with the native AIX compiler (xlc),
-	dnl  but the compiler seems to handle the default "inline" quite well, hence, we
-	dnl  simply skip this test.
-	;;
-*)	AC_C_INLINE();;
-esac
 AC_TYPE_PID_T()
 AC_TYPE_OFF_T()
 AC_TYPE_SIZE_T()
@@ -237,7 +240,8 @@ AC_FUNC_MEMCMP()
 AC_CHECK_FUNCS(strsignal)
 AC_CHECK_FUNCS(mkdir rmdir getcwd getopt getrlimit vsnprintf snprintf kill)
 AC_CHECK_FUNCS(strcspn strdup strstr strtod strtof strtol strerror strcasecmp)
-AC_CHECK_FUNCS(gethostname gettimeofday setenv putenv select)
+AC_CHECK_FUNCS(strtoll strtoull)
+AC_CHECK_FUNCS(gethostname gettimeofday setenv putenv select times)
 AC_CHECK_FUNCS(fstat getpwuid getuid ftime sysconf)
 AC_CHECK_FUNCS(mrand48 drand48)
 AC_CHECK_FUNCS(nanosleep lockf)

@@ -44,7 +44,7 @@ data files. It also works on sockets.
  * required for proper conversion on different byte order platforms.
  */
 #ifdef HAVE_CONFIG_H 
-#include <config.h>
+#include <monetdb_config.h>
 #endif
 
 #include <ctype.h>
@@ -153,7 +153,6 @@ stream_export int bs_read_next( stream *s, char *buf, int *last );
 
 #endif /*_STREAM_H_*/
 @c
-#include <config.h>
 #include "stream.h"
 #include <string.h> 
 
