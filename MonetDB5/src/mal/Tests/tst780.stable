@@ -7,42 +7,49 @@
 ##test debugging of a recursive function
 #
 #function test(age:int,nme:str):int;
+#	d:= catalog.getStackDepth();
+#	printf("stack depth %d\n",d);
 #	printf("simulated error\n");
-#	c:= stkDepth();
-#	printf("depth %d\n",c);
-#	t:= catalog.stkFrame();
+#	f:= catalog.symbolDump();
+#	io.print(f);
+#	t:= catalog.getStackFrame();
 #	print(t);
-#	d:= symbolDump();
-#	print(d);
-#	t:= catalog.stkFrame(c);
+#	t:= catalog.getStackFrame(d);
 #	print(t);
-#	v:= catalog.varUsed();
-#	print(v);
-#	w:= catalog.varConstant();
-#	print(w);
 #end test;
 function Admin.test(age:int,nme:str):int; #0  (test:int)<-(age:int)(nme:str)
-    system.printf("simulated error\n"); #1 SYSprint_str ($3:int)<-($4:str)
-    c := catalog.stkDepth(); #2 CATALOGStkDepth (c:int)
-    system.printf("depth %d\n",c); #3 SYSprint_formatted_int ($6:int)<-($7:str)(c:int)
-    t := catalog.stkFrame(); #4 CATALOGStkFrame (t:bat[str,str])
-    io.print(t); #5 CMDprint_val ($9:int)<-(t:bat[str,str])
-    d := catalog.symbolDump(); #6 CATALOGsymbolDump (d:bat[void,str])
-    io.print(d); #7 CMDprint_val ($11:int)<-(d:bat[void,str])
-    t := catalog.stkFrame(c); #8 CATALOGStkFrameN (t:bat[str,str])<-(c:int)
+    d := catalog.getStackDepth(); #1 CATALOGStkDepth (d:int)
+    system.printf("stack depth %d\n",d); #2 SYSprint_formatted_int ($4:int)<-($5:str)(d:int)
+    system.printf("simulated error\n"); #3 SYSprint_str ($6:int)<-($7:str)
+    f := catalog.symbolDump(); #4 CATALOGsymbolDump (f:bat[void,str])
+    io.print(f); #5 CMDprint_val ($9:int)<-(f:bat[void,str])
+    t := catalog.getStackFrame(); #6 CATALOGStkFrame (t:bat[str,str])
+    io.print(t); #7 CMDprint_val ($11:int)<-(t:bat[str,str])
+    t := catalog.getStackFrame(d); #8 CATALOGStkFrameN (t:bat[str,str])<-(d:int)
     io.print(t); #9 CMDprint_val ($12:int)<-(t:bat[str,str])
-    v := catalog.varUsed(); #10 CATALOGVarUsed (v:bat[str,str])
-    io.print(v); #11 CMDprint_val ($14:int)<-(v:bat[str,str])
-    w := catalog.varConstant(); #12 CATALOGVarConstant (w:bat[str,str])
-    io.print(w); #13 CMDprint_val ($16:int)<-(w:bat[str,str])
-end test; #14  
+end test; #10  
 #test(12,"jj");
 #
 function Admin.main():int; #0  (main:int)
     Admin.test(12,"jj"); #1  ($1:int)<-($2:int)($3:str)
 end main; #2  
+stack depth 2
 simulated error
-depth 2
+#---------------------------------------------------------#
+# BAT:	  stmt						  #
+# (void)  (str)						  #
+#---------------------------------------------------------#
+[ nil,	  "function Admin.test(age:int,nme:str):int;"	  ]
+[ nil,	  "    d := catalog.getStackDepth();"		  ]
+[ nil,	  "    system.printf(\"stack depth %d\\n\",d);"	  ]
+[ nil,	  "    system.printf(\"simulated error\\n\");"	  ]
+[ nil,	  "    f := catalog.symbolDump();"		  ]
+[ nil,	  "    io.print(f);"				  ]
+[ nil,	  "    t := catalog.getStackFrame();"		  ]
+[ nil,	  "    io.print(t);"				  ]
+[ nil,	  "    t := catalog.getStackFrame(d);"		  ]
+[ nil,	  "    io.print(t);"				  ]
+[ nil,	  "end test;"					  ]
 #-----------------------------------------#
 # BAT:	  frame				  #
 # (str)	  (str)				  #
@@ -50,39 +57,16 @@ depth 2
 [ "test", "0@0"				  ]
 [ "age",  "12"				  ]
 [ "nme",  "\"jj\""			  ]
-[ "$3",	  "1"				  ]
-[ "$4",	  "\"simulated error\\\\n\""	  ]
-[ "c",	  "2"				  ]
+[ "d",	  "2"				  ]
+[ "$4",	  "1"				  ]
+[ "$5",	  "\"stack depth %d\\\\n\""	  ]
 [ "$6",	  "1"				  ]
-[ "$7",	  "\"depth %d\\\\n\""		  ]
-[ "t",	  "<frame>"			  ]
+[ "$7",	  "\"simulated error\\\\n\""	  ]
+[ "f",	  "<stmt>"			  ]
 [ "$9",	  "0"				  ]
-[ "d",	  "nil"				  ]
+[ "t",	  "<frame>"			  ]
 [ "$11",  "0"				  ]
 [ "$12",  "0"				  ]
-[ "v",	  "nil"				  ]
-[ "$14",  "0"				  ]
-[ "w",	  "nil"				  ]
-[ "$16",  "0"				  ]
-#---------------------------------------------------------#
-# BAT:	  stmt						  #
-# (void)  (str)						  #
-#---------------------------------------------------------#
-[ nil,	  "function Admin.test(age:int,nme:str):int;"	  ]
-[ nil,	  "    system.printf(\"simulated error\\n\");"	  ]
-[ nil,	  "    c := catalog.stkDepth();"		  ]
-[ nil,	  "    system.printf(\"depth %d\\n\",c);"	  ]
-[ nil,	  "    t := catalog.stkFrame();"		  ]
-[ nil,	  "    io.print(t);"				  ]
-[ nil,	  "    d := catalog.symbolDump();"		  ]
-[ nil,	  "    io.print(d);"				  ]
-[ nil,	  "    t := catalog.stkFrame(c);"		  ]
-[ nil,	  "    io.print(t);"				  ]
-[ nil,	  "    v := catalog.varUsed();"			  ]
-[ nil,	  "    io.print(v);"				  ]
-[ nil,	  "    w := catalog.varConstant();"		  ]
-[ nil,	  "    io.print(w);"				  ]
-[ nil,	  "end test;"					  ]
 #-------------------------#
 # BAT:	  frame		  #
 # (str)	  (str)		  #
@@ -90,24 +74,5 @@ depth 2
 [ "test", "0@0"		  ]
 [ "age",  "0"		  ]
 [ "nme",  "12"		  ]
-[ "$3",	  "\"jj\""	  ]
-#-----------------#
-# BAT:	  used	  #
-# (str)	  (void)  #
-#-----------------#
-[ "age",  nil	  ]
-[ "nme",  nil	  ]
-[ "$4",	  nil	  ]
-[ "c",	  nil	  ]
-[ "$7",	  nil	  ]
-[ "t",	  nil	  ]
-[ "d",	  nil	  ]
-[ "v",	  nil	  ]
-[ "w",	  nil	  ]
-#-------------------------#
-# BAT:	  constant	  #
-# (str)	  (void)	  #
-#-------------------------#
-[ "$4",	  nil		  ]
-[ "$7",	  nil		  ]
+[ "d",	  "\"jj\""	  ]
 >

@@ -6,5 +6,5 @@ stmt:= catalog.symbolDefinition("algebra","select");
 sig:= catalog.symbolSignature("algebra","select");
 tpe:= catalog.symbolType("algebra","select");
 
-n:= catalog.helpComment("algebra","insert"); print(n);
+n:= mal.helpComment("algebra","insert"); print(n);
 d:= catalog.symbolDefinition("catalog","dir"); print(d);

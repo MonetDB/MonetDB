@@ -29,7 +29,7 @@
 #	print(MALexception);
 #exit MALexception;
 #print(v);
-#x:= catalog.bbpNames();
+#x:= bbp.getNames();
 #print(x);
 #bbp.close();
 #
@@ -55,7 +55,7 @@ catch MALexception; #18  (MALexception:str) jump 20
     io.print(MALexception); #19 CMDprint_val ($24:int)<-(MALexception:str)
 exit MALexception; #20  (MALexception:str)
     io.print(v); #21 CMDprint_val ($25:int)<-(v:bat[any,any])
-    x := catalog.bbpNames(); #22 CATALOGbbpNames (x:bat[int,str])
+    x := bbp.getNames(); #22 CMDbbpNames (x:bat[int,str])
     io.print(x); #23 CMDprint_val ($27:int)<-(x:bat[int,str])
     bbp.close(); #24 CMDbbpclose ($28:void)
 end main; #25  

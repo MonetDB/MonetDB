@@ -6,6 +6,6 @@ function z(mod:str,nme:str,title:str):bat;
         return b;
 end z;
 
-	r:= z("catalog","bbpNames","names");
+	r:= z("bbp","getNames","names");
 	print(r);
 

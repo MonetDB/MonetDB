@@ -11,7 +11,7 @@
 ##
 ###line 567 "/ufs/mk/monet_4-3/src/modules/plain/ddbench.mx"
 ##
-#	view_bbp_name:= catalog.bbpNames();
+#	view_bbp_name:= bbp.getNames();
 #	aa_a := reverse(view_bbp_name);
 #barrier	ba_a:= exist(aa_a,"tpe");
 ##if (view_bbp_name.reverse.exist("tpe")) {
@@ -260,7 +260,7 @@
 !ERROR: 'vals_oidselect' undefined in Admin.main[120]
 !ERROR: 'rngs_oidselect' undefined in Admin.main[129]
 function Admin.main():int; #0  (main:int)
-    view_bbp_name := catalog.bbpNames(); #1 CATALOGbbpNames (view_bbp_name:bat[int,str])
+    view_bbp_name := bbp.getNames(); #1 CMDbbpNames (view_bbp_name:bat[int,str])
     aa_a := bat.reverse(view_bbp_name); #2 CMDreverse (aa_a:bat[str,int])<-(view_bbp_name:bat[int,str])
 barrier ba_a := algebra.exist(aa_a,"tpe"); #3 CMDexist (ba_a:bit)<-(aa_a:bat[str,int])($4:str) jump 7
     tpe := bbp.bind("tpe"); #4 CMDbbpbind (tpe:bat[any,any])<-($4:str)
