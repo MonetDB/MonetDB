@@ -498,7 +498,7 @@ extern YYSTREE yysugar(YYSTREE node);
 %%
 program:
         monet_session 
-	{ ll_client->tree = $1; yypostprocess(ll_client->tree);               }
+	{ ll_client->tree = $1; yypostprocess(ll_client->tree);		      }
     |   error ';' { ll_clrids(); yyerrok; yyclearin; return 1; }
     |   /* empty */ 
 

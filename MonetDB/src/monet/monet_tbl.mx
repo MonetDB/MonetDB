@@ -1331,15 +1331,6 @@ Check if it is in use already.
 	if ((refcnt = TBL_M_decref(father, mid)) > 0 )
 		goto xit;
 
-	/* Go ahead with module drop: first execute the MIL exit script
-         */
-	BUNfndOID(p,TBL_mod_drop, &mid);
-	if (p != NULL) {
-		ValRecord v;
-	   	TBL_M_unlock(father);
-		interpret_str(client->maxstk, BUNtvar(TBL_mod_drop,p), &v);
-	   	TBL_M_lock(father);
-	}
 @-
 Delete all the modules's functions from user table.
 @c
@@ -1433,6 +1424,21 @@ xit:	if (level==0) {
 	return ret;
 }
 
+void TBL_drop(Client client, str module, int level) {
+	Client father = client;
+	char *p;
+	oid mid;
+
+	/* Go ahead with module drop: first execute the MIL exit script
+         */
+	BUNfndOID(p,TBL_mod_drop, &mid);
+	if (p != NULL) {
+		ValRecord v;
+	   	TBL_M_unlock(father);
+		interpret_str(client->maxstk, BUNtvar(TBL_mod_drop,p), &v);
+	   	TBL_M_lock(father);
+	}
+}
 
 @+ Function Resolution
 @- TBL_search
@@ -2206,7 +2212,7 @@ operation cheap.
 The space occupied by user defined functions should be reclaimed.
 @c
 void TBL_exitclient(Client client) {
-	BAT	*b, *bn;
+	BAT	*b, *bn, *procs, *fcns;
 	BUN 	p, q, r;
 	int	xx, proc=TOK_PROC;
 
@@ -2215,7 +2221,7 @@ void TBL_exitclient(Client client) {
 #endif
 	TBL_M_lock(client);
 
-	/* Unload all loaded modules in reverse loading order. */
+	/* run the drop scripts. */
 	bn = BATselect(TBL_mod_use, &client, &client);
 	b = BATsort(bn); 
 	b = BATrevert(BATsetaccess(b, BAT_WRITE));
@@ -2224,17 +2230,27 @@ void TBL_exitclient(Client client) {
 	    if (BUNlocate(TBL_mod_use, BUNhloc(b,p), &client)) {
 	   	str module = BUNtailfnd(char,TBL_mod_nme,r,&mid);
 	    	if (TBL_M_directloaded(client, mid, module))
-		    TBL_unloadmod(client, module, 1);
+		    TBL_drop(client, module, 1);
 	    }
 	}
-	BBPreclaim(b);
-	BBPreclaim(bn);
 
 	/* Check for procs in your fcn table. */
-	bn = BATjoin(client->fcntbl, TBL_fcn_tpe);
-	b = BAT_select(bn, &proc, &proc, FALSE);
-	BATloopFast(b, p, q, xx) {
-		TBL_delproc(client, (str) BUNhvar(b, p), FALSE);
+	fcns = BATjoin(client->fcntbl, TBL_fcn_tpe);
+	procs = BAT_select(fcns, &proc, &proc, FALSE);
+	BATloopFast(procs, p, q, xx) {
+		TBL_delproc(client, (str) BUNhvar(procs, p), FALSE);
+	}
+	BBPreclaim(procs);
+	BBPreclaim(fcns);
+
+	/* Unload all loaded modules in reverse loading order. */
+	BATloopFast(b, p, q, xx) { 
+	    oid mid = *(oid*) BUNhloc(b,p); 
+	    if (BUNlocate(TBL_mod_use, BUNhloc(b,p), &client)) {
+	   	str module = BUNtailfnd(char,TBL_mod_nme,r,&mid);
+	    	if (TBL_M_directloaded(client, mid, module))
+		    TBL_unloadmod(client, module, 1);
+	    }
 	}
 	BBPreclaim(b);
 	BBPreclaim(bn);

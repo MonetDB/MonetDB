@@ -929,6 +929,10 @@ int GDKinit(int argc, char** argv) {
 		}
 	}
 	GDKenvironment(db,monetrc);
+
+	if (monetrc) GDKfree(monetrc);
+	if (db) GDKfree(db);
+
 	if (GDKdbnameStr[0] == 0) {
 	    fprintf(stderr, 
 		"GDKhomeScan: %s:  database name missing.\n",

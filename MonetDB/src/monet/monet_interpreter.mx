@@ -198,6 +198,8 @@ int interpret_str(Cntxt stk, str buf, ValPtr res) {
 				VALclear(res);
 			}
                         CLEANUP(c->tree);
+			yyfree(c->tree);
+			c->tree = NULL;
                 }
                 c->input = input_bak;
 		closeClient(c, FALSE);

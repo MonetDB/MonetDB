@@ -731,11 +731,15 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
 	OIDflushdelta = 0;
 	TMcommit();
 	if (c == monet_clients) {
-		int status = 0, *statusp = &status;
+		int i,status = 0, *statusp = &status;
         	if (lt->cnt > 0) { 
 			@:builtin_operand(0, TYPE_int, statusp)@
         	}
+		/*
+		freeClient(c);
+		*/
 		fflush(GDKout);
+		monet_exit();
 		MT_global_exit(*statusp);
 	}
 	q = topRequest(c);

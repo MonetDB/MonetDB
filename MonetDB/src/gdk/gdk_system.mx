@@ -335,12 +335,13 @@ void MT_destroy_lock (MT_Lock l) {
 }
 
 void MT_set_lock(MT_Lock l, char *name){
-    	int t = pthread_mutex_lock((pthread_mutex_t*)l);
+    	int t = 0;
     	if (MT_debug & 1024) {
         	fprintf(MT_out,"MT_set_lock(%lu\@%s) %ld %d\n", 
 			(long)MT_getpid(), name, (long)l, t);
         	fflush(MT_out);
     	}
+	(void)pthread_mutex_lock((pthread_mutex_t*)l);
 }
 
 void MT_unset_lock(MT_Lock l, char *name)	{

@@ -319,6 +319,16 @@ void freeClient(Client c) {
 	}
 
 	/* destroy all bindings */
+
+	if (c->tree) {
+		yyfree(c->tree);
+		c->tree = NULL;
+		CNTXTfree2(c->stk, c);
+	}
+	if (c == monet_clients){ /* admin context */
+		yyfree(mil_general);
+	}
+
 	CNTXTclear(c->stk);
 	CNTXTfree2(c->stk, c); 
 	CNTXTdelete(c->stk); 
