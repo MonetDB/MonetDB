@@ -84,9 +84,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 			(void)(*nr)++; s->nr = (*nr)++;
 			break;
 		case cmp_lt:
-			/*len += snprintf( buf+len, BUFSIZ, "s%d := s%d.mil_select(\"<in>\", %s(nil), s%d).access(BAT_READ);\n", 
-			  */
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.select(%s(nil), s%d).access(BAT_READ);\n", 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.mil_select(\"<in>\", %s(nil), s%d).access(BAT_READ);\n", 
 			  *nr, l, tail_type(s)->name, r ); 
 			s->nr = (*nr)++;
 			break;
@@ -96,10 +94,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 			s->nr = (*nr)++;
 			break;
 		case cmp_gt:
-			/*
 			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.mil_select(\"<in>\", s%d, %s(nil)).access(BAT_READ);\n", 
-			*/
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.select(s%d, %s(nil)).access(BAT_READ);\n", 
 			  *nr, l, r, tail_type(s)->name ); 
 			s->nr = (*nr)++;
 			break;
