@@ -5,7 +5,7 @@
 
 #define die(X) {mapi_explain(X,stdout); exit(-1); }
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	/* a parameter binding test */
 	char *nme= 0;
@@ -38,4 +38,6 @@ main(int argc, char **argv)
 		printf("%s is %d\n", nme, age);
 	}
 	mapi_disconnect(dbh);
+
+	return 0;
 }

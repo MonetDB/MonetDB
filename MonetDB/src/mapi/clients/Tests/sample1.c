@@ -5,7 +5,7 @@
 
 #define die(X) {mapi_explain(X,stdout); exit(-1); }
 
-main(int argc, char **argv){
+int main(int argc, char **argv){
 	Mapi	dbh;
 	int    port;
 	char   buf[40];
@@ -37,4 +37,6 @@ main(int argc, char **argv){
 	/* mapi_stat(dbh);
 	printf("mapi_ping %d\n",mapi_ping(dbh)); */
 	mapi_disconnect(dbh);
+
+	return 0;
 }

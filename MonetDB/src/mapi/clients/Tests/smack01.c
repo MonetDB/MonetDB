@@ -5,7 +5,7 @@
 
 #define die(X) {mapi_explain(X,stdout); exit(-1); }
 
-main(int argc, char **argv){
+int main(int argc, char **argv){
 	Mapi	dbh;
 	int i;
 	char buf1[40],buf[40], *line;
@@ -25,10 +25,12 @@ main(int argc, char **argv){
 		if(mapi_error(dbh)) die(dbh);
 		snprintf(buf,40,"print(%d);",i);
 		if( mapi_query(dbh,buf)) die(dbh);
-		while( line= mapi_fetch_line(dbh)){
+		while((line= mapi_fetch_line(dbh))){
 			printf("%s \n", line );
 		}
 		mapi_disconnect(dbh);
 		/* printf("close connection %d\n",i);*/
 	}
+
+	return 0;
 }
