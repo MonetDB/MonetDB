@@ -30,7 +30,7 @@ stdout of test 'ID.905495s` in directory 'tests/BugsViaSourgeforce` itself:
 #	aa_a := print("hello");
 #
 function Admin.main():int;	# 0  (main:int)
-    aa_a := io.print("hello");	# 1 IOprint_val (aa_a:int)<-($32:str)
+    aa_a := io.print("hello");	# 1 IOprint_val (aa_a:int)<-($2:str)
 end main;	# 2  
 [ "hello" ]
 
