@@ -1,11 +1,11 @@
 stdout of test 'none` in directory 'tests/sigs` itself:
 
 
-# 00:13:12 >  
-# 00:13:12 >   Mserver "--config=D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\conf\monet.conf" --debug=10 --set "monet_mod_path=D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\src\modules\plain;D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\src\modules\calibrator;D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\src\mapi" --dbfarm "D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\dbfarm" --set monet_prompt= "D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\Tests\trace.mil" --dbname=Tests_tests_sigs  < none.milS
-# 00:13:12 >  
+# 17:03:28 >  
+# 17:03:28 >   Mserver "--config=C:\Documents and Settings\sjoerd\My Documents\src\monet\NT\conf\monet.conf" --debug=10 --set "monet_mod_path=C:\Documents and Settings\sjoerd\My Documents\src\monet\NT\src\modules\plain;C:\Documents and Settings\sjoerd\My Documents\src\monet\NT\src\modules\calibrator;C:\Documents and Settings\sjoerd\My Documents\src\monet\NT\src\mapi" --dbfarm "C:\Documents and Settings\sjoerd\My Documents\src\monet\NT\dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_sigs  < none.milS
+# 17:03:28 >  
 
-# Monet Database Server V4.3.5
+# Monet Database Server V4.3.7
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-win32/32bit; dynamically linked.
 setoid(20000000);
@@ -23,7 +23,7 @@ loaded;
 [ "trans",	  1		  ]
 [~monet_mod_nme].reverse.sort.print;
 #-------------------------#
-# BAT:		  tmp_23  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "algebra",	  nil	  ]
@@ -35,7 +35,7 @@ loaded;
 [ "trans",	  nil	  ]
 [~view_modules].reverse.kunique.sort.print;
 #-------------------------#
-# BAT:		  tmp_26  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "aggr",	  nil	  ]
@@ -97,7 +97,7 @@ loaded;
 [ "trans",	  1		  ]
 [~monet_mod_nme].reverse.sort.print;
 #-------------------------#
-# BAT:		  tmp_26  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "algebra",	  nil	  ]
@@ -116,7 +116,7 @@ loaded;
 fix:=monet_mod_nme.reverse.copy;
 [fix~].print;
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_28  #
 # (str)		  (void)  #
 #-------------------------#
 [ "kernel",	  nil	  ]
@@ -132,7 +132,7 @@ mprof:=view_modules.select("mprof").reverse.kunique;
 others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRITE).delete("mprof").sort.access(BAT_WRITE).revert.insert(mprof);
 [others~].print;
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "xtables",	  nil	  ]
@@ -199,7 +199,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "xtables",	  nil	  ]
@@ -233,7 +233,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "wisc",	  1		  ]
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_28  #
 # (str)	  (void)  #
 #-----------------#
 [ "wisc", nil	  ]
@@ -306,7 +306,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "url",	  1		  ]
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_28  #
 # (str)	  (void)  #
 #-----------------#
 [ "url",  nil	  ]
@@ -333,7 +333,6 @@ others@batloop{
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
@@ -345,12 +344,8 @@ others@batloop{
 # (str)	  (void)  #
 #-----------------#
 [ "unix", nil	  ]
-[ "blob", nil	  ]
 
 	dropping unix
-
-
-	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -379,7 +374,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "uchr",	  1		  ]
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_28  #
 # (str)	  (void)  #
 #-----------------#
 [ "uchr", nil	  ]
@@ -413,7 +408,7 @@ others@batloop{
 [ "tpcd",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_32  #
 # (str)	  (void)  #
 #-----------------#
 [ "tpcd", nil	  ]
@@ -447,7 +442,7 @@ others@batloop{
 [ "tcpip",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_32  #
 # (str)		  (void)  #
 #-------------------------#
 [ "tcpip",	  nil	  ]
@@ -482,7 +477,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_24  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "streams",	  nil	  ]
@@ -516,7 +511,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_32  #
 # (str)		  (void)  #
 #-------------------------#
 [ "stats",	  nil	  ]
@@ -550,7 +545,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_29  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "salgebra",	  nil	  ]
@@ -584,7 +579,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_33  #
 # (str)		  (void)  #
 #-------------------------#
 [ "radix",	  nil	  ]
@@ -621,7 +616,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "uchr",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_29  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "qt",		  nil	  ]
@@ -667,7 +662,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_33  #
 # (str)		  (void)  #
 #-------------------------#
 [ "perfex",	  nil	  ]
@@ -701,7 +696,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_30  #
+# BAT:	  tmp_27  #
 # (str)	  (void)  #
 #-----------------#
 [ "oo7",  nil	  ]
@@ -735,7 +730,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_33  #
 # (str)		  (void)  #
 #-------------------------#
 [ "monettime",	  nil	  ]
@@ -769,7 +764,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "mmath",	  nil	  ]
@@ -803,14 +798,13 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_30  #
+# BAT:	  tmp_34  #
 # (str)	  (void)  #
 #-----------------#
 [ "mel",  nil	  ]
 
 	dropping mel
 
-#BBPreclaim: bat(26) view=0 mod=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -839,7 +833,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_34  #
 # (str)		  (void)  #
 #-------------------------#
 [ "mapi",	  nil	  ]
@@ -877,7 +871,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_29  #
+# BAT:		  tmp_35  #
 # (str)		  (void)  #
 #-------------------------#
 [ "malalgebra",	  nil	  ]
@@ -911,7 +905,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_33  #
 # (str)		  (void)  #
 #-------------------------#
 [ "logger",	  nil	  ]
@@ -945,7 +939,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_31  #
+# BAT:	  tmp_35  #
 # (str)	  (void)  #
 #-----------------#
 [ "lock", nil	  ]
@@ -979,7 +973,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_29  #
+# BAT:		  tmp_34  #
 # (str)		  (void)  #
 #-------------------------#
 [ "iterator",	  nil	  ]
@@ -1052,7 +1046,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_31  #
+# BAT:		  tmp_33  #
 # (str)		  (void)  #
 #-------------------------#
 [ "decimal",	  nil	  ]
@@ -1089,7 +1083,7 @@ others@batloop{
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_29  #
+# BAT:		  tmp_35  #
 # (str)		  (void)  #
 #-------------------------#
 [ "ddbench",	  nil	  ]
@@ -1135,14 +1129,13 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_29  #
+# BAT:		  tmp_36  #
 # (str)		  (void)  #
 #-------------------------#
 [ "counters",	  nil	  ]
 
 	dropping counters
 
-#BBPreclaim: bat(26) view=0 mod=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1170,7 +1163,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_30  #
+# BAT:	  tmp_35  #
 # (str)	  (void)  #
 #-----------------#
 [ "blob", nil	  ]
@@ -1204,7 +1197,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_36  #
 # (str)		  (void)  #
 #-------------------------#
 [ "bitvector",	  nil	  ]
@@ -1238,14 +1231,13 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_31  #
+# BAT:		  tmp_37  #
 # (str)		  (void)  #
 #-------------------------#
 [ "bitset",	  nil	  ]
 
 	dropping bitset
 
-#BBPreclaim: bat(26) view=0 mod=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1273,7 +1265,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_35  #
 # (str)		  (void)  #
 #-------------------------#
 [ "bat_arith",	  nil	  ]
@@ -1308,7 +1300,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_36  #
 # (str)		  (void)  #
 #-------------------------#
 [ "ascii_io",	  nil	  ]
@@ -1346,7 +1338,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_37  #
 # (str)		  (void)  #
 #-------------------------#
 [ "alarm",	  nil	  ]
@@ -1380,7 +1372,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_35  #
 # (str)		  (void)  #
 #-------------------------#
 [ "aggrX3",	  nil	  ]
@@ -1414,7 +1406,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_31  #
+# BAT:	  tmp_36  #
 # (str)	  (void)  #
 #-----------------#
 [ "aggr", nil	  ]
@@ -1434,7 +1426,7 @@ others@batloop{
 [ "trans",	  1		  ]
 quit;
 
-# 00:13:17 >  
-# 00:13:17 >  Done.
-# 00:13:17 >  
+# 17:03:32 >  
+# 17:03:32 >  Done.
+# 17:03:32 >  
 
