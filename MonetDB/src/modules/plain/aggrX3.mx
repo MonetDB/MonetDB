@@ -822,7 +822,7 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 		"var" for varsized b/bn-tail-type
 */
 @= extreme_typed
-int aggrX3_@1_@3_@4(BAT **ret, BAT *b, BAT *e){
+static int aggrX3_@1_@3_@4(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int (*cmp)(ptr,ptr);
 	ptr nil;
@@ -1345,7 +1345,7 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 */
 @= arithsum3
 
-BAT* aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, size_t range, oid min, oid max){
+static int aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, size_t range, oid min, oid max){
 	@2 zero = (@2) 0, *sums;
 	BUN p, q, r;
 	int xx;
@@ -1357,7 +1357,7 @@ BAT* aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, size_t
 	                             bn->batId,b->batId,g->batId,e->batId,range,(size_t) min,(size_t) max);
 	@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,&sums[(*(oid*)h)-min],,@2)@
 	
-	return bn;
+	return GDK_SUCCEED;
 }
 
 int CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
@@ -1379,6 +1379,8 @@ int CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
 		return CMDaggrX3_sum_@1_@2(ret, BATjoin(BATmirror(g),b,oid_nil), e);
 	}
+
+	*ret = bn;
 
 	/* init: set all sums to zero and calculate min/max oid */
 	@:init_result(@2)@
@@ -1412,7 +1414,7 @@ int CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 		/* array lookup */
 		if (b->htype == TYPE_void) {
 			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				bn = aggrX3_sum3_@1_@2_EarrayBvoidGvoid (bn, b, g, e, range, min, max);
+				return aggrX3_sum3_@1_@2_EarrayBvoidGvoid (bn, b, g, e, range, min, max);
 			} else {
 				@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,&sums[(*(oid*)h)-min],if (w >= base && w < end),@2)@
 			}
@@ -1421,7 +1423,6 @@ int CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 		}
 	}
 			
-	*ret = bn;
 	return GDK_SUCCEED;
 }
 @c
@@ -1437,7 +1438,7 @@ int CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 */
 @= arithprod3
 
-BAT* aggrX3_prod3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, size_t range, oid min, oid max){
+static int aggrX3_prod3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, size_t range, oid min, oid max){
 	@2 zero = (@2) 1, *prods;
 	BUN p, q, r;
 	int xx;
@@ -1449,7 +1450,7 @@ BAT* aggrX3_prod3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, size_
 	                             bn->batId,b->batId,g->batId,e->batId,range,(size_t) min,(size_t) max);
 	@:aggrX3_prod3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,&prods[(*(oid*)h)-min],,@2)@
 	
-	return bn;
+	return GDK_SUCCEED;
 }
 
 int CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
@@ -1471,6 +1472,8 @@ int CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
 		return CMDaggrX3_prod_@1_@2(ret, BATjoin(BATmirror(g),b,oid_nil), e);
 	}
+
+	*ret = bn;
 
 	/* init: set all prods to zero and calculate min/max oid */
 	@:init_result(@2)@
@@ -1504,7 +1507,7 @@ int CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 		/* array lookup */
 		if (b->htype == TYPE_void) {
 			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				bn = aggrX3_prod3_@1_@2_EarrayBvoidGvoid (bn, b, g, e, range, min, max);
+				return aggrX3_prod3_@1_@2_EarrayBvoidGvoid (bn, b, g, e, range, min, max);
 			} else {
 				@:aggrX3_prod3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,&prods[(*(oid*)h)-min],if (w >= base && w < end),@2)@
 			}
@@ -1513,7 +1516,6 @@ int CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 		}
 	}
 			
-	*ret = bn;
 	return GDK_SUCCEED;
 }
 @c
@@ -1693,7 +1695,7 @@ int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 		"var" for varsized b/bn-tail-type
 */
 @= extreme3_typed
-int aggrX3_@13_@3_@4(BAT **ret, BAT *b, BAT *g, BAT *e){
+static int aggrX3_@13_@3_@4(BAT **ret, BAT *b, BAT *g, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int (*cmp)(ptr,ptr);
 	ptr nil;
