@@ -142,6 +142,7 @@ static int TWIG_ID[] = {
     [p_tag]          = tag,          /* (fixed) tag name */
     [p_pi]           = pi,           /* <?...?> content */
     [p_comment]      = comment,      /* <!--...--> content */
+    [p_contseq]      = contseq,      /* content sequence (in constructors) */
     [p_xquery]       = xquery,       /* root of the query parse tree */
     [p_prolog]       = prolog,       /* query prolog */
     [p_decl_imps]    = decl_imps,    /* list of declarations and imports */
@@ -160,10 +161,110 @@ static int TWIG_ID[] = {
 /** twig: setup twig */
 #include "twig.h"
 
-/* we define a function varref() later and don't want it to be
- * overridden by the twig definition for the node type.
+/*
+ * Undefine all the macros that Twig has defined.
  */
+#undef plus
+#undef minus
+#undef mult
+#undef div_
+#undef idiv
+#undef mod
+#undef and
+#undef or
+#undef lt
+#undef le
+#undef gt
+#undef ge
+#undef eq
+#undef ne
+#undef val_lt
+#undef val_le
+#undef val_gt
+#undef val_ge
+#undef val_eq
+#undef val_ne
+#undef uplus
+#undef uminus
+#undef lit_int
+#undef lit_dec
+#undef lit_dbl
+#undef lit_str
+#undef is
+#undef nis
+#undef step
 #undef varref
+#undef var
+#undef namet
+#undef kindt
+#undef locpath
+#undef root_
+#undef dot
+#undef ltlt
+#undef gtgt
+#undef flwr
+#undef binds
+#undef nil
+#undef empty_seq
+#undef bind
+#undef let
+#undef exprseq
+#undef range
+#undef union_
+#undef intersect
+#undef except
+#undef pred
+#undef if_
+#undef some
+#undef every
+#undef orderby
+#undef orderspecs
+#undef instof
+#undef seq_ty
+#undef empty_ty
+#undef node_ty
+#undef item_ty
+#undef atom_ty
+#undef atomval_ty
+#undef named_ty
+#undef req_ty
+#undef req_name
+#undef typeswitch
+#undef cases
+#undef case_
+#undef schm_path
+#undef schm_step
+#undef glob_schm
+#undef glob_schm_ty
+#undef castable
+#undef cast
+#undef treat
+#undef validate
+#undef fun_ref
+#undef args
+#undef char_
+#undef doc
+#undef elem
+#undef attr
+#undef text
+#undef tag
+#undef pi
+#undef comment
+#undef contseq
+#undef xquery
+#undef prolog
+#undef decl_imps
+#undef xmls_decl
+#undef coll_decl
+#undef ns_decl
+#undef fun_decls
+#undef fun_decl
+#undef ens_decl
+#undef fns_decl
+#undef schm_imp
+#undef params
+#undef param
+
 
 /**
  * Normalize abstract syntax tree.

@@ -172,6 +172,7 @@ static int TWIG_ID[] = {
     [p_tag]          tag,          /* (fixed) tag name */
     [p_pi]           pi,           /* <?...?> content */
     [p_comment]      comment,      /* <!--...--> content */
+    [p_contseq]      contseq,      /* constructor content sequence */
     [p_xquery]       xquery,       /* root of the query parse tree */
     [p_prolog]       prolog,       /* query prolog */
     [p_decl_imps]    decl_imps,    /* list of declarations and imports */
@@ -278,6 +279,7 @@ static int TWIG_ID[] = {
 #undef tag          
 #undef pi           
 #undef comment      
+#undef contseq
 #undef xquery       
 #undef prolog       
 #undef decl_imps    

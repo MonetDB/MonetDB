@@ -33,19 +33,6 @@ prologue {
  * $Id$
  */
 
-/*
- * NOTE (Revision Information):
- *
- * Changes in the Core2MIL_Summer2004 branch have been merged into
- * this file on July 15, 2004. I have tagged this file in the
- * Core2MIL_Summer2004 branch with `merged-into-main-15-07-2004'.
- *
- * For later merges from the Core2MIL_Summer2004, please only merge
- * the changes since this tag.
- *
- * Jens
- */
-
 
 #include "pathfinder.h"
 #include "normalize.h"
@@ -146,6 +133,7 @@ node  plus         /* binary + */
       tag          /* (fixed) tag name */
       pi           /* <?...?> content */
       comment      /* <!--...--> content */
+      contseq      /* constructor content sequence */
       xquery       /* root of the query parse tree */
       prolog       /* query prolog */
       decl_imps    /* list of declarations and imports */
@@ -220,6 +208,8 @@ label Query
       Constructor
       ElementConstructor
       ElementContent
+      OptContSequence_
+      ContSequence
       TagName
       XmlComment
       XmlProcessingInstruction
@@ -606,7 +596,7 @@ TypeswitchExpr:         typeswitch (Expr,
                                           $1$,
                                           p_wire2 (p_cases, $2.1$->loc,
                                                    $2.1$,
-                                                   p_leaf (nil, $2.1$->loc)),
+                                                   p_leaf (p_nil, $2.1$->loc)),
                                           varref (v1, $2.1$->loc),
                                           p_wire4 (p_typeswitch, $2.2$->loc,
                                                    varref (v1, $2.1$->loc),
@@ -700,7 +690,7 @@ ValueExpr:              ValidateExpr;
 ValueExpr:              CastExpr;
 ValueExpr:              TreatExpr;
 ValueExpr:              Constructor;
-ValueExpr:              PathExpr;                       
+ValueExpr:              PathExpr;
 
 ValidateExpr:           validate (OptSchemaContext_, Expr);
 
@@ -745,9 +735,45 @@ XmlProcessingInstruction: pi (lit_str);
 TagName:                tag;
 TagName:                Expr;
 
-ElementContent:         OptExprSequence_;
+ElementContent:         OptContSequence_;
 
-AttributeValue:         OptExprSequence_;
+AttributeValue:         OptContSequence_;
+
+OptContSequence_:       empty_seq;
+OptContSequence_:       ContSequence;
+
+ContSequence:           contseq (Expr, empty_seq);
+ContSequence:           contseq (empty_seq, OptContSequence_)
+                        {
+                          cost = 1;
+			  REWRITE;
+                        } = 
+                        {
+                          /* in case there is an empty sequence as 
+                           * first child of a contseq node, let the
+                           * second child of this node become the node
+                           * itself. 
+                           */
+                          return $2$;
+                        };
+ContSequence:           contseq (Expr, ContSequence);
+ContSequence:           contseq (ContSequence, ContSequence)
+                        {
+                          REWRITE;
+                        } = 
+                        { /* Rewrite content sequence to be right-deep:
+                           * concatenate the sequence and the expression
+                           * (discarding the exprseq root).
+                           */
+			  return concat (p_contseq, $1$, $2$);
+			};
+ContSequence:           contseq (ContSequence, empty_seq)
+                        {
+                            cost = 1;
+                            REWRITE;
+                        } =
+                        { return $1$; };
+
 
 Context_:               PathExpr;
 Context_:               dot;

@@ -135,6 +135,7 @@ char *p_id[]  = {
     , [p_tag]               = "tag"
     , [p_pi]                = "pi"
     , [p_comment]           = "comment"                                    
+    , [p_contseq]           = "contseq"
     , [p_xquery]            = "xquery"                                     
     , [p_prolog]            = "prolog"                                     
     , [p_decl_imps]         = "decl_imps"                                  

@@ -134,6 +134,7 @@ enum PFptype_t {
   p_tag,          /**< (fixed) tag name */
   p_pi,           /**< <?...?> content */
   p_comment,      /**< <!--...--> content */
+  p_contseq,      /**< content sequence (in constructors) */
   p_xquery,       /**< root of the query parse tree */
   p_prolog,       /**< query prolog */
   p_decl_imps,    /**< list of declarations and imports */

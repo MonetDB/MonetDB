@@ -165,6 +165,7 @@ node  plus         /* binary + */
       tag          /* (fixed) tag name */
       pi           /* <?...?> content */
       comment      /* <!--...--> content */
+      contseq      /* constructor content sequence */
       xquery       /* root of the query parse tree */
       prolog       /* query prolog */
       decl_imps    /* list of declarations and imports */
@@ -236,6 +237,8 @@ label Query
       AttributeConstructor          
       TextConstructor
       AttributeValue
+      OptContSequence_
+      ContSequence
       PathExpr
       LocationStep_
       LocationPath_
@@ -1596,9 +1599,57 @@ TagName:                Expr
     }
     ;
 
-ElementContent:         OptExprSequence_;
+ElementContent:         OptContSequence_;
 
-AttributeValue:         OptExprSequence_;
+AttributeValue:         OptContSequence_;
+
+OptContSequence_:       EmptySequence_;
+OptContSequence_:       ContSequence;
+
+ContSequence:           contseq (Expr, EmptySequence_)
+    =
+    {
+        /*
+         * let $v1 := [[ e1 ]] return
+         *   let $v2 := [[ e2 ]] return
+         *     let $v3 := fs:item-sequence-to-node-sequence($v1) return
+         *       ( $v3, $v2 )
+         */
+        PFvar_t *v1 = new_var (NULL);
+        PFvar_t *v2 = new_var (NULL);
+        PFvar_t *v3 = new_var (NULL);
+        PFfun_t *is2ns = 
+                function (PFqname (PFns_pf, "item-sequence-to-node-sequence"));
+
+        [[ $$ ]] =
+            let (var (v1), [[ $1$ ]],
+                 let (var (v2), [[ $2$ ]],
+                      let (var (v3), APPLY (is2ns, var (v1)),
+                           seq (var (v3), var (v2)))));
+    }
+    ;
+ContSequence:           contseq (Expr, ContSequence)
+    =
+    {
+        /*
+         * let $v1 := [[ e1 ]] return
+         *   let $v2 := [[ e2 ]] return
+         *     let $v3 := fs:item-sequence-to-node-sequence($v1) return
+         *       ( $v3, $v2 )
+         */
+        PFvar_t *v1 = new_var (NULL);
+        PFvar_t *v2 = new_var (NULL);
+        PFvar_t *v3 = new_var (NULL);
+        PFfun_t *is2ns = 
+                function (PFqname (PFns_pf, "item-sequence-to-node-sequence"));
+
+        [[ $$ ]] =
+            let (var (v1), [[ $1$ ]],
+                 let (var (v2), [[ $2$ ]],
+                      let (var (v3), APPLY (is2ns, var (v1)),
+                           seq (var (v3), var (v2)))));
+    }
+    ;
 
 PathExpr:               StepExpr;
 PathExpr:               LocationPath_;

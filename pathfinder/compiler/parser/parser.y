@@ -1543,8 +1543,7 @@ OptS                        : /* empty */
 ElementContents_            : /* empty */
                               { $$ = p_leaf (p_empty_seq, @$); }
                             | ElementContent ElementContents_
-                              { $$ = p_wire2 (p_exprseq, @$,
-                                              $1, $2); }
+                              { $$ = p_wire2 (p_contseq, @$, $1, $2); }
                             ;
 
 /* [95] */
@@ -1558,11 +1557,15 @@ ComputedElementConstructor  : "element QName {" OptExprSequence_ '}'
                                               (c = p_leaf (p_tag, @1),
                                                c->sem.qname = $1,
                                                c),
-                                              $2
+                                              p_wire2 (p_contseq, @2, $2,
+                                                       p_leaf (p_empty_seq, @2))
                                               ); 
                               }
                             | "element {" Expr '}' '{' OptExprSequence_ '}'
-                              { $$ = p_wire2 (p_elem, @$, $2, $5); }
+                              { $$ = p_wire2 (p_elem, @$, $2, 
+                                              p_wire2 (p_contseq, @5, $5,
+                                                       p_leaf (p_empty_seq,
+                                                               @2))); }
                             ;
 
 /* [97] */
@@ -1571,11 +1574,15 @@ ComputedAttributeConstructor: "attribute QName {" OptExprSequence_ '}'
                                               (c = p_leaf (p_tag, @1),
                                                c->sem.qname = $1,
                                                c),
-                                              $2
+                                              p_wire2 (p_contseq, @2, $2,
+                                                       p_leaf (p_empty_seq, @2))
                                               ); 
                               }
                             | "attribute {" Expr '}' '{' OptExprSequence_ '}'
-                              { $$ = p_wire2 (p_attr, @$, $2, $5); }
+                              { $$ = p_wire2 (p_attr, @$, $2,
+                                              p_wire2 (p_contseq, @5, $5,
+                                                       p_leaf (p_empty_seq,
+                                                               @5))); }
                             ;
 
 /* [98] */
@@ -1709,8 +1716,7 @@ AttributeValue              : '"' QuotAttributeValueContents_ '"'
 QuotAttributeValueContents_ : /* empty */
                               { $$ = p_leaf (p_empty_seq, @$); }
                             | QuotAttributeContent QuotAttributeValueContents_
-                              { $$ = p_wire2 (p_exprseq, @$,
-                                              $1, $2); }
+                              { $$ = p_wire2 (p_contseq, @$, $1, $2); }
                             ;
 
 QuotAttributeContent        : QuotAttributeContentTexts_
@@ -1753,8 +1759,7 @@ QuotAttributeContentText_   : Char                   { $$ = $1; }
 AposAttributeValueContents_ : /* empty */
                               { $$ = p_leaf (p_empty_seq, @$); }
                             | AposAttributeContent AposAttributeValueContents_
-                              { $$ = p_wire2 (p_exprseq, @$,
-                                              $1, $2); }
+                              { $$ = p_wire2 (p_contseq, @$, $1, $2); }
                             ;
 
 AposAttributeContent        : AposAttributeContentTexts_
@@ -1992,7 +1997,6 @@ flatten_locpath (PFpnode_t *p, PFpnode_t *r)
     }
     return p;
 }
-
 
 /**
  * Invoked by bison whenever a parsing error occurs.
