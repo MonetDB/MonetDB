@@ -94,3 +94,19 @@ SELECT '' AS TYPE_CAT, '' AS TYPE_SCHEM, '' AS TYPE_NAME,
 0 AS ORDINAL_POSITION, 'YES' AS IS_NULLABLE,
 '' AS SCOPE_CATALOG, '' AS SCOPE_SCHEMA, '' AS SCOPE_TABLE,
 0 AS SOURCE_DATA_TYPE WHERE 1 = 0;
+
+-- getIndexInfo
+SELECT null AS TABLE_CAT, schemas.name AS TABLE_SCHEM,
+tables.name AS TABLE_NAME, idxs.type as nonunique,
+null AS INDEX_QUALIFIER, idxs.name AS INDEX_NAME,
+0 AS TYPE,
+columns.number AS ORDINAL_POSITION, columns.name AS COLUMN_NAME,
+null AS ASC_OR_DESC, 0 AS PAGES,
+null AS FILTER_CONDITION
+	FROM idxs, columns, keycolumns, tables, schemas
+	WHERE idxs.table_id = tables.id
+		AND tables.schema_id = schemas.id
+		AND keycolumns.id = idxs.id
+		AND columns.name = keycolumns."column"
+		AND columns.table_id = tables.id
+	ORDER BY nonunique, TYPE, INDEX_NAME, ORDINAL_POSITION;
