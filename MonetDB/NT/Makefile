@@ -23,6 +23,7 @@ all-msc: config.h unistd.h sys\socket.h
 
 config.h: winconfig.h
 	$(INSTALL) winconfig.h config.h
+	$(ECHO) #define MONET_PREFIX "." >> config.h
 
 unistd.h: 
 	$(ECHO) #ifndef UNISTD_H > unistd.h
