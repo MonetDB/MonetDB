@@ -384,6 +384,8 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	opt_grantor
 	opt_from_grantor
 	opt_column
+	opt_prep
+	exec
 	grantor
 	transaction_mode
 	transaction_mode_list
@@ -456,7 +458,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token TEMPORARY 
 %token<sval> AS ASC DESC AUTHORIZATION 
 %token CHECK CONSTRAINT CREATE 
-%token MODULE TYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME EXECUTE
+%token MODULE TYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN 
 %token PASSWORD GRANT REVOKE ROLE ADMIN HAVING INTO 
@@ -1423,7 +1425,7 @@ join_spec:
   ;
 
 sql: 
-    select_stmt 
+    opt_prep select_stmt 	{ $$ = $2; }
  ;
 
 select_stmt:
@@ -1874,6 +1876,7 @@ value_exp:
     atom
  |  column_ref 			{ $$ = _symbol_create_list( SQL_COLUMN, $1); }
  |  aggr_ref 
+ |  exec func_ref		{ $$ = $2; } 
  |  func_ref 
  |  datetime_funcs
  |  string_funcs
@@ -1908,18 +1911,23 @@ datetime_funcs:
   		  		  dlist_append_string(l, _strdup(ident));
   		  		  dlist_append_symbol(l, $5);
 		  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
- |  CURRENT_DATE 
+ |  CURRENT_DATE opt_brackets 
  			{ dlist *l = dlist_create();
 			  dlist_append_string(l, _strdup("current_date"));
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
- |  CURRENT_TIME 
+ |  CURRENT_TIME opt_brackets
  			{ dlist *l = dlist_create();
 			  dlist_append_string(l, _strdup("current_time"));
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
- |  CURRENT_TIMESTAMP 
+ |  CURRENT_TIMESTAMP opt_brackets
  			{ dlist *l = dlist_create();
 			  dlist_append_string(l, _strdup("current_timestamp"));
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
+ ;
+
+opt_brackets:
+ 	/* empty */
+ | '(' ')'
  ;
 
 string_funcs:
@@ -2566,6 +2574,20 @@ string:
  |  STRING string
 		{ $$ = strconcat($1,$2); _DELETE($1); _DELETE($2); }
  ;
+
+opt_prep:
+     PREPARE 	{ mvc *m = (mvc*)parm; 
+		  m->mode = m_prepare; 
+		  $$ = (int)m_prepare; }
+ | /*nothing*/  { $$ = (int)m_normal; }
+ ;
+
+exec:
+     EXECUTE 	{ mvc *m = (mvc*)parm; 
+		  m->mode = m_execute; 
+		  $$ = (int)m_execute; }
+ ;
+
 
 
 %%

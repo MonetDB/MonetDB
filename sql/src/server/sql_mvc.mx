@@ -207,6 +207,12 @@ typedef struct res_table {
 
 #define ERRSIZE 1024
 
+typedef enum modes_t {
+	m_normal = 0,
+	m_prepare = 1,
+	m_execute = 2
+} modes_t;
+
 typedef struct mvc {
 	char 	errstr[ERRSIZE];
 
@@ -226,7 +232,7 @@ typedef struct mvc {
 	char *user;
 	char *role;
 
-	int prepare;
+	modes_t mode;
 	int auto_commit;
 	int reply_size;
 	int debug;
@@ -2873,7 +2879,7 @@ mvc *mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 	m->role_id = m->user_id = -1;
 	m->schema = m->role = m->user = NULL;
 
-	m->prepare = 0;
+	m->mode = 0;
 	m->auto_commit = 0;
 	m->reply_size = -1;
 	m->debug = 0;
