@@ -421,10 +421,10 @@ Module: "malalgebra"
 [ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "grouped tail sum"						  ]
 [ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "grouped tail sum"						  ]
 [ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "Choose a different implementation if b is sorted on head."	  ]
-[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "not available"						  ]
-[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,int]) : BAT[oid,int]",					  "not available"						  ]
-[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "not available"						  ]
-[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "not available"						  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,int]) : BAT[oid,int]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "Choose a different implementation if b is sorted on head."	  ]
 
 Module: "mapi"
 
@@ -920,8 +920,8 @@ Module: "wisc"
 
 Module: "xtables"
 
-[ 19 ]
-[ 19 ]
+[ 20 ]
+[ 20 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature									| help																																						  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -938,6 +938,7 @@ Module: "xtables"
 [ "CTsubgroup",		  "PROC: ",	  "CTsubgroup(BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",	  "not available"																																				  ]
 [ "CTsubhisto",		  "COMMAND: ",	  "CTsubhisto(BAT[void,bit], BAT[void,oid], BAT[oid,any]) : BAT[oid,int]",	  "optimized sub-histogram for synced grp[void,oid] and sel[void,bit] \n         bats on a previously known domain "																								  ]
 [ "histogram",		  "COMMAND: ",	  "histogram(BAT[oid,any::1]) : BAT[any::1,int]",				  "compute a histogram on the tail. Optimized for retrieving the\n         already present histogram on a cross-table computed by CTgroup."																					  ]
+[ "_CTgroup",		  "COMMAND: ",	  "_CTgroup(BAT[oid,any], int, int) : BAT[oid,oid]",				  "Cross tabulation group initialization like CTgroup, but with user\n         provided #bits in hashmask and #distinct values in range."																					  ]
 [ "orderby_table",	  "PROC: ",	  "orderby_table(str, str, ..BAT[any::1,any]..) : any",				  "not available"																																				  ]
 [ "print",		  "PROC: ",	  "print(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",			  "not available"																																				  ]
 [ "table",		  "PROC: ",	  "table(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",			  "not available"																																				  ]

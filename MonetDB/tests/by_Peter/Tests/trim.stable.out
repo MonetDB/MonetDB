@@ -1,11 +1,16 @@
 stdout of test 'trim` in directory 'tests/by_Peter` itself:
 
-#> Mtest:	milM trim milM
-#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_by_Peter trim.milM
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Tue May 23 05:50:46 MET DST 2000.
-#script:trim.milM
+
+# 06:06:11 >  
+# 06:06:11 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_tests_by_Peter  < trim.milM
+# 06:06:11 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for sparc-sun-solaris2.8/64bit; dynamically linked.
+# dbfarm:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm
+# dbname:Tests_tests_by_Peter
+# dbdir:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_tests_by_Peter
 
 loaded;
 #---------------------------------#
@@ -23,19 +28,17 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #---------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt  #
 #---------------------------------------------------------------------------------------------------------#
 [ "monet_acctbl",	  "str",  "int",  2,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  435,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  "oid",  "ptr",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1229,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -59,12 +62,12 @@ Try: modules;                - for other modules.
 [ "b1",			  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0	  ]
 [ "monet_acctbl",	  "str",  "int",  2,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  435,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  "oid",  "ptr",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1229,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -89,12 +92,12 @@ Try: modules;                - for other modules.
 [ "b2",			  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0	  ]
 [ "monet_acctbl",	  "str",  "int",  2,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  435,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  "oid",  "ptr",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1229,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -120,12 +123,12 @@ Try: modules;                - for other modules.
 [ "b3",			  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0	  ]
 [ "monet_acctbl",	  "str",  "int",  2,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  435,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  "oid",  "ptr",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1229,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -152,12 +155,12 @@ Try: modules;                - for other modules.
 [ "b4",			  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0	  ]
 [ "monet_acctbl",	  "str",  "int",  2,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  435,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  "oid",  "ptr",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1229,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -185,12 +188,12 @@ Try: modules;                - for other modules.
 [ "b5",			  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0	  ]
 [ "monet_acctbl",	  "str",  "int",  2,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  435,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  "oid",  "ptr",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1229,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -219,12 +222,12 @@ Try: modules;                - for other modules.
 [ "b6",			  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0	  ]
 [ "monet_acctbl",	  "str",  "int",  2,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  435,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  "oid",  "ptr",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1229,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -254,12 +257,12 @@ Try: modules;                - for other modules.
 [ "b7",			  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0	  ]
 [ "monet_acctbl",	  "str",  "int",  2,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  435,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  "oid",  "ptr",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1229,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -290,12 +293,12 @@ Try: modules;                - for other modules.
 [ "b8",			  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0	  ]
 [ "monet_acctbl",	  "str",  "int",  2,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  435,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  "oid",  "ptr",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1229,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -327,12 +330,12 @@ Try: modules;                - for other modules.
 [ "b9",			  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0	  ]
 [ "monet_acctbl",	  "str",  "int",  2,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  435,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  "oid",  "ptr",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  498,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1229,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -365,12 +368,12 @@ Try: modules;                - for other modules.
 [ "b9",			  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0	  ]
 [ "monet_acctbl",	  "str",  "int",  2,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  435,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  "oid",  "ptr",  499,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  499,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1231,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -406,12 +409,12 @@ Try: modules;                - for other modules.
 [ "b9",			  "oid",  "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0	  ]
 [ "monet_acctbl",	  "str",  "int",  2,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  435,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  "oid",  "ptr",  499,		  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  468,		  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  469,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  499,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1231,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,		  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -428,3 +431,8 @@ Try: modules;                - for other modules.
 [ "monet_mod_use",	  "oid",  "ptr",  7,		  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "tmp_23",		  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "tmp_24",		  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 1	  ]
+
+# 06:06:15 >  
+# 06:06:15 >  Done.
+# 06:06:15 >  
+

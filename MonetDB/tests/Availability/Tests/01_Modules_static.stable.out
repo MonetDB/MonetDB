@@ -1,11 +1,16 @@
 stdout of test '01_Modules_static` in directory 'tests/Availability` itself:
 
-#> Mtest:	milS 01_Modules_static milS
-#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_Availability -single 01_Modules_static.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Tue May 23 05:50:46 MET DST 2000.
-#script:01_Modules_static.milS
+
+# 06:04:14 >  
+# 06:04:14 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_tests_Availability  < 01_Modules_static.milS
+# 06:04:14 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for sparc-sun-solaris2.8/64bit; dynamically linked.
+# dbfarm:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm
+# dbname:Tests_tests_Availability
+# dbdir:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_tests_Availability
 
 loaded;
 #---------------------------------#
@@ -39,7 +44,7 @@ Try: modules;                - for other modules.
 
 Module: ""
 
-[ 30 ]
+[ 29 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature										| help																																								  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -48,8 +53,8 @@ Module: ""
 [ "cold",	  "PROC: ",	  "cold(BAT[any::1,any::2]) : void",							  "not available"																																						  ]
 [ "destroy",	  "PROC: ",	  "destroy(BAT[any,any]) : any",							  "not available"																																						  ]
 [ "destroy",	  "PROC: ",	  "destroy(str) : any",									  "not available"																																						  ]
-[ "dir",	  "PROC: ",	  "dir() : void",									  "not available"																																						  ]
 [ "dir",	  "PROC: ",	  "dir(BAT[int,str]) : any",								  "not available"																																						  ]
+[ "dir",	  "PROC: ",	  "dir(str) : void",									  "not available"																																						  ]
 [ "dir_leaks",	  "PROC: ",	  "dir_leaks() : any",									  "not available"																																						  ]
 [ "help",	  "PROC: ",	  "help() : <predefinition>",								  "not available"																																						  ]
 [ "help_sig",	  "PROC: ",	  "help_sig(oid) : void",								  "not available"																																						  ]
@@ -67,7 +72,6 @@ Module: ""
 [ "new",	  "PROC: ",	  "new(int, int) : BAT[any,any]",							  "not available"																																						  ]
 [ "new",	  "PROC: ",	  "new(int, int, int) : BAT[any,any]",							  "not available"																																						  ]
 [ "project",	  "PROC: ",	  "project(BAT[any::1,any]) : BAT[any::1,void]",					  "not available"																																						  ]
-[ "readonly",	  "PROC: ",	  "readonly(BAT[any::1,any::2], int) : BAT[any::1,any::2]",				  "not available"																																						  ]
 [ "save",	  "PROC: ",	  "save(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "not available"																																						  ]
 [ "ttype",	  "PROC: ",	  "ttype(BAT[any,any]) : int",								  "not available"																																						  ]
 [ "tunique",	  "PROC: ",	  "tunique(BAT[any,any::1]) : BAT[any::1,void]",					  "not available"																																						  ]
@@ -509,7 +513,7 @@ Module: "str"
 
 Module: "sys"
 
-[ 62 ]
+[ 63 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature									| help																																																															  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -517,7 +521,7 @@ Module: "sys"
 [ "check_bbp_size",	  "COMMAND: ",	  "check_bbp_size() : lng",							  "Walk the BBP directories, delete leftovers and return total size"																																																							  ]
 [ "clients",		  "PROC: ",	  "clients() : void",								  "list all active clients by their number."																																																										  ]
 [ "cpu",		  "PROC: ",	  "cpu() : BAT[str,int]",							  "Global cpu usage info"																																																												  ]
-[ "dir",		  "PROC: ",	  "dir(str) : void",								  "list all bats, including system bats. Optionally filter on name with a certain substring"																																																				  ]
+[ "dir",		  "PROC: ",	  "dir() : void",								  "list all bats, including system bats. Optionally filter on name with a certain substring"																																																				  ]
 [ "env",		  "PROC: ",	  "env() : void",								  "list the values of all environment variables"																																																									  ]
 [ "environment",	  "PROC: ",	  "environment() : BAT[str,str]",						  "deprecated"																																																														  ]
 [ "exit",		  "PROC: ",	  "exit() : void",								  "quit for consultants"																																																												  ]
@@ -541,7 +545,8 @@ Module: "sys"
 [ "print",		  "COMMAND: ",	  "print(int, BAT[any::1,any], ..BAT[any::1,any]..) : void",			  "The same as normal table print, but enforces to use the order of\n  BAT number [1..argc] to do the printing."																																																	  ]
 [ "printf",		  "COMMAND: ",	  "printf(str, ..any..) : void",						  "Print a formatted string on the standard client output."																																																								  ]
 [ "procs",		  "PROC: ",	  "procs() : void",								  "list all defined procs."																																																												  ]
-[ "readonly",		  "PROC: ",	  "readonly(BAT[any::1,any::2]) : int",						  "deprecated. Use 'info.find(batRestricted)' instead."																																																									  ]
+[ "readonly",		  "PROC: ",	  "readonly(BAT[any::1,any::2]) : int",						  "deprecated. Use 'b.access' instead."																																																											  ]
+[ "readonly",		  "PROC: ",	  "readonly(BAT[any::1,any::2], int) : BAT[any::1,any::2]",			  "deprecated. Use 'info.find(batRestricted)' instead."																																																									  ]
 [ "rename",		  "PROC: ",	  "rename(BAT[any::1,any::2], str) : BAT[any::1,any::2]",			  "try to name a BAT and fail if it is not possible."																																																									  ]
 [ "sigs",		  "PROC: ",	  "sigs(str) : void",								  "Show all signatures of the functions in a module."																																																									  ]
 [ "sprintf",		  "COMMAND: ",	  "sprintf(str, ..any..) : str",						  "Print a formatted string on the standard client output."																																																								  ]

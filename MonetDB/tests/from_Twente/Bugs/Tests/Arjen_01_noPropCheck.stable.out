@@ -1,12 +1,26 @@
 stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itself:
 
-#> Mtest (22:25:10):	other Arjen_01_noPropCheck 1200
-#> Mtest (22:25:10):	Mtimeout -timeout 1200 ./Arjen_01_noPropCheck Arjen_01_noPropCheck
-#> Mlog (22:25:10):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -db tests_from_Twente_Bugs Arjen_01.milM
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:Arjen_01.milM
+
+# 06:08:04 >  
+# 06:08:04 >  Mtimeout -timeout 924 ./Arjen_01_noPropCheck Arjen_01_noPropCheck 
+# 06:08:04 >  
+
+
+# 06:08:04 >  
+# 06:08:04 >  echo 'debugmask(2);' > d2.mil
+# 06:08:04 >  
+
+
+# 06:08:04 >  
+# 06:08:04 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_tests_from_Twente_Bugs d2.mil Arjen_01.milM
+# 06:08:04 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for sparc-sun-solaris2.8/64bit; dynamically linked.
+# dbfarm:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm
+# dbname:Tests_tests_from_Twente_Bugs
+# dbdir:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_tests_from_Twente_Bugs
 
 loaded;
 #---------------------------------#
@@ -24,8 +38,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #-----------------#
 # BAT:	  tmp_24  #
 # (void)  (oid)	  #
@@ -142,8 +154,8 @@ Try: modules;                - for other modules.
 [ "batDeleted",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batHole",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "top",			  "5",		  "5",		  "8",		  "4",		  "8",		  "4",		  "3",		  "3",		  "3",		  "3",		  "3"		  ]
-[ "batStamp",			  "-73",	  "-74",	  "-75",	  "-78",	  "-79",	  "-81",	  "-82",	  "-83",	  "-85",	  "-83",	  "-87"		  ]
-[ "curStamp",			  "88",		  "91",		  "94",		  "97",		  "100",	  "103",	  "106",	  "109",	  "112",	  "115",	  "118"		  ]
+[ "batStamp",			  "-144",	  "-145",	  "-146",	  "-149",	  "-150",	  "-152",	  "-153",	  "-154",	  "-156",	  "-154",	  "-158"	  ]
+[ "curStamp",			  "159",	  "162",	  "165",	  "168",	  "171",	  "174",	  "177",	  "180",	  "183",	  "186",	  "189"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "clean",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
@@ -185,3 +197,8 @@ Try: modules;                - for other modules.
 [ "taccelerator.storage",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
 [ "taccelerator.filename",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
 [ "taccelerator.offset",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+
+# 06:08:04 >  
+# 06:08:04 >  Done.
+# 06:08:04 >  
+

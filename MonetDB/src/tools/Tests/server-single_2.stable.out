@@ -1,13 +1,21 @@
 stdout of test 'server-single_2` in directory 'src/tools` itself:
 
-#> Mtest:	other server-single_2 1086 -prelude server-single_2.prelude
-#> Mtest:	Mtimeout -timeout 1086 ./server-single_2 server-single_2 -prelude server-single_2.prelude
-#> Mlog:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db src_tools -single -prelude server-single_2.prelude server-single_2.mil
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Tue May 23 05:50:46 MET DST 2000.
-#script:server-single_2.mil
-#prelude:server-single_2.prelude
+
+# 06:03:31 >  
+# 06:03:31 >  Mtimeout -timeout 924 ./server-single_2 server-single_2 server-single_2.prelude
+# 06:03:31 >  
+
+
+# 06:03:31 >  
+# 06:03:31 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_src_tools server-single_2.prelude < server-single_2.mil
+# 06:03:31 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for sparc-sun-solaris2.8/64bit; dynamically linked.
+# dbfarm:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm
+# dbname:Tests_src_tools
+# dbdir:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_src_tools
 
 loaded;
 #---------------------------------#
@@ -25,8 +33,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 Start of MIL prelude.
 [ 1 ]
 [ 10 ]
@@ -474,12 +480,12 @@ Start of MIL prelude.
 #-------------------------------------------------------------------------------------------------#
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  468,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  468,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  468,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  469,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  469,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  469,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  435,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  "oid",  "ptr",  498,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  468,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  469,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  498,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1229,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,	  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -1148,12 +1154,12 @@ dir();
 #-------------------------------------------------------------------------------------------------#
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  468,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  468,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  468,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  469,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  469,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  469,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  "oid",  "ptr",  435,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  "oid",  "ptr",  498,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  468,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  469,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_nme",	  "oid",  "str",  498,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_pro",	  "oid",  "str",  1229,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  36,	  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -1377,3 +1383,8 @@ printf("End of MIL script.\n");
 End of MIL script.
 
 quit();
+
+# 06:03:31 >  
+# 06:03:31 >  Done.
+# 06:03:31 >  
+

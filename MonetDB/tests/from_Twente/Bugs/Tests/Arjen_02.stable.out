@@ -1,11 +1,16 @@
 stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 
-#> Mtest (20:56:20):	milM Arjen_02 milM
-#> Mtest (20:56:20):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_from_Twente_Bugs Arjen_02.milM
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:Arjen_02.milM
+
+# 06:08:05 >  
+# 06:08:05 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_tests_from_Twente_Bugs  < Arjen_02.milM
+# 06:08:05 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for sparc-sun-solaris2.8/64bit; dynamically linked.
+# dbfarm:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm
+# dbname:Tests_tests_from_Twente_Bugs
+# dbdir:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_tests_from_Twente_Bugs
 
 loaded;
 #---------------------------------#
@@ -23,8 +28,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #-----------------#
 # BAT:	  tmp_24  #
 # (void)  (int)	  #
@@ -84,8 +87,8 @@ Try: modules;                - for other modules.
 [ "batDeleted",			  "0",		  "3",		  "0"		  ]
 [ "batHole",			  "0",		  "3",		  "0"		  ]
 [ "top",			  "4",		  "7",		  "2"		  ]
-[ "batStamp",			  "-73",	  "-74",	  "-77"		  ]
-[ "curStamp",			  "78",		  "83",		  "86"		  ]
+[ "batStamp",			  "-144",	  "-145",	  "-148"	  ]
+[ "curStamp",			  "149",	  "154",	  "157"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
@@ -181,8 +184,8 @@ Try: modules;                - for other modules.
 [ "batDeleted",			  "0",		  "3",		  "0"		  ]
 [ "batHole",			  "0",		  "3",		  "0"		  ]
 [ "top",			  "4",		  "7",		  "2"		  ]
-[ "batStamp",			  "-73",	  "-89",	  "-92"		  ]
-[ "curStamp",			  "93",		  "98",		  "101"		  ]
+[ "batStamp",			  "-144",	  "-160",	  "-163"	  ]
+[ "curStamp",			  "164",	  "169",	  "172"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
@@ -278,8 +281,8 @@ Try: modules;                - for other modules.
 [ "batDeleted",			  "0",		  "3",		  "0"		  ]
 [ "batHole",			  "0",		  "3",		  "0"		  ]
 [ "top",			  "4",		  "7",		  "2"		  ]
-[ "batStamp",			  "-73",	  "-104",	  "-107"	  ]
-[ "curStamp",			  "108",	  "113",	  "116"		  ]
+[ "batStamp",			  "-144",	  "-175",	  "-178"	  ]
+[ "curStamp",			  "179",	  "184",	  "187"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
@@ -323,3 +326,8 @@ Try: modules;                - for other modules.
 [ "taccelerator.offset",	  "0",		  "0",		  "0"		  ]
 [ "head_index",			  "absent",	  "absent",	  "absent"	  ]
 [ "tail_index",			  "absent",	  "absent",	  "absent"	  ]
+
+# 06:08:06 >  
+# 06:08:06 >  Done.
+# 06:08:06 >  
+

@@ -380,10 +380,10 @@ Module: "malalgebra"
 [ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "grouped tail sum"						  ]
 [ "{_csum}",	  "COMMAND: ",	  "{_csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "grouped tail sum"						  ]
 [ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "Choose a different implementation if b is sorted on head."	  ]
-[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "not available"						  ]
-[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,int]) : BAT[oid,int]",					  "not available"						  ]
-[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "not available"						  ]
-[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "not available"						  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,int]) : BAT[oid,int]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,lng]) : BAT[oid,lng]",					  "Choose a different implementation if b is sorted on head."	  ]
+[ "{csum}",	  "PROC: ",	  "{csum}(BAT[oid,sht]) : BAT[oid,sht]",					  "Choose a different implementation if b is sorted on head."	  ]
 
 Module: "mapi"
 
@@ -748,8 +748,8 @@ Module: "wisc"
 
 Module: "xtables"
 
-[ 19 ]
-[ 19 ]
+[ 20 ]
+[ 20 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature									| help																																						  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -807,6 +807,7 @@ Module: "mprof"
 [ "pmB",		  "COMMAND: ",	  "pmB(str) : int",				  "Start a new labelled timing period"			  ]
 [ "pmClear",		  "COMMAND: ",	  "pmClear() : void",				  "Clear the performance bats"				  ]
 [ "pmE",		  "COMMAND: ",	  "pmE(str) : int",				  "End a labelled timing period"			  ]
+[ "_CTgroup",		  "COMMAND: ",	  "_CTgroup(BAT[oid,any], int, int) : BAT[oid,oid]",				  "Cross tabulation group initialization like CTgroup, but with user\n         provided #bits in hashmask and #distinct values in range."																					  ]
 [ "pmExit",		  "COMMAND: ",	  "pmExit() : void",				  "Removes the Mprof bats"				  ]
 [ "pmPrint",		  "PROC: ",	  "pmPrint(..any..) : any",			  "not available"					  ]
 [ "pmStart",		  "COMMAND: ",	  "pmStart() : void",				  "Initializes the mprof bats"				  ]
