@@ -35,37 +35,51 @@ Last updated: @value{UPDATED}
 @end iftex
 
 @ifnottex
+
 @page
-@node Top, About this manual, (dir), (dir)
-@top MonetDB
-
+@node Top, TOC,  , 
+@top MonetDB Reference Manual
 @include Assets/General_information
+
+@node TOC, About this manual, Top,(Dir)
+Table of contents
 @menu
---- System overview ---
+* TOC::
 * About this manual::
-* Introduction::
+@menu
+* Intended audience::
+* Manual Generation::
+* Conventions and notation::
+@end menu
+
+* Installation and overview::
+
 * The main features of MonetDB ::
+@menu
 * The history of MonetDB::
-* MonetDB Assembler Language::
-
---- Introduction ---
-* Backward compatibility:: 
-* Design considerations:: 
 * Architecture overview:: 
-* MAL Synopsis:: 
-* MAL interpretation:: 
-* Session management::
+* Design considerations:: 
+* Backward compatibility:: 
+* MAL synopsis:: 
+@end menu
 
---- Session management ---
-* Scenarios::
-* Scenario Administration::
-* Client Administration::
+* Session management::
+@menu
+* Client administration::
+* Session scenarios::
+* MAL execution:: 
+@end menu
+
+
 
 --- The SQL front-end ---
 
---- The Application interfaces ---
+--- The Xquery front-end ---
 
---- The MAL layer ---
+* The application interfaces ::
+
+* MonetDB Assembler Language::
+@menu
 * MAL constants::
 * MAL variables::
 * MAL instructions::
@@ -85,12 +99,15 @@ Last updated: @value{UPDATED}
 * Optimizer framework::
 * Property management::
 * Name space management::
+* MAL syntax::
+@end menu
+
 * XML interface::
 * The MAL debugger::
 * The MAL profiler::
-* MAL syntax::
 
 --- The BAT kernel ---
+
 --- Extension modules ---
 @end menu
 
@@ -100,64 +117,65 @@ Last updated: @value{UPDATED}
 @include Assets/History
 @include Assets/Features
 
-@node Introduction, MonetDB Assembler Language, About this manual , Top
+@node Installation and overview, MonetDB Assembler Language, About this manual , TOC
 @include mal.bdy.texi
 @include mal_scenario.bdy.texi
 @include mal_client.bdy.texi
 @include mal_session.bdy.texi
 
-@node MonetDB Assembler Language , Function definitions, Introduction, Top
+@node MonetDB Assembler Language , Function definitions, Installation and overview, TOC
 @include mal_instruction.bdy.texi
 @include mal_parser.bdy.texi
 
-@node Function definitions, Factory definitions , MonetDB Assembler Language, Top
+@node Function definitions, Factory definitions , MonetDB Assembler Language, TOC
 @include mal_function.bdy.texi
 
-@node Factory definitions, Bootstrap , Function definitions, Top
+@node Factory definitions, Bootstrap , Function definitions, TOC
 @include mal_factory.bdy.texi
 
-@node Bootstrap , Modules ,Factory definitions, Top
+@node Bootstrap , Modules ,Factory definitions, TOC
 @include mal_linker.bdy.texi
 
-@node Modules , MAL interpreter ,Bootstrap, Top
+@node Modules , MAL interpreter ,Bootstrap, TOC
 @include mal_import.bdy.texi
 
-@node MAL interpreter, Atom types, Modules, Top
+@node MAL interpreter, Atom types, Modules, TOC
 @include mal_interpreter.bdy.texi
 @include mal_stack.bdy.texi
 
-@node Atom types, Type resolution,MAL interpreter, Top
+@node Atom types, Type resolution,MAL interpreter, TOC
 @include mal_atom.bdy.texi
 
-@node Type resolution, Boxed variables, Atom types, Top
+@node Type resolution, Boxed variables, Atom types, TOC
 @include mal_type.bdy.texi
 @include mal_resolve.bdy.texi
 
-@node Boxed variables, Optimizer framework , Type resolution, Top
+@node Boxed variables, Optimizer framework , Type resolution, TOC
 @include mal_box.bdy.texi
 
-@node Optimizer framework, Property management , Boxed variables, Top
+@node Optimizer framework, Property management , Boxed variables, TOC
 @include mal_optimizer.bdy.texi
 
-@node Property management, Name space management , Optimizer framework, Top
+@node Property management, Name space management , Optimizer framework, TOC
 @include mal_properties.bdy.texi
 
-@node Name space management, XML interface , Property management, Top
+@node Name space management, XML interface , Property management, TOC
 @include mal_namespace.bdy.texi
 @include mal_scope.bdy.texi
 
-@node XML interface, The MAL debugger, Name space management, Top
+@node XML interface, The MAL debugger, Name space management, TOC
 @include mal_xml.bdy.texi
 
-@node The MAL debugger, The MAL profiler , XML interface, Top
+@node The MAL debugger, The MAL profiler , XML interface, TOC
 @include mal_debugger.bdy.texi
 
-@node The MAL profiler, MAL syntax , The MAL debugger, Top
+@node The MAL profiler, MAL syntax , The MAL debugger, TOC
 @include mal_profiler.bdy.texi
 
-@node MAL syntax,, The MAL profiler, Top
+@node MAL syntax,, The MAL profiler, TOC
 @include mal_syntax.bdy.texi
 @c @include mil_parser.bdy.texi
+@include Assets/ApplicationInterfaces
 
 
 @bye
