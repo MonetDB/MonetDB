@@ -49,7 +49,7 @@ def wlen(str) :
 
 test = (
         # potential differences, which we want to ignore
-        re.compile('|'.join([
+        re.compile('(?:'+')|(?:'.join([
 ## sql5
 		      r"^printf\(\"\\nReady.\\n\"\);",
 		      r"^quit\(\);",
@@ -72,23 +72,23 @@ test = (
                       r"^MAPI  = .*@.*:[0-9]*$",
                     r"^Pathfinder (?:XQuery Compiler|XML Shredder) \(.Revision: .* .\)$",
 ##                    r"^SQL  .* affected$",
-##                    r"^.*: Symbol .(?:exit|_setjmp). causes overflow in R_X86_64_PC32 relocation$",
+##                    r": Symbol .(?:exit|_setjmp). causes overflow in R_X86_64_PC32 relocation$",
 ##                    r"^\+\=+\+$",
 ##                    r"^\+\-+\+$",
-                 ]),  re.MULTILINE),
+                 ])+')',  re.MULTILINE),
         # differing error messages when loading non-existing modules in dynamic and static Mserver
-        re.compile('|'.join([
+        re.compile('(?:'+')|(?:'.join([
                     r"^!ERROR: DL_open: Unknown error.$",
                     r"^!ERROR: DL_open: library not found \(STATIC\).$",
-                 ]),  re.MULTILINE),
-        re.compile('|'.join([
+                 ])+')',  re.MULTILINE),
+        re.compile('(?:'+')|(?:'.join([
                     r"^!ERROR: TBL_loadmod: module load .* cancelled.$",
-                 ]),  re.MULTILINE),
-        re.compile('|'.join([
+                 ])+')',  re.MULTILINE),
+        re.compile('(?:'+')|(?:'.join([
                     r"^!ERROR: module\(.*\): load error.$",
-                 ]),  re.MULTILINE),
+                 ])+')',  re.MULTILINE),
         # differences due to property-checking, which we want to treat as "minor differences"
-        re.compile('|'.join([
+        re.compile('(?:'+')|(?:'.join([
 ##                    r'^synced\(x,[yz]\) := (?:true|false)$',
 ##                #dir(): # name                 htype          ttype          count       heat        dirty                      status             kind               refcnt      lrefcnt     #
 ##                    r'^\[ "[A-Za-z0-9_]+",\t* +"[a-z_]+",\t* +"[a-z_]+",\t* +[0-9]+,\t* +[0-9]+,\t* +"(?:dirty|clean|diffs)",\t* +"(?:load|disk)",\t* +"(?:tran|pers)",\t* +[0-9]+,\t* +[0-9]+\t* +\]$',
@@ -178,7 +178,7 @@ test = (
                 # Tokens & messages depend on flex/bison
                     r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
                     r'^(?:ERROR = !|)(?:syntax|parse) error, ',
-                    r'^.*: at \([0-9]+,[0-9]+\-[0-9]+,[0-9]+\): ',
+                    r': at \([0-9]+,[0-9]+\-[0-9]+,[0-9]+\): ',
 ##                # Intel compiler seems to do some (re-)compilation for src/mapi/examples/C/
 ##                    r'^IPO: using IR for .*$',
 ##                    r'^IPO: performing single-file optimizations$',
@@ -198,7 +198,7 @@ test = (
                     r'^! (?:SQL|MAPI)PORT was not properly released by Mserver !$',
                 # ld warnings on IRIX64:
                     r"^ld64: WARNING 84 : .*/common/.libs/libmutils.so is not used for resolving any symbol.$",
-                 ]),  re.MULTILINE)
+                 ])+')',  re.MULTILINE)
         )
 
 def mFilter (FILE, IGNORE) :
