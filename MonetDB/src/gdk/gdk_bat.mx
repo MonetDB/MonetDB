@@ -1384,7 +1384,7 @@ BAT *BATmode(BAT *b, int mode) {
 		/* persistent BATs get a logical reference */
 		if (mode == PERSISTENT) {
 			BBPincref(bid, TRUE);
-		} else {
+		} else if (b->batPersistence == PERSISTENT) {
 			BBPdecref(bid, TRUE);
 		}
                 MT_set_lock(GDKswapLock[bid&BBPLOCKMASK], "BATmode");
