@@ -1149,18 +1149,18 @@ void ACCremoveall(BAT *b) {
 }
 
 accDesc BATaccelerators[MAXACCS] = {
-   { "_dummy_",	(void (*)()) 0,		(void (*)()) 0,		(void (*)()) 0,
-        	(void (*)()) 0,		(void (*)()) 0,        	(void (*)()) 0,
-		(void (*)()) 0,        	(void (*)()) 0,		(int  (*)()) 0,
-	       	(int  (*)()) 0,         (void (*)()) 0 },          	
-   { "hash",	(void (*)()) 0,		(void (*)()) 0,		(void (*)()) 0,
-        	(void (*)()) 0,		(void (*)()) 0,        	(void (*)()) 0,
-		(void (*)()) 0,        	(void (*)()) 0,		(int  (*)()) 0,
-	       	(int  (*)()) 0,         (void (*)()) 0 },          	
-   { "index",	(void (*)()) 0,		(void (*)()) 0,		(void (*)()) 0,
-        	(void (*)()) 0,		(void (*)()) 0,        	(void (*)()) 0,
-		(void (*)()) 0,        	(void (*)()) 0,		(int  (*)()) 0,
-	       	(int  (*)()) 0,         (void (*)()) 0 } };          	
+   { "_dummy_",	0,		0,		0,
+		0,		0,		0,
+		0,		0,		0,
+		0,		0 },
+   { "hash",	0,		0,		0,
+		0,		0,		0,
+		0,		0,		0,
+		0,		0 },
+   { "index",	0,		0,		0,
+		0,		0,		0,
+		0,		0,		0,
+		0,		0 } };
 
 
 
@@ -1208,25 +1208,25 @@ void ACCproperty(str name, str prop, ptr fcn) {
 		}
 	}
 	if (strcmp(prop, "build") == 0) {
-		BATaccelerators[i].accBuild = (void (*)()) fcn;
+		BATaccelerators[i].accBuild = (void (*)(Heap*, BAT*, void *param)) fcn;
 	} else if (strcmp(prop, "destroy") == 0) {
-		BATaccelerators[i].accDestroy = (void (*)()) fcn;
+		BATaccelerators[i].accDestroy = (void (*)(Heap*, BAT*)) fcn;
 	} else if (strcmp(prop, "insert") == 0) {
-		BATaccelerators[i].accInsert = (void (*)()) fcn;
+		BATaccelerators[i].accInsert = (void (*)(Heap*, int pos, BAT*, ptr val)) fcn;
 	} else if (strcmp(prop, "delete") == 0) {
-		BATaccelerators[i].accDelete = (void (*)()) fcn;
+		BATaccelerators[i].accDelete = (void (*)(Heap*, int pos, BAT*, ptr val)) fcn;
 	} else if (strcmp(prop, "move") == 0) {
-		BATaccelerators[i].accMove = (void (*)()) fcn;
+		BATaccelerators[i].accMove = (void (*)(Heap*, int from, int to, BAT*, ptr val)) fcn;
 	} else if (strcmp(prop, "save") == 0) {
-		BATaccelerators[i].accSave = (void (*)()) fcn;
+		BATaccelerators[i].accSave = (void (*)(Heap*, BAT*)) fcn;
 	} else if (strcmp(prop, "commit") == 0) {
-		BATaccelerators[i].accCommit = (void (*)()) fcn;
+		BATaccelerators[i].accCommit = (void (*)(Heap*, BAT*)) fcn;
 	} else if (strcmp(prop, "abort") == 0) {
-		BATaccelerators[i].accAbort = (void (*)()) fcn;
+		BATaccelerators[i].accAbort = (void (*)(Heap*, BAT*)) fcn;
 	} else if (strcmp(prop, "cluster") == 0) {
-		BATaccelerators[i].accBuncluster = (int (*)()) fcn;
+		BATaccelerators[i].accBuncluster = (int (*)(Heap*, BAT*)) fcn;
 	} else if (strcmp(prop, "repair") == 0) {
-		BATaccelerators[i].accRepair = (int (*)()) fcn;
+		BATaccelerators[i].accRepair = (int (*)(Heap*, BAT*)) fcn;
 	}
         MT_unset_lock(GDKthreadLock, "ACCproperty");
 }
