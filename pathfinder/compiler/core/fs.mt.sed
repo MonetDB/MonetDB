@@ -1667,13 +1667,10 @@ StepExpr:               pred (PathExpr, Expr)
         PFvar_t *v3 = new_var (0);
         PFvar_t *v4 = new_var (0);
         PFvar_t *v5 = new_var (0);
-        PFvar_t *v6 = new_var (0);
         PFvar_t *dot = new_var ("dot");
         PFvar_t *fs_position = new_var ("pos");
 
         PFfun_t *fn_eq = function (PFqname (PFns_op, "eq"));
-        /* need to subtract '- 1' because fs_position starts with '0' */
-        PFfun_t *minus = function (PFqname (PFns_op, "minus"));
 
         tDO ($%1$);
 
@@ -1691,17 +1688,12 @@ StepExpr:               pred (PathExpr, Expr)
                              let (var (v3), 
                                   typeswitch (var (v2),
                                       cases (case_ (seqtype (PFty_numeric ()),
-                                                    let (var (v6),
-                                                         apply (minus,
+                                                    let (var (v4),
+                                                         apply (fn_eq,
                                                                 arg (var (v2),
-                                                                     arg (num(1),
+                                                                     arg (var (fs_position),
                                                                           nil ()))),
-                                                         let (var (v4),
-                                                              apply (fn_eq,
-                                                                     arg (var (v6),
-                                                                          arg (var (fs_position),
-                                                                               nil ()))),
-                                                              var (v4)))),
+                                                         var (v4))),
                                              nil ()),
                                       ebv (var (v2))),
                                   ifthenelse (var (v3), 
