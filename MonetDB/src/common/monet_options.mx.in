@@ -74,7 +74,7 @@ mutils_export char *mo_find_option( opt *set, int setlen, const char *name );
    be substituted using the mo_substitute function */
 mutils_export void mo_substitute( opt *set, int setlen, char *name );
 
-/* mo_config_file adds all options int the given config file, to the current
+/* mo_config_file adds all options in the given config file, to the current
    options set  (returns the new setlen) */
 mutils_export int mo_config_file( opt **Set, int setlen, char *file );
 
