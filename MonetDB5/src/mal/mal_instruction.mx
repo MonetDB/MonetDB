@@ -1400,21 +1400,22 @@ for the new value. This should be garbage collected at the
 end.
 @c
     default:{ 
-        ptr *p = (ptr *) &vr->val.ival;
+		int ll=0; ptr d=0;
 
-        if( parsetype != BATatoms[parsetype].storage){
-            parsetype = BATatoms[type].storage;
-            goto retryConstant;
-        }
         if( BATatoms[type].atomFromStr== 0) {
+			if( parsetype != BATatoms[parsetype].storage){
+				parsetype = BATatoms[type].storage;
+				goto retryConstant;
+			}
             s= getTypeName(type);
             GDKerror("newConstant:no string coercion for '%s'\n", s);
             GDKfree(s);
             break;
         }
 #ifdef STRUCT_ALIGNED
+        (*BATatoms[type].atomFromStr)(val, &ll, &d);
         vr->vtype= type;
-        (*BATatoms[type].atomFromStr)(val, &vr->len, p);
+		vr->val.pval= *(ptr *)d;
 #else
         GDKerror("newConstants:missing implementation\n");
 #endif
