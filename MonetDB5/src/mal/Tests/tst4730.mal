@@ -2,7 +2,7 @@
 # the basis for further optimizer tests
 include sql;
 
-factory qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:lng):any;
+factory qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):any;
     V6{count=10000} := sql.bind("sys","lineitem","l_shipdate",0);
     V11{count=0} := sql.bind_dbat("sys","lineitem",0);
     V22{count=10000} := sql.bind("sys","lineitem","l_returnflag",0);

@@ -61,7 +61,7 @@ str MILinit(Client cntxt){
 	/* load the modules */
 	malInclude(cntxt,"mil","mil",0);
 	malInclude(cntxt,"mil_algebra_procs","mil_algebra_procs",0);
-	malInclude(cntxt,"mil_sysprocs","mil_sysprocs",0);
+	malInclude(cntxt,"mil_system_procs","mil_system_procs",0);
 	(void) cntxt;
 	return MAL_SUCCEED;
 }

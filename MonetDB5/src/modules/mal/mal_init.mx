@@ -47,8 +47,7 @@ include mtime;
 
 include bat;
 #include mkey;
-include pcre;
-include mil;
+#include pcre;
 include algebra;
 include algebra2;
 include calc;
@@ -78,8 +77,6 @@ include costmodel;
 include optimizer;
 include chopper;
 include transaction;
-#include mil_scenario;
-#include sql;
 @-
 In practice, we have to introduce different startup for each
 client group or database.

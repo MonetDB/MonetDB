@@ -1,8 +1,6 @@
 # Monet Mil to Mal compiler
+include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
-include "mil_insert";
-include "mil_system_procs";
-include "mil_algebra_procs";
 
 #Predefined code segment
 #The compiler can not guarantee an accurate compilation,
@@ -11,9 +9,6 @@ include "mil_algebra_procs";
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-include "mil_insert";
-include "mil_algebra_procs";
-include "mil_system_procs";
 	mil.line("# >Number:         37\n");
 	mil.line("# >Category:       Mserver\n");
 	mil.line("# >Synopsis:       built-in bats\n");

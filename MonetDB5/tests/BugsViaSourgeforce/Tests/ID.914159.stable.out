@@ -41,8 +41,8 @@ end crash;	# 4
 #	ba_a := crash();
 #
 function Admin.main():int;	# 0  (main:int)
-    mil.line("PROC crash() : void");	# 1 MILline ($1:void)<-($2:str)
-    mil.line("crash();");	# 2 MILline ($3:void)<-($4:str)
+    mil.line("PROC crash() : void");	# 1 MILline ($31:void)<-($32:str)
+    mil.line("crash();");	# 2 MILline ($33:void)<-($34:str)
     ba_a := Admin.crash();	# 3  (ba_a:void)
 end main;	# 4  
 #PROC crash() : void
