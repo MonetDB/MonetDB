@@ -77,6 +77,11 @@ Connection warning: database specifier not supported on this server (mserver_sql
 
 Connection warning: database specifier not supported on this server (mserver_sql), protocol version 4
 
+# 10:37:06 >  
+# 10:37:06 >  java -jar /net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/jdbc/MonetDB_JDBC.jar -h norma -p 50095 -d
+# 10:37:06 >  
+
+Connection warning: database specifier not supported on this server (mserver_sql), protocol version 4
 
 # 11:07:40 >  
 # 11:07:40 >  Done.
