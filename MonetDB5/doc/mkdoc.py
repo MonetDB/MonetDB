@@ -98,8 +98,6 @@ def removedir(dir):
     os.rmdir(dir)
 
 removedir(os.path.join(dstdir, 'doc', 'www'))
-#copyfile(os.path.join(srcdir, 'doc', 'monet.html'),
-#         os.path.join(dstdir, 'doc', 'monet.html'))
 
 #for f in ['monet', 'mil', 'mel']:
 #    runMx(os.path.join(srcdir, 'doc'), f, os.path.join(dstdir, 'doc', 'www', 'Services'))
@@ -142,7 +140,7 @@ for f in ['mal_atom',
     'mal_xml',
 	]:
     runMx(os.path.join(srcdir, 'src', 'mal'), f,
-          os.path.join(dstdir, 'doc', 'www', 'Services'))
+          os.path.join(dstdir, 'doc', 'www', 'MAL'))
 
 #runMx(os.path.join(srcdir, 'src', 'monet'), 'monet',
 #     os.path.join(dstdir, 'doc', 'www'))
@@ -183,6 +181,9 @@ runMx(os.path.join(srcdir, 'src', 'mapi', 'clients', 'C'), 'MapiClient',
 #for f in ['HowToStart', 'HowToStart-Win32.txt']:
 #    copyfile(os.path.join(srcdir, f),
 #             os.path.join(dstdir, 'doc', 'www', f))
+
+copyfile(os.path.join(srcdir, 'doc', 'design.shtml'),
+         os.path.join(dstdir, 'doc/www', 'design.shtml'))
 
 f = open(os.path.join(dstdir, 'doc', 'www', 'sql.html'), 'w')
 f.write('''\
