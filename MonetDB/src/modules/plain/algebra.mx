@@ -983,7 +983,7 @@ that for the moment are defined as procs.
 		} else if (fcn = ">") {
 		    return b.select(val, nilval, FALSE, FALSE);
 		} else if (fcn = "like") {
-		    var bn := likeselect(b, val);
+		    var bn := like_uselect(b, val, "\\");
 		    return b.semijoin(bn);
 		}
 	    }
@@ -1025,7 +1025,7 @@ that for the moment are defined as procs.
 		} else if (fcn = "<") {
 		    return b.mil_select(">=", val);
 		} else if (fcn = "like") {
-		    var bn := likeselect(b, val);
+		    var bn := like_uselect(b, val, "\\");
 		    return b.kdiff(bn);
 		}
 	    }
