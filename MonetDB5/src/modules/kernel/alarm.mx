@@ -312,7 +312,7 @@ PROC test_alarm() : void := {
 Wrapping the Version 4 code base
 @c
 #include "mal.h"
-#include "mal_function.h"
+#include "mal_exception.h"
 
 void ALARMinitTimer(int sec, int usec){
 	CLKinitTimer(sec, usec);

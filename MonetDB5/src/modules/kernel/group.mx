@@ -1149,7 +1149,7 @@ int CTrefine_rev(BAT **res, BAT *b, BAT *a) {
 Wrapping the version 4 xtables code base
 @c
 #include "mal.h"
-#include "mal_function.h"
+#include "mal_exception.h"
 #include "mal_atom.h"
 
 @-

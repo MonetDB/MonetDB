@@ -173,7 +173,7 @@ address SYSsetvm_maxsize
 #include "gdk.h"
 #include <stdarg.h>
 #include <time.h>
-#include "mal_function.h"
+#include "mal_exception.h"
 
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>

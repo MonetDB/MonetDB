@@ -627,7 +627,7 @@ the string representations.
 #include "calc.h"
 #include "stdlib.h"
 #include "mal.h"
-#include "mal_function.h"
+#include "mal_exception.h"
 
 /* third param indicates return value if one of the params is nil */ 
 @:c_comp_ops(<,LT)@

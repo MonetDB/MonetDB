@@ -875,7 +875,7 @@ to be included at a later stage
 @c
 #include "bat.h"
 #include <stream.h>
-#include "mal_function.h"
+#include "mal_exception.h"
 
 @:BATaggr(min)@
 @:BATaggr(max)@
@@ -1571,8 +1571,6 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 @-
 
 @c
-#include <gdk.h>
-#include <mal.h>
 
 str BKCnewBATint(int *res, int *ht, int *tt, int *cap){
 	BAT *b;

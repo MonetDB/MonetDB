@@ -434,7 +434,7 @@ The code below wraps around the V4 code base
         if(*@2 <0) @3 = BATmirror(@3);
 @c
 #include "mal.h"
-#include "mal_function.h"
+#include "mal_exception.h"
 
 @c
 str MKEYrotate(int *res, int *val, int *n) {

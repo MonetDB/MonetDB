@@ -339,7 +339,7 @@ comment "POSIX pattern matching against a string BAT";
 @h
 #include "gdk.h"
 #include "math.h"
-#include "mal_function.h"
+#include "mal_exception.h"
 #include "mal_client.h"
 #include <regex.h>
 

@@ -829,7 +829,7 @@ different situations as conditions.
 
 #include <gdk.h>
 #include "../atoms/uchr.h"
-#include "mal_function.h"
+#include "mal_exception.h"
 #endif
 
 @c
@@ -1381,7 +1381,6 @@ str ALGprod_@1_@2(@2* res, int *bid) {
 }
 @c
 #include "../atoms/uchr.h"
-#include "mal_function.h"
 
 @:ALGsum_implementation(uchr,uchr,0)@
 @:ALGsum_implementation(uchr,sht,0)@

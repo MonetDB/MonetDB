@@ -21,7 +21,7 @@ use "kernel/mkey";
 use "kernel/algebra";
 use "kernel/calc";
 use "kernel/batcalc";	
-use "kernel/system";
+use "kernel/status";
 use "kernel/group";
 use "kernel/aggrX3";
 use "kernel/mapi";
