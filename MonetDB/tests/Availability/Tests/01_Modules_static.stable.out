@@ -46,12 +46,12 @@ monet_fcntbl.sort@batloop {
 }
 
 Fnts.count.print;
-[ 633 ]
+[ 635 ]
 Fnts.reverse.sort.reverse@batloop {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count.print;
-[ 633 ]
+[ 635 ]
 
 All:=0;
 
@@ -131,7 +131,7 @@ Module: ""
 
 Module: "algebra"
 
-[ 104 ]
+[ 106 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature										| help																																																															  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -209,7 +209,8 @@ Module: "algebra"
 [ "sample",	  "COMMAND:   ",  "sample(BAT[any::1,any::2], int) : BAT[any::1,any::2]",				  "Produce a random selection of size 'num' from the input BAT."																																																							  ]
 [ "sdiff",	  "COMMAND:   ",  "sdiff(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",			  "Returns the difference taken over *both* columns of two BATs.  \n Results in all BUNs of 'left' that are *not* in 'right'. Does *not* do\n double-elimination over the 'left' BUNs, If you want this, use:\n 'sdiff(left.sunique,right.sunique)' or: 'sdiff(left,right).sunique'."																													  ]
 [ "select",	  "COMMAND:   ",  "select(BAT[any::1,any::2], any::2) : BAT[any::1,any::2]",				  "Select all BUNs of a BAT with a certain tail value. Selection\n on NIL is also possible (it should be properly casted, e.g.: int(nil))."																																														  ]
-[ "select",	  "COMMAND:   ",  "select(BAT[any::1,any::2], any::2, any::2) : BAT[any::1,any::2]",			  "Select all BUNs of a BAT that have tail values: {v| low <= v <= high}.\n\n\nNIL boundary values have a special meaning.\n\n+ low  == nil means: no lower bound\n\n+ high == nil means: no upper bound.\n\nNOTE 1: you should cast the nil to the appropriate type, e.g. int(nil)\n        in order to cirumvent type clashes.\nNOTE 2: as the 'nil' element has no clear place in the ordered domain \n        of values, tuples with 'nil values are NEVER returned by the \n        range select."			  ]
+[ "select",	  "COMMAND:   ",  "select(BAT[any::1,any::2], any::2, any::2) : BAT[any::1,any::2]",		  "Select all BUNs of a BAT that have tail values: {v| low <= v <= high}.\n\nNIL boundary values have a special meaning.\n+ low  == nil means: no lower bound\n+ high == nil means: no upper bound.\n\nNOTE 1: you should cast the nil to the appropriate type, e.g. int(nil)\n        in order to cirumvent type clashes.\nNOTE 2: as the 'nil' element has no clear place in the ordered domain \n        of values, tuples with 'nil values are NEVER returned by the \n        range select."	  ]
+[ "select",	  "COMMAND:   ",  "select(BAT[any::1,any::2], any::2, any::2, bit, bit) : BAT[any::1,any::2]",	  "Select all BUNs of a BAT that have tail values: {v| low <[=] v <[=] high}.\nEither boundary value is included ('<=') if the respective bit (l_in / h_in)\nis TRUE, and excluded ('<') otherwise.\n\nNIL boundary values have a special meaning.\n+ low  == nil means: no lower bound\n+ high == nil means: no upper bound.\n\nNOTE 1: you should cast the nil to the appropriate type, e.g. int(nil)\n        in order to cirumvent type clashes.\nNOTE 2: as the 'nil' element has no clear place in the ordered domain \n        of values, tuples with 'nil values are NEVER returned by the \n        range select."  ]
 [ "semijoin",	  "PROC:      ",  "semijoin(BAT[any::1,any::2], BAT[any::1,any]) : BAT[any::1,any::2]",			  "semijoin is a synonym of kintersect."																																																										  ]
 [ "sintersect",	  "COMMAND:   ",  "sintersect(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",		  "Returns the intersection taken over *both* columns of two BATs.\n Results in all BUNs of 'left' that are also in 'right'. Does *not* do \n double-elimination over the 'left' BUNs, If you want this, use:\n 'sintersect(left.sunique,right.sunique)' or: 'sintersect(left,right).sunique'."																												  ]
 [ "slice",	  "COMMAND:   ",  "slice(BAT[any::1,any::2], int, int) : BAT[any::1,any::2]",				  "Return the slice with the BUNs at position x till y."																																																								  ]
@@ -238,6 +239,7 @@ Module: "algebra"
 [ "urangesplit",  "COMMAND:   ",  "urangesplit(BAT[any::1,any::2], int) : BAT[any::2,BAT]",				  "Same as rangesplit, but only collect the head values in the fragments"																																																						  ]
 [ "uselect",	  "COMMAND:   ",  "uselect(BAT[any::1,any::2], any::2) : BAT[any::1,void]",				  "Value select, but returning only the head values.\n SEE ALSO: select(bat,val)"																																																					  ]
 [ "uselect",	  "COMMAND:   ",  "uselect(BAT[any::1,any::2], any::2, any::2) : BAT[any::1,void]",			  "Select on tail, returning only the head values. \n SEE ALSO: select(bat,low,high)."																																																					  ]
+[ "uselect",	  "COMMAND:   ",  "uselect(BAT[any::1,any::2], any::2, any::2, bit, bit) : BAT[any::1,void]",	  "Select on tail, returning only the head values. \n SEE ALSO: select(bat,low,high,l_in,h_in)."																																																	  ]
 [ "{count}",	  "COMMAND:   ",  "{count}(BAT[any::2,any]) : BAT[any::2,int]",						  "has fast implementation: histogram(bat.reverse)"																																																									  ]
 
 Module: "arith"
@@ -765,7 +767,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",										  "save all persistent BATs"																																										  ]
 
 All.print;
-[ 633 ]
+[ 635 ]
 
 quit;
 

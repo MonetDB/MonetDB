@@ -216,7 +216,7 @@ BAT *BUNfastins(BAT *b, ptr h, ptr t) {
 }
 */
 
-BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, int equi, int lval, int hval, int nocheck);
+BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int lval, int hval, int nocheck);
 
 #endif /* _GDK_SCANSELECT_H */
 
@@ -446,9 +446,14 @@ In case of a range select we skip all nil.
 */
 @= DEFseqscanIF
 	@:DEFseqscanHTget(eq_@1,@2,@3,if ( @4_EQ(tl ,v,@5)                      ),v)@
-	@:DEFseqscanHTget(lh_@1,@2,@3,if ( @4_LE(tl ,v,@5) && @4_LE(v,th,@5) @6 ),v)@
-	@:DEFseqscanHTget(ln_@1,@2,@3,if ( @4_LE(tl ,v,@5)                   @6 ),v)@
-	@:DEFseqscanHTget(nh_@1,@2,@3,if (!@4_EQ(nil,v,@5) && @4_LE(v,th,@5)    ),v)@
+	@:DEFseqscanHTget(LH_@1,@2,@3,if ( @4_LE(tl ,v,@5) && @4_LE(v,th,@5) @6 ),v)@
+	@:DEFseqscanHTget(Lh_@1,@2,@3,if ( @4_LE(tl ,v,@5) && @4_LT(v,th,@5) @6 ),v)@
+	@:DEFseqscanHTget(lH_@1,@2,@3,if ( @4_LT(tl ,v,@5) && @4_LE(v,th,@5) @6 ),v)@
+	@:DEFseqscanHTget(lh_@1,@2,@3,if ( @4_LT(tl ,v,@5) && @4_LT(v,th,@5) @6 ),v)@
+	@:DEFseqscanHTget(Ln_@1,@2,@3,if ( @4_LE(tl ,v,@5)                   @6 ),v)@
+	@:DEFseqscanHTget(ln_@1,@2,@3,if ( @4_LT(tl ,v,@5)                   @6 ),v)@
+	@:DEFseqscanHTget(nH_@1,@2,@3,if (!@4_EQ(nil,v,@5) && @4_LE(v,th,@5)    ),v)@
+	@:DEFseqscanHTget(nh_@1,@2,@3,if (!@4_EQ(nil,v,@5) && @4_LT(v,th,@5)    ),v)@
 	@:DEFseqscanHTget(nn_@1,@2,@3,if (!@4_EQ(nil,v,@5)                      ),v)@
 @= seqscanIF
 	if (equi) {
@@ -457,11 +462,27 @@ In case of a range select we skip all nil.
 	 * (explicitely by !@4_EQ(nil,v,@5) or @6
          *  or implicitely by @4_LE(tl,v,@5)) */
 	} else if (lval && hval) {
-		@:seqscanHTget(lh_@1,@2,@3,if ( @4_LE(tl ,v,@5) && @4_LE(v,th,@5) @6 ),v)@
+		if (li && hi) {
+			@:seqscanHTget(LH_@1,@2,@3,if ( @4_LE(tl ,v,@5) && @4_LE(v,th,@5) @6 ),v)@
+		} else if (li && !hi) {
+			@:seqscanHTget(Lh_@1,@2,@3,if ( @4_LE(tl ,v,@5) && @4_LT(v,th,@5) @6 ),v)@
+		} else if (!li && hi) {
+			@:seqscanHTget(lH_@1,@2,@3,if ( @4_LT(tl ,v,@5) && @4_LE(v,th,@5) @6 ),v)@
+		} else {
+			@:seqscanHTget(lh_@1,@2,@3,if ( @4_LT(tl ,v,@5) && @4_LT(v,th,@5) @6 ),v)@
+		}
 	} else if (lval) {
-		@:seqscanHTget(ln_@1,@2,@3,if ( @4_LE(tl ,v,@5)                   @6 ),v)@
+		if (li) {
+			@:seqscanHTget(Ln_@1,@2,@3,if ( @4_LE(tl ,v,@5)                   @6 ),v)@
+		} else {
+			@:seqscanHTget(ln_@1,@2,@3,if ( @4_LT(tl ,v,@5)                   @6 ),v)@
+		}
 	} else if (hval) {
-		@:seqscanHTget(nh_@1,@2,@3,if (!@4_EQ(nil,v,@5) && @4_LE(v,th,@5)    ),v)@
+		if (hi) {
+			@:seqscanHTget(nH_@1,@2,@3,if (!@4_EQ(nil,v,@5) && @4_LE(v,th,@5)    ),v)@
+		} else {
+			@:seqscanHTget(nh_@1,@2,@3,if (!@4_EQ(nil,v,@5) && @4_LT(v,th,@5)    ),v)@
+		}
 	} else {
 		@:seqscanHTget(nn_@1,@2,@3,if (!@4_EQ(nil,v,@5)                      ),v)@
 	}
@@ -523,7 +544,7 @@ Generate all working functions.
 The dispatcher, called from BAT_select (gdk_batop.mx).
 
 @c
-BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, int equi, int lval, int hval, int nocheck) {
+BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int lval, int hval, int nocheck) {
         int AsHt = ATOMstorage(bn->htype), t = b->ttype, AsTt = ATOMstorage(t);
 	var_t str_idx = 0;
 	oid oid_ctr = (oid)0;

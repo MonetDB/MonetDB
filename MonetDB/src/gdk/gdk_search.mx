@@ -827,20 +827,29 @@ BUN *IDXfnd@1(BAT *b, ptr v){
 @:idxfndwhich(first)@
 @:idxfndwhich(last)@
 
-void IDXrng(BAT	*b, ptr	v, ptr w, BUN **p, BUN **q){
+void IDXrng_(BAT *b, ptr v, ptr w, bit li, bit hi, BUN **p, BUN **q){
 	int (*cmp)(ptr,ptr) = BATatoms[b->htype].atomCmp;
 	int res = (*cmp)(v, w);
 	if (res > 0) {
-		ptr _swap = v; v = w; w = _swap;
+		{ptr _swap = v; v = w; w = _swap;}
+		{bit _si = li; li = hi; hi = _si;}
 	}
-	*p = IDXfndfirst(b,v);
+	if (li) *p = IDXfndfirst(b,v);
+	else    *p = IDXfndlast(b,v);
 	if (res) {
-		*q = IDXfndlast(b,w);
+		if (hi) *q = IDXfndlast(b,w);
+		else    *q = IDXfndfirst(b,w);
+	} else if (!(li && hi)) {
+		*q = *p;
 	} else {
 		BUN *cur, *end = IDXlast(b);
 		for(cur = *p; cur < end && (cmp)(BUNhead(b,*cur),v) == 0; cur++);
 		*q = cur;
 	}
+}
+
+void IDXrng(BAT *b, ptr v, ptr w, BUN **p, BUN **q){
+	IDXrng_(b, v, w, TRUE, TRUE, p, q);
 }
 
 @+ Binary Search on a Sorted BAT

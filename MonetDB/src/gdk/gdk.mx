@@ -2019,6 +2019,7 @@ gdk_export BUN	SORTfndlast  (BAT *b, ptr v);
 gdk_export BUN	IDXfnd       (BAT *b, ptr v);
 gdk_export BUN*	IDXfndfirst  (BAT *b, ptr v);
 gdk_export BUN*	IDXfndlast   (BAT *b, ptr v);
+gdk_export void	IDXrng_      (BAT *b, ptr v, ptr w, bit li, bit hi, BUN **p, BUN **q);
 gdk_export void	IDXrng       (BAT *b, ptr v, ptr w, BUN **p, BUN **q);
 gdk_export void    IDXdestroy    (BAT *b);
 gdk_export void    IDXremove     (BAT *b);
@@ -2864,8 +2865,11 @@ look at the head column:@%BATkunion@, @%BATkdiff@, and
 #define JOIN_BAND 3
 
 gdk_export BAT*	BATfragment  (BAT *b, ptr hl, ptr hh, ptr tl, ptr th); 
+gdk_export BAT*	BAT_select_  (BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail); 
+gdk_export BAT*	BAT_select   (BAT *b, ptr tl, ptr th, bit tail); 
+gdk_export BAT*	BATselect_   (BAT *b, ptr tl, ptr th, bit li, bit hi); 
+gdk_export BAT*	BATuselect_  (BAT *b, ptr tl, ptr th, bit li, bit hi); 
 gdk_export BAT*	BATselect    (BAT *b, ptr tl, ptr th); 
-gdk_export BAT*	BAT_select   (BAT *b, ptr tl, ptr th, int mode); 
 gdk_export BAT*	BATuselect   (BAT *b, ptr tl, ptr th); 
 gdk_export BAT*	BATrestrict  (BAT *b, ptr hl, ptr hh, ptr tl, ptr th); 
 

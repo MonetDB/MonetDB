@@ -80,10 +80,26 @@ that return a BAT.
 @m
 .COMMAND select ( BAT[any::1,any::2] b, any::2 low, any::2 high) : 
 				BAT[any::1, any::2] = CMDselect; 
-"Select all BUNs of a BAT that have tail values: {v| low <= v <= high}.\n
+"Select all BUNs of a BAT that have tail values: {v| low <= v <= high}.
 
-NIL boundary values have a special meaning.\n
-+ low  == nil means: no lower bound\n
+NIL boundary values have a special meaning.
++ low  == nil means: no lower bound
++ high == nil means: no upper bound.
+
+NOTE 1: you should cast the nil to the appropriate type, e.g. int(nil)
+        in order to cirumvent type clashes.
+NOTE 2: as the 'nil' element has no clear place in the ordered domain 
+        of values, tuples with 'nil values are NEVER returned by the 
+        range select."
+
+.COMMAND select ( BAT[any::1,any::2] b, any::2 low, any::2 high, bit l_in, bit h_in) : 
+				BAT[any::1, any::2] = CMDselect_; 
+"Select all BUNs of a BAT that have tail values: {v| low <[=] v <[=] high}.
+Either boundary value is included ('<=') if the respective bit (l_in / h_in)
+is TRUE, and excluded ('<') otherwise.
+
+NIL boundary values have a special meaning.
++ low  == nil means: no lower bound
 + high == nil means: no upper bound.
 
 NOTE 1: you should cast the nil to the appropriate type, e.g. int(nil)
@@ -97,6 +113,11 @@ NOTE 2: as the 'nil' element has no clear place in the ordered domain
 				BAT[any::1, void] = CMDuselect;
 "Select on tail, returning only the head values. 
  SEE ALSO: select(bat,low,high)."
+
+.COMMAND uselect ( BAT[any::1,any::2] b, any::2 low, any::2 high, bit l_in, bit h_in) : 
+				BAT[any::1, void] = CMDuselect_;
+"Select on tail, returning only the head values. 
+ SEE ALSO: select(bat,low,high,l_in,h_in)."
 @- value select
 @m
 .COMMAND select ( BAT[any::1,any::2] b, any::2 value) :
@@ -599,27 +620,11 @@ that for the moment are defined as procs.
                 } else if (fcn = "<=") {
                     return b.select(nilval, val);
                 } else if (fcn = "<") {
-                    var bn := b.select(nilval, val);
-		    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
-			bn := [oid](bn.reverse).reverse();
-		    }
-                    var bn_access := bn.access();
-                    bn.access(BAT_WRITE);
-                    bn.reverse.delete(val);
-                    bn.access(bn_access);
-                    return bn;
+                    return b.select(nilval, val, FALSE, FALSE);
                 } else if (fcn = ">=") {
                     return b.select(val, nilval);
                 } else if (fcn = ">") {
-                    var bn := b.select(val, nilval);
-		    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
-			bn := [oid](bn.reverse).reverse();
-		    }
-                    var bn_access := bn.access();
-                    bn.access(BAT_WRITE);
-                    bn.reverse.delete(val);
-                    bn.access(bn_access);
-                    return bn;
+                    return b.select(val, nilval, FALSE, FALSE);
                 } else if (fcn = "like") {
                     var bn := likeselect(b, val);
                     return b.semijoin(bn);
@@ -635,36 +640,11 @@ that for the moment are defined as procs.
         if (or((fcn = "between"),(fcn = "[in]"))) {
             return b.select(lo,hi);
         } else if (fcn = "<in]") {
-            var bn := b.select(lo,hi);
-	    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
-		bn := [oid](bn.reverse).reverse();
-	    }
-            var bn_access := bn.access();
-            bn.access(BAT_WRITE);
-            bn.reverse.delete(lo);
-            bn.access(bn_access);
-            return bn;
+            return b.select(lo,hi,FALSE,TRUE);
         } else if (fcn = "[in>") {
-            var bn := b.select(lo,hi);
-	    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
-		bn := [oid](bn.reverse).reverse();
-	    }
-            var bn_access := bn.access();
-            bn.access(BAT_WRITE);
-            bn.reverse.delete(hi);
-            bn.access(bn_access);
-            return bn;
+            return b.select(lo,hi,TRUE,FALSE);
         } else if (fcn = "<in>") {
-            var bn := b.select(lo,hi);
-	    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
-		bn := [oid](bn.reverse).reverse();
-	    }
-            var bn_access := bn.access();
-            bn.access(BAT_WRITE);
-            bn.reverse.delete(lo);
-            bn.reverse.delete(hi);
-            bn.access(bn_access);
-            return bn;
+            return b.select(lo,hi,FALSE,FALSE);
         }
         var bitvector := [*fcn](b,lo,hi);
         return [bitvector?b:];
@@ -1197,6 +1177,12 @@ int CMDselect(BAT **result, BAT *b, ptr low, ptr high) {
 }
 int CMDuselect(BAT **result, BAT *b, ptr low, ptr high) {
 	return (*result = BATuselect(b, low, high))?GDK_SUCCEED:GDK_FAIL;
+}
+int CMDselect_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_in) {
+	return (*result = BATselect_(b, low, high, *l_in, *h_in))?GDK_SUCCEED:GDK_FAIL;
+}
+int CMDuselect_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_in) {
+	return (*result = BATuselect_(b, low, high, *l_in, *h_in))?GDK_SUCCEED:GDK_FAIL;
 }
 int CMDfragment(BAT **result, BAT *b, ptr hlow, ptr hhigh, ptr tlow, ptr thigh) 
 {
