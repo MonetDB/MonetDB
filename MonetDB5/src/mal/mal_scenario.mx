@@ -202,13 +202,13 @@ Scenario getFreeScenario(){
 	int i;
 	Scenario scen= NULL;
 
-	MT_set_lock(mal_contextLock,"Scenario");
+	mal_set_lock(mal_contextLock,"Scenario");
 	for(i=0;i<MAXSCEN && scenarioRec[i].name;i++);
 
 	if( i==MAXSCEN)
 	GDKerror("freeScenario:no scenario space left; adjust & recompile \n");
 	else scen= scenarioRec+i;
-	MT_unset_lock(mal_contextLock, "Scenario");
+	mal_unset_lock(mal_contextLock, "Scenario");
 
 	return scen;
 }
@@ -231,10 +231,10 @@ call once the routine default scenario for each client first.
 str initScenario(Client c, Scenario s){
 	if(s->initScenario && s->initScenarioCmd==0){
 		/* prepare for conclicts */
-		MT_set_lock(mal_contextLock,"Scenario");
+		mal_set_lock(mal_contextLock,"Scenario");
 		s->initScenarioCmd= (MALfcn)getAddress( s->initScenario);
 		if(s->initScenarioCmd) (*s->initScenarioCmd)(c);
-		MT_unset_lock(mal_contextLock,"Scenario");
+		mal_unset_lock(mal_contextLock,"Scenario");
 	}
 	@:initScen(s,exitScenario)@
 	@:initScen(s,initClient)@

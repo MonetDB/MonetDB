@@ -831,9 +831,9 @@ waitForChildren(stk);
 void waitForChildren(MalStkPtr stk){
 	int i= stk->shares;
 	while(i>0 ) { 
-		MT_set_lock(stk->stklock,"finishChild");
+		mal_set_lock(stk->stklock,"finishChild");
 		i= stk->shares;
-		MT_unset_lock(stk->stklock,"finishChild");
+		mal_unset_lock(stk->stklock,"finishChild");
 #ifdef DEBUG_MAL_PARALLEL
 		stream_printf(GDKout,"%d awaiting childs\n",
 			MT_getpid());
@@ -855,8 +855,8 @@ Joining a process thread is controlled with a lock part of the stack frame
 		stkpc= pci->jump;
 		break;
 	}
-	if(stk->stklock== 0) stk->stklock= MT_create_lock();
-	MT_set_lock(stk->stklock,"createChild");
+	if(stk->stklock== 0 && GDKprotected) stk->stklock= MT_create_lock();
+	mal_set_lock(stk->stklock,"createChild");
 	if( stk->shares == MAXSHARES){
 		ret= raiseException(mb,stkpc,MALexception,
 					"too many threads\n");
@@ -867,7 +867,7 @@ Joining a process thread is controlled with a lock part of the stack frame
 	vp->val.ival = 1; /* already created, temporary identity */
 	stk->childs[stk->shares]= getDestVar(pci);
 	stk->shares++;
-	MT_unset_lock(stk->stklock,"createChild");
+	mal_unset_lock(stk->stklock,"createChild");
 	task->cntxt= cntxt; 
 	task->mb= mb; 
 	task->stk=stk; 
@@ -895,7 +895,7 @@ Joining a process thread is controlled with a lock part of the stack frame
 @= finishChild
 	if( childProcess && childProcess== getDestVar(pci)){
 		int j,k,lim;
-		MT_set_lock(stk->stklock,"finishChild");
+		mal_set_lock(stk->stklock,"finishChild");
 #ifdef DEBUG_MAL_PARALLEL
 	stream_printf(GDKout,"finish the child "
 		"%d %s\n",childProcess, 
@@ -907,7 +907,7 @@ Joining a process thread is controlled with a lock part of the stack frame
 			stk->childs[k++]= stk->childs[j];
 		else	stk->shares--;
 		childProcess=0;
-		MT_unset_lock(stk->stklock,"finishChild");
+		mal_unset_lock(stk->stklock,"finishChild");
 #ifdef DEBUG_MAL_PARALLEL
 	stream_printf(GDKout,"finished childs in stk "
 		"%d %d\n",stk->shares, &stk->shares);

@@ -635,12 +635,17 @@ variables.
 		int rhs = getArgType(mb,p,i);
 		int lhs = getArgType(mb,p,k);
 
-		if( rhs!= TYPE_void){
+		if( rhs != TYPE_void){
 			s1= resolveType(lhs,rhs);
 			if( s1== -1 ){
 				typeMismatch(mb,p,lhs,rhs);
 				return;
 			}
+		} 
+		if( lhs != rhs && lhs != TYPE_void && 
+		    rhs != TYPE_any && lhs != TYPE_any) {
+			typeMismatch(mb,p,lhs,rhs);
+			return;
 		}
 		if( !isFixed(mb,p->argv[k])) {
 			setVarType(mb,p->argv[k],rhs);

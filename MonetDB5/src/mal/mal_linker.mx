@@ -187,7 +187,7 @@ Use the search path provided in the configuration file
 		GDKfree(fullname);
 	}
 
-        MT_set_lock(mal_contextLock, "loadModule");
+        mal_set_lock(mal_contextLock, "loadModule");
 	for(i=0;modulesLoaded[i] && i<127;i++);
 	if( i==MAXMODULES)
 		GDKerror("loadModule:too many modules loaded\n");
@@ -195,7 +195,7 @@ Use the search path provided in the configuration file
 		modulesLoaded[i]= GDKstrdup(modnme);
 		handles[i]= handle;
 	}
-        MT_unset_lock(mal_contextLock, "loadModule");
+        mal_unset_lock(mal_contextLock, "loadModule");
 	return 0;
 }
 @-

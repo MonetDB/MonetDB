@@ -268,7 +268,8 @@ only.
 	obj->name= GDKstrdup(name);
 	obj->sym=  newMalBlk(MAXVARS,MAXSTMTS);
 	obj->val = newGlobalStack(MAXVARS);
-	obj->lock= MT_create_lock();
+	if( GDKprotected)
+		obj->lock= MT_create_lock();
 @-
 @c
 #include "mal_box.h"
@@ -283,13 +284,13 @@ Box box[MAXSPACES];
 Box newBox(str name){
 	Box obj= 0;
 	int i;
-        MT_set_lock(mal_contextLock, "newBox");
+        mal_set_lock(mal_contextLock, "newBox");
 #ifdef DEBUG_MAL_BOX
 	stream_printf(GDKout,"create new box '%s'\n",name);
 #endif
 	for(i=0; i<MAXSPACES; i++)
 	if( box[i]!= NULL && idcmp(name,box[i]->name)==0) {
-		MT_unset_lock(mal_contextLock, "newBox");
+		mal_unset_lock(mal_contextLock, "newBox");
 		GDKwarning("newBox:duplicate box definition\n");
 		return box[i];
 	}
@@ -299,7 +300,7 @@ Box newBox(str name){
 		box[i]= obj;
 		break;
 	}
-        MT_unset_lock(mal_contextLock, "newBox");
+        mal_unset_lock(mal_contextLock, "newBox");
 	if( i== MAXSPACES)
 		GDKerror("too many boxes\n");
 #ifdef DEBUG_MAL_BOX
@@ -323,17 +324,17 @@ void freeBoxes(){
 
 Box findBox(str name){
 	int i;
-        MT_set_lock(mal_contextLock, "findBox");
+        mal_set_lock(mal_contextLock, "findBox");
 
 	for(i=0; i<MAXSPACES; i++)
 	if( box[i]!= NULL && idcmp(name,box[i]->name)==0) {
 #ifdef DEBUG_MAL_BOX
 		stream_printf(GDKout,"found the box '%s' %d\n",name,i);
 #endif
-		MT_unset_lock(mal_contextLock, "findBox");
+		mal_unset_lock(mal_contextLock, "findBox");
 		return box[i];
 	}
-        MT_unset_lock(mal_contextLock, "findBox");
+        mal_unset_lock(mal_contextLock, "findBox");
 #ifdef DEBUG_MAL_BOX
 	stream_printf(GDKout,"could not find the box '%s' \n",name);
 #endif
@@ -360,7 +361,7 @@ void destroyBox(str name){
 	int i,j;
 	str boxfile;
 
-        MT_set_lock(mal_contextLock, "destroyBox");
+        mal_set_lock(mal_contextLock, "destroyBox");
 	for(i=j=0;i<MAXSPACES;i++){
 		if( idcmp(box[j]->name,name) == 0){
 			free(box[i]->name);
@@ -371,7 +372,7 @@ void destroyBox(str name){
 			GDKfree(boxfile); 
 		} else box[i] = box[j++];
 	}
-        MT_unset_lock(mal_contextLock, "destroyBox");
+        mal_unset_lock(mal_contextLock, "destroyBox");
 
 }
 @+ Operations

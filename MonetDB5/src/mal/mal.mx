@@ -214,6 +214,11 @@ mal_export void monet_hello();
 mal_export char            monet_cwd[PATHLENGTH];
 mal_export int             monet_welcome; 
 mal_export str             *monet_script;
+
+#define mal_set_lock(X,Y) if(GDKprotected) MT_set_lock(X,Y)
+#define mal_unset_lock(X,Y) if(GDKprotected) MT_unset_lock(X,Y)
+#define mal_up_sema(X,Y) if(GDKprotected) MT_up_sema(X,Y)
+#define mal_down_sema(X,Y) if(GDKprotected) MT_down_sema(X,Y)
 @c 
 #include <mal.h>
 
@@ -328,6 +333,7 @@ void tstAligned()
 #endif
 }
 int mal_init(){
+	GDKprotect();
 	mal_contextLock= MT_create_lock();
 	tstAligned();
 	initNamespace();

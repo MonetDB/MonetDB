@@ -201,9 +201,9 @@ The parameter of getEventStream is the return value of the enclosing function:
 	setEndPoint:	a str
 @= getEventStream
 	if( profileLock==0) profileLock= MT_create_lock();
-	MT_set_lock(profileLock,"profileLock");
+	mal_set_lock(profileLock,"profileLock");
 	if( eventstream == NULL) {
-		MT_unset_lock(profileLock,"profileLock");
+		mal_unset_lock(profileLock,"profileLock");
 		return @1;
 	}
 @- Event dispatching
@@ -272,7 +272,7 @@ void onlineProfilerHeader(){
 	}
 	log0("event\t# name\n");
 	flushLog();
-	MT_unset_lock(profileLock,"profileLock");
+	mal_unset_lock(profileLock,"profileLock");
 }
 
 void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -357,7 +357,7 @@ void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	log("%d ]\n",eventcounter);
 	eventcounter++;
 	flushLog();
-	MT_unset_lock(profileLock,"profileLock");
+	mal_unset_lock(profileLock,"profileLock");
 }
 #endif
 @+ Cached processing
@@ -616,7 +616,7 @@ inspect the properties of BATs and their propagation.
 	}
 
 	log0("</event>\n");
-	MT_unset_lock(profileLock,"profileLock");
+	mal_unset_lock(profileLock,"profileLock");
 	stream_flush(eventstream);
 #endif
 }
@@ -625,13 +625,13 @@ str setLogFile(Scope cntxt,  str fname){
         (void) cntxt; /* still unused */
 #ifdef MALprofiler
 	if( profileLock==0) profileLock= MT_create_lock();
-	MT_set_lock(profileLock,"profileLock");
+	mal_set_lock(profileLock,"profileLock");
 	eventstream = open_wastream(fname);
 	if( eventstream == NULL){
 		return throwMessage("mal.profiler",
 			"Could not create event stream file");
 	}
-	MT_unset_lock(profileLock,"profileLock");
+	mal_unset_lock(profileLock,"profileLock");
 #else
 	stream_printf(GDKout,"# Monet not compiled for profiling\n");
 #endif
@@ -658,7 +658,7 @@ str setStartPoint(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
 	@:getEventStream(MAL_SUCCEED /*? or MAL_? ?*/)@
 	stream_printf(GDKout,"# start point not set\n");
-	MT_unset_lock(profileLock,"profileLock");
+	mal_unset_lock(profileLock,"profileLock");
 #else
 	stream_printf(GDKout,"# Monet not compiled for profiling\n");
 #endif
@@ -669,7 +669,7 @@ str setEndPoint(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
 	@:getEventStream(MAL_SUCCEED /*? or MAL_? ?*/)@
 	stream_printf(GDKout,"# end point not set\n");
-	MT_unset_lock(profileLock,"profileLock");
+	mal_unset_lock(profileLock,"profileLock");
 #else
 	stream_printf(GDKout,"# Monet not compiled for profiling\n");
 #endif
@@ -698,9 +698,9 @@ leaves the scene. (Unclear if parallelism may cause errors)
 @c
 void resetProfiler(stream *fdout){
 	if( fdout != eventstream) return;
-	MT_set_lock(profileLock,"profileLock");
+	mal_set_lock(profileLock,"profileLock");
 	eventstream= 0;
-	MT_unset_lock(profileLock,"profileLock");
+	mal_unset_lock(profileLock,"profileLock");
 }
 @-
 Performance tracing is triggered on an instruction basis
@@ -738,7 +738,7 @@ void setFilter(Scope cntxt, str mod, str fcn){
 	profileAll= strcmp(mod,"*")==0 && strcmp(fcn,"*")==0;
 	if( profileAll) return;
 	if( profileLock==0) profileLock= MT_create_lock();
-	MT_set_lock(profileLock,"profileLock");
+	mal_set_lock(profileLock,"profileLock");
         while(s!= NULL){
                 if( s->subscope)
                 for(j=0;j<MAXSCOPE;j++)
@@ -755,7 +755,7 @@ void setFilter(Scope cntxt, str mod, str fcn){
                 }
                 s= s->outer;
         }
-	MT_unset_lock(profileLock,"profileLock");
+	mal_unset_lock(profileLock,"profileLock");
 #else
 	stream_printf(GDKout,"# Monet not compiled for profiling\n");
 #endif
@@ -774,7 +774,7 @@ void resetFilter(Scope cntxt, str mod, str fcn){
 	(void) mod; (void) fcn; /* still unused */
 
 	if( profileLock==0) profileLock= MT_create_lock();
-	MT_set_lock(profileLock,"profileLock");
+	mal_set_lock(profileLock,"profileLock");
 	if( profileAll){
 		profileAll= FALSE;
 		return;
@@ -792,7 +792,7 @@ void resetFilter(Scope cntxt, str mod, str fcn){
                 }
                 s= s->outer;
         }
-	MT_unset_lock(profileLock,"profileLock");
+	mal_unset_lock(profileLock,"profileLock");
 #else
 	stream_printf(GDKout,"# Monet not compiled for profiling\n");
 #endif

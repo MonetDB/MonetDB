@@ -258,11 +258,11 @@ ClientRec	mal_clients[MAL_MAXCLIENTS+1];
 
 Client newClient(){
 	Client 	c;
-	MT_set_lock(mal_contextLock, "newClient");
+	mal_set_lock(mal_contextLock, "newClient");
 	if( mal_clients[CONSOLE].user &&
 	    mal_clients[CONSOLE].mode == FINISHING){
 		GDKerror("newClient:system shutdown in progress \n");
-		MT_unset_lock(mal_contextLock, "newClient");
+		mal_unset_lock(mal_contextLock, "newClient");
 		return NULL;
 	}
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
@@ -271,7 +271,7 @@ Client newClient(){
 			break;
 		}
 	}
-	MT_unset_lock(mal_contextLock, "newClient");
+	mal_unset_lock(mal_contextLock, "newClient");
 
 	if (c == mal_clients+MAL_MAXCLIENTS) {
 		GDKfatal("Out of client slots\n");
@@ -603,15 +603,15 @@ str stopClient(Client c, str nme){
         if( ! isAdministrator(c))
                 return throwMessage("stop","Only permitted from server console");
 
-	MT_set_lock(mal_contextLock, "stopClient");
+	mal_set_lock(mal_contextLock, "stopClient");
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
 		if (c->mode > FREECLIENT && strcmp(nme,c->user)==0) {
 			killClient(c);
-			MT_unset_lock(mal_contextLock, "stopClient");
+			mal_unset_lock(mal_contextLock, "stopClient");
 			return MAL_SUCCEED;
 		}
 	}
-	MT_unset_lock(mal_contextLock, "stopClient");
+	mal_unset_lock(mal_contextLock, "stopClient");
 	return throwMessage("stop","Illegal client name");
 }
 @}
