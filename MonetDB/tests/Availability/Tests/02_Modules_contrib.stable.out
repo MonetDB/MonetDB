@@ -267,8 +267,8 @@ Module: "mel"
 
 Module: "mprof"
 
-[ 34 ]
-[ 34 ]
+[ 31 ]
+[ 31 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature					| help							  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -293,16 +293,13 @@ Module: "mprof"
 [ "Tms_new",		  "COMMAND:   ",  "Tms_new() : Tms",				  "Create a new Tms record"				  ]
 [ "Tms_stime",		  "COMMAND:   ",  "Tms_stime(Tms) : int",			  "Extract the system time part from the record"	  ]
 [ "Tms_utime",		  "COMMAND:   ",  "Tms_utime(Tms) : int",			  "Extract the user time part from the record"		  ]
-[ "drop_mprof",		  "PROC:      ",  "drop_mprof() : any",				  "not available"					  ]
 [ "emptyMallinfo",	  "PROC:      ",  "emptyMallinfo(..any..) : any",		  "not available"					  ]
 [ "insB",		  "COMMAND:   ",  "insB(str, int, Tms, Rusage, Mallinfo) : int",  "Insert the begin of a new labelled time period"	  ]
 [ "insE",		  "COMMAND:   ",  "insE(str, int, Tms, Rusage, Mallinfo) : int",  "Insert the end of a new labelled time period"	  ]
 [ "pmB",		  "COMMAND:   ",  "pmB(str) : int",				  "Start a new labelled timing period"			  ]
 [ "pmClear",		  "COMMAND:   ",  "pmClear() : void",				  "Clear the performance bats"				  ]
 [ "pmE",		  "COMMAND:   ",  "pmE(str) : int",				  "End a labelled timing period"			  ]
-[ "pmExit",		  "COMMAND:   ",  "pmExit() : void",				  "Removes the Mprof bats"				  ]
 [ "pmPrint",		  "PROC:      ",  "pmPrint(..any..) : any",			  "not available"					  ]
-[ "pmStart",		  "COMMAND:   ",  "pmStart() : void",				  "Initializes the mprof bats"				  ]
 [ "pmSummary",		  "PROC:      ",  "pmSummary(..any..) : any",			  "not available"					  ]
 [ "pmTag",		  "COMMAND:   ",  "pmTag(str, str) : void",			  "Add comment to a timing period"			  ]
 [ "test_mprof",		  "PROC:      ",  "test_mprof() : void",			  "not available"					  ]
