@@ -1452,12 +1452,11 @@ BATloopFast(b, r, s, xx) {
             BAT **bats = (BAT**) GDKmalloc(n*sizeof(BAT*));
 	    for(yy=0; yy<n; yy++) {
 		bats[yy] = part_bat(bn,BAThtype(bn),bn->ttype,sizes[yy],TRUE);
-		if (bf == NULL) {
+		if (bats[yy] == NULL) {
 			BBPreclaim(metabat);
 			return NULL;
 		}
 		BUNins(metabat, seps[yy], &bats[yy]->batCacheid);
-		GDKfree(seps[yy]);
 	    }
             switch(tpe = ATOMstorage(b->ttype)) {
             case TYPE_chr:  @:rangesplit(simple,loc,chr)@
@@ -1475,6 +1474,8 @@ BATloopFast(b, r, s, xx) {
 	    }
             GDKfree(bats);
 	}
+	for(yy=0; yy<(n-1); yy++)
+		GDKfree(seps[yy]);
         GDKfree(seps);
         GDKfree(sizes);
 
