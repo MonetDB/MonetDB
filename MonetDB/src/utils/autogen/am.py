@@ -496,7 +496,7 @@ CXXEXT = \\\"cc\\\"
   am['ALL'] = []
   am['DEPS'] = []
   am['InstallList'] = []
-  am['InstallList'].append(am['CWD'])
+  am['InstallList'].append(am['CWD']+"\n")
   am['OutList'] = [ am['CWD'] + 'Makefile' ]
 
   for i in tree.keys():
