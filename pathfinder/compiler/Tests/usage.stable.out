@@ -19,8 +19,6 @@ Usage: pf [OPTION] [FILE]
 
 = -h, --help: print this help message
 = -q, --quiet: do not print informational messages to log file
-= -l file, --log file: specify log file name (default stderr)
-= -d port, --daemon port: act as dæmon listening on specified TCP port
 = -M, --print-mil_summer: print MIL code (summer version) and stop
 = -P, --print-human-readable: print internal tree structure human-readable
 = -D, --print-att-dot: print internal tree structure in AT&T dot notation

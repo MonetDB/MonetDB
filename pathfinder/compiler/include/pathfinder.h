@@ -75,7 +75,6 @@ typedef struct PFstate_t PFstate_t;
 /** componentes of global compiler state */
 struct PFstate_t {
     bool quiet;               /**< command line switch: -q */
-    bool daemon;              /**< command line switch: -d */
     bool timing;              /**< command line switch: -T */
     bool print_dot;           /**< command line switch: -D */
     bool print_pretty;        /**< command line switch: -P */

@@ -29,6 +29,6 @@ EXTRA_DIST = \
 	core.h           import.h     ns.h         scope.h       varscope.h \
 	core_mnemonic.h  mem.h        nsres.h      simplify.h    xquery_fo.h \
 	coreprint.h      core2alg.h   oops.h       subtyping.h   algebra.h \
-	daemon.h         mil.h        parser.h     timer.h       builtins.h \
+	                 mil.h        parser.h     timer.h       builtins.h \
 	mil_mnemonic.h   milgen.h     algopt.h     algebra_cse.h coreopt.h \
 	algebra_mnemonic.h milprint_summer.h

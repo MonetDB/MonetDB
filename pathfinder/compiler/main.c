@@ -393,9 +393,7 @@ static struct option long_options[] = {
     { "timing",                        0, NULL, 'T' },
     { "print-algebra",                 0, NULL, 'a' },
     { "print-core-tree",               0, NULL, 'c' },
-    { "daemon",                        2, NULL, 'd' },
     { "help",                          0, NULL, 'h' },
-    { "log",                           0, NULL, 'l' },
     { "print-parse-tree",              0, NULL, 'p' },
     { "quiet",                         0, NULL, 'q' },
     { "stop-after",                    1, NULL, 's' },
@@ -457,7 +455,6 @@ static const char
 #include "abssynprint.h"
 #include "coreprint.h"
 #include "algdebug.h"
-#include "daemon.h"
 #include "timer.h"
 #include "fs.h"           /* core mapping (formal semantics) */
 #include "types.h"        /* type system */
@@ -505,7 +502,6 @@ static char *phases[] = {
 /** global state of the compiler */
 PFstate_t PFstate = {
     quiet               : false,
-    daemon              : false,
     timing              : false,
     print_dot           : false,
     print_pretty        : false,
@@ -608,10 +604,6 @@ main (int argc, char *argv[])
     PFarray_t  *mil_program = 0;
     unsigned int i;
 
-    /* fd of the log file (if present) */
-    int logf = 0;
-    char *logfn = 0;
-
     /* fd of query file (if present) */
     int query = 0;
 
@@ -636,10 +628,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "DMOPTacd:hl:pqrs:t", 
+        c = getopt_long (argc, argv, "DMOPTachpqrs:t", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "DMOPTacd:hl:pqrs:t");
+        c = getopt (argc, argv, "DMOPTachpqrs:t");
 #endif
 
         if (c == -1)
@@ -655,10 +647,6 @@ main (int argc, char *argv[])
                     long_option (opt_buf, ", --%s", 'h'));
             printf ("  -q%s: do not print informational messages to log file\n",
                     long_option (opt_buf, ", --%s", 'q'));
-            printf ("  -l file%s: specify log file name (default stderr)\n",
-                    long_option (opt_buf, ", --%s file", 'l'));
-            printf ("  -d port%s: act as dæmon listening on specified TCP port\n",
-                    long_option (opt_buf, ", --%s port", 'd'));
             printf ("  -M%s: print MIL code (summer version) and stop\n",
                     long_option (opt_buf, ", --%s", 'M'));
             printf ("  -P%s: print internal tree structure human-readable\n",
@@ -689,17 +677,6 @@ main (int argc, char *argv[])
           
         case 'q':
             PFstate.quiet = true;
-            break;
-
-        case 'd':
-            PFstate.daemon = true;
-
-            PFdaemonize (atoi (optarg));
-            break;
-        
-        case 'l': 
-            /* yank leading blanks, tabs in command line */
-            logfn = PFstrdup (strtok (optarg, " \t"));
             break;
 
         case 'p':
@@ -751,10 +728,8 @@ main (int argc, char *argv[])
         }           /* end of switch */
     }           /* end of while */
 
-    /* connect stdin to query file (if present) 
-     * if we are not in daemon mode
-     */
-    if (optind < argc && ! PFstate.daemon) {
+    /* connect stdin to query file (if present) */
+    if (optind < argc) {
         if ((query = open (argv[optind], O_RDONLY)) < 0) {
             PFoops (OOPS_FATAL, 
                     "cannot read query from file `%s': %s",
@@ -768,28 +743,6 @@ main (int argc, char *argv[])
         if (dup2 (query, fileno (stdin)) < 0) {
             PFoops (OOPS_FATAL,
                     "cannot dup query file: %s",
-                    strerror (errno));
-            goto failure;
-        }
-    }
-
-    /* reroute stderr to log file 
-     * if this has been requested (via `-l') 
-     */
-    if (logfn) {
-        if ((logf = open (logfn, O_CREAT | O_WRONLY | O_APPEND)) < 0) {
-            PFoops (OOPS_FATAL,
-                    "cannot append to log file `%s': %s",
-                    logfn,
-                    strerror (errno));
-            goto failure;
-        }
-    
-        close (fileno (stderr));
-    
-        if (dup2 (logf, fileno (stderr)) < 0) {
-            PFoops (OOPS_FATAL,
-                    "failed to reroute log messages: %s",
                     strerror (errno));
             goto failure;
         }
@@ -1026,9 +979,6 @@ main (int argc, char *argv[])
     if (PFstate.timing)
         PFlog ("#garbage collections:\t %d", (int) GC_gc_no);
 
-    if (logf > 0)
-        close (logf);
-
     /* print abstract syntax tree if requested */
     if (PFstate.print_parse_tree) {
         if (proot) {
@@ -1077,9 +1027,6 @@ main (int argc, char *argv[])
     exit (EXIT_SUCCESS);
 
  failure:
-    if (logf > 0)
-        close (logf);
-
     exit (EXIT_FAILURE);
 }
 
