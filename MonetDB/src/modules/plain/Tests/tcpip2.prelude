@@ -9,7 +9,7 @@ proc get_mapi_port() := {
 	}
 }
 
-VAR tcpip_port = get_mapi_port();
+VAR tcpip_port := get_mapi_port();
 
 fork(listen(tcpip_port));
 sleep(2);
