@@ -134,6 +134,9 @@ m_export void closeProfiler(stream* o);
 m_export int startProfiler(stream* o);
 m_export int stopProfiler(void);
 m_export int setProfilerFilter(str left, str right);
+m_export void setProfilerMode(int mode);
+m_export BAT * getProfilerCount();
+m_export void resetProfilerCount();
 #endif /* _MONET_INTERPRETER_H_ */
 
 @c
@@ -433,6 +436,10 @@ event stream. The amount of data is rather large and a potential
 performance bottleneck. Nevertheless, it is considered usefull information
 for debugging and optimizing the mil programs.
 
+When the profilermode is set to >1, it collects information
+in a persistent BAT. It can be picked up at a later time for inspection.
+This can be extended upon need to also collect the timings.
+
 To avoid problems, each time client disappears we close the profiling option.
 It should be explicitly set afterwards. 
 @c
@@ -451,6 +458,8 @@ m_export void onlineProfilerHeader();
 static stream *eventstream=NULL;
 static int delayswitch=0;
 static int showheader=0;
+static int profilemode=0;	/* 1-> events 2-> count summary */
+static BAT *profileBAT=0;
 
 static MT_Lock profilerLock;
 
@@ -462,6 +471,7 @@ void closeProfiler(stream *o)
 	if( o == eventstream){ 
 		eventstream= NULL;
 	}
+	profilemode = 0;
 	monet_unset_lock(profilerLock, "startProfiler");
 }
 int startProfiler(stream *o)
@@ -469,9 +479,10 @@ int startProfiler(stream *o)
 	if( profilerLock==NULL)
 		profilerLock= MT_create_lock();
 	monet_set_lock(profilerLock, "startProfiler");
-	eventstream= o;
-	delayswitch=1;
-	showheader=1;
+	eventstream = o;
+	delayswitch = 1;
+	showheader = 1;
+	profilemode = 1;
 	monet_unset_lock(profilerLock, "startProfiler");
 	return 0;
 }
@@ -479,9 +490,31 @@ int stopProfiler(void)
 {
 	monet_set_lock(profilerLock, "stopProfiler");
 	eventstream= NULL;
+	profilemode = 0;
 	monet_unset_lock(profilerLock, "stopProfiler");
 	return 0;
 }
+void setProfilerMode(int mode){
+	profilemode= mode;
+	if( mode>1){
+		/* check existence of the BAT */
+		int bid = BBPindex("monet_profile_count");
+		if(bid) profileBAT = BATdescriptor(bid);
+		if( profileBAT == NULL){
+			profileBAT = BATnew(TYPE_str,TYPE_int, (size_t) 1000);
+			BBPrename(profileBAT->batCacheid,"monet_profile_count");
+			BATroles(profileBAT,"name","count");
+			BATmode(profileBAT, PERSISTENT);
+			BBPincref(profileBAT->batCacheid,TRUE);
+		}
+		BBPfix(profileBAT->batCacheid);
+		/* set default filters */
+		setProfilerFilter("proc","*");
+		setProfilerFilter("command","*");
+	}
+}
+BAT *getProfilerCount(){ return profileBAT;}
+void resetProfilerCount(){ if(profileBAT) BATclear(profileBAT); }
 #else
 void closeProfiler(stream *o)
 {
@@ -496,13 +529,16 @@ int stopProfiler(void)
 {
 	return 0;
 }
+void setProfilerMode(int mode){ }
+BAT *getProfilerCount(){ return 0;}
+void resetProfilerCount(){ }
 #endif /* HAVE_TIMES */
 @-
 The information gathered is currently limited to some basic OS properties;
 It is dumped on the eventstream whenever we leave the interpreter();
 @= profileEvent
 #ifdef HAVE_TIMES
-if( eventstream){
+if( profilemode){
     long nc= GDKusec();
     onlineProfilerEvent("@1",nc, nc-clk, &timer, lt);
 }
@@ -2051,6 +2087,21 @@ void onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, 
         struct rusage   infoUsage;
 	char namebuf[1024];
 
+	if( profilemode >1 ){
+		int one = 1;
+		namebuf[0]=0;
+		yydeparseFunction(monet_clients,lt,namebuf,namebuf+1024);
+		if( tstFilter(caller,namebuf)) {
+			BUN cnt = BUNfnd(profileBAT,namebuf);
+			if( cnt == NULL)
+				BUNins(profileBAT,namebuf, &one);
+			else { 
+				cnt = BUNtail(profileBAT,cnt);
+				*(int*) cnt = *(int *)cnt +1;
+			}
+		}
+		return;
+	}
 	if( eventstream==0) return;
 	if( delayswitch >0){
 		/* first call to profiled */
