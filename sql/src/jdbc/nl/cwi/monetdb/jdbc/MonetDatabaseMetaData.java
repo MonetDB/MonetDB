@@ -1467,15 +1467,15 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			") AS \"tables\" WHERE 1 = 1 ";
 
 		if (tableNamePattern != null) {
-			select += "AND \"TABLE_NAME\" LIKE '" + escapeQuotes(tableNamePattern) + "' ";
+			select += "AND LOWER(\"TABLE_NAME\") LIKE '" + escapeQuotes(tableNamePattern).toLowerCase() + "' ";
 		}
 		if (schemaPattern != null) {
-			select += "AND \"TABLE_SCHEM\" LIKE '" + escapeQuotes(schemaPattern) + "' ";
+			select += "AND LOWER(\"TABLE_SCHEM\") LIKE '" + escapeQuotes(schemaPattern).toLowerCase() + "' ";
 		}
 		if (types != null) {
 			select += "AND (";
 			for (int i = 0; i < types.length; i++) {
-				select += (i == 0 ? "" : " OR ") + "\"TABLE_TYPE\" LIKE '" + escapeQuotes(types[i]) + "'";
+				select += (i == 0 ? "" : " OR ") + "LOWER(\"TABLE_TYPE\") LIKE '" + escapeQuotes(types[i]).toLowerCase() + "'";
 			}
 			select += ") ";
 		}
@@ -1716,13 +1716,13 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 					"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" ";
 
 		if (schemaPattern != null) {
-			query += "AND \"schemas\".\"name\" LIKE '" + escapeQuotes(schemaPattern) + "' ";
+			query += "AND LOWER(\"schemas\".\"name\") LIKE '" + escapeQuotes(schemaPattern).toLowerCase() + "' ";
 		}
 		if (tableNamePattern != null) {
-			query += "AND \"tables\".\"name\" LIKE '" + escapeQuotes(tableNamePattern) + "' ";
+			query += "AND LOWER(\"tables\".\"name\") LIKE '" + escapeQuotes(tableNamePattern).toLowerCase() + "' ";
 		}
 		if (columnNamePattern != null) {
-			query += "AND \"columns\".\"name\" LIKE '" + escapeQuotes(columnNamePattern) + "' ";
+			query += "AND LOWER(\"columns\".\"name\") LIKE '" + escapeQuotes(columnNamePattern).toLowerCase() + "' ";
 		}
 
 		query += "ORDER BY \"TABLE_SCHEM\", \"TABLE_NAME\", \"ORDINAL_POSITION\"";
@@ -1799,13 +1799,13 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"AND \"privileges\".\"grantor\" = \"grantors\".\"id\" ";
 		
 		if (schemaPattern != null) {
-			query += "AND \"schemas\".\"name\" LIKE '" + escapeQuotes(schemaPattern) + "' ";
+			query += "AND LOWER(\"schemas\".\"name\") LIKE '" + escapeQuotes(schemaPattern).toLowerCase() + "' ";
 		}
 		if (tableNamePattern != null) {
-			query += "AND \"tables\".\"name\" LIKE '" + escapeQuotes(tableNamePattern) + "' ";
+			query += "AND LOWER(\"tables\".\"name\") LIKE '" + escapeQuotes(tableNamePattern).toLowerCase() + "' ";
 		}
 		if (columnNamePattern != null) {
-			query += "AND \"columns\".\"name\" LIKE '" + escapeQuotes(columnNamePattern) + "' ";
+			query += "AND LOWER(\"columns\".\"name\") LIKE '" + escapeQuotes(columnNamePattern).toLowerCase() + "' ";
 		}
 
 		query += "ORDER BY \"COLUMN_NAME\", \"PRIVILEGE\"";
@@ -1878,10 +1878,10 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"AND \"privileges\".\"grantor\" = \"grantors\".\"id\" ";
 		
 		if (schemaPattern != null) {
-			query += "AND \"schemas\".\"name\" LIKE '" + escapeQuotes(schemaPattern) + "' ";
+			query += "AND LOWER(\"schemas\".\"name\") LIKE '" + escapeQuotes(schemaPattern).toLowerCase() + "' ";
 		}
 		if (tableNamePattern != null) {
-			query += "AND \"tables\".\"name\" LIKE '" + escapeQuotes(tableNamePattern) + "' ";
+			query += "AND LOWER(\"tables\".\"name\") LIKE '" + escapeQuotes(tableNamePattern).toLowerCase() + "' ";
 		}
 
 		query += "ORDER BY \"TABLE_SCHEM\", \"TABLE_NAME\", \"PRIVILEGE\"";
@@ -1950,10 +1950,10 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		// SCOPE, DATA_TYPE, PSEUDO_COLUMN have to be generated with Java logic
 
 		if (schema != null) {
-			query += "AND \"schemas\".\"name\" LIKE '" + escapeQuotes(schema) + "' ";
+			query += "AND LOWER(\"schemas\".\"name\") LIKE '" + escapeQuotes(schema).toLowerCase() + "' ";
 		}
 		if (table != null) {
-			query += "AND \"tables\".\"name\" LIKE '" + escapeQuotes(table) + "' ";
+			query += "AND LOWER(\"tables\".\"name\") LIKE '" + escapeQuotes(table).toLowerCase() + "' ";
 		}
 		if (!nullable) {
 			query += "AND \"columns\".\"null\" = false ";
@@ -2098,10 +2098,10 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"AND \"keys\".\"type\" = 0 ";
 
 		if (schema != null) {
-			query += "AND \"schemas\".\"name\" LIKE '" + escapeQuotes(schema) + "' ";
+			query += "AND LOWER(\"schemas\".\"name\") LIKE '" + escapeQuotes(schema).toLowerCase() + "' ";
 		}
 		if (table != null) {
-			query += "AND \"tables\".\"name\" LIKE '" + escapeQuotes(table) + "' ";
+			query += "AND LOWER(\"tables\".\"name\") LIKE '" + escapeQuotes(table).toLowerCase() + "' ";
 		}
 
 		query += "ORDER BY \"COLUMN_NAME\"";
@@ -2189,10 +2189,10 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String query = keyQuery(cat);
 
 		if (schema != null) {
-			query += "AND \"fkschema\".\"name\" LIKE '" + escapeQuotes(schema) + "' ";
+			query += "AND LOWER(\"fkschema\".\"name\") LIKE '" + escapeQuotes(schema).toLowerCase() + "' ";
 		}
 		if (table != null) {
-			query += "AND \"fktable\".\"name\" LIKE '" + escapeQuotes(table) + "' ";
+			query += "AND LOWER(\"fktable\".\"name\") LIKE '" + escapeQuotes(table).toLowerCase() + "' ";
 		}
 
 		query += "ORDER BY \"PKTABLE_CAT\", \"PKTABLE_SCHEM\", \"PKTABLE_NAME\", \"KEY_SEQ\"";
@@ -2259,10 +2259,10 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String query = keyQuery(cat);
 
 		if (schema != null) {
-			query += "AND \"pkschema\".\"name\" LIKE '" + escapeQuotes(schema) + "' ";
+			query += "AND LOWER(\"pkschema\".\"name\") LIKE '" + escapeQuotes(schema).toLowerCase() + "' ";
 		}
 		if (table != null) {
-			query += "AND \"pktable\".\"name\" LIKE '" + escapeQuotes(table) + "' ";
+			query += "AND LOWER(\"pktable\".\"name\") LIKE '" + escapeQuotes(table).toLowerCase() + "' ";
 		}
 
 		query += "ORDER BY \"FKTABLE_CAT\", \"FKTABLE_SCHEM\", \"FKTABLE_NAME\", \"KEY_SEQ\"";
@@ -2344,16 +2344,16 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String query = keyQuery(cat);
 
 		if (pschema != null) {
-			query += "AND \"pkschema\".\"name\" LIKE '" + escapeQuotes(pschema) + "' ";
+			query += "AND LOWER(\"pkschema\".\"name\") LIKE '" + escapeQuotes(pschema).toLowerCase() + "' ";
 		}
 		if (ptable != null) {
-			query += "AND \"pktable\".\"name\" LIKE '" + escapeQuotes(ptable) + "' ";
+			query += "AND LOWER(\"pktable\".\"name\") LIKE '" + escapeQuotes(ptable).toLowerCase() + "' ";
 		}
 		if (fschema != null) {
-			query += "AND \"fkschema\".\"name\" LIKE '" + escapeQuotes(fschema) + "' ";
+			query += "AND LOWER(\"fkschema\".\"name\") LIKE '" + escapeQuotes(fschema).toLowerCase() + "' ";
 		}
 		if (ftable != null) {
-			query += "AND \"fktable\".\"name\" LIKE '" + escapeQuotes(ftable) + "' ";
+			query += "AND LOWER(\"fktable\".\"name\") LIKE '" + escapeQuotes(ftable).toLowerCase() + "' ";
 		}
 
 		query += "ORDER BY \"FKTABLE_CAT\", \"FKTABLE_SCHEM\", \"FKTABLE_NAME\", \"KEY_SEQ\"";
@@ -2560,10 +2560,10 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 				"WHERE 1 = 1 ";
 
 		if (schema != null) {
-			query += "AND \"TABLE_SCHEM\" LIKE '" + escapeQuotes(schema) + "' ";
+			query += "AND LOWER(\"TABLE_SCHEM\") LIKE '" + escapeQuotes(schema).toLowerCase() + "' ";
 		}
 		if (table != null) {
-			query += "AND \"TABLE_NAME\" LIKE '" + escapeQuotes(table) + "' ";
+			query += "AND LOWER(\"TABLE_NAME\") LIKE '" + escapeQuotes(table).toLowerCase() + "' ";
 		}
 		if (unique) {
 			query += "AND \"NON_UNIQUE\" = false ";
