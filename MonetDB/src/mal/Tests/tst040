@@ -5,3 +5,4 @@ str := "hello";
 int := 1:sht;
 flt := "wrong";
 i   := true;
+

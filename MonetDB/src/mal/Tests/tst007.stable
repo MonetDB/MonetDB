@@ -56,7 +56,7 @@
 #
 #
 function Admin.main():int;	#0:(main:int)
-barrier	H := batoperatie;	#1 dynamic:(H:any)<-(batoperatie:any) jump 5
+barrier	H := batoperatie;	#1 unknown:(H:any)<-(batoperatie:any) jump 5
 	Tail := bat.fetch(b,H);	#2 unknown:(Tail:any)<-(b:any)(H:any)
 	redo H ;	#3:(H:any) jump 1
 end	H;	#4:(H:any)
@@ -66,7 +66,7 @@ barrier	L := bat.hasMoreElements(b);	#5 unknown:(L:any)<-(b:any) jump 10
 	redo L ;	#8:(L:any) jump 5
 end	L;	#9:(L:any)
 	entry := true;	#10:(entry:bit)<-($8:bit)
-barrier	M := entry_or_exittest;	#11 dynamic:(M:any)<-(entry_or_exittest:any) jump 15
+barrier	M := entry_or_exittest;	#11 unknown:(M:any)<-(entry_or_exittest:any) jump 15
 	entry := false;	#12:(entry:bit)<-($11:bit)
 	redo M ;	#13:(M:any) jump 11
 end	M;	#14:(M:any)
@@ -75,16 +75,15 @@ barrier	N := calc.<(i,10);	#16:(N:bit)<-(i:int)($15:int) jump 20
 	i := calc.+(i,1);	#17:(i:int)<-(i:int)($13:int)
 	redo N ;	#18:(N:bit) jump 16
 end	N;	#19:(N:bit)
-barrier	FT := booleanexpr;	#20 dynamic:(FT:any)<-(booleanexpr:any) jump 22
+barrier	FT := booleanexpr;	#20 unknown:(FT:any)<-(booleanexpr:any) jump 22
 end	FT;	#21:(FT:any)
-barrier	FTE := booleanexpr;	#22 dynamic:(FTE:any)<-(booleanexpr:any) jump 24
+barrier	FTE := booleanexpr;	#22 unknown:(FTE:any)<-(booleanexpr:any) jump 24
 end	FTE;	#23:(FTE:any)
 barrier	FS := not(FTE);	#24 unknown:(FS:any)<-(FTE:any) jump 26
 end	FS;	#25:(FS:any)
 end function;	#26:
 Start dynamic type check on:
-	Tail := bat.fetch(b,H);	#2 unknown:(Tail:any)<-(b:any)(H:any)
+barrier	H := batoperatie;	#1 unknown:(H:any)<-(batoperatie:any) jump 5
 type checked version:
-	Tail := bat.fetch(b,H);	#-1 unknown:(Tail:any)<-(b:any)(H:any)
-!ERROR: MALexception:Admin.main[2]:Instruction type not fixed
+barrier	H := batoperatie;	#-1 dynamic:(H:any)<-(batoperatie:any) jump 5
 >

@@ -12,7 +12,11 @@
 #b:=c;	#c undefined
 #
 function Admin.main():int;	#0:(main:int)
-	a := b;	#1 dynamic:(a:any)<-(b:any)
-	b := c;	#2 dynamic:(b:any)<-(c:any)
+	a := b;	#1 unknown:(a:any)<-(b:any)
+	b := c;	#2 unknown:(b:any)<-(c:any)
 end function;	#3:
+Start dynamic type check on:
+	a := b;	#1 unknown:(a:any)<-(b:any)
+type checked version:
+	a := b;	#-1 dynamic:(a:any)<-(b:any)
 >
