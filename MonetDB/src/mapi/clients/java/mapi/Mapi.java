@@ -182,8 +182,7 @@ public class Mapi
 	private Column columns[]= new Column[32];
 	
 	private Socket socket;
-	private DataOutputStream toMonet;
-	//private DataInputStream fromMonet;
+	private BufferedWriter toMonet;
 	private BufferedReader fromMonet;
 	private PrintStream traceLog = System.err;
 	
@@ -326,7 +325,8 @@ throws MapiException
 		socket   = new Socket( host, port );
 		fromMonet= new BufferedReader(
 			new InputStreamReader(socket.getInputStream(),"UTF-8"));
-		toMonet= new DataOutputStream(socket.getOutputStream());
+		toMonet= new BufferedWriter( 
+			new OutputStreamWriter(socket.getOutputStream()));
 		connected = true;
 	} catch(IOException e) {
 		error= MERROR;
@@ -1034,7 +1034,7 @@ private int executeInternal(){
 		}
 		if (tableid >= 0) {
 			if (trace) traceLog.println("execute: Xclose");
-			toMonet.writeBytes("Xclose " + tableid + "\n" );
+			toMonet.write("Xclose " + tableid + "\n" );
 			toMonet.flush();
 			do {
 				blk.buf = fromMonet.readLine(); 
@@ -1686,8 +1686,8 @@ private void toMonet(String msg) throws MapiException {
 		if( trace) traceLog.println("toMonet:"+msg);
 		int size= msg.length();
 		if( language.equals("sql"))
-			toMonet.writeBytes("S");
-		toMonet.writeBytes(msg);
+			toMonet.write("S");
+		toMonet.write(msg);
 		toMonet.flush();
 	} catch( IOException e){
 		throw new MapiException("Can not write to Monet" );
