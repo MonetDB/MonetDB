@@ -70,6 +70,8 @@ module 'pathfinder'
 [ "serialize(BAT[void,oid], BAT[oid,int], BAT[oid,str], BAT[oid,dbl], BAT[oid,dbl], BAT[oid,bit], BAT[oid,oid]) : void"                   ]
 [ "xml_print(BAT[void,BAT], BAT[void,oid], BAT[void,int], BAT[void,int], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : void"  ]
 [ "xml_print(BAT[void,BAT], str) : void"  ]
+[ "xquery(str, str) : void"														  ]
+
 quit();
 
 # 20:09:25 >  

@@ -20,6 +20,7 @@ Pathfinder XML Shredder ($Revision$, $Date$)
      -v: be verbose
 =    -c: compress node properties (40% encoding speed)
      -d: set XML node stack depth to <n> (default 256)
+     -p: generate pre table in post-order
      -o: write relations to OUTPUT.<rel> instead of FILE.<rel>
          (mandatory if we read from stdin)
          <rel> = { pre,qn,text,com,pi,@,@val }
