@@ -215,11 +215,10 @@ if test "x$have_libxml2" != xyes; then
     PF_LOADER_PROGRAMS=""
     AC_DEFINE(HAVE_LIBXML2, 0,
               [Do we have the libxml2 library available to support XML Schema?])
-    AC_MSG_WARN([The libxml2 XML parsing library was not found or you have
-                requested to not use it.
-                This will disable XML Schema import functionality in the
-                Pathfinder compiler. The XML document loader does not work
-                without the libxml2 library and will not be compiled at all.])
+    AC_MSG_FAILURE([The libxml2 XML parsing library and/or include files were 
+		not found or you have requested to not use it.
+                This is required dependence, core components like 
+		the XML Schema import functionality depends on it.])
 fi
 
 if test "x$have_libxml2" = xyes; then
@@ -239,6 +238,7 @@ AC_SUBST(LIBXML2_LIBS, $LIBXML2_LIBS)
 AC_SUBST(LIBXML2_LDADD, $LIBXML2_LDADD)
 AC_SUBST(PF_LOADER_PROGRAMS, $PF_LOADER_PROGRAMS)
 AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
+
 
 dnl See if we have the Hans Boehm garbage collector available
 dnl
