@@ -1422,7 +1422,8 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 str BKCnewBATint(int *res, int *ht, int *tt, int *cap){
 	BAT *b;
 	if( CMDnew(&b,ht,tt, cap) == GDK_SUCCEED){
-		*res= b->batCacheid;
+		BBPincref(*res= b->batCacheid, TRUE);
+		BBPunfix(*res);
 		return MAL_SUCCEED;
 	}
 	return  throwMessage("bat.new", 
@@ -1432,7 +1433,8 @@ str BKCnewBATlng(int *res, int *ht, int *tt){
 	BAT *b;
 	lng cap =0;
 	if( CMDnew_lng(&b,ht,tt,&cap) == GDK_SUCCEED){
-		*res= b->batCacheid;
+		BBPincref(*res= b->batCacheid, TRUE);
+		BBPunfix(*res);
 		return MAL_SUCCEED;
 	}
 	return  throwMessage("bat.new", 
@@ -1449,6 +1451,7 @@ str BKCreverse(int *ret, int *bid){
 	CMDreverse(&bn,b);
 	if( bn) {
 		*ret= bn->batCacheid;
+		BBPincref(bn->batCacheid,TRUE);
 		BBPunfix(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
@@ -1459,7 +1462,8 @@ str BKCmirror(int *ret, int *bid){
 	BAT *b, *bn = NULL;
 	@:getBATdescriptor(ret,bid,b,mirror)@
 	if( CMDmirror(&bn, b)== GDK_SUCCEED){
-                *ret = bn->batCacheid;
+                BBPincref(*ret = bn->batCacheid,TRUE);
+				BBPunfix(*ret);
                 return MAL_SUCCEED;
         }
 	*ret = 0;
@@ -1470,30 +1474,40 @@ str BKCconvert(int *ret, int *bid){
 	BAT *b, *bn=NULL;
 	@:getBATdescriptor(ret,bid,b,convert)@
 	CMDconvert(&bn,b);
+	BBPincref(bn->batCacheid,TRUE);
+	BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str BKCrevert(int *ret, int *bid){
 	BAT *b, *bn =NULL;
-	(void) bn;
 	@:getBATdescriptor(ret,bid,b,revert)@
-	if( CMDrevert(&bn,b) == GDK_SUCCEED)
+	if( CMDrevert(&bn,b) == GDK_SUCCEED){
+		BBPincref(bn->batCacheid,TRUE);
+		BBPunfix(bn->batCacheid);
 		return MAL_SUCCEED;
+	}
 	return throwMessage("bat.revert","GDKerror");
 }
 
 str BKCorder(int *ret, int *bid){
 	BAT *b, *bn = NULL;
 	@:getBATdescriptor(ret,bid,b,order)@
-	if( CMDorder(&bn,b) == GDK_SUCCEED)
+	if( CMDorder(&bn,b) == GDK_SUCCEED){
+		BBPincref(bn->batCacheid,TRUE);
+		BBPunfix(bn->batCacheid);
 		return MAL_SUCCEED;
+	}
 	return throwMessage("bat.order","GDKerror");
 }
 str BKCorder_rev(int *ret, int *bid){
 	BAT *b, *bn = NULL;
 	@:getBATdescriptor(ret,bid,b,order_rev)@
-	if( CMDorder_rev(&bn,b) == GDK_SUCCEED)
+	if( CMDorder_rev(&bn,b) == GDK_SUCCEED){
+		BBPincref(bn->batCacheid,TRUE);
+		BBPunfix(bn->batCacheid);
 		return MAL_SUCCEED;
+	}
 	return throwMessage("bat.order","GDKerror");
 }
 @-
@@ -1532,8 +1546,8 @@ str BKCinsert_bat(int *r, int *bid, int *sid){
 	@:getBATdescriptor(r,bid,b,insert)@
 	@:getBATdescriptor(r,sid,s,insert)@
 	CMDinsert_bat(&bn, b,s);
+	BBPincref(bn->batCacheid,TRUE);
 	BBPunfix(bn->batCacheid);
-	(void) bn;
 	return MAL_SUCCEED;
 }
 
@@ -1551,9 +1565,12 @@ str BKCreplace_bat(int *r, int *bid, int *sid){
 	BAT *b,*s, *bn= NULL;
 	@:getBATdescriptor(r,bid,b,replace)@
 	@:getBATdescriptor(r,sid,s,replace)@
-	return CMDreplace_bat(&bn,b,s)== GDK_SUCCEED?
-		MAL_SUCCEED:
-		throwMessage("bat.replace_bat", "GDKerror");
+	if( CMDreplace_bat(&bn,b,s)== GDK_SUCCEED){
+		BBPincref(bn->batCacheid,TRUE);
+		BBPunfix(bn->batCacheid);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("bat.replace_bat", "GDKerror");
 }
 str BKCdelete_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b, *bn=NULL;
@@ -1561,8 +1578,9 @@ str BKCdelete_bun(int *r, int *bid, ptr h, ptr t) {
 	@:getBATdescriptor(r,bid,b,delete)@
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
-	if(CMDdelete_bun(&bn,b,h,t) == GDK_SUCCEED)
+	if(CMDdelete_bun(&bn,b,h,t) == GDK_SUCCEED){
 		return MAL_SUCCEED;
+	}
 	return throwMessage("bat.delete_buns", "GDKerror");
 }
 
@@ -1571,8 +1589,9 @@ str BKCdelete_head(int *r, int *bid, ptr h) {
 	(void) bn;
 	@:getBATdescriptor(r,bid,b,delete)@
 	@:derefStr(b,h,h)@
-	if( CMDdelete_head(&bn,b,h) == GDK_SUCCEED)
+	if( CMDdelete_head(&bn,b,h) == GDK_SUCCEED){
 		return MAL_SUCCEED;
+	}
 	return throwMessage("bat.delete_head", "GDKerror");
 }
 
@@ -1580,8 +1599,9 @@ str BKCdelete_all(int *r, int *bid) {
 	BAT *b, *bn = NULL;
 	(void) bn;
 	@:getBATdescriptor(r,bid,b,delete)@
-	if( CMDdelete_all(&bn,b) == GDK_SUCCEED)
+	if( CMDdelete_all(&bn,b) == GDK_SUCCEED){
 		return MAL_SUCCEED;
+	}
 	return throwMessage("bat.delete_all", "GDKerror");
 }
 
@@ -1590,8 +1610,9 @@ str BKCdelete_bat_bun(int *r, int *bid, int *sid){
 	(void) bn;
 	@:getBATdescriptor(r,bid,b,delete)@
 	@:getBATdescriptor(r,sid,s,delete)@
-	if( CMDdelete_bat_bun(&bn,b,s) == GDK_SUCCEED)
+	if( CMDdelete_bat_bun(&bn,b,s) == GDK_SUCCEED){
 		return MAL_SUCCEED;
+	}
 	return throwMessage("bat.delete_bat_buns", "GDKerror");
 }
 
@@ -1600,8 +1621,9 @@ str BKCdelete_bat_head(int *r, int *bid, int *sid){
 	(void) bn;
 	@:getBATdescriptor(r,bid,b,delete)@
 	@:getBATdescriptor(r,sid,s,delete)@
-	if( CMDdelete_bat_head(&bn,b,s) == GDK_SUCCEED)
+	if( CMDdelete_bat_head(&bn,b,s) == GDK_SUCCEED){
 		return MAL_SUCCEED;
+	}
 	return throwMessage("bat.delete_bat_heads", "GDKerror");
 }
 str BKCdestroy_bat(bit *r,str *input, bit *immediate) {
@@ -1630,13 +1652,13 @@ void void_inplace(BAT *b, oid id, ptr val )
 	BUN p = NULL;
 	BUN oldInserted = b->batInserted;
 
-        assert(b->htype == TYPE_void);
-        assert(b->hseqbase != oid_nil);
-        assert(BATcount(b) > (id-b->hseqbase));
+	assert(b->htype == TYPE_void);
+	assert(b->hseqbase != oid_nil);
+	assert(BATcount(b) > (id-b->hseqbase));
 
 	b->batInserted = NULL;
 	BUNfndVOID(p, b, (ptr)&id);
-        assert(p >= b->batInserted); /* we don't want delete/ins */
+	assert(p >= b->batInserted); /* we don't want delete/ins */
 	(void) BUNinplace(b, p, (ptr)&id, val);
 	b->batInserted = oldInserted;
 }
@@ -1713,7 +1735,7 @@ size_t void_insert_bat( BAT *b, BAT *u){
 }
 
 size_t void_append_bat( BAT *b, BAT *u){
-        size_t sz = BUNsize(u);
+	size_t sz = BUNsize(u);
 	size_t sbase = b->hseqbase + BATcount(b);
 	BATseqbase(u, sbase);
 	BATins(b, u);
@@ -1724,10 +1746,10 @@ str BKCbat_append_void_bat_wrap( int *r, int *bid, int *uid )
 	BAT *i, *u;
 	@:getBATdescriptor(r,bid,i,append)@
 	@:getBATdescriptor(r,uid,u,append)@
-        i= BATsetaccess(i,0);
+	i= BATsetaccess(i,0);
 	void_append_bat( i, u );
 	*r = i->batCacheid;
-	BBPfix(i->batCacheid);
+	BBPincref(i->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 
@@ -1736,10 +1758,10 @@ str BKCbat_append_oid_bat_wrap( int *r, int *bid, int *uid )
 	BAT *i, *u;
 	@:getBATdescriptor(r,bid,i,append)@
 	@:getBATdescriptor(r,uid,u,append)@
-        i= BATsetaccess(i,0);
+	i= BATsetaccess(i,0);
 	void_insert_bat( i, u );
 	*r = i->batCacheid;
-	BBPfix(i->batCacheid);
+	BBPincref(i->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 
@@ -1748,10 +1770,10 @@ str BKCbat_append_oidvoid_bat_wrap( int *r, int *bid, int *uid )
 	BAT *i, *u;
 	@:getBATdescriptor(r,bid,i,append)@
 	@:getBATdescriptor(r,uid,u,append)@
-        i= BATsetaccess(i,0);
+	i= BATsetaccess(i,0);
 	void_insert_bat( i, u );
 	*r = i->batCacheid;
-	BBPfix(i->batCacheid);
+	BBPincref(i->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 
@@ -1795,7 +1817,7 @@ str BKCoid_bat_append_oid_bat_wrap( int *res, int *bid, int *uid )
                 BUNins(i, &h,  BUNtail(u,r));
         }
 	*res = i->batCacheid;
-	BBPfix(i->batCacheid);
+	BBPincref(i->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 @-
@@ -1814,7 +1836,7 @@ str BKCoid_bat_append_val_wrap( int *r, int *bid, ptr u)
 	@:derefStr(i,t,u)@
 	BUNins( i, (ptr) & o, u );
 	*r = i->batCacheid;
-	BBPfix(i->batCacheid);
+	BBPincref(i->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 
@@ -1829,7 +1851,7 @@ str BKCbat_append_val_wrap( int *r, int *bid, ptr u)
         i= BATsetaccess(i,0);
 	BUNins( i, (ptr) & h, u );
 	*r = i->batCacheid;
-	BBPfix(i->batCacheid);
+	BBPincref(i->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 
@@ -1841,7 +1863,7 @@ str BKCbat_replace_oid_bat_wrap( int *r, int *bod, int *did )
         o= BATsetaccess(o,0);
 	void_replace_bat( o, d );
 	*r = o->batCacheid;
-	BBPfix(o->batCacheid);
+	BBPincref(o->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 /*end of SQL enhancement */
@@ -1849,7 +1871,7 @@ str BKCbat_replace_oid_bat_wrap( int *r, int *bod, int *did )
 str BKCgetAlpha(int *r, int *bid) {
 	BAT *b,*c;
 	@:getBATdescriptor(r,bid,b,getInserted)@
-	BBPfix(b->batCacheid);
+	BBPincref(b->batCacheid,TRUE);
 	c= BATalpha(b);
 	*r = c->batCacheid;
 	return MAL_SUCCEED;
@@ -1857,7 +1879,7 @@ str BKCgetAlpha(int *r, int *bid) {
 str BKCgetDelta(int *r, int *bid) {
 	BAT *b,*c;
 	@:getBATdescriptor(r,bid,b,getInserted)@
-	BBPfix(b->batCacheid);
+	BBPincref(b->batCacheid,TRUE);
 	c= BATdelta(b);
 	*r = c->batCacheid;
 	return MAL_SUCCEED;
@@ -1939,40 +1961,37 @@ str BKCgetKey(bit *ret, int *bid) {
 }
 
 str BKCpersists(bit *res, int *bid, int *flg) {
-	BAT *b, *bn= NULL;
-	bit param = *flg;
+	BAT *b ; 
 	@:getBATdescriptor(res,bid,b,setPersistence)@
-	CMDpersists(&bn,b,&param);
-	BBPunfix(bn->batCacheid);
+	if( *flg) BBPincref(b->batCacheid, TRUE);
+	else BBPdecref(b->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 str BKCsetPersistent(bit *res, int *bid) {
-	BAT *b, *bn= NULL;
-	bit param= 1;
+	BAT *b;
 	@:getBATdescriptor(res,bid,b,setPersistence)@
-	CMDpersists(&bn,b,&param);
-	BBPunfix(bn->batCacheid);
+	BATmode(b,PERSISTENT);
 	*res = TRUE;
-        return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 str BKCisPersistent(bit *res, int *bid) {
 	BAT *b;
 	@:getBATdescriptor(res,bid,b,setPersistence)@
 	*res= (b->batPersistence == PERSISTENT)? TRUE:FALSE;
-        return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 str BKCsetTransient(bit *res, int *bid) {
 	BAT *b;
 	@:getBATdescriptor(res,bid,b,setTransient)@
 	BATmode(b, TRANSIENT);
 	*res= TRUE;
-        return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 str BKCisTransient(bit *res, int *bid) {
 	BAT *b;
 	@:getBATdescriptor(res,bid,b,setTransient)@
 	*res= b->batPersistence == TRANSIENT;
-        return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 @-
 @= accessMode

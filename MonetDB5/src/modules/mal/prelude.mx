@@ -23,6 +23,7 @@ access the BAT descriptor.
     BATroles(b,"@1","@2");
     BATmode(b,TRANSIENT);
     BATfakeCommit(b);
-    *ret = b->batCacheid;
+    BBPincref(*ret = b->batCacheid,TRUE);
+	BBPunfix(*ret);
 
 

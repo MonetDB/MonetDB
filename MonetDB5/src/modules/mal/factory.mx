@@ -128,5 +128,5 @@ str FCTshutdown(int *ret, str *mod, str *fcn)
     shutdownFactory(s->def);
     return MAL_SUCCEED;
 }
-@-
+
 @}

@@ -90,9 +90,9 @@ pattern discard(name:str):void
 address CMDbbpdiscard
 comment "Remove the BAT from the box";
 
-command garbage(b:bat[:any,:any])
+pattern garbage(b:bat[:any,:any])
 address CMDbbpgarbage
-comment "Designate as garbage";
+comment "Designate a BAT as garbage";
 
 pattern iterator(nme:str):lng 	
 address CMDbbpiterator
@@ -319,6 +319,7 @@ str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			b= (BAT*) BBPgetdesc(lhs->val.bval);
 			if( b==NULL ) 
 				return throwMessage("bbp.bind","can not access descriptor");
+			BBPincref(b->batCacheid,TRUE);
 		}
 		return MAL_SUCCEED;
 	}
@@ -333,6 +334,7 @@ str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		return throwException(MALEXCEPTION,"bbp.bind",
 					"failed to find '%s' in box",name);
 	
+	BBPincref(b->batCacheid,TRUE);
 	BBPunfix(i);
 	lhs->vtype = TYPE_bat;
 	lhs->val.bval= i;
@@ -343,7 +345,7 @@ str CMDbbpbindindex(int *ret, int *bid){
 	b= (BAT*) BBPdescriptor(*bid);
 	if( b == 0 ) 
 		return throwMessage("bbp.bind","can not access descriptor");
-	*ret= *bid;
+	BBPincref(*ret = *bid, TRUE);
 	return MAL_SUCCEED;
 }
 @-
@@ -369,6 +371,7 @@ str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			/* adjust the types as well */
 			v->vtype= TYPE_bat;
 			v->val.ival= bid;
+			BBPincref(bid,TRUE);
 		} else
 			return throwException(MALEXCEPTION,"bbp.take",
 				"failed to take '%s' from box",name);
@@ -404,6 +407,7 @@ str CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgValue(stk,pci,1);
 	BBPdecref(*bid,TRUE);
 	releaseBAT(mb,stk,*bid);
+	*bid= 0;
 	return MAL_SUCCEED;
 }
 @-
@@ -415,9 +419,12 @@ CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *bid;
 	Box box;
 
+	(void) mb;
 	@:OpenBox(release)@
 	bid = (int *) getArgValue(stk,pci,1);
-	releaseBAT(mb,stk,*bid);
+	if( *bid)
+		BBPdecref(*bid,TRUE);
+	/* releaseBAT(mb,stk,*bid);*/
 	return MAL_SUCCEED;
 }
 @-
@@ -628,7 +635,8 @@ it is simply removed first
 	BATroles(b,"@1","@2");
 	BATmode(b,TRANSIENT);
 	BATfakeCommit(b);
-	*ret = b->batCacheid;
+	BBPincref(*ret = b->batCacheid, TRUE);
+	BBPunfix(*ret);
 @c
 str CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT*    b;

@@ -567,7 +567,7 @@ str CRKnewIterator(lng *newpid, int *vid, int *bid)
 
 	b->batRestricted= BAT_READ;
 	view= VIEWcreate_(b,TRUE);
-	BBPfix(*vid=  view->batCacheid);
+	BBPincref(*vid=  view->batCacheid,TRUE);
 
 	*newpid= -1;
 	for(i=0; i<crackMap[m].freepiece; i++)
@@ -691,7 +691,6 @@ str CRKselectNew(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
 
 	b->batRestricted= BAT_READ;
 	view= VIEWcreate_(b,TRUE);
-	/* BBPfix(*vid=  view->batCacheid); */
 	*vid=  view->batCacheid;
 	intervalSelect(m,0,low,high, &left, &right);
 	/* printf("get range from %d %d\n",left,right);*/
@@ -714,7 +713,6 @@ str CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
 
 	b->batRestricted= BAT_READ;
 	view= VIEWcreate_(b,TRUE);
-	/*BBPfix(*vid=  view->batCacheid);*/
 	*vid=  view->batCacheid;
 
 @-
@@ -809,7 +807,7 @@ str CRKselectPieces(int *result, int *bid, int *low, int *hgh)
 		if( crackMap[m].pieces[i].rng_min > *hgh) continue;
 		BUNins(b,&o,&i);
 	}
-	BBPfix(*result = b->batCacheid);
+	BBPincref(*result = b->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 @-

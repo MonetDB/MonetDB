@@ -801,7 +801,6 @@ Upon exit, we set the return value of the enclosing instruction
 and leave it up to the interpreter to deal with exception handling.
 @c
 	retval=  &stk->stk[pci->argv[0]];
-	garbageElement(retval);
 	stk->pcup = getPC(mb,pci);
 	ret= runMAL(getClient(),m,1,mb,stk,pci);
 @-

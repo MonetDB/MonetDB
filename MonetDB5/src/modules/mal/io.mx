@@ -674,7 +674,7 @@ Cleanup and exit. Return the filled BAT.
 	if (t) GDKfree(t);
 	GDKfree(buf);
 	MT_munmap(base, end-base);
-	BBPfix(b->batCacheid);
+	BBPincref(b->batCacheid, TRUE);
 	*ret = TRUE;
 	return MAL_SUCCEED;
 }

@@ -1407,7 +1407,7 @@ str CMDtablet_load(int *ret, int *nameid, int *sepid, int *typeid,
 	tablet_load( &bn, names, seps, types, *filename, nr);
 	if( bn== NULL)
 		return throwMessage("tablet.load","failed to load");
-	BBPfix(*ret);
+	BBPincref(*ret, TRUE);
 	*ret= bn->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -1433,7 +1433,7 @@ str CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid,
 	tablet_input(&bn,names, seps, types, (void **)s, nr);
 	if( bn== NULL)
 		return throwMessage("tablet.load","failed to load");
-	BBPfix(*ret);
+	BBPincref(*ret,TRUE);
 	*ret= bn->batCacheid;
 	return MAL_SUCCEED;
 }

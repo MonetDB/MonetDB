@@ -974,16 +974,16 @@ str CALCnil2@1(@1 *retval, ptr val){
 @:c_isnil(bat)@
 
 str CALCisnil_str(bit *retval, str *val) {
-	*retval = (*val == ATOMnilptr(TYPE_str));
+	*retval = strcmp(*val, ATOMnilptr(TYPE_str))==0;
 	return MAL_SUCCEED;
 }
 str CALCisnotnil_str(bit *retval, str *val) {
-	*retval = (*val != ATOMnilptr(TYPE_str));
+	*retval = strcmp(*val, ATOMnilptr(TYPE_str));
 	return MAL_SUCCEED;
 }
 str CALCstr2nil(str *retval, str *val) {
 	(void)val; /* fool compiler */
-	*retval = ATOMnilptr(TYPE_str);
+	*retval = GDKstrdup(ATOMnilptr(TYPE_str));
 	return MAL_SUCCEED;
 }
 
@@ -1241,11 +1241,11 @@ str voidFromStrImpl(void *ret, str val){
 }
 str CALCnil2str(str *ret, void *val){
 	(void) val; /* fool compiler */
-	*ret = ATOMnilptr(TYPE_str);
+	*ret = GDKstrdup(str_nil);
 	return MAL_SUCCEED;
 }
 str CALCstr2str(str *ret, str *val){
-	*ret = *val;
+	*ret = GDKstrdup(*val);
 	return MAL_SUCCEED;
 }
 str CALCstr2oid(oid *ret, str *val){

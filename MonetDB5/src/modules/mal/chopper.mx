@@ -137,7 +137,7 @@ str CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule){
 	cnt = BATcount(b);
 	first = BUNindex(b,BUNfirst(b));
 	view= VIEWcreate_(b,TRUE);
-	BBPfix(*vid=  view->batCacheid);
+	BBPincref(*vid=  view->batCacheid,TRUE);
 	/*  printf("set bat chunk bound to %d %d - %d\n",
 		*granule, first, MIN(cnt,(size_t) *granule)); */
 	VIEWbounds(view,(size_t) first, first + MIN(cnt,(size_t) *granule)-1);
@@ -199,8 +199,6 @@ str CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	/* get head = ... tail = ... */
 	p = BUNptr(b,*cursor);
-	garbageElement(head);
-	garbageElement(tail); 
 	VALinit( head, getArgType(mb,pci,1),BUNhead(b,p));
 	VALinit( tail, getArgType(mb,pci,2),BUNtail(b,p));
 	return MAL_SUCCEED;
@@ -229,8 +227,6 @@ str CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		*cursor = -1;
 		return MAL_SUCCEED;
 	}
-	garbageElement(head);
-	garbageElement(tail); 
 	VALinit( head, getArgType(mb,pci,1),BUNhead(b,p));
 	VALinit( tail, getArgType(mb,pci,2),BUNtail(b,p));
 	return MAL_SUCCEED;
@@ -264,7 +260,6 @@ str CHPgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	/* get head = ... */
 	p = BUNptr(b,*cursor);
-	garbageElement(head);
 	VALinit( head, getArgType(mb,pci,3),BUNhead(b,p));
 	return MAL_SUCCEED;
 }
@@ -287,9 +282,8 @@ str CHPgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		return throwMessage("mal.getTail","range error");
 	}
 
-	/* get head = ... */
+	/* get tail = ... */
 	p = BUNptr(b,*cursor);
-	garbageElement(tail);
 	VALinit( tail, getArgType(mb,pci,3),BUNtail(b,p));
 	return MAL_SUCCEED;
 }

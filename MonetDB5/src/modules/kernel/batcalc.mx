@@ -424,7 +424,8 @@ str CMDbat@1(int *ret, int *l, int *r)
 	if( dst == NULL){
 		return throwMessage("batcalc.mod", "no copy available ");
 	}
-	BBPfix(*ret = dst->batCacheid);
+	BBPincref(*ret = dst->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return bataccum@1(dst,left,right);
 }
 
@@ -449,7 +450,8 @@ str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
 	@:getBATdescriptor(ret,r,dst,CMDbataccum@1)@
 	@:getBATdescriptor(ret,l,left,CMDbataccum@1)@
 	@:chkSize(dst,left,CMDbataccum@1)@
-	*ret = dst->batCacheid;
+	BBPincref(*ret = dst->batCacheid,TRUE);
+	BBPunfix(*ret);
 	@:batinit(1,dst)@
 	@:batinit(2,left)@
 	hend = (str) BUNlast(dst);
@@ -533,7 +535,8 @@ str CMDbatMOD(int *ret, int *l, int *r)
 	if( dst == NULL){
 		return throwMessage("batcalc.mod", "no copy available ");
 	}
-	BBPfix(*ret = dst->batCacheid);
+	BBPincref(*ret = dst->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return bataccumMOD(dst,left,right);
 }
 
@@ -712,7 +715,8 @@ str CMDcmp@1(int *ret, int *l, int *r)
 	}
 bunins_failed:
 	dst->hsorted= BAThordered(left);
-	BBPfix(*ret = dst->batCacheid);
+	BBPincref(*ret = dst->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return compareaccum@1(dst,left,right);
 }
 
@@ -879,7 +883,8 @@ str CMDconvert@1_@1(int *ret, int *bid){
 
         bn= BATcopy(b);
 	@:tstBat(CMDconvert@1_@1)@
-	BBPfix(*ret= bn->batCacheid);
+	BBPincref(*ret= bn->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 @-
@@ -907,7 +912,8 @@ str CMDconvert@1_@2Enlarge(int *ret, int *bid){
 		p1 = (ptr) (((char *) p1)+s1);
 		(bn)->batBuns->free += s1;
 	}
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 @= General
@@ -930,7 +936,8 @@ str CMDconvert@1_@2(int *ret, int *bid){
 		bunfastins(bn, h, &y);
 	}
 bunins_failed:
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 @-
@@ -988,13 +995,14 @@ str CMDconvertstr_int(int *ret, int *bid){
 		bunfastins(bn, h, &y);
 	}
 bunins_failed:
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 str CMDconvertOIDclass(int *ret, int *bid){
 	BAT *b;
 	@:getBATdescriptor(ret,bid,b,CMDconvertOIDclass)@
-	BBPfix( *ret= b->batCacheid);
+	BBPincref( *ret= b->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 /* You don;t have to materialize the oids.
@@ -1017,7 +1025,8 @@ str CMDconvertvoid_oid(int *ret, int *bid){
 		x++;
 	}
 bunins_failed:
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 @- Implementations of scientific functions
@@ -1063,7 +1072,8 @@ str CMDscience_@1(int *ret, int *bid){
 		bunfastins(bn, h, &x);
 	}
 bunins_failed:
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 @= scienceBinaryImpl
@@ -1084,7 +1094,8 @@ str CMDscience_@1(int *ret, int *bid, @2 *d){
 		bunfastins(bn, h, &x);
 	}
 bunins_failed:
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 @- IfThenElse
@@ -1117,7 +1128,8 @@ str CMDifThen(int *ret, int *iid, int *tid){
 		} 
 	}
 bunins_failed:
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 @-
@@ -1145,7 +1157,7 @@ str CMDifThenCst_@1(int *ret, int *iid, ptr *eid){
 		} 
 	}
 bunins_failed:
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 str CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid){
@@ -1172,7 +1184,7 @@ str CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid){
 		} 
 	}
 bunins_failed:
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 str CMDfilltail_@1(int *ret, int *iid, ptr *val){
@@ -1189,7 +1201,7 @@ str CMDfilltail_@1(int *ret, int *iid, ptr *val){
 		bunfastins(bn, v, val);
 	}
 bunins_failed:
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 str CMDprojecthead_@1(int *ret,ptr *val, int *iid){
@@ -1206,7 +1218,7 @@ str CMDprojecthead_@1(int *ret,ptr *val, int *iid){
 		bunfastins(bn, val,v);
 	}
 bunins_failed:
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 @-
@@ -1252,7 +1264,7 @@ str CMDifThenElse(int *ret, int *iid, int *tid,int *eid){
 		}
 	}
 bunins_failed:
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 str CMDifThenElseCst1(int *ret, int *iid, ptr *val,int *eid){
@@ -1286,7 +1298,7 @@ str CMDifThenElseCst1(int *ret, int *iid, ptr *val,int *eid){
 		}
 	}
 bunins_failed:
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 str CMDifThenElseCst2(int *ret, int *iid, int *tid,ptr *val){
@@ -1320,7 +1332,7 @@ str CMDifThenElseCst2(int *ret, int *iid, int *tid,ptr *val){
 		}
 	}
 bunins_failed:
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
 str CMDmatchStr(int  *ret, int *bid, str *pat){
@@ -1351,7 +1363,7 @@ str CMDmatchStr(int  *ret, int *bid, str *pat){
 		}
 	}
 bunins_failed:
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid,TRUE);
         return MAL_SUCCEED;
 }
 
@@ -1374,8 +1386,8 @@ BAT *cmd000(BAT *A2, BAT *A3){
 	str exception=0;
 
 /* ensure access, handled by MAL layer as well */
-	BBPfix(A2->batCacheid);
-	BBPfix(A3->batCacheid);
+	BBPincref(A2->batCacheid,TRUE);
+	BBPincref(A3->batCacheid,TRUE);
 
 /*d:= new(lng,lng); */
 	rB= BATnew(TYPE_lng,TYPE_lng,BATcount(A2));

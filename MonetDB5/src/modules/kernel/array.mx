@@ -312,7 +312,8 @@ ARRAYgrid(int *ret, int *groups, int *groupsize, int *clustersize, int *offset){
 	BAT *bn;
 	if( grid(&bn, groups, groupsize, clustersize, offset) == GDK_FAIL)
 		return throwMessage("array.grid","Failed to create the grid\n");
-	BBPfix( *ret= bn->batCacheid);
+	BBPincref( *ret= bn->batCacheid, TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 str

@@ -180,7 +180,7 @@ end main;	# 6
 [ 148@0,  "command",	  "bbp",	  "getTailType",		  "():bat[:int,:str] address CMDbbpTailType;"										  ]
 [ 149@0,  "command",	  "bbp",	  "getHeadType",		  "():bat[:int,:str] address CMDbbpHeadType;"										  ]
 [ 150@0,  "pattern",	  "bbp",	  "getObjects",			  "():bat[:int,:str] address CMDbbpGetObjects;"										  ]
-[ 151@0,  "command",	  "bbp",	  "garbage",			  "(b:bat[:any,:any]):void address CMDbbpgarbage;"									  ]
+[ 151@0,  "pattern",	  "bbp",	  "garbage",		  "(b:bat[:any,:any]):void address CMDbbpgarbage;"										  ]
 [ 152@0,  "pattern",	  "bbp",	  "iterator",			  "(nme:str):lng address CMDbbpiterator;"										  ]
 [ 153@0,  "pattern",	  "bbp",	  "new",			  "(b:bat[:any$1,:any$2],size:lng):bat[:any$1,:any$2] address CMDBATnewDerived;"					  ]
 [ 154@0,  "pattern",	  "bbp",	  "new",			  "(b:bat[:any$1,:any$2]):bat[:any$1,:any$2] address CMDBATnewDerived;"							  ]

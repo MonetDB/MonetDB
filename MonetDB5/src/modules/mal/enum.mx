@@ -279,7 +279,7 @@ int ENUMatom(int i, BAT *h){
 	}
 	ENUMtpe[i] = ATOMindex(name);
 	ENUMmap[i] = h->batCacheid;
-	BBPfix(h->batCacheid);
+	BBPincref(h->batCacheid,TRUE);
 	return ENUMtpe[i];
 }
 str ENUMreload(int *retval, int bid) {
@@ -302,7 +302,7 @@ str ENUMreload(int *retval, int bid) {
 			}
 			ENUMtpe[i] = ATOMindex(name);
 			ENUMmap[i] = h->batCacheid;
-			BBPfix(h->batCacheid);
+			BBPincref(h->batCacheid,TRUE);
 			*retval = h->batCacheid;
 			mal_unset_lock(mal_contextLock, "ENUMload");
 			return MAL_SUCCEED;
