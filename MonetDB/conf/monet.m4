@@ -202,7 +202,7 @@ AC_HELP_STRING([--without-gcc], [do not use GCC]), [
 AC_ARG_WITH(gxx,
 	AC_HELP_STRING([--with-gxx=<compiler>], [which C++ compiler to use]), [
 	case $withval in
-	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
+	yes|no)	AC_MSG_ERROR(must supply a compiler when using --with-gxx);;
 	*)	CXX=$withval
 		case "$CXX" in
 		dnl  Portland Group compiler (pgcc/pgCC)
@@ -419,14 +419,14 @@ AC_ARG_ENABLE(bits,
 		[specify number of bits (32 or 64)]), [
 case $enableval in
 32)	case "$host" in
-	ia64*)	AC_ERROR([we do not support 32 bits on $host, yet]);;
+	ia64*)	AC_MSG_ERROR([we do not support 32 bits on $host, yet]);;
 	esac
 	;;
 64)	case "$host-$GCC-$CC" in
-	i?86*-*-*)  AC_ERROR([$host does not support 64 bits]);;
+	i?86*-*-*)  AC_MSG_ERROR([$host does not support 64 bits]);;
 	esac
 	;;
-*)	AC_ERROR(--enable-bits argument must be either 32 or 64);;
+*)	AC_MSG_ERROR(--enable-bits argument must be either 32 or 64);;
 esac
 bits=$enableval
 ])
@@ -446,7 +446,7 @@ case "$GCC-$CC-$host_os-$host-$bits" in
 yes-*-solaris*-64)
 	case `$CC -v 2>&1` in
 	*'gcc version 3.'*)	;;
-	*)	AC_ERROR([need GCC version 3.X for 64 bits]);;
+	*)	AC_MSG_ERROR([need GCC version 3.X for 64 bits]);;
 	esac
 	CC="$CC -m$bits"
 	CXX="$CXX -m$bits"
@@ -567,11 +567,15 @@ AC_ARG_WITH(java,
 		[javac and jar are installed in DIR/bin]),
 	have_java="$withval",
 	have_java=auto)
+JPATH=$PATH
+case $have_java in
+yes|no|auto)
+	;;
+*)
+	JPATH="$withval/bin:$JPATH"
+	;;
+esac
 if test "x$have_java" != xno; then
-  JPATH=$PATH
-  if test "x$have_java" != xauto; then
-     JPATH="$withval/bin:$JPATH"
-  fi
   AC_PATH_PROG(JAVA,java,,$JPATH)
   if test "x$JAVA" != "x"; then
     AC_MSG_CHECKING(for Java >= 1.4)
@@ -587,10 +591,19 @@ if test "x$have_java" != xno; then
   AC_PATH_PROG(JAVAC,javac,,$JPATH)
   AC_PATH_PROG(JAR,jar,,$JPATH)
   if test x$have_java_1_4 != xyes; then
+     if test "x$have_java" = xyes; then
+	AC_MSG_ERROR([Java version too old (1.4 required)])
+     fi
      have_java=no
   elif test "x$JAVAC" = "x"; then
+     if test "x$have_java" = xyes; then
+	AC_MSG_ERROR([No javac found])
+     fi
      have_java=no
   elif test "x$JAR" = "x"; then
+     if test "x$have_java" = xyes; then
+	AC_MSG_ERROR([No jar found])
+     fi
      have_java=no
   else
      have_java=yes
@@ -609,7 +622,7 @@ AC_SUBST(JAVA)
 AC_SUBST(JAVAC)
 AC_SUBST(JAR)
 AC_SUBST(CLASSPATH)
-AM_CONDITIONAL(HAVE_JAVA,test x$have_java = xyes)
+AM_CONDITIONAL(HAVE_JAVA,test x$have_java != xno)
 
 ]) dnl AC_DEFUN AM_MONETDB_COMPILER
 
@@ -912,7 +925,7 @@ AC_ARG_ENABLE(debug,
 	enable_debug=no)
 if test "x$enable_debug" = xyes; then
   if test "x$enable_optim" = xyes; then
-    AC_ERROR([combining --enable-optimize and --enable-debug is not possible.])
+    AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible.])
   else
     dnl  remove "-Ox" as some compilers don't like "-g -Ox" combinations
     CFLAGS=" $CFLAGS "
@@ -952,11 +965,11 @@ AC_ARG_ENABLE(optimize,
 	enable_optim=$enableval, enable_optim=no)
 if test "x$enable_optim" = xyes; then
   if test "x$enable_debug" = xyes; then
-    AC_ERROR([combining --enable-optimize and --enable-debug is not possible.])
+    AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible.])
   elif test "x$enable_prof" = xyes; then
-    AC_ERROR([combining --enable-optimize and --enable-profile is not (yet?) possible.])
+    AC_MSG_ERROR([combining --enable-optimize and --enable-profile is not (yet?) possible.])
   elif test "x$enable_instrument" = xyes; then
-    AC_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
+    AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
   else
     dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
     CFLAGS=" $CFLAGS "
@@ -1075,7 +1088,7 @@ AC_ARG_ENABLE(profile,
 	enable_prof=no)
 if test "x$enable_prof" = xyes; then
   if test "x$enable_optim" = xyes; then
-    AC_ERROR([combining --enable-optimize and --enable-profile is not (yet?) possible.])
+    AC_MSG_ERROR([combining --enable-optimize and --enable-profile is not (yet?) possible.])
   else
     AC_DEFINE(PROFILE, 1, [Compiler flag])
     need_profiling=yes
@@ -1095,7 +1108,7 @@ AC_ARG_ENABLE(instrument,
 	enable_instrument=no)
 if test "x$enable_instrument" = xyes; then
   if test "x$enable_optim" = xyes; then
-    AC_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
+    AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
   else
     AC_DEFINE(PROFILE, 1, [Compiler flag])
     need_instrument=yes
@@ -1145,37 +1158,44 @@ AC_ARG_WITH(pthread,
 	AC_HELP_STRING([--with-pthread=DIR],
 		[pthread library is installed in DIR]), 
 	have_pthread="$withval")
+case "$have_pthread" in
+yes|no|auto)
+	;;
+*)
+	PTHREAD_LIBS="-L$withval/lib"
+	PTHREAD_INCS="-I$withval/include"
+	;;
+esac
 if test "x$have_pthread" != xno; then
-  if test "x$have_pthread" != xauto; then
-    PTHREAD_LIBS="-L$withval/lib"
-    PTHREAD_INCS="-I$withval/include"
-  fi
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
+	AC_CHECK_HEADERS(pthread.h semaphore.h) 
+	CPPFLAGS="$save_CPPFLAGS"
 
-  save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
-  AC_CHECK_HEADERS(pthread.h semaphore.h) 
-  CPPFLAGS="$save_CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
+	AC_CHECK_LIB(pthread, sem_init, 
+		PTHREAD_LIBS="$PTHREAD_LIBS -lpthread", 
+		dnl sun
+		AC_CHECK_LIB(pthread, sem_post,
+			PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4",
+			[ if test "x$have_pthread" = xyes; then AC_MSG_ERROR([pthread library not found]); fi; have_pthread=no ],
+			"-lposix4")
+		)
+	AC_CHECK_LIB(pthread, pthread_sigmask,
+		AC_DEFINE(HAVE_PTHREAD_SIGMASK, 1,
+			[Define if you have the pthread_sigmask function]))
+	AC_CHECK_LIB(pthread, pthread_kill_other_threads_np,
+		AC_DEFINE(HAVE_PTHREAD_KILL_OTHER_THREADS_NP, 1,
+			[Define if you have the pthread_kill_other_threads_np function]))
+	LDFLAGS="$save_LDFLAGS"
 
-  save_LDFLAGS="$LDFLAGS"
-  LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
-  AC_CHECK_LIB(pthread, sem_init, 
-	[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread" 
-          AC_DEFINE(HAVE_LIBPTHREAD, 1, [Define if you have the pthread library]) 
-	  have_pthread=yes ] , 
-	dnl sun
-	[ AC_CHECK_LIB(pthread, sem_post, 
-		[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4" 
-          	AC_DEFINE(HAVE_LIBPTHREAD, 1, [Define if you have the pthread library]) 
-	  	have_pthread=yes ] , [ have_pthread=no], "-lposix4" )
-	] )
-  AC_CHECK_LIB(pthread, pthread_sigmask, AC_DEFINE(HAVE_PTHREAD_SIGMASK, 1, [Define if you have the pthread_sigmask function]))
-  AC_CHECK_LIB(pthread, pthread_kill_other_threads_np, AC_DEFINE(HAVE_PTHREAD_KILL_OTHER_THREADS_NP, 1, [Define if you have the pthread_kill_other_threads_np function]))
-  LDFLAGS="$save_LDFLAGS"
-
-  if test "x$have_pthread" != xyes; then
-    PTHREAD_LIBS=""
-    PTHREAD_INCS=""
-  fi
+fi
+if test "x$have_pthread" != xno; then
+	AC_DEFINE(HAVE_LIBPTHREAD, 1, [Define if you have the pthread library])
+else
+	PTHREAD_LIBS=""
+	PTHREAD_INCS=""
 fi
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_INCS)
@@ -1188,39 +1208,47 @@ AC_ARG_WITH(readline,
 	AC_HELP_STRING([--with-readline=DIR],
 		[readline library is installed in DIR]), 
 	have_readline="$withval")
+case "$have_readline" in
+yes|no|auto)
+	;;
+*)
+	READLINE_LIBS="-L$have_readline/lib"
+	READLINE_INCS="-I$have_readline/include"
+	;;
+esac
+save_LDFLAGS="$LDFLAGS"
+LDFLAGS="$LDFLAGS $READLINE_LIBS"
 if test "x$have_readline" != xno; then
-  if test "x$have_readline" != xauto; then
-    READLINE_LIBS="-L$have_readline/lib"
-    READLINE_INCS="-I$have_readline/include"
-  fi
-
-  save_LDFLAGS="$LDFLAGS"
-  LDFLAGS="$LDFLAGS $READLINE_LIBS"
-  dnl use different functions in the cascade of AC_CHECK_LIB
-  dnl calls since configure may cache the results
-  AC_CHECK_LIB(readline, readline, 
-	[ READLINE_LIBS="$READLINE_LIBS -lreadline" 
-	  have_readline=yes ]
-	, [ AC_CHECK_LIB(readline, rl_history_search_forward, 
-	[ READLINE_LIBS="$READLINE_LIBS -lreadline -ltermcap" 
-	  have_readline=yes ]
-	, [ AC_CHECK_LIB(readline, rl_reverse_search_history,
-	[ READLINE_LIBS="$READLINE_LIBS -lreadline -lncurses" 
-	  have_readline=yes ] 
-	, have_readline=no, "-lncurses" ) ], "-ltermcap" ) ],)
-  LDFLAGS="$save_LDFLAGS"
-
-  if test "x$have_readline" = xyes; then
-    AC_CHECK_LIB(readline, rl_completion_matches,
-	have_readline=yes, have_readline=no,
-	$READLINE_LIBS)
-  fi
-  if test "x$have_readline" = xyes; then
-    AC_DEFINE(HAVE_LIBREADLINE, 1, [Define if you have the readline library])
-  else
-    READLINE_LIBS=""
-    READLINE_INCS=""
-  fi
+	dnl use different functions in the cascade of AC_CHECK_LIB
+	dnl calls since configure may cache the results
+	AC_CHECK_LIB(readline, readline,
+		READLINE_LIBS="$READLINE_LIBS -lreadline",
+		[ AC_CHECK_LIB(readline, rl_history_search_forward,
+			READLINE_LIBS="$READLINE_LIBS -lreadline -ltermcap",
+			[ AC_CHECK_LIB(readline, rl_reverse_search_history,
+				READLINE_LIBS="$READLINE_LIBS -lreadline -lncurses",
+				[ if test "x$have_readline" = xyes; then
+					AC_MSG_ERROR([readline library not found])
+				  fi; have_readline=no ],
+				-lncurses)],
+			-ltermcap)],
+		)
+fi
+if test "x$have_readline" != xno; then
+	dnl provide an ACTION-IF-FOUND, or else all subsequent checks
+	dnl that involve linking will fail!
+	AC_CHECK_LIB(readline, rl_completion_matches,
+		:,
+		[ if test "x$have_readline" = xyes; then AC_MSG_ERROR([readline library does not contain rl_completion_matches]); fi; have_readline=no ],
+	      $READLINE_LIBS)
+fi
+LDFLAGS="$save_LDFLAGS"
+if test "x$have_readline" != xno; then
+	AC_DEFINE(HAVE_LIBREADLINE, 1,
+		[Define if you have the readline library])
+else
+	READLINE_LIBS=""
+	READLINE_INCS=""
 fi
 AC_SUBST(READLINE_LIBS)
 AC_SUBST(READLINE_INCS)
@@ -1235,38 +1263,38 @@ AC_ARG_WITH(openssl,
 	AC_HELP_STRING([--with-openssl=DIR],
 		[OpenSSL library is installed in DIR]), 
 	have_openssl="$withval")
+case "$have_openssl" in
+yes|no|auto)
+	;;
+*)
+	OPENSSL_LIBS="-L$withval/lib"
+	OPENSSL_INCS="-I$withval/include"
+	;;
+esac
 if test "x$have_openssl" != xno; then
-  if test "x$have_openssl" != xauto; then
-    OPENSSL_LIBS="-L$withval/lib"
-    OPENSSL_INCS="-I$withval/include"
-  fi
-
-  save_LDFLAGS="$LDFLAGS"
-  LDFLAGS="$LDFLAGS $OPENSSL_LIBS"
-  AC_CHECK_LIB(ssl, SSL_read,
-	[ OPENSSL_LIBS="$OPENSSL_LIBS -lssl"
-	  have_openssl=yes ]
-	, have_openssl=no )
-  dnl on some systems, -lcrypto needs to be passed as well
-  AC_CHECK_LIB(crypto, ERR_get_error, OPENSSL_LIBS="$OPENSSL_LIBS -lcrypto")
-  LDFLAGS="$save_LDFLAGS"
-
-  if test "x$have_openssl" = xyes; then
-    AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]), ,
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS -DOPENSSL_NO_KRB5"
-	AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]),
-		AC_DEFINE(OPENSSL_NO_KRB5, 1, [Define if OpenSSL should not use Kerberos 5]),
-		have_openssl=no))
-	CPPFLAGS="$save_CPPFLAGS"
-  fi
-
-  if test "x$have_openssl" = xyes; then
-    AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
-  else
-    OPENSSL_LIBS=""
-    OPENSSL_INCS=""
-  fi
+	save_LDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS $OPENSSL_LIBS"
+	AC_CHECK_LIB(ssl, SSL_read,
+		OPENSSL_LIBS="$OPENSSL_LIBS -lssl",
+		[ if test "x$have_openssl" = xyes; then AC_MSG_ERROR([OpenSSL library not found]); fi; have_openssl=no ])
+	dnl on some systems, -lcrypto needs to be passed as well
+	AC_CHECK_LIB(crypto, ERR_get_error, OPENSSL_LIBS="$OPENSSL_LIBS -lcrypto")
+	LDFLAGS="$save_LDFLAGS"
+fi
+if test "x$have_openssl" != xno; then
+	AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]), , [
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS -DOPENSSL_NO_KRB5"
+		AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]),
+			AC_DEFINE(OPENSSL_NO_KRB5, 1, [Define if OpenSSL should not use Kerberos 5]),
+			[ if test "x$have_openssl" = xyes; then AC_MSG_ERROR([OpenSSL library not usable]); fi; have_openssl=no ])
+		CPPFLAGS="$save_CPPFLAGS"])
+fi
+if test "x$have_openssl" != xno; then
+	AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
+else
+	OPENSSL_LIBS=""
+	OPENSSL_INCS=""
 fi
 AC_SUBST(OPENSSL_LIBS)
 AC_SUBST(OPENSSL_INCS)
@@ -1302,33 +1330,36 @@ AC_ARG_WITH(netcdf,
 	AC_HELP_STRING([--with-netcdf=DIR],
 		[netcdf library is installed in DIR]),
 	have_netcdf="$withval")
+case "$have_netcdf" in
+yes|no|auto)
+	;;
+*)
+	NETCDF_CFLAGS="-I$withval/include"
+	NETCDF_LIBS="-L$withval/lib"
+	;;
+esac
 if test "x$have_netcdf" != xno; then
-  if test "x$have_netcdf" != xauto; then
-    NETCDF_CFLAGS="-I$withval/include"
-    NETCDF_LIBS="-L$withval/lib"
-  fi
-
-  save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $NETCDF_CFLAGS"
-  AC_CHECK_HEADER(netcdf.h, have_netcdf=yes, have_netcdf=no)
-  CPPFLAGS="$save_CPPFLAGS"
-
-  if test "x$have_netcdf" = xyes; then
-  	save_LDFLAGS="$LDFLAGS"
-  	LDFLAGS="$LDFLAGS $NETCDF_LIBS"
-  	AC_CHECK_LIB(netcdf, nc_open, NETCDF_LIBS="$NETCDF_LIBS -lnetcdf"
-        	AC_DEFINE(HAVE_LIBNETCDF, 1, [Define if you have the netcdf library]) have_netcdf=yes, have_netcdf=no)
-  	LDFLAGS="$save_LDFLAGS"
-  fi
-
-  if test "x$have_netcdf" != xyes; then
-    NETCDF_CFLAGS=""
-    NETCDF_LIBS=""
-  fi
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $NETCDF_CFLAGS"
+	AC_CHECK_HEADER(netcdf.h, :, [ if test "x$have_netcdf" = xyes; then AC_MSG_ERROR([netcdf.h not found]); fi; have_netcdf=no ])
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+if test "x$have_netcdf" != xno; then
+	save_LDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS $NETCDF_LIBS"
+	AC_CHECK_LIB(netcdf, nc_open, NETCDF_LIBS="$NETCDF_LIBS -lnetcdf",
+		[ if test "x$have_netcdf" = xyes; then AC_MSG_ERROR([netcdf library not found]); fi; have_netcdf=no ])
+	LDFLAGS="$save_LDFLAGS"
+fi
+if test "x$have_netcdf" != xno; then
+	AC_DEFINE(HAVE_LIBNETCDF, 1, [Define if you have the netcdf library])
+else
+	NETCDF_CFLAGS=""
+	NETCDF_LIBS=""
 fi
 AC_SUBST(NETCDF_CFLAGS)
 AC_SUBST(NETCDF_LIBS)
-AM_CONDITIONAL(HAVE_NETCDF, test "x$have_netcdf" = xyes)
+AM_CONDITIONAL(HAVE_NETCDF, test "x$have_netcdf" != xno)
 
 dnl check for z (de)compression library (default /usr and /usr/local)
 have_z=auto
@@ -1338,64 +1369,70 @@ AC_ARG_WITH(z,
 	AC_HELP_STRING([--with-z=DIR],
 		[z library is installed in DIR]),
 	have_z="$withval")
+case "$have_z" in
+yes|no|auto)
+	;;
+*)
+	Z_CFLAGS="-I$withval/include"
+	Z_LIBS="-L$withval/lib"
+	;;
+esac
 if test "x$have_z" != xno; then
-  if test "x$have_z" != xauto; then
-    Z_CFLAGS="-I$withval/include"
-    Z_LIBS="-L$withval/lib"
-  fi
-
-  save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $Z_CFLAGS"
-  AC_CHECK_HEADER(zlib.h, have_z=yes, have_z=no)
-  CPPFLAGS="$save_CPPFLAGS"
-
-  if test "x$have_z" = xyes; then
-  	save_LDFLAGS="$LDFLAGS"
-  	LDFLAGS="$LDFLAGS $Z_LIBS"
-  	AC_CHECK_LIB(z, gzopen, Z_LIBS="$Z_LIBS -lz"
-        	AC_DEFINE(HAVE_LIBZ, 1, [Define if you have the z library]) have_z=yes, have_z=no)
-  	LDFLAGS="$save_LDFLAGS"
-  fi
-
-  if test "x$have_z" != xyes; then
-    Z_CFLAGS=""
-    Z_LIBS=""
-  fi
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $Z_CFLAGS"
+	AC_CHECK_HEADER(zlib.h, :, [ if test "x$have_z" = xyes; then AC_MSG_ERROR([zlib.h not found]); fi; have_z=no ])
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+if test "x$have_z" != xno; then
+	save_LDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS $Z_LIBS"
+	AC_CHECK_LIB(z, gzopen, Z_LIBS="$Z_LIBS -lz",
+		[ if test "x$have_z" = xyes; then AC_MSG_ERROR([z library not found]); fi; have_z=no ])
+	LDFLAGS="$save_LDFLAGS"
+fi
+if test "x$have_z" != xno; then
+	AC_DEFINE(HAVE_LIBZ, 1, [Define if you have the z library])
+else
+	Z_CFLAGS=""
+	Z_LIBS=""
 fi
 AC_SUBST(Z_CFLAGS)
 AC_SUBST(Z_LIBS)
 
 dnl check for bz2 (de)compression library (default /usr and /usr/local)
-have_bz=auto
+have_bz2=auto
 BZ_CFLAGS=""
 BZ_LIBS=""
 AC_ARG_WITH(bz2,
 	AC_HELP_STRING([--with-bz2=DIR],
 		[bz2 library is installed in DIR]),
-	have_bz="$withval")
-if test "x$have_bz" != xno; then
-  if test "x$have_bz" != xauto; then
-    BZ_CFLAGS="-I$withval/include"
-    BZ_LIBS="-L$withval/lib"
-  fi
-
-  save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $BZ_CFLAGS"
-  AC_CHECK_HEADER(bzlib.h, have_bz=yes, have_bz=no)
-  CPPFLAGS="$save_CPPFLAGS"
-
-  if test "x$have_bz" = xyes; then
-  	save_LDFLAGS="$LDFLAGS"
-  	LDFLAGS="$LDFLAGS $BZ_LIBS"
-  	AC_CHECK_LIB(bz2, BZ2_bzopen, BZ_LIBS="$BZ_LIBS -lbz2"
-        	AC_DEFINE(HAVE_LIBBZ2, 1, [Define if you have the bz2 library]) have_bz=yes, have_bz=no)
-  	LDFLAGS="$save_LDFLAGS"
-  fi
-
-  if test "x$have_bz" != xyes; then
-    BZ_CFLAGS=""
-    BZ_LIBS=""
-  fi
+	have_bz2="$withval")
+case "$have_bz2" in
+yes|no|auto)
+	;;
+*)
+	BZ_CFLAGS="-I$withval/include"
+	BZ_LIBS="-L$withval/lib"
+	;;
+esac
+if test "x$have_bz2" != xno; then
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $BZ_CFLAGS"
+	AC_CHECK_HEADER(bzlib.h, :, [ if test "x$have_bz2" = xyes; then AC_MSG_ERROR([bzlib.h not found]); fi; have_bz2=no ])
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+if test "x$have_bz2" != xno; then
+	save_LDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS $BZ_LIBS"
+	AC_CHECK_LIB(bz2, nc_open, BZ_LIBS="$BZ_LIBS -lbz2",
+		[ if test "x$have_bz2" = xyes; then AC_MSG_ERROR([bz2 library not found]); fi; have_bz2=no ])
+	LDFLAGS="$save_LDFLAGS"
+fi
+if test "x$have_bz2" != xno; then
+	AC_DEFINE(HAVE_LIBBZ2, 1, [Define if you have the bz2 library])
+else
+	BZ_CFLAGS=""
+	BZ_LIBS=""
 fi
 AC_SUBST(BZ_CFLAGS)
 AC_SUBST(BZ_LIBS)
@@ -1416,12 +1453,15 @@ AC_ARG_WITH(hwcounters,
 	AC_HELP_STRING([--with-hwcounters=DIR],
 		[hwcounters library is installed in DIR]), 
 	have_hwcounters="$withval")
+case "$have_hwcounters" in
+yes|no|auto)
+	;;
+*)
+	HWCOUNTERS_LIBS="-L$withval/lib"
+	HWCOUNTERS_INCS="-I$withval/include"
+	;;
+esac
 if test "x$have_hwcounters" != xno; then
-  if test "x$have_hwcounters" != xauto; then
-    HWCOUNTERS_LIBS="-L$withval/lib"
-    HWCOUNTERS_INCS="-I$withval/include"
-  fi
-
   case "$host_os-$host" in
     linux*-i?86*) HWCOUNTERS_INCS="$HWCOUNTERS_INCS -I/usr/src/linux-`uname -r | sed 's|smp$||'`/include"
   esac
