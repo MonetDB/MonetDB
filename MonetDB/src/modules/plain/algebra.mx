@@ -638,6 +638,41 @@ that for the moment are defined as procs.
     ADDHELP("join", "boncz", "Aug  6 1998",
             "Returns [left.head,right.tail] where (*fcn)(left.tail,right.head,..params..)", "algebra");
 
+	proc find_unescaped_occurrence(str b, chr c) : int {
+		var idx := b.search(c);
+		var tmp;
+		
+		while (idx > 0) {
+			# check if this char was escaped
+			tmp := idx;
+			while ((tmp :-=1) >= 0) {
+				if ("\\" != b.string(tmp, 1)) {
+					tmp :+= 1;
+					break;
+				}
+			}
+			if (((idx - tmp) % 2) = 1) {
+				# this was an escaped char, go looking for the next one
+				tmp := b.string(idx, b.length() - idx).search(c);
+				# if not found, keep it like that, otherwise correct the
+				# index with an offset
+				if (tmp >= 0) {
+					idx := tmp + idx;
+				} else {
+					idx := tmp;
+					# we will not find anything more, break out
+					break;
+				}
+			} else {
+				# we found a valid one, break out of the loop!
+				break;
+			}
+		}
+		return(idx);
+    }
+    ADDHELP("find_unescaped_occurrence", "groffen", "Sep 26 2004",
+    "finds the first occurrence of c that is not escaped by a \\", "algebra");
+
     # SQL LIKE functionality, vectorized MIL implementation
     PROC likeselect(bat[any::1,str] b, str pat) : bat[any::1,oid]  {
         var s;
@@ -735,41 +770,6 @@ that for the moment are defined as procs.
     ADDHELP("likeselect", "groffen", "Sep 26 2004",
     "does SQL LIKE select which supports % and _ (also understands escapes)", "algebra");
     
-	proc find_unescaped_occurrence(str b, chr c) : int {
-		var idx := b.search(c);
-		var tmp;
-		
-		while (idx > 0) {
-			# check if this char was escaped
-			tmp := idx;
-			while ((tmp :-=1) >= 0) {
-				if ("\\" != b.string(tmp, 1)) {
-					tmp :+= 1;
-					break;
-				}
-			}
-			if (((idx - tmp) % 2) = 1) {
-				# this was an escaped char, go looking for the next one
-				tmp := b.string(idx, b.length() - idx).search(c);
-				# if not found, keep it like that, otherwise correct the
-				# index with an offset
-				if (tmp >= 0) {
-					idx := tmp + idx;
-				} else {
-					idx := tmp;
-					# we will not find anything more, break out
-					break;
-				}
-			} else {
-				# we found a valid one, break out of the loop!
-				break;
-			}
-		}
-		return(idx);
-    }
-    ADDHELP("find_unescaped_occurrence", "groffen", "Sep 26 2004",
-    "finds the first occurrence of c that is not escaped by a \\", "algebra");
-
 
     PROC mil_select(bat[any::1,any::2] b, str fcn, ..any..) : bat[any::1,any::2] 
     {
