@@ -152,6 +152,33 @@ NonAtom:         BuiltIns;
 BindingExpr:     for_ (var_, OptVar, Atom, CoreExpr);
 BindingExpr:     let (var_, CoreExpr, CoreExpr);
 
+BindingExpr:     for_ (var_, OptVar, Atom, var_)
+    {
+        /*
+         * for $v [ at $p ] in e return $v   -->   e
+         */
+        if ($1$->sem.var == $4$->sem.var)
+            REWRITE;
+        else
+            ABORT;
+    }
+    =
+    { return $3$; };
+
+BindingExpr:     let (var_, Atom, CoreExpr)
+    =
+    {
+        /* Unfold atoms (a atom):
+         *
+         *     let $v := a return e
+         * -->
+         *     e[a/$v]
+         */
+	replace_var ($1$->sem.var, $2$, $3$);
+        
+      	return $3$; 
+    }
+    ;
 TypeswitchExpr:  typesw (Atom,
                          cases (case_ (SequenceType,
                                        CoreExpr),

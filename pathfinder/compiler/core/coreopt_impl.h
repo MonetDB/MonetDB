@@ -173,6 +173,29 @@ static int TWIG_ID[] = {
 
 #include "subtyping.h"
 
+/**
+ * Walk core tree @a e and replace occurrences of variable @a v
+ * by core tree @a a (i.e., compute e[a/v]).
+ *
+ * @param v variable to replace
+ * @param a core tree to insert for @a v
+ * @param e core tree to walk over
+ * @return modified core tree
+ */
+static void
+replace_var (PFvar_t *v, PFcnode_t *a, PFcnode_t *e)
+{
+  unsigned short int i;
+
+  assert (v && a && e);
+
+  if (e->kind == c_var && e->sem.var == v)
+      *e = *a;
+  else
+      for (i = 0; (i < PFCNODE_MAXCHILD) && e->child[i]; i++)
+          replace_var (v, a, e->child[i]);
+}
+
 /** 
  * Phases for Core tree optimization
  *
