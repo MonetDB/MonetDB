@@ -37,42 +37,42 @@ Only the standard types sht, int, lng, flt, dbl are supported.
 	@3:	add, sub, mul, div, mod	basic arithmetic operator name
 \end{verbatim}
 @= signatures
-.OPERATOR (BAT[void,@1]) "[@2]" (BAT[void,@1]) : BAT[void,@1] = batbat_@1_@3;
+.OPERATOR@4 (BAT[void,@1]) "[@2]" (BAT[void,@1]) : BAT[void,@1] = batbat_@1_@3;
 	"optimized multiplexed @3 ('@2') on head-aligned [void,@1] BATs"
-.OPERATOR (@1) "[@2]" (BAT[void,@1]) : BAT[void,@1] = valbat_@1_@3;
+.OPERATOR@4 (@1) "[@2]" (BAT[void,@1]) : BAT[void,@1] = valbat_@1_@3;
 	"optimized multiplexed left-scalar @3 ('@2') on [void,@1] BAT"
-.OPERATOR (BAT[void,@1]) "[@2]" (@1) : BAT[void,@1] = batval_@1_@3;
+.OPERATOR@4 (BAT[void,@1]) "[@2]" (@1) : BAT[void,@1] = batval_@1_@3;
 	"optimized multiplexed right-scalar @3 ('@2') on [void,@1] BAT"
-.OPERATOR (BAT[void,@1]) "[:@2=]" (BAT[void,@1]) : BAT[void,@1] = batbat_@1_@3_inplace;
+.OPERATOR@4 (BAT[void,@1]) "[:@2=]" (BAT[void,@1]) : BAT[void,@1] = batbat_@1_@3_inplace;
 	"optimized multiplexed in-place @3 (':@2=') on head-aligned [void,@1] BATs (overwrites first operand)"
-.OPERATOR (@1) "[:@2=]" (BAT[void,@1]) : BAT[void,@1] = valbat_@1_@3_inplace;
+.OPERATOR@4 (@1) "[:@2=]" (BAT[void,@1]) : BAT[void,@1] = valbat_@1_@3_inplace;
 	"optimized multiplexed left-scalar in-place @3 (':@2=') on [void,@1] BAT (overwrites second operand)"
-.OPERATOR (BAT[void,@1]) "[:@2=]" (@1) : BAT[void,@1] = batval_@1_@3_inplace;
+.OPERATOR@4 (BAT[void,@1]) "[:@2=]" (@1) : BAT[void,@1] = batval_@1_@3_inplace;
 	"optimized multiplexed right-scalar in-place @3 (':@2=') on [void,@1] BAT (overwrites first operand)"
 @m
 @:signatures(sht,+,add)@
 @:signatures(sht,-,sub)@
-@:signatures(sht,*,mul)@
-@:signatures(sht,/,div)@
-@:signatures(sht,%,mod)@
+@:signatures(sht,*,mul,1)@
+@:signatures(sht,/,div,1)@
+@:signatures(sht,%,mod,1)@
 @:signatures(int,+,add)@
 @:signatures(int,-,sub)@
-@:signatures(int,*,mul)@
-@:signatures(int,/,div)@
-@:signatures(int,%,mod)@
+@:signatures(int,*,mul,1)@
+@:signatures(int,/,div,1)@
+@:signatures(int,%,mod,1)@
 @:signatures(lng,+,add)@
 @:signatures(lng,-,sub)@
-@:signatures(lng,*,mul)@
-@:signatures(lng,/,div)@
-@:signatures(lng,%,mod)@
+@:signatures(lng,*,mul,1)@
+@:signatures(lng,/,div,1)@
+@:signatures(lng,%,mod,1)@
 @:signatures(flt,+,add)@
 @:signatures(flt,-,sub)@
-@:signatures(flt,*,mul)@
-@:signatures(flt,/,div)@
+@:signatures(flt,*,mul,1)@
+@:signatures(flt,/,div,1)@
 @:signatures(dbl,+,add)@
 @:signatures(dbl,-,sub)@
-@:signatures(dbl,*,mul)@
-@:signatures(dbl,/,div)@
+@:signatures(dbl,*,mul,1)@
+@:signatures(dbl,/,div,1)@
 
 .END bat_arith;
 

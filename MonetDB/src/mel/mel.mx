@@ -263,7 +263,9 @@ const char *token2str( int token ){
         case MEL_BUILTIN    : return "builtin";
         case MEL_OBJECT     : return "object";
         case MEL_COMMAND    : return "command";
+        case MEL_OPERATOR0  : return "operator0";
         case MEL_OPERATOR   : return "operator";
+        case MEL_OPERATOR1  : return "operator1";
 	case MEL_ATOM	    : return "atom";
 	case MEL_ATOMOP	    : return "atom TODO";
 	case MEL_ACC	    : return "accelerator";
@@ -549,7 +551,9 @@ YY_SPACES    	[\t\n ]*
 (".BUILTIN"|".builtin")	  { return MEL_BUILTIN; 			}
 (".OBJECT"|".object")	  { return MEL_OBJECT; 				}
 (".COMMAND"|".command")	  { return MEL_COMMAND; 			}
+(".OPERATOR0"|".operator0") { return MEL_OPERATOR0; 			}
 (".OPERATOR"|".operator") { return MEL_OPERATOR; 			}
+(".OPERATOR1"|".operator1") { return MEL_OPERATOR1; 			}
 (".ATOM"|".atom")	  { return MEL_ATOM; 	     			}
 (".FIXED_ATOM"|".fixed_atom")	  { return MEL_FIXEDATOM; 		}
 (".TOSTR"|".tostr")	  { yylval.i = OP_TOSTR; return MEL_ATOMOP;	}
@@ -743,7 +747,8 @@ using namespace std;
 extern char* script;
 %}
 
-%token MEL_MODULE MEL_PRELUDE MEL_EPILOGUE MEL_END MEL_COMMAND MEL_OPERATOR
+%token MEL_MODULE MEL_PRELUDE MEL_EPILOGUE MEL_END MEL_COMMAND 
+%token MEL_OPERATOR0 MEL_OPERATOR MEL_OPERATOR1
 %token MEL_FIXEDATOM MEL_ATOM MEL_USE MEL_ATOMOP MEL_STRING MEL_IDENTIFIER
 %token MEL_USED
 %token MEL_NUMBER
@@ -907,10 +912,22 @@ commandname:
 
 operator:
       { anynr_clear(); }
+     	MEL_OPERATOR0 operand MEL_STRING operand returntype
+	'=' ident ';' MEL_STRING
+      { $$.sym = new Operator(
+      		MEL_OPERATOR0, $4.s, $8.s, $6.sym, $3.sym, $5.sym, $10.s ); }
+    |
+      { anynr_clear(); }
      	MEL_OPERATOR operand MEL_STRING operand returntype
 	'=' ident ';' MEL_STRING
       { $$.sym = new Operator(
       		MEL_OPERATOR, $4.s, $8.s, $6.sym, $3.sym, $5.sym, $10.s ); }
+    |
+      { anynr_clear(); }
+     	MEL_OPERATOR1 operand MEL_STRING operand returntype
+	'=' ident ';' MEL_STRING
+      { $$.sym = new Operator(
+      		MEL_OPERATOR1, $4.s, $8.s, $6.sym, $3.sym, $5.sym, $10.s ); }
     ;
 
 operand:

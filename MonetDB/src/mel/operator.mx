@@ -40,6 +40,7 @@ class Operator : public Command {
 	virtual ostream &print( language *l, ostream &o ) const ;
     private:
     	void set_op_names();
+	int level;
 
 	Symbol *_op1;
 	Symbol *_op2;
@@ -70,6 +71,7 @@ Operator::Operator( int t, char *n, char *fcn,
 		_op2 = op2;
 	}
 	set_op_names();
+	level = t;
 }
 
 void Operator::set_op_names(){
@@ -90,6 +92,8 @@ Symbol *Operator::op2() const {
 }
 
 const char* Operator::Token() const {
+	if (level == MEL_OPERATOR0) return "TOK_OPERATOR0";
+	if (level == MEL_OPERATOR1) return "TOK_OPERATOR1";
         return "TOK_OPERATOR";
 }
 

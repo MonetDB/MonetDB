@@ -119,12 +119,12 @@ decimal columns is their use as foreign key on tables imported from another DBMS
 @- comparison
 @m
 .COMMAND isnil(decimal) : bit = decimal_isnil;         "decimal nil test (!DS2.2)"
-.OPERATOR (decimal) "="  (decimal) : bit = decimal_eq; "decimal equality test (!DS2.2)"
-.OPERATOR (decimal) "!=" (decimal) : bit = decimal_ne; "decimal non-equality test (!DS2.2)"
-.OPERATOR (decimal) "<"  (decimal) : bit = decimal_lt; "decimal smaller-than test (!DS2.2)"
-.OPERATOR (decimal) ">"  (decimal) : bit = decimal_gt; "decimal greater-than test (!DS2.2)"
-.OPERATOR (decimal) "<=" (decimal) : bit = decimal_le; "decimal smaller-or-equal test (!DS2.2)"
-.OPERATOR (decimal) ">=" (decimal) : bit = decimal_ge; "decimal greater-or-equal test (!DS2.2)"
+.OPERATOR0 (decimal) "="  (decimal) : bit = decimal_eq; "decimal equality test (!DS2.2)"
+.OPERATOR0 (decimal) "!=" (decimal) : bit = decimal_ne; "decimal non-equality test (!DS2.2)"
+.OPERATOR0 (decimal) "<"  (decimal) : bit = decimal_lt; "decimal smaller-than test (!DS2.2)"
+.OPERATOR0 (decimal) ">"  (decimal) : bit = decimal_gt; "decimal greater-than test (!DS2.2)"
+.OPERATOR0 (decimal) "<=" (decimal) : bit = decimal_le; "decimal smaller-or-equal test (!DS2.2)"
+.OPERATOR0 (decimal) ">=" (decimal) : bit = decimal_ge; "decimal greater-or-equal test (!DS2.2)"
 
 @- arithmetic
 All operators return a result decimal whose value is exactly the value of the operation, 
@@ -146,10 +146,10 @@ The result of all operations are always normalized by deleting all leading and t
 .COMMAND abs(decimal value) : decimal = decimal_abs;
      "Returns a decimal whose value is the absolute value of this number."
 
-.OPERATOR (decimal val1) "*" (decimal val2) : decimal = decimal_multiply;
+.OPERATOR1 (decimal val1) "*" (decimal val2) : decimal = decimal_multiply;
      "Returns a decimal whose value is exactly (val1 * val2)."
 
-.OPERATOR (decimal val1) "/" (decimal val2) : decimal = decimal_divide_default;
+.OPERATOR1 (decimal val1) "/" (decimal val2) : decimal = decimal_divide_default;
      "Returns a decimal whose value is val1 DIV val2, (scale=0) like in C integer division. 
       This operator can implement MOD as MOD(x,y) = x - y*DIV(d,y). 
       Use the tertiary divide(num,div,prec) command for dividing with arbitrary precision. 

@@ -145,7 +145,9 @@ char* yydeparse(Client c, YYSTREE t, char* buf, char* end){
 	}
 	switch( tk ){
 	case TOK_COMMAND:
+	case TOK_OPERATOR0:
 	case TOK_OPERATOR:
+	case TOK_OPERATOR1:
 	case TOK_SETAGGR:
 	case TOK_SETOP:
 	case TOK_FUNCTION:
@@ -177,7 +179,9 @@ char* yydeparse(Client c, YYSTREE t, char* buf, char* end){
 	}
 	switch( tk ){
 	case TOK_COMMAND:
+	case TOK_OPERATOR0:
 	case TOK_OPERATOR:
+	case TOK_OPERATOR1:
 	case TOK_SETAGGR:
 	case TOK_SETOP:
 	case TOK_FUNCTION:
@@ -224,7 +228,9 @@ char* yydeparseCall(Client c, YYSTREE t, char* buf, char* end){
 	}
 	switch( tk ){
 	case TOK_COMMAND:
+	case TOK_OPERATOR0:
 	case TOK_OPERATOR:
+	case TOK_OPERATOR1:
 	case TOK_SETAGGR:
 	case TOK_SETOP:
 	case TOK_FUNCTION:

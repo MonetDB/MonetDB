@@ -291,6 +291,7 @@ See the MonetDB.conf file for additional system variable settings
 #define MAXSCRIPT 64
 
 m_export char		monet_cwd[PATHLENGTH];	/* where the server started */
+m_export int 		monet_nostalgic;	/* do not require () on empty parameters */
 m_export int		monet_listing;		/* echo input */
 m_export int		monet_daemon;		/* set server console is deaf */
 m_export int		monet_singlethreaded;	/* in singlethreaded mode? */
@@ -323,6 +324,7 @@ m_export char 		monet_version[PATHLENGTH];
 @c 
 #include "monet.h"
 
+int 		monet_nostalgic = 0;
 int 		monet_running = 0;
 char            monet_cwd[PATHLENGTH]={0}, *monet_ver=0;
 int             monet_listing=0, monet_daemon=0;
@@ -417,6 +419,9 @@ ptr monet_init(void){
         monet_available  = MT_create_sema(0);
         monet_forksync   = MT_create_sema(0);
 
+	if (GDKgetenv_isyes("monet_nostalgic")) {
+		monet_nostalgic = 1;
+	}
 	CNTXTinit();
         TBL_init(); /* init MIL function table management. */
         c = initClient(

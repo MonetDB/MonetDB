@@ -265,10 +265,10 @@ double drand48(void)
    .OPERATOR (@1s) "-" (@1s) : @1s = opr_@1s_subtract;
      "Subtraction of vectors of @1s (param 1 - param 2)"
 
-   .OPERATOR (@1s) "*" (@1)  : @1s = opr_@1s_multiply;
+   .OPERATOR1 (@1s) "*" (@1)  : @1s = opr_@1s_multiply;
      "Multiplication of vector of @1s with scalar"
 
-   .OPERATOR (@1s) "/" (@1)  : @1s = opr_@1s_divide;
+   .OPERATOR1 (@1s) "/" (@1)  : @1s = opr_@1s_divide;
      "Divide vector of @1s by @1"
 @
 
@@ -279,10 +279,10 @@ double drand48(void)
    .OPERATOR (@1_vector@2) "-" (@1_vector@2) : @1_vector@2 = opr_@1_vector@2_subtract;
      "Subtraction of vectors of @1s (param 1 - param 2)"
 
-   .OPERATOR (@1_vector@2) "*" (@1)  : @1_vector@2 = opr_@1_vector@2_multiply;
+   .OPERATOR1 (@1_vector@2) "*" (@1)  : @1_vector@2 = opr_@1_vector@2_multiply;
      "Multiplication of vector of @1s with scalar"
 
-   .OPERATOR (@1_vector@2) "/" (@1)  : @1_vector@2 = opr_@1_vector@2_divide;
+   .OPERATOR1 (@1_vector@2) "/" (@1)  : @1_vector@2 = opr_@1_vector@2_divide;
      "Divide vector of @1s by @1"
 @
 

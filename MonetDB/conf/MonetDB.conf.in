@@ -51,6 +51,7 @@ gdk_debug=0			# debug
 monet_admin=adm			#administrator user name 
 monet_prompt=MonetDB>		#prompt 
 monet_welcome=yes		#Version and copyright information
+monet_nostalgic=no		#set to yes if you don't want to type () after each operator
 monet_mod_path=@libdir@@DIRSEP@@PACKAGE@
 monet_daemon=no			# default yes
 

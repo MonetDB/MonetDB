@@ -196,12 +196,12 @@ in a string.
 .END;
 
 .COMMAND isnil(date) : bit = date_isnil;            "date nil test (!DS2.2)"
-.OPERATOR (date) "="  (date) : bit = date_comp_EQ;  "date equality test (!DS2.2)"
-.OPERATOR (date) "!=" (date) : bit = date_comp_NE; "date non-equality test (!DS2.2)"
-.OPERATOR (date) "<"  (date) : bit = date_comp_LT;  "date smaller-than test (!DS2.2)"
-.OPERATOR (date) ">"  (date) : bit = date_comp_GT;  "date greater-than test (!DS2.2)"
-.OPERATOR (date) "<=" (date) : bit = date_comp_LE;  "date smaller-or-equal test (!DS2.2)"
-.OPERATOR (date) ">=" (date) : bit = date_comp_GE;  "date greater-or-equal test (!DS2.2)"
+.OPERATOR0 (date) "="  (date) : bit = date_comp_EQ;  "date equality test (!DS2.2)"
+.OPERATOR0 (date) "!=" (date) : bit = date_comp_NE; "date non-equality test (!DS2.2)"
+.OPERATOR0 (date) "<"  (date) : bit = date_comp_LT;  "date smaller-than test (!DS2.2)"
+.OPERATOR0 (date) ">"  (date) : bit = date_comp_GT;  "date greater-than test (!DS2.2)"
+.OPERATOR0 (date) "<=" (date) : bit = date_comp_LE;  "date smaller-or-equal test (!DS2.2)"
+.OPERATOR0 (date) ">=" (date) : bit = date_comp_GE;  "date greater-or-equal test (!DS2.2)"
 
 @- daytime atom
 @T
@@ -225,12 +225,12 @@ with: HOUR = integer between 0 and 23
 .END;
 
 .COMMAND isnil(daytime) : bit = daytime_isnil;               "daytime nil test (!DS2.2)"
-.OPERATOR (daytime) "="  (daytime) : bit = daytime_comp_EQ;  "daytime equality test (!DS2.2)"
-.OPERATOR (daytime) "!=" (daytime) : bit = daytime_comp_NE; "daytime non-equality test (!DS2.2)"
-.OPERATOR (daytime) "<"  (daytime) : bit = daytime_comp_LT;  "daytime smaller-than test (!DS2.2)"
-.OPERATOR (daytime) ">"  (daytime) : bit = daytime_comp_GT;  "daytime greater-than test (!DS2.2)"
-.OPERATOR (daytime) "<=" (daytime) : bit = daytime_comp_LE;  "daytime smaller-or-equal test (!DS2.2)"
-.OPERATOR (daytime) ">=" (daytime) : bit = daytime_comp_GE;  "daytime greater-or-equal test (!DS2.2)"
+.OPERATOR0 (daytime) "="  (daytime) : bit = daytime_comp_EQ;  "daytime equality test (!DS2.2)"
+.OPERATOR0 (daytime) "!=" (daytime) : bit = daytime_comp_NE; "daytime non-equality test (!DS2.2)"
+.OPERATOR0 (daytime) "<"  (daytime) : bit = daytime_comp_LT;  "daytime smaller-than test (!DS2.2)"
+.OPERATOR0 (daytime) ">"  (daytime) : bit = daytime_comp_GT;  "daytime greater-than test (!DS2.2)"
+.OPERATOR0 (daytime) "<=" (daytime) : bit = daytime_comp_LE;  "daytime smaller-or-equal test (!DS2.2)"
+.OPERATOR0 (daytime) ">=" (daytime) : bit = daytime_comp_GE;  "daytime greater-or-equal test (!DS2.2)"
 
 
 @- timestamp
@@ -262,12 +262,12 @@ arbitrarily.
 .END;
 
 .COMMAND isnil(timestamp) : bit = timestamp_isnil;                 "timestamp nil test (!DS2.2)"
-.OPERATOR (timestamp) "="  (timestamp) : bit = timestamp_comp_EQ;  "timestamp equality test (!DS2.2)"
-.OPERATOR (timestamp) "!=" (timestamp) : bit = timestamp_comp_NE; "timestamp non-equality test (!DS2.2)"
-.OPERATOR (timestamp) "<"  (timestamp) : bit = timestamp_comp_LT;  "timestamp smaller-than test (!DS2.2)"
-.OPERATOR (timestamp) ">"  (timestamp) : bit = timestamp_comp_GT;  "timestamp greater-than test (!DS2.2)"
-.OPERATOR (timestamp) "<=" (timestamp) : bit = timestamp_comp_LE;  "timestamp smaller-or-equal test (!DS2.2)"
-.OPERATOR (timestamp) ">=" (timestamp) : bit = timestamp_comp_GE;  "timestamp greater-or-equal test (!DS2.2)"
+.OPERATOR0 (timestamp) "="  (timestamp) : bit = timestamp_comp_EQ;  "timestamp equality test (!DS2.2)"
+.OPERATOR0 (timestamp) "!=" (timestamp) : bit = timestamp_comp_NE; "timestamp non-equality test (!DS2.2)"
+.OPERATOR0 (timestamp) "<"  (timestamp) : bit = timestamp_comp_LT;  "timestamp smaller-than test (!DS2.2)"
+.OPERATOR0 (timestamp) ">"  (timestamp) : bit = timestamp_comp_GT;  "timestamp greater-than test (!DS2.2)"
+.OPERATOR0 (timestamp) "<=" (timestamp) : bit = timestamp_comp_LE;  "timestamp smaller-or-equal test (!DS2.2)"
+.OPERATOR0 (timestamp) ">=" (timestamp) : bit = timestamp_comp_GE;  "timestamp greater-or-equal test (!DS2.2)"
 
 @T
 When creating a timestamp from a date and daytime, a timezone should be specified

@@ -1936,7 +1936,7 @@ again:
 		if (*t == TOK_BUILTIN) {
 		    ret = (char *) *BUNtailfnd(ptr, TBL_fcn_imp, v, &fid);
 		} else if (no_command == 0 && (cur_is_ident == 0 || 
-		           (next_is_ident == 0 || *t == TOK_OPERATOR))) 
+		           (next_is_ident == 0 || *t == TOK_OPERATOR0 || *t == TOK_OPERATOR || *t == TOK_OPERATOR1))) 
 		{
 		    /* we refuse only if we know the following cannot be a command
                        or if we see a command followed by an identifier */ 
@@ -1949,7 +1949,7 @@ We recognize '+=' (and similar for other operators than +) as an TOK_ASSIGNOP.
 @c
 	if (assignop) {
 		GDKfree(assignop);
-		if (*t != TOK_OPERATOR && *t != TOK_COMMAND) {
+		if (*t != TOK_OPERATOR0 && *t != TOK_OPERATOR  && *t != TOK_OPERATOR1 && *t != TOK_COMMAND) {
 		    ret = NULL;
 		} else {
 		    *t = TOK_ASSIGNOP;
@@ -2036,7 +2036,7 @@ Found IT: substitute name by address.
 		    } 	
 		} 	
 		TBL_unset_readlock();
-		return (tpe==TOK_OPERATOR)?TOK_COMMAND:tpe; /* simplify */
+		return (tpe==TOK_OPERATOR0 || tpe==TOK_OPERATOR || tpe==TOK_OPERATOR1)?TOK_COMMAND:tpe; /* simplify */
 	}
 	TBL_unset_readlock();
 

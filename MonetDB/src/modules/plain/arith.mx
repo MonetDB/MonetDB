@@ -108,19 +108,19 @@ arithmetic operations. Note that comparison operators with unequal
 operands are already supported in the kernel, but are not nearly as fast,
 (because they have to convert values on the fly).  
 @= mel_eq_ops
-	.OPERATOR (@1) "=" (@1) : bit = @2_comp_EQ; 
+	.OPERATOR0 (@1) "=" (@1) : bit = @2_comp_EQ; 
 		"left equal to right?"
-	.OPERATOR (@1) "!=" (@1) : bit = @2_comp_NEQ; 
+	.OPERATOR0 (@1) "!=" (@1) : bit = @2_comp_NEQ; 
 		"left unequal to right?"
 @= mel_comp_ops
 	@:mel_eq_ops(@1,@2)@
-	.OPERATOR (@1) "<" (@1) : bit = @2_comp_LT; 
+	.OPERATOR0 (@1) "<" (@1) : bit = @2_comp_LT; 
 		"left smaller than right?"
-	.OPERATOR (@1) "<=" (@1) : bit = @2_comp_LE; 
+	.OPERATOR0 (@1) "<=" (@1) : bit = @2_comp_LE; 
 		"left smaller than right or equal?"
-	.OPERATOR (@1) ">=" (@1) : bit = @2_comp_GE; 
+	.OPERATOR0 (@1) ">=" (@1) : bit = @2_comp_GE; 
 		"left greater than right or equal?)"
-	.OPERATOR (@1) ">" (@1) : bit = @2_comp_GT; 
+	.OPERATOR0 (@1) ">" (@1) : bit = @2_comp_GT; 
 		"left greater than right?"
 	.COMMAND between(@1 val, @1 low, @1 high) : bit = @2_comp_between; 
 		"checks (low <= val <= high)"
@@ -142,19 +142,19 @@ The {\tt mel\_arith\_ops} Mx macro implements the mel interface to the
 arithmetic operations.  The macro expects three parameters, two input
 atomic types and a result type. 
 @m
-	.OPERATOR (chr) "%"  (int) : int = chrint_checkbinary_MOD;	"modulo"
-	.OPERATOR (sht) "%"  (sht) : sht = shtsht_checkbinary_MOD;	"modulo"
-	.OPERATOR (sht) "%"  (int) : int = shtint_checkbinary_MOD;	"modulo"
-	.OPERATOR (int) "%"  (int) : int = intint_checkbinary_MOD;	"modulo"
-	.OPERATOR (lng) "%"  (lng) : lng = lnglng_checkbinary_MOD;	"modulo"
-	.OPERATOR (lng) "%"  (int) : int = lngint_checkbinary_MOD;	"modulo"
-	.OPERATOR (int) "%"  (chr) : chr = intchr_checkbinary_MOD;	"modulo"
-	.OPERATOR (int) "%"  (sht) : sht = intsht_checkbinary_MOD;	"modulo"
+	.OPERATOR1 (chr) "%"  (int) : int = chrint_checkbinary_MOD;	"modulo"
+	.OPERATOR1 (sht) "%"  (sht) : sht = shtsht_checkbinary_MOD;	"modulo"
+	.OPERATOR1 (sht) "%"  (int) : int = shtint_checkbinary_MOD;	"modulo"
+	.OPERATOR1 (int) "%"  (int) : int = intint_checkbinary_MOD;	"modulo"
+	.OPERATOR1 (lng) "%"  (lng) : lng = lnglng_checkbinary_MOD;	"modulo"
+	.OPERATOR1 (lng) "%"  (int) : int = lngint_checkbinary_MOD;	"modulo"
+	.OPERATOR1 (int) "%"  (chr) : chr = intchr_checkbinary_MOD;	"modulo"
+	.OPERATOR1 (int) "%"  (sht) : sht = intsht_checkbinary_MOD;	"modulo"
 @= mel_arith_ops
 	.OPERATOR (@1) "+" (@2) : @3 = @1@2_binary_ADD; 	"addition"
 	.OPERATOR (@1) "-" (@2) : @3 = @1@2_binary_SUB;		"substraction"
-	.OPERATOR (@1) "*" (@2) : @3 = @1@2_binary_MUL;		"multiplication"
-	.OPERATOR (@1) "/" (@2) : @3 = @1@2_checkbinary_DIV;	"division"
+	.OPERATOR1 (@1) "*" (@2) : @3 = @1@2_binary_MUL;		"multiplication"
+	.OPERATOR1 (@1) "/" (@2) : @3 = @1@2_checkbinary_DIV;	"division"
 @m
 	@:mel_arith_ops(chr,chr,chr)@
 	@:mel_arith_ops(chr,sht,sht)@

@@ -217,12 +217,10 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 
     PROC help_tpe(int tpe) : str {
 	IF (tpe = TOK_PROC) RETURN "PROC:      ";
-	ELSE IF (tpe = TOK_OPERATOR) RETURN "OPERATOR:  ";
 	ELSE IF (tpe = TOK_COMMAND) RETURN "COMMAND:   ";
 	ELSE IF (tpe = TOK_BUILTIN) RETURN "BUILTIN:   ";
 	ELSE IF (tpe = TOK_ITERATOR) RETURN "ITERATOR:  ";
-	ELSE IF (tpe = TOK_OBJECT) RETURN "OBJECT:    ";
-	RETURN "UNKNOWN:   ";
+	RETURN "OPERATOR:  ";
     }
  
     PROC help_sig(oid fid) : void {
