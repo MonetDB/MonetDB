@@ -723,6 +723,7 @@ main(int argc, char **argv)
 		{"time", 0, 0, 'T'},
 		{"trace", 0, 0, 't'},
 		{"user", 1, 0, 'u'},
+		{"help", 0, 0, '?'},
 		{0, 0, 0, 0}
 	};
 
@@ -733,7 +734,7 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "c:l:u:P:h:s:DtTd::", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "c:l:u:P:h:s:DtTd::?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'c':
 			config = optarg;
@@ -790,6 +791,8 @@ main(int argc, char **argv)
 			else
 				usage(argv[0]);
 			break;
+		case '?':
+			usage(argv[0]);
 		default:
 			usage(argv[0]);
 		}
