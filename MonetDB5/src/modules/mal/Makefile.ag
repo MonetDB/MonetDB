@@ -11,7 +11,7 @@ LIBS = {
 	SOURCES = \
 		chopper.mx language.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx io.mx \
-		enum.mx streams.mx inspect.mx crackers.mx \
+		enum.mx inspect.mx crackers.mx \
 		thread.mx clients.mx tablet.mx \
 		transaction.mx factory.mx mdb.mx  \
 		statistics.mx
@@ -39,7 +39,7 @@ lib__pcre = {
 #	SOURCES = \
 #		startup.mx mal_init.mx language.mx box.mx multiplex.mx  \
 #		atoms.mx profiler.mx const.mx bbp.mx io.mx \
-#		enum.mx streams.mx inspect.mx crackers.mx \
+#		enum.mx inspect.mx crackers.mx \
 #		chopper.mx thread.mx clients.mx tablet.mx \
 #		transaction.mx factory.mx mdb.mx 
 #}
@@ -48,7 +48,7 @@ scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = language.mx mal_init.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx  \
-		enum.mx streams.mx inspect.mx crackers.mx io.mal \
+		enum.mx inspect.mx crackers.mx io.mal \
 		chopper.mx thread.mx clients.mx tablet.mx \
 		transaction.mx factory.mx mdb.mx pcre.mx \
 		statistics.mx
