@@ -19,11 +19,10 @@ MEL=$(TOPDIR)\src\mel\mel
 MX=$(TOPDIR)\src\utils\Mx\Mx
 YACC=bison -y
 BISONSIMPLE=\tmp\vim57\bison.simple
-LEX=flex -l
+LEX=flex 
 CP=copy
 MV=rename
-#PYTHON = "c:\program files\python\python.exe" 
-PYTHON = "c:\python16\python.exe" 
+DEL=del
 
 {$(SRCDIR)}.mx.h:
 	$(MX) $(MXFLAGS) -l -x h $<

@@ -4,21 +4,22 @@
 # Nothing much configurable below
 
 # cl -? describes the options
-CC = cl -GF -W3 -MD -nologo -Zi
+CC = cl -GF -W3 -D -nologo -Zi
 # optimize use -Ox
 
 # No general LDFLAGS needed
 LDFLAGS = /link
 INSTALL = copy
-MKDIR = mkdir
+KDIR = mkdir
 ECHO = echo
 CD = cd
+#PYTHON = "c:\program files\python\python.exe" 
+PYTHON = "c:\python16\python.exe" 
 
 TOPDIR = .
 CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H
 
 CXXEXT = "cxx"
-!INCLUDE rules.msc
 
 all: all-msc all-recursive
 
@@ -30,11 +31,11 @@ all-recursive: src-recursive
 	cd .. && $(PYTHON) src\utils\autogen\autogen.py
 
 src-recursive: src ../makefile.msc 
-	cd src && nmake /k /nologo -f Makefile
+	cd src && nmake /k /nologo -f akefile
 
 src:
-	if not exist src $(MKDIR) src
-	$(INSTALL) ..\src\Makefile.msc src\Makefile
+	if not exist src $(KDIR) src
+	$(INSTALL) ..\src\akefile.msc src\akefile
 
 all-msc: config.h unistd.h sys\socket.h
 
@@ -48,7 +49,7 @@ unistd.h:
 	$(ECHO) #endif >> unistd.h
 
 sys\socket.h: 
-	if not exist sys $(MKDIR) sys
+	if not exist sys $(KDIR) sys
 	$(ECHO) #ifndef SOCKET_H > sys\socket.h
 	$(ECHO) #define SOCKET_H >> sys\socket.h
 	$(ECHO) #include "winsock.h" >> sys\socket.h
