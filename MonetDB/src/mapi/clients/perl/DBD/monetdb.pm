@@ -37,11 +37,11 @@ $drh = undef;
 
 sub driver {
     return $drh if $drh;
-    
+
     my $class = shift;
     my $attr  = shift;
     $class .= '::dr';
-    
+
     $drh = DBI::_new_drh($class, {
 				  Name        => 'monetdb',
 				  Version     => $VERSION,
@@ -215,6 +215,7 @@ sub prepare {
 				  });
     $sth->STORE(monetdb_handle => $dbh->FETCH('monetdb_connection'));
     $sth->STORE(monetdb_params => []);
+    $sth->{monetdb_rows} = -1;
     $sth->STORE(NUM_OF_PARAMS => _count_param($statement));
     $sth;
 }
@@ -264,7 +265,7 @@ sub tables {
     my $mapi = $dbh->FETCH('monetdb_connection');
 
     my @table_list;
-	
+
     my $hdl = MapiLib::mapi_query($mapi, ($dbh->FETCH('Language') ne 'sql')?'ls;':'SELECT name FROM tables;');
     die MapiLib::mapi_error_str($mapi) if MapiLib::mapi_error($mapi);
 
@@ -373,6 +374,7 @@ sub execute {
 	$statement =~ s/\?/$quoted_param/;
     }
 
+    my $rows;
     my @data = ();
 
     my $result = eval {
@@ -382,8 +384,8 @@ sub execute {
 	$sth->STORE(monetdb_hdl => $hdl);
 	$sth->STORE(monetdb_errstr => MapiLib::mapi_result_error($hdl));
 	$sth->STORE(monetdb_err => MapiLib::mapi_result_error($hdl)?1:0);
-	$sth->STORE(rows => MapiLib::mapi_rows_affected($hdl));
-	$sth->STORE(monetdb_querytype => MapiLib::mapi_get_querytype($hdl));
+	$rows = MapiLib::mapi_rows_affected($hdl);
+	my $querytype = MapiLib::mapi_get_querytype($hdl);
 
 	if ($sth->FETCH('monetdb_err') == 0) {
 	    my $first = 1;
@@ -391,7 +393,7 @@ sub execute {
 	    my @types = (); my @precisions = (); my @nullables = ();
 
 	    my $numfields;
-	    
+
 	    while (MapiLib::mapi_fetch_row($hdl)) {
 		$numfields =  MapiLib::mapi_get_field_count($hdl) if !defined($numfields);
 		my @row = ();
@@ -407,9 +409,9 @@ sub execute {
 		$first = 0;
 		push @data, \@row;
 	    }
-	    
+
 	    $sth->{monetdb_data} = \@data;
-	    $sth->{monetdb_rows} = @data;
+	    $sth->{monetdb_rows} = ( $querytype == 3 ) ? 0 : $rows;
 	    $sth->STORE(NUM_OF_FIELDS => $numfields) if defined $numfields && !$sth->FETCH('NUM_OF_FIELDS');
 	    $sth->STORE(NAME => \@names);
 
@@ -419,13 +421,13 @@ sub execute {
 	    # $sth->STORE(NULLABLE => \@nullables);
 	}
     };
-	
+
     if ($@ or $sth->FETCH('monetdb_err')) {
 	$sth->DBI::set_err($sth->{monetdb_err}, $sth->{monetdb_errstr});
 	return undef;
     }
 
-    @data || '0E0';
+    $rows || '0E0';
 }
 
 
@@ -436,14 +438,15 @@ sub fetchrow_arrayref  {
     my $sth = shift;
     my $data = $sth->FETCH('monetdb_data');
     my $row = shift @$data;
-    
+
     if (!$row) {
 	return undef;
     }
-    
+
     if ($sth->FETCH('ChopBlanks')) {
 	map { $_ =~ s/\s+$//; } @$row;
     }
+    $sth->{monetdb_rows}++;
     return $sth->_set_fbav($row);
 }
 
@@ -458,7 +461,7 @@ sub rows {
 sub FETCH {
     my $sth = shift;
     my $key = shift;
-    
+
     return $sth->{NAME} if $key eq 'NAME';
     return $sth->{$key} if $key =~ /^monetdb_/;
     return $sth->SUPER::FETCH($key);
