@@ -160,7 +160,7 @@ extern stmt *stmt_update_var( char *varname );
 
 extern stmt *stmt_basetable(sql_table *t, char *tname); 
 
-#define isbasetable(s) (s->type == st_basetable)
+#define isbasetable(s) (s->type == st_basetable && s->op1.tval->table)
 #define basetable_table(s) s->op1.tval 
 
 #define ptable_pivots(s) 	((s)->op1.lval)

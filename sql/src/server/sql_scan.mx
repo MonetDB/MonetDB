@@ -142,6 +142,7 @@ init_keywords()
 	keywords_insert("AS", AS);
 	keywords_insert("ASC", ASC);
 	keywords_insert("AUTHORIZATION", AUTHORIZATION);
+	keywords_insert("BATS", BATS);
 	keywords_insert("BETWEEN", BETWEEN);
 	keywords_insert("SYMMETRIC", SYMMETRIC);
 	keywords_insert("ASYMMETRIC", ASYMMETRIC);
@@ -324,6 +325,16 @@ init_keywords()
 	keywords_insert("EXEC",    EXECUTE );
 
 	keywords_insert("INDEX", INDEX );
+
+	keywords_insert("SEQUENCE", SEQUENCE );
+	keywords_insert("INCREMENT", INCREMENT );
+	keywords_insert("MAXVALUE", MAXVALUE );
+	keywords_insert("MINVALUE", MINVALUE );
+	keywords_insert("CYCLE", CYCLE );
+	keywords_insert("NEXT", NEXT );
+	keywords_insert("VALUE", VALUE );
+	keywords_insert("GENERATED", GENERATED );
+	keywords_insert("IDENTITY", IDENTITY );
 }
 
 void 

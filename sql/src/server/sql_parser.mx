@@ -36,6 +36,7 @@ typedef enum tokens {
 	SQL_CREATE_MODULE,
 	SQL_CREATE_TYPE,
 	SQL_CREATE_FUNC,
+	SQL_CREATE_SEQ,
 	SQL_DROP_SCHEMA,
 	SQL_DROP_TABLE,
 	SQL_DROP_VIEW,
@@ -45,6 +46,7 @@ typedef enum tokens {
 	SQL_DROP_MODULE,
 	SQL_DROP_TYPE,
 	SQL_DROP_FUNC,
+	SQL_DROP_SEQ,
 	SQL_ALTER_TABLE,
 	SQL_ALTER_USER,
 	SQL_DROP_COLUMN,
@@ -222,11 +224,13 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	copyfrom_stmt
 	table_def
 	view_def
+	view_as
 	role_def
 	module_def
 	type_def
 	func_def
 	index_def
+  	seq_def
 	all_or_any_predicate
 	atom_exp
 	between_predicate
@@ -398,6 +402,11 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	transaction_mode
 	transaction_mode_list
 	_transaction_mode_list
+	opt_start
+	opt_increment
+	opt_min
+	opt_max
+	opt_cycle
 
 %type <bval>
 	opt_brackets
@@ -444,6 +453,9 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 
 /* datetime operations */
 %token <operation> EXTRACT
+%token SEQUENCE INCREMENT MAXVALUE MINVALUE CYCLE 
+%token NEXT VALUE 
+%token GENERATED IDENTITY
 
 	/* operators */
 %left UNION EXCEPT INTERSECT CORRESPONDING UNIONJOIN
@@ -478,7 +490,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token PATH PRIMARY PRIVILEGES 
 %token<sval> PUBLIC REFERENCES SCHEMA SET 
 
-%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH 
+%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW BATS WHERE WITH 
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 %token LIMIT
@@ -842,7 +854,53 @@ opt_column:
  |   /* empty */ { $$ = 0; }
  ;
 
-create:	role_def | table_def | view_def | module_def | type_def | func_def | index_def;
+create:	role_def | table_def | view_def | module_def | type_def | func_def | index_def | seq_def;
+
+seq_def:
+    CREATE SEQUENCE qname 
+    AS data_type 
+    opt_start
+    opt_increment
+    opt_min
+    opt_max
+    opt_cycle
+	{ dlist *l = dlist_create();
+	  dlist_append_list(l, $3 );
+	  dlist_append_type(l, $5 );
+	  dlist_append_int(l, $6 );
+	  dlist_append_int(l, $7 );
+	  dlist_append_int(l, $8 );
+	  dlist_append_int(l, $9 );
+	  dlist_append_int(l, $10 );
+	  $$ = _symbol_create_list( SQL_CREATE_SEQ, l ); }
+  | DROP SEQUENCE qname 
+	{ $$ = _symbol_create_list( SQL_DROP_SEQ, $3 ); } 
+  ;
+
+opt_start:
+     /* empty */ 		{ $$ = 1; }
+  |  START WITH intval 		{ $$ = $3; }
+  ;
+
+opt_increment:
+     /* empty */ 		{ $$ = 1; }
+  |  INCREMENT BY intval 	{ $$ = $3; }
+  ;
+
+opt_min:
+     /* empty */ { $$ = 1; }
+  |  NO MINVALUE { $$ = 0; }
+  ;
+
+opt_max:
+     /* empty */ { $$ = 1; }
+  |  NO MAXVALUE { $$ = 0; }
+  ;
+
+opt_cycle:
+     /* empty */ { $$ = 1; }
+  |  NO CYCLE 	 { $$ = 0; }
+  ;
 
 index_def:
     CREATE opt_index_type INDEX ident ON qname '(' column_commalist ')' 
@@ -1089,15 +1147,19 @@ view_def:
     CREATE VIEW qname opt_column_commalist
     AS			{ mvc *m = (mvc*)parm;
 			  m->scanner.as = m->scanner.yycur; }
-	select_stmt opt_with_check_option
-
+    view_as opt_with_check_option
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $3);
 	  dlist_append_list(l, $4);
 	  dlist_append_symbol(l, $7);
 	  dlist_append_int(l, $8);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); }
-    ;
+  ;
+
+view_as:
+	select_stmt 		
+  | 	BATS			{ $$ = NULL; }
+  ;
 	
 opt_with_check_option:
     /* empty */ 		{ $$ = FALSE; }
@@ -2735,6 +2797,7 @@ non_reserved_word:
 | MODULE	{ $$ = _strdup("module"); }
 | PRIVILEGES	{ $$ = _strdup("privileges"); }
 | START		{ $$ = _strdup("start"); }
+| VALUE		{ $$ = _strdup("value"); }
 ;
 
 name_commalist:

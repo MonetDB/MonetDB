@@ -548,6 +548,7 @@ int sqlexecute(backend * be, stream *out )
 			return sqlcleanup(c, err, cache);
 		}
 	} else if (q && !q->code) {
+		/* TODO change to backend_call(c, name, c->args, &err); */
 		char buf[BUFSIZ];
 		Cntxt procstk = backend_newstack(c->stk);
 		YYSTREE callnode;
@@ -588,7 +589,10 @@ int sqlexecute(backend * be, stream *out )
 
 		T1 = GDKusec();
 		/* TODO use sql_prepare/execute */
-		snprintf(buf, BUFSIZ, "insert into history values(now,'%s',%lld,%lld,%lld,%lld,USER);\n", query, Tparse-T0, Tmil-Tparse, Texec-Tmil, T1-T0);
+		snprintf(buf, BUFSIZ, 
+			"insert into sys.history "
+			"values(now,'%s',%lld,%lld,%lld,%lld,USER);\n", 
+			query, Tparse-T0, Tmil-Tparse, Texec-Tmil, T1-T0);
 		_DELETE(query);
 		/* switch of explain to prevent recursion */
 		c->explain = NULL;

@@ -596,10 +596,14 @@ create_view(mvc * sql, sql_schema * ss, dlist * qname, dlist * column_spec,
 
 	if (mvc_bind_table(sql, cur_schema(sql), name)) {
 		return sql_error(sql, 02, "Create View name %s already in use", name);
-	} else {
-		stmt *sq;
+	} else if (!schema_privs(sql->role_id, ss)){
+		return sql_error(sql, 02, 
+		    "User/Role is not allowed to create views in schema %s", 
+		    ss->base.name);
+	} else if (query) {
+		stmt *sq = NULL;
 		SelectNode *sn = (SelectNode*)query;
-		char *subquery;
+		char *subquery = NULL;
 
 		if (sn->limit >= 0) 
 			return sql_error( sql, 01, 
@@ -608,22 +612,21 @@ create_view(mvc * sql, sql_schema * ss, dlist * qname, dlist * column_spec,
 			return sql_error( sql, 01, 
 				"Order by not supported for views" );
 
- 		sq = scope_subquery(sql, NULL, query);
+		sq = scope_subquery(sql, NULL, query);
 		if (!sq)
 			return NULL;
-
  		subquery = QUERY(sql->scanner) + sql->scanner.as;
+
 		if (column_spec) {
+			sql_table *t = mvc_create_view(sql, ss, name, subquery, 0, 1);
 			dnode *n = column_spec->h;
 			node *m = sq->op1.lval->h;
-			sql_table *t = mvc_create_view(sql, ss, name, subquery, 0, 1);
 
 			for (; n; n = n->next, m = m->next) {
 				char *cname = n->data.sval;
 				stmt *st = m->data;
 				sql_subtype *tp = 
 					sql_dup_subtype(tail_type(st));
-
 				mvc_create_column(sql, t, cname, tp );  
 			}
 		} else {
@@ -640,6 +643,38 @@ create_view(mvc * sql, sql_schema * ss, dlist * qname, dlist * column_spec,
 			}
 		}
 		stmt_destroy(sq);
+		return stmt_none();
+	/* only db admin can create views on bats */
+	} else if (sql->user_id != USER_MONETDB && 
+		   sql->role_id != ROLE_SYSADMIN){
+		return sql_error(sql, 02, 
+		       	"Current user %s doesn't have CREATE VIEW AS BATS privileges",
+			sql->user);
+	} else {
+		sql_table *t = mvc_create_view(sql, ss, name, NULL, 0, 1);
+		dnode *n = column_spec->h;
+
+		for (; n; n = n->next ) {
+			char *cname = n->data.sval;
+			bat bid = BBPindex(cname);
+			BAT *b;
+			sql_subtype *tp;
+
+			if (!bid) 
+				return sql_error(sql, 02, "Create view as bats,"
+					" bat %s does not exist", cname);
+			b = BATdescriptor(bid);
+			if (b->htype != TYPE_void || b->hseqbase != 0) {
+				bat_destroy(b);
+				return sql_error(sql, 02, "Create view as bats,"
+					" bat %s does not have a void head or head seqbase 0", 
+					cname);
+			}
+			tp = sql_bind_localtype(ATOMname(b->ttype));
+			tp = sql_dup_subtype(tp);
+			mvc_create_column_bat(sql, t, cname, tp, b, NULL );  
+			bat_destroy(b);
+		}
 		return stmt_none();
 	}
 	return NULL;

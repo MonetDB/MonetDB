@@ -42,14 +42,9 @@ Over..
 [ NULL,	"sys",	"history",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"sessions",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"env",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"foo",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"ff",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"s4",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
+[ NULL,	"sys",	"sequences",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"r",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"test",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"c1006293",	"TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"c1006347",	"TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"ttables",	"TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 # 3 # querytype
 # ,	,	,	,	,	,	,	,	,	 # table_name
 # TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
@@ -57,19 +52,9 @@ Over..
 # 1,	3,	10,	23,	0,	1,	1,	1,	2,	6 # length
 # 30,	,	,	,	,	,	,	,	,	 # tuplecount
 # 2,	,	,	,	,	,	,	,	,	 # id
-[ NULL,	"sys",	"c1006293",	"SESSION TEMPORARY TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"c1006347",	"SESSION TEMPORARY TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"c1006622",	"SESSION TEMPORARY TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"c1006676",	"SESSION TEMPORARY TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"c1006730",	"SESSION TEMPORARY TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"c1006784",	"SESSION TEMPORARY TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"ttables",	"SESSION TEMPORARY TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"ttables",	"SESSION TEMPORARY TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"auths",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"db_users",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"env",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"ff",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"foo",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"history",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"idxs",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"keycolumns",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
@@ -79,8 +64,8 @@ Over..
 [ NULL,	"sys",	"privileges",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"ptables",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"r",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-[ NULL,	"sys",	"s4",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"schemas",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
+[ NULL,	"sys",	"sequences",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"sessions",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"tcolumns",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"test",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]

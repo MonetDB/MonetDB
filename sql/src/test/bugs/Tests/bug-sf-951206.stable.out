@@ -24,9 +24,10 @@ Over..
 # x # name
 # mediumint # type
 # 1 # tuplecount
-# 0 # id
-[ 22	]
-# wall-clock: 2 ms
+# 1 # id
+[ 20	]
+# 3 # querytype
+# t # table_name
 # x # name
 # varchar # type
 # 14 # tuplecount
@@ -48,9 +49,7 @@ Over..
 [ "history"	]
 [ "sessions"	]
 [ "env"	]
-[ "foo"	]
-[ "ff"	]
-[ "s4"	]
+[ "sequences"	]
 [ "r"	]
 [ "test"	]
 # wall-clock: 2 ms

@@ -79,6 +79,7 @@ sql_export void sql_destroy_args( mvc *sql );			/* used in backend */
 #include "sql_updates.h"
 #include "sql_select.h"
 #include "sql_env.h"
+#include "sql_sequence.h"
 #include "sql_privileges.h"
 
 #include <unistd.h>
@@ -287,7 +288,7 @@ tvar *scope_add_table_columns(mvc * sql, scope * scp, sql_table * t, char *tname
 	node *n, *m;
 	tvar *tv = NULL;
 
-	if (!t->table){
+	if (!t->table && t->query){
 
 		stmt *sq = sqlparse_intern(sql, t->query);
 
@@ -800,6 +801,10 @@ stmt *semantic(mvc * sql, symbol * s)
 	case SQL_CREATE_TYPE:
 	case SQL_CREATE_FUNC:
 		return schemas(sql, s);
+
+	case SQL_CREATE_SEQ:
+	case SQL_DROP_SEQ:
+		return sequences(sql, s);
 
 	case SQL_COPYFROM:
 	case SQL_INSERT:

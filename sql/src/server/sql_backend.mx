@@ -70,16 +70,19 @@ void backend_init( freestack_fptr fstack, freecode_fptr fcode,
 
 void backend_freestack( backend_stack stk )
 {
-	_fstack(stk);
+	if (_fstack)
+		_fstack(stk);
 }
 
 void backend_freecode( backend_code code, backend_stack stk, int nr )
 {
-	_fcode(code, stk, nr);
+	if (_fcode)
+		_fcode(code, stk, nr);
 }
 
 void backend_interpret( backend_stack stk, char *code )
 {
-	_finterpret(stk, code);
+	if (_finterpret)
+		_finterpret(stk, code);
 }
 @}

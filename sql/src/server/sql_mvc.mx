@@ -35,7 +35,7 @@
 #include <stream.h>
 
 /* version 01.02.00 of catalog */
-#define CATALOG_VERSION 10100
+#define CATALOG_VERSION 010200
 
 #define ISO_READ_UNCOMMITED 1
 #define ISO_READ_COMMITED   2
@@ -212,7 +212,6 @@ typedef enum modes_t {
 typedef struct mvc {
 	char 	errstr[ERRSIZE];
 
-	int	cache;  	/* some queries should not be cached ! */
 	struct  qc  *qc;
 	backend_stack stk;
 	struct  scanner scanner;
@@ -229,6 +228,8 @@ typedef struct mvc {
 	char *user;
 	char *role;
 	int timezone; /* minutes west of UTC */
+	int	cache;  	/* some queries should not be cached ! */
+	int	factory;  	/* enable/disable the factory */
 
 	modes_t mode;
 	int auto_commit;
@@ -306,6 +307,8 @@ sql_export sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, bit sy
 sql_export void mvc_drop_column( mvc *c, sql_table *t, char *name );
 sql_export sql_column *mvc_create_column( mvc *c, sql_table *t, char *name, sql_subtype *type );
 sql_export sql_column *mvc_create_column_( mvc *c, sql_table *t, char *name, char *type, int digits );
+sql_export sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
+		       sql_subtype *tpe, BAT *bb, BAT *u);
 sql_export sql_column *mvc_null( mvc *c, sql_column *col, int flag );
 sql_export sql_column *mvc_default( mvc *c, sql_column *col, char *val );
 
@@ -349,6 +352,7 @@ sql_export void mvc_clean_result( mvc *m, res_table *t);
 #include "sql_statement.h"
 #include "sql_types.h"
 #include "sql_env.h"
+#include "sql_sequence.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
 
@@ -690,7 +694,8 @@ static void table_destroy(sql_table * t)
 		temp_destroy(t->dbid);
 	}
 	base_destroy( &t->base );
-	_DELETE(t->query);
+	if (t->query)
+		_DELETE(t->query);
 	cs_destroy( &t->keys );
 	cs_destroy( &t->idxs );
 	cs_destroy( &t->columns );
@@ -1098,6 +1103,9 @@ static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j
 		c->bat.ubid = temp_create(u);
 		bat_destroy(b);
 		bat_destroy(u);
+	} else if (!t->table && !t->query) {
+		snprintf(name, BUFSIZ, "%s_%s", t->base.name, c->base.name );
+		c->bat.bid = bm_find_bat(tr->bm, name);
 	}
 
 	if (mvc_debug)
@@ -1128,7 +1136,7 @@ static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j
 
 static sql_table *load_table(sql_trans *tr, sql_schema *s, BAT * tables, BUN j)
 {
-	char name[BUFSIZ];
+	char name[BUFSIZ], *query;
 	sql_table *t = NEW(sql_table);
 	ptr lid = BUNhead(tables, j);
 	BAT *cols, *rcols, *keys, *idxs;
@@ -1147,7 +1155,10 @@ static sql_table *load_table(sql_trans *tr, sql_schema *s, BAT * tables, BUN j)
 
 	base_init( &t->base, *(sqlid*) bun_find(table_id, lid),
 		TR_OLD, bun_find(table_names, lid));
-	t->query = _strdup(bun_find(table_queries, lid));
+	query = (char*)bun_find(table_queries, lid);
+	t->query = NULL;
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), query) != 0)
+		t->query = _strdup(query);
 	t->table = *(bit*) bun_find(table_istable, lid); 
 	t->system = *(bit*) bun_find(table_system, lid);
 	t->clear = *(bit*) bun_find(table_clear, lid);
@@ -1161,15 +1172,17 @@ static sql_table *load_table(sql_trans *tr, sql_schema *s, BAT * tables, BUN j)
 	cs_init( &t->idxs, (fdestroy)&idx_destroy );
 	cs_init( &t->keys, (fdestroy)&key_destroy );
 
-	if (!t->clear) {
+	if (t->table) {
+	    if (!t->clear) {
 		snprintf(name, BUFSIZ, "D_%s", t->base.name );
 		t->dbid = bm_find_bat(tr->bm, name);
-	} else {
+	    } else {
  		BAT *b = bat_new( TYPE_void, TYPE_oid, t->sz, "load_table");
 
 		BATseqbase(b, 0);
 		t->dbid = temp_create(b);
 		bat_destroy(b);
+	    }
 	}
 
 	cols = BATselect(column_table, (ptr) & t->base.id, (ptr) & t->base.id);
@@ -1518,7 +1531,7 @@ static sql_table *table_dup(sql_trans *tr, int flag, sql_table * ot, sql_schema 
 	t->system = ot->system;
 	t->persists = ot->persists;
 	t->clear = ot->clear;
-	t->query = _strdup(ot->query);
+	t->query = (ot->query)?_strdup(ot->query):NULL;
 
 	cs_init( &t->columns, (fdestroy)&column_destroy);
 	cs_init( &t->keys, (fdestroy)&key_destroy);
@@ -2117,7 +2130,8 @@ int mvc_init(int debug, backend_stack stk)
 		sql_create_role(m, "sysadmin", 0);	/* ROLE_SYSADMIN 1 */
 		sql_create_user(m, "monetdb", "monetdb", "MonetDB Admin", "sys", 0);
 		sql_create_history(m, s);
-		sql_create_env(m, s);
+		sql_create_sessions(m, s);
+		sql_create_sequences(m, s);
 
 		t = mvc_create_view(m, s, "tables", "select * from ( select p.*, 0 as \"temporary\" from sys.ptables p union all select t.*, 1 as \"temporary\" from sys.ttables t) as tables;", 1, 1);
 		mvc_create_column_(m, t, "id", "INT", 9);
@@ -2402,6 +2416,29 @@ rollforward_create_column( sql_trans *tr, sql_column *c )
 	return c;
 }
 
+static sql_column *
+rollforward_use_bat( sql_trans *tr, sql_column *c )
+{
+	int ok = SQL_OK;
+	char bname[BUFSIZ];
+	BAT *b;
+
+	/* only log on toplevel */
+	assert(!c->bat.ibid);
+	b = bm_lbid2bat( tr->bm, c->bat.bid);
+	snprintf(bname, BUFSIZ, "%s_%s", 
+		c->t->base.name, c->base.name );
+	c->bat.bid = bm_add_bat(tr->parent->bm, 
+				b->batCacheid, bname, 1 /*=> no rename */);
+	if (tr->parent == gtrans)
+		ok = log_bat_persists(logger, b, c->bat.bid, bname); 
+	bat_destroy(b);
+	
+	if (ok != SQL_OK)
+		return NULL;
+	return c;
+}
+
 static sql_table *
 rollforward_create_table( sql_trans *tr, sql_table *t )
 {
@@ -2427,6 +2464,10 @@ rollforward_create_table( sql_trans *tr, sql_table *t )
 			(rfcfunc)&rollforward_create_column );
 		rollforward_changeset_creates( tr, &t->idxs, 
 			(rfcfunc)&rollforward_create_idx );
+	/* bat views also need to be registered */ 
+	} else if (!t->table && t->persists && !t->query) {
+		rollforward_changeset_creates( tr, &t->columns, 
+			(rfcfunc)&rollforward_use_bat );
 	}
 	if (ok != SQL_OK)
 		return NULL;
@@ -3035,7 +3076,6 @@ mvc *mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 
 	m->errstr[0] = '\0';
 
-	m->cache = cache;
 	m->qc = qc_create();
 	m->stk = stk;
 
@@ -3046,6 +3086,8 @@ mvc *mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 	m->role_id = m->user_id = -1;
 	m->schema = m->role = m->user = NULL;
 	m->timezone = 0;
+	m->cache = cache;
+	m->factory = cache;
 
 	m->mode = 0;
 	m->auto_commit = 0;
@@ -4064,7 +4106,7 @@ static sql_table *bootstrap_create_table(mvc * m, sql_schema *s, char *name, bit
 	BAT *b;
 	oid rid;
 
-	t->query = _strdup("");
+	t->query = NULL;
 	t->s = s;
 	cs_add( &s->tables, t, TR_NEW);
 
@@ -4086,7 +4128,7 @@ static sql_table *bootstrap_create_table(mvc * m, sql_schema *s, char *name, bit
 	b = sys_bat(m->trans->bm, "ptables_clear");
 	BUNins(b, (ptr) & rid, (ptr) & t->clear); bat_destroy(b);
 	b = sys_bat(m->trans->bm, "ptables_query");
-	BUNins(b, (ptr) & rid, (ptr) t->query); bat_destroy(b);
+	BUNins(b, (ptr) & rid, (ptr) ATOMnilptr(TYPE_str)); bat_destroy(b);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	return t;
@@ -4107,7 +4149,7 @@ sql_table *mvc_create_table(mvc * m, sql_schema *s, char *name, bit system, bit 
 		 s->base.name, name, system, persists, clear);
 
 	t->dbid = 0;
-	t->query = _strdup("");
+	t->query = NULL;
 	t->s = s;
 	t->sz = sz;
 	if (sz < 0)
@@ -4138,7 +4180,7 @@ sql_table *mvc_create_table(mvc * m, sql_schema *s, char *name, bit system, bit 
 	b = bind_bat(tr, find_column(systable, "clear"), UPD);
 	BUNins(b, (ptr)&rid, & t->clear ); bat_destroy(b);
 	b = bind_bat(tr, find_column(systable, "query"), UPD);
-	BUNins(b, (ptr)&rid, t->query ); bat_destroy(b);
+	BUNins(b, (ptr)&rid, (ptr) ATOMnilptr(TYPE_str)); bat_destroy(b);
 	systable->base.wtime = tr->stime;
 
 	if (t->persists)
@@ -4161,7 +4203,9 @@ sql_table *mvc_create_view(mvc * m, sql_schema *s, char *name, char *sql, bit sy
 		fprintf(stderr, "mvc_create_view %s %s %s\n", 	
 			s->base.name, name, sql);
 
-	t->query = _strdup(sql);
+	t->query = NULL;
+	if (sql)
+		t->query = _strdup(sql);
 	t->s = s;
 	cs_add( &s->tables, t, TR_NEW);
 
@@ -4179,7 +4223,11 @@ sql_table *mvc_create_view(mvc * m, sql_schema *s, char *name, char *sql, bit sy
 	b = bind_bat(tr, find_column(systable, "clear"), UPD);
 	BUNins(b, (ptr)&rid, & t->clear ); bat_destroy(b);
 	b = bind_bat(tr, find_column(systable, "query"), UPD);
-	BUNins(b, (ptr)&rid, t->query ); bat_destroy(b);
+	if (t->query)
+		BUNins(b, (ptr)&rid, t->query ); 
+	else
+		BUNins(b, (ptr)&rid, (ptr) ATOMnilptr(TYPE_str)); 
+	bat_destroy(b);
 
 	if (t->persists)
 		systable->base.wtime = t->base.wtime = s->base.wtime = 
@@ -4261,7 +4309,7 @@ bootstrap_create_column(mvc * m, sql_table *t, char *name, char *sqltype, int di
 	return col;
 }
 
-static sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
+sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
 		       sql_subtype *tpe, BAT *bb, BAT *u)
 {
 	char bname[BUFSIZ];

@@ -22,86 +22,57 @@ Over..
 # 01:20:33 >  
 
 # 3 # querytype
-# tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	t2 # table_name
-# id,	name,	schema_id,	query,	istable,	system,	clear,	temporary,	count_id # name
-# mediumint,	varchar,	mediumint,	varchar,	boolean,	boolean,	boolean,	decimal,	mediumint # type
-# 0,	10,	0,	0,	0,	0,	0,	0,	0 # length
-# 29,	,	,	,	,	,	,	,	 # tuplecount
-# 1,	,	,	,	,	,	,	,	 # id
-[ 1005868,	"modules",	1005858,	"",	true,	true,	false,	0,	29	]
-[ 1005919,	"schemas",	1005858,	"",	true,	true,	false,	0,	29	]
-[ 1005923,	"ptables",	1005858,	"",	true,	true,	false,	0,	29	]
-[ 1005931,	"pcolumns",	1005858,	"",	true,	true,	false,	0,	29	]
-[ 1005941,	"keys",	1005858,	"",	true,	true,	false,	0,	29	]
-[ 1005947,	"idxs",	1005858,	"",	true,	true,	false,	0,	29	]
-[ 1005952,	"keycolumns",	1005858,	"",	true,	true,	false,	0,	29	]
-[ 1005957,	"types",	1005858,	"",	true,	true,	false,	0,	29	]
-[ 1005965,	"ttables",	1005858,	"",	true,	true,	true,	0,	29	]
-[ 1006003,	"tcolumns",	1005858,	"",	true,	true,	true,	0,	29	]
-[ 1006051,	"db_users",	1005858,	"",	true,	true,	false,	0,	29	]
-[ 1006074,	"user_role",	1005858,	"",	true,	true,	false,	0,	29	]
-[ 1006097,	"auths",	1005858,	"",	true,	true,	false,	0,	29	]
-[ 1006115,	"privileges",	1005858,	"",	true,	true,	false,	0,	29	]
-[ 1006143,	"history",	1005858,	"",	true,	true,	false,	0,	29	]
-[ 1006181,	"sessions",	1005858,	"",	true,	true,	true,	0,	29	]
-[ 1006204,	"env",	1005858,	"",	true,	true,	false,	0,	29	]
-[ 1009330,	"foo",	1005858,	"",	true,	false,	false,	0,	29	]
-[ 1009468,	"ff",	1005858,	"",	true,	false,	false,	0,	29	]
-[ 1009946,	"s4",	1005858,	"",	true,	false,	false,	0,	29	]
-[ 1011787,	"r",	1005858,	"",	true,	false,	false,	0,	29	]
-[ 1006273,	"test",	1005858,	"",	true,	false,	false,	0,	29	]
-[ 1006294,	"c1006293",	1005858,	"",	true,	false,	false,	1,	29	]
-[ 1006338,	"c1006337",	1005858,	"",	true,	false,	false,	1,	29	]
-[ 1006381,	"tables",	1005858,	"",	true,	false,	false,	1,	29	]
-[ 1006425,	"c1006424",	1005858,	"",	true,	false,	false,	1,	29	]
-[ 1006469,	"c1006468",	1005858,	"",	true,	false,	false,	1,	29	]
-[ 1006512,	"tables",	1005858,	"",	true,	false,	false,	1,	29	]
-[ 1006555,	"t2",	1005858,	"",	true,	false,	false,	1,	29	]
+# tables # table_name
+# name # name
+# varchar # type
+# 10 # length
+# 18 # tuplecount
+# 1 # id
+[ "modules"	]
+[ "schemas"	]
+[ "ptables"	]
+[ "pcolumns"	]
+[ "keys"	]
+[ "idxs"	]
+[ "keycolumns"	]
+[ "types"	]
+[ "ttables"	]
+[ "tcolumns"	]
+[ "db_users"	]
+[ "user_role"	]
+[ "auths"	]
+[ "privileges"	]
+[ "history"	]
+[ "sessions"	]
+[ "env"	]
+[ "sequences"	]
 # 3 # querytype
-# t2,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables # table_name
-# count_id,	id,	name,	schema_id,	query,	istable,	system,	clear,	temporary # name
-# mediumint,	mediumint,	varchar,	mediumint,	varchar,	boolean,	boolean,	boolean,	decimal # type
-# 0,	0,	10,	0,	0,	0,	0,	0,	0 # length
-# 36,	,	,	,	,	,	,	,	 # tuplecount
-# 2,	,	,	,	,	,	,	,	 # id
-[ 36,	1005868,	"modules",	1005858,	"",	true,	true,	false,	0	]
-[ 36,	1005919,	"schemas",	1005858,	"",	true,	true,	false,	0	]
-[ 36,	1005923,	"ptables",	1005858,	"",	true,	true,	false,	0	]
-[ 36,	1005931,	"pcolumns",	1005858,	"",	true,	true,	false,	0	]
-[ 36,	1005941,	"keys",	1005858,	"",	true,	true,	false,	0	]
-[ 36,	1005947,	"idxs",	1005858,	"",	true,	true,	false,	0	]
-[ 36,	1005952,	"keycolumns",	1005858,	"",	true,	true,	false,	0	]
-[ 36,	1005957,	"types",	1005858,	"",	true,	true,	false,	0	]
-[ 36,	1005965,	"ttables",	1005858,	"",	true,	true,	true,	0	]
-[ 36,	1006003,	"tcolumns",	1005858,	"",	true,	true,	true,	0	]
-[ 36,	1006051,	"db_users",	1005858,	"",	true,	true,	false,	0	]
-[ 36,	1006074,	"user_role",	1005858,	"",	true,	true,	false,	0	]
-[ 36,	1006097,	"auths",	1005858,	"",	true,	true,	false,	0	]
-[ 36,	1006115,	"privileges",	1005858,	"",	true,	true,	false,	0	]
-[ 36,	1006143,	"history",	1005858,	"",	true,	true,	false,	0	]
-[ 36,	1006181,	"sessions",	1005858,	"",	true,	true,	true,	0	]
-[ 36,	1006204,	"env",	1005858,	"",	true,	true,	false,	0	]
-[ 36,	1009330,	"foo",	1005858,	"",	true,	false,	false,	0	]
-[ 36,	1009468,	"ff",	1005858,	"",	true,	false,	false,	0	]
-[ 36,	1009946,	"s4",	1005858,	"",	true,	false,	false,	0	]
-[ 36,	1011787,	"r",	1005858,	"",	true,	false,	false,	0	]
-[ 36,	1006273,	"test",	1005858,	"",	true,	false,	false,	0	]
-[ 36,	1006294,	"c1006293",	1005858,	"",	true,	false,	false,	1	]
-[ 36,	1006338,	"c1006337",	1005858,	"",	true,	false,	false,	1	]
-[ 36,	1006381,	"tables",	1005858,	"",	true,	false,	false,	1	]
-[ 36,	1006425,	"c1006424",	1005858,	"",	true,	false,	false,	1	]
-[ 36,	1006469,	"c1006468",	1005858,	"",	true,	false,	false,	1	]
-[ 36,	1006512,	"tables",	1005858,	"",	true,	false,	false,	1	]
-[ 36,	1006555,	"t2",	1005858,	"",	true,	false,	false,	1	]
-[ 36,	1006840,	"c1006839",	1005858,	"",	true,	false,	false,	1	]
-[ 36,	1006884,	"c1006883",	1005858,	"",	true,	false,	false,	1	]
-[ 36,	1006927,	"tables",	1005858,	"",	true,	false,	false,	1	]
-[ 36,	1006970,	"t2",	1005858,	"",	true,	false,	false,	1	]
-[ 36,	1006979,	"c1006978",	1005858,	"",	true,	false,	false,	1	]
-[ 36,	1007023,	"c1007022",	1005858,	"",	true,	false,	false,	1	]
-[ 36,	1007066,	"tables",	1005858,	"",	true,	false,	false,	1	]
+# tables # table_name
+# name # name
+# varchar # type
+# 10 # length
+# 18 # tuplecount
+# 2 # id
+[ "modules"	]
+[ "schemas"	]
+[ "ptables"	]
+[ "pcolumns"	]
+[ "keys"	]
+[ "idxs"	]
+[ "keycolumns"	]
+[ "types"	]
+[ "ttables"	]
+[ "tcolumns"	]
+[ "db_users"	]
+[ "user_role"	]
+[ "auths"	]
+[ "privileges"	]
+[ "history"	]
+[ "sessions"	]
+[ "env"	]
+[ "sequences"	]
 
-# 20:38:54 >  
-# 20:38:54 >  Done.
-# 20:38:54 >  
+# 11:47:40 >  
+# 11:47:40 >  Done.
+# 11:47:40 >  
 

@@ -77,7 +77,7 @@ sql_export int sql_set_var_value(mvc *sql, char *name, char *value );
 sql_export char * sql_get_var( mvc *sql, char *name );
 sql_export char * sql_get_type( mvc *sql, char *name );
 
-sql_export int sql_create_env(mvc *sql, sql_schema *s);
+sql_export int sql_create_sessions(mvc *sql, sql_schema *s);
 sql_export int sql_create_history(mvc *sql, sql_schema *s);
 sql_export int sql_session(mvc *sql);
 
@@ -313,6 +313,10 @@ int sql_update_var(mvc *m, char *name )
 			GDKwarning("Session variable explain can only be set to 'plan', 'performance' or to the empty string\n");
 			return GDK_FAIL;
 		}
+	} else if (strcmp(name, "cache") == 0) {
+		m->cache = sql_get_bit_var(m, "cache");
+	} else if (strcmp(name, "factory") == 0) {
+		m->factory = sql_get_bit_var(m, "factory");
 	}
 	return GDK_SUCCEED;
 }
@@ -435,6 +439,24 @@ sql_session( mvc *m )
 	BUNins(a, (ptr) &h, &rw);
 	h++;
 
+	BUNins(n, (ptr) &h, "cache" );
+	if (m->cache)
+		BUNins(v, (ptr) &h, "true");
+	else
+		BUNins(v, (ptr) &h, "false");
+	BUNins(T, (ptr) &h, "boolean");
+	BUNins(a, (ptr) &h, &rw);
+	h++;
+
+	BUNins(n, (ptr) &h, "factory" );
+	if (m->factory)
+		BUNins(v, (ptr) &h, "true");
+	else
+		BUNins(v, (ptr) &h, "false");
+	BUNins(T, (ptr) &h, "boolean");
+	BUNins(a, (ptr) &h, &rw);
+	h++;
+
 	bat_destroy(n);
 	bat_destroy(v);
 	bat_destroy(T);
@@ -444,7 +466,7 @@ sql_session( mvc *m )
 }
 
 int
-sql_create_env( mvc *m, sql_schema *s ) 
+sql_create_sessions( mvc *m, sql_schema *s ) 
 {
 	BUN p,q;
 	BAT *n,*v;

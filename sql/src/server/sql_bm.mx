@@ -552,7 +552,8 @@ oid bm_add_bat(bm *bm, oid bid, char *name, int version)
 	if (!lbid){
 		lbid = bm->lbid++;
 		(void)bm_add_bat_intern(bm, lbid, bid, name, version, BM_WRITE);
-		bat_rename(bid, name, version, BM_WRITE);
+		if (!version)
+			bat_rename(bid, name, version, BM_WRITE);
 	} else {
 		_bm_new_bat(bm, lbid, bid);
 		bm_new_version(bm, lbid, version);

@@ -117,15 +117,15 @@ Over..
 # int,	int # type
 # 0,	0 # length
 # 9,	 # tuplecount
-# 10,	 # id
+# 11,	 # id
+[ NULL,	NULL	]
 [ NULL,	6	]
 [ NULL,	5	]
-[ NULL,	NULL	]
+[ 1,	6	]
 [ 1,	5	]
 [ 1,	NULL	]
-[ 1,	6	]
-[ 2,	NULL	]
 [ 2,	5	]
+[ 2,	NULL	]
 [ 2,	6	]
 # 3 # querytype
 # t3,	t3 # table_name
