@@ -234,11 +234,15 @@ statement *statement_default( statement *col, statement *def ){
 }
 
 statement *statement_column( column *op1, var *basetable ){
+	var *v = NEW(var);
 	statement *s = statement_create();
 	s->type = st_column;
 	s->op1.cval = op1;
 	s->nrcols = 1;
-	s->h = basetable;
+
+	if (basetable){
+		s->h = basetable; basetable->refcnt++;
+	}
 	return s;
 }
 

@@ -8,11 +8,14 @@ static void destroy_vars( list *vars ){
 	  	node *n = vars->h;
 	  	for( ; n; n = n->next ){
 			var *v = (var*)n->data.sval;
-			if (v->type == type_statement)
-				statement_destroy(v->data.stval);
-			if (v->tname) _DELETE(v->tname);
-			if (v->cname) _DELETE(v->cname);
-			_DELETE(n->data.sval);
+			--v->refcnt;
+			if (v->refcnt <= 0){
+				if (v->type == type_statement)
+					statement_destroy(v->data.stval);
+				if (v->tname) _DELETE(v->tname);
+				if (v->cname) _DELETE(v->cname);
+				_DELETE(v);
+			}
 	  	}
 	  	list_destroy(vars);
 	}
@@ -49,9 +52,11 @@ var *scope_add_statement( scope *scp, statement *s, char *tname, char *cname ){
 	var *v = NEW(var);
 	v->type = type_statement;
 	v->data.stval = s; st_attache(s, NULL);
+	assert((!tname || strlen(tname)));
 	v->tname = (tname)?_strdup(tname):NULL;
 	v->cname = _strdup(cname);
 	v->nr = scp->nr++;
+	v->refcnt = 1;
 	list_append_string( scp->vars, (char*)v);
 	return v;
 }
@@ -60,9 +65,11 @@ var *scope_add_table( scope *scp, table *t, char *tname ){
 	var *v = NEW(var);
 	v->type = type_table;
 	v->data.tval = t;
+	assert((!tname || strlen(tname)));
 	v->tname = (tname)?_strdup(tname):NULL;
 	v->cname = NULL;
 	v->nr = scp->nr++;
+	v->refcnt = 1;
 	list_append_string( scp->vars, (char*)v);
 	return v;
 }

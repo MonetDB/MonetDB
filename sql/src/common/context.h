@@ -10,6 +10,7 @@
 
 typedef struct context {
 	int cur;
+	int prev; /* previous token lr(1) is to restrictive for SQL */
 
 	int yyval;
 	char *yytext;

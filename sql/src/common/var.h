@@ -9,6 +9,7 @@ typedef struct var {
 	char *tname;
 	char *cname;
 	int nr;
+	int refcnt;
 } var;
 
 #endif /*_VAR_H_*/

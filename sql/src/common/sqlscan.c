@@ -140,7 +140,6 @@ void init_keywords(){
 	keywords_insert("GROUP", GROUP );
 	keywords_insert("HAVING", HAVING );
 	keywords_insert("IN", IN );
-	keywords_insert("INDICATOR", INDICATOR );
 	keywords_insert("INNER", INNER );
 	keywords_insert("INSERT", INSERT );
 	keywords_insert("INT", INTEGER );
@@ -607,19 +606,40 @@ int tokenize(context *lc){
 
 int sqllex( YYSTYPE *yylval, void *parm ){
 	context *lc = (context*)parm;
-	int token = tokenize(lc);
-	yylval->sval = lc->yytext;
-	if (token == IDENT || token == COMPARISON || token == STRING ||
-		token == AMMSC || token == TYPE)
-		yylval->sval = _strdup(lc->yytext);
+	int token = lc->prev;
 
-	if (token == STRING)
-		sql_statement_add(lc, "'");
+	lc->prev = 0;
+	if (!token){
+	       	token = tokenize(lc);
+		yylval->sval = lc->yytext;
 
-	sql_statement_add(lc, lc->yytext);
+		if (token == UNION){
+			token = tokenize(lc);
+			yylval->sval = lc->yytext;
+			if (token == JOIN){
+				sql_statement_add(lc, "UNION JOIN");
+				return UNIONJOIN;
+			} else {
+				lc->prev = token;
+				yylval->sval = "UNION";
+				sql_statement_add(lc, "UNION");
+				sql_statement_add(lc, lc->yytext);
+				return UNION;
+			}
+		} else {
+			if (token == IDENT || token == COMPARISON || 
+			   token == STRING || token == AMMSC || token == TYPE)
+				yylval->sval = _strdup(lc->yytext);
 
-	if (token == STRING)
-		sql_statement_add(lc, "'");
+			if (token == STRING)
+				sql_statement_add(lc, "'");
+	
+			sql_statement_add(lc, lc->yytext);
+	
+			if (token == STRING)
+				sql_statement_add(lc, "'");
+		}
+	}
 	return token;
 }
 

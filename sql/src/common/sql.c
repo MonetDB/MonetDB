@@ -251,7 +251,7 @@ var *table_optname( context *sql, scope *scp, statement *sq,
 		for(d = columnrefs->h; d && m; d = d->next, m = m->next){
 			statement *st = m->data.stval;
 			scope_add_statement( scp, st, tname, d->data.sval );
-			st->h = v; /* Hack to fix ref to table */
+			st->h = v; v->refcnt++; /* Hack to fix ref to table */
 		}
 	} else if (!tname){
 		/* foreach column add full basetable,column name */ 
@@ -262,14 +262,20 @@ var *table_optname( context *sql, scope *scp, statement *sq,
 			statement *bc = tail_column(st);
 
 			while(bc->type == st_column &&
+			      (bc->h == NULL || bc->h->tname == NULL) &&
 			      bc->op1.cval->table->name == NULL &&
 			      bc->op1.cval->s != NULL){
 				bc = tail_column(bc->op1.cval->s);
 			}
-			assert(bc->op1.cval->table->name);
-			scope_add_statement( scp, st, 
+
+			if (bc->h && bc->h->tname){
+				scope_add_statement( scp, st, 
+					bc->h->tname, cname );
+			} else {
+				scope_add_statement( scp, st, 
 					bc->op1.cval->table->name, cname );
-			st->h = v; /* Hack to fix ref to table */
+			}
+			st->h = v; v->refcnt++; /* Hack to fix ref to table */
 		}	
 	}
 	return v;
@@ -299,7 +305,6 @@ var *table_ref( context *sql, scope *scp, symbol *tableref ){
 
 	if (tableref->token == SQL_NAME){
 		tname = table_name(tableref->data.lval->h->data.lval);
-		printf("%s\n", tname );
 		t = cat_bind_table(sql->cat, sql->cat->cur_schema, tname);
 		if (!t){  
 			snprintf(sql->errstr, ERRSIZE, 
@@ -308,7 +313,6 @@ var *table_ref( context *sql, scope *scp, symbol *tableref ){
 		}
 		if (tableref->data.lval->h->next->data.sym){ /* AS */
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
-			printf("%s\n", tname );
 		} 
 		return scope_add_table( scp, t, tname );
 	} else if (tableref->token == SQL_SELECT) {
@@ -1281,8 +1285,10 @@ var *query_exp_optname( context *sql, scope *scp, symbol *q ){
 	case SQL_JOIN: { 
 		scope *nscp = scope_open(scp);
 		statement *tq = sql_join( sql, nscp, q );
-		if (!tq)
+		if (!tq){
+			printf("empty join result\n");
 	       		return NULL;
+		}
 		res = table_optname( sql, scp, 
 				tq, q->sql, q->data.lval->t->data.sym);
 		scp = scope_close(nscp);
