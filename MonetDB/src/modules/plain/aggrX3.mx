@@ -809,7 +809,7 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 int aggrX3_@1_@3_@4(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int (*cmp)(ptr,ptr);
-	ptr nil, zero=nil;
+	ptr nil;
 	int xx;
 	size_t off;
 	ptr *extremes;
@@ -823,7 +823,6 @@ int aggrX3_@1_@3_@4(BAT **ret, BAT *b, BAT *e){
 	nil =  ATOMnilptr(bn->ttype);
 	off =  BUNindex(bn,BUNfirst(bn));
 
-	(void) zero;		/* silence compiler about unused variable */
 	ALGODEBUG THRprintf(GDKout, "aggrX3_@1_@3_@4[@2](b=%s,e=%s);\n",b->batId,e->batId);
 	/* init: prepare the result bat; 
 	 * trick: by using "tail-type" void, we only write the head column, here */
@@ -1657,7 +1656,7 @@ int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 int aggrX3_@13_@3_@4(BAT **ret, BAT *b, BAT *g, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int (*cmp)(ptr,ptr);
-	ptr nil, zero = nil;
+	ptr nil;
 	int xx;
 	size_t off;
 	ptr *extremes;
@@ -1673,7 +1672,6 @@ int aggrX3_@13_@3_@4(BAT **ret, BAT *b, BAT *g, BAT *e){
 	nil = ATOMnilptr(bn->ttype);
 	off = BUNindex(bn,BUNfirst(bn));
 
-	(void) zero;		/* silence compiler about unused variable */
 	ALGODEBUG THRprintf(GDKout, "aggrX3_@1_@3_@4[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "aggrX3_@13_@3_@4: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "aggrX3_@13_@3_@4: head of BAT g must not be nil.\n");
