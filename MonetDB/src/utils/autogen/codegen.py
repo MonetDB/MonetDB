@@ -264,19 +264,24 @@ class java_parser:
         self.count = 0
         self.ncount = 0
         self.classes = []
-        self.pclass = None
+        self.pclass = []
+        self.pcount = []
         self.package = None
         self.anonnr = 1
+	self.member = 0
 
     def ptoken(self, type, token, (srow, scol), (erow, ecol), line): 
-
         if token == '{':
             self.count = self.count + 1
             self.ncount = self.ncount + 1
         if token == '}':
             self.count = self.count - 1
             self.ncount = self.ncount - 1
-        # handle packeges 
+            # handle end of class
+            if len(self.pclass) > 0 and self.count == self.pcount[len(self.pcount)-1]:
+                del self.pclass[len(self.pclass)-1]
+                del self.pcount[len(self.pcount)-1]
+        # handle packages 
         if self.status == 'package':
             if token == ';':
                 self.status = None
@@ -296,22 +301,24 @@ class java_parser:
             self.status = 'new()'
             self.ncount = 0             # reset
         if self.status == 'new()' and token == '{' and self.ncount == 0:
-            self.classes.append(self.pclass + "$$%d" % self.anonnr)
+            self.classes.append(self.pclass[len(self.pclass)-1] + "$$%d" % self.anonnr)
             self.anonnr = self.anonnr + 1
             self.status = None
         if (self.status == 'new' or self.status == 'new(' or self.status == 'new()') \
                and token == ';':
             self.status = None
-        # handle reall classes 
+        # handle real classes 
         if self.status == 'class':
             if self.count > 0:
-                tmp = self.pclass + '$$' + token
-                self.classes.append(tmp)
+                # handle inner class
+                pclass = self.pclass[len(self.pclass)-1] + '$$' + token
             else:
-                self.pclass = token
-                self.classes.append(self.pclass)
+                pclass = token
+            self.classes.append(pclass)
+            self.pclass.append(pclass)
+            self.pcount.append(self.count)
             self.status = None
-        if self.status == None and token == 'class':
+        if self.status == None and token == 'class' and self.member != 1:
             self.status = 'class'
         # handle simple comments
         if self.status == None and token == '//':
@@ -333,7 +340,13 @@ class java_parser:
             self.status = 'comment'
         if self.status == 'comment' and (token == '*' or token == '**'):
             self.status = 'end comment'
+        # help detecting the usage of class member, i.e. <class>.class
+        if token == '.':
+            self.member = 1
+        else:
+            self.member = 0
         #print(self.status,type,token)
+        #print(self.package,self.pclass,self.classes,self.member)
 
     def parse(self, f):
         try:
