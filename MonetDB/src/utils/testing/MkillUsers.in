@@ -31,6 +31,11 @@ cpids=""
 if [ "$PARENT" ] ; then
   cpids="`ps -ef | egrep '^ *[a-zA-Z0-9_]+ +[0-9]+ +'"$PARENT"' ' | egrep -v '^ *[a-zA-Z0-9_]+ +'"$CHILD"' +[0-9]+ ' | sort +4.0 | awk '{printf  "%s " , $2}' | perl -pe 's|  *$||'`"
   if [ "$cpids" ] ; then
+#	KIDS="`echo "($cpids)" | perl -pe 's/ /|/g'`"
+#	gpids="`ps -ef | egrep '^ *[a-zA-Z0-9_]+ +[0-9]+ +'"$KIDS"' ' | egrep -v '^ *[a-zA-Z0-9_]+ +'"$CHILD"' +[0-9]+ ' | sort +4.0 | awk '{printf  "%s " , $2}' | perl -pe 's|  *$||'`"
+#	if [ "$gpids" ] ; then
+#		cpids="$cpids $gpids"
+#	fi
 	cpids="$cpids "
   fi
 fi
@@ -46,19 +51,19 @@ done
 
 case `uname` in
   Linux)
-	pids1="$cpids`fuser $files | cut -d: -f2- | sed 's|[a-z]||g' | sed 's| *'$PARENT'||g'`"
+	pids1="$cpids`fuser $files | cut -d: -f2- | perl -pe 's|[a-z]||g' | perl -pe 's| *'$PARENT'||g'`"
 	PS="ps -f $pids1"
 	FUSER="fuser -v"
 	;;
   IRIX|IRIX64)
-  	pids0="`echo $cpids | sed 's| |,|g'``fuser -q $files | sed 's|,*'$PARENT'||g'`"
-  	pids1="`echo $pids0 | sed 's|,| |g'`"
+  	pids0="`echo $cpids | perl -pe 's| |,|g'``fuser -q $files | perl -pe 's|,*'$PARENT'||g'`"
+  	pids1="`echo $pids0 | perl -pe 's|,| |g'`"
 	PS="ps -fp $pids0"
 	FUSER="fuser"
 	;;
   SunOS)
-	pids1="$cpids`fuser $files 2>/dev/null | sed 's| *'$PARENT'||g'`"
-	pids0="`echo $pids1 | sed 's| |,|g'`"
+	pids1="$cpids`fuser $files 2>/dev/null | perl -pe 's| *'$PARENT'||g'`"
+	pids0="`echo $pids1 | perl -pe 's| |,|g'`"
 	PS="ps -fp $pids0"
 	FUSER="fuser"
 	;;
@@ -67,7 +72,7 @@ case `uname` in
 esac
 
 if [ "$pids1" ] ; then
-	pids2="(`echo $pids1 | sed 's/ /|/g'`)"
+	pids2="(`echo $pids1 | perl -pe 's/ /|/g'`)"
 	echo PARENT=$PARENT
 	echo CHILD=$CHILD
 	echo files=$files
