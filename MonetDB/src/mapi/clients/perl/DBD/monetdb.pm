@@ -260,6 +260,36 @@ sub get_info {
 }
 
 
+sub primary_key_info {
+    my($dbh, $catalog, $schema, $table) = @_;
+    return $dbh->set_err(-1,'Undefined schema','HY009') unless defined $schema;
+    return $dbh->set_err(-1,'Undefined table' ,'HY009') unless defined $table;
+    my $sql = <<'SQL';
+select cast( null        as varchar  ) as table_cat
+     , cast( s."name"    as varchar  ) as table_schem
+     , cast( t."name"    as varchar  ) as table_name
+     , cast( c."column"  as varchar  ) as column_name
+     , cast( c."nr" + 1  as smallint ) as key_seq
+     , cast( k."name"    as varchar  ) as pk_name
+  from sys."schemas"     s
+     , sys."tables"      t
+     , sys."keys"        k
+     , sys."keycolumns"  c
+ where t."schema_id"   = s."id"
+   and k."table_id"    = t."id"
+   and c."id"          = k."id"
+   and s."name"        = ?
+   and t."name"        = ?
+   and k."type"        = 0
+ order by table_schem, table_name, key_seq
+SQL
+    my $sth = $dbh->prepare($sql) or return;
+    $sth->execute($schema, $table) or return;
+    $dbh->set_err(0,"Catalog parameter '$catalog' ignored") if defined $catalog;
+    return $sth;
+}
+
+
 sub type_info_all {
     my ($dbh) = @_;
     require DBD::monetdb::TypeInfo;
