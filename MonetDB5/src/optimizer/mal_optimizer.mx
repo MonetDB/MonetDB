@@ -499,6 +499,7 @@ mal_export str RXemptyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RXalignedBATs(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 mal_export void setLifespan(MalBlkPtr mb);
+mal_export void debugLifespan(MalBlkPtr mb);
 mal_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
 mal_export int isUnsafeInstruction(InstrPtr q);
 
@@ -530,7 +531,7 @@ denotes the signature and can not be removed.
         if(@1) {
 			removeInstruction(mb,@1);
             chkFlow(mb);
-			chkDeclarations(mb);
+			chkDeclarations(mb,TRUE);
         }
 @c
 #include "mal_optimizer.h"
@@ -612,11 +613,11 @@ void debugLifespan(MalBlkPtr mb){
     for(i=0; i<mb->vtop; i++){
         VarPtr v= getVar(mb,i);
         if( isTmpVar(mb,i))
-        printf("%c%d %d - %d\n", TMPMARKER, v->tmpindex,
-                v->beginLifespan, v->endLifespan);
+        printf("%c%d %d - %d scope=%d,%d\n", TMPMARKER, v->tmpindex,
+                v->beginLifespan, v->endLifespan,v->scope,v->depth);
         else
-        printf("%s %d - %d\n", v->name, 
-                v->beginLifespan, v->endLifespan);
+        printf("%s %d - %d scope= %d,%d\n", v->name, 
+                v->beginLifespan, v->endLifespan,v->scope,v->depth);
     }
 }
 void setLifespan(MalBlkPtr mb){
@@ -1269,7 +1270,7 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
                 p= pushArgument(mb,p,q->argv[1]);
                 removeInstruction(mb,q);
                 chkFlow(mb);
-				chkDeclarations(mb);
+				chkDeclarations(mb,TRUE);
                 return 1;
             }
         }
@@ -1283,7 +1284,7 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
                 p= pushArgument(mb,p,q->argv[3]);
                 removeInstruction(mb,q);
                 chkFlow(mb);
-				chkDeclarations(mb);
+				chkDeclarations(mb,TRUE);
                 return 1;
             }
         }
@@ -1298,7 +1299,7 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
                 p= pushArgument(mb,p,q->argv[3]);
                 removeInstruction(mb,q);
                 chkFlow(mb);
-				chkDeclarations(mb);
+				chkDeclarations(mb,TRUE);
                 return 1;
             }
         }
@@ -1689,7 +1690,7 @@ int ORvalidSource(MalBlkPtr mb, int v, int pc, int stop){
 	return 1;
 }
 str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{   int i,j,a;
+{   int i,j,a,depth;
     InstrPtr p;
     (void) pci; (void) stk;  /* to fool compilers */
 	Client cntxt= getClient();
@@ -1709,11 +1710,13 @@ at the end of the optimization attempt.
         VarPtr v;
         p= getInstrPtr(mb,i);
 		if( moduleName(p)==0 || strcmp(moduleName(p),"batcalc")) continue;
+
+		depth= getVarDepth(mb,getArg(p,0));
 		if( p->argc == 3) {
 			/* binary/unary operation, check first argument */
 			v= getVar(mb, a =getArg(p,1));
 
-			if( isaBatType(v->type) && v->endLifespan ==i ) {
+			if( isaBatType(v->type) && v->endLifespan ==i && v->depth<= depth ) {
 				if( ORvalidSource(mb,a,i, v->beginLifespan) ){
 #ifdef DEBUG_MAL_OPTIMIZER
 					stream_printf(GDKout,"Found binary OR candidate left\n");
@@ -1725,7 +1728,7 @@ at the end of the optimization attempt.
 					p->argv[p->retc]= a;
 					ARreplaceAlias(mb,i+1,mb->stop, p->argv[0], a);
 					p->argv[0]= newTmpVariable(mb, TYPE_void);
-					typeChecker(scope,mb,p);
+					typeChecker(scope,mb,p,TRUE);
 #ifdef DEBUG_MAL_OPTIMIZER
 					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
@@ -1734,7 +1737,7 @@ at the end of the optimization attempt.
 			}
 			/* continue with binary version */
 			v= getVar(mb, a =getArg(p,2));
-			if( isaBatType(v->type) && v->endLifespan ==i ) {
+			if( isaBatType(v->type) && v->endLifespan ==i  && v->depth<= depth) {
 				if( ORvalidSource(mb,a,i, v->beginLifespan) ){
 #ifdef DEBUG_MAL_OPTIMIZER
 					stream_printf(GDKout,"Found binary OR candidate right\n");
@@ -1746,7 +1749,7 @@ at the end of the optimization attempt.
 					p->argv[p->retc]= a;
 					ARreplaceAlias(mb,i+1,mb->stop, p->argv[0], a);
 					p->argv[0]= newTmpVariable(mb, TYPE_void);
-					typeChecker(scope,mb,p);
+					typeChecker(scope,mb,p,TRUE);
 #ifdef DEBUG_MAL_OPTIMIZER
 					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
@@ -1761,18 +1764,18 @@ at the end of the optimization attempt.
 			v= getVar(mb, a =getArg(p,1));
 
 			if( isaBatType(v->type) && v->endLifespan ==i ) {
-				if( ORvalidSource(mb,a,i, v->beginLifespan) ){
+				if( ORvalidSource(mb,a,i, v->beginLifespan)  && v->depth<= depth){
 #ifdef DEBUG_MAL_OPTIMIZER
 					stream_printf(GDKout,"Found unary OR candidate\n");
 					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
 					mb->errors=0;
 					p->argv[0]= a;
-					typeChecker(scope,mb,p);
+					typeChecker(scope,mb,p,TRUE);
 					if( p->typechk == TYPE_UNKNOWN){
 						mb->errors= olderr;
 						p->argv[0]= oldtarget;
-						typeChecker(scope,mb,p);
+						typeChecker(scope,mb,p,TRUE);
 					} else
 						ARreplaceAlias(mb,i+1,mb->stop, oldtarget, a);
 				}
@@ -1780,7 +1783,9 @@ at the end of the optimization attempt.
 		}
     } 
 	if( errlen) strncpy(cntxt->errbuf,olderr,errlen);
+	chkDeclarations(mb,TRUE);
 	chkProgram(scope,mb);
+	/* debugLifespan(mb);*/
     /* remove the ORoptimizer request */
 	if( mb->errors) {
 		showErrors();

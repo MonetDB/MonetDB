@@ -77,6 +77,12 @@ pattern expressionAccumulation(mod:str, fcn:str):str
 address QOTORoptimizerCALL
 comment "Replace calculations with accumulator model";
 
+pattern strengthReduction():str 
+address QOTSRoptimizer;
+pattern strengthReduction(mod:str, fcn:str):str 
+address QOTSRoptimizerCALL
+comment "Move constant expressions out of the loop";
+
 pattern garbageCollector():str 
 address QOTGCoptimizer;
 pattern garbageCollector(mod:str, fcn:str):str 
@@ -155,6 +161,7 @@ optimizer.prelude();
 #include "mal_interpreter.h"
 #include "mal_optimizer.h"
 #include "mal_factorize.h"
+#include "mal_strengthReduction.h"
 #include "mal_scenario.h"
 
 @
@@ -221,6 +228,7 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:QOTC(RR)@
 	@:QOTC(OR)@
 	@:QOTC(FT)@
+	@:QOTC(SR)@
 
 str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str modnme;
