@@ -2,4 +2,4 @@ module("unix");
 
 var SQLprefix := getenv("SQL_PREFIX");
 
-source(SQLprefix+"/share/MonetDB/sqlserver.mil");
+source(SQLprefix+"/share/MonetDB/sql_server.mil");
