@@ -79,7 +79,7 @@ SQLRETURN SQL_API
 SQLSetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
-	SQLPOINTER ptr = (SQLPOINTER) vParam;
+	SQLPOINTER ptr = (SQLPOINTER) (size_t) vParam;
 	SQLULEN p;
 	SQLRETURN rc;
 
@@ -97,8 +97,8 @@ SQLSetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 	case SQL_ATTR_CURRENT_CATALOG:
 	case SQL_ATTR_TRACEFILE:
 	case SQL_ATTR_TRANSLATE_LIB:
-		fixWcharIn((SQLPOINTER) vParam, SQL_NTS, ptr, addDbcError, dbc, return SQL_ERROR);
-		p = (SQLULEN) ptr;
+		fixWcharIn((SQLPOINTER) (size_t) vParam, SQL_NTS, ptr, addDbcError, dbc, return SQL_ERROR);
+		p = (SQLULEN) (size_t) ptr;
 		break;
 	default:
 		p = vParam;
