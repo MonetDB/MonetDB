@@ -1533,7 +1533,7 @@ bs_write(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		todo -= n;
 		buf = (void *) ((char *) buf + n);
 		if (s->nr == sizeof(s->buf)) {
-			if (!stream_writeInt(s->s, s->nr) ||
+			if (stream_writeInt(s->s, s->nr) ||
 			    stream_write(s->s, s->buf, 1, s->nr) != s->nr) {
 				ss->errnr = WRITE_ERROR;
 				return -1;
@@ -1562,9 +1562,9 @@ bs_flush(stream *ss)
 		   stream_writeInt) to indicate user-instigated
 		   flush */
 		if ((s->nr > 0 &&
-		     (!stream_writeInt(s->s, s->nr) ||
+		     (stream_writeInt(s->s, s->nr) ||
 		      s->s->write(s->s, s->buf, 1, s->nr) != s->nr)) ||
-		    !stream_writeInt(s->s, 0)
+		    stream_writeInt(s->s, 0)
 			) {
 			ss->errnr = WRITE_ERROR;
 			return -1;
@@ -1602,7 +1602,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			   nothing more to read in the current block,
 			   so read the count for the next block */
 			int nr;
-			if (!stream_readInt(s->s, &nr) || nr < 0) {
+			if (stream_readInt(s->s, &nr) || nr < 0) {
 				ss->errnr = READ_ERROR;
 				return -1;
 			}
@@ -1691,7 +1691,6 @@ void bs_destroy( stream *ss )
 {
 	bs *s = (bs*)ss->stream_data.p;
 	s->s->destroy( s->s );
-	free(s->buf);
 	free(s);
 	destroy(ss);
 }
