@@ -25,7 +25,7 @@
 # ! this file should be kept identical in         !
 # ! monet, sql, xml, acoi, template, playpen, gis !
 #
-# In the following. ${what} is one of monet, sql, xml, acoi. 
+# In the following, ${what} is one of monet, sql, xml, acoi. 
 # It is automatically derived from the current directory name.
 #
 # This script is supposed to be "sourced" in the top-level directory of the
@@ -226,8 +226,12 @@ if [ "${os}" = "Linux" ] ; then
 fi
 
 if [ "${os}" = "Darwin" ] ; then
-	# "our" autoconf on sap 
-	binpath="/Users/manegold/soft/local/bin:${binpath}"
+	# "our" autoconf on sap & monet
+	for d in "/sw/bin" "/usr/bin" "/usr/local/bin" "/Users/monet/soft/local/bin" "/Users/manegold/soft/local/bin" ; do
+		if [ -d ${d} ] ; then
+			binpath="${d}:${binpath}"
+		fi
+	done
 fi
 
 if [ "${os}" = "SunOS" ] ; then
