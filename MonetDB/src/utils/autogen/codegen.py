@@ -95,7 +95,7 @@ code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
 	    'java.in':	[ '.java' ],
 }
 
-c_inc = "^[ \t]*#[ \t]*include[ \t]*[<\"]\([a-zA-Z0-9\.\_]*\)[>\"]"
+c_inc = "^[ \t]*#[ \t]*include[ \t]*[<\"]\([a-zA-Z0-9\.\_\-]*\)[>\"]"
 m_use = "^[ \t]*\.[Uu][Ss][Ee][ \t]+\([a-zA-Z0-9\.\_, ]*\);"
 m_sep = "[ \t]*,[ \t*]"
 xsl_inc = "^[ \t]*<xsl:{include|import}[ \t]*href=['\"]\([a-zA-Z0-9\.\_]*\)['\"]"
@@ -160,6 +160,8 @@ def readfilepart(f,ext):
 	    else:
 	    	buf2 = buf2 + buf[m:]
 		m = n
+    else:
+	return buf
     return buf2
 
 # targets are all objects which can somehow be created.
@@ -171,8 +173,8 @@ def readfilepart(f,ext):
 def do_code_extract(f,base,ext, targets, deps, cwd):
         file = cwd+os.sep+f
     	if os.path.exists(file):
-	  b = readfile(file)
 	  if (code_extract.has_key(ext)):
+	    b = readfile(file)
 	    for pat,newext in code_extract[ext]:
 	      p = regex.compile(pat)
 	      if (p.search(b) >= 0 ):
@@ -278,8 +280,7 @@ def do_dep_rules(deps,cwd,cache):
       	  cache[target].append(tf+new)
 
 # scan for includes and match against the known deps and include map.
-def do_scan(targets,deps,incmap,cwd,cache):
-  for target,depfiles in deps.items():
+def do_scan_target(target,targets,deps,incmap,cwd,cache):
       base,ext = split_filename(target)
       if (not cache.has_key(target)):
         inc_files = []
@@ -315,6 +316,12 @@ def do_scan(targets,deps,incmap,cwd,cache):
 		#print(fnd + depext + " not in deps and incmap " )
               m = pat.search(b,m+1)
         cache[target] = inc_files
+
+def do_scan(targets,deps,incmap,cwd,cache):
+  for target,depfiles in deps.items():
+    do_scan_target(target,targets,deps,incmap,cwd,cache)
+    for target in depfiles:
+      do_scan_target(target,targets,deps,incmap,cwd,cache)
   #for i in cache.keys():
     #print(i,cache[i])
 
