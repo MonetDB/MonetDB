@@ -314,4 +314,9 @@ proc get_mapi_port() := {
 	}
 	return port;
 }
-fork(listen(get_mapi_port(),5));
+proc mapi_server(int port, int nr) := {
+        var l := listen(port, nr);
+        printf("!ERROR: listen(%d,%d) failed ... exiting\n", port, nr);
+	quit;
+}
+fork(mapi_server(get_mapi_port(),5));
