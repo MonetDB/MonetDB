@@ -10,7 +10,7 @@ void st_attache( statement *st, statement *user ){
 
 
 void st_detach( statement *st, statement *user ){
-	list_remove_statement(st->uses, user);
+	if (user) list_remove_statement(st->uses, user);
 	statement_destroy(st);
 }
 
@@ -541,7 +541,10 @@ statement *statement_binop( statement *op1, statement *op2, func *op ){
 	s->op1.stval = op1; st_attache(op1,s);
 	s->op2.stval = op2; st_attache(op2,s);
 	s->op3.funcval = op;
-	s->h = op1->h;
+	if (op1->nrcols > op2->nrcols)
+		s->h = op1->h;
+	else
+		s->h = op2->h;
 	s->nrcols = (op1->nrcols >= op2->nrcols)?op1->nrcols:op2->nrcols;
 	return s;
 }
@@ -553,7 +556,10 @@ statement *statement_triop( statement *op1, statement *op2, statement *op3, func
 	list_append_statement(s->op1.lval, op2);
 	list_append_statement(s->op1.lval, op3);
 	s->op2.funcval = op;
-	s->h = op1->h;
+	if (op1->nrcols > op2->nrcols)
+		s->h = op1->h;
+	else
+		s->h = op2->h;
 	s->nrcols = (op1->nrcols >= op2->nrcols)?op1->nrcols:op2->nrcols;
 	return s;
 }
@@ -732,8 +738,10 @@ char *aggr_name( char *n1, char *n2){
 
 char *column_name( statement *st ){
 	switch(st->type){
+	case st_reverse: return column_name(head_column(st->op1.stval));
 	case st_join: return column_name(st->op2.stval);
 	case st_union: 
+	case st_mark: 
 	case st_select: 
 	case st_select2: return column_name(st->op1.stval);
 

@@ -11,6 +11,9 @@
 .COMMAND mvc_bind( mvc c, int cid ) : BAT[any::1,any::2] = mvc_bind_wrap;
 		"Bind the column, cid"
 
+.COMMAND mvc_dump( mvc c ) = mvc_dump_wrap;
+		"dump bats info"
+
 .COMMAND mvc_create( int debug ) : mvc = mvc_create_wrap;
 	"Create multi version catalog"
 
@@ -57,6 +60,11 @@ int mvc_create_wrap( mvc *res, int *debug ){
 int mvc_bind_wrap( BAT** res, mvc* c, int* cid){
 	*res = mvc_bind( *(mvc**)c, *cid );
 	BBPfix((*res)->batCacheid );
+	return GDK_SUCCEED;
+}
+
+int mvc_dump_wrap( mvc* c ){
+	mvc_dump( *(mvc**)c );
 	return GDK_SUCCEED;
 }
 

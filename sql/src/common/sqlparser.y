@@ -86,14 +86,16 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	query_spec
 	query_term
 	query_exp
+	query_exp_body
     	non_join_query_exp
+    	non_join_query_term
 	joined_table
     	cross_table
 	join_spec
     	qualified_join
 	search_condition
 	update_statement
-	select_statement
+	select_into_statement
 	subquery
 	target
 	test_for_null
@@ -116,12 +118,14 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	datetime_funcs
 	string_funcs
 	scalar_exp
+	value_exp
 	column_exp
 	atom
 	insert_atom
 	parameter_ref
 	literal
 	ordering_spec
+	simple_table
 	table_ref 
 	opt_temp
 	case_exp
@@ -129,7 +133,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	when_value
 	when_search
 	opt_else
-	opt_table_name
+	table_name
 
 %type <sval>
 	any_all_some
@@ -138,7 +142,6 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	column
 	parameter
 	user
-	name
 	data_type
 	datetime_type
 	interval_type
@@ -161,7 +164,6 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	schema_element_list
 	operation_commalist
 	privileges
-	opt_into
 	target_commalist
 	grantee_commalist
 	column_def_opt_list
@@ -181,7 +183,6 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	scalar_exp_list
 	when_value_list
 	when_search_list
-	opt_derived_column_list
 
 %type <ival>
 	drop_action 
@@ -204,7 +205,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	tz
 
 %token <sval> 
-	NAME TYPE STRING AMMSC PARAMETER INT INTNUM APPROXNUM USER USING
+	IDENT TYPE STRING AMMSC PARAMETER INT INTNUM APPROXNUM USER USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL LOCAL CASCADE CAST RESTRICT
 	CHARACTER NUMERIC DECIMAL INTEGER SMALLINT FLOAT REAL
 	DOUBLE PRECISION VARCHAR 
@@ -233,8 +234,8 @@ OPEN CLOSE FETCH
 %left <operation> '('
 %left <sval> COMPARISON /* <> < > <= >= */
 %left <operation> '='
-%left '+' '-'
-%left '*' '/'
+%left <operation> '+' '-'
+%left <operation> '*' '/'
 %nonassoc UMINUS
 
 	/* literal keyword tokens */
@@ -302,22 +303,22 @@ schema:
  ;
 
 schema_name:
-    name		    	
+    ident		    	
 	{ $$ = dlist_create();
 	  dlist_append_string($$, $1 );
 	  dlist_append_string($$, NULL ); }
- |  AUTHORIZATION name  	
+ |  AUTHORIZATION ident  	
 	{ $$ = dlist_create();
 	  dlist_append_string($$, NULL );
 	  dlist_append_string($$, $2 ); }
- |  name AUTHORIZATION name 
+ |  ident AUTHORIZATION ident 
 	{ $$ = dlist_create();
 	  dlist_append_string($$, $1 );
 	  dlist_append_string($$, $3 ); }
 
 opt_schema_default_char_set:
     /* empty */		   	{ $$ = NULL; }
- |  DEFAULT CHARACTER SET name 	{ $$ = _symbol_create( SQL_CHARSET, $4 ); }
+ |  DEFAULT CHARACTER SET ident { $$ = _symbol_create( SQL_CHARSET, $4 ); }
  ;
 
 opt_schema_path:
@@ -597,7 +598,7 @@ cursor:	ident ;
 	/* data manipulative statements */
 
 sql: commit_statement |	rollback_statement | delete_statement_searched 
- | insert_statement | select_statement | update_statement ;
+ | insert_statement | select_into_statement | update_statement ;
 
 commit_statement:
     COMMIT WORK 	{ $$ = _symbol_create( SQL_COMMIT, NULL); }
@@ -653,21 +654,18 @@ insert_atom:
  |  NULLX		{ $$ = _symbol_create(SQL_NULL, NULL ); }
  ;
 
-select_statement:
-    SELECT opt_distinct selection opt_into table_exp opt_order_by_clause
+select_into_statement:
+    SELECT opt_distinct selection INTO target_commalist 
+           table_exp opt_order_by_clause
 
 	{ dlist *l = dlist_create();
 	  dlist_append_int(l, $2);
 	  dlist_append_list(l, $3);
-	  dlist_append_list(l, $4);
 	  dlist_append_list(l, $5);
-	  dlist_append_symbol(l, $6);
+	  dlist_append_list(l, $6);
+	  dlist_append_symbol(l, $7);
 	  $$ = _symbol_create_list( SQL_SELECT, l ); 		}
  ;
-
-opt_into:
-    /* empty */ 		{ $$ = NULL; }
- |  INTO target_commalist 	{ $$ = $2; }
 
 opt_distinct:
     /* empty */ 	{ $$ = FALSE; }	
@@ -714,12 +712,11 @@ opt_where_clause:
 
 /* sql: query_exp | IF '(' predicate ')' sql ; */
 
-
 joined_table:
-    cross_table
-  | qualified_join
-  | '(' joined_table ')' 		{ $$ = $2; }
-  ;
+   cross_table
+ | qualified_join
+ | '(' joined_table ')' 	{ $$ = $2; }
+ ;
 
 cross_table:
     table_ref CROSS JOIN table_ref
@@ -731,7 +728,7 @@ cross_table:
   ;
 
 qualified_join:
-    table_ref opt_natural opt_join_type JOIN table_ref join_spec
+    table_ref opt_natural opt_join_type JOIN table_ref join_spec 
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $1);
 	  dlist_append_int(l, $2);
@@ -765,15 +762,28 @@ join_spec:
 		{ $$ = _symbol_create_list( SQL_USING, $3); }
   ;
 
-sql: query_exp 
+sql: 
+    query_exp 
+ |  '(' sql ')' 	{ $$ = $2; }
 
 query_exp:
+    query_spec
+ |  query_exp_body
+
+
+query_exp_body:
     non_join_query_exp
  |  joined_table
+ ;
+
+query_term:
+    non_join_query_term
+ |  joined_table
+ ;
 
 non_join_query_exp:
-    query_term				
- |  query_exp UNION opt_all query_term		
+    non_join_query_term  
+ |  query_exp UNION opt_all query_term
 
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $1);
@@ -782,16 +792,15 @@ non_join_query_exp:
 	  $$ = _symbol_create_list( SQL_UNION, l); }
  ;
 
+non_join_query_term:
+    simple_table
+ |  '(' non_join_query_exp ')'  	{ $$ = $2; }  
+
+
 opt_all:
      /* empty */		{ $$ = 0; }
   |  ALL			{ $$ = 1; }
   ;
-
-
-query_term:
-    query_spec 
- |  '(' query_exp ')'  		{ $$ = $2; }
- ;
 
 query_spec:
     SELECT opt_distinct	selection table_exp opt_order_by_clause
@@ -830,34 +839,49 @@ table_ref_commalist:
  |  table_ref_commalist ',' table_ref  { $$ = dlist_append_symbol($1, $3); }
  ;
 
-table_ref:
-    qname opt_table_name 	{ dlist *l = dlist_create();
+simple_table:
+   qname 			{ dlist *l = dlist_create();
+		  		  dlist_append_list(l, $1);  
+		  	  	  dlist_append_symbol(l, NULL);  
+		  		  $$ = _symbol_create_list(SQL_NAME, l); }
+ | qname table_name 		{ dlist *l = dlist_create();
 		  		  dlist_append_list(l, $1);  
 		  	  	  dlist_append_symbol(l, $2);  
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
- |  subquery opt_table_name	{ $$ = $1; 
-				  dlist_append_symbol($1->data.lval, $2); }
- |  query_exp opt_table_name	{ $$ = $1; 
-				  dlist_append_symbol($1->data.lval, $2); }
  ;
 
-opt_table_name:	
-    /* empty */			{ $$ = NULL; }
+table_ref:
+    simple_table
+ |  subquery table_name		{ $$ = $1; 
+				  dlist_append_symbol($1->data.lval, $2); }
+ |  joined_table 		{ $$ = $1; 
+				  dlist_append_symbol($1->data.lval, NULL); }
+ |  '(' joined_table ')' table_name	
+				{ $$ = $2; 
+				  dlist_append_symbol($2->data.lval, $4); }
+ ;
+
+table_name:	
+    AS ident '(' name_commalist ')'
+				{ dlist *l = dlist_create();
+		  		  dlist_append_string(l, $2);  
+		  	  	  dlist_append_list(l, $4);  
+		  		  $$ = _symbol_create_list(SQL_NAME, l); }
+ |  AS ident 
+				{ dlist *l = dlist_create();
+		  		  dlist_append_string(l, $2);  
+		  	  	  dlist_append_list(l, NULL);  
+		  		  $$ = _symbol_create_list(SQL_NAME, l); }
+ |  ident '(' name_commalist ')'
+				{ dlist *l = dlist_create();
+		  		  dlist_append_string(l, $1);  
+		  	  	  dlist_append_list(l, $3);  
+		  		  $$ = _symbol_create_list(SQL_NAME, l); }
  |  ident 
 				{ dlist *l = dlist_create();
 		  		  dlist_append_string(l, $1);  
 		  	  	  dlist_append_list(l, NULL);  
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
- |  AS ident opt_derived_column_list 
-				{ dlist *l = dlist_create();
-		  		  dlist_append_string(l, $2);  
-		  	  	  dlist_append_list(l, $3);  
-		  		  $$ = _symbol_create_list(SQL_NAME, l); }
- ;
-
-opt_derived_column_list:
-    /* empty */				{ $$ = NULL; }
- |  '(' name_commalist ')'	{ $$ = $2; }
  ;
 
 opt_group_by_clause:
@@ -893,7 +917,7 @@ search_condition:
 		  dlist_append_symbol(l, $3); 
 		  $$ = _symbol_create_list(SQL_AND, l ); }
  |  '(' search_condition ')'	{ $$ = $2; }
- |  predicate			
+ | predicate			
  ;
 
 opt_order_by_clause:
@@ -938,19 +962,7 @@ comparison_predicate:
 		  dlist_append_string(l, $2); 
 		  dlist_append_symbol(l, $3); 
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
- |  scalar_exp COMPARISON subquery
-		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_string(l, $2); 
-		  dlist_append_symbol(l, $3); 
-		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
  |  scalar_exp '=' scalar_exp
-		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_string(l, _strdup("=")); 
-		  dlist_append_symbol(l, $3); 
-		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
- |  scalar_exp '=' subquery
 		{ dlist *l = dlist_create();
 		  dlist_append_symbol(l, $1); 
 		  dlist_append_string(l, _strdup("=")); 
@@ -1004,8 +1016,10 @@ atom_exp:
  ;
 
 test_for_null:
-    column_ref IS NOT NULLX  { $$ = _symbol_create( SQL_NOT_NULL, (char*)$1 ); }
- |  column_ref IS NULLX	     { $$ = _symbol_create( SQL_NULL, (char*)$1 ); }
+    column_ref IS NOT NULLX  { symbol *s =_symbol_create_list(SQL_COLUMN, $1);
+			      $$ = _symbol_create_symbol( SQL_NOT_NULL, s ); }
+ |  column_ref IS NULLX	     { symbol *s =_symbol_create_list(SQL_COLUMN, $1);
+			       $$ = _symbol_create_symbol( SQL_NULL, s ); }
  ;
 
 in_predicate:
@@ -1073,7 +1087,9 @@ subquery:
 	/* scalar expressions */
 
 scalar_exp:
-    scalar_exp '+' scalar_exp	
+    value_exp
+
+ |  scalar_exp '+' scalar_exp	
 				{ dlist *l = dlist_create();
 				  dlist_append_string(l, _strdup("add"));
 	  			  dlist_append_symbol(l, $1);
@@ -1105,23 +1121,26 @@ scalar_exp:
 				  dlist_append_string(l, _strdup("neg"));
 	  			  dlist_append_symbol(l, $2);
 	  			  $$ = _symbol_create_list( SQL_UNOP, l ); }
- |  atom
+ |  '(' scalar_exp ')' 		{ $$ = $2; }
+ |  subquery
+
+
+value_exp:
+    atom
  |  column_ref 			{ $$ = _symbol_create_list( SQL_COLUMN, $1); }
  |  function_ref 
  |  datetime_funcs
  |  string_funcs
- |  '(' scalar_exp ')' 		{ $$ = $2; }
  |  case_exp	
  |  cast_exp
- |  subquery
  ;
 
 
 datetime_funcs:
     EXTRACT '(' datetime_field FROM scalar_exp ')' 
 				{ dlist *l = dlist_create();
-				  const char *name = datetime_field($3);
-  		  		  dlist_append_string(l, _strdup(name));
+				  const char *ident = datetime_field($3);
+  		  		  dlist_append_string(l, _strdup(ident));
   		  		  dlist_append_symbol(l, $5);
 		  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
  ;
@@ -1462,20 +1481,17 @@ data_type:
  | interval_type
  ;
 
-	/* the various things you can name */
-ident: name	
+column:	ident ;
+/* :ident handled in parser */
+parameter: PARAMETER ;
+
+user: 		ident ;
+
+ident: 
+    IDENT	{ $$ = $1; }	
+ |  TYPE	{ $$ = $1; }
  |  non_reserved_word
  ;
-
-column:	ident ;
-/* :name handled in parser */
-parameter: PARAMETER ;
-user: name 	;
-name: 
-     NAME 	{ $$ = $1; } 		
-  |  TYPE 	{ $$ = $1; } 		
-  ;
-
 
 non_reserved_word: 
   CHARACTER 	{ $$ = _strdup("character"); }
@@ -1504,5 +1520,5 @@ intval:
 
 	/* embedded condition things */
 /* sql: WHENEVER NOT FOUND when_action |	WHENEVER SQLERROR when_action ;
-when_action:	GOTO NAME |	CONTINUE ; */
+when_action:	GOTO IDENT |	CONTINUE ; */
 %%

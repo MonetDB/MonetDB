@@ -2,6 +2,12 @@
 
 #include <gdk.h>
 
+typedef struct batinfo {
+	BAT *b;
+	int reads;
+	int writes;
+} batinfo;
+
 typedef struct mvc {
 	int debug;
 
@@ -27,7 +33,7 @@ typedef struct mvc {
 	BAT *column_null;
 	BAT *column_number;
 
-	BAT **batptrs; /* keep hot batptr */
+	batinfo *bats; /* keep info about used bats */
 	int 	size;
 } mvc;
 

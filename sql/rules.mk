@@ -13,13 +13,13 @@ MXFLAGS= -notouch
 
 %.tab.c: %.y
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $^
+	$(YACC) $(YFLAGS) $<
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
 	rm -f waiting
 
 %.tab.h: %.y
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $^
+	$(YACC) $(YFLAGS) $<
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
 	rm -f waiting
 

@@ -255,10 +255,6 @@ int statement_dump( statement *s, int *nr, context *sql ){
 			  s->op1.cval->name );
 
 			s->nr = (*nr)++;
-			if (sql->debug&4){
-				len += snprintf( buf+len, BUFSIZ, 
-				"s%d.print();\n", s->nr );
-			}
 		}
 		break;
 	case st_reverse: {

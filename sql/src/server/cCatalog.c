@@ -72,36 +72,57 @@ mvc *mvc_create(int debug){
 	bat_incref(c->column_number);
 
 	c->size = BATcount(c->column_id) + 1024;
-	c->batptrs = NEW_ARRAY( BAT*, c->size); 
-	memset(c->batptrs, 0, c->size*sizeof(BAT*) );
+	c->bats = NEW_ARRAY( batinfo, c->size); 
+	memset(c->bats, 0, c->size*sizeof(batinfo) );
 	return c;
 }
 
-BAT *mvc_bind( mvc *c, oid colid ){
+void mvc_dump( mvc *c ){
+	int i;
+	for (i=0; i < c->size; i++){
+		if (c->bats[i].b){
+			printf("%s %d %d\n", 
+				BUNtail(c->column_name,
+				  BUNfnd(c->column_name, (ptr)&i)), 
+				c->bats[i].reads, c->bats[i].writes);
+		}
+	}
+}
+
+BAT *mvc_bind_intern( mvc *c, oid colid, int write ){
 	BAT *m = BATmirror(c->column_id);
 	oid cid = *(oid*)BUNtail(m,BUNfnd(m, (ptr)&colid));
 
 	if (c->debug) 
-		printf("mvc_bind %d, %d\n", colid, cid);
+		printf("mvc_bind_intern %d, %d\n", colid, cid);
 
 	if (cid > c->size){
 		int oldsz = c->size;
 		c->size = cid + 1024;
-		c->batptrs = RENEW_ARRAY(BAT*,c->batptrs,c->size);
-		memset(c->batptrs+oldsz, 0, (c->size-oldsz)*sizeof(BAT*) );
+		c->bats = RENEW_ARRAY(batinfo,c->bats,c->size);
+		memset(c->bats+oldsz, 0, (c->size-oldsz)*sizeof(batinfo) );
 	}
 	/*
-	if (!c->batptrs[cid]){
+	if (!c->bats[cid].b){
 		BAT *b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
 					BUNfnd(c->column_bat, (ptr)&cid)));
-		c->batptrs[cid] = b;
+		c->bats[cid].b = b;
 		bat_incref(b);
 	}
-	return c->batptrs[cid];
+	return c->bats[cid].b;
 	*/
+	c->bats[cid].b = (BAT*)1; 
+	c->bats[cid].reads+=!write;
+	c->bats[cid].writes+=!write;
+
 	return BATdescriptor(*(bat*)BUNtail(c->column_bat,
 				BUNfnd(c->column_bat, (ptr)&cid)));
 }
+
+BAT *mvc_bind( mvc *c, oid colid ){
+	return mvc_bind_intern(c, colid, 0);
+}
+
 
 oid mvc_create_schema( mvc *c, oid sid, char *name, char *auth){
 	oid s = BATcount( c->schema_name );	
@@ -129,9 +150,9 @@ void drop_column( mvc *c, oid id ){
 	BUNdelHead(c->column_number, 	(ptr)&id );
 	BUNdelHead(c->column_bat, 	(ptr)&id );
 	BATmode(b,TRANSIENT);
-	if (id <= c->size && c->batptrs[id]){
+	if (id <= c->size && c->bats[id].b){
 		BBPunfix(b->batCacheid);
-		c->batptrs[id] = 0;
+		c->bats[id].b = 0;
 	}
 }
 
@@ -228,7 +249,7 @@ oid mvc_create_column( mvc *c, oid cid, oid tid,
 	BUNins(c->column_null, 	(ptr)&ci, (ptr)&one );
 	BUNins(c->column_number, 	(ptr)&ci, (ptr)&seqnr );
 	BUNins(c->column_bat, 	(ptr)&ci, (ptr)&b->batCacheid );
-	mvc_bind( c, cid );
+	mvc_bind_intern( c, cid, 1 );
 
 	return cid;
 }
@@ -293,7 +314,7 @@ void mvc_insert( mvc *c, char *insert_string ){
 
 	if (nr){
 		oid id = strtol( next+1, &next, 10);
-		BAT *b = mvc_bind(c, id);
+		BAT *b = mvc_bind_intern(c, id, 1);
 		ptr *p;
 		char *e = next_comma(next+1); 
 		*e = '\0';
@@ -306,7 +327,7 @@ void mvc_insert( mvc *c, char *insert_string ){
 
 	    	while(nr > 0){
 			oid id = strtol( next+1, &next, 10);
-			BAT  *b = mvc_bind(c, id);
+			BAT  *b = mvc_bind_intern(c, id, 1);
 			char *e = next_comma(next+1); 
 			*e = '\0';
 	        	p = ADTfromStr( b->dims.tailtype, next+1 );

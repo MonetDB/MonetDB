@@ -472,7 +472,7 @@ statement *sql_search_case( context *sql, scope *scp, dlist *when_search_list,
 		res = first_subset(subset);
 		if (!res){
 			snprintf(sql->errstr, ERRSIZE, 
-	  		_("Subset not found") );
+	  		_("Subset not found for case statement") );
 		    	list_destroy(conds);
 		    	list_destroy(results);
 		       	return NULL;
@@ -680,7 +680,7 @@ statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
 
 			if (!foundsubset){
 				snprintf(sql->errstr, ERRSIZE, 
-		  		_("Subset not found") );
+		  		_("Subset not found for value expression") );
 			       	return NULL;
 			}
 			res = statement_join(foundsubset, res, cmp_equal);
@@ -1132,12 +1132,14 @@ static statement *sql_join_
 
   	if (s){
 		s = sql_search_condition2pivot(sql, s);
-		if (list_length(scp->lifted) > 0){
 			/* possibly lift references */
+		/*
+		if (list_length(scp->lifted) > 0){
 	  		snprintf(sql->errstr, ERRSIZE, 
 			_("Outer join with outer reference not implemented\n"));
 			return NULL;
 		}
+		*/
   	}
   	subset = s;
 	if (subset){
@@ -1149,8 +1151,18 @@ static statement *sql_join_
 		statement *ld = NULL, *rd = NULL;
 
 		if(!fs1 || !fs2){
-			snprintf(sql->errstr, ERRSIZE, 
-		  	_("Subset not found") );
+			if (!fs1)
+				snprintf(sql->errstr, ERRSIZE, 
+		  		_("Subset %s not found in join expression"), 
+				tv1->tname );
+			else if (!fs2)
+				snprintf(sql->errstr, ERRSIZE, 
+		  		_("Subset %s not found in join expression"), 
+				tv2->tname );
+			else 
+				snprintf(sql->errstr, ERRSIZE, 
+		  		_("Subsets %s,%s not found in join expression"),
+				tv1->tname, tv2->tname );
 		       	return NULL;
 		}
 
@@ -1804,6 +1816,23 @@ statement *search_condition( context *sql, scope *scp, symbol *sc,
 			}
 			return sd;
 		}
+	} break;
+	case SQL_NULL:
+	case SQL_NOT_NULL: {
+		symbol *cr = sc->data.sym;
+		statement *res = scalar_exp(sql, scp, cr, group, subset );
+
+		if (res){
+			type *tpe = tail_type(res);
+			statement *a = statement_atom( atom_general(tpe,NULL));
+
+			if (sc->token == SQL_NULL){
+				res = statement_select(res, a, cmp_equal);
+			} else {
+				res = statement_select(res, a, cmp_notequal);
+			}
+		}
+		return res;
 	} break;
 	default:
 		snprintf(sql->errstr, ERRSIZE, 

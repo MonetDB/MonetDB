@@ -14,6 +14,17 @@
 
 stream *ws = NULL, *rs = NULL;
 
+/*
+ * Debug levels
+ * 	0 	no debugging
+ * 	1 	not used
+ * 	2	output additional time statements
+ * 	4	not used
+ * 	8	output code to stderr
+ * 	16	output parsed SQL
+ * 	32	execute but no output write to the client
+ * 	64 	output code only, no excution on the server.
+ */ 
 extern catalog *catalog_create_stream( stream *s, context *lc );
 
 void usage( char *prog ){

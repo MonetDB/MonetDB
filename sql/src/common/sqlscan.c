@@ -312,7 +312,7 @@ int keyword_or_ident(context *lc){
 			} else if (cat_bind_type( lc->cat, yytext ) != NULL){
 				lc->yyval = TYPE;
 			} else {
-				lc->yyval = NAME;
+				lc->yyval = IDENT;
 			}
 			lc->yytext = yytext;
 			lc->yylen = yylen;
@@ -337,7 +337,7 @@ int keyword_or_ident(context *lc){
 	} else if (cat_bind_type( lc->cat, yytext ) != NULL){
 		lc->yyval = TYPE;
 	} else {
-		lc->yyval = NAME;
+		lc->yyval = IDENT;
 	}
 	lc->yytext = yytext;
 	lc->yylen = yylen;
@@ -609,7 +609,7 @@ int sqllex( YYSTYPE *yylval, void *parm ){
 	context *lc = (context*)parm;
 	int token = tokenize(lc);
 	yylval->sval = lc->yytext;
-	if (token == NAME || token == COMPARISON || token == STRING ||
+	if (token == IDENT || token == COMPARISON || token == STRING ||
 		token == AMMSC || token == TYPE)
 		yylval->sval = _strdup(lc->yytext);
 
