@@ -1,8 +1,0 @@
-module("pathfinder");
-module("unix");
-
-var TSTTRGDIR := getenv("TSTTRGDIR");
-
-import_doc(TSTTRGDIR + "/" + "ID.1078462_doc.xml", "ID.1078462_doc.xml");
-
-commit();

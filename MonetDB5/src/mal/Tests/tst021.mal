@@ -1,6 +1,0 @@
-# ADT management 
-
-d1:= date("1998-12-01");
-print(d1);
-d2:= "1998-12-01":date;
-print(d2);

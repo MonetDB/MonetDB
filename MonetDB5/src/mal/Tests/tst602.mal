@@ -1,9 +1,0 @@
-# Testing the box interfaces
-# open de MIL support box and display its content
-
-mil.open();
-barrier (v,nme):= mil.iterator();
-	print(nme);
-	redo (v,nme):=mil.iterator();
-exit v;
-mil.close();	# save the content on persistent store
