@@ -189,6 +189,7 @@ Scope fixateScope(Scope scope, str nme, int len){
         }
     }
     n= (str) GDKmalloc(len+1);
+    *(short*)n = 0;
     strncpy(n,nme,len);
     n[len]=0;
     return newScope(scope, n);
@@ -303,10 +304,11 @@ the start of a new module scope.
 Scope findScope(Scope scope, str name){
     if( scope->name==NULL) return NULL;
     if( name==NULL) return scope;
-    if( scopeJump[(int)(*name)][(int)(*(name+1))]) scope= scopeJump[(int)(*name)][(int)(*(name+1))];
+    if( scopeJump[(int)(*name)][(int)(*(name+1))]) 
+        scope= scopeJump[(int)(*name)][(int)(*(name+1))];
         while(scope != NULL){
                 if( idcmp(name,scope->name)== 0 )
-                        break;
+                        return scope;
                 scope= scope->outer;
         }
         return scope;
