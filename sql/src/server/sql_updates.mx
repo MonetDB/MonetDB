@@ -163,8 +163,12 @@ insert_check_ukey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 	} else { /* single column key */
 		sql_kc *c = k->columns->h->data;
 		stmt *h = stmt_dup(inserts[c->c->colnr]->op2.stval);	
-		stmt *s = stmt_uselect( 
-			stmt_dup(inserts[c->c->colnr]->op1.stval), h, cmp_equal);
+		stmt *s = stmt_dup(inserts[c->c->colnr]->op1.stval); 
+		if (h->nrcols){ 
+			s = stmt_join(s, stmt_reverse(h), cmp_equal);
+		} else {
+			s = stmt_uselect(s, h, cmp_equal);
+		}
 		/* s should be empty */
 		if (k->type == pkey) {
 			snprintf(buf, BUFSIZ, "INSERT INTO: PRIMARY KEY constraint %s.%s violated", 
@@ -435,7 +439,7 @@ is_idx_updated(sql_idx *i, stmt **updates )
 		sql_kc *ic = m->data;
 		
 		if (updates[ic->c->colnr]){
-			update = ic->c->colnr;
+			update = 1;
 			break;
 		}
 	}
@@ -458,19 +462,21 @@ static stmt *
 update_check_ukey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int updcol )
 {
 	char buf[BUFSIZ];
-	stmt *res;
+	stmt *res = NULL;
 
 	sql_subtype *it = sql_bind_localtype( "int" );
 	sql_subaggr *cnt = sql_bind_aggr("count", NULL);
 	sql_subtype *bt = sql_bind_localtype( "bit" );
+	sql_subfunc *ne;
 
+	if (list_length(k->columns) > 1 && !idx_updates)
+		return NULL;
+
+ 	ne = sql_bind_func_result("<>", it, it, bt);
 	if (list_length(k->columns) > 1){
 		stmt *ts = stmt_basetable(k->t, k->t->base.name);
 		node *m;
 		stmt *s; 
-		sql_subaggr *sum;
-		stmt *count_sum = NULL;
-	    	sql_subfunc *ne = sql_bind_func_result("<>", it, it, bt);
 
 		/* 1st stage: find out if original contains same values */
 		s = stmt_reljoin_init();
@@ -497,24 +503,24 @@ update_check_ukey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 
 		/* 2e stage: find out if updated are unique */
 		if (idx_updates->nrcols){ /* update columns not atoms */
+			sql_subaggr *sum;
+			stmt *count_sum = NULL;
 			group *g = NULL;
-		    	stmt *ss;
+		    stmt *ss;
 			sql_subfunc *or = sql_bind_func_result("or", bt, bt, bt);
-		    	for(m = k->columns->h; m; m = m->next){
+
+		    for(m = k->columns->h; m; m = m->next){
 				sql_kc *c = m->data;
 				stmt *upd;
+
 				if (updates[c->c->colnr]){
 					upd = stmt_dup(updates[c->c->colnr]->op2.stval);
 				} else {
 					upd = stmt_dup(updates[updcol]->op2.stval);
-					upd = stmt_semijoin(
-						stmt_cbat(c->c, 
-							stmt_dup(ts), 
-							RDONLY, 
-							st_bat), 
-						upd);
+					upd = stmt_semijoin( stmt_cbat(c->c, stmt_dup(ts), RDONLY, 
+							st_bat), upd);
 				}
-				g = grp_create(upd,g, NULL);
+				g = grp_create(upd, g, NULL);
 			}
 			ss = stmt_aggr(stmt_dup(g->grp), grp_dup(g), sql_dup_aggr(cnt));
 			grp_destroy(g);
@@ -541,10 +547,34 @@ update_check_ukey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 		sql_kc *c = k->columns->h->data;
 		stmt *h = stmt_dup( updates[c->c->colnr]->op2.stval ); 
 		stmt *o = stmt_diff( 
-				stmt_dup(updates[c->c->colnr]->op1.stval), 
-				stmt_dup(updates[c->c->colnr]->op2.stval));	
-		stmt *s = stmt_uselect( o, h, cmp_equal);
+				stmt_dup(updates[c->c->colnr]->op1.stval), stmt_dup(h));	
+		stmt *s = stmt_join( o, stmt_reverse(h), cmp_equal);
 		/* s should be empty */
+		s = stmt_binop(stmt_aggr(s, NULL, cnt),
+			stmt_atom_int(0), ne);
+
+		/* 2e stage: find out if updated are unique */
+		if (h->nrcols){ /* update columns not atoms */
+			sql_subaggr *sum;
+			stmt *count_sum = NULL;
+			sql_subfunc *or = sql_bind_func_result("or", bt, bt, bt);
+			stmt *ssum;
+
+			stmt *upd = stmt_dup(updates[c->c->colnr]->op2.stval);
+			group *g = grp_create(upd, NULL, NULL);
+		    stmt *ss = stmt_aggr(stmt_dup(g->grp), g, sql_dup_aggr(cnt));
+			/* (count(ss) <> sum(ss)) */
+			sum = sql_bind_aggr("sum", tail_type(ss));
+			ssum = stmt_aggr(ss, NULL, sum);
+			count_sum = stmt_binop( 
+				check_types(sql, tail_type(ssum), 
+				 stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt)), type_equal), 
+				ssum, sql_dup_func(ne));
+
+			/* combine results */
+			s = stmt_binop(s, count_sum, or);
+		}
+
 		if (k->type == pkey) {
 			snprintf(buf, BUFSIZ, "UPDATE: PRIMARY KEY constraint %s.%s violated", 
 				k->t->base.name, k->base.name ); 
@@ -552,7 +582,7 @@ update_check_ukey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 			snprintf(buf, BUFSIZ, "UPDATE: UNIQUE constraint %s.%s violated", 
 				k->t->base.name, k->base.name ); 
 		}
-		res = stmt_exception( stmt_aggr(s, NULL, cnt), buf, 00001); 
+		res = stmt_exception( s, buf, 00001); 
 	}
 	return res;
 }
@@ -568,6 +598,8 @@ update_check_fkey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 	sql_subfunc *ne = sql_bind_func_result("<>", it, it, bt);
 	stmt *cur;
 
+	if (!idx_updates)
+		return NULL;
 	(void)sql; /* unused! */
 	/* reljoin.count <> updates[updcol].count */
 	cur = stmt_dup(updates[updcol]->op2.stval);
@@ -689,15 +721,13 @@ sql_update_idxs(mvc * sql, sql_table *t, stmt **updates, list *l)
 	node *n;
 	int updcol;
 
-	(void)sql; 
-
 	if (!t->idxs.set)
 		return res;
 
 	updcol = first_updated_col(updates, list_length(t->columns.set));
  	for(n = t->idxs.set->h; n; n = n->next){
-	    	sql_idx *i = n->data;
-	    	stmt *is = NULL;
+	    sql_idx *i = n->data;
+	    stmt *is = NULL;
 
 		/* check if update is needed, 
 		 * ie atleast on of the idx columns is updated 
@@ -710,9 +740,10 @@ sql_update_idxs(mvc * sql, sql_table *t, stmt **updates, list *l)
 		} else if (i->type == join_idx){
 			is = join_idx_update( i, updates, updcol);
 		}
-		if (is && i->key){
+		if (i->key){
 			stmt *ckeys = sql_update_key(sql, updates, i->key, is, updcol);
-			list_prepend(l, ckeys);
+			if (ckeys)
+				list_prepend(l, ckeys);
 		}
 		if (is) 
 			list_append( l, stmt_replace(stmt_idxbat(i,1), is));
