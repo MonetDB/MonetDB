@@ -29,6 +29,15 @@ MTSAFE
 # install these libs in the pkglib
 LIBDIR = pkglib
 
+lib__streams = {
+	SOURCES = streams.mx
+	HEADERS = h proto.h m
+	#SCRIPTS = mil ""
+	LIBS = ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
+}
+
 LIBS = {
 	SEP = _
 	SOURCES = \
@@ -39,50 +48,15 @@ LIBS = {
 		perfex.mx radix.mx salgebra.mx stats.mx str.mx \
 		sys.mx tcpip.mx  tpcd.mx trans.mx uchr.mx \
 		unix.mx url.mx vector.mx wisc.mx xtables.mx logger.mx \
-		mel.mx \
+		mel.mx ascii_io.mx qt.mx ddbench.mx \
 		bat_arith.mx aggrX3.mx
 	HEADERS = h proto.h m
 	SCRIPTS = mil ""
-	LIBS = ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
+	LIBS = .L. ../../common/libstream ../../gdk/libbat \
+		../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 
-}
-
-lib__streams = {
-	SOURCES = streams.mx
-	HEADERS = h proto.h m
-	#SCRIPTS = mil ""
-	LIBS = ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
-}
-
-lib__ascii_io = {
-	SOURCES = ascii_io.mx
-	HEADERS = h proto.h m
-	#SCRIPTS = mil ""
-	LIBS = -L. ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
-}
-
-lib__qt = {
-	SOURCES = qt.mx
-	HEADERS = h proto.h m
-	#SCRIPTS = mil ""
-	LIBS = -L. ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
-}
-
-lib__ddbench = {
-	SOURCES = ddbench.mx
-	HEADERS = h proto.h m
-	#SCRIPTS = mil ""
-	LIBS = -L. ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 }
 
 lib__counters = {
