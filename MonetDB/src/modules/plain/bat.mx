@@ -1382,9 +1382,8 @@ int CMDmadvise(BAT **r, BAT *b, int *bns, int *hhp, int *thp,
 int CMDaccbuild(BAT *b, str acc, ptr param, int dummy){
 	int acctpe = ACCindex(acc); 
 	(void) dummy;
-	if (acctpe > 0) {
-		ACCbuild(acctpe, b, &b->haccelerator, param); 
-		if (b->hacctype == acctpe) return GDK_SUCCEED;
+	if (acctpe > 0 && ACCbuild(acctpe, b, &b->haccelerator, param) >= 0)  {
+		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
 }
@@ -1394,8 +1393,7 @@ int CMDaccbuild_std(BAT *b, str acc){
 
 int CMDaccdestroy(BAT *b, str acc) {
 	int acctpe = ACCindex(acc); 
-	if (b->hacctype == acctpe) {
-		ACCdestroy(acctpe, b, &b->haccelerator);
+	if (acctpe > 0 && ACCdestroy(acctpe, b, &b->haccelerator) >= 0) {
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
