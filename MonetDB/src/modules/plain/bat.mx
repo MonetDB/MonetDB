@@ -1129,8 +1129,8 @@ Parse the line, and insert a BUN.
 @-
 Unmap already parsed memory, to keep the memory usage low. 
 @c
-#define MAXBUF 40*MT_pagesize()
-		if (cur - base > MAXBUF) {
+#define MAXBUF (40*MT_pagesize())
+		if ((size_t) (cur - base) > MAXBUF) {
 			MT_munmap(base, MAXBUF);
 			base += MAXBUF;
 		} 
