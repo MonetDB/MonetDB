@@ -254,6 +254,7 @@ def am_binary(fd, var, binmap, am ):
         else: # link
             src = binmap[0][4:]
             fd.write("install-exec-local-%s: %s\n" % (name,src))
+            fd.write("\t-mkdir -p $(DESTDIR)$(bindir)\n")
             fd.write("\t-$(RM) $(DESTDIR)$(bindir)/%s\n" % (name))
             fd.write("\tcd $(DESTDIR)$(bindir); $(LN_S) %s %s\n\n" % (src,name))
             fd.write("uninstall-exec-local-%s: \n" % (name))
