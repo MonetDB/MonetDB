@@ -182,6 +182,9 @@ def am_scripts(fd, var, scripts, am):
         sd = scripts["DIR"][0] # use first name given
     sd = am_translate_dir(sd,am)
 
+    for src in scripts['SOURCES']:
+        am['EXTRA_DIST'].append(src)
+
     for script in scripts['TARGETS']:
 	if script not in am['BIN_SCRIPTS']:
 		am['BIN_SCRIPTS'].append("script_" + script)
