@@ -516,11 +516,11 @@ CONST GT := 1;
 CONST GE := 2;
 
     PROC ADDHELP(str cmd, str aut, str dat, str hlp, str modname) : void {
-        var fid := monet_fcn_nme.select(cmd).kdiff(monet_fcn_aut).reverse.min();
+        var fid := monet_fcn_nme.select(cmd).kdiff(monet_fcn_aut).reverse().min();
         monet_fcn_dsc.insert(fid, hlp);
         monet_fcn_aut.insert(fid, aut);
         monet_fcn_dat.insert(fid, dat);
-	monet_fcn_mid.insert(fid, monet_mod_nme.reverse.find(modname));
+	monet_fcn_mid.insert(fid, monet_mod_nme.reverse().find(modname));
     }
 
     ADDHELP("ADDHELP", "boncz", "Feb  6 1996",
@@ -576,7 +576,7 @@ that for the moment are defined as procs.
         var ht := a.htype;
         var tt := b.ttype;
         if ((ht = tt) and (ht = void)) {
-                if (not(isnil(b.reverse.seqbase()))) {
+                if (not(isnil(b.reverse().seqbase()))) {
                         tt := oid;
                 } else if (not(isnil(a.seqbase()))) {
                         ht := oid;
@@ -584,8 +584,8 @@ that for the moment are defined as procs.
         }
 	var r := new(ht, tt, sz);
 	if (tt = void) {
-		if (not(isnil(b.reverse.seqbase()))) {
-			r.reverse.seqbase( b.reverse.seqbase() );
+		if (not(isnil(b.reverse().seqbase()))) {
+			r.reverse().seqbase( b.reverse().seqbase() );
 		}
 	}
 	if (ht = void) {
@@ -615,12 +615,12 @@ that for the moment are defined as procs.
             }
         }
         var swapped := false;
-        if (l.count < r.count) {
+        if (l.count() < r.count()) {
             var swap := l;
-            l := r.reverse; r := swap.reverse;
+            l := r.reverse(); r := swap.reverse();
             swapped := true;
         }
-	if (isnil(estimate)) estimate := l.count;
+	if (isnil(estimate)) estimate := l.count();
         var bn := new(l, r, estimate);
         l@batloop() {
             var h := $h;
@@ -632,7 +632,7 @@ that for the moment are defined as procs.
             }
         }
         if (swapped) {
-            return bn.reverse;
+            return bn.reverse();
         } else {
             return bn;
         }
@@ -756,13 +756,13 @@ that for the moment are defined as procs.
             "(value OP column) select rather than (column OP value)","algebra");
 
     PROC tunique (bat[any,any::1] b) : bat[any::1,void]
-	return b.reverse.mark(nil).kunique;
+	return b.reverse().mark(nil).kunique();
 
     PROC sort_ht (bat[any::1,any::2] B) : bat[any::1,any::2] 
     {
         var R := new(htype(B),ttype(B),count(B));
-        B.kunique.sort@batloop {
-            B.reverse.select($h).sort@batloop {
+        B.kunique().sort()@batloop {
+            B.reverse().select($h).sort()@batloop {
                 R.insert($t,$h);
             }
         }

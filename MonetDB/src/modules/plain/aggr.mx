@@ -140,7 +140,7 @@ test scripts were added.
     "short-cut for {count}(b,e,TRUE)", "aggr");
 
     proc size(BAT[any,bit] b) : int {
-	var h := b.histogram;
+	var h := b.histogram();
 	if (h.exist(true)) 
 	    return h.find(true);
 	return 0;
@@ -184,15 +184,15 @@ test scripts were added.
 		return	 {prod_dbl}(b,e);
     }
     proc {card}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
-	return {count}(b.sunique,e);
+	return {count}(b.sunique(),e);
     }
 
     proc variance(BAT[any,any::1] b) : any::1 {
-	var c := dbl(b.count);
+	var c := dbl(b.count());
 	if (c = 0.0LL) {
 		return 0.cast(b.ttype);
 	}
-	var s := [*](b,b).sum;
+	var s := [*](b,b).sum();
 	var a := b.avg;
 	return ((s / c) - (a * a)).cast(b.ttype); 
     }
@@ -224,7 +224,7 @@ proc aggrtst(int num, int fanout, str agg, ..str..) : void {
 	                v.insert(nil, 42);
 	                i :+= 1;
 	        }
-	        e := [oid](v.seqbase(0@0).reverse).reverse;
+	        e := [oid](v.seqbase(0@0).reverse()).reverse();
 	        if (fanout = 1) {
 	                b := bat(void,(*tpe)()).seqbase(0@0);
 	        } else {
@@ -253,15 +253,15 @@ proc aggrtst(int num, int fanout, str agg, ..str..) : void {
 		var abv := (*gagg)(b,v).col_name(sprintf("%s(b,v)",gagg));
 		var abe := (*gagg)(b,e).col_name(sprintf("%s(b,e)",gagg));
 		if (not(printed)) {
-			v.print;
-			e.print;
-			var bh := b.mark(0@0).reverse;
-			var bt := b.reverse.mark(0@0).reverse;
+			v.print();
+			e.print();
+			var bh := b.mark(0@0).reverse();
+			var bt := b.reverse().mark(0@0).reverse();
 			print(bh,bt,bt.[sht],bt.[int],bt.[lng],bt.[flt],bt.[dbl],[decimal]([int](bt)),bt.[str]);
 			printed := TRUE;
 		}
 		var tpe2 := tail(ab);
-		ab.access(BAT_WRITE).insert(oid(num),(*agg)(b.reverse.select(oid(num)).reverse));
+		ab.access(BAT_WRITE).insert(oid(num),(*agg)(b.reverse().select(oid(num)).reverse()));
 		bs.access(BAT_WRITE).insert(oid(num),"{  }");
         	print(bs,
         	      ab , ab.[str] ,
