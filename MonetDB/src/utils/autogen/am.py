@@ -521,15 +521,21 @@ def am_jar(fd, var, jar, am):
     fd.write("\n%s.jar: $(%s_class_files) $(%s_extra_files)\n" % (name,name,name))
     fd.write("\t$(shell $(JAR) $(JARFLAGS) -cf $@ $(%s_class_files) $(%s_inner_class_files) $(%s_extra_files))\n" % (name,name,name) )
 
-    fd.write("\nall-local-%s_jar: %s.jar\n" % (name,name))
-    am['ALL'].append(name+"_jar")
-
     fd.write("\ninstall-exec-local-%s_jar: %s.jar\n" % (name,name))
     fd.write("\t-mkdir -p $(DESTDIR)%s\n" % (jd))
     fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s.jar\n" % (jd,name))
 
-    fd.write("\nuninstall-exec-local-%s_jar: \n" % (name))
+    fd.write("\nuninstall-exec-local-%s_jar:\n" % (name))
     fd.write("\t$(RM) $(DESTDIR)%s/%s.jar\n" % (jd,name))
+
+    fd.write("\nall-local-%s_jar: %s.jar\n" % (name,name))
+    am['ALL'].append(name+"_jar")
+
+    fd.write("\nelse\n")
+
+    fd.write("\ninstall-exec-local-%s_jar:\n" % (name))
+    fd.write("\nuninstall-exec-local-%s_jar:\n" % (name))
+    fd.write("\nall-local-%s_jar:\n" % (name))
 
     fd.write("\nendif #HAVE_JAVA\n")
 
