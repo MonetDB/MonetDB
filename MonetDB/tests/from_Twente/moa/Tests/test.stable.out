@@ -1,21 +1,22 @@
 stdout of test 'test` in directory 'tests/from_Twente/moa` itself:
 
 
-# 17:08:37 >  
-# 17:08:37 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/MonetDB/_PREFIX_d_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/MonetDB/_PREFIX_d_/lib/MonetDB" --dbfarm "/var/tmp/MonetDB/_PREFIX_d_/var/dbfarm" --set monet_prompt= /ufs/manegold/tmp/Tests-d10/Tests/trace.mil --dbname=Tests_tests_from_Twente_moa test.prelude < test.milM
-# 17:08:37 >  
+# 15:30:37 >  
+# 15:30:37 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build/conf/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/build/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/build/log" --set mapi_port=49332 --set sql_port=56277 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_moa test.prelude < test.milM
+# 15:30:37 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-indexA  := new(void,oid);
-valuesA := new(void,int);
-valuesD := new(void,int);
-indexB  := new(oid,oid);
-valuesB := new(oid,int);
-indexC  := new(void,oid);
-valuesC := new(void,int);
-BAindex := new(void,oid);
+# Monet Database Server V4.3.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+var indexA  := new(void,oid);
+var valuesA := new(void,int);
+var valuesD := new(void,int);
+var indexB  := new(oid,oid);
+var valuesB := new(oid,int);
+var indexC  := new(void,oid);
+var valuesC := new(void,int);
+var BAindex := new(void,oid);
 indexA.insert(nil,0@0);
 indexA.insert(nil,1@0);
 indexA.insert(nil,2@0);
@@ -64,7 +65,7 @@ valuesB.insert(403@0,3000);
 valuesB.insert(402@0,2000);
 valuesB.insert(401@0,1000);
 
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -73,25 +74,25 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesA.find(0@0).print;
+valuesA.find(0@0).print();
 [ 10 ]
-valuesD.find(0@0).print;
+valuesD.find(0@0).print();
 [ 20 ]
-valuesA.find(1@0).print;
+valuesA.find(1@0).print();
 [ 20 ]
-valuesD.find(1@0).print;
+valuesD.find(1@0).print();
 [ 30 ]
-valuesA.find(2@0).print;
+valuesA.find(2@0).print();
 [ 30 ]
-valuesD.find(2@0).print;
+valuesD.find(2@0).print();
 [ 40 ]
-valuesA.find(3@0).print;
+valuesA.find(3@0).print();
 [ 40 ]
-valuesD.find(3@0).print;
+valuesD.find(3@0).print();
 [ 10 ]
 # {<a= 10 , b= 20 >, <a= 20 , b= 30 >, <a= 30 , b= 40 >, <a= 40 , b= 10 >}
 
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -100,17 +101,17 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesD.find(0@0).print;
+valuesD.find(0@0).print();
 [ 20 ]
-valuesD.find(1@0).print;
+valuesD.find(1@0).print();
 [ 30 ]
-valuesD.find(2@0).print;
+valuesD.find(2@0).print();
 [ 40 ]
-valuesD.find(3@0).print;
+valuesD.find(3@0).print();
 [ 10 ]
 # { 20 ,  30 ,  40 ,  10 }
 
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -119,20 +120,20 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesD.find(0@0).print;
+valuesD.find(0@0).print();
 [ 20 ]
-valuesD.find(1@0).print;
+valuesD.find(1@0).print();
 [ 30 ]
-valuesD.find(2@0).print;
+valuesD.find(2@0).print();
 [ 40 ]
-valuesD.find(3@0).print;
+valuesD.find(3@0).print();
 [ 10 ]
 # { 20 ,  30 ,  40 ,  10 }
 
-_MMoper_2 := [+](valuesD,valuesA);
-_MMoper_3 := [-](valuesD,valuesA);
-_MMoper_4 := [*](_MMoper_2,_MMoper_3);
-indexA.print;
+var _MMoper_2 := [+](valuesD,valuesA);
+var _MMoper_3 := [-](valuesD,valuesA);
+var _MMoper_4 := [*](_MMoper_2,_MMoper_3);
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -141,26 +142,26 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-_MMoper_4.find(0@0).print;
+_MMoper_4.find(0@0).print();
 [ 300 ]
-_MMoper_4.find(1@0).print;
+_MMoper_4.find(1@0).print();
 [ 500 ]
-_MMoper_4.find(2@0).print;
+_MMoper_4.find(2@0).print();
 [ 700 ]
-_MMoper_4.find(3@0).print;
+_MMoper_4.find(3@0).print();
 [ -1500 ]
 # { 300 ,  500 ,  700 ,  -1500 }
 
 # 1
 
 _MMoper_2 := +(1,2);
-_MMoper_2.print;
+_MMoper_2.print();
 [ 3 ]
 #  3 
 
 # "aap"
 
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -169,17 +170,17 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesA.find(0@0).print;
+valuesA.find(0@0).print();
 [ 10 ]
-valuesA.find(1@0).print;
+valuesA.find(1@0).print();
 [ 20 ]
-valuesA.find(2@0).print;
+valuesA.find(2@0).print();
 [ 30 ]
-valuesA.find(3@0).print;
+valuesA.find(3@0).print();
 [ 40 ]
 # { 10 ,  20 ,  30 ,  40 }
 
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -188,17 +189,17 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesD.find(0@0).print;
+valuesD.find(0@0).print();
 [ 20 ]
-valuesD.find(1@0).print;
+valuesD.find(1@0).print();
 [ 30 ]
-valuesD.find(2@0).print;
+valuesD.find(2@0).print();
 [ 40 ]
-valuesD.find(3@0).print;
+valuesD.find(3@0).print();
 [ 10 ]
 # { 20 ,  30 ,  40 ,  10 }
 
-indexC.print;
+indexC.print();
 #-----------------#
 # BAT:	  tmp_30  #
 # (void)  (oid)	  #
@@ -207,18 +208,18 @@ indexC.print;
 [ nil,	  1@0	  ]
 [ nil,	  2@0	  ]
 [ nil,	  3@0	  ]
-valuesC.find(0@0).print;
+valuesC.find(0@0).print();
 [ 10 ]
-valuesC.find(1@0).print;
+valuesC.find(1@0).print();
 [ 10 ]
-valuesC.find(2@0).print;
+valuesC.find(2@0).print();
 [ 30 ]
-valuesC.find(3@0).print;
+valuesC.find(3@0).print();
 [ 50 ]
 # { 10 ,  10 ,  30 ,  50 }
 
-_MMreverse_2 := reverse(indexA);
-indexA.print;
+var _MMreverse_2 := reverse(indexA);
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -227,23 +228,23 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-reverse(select(reverse(indexB),0@0)).print;
+reverse(select(reverse(indexB),0@0)).print();
 #-----------------#
 # BAT:	  tmp_33  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  409@0	  ]
-valuesB.find(409@0).print;
+valuesB.find(409@0).print();
 [ 9000 ]
-reverse(select(reverse(indexB),1@0)).print;
+reverse(select(reverse(indexB),1@0)).print();
 #-----------------#
 # BAT:	  tmp_33  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  408@0	  ]
-valuesB.find(408@0).print;
+valuesB.find(408@0).print();
 [ 8000 ]
-reverse(select(reverse(indexB),2@0)).print;
+reverse(select(reverse(indexB),2@0)).print();
 #-----------------#
 # BAT:	  tmp_33  #
 # (oid)	  (oid)	  #
@@ -251,13 +252,13 @@ reverse(select(reverse(indexB),2@0)).print;
 [ 2@0,	  407@0	  ]
 [ 2@0,	  406@0	  ]
 [ 2@0,	  405@0	  ]
-valuesB.find(407@0).print;
+valuesB.find(407@0).print();
 [ 7000 ]
-valuesB.find(406@0).print;
+valuesB.find(406@0).print();
 [ 6000 ]
-valuesB.find(405@0).print;
+valuesB.find(405@0).print();
 [ 5000 ]
-reverse(select(reverse(indexB),3@0)).print;
+reverse(select(reverse(indexB),3@0)).print();
 #-----------------#
 # BAT:	  tmp_33  #
 # (oid)	  (oid)	  #
@@ -266,22 +267,22 @@ reverse(select(reverse(indexB),3@0)).print;
 [ 3@0,	  403@0	  ]
 [ 3@0,	  402@0	  ]
 [ 3@0,	  401@0	  ]
-valuesB.find(404@0).print;
+valuesB.find(404@0).print();
 [ 4000 ]
-valuesB.find(403@0).print;
+valuesB.find(403@0).print();
 [ 3000 ]
-valuesB.find(402@0).print;
+valuesB.find(402@0).print();
 [ 2000 ]
-valuesB.find(401@0).print;
+valuesB.find(401@0).print();
 [ 1000 ]
 # {{ 9000 }, { 8000 }, { 7000 ,  6000 ,  5000 }, { 4000 ,  3000 ,  2000 ,  1000 }}
 
-_MMsort_2 := sort(valuesA);
-_MMsort_3 := sort(valuesD);
-_MMunion_4 := union(_MMsort_2,_MMsort_3);
-_MMcastnil_5 := _MMunion_4.mark(0@0);
-_MMnilcast_6 := _MMunion_4.reverse.mark(0@0).reverse;
-indexA.print;
+var _MMsort_2 := sort(valuesA);
+var _MMsort_3 := sort(valuesD);
+var _MMunion_4 := union(_MMsort_2,_MMsort_3);
+var _MMcastnil_5 := _MMunion_4.mark(0@0);
+var _MMnilcast_6 := _MMunion_4.reverse().mark(0@0).reverse();
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -290,49 +291,49 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-reverse(select(reverse(_MMcastnil_5),0@0)).print;
+reverse(select(reverse(_MMcastnil_5),0@0)).print();
 #-----------------#
 # BAT:	  tmp_40  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 0@0,	  4@0	  ]
-_MMnilcast_6.find(0@0).print;
+_MMnilcast_6.find(0@0).print();
 [ 10 ]
-_MMnilcast_6.find(4@0).print;
+_MMnilcast_6.find(4@0).print();
 [ 20 ]
-reverse(select(reverse(_MMcastnil_5),1@0)).print;
+reverse(select(reverse(_MMcastnil_5),1@0)).print();
 #-----------------#
 # BAT:	  tmp_40  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  1@0	  ]
 [ 1@0,	  5@0	  ]
-_MMnilcast_6.find(1@0).print;
+_MMnilcast_6.find(1@0).print();
 [ 20 ]
-_MMnilcast_6.find(5@0).print;
+_MMnilcast_6.find(5@0).print();
 [ 30 ]
-reverse(select(reverse(_MMcastnil_5),2@0)).print;
+reverse(select(reverse(_MMcastnil_5),2@0)).print();
 #-----------------#
 # BAT:	  tmp_40  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 2@0,	  2@0	  ]
 [ 2@0,	  6@0	  ]
-_MMnilcast_6.find(2@0).print;
+_MMnilcast_6.find(2@0).print();
 [ 30 ]
-_MMnilcast_6.find(6@0).print;
+_MMnilcast_6.find(6@0).print();
 [ 40 ]
-reverse(select(reverse(_MMcastnil_5),3@0)).print;
+reverse(select(reverse(_MMcastnil_5),3@0)).print();
 #-----------------#
 # BAT:	  tmp_40  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 3@0,	  3@0	  ]
 [ 3@0,	  7@0	  ]
-_MMnilcast_6.find(3@0).print;
+_MMnilcast_6.find(3@0).print();
 [ 40 ]
-_MMnilcast_6.find(7@0).print;
+_MMnilcast_6.find(7@0).print();
 [ 10 ]
 # {{ 10 ,  20 }, { 20 ,  30 }, { 30 ,  40 }, { 40 ,  10 }}
 
@@ -340,8 +341,8 @@ _MMsort_2 := sort(valuesA);
 _MMsort_3 := sort(valuesD);
 _MMunion_4 := union(_MMsort_2,_MMsort_3);
 _MMcastnil_5 := _MMunion_4.mark(0@0);
-_MMnilcast_6 := _MMunion_4.reverse.mark(0@0).reverse;
-indexA.print;
+_MMnilcast_6 := _MMunion_4.reverse().mark(0@0).reverse();
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -350,61 +351,61 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-reverse(select(reverse(_MMcastnil_5),0@0)).print;
+reverse(select(reverse(_MMcastnil_5),0@0)).print();
 #-----------------#
 # BAT:	  tmp_39  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 0@0,	  4@0	  ]
-_MMnilcast_6.find(0@0).print;
+_MMnilcast_6.find(0@0).print();
 [ 10 ]
-_MMnilcast_6.find(4@0).print;
+_MMnilcast_6.find(4@0).print();
 [ 20 ]
-reverse(select(reverse(_MMcastnil_5),1@0)).print;
+reverse(select(reverse(_MMcastnil_5),1@0)).print();
 #-----------------#
 # BAT:	  tmp_39  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  1@0	  ]
 [ 1@0,	  5@0	  ]
-_MMnilcast_6.find(1@0).print;
+_MMnilcast_6.find(1@0).print();
 [ 20 ]
-_MMnilcast_6.find(5@0).print;
+_MMnilcast_6.find(5@0).print();
 [ 30 ]
-reverse(select(reverse(_MMcastnil_5),2@0)).print;
+reverse(select(reverse(_MMcastnil_5),2@0)).print();
 #-----------------#
 # BAT:	  tmp_39  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 2@0,	  2@0	  ]
 [ 2@0,	  6@0	  ]
-_MMnilcast_6.find(2@0).print;
+_MMnilcast_6.find(2@0).print();
 [ 30 ]
-_MMnilcast_6.find(6@0).print;
+_MMnilcast_6.find(6@0).print();
 [ 40 ]
-reverse(select(reverse(_MMcastnil_5),3@0)).print;
+reverse(select(reverse(_MMcastnil_5),3@0)).print();
 #-----------------#
 # BAT:	  tmp_39  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 3@0,	  3@0	  ]
 [ 3@0,	  7@0	  ]
-_MMnilcast_6.find(3@0).print;
+_MMnilcast_6.find(3@0).print();
 [ 40 ]
-_MMnilcast_6.find(7@0).print;
+_MMnilcast_6.find(7@0).print();
 [ 10 ]
 # {{< 10 >, < 20 >}, {< 20 >, < 30 >}, {< 30 >, < 40 >}, {< 40 >, < 10 >}}
 
-_MMcount_2 := count(indexA);
-_MMcount_2.print;
+var _MMcount_2 := count(indexA);
+_MMcount_2.print();
 [ 4 ]
 #  4 
 
 _MMreverse_2 := reverse(indexA);
 _MMoper_3 := {count}(indexB);
-_MMmergecast_4 := mergecast(_MMreverse_2,_MMoper_3,0);
-indexA.print;
+var _MMmergecast_4 := mergecast(_MMreverse_2,_MMoper_3,0);
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -413,18 +414,18 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-_MMmergecast_4.find(0@0).print;
+_MMmergecast_4.find(0@0).print();
 [ 1 ]
-_MMmergecast_4.find(1@0).print;
+_MMmergecast_4.find(1@0).print();
 [ 1 ]
-_MMmergecast_4.find(2@0).print;
+_MMmergecast_4.find(2@0).print();
 [ 3 ]
-_MMmergecast_4.find(3@0).print;
+_MMmergecast_4.find(3@0).print();
 [ 4 ]
 # { 1 ,  1 ,  3 ,  4 }
 
 _MMoper_2 := [+](1,valuesA);
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -433,18 +434,18 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-_MMoper_2.find(0@0).print;
+_MMoper_2.find(0@0).print();
 [ 11 ]
-_MMoper_2.find(1@0).print;
+_MMoper_2.find(1@0).print();
 [ 21 ]
-_MMoper_2.find(2@0).print;
+_MMoper_2.find(2@0).print();
 [ 31 ]
-_MMoper_2.find(3@0).print;
+_MMoper_2.find(3@0).print();
 [ 41 ]
 # { 11 ,  21 ,  31 ,  41 }
 
 _MMoper_2 := [+](valuesA,valuesA);
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -453,19 +454,19 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-_MMoper_2.find(0@0).print;
+_MMoper_2.find(0@0).print();
 [ 20 ]
-_MMoper_2.find(1@0).print;
+_MMoper_2.find(1@0).print();
 [ 40 ]
-_MMoper_2.find(2@0).print;
+_MMoper_2.find(2@0).print();
 [ 60 ]
-_MMoper_2.find(3@0).print;
+_MMoper_2.find(3@0).print();
 [ 80 ]
 # { 20 ,  40 ,  60 ,  80 }
 
 _MMoper_2 := [+](valuesB,1);
-_MMreverse_3 := reverse(indexA);
-indexA.print;
+var _MMreverse_3 := reverse(indexA);
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -474,23 +475,23 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-reverse(select(reverse(indexB),0@0)).print;
+reverse(select(reverse(indexB),0@0)).print();
 #-----------------#
 # BAT:	  tmp_42  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  409@0	  ]
-_MMoper_2.find(409@0).print;
+_MMoper_2.find(409@0).print();
 [ 9001 ]
-reverse(select(reverse(indexB),1@0)).print;
+reverse(select(reverse(indexB),1@0)).print();
 #-----------------#
 # BAT:	  tmp_42  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  408@0	  ]
-_MMoper_2.find(408@0).print;
+_MMoper_2.find(408@0).print();
 [ 8001 ]
-reverse(select(reverse(indexB),2@0)).print;
+reverse(select(reverse(indexB),2@0)).print();
 #-----------------#
 # BAT:	  tmp_42  #
 # (oid)	  (oid)	  #
@@ -498,13 +499,13 @@ reverse(select(reverse(indexB),2@0)).print;
 [ 2@0,	  407@0	  ]
 [ 2@0,	  406@0	  ]
 [ 2@0,	  405@0	  ]
-_MMoper_2.find(407@0).print;
+_MMoper_2.find(407@0).print();
 [ 7001 ]
-_MMoper_2.find(406@0).print;
+_MMoper_2.find(406@0).print();
 [ 6001 ]
-_MMoper_2.find(405@0).print;
+_MMoper_2.find(405@0).print();
 [ 5001 ]
-reverse(select(reverse(indexB),3@0)).print;
+reverse(select(reverse(indexB),3@0)).print();
 #-----------------#
 # BAT:	  tmp_42  #
 # (oid)	  (oid)	  #
@@ -513,22 +514,22 @@ reverse(select(reverse(indexB),3@0)).print;
 [ 3@0,	  403@0	  ]
 [ 3@0,	  402@0	  ]
 [ 3@0,	  401@0	  ]
-_MMoper_2.find(404@0).print;
+_MMoper_2.find(404@0).print();
 [ 4001 ]
-_MMoper_2.find(403@0).print;
+_MMoper_2.find(403@0).print();
 [ 3001 ]
-_MMoper_2.find(402@0).print;
+_MMoper_2.find(402@0).print();
 [ 2001 ]
-_MMoper_2.find(401@0).print;
+_MMoper_2.find(401@0).print();
 [ 1001 ]
 # {{ 9001 }, { 8001 }, { 7001 ,  6001 ,  5001 }, { 4001 ,  3001 ,  2001 ,  1001 }}
 
 _MMsort_2 := sort(valuesA);
 _MMsort_3 := sort(valuesC);
 _MMunion_4 := union(_MMsort_2,_MMsort_3);
-_MMnilcast_5 := _MMunion_4.reverse.mark(0@0).reverse;
-_MMreverse_6 := reverse(_MMnilcast_5);
-_MMreverse_6.print;
+var _MMnilcast_5 := _MMunion_4.reverse().mark(0@0).reverse();
+var _MMreverse_6 := reverse(_MMnilcast_5);
+_MMreverse_6.print();
 #-----------------#
 # BAT:	  tmp_36  #
 # (int)	  (void)  #
@@ -541,30 +542,30 @@ _MMreverse_6.print;
 [ 10,	  5@0	  ]
 [ 30,	  6@0	  ]
 [ 50,	  7@0	  ]
-_MMnilcast_5.find(0@0).print;
+_MMnilcast_5.find(0@0).print();
 [ 10 ]
-_MMnilcast_5.find(1@0).print;
+_MMnilcast_5.find(1@0).print();
 [ 20 ]
-_MMnilcast_5.find(2@0).print;
+_MMnilcast_5.find(2@0).print();
 [ 30 ]
-_MMnilcast_5.find(3@0).print;
+_MMnilcast_5.find(3@0).print();
 [ 40 ]
-_MMnilcast_5.find(4@0).print;
+_MMnilcast_5.find(4@0).print();
 [ 10 ]
-_MMnilcast_5.find(5@0).print;
+_MMnilcast_5.find(5@0).print();
 [ 10 ]
-_MMnilcast_5.find(6@0).print;
+_MMnilcast_5.find(6@0).print();
 [ 30 ]
-_MMnilcast_5.find(7@0).print;
+_MMnilcast_5.find(7@0).print();
 [ 50 ]
 # { 10 ,  20 ,  30 ,  40 ,  10 ,  10 ,  30 ,  50 }
 
 _MMsort_2 := sort(valuesA);
 _MMsort_3 := sort(valuesC);
 _MMunion_4 := union(_MMsort_2,_MMsort_3);
-_MMnilcast_5 := _MMunion_4.reverse.mark(0@0).reverse;
+_MMnilcast_5 := _MMunion_4.reverse().mark(0@0).reverse();
 _MMreverse_6 := reverse(_MMnilcast_5);
-_MMreverse_6.print;
+_MMreverse_6.print();
 #-----------------#
 # BAT:	  tmp_33  #
 # (int)	  (void)  #
@@ -577,42 +578,42 @@ _MMreverse_6.print;
 [ 10,	  5@0	  ]
 [ 30,	  6@0	  ]
 [ 50,	  7@0	  ]
-_MMnilcast_5.find(0@0).print;
+_MMnilcast_5.find(0@0).print();
 [ 10 ]
-_MMnilcast_5.find(1@0).print;
+_MMnilcast_5.find(1@0).print();
 [ 20 ]
-_MMnilcast_5.find(2@0).print;
+_MMnilcast_5.find(2@0).print();
 [ 30 ]
-_MMnilcast_5.find(3@0).print;
+_MMnilcast_5.find(3@0).print();
 [ 40 ]
-_MMnilcast_5.find(4@0).print;
+_MMnilcast_5.find(4@0).print();
 [ 10 ]
-_MMnilcast_5.find(5@0).print;
+_MMnilcast_5.find(5@0).print();
 [ 10 ]
-_MMnilcast_5.find(6@0).print;
+_MMnilcast_5.find(6@0).print();
 [ 30 ]
-_MMnilcast_5.find(7@0).print;
+_MMnilcast_5.find(7@0).print();
 [ 50 ]
 # {< 10 >, < 20 >, < 30 >, < 40 >, < 10 >, < 10 >, < 30 >, < 50 >}
 
 _MMreverse_2 := reverse(valuesA);
 _MMreverse_3 := reverse(valuesC);
-_MMsemijoin_4 := semijoin(_MMreverse_2,_MMreverse_3);
-_MMreverse_5 := reverse(_MMsemijoin_4);
-_MMcastnil_6 := _MMreverse_5.mark(0@0);
-_MMjoin_7 := join(indexA,_MMcastnil_6);
-_MMreverse_8 := reverse(_MMcastnil_6);
-_MMjoin_9 := join(_MMreverse_8,valuesA);
-_MMjoin_7.print;
+var _MMsemijoin_4 := semijoin(_MMreverse_2,_MMreverse_3);
+var _MMreverse_5 := reverse(_MMsemijoin_4);
+var _MMcastnil_6 := _MMreverse_5.mark(0@0);
+var _MMjoin_7 := join(indexA,_MMcastnil_6);
+var _MMreverse_8 := reverse(_MMcastnil_6);
+var _MMjoin_9 := join(_MMreverse_8,valuesA);
+_MMjoin_7.print();
 #-----------------#
 # BAT:	  tmp_45  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
-_MMjoin_9.find(0@0).print;
+_MMjoin_9.find(0@0).print();
 [ 10 ]
-_MMjoin_9.find(1@0).print;
+_MMjoin_9.find(1@0).print();
 [ 30 ]
 # { 10 ,  30 }
 
@@ -624,31 +625,31 @@ _MMcastnil_6 := _MMreverse_5.mark(0@0);
 _MMjoin_7 := join(indexA,_MMcastnil_6);
 _MMreverse_8 := reverse(_MMcastnil_6);
 _MMjoin_9 := join(_MMreverse_8,valuesA);
-_MMjoin_7.print;
+_MMjoin_7.print();
 #-----------------#
 # BAT:	  tmp_49  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
-_MMjoin_9.find(0@0).print;
+_MMjoin_9.find(0@0).print();
 [ 10 ]
-_MMjoin_9.find(1@0).print;
+_MMjoin_9.find(1@0).print();
 [ 30 ]
 # {< 10 >, < 30 >}
 
 _MMoper_2 := [=](valuesA,10);
-_MMuselect_3 := uselect(_MMoper_2,true).mark(0@0);
-_MMjoin_4 := join(indexA,_MMuselect_3);
+var _MMuselect_3 := uselect(_MMoper_2,true).mark(0@0);
+var _MMjoin_4 := join(indexA,_MMuselect_3);
 _MMreverse_5 := reverse(_MMuselect_3);
-_MMjoin_6 := join(_MMreverse_5,valuesA);
-_MMjoin_4.print;
+var _MMjoin_6 := join(_MMreverse_5,valuesA);
+_MMjoin_4.print();
 #-----------------#
 # BAT:	  tmp_45  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
-_MMjoin_6.find(0@0).print;
+_MMjoin_6.find(0@0).print();
 [ 10 ]
 # { 10 }
 
@@ -657,35 +658,35 @@ _MMuselect_3 := uselect(_MMoper_2,true).mark(0@0);
 _MMjoin_4 := join(indexA,_MMuselect_3);
 _MMreverse_5 := reverse(_MMuselect_3);
 _MMjoin_6 := join(_MMreverse_5,valuesA);
-_MMjoin_4.print;
+_MMjoin_4.print();
 #-----------------#
 # BAT:	  tmp_53  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
-_MMjoin_6.find(0@0).print;
+_MMjoin_6.find(0@0).print();
 [ 10 ]
 # {< 10 >}
 
 _MMoper_2 := [=](valuesA,10);
 _MMuselect_3 := uselect(_MMoper_2,true).mark(0@0);
 _MMoper_4 := [=](valuesA,20);
-_MMuselect_5 := uselect(_MMoper_4,true).mark(0@0);
-_MMkunion_6 := kunion(_MMuselect_3,_MMuselect_5);
-_MMcastnil_7 := _MMkunion_6.mark(0@0);
-_MMjoin_8 := join(indexA,_MMcastnil_7);
-_MMreverse_9 := reverse(_MMcastnil_7);
-_MMjoin_10 := join(_MMreverse_9,valuesA);
-_MMjoin_8.print;
+var _MMuselect_5 := uselect(_MMoper_4,true).mark(0@0);
+var _MMkunion_6 := kunion(_MMuselect_3,_MMuselect_5);
+var _MMcastnil_7 := _MMkunion_6.mark(0@0);
+var _MMjoin_8 := join(indexA,_MMcastnil_7);
+var _MMreverse_9 := reverse(_MMcastnil_7);
+var _MMjoin_10 := join(_MMreverse_9,valuesA);
+_MMjoin_8.print();
 #-----------------#
 # BAT:	  tmp_57  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
-_MMjoin_10.find(0@0).print;
+_MMjoin_10.find(0@0).print();
 [ 10 ]
-_MMjoin_10.find(1@0).print;
+_MMjoin_10.find(1@0).print();
 [ 20 ]
 # { 10 ,  20 }
 
@@ -693,21 +694,21 @@ _MMoper_2 := [>=](valuesA,10);
 _MMuselect_3 := uselect(_MMoper_2,true).mark(0@0);
 _MMoper_4 := [<=](valuesA,20);
 _MMuselect_5 := uselect(_MMoper_4,true).mark(0@0);
-_MMsemijoin_6 := semijoin(_MMuselect_3,_MMuselect_5);
+var _MMsemijoin_6 := semijoin(_MMuselect_3,_MMuselect_5);
 _MMcastnil_7 := _MMsemijoin_6.mark(0@0);
 _MMjoin_8 := join(indexA,_MMcastnil_7);
 _MMreverse_9 := reverse(_MMcastnil_7);
 _MMjoin_10 := join(_MMreverse_9,valuesA);
-_MMjoin_8.print;
+_MMjoin_8.print();
 #-----------------#
 # BAT:	  tmp_51  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
-_MMjoin_10.find(0@0).print;
+_MMjoin_10.find(0@0).print();
 [ 10 ]
-_MMjoin_10.find(1@0).print;
+_MMjoin_10.find(1@0).print();
 [ 20 ]
 # { 10 ,  20 }
 
@@ -716,8 +717,8 @@ _MMuselect_3 := uselect(_MMoper_2,true).mark(0@0);
 _MMjoin_4 := join(indexB,_MMuselect_3);
 _MMreverse_5 := reverse(_MMuselect_3);
 _MMjoin_6 := join(_MMreverse_5,valuesB);
-_MMreverse_7 := reverse(indexA);
-indexA.print;
+var _MMreverse_7 := reverse(indexA);
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -726,23 +727,23 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-reverse(select(reverse(_MMjoin_4),0@0)).print;
+reverse(select(reverse(_MMjoin_4),0@0)).print();
 #-----------------#
 # BAT:	  tmp_36  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
-_MMjoin_6.find(0@0).print;
+_MMjoin_6.find(0@0).print();
 [ 9000 ]
-reverse(select(reverse(_MMjoin_4),1@0)).print;
+reverse(select(reverse(_MMjoin_4),1@0)).print();
 #-----------------#
 # BAT:	  tmp_36  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  1@0	  ]
-_MMjoin_6.find(1@0).print;
+_MMjoin_6.find(1@0).print();
 [ 8000 ]
-reverse(select(reverse(_MMjoin_4),2@0)).print;
+reverse(select(reverse(_MMjoin_4),2@0)).print();
 #-----------------#
 # BAT:	  tmp_36  #
 # (oid)	  (oid)	  #
@@ -750,13 +751,13 @@ reverse(select(reverse(_MMjoin_4),2@0)).print;
 [ 2@0,	  2@0	  ]
 [ 2@0,	  3@0	  ]
 [ 2@0,	  4@0	  ]
-_MMjoin_6.find(2@0).print;
+_MMjoin_6.find(2@0).print();
 [ 7000 ]
-_MMjoin_6.find(3@0).print;
+_MMjoin_6.find(3@0).print();
 [ 6000 ]
-_MMjoin_6.find(4@0).print;
+_MMjoin_6.find(4@0).print();
 [ 5000 ]
-reverse(select(reverse(_MMjoin_4),3@0)).print;
+reverse(select(reverse(_MMjoin_4),3@0)).print();
 #-----------------#
 # BAT:	  tmp_36  #
 # (oid)	  (oid)	  #
@@ -764,21 +765,21 @@ reverse(select(reverse(_MMjoin_4),3@0)).print;
 [ 3@0,	  5@0	  ]
 [ 3@0,	  6@0	  ]
 [ 3@0,	  7@0	  ]
-_MMjoin_6.find(5@0).print;
+_MMjoin_6.find(5@0).print();
 [ 4000 ]
-_MMjoin_6.find(6@0).print;
+_MMjoin_6.find(6@0).print();
 [ 3000 ]
-_MMjoin_6.find(7@0).print;
+_MMjoin_6.find(7@0).print();
 [ 2000 ]
 # {{ 9000 }, { 8000 }, { 7000 ,  6000 ,  5000 }, { 4000 ,  3000 ,  2000 }}
 
 _MMreverse_2 := reverse(indexA);
 _MMoper_3 := [<=](valuesB,2000);
-_MMuselect_4 := uselect(_MMoper_3,true).mark(0@0);
-_MMjoin_5 := join(indexB,_MMuselect_4);
-_MMoper_6 := {count}(_MMjoin_5);
-_MMmergecast_7 := mergecast(_MMreverse_2,_MMoper_6,0);
-indexA.print;
+var _MMuselect_4 := uselect(_MMoper_3,true).mark(0@0);
+var _MMjoin_5 := join(indexB,_MMuselect_4);
+var _MMoper_6 := {count}(_MMjoin_5);
+var _MMmergecast_7 := mergecast(_MMreverse_2,_MMoper_6,0);
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -787,38 +788,38 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-_MMmergecast_7.find(0@0).print;
+_MMmergecast_7.find(0@0).print();
 [ 0 ]
-_MMmergecast_7.find(1@0).print;
+_MMmergecast_7.find(1@0).print();
 [ 0 ]
-_MMmergecast_7.find(2@0).print;
+_MMmergecast_7.find(2@0).print();
 [ 0 ]
-_MMmergecast_7.find(3@0).print;
+_MMmergecast_7.find(3@0).print();
 [ 2 ]
 # { 0 ,  0 ,  0 ,  2 }
 
 _MMoper_2 := [=](valuesA,30);
-_MMCTgroup_3 := [oid](CTgroup(_MMoper_2));
-_MMtunique_4 := tunique(_MMCTgroup_3).mark(0@0);
+var _MMCTgroup_3 := [oid](CTgroup(_MMoper_2));
+var _MMtunique_4 := tunique(_MMCTgroup_3).mark(0@0);
 _MMreverse_5 := reverse(_MMtunique_4);
-_MMnilcast_6 := _MMreverse_5.reverse.mark(0@0).reverse;
+_MMnilcast_6 := _MMreverse_5.reverse().mark(0@0).reverse();
 _MMjoin_7 := join(_MMnilcast_6,_MMoper_2);
 _MMreverse_8 := reverse(_MMjoin_7);
-_MMnilcast_9 := _MMreverse_8.reverse.mark(0@0).reverse;
-_MMreverse_10 := reverse(_MMnilcast_6);
-_MMjoin_11 := join(_MMCTgroup_3,_MMreverse_10);
-_MMreverse_12 := reverse(_MMjoin_11);
-_MMreverse_13 := reverse(_MMnilcast_9);
-_MMnilcast_9.print;
+var _MMnilcast_9 := _MMreverse_8.reverse().mark(0@0).reverse();
+var _MMreverse_10 := reverse(_MMnilcast_6);
+var _MMjoin_11 := join(_MMCTgroup_3,_MMreverse_10);
+var _MMreverse_12 := reverse(_MMjoin_11);
+var _MMreverse_13 := reverse(_MMnilcast_9);
+_MMnilcast_9.print();
 #-----------------#
 # BAT:	  tmp_49  #
 # (void)  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
-_MMjoin_7.find(0@0).print;
+_MMjoin_7.find(0@0).print();
 [ false ]
-reverse(select(reverse(_MMreverse_12),0@0)).print;
+reverse(select(reverse(_MMreverse_12),0@0)).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (oid)	  (oid)	  #
@@ -826,26 +827,26 @@ reverse(select(reverse(_MMreverse_12),0@0)).print;
 [ 0@0,	  0@0	  ]
 [ 0@0,	  1@0	  ]
 [ 0@0,	  3@0	  ]
-valuesA.find(0@0).print;
+valuesA.find(0@0).print();
 [ 10 ]
-valuesA.find(1@0).print;
+valuesA.find(1@0).print();
 [ 20 ]
-valuesA.find(3@0).print;
+valuesA.find(3@0).print();
 [ 40 ]
-_MMjoin_7.find(1@0).print;
+_MMjoin_7.find(1@0).print();
 [ true ]
-reverse(select(reverse(_MMreverse_12),1@0)).print;
+reverse(select(reverse(_MMreverse_12),1@0)).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  2@0	  ]
-valuesA.find(2@0).print;
+valuesA.find(2@0).print();
 [ 30 ]
 # {< false , { 10 ,  20 ,  40 }>, < true , { 30 }>}
 
 _MMreverse_2 := reverse(indexA);
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -854,29 +855,29 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesA.find(0@0).print;
+valuesA.find(0@0).print();
 [ 10 ]
-reverse(select(reverse(indexB),0@0)).print;
+reverse(select(reverse(indexB),0@0)).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  409@0	  ]
-valuesB.find(409@0).print;
+valuesB.find(409@0).print();
 [ 9000 ]
-valuesA.find(1@0).print;
+valuesA.find(1@0).print();
 [ 20 ]
-reverse(select(reverse(indexB),1@0)).print;
+reverse(select(reverse(indexB),1@0)).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  408@0	  ]
-valuesB.find(408@0).print;
+valuesB.find(408@0).print();
 [ 8000 ]
-valuesA.find(2@0).print;
+valuesA.find(2@0).print();
 [ 30 ]
-reverse(select(reverse(indexB),2@0)).print;
+reverse(select(reverse(indexB),2@0)).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (oid)	  (oid)	  #
@@ -884,15 +885,15 @@ reverse(select(reverse(indexB),2@0)).print;
 [ 2@0,	  407@0	  ]
 [ 2@0,	  406@0	  ]
 [ 2@0,	  405@0	  ]
-valuesB.find(407@0).print;
+valuesB.find(407@0).print();
 [ 7000 ]
-valuesB.find(406@0).print;
+valuesB.find(406@0).print();
 [ 6000 ]
-valuesB.find(405@0).print;
+valuesB.find(405@0).print();
 [ 5000 ]
-valuesA.find(3@0).print;
+valuesA.find(3@0).print();
 [ 40 ]
-reverse(select(reverse(indexB),3@0)).print;
+reverse(select(reverse(indexB),3@0)).print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (oid)	  (oid)	  #
@@ -901,26 +902,26 @@ reverse(select(reverse(indexB),3@0)).print;
 [ 3@0,	  403@0	  ]
 [ 3@0,	  402@0	  ]
 [ 3@0,	  401@0	  ]
-valuesB.find(404@0).print;
+valuesB.find(404@0).print();
 [ 4000 ]
-valuesB.find(403@0).print;
+valuesB.find(403@0).print();
 [ 3000 ]
-valuesB.find(402@0).print;
+valuesB.find(402@0).print();
 [ 2000 ]
-valuesB.find(401@0).print;
+valuesB.find(401@0).print();
 [ 1000 ]
 # {< 10 , { 9000 }>, < 20 , { 8000 }>, < 30 , { 7000 ,  6000 ,  5000 }>, < 40 , { 4000 ,  3000 ,  2000 ,  1000 }>}
 
-_MMnilcast_2 := indexB.reverse.mark(0@0).reverse;
+var _MMnilcast_2 := indexB.reverse().mark(0@0).reverse();
 _MMreverse_3 := reverse(indexB);
 _MMjoin_4 := join(_MMreverse_3,valuesA);
 _MMjoin_5 := join(_MMreverse_3,indexB);
 _MMcastnil_6 := _MMjoin_5.mark(0@0);
-_MMnilcast_7 := _MMjoin_5.reverse.mark(0@0).reverse;
+var _MMnilcast_7 := _MMjoin_5.reverse().mark(0@0).reverse();
 _MMjoin_8 := join(_MMnilcast_7,valuesB);
 _MMreverse_9 := reverse(indexA);
 _MMjoin_10 := join(_MMreverse_3,_MMreverse_9);
-_MMnilcast_2.print;
+_MMnilcast_2.print();
 #-----------------#
 # BAT:	  tmp_70  #
 # (void)  (oid)	  #
@@ -934,35 +935,35 @@ _MMnilcast_2.print;
 [ 6@0,	  403@0	  ]
 [ 7@0,	  402@0	  ]
 [ 8@0,	  401@0	  ]
-valuesB.find(409@0).print;
+valuesB.find(409@0).print();
 [ 9000 ]
-_MMjoin_4.find(409@0).print;
+_MMjoin_4.find(409@0).print();
 [ 10 ]
-reverse(select(reverse(_MMcastnil_6),409@0)).print;
+reverse(select(reverse(_MMcastnil_6),409@0)).print();
 #-----------------#
 # BAT:	  tmp_56  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 409@0,  0@0	  ]
-_MMjoin_8.find(0@0).print;
+_MMjoin_8.find(0@0).print();
 [ 9000 ]
-valuesB.find(408@0).print;
+valuesB.find(408@0).print();
 [ 8000 ]
-_MMjoin_4.find(408@0).print;
+_MMjoin_4.find(408@0).print();
 [ 20 ]
-reverse(select(reverse(_MMcastnil_6),408@0)).print;
+reverse(select(reverse(_MMcastnil_6),408@0)).print();
 #-----------------#
 # BAT:	  tmp_56  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 408@0,  1@0	  ]
-_MMjoin_8.find(1@0).print;
+_MMjoin_8.find(1@0).print();
 [ 8000 ]
-valuesB.find(407@0).print;
+valuesB.find(407@0).print();
 [ 7000 ]
-_MMjoin_4.find(407@0).print;
+_MMjoin_4.find(407@0).print();
 [ 30 ]
-reverse(select(reverse(_MMcastnil_6),407@0)).print;
+reverse(select(reverse(_MMcastnil_6),407@0)).print();
 #-----------------#
 # BAT:	  tmp_56  #
 # (oid)	  (oid)	  #
@@ -970,17 +971,17 @@ reverse(select(reverse(_MMcastnil_6),407@0)).print;
 [ 407@0,  2@0	  ]
 [ 407@0,  3@0	  ]
 [ 407@0,  4@0	  ]
-_MMjoin_8.find(2@0).print;
+_MMjoin_8.find(2@0).print();
 [ 7000 ]
-_MMjoin_8.find(3@0).print;
+_MMjoin_8.find(3@0).print();
 [ 6000 ]
-_MMjoin_8.find(4@0).print;
+_MMjoin_8.find(4@0).print();
 [ 5000 ]
-valuesB.find(406@0).print;
+valuesB.find(406@0).print();
 [ 6000 ]
-_MMjoin_4.find(406@0).print;
+_MMjoin_4.find(406@0).print();
 [ 30 ]
-reverse(select(reverse(_MMcastnil_6),406@0)).print;
+reverse(select(reverse(_MMcastnil_6),406@0)).print();
 #-----------------#
 # BAT:	  tmp_56  #
 # (oid)	  (oid)	  #
@@ -988,17 +989,17 @@ reverse(select(reverse(_MMcastnil_6),406@0)).print;
 [ 406@0,  5@0	  ]
 [ 406@0,  6@0	  ]
 [ 406@0,  7@0	  ]
-_MMjoin_8.find(5@0).print;
+_MMjoin_8.find(5@0).print();
 [ 7000 ]
-_MMjoin_8.find(6@0).print;
+_MMjoin_8.find(6@0).print();
 [ 6000 ]
-_MMjoin_8.find(7@0).print;
+_MMjoin_8.find(7@0).print();
 [ 5000 ]
-valuesB.find(405@0).print;
+valuesB.find(405@0).print();
 [ 5000 ]
-_MMjoin_4.find(405@0).print;
+_MMjoin_4.find(405@0).print();
 [ 30 ]
-reverse(select(reverse(_MMcastnil_6),405@0)).print;
+reverse(select(reverse(_MMcastnil_6),405@0)).print();
 #-----------------#
 # BAT:	  tmp_56  #
 # (oid)	  (oid)	  #
@@ -1006,17 +1007,17 @@ reverse(select(reverse(_MMcastnil_6),405@0)).print;
 [ 405@0,  8@0	  ]
 [ 405@0,  9@0	  ]
 [ 405@0,  10@0	  ]
-_MMjoin_8.find(8@0).print;
+_MMjoin_8.find(8@0).print();
 [ 7000 ]
-_MMjoin_8.find(9@0).print;
+_MMjoin_8.find(9@0).print();
 [ 6000 ]
-_MMjoin_8.find(10@0).print;
+_MMjoin_8.find(10@0).print();
 [ 5000 ]
-valuesB.find(404@0).print;
+valuesB.find(404@0).print();
 [ 4000 ]
-_MMjoin_4.find(404@0).print;
+_MMjoin_4.find(404@0).print();
 [ 40 ]
-reverse(select(reverse(_MMcastnil_6),404@0)).print;
+reverse(select(reverse(_MMcastnil_6),404@0)).print();
 #-----------------#
 # BAT:	  tmp_56  #
 # (oid)	  (oid)	  #
@@ -1025,19 +1026,19 @@ reverse(select(reverse(_MMcastnil_6),404@0)).print;
 [ 404@0,  12@0	  ]
 [ 404@0,  13@0	  ]
 [ 404@0,  14@0	  ]
-_MMjoin_8.find(11@0).print;
+_MMjoin_8.find(11@0).print();
 [ 4000 ]
-_MMjoin_8.find(12@0).print;
+_MMjoin_8.find(12@0).print();
 [ 3000 ]
-_MMjoin_8.find(13@0).print;
+_MMjoin_8.find(13@0).print();
 [ 2000 ]
-_MMjoin_8.find(14@0).print;
+_MMjoin_8.find(14@0).print();
 [ 1000 ]
-valuesB.find(403@0).print;
+valuesB.find(403@0).print();
 [ 3000 ]
-_MMjoin_4.find(403@0).print;
+_MMjoin_4.find(403@0).print();
 [ 40 ]
-reverse(select(reverse(_MMcastnil_6),403@0)).print;
+reverse(select(reverse(_MMcastnil_6),403@0)).print();
 #-----------------#
 # BAT:	  tmp_56  #
 # (oid)	  (oid)	  #
@@ -1046,19 +1047,19 @@ reverse(select(reverse(_MMcastnil_6),403@0)).print;
 [ 403@0,  16@0	  ]
 [ 403@0,  17@0	  ]
 [ 403@0,  18@0	  ]
-_MMjoin_8.find(15@0).print;
+_MMjoin_8.find(15@0).print();
 [ 4000 ]
-_MMjoin_8.find(16@0).print;
+_MMjoin_8.find(16@0).print();
 [ 3000 ]
-_MMjoin_8.find(17@0).print;
+_MMjoin_8.find(17@0).print();
 [ 2000 ]
-_MMjoin_8.find(18@0).print;
+_MMjoin_8.find(18@0).print();
 [ 1000 ]
-valuesB.find(402@0).print;
+valuesB.find(402@0).print();
 [ 2000 ]
-_MMjoin_4.find(402@0).print;
+_MMjoin_4.find(402@0).print();
 [ 40 ]
-reverse(select(reverse(_MMcastnil_6),402@0)).print;
+reverse(select(reverse(_MMcastnil_6),402@0)).print();
 #-----------------#
 # BAT:	  tmp_56  #
 # (oid)	  (oid)	  #
@@ -1067,19 +1068,19 @@ reverse(select(reverse(_MMcastnil_6),402@0)).print;
 [ 402@0,  20@0	  ]
 [ 402@0,  21@0	  ]
 [ 402@0,  22@0	  ]
-_MMjoin_8.find(19@0).print;
+_MMjoin_8.find(19@0).print();
 [ 4000 ]
-_MMjoin_8.find(20@0).print;
+_MMjoin_8.find(20@0).print();
 [ 3000 ]
-_MMjoin_8.find(21@0).print;
+_MMjoin_8.find(21@0).print();
 [ 2000 ]
-_MMjoin_8.find(22@0).print;
+_MMjoin_8.find(22@0).print();
 [ 1000 ]
-valuesB.find(401@0).print;
+valuesB.find(401@0).print();
 [ 1000 ]
-_MMjoin_4.find(401@0).print;
+_MMjoin_4.find(401@0).print();
 [ 40 ]
-reverse(select(reverse(_MMcastnil_6),401@0)).print;
+reverse(select(reverse(_MMcastnil_6),401@0)).print();
 #-----------------#
 # BAT:	  tmp_56  #
 # (oid)	  (oid)	  #
@@ -1088,25 +1089,25 @@ reverse(select(reverse(_MMcastnil_6),401@0)).print;
 [ 401@0,  24@0	  ]
 [ 401@0,  25@0	  ]
 [ 401@0,  26@0	  ]
-_MMjoin_8.find(23@0).print;
+_MMjoin_8.find(23@0).print();
 [ 4000 ]
-_MMjoin_8.find(24@0).print;
+_MMjoin_8.find(24@0).print();
 [ 3000 ]
-_MMjoin_8.find(25@0).print;
+_MMjoin_8.find(25@0).print();
 [ 2000 ]
-_MMjoin_8.find(26@0).print;
+_MMjoin_8.find(26@0).print();
 [ 1000 ]
 # {< 9000 , < 10 , { 9000 }>>, < 8000 , < 20 , { 8000 }>>, < 7000 , < 30 , { 7000 ,  6000 ,  5000 }>>, < 6000 , < 30 , { 7000 ,  6000 ,  5000 }>>, < 5000 , < 30 , { 7000 ,  6000 ,  5000 }>>, < 4000 , < 40 , { 4000 ,  3000 ,  2000 ,  1000 }>>, < 3000 , < 40 , { 4000 ,  3000 ,  2000 ,  1000 }>>, < 2000 , < 40 , { 4000 ,  3000 ,  2000 ,  1000 }>>, < 1000 , < 40 , { 4000 ,  3000 ,  2000 ,  1000 }>>}
 
-_MMnilcast_2 := indexB.reverse.mark(0@0).reverse;
+_MMnilcast_2 := indexB.reverse().mark(0@0).reverse();
 _MMreverse_3 := reverse(indexB);
 _MMjoin_4 := join(_MMreverse_3,indexB);
 _MMcastnil_5 := _MMjoin_4.mark(0@0);
-_MMnilcast_6 := _MMjoin_4.reverse.mark(0@0).reverse;
+_MMnilcast_6 := _MMjoin_4.reverse().mark(0@0).reverse();
 _MMjoin_7 := join(_MMnilcast_6,valuesB);
 _MMreverse_8 := reverse(indexA);
 _MMjoin_9 := join(_MMreverse_3,_MMreverse_8);
-_MMnilcast_2.print;
+_MMnilcast_2.print();
 #-----------------#
 # BAT:	  tmp_56  #
 # (void)  (oid)	  #
@@ -1120,29 +1121,29 @@ _MMnilcast_2.print;
 [ 6@0,	  403@0	  ]
 [ 7@0,	  402@0	  ]
 [ 8@0,	  401@0	  ]
-valuesB.find(409@0).print;
+valuesB.find(409@0).print();
 [ 9000 ]
-reverse(select(reverse(_MMcastnil_5),409@0)).print;
+reverse(select(reverse(_MMcastnil_5),409@0)).print();
 #-----------------#
 # BAT:	  tmp_44  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 409@0,  0@0	  ]
-_MMjoin_7.find(0@0).print;
+_MMjoin_7.find(0@0).print();
 [ 9000 ]
-valuesB.find(408@0).print;
+valuesB.find(408@0).print();
 [ 8000 ]
-reverse(select(reverse(_MMcastnil_5),408@0)).print;
+reverse(select(reverse(_MMcastnil_5),408@0)).print();
 #-----------------#
 # BAT:	  tmp_44  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 408@0,  1@0	  ]
-_MMjoin_7.find(1@0).print;
+_MMjoin_7.find(1@0).print();
 [ 8000 ]
-valuesB.find(407@0).print;
+valuesB.find(407@0).print();
 [ 7000 ]
-reverse(select(reverse(_MMcastnil_5),407@0)).print;
+reverse(select(reverse(_MMcastnil_5),407@0)).print();
 #-----------------#
 # BAT:	  tmp_44  #
 # (oid)	  (oid)	  #
@@ -1150,15 +1151,15 @@ reverse(select(reverse(_MMcastnil_5),407@0)).print;
 [ 407@0,  2@0	  ]
 [ 407@0,  3@0	  ]
 [ 407@0,  4@0	  ]
-_MMjoin_7.find(2@0).print;
+_MMjoin_7.find(2@0).print();
 [ 7000 ]
-_MMjoin_7.find(3@0).print;
+_MMjoin_7.find(3@0).print();
 [ 6000 ]
-_MMjoin_7.find(4@0).print;
+_MMjoin_7.find(4@0).print();
 [ 5000 ]
-valuesB.find(406@0).print;
+valuesB.find(406@0).print();
 [ 6000 ]
-reverse(select(reverse(_MMcastnil_5),406@0)).print;
+reverse(select(reverse(_MMcastnil_5),406@0)).print();
 #-----------------#
 # BAT:	  tmp_44  #
 # (oid)	  (oid)	  #
@@ -1166,15 +1167,15 @@ reverse(select(reverse(_MMcastnil_5),406@0)).print;
 [ 406@0,  5@0	  ]
 [ 406@0,  6@0	  ]
 [ 406@0,  7@0	  ]
-_MMjoin_7.find(5@0).print;
+_MMjoin_7.find(5@0).print();
 [ 7000 ]
-_MMjoin_7.find(6@0).print;
+_MMjoin_7.find(6@0).print();
 [ 6000 ]
-_MMjoin_7.find(7@0).print;
+_MMjoin_7.find(7@0).print();
 [ 5000 ]
-valuesB.find(405@0).print;
+valuesB.find(405@0).print();
 [ 5000 ]
-reverse(select(reverse(_MMcastnil_5),405@0)).print;
+reverse(select(reverse(_MMcastnil_5),405@0)).print();
 #-----------------#
 # BAT:	  tmp_44  #
 # (oid)	  (oid)	  #
@@ -1182,15 +1183,15 @@ reverse(select(reverse(_MMcastnil_5),405@0)).print;
 [ 405@0,  8@0	  ]
 [ 405@0,  9@0	  ]
 [ 405@0,  10@0	  ]
-_MMjoin_7.find(8@0).print;
+_MMjoin_7.find(8@0).print();
 [ 7000 ]
-_MMjoin_7.find(9@0).print;
+_MMjoin_7.find(9@0).print();
 [ 6000 ]
-_MMjoin_7.find(10@0).print;
+_MMjoin_7.find(10@0).print();
 [ 5000 ]
-valuesB.find(404@0).print;
+valuesB.find(404@0).print();
 [ 4000 ]
-reverse(select(reverse(_MMcastnil_5),404@0)).print;
+reverse(select(reverse(_MMcastnil_5),404@0)).print();
 #-----------------#
 # BAT:	  tmp_44  #
 # (oid)	  (oid)	  #
@@ -1199,17 +1200,17 @@ reverse(select(reverse(_MMcastnil_5),404@0)).print;
 [ 404@0,  12@0	  ]
 [ 404@0,  13@0	  ]
 [ 404@0,  14@0	  ]
-_MMjoin_7.find(11@0).print;
+_MMjoin_7.find(11@0).print();
 [ 4000 ]
-_MMjoin_7.find(12@0).print;
+_MMjoin_7.find(12@0).print();
 [ 3000 ]
-_MMjoin_7.find(13@0).print;
+_MMjoin_7.find(13@0).print();
 [ 2000 ]
-_MMjoin_7.find(14@0).print;
+_MMjoin_7.find(14@0).print();
 [ 1000 ]
-valuesB.find(403@0).print;
+valuesB.find(403@0).print();
 [ 3000 ]
-reverse(select(reverse(_MMcastnil_5),403@0)).print;
+reverse(select(reverse(_MMcastnil_5),403@0)).print();
 #-----------------#
 # BAT:	  tmp_44  #
 # (oid)	  (oid)	  #
@@ -1218,17 +1219,17 @@ reverse(select(reverse(_MMcastnil_5),403@0)).print;
 [ 403@0,  16@0	  ]
 [ 403@0,  17@0	  ]
 [ 403@0,  18@0	  ]
-_MMjoin_7.find(15@0).print;
+_MMjoin_7.find(15@0).print();
 [ 4000 ]
-_MMjoin_7.find(16@0).print;
+_MMjoin_7.find(16@0).print();
 [ 3000 ]
-_MMjoin_7.find(17@0).print;
+_MMjoin_7.find(17@0).print();
 [ 2000 ]
-_MMjoin_7.find(18@0).print;
+_MMjoin_7.find(18@0).print();
 [ 1000 ]
-valuesB.find(402@0).print;
+valuesB.find(402@0).print();
 [ 2000 ]
-reverse(select(reverse(_MMcastnil_5),402@0)).print;
+reverse(select(reverse(_MMcastnil_5),402@0)).print();
 #-----------------#
 # BAT:	  tmp_44  #
 # (oid)	  (oid)	  #
@@ -1237,17 +1238,17 @@ reverse(select(reverse(_MMcastnil_5),402@0)).print;
 [ 402@0,  20@0	  ]
 [ 402@0,  21@0	  ]
 [ 402@0,  22@0	  ]
-_MMjoin_7.find(19@0).print;
+_MMjoin_7.find(19@0).print();
 [ 4000 ]
-_MMjoin_7.find(20@0).print;
+_MMjoin_7.find(20@0).print();
 [ 3000 ]
-_MMjoin_7.find(21@0).print;
+_MMjoin_7.find(21@0).print();
 [ 2000 ]
-_MMjoin_7.find(22@0).print;
+_MMjoin_7.find(22@0).print();
 [ 1000 ]
-valuesB.find(401@0).print;
+valuesB.find(401@0).print();
 [ 1000 ]
-reverse(select(reverse(_MMcastnil_5),401@0)).print;
+reverse(select(reverse(_MMcastnil_5),401@0)).print();
 #-----------------#
 # BAT:	  tmp_44  #
 # (oid)	  (oid)	  #
@@ -1256,21 +1257,21 @@ reverse(select(reverse(_MMcastnil_5),401@0)).print;
 [ 401@0,  24@0	  ]
 [ 401@0,  25@0	  ]
 [ 401@0,  26@0	  ]
-_MMjoin_7.find(23@0).print;
+_MMjoin_7.find(23@0).print();
 [ 4000 ]
-_MMjoin_7.find(24@0).print;
+_MMjoin_7.find(24@0).print();
 [ 3000 ]
-_MMjoin_7.find(25@0).print;
+_MMjoin_7.find(25@0).print();
 [ 2000 ]
-_MMjoin_7.find(26@0).print;
+_MMjoin_7.find(26@0).print();
 [ 1000 ]
 # {< 9000 , { 9000 }>, < 8000 , { 8000 }>, < 7000 , { 7000 ,  6000 ,  5000 }>, < 6000 , { 7000 ,  6000 ,  5000 }>, < 5000 , { 7000 ,  6000 ,  5000 }>, < 4000 , { 4000 ,  3000 ,  2000 ,  1000 }>, < 3000 , { 4000 ,  3000 ,  2000 ,  1000 }>, < 2000 , { 4000 ,  3000 ,  2000 ,  1000 }>, < 1000 , { 4000 ,  3000 ,  2000 ,  1000 }>}
 
-_MMnilcast_2 := indexB.reverse.mark(0@0).reverse;
+_MMnilcast_2 := indexB.reverse().mark(0@0).reverse();
 _MMreverse_3 := reverse(_MMnilcast_2);
-_MMnilcast_4 := _MMreverse_3.reverse.mark(0@0).reverse;
+var _MMnilcast_4 := _MMreverse_3.reverse().mark(0@0).reverse();
 _MMjoin_5 := join(_MMnilcast_2,valuesB);
-_MMnilcast_4.print;
+_MMnilcast_4.print();
 #-----------------#
 # BAT:	  tmp_56  #
 # (void)  (void)  #
@@ -1284,31 +1285,31 @@ _MMnilcast_4.print;
 [ 6@0,	  6@0	  ]
 [ 7@0,	  7@0	  ]
 [ 8@0,	  8@0	  ]
-_MMjoin_5.find(0@0).print;
+_MMjoin_5.find(0@0).print();
 [ 9000 ]
-_MMjoin_5.find(1@0).print;
+_MMjoin_5.find(1@0).print();
 [ 8000 ]
-_MMjoin_5.find(2@0).print;
+_MMjoin_5.find(2@0).print();
 [ 7000 ]
-_MMjoin_5.find(3@0).print;
+_MMjoin_5.find(3@0).print();
 [ 6000 ]
-_MMjoin_5.find(4@0).print;
+_MMjoin_5.find(4@0).print();
 [ 5000 ]
-_MMjoin_5.find(5@0).print;
+_MMjoin_5.find(5@0).print();
 [ 4000 ]
-_MMjoin_5.find(6@0).print;
+_MMjoin_5.find(6@0).print();
 [ 3000 ]
-_MMjoin_5.find(7@0).print;
+_MMjoin_5.find(7@0).print();
 [ 2000 ]
-_MMjoin_5.find(8@0).print;
+_MMjoin_5.find(8@0).print();
 [ 1000 ]
 # { 9000 ,  8000 ,  7000 ,  6000 ,  5000 ,  4000 ,  3000 ,  2000 ,  1000 }
 
-_MMnilcast_2 := indexB.reverse.mark(0@0).reverse;
+_MMnilcast_2 := indexB.reverse().mark(0@0).reverse();
 _MMreverse_3 := reverse(_MMnilcast_2);
-_MMnilcast_4 := _MMreverse_3.reverse.mark(0@0).reverse;
+_MMnilcast_4 := _MMreverse_3.reverse().mark(0@0).reverse();
 _MMjoin_5 := join(_MMnilcast_2,valuesB);
-_MMnilcast_4.print;
+_MMnilcast_4.print();
 #-----------------#
 # BAT:	  tmp_77  #
 # (void)  (void)  #
@@ -1322,28 +1323,28 @@ _MMnilcast_4.print;
 [ 6@0,	  6@0	  ]
 [ 7@0,	  7@0	  ]
 [ 8@0,	  8@0	  ]
-_MMjoin_5.find(0@0).print;
+_MMjoin_5.find(0@0).print();
 [ 9000 ]
-_MMjoin_5.find(1@0).print;
+_MMjoin_5.find(1@0).print();
 [ 8000 ]
-_MMjoin_5.find(2@0).print;
+_MMjoin_5.find(2@0).print();
 [ 7000 ]
-_MMjoin_5.find(3@0).print;
+_MMjoin_5.find(3@0).print();
 [ 6000 ]
-_MMjoin_5.find(4@0).print;
+_MMjoin_5.find(4@0).print();
 [ 5000 ]
-_MMjoin_5.find(5@0).print;
+_MMjoin_5.find(5@0).print();
 [ 4000 ]
-_MMjoin_5.find(6@0).print;
+_MMjoin_5.find(6@0).print();
 [ 3000 ]
-_MMjoin_5.find(7@0).print;
+_MMjoin_5.find(7@0).print();
 [ 2000 ]
-_MMjoin_5.find(8@0).print;
+_MMjoin_5.find(8@0).print();
 [ 1000 ]
 # {< 9000 >, < 8000 >, < 7000 >, < 6000 >, < 5000 >, < 4000 >, < 3000 >, < 2000 >, < 1000 >}
 
 _MMreverse_2 := reverse(indexA);
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -1352,35 +1353,35 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesA.find(0@0).print;
+valuesA.find(0@0).print();
 [ 10 ]
-valuesD.find(0@0).print;
+valuesD.find(0@0).print();
 [ 20 ]
-reverse(select(reverse(indexB),0@0)).print;
+reverse(select(reverse(indexB),0@0)).print();
 #-----------------#
 # BAT:	  tmp_75  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  409@0	  ]
-valuesB.find(409@0).print;
+valuesB.find(409@0).print();
 [ 9000 ]
-valuesA.find(1@0).print;
+valuesA.find(1@0).print();
 [ 20 ]
-valuesD.find(1@0).print;
+valuesD.find(1@0).print();
 [ 30 ]
-reverse(select(reverse(indexB),1@0)).print;
+reverse(select(reverse(indexB),1@0)).print();
 #-----------------#
 # BAT:	  tmp_75  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  408@0	  ]
-valuesB.find(408@0).print;
+valuesB.find(408@0).print();
 [ 8000 ]
-valuesA.find(2@0).print;
+valuesA.find(2@0).print();
 [ 30 ]
-valuesD.find(2@0).print;
+valuesD.find(2@0).print();
 [ 40 ]
-reverse(select(reverse(indexB),2@0)).print;
+reverse(select(reverse(indexB),2@0)).print();
 #-----------------#
 # BAT:	  tmp_75  #
 # (oid)	  (oid)	  #
@@ -1388,17 +1389,17 @@ reverse(select(reverse(indexB),2@0)).print;
 [ 2@0,	  407@0	  ]
 [ 2@0,	  406@0	  ]
 [ 2@0,	  405@0	  ]
-valuesB.find(407@0).print;
+valuesB.find(407@0).print();
 [ 7000 ]
-valuesB.find(406@0).print;
+valuesB.find(406@0).print();
 [ 6000 ]
-valuesB.find(405@0).print;
+valuesB.find(405@0).print();
 [ 5000 ]
-valuesA.find(3@0).print;
+valuesA.find(3@0).print();
 [ 40 ]
-valuesD.find(3@0).print;
+valuesD.find(3@0).print();
 [ 10 ]
-reverse(select(reverse(indexB),3@0)).print;
+reverse(select(reverse(indexB),3@0)).print();
 #-----------------#
 # BAT:	  tmp_75  #
 # (oid)	  (oid)	  #
@@ -1407,17 +1408,17 @@ reverse(select(reverse(indexB),3@0)).print;
 [ 3@0,	  403@0	  ]
 [ 3@0,	  402@0	  ]
 [ 3@0,	  401@0	  ]
-valuesB.find(404@0).print;
+valuesB.find(404@0).print();
 [ 4000 ]
-valuesB.find(403@0).print;
+valuesB.find(403@0).print();
 [ 3000 ]
-valuesB.find(402@0).print;
+valuesB.find(402@0).print();
 [ 2000 ]
-valuesB.find(401@0).print;
+valuesB.find(401@0).print();
 [ 1000 ]
 # {< 10 ,  20 , { 9000 }>, < 20 ,  30 , { 8000 }>, < 30 ,  40 , { 7000 ,  6000 ,  5000 }>, < 40 ,  10 , { 4000 ,  3000 ,  2000 ,  1000 }>}
 
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -1426,17 +1427,17 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesD.find(0@0).print;
+valuesD.find(0@0).print();
 [ 20 ]
-valuesD.find(1@0).print;
+valuesD.find(1@0).print();
 [ 30 ]
-valuesD.find(2@0).print;
+valuesD.find(2@0).print();
 [ 40 ]
-valuesD.find(3@0).print;
+valuesD.find(3@0).print();
 [ 10 ]
 # { 20 ,  30 ,  40 ,  10 }
 
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -1445,17 +1446,17 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesA.find(0@0).print;
+valuesA.find(0@0).print();
 [ 10 ]
-valuesA.find(1@0).print;
+valuesA.find(1@0).print();
 [ 20 ]
-valuesA.find(2@0).print;
+valuesA.find(2@0).print();
 [ 30 ]
-valuesA.find(3@0).print;
+valuesA.find(3@0).print();
 [ 40 ]
 # { 10 ,  20 ,  30 ,  40 }
 
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -1464,13 +1465,13 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesD.find(0@0).print;
+valuesD.find(0@0).print();
 [ 20 ]
-valuesD.find(1@0).print;
+valuesD.find(1@0).print();
 [ 30 ]
-valuesD.find(2@0).print;
+valuesD.find(2@0).print();
 [ 40 ]
-valuesD.find(3@0).print;
+valuesD.find(3@0).print();
 [ 10 ]
 # { 20 ,  30 ,  40 ,  10 }
 
@@ -1480,7 +1481,7 @@ _MMjoin_4 := join(indexA,_MMuselect_3);
 _MMreverse_5 := reverse(_MMuselect_3);
 _MMjoin_6 := join(_MMreverse_5,valuesA);
 _MMjoin_7 := join(_MMreverse_5,valuesD);
-_MMjoin_4.print;
+_MMjoin_4.print();
 #-----------------#
 # BAT:	  tmp_61  #
 # (oid)	  (oid)	  #
@@ -1488,17 +1489,17 @@ _MMjoin_4.print;
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
-_MMjoin_6.find(0@0).print;
+_MMjoin_6.find(0@0).print();
 [ 10 ]
-_MMjoin_7.find(0@0).print;
+_MMjoin_7.find(0@0).print();
 [ 20 ]
-_MMjoin_6.find(1@0).print;
+_MMjoin_6.find(1@0).print();
 [ 20 ]
-_MMjoin_7.find(1@0).print;
+_MMjoin_7.find(1@0).print();
 [ 30 ]
-_MMjoin_6.find(2@0).print;
+_MMjoin_6.find(2@0).print();
 [ 30 ]
-_MMjoin_7.find(2@0).print;
+_MMjoin_7.find(2@0).print();
 [ 40 ]
 # {< 10 ,  20 >, < 20 ,  30 >, < 30 ,  40 >}
 
@@ -1508,19 +1509,19 @@ _MMjoin_4 := join(indexA,_MMuselect_3);
 _MMreverse_5 := reverse(_MMuselect_3);
 _MMjoin_6 := join(_MMreverse_5,valuesA);
 _MMjoin_7 := join(_MMreverse_5,valuesD);
-_MMjoin_4.print;
+_MMjoin_4.print();
 #-----------------#
 # BAT:	  tmp_78  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 3@0,	  0@0	  ]
-_MMjoin_6.find(0@0).print;
+_MMjoin_6.find(0@0).print();
 [ 40 ]
-_MMjoin_7.find(0@0).print;
+_MMjoin_7.find(0@0).print();
 [ 10 ]
 # {< 40 ,  10 >}
 
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -1529,17 +1530,17 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesD.find(0@0).print;
+valuesD.find(0@0).print();
 [ 20 ]
-valuesD.find(1@0).print;
+valuesD.find(1@0).print();
 [ 30 ]
-valuesD.find(2@0).print;
+valuesD.find(2@0).print();
 [ 40 ]
-valuesD.find(3@0).print;
+valuesD.find(3@0).print();
 [ 10 ]
 # { 20 ,  30 ,  40 ,  10 }
 
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -1548,20 +1549,20 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesD.find(0@0).print;
+valuesD.find(0@0).print();
 [ 20 ]
-valuesD.find(1@0).print;
+valuesD.find(1@0).print();
 [ 30 ]
-valuesD.find(2@0).print;
+valuesD.find(2@0).print();
 [ 40 ]
-valuesD.find(3@0).print;
+valuesD.find(3@0).print();
 [ 10 ]
 # { 20 ,  30 ,  40 ,  10 }
 
 _MMoper_2 := [+](valuesD,valuesA);
 _MMoper_3 := [-](valuesD,valuesA);
 _MMoper_4 := [*](_MMoper_2,_MMoper_3);
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -1570,20 +1571,20 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-_MMoper_4.find(0@0).print;
+_MMoper_4.find(0@0).print();
 [ 300 ]
-_MMoper_4.find(1@0).print;
+_MMoper_4.find(1@0).print();
 [ 500 ]
-_MMoper_4.find(2@0).print;
+_MMoper_4.find(2@0).print();
 [ 700 ]
-_MMoper_4.find(3@0).print;
+_MMoper_4.find(3@0).print();
 [ -1500 ]
 # { 300 ,  500 ,  700 ,  -1500 }
 
 _MMreverse_2 := reverse(indexB);
-_MMjoin_3 := join(_MMreverse_2,valuesA);
-_MMreverse_4 := reverse(indexA);
-indexA.print;
+var _MMjoin_3 := join(_MMreverse_2,valuesA);
+var _MMreverse_4 := reverse(indexA);
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -1592,23 +1593,23 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-reverse(select(reverse(indexB),0@0)).print;
+reverse(select(reverse(indexB),0@0)).print();
 #-----------------#
 # BAT:	  tmp_79  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  409@0	  ]
-_MMjoin_3.find(409@0).print;
+_MMjoin_3.find(409@0).print();
 [ 10 ]
-reverse(select(reverse(indexB),1@0)).print;
+reverse(select(reverse(indexB),1@0)).print();
 #-----------------#
 # BAT:	  tmp_79  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  408@0	  ]
-_MMjoin_3.find(408@0).print;
+_MMjoin_3.find(408@0).print();
 [ 20 ]
-reverse(select(reverse(indexB),2@0)).print;
+reverse(select(reverse(indexB),2@0)).print();
 #-----------------#
 # BAT:	  tmp_79  #
 # (oid)	  (oid)	  #
@@ -1616,13 +1617,13 @@ reverse(select(reverse(indexB),2@0)).print;
 [ 2@0,	  407@0	  ]
 [ 2@0,	  406@0	  ]
 [ 2@0,	  405@0	  ]
-_MMjoin_3.find(407@0).print;
+_MMjoin_3.find(407@0).print();
 [ 30 ]
-_MMjoin_3.find(406@0).print;
+_MMjoin_3.find(406@0).print();
 [ 30 ]
-_MMjoin_3.find(405@0).print;
+_MMjoin_3.find(405@0).print();
 [ 30 ]
-reverse(select(reverse(indexB),3@0)).print;
+reverse(select(reverse(indexB),3@0)).print();
 #-----------------#
 # BAT:	  tmp_79  #
 # (oid)	  (oid)	  #
@@ -1631,26 +1632,26 @@ reverse(select(reverse(indexB),3@0)).print;
 [ 3@0,	  403@0	  ]
 [ 3@0,	  402@0	  ]
 [ 3@0,	  401@0	  ]
-_MMjoin_3.find(404@0).print;
+_MMjoin_3.find(404@0).print();
 [ 40 ]
-_MMjoin_3.find(403@0).print;
+_MMjoin_3.find(403@0).print();
 [ 40 ]
-_MMjoin_3.find(402@0).print;
+_MMjoin_3.find(402@0).print();
 [ 40 ]
-_MMjoin_3.find(401@0).print;
+_MMjoin_3.find(401@0).print();
 [ 40 ]
 # {{ 10 }, { 20 }, { 30 ,  30 ,  30 }, { 40 ,  40 ,  40 ,  40 }}
 
 _MMreverse_2 := reverse(indexB);
 _MMjoin_3 := join(_MMreverse_2,valuesA);
 _MMoper_4 := [*](_MMjoin_3,100);
-_MMoper_5 := [=](valuesB,_MMoper_4);
-_MMuselect_6 := uselect(_MMoper_5,true).mark(0@0);
+var _MMoper_5 := [=](valuesB,_MMoper_4);
+var _MMuselect_6 := uselect(_MMoper_5,true).mark(0@0);
 _MMjoin_7 := join(indexB,_MMuselect_6);
 _MMreverse_8 := reverse(_MMuselect_6);
 _MMjoin_9 := join(_MMreverse_8,valuesB);
 _MMreverse_10 := reverse(indexA);
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -1659,35 +1660,35 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-reverse(select(reverse(_MMjoin_7),0@0)).print;
+reverse(select(reverse(_MMjoin_7),0@0)).print();
 #-----------------#
 # BAT:	  tmp_68  #
 # (oid)	  (oid)	  #
 #-----------------#
-reverse(select(reverse(_MMjoin_7),1@0)).print;
+reverse(select(reverse(_MMjoin_7),1@0)).print();
 #-----------------#
 # BAT:	  tmp_68  #
 # (oid)	  (oid)	  #
 #-----------------#
-reverse(select(reverse(_MMjoin_7),2@0)).print;
+reverse(select(reverse(_MMjoin_7),2@0)).print();
 #-----------------#
 # BAT:	  tmp_68  #
 # (oid)	  (oid)	  #
 #-----------------#
-reverse(select(reverse(_MMjoin_7),3@0)).print;
+reverse(select(reverse(_MMjoin_7),3@0)).print();
 #-----------------#
 # BAT:	  tmp_68  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 3@0,	  0@0	  ]
-_MMjoin_9.find(0@0).print;
+_MMjoin_9.find(0@0).print();
 [ 4000 ]
 # {{}, {}, {}, { 4000 }}
 
 _MMreverse_2 := reverse(indexB);
 _MMjoin_3 := join(_MMreverse_2,valuesC);
 _MMreverse_4 := reverse(indexA);
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -1696,23 +1697,23 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-reverse(select(reverse(indexB),0@0)).print;
+reverse(select(reverse(indexB),0@0)).print();
 #-----------------#
 # BAT:	  tmp_79  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  409@0	  ]
-_MMjoin_3.find(409@0).print;
+_MMjoin_3.find(409@0).print();
 [ 10 ]
-reverse(select(reverse(indexB),1@0)).print;
+reverse(select(reverse(indexB),1@0)).print();
 #-----------------#
 # BAT:	  tmp_79  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  408@0	  ]
-_MMjoin_3.find(408@0).print;
+_MMjoin_3.find(408@0).print();
 [ 10 ]
-reverse(select(reverse(indexB),2@0)).print;
+reverse(select(reverse(indexB),2@0)).print();
 #-----------------#
 # BAT:	  tmp_79  #
 # (oid)	  (oid)	  #
@@ -1720,13 +1721,13 @@ reverse(select(reverse(indexB),2@0)).print;
 [ 2@0,	  407@0	  ]
 [ 2@0,	  406@0	  ]
 [ 2@0,	  405@0	  ]
-_MMjoin_3.find(407@0).print;
+_MMjoin_3.find(407@0).print();
 [ 30 ]
-_MMjoin_3.find(406@0).print;
+_MMjoin_3.find(406@0).print();
 [ 30 ]
-_MMjoin_3.find(405@0).print;
+_MMjoin_3.find(405@0).print();
 [ 30 ]
-reverse(select(reverse(indexB),3@0)).print;
+reverse(select(reverse(indexB),3@0)).print();
 #-----------------#
 # BAT:	  tmp_79  #
 # (oid)	  (oid)	  #
@@ -1735,24 +1736,24 @@ reverse(select(reverse(indexB),3@0)).print;
 [ 3@0,	  403@0	  ]
 [ 3@0,	  402@0	  ]
 [ 3@0,	  401@0	  ]
-_MMjoin_3.find(404@0).print;
+_MMjoin_3.find(404@0).print();
 [ 50 ]
-_MMjoin_3.find(403@0).print;
+_MMjoin_3.find(403@0).print();
 [ 50 ]
-_MMjoin_3.find(402@0).print;
+_MMjoin_3.find(402@0).print();
 [ 50 ]
-_MMjoin_3.find(401@0).print;
+_MMjoin_3.find(401@0).print();
 [ 50 ]
 # {{ 10 }, { 10 }, { 30 ,  30 ,  30 }, { 50 ,  50 ,  50 ,  50 }}
 
 _MMreverse_2 := reverse(indexB);
 _MMjoin_3 := join(_MMreverse_2,indexB);
-_MMcastnil_4 := _MMjoin_3.mark(0@0);
-_MMnilcast_5 := _MMjoin_3.reverse.mark(0@0).reverse;
+var _MMcastnil_4 := _MMjoin_3.mark(0@0);
+_MMnilcast_5 := _MMjoin_3.reverse().mark(0@0).reverse();
 _MMjoin_6 := join(_MMnilcast_5,valuesB);
 _MMreverse_7 := reverse(indexA);
 _MMjoin_8 := join(_MMreverse_2,_MMreverse_7);
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -1761,35 +1762,35 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-reverse(select(reverse(indexB),0@0)).print;
+reverse(select(reverse(indexB),0@0)).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  409@0	  ]
-reverse(select(reverse(_MMcastnil_4),409@0)).print;
+reverse(select(reverse(_MMcastnil_4),409@0)).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 409@0,  0@0	  ]
-_MMjoin_6.find(0@0).print;
+_MMjoin_6.find(0@0).print();
 [ 9000 ]
-reverse(select(reverse(indexB),1@0)).print;
+reverse(select(reverse(indexB),1@0)).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  408@0	  ]
-reverse(select(reverse(_MMcastnil_4),408@0)).print;
+reverse(select(reverse(_MMcastnil_4),408@0)).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 408@0,  1@0	  ]
-_MMjoin_6.find(1@0).print;
+_MMjoin_6.find(1@0).print();
 [ 8000 ]
-reverse(select(reverse(indexB),2@0)).print;
+reverse(select(reverse(indexB),2@0)).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (oid)	  (oid)	  #
@@ -1797,7 +1798,7 @@ reverse(select(reverse(indexB),2@0)).print;
 [ 2@0,	  407@0	  ]
 [ 2@0,	  406@0	  ]
 [ 2@0,	  405@0	  ]
-reverse(select(reverse(_MMcastnil_4),407@0)).print;
+reverse(select(reverse(_MMcastnil_4),407@0)).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (oid)	  (oid)	  #
@@ -1805,13 +1806,13 @@ reverse(select(reverse(_MMcastnil_4),407@0)).print;
 [ 407@0,  2@0	  ]
 [ 407@0,  3@0	  ]
 [ 407@0,  4@0	  ]
-_MMjoin_6.find(2@0).print;
+_MMjoin_6.find(2@0).print();
 [ 7000 ]
-_MMjoin_6.find(3@0).print;
+_MMjoin_6.find(3@0).print();
 [ 6000 ]
-_MMjoin_6.find(4@0).print;
+_MMjoin_6.find(4@0).print();
 [ 5000 ]
-reverse(select(reverse(_MMcastnil_4),406@0)).print;
+reverse(select(reverse(_MMcastnil_4),406@0)).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (oid)	  (oid)	  #
@@ -1819,13 +1820,13 @@ reverse(select(reverse(_MMcastnil_4),406@0)).print;
 [ 406@0,  5@0	  ]
 [ 406@0,  6@0	  ]
 [ 406@0,  7@0	  ]
-_MMjoin_6.find(5@0).print;
+_MMjoin_6.find(5@0).print();
 [ 7000 ]
-_MMjoin_6.find(6@0).print;
+_MMjoin_6.find(6@0).print();
 [ 6000 ]
-_MMjoin_6.find(7@0).print;
+_MMjoin_6.find(7@0).print();
 [ 5000 ]
-reverse(select(reverse(_MMcastnil_4),405@0)).print;
+reverse(select(reverse(_MMcastnil_4),405@0)).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (oid)	  (oid)	  #
@@ -1833,13 +1834,13 @@ reverse(select(reverse(_MMcastnil_4),405@0)).print;
 [ 405@0,  8@0	  ]
 [ 405@0,  9@0	  ]
 [ 405@0,  10@0	  ]
-_MMjoin_6.find(8@0).print;
+_MMjoin_6.find(8@0).print();
 [ 7000 ]
-_MMjoin_6.find(9@0).print;
+_MMjoin_6.find(9@0).print();
 [ 6000 ]
-_MMjoin_6.find(10@0).print;
+_MMjoin_6.find(10@0).print();
 [ 5000 ]
-reverse(select(reverse(indexB),3@0)).print;
+reverse(select(reverse(indexB),3@0)).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (oid)	  (oid)	  #
@@ -1848,7 +1849,7 @@ reverse(select(reverse(indexB),3@0)).print;
 [ 3@0,	  403@0	  ]
 [ 3@0,	  402@0	  ]
 [ 3@0,	  401@0	  ]
-reverse(select(reverse(_MMcastnil_4),404@0)).print;
+reverse(select(reverse(_MMcastnil_4),404@0)).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (oid)	  (oid)	  #
@@ -1857,15 +1858,15 @@ reverse(select(reverse(_MMcastnil_4),404@0)).print;
 [ 404@0,  12@0	  ]
 [ 404@0,  13@0	  ]
 [ 404@0,  14@0	  ]
-_MMjoin_6.find(11@0).print;
+_MMjoin_6.find(11@0).print();
 [ 4000 ]
-_MMjoin_6.find(12@0).print;
+_MMjoin_6.find(12@0).print();
 [ 3000 ]
-_MMjoin_6.find(13@0).print;
+_MMjoin_6.find(13@0).print();
 [ 2000 ]
-_MMjoin_6.find(14@0).print;
+_MMjoin_6.find(14@0).print();
 [ 1000 ]
-reverse(select(reverse(_MMcastnil_4),403@0)).print;
+reverse(select(reverse(_MMcastnil_4),403@0)).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (oid)	  (oid)	  #
@@ -1874,15 +1875,15 @@ reverse(select(reverse(_MMcastnil_4),403@0)).print;
 [ 403@0,  16@0	  ]
 [ 403@0,  17@0	  ]
 [ 403@0,  18@0	  ]
-_MMjoin_6.find(15@0).print;
+_MMjoin_6.find(15@0).print();
 [ 4000 ]
-_MMjoin_6.find(16@0).print;
+_MMjoin_6.find(16@0).print();
 [ 3000 ]
-_MMjoin_6.find(17@0).print;
+_MMjoin_6.find(17@0).print();
 [ 2000 ]
-_MMjoin_6.find(18@0).print;
+_MMjoin_6.find(18@0).print();
 [ 1000 ]
-reverse(select(reverse(_MMcastnil_4),402@0)).print;
+reverse(select(reverse(_MMcastnil_4),402@0)).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (oid)	  (oid)	  #
@@ -1891,15 +1892,15 @@ reverse(select(reverse(_MMcastnil_4),402@0)).print;
 [ 402@0,  20@0	  ]
 [ 402@0,  21@0	  ]
 [ 402@0,  22@0	  ]
-_MMjoin_6.find(19@0).print;
+_MMjoin_6.find(19@0).print();
 [ 4000 ]
-_MMjoin_6.find(20@0).print;
+_MMjoin_6.find(20@0).print();
 [ 3000 ]
-_MMjoin_6.find(21@0).print;
+_MMjoin_6.find(21@0).print();
 [ 2000 ]
-_MMjoin_6.find(22@0).print;
+_MMjoin_6.find(22@0).print();
 [ 1000 ]
-reverse(select(reverse(_MMcastnil_4),401@0)).print;
+reverse(select(reverse(_MMcastnil_4),401@0)).print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (oid)	  (oid)	  #
@@ -1908,26 +1909,26 @@ reverse(select(reverse(_MMcastnil_4),401@0)).print;
 [ 401@0,  24@0	  ]
 [ 401@0,  25@0	  ]
 [ 401@0,  26@0	  ]
-_MMjoin_6.find(23@0).print;
+_MMjoin_6.find(23@0).print();
 [ 4000 ]
-_MMjoin_6.find(24@0).print;
+_MMjoin_6.find(24@0).print();
 [ 3000 ]
-_MMjoin_6.find(25@0).print;
+_MMjoin_6.find(25@0).print();
 [ 2000 ]
-_MMjoin_6.find(26@0).print;
+_MMjoin_6.find(26@0).print();
 [ 1000 ]
 # {{{ 9000 }}, {{ 8000 }}, {{ 7000 ,  6000 ,  5000 }, { 7000 ,  6000 ,  5000 }, { 7000 ,  6000 ,  5000 }}, {{ 4000 ,  3000 ,  2000 ,  1000 }, { 4000 ,  3000 ,  2000 ,  1000 }, { 4000 ,  3000 ,  2000 ,  1000 }, { 4000 ,  3000 ,  2000 ,  1000 }}}
 
 _MMreverse_2 := reverse(valuesC);
 _MMjoin_3 := join(valuesA,_MMreverse_2);
 _MMreverse_4 := reverse(_MMjoin_3);
-_MMnilcast_5 := _MMreverse_4.reverse.mark(0@0).reverse;
+_MMnilcast_5 := _MMreverse_4.reverse().mark(0@0).reverse();
 _MMjoin_6 := join(_MMnilcast_5,valuesA);
 _MMreverse_7 := reverse(_MMjoin_6);
-_MMnilcast_8 := _MMreverse_7.reverse.mark(0@0).reverse;
-_MMnilcast_9 := _MMjoin_3.reverse.mark(0@0).reverse;
+var _MMnilcast_8 := _MMreverse_7.reverse().mark(0@0).reverse();
+_MMnilcast_9 := _MMjoin_3.reverse().mark(0@0).reverse();
 _MMjoin_10 := join(_MMnilcast_9,valuesC);
-_MMnilcast_8.print;
+_MMnilcast_8.print();
 #-----------------#
 # BAT:	  tmp_83  #
 # (void)  (oid)	  #
@@ -1935,27 +1936,27 @@ _MMnilcast_8.print;
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
-_MMjoin_6.find(0@0).print;
+_MMjoin_6.find(0@0).print();
 [ 10 ]
-_MMjoin_10.find(0@0).print;
+_MMjoin_10.find(0@0).print();
 [ 10 ]
-_MMjoin_6.find(1@0).print;
+_MMjoin_6.find(1@0).print();
 [ 10 ]
-_MMjoin_10.find(1@0).print;
+_MMjoin_10.find(1@0).print();
 [ 10 ]
-_MMjoin_6.find(2@0).print;
+_MMjoin_6.find(2@0).print();
 [ 30 ]
-_MMjoin_10.find(2@0).print;
+_MMjoin_10.find(2@0).print();
 [ 30 ]
 # {< 10 ,  10 >, < 10 ,  10 >, < 30 ,  30 >}
 
 _MMreverse_2 := reverse(valuesC);
 _MMjoin_3 := join(valuesA,_MMreverse_2);
 _MMcastnil_4 := _MMjoin_3.mark(0@0);
-_MMnilcast_5 := _MMjoin_3.reverse.mark(0@0).reverse;
+_MMnilcast_5 := _MMjoin_3.reverse().mark(0@0).reverse();
 _MMjoin_6 := join(_MMnilcast_5,valuesC);
 _MMreverse_7 := reverse(indexA);
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -1964,39 +1965,39 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesA.find(0@0).print;
+valuesA.find(0@0).print();
 [ 10 ]
-reverse(select(reverse(_MMcastnil_4),0@0)).print;
+reverse(select(reverse(_MMcastnil_4),0@0)).print();
 #-----------------#
 # BAT:	  tmp_79  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 0@0,	  1@0	  ]
-_MMjoin_6.find(0@0).print;
+_MMjoin_6.find(0@0).print();
 [ 10 ]
-_MMjoin_6.find(1@0).print;
+_MMjoin_6.find(1@0).print();
 [ 10 ]
-valuesA.find(1@0).print;
+valuesA.find(1@0).print();
 [ 20 ]
-reverse(select(reverse(_MMcastnil_4),1@0)).print;
+reverse(select(reverse(_MMcastnil_4),1@0)).print();
 #-----------------#
 # BAT:	  tmp_79  #
 # (oid)	  (void)  #
 #-----------------#
-valuesA.find(2@0).print;
+valuesA.find(2@0).print();
 [ 30 ]
-reverse(select(reverse(_MMcastnil_4),2@0)).print;
+reverse(select(reverse(_MMcastnil_4),2@0)).print();
 #-----------------#
 # BAT:	  tmp_79  #
 # (oid)	  (void)  #
 #-----------------#
 [ 2@0,	  2@0	  ]
-_MMjoin_6.find(2@0).print;
+_MMjoin_6.find(2@0).print();
 [ 30 ]
-valuesA.find(3@0).print;
+valuesA.find(3@0).print();
 [ 40 ]
-reverse(select(reverse(_MMcastnil_4),3@0)).print;
+reverse(select(reverse(_MMcastnil_4),3@0)).print();
 #-----------------#
 # BAT:	  tmp_79  #
 # (oid)	  (void)  #
@@ -2007,32 +2008,32 @@ _MMreverse_2 := reverse(valuesA);
 _MMreverse_3 := reverse(valuesC);
 _MMsemijoin_4 := semijoin(_MMreverse_2,_MMreverse_3);
 _MMreverse_5 := reverse(_MMsemijoin_4);
-_MMmirror_6 := mirror(_MMreverse_5);
+var _MMmirror_6 := mirror(_MMreverse_5);
 _MMjoin_7 := join(indexA,_MMmirror_6);
 _MMjoin_8 := join(_MMmirror_6,valuesA);
-_MMjoin_7.print;
+_MMjoin_7.print();
 #-----------------#
 # BAT:	  tmp_88  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 2@0,	  2@0	  ]
-_MMjoin_8.find(0@0).print;
+_MMjoin_8.find(0@0).print();
 [ 10 ]
-_MMjoin_8.find(2@0).print;
+_MMjoin_8.find(2@0).print();
 [ 30 ]
 # { 10 ,  30 }
 
 _MMreverse_2 := reverse(valuesC);
 _MMjoin_3 := join(valuesA,_MMreverse_2);
 _MMreverse_4 := reverse(_MMjoin_3);
-_MMnilcast_5 := _MMreverse_4.reverse.mark(0@0).reverse;
+_MMnilcast_5 := _MMreverse_4.reverse().mark(0@0).reverse();
 _MMjoin_6 := join(_MMnilcast_5,valuesA);
 _MMreverse_7 := reverse(_MMjoin_6);
-_MMnilcast_8 := _MMreverse_7.reverse.mark(0@0).reverse;
-_MMnilcast_9 := _MMjoin_3.reverse.mark(0@0).reverse;
+_MMnilcast_8 := _MMreverse_7.reverse().mark(0@0).reverse();
+_MMnilcast_9 := _MMjoin_3.reverse().mark(0@0).reverse();
 _MMjoin_10 := join(_MMnilcast_9,valuesC);
-_MMnilcast_8.print;
+_MMnilcast_8.print();
 #-----------------#
 # BAT:	  tmp_84  #
 # (void)  (oid)	  #
@@ -2040,30 +2041,30 @@ _MMnilcast_8.print;
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
-_MMjoin_6.find(0@0).print;
+_MMjoin_6.find(0@0).print();
 [ 10 ]
-_MMjoin_10.find(0@0).print;
+_MMjoin_10.find(0@0).print();
 [ 10 ]
-_MMjoin_6.find(1@0).print;
+_MMjoin_6.find(1@0).print();
 [ 10 ]
-_MMjoin_10.find(1@0).print;
+_MMjoin_10.find(1@0).print();
 [ 10 ]
-_MMjoin_6.find(2@0).print;
+_MMjoin_6.find(2@0).print();
 [ 30 ]
-_MMjoin_10.find(2@0).print;
+_MMjoin_10.find(2@0).print();
 [ 30 ]
 # {<< 10 >, < 10 >>, << 10 >, < 10 >>, << 30 >, < 30 >>}
 
 _MMreverse_2 := reverse(valuesC);
 _MMjoin_3 := join(valuesA,_MMreverse_2);
 _MMreverse_4 := reverse(_MMjoin_3);
-_MMnilcast_5 := _MMreverse_4.reverse.mark(0@0).reverse;
+_MMnilcast_5 := _MMreverse_4.reverse().mark(0@0).reverse();
 _MMjoin_6 := join(_MMnilcast_5,valuesA);
 _MMreverse_7 := reverse(_MMjoin_6);
-_MMnilcast_8 := _MMreverse_7.reverse.mark(0@0).reverse;
-_MMnilcast_9 := _MMjoin_3.reverse.mark(0@0).reverse;
+_MMnilcast_8 := _MMreverse_7.reverse().mark(0@0).reverse();
+_MMnilcast_9 := _MMjoin_3.reverse().mark(0@0).reverse();
 _MMjoin_10 := join(_MMnilcast_9,valuesC);
-_MMnilcast_8.print;
+_MMnilcast_8.print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (void)  (void)  #
@@ -2071,27 +2072,27 @@ _MMnilcast_8.print;
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
-_MMjoin_6.find(0@0).print;
+_MMjoin_6.find(0@0).print();
 [ 10 ]
-_MMjoin_10.find(0@0).print;
+_MMjoin_10.find(0@0).print();
 [ 10 ]
-_MMjoin_6.find(1@0).print;
+_MMjoin_6.find(1@0).print();
 [ 10 ]
-_MMjoin_10.find(1@0).print;
+_MMjoin_10.find(1@0).print();
 [ 10 ]
-_MMjoin_6.find(2@0).print;
+_MMjoin_6.find(2@0).print();
 [ 30 ]
-_MMjoin_10.find(2@0).print;
+_MMjoin_10.find(2@0).print();
 [ 30 ]
 # {<< 10 >, < 10 >>, << 10 >, < 10 >>, << 30 >, < 30 >>}
 
 _MMreverse_2 := reverse(valuesC);
 _MMjoin_3 := join(valuesA,_MMreverse_2);
 _MMcastnil_4 := _MMjoin_3.mark(0@0);
-_MMnilcast_5 := _MMjoin_3.reverse.mark(0@0).reverse;
+_MMnilcast_5 := _MMjoin_3.reverse().mark(0@0).reverse();
 _MMjoin_6 := join(_MMnilcast_5,valuesC);
 _MMreverse_7 := reverse(indexA);
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -2100,43 +2101,43 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesA.find(0@0).print;
+valuesA.find(0@0).print();
 [ 10 ]
-reverse(select(reverse(_MMcastnil_4),0@0)).print;
+reverse(select(reverse(_MMcastnil_4),0@0)).print();
 #-----------------#
 # BAT:	  tmp_83  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 0@0,	  1@0	  ]
-_MMjoin_6.find(0@0).print;
+_MMjoin_6.find(0@0).print();
 [ 10 ]
-_MMjoin_6.find(1@0).print;
+_MMjoin_6.find(1@0).print();
 [ 10 ]
-valuesA.find(1@0).print;
+valuesA.find(1@0).print();
 [ 20 ]
-reverse(select(reverse(_MMcastnil_4),1@0)).print;
-#-------------------------#
-# BAT:	  tmp_101	  #
-# (oid)	  (void)	  #
-#-------------------------#
-valuesA.find(2@0).print;
+reverse(select(reverse(_MMcastnil_4),1@0)).print();
+#-----------------#
+# h	tmp_74	  # name
+# oid	void	  # type
+#-----------------#
+valuesA.find(2@0).print();
 [ 30 ]
-reverse(select(reverse(_MMcastnil_4),2@0)).print;
+reverse(select(reverse(_MMcastnil_4),2@0)).print();
 #-----------------#
 # BAT:	  tmp_83  #
 # (oid)	  (void)  #
 #-----------------#
 [ 2@0,	  2@0	  ]
-_MMjoin_6.find(2@0).print;
+_MMjoin_6.find(2@0).print();
 [ 30 ]
-valuesA.find(3@0).print;
+valuesA.find(3@0).print();
 [ 40 ]
-reverse(select(reverse(_MMcastnil_4),3@0)).print;
-#-------------------------#
-# BAT:	  tmp_101	  #
-# (oid)	  (void)	  #
-#-------------------------#
+reverse(select(reverse(_MMcastnil_4),3@0)).print();
+#-----------------#
+# h	tmp_74	  # name
+# oid	void	  # type
+#-----------------#
 # {<< 10 >, {< 10 >, < 10 >}>, << 20 >, {}>, << 30 >, {< 30 >}>, << 40 >, {}>}
 
 _MMreverse_2 := reverse(valuesA);
@@ -2146,16 +2147,16 @@ _MMreverse_5 := reverse(_MMsemijoin_4);
 _MMmirror_6 := mirror(_MMreverse_5);
 _MMjoin_7 := join(indexA,_MMmirror_6);
 _MMjoin_8 := join(_MMmirror_6,valuesA);
-_MMjoin_7.print;
+_MMjoin_7.print();
 #-----------------#
 # BAT:	  tmp_47  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 2@0,	  2@0	  ]
-_MMjoin_8.find(0@0).print;
+_MMjoin_8.find(0@0).print();
 [ 10 ]
-_MMjoin_8.find(2@0).print;
+_MMjoin_8.find(2@0).print();
 [ 30 ]
 # {< 10 >, < 30 >}
 
@@ -2166,30 +2167,30 @@ _MMreverse_5 := reverse(_MMsemijoin_4);
 _MMmirror_6 := mirror(_MMreverse_5);
 _MMjoin_7 := join(indexA,_MMmirror_6);
 _MMjoin_8 := join(_MMmirror_6,valuesA);
-_MMjoin_7.print;
+_MMjoin_7.print();
 #-----------------#
 # BAT:	  tmp_65  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 2@0,	  2@0	  ]
-_MMjoin_8.find(0@0).print;
+_MMjoin_8.find(0@0).print();
 [ 10 ]
-_MMjoin_8.find(2@0).print;
+_MMjoin_8.find(2@0).print();
 [ 30 ]
 # {< 10 >, < 30 >}
 
 _MMreverse_2 := reverse(valuesC);
 _MMjoin_3 := join(valuesA,_MMreverse_2);
 _MMreverse_4 := reverse(_MMjoin_3);
-_MMnilcast_5 := _MMreverse_4.reverse.mark(0@0).reverse;
+_MMnilcast_5 := _MMreverse_4.reverse().mark(0@0).reverse();
 _MMjoin_6 := join(_MMnilcast_5,valuesA);
 _MMreverse_7 := reverse(_MMjoin_6);
-_MMnilcast_8 := _MMreverse_7.reverse.mark(0@0).reverse;
+_MMnilcast_8 := _MMreverse_7.reverse().mark(0@0).reverse();
 _MMjoin_9 := join(_MMnilcast_5,valuesD);
-_MMnilcast_10 := _MMjoin_3.reverse.mark(0@0).reverse;
+var _MMnilcast_10 := _MMjoin_3.reverse().mark(0@0).reverse();
 _MMjoin_11 := join(_MMnilcast_10,valuesC);
-_MMnilcast_8.print;
+_MMnilcast_8.print();
 #-----------------#
 # BAT:	  tmp_72  #
 # (void)  (oid)	  #
@@ -2197,33 +2198,33 @@ _MMnilcast_8.print;
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
-_MMjoin_6.find(0@0).print;
+_MMjoin_6.find(0@0).print();
 [ 10 ]
-_MMjoin_9.find(0@0).print;
+_MMjoin_9.find(0@0).print();
 [ 20 ]
-_MMjoin_11.find(0@0).print;
+_MMjoin_11.find(0@0).print();
 [ 10 ]
-_MMjoin_6.find(1@0).print;
+_MMjoin_6.find(1@0).print();
 [ 10 ]
-_MMjoin_9.find(1@0).print;
+_MMjoin_9.find(1@0).print();
 [ 20 ]
-_MMjoin_11.find(1@0).print;
+_MMjoin_11.find(1@0).print();
 [ 10 ]
-_MMjoin_6.find(2@0).print;
+_MMjoin_6.find(2@0).print();
 [ 30 ]
-_MMjoin_9.find(2@0).print;
+_MMjoin_9.find(2@0).print();
 [ 40 ]
-_MMjoin_11.find(2@0).print;
+_MMjoin_11.find(2@0).print();
 [ 30 ]
 # {<< 10 ,  20 >,  10 >, << 10 ,  20 >,  10 >, << 30 ,  40 >,  30 >}
 
 _MMreverse_2 := reverse(valuesC);
 _MMjoin_3 := join(valuesA,_MMreverse_2);
 _MMcastnil_4 := _MMjoin_3.mark(0@0);
-_MMnilcast_5 := _MMjoin_3.reverse.mark(0@0).reverse;
+_MMnilcast_5 := _MMjoin_3.reverse().mark(0@0).reverse();
 _MMjoin_6 := join(_MMnilcast_5,valuesC);
 _MMreverse_7 := reverse(indexA);
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -2232,51 +2233,51 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesA.find(0@0).print;
+valuesA.find(0@0).print();
 [ 10 ]
-valuesD.find(0@0).print;
+valuesD.find(0@0).print();
 [ 20 ]
-reverse(select(reverse(_MMcastnil_4),0@0)).print;
+reverse(select(reverse(_MMcastnil_4),0@0)).print();
 #-----------------#
 # BAT:	  tmp_83  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 0@0,	  1@0	  ]
-_MMjoin_6.find(0@0).print;
+_MMjoin_6.find(0@0).print();
 [ 10 ]
-_MMjoin_6.find(1@0).print;
+_MMjoin_6.find(1@0).print();
 [ 10 ]
-valuesA.find(1@0).print;
+valuesA.find(1@0).print();
 [ 20 ]
-valuesD.find(1@0).print;
+valuesD.find(1@0).print();
 [ 30 ]
-reverse(select(reverse(_MMcastnil_4),1@0)).print;
-#-------------------------#
-# BAT:	  tmp_106	  #
-# (oid)	  (void)	  #
-#-------------------------#
-valuesA.find(2@0).print;
+reverse(select(reverse(_MMcastnil_4),1@0)).print();
+#-----------------#
+# h	tmp_69	  # name
+# oid	void	  # type
+#-----------------#
+valuesA.find(2@0).print();
 [ 30 ]
-valuesD.find(2@0).print;
+valuesD.find(2@0).print();
 [ 40 ]
-reverse(select(reverse(_MMcastnil_4),2@0)).print;
+reverse(select(reverse(_MMcastnil_4),2@0)).print();
 #-----------------#
 # BAT:	  tmp_83  #
 # (oid)	  (void)  #
 #-----------------#
 [ 2@0,	  2@0	  ]
-_MMjoin_6.find(2@0).print;
+_MMjoin_6.find(2@0).print();
 [ 30 ]
-valuesA.find(3@0).print;
+valuesA.find(3@0).print();
 [ 40 ]
-valuesD.find(3@0).print;
+valuesD.find(3@0).print();
 [ 10 ]
-reverse(select(reverse(_MMcastnil_4),3@0)).print;
-#-------------------------#
-# BAT:	  tmp_106	  #
-# (oid)	  (void)	  #
-#-------------------------#
+reverse(select(reverse(_MMcastnil_4),3@0)).print();
+#-----------------#
+# h	tmp_69	  # name
+# oid	void	  # type
+#-----------------#
 # {<< 10 ,  20 >, { 10 ,  10 }>, << 20 ,  30 >, {}>, << 30 ,  40 >, { 30 }>, << 40 ,  10 >, {}>}
 
 _MMreverse_2 := reverse(valuesA);
@@ -2287,20 +2288,20 @@ _MMmirror_6 := mirror(_MMreverse_5);
 _MMjoin_7 := join(indexA,_MMmirror_6);
 _MMjoin_8 := join(_MMmirror_6,valuesA);
 _MMjoin_9 := join(_MMmirror_6,valuesD);
-_MMjoin_7.print;
+_MMjoin_7.print();
 #-----------------#
 # BAT:	  tmp_79  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 2@0,	  2@0	  ]
-_MMjoin_8.find(0@0).print;
+_MMjoin_8.find(0@0).print();
 [ 10 ]
-_MMjoin_9.find(0@0).print;
+_MMjoin_9.find(0@0).print();
 [ 20 ]
-_MMjoin_8.find(2@0).print;
+_MMjoin_8.find(2@0).print();
 [ 30 ]
-_MMjoin_9.find(2@0).print;
+_MMjoin_9.find(2@0).print();
 [ 40 ]
 # {< 10 ,  20 >, < 30 ,  40 >}
 
@@ -2309,7 +2310,7 @@ _MMoper_3 := {count}(indexB);
 _MMmergecast_4 := mergecast(_MMreverse_2,_MMoper_3,0);
 _MMoper_5 := [*](10,_MMmergecast_4);
 _MMreverse_6 := reverse(_MMoper_5);
-valuesA.print;
+valuesA.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (void)  (int)	  #
@@ -2318,7 +2319,7 @@ valuesA.print;
 [ 1@0,	  20	  ]
 [ 2@0,	  30	  ]
 [ 3@0,	  40	  ]
-_MMreverse_6.print;
+_MMreverse_6.print();
 #-----------------#
 # BAT:	  tmp_43  #
 # (int)	  (void)  #
@@ -2328,7 +2329,7 @@ _MMreverse_6.print;
 [ 30,	  2@0	  ]
 [ 40,	  3@0	  ]
 _MMjoin_7 := join(valuesA,_MMreverse_6);
-_MMjoin_7.print;
+_MMjoin_7.print();
 #-----------------#
 # BAT:	  tmp_33  #
 # (oid)	  (oid)	  #
@@ -2337,8 +2338,8 @@ _MMjoin_7.print;
 [ 0@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-_MMjoin_7s := join(valuesA,_MMreverse_6).reverse.sort.reverse;
-_MMjoin_7s.print;
+var _MMjoin_7s := join(valuesA,_MMreverse_6).reverse().sort().reverse();
+_MMjoin_7s.print();
 #-----------------#
 # BAT:	  tmp_56  #
 # (oid)	  (oid)	  #
@@ -2348,13 +2349,13 @@ _MMjoin_7s.print;
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
 _MMreverse_8 := reverse(_MMjoin_7);
-_MMnilcast_9 := _MMreverse_8.reverse.mark(0@0).reverse;
+_MMnilcast_9 := _MMreverse_8.reverse().mark(0@0).reverse();
 _MMjoin_10 := join(_MMnilcast_9,valuesA);
-_MMreverse_11 := reverse(_MMjoin_10);
-_MMnilcast_12 := _MMreverse_11.reverse.mark(0@0).reverse;
-_MMjoin_13 := join(_MMnilcast_9,valuesD);
-_MMnilcast_14 := _MMjoin_7.reverse.mark(0@0).reverse;
-_MMnilcast_14.print;
+var _MMreverse_11 := reverse(_MMjoin_10);
+var _MMnilcast_12 := _MMreverse_11.reverse().mark(0@0).reverse();
+var _MMjoin_13 := join(_MMnilcast_9,valuesD);
+var _MMnilcast_14 := _MMjoin_7.reverse().mark(0@0).reverse();
+_MMnilcast_14.print();
 #-----------------#
 # BAT:	  tmp_56  #
 # (void)  (oid)	  #
@@ -2363,8 +2364,8 @@ _MMnilcast_14.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-_MMjoin_15 := join(_MMnilcast_14,indexB);
-_MMjoin_15.print;
+var _MMjoin_15 := join(_MMnilcast_14,indexB);
+_MMjoin_15.print();
 #-----------------#
 # BAT:	  tmp_82  #
 # (oid)	  (oid)	  #
@@ -2378,9 +2379,9 @@ _MMjoin_15.print;
 [ 3@0,	  403@0	  ]
 [ 3@0,	  402@0	  ]
 [ 3@0,	  401@0	  ]
-_MMcastnil_16 := _MMjoin_15.mark(0@0);
-_MMnilcast_17 := _MMjoin_15.reverse.mark(0@0).reverse;
-_MMnilcast_17.print;
+var _MMcastnil_16 := _MMjoin_15.mark(0@0);
+var _MMnilcast_17 := _MMjoin_15.reverse().mark(0@0).reverse();
+_MMnilcast_17.print();
 #-----------------#
 # BAT:	  tmp_78  #
 # (void)  (oid)	  #
@@ -2394,8 +2395,8 @@ _MMnilcast_17.print;
 [ 6@0,	  403@0	  ]
 [ 7@0,	  402@0	  ]
 [ 8@0,	  401@0	  ]
-_MMjoin_18 := join(_MMnilcast_17,valuesB);
-_MMjoin_18.print;
+var _MMjoin_18 := join(_MMnilcast_17,valuesB);
+_MMjoin_18.print();
 #-----------------#
 # BAT:	  tmp_95  #
 # (oid)	  (int)	  #
@@ -2409,8 +2410,8 @@ _MMjoin_18.print;
 [ 6@0,	  3000	  ]
 [ 7@0,	  2000	  ]
 [ 8@0,	  1000	  ]
-_MMjoin_19 := join(_MMnilcast_14,_MMreverse_2);
-_MMnilcast_12.print;
+var _MMjoin_19 := join(_MMnilcast_14,_MMreverse_2);
+_MMnilcast_12.print();
 #-----------------#
 # BAT:	  tmp_83  #
 # (void)  (oid)	  #
@@ -2419,79 +2420,79 @@ _MMnilcast_12.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-_MMjoin_10.find(0@0).print;
+_MMjoin_10.find(0@0).print();
 [ 10 ]
-_MMjoin_13.find(0@0).print;
+_MMjoin_13.find(0@0).print();
 [ 20 ]
-reverse(select(reverse(_MMcastnil_16),0@0)).print;
-#-----------------#
-# BAT:	  tmp_94  #
-# (oid)	  (void)  #
-#-----------------#
+reverse(select(reverse(_MMcastnil_16),0@0)).print();
+#-------------------------#
+# t	tmp_100		  # name
+# oid	void		  # type
+#-------------------------#
 [ 0@0,	  0@0	  ]
-_MMjoin_18.find(0@0).print;
+_MMjoin_18.find(0@0).print();
 [ 9000 ]
-_MMjoin_10.find(1@0).print;
+_MMjoin_10.find(1@0).print();
 [ 10 ]
-_MMjoin_13.find(1@0).print;
+_MMjoin_13.find(1@0).print();
 [ 20 ]
-reverse(select(reverse(_MMcastnil_16),1@0)).print;
-#-----------------#
-# BAT:	  tmp_94  #
-# (oid)	  (void)  #
-#-----------------#
+reverse(select(reverse(_MMcastnil_16),1@0)).print();
+#-------------------------#
+# t	tmp_100		  # name
+# oid	void		  # type
+#-------------------------#
 [ 1@0,	  1@0	  ]
-_MMjoin_18.find(1@0).print;
+_MMjoin_18.find(1@0).print();
 [ 8000 ]
-_MMjoin_10.find(2@0).print;
+_MMjoin_10.find(2@0).print();
 [ 30 ]
-_MMjoin_13.find(2@0).print;
+_MMjoin_13.find(2@0).print();
 [ 40 ]
-reverse(select(reverse(_MMcastnil_16),2@0)).print;
-#-----------------#
-# BAT:	  tmp_94  #
-# (oid)	  (void)  #
-#-----------------#
+reverse(select(reverse(_MMcastnil_16),2@0)).print();
+#-------------------------#
+# t	tmp_100		  # name
+# oid	void		  # type
+#-------------------------#
 [ 2@0,	  2@0	  ]
 [ 2@0,	  3@0	  ]
 [ 2@0,	  4@0	  ]
-_MMjoin_18.find(2@0).print;
+_MMjoin_18.find(2@0).print();
 [ 7000 ]
-_MMjoin_18.find(3@0).print;
+_MMjoin_18.find(3@0).print();
 [ 6000 ]
-_MMjoin_18.find(4@0).print;
+_MMjoin_18.find(4@0).print();
 [ 5000 ]
-_MMjoin_10.find(3@0).print;
+_MMjoin_10.find(3@0).print();
 [ 40 ]
-_MMjoin_13.find(3@0).print;
+_MMjoin_13.find(3@0).print();
 [ 10 ]
-reverse(select(reverse(_MMcastnil_16),3@0)).print;
-#-----------------#
-# BAT:	  tmp_94  #
-# (oid)	  (void)  #
-#-----------------#
+reverse(select(reverse(_MMcastnil_16),3@0)).print();
+#-------------------------#
+# t	tmp_100		  # name
+# oid	void		  # type
+#-------------------------#
 [ 3@0,	  5@0	  ]
 [ 3@0,	  6@0	  ]
 [ 3@0,	  7@0	  ]
 [ 3@0,	  8@0	  ]
-_MMjoin_18.find(5@0).print;
+_MMjoin_18.find(5@0).print();
 [ 4000 ]
-_MMjoin_18.find(6@0).print;
+_MMjoin_18.find(6@0).print();
 [ 3000 ]
-_MMjoin_18.find(7@0).print;
+_MMjoin_18.find(7@0).print();
 [ 2000 ]
-_MMjoin_18.find(8@0).print;
+_MMjoin_18.find(8@0).print();
 [ 1000 ]
 # {<< 10 ,  20 >, { 9000 }>, << 10 ,  20 >, { 8000 }>, << 30 ,  40 >, { 7000 ,  6000 ,  5000 }>, << 40 ,  10 >, { 4000 ,  3000 ,  2000 ,  1000 }>}
 
 # 1
 
 _MMoper_2 := +(1,1);
-_MMoper_2.print;
+_MMoper_2.print();
 [ 2 ]
 #  2 
 
-indexA.print;
+indexA.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (oid)	  #
@@ -2500,13 +2501,13 @@ indexA.print;
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
 [ 3@0,	  3@0	  ]
-valuesA.find(0@0).print;
+valuesA.find(0@0).print();
 [ 10 ]
-valuesA.find(1@0).print;
+valuesA.find(1@0).print();
 [ 20 ]
-valuesA.find(2@0).print;
+valuesA.find(2@0).print();
 [ 30 ]
-valuesA.find(3@0).print;
+valuesA.find(3@0).print();
 [ 40 ]
 # { 10 ,  20 ,  30 ,  40 }
 
@@ -2514,13 +2515,13 @@ _MMoper_2 := [+](valuesA,10);
 _MMreverse_3 := reverse(_MMoper_2);
 _MMjoin_4 := join(valuesA,_MMreverse_3);
 _MMreverse_5 := reverse(_MMjoin_4);
-_MMnilcast_6 := _MMreverse_5.reverse.mark(0@0).reverse;
+_MMnilcast_6 := _MMreverse_5.reverse().mark(0@0).reverse();
 _MMjoin_7 := join(_MMnilcast_6,valuesA);
 _MMreverse_8 := reverse(_MMjoin_7);
-_MMnilcast_9 := _MMreverse_8.reverse.mark(0@0).reverse;
-_MMnilcast_10 := _MMjoin_4.reverse.mark(0@0).reverse;
+_MMnilcast_9 := _MMreverse_8.reverse().mark(0@0).reverse();
+_MMnilcast_10 := _MMjoin_4.reverse().mark(0@0).reverse();
 _MMjoin_11 := join(_MMnilcast_10,_MMoper_2);
-_MMnilcast_9.print;
+_MMnilcast_9.print();
 #-----------------#
 # BAT:	  tmp_35  #
 # (void)  (void)  #
@@ -2528,17 +2529,17 @@ _MMnilcast_9.print;
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
-_MMjoin_7.find(0@0).print;
+_MMjoin_7.find(0@0).print();
 [ 20 ]
-_MMjoin_11.find(0@0).print;
+_MMjoin_11.find(0@0).print();
 [ 20 ]
-_MMjoin_7.find(1@0).print;
+_MMjoin_7.find(1@0).print();
 [ 30 ]
-_MMjoin_11.find(1@0).print;
+_MMjoin_11.find(1@0).print();
 [ 30 ]
-_MMjoin_7.find(2@0).print;
+_MMjoin_7.find(2@0).print();
 [ 40 ]
-_MMjoin_11.find(2@0).print;
+_MMjoin_11.find(2@0).print();
 [ 40 ]
 # {< 20 ,  20 >, < 30 ,  30 >, < 40 ,  40 >}
 
@@ -2546,13 +2547,13 @@ _MMoper_2 := [+](valuesA,10);
 _MMreverse_3 := reverse(_MMoper_2);
 _MMjoin_4 := join(valuesA,_MMreverse_3);
 _MMreverse_5 := reverse(_MMjoin_4);
-_MMnilcast_6 := _MMreverse_5.reverse.mark(0@0).reverse;
+_MMnilcast_6 := _MMreverse_5.reverse().mark(0@0).reverse();
 _MMjoin_7 := join(_MMnilcast_6,valuesA);
 _MMreverse_8 := reverse(_MMjoin_7);
-_MMnilcast_9 := _MMreverse_8.reverse.mark(0@0).reverse;
-_MMnilcast_10 := _MMjoin_4.reverse.mark(0@0).reverse;
+_MMnilcast_9 := _MMreverse_8.reverse().mark(0@0).reverse();
+_MMnilcast_10 := _MMjoin_4.reverse().mark(0@0).reverse();
 _MMjoin_11 := join(_MMnilcast_10,_MMoper_2);
-_MMnilcast_9.print;
+_MMnilcast_9.print();
 #-----------------#
 # BAT:	  tmp_77  #
 # (void)  (void)  #
@@ -2560,17 +2561,17 @@ _MMnilcast_9.print;
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
-_MMjoin_7.find(0@0).print;
+_MMjoin_7.find(0@0).print();
 [ 20 ]
-_MMjoin_11.find(0@0).print;
+_MMjoin_11.find(0@0).print();
 [ 20 ]
-_MMjoin_7.find(1@0).print;
+_MMjoin_7.find(1@0).print();
 [ 30 ]
-_MMjoin_11.find(1@0).print;
+_MMjoin_11.find(1@0).print();
 [ 30 ]
-_MMjoin_7.find(2@0).print;
+_MMjoin_7.find(2@0).print();
 [ 40 ]
-_MMjoin_11.find(2@0).print;
+_MMjoin_11.find(2@0).print();
 [ 40 ]
 # {< 20 ,  20 >, < 30 ,  30 >, < 40 ,  40 >}
 
@@ -2579,25 +2580,25 @@ _MMoper_3 := [+](_MMoper_2,20);
 _MMreverse_4 := reverse(_MMoper_3);
 _MMjoin_5 := join(valuesA,_MMreverse_4);
 _MMreverse_6 := reverse(_MMjoin_5);
-_MMnilcast_7 := _MMreverse_6.reverse.mark(0@0).reverse;
+_MMnilcast_7 := _MMreverse_6.reverse().mark(0@0).reverse();
 _MMjoin_8 := join(_MMnilcast_7,valuesA);
 _MMreverse_9 := reverse(_MMjoin_8);
-_MMnilcast_10 := _MMreverse_9.reverse.mark(0@0).reverse;
-_MMnilcast_11 := _MMjoin_5.reverse.mark(0@0).reverse;
-_MMjoin_12 := join(_MMnilcast_11,_MMoper_2);
-_MMnilcast_10.print;
+_MMnilcast_10 := _MMreverse_9.reverse().mark(0@0).reverse();
+var _MMnilcast_11 := _MMjoin_5.reverse().mark(0@0).reverse();
+var _MMjoin_12 := join(_MMnilcast_11,_MMoper_2);
+_MMnilcast_10.print();
 #-----------------#
 # BAT:	  tmp_65  #
 # (void)  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
-_MMjoin_8.find(0@0).print;
+_MMjoin_8.find(0@0).print();
 [ 40 ]
-_MMjoin_12.find(0@0).print;
+_MMjoin_12.find(0@0).print();
 [ 20 ]
 # {< 40 ,  20 >}
 
-quit;
+quit();
 
 # 05:09:21 >  
 # 05:09:21 >  Done.

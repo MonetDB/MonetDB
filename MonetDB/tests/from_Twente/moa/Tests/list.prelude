@@ -2,8 +2,8 @@ module("str");
 module("xtables");
 
 # kdiff work around, 27-01-1999, blokh@cs.utwente.nl
-PROC he_kdiff(BAT b1, BAT b2 ): BAT := {
-  IF ( b2.count = 0 )
+PROC he_kdiff(BAT b1, BAT b2 ): BAT {
+  IF ( b2.count() = 0 )
   {
     printf( "WARNING: second BAT is empty, using special kdiff!\n" );
     return b1.copy;
@@ -14,8 +14,8 @@ PROC he_kdiff(BAT b1, BAT b2 ): BAT := {
   }
 }
 
-PROC load_module( str mn ): void := {
-  IF ( monet_mod_nme.reverse.exist( mn ) )
+PROC load_module( str mn ): void {
+  IF ( monet_mod_nme.reverse().exist( mn ) )
   printf( "module %s already loaded\n", mn ); ELSE 
   {
     printf( "loading module %s\n", mn );
@@ -23,14 +23,14 @@ PROC load_module( str mn ): void := {
   }
 }
 
-PROC eq( any x, any y ): bit := {RETURN x = y;}
-PROC ne( any x, any y ): bit := {RETURN x != y;}
-PROC lt( any x, any y ): bit := {RETURN x < y;}
-PROC le( any x, any y ): bit := {RETURN x <= y;}
-PROC gt( any x, any y ): bit := {RETURN x > y;}
-PROC ge( any x, any y ): bit := {RETURN x >= y;}
+PROC eq( any x, any y ): bit {RETURN x = y;}
+PROC ne( any x, any y ): bit {RETURN x != y;}
+PROC lt( any x, any y ): bit {RETURN x < y;}
+PROC le( any x, any y ): bit {RETURN x <= y;}
+PROC gt( any x, any y ): bit {RETURN x > y;}
+PROC ge( any x, any y ): bit {RETURN x >= y;}
 
-PROC str_concat( BAT[oid, str] s ):str := {
+PROC str_concat( BAT[oid, str] s ):str {
   VAR cur_res := "";
   VAR first := true;
   VAR current_oid := nil;
@@ -54,16 +54,8 @@ PROC str_concat( BAT[oid, str] s ):str := {
   RETURN res;
 }
 
-PROC nilcast(bat[any,any::1] b):bat[void,any::1] := {
-  RETURN [~b].reverse.mark(0@0).reverse;
-}
-
-PROC castnil(bat[any::1,any] b):bat[any::1,void] := {
-  RETURN [b~].mark(0@0);
-}
-
 PROC sunion(bat[any::1,any::2] bat1, bat[any::1,any::2] bat2):
-  bat[any::1,any::2] := 
+  bat[any::1,any::2]
 {
     VAR result := new(htype(bat1), ttype(bat1));
     result.insert(bat1);
@@ -72,20 +64,14 @@ PROC sunion(bat[any::1,any::2] bat1, bat[any::1,any::2] bat2):
 }
 
 PROC mergecast( BAT[any::1,any] bat1, BAT[any,any::2] bat2, any::2 val)
-                        :BAT[any::1,any::2] :=
+                        :BAT[any::1,any::2]
 {
       VAR tmp := [exist](const bat2.mirror,bat1.mirror);
-      RETURN [tmp?outerjoin(bat1.mirror,bat2):val];
-}
-
-PROC cartprod( BAT[any::1,any::2] bat1, BAT[any::2,any::3] bat2)
-                        :BAT[any::1,any::3] :=
-{
-      RETURN join([bat1~1], [1~bat2]);
+      RETURN [ifthenelse](tmp,outerjoin(bat1.mirror,bat2),val);
 }
 
 PROC concat( BAT[any::1,any::2] bat1, BAT[any::1,any::2] bat2)
-  :BAT[any::1,any::2] :=
+  :BAT[any::1,any::2]
 {
     VAR result := new(htype(bat1), ttype(bat1));
     result.insert(bat1);
@@ -93,34 +79,34 @@ PROC concat( BAT[any::1,any::2] bat1, BAT[any::1,any::2] bat2)
     RETURN result;
 }
 
-PROC castval( BAT[any::1, any::2] bat1, any::3 val): BAT[any::1,any::3] := {
-    RETURN [bat1~val];
+PROC castval( BAT[any::1, any::2] bat1, any::3 val): BAT[any::1,any::3] {
+    RETURN bat1.project(val);
 }
 
-PROC copy_order( BAT[oid,any] xs, BAT[oid,any::1] y ): BAT[oid,any::1] := {
+PROC copy_order( BAT[oid,any] xs, BAT[oid,any::1] y ): BAT[oid,any::1] {
   # xs is ordered; orders y on oid following x's order
   VAR z, xy;
-  z  := xs.mark(0@0).reverse;  
-  xy := z.join(y).sort;
-  RETURN z.reverse.join(xy);
+  z  := xs.mark(0@0).reverse();  
+  xy := z.join(y).sort();
+  RETURN z.reverse().join(xy);
 }
 
-PROC cast_copy_order( BAT[oid,any] xs, BAT[oid,any::1] y ): BAT[void,any::1] := {
+PROC cast_copy_order( BAT[oid,any] xs, BAT[oid,any::1] y ): BAT[void,any::1] {
   # xs is ordered; orders y on oid following x's order
   VAR z;
-  z  := xs.mark(nil).reverse;
-  RETURN z.join(y).reverse.mark(0@0).reverse;
+  z  := xs.mark(nil).reverse();
+  RETURN z.join(y).reverse().mark(0@0).reverse();
 }
 
-PROC CTOgroup( bat[oid,any] x ): bat[oid,int] := {
-  RETURN join( x, x.reverse.kunique.sort.number );
+PROC CTOgroup( bat[oid,any] x ): bat[oid,int] {
+  RETURN join( x, x.reverse().kunique().sort().number() );
 }
 
-PROC CTOgroup( bat[oid,any] x, bat[oid,any] y ): bat[oid,int] := {
+PROC CTOgroup( bat[oid,any] x, bat[oid,any] y ): bat[oid,int] {
   VAR nx, ny;
   nx := CTOgroup( x );
   ny := CTOgroup( y );
-  RETURN [+]([<<](nx,20),ny).reverse.sort.reverse;
+  RETURN [+]([<<](nx,20),ny).reverse().sort().reverse();
 }
 
 #
@@ -128,15 +114,15 @@ PROC CTOgroup( bat[oid,any] x, bat[oid,any] y ): bat[oid,int] := {
 # to a new table
 #
 
-PROC CTOgroup_last( bat[any::1,any::2] x ): bat[any::1,int] := {
-  RETURN x.reverse.sort.reverse.number.sort;
+PROC CTOgroup_last( bat[any::1,any::2] x ): bat[any::1,int] {
+  RETURN x.reverse().sort().reverse().number().sort();
 }
 
-PROC CTOgroup_last( bat[oid,any] x, bat[oid,any] y ): bat[oid,int] := {
+PROC CTOgroup_last( bat[oid,any] x, bat[oid,any] y ): bat[oid,int] {
   VAR nx, ny;
   nx := CTOgroup( x );
   ny := CTOgroup_last( y );
-  RETURN [+]([<<](nx,20),ny).reverse.sort.reverse;
+  RETURN [+]([<<](nx,20),ny).reverse().sort().reverse();
 }
 
 #
@@ -144,7 +130,7 @@ PROC CTOgroup_last( bat[oid,any] x, bat[oid,any] y ): bat[oid,int] := {
 #
 
 PROC lexsort_intern( bat[oid,any::1] xv, bat[oid,any::2] yv ): 
-  bat[any::1,any::2] := 
+  bat[any::1,any::2]
 {
   VAR x,y, cn, rel;
 
@@ -152,35 +138,20 @@ PROC lexsort_intern( bat[oid,any::1] xv, bat[oid,any::2] yv ):
   cn := CTOgroup_last( xv, yv );
   rel := cn.mark(0@0);
   # propagate order
-  x := xv.reverse.join(rel).reverse;
-  y := yv.reverse.join(rel).reverse;
+  x := xv.reverse().join(rel).reverse();
+  y := yv.reverse().join(rel).reverse();
 
-  RETURN join(x.reverse, y);
+  RETURN join(x.reverse(), y);
 }
 
 #
 # split and then sort
 #
 
-PROC lexsort( bat[any::1, any::2] XY ): bat[any::1,any::2] := {
+PROC lexsort( bat[any::1, any::2] XY ): bat[any::1,any::2] {
   #split XY
   VAR xv, yv;
-  xv := XY.mark(0@0).reverse;
-  yv := XY.reverse.mark(0@0).reverse;
+  xv := XY.mark(0@0).reverse();
+  yv := XY.reverse().mark(0@0).reverse();
   RETURN lexsort_intern( xv, yv );
 }
-
-PROC mygenjoin(op1, op2, fcn) := {
-    VAR result := new(htype(op1), htype(op2));
-    htype(op1).print;
-    htype(op2).print;
-    op1@batloop() {
-        VAR h := $h;
-        VAR t := $t;
-        op2@batloop() {
-            if ((*fcn)(t, $t)) insert(result, h, $h);
-        }
-    }
-    RETURN result;
-}
-
