@@ -66,11 +66,6 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 	rec = stmt->ImplRowDescr->descRec + nCol;
 
 	switch (nFieldIdentifier) {
-	case SQL_COLUMN_LENGTH:
-	case SQL_COLUMN_PRECISION:
-	case SQL_COLUMN_SCALE:
-		/* XXX needs to be implemented */
-		break;
 	case SQL_DESC_AUTO_UNIQUE_VALUE: /* SQL_COLUMN_AUTO_INCREMENT */
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_auto_unique_value;
@@ -115,6 +110,7 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 			   pszValue, nValueLengthMax, pnValueLength,
 			   addStmtError, stmt);
 		break;
+	case SQL_COLUMN_LENGTH:
 	case SQL_DESC_LENGTH:
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_length;
@@ -151,10 +147,12 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_octet_length;
 		break;
+	case SQL_COLUMN_PRECISION:
 	case SQL_DESC_PRECISION:
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_precision;
 		break;
+	case SQL_COLUMN_SCALE:
 	case SQL_DESC_SCALE:
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_scale;
@@ -226,6 +224,17 @@ SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLColAttributeA(SQLHSTMT hStmt, SQLSMALLINT nCol,
+		 SQLSMALLINT nFieldIdentifier, SQLPOINTER pszValue,
+		 SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength,
+		 SQLPOINTER pnValue)
+{
+	return SQLColAttribute(hStmt, (SQLUSMALLINT) nCol,
+			       (SQLUSMALLINT) nFieldIdentifier, pszValue,
+			       nValueLengthMax, pnValueLength, pnValue);
+}
+
+SQLRETURN SQL_API
 SQLColAttributeW(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 		 SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue,
 		 SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength,
@@ -271,7 +280,7 @@ SQLColAttributeW(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 	rc = SQLColAttribute_(stmt, nCol, nFieldIdentifier, ptr, n, &n, pnValue);
 	
 	if (ptr != pszValue)
-		fixWcharOut(rc, ptr, n, pszValue, nValueLengthMax, pnValueLength, addStmtError, stmt);
+		fixWcharOut(rc, ptr, n, pszValue, nValueLengthMax, pnValueLength, 2, addStmtError, stmt);
 	else if (pnValueLength)
 		*pnValueLength = n;
 

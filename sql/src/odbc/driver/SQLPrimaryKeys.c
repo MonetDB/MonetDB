@@ -136,6 +136,18 @@ SQLPrimaryKeys(SQLHSTMT hStmt,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLPrimaryKeysA(SQLHSTMT hStmt,
+		SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+		SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+		SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
+{
+	return SQLPrimaryKeys(hStmt,
+			      szCatalogName, nCatalogNameLength,
+			      szSchemaName, nSchemaNameLength,
+			      szTableName, nTableNameLength);
+}
+
+SQLRETURN SQL_API
 SQLPrimaryKeysW(SQLHSTMT hStmt,
 		SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
 		SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,

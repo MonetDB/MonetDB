@@ -93,6 +93,14 @@ SQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLSetConnectAttrA(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
+		   SQLPOINTER ValuePtr, SQLINTEGER StringLength)
+{
+	return SQLSetConnectAttr(ConnectionHandle, Attribute,
+				 ValuePtr, StringLength);
+}
+
+SQLRETURN SQL_API
 SQLSetConnectAttrW(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 		   SQLPOINTER ValuePtr, SQLINTEGER StringLength)
 {
@@ -115,6 +123,8 @@ SQLSetConnectAttrW(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 	case SQL_ATTR_CURRENT_CATALOG:
 	case SQL_ATTR_TRACEFILE:
 	case SQL_ATTR_TRANSLATE_LIB:
+		if (StringLength > 0) /* convert from bytes to characters */
+			StringLength /= 2;
 		fixWcharIn(ValuePtr, StringLength, ptr, addDbcError, dbc, return SQL_ERROR);
 		n = SQL_NTS;
 		break;

@@ -190,6 +190,20 @@ SQLStatistics(SQLHSTMT hStmt,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLStatisticsA(SQLHSTMT hStmt,
+	       SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	       SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	       SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
+	       SQLUSMALLINT nUnique, SQLUSMALLINT nReserved)
+{
+	return SQLStatistics(hStmt,
+			     szCatalogName, nCatalogNameLength,
+			     szSchemaName, nSchemaNameLength,
+			     szTableName, nTableNameLength,
+			     nUnique, nReserved);
+}
+
+SQLRETURN SQL_API
 SQLStatisticsW(SQLHSTMT hStmt,
 	       SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
 	       SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,

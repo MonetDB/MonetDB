@@ -70,6 +70,29 @@ static const char *columntypes[NCOLUMNS] = {
 	"smallint"
 };
 
+/* column lengths of result set */
+static const int columnlengths[NCOLUMNS] = {
+	128,
+	  5,
+	 10,
+	128,
+	128,
+	128,
+	  5,
+	  5,
+	  5,
+	  5,
+	  5,
+	  5,
+	128,
+	  5,
+	  5,
+	  5,
+	  5,
+	 10,
+	  5
+};
+
 static struct types {
 	const char *type_name;
 	const int data_type;	/* concise type */
@@ -759,6 +782,24 @@ static struct types {
 	}
 };
 
+/* find some info about a type given the concise type */
+const char *
+ODBCGetTypeInfo(int concise_type, int *data_type, int *sql_data_type,
+		int *sql_datetime_sub)
+{
+	struct types *t;
+
+	for (t = types; t < &types[sizeof(types) / sizeof(types[0])]; t++) {
+		if (t->data_type == concise_type) {
+			*data_type = t->data_type;
+			*sql_data_type = t->sql_data_type;
+			*sql_datetime_sub = t->sql_datetime_sub;
+			return t->type_name;
+		}
+	}
+	return NULL;
+}
+
 static SQLRETURN
 SQLGetTypeInfo_(ODBCStmt *stmt, SQLSMALLINT nSqlDataType)
 {
@@ -943,7 +984,8 @@ SQLGetTypeInfo_(ODBCStmt *stmt, SQLSMALLINT nSqlDataType)
 		}
 	}
 
-	mapi_virtual_result(stmt->hdl, NCOLUMNS, columnnames, columntypes, NULL, i, tuples);
+	mapi_virtual_result(stmt->hdl, NCOLUMNS, columnnames, columntypes,
+			    columnlengths, i, tuples);
 
 	return ODBCInitResult(stmt);
 }
@@ -967,6 +1009,12 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 }
 
 #ifdef WITH_WCHAR
+SQLRETURN SQL_API
+SQLGetTypeInfoA(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
+{
+	return SQLGetTypeInfo(hStmt, nSqlDataType);
+}
+
 SQLRETURN SQL_API
 SQLGetTypeInfoW(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 {

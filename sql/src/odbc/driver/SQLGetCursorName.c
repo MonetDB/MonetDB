@@ -60,6 +60,14 @@ SQLGetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLGetCursorNameA(SQLHSTMT hStmt, SQLCHAR *szCursor,
+		  SQLSMALLINT nCursorMaxLength, SQLSMALLINT *pnCursorLength)
+{
+	return SQLGetCursorName(hStmt, szCursor,
+				nCursorMaxLength, pnCursorLength);
+}
+
+SQLRETURN SQL_API
 SQLGetCursorNameW(SQLHSTMT hStmt, SQLWCHAR *szCursor,
 		  SQLSMALLINT nCursorMaxLength, SQLSMALLINT *pnCursorLength)
 {
@@ -81,7 +89,7 @@ SQLGetCursorNameW(SQLHSTMT hStmt, SQLWCHAR *szCursor,
 
 	rc = SQLGetCursorName_(stmt, cursor, nCursorMaxLength, &n);
 
-	fixWcharOut(rc, cursor, n, szCursor, nCursorMaxLength, pnCursorLength, addStmtError, stmt);
+	fixWcharOut(rc, cursor, n, szCursor, nCursorMaxLength, pnCursorLength, 1, addStmtError, stmt);
 
 	return rc;
 }

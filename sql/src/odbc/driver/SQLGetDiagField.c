@@ -152,6 +152,16 @@ SQLGetDiagField(SQLSMALLINT HandleType, SQLHANDLE Handle,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLGetDiagFieldA(SQLSMALLINT HandleType, SQLHANDLE Handle,
+		 SQLSMALLINT RecNumber, SQLSMALLINT DiagIdentifier,
+		 SQLPOINTER DiagInfo, SQLSMALLINT BufferLength,
+		 SQLSMALLINT *StringLength)
+{
+	return SQLGetDiagField(HandleType, Handle, RecNumber, DiagIdentifier,
+			       DiagInfo, BufferLength, StringLength);
+}
+
+SQLRETURN SQL_API
 SQLGetDiagFieldW(SQLSMALLINT HandleType, SQLHANDLE Handle,
 		 SQLSMALLINT RecNumber, SQLSMALLINT DiagIdentifier,
 		 SQLPOINTER DiagInfo, SQLSMALLINT BufferLength,

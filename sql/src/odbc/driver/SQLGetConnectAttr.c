@@ -114,6 +114,14 @@ SQLGetConnectAttr(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLGetConnectAttrA(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
+		   SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+{
+	return SQLGetConnectAttr(hDbc, Attribute, ValuePtr,
+				 BufferLength, StringLength);
+}
+
+SQLRETURN SQL_API
 SQLGetConnectAttrW(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 		   SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
@@ -149,8 +157,9 @@ SQLGetConnectAttrW(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 	if (ptr != ValuePtr) {
 		SQLSMALLINT nn = (SQLSMALLINT) n;
 
-		fixWcharOut(rc, ptr, nn, ValuePtr, BufferLength, StringLength, addDbcError, dbc);
-	}
+		fixWcharOut(rc, ptr, nn, ValuePtr, BufferLength, StringLength, 2, addDbcError, dbc);
+	} else if (StringLength)
+		*StringLength = n;
 
 	return rc;
 }

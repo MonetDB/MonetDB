@@ -100,6 +100,20 @@ SQLProcedureColumns(SQLHSTMT hStmt,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLProcedureColumnsA(SQLHSTMT hStmt,
+		     SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+		     SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+		     SQLCHAR *szProcName, SQLSMALLINT nProcNameLength,
+		     SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+{
+	return SQLProcedureColumns(hStmt,
+				   szCatalogName, nCatalogNameLength,
+				   szSchemaName, nSchemaNameLength,
+				   szProcName, nProcNameLength,
+				   szColumnName, nColumnNameLength);
+}
+
+SQLRETURN SQL_API
 SQLProcedureColumnsW(SQLHSTMT hStmt,
 		     SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
 		     SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,

@@ -47,6 +47,15 @@ SQLError(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLErrorA(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState,
+	  SQLINTEGER *pfNativeError, SQLCHAR *szErrorMsg,
+	  SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)
+{
+	return SQLError(hEnv, hDbc, hStmt, szSqlState, pfNativeError,
+			szErrorMsg, nErrorMsgMax, pcbErrorMsg);
+}
+
+SQLRETURN SQL_API
 SQLErrorW(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLWCHAR *szSqlState,
 	  SQLINTEGER *pfNativeError, SQLWCHAR *szErrorMsg,
 	  SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)

@@ -173,6 +173,15 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLConnectA(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
+	    SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD,
+	    SQLSMALLINT nPWDLength)
+{
+	return SQLConnect(hDbc, szDataSource, nDataSourceLength,
+			  szUID, nUIDLength, szPWD, nPWDLength);
+}
+
+SQLRETURN SQL_API
 SQLConnectW(SQLHDBC hDbc,
 	    SQLWCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	    SQLWCHAR *szUID, SQLSMALLINT nUIDLength,

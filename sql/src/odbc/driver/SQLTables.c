@@ -218,6 +218,20 @@ SQLTables(SQLHSTMT hStmt,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLTablesA(SQLHSTMT hStmt,
+	   SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
+	   SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
+	   SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
+	   SQLCHAR *szTableType, SQLSMALLINT nTableTypeLength)
+{
+	return SQLTables(hStmt,
+			 szCatalogName, nCatalogNameLength,
+			 szSchemaName, nSchemaNameLength,
+			 szTableName, nTableNameLength,
+			 szTableType, nTableTypeLength);
+}
+
+SQLRETURN SQL_API
 SQLTablesW(SQLHSTMT hStmt,
 	   SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
 	   SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,

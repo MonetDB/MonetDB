@@ -412,7 +412,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		sValue = "Y";
 		break;
 	case SQL_IDENTIFIER_CASE:
-		nValue = SQL_IC_UPPER;
+		nValue = SQL_IC_LOWER;
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_IDENTIFIER_QUOTE_CHAR:
@@ -548,7 +548,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		sValue = "N";
 		break;
 	case SQL_QUOTED_IDENTIFIER_CASE:
-		nValue = SQL_IC_MIXED;
+		nValue = SQL_IC_SENSITIVE;
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_SPECIAL_CHARACTERS:
@@ -688,6 +688,14 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLGetInfoA(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
+	    SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
+{
+	return SQLGetInfo(hDbc, nInfoType,
+			  pInfoValue, nInfoValueMax, pnLength);
+}
+
+SQLRETURN SQL_API
 SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	    SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
 {
@@ -758,7 +766,7 @@ SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	rc = SQLGetInfo_(dbc, nInfoType, ptr, n, &n);
 
 	if (ptr != pInfoValue)
-		fixWcharOut(rc, ptr, n, pInfoValue, nInfoValueMax, pnLength, addDbcError, dbc);
+		fixWcharOut(rc, ptr, n, pInfoValue, nInfoValueMax, pnLength, 2, addDbcError, dbc);
 	else if (pnLength)
 		*pnLength = n;
 

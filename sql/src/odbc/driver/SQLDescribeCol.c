@@ -122,6 +122,18 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLDescribeColA(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
+		SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength,
+		SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize,
+		SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
+{
+	return SQLDescribeCol(hStmt, nCol,
+			      szColName, nColNameMax, pnColNameLength,
+			      pnSQLDataType, pnColSize, pnDecDigits,
+			      pnNullable);
+}
+
+SQLRETURN SQL_API
 SQLDescribeColW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLWCHAR *szColName,
 		SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength,
 		SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize,
@@ -147,7 +159,7 @@ SQLDescribeColW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLWCHAR *szColName,
 			     &n, pnSQLDataType, pnColSize,
 			     pnDecDigits, pnNullable);
 
-	fixWcharOut(rc, colname, n, szColName, nColNameMax, pnColNameLength, addStmtError, stmt);
+	fixWcharOut(rc, colname, n, szColName, nColNameMax, pnColNameLength, 1, addStmtError, stmt);
 
 	return rc;
 }

@@ -256,6 +256,15 @@ SQLGetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLGetDescFieldA(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
+		 SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
+		 SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+{
+	return SQLGetDescField(DescriptorHandle, RecordNumber, FieldIdentifier,
+			       Value, BufferLength, StringLength);
+}
+
+SQLRETURN SQL_API
 SQLGetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 		SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
 		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
@@ -301,8 +310,9 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 	if (ptr != Value) {
 		SQLSMALLINT nn = (SQLSMALLINT) n;
 
-		fixWcharOut(rc, ptr, nn, Value, BufferLength, StringLength, addDescError, desc);
-	}
+		fixWcharOut(rc, ptr, nn, Value, BufferLength, StringLength, 2, addDescError, desc);
+	} else if (StringLength)
+		*StringLength = n;
 
 	return rc;
 }

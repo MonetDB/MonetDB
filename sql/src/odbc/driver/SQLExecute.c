@@ -49,6 +49,17 @@ static struct msql_types {
 	{0, 0},			/* sentinel */
 };
 
+int
+ODBCConciseType(const char *name)
+{
+	struct msql_types *p;
+
+	for (p = msql_types; p->name; p++)
+		if (strcmp(p->name, name) == 0)
+			return p->concise_type;
+	return 0;
+}
+
 SQLRETURN
 ODBCInitResult(ODBCStmt *stmt)
 {
@@ -121,8 +132,8 @@ ODBCInitResult(ODBCStmt *stmt)
 
 	rec = stmt->ImplRowDescr->descRec + 1;
 	for (i = 0; i < nrCols; i++) {
-		struct msql_types *p;
 		struct sql_types *tp;
+		int concise_type;
 		char *s;
 
 		rec->sql_desc_auto_unique_value = SQL_FALSE;
@@ -149,26 +160,22 @@ ODBCInitResult(ODBCStmt *stmt)
 
 		s = mapi_get_type(hdl, i);
 		rec->sql_desc_type_name = (SQLCHAR *) strdup(s ? s : "");
-		for (p = msql_types; p->name; p++) {
-			if (strcmp(p->name, s) == 0) {
-				for (tp = ODBC_sql_types; tp->concise_type; tp++)
-					if (p->concise_type == tp->concise_type)
-						break;
-				rec->sql_desc_concise_type = tp->concise_type;
-				rec->sql_desc_type = tp->type;
-				rec->sql_desc_datetime_interval_code = tp->code;
-				if (tp->precision != UNAFFECTED)
-					rec->sql_desc_precision = tp->precision;
-				if (tp->datetime_interval_precision != UNAFFECTED)
-					rec->sql_desc_datetime_interval_precision = tp->datetime_interval_precision;
-				if (tp->scale != UNAFFECTED)
-					rec->sql_desc_scale = tp->scale;
-				rec->sql_desc_fixed_prec_scale = tp->fixed;
-				rec->sql_desc_num_prec_radix = tp->radix;
-				rec->sql_desc_unsigned = tp->radix == 0 ? SQL_TRUE : SQL_FALSE;
+		concise_type = ODBCConciseType(s);
+		for (tp = ODBC_sql_types; tp->concise_type; tp++)
+			if (concise_type == tp->concise_type)
 				break;
-			}
-		}
+		rec->sql_desc_concise_type = tp->concise_type;
+		rec->sql_desc_type = tp->type;
+		rec->sql_desc_datetime_interval_code = tp->code;
+		if (tp->precision != UNAFFECTED)
+			rec->sql_desc_precision = tp->precision;
+		if (tp->datetime_interval_precision != UNAFFECTED)
+			rec->sql_desc_datetime_interval_precision = tp->datetime_interval_precision;
+		if (tp->scale != UNAFFECTED)
+			rec->sql_desc_scale = tp->scale;
+		rec->sql_desc_fixed_prec_scale = tp->fixed;
+		rec->sql_desc_num_prec_radix = tp->radix;
+		rec->sql_desc_unsigned = tp->radix == 0 ? SQL_TRUE : SQL_FALSE;
 
 		if (rec->sql_desc_concise_type == SQL_CHAR ||
 		    rec->sql_desc_concise_type == SQL_VARCHAR)

@@ -295,6 +295,15 @@ SQLSetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLSetDescFieldA(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
+		 SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
+		 SQLINTEGER BufferLength)
+{
+	return SQLSetDescField(DescriptorHandle, RecordNumber, FieldIdentifier,
+			       Value, BufferLength);
+}
+
+SQLRETURN SQL_API
 SQLSetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 		 SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
 		 SQLINTEGER BufferLength)
@@ -316,6 +325,8 @@ SQLSetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 
 	switch (FieldIdentifier) {
 	case SQL_DESC_NAME:
+		if (BufferLength > 0) /* convert from bytes to characters */
+			BufferLength /= 2;
 		fixWcharIn(Value, BufferLength, ptr, addDescError, desc, return SQL_ERROR);
 		n = SQL_NTS;
 		break;

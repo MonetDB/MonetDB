@@ -161,6 +161,14 @@ SQLGetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLGetStmtAttrA(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
+		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+{
+	return SQLGetStmtAttr(hStmt, Attribute,
+			      Value, BufferLength, StringLength);
+}
+
+SQLRETURN SQL_API
 SQLGetStmtAttrW(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {

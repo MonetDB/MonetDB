@@ -69,6 +69,12 @@ SQLGetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
+SQLGetConnectOptionA(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
+{
+	return SQLGetConnectOption(hDbc, nOption, pvParam);
+}
+
+SQLRETURN SQL_API
 SQLGetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 {
 	ODBCDbc * dbc = (ODBCDbc *) hDbc;
@@ -103,7 +109,7 @@ SQLGetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 		SQLSMALLINT n = strlen((char *) ptr);
 		SQLSMALLINT *nullp = NULL;
 
-		fixWcharOut(rc, ptr, n, pvParam, SQL_MAX_OPTION_STRING_LENGTH, nullp, addDbcError, dbc);
+		fixWcharOut(rc, ptr, n, pvParam, SQL_MAX_OPTION_STRING_LENGTH, nullp, 2, addDbcError, dbc);
 	}
 
 	return rc;

@@ -168,6 +168,10 @@ SQLRETURN ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 		    int row);
 SQLRETURN ODBCFreeStmt_(ODBCStmt *stmt);
 SQLRETURN ODBCInitResult(ODBCStmt *stmt);
+const char * ODBCGetTypeInfo(int concise_type, int *data_type,
+			     int *sql_data_type, int *sql_datetime_sub);
+int ODBCConciseType(const char *name);
+void ODBCResetStmt(ODBCStmt *stmt);
 SQLRETURN SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 			    SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
 			    SQLSMALLINT ParameterType, SQLUINTEGER ColumnSize,
