@@ -423,7 +423,7 @@ public class MonetConnection implements Connection {
 		this.autoCommit = autoCommit;
 
 		String error =
-			sendIndependantCommand("SSET autocommit = " + autoCommit + ";");
+			sendIndependantCommand("SSET auto_commit = " + autoCommit + ";");
 		if (error != null) throw new SQLException(error);
 	}
 
