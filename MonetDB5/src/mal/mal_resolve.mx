@@ -614,8 +614,9 @@ In those cases, the detailed analysis is performed upon an actual call.
         if( moduleId(p) && (i=findVariable(mb,moduleName(p))) != -1 &&
                     getVarType(mb,i) == TYPE_str){
             for(i=0;i<p->retc;i++) setFixed(mb,p->argv[i]);
-            p->typechk= TYPE_UNKNOWN;return;
-        } else
+            p->typechk= TYPE_UNKNOWN;
+            return;
+        } 
         if( functionId(p) && (i=findVariable(mb,functionName(p))) != -1 &&
                     getVarType(mb,i) == TYPE_str){
             for(i=0;i<p->retc;i++) setFixed(mb,p->argv[i]);

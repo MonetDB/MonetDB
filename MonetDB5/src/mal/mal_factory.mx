@@ -299,10 +299,8 @@ str callFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller,
 #ifdef DEBUG_MAL_FACTORY
     stream_printf(GDKout,"factoryMgr called\n");
 #endif
-    (void) cntxt; (void) pci; 
-    (void) mbcaller;
     plim = plants + lastPlant;
-    /* the lookup can be avoided by handing out the index
+    /* the lookup can be largely avoided by handing out the index
        upon factory definition. todo
     */
     for(pl = plants; pl< plim; pl++)
@@ -372,6 +370,7 @@ Plant newPlant(MalBlkPtr mb){
     p->id = plantId++;
     p->pc = 1;  /* where we start */
     p->stk = newGlobalStack(mb->vsize);
+    p->stk->blk= mb;
     p->stk->keepAlive= TRUE;
     return p;
 }
