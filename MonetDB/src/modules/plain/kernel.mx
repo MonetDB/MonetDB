@@ -1113,9 +1113,10 @@ int CMDcall(Cntxt stk, YYSTREE lt, ValPtr res){
 	}
 	res->vtype = TYPE_void;
 	if (i == 0) {
-		Myypostprocess(t);
-		i = interpret(stk, t, res);
-        	CATCHRET(stk,t,res,i);
+		if ((i = Myypostprocess(t)) >= 0) {
+			i = interpret(stk, t, res);
+        		CATCHRET(stk,t,res,i);
+		}
 	}
 	t->yyval.vtype = TYPE_void;
 	Myyfree(t);

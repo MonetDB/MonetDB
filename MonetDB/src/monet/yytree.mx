@@ -75,7 +75,9 @@ void Myylogout(YYSTREE t) {
 
 	if (++yyoid == 0) yyoid=2; 
 	yyid = yyoid;
-	Myypostprocess(t); 
+	if (Myypostprocess(t) < 0) {
+		GDKerror("Myylogout: Myypostprocess(t) failed.\n");
+	}
 	yyid = 1;
 
 	for (t1=yyroot; t1; t1=t1->next) {
@@ -306,6 +308,7 @@ YYSTREE Myycopy(YYSTREE t) {
 @c
 
 int Myypostprocess(YYSTREE lt) {
+	int rtrn = 0;
 @-
 Rewrite TOK_ASSIGNOP in the non-multiplexed case into a simple assignment.
 In this way, we do not have to interpret it. It can follow the normal route.
@@ -316,6 +319,7 @@ In this way, we do not have to interpret it. It can follow the normal route.
 			    lt->token = 0;
 			    GDKerror("Myypostprocess: must %s= to a variable\n"
 				, lt->yyval.val.sval);
+			    rtrn = -1;
 			} else {
 			    YYSTREE var = Myylognode(0,0);
 			    YYSTREE op = Myylognode(0,0);
@@ -354,7 +358,9 @@ We store the parameter evaluation space size in the ival of the exec node.
 		if (lt->yyval.vtype == TYPE_void) {
 			deref = lt->yysons[0];
 		    	params = lt->yysons[1];
-                	Myypostprocess(deref);
+                	if (Myypostprocess(deref) < 0) {
+                		rtrn = -1;
+                	}
 		} else {
 			deref = NULL;
 		    	params = Myynode(0,0);
@@ -363,7 +369,13 @@ We store the parameter evaluation space size in the ival of the exec node.
 			params->yyval.vtype = TYPE_void;
 		}
 		exec->yyval.vtype = TYPE_int;
-		exec->yyval.val.ival = Myypostprocess(params)*(int)sizeof(ValRecord);
+		exec->yyval.val.ival = Myypostprocess(params);
+               	if (exec->yyval.val.ival < 0) {
+			rtrn = -1;
+               		exec->yyval.val.ival = 0;
+               	} else {
+               		exec->yyval.val.ival *= (int)sizeof(ValRecord);
+               	}
 		lt->cnt = 0;
 		lt->last = lt->overflow = NULL;
 		lt->free.yyid = yyid;
@@ -382,13 +394,15 @@ otherwise just count the number of sons (i.e. parameters below 'params' nodes)
 			for(i=0; i<t->cnt; i++)
 				if (t->yysons[i]) {
 					range_sons |= (t->yysons[i]->token == TOK_RANGETEMP);
-					Myypostprocess(t->yysons[i]);
+		                	if (Myypostprocess(t->yysons[i]) < 0) {
+                				rtrn = -1;
+                			}
 					sons++;
 				}
 		}  while ((t = t->overflow) != NULL);
-		return range_sons?MAXPARAMS:sons;
+		return (rtrn<0)?rtrn:(range_sons?MAXPARAMS:sons);
 	} 
-        return 0;
+        return rtrn;
 }
  
 @- Run-Time Proc Trees

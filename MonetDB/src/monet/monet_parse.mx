@@ -650,7 +650,11 @@ extern YYSTREE yysugar(YYSTREE node);
 %%
 program:
 	monet_session
-	{ ll_client->tree = $1; Myypostprocess(ll_client->tree); ll_lastval=0; }
+	{ ll_client->tree = $1; 
+	  if (Myypostprocess(ll_client->tree) < 0) {
+		ll_clrids(); yyerrok; yyclearin; ll_lastval=0; return 1;
+	  }
+	  ll_lastval=0; }
     |   error ';' { ll_clrids(); yyerrok; yyclearin; ll_lastval=0; return 1; }
     |   /* empty */
     ;
