@@ -128,9 +128,9 @@ Redirected script evaluations.
 @mal
 command cwd(s:str):str= CMDsetCwd
 	comment "Return the current working directory. Set it to a new one.";
-pattern eval(s:str):nil= CMDevalString
+pattern eval(s:str):void= CMDevalString
 	comment "Evaluate a string representing a MAL program";
-pattern source(f:str):nil= CMDevalFile
+pattern source(f:str):void= CMDevalFile
 	comment "Load and executed a (local) file";
 @-
 The prime scheme to inspect the MAL interpreter status is to use

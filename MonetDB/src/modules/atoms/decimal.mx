@@ -78,7 +78,7 @@ command >(v:decimal,w:decimal):bit = decimal_GT
 command >=(v:decimal,w:decimal):bit = decimal_GE
 	comment "Equality of two decimals";
 
-command decimal (value:nil) : decimal = decimal_from_nil
+command decimal (value:void) : decimal = decimal_from_nil
      comment "Translates a nil into a decimal.";
 
 command decimal (value:str) : decimal = decimal_from_str
@@ -195,8 +195,8 @@ command istenfold(d:decimal) : bit = decimal_istenfold
 command decimal_minrepeat(x:int) : void = decimal_setminrepeat
 	comment "set number of repeating characters after which to condense decimals .";
 
-command decimal_prelude():nil= decimal_prelude;
-command decimal_epilogue():nil = decimal_epilogue;
+command decimal_prelude():void= decimal_prelude;
+command decimal_epilogue():void = decimal_epilogue;
 
 decimal_prelude();
 @-

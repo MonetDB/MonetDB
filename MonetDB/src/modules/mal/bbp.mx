@@ -30,37 +30,37 @@ to a directory on the local file system.
 @mal
 module bbp;
 
-command open():nil= CMDbbpopen
+command open():void= CMDbbpopen
 comment "Locate the bbp box and open it.";
 
-command close():nil= CMDbbpclose
+command close():void= CMDbbpclose
 comment "Close the bbp box.";
 
-command destroy():nil= CMDbbpdestroy
+command destroy():void= CMDbbpdestroy
 comment "Destroy the box, which is forbidden for casual users";
 
 pattern take(name:str) : bat[any,any] = CMDbbptake
 comment "Load a particular bat from disk and make a private copy";
 
-pattern deposit(name:str,v:bat[any,any]):nil = CMDbbpdeposit
+pattern deposit(name:str,v:bat[any,any]):void = CMDbbpdeposit
 comment "Enter a new bat into the bbp box.";
 
-pattern releaseAll():nil = CMDbbpreleaseAll
+pattern releaseAll():void = CMDbbpreleaseAll
 comment "Commit updates and release all bats for this client";
 
-pattern release(name:str,val:bat[any,any]):nil = CMDbbprelease
+pattern release(name:str,val:bat[any,any]):void = CMDbbprelease
 comment "Commit updates and release this BAT.";
 
 pattern toString(name:str):str = CMDbbptoString
 comment "Get the string representation of an element in the box";
 
-pattern discard(name:str):nil = CMDbbpdiscard
+pattern discard(name:str):void = CMDbbpdiscard
 comment "Remove the BAT from the box";
 
 pattern iterator(nme:str):lng = CMDbbpiterator
 comment "Locates the next element in the bbp box";
 
-pattern prelude():nil = CMDbbpprelude
+pattern prelude():void = CMDbbpprelude
 comment "Initialize the bbp box";
 
 pattern bind(name:str,loc:str):bat = CMDbbpbindDefinition
@@ -123,11 +123,11 @@ the atomic commit protocol!!";
 command isCached(b:bat[any,any]):bit = CMDbbpisCached
 comment "Bat is stored in main memory.";
 
-command setHot(name:str) :nil = CMDbbphot
+command setHot(name:str) :void = CMDbbphot
 comment "Makes a BAT very hot for the BBP. The chance of being chosen 
 for swapout is low, afterwards.";
 
-command setCold(nme:str) :nil = CMDbbpcold
+command setCold(nme:str) :void = CMDbbpcold
 comment "Makes a BAT very cold for the CMDbbp. The chance of being chosen 
 for swapout is high, afterwards.";
 

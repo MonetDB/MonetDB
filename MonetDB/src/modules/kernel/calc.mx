@@ -341,7 +341,7 @@ array. Specific operations work with this interpretation.
 @mal
 	command rand () : int = CALCrandint
 	comment "return a random number";
-	command srand(seed:int) : nil = CALCsrandint
+	command srand(seed:int) :void = CALCsrandint
 	comment "initialize the rand() function with a seed";
 @+ Type coercions
 The Monet kernel contains a few built-in atomic types together
@@ -351,7 +351,7 @@ Those accessible at the MAL command level are introduced below.
 @= convertCmd
 command @1(v:str):@1 = CALCstr_2_@1;
 command str(v:@1):str = CALC@1_2_str;
-command @1(v:nil) : @1 = CALCnil_2_@1;
+command @1(v:void) : @1 = CALCnil_2_@1;
 
 @mal
 @:convertCmd(oid)@
@@ -365,8 +365,8 @@ command @1(v:nil) : @1 = CALCnil_2_@1;
 @:convertCmd(bat)@
 @:convertCmd(chr)@
 
-command str(v:nil) :str = CALCnil_2_str;
-command void(v:nil) :void = CALCnil_2_void;
+command str(v:void) :str = CALCnil_2_str;
+command void(v:void) :void = CALCnil_2_void;
 command void(v:int) :void = CALCint_2_void;
 command void(v:sht) :void = CALCsht_2_void;
 command void(v:lng) :void = CALClng_2_void;

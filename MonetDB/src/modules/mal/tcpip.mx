@@ -96,7 +96,7 @@ comment "a BAT with all current waiting threads.";
 command cache() : BAT[str,str] = cache_bat
 comment "a copy of the list of BATs cached via the network";
 
-command TCPprelude():void= TPCprelude;
+command TCPprelude():void= TCPprelude;
 command TCPepilogue():void= TPCepilogue;
 @-
 @= getBATdescriptor
@@ -823,7 +823,7 @@ str TCPprelude(){
 @+ prelude
 Cleanup the global structures.
 @c
-str TCPepilogue(){
+str TPCepilogue(){
 	int i = 0, j = listeners;
 	int ret;
 @-

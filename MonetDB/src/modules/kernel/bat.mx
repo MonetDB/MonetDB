@@ -151,23 +151,23 @@ comment "Utility for debugging MAL interpreter";
 Update commands come in many disguises.  Note that we don;t return
 the BAT id, but merely a success/failure code.
 @mal
-command insert(b:bat[any::1, any::2], h:any::1, t:any::2) 
-				: bat[any::1,any::2] = CMDinsert_bun
-comment "Insert one BUN[h,t] in a BAT.";
-
 command insert(b:bat[any::1, any::2], src:bat[any::1,any::2]) 
 				: bat[any::1,any::2] = CMDinsert_bat
 comment "Insert all BUNs of the second BAT into the first.";
 
-command replace(b:bat[any::1, any::2], h:any::1, t:any::2) 
-				: bat[any::1,any::2] = CMDreplace_bun
-comment "Replace the tail value of one BUN that has some head value.";
+command insert(b:bat[any::1, any::2], h:any::1, t:any::2) 
+				: bat[any::1,any::2] = CMDinsert_bun
+comment "Insert one BUN[h,t] in a BAT.";
 
 command replace(b:bat[any::1, any::2], src:bat[any::1,any::2]) 
 				: bat[any::1,any::2] = CMDreplace_bat
 comment "Perform replace for all BUNs of the second BAT into the first.";
 
-command destroy(b:bat):nil = CMDdestroy_bat
+command replace(b:bat[any::1, any::2], h:any::1, t:any::2) 
+				: bat[any::1,any::2] = CMDreplace_bun
+comment "Replace the tail value of one BUN that has some head value.";
+
+command destroy(b:bat):void = CMDdestroy_bat
 comment "Schedule bat for removal upon session commit\n";
 
 command delete(b:bat[any::1, any::2], h:any::1, t:any::2) 
@@ -253,11 +253,11 @@ comment "Swapout a BAT to disk. Transient BATs can also be swapped out.
 command isCached(b:bat[any,any]):bit = CMDisCached
 comment "Bat is stored in main memory.";
 
-command hot(name:str) :nil = CMDhot
+command hot(name:str) :void = CMDhot
 comment "Makes a BAT very hot for the BBP. The chance of being chosen 
 for swapout is small, afterwards.  Returns the BAT itself.";
 
-command cold(nme:str) :nil = CMDcold
+command cold(nme:str) :void = CMDcold
 comment "Makes a BAT very cold for the BBP. The chance of being choses 
 for swapout is big, afterwards.  Returns the BAT itself.";
 
@@ -528,6 +528,7 @@ if (b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
 @c
 str CMDinsert_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b;
+	/*int l;*/
 	@:getBATdescriptor2(r,bid,b,CMDinsert_bun)@
 	@:void_insertbun(h)@
 	@:void_insertbun(t)@
@@ -535,6 +536,8 @@ str CMDinsert_bun(int *r, int *bid, ptr h, ptr t) {
 	@:derefStr(b,t,t)@
 	BUNins(b, @:batconvert(b,h)@, @:batconvert(b,t)@); 
 	BBPfix(b->batCacheid);
+	/*l= b->batCacheid; l= l<0?-l:l;
+	++BBP_refs(l); */
 	*r = b->batCacheid;
 	return MAL_SUCCEED;
 } 

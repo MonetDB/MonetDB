@@ -142,7 +142,7 @@ int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 	fcnname= getVarLiteral(mb,pci->argv[1]);
 	inplace = operatorModifier(name,fcnname);
 	p->fcnname= GDKstrdup(name);
-	k = newVariable(m, newTmpName(0),malAnyType);
+	k = newVariable(m, newTmpName(0),TYPE_any);
 	p->argv[0]= k;
 #ifdef DEBUG_MULTIPLEX
 	printf("multiplex against operator %s (original %s)\n",
@@ -393,8 +393,8 @@ find the actule arguments at the proper place of the callee.
 	q->argv[0]= resB = newVariable(m,GDKstrdup("resB"),refType);
 	q->modname= GDKstrdup("mal");
 	q->fcnname= GDKstrdup("new");
-	q->argv[1]= newVariable(m, malTypeName(getHeadType(refType)),malAnyType);
-	q->argv[2]= newVariable(m, malTypeName(getTailType(refType)),malAnyType);
+	q->argv[1]= newVariable(m, malTypeName(getHeadType(refType)),TYPE_any);
+	q->argv[2]= newVariable(m, malTypeName(getTailType(refType)),TYPE_any);
 	q->argc= 3;
 	pushInstruction(m,q);
 

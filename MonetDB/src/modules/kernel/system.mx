@@ -98,14 +98,14 @@ command view_client_info( ): bat[int,str] = VIEWclient_info
 The properties of the Client record can be obtained for inspection.
 Only the listing property can be dynamically set.
 @mal
-command set_client_prompt(s:str):nil= SYSsetPrompt
+command set_client_prompt(s:str):void= SYSsetPrompt
 	comment "Change the prompt for the current user.";
-command set_client_listing(b:bit):nil= SYSsetListing
+command set_client_listing(b:bit):void= SYSsetListing
 	comment "Turn on/off echoing of MAL instructions";
 command quit():void= SYSquit
 	comment "Terminate the server"'
 
-command kill(n:int):nil =SYSkill
+command kill(n:int):void =SYSkill
 	comment "remove a client instance";
 @- Monet modules and scopes
 Each module forms a separately named scope. Scopes visible to a user

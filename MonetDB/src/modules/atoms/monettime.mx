@@ -280,7 +280,7 @@ atom module rule : int;
 	command tostr() = rule_tostr;
 
 module monettime;
-command tzone_local(t:tzone):nil = tzone_set_local 
+command tzone_local(t:tzone):void = tzone_set_local 
 comment "set the local tzone; which is used for printing timestamps (!DS2.2)";
 command tzone_local() : tzone = tzone_get_local 
 comment "get the local tzone; which is used for printing timestamps (!DS2.2)";

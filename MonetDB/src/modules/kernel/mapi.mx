@@ -33,13 +33,13 @@ command Stop(port:int):bit = MAPIstop
 command Stop(name:str):bit = MAPIstopClient
 	comment "Terminate a client";
 
-command Trace(nme:str, flag:bit):nil = MAPItrace2
+command Trace(nme:str, flag:bit):void = MAPItrace2
 	comment "Trace (on/off) receipt of all messages from a specific user";
-command Trace(flag:bit):nil = MAPItrace
+command Trace(flag:bit):void = MAPItrace
 	comment "Trace (on/off) receipt of messages for all users";
 
 # initialization code
-#function main():nil;
+#function main():void;
 	#vm1:bat[int,int]:= bat(5:int,11:int);
 	#bat.setName(vm1,"view_mapi_owner");
 	#bat.setRoles(vm1,"mapi","owner");
