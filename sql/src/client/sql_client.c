@@ -107,6 +107,22 @@ void clientAccept( context *lc, stream *rs ){
 	}
 }
 
+/*
+When using alloca(3) in a shared library, Intel's "C++ Compiler for 32-bit
+applications, Version 5.0.1 Beta Build 010528D0" seems to require another
+reference to alloca(3) in the file that contains the main(), otherwise it
+complains about an "undefined reference to `\_alloca\_probe' when linking
+the shared library to the executable.
+Hence, we define this FAKE\_ALLOCA\_CALL and call it in the respective
+main()s just before the final return.
+*/
+#if ( defined(__INTEL_COMPILER) && (!defined(STATIC)) )
+# include <alloca.h>
+# define FAKE_ALLOCA_CALL (void)alloca(0);
+#else
+# define FAKE_ALLOCA_CALL ;
+#endif
+
 int
 main(int ac, char **av)
 {
@@ -200,6 +216,7 @@ main(int ac, char **av)
 	       	rs->destroy(rs);
 	}
 	sql_exit_context( &lc );
+	FAKE_ALLOCA_CALL; /* buggy Intel C/C++ compiler for Linux ... */
 	return 0;
 } /* main */
 
