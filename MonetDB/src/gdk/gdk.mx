@@ -426,6 +426,7 @@ below.  The global variables should not be modified directly.
 #define PATHLENGTH	128		/* maximum file pathnamde length */ 
 #define BATMARGIN	1.2		/* extra free margin for new heaps */ 
 #define BATTINY		50		/* extra fixed margin for BATS */
+#define GDK_VMUNITSIZE	65536
 
 #define TYPE_void	0		
 #define TYPE_bit	1		
@@ -2481,7 +2482,7 @@ gdk_export BAT*	VIEWhead	(BAT *b);
 gdk_export BAT*	VIEWhead_	(BAT *b, int mode);
 gdk_export BAT*	VIEWreset	(BAT *b);
 gdk_export BAT*	VIEWcombine	(BAT *b);
-gdk_export int	VIEWdestroy	(BAT *b);
+gdk_export void	VIEWdestroy	(BAT *b);
 
 /* low level functions */
 gdk_export int      ALIGNundo       (BAT *b);
@@ -2493,6 +2494,8 @@ gdk_export int      ALIGNsetH       (BAT *b1, BAT *b2);
 #define ALIGNdelH(x,y)	{ALIGNchk(x,y);(x)->halign=0;}
 #define ALIGNdelT(x,y)	{ALIGNchk(x,y);(x)->talign=0;}
 #define ALIGNset(x,y)	{ALIGNsetH(x,y);ALIGNsetT(x,y);}
+
+#define BATrestricted(b) (VIEWparent(b)?BBP_cache(VIEWparent(b))->batRestricted:(b)->batRestricted)
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted

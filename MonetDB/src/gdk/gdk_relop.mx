@@ -14,6 +14,7 @@ are not being harmed too much.
 @c
 #include "gdk_relop.h"
 
+#define LOG_SAMPLESIZE 17
 @{
 @+ Join Algorithms
 @{
@@ -36,13 +37,13 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
 {	int _estimate = @1;
 	if (_estimate == 0) {
 		int _batcnt = BATcount(l);
-		if (_batcnt > 100000) {
+		if (_batcnt > (1 << LOG_SAMPLESIZE)) {
 			int _tot = 0, _div = 0, _lo, _hi, _step = 0;
 			BAT *_tmp1 = l; 
-			for(_hi=_batcnt; _hi > 1; _hi >>= 1) _step++;
-			_step = _batcnt / (_step-13);
-			for(_hi=104; _hi <= _batcnt; _hi += _step) {
-			  	_lo = _hi - 104; /* try to estimate 105% to have some margin */
+			for(_hi=_batcnt; _hi > 0; _hi >>= 1) _step++;
+			_step = _batcnt / (_step-LOG_SAMPLESIZE);
+			for(_hi=1050; _hi <= _batcnt; _hi += _step) {
+			  	_lo = _hi - 1050; /* try to estimate 105% to have some margin */
 				l = BATslice(_tmp1, &_lo, &_hi); /* slice keeps all parent properties */ 
 				if (l) {
 					BAT *_tmp2 = @2;
@@ -53,7 +54,7 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
 				}		
 				BBPreclaim(l); 
 			}
-			if (_div) _estimate = (((lng) _tot) * ((lng) _batcnt)) / (((lng) _div)*LL_CONSTANT(100));
+			if (_div) _estimate = (((lng) _tot) * ((lng) _batcnt)) / (((lng) _div)*1000LL);
 			l = _tmp1;
 		}
 		if (_estimate == 0) {
@@ -276,14 +277,14 @@ The aftermath -- property setting -- is relatively straightforward here.
 
 @= fetchjoin
     BATloopFast(l, l_cur, l_end, xx) {
-        yy = offset + *(unsigned int*) BUN@1(l,l_cur);
+        yy = offset + *(unsigned int*) BUNtloc(l,l_cur);
         if (yy < base || yy >= end) {
             bn->batBuns->free = dst - bn->batBuns->base;
             BBPreclaim(bn); 
             goto nondense;
         }
         r_cur = BUNptr(r, yy);
-	@4put(@3, &bn->theap, (int*) dst, BUN@2(r, r_cur));
+	@3put(@2, &bn->theap, (int*) dst, BUN@1(r, r_cur));
 	dst += zz;
     }
     bn->batBuns->free = dst - bn->batBuns->base;
@@ -293,6 +294,7 @@ The aftermath -- property setting -- is relatively straightforward here.
 BAT* BATfetchjoin(BAT *l, BAT *r) {
         int xx, yy, zz, base, offset, end;
         BUN r_cur, l_cur, l_end, dst;
+	oid seqbase;
         BAT *bn;
 
         BATcheck(l, "BATfetchjoin: l");
@@ -304,40 +306,10 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
 	base = BUNindex(r, BUNfirst(r)); 
 	offset = base - r->hseqbase;
 	end = base + BATcount(r);
+	seqbase = *(oid*) BUNhead(l,BUNfirst(l));
 
-	/* optimize for propagation of void columns in the result */	
-	if (BAThvoid(l)) {
-		int tpe = r->ttype;
-		if (ATOMstorage(tpe) == TYPE_str && GDK_ELIMDOUBLES(&r->theap)) {
-			tpe = TYPE_int; /* insert double-eliminated strings as ints */
-		}
-		bn = BATnew(TYPE_void, ATOMtype(tpe), BATcount(l));
-		dst = BUNfirst(bn);
-		zz = BUNsize(bn);
-
-		if (l->ttype && ATOMstorage(tpe) == TYPE_chr) {
-			@:fetchjoin(tloc,tloc,chr,SIMPLE)@
-		} else if (l->ttype && ATOMstorage(tpe) == TYPE_sht) {
-			@:fetchjoin(tloc,tloc,sht,SIMPLE)@
-		} else if (l->ttype && (ATOMstorage(tpe) == TYPE_int || ATOMstorage(tpe) == TYPE_flt)) {
-			@:fetchjoin(tloc,tloc,int,SIMPLE)@
-		} else if (l->ttype && (ATOMstorage(tpe) == TYPE_lng || ATOMstorage(tpe) == TYPE_dbl)) {
-			@:fetchjoin(tloc,tloc,lng,SIMPLE)@
-		} else {
-			@:fetchjoin(tail,tail,bn->ttype,ATOM)@
-		}
-		/* handle string trick */
-		if (tpe == TYPE_int && ATOMstorage(r->ttype) == TYPE_str) {
-               		BAT *bm = BATmirror(bn);
-               		bn->ttype = bm->htype = r->ttype;
-               		bn->tvarsized = bm->hvarsized = 1;
-               		strcpy(bn->tatom, ATOMname(r->ttype));
-       	      		HEAPcopy(&bn->theap, &r->theap);
-       		}
-		BATseqbase(bn, *(oid*) BUNhead(l,BUNfirst(l))); 
-		if (bn->hseqbase != oid_nil) BATkey(bn, TRUE);
-		bn->hsorted = GDK_SORTED; 
-	} else {
+	if (!BAThvoid(l)) {
+		/* default case: no void column to propagate */
 nondense:	bn = BATnew(BAThtype(l), BATttype(r), BATcount(l));
 		dst = BUNfirst(bn);
 		zz = BUNsize(bn);
@@ -351,6 +323,52 @@ nondense:	bn = BATnew(BAThtype(l), BATttype(r), BATcount(l));
 			dst += zz;
 		}
 		bn->hsorted = (BATtordered(l)&BAThordered(r)&1)?BAThordered(l):0;
+	} else if (!BATtvoid(l)) {
+		/* propagation of void columns in the result */	
+		int tpe = r->ttype;
+		if (ATOMstorage(tpe) == TYPE_str && GDK_ELIMDOUBLES(&r->theap)) {
+			tpe = TYPE_int; /* insert double-eliminated strings as ints */
+		}
+		bn = BATnew(TYPE_void, ATOMtype(tpe), BATcount(l));
+		dst = BUNfirst(bn);
+		zz = BUNsize(bn);
+
+		if (ATOMstorage(tpe) == TYPE_chr) {
+			@:fetchjoin(tloc,chr,SIMPLE)@
+		} else if (ATOMstorage(tpe) == TYPE_sht) {
+			@:fetchjoin(tloc,sht,SIMPLE)@
+		} else if (ATOMstorage(tpe) == TYPE_int || ATOMstorage(tpe) == TYPE_flt) {
+			@:fetchjoin(tloc,int,SIMPLE)@
+		} else if (ATOMstorage(tpe) == TYPE_lng || ATOMstorage(tpe) == TYPE_dbl) {
+			@:fetchjoin(tloc,lng,SIMPLE)@
+		} else {
+			@:fetchjoin(tail,bn->ttype,ATOM)@
+		}
+		/* handle string trick */
+		if (tpe == TYPE_int && ATOMstorage(r->ttype) == TYPE_str) {
+               		BAT *bm = BATmirror(bn);
+               		bn->ttype = bm->htype = r->ttype;
+               		bn->tvarsized = bm->hvarsized = 1;
+               		strcpy(bn->tatom, ATOMname(r->ttype));
+       	      		HEAPcopy(&bn->theap, &r->theap);
+       		}
+		BATseqbase(bn, seqbase);
+		if (seqbase != oid_nil) BATkey(bn, TRUE);
+		bn->hsorted = GDK_SORTED; 
+	} else if (l->tseqbase != oid_nil) {
+		/* execute using slice */
+		BAT *v = BATmirror(VIEWhead(BATmirror(r)));
+		oid lo_val = MAX(l->tseqbase,r->hseqbase);
+		oid hi_val = MIN(l->tseqbase+BATcount(l),r->hseqbase+BATcount(r));
+		int lo_pos = lo_val - r->hseqbase;
+		int hi_pos = hi_val - (r->hseqbase+1);
+		bn = BATslice(v, &lo_pos, &hi_pos);
+		if (seqbase != oid_nil) seqbase += lo_val - l->tseqbase;
+		BATseqbase(bn, seqbase);
+		VIEWdestroy(v);
+	} else {
+		/* nil join column => empty result */
+		bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), 10);
 	}
 
 	/* property propagation */

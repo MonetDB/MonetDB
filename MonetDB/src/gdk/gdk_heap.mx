@@ -67,7 +67,7 @@ int HEAPalloc(Heap *h, int nitems, int itemsize) {
         h->offset = h->free = 0;
 	h->base = h->filename = NULL;
 	if (h->size > GDKmem_bigsize()) {
-		size_t sz = h->size + (BATMARGIN-1.0)*h->size;
+		size_t sz = h->size + GDK_VMUNITSIZE;
         	h->storage = STORE_MMAP;
                 h->base = (char *) GDKvmalloc(h->size, &sz);
 		if (h->base) h->maxsize = sz;

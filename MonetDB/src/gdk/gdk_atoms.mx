@@ -1151,7 +1151,7 @@ int strLocate(Heap *h, str v) {
 	int *l, *e = htab + (strOldHash(v) & GDK_STRHASHMASK); 
 
 	if (*e) {
-		for (l = e; *l; l = (int*) (((char*) h->base)  + *l)) {
+		for (l = e; *l; l = (int*) (h->base + *l)) {
 			str x = (str) (h->base + *l + sizeof(int)); 
 			if (GDK_STRCMP(v, x) == 0) {
 				return *l + sizeof(int); 
@@ -1168,13 +1168,13 @@ void strHeapConvert(Heap *h,int dir) {
 
 	if (dir == CONV_HTON){
 	    for(i=0; i<GDK_STRHASHTABLE; i++) {
-		for (l= htab+i; (j=*l) != 0; l=(int*) (((char*) h->base)+ j)) {
+		for (l= htab+i; (j=*l) != 0; l=(int*) (h->base + j)) {
 			*l = normal_int_SWAP(j);
 		}
 	    }
 	} else {
 	    for(i=0; i<GDK_STRHASHTABLE; i++) {
-		for (l= htab+i; (j=*l) != 0; l=(int*) (((char*) h->base)+ *l)) {
+		for (l= htab+i; (j=*l) != 0; l=(int*) (h->base + *l)) {
 			*l = normal_int_SWAP(j);
 		}
 	    }

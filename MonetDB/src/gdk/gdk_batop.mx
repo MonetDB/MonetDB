@@ -187,7 +187,7 @@ BAT *BATmark(BAT *b, oid oid_base) {
         BAT     *bn;
  
         BATcheck(b, "BATmark");
-	if (b->batRestricted == BAT_READ) {
+	if (BATrestricted(b) == BAT_READ) {
 		bn = VIEWhead(b);
 	} else {
 		int xx;
@@ -232,7 +232,7 @@ BAT* BATconst(BAT *b, int tailtype, ptr v) {
         BUN p,q;
         int xx;
 
-	if (b->batRestricted == BAT_READ &&
+	if (BATrestricted(b) == BAT_READ &&
            (tailtype == TYPE_void || (tailtype == TYPE_oid && *(oid*) v == oid_nil)))
 	{
 		oid seqbase = (tailtype==TYPE_void)?oid_nil:*(oid*) v;
@@ -513,7 +513,7 @@ independent view on the virtual memory.
 	 * besides, for most query evaulation pruposes, the horizontal view creation
          * below is suffiecient. Peter/dec99
 	 */
-	if (i <= j && (b->batRestricted != BAT_WRITE && b->batBuns->storage == STORE_MMAP)) {
+	if (i <= j && (BATrestricted(b) != BAT_WRITE && b->batBuns->storage == STORE_MMAP)) {
 		BUN start = BUNptr(b,i-1);
 		BUN end = BUNptr(b,j+1);
 		int add;
@@ -533,7 +533,7 @@ independent view on the virtual memory.
 Alternatively, if the source BAT is readonly, then we can obtain a VIEW
 that just reuses the memory of the source. 
 @c
-	if (b->batRestricted == BAT_READ) {
+	if (BATrestricted(b) == BAT_READ) {
 		bn = VIEWcreate(b); 
 		bn->batBuns->base = BUNptr(b, i-1);  
                 bn->batInserted = BUNptr(b, i);  
@@ -547,7 +547,7 @@ We have to do it: create a new BAT and put everything into it.
 		BUN p = BUNptr(b,i);
 		BUN q = BUNptr(b,j);
 
-        	bn = BATnew(b->ttype?b->htype:ATOMtype(b->htype), b->ttype, j-i);
+        	bn = BATnew(b->htype, b->htype?b->ttype:ATOMtype(b->ttype), j-i);
 		if (bn == NULL) {
 			return bn;
 		}

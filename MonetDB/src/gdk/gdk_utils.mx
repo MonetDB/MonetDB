@@ -467,10 +467,12 @@ the memory consumption.
 #define GDK_VM_KEEPHISTO
 #endif
 
-#if (defined(WIN32) || defined(__sgi) || defined(_AIX))
-#define GDK_MEM_BIGSIZE	LL_CONSTANT(131072)     /* offload malloc fragmentation pressure */
+#if (defined(WIN32)) 
+#define GDK_MEM_BIGSIZE	LL_CONSTANT(32768)   /* very fragile malloc */
+#elif (defined(__sgi) || defined(_AIX))
+#define GDK_MEM_BIGSIZE	LL_CONSTANT(131072)  /* offload malloc fragmentation pressure */
 #else
-#define GDK_MEM_BIGSIZE	LL_CONSTANT(33554432)   /* robust malloc: use up till 32MB */ 
+#define GDK_MEM_BIGSIZE	LL_CONSTANT(33554432)/* robust malloc: use up till 32MB */ 
 #endif
 
 #if SIZEOF_LONG==8

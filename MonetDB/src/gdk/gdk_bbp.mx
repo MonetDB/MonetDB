@@ -85,7 +85,7 @@ gdk_export void BBPclear     (bat bid, int lock);
 gdk_export int  BBPentry     (str dirname, str batname, int mode);
 gdk_export void BBPcacheit   (BAT *b, int lock);
 gdk_export void BBPuncacheit (bat bid, int lock);
-gdk_export void BBPspin 	 (bat bid, str debug);
+static void BBPspin 	 (bat bid, str debug, int event);
 gdk_export int  BBPreclaim   (BAT *b);
 gdk_export int  BBPsave      (BAT *b);
 gdk_export int  BBPrename    (bat bid, str nme);
@@ -100,6 +100,8 @@ gdk_export lng  BBPdiskscan  (str dir);
 gdk_export int  BBPsync      (int commit);
 gdk_export int  BBPfix       (bat b);
 gdk_export int  BBPunfix     (bat b);
+gdk_export void BBPpersistent(bat b); 
+gdk_export void BBPtransient (bat b);
 
 #endif /* _GDK_BBP_H_ */
 @
@@ -133,6 +135,20 @@ field in the BBPrec records.
 
 int*		BBP_hash = NULL;	/* BBP logical name hash buckets */
 int		BBP_mask = 0;		/* number of buckets = & mask */
+
+static INLINE
+void set_status(int i, int flag, int locks){
+	if (locks) MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "set_status");
+	BBP_status(i) |= flag;
+	if (locks) MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "set_status");
+}
+
+static INLINE
+void reset_status(int i, int flag, int locks){
+	if (locks) MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "reset_status");
+	BBP_status(i) &= ~flag;
+	if (locks) MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "reset_status");
+}
 
 static INLINE 
 void BBP_insert(int i) {
@@ -290,6 +306,7 @@ In order to start, we read the BBP.dir in the bat/ directory, BUT:
 - if BBP.dir is lost, we try BBP.bak 
 - if we do not use the original BBP.dir; move the previous to BBP.bak
 @c
+
 void BBPinit() {
     FILE	*fp = GDKfilelocate("BBP", "rb", "dir");
     DIR         *recover = opendir(BAKDIR);
@@ -829,12 +846,14 @@ void BBPclear(int i, int lock) {
 	}
 }
 
-void BBPspin(int i, str s) {
-	if (BBPcheck(i,"BBPspin") && (BBP_status(i)&BBPWAITING)) {
+static
+void BBPspin(int i, str s, int event) {
+	if (BBPcheck(i,"BBPspin") && (BBP_status(i)&event)) {
 		lng spin = LL_CONSTANT(0);
-		while(BBP_status(i)&BBPWAITING) spin++;
+		while(BBP_status(i)&event) spin++;
 		BATDEBUG 
-		THRprintf(GDKout, "BBPspin(%d,%s): %ld loops\n", i,s,spin);
+		THRprintf(GDKout, "BBPspin(%d,%s,%d): %ld loops\n", 
+				i, s, event, spin);
 	}
 }
 
@@ -902,7 +921,7 @@ int BBPrename(bat bid, str nme) {
 	}
 	b->batDirtydesc = 1;
 	if (b->batPersistence&PERSISTENT){
-		BBP_status(bid) |= BBPRENAMED;
+		set_status(bid, BBPRENAMED, TRUE);
 		BBPdirty(1);
 	}
 	MT_unset_lock(GDKcacheLock, "BBPrename"); 
@@ -937,7 +956,7 @@ int BBPfix(bat i) {
 			MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPfix"); 
 			if (BBP_status(i) & BBPUNLOADING) { /* must wait for unload, then reload */
 				MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPfix spin wait"); 
-				BBPspin(i, "BBPfix");
+				BBPspin(i, "BBPfix", BBPWAITING);
 			} else { 
 				break;
 			}
@@ -967,7 +986,7 @@ int BBPunfix(bat i) {
 			b->batLastused = sec;
 		} 
 		if (BBPswappable(b) && !(b->batPersistence&PERSISTENT)) {
-			BBP_status(i) |= BBPUNLOADING;
+			set_status(i, BBPUNLOADING, FALSE);
 		} else {
 			b = NULL;
 		}
@@ -980,6 +999,28 @@ int BBPunfix(bat i) {
 	return refs;
 }
 
+void BBPpersistent(bat i) {
+	if (i < 0) i = -i;
+	if (BBPcheck(i, "BBPpersistent")) {
+		MT_set_lock(GDKcacheLock, "BBPpersistent");
+		if (!(BBPstatus(i)&BBPDELETED))
+			BBP_status(i) |= BBPNEW;
+		BBP_status(i) &= ~BBPDELETED;
+		MT_unset_lock(GDKcacheLock, "BBPpersistent");
+	}
+}
+
+void BBPtransient(bat i) {
+	if (i < 0) i = -i;
+	if (BBPcheck(i, "BBPtransient")) {
+		MT_set_lock(GDKcacheLock, "BBPtransient");
+		if (!(BBPstatus(i)&BBPNEW))
+			BBP_status(i) |= BBPDELETED;
+		BBP_status(i) &= ~BBPPERSISTENT;
+		MT_unset_lock(GDKcacheLock, "BBPtransient");
+	}
+}
+
 int BBPunload(bat i) {
 	BAT *b = NULL;
 	if (BBPcheck(i, "BBPunload") == 0) {
@@ -989,7 +1030,7 @@ int BBPunload(bat i) {
 	MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPunload"); 
 	BBP_refs(i)--;
 	if (BBP_refs(i) <= 0 && !(BBP_status(i)&BBPWAITING) && (b=BBP_cache(i)) != NULL) {
-		BBP_status(i) |= BBPUNLOADING;
+		set_status(i, BBPUNLOADING, FALSE);
 	}
 	MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPunload"); 
 	if (b) {
@@ -1033,7 +1074,7 @@ int BBPreclaim(BAT* b) {
 	BATDEBUG debug = 1;
 
 	/* make sure it is killed immediately */
-	BBP_status(b->batCacheid) |= BBPUNLOADING; 
+	set_status(i, BBPUNLOADING, FALSE);
 	b->batPersistence = TRANSIENT; 
 	MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
 
@@ -1054,16 +1095,16 @@ BAT *BBPdescriptor(int i) {
 		if (b == NULL) {
 			int j = ABS(i);
 			MT_set_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
-			if (BBP_status(i) & BBPLOADING) { /* wait for bat to be loaded by other thread */
+			if (BBP_status(j) & BBPLOADING) { /* wait for bat to be loaded by other thread */
 				MT_unset_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
-				BBPspin(j, "BATdescriptor");
+				BBPspin(j, "BATdescriptor", BBPWAITING);
 				b = BBP_cache(i);
 			} else {
-				BBP_status(j) |= BBPLOADING;
+				set_status(j, BBPLOADING, FALSE);
 				MT_unset_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
 
 				b = BATload_intern(i); 
-				BBP_status(j) &= ~BBPLOADING;
+				reset_status(j, BBPLOADING, TRUE);
 			}
 		}
 		if (b) {
@@ -1092,11 +1133,11 @@ int BBPsave(BAT* b) {
 			BBP_status(bid) |= BBPSAVING;
 			MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BBPsave"); 
  			if (DELTAdirty(b)) {
-				BBP_status(bid) |= BBPSWAPPED;
+				set_status(bid, BBPSWAPPED, TRUE);
 				BBPdirty(1);
 			}
  			if (!(b->batPersistence&PERSISTENT)) {
-				BBP_status(bid) |= BBPTMP;
+				set_status(bid, BBPTMP, TRUE);
 			}
 
 			/* do the time-consuming work unlocked */
@@ -1106,7 +1147,7 @@ int BBPsave(BAT* b) {
 			if (ret == 0) {
 				DESCclean(b);
 			}
-			BBP_status(bid) &= ~BBPSAVING;
+			reset_status(bid, BBPSAVING, TRUE);
 		} else {
 			MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BBPsave"); 
 		}
@@ -1132,7 +1173,7 @@ int BBPfree(BAT *b) {
 		/* write dirty BATs before being unloaded */
 		int ret = BBPsave(b);
 		if (ret) {
-			BBP_status(bid) &= ~BBPUNLOADING;
+			reset_status(bid, BBPUNLOADING, TRUE);
 			return ret; /* error: no go */
 		}
 	}
@@ -1162,8 +1203,8 @@ int BBPfree(BAT *b) {
 			BATdelete(b); /* remove persistent info */
                 }
 		BATfree(b); /* free memory */
-        } else if (VIEWdestroy(b)) {
-		BBPunfix(parent); /* last view reference unfixes parent */
+        } else {
+		VIEWdestroy(b);
 	}
 	if (destroy) {
 		BBPclear(bid, TRUE); /* if destroyed; de-register from BBP */
@@ -1306,7 +1347,7 @@ void BBPtrim_select(lng *memtarget, lng *vmtarget, int dirty) {
 						(unsigned int) memdelta, (unsigned int) vmdelta, 
 						(unsigned int) memdirty, (unsigned int) vmdirty);
 				}
-				BBP_status(bbptrim[cur].bid) |= BBPUNLOADING;
+				set_status(bbptrim[cur].bid, BBPUNLOADING, FALSE);
 				*memtarget -= memdelta;
 				*vmtarget -= vmdelta;
 
@@ -1625,7 +1666,7 @@ BAT *BBPquickdesc(bat bid, int delaccess) {
 static BAT *dirty_bat(int i) {
 	if (BBP_logical(i)) {
 		BAT *b;
-		BBPspin(i, "dirty_bat");
+		BBPspin(i, "dirty_bat", BBPSAVING);
 		b = BBP_cache(i);
 		if (b != NULL) {
 			if ((b->batPersistence&PERSISTENT) && BATdirty(b)) {

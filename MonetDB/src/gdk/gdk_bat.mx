@@ -448,15 +448,11 @@ This routine could benefit from efficient OS memory management support.
 The routine assumes that the atom heaps can simply be copied as well.
 @c
 BAT *batcopy(BAT *b, int ht, int tt, int writeable) {
-	BAT *bn, *p = b;
+	BAT *bn;
 	BATcheck(b, "batcopy");
 
-	if (VIEWparent(b)) {
-		/* look at the access characteristics of the parent */
-		p = BATdescriptor(VIEWparent(b)); 
-	}
 	/* optimization: return a view (itself) on a readonly bat */
-        if (p->batRestricted && !writeable) {
+        if (BATrestricted(b) && !writeable) {
 		return VIEWcreate(b);
 	} else {
 		int xx, yy;
@@ -1162,14 +1158,20 @@ BAT *BATsetaccess(BAT *b, int mode) {
 	    if (VIEWparent(b) && mode != BAT_READ) {
 		VIEWreset(b);
 	    }  
+/*
 	    MT_set_lock(GDKswapLock[bid&BBPLOCKMASK], "BATsetaccess");
+*/
 	    if (b->batSharecnt && mode != BAT_READ) {
 	        GDKwarning("BATsetaccess: %s has %d views; deliver a copy.\n", b->batId, b->batSharecnt);
+/*
 	        MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BATsetaccess");
+*/
 	        b = BATsetaccess(batcopy(b,b->htype,b->ttype,TRUE),mode); 
 		if (b->batStamp > 0) b->batStamp = -b->batStamp; /* prevent MIL setaccess */
 	    } else {
+/*
 	        MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BATsetaccess");
+*/
 		
 		if (mode == BAT_READ) {
 		    @:mmap_read(m1,(*b->batBuns))@
@@ -1270,17 +1272,9 @@ BAT *BATmode(BAT *b, int mode) {
 			if (VIEWparent(b)) {
 				VIEWreset(b);
 			}
-			MT_set_lock(GDKcacheLock, "BATmode");
-			if (!(BBPstatus(b->batCacheid)&BBPDELETED))
-				BBP_status(b->batCacheid) |= BBPNEW;
-			BBP_status(b->batCacheid) &= ~BBPDELETED;
-			MT_unset_lock(GDKcacheLock, "BATmode");
+			BBPpersistent(b->batCacheid);
 		} else if (b->batPersistence&PERSISTENT) {
-			MT_set_lock(GDKcacheLock, "BATmode");
-			if (!(BBPstatus(b->batCacheid)&BBPNEW))
-				BBP_status(b->batCacheid) |= BBPDELETED;
-			BBP_status(b->batCacheid) &= ~BBPPERSISTENT;
-			MT_unset_lock(GDKcacheLock, "BATmode");
+			BBPtransient(b->batCacheid);
 		}
 		b->batPersistence = mode;
 	}

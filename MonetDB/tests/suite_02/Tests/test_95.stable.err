@@ -1,4 +1,4 @@
 stderr of test 'test_95` in directory 'tests/suite_02` itself:
 
-#> Mtest:	milM test_95 milM
-#> Mtest:	Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/IRIX6.3 -db tests_suite_02 test_95.milM
+#> Mtest (20:00:02):	milM test_95 milM
+#> Mtest (20:00:02):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_02 test_95.milM

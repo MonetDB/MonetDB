@@ -286,7 +286,7 @@ short-term lock ('protector').
     MT_set_lock(TBL_protector, "TBL_unset_readlock(protector)");\
     if (--TBL_readers == 0 && TBL_writer) 			\
 		MT_up_sema(TBL_barrier, "TBL_unset_readlock");	\
-    MT_unset_lock(TBL_protector, "TBL_readlock(protector)");	}
+    MT_unset_lock(TBL_protector, "TBL_unset_readlock(protector)");	}
 #define TBL_set_writelock() {					\
     MT_set_lock(TBL_writelock, "TBL_set_writelock(writelock)");	\
     MT_set_lock(TBL_protector, "TBL_set_writelock(protector)");	\
@@ -295,7 +295,9 @@ short-term lock ('protector').
     if (TBL_writer) 						\
 	MT_down_sema(TBL_barrier, "TBL_set_writelock");		}
 #define TBL_unset_writelock() {					\
+    MT_set_lock(TBL_protector, "TBL_unset_writelock(protector)");	\
     TBL_writer = 0;						\
+    MT_unset_lock(TBL_protector, "TBL_unset_writelock(protector)");\
     MT_unset_lock(TBL_writelock, "TBL_unset_writelock");	}
 
 

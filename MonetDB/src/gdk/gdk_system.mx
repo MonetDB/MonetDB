@@ -337,12 +337,13 @@ void MT_set_lock(MT_Lock l, char *name){
 }
 
 void MT_unset_lock(MT_Lock l, char *name)	{
-   	int t = pthread_mutex_unlock((pthread_mutex_t*)l);
+   	int t = 0;
     	if (MT_debug & 1024) {
         	fprintf(MT_out,"MT_unset_lock(%lu\@%s) %ld %d\n", 
 			(long)MT_getpid(), name, (long)l,t);
         	fflush(MT_out);
 	}   
+ 	t = pthread_mutex_unlock((pthread_mutex_t*)l);
 }
  
 int	MT_try_lock (MT_Lock l) {
