@@ -667,6 +667,7 @@ int strIconv( str *res, str org, str f, str t)
 	iconv_close(cd);
 	return GDK_SUCCEED;
 #else
+	(void)res; (void)org; (void)f; (void)t; /* fool the compiler */
 	GDKerror("MIL-`iconv()' not available as C-`iconv()' wasn't found during compilation.\n");
 	return GDK_FAIL;
 #endif
