@@ -21,29 +21,54 @@ import sys
 import fileinput
 import os
 
+if sys.argv[1] == '-DHAVE_JAVA':
+    del sys.argv[1]
+    have_java_false = '#'
+else:
+    have_java_false = ''
+
 build=os.path.abspath(sys.argv[1]);
 prefix=os.path.abspath(sys.argv[2]);
 
 source=os.path.abspath(os.path.join(build,os.pardir))
 
 subs = [
-    ('@exec_prefix@',       prefix),
-    ('@sysconfdir@',        r"${prefix}\etc"),
-    ('@localstatedir@',     r"${prefix}\var"),
-    ('@libdir@',            r"${prefix}\lib"),
-    ('@bindir@',            r"${prefix}\bin"),
-    ('@mandir@',            r"${prefix}\man"),
-    ('@includedir@',        r"${prefix}\include"),
-    ('@datadir@',           r"${prefix}\share"),
-    ('@infodir@',           r"${prefix}\info"),
-    ('@libexecdir@',        r"${prefix}\libexec"),
-    ('@PACKAGE@',           r"MonetDB"),
-    ('@VERSION@',           r"4.5.0"),
-    ('@DIRSEP@',            "\\"),
-    ('@prefix@',            prefix),
-    ('@MONETDB_BUILD@',       build),
-    ('@MONETDB_SOURCE@',      source),
-    ('@NO_X_CFLAGS@',       ''),
+    ('@exec_prefix@',            prefix),
+    ('@sysconfdir@',             r'${prefix}\etc'),
+    ('@localstatedir@',          r'${prefix}\var'),
+    ('@libdir@',                 r'${prefix}\lib'),
+    ('@bindir@',                 r'${prefix}\bin'),
+    ('@mandir@',                 r'${prefix}\man'),
+    ('@includedir@',             r'${prefix}\include'),
+    ('@datadir@',                r'${prefix}\share'),
+    ('@infodir@',                r'${prefix}\info'),
+    ('@libexecdir@',             r'${prefix}\libexec'),
+    ('@PACKAGE@',                r'MonetDB'),
+    ('@VERSION@',                r'4.5.0'),
+    ('@DIRSEP@',                 '\\'),
+    ('@prefix@',                 prefix),
+    ('@MONETDB_BUILD@',          build),
+    ('@MONETDB_SOURCE@',         source),
+    ('@NO_X_CFLAGS@',            ''),
+    # conditionals for Mtest.py (see comment over there)
+    ('@CROSS_COMPILING_FALSE@',  '#'),
+    ('@DOCTOOLS_FALSE@',         '#'),
+    ('@HAVE_JAVA_FALSE@',        have_java_false),
+    ('@HAVE_MONET5_FALSE@',      ''),
+    ('@HAVE_MONET_FALSE@',       '#'),
+    ('@HAVE_PERL_FALSE@',        ''),
+    ('@HAVE_PERL_SWIG_FALSE@',   ''),
+    ('@HAVE_PHP_FALSE@',         ''),
+    ('@HAVE_PYTHON_FALSE@',      '#'),
+    ('@HAVE_PYTHON_SWIG_FALSE@', ''),
+    ('@HAVE_SWIG_FALSE@',        ''),
+    ('@LINK_STATIC_FALSE@',      ''),
+    ('@NOT_WIN32_FALSE@',        ''),
+    ('@PROFILING_FALSE@',        ''),
+    # SQL:
+    ('@MONET4_FALSE@',           '#'),
+    ('@MONET5_FALSE@',           ''),
+    ('@NATIVE_WIN32_FALSE@',     '#'),
 ]
 
 for key, val in subs[:]:

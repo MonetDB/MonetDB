@@ -275,7 +275,8 @@ static int atom_type(str s)
 	if (i == TYPE_bat) return -TYPE_bat;
 	if (i < 0) {
 	    char buf[PATHLENGTH], *p = s;
-	    strcpy(buf, "adm_"); strcpy(buf+4, p);
+	    strcpy(buf, "adm_"); /* assuming PATHLENGTH > 4... */
+	    strncpy(buf+4, p, sizeof(buf)-4);
 	    i = ATOMindex(buf);
   	}
 	return i; 
@@ -703,7 +704,7 @@ the standard mechanism.
 	        (p  = strchr(q+1, ':')) == NULL) continue;
 
 	    *q++ = 0; *p++ = 0;
-	    strcpy(nm, q);
+	    strncpy(nm, q, NM_LEN); nm[NM_LEN - 1] = 0;
 	    if (GDKdebug&65536) {	
 		THRprintf(GDKerr, "%s:%s:%s\n", tp, nm, p);
 	    }
@@ -965,7 +966,8 @@ static int conn_insert(str host, int port, int me, int sock)
 	    connections[i].port = port;
 	    connections[i].sock = sock;
             connections[i].waiter = (Thread)0;
-	    strcpy(connections[i].hostname, host);
+	    strncpy(connections[i].hostname, host, sizeof(connections[i].hostname));
+	    connections[i].hostname[sizeof(connections[i].hostname) - 1] = 0;
 	    if (me) {
 		    /* We want to pass the value of i to conn_waiter.
 		       This has to be done using a pointer to i,
@@ -1216,10 +1218,22 @@ TCPopen(int *retval, str address)
 	int fd, i, port = TCPPORT;
 	char *p, host[128];
 	
-	strcpy(host, address);
-	if ((p = strchr(host,':')) != NULL) {
-		*p++ = 0; port = atoi(p);
+	if ((p = strchr(address,':')) != NULL) {
+		if (p - address >= (int)sizeof(host)) {
+			/* address does not fit in host */
+			return GDK_FAIL;
+		}
+		strncpy(host, address, p - address);
+		host[p - address] = 0;
+		port = atoi(p + 1);
+	} else if (strlen(address) >= sizeof(host)) {
+		/* address does not fit in host */
+		return GDK_FAIL;
+	} else {
+		/* we know it'll fit */
+		strcpy(host, address);
 	}
+		
 	MT_set_lock(TCPlock, "TCPopen");
 	i = conn_find(host, port);
 	MT_unset_lock(TCPlock, "TCPopen");
