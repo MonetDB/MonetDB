@@ -1,3 +1,27 @@
-module("color");
+PROC test_color() : void := {
+    var c := rgb(100,101,102);
+    print(c);
+    print(red(c));
+    print(green(c));
+    print(blue(c));
+
+    c := hsv(90.0,0.5,1.0);
+    print(c);
+    print(hue(c));
+    print(saturation(c));
+    print(value(c));
+
+    c := ycc(200,100,50);
+    print(c);
+    print(luminance(c));
+    print(cr(c));
+    print(cb(c));
+
+    c := color("0x0012ABcd");
+    print(c);
+    print(red(c));
+    print(green(c));
+    print(blue(c));
+}
 test_color();
 quit();
