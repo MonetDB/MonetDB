@@ -3138,7 +3138,8 @@ unquote(char *msg, char **start, char **next)
 			}
 			s++;
 		}
-		*p++ = 0;	/* end-of-string quote */
+		*s = 0;		/* close string */
+		p++;		/* skip over end-of-string quote */
 		/* skip over trailing junk (presumably white space) */
 		while (*p && *p != ',' && *p != ']')
 			p++;
