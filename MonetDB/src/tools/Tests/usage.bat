@@ -2,10 +2,8 @@
 @prompt # $t $g  
 
 Mserver -?
-Mclient -help
+MapiClient -help
 Mcreatedb -?
 Mdestroydb -?
-Mload -?
-Mdump -?
-Mrecover -?
+Mshutdown -?
 
