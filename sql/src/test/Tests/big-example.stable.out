@@ -109,15 +109,15 @@ Over..
 
 5	"xtest"	0.9
 9	"testx"	9.1
-8	"texxst"	1e-04
+8	"texxst"	0.0001
 5	"xtest"	0.9
 9	"testx"	9.1
-8	"texxst"	1e-04
+8	"texxst"	0.0001
 6 Rows affected
 9	"testx"	9.1
 9	"testx"	9.1
-8	"texxst"	1e-04
-8	"texxst"	1e-04
+8	"texxst"	0.0001
+8	"texxst"	0.0001
 4 Rows affected
 
 # 16:09:41 >  
