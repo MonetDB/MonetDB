@@ -320,6 +320,7 @@ static tvar *table_optname(mvc * sql, scope * scp, stmt * sq,
 			char *cname = column_name(st);
 			stmt *sc = stmt_ibat(stmt_dup(st), stmt_dup(sq));
 
+			sc = stmt_alias(sc, tname, cname);
 			table_add_column(tv, sc, tname, cname);
 			_DELETE(cname);
 		}
