@@ -919,7 +919,7 @@ sql_value_exp(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset, i
 		if (sql->mode != m_prepare){
 			return sql_error(sql, 02, "Cannot have parameters (?) in normal queries, use PREPARE;");
 		}
-		sql_add_param(sql, n, s=stmt_var(_strdup(n), NULL)); 
+		sql_add_param(sql, _strdup(n), s=stmt_var(_strdup(n), NULL)); 
 		return stmt_dup(s);
 	}
 	case SQL_NULL: 
@@ -2726,6 +2726,7 @@ selects(mvc * sql, symbol * s)
 			ret = stmt_output(ret);
 		sql->type = Q_TABLE;
 		break;
+
 	default:
 		return sql_error(sql, 01, 
 			 "Select statement unknown Symbol(%ld)->token = %s",

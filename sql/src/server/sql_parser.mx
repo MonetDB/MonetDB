@@ -298,6 +298,8 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	table_name
 	ref_on
 	object_name
+	exec
+	exec_ref
 
 %type <type>
 	data_type
@@ -356,6 +358,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	single_datetime_field
 	interval_qualifier
 	scalar_exp_list
+	scalar_exp_list2
 	when_value_list
 	when_search_list
 	opt_seps
@@ -386,7 +389,6 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	opt_from_grantor
 	opt_column
 	opt_prep
-	exec
 	grantor
 	transaction_mode
 	transaction_mode_list
@@ -1435,6 +1437,7 @@ join_spec:
 
 sql: 
     opt_prep select_stmt 	{ $$ = $2; }
+ |  exec		
  ;
 
 select_stmt:
@@ -1885,7 +1888,6 @@ value_exp:
     atom
  |  column_ref 			{ $$ = _symbol_create_list( SQL_COLUMN, $1); }
  |  aggr_ref 
- |  exec func_ref		{ $$ = $2; } 
  |  func_ref 
  |  datetime_funcs
  |  string_funcs
@@ -1906,7 +1908,7 @@ func_ref:
   	  dlist_append_symbol(l, $3);
   	  dlist_append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_BINOP, l ); }
-|   IDENT '(' scalar_exp_list ')'
+|   IDENT '(' scalar_exp_list2 ')'
 	{ dlist *l = dlist_create();
   	  dlist_append_string(l, $1);
   	  dlist_append_list(l, $3);
@@ -2151,12 +2153,12 @@ user:
 
 literal:
     string
-		{  sql_subtype *t = sql_bind_subtype("CHARACTER", strlen($1), 0 ); 
+		{  sql_subtype *t = sql_bind_subtype("VARCHAR", strlen($1), 0 ); 
 		   $$ = _newAtomNode( atom_string(t, $1)); }
 
  |  user 
 		{  mvc *m = (mvc*)parm;
-		   sql_subtype *t = sql_bind_subtype("CHARACTER", strlen(m->user),0);
+		   sql_subtype *t = sql_bind_subtype("VARCHAR", strlen(m->user),0);
 		   $$ = _newAtomNode( atom_string(t, _strdup(m->user))); }
 
  |  sqlINT   	{ int digits = strlen($1);
@@ -2333,7 +2335,7 @@ case_exp:
 		   dlist_append_symbol(
 		    dlist_append_symbol(
 		     dlist_create(), $3), $5)); }
- |   COALESCE '(' scalar_exp_list ')'
+ |   COALESCE '(' scalar_exp_list2 ')'
 		{ $$ = _symbol_create_list(SQL_COALESCE, $3); }
  |   CASE scalar_exp when_value_list opt_else END
 		{ $$ = _symbol_create_list(SQL_CASE, 
@@ -2348,13 +2350,13 @@ case_exp:
 		     dlist_create(),$2),$3)); }
  ;
 
-scalar_exp_list:
+scalar_exp_list2:
     scalar_exp ',' scalar_exp ',' scalar_exp
 			{ $$ = dlist_append_symbol( dlist_create(), $1);
 			  $$ = dlist_append_symbol( $$, $3); 
 			  $$ = dlist_append_symbol( $$, $5);
 			}
- |  scalar_exp_list ',' scalar_exp
+ |  scalar_exp_list2 ',' scalar_exp
 			{ $$ = dlist_append_symbol( $1, $3); }
  ;
 
@@ -2599,10 +2601,31 @@ opt_prep:
  | /*nothing*/  { $$ = (int)m_normal; }
  ;
 
+exec_ref:
+    intval '(' ')'
+	{ dlist *l = dlist_create();
+  	  dlist_append_int(l, $1);
+  	  dlist_append_list(l, NULL);
+	  $$ = _symbol_create_list( SQL_NOP, l ); }
+|   intval '(' scalar_exp_list ')'
+	{ dlist *l = dlist_create();
+  	  dlist_append_int(l, $1);
+  	  dlist_append_list(l, $3);
+	  $$ = _symbol_create_list( SQL_NOP, l ); }
+ ;
+
+scalar_exp_list:
+    scalar_exp 		{ $$ = dlist_append_symbol( dlist_create(), $1); }
+ |  scalar_exp_list ',' scalar_exp
+			{ $$ = dlist_append_symbol( $1, $3); }
+ ;
+
+
 exec:
-     EXECUTE 	{ mvc *m = (mvc*)parm; 
+     EXECUTE exec_ref
+		{ mvc *m = (mvc*)parm; 
 		  m->mode = m_execute; 
-		  $$ = (int)m_execute; }
+		  $$ = $2; }
  ;
 
 

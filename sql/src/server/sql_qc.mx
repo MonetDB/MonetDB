@@ -75,7 +75,8 @@ typedef struct qc {
 
 sql_export qc *qc_create();
 sql_export void qc_destroy( qc *cache );
-sql_export cq *qc_find( qc *cache, symbol *s, list *params, int key );
+sql_export cq *qc_find( qc *cache, int id );
+sql_export cq *qc_match( qc *cache, symbol *s, list *params, int key );
 sql_export cq *qc_insert( qc *cache, symbol *s, list *params, int key, int type );
 sql_export int qc_size( qc *cache );
 
@@ -153,7 +154,18 @@ int param_list_cmp( list *l1, list *l2 )
 	return 0;
 }
 
-cq *qc_find( qc *cache, symbol *s, list *params, int key )
+cq *qc_find( qc *cache, int id )
+{
+	cq *q;
+
+	for (q = cache->q; q; q = q->next ){
+		if (q->id == id)
+			return q;
+	}
+	return NULL;
+}
+
+cq *qc_match( qc *cache, symbol *s, list *params, int key )
 {
 	cq *q;
 

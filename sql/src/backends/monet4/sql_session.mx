@@ -419,8 +419,38 @@ int sqlexecute(backend * be, stream *out )
 	if (explain == ex_performance)
 		Tparse = GDKusec();
 
-	if (explain == ex_plan || !c->cache ||
-	    !(q = qc_find(c->qc, c->sym, c->params, c->scanner.key))) {
+	if (c->mode == m_execute) {
+		node *a, *p;
+		int id = c->sym->data.lval->h->data.ival;
+		q = qc_find( c->qc, id);
+
+		if (!q) {
+			error(out, "Error: no prepared statement with the given query id\n");
+			err = -1;
+		} else if (!c->args || list_length(q->params) != list_length(c->args)) {
+			error(out, "Error: wrong number of arguments for prepared statement\n");
+			err = -1;
+			q = NULL;
+		} else {
+			for ( a = c->args->h, p = q->params->h; 
+			      a && p; 
+			      a = a->next, p = p->next){
+				atom *arg = a->data;
+				var_ *param = p->data;
+				sql_subtype *pt = tail_type(param->s);
+	
+				if (subtype_cmp(pt, arg->tpe) != 0) {
+					char buf[BUFSIZ];
+
+					snprintf( buf, BUFSIZ, "Error: wrong argument for prepared statement (%s,%s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
+					error(out, buf);
+					err = -1;
+					q = NULL;
+				}
+			}
+		}
+	} else if (explain == ex_plan || !c->cache ||
+	    !(q = qc_match(c->qc, c->sym, c->params, c->scanner.key))) {
 		char *cmd = NULL;
 		stmt *s = sql_symbol2stmt(c);
 
