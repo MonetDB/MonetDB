@@ -245,12 +245,12 @@ public class MonetDB {
 		int start = 0;
 		if (!wasInString && len > 0) {
 			// trim spaces at the start of the string
-			for (int i = 0; Character.isWhitespace(query.charAt(i)) && i < len; i++) start++;
+			for (; start < len && Character.isWhitespace(query.charAt(start)); start++);
 		}
 		int stop = len - 1;
 		if (!inString && stop > start) {
 			// trim spaces at the end of the string
-			for (int i = stop; Character.isWhitespace(query.charAt(i)) && i >= start; i--) stop--;
+			for (; stop >= start && Character.isWhitespace(query.charAt(stop)); stop--);
 		}
 		stop++;
 
