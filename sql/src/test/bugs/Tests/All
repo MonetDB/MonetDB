@@ -18,7 +18,7 @@ bug-sf-952755
 bug-sf-952758
 bug-sf-953545
 bug-sf-953560
-bug-sf-960166
+date_parsing-bug-sf-960166
 innerjoin_between-bug-sf-960672
 cast_varchar2int-bug-sf-964165
 update_where-bug-sf-976963
