@@ -163,17 +163,17 @@ SQL  12 Rows affected
 #----------------------
 #| category | totalnr |
 #----------------------
-[ "TURBOPROP",	32	]
 [ "JET",	15	]
 [ "PROPELLER",	16	]
+[ "TURBOPROP",	32	]
 SQL  3 Rows affected
 #    17: select category,count(*) from aircraft where engines=2 group by category having count(*)>4;
 #-----------------------------
 #| category | count_category |
 #-----------------------------
-[ "TURBOPROP",	32	]
 [ "JET",	15	]
 [ "PROPELLER",	16	]
+[ "TURBOPROP",	32	]
 SQL  3 Rows affected
 #    18: select flight_number,range_miles,fare_class FROM aircraft,flight,flight_class WHERE flight.flight_code=flight_class.flight_code AND flight.aircraft_code=aircraft.aircraft_code AND range_miles<>0 AND (stops=1 OR stops=2) GROUP BY flight_number,range_miles,fare_class;
 #--------------------------------------------

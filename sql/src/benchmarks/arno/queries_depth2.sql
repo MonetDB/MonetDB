@@ -79,8 +79,8 @@ SELECT MODEL286.is_mutagen, count(distinct MODEL286.model_id ) FROM MODEL MODEL2
 SELECT MODEL286.is_mutagen,MODEL286.is_mutagen, count(distinct MODEL286.model_id ) FROM MODEL MODEL286  WHERE MODEL286.logp='2' group by MODEL286.is_mutagen , MODEL286.is_mutagen;
 SELECT MODEL286.is_mutagen,MODEL286.lumo, count(distinct MODEL286.model_id ) FROM MODEL MODEL286  WHERE MODEL286.logp='2' group by MODEL286.lumo , MODEL286.is_mutagen;
 SELECT MODEL286.is_mutagen,MODEL286.logp, count(distinct MODEL286.model_id ) FROM MODEL MODEL286  WHERE MODEL286.logp='2' group by MODEL286.logp , MODEL286.is_mutagen;
-SELECT MODEL297.is_mutagen, count(distinct MODEL297.model_id ) FROM MODEL MODEL297, ATOM T1008290440150  WHERE MODEL297.model_id=T1008290440150.model_id AND MODEL297.logp='1' group by MODEL297.is_mutagen;
-SELECT MODEL297.is_mutagen, count(distinct MODEL297.model_id ) FROM MODEL MODEL297, BOND T1008290440700  WHERE MODEL297.model_id=T1008290440700.model_id AND MODEL297.logp='1' group by MODEL297.is_mutagen;
+SELECT MODEL297.is_mutagen, count(distinct MODEL297.model_id ) FROM MODEL MODEL297, ATOM T1008290440150  WHERE MODEL297.model_id=T1008290440150.model_id AND MODEL297.logp='1' group by MODEL297.is_mutagen order by is_mutagen;
+SELECT MODEL297.is_mutagen, count(distinct MODEL297.model_id ) FROM MODEL MODEL297, BOND T1008290440700  WHERE MODEL297.model_id=T1008290440700.model_id AND MODEL297.logp='1' group by MODEL297.is_mutagen order by is_mutagen;
 SELECT MODEL297.is_mutagen,MODEL297.is_mutagen, count(distinct MODEL297.model_id ) FROM MODEL MODEL297  WHERE MODEL297.logp='1' group by MODEL297.is_mutagen , MODEL297.is_mutagen;
 SELECT MODEL297.is_mutagen,MODEL297.lumo, count(distinct MODEL297.model_id ) FROM MODEL MODEL297  WHERE MODEL297.logp='1' group by MODEL297.lumo , MODEL297.is_mutagen;
 SELECT MODEL297.is_mutagen,MODEL297.logp, count(distinct MODEL297.model_id ) FROM MODEL MODEL297  WHERE MODEL297.logp='1' group by MODEL297.logp , MODEL297.is_mutagen;
