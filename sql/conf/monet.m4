@@ -129,8 +129,8 @@ if test "x$have_pthread" != xno; then
   AC_CHECK_HEADERS(pthread.h semaphore.h) 
   CPPFLAGS="$save_CPPFLAGS"
 
-  save_LIBS="$LIBS"
-  LIBS="$LIBS $PTHREAD_LIBS"
+  save_LDFLAGS="$LDFLAGS"
+  LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
   AC_CHECK_LIB(pthread, sem_init, 
 	[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread" 
           AC_DEFINE(HAVE_LIBPTHREAD) 
@@ -141,7 +141,7 @@ if test "x$have_pthread" != xno; then
           	AC_DEFINE(HAVE_LIBPTHREAD) 
 	  	have_pthread=yes ] , [ have_pthread=no], "-lposix4" )
 	] )
-  LIBS="$save_LIBS"
+  LDFLAGS="$save_LDFLAGS"
 
   if test "x$have_pthread" != xyes; then
     PTHREAD_LIBS=""
@@ -162,14 +162,14 @@ if test "x$have_readline" != xno; then
     READLINE_LIBS="-L$withval/lib"
   fi
 
-  save_LIBS="$LIBS"
-  LIBS="$LIBS $READLINE_LIBS"
+  save_LDFLAGS="$LDFLAGS"
+  LDFLAGS="$LDFLAGS $READLINE_LIBS"
   AC_CHECK_LIB(readline, readline, 
 	[ READLINE_LIBS="$READLINE_LIBS -lreadline -ltermcap" 
           AC_DEFINE(HAVE_LIBREADLINE) 
 	  have_readline=yes ]
 	, have_readline=no, "-ltermcap" )
-  LIBS="$save_LIBS"
+  LDFLAGS="$save_LDFLAGS"
 
   if test "x$have_readline" != xyes; then
     READLINE_LIBS=""
@@ -185,10 +185,10 @@ MALLOC_LIBS=""
 AC_CHECK_LIB(malloc, malloc, [ MALLOC_LIBS="-lmalloc" ] )
 AC_SUBST(MALLOC_LIBS)
 
-save_LIBS="$LIBS"
-LIBS="$LIBS $MALLOC_LIBS"
+save_LDFLAGS="$LDFLAGS"
+LDFLAGS="$LDFLAGS $MALLOC_LIBS"
 AC_CHECK_FUNCS(mallopt mallinfo)
-LIBS="$save_LIBS"
+LDFLAGS="$save_LDFLAGS"
 
 
 SOCKET_LIBS=""
@@ -213,11 +213,11 @@ if test "x$have_z" != xno; then
   CPPFLAGS="$save_CPPFLAGS"
 
   if test "x$have_z" = xyes; then
-  	save_LIBS="$LIBS"
-  	LIBS="$LIBS $Z_LIBS"
+  	save_LDFLAGS="$LDFLAGS"
+  	LDFLAGS="$LDFLAGS $Z_LIBS"
   	AC_CHECK_LIB(z, gzopen, Z_LIBS="$Z_LIBS -lz"
         	AC_DEFINE(HAVE_LIBZ) have_z=yes, have_z=no)
-  	LIBS="$save_LIBS"
+  	LDFLAGS="$save_LDFLAGS"
   fi
 
   if test "x$have_z" != xyes; then
@@ -246,11 +246,11 @@ if test "x$have_bz" != xno; then
   CPPFLAGS="$save_CPPFLAGS"
 
   if test "x$have_bz" = xyes; then
-  	save_LIBS="$LIBS"
-  	LIBS="$LIBS $BZ_LIBS"
+  	save_LDFLAGS="$LDFLAGS"
+  	LDFLAGS="$LDFLAGS $BZ_LIBS"
   	AC_CHECK_LIB(bz2, BZ2_bzopen, BZ_LIBS="$BZ_LIBS -lbz2"
         	AC_DEFINE(HAVE_LIBBZ2) have_bz=yes, have_bz=no)
-  	LIBS="$save_LIBS"
+  	LDFLAGS="$save_LDFLAGS"
   fi
 
   if test "x$have_bz" != xyes; then
@@ -279,8 +279,8 @@ if test "x$have_getopt" != xno; then
   AC_CHECK_HEADERS(getopt.h) 
   CPPFLAGS="$save_CPPFLAGS"
 
-  save_LIBS="$LIBS"
-  LIBS="$LIBS $GETOPT_LIBS"
+  save_LDFLAGS="$LDFLAGS"
+  LDFLAGS="$LDFLAGS $GETOPT_LIBS"
   AC_CHECK_LIB(c, getopt_long, 
 	[ GETOPT_LIBS="$GETOPT_LIBS" 
           AC_DEFINE(HAVE_LIBGETOPT) 
@@ -290,7 +290,7 @@ if test "x$have_getopt" != xno; then
           	AC_DEFINE(HAVE_LIBGETOPT) 
 	  	have_getopt=yes ] , [ have_getopt=no] )
 	] )
-  LIBS="$save_LIBS"
+  LDFLAGS="$save_LDFLAGS"
 
   if test "x$have_getopt" != xyes; then
     GETOPT_LIBS=""
