@@ -208,10 +208,10 @@ PROC fake_fetch (bat[void,any::1] b, @1 p) : any::1
 @:fake_fetch(int)@
 @:fake_fetch(oid)@
 
-PROC fake_leftfetchjoin (bat[oid,oid] l, bat[oid,any::3] r) : bat[oid,any::3]
+PROC fake_leftfetchjoin (bat[any::1,any::2] l, bat[any::2,any::3] r) : bat[any::1,any::3]
 {
 	if (is_fake_project(r)) {
-		return r;
+		return project(l,fetch(r,0));
 	} else {
 		return leftfetchjoin(l,r);
 	}
@@ -381,15 +381,12 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	npairs = nbats>>1;
 
 	for (i=0; i<nbats; i+=2) {
-		bit ci, cj;
 		j = i+1;
-		ci = (i==0 || !is_fake_project(b[i]));
-		cj = (j==1 || !is_fake_project(b[j]));
-		if (ci && !BAThdense(b[i])) {
+		if (!BAThdense(b[i])) {
 			GDKerror("merged_union: BAT %d must have a dense head.\n", i+1);
 			return GDK_FAIL;
 		}
-		if (cj && !BAThdense(b[j])) {
+		if (!BAThdense(b[j])) {
 			GDKerror("merged_union: BAT %d must have a dense head.\n", j+1);
 			return GDK_FAIL;
 		}
@@ -397,19 +394,19 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 			GDKerror("merged_union: BATs %d & %d must have the same tail types.\n", i+1, j+1);
 			return GDK_FAIL;
 		}
-		if (ci && b[i]->hseqbase != b[0]->hseqbase) {
+		if (b[i]->hseqbase != b[0]->hseqbase) {
 			GDKerror("merged_union: BAT %d must have the same hseqbase as BAT 1.\n", i+1);
 			return GDK_FAIL;
 		}
-		if (cj && b[j]->hseqbase != b[1]->hseqbase) {
+		if (b[j]->hseqbase != b[1]->hseqbase) {
 			GDKerror("merged_union: BAT %d must have the same hseqbase as BAT 2.\n", j+1);
 			return GDK_FAIL;
 		}
-		if (ci && BATcount(b[i]) != BATcount(b[0])) {
+		if (BATcount(b[i]) != BATcount(b[0])) {
 			GDKerror("merged_union: BAT %d must have the same size as BAT 1.\n", i+1);
 			return GDK_FAIL;
 		}
-		if (cj && BATcount(b[j]) != BATcount(b[1])) {
+		if (BATcount(b[j]) != BATcount(b[1])) {
 			GDKerror("merged_union: BAT %d must have the same size as BAT 2.\n", j+1);
 			return GDK_FAIL;
 		}
@@ -450,11 +447,7 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 		dst[k] = BUNlast(bn[k]);
 	}
 	for (i=0; i<nbats; i++) {
-		if (is_fake_project(b[i])) {
-			bs[i] = 0;
-		} else {
-			bs[i] = BUNsize(b[i]);
-		}
+		bs[i] = BUNsize(b[i]);
 		cur[i] = BUNfirst(b[i]);
 		lst[i] = BUNlast(b[i]);
 	}
@@ -979,9 +972,9 @@ cleanup:
 
 int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 {
-	BAT *bn, **batlist = NULL, *the_frag_bat = NULL;
+	BAT *bn, **batlist;
 	BUN q, pp, pf, pw, dst;
-	int bs, bsp, bsf, ii = 0, tt = 0;
+	int bs, bsp, bsf, ii = 0;
 	size_t cnt, len;
 	oid base, wl, wh;
 	bit triv_prop;
@@ -1013,50 +1006,14 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	ERRORcheck(len==0,
 		"mposjoin: third input BAT (ws_item) must not be empty.\n");
 
-	the_frag_bat = BATdescriptor(*(bat*)BUNtloc(ws_item, BUNfirst(ws_item)));
-	tt = the_frag_bat->ttype;
-	BBPunfix(the_frag_bat->batCacheid);
-	the_frag_bat = NULL;
+	batlist = (BAT**)GDKmalloc(len * sizeof(BAT*));
+	if (batlist == NULL) {
+		GDKerror("mposjoin: GDKmalloc(" SZFMT ") failed.\n", len * sizeof(BAT*));
+		return GDK_FAIL;
+	}
 
 	ii = 0;
-	
-	if (cnt==0) {
-		@:mpos_res_empty@
-	}
-	if (fake_frag) {
-		oid the_frag_id = *(oid*)BUNtail(frag, BUNfirst(frag));
-		len = 1;
-		batlist = &the_frag_bat;
-		BUNfndVOID(pw, ws_item, &the_frag_id);
-		if (pw==NULL) {
-			@:mpos_res_empty@
-		}
-
-		@:mpos_init_batlist@
-		if (!fake_ws_item) {
-			*res = bn = BATleftfetchjoin(pre, batlist[0], oid_nil);
-			@:mpos_free_batlist@
-			if (bn == NULL) {
-				GDKerror("mposjoin: BATleftfetchjoin(pre, ws_item["SZFMT"]) failed.\n",
-					 the_frag_id);
-				return GDK_FAIL;
-			}
-			return GDK_SUCCEED;
-		}
-	
-	} else {
-		batlist = (BAT**)GDKmalloc(len * sizeof(BAT*));
-		if (batlist == NULL) {
-			GDKerror("mposjoin: GDKmalloc(" SZFMT ") failed.\n", len * sizeof(BAT*));
-			return GDK_FAIL;
-		}
-		BATloopFast(ws_item, pw, q, bs) {
-			@:mpos_init_batlist@
-		}
-	}
-
-@= mpos_init_batlist
-{
+	BATloopFast(ws_item, pw, q, bs) {
 		bit fake_item = FALSE;
 		bat bid = *(bat*)BUNtloc(ws_item, pw);
 		batlist[ii] = BATdescriptor(bid);
@@ -1065,37 +1022,27 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 		if (!(fake_item || BAThdense(batlist[ii]))) {
 			GDKerror("mposjoin: all BATs in the tail of the third input BAT (ws_item) must have a dense head.\n");
 			ii++;
-			@:mpos_free_batlist@
+			@:free_batlist@
 			return GDK_FAIL;
 		}
 		if (batlist[0]->ttype != batlist[ii]->ttype) {
 			GDKerror("mposjoin: all BATs in the tail of the third input BAT (ws_item) must have the same tail type.\n");
 			ii++;
-			@:mpos_free_batlist@
+			@:free_batlist@
 			return GDK_FAIL;
 		}
 		ii++;
-}	
-@
-@= mpos_res_empty
-	cnt = 0;
-	@:mpos_res_create@
-	@:mpos_res_prop@
+	}	
 
-	return GDK_SUCCEED;
-@
-@= mpos_res_create
 	/* create result BAT */
 
-	bn = BATnew(TYPE_void, tt, cnt);
+	bn = BATnew(TYPE_void, batlist[0]->ttype, cnt);
 	if (bn == NULL) {
-		GDKerror("mposjoin: BATnew(TYPE_void, %s, " SZFMT ") failed.\n", ATOMname(ATOMtype(tt)), cnt);
-		@:mpos_free_batlist@
+		GDKerror("mposjoin: BATnew(TYPE_void, %s, " SZFMT ") failed.\n", ATOMname(ATOMtype(batlist[0]->ttype)), cnt);
+		@:free_batlist@
 		return GDK_FAIL;
 	}
 	BATseqbase(bn, base);
-@c
-	@:mpos_res_create@
 	bs = BUNsize(bn);
 	dst = BUNlast(bn);
 
@@ -1117,41 +1064,27 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 @= mposjoin
 	/*  @1: ATOMstorage(batlist[0]->ttype) (chr, sht, int, flt, lng, dbl, any)
 	 *  @2: tloc, tvar, tail
+	 *  @3: simple, atom
 	 */
-	 if (fake_frag) {
-	 	/* !fake_ws_item handled above */
-	 	@:mposjoin_fake_fake(@1,@2)@
-	 } else {
-		if (fake_ws_item) {
-			@:mposjoin_(@1,@2,is_fake_project(b))@
-		} else {
-			@:mposjoin_(@1,@2,FALSE)@
-		}
+	if (fake_ws_item) {
+		@:mposjoin_(@1,@2,@3,is_fake_project(b))@
+	} else {
+		@:mposjoin_(@1,@2,@3,FALSE)@
 	}
 	break;
-@
-@= mposjoin_fake_fake
-	/*  @1: ATOMstorage(batlist[0]->ttype) (chr, sht, int, flt, lng, dbl, any)
-	 *  @2: tloc, tvar, tail
-	 */
-	BAT *b = batlist[0];
-	ptr  w = BUN@2(b, BUNfirst(b));
-	for (q = BUNlast(pre) ; pp < q ; pp += bsp) {
-		void@1_bunfastins_nocheck_noinc(bn,dst,0,w);
-		dst += bs;
-	}
 @
 @= mposjoin_
 	/*  @1: ATOMstorage(batlist[0]->ttype) (chr, sht, int, flt, lng, dbl, any)
 	 *  @2: tloc, tvar, tail
-	 *  @3: FALSE / is_fake_project(b)
+	 *  @3: simple, atom
+	 *  @4: FALSE / is_fake_project(b)
 	 */
 	for (q = BUNlast(pre) ; pp < q ; pp += bsp, pf += bsf) {
 		oid p = *(oid*)BUNtail(pre,pp);  /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 		oid f = *(oid*)BUNtail(frag,pf); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 		if (f >= wl && f <= wh) {
 			BAT *b = batlist[f - wl];
-			if (@3) {
+			if (@4) {
 				void@1_bunfastins_nocheck_noinc(bn,dst,0,BUN@2(b,BUNfirst(b)));
 				dst += bs;
 			} else {
@@ -1181,11 +1114,10 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 			@:mposjoin(any,tloc,atom)@
 		}
 	}
-	bn->batBuns->free = dst - bn->batBuns->base;
 
-@= mpos_res_prop
 	/* set result properties */
 
+	bn->batBuns->free = dst - bn->batBuns->base;
 	if (!bn->batDirty) bn->batDirty = TRUE;
 	triv_prop = (BATcount(bn) < 2);
 	BATkey(bn,TRUE);
@@ -1196,30 +1128,27 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	bn->tdense = FALSE;
 
 	*res = bn;
-@c
-	@:mpos_res_prop@
-	@:mpos_free_batlist@
+
+	@:free_batlist@
 
 	return GDK_SUCCEED;
 bunins_failed:
 	GDKerror("mposjoin: bunins failed.\n");
 	BBPreclaim(bn);
-@= mpos_free_batlist
+@= free_batlist
 	while (ii > 0) {
 		BBPunfix(batlist[--ii]->batCacheid);
 	}
-	if (batlist && !fake_frag) {
-		GDKfree(batlist);
-	}
+	GDKfree(batlist);
 @c
-	@:mpos_free_batlist@
+	@:free_batlist@
 	return GDK_FAIL;
 }
 
 
 int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 {
-	BAT *bn, **batlist = NULL, *the_frag_bat = NULL;
+	BAT *bn, **batlist;
 	BUN q, pp, pf, pw;
 	int bsp, bsf, bsw, ii = 0;
 	size_t cnt, len, sze;
@@ -1251,62 +1180,30 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	ERRORcheck(len==0,
 		"mvaljoin: third input BAT (ws_item) must not be empty.\n");
 
+	batlist = (BAT**)GDKmalloc(len * sizeof(BAT*));
+	if (batlist == NULL) {
+		GDKerror("mvaljoin: GDKmalloc(" SZFMT ") failed.\n", len * sizeof(BAT*));
+		return GDK_FAIL;
+	}
+
 	sze = cnt;
 	ii = 0;
 	all_hash = all_sort = all_key = TRUE;
 	some_hash = some_sort = FALSE;
-	
-	if (sze == 0) {
-		@:mval_res_empty@
-	}
-	if (fake_frag) {
-		oid the_frag_id = *(oid*)BUNtail(frag, BUNfirst(frag));
-		len = 1;
-		batlist = &the_frag_bat;
-		BUNfndVOID(pw, ws_item, &the_frag_id);
-		if (pw==NULL) {
-			@:mval_res_empty@
-		}
-
-		@:mval_init_batlist@
-		*res = bn = BATleftjoin(pre, BATmirror(batlist[0]), oid_nil);
-		@:mval_free_batlist@
-		if (bn == NULL) {
-			GDKerror("mvaljoin: BATleftjoin(pre, BATmirror(ws_item["SZFMT"])) failed.\n",
-				 the_frag_id);
-			return GDK_FAIL;
-		}
-		return GDK_SUCCEED;
-
-	} else {
-		batlist = (BAT**)GDKmalloc(len * sizeof(BAT*));
-		if (batlist == NULL) {
-			GDKerror("mvaljoin: GDKmalloc(" SZFMT ") failed.\n", len * sizeof(BAT*));
-			return GDK_FAIL;
-		}
-		BATloopFast(ws_item, pw, q, bsw) {
-			@:mval_init_batlist@
-		}
-	}
-	if (all_key) {
-		sze = cnt;
-	}
-
-@= mval_init_batlist
-{
+	BATloopFast(ws_item, pw, q, bsw) {
 		bit hsh, srt;
 		bat bid = *(bat*)BUNtloc(ws_item, pw);
 		batlist[ii] = BATdescriptor(bid);
 		if (!BAThdense(batlist[ii])) {
 			GDKerror("mvaljoin: all BATs in the tail of the third input BAT (ws_item) must have a dense head.\n");
 			ii++;
-			@:mval_free_batlist@
+			@:free_batlist@
 			return GDK_FAIL;
 		}
 		if (batlist[ii]->ttype != TYPE_oid) {
 			GDKerror("mvaljoin: all BATs in the tail of the third input BAT (ws_item) must have tail type OID.\n");
 			ii++;
-			@:mval_free_batlist@
+			@:free_batlist@
 			return GDK_FAIL;
 		}
 		hsh = (BAThash(BATmirror(batlist[ii]), 0) != NULL);
@@ -1318,26 +1215,16 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 		all_key &= (batlist[ii]->tkey!=0);
 		sze = MAX(sze, BATcount(batlist[ii]));
 		ii++;
-}	
-@
-@= mval_res_empty
-	sze = 0;
-	@:mval_res_create@
-	@:mval_res_prop@
+	}	
 
-	return GDK_SUCCEED;
-@
-@= mval_res_create
 	/* create result BAT */
 
 	bn = BATnew(TYPE_oid, TYPE_oid, sze);
 	if (bn == NULL) {
 		GDKerror("mvaljoin: BATnew(TYPE_oid, TYPE_oid, " SZFMT ") failed.\n", sze);
-		@:mval_free_batlist@
+		@:free_batlist@
 		return GDK_FAIL;
 	}
-@c
-	@:mval_res_create@
 
 	/* do the mvaljoin */
 
@@ -1345,7 +1232,11 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	wh = wl + len - 1;
 
 	bsp = BUNsize(pre);
-	bsf = BUNsize(frag);
+	if (fake_frag) {
+		bsf = 0;
+	} else {
+		bsf = BUNsize(frag);
+	}
 
 	pp = BUNfirst(pre);
 	pf = BUNfirst(frag);
@@ -1417,7 +1308,6 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 		@:mvaljoin(@:scan_only@)@
 	}
 
-@= mval_res_prop
 	/* set result properties */
 
 	if (!bn->batDirty) bn->batDirty = TRUE;
@@ -1437,22 +1327,19 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	}
 
 	*res = bn;
-@c
-	@:mval_res_prop@
-	@:mval_free_batlist@
+
+	@:free_batlist@
 
 	return GDK_SUCCEED;
 bunins_failed:
 	GDKerror("mvaljoin: bunins failed.\n");
 	BBPreclaim(bn);
-@= mval_free_batlist
+@= free_batlist
 	while (ii > 0) {
 		BBPunfix(batlist[--ii]->batCacheid);
 	}
-	if (batlist && !fake_frag) {
-		GDKfree(batlist);
-	}
+	GDKfree(batlist);
 @c
-	@:mval_free_batlist@
+	@:free_batlist@
 	return GDK_FAIL;
 }

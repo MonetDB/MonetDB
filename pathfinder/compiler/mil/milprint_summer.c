@@ -1468,6 +1468,12 @@ loop_liftedElemConstr (FILE *f, int i)
  /* attr */ "var content_pre := res_item;\n"
  /* attr */ /* as well as content_frag_pre */
  /* attr */ "var content_frag_pre := res_frag;\n"
+            "if (is_fake_project(ctx_dn_frag)) {\n"
+            "    content_frag_pre := pruned_input.reverse().project(ctx_dn_frag.fetch(0));\n"
+            "    content_frag_pre := content_frag_pre.reverse().mark(0@0).reverse();\n"
+            "} else {\n"
+            "    content_frag_pre := res_frag;\n"
+            "}\n"
 
             "res_item := nil_oid_oid;\n"
             "res_frag := nil_oid_oid;\n"

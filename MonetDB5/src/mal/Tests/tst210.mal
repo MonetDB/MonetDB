@@ -1,8 +1,0 @@
-# simple renaming of a bat;
-
-b:= new(:int,:int);
-insert(b,1,1);
-print(b);
-setName(b,"myhome");
-setColumn(b,"first","last");
-print(b);
