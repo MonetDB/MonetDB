@@ -182,6 +182,7 @@ typedef enum PFalg_test_t PFalg_test_t;
 enum PFalg_op_kind_t {
       aop_lit_tbl          /**< literal table */
     , aop_disjunion        /**< union two relations with same schema */
+    , aop_intersect        /**< intersect two relations with same schema */
     , aop_difference       /**< difference of two relations with same schema */
     , aop_cross            /**< cross product (Cartesian product) */
     , aop_eqjoin           /**< equi-join */
@@ -199,6 +200,7 @@ enum PFalg_op_kind_t {
     , aop_num_subtract     /**< arithmetic minus operator */
     , aop_num_multiply     /**< arithmetic times operator */
     , aop_num_divide       /**< arithmetic divide operator */
+    , aop_num_modulo       /**< arithmetic modulo operator */
     , aop_num_eq           /**< numeric equal operator */
     , aop_num_gt           /**< numeric greater-than operator */
     , aop_num_neg          /**< numeric negation operator */
@@ -214,6 +216,10 @@ enum PFalg_op_kind_t {
     , aop_docnode          /**< document node-constructing operator */
     , aop_comment          /**< comment-constructing operator */
     , aop_processi         /**< processing instruction-constructing operator */
+    , aop_items_to_nodes   /**< operator for fs:item-sequence-to-node-sequence
+                                builtin function */
+    , aop_merge_adjacent   /**< operator for pf:merge-adjacent-text-nodes
+                                builtin function */
     , aop_seqty1           /**< test for exactly one type occurrence in one
                                 iteration (Pathfinder extension) */
     , aop_all              /**< test if all items in an iteration are true */
@@ -456,6 +462,14 @@ PFalg_op_t * PFalg_doc_tbl (char *rel);
  */
 PFalg_op_t * PFalg_disjunion (PFalg_op_t *, PFalg_op_t *);
 
+
+/**
+ * Intersection between two relations.
+ * Both argument must have the same schema.
+ */
+PFalg_op_t * PFalg_intersect (PFalg_op_t *, PFalg_op_t *);
+
+
 /**
  * Difference of two relations.
  * Both argument must have the same schema.
@@ -527,6 +541,10 @@ PFalg_op_t * PFalg_multiply (PFalg_op_t *n, PFalg_att_t res,
 PFalg_op_t * PFalg_divide (PFalg_op_t *n, PFalg_att_t res,
                            PFalg_att_t att1, PFalg_att_t att2);
 
+/** Constructor for arithmetic modulo operators. */
+PFalg_op_t * PFalg_modulo (PFalg_op_t *n, PFalg_att_t res,
+                           PFalg_att_t att1, PFalg_att_t att2);
+
 /** Constructor for numeric equal operators. */
 PFalg_op_t * PFalg_eq (PFalg_op_t *n, PFalg_att_t res,
                        PFalg_att_t att1, PFalg_att_t att2);
@@ -583,16 +601,23 @@ PFalg_op_t * PFalg_attribute (PFalg_op_t *doc, PFalg_op_t *tags,
 			      PFalg_op_t *cont);
 
 /** Constructor for text node operators. */
-PFalg_op_t * PFalg_textnode (PFalg_op_t *doc, PFalg_op_t *cont);
+PFalg_op_t * PFalg_textnode (PFalg_op_t *cont);
 
 /** Constructor for document node operators. */
 PFalg_op_t * PFalg_docnode (PFalg_op_t *doc, PFalg_op_t *cont);
 
 /** Constructor for comment operators. */
-PFalg_op_t * PFalg_comment (PFalg_op_t *doc, PFalg_op_t *cont);
+PFalg_op_t * PFalg_comment (PFalg_op_t *cont);
 
 /** Constructor for processing instruction operators. */
-PFalg_op_t * PFalg_processi (PFalg_op_t *doc, PFalg_op_t *cont);
+PFalg_op_t * PFalg_processi (PFalg_op_t *cont);
+
+/** Constructor for fs:item-sequence-to-node-sequence() functionality */
+PFalg_op_t *PFalg_pf_item_seq_to_node_seq (PFalg_op_t *n);
+
+/** Constructor for pf:merge-adjacent-text-nodes() functionality */
+PFalg_op_t *PFalg_pf_merge_adjacent_text_nodes (PFalg_op_t *doc,
+						PFalg_op_t *n);
 
 /** Cast nat to int. */
 PFalg_op_t * PFalg_cast_item (PFalg_op_t *o);

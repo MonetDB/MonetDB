@@ -563,7 +563,7 @@ castdbl :   LSQBR CDBL LBRACK item RBRACK operator RSQBR
 textnode :  LSQBR TEXT operator operator RSQBR
             {
               /* [TEXT operator operator] */
-	      $$=textnode ($3, $4);
+	      $$=textnode ($4);
             }
         ;
 

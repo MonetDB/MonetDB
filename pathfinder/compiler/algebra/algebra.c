@@ -787,6 +787,57 @@ PFalg_disjunion (PFalg_op_t *n1, PFalg_op_t *n2)
 
 
 /**
+ * Intersection between two relations.
+ * Both argument must have the same schema.
+ */
+PFalg_op_t * PFalg_intersect (PFalg_op_t *n1, PFalg_op_t *n2)
+{
+    PFalg_op_t *ret = alg_op_wire2 (aop_intersect, n1, n2);
+    int         i, j;
+
+    /* see if both operands have same number of attributes */
+    if (n1->schema.count != n2->schema.count)
+        PFoops (OOPS_FATAL,
+                "Schema of two arguments of INTERSECTION do not match");
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n1->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* see if we find each attribute of n1 also in n2 */
+    for (i = 0; i < n1->schema.count; i++) {
+        for (j = 0; j < n2->schema.count; j++)
+            if (!strcmp (n1->schema.items[i].name, n2->schema.items[j].name)) {
+		/* The two attributes match, so include their name
+		 * and type information into the result. This allows
+		 * for the order of schema items in n1 and n2 to be
+		 * different.
+		 */
+		ret->schema.items[i] =
+		(struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
+					     .type = n1->schema.items[i].type
+                                                 | n2->schema.items[j].type };
+                break;
+	    }
+
+        if (j == n2->schema.count)
+            PFoops (OOPS_FATAL,
+                    "Schema of two arguments of INTERSECTION do not match");
+    }
+
+    /* set schema
+    for (i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] =
+            (struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
+                                         .type = n1->schema.items[i].type
+                                               | n2->schema.items[i].type };
+    */
+    return ret;
+}
+
+
+/**
  * Difference of two relations.
  * Both argument must have the same schema.
  */
@@ -823,7 +874,7 @@ PFalg_op_t * PFalg_difference (PFalg_op_t *n1, PFalg_op_t *n2)
 
         if (j == n2->schema.count)
             PFoops (OOPS_FATAL,
-                    "Schema of two arguments of UNION do not match");
+                    "Schema of two arguments of DIFFERENCE do not match");
     }
 
     /* set schema
@@ -1096,6 +1147,15 @@ PFalg_divide (PFalg_op_t *n,
               PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
     return arithm_op (aop_num_divide, n, res, att1, att2);
+}
+
+
+/** Constructs an operator for an arithmetic modulo operation. */
+PFalg_op_t *
+PFalg_modulo (PFalg_op_t *n,
+              PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
+{
+    return arithm_op (aop_num_modulo, n, res, att1, att2);
 }
 
 
@@ -1747,7 +1807,7 @@ PFalg_op_t * PFalg_element (PFalg_op_t *doc, PFalg_op_t *tag,
  * names, and @a cont is the content of the attributes.
  */
 PFalg_op_t * PFalg_attribute (PFalg_op_t *doc, PFalg_op_t *tag,
-			    PFalg_op_t *cont)
+			      PFalg_op_t *cont)
 {
     PFalg_op_t *ret = alg_op_wire3 (aop_attribute, doc, tag, cont);
     int i;
@@ -1773,21 +1833,30 @@ PFalg_op_t * PFalg_attribute (PFalg_op_t *doc, PFalg_op_t *tag,
  * @a doc is the current document and @a cont is the text content of
  * the node.
  */
-PFalg_op_t * PFalg_textnode (PFalg_op_t *doc, PFalg_op_t *cont)
+PFalg_op_t * PFalg_textnode (PFalg_op_t *cont)
 {
-    PFalg_op_t *ret = alg_op_wire2 (aop_textnode, doc, cont);
+    PFalg_op_t *ret = alg_op_wire1 (aop_textnode, cont);
     int i;
 
     /* set result schema */
-    ret->schema.count = doc_schm.count + 1;
+    ret->schema.count = doc_schm.count + 2;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
     for (i = 0; i < doc_schm.count; i++)
         ret->schema.items[i] = doc_schm.items[i];
 
-    ret->schema.items[ret->schema.count-1].name = "iter";
-    ret->schema.items[ret->schema.count-1].type = aat_nat;
+    /* Since this functionality is also required for the builtin
+     * item-sequence-to-node-sequence() function, we must
+     * additionally include the "pos" column of the "cont"
+     * parameter into the result (schema).
+     */
+    for (i = 0; i < cont->schema.count; i++) {
+	if (!strcmp ("iter", cont->schema.items[i].name))
+	    ret->schema.items[ret->schema.count-2] = cont->schema.items[i];
+	else if (!strcmp ("pos", cont->schema.items[i].name))
+	    ret->schema.items[ret->schema.count-1] = cont->schema.items[i];
+    }
 
     return ret;
 }
@@ -1823,9 +1892,9 @@ PFalg_op_t * PFalg_docnode (PFalg_op_t *doc, PFalg_op_t *cont)
  * @a doc is the current document and @a cont is the content of
  * the comment.
  */
-PFalg_op_t * PFalg_comment (PFalg_op_t *doc, PFalg_op_t *cont)
+PFalg_op_t * PFalg_comment (PFalg_op_t *cont)
 {
-    PFalg_op_t *ret = alg_op_wire2 (aop_comment, doc, cont);
+    PFalg_op_t *ret = alg_op_wire1 (aop_comment, cont);
     int i;
 
     /* set result schema */
@@ -1848,9 +1917,9 @@ PFalg_op_t * PFalg_comment (PFalg_op_t *doc, PFalg_op_t *cont)
  * @a doc is the current document and @a cont is the content of
  * the processing instruction.
  */
-PFalg_op_t * PFalg_processi (PFalg_op_t *doc, PFalg_op_t *cont)
+PFalg_op_t * PFalg_processi (PFalg_op_t *cont)
 {
-    PFalg_op_t *ret = alg_op_wire2 (aop_processi, doc, cont);
+    PFalg_op_t *ret = alg_op_wire1 (aop_processi, cont);
     int i;
 
     /* set result schema */
@@ -1867,6 +1936,88 @@ PFalg_op_t * PFalg_processi (PFalg_op_t *doc, PFalg_op_t *cont)
     return ret;
 }
 
+
+/**
+ * Constructor for fs:item-sequence-to-node-sequence() functionality.
+ *
+ * This function is required for the fs:item-sequence-to-node-sequence()
+ * builtin function. Its argument operator @a n has the schema
+ * iter | pos | item. The "item" column has to be of type string
+ * (aat_str). What it does is to concatenate the string values of rows
+ * with consecutive "pos" values (and identical "iter" values) by
+ * putting a space character between any two such strings. The string
+ * resulting from such a concatenation ("s1" . " " . "s2" ...) gets
+ * the "iter" and "pos" value of the first string s1. The output
+ * schema is the same as the input schema.
+ */
+PFalg_op_t *
+PFalg_pf_item_seq_to_node_seq (PFalg_op_t *n)
+{
+    PFalg_op_t *ret = alg_op_wire1 (aop_items_to_nodes, n);
+    int i;
+
+    /* set result schema */
+    ret->schema.count = n->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < n->schema.count; i++) {
+	if (!strcmp (n->schema.items[i].name, "item") &&
+	    n->schema.items[i].type != aat_str)
+	    PFoops (OOPS_FATAL, "PFalg_pf_item_seq_to_node_seq (): "
+		    "column 'item' is not of type string");
+        ret->schema.items[i] = n->schema.items[i];
+    }
+
+    return ret;
+}
+
+
+/**
+ * Constructor for pf:merge-adjacent-text-nodes() functionality.
+ *
+ * Use @a doc to retrieve information about the nodes in @n, i.e. to
+ * determine which ones are text nodes. If two consecutive text nodes
+ * are found in @a n (same "iter", consecutive "pos" value), merge
+ * them into one text node. If the content of a text node is empty,
+ * discard the node.
+ * The input parameters have the following schemata:
+ * - @a doc: pre | size | level | kind | prop | frag
+ * - @a n:   iter | pos | item
+ * The output must have the following schema:
+ * pre | size | level | kind | prop | frag | res| iter | pos 
+ * The "res" column specifies whether the tuple is a newly
+ * created one, i.e. whether it has to be included into the
+ * result fragment.
+ */
+PFalg_op_t *
+PFalg_pf_merge_adjacent_text_nodes (PFalg_op_t *doc, PFalg_op_t *n)
+{
+    PFalg_op_t *ret = alg_op_wire2 (aop_merge_adjacent, doc, n);
+    int i;
+
+    /* set result schema */
+    ret->schema.count = doc_schm.count + 3;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    for (i = 0; i < doc_schm.count; i++)
+        ret->schema.items[i] = doc_schm.items[i];
+
+    /* add "res" field */
+    ret->schema.items[ret->schema.count-3].name = "res";
+    ret->schema.items[ret->schema.count-3].type = aat_bln;
+
+    /* add "iter" and "pos" field */
+    for (i = 0; i < n->schema.count; i++) {
+	if (!strcmp ("iter", n->schema.items[i].name))
+	    ret->schema.items[ret->schema.count-2] = n->schema.items[i];
+	else if (!strcmp ("pos", n->schema.items[i].name))
+	    ret->schema.items[ret->schema.count-1] = n->schema.items[i];
+    }
+
+    return ret;
+}
 
 /**
  * In case an optional variable $p is present in a let expression,

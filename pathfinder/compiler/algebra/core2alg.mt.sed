@@ -466,7 +466,7 @@ TypeswitchExpr:  typesw (CoreExpr,
 
         [[ $$ ]] = (struct PFalg_pair_t) {
             .result = disjunion ([[ $2.1.2$ ]].result, [[ $3$ ]].result),
-            .doc    = set_union ([[ $2.1.2$ ]].doc, [[ $3$ ]].doc)
+            .doc    = PFalg_set_union ([[ $2.1.2$ ]].doc, [[ $3$ ]].doc)
         };
     }
     ;
@@ -581,7 +581,7 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
 
         [[ $$ ]] = (struct  PFalg_pair_t) {
                  .result = disjunion ([[ $2$ ]].result, [[ $3$ ]].result),
-                 .doc = set_union ([[ $2$ ]].doc, [[ $3$ ]].doc) };
+                 .doc = PFalg_set_union ([[ $2$ ]].doc, [[ $3$ ]].doc) };
     }
     ;
 
@@ -615,7 +615,7 @@ SequenceExpr:    seq (Atom, Atom)
                      proj ("iter", "iter"),
                      proj ("pos", "pos1"),
                      proj ("item", "item")),
-                 .doc = set_union ([[ $1$ ]].doc, [[ $2$ ]].doc) };
+                 .doc = PFalg_set_union ([[ $1$ ]].doc, [[ $2$ ]].doc) };
     }
     ;
 
@@ -718,7 +718,7 @@ LocationSteps:   locsteps (LocationStep, CoreExpr)
          *      proj_iter,item (q(e) join (doc U delta1)), delta1))
          */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = rownum (scjoin (alg_union ([[ $2$ ]].doc),
+                 .result = rownum (scjoin (PFalg_alg_union ([[ $2$ ]].doc),
                                            project ([[ $2$ ]].result,
                                                     proj ("iter", "iter"),
                                                     proj ("item", "item")),
@@ -817,7 +817,7 @@ ConstructorExpr: elem (TagName, CoreExpr)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *elem = element (alg_union ([[ $2$ ]].doc),
+        PFalg_op_t *elem = element (PFalg_alg_union ([[ $2$ ]].doc),
                                     [[ $1$ ]].result,
                                     [[ $2$ ]].result);
 
@@ -835,13 +835,13 @@ ConstructorExpr: elem (TagName, CoreExpr)
                                       proj ("item", "pre")),
                                   lit_tbl (attlist ("pos"),
                                            tuple (lit_nat (1)))),
-                 .doc = new_frag (project (elem,
-                                           proj ("pre", "pre"),
-                                           proj ("size", "size"),
-                                           proj ("level", "level"),
-                                           proj ("kind", "kind"),
-                                           proj ("prop", "prop"),
-                                           proj ("frag", "frag"))) };
+                 .doc = PFalg_new_frag (project (elem,
+                                                 proj ("pre", "pre"),
+                                                 proj ("size", "size"),
+                                                 proj ("level", "level"),
+                                                 proj ("kind", "kind"),
+                                                 proj ("prop", "prop"),
+                                                 proj ("frag", "frag"))) };
     }
     ;
 
@@ -868,7 +868,7 @@ ConstructorExpr: attr (TagName, CoreExpr)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *attr = attribute (alg_union ([[ $2$ ]].doc),
+        PFalg_op_t *attr = attribute (PFalg_alg_union ([[ $2$ ]].doc),
                                       [[ $1$ ]].result,
                                       [[ $2$ ]].result);
 
@@ -886,13 +886,13 @@ ConstructorExpr: attr (TagName, CoreExpr)
                                       proj ("item", "pre")),
                                   lit_tbl (attlist ("pos"),
                                            tuple (lit_nat (1)))),
-                 .doc = new_frag (project (attr,
-                                           proj ("pre", "pre"),
-                                           proj ("size", "size"),
-                                           proj ("level", "level"),
-                                           proj ("kind", "kind"),
-                                           proj ("prop", "prop"),
-                                           proj ("frag", "frag"))) };
+                 .doc = PFalg_new_frag (project (attr,
+                                                 proj ("pre", "pre"),
+                                                 proj ("size", "size"),
+                                                 proj ("level", "level"),
+                                                 proj ("kind", "kind"),
+                                                 proj ("prop", "prop"),
+                                                 proj ("frag", "frag"))) };
     }
     ;
 
@@ -914,30 +914,24 @@ ConstructorExpr: text (CoreExpr)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *textnode = textnode (alg_union ([[ $1$ ]].doc),
-                                         [[ $1$ ]].result);
+        PFalg_op_t *textnode = textnode ([[ $1$ ]].result);
 
+        /* we do not have to check for 'level' == 0, since newly
+         * created text nodes always have that level
+         */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (project (
-                                      select_ (
-                                          eq (cross (textnode,
-                                                     lit_tbl (
-                                                         attlist ("zero"),
-                                                         tuple (
-                                                             lit_int (0)))),
-                                              "res","level","zero"),
-                                          "res"),
-                                      proj ("iter", "iter"),
-                                      proj ("item", "pre")),
+                 .result = cross (project (textnode,
+                                           proj ("iter", "iter"),
+                                           proj ("item", "pre")),
                                   lit_tbl (attlist ("pos"),
                                            tuple (lit_nat (1)))),
-                 .doc = new_frag (project (textnode,
-                                           proj ("pre", "pre"),
-                                           proj ("size", "size"),
-                                           proj ("level", "level"),
-                                           proj ("kind", "kind"),
-                                           proj ("prop", "prop"),
-                                           proj ("frag", "frag"))) };
+                 .doc = PFalg_new_frag (project (textnode,
+                                                 proj ("pre", "pre"),
+                                                 proj ("size", "size"),
+                                                 proj ("level", "level"),
+                                                 proj ("kind", "kind"),
+                                                 proj ("prop", "prop"),
+                                                 proj ("frag", "frag"))) };
     }
     ;
 
@@ -959,7 +953,7 @@ ConstructorExpr: doc (CoreExpr)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *docnode = docnode (alg_union ([[ $1$ ]].doc),
+        PFalg_op_t *docnode = docnode (PFalg_alg_union ([[ $1$ ]].doc),
                                        [[ $1$ ]].result);
 
         [[ $$ ]] = (struct  PFalg_pair_t) {
@@ -976,13 +970,13 @@ ConstructorExpr: doc (CoreExpr)
                                       proj ("item", "pre")),
                                   lit_tbl (attlist ("pos"),
                                            tuple (lit_nat (1)))),
-                 .doc = new_frag (project (docnode,
-                                           proj ("pre", "pre"),
-                                           proj ("size", "size"),
-                                           proj ("level", "level"),
-                                           proj ("kind", "kind"),
-                                           proj ("prop", "prop"),
-                                           proj ("frag", "frag"))) };
+                 .doc = PFalg_new_frag (project (docnode,
+                                                 proj ("pre", "pre"),
+                                                 proj ("size", "size"),
+                                                 proj ("level", "level"),
+                                                 proj ("kind", "kind"),
+                                                 proj ("prop", "prop"),
+                                                 proj ("frag", "frag"))) };
     }
     ;
 
@@ -1004,30 +998,24 @@ ConstructorExpr: comment (lit_str)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *comment = comment (alg_union ([[ $1$ ]].doc),
-                                       [[ $1$ ]].result);
+        PFalg_op_t *comment = comment ([[ $1$ ]].result);
 
+        /* we do not have to check for 'level' == 0, since newly
+         * created comments always have that level
+         */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (project (
-                                      select_ (
-                                          eq (cross (comment,
-                                                     lit_tbl (
-                                                         attlist ("zero"),
-                                                         tuple (
-                                                             lit_int (0)))),
-                                              "res","level","zero"),
-                                          "res"),
-                                      proj ("iter", "iter"),
-                                      proj ("item", "pre")),
+                 .result = cross (project (comment,
+                                           proj ("iter", "iter"),
+                                           proj ("item", "pre")),
                                   lit_tbl (attlist ("pos"),
                                            tuple (lit_nat (1)))),
-                 .doc = new_frag (project (comment,
-                                           proj ("pre", "pre"),
-                                           proj ("size", "size"),
-                                           proj ("level", "level"),
-                                           proj ("kind", "kind"),
-                                           proj ("prop", "prop"),
-                                           proj ("frag", "frag"))) };
+                 .doc = PFalg_new_frag (project (comment,
+                                                 proj ("pre", "pre"),
+                                                 proj ("size", "size"),
+                                                 proj ("level", "level"),
+                                                 proj ("kind", "kind"),
+                                                 proj ("prop", "prop"),
+                                                 proj ("frag", "frag"))) };
     }
     ;
 
@@ -1049,30 +1037,24 @@ ConstructorExpr: pi (lit_str)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *pi = processi (alg_union ([[ $1$ ]].doc),
-                                   [[ $1$ ]].result);
+        PFalg_op_t *pi = processi ([[ $1$ ]].result);
 
+        /* we do not have to check for 'level' == 0, since newly
+         * created processing instructions always have that level
+         */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (project (
-                                      select_ (
-                                          eq (cross (pi,
-                                                     lit_tbl (
-                                                         attlist ("zero"),
-                                                         tuple (
-                                                             lit_int (0)))),
-                                              "res","level","zero"),
-                                          "res"),
-                                      proj ("iter", "iter"),
-                                      proj ("item", "pre")),
+                 .result = cross (project (pi,
+                                           proj ("iter", "iter"),
+                                           proj ("item", "pre")),
                                   lit_tbl (attlist ("pos"),
                                            tuple (lit_nat (1)))),
-                 .doc = new_frag (project (pi,
-                                           proj ("pre", "pre"),
-                                           proj ("size", "size"),
-                                           proj ("level", "level"),
-                                           proj ("kind", "kind"),
-                                           proj ("prop", "prop"),
-                                           proj ("frag", "frag"))) };
+                 .doc = PFalg_new_frag (project (pi,
+                                                 proj ("pre", "pre"),
+                                                 proj ("size", "size"),
+                                                 proj ("level", "level"),
+                                                 proj ("kind", "kind"),
+                                                 proj ("prop", "prop"),
+                                                 proj ("frag", "frag"))) };
     }
     ;
 

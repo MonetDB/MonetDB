@@ -47,6 +47,7 @@ static PFalg_op_t * find_subexp (PFalg_op_t *new);
 static PFalg_op_t * find_lit_tbl (PFalg_op_t *new);
 static PFalg_op_t * find_doc_tbl (PFalg_op_t *new);
 static PFalg_op_t * find_disjunion (PFalg_op_t *new);
+static PFalg_op_t * find_intersect (PFalg_op_t *new);
 static PFalg_op_t * find_cross (PFalg_op_t *new);
 static PFalg_op_t * find_difference (PFalg_op_t *new);
 static PFalg_op_t * find_eqjoin (PFalg_op_t *new);
@@ -61,6 +62,8 @@ static PFalg_op_t * find_unary (PFalg_op_t *new);
 static PFalg_op_t * find_sum (PFalg_op_t *new);
 static PFalg_op_t * find_count (PFalg_op_t *new);
 static PFalg_op_t * find_distinct (PFalg_op_t *new);
+static PFalg_op_t * find_items_to_nodes (PFalg_op_t *new);
+static PFalg_op_t * find_merge_adjacent (PFalg_op_t *new);
 
 static bool tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b);
 
@@ -307,6 +310,17 @@ find_disjunion (PFalg_op_t *new)
     *((PFalg_op_t **) PFarray_add (subexps)) = new;
 
     return new;
+}
+
+
+/**
+ * Intersection expressions look the same as disjoint union
+ * operators. We check, if @ new has the same child nodes as
+ * another existing expression.
+ */
+static PFalg_op_t * find_intersect (PFalg_op_t *new)
+{
+    return find_disjunion (new);
 }
 
 
@@ -966,6 +980,30 @@ static PFalg_op_t * find_distinct (PFalg_op_t *new)
     return new;
 }
 
+
+/**
+ * Check whether the items_to_nodes expression @ new already exists
+ * in the array of existing expressions. It must have the same child
+ * node.
+ */
+static PFalg_op_t * find_items_to_nodes (PFalg_op_t *new)
+{
+    return find_distinct (new);
+}
+
+
+/**
+ * Check whether the merge_adjacent expression @ new already exists
+ * in the array of existing expressions. It must have the same child
+ * nodes and the same order of child nodes, just like a difference
+ * expression.
+ */
+static PFalg_op_t * find_merge_adjacent (PFalg_op_t *new)
+{
+    return find_difference (new);
+}
+
+
 /**
  * See if we already saw a boolean grouping expression
  * (`seqty1' or `all') like @a new during CSE.
@@ -1027,6 +1065,9 @@ find_subexp (PFalg_op_t *new)
         case aop_disjunion:
             return find_disjunion (new);
 
+        case aop_intersect:
+            return find_intersect (new);
+
         case aop_cross:
             return find_cross (new);
 
@@ -1061,6 +1102,7 @@ find_subexp (PFalg_op_t *new)
         case aop_num_subtract:
         case aop_num_multiply:
         case aop_num_divide:
+        case aop_num_modulo:
         case aop_num_eq:
         case aop_num_gt:
         case aop_bool_and:
@@ -1091,6 +1133,12 @@ find_subexp (PFalg_op_t *new)
         case aop_comment:
         case aop_processi:
 	    return new;
+
+        case aop_items_to_nodes:
+	    return find_items_to_nodes (new);
+
+        case aop_merge_adjacent:
+	    return find_merge_adjacent (new);
 
         case aop_seqty1:
         case aop_all:

@@ -48,6 +48,7 @@
 char *a_id[]  = {
       [aop_lit_tbl]          = "TBL"
     , [aop_disjunion]        = "U"
+    , [aop_intersect]        = "n"
     , [aop_difference]       = "DIFF"             /* orange */
       /* note: dot does not like the sequence "×\nfoo", so we put spaces
        * around the cross symbol.
@@ -63,6 +64,7 @@ char *a_id[]  = {
     , [aop_num_subtract]     = "num_subtr"
     , [aop_num_multiply]     = "num-mult"
     , [aop_num_divide]       = "num-div"
+    , [aop_num_modulo]       = "num-mod"
     , [aop_project]          = "¶"
     , [aop_rownum]           = "ROW#"              /* red */
     , [aop_serialize]        = "SERIALIZE"
@@ -81,6 +83,8 @@ char *a_id[]  = {
     , [aop_docnode]          = "DOC"              /* lawn green */
     , [aop_comment]          = "COMMENT"          /* lawn green */
     , [aop_processi]         = "PI"               /* lawn green */
+    , [aop_items_to_nodes]   = "item-sequence-to-node-sequence"
+    , [aop_merge_adjacent]   = "merge-adjacent-text-nodes"
     , [aop_seqty1]           = "SEQTY1"
     , [aop_all]              = "ALL"
 };
@@ -126,6 +130,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
     static char *color[] = {
           [aop_lit_tbl]        = "grey"
         , [aop_disjunion]      = "grey"
+        , [aop_intersect]      = "grey"
         , [aop_difference]     = "orange"
         , [aop_cross]          = "yellow"
         , [aop_eqjoin]         = "green"
@@ -141,6 +146,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         , [aop_num_subtract]   = "grey"
         , [aop_num_multiply]   = "grey"
         , [aop_num_divide]     = "grey"
+        , [aop_num_modulo]     = "grey"
         , [aop_num_eq]         = "grey"
         , [aop_num_gt]         = "grey"
         , [aop_num_neg]        = "grey"
@@ -156,6 +162,8 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         , [aop_docnode]        = "lawngreen"
         , [aop_comment]        = "lawngreen"
         , [aop_processi]       = "lawngreen"
+        , [aop_items_to_nodes] = "grey"
+        , [aop_merge_adjacent] = "grey"
         , [aop_seqty1]         = "grey"
         , [aop_all]            = "grey"
     };
@@ -333,6 +341,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         case aop_num_subtract:
         case aop_num_multiply:
         case aop_num_divide:
+        case aop_num_modulo:
         case aop_num_eq:
         case aop_num_gt:
         case aop_bool_and:
@@ -412,6 +421,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
 
         case aop_cross:
         case aop_disjunion:
+        case aop_intersect:
         case aop_difference:
         case aop_serialize:
         case aop_distinct:
@@ -421,6 +431,8 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         case aop_docnode:
         case aop_comment:
         case aop_processi:
+        case aop_items_to_nodes:
+        case aop_merge_adjacent:
             PFarray_printf (dot, "%s", a_id[n->kind]);
             break;
     }
@@ -615,6 +627,7 @@ alg_pretty (PFalg_op_t *n)
         case aop_serialize:
         case aop_cross:
         case aop_disjunion:
+        case aop_intersect:
         case aop_difference:
         case aop_eqjoin:
         case aop_scjoin:
@@ -625,6 +638,7 @@ alg_pretty (PFalg_op_t *n)
         case aop_num_subtract:
         case aop_num_multiply:
         case aop_num_divide:
+        case aop_num_modulo:
         case aop_num_eq:
         case aop_num_gt:
         case aop_num_neg:
@@ -640,6 +654,8 @@ alg_pretty (PFalg_op_t *n)
         case aop_docnode:
         case aop_comment:
         case aop_processi:
+        case aop_items_to_nodes:
+        case aop_merge_adjacent:
             break;
 
     }

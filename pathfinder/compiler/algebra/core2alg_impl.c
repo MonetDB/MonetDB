@@ -206,22 +206,6 @@ static PFalg_op_t *prec (PFalg_op_t *n);
 static PFalg_op_t *prec_sibl (PFalg_op_t *n);
 static PFalg_op_t *self (PFalg_op_t *n);
 
-/**
- * Create new list with one fragment.
- */
-static PFarray_t *new_frag (PFalg_op_t *n);
-
-/**
- * Form algebraic disjoint union between the fragments of an
- * algebra operator's document.
- */
-static PFalg_op_t *alg_union (PFarray_t *frags);
-
-/**
- * Form a set-oriented union between two lists of fragments.
- */
-PFarray_t *set_union (PFarray_t *frag1, PFarray_t *frag2);
-
 /* Concatenate the parameters of built-in functions. */
 static struct PFalg_pair_t args (struct PFalg_pair_t arg,
                                  struct PFalg_pair_t args);
@@ -476,7 +460,7 @@ PFcore2alg (PFcnode_t *c)
     if (!ret)
         PFoops (OOPS_FATAL, "Translation to Relational Algebra failed.");
 
-    return serialize (alg_union (ret->alg.doc), ret->alg.result);
+    return serialize (PFalg_alg_union (ret->alg.doc), ret->alg.result);
 
     /*
     return serialize (lit_tbl (attlist ("pos", "item"),
@@ -796,7 +780,7 @@ PFarray_t *PFalg_empty_frag (void)
 /**
  * Create new list with one fragment.
  */
-static PFarray_t *new_frag (PFalg_op_t *n)
+PFarray_t *PFalg_new_frag (PFalg_op_t *n)
 {
     PFarray_t *ret = PFarray (sizeof (PFalg_op_t *));
 
@@ -811,7 +795,7 @@ static PFarray_t *new_frag (PFalg_op_t *n)
  * Form algebraic disjoint union between the fragments of an
  * algebra operator's document.
  */
-static PFalg_op_t *alg_union (PFarray_t *frags)
+PFalg_op_t *PFalg_alg_union (PFarray_t *frags)
 {
     unsigned int i;
     PFalg_op_t *ret;
@@ -834,7 +818,7 @@ static PFalg_op_t *alg_union (PFarray_t *frags)
 /**
  * Form a set-oriented union between two lists of fragments.
  */
-PFarray_t *set_union (PFarray_t *frag1, PFarray_t *frag2)
+PFarray_t *PFalg_set_union (PFarray_t *frag1, PFarray_t *frag2)
 {
     unsigned int i, j;
     PFalg_op_t *n1;

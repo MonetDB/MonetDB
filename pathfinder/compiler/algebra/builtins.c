@@ -37,7 +37,9 @@
 
 /**
  * Worker function to construct algebra implementation of binary
- * arithmetic functions (e.g., op:numeric-add(), op:numeric-subtract(),...).
+ * functions (e.g., arithmetic functions: op:numeric-add(),
+ * op:numeric-subtract(); comparison functions: op:eq(); boolean
+ * functions: op:and();...).
  *
  * env,loop,delta: e1 => q1,delta1   env,loop,delta1: e2 => q2,delta2
  * ------------------------------------------------------------------
@@ -51,12 +53,12 @@
  *  delta2
  * )
  *
- * (where OP is the algebra operator that implements the arithmetic
- * function, and t is the implementation type that is used)
+ * (where OP is the algebra operator that implements the function,
+ * and t is the implementation type that is used)
  *
  * @param t    Algebra type that should be used for this operator.
  *             All arguments will be cast to that type before invoking
- *             the actual algebra operator. This makes arithmetic
+ *             the actual algebra operator. This makes these
  *             operations always monomorphic (and thus reasonably
  *             efficient).
  * @param op   Algebra tree node constructor for the algebra operator
@@ -64,7 +66,7 @@
  *             construction functions in algebra.c.)
  * @param args Builtin function argument list as in the calling
  *             conventions for algebra implementations in the PFfun_t
- *             struct (field @c alg). (Our implementations for arithmetic
+ *             struct (field @c alg). (Our implementations for these
  *             functions do not require document representation and/or
  *             the loop relation. They are thus missing here.)
  */
@@ -83,6 +85,50 @@ bin_arith (PFalg_simple_type_t t,
 				       "iter",
 				       "iter1"),
 			       "res", "item", "item1"),
+			   proj ("iter", "iter"),
+			   proj ("pos", "pos"),
+			   proj ("item", "res")),
+	.doc = PFalg_empty_frag () };
+}
+
+
+/**
+ * Worker function to construct algebra implementation of unary
+ * functions (e.g., fn:not(), op:numeric-unary-plus(),...).
+ *
+ * env,loop,delta: e1 => q1,delta1
+ * ------------------------------------------------------------------
+ *                 env,loop,delta: e1 =>
+ * (proj_iter,pos,item:res(OP_res<item>(cast_item,t (q1)))
+ *  ,
+ *  delta2
+ * )
+ *
+ * (where OP is the algebra operator that implements the function,
+ * and t is the implementation type that is used)
+ *
+ * @param t    Algebra type that should be used for this operator.
+ *             All arguments will be cast to that type before invoking
+ *             the actual algebra operator. This makes these
+ *             operations always monomorphic (and thus reasonably
+ *             efficient).
+ * @param op   Algebra tree node constructor for the algebra operator
+ *             that shall be used for this operation. (Pick any of the
+ *             construction functions in algebra.c.)
+ * @param args Builtin function argument list as in the calling
+ *             conventions for algebra implementations in the PFfun_t
+ *             struct (field @c alg). (Our implementations for these
+ *             functions do not require document representation and/or
+ *             the loop relation. They are thus missing here.)
+ */
+static struct PFalg_pair_t
+un_func (PFalg_simple_type_t t,
+	 PFalg_op_t *(*OP) (PFalg_op_t *, PFalg_att_t, PFalg_att_t),
+	 struct PFalg_pair_t *args)
+{
+    return (struct PFalg_pair_t) {
+	.result = project (OP (cast (args[0].result, "item", t),
+			       "res", "item"),
 			   proj ("iter", "iter"),
 			   proj ("pos", "pos"),
 			   proj ("item", "res")),
@@ -191,20 +237,15 @@ PFbui_op_numeric_multiply_dbl (PFalg_op_t *loop __attribute__((unused)),
     return bin_arith (aat_dbl, PFalg_multiply, args);
 }
 
-/**
- * Algebra implementation for op:numeric-divide(integer?,integer?)
- * @see bin_arith()
- */
-struct PFalg_pair_t
-PFbui_op_numeric_divide_int (PFalg_op_t *loop __attribute__((unused)),
-                             struct PFalg_pair_t *args)
-{
-    return bin_arith (aat_int, PFalg_divide, args);
-}
 
 /**
  * Algebra implementation for op:numeric-divide(decimal?,decimal?)
  * @see bin_arith()
+ *
+ * NB: A function for the division of two integer operators is required
+ * because, according to the XQuery specifications, the division of two
+ * integers returns a decimal number, i.e. we let the two operands be
+ * promoted to decimal and use "PFbui_op_numeric_divide_dec".     
  */
 struct PFalg_pair_t
 PFbui_op_numeric_divide_dec (PFalg_op_t *loop __attribute__((unused)),
@@ -222,6 +263,85 @@ PFbui_op_numeric_divide_dbl (PFalg_op_t *loop __attribute__((unused)),
                              struct PFalg_pair_t *args)
 {
     return bin_arith (aat_dbl, PFalg_divide, args);
+}
+
+
+/**
+ * Algebra implementation for op:numeric-integer-divide(integer?,integer?)
+ * @see bin_arith()
+ *
+ * NB: ($a idiv $b) <=> ($a div $b) cast as xs:integer
+ */
+struct PFalg_pair_t
+PFbui_op_numeric_idivide_int (PFalg_op_t *loop __attribute__((unused)),
+			      struct PFalg_pair_t *args)
+{
+    return (struct PFalg_pair_t) {
+	.result = cast (bin_arith (aat_int, PFalg_divide, args).result,
+			"item", aat_int),
+	.doc = PFalg_empty_frag () };
+}
+
+/**
+ * Algebra implementation for op:numeric-integer-divide(decimal?,decimal?)
+ * @see bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_numeric_idivide_dec (PFalg_op_t *loop __attribute__((unused)),
+                             struct PFalg_pair_t *args)
+{
+    return (struct PFalg_pair_t) {
+	.result = cast (bin_arith (aat_dec, PFalg_divide, args).result,
+			"item", aat_int),
+	.doc = PFalg_empty_frag () };
+}
+
+/**
+ * Algebra implementation for op:numeric-integer-divide(double?,double?)
+ * @see bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_numeric_idivide_dbl (PFalg_op_t *loop __attribute__((unused)),
+			      struct PFalg_pair_t *args)
+{
+    return (struct PFalg_pair_t) {
+	.result = cast (bin_arith (aat_dbl, PFalg_divide, args).result,
+			"item", aat_int),
+	.doc = PFalg_empty_frag () };
+}
+
+
+/**
+ * Algebra implementation for op:numeric-mod(integer?,integer?)
+ * @see bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_numeric_modulo_int (PFalg_op_t *loop __attribute__((unused)),
+                             struct PFalg_pair_t *args)
+{
+    return bin_arith (aat_int, PFalg_modulo, args);
+}
+
+/**
+ * Algebra implementation for op:numeric-mod(decimal?,decimal?)
+ * @see bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_numeric_modulo_dec (PFalg_op_t *loop __attribute__((unused)),
+                             struct PFalg_pair_t *args)
+{
+    return bin_arith (aat_dec, PFalg_modulo, args);
+}
+
+/**
+ * Algebra implementation for op:numeric-mod(double?,double?)
+ * @see bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_numeric_modulo_dbl (PFalg_op_t *loop __attribute__((unused)),
+                             struct PFalg_pair_t *args)
+{
+    return bin_arith (aat_dbl, PFalg_modulo, args);
 }
 
 
@@ -278,6 +398,72 @@ PFbui_op_gt_str (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
     return bin_arith (aat_str, PFalg_gt, args);
+}
+
+
+/**
+ * Algebra implementation for op:ge(integer?,integer?)
+ * @see un_func() and bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_ge_int (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+        return un_func (aat_bln, PFalg_not,
+	    (struct PFalg_pair_t []) { bin_arith (aat_int, PFalg_gt,
+                      (struct PFalg_pair_t []) { args[1], args[0] }) });
+}
+
+/**
+ * Algebra implementation for op:ge(decimal?,decimal?)
+ * @see un_func() and bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_ge_dec (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+        return un_func (aat_bln, PFalg_not,
+	    (struct PFalg_pair_t []) { bin_arith (aat_dec, PFalg_gt,
+                      (struct PFalg_pair_t []) { args[1], args[0] }) });
+}
+
+/**
+ * Algebra implementation for op:ge(double?,double?)
+ * @see un_func() and bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_ge_dbl (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+        return un_func (aat_bln, PFalg_not,
+	    (struct PFalg_pair_t []) { bin_arith (aat_dbl, PFalg_gt,
+                      (struct PFalg_pair_t []) { args[1], args[0] }) });
+}
+
+/**
+ * Algebra implementation for op:ge(boolean?,boolean?)
+ * @see un_func() and bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_ge_bln (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+        return un_func (aat_bln, PFalg_not,
+	    (struct PFalg_pair_t []) { bin_arith (aat_bln, PFalg_gt,
+                      (struct PFalg_pair_t []) { args[1], args[0] }) });
+}
+
+/**
+ * Algebra implementation for op:ge(string?,string?)
+ * @see un_func() and bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_ge_str (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+        return un_func (aat_bln, PFalg_not,
+	    (struct PFalg_pair_t []) { bin_arith (aat_str, PFalg_gt,
+                      (struct PFalg_pair_t []) { args[1], args[0] }) });
 }
 
 
@@ -343,6 +529,67 @@ PFbui_op_lt_str (PFalg_op_t *loop __attribute__((unused)),
 
 
 /**
+ * Algebra implementation for op:le(integer?,integer?)
+ * @see un_func() and bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_le_int (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+        return un_func (aat_bln, PFalg_not,
+	    (struct PFalg_pair_t []) { bin_arith (aat_int, PFalg_gt, args) });
+}
+
+/**
+ * Algebra implementation for op:le(decimal?,decimal?)
+ * @see un_func() and bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_le_dec (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+        return un_func (aat_bln, PFalg_not,
+	    (struct PFalg_pair_t []) { bin_arith (aat_dec, PFalg_gt, args) });
+}
+
+/**
+ * Algebra implementation for op:le(double?,double?)
+ * @see un_func() and bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_le_dbl (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+        return un_func (aat_bln, PFalg_not,
+	    (struct PFalg_pair_t []) { bin_arith (aat_dbl, PFalg_gt, args) });
+}
+
+/**
+ * Algebra implementation for op:le(boolean?,boolean?)
+ * @see un_func() and bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_le_bln (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+        return un_func (aat_bln, PFalg_not,
+	    (struct PFalg_pair_t []) { bin_arith (aat_bln, PFalg_gt, args) });
+}
+
+/**
+ * Algebra implementation for op:le(string?,string?)
+ * @see un_func() and bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_le_str (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+        return un_func (aat_bln, PFalg_not,
+	    (struct PFalg_pair_t []) { bin_arith (aat_str, PFalg_gt, args) });
+}
+
+
+/**
  * Algebra implementation for op:eq(integer?,integer?)
  * @see bin_arith()
  */
@@ -399,17 +646,384 @@ PFbui_op_eq_str (PFalg_op_t *loop __attribute__((unused)),
 
 
 /**
+ * Algebra implementation for op:ne(integer?,integer?)
+ * @see un_func() and bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_ne_int (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+        return un_func (aat_bln, PFalg_not,
+	    (struct PFalg_pair_t []) { bin_arith (aat_int, PFalg_eq, args) });
+}
+
+/**
+ * Algebra implementation for op:ne(decimal?,decimal?)
+ * @see un_func() and bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_ne_dec (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+        return un_func (aat_bln, PFalg_not,
+	    (struct PFalg_pair_t []) { bin_arith (aat_dec, PFalg_eq, args) });
+}
+
+/**
+ * Algebra implementation for op:ne(double?,double?)
+ * @see un_func() and bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_ne_dbl (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+        return un_func (aat_bln, PFalg_not,
+	    (struct PFalg_pair_t []) { bin_arith (aat_dbl, PFalg_eq, args) });
+}
+
+/**
+ * Algebra implementation for op:ne(boolean?,boolean?)
+ * @see un_func() and bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_ne_bln (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+        return un_func (aat_bln, PFalg_not,
+	    (struct PFalg_pair_t []) { bin_arith (aat_bln, PFalg_eq, args) });
+}
+
+/**
+ * Algebra implementation for op:ne(string?,string?)
+ * @see un_func() and bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_ne_str (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+        return un_func (aat_bln, PFalg_not,
+	    (struct PFalg_pair_t []) { bin_arith (aat_str, PFalg_eq, args) });
+}
+
+/**
+ * Algebra implementation for fn:not (boolean) as boolean
+ * @see bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_fn_not_bln (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+    return un_func (aat_bln, PFalg_not, args);
+}
+
+/**
+ * Algebra implementation for op:or (boolean, boolean) as boolean
+ * @see bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_or_bln (PFalg_op_t *loop __attribute__((unused)),
+                 struct PFalg_pair_t *args)
+{
+    return bin_arith (aat_bln, PFalg_or, args);
+}
+
+/**
+ * Algebra implementation for op:and (boolean, boolean) as boolean
+ * @see bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_and_bln (PFalg_op_t *loop __attribute__((unused)),
+		  struct PFalg_pair_t *args)
+{
+    return bin_arith (aat_bln, PFalg_and, args);
+}
+
+
+/**
  * Algebra implementation for <code>fn:boolean (xs:boolean)</code>.
  *
  * If the operand is a single boolean value, the function returns
  * the boolean value itself.
  */
 struct PFalg_pair_t
-PFbui_fn_boolean_bool (PFalg_op_t *loop __attribute ((unused)),
+PFbui_fn_boolean_bln (PFalg_op_t *loop __attribute__((unused)),
                        struct PFalg_pair_t *args)
 {
     return args[0];
 }
+
+
+/**
+ * Algebra implementation for op:is-same-node (node?, node?)
+ * @see bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_is_same_node (PFalg_op_t *loop __attribute__((unused)),
+		       struct PFalg_pair_t *args)
+{
+    return bin_arith (aat_node, PFalg_eq, args);
+}
+
+/**
+ * Algebra implementation for op:node-before (node?, node?)
+ * @see bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_node_before (PFalg_op_t *loop __attribute__((unused)),
+		      struct PFalg_pair_t *args)
+{
+    return bin_arith (aat_node, PFalg_gt,
+		      (struct PFalg_pair_t []) { args[1], args[0] });
+}
+
+/**
+ * Algebra implementation for op:node-after (node?, node?)
+ * @see bin_arith()
+ */
+struct PFalg_pair_t
+PFbui_op_node_after (PFalg_op_t *loop __attribute__((unused)),
+		     struct PFalg_pair_t *args)
+{
+    return bin_arith (aat_node, PFalg_gt, args);
+}
+
+
+/**
+ * Algebra implementation for op:union (node*, node*)
+ *
+ * Constructs a sequence containing every node that occurs in the
+ * values of either the first or the second parameter, eliminating
+ * duplicate nodes. Nodes are returned in document order. Two nodes
+ * are equal if they are op:is-same-node().
+ */
+struct PFalg_pair_t
+PFbui_op_union (PFalg_op_t *loop __attribute__((unused)),
+		struct PFalg_pair_t *args)
+{
+    return (struct  PFalg_pair_t) {
+        .result = rownum (
+	             distinct (
+			 disjunion (
+			     project (args[0].result,
+				      proj ("iter", "iter"),
+				      proj ("item", "item")),
+			     project (args[1].result,
+				      proj ("iter", "iter"),
+				      proj ("item", "item")))),
+		     "pos", sortby ("item"), NULL),
+        .doc = PFalg_set_union (args[1].doc, args[2].doc) };
+}
+
+/**
+ * Algebra implementation for op:intersect (node*, node*)
+ *
+ * Constructs a sequence containing every node that occurs in the
+ * values of both the first and the second parameter, eliminating
+ * duplicate nodes. Nodes are returned in document order. If either
+ * operand is the empty sequence, the empty sequence is returned.
+ * Two nodes are equal if they are op:is-same-node().
+ */
+struct PFalg_pair_t
+PFbui_op_intersect (PFalg_op_t *loop __attribute__((unused)),
+		    struct PFalg_pair_t *args)
+{
+    return (struct  PFalg_pair_t) {
+        .result = rownum (
+	             distinct (
+			 intersect (
+			     project (args[0].result,
+				      proj ("iter", "iter"),
+				      proj ("item", "item")),
+			     project (args[1].result,
+				      proj ("iter", "iter"),
+				      proj ("item", "item")))),
+		     "pos", sortby ("item"), NULL),
+        .doc = PFalg_set_union (args[1].doc, args[2].doc) };
+}
+
+/**
+ * Algebra implementation for op:except (node*, node*)
+ *
+ * Constructs a sequence containing every node that occurs in the
+ * value of the first parameter, but not in the value of the second
+ * parameter, eliminating duplicate nodes. Nodes are returned in
+ * document order. If the first parameter is the empty sequence, the
+ * empty sequence is returned. If the second parameter is the empty
+ * sequence, the first parameter is returned. Two nodes are equal if
+ * they are op:is-same-node().
+ */
+struct PFalg_pair_t
+PFbui_op_except (PFalg_op_t *loop __attribute__((unused)),
+		 struct PFalg_pair_t *args)
+{
+    return (struct  PFalg_pair_t) {
+        .result = rownum (
+	             distinct (
+			 difference (
+			     project (args[0].result,
+				      proj ("iter", "iter"),
+				      proj ("item", "item")),
+			     project (args[1].result,
+				      proj ("iter", "iter"),
+				      proj ("item", "item")))),
+		     "pos", sortby ("item"), NULL),
+	/* result nodes can only originate from first argument TODO*/
+        .doc = args[1].doc };
+}
+
+
+/**
+ *
+ * Th fs:item-sequence-to-node-sequence function converts a sequence
+ * of item values to nodes (see FS, Section 6.1.6).
+ *
+ * intput:
+ *          iter | pos | item
+ *         -------------------
+ *               |     | "a"
+ *               |     | 42
+ *               |     | <foo/>
+ *               |     | 1.2
+ *
+ * - insert new, consecutive row numbering of "pos" column
+ * - select those rows that have type "node" (part1)
+ * - select the remaining rows (part2)
+ * - convert all items in part2 into strings
+ * - concatenate consecutive strings by putting a space between them;
+ *   (e.g. "a" . " " . "42"); we must introduce a new operator for
+ *   this step
+ * - create text nodes from the (concatenated) strings; IMPORTANT:
+ *   textnode() function was generalized to retain "pos" numbering
+ * - add the new fragment of text nodes (frag) to the .doc field
+ *   together with those nodes we had in the very beginning (those
+ *   in part1, e.g. <foo/>)
+ * - project frag on "iter", "pos", "item"
+ * - form union of projection result and part1
+ * - sort result on "pos" column to restore original sort order
+ */
+struct PFalg_pair_t
+PFbui_pf_item_seq_to_node_seq (PFalg_op_t *loop __attribute__((unused)),
+			       struct PFalg_pair_t *args)
+{
+    /* insert new, consecutive row numbering of "pos" column and
+     * carry out type test on "node" type
+     */
+    PFalg_op_t *sort = type (rownum (args[0].result, "pos1",
+				     sortby ("pos"), "iter"),
+			     "res", "item", aat_node);
+
+    /* select those rows that have type "node" (part1) */
+    PFalg_op_t *part1 = project (select_ (sort, "res"),
+				 proj ("iter", "iter"),
+				 proj ("pos", "pos1"),
+				 proj ("item", "item"));
+
+    /* select the remaining rows (part2) */
+    PFalg_op_t *part2 = project (select_ (not (sort, "res1", "res"), "res1"),
+				 proj ("iter", "iter"),
+				 proj ("pos", "pos1"),
+				 proj ("item", "item"));
+
+    /* convert all items in part2 into strings and concatenate
+     * consecutive strings (by putting a space between them;
+     * (e.g. "a" . " " . "42"); create text nodes from the
+     * (concatenated) strings
+     */
+    PFalg_op_t *t_nodes = textnode (
+                              items_to_nodes (
+				  cast (part2, "item", aat_str)));
+
+    /* project the new text nodes on "iter", "pos", "item", form
+     * union of projection result and part1, and sort result on "pos"
+     * column
+     */
+    return (struct  PFalg_pair_t) {
+                 .result = project (
+                               rownum (
+				   disjunion (
+				       project (t_nodes,
+						proj ("iter", "iter"),
+						proj ("pos", "pos"),
+						proj ("item", "pre")),
+				       part1),
+				   "pos1", sortby ("pos"), "iter"),
+			       proj ("iter", "iter"),
+			       proj ("pos", "pos1"),
+			       proj ("item", "item")),
+		 /* union of those nodes we had in the very beginning
+		  * (those in part1) and those produced by text node
+		  * creation
+		  */
+                 .doc = PFalg_set_union (args[0].doc,
+		            PFalg_new_frag (project (t_nodes,
+						     proj ("pre", "pre"),
+						     proj ("size", "size"),
+						     proj ("level", "level"),
+						     proj ("kind", "kind"),
+						     proj ("prop", "prop"),
+						     proj ("frag", "frag"))))};
+}
+
+
+/**
+ * Merge adjacent textnodes into one text node and delete empty text
+ * nodes.
+ *
+ * Input: iter | pos | item table where all items are of type node.
+ * Introduce new algebra operator which takes the current document and
+ * the current algebra representation. It merges consecutive text nodes
+ * (with same "iter" and consecutive "pos" values). If a text node
+ * is empty, it is discarded.
+ * Output: pre | size | level | kind | prop | frag | res | iter | pos
+ * The "res" column specifies whether a result node is a newly created
+ * node.
+ */
+struct PFalg_pair_t
+PFbui_pf_merge_adjacent_text_nodes (PFalg_op_t *loop __attribute__((unused)),
+			 struct PFalg_pair_t *args)
+{
+    PFalg_op_t *merged = merge_adjacent (PFalg_alg_union (args[0].doc),
+					 args[0].result);
+
+    return (struct  PFalg_pair_t) {
+                 .result = project (merged,
+				    proj ("iter", "iter"),
+				    proj ("pos", "pos"),
+				    proj ("item", "pre")),
+		 /* form union of old and new fragment; to form the new
+		  * fragment, we must select the new text nodes only
+		  */
+		 .doc = PFalg_set_union (args[0].doc,
+					 PFalg_new_frag (
+				             project (
+						 select_ (merged, "res"),
+						 proj ("pre", "pre"),
+						 proj ("size", "size"),
+						 proj ("level", "level"),
+						 proj ("kind", "kind"),
+						 proj ("prop", "prop"),
+						 proj ("frag", "frag")))) };
+}
+
+
+/**
+ * The fs:distinct-doc-order function sorts its input sequence of
+ * nodes by document order and removes duplicates.
+ */
+struct PFalg_pair_t
+PFbui_pf_distinct_doc_order (PFalg_op_t *loop __attribute__((unused)),
+			     struct PFalg_pair_t *args)
+{
+    return (struct  PFalg_pair_t) {
+                 .result = rownum (
+                               distinct (
+				   project (args[0].result,
+					    proj ("iter", "iter"),
+					    proj ("item", "item"))),
+			       "pos", sortby ("item"), "iter"),
+                 .doc = args[0].doc };
+}
+
 
 /**
  * Algebra implementation for <code>fn:boolean (xs:boolean?)</code>.
@@ -430,8 +1044,8 @@ PFbui_fn_boolean_bool (PFalg_op_t *loop __attribute ((unused)),
  * )
  */
 struct PFalg_pair_t
-PFbui_fn_boolean_optbool (PFalg_op_t *loop __attribute ((unused)),
-                          struct PFalg_pair_t *args)
+PFbui_fn_boolean_optbln (PFalg_op_t *loop __attribute__((unused)),
+			 struct PFalg_pair_t *args)
 {
     return (struct PFalg_pair_t) {
 	.result = disjunion (
@@ -455,7 +1069,7 @@ PFbui_fn_boolean_optbool (PFalg_op_t *loop __attribute ((unused)),
  *      semantics.
  */
 struct PFalg_pair_t
-PFbui_fn_boolean_item (PFalg_op_t *loop __attribute ((unused)),
+PFbui_fn_boolean_item (PFalg_op_t *loop __attribute__((unused)),
                        struct PFalg_pair_t *args)
 {
     return (struct PFalg_pair_t) {
@@ -492,7 +1106,7 @@ PFbui_fn_boolean_item (PFalg_op_t *loop __attribute ((unused)),
  * )
  */
 struct PFalg_pair_t
-PFbui_fn_empty (PFalg_op_t *loop __attribute ((unused)),
+PFbui_fn_empty (PFalg_op_t *loop __attribute__((unused)),
                 struct PFalg_pair_t *args)
 {
     return (struct PFalg_pair_t) {

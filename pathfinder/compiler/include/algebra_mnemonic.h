@@ -46,6 +46,9 @@
 /** disjoint union */
 #define disjunion(a,b)  PFalg_disjunion ((a),(b))
 
+/** intersection */
+#define intersect(a,b)  PFalg_intersect ((a),(b))
+
 /** difference */
 #define difference(a,b) PFalg_difference ((a),(b))
 
@@ -78,6 +81,9 @@
 
 /* division operator */
 #define divide(a,b,c,d)   PFalg_divide ((a),(b),(c),(d))
+
+/* modulo operator */
+#define modulo(a,b,c,d)   PFalg_modulo ((a),(b),(c),(d))
 
 /* numeric equal operator */
 #define eq(a,b,c,d)    PFalg_eq ((a),(b),(c),(d))
@@ -119,18 +125,24 @@
 #define attribute(a,b,c)  PFalg_attribute ((a),(b),(c))
 
 /* text node-constructing operator */
-#define textnode(a,b)     PFalg_textnode ((a),(b))
+#define textnode(a)       PFalg_textnode ((a))
 
 /* document node-constructing operator */
 #define docnode(a,b)      PFalg_docnode ((a),(b))
 
 /* comment-constructing operator */
-#define comment(a,b)      PFalg_comment ((a),(b))
+#define comment(a)        PFalg_comment ((a))
 
 /* processing instruction-constructing operator */
-#define processi(a,b)     PFalg_processi ((a),(b))
+#define processi(a)       PFalg_processi ((a))
 
-#define cast_item(o)      PFalg_cast_item (o)
+/* constructor for fs:item-sequence-to-node-sequence() functionality */
+#define items_to_nodes(a) PFalg_pf_item_seq_to_node_seq ((a))
+
+/* constructor for pf:merge-adjacent-text-nodes() functionality */
+#define merge_adjacent(a,b) PFalg_pf_merge_adjacent_text_nodes ((a),(b))
+
+#define cast_item(o)      PFalg_cast_item ((o))
 
 /** serialization */
 #define serialize(a,b)    PFalg_serialize((a),(b))

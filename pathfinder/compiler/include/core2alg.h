@@ -51,6 +51,22 @@ struct PFalg_op_t *PFcore2alg (PFcnode_t *);
  */
 PFarray_t *PFalg_empty_frag (void);
 
+/**
+ * Form a set-oriented union between two lists of fragments.
+ */
+PFarray_t *PFalg_set_union (PFarray_t *frag1, PFarray_t *frag2);
+
+/**
+ * Create new list with one fragment.
+ */
+PFarray_t *PFalg_new_frag (struct PFalg_op_t *n);
+
+/**
+ * Form algebraic disjoint union between the fragments of an
+ * algebra operator's document.
+ */
+struct PFalg_op_t *PFalg_alg_union (PFarray_t *frags);
+
 
 
 /* ............. environment entry specification .............. */

@@ -68,11 +68,23 @@ struct PFalg_pair_t PFbui_op_numeric_multiply_dec (PFalg_op_t *loop,
 struct PFalg_pair_t PFbui_op_numeric_multiply_dbl (PFalg_op_t *loop,
                                                    struct PFalg_pair_t *args);
 
-struct PFalg_pair_t PFbui_op_numeric_divide_int (PFalg_op_t *loop,
-                                                 struct PFalg_pair_t *args);
 struct PFalg_pair_t PFbui_op_numeric_divide_dec (PFalg_op_t *loop,
                                                  struct PFalg_pair_t *args);
 struct PFalg_pair_t PFbui_op_numeric_divide_dbl (PFalg_op_t *loop,
+                                                 struct PFalg_pair_t *args);
+
+struct PFalg_pair_t PFbui_op_numeric_idivide_int (PFalg_op_t *loop,
+                                                  struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_numeric_idivide_dec (PFalg_op_t *loop,
+                                                  struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_numeric_idivide_dbl (PFalg_op_t *loop,
+                                                  struct PFalg_pair_t *args);
+
+struct PFalg_pair_t PFbui_op_numeric_modulo_int (PFalg_op_t *loop,
+                                                 struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_numeric_modulo_dec (PFalg_op_t *loop,
+                                                 struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_numeric_modulo_dbl (PFalg_op_t *loop,
                                                  struct PFalg_pair_t *args);
 
 struct PFalg_pair_t PFbui_op_gt_int (PFalg_op_t *loop,
@@ -86,6 +98,17 @@ struct PFalg_pair_t PFbui_op_gt_bln (PFalg_op_t *loop,
 struct PFalg_pair_t PFbui_op_gt_str (PFalg_op_t *loop,
                                      struct PFalg_pair_t *args);
 
+struct PFalg_pair_t PFbui_op_ge_int (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_ge_dec (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_ge_dbl (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_ge_bln (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_ge_str (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+
 struct PFalg_pair_t PFbui_op_lt_int (PFalg_op_t *loop,
                                      struct PFalg_pair_t *args);
 struct PFalg_pair_t PFbui_op_lt_dec (PFalg_op_t *loop,
@@ -95,6 +118,17 @@ struct PFalg_pair_t PFbui_op_lt_dbl (PFalg_op_t *loop,
 struct PFalg_pair_t PFbui_op_lt_bln (PFalg_op_t *loop,
                                      struct PFalg_pair_t *args);
 struct PFalg_pair_t PFbui_op_lt_str (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+
+struct PFalg_pair_t PFbui_op_le_int (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_le_dec (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_le_dbl (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_le_bln (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_le_str (PFalg_op_t *loop,
                                      struct PFalg_pair_t *args);
 
 struct PFalg_pair_t PFbui_op_eq_int (PFalg_op_t *loop,
@@ -108,14 +142,53 @@ struct PFalg_pair_t PFbui_op_eq_bln (PFalg_op_t *loop,
 struct PFalg_pair_t PFbui_op_eq_str (PFalg_op_t *loop,
                                      struct PFalg_pair_t *args);
 
+struct PFalg_pair_t PFbui_op_ne_int (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_ne_dec (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_ne_dbl (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_ne_bln (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_ne_str (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+
+struct PFalg_pair_t PFbui_fn_not_bln (PFalg_op_t *loop,
+                                      struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_or_bln (PFalg_op_t *loop ,
+                                     struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_and_bln (PFalg_op_t *loop,
+                                      struct PFalg_pair_t *args);
+
+struct PFalg_pair_t PFbui_op_is_same_node (PFalg_op_t *loop,
+                                           struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_node_before (PFalg_op_t *loop,
+                                          struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_node_after (PFalg_op_t *loop,
+                                         struct PFalg_pair_t *args);
+
+struct PFalg_pair_t PFbui_op_union (PFalg_op_t *loop,
+                                    struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_intersect (PFalg_op_t *loop,
+                                        struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_op_except (PFalg_op_t *loop,
+                                     struct PFalg_pair_t *args);
+
+struct PFalg_pair_t PFbui_pf_item_seq_to_node_seq (PFalg_op_t *loop,
+                                                   struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_pf_merge_adjacent_text_nodes (PFalg_op_t *loop,
+                                                   struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_pf_distinct_doc_order (PFalg_op_t *loop,
+                                                 struct PFalg_pair_t *args);
+
 struct PFalg_pair_t PFbui_op_typed_value (PFalg_op_t *loop,
                                           struct PFalg_pair_t *args);
 
-struct PFalg_pair_t PFbui_fn_boolean_bool (PFalg_op_t *loop,
-                                           struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_fn_boolean_bln (PFalg_op_t *loop,
+                                          struct PFalg_pair_t *args);
 
-struct PFalg_pair_t PFbui_fn_boolean_optbool (PFalg_op_t *loop,
-                                              struct PFalg_pair_t *args);
+struct PFalg_pair_t PFbui_fn_boolean_optbln (PFalg_op_t *loop,
+                                             struct PFalg_pair_t *args);
 
 struct PFalg_pair_t PFbui_fn_empty (PFalg_op_t *loop,
                                     struct PFalg_pair_t *args);
