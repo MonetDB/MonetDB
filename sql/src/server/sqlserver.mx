@@ -798,7 +798,7 @@ proc mvc_create_role( m, auth, grantor ) {
 	auth_name.insert(nil, auth);
 	auth_grantor.insert(nil, grantor);
 	auth_priv.insert(nil,0); # all privileges are off 
-	print(auth_id,auth_name,auth_grantor,auth_priv);
+	#print(auth_id,auth_name,auth_grantor,auth_priv);
 	return true;
 } 
 proc mvc_drop_role( m, auth ) {
@@ -812,12 +812,12 @@ proc mvc_drop_role( m, auth ) {
 		return;
 	}
 	id := auth_name.reverse.find(auth);
-	print(id);
+	#print(id);
 	auth_id.replace(id, int(nil));
 	auth_name.replace(id, str(nil));
 	auth_grantor.replace(id, int(nil));
 	auth_priv.replace(id, int(nil));
-	print(auth_id,auth_name,auth_grantor,auth_priv);
+	#print(auth_id,auth_name,auth_grantor,auth_priv);
 	D_auth.insert(nil,id);
 } 
 proc mvc_grant_role( m, grantee, auth ) {
@@ -856,7 +856,7 @@ proc mvc_revoke_role( m, grantee, auth ) {
 	if (not(logins.reverse.exist(grantee_id)))
 		return;
 	id := logins.reverse.find(grantee_id);
-	print(id);
+	#print(id);
 	login_id.replace(nil,int(nil));
 	role_id.replace(nil,int(nil));
 	D_user_role.insert(nil,id);
@@ -880,7 +880,7 @@ proc mvc_create_user( m, user, passwd, fullname, schema_name, grantor ) {
 	user_fullname.insert(nil, fullname);
 	user_dschema.insert(nil, schema_id);
 
-	print(user_name,user_passwd,user_fullname,user_dschema);
+	#print(user_name,user_passwd,user_fullname,user_dschema);
 } 
 
 proc mvc_drop_user( m, user) {
@@ -896,7 +896,7 @@ proc mvc_drop_user( m, user) {
 	mvc_drop_role( m, user );
 
 	id := user_name.reverse.find(user);
-	print(id);
+	#print(id);
 	user_name.replace(id,str(nil));
 	user_passwd.replace(id,str(nil));
 	user_fullname.replace(id,str(nil));
