@@ -364,7 +364,7 @@ statement *column_exp( context *sql, list *tables, symbol *column_e, symbol *gro
 	{
 		dlist *l = column_e->data.lval;
 		statement *s = scalar_exp(l->h->data.sym, sql, tables, groupby, subset);
-		if (l->h->next->data.sval){
+		if (s && l->h->next->data.sval){
 			s = statement_name(s, l->h->next->data.sval);
 		} 
 		return s;
