@@ -4,12 +4,12 @@ CREATE TABLE sys.craftsmen (
 	number_sup	varchar(1),
 	trip	integer(9),
 	trip_sup	varchar(1),
-	one	integer(9),
-	two	integer(9),
-	three	integer(9),
-	four	integer(9),
-	five	integer(9),
-	six	integer(9)
+	onboard_at_departure	integer(9),
+	death_at_cape	integer(9),
+	left_at_cape	integer(9),
+	onboard_at_cape	integer(9),
+	death_during_voyage	integer(9),
+	onboard_at_arrival	integer(9)
 );
 
 INSERT INTO sys.craftsmen VALUES (4398, '', 3, '', 1, NULL, NULL, NULL, NULL, NULL);
@@ -2389,12 +2389,12 @@ CREATE TABLE sys.impotenten (
 	number_sup	varchar(1),
 	trip	integer(9),
 	trip_sup	varchar(1),
-	one	integer(9),
-	two	integer(9),
-	three	integer(9),
-	four	integer(9),
-	five	integer(9),
-	six	integer(9)
+	onboard_at_departure	integer(9),
+	death_at_cape	integer(9),
+	left_at_cape	integer(9),
+	onboard_at_cape	integer(9),
+	death_during_voyage	integer(9),
+	onboard_at_arrival	integer(9)
 );
 
 INSERT INTO sys.impotenten VALUES (8037, '', 3, '', 2, NULL, NULL, NULL, NULL, NULL);
@@ -7185,12 +7185,12 @@ CREATE TABLE sys.passengers (
 	number_sup	varchar(1),
 	trip	integer(9),
 	trip_sup	varchar(1),
-	one	integer(9),
-	two	integer(9),
-	three	integer(9),
-	four	integer(9),
-	five	integer(9),
-	six	integer(9)
+	onboard_at_departure	integer(9),
+	death_at_cape	integer(9),
+	left_at_cape	integer(9),
+	onboard_at_cape	integer(9),
+	death_during_voyage	integer(9),
+	onboard_at_arrival	integer(9)
 );
 
 INSERT INTO sys.passengers VALUES (4411, '', 1, '', 6, NULL, NULL, NULL, NULL, 5);
@@ -10019,12 +10019,12 @@ CREATE TABLE sys.seafarers (
 	number_sup	varchar(1),
 	trip	integer(9),
 	trip_sup	varchar(1),
-	one	integer(9),
-	two	integer(9),
-	three	integer(9),
-	four	integer(9),
-	five	integer(9),
-	six	integer(9)
+	onboard_at_departure	integer(9),
+	death_at_cape	integer(9),
+	left_at_cape	integer(9),
+	onboard_at_cape	integer(9),
+	death_during_voyage	integer(9),
+	onboard_at_arrival	integer(9)
 );
 
 INSERT INTO sys.seafarers VALUES (4398, '', 3, '', 178, 73, 102, 69, 88, 119);
@@ -14524,12 +14524,12 @@ CREATE TABLE sys.soldiers (
 	number_sup	varchar(1),
 	trip	integer(9),
 	trip_sup	varchar(1),
-	one	integer(9),
-	two	integer(9),
-	three	integer(9),
-	four	integer(9),
-	five	integer(9),
-	six	integer(9)
+	onboard_at_departure	integer(9),
+	death_at_cape	integer(9),
+	left_at_cape	integer(9),
+	onboard_at_cape	integer(9),
+	death_during_voyage	integer(9),
+	onboard_at_arrival	integer(9)
 );
 
 INSERT INTO sys.soldiers VALUES (4398, '', 3, '', 74, NULL, NULL, 100, NULL, 138);
@@ -18734,12 +18734,12 @@ CREATE TABLE sys.total (
 	number_sup	varchar(1),
 	trip	integer(9),
 	trip_sup	varchar(1),
-	one	integer(9),
-	two	integer(9),
-	three	integer(9),
-	four	integer(9),
-	five	integer(9),
-	six	integer(9)
+	onboard_at_departure	integer(9),
+	death_at_cape	integer(9),
+	left_at_cape	integer(9),
+	onboard_at_cape	integer(9),
+	death_during_voyage	integer(9),
+	onboard_at_arrival	integer(9)
 );
 
 INSERT INTO sys.total VALUES (4399, '', 2, '', 317, 127, 112, NULL, NULL, NULL);
