@@ -643,6 +643,11 @@ int main(int ac, char **av)
 
 	toConsole = stdout;
 	mid = mapi_connect(host, port, user, passwd, language);
+	if (mid == NULL) {
+		fprintf(toConsole, "failed to allocate Mapi structure\n");
+		fflush(toConsole);
+		exit(2);
+	}
 	mapi_trace(mid, trace);
 	if (mapi_error(mid)) {
 		mapi_explain(mid,toConsole);
