@@ -23,7 +23,11 @@ if test "x$enable_optim" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
       case "$host" in
       i*86-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -ffast-math -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
-      *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions";;
+      *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions"
+                      if test "$CC" = "gcc -m64" ; then
+                        NO_INLINE_CFLAGS="-O1"
+                      fi
+                      ;;
       *irix6.5*)      CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions"
                       NO_INLINE_CFLAGS="-fno-inline"
                       ;;
