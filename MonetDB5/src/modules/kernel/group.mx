@@ -1869,9 +1869,9 @@ str GRPwindowsum_@1(int *retval, int *bid, int  *size){
 	return GRPslidingsum_@1(retval,bid,size,size);
 }
 @c
-@:windowsum(sht,lng)@;
-@:windowsum(int,lng)@;
-@:windowsum(lng,lng)@;
-@:windowsum(flt,dbl)@;
-@:windowsum(dbl,dbl)@;
+@:windowsum(sht,lng)@
+@:windowsum(int,lng)@
+@:windowsum(lng,lng)@
+@:windowsum(flt,dbl)@
+@:windowsum(dbl,dbl)@
 @}
