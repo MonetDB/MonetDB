@@ -67,10 +67,10 @@ sql_export void sql_destroy_args( mvc *sql );			/* used in src/server/sql_contex
  * a string representation.
  *
  *
- * SQL ERROR <sqlerrno> : <details>
- * SQL DEBUG  <details>
- * SQL WARNING <details>
- * SQL  <informative message, reserved for ...rows affected>
+ * !SQL ERROR <sqlerrno> : <details>
+ * !SQL DEBUG  <details>
+ * !SQL WARNING <details>
+ * !SQL  <informative message, reserved for ...rows affected>
  *
  * Todo add insert bats used for inserts (ie should change the 
  * 	query code to use the global bats (mvc_bat) in read only mode).
@@ -4360,7 +4360,7 @@ grant_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,
 
 				for(cn = op->data.lval->h; cn; cn = cn->next) {
 					char *cname = cn->data.sval;
-					sql_column *c;
+					sql_column *c=0;
 
 					int allowed = sql_grantable( sql, 
 						grantor, t->s->base.id, 
