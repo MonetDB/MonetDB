@@ -32,8 +32,6 @@ scripts_mapi = {
 	SOURCES = Mshutdown.py.in MapiClient.py.in Mshutdown.py.bat MapiClient.py.bat
 }
 
-#bin_SCRIPTS = Mshutdown.py MapiClient.py
-
 scripts_pl = {
 	DIR = pkgdatadir/site_perl
 	SOURCES = Mapi.pm MapiClient.pl
