@@ -435,6 +435,23 @@ static char *rfind_quote(char *str, char quote ){
 		str--;
 	return str;
 }
+static char *skip_string(char *str, char quote ){
+	int esc = 0;
+	while(*str){
+		if (*str == '\\' && !esc)
+			esc = 1;
+		else if (*str == quote && !esc)
+			break;
+		else
+			esc = 0;
+		str++;
+	}
+	if (*str) 
+		str++;
+	else
+		return NULL;
+	return str;
+}
 
 static INLINE
 int insert_line( ascii *as, char *line ){
@@ -455,11 +472,8 @@ int insert_line( ascii *as, char *line ){
 				quotes = 1;
 				quote = *line;
 				line++;
-				while( *line && 
-					(*line != quote && *(line-1) != '\\') )
-					line++;
-				if (*line) line++;
-				else return -1;
+				line = skip_string( line, quote );
+				if (!line) return -1;
 				first = 0;
 			} else {
 				if (first && !isspace(*line))
@@ -498,10 +512,8 @@ int insert_line( ascii *as, char *line ){
 			quotes = 1;
 			quote = *line;
 			line++;
-			while( *line && (*line != quote && *(line-1) != '\\') )
-				line++;
-			if (*line) line++;
-			else return -1;
+			line = skip_string( line, quote );
+			if (!line) return -1;
 			first = 0;
 		} else {
 			if (first && !isspace(*line))
