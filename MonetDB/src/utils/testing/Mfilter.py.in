@@ -26,6 +26,31 @@ def Warn(THISFILE,TEXT) :
     sys.stderr.write("%s warning: %s\n" % (THISFILE,TEXT))
 ### Warn(THISFILE,TEXT) #
 
+test = (
+        re.compile( r"^Mdestroydb: processing database ..*. in "                     "|"
+                    r"^Mcreatedb: processing database ..*. in "                      "|"
+                    r"^Mcreatedb: using default dbdir "                              "|"
+                    r"^Mcreatedb: calling .Mserver .*-db .* for the first time..$"   "|"
+                    r"^Mcreatedb: database .* has been initialized succesfully!$"    "|"
+                    r"^module\(mprof\);$"                                            "|"
+                    r'^pm([BE]\("(global_.+|[a-zA-Z0-9_]+[0-9])"\)|Summary\(\));$'   "|"
+                    r'^printf\("#~BeginProfilingOutput~#\\n"\);$'                    "|"
+                    r"^connection= .*:[0-9]*$"                                       "|"
+                    r"^Connecting to server: localhost:[0-9]*$"                      "|"
+                    r"^server listening on port [0-9]*$",
+                    re.MULTILINE),
+        re.compile( r"^!ERROR: DL_open: Unknown error.$"                             "|"
+                    r"^!ERROR: DL_open: library not found \(STATIC\).$",
+                    re.MULTILINE),
+        re.compile( r"^!ERROR: TBL_loadmod: module load .* cancelled.$",
+                    re.MULTILINE),
+        re.compile( r"^!ERROR: module\(.*\): load error.$",
+##                    r"^!WARNING: TCPlisten\([0-9]*\): stopped.$"                     "|"
+##                    r"^!WARNING: TCPepilogue: terminate [01] listeners$"             "|"
+                    re.MULTILINE)
+
+        )
+
 def mFilter (FILE, IGNORE) :
     fin = open(FILE, "r")
     LINE = fin.readline()
@@ -33,30 +58,10 @@ def mFilter (FILE, IGNORE) :
         LINE = fin.readline()
     fin.close()
     if  len(LINE) >= 15  and  LINE[:15] in ("stdout of test ", "stderr of test "):
-        WHAT, TST, TSTDIR = re.search("^std(out|err) of test .(.*). in directory .(.*). itself:", LINE).groups()
+        WHAT, TST, TSTDIR = re.search("^std(out|err) of test .(.*). in directory .(.*). itself:", LINE, re.MULTILINE).groups()
     else:
         WHAT, TST, TSTDIR = "", "", ""
 
-    test = (re.compile(IGNORE) ,
-            re.compile( r"^Mdestroydb: processing database ..*. in "                     "|"
-                        r"^Mcreatedb: processing database ..*. in "                      "|"
-                        r"^Mcreatedb: using default dbdir "                              "|"
-                        r"^Mcreatedb: calling .Mserver .*-db .* for the first time..$"   "|"
-                        r"^Mcreatedb: database .* has been initialized succesfully!$"    "|"
-                        r"^module\(mprof\);$"                                            "|"
-                        r'^pm([BE]\("(global_.+|[a-zA-Z0-9_]+[0-9])"\)|Summary\(\));$'   "|"
-                        r'^printf\("#~BeginProfilingOutput~#\\n"\);$'                    "|"
-                        r"^connection= .*:[0-9]*$"                                       "|"
-                        r"^Connecting to server: localhost:[0-9]*$"                      "|"
-                        r"^server listening on port [0-9]*$"                         ) ,
-            re.compile( r"^!ERROR: DL_open: Unknown error.$"                             "|"
-                        r"^!ERROR: DL_open: library not found \(STATIC\).$"          ) ,
-            re.compile( r"^!ERROR: TBL_loadmod: module load .* cancelled.$"  ) ,
-            re.compile( r"^!ERROR: module\(.*\): load error.$"               )
-
-##                        r"^!WARNING: TCPlisten\([0-9]*\): stopped.$"                     "|"
-##                        r"^!WARNING: TCPepilogue: terminate [01] listeners$"             "|"
-            )
 
     ftmp = []
     ig = n = 0
@@ -69,12 +74,12 @@ def mFilter (FILE, IGNORE) :
         if ig  and  ( len(iline) == 0  or  iline[0] != "!" ):
             oline = "#~ " + iline
             n = n + 1
-        elif test[1].match(iline):
+        elif test[0].match(iline):
             oline = "#~ " + iline
         elif len(ftmp) > 2              and \
-             test[4].match(iline)       and \
-             test[3].match(ftmp[-1])    and \
-             test[2].match(ftmp[-2]):
+             test[3].match(iline)       and \
+             test[2].match(ftmp[-1])    and \
+             test[1].match(ftmp[-2]):
             oline = iline
             for i in -1, -2:
                 w = len(string.split(ftmp[i]))
@@ -100,7 +105,7 @@ def mFilter (FILE, IGNORE) :
                 w = len(string.split(ln))
                 c = len(ln)
                 if ln != os.linesep  and  \
-                   not test[0].match(ln):
+                   not re.match(IGNORE,ln, re.MULTILINE):
                     il = il + 1
                     iw = iw + w
                     ic = ic + c

@@ -30,6 +30,7 @@ import time
 import socket
 #import signal
 #import getpass
+import Mfilter
 
 STDOUT = sys.stdout
 STDERR = sys.stdout     # err
@@ -259,8 +260,8 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
     TSTDIR    = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
 
-    testT = re.compile("^/"+TST+EXT+"/([^/]*)/")
-    testS = re.compile("^/"+TST+stableWHAT+"/([^/]*)/")
+    testT = re.compile("^/"+TST+EXT+"/([^/]*)/", re.MULTILINE)
+    testS = re.compile("^/"+TST+stableWHAT+"/([^/]*)/", re.MULTILINE)
     REVt="?"
     REVs="?"
     entries = os.path.join(TSTSRCDIR,"CVS","Entries")
@@ -272,7 +273,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
             mS = testS.match(l)
             if mS:
                 REVs=mS.group(1)
-    test = re.compile("^<TR.*><TH.*>No differences.</TH></TR>$")
+    test = re.compile("^<TR.*><TH.*>No differences.</TH></TR>$", re.MULTILINE)
     DIFF = "<B>Differences</B>"
     for l in fileinput.input(TST+WHAT+".diff.html"):
         if test.match(l):
@@ -283,7 +284,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
 
     xWHAT = WHAT
     if THISFILE == "Mprofile.py":
-        test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*mil.*\.prof\.diff\.html$")
+        test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*mil.*\.prof\.diff\.html$", re.MULTILINE)
         d = os.listdir(os.getcwd())
         d.sort()
         rows = ""
@@ -410,7 +411,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
 
     f = open(".index.head.html","a")
     f.write("<TD ALIGN=CENTER><FONT FACE='helvetica, arial'><A HREF='."+TST+".src.index.html' TARGET='"+OSVER+"_"+TSTDIR+"_body'><FONT COLOR=#000000>")
-    test = re.compile("^<TR.*><TH.*>No differences.</TH></TR>$")
+    test = re.compile("^<TR.*><TH.*>No differences.</TH></TR>$", re.MULTILINE)
     o = e = 1
     for l in fileinput.input(TST+".out.diff.html"):
         if test.match(l):
@@ -448,7 +449,7 @@ def AddSubToHtmlIndex (env, TSTDIR) :
         f = open("index.head.html","a")
         f.write("<TD><FONT FACE='helvetica, arial'>")
         STRING = "<A HREF='"+url(TSTDIR)+"/.index.html' TARGET='"+OSVER+"__body'>"+TSTDIR+"</A>"
-        test = re.compile("^.*><B>.*</B><.*$")
+        test = re.compile("^.*><B>.*</B><.*$", re.MULTILINE)
         diff = 0
         for l in fileinput.input(os.path.join(TSTDIR,".index.head.html")):
             if test.match(l):
@@ -590,8 +591,8 @@ def ApproveOutput (env, TST) :
     EXTENSIONS = par['EXTENSION']
     SYSTEM = par['SYSTEM']
 
-#       filter = re.compile( "^!WARNING: TCPlisten\([0-9]*\): stopped.$"        + "|"   \
-#                          + "^!WARNING: TCPepilogue: terminate [01] listeners$"        )
+#       filter = re.compile( "^!WARNING: TCPlisten\([0-9]*\): stopped.$"        "|"
+#                            "^!WARNING: TCPepilogue: terminate [01] listeners$", re.MULTILINE)
 
     for WHAT in EXTENSIONS:
         testOUTPUT   = os.path.join(TSTTRGDIR,TST+".test."+WHAT)
@@ -640,9 +641,9 @@ MODs:=sunion([~monet_mod_nme],[~view_modules]).reverse.kunique;printf("\\nModule
     env['TST_MODS'] = []
     env['TST_STATIC'] = ""
     if qOut:
-        tbs = re.compile("^# compiled for .*/([63][42]bit); (.*) linked")
-        tm = re.compile("^Modules: (.*)$")
-        #ts = re.compile("^!ERROR: DL_open: library not found \(STATIC\).$")
+        tbs = re.compile("^# compiled for .*/([63][42]bit); (.*) linked", re.MULTILINE)
+        tm = re.compile("^Modules: (.*)$", re.MULTILINE)
+        #ts = re.compile("^!ERROR: DL_open: library not found \(STATIC\).$", re.MULTILINE)
         for l in qOut:
             bs = tbs.match(l)
             if bs:
@@ -698,7 +699,7 @@ BATs:=view_bbp_name;printf("\\nBATs: ");x:="";BATs@batloop{printf("%s\'%s\'",x,$
     pErr.close()
     TST_BATS = []
     if qOut:
-        tb = re.compile("^BATs: (.*)$")
+        tb = re.compile("^BATs: (.*)$", re.MULTILINE)
         for l in qOut:
             b = tb.match(l)
             if b:
@@ -852,7 +853,7 @@ def RunTest(env, TST, BusyPorts) :
     elif SERVER in BusyPorts:
         SkipTest(env, TST, EXT, "as %sPORT=%s is not available." % (SERVER,env[SERVER+'PORT']))
     else:
-        test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$")
+        test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
         for f in os.listdir(TSTSRCDIR):
             if test.match(f):
                 shutil.copy(os.path.join(TSTSRCDIR,f),TSTTRGDIR)
@@ -865,7 +866,7 @@ def RunTest(env, TST, BusyPorts) :
             else:
                 SkipTest(env, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.")
                 return TX
-        test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$")
+        test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
         for ff in os.listdir(TSTTRGDIR):
             if test.match(ff) and not os.path.isfile(ff[:-4]):
                 f = open(ff,"r")
@@ -877,7 +878,7 @@ def RunTest(env, TST, BusyPorts) :
                     Warn("source file '"+TSTSRC+"` is missing.")
 
         if THISFILE == "Mprofile.py":
-            test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*mil.*$")
+            test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*mil.*$", re.MULTILINE)
             d = os.listdir(os.getcwd())
             for f in d:
                 if test.match(f)  and  f != TST+EXT+".src":
@@ -930,7 +931,7 @@ def RunTest(env, TST, BusyPorts) :
         TIMEOUTED = "Mtimeout"
         for v in env['exe'].keys():
             TIMEOUTED = TIMEOUTED+"|"+string.upper(v)
-        test = re.compile("^[^#]*("+TIMEOUTED+")[^#]*(# ([0-9]+)x|#.*)?$")
+        test = re.compile("^[^#]*("+TIMEOUTED+")[^#]*(# ([0-9]+)x|#.*)?$", re.MULTILINE)
         TIMEOUT = par['TIMEOUT']
         if os.path.isfile(TST+".timeout"):
             for f in fileinput.input(TST+".timeout"):
@@ -953,7 +954,7 @@ def RunTest(env, TST, BusyPorts) :
                         TOx = 1
                     CTIMEOUT = CTIMEOUT + ( TOx * TIMEOUT )
         elif CALL in ["milMXs", "milSXs", "milCXs", "sqlXs"]:
-            test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$")
+            test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$", re.MULTILINE)
             d = os.listdir(os.getcwd())
             for f in d:
                 if test.match(f):
@@ -1038,7 +1039,7 @@ def RunTest(env, TST, BusyPorts) :
         TestErr.close()
 
         timeout = 0
-        mto = re.compile("^!Mtimeout: Timeout: ")
+        mto = re.compile("^!Mtimeout: Timeout: ", re.MULTILINE)
         for l in fileinput.input(TestErr.name):
             if mto.match(l):
                 timeout = 1
@@ -1055,12 +1056,13 @@ def RunTest(env, TST, BusyPorts) :
             SetExecEnv(env['exe'],0)
 
         if THISFILE in ["Mtest.py", "Mprofile.py"]:
-            os.system("python "+os.path.join(THISPATH,"Mfilter.py")+" "+par['IGNORE']+" "+TST+STABLEout+" "+TST+STABLEerr+" "+TST+".test.out "+TST+".test.err")
-            if os.name == "nt":
-                time.sleep(1)
+            Mfilter.mFilter(TST+STABLEout,par['IGNORE'][3:-1])
+            Mfilter.mFilter(TST+STABLEerr,par['IGNORE'][3:-1])
+            Mfilter.mFilter(TST+".test.out",par['IGNORE'][3:-1])
+            Mfilter.mFilter(TST+".test.err",par['IGNORE'][3:-1])
 
-            testO = re.compile("^/"+TST+STABLEout+"/([^/]*)/")
-            testE = re.compile("^/"+TST+STABLEerr+"/([^/]*)/")
+            testO = re.compile("^/"+TST+STABLEout+"/([^/]*)/", re.MULTILINE)
+            testE = re.compile("^/"+TST+STABLEerr+"/([^/]*)/", re.MULTILINE)
             REVo="?"
             REVe="?"
             entries = os.path.join(TSTSRCDIR,"CVS","Entries")
@@ -1288,7 +1290,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             X=""
         else:
             X="_s[0-9][0-9]"
-        test = re.compile("^"+TST+X+EXT+"$")
+        test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
         d = os.listdir(os.getcwd())
         d.sort()
         for f in d:
@@ -1300,7 +1302,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             X=""
         else:
             X="_s[0-9][0-9]"
-        test = re.compile("^"+TST+X+EXT+"$")
+        test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
         d = os.listdir(os.getcwd())
         d.sort()
         for f in d:
@@ -1319,7 +1321,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             X=""
         else:
             X="_s[0-9][0-9]"
-        test = re.compile("^"+TST+X+EXT+"$")
+        test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
         d = os.listdir(os.getcwd())
         d.sort()
         for f in d:
@@ -1536,7 +1538,7 @@ def FindCmdLst(env) :
 
 def ReadFromMonetConf(env, var) :
     value = ""
-    test = re.compile("^\s*"+var+"\s*=\s*([^#\s]+)")
+    test = re.compile("^\s*"+var+"\s*=\s*([^#\s]+)", re.MULTILINE)
     for l in fileinput.input(env['MONETRC']):
         m = test.match(l)
         if m:
@@ -1565,13 +1567,10 @@ def main(argv) :
     #TODO:
     #signal.signal(signal.SIGALRM, AlarmHandler)
 
-    if os.environ.has_key('SQL_PREFIX'):
-        SQLprefix = os.environ['SQL_PREFIX']
-    else:
-        SQLprefix = ''
+    SQLprefix = os.environ.get('SQL_PREFIX', '')
 
-    vars = ['MONET_SOURCE', 'MONET_BUILD', 'MONET_PREFIX', \
-            'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'  , \
+    vars = ['MONET_SOURCE', 'MONET_BUILD', 'MONET_PREFIX',
+            'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'  ,
             'SQL_PREFIX'                                   ]
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         vars = vars + ['MONETRC', 'MAPIPORT', 'SQLPORT', 'SQLCLIENT', 'MAPICLIENT' ]    #, 'MONET_MOD_PATH' ]
@@ -1644,7 +1643,7 @@ def main(argv) :
             # commandline options overrule environment
         # Mtest.py
         elif o == "-I":
-            par['IGNORE'] = o+a
+            par['IGNORE'] = o+`a`
         elif o == "-c":
             par['CONTEXT'] = o+str(int(a))
         elif o == "-a":
@@ -1967,7 +1966,7 @@ def main(argv) :
         env['TSTTRGDIR'] = os.path.join(env['TSTTRGBASE'],TSTPREF)
         CreateHtmlIndex(env)
 
-        test = re.compile("^.*<B>.*$")
+        test = re.compile("^.*<B>.*$", re.MULTILINE)
         failed = 0
         for l in fileinput.input(os.path.join(env['TSTTRGBASE'],TSTPREF,"index.head.html")):
             if test.match(l):
