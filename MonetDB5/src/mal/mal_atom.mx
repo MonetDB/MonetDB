@@ -83,10 +83,6 @@ as ordinary mal operators.
 @= chkItem
 if( idcmp(@1,name)==0 && pci->argc==1){
 	BATatoms[tpe].@2= (@3 (*)()) pci->fcn;
-#ifdef MAL_ATOM_DEBUG
-	stream_printf(GDKout,"replaced the function %s.%s\n",
-		moduleName(pci),functionName(pci));
-#endif
 	setAtomName(pci);
 	return 1;
 } 
@@ -126,6 +122,10 @@ void setAtomName(InstrPtr pci){
 	snprintf(buf,MAXPATHLEN,"#%s", functionName(pci));
 	GDKfree(pci->fcnname);
 	setFunctionId(pci, GDKstrdup(buf));
+#ifdef MAL_ATOM_DEBUG
+	stream_printf(GDKout,"replaced the function %s.%s\n",
+		moduleName(pci),functionName(pci));
+#endif
 }
 
 int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
@@ -138,28 +138,97 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
 		GDKwarning("malAtomProperty:function not bound\n");
 	switch(name[0]){
 	case 'a': GDKwarning("illegal atom property"); break;
-	case 'd': @:chkItem("del",atomDel,void)@ break;
-	case 'c': @:chkItem("cmp",atomCmp,int)@ 
-		  @:chkItem("convert",atomConvert,void)@ break;
-	case 'f': @:chkItem("fromstr",atomFromStr,int)@ 
-		  @:chkItem("fix",atomFix,int)@ break;
-	case 'h': @:chkItem("heap",atomHeap,void)@ 
-		  @:chkItem("heapconvert",atomHeapConvert,void)@ 
+	case 'd': 
+		if( idcmp("del",name)==0 && pci->argc==1){
+			BATatoms[tpe].atomDel= (void (*)()) pci->fcn;
+			setAtomName(pci);
+			return 1;
+		}
+		break;
+	case 'c': 
+		if( idcmp("cmp",name)==0 && pci->argc==1){
+			BATatoms[tpe].atomCmp= (int (*)()) pci->fcn;
+			setAtomName(pci);
+			return 1;
+		} 
+		if( idcmp("convert",name)==0 && pci->argc==1){
+			BATatoms[tpe].atomConvert= (void (*)()) pci->fcn;
+			setAtomName(pci);
+			return 1;
+		} 
+		break;
+	case 'f': 
+		if( idcmp("fromstr",name)==0 && pci->argc==1){
+			BATatoms[tpe].atomFromStr= (int (*)()) pci->fcn;
+			setAtomName(pci);
+			return 1;
+		} 
+		if( idcmp("fix",name)==0 && pci->argc==1){
+			BATatoms[tpe].atomFix= (int (*)()) pci->fcn;
+			setAtomName(pci);
+			return 1;
+		} 
+		break;
+	case 'h':
+		if( idcmp("heap",name)==0 && pci->argc==1){
+			BATatoms[tpe].atomHeap= (void (*)()) pci->fcn;
+			setAtomName(pci);
+			return 1;
+		} 
+		if( idcmp("heapconvert",name)==0 && pci->argc==1){
+			BATatoms[tpe].atomHeapConvert= (void (*)()) pci->fcn;
+			setAtomName(pci);
+			return 1;
+		} 
 /* 64 bit issue
 		  @:chkItem("hash",atomHash,unsigned int)@ 
 */
-		  @:chkItem("heapcheck",atomHeapCheck,int)@ break;
-	case 'l': @:chkItem("length",atomLen,int)@ 
+		if( idcmp("heapcheck",name)==0 && pci->argc==1){
+			BATatoms[tpe].atomHeapCheck= (int (*)()) pci->fcn;
+			setAtomName(pci);
+			return 1;
+		} 
+		break;
+	case 'l': 
+		if( idcmp("length",name)==0 && pci->argc==1){
+			BATatoms[tpe].atomLen= (int (*)()) pci->fcn;
+			setAtomName(pci);
+			return 1;
+		} 
+		break;
 	case 'n':
 /* 64 bit issue
 		  @:setItem("null",atomNull,TYPE_ptr,lng)@ 
 */
-		  @:chkItem("nequal",atomCmp,int)@ break;
-	case 'p': @:chkItem("put",atomPut,void)@ break; 
+		if( idcmp("nequal",name)==0 && pci->argc==1){
+			BATatoms[tpe].atomCmp= (int (*)()) pci->fcn;
+			setAtomName(pci);
+			return 1;
+		}
+		break; 
+	case 'p': 
+		if( idcmp("put",name)==0 && pci->argc==1){
+			BATatoms[tpe].atomPut= (void (*)()) pci->fcn;
+			setAtomName(pci);
+			return 1;
+		} 
+		break;
 	case 's': 
 		  @:setItem("storage",storage,TYPE_int,long); break;
-	case 't': @:chkItem("tostr",atomToStr,int)@ break;
-	case 'u': @:chkItem("unfix",atomUnfix,int)@ 
+	case 't': 
+		if( idcmp("tostr",name)==0 && pci->argc==1){
+			BATatoms[tpe].atomToStr= (int (*)()) pci->fcn;
+			setAtomName(pci);
+			return 1;
+		} 
+		break;
+	case 'u': 
+		if( idcmp("unfix",name)==0 && pci->argc==1){
+			BATatoms[tpe].atomUnfix= (int (*)()) pci->fcn;
+			setAtomName(pci);
+			return 1;
+		} 
+		break;
 	case 'v': @:setItem("varsized",varsized,TYPE_int,long)@ 
 	}
 	return 0;
@@ -275,5 +344,4 @@ void showAtoms(stream *fd){
 		if( BATatoms[i+1].name[0]) stream_printf(fd,",");
 	}
 	stream_printf(fd,"\n");
-
 }
