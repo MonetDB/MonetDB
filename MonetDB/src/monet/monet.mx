@@ -376,7 +376,7 @@ void monet_hello(stream *out) {
 			  "All rights reserved.\n");
         stream_printf(out, "# Compiled for %s/" SZFMT "bit; %s linked.\n", 
 			monet_arch, (size_t) (sizeof(ptr)*8), linkinfo );
-	stream_printf(out, "# Visit http://monetdb.cwi.nl for further information.\n");
+	stream_printf(out, "# Visit http://monetdb.cwi.nl/ for further information.\n");
     }
 }
 
