@@ -55,7 +55,7 @@ $dbh->do('var b:=new(int,str);');
 $dbh->do('insert(b,3,"three");');
 {
   # variable binding stuff:
-  my $sth = $dbh->prepare('insert(b,int(?),?);');
+  my $sth = $dbh->prepare('insert(b,?,?);');
   $sth->bind_param( 1,     7 , DBI::SQL_INTEGER() );
   $sth->bind_param( 2,'seven' );
   $sth->execute;

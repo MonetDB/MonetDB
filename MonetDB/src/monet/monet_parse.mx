@@ -349,7 +349,7 @@ command:	      {	int i, l = (int) strlen(yytext);
 void
 ll_skipcomment(void)
 {
-	char c;
+	int c;
 
 	while ((c = input()) != 0 && c != EOF && c != '\n')
 		;

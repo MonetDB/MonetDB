@@ -169,9 +169,17 @@ sub quote {
       s/"/\\"/g;
       s/'/''/g;
     }
-    # TODO: prefix/suffix from TypeInfo
-    my $quote = $dbh->{monetdb_language} eq 'sql' ? q(') : q(");
-    return $quote . $value . $quote;
+
+    $type ||= DBI::SQL_VARCHAR();
+
+    my $prefix = $DBD::monetdb::TypeInfo::prefixes{$type} || '';
+    my $suffix = $DBD::monetdb::TypeInfo::suffixes{$type} || '';
+
+    if ( $dbh->{monetdb_language} ne 'sql') {
+      $prefix = q(") if $prefix eq q(');
+      $suffix = q(") if $suffix eq q(');
+    }
+    return $prefix . $value . $suffix;
 }
 
 
@@ -614,8 +622,7 @@ sub execute {
         unless @$params == $num_of_params;
 
     for ( 1 .. $num_of_params ) {
-        # TODO: parameter type
-        my $quoted_param = $dbh->quote($params->[$_-1]);
+        my $quoted_param = $dbh->quote($params->[$_-1], $sth->{monetdb_types}[$_-1]);
         $statement =~ s/\?/$quoted_param/;  # TODO: '?' inside quotes/comments
     }
     $sth->trace_msg("    -- Statement: $statement\n", 5);

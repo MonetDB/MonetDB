@@ -78,4 +78,14 @@ my @data =
 
 sub type_info_all { [ \%index, @data ] }
 
+%typeinfo = ();
+%prefixes = ();
+%suffixes = ();
+
+for ( @data ) {
+  $typeinfo{$_->[0]} = $_;
+  $prefixes{$_->[1]} = $_->[3];
+  $suffixes{$_->[1]} = $_->[4];
+}
+
 1;
