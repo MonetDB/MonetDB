@@ -41,6 +41,7 @@
 #endif
 
 #ifdef NATIVE_WIN32
+#include <windows.h>
 #define DIFF	"diff"		/* --binary */
 #define COPY	"copy /y"	/* "cp -f" */
 #else
@@ -248,7 +249,6 @@ int lw_diff2wc_diff (int doChar, char *lw_diff_fn, char *wc_diff_fn)
 */
 
 #ifdef NATIVE_WIN32
-#include <io.h>
       sprintf(command,"%s %s %s.cp > nul",COPY,fn[0],fn[0]);
       SYSTEM(command);
       Sleep(1000);
