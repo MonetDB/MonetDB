@@ -1942,8 +1942,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         Srvr = Srvr+'echo Over..'
 
         pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, '\nprintf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
-        ln=""
-        while len(ln) < 6 or ln[:6] not in ['Ready.','Over..']:
+        ln="dummy"
+        while 0 < len(ln) < 6 or ln[:6] not in ['Ready.','Over..']:
             ln=pSrvrOut.readline()
             SrvrOut.write(ln)
             SrvrOut.flush()
@@ -2049,8 +2049,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             except IOError, (IOerrNo, IOerrStr):
                 EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
                 EpiFailed = EpiFailed+"\n! Probably, Mserver has died before or during. !\n"
-            ln=""
-            while len(ln) < 6 or ln[:6] not in ['Done..','Over..']:
+            ln="dummy"
+            while 0 < len(ln) < 6 or ln[:6] not in ['Done..','Over..']:
                 ln=pSrvrOut.readline()
                 SrvrOut.write(ln)
                 SrvrOut.flush()
