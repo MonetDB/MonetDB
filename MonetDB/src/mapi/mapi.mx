@@ -107,7 +107,6 @@ This module contains a simple interface for internet connections.
 @h
 #ifndef MAPI_H
 #define MAPI_H
-/*#define BLOCKED*/
 
 #include <streams.h>
 #include <monet_context.h>
@@ -266,6 +265,7 @@ Get the new information for the server socket and start listening.
 			stream *fdout= NULL;
 			Client c;
 
+			assert(name);
 			if (fdin == 0){
 				GDKsyserror("CLIENTlisten:fdin problems\n");
 				continue;
@@ -276,6 +276,7 @@ Get the new information for the server socket and start listening.
 				user++;
 				fdin->read(fdin, user, 1, 1);
 			}
+			*user=0;
                         /* printf("mapi:Client accepted %s\n", name);*/
                         fflush(stdout);
                         s= strrchr(name,':');
