@@ -1,5 +1,0 @@
-This directory contains MIL scripts taken over from the 4.3 line
-and necessary to support backward functionality to the MIL language layer.
-
-They are considered second priority wrt to maintenance and development.
-
