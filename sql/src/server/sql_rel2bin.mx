@@ -732,6 +732,31 @@ eliminate_reverse(stmt *s)
 }
 
 
+int
+stmt_has_diff_with(stmt *s, sql_table *t) 
+{
+	switch(s->type) {
+	case st_diff: {
+		stmt *st = s->op2.stval;
+		if (st->type == st_reverse && 
+		    st->op1.stval->type == st_dbat && 
+		    st->op1.stval->op1.tval == t)
+			return 1;
+	}
+	case st_mark:
+	case st_reverse:
+	case st_semijoin:
+	case st_uselect2:
+	case st_select2:
+	case st_uselect:
+	case st_select:  
+		return stmt_has_diff_with(s->op1.stval, t);
+	default:
+		return 0;
+	}
+	return 0;
+}
+
 stmt *
 rel2bin(mvc *c, stmt *s)
 {
@@ -826,6 +851,42 @@ rel2bin(mvc *c, stmt *s)
 		return ns;
 	}
 
+	case st_join:{
+
+		if (s->op1.stval) {
+			stmt *os = s->op1.stval;
+			stmt *ns = rel2bin(c, os);
+
+			assert(ns != s);
+			stmt_destroy(os);
+			s->op1.stval = ns;
+		}
+		if (s->op2.stval) {
+			stmt *os = s->op2.stval;
+			stmt *ns = rel2bin(c, os);
+
+			assert(ns != s);
+			stmt_destroy(os);
+			s->op2.stval = ns;
+		}
+
+		/* remove expensive double kdiffs */
+		/* if join on oids and right has kdiff, check if left has
+		   same kdiff, then remove kdiff from right */
+		if (s->flag == cmp_equal && 
+		    s->op1.stval->t == s->op2.stval->h &&
+		    s->op2.stval->type == st_diff &&
+		    s->op2.stval->op2.stval->type == st_reverse &&
+		    s->op2.stval->op2.stval->op1.stval->type == st_dbat &&
+		    stmt_has_diff_with(s->op1.stval, s->op2.stval->op2.stval->op1.stval->op1.tval)){
+			stmt *old = s->op2.stval;
+			s->op2.stval = stmt_dup(old->op1.stval);
+			stmt_destroy(old);
+		}
+		s->optimized = 2;
+		return stmt_dup(s);
+	}
+
 	case st_reverse:{
 
 		stmt *os, *ns;
@@ -854,7 +915,6 @@ rel2bin(mvc *c, stmt *s)
 	case st_intersect:
 	case st_union:
 	case st_outerjoin:
-	case st_join:
 	case st_mirror:
 	case st_const:
 	case st_mark:
@@ -883,10 +943,9 @@ rel2bin(mvc *c, stmt *s)
 	case st_Nop:
 
 		if (s->op1.stval) {
-			stmt *os, *ns;
+			stmt *os = s->op1.stval;
+			stmt *ns = rel2bin(c, os);
 
-			os = s->op1.stval;
-			ns = rel2bin(c, os);
 			assert(ns != s);
 			stmt_destroy(os);
 			s->op1.stval = ns;

@@ -793,7 +793,7 @@ proc SQLclient( Stream s_in, Stream s_out ) : void {
 	fork(sqlclient(s_in, s_out));
 }
 
-proc sql_diff (bat[oid,any::1] b1, bat[oid,any::2] b2) : bat[oid,any::1] {
+proc sql_diff (bat[any::1,any::2] b1, bat[any::1,any::3] b2) : bat[any::1,any::2] {
 	if (count(b2) > 0)
 		return kdiff(b1,b2);
 	return b1;
