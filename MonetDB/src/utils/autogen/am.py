@@ -11,6 +11,12 @@ def am_assignment(fd, var, values, am ):
     o = o + " " + v
   fd.write("%s = %s\n" % (var,o) )
 
+def am_cflags(fd, var, values, am ):
+  o = ""
+  for v in values:
+    o = o + " " + v
+  fd.write("%s += %s\n" % (var,o) )
+
 def am_extra_dist(fd, var, values, am ):
   for i in values:
     am['EXTRA_DIST'].append(i)
@@ -355,6 +361,8 @@ output_funcs = { 'SUBDIRS': am_assignment,
 		 'BIN' : am_binary,
  		 'INCLUDES' : am_includes,
 		 'MTSAFE' : am_mtsafe,
+		 'CFLAGS' : am_cflags,
+		 'CXXFLAGS' : am_cflags,
 		}
 
 

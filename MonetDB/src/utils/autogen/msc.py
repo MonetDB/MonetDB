@@ -35,7 +35,7 @@ def msc_cflags(fd, var, values, msc ):
   o = ""
   for v in values:
     o = o + " " + v
-  fd.write("CFLAGS = $(CFLAGS) %s\n" % (o) )
+  fd.write("%s = $(%s) %s\n" % (var,var,o) )
 
 def msc_extra_dist(fd, var, values, msc ):
   for i in values:
@@ -421,6 +421,7 @@ output_funcs = { 'SUBDIRS': msc_subdirs,
  		 'INCLUDES' : msc_includes,
 		 'MTSAFE' : msc_mtsafe,
 		 'CFLAGS' : msc_cflags,
+		 'CXXFLAGS' : msc_cflags,
 		}
 
 
