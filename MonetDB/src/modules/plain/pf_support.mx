@@ -62,9 +62,15 @@ Merges pairs of bats according to the order as defined by the first pair's tails
 .COMMAND combine_text_string( BAT[void,oid] iter, BAT[void,oid] kind, BAT[void,str] str_value, int result_size )
 		: BAT[oid,str] = CMDcombine_text_string;
 "PARAMETERS:
-[to be filled in by Jan R.]
+BAT[void,oid] - iter values which have to be ordered
+BAT[void,oid] - one of three different kinds (strings '3@0'; text-nodes '2@0' and other nodes '1@0')
+BAT[void,str] - string values of the strings and text-nodes; an empty string for each other node
 DESCRIPITON:
-[to be filled in by Jan R.]"
+very specialized helper function for the translation of the item-sequence-to-node-sequence function in XQuery.
+It expects three aligned columns and creates out of adjazent strings and text-nodes one string,
+which can be translated into a text-node again. Every other node and every new iter divide the strings.
+A space is inserted if two strings are adjazent and no space is inserted, if a text-node is in between. 
+Empty strings are not added to the output."
 
 .COMMAND mposjoin( BAT[void,oid] pre, BAT[void,oid] frag, BAT[void, bat] ws_item )
 		: BAT[void,any] = CMDmposjoin;
@@ -588,12 +594,12 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 	len = 0;
 	actual_str[0] = '\0';
 	k0 = oid_nil;
-	i0 = *(oid*)BUNtloc(iter,pi);
+	i0 = *(oid*)BUNtail(iter,pi); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 	base0 = oid_nil;
 
 	for (qi = BUNlast(iter) ; pi < qi ; pi += bsi, pk += bsk, ps += bss) {
-		oid i = *(oid*)BUNtloc(iter,pi);
-		oid k = *(oid*)BUNtloc(kind,pk);
+		oid i = *(oid*)BUNtail(iter,pi); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+		oid k = *(oid*)BUNtail(kind,pk); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 		str s = (str)BUNtvar(str_value,ps);
 		size_t l = strlen(s) + 1;
 		if ( i0 < i || k == KIND_NODE ) {
@@ -644,7 +650,9 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 	bn->tsorted = triv_prop;
 	bn->hdense = triv_prop;
 	bn->tdense = FALSE;
-
+	if (BATcount(bn) == 1) {
+		BATseqbase(bn, *(oid*)BUNhloc(bn,BUNfirst(bn)));
+	}
 	*res = bn;
 
 	return GDK_SUCCEED;
@@ -738,8 +746,8 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	 *  @3: simple, atom
 	 */
 	for (q = BUNlast(pre) ; pp < q ; pp += bsp, pf += bsf) {
-		oid p = *(oid*)BUNtloc(pre,pp);
-		oid f = *(oid*)BUNtloc(frag,pf);
+		oid p = *(oid*)BUNtail(pre,pp);  /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+		oid f = *(oid*)BUNtail(frag,pf); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 		if (f >= wl && f <= wh) {
 			BAT *b = batlist[f - wl];
 			oid l = b->hseqbase;
@@ -761,6 +769,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	case TYPE_flt:	@:mposjoin(flt,tloc,simple)@
 	case TYPE_lng:	@:mposjoin(lng,tloc,simple)@
 	case TYPE_dbl:	@:mposjoin(dbl,tloc,simple)@
+	default:
 		if (batlist[0]->tvarsized) {
 			@:mposjoin(any,tvar,atom)@
 		} else {
@@ -786,7 +795,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 
 	return GDK_SUCCEED;
 bunins_failed:
-	GDKerror("combine_text_string: bunins failed.\n");
+	GDKerror("mposjoin: bunins failed.\n");
 	BBPreclaim(bn);
 @= free_batlist
 	while (ii > 0) {
@@ -899,7 +908,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	BUN rp, rq;
 	int bs;
 	BATloopFast(b, rp, rq, bs) {
-		if (p == *(oid*)BUNtloc(b,rp)) {
+		if (p == *(oid*)BUNtail(b,rp)) { /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 			oidoid_bunfastins(bn,&base,BUNhvar(b,rp));
 		}
 	}
@@ -925,8 +934,8 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	}
 @= mvaljoin
 	for (q = BUNlast(pre) ; pp < q ; pp += bsp, pf += bsf) {
-		oid p = *(oid*)BUNtloc(pre,pp);
-		oid f = *(oid*)BUNtloc(frag,pf);
+		oid p = *(oid*)BUNtail(pre,pp); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+		oid f = *(oid*)BUNtail(frag,pf); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 		if (f >= wl && f <= wh) {
 			BAT *b = batlist[f - wl];
 			@1
@@ -959,6 +968,10 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	bn->tsorted = triv_prop;
 	bn->hdense = triv_prop;
 	bn->tdense = triv_prop;
+	if (BATcount(bn) == 1) {
+		BATseqbase(bn, *(oid*)BUNhloc(bn,BUNfirst(bn)));
+		BATseqbase(BATmirror(bn), *(oid*)BUNtloc(bn,BUNfirst(bn)));
+	}
 
 	*res = bn;
 
@@ -966,7 +979,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 
 	return GDK_SUCCEED;
 bunins_failed:
-	GDKerror("combine_text_string: bunins failed.\n");
+	GDKerror("mvaljoin: bunins failed.\n");
 	BBPreclaim(bn);
 @= free_batlist
 	while (ii > 0) {
