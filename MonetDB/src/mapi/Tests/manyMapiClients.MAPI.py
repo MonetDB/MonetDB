@@ -20,7 +20,7 @@ while i < n:
     STDOUT.write("%d:\n" % i)
     STDERR.write("%d:\n" % i)
 
-    s = Mapi.server( Mapi.hostname(), Mapi.portnr(), Mapi.user())
+    s = Mapi.server( "localhost", os.environ['MAPIPORT'], os.environ['USER'])
     print( s.cmd( "print(%d);\n" % i ) )
     s.disconnect()
 STDOUT.write("done: %d\n" % i)
