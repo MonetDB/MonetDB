@@ -409,12 +409,15 @@ char *bindFcn(str nme){
 	switch(*nme){
 	case '[':
 		nme[strlen(nme)-1]=0;
+/*
 		for(i=0; multiplexOp[i];i++)
 		if( strcmp(nme+1, multiplexOp[i])==0){
 			sprintf(buffer,"%s(",nme+1);
 			return GDKstrdup(buffer);
 		}
 		sprintf(buffer,"multiplex.script(\"%s\",", nme+1);
+*/
+		sprintf(buffer,"multiplex.tactics(\"%s\",", nme+1);
 		break;
 	case '{':
 		nme[strlen(nme)-1]=0;
