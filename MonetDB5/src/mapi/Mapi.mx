@@ -112,7 +112,6 @@ forever on the server. Thus formatted printing is discouraged in favor
 of tabular printing as offered by the table.print() commands in 
 Monet 5.
 
-
 @+ Compilation
 The Mapi application uses include files found in the Monet distribution
 directory or at a central location in your machine.
@@ -291,7 +290,6 @@ string values provided.
 
 \item[MapiMsg mapi_bind(Mapi mid, int fldnr, char **val)];
 Bind a string variable with a field in the return table.
-The bindings are cleared when a new query is prepared.
 Returns an error if the field identified does not exist.
 
 \item[MapiMsg mapi_bind_var(Mapi mid, int fldnr, int type, void *val)];
@@ -309,8 +307,7 @@ Describe the location of a numeric parameter in a query template.
 
 \item[MapiMsg mapi_param(Mapi mid, int fldnr, char **val)];
 Bind a string variable with the n-th placeholder in the query
-template. Parameter bindings are automatically cleared when a new
-query is prepared.
+template. 
 No conversion takes place.
 
 \item[MapiMsg mapi_param_type(Mapi mid, int fldnr, int type, void *val)];
@@ -1093,13 +1090,6 @@ The query is retained in the Mapi structure to repeate shipping.
 	} else {
 		int len= strlen(cmd);
 		if( mid->template){
-			int n;
-			for(n=0; n< mid->fieldcnt; n++){
-				mid->fields[n].inparam = 0;
-				mid->fields[n].intype = SQL_AUTO;
-				mid->fields[n].outparam = 0;
-				mid->fields[n].outtype = SQL_AUTO;
-			}
 			free(mid->template);
 			mid->template=0;
 		}
@@ -1173,10 +1163,10 @@ char *mapi_param_store(Mapi mid){
 			(int)q-(int)p);
 		mid->query[k+(int)q-(int)p]=0;
 	
-		for(;i<mid->fieldcnt;i++)
+		for(;i<mid->maxfields;i++)
 		if( mid->fields[i].inparam) break;
 
-		if( i==mid->fieldcnt || mid->fields[i].inparam==0) {
+		if( i==mid->maxfields || mid->fields[i].inparam==0) {
 			mid->query[strlen(mid->query)]=PLACEHOLDER;
 		} else
 		switch(mid->fields[i].intype){
