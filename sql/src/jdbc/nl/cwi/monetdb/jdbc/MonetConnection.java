@@ -764,6 +764,8 @@ public class MonetConnection extends Thread implements Connection {
 	private final static int QUERY = 1;
 	/** The state DEAD represents this thread to be dead and unable to do anything */
 	private final static int DEAD = 2;
+	/** An optional thread that is used for sending large queries */
+	SendThread sendThread = null;
 
 	/** Whether this CacheThread is still running, executing or waiting */
 	private int state = WAIT;
@@ -907,7 +909,7 @@ public class MonetConnection extends Thread implements Connection {
 	 * @param hdrl a HeaderList which contains the query to execute
 	 */
 	private void processQuery(HeaderList hdrl) {
-		SendThread sendThread = null;
+		boolean sendThreadInUse = false;
 		
 		try {
 			// make sure we're ready to send query; read data till we have the
@@ -916,13 +918,12 @@ public class MonetConnection extends Thread implements Connection {
 			// previous result sets.
 			monet.waitForPrompt();
 
-			// set the reply size for this query.  If it is set to 0 we get a
-			// prompt after the server sent it's header
 			try {
 				/**
-				 * Change the reply size of the server. If the given
+				 * Change the reply size of the server.  If the given
 				 * value is the same as the current value known to use,
-				 * then ignore this call.
+				 * then ignore this call.  If it is set to 0 we get a
+				 * prompt after the server sent it's header.
 				 */
 				int size =
 					hdrl.maxrows != 0 ? Math.min(hdrl.maxrows, hdrl.cachesize) : hdrl.cachesize;
@@ -952,9 +953,10 @@ public class MonetConnection extends Thread implements Connection {
 			// server want to write, but block.
 			if (hdrl.query.length() > 8192) {
 				// get a reference to the send thread
-				sendThread = SendThread.getInstance();
+				if (sendThread == null) sendThread = new SendThread();
 				// tell it to do some work!
 				sendThread.runQuery(hdrl.query, monet);
+				sendThreadInUse = true;
 			} else {
 				// this is a simple call, which is a lot cheaper for and will
 				// always succeed for small queries
@@ -1013,7 +1015,7 @@ public class MonetConnection extends Thread implements Connection {
 				hdrl.addHeader(hdr);
 			}
 			// if we used the sendThread, make sure it has finished
-			if (sendThread != null) sendThread.throwErrors();
+			if (sendThreadInUse) sendThread.throwErrors();
 		} catch (SQLException e) {
 			hdrl.addError(e.getMessage());
 			// if MonetDB sent us an incomplete or malformed header, we have
@@ -1255,7 +1257,7 @@ public class MonetConnection extends Thread implements Connection {
 		private int rsconcur;
 		/** Whether we should send an Xclose command to the server if we close this
 		 *  Header */
-		 private boolean destroyOnClose;
+		private boolean destroyOnClose;
 
 		/** a regular expression that we often use to split
 		 *  the headers into an array (compile them once) */
@@ -1814,24 +1816,35 @@ public class MonetConnection extends Thread implements Connection {
 	}
 }
 
+/**
+ * A thread to send a query to the server.  When sending large amounts of data
+ * to a server, the output buffer of the underlying communication socket may
+ * overflow.  In such case the sending process blocks.  In order to prevent
+ * deadlock, it might be desirable that the driver as a whole does not block.
+ * This thread facilitates the prevention of such 'full block', because this
+ * separate thread only will block.<br />
+ * This thread is designed for reuse, as thread creation costs are high.<br />
+ * <br />
+ * NOTE: This thread is neither thread safe nor synchronised.  The reason for
+ * this is that program wise only one thread (the CacheThread) will use this
+ * thread, so costly locking mechanisms can be avoided.
+ */
 class SendThread extends Thread {
-	private static SendThread myself;
 	private String query;
 	private MonetSocket conn;
 	private String error;
 
-	private SendThread() {
+	/**
+	 * Constructor which immediately starts this thread and sets it into
+	 * daemon mode.
+	 */
+	public SendThread() {
 		super("SendThread");
 		setDaemon(true);
 		start();
 	}
 
-	public static synchronized SendThread getInstance() {
-		if (myself == null) myself = new SendThread();
-		return(myself);
-	}
-
-	public synchronized void run() {
+	public void run() {
 		while (true) {
 			while (query == null) {
 				try {
@@ -1852,13 +1865,31 @@ class SendThread extends Thread {
 		}
 	}
 
-	public synchronized void runQuery(String query, MonetSocket monet) {
+	/**
+	 * Starts sending the given query over the given socket.  Beware that
+	 * the thread should be finished (assured by calling throwErrors()) before
+	 * this method is called!
+	 *
+	 * @param query a String containing the query to send
+	 * @param monet the socket to write to
+	 */
+	public void runQuery(String query, MonetSocket monet) {
 		this.query = query;
 		conn = monet;
 	
 		this.notify();
 	}
 
+	/**
+	 * Throws errors encountered during the sending process or about the
+	 * current state of the thread.
+	 *
+	 * @throws AssertionError (note: Error) if this thread is not finished
+	 *         at the time of calling this method (should theoretically never
+	 *         happen)
+	 * @throws SQLException in case an (IO) error occurred while sending the
+	 *         query to the server.
+	 */
 	public void throwErrors() throws SQLException {
 		if (query != null) throw new AssertionError("Aaaiiiiiiii!!! SendThread not finished :(");
 		if (error != null) throw new SQLException(error);
