@@ -1320,7 +1320,7 @@ int print_table_default(BAT *b, ...) {
 }
 
 int format_fcn_sig(str *sig, oid *fid){
-	if (TBL_formatsig(*sig = (str) GDKmalloc(256), *fid)) {
+	if (TBL_formatsig(*sig = (str) GDKmalloc(1024), *fid)) {
 		return GDK_SUCCEED;
 	}
 	GDKfree(*sig);
