@@ -172,6 +172,7 @@ blob* blob_null(void)
 
 blob *blob_read(blob *a, stream *s, size_t cnt) {
 	int len;
+	(void) cnt;
 	assert(cnt==1);
 	if (!stream_readInt(s, &len))
 		return NULL;
@@ -186,6 +187,7 @@ blob *blob_read(blob *a, stream *s, size_t cnt) {
 
 void blob_write(blob *a, stream *s, size_t cnt) {
 	int len = blobsize(a->nitems);
+	(void) cnt;
 	assert(cnt==1);
 	if (stream_writeInt(s, (int) len))
 		stream_write(s, (char*)a, len, 1 );
