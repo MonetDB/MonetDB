@@ -191,6 +191,7 @@ mapi_quote()	& Escape characters\\
 mapi_reconnect()	& Reconnect with a clean session context\\
 mapi_rows_affected()	& Obtain number of rows changed\\
 mapi_quick_response()	&	Quick pass response to stream\\
+mapi_setAutocommit()	&	Set auto-commit flag\\
 mapi_stream_query()	& Send query and prepare for reading tuple stream\\
 mapi_seek_row()	&	Move row reader to specific location in cache\\
 mapi_table()	&	Get current table name\\
@@ -384,6 +385,11 @@ If sizeptr == NULL or *sizeptr == -1, the string is NULL-terminated.
 
 \item[MapiMsg mapi_clear_params(MapiHdl hdl)]:
 Clear all parameter bindings.
+
+\item[MapiMsg mapi_setAutocommit(Mapi mid, int autocommit)]:
+Set the autocommit flag (default is off).  This only has an effect when
+the language is SQL.  In that case, a commit statement is added to the
+end of each query sent to the server.
 
 \item[MapiMsg mapi_cache_limit(Mapi mid, int maxrows)]:
 A limited number of tuples are pre-fetched after each execute().
@@ -654,7 +660,7 @@ typedef struct MapiStruct {
 	int languageId;
 	int versionId;		/* Monet 4 or 5 */
 
-	int everything;		/* keep all lines received */
+	int autocommit;		/* auto-commit every query (SQL) */
 	int trace;		/* Trace Mapi interaction */
 	int blocked;		/* blocked mode */
 	int error;		/* Error occurred */
@@ -815,6 +821,7 @@ mapi_export MapiHdl mapi_quick_query(Mapi mid, const char* cmd, FILE *fd);
 mapi_export MapiHdl mapi_query_array(Mapi mid, const char *cmd, char **val);
 mapi_export MapiHdl mapi_quick_query_array(Mapi mid, const char* cmd, char **val, FILE *fd);
 mapi_export MapiHdl mapi_stream_query(Mapi mid, const char* cmd, int windowsize);
+mapi_export MapiMsg mapi_setAutocommit(Mapi mid, int autocommit);
 mapi_export MapiMsg mapi_cache_limit(Mapi mid,int limit);
 mapi_export MapiMsg mapi_cache_shuffle(MapiHdl hdl,int percentage);
 mapi_export MapiMsg mapi_cache_freeup(MapiHdl hdl,int percentage);
@@ -1004,6 +1011,14 @@ mapi_ping(Mapi mid)
 	return mapi_error(mid);
 }
 
+MapiMsg
+mapi_setAutocommit(Mapi mid, int autocommit)
+{
+	mapi_check(mid, "mapi_setAutocommit");
+	mid->autocommit = autocommit;
+	return MOK;
+}
+
 static MapiMsg
 mapi_setError(Mapi mid, const char *msg, const char *action)
 {
@@ -1064,6 +1079,8 @@ mapi_new_handle(Mapi mid)
 MapiMsg
 mapi_close_handle(MapiHdl hdl)
 {
+	if (hdl == NULL)
+		return MERROR;
 	if (hdl->tableid >= 0) {
 		hdl->mid->active = 1;
 		stream_printf(hdl->mid->to, "X" "close %d\n", hdl->tableid);
@@ -1132,6 +1149,7 @@ mapi_new(void)
 	m->next = m;		/* the shortest circular list possible */
 	m->blocked = blocked;
 	m->error = MOK;
+	m->autocommit = 0;
 	strcpy(m->hostname, "localhost");
 #ifdef MONET5
 	strcpy(m->language, "mal");
@@ -1191,6 +1209,7 @@ mapi_dup(Mapi mid)
 	strcpy(m->username, mid->username);
 	strcpy(m->password, mid->password);
 	m->port = mid->port;
+	m->autocommit = mid->autocommit;
 #ifdef HAVE_OPENSSL
 	m->secure = mid->secure;
 #endif
@@ -1906,7 +1925,7 @@ The query is retained in the Mapi structure to repeat shipping.
 static MapiHdl
 prepareQuery(MapiHdl hdl, const char *cmd)
 {
-	if (cmd) {
+	if (hdl && cmd) {
 		size_t len = strlen(cmd);
 
 		hdl->query = malloc(len + 1);
@@ -2165,9 +2184,10 @@ mapi_execute_internal(MapiHdl hdl)
 {
 	size_t size;
 	char *cmd;
-	Mapi mid = hdl->mid;
+	Mapi mid;
 
-	mapi_check(mid, "mapi_execute");
+	mapi_hdl_check(hdl, "mapi_execute");
+	mid = hdl->mid;
 	mapi_param_store(hdl);
 	cmd = hdl->query;
 	size = strlen(cmd) /* null byte */ ;
@@ -2186,8 +2206,13 @@ mapi_execute_internal(MapiHdl hdl)
 	/* all SQL statements should end with a semicolon */
 	/* for the other languages it is assumed that the statements are correct */
 	if (mid->languageId == LANG_SQL &&
-	    (size == 0 || hdl->query[size - 1] != ';')) {
+	    (size > 0 && hdl->query[size - 1] != ';')) {
 		stream_write(mid->to, ";", 1, 1);
+		check_stream(mid, mid->to, "write error on stream",
+			     "mapi_execute", mid->error);
+	}
+	if (mid->languageId == LANG_SQL && mid->autocommit) {
+		stream_write(mid->to, "commit;", 7, 1);
 		check_stream(mid, mid->to, "write error on stream",
 			     "mapi_execute", mid->error);
 	}
@@ -2229,7 +2254,7 @@ mapi_query(Mapi mid, const char *cmd)
 	MapiHdl hdl;
 
 	hdl = prepareQuery(mapi_new_handle(mid), cmd);
-	ret = hdl->mid->error;
+	ret = mid->error;
 	if (ret == MOK)
 		ret = mapi_execute_internal(hdl);
 	if (ret == MOK)
