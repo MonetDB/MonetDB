@@ -602,7 +602,7 @@ CXXEXT = \\\"cxx\\\"
   fd.write("SRCDIR = $(TOPDIR)\\..%s\n" % regsub.gsub("/", "\\", srcdir))
   fd.write("!INCLUDE $(TOPDIR)\\rules.msc\n")
   if ("SUBDIRS" in tree.keys()):
-     fd.write("all: all-msc all-recursive\n")
+     fd.write("all: all-recursive all-msc\n")
      fd.write("install: install-recursive install-msc\n")
   else:
      fd.write("all: all-msc\n")
