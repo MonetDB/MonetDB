@@ -5,23 +5,23 @@
 # except in compliance with the License. You may obtain a copy of
 # the License at
 # http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-# 
+#
 # Software distributed under the License is distributed on an "AS
 # IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
 # implied. See the License for the specific language governing
 # rights and limitations under the License.
-# 
+#
 # The Original Code is the Monet Database System.
-# 
+#
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-2004 CWI.
 # All Rights Reserved.
-# 
+#
 # Contributor(s):
-# 		Martin Kersten <Martin.Kersten@cwi.nl>
-# 		Peter Boncz <Peter.Boncz@cwi.nl>
-# 		Niels Nes <Niels.Nes@cwi.nl>
-# 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+#		Martin Kersten <Martin.Kersten@cwi.nl>
+#		Peter Boncz <Peter.Boncz@cwi.nl>
+#		Niels Nes <Niels.Nes@cwi.nl>
+#		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 # This script requires Python 2.2 or later.
 
@@ -226,6 +226,11 @@ def addlicense(file, pre = None, post = None, start = None, end = None):
     except OSError:
         print >> sys.stderr, 'Cannot move file %s into position' % file
 
+def normalize(s):
+    # normalize white space: remove leading and trailing white space,
+    # and replace multiple white space characters by a single space
+    return ' '.join(s.split())
+
 def dellicense(file, pre = None, post = None, start = None, end = None):
     if pre is None and post is None and start is None and end is None:
         root, ext = os.path.splitext(file)
@@ -254,6 +259,10 @@ def dellicense(file, pre = None, post = None, start = None, end = None):
         start = ''
     if not end:
         end = ''
+    pre = normalize(pre)
+    post = normalize(post)
+    start = normalize(start)
+    end = normalize(end)
     try:
         f = open(file)
     except IOError:
@@ -275,9 +284,11 @@ def dellicense(file, pre = None, post = None, start = None, end = None):
         line = f.readline()
         if line and line == '\n':
             line = f.readline()
+    nline = normalize(line)
     if pre:
-        if line[:-1] == pre:
+        if nline == pre:
             line = f.readline()
+            nline = normalize(line)
         else:
             # doesn't match
             print >> sys.stderr, 'PRE doesn\'t match in file %s' % file
@@ -289,11 +300,14 @@ def dellicense(file, pre = None, post = None, start = None, end = None):
                 pass
             return
     for l in license:
-        if line.find(l) >= 0:
+        if nline.find(normalize(l)) >= 0:
             line = f.readline()
+            nline = normalize(line)
         else:
             # doesn't match
             print >> sys.stderr, 'line doesn\'t match in file %s' % file
+            print >> sys.stderr, 'file:    "%s"' % line
+            print >> sys.stderr, 'license: "%s"' % l
             f.close()
             g.close()
             try:
@@ -302,8 +316,9 @@ def dellicense(file, pre = None, post = None, start = None, end = None):
                 pass
             return
     if post:
-        if line[:-1] == post:
+        if nline == post:
             line = f.readline()
+            nline = normalize(line)
         else:
             # doesn't match
             print >> sys.stderr, 'POST doesn\'t match in file %s' % file

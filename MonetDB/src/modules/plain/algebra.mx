@@ -160,11 +160,11 @@ as substring in the tail."
 @m
 .COMMAND sort ( BAT[any::1,any::2] b) : 
 				BAT[any::1, any::2] = CMDsort; 
-"Returns a sorted copy of a BAT."
+"Returns copy of a BAT with the BUNs sorted on ascending head values."
 
 .COMMAND sort_rev ( BAT[any::1,any::2] b) : 
 				BAT[any::1, any::2] = CMDsort_rev; 
-"Returns a reversely sorted copy of a BAT."
+"Returns copy of a BAT with the BUNs sorted on descending head values."
 
 @- vertical projection
 @m
@@ -287,6 +287,12 @@ Signature Changed: Output tail type incorrect because of soid to coid switch.
 .COMMAND semijoin ( BAT[any::1,any::2] left, 
                    BAT[any::1,any] right) :
 				BAT[any::1,any::2] = CMDsemijoin; 
+@- cross-product (projected out join columns)
+@m
+.COMMAND cross ( BAT[any::1,any::2] left, BAT[any::3,any::4] right) :
+                               BAT[any::1,any::4] = CMDcross; 
+"Returns head-value from 'left' and tail-value from 'right'
+for all BUNs in the cross product of 'left' and 'right'."
 @- join (projected out join columns)
 @m
 .COMMAND join ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, lng estimate) :
@@ -347,15 +353,6 @@ initiated OID columns, for representing n-ary (intermediary) relations.
 				BAT[any::1,OID] = CMDmark; 
 "Produces a new BAT with fresh unique dense sequense of OIDs in the tail
  that starts at base (i.e. [base,base+1,..base+b.count()-1] )."
-
-.COMMAND mark_grp( BAT[any::1,oid] b , BAT[oid,oid] g) : 
-				BAT[any::1,OID] = CMDmark_grp; 
-"\"grouped mark\": Produces a new BAT with per group a locally unique dense
- ascending sequense of OIDs in the tail. The tail of the first BAT (b)
- identifies the group that each BUN of b belongs to. The second BAT (g)
- represents the group extend, i.e., the head is the unique list of group IDs
- from b's tail. The tail of g gives for each group the base value for the new
- OID sequence."
 
 @- number tail column
 @m
@@ -589,12 +586,7 @@ that for the moment are defined as procs.
             } else if (fcn = ">") {
                 return thetajoin(l,r,GT,estimate);
             } else if (fcn = "true") {
-                var bn := new(l,r, l.count*r.count);
-                l@batloop() {
-                    var h := $h;
-                    r@batloop() bn.insert(h,$t);
-                }
-                return bn;
+                return cross(l,r);
             }
         }
         var swapped := false;
@@ -1141,9 +1133,11 @@ ptr BAT@1(BAT *b, ptr aggr) {
 	t = b->ttype;
 	if (BATtvoid(b)) {
 	    @:aggr@1(chr,loc,simple,chr,void)@ 
+	} else if (t == TYPE_uchr) {
+	    @:aggr@1(uchr,loc,simple,uchr,atom)@ 
 	} else {
 	    switch(ATOMstorage(t)) {
-	    case TYPE_chr: @:aggr@1(uchr,loc,simple,uchr,atom)@ break;
+	    case TYPE_chr: @:aggr@1(chr,loc,simple,chr,atom)@ break;
 	    case TYPE_sht: @:aggr@1(sht,loc,simple,sht,atom)@ break;
 	    case TYPE_int: @:aggr@1(int,loc,simple,int,atom)@ break;
 	    case TYPE_flt: @:aggr@1(flt,loc,simple,flt,atom)@ break;
@@ -1317,6 +1311,7 @@ int CMD@1(BAT **result, BAT* b, int *param) {
 @:unary(kunique, BATkunique)@
 @:unary(sunique, BATsunique)@
 @:binary(semijoin, BATsemijoin)@
+@:binary(cross, BATcross)@
 @:binaryestimate(join, BATjoin)@
 @:binaryestimate(outerjoin, BATouterjoin)@
 @:binary(sunion, BATsunion)@
@@ -1341,10 +1336,6 @@ int CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize) {
 
 int CMDproject(BAT** res, BAT *b, ptr p, int t) {
 	return (*res=BATconst(b, t, p))?GDK_SUCCEED:GDK_FAIL;
-}
-
-int CMDmark_grp(BAT** res, BAT *b, BAT *g){
-	return (*res=BATmark_grp(b, g))?GDK_SUCCEED:GDK_FAIL;
 }
 
 int CMDmark(BAT** res, BAT *b, oid *base){

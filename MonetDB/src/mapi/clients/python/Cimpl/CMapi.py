@@ -25,7 +25,7 @@ import MapiLib
 
 class Mapi:
     def __init__(self, host = None, port = 0, username = None, password = None, lang = None):
-        self.__mid = MapiLib.mapi_connect(host, port, username, password, lang)
+        self.__mid = MapiLib.mapi_connect(host, int(port), username, password, lang)
         if not self.__mid:
             raise IOError("Creating connection structure failed")
         if self.error():
@@ -384,6 +384,12 @@ class MapiQuery:
             raise IOError(self.__mid.error_str())
         return ret
 
+    def next_result(self):
+        ret = MapiLib.mapi_next_result(self.__hdl)
+        if self.__mid.error():
+            raise IOError(self.__mid.error_str())
+        return ret
+
     def get_table(self, fnr):
         ret = MapiLib.mapi_get_table(self.__hdl, fnr)
         if self.__mid.error():
@@ -403,4 +409,3 @@ class MapiQuery:
         if self.__mid.error():
             raise IOError(self.__mid.error_str())
         return ret
-

@@ -50,6 +50,7 @@ smallTOC_SHARED_MODS =	\
 	../modules/plain/lib_mkey	\
 	../modules/plain/lib_mmath	\
 	../modules/plain/lib_monettime	\
+	../modules/plain/lib_pf_support	\
 	../modules/plain/lib_profiler	\
 	../modules/plain/lib_radix	\
 	../modules/plain/lib_stats	\
@@ -75,6 +76,7 @@ smallTOC_SHARED_MODS =	\
 	../modules/contrib/lib_qt	\
 	../modules/contrib/lib_salgebra	\
 	../modules/contrib/lib_tpcd	\
+	../modules/contrib/lib_txtsim	\
 	../modules/contrib/lib_wisc
 
 largeTOC_SHARED_MODS =	\

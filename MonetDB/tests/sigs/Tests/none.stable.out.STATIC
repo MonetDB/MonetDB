@@ -78,6 +78,7 @@ loaded;
 [ "mprof",	  nil	  ]
 [ "oo7",	  nil	  ]
 [ "pcl",	  nil	  ]
+[ "pf_support",	  nil	  ]
 [ "profiler",	  nil	  ]
 [ "qt",		  nil	  ]
 [ "radix",	  nil	  ]
@@ -89,6 +90,7 @@ loaded;
 [ "tcpip",	  nil	  ]
 [ "tpcd",	  nil	  ]
 [ "trans",	  nil	  ]
+[ "txtsim",	  nil	  ]
 [ "uchr",	  nil	  ]
 [ "unix",	  nil	  ]
 [ "url",	  nil	  ]
@@ -159,6 +161,7 @@ others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE)
 [ "vector",	  nil	  ]
 [ "url",	  nil	  ]
 [ "unix",	  nil	  ]
+[ "txtsim",	  nil	  ]
 [ "tpcd",	  nil	  ]
 [ "tcpip",	  nil	  ]
 [ "streams",	  nil	  ]
@@ -167,6 +170,7 @@ others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE)
 [ "radix",	  nil	  ]
 [ "qt",		  nil	  ]
 [ "profiler",	  nil	  ]
+[ "pf_support",	  nil	  ]
 [ "pcl",	  nil	  ]
 [ "oo7",	  nil	  ]
 [ "mprof",	  nil	  ]
@@ -392,7 +396,48 @@ others@batloop{
 	dropping unix
 
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading txtsim
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "txtsim",	  1		  ]
+[ "uchr",	  2		  ]
+#-------------------------#
+# h		tmp_30	  # name
+# str		void	  # type
+#-------------------------#
+[ "txtsim",	  nil	  ]
+
+	dropping txtsim
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -506,7 +551,48 @@ others@batloop{
 	dropping streams
 
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading pf_support
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+#-------------------------#
+# h		tmp_37	  # name
+# str		void	  # type
+#-------------------------#
+[ "pf_support",	  nil	  ]
+
+	dropping pf_support
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]

@@ -52,11 +52,13 @@ class BaseCursor:
         self.close()
 
     def nextset(self):
-        pass
+        if (self._result.next_result()):
+            return True
+        return None
 
     def setinputsizes(self, *args):
         """Does nothing, required by DB API."""
-      
+
     def setoutputsizes(self, *args):
         """Does nothing, required by DB API."""
 
@@ -67,7 +69,7 @@ class BaseCursor:
     def execute(self, query, args=None):
 
         """Execute a query.
-        
+
         query -- string, query to execute on server
         args -- optional sequence or mapping, parameters to use with query.
 
@@ -103,16 +105,16 @@ class BaseCursor:
     def executemany(self, query, args):
 
         """Execute a multi-row query.
-        
+
         query -- string, query to execute on server
 
         args
 
             Sequence of sequences or mappings, parameters to use with
             query.
-            
+
         Returns long integer rows affected, if any.
-        
+
         This method improves performance on multiple-row INSERT and
         REPLACE. Otherwise it is equivalent to looping over args with
         execute().
@@ -139,15 +141,15 @@ class BaseCursor:
             d = (self._result.get_name(i), self._result.get_type(i), None, None, None, None, None)
             description.append(d)
         return description
-    
+
     # _query = __do_query
 
-        
+
     def insert_id(self):
         """Return the last inserted ID on an AUTO_INCREMENT columns.
         DEPRECATED: use lastrowid attribute"""
         self.errorhandler(self, NotSupportedError, "Monet does not support AUTO_INCREMENT columns")
-    
+
     def _fetch_row(self, size=1):
         if not self._result:
             return ()
@@ -156,16 +158,20 @@ class BaseCursor:
     def __iter__(self):
         return iter(self.fetchone, None)
 
-        
+
 class CursorStoreResultMixIn:
     """This is a MixIn class which causes the entire result set to be
     stored on the client side.
 
     In Monet, output comes in one large batch anyway, so there is no
     need to do this iteratively."""
-    
+
     def _query(self, q):
         rowcount = self._BaseCursor__do_query(q)
+        self._cacheResult()
+        return rowcount
+
+    def _cacheResult(self):
         self._rows = []
         while self._result.fetch_row() > 0:
             if self._fetch_type == 0: row = ()
@@ -175,8 +181,13 @@ class CursorStoreResultMixIn:
                 if self._fetch_type == 0: row = row + (val,)
                 else: row[self.description[i][0]] = val
             self._rows.append(row)
-        return rowcount
-            
+
+    def nextset(self):
+        if (self._result.next_result()):
+            self._cacheResult()
+            return True
+        return None
+
     def fetchone(self):
         """Fetches a single row from the cursor. None indicates that
         no more rows are available."""
@@ -201,11 +212,11 @@ class CursorStoreResultMixIn:
         result = self.rownumber and self._rows[self.rownumber:] or self._rows
         self.rownumber = len(self._rows)
         return result
-    
+
     def scroll(self, value, mode='relative'):
         """Scroll the cursor in the result set to a new position according
         to mode.
-        
+
         If mode is 'relative' (default), value is taken as offset to
         the current position in the result set, if set to 'absolute',
         value states an absolute target position."""
@@ -256,9 +267,8 @@ class CursorDictRowsMixIn:
         return self.fetchall()
 
 
-class Cursor (BaseCursor, CursorStoreResultMixIn, CursorTupleRowsMixIn):
+class Cursor (CursorStoreResultMixIn, CursorTupleRowsMixIn, BaseCursor):
     pass
 
-class DictCursor (BaseCursor, CursorStoreResultMixIn, CursorDictRowsMixIn):
+class DictCursor (CursorStoreResultMixIn, CursorDictRowsMixIn, BaseCursor):
     pass
-

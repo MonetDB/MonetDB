@@ -46,6 +46,7 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "mprof",	  "contrib"	  ]
 [ "oo7",	  "contrib"	  ]
 [ "pcl",	  "plain"	  ]
+[ "pf_support",	  "plain"	  ]
 [ "profiler",	  "plain"	  ]
 [ "qt",		  "contrib"	  ]
 [ "radix",	  "plain"	  ]
@@ -57,6 +58,7 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "tcpip",	  "plain"	  ]
 [ "tpcd",	  "contrib"	  ]
 [ "trans",	  "static"	  ]
+[ "txtsim",	  "contrib"	  ]
 [ "uchr",	  "static"	  ]
 [ "unix",	  "plain"	  ]
 [ "url",	  "plain"	  ]
@@ -69,13 +71,13 @@ ls;
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  51,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",	  "str",  "str",  53,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 
 dir;
 #-----------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-----------------------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  51,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",		  "str",  "str",  53,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "adm_acctbl",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_atomtbl",	  "str",  "int",  14,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_fcntbl",		  "str",  "oid",  658,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
@@ -152,6 +154,7 @@ table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col
 [ "mprof"		  ]
 [ "oo7"			  ]
 [ "pcl"			  ]
+[ "pf_support"		  ]
 [ "profiler"		  ]
 [ "qt"			  ]
 [ "radix"		  ]
@@ -160,6 +163,7 @@ table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col
 [ "streams"		  ]
 [ "tcpip"		  ]
 [ "tpcd"		  ]
+[ "txtsim"		  ]
 [ "unix"		  ]
 [ "url"			  ]
 [ "vector"		  ]

@@ -1,5 +1,5 @@
 This document helps you to install the MonetDB source and compile it.
-Once succeeded, refer to doc/monet.html for the user documentation
+Once succeeded, refer to doc/MonetDB.html for the user documentation
 generated as part of the process.
 
 In case you prefer to install a pre-compiled binary distribution, please
@@ -51,10 +51,10 @@ UnxUtils for Win32
 	The same drive is required, as the UnxUtils do not know about
 	drive letters, and hence absolute paths start with "\" (i.e.,
 	without a leading "C:", "D:", ...).  The default "\UnxUtils\"
-	prefix has to be omitted, as other the UnxUtils' "bison" does
-	not find its own "bison.simple" file, which it expects to be in
-	"/usr/share/bison/bison.simple" (aka. 
-	"\usr\share\bison\bison.simple").
+	prefix has to be omitted, as otherwise the UnxUtils' "bison"
+	does not find its own "bison.simple" file, which it expects to
+	be in "/usr/share/bison/bison.simple"
+	(aka. "\usr\share\bison\bison.simple").
 	Next to some tools used by Mtest.py for testing MonetDB (see
 	below), UnxUtils provide the lexical analyzer generator "flex"
 	and the parser generator "bison", which are required to compile
@@ -172,7 +172,7 @@ the installed version of MonetDB.
 Documentation:
 ==============
 
-The documentation starts in <sourcedir>\NT\doc\monet.html
+The documentation starts in <sourcedir>\NT\doc\MonetDB.html
 
 NOTE: the current 'nmake install' does not yet generate this
       documentation to do this manually, execute *after* successful

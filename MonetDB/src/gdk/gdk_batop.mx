@@ -271,90 +271,6 @@ bunins_failed:
 	return NULL;
 }
 
-@= mark_grp_loop3
-{	BUN p, q;
-	int xx;
-	BATloopFast(b, p, q, xx) {
-		oid n = oid_nil;
-		BUN w;
-		ptr v = BUNt@2(b, p);
-
-		BUNfnd@3(w, gc, v);
-		if (w) {
-			oid *m = (oid*) BUNtloc(gc, w);
-			if (*m != oid_nil) {
-				n = (*m)++;
-			}
-		}
-		if (n == oid_nil) {
-			tsdk = 0;
-		}
-		bunfastins_nocheck(bn, r, BUNh@1(b, p), &n, yy); 
-		r += yy; 
-	}
-}
-@= mark_grp_loop2
-	if (gc->htype==TYPE_void) {
-		@:mark_grp_loop3(@1,@2,VOID)@
-	} else {
-		@:mark_grp_loop3(@1,@2,OID)@
-	}
-@= mark_grp_loop1
-	if (b->ttype==TYPE_void) {
-		@:mark_grp_loop2(@1,var)@
-	} else {
-		@:mark_grp_loop2(@1,loc)@
-	}
-@= mark_grp_loop
-{	BUN r = BUNfirst(bn);
-	int yy = BUNsize(bn);
-	if (b->hvarsized) {
-		@:mark_grp_loop1(var)@
-	} else {
-		@:mark_grp_loop1(loc)@
-	}
-}
-@c
-BAT *BATmark_grp(BAT *b, BAT *g) {
-        BAT *bn, *gc;
-	int tsdk;
- 
-        BATcheck(b, "BATmark_grp");
-        BATcheck(g, "BATmark_grp");
-	ERRORcheck((b->ttype!=TYPE_void) && (b->ttype!=TYPE_oid),
-	           "BATmark_grp: tail of BAT b must be oid.\n");
-	ERRORcheck((g->htype!=TYPE_void) && (g->htype!=TYPE_oid),
-	           "ERRORcheck: head of BAT g must be oid.\n");
-	ERRORcheck((g->ttype!=TYPE_oid),
-	           "BATmark_grp: tail of BAT g must be oid.\n");
-
-	tsdk = ((BATcount(g) == 1) || (BATcount(b) == 0));
-	gc = batcopy(g, g->htype, g->ttype, TRUE);
-	if (gc == NULL) return NULL;
-	bn = BATnew(b->htype, TYPE_oid, BATcount(b));
-	if (bn == NULL) {
-		BBPreclaim(gc);
-		return NULL;
-	}
-
-	@:mark_grp_loop@
-
-	ALIGNsetH(bn,b);
-	bn->hsorted = BAThordered(b);
-	bn->hdense = BAThdense(b);
-	BATkey(bn, (b->hkey!=0));
-	bn->tsorted = (tsdk?GDK_SORTED:0);
-	bn->tdense = tsdk;
-	BATkey(BATmirror(bn), tsdk);
-
-	BBPreclaim(gc);
-        return bn;
-bunins_failed:
-	BBPreclaim(gc);
-	BBPreclaim(bn);
-	return NULL;
-}
- 
 #define BUNnumber(bx,hx,tx)	bunfastins_nocheck(bx, r, hx, (ptr)&i, yy); r += yy; i++;
 BAT *BATnumber(BAT *b) {
         int     i = 0, yy;
@@ -870,7 +786,7 @@ bunins_failed:	BBPreclaim(bn);
 	return bn;
 }
 
-BAT *BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail) {
+BAT *BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit preserve_order) {
 	int	hval, lval, equi, t, ht, tt;
 	size_t 	offset, batcnt, estimate = 0;
 	ptr	nil;
@@ -986,7 +902,7 @@ Use sampling to determine a good result size, when the bat is large.
 		BAT *tmp2;
 	        ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): sampling: tmp2 = BAT_select_(tmp1=%s, tl, th, tail);\n",
 	                                    b->batId, tmp1->batId);
-                tmp2 = BAT_select_(tmp1, tl, th, li, hi, tail);
+                tmp2 = BAT_select_(tmp1, tl, th, li, hi, tail, FALSE);
                 if (tmp2) {
 		    /* reserve 105% of what has been estimated */
                     estimate = (size_t) ((((lng) BATcount(tmp2)) * (lng) batcnt)/LL_CONSTANT(100));
@@ -1003,15 +919,15 @@ Create the result BAT and execute the select algorithm.
         bn = BATnew(ht, tt, estimate);
 	if (bn) {
 	    int nocheck = (estimate >= batcnt);
-	    if (equi && b->thash_heap) {
+	    if (!preserve_order && equi && b->thash_heap) {
  	        ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (using existing hash-table)\n",
 		                            b->batId, b->batId, bn->batId);
 	    	bn = BAT_hashselect(b, bn, tl);
-	    } else if (b->tidx_heap) {
+	    } else if (!preserve_order && b->tidx_heap) {
 	    	ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_indexselect(b=%s, bn=%s, tl, th);\n",
 	    	                            b->batId, b->batId, bn->batId);
 	    	bn = BAT_indexselect(b, bn, tl, th, li, hi, equi);
-	    } else if (equi && ATOMsize(b->ttype) > 1 && estimate*100 < batcnt && batcnt*2*sizeof(int) < (GDK_mem_maxsize/4)) { 
+	    } else if (!preserve_order && equi && ATOMsize(b->ttype) > 1 && estimate*100 < batcnt && batcnt*2*sizeof(int) < (GDK_mem_maxsize/4)) { 
 	        /* Build a hash-table on the fly for equi-select if the selectivity is low
                  * and it is not too big */
  	        ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (building hash-table on the fly)\n",
@@ -1061,23 +977,23 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 }
 
 BAT* BAT_select(BAT *b, ptr h, ptr t, bit tail) {
-	return BAT_select_(b, h, t, TRUE, TRUE, tail);
+	return BAT_select_(b, h, t, TRUE, TRUE, tail, FALSE);
 }
 
 BAT* BATselect_(BAT *b, ptr h, ptr t, bit li, bit hi) {
-	return BAT_select_(b, h, t, li, hi, TRUE);
+	return BAT_select_(b, h, t, li, hi, TRUE, FALSE);
 }
 
 BAT* BATuselect_(BAT *b, ptr h, ptr t, bit li, bit hi) {
-	return BAT_select_(b, h, t, li, hi, FALSE);
+	return BAT_select_(b, h, t, li, hi, FALSE, FALSE);
 }
 
 BAT* BATselect(BAT *b, ptr h, ptr t) {
-	return BAT_select_(b, h, t, TRUE, TRUE, TRUE);
+	return BAT_select_(b, h, t, TRUE, TRUE, TRUE, FALSE);
 }
 
 BAT* BATuselect(BAT *b, ptr h, ptr t) {
-	return BAT_select_(b, h, t, TRUE, TRUE, FALSE);
+	return BAT_select_(b, h, t, TRUE, TRUE, FALSE, FALSE);
 }
 
 @- Top-N selection

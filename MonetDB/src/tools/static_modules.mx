@@ -53,6 +53,7 @@
 @:install_module(mkey)@
 @:install_module(mmath)@
 @:install_module(monettime)@
+@:install_module(pf_support)@
 @:install_module(profiler)@
 @:install_module(radix)@
 @:install_module(stats)@
@@ -76,6 +77,7 @@
 @:install_module(oo7)@
 @:install_module(salgebra)@
 @:install_module(tpcd)@
+@:install_module(txtsim)@
 @:install_module(wisc)@
 @:install_module(mel)@
 @:install_module(qt)@

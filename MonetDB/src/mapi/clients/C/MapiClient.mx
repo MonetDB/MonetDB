@@ -962,11 +962,13 @@ main(int argc, char **argv)
 	}
 
 	if (strcmp(language, "sql") == 0) {
-		if (guest) user= "monetdb"; else
-		if (user == NULL)
+		if (guest)
+			user= "monetdb";
+		else if (user == NULL)
 			user = simple_prompt("User ", BUFSIZ, 1, "monetdb");
-		if (guest) passwd= "monetdb"; else
-		if (passwd == NULL)
+		if (guest)
+			passwd= "monetdb";
+		else if (passwd == NULL)
 			passwd = simple_prompt("Password ", BUFSIZ, 0, "monetdb");
 	}
 

@@ -1,5 +1,5 @@
 This document helps you to install the MonetDB source and compile it.
-Once succeeded, refer to doc/monet.html for the user documentation 
+Once succeeded, refer to doc/MonetDB.html for the user documentation 
 generated as part of the process.
 
 In case you prefer to install a pre-compiled binary distribution, please
@@ -200,7 +200,7 @@ this command: it will create subdirectories var/dbfarm and Tests.
 Documentation:
 ==============
 
-The documentation starts in <prefixdir>/doc/monet.html
+The documentation starts in <prefixdir>/doc/MonetDB.html
 
 NOTE: the current 'make install' does not yet generate this
       documentation to do this manually, execute *after* successful

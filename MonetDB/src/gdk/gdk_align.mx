@@ -477,13 +477,14 @@ BAT *VIEWreset(BAT *b) {
 	str nme = BBP_physical(n->batCacheid);
 
 	/* alloc heaps */
+	memset(&buns, 0, sizeof(Heap));
         buns.filename = (str) GDKmalloc(strlen(nme)+12);
         sprintf(buns.filename, "%s.buns", nme);
 	if (HEAPalloc(&buns, cnt+1, BUNsize(n)) < 0) {
 		GDKfree(buns.filename);
 		return NULL;
 	}
-	hh.base = NULL;
+	memset(&hh, 0, sizeof(Heap));
         hh.filename = (str) GDKmalloc(strlen(nme)+12);
         sprintf(hh.filename, "%s.hheap", nme);
 	if (ATOMheap(ht, &hh, cnt) < 0) {
@@ -491,7 +492,7 @@ BAT *VIEWreset(BAT *b) {
 		GDKfree(hh.filename);
 		return NULL;
 	}
-	th.base = NULL;
+	memset(&th, 0, sizeof(Heap));
         th.filename = (str) GDKmalloc(strlen(nme)+12);
         sprintf(th.filename, "%s.theap", nme);
 	if (ATOMheap(n->ttype, &th, cnt) < 0) {
