@@ -16,18 +16,18 @@ unknown("hello");
 !ERROR: interpret: no matching MIL operator to 'unknown(str)'.
 
 #simple procedure with withdrawal
-proc c:= clock.print;
-c;
+proc c(){ clock.print();}
+c();
 !WARNING: interpret: convert identifier 'clock' to string.
 [ "clock" ]
 undef c;
-c;
-!WARNING: interpret: convert identifier 'c' to string.
+c();
+!ERROR: interpret: no matching MIL operator to 'c()'.
 
 # block administration
 
 # how about variables in a block
-{ i:=123; vars;}
+{ i:=123; vars();}
 #-----------------------------------------------------------------------------------------#
 # tmp_31		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
@@ -69,8 +69,8 @@ c;
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
 
 # and in a procedure
-proc xyz:= {var j; j:=23; k:=234; vars;}
-xyz;
+proc xyz() {var j; j:=23; k:=234; vars();}
+xyz();
 #-----------------------------------------------------------------------------------------#
 # tmp_33		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
@@ -111,7 +111,7 @@ xyz;
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
-vars;
+vars();
 #-----------------------------------------------------------------------------------------#
 # tmp_30		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
@@ -150,7 +150,7 @@ vars;
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
-quit;
+quit();
 
 # 18:33:55 >  
 # 18:33:55 >  Done.
