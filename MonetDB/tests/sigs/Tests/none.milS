@@ -5,29 +5,29 @@ PROC mmn() : BAT[oid,str] {
 }
 
 loaded();
-[~mmn()].reverse().sort().print();
-[~view_modules].reverse().kunique().sort().print();
+mmn().reverse().mark(oid(nil)).sort().print();
+view_modules.reverse().mark(oid(nil)).kunique().sort().print();
 
 module("cluster");
 loaded();
-[~mmn()].reverse().sort().print();
+mmn().reverse().mark(oid(nil)).sort().print();
 
 # # module("Meta");
 # # loaded();
-# # [~mmn()].reverse().sort().print();
+# # mmn().reverse().mark(oid(nil)).sort().print();
 
-fix:=mmn().reverse().copy();
-[fix~].print();
+var fix:=mmn().reverse().copy();
+fix.mark(oid(nil)).print();
 
-others:=kdiff(view_modules.reverse().kunique(),mmn().reverse()).sort().access(BAT_WRITE).revert();
-[others~].print();
+var others:=kdiff(view_modules.reverse().kunique(),mmn().reverse()).sort().access(BAT_WRITE).revert();
+others.mark(oid(nil)).print();
 
 others@batloop(){
 	printf("\n\tloading %s\n\n",$h);
 	module($h);
 	loaded();
-	off:=kdiff(mmn().reverse(),fix);
-	[off~].print();
+	var off:=kdiff(mmn().reverse(),fix);
+	off.mark(oid(nil)).print();
 	off@batloop(){
 		printf("\n\tdropping %s\n\n",$h);
 	}
