@@ -358,6 +358,17 @@ class MonetSocketBlockMode extends MonetSocket {
 	}
 
 	/**
+	 * Returns whether data can be read from the stream or not.
+	 */
+	public synchronized boolean hasData() {
+		try {
+			return(fromMonetRaw.available() > 0);
+		} catch (IOException e) {
+			return(false);
+		}
+	}
+
+	/**
 	 * destructor called by garbage collector before destroying this object
 	 * tries to disconnect the MonetDB connection if it has not been disconnected
 	 * already

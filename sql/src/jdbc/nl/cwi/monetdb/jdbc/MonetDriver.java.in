@@ -119,7 +119,6 @@ public class MonetDriver implements Driver {
 		props.put("blockmode", BLOCKMODE);
 		props.put("debug", "false");
 		props.put("language", "sql");	// mil, mal, sql, xquery, whatever
-		props.put("protocolversion", "4");
 
 		props.putAll(info);
 		info = props;
@@ -234,11 +233,6 @@ public class MonetDriver implements Driver {
 		prop = new DriverPropertyInfo("blockmode_blocksize", "2048");
 		prop.required = false;
 		prop.description = "The maximum size of blocks read from the socket when using blockmode protocol";
-		props.add(prop);
-
-		prop = new DriverPropertyInfo("protocolversion", "4");
-		prop.required = false;
-		prop.description = "The protocol version to use when connecting.  A value of 5 and up expects the server to send a challenge first.";
 		props.add(prop);
 
 		DriverPropertyInfo[] dpi = new DriverPropertyInfo[props.size()];

@@ -277,6 +277,17 @@ class MonetSocket {
 	}
 
 	/**
+	 * Returns whether data can be read from the stream or not.
+	 */
+	public synchronized boolean hasData() {
+		try {
+			return(fromMonet.ready());
+		} catch (IOException e) {
+			return(false);
+		}
+	}
+
+	/**
 	 * destructor called by garbage collector before destroying this object
 	 * tries to disconnect the MonetDB connection if it has not been disconnected
 	 * already
