@@ -1183,6 +1183,66 @@ public class MonetResultSet implements ResultSet {
 		new SimpleDateFormat("yyyy-MM-dd");
 
 	/**
+	// This behaviour is according table B-6 of Sun JDBC Specification 3.0
+	 * Helper method which returns a java.util.Date for columns of type
+	 * TIME, DATE and TIMESTAMP. For the types CHAR, VARCHAR and LONGVARCHAR
+	 * an attempt is made to parse the date according to the given type.
+	 * If the underlying type of the column is
+	 * none of the mentioned six, January 1st 1970 0:00:00 GMT is
+	 * returned.<br />
+	 * The dates are parsed with the given Calendar.
+	 *
+	 * @param cal the Calendar to use when parsing the date
+	 * @param col the column to parse
+	 * @param type the corresponding java.sql.Types type of the calling
+	 *        function
+	 * @return an instance of java.util.Date representing this date corrected
+	 *         with the given Calendar, or 0 if not parseable
+	 * @throws SQLException if a database error occurs
+	 * @see MonetResultSet#getJavaDate(Calendar cal, int col)
+	 */
+	private java.util.Date getJavaDate(Calendar cal, int col, int type)
+		throws SQLException
+	{
+		if (cal == null) throw
+			new IllegalArgumentException("No Calendar object given!");
+		if (col <= 0) throw
+			new IllegalArgumentException("No valid column number given!");
+
+		String monetDate;
+		if ((monetDate = getString(col)) == null) return(null);
+
+		int dataType = MonetDriver.getJavaType(types[col - 1]);
+		if (dataType == Types.CHAR ||
+			dataType == Types.VARCHAR ||
+			dataType == Types.LONGVARCHAR)
+		{
+			// If we got a string type, set the datatype to the given
+			// type so we attempt to parse it as the caller thinks it is.
+			dataType = type;
+		}
+
+		try {
+			switch(dataType) {
+				default:
+					return(new java.util.Date(0L));
+
+				case Types.DATE:
+					mDate.setCalendar(cal);
+					return(mDate.parse(monetDate));
+				case Types.TIME:
+					mTime.setCalendar(cal);
+					return(mTime.parse(monetDate));
+				case Types.TIMESTAMP:
+					mTimestamp.setCalendar(cal);
+					return(mTimestamp.parse(monetDate));
+			}
+		} catch(java.text.ParseException e) {
+			return(new java.sql.Date(0L));
+		}
+	}
+
+	/**
 	 * Retrieves the value of the designated column in the current row of this
 	 * ResultSet object as a java.sql.Date object in the Java programming
 	 * language.
@@ -1212,15 +1272,7 @@ public class MonetResultSet implements ResultSet {
 	public java.sql.Date getDate(int columnIndex, Calendar cal)
 		throws SQLException
 	{
-		String monetDate;
-		if ((monetDate = getString(columnIndex)) == null) return(null);
-
-		mDate.setCalendar(cal);
-		try {
-			return(new java.sql.Date(mDate.parse(monetDate).getTime()));
-		} catch(java.text.ParseException e) {
-			return(new java.sql.Date(0L));
-		}
+		return(new java.sql.Date(getJavaDate(cal, columnIndex, Types.DATE).getTime()));
 	}
 
 	/**
@@ -1290,15 +1342,7 @@ public class MonetResultSet implements ResultSet {
 	public Time getTime(int columnIndex, Calendar cal)
 		throws SQLException
 	{
-		String monetDate;
-		if ((monetDate = getString(columnIndex)) == null) return(null);
-
-		mDate.setCalendar(cal);
-		try {
-			return(new Time(mTime.parse(monetDate).getTime()));
-		} catch(java.text.ParseException e) {
-			return(new Time(0L));
-		}
+		return(new Time(getJavaDate(cal, columnIndex, Types.TIME).getTime()));
 	}
 
 	/**
@@ -1368,15 +1412,7 @@ public class MonetResultSet implements ResultSet {
 	public Timestamp getTimestamp(int columnIndex, Calendar cal)
 		throws SQLException
 	{
-		String monetDate;
-		if ((monetDate = getString(columnIndex)) == null) return(null);
-
-		mDate.setCalendar(cal);
-		try {
-			return(new Timestamp(mTimestamp.parse(monetDate).getTime()));
-		} catch(java.text.ParseException e) {
-			return(new Timestamp(0L));
-		}
+		return(new Timestamp(getJavaDate(cal, columnIndex, Types.TIMESTAMP).getTime()));
 	}
 
 	/**

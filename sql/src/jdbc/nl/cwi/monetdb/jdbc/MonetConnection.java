@@ -10,9 +10,8 @@ import java.nio.ByteOrder;
  * <br /><br />
  * This connection represents a connection (session) to a Monet database. SQL
  * statements are executed and results are returned within the context of a
- * connection. <b>In this implementation there is no connection to Monet at this
- * object.</b> Physical connections to Monet are made in a MonetStatement object
- * as returned by createStatement().
+ * connection. This Connection object holds a physical connection to the Monet
+ * database.
  * <br /><br />
  * A Connection object's database should able to provide information describing
  * its tables, its supported SQL grammar, its stored procedures, the
@@ -24,8 +23,8 @@ import java.nio.ByteOrder;
  * explicitly in order to commit changes; otherwise, database changes will not
  * be saved.
  * <br /><br />
- * The current state of this connection is that it only implements the
- * createStatement() method with default transactions and cursors.
+ * The current state of this connection is that it nearly implements the
+ * whole Connection interface.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version 0.4 (beta release)
