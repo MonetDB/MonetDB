@@ -57,7 +57,12 @@ BINS = {
 
 scripts_py = {
 	DIR = bindir
-	SOURCES = Mshutdown.py.in MapiClient.py.in Mshutdown.py.bat MapiClient.py.bat
+	SOURCES = Mshutdown.py.in MapiClient.py.in
+}
+
+scripts_bat = {
+	DIR = bindir
+	SOURCES = Mshutdown.py.bat MapiClient.py.bat
 }
 
 scripts_perl = {
@@ -66,7 +71,8 @@ scripts_perl = {
 	SOURCES = Mapi.pm MapiClient.pl
 }
 
-scripts_py = {
+scripts_python = {
+	EXT = py
 	DIR = pkgdatadir/python
 	SOURCES = Mapi.py
 }
