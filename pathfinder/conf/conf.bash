@@ -437,7 +437,7 @@ fi
 if [ "${what}" != "MONETDB" ] ; then
 	# tell configure where to find MonetDB
 	conf_opts="${conf_opts} --with-monet=${MONETDB_PREFIX}"
-	if [ "${what}" != "MONET5"  -a  "$MONET5_PREFIX" ] ; then
+	if [ "${what}" != "MONET5"  -a  "${MONET5_PREFIX}" ] ; then
 		# tell configure where to find MonetDB5
 		conf_opts="${conf_opts} --with-monet5=${MONET5_PREFIX}"
 	fi
@@ -561,8 +561,14 @@ if [ "${modpath}" ] ; then
 	echo " MONETDB_MOD_PATH=${MONETDB_MOD_PATH}"
 fi
 
+if [ "${MONET5_PREFIX}" ] ; then
+	monet5_config="--config=${WHAT_PREFIX}/etc/MonetDB5.conf"
+  else
+	monet5_config=""
+fi
+
 if [ "${what}" = "MONET5" ] ; then
-	mtest_config="--config=${WHAT_PREFIX}/etc/MonetDB5.conf"
+	mtest_config="${monet5_config}"
   else
 	mtest_config=""
 fi
@@ -574,6 +580,10 @@ eval "alias configure_${wh_t}='${WHAT_CONFIGURE}'"
 eval "alias configure_${wh_t}"
 eval "alias Mtest_${wh_t}='Mtest.py ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} ${mtest_modpath}'"
 eval "alias Mtest_${wh_t}"
+if [ "${what}" = "SQL"  -a  "${MONET5_PREFIX}" ] ; then
+	eval "alias Mtest_${wh_t}5='Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/lib/${pkgdir}5:`${MONET5_PREFIX}/bin/monetdb-config --modpath`'"
+	eval "alias Mtest_${wh_t}5"
+fi
 eval "alias Mapprove_${wh_t}='Mapprove.py --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
 eval "alias Mapprove_${wh_t}"
 
