@@ -524,7 +524,7 @@ scanner_getc_s(struct scanner * lc)
 }
 
 static INLINE int
-read_more(struct scanner * lc, int n)
+scanner_read_more(struct scanner * lc, int n)
 {
 	bstream *b = lc->rs;
 	int more = 0;
@@ -559,7 +559,7 @@ scanner_getc_bs(struct scanner * lc)
 	int c;
 	int n, m, mask;
 
-	if (read_more(lc, 1) == EOF)
+	if (scanner_read_more(lc, 1) == EOF)
 		return EOF;
 
 	s = (unsigned char*) b->buf + b->pos + lc->yycur++;
@@ -577,7 +577,7 @@ scanner_getc_bs(struct scanner * lc)
 		goto error;
 	}
 
-	if (read_more(lc, n) == EOF)
+	if (scanner_read_more(lc, n) == EOF)
 		return EOF;
 	s = (unsigned char*) b->buf + b->pos + lc->yycur;
 
@@ -656,7 +656,7 @@ scanner_string_bs(mvc * c, int quote)
 		lc->yycur--; /* go back to current (possibly invalid) char */
 		/* long utf8, if correct isn't the quote */
 		if (!cur) {
-			cur = read_more(lc, 1);
+			cur = scanner_read_more(lc, 1);
 		} else {
 			cur = scanner_getc_bs(lc);
 		}

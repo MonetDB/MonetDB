@@ -635,14 +635,20 @@ query string with "M".
 			break;
 		}
 
-		pstatus = m->status ;
+		if (m->trans)
+			pstatus = m->status;
+		/* no transaction, reset status */
+		if (!m->trans)
+			m->status = 0;
+
 		err = sqlexecute(sql, out);
 		m->scanner.mode = oldmode;
 
 		if (err){ /* output error */
 			char *buf = GDKerrbuf;
 
-			if (pstatus < 0) { /* transaction allready broken */
+			/* transaction allready broken */
+			if (m->type != Q_TRANS && pstatus < 0) { 
 				if (stream_write( out, TRANS_ABORTED, sizeof(TRANS_ABORTED)-1, 1 ) != 1 ){
 					go = !go;
 					break;
@@ -1305,7 +1311,7 @@ int mvc_export_table( mvc *m, stream *s, int res_id, unsigned int offset, unsign
                 fmt[i].tostr = &_ASCIIadt_toStr;
                 fmt[i].frstr = &_ASCIIadt_frStr;
                 fmt[i].extra = NULL;
-		if (c->type->type->scale == SCALE_FIX){
+		if (strcmp(c->type->type->sqlname, "decimal") == 0){
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;
 			fmt[i].extra = (void*)(ptrdiff_t)c->type->scale;

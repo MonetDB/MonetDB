@@ -1,4 +1,5 @@
 create table t3(id int not null, val int);
+
 insert into t3 values(2,6);
 insert into t3 values(2,NULL);
 insert into t3 values(2,5);

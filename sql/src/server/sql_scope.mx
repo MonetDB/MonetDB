@@ -132,6 +132,7 @@ extern void tvar_destroy(tvar *t);
 #include "sql_scope.h"
 #include <string.h>
 
+
 static void cvar_destroy(cvar *cv) 
 {
 	if (sql_ref_dec( &(cv->ref) ) == 0){

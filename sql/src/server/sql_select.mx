@@ -258,6 +258,7 @@ static tvar *table_optname(mvc * sql, scope * scp, stmt * sq,
 	if (columnrefs) {
 		dnode *d;
 
+		assert(list_length(sq->op1.lval) == dlist_length(columnrefs));
 		for (m = sq->op1.lval->h, d = columnrefs->h; 
 		     d && m; 
 		     d = d->next, m = m->next) {
@@ -301,6 +302,17 @@ static tvar *sql_subquery_optname(mvc * sql, scope * scp,
 	if (!sq)
 		return NULL;
 
+	/* create a table from a single value subquery result */
+	if (sq->key && sq->nrcols == 0) {
+		list *l = create_stmt_list();
+		stmt *nsq = stmt_dup( sq->op1.lval->h->data );
+	        stmt *temp = stmt_temp( sql_dup_subtype(tail_type(nsq) ));
+                nsq = stmt_append(temp, nsq);
+		stmt_destroy(sq);
+		
+		list_append(l, nsq);
+		sq = stmt_list(l);
+	}
 	return table_optname(sql, scp, sq, QUERY(sql->scanner), sn->name);
 }
 
@@ -669,9 +681,9 @@ sql_binop_(mvc * sql, scope *scp, char *fname, stmt * ls, stmt *rs)
 			rs = fix_scale( sql, t1, rs, 0, 0);
 		}
 		if (f->func->res->scale == SCALE_SUB)
-			ls = scale_algebra( f, ls, rs );
+			ls = scale_algebra( f, ls, rs);
 		if (f->func->res->scale == SCALE_ADD)
-			sum_scales(f, ls, rs);
+			ls = sum_scales( f, ls, rs);
 		return stmt_binop(ls, rs, f);
 	} else {
 		if (convert_types( sql, &ls, &rs, 0) >= 0){
@@ -684,9 +696,9 @@ sql_binop_(mvc * sql, scope *scp, char *fname, stmt * ls, stmt *rs)
 					rs = fix_scale( sql, t1, rs, 0, 0);
 				}
 				if (f->func->res->scale == SCALE_SUB)
-					ls = scale_algebra( f, ls, rs );
+					ls = scale_algebra( f, ls, rs);
 				if (f->func->res->scale == SCALE_ADD)
-					sum_scales(f, ls, rs);
+					ls = sum_scales( f, ls, rs);
 				return stmt_binop(ls, rs, f);
 			}
 		}
@@ -2262,12 +2274,15 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 	}
 
 	subset = stmt_dup(s);
-	if (sn->having) {
-		if (s) stmt_destroy(s);
-		s = sql_logical_exp(sql, scp, sn->having, 
-					grp, subset, sql_where);
 
-		if (!s){
+	/* should use the partial pivots through 
+		the group by and having parts, ie where,group by and having
+		change the ptable! */ 
+
+	if (sn->having) {
+		stmt *t = sql_logical_exp(sql, scp, sn->having, 
+						grp, subset, sql_where);
+		if (!t){
 			sql_select_cleanup(sql, s, subset, grp);
 			return sql_error( sql, 02, "Subquery result missing");
 		}
@@ -2280,7 +2295,10 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 				stmt_atom(atom_int(sql_dup_subtype(it), 0))), 
 			      NULL, NULL);
 		}
-		grp = grp_semijoin(grp, stmt_dup(s));
+		grp = grp_semijoin(grp, t);
+		/*
+		ptable_filter(subset) = stmt_filter(t);
+		*/
 	}
 
 	if (!subset){

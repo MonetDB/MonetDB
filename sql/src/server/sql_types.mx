@@ -71,7 +71,6 @@ typedef struct sql_type {
 	unsigned int digits;
 	unsigned int scale; /* indicates how scale is used in functions */
 	unsigned int radix; 
-	int nr;
 	int localtype; 	/* localtype, need for coersions */
 } sql_type;
 
@@ -679,13 +678,6 @@ sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale
 	t->digits = digits;
 	t->scale = scale;
 	t->radix = radix;
-	t->nr = list_length(types);
-	if (t->nr){
-		sql_type *pt = types->t->data;
-		t->nr = pt->nr;
-		if (strcmp(pt->sqlname, t->sqlname) != 0)
-			t->nr ++;
-	}
 	t->localtype = ATOMindex(t->base.name);
 	if (!keyword_exists(t->sqlname))
 		keywords_insert(t->sqlname, aTYPE);
@@ -1001,6 +993,7 @@ void sqltypeinit()
 	  for(u=numerical; u < dates; u++){
 	    if (*t != *u)
 	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX );
+	    sql_create_func("scale_up", "*", *u, *t, *t, SCALE_NONE );
 	  }
 	}
 
@@ -1008,7 +1001,7 @@ void sqltypeinit()
 	for(t=strings; t < numerical; t++){
 	  sql_type **u;
 	  for(u=strings; u < numerical; u++){
-	    if (*t != *u)
+	    if (*t != *u) 
 	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX );
 	  }
 	}

@@ -1217,20 +1217,13 @@ static sql_type *load_type(sql_trans *tr, sql_module *m, BAT * types, BUN j)
 	BAT *type_scale = sys_bat(tr->bm, "types_scale");
 	BAT *type_radix = sys_bat(tr->bm, "types_radix");
 
+	(void)m;
 	base_init( &t->base, *(sqlid*) bun_find(type_id, lid),
 		TR_OLD, bun_find(type_systemname, lid));
 	t->sqlname = _strdup( (char*) bun_find(type_sqlname, lid));
 	t->digits = *(int*)bun_find(type_digits, lid);
 	t->scale = *(int*)bun_find(type_scale, lid);
 	t->radix = *(int*)bun_find(type_radix, lid);
-	t->nr = cs_size(&m->types);
-
-	if (t->nr) { 
-		sql_type *pt = m->types.set->t->data;
-		t->nr = pt->nr;
-		if (strcmp(pt->sqlname, t->sqlname) != 0)
-			t->nr ++;
-	}
 	t->localtype = ATOMindex(t->base.name);
 
 	bat_destroy(type_id);
@@ -1551,7 +1544,6 @@ static sql_type *type_dup(sql_trans *tr, int flag, sql_type * ot, sql_module *m)
 	t->digits = ot->digits;
 	t->scale = ot->scale;
 	t->radix = ot->radix;
-	t->nr = ot->nr;
 	t->localtype = ot->localtype;
 	return t;
 }
@@ -2157,14 +2149,12 @@ void mvc_exit()
 void 
 mvc_logmanager()
 {
-/*
 	if (log_changes(logger) < 100)
 		return;
 	MT_set_lock(mvc_lock, "mvc_commit");
 	logger_restart(logger);
 	MT_unset_lock(mvc_lock, "mvc_commit");
 	logger_cleanup(logger);
-*/
 }
 
 ssize_t 
@@ -3527,7 +3517,6 @@ mvc_create_type(mvc * sql, sql_module *m,
 	t->digits = digits;
 	t->scale = scale;
 	t->radix = radix;
-	t->nr = cs_size(&m->types);
 	t->localtype = ATOMindex(t->base.name);
 
 	cs_add( &m->types, t, TR_NEW);

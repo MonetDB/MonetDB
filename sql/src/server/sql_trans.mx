@@ -56,7 +56,6 @@ transactions(mvc * sql, symbol * s)
 {
 	int ret = 0;
 	switch (s->token) {
-	/* todo add start transaction and set iso levels */
 	case TR_RELEASE:
 		ret = mvc_release( sql, s->data.sval );
 		if (ret < 0) 

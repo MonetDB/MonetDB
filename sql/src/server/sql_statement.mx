@@ -168,6 +168,7 @@ extern stmt *stmt_basetable(sql_table *t, char *tname);
 #define ptable_ppivots(s) 	((s)->op1.lval)
 #define ptable_pivots(s) 	((s)->op2.lval)
 #define ptable_statements(s) 	((s)->op3.stval)
+#define ptable_filter(s) 	((s)->op4.stval)
 
 extern stmt *stmt_cbat(sql_column * c, stmt * basetable, int access, st_type type);
 extern stmt *stmt_ibat(stmt * i, stmt * basetable );
@@ -254,7 +255,6 @@ extern int stmt_list_nrcols(list *l);
 
 sql_export char *column_name(stmt * st);
 extern char *table_name(stmt * st);
-sql_export sql_column *basecolumn(stmt *st);
 
 sql_export void stmt_destroy(stmt *s );
 extern stmt *stmt_dup( stmt *s );
@@ -1218,12 +1218,20 @@ stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr )
 
 stmt *stmt_list(list * l)
 {
+	node *n;
 	stmt *s = stmt_create(st_list);
 	s->op1.lval = l;
-	if (list_length(l) > 0) {
-		stmt *f = l->h->data;
-		s->nrcols = f->nrcols;
+	int nrcols = 0;
+	int key = 1;
+	
+	for (n = l->h; n; n = n->next){
+		stmt *f = n->data;
+		if (f->nrcols > nrcols)
+			nrcols = f->nrcols;
+		key &= f->key;
 	}
+	s->nrcols = nrcols;
+	s->key = key;
 	return s;
 }
 
@@ -1654,136 +1662,6 @@ stmt_list_nrcols( list *l )
 	return nrcols;
 }
 
-static stmt *head_column(stmt * st);
-
-static stmt *tail_column(stmt * st)
-{
-	switch (st->type) {
-	case st_join:
-	case st_outerjoin:
-	case st_derive:
-	case st_intersect:
-	case st_find:
-		return tail_column(st->op2.stval);
-	case st_reljoin:
-		return tail_column(st->op2.lval->h->data);
-
-	case st_const:
-	case st_unop:
-	case st_binop:
-	case st_Nop:
-	case st_aggr:
-	case st_diff:
-	case st_filter:
-	case st_select:
-	case st_select2:
-	case st_uselect:
-	case st_uselect2:
-	case st_semijoin:
-	case st_alias:
-	case st_union:
-	case st_append:
-	case st_unique:
-	case st_partial_pivot: case st_pivot:
-		return tail_column(st->op1.stval);
-
-	case st_var:
-	case st_column_alias:
-	case st_ibat:
-	case st_bat:
-		return st;
-
-	case st_mirror:
-	case st_reverse:
-		return head_column(st->op1.stval);
-	case st_list:
-		return tail_column(st->op1.lval->h->data);
-
-	/* required for shrink_select_ranges() in sql_rel2bin.mx */
-	case st_idxbat: 
-
-	/* required for eliminate_semijoin() in sql_rel2bin.mx */
-	case st_relselect: 
-
-		printf("= TODO: tail_column(%d=%s) -> NULL !?\n",
-			st->type, st_type2string(st->type) );
-	case st_atom:
-	/* some statements have no column coming from any basetable */
-	case st_mark:
-	case st_group:	
-	case st_group_ext:
-	case st_predicate:	/* 1 = 1 is not a column */
-	case st_basetable: 	/* a table is not a column */
-		return NULL;
-
-	default:
-		fprintf(stderr, "missing tail column %d: %s\n", st->type, st_type2string(st->type) );
-		assert(0);
-		return NULL;
-	}
-}
-
-stmt *head_column(stmt * st)
-{
-	switch (st->type) {
-	case st_atom:
-	case st_const:
-	case st_mark:
-	case st_alias:
-	case st_union:
-	case st_unique:
-	case st_aggr:
-	case st_unop:
-	case st_binop:
-	case st_Nop:
-	case st_diff:
-	case st_join:
-	case st_outerjoin:
-	case st_intersect:
-	case st_semijoin:
-	case st_filter:
-	case st_select:
-	case st_select2:
-	case st_uselect:
-	case st_uselect2:
-	case st_append:
-	case st_insert:
-	case st_replace:
-	case st_partial_pivot: case st_pivot:
-	case st_mirror:
-	case st_group:
-	case st_group_ext:
-		return head_column(st->op1.stval);
-	case st_relselect:
-	case st_reljoin:
-		return head_column(st->op1.lval->h->data);
-
-	case st_column_alias:
-	case st_ibat:
-	case st_bat:
-	case st_var:
-		return st;
-
-	case st_reverse:
-		return tail_column(st->op1.stval);
-
-	case st_derive:
-		return tail_column(st->op2.stval);
-	case st_list:
-		return head_column(st->op1.lval->h->data);
-
-	/* required for eliminate_semijoin() in sql_rel2bin.mx */
-	/* st_temp has no head column coming from any basetable */
-	case st_temp: 
-		return NULL;
-
-	default:
-		fprintf(stderr, "missing head column %d: %s\n", st->type, st_type2string(st->type) );
-		assert(0);
-		return NULL;
-	}
-}
-
 static char *func_name(char *n1, char *n2)
 {
 	int l1 = strlen(n1);
@@ -1930,29 +1808,6 @@ char *table_name(stmt * st)
 	default:
 		fprintf(stderr, "missing table name %d: %s\n", st->type, st_type2string(st->type) );
 		return NULL;
-	}
-}
-
-sql_column *basecolumn(stmt * st)
-{
-	if (!st) return NULL; /* required for shrink_select_ranges() and eliminate_semijoin() in sql_rel2bin.mx */
-	switch (st->type) {
-	case st_reverse:
-		return basecolumn(head_column(st->op1.stval));
-
-	case st_partial_pivot: case st_pivot:
-		return basecolumn(st->op1.stval);
-	case st_bat:
-		return st->op1.cval;
-
-	case st_column_alias: /* required to avoid cyclic calls */
-	case st_ibat:
-		printf("= TODO: basecolumn(%d=%s) -> NULL !?\n",
-			st->type, st_type2string(st->type) );
-		return NULL;
-
-	default:
-		return basecolumn(tail_column(st));
 	}
 }
 

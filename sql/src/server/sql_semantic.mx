@@ -49,7 +49,7 @@ sql_export sql_subtype *supertype( sql_subtype *r, sql_subtype *i );
 sql_export int convert_types(mvc * sql, stmt ** L, stmt ** R, int scale_fixing);
 sql_export stmt *check_types(mvc * sql, sql_subtype * ct, stmt * s );
 sql_export stmt *fix_scale( mvc * sql, sql_subtype * ct, stmt * s, int both, int always);
-sql_export void sum_scales( sql_subfunc *f, stmt *ls, stmt *rs );
+sql_export stmt *sum_scales( sql_subfunc *f, stmt *ls, stmt *rs );
 sql_export stmt *scale_algebra( sql_subfunc *f, stmt *ls, stmt *rs );
 sql_export stmt * sqlparse_intern(mvc *m, char *query);
 sql_export stmt * scope_sqlparse(mvc *m, scope *scp, char *query);
@@ -265,30 +265,88 @@ static lng scale2value(int scale){
 	return val;
 }
 
-void sum_scales( sql_subfunc *f, stmt *ls, stmt *rs ){
+stmt *sum_scales( sql_subfunc *f, stmt *ls, stmt *rs )
+{
 	if (strcmp(f->func->imp, "*") == 0 && 
 			f->func->res->type->scale == SCALE_FIX){
 		f->res->scale = tail_type(ls)->scale + 
 					tail_type(rs)->scale;
+		f->res->digits = tail_type(ls)->digits + 
+					tail_type(rs)->digits;
+		/* HACK alert: digits should be less then max */
+		if (f->res->digits > 19)
+			f->res->digits = 19;
+		/* sum of digits may mean we need a bigger result type 
+ 		 * as the function don't support this we need to
+		 * make bigger input types!
+		 */
+		if (f) {
+			sql_subtype *t = sql_bind_subtype( 
+				f->res->type->sqlname,
+				f->res->digits, f->res->scale );
+			if (subtype_cmp( t, f->res) != 0) {
+				sql_subfunc *c = NULL;
+				
+				c = sql_bind_func_result("convert",
+							  	f->res,NULL,t);
+				if (c) 
+					ls = stmt_unop(ls, c);
+			}
+			sql_subtype_destroy(t);
+		}
 	}
+	return ls;
 }
 
-stmt *scale_algebra( sql_subfunc *f, stmt *ls, stmt *rs ){
+stmt *scale_algebra( sql_subfunc *f, stmt *ls, stmt *rs )
+{
 	sql_subtype *lt = tail_type(ls);
 	sql_subtype *rt = tail_type(rs);
 
+	/*
+   	 * Decimals are mapped on plain integers. This has impact on the
+  	 * implemantion of division. First the 'dividend' should be large 
+	 * enough to prevent rounding errors. This is solved by a 
+	 * multiplication with the 'scale' of the divisor.
+	 * Second the result type of the division should be equal to the 
+	 * 'dividend', with the maximum scale of the dividend and divisor.
+	 *
+	 * Example 	1.0/0.1 mapped (int 1 dec(1,0) and int 1 dec(2,1))
+	 *				1 * 10 = 10 (scale of divisor)
+	 *				10/1 = 1 dec(1)
+	 */
+
 	if (lt->type->scale == SCALE_FIX && rt->scale){ 
-		sql_subtype *it = sql_bind_localtype( lt->type->base.name );
 		sql_subfunc *c = NULL;
+		int digits = rt->scale + lt->digits;
+		int scale = MAX(lt->scale,rt->scale);
+		int d = 0;
+		/* scale fixing may require a larger type ! */
+		sql_subtype *it = 
+			sql_bind_subtype( lt->type->sqlname, digits, scale  );
+
+		if (scale > lt->scale)
+			d = (scale-lt->scale);
+		f->res->digits = lt->digits;
+		f->res->scale = scale;
 
 		if (strcmp(f->func->imp, "/") == 0){
 			c = sql_bind_func("scale_up",lt,it);
+			if (!c) {
+				c = sql_bind_func_result("convert",lt,NULL,it);
+				if (c) {
+					ls = stmt_unop(ls, c);
+					lt = tail_type(ls);
+					c = sql_bind_func("scale_up",lt,it);
+				}
+			}
 		}
 		if (c){
-			lng val = scale2value(rt->scale);
+			lng val = scale2value(rt->scale+d);
 			atom *a = atom_int(sql_dup_subtype(it), val);
 			ls = stmt_binop(ls, stmt_atom(a), c);
 		}
+		sql_subtype_destroy(it);
 	}
 	return ls;
 }
@@ -354,12 +412,15 @@ stmt *check_types(mvc * sql, sql_subtype * ct, stmt * s )
 			sql_subfunc *c = 
 				sql_bind_func_result("convert",st,NULL,ct);
 			if (c){ 
-				if ((ct->digits > 0 && ct->scale == 0 && 
+				int sc = (ct->type->scale == SCALE_FIX);
+				if (sc &&
+				    ((ct->digits > 0 && ct->scale == 0 && 
 					ct->digits < st->digits) ||
 		    		    (ct->scale > 0 && ct->digits > 0 && 
 					ct->digits-ct->scale < 
-						st->digits-st->scale) 
+						st->digits-st->scale)) 
 				) {
+					stmt_destroy(s);
 					sql_subfunc_destroy(c);
 					return sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
 				}
@@ -392,10 +453,12 @@ stmt *check_types(mvc * sql, sql_subtype * ct, stmt * s )
 			}
 		}
 		if (!t || subtype_cmp(t, ct) != 0) {
+			stmt_destroy(s);
 			return sql_error(sql, 02, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
 		}
 	} else {
 		assert(0);
+		stmt_destroy(s);
 		return sql_error(sql, 02, "Statement has no type information");
 	}
 	if (st) {
@@ -404,6 +467,7 @@ stmt *check_types(mvc * sql, sql_subtype * ct, stmt * s )
 		    (ct->scale > 0 && ct->digits > 0 
 			&& ct->digits-ct->scale < st->digits-st->scale) 
 		){
+			stmt_destroy(s);
 			return sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
 		}
 	}
@@ -418,7 +482,7 @@ sql_subtype *supertype( sql_subtype *r, sql_subtype *i )
 	int digits = 0;
 	unsigned int scale = sql_max(i->scale,r->scale);
 
-	if (i->type->nr > r->type->nr)
+	if (i->type->base.id > r->type->base.id)
 		tpe = i->type->sqlname;
 	if (i->digits && r->digits) {
 		if (i->digits > r->digits) {

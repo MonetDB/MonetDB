@@ -390,7 +390,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	_transaction_mode_list
 
 %type <bval>
-	opt_trans
+	opt_work
 	opt_chain
 	opt_distinct
 	set_distinct
@@ -1138,13 +1138,13 @@ transaction_stmt:
  ;
 
 _transaction_stmt:
-    COMMIT opt_trans opt_chain 	
+    COMMIT opt_work opt_chain 	
 		{ $$ = _symbol_create_int( TR_COMMIT, $3);  }
  |  SAVEPOINT ident 		
 		{ $$ = _symbol_create( TR_SAVEPOINT, $2); }
  |  RELEASE SAVEPOINT ident 	
 		{ $$ = _symbol_create( TR_RELEASE, $3); }
- |  ROLLBACK opt_trans opt_chain opt_to_savepoint
+ |  ROLLBACK opt_work opt_chain opt_to_savepoint
 		{ $$ = _symbol_create_list( TR_ROLLBACK, 
 		   dlist_append_string(
 		   	dlist_append_int(dlist_create(), $3), $4 )); }
@@ -1186,7 +1186,7 @@ iso_level:
  | 	SERIALIZABLE	
  ;
 
-opt_trans: /* pure syntax sugar */
+opt_work: /* pure syntax sugar */
     WORK		{ $$ = 0; }
  |  /* empty */		{ $$ = 0; }
  ;
@@ -1879,6 +1879,7 @@ value_exp:
  |  string_funcs
  |  case_exp	
  |  cast_exp
+ |  '?'				{ $$ = _symbol_create( SQL_PARAMETER, NULL ); }
  ;
 
 func_ref:
@@ -2144,7 +2145,7 @@ literal:
  |  sqlINT   	{ int digits = strlen($1);
 		  int len = sizeof(lng);
 		  lng value, *p = &value; 
-		  sql_subtype *t = sql_bind_subtype("INT", digits, 0 );
+		  sql_subtype *t = sql_bind_subtype("DECIMAL", digits, 0 );
 
 		  lngFromStr($1, &len, &p);
 		  $$ = _newAtomNode( atom_int(t, value)); }

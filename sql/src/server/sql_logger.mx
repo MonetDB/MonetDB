@@ -528,20 +528,19 @@ int logger_cleanup(logger *logger) {
 
 
 	snprintf(buf, BUFSIZ,"%s%s.bak-%d", logger->dir, LOGFILE, logger->id);
-	printf(buf);
         if (logger->debug&1)
 		fprintf(stderr, "logger_cleanup %s\n", buf);
 
-	if ( (fp = fopen(buf, "r")) != NULL)
+	if ( (fp = fopen(buf, "r")) == NULL)
 		return res;
 
-	printf(buf);
 	/* skip catalog */
 	while(fgets(id, BUFSIZ, fp) != NULL && id[0] != '\n')
 		;
 
 	while(fgets(id, BUFSIZ, fp) != NULL){
-		printf("(%s.%s)\n", LOGFILE, id);
+		char *e = strchr(id,'\n');
+		if (e) *e = 0;
 		GDKunlink( logger->dir, LOGFILE, id ); 
 	}
 	fclose(fp);
