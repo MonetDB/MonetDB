@@ -118,11 +118,13 @@ while test $# -gt 0; do
        	;;
 
     --libs)
-       	echo -L$prefix/lib/@PACKAGE@
+       	echo \
+		-L$libdir \
+		-L$pkglibdir
        	;;
 
     --modpath)
-        echo $prefix/lib/@PACKAGE@
+        echo 	$pkglibdir
         ;;
 
     *)
