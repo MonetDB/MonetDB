@@ -153,7 +153,7 @@ Start of MIL prelude.
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "Å"			  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "¬Å"			  ]
 [ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
@@ -522,8 +522,7 @@ Start of MIL prelude.
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[      1,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x40037997.
-unknown(0)#"                   ]
+#[      1,         0,         1,         0, "unknown(0)#"                   ]
 #[      0,         1,   running,         1, "source("/var/tmp/_4.3.13-#"    ]
 [ 1 ]
 #-----------------------------------------------------------------#
@@ -875,7 +874,7 @@ vars();
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "Å"			  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "¬Å"			  ]
 [ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
@@ -1262,8 +1261,7 @@ queue();
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[     48,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x40037997.
-unknown(0)#"                   ]
+#[     48,         0,         1,         0, "unknown(0)#"                   ]
 #[     49,         1,   running,        48, "queue()#"                      ]
 threadid().print();
 [ 1 ]

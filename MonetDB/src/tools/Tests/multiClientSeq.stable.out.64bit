@@ -649,7 +649,7 @@ Start of MIL script.
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "Å"			  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "¬Å"			  ]
 [ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
@@ -665,10 +665,8 @@ Start of MIL script.
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
 #[      2,         1,   running,         0, "mapi_server(get_mapi_port#"    ]
-#[      3,         2,   running,         0, "!ERROR: TBL_getname: inexistent function 0x40037997.
-unknown(0)#"                   ]
-#[     52,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x40037997.
-unknown(1)#"                   ]
+#[      3,         2,   running,         0, "unknown(0)#"                   ]
+#[     52,         0,         1,         0, "unknown(1)#"                   ]
 #[     53,         3,   running,        52, "queue()#"                      ]
 [ 3 ]
 #---------------------------------------------------------------------------------------------------------#
@@ -1511,7 +1509,7 @@ Start of MIL script.
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "Å"			  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "¬Å"			  ]
 [ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
@@ -1527,12 +1525,9 @@ Start of MIL script.
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
 #[      2,         1,   running,         0, "mapi_server(get_mapi_port#"    ]
-#[      3,         2,   running,         0, "!ERROR: TBL_getname: inexistent function 0x40037997.
-unknown(0)#"                   ]
-#[     88,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x40037997.
-unknown(1)#"                   ]
-#[    138,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x40037997.
-unknown(1)#"                   ]
+#[      3,         2,   running,         0, "unknown(0)#"                   ]
+#[     88,         0,         1,         0, "unknown(1)#"                   ]
+#[    138,         0,         1,         0, "unknown(1)#"                   ]
 #[    139,         3,   running,       138, "queue()#"                      ]
 [ 3 ]
 #---------------------------------------------------------------------------------------------------------#

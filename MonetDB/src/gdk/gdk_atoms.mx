@@ -985,7 +985,7 @@ int chrToStr(str *dst, int *len, chr *src) {
 		strcpy(*dst, "nil");
 		return 3;
 	} else if (*src & 0x80) {
-		(*dst)[0] = 0xC0 | (*src >> 6);
+		(*dst)[0] = 0xC0 | ((*src >> 6) & 0x3);
 		(*dst)[1] = 0x80 | (*src & 0x3F);
 		(*dst)[2] = 0;
 		return 2;
