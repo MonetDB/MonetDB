@@ -1551,9 +1551,14 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 				count = strlen((char*)c->p);
 			}
 			ok = (stream_printf(s, SZFMT, count) >= 0);
-		} else {
+		} else if (c->type->type->localtype == TYPE_sht ||
+			c->type->type->localtype == TYPE_int ||
+			c->type->type->localtype == TYPE_lng)
+		{
 			int count = c->type->digits;
 			ok = (stream_printf(s, SZFMT, count) >= 0);
+		} else {
+			ok = (stream_write(s, "0", 1, 1) == 1);
 		}
 		if(i+1< t->nr_cols && ok)
 			ok = (stream_write(s, ",\t", 2, 1) == 1);
