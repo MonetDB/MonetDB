@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 INCLUDES = -I../../common -I../../gdk -I../../monet \
-	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS)
+	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS) $(PCRE_CFLAGS)
 MTSAFE
 
 lib__streams = {
@@ -124,6 +124,23 @@ lib__pcl = {
 #doc__pcl = {
 #	DIR = pkgdatadir/docs/plain/
 #	SOURCES = pcl.mx
+#}
+
+lib__pcre = {
+	DIR = pkglibdir
+	SOURCES = pcre.mx
+	HEADERS = h proto.h m
+	#SCRIPTS = mil ""
+	WINLIBS = ../../common/libstream ../../gdk/libbat \
+		../../monet/libmonet \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
+	LIBS = $(PCRE_LIBS)
+}
+
+#doc__pcre = {
+#	DIR = pkgdatadir/docs/plain/
+#	SOURCES = pcre.mx
 #}
 
 scripts_mil = {
