@@ -1421,8 +1421,6 @@ int THRcnt() {
 	return GDKnrofthreads; 
 }
 
-#define THREAD_STACK_SIZE	((unsigned long)1024*1024)
-
 int THRhighwater() {
 	unsigned long c = THRsp();
 	Thread s = GDK_find_thread(MT_getpid());

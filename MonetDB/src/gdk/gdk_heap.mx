@@ -317,7 +317,10 @@ int HEAPload(Heap* h, str nme, str ext) {
          */
 	fp = (FILE*) GDKfilelocate(nme, "mrb+", ext);
 	strcpy(priv, ext); 
-	strcat(priv, ".priv");
+	if (strlen(ext)){
+		strcat(priv, ".");
+	}
+	strcat(priv, "priv");
 	if (fp == NULL) {
 		/* try to move a previous version back */
 		GDKmove(BATDIR, nme, priv, BATDIR, nme, ext); 
