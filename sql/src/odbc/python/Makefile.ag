@@ -22,7 +22,9 @@
 #		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 SWIGFLAGS = -DHAVE_LONG_LONG -I@srcdir@/../include
-INCLUDES = -I@PYTHONINC@
+INCLUDES = \
+	-I../include \
+	-I@PYTHONINC@ 
 
 _odbc_la_LDFLAGS = -module
 X_CFLAGS =
