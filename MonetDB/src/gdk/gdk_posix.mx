@@ -888,6 +888,11 @@ void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t *maxsiz
         return p;
 }
 
+#if defined(HAVE_LOCKF) && defined(__MACH__)
+/* lockf() seems to be there, but I didn't find any header file that declares the prototype ... */
+extern int lockf (int __fd, int __cmd, off_t __len);
+#endif
+
 #ifndef HAVE_LOCKF
 /* Cygwin implementation: struct flock is there, but lockf() is
    missing.
