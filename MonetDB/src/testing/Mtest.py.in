@@ -1511,7 +1511,8 @@ def Check(command, input) :
     test = re.compile( r"^!WARNING: BATpropcheck: "                                          "|"
                        r"^!WARNING: monet_checkbat: "                                        "|"
                        r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock."       "|"
-                       r"^!WARNING: BBPdir: initializing BBP."                               ,
+                       r"^!WARNING: BBPdir: initializing BBP."                               "|"
+                       r"^!ERROR: yyclean: BAT -?[0-9]+ OVERWRITTEN \(stamp 0 != -?[0-9]+\)" ,
                        re.MULTILINE)
     noErr = []
     for l in qOut+qErr:
