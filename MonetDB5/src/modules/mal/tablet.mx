@@ -404,7 +404,7 @@ typedef struct Table_t {
 	stream *fd;
 	BAT *pivot;
 	int rowwidth;	/* sum of columns used for mallocs*/
-	Column columns[];
+	Column columns[1];
 } Table;
 
 extern BAT *TABLEload( BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr );
