@@ -28,7 +28,7 @@ AC_INIT(src/utils/Mx/Mx.h)
 AC_CONFIG_AUX_DIR(conf)
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("MonetDB", 4.3.5)
+AM_INIT_AUTOMAKE("MonetDB", 4.3.6)
 AM_CONFIG_HEADER(config.h:conf/config.h.in)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
