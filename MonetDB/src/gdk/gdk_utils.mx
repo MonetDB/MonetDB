@@ -510,7 +510,7 @@ these redirected blocks.This behavior is enabled by defining GDK\_MEM\_VMREDIREC
 #ifdef GDK_MEM_QUERYSIZE
 #define GDK_MEM_BLKSIZE(p) GDK_MEM_QUERYSIZE(p)
 #else
-#define GDK_MEM_BLKSIZE(p) ((unsigned int*) (p))[-1]
+#define GDK_MEM_BLKSIZE(p) ((long*) (p))[-1]
 #endif
 
 static 
