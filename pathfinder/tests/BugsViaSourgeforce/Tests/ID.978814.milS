@@ -71,7 +71,7 @@ if (iter.count() = 0) {
 } else if (iter001.count() != 0)
 { # translateSeq (counter)
 var merged_result := merged_union (iter001, iter, pos001, pos, item001, item, kind001, kind);
-merged_result.print();
+merged_result.count().print();
 print (merged_result.fetch(0), merged_result.fetch(1), merged_result.fetch(2), merged_result.fetch(3));
 merged_result := nil;
 var iter2 := iter; var pos2 := pos; var item2 := item; var kind2 := kind;
@@ -235,7 +235,7 @@ print(iter001,pos001,item001,kind001);
 print(iter,pos,item,kind);
 print("the call of 'merged_union' triggers the error");
 var merged_result := merged_union (iter001, iter, pos001, pos, item001, item, kind001, kind);
-merged_result.print();
+merged_result.count().print();
 print (merged_result.fetch(0), merged_result.fetch(1), merged_result.fetch(2), merged_result.fetch(3));
 merged_result := nil;
 
