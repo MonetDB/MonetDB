@@ -14,18 +14,15 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@'
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f streams
 @a Niels Nes
 @* An simple interface to streams
-This interface can be used to open 'non compressed, gzipped, bz2zipped'
-data files. It encapsulates the corresponding library managed in
+All file IO is funneled through the stream library, which
+guarantees cross-platform capabilities.
+Several protocols are provided, e.g. it can be used to 
+open 'non compressed, gzipped, bz2zipped' data files. 
+It encapsulates the corresponding library managed in
 .../stream.
 
 @mal
@@ -33,33 +30,34 @@ atom stream :ptr;
 
 module streams;
 
-command open_rstream( filename:str ) :stream
+command openReadBytes( filename:str ) :stream
 address stream_open_rstream
 comment "open a file stream for reading";
-command open_wstream( filename:str ) :stream
+command openWriteBytes( filename:str ) :stream
 address stream_open_wstream
 comment "open a file stream for writing";
-command open_rastream( filename:str ) :stream
+
+command openRead( filename:str ) :stream
 address stream_open_rastream
 comment "open ascii file stream for reading";
-command open_wastream( filename:str ) :stream
+command openWrite( filename:str ) :stream
 address stream_open_wastream
 comment "open ascii file stream for writing";
 
-command socket_rstream(skt:int,name:str):stream
+command socketReadBytes(skt:int,name:str):stream
 address stream_socket_rstream
 comment "open a socket stream for reading";
-command socket_wstream(skt:int,name:str):stream
+command socketWriteBytes(skt:int,name:str):stream
 address stream_socket_wstream
 comment "open a socket stream for writing";
-command socket_rastream(skt:int,name:str):stream
+command socketRead(skt:int,name:str):stream
 address stream_socket_rastream
 comment "open ascii socket stream for reading";
-command socket_wastream(skt:int,name:str):stream
+command socketWrite(skt:int,name:str):stream
 address stream_socket_wastream
 comment "open ascii socket stream for writing";
 
-command block_stream( s:stream ) :stream
+command blocked( s:stream ) :stream
 address open_block_stream
 comment "open a block based stream";
 
@@ -72,7 +70,7 @@ comment "write data on the stream";
 command readStr( s:stream):str
 address stream_read_str
 comment "read string data from the stream";
-command readInt( s:stream):str
+command readInt( s:stream):int
 address stream_read_int
 comment "read integer data from the stream";
 
@@ -138,13 +136,19 @@ str stream_socket_@1( stream *S, int *socket, str name ){
 @:open_socket(rastream)@
 @:open_socket(wastream)@
 
-str stream_write_string( stream *S, str *data ){
+str stream_write_string(int *ret, stream *S, str *data ){
 	stream *s = *(stream**)S;
+	(void) ret;
+	if( S == NULL)
+		return throwMessage("streams.writeStr","failed");
 	stream_write( s, *data, 1, strlen(*data));
 	return MAL_SUCCEED;
 }
-str stream_write_int( stream *S, int *data ){
+str stream_write_int(int *ret,  stream *S, int *data ){
 	stream *s = *(stream**)S;
+	(void) ret;
+	if( S == NULL)
+		return throwMessage("streams.writeInt","failed");
 	stream_writeInt(s,*data);
 	return MAL_SUCCEED;
 }
@@ -153,8 +157,11 @@ str stream_read_str( str *res,stream *S){
 	stream *s = *(stream**)S;
         size_t len = 0;
         size_t size = CHUNK + 1;
-        char *buf = GDKmalloc(size), *start = buf;
+        char *buf, *start;
 
+	if( S == NULL)
+		return throwMessage("streams.readStr","failed");
+        buf = GDKmalloc(size); start = buf;
         while ((len = stream_read(s, start, 1, CHUNK)) == CHUNK){
                 size += CHUNK;
                 buf = GDKrealloc(buf, size);
@@ -168,27 +175,35 @@ str stream_read_str( str *res,stream *S){
 }
 str stream_read_int( int *data, stream *S){
 	stream *s = *(stream**)S;
+	if( S == NULL)
+		return throwMessage("streams.readInt","failed");
 	stream_readInt(s,data);
 	return MAL_SUCCEED;
 }
 
-str stream_flush_stream( stream *S ){
+str stream_flush_stream(int *ret, stream *S ){
 	stream *s = *(stream**)S;
+	if( S == NULL)
+		return throwMessage("streams.flush","failed");
 	stream_flush( s );
+	(void) ret;
 	return MAL_SUCCEED;
 }
 
-str stream_close_stream( stream *S ){
+str stream_close_stream(int *ret, stream *S ){
 	stream *s = *(stream**)S;
+	if( S == NULL)
+		return throwMessage("streams.close","failed");
 	stream_close( s );
 	stream_destroy( s );
+	(void) ret;
 	return MAL_SUCCEED;
 }
 
 str open_block_stream( stream *S, stream *is ){
-	if ((*(stream**)S = block_stream( *(stream**)is )) == NULL){
+	if ((*(stream**)S = block_stream( *(stream**)is )) == NULL)
 		return throwMessage("streams.block_stream","failed");
-	} else {
+	else {
 		return MAL_SUCCEED;
 	}
 }

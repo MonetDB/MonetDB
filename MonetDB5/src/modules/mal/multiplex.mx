@@ -119,8 +119,8 @@ c tails and stores it in b. This case is detected by operatorModifier();
 #include "multiplex.h"
 #define REALLY_REALLY_BIG	2000000000
 
-/* #define DEBUG_MULTIPLEX  */
-/* #define TRACE_MULTIPLEX   */
+/* #define DEBUG_MULTIPLEX*/
+/*#define TRACE_MULTIPLEX*/
 static int multiplexDebug=0;
 
 static int batcalcTypeCheck(str operator, int type);
@@ -204,6 +204,7 @@ Constants passed into the multiplex operator are a special case.
 	for(i=2; i < pci->argc; i++) {
 	    t= getArgType(mb,pci,i);
 	    if( isaBatType(t) ){
+		tt = getTailType(t);
 		if (first){
 			firstbat= TRUE;
 			if( getHeadType(t) != TYPE_any) {
@@ -216,7 +217,7 @@ Beware, the BAT header types in this case could be a mix of oid and void.
 They are conformable in the current implementation with respect to
 join compatability
 @c
-			int t2= getHeadType(t);
+			int t2 = getHeadType(t);
 			if( !( (tpe == TYPE_void && t2 == TYPE_oid) ||
 			       (tpe == TYPE_oid && t2 == TYPE_void) ) ){
 				if( t2 != tpe)
@@ -224,7 +225,6 @@ join compatability
 					 functionName(pci), getPC(mb,pci));
 			}
 		}
-		tt = getTailType(t);
 	    } else {
 		tt= getArgType(mb,pci,i);
 	    }

@@ -184,10 +184,14 @@ address CMDbbpTailType
 comment "Map a BAT into its tail type";
 command getNames() :bat[:int,:str] 	
 address CMDbbpNames
-comment "Map a BAT into its bbp name";
+comment "Map BAT into its bbp name";
 command getRNames() :bat[:int,:str] 	
 address CMDbbpRNames
 comment "Map a BAT into its bbp physical name";
+
+command getName( b:bat[:any,:any]):str
+address CMDbbpName
+comment "Map a BAT into its internal name";
 command getCount() :bat[:int,:lng] 	
 address CMDbbpCount
 comment "Map a BAT into its cardinality";
@@ -664,6 +668,10 @@ str CMDbbpNames( int *ret){
 	}
 	BBPunlock("CMDbbpNames");
 	@:Pseudo(bbp,name)@
+        return MAL_SUCCEED;
+}
+str CMDbbpName( str *ret, int *bid){       
+	*ret = (str) GDKstrdup( BBP_logical(*bid));
         return MAL_SUCCEED;
 }
 str CMDbbpRNames( int *ret){       

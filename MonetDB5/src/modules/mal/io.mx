@@ -15,146 +15,28 @@
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
 @' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
-
 @f io
 @a N.J. Nes, M.L. Kersten
 @d 01/07/1996, 31/01/2002
 
 @* The io Module
 @T
-This module contains all the file access commands. The implementation
-is very simple. All function call the stdio library function.
+The IO module provides simple ascii-io rendering options.
+It is modeled after the version 4 tuple formats, but does not
+attempt to outline the results. Instead, it is geared at speed,
+which also means that some functionality regarding the builtin
+types is duplicated from the atoms definitions.
 
-This module is seperated from the database kernel since some 
-servers are not allowed to do file accesses.
+A functional limited form of formatted printinf is also provided.
+It accepts at most one variable though.
 
-{\tt fopen()} opens the file named by filename  and  associates  a
-fstream  with  it. {\tt fopen()}  returns  a  pointer to the FILE
-structure associated with the fstream. The resulting pointer is needed
-by all other io function. So fopen should be called before any other 
-function. 
-
-The {\tt fclose()} command closes the associated fstream. The FILE pointer 
-given can not be used after calling this function. 
-
-Pipes can be created with {\tt popen()}. This function returns the
-identifier to a bidirectional pipe. You can then for instance {\tt fork()}
-a new Monet session, passing this identifier.
-
-Both sessions can then use the pipe to open a fstream with {\tt fdpipe()}.
-The one end should pass {\tt true} as the {\tt up} parameter, the other
-{\tt down}. This function returns a fstream, and can be used in combination
-with any of the functions of this module.
-
-The {\tt fflush()} command flushes the buffer of the associated fstream.
-
-{\tt feof()} returns non-zero when EOF has previously been
-detected reading the named input fstream, otherwise zero.
-
-{\tt freopen()} substitutes the named file in place  of  the  open
-fstream. A flush is first attempted, and then the original
-fstream is closed, regardless of whether the open ultimately
-succeeds. Failure to flush or close fstream successfully is
-ignored. It returns the new FILE pointer.
-
-The {\tt fread()} and {\tt fwrite()} commands read/write a number of bytes 
-to or from a associated fstream. The read function returns a string 
-containing the result. The write function returns the number of written bytes. 
-
-The {\tt fseek()} function seeks an offset number of bytes form the start, the 
-current position, or the end of the fstream.
-\footnote{See the mil script file for the correct constants.}
-This function returns the number of bytes moved. 
-
-The {\tt fprintf()} function print a variable number of 
-arguments using the format string. They return the number of arguments 
-printed. 
-
-The {\tt fputs()} places a string on the given output fstream. 
-{\tt fgets()} reads a string until an end of line is found form the 
-given input fstream. 
-
-Look at the related ANSI-C/POSIX manual pages to get the needed information.
-This module uses the blob atom.
-
-@mal
-atom module fstream :ptr
-comment "Mapping to the FILE descriptor 
-	on the Unix platforms. Should be 
-	replaced by the stream package 
-	primitives on NT";
-
-atom module bipipe :lng;
-command popen( ) :bipipe 
-address io_popen 
-comment "Open a bidirectional pipe. See:man pipe" ;
-command fdpipe(b:bipipe,up:bit,mode:str):fstream 
-address io_fdpipe 
-comment "Open stream in one direction through 
-	a pipe.";
-
-module io;
-command fopen(filename:str,mode:str):fstream 
-address io_fopen 
-comment "See:man fopen. Returns fstream, 
-	or fstream(nil) on failure.";
-command freopen(n:str,m:str,f:fstream):fstream 
-address io_freopen 
-comment "See:man freopen. Returns fstream, 
-	or fstream(nil) on failure.";
-command fsize( filename:str ) :int 
-address io_fsize 
-comment "Return the filesize or -1";
-command ferror() :str 
-address io_ferror 
-comment "returns last error message or nil.";
-
-command fclose( f:fstream ):void 
-address io_fclose comment "See:man fclose";
-command fflush( f:fstream ):void 
-address io_fflush comment "See:man fflush";
-command feof( f:fstream ) :bit 
-address io_feof comment "See: man feof";
-command fread( filep:fstream, nbytes:int ) :blob 
-address io_fread 
-comment "See:man fread";
-command fwrite(fp:fstream,buf:str,bytes:int):void 
-address io_fwrite_str 
-comment "See:man fwrite";
-command fwrite(fp:fstream,buf:blob,bytes:int):void 
-address io_fwrite 
-comment "See:man fwrite";
-command fseek(fp:fstream,pos:int,offset:int):int 
-address io_fseek 
-comment "See:man fseek";
-command ftell( filep:fstream ) :int 
-address io_ftell 
-comment "See:man ftell";
-
-command fputs(s:str,fp:fstream):void 
-address io_fputs 
-comment "See:man fputs";
-command fgets(fp:fstream ):str 
-address io_fgets 
-comment "See: man fgets";
-
-command fputc(c:int,filep:fstream ):void 
-address io_fputc 
-comment "See:man fputs";
-command fgetc(filep:fstream ):chr 
-address io_fgetc 
-comment "See: man fgetc";
-
+A more complete approach is the tablet module.
 @+ Printing 
 The polymorphic print commands are collected here.
 Watch out, the order of definitions is crucial, because the most
 specific should be introduced last.
 @mal
+module io;
 
 pattern print(b1:bat[:any$1,:any], 
 		b2:bat[:any$1,:any]...):int 
@@ -207,18 +89,6 @@ pattern printft(val:any):int
 address IOprint_ft
 comment "Select default format ";
 
-pattern fprint(fp:fstream,arg:any...):void 
-address io_fprint 
-comment "Print a (comma seperated) list ";
-
-pattern fprintf(f:fstream,fm:str,a:any...):void 
-address io_fprintf 
-comment "See:man fprintf";
-
-pattern sprintf(fm:str,a:any...):str 
-address io_sprintf 
-comment "See:man sprintf, returns the string";
-
 @- Formatted printing
 The routines that inspect the runtime setting are moved out of this area.
                                                                                 
@@ -243,6 +113,7 @@ command printf(val:str):int
 address IOprint_str;
 command printf(format:str,val:str):int
 address IOprint_formatted_str;
+
 @- ASCII import, export
 The below commands load and save a BAT from/to an ASCII dump. These
 functions are efficient but work only for binary tables. For printing
@@ -260,38 +131,6 @@ comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
 
 @-
 @{
-@- MIL initializations 
-The constants for the seek function.
-@* Example Script
-@mil
-        const EOF      := -1;
-        const SEEK_SET := 0;
-        const SEEK_CUR := 1;
-        const SEEK_END := 2;
-setoid(oid(20000000));
-module(io);
-
-fp := fopen ( "test", "w+" );
-fwrite( fp, "Dit is een test\n", 17 );
-fp := freopen ( "test", "r+", fp );
-fread( fp, 17 ).tostr.print;
-
-fseek( fp, 0, 0);
-fprintf( fp, "%s %d %c %d %f\n", "test", 10, 'c', 10, 7.0 );
-
-s := "testing again and again\n";
-
-fseek( fp, 0, 0);
-fputs( s, fp );
-fseek( fp, 0, 0);
-s := fgets( fp );
-
-fflush( fp );
-fclose( fp );
-printf( "%s %d %c %d %f\n", "test", 10, 'c', 10, 7.0 );
-printf( "%s\n", s );
-
-quit;
 @* Implementation Code
 
 @h
@@ -323,263 +162,6 @@ typedef FILE* fstream;
 @c
 #include <mal_config.h>
 #include "io.h"
-
-str io_fclose(int *ret, fstream* filepp ){
-   FILE *fp = *(FILE**) filepp; 
-   (void) ret; /* fool compiler */
-   fileCheck(fp)
-   if (fclose(fp) < 0) {
-	return throwMessage("io.fclose"," failed");
-   }
-   return MAL_SUCCEED;
-}
-
-str io_fflush(int *ret, fstream *filepp ){
-   FILE *fp = *(FILE**) filepp; 
-   (void) ret; /* fool compiler */
-   fileCheck(fp);
-   (void)fflush(fp);
-   return MAL_SUCCEED;
-}
-
-str io_popen(bipipe **retval){
-   if(*retval) GDKfree(*retval);
-   *retval= (bipipe*) GDKmalloc(sizeof(bipipe));
-   if (pipe((int*) *retval) < 0)
-	return throwMessage("io.popen"," failed");
-   return MAL_SUCCEED;
-}
-str io_fdpipe(fstream *retval, bipipe* p, bit *up, str *mode){
-   *retval = (fstream) fdopen(up?p->up:p->down, *mode);
-   if (*retval == 0) return MAL_SUCCEED;
-   return throwMessage("io.fdpipe"," failed");
-}
-
-str io_feof( bit *res, fstream *filepp ){
-   FILE *fp = *(FILE**) filepp; 
-   fileCheck(fp);
-   *res = feof(fp)?TRUE:FALSE;
-   return MAL_SUCCEED;
-}
-
-str io_fopen( fstream *res, str *name, str *mode ){
-   *res = fopen(*name,*mode);
-   if (!*res) *res = *(fstream*) ATOMnilptr(TYPE_ptr);
-   return MAL_SUCCEED;
-}
-
-str io_freopen( fstream *res, str *name, str *mode, fstream *filepp ){
-   FILE *fp = *(FILE**) filepp; 
-   fileCheck(fp);
-   *res = freopen(*name,*mode,fp);
-   if (!*res) *res = *(fstream*) ATOMnilptr(TYPE_ptr);
-   return MAL_SUCCEED;
-}
-
-str io_ferror( str *msg) {
-   int r = MT_geterrno();
-   if (r) {
-    	*msg = GDKstrdup(strerror(r));
-   } else { 
-	*msg = str_nil;
-   }
-   return MAL_SUCCEED;
-}
-
-str io_fread( blob **res, fstream *filepp, int *nbytes ){
-   FILE *fp = *(FILE**) filepp; 
-   int err = -1;
-   str buf;
-   fileCheck(fp);
-   buf = (str) GDKmalloc( sizeof(int) + *nbytes );
-   if ((*res = (blob*) buf) != NULL){
-   	err = fread(buf+sizeof(int),1,*nbytes,fp);
-   }
-   if (err<0){
-      if (*res) GDKfree(*res);
-      return throwMessage("io.fread"," failed");
-   }
-   (**res).nitems= err;
-   return MAL_SUCCEED;
-}
-
-str io_fwrite_str(int *ret, fstream *filepp, str *buf, int *nbytes ){
-   FILE *fp = *(FILE**) filepp; 
-   int n = strlen(*buf); 
-   (void) ret; /* fool compiler */
-   fileCheck(fp);
-   if (*nbytes < n) n = *nbytes;
-   if (fwrite(*buf,1,n,fp) < (size_t) n) {
-      return throwMessage("io.fwrite_str"," failed");
-   }
-   return MAL_SUCCEED;
-}
-
-str io_fwrite(int *ret, fstream *filepp, blob **b, int *nbytes ){
-   FILE *fp = *(FILE**) filepp; 
-   int n = *nbytes;
-   str buf = (str) *b;
-   (void) ret; /* fool compiler */
-   fileCheck(fp);
-   if (n> (**b).nitems) {
-	n = MAX(0,(**b).nitems);
-	GDKerror("io_fwrite:blob contains only %d bytes.\n", (**b).nitems);
-   }
-   if (fwrite(buf+sizeof(int),1,n,fp) < (size_t) n) {
-      return throwMessage("io.fwrite"," failed");
-   }
-   return MAL_SUCCEED;
-}
-
-str io_fseek(int *res, fstream *filepp, int *pos, int *nbytes ){
-   FILE *fp = *(FILE**) filepp; 
-   fileCheck(fp);
-   *res = fseek(fp, (long)*pos, *nbytes);
-   if (*res < 0) {
-      return throwMessage("io.fseek"," failed");
-   }
-   return MAL_SUCCEED;
-}
-
-str io_ftell(int *res, fstream *filepp ){
-   FILE *fp = *(FILE**) filepp; 
-   fileCheck(fp);
-   *res = ftell(fp);
-   if (*res < 0) {
-      throwMessage("io.ftell"," failed");
-   }
-   return MAL_SUCCEED;
-}
-
-str io_fsize(int* res, str *filename){
-#ifdef HAVE_FSTAT
-	struct stat buf;
-	if (stat(*filename,&buf))
-		*res = -1;
-	else
-		*res = (int)buf.st_size;
-#else
-        *res = -1;
-#endif
-	return MAL_SUCCEED;
-}
-
-
-str io_sprintf(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-   (void) mb;(void) stk; (void)pci; /* fool compiler */
-	return throwMessage("io.sprintf"," not yet defined in version-5\n");
-}
-
-str io_fprintf(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-   (void) mb;(void) stk; (void)pci; /* fool compiler */
-	return throwMessage("io.fprintf"," not yet defined in version-5\n");
-}
-/* 4.4 VERSION
-int io_fprintf(fstream *filepp, str format,  ...){
-        va_list ap;
-        int ret;
-        str s;
- 
-	fileCheck(*filepp);
-        va_start(ap,format);
-        ret = monet_sprintf(&s, format, ap);
-        va_end(ap);
-        if (ret == 0) {
-                return throwMessage("io.printf","failed");
-        }
-        if (fputs(s, *filepp) < 0) {
-                GDKfree(s);
-                return throwMessage("io.fprintf","failed");
-        }
-	GDKfree(s);
-        return MAL_SUCCEED;
-}
-*/
-
-str io_fprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void) mb;(void) stk; (void)pci; /* fool compiler */
-	GDKwarning("io_fprint:not defined in version-5\n");
-        return MAL_SUCCEED;
-}
-/*
-int io_fprint(fstream *filepp, ...){
-        va_list ap;
-        ptr val; 
-	int type;
- 
-	fileCheck(*filepp);
-        va_start(ap,filepp);
-
-	val = va_arg (ap,ptr);
-        if(val){
-		type = va_arg(ap,int);
-		if (ATOMstorage(type) != TYPE_str)
-			fprintf( *filepp, "%s(\"", ATOMname(type) );
-		ATOMprint(type, val, *filepp);
-		if (ATOMstorage(type) != TYPE_str)
-			fprintf( *filepp, "\")" );
-		val = va_arg (ap,ptr);
-        	while(val){
-			type = va_arg(ap,int);
-			if (ATOMstorage(type) != TYPE_str)
-				fprintf( *filepp, ", %s(\"", ATOMname(type) );
-			else
-				fprintf( *filepp, ", ");
-			ATOMprint(type, val, *filepp);
-			if (ATOMstorage(type) != TYPE_str)
-				fprintf( *filepp, "\")" );
-			val = va_arg (ap,ptr);
-		}
-	}
-        va_end(ap);
-        return MAL_SUCCEED;
-}
-*/
-
-
-str io_fputs(int *ret, str *s, fstream *filepp ){
-   (void) ret; /* fool compiler */
-   fileCheck(*filepp);
-   if (fputs(*s,*(FILE**)filepp) < 0) {
-      return throwMessage("io.fputs"," failed");
-   }
-   return MAL_SUCCEED;
-}
-
-str io_fputc(int *ret,int *c, fstream *filepp ){
-   FILE *fp = *(FILE**) filepp; 
-   (void) ret; /* fool compiler */
-   fileCheck(fp);
-   if (fputc(*c, fp) < 0)
-      return throwMessage("io.fputs"," failed");
-   return MAL_SUCCEED;
-}
-
-str io_fgets( str *s, fstream *filepp ){
-   FILE *fp = *(FILE**) filepp; 
-   fileCheck(fp);
-   *s = GDKmalloc( BUFSIZ );
-   **s = 0;
-   if (fgets(*s, BUFSIZ, fp) <= (char *) 0) {
-      if (feof(fp)){
-        **s = 0;
-      	return MAL_SUCCEED;
-      }
-      return throwMessage("io.fgets"," failed");
-   }
-   return MAL_SUCCEED;
-}
-
-str io_fgetc( chr *c, fstream *filepp ){
-   FILE *fp = *(FILE**) filepp; 
-   int ret;
-   fileCheck(fp);
-   ret = (int)fgetc(fp);
-   if (ret <= 0) 
-      return throwMessage("io.fgetc"," failed");
-   *c = ret;
-   return MAL_SUCCEED;
-}
 
 @+ Printing
 The print commands are implemented as single instruction rules,
@@ -619,7 +201,6 @@ str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,int indx,str hd, str t
 		if( b== NULL) {
 			return throwMessage("io.print","could not access descriptor");
 		}
-		/* BATprint(b);*/
 		BATmultiprintf(GDKout,2,&b,TRUE,0);
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
@@ -1068,5 +649,4 @@ Cleanup and exit. Return the filled BAT.
 	*ret = TRUE;
 	return MAL_SUCCEED;
 }
-
 @}
