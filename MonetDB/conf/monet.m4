@@ -261,6 +261,56 @@ AM_CONDITIONAL(HAVE_JAVA,test x$have_java = xyes)
 
 ])
 
+AC_DEFUN(AM_MONET_CxxFLAGS,[
+
+dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
+case $CC in
+gcc)	
+	dnl CFLAGS="$CFLAGS -Werror-implicit-function-declaration"
+	dnl  Be rigid ;-)
+	CFLAGS="$CFLAGS -Wno-unused-function -Wno-format -Werror"
+	dnl "-Wno-sign-compare"
+	;;
+icc|ecc)
+	dnl  Let warning #266 "function declared implicitly" become an error.
+	dnl CFLAGS="$CFLAGS -we266"
+	dnl  Be rigid ;-)
+	CFLAGS="$CFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,108,188,1357 -Werror"
+	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
+	dnl  #1418: external definition with no prior declaration
+	dnl  #1419: external declaration in primary source file
+	dnl  # 279: controlling expression is constant
+	dnl  # 310: old-style parameter list (anachronism)
+	dnl  # 981: operands are evaluated in unspecified order
+	dnl  # 810: conversion from "." to "." may lose significant bits
+	dnl  # 444: destructor for base class "." is not virtual
+	dnl  # 193: zero used for undefined preprocessing identifier
+	dnl  # 111: statement is unreachable
+	dnl  # 177: function "." was declared but never referenced
+	dnl  # 171: invalid type conversion: "." to "."
+	dnl  # 181: argument is incompatible with corresponding format string conversion
+	dnl  # 108: implicitly-signed bit field of length 1
+	dnl  # 188: enumerated type mixed with another type
+	dnl  #1357: optimization disabled due to excessive resource requirements; contact Intel Premier Support for assistance
+	;;
+esac
+case $CXX in
+g++)	
+	dnl CXXFLAGS="$CXXFLAGS -Werror-implicit-function-declaration"
+	dnl  Be rigid ;-)
+	CXXFLAGS="$CXXFLAGS -Wno-unused-function -Wno-format -Werror"
+	dnl "-Wno-sign-compare"
+	;;
+icpc|ecpc)
+	dnl  Let warning #266 "function declared implicitly" become an error.
+	dnl CXXFLAGS="$CXXFLAGS -we266"
+	dnl  Be rigid ;-)
+	CXXFLAGS="$CXXFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,108,188,1357 -Werror"
+	;;
+esac
+
+])
+
 AC_DEFUN(AM_MONET_TOOLS,[
 
 dnl AM_PROG_LIBTOOL has loads of required macros, when those are not satisfied within
@@ -316,8 +366,8 @@ if test "x$enable_debug" = xyes; then
     CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's|^ ||' -e 's| $||'`"
     CXXFLAGS=" $CXXFLAGS "
     CXXFLAGS="`echo "$CXXFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's|^ ||' -e 's| $||'`"
-    CFLAGS="$CFLAGS -O0 -g"
-    CXXFLAGS="$CXXFLAGS -O0 -g"
+    CFLAGS="$CFLAGS -g"
+    CXXFLAGS="$CXXFLAGS -g"
   fi
 fi
 
@@ -404,8 +454,8 @@ AC_ARG_ENABLE(warning,
   enable_warning=$enableval, enable_warning=no)
 if test "x$enable_warning" = xyes; then
   if test "x$GCC" = xyes; then
-    CFLAGS="$CFLAGS -Wall -ansi -std=c99 -pedantic -Wno-long-long -Wno-unused-function -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500"
-    CXXFLAGS="$CXXFLAGS -Wall -ansi -pedantic -Wno-long-long -Wno-unused-function"
+    CFLAGS="$CFLAGS -Wall -W -ansi -std=c99 -pedantic -Wno-long-long -Wno-unused-function -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500"
+    CXXFLAGS="$CXXFLAGS -Wall -W -ansi -pedantic -Wno-long-long -Wno-unused-function"
   else
     case "$host_os" in
     linux*) CFLAGS="$CFLAGS -w2 -Wall -ansi -c99"
