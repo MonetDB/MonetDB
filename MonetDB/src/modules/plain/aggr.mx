@@ -399,14 +399,14 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 	cnt  = (int*) GDKmalloc(range*sizeof(int));
 	memset(cnt, 0, range*sizeof(int));
 	BATloopFast(b, p, q, xx) {
-		int h = (int)(*(chr*) BUNhloc(b,p)) - min;
+		int h = (int)(*(oid*) BUNhloc(b,p)) - min;
 
 		if (h >= 0 && h < range) {
 			cnt[h]++;
 		}
 	} 
 	BATloopFast(bn, p, q, xx) {
-		int h = (int)(*(chr*) BUNhloc(bn,p)) - min;
+		int h = (int)(*(oid*) BUNhloc(bn,p)) - min;
 		*(int*)BUNtloc(bn, p) = cnt[h];
 	}
         GDKfree(cnt);
