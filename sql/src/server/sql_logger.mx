@@ -300,7 +300,6 @@ static void logger_commit( logger *logger ) {
 		printf("logger_commit\n");
 
 	bm_commit(logger->bm, logger->tid);
- 	TMfakeCommit();
 }
 
 static void logger_abort( logger *logger ) {
@@ -308,7 +307,6 @@ static void logger_abort( logger *logger ) {
 		printf("logger_abort\n");
 
 	bm_abort(logger->bm, logger->tid);
- 	TMfakeCommit();
 }
 
 static void logger_open(logger *logger){
