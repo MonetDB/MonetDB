@@ -130,7 +130,8 @@ AC_CHECK_HEADERS(ieeefp.h)
 AC_LANG_SAVE
 #AC_LANG_PUSH(C++)
 AC_LANG_CPLUSPLUS
-AC_CHECK_HEADERS(iostream cstdio)
+AC_CHECK_HEADER(iostream, AC_DEFINE(HAVE_IOSTREAM,1,[Define to 1 if you have the <iostream> header file.]),,[ ])
+AC_CHECK_HEADER(cstdio, AC_DEFINE(HAVE_CSTDIO,1,[Define to 1 if you have the <cstdio> header file.]),,[ ])
 #AC_LANG_POP(C++)
 AC_LANG_RESTORE
 dnl We don't need to check for these two: they're only present on
