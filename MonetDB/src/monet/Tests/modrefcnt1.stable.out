@@ -66,12 +66,12 @@ loaded;
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 test.print;
-!ERROR: atom 'lock' unknown, in BAT '28'.
-!ERROR: atom 'lock' unknown, in BAT '28'.
+!ERROR: atom 'lock' unknown, in BAT '29'.
+!ERROR: atom 'lock' unknown, in BAT '29'.
 !ERROR: CMDprint_table: operation failed.
 test.count.print;
-!ERROR: atom 'lock' unknown, in BAT '28'.
-!ERROR: atom 'lock' unknown, in BAT '28'.
+!ERROR: atom 'lock' unknown, in BAT '29'.
+!ERROR: atom 'lock' unknown, in BAT '29'.
 !ERROR: BATcount: BAT required.
 [ 0 ]
 

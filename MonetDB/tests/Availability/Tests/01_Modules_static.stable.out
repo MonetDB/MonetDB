@@ -43,12 +43,12 @@ monet_fcntbl.sort@batloop {
 }
 
 Fnts.count.print;
-[ 574 ]
+[ 579 ]
 Fnts.reverse.sort.reverse@batloop {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count.print;
-[ 574 ]
+[ 579 ]
 
 All:=0;
 
@@ -492,7 +492,7 @@ Module: "arith"
 
 Module: "bat"
 
-[ 53 ]
+[ 55 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature											| help																																					  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -535,9 +535,11 @@ Module: "bat"
 [ "mmap",	  "COMMAND:   ",  "mmap(BAT[any::1,any::2], int, int, int, int, int) : BAT[any::1,any::2]",			  "For each individual heap, you can change the allocation mode to \n either STORE_MEM or STORE_MMAP. Passing an int(nil) means: no change.\n Changing a dirty STORE_MEM heap into STORE_MMAP, will cause a BAT save \n (this has to happen before the heap can be mapped into virtual memory). \n These modes are persistent. "  ]
 [ "order",	  "COMMAND:   ",  "order(BAT[any::1,any::2]) : BAT[any::1,any::2]",						  "Sorts the BAT itself, in place. Returns b."																																  ]
 [ "ordered",	  "COMMAND:   ",  "ordered(BAT[any,any]) : bit",								  "Returns whether a BAT is ordered on head or not."																															  ]
-[ "persists",	  "COMMAND:   ",  "persists(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",					  "Make the BAT persistent (mode = TRUE) or transient (mode = FALSE).\n Returns the BAT itself."																									  ]
+[ "persists",	  "COMMAND:   ",  "persists(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",				  "Make the BAT persistent (mode = TRUE), transient (mode = FALSE).\n or session (mode = bit(nil)). Returns the BAT itself."																																																					  ]
+[ "release",	  "COMMAND:   ",  "release(BAT[any,any]) : lng",							  "Change the BAT mode to session and return a unique numerical ID for the BAT"																																																											  ]
 [ "replace",	  "COMMAND:   ",  "replace(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",			  "Perform replace for all BUNs of the second BAT into the first.\n Returns the modified BAT."																										  ]
 [ "replace",	  "COMMAND:   ",  "replace(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]",				  "Replace the tail value of one BUN that has some head value. \n Returns the modified BAT."																										  ]
+[ "resurrect",	  "COMMAND:   ",  "resurrect(lng) : BAT[any,any]",							  "Try to get back a session BAT from its ID. Gives an ERROR if it was removed from the BAT cache. \n USAGE: if (isnil(CATCH(b := resurrect(id))) { #found } else { #not found }."																																														  ]
 [ "reverse",	  "COMMAND:   ",  "reverse(BAT[any::1,any::2]) : BAT[any::2,any::1]",						  "Returns the reverse view of a BAT (head is tail and tail is head).\n BEWARE:  no copying is involved; input and output refer to the same object!"																			  ]
 [ "revert",	  "COMMAND:   ",  "revert(BAT[any::1,any::2]) : BAT[any::1,any::2]",						  "Puts all BUNs in a BAT in reverse order. Returns b."																															  ]
 [ "roles",	  "COMMAND:   ",  "roles(BAT[any::1,any::2], str, str) : BAT[any::1,any::2]",					  "Give a logical name to the columns of a BAT.\n Returns the BAT itself."																												  ]
@@ -591,19 +593,20 @@ Module: "kernel"
 
 Module: "str"
 
-[ 17 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 20 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature												| help																																																																				  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "+",		  "OPERATOR:  ",  "+(str, any) : str",											  "Concatenate two strings."																																																																	  ]
-[ "chrAt",	  "COMMAND:   ",  "chrAt(str, int) : chr",										  "String array lookup operation."																																																																  ]
+[ "chrAt",	  "COMMAND:   ",  "chrAt(str, int) : chr",									  "String array lookup operation. DEPRECATED: non-ASCII characters become nil, use: string(str,pos,1)"																												  ]
 [ "endsWith",	  "COMMAND:   ",  "endsWith(str, str) : bit",										  "Suffix check."																																																																		  ]
-[ "length",	  "COMMAND:   ",  "length(str) : int",											  "Return the length of a string."																																																																  ]
+[ "length",	  "COMMAND:   ",  "length(str) : int",										  "Return the length of a string in characters."																																		  ]
 [ "ltrim",	  "COMMAND:   ",  "ltrim(str) : str",											  "Strip whitespaces from start of a string."																																																															  ]
-[ "r_search",	  "COMMAND:   ",  "r_search(str, chr) : int",										  "Reverse search for a char. Returns position, -1 if not found."																																																												  ]
+[ "nbytes",	  "COMMAND:   ",  "nbytes(str) : int",										  "Return the length of a string in bytes."																																			  ]
+[ "r_search",	  "COMMAND:   ",  "r_search(str, chr) : int",									  "Reverse search for a character. Returns position, -1 if not found. DEPRECATED: does not work for non-ASCII characters, use: r_search(str,str)"																						  ]
 [ "r_search",	  "COMMAND:   ",  "r_search(str, str) : int",										  "Reverse search for a substring. Returns position, -1 if not found."																																																												  ]
 [ "rtrim",	  "COMMAND:   ",  "rtrim(str) : str",											  "Strip whitespaces from end of a string."																																																															  ]
-[ "search",	  "COMMAND:   ",  "search(str, chr) : int",										  "Search for a character. Returns position, -1 if not found."																																																													  ]
+[ "search",	  "COMMAND:   ",  "search(str, chr) : int",									  "Search for a character. Returns position, -1 if not found. DEPRECATED: does not work for non-ASCII characters, use: search(str,str)"																								  ]
 [ "search",	  "COMMAND:   ",  "search(str, str) : int",										  "Search for a substring. Returns position, -1 if not found."																																																													  ]
 [ "startsWith",	  "COMMAND:   ",  "startsWith(str, str) : bit",										  "Prefix check."																																																																		  ]
 [ "string",	  "COMMAND:   ",  "string(str, int) : str",										  "Return the tail s[offset..n] of a string s[0..n]."																																																														  ]
@@ -612,6 +615,8 @@ Module: "str"
 [ "toLower",	  "COMMAND:   ",  "toLower(str) : str",											  "Convert a string to lower case."																																																																  ]
 [ "toUpper",	  "COMMAND:   ",  "toUpper(str) : str",											  "Convert a string to upper case."																																																																  ]
 [ "trim",	  "COMMAND:   ",  "trim(str) : str",											  "Strip whitespaces around a string."																																																																  ]
+[ "unicode",	  "COMMAND:   ",  "unicode(int) : str",										  "convert a unicode to a one-character string. (!DS2.2)"																																	  ]
+[ "unicodeAt",	  "COMMAND:   ",  "unicodeAt(str, int) : int",									  "get a unicode character (as an int) from a string position. (!DS2.2)"																															  ]
 
 Module: "sys"
 
@@ -703,7 +708,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",											  "save all persistent BATs"																																																																	  ]
 
 All.print;
-[ 574 ]
+[ 579 ]
 
 quit;
 

@@ -42,6 +42,7 @@ view_bbp_name.print;
 [ 22,	  "monet_fcntbl"	  ]
 [ 23,	  "monet_acctbl"	  ]
 [ 24,	  "monet_atomtbl"	  ]
+[ 25,	  "monet_unicode_case"	  ]
 
 # Pseudo bat to map a BAT id into its refcnt
 view_bbp_refcnt.print;
@@ -73,6 +74,7 @@ view_bbp_refcnt.print;
 [ 22,	  1	  ]
 [ 23,	  1	  ]
 [ 24,	  1	  ]
+[ 25,	  1	  ]
 
 # Pseudo bat to map a BAT id into its disk location
 view_bbp_location.print;
@@ -104,6 +106,7 @@ view_bbp_location.print;
 [ 22,	  "22"		  ]
 [ 23,	  "23"		  ]
 [ 24,	  "24"		  ]
+[ 25,	  "25"		  ]
 
 # Pseudo bat to map a BAT id into its heat
 view_bbp_heat.print;
@@ -135,6 +138,7 @@ view_bbp_heat.print;
 [ 22,	  0	  ]
 [ 23,	  0	  ]
 [ 24,	  0	  ]
+[ 25,	  0	  ]
 
 # Pseudo bat to map a BAT id into its dirty status
 view_bbp_dirty.print;
@@ -166,6 +170,7 @@ view_bbp_dirty.print;
 [ 22,	  "dirty"	  ]
 [ 23,	  "dirty"	  ]
 [ 24,	  "dirty"	  ]
+[ 25,	  "dirty"	  ]
 
 # Pseudo bat to map a BAT id into its disk/loaded/dirty status
 view_bbp_status.print;
@@ -197,6 +202,7 @@ view_bbp_status.print;
 [ 22,	  "load"  ]
 [ 23,	  "load"  ]
 [ 24,	  "load"  ]
+[ 25,	  "load"  ]
 
 # Pseudo bat to map a BAT id into its type
 view_bbp_kind.print;
@@ -228,6 +234,7 @@ view_bbp_kind.print;
 [ 22,	  "tran"  ]
 [ 23,	  "tran"  ]
 [ 24,	  "tran"  ]
+[ 25,	  "tran"  ]
 
 # Pseudo bat with statistics on the use of BAT buffer pool
 "view_bbp_info".print;

@@ -56,6 +56,7 @@ monet_mod_drop
 monet_fcntbl
 monet_acctbl
 monet_atomtbl
+monet_unicode_case
 quit;
 
 # 18:58:56 >  

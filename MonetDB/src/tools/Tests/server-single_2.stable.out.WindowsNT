@@ -22,8 +22,8 @@ Start of MIL prelude.
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  25	  ]
-[ "tmpbats",	  25	  ]
+[ "bats",	  26	  ]
+[ "tmpbats",	  26	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -108,31 +108,31 @@ Start of MIL prelude.
 #-----------------------------------------------------------------------------------------#
 # type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
-[ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
-[ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
-[ "LT",			  "int",  "liquid",	  "constant",	  "-1"			  ]
-[ "EQ",			  "int",  "liquid",	  "constant",	  "0"			  ]
-[ "BAT_WRITE",		  "int",  "liquid",	  "constant",	  "0"			  ]
-[ "BAT_APPEND",		  "int",  "liquid",	  "constant",	  "2"			  ]
-[ "BAT_READ",		  "int",  "liquid",	  "constant",	  "1"			  ]
-[ "BUF_DONTNEED",	  "int",  "liquid",	  "constant",	  "4"			  ]
-[ "BUF_WILLNEED",	  "int",  "liquid",	  "constant",	  "3"			  ]
-[ "BUF_SEQUENTIAL",	  "int",  "liquid",	  "constant",	  "2"			  ]
-[ "BUF_RANDOM",		  "int",  "liquid",	  "constant",	  "1"			  ]
-[ "BUF_NORMAL",		  "int",  "liquid",	  "constant",	  "0"			  ]
-[ "STORE_COMPR",	  "int",  "liquid",	  "constant",	  "2"			  ]
-[ "STORE_MMAP",		  "int",  "liquid",	  "constant",	  "1"			  ]
-[ "STORE_MEM",		  "int",  "liquid",	  "constant",	  "0"			  ]
-[ "LNG_MIN",		  "lng",  "liquid",	  "constant",	  "-9223372036854775807"  ]
-[ "LNG_MAX",		  "lng",  "liquid",	  "constant",	  "9223372036854775807"	  ]
-[ "INT_MIN",		  "int",  "liquid",	  "constant",	  "-2147483647"		  ]
-[ "INT_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
-[ "SHT_MIN",		  "sht",  "liquid",	  "constant",	  "-32767"		  ]
-[ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
-[ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
-[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
+[ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
+[ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
+[ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
+[ "LT",			  "int",  "frozen",	  "constant",	  "-1"			  ]
+[ "EQ",			  "int",  "frozen",	  "constant",	  "0"			  ]
+[ "BAT_WRITE",		  "int",  "frozen",	  "constant",	  "0"			  ]
+[ "BAT_APPEND",		  "int",  "frozen",	  "constant",	  "2"			  ]
+[ "BAT_READ",		  "int",  "frozen",	  "constant",	  "1"			  ]
+[ "BUF_DONTNEED",	  "int",  "frozen",	  "constant",	  "4"			  ]
+[ "BUF_WILLNEED",	  "int",  "frozen",	  "constant",	  "3"			  ]
+[ "BUF_SEQUENTIAL",	  "int",  "frozen",	  "constant",	  "2"			  ]
+[ "BUF_RANDOM",		  "int",  "frozen",	  "constant",	  "1"			  ]
+[ "BUF_NORMAL",		  "int",  "frozen",	  "constant",	  "0"			  ]
+[ "STORE_COMPR",	  "int",  "frozen",	  "constant",	  "2"			  ]
+[ "STORE_MMAP",		  "int",  "frozen",	  "constant",	  "1"			  ]
+[ "STORE_MEM",		  "int",  "frozen",	  "constant",	  "0"			  ]
+[ "LNG_MIN",		  "lng",  "frozen",	  "constant",	  "-9223372036854775807"  ]
+[ "LNG_MAX",		  "lng",  "frozen",	  "constant",	  "9223372036854775807"	  ]
+[ "INT_MIN",		  "int",  "frozen",	  "constant",	  "-2147483647"		  ]
+[ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
+[ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
+[ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "'\201'"		  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  "'\177'"		  ]
+[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "32767"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
@@ -193,6 +193,7 @@ Start of MIL prelude.
 [ 22,	  "tran"  ]
 [ 23,	  "tran"  ]
 [ 24,	  "tran"  ]
+[ 25,	  "tran"  ]
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -221,6 +222,7 @@ Start of MIL prelude.
 [ 22,	  "22"		  ]
 [ 23,	  "23"		  ]
 [ 24,	  "24"		  ]
+[ 25,	  "25"		  ]
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
@@ -249,6 +251,7 @@ Start of MIL prelude.
 [ 22,	  "monet_fcntbl"	  ]
 [ 23,	  "monet_acctbl"	  ]
 [ 24,	  "monet_atomtbl"	  ]
+[ 25,	  "monet_unicode_case"	  ]
 #-----------------#
 # BAT:	  refcnt  #
 # (int)	  (int)	  #
@@ -277,6 +280,7 @@ Start of MIL prelude.
 [ 22,	  1	  ]
 [ 23,	  1	  ]
 [ 24,	  1	  ]
+[ 25,	  1	  ]
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -305,6 +309,7 @@ Start of MIL prelude.
 [ 22,	  "load"  ]
 [ 23,	  "load"  ]
 [ 24,	  "load"  ]
+[ 25,	  "load"  ]
 #-------------------------------------------------------------------------------------------------#
 # BAT:	  tree											  #
 # (int)	  (str)											  #
@@ -315,8 +320,8 @@ Start of MIL prelude.
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  25	  ]
-[ "tmpbats",	  25	  ]
+[ "bats",	  26	  ]
+[ "tmpbats",	  26	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -386,31 +391,31 @@ Start of MIL prelude.
 # BAT:			  tmp_29	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "GE",			  "liquid"	  ]
-[ "GT",			  "liquid"	  ]
-[ "LE",			  "liquid"	  ]
-[ "LT",			  "liquid"	  ]
-[ "EQ",			  "liquid"	  ]
-[ "BAT_WRITE",		  "liquid"	  ]
-[ "BAT_APPEND",		  "liquid"	  ]
-[ "BAT_READ",		  "liquid"	  ]
-[ "BUF_DONTNEED",	  "liquid"	  ]
-[ "BUF_WILLNEED",	  "liquid"	  ]
-[ "BUF_SEQUENTIAL",	  "liquid"	  ]
-[ "BUF_RANDOM",		  "liquid"	  ]
-[ "BUF_NORMAL",		  "liquid"	  ]
-[ "STORE_COMPR",	  "liquid"	  ]
-[ "STORE_MMAP",		  "liquid"	  ]
-[ "STORE_MEM",		  "liquid"	  ]
-[ "LNG_MIN",		  "liquid"	  ]
-[ "LNG_MAX",		  "liquid"	  ]
-[ "INT_MIN",		  "liquid"	  ]
-[ "INT_MAX",		  "liquid"	  ]
-[ "SHT_MIN",		  "liquid"	  ]
-[ "SHT_MAX",		  "liquid"	  ]
-[ "CHR_MIN",		  "liquid"	  ]
-[ "CHR_MAX",		  "liquid"	  ]
-[ "RAND_MAX",		  "liquid"	  ]
+[ "GE",			  "frozen"	  ]
+[ "GT",			  "frozen"	  ]
+[ "LE",			  "frozen"	  ]
+[ "LT",			  "frozen"	  ]
+[ "EQ",			  "frozen"	  ]
+[ "BAT_WRITE",		  "frozen"	  ]
+[ "BAT_APPEND",		  "frozen"	  ]
+[ "BAT_READ",		  "frozen"	  ]
+[ "BUF_DONTNEED",	  "frozen"	  ]
+[ "BUF_WILLNEED",	  "frozen"	  ]
+[ "BUF_SEQUENTIAL",	  "frozen"	  ]
+[ "BUF_RANDOM",		  "frozen"	  ]
+[ "BUF_NORMAL",		  "frozen"	  ]
+[ "STORE_COMPR",	  "frozen"	  ]
+[ "STORE_MMAP",		  "frozen"	  ]
+[ "STORE_MEM",		  "frozen"	  ]
+[ "LNG_MIN",		  "frozen"	  ]
+[ "LNG_MAX",		  "frozen"	  ]
+[ "INT_MIN",		  "frozen"	  ]
+[ "INT_MAX",		  "frozen"	  ]
+[ "SHT_MIN",		  "frozen"	  ]
+[ "SHT_MAX",		  "frozen"	  ]
+[ "CHR_MIN",		  "frozen"	  ]
+[ "CHR_MAX",		  "frozen"	  ]
+[ "RAND_MAX",		  "frozen"	  ]
 [ "TOK_OBJECT",		  "frozen"	  ]
 [ "TOK_ITERATOR",	  "frozen"	  ]
 [ "TOK_COMMAND",	  "frozen"	  ]
@@ -510,18 +515,18 @@ Start of MIL prelude.
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_environment",	  "str",  "str",  24,	  0,	  "dirty",	  "load", "tran", 2,	  0,		  0	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  545,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  574,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  545,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  545,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  510,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  574,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  545,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  574,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1436,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  550,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_cnt",	  "oid",  "int",  579,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  550,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  550,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  515,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  579,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  550,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  579,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1447,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  574,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcntbl",	  "str",  "oid",  574,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  579,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcntbl",	  "str",  "oid",  579,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
@@ -531,6 +536,7 @@ Start of MIL prelude.
 [ "monet_mod_load",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_unicode_case",	  "int",  "int",  685,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
 #---------------------------------------------------------------------------------------------------------#
@@ -562,6 +568,7 @@ Start of MIL prelude.
 [ 22,	  0	  ]
 [ 23,	  0	  ]
 [ 24,	  0	  ]
+[ 25,	  0	  ]
 #~BeginVariableOutput~#
 [ 10 ]
 ##------------------------------------------------------------------#
@@ -573,10 +580,11 @@ unknown(0)               #"                            ]
 unknown("D:\\TmpDir\\mone#"                            ]
 [ 1 ]
 #---------------------------------------------------------#
-# name	| login				| mil		  #
+# BAT:	  name	| login			| mil		  #
+# (int)	  (str)	| (str)			| (str)		  #
 #---------------------------------------------------------#
-[ "adm",  "Fri Aug 30 11:37:36 2002",	  ""		  ]
-[ "adm",  "Fri Aug 30 11:37:36 2002",	  "clients()"	  ]
+[ 0,	  "adm",  "no asctime in WIN32",  ""		  ]
+[ 1,	  "adm",  "no asctime in WIN32",  "clients()"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
@@ -772,8 +780,8 @@ bbp.print();
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  25	  ]
-[ "tmpbats",	  25	  ]
+[ "bats",	  26	  ]
+[ "tmpbats",	  26	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -861,31 +869,31 @@ vars();
 #-----------------------------------------------------------------------------------------#
 # type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
-[ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
-[ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
-[ "LT",			  "int",  "liquid",	  "constant",	  "-1"			  ]
-[ "EQ",			  "int",  "liquid",	  "constant",	  "0"			  ]
-[ "BAT_WRITE",		  "int",  "liquid",	  "constant",	  "0"			  ]
-[ "BAT_APPEND",		  "int",  "liquid",	  "constant",	  "2"			  ]
-[ "BAT_READ",		  "int",  "liquid",	  "constant",	  "1"			  ]
-[ "BUF_DONTNEED",	  "int",  "liquid",	  "constant",	  "4"			  ]
-[ "BUF_WILLNEED",	  "int",  "liquid",	  "constant",	  "3"			  ]
-[ "BUF_SEQUENTIAL",	  "int",  "liquid",	  "constant",	  "2"			  ]
-[ "BUF_RANDOM",		  "int",  "liquid",	  "constant",	  "1"			  ]
-[ "BUF_NORMAL",		  "int",  "liquid",	  "constant",	  "0"			  ]
-[ "STORE_COMPR",	  "int",  "liquid",	  "constant",	  "2"			  ]
-[ "STORE_MMAP",		  "int",  "liquid",	  "constant",	  "1"			  ]
-[ "STORE_MEM",		  "int",  "liquid",	  "constant",	  "0"			  ]
-[ "LNG_MIN",		  "lng",  "liquid",	  "constant",	  "-9223372036854775807"  ]
-[ "LNG_MAX",		  "lng",  "liquid",	  "constant",	  "9223372036854775807"	  ]
-[ "INT_MIN",		  "int",  "liquid",	  "constant",	  "-2147483647"		  ]
-[ "INT_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
-[ "SHT_MIN",		  "sht",  "liquid",	  "constant",	  "-32767"		  ]
-[ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
-[ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
-[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
+[ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
+[ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
+[ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
+[ "LT",			  "int",  "frozen",	  "constant",	  "-1"			  ]
+[ "EQ",			  "int",  "frozen",	  "constant",	  "0"			  ]
+[ "BAT_WRITE",		  "int",  "frozen",	  "constant",	  "0"			  ]
+[ "BAT_APPEND",		  "int",  "frozen",	  "constant",	  "2"			  ]
+[ "BAT_READ",		  "int",  "frozen",	  "constant",	  "1"			  ]
+[ "BUF_DONTNEED",	  "int",  "frozen",	  "constant",	  "4"			  ]
+[ "BUF_WILLNEED",	  "int",  "frozen",	  "constant",	  "3"			  ]
+[ "BUF_SEQUENTIAL",	  "int",  "frozen",	  "constant",	  "2"			  ]
+[ "BUF_RANDOM",		  "int",  "frozen",	  "constant",	  "1"			  ]
+[ "BUF_NORMAL",		  "int",  "frozen",	  "constant",	  "0"			  ]
+[ "STORE_COMPR",	  "int",  "frozen",	  "constant",	  "2"			  ]
+[ "STORE_MMAP",		  "int",  "frozen",	  "constant",	  "1"			  ]
+[ "STORE_MEM",		  "int",  "frozen",	  "constant",	  "0"			  ]
+[ "LNG_MIN",		  "lng",  "frozen",	  "constant",	  "-9223372036854775807"  ]
+[ "LNG_MAX",		  "lng",  "frozen",	  "constant",	  "9223372036854775807"	  ]
+[ "INT_MIN",		  "int",  "frozen",	  "constant",	  "-2147483647"		  ]
+[ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
+[ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
+[ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "'\201'"		  ]
+[ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  "'\177'"		  ]
+[ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "32767"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
@@ -947,6 +955,7 @@ view_bbp_kind().print();
 [ 22,	  "tran"  ]
 [ 23,	  "tran"  ]
 [ 24,	  "tran"  ]
+[ 25,	  "tran"  ]
 view_bbp_location().print();
 #-------------------------#
 # BAT:	  location	  #
@@ -976,6 +985,7 @@ view_bbp_location().print();
 [ 22,	  "22"		  ]
 [ 23,	  "23"		  ]
 [ 24,	  "24"		  ]
+[ 25,	  "25"		  ]
 view_bbp_name().print();
 #---------------------------------#
 # BAT:	  name			  #
@@ -1005,6 +1015,7 @@ view_bbp_name().print();
 [ 22,	  "monet_fcntbl"	  ]
 [ 23,	  "monet_acctbl"	  ]
 [ 24,	  "monet_atomtbl"	  ]
+[ 25,	  "monet_unicode_case"	  ]
 view_bbp_refcnt().print();
 #-----------------#
 # BAT:	  refcnt  #
@@ -1034,6 +1045,7 @@ view_bbp_refcnt().print();
 [ 22,	  1	  ]
 [ 23,	  1	  ]
 [ 24,	  1	  ]
+[ 25,	  1	  ]
 view_bbp_status().print();
 #-----------------#
 # BAT:	  status  #
@@ -1063,6 +1075,7 @@ view_bbp_status().print();
 [ 22,	  "load"  ]
 [ 23,	  "load"  ]
 [ 24,	  "load"  ]
+[ 25,	  "load"  ]
 view_client_tree().print();
 #-----------------------------------------#
 # BAT:	  tree				  #
@@ -1074,8 +1087,8 @@ view_gdk_bbp().print();
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "bats",	  25	  ]
-[ "tmpbats",	  25	  ]
+[ "bats",	  26	  ]
+[ "tmpbats",	  26	  ]
 [ "perbats",	  0	  ]
 [ "ondisk",	  0	  ]
 [ "todisk",	  0	  ]
@@ -1147,31 +1160,31 @@ view_var_name.reverse.join(view_var_kind()).print();
 # BAT:			  tmp_44	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "GE",			  "liquid"	  ]
-[ "GT",			  "liquid"	  ]
-[ "LE",			  "liquid"	  ]
-[ "LT",			  "liquid"	  ]
-[ "EQ",			  "liquid"	  ]
-[ "BAT_WRITE",		  "liquid"	  ]
-[ "BAT_APPEND",		  "liquid"	  ]
-[ "BAT_READ",		  "liquid"	  ]
-[ "BUF_DONTNEED",	  "liquid"	  ]
-[ "BUF_WILLNEED",	  "liquid"	  ]
-[ "BUF_SEQUENTIAL",	  "liquid"	  ]
-[ "BUF_RANDOM",		  "liquid"	  ]
-[ "BUF_NORMAL",		  "liquid"	  ]
-[ "STORE_COMPR",	  "liquid"	  ]
-[ "STORE_MMAP",		  "liquid"	  ]
-[ "STORE_MEM",		  "liquid"	  ]
-[ "LNG_MIN",		  "liquid"	  ]
-[ "LNG_MAX",		  "liquid"	  ]
-[ "INT_MIN",		  "liquid"	  ]
-[ "INT_MAX",		  "liquid"	  ]
-[ "SHT_MIN",		  "liquid"	  ]
-[ "SHT_MAX",		  "liquid"	  ]
-[ "CHR_MIN",		  "liquid"	  ]
-[ "CHR_MAX",		  "liquid"	  ]
-[ "RAND_MAX",		  "liquid"	  ]
+[ "GE",			  "frozen"	  ]
+[ "GT",			  "frozen"	  ]
+[ "LE",			  "frozen"	  ]
+[ "LT",			  "frozen"	  ]
+[ "EQ",			  "frozen"	  ]
+[ "BAT_WRITE",		  "frozen"	  ]
+[ "BAT_APPEND",		  "frozen"	  ]
+[ "BAT_READ",		  "frozen"	  ]
+[ "BUF_DONTNEED",	  "frozen"	  ]
+[ "BUF_WILLNEED",	  "frozen"	  ]
+[ "BUF_SEQUENTIAL",	  "frozen"	  ]
+[ "BUF_RANDOM",		  "frozen"	  ]
+[ "BUF_NORMAL",		  "frozen"	  ]
+[ "STORE_COMPR",	  "frozen"	  ]
+[ "STORE_MMAP",		  "frozen"	  ]
+[ "STORE_MEM",		  "frozen"	  ]
+[ "LNG_MIN",		  "frozen"	  ]
+[ "LNG_MAX",		  "frozen"	  ]
+[ "INT_MIN",		  "frozen"	  ]
+[ "INT_MAX",		  "frozen"	  ]
+[ "SHT_MIN",		  "frozen"	  ]
+[ "SHT_MAX",		  "frozen"	  ]
+[ "CHR_MIN",		  "frozen"	  ]
+[ "CHR_MAX",		  "frozen"	  ]
+[ "RAND_MAX",		  "frozen"	  ]
 [ "TOK_OBJECT",		  "frozen"	  ]
 [ "TOK_ITERATOR",	  "frozen"	  ]
 [ "TOK_COMMAND",	  "frozen"	  ]
@@ -1274,18 +1287,18 @@ dir();
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_environment",	  "str",  "str",  24,	  0,	  "dirty",	  "load", "tran", 2,	  0,		  0	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  545,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  574,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  545,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  545,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  510,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  574,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  545,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  574,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1436,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  550,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_cnt",	  "oid",  "int",  579,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  550,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  550,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  515,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  579,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  550,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  579,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1447,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  574,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
-[ "monet_fcntbl",	  "str",  "oid",  574,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  579,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_fcntbl",	  "str",  "oid",  579,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_cnt",	  "oid",  "int",  7,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
@@ -1295,6 +1308,7 @@ dir();
 [ "monet_mod_load",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "monet_unicode_case",	  "int",  "int",  685,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 ls();
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
@@ -1328,6 +1342,7 @@ view_bbp_heat().print();
 [ 22,	  0	  ]
 [ 23,	  0	  ]
 [ 24,	  0	  ]
+[ 25,	  0	  ]
 
 printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -1346,9 +1361,10 @@ threadid().print();
 
 clients();
 #---------------------------------------------------------#
-# name	| login				| mil		  #
+# BAT:	  name	| login			| mil		  #
+# (int)	  (str)	| (str)			| (str)		  #
 #---------------------------------------------------------#
-[ "adm",  "Fri Aug 30 11:37:36 2002",	  "clients()"	  ]
+[ 0,	  "adm",  "no asctime in WIN32",  "clients()"	  ]
 cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #

@@ -196,8 +196,8 @@ Module: "alarm"
 
 Module: "ascii_io"
 
-[ 12 ]
-[ 12 ]
+[ 16 ]
+[ 16 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature									| help			  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -207,6 +207,10 @@ Module: "ascii_io"
 [ "dump_data",		  "PROC:      ",  "dump_data(BAT[str,BAT], str, int) : any",					  "not available"	  ]
 [ "dump_format",	  "PROC:      ",  "dump_format(BAT[void,BAT], str) : BAT[str,BAT]",				  "not available"	  ]
 [ "dump_seps",		  "PROC:      ",  "dump_seps(BAT[void,BAT]) : BAT[void,str]",					  "not available"	  ]
+[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",							  "not available"	  ]
+[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",							  "not available"	  ]
+[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",							  "not available"	  ]
+[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",							  "not available"	  ]
 [ "load",		  "COMMAND:   ",  "load(BAT[void,str], BAT[void,str], BAT[void,str], str, int) : BAT[str,BAT]",	  ""			  ]
 [ "load_data",		  "PROC:      ",  "load_data(BAT[str,BAT], str, int) : BAT[str,BAT]",				  "not available"	  ]
 [ "load_format",	  "PROC:      ",  "load_format(str) : BAT[str,BAT]",						  "not available"	  ]
@@ -379,8 +383,8 @@ Module: "counters"
 
 Module: "ddbench"
 
-[ 44 ]
-[ 44 ]
+[ 48 ]
+[ 48 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature										| help																																													  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -390,6 +394,10 @@ Module: "ddbench"
 [ "enum_join",		  "COMMAND:   ",  "enum_join(BAT[any::1,void], BAT[any,any::2]) : BAT[any::1,any::2]",			  "positional join if the b2 head type is an enumerated oid"																																						  ]
 [ "enum_semijoin",	  "COMMAND:   ",  "enum_semijoin(BAT[void,any::1], BAT[any,any]) : BAT[oid,any::1]",			  "positional semijoin if the b2 head type is an enumerated oid"																																					  ]
 [ "enum_view",		  "COMMAND:   ",  "enum_view(BAT[void,any]) : BAT[oid,int]",						  "produces a histogram that is an adaptation of the enum-lookup table\n  of the tail of b. Its head column differs: it contains oids; namely \n  the first oid of 'b' where the original lookup head value occured\n  in the tail of 'b'. In other words :-), this produces the lookup\n  table needed to create an 'enumeration view' that represents CTgroup(b)."	  ]
+[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",								  "not available"																																											  ]
+[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",								  "not available"																																											  ]
+[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",								  "not available"																																											  ]
+[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",								  "not available"																																											  ]
 [ "group",		  "PROC:      ",  "group(BAT[oid,any]) : BAT[oid,oid]",							  "not available"																																											  ]
 [ "group",		  "PROC:      ",  "group(BAT[oid,any], BAT[oid,any]) : BAT[oid,any]",					  "not available"																																											  ]
 [ "group",		  "PROC:      ",  "group(BAT[void,any]) : BAT[oid,oid]",						  "not available"																																											  ]
@@ -468,8 +476,8 @@ Module: "decimal"
 
 Module: "enum"
 
-[ 18 ]
-[ 18 ]
+[ 22 ]
+[ 22 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature								| help										  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -488,6 +496,10 @@ Module: "enum"
 [ "enum_sethisto",	  "COMMAND:   ",  "enum_sethisto(int, BAT[any,any]) : void",				  "registers the fact that enum_table(tpe) is a histogram on b's head column"	  ]
 [ "enum_table",		  "COMMAND:   ",  "enum_table(int) : BAT[any,any]",					  "return the enumeration BAT of an enum type"					  ]
 [ "enum_trick",		  "PROC:      ",  "enum_trick(BAT[oid,any], BAT[any,int]) : BAT[oid,any]",		  "create a view on a BAT with a diffrent enum map."				  ]
+[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",						  "not available"								  ]
+[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",						  "not available"								  ]
+[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",						  "not available"								  ]
+[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",						  "not available"								  ]
 [ "isenum",		  "COMMAND:   ",  "isenum(int) : bit",							  "returns true iff tpe is an enumerated type"					  ]
 [ "lower",		  "COMMAND:   ",  "lower(int, any) : any",						  "encode to the lowest value in the encoded domain that is larger than v"	  ]
 [ "upper",		  "COMMAND:   ",  "upper(int, any) : any",						  "encode to the hightes value in the encoded domain that is smaller than v"	  ]
@@ -572,11 +584,15 @@ Module: "malalgebra"
 
 Module: "mapi"
 
-[ 11 ]
-[ 11 ]
+[ 15 ]
+[ 15 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature						| help																							  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "fclose",	  "PROC:      ",  "fclose(Stream) : void",				  "not available"																					  ]
+[ "fflush",	  "PROC:      ",  "fflush(Stream) : void",				  "not available"																					  ]
+[ "fopen",	  "PROC:      ",  "fopen(str, str) : Stream",				  "not available"																					  ]
+[ "fputs",	  "PROC:      ",  "fputs(str, Stream) : void",				  "not available"																					  ]
 [ "listen",	  "PROC:      ",  "listen() : any",					  "Start the Mapi listener on 50000."																			  ]
 [ "listen",	  "PROC:      ",  "listen(int) : any",					  "Start the Mapi listener on <port>."																			  ]
 [ "listen",	  "PROC:      ",  "listen(int, int) : any",				  "Start the Mapi listener on <port> for <maxusers>."																	  ]
@@ -810,8 +826,8 @@ Module: "stats"
 
 Module: "streams"
 
-[ 25 ]
-[ 25 ]
+[ 32 ]
+[ 32 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature						| help									  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -820,9 +836,16 @@ Module: "streams"
 [ "buffer_destroy",	  "COMMAND:   ",  "buffer_destroy(Buffer) : void",			  "destroy buffer"							  ]
 [ "buffer_rastream",	  "COMMAND:   ",  "buffer_rastream(Buffer, str) : Stream",		  "create a buffer read stream"						  ]
 [ "buffer_wastream",	  "COMMAND:   ",  "buffer_wastream(Buffer, str) : Stream",		  "create a buffer write stream"					  ]
+[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",				  "not available"							  ]
+[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",				  "not available"							  ]
+[ "fgetc",		  "COMMAND:   ",  "fgetc(Stream) : int",				  "See: man fgetc"							  ]
+[ "fgets",		  "COMMAND:   ",  "fgets(Stream) : str",				  "See: man fgets"							  ]
+[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",				  "not available"							  ]
 [ "fprintf",		  "COMMAND:   ",  "fprintf(Stream, str, ..any..) : void",		  "See: man fprintf"							  ]
+[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",				  "not available"							  ]
 [ "ftable",		  "COMMAND:   ",  "ftable(Stream, ..BAT[any::1,any]..) : void",		  "Print an n-ary table to a file."					  ]
 [ "ftable",		  "COMMAND:   ",  "ftable(Stream, int, ..BAT[any::1,any]..) : void",	  "Print an n-ary table to a file, using order of BAT [1..argc]."	  ]
+[ "fwrite",		  "COMMAND:   ",  "fwrite(Stream, str, int) : void",			  "See: man fwrite"							  ]
 [ "open_rastream",	  "COMMAND:   ",  "open_rastream(str) : Stream",			  "open ascii file stream for reading"					  ]
 [ "open_rstream",	  "COMMAND:   ",  "open_rstream(str) : Stream",				  "open a file stream for reading"					  ]
 [ "open_wastream",	  "COMMAND:   ",  "open_wastream(str) : Stream",			  "open ascii file stream for writing"					  ]
@@ -869,6 +892,7 @@ Module: "tcpip"
 [ "terminate",	  "COMMAND:   ",  "terminate() : void",			  "stop a TCP/IP server"																				  ]
 [ "terminate",	  "COMMAND:   ",  "terminate(int) : void",		  "stop a TCP/IP server"																				  ]
 [ "waits",	  "COMMAND:   ",  "waits() : BAT[int,int]",		  "a BAT with all current waiting threads."																		  ]
+!WARNING: TCPepilogue: terminate 0 listeners
 
 Module: "tpcd"
 

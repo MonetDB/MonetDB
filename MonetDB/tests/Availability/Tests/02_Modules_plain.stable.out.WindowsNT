@@ -193,8 +193,8 @@ Module: "alarm"
 
 Module: "ascii_io"
 
-[ 12 ]
-[ 12 ]
+[ 16 ]
+[ 16 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature									| help			  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -204,6 +204,10 @@ Module: "ascii_io"
 [ "dump_data",		  "PROC:      ",  "dump_data(BAT[str,BAT], str, int) : any",					  "not available"	  ]
 [ "dump_format",	  "PROC:      ",  "dump_format(BAT[void,BAT], str) : BAT[str,BAT]",				  "not available"	  ]
 [ "dump_seps",		  "PROC:      ",  "dump_seps(BAT[void,BAT]) : BAT[void,str]",					  "not available"	  ]
+[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",							  "not available"	  ]
+[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",							  "not available"	  ]
+[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",							  "not available"	  ]
+[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",							  "not available"	  ]
 [ "load",		  "COMMAND:   ",  "load(BAT[void,str], BAT[void,str], BAT[void,str], str, int) : BAT[str,BAT]",	  ""			  ]
 [ "load_data",		  "PROC:      ",  "load_data(BAT[str,BAT], str, int) : BAT[str,BAT]",				  "not available"	  ]
 [ "load_format",	  "PROC:      ",  "load_format(str) : BAT[str,BAT]",						  "not available"	  ]
@@ -365,8 +369,8 @@ Module: "counters"
 
 Module: "ddbench"
 
-[ 44 ]
-[ 44 ]
+[ 48 ]
+[ 48 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature										| help																																													  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -376,6 +380,10 @@ Module: "ddbench"
 [ "enum_join",		  "COMMAND:   ",  "enum_join(BAT[any::1,void], BAT[any,any::2]) : BAT[any::1,any::2]",			  "positional join if the b2 head type is an enumerated oid"																																						  ]
 [ "enum_semijoin",	  "COMMAND:   ",  "enum_semijoin(BAT[void,any::1], BAT[any,any]) : BAT[oid,any::1]",			  "positional semijoin if the b2 head type is an enumerated oid"																																					  ]
 [ "enum_view",		  "COMMAND:   ",  "enum_view(BAT[void,any]) : BAT[oid,int]",						  "produces a histogram that is an adaptation of the enum-lookup table\n  of the tail of b. Its head column differs: it contains oids; namely \n  the first oid of 'b' where the original lookup head value occured\n  in the tail of 'b'. In other words :-), this produces the lookup\n  table needed to create an 'enumeration view' that represents CTgroup(b)."	  ]
+[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",								  "not available"																																											  ]
+[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",								  "not available"																																											  ]
+[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",								  "not available"																																											  ]
+[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",								  "not available"																																											  ]
 [ "group",		  "PROC:      ",  "group(BAT[oid,any]) : BAT[oid,oid]",							  "not available"																																											  ]
 [ "group",		  "PROC:      ",  "group(BAT[oid,any], BAT[oid,any]) : BAT[oid,any]",					  "not available"																																											  ]
 [ "group",		  "PROC:      ",  "group(BAT[void,any]) : BAT[oid,oid]",						  "not available"																																											  ]
@@ -426,7 +434,7 @@ Module: "decimal"
 [ "+",			  "OPERATOR:  ",  "+(decimal, decimal) : decimal",					  "Returns a decimal whose value is extactly (val1 + val2)."																																																																																  ]
 [ "-",			  "OPERATOR:  ",  "-(decimal) : decimal",						  "Returns a decimal whose value is -1 * value, with equal scale and precision as 'value'."																																																																												  ]
 [ "-",			  "OPERATOR:  ",  "-(decimal, decimal) : decimal",					  "Returns a decimal whose value is exactly (val1 - val2)."																																																																																  ]
-[ "/",			  "OPERATOR:  ",  "/(decimal, decimal) : decimal",					  "Returns a decimal whose value is val1 DIV val2, (scale=0) like in C integer division. \n      This operator can implement MOD as MOD(x,y) = x - y*DIV(d,y). \n      Use the tertiary divide(dum,div,prec) command for dividing with arbitrary precision. \n      Division by zero returns decimal(nil)."																																																		  ]
+[ "/",			  "OPERATOR:  ",  "/(decimal, decimal) : decimal",					  "Returns a decimal whose value is val1 DIV val2, (scale=0) like in C integer division. \n      This operator can implement MOD as MOD(x,y) = x - y*DIV(d,y). \n      Use the tertiary divide(num,div,prec) command for dividing with arbitrary precision. \n      Division by zero returns decimal(nil)."																																																				  ]
 [ "[/]",		  "PROC:      ",  "[/](BAT[any::1,decimal], decimal) : BAT[any::1,decimal]",		  "not available"																																																																																					  ]
 [ "[divide]",		  "PROC:      ",  "[divide](BAT[any::1,decimal], decimal, int) : BAT[any::1,decimal]",	  "not available"																																																																																					  ]
 [ "abs",		  "COMMAND:   ",  "abs(decimal) : decimal",						  "Returns a decimal whose value is the absolute value of this number."																																																																															  ]
@@ -449,13 +457,13 @@ Module: "decimal"
 [ "pow",		  "COMMAND:   ",  "pow(decimal, int) : decimal",					  "Raises a decimal to the power of some integer.\n      The precision of the result is the precision of the decimal (!DS2.2)."																																																																								  ]
 [ "pow",		  "COMMAND:   ",  "pow(decimal, int, int) : decimal",					  "Raises a decimal to the power of some integer.\n      The precision argument determines the maximum precision of the result (!DS2.2)."																																																																						  ]
 [ "setprecision",	  "COMMAND:   ",  "setprecision(decimal, int) : decimal",				  "Return the same number but with a different precision; i.e. truncated or zero-padded (!DS2.2)."																																																																											  ]
-[ "setscale",		  "COMMAND:   ",  "setscale(decimal, int) : decimal",					  "Normalize the number of a decimal by setting the scale to a fixed value.\n      This is compensated by making the number shorted (by truncation) or by enlarging\n      it with trailing zeros (!DS2.2)."																																																														  ]
-[ "str",		  "COMMAND:   ",  "str(decimal, str) : str",						  "Formats a decimal in a fixed-width string (truncated, if necessary).\n      format = [ '+' ] ( N1 | ( N1 '.' N2 ) | ( '.' N2 ) ) [ 'E' N3 ]\n       with: Nx = a number of the form [0-9]+ (possibly starting with 0)\n      where: N1 = is the number of digits before the comma (default = 0)\n             N2 = is the number of digits after the comma (default = 1)\n             N3 = the number of digits to use for the scale (default = 2)\n      A zero will be printed with only one zero digit (left space-padded), unless N1 has a \n      leading zero, in which case a zero-padded number of width N1 is produced. \n      If the plus at start is specified, positive numbers start with a plus. "	  ]
+[ "setscale",		  "COMMAND:   ",  "setscale(decimal, int) : decimal",					  "Normalize the number of a decimal by setting the scale to a fixed value.\n      This is compensated by making the number shorter (by truncation) or by enlarging\n      it with trailing zeros (!DS2.2)."																																																																  ]
+[ "str",		  "COMMAND:   ",  "str(decimal, str) : str",						  "Formats a decimal in a fixed-width string (truncated, if necessary).\n      format = [ '+' ] ( N1 | ( N1 '.' N2 ) | ( '.' N2 ) ) [ 'E' N3 ]\n       with: Nx = a number of the form [0-9]+ (possibly starting with 0)\n      where: N1 = is the number of digits before the decimal point (default = 0)\n             N2 = is the number of digits after the decimal point (default = 1)\n             N3 = the number of digits to use for the scale (default = 2)\n      A zero will be printed with only one zero digit (left space-padded), unless N1 has a \n      leading zero, in which case a zero-padded number of width N1 is produced. \n      If the plus at start is specified, positive numbers start with a plus. "	  ]
 
 Module: "enum"
 
-[ 18 ]
-[ 18 ]
+[ 22 ]
+[ 22 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature								| help										  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -474,6 +482,10 @@ Module: "enum"
 [ "enum_sethisto",	  "COMMAND:   ",  "enum_sethisto(int, BAT[any,any]) : void",				  "registers the fact that enum_table(tpe) is a histogram on b's head column"	  ]
 [ "enum_table",		  "COMMAND:   ",  "enum_table(int) : BAT[any,any]",					  "return the enumeration BAT of an enum type"					  ]
 [ "enum_trick",		  "PROC:      ",  "enum_trick(BAT[oid,any], BAT[any,int]) : BAT[oid,any]",		  "create a view on a BAT with a diffrent enum map."				  ]
+[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",						  "not available"								  ]
+[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",						  "not available"								  ]
+[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",						  "not available"								  ]
+[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",						  "not available"								  ]
 [ "isenum",		  "COMMAND:   ",  "isenum(int) : bit",							  "returns true iff tpe is an enumerated type"					  ]
 [ "lower",		  "COMMAND:   ",  "lower(int, any) : any",						  "encode to the lowest value in the encoded domain that is larger than v"	  ]
 [ "upper",		  "COMMAND:   ",  "upper(int, any) : any",						  "encode to the hightes value in the encoded domain that is smaller than v"	  ]
@@ -558,11 +570,15 @@ Module: "malalgebra"
 
 Module: "mapi"
 
-[ 11 ]
-[ 11 ]
+[ 15 ]
+[ 15 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature						| help																							  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "fclose",	  "PROC:      ",  "fclose(Stream) : void",				  "not available"																					  ]
+[ "fflush",	  "PROC:      ",  "fflush(Stream) : void",				  "not available"																					  ]
+[ "fopen",	  "PROC:      ",  "fopen(str, str) : Stream",				  "not available"																					  ]
+[ "fputs",	  "PROC:      ",  "fputs(str, Stream) : void",				  "not available"																					  ]
 [ "listen",	  "PROC:      ",  "listen() : any",					  "Start the Mapi listener on 50000."																			  ]
 [ "listen",	  "PROC:      ",  "listen(int) : any",					  "Start the Mapi listener on <port>."																			  ]
 [ "listen",	  "PROC:      ",  "listen(int, int) : any",				  "Start the Mapi listener on <port> for <maxusers>."																	  ]
@@ -796,8 +812,8 @@ Module: "stats"
 
 Module: "streams"
 
-[ 25 ]
-[ 25 ]
+[ 32 ]
+[ 32 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature						| help									  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -806,9 +822,16 @@ Module: "streams"
 [ "buffer_destroy",	  "COMMAND:   ",  "buffer_destroy(Buffer) : void",			  "destroy buffer"							  ]
 [ "buffer_rastream",	  "COMMAND:   ",  "buffer_rastream(Buffer, str) : Stream",		  "create a buffer read stream"						  ]
 [ "buffer_wastream",	  "COMMAND:   ",  "buffer_wastream(Buffer, str) : Stream",		  "create a buffer write stream"					  ]
+[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",				  "not available"							  ]
+[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",				  "not available"							  ]
+[ "fgetc",		  "COMMAND:   ",  "fgetc(Stream) : int",				  "See: man fgetc"							  ]
+[ "fgets",		  "COMMAND:   ",  "fgets(Stream) : str",				  "See: man fgets"							  ]
+[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",				  "not available"							  ]
 [ "fprintf",		  "COMMAND:   ",  "fprintf(Stream, str, ..any..) : void",		  "See: man fprintf"							  ]
+[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",				  "not available"							  ]
 [ "ftable",		  "COMMAND:   ",  "ftable(Stream, ..BAT[any::1,any]..) : void",		  "Print an n-ary table to a file."					  ]
 [ "ftable",		  "COMMAND:   ",  "ftable(Stream, int, ..BAT[any::1,any]..) : void",	  "Print an n-ary table to a file, using order of BAT [1..argc]."	  ]
+[ "fwrite",		  "COMMAND:   ",  "fwrite(Stream, str, int) : void",			  "See: man fwrite"							  ]
 [ "open_rastream",	  "COMMAND:   ",  "open_rastream(str) : Stream",			  "open ascii file stream for reading"					  ]
 [ "open_rstream",	  "COMMAND:   ",  "open_rstream(str) : Stream",				  "open a file stream for reading"					  ]
 [ "open_wastream",	  "COMMAND:   ",  "open_wastream(str) : Stream",			  "open ascii file stream for writing"					  ]
