@@ -1,4 +1,4 @@
-INCLUDES = -I../common -I../gdk -I../mal
+INCLUDES = ../common ../gdk ../mal
 
 YFLAGS = -v -d
 
