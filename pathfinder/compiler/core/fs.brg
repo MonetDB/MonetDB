@@ -683,6 +683,10 @@ reduce (PFpnode_t * p, int goalnt)
     /* PFinfo (OOPS_NOTICE, "in rule %u", rule); */
 
     switch (rule) {
+        /* FunctionDeclaration:    fun (fun_sig (OptParamList_,
+                                                 OptSequenceType_),
+                                        Expr) */
+        case 34:
         /* NodeTest:               node_ty (ElemOrAttrType) */
         case 87:
         /* NodeTest:               node_ty (node_ty (ElemOrAttrType)) */
@@ -923,8 +927,16 @@ reduce (PFpnode_t * p, int goalnt)
              *
              * FIXME: Does this actually work? Test!
              */
+
+            /* compile function signature */
+            reduce (kids[0], nts[0]);
+            reduce (kids[1], nts[1]);
+
             p->sem.fun->par_ty = parameter_types (LL(p));
             p->sem.fun->ret_ty = C(LR(p))->sem.type;
+
+            /* compile function body */
+            reduce (kids[2], nts[2]);
 
             C(R(p)) = let (letbind (var (v), C(R(p))),
                            function_conversion (var (v), C(LR(p))->sem.type));
@@ -933,7 +945,7 @@ reduce (PFpnode_t * p, int goalnt)
             fun_sigs = fun_decls (fun_decl (p->sem.fun, C(LL(p)), C(R(p))),
                                   fun_sigs);
 
-        }   break;
+        } break;
 
         /* FunctionDeclaration:    fun (fun_sig (OptParamList_,
                                                  OptSequenceType_),
