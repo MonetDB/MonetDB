@@ -748,7 +748,7 @@ flow of control primitives LEAVE and RETRY should form a valid
 hierarchy. Failure to comply is considered a structural error
 and leads to flagging the function as erroneous.
 Also check general conformaty of the ML block structure.
-It should start with a signature and finish with and ENDDEFsymbol
+It should start with a signature and finish with and ENDsymbol
 @c
 int chkProgramIdentifier(MalBlkPtr mb, str nme, int tpe){
     if( ATOMindex(nme)>0) return TRUE;

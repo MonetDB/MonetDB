@@ -442,7 +442,7 @@ upon destruction of the definition.
 
 typedef struct MALBLK{
     str binding;/* related C-function */
-        str     help;   /* supportive commentary */
+    str     help;   /* supportive commentary */
     PropertySet props; /* private */
     struct MALBLK *alternative;
     int vtop;       /* next free slot */
@@ -550,6 +550,7 @@ mal_export void     setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe);
 mal_export void     setReturnArgument(InstrPtr p, int varid);
 mal_export malType  destinationType(MalBlkPtr mb, InstrPtr p);
 mal_export str      fcnClass(InstrPtr p);
+mal_export str      fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg );
 mal_export void     printInstruction(stream *fd, MalBlkPtr mb,InstrPtr p,int flg);
 mal_export void     promptInstruction(stream *fd, MalBlkPtr mb,InstrPtr p,int flg);
 mal_export void     printSignature(stream *fd, Symbol s, int flg);
@@ -1583,7 +1584,7 @@ variable to hold the result instead.
 }
 void pushEndInstruction(MalBlkPtr mb){
     InstrPtr p;
-    p= newInstruction(ENDDEFsymbol);
+    p= newInstruction(ENDsymbol);
     getDestVar(p) = findVariable(mb,functionName(getInstrPtr(mb,0)));
     p->argc =0;
     p->retc = 0;
@@ -1750,8 +1751,7 @@ str operatorName(int i){
     case YIELDsymbol:   return "yield";
     case CATCHsymbol:   return "catch";
     case RAISEsymbol:   return "raise";
-    case ENDsymbol:     return "end";
-    case ENDDEFsymbol:  return "end";
+    case ENDsymbol:  return "end";
     case FUNCTIONsymbol:    return "function";
     case FACTORYsymbol: return "factory";
     case COMMANDsymbol: return "command";
@@ -1834,8 +1834,6 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
             }
             break;
         case ENDsymbol:
-            sprintf(t,"%s ", operatorName(p->token)); break;
-        case ENDDEFsymbol:
             if( isTmpVar(mb,getDestVar(p)) )
                 sprintf(t,"end %c%d", TMPMARKER,
                     getVarTmp(mb,getDestVar(p)) );

@@ -103,6 +103,7 @@ typedef struct {
 } mdbStateRecord, *mdbState;
 
 mal_export void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, str name,char cmd);
+mal_export void mdbClrBreakpointName(Client cntxt, str name);
 mal_export void mdbShowBreakpoints(Client cntxt);
 mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
 mal_export void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
@@ -112,8 +113,6 @@ mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
 mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra);
 
-mal_export int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export int mdbSetCmd(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void printBBPinfo(stream *out);
 #endif /* _MAL_DEBUGGER_h */
 @+ Debugger framework
@@ -145,7 +144,7 @@ char isBreakpoint(Client cntxt, InstrPtr p){
 }
 @-
 Break points can be set on assignment to a specific variable
-or specific function name.
+or specific operation.
 @c
 void mdbSetBreakpointName(Client cntxt, MalBlkPtr mb, str name, char cmd){
     int i,j,cnt=0;
@@ -296,47 +295,6 @@ void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     GDKfree(msg);
 }
 
-@+ MDB module implementation 
-The following routines are available for inclusion also in MAL programs.
-Either one set is sufficient to produce the required action.
-Note that the mdbToggle command is called mostly from within a
-(dummy) function. Therefore, we should also export the debugging mode
-to the context.
-@c
-#define MDBstatus(X) if(cntxt->fdout) stream_printf(cntxt->fdout,"#Monet Debugger %s\n", (X?"on":"off"));
-
-int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    Client cntxt= getClient();
-    int b=0;
-    (void) mb; /* still unused */
-    if( p->argc==1){
-        /* Toggle */
-        stk->cmd= stk->cmd? 0: 's';
-        cntxt->itrace = cntxt->itrace? 0: 's';
-        if( stk->up) stk->up->cmd=  0;
-        return 0;
-    }
-    if( p->argc >1){
-        b= *(int *) getArgReference(stk,p,1);
-    } else b= stk->cmd; 
-    stk->cmd= b?'n':0;
-    if( stk->up) stk->up->cmd=  b?'n':0;
-    cntxt->itrace= b?'n':0;
-    MDBstatus(b);
-    return 0;
-}
-
-int mdbSetCmd(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    Client cntxt= getClient();
-    int b;
-    (void) mb; /* still unused */
-    b= *(chr *) getArgReference(stk,p,1);
-    stk->cmd= b;
-    cntxt->itrace= 'T';
-    MDBstatus(b);
-    return 0;
-}
-
 @+ MAL parser
 The debugger structure is inherited from GDB.
 The routine mdbCommand is called with p=0 after finishing a mal- function call
@@ -345,9 +303,11 @@ The commands are self-explanatory.
 
 The prompt string sent to the user indicates the debugger mode.
 @c
+#define MDBstatus(X) if(cntxt->fdout) stream_printf(cntxt->fdout,"#Monet Debugger %s\n", (X?"on":"off"));
+
 void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 {
-	int m = 1;
+    int m = 1;
     char *b,*c;
     stream *out = cntxt->fdout;
     int listing = cntxt->listing;
@@ -467,13 +427,13 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	if( strncmp("type",b,4)==0){
             	skipWord(cntxt,b); skipBlanc(cntxt,b);
             	if(strchr(b,'\n')) 	
-					*strchr(b,'\n')= 0;
+                        *strchr(b,'\n')= 0;
            		traceFcnName= GDKstrdup(b);
         	} else if( strncmp("timer",b,5)==0){
             	if( cntxt->timer==0)
                 	cntxt->timer = GDKusec();
             	else 
-					cntxt->timer = 0;
+                        cntxt->timer = 0;
         	}
         	break;
     	case 'T': /* trace instruction calls */
@@ -489,9 +449,9 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	}
         	skipWord(cntxt,b);
         	if(*b==0) { 
-				mdbShowBreakpoints(cntxt); 
-				continue;
-			}
+                        mdbShowBreakpoints(cntxt); 
+                        continue;
+                }
         	if( !isspace((int)*b) && *b != 0){
             	/* set breakpoints by name */
             	mdbSetBreakpointName(cntxt,mb,b,'s');

@@ -132,7 +132,7 @@ int getPC(MalBlkPtr mb, InstrPtr p)
 #define functionStart(X) ((X)->token == FUNCTIONsymbol || \
               (X)->token == COMMANDsymbol || \
               (X)->token == FACTORYsymbol )
-#define functionExit(X)  ((X)->token == ENDDEFsymbol)
+#define functionExit(X)  ((X)->token == ENDsymbol)
 
 #define blockStart(X)   ((X)->barrier == BARRIERsymbol || \
              (X)->barrier == CATCHsymbol || \

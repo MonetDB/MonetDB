@@ -76,10 +76,9 @@ derived from the parser to avoid a loop in the define-structure.
 #define EXITsymbol  29
 
 #define ASSIGNsymbol    40  /* interpreter entry points */
-#define ENDDEFsymbol    41
+#define ENDsymbol    41
 #define COMMENTsymbol   42  /* propagation of comments */
 #define NOOPsymbol  43  /* no operation required */
-#define ENDsymbol   44
 
 #define COMMANDsymbol   61  /* these tokens should be the last group !! */
 #define FUNCTIONsymbol  62  /* the designate the signature start */

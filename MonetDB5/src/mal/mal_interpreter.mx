@@ -475,12 +475,11 @@ elements in the value stack.
                 	break;
                 }
     case NOOPsymbol:
-    case ENDsymbol: 
     case COMMANDsymbol:
     case FUNCTIONsymbol:
     case FACTORYsymbol:
         break;
-    case ENDDEFsymbol: 
+    case ENDsymbol: 
         if( getInstrPtr(mb,0)->token == FACTORYsymbol)
             ret= shutdownFactory(mb);
         @:endProfile@
