@@ -202,19 +202,24 @@ typedef struct res_table {
 } res_table;
 
 typedef struct mvc {
-	int debug;
 
 	/* not used jet */
 	int privileges;
 	int user_id;
 	int role_id;
+
+	/* should change to a list of setting 
+		(could be used like global variables) */
+	int debug;
 	char *user;
 	char *role;
+	ValRecord *explain;
 
 	sql_trans *trans;
 	
 	int type;
 	ssize_t status;
+
 	int result_id;
 	res_table *results;
 } mvc;
@@ -1783,6 +1788,8 @@ void mvc_init(int debug)
 		mvc_create_column(m, t, "auth_id", "MEDIUMINT",0,0);
 		mvc_create_column(m, t, "privileges", "MEDIUMINT",0,0);
 
+		/* proc/func/aggr privileges? */
+
 		/* add monetdb user */
 		sql_create_user(m, "monetdb", "monetdb", "MonetDB Admin", "sys", 0);
 		mvc_create_schema(m, "default-schema", "sqladmin");
@@ -1893,6 +1900,7 @@ mvc *mvc_create(int debug)
 	m->debug = debug;
 	m->role_id = m->user_id = -1;
 	m->role = m->user = NULL;
+	m->explain = NULL;
 	m->privileges = 0;
 	m->trans = NULL;
 	m->trans = trans_dup(gtrans,NULL);
@@ -2147,7 +2155,7 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 	node *n, *m;
 
 	/* cannot update views */
-	if (ft->type == tt_view && ft->type == tt_temp && 
+	if (ft->type == tt_view || ft->type == tt_temp || 
 	    ft->type == tt_session) 
 		return;
 
@@ -2156,10 +2164,14 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 	n = ft->columns.set->h;
 	m = tt->columns.set->h;
 	if (n && m) {
-		BAT *db = bm_lbid2bat( tr->bm, tt->dbid );
+		BAT *db = bm_lbid2bat( tr->bm, ft->dbid );
 
-                tt->base.rtime = tt->base.rtime;
-                tt->base.wtime = tt->base.wtime;
+                tt->base.rtime = ft->base.rtime;
+                tt->base.wtime = ft->base.wtime;
+
+		bm_new_bat( ttr->bm, tt->dbid, db->batCacheid );
+		log_bat(logger, tt->dbid, db);
+		bat_destroy(db);
 
 		do { 
 			sql_column *cc = n->data;
@@ -2167,32 +2179,16 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 
 			BAT *ins = bm_lbid2bat( tr->bm, cc->bat.bid);
 			BAT *ups = bm_lbid2bat( tr->bm, cc->bat.ubid);
-			BAT *gob = bind_bat(ttr, oc, 1);
 
                 	oc->base.rtime = cc->base.rtime;
                 	oc->base.wtime = cc->base.wtime;
-
-			/* forward inserts */
-			if (ins->batInserted < BUNlast(ins)) {
-				void_insert_delta(gob, ins);
-				log_bat(logger, oc->bat.bid, gob);
-			}
+			
+			bm_new_bat( ttr->bm, oc->bat.bid, ins->batCacheid );
+			log_bat(logger, oc->bat.bid, ins);
 			bat_destroy(ins);
-
-			if (ups->batInserted < BUNlast(ups)) {
-				BAT *oub = bind_ubat(ttr, oc, 1);
-				insert_delta(oub, ups);
-				void_replace_delta(gob, ups);
-				log_bat(logger, oc->bat.ubid, oub);
-				bat_destroy(oub);
-			}
+			bm_new_bat( ttr->bm, oc->bat.ubid, ups->batCacheid );
+			log_bat(logger, oc->bat.ubid, ups);
 			bat_destroy(ups);
-
-			if (db->batInserted < BUNlast(db)) {
-				void_delete_bat(gob, db, 1);
-			}
-
-			bat_destroy(gob);
 
 			n = n->next;
 			m = m->next;
@@ -2207,41 +2203,22 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 			    if (ci->bat.bid && ci->bat.ubid){
 				BAT *ins = bm_lbid2bat( tr->bm, ci->bat.bid);
 				BAT *ups = bm_lbid2bat( tr->bm, ci->bat.ubid);
-				BAT *gib = bind_idx(ttr, oi, 1);
 
                 		oi->base.rtime = ci->base.rtime;
                 		oi->base.wtime = ci->base.wtime;
-
-				/* forward inserts */
-				if (ins->batInserted < BUNlast(ins)) {
-					void_insert_delta(gib, ins);
-					log_bat(logger, oi->bat.bid, gib);
-				}
+			
+				bm_new_bat( ttr->bm, oi->bat.bid, 	
+					    ins->batCacheid );
+				log_bat(logger, oi->bat.bid, ins);
 				bat_destroy(ins);
-
-				if (ups->batInserted < BUNlast(ups)) {
-					BAT *oub = bind_uidx(ttr, oi, 1);
-					insert_delta(oub, ups);
-					void_replace_delta(gib, ups);
-					log_bat(logger, oi->bat.ubid, oub);
-					bat_destroy(oub);
-				}
+				bm_new_bat( ttr->bm, oi->bat.ubid, 
+					    ups->batCacheid );
+				log_bat(logger, oi->bat.ubid, ups);
 				bat_destroy(ups);
 
-				if (db->batInserted < BUNlast(db)) {
-					void_delete_bat(gib, db, 1);
-				}
-				bat_destroy(gib);
 			    }
 			}
 		}
-		if (db->batInserted < BUNlast(db)) {
-			BAT *odb = bind_dbat(ttr, tt, 1);
-			void_insert_delta(odb, db);
-			log_bat(logger, tt->dbid, odb);
-			bat_destroy(odb);
-		}
-		bat_destroy(db);
 	}
 	rollforward_changeset_updates( tr, &ft->columns, &tt->columns, 
 		&tt->base,
