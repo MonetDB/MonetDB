@@ -251,6 +251,9 @@ str CMDevalFile(int *ret, str *fnme){
 	char buffer[1024];
 
 	(void) ret; /* fool compiler */
+	if( s==0 ){
+		return throwMessage("mal.setCwd","File name missing\n");
+	}
 	if( strlen(s)+strlen(c->cwd)+2>=1024){
 		return throwMessage("mal.setCwd","Evaluation buffer too small\n");
 	}
