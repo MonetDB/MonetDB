@@ -1106,19 +1106,23 @@ association head.
 @{
 @c
 BAT *BATkey(BAT *b, int flag) {
-	BATcheck(b, "BATkey"); 
-	if (b->htype != TYPE_void) {
-		BAT *parent = BBP_cache(VIEWparent(b));
-		if (flag) flag |= (1|b->hkey);
-		if (b->hkey != flag) b->batDirtydesc = TRUE; 
-		BATmirror(b)->tkey = b->hkey = flag; 
-		if (flag && parent && ALIGNsynced(b,parent)) 
-			BATkey(parent,TRUE);
-	} else if (b->hseqbase == oid_nil && flag==BOUND2BTRUE) { 
-		GDKerror("BATkey: nil-column cannot be unique.\n");
-	}
-	return b; 
+        BAT *parent;
+        if (b->htype == TYPE_void && flag == BOUND2BTRUE) {
+                if(b->hseqbase == oid_nil) {
+                        GDKerror("BATkey: nil-column cannot be kept unique.\n");
+                        return b;
+                }
+                flag = TRUE; /* we do not need bound2true checking here */
+        }
+        parent = BBP_cache(VIEWparent(b));
+        if (flag) flag |= (1|b->hkey);
+        if (b->hkey != flag) b->batDirtydesc = TRUE;
+        BATmirror(b)->tkey = b->hkey = flag;
+        if (flag && parent && ALIGNsynced(b,parent))
+                BATkey(parent,TRUE);
+        return b;
 }
+
 
 BAT *BATset(BAT *b, int flag) {
 	BATcheck(b, "BATset"); 

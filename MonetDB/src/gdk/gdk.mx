@@ -371,10 +371,8 @@ extern int setenv(char *name, char *value, int overwrite);
 #define DBLOGFILE	"MonetLog"
 #define dbhome		GDKenviron[GDKdir]
 #define GDKdbname	0
-#define GDKserver	1
-#define GDKport		2
-#define GDKdir		3
-#define GDKowner	4
+#define GDKdir		1
+#define GDKowner	2
 
 gdk_export char 		*GDKenviron[GDKPROP]; 
 gdk_export char 		*GDKenvironName[GDKPROP]; 

@@ -759,18 +759,25 @@ int BATmadvise(BAT *b, int bns, int hhp, int thp, int hacc, int tacc) {
 new behavior is to let the routine produce warnings but always succeed.
 rationale: on a delete, we must get rid of *all* the files. We do not have to care
 about preserving them or be too much concerned if a file that had to be deleted was
-not found (end result is still that it does not exist). The pas behavior to delete 
+not found (end result is still that it does not exist). The past behavior to delete 
 some files and then fail was erroneous. The BAT would continue to exist with an 
 incorrect disk status, causing havoc later on.
+
+NT forces us to close all files before deleteing them; in case of memory mapped
+files this means that we have to unload the BATs before deleting. This is
+enforced now.
 @c
 int BATdelete(BAT* b) {
-	str o = BBP_physical(b->batCacheid); 
+        bat bid = ABS(b->batCacheid);
+        str o = BBP_physical(bid);
 
+        if (BBP_cache(bid)) {
+                BATfree(b);
+                b = (BAT*) BBPgetdesc(bid);
+        }
 	if (o && b->batCopiedtodisk) {
 	    IODEBUG THRprintf(GDKerr, "BATdelete %s\n", o); 
-	    if (b->batCacheid < 0) {
-		b = BATmirror(b);
-	    }
+
 	    if (GDKunlink(BATDIR, o, "desc")) {
 		GDKwarning("BATdelete(%s): descriptor\n", b->batId);
 	    }

@@ -19,7 +19,7 @@ gdk_export int  GDKms        ();
 gdk_export int  GDKcsec      ();
 gdk_export int  GDKsec       ();
 
-gdk_export int GDKhomeScan(str usr, str db, str home);
+gdk_export int GDKhomeScan(str usr, str db, str home, int dbcreate);
 
 #endif /* _GDK_UTILS_H_ */
 @c
@@ -35,11 +35,11 @@ Remap the malloc/free calls to their GDK equivalents.
 @
 @
 @%GDKhomeScan(usr,db,home)@ scans the 'homes' file  for a (usr,db,home) entry.
-It expects an empty @%GDKenviron@ array. If @GDKport@ and @%GDKdir@ are set,
-however, it changes to 'creation-mode', and scans the homes file for previous
-definitions for database 'db'. If it exists, it assumes that the 'usr' will be 
+It expects an empty @%GDKenviron@ array. If dbcreate is set, however, it 
+changes to 'creation-mode', and scans the homes file for previous
+definitions for database 'db'. If it exists, it assumes that the 'user' will be 
 added to it, and keeps the stored database parameters. If it is not found,
-the values passed in @%GDKport@ and @%GDKdir@ are used.
+the values passed in @%GDKdir@ are used.
 It returns TRUE if the entry was found, FALSE if not.
 @
 @
@@ -63,18 +63,14 @@ named).
 #endif
 
 char	GDKdirStr[PATHLENGTH] = { 0 };
-char	GDKserverStr[PATHLENGTH] = { 0 };
-char	GDKportStr[IDLENGTH] = { 0 };
 char	GDKownerStr[IDLENGTH] = { 0 };
 char	GDKnameStr[IDLENGTH] = { 0 };
 
 char	*GDKenviron[GDKPROP] = { 
-	GDKnameStr, GDKserverStr, GDKportStr,
-	GDKdirStr, GDKownerStr, 0 }; 
+	GDKnameStr, GDKdirStr, GDKownerStr, 0 }; 
 
 char	*GDKenvironName[GDKPROP] = {
-	"dbname", "server", "port", 
-	"directory", "owner", 0 }; 
+	"dbname", "directory", "owner", 0 }; 
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -116,8 +112,8 @@ int setenv(char *name, char *value, int overwrite) {
 #endif
 #endif
 
-int GDKhomeScan(str usr, str db, str home) {
-	int	dbpresent=0, dbcreate = (*GDKportStr && *GDKdirStr);
+int GDKhomeScan(str usr, str db, str home, int dbcreate) {
+	int	dbpresent=0;
 	char	buf[1024], *env[GDKPROP], *s;
 	int	line;
 @= openhome
@@ -143,7 +139,6 @@ Perform checks.
 @-
 Set standard values.
 @c
-	gethostname(GDKserverStr, (size_t) PATHLENGTH-1); /* not read from file */
 	if (usr) {
 	    strcpy(GDKownerStr, usr);
 	} else {
@@ -192,7 +187,6 @@ Partial match: collect info about this database.
 		dbpresent = 1;
 		strcpy(GDKnameStr, env[GDKdbname]);
 		strcpy(GDKdirStr,  env[GDKdir]);
-		if (GDKsetenv(GDKport)) strcpy(GDKportStr, env[GDKport]);
 	       	if (GDKsetenv(GDKowner) && !strcmp(GDKownerStr,env[GDKowner])) {
 			break; /* total match */
 		}
@@ -224,9 +218,8 @@ Epilogue: return whether a matching entry existed, or exit on fatal error.
 
 int GDKhomeIns(str user, str db, str home) {
 	@:openhome(GDKhomeIns,"a")@
-	fprintf(fp, "%s%c%c%s%c%s%c%s%c\n", 
-		GDKenviron[GDKdbname], PATH_SEP, PATH_SEP,
-		GDKenviron[GDKport], PATH_SEP,
+	fprintf(fp, "%s%c%s%c%s%c\n", 
+		GDKenviron[GDKdbname], PATH_SEP, 
 		GDKenviron[GDKdir], PATH_SEP,
 		user?user:GDKenviron[GDKowner], PATH_SEP);
 	fclose(fp);
@@ -965,7 +958,7 @@ int GDKinit(int argc, char** argv) {
 	}
 	PROPDEBUG GDKdebug |= 2; 
 	MT_init_posix();
-	GDKhomeScan(usr, db, home); 
+	GDKhomeScan(usr, db, home, 0); 
 	THRinit();
 	BATSIGinit(); 
 	GDKlockHome(); 
@@ -1103,10 +1096,13 @@ We have the lock, are the only process currently allowed in this section.
 Print the new process list in the global lockfile.
 @c
 	fseek(GDKlockFile, 0, SEEK_SET);
+/*
 	sprintf(buf, " %s:%s\n", GDKenviron[GDKserver], GDKenviron[GDKport]);
 	fputs(buf, GDKlockFile);
 	fflush(GDKlockFile);
 	ftruncate(fileno(GDKlockFile), strlen(buf));
+*/
+	ftruncate(fileno(GDKlockFile), 0);
 	fflush(GDKlockFile);
 	GDKlog(GDKLOGON);
 @-

@@ -1206,9 +1206,10 @@ int BBPfree(BAT *b) {
 					(*tunfix)(BUNtail(b,p));
                         	}
 			}
-			BATdelete(b); /* remove persistent info */
-                }
-		BATfree(b); /* free memory */
+			BATdelete(b); /* remove persistent info and free memory */
+                } else {
+			BATfree(b); /* free memory */
+		}
         } else {
 		VIEWdestroy(b);
 	}

@@ -380,21 +380,10 @@ int HEAPsave(Heap* h, str nme, str ext) {
 }
 
 int HEAPdelete(Heap* h, str o, str ext) {
-        int ret = 0;
-
-	if (h->filename) {
-		int len = strlen(h->filename);
-		ret = GDKunlink(BATDIR, h->filename, NULL);
-		if (len > 5 && strcmp(h->filename+len-5, ".priv") == 0) {	
-        		/* for a X.ext.priv file, also remove any X.ext file */
-        		long_str buf;
-        		GDKfilepath(buf, BATDIR, o, ext);
-        		unlink(buf); /* may fail as file may not exist */
-		}
-	} else if (h->size) {
-		ret = GDKunlink(BATDIR, o, ext);
+	if (h->size) {
+		return GDKunlink(BATDIR, o, ext);
 	}
-	return ret;
+	return 0;
 }
 
 size_t HEAPvmsize(Heap *h) {

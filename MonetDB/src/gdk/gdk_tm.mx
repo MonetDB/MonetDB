@@ -142,7 +142,6 @@ int TMabort() {
 				b = BATload_intern(i);
 			}
 			if (b) {
-				BATdelete(b); 
 				b->batPersistence &= ~PERSISTENT;
 				b->batPersistence |= TRANSIENT;
 				b->batDirtydesc = 1;

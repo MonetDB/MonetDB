@@ -1062,7 +1062,7 @@ a missing value.
 @{
 @h
 #define GDK_STRNIL(s)	 ((s) == NULL || *(chr*) (s) == GDK_chr_min)
-#define GDK_STRLEN(s)	 (GDK_STRNIL(s)?1:strlen(s)+1)
+#define GDK_STRLEN(s)	 ((GDK_STRNIL(s)?1:strlen(s))+1)
 #define GDK_STRCMP(l,r)	 ((*(l) < *(r))?-1:(*(l) > *(r))?1:(GDK_STRNIL(l) && GDK_STRNIL(r))?0:strcmp(l,r))
 @c
 int strNil(str s)   	 { return GDK_STRNIL(s); }
