@@ -1272,6 +1272,7 @@ int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
 /* printf("new constant %d val %s %d\n",k,val,type);*/
     getVarLiteral(mb,k)= val;
     isConstant(mb,k) = 1;
+	setFixed(mb,k);
     isVarUsed(mb,k) = FALSE;
     isVarInitialized(mb,k) = FALSE;
     vr = &getVarConstant(mb,k);
