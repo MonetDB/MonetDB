@@ -243,14 +243,6 @@ if [ "${os}" = "IRIX64" ] ; then
 	fi
 fi
 
-if [ "${os}" = "CYGWIN" ] ; then
-	# automake 1.6.2 & autconf 2.53a don't seem to work in our case,
-	# hence let's fallback to automake 1.4-p5 & autoconf 2.13;
-	# (actually the wrapper should do this automatically depending on the
-	# contents of configure.in/.ac ...)
-	binpath="/usr/autotool/stable/bin:${binpath}"
-fi
-
 ## gathered from old scripts, but not used anymore/yet
 #if [ "${os}" = "AIX" ] ; then
 #	# rs6000.ddi.nl
@@ -335,7 +327,7 @@ binpath="${WHAT_PREFIX}/bin:${binpath}"
 
 # the following is nolonger needed for Monet,
 # but still needed for the rest:
-if [ "${what}" != "MONET" ] ; then
+if [ "${what}" != "MONET"  -a  "${WHAT_PREFIX}" != "${MONET_PREFIX}" ] ; then
 	# set MONET_MOD_PATH and prepend it to LD_LIBRARY_PATH
 	modpath="${WHAT_PREFIX}/lib/MonetDB"
 	libpath="${WHAT_PREFIX}/lib:${modpath}:${libpath}"
