@@ -169,7 +169,7 @@ stmt *flat_subquery(mvc * sql, symbol * sq)
 	stmt *s = sql_subquery(sql, scp, sq, 1);
 	scp = scope_close(scp);
 
-	if (s->type == st_ordered) {
+	if (s && s->type == st_ordered) {
 		list *l = create_stmt_list();
 		node *n;
 
