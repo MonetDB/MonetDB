@@ -1,13 +1,13 @@
 stdout of test '99_Modules_ALL` in directory 'tests/Availability` itself:
 
 
-# 17:20:06 >  
-# 17:20:06 >   Mserver "--config=C:\Documents and Settings\sjoerd\My Documents\src\monet\NT\conf\monet.conf" --debug=10 --set "monet_mod_path=C:\Documents and Settings\sjoerd\My Documents\src\monet\NT\src\modules\plain;C:\Documents and Settings\sjoerd\My Documents\src\monet\NT\src\modules\calibrator;C:\Documents and Settings\sjoerd\My Documents\src\monet\NT\src\mapi" --dbfarm "C:\Documents and Settings\sjoerd\My Documents\src\monet\NT\dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_Availability  < 99_Modules_ALL.milS
-# 17:20:06 >  
+# 13:58:47 >  
+# 13:58:47 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs" --dbfarm "/ufs/sjoerd/src/MonetDB/build/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_Availability  < 99_Modules_ALL.milS
+# 13:58:47 >  
 
 # Monet Database Server V4.3.7
 # Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-win32/32bit; dynamically linked.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 
 PROC mmn() : BAT[oid,str] := return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
@@ -72,7 +72,7 @@ bat_arith: loading... done.
 
 table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
 #-----------------#
-# 43 modules	  #
+# 45 modules	  #
 #-----------------#
 [ "aggr"	  ]
 [ "aggrX3"	  ]
@@ -168,7 +168,7 @@ table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
 
 quit;
 
-# 17:20:07 >  
-# 17:20:07 >  Done.
-# 17:20:07 >  
+# 13:58:48 >  
+# 13:58:48 >  Done.
+# 13:58:48 >  
 

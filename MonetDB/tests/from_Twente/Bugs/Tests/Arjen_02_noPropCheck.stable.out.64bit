@@ -1,27 +1,27 @@
 stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itself:
 
 
-# 20:02:43 >  
-# 20:02:43 >  Mtimeout -timeout 180 ./Arjen_02_noPropCheck Arjen_02_noPropCheck 
-# 20:02:43 >  
+# 18:32:01 >  
+# 18:32:01 >  Mtimeout -timeout 180 ./Arjen_02_noPropCheck Arjen_02_noPropCheck 
+# 18:32:01 >  
 
 
-# 20:02:43 >  
-# 20:02:43 >  Mtimeout -timeout 60 Mserver --config=/ufs/boncz/MonetDB/linux/etc/monet.conf --debug=10 --set monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB --set gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm --set sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log --set mapi_port=52330 --set sql_port=54357 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs d2.mil Arjen_02.milM
-# 20:02:43 >  
+# 18:32:01 >  
+# 18:32:01 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf --debug=10 --set monet_mod_path=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB --set gdk_dbfarm=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm --set sql_logdir=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log --set mapi_port=53708 --set sql_port=52024 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs d2.mil Arjen_02.milM
+# 18:32:01 >  
 
 # Monet Database Server V4.3.13
 # Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_29  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_28  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  true	  ]
@@ -318,7 +318,7 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "head_index",			  "absent",	  "absent",	  "absent"	  ]
 [ "tail_index",			  "absent",	  "absent",	  "absent"	  ]
 
-# 20:02:43 >  
-# 20:02:43 >  Done.
-# 20:02:43 >  
+# 18:32:02 >  
+# 18:32:02 >  Done.
+# 18:32:02 >  
 

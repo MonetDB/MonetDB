@@ -522,93 +522,93 @@ Start of MIL prelude.
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[      1,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 3ffff80514.
+#[      1,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x40037997.
 unknown(0)#"                   ]
 #[      1,         1,   running,         2, "!ERROR: TBL_getname: inexistent function 1000132A.
 unknown("D:\\TmpDir\\mone#"                            ]
 [ 1 ]
 #-----------------------------------------------------------------#
-# BAT:	  name	| login				| mil		  #
+# BAT:	  name	| login				| tree		  #
 # (int)	  (str)	| (str)				| (str)		  #
 #-----------------------------------------------------------------#
-[ 0,	  "adm",  "Thu Aug 14 00:36:47 2003",	  ""		  ]
-[ 1,	  "adm",  "Thu Aug 14 00:36:47 2003",	  "clients()"	  ]
+[ 0,	  "adm",  "Thu Sep 18 18:26:52 2003",	  ""		  ]
+[ 1,	  "adm",  "Thu Sep 18 18:26:52 2003",	  "clients()"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  19	  ]
+[ "user",	  150	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  39	  ]
+[ "system",	  710	  ]
 [ "elapsystem",	  0	  ]
-#-------------------------------------------------------------------------#
-# BAT:			  monet_environment				  #
-# (str)			  (str)						  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"																																								  ]
-[ "gdk_version",	  "4.3.13"																																										  ]
-[ "monet_pid",		  "13052"																																										  ]
-[ "prefix",		  "/var/tmp/monet.GNU_32-d.8885/monet/.GNU_32-d/Linux2.4.18-18perfctrsmp"																																		  ]
-[ "exec_prefix",	  "/var/tmp/monet.GNU_32-d.8885/monet/.GNU_32-d/Linux2.4.18-18perfctrsmp"																																		  ]
-[ "gdk_dbname",		  "mTests_src_tools"																																									  ]
-[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/dbfarm"																																			  ]
-[ "gdk_debug",		  "10"						  ]
-[ "gdk_mmap",		  "33554432"					  ]
-[ "monet_admin",	  "adm"						  ]
-[ "monet_prompt",	  ""						  ]
-[ "monet_welcome",	  "yes"						  ]
-[ "monet_mod_path",	  "/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/src/modules/plain/.libs:/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/src/modules/contrib/.libs:/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/src/modules/calibrator/.libs:/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/src/mapi/.libs"	  ]
-[ "monet_daemon",	  "no"																																											  ]
-[ "host",		  "localhost"					  ]
-[ "mapi_port",		  "55056"																																										  ]
-[ "mapi_noheaders",	  "no"						  ]
-[ "mapi_debug",		  "0"						  ]
-[ "sql_port",		  "51161"																																										  ]
-[ "sql_debug",		  "0"						  ]
-[ "sql_api",		  "sql(default-schema)"				  ]
-[ "sql_user",		  "monetdb"					  ]
-[ "sql_schema",		  "default-schema"				  ]
-[ "sql_logdir",		  "/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/log"																																			  ]
-[ "gdk_config",		  "/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/conf/monet.conf"																																		  ]
-[ "monet_cwd",		  "/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/mTests/src/tools"																																	  ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  monet_environment				  #
-# (str)			  (str)						  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"																																								  ]
-[ "gdk_version",	  "4.3.13"																																										  ]
-[ "monet_pid",		  "13052"																																										  ]
-[ "prefix",		  "/var/tmp/monet.GNU_32-d.8885/monet/.GNU_32-d/Linux2.4.18-18perfctrsmp"																																		  ]
-[ "exec_prefix",	  "/var/tmp/monet.GNU_32-d.8885/monet/.GNU_32-d/Linux2.4.18-18perfctrsmp"																																		  ]
-[ "gdk_dbname",		  "mTests_src_tools"																																									  ]
-[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/dbfarm"																																			  ]
-[ "gdk_debug",		  "10"						  ]
-[ "gdk_mmap",		  "33554432"					  ]
-[ "monet_admin",	  "adm"						  ]
-[ "monet_prompt",	  ""						  ]
-[ "monet_welcome",	  "yes"						  ]
-[ "monet_mod_path",	  "/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/src/modules/plain/.libs:/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/src/modules/contrib/.libs:/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/src/modules/calibrator/.libs:/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/src/mapi/.libs"	  ]
-[ "monet_daemon",	  "no"																																											  ]
-[ "host",		  "localhost"					  ]
-[ "mapi_port",		  "55056"																																										  ]
-[ "mapi_noheaders",	  "no"						  ]
-[ "mapi_debug",		  "0"						  ]
-[ "sql_port",		  "51161"																																										  ]
-[ "sql_debug",		  "0"						  ]
-[ "sql_api",		  "sql(default-schema)"				  ]
-[ "sql_user",		  "monetdb"					  ]
-[ "sql_schema",		  "default-schema"				  ]
-[ "sql_logdir",		  "/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/log"																																			  ]
-[ "gdk_config",		  "/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/conf/monet.conf"																																		  ]
-[ "monet_cwd",		  "/var/tmp/monet.GNU_32-d.8885/monet/Linux2.4.18-18perfctrsmp/mTests/src/tools"																																	  ]
+#---------------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment											  #
+# (str)			  (str)													  #
+#---------------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"										  ]
+[ "gdk_version",	  "4.3.13"												  ]
+[ "monet_pid",		  "2923"												  ]
+[ "prefix",		  "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_"				  ]
+[ "exec_prefix",	  "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_"				  ]
+[ "gdk_dbname",		  "mTests_src_tools"											  ]
+[ "gdk_dbfarm",		  "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm"	  ]
+[ "gdk_debug",		  "10"													  ]
+[ "gdk_mmap",		  "33554432"												  ]
+[ "monet_admin",	  "adm"													  ]
+[ "monet_prompt",	  ""													  ]
+[ "monet_welcome",	  "yes"													  ]
+[ "monet_mod_path",	  "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB"		  ]
+[ "monet_daemon",	  "no"													  ]
+[ "host",		  "localhost"												  ]
+[ "mapi_port",		  "53708"												  ]
+[ "mapi_noheaders",	  "no"													  ]
+[ "mapi_debug",		  "0"													  ]
+[ "sql_port",		  "52024"												  ]
+[ "sql_debug",		  "0"													  ]
+[ "sql_api",		  "sql(default-schema)"											  ]
+[ "sql_user",		  "monetdb"												  ]
+[ "sql_schema",		  "default-schema"											  ]
+[ "sql_logdir",		  "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log"		  ]
+[ "gdk_config",		  "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf"		  ]
+[ "monet_cwd",		  "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/mTests/src/tools"		  ]
+#---------------------------------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment											  #
+# (str)			  (str)													  #
+#---------------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"										  ]
+[ "gdk_version",	  "4.3.13"												  ]
+[ "monet_pid",		  "2923"												  ]
+[ "prefix",		  "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_"				  ]
+[ "exec_prefix",	  "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_"				  ]
+[ "gdk_dbname",		  "mTests_src_tools"											  ]
+[ "gdk_dbfarm",		  "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm"	  ]
+[ "gdk_debug",		  "10"													  ]
+[ "gdk_mmap",		  "33554432"												  ]
+[ "monet_admin",	  "adm"													  ]
+[ "monet_prompt",	  ""													  ]
+[ "monet_welcome",	  "yes"													  ]
+[ "monet_mod_path",	  "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB"		  ]
+[ "monet_daemon",	  "no"													  ]
+[ "host",		  "localhost"												  ]
+[ "mapi_port",		  "53708"												  ]
+[ "mapi_noheaders",	  "no"													  ]
+[ "mapi_debug",		  "0"													  ]
+[ "sql_port",		  "52024"												  ]
+[ "sql_debug",		  "0"													  ]
+[ "sql_api",		  "sql(default-schema)"											  ]
+[ "sql_user",		  "monetdb"												  ]
+[ "sql_schema",		  "default-schema"											  ]
+[ "sql_logdir",		  "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log"		  ]
+[ "gdk_config",		  "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf"		  ]
+[ "monet_cwd",		  "/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/mTests/src/tools"		  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  644	  ]
-[ "majflt",	  827	  ]
+[ "minflt",	  485	  ]
+[ "majflt",	  664	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]

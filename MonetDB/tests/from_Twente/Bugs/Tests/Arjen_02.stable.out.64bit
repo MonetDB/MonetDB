@@ -1,9 +1,9 @@
 stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 
 
-# 20:02:41 >  
-# 20:02:41 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=52330 --set sql_port=54357 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs  < Arjen_02.milM
-# 20:02:41 >  
+# 18:31:59 >  
+# 18:31:59 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log" --set mapi_port=53708 --set sql_port=52024 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs  < Arjen_02.milM
+# 18:31:59 >  
 
 # Monet Database Server V4.3.13
 # Copyright (c) 1993-2003, CWI. All rights reserved.
@@ -22,7 +22,7 @@ a.insert( nil, 1 );
 a.insert( nil, 2 );
 a.seqbase(0@0).print;
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_29  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
@@ -32,7 +32,7 @@ a.seqbase(0@0).print;
 A := 0;
 aA := [=]( a, A );   aA.print;
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_28  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  true	  ]
@@ -350,7 +350,7 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 
 quit;
 
-# 20:02:42 >  
-# 20:02:42 >  Done.
-# 20:02:42 >  
+# 18:32:00 >  
+# 18:32:00 >  Done.
+# 18:32:00 >  
 
