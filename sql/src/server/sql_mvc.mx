@@ -2155,8 +2155,12 @@ int mvc_init(int debug, backend_stack stk)
 	return res;
 }
 
+static int cleanup = 0;
+
 void mvc_exit()
 {
+	struct logger *l = logger;
+
 	if (mvc_debug)
 		fprintf(stderr, "mvc_exit\n");
 
@@ -2165,8 +2169,11 @@ void mvc_exit()
 		return ;
 
 	MT_set_lock(mvc_lock, "mvc_commit");
-	logger_exit(logger); 
-	logger_destroy(logger); 
+	logger = NULL;
+	while (cleanup) 
+		MT_sleep_ms(100); 
+	logger_exit(l); 
+	logger_destroy(l); 
 
 	trans_destroy(gtrans);
 	MT_unset_lock(mvc_lock, "mvc_commit");
@@ -2177,12 +2184,16 @@ void mvc_exit()
 void 
 mvc_logmanager()
 {
-	if (log_changes(logger) < 100)
+	if (!logger || log_changes(logger) < 100)
 		return;
 	MT_set_lock(mvc_lock, "mvc_commit");
+	if (!logger)
+		return;
 	logger_restart(logger);
+	cleanup = 1;
 	MT_unset_lock(mvc_lock, "mvc_commit");
 	logger_cleanup(logger);
+	cleanup = 0;
 }
 
 ssize_t 
