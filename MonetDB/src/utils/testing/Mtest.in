@@ -54,7 +54,7 @@ Usage:  $THISFILE [-x<ext>] [-s<sys>] [-r] [<dir>] <tests>
 
  -x<ext> : (optional) consider only output files *.<ext><sys> (<ext> = 'out' or 'err')
                        (default: <ext> = 'out' & 'err')
- -s<sys> : (optional) consider only output files *.<ext><sys> (<sys> = '', '.$OS', or '.$OSVER')
+ -s<sys> : (optional) consider only output files *.<ext><sys> (<sys> = '', '.$OS', '.$OSVER', or '.$OSVER.(32|64)bit' )
                        (default: <sys> = '')
  -r      : (optional) proceed in subdirectories as well (implies 'All\`)
  <dir>   : (optional) if present, $THISFILE behaves as if called in <dir>
@@ -140,14 +140,14 @@ function InitMaster () {
 	if [ ! "$MONETHOME"     ] ; then  export MONETHOME=$MONETDIST ; fi          ; fLOG1 MONETHOME=$MONETHOME
 	if [ ! -d "$MONETDIST"  ] ; then  ErrXit "MONETDIST directory missing: $MONETDIST" ; fi
 	if [ ! -d "$MONETHOME"  ] ; then  ErrXit "MONETHOME directory missing: $MONETHOME" ; fi
-	if [ "${MONETDIST%/$xPREFIX$OSVER}" != "$MONETDIST" ]
+	if [ "${MONETDIST%/$xPREFIX$OSVER}" != "$MONETDIST"  -o  "${MONETDIST%/$xPREFIX$OS}" != "$MONETDIST" ]
 	  then	export MONETDISTPREFIX=$MONETDIST
 	 elif [ -d "$MONETDIST/$xPREFIX$OSVER"  -o  ! -d "$MONETDIST/$xPREFIX$OS" ]
 	  then	export MONETDISTPREFIX=$MONETDIST/$xPREFIX$OSVER
 	  else  export MONETDISTPREFIX=$MONETDIST/$xPREFIX$OS
 	fi
 	fLOG1 MONETDISTPREFIX=$MONETDISTPREFIX
-	if [ "${MONETHOME%/$xPREFIX$OSVER}" != "$MONETHOME" ]
+	if [ "${MONETHOME%/$xPREFIX$OSVER}" != "$MONETHOME"  -o  "${MONETHOME%/$xPREFIX$OS}" != "$MONETHOME" ]
 	  then	export MONETHOMEPREFIX=$MONETHOME
 	 elif [ -d "$MONETHOME/$xPREFIX$OSVER"  -o  ! -d "$MONETHOME/$xPREFIX$OS" ]
 	  then	export MONETHOMEPREFIX=$MONETHOME/$xPREFIX$OSVER
@@ -243,6 +243,10 @@ function InitMaster () {
 			if     [ "$1"   =  "-r"       ] ; then  RECURSIVE=YES
 			  elif [ "$1"   =  "-x"       ] ; then  shift ; TopShift ; EXTENSIONS="$1"
 			  elif [ "$1"   != "${1#-x}"  ] ; then  EXTENSIONS="${1#-x}"
+			  elif [ "${1%.[63][42]bit}"   = "-s$OSVER" -o \
+			         "${1%.[63][42]bit}"   = "-s.$OSVER" ] ; then  SYSTEM=.$OSVER.${1#*$OSVER.}
+			  elif [ "$1${2%.[63][42]bit}" = "-s$OSVER" -o \
+			         "$1${2%.[63][42]bit}" = "-s.$OSVER" ] ; then  SYSTEM=.$OSVER.${2#*$OSVER.} ; shift ; TopShift
 			  elif [ "$1"   = "-s$OSVER" -o \
 			         "$1"   = "-s.$OSVER" ] ; then  SYSTEM=.$OSVER
 			  elif [ "$1$2" = "-s$OSVER" -o \
@@ -834,14 +838,16 @@ function MtestIt () {
 		if [ -f $THESRCDIR/${TST}_s00.$EXT ] ; then  ln -fs $THESRCDIR/${TST}_s[0-9][0-9].$EXT . ; fi
 		if [ -f $THESRCDIR/${TST}_p00.$EXT ] ; then  ln -fs $THESRCDIR/${TST}_p[0-9][0-9].$EXT . ; fi
 		ln -fs $THESRCDIR/$TST.* .
-		if     [ -f $TST.stable.out.$OSVER ] ; then  export STABLEout=stable.out.$OSVER
-		  elif [ -f $TST.stable.out.$OS    ] ; then  export STABLEout=stable.out.$OS
-		  else                                       export STABLEout=stable.out
+		if     [ -f $TST.stable.out.$OSVER.$BITS ] ; then  export STABLEout=stable.out.$OSVER.$BITS
+		  elif [ -f $TST.stable.out.$OSVER       ] ; then  export STABLEout=stable.out.$OSVER
+		  elif [ -f $TST.stable.out.$OS          ] ; then  export STABLEout=stable.out.$OS
+		  else                                             export STABLEout=stable.out
 		fi
 		if [ ! -f $TST.$STABLEerr ] ; then  touch $TST.$STABLEerr ; fi
-		if     [ -f $TST.stable.err.$OSVER ] ; then  export STABLEerr=stable.err.$OSVER
-		  elif [ -f $TST.stable.err.$OS    ] ; then  export STABLEerr=stable.err.$OS
-		  else                                       export STABLEerr=stable.err
+		if     [ -f $TST.stable.err.$OSVER.$BITS ] ; then  export STABLEerr=stable.err.$OSVER.$BITS
+		  elif [ -f $TST.stable.err.$OSVER       ] ; then  export STABLEerr=stable.err.$OSVER
+		  elif [ -f $TST.stable.err.$OS          ] ; then  export STABLEerr=stable.err.$OS
+		  else                                             export STABLEerr=stable.err
 		fi
 		if [ ! -f $TST.$STABLEerr ] ; then  touch $TST.$STABLEerr ; fi
 		if [ -f "$TST.prelude" ]
@@ -1015,12 +1021,17 @@ function GetModules () {
 	MIL
 } # GetModules ()
 
+function GetBits () {
+	echo '' | $MSERVER -db Tests | grep '^# compiled for .*/[63][42]bit' | sed 's|^\(.*/\)\([63][42]bit\).*$|\2|'
+} # GetBits ()
+
 function M_Master () {
 	if [ $THISFILE = Mtest ] ; then
 		CHECK $MCREATEDB -db Tests
 		MERROR=`echo '' | ( $MSERVER -db Tests || echo -e '\n!Exit 1' ) | grep '^!'`
 		if [ "$MERROR" ] ; then  ErrXit "'$MSERVER -db Tests\` fails with:\n$MERROR" ; fi
 		export TSTMODS="`GetModules`" ; LOG1 $TSTMODS
+		export BITS="`GetBits`"       ; LOG1 $BITS
 	fi
 	CALLDIR=$PWD
 	LOG1x cd $EXECDIR

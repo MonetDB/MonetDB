@@ -47,9 +47,10 @@ have changed since my proposal.
   + stable (i.e. correct) versions of stdout and stderr
      of the test                                           (TST.stable.{out,err})
     operating system (OS) specific stable output can be 
-    provided by adding the suffix ".<OSname>" (".`uname`")
-    or ".<OSname><OSversion>" (".`uanme``unamr -r`") to
-    the respective filename.
+    provided by adding the suffix ".<OSname>" (".`uname`"),
+    ".<OSname><OSversion>" (".`uanme``uname -r`"), or
+    ".<OSname><OSversion>.(64|32)bit" 
+    to the respective filename.
 
   Using this naming conventions, the test environment can automatically
   decide what to do when called as "Mtest TST" (see below), i.e. execute one
@@ -148,9 +149,9 @@ have changed since my proposal.
 - Mtest stores the output of test "$TSTSRCDIR/TST" in
   $TSTTRGDIR/TST.test.{out,err} and checks it against
   $TSTSRCDIR/TST.stable.{out,err}. If system specific stable output files
-  ($TSTSRCDIR/TST.stable.{out,err}.[$OS|$OSVER]) exist, the most specific
-  stable output is used. Mtest stores the respective Mdiff results in
-  $TSTTRGDIR/TST.{out,err}.diff.html.
+  ($TSTSRCDIR/TST.stable.{out,err}[.($OS|$OSVER[.(64|32)bit])]) exist, the
+  most specific stable output is used. Mtest stores the respective Mdiff
+  results in $TSTTRGDIR/TST.{out,err}.diff.html.
   For each test directory, a common entry point to the test results is
   created as $TSTTRGDIR/index.html.  
   For the whole test run, a global entry point to the test results is
@@ -207,5 +208,5 @@ have changed since my proposal.
 | Stefan Manegold     | mailto:Stefan.Manegold@cwi.nl |
 | CWI,  P.O.Box 94079 | http://www.cwi.nl/~manegold/  |
 | 1090 GB Amsterdam   | Tel.: +31 (20) 592-4212       |
-| The Netherlands     | Fax : +31 (20) 592-4199       |
+| The Netherlands     | Fax : +31 (20) 592-4312       |
 
