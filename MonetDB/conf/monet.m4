@@ -102,6 +102,7 @@ AC_ARG_WITH(gcc,
 	case $withval in
 	no)	CC=cc CXX=CC;;
 	yes)	CC=gcc CXX=g++;;
+	icc)	CC="icc -i_dynamic" CXX="icpc -i_dynamic";;
 	*)	CC=$withval;;
 	esac])
 
@@ -109,6 +110,7 @@ AC_ARG_WITH(gxx,
 [  --with-gxx=<compiler>   which C++ compiler to use], [
 	case $withval in
 	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
+	icpc)	CXX="icpc -i_dynamic";;
 	*)	CXX=$withval;;
 	esac])
 
