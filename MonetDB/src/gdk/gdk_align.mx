@@ -119,8 +119,7 @@ int ALIGNsetH(BAT *b1, BAT *b2) {
 		if (b1->htype != TYPE_void) b1->hdense = TRUE;
 		BATseqbase(b1, b2->hseqbase);
 	}
-	if (b2->hkey) BATkey(b1, TRUE);
-	if (b1->hkey) BATkey(b2, TRUE);
+	BATkey(b1, b2->hkey != FALSE);
 	b1->hsorted = BAThordered(b2);
         b1->halign = b2->halign; 
 	b1->batDirtydesc = TRUE;
