@@ -2709,10 +2709,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 	/**
 	 * Indicates whether the driver supports batch updates.
-	 * Not yet, but I want to do them in the near future
 	 */
 	public boolean supportsBatchUpdates() {
-		return(false);
+		return(true);
 	}
 
 	/**

@@ -492,9 +492,10 @@ public class MonetPreparedStatement
 	public void setDate(int parameterIndex, java.sql.Date x, Calendar cal)
 		throws SQLException
 	{
-		cal.setTime(x);
-		setValue(parameterIndex, "'" +
-		    MonetConnection.mDate.format(cal.getTime()) + "'");
+		synchronized (MonetConnection.mDate) {
+			MonetConnection.mDate.setTimeZone(cal.getTimeZone());
+			setValue(parameterIndex, "'" + MonetConnection.mDate.format(x));
+		}
 	}
 
 	/**
@@ -772,9 +773,12 @@ public class MonetPreparedStatement
 	public void setTime(int parameterIndex, Time x, Calendar cal)
 		throws SQLException
 	{
-		cal.setTime(x);
-		setValue(parameterIndex, "'" +
-		    MonetConnection.mTime.format(cal.getTime()) + "'");
+		synchronized (MonetConnection.mTimeZ) {
+			MonetConnection.mTimeZ.setTimeZone(cal.getTimeZone());
+			String RFC822 = MonetConnection.mTimeZ.format(x);
+			setValue(parameterIndex, "'" +
+				RFC822.substring(0, 15) + ":" + RFC822.substring(15) + "'");
+		}
 	}
 
 	/**

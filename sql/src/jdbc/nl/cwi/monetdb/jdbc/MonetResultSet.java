@@ -1315,24 +1315,48 @@ public class MonetResultSet implements ResultSet {
 					throw new java.text.ParseException("Unsupported data type", 0);
 
 				case Types.DATE:
-					cal.setTime(MonetConnection.mDate.parse(monetDate));
+					synchronized (MonetConnection.mDate) {
+						MonetConnection.mDate.setTimeZone(TimeZone.getDefault());
+						return(MonetConnection.mDate.parse(monetDate));
+					}
 				break;
 				case Types.TIME:
-					cal.setTime(MonetConnection.mTime.parse(monetDate));
+					if (monetDate.length() == 18) { // "HH:mm:ss.SSS+00:00".length()
+						// RFC822:         Sign TwoDigitHours Minutes
+						// MonetDB/SQL99:  Sign TwoDigitHours : Minutes
+						String tzRFC822 =
+							monetDate.substring(12, 15) +
+							monetDate.substring(16, 18);
+
+						synchronized (MonetConnection.mTimeZ) {
+							MonetConnection.mTimeZ.setTimeZone(TimeZone.getDefault());
+							return(MonetConnection.mTimeZ.parse(monetDate.substring(0, 23) + tzRFC822));
+						}
+					} else if (monetDate.length() == 12) { // "HH:mm:ss.SSS".length()
+						// if there is no time zone information in the database
+						// we have to use the given calendar to construct it
+						synchronized (MonetConnection.mTimeZ) {
+							MonetConnection.mTimeZ.setTimeZone(cal.getTimeZone());
+							String tz = MonetConnection.mTimeZ.format(Time.valueOf(monetDate));
+							tz = tz.substring(12);
+							MonetConnection.mTimeZ.setTimeZone(TimeZone.getDefault());
+							return(MonetConnection.mTimeZ.parse(monetDate + tz));
+						}
+					}
 				break;
 				case Types.TIMESTAMP:
-					if (monetDate.length() == 29) {
-						// RFC822: Sign TwoDigitHours Minutes
-						// MonetDB: Sign TwoDigitHours : Minutes
+					if (monetDate.length() == 29) { // "yyyy-MM-dd HH:mm:ss.SSS+00:00".length()
+						// RFC822:         Sign TwoDigitHours Minutes
+						// MonetDB/SQL99:  Sign TwoDigitHours : Minutes
 						String tzRFC822 =
 							monetDate.substring(23, 26) +
 							monetDate.substring(27, 29);
 
 						synchronized (MonetConnection.mTimestampZ) {
-							MonetConnection.mTimestamp.setTimeZone(TimeZone.getDefault());
+							MonetConnection.mTimestampZ.setTimeZone(TimeZone.getDefault());
 							return(MonetConnection.mTimestampZ.parse(monetDate.substring(0, 23) + tzRFC822));
 						}
-					} else if (monetDate.length() == 23) {
+					} else if (monetDate.length() == 23) { // "yyyy-MM-dd HH:mm:ss.SSS".length()
 						// if there is no time zone information in the database
 						// we have to use the given calendar to construct it
 						synchronized (MonetConnection.mTimestampZ) {

@@ -83,15 +83,12 @@ public class MonetConnection extends Thread implements Connection {
 	private int curReplySize = -1;	// the server by default uses -1 (all)
 
 	/* only parse the date patterns once, use multiple times */
-	/** Format of a timestamp used by Mserver */
-	final static SimpleDateFormat mTimestamp =
-		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-	/** Format of a timestamp with RFC822 timezone */
+	/** Format of a timestamp with RFC822 time zone */
 	final static SimpleDateFormat mTimestampZ =
 		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
-	/** Format of a time used by Mserver */
-	final static SimpleDateFormat mTime =
-		new SimpleDateFormat("HH:mm:ss.SSS");
+	/** Format of a time with RFC822 time zone */
+	final static SimpleDateFormat mTimeZ =
+		new SimpleDateFormat("HH:mm:ss.SSSZ");
 	/** Format of a date used by Mserver */
 	final static SimpleDateFormat mDate =
 		new SimpleDateFormat("yyyy-MM-dd");
@@ -99,8 +96,8 @@ public class MonetConnection extends Thread implements Connection {
 	static {
 		// make sure strict parsing of time fields is used, such
 		// that partial matches are not allowed
-		mTimestamp.setLenient(false);
-		mTime.setLenient(false);
+		mTimestampZ.setLenient(false);
+		mTimeZ.setLenient(false);
 		mDate.setLenient(false);
 	}
 
