@@ -398,7 +398,7 @@ typedef struct VARRECORD{
 #define TYPE_UNKNOWN            0
 #define TYPE_DYNAMIC            1
 #define TYPE_BIND           2
-#define TYPE_FIXED              4
+#define TYPE_RESOLVED              4
 
 /* all functions return a string */
 typedef str (*MALfcn)();
@@ -1647,7 +1647,7 @@ str typechkName(int i){
     case TYPE_UNKNOWN:  return " unknown";
     case TYPE_DYNAMIC:  return " dynamic";
     case TYPE_BIND:     return " bind";
-    case TYPE_FIXED:    return "";
+    case TYPE_RESOLVED: return "";
     }
 }
 str hiddenInstructionArgs(MalBlkPtr mb,InstrPtr p,str s){

@@ -194,7 +194,7 @@ void chkFlow(MalBlkPtr mb)
                 getVarName(mb, v), getFcnName(mb), i);
             }
             btop++;
-            if( p->typechk != TYPE_FIXED) fixed =0;
+            if( p->typechk != TYPE_RESOLVED) fixed =0;
             break;
         case EXITsymbol:
             v= getDestVar(p);
@@ -229,7 +229,7 @@ void chkFlow(MalBlkPtr mb)
                         p1->jump= pc[btop]+1;
                 }
             }
-            if( p->typechk != TYPE_FIXED) fixed =0;
+            if( p->typechk != TYPE_RESOLVED) fixed =0;
             break;
         case LEAVEsymbol:
         case REDOsymbol:
@@ -241,7 +241,7 @@ void chkFlow(MalBlkPtr mb)
                 getVarName(mb,v),getFcnName(mb),i);
                 mb->errors++;
             } else
-            if( p->typechk != TYPE_FIXED) fixed =0;
+            if( p->typechk != TYPE_RESOLVED) fixed =0;
             break;
         case YIELDsymbol:
             { InstrPtr ps= getInstrPtr(mb,0);
@@ -256,7 +256,7 @@ void chkFlow(MalBlkPtr mb)
                     GDKerror("invalid return target\n!");
                     mb->errors++;
                 } else
-                if(ps->typechk == TYPE_FIXED)
+                if(ps->typechk == TYPE_RESOLVED)
                 for(i=0;i<p->retc; i++)
                 if( resolveType(getArgType(mb,ps,i), getArgType(mb,p,i)) == -1){
                     GDKerror("%s type mismatch at type %d\n",
@@ -264,7 +264,7 @@ void chkFlow(MalBlkPtr mb)
                                             getArgType(mb,p,i));
                     mb->errors++;
                 }
-                if(ps->typechk != TYPE_FIXED) fixed =0;
+                if(ps->typechk != TYPE_RESOLVED) fixed =0;
             }
             retseen = 1;
             break;

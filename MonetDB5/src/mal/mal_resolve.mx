@@ -76,7 +76,7 @@ This precludes loops where the typing scheme changes with each step.
 Instead, such type changes should be factored out algoritmically.
 
 The type resolution status is marked in each instruction.
-TYPE_FIXED implies that the type of the instruction is fully
+TYPE_RESOLVED implies that the type of the instruction is fully
 resolved, it is marked TYPE_DYNAMIC otherwise.
 
 Alternatie solutions.
@@ -346,7 +346,7 @@ means that we may not overwrite any formal argument.
 Using the knowledge dat the arguments occupy the header
 of the symbol stack, it is easy to filter such errors.
 @c
-    p->typechk= TYPE_FIXED;
+    p->typechk= TYPE_RESOLVED;
     for(i=0;i<p->argc;i++) {
         if( !isFixed(mb,p->argv[i])) {
             setVarType(mb,p->argv[i],returntype[i]);
@@ -584,7 +584,7 @@ message to the user.
     if( isaSignature(p) ) {
         for(k=0;k<p->argc;k++)
             setFixed(mb,p->argv[k]);
-        p->typechk= TYPE_FIXED;
+        p->typechk= TYPE_RESOLVED;
         for(k=0; k<p->retc;k++)
             p->typechk = MIN(p->typechk,typeKind(mb,p,0));
         return;
@@ -632,7 +632,7 @@ In those cases, the detailed analysis is performed upon an actual call.
                 functionName(p), scope->name,
                 functionName(getInstrPtr(mb,0)),getPC(mb,p));
 				p->typechk= TYPE_UNKNOWN;
-        } else p->typechk= TYPE_FIXED;
+        } else p->typechk= TYPE_RESOLVED;
         return;
     }
 @+ Assignment 
@@ -645,7 +645,7 @@ variables.
         GDKerror("Multiple assignment mismatch\n");
         mb->errors++;
     } else
-		p->typechk= TYPE_FIXED;
+		p->typechk= TYPE_RESOLVED;
     for(k=0,i= p->retc; k<p->retc && i<p->argc; i++,k++){
         int rhs = getArgType(mb,p,i);
         int lhs = getArgType(mb,p,k);
@@ -789,13 +789,13 @@ void chkProgram(Scope s, MalBlkPtr mb)
 			if(p== NULL) continue;
 			if( p->typechk == TYPE_BIND) 
 				fcnBinder(s,mb,p);
-			else /*  not ready if( p->typechk != TYPE_FIXED)*/
+			else /*  not ready if( p->typechk != TYPE_RESOLVED)*/
 				typeChecker(s,mb,p);
 
 			if( functionId(p) ){
-				if(p->fcn != NULL && p->typechk== TYPE_FIXED) chk++;
+				if(p->fcn != NULL && p->typechk== TYPE_RESOLVED) chk++;
 			} else
-			if( p->typechk== TYPE_FIXED) chk++;
+			if( p->typechk== TYPE_RESOLVED) chk++;
 		}
 /* it is not ready yet, too fragile
 		mb->typefixed = mb->stop == chk; ignored END */
@@ -815,7 +815,7 @@ int typeKind(MalBlkPtr mb, InstrPtr p, int i){
     if( isAnyExpression(t) || t == TYPE_any) {
         return TYPE_DYNAMIC;
     }
-    return TYPE_FIXED;
+    return TYPE_RESOLVED;
 }
 int isPolymorphic(malType t){
     int ret =0;
