@@ -1,8 +1,8 @@
 # Monet Database Server V5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
 # dbname:demo
 ## the multiplex code blocks.
 #
@@ -232,17 +232,17 @@ exit v;	# 8  (v:bit)
     d0 := calc.-(t1,t0);	# 109 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     system.printf("#multiplex.tactics(+) %d\n",d0);	# 110 SYSprint_formatted_lng ($78:int)<-($79:str)(d0:lng)
 end main;	# 111  
-#copy 46237#count 1000000
-#select none 350240 count 0
-#select all 59578 count 1000000
-#select 0.05 40328 count 50004
-#select 0.1 42537 count 100016
-#select 0.2 48665 count 199929
-#select 0.4 61189 count 399791
-#select 0.6 70388 count 600237
-#select 0.8 76076 count 799837
-#select 1.0 55604 count 999999
-#tail sort 884703 count 1000000
-#multiplex.script(+) 12141382
-#multiplex.tactics(+) 852694
+#copy 36942#count 1000000
+#select none 198566 count 0
+#select all 41627 count 1000000
+#select 0.05 24976 count 50004
+#select 0.1 26287 count 100016
+#select 0.2 29491 count 199929
+#select 0.4 34511 count 399791
+#select 0.6 38491 count 600237
+#select 0.8 40787 count 799837
+#select 1.0 40001 count 999999
+#tail sort 573517 count 1000000
+#multiplex.script(+) 6091533
+#multiplex.tactics(+) 73319
 >

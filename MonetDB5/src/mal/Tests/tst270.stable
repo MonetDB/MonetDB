@@ -1,14 +1,19 @@
 # Monet Database Server V5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
 # dbname:demo
 ##Same as tst200, but includes testing of the profiler
 #
+##profiler.setAll();
+#profiler.activate("tick");
+#profiler.activate("pc");
+#profiler.activate("statement");
+##profiler.setFilter("*","*");
 #profiler.setFilter("*","insert");
-#profiler.setFilter("*","print");
-#profiler.openStream("/tmp/MonetProfile.xml");
+##profiler.setFilter("*","print");
+#profiler.openStream("/tmp/MonetEvents");
 #
 #o:=oid(20000000);
 #setoid(o);
@@ -41,38 +46,40 @@
 #profiler.closeStream();
 #
 function Admin.main():int;	# 0  (main:int)
-    profiler.setFilter("*","insert");	# 1 CMDsetFilterProfiler ($1:any)<-($2:str)($3:str)
-    profiler.setFilter("*","print");	# 2 CMDsetFilterProfiler ($4:any)<-($2:str)($5:str)
-    profiler.openStream("/tmp/MonetProfile.xml");	# 3 CMDsetProfilerStream ($6:any)<-($7:str)
-    o := calc.oid(20000000);	# 4 CALClng2oid (o:oid)<-($9:lng)
-    calc.setoid(o);	# 5 CALCsetoidInc ($10:oid)<-(o:oid)
-    b := bbp.new(:int,:int);	# 6 CMDBATnew (b:bat[int,int])<-($12:int)($13:int)
-    system.printf("#~BeginVariableOutput~#\n");	# 7 SYSprint_str ($14:int)<-($15:str)
-    binfo := bat.info(b);	# 8 CMDinfo (binfo:bat[str,str])<-(b:bat[int,int])
-    io.print(binfo);	# 9 CMDprint_val ($17:int)<-(binfo:bat[str,str])
-    system.printf("#~EndVariableOutput~#\n");	# 10 SYSprint_str ($18:int)<-($19:str)
-    profiler.start();	# 11 CMDstartProfiler ($20:any)
-    err := bat.insert(b,1,15);	# 12 CMDinsert_bun (err:void)<-(b:bat[int,int])($22:int)($23:int)
-    err := bat.insert(b,2,4);	# 13 CMDinsert_bun (err:void)<-(b:bat[int,int])($24:int)($25:int)
-    n0 := calc.int(nil);	# 14 CALCnil2int (n0:int)<-($27:void)
-    err := bat.insert(b,3,n0);	# 15 CMDinsert_bun (err:void)<-(b:bat[int,int])($28:int)(n0:int)
-    err := bat.insert(b,4,16);	# 16 CMDinsert_bun (err:void)<-(b:bat[int,int])($25:int)($29:int)
-    err := bat.insert(b,5,25);	# 17 CMDinsert_bun (err:void)<-(b:bat[int,int])($30:int)($31:int)
-    err := bat.insert(b,6,36);	# 18 CMDinsert_bun (err:void)<-(b:bat[int,int])($32:int)($33:int)
-    err := bat.insert(b,7,49);	# 19 CMDinsert_bun (err:void)<-(b:bat[int,int])($34:int)($35:int)
-    err := bat.insert(b,8,64);	# 20 CMDinsert_bun (err:void)<-(b:bat[int,int])($36:int)($37:int)
-    err := bat.insert(b,9,n0);	# 21 CMDinsert_bun (err:void)<-(b:bat[int,int])($38:int)(n0:int)
-    err := bat.insert(b,n0,n0);	# 22 CMDinsert_bun (err:void)<-(b:bat[int,int])(n0:int)(n0:int)
-    err := bat.insert(b,n0,81);	# 23 CMDinsert_bun (err:void)<-(b:bat[int,int])(n0:int)($39:int)
-    io.print(b);	# 24 CMDprint_val ($40:int)<-(b:bat[int,int])
-    io.print(b,b,b);	# 25 CMDtable ($41:int)<-(b:bat[int,int])(b:bat[int,int])(b:bat[int,int])
-    profiler.stop();	# 26 CMDstopProfiler ($42:any)
-    profiler.closeStream();	# 27 closeProfilerStream ($43:void)
-end main;	# 28  
+    profiler.activate("tick");	# 1 CMDactivateProfiler ($1:any)<-($2:str)
+    profiler.activate("pc");	# 2 CMDactivateProfiler ($3:any)<-($4:str)
+    profiler.activate("statement");	# 3 CMDactivateProfiler ($5:any)<-($6:str)
+    profiler.setFilter("*","insert");	# 4 CMDsetFilterProfiler ($7:any)<-($8:str)($9:str)
+    profiler.openStream("/tmp/MonetEvents");	# 5 CMDsetProfilerStream ($10:any)<-($11:str)
+    o := calc.oid(20000000);	# 6 CALClng2oid (o:oid)<-($13:lng)
+    calc.setoid(o);	# 7 CALCsetoidInc ($14:oid)<-(o:oid)
+    b := bbp.new(:int,:int);	# 8 CMDBATnew (b:bat[int,int])<-($16:int)($17:int)
+    system.printf("#~BeginVariableOutput~#\n");	# 9 SYSprint_str ($18:int)<-($19:str)
+    binfo := bat.info(b);	# 10 CMDinfo (binfo:bat[str,str])<-(b:bat[int,int])
+    io.print(binfo);	# 11 CMDprint_val ($21:int)<-(binfo:bat[str,str])
+    system.printf("#~EndVariableOutput~#\n");	# 12 SYSprint_str ($22:int)<-($23:str)
+    profiler.start();	# 13 CMDstartProfiler ($24:any)
+    err := bat.insert(b,1,15);	# 14 CMDinsert_bun (err:void)<-(b:bat[int,int])($26:int)($27:int)
+    err := bat.insert(b,2,4);	# 15 CMDinsert_bun (err:void)<-(b:bat[int,int])($28:int)($29:int)
+    n0 := calc.int(nil);	# 16 CALCnil2int (n0:int)<-($31:void)
+    err := bat.insert(b,3,n0);	# 17 CMDinsert_bun (err:void)<-(b:bat[int,int])($32:int)(n0:int)
+    err := bat.insert(b,4,16);	# 18 CMDinsert_bun (err:void)<-(b:bat[int,int])($29:int)($33:int)
+    err := bat.insert(b,5,25);	# 19 CMDinsert_bun (err:void)<-(b:bat[int,int])($34:int)($35:int)
+    err := bat.insert(b,6,36);	# 20 CMDinsert_bun (err:void)<-(b:bat[int,int])($36:int)($37:int)
+    err := bat.insert(b,7,49);	# 21 CMDinsert_bun (err:void)<-(b:bat[int,int])($38:int)($39:int)
+    err := bat.insert(b,8,64);	# 22 CMDinsert_bun (err:void)<-(b:bat[int,int])($40:int)($41:int)
+    err := bat.insert(b,9,n0);	# 23 CMDinsert_bun (err:void)<-(b:bat[int,int])($42:int)(n0:int)
+    err := bat.insert(b,n0,n0);	# 24 CMDinsert_bun (err:void)<-(b:bat[int,int])(n0:int)(n0:int)
+    err := bat.insert(b,n0,81);	# 25 CMDinsert_bun (err:void)<-(b:bat[int,int])(n0:int)($43:int)
+    io.print(b);	# 26 CMDprint_val ($44:int)<-(b:bat[int,int])
+    io.print(b,b,b);	# 27 CMDtable ($45:int)<-(b:bat[int,int])(b:bat[int,int])(b:bat[int,int])
+    profiler.stop();	# 28 CMDstopProfiler ($46:any)
+    profiler.closeStream();	# 29 closeProfilerStream ($47:void)
+end main;	# 30  
 #~BeginVariableOutput~#
 #-------------------------------------------------#
-# BAT:				  tmp_5		  #
-# (str)				  (str)		  #
+# h				tmp_5		  # name
+# str				str		  # type
 #-------------------------------------------------#
 [ "version",			  "980714"	  ]
 [ "batId",			  "tmp_4"	  ]
@@ -117,23 +124,23 @@ end main;	# 28
 [ "batDirtybuns",		  "clean"	  ]
 [ "batBuns.free",		  "8"		  ]
 [ "batBuns.size",		  "424"		  ]
-[ "batBuns.maxsize",		  "69632"	  ]
-[ "batBuns.storage",		  "anonymous vm"  ]
-[ "batBuns.filename",		  "no file"	  ]
+[ "batBuns.maxsize",		  "424"		  ]
+[ "batBuns.storage",		  "malloced"	  ]
+[ "batBuns.filename",		  "4.buns"	  ]
 [ "batBuns.offset",		  "0"		  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "hheap.free",			  "0"		  ]
 [ "hheap.size",			  "0"		  ]
 [ "hheap.maxsize",		  "0"		  ]
 [ "hheap.storage",		  "absent"	  ]
-[ "hheap.filename",		  "no file"	  ]
+[ "hheap.filename",		  "4.hheap"	  ]
 [ "hheap.offset",		  "0"		  ]
 [ "theapdirty",			  "clean"	  ]
 [ "theap.free",			  "0"		  ]
 [ "theap.size",			  "0"		  ]
 [ "theap.maxsize",		  "0"		  ]
 [ "theap.storage",		  "absent"	  ]
-[ "theap.filename",		  "no file"	  ]
+[ "theap.filename",		  "4.theap"	  ]
 [ "theap.offset",		  "0"		  ]
 [ "hacctype",			  "null"	  ]
 [ "haccdirty",			  "clean"	  ]
@@ -158,8 +165,8 @@ end main;	# 28
 #~EndVariableOutput~#
 # Start performance profiling
 #-----------------#
-# BAT:	  tmp_4	  #
-# (int)	  (int)	  #
+# h	tmp_4	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  15	  ]
 [ 2,	  4	  ]
@@ -173,8 +180,8 @@ end main;	# 28
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
 #---------------------------------#
-# BAT:	  tmp_4	| tmp_4	| tmp_4	  #
-# (int)	  (int)	| (int)	| (int)	  #
+# h	tmp_4	tmp_4	tmp_4	  # name
+# int	int	int	int	  # type
 #---------------------------------#
 [ 1,	  15,	  15,	  15	  ]
 [ 2,	  4,	  4,	  4	  ]

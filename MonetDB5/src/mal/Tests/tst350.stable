@@ -1,8 +1,8 @@
 # Monet Database Server V5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
 # dbname:demo
 ##inspection of the runtime setting
 ##it uses the dynamic type analysis scheme
@@ -101,21 +101,18 @@ function Admin.main():int;	# 0  (main:int)
     Admin.dir("simple");	# 6  ($10:void)<-($11:str)
 end main;	# 7  
 [ "start test" ]
-#---------------------------------------------------------------------------------------------------------------------------------#
-# bbp	| tmp_8			| htype	| ttype		| count	| heat	| dirty		| status	| kind		| refcnt  #
-#---------------------------------------------------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",  "str",	  31,	  151,	  "dirty",	  "dirty",	  "transient",	  3	  ]
-[ 2,	  "monet_unicode_case",	  "int",  "int",	  685,	  152,	  "dirty",	  "dirty",	  "transient",	  3	  ]
-[ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "dirty",	  "transient",	  3	  ]
-[ 4,	  "simplemind",		  "int",  "int",	  0,	  37,	  "dirty",	  "dirty",	  "transient",	  3	  ]
+#-------------------------------------------------------------------------------------------------#
+# bbp	tmp_8			htype	ttype	count	heat	dirty	status	kind	refcnt	  # name
+# int	str			str	str	lng	int	str	str	str	int	  # type
+#-------------------------------------------------------------------------------------------------#
 [ "Search directory by name" ]
 #-------------------------#
-# BAT:	  tmp_25	  #
-# (int)	  (str)		  #
+# h	tmp_25		  # name
+# int	str		  # type
 #-------------------------#
 [ 4,	  "simplemind"	  ]
-#-----------------------------------------------------------------------------------------------------------------#
-# tmp_25| tmp_28	| htype	| ttype	| count	| heat	| dirty		| status	| kind		| refcnt  #
-#-----------------------------------------------------------------------------------------------------------------#
-[ 4,	  "simplemind",	  "int",  "int",  0,	  165,	  "dirty",	  "dirty",	  "transient",	  5	  ]
+#-----------------------------------------------------------------------------------------#
+# tmp_25	tmp_28		htype	ttype	count	heat	dirty	status	kind	refcnt	  # name
+# int	str		str	str	lng	int	str	str	str	int	  # type
+#-----------------------------------------------------------------------------------------#
 >

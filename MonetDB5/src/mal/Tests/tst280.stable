@@ -1,8 +1,8 @@
 # Monet Database Server V5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
 # dbname:demo
 #function pow(i:int,j:int):int;
 #	z:= i+j;
@@ -85,14 +85,14 @@ function Admin.main():int;	# 0  (main:int)
 end main;	# 11  
 [ 2 ]
 #-----------------#
-# BAT:	  tmp_4	  #
-# (void)  (int)	  #
+# h	tmp_4	  # name
+# void	int	  # type
 #-----------------#
 [ 0@0,	  1	  ]
 [ 1@0,	  2	  ]
 #-----------------#
-# BAT:	  tmp_4	  #
-# (void)  (int)	  #
+# h	tmp_4	  # name
+# void	int	  # type
 #-----------------#
 [ 0@0,	  1	  ]
 [ 1@0,	  2	  ]
@@ -106,8 +106,8 @@ B2 value 2
 B3 value 2
 result 4
 #-----------------#
-# BAT:	  tmp_6	  #
-# (void)  (int)	  #
+# h	tmp_6	  # name
+# void	int	  # type
 #-----------------#
 [ 0@0,	  2	  ]
 [ 1@0,	  4	  ]

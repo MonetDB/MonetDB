@@ -1,8 +1,8 @@
 # Monet Database Server V5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
 # dbname:demo
 #b:= new(:int,:str);
 #insert(b,1,"hello");
@@ -24,14 +24,14 @@ function Admin.main():int;	# 0  (main:int)
     io.print(z2);	# 7 CMDprint_val ($15:int)<-(z2:bat[int,bit])
 end main;	# 8  
 #-----------------#
-# BAT:	  tmp_5	  #
-# (int)	  (bit)	  #
+# h	tmp_5	  # name
+# int	bit	  # type
 #-----------------#
 [ 1,	  true	  ]
 [ 2,	  false	  ]
 #-----------------#
-# BAT:	  tmp_6	  #
-# (int)	  (bit)	  #
+# h	tmp_6	  # name
+# int	bit	  # type
 #-----------------#
 [ 1,	  true	  ]
 [ 2,	  true	  ]

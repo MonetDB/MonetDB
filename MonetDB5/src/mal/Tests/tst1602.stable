@@ -1,8 +1,8 @@
 # Monet Database Server V5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
 # dbname:demo
 #	int_1M:= new(:void,:lng,1000000);
 #	setSequenceBase(int_1M,0@0);
@@ -286,10 +286,10 @@ end main;	# 94
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 490 ms
-count 1000000 = 384 ms
-count 1000000 = 382 ms
-count 1000000 = 389 ms
+count 1000000 = 296 ms
+count 1000000 = 228 ms
+count 1000000 = 227 ms
+count 1000000 = 230 ms
 #-------------------------------------------------#
 # h				tmp_10		  # name
 # str				str		  # type
@@ -375,10 +375,10 @@ count 1000000 = 389 ms
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 3180 ms
-count 1000000 = 1636 ms
-count 1000000 = 328 ms
-count 1000000 = 343 ms
+count 1000000 = 309 ms
+count 1000000 = 225 ms
+count 1000000 = 224 ms
+count 1000000 = 223 ms
 #-------------------------------------------------#
 # h				tmp_16		  # name
 # str				str		  # type
