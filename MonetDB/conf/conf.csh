@@ -34,6 +34,7 @@ if ( ! -x bootstrap ) then
   else
 	set binpath = ""
 	set libpath = ""
+	set modpath = ""
 
 	# check for not set variables (MONET_BUILD, MONET_PREFIX, COMP, BITS, LINK)
 
@@ -260,9 +261,16 @@ if ( ! -x bootstrap ) then
 
 	# prepend target bin-dir to PATH
 	set binpath = "${MONET_PREFIX}/bin:${binpath}"
+
+#	# the following is nolonger needed for Monet
+#	# set MONET_MOD_PATH and prepend it to LD_LIBRARY_PATH
+#	set modpath = "${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
+#	set libpath = "${modpath}:${libpath}"
+
 	# remove trailing ':'
 	set binpath = `echo "${binpath}" | sed 's|:$||'`
 	set libpath = `echo "${libpath}" | sed 's|:$||'`
+	set modpath = `echo "${modpath}" | sed 's|:$||'`
 
 	# export new settings
 	echo ""
@@ -299,21 +307,22 @@ if ( ! -x bootstrap ) then
 		endif
 		echo " LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 	endif
+	if ( ${%modpath} ) then
+		if ( ${?MONET_MOD_PATH} ) then
+			# prepend new modpath to existing MONET_MOD_PATH, if MONET_MOD_PATH doesn't contain modpath, yet
+			if ( "`echo ':${MONET_MOD_PATH}:' | sed 's|:${modpath}:|:|'`" == ":${MONET_MOD_PATH}:" ) then
+				setenv MONET_MOD_PATH "${modpath}:${MONET_MOD_PATH}"
+			endif
+		  else
+			# set MONET_MOD_PATH as modpath
+			setenv MONET_MOD_PATH "${modpath}"
+		endif
+		echo " MONET_MOD_PATH=${MONET_MOD_PATH}"
+	endif
 
-#	# we shouldn't need this
-#	if ( ${?LD_LIBRARY_PATH} ) then
-#		setenv LD_LIBRARY_PATH "${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet:${LD_LIBRARY_PATH}"
-#	  else	setenv LD_LIBRARY_PATH "${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
-#	endif
-
-#	# this nolonger needed for Monet
-#	setenv MONETDIST "${MONET_PREFIX}"
-#	setenv MONET_MOD_PATH "${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
-#	echo " MONET_MOD_PATH=${MONET_MOD_PATH}"
-
-	# for convenience: store the complete configure-call in CONFIGURE
-	setenv CONFIGURE "${base}/configure ${conf_opts} --prefix=${MONET_PREFIX}"
-	echo " CONFIGURE=${CONFIGURE}"
+	# for convenience: store the complete configure-call in MONET_CONFIGURE
+	setenv MONET_CONFIGURE "${base}/configure ${conf_opts} --prefix=${MONET_PREFIX}"
+	echo " MONET_CONFIGURE=${MONET_CONFIGURE}"
 
 	mkdir -p ${MONET_BUILD}
 

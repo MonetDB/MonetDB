@@ -5,21 +5,44 @@
 # this is not meant to go into the distributions
 
 find . -name .cache\* \-exec rm {} \;
+
 src/utils/autogen/autogen.py `pwd`
+
 cat configure.ag > configure.in
 echo "AC_OUTPUT(" >> configure.in
 cat acout.in  >> configure.in
 echo ")" >> configure.in
 
 test -f conf/ltmain.sh || libtoolize -c -f; 
+
 #if [ ! "`grep \"CC=\$arg\" conf/ltmain.sh 2>/dev/null`" ]; then
 #  perl -i.bak -p -e  's/link \| relink\)/link \| relink\)\n    CC=\$arg/g' conf/ltmain.sh
-
 #fi
+
 # default deplibs_check_method (pass all libs)
 # needed since deplibs is switched off in libtool 1.3c (we cannot wait for 1.4)
-perl -i.bak -p -e  's/&& deplibs_check_method=unknown/&& deplibs_check_method=pass_all/g' conf/ltconfig
+test -f conf/ltconfig && perl -i.bak -p -e  's/&& deplibs_check_method=unknown/&& deplibs_check_method=pass_all/g' conf/ltconfig
+
+# patch conf/config.guess for Intel compiler on Linux (icc) 
+grep 'ifdef __INTEL_COMPILER' conf/config.guess >/dev/null || cat << "EOF" | patch conf/config.guess
+--- conf/config.guess~	Sun Feb 10 14:13:07 2002
++++ conf/config.guess	Wed Jan 30 15:14:03 2002
+@@ -936,7 +936,10 @@
+    printf ("%s-${VENDOR}-linux-gnulibc1\n", argv[1]);
+ # endif
+ #else
+-  printf ("%s-${VENDOR}-linux-gnuaout\n", argv[1]);
++# ifdef __INTEL_COMPILER
++   printf ("%s-${VENDOR}-linux-Intel\n", argv[1]);
++# else
++   printf ("%s-${VENDOR}-linux-gnuaout\n", argv[1]);
+ #endif
+   return 0;
+ }
+EOF
+
 aclocal -I . -I conf
+
 # patch aclocal.m4 to call the linker with "-IPA" on IRIX (medusa)
 # (just adding -IPA to LDFLAGS somehow doesn't help ...)
 perl -i.bak -p -e 's|(LD-ld. )|$1-IPA |g' aclocal.m4
@@ -80,4 +103,3 @@ cat << "EOF" | patch configure
 EOF
 
 exit 0
-

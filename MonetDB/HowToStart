@@ -5,43 +5,50 @@
 Compiling Monet from its sources now involves three major directory
 structures:
 
-	BASE	where the common source base has been checked out from the
+	MONET_SOURCE
+		where the common source base has been checked out from the
 		cvs repository.
 
-	BUILD	where "configure" puts the architecture-specific source tree
-		that it generates from the common source base in BASE. 
+	MONET_BUILD
+		where "configure" puts the architecture-specific source tree
+		that it generates from the common source base in MONET_SOURCE.
 		here, also the compilation takes place.
 
-	PREFIX	where "make install" finally puts the binaries, libraries,
+	MONET_PREFIX
+		where "make install" finally puts the binaries, libraries,
 		include files, etc.
 
-in principle, BASE, BUILD, and PREFIX might be identical, but in many cases,
-it's convenient if they make-up separate directory trees. Then, one can
-easily "rm -rf" BUILD, in order to rebuild the whole stuff from scratch, or
-"rm -rf" BASE and BUILD, once everything is compiled an properly installed
-in PREFIX.
+In principle, MONET_SOURCE, MONET_BUILD, and MONET_PREFIX might be identical,
+but in many cases, it's convenient if they make-up separate directory trees.
+Then, one can easily "rm -rf" MONET_BUILD, in order to rebuild the whole
+stuff from scratch, or "rm -rf" MONET_SOURCE and MONET_BUILD, once everything
+is compiled an properly installed in MONET_PREFIX.
 
-In the remainder, we will just refer to BASE, BUILD, and PREFIX. You can
-(have to ;-) decide for yourself, whether they should be all identical, all
-different, or maybe BASE == BUILD != PREFIX, or BASE != BUILD == PREFIX. In
-any case, BASE, BUILD, & PREFIX should always be given as absolute paths.
+In the remainder, we will just refer to MONET_SOURCE, MONET_BUILD, and
+MONET_PREFIX. You can (have to ;-) decide for yourself, whether they should
+be all identical, all different, or maybe
+MONET_SOURCE == MONET_BUILD != MONET_PREFIX, or
+MONET_SOURCE != MONET_BUILD == MONET_PREFIX.
+In any case, MONET_SOURCE, MONET_BUILD, & MONET_PREFIX should always be given
+as absolute paths.
 
 
 1) Preparing your environment
 =============================
 
-The Monet development system needs two environment variables BUILD and PREFIX 
-to work properly. They are set to convenient defaults upon first use:
+The Monet development system needs two environment variables MONET_BUILD and
+MONET_PREFIX to work properly. They are set to convenient defaults upon first
+use:
 
-	BUILD=BASE/`uname`
-	PREFIX=BUILD
+	MONET_BUILD=MONET_SOURCE/`uname`
+	MONET_PREFIX=MONET_BUILD
 
 You can overrule this default by selecting your desired build and target
 directory and setting the variables in your shell before continuing.
 
 Likewise, the Monet development system needs the identity of the desired
-compiler ("GNU" or "ntv" (native)), the desired binary type (32bit or
-64bit), and whether binarys should be linked dynamically or statically. 
+compiler ("GNU" or "ntv" (native)), the desired binary type (32bit or 64bit),
+and whether binarys should be linked dynamically or statically.
 You can do this by setting the following environment variables:
 
 	COMP="GNU"	or	COMP="ntv"
@@ -57,13 +64,13 @@ able to compile Monet-4.2. The easiest way to do so, is to
 or
 	source  conf/conf.csh	(for [t]csh users)
 
-in BASE. These scripts look for the preset environment variables to adopt to
-you preferences.
+in MONET_SOURCE. These scripts look for the preset environment variables
+to adopt to you preferences.
 
 Depending on the architecture your currently working on, and depending on
-your settings for COMP, BITS, LINK, BUILD, and PREFIX, conf/conf.{ba,c}sh
-setup the environment as needed by configure. Among others, these script
-take care of
+your settings for COMP, BITS, LINK, MONET_BUILD, and MONET_PREFIX,
+conf/conf.{ba,c}sh setup the environment as needed by configure.
+Among others, these script take care of
  - setting the proper PATH & LD_LIBRARY_PATH,
  - choosing the proper C/C++ compiler calls (i.e., setting command name and
    flags in CC & CXX).
@@ -76,27 +83,30 @@ configure.
 ========================
 
 Once you setup your environment properly (see above), you need to execute
-the following in BASE:
+the following in MONET_SOURCE:
 
 	./bootstrap
-	cd ${BUILD}
-	${BASE}/configure --prefix=${PREFIX}
+	cd ${MONET_BUILD}
+	${MONET_SOURCE}/configure --prefix=${MONET_PREFIX}
 
 Unless you (or a cvs update) modify any "Makefile.ag"-file, or delete any of
 the files created by bootstrap or configure, you need to execute them only
-once after a cvs checkout. 
+once after a cvs checkout.
 
 NOTE: Never edit any of the files created by bootstrap or configure. Here,
-it becomes most convenient, if you use BASE != BUILD: configure puts all its
-output to BUILD and keep BASE "clean"; bootstrap create its output in BASE,
-but actually only "Makefile.{am,msc,in}"-file. So, never touch any on these,
-and never touch anything in BUILD. If you need some changes to one those
-files, you must look for its origin in BASE (i.e., checked out from the cvs
-tree) and modify this. Unless it is a "Makefile.ag"-file, you do not even have
-to re-run bootstrap or configure. Configure takes care of the dependencies
-between the original source file (and the bootstrap output) in BASE and the
-configure output in BUILD. You only have to edit (your) original source file
-in BASE and the call "make" in BUILD (see below).
+it becomes most convenient, if you use MONET_SOURCE != MONET_BUILD:
+
+configure puts all its output to MONET_BUILD and keeps MONET_SOURCE "clean";
+bootstrap creates its output in MONET_SOURCE, but actually only
+"Makefile.{am,msc,in}"-files. So, never touch any of these, and never touch
+anything in MONET_BUILD. If you need some changes to one of those files, you
+must look for its origin in MONET_SOURCE (i.e., checked out from the cvs
+tree) and modify this. Unless it is a "Makefile.ag"-file, you do not even
+have to re-run bootstrap or configure. Configure takes care of the
+dependencies between the original source file (and the bootstrap output) in
+MONET_SOURCE and the configure output in MONET_BUILD. You only have to edit
+(your) original source file in MONET_SOURCE and the call "make" in
+MONET_BUILD (see below).
 
 
 2) Make & Make Install
@@ -106,22 +116,22 @@ Once bootstrap-ed and configure-d, you can compile Monet,by simply calling
 
 	make
 
-in BUILD. This compiles everything in about 10 minutes (on 550Mhz Linux box),
-and leaves the results in BUILD.
+in MONET_BUILD. This compiles everything in about 10 minutes
+(on 550Mhz Linux box), and leaves the results in MONET_BUILD.
 
-To finally move the results to your favorite destination (i.e., PREFIX),
-just call
+To finally move the results to your favorite destination
+(i.e., MONET_PREFIX), just call
 
 	make install
 
-in BUILD. Of course, this only works properly when make was successful...
-Well, a simple "make install" without a "make" before should also work; make
-install also checks the dependencies back to the original sources, and just
-do a make first, if necessary.
+in MONET_BUILD. Of course, this only works properly when make was successful.
+Well, a simple "make install" without a "make" before should also work;
+make install also checks the dependencies back to the original sources, and
+just do a make first, if necessary.
 
 As already mentioned above, during "normal development", you will just edit
-(your) sources in BASE and then call make / make install in BUILD. Very
-convenient ...
+(your) sources in MONET_SOURCE and then call make / make install in
+MONET_BUILD. Very convenient ...
 
 Have fun with Monet!
 
@@ -129,7 +139,8 @@ Have fun with Monet!
 	Stefan Manegold, Februari 2001
 
 DISCLAIMER:
-The Software is distributed under the Monet Public License on an "AS IS" 
+The Software is distributed under the Monet Public License on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
-See the License for the specific language governing rights and 
-limitations under the License. 
+See the License for the specific language governing rights and
+limitations under the License.
+

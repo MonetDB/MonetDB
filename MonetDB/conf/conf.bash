@@ -34,6 +34,7 @@ if [ ! -x bootstrap ] ; then
   else
 	binpath=""
 	libpath=""
+	modpath=""
 
 	# check for not or incorrectly set variables (MONET_BUILD, MONET_PREFIX, COMP, BITS, LINK)
 
@@ -233,9 +234,16 @@ if [ ! -x bootstrap ] ; then
 
 	# prepend target bin-dir to PATH
 	binpath="${MONET_PREFIX}/bin:${binpath}"
+
+#	# the following is nolonger needed for Monet
+#	# set MONET_MOD_PATH and prepend it to LD_LIBRARY_PATH
+#	modpath="${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
+#	libpath="${modpath}:${libpath}"
+
 	# remove trailing ':'
 	binpath=`echo "${binpath}" | sed 's|:$||'`
 	libpath=`echo "${libpath}" | sed 's|:$||'`
+	modpath=`echo "${modpath}" | sed 's|:$||'`
 
 	# export new settings
 	echo ""
@@ -272,21 +280,22 @@ if [ ! -x bootstrap ] ; then
 		fi
 		echo " LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 	fi
+	if [ "${modpath}" ] ; then
+		if [ "${MONET_MOD_PATH}" ] ; then
+			# prepend new modpath to existing MONET_MOD_PATH, if MONET_MOD_PATH doesn't contain modpath, yet
+			if [ "`echo ":${MONET_MOD_PATH}:" | sed "s|:${modpath}:|:|"`" = ":${MONET_MOD_PATH}:" ] ; then
+				export MONET_MOD_PATH="${modpath}:${MONET_MOD_PATH}"
+			fi
+		  else
+			# set MONET_MOD_PATH as modpath
+			export MONET_MOD_PATH="${modpath}"
+		fi
+		echo " MONET_MOD_PATH=${MONET_MOD_PATH}"
+	fi
 
-#	# we shouldn't need this
-#	if [ "${LD_LIBRARY_PATH}" ] ; then
-#		export LD_LIBRARY_PATH="${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet:${LD_LIBRARY_PATH}"
-#	  else	export LD_LIBRARY_PATH="${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
-#	fi
-
-#	# this nolonger needed for Monet
-#	export MONETDIST="${MONET_PREFIX}"
-#	export MONET_MOD_PATH="${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
-#	echo " MONET_MOD_PATH=${MONET_MOD_PATH}"
-
-	# for convenience: store the complete configure-call in CONFIGURE
-	export CONFIGURE="${base}/configure ${conf_opts} --prefix=${MONET_PREFIX}"
-	echo " CONFIGURE=${CONFIGURE}"
+	# for convenience: store the complete configure-call in MONET_CONFIGURE
+	export MONET_CONFIGURE="${base}/configure ${conf_opts} --prefix=${MONET_PREFIX}"
+	echo " MONET_CONFIGURE=${MONET_CONFIGURE}"
 
 	mkdir -p ${MONET_BUILD}
 
