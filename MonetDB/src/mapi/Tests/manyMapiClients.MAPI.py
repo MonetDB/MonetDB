@@ -2,7 +2,7 @@ import sys
 import os
 
 if os.environ.has_key('MONET_PREFIX'):
-    sys.path.append(os.environ['MONET_PREFIX']+os.sep+'share'+os.sep+'MonetDB'+os.sep+'python')
+    sys.path.append(os.path.join(os.environ['MONET_PREFIX'],'share','MonetDB','python'))
 
 import Mapi
 
