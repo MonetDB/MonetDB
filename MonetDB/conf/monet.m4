@@ -1472,6 +1472,41 @@ fi
 AC_SUBST(PCL_CFLAGS)
 AC_SUBST(PCL_LIBS)
 
+dnl check for the Perl-compatible regular expressions library 
+have_pcre=auto
+PCRE_CFLAGS=""
+PCRE_LIBS=""
+AC_ARG_WITH(pcre,
+	AC_HELP_STRING([--with-pcre=DIR],
+		[pcre library is installed in DIR]),
+	have_pcre="$withval")
+if test "x$have_pcre" != xno; then
+  if test "x$have_pcre" != xauto; then
+    PCRE_CFLAGS="-I$withval/include"
+    PCRE_LIBS="-L$withval/lib"
+  fi
+
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $PCRE_CFLAGS"
+  AC_CHECK_HEADER(pcre/pcre.h, have_pcre=yes, have_pcre=no)
+  CPPFLAGS="$save_CPPFLAGS"
+
+  if test "x$have_pcre" = xyes; then
+  	save_LDFLAGS="$LDFLAGS"
+  	LDFLAGS="$LDFLAGS $PCRE_LIBS"
+  	AC_CHECK_LIB(pcre, pcre_compile, PCRE_LIBS="$PCRE_LIBS -lpcre"
+        	AC_DEFINE(HAVE_LIBPCRE, 1, [Define if you have the pcre library]) have_pcre=yes, have_pcre=no)
+  	LDFLAGS="$save_LDFLAGS"
+  fi
+
+  if test "x$have_pcre" != xyes; then
+    PCRE_CFLAGS=""
+    PCRE_LIBS=""
+  fi
+fi
+AC_SUBST(PCRE_CFLAGS)
+AC_SUBST(PCRE_LIBS)
+
 AC_CHECK_HEADERS(iconv.h locale.h langinfo.h)
 AC_CHECK_FUNCS(nl_langinfo setlocale)
 
