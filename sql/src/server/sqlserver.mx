@@ -344,6 +344,8 @@ int mvc_destroy_wrap( mvc *c ){
 
 int mvc_login_wrap( int *r, mvc *c, str schema, str user, str passwd  ){
 	*r = mvc_login( *(mvc**)c, schema, user, passwd );
+	if (*r != 0)
+		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
 

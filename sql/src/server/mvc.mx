@@ -754,7 +754,9 @@ int mvc_login(mvc *m, char *schema, char *user, char *passwd)
 {
 	/* currently only one schema supported */
 	m->trans->schema = find_schema(m->trans, schema);
-	return 1;
+	if (!m->trans->schema) 
+		return -1;
+	return 0;
 }
 
 
