@@ -165,14 +165,39 @@ STRprelude();
 @h
 #ifndef __string_H__
 #define __string_H__
+#include <gdk.h>
+#include "mal.h"
+#include "ctype.h"
 
+mal_export str STRtostr(str *res, str *src);
+mal_export str STRConcat(str *res, str *val1, str *val2);
+mal_export str STRLength( int *res, str *arg1 );
+mal_export str STRBytes( int *res, str *arg1 );
+mal_export str STRTail( str *res, str *arg1, int *offset);
+mal_export str STRSubString( str *res, str *arg1, int *offset, int *length );
+mal_export str STRFromWChr( str *res, int *at );
+mal_export str STRWChrAt( int *res, str *arg1, int *at );
+mal_export str STRcodeset( str *res );
+mal_export str STRIconv( str *res, str *o, str *fp, str *tp);
+mal_export str STRChrAt( chr *res, str *arg1, int *at );
+mal_export str STRPrefix( bit *res, str *arg1, str *arg2 );
+mal_export str STRSuffix( bit *res, str *arg1, str *arg2 );
+mal_export str STRLower( str *res, str *arg1 );
+mal_export str STRUpper( str *res, str *arg1 );
+mal_export str STRChrSearch( int *res, str *arg1, chr *c );
+mal_export str STRstrSearch( int *res, str *arg1, str *arg2 );
+mal_export str STRReverseStrSearch( int *res, str *arg1, str *arg2 );
+mal_export str STRchrSearch( int *res, str *arg1, chr *c );
+mal_export str STRReverseChrSearch( int *res, str *arg1, chr *c );
+mal_export str STRStrip(str *res, str *arg1) ;
+mal_export str STRLtrim(str *res, str *arg1) ;
+mal_export str STRRtrim(str *res, str *arg1) ;
+mal_export str STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g) ;
 #endif /* __string_H__ */
 @}
 
 @{
 @c
-#include <gdk.h>
-#include "ctype.h"
 #include "str.h"
 #include <string.h>
 
