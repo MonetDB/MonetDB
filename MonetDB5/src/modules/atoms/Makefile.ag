@@ -18,7 +18,7 @@ LIBS = {
 scripts_mal = {
         DIR = sysconfdir/MonetDB/atoms
         SOURCES = atoms_init.mal str.mal blob.mal url.mal mtime.mal \
-		uchr.mal decimal.mal
+		uchr.mal 
 }
 
 EXTRA_DIST_DIR = Tests
