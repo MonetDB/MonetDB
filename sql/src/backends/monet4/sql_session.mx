@@ -547,7 +547,7 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out,
 
 	v = VARnew(stk, "reply_size");
 	v->binding.vtype = TYPE_int;
-	v->binding.val.ival = 100;
+	v->binding.val.ival = -1;
 
  	errbuf = GDKmalloc(GDKMAXERRLEN);
 	errbuf[0] = '\0';
