@@ -49,6 +49,15 @@
 ;;; Code:
 (provide 'mx-mode)
 
+(defvar mx-mode-syntax-table nil
+  "Syntax table used in `mx-mode' buffers.")
+(if mx-mode-syntax-table
+    nil
+  (setq mx-mode-syntax-table (make-syntax-table))
+  (modify-syntax-entry ?@ "_ 1" mx-mode-syntax-table)
+  (modify-syntax-entry ?' "_ 2" mx-mode-syntax-table)
+  (modify-syntax-entry ?\n ">" mx-mode-syntax-table))
+
 (defvar mx-mode-map ()
   "Keymap used in Java mode.")
 
@@ -109,7 +118,7 @@ mode.
     ;; Now customize mx-mode to give us any behaviors specific to
     ;; Mx mode. (Hm; not much there right now...)
     (use-local-map mx-mode-map)
-
+    (set-syntax-table mx-mode-syntax-table)
     (setq major-mode 'mx-mode
 	  mode-name "Mx"
 	  comment-column 32)
