@@ -233,7 +233,10 @@
 
 /* Define to 1 if the system has the type `long long'. */
 #if _MSC_VER >= 1300
-#define HAVE_LONG_LONG 1
+/* #define HAVE_LONG_LONG 1 */
+/* Visual Studio .NET 2003 does have long long, but the printf %lld
+ * format is interpreted the same as %ld, i.e. useless
+ */
 #else
 /* #undef HAVE_LONG_LONG */
 #endif
@@ -544,7 +547,7 @@
 /* #undef TM_IN_SYS_TIME */
 
 /* Version number of package */
-#define VERSION "4.3.16_rc05"
+#define VERSION "4.3.17"
 
 /* Define on MS Windows (also under Cygwin) */
 #ifndef WIN32

@@ -277,7 +277,7 @@ capabilities depend on the malloc implementation used at run time.
 	    if (mallopt(M_MXFAST, 192)) {
 		fprintf(stderr, "monet: mallopt(M_MXFAST,192) fails.\n");
 	    }
-#ifdef IRIX
+#ifdef M_BLKSZ
 	    if (mallopt(M_BLKSZ, 8*1024)) {
 		fprintf(stderr, "monet: mallopt(M_BLKSZ,8*1024) fails.\n");
 	    }
@@ -285,14 +285,14 @@ capabilities depend on the malloc implementation used at run time.
 	}
 	malloc_init=0;
 @
-#ifndef LINUX
+#ifndef __linux__
 /* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
 /* for (Red Hat) Linux (8) unused and fails at least as of glibc-2.2.93-5 */
 	    if (mallopt(M_NLBLKS, 16)) {
 		fprintf(stderr, "monet: mallopt(M_NLBLKS,16) fails.\n");
 	    }
 #endif
-#ifndef LINUX
+#ifndef __linux__
 /* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
 /* for (Red Hat) Linux (8) unused and fails at least as of glibc-2.2.93-5 */
 	    if (mallopt(M_GRAIN, 32)) {

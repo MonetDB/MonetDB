@@ -1,7 +1,7 @@
 
 # in the global context on the Mserver konsole (before any client connects):
 # - load module "lock"
-# - create a BAT using the "lock" atom a tail type
+# - create a BAT using the "lock" atom as tail type
 
 module("lock");
 

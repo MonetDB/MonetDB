@@ -176,15 +176,13 @@ bat* CLKprelude(void){
 
 void CLKepilogue(void){
 	int k;
-#ifdef SIGALRM
+#if (defined(SIGALRM) && defined(SIG_IGN))
 /* HACK to pacify compiler */
 #if (defined(__INTEL_COMPILER) && (SIZEOF_VOID_P > SIZEOF_INT))  
 #undef  SIG_IGN /*((__sighandler_t)1 )*/
 #define SIG_IGN   ((__sighandler_t)1L)
 #endif
-#if !(defined(LINUX) || defined(WIN32) || defined(CYGWIN32) || defined(__MACH__))
 	(void) signal(SIGALRM, SIG_IGN);
-#endif
 #endif
 	for (k = 0; k < timerTop; k++) {
 		if (timer[k].action) GDKfree(timer[k].action);
@@ -199,13 +197,6 @@ int CMDsleep(int *secs){
         	return GDK_FAIL;
         } else {
 		MT_sleep_ms(*secs*1000);
-/*
-		MT_Sema s = CLKalarm(*secs+time(0), 0);
-		(void)CLKprelude();
-                MT_down_sema(s, "CLKsleep"); */ /* block on this */
-/*
-		MT_destroy_sema(s);
-*/
         }
         return GDK_SUCCEED;
 }
@@ -282,3 +273,17 @@ int CMDtime(int *retval){
 	return GDK_SUCCEED;
 }
 @}
+
+@mil
+PROC test_alarm() : void := {
+	sleep(15);
+	alarm(15, "print(\"alarm went off\");" );
+	printf("#~BeginVariableOutput~#\n");
+	timers().print;
+	time.print;
+	usec.print;
+	epoch.print;
+	ctime.print;
+	printf("#~EndVariableOutput~#\n");
+	sleep(15); # wait for alarm
+}

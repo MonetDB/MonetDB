@@ -23,7 +23,7 @@ dnl 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 dnl VERSION_TO_NUMBER macro (copied from libxslt)
 AC_DEFUN(MONET_VERSION_TO_NUMBER,
-[`$1 | awk 'BEGIN { FS = "."; } { printf "%d", ([$]1 * 1000 + [$]2) * 1000 + [$]3;}'`])
+[`$1 | sed 's|[_\-][a-zA-Z0-9]*$||' | awk 'BEGIN { FS = "."; } { printf "%d", ([$]1 * 1000 + [$]2) * 1000 + [$]3;}'`])
 
 AC_DEFUN(AM_MONET,
 [
@@ -35,7 +35,7 @@ MONET_LIBS=""
 MONET_MOD_PATH=""
 MONET_PREFIX="."
 if test "x$1" = "x"; then
-  MONET_REQUIRED_VERSION="4.3.16_rc05"
+  MONET_REQUIRED_VERSION="4.3.17"
 else
   MONET_REQUIRED_VERSION="$1"
 fi
