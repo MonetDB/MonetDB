@@ -174,10 +174,10 @@ command create(name:str):resultset
 address RSBcreate
 comment "Create a new ResultSet and deposit it in the box";
 
-pattern take(id:str):resultset
+command take(id:str):resultset
 address RSBtake
 comment "Take a resultset with the given id out of the box";
-pattern deposit(name:str,set:resultset):void 		
+command deposit(name:str,set:resultset):void 		
 address RSBdeposit
 comment "Store a new resultset into the box (only there to comply
 to the interface, throws an exception, use create instead)";
@@ -197,10 +197,10 @@ command discard(id:str):void
 address RSBrelease
 comment "see rsbox.release(id:str)";
 
-pattern newIterator()(:lng,:resultset)
+command newIterator()(:lng,:resultset)
 address RSBiterator
 comment "Initialize the iterator over the resultset box";
-pattern hasMoreElements()(:lng,:resultset)
+command hasMoreElements()(:lng,:resultset)
 address RSBhasMoreElements
 comment "Locate next resultset in the box";
 
