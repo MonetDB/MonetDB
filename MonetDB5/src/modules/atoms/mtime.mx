@@ -457,33 +457,53 @@ comment "create a tzone as an hour difference
 @T
 There are routines that decompose a date and routines that decompose a daytime.
 For decomposing a timestamp, there are routines that decompose it in a date 
-and daytime.
+and daytime. The bulk variants are also provided to simplify code
+generation for SQL and to improve speed.
 @mal
 # date
 command year(d:date) :int 
 address MTIMEdate_extract_year 
 comment "extracts year from date (nonzero 
 	value between -5867411 and +5867411).";
+command year(d:bat[:any$1,:date]):bat[:any1,:int]
+address MTIMEdate_extract_year_bulk;
+
 command month(d:date) :int 
 address MTIMEdate_extract_month 
 comment "extracts month from date";
+command month(d:bat[:any$1,:date]):bat[:any1,:int]
+address MTIMEdate_extract_month_bulk;
+
 command day(d:date) :int 
 address MTIMEdate_extract_day 
 comment "extracts day from date ";
+command day(d:bat[:any$1,:date]):bat[:any1,:int]
+address MTIMEdate_extract_day_bulk;
 
 # daytime
 command hours(h:daytime) :int 
 address MTIMEdaytime_extract_hours 
 comment "extracts hour from daytime";
+command hours(d:bat[:any$1,:date]):bat[:any1,:int]
+address MTIMEdaytime_extract_hours_bulk;
+
 command minutes(d:daytime) :int 
 address MTIMEdaytime_extract_minutes 
 comment "extracts minutes from daytime";
+command minutes(d:bat[:any$1,:date]):bat[:any1,:int]
+address MTIMEdaytime_extract_minutes_bulk;
+
 command seconds(d:daytime) :int 
 address MTIMEdaytime_extract_seconds 
 comment "extracts seconds from daytime";
+command seconds(d:bat[:any$1,:date]):bat[:any1,:int]
+address MTIMEdaytime_extract_seconds_bulk;
+
 command milliseconds(d:daytime) :int 
 address MTIMEdaytime_extract_milliseconds 
 comment "extracts milliseconds from daytime";
+command milliseconds(d:bat[:any$1,:date]):bat[:any1,:int]
+address MTIMEdaytime_extract_milliseconds_bulk;
 
 # timestamp
 command daytime(t:timestamp) :daytime 
@@ -2397,7 +2417,9 @@ The Monet V5 API interface is defined here
         ticks =@2;
         tzone_create_dst((tzone*) &vr.val.ival, &ticks,&@3,&@4);
         tz= BUNins(tz,@1,&vr.val.ival);
-
+@-
+Include BAT macros
+@include ../mal/prelude.mx
 @c
 #include "mal.h"
 #include "mal_exception.h"
@@ -2689,7 +2711,6 @@ str MTIMEdate_diff(int *ret, date* v1, date *v2) {
 	date_diff(ret, v1, v2);
 	return MAL_SUCCEED;
 }
-
 str MTIMEtimestamp_add(timestamp* ret, timestamp *v, lng *msecs) {
 	timestamp_add(ret, v, msecs);
 	return MAL_SUCCEED;
@@ -2960,5 +2981,47 @@ str MTIMEcurrent_time(daytime *t)
 	MTIMEtimestamp_extract_daytime_default(t, &stamp);
 	return MAL_SUCCEED;
 }
+
+@-
+The BAT equivalents for these functions provide
+speed.
+@= Extract
+str MTIME@1_extract_@2_bulk(int *ret, int *bid)
+{       BAT *b,*bn;
+        int s1,xx;
+        @3 v;
+        date d;
+        ptr p1;
+        BUN p,q;
+
+        @:getBATdescriptor(ret,bid,b,MTIMEdate_extrac_@2_bulk)@
+
+        bn= BATnew(BAThtype(b),TYPE_@3, BATcount(b));
+
+        s1= BUNsize(bn);
+        p1= BUNfirst(bn);
+
+        BATloopFast(b,p,q,xx){
+                ptr h= BUNhead(b,p);
+                d= *(date*) BUNtail(b,p);
+                MTIME@1_extract_@2(&v,&d);
+                bunfastins_nocheck(bn,p1,h,&v,s1);
+                p1= (ptr)( ((char*)p1) + s1);
+        }
+bunins_failed:
+        BBPfix(*ret = bn->batCacheid);
+        return MAL_SUCCEED;
+}
+
+
+@-
+@c
+@:Extract(date,year,int)@
+@:Extract(date,month,int)@
+@:Extract(date,day,int)@
+@:Extract(daytime,hours,int)@
+@:Extract(daytime,minutes,int)@
+@:Extract(daytime,seconds,int)@
+@:Extract(daytime,milliseconds,int)@
 
 @}
