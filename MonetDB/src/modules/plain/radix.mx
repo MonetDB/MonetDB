@@ -1077,6 +1077,8 @@ var b4 := radix_cluster(b2, cnt.bbpname, 1.0, 1, 7);
 b4.info.find("tsorted").print;
 radix_cluster(attr_int,  
 
+@-
+@{
 @f radix
 @* Implementation
 @c
@@ -3419,3 +3421,4 @@ int posjoin_clustered(BAT** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
 	bn->tsorted = 0;
 	return GDK_SUCCEED;
 }
+@}

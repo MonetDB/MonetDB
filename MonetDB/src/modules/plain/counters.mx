@@ -25,23 +25,28 @@
 @a S. Manegold, P. Boncz
 @t Performance Counters
 @T
-
 This is a memory/cpu performance measurement tool for 
-MIPS R10000/R12000 (IP27), 
-Sun UltraSparcI/II (sun4u), 
-Intel Pentium (i586/P5), 
-Intel PentiumPro/PentiumII/PentiumIII/Celeron (i686/P6),
-AMD Athlon (i686/K7), and
-Intel Itanium/Itanium2 (ia64)
-processors.
+the followingprocessor (families).
+\begin{tabuler}{l}
+MIPS R10000/R12000 (IP27)\\
+Sun UltraSparcI/II (sun4u)\\ 
+Intel Pentium (i586/P5) \\
+Intel PentiumPro/PentiumII/PentiumIII/Celeron (i686/P6)\\
+AMD Athlon (i686/K7)\\
+Intel Itanium/Itanium2 (ia64)\\
+\end{tabular}
 
 It uses 
 libperfex (IRIX) for R10000/R12000, 
-libperfmon (Solaris <= 7, by Richard Enbody, http://www.cse.msu.edu/~enbody/perfmon.html) respectively 
-libcpc (Solaris >= 8) for UltraSparcI/II, and 
-libpperf (Linux-i?86 <= 2.2, by M. Patrick Goda and Michael S. Warren, http://qso.lanl.gov/~mpg/pperf.html) respectively
-libperfctr (Linux-i?86 >= 2.4, by M. Pettersson, http://www.csd.uu.se/~mikpe/linux/perfctr/ for Pentiums & Athlons.
-libpfm (Linux-ia64 >= 2.4, by HP, http://www.hpl.hp.com/research/linux/perfmon/ for Itanium[2].
+@[<a href="http://www.cse.msu.edu/~enbody/perfmon.html"> libperfmon </a>@  
+(Solaris <= 7) by Richard Enbody,
+libcpc (Solaris >= 8) for UltraSparcI/II, 
+@[<a href="http://qso.lanl.gov/~mpg/pperf.html"> libpperf </a>@ 
+(Linux-i?86 <= 2.2), by M. Patrick Goda and Michael S. Warren,
+@[<a href="http://www.csd.uu.se/~mikpe/linux/perfctr/"> libperfctr </a>@
+(Linux-i?86 >= 2.4), by M. Pettersson for Pentiums & Athlons.
+@[<a href="http://www.hpl.hp.com/research/linux/perfmon/"> libpfm</a>@
+(Linux-ia64 >= 2.4), by HP for Itanium[2].
 
 Module counters provides similar interface and facilities as Peter's
 R10000 perfex module, but it offers no multiplexing of several events;
@@ -158,7 +163,7 @@ PROC counter2str(counter c) : str := {
 ADDHELP("counter2str", "manegold", "Mar 16 2002",
 	"cast counter to string.",
 	"counters");
-
+@{
 @+ Implementation 
 @h
 #include "gdk.h"
@@ -1995,3 +2000,4 @@ PROC test_counters() : void := {
 	}
 }
 	
+@}

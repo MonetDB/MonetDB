@@ -23,7 +23,7 @@
 
 @f streams
 @a Niels Nes
-@* An simple interface to streams 
+@* An simple interface to IO streams 
 This interface can be used to open 'non compressed, gzipped, bz2zipped' 
 data files. 
 
@@ -150,6 +150,10 @@ the sqlserver, which in v5.x will output mal instructions (ie no ascii mil dump)
 		} 
 		return Stream(ptr(0));
 	}
+@-
+@{
+@-
+The implementation follows andshould be self-documenting
 @h
 #ifndef _STREAMS_H_
 #define _STREAMS_H_
@@ -471,3 +475,4 @@ PROC test_streams() : void := {
     stream_close( s );
     print(st);
 }
+@}
