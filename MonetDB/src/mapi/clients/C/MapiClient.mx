@@ -356,7 +356,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 	do {
 #ifdef HAVE_LIBREADLINE
 		if (prompt) {
-			rl_completion_func_t *func;
+			rl_completion_func_t *func = NULL;
 			if (buf)
 				free(buf);
 			if (hdl)
