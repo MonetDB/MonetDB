@@ -22,7 +22,7 @@ if [ "$SFuser" = "anonymous" ] ; then
   else
 	SFuser="ext:$SFuser"
 fi
-SFsource="-d:$SFuser@cvs.sourceforge.net:/cvsroot/monetdb"
+SFsource="-d:$SFuser@cvs.monetdb.sourceforge.net:/cvsroot/monetdb"
 
 echo "pruning empty directories..."
 cvs -q update -d -P
