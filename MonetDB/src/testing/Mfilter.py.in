@@ -171,6 +171,8 @@ test = (
                 # src/tools/{client,multiClientSeq}
                 "|" r'^ERROR = (Connection terminated|Lost connection with server)$'
                 "|" r'^ERROR = (communication line broken|Connection lost)$'
+                # pathfinder: loader/usage (without BerkeleyDB):
+                "|" r'^     -c: compress node properties (40% encoding speed)$"
                 # Mtest warnings:
                 "|" r'^Over\.\.$'
                 "|" r'^(quit)?;$'
