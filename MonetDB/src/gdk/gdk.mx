@@ -2211,7 +2211,7 @@ gdk_export int	GDKfatal    (char* format, ... );
 #include "gdk_utils.h"
 #include "gdk_heap.h"
 
-#define BBPLOCKMASK     0
+#define BBPLOCKMASK     7
 
 gdk_export MT_Lock		GDKthreadLock;
 gdk_export MT_Lock		GDKstatusLock[BBPLOCKMASK+1]; 
