@@ -40,36 +40,44 @@ for the time being.
 
 	.ATOM mvc = ptr;
 	.END;
+	.ATOM sql_module = ptr;
+	.END;
 	.ATOM sql_schema = ptr;
 	.END;
 	.ATOM sql_table = ptr;
 	.END;
 	.ATOM sql_column = ptr;
 	.END;
-	# the check constraints (including IS (NOT) NULL) 
-	.ATOM sql_check = ptr;
-	.END; 
 	# the primary, unique and foreign keys
 	.ATOM sql_key = ptr;
 	.END;
 	.ATOM sql_idx = ptr;
 	.END;
+
+	# TODO the check constraints (including IS (NOT) NULL) 
+	.ATOM sql_check = ptr;
+	.END; 
 	
-	.BUILTIN mapisqlclient( Stream s_in, Stream s_out ) = 
-		mapisqlclient;
+	.BUILTIN sqlclient( Stream s_in, Stream s_out ) = sqlclient;
 		"parse the next sql command and convert this to mil code"
 
-	.COMMAND mvc_init(int debug) = mvc_init_wrap; 
+	.BUILTIN sqlserver( ) = sqlserver;
+		"parse the next sql command and convert this to mil code"
+
+	.BUILTIN mvc_init(int debug) = mvc_init_wrap; 
 		"create the global catalog"
 
 	.BUILTIN quit() = mvc_exit_wrap; 
 		"cleanup the global catalog and quit server"
 
-	.COMMAND mvc_create( int debug ) : mvc = mvc_create_wrap;
+	.BUILTIN mvc_create( int debug ) : mvc = mvc_create_wrap;
 		"Create multi version catalog"
 
 	.COMMAND mvc_destroy( mvc m ) = mvc_destroy_wrap;
 		"Destroy multi version catalog"
+
+	.COMMAND mvc_sql( mvc m, str cmd ) = mvc_sql;
+		"execute a sql query"
 
 	.COMMAND mvc_login( mvc m, str user, str passwd ) : str 
 		= mvc_login_wrap; "database login"
@@ -96,7 +104,7 @@ for the time being.
 		BAT[any::1,any::2] = 
 		mvc_bind_wrap; "Bind the bat, tname.cname"
 
-	.COMMAND mvc_bind_ubat( mvc c, str sname, str tname, str cname, int acess ) : 
+	.COMMAND mvc_bind_ubat( mvc c, str sname, str tname, str cname, int access ) : 
 		BAT[any::1,any::2] = 
 		mvc_bind_ubat_wrap; "Bind bat with the updates to tname.cname"
 
@@ -107,6 +115,9 @@ for the time being.
 	.COMMAND mvc_bind_ibat( mvc c, str sname, str tname, str iname, int access ) : 
 		BAT[any::1,any::2] = mvc_bind_ibat_wrap; 
 		"Bind the idx table"
+
+	.COMMAND mvc_bind_module( mvc c, str mname ) : sql_module = 
+		mvc_bind_module_wrap; "Bind module, mname"
 
 	.COMMAND mvc_bind_schema( mvc c, str sname ) : sql_schema = 
 		mvc_bind_schema_wrap; "Bind schema, sname"
@@ -122,6 +133,12 @@ for the time being.
 
 	.COMMAND mvc_bind_idx( mvc c, sql_schema s, str iname ) : sql_idx = 
 		mvc_bind_idx_wrap; "Bind index with name, iname"
+
+	.COMMAND mvc_drop_module( mvc c, str name ) = mvc_drop_module_wrap;
+		"Drop module"
+
+	.COMMAND mvc_create_module( mvc c, str name ) : sql_module = 
+		mvc_create_module_wrap; "Create module"
 
 	.COMMAND mvc_drop_schema( mvc c, str name ) = mvc_drop_schema_wrap;
 		"Drop schema"
@@ -170,7 +187,13 @@ for the time being.
 	.COMMAND mvc_create_ic( mvc m, sql_idx i, str col ):
 		sql_idx = mvc_create_ic_wrap; "Create a idx column"
 
+	.COMMAND mvc_create_role( mvc m, str name, int grantor ) = mvc_create_role_wrap; "Create a role"
+
+	.COMMAND mvc_drop_role( mvc m, str name ) = mvc_drop_role_wrap; "Drop a role"
+
 	.COMMAND mvc_create_user( mvc m, str user, str pwd, str fullname, str dschema, int id) = mvc_create_user_wrap; "Create a user"
+
+	.COMMAND mvc_drop_user( mvc m, str name ) = mvc_drop_user_wrap; "Drop a user"
 
 	.COMMAND mvc_result_table( mvc m, int nr_cols, any order ) : int = mvc_result_row_wrap; "Create structure to cache a row query result" 
 
@@ -223,6 +246,8 @@ kernel libraries, e.g. bat.mx
 #ifndef _SQL_SERVER_H_
 #define _SQL_SERVER_H_
 
+#include <sql_mem.h>
+
 #ifdef _MSC_VER
 #ifndef LIBSQL_SERVER
 #define sql_server_export extern __declspec(dllimport)
@@ -242,15 +267,43 @@ kernel libraries, e.g. bat.mx
 #endif /*_SQL_SERVER_H_*/
 
 @c
-#include <sql_mem.h>
 #include "sql_server2.h"
 #include "sql_privileges.h"
 #include "sql_session.h"
 #include <algebra.h>
 
-int mvc_init_wrap( int* debug ){
-        backend_init( &monet4_freestack, &monet4_freecode );
-	mvc_init(*debug );
+static int builtin_operand( Cntxt stk, YYSTREE lt, int arg_nr, ptr *Res, int type, ValPtr res)
+{ 
+	int k = interpret( stk, arg(lt, arg_nr), res);
+	if (k < 0) return k;
+        *Res = VALconvert(type, res);
+        if ((res == ILLEGALVALUE)  || (type == TYPE_bat && res)) {
+                return handle_paramerror(res,arg_nr, res->vtype, type);
+        }
+	return 0;
+}
+
+int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res){ 
+	int *Debug = NULL;
+  	if (lt->cnt != 1) {
+        	return handle_argerror(res, lt->cnt, 1);
+  	}
+	builtin_operand( stk, lt, 0, (ptr*)&Debug, TYPE_int, res);
+	backend_init( &monet4_freestack, &monet4_freecode, &monet4_parse );
+	if ( mvc_init(*Debug, (backend_stack)stk ) ){
+		sqlstatement("GRANT ALL on modules to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on schemas to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on tables to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on columns to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on keys to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on idxs to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on keycolumns to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on types to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on users to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on user_role to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on auths to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on privileges to monetdb with grant option with hierarchy option;", stk);
+	}
 	return GDK_SUCCEED;
 }
 
@@ -268,8 +321,14 @@ int mvc_exit_wrap(Cntxt stk, YYSTREE lt, ValPtr res){
 	return CMDquit(stk, lt, res);
 }
 
-int mvc_create_wrap( mvc *res, int *debug ){
-	*(mvc**)res = mvc_create( *debug );
+int mvc_create_wrap(Cntxt stk, YYSTREE lt, ValPtr res){ 
+	int *Debug = NULL;
+  	if (lt->cnt != 1) {
+        	return handle_argerror(res, lt->cnt, 1);
+  	}
+	builtin_operand( stk, lt, 0, (ptr*)&Debug, TYPE_int, res);
+        res->val.pval = (ptr) mvc_create( *Debug, 1, (backend_stack)stk );
+        res->vtype = TYPE_mvc;
 	return GDK_SUCCEED;
 }
 
@@ -348,6 +407,11 @@ int mvc_bind_ibat_wrap( BAT** res, mvc* c, str sname, str tname, str iname, int 
 	return GDK_FAIL;
 }
 
+int mvc_bind_module_wrap( sql_module* res, mvc* c, str mname){
+	*(sql_module**)res = mvc_bind_module( *(mvc**)c, mname );
+	return GDK_SUCCEED;
+}
+
 int mvc_bind_schema_wrap( sql_schema* res, mvc* c, str sname){
 	*(sql_schema**)res = mvc_bind_schema( *(mvc**)c, sname );
 	return GDK_SUCCEED;
@@ -370,6 +434,16 @@ int mvc_bind_key_wrap( sql_key* res, mvc* c, sql_schema *s, str name ){
 
 int mvc_bind_idx_wrap( sql_idx* res, mvc* c, sql_schema *s, str name ){
 	*(sql_idx**)res = mvc_bind_idx( *(mvc**)c, *(sql_schema**)s, name);
+	return GDK_SUCCEED;
+}
+
+int mvc_create_module_wrap( sql_module *s, mvc* c, str name){
+	*(sql_module**)s = mvc_create_module( *(mvc**)c, name);
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_module_wrap( mvc* c, str name){
+	mvc_drop_module( *(mvc**)c, name );
 	return GDK_SUCCEED;
 }
 
@@ -477,6 +551,33 @@ int mvc_create_ic_wrap( sql_idx* res, mvc* M, sql_idx *I, str name )
 int mvc_create_user_wrap( mvc *c, str user, str passwd, str fullname, str dschema, int *grantor)
 {
 	if (sql_create_user( *(mvc**)c, user, passwd, fullname, dschema, *grantor)){
+		return GDK_SUCCEED;
+	} else {
+		return GDK_FAIL;
+	}
+}
+
+int mvc_drop_user_wrap( mvc *c, str user )
+{
+	if (sql_drop_user( *(mvc**)c, user)){
+		return GDK_SUCCEED;
+	} else {
+		return GDK_FAIL;
+	}
+}
+
+int mvc_create_role_wrap( mvc *c, str role, int *grantor)
+{
+	if (sql_create_role( *(mvc**)c, role, *grantor)){
+		return GDK_SUCCEED;
+	} else {
+		return GDK_FAIL;
+	}
+}
+
+int mvc_drop_role_wrap( mvc *c, str role )
+{
+	if (sql_drop_role( *(mvc**)c, role)){
 		return GDK_SUCCEED;
 	} else {
 		return GDK_FAIL;
@@ -624,7 +725,6 @@ module(blob);
 module(mmath);
 module(mkey);
 module(mapi); # mapi_listen 
-module(streams);
 
 # low memory usage for testing unloading
 #mem_maxsize(0LL);
@@ -632,14 +732,11 @@ module(streams);
 
 mvc_init(int(monet_environment.find("sql_debug")));
 
-proc SQLmapiclient( Stream s_in, Stream s_out ) := {
-	fork(mapisqlclient(s_in, s_out));
+proc SQLclient( Stream s_in, Stream s_out ) := {
+	fork(sqlclient(s_in, s_out));
 }
 
-# temporary patch to assure that this implementation does not clash
-# with the default port
-mapi_listen(47111, 5, "SQLmapiclient").fork();
+mapi_listen(int(monet_environment.find("sql_port")), 5, "SQLclient").fork();
 # start a default mapi client for debugging, this should go once
 # MonetDB SQL gets stable.
 mapi_listen(int(monet_environment.find("mapi_port")), 5, "").fork();
-

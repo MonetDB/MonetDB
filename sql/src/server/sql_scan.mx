@@ -224,6 +224,8 @@ void init_keywords()
 	keywords_insert("PRECISION", PRECISION);
 	keywords_insert("PRIMARY", PRIMARY);
 
+	keywords_insert("USER", USER);
+	keywords_insert("PASSWORD", PASSWORD);
 	keywords_insert("GRANT", GRANT);
 	keywords_insert("REVOKE", REVOKE);
 	keywords_insert("ROLE", ROLE);
@@ -233,6 +235,7 @@ void init_keywords()
 	keywords_insert("PUBLIC", PUBLIC);
 	keywords_insert("CURRENT_USER", CURRENT_USER);
 	keywords_insert("CURRENT_ROLE", CURRENT_ROLE);
+	keywords_insert("SESSION_USER", SESSION_USER);
 
 	keywords_insert("REAL", REAL);
 	keywords_insert("RIGHT", RIGHT);
@@ -253,8 +256,6 @@ void init_keywords()
 	 */
 	keywords_insert("UNION", UNION);
 	keywords_insert("UNIQUE", UNIQUE);
-	keywords_insert("USER", USER);
-	keywords_insert("SESSION_USER", SESSION_USER);
 	keywords_insert("USING", USING);
 	keywords_insert("VALUES", VALUES);
 	keywords_insert("VIEW", VIEW);
@@ -308,6 +309,7 @@ void init_keywords()
 	keywords_insert("EXTERNAL", EXTERNAL );
 	keywords_insert("NAME", sqlNAME );
 	keywords_insert("EXPORT", EXPORT );
+	keywords_insert("EXECUTE", EXECUTE );
 
 	keywords_insert("INDEX", INDEX );
 }
@@ -430,7 +432,7 @@ static int utf8_intlen(int ch)
         }
 }
 
-static int lex_getc(context * lc)
+static int lex_getc(struct scanner * lc)
 {
 	int len = 0;
 	int c = EOF;
@@ -447,7 +449,7 @@ static int lex_getc(context * lc)
 	return c;
 }
 
-void lex_append(context *lc, int ch)
+void lex_append(struct scanner *lc, int ch)
 {
 	int len = utf8_intlen(ch);
 
@@ -461,7 +463,7 @@ void lex_append(context *lc, int ch)
 	lc->yytext[lc->yylen] = 0;
 }
 
-int keyword_or_ident(context * lc)
+int keyword_or_ident(struct scanner * lc)
 {
 	keyword *k = NULL;
 	int cur = 0;
@@ -492,7 +494,7 @@ int keyword_or_ident(context * lc)
 	return lc->yyval;
 }
 
-void skip_white_space(context * lc)
+void skip_white_space(struct scanner * lc)
 {
 	int cur;
 	while ((cur = lex_getc(lc)) != EOF && isspace(cur));
@@ -500,9 +502,9 @@ void skip_white_space(context * lc)
 }
 
 
-int handle_error(context * lc)
+int handle_error(mvc * lc)
 {
-	switch (lc->cur) {
+	switch (lc->scanner.cur) {
 	case EOF:
 		(void)sql_error( lc, 1, "Unexpected end of input");
 		return -1; /* EOF needs -1 result */
@@ -512,7 +514,7 @@ int handle_error(context * lc)
 	return LEX_ERROR;
 }
 
-int skip_c_comment(context * lc)
+int skip_c_comment(struct scanner * lc)
 {
 	int cur;
 	int prev = 0;
@@ -524,7 +526,7 @@ int skip_c_comment(context * lc)
 	return lc->cur;
 }
 
-int skip_sql_comment(context * lc)
+int skip_sql_comment(struct scanner * lc)
 {
 	int cur;
 	while ((cur = lex_getc(lc)) != EOF && (cur != '\n'));
@@ -533,7 +535,7 @@ int skip_sql_comment(context * lc)
 	return lc->cur;
 }
 
-int context_yychar(context * lc, int yychar)
+int context_yychar(struct scanner * lc, int yychar)
 {
 	lc->yytext[0] = (char) yychar;
 	lc->yytext[1] = 0;
@@ -542,7 +544,7 @@ int context_yychar(context * lc, int yychar)
 	return lc->yyval;
 }
 
-int context_yy2char(context * lc, int yychar, int yyval)
+int context_yy2char(struct scanner * lc, int yychar, int yyval)
 {
 	lc->yytext[0] = (char) yychar;
 	lc->yytext[1] = (char) yychar;
@@ -552,7 +554,7 @@ int context_yy2char(context * lc, int yychar, int yyval)
 	return lc->yyval;
 }
 
-int context_comparison(context * lc, char *yychar)
+int context_comparison(struct scanner * lc, char *yychar)
 {
 	int len = strlen(yychar);
 	strncpy(lc->yytext, yychar, len);
@@ -562,8 +564,9 @@ int context_comparison(context * lc, char *yychar)
 	return lc->yyval;
 }
 
-int lex_string(context * lc, int quote)
+int lex_string(mvc * c, int quote)
 {
+	struct scanner *lc = &c->scanner;
 	int cur = 0;
 	int escape = 0;
 
@@ -577,7 +580,7 @@ int lex_string(context * lc, int quote)
 		lex_append(lc, cur);
 	}
 	if (cur == EOF){
-		(void)sql_error( lc, 2, "Unexpected end of input" );
+		(void)sql_error( c, 2, "Unexpected end of input" );
 		return LEX_ERROR;
 	}
 	lc->yyval = STRING;
@@ -585,10 +588,11 @@ int lex_string(context * lc, int quote)
 	return lc->yyval;
 }
 
-static int tokenize(context * lc);
+static int tokenize(mvc * lc);
 
-int number(context * lc, int len)
+int number(mvc * c, int len)
 {
+	struct scanner *lc = &c->scanner;
 	char *yytext = lc->yytext;
 	int token = sqlINT;
 	int cur = 0;
@@ -655,7 +659,7 @@ int number(context * lc, int len)
 			if (cur == '-') {
 				if (skip_sql_comment(lc) == EOF)
 					return lc->cur;
-				return tokenize(lc);
+				return tokenize(c);
 			} else {
 				lc->cur = cur;
 				return context_yychar(lc, yytext[0]);
@@ -665,7 +669,7 @@ int number(context * lc, int len)
 			return context_yychar(lc, yytext[0]);
 		}
 	} else {
-		(void)sql_error( lc, 2, "Unexpected symbol %c", lc->cur);
+		(void)sql_error( c, 2, "Unexpected symbol %c", lc->cur);
 		return LEX_ERROR;
 	}
 	lc->yytext = yytext;
@@ -677,8 +681,9 @@ int number(context * lc, int len)
 }
 
 
-int lex_symbol(context * lc)
+int lex_symbol(mvc * c)
 {
+	struct scanner *lc = &c->scanner;
 	int cur = lc->cur;
 	int next = 0;
 
@@ -686,20 +691,20 @@ int lex_symbol(context * lc)
 		next = lex_getc(lc);
 		if (next == '*') {
 			skip_c_comment(lc);
-			return tokenize(lc);
+			return tokenize(c);
 		} else {
 			lc->cur = next;
 			return context_yychar(lc, cur);
 		}
 	} else if (isdigit(cur)) {
 		lc->cur = cur;
-		return number(lc, 1);
+		return number(c, 1);
 	} else if (cur == '#') {
 		if (skip_sql_comment(lc) == EOF)
 			return lc->cur;
-		return tokenize(lc);
+		return tokenize(c);
 	} else if (cur == '\'' || cur == '"') {
-		return lex_string(lc, cur);
+		return lex_string(c, cur);
 	}
 	switch (cur) {
 	case '-':
@@ -707,7 +712,7 @@ int lex_symbol(context * lc)
 		if (next == '-') {
 			if (skip_sql_comment(lc) == EOF)
 				return lc->cur;
-			return tokenize(lc);
+			return tokenize(c);
 		}
 		lc->cur = next;
 		return context_yychar(lc, cur);
@@ -748,33 +753,35 @@ int lex_symbol(context * lc)
 			return context_yy2char(lc, '|', CONCATSTRING);
 		}
 	}
-	(void)sql_error( lc, 3, "Unexpected symbol (%c)", lc->cur);
+	(void)sql_error( c, 3, "Unexpected symbol (%c)", lc->cur);
 	lc->cur = ' ';
 	return LEX_ERROR;
 }
 
-int tokenize(context * lc)
+int tokenize(mvc * c)
 {
+	struct scanner *lc = &c->scanner;
 	while (1) {
 		if (isspace(lc->cur)) {
 			skip_white_space(lc);
 			if (lc->cur == EOF)
 				return lc->cur;
 		} else if (isdigit(lc->cur)) {
-			return number(lc, 1);
+			return number(c, 1);
 		} else if (isalpha(lc->cur) || lc->cur == '_') {
 			return keyword_or_ident(lc);
 		} else if (ispunct(lc->cur)) {
-			return lex_symbol(lc);
+			return lex_symbol(c);
 		}
 		if (lc->cur == EOF || iscntrl(lc->cur))
-			return handle_error(lc);
+			return handle_error(c);
 	}
 }
 
 int sqllex(YYSTYPE * yylval, void *parm)
 {
-	context *lc = (context *) parm;
+	mvc *c = (mvc *) parm;
+	struct scanner *lc = &c->scanner;
 	int token = lc->prev;
 
 	lc->prev = 0;
@@ -783,20 +790,20 @@ int sqllex(YYSTYPE * yylval, void *parm)
 		lc->yylen = 0;
 		lc->yytext[0] = 0;
 
-		token = tokenize(lc);
+		token = tokenize(c);
 		yylval->sval = lc->yytext;
 
 		if (token == UNION) {
-			token = tokenize(lc);
+			token = tokenize(c);
 			yylval->sval = lc->yytext;
 			if (token == JOIN) {
-				cmd_add_token(lc, "UNION JOIN");
+				cmd_add_token(c, "UNION JOIN");
 				return UNIONJOIN;
 			} else {
 				lc->prev = token;
 				yylval->sval = "UNION";
-				cmd_add_token(lc, "UNION");
-				cmd_add_token(lc, lc->yytext);
+				cmd_add_token(c, "UNION");
+				cmd_add_token(c, lc->yytext);
 				return UNION;
 			}
 		} else {
@@ -806,9 +813,9 @@ int sqllex(YYSTYPE * yylval, void *parm)
 				yylval->sval = _strdup(lc->yytext);
 
 			if ( token == STRING )
-				cmd_add_string(lc, lc->yytext);
+				cmd_add_string(c, lc->yytext);
 			else
-				cmd_add_token(lc, lc->yytext);
+				cmd_add_token(c, lc->yytext);
 			lc->key ^= token;
 		}
 	}

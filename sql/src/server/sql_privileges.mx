@@ -38,16 +38,26 @@ table or column level) overwrite privileges on higher levels.
 /* privileges */
 #include <sql_mvc.h>
 
-extern int sql_privileges( int authid );
-extern int sql_table_privileges( int authid, int tableid, int globalprivs );
-extern int sql_column_privileges( int authid, int columnid, int tableprivs );
+#define PRIV_SELECT 1
+#define PRIV_UPDATE 2
+#define PRIV_INSERT 4
+#define PRIV_DELETE 8
+#define PRIV_EXECUTE 16
+#define PRIV_GRANT 32
 
-extern int sql_create_role(mvc *m,  str auth, int grantor ) ;
-extern int sql_drop_role( mvc *m, str auth );
-extern int sql_grant_role( mvc *m, str grantee, str auth );
-extern int sql_revoke_role( mvc *m, str grantee, str auth );
+extern int table_privs( mvc *m, sql_table *t, int privs );
+
+extern int sql_privilege( mvc *m, int auth_id, int obj_id, int privs, int sub );
+extern int sql_grantable( mvc *m, int grantorid, int obj_id, int privs, int sub );
+extern int sql_find_auth( mvc *m, str auth );
+extern int sql_find_schema( mvc *m, str schema );
+
+sql_export int sql_create_role(mvc *m,  str auth, int grantor ) ;
+sql_export int sql_drop_role( mvc *m, str auth );
+sql_export int sql_grant_role( mvc *m, str grantee, str auth );
+sql_export int sql_revoke_role( mvc *m, str grantee, str auth );
 sql_export int sql_create_user( mvc *m, str user, str passwd,str  fullname, str schema_name,int grantor );
-extern int sql_drop_user(mvc *m,  str user);
+sql_export int sql_drop_user(mvc *m,  str user);
 
 #endif /*_SQL_PRIV_H_ */
 @c
@@ -77,52 +87,6 @@ ptr bun_find(BAT *b, ptr v){
 	return NULL;
 }
 
-int sql_privileges( int authid ){
-	BAT *auths_id = desc("auths_id"); 
-	BAT *auths_priv = desc("auths_privileges");
-	ptr lid = bun_find(BATmirror(auths_id), &authid);
-	int res = *(int*)bun_find(auths_priv, lid);
-	
-	bat_destroy(auths_id);
-	bat_destroy(auths_priv);
-	return res;
-}
-
-int sql_table_privileges( int authid, int tableid, int gprivs ){
-	BAT *tp_table_id = desc("table_privileges_table_id"); 
-	BAT *tp_auth_id = desc("table_privileges_auth_id");
-	BAT *tp_priv = desc("table_privileges_privileges");
-	BAT *tables = BATselect(tp_table_id, &tableid, &tableid );
-	BAT *auths = BATsemijoin(tp_auth_id, tables);
-	ptr lid = bun_find(BATmirror(auths), &authid);
-	int res = *(int*)bun_find(tp_priv, lid);
-	
-	bat_destroy(tables);
-	bat_destroy(auths);
-
-	bat_destroy(tp_table_id);
-	bat_destroy(tp_auth_id);
-	bat_destroy(tp_priv);
-	return gprivs | res;
-}
-
-int sql_column_privileges( int authid, int columnid, int tprivs ){
-	BAT *tp_column_id = desc("column_privileges_column_id"); 
-	BAT *tp_auth_id = desc("column_privileges_auth_id");
-	BAT *tp_priv = desc("column_privileges_privileges");
-	BAT *columns = BATselect(tp_column_id, &columnid, &columnid );
-	BAT *auths = BATsemijoin(tp_auth_id, columns);
-	ptr lid = bun_find(BATmirror(auths), &authid);
-	int res = *(int*)bun_find(tp_priv, lid);
-	
-	bat_destroy(columns);
-	bat_destroy(auths);
-
-	bat_destroy(tp_column_id);
-	bat_destroy(tp_auth_id);
-	bat_destroy(tp_priv);
-	return tprivs | res;
-}
 @-
 The remainder has been taken over from the sql_server mil document.
 The code below provides abstractions to manage the priviliges.
@@ -133,14 +97,13 @@ The code below provides abstractions to manage the priviliges.
 	@1 = bun_find(BATmirror(auth_name),@2);
 @c
 int sql_create_role(mvc *m,  str auth, int grantor ) 
-{ BAT *auth_id, *auth_name, *auth_grantor, *auth_priv;
+{ BAT *auth_id, *auth_name, *auth_grantor;
   int zero = 0;
   oid onil =oid_nil;
   ptr p;
 	auth_id = mvc_bind( m, "sys", "auths", "id", 1); 
 	auth_name = mvc_bind( m, "sys", "auths", "name", 1);
 	auth_grantor = mvc_bind( m, "sys", "auths", "grantor", 1);
-	auth_priv = mvc_bind( m, "sys", "auths", "privileges", 1);
 	
 	p = BUNfnd(BATmirror(auth_name), auth);
 	if (p){
@@ -156,21 +119,19 @@ int sql_create_role(mvc *m,  str auth, int grantor )
 	}
 	BUNins(auth_name, &onil, auth);
 	BUNins(auth_grantor, &onil, &grantor);
-	BUNins(auth_priv, &onil, &zero); 
 	bat_destroy(auth_id);
 	bat_destroy(auth_name);
 	bat_destroy(auth_grantor);
-	bat_destroy(auth_priv);
 	return TRUE;
 } 
+
 int sql_drop_role( mvc *m, str auth )
-{ BAT *auth_id, *auth_name, *auth_grantor, *auth_priv, *D_auth;
+{ BAT *auth_id, *auth_name, *auth_grantor, *D_auth;
   ptr id, p;
   oid onil =oid_nil;
 	auth_id = mvc_bind( m, "sys", "auths", "id", 1);
 	auth_name = mvc_bind( m, "sys", "auths", "name", 1);
 	auth_grantor = mvc_bind( m, "sys", "auths", "grantor", 1);
-	auth_priv = mvc_bind( m, "sys", "auths", "privileges", 1);
 	D_auth = mvc_bind_dbat( m, "sys", "auths", 1);
 	
 	@:accessRight(auth)@
@@ -178,16 +139,15 @@ int sql_drop_role( mvc *m, str auth )
 	BUNins(auth_id,&id, &int_nil);
 	BUNins(auth_name,&id, &str_nil);
 	BUNins(auth_grantor,&id, &int_nil);
-	BUNins(auth_priv,&id, &int_nil);
 	BUNins(D_auth,&onil,id);
 
 	bat_destroy(auth_id);
 	bat_destroy(auth_name);
 	bat_destroy(auth_grantor);
-	bat_destroy(auth_priv);
 	bat_destroy(D_auth);
 	return TRUE;
 } 
+
 int sql_grant_role( mvc *m, str grantee, str auth )
 { BAT *auth_ids, *auth_name, *login_id, *role_id;
   ptr auth_id, grantee_id, p;
@@ -250,11 +210,47 @@ int sql_revoke_role( mvc *m, str grantee, str auth )
 	return TRUE;
 } 
 
+int sql_find_auth( mvc *m, str auth )
+{
+	int res = -1;
+	BAT *auth_name = mvc_bind( m, "sys", "auths", "name", 0);
+	BAT *auth_id = mvc_bind( m, "sys", "auths", "id", 0);
+	BUN p = BUNfnd(BATmirror(auth_name), auth);
+	
+	if (p){
+		int id = *(int*)BUNhead(auth_name, p);
+		res = *(int*)BUNtail(auth_id, BUNfnd(auth_id, &id));
+	}
+
+	bat_destroy(auth_name);
+	bat_destroy(auth_id);
+	return res;
+}
+
+int sql_find_schema( mvc *m, str schema )
+{
+	BAT *schema_ids = mvc_bind( m, "sys", "schemas", "id", 1);
+	BAT *schema_names = mvc_bind( m, "sys", "schemas", "name", 1);
+	BUN p;
+	int schema_id = -1;
+
+	p = BUNfnd(BATmirror(schema_names), schema);
+	if (p) {
+		int id = *(int*)BUNhead(schema_names, p);
+		schema_id = *(int*)BUNtail(schema_ids, BUNfnd(schema_ids, &id));
+	}
+	
+	bat_destroy(schema_ids);
+	bat_destroy(schema_names);
+	return schema_id;
+}
+
 int sql_create_user( mvc *m, str user, str passwd, str fullname, str schema_name,int grantor )
-{ BAT *user_name, *user_passwd, *user_fullname, *user_dschema;
-  BAT *schema_ids, *schema_names;
-  ptr schema_id;
-  oid onil =oid_nil;
+{ 
+	BAT *user_name, *user_passwd, *user_fullname, *user_dschema;
+  	BAT *schema_ids, *schema_names;
+  	ptr schema_id;
+  	oid onil =oid_nil;
 	if (!(sql_create_role( m, user, grantor )))
 		return FALSE; 
 
@@ -309,4 +305,116 @@ int sql_drop_user(mvc *m,  str user)
 	bat_destroy(user_dschema);
 	bat_destroy(D_user);
 	return TRUE;
+}
+
+int sql_privilege_( mvc *m, int auth_id, int obj_id, int priv, int sub )
+{
+ 	BAT *priv_obj = mvc_bind( m, "sys", "privileges", "obj_id", 1);
+ 	BAT *priv_auth = mvc_bind( m, "sys", "privileges", "auth_id", 1);
+ 	BAT *priv_priv = mvc_bind( m, "sys", "privileges", "privileges", 1);
+ 	BAT *priv_hier = mvc_bind( m, "sys", "privileges", "hierarchy", 1);
+	int res = 0;
+	
+	BAT *b1,*b2 = BATselect(priv_obj, &obj_id, &obj_id );
+
+	b1 = BATsemijoin(priv_auth, b2);
+	bat_destroy(b2);
+	b2 = BATselect( b1, &auth_id, &auth_id );
+	bat_destroy(b1);
+	b1 = BATsemijoin(priv_priv, b2);
+	bat_destroy(b2);
+	b2 = BATselect(b1, &priv, &priv);
+	bat_destroy(b1);
+
+	if (BATcount(b2) == 1){
+		if (sub){
+			int id = *(int*)BUNhead(b2,BUNfirst(b2));
+			int hier = *(int*)BUNtail(priv_hier, 
+						BUNfnd(priv_hier, &id));
+			if (hier)
+				res = priv;
+		} else {
+			res = priv;
+		}
+	}
+	bat_destroy(b2);
+
+	bat_destroy(priv_obj);
+	bat_destroy(priv_auth);
+	bat_destroy(priv_priv);
+	bat_destroy(priv_hier);
+	return res;
+}
+
+int sql_privilege( mvc *m, int auth_id, int obj_id, int priv, int sub )
+{
+	if (m->user_id == 0)
+		return 1;
+	return sql_privilege_(m, auth_id, obj_id, priv, sub);
+	
+}
+
+int table_privs( mvc *m, sql_table *t, int priv )
+{
+	int a;
+
+	if ((a = sql_privilege( m, m->user_id, t->base.id, priv, 0 )) == 0 ||
+	    (a = sql_privilege( m, m->role_id, t->base.id, priv, 0 )) == 0 ||
+	    (a = sql_privilege( m, 1, t->base.id, priv, 0 )) == 0) {
+		return 0;
+	}
+	return 1;
+}
+
+int sql_grantable_( mvc *m, int grantorid, int obj_id, int privs, int sub )
+{
+	BUN p,q;
+ 	BAT *priv_obj = mvc_bind( m, "sys", "privileges", "obj_id", 1);
+ 	BAT *priv_auth = mvc_bind( m, "sys", "privileges", "auth_id", 1);
+ 	BAT *priv_priv = mvc_bind( m, "sys", "privileges", "privileges", 1);
+ 	BAT *priv_allowed = mvc_bind( m, "sys", "privileges", "grantable", 1);
+ 	BAT *priv_hier = mvc_bind( m, "sys", "privileges", "hierarchy", 1);
+	
+	BAT *b1,*b2 = BATselect(priv_obj, &obj_id, &obj_id );
+
+	b1 = BATsemijoin(priv_auth, b2);
+	bat_destroy(b2);
+	b2 = BATselect( b1, &grantorid, &grantorid );
+	bat_destroy(b1);
+	b1 = BATsemijoin(priv_priv, b2);
+	bat_destroy(b2);
+
+	BATloop(b1, p, q) {
+		int id = *(int*)BUNhead(b1,p);
+		int priv = *(int*)BUNtail(b1,p);
+		int allowed = *(int*)BUNtail(priv_allowed, 
+						BUNfnd(priv_allowed, &id));
+		/* switch of priv bit */
+		if (allowed && !sub)
+			privs = (privs & ~priv); 
+		if (sub && allowed){
+			int hier = *(int*)BUNtail(priv_hier, 
+						BUNfnd(priv_hier, &id));
+			if (hier)
+				privs = (privs & ~priv); 
+		}
+	}
+	bat_destroy(b1);
+
+	bat_destroy(priv_obj);
+	bat_destroy(priv_auth);
+	bat_destroy(priv_priv);
+	bat_destroy(priv_allowed);
+	bat_destroy(priv_hier);
+	if (privs != 0)
+		return 0;
+	return 1;
+}
+
+int sql_grantable( mvc *m, int grantorid, int obj_id, int privs, int sub )
+{
+	if (m->user_id == 0)
+		return 1;
+	return sql_grantable_(m, grantorid, obj_id, privs, sub);
+	
 }

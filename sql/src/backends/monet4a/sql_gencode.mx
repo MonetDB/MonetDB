@@ -44,6 +44,7 @@ sql_server_export void backend_dumpproc( backend *be, int id, stmt *s );
 #include <sql_gencode.h>
 #include <string.h>
 
+sql_server_export int backend_dumpstmt_( stmt *s, int *nr, backend *sql );
 @(
 		if (c->debug&8192) {
 			char *sqzd_cmd = NULL;
@@ -62,7 +63,7 @@ static void write_head( backend *sql, int nr )
         (void) nr; /* Stefan: unused!? */
 
 	if (sql->debug&2){
-		char *t0 = "t0 := time();\n";
+		char *t0 = "var t0 := time();\n";
 		int l = strlen(t0);
 		stream_write( sql->out, t0, 1, l );
 	}
@@ -73,7 +74,7 @@ static void write_tail( backend *sql, int nr)
 	if (sql->debug&2){
 		char dbg[BUFSIZ];
 		int l = snprintf( dbg, BUFSIZ,
-		"t1 := time(); printf(\"%d %%d\\n\", t1 - t0);\n", nr);
+		"var t1 := time(); printf(\"%d %%d\\n\", t1 - t0);\n", nr);
 		stream_write( sql->out, dbg, 1, l );
 	}
 }
@@ -153,9 +154,9 @@ static void dump( backend *sql, char *buf, int len, int nr )
 void mvc_dump_1( backend *sql, stmt *s, char *name, int *nr )
 {
 	char buf[BUFSIZ];
-	int o1 = backend_dumpstmt(s->op1.stval, nr, sql);
+	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
 	int len = snprintf( buf, BUFSIZ, 
-		"s%d := mvc_%s(myc, s%d);\n", 
+		"var s%d := mvc_%s(myc, s%d);\n", 
 		-s->nr, name, o1);
 	dump(sql,buf,len,-s->nr);
 }
@@ -163,10 +164,10 @@ void mvc_dump_1( backend *sql, stmt *s, char *name, int *nr )
 void mvc_dump_2( backend *sql, stmt *s, char *name, int *nr )
 {
 	char buf[BUFSIZ];
-	int o1 = backend_dumpstmt(s->op1.stval, nr, sql);
-	int o2 = backend_dumpstmt(s->op2.stval, nr, sql);
+	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
+	int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
 	int len = snprintf( buf, BUFSIZ, 
-		"s%d := mvc_%s(myc, s%d, s%d);\n", 
+		"var s%d := mvc_%s(myc, s%d, s%d);\n", 
 		-s->nr, name, o1, o2);
 	dump(sql,buf,len,-s->nr);
 }
@@ -174,11 +175,11 @@ void mvc_dump_2( backend *sql, stmt *s, char *name, int *nr )
 void mvc_dump_3( backend *sql, stmt *s, char *name, int *nr )
 {
 	char buf[BUFSIZ];
-	int o1 = backend_dumpstmt(s->op1.stval, nr, sql);
-	int o2 = backend_dumpstmt(s->op2.stval, nr, sql);
-	int o3 = backend_dumpstmt(s->op3.stval, nr, sql);
+	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
+	int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
+	int o3 = backend_dumpstmt_(s->op3.stval, nr, sql);
 	int len = snprintf( buf, BUFSIZ, 
-		"s%d := mvc_%s(myc, s%d, s%d, s%d);\n", 
+		"var s%d := mvc_%s(myc, s%d, s%d, s%d);\n", 
 		-s->nr, name, o1, o2, o3);
 	dump(sql,buf,len,-s->nr);
 }
@@ -186,13 +187,26 @@ void mvc_dump_3( backend *sql, stmt *s, char *name, int *nr )
 void mvc_dump_4( backend *sql, stmt *s, char *name, int *nr )
 {
 	char buf[BUFSIZ];
-	int o1 = backend_dumpstmt(s->op1.stval, nr, sql);
-	int o2 = backend_dumpstmt(s->op2.stval, nr, sql);
-	int o3 = backend_dumpstmt(s->op3.stval, nr, sql);
-	int o4 = backend_dumpstmt(s->op4.stval, nr, sql);
+	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
+	int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
+	int o3 = backend_dumpstmt_(s->op3.stval, nr, sql);
+	int o4 = backend_dumpstmt_(s->op4.stval, nr, sql);
 	int len = snprintf( buf, BUFSIZ, 
-		"s%d := mvc_%s(myc, s%d, s%d, s%d, s%d);\n", 
+		"var s%d := mvc_%s(myc, s%d, s%d, s%d, s%d);\n", 
 		-s->nr, name, o1, o2, o3, o4);
+	dump(sql,buf,len,-s->nr);
+}
+
+void mvc_dump_5( backend *sql, stmt *s, char *name, int *nr )
+{
+	char buf[BUFSIZ];
+	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
+	int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
+	int o3 = backend_dumpstmt_(s->op3.stval, nr, sql);
+	int o4 = backend_dumpstmt_(s->op4.stval, nr, sql);
+	int len = snprintf( buf, BUFSIZ, 
+		"var s%d := mvc_%s(myc, s%d, s%d, s%d, s%d, %d);\n", 
+		-s->nr, name, o1, o2, o3, o4, s->flag);
 	dump(sql,buf,len,-s->nr);
 }
 
@@ -201,9 +215,9 @@ void mvc_dump_n( backend *sql, stmt *s, char *name, int *nr )
 	char buf[BUFSIZ];
 	node *n;
 
-	int len = snprintf( buf, BUFSIZ, "s%d := mvc_%s(myc", -s->nr, name);
+	int len = snprintf( buf, BUFSIZ, "var s%d := mvc_%s(myc", -s->nr, name);
 	for(n = s->op1.stval->op1.lval->h; n; n = n->next){
-		int o = backend_dumpstmt(n->data, nr, sql);
+		int o = backend_dumpstmt_(n->data, nr, sql);
 		len += snprintf( buf+len, BUFSIZ-len, ", s%d", o);
 	}
 	len += snprintf( buf+len, BUFSIZ-len, ");\n");
@@ -213,9 +227,9 @@ void mvc_dump_n( backend *sql, stmt *s, char *name, int *nr )
 void dump_1( backend *sql, stmt *s, char *name, int *nr )
 {
 	char buf[BUFSIZ];
-	int o1 = backend_dumpstmt(s->op1.stval, nr, sql);
+	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
 	int len = snprintf( buf, BUFSIZ, 
-		"s%d := s%d.%s;\n", 
+		"var s%d := s%d.%s;\n", 
 		-s->nr, o1, name);
 	dump(sql,buf,len,-s->nr);
 }
@@ -223,10 +237,10 @@ void dump_1( backend *sql, stmt *s, char *name, int *nr )
 void dump_2( backend *sql, stmt *s, char *name, int *nr )
 {
 	char buf[BUFSIZ];
-	int o1 = backend_dumpstmt(s->op1.stval, nr, sql);
-	int o2 = backend_dumpstmt(s->op2.stval, nr, sql);
+	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
+	int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
 	int len = snprintf( buf, BUFSIZ, 
-		"s%d := %s(s%d, s%d);\n", 
+		"var s%d := %s(s%d, s%d);\n", 
 		-s->nr, name, o1, o2);
 	dump(sql,buf,len,-s->nr);
 }
@@ -234,16 +248,16 @@ void dump_2( backend *sql, stmt *s, char *name, int *nr )
 void dump_3( backend *sql, stmt *s, char *name, int *nr )
 {
 	char buf[BUFSIZ];
-	int o1 = backend_dumpstmt(s->op1.stval, nr, sql);
-	int o2 = backend_dumpstmt(s->op2.stval, nr, sql);
-	int o3 = backend_dumpstmt(s->op3.stval, nr, sql);
+	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
+	int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
+	int o3 = backend_dumpstmt_(s->op3.stval, nr, sql);
 	int len = snprintf( buf, BUFSIZ, 
-		"s%d := %s(s%d, s%d, s%d);\n", 
+		"var s%d := %s(s%d, s%d, s%d);\n", 
 		-s->nr, name, o1, o2, o3);
 	dump(sql,buf,len,-s->nr);
 }
 
-int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
+int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
     char buf[BUFSIZ+1];
     int len = 0;
     node *n;
@@ -259,21 +273,38 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 
 	switch(s->type){
 	case st_none: 
-		len = snprintf( buf, BUFSIZ, "none := \"none\";\n");
+		len = snprintf( buf, BUFSIZ, "var none := \"none\";\n");
 		dump(sql,buf,len,-s->nr);
 		break;
-	case st_load_module: 
-		len = snprintf( buf, BUFSIZ, "module(\"%s\");\n", s->op4.sval);
-		dump(sql,buf,len,-s->nr);
+	case st_sql: 
+		mvc_dump_1( sql, s, "sql", nr  ); 
+		break;
+	case st_create_module: 
+		mvc_dump_1( sql, s, "create_module", nr  ); 
+		break;
+	case st_drop_module: 
+		mvc_dump_1( sql, s, "drop_module", nr  ); 
+		break;
+	case st_create_type: 
+		mvc_dump_1( sql, s, "create_type", nr  ); 
+		break;
+	case st_drop_type: 
+		mvc_dump_1( sql, s, "drop_type", nr  ); 
+		break;
+	case st_create_func: 
+		mvc_dump_1( sql, s, "create_func", nr  ); 
+		break;
+	case st_drop_func: 
+		mvc_dump_1( sql, s, "drop_func", nr  ); 
 		break;
 	case st_assign: {
-		int val = backend_dumpstmt( s->op1.stval, nr, sql );
+		int val = backend_dumpstmt_( s->op1.stval, nr, sql );
 		len = snprintf( buf, BUFSIZ, "%s := s%d;\n",
 			s->op4.sval, val);
 		dump(sql,buf,len,-s->nr);
 	}	break;
 	case st_var: {
-		len = snprintf( buf, BUFSIZ, "s%d := %s;\n",
+		len = snprintf( buf, BUFSIZ, "var s%d := %s;\n",
 			-s->nr, s->op1.sval);
 		dump(sql,buf,len,-s->nr);
 	}	break;
@@ -344,6 +375,12 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 	case st_drop_idx:
 		mvc_dump_2( sql, s, "drop_idx", nr );
 		break;
+	case st_create_user: 
+		mvc_dump_5( sql, s, "create_user", nr );
+		break;
+	case st_drop_user: 
+		mvc_dump_1( sql, s, "drop_user", nr );
+		break;
 	case st_create_role: 
 		mvc_dump_2( sql, s, "create_role", nr );
 		break;
@@ -358,12 +395,12 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 		break;
 	case st_temp: 
 		len = snprintf( buf, BUFSIZ, 
-			"s%d := new(void,%s).seqbase(oid(0));\n", 
+			"var s%d := new(void,%s).seqbase(oid(0));\n", 
 			-s->nr, s->op4.typeval->type->name );
 		dump(sql,buf,len,-s->nr);
 		break;
 	case st_ibat: 
-		s->nr = -backend_dumpstmt( s->op1.stval, nr, sql );
+		s->nr = -backend_dumpstmt_( s->op1.stval, nr, sql );
 		break;
 	case st_bat:
 	case st_ubat: {
@@ -373,7 +410,7 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 			hname = s->h->op1.tval->base.name;
 		}
 		len = snprintf( buf, BUFSIZ, 
-			   "s%d := mvc_bind%s(myc, \"%s\", \"%s\", \"%s\", %d)",
+		     "var s%d := mvc_bind%s(myc, \"%s\", \"%s\", \"%s\", %d)",
 			  -s->nr, type, 
 			  s->op1.cval->t->s->base.name, 
 			  s->op1.cval->t->base.name, 
@@ -397,7 +434,7 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 	} break;
 	case st_dbat: {
 		len = snprintf( buf, BUFSIZ, 
-		  	"s%d := mvc_bind_dbat(myc, \"%s\", \"%s\", %d)",
+		  	"var s%d := mvc_bind_dbat(myc, \"%s\", \"%s\", %d)",
 			  -s->nr,  
 			  s->op1.tval->s->base.name, 
 			  s->op1.tval->base.name, 
@@ -416,7 +453,7 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 	} break;
 	case st_idxbat: {
 		len = snprintf( buf, BUFSIZ, 
-		  	"s%d := mvc_bind_ibat(myc, \"%s\", \"%s\", \"%s\", %d)",
+		  "var s%d := mvc_bind_ibat(myc, \"%s\", \"%s\", \"%s\", %d)",
 			  -s->nr, 
 			  s->op1.idxval->t->s->base.name, 
 			  s->op1.idxval->t->base.name, 
@@ -447,40 +484,40 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 		dump_1( sql, s, "mirror", nr );
 	 	break;
 	case st_limit: {
-		int l = backend_dumpstmt( s->op1.stval, nr, sql );
-		int r = backend_dumpstmt( s->op2.stval, nr, sql );
+		int l = backend_dumpstmt_( s->op1.stval, nr, sql );
+		int r = backend_dumpstmt_( s->op2.stval, nr, sql );
 		len = snprintf( buf, BUFSIZ, 
-			"s%d := s%d.slice(0, s%d - 1);\n", -s->nr, l, r );
+			"var s%d := s%d.slice(0, s%d - 1);\n", -s->nr, l, r );
 		dump(sql,buf,len,-s->nr);
 	} 	break;
 	case st_order: {
-		int l = backend_dumpstmt( s->op1.stval, nr, sql );
+		int l = backend_dumpstmt_( s->op1.stval, nr, sql );
 		if (s->flag)
 			len = snprintf( buf, BUFSIZ,
-			"s%d := s%d.reverse().sort()", -s->nr, l );
+			"var s%d := s%d.reverse().sort()", -s->nr, l );
 		else 
 			len = snprintf( buf, BUFSIZ,
-			"s%d := s%d.reverse().sort_rev()", -s->nr, l );
+			"var s%d := s%d.reverse().sort_rev()", -s->nr, l );
 		len += snprintf( buf+len, BUFSIZ-len, ".reverse();\n" );
 		dump(sql,buf,len,-s->nr);
 	} 	break;
 	case st_reorder: {
-		int l = backend_dumpstmt( s->op1.stval, nr, sql );
-		int r = backend_dumpstmt( s->op2.stval, nr, sql );
+		int l = backend_dumpstmt_( s->op1.stval, nr, sql );
+		int r = backend_dumpstmt_( s->op2.stval, nr, sql );
 		if (s->flag)
 			len = snprintf( buf, BUFSIZ,
-				"s%d := s%d.CTrefine(s%d)", -s->nr, l, r);
+				"var s%d := s%d.CTrefine(s%d)", -s->nr, l, r);
 		else 
 			len = snprintf( buf, BUFSIZ,
-				"s%d := s%d.CTrefine_rev(s%d)", -s->nr, l, r);
+				"var s%d := s%d.CTrefine_rev(s%d)", -s->nr, l, r);
 		len += snprintf( buf+len, BUFSIZ-len, ";\n" );
 		dump(sql,buf,len,-s->nr);
 	} 	break;
 
 	case st_select: 
 	case st_uselect: {
-		int l = backend_dumpstmt( s->op1.stval, nr, sql );
-		int r = backend_dumpstmt( s->op2.stval, nr, sql );
+		int l = backend_dumpstmt_( s->op1.stval, nr, sql );
+		int r = backend_dumpstmt_( s->op2.stval, nr, sql );
 		if (s->op2.stval->nrcols >= 1){
 			char *op = "=";
 			switch(s->flag){
@@ -495,7 +532,7 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 					"error impossible\n");
 	  		} 
 			len = snprintf( buf, BUFSIZ, 
-				"s%d := [%s](s%d,s%d).uselect(TRUE);\n", 
+				"var s%d := [%s](s%d,s%d).uselect(TRUE);\n", 
 				-s->nr, op, l, r ); 
 		} else {
 		char *cmd;
@@ -506,44 +543,44 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 		switch(s->flag){
 		case cmp_like:
 			len = snprintf( buf, BUFSIZ, 
-				"s%d := s%d.likeselect(s%d);\n", -s->nr, l, r ); 
+				"var s%d := s%d.likeselect(s%d);\n", -s->nr, l, r ); 
 			break;
 		case cmp_notlike:
 			(void)(*nr)++; 
 			len = snprintf( buf, BUFSIZ, 
-				"s%d := s%d.likeselect(s%d);\n", *nr, l, r ); 
+				"var s%d := s%d.likeselect(s%d);\n", *nr, l, r ); 
 			len += snprintf( buf+len, BUFSIZ, 
-				"s%d := s%d.kdiff(s%d);\n", -s->nr, l, *nr );
+				"var s%d := s%d.kdiff(s%d);\n", -s->nr, l, *nr );
 			break;
 		case cmp_equal:
 			len = snprintf( buf, BUFSIZ, 
-				"s%d := s%d.%s(s%d);\n", -s->nr, l, cmd, r ); 
+				"var s%d := s%d.%s(s%d);\n", -s->nr, l, cmd, r ); 
 			break;
 		case cmp_notequal:
 			(void)(*nr)++; 
 			len = snprintf( buf, BUFSIZ, 
-				"s%d := s%d.uselect(s%d);\n", *nr, l, r ); 
+				"var s%d := s%d.uselect(s%d);\n", *nr, l, r ); 
 			len += snprintf( buf+len, BUFSIZ, 
-				"s%d := s%d.kdiff(s%d);\n", -s->nr, l, *nr );
+				"var s%d := s%d.kdiff(s%d);\n", -s->nr, l, *nr );
 			break;
 		case cmp_lt:
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.%s(%s(nil), s%d, FALSE, FALSE);\n", 
+			  "var s%d := s%d.%s(%s(nil), s%d, FALSE, FALSE);\n", 
 			  -s->nr, l, cmd, tail_type(s)->type->name, r ); 
 			break;
 		case cmp_lte:
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.%s(%s(nil), s%d);\n", 
+			  "var s%d := s%d.%s(%s(nil), s%d);\n", 
 			  -s->nr, l, cmd, tail_type(s)->type->name, r ); 
 			break;
 		case cmp_gt:
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.%s(s%d, %s(nil), FALSE, FALSE);\n", 
+			  "var s%d := s%d.%s(s%d, %s(nil), FALSE, FALSE);\n", 
 			  -s->nr, l, cmd, r, tail_type(s)->type->name ); 
 			break;
 		case cmp_gte: 
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.%s(s%d, %s(nil));\n", 
+			  "var s%d := s%d.%s(s%d, %s(nil));\n", 
 			  -s->nr, l, cmd, r, tail_type(s)->type->name ); 
 			break;
 		default:
@@ -555,9 +592,9 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 	} break;
 	case st_select2: 
 	case st_uselect2: {
-		int l = backend_dumpstmt( s->op1.stval, nr, sql );
-		int r1 = backend_dumpstmt( s->op2.stval, nr, sql );
-		int r2 = backend_dumpstmt( s->op3.stval, nr, sql );
+		int l = backend_dumpstmt_( s->op1.stval, nr, sql );
+		int r1 = backend_dumpstmt_( s->op2.stval, nr, sql );
+		int r2 = backend_dumpstmt_( s->op3.stval, nr, sql );
 		char *bits = NULL;
 		char *cmd;
 		if (s->type == st_select2)
@@ -579,7 +616,7 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 			break;
 		}
 		len = snprintf( buf, BUFSIZ, 
-		  "s%d := s%d.%s(s%d, s%d%s);\n", 
+		  "var s%d := s%d.%s(s%d, s%d%s);\n", 
 		  -s->nr, l, cmd, r1, r2, bits ); 
 		dump(sql,buf,len,-s->nr);
 	} break;
@@ -594,18 +631,18 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 		break;
 	case st_reljoin: {
 		if (list_length(s->op1.lval) == 1) {
-			int l = backend_dumpstmt( s->op1.lval->h->data, nr, sql );
-			int r = backend_dumpstmt( s->op2.lval->h->data, nr, sql );
+			int l = backend_dumpstmt_( s->op1.lval->h->data, nr, sql );
+			int r = backend_dumpstmt_( s->op2.lval->h->data, nr, sql );
 			len = snprintf( buf, BUFSIZ,
-			  "s%d := join(s%d,reverse(s%d));\n", -s->nr, l, r);
+			  "var s%d := join(s%d,reverse(s%d));\n", -s->nr, l, r);
 		} else {
 			node *ln = NULL, *rn = NULL;
 			char x = '(';
 			len = snprintf( buf, BUFSIZ,
-			  "s%d := ds_link", -s->nr );
+			  "var s%d := ds_link", -s->nr );
 			for (ln = s->op1.lval->h, rn = s->op2.lval->h; ln && rn; ln = ln->next, rn = rn->next) {
-				int l = backend_dumpstmt( ln->data, nr, sql );
-				int r = backend_dumpstmt( rn->data, nr, sql );
+				int l = backend_dumpstmt_( ln->data, nr, sql );
+				int r = backend_dumpstmt_( rn->data, nr, sql );
 				len += snprintf(buf +len, BUFSIZ-len,
 				  "%c s%d, s%d", x, l, r );
 				x = ',';
@@ -617,39 +654,39 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 	} break;
 	case st_outerjoin:
 	case st_join: {
-		int l = backend_dumpstmt( s->op1.stval, nr, sql );
-		int r = backend_dumpstmt( s->op2.stval, nr, sql );
+		int l = backend_dumpstmt_( s->op1.stval, nr, sql );
+		int r = backend_dumpstmt_( s->op2.stval, nr, sql );
 		char *jt = "join";
 		if (s->type == st_outerjoin)
 			jt = "outerjoin";
 		switch(s->flag){
 		case cmp_equal:
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.%s(s%d);\n", -s->nr, l, jt, r ); 
+			  "var s%d := s%d.%s(s%d);\n", -s->nr, l, jt, r ); 
 			break;
 		case cmp_notequal:
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.%s(s%d, \"!=\");\n", -s->nr, l, jt, r ); 
+			  "var s%d := s%d.%s(s%d, \"!=\");\n", -s->nr, l, jt, r ); 
 			break;
 		case cmp_lt:
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.%s(s%d, \"<\");\n", -s->nr, l, jt, r ); 
+			  "var s%d := s%d.%s(s%d, \"<\");\n", -s->nr, l, jt, r ); 
 			break;
 		case cmp_lte: 
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.%s(s%d, \"<=\");\n", -s->nr, l, jt, r );
+			  "var s%d := s%d.%s(s%d, \"<=\");\n", -s->nr, l, jt, r );
 			break;
 		case cmp_gt: 
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.%s(s%d, \">\" );\n", -s->nr, l, jt, r); 
+			  "var s%d := s%d.%s(s%d, \">\" );\n", -s->nr, l, jt, r); 
 			break;
 		case cmp_gte: 
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.%s(s%d, \">=\" );\n", -s->nr, l, jt, r);
+			  "var s%d := s%d.%s(s%d, \">=\" );\n", -s->nr, l, jt, r);
 			break;
 		case cmp_all: /* aka cross table */
 			len = snprintf( buf, BUFSIZ, 
-			"s%d := s%d.project(0).join(s%d.reverse().project(0).reverse());\n", -s->nr, l, r ); 
+			"var s%d := s%d.project(0).join(s%d.reverse().project(0).reverse());\n", -s->nr, l, r ); 
 			break;
 		default:
 			len = snprintf( buf, BUFSIZ, 
@@ -671,32 +708,32 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 		dump_2( sql, s, "CTgroup", nr );
 		break;
 	case st_unique: {
-		int l = backend_dumpstmt( s->op1.stval, nr, sql );
+		int l = backend_dumpstmt_( s->op1.stval, nr, sql );
 		if (s->op2.stval){
-			int g = backend_dumpstmt( s->op2.stval, nr, sql );
+			int g = backend_dumpstmt_( s->op2.stval, nr, sql );
 
 		  	len += snprintf( buf+len, BUFSIZ-len, 
-			/*"s%dg := s%d.CTunique(s%d);\n", -s->nr, g, l);*/
-			"s%dg := s%d.CTgroup(s%d);\n", -s->nr, g, l);
+			/*"var s%dg := s%d.CTunique(s%d);\n", -s->nr, g, l);*/
+			"var s%dg := s%d.CTgroup(s%d);\n", -s->nr, g, l);
 		  	len += snprintf( buf+len, BUFSIZ-len, 
-			"s%de := s%dg.tunique().mirror();\n", -s->nr, -s->nr);
-			/*"s%de := s%dg.reverse.kunique.mirror;\n", -s->nr, -s->nr);*/
+			"var s%de := s%dg.tunique().mirror();\n", -s->nr, -s->nr);
+			/*"var s%de := s%dg.reverse.kunique.mirror;\n", -s->nr, -s->nr);*/
 		  	len += snprintf( buf+len, BUFSIZ-len, 
-			"s%d := s%d.semijoin(s%de);\n", -s->nr, l, -s->nr );
+			"var s%d := s%d.semijoin(s%de);\n", -s->nr, l, -s->nr );
 		} else {
 		  	len += snprintf( buf+len, BUFSIZ-len, 
-			"s%d := s%d.reverse().kunique().reverse();\n", 
+			"var s%d := s%d.reverse().kunique().reverse();\n", 
 			-s->nr, l);
 		}
 		dump(sql,buf,len,-s->nr);
 	} 	break;
 	case st_op: {
 		len = snprintf( buf, BUFSIZ, 
-		   "s%d := %s();\n", -s->nr, s->op4.funcval->func->imp);
+		   "var s%d := %s();\n", -s->nr, s->op4.funcval->func->imp);
 		dump(sql,buf,len,-s->nr);
 	} 	break;
 	case st_unop: {
-		int l = backend_dumpstmt( s->op1.stval, nr, sql );
+		int l = backend_dumpstmt_( s->op1.stval, nr, sql );
 
 		if (s->op1.stval->nrcols){
 		  sql_subtype *v, *a;
@@ -704,39 +741,39 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 		  v = tail_type(s->op1.stval);
 		  if (  a->type->localtype == v->type->localtype &&
 			strcmp(s->op4.funcval->func->name, "convert") == 0 )
-		   len = snprintf( buf, BUFSIZ, "s%d := s%d;\n", -s->nr, l);
+		   len = snprintf( buf, BUFSIZ, "var s%d := s%d;\n", -s->nr, l);
 		  else
 		   len = snprintf( buf, BUFSIZ, 
-		   "s%d := [%s](s%d);\n", -s->nr, s->op4.funcval->func->imp, l);
+		   "var s%d := [%s](s%d);\n", -s->nr, s->op4.funcval->func->imp, l);
 		} else 
 		  len = snprintf( buf, BUFSIZ, 
-		   "s%d := %s(s%d);\n", -s->nr, s->op4.funcval->func->imp, l);
+		   "var s%d := %s(s%d);\n", -s->nr, s->op4.funcval->func->imp, l);
 		 dump(sql,buf,len,-s->nr);
 	} 	break;
 	case st_binop: {
-		int l = backend_dumpstmt( s->op1.stval, nr, sql );
-		int r = backend_dumpstmt( s->op2.stval, nr, sql );
+		int l = backend_dumpstmt_( s->op1.stval, nr, sql );
+		int r = backend_dumpstmt_( s->op2.stval, nr, sql );
 		if (s->op1.stval->nrcols || s->op2.stval->nrcols ){
 /*
 		  	if (!s->op1.stval->nrcols){
 				int n = (*nr)++; 
 		  		len += snprintf( buf+len, BUFSIZ-len, 
-		    		"s%d := [s%d ~ s%d];\n", n, r, l ); 
+		    		"var s%d := [s%d ~ s%d];\n", n, r, l ); 
 				l = n;
 		  	}
 		  	if (!s->op2.stval->nrcols){
 				int n = (*nr)++; 
 		  		len += snprintf( buf+len, BUFSIZ-len, 
-		    		"s%d := [s%d ~ s%d];\n", n, l, r ); 
+		    		"var s%d := [s%d ~ s%d];\n", n, l, r ); 
 				r = n;
 		  	}
 */
 		  	len += snprintf( buf+len, BUFSIZ-len, 
-		    	"s%d := [%s](s%d,s%d);\n", 
+		    	"var s%d := [%s](s%d,s%d);\n", 
 			-s->nr, s->op4.funcval->func->imp, l, r );
 		} else  {
 		  	len += snprintf( buf+len, BUFSIZ-len, 
-		    	"s%d := %s(s%d,s%d);\n", 
+		    	"var s%d := %s(s%d,s%d);\n", 
 			-s->nr, s->op4.funcval->func->imp, l,r );
 		}
 		dump(sql,buf,len,-s->nr);
@@ -746,7 +783,7 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 		char ops[BUFSIZ];
 		node *n;
 
-		backend_dumpstmt(s->op1.stval, nr, sql); /* dump operants */
+		backend_dumpstmt_(s->op1.stval, nr, sql); /* dump operants */
 		write_head(sql,-s->nr);
 		if (s->nrcols){
 		    stmt *h;
@@ -763,7 +800,7 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 		  	if (!op->nrcols){
 				n = (*nr)++; 
 		  		len = snprintf( buf, BUFSIZ, 
-		    		"s%d := [ s%d ~ s%d];\n", n, h->nr, op->nr); 
+		    		"var s%d := [ s%d ~ s%d];\n", n, h->nr, op->nr); 
 				write_part(sql,buf,len);
 		  	}
 */
@@ -771,7 +808,7 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 			 "%cs%d", (opslen)?',':' ', n);
 		    }
 		    len = snprintf( buf, BUFSIZ, 
-		    	"s%d := [%s](%s);\n", 
+		    	"var s%d := [%s](%s);\n", 
 			-s->nr, s->op4.funcval->func->imp, ops );
 		} else {
 		    for (n = s->op1.stval->op1.lval->h; n; n=n->next){
@@ -782,7 +819,7 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 			 "%cs%d", (opslen)?',':' ', n);
 		    }
 		    len = snprintf( buf, BUFSIZ, 
-		      	"s%d := %s(%s);\n", 
+		      	"var s%d := %s(%s);\n", 
 			-s->nr, s->op4.funcval->func->imp, ops);
 		}
 		write_part(sql,buf,len);
@@ -791,82 +828,82 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 		write_tail(sql,-s->nr);
 	} 	break;
 	case st_aggr: {
-		int l = backend_dumpstmt( s->op1.stval, nr, sql );
+		int l = backend_dumpstmt_( s->op1.stval, nr, sql );
 		if (s->op3.gval){
-			int g = backend_dumpstmt( s->op2.stval, nr, sql );
-			int e = backend_dumpstmt( s->op3.stval, nr, sql );
+			int g = backend_dumpstmt_( s->op2.stval, nr, sql );
+			int e = backend_dumpstmt_( s->op3.stval, nr, sql );
 			len += snprintf( buf+len, BUFSIZ-len, 
-			"s%d := {%s}(s%d, s%d, s%d);\n", 
+			"var s%d := {%s}(s%d, s%d, s%d);\n", 
 				-s->nr, s->op4.aggrval->aggr->imp, l, g, e);
 		} else {
 			len += snprintf( buf+len, BUFSIZ-len, 
-				"s%d := s%d.%s();\n", 
+				"var s%d := s%d.%s();\n", 
 				-s->nr, l, s->op4.aggrval->aggr->imp );
 		}
 		dump(sql,buf,len,-s->nr);
 	} 	break;
 	case st_atom: {
 		write_head(sql,-s->nr);
-		len = snprintf( buf, BUFSIZ, "s%d := ", -s->nr);
+		len = snprintf( buf, BUFSIZ, "var s%d := ", -s->nr);
 		write_command(sql,buf);
 		write_part(sql,buf,len);
 		atom_dump(s->op1.aval, sql->out);
 		len = snprintf( buf, BUFSIZ, ";\n");
 		write_part(sql,buf,len);
-		len = snprintf( buf, BUFSIZ, "s%d := ", -s->nr);
+		len = snprintf( buf, BUFSIZ, "var s%d := ", -s->nr);
 		write_result(sql,buf);
 		write_tail(sql,-s->nr);
 	} break;
 	case st_insert: {
-		int l = backend_dumpstmt( s->op1.stval, nr, sql );
-		int r = backend_dumpstmt( s->op2.stval, nr, sql );
+		int l = backend_dumpstmt_( s->op1.stval, nr, sql );
+		int r = backend_dumpstmt_( s->op2.stval, nr, sql );
 		if (s->op2.stval->nrcols){
 			len = snprintf( buf, BUFSIZ, 
-		  	"s%d := insert(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
+		  	"var s%d := insert(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
 		} else {
 			len = snprintf( buf, BUFSIZ, 
-		  	"s%d := insert(s%d,s%d);\n", -s->nr, l, r);
+		  	"var s%d := insert(s%d,s%d);\n", -s->nr, l, r);
 		}
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_append: {
-		int l = backend_dumpstmt( s->op1.stval, nr, sql );
-		int r = backend_dumpstmt( s->op2.stval, nr, sql );
+		int l = backend_dumpstmt_( s->op1.stval, nr, sql );
+		int r = backend_dumpstmt_( s->op2.stval, nr, sql );
 		/*
 		if (s->op2.stval->nrcols){
 		*/
 			len = snprintf( buf, BUFSIZ, 
-		  	"s%d := append(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
+		  	"var s%d := append(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
 		/*
 		} else {
 			len = snprintf( buf, BUFSIZ, 
-		  	"s%d := append(s%d,s%d);\n", -s->nr, l, r);
+		  	"var s%d := append(s%d,s%d);\n", -s->nr, l, r);
 		}
 		*/
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_replace: {
-		int l = backend_dumpstmt( s->op1.stval, nr, sql );
-		int r = backend_dumpstmt( s->op2.stval, nr, sql );
+		int l = backend_dumpstmt_( s->op1.stval, nr, sql );
+		int r = backend_dumpstmt_( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ-len, 
-		  "s%d := replace(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
+		  "var s%d := replace(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_exception: {
-		int l = backend_dumpstmt( s->op1.stval, nr, sql );
-		int r = backend_dumpstmt( s->op2.stval, nr, sql );
+		int l = backend_dumpstmt_( s->op1.stval, nr, sql );
+		int r = backend_dumpstmt_( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ-len, 
 		  "if (bit(s%d)){ ERROR(s%d); }\n", l, r);
 		dump(sql,buf,len,-s->nr);
 	}
 	case st_alias: 
 	case st_column_alias: 
-		s->nr = - backend_dumpstmt( s->op1.stval, nr, sql );
+		s->nr = - backend_dumpstmt_( s->op1.stval, nr, sql );
 		break;
 	case st_set: 
 	case st_list: {
 		for (n = s->op1.lval->h; n; n = n->next ){
-			(void)backend_dumpstmt( n->data, nr, sql );
+			(void)backend_dumpstmt_( n->data, nr, sql );
 		}
 	} break;
 	case st_sets: {
@@ -874,7 +911,7 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 			list *l = n->data;
 			node *m = l->h;
 			while(m){
-				(void)backend_dumpstmt( m->data, nr, sql );
+				(void)backend_dumpstmt_( m->data, nr, sql );
 				m = m->next;
 			}
 		}
@@ -884,21 +921,21 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 		break;
 	case st_bulkinsert: {
 		char *tname = s->op1.stval->op1.tval->base.name;
-		int sep =  backend_dumpstmt( s->op2.stval, nr, sql );
-		int rsep =  backend_dumpstmt( s->op3.stval, nr, sql );
+		int sep =  backend_dumpstmt_( s->op2.stval, nr, sql );
+		int rsep =  backend_dumpstmt_( s->op3.stval, nr, sql );
 
 		if (s->op4.stval){
-			int file =  backend_dumpstmt( s->op4.stval, nr, sql );
+			int file =  backend_dumpstmt_( s->op4.stval, nr, sql );
 			len += snprintf( buf+len, BUFSIZ-len, 
-			"f%d := open_rastream(iconv(s%d, \"UTF-8\", codeset()));\n", file, file);
+			"var f%d := open_rastream(iconv(s%d, \"UTF-8\", codeset()));\n", file, file);
 			len += snprintf( buf+len, BUFSIZ-len, 
-		    	"s%d := mvc_import_table( myc, f%d, \"%s\", s%d, s%d, %d);\n",
+		    	"var s%d := mvc_import_table( myc, f%d, \"%s\", s%d, s%d, %d);\n",
 			-s->nr, file, tname, sep, rsep, s->flag );
 			len += snprintf( buf+len, BUFSIZ-len, 
 			"stream_close(f%d);\n", file );
 		} else {
 			len += snprintf( buf+len, BUFSIZ-len, 
-		        "s%d := mvc_import_table( myc, Input, \"%s\", s%d, s%d, %d);\n",
+		        "var s%d := mvc_import_table( myc, Input, \"%s\", s%d, s%d, %d);\n",
 			-s->nr, tname, sep, rsep, s->flag );
 		}
 		dump(sql,buf,len,-s->nr);
@@ -908,26 +945,26 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_export: {
-		int o1 = backend_dumpstmt(s->op1.stval, nr, sql);
-		int o2 = backend_dumpstmt(s->op2.stval, nr, sql);
-		int o3 = backend_dumpstmt(s->op3.stval, nr, sql);
+		int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
+		int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
+		int o3 = backend_dumpstmt_(s->op3.stval, nr, sql);
 		int len = snprintf( buf, BUFSIZ, 
-		    "s%d := mvc_export_table(myc, Output, s%d, s%d, s%d);\n", 
+		    "var s%d := mvc_export_table(myc, Output, s%d, s%d, s%d);\n", 
 			-s->nr, o1, o2, o3);
 		dump(sql,buf,len,-s->nr);
 	}
 	case st_filter:
-		s->nr = -backend_dumpstmt( s->op1.stval, nr, sql );
+		s->nr = -backend_dumpstmt_( s->op1.stval, nr, sql );
 		break;
 	case st_ordered: {
-		int l =  backend_dumpstmt( s->op1.stval, nr, sql );
-		(void)backend_dumpstmt( s->op2.stval, nr, sql );
+		int l =  backend_dumpstmt_( s->op1.stval, nr, sql );
+		(void)backend_dumpstmt_( s->op2.stval, nr, sql );
 		s->nr = -l;
 	} break;
 	case st_output: {
 		stmt *order = NULL;
 		stmt *lst = s->op1.stval;
-		backend_dumpstmt( lst, nr, sql );
+		backend_dumpstmt_( lst, nr, sql );
 
 		write_head(sql,-s->nr);
 		if (sql->debug&1){
@@ -988,21 +1025,23 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 			  }
 			}
 			len = snprintf( buf, BUFSIZ,
-				"s%d := mvc_result_table(myc, %d, s%d);\n", 
+				"var s%d := mvc_result_table(myc, %d, s%d);\n", 
 					-s->nr, cnt, order->nr);
 			write_command(sql,buf);
 			write_part(sql,buf,len);
 			len = 0;
 			for(; n; n = n->next){
 				stmt *r = n->data;
+				char *cn = column_name(r);
 				len = snprintf( buf, BUFSIZ,
 					"mvc_result_column(myc, \"%s\", \"%s\", %d, %d, s%d);\n", 
-					column_name(r),
+					cn,
 					tail_type(r)->type->sqlname,
 					tail_type(r)->digits,
 					tail_type(r)->scale,
 				        r->nr
 				);
+				_DELETE(cn);
 				write_command(sql,buf);
 				write_part(sql,buf,len);
 				len = 0;
@@ -1012,8 +1051,7 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 					-s->nr );
 			/* send first part (or all) */
 			len += snprintf( buf+len, BUFSIZ-len,
-				"mvc_export_table(myc, Output, s%d, 0, int(reply_size));\n", 
-					-s->nr );
+				"mvc_export_table(myc, Output, s%d, 0, int(reply_size));\n", -s->nr );
 			write_command(sql,buf);
 			write_part(sql,buf,len);
 			len = 0;
@@ -1028,15 +1066,13 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
 	case st_relselect:
 	case st_intersect: 
 	/* todo */
-	case st_grant:
-	case st_revoke:
 
 	case st_basetable: /* relation(table) */
 	case st_ptable:
 	case st_pivot:
 	case st_partial_pivot:
 	case st_idx:
-		printf("backend_dumpstmt: not implemented stmt %s\n", st_type2string(s->type));
+		printf("backend_dumpstmt_: not implemented stmt %s\n", st_type2string(s->type));
 		assert(0);
 	}
 
@@ -1050,6 +1086,16 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql ){
     return 0;
 }
 
+int backend_dumpstmt( stmt *s, int *nr, backend *sql )
+{
+	int ret = 0;
+
+	stream_write(sql->out, "{\n", 2, 1); 
+    	ret = backend_dumpstmt_( s, nr, sql );
+	stream_write(sql->out, "}\n", 2, 1); 
+	return ret;
+}
+
 void backend_dumpproc( backend *be, int id, stmt *s )
 {
 	int nr = 1;
@@ -1058,8 +1104,8 @@ void backend_dumpproc( backend *be, int id, stmt *s )
 	node *n;
 
 	i = snprintf( buf, BUFSIZ, "proc sql%d (", id);
-	if (be->context->params){
-		for (n = be->context->params->h; n; n = n->next){
+	if (be->mvc->params){
+		for (n = be->mvc->params->h; n; n = n->next){
 			var_ *v = n->data;
 
 			i += snprintf(buf+i, BUFSIZ-i, "%s %s%c", 
@@ -1068,12 +1114,10 @@ void backend_dumpproc( backend *be, int id, stmt *s )
 				);
 		}
 	}
-	i += snprintf(buf+i, BUFSIZ-i, ") : void {\n");
+	i += snprintf(buf+i, BUFSIZ-i, ") : void \n");
 	stream_write(be->out, buf, i, 1); 
 
     	backend_dumpstmt( s, &nr, be );
-
-	stream_write(be->out, "}\n", 2, 1);
 }
 	
 

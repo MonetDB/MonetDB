@@ -34,7 +34,7 @@
 #include "sql_statement.h"
 #include "sql_types.h"
 
-extern stmt *rel2bin( context *c, stmt *s );
+extern stmt *rel2bin( mvc *c, stmt *s );
 
 #endif /* _SQL_REL2BIN_H */
 
@@ -475,24 +475,28 @@ stmt *eliminate_semijoin(stmt *s)
 }
 
 
-stmt *rel2bin( context *c, stmt *s )
+stmt *rel2bin( mvc *c, stmt *s )
 {
 	switch(s->type){
 	/* first just return those statements which we cannot optimize,
 	 * such as schema manipulation, transaction managment, 
 	 * and user authentication.
 	 */
-	case st_none: case st_load_module:
+	case st_none: 
+	case st_sql: 
 	case st_release: case st_commit: case st_rollback: 
 	case st_schema: case st_table: case st_column: case st_key: 
+	case st_create_module: case st_drop_module: 
+	case st_create_type: case st_drop_type: 
+	case st_create_func: case st_drop_func: 
 	case st_create_schema: case st_drop_schema: 
 	case st_create_view: case st_create_table: case st_drop_table: 
 	case st_create_column: case st_null: case st_default: 
 	case st_create_key: case st_create_kc: case st_drop_key:
 	case st_create_idx: case st_create_ic: case st_drop_idx:
+	case st_create_user: case st_drop_user: 
 	case st_create_role: case st_drop_role: 
 	case st_grant_role: case st_revoke_role: 
-	case st_grant: case st_revoke:
 
 	case st_dbat: case st_basetable: case st_idxbat:
 

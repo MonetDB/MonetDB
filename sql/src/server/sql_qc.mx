@@ -40,7 +40,7 @@ typedef struct cq {
 	symbol 	*s;
 	list 	*params;
 	backend_stack	stk;
-	backend_code code;
+	backend_code 	code;
 	int 	id;
 	int 	key;
 } cq;

@@ -37,50 +37,13 @@
 #include "sql_qc.h"
 #include "sql_mvc.h"
 
-#define ERRSIZE 1024
+sql_export void cmd_init(mvc * c);
+sql_export void cmd_add_token(mvc * c, char *token);
+sql_export void cmd_add_string(mvc * c, char *str);
 
-typedef struct context {
-	int cur;
-	int prev;	/* previous token lr(1) is to restrictive for SQL */
+sql_export struct stmt *sql_symbol2stmt( mvc *c );
 
-	int yyval;
-	char *yytext;
-	int yylen;
-	int yysize;
-	int debug;
-	int cnt;
-
-	char *sql;
-	int sqllen;
-	int sqlsize;
-	int key;
-
-	int 	lineno;
-	char*	buf;
-
-	char 	errstr[ERRSIZE];
-	struct  mvc *mvc;
-	int	cache;  /* some queries should not be cached ! */
-	struct  qc  *qc;
-
-	char 	auth;	/* authorization */
-	int 	authid; /* authorization id */
-
-	list 	*params;
-	list 	*args;
-	struct symbol *sym;
-} context;
-
-sql_export context *sql_create_context(int debug, int cache, mvc *m);
-sql_export void sql_destroy_context(context * c);
-
-sql_export void cmd_init(context * c);
-sql_export void cmd_add_token(context * c, char *token);
-sql_export void cmd_add_string(context * c, char *str);
-
-sql_export struct stmt *sql_symbol2stmt( context *c );
-
-sql_export int sqlcleanup( context *c, char *cmd, int err);
+sql_export int sqlcleanup( mvc *c, char *cmd, int err);
 
 
 #endif	/* _SQL_CONTEXT_H_ */
@@ -96,7 +59,7 @@ sql_export int sqlcleanup( context *c, char *cmd, int err);
 #include "sql_qc.h"
 #include "sql_backend.h"
 
-stmt *sql_symbol2stmt( context *c ){
+stmt *sql_symbol2stmt( mvc *c ){
 	stmt *s = semantic(c, c->sym);
 	if (s){
 		stmt *opt = optimize(c, s);
@@ -107,7 +70,7 @@ stmt *sql_symbol2stmt( context *c ){
 	return s;
 }
 
-int sqlcleanup( context *c, char *cmd, int err)
+int sqlcleanup( mvc *c, char *cmd, int err)
 {
 	sql_destroy_params(c);
 	sql_destroy_args(c);
@@ -125,69 +88,25 @@ int sqlcleanup( context *c, char *cmd, int err)
 	return err;
 }
 
-context *sql_create_context(int debug, int cache, mvc * mvc)
+void cmd_init(mvc * m)
 {
-	context *c = NEW(context); 
+	struct scanner *c = &m->scanner;
 
-	memset(c, 0, sizeof(context));
-	c->cur = ' ';
-	c->buf = NULL;
-
-	c->debug = debug;
-
-	c->cnt = 0;
-	c->lineno = 1;
-	c->sym = NULL;
-	c->cache = cache;
-	c->qc = qc_create();
-	c->mvc = mvc;
-	c->errstr[0] = '\0';
-
-	c->yyval = 0;
-	c->yytext = NEW_ARRAY(char, BUFSIZ);
-	c->yytext[0] = 0;
-	c->yylen = 0;
-	c->yysize = BUFSIZ;
-
-	if (c->sql)
-		_DELETE(c->sql);
-	c->sql = NEW_ARRAY(char, BUFSIZ);
-	c->sqlsize = BUFSIZ;
-	c->sql[0] = '\0';
-
-	cmd_init(c);
-	return c;
-}
-
-void sql_destroy_context(context * c)
-{
-	c->mvc = NULL;
-
-	if (c->qc) qc_destroy(c->qc); 
-	c->qc = NULL;
-
-	if (c->sql != NULL)
-		_DELETE(c->sql);
-	c->sql = NULL;
-	_DELETE(c->yytext);
-	_DELETE(c);
-}
-
-void cmd_init(context * c)
-{
-	if (c->sql && c->debug & D__SQL)
+	if (c->sql && m->debug & D__SQL)
 		fprintf(stderr, "%s\n", c->sql);
 	c->sql[0] = '\0';
 	c->sqllen = 1;
 
-	c->errstr[0] = '\0';
+	m->errstr[0] = '\0';
 	c->key = 0;
 }
 
 /* add token + widthspace */
-void cmd_add_token(context * c, char *token)
+void cmd_add_token(mvc * m, char *token)
 {
+	struct scanner *c = &m->scanner;
 	int len = strlen(token);
+
 	if ((c->sqllen + len + 1) > c->sqlsize) {
 		while( (c->sqllen + len + 1) > c->sqlsize)
 			c->sqlsize *= 2;
@@ -200,8 +119,9 @@ void cmd_add_token(context * c, char *token)
 }
 
 /* add quoted string + widthspace */
-void cmd_add_string(context * c, char *str)
+void cmd_add_string(mvc * m, char *str)
 {
+	struct scanner *c = &m->scanner;
 	int len = strlen(str);
 	if ((c->sqllen + len + 3) > c->sqlsize) {
 		while( (c->sqllen + len + 3) > c->sqlsize)

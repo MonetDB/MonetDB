@@ -424,6 +424,7 @@ logger *logger_new(int debug, char *logdir, char *dbname, struct bm *bm){
 	logger *logger = NEW(struct logger);
 	FILE *fp;
 	char filename[BUFSIZ];
+	char bak[BUFSIZ];
 
 	logger->debug = debug;
 	logger->id = 1;
@@ -434,10 +435,19 @@ logger *logger_new(int debug, char *logdir, char *dbname, struct bm *bm){
 	logger->bm = bm;
 
 	snprintf(filename, BUFSIZ, "%s%s", logger->dir, LOGFILE);
+	snprintf(bak, BUFSIZ, "%s.bak", filename);
 
 	if ( (fp = fopen(filename, "r+")) != NULL){
 		logger_load(logger, fp);
 		logger_readlogs(logger, fp, filename);
+	} else if ( (fp = fopen(bak, "r+")) != NULL){
+		fclose(fp);
+		GDKmove( logger->dir, LOGFILE, "bak", 
+			 logger->dir, LOGFILE, NULL ); 
+		if ( (fp = fopen(filename, "r+")) != NULL){
+			logger_load(logger, fp);
+			logger_readlogs(logger, fp, filename);
+		}
 	} else if ( (fp = fopen(filename, "w")) == NULL){
 		if (!GDKcreatedir(filename)){
 			fprintf(stderr, 

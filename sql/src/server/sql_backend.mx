@@ -32,14 +32,17 @@
 #include "sql_mem.h"
 
 typedef void *backend_code;
-typedef void *backend_stack;
+typedef int backend_stack;
 
 typedef void (*freestack_fptr)( backend_stack stk );
 typedef void (*freecode_fptr)( backend_code code, backend_stack stk, int nr );
+typedef void (*interpret_fptr)( backend_stack stk, char *code );
 	
-sql_export void backend_init( freestack_fptr fstack, freecode_fptr fcode);
+sql_export void backend_init( freestack_fptr fstack, freecode_fptr fcode, 
+		   interpret_fptr finterpret );
 sql_export void backend_freestack( backend_stack stk );
 sql_export void backend_freecode( backend_code code, backend_stack stk, int nr);
+sql_export void backend_interpret( backend_stack stk, char *code);
 
 #endif /* _SQL_BACKEND_H_ */
 @c
@@ -48,11 +51,14 @@ sql_export void backend_freecode( backend_code code, backend_stack stk, int nr);
 
 static freestack_fptr _fstack = NULL;
 static freecode_fptr  _fcode = NULL;
+static interpret_fptr  _finterpret = NULL;
 
-void backend_init( freestack_fptr fstack, freecode_fptr fcode)
+void backend_init( freestack_fptr fstack, freecode_fptr fcode, 
+		   interpret_fptr finterpret )
 {
 	_fstack = fstack;
 	_fcode = fcode;
+	_finterpret = finterpret;
 }
 
 void backend_freestack( backend_stack stk )
@@ -63,4 +69,9 @@ void backend_freestack( backend_stack stk )
 void backend_freecode( backend_code code, backend_stack stk, int nr )
 {
 	_fcode(code, stk, nr);
+}
+
+void backend_interpret( backend_stack stk, char *code )
+{
+	_finterpret(stk, code);
 }

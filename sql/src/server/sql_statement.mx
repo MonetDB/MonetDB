@@ -43,7 +43,7 @@
 
 typedef enum stmt_type {
 	st_none,
-	st_load_module,
+	st_sql,		/* sometimes a query rewrite is easier */
 	st_var,		/* still needs work */
 	st_assign,		/* still needs work */
 	st_commit,
@@ -54,6 +54,12 @@ typedef enum stmt_type {
 	st_column,
 	st_key,
 	st_idx,
+	st_create_module,
+	st_drop_module,
+	st_create_type,
+	st_drop_type,
+	st_create_func,
+	st_drop_func,
 	st_create_schema,
 	st_drop_schema,
 	st_create_view,
@@ -68,12 +74,12 @@ typedef enum stmt_type {
 	st_create_ic,
 	st_drop_key,
 	st_drop_idx,
+	st_create_user,
+	st_drop_user,
 	st_create_role,
 	st_drop_role,
 	st_grant_role,
 	st_revoke_role,
-	st_grant,
-	st_revoke,
 	st_basetable,		/* still needs work */
 	st_temp,	/* temporal bat */
 	st_bat,
@@ -186,7 +192,7 @@ typedef struct group {
 sql_export const char * st_type2string(st_type type);
 
 extern stmt *stmt_none();
-extern stmt *stmt_load_module( char *name);
+extern stmt *stmt_sql( char *query );
 extern stmt *stmt_assign( char *varname, stmt *val);
 extern stmt *stmt_var( char *varname, sql_subtype *t);
 
@@ -205,6 +211,8 @@ extern stmt *stmt_bind_column( stmt *table, char *name  );
 extern stmt *stmt_bind_key   ( stmt *schema, char *name  );
 extern stmt *stmt_bind_index ( stmt *schema, char *name  );
 
+extern stmt *stmt_create_module( char *name);
+extern stmt *stmt_drop_module( char *name);
 extern stmt *stmt_create_schema( char *name, char *auth );
 extern stmt *stmt_drop_schema( char *name, int dropaction);
 
@@ -223,21 +231,12 @@ extern stmt *stmt_create_index( stmt *table, char *iname, idx_type it);
 extern stmt *stmt_create_ic( stmt *idx, char *name );
 extern stmt *stmt_drop_index( stmt *ss, char *name );
 
+extern stmt *stmt_create_user( char *name, char *passwd, char *fullname, char *dschema, int grantor);
+extern stmt *stmt_drop_user( char *name );
 extern stmt *stmt_create_role( char *name, int admin);
 extern stmt *stmt_drop_role( char *name );
 extern stmt *stmt_grant_role( char *authid, char *role);
 extern stmt *stmt_revoke_role( char *authid, char *role);
-
-/*
-extern stmt *stmt_schema_grant(stmt *s, char *authid, int privilege);
-extern stmt *stmt_schema_revoke(stmt *s, char *authid, int privilege);
-extern stmt *stmt_table_grant(stmt *t, char *authid, int privilege);
-extern stmt *stmt_table_revoke(stmt *t, char *authid, int privilege);
-extern stmt *stmt_column_grant(stmt *c, char *authid, int privilege);
-extern stmt *stmt_column_revoke(stmt *c, char *authid, int privilege);
-extern stmt *stmt_func_grant(stmt *c, char *authid, int privilege);
-extern stmt *stmt_func_revoke(stmt *c, char *authid, int privilege);
-*/
 
 extern stmt *stmt_basetable(sql_table *t); 
 
@@ -255,6 +254,8 @@ extern stmt *stmt_idxbat(sql_idx *i, int access );
 
 extern stmt *stmt_temp(sql_subtype * t );
 extern stmt *stmt_atom(atom * op1);
+extern stmt *stmt_atom_string( char * s );
+extern stmt *stmt_atom_int( int i );
 extern stmt *stmt_filter(stmt * sel);
 extern stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype);
 extern stmt *stmt_uselect(stmt * op1, stmt * op2, comp_type cmptype);
@@ -267,6 +268,14 @@ extern stmt *stmt_uselect(stmt * op1, stmt * op2, comp_type cmptype);
 extern stmt *stmt_select2(stmt * op1, stmt * op2, stmt * op3, int cmp);
 extern stmt *stmt_uselect2(stmt * op1, stmt * op2, stmt * op3, int cmp);
 extern stmt *stmt_semijoin(stmt * op1, stmt * op2);
+
+/* TODO: project single value 
+extern stmt *stmt_project(stmt *table, stmt *col ); 
+*/
+
+/* TODO: project table 
+extern stmt *stmt_relproject(stmt *table, list *collist ); 
+*/
 
 extern stmt *stmt_relselect_init();
 extern void stmt_relselect_fill(stmt *relselect, stmt *select);
@@ -299,7 +308,7 @@ extern stmt *stmt_insert(stmt *c, stmt * values);
 extern stmt *stmt_replace(stmt * c, stmt * values);
 
 /* raise exception incase the condition (cond) holds */
-extern stmt *stmt_exception(stmt * cond, char *errstr); 
+extern stmt *stmt_exception(stmt *cond, char *errstr, int errcode);
 
 extern stmt *stmt_const(stmt * s, stmt * val);
 extern stmt *stmt_mark(stmt * s, int id);
@@ -350,7 +359,7 @@ extern group *grp_dup(group * g);
 const char * st_type2string(st_type type) {
 	switch (type) {
 	case st_none:	return "st_none";
-	case st_load_module:	return "st_load_module";
+	case st_sql:	return "st_sql";
 	case st_commit:		return "st_commit";
 	case st_rollback:	return "st_rollback";
 	case st_release:	return "st_release";
@@ -359,6 +368,12 @@ const char * st_type2string(st_type type) {
 	case st_column:	return "st_column";
 	case st_key:	return "st_key";
 	case st_idx:	return "st_idx";
+	case st_create_module:	return "st_create_module";
+	case st_drop_module:	return "st_drop_module";
+	case st_create_type:	return "st_create_type";
+	case st_drop_type:	return "st_drop_type";
+	case st_create_func:	return "st_create_func";
+	case st_drop_func:	return "st_drop_func";
 	case st_create_schema:	return "st_create_schema";
 	case st_drop_schema:	return "st_drop_schema";
 	case st_create_view:	return "st_create_view";
@@ -373,12 +388,12 @@ const char * st_type2string(st_type type) {
 	case st_create_ic:	return "st_create_ic";
 	case st_drop_key:	return "st_drop_key";
 	case st_drop_idx:	return "st_drop_idx";
+	case st_create_user:	return "st_create_user";
+	case st_drop_user:	return "st_drop_user";
 	case st_create_role:	return "st_create_role";
 	case st_drop_role:	return "st_drop_role";
 	case st_grant_role:	return "st_grant_role";
 	case st_revoke_role:	return "st_revoke_role";
-	case st_grant:		return "st_grant";
-	case st_revoke:		return "st_revoke";
 	case st_basetable:	return "st_basetable";
 
 	case st_temp:	return "st_temp";
@@ -442,13 +457,13 @@ const char * st_type2string(st_type type) {
 }
 
 /* #TODO make proper traversal operations */
-static stmt *stmt_atom_string( char * s )
+stmt *stmt_atom_string( char * s )
 {
 	sql_subtype *t = sql_bind_subtype("CHAR", strlen(s), 0);
 	return stmt_atom( atom_string(t, _strdup(s)) );
 }
 
-static stmt *stmt_atom_int( int i )
+stmt *stmt_atom_int( int i )
 {
 	sql_subtype *t = sql_bind_subtype("MEDIUMINT", 0, 0);
 	return stmt_atom( atom_int(t, i) );
@@ -585,6 +600,7 @@ void stmt_destroy(stmt * s)
 		case st_partial_pivot: case st_pivot:
 		case st_export:
 	  	case st_find:
+		case st_sql:
 
 			if (s->op1.stval) stmt_destroy(s->op1.stval);
 			if (s->op2.stval) stmt_destroy(s->op2.stval);
@@ -600,7 +616,6 @@ void stmt_destroy(stmt * s)
 			break;
 
 		case st_assign:
-		case st_load_module:
 			if (s->op1.stval) stmt_destroy(s->op1.stval);
 			_DELETE(s->op4.sval);
 			break;
@@ -643,15 +658,18 @@ void stmt_destroy(stmt * s)
 		case st_release: case st_commit: case st_rollback:
 		case st_schema: case st_table: case st_column: case st_key:
 		case st_idx:
+		case st_create_module: case st_drop_module:
+		case st_create_type: case st_drop_type:
+		case st_create_func: case st_drop_func:
 		case st_create_schema: case st_drop_schema:
 		case st_create_view: case st_create_table: case st_drop_table:
 		case st_create_column: case st_null: case st_default:
 		case st_create_key: case st_create_kc:
 		case st_drop_key: case st_drop_idx: 
 		case st_create_idx: case st_create_ic:
+		case st_create_user: case st_drop_user:
 		case st_create_role: case st_drop_role:
 		case st_grant_role: case st_revoke_role:
-		case st_grant: case st_revoke: 
 
 		case st_const: case st_mark:
 		case st_reverse: case st_mirror:
@@ -688,9 +706,9 @@ stmt *stmt_none(){
 	return stmt_create(st_none);
 }
 
-stmt *stmt_load_module( char *name ){
-	stmt *s = stmt_create(st_load_module);
-	s->op4.sval = _strdup(name);
+stmt *stmt_sql(char *query ){
+	stmt *s = stmt_create(st_sql);
+	s->op1.stval = stmt_atom_string(query );
 	return s;
 }
 
@@ -773,6 +791,18 @@ stmt *stmt_bind_index(stmt *schema, char *name)
 	stmt *s = stmt_create(st_idx);
 	s->op1.stval = schema;
 	s->op2.stval = stmt_atom_string(name);
+	return s;
+}
+
+stmt *stmt_create_module( char *name ){
+	stmt *s = stmt_create(st_create_module);
+	s->op1.stval = stmt_atom_string(name);
+	return s;
+}
+
+stmt *stmt_drop_module( char *name ){
+	stmt *s = stmt_create(st_drop_module);
+	s->op1.stval = stmt_atom_string(name);
 	return s;
 }
 
@@ -900,6 +930,24 @@ stmt *stmt_create_ic( stmt *idx, char *name )
 	return s;
 }
 
+stmt *stmt_create_user( char *name, char *passwd, char *fullname, char *dschema, int grantor)
+{
+	stmt *s = stmt_create(st_create_user);
+	s->op1.stval = stmt_atom_string(name);
+	s->op2.stval = stmt_atom_string(passwd);
+	s->op3.stval = stmt_atom_string(fullname);
+	s->op4.stval = stmt_atom_string(dschema);
+	s->flag = grantor;
+	return s;
+}
+
+stmt *stmt_drop_user( char *name ) 
+{
+	stmt *s = stmt_create(st_drop_user);
+	s->op1.stval = stmt_atom_string(name);
+	return s;
+}
+
 stmt *stmt_create_role(char *name, int admin)
 {
 	stmt *s = stmt_create(st_create_role);
@@ -922,6 +970,7 @@ stmt *stmt_grant_role(char *authid, char *role)
 	s->op2.stval = stmt_atom_string(role);
 	return s;
 }
+
 stmt *stmt_revoke_role(char *authid, char *role)
 {
 	stmt *s = stmt_create(st_revoke_role);
@@ -1542,11 +1591,12 @@ stmt *stmt_replace(stmt * c, stmt * b)
 	return s;
 }
 
-stmt *stmt_exception(stmt * cond, char *errstr )
+stmt *stmt_exception(stmt * cond, char *errstr, int errcode )
 {
 	stmt *s = stmt_create(st_exception);
 	s->op1.stval = cond;
 	s->op2.stval = stmt_atom_string(errstr);
+	s->op3.stval = stmt_atom_int(errcode);
 	s->nrcols = 0;
 	return s;
 }

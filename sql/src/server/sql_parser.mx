@@ -35,21 +35,25 @@ typedef enum tokens {
 	SQL_CREATE_SCHEMA,
 	SQL_CREATE_TABLE,
 	SQL_CREATE_VIEW,
+	SQL_CREATE_INDEX,
 	SQL_CREATE_ROLE,
+	SQL_CREATE_USER,
 	SQL_CREATE_MODULE,
 	SQL_CREATE_TYPE,
 	SQL_CREATE_FUNC,
-	SQL_CREATE_INDEX,
 	SQL_DROP_SCHEMA,
 	SQL_DROP_TABLE,
 	SQL_DROP_VIEW,
+	SQL_DROP_INDEX,
 	SQL_DROP_ROLE,
+	SQL_DROP_USER,
+	SQL_DROP_MODULE,
+	SQL_DROP_TYPE,
+	SQL_DROP_FUNC,
+	SQL_ALTER_TABLE,
 	SQL_DROP_COLUMN,
 	SQL_DROP_CONSTRAINT,
 	SQL_DROP_DEFAULT,
-	SQL_DROP_FUNC,
-	SQL_DROP_INDEX,
-	SQL_ALTER_TABLE,
 	SQL_SET,
 	SQL_NAME,
 	SQL_USER,
@@ -108,6 +112,7 @@ typedef enum tokens {
 	SQL_GRANT_ROLES,
 	SQL_REVOKE,
 	SQL_REVOKE_ROLES,
+	SQL_EXECUTE,
 	SQL_PRIVILEGES,
 	SQL_ROLE,
 	SQL_PARAMETER,
@@ -135,8 +140,8 @@ typedef enum jt {
 } jt;
 
 sql_export char *token2string(int token);
-sql_export stmt *sql_error( context * sql, int error_code, char *format, ... );
-sql_export int parse_error( context * sql, char *s);
+sql_export stmt *sql_error( mvc * sql, int error_code, char *format, ... );
+sql_export int parse_error( mvc * sql, char *s);
 sql_export int sqlparse(void *);
 
 #endif /*_SQL_PARSER_H_*/
@@ -287,7 +292,6 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_ref_delete
 	opt_ref_update
 	object_name
-	privileges
 
 %type <type>
 	data_type
@@ -311,6 +315,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 
 %type <l>
 	object_privileges
+	privileges
 	schema_name
 	assignment_commalist
 	opt_column_commalist
@@ -391,44 +396,28 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_var
 	tz
 
-/*- bison 1.75-1 under CYGWIN doesn't like re-definition of tokens
-    and other bisons seem to do fine without them, hence I uncommented them;
-    (might also be removed completely).		Stefan.Manegold@cwi.nl
--*/
-
 %token <sval> 
-	IDENT TYPE AGGR STRING sqlINT INTNUM APPROXNUM USER USING
+	IDENT TYPE AGGR STRING sqlINT INTNUM APPROXNUM USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL LOCAL CAST
 	CHARACTER VARYING NUMERIC sqlDECIMAL sqlFLOAT REAL
 	sqlDOUBLE PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE 
-	SESSION_USER
+	USER SESSION_USER
 	CURRENT_USER CURRENT_ROLE CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME
 	LEX_ERROR
 
-/*
-OPEN CLOSE FETCH 
-*/
 %token <sval> sqlDELETE UPDATE SELECT INSERT
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER UNIONJOIN
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 	
-/*-
-%token <operation> '+' '-' '*' '/'
--*/
 %token <sval> LIKE BETWEEN ASYMMETRIC SYMMETRIC ORDER BY
 %token <operation> sqlIN EXISTS ESCAPE HAVING GROUP NULLX 
 %token <operation> FROM FOR MATCH
 
 /* datetime operations */
 %token <operation> EXTRACT
-/* string operations */
-/*-
-%token <operation> SUBSTRING CONCATSTRING
--*/
 
 	/* operators */
-
 %left UNION
 %left JOIN UNIONJOIN CROSS LEFT FULL RIGHT INNER NATURAL
 %left <operation> OR
@@ -445,23 +434,22 @@ OPEN CLOSE FETCH
 	/* literal keyword tokens */
 
 /*
-CONTINUE CURRENT CURSOR DECLARE FOUND GOTO GO
-LANGUAGE OF PROCEDURE
-SQLCODE SQLERROR 
-UNDER WHENEVER 
+CONTINUE CURRENT CURSOR DECLARE FOUND GOTO GO LANGUAGE 
+SQLCODE SQLERROR UNDER WHENEVER 
 */
+
 %token TEMPORARY 
 %token<sval> AS ASC DESC AUTHORIZATION 
 %token CHECK CONSTRAINT CREATE 
-%token MODULE sqlTYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME
+%token MODULE sqlTYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN 
-%token GRANT REVOKE ROLE ADMIN HAVING INTO 
+%token PASSWORD GRANT REVOKE ROLE ADMIN HAVING INTO 
 %token IS KEY ON OPTION OPTIONS
 %token PATH PRIMARY PRIVILEGES HIERARCHY
 %token<sval> PUBLIC REFERENCES SCHEMA SET EXPORT
 
-%token ALTER ADD TABLE COLUMN TO UNION UNIQUE USER VALUES VIEW WHERE WITH 
+%token ALTER ADD TABLE COLUMN TO UNION UNIQUE VALUES VIEW WHERE WITH 
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 %token LIMIT
@@ -474,23 +462,23 @@ UNDER WHENEVER
 
 /*
 sql_list:
-    sqlstmt 	{ context *lc = (context*)parm;
+    sqlstmt 	{ mvc *lc = (mvc*)parm;
 			  lc->l = $$ = dlist_append_symbol(dlist_create(), $1 );
 			  sql_stmt_init(lc); }
- |  sql_list sqlstmt { context *lc = (context*)parm;
+ |  sql_list sqlstmt { mvc *lc = (mvc*)parm;
 			  lc->l = $$ = dlist_append_symbol($1, $2); 
 			  sql_stmt_init(lc); }
  ;
 */
 
 sqlstmt:
-   sql ';' 		{ context *lc = (context*)parm; 
+   sql ';' 		{ mvc *lc = (mvc*)parm; 
 			  lc->sym = $$ = $1; YYACCEPT; }
- | /*empty*/		{ context *lc = (context*)parm; 
+ | /*empty*/		{ mvc *lc = (mvc*)parm; 
 			  lc->sym = $$ = NULL; YYACCEPT; }
- | error ';'		{ context *lc = (context*)parm;
+ | error ';'		{ mvc *lc = (mvc*)parm;
 			  lc->sym = $$ = NULL; YYACCEPT; }
- | LEX_ERROR ';'	{ context *lc = (context*)parm;
+ | LEX_ERROR ';'	{ mvc *lc = (mvc*)parm;
 			  lc->sym = $$ = NULL; YYACCEPT; }
  ;
 
@@ -579,7 +567,7 @@ schema_element: grant | create | drop | alter;
 
 
 opt_grantor:
-     /* empty */	 { $$ = 0; } 
+     /* empty */	 { $$ = cur_user; } 
  |   WITH ADMIN grantor  { $$ = $3; }
  ;
 
@@ -592,20 +580,12 @@ grant:
     GRANT privileges TO grantee_commalist opt_with_grant
 	 opt_with_hierarchy opt_from_grantor
 	{ dlist *l = dlist_create();
-	  dlist_append_symbol(l, $2);
+	  dlist_append_list(l, $2);
 	  dlist_append_list(l, $4);
 	  dlist_append_int(l, $5);
 	  dlist_append_int(l, $6);
 	  dlist_append_int(l, $7);
 	$$ = _symbol_create_list( SQL_GRANT, l); 
-	/* grants = $2.grants;
-	   object = $2.object;
-	   privs = select privileges from privileges where object = object;
-	   newprivs = totable(grants)
-	   nwprivs = join(privs, newprivs)
-	   insert into privileges join(privs, newprivs)
-	   update privileges set = newprivs where prives not in privs
-	*/
 	}
 
  |  GRANT authid_list TO grantee_commalist opt_with_admin 
@@ -645,19 +625,19 @@ opt_with_admin:
 
 
 opt_from_grantor:
- 	/* empty */	{ $$ = 0; }
- | 	FROM grantor	{ $$ = $1; }
+ 	/* empty */	{ $$ = cur_user; }
+ | 	FROM grantor	{ $$ = $2; }
  ;
 
 revoke:
-    REVOKE opt_grant_for opt_hierarchy_for privileges FROM grantee_commalist 
+     REVOKE opt_grant_for opt_hierarchy_for privileges FROM grantee_commalist 
 	opt_from_grantor
 	{ dlist *l = dlist_create();
-	  dlist_append_symbol(l, $4);
+	  dlist_append_list(l, $4);
 	  dlist_append_list(l, $6);
-	  dlist_append_int(l, $7);
 	  dlist_append_int(l, $2);
 	  dlist_append_int(l, $3);
+	  dlist_append_int(l, $7);
 	$$ = _symbol_create_list( SQL_REVOKE, l); }
  |   REVOKE opt_admin_for authid_list FROM grantee_commalist 
 	opt_from_grantor
@@ -686,15 +666,14 @@ opt_admin_for:
 
 privileges:
 	object_privileges ON object_name 	
-	{ dlist *l = dlist_create();
-	  dlist_append_list(l, $1);
-	  dlist_append_symbol(l, $3);
-	 $$ = _symbol_create_list( SQL_PRIVILEGES, l); }
+	{ $$ = dlist_create();
+	  dlist_append_list($$, $1);
+	  dlist_append_symbol($$, $3); }
  ;
 
 object_name:
-     opt_table ident			{ $$ = _symbol_create(SQL_TABLE, $2); }
- |   function_name			{ $$ = _symbol_create(SQL_FUNC, $1); }
+     TABLE ident		{ $$ = _symbol_create(SQL_TABLE, $2); }
+ |   ident			{ $$ = _symbol_create(SQL_NAME, $1); }
 
 /* | DOMAIN domain_name
    | CHARACTER SET char_set_name
@@ -705,11 +684,6 @@ object_name:
 */
  ; 
 
-opt_table:
-	/*empty */	
- | 	TABLE
- ;
-
 object_privileges:
     ALL PRIVILEGES			{ $$ = NULL; }
  |  ALL 				{ $$ = NULL; }
@@ -717,20 +691,20 @@ object_privileges:
  ;
 
 operation_commalist:
-    operation			{ $$ = dlist_append_symbol(dlist_create(), $1); }
+    operation		    { $$ = dlist_append_symbol(dlist_create(), $1); }
  |  operation_commalist ',' operation   { $$ = dlist_append_symbol($1, $3); }
  ;
 
 operation:
-    SELECT opt_column_commalist	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
- |  INSERT 			    { $$ = _symbol_create(SQL_INSERT,NULL); }
+    INSERT 			    { $$ = _symbol_create(SQL_INSERT,NULL); }
  |  sqlDELETE 			    { $$ = _symbol_create(SQL_DELETE,NULL); }
  |  UPDATE opt_column_commalist     { $$ = _symbol_create_list(SQL_UPDATE,$2); }
+ |  SELECT opt_column_commalist	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
  |  REFERENCES opt_column_commalist { $$ = _symbol_create_list(SQL_SELECT,$2); }
+ |  EXECUTE			    { $$ = _symbol_create(SQL_EXECUTE,NULL); }
 /* | TRIGGER
    | UNDER 
    | USAGE
-   | EXECUTE
 */
  ;
 
@@ -834,6 +808,13 @@ role_def:
 	  dlist_append_list(l, $3);
 	  dlist_append_int(l, $4);
 	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
+ |  CREATE USER ident WITH PASSWORD ident sqlNAME STRING SCHEMA ident
+	{ dlist *l = dlist_create();
+	  dlist_append_string(l, $3);
+	  dlist_append_string(l, $6);
+	  dlist_append_string(l, $8);
+	  dlist_append_string(l, $10);
+	  $$ = _symbol_create_list( SQL_CREATE_USER, l ); }
  ;
 
 table_def:
@@ -1062,12 +1043,7 @@ column_commalist_parens:
  ;
 
 module_def:
-    CREATE MODULE 	{ context *c = (context*)parm; 
-			  c->cache = 0; }
-	ident
-			{ dlist *f = dlist_create();
-	  		  	dlist_append_string(f, $4);
- 			  $$ = _symbol_create_list( SQL_CREATE_MODULE, f ); }
+    CREATE MODULE qname { $$ = _symbol_create_list( SQL_CREATE_MODULE, $3 ); }
  ;
 
 /*
@@ -1144,7 +1120,9 @@ drop:
 
  |  DROP VIEW qname	  { $$ = _symbol_create_list( SQL_DROP_VIEW, $3 ); }
  |  DROP ROLE qname	  { $$ = _symbol_create_list( SQL_DROP_ROLE, $3 ); }
+ |  DROP USER ident	  { $$ = _symbol_create( SQL_DROP_USER, $3 ); }
  |  DROP INDEX qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }
+ |  DROP MODULE qname	  { $$ = _symbol_create_list( SQL_DROP_MODULE, $3 ); }
  ;
 
 drop_action:
@@ -1900,7 +1878,7 @@ opt_alias_name:
 atom:
     literal	
 	{ /* replace by argument */
-	  context *c = (context*)parm;
+	  mvc *c = (mvc*)parm;
 	  int len = (c->params)?list_length(c->params):0;
 	  if (len < MAXPARAMS-2 && c->cache){
 	  	char name[BUFSIZ]; 
@@ -1913,7 +1891,7 @@ atom:
 	  	/* we miss use SQL_COLUMN also for param's, maybe 
 	     	change SQL_COLUMN to SQL_IDENT */
  	  	$$ = _symbol_create_list( SQL_COLUMN, dlist_append_string(dlist_create(), _strdup(name))); 
-		c->key ^= t->type->localtype;
+		c->scanner.key ^= t->type->localtype;
 
 		symbol_destroy($1);
 	   } else {
@@ -2069,7 +2047,7 @@ literal:
 		{ sql_subtype *t = sql_bind_subtype("TIMESTAMP", 0, 0 );
 		  $$ = _newAtomNode( atom_general(t, $2)); }
  |  INTERVAL opt_sign string interval_qualifier
-		{ context *lc = (context*)parm;
+		{ mvc *lc = (mvc*)parm;
 	  	  int i,tpe;
 	  	  if ( (tpe = parse_interval( lc, $2, $3, $4, &i)) < 0 ){
 			yyerror("incorrect interval");
@@ -2307,6 +2285,14 @@ char *token2string(int token)
 		return "Create View";
 	case SQL_CREATE_ROLE:
 		return "Create ROLE";
+	case SQL_CREATE_USER:
+		return "Create USER";
+	case SQL_CREATE_MODULE:
+		return "Create MODULE";
+	case SQL_CREATE_TYPE:
+		return "Create TYPE";
+	case SQL_CREATE_FUNC:
+		return "Create FUNC";
 	case SQL_DROP_SCHEMA:
 		return "Drop Schema";
 	case SQL_DROP_TABLE:
@@ -2315,6 +2301,14 @@ char *token2string(int token)
 		return "Drop View";
 	case SQL_DROP_ROLE:
 		return "Drop ROLE";
+	case SQL_DROP_USER:
+		return "Drop USER";
+	case SQL_DROP_MODULE:
+		return "Drop MODULE";
+	case SQL_DROP_TYPE:
+		return "Drop TYPE";
+	case SQL_DROP_FUNC:
+		return "Drop FUNC";
 	case SQL_DROP_CONSTRAINT:
 		return "Drop CONSTRAINT";
 	case SQL_DROP_INDEX:
@@ -2413,6 +2407,8 @@ char *token2string(int token)
 		return "Grant";
 	case SQL_REVOKE:
 		return "Revoke";
+	case SQL_EXECUTE:
+		return "Execute";
 	case SQL_PARAMETER:
 		return "Parameter";
 	case SQL_AGGR:
@@ -2454,24 +2450,25 @@ char *token2string(int token)
 	}
 }
 
-stmt *sql_error( context * sql, int error_code, char *format, ... )
+stmt *sql_error( mvc * sql, int error_code, char *format, ... )
 {
 	va_list	ap; 
 
 	va_start (ap,format); 
 	if (sql->errstr[0] == '\0') {
-		sql->mvc->status = error_code;
+		sql->status = error_code;
 		vsnprintf(sql->errstr, ERRSIZE, _(format), ap); 
 	}
 	va_end (ap); 
 	return NULL;
 }
 
-int parse_error(context * c, char *err)
+int parse_error(mvc * c, char *err)
 {
 	(void)sql_error( c, 4, 
 		 "!ERROR (%d) %s at token (%d): %s in statement: %s\n",
-		 c->lineno, err, c->yyval, c->yytext, c->sql);
-	c->cur = ' ';
+		 c->scanner.lineno, err, c->scanner.yyval, 
+		 c->scanner.yytext, c->scanner.sql);
+	c->scanner.cur = ' ';
 	return 1;
 }

@@ -41,7 +41,7 @@ typedef enum inttype {
 	isec
 } itype;
 
-int parse_interval(context * sql, int sign, char *str, struct dlist *pers,
+int parse_interval(mvc * sql, int sign, char *str, struct dlist *pers,
 		   int *val);
 /* returns 0 for month intervals and value in val, 
  *         1 for sec intervals and value in val, 
@@ -56,8 +56,8 @@ char *datetime_field(itype field);
 #include <string.h>
 #include <stdlib.h>
 
-int parse_interval_intern(context * sql,
-		      int sign, char *str, int sk, int ek, int *i)
+int 
+parse_interval_intern(mvc * sql, int sign, char *str, int sk, int ek, int *i)
 {
 	char *n = NULL;
 	int val = 0;
@@ -104,9 +104,9 @@ int parse_interval_intern(context * sql,
 		return type;
 	}
 }
+
 int
-parse_interval(context * sql,
-	       int sign, char *str, struct dlist *pers, int *val)
+parse_interval(mvc * sql, int sign, char *str, struct dlist *pers, int *val)
 {
 
 	int sk = iyear, ek = isec;
