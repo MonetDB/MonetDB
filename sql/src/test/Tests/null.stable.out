@@ -24,8 +24,8 @@ Over..
 # int,	int # type
 # 2,	 # tuplecount
 # 0,	 # id
-[ 2,	nil	]
-[ 1,	nil	]
+[ 2,	NULL	]
+[ 1,	NULL	]
 
 # 11:33:24 >  
 # 11:33:24 >  Done.

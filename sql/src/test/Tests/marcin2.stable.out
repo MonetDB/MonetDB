@@ -23,52 +23,52 @@ Over..
 # int,	int # type
 # 9,	 # tuplecount
 # 0,	 # id
-[ 2,	nil	]
-[ nil,	nil	]
-[ 1,	nil	]
+[ 2,	NULL	]
+[ NULL,	NULL	]
+[ 1,	NULL	]
 [ 1,	5	]
 [ 2,	5	]
-[ nil,	5	]
+[ NULL,	5	]
 [ 1,	6	]
-[ nil,	6	]
+[ NULL,	6	]
 [ 2,	6	]
 # id,	val # name
 # int,	int # type
 # 9,	 # tuplecount
 # 1,	 # id
-[ nil,	6	]
-[ nil,	5	]
-[ nil,	nil	]
+[ NULL,	6	]
+[ NULL,	5	]
+[ NULL,	NULL	]
 [ 1,	5	]
-[ 1,	nil	]
+[ 1,	NULL	]
 [ 1,	6	]
-[ 2,	nil	]
+[ 2,	NULL	]
 [ 2,	5	]
 [ 2,	6	]
 # id,	val # name
 # int,	int # type
 # 9,	 # tuplecount
 # 2,	 # id
-[ nil,	nil	]
-[ 1,	nil	]
-[ 2,	nil	]
-[ nil,	5	]
+[ NULL,	NULL	]
+[ 1,	NULL	]
+[ 2,	NULL	]
+[ NULL,	5	]
 [ 1,	5	]
 [ 2,	5	]
-[ nil,	6	]
+[ NULL,	6	]
 [ 1,	6	]
 [ 2,	6	]
 # id,	val # name
 # int,	int # type
 # 9,	 # tuplecount
 # 3,	 # id
-[ nil,	nil	]
-[ nil,	5	]
-[ nil,	6	]
-[ 1,	nil	]
+[ NULL,	NULL	]
+[ NULL,	5	]
+[ NULL,	6	]
+[ 1,	NULL	]
 [ 1,	5	]
 [ 1,	6	]
-[ 2,	nil	]
+[ 2,	NULL	]
 [ 2,	5	]
 [ 2,	6	]
 

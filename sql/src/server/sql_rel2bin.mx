@@ -490,8 +490,8 @@ stmt *rel2bin( mvc *c, stmt *s )
 	case st_dbat: case st_basetable: case st_idxbat:
 
 	case st_atom: 
-	case st_find: 
-	case st_bulkinsert: case st_export:
+	case st_find: case st_exist: 
+	case st_bulkinsert: 
 	case st_assign: case st_var:
 
 		s->optimized = 2;
@@ -548,7 +548,7 @@ stmt *rel2bin( mvc *c, stmt *s )
 		os = stmt_semijoin(
 			rel2bin(c, s->op1.stval),
 			rel2bin(c, s->op2.stval));
-		if (!mvc_debug_on(c,4096)) {
+		if (!mvc_debug_on(c,4096) && os->nrcols) {
 			ns = eliminate_semijoin(os);
 		} else {
 			ns = stmt_dup(os);

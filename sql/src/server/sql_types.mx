@@ -890,7 +890,10 @@ void sqltypeinit()
 	for(t=strings; t < numerical; t++){
 	  sql_type **u;
 	  for(u=numerical; u < dates; u++){
-	      	sql_create_func("convert", (*u)->name, *t, NULL, *u, SCALE_FIX );
+		char buf[50];
+
+		snprintf(buf,50,"cast2%s", (*u)->name);
+	      	sql_create_func("convert", buf, *t, NULL, *u, SCALE_FIX );
 	  }
 	}
 

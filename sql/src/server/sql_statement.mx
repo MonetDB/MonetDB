@@ -116,12 +116,12 @@ typedef enum stmt_type {
 	st_relselect,
 
 	st_find,
+	st_exist,
 	st_bulkinsert,
 	st_append,
 	st_insert,
 	st_replace,
 	st_exception,
-	st_export,
 
 	st_group_ext,
 	st_group,
@@ -299,8 +299,8 @@ extern stmt *stmt_pivot(stmt *s, stmt *ptable);
 extern stmt *stmt_partial_pivot(stmt *s, stmt *ptable);
 
 extern stmt *stmt_find(stmt *b, stmt *v );
+extern stmt *stmt_exist(stmt *b, stmt *v );
 extern stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr);
-extern stmt *stmt_export(int id, int offset, int len);
 
 extern stmt *stmt_append(stmt *c, stmt * values);
 extern stmt *stmt_insert(stmt *c, stmt * values);
@@ -428,7 +428,6 @@ const char * st_type2string(st_type type) {
 	case st_uselect:	return "st_uselect";
 	case st_uselect2:	return "st_uselect2";
 	case st_bulkinsert:	return "st_bulkinsert";
-	case st_export:	return "st_export";
 	case st_append:	return "st_append";
 	case st_insert:	return "st_insert";
 	case st_replace:	return "st_replace";
@@ -598,8 +597,8 @@ void stmt_destroy(stmt * s)
 		case st_append: case st_insert: case st_replace:
 		case st_exception:
 		case st_partial_pivot: case st_pivot:
-		case st_export:
 	  	case st_find:
+	  	case st_exist:
 		case st_sql:
 
 			if (s->op1.stval) stmt_destroy(s->op1.stval);
@@ -1442,6 +1441,18 @@ stmt *stmt_find(stmt * b, stmt * v)
 	return s;
 }
 
+stmt *stmt_exist(stmt * b, stmt * v)
+{
+	stmt *s = stmt_create(st_exist);
+	s->op1.stval = b;
+	s->op2.stval = v;
+	s->nrcols = 0;
+	s->key = 1;
+	s->h = stmt_dup(b->h);
+	s->t = stmt_dup(b->t);
+	return s;
+}
+
 stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr )
 {
 	stmt *s = stmt_create(st_bulkinsert);
@@ -1450,15 +1461,6 @@ stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr )
 	s->op3.stval = stmt_atom_string(rsep);
 	s->op4.stval = file;
 	s->flag = nr; 
-	return s;
-}
-
-stmt *stmt_export(int id, int offset, int len )
-{
-	stmt *s = stmt_create(st_export);
-	s->op1.stval = stmt_atom_int(id);
-	s->op2.stval = stmt_atom_int(offset);
-	s->op3.stval = stmt_atom_int(len);
 	return s;
 }
 
@@ -1772,6 +1774,8 @@ sql_subtype *tail_type(stmt * st)
 		return st->op4.typeval;
 	case st_var:
 		return st->op2.typeval;
+	case st_exist:
+		return sql_bind_localtype( "bit" );
 
 	case st_relselect:
 	default:
@@ -1864,6 +1868,7 @@ stmt *tail_column(stmt * st)
 	case st_partial_pivot: case st_pivot:
 		return tail_column(st->op1.stval);
 
+	case st_var:
 	case st_column_alias:
 	case st_ibat:
 	case st_bat:
@@ -1925,6 +1930,7 @@ stmt *head_column(stmt * st)
 	case st_column_alias:
 	case st_ibat:
 	case st_bat:
+	case st_var:
 		return st;
 
 	case st_group:
@@ -1982,6 +1988,7 @@ char *column_name(stmt * st)
 	case st_join:
 	case st_outerjoin:
 	case st_derive:
+	case st_exist:
 		return column_name(st->op2.stval);
 	case st_ibat:
 	case st_union:

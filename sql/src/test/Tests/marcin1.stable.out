@@ -106,8 +106,8 @@ SQL  9 Rows affected
 [ 1,	1	]
 [ 2,	2	]
 [ 3,	3	]
-[ 4,	nil	]
-[ 5,	nil	]
+[ 4,	NULL	]
+[ 5,	NULL	]
 SQL  5 Rows affected
 #    25: 0 
 #    26: 0 # As the sub-select returns a single value (3), no error occures

@@ -1069,6 +1069,9 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 	case st_find: 
 		dump_2( sql, s, "find", nr );
 		break;
+	case st_exist: 
+		dump_2( sql, s, "exist", nr );
+		break;
 	case st_bulkinsert: {
 		char *tname = s->op1.stval->op1.tval->base.name;
 		int sep =  backend_dumpstmt_( s->op2.stval, nr, sql );
@@ -1103,18 +1106,6 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		dump(sql,buf,len,-s->nr);
 		_DELETE(buf);
 		break;
-	}
-	case st_export: {
-		int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
-		int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
-		int o3 = backend_dumpstmt_(s->op3.stval, nr, sql);
-		int len;
-		buf = NEW_ARRAY(char, BUFSIZ+1);
-		len = snprintf( buf, BUFSIZ, 
-		    "var s%d := mvc_export_table(myc, Output, s%d, s%d, s%d);\n", 
-			-s->nr, o1, o2, o3);
-		dump(sql,buf,len,-s->nr);
-		_DELETE(buf);
 	}
 	case st_filter:
 		s->nr = -backend_dumpstmt_( s->op1.stval, nr, sql );

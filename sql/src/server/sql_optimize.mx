@@ -915,8 +915,8 @@ stmt *optimize( mvc *c, stmt *s ){
 	case st_dbat: case st_basetable: case st_idxbat:
 
 	case st_atom: 
-	case st_find: 
-	case st_bulkinsert: case st_export:
+	case st_find: case st_exist: 
+	case st_bulkinsert:
 	case st_assign: case st_var:
 
 		s->optimized = 1;

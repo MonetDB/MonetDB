@@ -1040,6 +1040,42 @@ ptr *dec_frstr( void *extra, int type, char *s)
 	return NULL;
 }
 
+ptr *_ASCIIadt_frStr( void *extra, int type, char *s){
+        int l = 0;
+        ptr *res = NULL;
+	(void) extra;
+	if (strcasecmp(s, "NULL") == 0) {
+		res = (ptr*)ATOMnil(type);
+	} else {
+                (void) (*BATatoms[type].atomFromStr)(s, &l, (ptr)&res);
+	}
+        return res;
+}
+
+
+static int _ASCIIadt_toStr( void *extra, char **buf, int *len, int type, ptr a){
+	
+	(void) extra;
+	if (!a || ATOMcmp(type, ATOMnilptr(type),a) == 0){
+		char *dst;
+		const char *src = "NULL";
+		int l = sizeof(src);
+
+		if (l+1 > *len) {
+			GDKfree(buf);
+			*len = l+1;
+			*buf = GDKmalloc( *len );
+		}
+		dst = *buf;
+		strncpy(dst, src, l);
+		dst[l] = 0;
+		return l;
+	} else {
+        	return (*BATatoms[type].atomToStr)(buf, len, a);
+	}
+}
+
+
 BAT *mvc_import_table( mvc *m, bstream *bs, char *tname, 
 		char *sep, char *rsep, int sz)
 {
@@ -1077,8 +1113,8 @@ BAT *mvc_import_table( mvc *m, bstream *bs, char *tname,
                 	fmt[i].seplen = (int) strlen( fmt[i].sep );
                 	fmt[i].type = _strdup(col->type->type->name);
                 	fmt[i].adt = ATOMindex( fmt[i].type );
-                	fmt[i].tostr = &ASCIIadt_toStr;
-                	fmt[i].frstr = &ASCIIadt_frStr;
+                	fmt[i].tostr = &_ASCIIadt_toStr;
+                	fmt[i].frstr = &_ASCIIadt_frStr;
                 	fmt[i].extra = NULL;
 			if (strcmp(col->type->type->sqlname, "decimal")==0){
 				fmt[i].tostr = &dec_tostr;
@@ -1184,7 +1220,10 @@ static int mvc_export_row( mvc *m, stream *s, res_table *t )
 					c->mtype, c->p);
 			stream_write(s, buf, l, 1);
 			_DELETE(buf);
-		} else { 
+		} else if (!c->p || 
+			ATOMcmp(c->mtype, ATOMnilptr(c->mtype),c->p) == 0){
+			stream_write(s, "NULL", sizeof("NULL"), 1);
+		} else {
 			char *buf = NULL;
 			int len = 0;
 			int l = (*BATatoms[c->mtype].atomToStr)(&buf, &len, c->p);
@@ -1259,8 +1298,8 @@ int mvc_export_table( mvc *m, stream *s, int res_id, unsigned int offset, unsign
                 fmt[i].seplen = (int) strlen( fmt[i].sep );
 		fmt[i].type = ATOMname(fmt[i].c->ttype);
 		fmt[i].adt = fmt[i].c->ttype;
-                fmt[i].tostr = &ASCIIadt_toStr;
-                fmt[i].frstr = &ASCIIadt_frStr;
+                fmt[i].tostr = &_ASCIIadt_toStr;
+                fmt[i].frstr = &_ASCIIadt_frStr;
                 fmt[i].extra = NULL;
 		if (c->type->type->scale == SCALE_FIX){
 			fmt[i].tostr = &dec_tostr;

@@ -647,8 +647,11 @@ static stmt *check_types(mvc * sql, sql_subtype * ct, stmt * s )
 					ct->digits-ct->scale < 
 						st->digits-st->scale) 
 				) {
-						sql_subfunc_destroy(c);
-						return sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->name, ct->type->sqlname, ct->digits, ct->scale, ct->type->name);
+					/* TODO here trunc-ing could be added, 
+					 * which requires a warning! 
+					 */
+					sql_subfunc_destroy(c);
+					return sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->name, ct->type->sqlname, ct->digits, ct->scale, ct->type->name);
 				}
 				return fix_scale(sql, ct, stmt_unop(s, c), 1,
 					(st->type->scale == SCALE_FIX));
@@ -1178,8 +1181,7 @@ static stmt *sql_value_exp(mvc * sql, scope * scp, symbol * se, group * grp, stm
 		return NULL;
 		break;
 	default:
-		printf("unknown %d %s\n", se->token,
-		       token2string(se->token));
+		return sql_logical_exp(sql, scp, se, grp, subset);
 	}
 	return NULL;
 }
@@ -1626,7 +1628,7 @@ static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q)
 	return NULL;
 }
 
-/* column expresion of the form: table.* */
+/* column expression of the form: table.* */
 static stmt *columns_exp(mvc * sql, scope * scp, symbol * column_e, group * grp, stmt * subset)
 {
 	char *tname = column_e->data.lval->h->data.sval;
@@ -2044,10 +2046,16 @@ static stmt *sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, s
 						check_types(sql, ct, v) );
 				}
 				if (sc->token == SQL_IN){
-					return stmt_reverse(
-						stmt_semijoin(
-						 stmt_reverse(ls), 
-						 stmt_reverse(temp)));
+					/* normal subquery */
+					if (ls->nrcols) {
+						return stmt_reverse(
+							stmt_semijoin(
+						 	stmt_reverse(ls), 
+						 	stmt_reverse(temp)));
+					} else { /* boolean expression */
+						return stmt_exist(
+							stmt_reverse(temp),ls);
+					}
 				} else { /* SQL_NOT_IN */
 					return stmt_diff(
 						stmt_dup(ls), stmt_join(
@@ -2272,8 +2280,8 @@ static group *query_groupby_outers(mvc * sql, scope * scp, stmt * subset)
 
    As SQL-3 drop support for order by number (column position in result table)
    so we also do not support it. Unfortunately SQL-3 added new crap,
-   order by 'expression', where expresion should match a result column 
-   expresion. We also do not support this (just use as bla and order by bla!).
+   order by 'expression', where expression should match a result column 
+   expression. We also do not support this (just use as bla and order by bla!).
    SQL-3 supports ordering on columns not in the result table, but again we
    don't.
  */
@@ -5189,15 +5197,6 @@ static stmt *sql_stmt(mvc * sql, symbol * s)
 			scope_close(scp);
 			if (v)
 				ret = stmt_assign(_strdup(l->h->data.sval), v);
-		}
-		break;
-	case SQL_EXPORT:
-		{
-			dlist *l = s->data.lval;
-			ret = stmt_export( l->h->data.ival,
-					   l->h->next->data.ival,
-					   l->h->next->next->data.ival);
-			sql->type = Q_RESULT;
 		}
 		break;
 	default:

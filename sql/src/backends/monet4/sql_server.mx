@@ -248,6 +248,12 @@ kernel libraries, e.g. bat.mx
 
 	.COMMAND round( dbl v, dbl r ) : dbl = dbl_round_wrap; "round off the value v to nearests multiple of r"
 
+	.COMMAND cast2sht( str v ) : sht = cast2sht; "cast to sht"
+	.COMMAND cast2int( str v ) : int = cast2int; "cast to int"
+	.COMMAND cast2lng( str v ) : lng = cast2lng; "cast to lng"
+	.COMMAND cast2flt( str v ) : flt = cast2flt; "cast to flt"
+	.COMMAND cast2dbl( str v ) : dbl = cast2dbl; "cast to dbl"
+
 .END sql_server;
 
 @h
@@ -787,6 +793,31 @@ int @1_round_wrap( @1 *res, @1 *v, @1 *r )
 
 @:fround(flt)@
 @:fround(dbl)@
+
+@= cast
+int cast2@1( @1 *res, str val )
+{
+	ptr p = NULL;
+	int len = 0;
+	int e = ATOMfromstr(TYPE_@1, &p, &len, val);
+	
+	if (e <= 0 || !p) {
+		if (p)
+			GDKfree(p);
+		return GDK_FAIL;
+	}
+	*res = *(@1*)p;
+	if (p)
+		GDKfree(p);
+	return GDK_SUCCEED;
+}
+@c
+
+@:cast(sht)@
+@:cast(int)@
+@:cast(lng)@
+@:cast(flt)@
+@:cast(dbl)@
 
 @mil
 module(alarm);
