@@ -283,6 +283,21 @@ int math_binary_ROUND(dbl *res, dbl *x, int *y) {
   return(GDK_SUCCEED);
 }
 
+#ifdef NATIVE_WIN32
+#include <float.h>
+
+/* Windows spells these differently */
+#define isnan(x)	_isnan(x)
+#define finite(x)	_finite(x)
+
+/* Windows does not have an implementation of isinf */
+static int isinf(double x)
+{
+	int cl = _fpclass(x);
+	return cl == _FPCLASS_NINF || cl == _FPCLASS_PINF;
+}
+#endif
+
 int math_unary_ISNAN(bit *res , dbl *a ) {
 #ifdef DEBUG
 	printf( "math_unary_ISNAN\n");
