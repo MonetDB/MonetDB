@@ -141,7 +141,7 @@ typedef struct shredBAT {
         /* */
         union { /* cast to perform direct indexex insert in [void,any] BATs */
             void* voidCAST; /* the basecast */
-            nat*  intCAST;  /* cast for [void,int] BAT */
+            int*  intCAST;  /* cast for [void,int] BAT */
             chr*  chrCAST;  /* cast for [void,chr] BAT */
             oid*  oidCAST;  /* cast for [void,oid] BAT */
         } cast;
@@ -400,7 +400,7 @@ static int incrBATsize(shredBAT* sb, nat i) {
     return 1;
 }
 
-static INLINE nat direct_int2bat(shredCtx* ctx, int idx, nat i, nat v) {
+static INLINE nat direct_int2bat(shredCtx* ctx, int idx, nat i, int v) {
         shredBAT* sb = & ctx->dstBAT[idx];
 #ifdef VERBOSE
         stream_printf(GDKout,"DIRECT[%s](%d) = %d\n",sb->def->name,i,v);
