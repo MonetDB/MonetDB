@@ -1,9 +1,0 @@
-#!/bin/sh
-grep $1 output | sed 's|\]| |g' >o
-## StM: replaced "ex" by "sed"
-#ex - o <<!eof
-#f
-#g/\]/s// /g
-#w
-#q
-#!eof
