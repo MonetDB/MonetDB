@@ -21,6 +21,12 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
+try:
+    True
+except NameError:
+    # provide values for old Python versions
+    False, True = 0, 1
+
 import string, types
 from socket import socket, AF_INET, SOCK_STREAM, error
 import os, sys
