@@ -876,7 +876,7 @@ int decimal_fromstr(str buf, int *len, decimal **ret) {
 
 int decimal_tostr(str *buf, int *len, decimal *v) {
 	if (*len < v->precision+7) {
-		if (*buf) GDKfree(*buf);
+		if (*buf && *len) GDKfree(*buf);
 		*buf = (str) GDKmalloc(*len = v->precision+7);
 	} 
 	if (ISNIL(v)) {
