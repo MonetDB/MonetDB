@@ -154,6 +154,7 @@ tst755
 tst760
 tst770
 tst820
+tst850
 tst890
 tst900
 tst901
@@ -189,6 +190,8 @@ tst4610
 tst4611
 tst4620
 tst4630
+tst4631
+tst4730
 
 # Old x100 test moved to x100Tests
 #tst6000

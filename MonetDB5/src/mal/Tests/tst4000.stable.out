@@ -29,21 +29,6 @@ stdout of test 'tst4000` in directory 'src/mal` itself:
 #l3:= l2+k1;             # replace the alias
 #
 #
-Found assignment barrier for 
-    d := algebra.select(b,0,100);	# 6 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])($12:int)($13:int)
-    b := bbp.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-($6:int)($7:int)
-Found a common expression 6 <-> 7
-    d := algebra.select(b,0,100);	# 6 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])($12:int)($13:int)
-    e := algebra.select(b,0,100);	# 7 ALGselect (e:bat[:int,:int])<-(b:bat[:int,:int])($12:int)($13:int)
-Found assignment barrier for 
-    l := calc.+(k1,k2);	# 9 CALCbinaryADDintint (l:int)<-(k1:int)(k2:int)
-    k2 := 27;	# 8  (k2:int)<-($18:int)
-Found a common expression 9 <-> 10
-    l := calc.+(k1,k2);	# 9 CALCbinaryADDintint (l:int)<-(k1:int)(k2:int)
-    l2 := calc.+(k1,k2);	# 10 CALCbinaryADDintint (l2:int)<-(k1:int)(k2:int)
-Found assignment barrier for 
-    l3 := calc.+(l,k1);	# 10 CALCbinaryADDintint (l3:int)<-(l:int)(k1:int)
-    l := calc.+(k1,k2);	# 9 CALCbinaryADDintint (l:int)<-(k1:int)(k2:int)
 function Admin.main():int;	# 0  (main:int)
 end main;	# 1  
 

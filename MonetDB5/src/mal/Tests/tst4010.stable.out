@@ -26,12 +26,6 @@ stdout of test 'tst4010` in directory 'src/mal` itself:
 #insert(d,2,2);
 #
 #
-Found assignment barrier for 
-    bat.insert(b,1,1);	# 5 BKCinsert_bun ($10:void)<-(b:bat[:int,:int])($11:int)($11:int)
-    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-($5:int)($6:int)
-Found assignment barrier for 
-    bat.insert(d,2,2);	# 7 BKCinsert_bun ($15:void)<-(d:bat[:int,:int])($16:int)($16:int)
-    d := bbp.new(:int,:int);	# 6 CMDBATnew (d:bat[:int,:int])<-($13:int)($14:int)
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($5:int)($6:int)
     c := bbp.new(:int,:int);	# 2 CMDBATnew (c:bat[:int,:int])<-($8:int)($9:int)

@@ -1,8 +1,8 @@
 # testing simple property assignments
-i{constant}:= 1;
-j{blah} := "kk";
-k{blah,freeze} := "whatever";
-n{cost}:= new(:int,:int);
+i{constant=true}:= 1;
+j{blah=2} := "kk";
+k{blah=4,freeze=1} := "whatever";
+n{cost=12}:= new(:int,:int);
 #o{cost=12}:= new(int,int);
 #q:= 1:int{frozen};
 

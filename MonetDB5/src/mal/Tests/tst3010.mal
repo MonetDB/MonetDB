@@ -1,15 +1,15 @@
 #Parsing properties and keeping them around
-function add(i:int{read},j:int{read}):int{write,safe};
+function add(i:int{read=true},j:int{read=true}):int{write=true,safe=true};
 	j:= j+i;
-	return j{freeze};
+	return j{freeze=true};
 end add;
 
-function add2(i:int,j:int{read}):int{write,safe};
+function add2(i:int,j:int{read=true}):int{write=true,safe=true};
 	k:= j+i;
-	return k{freeze};
+	return k{freeze=true};
 end ;
 
-i{cost}:= 23;
+i{cost=23}:= 23;
 z:= add(i,i);
 kk:= add2(i,i);
 
