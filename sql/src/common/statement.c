@@ -210,6 +210,7 @@ void stmt_destroy(stmt * s)
 			break;
 		case st_copyfrom:
 			if (s->op2.lval) list_destroy(s->op2.lval);
+			if (s->op3.lval) list_destroy(s->op3.lval);
 			break;
 		case st_create_role:
 		case st_drop_role:
@@ -746,26 +747,26 @@ stmt *stmt_union(stmt * op1, stmt * op2)
 	return s;
 }
 
-stmt *stmt_copyfrom(table * t, char * file, char * tsep, char * rsep, int nr )
+stmt *stmt_copyfrom(table * t, list * files, char * tsep, char * rsep, int nr )
 {
 	stmt *s = stmt_create();
 	s->type = st_copyfrom;
 	s->op1.tval = t;
 	s->op2.lval = list_create(&free);
-	list_append( s->op2.lval, _strdup(file));
+	s->op3.lval = files;
 	list_append( s->op2.lval, _strdup(tsep));
 	list_append( s->op2.lval, _strdup(rsep));
 	s->flag = nr; 
 	return s;
 }
 
-char *stmt_copyfrom_file( stmt * s)
+list *stmt_copyfrom_files( stmt * s)
 {
 	while(s && s->type != st_copyfrom){
 		s = s->op1.stval;
 	}
 	if (s){
-		return s->op2.lval->h->data;
+		return s->op3.lval;
 	}
 	return NULL;
 }

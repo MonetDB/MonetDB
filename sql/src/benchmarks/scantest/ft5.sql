@@ -18,3 +18,4 @@ END ft5;
 
 -- now execute program
 /
+exec ft5(100000)

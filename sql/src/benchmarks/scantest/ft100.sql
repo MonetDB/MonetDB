@@ -18,3 +18,4 @@ END ft100;
 
 -- now execute program
 /
+exec ft100(100000)

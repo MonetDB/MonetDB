@@ -193,6 +193,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	when_value_list
 	when_search_list
 	opt_seps
+	string_commalist
 
 %type <ival>
 	drop_action 
@@ -847,17 +848,17 @@ opt_to_savepoint:
  ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname FROM STRING opt_seps 
+    COPY opt_nr INTO qname FROM string_commalist opt_seps 
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $4);
-	  dlist_append_string(l, $6);
+	  dlist_append_list(l, $6);
 	  dlist_append_list(l, $7);
 	  dlist_append_int(l, $2);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
   | COPY opt_nr INTO qname FROM STDIN opt_seps 
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $4);
-	  dlist_append_string(l, _strdup("stdin"));
+	  dlist_append_list(l, NULL);
 	  dlist_append_list(l, $7);
 	  dlist_append_int(l, $2);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
@@ -889,6 +890,12 @@ opt_using:
 opt_nr:
     /* empty */			{ $$ = -1; }
  |  intval RECORDS		{ $$ = $1; }
+ ;
+
+string_commalist:
+    STRING		{ $$ = dlist_append_string(dlist_create(), $1); }
+ |  string_commalist ',' STRING  	
+			{ $$ = dlist_append_string($1, $3); } 
  ;
 
 delete_stmt:
@@ -1841,7 +1848,7 @@ non_reserved_word:
 
 name_commalist:
     ident			{ $$ = dlist_append_string(dlist_create(), $1); }
- |  name_commalist ',' ident  	{ $$ = dlist_append_string($$, $3); } 
+ |  name_commalist ',' ident  	{ $$ = dlist_append_string($1, $3); } 
  ;
 
 intval:

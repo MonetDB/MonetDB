@@ -177,8 +177,8 @@ extern stmt *stmt_list(list * l);
 extern stmt *stmt_set(stmt * s1);
 extern stmt *stmt_sets(list * s1);
 
-extern stmt *stmt_copyfrom(table * t, char *file, char *tsep, char *rsep, int nr );
-extern char *stmt_copyfrom_file( stmt *s );
+extern stmt *stmt_copyfrom(table * t, list *files, char *tsep, char *rsep, int nr );
+extern list *stmt_copyfrom_files( stmt *s );
 
 extern stmt *stmt_insert(stmt *c, stmt * values, int unique_oids);
 extern stmt *stmt_replace(stmt * c, stmt * values);

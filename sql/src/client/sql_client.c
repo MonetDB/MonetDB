@@ -143,7 +143,7 @@ int clientAccept( context *lc, stream *rs ){
 	    		lc->out->flush( lc->out );
 
 			if (s && s->op1.stval->type == st_copyfrom &&
-				strcmp(stmt_copyfrom_file(s), "stdin") == 0){
+				!stmt_copyfrom_files(s)){
 				forward_data(in, lc);
 	    			lc->out->flush( lc->out );
 			}

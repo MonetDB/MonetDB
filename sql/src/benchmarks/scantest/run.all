@@ -44,14 +44,8 @@ st_v1(){
 	    done
 	done
 }
-#create
-#load
+
+create
+load
 st
 st_v1
-
-
-exit
-; do
-	echo $i
-	cat $i | grep -v 'PROMPT' | sed -e 's|&1|10000|g' | $SQL
-done

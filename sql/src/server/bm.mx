@@ -25,6 +25,8 @@
 @v 1.0
 @T
 @* Introduction
+Manages a collection of bats. This gives an abstraction on top of the monet
+bat ids.
 
 @* Implementation Code 
 @h

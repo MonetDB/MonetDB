@@ -18,3 +18,4 @@ END ft200;
 
 -- now execute program
 /
+exec ft200(100000)

@@ -13,7 +13,7 @@
 #define create_stmt_list() list_create((fdestroy)&stmt_destroy)
 #define create_column_list() list_create((fdestroy)NULL)
 #define create_atom_list() list_create((fdestroy)&atom_destroy)
-#define create_string_list() list_create((fdestroy)&string_destroy)
+#define create_string_list() list_create((fdestroy)&GDKfree)
 
 /* 
  * For debugging purposes we need to be able to convert sql-tokens to 
@@ -3201,19 +3201,24 @@ static stmt *drop_schema(context * sql, dlist * qname, int dropaction)
 }
 
 
-static stmt *copyfrom(context * sql, dlist * qname, char *file, dlist *seps, int nr)
+static stmt *copyfrom(context * sql, dlist * qname, dlist *files, dlist *seps, int nr)
 {
 	catalog *cat = sql->cat;
 	char *tname = qname_table(qname);
 	table *t = cat_bind_table(cat, cur_schema(sql), tname);
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
+	list *filelist = NULL;
 
 	if (!t) {
 		return sql_error(sql, 02, 
 				"Copy into non existing table %s", tname);
+	} else if (files){
+		dnode *n = files->h;
+		for (filelist = create_string_list(); n; n = n->next) 
+			list_append(filelist, _strdup(n->data.sval));
 	}
-	return stmt_copyfrom(t, file, tsep, rsep, nr);
+	return stmt_copyfrom(t, filelist, tsep, rsep, nr);
 
 }
 
@@ -3589,7 +3594,7 @@ static stmt *sql_stmt(context * sql, symbol * s)
 		{
 			dlist *l = s->data.lval;
 			ret = copyfrom(sql, l->h->data.lval,
-				       l->h->next->data.sval,
+				       l->h->next->data.lval,
 				       l->h->next->next->data.lval,
 				       l->h->next->next->next->data.ival);
 		}

@@ -773,12 +773,23 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	} break;
 	case st_copyfrom: {
 		node *m = s->op2.lval->h;
-		char *file = m->data;
-		char *tsep = m->next->data;
-		char *rsep = m->next->next->data;
+		char *tsep = m->data;
+		char *rsep = m->next->data;
+		
 		len += snprintf( buf+len, BUFSIZ-len, 
-		    "input(myc, Input, \"%s\", \"%s\",\"%s\", \"%s\", %d);\n",
-			s->op1.tval->name, file, tsep, rsep, s->flag);
+			"Bs%d := new(void,str);\n", -s->nr);
+		if (s->op3.lval){
+			node *n;
+			for(n = s->op3.lval->h; n; n = n->next){
+				char *file = n->data;
+				len += snprintf( buf+len, BUFSIZ-len, 
+				  	"Bs%d.insert(oid(nil),\"%s\");\n" , 
+				  	-s->nr, file );
+			}
+		}
+		len += snprintf( buf+len, BUFSIZ-len, 
+		    "input(myc, Input, \"%s\", Bs%d,\"%s\", \"%s\", %d);\n",
+			s->op1.tval->name, -s->nr, tsep, rsep, s->flag);
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_ordered: {
