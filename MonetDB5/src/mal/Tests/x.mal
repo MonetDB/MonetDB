@@ -1,6 +1,0 @@
-b:= new(int,int);
-mdb();
-barrier v:= bunStream(b,h,t);
-	print(1);
-	redo v;
-exit v;

@@ -192,7 +192,16 @@ d="`type -p $LIBTOOL | sed 's|/bin/'"$LIBTOOL"'$||'`/share/aclocal"
 if [ -d "$d" ] ; then
 	LT_M4_DIR="-I $d"
 fi
-aclocal -I . -I conf $LT_M4_DIR $CONFDIR
+
+# make sure, aclocal finds pkg.m4 even if pkg-config is not installed in /usr/;
+# requires that location of pkg-config is in PATH
+PKG_M4_DIR=""
+d="`type -p pkg-config | sed 's|/bin/pkg-config$||'`/share/aclocal"
+if [ -d "$d" ] ; then
+	PKG_M4_DIR="-I $d"
+fi
+
+aclocal -I . -I conf $LT_M4_DIR $PKG_M4_DIR $CONFDIR
 
 # patch aclocal.m4 to call the linker with "-IPA" on IRIX (medusa)
 # (just adding -IPA to LDFLAGS somehow doesn't help ...)
