@@ -1,0 +1,17 @@
+# the chunk mechanism
+
+S:= new(:void,:str);
+setSequenceBase(S,0:oid);
+insert(S,nil,"hello");
+insert(S,nil,"brave");
+insert(S,nil,"new");
+insert(S,nil,"world");
+print(S);
+
+L:= batstr.length(S);
+print(L);
+
+B:= batstr.==(S,"hello");
+print(B);
+
+
