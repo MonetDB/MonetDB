@@ -63,5 +63,5 @@ lib_embedded = {
 
 bin_prog = {
 	SOURCES = prog.c
-	LIBS = -L$(MONETDB_PREFIX)/lib -lembedded -linitmodules -lMapi -lmonet @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
+	LIBS = -L$(MONETDB_PREFIX)/lib -lembedded -linitmodules -lMapi -lmonet STATIC_MODS @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
 }
