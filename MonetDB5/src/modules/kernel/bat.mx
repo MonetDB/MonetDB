@@ -984,7 +984,6 @@ int CMDdestroy(bit *res, str input, bit *immediately) {
 		if (BBPindex(input) == bid) {
 			BAT *b = BBPquickdesc(ABS(bid), FALSE);
 			if (*immediately == FALSE) {
-				b->batKeeparound = 1;
 				b->batDirtydesc = 1;
 			}
 			BATmode(b, TRANSIENT);
@@ -1084,8 +1083,6 @@ static void infoHeap(BAT *bn, Heap *hp, str nme){
 		(hp->storage==STORE_PRIV)?"private map":"malloced");
 	strcpy(p, "filename");
         BUNins(bn, buf, hp->filename?hp->filename:"no file");
-	strcpy(p, "offset");
-        BUNins(bn, buf, local_utoa(hp->offset));
 }
 
 static char *oidtostr( oid i ){
@@ -1162,7 +1159,6 @@ int CMDinfo(BAT **retval, BAT *b){
         BUNins(bn, "top", local_utoa(BUNindex(b, (BUN) ((char *) Bunbase(b) + b->batBuns->free))));
         BUNins(bn, "batStamp", local_itoa(b->batStamp));
         BUNins(bn, "lastUsed", local_itoa(BBP_lastused(b->batCacheid)));
-        BUNins(bn, "keepAround", local_itoa(b->batKeeparound));
 	BUNins(bn, "curStamp", local_itoa(BBPcurstamp()));
         BUNins(bn, "batCopiedtodisk", local_itoa(b->batCopiedtodisk));
         BUNins(bn, "batDirtydesc", b->batDirtydesc?"dirty":"clean");
@@ -1193,8 +1189,6 @@ int CMDinfo(BAT **retval, BAT *b){
         if (b->thash_heap) {
                 HASHinfo(bn, &b->thash, "thash->");
         }
-        BUNins(bn, "head_index", b->hidx_heap?"present":"absent");
-        BUNins(bn, "tail_index", b->tidx_heap?"present":"absent");
  
 	return GDK_SUCCEED;
 }
@@ -1214,8 +1208,6 @@ int CMDbatsize(int *tot, BAT *b){
 		if (b->taccelerator.base) size += ROUND_UP(b->taccelerator.size, blksize);
 		if (b->hhash_heap) size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
 		if (b->thash_heap) size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
-		if (b->hidx_heap) size += ROUND_UP(sizeof(BUN) * cnt, blksize);
-		if (b->tidx_heap) size += ROUND_UP(sizeof(BUN) * cnt, blksize); 
 	}
 	*tot = size;
 	return GDK_SUCCEED;
