@@ -3771,12 +3771,6 @@ mapi_is_blocked(Mapi mid)
 	mapi_check0(mid, "mapi_is_blocked");
 	return mid->blocked;
 }
-int
-mapi_is_connected(Mapi mid)
-{
-	mapi_check0(mid, "mapi_is_connected");
-	return mid->connected;
-}
 
 int
 mapi_is_connected(Mapi mid)
