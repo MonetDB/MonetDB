@@ -88,7 +88,7 @@ typedef struct stream {
 } stream;
 
 /* some os specific initialization */
-stream_export int stream_init();
+stream_export int stream_init(void);
 
 stream_export int stream_readInt( stream *s, int *val );
 stream_export int stream_writeInt( stream *s, const int val );
@@ -199,7 +199,7 @@ typedef enum steam_errors {
 	WRITE_ERROR
 }stream_errors;
 
-int stream_init(){
+int stream_init(void){
 #ifdef WIN32
 	int sockopt = SO_SYNCHRONOUS_NONALERT;
 	WSADATA w;
@@ -210,8 +210,10 @@ int stream_init(){
 	if ( setsockopt(INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE, 
 		(char*)&sockopt, sizeof(sockopt)) < 0){
 		WSACleanup();
+		return -1;
 	}
 #endif
+	return 0;
 }
 
 #define EXT_LEN 4
