@@ -138,6 +138,6 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	ODBCLOG("SQLConnect\n");
 #endif
 
-	return SQLConnect(hDbc, szDataSource, nDataSourceLength,
-			  szUID, nUIDLength, szPWD, nPWDLength);
+	return SQLConnect_(hDbc, szDataSource, nDataSourceLength,
+			   szUID, nUIDLength, szPWD, nPWDLength);
 }
