@@ -1,0 +1,5 @@
+stderr of test 'malalgebra` in directory 'src/modules/plain` itself:
+
+#> Mtest:	other malalgebra 1200
+#> Mtest:	Mtimeout -timeout 1200 ./malalgebra malalgebra
+#> Mlog:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db modules_plain malalgebra.mil
