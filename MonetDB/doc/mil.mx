@@ -188,7 +188,7 @@ using Monet servers with different database-IDs, cross-system OID
 uniqueness can be ensured.
 
 Although OIDs should be generated with the command
-{\tt @[<a href="../../Core/Modules/kernel/index.html#mod_2_2_0">newoid(INT range):OID</a>@} to ensure their uniqueness, you
+{\tt @[<a href="../../Core/Modules/builtin/index.html#mod_2_2_0">newoid(INT range):OID</a>@} to ensure their uniqueness, you
 can also enter OIDs by hand for debugging purposes.
 
 You just type a number closed with an 'at' sign, e.g.  {\tt 12345\@},
@@ -383,9 +383,9 @@ will join them in parallel, with a maximum number of 16 jobs in parallel at the 
 
 During program execution, the status of variables can dynamically be
 changed  using the built-in commands
-{\tt @[<a href="../../Core/Modules/kernel/index.html#mod_2_2_1">constant(..IDENT..)</a>@}
+{\tt @[<a href="../../Core/Modules/builtin/index.html#mod_2_2_1">constant(..IDENT..)</a>@}
 (which fixes value and type) and
-{\tt @[<a href="../../Core/Modules/kernel/index.html#mod_2_2_1">freeze(..IDENT..)</a>@}
+{\tt @[<a href="../../Core/Modules/builtin/index.html#mod_2_2_1">freeze(..IDENT..)</a>@}
 (which fixes only the type).
 
 Also, the {\tt vars()} command produces a table of all active variables
@@ -867,7 +867,7 @@ So we now query for all available modules using the {\tt modules()} operator:
 [ "arith",        "any"           ]
 [ "ascii_io",     "any"           ]
 [ "bat",          "any"           ]
-[ "kernel",       "any"           ]
+[ "builtin",      "any"           ]
 [ "str",          "any"           ]
 [ "sys",          "any"           ]
 [ "trans",        "any"           ]
@@ -921,7 +921,7 @@ module, a runtime error occurs!
 [ "algebra",      1               ]
 [ "arith",        1               ]
 [ "bat",          1               ]
-[ "kernel",       1               ]
+[ "builtin",      1               ]
 [ "str",          1               ]
 [ "sys",          1               ]
 [ "trans",        1               ]
@@ -1013,7 +1013,7 @@ according to their functionality.
 @T
 As of version 4.1 MIL has 7 standard modules, that are always loaded.
 \begin{description}
-\item[ @[<a href="../../Core/Modules/kernel/index.html">kernel</a>@ ]
+\item[ @[<a href="../../Core/Modules/builtin/index.html">builtin</a>@ ]
 	these are the builtin system primitives.  They cannot be overloaded.
 \item[ @[<a href="../../Core/Modules/bat/index.html">bat</a>@ ]
 	basic commands to create and manipulate BATs.
@@ -1164,8 +1164,8 @@ session, a new thread is created as well.
 [ 2,      "Interpreter"   ]
 >
 \end{verbatim}
-You can get a listing of all Monet threads with the {\tt @[<a href="../../Core/Modules/kernel/index.html#mod_2_3_2">threads()</a>@} command.
-The {\tt @[<a href="../../Core/Modules/kernel/index.html#mod_2_3_2">threadcnt(int delta)</a>@} command allows to increase or decrease the number of
+You can get a listing of all Monet threads with the {\tt @[<a href="../../Core/Modules/builtin/index.html#mod_2_3_2">threads()</a>@} command.
+The {\tt @[<a href="../../Core/Modules/builtin/index.html#mod_2_3_2">threadcnt(int delta)</a>@} command allows to increase or decrease the number of
 MIL interpreter threads.
 
 @+ Client Sessions
@@ -1176,12 +1176,12 @@ multiple threads busy (threads are thus a lower-level concept than clients).
 
 Clients can:
 \begin{itemize}
-\item fork other clients with {\tt @[<a href="../../Core/Modules/kernel/index.html#mod_2_3_1">fork(expr):int</a>@},
-which returns a client-id.  \item killed with {\tt @[<a href="../../Core/Modules/kernel/index.html#mod_2_3_1">kill(int id)</a>@}.
+\item fork other clients with {\tt @[<a href="../../Core/Modules/builtin/index.html#mod_2_3_1">fork(expr):int</a>@},
+which returns a client-id.  \item killed with {\tt @[<a href="../../Core/Modules/builtin/index.html#mod_2_3_1">kill(int id)</a>@}.
 \item listed with {\tt @[<a href="../../Core/Modules/sys/index.html#mod_2_1_0">clients()</a>@}.
 \end{itemize}
 
-A common application of {\tt @[<a href="../../Core/Modules/kernel/index.html#mod_2_3_1">fork()</a>@} is to start a Mapi listener in the background:
+A common application of {\tt @[<a href="../../Core/Modules/builtin/index.html#mod_2_3_1">fork()</a>@} is to start a Mapi listener in the background:
 \begin{verbatim}
 > module(mapi);
 > listen(45678).fork();
@@ -1204,12 +1204,12 @@ A common application of {\tt @[<a href="../../Core/Modules/kernel/index.html#mod
 >
 end{verbatim}
 
-The session is ended with a {\tt @[<a href="../../Core/Modules/kernel/index.html#mod_2_3_1">quit()</a>@}. Note that typing this in the
+The session is ended with a {\tt @[<a href="../../Core/Modules/builtin/index.html#mod_2_3_1">quit()</a>@}. Note that typing this in the
 {\tt @[<a href="../../Tools/Mserver/index.html">Mserver</a>@} console with stop the Monet server
 immediately, whereas in the {\tt @[<a href="../../Tools/MapiClient/index.html">MapiClient</a>@} it
 will only end the current user session. The server can be shutdown from the
 {\tt @[<a href="../../Tools/MapiClient/index.html">MapiClient</a>@} (and also from the
-{\tt @[<a href="../../Tools/Mserver/index.html">Mserver</a>@} console) with {\tt @[<a href="../../Core/Modules/kernel/index.html#mod_2_3_1">shutdown()</a>@}.
+{\tt @[<a href="../../Tools/Mserver/index.html">Mserver</a>@} console) with {\tt @[<a href="../../Core/Modules/builtin/index.html#mod_2_3_1">shutdown()</a>@}.
 
 \subsection{ Miscellaneous}
 @- Nested BATs
@@ -1229,7 +1229,7 @@ or proc as the function in a multiplex operator:
 @T
 We recommend you to study the commands in the following modules:
 \begin{description}
-\item[system] @[<a href="../../Core/Modules/kernel/index.html">kernel</a>@ (special keywords),
+\item[system] @[<a href="../../Core/Modules/builtin/index.html">builtin</a>@ (special keywords),
 @[<a href="../../Core/Modules/sys/index.html">sys</a>@ (especially look at the @[<a href="../../Core/Modules/sys/index.html#mod_2_1_0">PROCs</a>@).
 
 \item[bats] @[<a href="../../Core/Modules/bat/index.html">bat</a>@ (basic bat management) and

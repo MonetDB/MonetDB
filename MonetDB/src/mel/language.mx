@@ -48,6 +48,9 @@ using namespace std;
 #else
 #include <iostream.h>
 #endif
+#ifdef __MINGW32_VERSION
+extern char *strdup(const char*);
+#endif
 
 class language {
       public:

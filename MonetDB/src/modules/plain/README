@@ -3,5 +3,5 @@ single-file extension modules for MonetDB.
 
 Here, "primary" refers to the fact that these modules are considered "vital"
 for MonetDB, and hence, they are supposed to be officially supported.
-Seven of these modules (i.e., algebra, arith, bat, kernel, str, sys, trans)
+Seven of these modules (i.e., algebra, arith, bat, builtin, str, sys, trans)
 are "mandatory" and by default loaded when Mserver is started.

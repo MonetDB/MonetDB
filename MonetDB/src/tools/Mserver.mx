@@ -67,8 +67,10 @@ The options have the following meaning:
 #include "yytree.h"
 
 #endif /* _MONET_GLOBAL_H_ */
-@C
+@c
+#ifdef __cplusplus
 extern "C" {
+#endif
 #include "Mserver.h"
 
 #ifdef _CRTDBG_MAP_ALLOC
@@ -88,6 +90,7 @@ extern "C" {
 #include "monet_options.h"
 #include "initmodules.h"
 #include <locale.h>
+#ifdef __cplusplus
 }
 #ifdef HAVE_NEW
 #include <new>
@@ -129,6 +132,7 @@ throw()
 	GDKfree(ptr);
 }
 #endif
+#endif /* __cplusplus */
 
 
 @-
@@ -151,12 +155,12 @@ buffer of 20 bytes in the sunos2.5.5.X thread library, making the tunable
 malloc library totally unusable, since it requires you to do advice before any 
 use of malloc().  We hack around it, by using realloc(0,size) in 
 gdk/gdk_utils.mx and wrapping malloc in the below dummy function:
-@C
+@c
 #ifdef HAVE_MALLOPT
 static int malloc_init = 1;
 #endif
-@C
-#ifdef NATIVE_WIN32
+@c
+#if defined(_MSC_VER) && defined(__cplusplus)
 #include <eh.h>
 void
 Mserver_abort()
@@ -166,7 +170,7 @@ Mserver_abort()
 	MT_global_exit(1);
 }
 #endif
-@C
+@c
 void
 usage(char *prog)
 {
@@ -266,7 +270,7 @@ Monet_init(opt *set, int setlen)
 	return monet_init();
 }
 
-@C
+@c
 int
 main(int argc, char **av)
 {
@@ -274,6 +278,19 @@ main(int argc, char **av)
 	char *prog = *av;
 	opt *set = NULL;
 	int idx = 0, debug = 0, setlen = 0, status = 1;
+
+	static struct option long_options[] = {
+		{"config", 1, 0, 'c'},
+		{"dbname", 1, 0, 0},
+		{"dbfarm", 1, 0, 0},
+		{"dbinit", 1, 0, 0},
+		{"debug", 2, 0, 'd'},
+		{"help", 0, 0, '?'},
+		{"nostalgic", 0, 0, 0},
+		{"set", 1, 0, 's'},
+		{"trace", 0, 0, 0},
+		{0, 0, 0, 0}
+	};
 
 @-
 We give malloc advice here. Main goal: prevent fragmentation.
@@ -301,30 +318,17 @@ capabilities depend on the malloc implementation used at run time.
 	}
 	malloc_init=0;
 @
-@C
-#ifdef NATIVE_WIN32
+@c
+#if defined(_MSC_VER) && defined(__cplusplus)
 	set_terminate(Mserver_abort);
 #endif
-@C
+@c
 	if (setlocale(LC_CTYPE, "") == NULL) {
 		GDKfatal("cannot set locale\n");
 	}
 #ifdef HAVE_MALLOPT
 	@:mallopt@
 #endif
-
-	static struct option long_options[] = {
-		{"config", 1, 0, 'c'},
-		{"dbname", 1, 0, 0},
-		{"dbfarm", 1, 0, 0},
-		{"dbinit", 1, 0, 0},
-		{"debug", 2, 0, 'd'},
-		{"help", 0, 0, '?'},
-		{"nostalgic", 0, 0, 0},
-		{"set", 1, 0, 's'},
-		{"trace", 0, 0, 0},
-		{0, 0, 0, 0}
-	};
 
 	if (getcwd(monet_cwd, PATHLENGTH - 1) == NULL) {
 		perror("pwd");
@@ -426,20 +430,20 @@ capabilities depend on the malloc implementation used at run time.
 @-
 Execute scripts.
 	if (monet_script ) printf("#script:%s\n",monet_script);
-@C
+@c
 @- 
 thread management.
-@C
+@c
 	THRnew(MT_getpid(), "Interpreter");
 	scheduleClient(c);
 	monetInterpreter((void *) &status);
 @-
 At the end of a multi-threaded session we should wait
 for all processes to terminate properly.
-@C
+@c
 @-
 Peter: for the time being avoid difficult things like dropping everything 
-@C
+@c
 	monet_exit(0);
 	MT_global_exit(0);
 	return 0;

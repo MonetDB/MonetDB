@@ -23,8 +23,13 @@ LEX=flex
 # This is the location of pthreads for Win32, 
 # see http://sources.redhat.com/pthreads-win32/
 PTHREAD = C:\Pthreads
-PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC.lib"
+!IFDEF USE_MINGW
+PTHREAD_INCS = "-I$(PTHREAD)\include" -D_DLL
+PTHREAD_LIBS = "$(PTHREAD)\lib\libpthreadGC.a"
+!ELSE
 PTHREAD_INCS = "-I$(PTHREAD)\include"
+PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC.lib"
+!ENDIF
 
 # not need to edit beyond here..
 
@@ -49,13 +54,12 @@ pkgincludedir = $(includedir)\$(pkg)
 
 #-FI$(TOPDIR)\config.h 
 LIBC_INCS = $(PTHREAD_INCS)
-SOCKET_LIBS = wsock32.lib
-
 !IFDEF USE_MINGW
-CXX=g++
+SOCKET_LIBS = -lwsock32
 !ELSE
-CXX=$(CC)
+SOCKET_LIBS = wsock32.lib
 !ENDIF
+
 MEL="$(TOPDIR)\src\mel\mel"
 MX="$(TOPDIR)\src\utils\Mx\Mx"
 CP=copy

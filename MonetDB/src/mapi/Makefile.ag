@@ -30,7 +30,6 @@ lib__mapi = {
 	#SCRIPTS = mil ""
 	WINLIBS =  ../common/libmutils ../common/libstream \
 		../gdk/libbat ../monet/libmonet \
-		../modules/plain/lib_kernel \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 

@@ -58,7 +58,6 @@ monettime: loading... done.
      mapi: loading... done.
 malalgebra: loading... done.
      lock: loading... done.
-   kernel: loaded.
  iterator: loading... done.
     image: loading... done.
      enum: loading... done.
@@ -67,6 +66,7 @@ malalgebra: loading... done.
  counters: loading... done.
     color: loading... done.
   cluster: loaded.
+  builtin: loaded.
      blob: loading... done.
 bitvector: loaded.
    bitset: loading... done.
@@ -100,6 +100,7 @@ table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count
 [ "bitset"	  ]
 [ "bitvector"	  ]
 [ "blob"	  ]
+[ "builtin"	  ]
 [ "cluster"	  ]
 [ "color"	  ]
 [ "counters"	  ]
@@ -108,7 +109,6 @@ table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count
 [ "enum"	  ]
 [ "image"	  ]
 [ "iterator"	  ]
-[ "kernel"	  ]
 [ "lock"	  ]
 [ "main"	  ]
 [ "malalgebra"	  ]

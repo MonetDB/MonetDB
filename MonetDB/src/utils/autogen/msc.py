@@ -26,7 +26,8 @@ MAKEFILE_HEAD = '''
 
 # cl -help describes the options
 !IFDEF USE_MINGW
-CC = gcc -mwindows -std=c99
+CC = gcc -mwin32 -mno-cygwin -std=gnu99 -g
+CXX = g++ -mwin32 -mno-cygwin -g
 ARCHIVER = ar cr
 !ELSE
 !IFDEF DEBUG
@@ -34,6 +35,7 @@ CC = cl -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -G6 -Od -D_DEBUG -RTC1 -ZI
 !ELSE
 CC = cl -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -G6
 !ENDIF
+CXX = $(CC)
 ARCHIVER = lib
 !ENDIF
 # optimize use -Ox
@@ -41,6 +43,8 @@ RC = rc
 
 JAVAC = javac
 JAR = jar
+
+CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H $(INCLUDES)
 
 # No general LDFLAGS needed
 !IFDEF USE_MINGW
@@ -50,6 +54,7 @@ OUTPUTOBJ = -o
 OUTPUTLIB =
 LDFLAGS2 =
 O = o
+CXXFLAGS = $(CFLAGS)
 !ELSE
 LDFLAGS = /link
 OUTPUTEXE = -Fe
@@ -57,6 +62,7 @@ OUTPUTOBJ = -Fo
 OUTPUTLIB = /out:
 LDFLAGS2 = /subsystem:console /NODEFAULTLIB:LIBC
 O = obj
+CXXFLAGS = $(CFLAGS) -EHsc
 !ENDIF
 INSTALL = copy
 # TODO
@@ -64,9 +70,6 @@ INSTALL = copy
 MKDIR = mkdir
 ECHO = echo
 CD = cd
-
-CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H $(INCLUDES)
-CXXFLAGS = $(CFLAGS) -EHsc
 
 CXXEXT = \\\"cxx\\\"
 
@@ -572,7 +575,18 @@ def msc_binary(fd, var, binmap, msc):
                 SCRIPTS.append(target)
     fd.write(srcs + "\n")
     fd.write("%s.exe: $(%s_OBJS)\n" % (binname, binname.replace('-','_')))
-    fd.write("\t$(CC) $(CFLAGS) $(OUTPUTEXE)%s.exe $(%s_OBJS) $(LDFLAGS) $(%s_LIBS) $(LDFLAGS2)\n\n" % (binname, binname.replace('-','_'), binname.replace('-','_')))
+    is_cxx = False
+    if not msc['DEPS']:
+        for tar, deplist in binmap['DEPS'].items():
+            b, ext = split_filename(tar)
+            if ext in ('cc', 'cxx'):
+                is_cxx = True
+                break
+    if is_cxx:
+        fd.write('\t$(CXX) $(CXXFLAGS)')
+    else:
+        fd.write('\t$(CC) $(CFLAGS)')
+    fd.write(" $(OUTPUTEXE)%s.exe $(%s_OBJS) $(LDFLAGS) $(%s_LIBS) $(LDFLAGS2)\n\n" % (binname, binname.replace('-','_'), binname.replace('-','_')))
 
     if SCRIPTS:
         fd.write(binname.replace('-','_')+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -606,6 +620,8 @@ def msc_bins(fd, var, binsmap, msc):
         bin, ext = split_filename(binsrc)
         if ext not in automake_ext:
             msc['EXTRA_DIST'].append(binsrc)
+
+        is_cxx = ext in ('cc', 'cxx')   # whether source is C++ or C
 
         if binsmap.has_key("DIR"):
             bd = binsmap["DIR"][0] # use first name given
@@ -648,7 +664,11 @@ def msc_bins(fd, var, binsmap, msc):
                         SCRIPTS.append(target)
         fd.write(srcs + "\n")
         fd.write("%s.exe: $(%s_OBJS)\n" % (bin, bin.replace('-','_')))
-        fd.write("\t$(CC) $(CFLAGS) $(OUTPUTEXE)%s.exe $(%s_OBJS) $(LDFLAGS) $(%s_LIBS) $(LDFLAGS2)\n\n" % (bin, bin.replace('-','_'), bin.replace('-','_')))
+        if is_cxx:
+            fd.write('\t$(CXX) $(CXXFLAGS)')
+        else:
+            fd.write('\t$(CC) $(CFLAGS)')
+        fd.write(" $(OUTPUTEXE)%s.exe $(%s_OBJS) $(LDFLAGS) $(%s_LIBS) $(LDFLAGS2)\n\n" % (bin, bin.replace('-','_'), bin.replace('-','_')))
 
     if SCRIPTS:
         fd.write(name.replace('-','_')+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -736,7 +756,8 @@ def msc_library(fd, var, libmap, msc):
             msc['EXTRA_DIST'].append(src)
 
     srcs = pref + sep + libname + "_OBJS ="
-    deffile = ''
+    deffile1 = ''
+    deffile2 = ''
     for target in libmap['TARGETS']:
         if target == "@LIBOBJS@":
             srcs = srcs + " $(LIBOBJS)"
@@ -758,7 +779,8 @@ def msc_library(fd, var, libmap, msc):
                 if target not in SCRIPTS:
                     SCRIPTS.append(target)
             elif ext == 'def':
-                deffile = ' "-DEF:$(SRCDIR)\\%s"' % target
+                deffile1 = ' "-DEF:$(SRCDIR)\\%s"' % target
+                deffile2 = ' --def "$(SRCDIR)\\%s"' % target
     fd.write(srcs + "\n")
     ln = pref + sep + libname
     if libmap.has_key('NOINST'):
@@ -766,8 +788,13 @@ def msc_library(fd, var, libmap, msc):
         fd.write('\t$(ARCHIVER) $(OUTPUTLIB)"%s.lib" $(%s_OBJS)\n' % (ln, ln.replace('-','_')))
     else:
         fd.write("%s.lib: %s%s\n" % (ln, ln, dll))
+        fd.write("!IFDEF USE_MINGW\n")
         fd.write("%s%s: $(%s_OBJS) \n" % (ln, dll, ln.replace('-','_')))
-        fd.write("\t$(CC) $(CFLAGS) -LD $(OUTPUTEXE)%s%s $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile))
+        fd.write("\tdllwrap --driver-name=gcc --mno-cygwin --dllname=%s%s --output-lib=%s.lib $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, dll, ln, ln.replace('-','_'), ln.replace('-','_'), deffile2))
+        fd.write("!ELSE\n")
+        fd.write("%s%s: $(%s_OBJS) \n" % (ln, dll, ln.replace('-','_')))
+        fd.write("\t$(CC) $(CFLAGS) -LD $(OUTPUTEXE)%s%s $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile1))
+        fd.write("!ENDIF\n")
         if sep == "_":
             fd.write("\tif not exist .libs $(MKDIR) .libs\n")
             fd.write('\tif exist "%s%s" $(INSTALL) "%s%s" .libs\\%s%s\n' % (ln, dll, ln, dll, ln, dll))
@@ -827,7 +854,8 @@ def msc_libs(fd, var, libsmap, msc):
                 fd.write(msc_additional_libs(fd, libname, sep, "LIB", libslist, dlib, msc))
 
         srcs = "lib"+sep+libname+"_OBJS ="
-        deffile = ''
+        deffile1 = ''
+        deffile2 = ''
         for target in libsmap['TARGETS']:
             t, ext = split_filename(target)
             if t == libname:
@@ -846,12 +874,18 @@ def msc_libs(fd, var, libsmap, msc):
                     if target not in SCRIPTS:
                         SCRIPTS.append(target)
                 elif ext == 'def':
-                    deffile = ' "-DEF:$(SRCDIR)\\%s"' % target
+                    deffile1 = ' "-DEF:$(SRCDIR)\\%s"' % target
+                    deffile2 = ' --def "$(SRCDIR)\\%s"' % target
         fd.write(srcs + "\n")
         ln = "lib" + sep + libname
         fd.write(ln + ".lib: " + ln + ".dll\n")
+        fd.write("!IFDEF USE_MINGW\n")
         fd.write(ln + ".dll: $(" + ln.replace('-','_') + "_OBJS)\n")
-        fd.write("\t$(CC) $(CFLAGS) -LD $(OUTPUTEXE)%s.dll $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, ln.replace('-','_'), ln.replace('-','_'), deffile))
+        fd.write("\tdllwrap --driver-name=gcc --mno-cygwin --dllname=%s.dll --output-lib=%s.lib $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, ln, ln.replace('-','_'), ln.replace('-','_'), deffile2))
+        fd.write("!ELSE\n")
+        fd.write(ln + ".dll: $(" + ln.replace('-','_') + "_OBJS)\n")
+        fd.write("\t$(CC) $(CFLAGS) -LD $(OUTPUTEXE)%s.dll $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, ln.replace('-','_'), ln.replace('-','_'), deffile1))
+        fd.write("!ENDIF\n")
         if sep == "_":
             fd.write("\tif not exist .libs $(MKDIR) .libs\n")
             fd.write('\tif exist "%s.dll" $(INSTALL) "%s.dll" .libs\\%s.dll\n' % (ln, ln, ln))

@@ -75,7 +75,7 @@ int proto::generate_code( ostream &o, Symbol *root ){
 
 static char mod_export[1024];
 
-char *upper(char *str){
+char *upper(const char *str){
 	size_t i,l = strlen(str);
 	char *res = new char[l+1];
 
@@ -97,8 +97,8 @@ ostream &proto::gen_module( ostream &o, const Module &d ){
 	o << " */\n\n"; 
 	o << "#include <gdk.h>\n\n";
 
-	o << "#ifdef _MSC_VER\n";
-	o << "#ifndef LIB" << upper(strdup(d.Name())) << "\n";
+	o << "#ifdef NATIVE_WIN32\n";
+	o << "#ifndef LIB" << upper(d.Name()) << "\n";
 	o << "#define " << d.Name() << "_export extern __declspec(dllimport)\n";
 	o << "#else\n";
 	o << "#define " << d.Name() << "_export extern __declspec(dllexport)\n";

@@ -500,7 +500,7 @@ MonetDB>fork(listen(45678));
 \end{verbatim}
 
 The {\tt @[<a href="../Modules/mapi/index.html">listen(port)</a>@} command from the {\tt @[<a href="../Modules/mapi/index.html">mapi</a>@} module starts a client
-listener. As this command blocks, it is executed as a parameter to {\tt @[<a href="../Modules/kernel/index.html#mod_2_3_1">fork()</a>@}
+listener. As this command blocks, it is executed as a parameter to {\tt @[<a href="../Modules/builtin/index.html#mod_2_3_1">fork()</a>@}
 which forks off a separate @[<acronym title="MonetDB Interpreter Language">MIL</acronym>@ client that runs in the background.
 
 We now open a new window and start the @[<a href="../../Tools/MapiClient/index.html">MapiClient</a>@, telling it to connect
@@ -649,7 +649,7 @@ columns are projected out).
 mil>
 \end{verbatim}
 
-Finally, the MapiClient and Mserver sessions are closed, the former with $\backslash$q, the latter with a {\tt  @[<a href="../Modules/kernel/index.html#mod_2_3_1">quit</a>@}:
+Finally, the MapiClient and Mserver sessions are closed, the former with $\backslash$q, the latter with a {\tt  @[<a href="../Modules/builtin/index.html#mod_2_3_1">quit</a>@}:
 
 \begin{verbatim}
 mil>\q
@@ -790,7 +790,7 @@ that give detailed overviews of where the various kinds of memory are being used
 Debug-mask 4 causes regular printing of memory resource consumption. It can either be set
 from the {\tt @[<a href="../../../monet-compiled/etc/MonetDB.conf">MonetDB.conf</a>@} file, the
 @[<a href="../../Tools/Mserver/index.html">Mserver</a>@ command line, or by executing
-the @[<a href="../Modules/kernel/index.html#mod_2_4_2">debugmask()</a>@ operator. 
+the @[<a href="../Modules/builtin/index.html#mod_2_4_2">debugmask()</a>@ operator. 
 
 @* Copyright Notice
 @T

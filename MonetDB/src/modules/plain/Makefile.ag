@@ -68,7 +68,7 @@ LIBS = {
 	DIR = pkglibdir
 	SEP = _
 	SOURCES = \
-		algebra.mx arith.mx bat.mx kernel.mx sys.mx trans.mx \
+		algebra.mx arith.mx bat.mx builtin.mx sys.mx trans.mx \
 		mkey.mx profiler.mx \
 		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
 		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
@@ -85,7 +85,7 @@ LIBS = {
 #doc_libs = {
 #	DIR = pkgdatadir/docs/plain/
 #	SOURCES = \
-#		algebra.mx arith.mx bat.mx kernel.mx sys.mx trans.mx \
+#		algebra.mx arith.mx bat.mx builtin.mx sys.mx trans.mx \
 #		mkey.mx profiler.mx \
 #		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
 #		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
@@ -146,7 +146,7 @@ lib__pcre = {
 scripts_mil = {
 	DIR = pkglibdir
 	SOURCES = streams.mx str.mx xtables.mx \
-         	algebra.mx arith.mx bat.mx kernel.mx sys.mx trans.mx \
+         	algebra.mx arith.mx bat.mx builtin.mx sys.mx trans.mx \
                 mkey.mx profiler.mx \
                 aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx \
 		blob.mx decimal.mx enum.mx lock.mx mmath.mx \

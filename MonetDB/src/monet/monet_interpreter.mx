@@ -118,6 +118,8 @@ typedef struct {
 	int words[1];		/* allocate the rest dynamically */
 } monet_sig_t;
 
+m_export int handle_argerror(ValPtr res, int actual, int correct);
+m_export int handle_paramerror(ValPtr res, int param, int actual, int correct);
 m_export int interpret(Cntxt stk, YYSTREE lt, ValPtr res);
 m_export int interpret_while(Cntxt stk, YYSTREE lt, ValPtr res);
 m_export int interpret_ident(Cntxt stk, YYSTREE lt, ValPtr res);
@@ -648,6 +650,31 @@ It is dumped on the eventstream whenever we leave the interpreter();
 	}
 #endif
 @c
+
+/* two handy utilities for builtin functions */
+int
+handle_argerror(ValPtr res, int actual, int correct)
+{
+	str s = GDKmalloc(80);
+
+	VALclear(res);
+	res->val.sval = s;
+	res->vtype = TYPE_str;
+	sprintf(s, "%d arguments expected (got %d)", correct, actual);
+	return -1;
+}
+
+int
+handle_paramerror(ValPtr res, int param, int actual, int correct)
+{
+	str s = GDKmalloc(80);
+
+	VALclear(res);
+	res->val.sval = s;
+	res->vtype = TYPE_str;
+	sprintf(s, "parameter %d has type '%s' ('%s' expected)", param, TBL_atomname(actual), TBL_atomname(correct));
+	return -1;
+}
 
 /* the guts of MIL interpretation */
 int

@@ -1010,8 +1010,14 @@ def ApproveOutput (env, TST) :
                 else:
                     open(stableOUTPUT,"w").close()
 
-            patch = os.path.join(os.sep,"tmp",os.path.split(stableOUTPUT)[1]+".patch-"+str(os.getpid()))
-            os.system("diff -Bb -I'^[#=]' -U0 %s %s > %s" % (stableOUTPUT,testOUTPUT,patch+".0"))
+            for d in ('TMPDIR', 'TMP', 'TEMP'):
+                if os.environ.has_key(d):
+                    patch = os.environ[d]
+                    break
+            else:
+                patch = os.path.join(os.sep, 'tmp')
+            patch = os.path.join(patch, "%s.patch-%s" % (os.path.basename(stableOUTPUT), str(os.getpid())))
+            os.system('diff -Bb "-I^[#=]" -U0 "%s" "%s" > "%s"' % (stableOUTPUT,testOUTPUT,patch+".0"))
             if os.path.getsize(patch+".0"):
                 print "Approving  %s  ->  stable.%s%s   (%s file)" % (os.path.join(TSTDIR,TST+".test."+WHAT), WHAT, SYSTEM, oc)
 
@@ -1031,8 +1037,8 @@ def ApproveOutput (env, TST) :
                 f.flush()
                 f.close()
                 shutil.copy(stableOUTPUT,stableOUTPUT+".ORG")
-                os.system("patch %s %s" % (stableOUTPUT,patch+".1"))
-                os.system("diff -u %s %s > %s" % (stableOUTPUT+".ORG",stableOUTPUT,patch))
+                os.system('patch "%s" "%s"' % (stableOUTPUT,patch+".1"))
+                os.system('diff -u "%s" "%s" > "%s"' % (stableOUTPUT+".ORG",stableOUTPUT,patch))
                 os.remove(stableOUTPUT+".ORG")
                 os.remove(patch+".1")
             else:
@@ -1448,9 +1454,9 @@ def RunTest(env, TST, BusyPorts, COND) :
                     os.rename(f,f+".no_prof")
                     os.rename("prof_"+f,f)
                     if not quiet:
-                        os.system('%s -I"%s" %s -A%d %s.no_prof %s %s.prof.diff.html' % (env['exe']['Mdiff'][1],par['IGNORE'],par['CONTEXT'],par['ACCURACY'],f,f,f))
+                        os.system('%s -I"%s" "%s" -A%d "%s.no_prof" "%s" "%s.prof.diff.html"' % (env['exe']['Mdiff'][1],par['IGNORE'],par['CONTEXT'],par['ACCURACY'],f,f,f))
                     else:
-                        os.system('%s -q -I"%s" %s -A%d %s.no_prof %s %s.prof.diff.html' % (env['exe']['Mdiff'][1],par['IGNORE'],par['CONTEXT'],par['ACCURACY'],f,f,f))
+                        os.system('%s -q -I"%s" "%s" -A%d "%s.no_prof" "%s" "%s.prof.diff.html"' % (env['exe']['Mdiff'][1],par['IGNORE'],par['CONTEXT'],par['ACCURACY'],f,f,f))
 
         ACCURACYout = par['ACCURACY']
         ACCURACYerr = par['ACCURACY']
@@ -1676,9 +1682,9 @@ def RunTest(env, TST, BusyPorts, COND) :
                     MDIFF = MDIFF0
                     ACCURACYout = 0
                 if not quiet:
-                    timedout = os.system('%s -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.out.FILTERED %s.out.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYout, REVe, TST, STABLEout, TST, TST))
+                    timedout = os.system('%s -I"%s" "%s" -A%d -r"%s" "%s%s.FILTERED" "%s.test.out.FILTERED" "%s.out.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYout, REVe, TST, STABLEout, TST, TST))
                 else:
-                    timedout = os.system('%s -q -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.out.FILTERED %s.out.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYout, REVe, TST, STABLEout, TST, TST))
+                    timedout = os.system('%s -q -I"%s" "%s" -A%d -r"%s" "%s%s.FILTERED" "%s.test.out.FILTERED" "%s.out.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYout, REVe, TST, STABLEout, TST, TST))
                 ACCURACYout = ACCURACYout - 1
 
             #TODO:
@@ -1704,9 +1710,9 @@ def RunTest(env, TST, BusyPorts, COND) :
                     MDIFF = MDIFF0
                     ACCURACYerr = 0
                 if not quiet:
-                    timedout = os.system('%s -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.err.FILTERED %s.err.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
+                    timedout = os.system('%s -I"%s" "%s" -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 else:
-                    timedout = os.system('%s -q -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.err.FILTERED %s.err.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
+                    timedout = os.system('%s -q -I"%s" "%s" -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 ACCURACYerr = ACCURACYerr - 1
 
             FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
@@ -1929,7 +1935,7 @@ def mapi_ping(port) :
     retry = 0
     wait = 1
     host = 'localhost'
-    while (retry < 3):
+    while retry < 3:
         retry += 1
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

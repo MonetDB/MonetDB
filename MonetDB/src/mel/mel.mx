@@ -251,6 +251,13 @@ List *dirs = NULL;
 
 language *l = NULL;
 
+#ifdef __MINGW32_VERSION
+char *strdup(const char *s)
+{
+	return strcpy((char *) malloc(strlen(s) + 1), s);
+}
+#endif
+
 const char *token2str( int token ){
         switch (token){
         case MEL_MODULE     : return "module";
@@ -460,6 +467,15 @@ int yylineno;
 extern int	yyerrok;
 #undef YYLMAX
 #define YYLMAX	100000
+#endif
+
+#ifdef __MINGW32_VERSION
+int
+isatty(int fd)
+{
+	(void) fd;
+	return 1;
+}
 #endif
 
 void check_lineno(char *line)

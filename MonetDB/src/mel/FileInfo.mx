@@ -55,6 +55,7 @@ class FileInfo {
 @C
 #include <monetdb_config.h>
 #include "FileInfo.h"
+#include "language.h"
 #include "mel.h"
 #include "ListIterator.h"
 #include <stdio.h>

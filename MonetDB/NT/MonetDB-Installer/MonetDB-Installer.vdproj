@@ -955,8 +955,8 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_08736BD670A742A8A23B6B51A8A28668"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_kernel.dll"
-            "TargetName" = "8:lib_kernel.dll"
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_builtin.dll"
+            "TargetName" = "8:lib_builtin.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -975,8 +975,8 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_09BF045CD8F9418AA23CAA9AFCAE15DD"
             {
-            "SourcePath" = "8:..\\lib\\MonetDB\\kernel.mil"
-            "TargetName" = "8:kernel.mil"
+            "SourcePath" = "8:..\\lib\\MonetDB\\builtin.mil"
+            "TargetName" = "8:builtin.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"

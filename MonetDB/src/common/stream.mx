@@ -53,7 +53,7 @@ the various underlying storage types.
 #endif
 #include <signal.h>
 
-#ifdef _MSC_VER
+#ifdef NATIVE_WIN32
 #ifndef LIBSTREAM
 #define stream_export extern __declspec(dllimport)
 #else
@@ -353,7 +353,7 @@ stream_init(void)
 #ifdef STREAM_DEBUG
 /* code adapted from gdk.mx */
 /* define printf formats for printing size_t and ssize_t variables */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(__CYGWIN32__) && !defined(__sgi)
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi)
 #define SZFMT "%zu"
 #elif SIZEOF_SIZE_T == SIZEOF_INT
 #define SZFMT "%u"
@@ -1078,6 +1078,7 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	if (size == 0 || elmsize == 0)
 		return cnt;
 
+	errno = 0;
 	while (res < size && (
 #ifdef NATIVE_WIN32
 				     ((nr = send(s->stream_data.i, (void *) ((char *) buf + res), size - res, 0)) > 0)
@@ -1108,6 +1109,7 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	if (s->errnr)
 		return -1;
 
+	errno = 0;
 	while (res < size && (
 #ifdef NATIVE_WIN32
 				     ((nr = recv(s->stream_data.i, (void *) ((char *) buf + res), size - res, 0)) > 0)
@@ -1146,7 +1148,9 @@ socket_close(stream *s)
 		 * created.
 		 */
 		if (s->access == ST_READ) {
+#ifdef HAVE_SHUTDOWN
 			shutdown(fd, SHUT_RDWR);
+#endif
 			close(fd);
 		}
 	}
@@ -1196,7 +1200,7 @@ socket_open(int socket, const char *name)
 		}
 	}
 #endif
-#ifndef NATIVE_WIN32
+#ifdef HAVE_FCNTL
 	{
 		int fl = fcntl(socket, F_GETFL);
 

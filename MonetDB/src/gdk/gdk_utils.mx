@@ -247,6 +247,7 @@ It should be extended to cope with the specifics of the interrupt
 received.
 @{
 @c
+#ifndef NATIVE_WIN32
 #include <signal.h>
 RETSIGTYPE
 BATSIGignore(int nr)
@@ -332,6 +333,7 @@ BATSIGinit(void)
 #endif
 	return 0;
 }
+#endif	/* NATIVE_WIN32 */
 
 @}
 @+ Memory management
@@ -1395,7 +1397,9 @@ GDKinit(char *dbname, char *dbfarm, int alloc_map)
 	stream_init();
 	MT_init_posix(alloc_map);
 	THRinit();
+#ifndef NATIVE_WIN32
 	BATSIGinit();
+#endif
 	GDKlockHome();
 
 	/* init time */
@@ -1817,7 +1821,9 @@ GDKfatal(const char *format, ...)
 	FILE *fd = stderr;
 
 	GDKdebug |= 16;
+#ifndef NATIVE_WIN32
 	BATSIGinit();
+#endif
 	strcpy(message, GDKFATAL);
 	va_start(ap, format);
 	vsnprintf(message + len, GDKMAXERRLEN - (len + 2), format, ap);
@@ -1847,7 +1853,7 @@ Real errors should be saved in the lock file for post-crash inspection.
 }
 
 int
-GDKerrorCount()
+GDKerrorCount(void)
 {
 	return THRerrorcount[THRgettid()];
 }

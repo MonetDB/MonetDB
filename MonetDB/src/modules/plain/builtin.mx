@@ -15,10 +15,10 @@
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
 @' All Rights Reserved.
 
-@f kernel
+@f builtin
 @a M. Kersten, P. Boncz
 @v 2.0
-@t MIL Kernel Operations
+@t MIL Builtin Operations
 
 @* Introduction
 Apart from its grammatical structure, described in the
@@ -44,7 +44,7 @@ loading and unloading new modules.
 
 @* MEL Definition
 @m
-.MODULE kernel;
+.MODULE builtin;
 
 @+ Module management
 @m
@@ -263,7 +263,7 @@ any client activity.
 	"Print a formatted string on the standard client output."
 
 
-.END kernel;
+.END builtin;
 
 @{
 @* Implementation
@@ -271,24 +271,14 @@ The routines for Monet command interpretation are collected here.
 Each command is passed the parse tree and a pointer where the result
 should be delivered.
 
-@h
-#ifndef KERNEL_H
-#define KERNEL_H
-
+@c
 #include "gdk.h"
 #include "monet.h"
 #include "monet_context.h"
 #include "monet_client.h"
 #include "monet_queue.h"
-#include "kernel.proto.h"
-
-kernel_export int handle_argerror(ValPtr res, int actual, int correct);
-kernel_export int handle_paramerror(ValPtr res, int param, int actual, int correct);
-
-#endif /*KERNEL_H */
-
-@c
-#include "kernel.h"
+#include "monet_parse.h"
+#include "builtin.proto.h"
 
 @+ Useful Macros
 The below Mx macros serve to easily  factor out the parameter handling
@@ -296,32 +286,6 @@ in the Monet Command implementations. Since there are two types of commands:
  -- builtin commands, which receive raw YYTREE parse trees as parameters.
  -- standard commands, which receive already evaluated things, i.e. value
   records as parameters.
-
-@c
-kernel_export int
-handle_argerror(ValPtr res, int actual, int correct)
-{
-	str s = GDKmalloc(80);
-
-	VALclear(res);
-	res->val.sval = s;
-	res->vtype = TYPE_str;
-	sprintf(s, "%d arguments expected (got %d)", correct, actual);
-	return -1;
-}
-
-kernel_export int
-handle_paramerror(ValPtr res, int param, int actual, int correct)
-{
-	str s = GDKmalloc(80);
-
-	VALclear(res);
-	res->val.sval = s;
-	res->vtype = TYPE_str;
-	sprintf(s, "parameter %d has type '%s' ('%s' expected)", param, TBL_atomname(actual), TBL_atomname(correct));
-	return -1;
-}
-
 
 @-
 Builtin command argument check.

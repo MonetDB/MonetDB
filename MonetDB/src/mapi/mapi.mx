@@ -146,7 +146,6 @@ This module contains a simple interface for network connections.
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
 #endif
-#include "kernel.h"
 
 #define SOCKPTR struct sockaddr *
 #if HAVE_SOCKLEN_T

@@ -64,7 +64,7 @@ table(Static_mods.reverse().col_name(sprintf("%i modules",Static_mods.count())))
 [ "algebra"	  ]
 [ "arith"	  ]
 [ "bat"		  ]
-[ "kernel"	  ]
+[ "builtin"	  ]
 [ "str"		  ]
 [ "sys"		  ]
 [ "trans"	  ]
@@ -639,7 +639,7 @@ Module: "bat"
 [ "tail",	  "COMMAND:   ",  "tail(int) : str",											  "Returns the type of the tail column of a BAT, as a string."																														  ]
 [ "unload",	  "COMMAND:   ",  "unload(str) : bit",									  "Swapout a BAT to disk. Transient BATs can also be swapped out.\n Returns whether the unload indeed happened. "																																															  ]
 
-Module: "kernel"
+Module: "builtin"
 
 [ 42 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#

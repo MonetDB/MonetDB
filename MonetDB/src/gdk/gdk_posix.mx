@@ -231,6 +231,7 @@ gdk_export int win_mkdir(const char *, const int mode);
 
 #define NAME_MAX 255
 
+#ifndef HAVE_OPENDIR
 struct DIR {
 	char *dir_name;
 	int just_opened;
@@ -243,6 +244,7 @@ struct direct {
 	char d_name[NAME_MAX + 1];
 	int d_namelen;
 };
+#endif
 
 #ifndef HAVE_FTRUNCATE
 gdk_export int ftruncate(int fd, off_t size);
@@ -816,19 +818,19 @@ MT_mmap(char *path, int mode, off_t off, size_t len, void *fixed)
 		return (void *) -1L;
 	}
 
-	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) ((((__int64) off + (__int64) len) >> 32) & 0xFFFFFFFFi64), (DWORD) ((off + len) & 0xFFFFFFFFi64), NULL);
+	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) ((((gdk_int64) off + (gdk_int64) len) >> 32) & LL_CONSTANT(0xFFFFFFFF)), (DWORD) ((off + len) & LL_CONSTANT(0xFFFFFFFF)), NULL);
 	if (h2 == NULL) {
-		GDKsyserror("MT_mmap: CreateFileMapping(%x, &sa, %d, %d, %u, NULL) failed\n", h1, mode3, (DWORD) ((((__int64) off + (__int64) len) >> 32) & 0xFFFFFFFFi64), (DWORD) ((off + len) & 0xFFFFFFFFi64));
+		GDKsyserror("MT_mmap: CreateFileMapping(%x, &sa, %d, %d, %u, NULL) failed\n", h1, mode3, (DWORD) ((((gdk_int64) off + (gdk_int64) len) >> 32) & LL_CONSTANT(0xFFFFFFFF)), (DWORD) ((off + len) & LL_CONSTANT(0xFFFFFFFF)));
 		CloseHandle(h1);
 		return (void *) -1L;
 	}
 	if (fixed) {
-		ret = MapViewOfFileEx(h2, mode4, off >> 32, (unsigned int) off, len, fixed);
+		ret = MapViewOfFileEx(h2, mode4, (DWORD) ((gdk_int64) off >> 32), (DWORD) off, len, fixed);
 	} else {
-		ret = MapViewOfFile(h2, mode4, off >> 32, (unsigned int) off, len);
+		ret = MapViewOfFile(h2, mode4, (DWORD) ((gdk_int64) off >> 32), (DWORD) off, len);
 	}
 	if (ret == NULL) {
-		GDKsyserror("MT_mmap: MapViewOfFile%s(%x, %d, %d, %u, %d, %x) failed\n", h2, (fixed ? "Ex" : ""), mode4, off >> 32, (unsigned int) off, len, fixed);
+		GDKsyserror("MT_mmap: MapViewOfFile%s(%x, %d, %d, %u, %d, %x) failed\n", h2, (fixed ? "Ex" : ""), mode4, (DWORD) ((gdk_int64) off >> 32), (DWORD) off, len, fixed);
 		ret = (void *) -1L;
 	}
 	CloseHandle(h1);
@@ -879,6 +881,15 @@ MT_mmap_trim(size_t lim, void *err)
 	(void) err;
 	return 0;
 }
+
+#ifndef _HEAPOK			/* MinGW */
+#define _HEAPEMPTY      (-1)
+#define _HEAPOK         (-2)
+#define _HEAPBADBEGIN   (-3)
+#define _HEAPBADNODE    (-4)
+#define _HEAPEND        (-5)
+#define _HEAPBADPTR     (-6)
+#endif
 
 struct mallinfo
 MT_mallinfo(void)

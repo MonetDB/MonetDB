@@ -137,7 +137,7 @@ as well as in user defined module implementations.
 
 #include "gdk.h"
 
-#ifdef _MSC_VER
+#ifdef NATIVE_WIN32
 #ifndef LIBMONET
 #define m_export extern __declspec(dllimport)
 #else

@@ -27,7 +27,7 @@ functions.
 #ifndef _GDK_SYSTEM_H_
 #define _GDK_SYSTEM_H_
 
-#ifdef _MSC_VER
+#ifdef NATIVE_WIN32
 #ifndef LIBGDK
 #define gdk_export extern __declspec(dllimport)
 #else
@@ -62,7 +62,9 @@ functions.
 #ifdef pid_t
 #undef pid_t
 #endif
+# include <sched.h>
 # include <pthread.h>
+# include <semaphore.h>
 #endif
 
 #ifdef HAVE_SEMAPHORE_H

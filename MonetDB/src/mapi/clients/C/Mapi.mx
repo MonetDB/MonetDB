@@ -849,7 +849,7 @@ the error status of the Mapi structure.
 extern "C" {
 #endif
 
-#ifdef _MSC_VER
+#ifdef NATIVE_WIN32
 #ifndef LIBMAPI
 #define mapi_export extern __declspec(dllimport)
 #else

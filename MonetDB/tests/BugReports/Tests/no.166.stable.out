@@ -55,7 +55,7 @@ stdout of test 'no.166` in directory 'tests/BugReports` itself:
 # #---------------------------------#
 # # module        | usage_count     #
 # #---------------------------------#
-# [ "kernel",       1               ]
+# [ "builtin",       1               ]
 # [ "arith",        1               ]
 # [ "bat",          1               ]
 # [ "algebra",      1               ]
@@ -87,7 +87,7 @@ loaded();
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "kernel",	  1		  ]
+[ "builtin",	  1		  ]
 [ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -112,8 +112,8 @@ loading 'enum' ... done.
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
+[ "builtin",	  1		  ]
 [ "enum",	  1		  ]
-[ "kernel",	  1		  ]
 [ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
@@ -128,7 +128,7 @@ dropping 'enum' ... done.
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "kernel",	  1		  ]
+[ "builtin",	  1		  ]
 [ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
