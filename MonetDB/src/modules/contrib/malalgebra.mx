@@ -38,7 +38,7 @@ Too many bugs.
   "Hook directly into the '@1join' implementation of the join."
 @= leftjoin
   .COMMAND left@1join ( BAT[any::1,any::2] left, BAT[any::2,any::3] right) :
-                    BAT[any::1,any::3] = CMD@1join;
+                    BAT[any::1,any::3] = CMDleft@1join;
   "Hook directly into the 'left@1join' implementation of the join.
    prefix 'left' means that left and right input are not swapped during processing,
    and hence, the order of the left input's head in maintained in the result."
