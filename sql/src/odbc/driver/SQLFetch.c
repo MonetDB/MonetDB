@@ -1612,22 +1612,6 @@ SQLFetch_(ODBCStmt *stmt)
 	ODBCDescRec *rec;
 	int i;
 	SQLINTEGER offset;
-	SQLRETURN retval = SQL_SUCCESS;
-
-	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
-
-	clearStmtErrors(stmt);
-
-	assert(stmt->hdl);
-
-	/* check statement cursor state, query should be executed */
-	if (stmt->State != EXECUTED) {
-		/* caller should have called SQLExecute or SQLExecDirect first */
-		/* HY010: Function sequence error */
-		addStmtError(stmt, "HY010", NULL, 0);
-		return SQL_ERROR;
-	}
 
 	stmt->retrieved = 0;
 	stmt->currentCol = 0;
@@ -1649,58 +1633,58 @@ SQLFetch_(ODBCStmt *stmt)
 		}
 	}
 
+	stmt->previousRow = stmt->currentRow;
+	stmt->currentRow++;
+
 	desc = stmt->ApplRowDescr;
 	if (desc->sql_desc_bind_offset_ptr)
 		offset = *desc->sql_desc_bind_offset_ptr;
 	else
 		offset = 0;
 	for (i = 1; i <= desc->sql_desc_count; i++) {
-		SQLRETURN rc;
-
 		rec = &desc->descRec[i];
 		if (rec->sql_desc_data_ptr == NULL)
 			continue;
 		stmt->retrieved = 0;
-		rc = ODBCFetch(stmt, i,
-			       rec->sql_desc_concise_type,
-			       rec->sql_desc_data_ptr,
-			       rec->sql_desc_octet_length,
-			       rec->sql_desc_octet_length_ptr,
-			       rec->sql_desc_indicator_ptr,
-			       rec->sql_desc_precision,
-			       rec->sql_desc_scale,
-			       rec->sql_desc_datetime_interval_precision,
-			       offset);
-		switch (rc) {
-		case SQL_ERROR:
-			retval = rc;
-			break;
-		case SQL_NO_DATA:
-			if (retval != SQL_ERROR)
-				retval = rc;
-			break;
-		case SQL_SUCCESS_WITH_INFO:
-			if (retval == SQL_SUCCESS)
-				retval = rc;
-			break;
-		case SQL_SUCCESS:
-		default:
-			break;
-		}
+		if (ODBCFetch(stmt, i,
+			      rec->sql_desc_concise_type,
+			      rec->sql_desc_data_ptr,
+			      rec->sql_desc_octet_length,
+			      rec->sql_desc_octet_length_ptr,
+			      rec->sql_desc_indicator_ptr,
+			      rec->sql_desc_precision,
+			      rec->sql_desc_scale,
+			      rec->sql_desc_datetime_interval_precision,
+			      offset) == SQL_ERROR)
+			return SQL_ERROR;
 	}
 
-	stmt->previousRow = stmt->currentRow;
-	stmt->currentRow++;
-
-	return SQL_SUCCESS;
+	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }
 
 SQLRETURN
 SQLFetch(SQLHSTMT hStmt)
 {
+	ODBCStmt *stmt = (ODBCStmt *) hStmt;
+
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLFetch\n");
 #endif
 
-	return SQLFetch_((ODBCStmt *) hStmt);
+	if (!isValidStmt(stmt))
+		 return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	assert(stmt->hdl);
+
+	/* check statement cursor state, query should be executed */
+	if (stmt->State != EXECUTED) {
+		/* caller should have called SQLExecute or SQLExecDirect first */
+		/* HY010: Function sequence error */
+		addStmtError(stmt, "HY010", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	return SQLFetch_(stmt);
 }
