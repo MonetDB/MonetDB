@@ -134,6 +134,7 @@ public class MonetConnection extends Thread implements Connection {
 		this.database = props.getProperty("database");
 		this.username = props.getProperty("user");
 		this.password = props.getProperty("password");
+		String language = props.getProperty("language");
 
 		// check input arguments
 		if (hostname == null || hostname.trim().equals(""))
@@ -146,11 +147,14 @@ public class MonetConnection extends Thread implements Connection {
 			throw new IllegalArgumentException("user should not be null or empty");
 		if (password == null || password.trim().equals(""))
 			throw new IllegalArgumentException("password should not be null or empty");
+		if (language == null || language.trim().equals("")) {
+			language = "sql";
+			addWarning("No language given, defaulting to 'sql'");
+		}
 		/** check and use the database name here... */
 
 		boolean blockMode = Boolean.valueOf(props.getProperty("blockmode")).booleanValue();
 		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
-		/** language ?!? */
 
 		try {
 			// make connection to MonetDB
@@ -196,7 +200,8 @@ public class MonetConnection extends Thread implements Connection {
 				MonetSocketBlockMode blkmon = (MonetSocketBlockMode)monet;
 
 				// mind the newline at the end
-				blkmon.write(username + ":" + password + ":blocked\n");
+				blkmon.write(username + ":" + password + ":" +
+					language + ":blocked\n");
 				// We need to send the server our byte order.  Java by itself
 				// uses network order.
 				// A short with value 1234 will be sent to indicate our
@@ -222,7 +227,7 @@ public class MonetConnection extends Thread implements Connection {
 					blkmon.setByteOrder(ByteOrder.LITTLE_ENDIAN);
 				}
 			} else {
-				monet.writeln(username + ":" + password);
+				monet.writeln(username + ":" + password + ":" + language);
 			}
 			// read monet response till prompt
 			String err;
