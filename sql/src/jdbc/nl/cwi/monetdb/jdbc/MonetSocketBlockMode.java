@@ -123,12 +123,12 @@ class MonetSocketBlockMode extends MonetSocket {
 	 */
 	public synchronized void writeln(String data) throws IOException {
 		// write the length of this block
-		inputBuffer.rewind();
-		inputBuffer.putInt(data.length() + 1);
+		outputBuffer.rewind();
+		outputBuffer.putInt(data.length() + 1);
 
 		byte[] len = new byte[4];
-		inputBuffer.rewind();
-		inputBuffer.get(len);
+		outputBuffer.rewind();
+		outputBuffer.get(len);
 
 		write(len);
 		write(data + "\n");

@@ -92,7 +92,6 @@ public class MonetResultSet implements ResultSet {
 			maxRows != 0 ? Math.min(maxRows, cacheSize) : cacheSize);
 
 		// check the query (make sure it ends with ';' and escape newlines)
-		query = query.replaceAll("\n", "\\\\n").replaceAll("\r", "\\\\r");
 		if (!query.endsWith(";")) query += ";";
 
 		// let the cache thread do it's work
