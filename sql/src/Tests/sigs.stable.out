@@ -38,7 +38,7 @@ module 'sql_server'
 [ "cast2sht(str) : sht"							  ]
 [ "cast2sht(str, int, int) : sht"					  ]
 [ "hash(any::1, int) : int"							  ]
-[ "logmanager() : void"							  ]
+[ "sqllogmanager() : void"							  ]
 [ "mvc_bind(mvc, str, str, str, int) : BAT[any::1,any::2]"			  ]
 [ "mvc_bind_dbat(mvc, str, str, int) : BAT[any::1,any::2]"			  ]
 [ "mvc_bind_ibat(mvc, str, str, str, int) : BAT[any::1,any::2]"		  ]
