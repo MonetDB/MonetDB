@@ -37,11 +37,12 @@ rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz
 	echo "%tmpdir            %{_tmppath}"         >> $(rpmtopdir)/rpmmacros
 	echo "%rpmcflags         -O2 "                >> $(rpmtopdir)/rpmmacros
 	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
-	( if [ "$(DOCTOOLS_TRUE)" = "#" ] ; then \
-		echo "%DOCTOOLS  0"                   >> $(rpmtopdir)/rpmmacros ; \
-	else \
-		echo "%DOCTOOLS  1"                   >> $(rpmtopdir)/rpmmacros ; \
-	fi )
+	#( if [ "$(DOCTOOLS_TRUE)" = "#" ] ; then \
+	#	echo "%DOCTOOLS  0"                   >> $(rpmtopdir)/rpmmacros ; \
+	#else \
+	#	echo "%DOCTOOLS  1"                   >> $(rpmtopdir)/rpmmacros ; \
+	#fi )
+	echo "%DOCTOOLS  0"                           >> $(rpmtopdir)/rpmmacros
 
 	$(RPMBUILD) --target `uname -m` --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
 
