@@ -30,6 +30,7 @@
 
 #include "symbol.h"
 #include "list.h"
+#include "mel.h"
 #include "mel.tab.h"
 
 enum cmd_types {

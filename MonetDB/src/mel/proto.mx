@@ -65,6 +65,7 @@ class proto: public language {
 @C
 #include "proto.h"
 #include "ListIterator.h"
+#include "mel.h"
 #include "mel.tab.h"
 #include <string.h>
 #include <ctype.h>
