@@ -1540,7 +1540,7 @@ if test "x$have_pcre" != xno; then
     	PCRE_LIBS="`$PCRE_CONFIG --libs`"
     fi
 
-    req_pcre_ver='4.0'
+    req_pcre_ver='4.5'
     AC_MSG_CHECKING(for pcre >= $req_pcre_ver)
     if test "x$PCRE_CONFIG" = x; then
     	have_pcre=no
