@@ -1,7 +1,7 @@
 dnl The contents of this file are subject to the MonetDB Public
 dnl License Version 1.0 (the "License"); you may not use this file
 dnl except in compliance with the License. You may obtain a copy of
-dnl the License at 
+dnl the License at
 dnl http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
 dnl 
 dnl Software distributed under the License is distributed on an "AS
@@ -12,7 +12,7 @@ dnl
 dnl The Original Code is the Monet Database System.
 dnl 
 dnl The Initial Developer of the Original Code is CWI.
-dnl Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+dnl Portions created by CWI are Copyright (C) 1997-2003 CWI.
 dnl All Rights Reserved.
 dnl 
 dnl Contributor(s):
