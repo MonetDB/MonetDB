@@ -315,9 +315,11 @@ void sql_subtype_destroy(sql_subtype * t)
 
 	if ((ref = sql_ref_dec( &(t->ref)) ) == 0){
 		_DELETE(t);
+#ifndef NDEBUG
 	} else if (sql_end == END_SUBTYPE){
 		printf("= REFCOUNT of subtype %s %s is wrong %d\n",
 			t->type->base.name, t->type->sqlname, ref);
+#endif
 	}
 }
 
@@ -415,8 +417,10 @@ static void aggr_destroy(sql_aggr * t)
 		if (t->tpe) sql_subtype_destroy(t->tpe);
 		sql_subtype_destroy(t->res);
 		_DELETE(t);
+#ifndef NDEBUG
 	} else if (sql_end == END_AGGR){
 		printf("= REFCOUNT of aggr %s %s is wrong %d\n", t->name, t->imp, ref);
+#endif
 	}
 }
 
@@ -433,8 +437,10 @@ void sql_subaggr_destroy( sql_subaggr *a )
 		aggr_destroy(a->aggr);
 		if (a->res) sql_subtype_destroy(a->res);
 		_DELETE(a);
+#ifndef NDEBUG
 	} else if (sql_end == END_SUBAGGR){
 		printf("= REFCOUNT of subaggr %s %s is wrong %d\n", a->aggr->name, a->aggr->imp, ref);
+#endif
 	}
 }
 
@@ -661,8 +667,10 @@ static void func_destroy(sql_func * t)
 		if (t->ops) list_destroy(t->ops);
 		if (t->res) sql_subtype_destroy(t->res);
 		_DELETE(t);
+#ifndef NDEBUG
 	} else if (sql_end == END_AGGR){
 		printf("= REFCOUNT of func %s %s is wrong %d\n", t->name, t->imp, ref);
+#endif
 	}
 }
 
@@ -679,8 +687,10 @@ void sql_subfunc_destroy( sql_subfunc *f )
 		func_destroy(f->func);
 		if (f->res) sql_subtype_destroy(f->res);
 		_DELETE(f);
+#ifndef NDEBUG
 	} else if (sql_end == END_SUBAGGR){
 		printf("= REFCOUNT of subfunc %s %s is wrong %d\n", f->func->name, f->func->imp, ref);
+#endif
 	}
 }
 

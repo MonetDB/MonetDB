@@ -14,8 +14,6 @@ printf("\nReady.\n");
 
 Ready.
 quit();
-= REFCOUNT of func convert int is wrong 1
-= REFCOUNT of func convert int is wrong 1
 
 Over..
 
