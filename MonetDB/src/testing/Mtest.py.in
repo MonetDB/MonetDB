@@ -2947,6 +2947,21 @@ def main(argv) :
             print "Modules: ", env['TST_MODS']
         STDOUT.flush()
 
+        is_pf = False
+        am_init_pf = re.compile('AM_INIT_AUTOMAKE\("pathfinder",.*,.*\)', re.MULTILINE)
+        configure_ag = os.path.join(env['TSTSRCBASE'],"configure.ag")
+        if os.path.isfile(configure_ag):
+            for l in fileinput.input(configure_ag):
+                if am_init_pf.match(l) and not is_pf:
+                    is_pf = True
+        if is_pf:
+            if not env['exe']['XQuery_Client'][0]:
+                ErrXit('Stopping Pathfinder testing as XQuery compiler "%s" is not available!' % \
+                       env['XQUERYCLIENT'].split(None, 1)[0])
+            MissingMods = CheckMods(env, '', '', 'pf') 
+            if MissingMods:
+                ErrXit('Stopping Pathfinder testing as modules "%s" are missing!' % str(MissingMods))
+
         host = ''
         for S in 'MAPI', 'SQL':
             port = int(env[S+'PORT'])
