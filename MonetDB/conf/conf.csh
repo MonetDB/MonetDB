@@ -108,7 +108,7 @@ if ( ! -x bootstrap ) then
 	endif
 
 	if ( "${os}" == "IRIX64" ) then
-		set binpath = ":/dbfarm/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin${binpath}"
+		set binpath = ":/soft/local/bin:/soft64/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin${binpath}"
 		if ( "${COMP}${BITS}" == "GNU64" ) then
 			set cc = "${cc} -mabi=64"
 			set cxx = "${cxx} -mabi=64"
