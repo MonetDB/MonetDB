@@ -44,15 +44,17 @@ exit v;	# 6  (v:bit)
     io.print(x);	# 10 IOprint_val ($15:int)<-(x:bat[:lng,:lng])
     x := batcalc.+(b,1);	# 11 CMDbatADDcst (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])($9:lng)
     io.print(x);	# 12 IOprint_val ($16:int)<-(x:bat[:lng,:lng])
-    x := batcalc.*(b,c);	# 13 CMDbatMUL (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])
+    x := batcalc./(b,1);	# 13 CMDbatDIVcst (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])($9:lng)
     io.print(x);	# 14 IOprint_val ($18:int)<-(x:bat[:lng,:lng])
-    y := batcalc.==(b,b);	# 15 CMDcmpEQ (y:bat[:lng,:bit])<-(b:bat[:lng,:lng])(b:bat[:lng,:lng])
-    io.print(y);	# 16 IOprint_val ($21:int)<-(y:bat[:lng,:bit])
-    y := batcalc.==(b,x);	# 17 CMDcmpEQ (y:bat[:lng,:bit])<-(b:bat[:lng,:lng])(x:bat[:lng,:lng])
-    io.print(y);	# 18 IOprint_val ($22:int)<-(y:bat[:lng,:bit])
-    z := batcalc.not(y);	# 19 CMDbitbatNOT (z:bat[:lng,:bit])<-(y:bat[:lng,:bit])
-    io.print(z);	# 20 IOprint_val ($25:int)<-(z:bat[:lng,:bit])
-end main;	# 21  
+    x := batcalc.*(b,c);	# 15 CMDbatMUL (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])
+    io.print(x);	# 16 IOprint_val ($20:int)<-(x:bat[:lng,:lng])
+    y := batcalc.==(b,b);	# 17 CMDcmpEQ (y:bat[:lng,:bit])<-(b:bat[:lng,:lng])(b:bat[:lng,:lng])
+    io.print(y);	# 18 IOprint_val ($23:int)<-(y:bat[:lng,:bit])
+    y := batcalc.==(b,x);	# 19 CMDcmpEQ (y:bat[:lng,:bit])<-(b:bat[:lng,:lng])(x:bat[:lng,:lng])
+    io.print(y);	# 20 IOprint_val ($24:int)<-(y:bat[:lng,:bit])
+    z := batcalc.not(y);	# 21 CMDbitbatNOT (z:bat[:lng,:bit])<-(y:bat[:lng,:bit])
+    io.print(z);	# 22 IOprint_val ($27:int)<-(z:bat[:lng,:bit])
+end main;	# 23  
 #-----------------#
 # h	tmp_4	  # name
 # lng	lng	  # type
@@ -95,6 +97,20 @@ end main;	# 21
 [ 7,	  8	  ]
 [ 8,	  9	  ]
 [ 9,	  10	  ]
+#-----------------#
+# h	tmp_8	  # name
+# lng	lng	  # type
+#-----------------#
+[ 0,	  0	  ]
+[ 1,	  1	  ]
+[ 2,	  2	  ]
+[ 3,	  3	  ]
+[ 4,	  4	  ]
+[ 5,	  5	  ]
+[ 6,	  6	  ]
+[ 7,	  7	  ]
+[ 8,	  8	  ]
+[ 9,	  9	  ]
 #-----------------#
 # h	tmp_7	  # name
 # lng	lng	  # type

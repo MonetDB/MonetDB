@@ -33,19 +33,30 @@ function Admin.main():int;	# 0  (main:int)
     tablet.setFormat(b1,b2);	# 8 TABsetFormat ($17:void)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
     tablet.setStream(s);	# 9 TABsetStream ($18:void)<-(s:str)
     tablet.setProperties("name,type,dense,sorted,key,min,max");	# 10 TABsetProperties ($20:int)<-($21:str)
-    s := streams.open_rastream("tst655.dumpfile");	# 11 stream_open_rastream (s:str)<-($22:str)
-    tablet.display(b1,b2);	# 12 TABdisplayTable ($23:int)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
-end main;	# 13  
+    tablet.display(b1,b2);	# 11 TABdisplayTable ($22:int)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
+end main;	# 12  
 #Monet Debugger on
-#mdb     b1 := bbp.new(0@0,0)
-#mdb     bat.insert(<tmp_4>,42)
-#mdb     bat.insert(<tmp_4>,49)
-#mdb     b2 := bbp.new(0@0,nil)
-#mdb     bat.insert(<tmp_5>,"hello world")
-#mdb     bat.insert(<tmp_5>,"goodbye world")
-#mdb     tablet.setFormat(<tmp_4>,<tmp_5>)
-#mdb     tablet.setStream(nil)
-#mdb     tablet.setProperties("name,type,dense,sorted,key,min,max")
-#mdb     s := streams.open_rastream("tst655.dumpfile")
-!ERROR: MALexception:stream:Could not open file
+#mdb !    b1 := bbp.new(0@0,0)
+#mdb !    bat.insert(<tmp_4>,42)
+#mdb !    bat.insert(<tmp_4>,49)
+#mdb !    b2 := bbp.new(0@0,nil)
+#mdb !    bat.insert(<tmp_5>,"hello world")
+#mdb !    bat.insert(<tmp_5>,"goodbye world")
+#mdb !    tablet.setFormat(<tmp_4>,<tmp_5>)
+#mdb !    tablet.setStream(nil)
+#mdb !    tablet.setProperties("name,type,dense,sorted,key,min,max")
+#mdb !    tablet.display(<tmp_4>,<tmp_5>)
+#---------------------------------------#
+# tmp_4,	tmp_5			# name
+# int,		str			# type
+# false,	false			# dense
+# true,		false			# sorted
+# true,		false			# key
+# 42,					# min
+# 49,					# max
+#---------------------------------------#
+[ 42,		"hello world"		]
+[ 49,		"goodbye world"		]
+#---------------------------------------#
+#mdb !end main;
 >

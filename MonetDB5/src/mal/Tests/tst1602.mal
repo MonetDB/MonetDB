@@ -1,7 +1,5 @@
 	int_1M:= new(:void,:lng,1000000);
 	setSequenceBase(int_1M,0@0);
-	zinfo:= bat.info(int_1M);
-	print(zinfo);
 
 	i:= 1000000:lng;
 barrier	sj_a:= true;
@@ -47,9 +45,6 @@ exit	sj_a;
         xg_a := printf("#count %d = ",wg_a);
         x:= alarm.time();
         yg_a := -(x,t);                                                                ah_a := printf("%d ms\n",yg_a);
-
-	zinfo:= bat.info(vg_a);
-	print(zinfo);
 
 	M2:= new(:lng,:lng,1000000);
 	i:= 1000000:lng;
@@ -97,5 +92,3 @@ exit	sj_b;
         x:= alarm.time();
         yg_b := -(x,t);                                                                ah_b := printf("%d ms\n",yg_b);
 
-	zinfo:= bat.info(vg_b);
-	print(zinfo);

@@ -111,368 +111,98 @@ stdout of test 'tst1602` in directory 'src/mal` itself:
 function Admin.main():int;	# 0  (main:int)
     int_1M := bbp.new(:void,:lng,1000000);	# 1 CMDBATnew (int_1M:bat[:void,:lng])<-($2:void)($3:lng)($4:int)
     bat.setSequenceBase(int_1M,0@0);	# 2 BKCsetSequenceBase ($5:any)<-(int_1M:bat[:void,:lng])($6:oid)
-    zinfo := bat.info(int_1M);	# 3 BKCinfo (zinfo:bat[:str,:str])<-(int_1M:bat[:void,:lng])
-    io.print(zinfo);	# 4 IOprint_val ($8:int)<-(zinfo:bat[:str,:str])
-    i := 1000000;	# 5  (i:lng)<-($10:lng)
-barrier sj_a := true;	# 6  (sj_a:bit)<-($12:bit) jump 14
-    i := calc.-(i,1);	# 7 CALCbinarySUBlngint (i:lng)<-(i:lng)($13:int)
-    uj_a := i;	# 8  (uj_a:lng)<-(i:lng)
-    vj_a := calc.>=(uj_a,0);	# 9 CALCcompGElngint (vj_a:bit)<-(uj_a:lng)($16:int)
-barrier tj_a := vj_a;	# 10  (tj_a:bit)<-(vj_a:bit) jump 13
-    xj_a := bat.insert(int_1M,nil,i);	# 11 BKCinsert_bun (xj_a:void)<-(int_1M:bat[:void,:lng])($19:void)(i:lng)
-    redo sj_a;	# 12  (sj_a:bit) jump 7
-exit tj_a;	# 13  (tj_a:bit)
-exit sj_a;	# 14  (sj_a:bit)
-    t := alarm.time();	# 15 ALARMtime (t:int)
-    ug_a := bat.reverse(int_1M);	# 16 BKCreverse (ug_a:bat[:lng,:void])<-(int_1M:bat[:void,:lng])
-    vg_a := algebra.join(int_1M,ug_a);	# 17 ALGjoin (vg_a:bat[:void,:void])<-(int_1M:bat[:void,:lng])(ug_a:bat[:lng,:void])
-    wg_a := algebra.count(vg_a);	# 18 ALGcount_bat (wg_a:lng)<-(vg_a:bat[:void,:void])
-    xg_a := io.printf("#count %d = ",wg_a);	# 19 IOprint_formatted_lng (xg_a:int)<-($25:str)(wg_a:lng)
-    x := alarm.time();	# 20 ALARMtime (x:int)
-    yg_a := calc.-(x,t);	# 21 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
-    ah_a := io.printf("%d ms\n",yg_a);	# 22 IOprint_formatted_int (ah_a:int)<-($29:str)(yg_a:int)
-    t := alarm.time();	# 23 ALARMtime (t:int)
-    ug_a := bat.reverse(int_1M);	# 24 BKCreverse (ug_a:bat[:lng,:void])<-(int_1M:bat[:void,:lng])
-    vg_a := algebra.join(int_1M,ug_a);	# 25 ALGjoin (vg_a:bat[:void,:void])<-(int_1M:bat[:void,:lng])(ug_a:bat[:lng,:void])
-    wg_a := algebra.count(vg_a);	# 26 ALGcount_bat (wg_a:lng)<-(vg_a:bat[:void,:void])
-    xg_a := io.printf("#count %d = ",wg_a);	# 27 IOprint_formatted_lng (xg_a:int)<-($25:str)(wg_a:lng)
-    x := alarm.time();	# 28 ALARMtime (x:int)
-    yg_a := calc.-(x,t);	# 29 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
-    ah_a := io.printf("%d ms\n",yg_a);	# 30 IOprint_formatted_int (ah_a:int)<-($29:str)(yg_a:int)
-    t := alarm.time();	# 31 ALARMtime (t:int)
-    ug_a := bat.reverse(int_1M);	# 32 BKCreverse (ug_a:bat[:lng,:void])<-(int_1M:bat[:void,:lng])
-    vg_a := algebra.join(int_1M,ug_a);	# 33 ALGjoin (vg_a:bat[:void,:void])<-(int_1M:bat[:void,:lng])(ug_a:bat[:lng,:void])
-    wg_a := algebra.count(vg_a);	# 34 ALGcount_bat (wg_a:lng)<-(vg_a:bat[:void,:void])
-    xg_a := io.printf("#count %d = ",wg_a);	# 35 IOprint_formatted_lng (xg_a:int)<-($25:str)(wg_a:lng)
-    x := alarm.time();	# 36 ALARMtime (x:int)
-    yg_a := calc.-(x,t);	# 37 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
-    ah_a := io.printf("%d ms\n",yg_a);	# 38 IOprint_formatted_int (ah_a:int)<-($29:str)(yg_a:int)
-    t := alarm.time();	# 39 ALARMtime (t:int)
-    ug_a := bat.reverse(int_1M);	# 40 BKCreverse (ug_a:bat[:lng,:void])<-(int_1M:bat[:void,:lng])
-    vg_a := algebra.join(int_1M,ug_a);	# 41 ALGjoin (vg_a:bat[:void,:void])<-(int_1M:bat[:void,:lng])(ug_a:bat[:lng,:void])
-    wg_a := algebra.count(vg_a);	# 42 ALGcount_bat (wg_a:lng)<-(vg_a:bat[:void,:void])
-    xg_a := io.printf("#count %d = ",wg_a);	# 43 IOprint_formatted_lng (xg_a:int)<-($25:str)(wg_a:lng)
-    x := alarm.time();	# 44 ALARMtime (x:int)
-    yg_a := calc.-(x,t);	# 45 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
-    ah_a := io.printf("%d ms\n",yg_a);	# 46 IOprint_formatted_int (ah_a:int)<-($29:str)(yg_a:int)
-    zinfo := bat.info(vg_a);	# 47 BKCinfo (zinfo:bat[:str,:str])<-(vg_a:bat[:void,:void])
-    io.print(zinfo);	# 48 IOprint_val ($30:int)<-(zinfo:bat[:str,:str])
-    M2 := bbp.new(:lng,:lng,1000000);	# 49 CMDBATnewint (M2:bat[:lng,:lng])<-($32:lng)($33:lng)($4:int)
-    i := 1000000;	# 50  (i:lng)<-($10:lng)
-barrier sj_b := true;	# 51  (sj_b:bit)<-($12:bit) jump 59
-    i := calc.-(i,1);	# 52 CALCbinarySUBlngint (i:lng)<-(i:lng)($13:int)
-    uj_b := i;	# 53  (uj_b:lng)<-(i:lng)
-    vj_b := calc.>=(uj_b,0);	# 54 CALCcompGElngint (vj_b:bit)<-(uj_b:lng)($16:int)
-barrier tj_b := vj_b;	# 55  (tj_b:bit)<-(vj_b:bit) jump 58
-    xj_b := bat.insert(M2,i,i);	# 56 BKCinsert_bun (xj_b:void)<-(M2:bat[:lng,:lng])(i:lng)(i:lng)
-    redo sj_b;	# 57  (sj_b:bit) jump 52
-exit tj_b;	# 58  (tj_b:bit)
-exit sj_b;	# 59  (sj_b:bit)
-    t := alarm.time();	# 60 ALARMtime (t:int)
-    ug_b := bat.reverse(M2);	# 61 BKCreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
-    vg_b := algebra.join(M2,ug_b);	# 62 ALGjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
-    wg_b := algebra.count(vg_b);	# 63 ALGcount_bat (wg_b:lng)<-(vg_b:bat[:lng,:lng])
-    xg_b := io.printf("#count %d = ",wg_b);	# 64 IOprint_formatted_lng (xg_b:int)<-($25:str)(wg_b:lng)
-    x := alarm.time();	# 65 ALARMtime (x:int)
-    yg_b := calc.-(x,t);	# 66 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
-    ah_b := io.printf("%d ms\n",yg_b);	# 67 IOprint_formatted_int (ah_b:int)<-($29:str)(yg_b:int)
-    t := alarm.time();	# 68 ALARMtime (t:int)
-    ug_b := bat.reverse(M2);	# 69 BKCreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
-    vg_b := algebra.join(M2,ug_b);	# 70 ALGjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
-    wg_b := algebra.count(vg_b);	# 71 ALGcount_bat (wg_b:lng)<-(vg_b:bat[:lng,:lng])
-    xg_b := io.printf("#count %d = ",wg_b);	# 72 IOprint_formatted_lng (xg_b:int)<-($25:str)(wg_b:lng)
-    x := alarm.time();	# 73 ALARMtime (x:int)
-    yg_b := calc.-(x,t);	# 74 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
-    ah_b := io.printf("%d ms\n",yg_b);	# 75 IOprint_formatted_int (ah_b:int)<-($29:str)(yg_b:int)
-    t := alarm.time();	# 76 ALARMtime (t:int)
-    ug_b := bat.reverse(M2);	# 77 BKCreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
-    vg_b := algebra.join(M2,ug_b);	# 78 ALGjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
-    wg_b := algebra.count(vg_b);	# 79 ALGcount_bat (wg_b:lng)<-(vg_b:bat[:lng,:lng])
-    xg_b := io.printf("#count %d = ",wg_b);	# 80 IOprint_formatted_lng (xg_b:int)<-($25:str)(wg_b:lng)
-    x := alarm.time();	# 81 ALARMtime (x:int)
-    yg_b := calc.-(x,t);	# 82 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
-    ah_b := io.printf("%d ms\n",yg_b);	# 83 IOprint_formatted_int (ah_b:int)<-($29:str)(yg_b:int)
-    t := alarm.time();	# 84 ALARMtime (t:int)
-    ug_b := bat.reverse(M2);	# 85 BKCreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
-    vg_b := algebra.join(M2,ug_b);	# 86 ALGjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
-    wg_b := algebra.count(vg_b);	# 87 ALGcount_bat (wg_b:lng)<-(vg_b:bat[:lng,:lng])
-    xg_b := io.printf("#count %d = ",wg_b);	# 88 IOprint_formatted_lng (xg_b:int)<-($25:str)(wg_b:lng)
-    x := alarm.time();	# 89 ALARMtime (x:int)
-    yg_b := calc.-(x,t);	# 90 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
-    ah_b := io.printf("%d ms\n",yg_b);	# 91 IOprint_formatted_int (ah_b:int)<-($29:str)(yg_b:int)
-    zinfo := bat.info(vg_b);	# 92 BKCinfo (zinfo:bat[:str,:str])<-(vg_b:bat[:lng,:lng])
-    io.print(zinfo);	# 93 IOprint_val ($45:int)<-(zinfo:bat[:str,:str])
-end main;	# 94  
-#-------------------------------------------------#
-# h				tmp_5		  # name
-# str				str		  # type
-#-------------------------------------------------#
-[ "version",			  "980714"	  ]
-[ "batId",			  "tmp_4"	  ]
-[ "batCacheid",			  "4"		  ]
-[ "batParentid",		  "0"		  ]
-[ "batSharecnt",		  "0"		  ]
-[ "head",			  "void"	  ]
-[ "tail",			  "lng"		  ]
-[ "batPersistence",		  "transient"	  ]
-[ "batRestricted",		  "updatable"	  ]
-[ "batRefcnt",			  "0"		  ]
-[ "batLRefcnt",			  "1"		  ]
-[ "batDirty",			  "dirty"	  ]
-[ "batSet",			  "0"		  ]
-[ "void_tid",			  "0"		  ]
-[ "void_cnt",			  "0"		  ]
-[ "hsorted",			  "65"		  ]
-[ "hident",			  "h"		  ]
-[ "hdense",			  "1"		  ]
-[ "hseqbase",			  "0@0"		  ]
-[ "hkey",			  "1"		  ]
-[ "hloc",			  "0"		  ]
-[ "hvarsized",			  "1"		  ]
-[ "halign",			  "0"		  ]
-[ "halignflushed",		  "1000068"	  ]
-[ "tident",			  "t"		  ]
-[ "tdense",			  "0"		  ]
-[ "tseqbase",			  "0@0"		  ]
-[ "tsorted",			  "1"		  ]
-[ "tkey",			  "0"		  ]
-[ "tloc",			  "0"		  ]
-[ "tvarsized",			  "0"		  ]
-[ "talign",			  "1000069"	  ]
-[ "talignflushed",		  "1000069"	  ]
-[ "batInserted",		  "1"		  ]
-[ "batDeleted",			  "0"		  ]
-[ "batHole",			  "0"		  ]
-[ "top",			  "1"		  ]
-[ "batStamp",			  "4"		  ]
-[ "lastUsed",			  "7"		  ]
-[ "keepAround",			  "0"		  ]
-[ "curStamp",			  "5"		  ]
-[ "batCopiedtodisk",		  "0"		  ]
-[ "batDirtydesc",		  "dirty"	  ]
-[ "batDirtybuns",		  "clean"	  ]
-[ "batBuns.free",		  "8"		  ]
-[ "batBuns.size",		  "8000024"	  ]
-[ "batBuns.maxsize",		  "8000024"	  ]
-[ "batBuns.storage",		  "malloced"	  ]
-[ "batBuns.filename",		  "4.buns"	  ]
-[ "batBuns.offset",		  "0"		  ]
-[ "hheapdirty",			  "clean"	  ]
-[ "hheap.free",			  "0"		  ]
-[ "hheap.size",			  "0"		  ]
-[ "hheap.maxsize",		  "0"		  ]
-[ "hheap.storage",		  "absent"	  ]
-[ "hheap.filename",		  "4.hheap"	  ]
-[ "hheap.offset",		  "0"		  ]
-[ "theapdirty",			  "clean"	  ]
-[ "theap.free",			  "0"		  ]
-[ "theap.size",			  "0"		  ]
-[ "theap.maxsize",		  "0"		  ]
-[ "theap.storage",		  "absent"	  ]
-[ "theap.filename",		  "4.theap"	  ]
-[ "theap.offset",		  "0"		  ]
-[ "hacctype",			  "null"	  ]
-[ "haccdirty",			  "clean"	  ]
-[ "haccCopiedtodisk",		  "0"		  ]
-[ "haccelerator.free",		  "0"		  ]
-[ "haccelerator.size",		  "0"		  ]
-[ "haccelerator.maxsize",	  "0"		  ]
-[ "haccelerator.storage",	  "absent"	  ]
-[ "haccelerator.filename",	  "no file"	  ]
-[ "haccelerator.offset",	  "0"		  ]
-[ "tacctype",			  "null"	  ]
-[ "taccdirty",			  "clean"	  ]
-[ "taccCopiedtodisk",		  "0"		  ]
-[ "taccelerator.free",		  "0"		  ]
-[ "taccelerator.size",		  "0"		  ]
-[ "taccelerator.maxsize",	  "0"		  ]
-[ "taccelerator.storage",	  "absent"	  ]
-[ "taccelerator.filename",	  "no file"	  ]
-[ "taccelerator.offset",	  "0"		  ]
-[ "head_index",			  "absent"	  ]
-[ "tail_index",			  "absent"	  ]
-#count 1000000 = 303 ms
-#count 1000000 = 215 ms
-#count 1000000 = 211 ms
-#count 1000000 = 210 ms
-#-------------------------------------------------#
-# h				tmp_6		  # name
-# str				str		  # type
-#-------------------------------------------------#
-[ "version",			  "980714"	  ]
-[ "batId",			  "tmp_7"	  ]
-[ "batCacheid",			  "7"		  ]
-[ "batParentid",		  "0"		  ]
-[ "batSharecnt",		  "0"		  ]
-[ "head",			  "oid"		  ]
-[ "tail",			  "oid"		  ]
-[ "batPersistence",		  "transient"	  ]
-[ "batRestricted",		  "updatable"	  ]
-[ "batRefcnt",			  "0"		  ]
-[ "batLRefcnt",			  "1"		  ]
-[ "batDirty",			  "dirty"	  ]
-[ "batSet",			  "0"		  ]
-[ "void_tid",			  "0"		  ]
-[ "void_cnt",			  "0"		  ]
-[ "hsorted",			  "65"		  ]
-[ "hident",			  "h"		  ]
-[ "hdense",			  "1"		  ]
-[ "hseqbase",			  "0@0"		  ]
-[ "hkey",			  "1"		  ]
-[ "hloc",			  "0"		  ]
-[ "hvarsized",			  "0"		  ]
-[ "halign",			  "1000126"	  ]
-[ "halignflushed",		  "1000126"	  ]
-[ "tident",			  "t"		  ]
-[ "tdense",			  "0"		  ]
-[ "tseqbase",			  "0@0"		  ]
-[ "tsorted",			  "0"		  ]
-[ "tkey",			  "0"		  ]
-[ "tloc",			  "4"		  ]
-[ "tvarsized",			  "0"		  ]
-[ "talign",			  "1000127"	  ]
-[ "talignflushed",		  "1000127"	  ]
-[ "batInserted",		  "1"		  ]
-[ "batDeleted",			  "0"		  ]
-[ "batHole",			  "0"		  ]
-[ "top",			  "1000001"	  ]
-[ "batStamp",			  "33"		  ]
-[ "lastUsed",			  "1000091"	  ]
-[ "keepAround",			  "0"		  ]
-[ "curStamp",			  "34"		  ]
-[ "batCopiedtodisk",		  "0"		  ]
-[ "batDirtydesc",		  "dirty"	  ]
-[ "batDirtybuns",		  "clean"	  ]
-[ "batBuns.free",		  "8000008"	  ]
-[ "batBuns.size",		  "8421072"	  ]
-[ "batBuns.maxsize",		  "8421072"	  ]
-[ "batBuns.storage",		  "malloced"	  ]
-[ "batBuns.filename",		  "7.buns"	  ]
-[ "batBuns.offset",		  "0"		  ]
-[ "hheapdirty",			  "clean"	  ]
-[ "hheap.free",			  "0"		  ]
-[ "hheap.size",			  "0"		  ]
-[ "hheap.maxsize",		  "0"		  ]
-[ "hheap.storage",		  "absent"	  ]
-[ "hheap.filename",		  "7.hheap"	  ]
-[ "hheap.offset",		  "0"		  ]
-[ "theapdirty",			  "clean"	  ]
-[ "theap.free",			  "0"		  ]
-[ "theap.size",			  "0"		  ]
-[ "theap.maxsize",		  "0"		  ]
-[ "theap.storage",		  "absent"	  ]
-[ "theap.filename",		  "7.theap"	  ]
-[ "theap.offset",		  "0"		  ]
-[ "hacctype",			  "null"	  ]
-[ "haccdirty",			  "clean"	  ]
-[ "haccCopiedtodisk",		  "0"		  ]
-[ "haccelerator.free",		  "0"		  ]
-[ "haccelerator.size",		  "0"		  ]
-[ "haccelerator.maxsize",	  "0"		  ]
-[ "haccelerator.storage",	  "absent"	  ]
-[ "haccelerator.filename",	  "no file"	  ]
-[ "haccelerator.offset",	  "0"		  ]
-[ "tacctype",			  "null"	  ]
-[ "taccdirty",			  "clean"	  ]
-[ "taccCopiedtodisk",		  "0"		  ]
-[ "taccelerator.free",		  "0"		  ]
-[ "taccelerator.size",		  "0"		  ]
-[ "taccelerator.maxsize",	  "0"		  ]
-[ "taccelerator.storage",	  "absent"	  ]
-[ "taccelerator.filename",	  "no file"	  ]
-[ "taccelerator.offset",	  "0"		  ]
-[ "head_index",			  "absent"	  ]
-[ "tail_index",			  "absent"	  ]
-#count 1000000 = 327 ms
-#count 1000000 = 2274 ms
-#count 1000000 = 212 ms
-#count 1000000 = 207 ms
-#-------------------------------------------------#
-# h				tmp_8		  # name
-# str				str		  # type
-#-------------------------------------------------#
-[ "version",			  "980714"	  ]
-[ "batId",			  "tmp_9"	  ]
-[ "batCacheid",			  "9"		  ]
-[ "batParentid",		  "0"		  ]
-[ "batSharecnt",		  "0"		  ]
-[ "head",			  "lng"		  ]
-[ "tail",			  "lng"		  ]
-[ "batPersistence",		  "transient"	  ]
-[ "batRestricted",		  "updatable"	  ]
-[ "batRefcnt",			  "0"		  ]
-[ "batLRefcnt",			  "1"		  ]
-[ "batDirty",			  "dirty"	  ]
-[ "batSet",			  "0"		  ]
-[ "void_tid",			  "0"		  ]
-[ "void_cnt",			  "0"		  ]
-[ "hsorted",			  "0"		  ]
-[ "hident",			  "h"		  ]
-[ "hdense",			  "0"		  ]
-[ "hseqbase",			  "0@0"		  ]
-[ "hkey",			  "1"		  ]
-[ "hloc",			  "0"		  ]
-[ "hvarsized",			  "0"		  ]
-[ "halign",			  "1000192"	  ]
-[ "halignflushed",		  "1000192"	  ]
-[ "tident",			  "t"		  ]
-[ "tdense",			  "0"		  ]
-[ "tseqbase",			  "0@0"		  ]
-[ "tsorted",			  "0"		  ]
-[ "tkey",			  "0"		  ]
-[ "tloc",			  "8"		  ]
-[ "tvarsized",			  "0"		  ]
-[ "talign",			  "1000193"	  ]
-[ "talignflushed",		  "1000193"	  ]
-[ "batInserted",		  "1"		  ]
-[ "batDeleted",			  "0"		  ]
-[ "batHole",			  "0"		  ]
-[ "top",			  "1000001"	  ]
-[ "batStamp",			  "66"		  ]
-[ "lastUsed",			  "2000186"	  ]
-[ "keepAround",			  "0"		  ]
-[ "curStamp",			  "68"		  ]
-[ "batCopiedtodisk",		  "0"		  ]
-[ "batDirtydesc",		  "dirty"	  ]
-[ "batDirtybuns",		  "clean"	  ]
-[ "batBuns.free",		  "16000016"	  ]
-[ "batBuns.size",		  "16842144"	  ]
-[ "batBuns.maxsize",		  "16842144"	  ]
-[ "batBuns.storage",		  "malloced"	  ]
-[ "batBuns.filename",		  "9.buns"	  ]
-[ "batBuns.offset",		  "0"		  ]
-[ "hheapdirty",			  "clean"	  ]
-[ "hheap.free",			  "0"		  ]
-[ "hheap.size",			  "0"		  ]
-[ "hheap.maxsize",		  "0"		  ]
-[ "hheap.storage",		  "absent"	  ]
-[ "hheap.filename",		  "9.hheap"	  ]
-[ "hheap.offset",		  "0"		  ]
-[ "theapdirty",			  "clean"	  ]
-[ "theap.free",			  "0"		  ]
-[ "theap.size",			  "0"		  ]
-[ "theap.maxsize",		  "0"		  ]
-[ "theap.storage",		  "absent"	  ]
-[ "theap.filename",		  "9.theap"	  ]
-[ "theap.offset",		  "0"		  ]
-[ "hacctype",			  "null"	  ]
-[ "haccdirty",			  "clean"	  ]
-[ "haccCopiedtodisk",		  "0"		  ]
-[ "haccelerator.free",		  "0"		  ]
-[ "haccelerator.size",		  "0"		  ]
-[ "haccelerator.maxsize",	  "0"		  ]
-[ "haccelerator.storage",	  "absent"	  ]
-[ "haccelerator.filename",	  "no file"	  ]
-[ "haccelerator.offset",	  "0"		  ]
-[ "tacctype",			  "null"	  ]
-[ "taccdirty",			  "clean"	  ]
-[ "taccCopiedtodisk",		  "0"		  ]
-[ "taccelerator.free",		  "0"		  ]
-[ "taccelerator.size",		  "0"		  ]
-[ "taccelerator.maxsize",	  "0"		  ]
-[ "taccelerator.storage",	  "absent"	  ]
-[ "taccelerator.filename",	  "no file"	  ]
-[ "taccelerator.offset",	  "0"		  ]
-[ "head_index",			  "absent"	  ]
-[ "tail_index",			  "absent"	  ]
+    i := 1000000;	# 3  (i:lng)<-($8:lng)
+barrier sj_a := true;	# 4  (sj_a:bit)<-($10:bit) jump 12
+    i := calc.-(i,1);	# 5 CALCbinarySUBlngint (i:lng)<-(i:lng)($11:int)
+    uj_a := i;	# 6  (uj_a:lng)<-(i:lng)
+    vj_a := calc.>=(uj_a,0);	# 7 CALCcompGElngint (vj_a:bit)<-(uj_a:lng)($14:int)
+barrier tj_a := vj_a;	# 8  (tj_a:bit)<-(vj_a:bit) jump 11
+    xj_a := bat.insert(int_1M,nil,i);	# 9 BKCinsert_bun (xj_a:void)<-(int_1M:bat[:void,:lng])($17:void)(i:lng)
+    redo sj_a;	# 10  (sj_a:bit) jump 5
+exit tj_a;	# 11  (tj_a:bit)
+exit sj_a;	# 12  (sj_a:bit)
+    t := alarm.time();	# 13 ALARMtime (t:int)
+    ug_a := bat.reverse(int_1M);	# 14 BKCreverse (ug_a:bat[:lng,:void])<-(int_1M:bat[:void,:lng])
+    vg_a := algebra.join(int_1M,ug_a);	# 15 ALGjoin (vg_a:bat[:void,:void])<-(int_1M:bat[:void,:lng])(ug_a:bat[:lng,:void])
+    wg_a := algebra.count(vg_a);	# 16 ALGcount_bat (wg_a:lng)<-(vg_a:bat[:void,:void])
+    xg_a := io.printf("#count %d = ",wg_a);	# 17 IOprint_formatted_lng (xg_a:int)<-($23:str)(wg_a:lng)
+    x := alarm.time();	# 18 ALARMtime (x:int)
+    yg_a := calc.-(x,t);	# 19 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
+    ah_a := io.printf("%d ms\n",yg_a);	# 20 IOprint_formatted_int (ah_a:int)<-($27:str)(yg_a:int)
+    t := alarm.time();	# 21 ALARMtime (t:int)
+    ug_a := bat.reverse(int_1M);	# 22 BKCreverse (ug_a:bat[:lng,:void])<-(int_1M:bat[:void,:lng])
+    vg_a := algebra.join(int_1M,ug_a);	# 23 ALGjoin (vg_a:bat[:void,:void])<-(int_1M:bat[:void,:lng])(ug_a:bat[:lng,:void])
+    wg_a := algebra.count(vg_a);	# 24 ALGcount_bat (wg_a:lng)<-(vg_a:bat[:void,:void])
+    xg_a := io.printf("#count %d = ",wg_a);	# 25 IOprint_formatted_lng (xg_a:int)<-($23:str)(wg_a:lng)
+    x := alarm.time();	# 26 ALARMtime (x:int)
+    yg_a := calc.-(x,t);	# 27 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
+    ah_a := io.printf("%d ms\n",yg_a);	# 28 IOprint_formatted_int (ah_a:int)<-($27:str)(yg_a:int)
+    t := alarm.time();	# 29 ALARMtime (t:int)
+    ug_a := bat.reverse(int_1M);	# 30 BKCreverse (ug_a:bat[:lng,:void])<-(int_1M:bat[:void,:lng])
+    vg_a := algebra.join(int_1M,ug_a);	# 31 ALGjoin (vg_a:bat[:void,:void])<-(int_1M:bat[:void,:lng])(ug_a:bat[:lng,:void])
+    wg_a := algebra.count(vg_a);	# 32 ALGcount_bat (wg_a:lng)<-(vg_a:bat[:void,:void])
+    xg_a := io.printf("#count %d = ",wg_a);	# 33 IOprint_formatted_lng (xg_a:int)<-($23:str)(wg_a:lng)
+    x := alarm.time();	# 34 ALARMtime (x:int)
+    yg_a := calc.-(x,t);	# 35 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
+    ah_a := io.printf("%d ms\n",yg_a);	# 36 IOprint_formatted_int (ah_a:int)<-($27:str)(yg_a:int)
+    t := alarm.time();	# 37 ALARMtime (t:int)
+    ug_a := bat.reverse(int_1M);	# 38 BKCreverse (ug_a:bat[:lng,:void])<-(int_1M:bat[:void,:lng])
+    vg_a := algebra.join(int_1M,ug_a);	# 39 ALGjoin (vg_a:bat[:void,:void])<-(int_1M:bat[:void,:lng])(ug_a:bat[:lng,:void])
+    wg_a := algebra.count(vg_a);	# 40 ALGcount_bat (wg_a:lng)<-(vg_a:bat[:void,:void])
+    xg_a := io.printf("#count %d = ",wg_a);	# 41 IOprint_formatted_lng (xg_a:int)<-($23:str)(wg_a:lng)
+    x := alarm.time();	# 42 ALARMtime (x:int)
+    yg_a := calc.-(x,t);	# 43 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
+    ah_a := io.printf("%d ms\n",yg_a);	# 44 IOprint_formatted_int (ah_a:int)<-($27:str)(yg_a:int)
+    M2 := bbp.new(:lng,:lng,1000000);	# 45 CMDBATnewint (M2:bat[:lng,:lng])<-($29:lng)($30:lng)($4:int)
+    i := 1000000;	# 46  (i:lng)<-($8:lng)
+barrier sj_b := true;	# 47  (sj_b:bit)<-($10:bit) jump 55
+    i := calc.-(i,1);	# 48 CALCbinarySUBlngint (i:lng)<-(i:lng)($11:int)
+    uj_b := i;	# 49  (uj_b:lng)<-(i:lng)
+    vj_b := calc.>=(uj_b,0);	# 50 CALCcompGElngint (vj_b:bit)<-(uj_b:lng)($14:int)
+barrier tj_b := vj_b;	# 51  (tj_b:bit)<-(vj_b:bit) jump 54
+    xj_b := bat.insert(M2,i,i);	# 52 BKCinsert_bun (xj_b:void)<-(M2:bat[:lng,:lng])(i:lng)(i:lng)
+    redo sj_b;	# 53  (sj_b:bit) jump 48
+exit tj_b;	# 54  (tj_b:bit)
+exit sj_b;	# 55  (sj_b:bit)
+    t := alarm.time();	# 56 ALARMtime (t:int)
+    ug_b := bat.reverse(M2);	# 57 BKCreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
+    vg_b := algebra.join(M2,ug_b);	# 58 ALGjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
+    wg_b := algebra.count(vg_b);	# 59 ALGcount_bat (wg_b:lng)<-(vg_b:bat[:lng,:lng])
+    xg_b := io.printf("#count %d = ",wg_b);	# 60 IOprint_formatted_lng (xg_b:int)<-($23:str)(wg_b:lng)
+    x := alarm.time();	# 61 ALARMtime (x:int)
+    yg_b := calc.-(x,t);	# 62 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
+    ah_b := io.printf("%d ms\n",yg_b);	# 63 IOprint_formatted_int (ah_b:int)<-($27:str)(yg_b:int)
+    t := alarm.time();	# 64 ALARMtime (t:int)
+    ug_b := bat.reverse(M2);	# 65 BKCreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
+    vg_b := algebra.join(M2,ug_b);	# 66 ALGjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
+    wg_b := algebra.count(vg_b);	# 67 ALGcount_bat (wg_b:lng)<-(vg_b:bat[:lng,:lng])
+    xg_b := io.printf("#count %d = ",wg_b);	# 68 IOprint_formatted_lng (xg_b:int)<-($23:str)(wg_b:lng)
+    x := alarm.time();	# 69 ALARMtime (x:int)
+    yg_b := calc.-(x,t);	# 70 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
+    ah_b := io.printf("%d ms\n",yg_b);	# 71 IOprint_formatted_int (ah_b:int)<-($27:str)(yg_b:int)
+    t := alarm.time();	# 72 ALARMtime (t:int)
+    ug_b := bat.reverse(M2);	# 73 BKCreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
+    vg_b := algebra.join(M2,ug_b);	# 74 ALGjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
+    wg_b := algebra.count(vg_b);	# 75 ALGcount_bat (wg_b:lng)<-(vg_b:bat[:lng,:lng])
+    xg_b := io.printf("#count %d = ",wg_b);	# 76 IOprint_formatted_lng (xg_b:int)<-($23:str)(wg_b:lng)
+    x := alarm.time();	# 77 ALARMtime (x:int)
+    yg_b := calc.-(x,t);	# 78 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
+    ah_b := io.printf("%d ms\n",yg_b);	# 79 IOprint_formatted_int (ah_b:int)<-($27:str)(yg_b:int)
+    t := alarm.time();	# 80 ALARMtime (t:int)
+    ug_b := bat.reverse(M2);	# 81 BKCreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
+    vg_b := algebra.join(M2,ug_b);	# 82 ALGjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
+    wg_b := algebra.count(vg_b);	# 83 ALGcount_bat (wg_b:lng)<-(vg_b:bat[:lng,:lng])
+    xg_b := io.printf("#count %d = ",wg_b);	# 84 IOprint_formatted_lng (xg_b:int)<-($23:str)(wg_b:lng)
+    x := alarm.time();	# 85 ALARMtime (x:int)
+    yg_b := calc.-(x,t);	# 86 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
+    ah_b := io.printf("%d ms\n",yg_b);	# 87 IOprint_formatted_int (ah_b:int)<-($27:str)(yg_b:int)
+end main;	# 88  
+#count 1000000 = 129 ms
+#count 1000000 = 92 ms
+#count 1000000 = 94 ms
+#count 1000000 = 92 ms
+#count 1000000 = 142 ms
+#count 1000000 = 103 ms
+#count 1000000 = 106 ms
+#count 1000000 = 102 ms
 >

@@ -13,6 +13,8 @@ x:= multiplex.tactics("+",b,c);
 print(x);
 x:= multiplex.tactics("+",b,1:lng);
 print(x);
+x:= multiplex.tactics("/",b,1:lng);
+print(x);
 x:= multiplex.tactics("*",b,c);
 print(x);
 y:= multiplex.tactics("==",b,b);

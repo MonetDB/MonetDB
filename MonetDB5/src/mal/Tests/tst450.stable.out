@@ -58,10 +58,8 @@ end main;	# 12
 [ 21,	  "fixed_16_4"	  ]
 [ 22,	  "fixed_8_4"	  ]
 [ 23,	  "stream"	  ]
-[ 24,	  "fstream"	  ]
-[ 25,	  "bipipe"	  ]
-[ 26,	  "enum"	  ]
-#-------------------------#
+[ 24,	  "enum"	  ]
+#---------------------------------#
 # scope	names		  # name
 # void	str		  # type
 #-------------------------#
@@ -80,8 +78,6 @@ end main;	# 12
 [ nil,	  "mal"		  ]
 [ nil,	  "multiplex"	  ]
 [ nil,	  "enum"	  ]
-[ nil,	  "fstream"	  ]
-[ nil,	  "bipipe"	  ]
 [ nil,	  "io"		  ]
 [ nil,	  "tablet"	  ]
 [ nil,	  "streams"	  ]
@@ -93,7 +89,6 @@ end main;	# 12
 [ nil,	  "batcalc"	  ]
 [ nil,	  "calc"	  ]
 [ nil,	  "algebra"	  ]
-[ nil,	  "mkey"	  ]
 [ nil,	  "bat"		  ]
 [ nil,	  "date"	  ]
 [ nil,	  "daytime"	  ]
