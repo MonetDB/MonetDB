@@ -1531,7 +1531,17 @@ TagName:                tag
     }
     ;
 
-TagName:                Expr;
+TagName:                Expr
+    =
+    {
+        /* in theory this should be translated into
+           'fn:resolve-QName' but we don't know the
+           element argument - therefore internally
+           the string is translated into a qname */
+        [[ $$ ]] = fs_convert_op (fn_data ([[ $$ ]]),
+                                  PFty_string ());
+    }
+    ;
 
 ElementContent:         OptExprSequence_;
 

@@ -194,12 +194,6 @@ static int TWIG_ID[] = {
 /** mnemonic XQuery Core constructors */
 #include "core_mnemonic.h"
 
-/** 
- * Top (last) entry contains a pointer to the list of expected
- * paramater types for the currently type checked function.
- */
-static PFarray_t *par_ty;
-
 /**
  * Resolve function overloading.  In the list of functions of the same
  * name @a qn, find the first (most specific) to match the actual
@@ -238,6 +232,14 @@ overload (PFqname_t qn, PFcnode_t *args)
          * expected formal parameter types?
          */
         for (a = 0, match = true; a < fn->arity; a++) {
+            /* test if function has at least the same
+               number of arguments as the tested function */
+            if (arg->kind == c_nil)
+            {
+                match = false;
+                break;
+            }
+
             match = match && PFty_promotable (arg->child[0]->type,
                                            (fn->par_ty)[a]);
             if (!match)
@@ -248,7 +250,8 @@ overload (PFqname_t qn, PFcnode_t *args)
         }
 
         /* yes, return this function (its the most specific match) */
-        if (match)
+        /* and it has the same number of arguments */
+        if (match && arg->kind == c_nil)
             return fn;
     } 
 
@@ -306,17 +309,11 @@ PFty_check (PFcnode_t *r)
 {
     PFcnode_t *core;
 
-    /* intialize stack of expected parameter types */
-    par_ty = PFarray (sizeof (PFty_t *));
-
     /* invoke twig: the tree is traversed and type annotations are
      * attached (the type checkers removes `proofs' and may add
      * `seqcast's, so return the modified core tree);
      */
     core = rewrite (r, 0);
-
-    /* sanity: no left over expected parameter type lists on the stack */
-    assert (PFarray_empty (par_ty));
 
     return core;
 }

@@ -656,11 +656,16 @@
   { .ns = PFns_op, .loc = "to",                                          \
     .arity = 2, .par_ty = { PFty_integer (), PFty_integer () },          \
     .ret_ty = PFty_star (PFty_integer ()) }                              \
-, /* pf:typed-value (node) as untypedAtomic */                           \
+, /* pf:typed-value (node) as untypedAtomic* */                          \
   { .ns = PFns_pf, .loc = "typed-value",                                 \
     .arity = 1, .par_ty = { PFty_node () },                              \
-    .ret_ty = PFty_untypedAtomic (),                                     \
+    .ret_ty = PFty_star (PFty_untypedAtomic ()),                         \
+    /* FIXME: does this still fit or is it string-value? */\
     .alg = PFbui_op_typed_value }                                        \
+, /* pf:string-value (node) as string */                                 \
+  { .ns = PFns_pf, .loc = "string-value",                                \
+    .arity = 1, .par_ty = { PFty_node () },                              \
+    .ret_ty = PFty_string () }                                           \
 , /* pf:distinct-doc-order (node *) as node* */                          \
   { .ns = PFns_pf, .loc = "distinct-doc-order",                          \
     .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \

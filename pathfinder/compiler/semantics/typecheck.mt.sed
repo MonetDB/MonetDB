@@ -447,9 +447,6 @@ KindTest:        kind_attr (nil);
 FunctionAppl:    apply (FunctionArgs)
     =
     {
-        PFty_t t;
-        PFcnode_t *core;
-        
         /* resolve overloading,
          * any type errors will be detected during resolution
          */
@@ -458,14 +455,7 @@ FunctionAppl:    apply (FunctionArgs)
         /* invoke specific typing rules for standard F&O functions 
          * (W3C XQuery 7.2)
          */
-        t = specific (($$)->sem.fun, ($1$));
-        
-        core = apply (($$)->sem.fun, ($1$));
-        
-        /* type the above piece of core */
-        [[ core ]] = t; 
-        
-        return core;
+        [[ $$ ]] = specific (($$)->sem.fun, ($1$));
     }
     ;
 
@@ -497,6 +487,11 @@ ConstructorExpr: elem (CoreExpr, CoreExpr)
         PFty_t t1 = [[ $2$ ]];
         PFqname_t wild = { .ns = PFns_wild, .loc = 0 };
 
+        if (!PFty_promotable ([[ $1$ ]], PFty_string ()))
+            PFoops (OOPS_TYPECHECK,
+                    "tagname in element construction can't be of type '%s'",
+                    PFty_str ([[ $1$ ]]));
+
         [[ $$ ]] = *PFty_simplify (PFty_elem (wild, t1));
     }
     ;
@@ -517,6 +512,11 @@ ConstructorExpr: attr (CoreExpr, CoreExpr)
     {   
         PFty_t t1 = [[ $2$ ]];
         PFqname_t wild = { .ns = PFns_wild, .loc = 0 };
+
+        if (!PFty_promotable ([[ $1$ ]], PFty_string ()))
+            PFoops (OOPS_TYPECHECK,
+                    "tagname in attribute construction can't be of type '%s'",
+                    PFty_str ([[ $1$ ]]));
 
         [[ $$ ]] = *PFty_simplify (PFty_attr (wild, t1));
     }

@@ -202,12 +202,19 @@ check_fun_usage (PFpnode_t * n)
             PFoops_loc (OOPS_APPLYERROR, n->loc,
                         "reference to undefined function `%s'", 
                         PFqname_str (n->sem.qname));
-        
-        fun = *((PFfun_t **) PFarray_at (funs, 0));
 
         /* Determine number of actual arguments */
         arity = actual_args (n->child[0]);
-        
+       
+        /* avoid warning about uninitialized variable 'fun' */ 
+        fun = *((PFfun_t **) PFarray_at (funs, 0));
+
+        for (i = 0; i < PFarray_last (funs); i++) { 
+            fun = *((PFfun_t **) PFarray_at (funs, i));
+            if (arity == fun->arity)
+                break;
+        }
+
         /* see if number of actual argument matches function declaration */
         if (arity != fun->arity)
             PFoops_loc (OOPS_APPLYERROR, n->loc,

@@ -69,6 +69,8 @@
 #include "abssyn.h"
 #include "mem.h"
 #include "oops.h"
+/* needed for function conversion */
+#include "subtyping.h"
 
 /** 
  * Allocates a new core tree leaf and initializes its kind.
@@ -843,9 +845,136 @@ PFcore_function (PFqname_t qn)
 }
 
 /**
+ * Count the number of actual arguments for the function call in core
+ * tree node @a c.
+ *
+ * @param n The current @c c_arg node; when called from outside,
+ *   this is the topmost @c c_arg node below the function
+ *   call. (Can also be a @c c_nil node if no parameters are
+ *   specified or the bottom is reached during recursion.)
+ * @return number of actual arguments
+ */
+static unsigned int
+actual_args (PFcnode_t *c)
+{
+    switch (c->kind) {
+        case c_nil:
+            return 0;
+                                                                                                                                                             
+        case c_arg:
+            return 1 + actual_args (c->child[1]);
+                                                                                                                                                             
+        default:
+            PFoops (OOPS_FATAL,
+                    "illegal node kind in function"
+                    " application (expecting nil/arg)");
+    }
+                                                                                                                                                             
+    /* just to pacify picky compilers; never reached due to "exit" in PFoops */
+    return 0;
+}
+
+/**
+ * Add core nodes, which converts arguments with the type
+ * node or untypedAtomic of a function application to their
+ * expected type
+ *
+ * @param c the function whose arguments are converted
+ * @return the updated function application
+ */
+static PFcnode_t *
+function_conversion (PFcnode_t *c)
+{
+    unsigned int i = 0;
+    PFty_t expected;
+    PFvar_t *v1;
+    PFfun_t *fun;
+    PFcnode_t *args, *result;
+
+    assert (c);
+    fun = c->sem.fun;
+    args = c->child[0];
+    result = c;
+
+    while (args->kind == c_arg && i < fun->arity)
+    {
+        expected = (fun->par_ty)[i];
+
+        /* the function conversion has only to be applied for
+           arguments which are a subtype of atomic and perhaps
+           have a quantifying type */
+        if (expected.type == ty_opt ||
+            expected.type == ty_star ||
+            expected.type == ty_plus)
+            expected = PFty_child (expected);
+
+        if (PFty_subtype (expected, PFty_atomic ()))
+        {
+            /* special case: numeric type is translated as xs:double */
+            if (PFty_eq (expected, PFty_numeric ()))
+                expected = PFty_double ();
+
+            /* 1. step: apply atomization */
+            /* 2. step: cast untypedAtomic to expected type */
+            v1 = PFcore_new_var (0);
+            result = PFcore_let (PFcore_var (v1),
+                                 PFcore_fs_convert_op 
+                                     (PFcore_fn_data (args->child[0]),
+                                      expected),
+                                 result);
+            args->child[0] = PFcore_var (v1);
+
+            /* 3. step: apply promotion */
+            /* FIXME: how does this work? */
+        }
+        args = args->child[1];
+        i++;
+    }
+    return result;
+}
+
+
+/**
+ * Test if a xquery function is called, where the
+ * conversion rules doesn't have to be applied
+ * - comparisons and calculations have this conversion
+ *   already automatically
+ * - typed-value is applied inside of fn:data and therefore
+ *   would cause an infinite loop
+ *
+ * @param fn function descriptor
+ * @return an integer containing the boolean value
+ */
+static int
+function_overloaded (PFfun_t *fn)
+{
+    PFqname_t qn = fn->qname;
+            /* avoid recursive call inside fn:data */
+    return (!PFqname_eq (qn, PFqname (PFns_pf, "typed-value")) ||
+            /* comparisons */
+            !PFqname_eq (qn, PFqname (PFns_op, "eq")) ||
+            !PFqname_eq (qn, PFqname (PFns_op, "ne")) ||
+            !PFqname_eq (qn, PFqname (PFns_op, "le")) ||
+            !PFqname_eq (qn, PFqname (PFns_op, "lt")) ||
+            !PFqname_eq (qn, PFqname (PFns_op, "ge")) ||
+            !PFqname_eq (qn, PFqname (PFns_op, "gt")) ||
+            /* calculations */
+            !PFqname_eq (qn, PFqname (PFns_op, "plus")) ||
+            !PFqname_eq (qn, PFqname (PFns_op, "minus")) ||
+            !PFqname_eq (qn, PFqname (PFns_op, "times")) ||
+            !PFqname_eq (qn, PFqname (PFns_op, "div")) ||
+            !PFqname_eq (qn, PFqname (PFns_op, "idiv")) ||
+            !PFqname_eq (qn, PFqname (PFns_op, "mod")));
+}
+
+/**
  * Create a core tree node representing a function application:
  *
  *     fn (e)
+ *
+ * if at a later point an argument is added, then the number of 
+ * function arguments will not fit anymore and probably 
+ * the function conversion will convert to the wrong types
  *
  * @param fn function descriptor
  * @param e  representation of argument list (right-deep tree of param nodes)
@@ -855,12 +984,36 @@ PFcnode_t *
 PFcore_apply (PFfun_t *fn, PFcnode_t *e)
 {
     PFcnode_t *core;
+    PFarray_t *funs;
+    PFfun_t *fun;
+    unsigned int arity, i;
 
     assert (fn && e);
-    
-    core = PFcore_wire1 (c_apply, e);
-    core->sem.fun = fn;
+    arity = actual_args (e);
+    fun = fn;
+    funs = PFenv_lookup (PFfun_env, fun->qname);
 
+    /* get the function where the number of arguments fit */
+    for (i = 0; i < PFarray_last (funs); i++) {
+        fun = *((PFfun_t **) PFarray_at (funs, i));
+        if (arity == fun->arity)
+            break;
+    }
+                                                                                                                                                             
+    /* see if number of actual argument matches function declaration */
+    if (arity != fun->arity)
+        PFoops (OOPS_APPLYERROR,
+                "wrong number of arguments for function `%s' "
+                "(expected %u, got %u)",
+                PFqname_str (fun->qname), fun->arity, arity);
+
+    core = PFcore_wire1 (c_apply, e);
+    core->sem.fun = fun;
+
+    /* add conversion if necessary */
+    if (!function_overloaded (fun))
+        core = function_conversion (core);
+  
     return core;
 }
 
@@ -901,7 +1054,8 @@ PFcore_apply_ (PFfun_t *fn, ...)
     PFcnode_t *a;
     PFvar_t *v;
     unsigned int i;
-    PFcnode_t *core, **fnargs;
+    PFcnode_t *core, *fnargs;
+    PFcnode_t *apply;
 
     assert (fn);
 
@@ -912,21 +1066,25 @@ PFcore_apply_ (PFfun_t *fn, ...)
         *((PFcnode_t **) PFarray_add (args)) = a;
     va_end (arglist);
 
-    core   = PFcore_apply (fn, PFcore_nil ());
-    fnargs = &(core->child[0]);
+    /* bind dummy node to apply */
+    apply  = PFcore_nil ();
+    core   = apply;
+    fnargs = PFcore_nil ();
 
     i = PFarray_last (args);
 
     while (i--) {
         v = PFcore_new_var (0);
 
-        core = PFcore_let (PFcore_var (v), 
-			   *((PFcnode_t **) PFarray_at (args, i)),
-			   core);
-        *fnargs = PFcore_arg (PFcore_var (v),
-			      *fnargs);
+        core = PFcore_let (PFcore_var (v),
+                           *((PFcnode_t **) PFarray_at (args, i)),
+                           core);
+        fnargs = PFcore_arg (PFcore_var (v),
+                              fnargs);
     }
 
+    /* bind apply instead of dummy node */
+    *apply = *(PFcore_apply (fn, fnargs));
     return core;
 }
 
@@ -940,25 +1098,29 @@ PFcore_apply_ (PFfun_t *fn, ...)
 PFcnode_t *
 PFcore_fs_convert_op (PFcnode_t *n, PFty_t cast_type)
 {
-    PFvar_t *v = PFcore_new_var (0);
+    PFvar_t *v1 = PFcore_new_var (0);
+    PFvar_t *v2 = PFcore_new_var (0);
     assert (n /*&& cast_type*/);
     
     return PFcore_let 
-              (PFcore_var (v), n,
-               PFcore_typeswitch 
-                   (PFcore_var (v),
-                    PFcore_cases 
-                        (PFcore_case 
-                             (PFcore_seqtype 
-                                  (PFty_xdt_untypedAtomic ()),
-                   /*return*/ PFcore_seqcast 
-                                  (PFcore_seqtype 
-                                       (cast_type),
-                                   PFcore_var (v))
-                              ),
-                         PFcore_nil ()
-                         ),
-                    PFcore_var (v))
+              (PFcore_var (v1), n,
+               PFcore_for
+                   (PFcore_var (v2), PFcore_nil (), PFcore_var (v1),
+                    PFcore_typeswitch 
+                       (PFcore_var (v2),
+                        PFcore_cases 
+                            (PFcore_case 
+                                 (PFcore_seqtype 
+                                      (PFty_xdt_untypedAtomic ()),
+                       /*return*/ PFcore_seqcast 
+                                      (PFcore_seqtype 
+                                           (cast_type),
+                                       PFcore_var (v2))
+                                  ),
+                             PFcore_nil ()
+                             ),
+                        PFcore_var (v2))
+                   )
                );                        
 }
 
@@ -976,8 +1138,16 @@ PFcore_fn_data (PFcnode_t *n)
     PFvar_t *v3 = PFcore_new_var (0);
     PFvar_t *v4 = PFcore_new_var (0);
     PFvar_t *v5 = PFcore_new_var (0);
+    PFvar_t *v6 = PFcore_new_var (0);
 
-    PFfun_t *op_tv = PFcore_function (PFqname (PFns_pf, "typed-value"));
+    PFfun_t *op_sv = PFcore_function (PFqname (PFns_pf, "string-value"));
+    PFcnode_t *typed_value = PFcore_let (PFcore_var (v6),
+                                         APPLY (op_sv, PFcore_var (v5)),
+                                         PFcore_seqcast
+                                             (PFcore_seqtype
+                                                  (PFty_untypedAtomic ()),
+                                              PFcore_var (v6))
+                                        );
 
     assert (n);
 
@@ -1002,11 +1172,11 @@ PFcore_fn_data (PFcnode_t *n)
                                              (PFcore_case 
                                                   (PFcore_seqtype (PFty_node ()),
                   /*return */                      PFcore_let (PFcore_var (v5),
-                                                               PFcore_seqcast 
-                                                                   (PFcore_seqtype 
-                                                                        (PFty_node ()),
+                               /* FIXME: seqcast needed     */ PFcore_seqcast 
+                               /* because of input-arg-type */     (PFcore_seqtype 
+                               /* of function string-value  */       (PFty_node ()),
                                                                     PFcore_var (v4)),
-                                                               APPLY (op_tv, PFcore_var (v5))
+                                                               typed_value
                                                               )
                                                   ),
                                                   PFcore_nil ()
