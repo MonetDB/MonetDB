@@ -49,6 +49,16 @@ if test "x$have_monet" != xyes; then
 fi
 AM_PROG_CC_C_O
 
+dnl And we need twig, otherwise stop here.
+AC_CHECK_PROGS(TWIG, twig)
+
+if test "x$TWIG" = "x"; then
+    AC_MSG_ERROR([Unable to find twig in your current PATH.
+                 Please find a version of twig and install it on your system.
+                 If you think twig should already be installed on your system
+                 please make sure that it can be found in your search PATH.])
+fi
+
 dnl Pathfinder needs bison (not yacc) and the `locations' feature
 dnl coming with bison versions >= 1.33.
 
