@@ -164,7 +164,11 @@ stream_export int bs_read_next( stream *s, char *buf, int *last );
 @c
 #include <config.h>
 #include "stream.h"
-#include <string.h> 
+#include <string.h>
+
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
 
 #ifdef HAVE_NETDB_H
 # include <sys/types.h> 
