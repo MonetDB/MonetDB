@@ -1,5 +1,0 @@
-var x:=new(void,int);
-x.insert(void(nil),2);
-x.insert(void(nil),4);
-x:=x.reverse().mark(0@0).reverse();
-table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);

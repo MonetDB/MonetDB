@@ -1,3 +1,0 @@
-module("mmath");
-test_mmath_nan();
-quit();
