@@ -1055,7 +1055,7 @@ Since the BBP will no longer store these tables only creation is needed
         @:TBL_create(mod,dep,oid,str,40,FALSE,FALSE)@
         @:TBL_create(mod,use,oid,ptr,40,FALSE,FALSE)@
         @:TBL_create(mod,load,oid,str,40,BOUND2BTRUE,FALSE)@
-        @:TBL_create(mod,drop,oid,int,40,BOUND2BTRUE,FALSE)@
+        @:TBL_create(mod,drop,oid,int,40,FALSE,FALSE)@
         @:TBL_create(mod,proc,str,oid,200,FALSE,FALSE)@
         @:TBL_create(mod,var,str,ptr,200,FALSE,FALSE)@
 @-
