@@ -1028,7 +1028,7 @@ def GetBitsAndModsAndStatic(env) :
     TSTPREF = env['TSTPREF']
     cmd = '%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF)
     pOut,pIn,pErr = popen2.popen3(cmd)
-    if "@VERSION@".split(".", 1)[0] == '5':
+    if env['VERSION'] >= 49900:
         pIn.write('''\
             quit();
         ''')
@@ -1080,7 +1080,7 @@ def GetBitsAndModsAndStatic(env) :
         if not env['TST_BITS']:
             ErrMsg("Checking for Bits failed!")
         if not env['TST_MODS']:
-            if "@VERSION@".split(".", 1)[0] == '5':
+    	    if env['VERSION'] >= 49900:
                 Warn("Monet5: Check, whether required modules do exist, is not possible, yet!")
                 env['TST_MODS'].append("")
             else:
@@ -1130,7 +1130,7 @@ def CheckMods(env, TST, SERVER, CALL) :
 def CheckBATs(env, TST, TSTDB) :
     missing = []
 
-    if "@VERSION@".split(".", 1)[0] == '5':
+    if env['VERSION'] >= 49900:
         Warn("Monet5: Check, whether required BATs do exist, is not possible, yet!")
         return missing
 
@@ -1914,7 +1914,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 if test.match(f):
                     if CALL == "mal":
                         RunIt(cmd+f+" </dev/null", "", ClntOutFile, ClntErrFile)
-                    elif "@VERSION@".split(".", 1)[0] == '5':
+                    elif env['VERSION'] >= 49900:
                         RunIt("M2m %s | %s" % (f,cmd), "", ClntOutFile, ClntErrFile)
                     else:
                         RunIt(cmd+"< "+f, "", ClntOutFile, ClntErrFile)
@@ -2242,11 +2242,34 @@ def FindCmdLst(env) :
     return ""
 ### FindCmdLst(env) #
 
+def MonetDBVersion():
+    print "MonetDBVersion"
+    cmd = CheckExec("monetdb-config")
+    print cmd
+    pOut,pIn = popen2.popen2(cmd+' --version')
+    pIn.close()
+    res = pOut.readlines()[0]
+    res = res.strip();
+    pOut.close()
+    print res
+    (x,y,z) = res.split('.',2)
+    print x,y,z
+    return ((x*100) + y) * 100 + z;
+    try:
+	#print x
+	#print ((x*100) + y) * 100 + z;
+	#return ((x*100) + y) * 100 + z;
+	return 1
+    except:
+	pass
+    return 0
+
 _MonetConfigDict = {
     '--source': '@QMONETDB_SOURCE@',
     '--build': '@QMONETDB_BUILD@',
     '--prefix': '@Qprefix@',
     }
+
 def GetMonetConfig(arg) :
     # this works for arg in ('--source', '--build', '--prefix')
     return _configure(_MonetConfigDict[arg])
@@ -2300,6 +2323,7 @@ def main(argv) :
     if THISFILE == "Mprofile.py":
         dft['CMDLST']         = "FindCmdLst(env)"
     env = {}
+    env['VERSION'] = MonetDBVersion()
 
     #par = {}
     # get current environment
@@ -2446,19 +2470,19 @@ def main(argv) :
     STDOUT.flush()
     #env['par'] = par
 
-    if env.has_key('MONETDB_PREFIX'):
-        bp = os.path.join(env['MONETDB_PREFIX'],"bin")
-        if os.environ.has_key('PATH'):
-            bp = bp+os.pathsep+os.environ['PATH']
-        os.environ['PATH'] = bp
+    #if env.has_key('MONETDB_PREFIX'):
+        #bp = os.path.join(env['MONETDB_PREFIX'],"bin")
+        #if os.environ.has_key('PATH'):
+            #bp = bp+os.pathsep+os.environ['PATH']
+        #os.environ['PATH'] = bp
 
-    if env.has_key('SQL_PREFIX'):
-        bp = os.path.join(env['SQL_PREFIX'],"bin")
-        if not os.path.isdir(bp):
-            bp = env['SQL_PREFIX']
-        if os.environ.has_key('PATH'):
-            bp = bp+os.pathsep+os.environ['PATH']
-        os.environ['PATH'] = bp
+    #if env.has_key('SQL_PREFIX'):
+        #bp = os.path.join(env['SQL_PREFIX'],"bin")
+        #if not os.path.isdir(bp):
+            #bp = env['SQL_PREFIX']
+        #if os.environ.has_key('PATH'):
+            #bp = bp+os.pathsep+os.environ['PATH']
+        #os.environ['PATH'] = bp
 
     # tidy-up and fall-back to defaults where necessary
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
