@@ -267,6 +267,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			(void)snprintf( buf, 32, "A%d", s->flag);
 			q= pushArgumentId(mb,q,_strdup(buf));
 		}
+		setVarInitialized(mb,s->nr);
         }       break;
 	case st_update_var:{
 		dump_1(sql,mb,s,"sql","update_var");
@@ -1069,8 +1070,6 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
 	curPrg = c->curprg;
         curBlk = curPrg->def;
         curInstr = getInstrPtr(curBlk,0);
-	/* result type ? */
-	curInstr->argv[0] = TYPE_void; 
 
 	if (be->mvc->args){
 		int argc = 0;
