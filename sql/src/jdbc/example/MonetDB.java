@@ -81,6 +81,7 @@ public class MonetDB {
 		// note that the database specifier is currently not implemented, for
 		// Monet itself can't access multiple databases.
 		Connection con = DriverManager.getConnection("jdbc:monetdb://" + host + "/default", user, pass);
+		DatabaseMetaData dbmd = con.getMetaData();
 
 		BufferedReader fr;
 		if (hasFile) {
@@ -89,7 +90,14 @@ public class MonetDB {
 		} else {
 			// use stdin
 			fr = in;
-			System.out.println("Welcome to the MonetDB interactive terminal!\n\nUse \\q to quit");
+			System.out.println("Welcome to the MonetDB interactive terminal!");
+			System.out.println("Database: " + dbmd.getDatabaseProductName() + " " +
+				dbmd.getDatabaseProductVersion() + " (" + dbmd.getDatabaseMajorVersion() +
+				"." + dbmd.getDatabaseMinorVersion() + ")");
+			System.out.println("Driver: " + dbmd.getDriverName() + " " +
+				dbmd.getDriverVersion() + " (" + dbmd.getDriverMajorVersion() +
+				"." + dbmd.getDriverMinorVersion() + ")");
+			System.out.println("Use \\q to quit");
 			System.out.println("auto commit mode: on");
 		}
 
@@ -107,54 +115,83 @@ public class MonetDB {
 				if (!hasFile) System.out.print(getPrompt(user, stack));
 				continue;
 			}
- 			if (qp.getQuery().equals("\\q")) break;	// quit
-			if (qp.getQuery().equalsIgnoreCase("start transaction;") ||
+ 			if (qp.getQuery().equals("\\q")) {
+				// quit
+				break;
+			} else if (qp.getQuery().equals("\\d")) {
+				// give us a list with tables
+				String[] types = {"TABLE", "VIEW"};
+				ResultSet tbl = dbmd.getTables(null, null, null, types);
+				while (tbl.next()) {
+					System.out.println(tbl.getString("TABLE_TYPE") + "\t" +
+						tbl.getString("TABLE_SCHEM") + "." +
+						tbl.getString("TABLE_NAME"));
+				}
+				tbl.close();
+			} else if (qp.getQuery().equalsIgnoreCase("start transaction;") ||
 				qp.getQuery().equalsIgnoreCase("begin transaction;")) {
-				// disable JDBC auto commit
-				con.setAutoCommit(false);
-				if (!hasFile) System.out.println("auto commit mode: off");
-			}
-			if (qp.getQuery().equalsIgnoreCase("commit;") ||
-				qp.getQuery().equalsIgnoreCase("rollback;")) {
-				// enable JDBC auto commit
-				con.setAutoCommit(true);
-				if (!hasFile) System.out.println("auto commit mode: on");
-			}
-			query += qp.getQuery() + (qp.hasOpenQuote() ? "\\n" : " ");
-			if (qp.isComplete()) {
 				try {
-					// execute the query, let the driver decide what type it is
-					if (stmt.execute(query)) {
-						// we have a ResultSet, print it
-						ResultSet rs = stmt.getResultSet();
-						ResultSetMetaData md = rs.getMetaData();
-						int col = 1;
-						System.out.print("+----------\n| ");
-						for (; col < md.getColumnCount(); col++) {
-							System.out.print(md.getColumnName(col) + "\t");
-						}
-						System.out.println(md.getColumnName(col));
-						System.out.println("+----------");
-						int count = 0;
-						for (; rs.next(); count++) {
-							col = 1;
-							System.out.print("| ");
-							for (; col < md.getColumnCount(); col++) {
-								System.out.print(rs.getString(col) + "\t");
-							}
-							System.out.println(rs.getString(col));
-						}
-						System.out.println("+----------");
-						System.out.println(count + " rows");
-					} else {
-						// we have an update count
-						System.out.println("affected rows\n-------------\n" + stmt.getUpdateCount());
-					}
+					// disable JDBC auto commit
+					con.setAutoCommit(false);
+					if (!hasFile) System.out.println("auto commit mode: off");
 				} catch (SQLException e) {
-					System.out.println("Error on line " + i + ": " + e.getMessage());
-					System.out.println("Executed query: " + query);
-				} finally {
-					query = "";
+					System.err.println("Error: " + e.getMessage());
+				}
+			} else if (qp.getQuery().equalsIgnoreCase("commit;")) {
+				try {
+					con.commit();
+					// enable JDBC auto commit
+					con.setAutoCommit(true);
+					if (!hasFile) System.out.println("auto commit mode: on");
+				} catch (SQLException e) {
+					System.err.println("Error: " + e.getMessage());
+				}
+			} else if (qp.getQuery().equalsIgnoreCase("rollback;")) {
+				try {
+					con.rollback();
+					// enable JDBC auto commit
+					con.setAutoCommit(true);
+				if (!hasFile) System.out.println("auto commit mode: on");
+				} catch (SQLException e) {
+					System.err.println("Error: " + e.getMessage());
+				}
+			} else {
+				query += qp.getQuery() + (qp.hasOpenQuote() ? "\\n" : " ");
+				if (qp.isComplete()) {
+					try {
+						// execute the query, let the driver decide what type it is
+						if (stmt.execute(query)) {
+							// we have a ResultSet, print it
+							ResultSet rs = stmt.getResultSet();
+							ResultSetMetaData md = rs.getMetaData();
+							int col = 1;
+							System.out.print("+----------\n| ");
+							for (; col < md.getColumnCount(); col++) {
+								System.out.print(md.getColumnName(col) + "\t");
+							}
+							System.out.println(md.getColumnName(col));
+							System.out.println("+----------");
+							int count = 0;
+							for (; rs.next(); count++) {
+								col = 1;
+								System.out.print("| ");
+								for (; col < md.getColumnCount(); col++) {
+									System.out.print(rs.getString(col) + "\t");
+								}
+								System.out.println(rs.getString(col));
+							}
+							System.out.println("+----------");
+							System.out.println(count + " rows");
+						} else {
+							// we have an update count
+							System.out.println("affected rows\n-------------\n" + stmt.getUpdateCount());
+						}
+					} catch (SQLException e) {
+						System.err.println("Error on line " + i + ": " + e.getMessage());
+						System.err.println("Executed query: " + query);
+					} finally {
+						query = "";
+					}
 				}
 			}
 			if (!hasFile) System.out.print(getPrompt(user, stack));
