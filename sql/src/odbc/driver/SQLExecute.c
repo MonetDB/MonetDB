@@ -80,6 +80,25 @@ static int next_result(stream *rs,  ODBCStmt *	hstmt, int *type ){
 	return status;
 }
 
+struct sql_types {
+	char *name;
+	int type;
+} sql_types[] = {
+	{"bit", SQL_C_BIT},
+	{"uchr", SQL_C_UTINYINT},
+	{"str", SQL_C_CHAR},
+	{"sht", SQL_C_SSHORT},
+	{"int", SQL_C_SLONG},
+	{"lng", SQL_C_SBIGINT},
+	{"flt", SQL_C_FLOAT},
+	{"dbl", SQL_C_DOUBLE},
+	{"date", SQL_C_TYPE_DATE},
+	{"time", SQL_C_TYPE_TIME},
+/* 	{"datetime", SQL_C_TIMESTAMP}, */
+	{"timestamp", SQL_C_TIMESTAMP},
+	{0, 0},			/* sentinel */
+};
+
 SQLRETURN SQLExecute(SQLHSTMT hStmt)
 {
 	ODBCStmt *	hstmt = (ODBCStmt *) hStmt;
@@ -154,9 +173,9 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 		query = Query;
 	}
 
-	dbc->Mws->write( dbc->Mws, query, strlen(query), 1 );
-	dbc->Mws->write( dbc->Mws, ";\n", 2, 1 );
-	dbc->Mws->flush( dbc->Mws );
+	dbc->Mws->write(dbc->Mws, query, 1, strlen(query));
+	dbc->Mws->write(dbc->Mws, ";\n", 1, 2);
+	dbc->Mws->flush(dbc->Mws);
 
 	/* now get the result data and store it to our internal data structure */
 	{ /* start of "get result data" code block */
@@ -198,6 +217,7 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 		ec = bs->buf + bs->len;
 		while(sc < ec){
 			char *s, *name = NULL, *type = NULL;
+			struct sql_types *p;
 
 			s = sc;
 			while(sc<ec && *sc != ',') sc++;
@@ -235,6 +255,12 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 			type = strdup(s);
 			sc++;
 
+			for (p = sql_types; p->name; p++) {
+				if (strcmp(p->name, type) == 0) {
+					pCol->nSQL_DESC_TYPE = p->type;
+					break;
+				}
+			}
 			pCol->pszSQL_DESC_BASE_COLUMN_NAME = name;
 			pCol->pszSQL_DESC_BASE_TABLE_NAME = strdup("tablename");
 			pCol->pszSQL_DESC_TYPE_NAME = type;

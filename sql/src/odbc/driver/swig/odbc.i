@@ -188,10 +188,10 @@
 		o = PyInt_FromLong((long) * (SQLUINTEGER *) $2);
 		break;
 	case SQL_C_FLOAT:
-		o = PyInt_FromLong((long) * (SQLREAL *) $2);
+		o = PyFloat_FromDouble((double) * (SQLREAL *) $2);
 		break;
 	case SQL_C_DOUBLE:
-		o = PyInt_FromLong((long) * (SQLDOUBLE *) $2);
+		o = PyFloat_FromDouble((double) * (SQLDOUBLE *) $2);
 		break;
 	case SQL_C_STINYINT:
 		o = PyInt_FromLong((long) * (SQLSCHAR *) $2);

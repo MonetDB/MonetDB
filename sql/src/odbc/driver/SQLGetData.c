@@ -67,7 +67,7 @@ SQLRETURN ODBCGetData(
 	SQLINTEGER	nTargetLength,
 	SQLINTEGER *	pnLengthOrIndicator )
 {
-	char *	pSourceData    = NULL;
+	char *pSourceData;
 
 	/* in the next cases this function should not have been called */
 	assert(stmt != NULL);
@@ -93,16 +93,13 @@ SQLRETURN ODBCGetData(
 		return SQL_ERROR;
 	}
 
-	/* when no Result or rows are their return SQL_NO_DATA */
-	if (stmt->ResultRows == NULL) {
+	/* when there are no Result or rows, return SQL_NO_DATA */
+	if (stmt->ResultRows == NULL)
 		return SQL_NO_DATA;
-	}
-	if (stmt->nrRows <= 0) {
+	if (stmt->nrRows <= 0)
 		return SQL_NO_DATA;
-	}
-	if (stmt->currentRow > stmt->nrRows) {
+	if (stmt->currentRow > stmt->nrRows)
 		return SQL_NO_DATA;
-	}
 
 
 
@@ -111,46 +108,98 @@ SQLRETURN ODBCGetData(
 	/**********************************************************************
 	 * GET pSourceData FOR NORMAL RESULT SETS
 	 **********************************************************************/
-	pSourceData = (stmt->ResultRows)[(stmt->currentRow * stmt->nrCols) + nCol];
+	pSourceData = stmt->ResultRows[stmt->currentRow * stmt->nrCols + nCol];
 
 	/****************************
 	 * ALL cols are stored as SQL_CHAR... bad for storage... good for code
 	 * SO no need to determine the source type when translating to destination
 	 ***************************/
-	if (pSourceData != NULL)
-	{
+	if (pnLengthOrIndicator != NULL)
+		*pnLengthOrIndicator = SQL_NULL_DATA;
+
+	if (pSourceData != NULL) {
 		/*********************
 		 * Now get the col when we have a value
 		 *********************/
-			if (pnLengthOrIndicator != NULL) {
-			*pnLengthOrIndicator = SQL_NULL_DATA;
-		}
-
-		if (pTarget != NULL) {
-		switch (nTargetType)
-		{
+		switch (nTargetType) {
 		case SQL_C_CHAR:
-			strncpy(pTarget, pSourceData, nTargetLength -1);
-			if (pnLengthOrIndicator != NULL) {
-				*pnLengthOrIndicator = strlen(pTarget);
-			}
+#ifdef SQL_C_XML
+		case SQL_C_XML:
+#endif
+		case SQL_C_VARBOOKMARK:
+			if (pTarget != NULL)
+				strncpy(pTarget, pSourceData, nTargetLength -1);
+			if (pnLengthOrIndicator != NULL)
+				*pnLengthOrIndicator = strlen(pSourceData);
 			break;
 		case SQL_C_LONG:
 		case SQL_C_SLONG:
-			*((int *)pTarget) = atoi(pSourceData);
-			if (pnLengthOrIndicator != NULL) {
-				*pnLengthOrIndicator = sizeof( int );
-			}
+			if (pTarget != NULL)
+				* (SQLINTEGER *) pTarget = strtol(pSourceData, NULL, 10);
+			if (pnLengthOrIndicator != NULL)
+				*pnLengthOrIndicator = sizeof(SQLINTEGER);
+			break;
+		case SQL_C_ULONG:
+			if (pTarget != NULL)
+				* (SQLUINTEGER *) pTarget = strtoul(pSourceData, NULL, 10);
+			if (pnLengthOrIndicator != NULL)
+				*pnLengthOrIndicator = sizeof(SQLUINTEGER);
+			break;
+		case SQL_C_SHORT:
+		case SQL_C_SSHORT:
+			if (pTarget != NULL)
+				* (SQLSMALLINT *) pTarget = strtol(pSourceData, NULL, 10);
+			if (pnLengthOrIndicator != NULL)
+				*pnLengthOrIndicator = sizeof(SQLSMALLINT);
+			break;
+		case SQL_C_USHORT:
+			if (pTarget != NULL)
+				* (SQLUSMALLINT *) pTarget = strtoul(pSourceData, NULL, 10);
+			if (pnLengthOrIndicator != NULL)
+				*pnLengthOrIndicator = sizeof(SQLUSMALLINT);
+			break;
+		case SQL_C_BIT:
+		case SQL_C_TINYINT:
+		case SQL_C_STINYINT:
+			if (pTarget != NULL)
+				* (SQLSCHAR *) pTarget = strtol(pSourceData, NULL, 10);
+			if (pnLengthOrIndicator != NULL)
+				*pnLengthOrIndicator = sizeof(SQLSCHAR);
+			break;
+		case SQL_C_UTINYINT:
+			if (pTarget != NULL)
+				* (SQLCHAR *) pTarget = strtoul(pSourceData, NULL, 10);
+			if (pnLengthOrIndicator != NULL)
+				*pnLengthOrIndicator = sizeof(SQLCHAR);
+			break;
+		case SQL_C_SBIGINT:
+			if (pTarget != NULL)
+				* (SQLBIGINT *) pTarget = strtoll(pSourceData, NULL, 10);
+			if (pnLengthOrIndicator != NULL)
+				*pnLengthOrIndicator = sizeof(SQLBIGINT);
+			break;
+		case SQL_C_UBIGINT:
+			if (pTarget != NULL)
+				* (SQLUBIGINT *) pTarget = strtoull(pSourceData, NULL, 10);
+			if (pnLengthOrIndicator != NULL)
+				*pnLengthOrIndicator = sizeof(SQLUBIGINT);
 			break;
 		case SQL_C_FLOAT:
-			sscanf( pSourceData, "%g", pTarget );
-			if (pnLengthOrIndicator != NULL) {
-				*pnLengthOrIndicator = sizeof( float );
-			}
+			if (pTarget != NULL)
+				sscanf(pSourceData, "%g", (SQLREAL *) pTarget);
+			if (pnLengthOrIndicator != NULL)
+				*pnLengthOrIndicator = sizeof(SQLREAL);
+			break;
+		case SQL_C_DOUBLE:
+			if (pTarget != NULL)
+				sscanf(pSourceData, "%lg", (SQLDOUBLE *) pTarget);
+			if (pnLengthOrIndicator != NULL)
+				*pnLengthOrIndicator = sizeof(SQLDOUBLE);
 			break;
 		default:
-			/* TODO: add error: unsuported conversion */
-			break;
+			/* unimplemented conversion */
+			addStmtError(stmt, "07006", NULL, 0);
+			return SQL_ERROR;
 #if 0
 #define SQL_C_CHAR    SQL_CHAR             /* CHAR, VARCHAR, DECIMAL, NUMERIC */#define SQL_C_LONG    SQL_INTEGER          /* INTEGER                      */
 #define SQL_C_SHORT   SQL_SMALLINT         /* SMALLINT                     */
@@ -190,33 +239,61 @@ SQLRETURN ODBCGetData(
 #define SQL_C_GUID      SQL_GUID
 #endif
 		}
-		}
-	}
-	else
-	{
+	} else {
 		/* it is a NULL value */
 
-		if (pnLengthOrIndicator != NULL) {
-			*pnLengthOrIndicator = SQL_NULL_DATA;
-		}
-
-		if (pTarget != NULL) {
-		switch (nTargetType)
-		{
+		switch (nTargetType) {
 		case SQL_C_CHAR:
-			*((char *)pTarget) = '\0';
+			if (pTarget != NULL)
+				* (SQLCHAR *) pTarget = 0;
 			break;
 		case SQL_C_LONG:
 		case SQL_C_SLONG:
-			memset( pTarget, 0, sizeof(int) );
+			if (pTarget != NULL)
+				* (SQLINTEGER *) pTarget = 0;
+			break;
+		case SQL_C_ULONG:
+			if (pTarget != NULL)
+				* (SQLUINTEGER *) pTarget = 0;
+			break;
+		case SQL_C_SHORT:
+		case SQL_C_SSHORT:
+			if (pTarget != NULL)
+				* (SQLSMALLINT *) pTarget = 0;
+			break;
+		case SQL_C_USHORT:
+			if (pTarget != NULL)
+				* (SQLUSMALLINT *) pTarget = 0;
+			break;
+		case SQL_C_BIT:
+		case SQL_C_TINYINT:
+		case SQL_C_STINYINT:
+			if (pTarget != NULL)
+				* (SQLSCHAR *) pTarget = 0;
+			break;
+		case SQL_C_UTINYINT:
+			if (pTarget != NULL)
+				* (SQLCHAR *) pTarget = 0;
+			break;
+		case SQL_C_SBIGINT:
+			if (pTarget != NULL)
+				* (SQLBIGINT *) pTarget = 0;
+			break;
+		case SQL_C_UBIGINT:
+			if (pTarget != NULL)
+				* (SQLUBIGINT *) pTarget = 0;
 			break;
 		case SQL_C_FLOAT:
-			memset( pTarget, 0, sizeof(float) );
+			if (pTarget != NULL)
+				* (SQLREAL *) pTarget = 0;
+			break;
+		case SQL_C_DOUBLE:
+			if (pTarget != NULL)
+				* (SQLDOUBLE *) pTarget = 0;
 			break;
 		default:
 			/* TODO: add error: unsuported conversion */
 			break;
-		}
 		}
 	}
 
