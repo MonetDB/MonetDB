@@ -94,7 +94,7 @@ SQLBindParameter(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
 
 	/* Note: there may already be bind information stored, in that
 	   case the column is rebound, so old bind info is overwritten */
-	addOdbcInArray(&(stmt->bindParams), inVar);
+	addOdbcInArray(&stmt->bindParams, inVar);
 
 	return SQL_SUCCESS;
 }

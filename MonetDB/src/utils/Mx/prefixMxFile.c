@@ -104,9 +104,9 @@ void processFile(void)
     op=openFile(outputfile,"w");
 
     if (prefixfile)
-        strcpy(disclaimerfile,prefixfile);
+        disclaimerfile = prefixfile;
     else
-        strcpy(disclaimerfile,"");
+        disclaimerfile = "";
     
     insertDisclaimer(op,outputfile);
     fwrite(END_OF_HEADER_MARKER,strlen(END_OF_HEADER_MARKER),1,op);
@@ -136,8 +136,7 @@ int main(int argc,char **argv)
         switch (option) 
             {
             case 'f':
-                prefixfile=(char *)malloc(strlen(optarg)+1);
-                strcpy(prefixfile,optarg);
+                prefixfile = optarg;
                 break;
             case 'o':
                 outputfile=(char *)malloc(strlen(optarg)+1);

@@ -322,7 +322,6 @@ ODBCGetData(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,	/* C DAT
 		default:
 			/* unsuported conversion */
 			addStmtError(stmt, "07006", NULL, 0);
-
 			break;
 		}
 	}

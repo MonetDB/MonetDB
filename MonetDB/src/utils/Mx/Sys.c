@@ -111,8 +111,8 @@ char *	StrDup(const char *str)
 /*VARGARGS*/
 void	Error(char *format,...)
 {
-    va_list ap;
-    va_start(ap,format);
+	va_list ap;
+	va_start(ap,format);
     
 	fprintf(stderr, "Mx:");
 	vfprintf(stderr, format, ap);
@@ -121,19 +121,17 @@ void	Error(char *format,...)
 	fprintf(stderr, ".\n");
 	mx_err++;
         va_end(ap);
-        
 }
 
 /*VARGARGS1*/
 void	Message(char *format,...)
 {
-    va_list ap;
-    va_start (ap,format);
+	va_list ap;
+	va_start (ap,format);
     
 	vfprintf(stderr, format, ap);
 	if( mx_file )
 		fprintf(stderr, "[%s:%d]", mx_file, mx_line);
 	fprintf(stderr, ".\n");
         va_end(ap);
-        
 }

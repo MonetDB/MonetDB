@@ -41,13 +41,11 @@ SQLEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 	case SQL_HANDLE_DBC:
 		if (!isValidDbc(dbc))
 			return SQL_INVALID_HANDLE;
-
 		clearDbcErrors(dbc);
 		break;
 	case SQL_HANDLE_ENV:
 		if (!isValidEnv(env))
 			return SQL_INVALID_HANDLE;
-
 		clearEnvErrors(env);
 
 		/* Currently commit/rollback of all connections within

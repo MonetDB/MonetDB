@@ -128,9 +128,8 @@ addOdbcInArray(OdbcInArray *this, OdbcInHostVar var)
 	/* add the InHostVar to the array */
 	assert(ParameterNumber <= this->size);
 	assert(this->array);
-	if (this->array[ParameterNumber] != NULL) {
+	if (this->array[ParameterNumber] != NULL)
 		destroyOdbcInHostVar(this->array[ParameterNumber]);
-	}
 	this->array[ParameterNumber] = var;
 }
 
