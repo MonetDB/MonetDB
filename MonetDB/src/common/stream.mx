@@ -179,6 +179,10 @@ stream_export int bs_read_next( stream *s, char *buf, int *last );
 #ifdef HAVE_LIBBZ2
 	#include <bzlib.h>
 #endif
+#ifdef NATIVE_WIN32
+#include <winsock.h>
+#include <io.h>
+#endif
 
 #include <dummy_gdk_utils.h>
 
