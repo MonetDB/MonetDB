@@ -1,7 +1,7 @@
 stdout of test 'test_95` in directory 'tests/suite_02` itself:
 
-#> Mtest (16:27:17):	milM test_95 milM
-#> Mtest (16:27:17):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_02 test_95.milM
+#> Mtest (20:00:02):	milM test_95 milM
+#> Mtest (20:00:02):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_02 test_95.milM
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
@@ -46,9 +46,9 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  120	  ]
+[ "user",	  130	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  40	  ]
+[ "system",	  20	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 join(t1,s1.reverse).count.print;
@@ -68,10 +68,10 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  170	  ]
-[ "elapuser",	  50	  ]
-[ "system",	  50	  ]
-[ "elapsystem",	  10	  ]
+[ "user",	  190	  ]
+[ "elapuser",	  60	  ]
+[ "system",	  20	  ]
+[ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 var i1,i2,i3,i4,i5;
 printf("#~BeginVariableOutput~#\n"); qstat; printf("#~EndVariableOutput~#\n");
@@ -79,44 +79,44 @@ printf("#~BeginVariableOutput~#\n"); qstat; printf("#~EndVariableOutput~#\n");
 ##------------------------------------------------------------------------#
 ## key   | put   | get  | wakeup  | enter | start | duration | action     #
 ##------------------------------------------------------------------------#
-#[     6,      0,      0,      5,       0,       0,     997, "# This sequence is conflict free"]
-#[     5,      0,      1,      8,       0,     997,       0, "readCmd;"]
-#[     8,      1,      1,      7,     997,     997,       5, "t1:= k10_unique1.copy;"]
-#[     7,      1,      1,     10,     997,    1002,       1, "readCmd;"]
-#[    10,      1,      1,      9,    1003,    1003,       4, "t2:= k10_unique1.copy;"]
-#[     9,      1,      1,     12,    1002,    1007,       0, "readCmd;"]
-#[    12,      1,      1,     11,    1007,    1007,       4, "t3:= k10_unique1.copy;"]
-#[    11,      1,      1,     14,    1007,    1011,       0, "readCmd;"]
-#[    14,      1,      1,     13,    1011,    1011,       4, "t4:= k10_unique1.copy;"]
-#[    13,      1,      1,     16,    1011,    1015,       1, "readCmd;"]
-#[    16,      1,      1,     15,    1016,    1016,       4, "t5:= k10_unique1.copy;"]
-#[    15,      1,      1,     18,    1015,    1020,       0, "readCmd;"]
-#[    18,      1,      1,     17,    1020,    1020,       3, "s1:= k10_unique2.copy;"]
-#[    17,      1,      1,     20,    1020,    1023,       0, "readCmd;"]
-#[    20,      1,      1,     19,    1023,    1023,       2, "s2:= k10_unique2.copy;"]
-#[    19,      1,      1,     22,    1023,    1025,       1, "readCmd;"]
-#[    22,      1,      1,     21,    1026,    1026,       2, "s3:= k10_unique2.copy;"]
-#[    21,      1,      1,     24,    1025,    1028,       0, "readCmd;"]
-#[    24,      1,      1,     23,    1028,    1028,       2, "s4:= k10_unique2.copy;"]
-#[    23,      1,      1,     26,    1028,    1030,       0, "readCmd;"]
-#[    26,      1,      1,     25,    1030,    1030,       2, "s5:= k10_unique2.copy;"]
-#[    25,      1,      1,     28,    1030,    1032,       0, "readCmd;"]
-#[    28,      1,      1,     27,    1032,    1033,       0, "printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVa"]
-#[    27,      1,      1,     30,    1032,    1033,       1, "readCmd;"]
-#[    30,      1,      1,     29,    1033,    1034,       8, "join(t1,s1.reverse).count.print;"]
-#[    29,      1,      1,     32,    1033,    1042,       1, "readCmd;"]
-#[    32,      1,      1,     31,    1043,    1043,      20, "join(t2,s2.reverse).count.print;"]
-#[    31,      1,      1,     34,    1042,    1063,       0, "readCmd;"]
-#[    34,      1,      1,     33,    1063,    1063,       8, "join(t3,s3.reverse).count.print;"]
-#[    33,      1,      1,     36,    1063,    1071,       1, "readCmd;"]
-#[    36,      1,      1,     35,    1072,    1072,       9, "join(t4,s4.reverse).count.print;"]
-#[    35,      1,      1,     38,    1071,    1081,       0, "readCmd;"]
-#[    38,      1,      1,     37,    1081,    1081,       9, "join(t5,s5.reverse).count.print;"]
-#[    37,      1,      1,     40,    1081,    1090,       0, "readCmd;"]
-#[    40,      1,      1,     39,    1090,    1090,       1, "printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVa"]
-#[    39,      1,      1,     42,    1090,    1091,       0, "readCmd;"]
-#[    42,      1,      1,     41,    1091,    1091,       0, "var i1,i2,i3,i4,i5;"]
-#[    41,      1,      1,     44,    1091,    1091,       0, "readCmd;"]
+#[     6,      0,      0,      5,       0,       0,     139, "# This sequence is conflict free"]
+#[     5,      0,      1,      8,       0,     139,       0, "readCmd;"]
+#[     8,      1,      1,      7,     139,     139,       5, "t1:= k10_unique1.copy;"]
+#[     7,      1,      1,     10,     139,     144,       0, "readCmd;"]
+#[    10,      1,      1,      9,     144,     144,       5, "t2:= k10_unique1.copy;"]
+#[     9,      1,      1,     12,     144,     149,       0, "readCmd;"]
+#[    12,      1,      1,     11,     149,     149,       4, "t3:= k10_unique1.copy;"]
+#[    11,      1,      1,     14,     149,     153,       0, "readCmd;"]
+#[    14,      1,      1,     13,     153,     153,       4, "t4:= k10_unique1.copy;"]
+#[    13,      1,      1,     16,     153,     157,       0, "readCmd;"]
+#[    16,      1,      1,     15,     157,     157,       5, "t5:= k10_unique1.copy;"]
+#[    15,      1,      1,     18,     157,     162,       0, "readCmd;"]
+#[    18,      1,      1,     17,     162,     162,       3, "s1:= k10_unique2.copy;"]
+#[    17,      1,      1,     20,     162,     165,       0, "readCmd;"]
+#[    20,      1,      1,     19,     165,     165,       2, "s2:= k10_unique2.copy;"]
+#[    19,      1,      1,     22,     165,     167,       1, "readCmd;"]
+#[    22,      1,      1,     21,     168,     168,       2, "s3:= k10_unique2.copy;"]
+#[    21,      1,      1,     24,     167,     170,       0, "readCmd;"]
+#[    24,      1,      1,     23,     170,     170,       2, "s4:= k10_unique2.copy;"]
+#[    23,      1,      1,     26,     170,     172,       0, "readCmd;"]
+#[    26,      1,      1,     25,     172,     172,       2, "s5:= k10_unique2.copy;"]
+#[    25,      1,      1,     28,     172,     175,       0, "readCmd;"]
+#[    28,      1,      1,     27,     175,     175,       1, "printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVa"]
+#[    27,      1,      1,     30,     175,     176,       0, "readCmd;"]
+#[    30,      1,      1,     29,     176,     176,      18, "join(t1,s1.reverse).count.print;"]
+#[    29,      1,      1,     32,     176,     194,       0, "readCmd;"]
+#[    32,      1,      1,     31,     194,     194,      10, "join(t2,s2.reverse).count.print;"]
+#[    31,      1,      1,     34,     194,     204,       0, "readCmd;"]
+#[    34,      1,      1,     33,     204,     204,       9, "join(t3,s3.reverse).count.print;"]
+#[    33,      1,      1,     36,     204,     213,       1, "readCmd;"]
+#[    36,      1,      1,     35,     214,     214,      10, "join(t4,s4.reverse).count.print;"]
+#[    35,      1,      1,     38,     213,     224,       0, "readCmd;"]
+#[    38,      1,      1,     37,     224,     224,       9, "join(t5,s5.reverse).count.print;"]
+#[    37,      1,      1,     40,     224,     233,       1, "readCmd;"]
+#[    40,      1,      1,     39,     234,     234,       0, "printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVa"]
+#[    39,      1,      1,     42,     234,     234,       1, "readCmd;"]
+#[    42,      1,      1,     41,     235,     235,       0, "var i1,i2,i3,i4,i5;"]
+#[    41,      1,      1,     44,     234,     235,       0, "readCmd;"]
 #~EndVariableOutput~#
 qtrace(0);qtrace(1);
 threadcnt(4);printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
@@ -126,9 +126,9 @@ threadcnt(4);printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariab
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  170	  ]
+[ "user",	  190	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  50	  ]
+[ "system",	  20	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 {|	
@@ -143,18 +143,18 @@ printf("#~BeginVariableOutput~#\n"); qstat; printf("#~EndVariableOutput~#\n");
 ##------------------------------------------------------------------------#
 ## key   | put   | get  | wakeup  | enter | start | duration | action     #
 ##------------------------------------------------------------------------#
-#[    46,      1,      1,     45,    1092,    1092,       0, "qtrace(0);qtrace(1);"]
-#[    45,      1,      1,     48,    1092,    1092,       0, "readCmd;"]
-#[    48,      1,      1,     47,    1092,    1092,       1, "threadcnt(4);printf("#~BeginVariableOutput~#\n"); cpu.print; pr"]
-#[    47,      1,      1,     50,    1092,    1094,       0, "readCmd;"]
-#[    52,      1,      1,     51,    1094,    1094,       8, "[0]"]
-#[    53,      1,      1,     51,    1094,    1102,       8, "[1]"]
-#[    54,      1,      1,     51,    1094,    1110,       8, "[2]"]
-#[    55,      1,      1,     51,    1094,    1118,       7, "[3]"]
-#[    56,      1,      1,     51,    1094,    1125,       8, "[4]"]
-#[    51,      1,      1,      0,    1094,    1133,       0, ""]
-#[    50,      1,      1,     49,    1094,    1094,      39, "{|	"]
-#[    49,      1,      1,     58,    1094,    1133,       0, "readCmd;"]
+#[    46,      1,      1,     45,     236,     236,       0, "qtrace(0);qtrace(1);"]
+#[    45,      1,      1,     48,     236,     236,       0, "readCmd;"]
+#[    48,      1,      1,     47,     236,     236,       1, "threadcnt(4);printf("#~BeginVariableOutput~#\n"); cpu.print; pr"]
+#[    47,      1,      1,     50,     236,     237,       1, "readCmd;"]
+#[    52,      1,      1,     51,     238,     238,       9, "[0]"]
+#[    53,      1,      1,     51,     238,     247,       8, "[1]"]
+#[    54,      1,      1,     51,     238,     255,       8, "[2]"]
+#[    55,      1,      1,     51,     238,     263,       9, "[3]"]
+#[    56,      1,      1,     51,     238,     272,       8, "[4]"]
+#[    51,      1,      1,      0,     238,     280,       0, ""]
+#[    50,      1,      1,     49,     238,     238,      42, "{|	"]
+#[    49,      1,      1,     58,     238,     280,       1, "readCmd;"]
 #~EndVariableOutput~#
 qtrace(0);
 print(i1);
@@ -181,7 +181,6 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_thread.print; printf("#~EndVariabl
 [ 2,	  "Interpreter"	  ]
 [ 3,	  "Interpreter"	  ]
 [ 4,	  "Interpreter"	  ]
-[ 5,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -190,13 +189,13 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOu
 # (str)		  (str)							  #
 #-------------------------------------------------------------------------#
 [ "dbname",	  "tests_suite_02"					  ]
-[ "server",	  "apollo-hrn0615.multiweb.net"				  ]
+[ "server",	  "apollo-hrn0146.multiweb.net"				  ]
 [ "port",	  "50072"						  ]
-[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/tests_suite_02"	  ]
+[ "directory",	  "/home/niels/data/monet/Linux/dbfarm/tests_suite_02"	  ]
 [ "owner",	  "niels"						  ]
 [ "prefix",	  "32biti686-pc-linux-gnu"				  ]
-[ "processid",	  "9779"						  ]
-[ "home",	  "/home/niels/new/monet/Linux"				  ]
+[ "processid",	  "19265"						  ]
+[ "home",	  "/home/niels/data/monet/Linux"			  ]
 [ "version",	  "4.2"							  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
@@ -206,9 +205,9 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  210	  ]
-[ "elapuser",	  40	  ]
-[ "system",	  50	  ]
+[ "user",	  240	  ]
+[ "elapuser",	  50	  ]
+[ "system",	  20	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 quit;
