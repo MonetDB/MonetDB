@@ -2908,7 +2908,7 @@ str MTIMEepoch(timestamp *ret) {
 str MTIMEepoch2lng(lng *ret, timestamp *t){
 	timestamp e;
 	lng v;
-	MTIMEepoch(&e);
+	MTIMEunix_epoch(&e);
 	timestamp_diff(&v,&e,t);
 	*ret = v/1000;
 	return MAL_SUCCEED;
@@ -2916,7 +2916,7 @@ str MTIMEepoch2lng(lng *ret, timestamp *t){
 str MTIMEtimestamp(timestamp *ret, int *sec){
 	timestamp e;
 	lng l = *sec * 1000;
-	MTIMEepoch(&e);
+	MTIMEunix_epoch(&e);
 	timestamp_add(ret,&e, &l);
 	return MAL_SUCCEED;
 }
