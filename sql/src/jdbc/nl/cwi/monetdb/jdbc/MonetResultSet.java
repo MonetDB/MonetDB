@@ -29,7 +29,7 @@ import java.net.*;
  */
 public class MonetResultSet implements ResultSet {
 	private String[] line;
-	private String[] result;
+	String[] result;	// default for the MonetVirtualResultSet
 	private int lastColumnRead = -1;
 	private boolean closed = false;
 	private int curRow = 0;
@@ -39,7 +39,7 @@ public class MonetResultSet implements ResultSet {
 	private final String[] columns;
 	private final String[] types;
 	private final String tableID;
-	private final int tupleCount;
+	final int tupleCount;	// default for the MonetVirtualResultSet
 
 	private final MonetSocket monet;
 	private final Statement statement;
@@ -52,7 +52,10 @@ public class MonetResultSet implements ResultSet {
 	 * Main constructor, sends query to Monet and reads header
 	 *
 	 * @param monet a valid Monet object to communicate to
+	 * @param statement the statement which created this ResultSet
 	 * @param query a query String to execute
+	 * @param resultSetType the type of resultset: forward only, etc.
+	 * @param resultSetConcurrency the concurrency mode
 	 * @throws IllegalArgumentException is monet or query is null or empty
 	 * @throws IOException if communicating with monet failed
 	 * @throws SQLException is a protocol error occurs
@@ -131,6 +134,43 @@ public class MonetResultSet implements ResultSet {
 		result = new String[columns.length];
 	}
 
+	/**
+	 * Constructor used by MonetFillableResultSet.
+	 * DO NOT USE THIS CONSTRUCTOR IF YOU ARE NOT EXTENDING THIS OBJECT!
+	 *
+	 * @param String[] columns the column names
+	 * @param String[] types the column types
+	 * @param int results the number of rows in the ResultSet
+	 * @throws IllegalArgumentException is monet or query is null or empty
+	 * @throws IOException if communicating with monet failed
+	 * @throws SQLException is a protocol error occurs
+	 */
+	MonetResultSet(
+		String[] columns,
+		String[] types,
+		int results
+	) throws IllegalArgumentException
+	{
+		if (columns == null || types == null) {
+			throw new IllegalArgumentException("One of the given arguments is null!");
+		}
+		if (columns.length != types.length) {
+			throw new IllegalArgumentException("Given arguments are not of same size!");
+		}
+		if (results < 0) {
+			throw new IllegalArgumentException("Negative rowcount not allowed!");
+		}
+
+		this.cache = null;
+		this.tableID = null;
+		this.monet = null;
+		this.statement = null;
+
+		this.columns = columns;
+		this.types = types;
+		this.tupleCount = results;
+	}
+
 	//== methods of interface ResultSet
 
 	/**
@@ -201,12 +241,14 @@ public class MonetResultSet implements ResultSet {
 					 * If all strings are wrapped between two quotes, a \" can
 					 * never exist outside a string. Thus if we believe that we
 					 * are not within a string, we can safely assume we're about
-					 * to enter a string if we found a quote.
+					 * to enter a string if we find a quote.
 					 * If we are in a string we should stop being in a string if
 					 * we find a quote which is not prefixed by a \, for that
 					 * would be an escaped quote. However, a nasty situation can
 					 * occur where the string is like "test \\" as obvious, a
-					 * test for a \ in front of a " doesn't hold here cases.
+					 * test for a \ in front of a " doesn't hold here for all
+					 * cases. Because "test \\\"" can exist as well, we need to
+					 * know if a quote is prefixed by an escaping slash or not.
 					 */
 					if (!inString) {
 						inString = true;
@@ -284,7 +326,7 @@ public class MonetResultSet implements ResultSet {
 	}
 
 	public void 	cancelRowUpdates() {}
-	
+
 	/**
 	 * Clears all warnings reported for this ResultSet object. After a call to
 	 * this method, the method getWarnings returns null until a new warning is
@@ -293,13 +335,11 @@ public class MonetResultSet implements ResultSet {
 	public void clearWarnings() {
 		warnings = null;
 	}
-	
+
 	/**
 	 * Releases this ResultSet object's database (and JDBC) resources
 	 * immediately instead of waiting for this to happen when it is
 	 * automatically closed.
-	 *
-	 * @throws SQLException if a database access error occurs
 	 */
 	public void close() {
 		if (!closed) {
@@ -835,7 +875,7 @@ public class MonetResultSet implements ResultSet {
 	public InputStream 	getUnicodeStream(String columnName) { return(null); }
 	public URL 	getURL(int columnIndex) { return(null); }
 	public URL 	getURL(String columnName) { return(null); }
-	
+
 	/**
 	 * Retrieves the first warning reported by calls on this ResultSet object.
 	 * If there is more than one warning, subsequent warnings will be chained to
@@ -853,12 +893,12 @@ public class MonetResultSet implements ResultSet {
 	 */
 	public SQLWarning getWarnings() throws SQLException {
 		if (closed) throw new SQLException("Cannot call on closed ResultSet");
-		
+
 		// if there are no warnings, this will be null, which fits with the
 		// specification.
 		return(warnings);
 	}
-	
+
 	public void 	insertRow() {}
 
 	/**
@@ -1043,7 +1083,7 @@ public class MonetResultSet implements ResultSet {
 	protected void finalize() {
 		close();
 	}
-	
+
 	/**
 	 * Adds a warning to the pile of warnings this ResultSet object has. If
 	 * there were no warnings (or clearWarnings was called) this warning will
