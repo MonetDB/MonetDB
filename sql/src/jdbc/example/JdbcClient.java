@@ -468,6 +468,17 @@ public class JdbcClient {
 		}
 	}
 
+	/**
+	 * Starts an interactive processing loop, where output is adjusted to an
+	 * user session.  This processing loop is not suitable for bulk processing
+	 * as in executing the contents of a file, since processing on the given
+	 * input is done after each row that has been entered.
+	 *
+	 * @param hasFile a boolean indicating whether a file is used as input
+	 * @param user a String representing the username of the current user
+	 * @throws IOException if an IO exception occurs
+	 * @throws SQLException if a database related error occurs
+	 */
 	public static void processInteractive(boolean hasFile, String user)
 		throws IOException, SQLException
 	{
@@ -659,6 +670,17 @@ public class JdbcClient {
 		}
 	}
 
+	/**
+	 * Starts a processing loop optimized for processing (large) chunks of
+	 * continous data, such as input from a file.  Unlike in the interactive
+	 * loop above, queries are sent only to the database if a certain batch
+	 * amount is reached.  No client side query checks are made, but everything
+	 * is sent to the server as-is.
+	 *
+	 * @param batchSize the number of items to store in the batch before
+	 *                  sending them to the database for execution.
+	 * @throws IOException if an IO exception occurs.
+	 */
 	public static void processBatch(int batchSize) throws IOException {
 		StringBuffer query = new StringBuffer();
 		String curLine;
@@ -695,23 +717,42 @@ public class JdbcClient {
 		}
 	}
 
+	/**
+	 * Simple helper function to repeat a given character a number of times.
+	 *
+	 * @param chr the character to repeat
+	 * @param cnt the number of times to repeat chr
+	 * @return a String holding cnt times chr
+	 */
 	private static String repeat(char chr, int cnt) {
 		StringBuffer sb = new StringBuffer(cnt);
 		for (int i = 0; i < cnt; i++) sb.append(chr);
 		return(sb.toString());
 	}
 
+	/**
+	 * A helper method to generate SQL CREATE code for a given table.
+	 * This method performs all required lookups to find all relations and column
+	 * information, as well as additional indices.
+	 *
+	 * @param out a Writer to write the output to
+	 * @param dbmd a DatabaseMetaData object to query on
+	 * @param table the table to describe in SQL CREATE format
+	 * @throws SQLException if a database related error occurs
+	 */
 	private static void createTable(
 		PrintWriter out,
 		DatabaseMetaData dbmd,
 		Table table
 	) throws SQLException {
+		// hande views directly
 		if (table.getType().equals("VIEW")) {
 			String[] types = new String[0];
 			types[0] = table.getType();
 			ResultSet tbl = dbmd.getTables(table.getCat(), table.getSchem(), table.getName(), types);
 			if (!tbl.next()) throw new SQLException("Whoops no data for " + table);
 
+			// This will probably only work for MonetDB
 			out.print("CREATE VIEW ");
 		 	out.print(table.getFqnameQ());
 			out.print(" AS ");
@@ -878,9 +919,18 @@ public class JdbcClient {
 	private final static int AS_IS = 0;
 	private final static int QUOTE = 1;
 
+	/**
+	 * Helper method to dump the contents of a table in SQL INSERT format.
+	 *
+	 * @param out a Writer to write the data to
+	 * @param stmt a Statement to perform the queries on
+	 * @param table the (fully qualified) name of the table to dump
+	 * @throws SQLException if a database related error occurs
+	 */
 	public static void dumpTable(PrintWriter out, Statement stmt, String table)
 		throws SQLException
 	{
+		// Simply select all from the given table
 		ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
 		ResultSetMetaData rsmd = rs.getMetaData();
 		String statement = "INSERT INTO " + table + " VALUES (";
@@ -938,6 +988,17 @@ public class JdbcClient {
 		}
 	}
 
+	/**
+	 * Wrapper method that decides to dump SQL or XML.  In the latter case,
+	 * this method does the XML data generation.
+	 *
+	 * @param out a Writer to write the data to
+	 * @param xml a boolean indicating whether to dump XML or not
+	 * @param table the table to dump
+	 * @param dbmd the DatabaseMetaData to use
+	 * @param stmt the Statement to use
+	 * @throws SQLException if a database related error occurs
+	 */
 	public static void doDump(
 		PrintWriter out,
 		boolean xml,
@@ -987,15 +1048,21 @@ public class JdbcClient {
 		}
 	}
 
-
+	/**
+	 * Simple helper method that generates a prompt.
+	 *
+	 * @param user the username
+	 * @param stack the current SQLStack
+	 * @return a prompt which consist of a username plus the top of the stack
+	 */
 	private static String getPrompt(String user, SQLStack stack) {
 		return(user + "-" + (stack.empty() ? '>' : stack.peek()) + " ");
 	}
 
 	/**
-	 * scans the given string and tries to discover if it is a complete query
-	 * or that there needs something to be added. If a string doesn't end with
-	 * a ; it is considered not to be complete. SQL string quotation using ' and
+	 * Scans the given string and tries to discover if it is a complete query
+	 * or that there needs something to be added.  If a string doesn't end with
+	 * a ; it is considered not to be complete.  SQL string quotation using ' and
 	 * SQL identifier quotation using " is taken into account when scanning a
 	 * string this way.
 	 * Additionally, this method removes comments from the SQL statements,
@@ -1105,6 +1172,11 @@ public class JdbcClient {
 	}
 }
 
+/**
+ * A QueryPart is (a part of) a SQL query.  In the QueryPart object information
+ * like the actual SQL query string, whether it has an open quote and the like
+ * is stored.
+ */
 class QueryPart {
 	private boolean complete;
 	private String query;
@@ -1133,6 +1205,10 @@ class QueryPart {
 	}
 }
 
+/**
+ * An SQLStack is a simple stack that keeps track of open brackets and
+ * (single and double) quotes in an SQL query.
+ */
 class SQLStack {
 	StringBuffer stack;
 
@@ -1167,7 +1243,7 @@ class SQLStack {
 }
 
 /**
- * This class prompts the user for a password and attempts to mask input with "*"
+ * This class prompts the user for a password and attempts to mask input with "*".
  */
 class PasswordField {
 
@@ -1280,6 +1356,10 @@ class MaskingThread extends Thread {
 	}
 }
 
+/**
+ * A Table represents an SQL table.  All data required to generate a fully
+ * qualified name is stored, as well as dependency data.
+ */
 class Table {
 	final String cat;
 	final String schem;
