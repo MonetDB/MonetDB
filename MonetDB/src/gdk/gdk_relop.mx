@@ -134,16 +134,20 @@ found in r, it uses binary search. It also allows joining of an
 unsorted l with a sorted r; in that case it always uses binary search.
 
 @= mergejoin
+if ((BATtvoid(l) != 0 || l->tseqbase != oid_nil) && 
+    (BAThvoid(r) != 0 || r->hseqbase != oid_nil || nil_on_miss)) 
+{ 
 	while(l_start < l_last) {
 	    ptr v2, v1 = BUNt@2(l,l_start);
 	    int neq = 1;
 
-	    /* lookup range in l; use a view on the head so that voids will
-	       point to different void_seq1 elements */ 
+	    /* lookup range in l */
 	    l_end = l_start;
-	    do {
+	    if (l_key) {
+		l_end += l_next;
+	    } else do {
 		if ((l_end += l_next) >= l_last) break;  
-		v2 = BUNt@2(lv,l_end);
+		v2 = BUNt@2(l,l_end);
 	    } while(@1_EQ(v1,v2,@4));
 
 	    /* lookup value in r (if not nil, that is) */
@@ -173,6 +177,7 @@ unsorted l with a sorted r; in that case it always uses binary search.
 	    if (neq == 0) {
 	        /* lookup range in r */
 	        r_end = r_start + r_next;
+		if (r_key == 0)
 		while (r_end < r_last) {
 		   v2 = BUNh@3(r,r_end);
 		   if (!@1_EQ(v1,v2,@4)) break;
@@ -184,17 +189,18 @@ unsorted l with a sorted r; in that case it always uses binary search.
 		        bunfastins(bn, BUNhead(l,l_start), BUNtail(r,r_cur));
 	    } else if (nil_on_miss) {
 		/* outerjoin inserts nils on a miss */
+		hasnils = 1;
 	        for(; l_start < l_end; l_start+=l_next) 
 		        bunfastins(bn, BUNhead(l,l_start), nil_on_miss);
 	    } else {
 		l_start = l_end; /* no match found in equi-join */
 	    }
 	}
+}
 @c
 /* serves both normal equi-join (nil_on_miss==NULL) and outerjoin (nil_on_miss=nil) */
 static BAT* mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate) {
 	ptr nil = ATOMnilptr(r->htype);
-	BAT *lv = VIEWcreate(l);
 	int r_scan = -1; /* no scanning in r */
         BAT *rr = BATmirror(r);
 	BUN l_last, r_last;   /* last BUN of the BAT */
@@ -202,8 +208,10 @@ static BAT* mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 	BUN l_end, r_end;     /* end of current chunk */
 	int r_next = BUNsize(r);
 	int l_next = BUNsize(l);
+	int l_key = l->tkey;
+	int r_key = r->hkey;
 	BUN r_cur, r_lim;
-	int loc, var;
+	int loc, var, hasnils = 0;
 
 	if (BATtordered(l)&1) {
 		int i, logr = 4; 
@@ -258,7 +266,6 @@ static BAT* mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 	    for(; l_start < l_last; l_start+=l_next) 
 		bunfastins(bn, BUNhead(l,l_start), nil_on_miss);
 	}
-	BBPreclaim(lv);
 
 	/* propagate properties */
 	bn->hsorted = BAThordered(l);
@@ -278,6 +285,8 @@ static BAT* mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 	        } else if (r->tkey) {
 		    BATkey(BATmirror(bn), TRUE);
 		}
+	    } else if (hasnils) {
+	        bn->tsorted = 0; /* nils destroy the ordering */
 	    }
 	}
 	return bn;
