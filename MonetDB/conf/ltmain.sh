@@ -55,7 +55,7 @@ modename="$progname"
 PROGRAM=ltmain.sh
 PACKAGE=libtool
 VERSION=1.3c
-TIMESTAMP=" (1.731 2000/07/10 09:42:21)"
+TIMESTAMP=" (1.741 2000/08/01 04:28:06)"
 
 default_mode=
 help="Try \`$progname --help' for more information."
@@ -714,39 +714,6 @@ compiler."
 
   # libtool link mode
   link | relink)
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
-    CC=$arg
     CC=$arg
     modename="$modename: link"
     case "$host" in
@@ -1926,7 +1893,7 @@ compiler."
 	      test -n "$add" && finalize_deplibs="$add $finalize_deplibs"
 	    else
 	      test -n "$add_dir" && deplibs="$add_dir $deplibs"
-	      test -n "$add" && deplibs="$add deplibs"
+	      test -n "$add" && deplibs="$add $deplibs"
 	    fi
 	  fi
 	elif test $linkmode = prog; then
@@ -2261,7 +2228,6 @@ compiler."
 
 	irix)
 	  major=`expr $current - $age + 1`
-	  versuffix="$major.$revision"
 	  verstring="sgi$major.$revision"
 
 	  # Add in all the interfaces that we are compatible with.
@@ -2271,6 +2237,10 @@ compiler."
 	    loop=`expr $loop - 1`
 	    verstring="sgi$major.$iface:$verstring"
 	  done
+
+	  # Before this point, $major must not contain `.'.
+	  major=.$major
+	  versuffix="$major.$revision"
 	  ;;
 
 	linux)
@@ -2418,8 +2388,10 @@ compiler."
 	    # these systems don't actually have a c library (as such)!
 	    ;;
 	  *)
-	    # Add libc to deplibs on all other systems.
-	    deplibs="$deplibs -lc"
+ 	    # Add libc to deplibs on all other systems if necessary.
+ 	    if test $build_libtool_need_lc = "yes"; then
+ 	      deplibs="$deplibs -lc"
+ 	    fi
 	    ;;
 	  esac
 	fi
@@ -3855,7 +3827,9 @@ relink_command=\"$relink_command\""
 
     # There may be an optional sh(1) argument at the beginning of
     # install_prog (especially on Windows NT).
-    if test "$nonopt" = "$SHELL" || test "$nonopt" = /bin/sh; then
+    if test "$nonopt" = "$SHELL" || test "$nonopt" = /bin/sh ||
+       # Allow the use of GNU shtool's install command.
+       $echo "X$nonopt" | $Xsed | grep shtool > /dev/null; then
       # Aesthetically quote it.
       arg=`$echo "X$nonopt" | $Xsed -e "$sed_quote_subst"`
       case "$arg" in
