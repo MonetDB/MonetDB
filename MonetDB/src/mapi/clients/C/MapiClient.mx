@@ -828,8 +828,7 @@ dump_table(Mapi mid, char *tname)
 				putc(')', toConsole);
 			fprintf(toConsole, ",\n\t");
 			if (k_name) {
-				fprintf(toConsole, "CONSTRAINT ",
-					k_name);
+				fprintf(toConsole, "CONSTRAINT " );
 				quoted_print(toConsole, k_name);
 				putc(' ', toConsole);
 			}
