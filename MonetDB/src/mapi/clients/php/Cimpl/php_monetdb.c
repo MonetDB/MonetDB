@@ -29,7 +29,7 @@
 #include "ext/standard/info.h"
 #include "php_monetdb.h"
 
-#define MONETDB_PHP_VERSION "0.01"
+#define MONETDB_PHP_VERSION "0.02"
 
 #include <Mapi.h>
 #include <stdlib.h>
@@ -99,8 +99,7 @@ ZEND_GET_MODULE(monetdb)
 static void _free_monetdb_link(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 {
 	Mapi monet_link = (Mapi)rsrc->ptr;
-	if (monet_link)
-		mapi_destroy(monet_link);
+	mapi_destroy(monet_link);
 }
 /* }}} */
 
@@ -109,8 +108,7 @@ static void _free_monetdb_link(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 static void _free_monetdb_handle(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 {
 	MapiHdl monet_handle = (MapiHdl)rsrc->ptr;
-	if (monet_handle)
-		mapi_close_handle(monet_handle);
+	mapi_close_handle(monet_handle);
 }
 /* }}} */
 
@@ -146,10 +144,10 @@ PHP_MINIT_FUNCTION(monetdb)
 	ZEND_INIT_MODULE_GLOBALS(monetdb, php_monetdb_init_globals, NULL);
 	REGISTER_INI_ENTRIES();
 
-    le_link = zend_register_list_destructors_ex(_free_monetdb_link, NULL,
-		"MonetDB connection", module_number);
 	le_handle = zend_register_list_destructors_ex(_free_monetdb_handle, NULL, 
 		"MonetDB result handle", module_number);
+    le_link = zend_register_list_destructors_ex(_free_monetdb_link, NULL,
+		"MonetDB connection", module_number);
 
 	REGISTER_LONG_CONSTANT("MONETDB_ASSOC", MONETDB_ASSOC, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("MONETDB_NUM", MONETDB_NUM, CONST_CS | CONST_PERSISTENT);
