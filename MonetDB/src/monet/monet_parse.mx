@@ -281,6 +281,24 @@ int ll_skipcomment(void) { char c; while ((c=input()) && (c != '\n')); return yy
 @-
 The routine @%ll_getch@ manipulates the input buffer for the current
 client indicated by @%ll_client@.
+
+BLAC MAGIC: the parse module-stack. In order to execute module initialize scripts in the correct
+order we maintain a stack of scripts (= MIL input buffers). 
+
+In case of modules that include other modules, what happens is that the init scripts of the
+included modules are put in front of each other. E.g. module(a); causes module(b) also
+to be loaded, and b should be initialized before a.
+
+But, parsing also loads (indepent) modules in sequence , e.g. module(a,c); In this case,
+we get the initialization sequence a,b,c; and *not* c,b,a, which would happen if we would
+alwas include initialization scripts upfront.
+
+This behavior is steered by setting ll_reset() (i.e. ll_insert = NULL) in the parser at 
+TOK_MODULE after having included one module fully.
+
+Ah. and don't confuse the parser module-stack with the execution module-stack (in monet_client.mx).
+That one is used to obtain the module-id of the currently *executing* (not parsing) module
+initialization script.
 @c
 #include "monet_parse.h"
 
@@ -290,39 +308,58 @@ int	   ll_maxlines=0; 	  /* maximum number of string chunks */
 str*	   ll_lines=0;		  /* string chunks */
 
 typedef struct _strstack_t {
-	str buf, cptr, cline, mod;
+	str cleanup, cptr, cline, mod;
 	struct _strstack_t *up;
 } strstack;
 
-strstack  *ll_stack = NULL;
+strstack  *ll_insert = NULL, *ll_stack = NULL;
+str ll_mod = NULL;
+
+	
+void ll_reset() {	
+	ll_insert = NULL;
+}
 
 int ll_push(str s, str mod) {
-	strstack *sp = (strstack*) GDKmalloc(sizeof(strstack));
-	sp->cptr = sp->cline = ll_client->cptr;
-	sp->mod = GDKstrdup(mod);
-	ll_client->cline = ll_client->cptr = sp->buf = s;
-	sp->up = ll_stack;
-	ll_stack = sp;
-	return 1;
+        strstack *sp = (strstack*) GDKmalloc(sizeof(strstack));
+        if (ll_insert) {
+		*sp = *ll_insert;
+		ll_insert->up = sp;
+		ll_insert->cline = ll_insert->cptr = s;
+		ll_insert->mod = GDKstrdup(mod);
+        	ll_insert = sp;
+        } else {
+        	sp->cline = ll_client->cline; 
+		sp->cptr = ll_client->cptr;
+		sp->mod = ll_mod;
+ 		ll_mod = GDKstrdup(mod);
+		ll_client->cline = ll_client->cptr = s;
+                sp->up = ll_stack;
+                ll_insert = ll_stack = sp;
+        }
+	sp->cleanup = s;
+        return 1;
 }
 
 int ll_pop(void) {
-	strstack *sp = ll_stack;
-	if (ll_stack) {
+        strstack *sp = ll_stack;
+        if (ll_stack) {
+                ll_insert = NULL;
 		ll_stack = sp->up;
-		ll_client->cptr = sp->cptr;
+		if (ll_mod) GDKfree(ll_mod);
+		ll_mod = sp->mod;
+                if (ll_client->cleanup)
+                	GDKfree(ll_client->cleanup);
+                ll_client->cptr = sp->cptr;
                 ll_client->cline = sp->cline;
-		GDKfree(sp->mod);
-		GDKfree(sp->buf);
-		GDKfree(sp);
-		return 1;
-	}
-	return 0;
+                GDKfree(sp);
+                return 1;
+        }
+        return 0;
 }
 
 str ll_parent_module(){
-	if (ll_stack)
-		return ll_stack->mod;
+	if (ll_mod) return ll_mod;
 	return moduleGetClient(ll_client);
 }
 
@@ -502,6 +539,7 @@ m_export int CMDconstant(Cntxt stk, YYSTREE lt, ValPtr res);
 m_export void ll_flushbuffer(void);
 m_export int ll_getstring(char *buf, int max_size);
 m_export int ll_push(str s, str mod);
+m_export void ll_reset();
 m_export str ll_parent_module();
 
 #endif /* _MONET_PARSE_H */
@@ -629,9 +667,10 @@ session:
                     }
 		    initstr = moduleClient( ll_client, mod, parmod );
 	            if (initstr != NULL) {
-		       ll_push(initstr,mod);
+			ll_push(initstr,mod);
 	            }
                 }
+		ll_reset();
                 lt = lt->overflow;
             }
             $$=0; yylogfree($4);                                                    }
