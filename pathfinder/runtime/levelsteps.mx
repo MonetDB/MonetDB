@@ -390,7 +390,7 @@ outer_loop:
      * the "real" BUNs section doesn't start at b->batBuns->base,
      * but only at b->batHole
      */
-    res->batDeleted = res->batHole
+    res->batDeleted = res->batInserted = res->batHole
                     = BUNptr(res, BUNindex(res, ((BUN)res_cur)));
 
     res->batDirty = TRUE;
