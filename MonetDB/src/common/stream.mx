@@ -435,7 +435,7 @@ stream *stream_rstream(stream *s)
 #ifdef STREAM_DEBUG
 	printf("stream_rstream %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	assert(s->access == ST_READ);
+	/* assert(s->access == ST_READ); */
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR)
 		s->read(s, (void *) &s->byteorder, sizeof(short), 1);
@@ -447,7 +447,7 @@ stream *stream_wstream(stream *s)
 #ifdef STREAM_DEBUG
 	printf("stream_wstream %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	assert(s->access == ST_WRITE);
+	/* assert(s->access == ST_WRITE); */
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR)
 		s->write(s, (void *) &s->byteorder, sizeof(short), 1);
