@@ -337,7 +337,10 @@ yes-*-*)
 	X_CXXFLAGS="$X_CXXFLAGS -Werror"
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
-	X_CFLAGS="$X_CFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,269,108,188,1357,102,70,1572"
+	X_CFLAGS="$X_CFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,269,108,188,1357,102,70"
+	case $icc_ver in
+	8.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572" ;;
+	esac
 	X_CXXFLAGS="$X_CXXFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,269,108,188,1357,102,70"
 	dnl  #1418: external definition with no prior declaration
 	dnl  #1419: external declaration in primary source file
