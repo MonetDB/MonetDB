@@ -23,7 +23,7 @@
 
 @+ Module loading
 The script modules require that the module_push/pop functionality is available.
-As these functions are in the kernel dynamic loadable library module we first
+As these functions are in the builtin dynamic loadable library module we first
 load the dynamic libraries before we load and run the scripts.
 
 @= install_module
