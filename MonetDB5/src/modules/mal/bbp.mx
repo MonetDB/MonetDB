@@ -90,6 +90,10 @@ pattern discard(name:str):void
 address CMDbbpdiscard
 comment "Remove the BAT from the box";
 
+command garbage(b:bat[:any,:any])
+address CMDbbpgarbage
+comment "Designate as garbage";
+
 pattern iterator(nme:str):lng 	
 address CMDbbpiterator
 comment "Locates the next element in the box";
@@ -321,7 +325,7 @@ str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	i= BBPindex(name);
 	if(i == 0)
 		return throwException(MALEXCEPTION,"bbp.bind",
-					"failed to find '%s' in box",name);
+					"failed to locate '%s' in box",name);
 	/* make sure you load the descriptors and heaps */
 	b= (BAT*) BATdescriptor(i);
 	if( b == 0 )
@@ -389,14 +393,28 @@ str CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 @-
 A BAT can be released to make room for others.
-It assures that all references to the BAT in the current
-frame are cleared 
+We decrease the reference count with one, but should not
+immediately release it, because there may be aliases.
 @c
 str CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *bid;
 	Box box;
 
-	(void) mb; /* fool compiler */
+	@:OpenBox(release)@
+	bid = (int *) getArgValue(stk,pci,1);
+	BBPdecref(*bid,TRUE);
+	releaseBAT(mb,stk,*bid);
+	return MAL_SUCCEED;
+}
+@-
+A BAT designated as garbage can be removed, provided we
+do not keep additional references in the stack frame
+@c
+str
+CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *bid;
+	Box box;
+
 	@:OpenBox(release)@
 	bid = (int *) getArgValue(stk,pci,1);
 	releaseBAT(mb,stk,*bid);
@@ -415,8 +433,9 @@ str CMDbbpdestroyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgValue(stk,pci,1);
 	immediate = (bit *) getArgValue(stk,pci,2);
 	msg= BKCdestroyImmediate(&ret,bid,immediate);
-	if( msg== MAL_SUCCEED)
+	if( msg== MAL_SUCCEED) {
 		msg= CMDbbpreleaseBAT(mb,stk,pci);
+	}
 	return msg;
 }
 str CMDbbpdestroyBAT1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -426,8 +445,9 @@ str CMDbbpdestroyBAT1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str msg;
 	bid = (int *) getArgValue(stk,pci,1);
 	msg= BKCdestroyImmediate(&ret,bid,&immediate);
-	if( msg== MAL_SUCCEED)
+	if( msg== MAL_SUCCEED){
 		msg= CMDbbpreleaseBAT(mb,stk,pci);
+	}
 	return msg;
 }
 
