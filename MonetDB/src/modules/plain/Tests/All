@@ -1,9 +1,9 @@
 alarm
 algebra_PROCs
 aggr
-aggr_uchr
+#aggr_uchr
 aggrX3
-aggrX3_uchr
+#aggrX3_uchr
 arith
 ascii_io
 ascii_io2
