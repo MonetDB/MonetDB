@@ -56,7 +56,7 @@ is shortly introduced in Section \ref{mknife}
 
 The examples are illustrated using the VOC database, shortly introduced
 next.
-\subsection{The Dutch United East India Company (VOC)}
+\subsection{The (Dutch) East Indian Company (VOC)}
 Exploring the wealth of functionality offered by MonetDB is best
 started using a toy database being distributed with all packages.
 This database provides a peephole view into the administrative
@@ -81,7 +81,7 @@ world expert on the topic F. Gaastra.
 The archives of the VOC are spread around the world, but a large
 contingent still resides in the 
 National Archive
-\footnote{ http://www.nationaalarchief.nl/collectie/zoeken/toegangen/VOC\_inventarissen/default.asp?ComponentID=5535\&SourcePageID=6947 }
+\footnote{ http://www.nationaalarchief.nl/ }
 , The Hague.
 
 The archives comprise over 25 million historical records.
@@ -120,22 +120,14 @@ create table voyage(
 \subsection{Textual interface}
 \label{mapi}
 In this section we illustrate the textual interface to MonetDB/SQL using the
-MapiClient program. This combination is the baseline for all interactions.
+MapiClient program. This combination is the baseline for all textual
+interactions with a MonetDB server.
 Failure to get it working often implies a wrong or inconsistent installation.
 
 To start a session, you should have installed both the
 MonetDB back-end and SQL front-end according to the 'HowToStart' descriptions.
 \footnote{http://monetdb.cwi.nl/GetGoing/Download/index.html}
-
 The next step is to start the MonetDB server.
-Before you start, make sure that both back-end and front-end can be found.
-The command `which Mserver` and `which MapiClient` should return the proper path
-to the binaries.  
-Furthermore, critial information is retained in a configuration file. 
-By default, it is located in the distribution directory and in most
-cases it is sufficient.
-You may overrule configuration settings by making a copy into your 
-home directory (See \ref{configfile}).
 
 The MonetDB server does not contain hardwired knowledge on its SQL frontend.
 It must be initialized and told to accept SQL sessions. In a separate window
@@ -143,19 +135,15 @@ start the server to access the VOC database:
 
 {\footnotesize
 \begin{verbatim}
-$ mkdir -p $PREFIX/var/MonetDB/dbfarm/VOC
 $ Mserver --dbname=VOC 
-# Monet Database Server V4.3.14
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.3.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
 monet>module(sql_server);
 monet>
 \end{verbatim}
 }
-
-Here \$PREFIX denotes the path where MonetDB has been installed.
-All databases are kept in \$PREFIX/var/MonetDB/dbfarm unless this location
-has been changed in the monet.conf file.
 
 The server is initialized by loading the SQL module. It will listen
 to a default port for requests.
@@ -165,14 +153,13 @@ reasons for this:
 
 \begin{itemize}
 \item
-The SQL frontend it not installed. Since the SQL frontend comes from a separate 
-source repository,
+The SQL frontend it not installed properly.
+Since the SQL frontend comes from a separate source repository,
 it should be installed separately (unless you did install the binary package on Windows).
 \item The SQL frontend is installed, but in a difference place, i.e., with a different 
 PREFIX, than MonetDB.
 In this case, you need to tell the Mserver, where to find the sql\_server module.
-You can do this by 
-adding the following switch when starting the Mserver:
+You can do this by adding the following switch when starting the Mserver:
 \begin{verbatim}
 --set monet_mod_path=$MONET_PREFIX/lib/MonetDB:\
 \$SQL_PREFIX/lib/MonetDB
@@ -182,17 +169,18 @@ been installed.
 Alternatively, you can add \$SQL\_PREFIX/lib/MonetDB to the monet\_mod\_path in your
  monet.conf file.
 \end{itemize}
+For further details see the installation notes for MonetDB.
 
 If you get an error message, e.g. 'port already in use', you might have 
-an obsolete Mserver process hanging around which should be killed first.
+an Mserver process hanging around which should be terminated first.
 
 The distribution comes with a simple textual interface with
 command-line history features, called MapiClient.
 To connect to the running MonetDB/SQL server using the
-default authorization information, type:
+default user and authorization information, type:
 
 \begin{verbatim}
-$ MapiClient  -lsql -u monetdb -P monetdb
+$ MapiClient  -lsql 
 sql>
 \end{verbatim}
 You can also identify the port listening to SQL requests using
@@ -202,11 +190,15 @@ To be assured of a proper SQL environment, you could inspect the catalog
 tables as follows, the actual output may slightly differ in your version:
 \begin{verbatim}
 sql> select name from tables;
+\#-
+\# 3 \# querytype
+\# tables \# table_name
 \# name \# name
 \# varchar \# type
-\# 12 \# tuplecount
-\# 1 \# id
-\# count 12
+\# 11 \# length
+\# 17 \# tuplecount
+\# 0 \# id
+[ "modules"     ]
 [ "schemas"     ]
 [ "tables"      ]
 [ "columns"     ]
@@ -214,11 +206,15 @@ sql> select name from tables;
 [ "idxs"        ]
 [ "keycolumns"  ]
 [ "types"       ]
+[ "tmp_tables"  ]
+[ "tmp_columns" ]
 [ "users"       ]
+[ "user_role"   ]
 [ "auths"       ]
-[ "user\_role"   ]
-[ "table\_privileges"    ]
-[ "column\_privileges"   ]
+[ "privileges"  ]
+[ "history"     ]
+[ "sessions"    ]
+[ "env" ]
 \end{verbatim}
 
 If you do not see the sql$>$ prompt, or worse get an error
@@ -283,7 +279,7 @@ sql> where tonnage between 0 and 1000;
 }
 
 \subsection{Simple web-form}
-label{form}
+\label{form}
 \subsection{A DBMS gui}
 \label{ide}
 \subsection{Mknife}
@@ -304,12 +300,14 @@ data. The screenshot below illustrates what you may expect.
 For more details, we refer to the Mknife manual, hosted on
 the
 MonetDB website \footnote{http://monetdb.cwi.nl/GetGoing/Usage/Mknife/index.html}.
-%%
-%% TODO (commented out to make it compile)
-%%
-%\begin{fig}
-%include picture
-%\end{fig}
+
+\begin{figure*}
+\begin{center}
+%include a picture
+%\includegraphics[height=6cm,width=8cm]{mknife.jpg}
+\caption{Mknife in action }
+\end{center}
+\end{figure*}
 
 
 \section{Functional overview}
@@ -324,15 +322,18 @@ statement {\sc set} {\em variable = expression}.
 The setting can be inspected with the {\sc sql} statement
 {\sc select} * {\sc from} env, which currently includes
 the following parameters.
+\begin{figure*}
 \begin{tabular}{ll l}
 auto\_commit & boolean & toggle auto commit transaction mode\\
 reply\_size & integer & limit tuples returned by a query.\\
-	& (-1 implies everything )\\
+	&& (-1 implies everything )\\
 explain & 'plan' & show MIL query plan\\
 	& 'history' & keep a statement log \\
-debug & integer value & toggle debugging flags inside the system. 
-See for an overview the MonetDB configuration file\\
+debug & integer & toggle debugging flags inside the system.\\
+ && See for an overview the MonetDB configuration file\\
 \end{tabular}
+\caption{SQL session variables}
+\end{figure*}
 
 %Packages included
 \subsection*{Packages}
@@ -583,6 +584,7 @@ CONNECT statement to establish connections. \\
 \end{tabular}
 
 The short term priority list for development encompasses
+
 \begin{tabular}{l}
 SQL modules and external functions \\
 GIS module re-vitalization\\

@@ -56,9 +56,10 @@ By default all remaining variables are stored as strings and
 any type analysis is up to the user. The can be freely used by the
 SQL programmer for inclusion in his queries. [TODO]
 
-The limited number of builtin variables defined above are strongly typed the hard way.
-Moreover, they have a counterpart representation in the MVC structure to ease
-inspection during query processing.
+The limited number of builtin variables defined above are 
+strongly typed the hard way.
+Moreover, they have a counterpart representation in the 
+MVC structure to ease inspection during query processing.
 
 The variables and their type definition are assembled in a system table
 called 'sessions'.
