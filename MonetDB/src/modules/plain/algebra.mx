@@ -1097,7 +1097,7 @@ int CMDlike(BAT **ret, BAT* b, str s) {
 @- BAT slice
 @c
 int CMDslice(BAT **retval, BAT *b, int *start, int *end){
-	return (*retval = BATslice(b, start, end))?GDK_SUCCEED:GDK_FAIL;
+	return (*retval = BATslice(b, *start, *end))?GDK_SUCCEED:GDK_FAIL;
 }
 
 @- BUN Get/Fetch

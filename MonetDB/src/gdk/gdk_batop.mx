@@ -519,15 +519,16 @@ case for BATselect (range selection on sorted column), BATrangesplit
 (fragmentation on sorted column) and BATsemijoin (when two dense columns
 are semijoined).
 @c
-BAT *BATslice(BAT *b, int *l, int *h) {
-        int xx, i = *l, j = *h;
+BAT *BATslice(BAT *b, int l, int h) {
+	int low = l;
+        int xx;
 	BAT *bn;
 
-        if (i < 0) i = 0; 
-	if (j >= BATcount(b)) j = BATcount(b)-1;
-	if (j < i) j = i-1;
-        i += BUNindex(b, BUNfirst(b));
-        j += BUNindex(b, BUNfirst(b));
+        if (l < 0) l = 0; 
+	if (h >= l && h >= BATcount(b)) h = BATcount(b)-1;
+	if (h < l) h = l-1;
+        l += BUNindex(b, BUNfirst(b));
+        h += BUNindex(b, BUNfirst(b));
 
 @- optimization
 If a BAT is memory mapped it, a slice can be taken without copying.
@@ -540,9 +541,9 @@ independent view on the virtual memory.
 	 * besides, for most query evaulation pruposes, the horizontal view creation
          * below is suffiecient. Peter/dec99
 	 */
-	if (i <= j && (BATrestricted(b) != BAT_WRITE && b->batBuns->storage == STORE_MMAP)) {
-		BUN start = BUNptr(b,i-1);
-		BUN end = BUNptr(b,j+1);
+	if (i <= h && (BATrestricted(b) != BAT_WRITE && b->batBuns->storage == STORE_MMAP)) {
+		BUN start = BUNptr(b,l-1);
+		BUN end = BUNptr(b,h+1);
 		int add;
 	        bn = BATcreatedesc(b->htype, b->ttype);
 		bn->dims = b->dims;
@@ -562,19 +563,19 @@ that just reuses the memory of the source.
 @c
 	if (BATrestricted(b) == BAT_READ) {
 		bn = VIEWcreate(b); 
-		bn->batBuns->base = BUNptr(b, i-1);  
-                bn->batInserted = BUNptr(b, i);  
+		bn->batBuns->base = BUNptr(b, l-1);  
+                bn->batInserted = BUNptr(b, l);  
                 bn->batHole = bn->batDeleted = bn->batBuns->base; 
 		bn->batBuns->maxsize = bn->batBuns->size = 
-		    bn->batBuns->free = BUNptr(b,j+1) - bn->batBuns->base; 
+		    bn->batBuns->free = BUNptr(b,h+1) - bn->batBuns->base; 
 @-
 We have to do it: create a new BAT and put everything into it.
 @c
 	} else {
-		BUN p = BUNptr(b,i);
-		BUN q = BUNptr(b,j);
+		BUN p = BUNptr(b,l);
+		BUN q = BUNptr(b,h);
 
-        	bn = BATnew(b->htype, b->htype?b->ttype:ATOMtype(b->ttype), j-i);
+        	bn = BATnew(b->htype, b->htype?b->ttype:ATOMtype(b->ttype), h-l);
 		if (bn == NULL) {
 			return bn;
 		}
@@ -585,10 +586,10 @@ We have to do it: create a new BAT and put everything into it.
         bn->hsorted = BAThordered(b);
         bn->tsorted = BATtordered(b);
 	if (BAThdense(b)) {
-		BATseqbase(bn, b->hseqbase+*l); 
+		BATseqbase(bn, b->hseqbase+low); 
 	}
 	if (BATtdense(b)) {
-		BATseqbase(BATmirror(bn), b->tseqbase+*l);
+		BATseqbase(BATmirror(bn), b->tseqbase+low);
 	}
         return bn;
 }
@@ -787,9 +788,9 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 		    high = BUNindex(b,q) - (offset+1);
 		}
 	    }
-	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): BATslice(v=%s, low=%d, high%d);\n",
+	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): BATslice(v=%s, low=%d, high=%d);\n",
 	                                b->batId, v->batId, low, high);
-	    bn = BATslice(v, &low, &high);
+	    bn = BATslice(v, low, high);
 	    if (!tail) {
 		BBPreclaim(v);
 	    }
@@ -805,7 +806,7 @@ BAT_hashselect code already ensures a good allocation estimate.
 	    BAT *tmp1;
 	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=%d, _hi=%d);\n",
 	                                b->batId, b->batId, _lo, _hi);
-            tmp1 = BATslice(b, &_lo, &_hi); /* slice keeps all parent properties */
+            tmp1 = BATslice(b, _lo, _hi); /* slice keeps all parent properties */
             if (tmp1) {
 		BAT *tmp2;
 	        ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): sampling: tmp2 = BAT_select(tmp1=%s, tl, th, tail);\n",
@@ -1384,7 +1385,7 @@ of binary search.
 			r = SORTfndlast(m, seps[yy]);
 			h = BUNindex(b,r) - (o+1);
 		}
-		bf = BATslice(bn, &l, &h); /* produces view bat */
+		bf = BATslice(bn, l, h); /* produces view bat */
 		BUNins(metabat, seps[yy], &bf->batCacheid); 
 	    }
 

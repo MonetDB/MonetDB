@@ -13,7 +13,7 @@
         str initscript=NULL;
 	TBL_loadmod( c, "@1", 0, &initscript );
         if (initscript) {
-		Cntxt stk = NULL;
+		Cntxt stk = 0;
 		ValRecord res;
                 interpret_str(stk, initscript, &res);
 		GDKfree(initscript);

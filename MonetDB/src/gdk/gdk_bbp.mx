@@ -1283,7 +1283,7 @@ void BBPtrim_select(lng *memtarget, lng *vmtarget, int dirty) {
 		next = bbptrim[cur].next; /* do now, because we overwrite bbptrim[cur].next below */ 
 		
 		MEMDEBUG if (b) {
-			THRprintf(GDKerr, "TRIMSELECT: candidate=%s BAT*=%d\n", BBPname(bbptrim[cur].bid), (int) b);   
+			THRprintf(GDKerr, "TRIMSELECT: candidate=%s BAT*=%p\n", BBPname(bbptrim[cur].bid), b);   
 			THRprintf(GDKerr, "            (mode=%d, refs=%d, status=%d, parent=%d, lastused=%d,%d)\n",
 					BBP_plevel(b->batCacheid), BBPrefs(b->batCacheid), BBPstatus(b->batCacheid), 
 					VIEWparent(b), b->batLastused, bbptrim[cur].lastused);

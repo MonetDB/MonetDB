@@ -2893,7 +2893,7 @@ gdk_export BAT*	BATmergejoin (BAT *l, BAT *r);
 gdk_export BAT*	BATjoin      (BAT *l, BAT *r); 
 gdk_export BAT*	BATouterjoin (BAT *l, BAT *r); 
 
-gdk_export BAT* 	BATslice     (BAT* b, int* low, int* high);
+gdk_export BAT* 	BATslice     (BAT* b, int low, int high);
 gdk_export BAT* 	BATfetch     (BAT* b, BAT *s);
 gdk_export BAT* 	BATfetchjoin (BAT* b, BAT *s);
 
