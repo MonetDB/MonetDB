@@ -18,7 +18,7 @@ Over..
 # 22:20:45 >  Mtimeout -timeout 60 ./sample0.MAPI sample0 
 # 22:20:45 >  
 
-Start mil test on draco.ins
+# Start mil test on draco.ins
 mapi_query:20:emp:= new(str,int);
 
 promptMonet:

@@ -14,7 +14,7 @@ int main(int argc, char **argv){
 		exit(-1);
 	}
 
-	printf("Start %s test on %s\n",(sqltest?"sql":"mil"),argv[1]);
+	printf("# Start %s test on %s\n",(sqltest?"sql":"mil"),argv[1]);
 	dbh= mapi_connect(argv[1],atoi(argv[2]),"guest",0,argv[3]);
 	if(mapi_error(dbh)) die(dbh);
 
