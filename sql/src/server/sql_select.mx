@@ -1757,7 +1757,8 @@ sql_or(mvc * sql, scope *scp, stmt * ls, stmt * rs, int f)
 		return NULL;
 
 	if (f >= sql_search) 
-		return stmt_union(ls, rs);
+		return stmt_union(stmt_const(ls,stmt_atom_int(0)), 
+				  stmt_const(rs,stmt_atom_int(0)));
 
 	/* optimization 
 		(x = 'a' or x = 'b') ==> union(select(x,'a'),select(x,'b'))
@@ -1766,7 +1767,8 @@ sql_or(mvc * sql, scope *scp, stmt * ls, stmt * rs, int f)
 	if (ls->type != st_set && ls->type != st_sets &&
 	    rs->type != st_set && rs->type != st_sets) {
 		if (ls->h == rs->h && ls->nrcols == 1 && rs->nrcols == 1)  
-			return stmt_union(ls,rs);
+			return stmt_union(stmt_const(ls,stmt_atom_int(0)),
+					  stmt_const(rs,stmt_atom_int(0)));
 	}
 
 	if (ls->type != st_set && ls->type != st_sets) {
