@@ -382,6 +382,14 @@ char *NextLine(void)
 		mx_line++;
 		return NextLine();
 	}
+	if (s) {
+		/* filter out \r if the source file got them and your libc does not ignore them */
+		int len = strlen(s);
+		if (len > 1 && s[len-1] == '\n' && s[len-2] == '\r') {
+			s[len-2] = '\n';
+			s[len-1] = 0;
+		}
+	}
 	return s;
     }
 }
