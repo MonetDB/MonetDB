@@ -31,7 +31,7 @@ import java.util.regex.*;
  * independent from what the client requests (pre-fetching strategy).
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.6 (beta release)
+ * @version 0.6
  */
 public class MonetConnection extends Thread implements Connection {
 	/** The hostname to connect to */

@@ -1,8 +1,8 @@
 RELEASE NOTES
-MonetDB JDBC driver version 0.7 beta
+MonetDB JDBC driver version 0.8 (1.0 Release Candidate 1)
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2004-08-10
+Release date: 2004-08-14
 
 This JDBC driver is designed for use with MonetDB, a main-memory database.  For
 more information see http://monetdb.cwi.nl/.
@@ -38,7 +38,6 @@ Currently implemented:
           but completely serializable transactions.
   * java.sql.Statement interface
     The next features are not implemented:
-    - addBatch/clearBatch/executeBatch (batching not yet implemented)
     - cancel/getQueryTimeout/setQueryTimeout (query execution cannot be
       terminated, once started)
     - execute with more than just an SQL query
@@ -50,7 +49,6 @@ Currently implemented:
     - setEscapeProcessing
   * java.sql.PreparedStatement interface
     The next features are not implemented:
-    - addBatch/clearBatch/executeBatch (batching not yet implemented)
     - getMetaData
     - getParameterMetaData
     - setArray

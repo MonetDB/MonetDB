@@ -24,7 +24,7 @@ import java.util.*;
  * Multi-result queries are supported using the getMoreResults() method.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.4 (beta release)
+ * @version 0.5
  */
 public class MonetStatement implements Statement {
 	/** the default number of rows that are (attempted to) read at once */
@@ -130,8 +130,9 @@ public class MonetStatement implements Statement {
 	 * batch by calling the method executeBatch.
 	 *
 	 * @param sql typically this is a static SQL INSERT or UPDATE statement
+	 * @throws SQLException so the PreparedStatement can throw this exception
 	 */
-	public void addBatch(String sql) {
+	public void addBatch(String sql) throws SQLException {
 		// we assume a batch is big; average chars per q = 60; average q = 1000
 		if (batch == null) batch = new StringBuffer(60000);
 

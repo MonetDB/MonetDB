@@ -8,7 +8,7 @@ import java.util.*;
  * <br /><br />
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.3 (beta release)
+ * @version 0.4
  */
 public class MonetDatabaseMetaData implements DatabaseMetaData {
 	private Connection con;

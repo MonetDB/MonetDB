@@ -20,7 +20,7 @@ import java.net.*;
  * "&gt;&gt;".
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 1.2 (part of MonetDB JDBC beta release)
+ * @version 1.3
  */
 class MonetSocket {
 	/** Reader from the Socket */

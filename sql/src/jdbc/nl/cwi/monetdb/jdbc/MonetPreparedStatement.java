@@ -20,7 +20,7 @@ import java.math.*;	// BigDecimal, etc.
  * underlying Statement.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.1 (beta release)
+ * @version 0.2
  */
 public class MonetPreparedStatement
 	extends MonetStatement
@@ -155,8 +155,16 @@ public class MonetPreparedStatement
 	/**
 	 * Adds a set of parameters to this PreparedStatement object's batch
 	 * of commands.
+	 *
+	 * @throws SQLException if a database access error occurs
 	 */
-	public void addBatch() {
+	public void addBatch() throws SQLException {
+		super.addBatch(transform());
+	}
+
+	/** override the execute from the Statement to throw an SQLException */
+	public void addBatch(String q) throws SQLException {
+		throw new SQLException("This method is not available in a PreparedStatement!");
 	}
 
 	/**
@@ -193,7 +201,6 @@ public class MonetPreparedStatement
 	 *                      is supplied to this method
 	 */
 	public boolean execute() throws SQLException {
-		// not that this works, but this should be the deal somehow
 		return(super.execute(transform()));
 	}
 

@@ -27,7 +27,7 @@ import java.text.SimpleDateFormat;
  * result sets.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.4 (beta release)
+ * @version 0.5
  */
 public class MonetResultSet implements ResultSet {
 	/** The last column read using some getXXX function */
