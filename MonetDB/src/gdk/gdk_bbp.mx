@@ -1932,8 +1932,10 @@ int BBPsync(int commit) {
 	int t0, t1 = GDKms();
 	t0 = t1;
 
-	BBPlock("BBPsync");
-        PERFDEBUG THRprintf(GDKerr, "BBPsync (lock time %d)\n", (t0=GDKms()) - t1);
+	if (!commit) {
+		BBPlock("BBPsync");
+		PERFDEBUG THRprintf(GDKerr, "BBPsync (lock time %d)\n", (t0=GDKms()) - t1);
+	}
         /* PHASE 1: safeguard everything in BACKUP dir */
 	if (commit) {
         	bbpdirty = BBP_dirty; 
