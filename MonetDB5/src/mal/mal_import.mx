@@ -93,15 +93,16 @@ malLoadScript(Client c, str name)
     stream *fd;
 
     if (c->fdin) {
-    	return throwException(MALEXCEPTION,"malInclude",
+		return throwException(MALEXCEPTION,
+			"malInclude",
             "Recursively loading scripts is currently not supported: %s\n", 
 			name);
     }
-    fd= malOpenSource(name);
-    if( stream_errnr(fd) == OPEN_ERROR){
-        stream_destroy(fd);
-                return throwException(MALEXCEPTION,"malInclude",
-            "could not open file: %s\n", name);
+    fd = malOpenSource(name);
+    if (stream_errnr(fd) == OPEN_ERROR){
+		stream_destroy(fd);
+		return throwException(MALEXCEPTION,
+			"malInclude", "could not open file: %s\n", name);
     }
     c->fdin = bstream_create( fd, 128*BLOCK );
     return NULL;
@@ -137,19 +138,16 @@ malInclude(Client c, str name, str libname, int listing)
 
     if ((s = malLoadScript(c,name))) {
         stream_printf(c->fdout,"%s\n",s);
-        return;
-    }
 @-
 Load any associated module first, because this sets the context for
 resolving addresses. 
 @c
-    if (libname && (s = (str) loadModuleLibrary(libname))) {
+	} else if (libname && (s = (str) loadModuleLibrary(libname))) {
 		stream_printf(c->fdout,"%s\n",s);
-		return;
+    } else {
+		initClientPrg(c, "main"); /* create new context */
+    	runScenario(c);
     }
-
-	initClientPrg(c, "main"); /* create new context */
-    runScenario(c);
 
     if (c->fdin){
             (void) stream_close(c->fdin->s);
