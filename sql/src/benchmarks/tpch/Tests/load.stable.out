@@ -15,35 +15,91 @@ quit();
 
 Over..
 
-# 16:40:35 >  
-# 16:40:35 >  Mtimeout -timeout 1140 python load.SQL.py load 
-# 16:40:35 >  
+# 17:04:00 >  
+# 17:04:00 >  Mtimeout -timeout 1140 python load.SQL.py load 
+# 17:04:00 >  
 
 
-# 16:40:35 >  
-# 16:40:35 >  Mtimeout -timeout 540 Msql -u monetdb -P monetdb --host=db1 --port=58043 --trace
-# 16:40:35 >  
+# 17:04:00 >  
+# 17:04:00 >  Mtimeout -timeout 540 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=51291
+# 17:04:00 >  
 
-SQL  connected to database mTests_src_benchmarks_tpch using schema sys
-#     1: 1 COPY 1500 RECORDS INTO customer from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/customer.tbl' USING DELIMITERS '|', '|\n';
-SQL  1500 Rows affected
-#     2: 1 COPY 25 RECORDS INTO nation from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/nation.tbl' USING DELIMITERS '|', '|\n';
-SQL  25 Rows affected
-#     3: 1 COPY 15000 RECORDS INTO orders from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/orders.tbl' USING DELIMITERS '|', '|\n';
-SQL  15000 Rows affected
-#     4: 1 COPY 8000 RECORDS INTO partsupp from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/partsupp.tbl' USING DELIMITERS '|', '|\n';
-SQL  8000 Rows affected
-#     5: 1 COPY 2000 RECORDS INTO part from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/part.tbl' USING DELIMITERS '|', '|\n';
-SQL  2000 Rows affected
-#     6: 1 COPY 5 RECORDS INTO region from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/region.tbl' USING DELIMITERS '|', '|\n';
-SQL  5 Rows affected
-#     7: 1 COPY 100 RECORDS INTO supplier from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/supplier.tbl' USING DELIMITERS '|', '|\n';
-SQL  100 Rows affected
-#     8: 1 COPY 70000 RECORDS INTO lineitem from '/export/data1/manegold/Monet/sql/src/benchmarks/tpch/SF-0.01/lineitem.tbl' USING DELIMITERS '|', '|\n';
-SQL  60175 Rows affected
-#     9: 1 COMMIT;
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 0 # id
+[ 5	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
+[ 25	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 2 # id
+[ 100	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 3 # id
+[ 1500	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 4 # id
+[ 2000	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 5 # id
+[ 8000	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 6 # id
+[ 15000	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 7 # id
+[ 60175	]
+#-
+# 7 # querytype
 
-# 19:03:00 >  
-# 19:03:00 >  Done.
-# 19:03:00 >  
+# 17:04:05 >  
+# 17:04:05 >  Done.
+# 17:04:05 >  
 
