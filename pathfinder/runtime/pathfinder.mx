@@ -95,6 +95,7 @@ DESCRIPTION
 axis step evaluation on the @2 axis from the given context."
 
 @m
+
 .COMMAND ebv(BAT[oid, bit] b) : BAT[oid, bit] = CMDebv;
 "PARAMETERS
 BAT[oid, bit], sorted on head values.
@@ -155,10 +156,10 @@ PROC get_kind (bat[void,oid] frag, int type_) : bat[void,int]
         return frag.[int]().[<<](6).[or](type_);
 }
 
-#PROC get_types (bat[void,int] kind) : bat[void,int]
-#{
-#        return kind.[and](63); # 63 = 2^6 - 1
-#}
+PROC get_types (bat[void,int] kind) : bat[void,int]
+{
+        return kind.[and](63); # 63 = 2^6 - 1
+}
 
 #PROC get_kind (bat[void,oid] frag, bat[void,int] type_) : bat[void,int]
 #{
@@ -820,69 +821,85 @@ ADDHELP("delete_all_docs", "tsheyar", "July 2004",
 deletes all persistent document BATs that store xml documents.",
 "pathfinder");
 
-@(
-# the print routine is not usable and therefore not needed any more
 
 #############################################
 # XML print functions / XML Serialization
 #
-# - xml_print()
-# - xml_print(str docname)
-# - xml_print(BAT[oid,any] context set)
+# - xml_print(BAT[void,bat] ws, str docname)
+# - xml_print(BAT[void,bat] ws, BAT[void,oid] item, BAT[void,int] kind,
+#             BAT[void,int] int_values, BAT[void,dbl] dbl_values,
+#     	      BAT[void,dbl] dec_values, BAT[void,str] str_values )
 #
 # The xml_print function serializes the information stored in the
 # collection of BATs. Thus, it restores fragments of the textual
 # representation of the XML-document.
-# xml_print() can be either called without argument, which causes
-# printing of the whole working set, or related to a specific document
-# or context set. In the latter case, for each node within the context
+# xml_print() can be either called with a working set and a document
+# name of a loaded document or prints the result or related to a specific
+# context set. In the latter case, for each node within the context
 # set, the node itself and its descendant fragment is printed (even if
 # this means to repeatedly print the same information, when context 
 # nodes relate to each other on the descendant axis).
 #
 
-PROC attr_print(oid pre) : void
+PROC attr_print(oid pre, oid frag, BAT[void,bat] ws) : void
 {
-    var attr_list := Tattr_own.uselect(pre);
+    var attr_list := ws.fetch(ATTR_OWN).fetch(frag).uselect(pre);
     var name;
     attr_list@batloop
     {
+	var attr_frag := ws.fetch(ATTR_FRAG).fetch(frag).fetch($h);
+	var attr_prop := ws.fetch(ATTR_PROP).fetch(frag).fetch($h);
+	var attr_qn := ws.fetch(ATTR_QN).fetch(frag).fetch($h);
+	var attr_ns := ws.fetch(QN_NS).fetch(attr_frag).fetch(attr_qn);
+	var attr_loc := ws.fetch(QN_LOC).fetch(attr_frag).fetch(attr_qn);
+	var attr_val := ws.fetch(PROP_VAL).fetch(attr_frag).fetch(attr_prop);
 	# recompose name
-	name := Tattr_ns.fetch($h);
+	name := attr_ns;
 	if (name != "") { name :+= ":"; }
-	name :+= Tattr_loc.fetch($h);
+	name :+= attr_loc;
 	# TODO: distinguish quot and apos enclosed attributes
-        printf(" %s=\"%s\"", name, Tattr_val.fetch($h));
+        printf(" %s=\"%s\"", name, attr_val);
     }
 }
 
-PROC node_print(oid pre, BAT[oid,str] S) : void
+PROC node_print(oid pre, oid frag, BAT[void,bat] ws, BAT[oid,str] S) : void
 {
-    var kind := Tpre_kind.fetch(pre);
-    var prop := Tpre_prop.fetch(pre);
+    var kind := ws.fetch(PRE_KIND).fetch(frag).fetch(pre);
+    var elem_frag := ws.fetch(PRE_FRAG).fetch(frag).fetch(pre);
+    var elem_prop := ws.fetch(PRE_PROP).fetch(frag).fetch(pre);
+    
 	
     if (kind = ELEMENT)
     {    
 	# recompose tag name
-	var tag := Tprop_ns.fetch(prop);
+	var tag := ws.fetch(QN_NS).fetch(elem_frag).fetch(elem_prop);
 	if (tag != "") { tag :+= ":"; }
-	tag :+= Tprop_loc.fetch(prop);
+	tag :+=  ws.fetch(QN_LOC).fetch(elem_frag).fetch(elem_prop);
 	
-        printf("<%s",tag);
-	attr_print(pre);
-	printf(">");
+	var size := ws.fetch(PRE_SIZE).fetch(frag).fetch(pre);
 
-	# push node on S
-	S.insert(oid(int(pre) + Tpre_size.fetch(pre)), tag);
+	if (size = 0) {
+		printf("<%s",tag);
+		attr_print(pre, frag, ws);
+		printf("/>");
+	}
+        else {
+        	printf("<%s",tag);
+		attr_print(pre, frag, ws);
+		printf(">");
+		# push node on S
+		S.insert(oid(int(pre) + ws.fetch(PRE_SIZE).fetch(frag).fetch(pre)), tag);
+	}
     }
     else { if (kind = TEXT)
-        { printf("%s",Tprop_text.fetch(prop)); }
+        { printf("%s", ws.fetch(PROP_TEXT).fetch(elem_frag).fetch(elem_prop)); }
     else { if (kind = COMMENT)
-        { printf("<!--%s-->",Tprop_com.fetch(prop)); }
+        { printf("<!--%s-->", ws.fetch(PROP_COM).fetch(elem_frag).fetch(elem_prop)); }
     else { if (kind = PI)
-        { printf("<?%s %s?>",Tprop_tgt.fetch(prop), Tprop_ins.fetch(prop)); }
+        { printf("<?%s %s?>", ws.fetch(PROP_INS).fetch(elem_frag).fetch(elem_prop),
+			      ws.fetch(PROP_TGT).fetch(elem_frag).fetch(elem_prop)); }
     else { if (kind = DOCUMENT)
-	{ S.insert(oid(int(pre) + Tpre_size.fetch(pre)), ""); }
+	{ S.insert(oid(int(pre) + ws.fetch(PRE_SIZE).fetch(frag).fetch(pre)), ""); }
 	 }}}}
 }
 
@@ -907,71 +924,146 @@ PROC endtag_print(oid pre, BAT[oid,str] S) : void
     S.delete(popped);
 }
 
-PROC xml_print(BAT[oid,any] CS) : void
+PROC xml_print(BAT[void,bat] ws, 
+	       BAT[void,oid] item,
+	       BAT[void,int] kind,
+	       BAT[void,int] int_values,
+	       BAT[void,dbl] dbl_values,
+	       BAT[void,dbl] dec_values,
+	       BAT[void,str] str_values) : void
 {
-    if (CS.count() = 0) { return; }
+    if (item.count() = 0) { return; }
     
     # line feed
     printf("\n");
+
+    var frags := kind.get_fragment();
+    var types := kind.get_types();
 
     # node stack (storing pre+size and the name of a node)
     var S := new(oid,str);
     
     # cursor moving over the pre values
     var pre;
-    var lastpre := Tpre_size.reverse().fetch(Tpre_size.count() - 1);
+    var lastpre;
+    var format_last := item.reverse().max();
    
     # for all nodes in the context set do ...
-    CS@batloop{
-        
-	pre := $h;
-        
-	# missing "do...while"-loops in mil ... 
-	node_print(pre, S);
-	pre := oid(int(pre) + 1);
-        endtag_print(pre, S);
-	
-        while ((S.count() > 0) and (pre <= lastpre))
+    item@batloop{
+        var type_ := types.fetch($h);
+	var frag := frags.fetch($h);
+	if (type_ = INT) {
+		printf("%i\n", int_values.fetch($t));
+	}
+	else if (type_ = DBL) {
+		printf("%d\n", dbl_values.fetch($t));
+	}
+	else if (type_ = DEC) {
+		printf("%d\n", dec_values.fetch($t));
+	}
+	else if (type_ = STR) {
+		printf("\"%s\"\n", str_values.fetch($t));
+	}
+	else if (type_ = ATTR)
 	{
-	    node_print(pre, S);
-	    pre := oid(int(pre) + 1);
-            endtag_print(pre, S);
-        }
+		var attr_frag := ws.fetch(ATTR_FRAG).fetch(frag).fetch($t);
+		var attr_prop := ws.fetch(ATTR_PROP).fetch(frag).fetch($t);
+		var attr_qn := ws.fetch(ATTR_QN).fetch(frag).fetch($h);
+		var attr_ns := ws.fetch(QN_NS).fetch(attr_frag).fetch(attr_qn);
+		var attr_loc := ws.fetch(QN_LOC).fetch(attr_frag).fetch(attr_qn);
+		var attr_val := ws.fetch(PROP_VAL).fetch(attr_frag).fetch(attr_prop);
+		if (attr_ns = "")
+			printf("%s='%s'\n", attr_loc, attr_val);
+		else 
+			printf("%s:%s=\"%s\"\n", attr_ns, attr_loc, attr_val);
+	}
+	else if (type_ = ELEM)
+	{
+		pre := $t;
+        	lastpre := oid(int(pre) + ws.fetch(PRE_SIZE).fetch(frag).fetch(pre));
+
+		# cheat a little bit to get the same output like Galax
+    		if (ws.fetch(PRE_KIND).fetch(frag).fetch(pre) = TEXT) {
+    			var elem_frag := ws.fetch(PRE_FRAG).fetch(frag).fetch(pre);
+			var elem_prop := ws.fetch(PRE_PROP).fetch(frag).fetch(pre);
+			printf("text \{\"");
+			printf("%s", ws.fetch(PROP_TEXT).fetch(elem_frag).fetch(elem_prop));
+			printf("\"\}");
+		}
+		else {
+			# missing "do...while"-loops in mil ... 
+			node_print(pre, frag, ws, S);
+			pre := oid(int(pre) + 1);
+	        	endtag_print(pre, S);
+	
+	        	while ((S.count() > 0) and (pre <= lastpre))
+			{
+			    node_print(pre, frag, ws, S);
+			    pre := oid(int(pre) + 1);
+        		    endtag_print(pre, S);
+		        }
+		}
+	}
+	else 
+		printf("ERROR: not supported type '%i'.\n", type_);
+
+	if ($h != format_last) printf(",");
 	# line feed
-	printf("\n\n");
+	printf("\n");
     }
 }
-ADDHELP("xml_print", "rode", "Dec 2003",
+ADDHELP("xml_print", "tsheyar", "Sep 2004",
 "PARAMETERS:\n\
-BAT[oid,any] context set\n\
+BAT[void,bat] working_set,\n\
+BAT[void,oid] item,\n\
+BAT[void,int] kind,\n\
+BAT[void,int] int_values,\n\
+BAT[void,dbl] dbl_values,\n\
+BAT[void,dbl] dec_values,\n\
+BAT[void,str] str_values\n\
 DESCRIPITON:\n\
 Print XML-fragment enclosed by each context node.",
 "pathfinder");
 
-PROC xml_print() : void
+@(
+PROC xml_print(BAT[void,bat] ws) : void
 {
-    xml_print(Tdoc_pre.reverse());
+    xml_print(ws, 
+	      ws.fetch(PRE_SIZE).fetch(0).mirror(),
+              ws.fetch(PRE_SIZE).fetch(0).project(0@0).get_kind(ELEM),
+	      bat(void,int),
+              bat(void,dbl),
+              bat(void,dbl),
+              bat(void,str));
 }
-ADDHELP("xml_print", "rode", "Dec 2003",
+ADDHELP("xml_print", "tsheyar", "Sep 2004",
 "DESCRIPITON:\n\
-Print all XML-documents in the working set.",
+Print all XML-fragmets in the working set.",
 "pathfinder");
+@)
 
-PROC xml_print(str name) : void
+PROC xml_print(BAT[void,bat] ws, str name) : void
 {
-    if (not(Tdoc_name.reverse().exist(name)))
+    if (not(ws.fetch(DOC_LOADED).reverse().exist(name)))
 	{ ERROR("Document %s does not exist in working set\n",name); }
-    var docid := int(Tdoc_name.reverse().find(name));	
-    xml_print(Tdoc_pre.slice(docid,docid).reverse());
+    var docid := int(ws.fetch(DOC_LOADED).reverse().find(name));
+    xml_print(ws, 
+	      ws.fetch(PRE_SIZE).fetch(docid).slice(0,0).mirror(),
+              ws.fetch(PRE_SIZE).fetch(docid).slice(0,0).project(oid(docid)).get_kind(ELEM),
+	      bat(void,int),
+              bat(void,dbl),
+              bat(void,dbl),
+              bat(void,str));
 }
-ADDHELP("xml_print", "rode", "Dec 2003",
+ADDHELP("xml_print", "tsheyar", "Sep 2004",
 "PARAMETERS:\n\
-str document name\n\
+BAT[void,bat] working_set,\n\
+str document_name\n\
 DESCRIPITON:\n\
-Print XML-document with the specified name.",
+Print loaded XML-document with the specified name.",
 "pathfinder");
 
-@) 
+
 @mil
 #############################################
 # MIL WRAPPER for AXIS STEPS 
@@ -983,7 +1075,6 @@ Print XML-document with the specified name.",
 @:step(descendant_or_self,descendant-or-self,scj_descorself,,@:sizes_code@,,)@
 @:step(ancestor,ancestor,scj_anc,,@:sizes_code@,,)@
 @:step(ancestor_or_self,ancestor-or-self,scj_ancorself,,@:sizes_code@,,)@
-
 @:step(child,child,lev_child,@:level_intro@,@:level_code@,,)@
 @:step(parent,parent,lev_parent,@:level_intro@,@:level_code@,,)@
 @:step(following_sibling,following-sibling,lev_fs,@:level_intro@,@:level_code@,,)@
@@ -1183,6 +1274,16 @@ var pre_kind;
 @= loop_lifted_scj_step2
 proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws@3) : bat[void,bat]
 {
+    # handle empty results correctly
+    if (iter.count() = 0) {
+	var empty := bat(void,oid).seqbase(0@0).access(BAT_READ);
+	return bat(void,bat).seqbase(0@0)
+			    .insert(nil,empty)
+			    .insert(nil,empty)
+			    .insert(nil,empty)
+			    .access(BAT_READ);
+    }
+
     var result;
     var result_iter;
     var result_item;
