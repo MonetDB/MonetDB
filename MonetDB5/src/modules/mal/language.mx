@@ -422,11 +422,26 @@ We assume that the range boundaries comply with the underlying domain.
 @= forloopRange
 str @1Forloop(bit *res, @1 *i, @1 *first, @1 *last){
         @1 v = *i;
+	if( v >= *first ){
+		*i = ++v;
+		if( v < *last){
+			*res = TRUE;
+			return MAL_SUCCEED;
+		}
+		*res = FALSE;
+		*i= *first;
+		return MAL_SUCCEED;
+	} 
+	*res = TRUE;
+	*i= *first;
+	return MAL_SUCCEED;
+/*
         if( v < *first || v >= *last)
                 *i = *first;
         else    *i = ++v;
         *res= *i < *last;
         return MAL_SUCCEED;
+*/
 }
 
 @= forloopStep
