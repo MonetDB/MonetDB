@@ -451,6 +451,7 @@ ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 	BBPincref( *ret= bn->batCacheid, TRUE);
 	BBPunfix(*ret);
 	BBPunfix(b->batCacheid);
+	BBPunfix(r->batCacheid);
 	return MAL_SUCCEED;
 }
 @c
@@ -489,6 +490,8 @@ ARRAYproduct(int *ret, int *bid, int *rid){
 	}
 	BBPincref( *ret= bn->batCacheid, TRUE);
 	BBPunfix(*ret);
+	BBPunfix(b->batCacheid);
+	BBPunfix(r->batCacheid);
 	return MAL_SUCCEED;
 }
 str
