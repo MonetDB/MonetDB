@@ -208,8 +208,6 @@ have changed since my proposal.
 	TSTTRGBASE	$MONET_PREFIX				base for test output
 	MAPICLIENT	MapiClient				mapi-client program	`)
 	SQLCLIENT	Msql					sql-client program	`)
-	MAPIPORT	<random-port-number>			the MAPI port
-	SQLPORT		<random-port-number>			the SQL port
 
     `) Alternative Mapi- & SQL- client programs need to accept (or ignore)
        "--config=", "--host=", & "--port=" options.
@@ -218,7 +216,7 @@ have changed since my proposal.
 	MONET_MOD_PATH	$MONET_PREFIX/lib;MONET_PREFIX/lib/Monet
 
     The setting of all these environment variables maybe overruled
-    by commandline options with the same names, e.g., "--SQLPORT=12345".
+    by commandline options with the same names, e.g., "--MAPICLIENT=MapiClient.py".
 
     NOTE: 
     All paths must be given as ABSOLUTE PHYSICAL PATHS (see "IMPORTANT NOTE"
@@ -237,6 +235,8 @@ have changed since my proposal.
 	MSHUTDOWN	"$MTIMEOUT Mshutdown.py --config=$MONET_CONF --host=$HOST --port=$MAPIPORT"
 	MDIFF		"$MTIMEOUT Mdiff"
 	SQL_CLIENT	"$MTIMEOUT $SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$SQLPORT --trace"
+	MAPIPORT	the MAPI port (random number between 40000 and 49999)
+	SQLPORT		the SQL  port (random number between 50000 and 59999)
 	TST		name of the current test
   	TSTDB		name of default test database, unique for each directory
 	TSTDIR		current test directory without $TSTSRCBASE/ & /Tests
