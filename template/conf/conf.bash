@@ -192,11 +192,17 @@ fi
 # (additional) system-specific settings
 
 if [ "${os}" = "Linux" ] ; then
-	if [ "${COMP}" = "ntv" ] ; then
-		if [ -d "${softpath}"  -a  "${what}" = "MONET" ] ; then
+	if [ "${COMP}" = "ntv"  -a  -d "${softpath}" ] ; then
+		# the Intel compiler doesn't find headers/libs in /usr/local without help
+		case ${what} in
+		MONET)
 			conf_opts="${conf_opts} --with-hwcounters=${softpath}"
 			conf_opts="${conf_opts} --with-pcl=${softpath}"
-		fi
+			;;
+		PATHFINDER)
+			conf_opts="${conf_opts} --with-gc=${softpath}"
+			;;
+		esac
 	fi
 	if [ "${hw}" = "ia64" ] ; then
 		if [ "${host%.ins.cwi.nl}" = "titan" ] ; then
@@ -323,6 +329,9 @@ if [ "${os}" != "Linux"  -a  "${os}" != "CYGWIN"  -a  "${os}" != "Darwin" ] ; th
 		ACOI)
 			conf_opts="${conf_opts} --with-getopt=${softpath}"
 			conf_opts="${conf_opts} --with-tcl=${softpath}"
+			;;
+		PATHFINDER)
+			conf_opts="${conf_opts} --with-gc=${softpath}"
 			;;
 		SQL)
 			conf_opts="${conf_opts} --with-odbc=${softpath}"
