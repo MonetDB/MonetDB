@@ -63,7 +63,7 @@ The options have the following meaning:
 	where to find the environment settings
 \end{description}
 
-
+@{
 @+ Implementation
 @h
 #ifndef _MONET_GLOBAL_H_
