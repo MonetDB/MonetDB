@@ -6,7 +6,7 @@ MTSAFE
 lib_stream  =  {
 	SOURCES = stream.mx
 	HEADERS = h
-	LIBS = \
+	LIBS = ../../../gdk/libbat \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) 
 }
 
