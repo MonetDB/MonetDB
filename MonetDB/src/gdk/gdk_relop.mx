@@ -842,7 +842,6 @@ The baseline join algorithm creates a hash on the smallest element and
 probes it using the larger one. [TODO]
 @c
 BAT *BATouterjoin(BAT *l, BAT *r, size_t estimate) {
-	int	any; 
 	BAT	*bn = NULL; 
 	
 	@:joincheck(BATouterjoin, l->ttype, r->htype)@

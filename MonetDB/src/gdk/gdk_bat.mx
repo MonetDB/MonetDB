@@ -767,8 +767,6 @@ one now must do:
 static INLINE BUN BUNdelete_(BAT *b, BUN p) {
 	BAT*	bm = BBP_cache(-b->batCacheid);
 	int 	bs = BUNsize(b);
-	int	sh = ATOMsize(b->htype);
-	int 	st = ATOMsize(b->ttype);
 	BUN	l, last = BUNlast(b) - bs; 
 	size_t	idx1, idx2; 
  

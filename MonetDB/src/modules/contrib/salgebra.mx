@@ -573,17 +573,15 @@ salgebra_CHadmin( clusterhash* ch ) {
 }
 
 /* should we indeed protect the insert with a lock? */
-@= cacheManHeader
 void
-salgebra_@1It( clusterhash* ch ) {
+salgebra_cacheIt( clusterhash* ch ) {
   int refCnt = 0;
   char *name = NULL;
   int bid = ABS( ch->b );
   BAT *cache = BBPdescriptor( salgebra_cache );
   BAT *namecache = BBPdescriptor( salgebra_namecache );
   BAT *refcnt = BBPdescriptor( salgebra_refcnt );
-@c
-@:cacheManHeader(cache)@
+
   name = salgebra_CHadmin( ch );
   MT_set_lock(salgebra_cacheLock, "cacheIt");
   MT_set_lock(salgebra_refcntLock, "cacheIt");
@@ -594,14 +592,20 @@ salgebra_@1It( clusterhash* ch ) {
   MT_unset_lock(salgebra_cacheLock, "cacheIt");
 }
 
-@:cacheManHeader(uncache)@
-  MT_set_lock(salgebra_cacheLock, "cacheIt");
+void
+salgebra_uncacheIt( clusterhash* ch ) {
+  int bid = ABS( ch->b );
+  BAT *cache = BBPdescriptor( salgebra_cache );
+  BAT *namecache = BBPdescriptor( salgebra_namecache );
+  BAT *refcnt = BBPdescriptor( salgebra_refcnt );
+
+  MT_set_lock(salgebra_cacheLock, "uncacheIt");
   BUNdelHead( namecache, &bid );
   BUNdelHead( cache, &bid );
-  MT_set_lock(salgebra_refcntLock, "cacheIt");
+  MT_set_lock(salgebra_refcntLock, "uncacheIt");
   BUNdelHead( refcnt, &bid );
-  MT_unset_lock(salgebra_refcntLock, "cacheIt");
-  MT_unset_lock(salgebra_cacheLock, "cacheIt");
+  MT_unset_lock(salgebra_refcntLock, "uncacheIt");
+  MT_unset_lock(salgebra_cacheLock, "uncacheIt");
 }
 
 int

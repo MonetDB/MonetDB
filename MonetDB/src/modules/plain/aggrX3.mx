@@ -322,6 +322,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 	/* where necessary, calculate min/max oid with minimal effort */
 	if (e->htype == TYPE_void) {
 		oid nil = oid_nil;
+		(void) nil;	/* silence compiler about unused variable */
 		ALGODEBUG THRprintf(GDKout, "init_result(@1): e->htype == TYPE_void, e->hseqbase=%lu\n", (unsigned long) e->hseqbase);
 		BATloopFast(e, p, q, xx) {
 			void@1_bunfastins_nocheck_noinc(bn, _p, &nil, &zero);
@@ -784,6 +785,7 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 	BATloopFast(bn, r, q, xx) {
 		oid *h = (oid*)BUNh@4(bn,r);
 		ptr val = extremes[@8];
+		(void) h;	/* silence compiler about unused variable */
 		/* trick: using a void head-type, only the tail are (over)written */
 		void@6_bunfastins_nocheck_noinc(bn, r, h, val?val:nil);
 	} 
@@ -810,6 +812,7 @@ int aggrX3_@1_@3_@4(BAT **ret, BAT *b, BAT *e){
 	oid min, max;
 	oid bhsb;
 
+	(void) zero;		/* silence compiler about unused variable */
 	ALGODEBUG THRprintf(GDKout, "aggrX3_@1_@3_@4[@2](b=%s,e=%s);\n",b->batId,e->batId);
 	/* init: prepare the result bat; 
 	 * trick: by using "tail-type" void, we only write the head column, here */
@@ -1613,6 +1616,7 @@ int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 	BATloopFast(bn, r, q, xx) {
 		oid *h = (oid*)BUNh@4(bn,r);
 		ptr val = extremes[@8];
+		(void) h;	/* silence compiler about unused variable */
 		/* trick: using a void head-type, only the tail are (over)written */
 		void@6_bunfastins_nocheck_noinc(bn, r, h, val?val:nil);
 	} 
@@ -1641,6 +1645,7 @@ int aggrX3_@13_@3_@4(BAT **ret, BAT *b, BAT *g, BAT *e){
   	size_t base, end, w;
   	ssize_t offset;
 
+	(void) zero;		/* silence compiler about unused variable */
 	ALGODEBUG THRprintf(GDKout, "aggrX3_@1_@3_@4[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "aggrX3_@13_@3_@4: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "aggrX3_@13_@3_@4: head of BAT g must not be nil.\n");

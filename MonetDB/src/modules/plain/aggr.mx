@@ -752,6 +752,7 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 		BUNfndOID(r, bn, h);
 		if (r) {
 			ptr t = BUNtail(b,p);
+			(void) t; /* silence compiler about unused variable */
 			@1 {
 				int *dst = (int*) BUNtloc(bn, r);
 				(*dst)++;
@@ -767,6 +768,7 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 
 		if (h < range) {
 			ptr t = BUNtail(b,p);
+			(void) t; /* silence compiler about unused variable */
 			@1 {
 				cnt[h]++;
 			}

@@ -376,8 +376,10 @@ static ColFcn multiplex_fcn(int tpe){
 	return (ColFcn) (ATOMextern(tpe)?multiplex_copy_var:multiplex_copy_loc);
 }
 
+#if 0
 @:multiplex_exec(proc,intern,tpechk)@
 @:multiplex_exec(proc,extern,tpechk)@
+#endif
 @:multiplex_exec(fcn,intern,intern)@
 @:multiplex_exec(fcn,extern,intern)@
 @:multiplex_exec(fcn,intern,extern)@

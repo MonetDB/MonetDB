@@ -81,7 +81,6 @@ Type-mappers for convenience
 @c
 
 int uchr_fromstr(char *uchrStr, int *len, uchr** c) {
-	char *end = NULL;
 	char *p = uchrStr;
 
 #ifdef DEBUG
