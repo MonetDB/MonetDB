@@ -20,9 +20,9 @@ stdout of test 'tst4611` in directory 'src/mal` itself:
 #    a:= zz;
 #end joinPath;
 function algebra.joinPath(a:bat[:any$1,:any$2],b:bat[:any$2,:any$3],c:bat[:any$3,:any$4]):bat[:any$1,:any$4];	# 0  dynamic (joinPath:bat[:any$1,:any$4])<-(a:bat[:any$1,:any$2])(b:bat[:any$2,:any$3])(c:bat[:any$3,:any$4])
-    z := algebra.join(a,b);	# 1 ALGjoin (z:bat[:any,:any])<-(a:bat[:any$1,:any$2])(b:bat[:any$2,:any$3])
-    zz := algebra.join(z,c);	# 2 ALGjoin (zz:bat[:any,:any])<-(z:bat[:any,:any])(c:bat[:any$3,:any$4])
-    a := zz;	# 3  (a:bat[:any$1,:any$2])<-(zz:bat[:any,:any])
+    z := algebra.join(a,b);	# 1 ALGjoin (z:bat[:oid,:oid])<-(a:bat[:any$1,:any$2])(b:bat[:any$2,:any$3])
+    zz := algebra.join(z,c);	# 2 ALGjoin (zz:bat[:oid,:oid])<-(z:bat[:oid,:oid])(c:bat[:any$3,:any$4])
+    a := zz;	# 3  (a:bat[:any$1,:any$2])<-(zz:bat[:oid,:oid])
 end joinPath;	# 4  
 !ERROR: return missing
 #
