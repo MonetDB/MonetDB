@@ -325,6 +325,7 @@ void bm_save( bm *bm, FILE *fp )
 	    	}
 		BUNins(pbat, &id, &pbid); 
 	    	fprintf(fp, "%s,%d,%d\n", name, version, pbid); 
+		assert( BBP_status(pbid)&BBPPERSISTENT);
 	}
 	if (bm->bat_pbid)
 		bat_destroy(bm->bat_pbid);
