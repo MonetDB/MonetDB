@@ -34,5 +34,5 @@ pathfinder $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-pf-checkins@lists.sour
 sql $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-sql-checkins@lists.sourceforge.net
 template $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-templ-chkins@lists.sourceforge.net
 
-# Catch all
+# catch all
 DEFAULT $CVSROOT/CVSROOT/syncmail -q -u %{sVv} Sjoerd.Mullender@cwi.nl

@@ -238,6 +238,7 @@ def blast_mail(subject, people, entries, contextlines, fromhost, replyto):
                     'date'    : datestamp,
                     }
             print '''\
+From: %(name)s <%(address)s>
 To: %(people)s''' % vars
             if replyto:
                 print 'Reply-To: %s' % replyto
