@@ -109,10 +109,16 @@ public class MonetConnection implements Connection {
 				if (blockMode) {
 					// mind the newline at the end
 					monet.writeln(username + ":" + password + ":blocked\n");
-					// we can't do anything with byteorder in Java, let's hope
-					// the server is compatible with us
-					// read two bytes, the size of a short
-					((MonetSocketBlockMode)monet).read(1);
+					// send the server a short with value 1234 to indicate our
+					// byte-order. (Java uses Most Significant Byte First)
+					/*
+					short x = 1234;
+					byte high = (byte)(x >>> 8);	// = 0x04
+					byte low = (byte)x;				// = 0xD2
+					*/
+					byte[] byteorder = {(byte)0x04, (byte)0xD2};
+					((MonetSocketBlockMode)monet).write(byteorder);
+					monet.flush();
 				} else {
 					monet.writeln(username + ":" + password);
 				}

@@ -31,20 +31,18 @@ class MonetSocketBlockMode extends MonetSocket {
 	private OutputStream toMonetRaw;
 
 	private StringBuffer readBuffer;
-	private StringBuffer writeBuffer;
 
 	MonetSocketBlockMode(String host, int port) throws IOException {
 		super(new Socket(host, port));
 
-		fromMonetRaw = con.getInputStream();
-		toMonetRaw = con.getOutputStream();
+		fromMonetRaw = new BufferedInputStream(con.getInputStream());
+		toMonetRaw = new BufferedOutputStream(con.getOutputStream());
 
 		readBuffer = new StringBuffer();
-		writeBuffer = new StringBuffer();
 	}
 
 	/**
-	 * write puts the given string in the buffer as is.
+	 * write puts the given string on the stream as is.
 	 * The stream will not be flushed after the write.
 	 * To flush the stream use flush(), or use writeln().
 	 *
@@ -53,10 +51,31 @@ class MonetSocketBlockMode extends MonetSocket {
 	 * @see flush(), writeln()
 	 */
 	public synchronized void write(String data) throws IOException {
-		writeBuffer.append(data);
+		write(data.getBytes());
+	}
+
+	/**
+	 * Writes the given bytes to the stream
+	 *
+	 * @param data the bytes to be written
+	 * @throws IOException if writing to the stream failed
+	 */
+	public synchronized void write(byte[] data) throws IOException {
+		toMonetRaw.write(data);
+
 		// reset the lineType variable, since we've sent data now and the last
 		// line isn't valid anymore
 		lineType = EMPTY;
+
+		// it's a bit nasty if an exception is thrown from the log,
+		// but ignoring it can be nasty as well, so it is decided to
+		// let it go so there is feedback about something going wrong
+		// it's a bit nasty if an exception is thrown from the log,
+		// but ignoring it can be nasty as well, so it is decided to
+		// let it go so there is feedback about something going wrong
+		if (debug) {
+			log.write("<< " + new String(data) + "\n");
+		}
 	}
 
 	/**
@@ -66,11 +85,6 @@ class MonetSocketBlockMode extends MonetSocket {
 	 * @throws IOException if writing to the stream failed
 	 */
 	public synchronized void flush() throws IOException {
-		// write the length of this block
-		toMonetRaw.write(writeBuffer.length());	// note: writes a byte, requires an int
-		// write the data
-		toMonetRaw.write(writeBuffer.toString().getBytes());
-		// and flush...
 		toMonetRaw.flush();
 
 		// it's a bit nasty if an exception is thrown from the log,
@@ -80,14 +94,8 @@ class MonetSocketBlockMode extends MonetSocket {
 		// but ignoring it can be nasty as well, so it is decided to
 		// let it go so there is feedback about something going wrong
 		if (debug) {
-			log.write("<<" + writeBuffer.length() + ") " +
-				writeBuffer.toString() + "\n");
 			log.flush();
 		}
-
-		// clear the write buffer; do not create a new object here for
-		// performance's sake
-		writeBuffer.delete(0, writeBuffer.length());
 	}
 
 	/**
@@ -105,28 +113,26 @@ class MonetSocketBlockMode extends MonetSocket {
 	/**
 	 * Reads up to count bytes from the stream, and returns them in a byte array
 	 *
-	 * @param count the number of bytes to read
-	 * @return an array containing the read bytes
-	 * @throws IOException if some IO error occurs or the requested bytes could
-	 *         not be read
+	 * @param a byte array, which should be filled with data from the stream
+	 * @return the number of bytes actually read, never less than zero
+	 * @throws IOException if some IO error occurs
 	 */
-	public synchronized byte[] read(int count) throws IOException {
+	public synchronized int read(byte[] data) throws IOException {
 		// read the data
-		byte[] data = new byte[count];
 		int size = fromMonetRaw.read(data);
 		// note: this catches also end of stream (-1)
-		if (size != count) throw
-			new IOException("Stream did not contain (full) block!");
+		if (size == -1) throw
+			new IOException("End of stream reached");
 
 		// it's a bit nasty if an exception is thrown from the log,
 		// but ignoring it can be nasty as well, so it is decided to
 		// let it go so there is feedback about something going wrong
 		if (debug) {
-			log.write(">> " + new String(data) + "\n");
+			log.write(">> " + (new String(data)).substring(0, size) + "\n");
 			log.flush();
 		}
 
-		return(data);
+		return(size);
 	}
 
 	/**
@@ -144,28 +150,13 @@ class MonetSocketBlockMode extends MonetSocket {
 		while ((nl = readBuffer.indexOf("\n")) == -1) {
 			// not found, fetch us some more data
 
-			// get the block size
-			int len = fromMonetRaw.read();	// note: reads byte, returns an int
-			if (len == -1) throw new IOException("End of stream reached!");
-
-			// read the data
-			byte[] data = new byte[len];
-			int size = fromMonetRaw.read(data);
-			// note: this catches also end of stream (-1)
-			if (size != len) throw
-				new IOException("Stream did not contain (full) block!");
+			// read some block of data
+			byte[] data = new byte[1024];	// use blocksize of 1024
+			int size = read(data);
 
 			// append the stuff to the buffer; let String do the charset
 			// conversion stuff
-			readBuffer.append(new String(data));
-
-			// it's a bit nasty if an exception is thrown from the log,
-			// but ignoring it can be nasty as well, so it is decided to
-			// let it go so there is feedback about something going wrong
-			if (debug) {
-				log.write(">> " + new String(data) + "\n");
-				log.flush();
-			}
+			readBuffer.append((new String(data)).substring(0, size));
 		}
 
 		// fill line, excluding newline
