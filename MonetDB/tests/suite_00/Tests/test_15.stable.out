@@ -97,7 +97,6 @@ print(d);
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #
 #-----------------#
-[ nil,	  nil	  ]
 e:= diff(reverse(c),d);
 print(e);
 #-----------------#
@@ -113,6 +112,7 @@ print(e);
 [ 49,	  7	  ]
 [ 64,	  8	  ]
 [ nil,	  9	  ]
+[ nil,	  nil	  ]
 [ 81,	  nil	  ]
 [ 81,	  nil	  ]
 f:= union(e,b);
@@ -130,6 +130,7 @@ print(f);
 [ 49,	  7	  ]
 [ 64,	  8	  ]
 [ nil,	  9	  ]
+[ nil,	  nil	  ]
 [ 81,	  nil	  ]
 [ 81,	  nil	  ]
 [ 1,	  1	  ]
@@ -159,6 +160,8 @@ marcel.print;
 [ 7,	  49	  ]
 [ 8,	  64	  ]
 [ 9,	  nil	  ]
+[ nil,	  nil	  ]
+[ nil,	  81	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
 quit;
