@@ -38,7 +38,7 @@ find . -name .incs.\* \-exec rm {} \;
 rm -rf autom4te-*.cache
 
 REQ_AM_VERSION="1.4"
-AM_VERSION=`automake --version | grep '^automake' | sed -e 's|.*)||g' -e 's| ||g' -e 's|-.*||g'`
+AM_VERSION=`automake --version 2>/dev/null | sed -n -e '/^automake/{s/.* //g;s/-.*//g;p;q;}'`
 _AM_VERSION=`echo $AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _REQ_AM_VERSION=`echo $REQ_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
@@ -51,7 +51,7 @@ fi
 $AUTOGEN `pwd` $_AM_VERSION
 
 NEW_AC_VERSION="2.53"
-AC_VERSION=`autoconf --version | grep '^[Aa]utoconf' | sed -e 's|.* ||g' -e 's| ||g' -e 's|-.*||g'`
+AC_VERSION=`autoconf --version 2>/dev/null | sed -n -e '/^[Aa]utoconf/{s/.* //g;s/-.*//g;p;q;}'`
 _AC_VERSION=`echo $AC_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _NEW_AC_VERSION=`echo $NEW_AC_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
@@ -71,7 +71,7 @@ cat acout.in  >> configure.in
 echo ")" >> configure.in
 
 REQ_LT_VERSION="1.4"
-LT_VERSION=`libtool --version | sed -e 's|([^)]*)||g' | sed -e 's|ltmain.sh||g' | sed -e 's| ||g'`
+LT_VERSION=`libtool --version 2>/dev/null | sed -n '/^ltmain\.sh/{s/([^)]*)//g;s/ltmain.sh//g;s/ //g;p;q;}'`
 _LT_VERSION=`echo $LT_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _REQ_LT_VERSION=`echo $REQ_LT_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
