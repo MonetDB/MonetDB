@@ -2909,6 +2909,7 @@ look at the head column:@%BATkunion@, @%BATkdiff@, and
 #define JOIN_LE	-2
 #define JOIN_GT	1
 #define JOIN_GE	2
+#define JOIN_BAND 3
 
 gdk_export BAT*	BATfragment  (BAT *b, ptr hl, ptr hh, ptr tl, ptr th); 
 gdk_export BAT*	BATselect    (BAT *b, ptr tl, ptr th); 
