@@ -244,6 +244,8 @@ struct tms
 #define ESTALE 133
 #define ENOTSUP 134
 
+/* fcntl */
+#define O_NONBLOCK 1
 
 #ifdef  __cplusplus
 extern "C" {

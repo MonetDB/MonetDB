@@ -165,6 +165,8 @@
 
 /* Define if you have the <fcntl.h> header file.  */
 #define HAVE_FCNTL_H 1
+#define HAVE_FCNTL  1
+#define HAVE_SETSOCKOPT 0
 
 /* Define if you have the <dlfcn.h> header file.  */
 #undef HAVE_DLFCN_H 
