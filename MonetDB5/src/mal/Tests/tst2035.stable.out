@@ -85,8 +85,6 @@ exit t0;	# 20  (t0:bit)
     redo wl;	# 22  (wl:bit) jump 15
 exit wl;	# 23  (wl:bit)
 end main;	# 24  
-[ "#start the child" ]
-#clock tick 1
 #Main thread
 #Wait for child to exit 1083439921
 #counter 1

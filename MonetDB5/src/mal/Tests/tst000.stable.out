@@ -7,6 +7,10 @@ stdout of test 'tst000` in directory 'src/mal` itself:
 
 
 
+
+
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.

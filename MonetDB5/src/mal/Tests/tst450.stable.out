@@ -65,7 +65,6 @@ end main;	# 11
 [ nil,	  "Admin"	  ]
 [ nil,	  "mil_sys_procs"	  ]
 [ nil,	  "mil_algebra_procs"	  ]
-[ nil,	  "sqlcache"		  ]
 [ nil,	  "transaction"	  ]
 [ nil,	  "chopper"	  ]
 [ nil,	  "optimizer"	  ]
