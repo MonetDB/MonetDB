@@ -1659,6 +1659,36 @@ int ORvalidSource(MalBlkPtr mb, int v, int pc, int stop){
 	}
 	return 1;
 }
+void ORcoercionOptimizer(MalBlkPtr mb, int i, InstrPtr p)
+{
+	int t;
+	t= getVarType(mb,getArg(p,1));
+	if( strcmp(functionName(p),"int")==0 && t== TYPE_int){
+		ARreplaceAlias(mb,i+1,mb->stop, getArg(p,0), getArg(p,1));
+		removeInstruction(mb,p);
+		return;
+	}
+	if( strcmp(functionName(p),"lng")==0 && t== TYPE_lng){
+		ARreplaceAlias(mb,i+1,mb->stop, getArg(p,0), getArg(p,1));
+		removeInstruction(mb,p);
+		return;
+	}
+	if( strcmp(functionName(p),"sht")==0 && t== TYPE_sht){
+		ARreplaceAlias(mb,i+1,mb->stop, getArg(p,0), getArg(p,1));
+		removeInstruction(mb,p);
+		return;
+	}
+	if( strcmp(functionName(p),"dbl")==0 && t== TYPE_dbl){
+		ARreplaceAlias(mb,i+1,mb->stop, getArg(p,0), getArg(p,1));
+		removeInstruction(mb,p);
+		return;
+	}
+	if( strcmp(functionName(p),"flt")==0 && t== TYPE_flt){
+		ARreplaceAlias(mb,i+1,mb->stop, getArg(p,0), getArg(p,1));
+		removeInstruction(mb,p);
+		return;
+	}
+}
 str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {   int i,j,a,b,depth;
     InstrPtr p;
@@ -1681,7 +1711,13 @@ at the end of the optimization attempt.
     for(i=1; i<mb->stop; i++){
         VarPtr v;
         p= getInstrPtr(mb,i);
-		if( moduleName(p)==0 || strcmp(moduleName(p),"batcalc")) continue;
+		if( moduleName(p)== 0) 
+			continue;
+		if( strcmp(moduleName(p),"calc")== 0) {
+			ORcoercionOptimizer(mb,i,p);
+			continue;
+		} 
+		if( strcmp(moduleName(p),"batcalc")) continue;
 
 		depth= getVarDepth(mb,getArg(p,0));
 		if( p->argc == 3) {
