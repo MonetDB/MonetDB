@@ -48,6 +48,7 @@ include mtime;
 include bat;
 #include mkey;
 include algebra;
+include algebra2;
 include calc;
 include batcalc;
 include status;
