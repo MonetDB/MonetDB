@@ -1,0 +1,41 @@
+## Process this file with automake to produce Makefile.in
+
+BUILT_SOURCES = cSQLserver.c
+
+YFLAGS = -d -p sql
+
+INCLUDES = \
+	-I$(MONETDIST)/include \
+	-I$(MONETDIST)/include/gdk \
+	-I$(MONETDIST)/include/monet \
+	-I$(MONETDIST)/include/plain 
+
+lib_sql = {
+	SOURCES = \
+		sqlparser.y sqlscan.c sqlscan.h sqlexecute.c sqlexecute.h \
+		sql.c sql.h \
+		catalog.c catalog.h \
+		list.c list.h symbol.c symbol.h sym.h \
+		statement.c statement.h atom.c atom.h 
+}
+
+lib__sql = {
+	SOURCES = sql.m sql-module.c catalog-module.c statement_dump.c
+	LIBS = libsql
+}
+
+lib__sqlserver = {
+	SOURCES = sqlserver.mx 
+}
+
+bin_sql_client = {
+	SOURCES = sql_client.c catalog-client.c statement_dump.c
+	LIBS = libsql -L$(MONETDIST)/lib -lbat -lmonet $(GDKLIBS) \
+		-L$(MONETDIST)/lib/Monet -l_tcpip -l_streams
+}
+
+bin_sql_aclient = {
+	SOURCES = sql_aclient.c catalog-aclient.c statement_adump.c \
+		  comm.c comm.h gdk.c
+	LIBS = libsql -L$(MONETDIST)/lib -lstream $(READLINE_LIBS)
+}

@@ -1,0 +1,47 @@
+
+## Use: nmake -f makefile.msc install
+
+# Change this to wherever you want to install the DLLs. This directory
+# should be in your PATH.
+BIN = C:\bin
+
+################################################################
+
+# Nothing much configurable below
+
+# cl -? describes the options
+CC = cl -GF -W3 -MD -nologo -Zi -G6
+# optimize use -Ox
+
+# No general LDFLAGS needed
+LDFLAGS = /link
+INSTALL = copy
+MKDIR = mkdir
+ECHO = echo
+CD = cd
+
+CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H
+
+CXXEXT = \"cxx\"
+
+CFLAGS = $(CFLAGS) $(INCLUDES)
+CXXFLAGS = $(CFLAGS)
+TOPDIR = .\..\..\..
+SRCDIR = $(TOPDIR)\..\src\odbc\setup
+!INCLUDE $(TOPDIR)\rules.msc
+all: all-msc
+install: install-msc
+INCLUDES =  -I$(srcdir)/../include $(ODBC_CFLAGS)
+DEFS =  -DUNIXODBC @DEFS@
+libMonetODBCs_OBJS = drvcfg.obj
+libMonetODBCs.lib: libMonetODBCs.dll
+libMonetODBCs.dll: $(libMonetODBCs_OBJS) 
+	$(CC) $(CFLAGS) -LD -FelibMonetODBCs.dll $(libMonetODBCs_OBJS) $(libMonetODBCs_LIBS) $(LDFLAGS)
+
+drvcfg.obj: $(SRCDIR)\drvcfg.c
+	$(CC) $(CFLAGS) $(INCLUDES) -DLIBMONETODBCS -c drvcfg.c
+all-msc: libMonetODBCs.dll
+install-msc: install-exec install-data
+install-exec: install_dll_MonetODBCs   
+install_dll_MonetODBCs: libMonetODBCs.dll
+	$(INSTALL) libMonetODBCs.dll $(libdir)

@@ -1,0 +1,205 @@
+module(sqlserver);
+module(ascii_io);
+module(str);
+module(alarm);
+
+proc create_table( name, temp ):= {
+	var t:=oid(table_name.count());
+	table_name.insert(t,name);
+	table_temp.insert(t,temp);
+	table_schema.insert(t,oid(0));
+	return t;
+}
+
+proc drop_column( oid c ):= {
+        column_name.delete(c);
+        column_type.delete(c);
+        column_table.delete(c);
+        var b := column_bat.find(c);
+        b.persists(false);
+        column_bat.delete(c);
+        column_default.delete(c);
+        column_null.delete(c);
+        column_number.delete(c);
+        column_fullname.delete(c);
+        return 1;
+}
+
+proc drop_table( str name, bit cascade ):= {
+        var t := table_name.reverse().find(name);
+        table_name.delete(t);
+        table_temp.delete(t);
+        table_schema.delete(t);
+        if (table_query.exist(t)){
+                table_query.delete(t);
+	}
+        var columns := column_table.select(t).reverse();
+        [drop_column](columns);
+        return 1;
+}
+
+proc create_view( name, query ):= {
+	var t:=oid(create_table( name, false));
+	table_query.insert( t, query );
+	return t;
+}
+
+proc create_column( tid, cname, sqltype, seqnr ):= {
+	var c:=oid(column_name.count());
+	column_name.insert(c, cname );
+	column_type.insert(c, sqltype );
+	column_table.insert(c, tid );
+	var typeid := sql_type_name.reverse.find(sqltype);
+	var mtype:= monet_atomtbl.find(sql_type_monet.find(typeid));
+	var b:=new(oid, mtype);
+	b.persists(true);
+	column_bat.insert(c, b);
+	column_default.insert(c, "NULL");
+	column_null.insert(c,true);
+	column_number.insert(c, seqnr);
+	var tab := table_name.find(tid);
+	column_fullname.insert(c, tab + "_" + cname );
+	return c;
+}
+
+proc not_null( cid ):= {
+	column_null.replace(cid,false);
+	return cid;
+}
+
+proc default( cid, val ):= {
+	column_default.replace(cid,str(val));
+	return cid;
+}
+
+proc Insert(col, val):= {
+	var cnt := oid(col.count());
+	col.insert(cnt, val);
+	return col;
+}
+
+proc atom(val):= {
+	return val;
+}
+
+proc add(x, y):= return x + y;
+proc sub(x, y):= return x - y;
+proc mul(x, y):= return x * y;
+proc div(x, y):= return x / y;
+proc neg(val):= return -1 * val;
+
+proc sep():= {
+	return "\t";
+}
+
+proc load_seps( BAT[void,BAT] bats ) : BAT[void,str] := {
+	var seps := new(void,str); seps.seqbase(oid(0));
+	var id := 0;
+	var cnt := bats.count - 1;
+	bats@batloop(){
+		if (id != cnt) {
+			seps.insert(nil,"\t");
+		} else {
+			seps.insert(nil,"\n");
+		}
+		id += 1;
+	}
+	return seps;
+}
+
+proc bat_name(b):= return str(b);
+proc bat_type(b):= return type(b);
+
+proc bulkload( tab, file ):= {
+	var tid := resolve_table( tab );
+        var columns := column_name.semijoin(column_table.select(tid));
+	var bats := column_bat.semijoin(columns);
+	bats := column_number.reverse().join(bats).sort();
+	
+	var names := [bat_name](bats);
+	var types := [bat_type](bats);
+	var seps := load_seps(bats);
+	load(names, seps, types, data, -1);
+}
+Stdout := file_wastream( stdout, "test" );
+
+proc output_count( bat b, stream Output ) := {
+	var buf := str((b.count())) + "\n";
+	stream_write(Output, buf );
+	stream_write(Stdout, buf );
+}
+
+proc ascii_io_output( bat Order, bat bats, stream Output, str Sep ) : int := {
+	var Max := bats.reverse.max();
+	var seps := [ bats ~ const Sep];
+	seps.access(BAT_WRITE);
+	seps.replace(Max, "\n");
+
+	seps := seps.reverse.mark(oid(0));
+	bats := bats.reverse.mark(oid(0));
+	return output( Order, seps.reverse, bats.reverse, Output );
+}
+
+proc server_output( stream Output, ..bat[oid,any]..) : void := {
+	var cnt := $0;
+	var Order := $2;
+	var bats := new(oid,bat);
+	var id := 0;
+	while((id + 1) < cnt ){
+		bats.insert(oid(id), $(id+2));
+		id :+= 1;
+	}
+	ascii_io_output(Order, bats, Output, "\t");
+}
+
+proc ascii_export_catalog(Output):= {
+	output_count( sql_type_name, Output);
+	server_output( Output, sql_type_name, sql_type_monet, sql_type_cast );
+
+	output_count( sql_aggr_name, Output);
+	server_output( Output, sql_aggr_name );
+		
+	output_count( sql_func_name, Output);
+	server_output( Output, sql_func_name );
+
+	output_count( table_name, Output);
+	var queries := [ table_query.union( table_name.diff( table_query )) ~ const "" ];
+	server_output( Output, table_name, table_temp, queries );
+
+	output_count( column_name, Output);
+	var table_names := column_table.join(table_name);
+	server_output( Output, table_names, column_name, column_type, column_default, column_null, column_number );
+}
+
+proc SQLclient_thread( int sock ):= {
+
+	var Input := socket_rastream( sock, sprintf("SQLserver-%d", sock) );
+	var Output := socket_wastream( sock, sprintf("SQLserver-%d", sock) );
+
+	ascii_export_catalog(Output);
+
+	var cmd := stream_read( Input );
+
+	while(cmd != ""){
+		sqlexecute(cmd, Output );
+		cmd := stream_read( Input );
+	}
+	stream_close( Output );
+	stream_close( Input );
+}
+
+proc sqlexecute( str cmd, stream Output ):= {
+	#print(cmd);
+	eval(cmd);
+	#commit();
+}
+
+proc SQLclient( int sock ) := {
+	print(sock);
+	SQLclient_thread(sock);#.fork();
+	sleep(1);
+}
+
+sqlserver_start(45123, "SQLclient").fork();
+
+

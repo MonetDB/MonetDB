@@ -1,0 +1,129 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(src/parser/sql.h)
+AC_CONFIG_AUX_DIR(conf)
+
+dnl ----------------------
+AM_INIT_AUTOMAKE("sql", 2.0)
+AM_CONFIG_HEADER(sql_config.h:conf/config.h.in)
+AC_CANONICAL_HOST
+
+HOST=[$host]
+AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
+
+dnl some dirty hacks
+thread_safe_flag_spec="-D_REENTRANT"
+[ case "$host_os" in
+  solaris*)
+    case "$CC" in
+      cc*) 
+	echo "$CC=cc"
+        thread_safe_flag_spec="-mt" ;;
+      *) ;;
+    esac
+    LEXLIB=-ll
+    ;;
+  irix*)
+    case "$CC" in
+      *-32|*"-32 ") libsuff="";;
+      "cc -32"|*-n32|*"-n32 ") libsuff=n32;;
+      "cc -64"|*-64|*"-64 ") libsuff=64;;
+      *) libsuff=n32;;
+    esac
+    LEXLIB=-ll
+    ;;
+  aix*)
+    thread_safe_flag_spec="-D_THREAD_SAFE $thread_safe_flag_spec"
+    ;;
+esac ]
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_GCC_TRADITIONAL
+AC_PROG_INSTALL
+AM_PROG_LEX
+AC_PROG_YACC
+AC_DISABLE_STATIC
+AC_ENABLE_SHARED
+AM_PROG_LIBTOOL
+dnl AC_PROG_CC_STDC
+
+AC_PROG_LN_S
+AC_CHECK_PROG(RM,rm,rm -f)
+AC_CHECK_PROG(MV,mv,mv -f)
+
+dnl to shut up automake (.m files are used for mel not for objc)
+AC_CHECK_TOOL(OBJC,objc)
+
+#AM_DEPENDENCIES(CC)
+#AM_DEPENDENCIES(CXX)
+
+dnl Checks for header files.
+AC_HEADER_STDC
+
+dnl check for monet
+have_monet=auto
+MONETDIST="."
+AC_ARG_WITH(monet,
+[  --with-monet=DIR     monet is installed in DIR], have_monet="$withval")
+if test "x$have_monet" != xno; then
+  if test "x$have_monet" != xauto; then
+    AC_CHECK_PROG(MONET_CONFIG,monet-config,$withval/bin/monet-config,,$withval/bin)
+    MONETDIST=`$MONET_CONFIG --prefix`
+    GDKLIBS=`$MONET_CONFIG --gdklibs`
+    have_monet=yes
+  else
+    have_monet=yes
+    AC_CHECK_PROG(MONET_CONFIG,monet-config,monet-config)
+    MONETDIST=`$MONET_CONFIG --prefix`
+    GDKLIBS=`$MONET_CONFIG --gdklibs`
+  fi
+
+  if test "x$have_monet" != xyes; then
+    MONETDIST=""
+    GDKLIBS=""
+  fi
+fi
+AC_SUBST(MONETDIST)
+AC_SUBST(GDKLIBS)
+
+dnl libreadline
+have_readline=auto
+READLINE_LIBS=""
+AC_ARG_WITH(readline,
+[  --with-readline=DIR     readline library is installed in DIR], 
+	[have_readline="$withval"])
+if test "x$have_readline" != xno; then
+  if test "x$have_readline" != xauto; then
+    READLINE_LIBS="-L$withval/lib"
+  fi
+
+  save_LIBS="$LIBS"
+  LIBS="$LIBS $READLINE_LIBS"
+  AC_CHECK_LIB(readline$libsuff, readline, 
+	[ READLINE_LIBS="$READLINE_LIBS -lreadline$libsuff -ltermcap" 
+          AC_DEFINE(HAVE_LIBREADLINE) 
+	  have_readline=yes ]
+	, have_readline=no, "-ltermcap" )
+  LIBS="$save_LIBS"
+
+  if test "x$have_readline" != xyes; then
+    READLINE_LIBS=""
+  fi
+fi
+AC_SUBST(READLINE_LIBS)
+
+dnl Checks for library functions.
+AC_SUBST(thread_safe_flag_spec)
+AC_SUBST(CFLAGS)
+AC_SUBST(CXXFLAGS)
+
+AC_OUTPUT(
+Makefile
+conf/Makefile
+src/Makefile
+src/parser/Makefile
+src/odbc/Makefile
+src/odbc/setup/Makefile
+src/odbc/driver/Makefile
+)

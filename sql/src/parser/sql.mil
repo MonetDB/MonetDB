@@ -1,0 +1,123 @@
+module(io);
+module(str);
+module(sql);
+module(ascii_io);
+
+proc create_table( name, temp ):= {
+	var t:=oid(table_name.count());
+	table_name.insert(t,name);
+	table_temp.insert(t,temp);
+	table_schema.insert(t,oid(0));
+	return t;
+}
+
+proc drop_column( oid c ):= {
+        column_name.delete(c);
+        column_type.delete(c);
+        column_table.delete(c);
+        var b := column_bat.find(c);
+        b.persists(false);
+        column_bat.delete(c);
+        column_default.delete(c);
+        column_null.delete(c);
+        column_number.delete(c);
+        column_fullname.delete(c);
+        return 1;
+}
+
+proc drop_table( str name, bit cascade ):= {
+        var t := table_name.reverse().find(name);
+        table_name.delete(t);
+        table_temp.delete(t);
+        table_schema.delete(t);
+        if (table_query.exist(t)){
+                table_query.delete(t);
+	}
+        var columns := column_table.select(t).reverse();
+        [drop_column](columns);
+        return 1;
+}
+
+proc create_view( name, query ):= {
+	var t:=oid(create_table( name, false));
+	table_query.insert( t, query );
+	return t;
+}
+
+proc create_column( tid, cname, sqltype, seqnr ):= {
+	var c:=oid(column_name.count());
+	column_name.insert(c, cname );
+	column_type.insert(c, sqltype );
+	column_table.insert(c, tid );
+	var typeid := sql_type_name.reverse.find(sqltype);
+	var mtype:= monet_atomtbl.find(sql_type_monet.find(typeid));
+	var b:=new(oid, mtype);
+	b.persists(true);
+	column_bat.insert(c, b);
+	column_default.insert(c, "NULL");
+	column_null.insert(c,true);
+	column_number.insert(c, seqnr);
+	var tab := table_name.find(tid);
+	column_fullname.insert(c, tab + "_" + cname );
+	return c;
+}
+
+proc not_null( cid ):= {
+	column_null.replace(cid,false);
+	return cid;
+}
+
+proc default( cid, val ):= {
+	column_default.replace(cid,str(val));
+	return cid;
+}
+
+proc Insert(col, val):= {
+	var cnt := oid(col.count());
+	col.insert(cnt, val);
+	return col;
+}
+
+proc atom(val):= {
+	return val;
+}
+
+proc add(x, y):= return x + y;
+proc sub(x, y):= return x - y;
+proc mul(x, y):= return x * y;
+proc div(x, y):= return x / y;
+proc neg(val):= return -1 * val;
+
+proc sep():= {
+	return "\t";
+}
+
+proc load_seps( BAT[void,BAT] bats ) : BAT[void,str] := {
+	var seps := new(void,str); seps.seqbase(oid(0));
+	var id := 0;
+	var cnt := bats.count - 1;
+	bats@batloop(){
+		if (id != cnt) {
+			seps.insert(nil,"\t");
+		} else {
+			seps.insert(nil,"\n");
+		}
+		id += 1;
+	}
+	return seps;
+}
+
+proc bat_name(b):= return str(b);
+proc bat_type(b):= return type(b);
+
+proc bulkload( tab, file ):= {
+	var tid := resolve_table( tab );
+        var columns := column_name.semijoin(column_table.select(tid));
+	var bats := column_bat.semijoin(columns);
+	bats := column_number.reverse().join(bats).sort();
+	
+	var names := [bat_name](bats);
+	var types := [bat_type](bats);
+	var seps := load_seps(bats);
+	load(names, seps, types, data, -1);
+}

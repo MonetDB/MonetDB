@@ -1,0 +1,489 @@
+# Makefile.in generated automatically by automake 1.4 from Makefile.am
+
+# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+
+
+SHELL = @SHELL@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+
+DESTDIR =
+
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+
+top_builddir = ../..
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@ $(AM_INSTALL_PROGRAM_FLAGS)
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+transform = @program_transform_name@
+
+NORMAL_INSTALL = :
+PRE_INSTALL = :
+POST_INSTALL = :
+NORMAL_UNINSTALL = :
+PRE_UNINSTALL = :
+POST_UNINSTALL = :
+host_alias = @host_alias@
+host_triplet = @host@
+AS = @AS@
+CC = @CC@
+CFLAGS = @CFLAGS@
+CPP = @CPP@
+CXXFLAGS = @CXXFLAGS@
+DLLTOOL = @DLLTOOL@
+GDKLIBS = @GDKLIBS@
+LEX = @LEX@
+LIBTOOL = @LIBTOOL@
+LN_S = @LN_S@
+MAKEINFO = @MAKEINFO@
+MONETDIST = @MONETDIST@
+MONET_CONFIG = @MONET_CONFIG@
+MV = @MV@
+OBJC = @OBJC@
+OBJDUMP = @OBJDUMP@
+PACKAGE = @PACKAGE@
+RANLIB = @RANLIB@
+READLINE_LIBS = @READLINE_LIBS@
+RM = @RM@
+VERSION = @VERSION@
+YACC = @YACC@
+thread_safe_flag_spec = @thread_safe_flag_spec@
+
+AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
+
+CXXEXT = \"cc\"
+
+INCLUDES = -I$(MONETDIST)/include -I$(MONETDIST)/include/gdk -I$(MONETDIST)/include/monet -I$(MONETDIST)/include/plain
+BUILT_SOURCES = sqlserver.proto.h sqlserver.glue.c sqlserver.c sqlserver.h sql.proto.h sql.glue.c sqlparser.tab.c sqlparser.tab.h
+lib_sqlserver_la_SOURCES = sqlserver.proto.h sqlserver.glue.c sqlserver.c sqlserver.h
+sql_aclient_LDADD = libsql.la -L$(MONETDIST)/lib -lstream $(READLINE_LIBS)
+sql_aclient_SOURCES = sql_aclient.c catalog-aclient.c statement_adump.c comm.c comm.h gdk.c
+lib_sql_la_LIBADD = libsql.la
+lib_sql_la_SOURCES = sql.proto.h sql.glue.c sql-module.c catalog-module.c statement_dump.c
+libsql_la_SOURCES = sqlparser.tab.c sqlparser.tab.h sqlscan.c sqlscan.h sqlexecute.c sqlexecute.h sql.c sql.h catalog.c catalog.h list.c list.h symbol.c symbol.h sym.h statement.c statement.h atom.c atom.h
+sql_client_LDADD = libsql.la -L$(MONETDIST)/lib -lbat -lmonet $(GDKLIBS) -L$(MONETDIST)/lib/Monet -l_tcpip -l_streams
+sql_client_SOURCES = sql_client.c catalog-client.c statement_dump.c
+YFLAGS = -d -p sql
+EXTRA_DIST = Makefile.ag Makefile.msc sqlserver.mx sql.m sqlparser.y
+lib_LTLIBRARIES = lib_sqlserver.la lib_sql.la libsql.la
+bin_PROGRAMS = sql_aclient sql_client
+
+MEL = $(MONETDIST)/bin/mel
+MX = $(MONETDIST)/bin/Mx
+MXFLAGS = -notouch
+
+SUFFIXES = .m .mx .proto.h .mil .glue.c
+PRECIOUS = .m 
+mkinstalldirs = $(SHELL) $(top_srcdir)/conf/mkinstalldirs
+CONFIG_HEADER = ../../sql_config.h
+CONFIG_CLEAN_FILES = 
+LTLIBRARIES =  $(lib_LTLIBRARIES)
+
+
+DEFS = @DEFS@ -I. -I$(srcdir) -I../..
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+lib_sqlserver_la_LDFLAGS = 
+lib_sqlserver_la_LIBADD = 
+lib_sqlserver_la_OBJECTS =  sqlserver.glue.lo sqlserver.lo
+lib_sql_la_LDFLAGS = 
+lib_sql_la_DEPENDENCIES =  libsql.la
+lib_sql_la_OBJECTS =  sql.glue.lo sql-module.lo catalog-module.lo \
+statement_dump.lo
+libsql_la_LDFLAGS = 
+libsql_la_LIBADD = 
+libsql_la_OBJECTS =  sqlparser.tab.lo sqlscan.lo sqlexecute.lo sql.lo \
+catalog.lo list.lo symbol.lo statement.lo atom.lo
+PROGRAMS =  $(bin_PROGRAMS)
+
+sql_aclient_OBJECTS =  sql_aclient.o catalog-aclient.o statement_adump.o \
+comm.o gdk.o
+sql_aclient_DEPENDENCIES =  libsql.la
+sql_aclient_LDFLAGS = 
+sql_client_OBJECTS =  sql_client.o catalog-client.o statement_dump.o
+sql_client_DEPENDENCIES =  libsql.la
+sql_client_LDFLAGS = 
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
+DIST_COMMON =  Makefile.am Makefile.in
+
+
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
+
+TAR = gtar
+GZIP_ENV = --best
+SOURCES = $(lib_sqlserver_la_SOURCES) $(lib_sql_la_SOURCES) $(libsql_la_SOURCES) $(sql_aclient_SOURCES) $(sql_client_SOURCES)
+OBJECTS = $(lib_sqlserver_la_OBJECTS) $(lib_sql_la_OBJECTS) $(libsql_la_OBJECTS) $(sql_aclient_OBJECTS) $(sql_client_OBJECTS)
+
+all: all-redirect
+.SUFFIXES:
+.SUFFIXES: .S .c .glue.c .lo .m .mil .mx .o .proto.h .s
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) $(top_srcdir)/rules.mk
+	cd $(top_srcdir) && $(AUTOMAKE) --foreign src/parser/Makefile
+
+Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+
+mostlyclean-libLTLIBRARIES:
+
+clean-libLTLIBRARIES:
+	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
+
+distclean-libLTLIBRARIES:
+
+maintainer-clean-libLTLIBRARIES:
+
+install-libLTLIBRARIES: $(lib_LTLIBRARIES)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(libdir)
+	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo "$(LIBTOOL)  --mode=install $(INSTALL) $$p $(DESTDIR)$(libdir)/$$p"; \
+	    $(LIBTOOL)  --mode=install $(INSTALL) $$p $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+
+uninstall-libLTLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	list='$(lib_LTLIBRARIES)'; for p in $$list; do \
+	  $(LIBTOOL)  --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p; \
+	done
+
+.c.o:
+	$(COMPILE) -c $<
+
+.s.o:
+	$(COMPILE) -c $<
+
+.S.o:
+	$(COMPILE) -c $<
+
+mostlyclean-compile:
+	-rm -f *.o core *.core
+
+clean-compile:
+
+distclean-compile:
+	-rm -f *.tab.c
+
+maintainer-clean-compile:
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
+
+.s.lo:
+	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
+
+.S.lo:
+	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
+
+mostlyclean-libtool:
+	-rm -f *.lo
+
+clean-libtool:
+	-rm -rf .libs _libs
+
+distclean-libtool:
+
+maintainer-clean-libtool:
+
+lib_sqlserver.la: $(lib_sqlserver_la_OBJECTS) $(lib_sqlserver_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(lib_sqlserver_la_LDFLAGS) $(lib_sqlserver_la_OBJECTS) $(lib_sqlserver_la_LIBADD) $(LIBS)
+
+lib_sql.la: $(lib_sql_la_OBJECTS) $(lib_sql_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(lib_sql_la_LDFLAGS) $(lib_sql_la_OBJECTS) $(lib_sql_la_LIBADD) $(LIBS)
+
+libsql.la: $(libsql_la_OBJECTS) $(libsql_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(libsql_la_LDFLAGS) $(libsql_la_OBJECTS) $(libsql_la_LIBADD) $(LIBS)
+
+mostlyclean-binPROGRAMS:
+
+clean-binPROGRAMS:
+	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+
+distclean-binPROGRAMS:
+
+maintainer-clean-binPROGRAMS:
+
+install-binPROGRAMS: $(bin_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+	@list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(LIBTOOL)  --mode=install $(INSTALL_PROGRAM) $$p $(DESTDIR)$(bindir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`"; \
+	    $(LIBTOOL)  --mode=install $(INSTALL_PROGRAM) $$p $(DESTDIR)$(bindir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \
+	  else :; fi; \
+	done
+
+uninstall-binPROGRAMS:
+	@$(NORMAL_UNINSTALL)
+	list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  rm -f $(DESTDIR)$(bindir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \
+	done
+
+sql_aclient: $(sql_aclient_OBJECTS) $(sql_aclient_DEPENDENCIES)
+	@rm -f sql_aclient
+	$(LINK) $(sql_aclient_LDFLAGS) $(sql_aclient_OBJECTS) $(sql_aclient_LDADD) $(LIBS)
+
+sql_client: $(sql_client_OBJECTS) $(sql_client_DEPENDENCIES)
+	@rm -f sql_client
+	$(LINK) $(sql_client_LDFLAGS) $(sql_client_OBJECTS) $(sql_client_LDADD) $(LIBS)
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES) $(LISP)
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	here=`pwd` && cd $(srcdir) \
+	  && mkid -f$$here/ID $$unique $(LISP)
+
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
+
+mostlyclean-tags:
+
+clean-tags:
+
+distclean-tags:
+	-rm -f TAGS ID
+
+maintainer-clean-tags:
+
+distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
+
+subdir = src/parser
+
+distdir: $(DISTFILES)
+	@for file in $(DISTFILES); do \
+	  d=$(srcdir); \
+	  if test -d $$d/$$file; then \
+	    cp -pr $$d/$$file $(distdir)/$$file; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	    || cp -p $$d/$$file $(distdir)/$$file || :; \
+	  fi; \
+	done
+info-am:
+info: info-am
+dvi-am:
+dvi: dvi-am
+check-am: all-am
+check: check-am
+installcheck-am:
+installcheck: installcheck-am
+install-exec-am: install-libLTLIBRARIES install-binPROGRAMS
+install-exec: install-exec-am
+
+install-data-am:
+install-data: install-data-am
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+install: install-am
+uninstall-am: uninstall-libLTLIBRARIES uninstall-binPROGRAMS
+uninstall: uninstall-am
+all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) all-local
+all-redirect: all-am
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install
+installdirs:
+	$(mkinstalldirs)  $(DESTDIR)$(libdir) $(DESTDIR)$(bindir)
+
+
+mostlyclean-generic:
+
+clean-generic:
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES)
+	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
+
+maintainer-clean-generic:
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
+mostlyclean-am:  mostlyclean-libLTLIBRARIES mostlyclean-compile \
+		mostlyclean-libtool mostlyclean-binPROGRAMS \
+		mostlyclean-tags mostlyclean-generic
+
+mostlyclean: mostlyclean-am
+
+clean-am:  clean-libLTLIBRARIES clean-compile clean-libtool \
+		clean-binPROGRAMS clean-tags clean-generic \
+		mostlyclean-am
+
+clean: clean-am
+
+distclean-am:  distclean-libLTLIBRARIES distclean-compile \
+		distclean-libtool distclean-binPROGRAMS distclean-tags \
+		distclean-generic clean-am
+	-rm -f libtool
+
+distclean: distclean-am
+
+maintainer-clean-am:  maintainer-clean-libLTLIBRARIES \
+		maintainer-clean-compile maintainer-clean-libtool \
+		maintainer-clean-binPROGRAMS maintainer-clean-tags \
+		maintainer-clean-generic distclean-am
+	@echo "This command is intended for maintainers to use;"
+	@echo "it deletes files that may require special tools to rebuild."
+
+maintainer-clean: maintainer-clean-am
+
+.PHONY: mostlyclean-libLTLIBRARIES distclean-libLTLIBRARIES \
+clean-libLTLIBRARIES maintainer-clean-libLTLIBRARIES \
+uninstall-libLTLIBRARIES install-libLTLIBRARIES mostlyclean-compile \
+distclean-compile clean-compile maintainer-clean-compile \
+mostlyclean-libtool distclean-libtool clean-libtool \
+maintainer-clean-libtool mostlyclean-binPROGRAMS distclean-binPROGRAMS \
+clean-binPROGRAMS maintainer-clean-binPROGRAMS uninstall-binPROGRAMS \
+install-binPROGRAMS tags mostlyclean-tags distclean-tags clean-tags \
+maintainer-clean-tags distdir info-am info dvi-am dvi check check-am \
+installcheck-am installcheck install-exec-am install-exec \
+install-data-am install-data install-am install uninstall-am uninstall \
+all-local all-redirect all-am all installdirs mostlyclean-generic \
+distclean-generic clean-generic maintainer-clean-generic clean \
+mostlyclean distclean maintainer-clean
+
+catalog-aclient.lo catalog-aclient.o: catalog-aclient.c
+sqlexecute.lo sqlexecute.o: sqlexecute.c
+sqlserver.m: sqlserver.mx
+symbol.lo symbol.o: symbol.c
+catalog-client.lo catalog-client.o: catalog-client.c
+comm.lo comm.o: comm.c
+sqlscan.lo sqlscan.o: sqlscan.c
+sqlparser.tab.lo sqlparser.tab.o: sqlparser.tab.c
+atom.lo atom.o: atom.c
+list.lo list.o: list.c
+sqlserver.proto.h: sqlserver.m
+sql.proto.h: sql.m
+sqlserver.glue.lo sqlserver.glue.o: sqlserver.glue.c sqlserver.proto.h
+statement.lo statement.o: statement.c
+sql.lo sql.o: sql.c
+sql_aclient.lo sql_aclient.o: sql_aclient.c
+gdk.lo gdk.o: gdk.c
+sql_client.lo sql_client.o: sql_client.c
+catalog.lo catalog.o: catalog.c
+sqlparser.tab.c: sqlparser.y
+sqlserver.glue.c: sqlserver.m
+sql.glue.lo sql.glue.o: sql.glue.c
+sqlserver.c: sqlserver.mx
+catalog-module.lo catalog-module.o: catalog-module.c
+sqlserver.lo sqlserver.o: sqlserver.c sqlserver.h sqlserver.proto.h
+statement_adump.lo statement_adump.o: statement_adump.c
+sqlparser.tab.h: sqlparser.y
+sqlserver.h: sqlserver.mx
+sql.glue.c: sql.m
+statement_dump.lo statement_dump.o: statement_dump.c statement_dump.c
+sql-module.lo sql-module.o: sql-module.c
+
+%.h: %.mx
+	$(MX) $(MXFLAGS) -x h $<
+
+%.c: %.mx
+	$(MX) $(MXFLAGS) -x c $<
+
+%.y: %.mx
+	$(MX) $(MXFLAGS) -x y $< 
+
+%.tab.c %.tab.h: %.y
+	$(YACC) $(YFLAGS) $<
+	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
+	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
+
+%.l: %.mx
+	$(MX) $(MXFLAGS) -x l $< 
+
+%.yy.c: %.l
+	$(LEX) $(LFLAGS) $*.l
+	if [ -f lex.yy.c ]; then $(MV) lex.yy.c $*.yy.c ; fi
+
+%.m: %.mx
+	$(MX) $(MXFLAGS) -x m $<
+
+%.mil: %.mx
+	$(MX) $(MXFLAGS) -x mil $<
+
+%.java: %.mx
+	$(MX) $(MXFLAGS) -x java $<
+
+%.tcl: %.mx
+	$(MX) $(MXFLAGS) -x tcl $<
+
+%.xsl: %.mx
+	$(MX) $(MXFLAGS) -x xsl $<
+
+%: %.mx
+	$(MX) $(MXFLAGS) -x sh $<
+
+%.i: %.mx
+	$(MX) $(MXFLAGS) -x swig $<
+
+%_wrap.c: %.i
+	$(SWIG) -tcl8 -o $@ $<
+
+%.fgr: %.mx
+	$(MX) $(MXFLAGS) -x fgr $<
+
+%.proto.h: %.m
+	$(MEL) $(INCLUDES) -o $@ -proto $<
+
+%.glue.c: %.m
+	$(MEL) $(INCLUDES) -o $@ -glue $<
+
+pkgIndex.tcl: $(TCLFILES)
+	@echo "pkg_mkIndex . *.tcl;exit;" | $(TCLSH)	
+
+all-local: $(BUILT_SOURCES)
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:

@@ -1,0 +1,7 @@
+#undef HAVE_LIBZ
+#undef HAVE_LIBBZ2
+#undef HAVE_LIBREADLINE
+
+/* LONGLONG */
+#undef HAVE_LONGLONG
+#undef HAVE__INT64

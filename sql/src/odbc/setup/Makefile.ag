@@ -1,0 +1,7 @@
+
+INCLUDES = -I$(srcdir)/../include $(ODBC_CFLAGS) 
+DEFS = -DUNIXODBC @DEFS@
+
+lib_MonetODBCs = {
+	SOURCES = drvcfg.c
+}

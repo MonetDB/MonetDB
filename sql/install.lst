@@ -1,0 +1,14 @@
+./
+conf/
+src/
+src/parser/
+	$(libdir)/lib_sqlserver.so
+	$(libdir)/lib_sql.so
+	$(libdir)/libsql.so
+	$(bindir)/sql_aclient
+	$(bindir)/sql_client
+src/odbc/
+src/odbc/setup/
+	$(libdir)/libMonetODBCs.so
+src/odbc/driver/
+	$(libdir)/libMonetODBC.so

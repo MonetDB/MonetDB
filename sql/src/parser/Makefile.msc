@@ -1,0 +1,133 @@
+
+## Use: nmake -f makefile.msc install
+
+# Change this to wherever you want to install the DLLs. This directory
+# should be in your PATH.
+BIN = C:\bin
+
+################################################################
+
+# Nothing much configurable below
+
+# cl -? describes the options
+CC = cl -GF -W3 -MD -nologo -Zi -G6
+# optimize use -Ox
+
+# No general LDFLAGS needed
+LDFLAGS = /link
+INSTALL = copy
+MKDIR = mkdir
+ECHO = echo
+CD = cd
+
+CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H
+
+CXXEXT = \"cxx\"
+
+CFLAGS = $(CFLAGS) $(INCLUDES)
+CXXFLAGS = $(CFLAGS)
+TOPDIR = .\..\..
+SRCDIR = $(TOPDIR)\..\src\parser
+!INCLUDE $(TOPDIR)\rules.msc
+all: all-msc
+install: install-msc
+INCLUDES =  -I$(MONETDIST)/include -I$(MONETDIST)/include/gdk -I$(MONETDIST)/include/monet -I$(MONETDIST)/include/plain
+BUILT_SOURCES =  cSQLserver.c
+YFLAGS =  -d -p sql
+lib_sqlserver_OBJS = sqlserver.glue.obj sqlserver.obj
+lib_sqlserver.lib: lib_sqlserver.dll
+lib_sqlserver.dll: $(lib_sqlserver_OBJS) 
+	$(CC) $(CFLAGS) -LD -Felib_sqlserver.dll $(lib_sqlserver_OBJS) $(lib_sqlserver_LIBS) $(LDFLAGS)
+
+catalog-aclient.obj: $(SRCDIR)\catalog-aclient.c
+sqlexecute.obj: $(SRCDIR)\sqlexecute.c
+	$(CC) $(CFLAGS) $(INCLUDES) -DLIBSQL -c sqlexecute.c
+sqlserver.m: $(SRCDIR)\sqlserver.mx
+symbol.obj: $(SRCDIR)\symbol.c
+	$(CC) $(CFLAGS) $(INCLUDES) -DLIBSQL -c symbol.c
+catalog-client.obj: $(SRCDIR)\catalog-client.c
+comm.obj: $(SRCDIR)\comm.c
+sqlscan.obj: $(SRCDIR)\sqlscan.c
+	$(CC) $(CFLAGS) $(INCLUDES) -DLIBSQL -c sqlscan.c
+sqlparser.tab.obj: sqlparser.tab.c
+atom.obj: $(SRCDIR)\atom.c
+	$(CC) $(CFLAGS) $(INCLUDES) -DLIBSQL -c atom.c
+list.obj: $(SRCDIR)\list.c
+	$(CC) $(CFLAGS) $(INCLUDES) -DLIBSQL -c list.c
+sqlserver.proto.h: sqlserver.m
+	$(MEL) $(INCLUDES) -o sqlserver.proto.h -proto sqlserver.m
+sql.proto.h: $(SRCDIR)\sql.m
+	$(MEL) $(INCLUDES) -o sql.proto.h -proto sql.m
+sqlserver.glue.obj: sqlserver.glue.c sqlserver.proto.h
+	$(CC) $(CFLAGS) $(INCLUDES) -DLIB_SQLSERVER -c sqlserver.glue.c
+statement.obj: $(SRCDIR)\statement.c
+	$(CC) $(CFLAGS) $(INCLUDES) -DLIBSQL -c statement.c
+sql.obj: $(SRCDIR)\sql.c
+	$(CC) $(CFLAGS) $(INCLUDES) -DLIBSQL -c sql.c
+sql_aclient.obj: $(SRCDIR)\sql_aclient.c
+gdk.obj: $(SRCDIR)\gdk.c
+sql_client.obj: $(SRCDIR)\sql_client.c
+catalog.obj: $(SRCDIR)\catalog.c
+	$(CC) $(CFLAGS) $(INCLUDES) -DLIBSQL -c catalog.c
+sqlparser.tab.c: $(SRCDIR)\sqlparser.y
+	$(YACC) $(YFLAGS) sqlparser.y
+	if exist y.tab.c $(MV) y.tab.c sqlparser.tab.c
+	if exist y.tab.h $(DEL) y.tab.h
+sqlserver.glue.c: sqlserver.m
+	$(MEL) $(INCLUDES) -o sqlserver.glue.c -glue sqlserver.m
+sql.glue.obj: sql.glue.c
+	$(CC) $(CFLAGS) $(INCLUDES) -DLIB_SQL -c sql.glue.c
+sqlserver.c: $(SRCDIR)\sqlserver.mx
+catalog-module.obj: $(SRCDIR)\catalog-module.c
+	$(CC) $(CFLAGS) $(INCLUDES) -DLIB_SQL -c catalog-module.c
+sqlserver.obj: sqlserver.c sqlserver.h sqlserver.proto.h
+	$(CC) $(CFLAGS) $(INCLUDES) -DLIB_SQLSERVER -c sqlserver.c
+statement_adump.obj: $(SRCDIR)\statement_adump.c
+sqlparser.tab.h: $(SRCDIR)\sqlparser.y
+	$(YACC) $(YFLAGS) sqlparser.y
+	if exist y.tab.c $(DEL) y.tab.c
+	if exist y.tab.h $(MV) y.tab.h sqlparser.tab.h
+sqlserver.h: $(SRCDIR)\sqlserver.mx
+sql.glue.c: $(SRCDIR)\sql.m
+	$(MEL) $(INCLUDES) -o sql.glue.c -glue sql.m
+statement_dump.obj: $(SRCDIR)\statement_dump.c $(SRCDIR)\statement_dump.c
+	$(CC) $(CFLAGS) $(INCLUDES) -DLIB_SQL -c statement_dump.c
+sql-module.obj: $(SRCDIR)\sql-module.c
+	$(CC) $(CFLAGS) $(INCLUDES) -DLIB_SQL -c sql-module.c
+libsql_aclient.dll:  libsql.lib
+sql_aclient_LIBS = libsql.lib -L$(MONETDIST)/lib -lstream $(READLINE_LIBS)
+sql_aclient_OBJS = sql_aclient.obj catalog-aclient.obj statement_adump.obj comm.obj gdk.obj
+sql_aclient.exe: $(sql_aclient_OBJS)
+	$(CC) $(CFLAGS) -Fesql_aclient.exe $(sql_aclient_OBJS) $(sql_aclient_LIBS) $(LDFLAGS) /subsystem:console /NODEFAULTLIB:LIBC
+
+lib_sql.dll:  libsql.lib
+lib_sql_LIBS = libsql.lib
+lib_sql_OBJS = sql.glue.obj sql-module.obj catalog-module.obj statement_dump.obj
+lib_sql.lib: lib_sql.dll
+lib_sql.dll: $(lib_sql_OBJS) 
+	$(CC) $(CFLAGS) -LD -Felib_sql.dll $(lib_sql_OBJS) $(lib_sql_LIBS) $(LDFLAGS)
+
+libsql_OBJS = sqlparser.tab.obj sqlscan.obj sqlexecute.obj sql.obj catalog.obj list.obj symbol.obj statement.obj atom.obj
+libsql.lib: libsql.dll
+libsql.dll: $(libsql_OBJS) 
+	$(CC) $(CFLAGS) -LD -Felibsql.dll $(libsql_OBJS) $(libsql_LIBS) $(LDFLAGS)
+
+libsql_client.dll:  libsql.lib
+sql_client_LIBS = libsql.lib -L$(MONETDIST)/lib -lbat -lmonet $(GDKLIBS) -L$(MONETDIST)/lib/Monet -l_tcpip -l_streams
+sql_client_OBJS = sql_client.obj catalog-client.obj statement_dump.obj
+sql_client.exe: $(sql_client_OBJS)
+	$(CC) $(CFLAGS) -Fesql_client.exe $(sql_client_OBJS) $(sql_client_LIBS) $(LDFLAGS) /subsystem:console /NODEFAULTLIB:LIBC
+
+all-msc: lib_sqlserver.dll lib_sql.dll libsql.dll sql_aclient.exe sql_client.exe
+install-msc: install-exec install-data
+install-exec: install_dll__sqlserver install_dll__sql install_dll_sql  install_bin_sql_aclient install_bin_sql_client  
+install_dll__sqlserver: lib_sqlserver.dll
+	$(INSTALL) lib_sqlserver.dll $(libdir)
+install_dll__sql: lib_sql.dll
+	$(INSTALL) lib_sql.dll $(libdir)
+install_dll_sql: libsql.dll
+	$(INSTALL) libsql.dll $(libdir)
+install_bin_sql_aclient: sql_aclient.exe
+	$(INSTALL) sql_aclient.exe $(bindir)
+install_bin_sql_client: sql_client.exe
+	$(INSTALL) sql_client.exe $(bindir)

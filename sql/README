@@ -1,0 +1,29 @@
+
+This directory contains the nessesary configure files and scripts to
+build a simple template module (src/template.mx) for the monet database engine.
+
+Before continuing find (or compile) a monet version 4.2 or higher.
+
+set MONETDIST
+
+export MONETDIST=`./monet-config --prefix`
+
+run bootstrap in the top directory
+mkdir $ARCH
+cd $ARCH
+../configure --prefix=`pwd` 
+gmake -j
+gmake install
+
+add the modules directory to your MONET_MOD_PATH and LD_LIBRARY_PATH
+
+ie. export MONET_MOD_PATH=`pwd`/lib/template:$MONET_MOD_PATH
+    export LD_LIBRARY_PATH=`pwd`/lib/template:$LD_LIBRARY_PATH
+
+Read the monet manual for creating a database and starting a monet server
+
+Mserver -db template
+module(template);
+avg( dbl(2.0), ZERO).print;
+
+
