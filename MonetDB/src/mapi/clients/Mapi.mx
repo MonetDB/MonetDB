@@ -32,8 +32,8 @@ running server using a database driver with a simple API and a textual protocol.
 The effectivness of such an approach has been demonstrated by the wide
 use of database API implementations, such as Perl DBI, PHP ADO, ODBC,...
 
-The database driver implementation given in this document is 
-focussed on developing applications in C/C++. The command collection 
+The database driver implementation given in this document is
+focussed on developing applications in C/C++. The command collection
 have been chosen to align with common practice, i.e. queries follow
 a prepare,execute,and fetch_row paradigm. The output is considered
 a regular table. An example of a mini
@@ -47,7 +47,8 @@ application below illustrates the main operations.
 
 #define die(X) {mapi_explain(X,stdout); exit(-1); }
 
-main(int argc, char *argv){
+main(int argc, char *argv)
+{
 	Mapi	*dbh;
 
 	dbh= mapi_connect("localhost:50001","guest",0,"sql");
@@ -109,7 +110,7 @@ in the query template.
 The Mapi library expects complete lines from the server as answers
 to query actions. Incomplete lines leads to Mapi waiting
 forever on the server. Thus formatted printing is discouraged in favor
-of tabular printing as offered by the table.print() commands in 
+of tabular printing as offered by the table.print() commands in
 Monet 5.
 
 @+ Compilation
@@ -147,7 +148,7 @@ mapi_error()	&	Test for error occurrence\\
 mapi_explain()	&	Display error message and context on stream\\
 mapi_execute()	&	Execute a query\\
 mapi_execute_array()	&Execute a query using string arguments\\
-mapi_fetch_field()	&Fetch a field from the current row\\	
+mapi_fetch_field()	&Fetch a field from the current row\\
 mapi_fetch_field_array()	& Fetch all fields from the current row\\
 mapi_fetch_line()	&	Retrieve the next line\\
 mapi_fetch_reset()	&	Set the cache reader to the begining\\
@@ -216,14 +217,14 @@ It also contains an explanation when connection to the server fails.
 
 \item[Mapi mapi_dup(Mapi mid)]:
 Setup a second communication channel using the parameter setting of
-the previous on. 
+the previous on.
 \item[int mapi_disconnect(Mapi mid)]:
-Terminates the session described by {\em mid}. Subsequent use 
+Terminates the session described by {\em mid}. Subsequent use
 of the channel represented by this descriptor leads to a failure.
 
 \item[MapiMsg mapi_query(Mapi mid, char *Command)]:
 This routine sends the Command to the database server represented by mid.
-It is one of the most common operations. 
+It is one of the most common operations.
 If Command is zero it takes the last query string kept around.
 It returns zero upon success, otherwise it indicates a failure of the request.
 The command response is buffered for consumption, e.g. mapi_fetch_row();
@@ -258,13 +259,13 @@ This routine retrieves a row from the server.
 The text retrieved is kept around in a buffer linked with the session
 descriptor from which selective fields can be extracted.
 It returns the number of fields recognized.
-A zero is returned upon encountering end of sequence 
+A zero is returned upon encountering end of sequence
 or error. This can be analysed in using mapi_error().
 
 \item[int mapi_fetch_all(Mapi mid)]:
 All rows are cached at the client side first. Subsequent calls
 to either mapi_fetch_row() will take
-the row from the cache. The number or rows cached 
+the row from the cache. The number or rows cached
 is returned.
 
 \item[int mapi_response(Mapi mid, stream s)]:
@@ -282,7 +283,7 @@ This is mostly used in combination with fetching all tuples at once.
 
 \item[char **mapi_fetch_array(Mapi mid)]:
 Returns an array of string pointers to the individual fields.
-A zero is returned upon encountering end of sequence 
+A zero is returned upon encountering end of sequence
 or error. This can be analysed in using mapi_error().
 
 \item[char *mapi_fetch_field(Mapi mid, int fnr)]:
@@ -309,8 +310,8 @@ Returns an error if the field identified does not exist.
 
 \item[MapiMsg mapi_bind_var(Mapi mid, int fldnr, int type, void *val)];
 Describe the type and location of the next parameter in a query template.
-The types recognized are {SQL_INT, SQL_LONG, SQL_CHAR, SQL_VARCHAR, SQL_FLOAT, 
-SQL_DOUBLE, SQL_TIME, SQL_DATE}. 
+The types recognized are {SQL_INT, SQL_LONG, SQL_CHAR, SQL_VARCHAR, SQL_FLOAT,
+SQL_DOUBLE, SQL_TIME, SQL_DATE}.
 The binding operations should be performed after the mapi_execute command.
 Subsequently all rows being fetched also involve delivery of the field
 values in the C-variables using proper conversion. For variable length
@@ -322,7 +323,7 @@ Describe the location of a numeric parameter in a query template.
 
 \item[MapiMsg mapi_param(Mapi mid, int fldnr, char **val)];
 Bind a string variable with the n-th placeholder in the query
-template. 
+template.
 No conversion takes place.
 
 \item[MapiMsg mapi_param_type(Mapi mid, int fldnr, int type, void *val)];
@@ -337,7 +338,7 @@ If maxrows is negative, all rows will be fetched before the
 application is permitted to continue.
 
 \item[MapiMsg mapi_finish(Mapi mid)]:
-This routine is used in the rare cases that consumption of the 
+This routine is used in the rare cases that consumption of the
 tuple stream produced should be prematurely terminated. It is automatically
 called when a new query is shipped to the database.
 
@@ -354,7 +355,7 @@ should be freed after use.
 Set the trace flag to monitor interaction with the server.
 
 \item[MapiMsg  mapi_trace_log(Mapi mid, char *fname)]:
-The interaction between the client and server is logged for 
+The interaction between the client and server is logged for
 offline inspection. Beware that the log file overwrites any
 previous log. It is not intended for recovery.
 
@@ -365,7 +366,7 @@ Test avalability of the server. Returns zero upon success.
 
 The remaining operations are wrappers around the datastructures
 maintained. Note that column properties are derived from the
-table output returned from the server. 
+table output returned from the server.
 \begin{description}
 \item[ char *mapi_get_name(Mapi mid, int fnr)]:
 \item[ char *mapi_get_table(Mapi mid, int fnr)]:
@@ -414,7 +415,7 @@ MERROR  & Mapi internal error.\\
 @h
 
 /*#define MONET5*/
-#define BLOCKED 
+#define BLOCKED
 
 
 #ifdef HAVE_UNISTD_H
@@ -458,12 +459,12 @@ char user_name = "win32";
 
 #define NAMELEN	256
 #define MAPIBLKSIZE 256	/* minimum buffer shipped */
-				
+
 #define SQL_AUTO	0	/* automatic type detection */
 #define SQL_INT		1
 #define SQL_LONG	2
 #define SQL_CHAR	3
-#define SQL_VARCHAR	4	
+#define SQL_VARCHAR	4
 #define SQL_FLOAT	5
 #define SQL_DOUBLE	6
 #define SQL_TIME	7
@@ -506,11 +507,11 @@ typedef struct{
 	int  coltype;
 	int  precision;
 	int  scale;
-	int  isnull;		
+	int  isnull;
 
 	void *inparam;		/* to application variable */
 	int  intype;
-	void *outparam;		
+	void *outparam;
 	int  outtype;
 } MapiField;
 
@@ -526,8 +527,8 @@ considered a single field.
 typedef struct {
 	int rowlimit;	/* maximal number of rows to cache */
 	int limit;	/* current storage space limit */
-	int writer;	
-	int reader; 
+	int writer;
+	int reader;
 	int tuples;	/* actual tuples in cache */
 	int  *fldcnt;	/* actual number of fields in each row */
 	char **rows;	/* string representation of rows received */
@@ -561,7 +562,7 @@ typedef struct {
 	int connected;
 	int active;		/* set when not all rows have been received */
 	char *template;		/* keep parameterized query text around */
-	char *query; 
+	char *query;
 
 	int	fieldcnt;	/* the table report section */
 	int	rows_affected;	/* mostly unknown */
@@ -584,12 +585,12 @@ extern "C" {
 
 #ifdef _MSC_VER
 #ifndef LIBMAPI
-#define mapi_export extern __declspec(dllimport) 
+#define mapi_export extern __declspec(dllimport)
 #else
-#define mapi_export extern __declspec(dllexport) 
+#define mapi_export extern __declspec(dllexport)
 #endif
 #else
-#define mapi_export extern 
+#define mapi_export extern
 #endif
 
 mapi_export MapiMsg mapi_bind(Mapi mid, int fnr, char **ptr) ;
@@ -597,7 +598,7 @@ mapi_export MapiMsg mapi_bind_var(Mapi mid, int fnr, int type, void *ptr) ;
 mapi_export MapiMsg mapi_bind_numeric(Mapi mid, int fnr, int scale,int precision, void *ptr) ;
 mapi_export Mapi mapi_connect(char *host, char *username,
 	 char *password, char *lang);
-mapi_export Mapi mapi_connect_ssl(char *host, char *username, 
+mapi_export Mapi mapi_connect_ssl(char *host, char *username,
 	char *password, char *lang);
 mapi_export MapiMsg mapi_disconnect(Mapi mid);
 mapi_export MapiMsg mapi_error(Mapi mid);
@@ -638,16 +639,6 @@ mapi_export char *mapi_get_name(Mapi mid,int fnr);
 mapi_export char *mapi_quote(char *msg);
 mapi_export char *mapi_unquote(char *msg);
 
-static void promptMonet(Mapi mid);
-static void mapi_cache_reset(Mapi mid);
-static Mapi mapi_new();
-static void mapi_check_query(Mapi mid);
-static void mapi_extend_cache(Mapi mid);
-static int mapi_get_row(Mapi mid) ;
-static int mapi_extend_fields(Mapi mid,int minfields);
-static int mapi_slice_row(Mapi mid);
-static int mapi_setError(Mapi mid, char *msg, char *action);
-
 #ifdef __cplusplus
 }
 #endif
@@ -678,6 +669,16 @@ They have been developed to ease interaction.
 # endif
 #endif
 
+static void promptMonet(Mapi mid);
+static void mapi_cache_reset(Mapi mid);
+static Mapi mapi_new(void);
+static void mapi_check_query(Mapi mid);
+static void mapi_extend_cache(Mapi mid);
+static int mapi_get_row(Mapi mid) ;
+static int mapi_extend_fields(Mapi mid,int minfields);
+static int mapi_slice_row(Mapi mid);
+static int mapi_setError(Mapi mid, char *msg, char *action);
+
 @+ Channel constructor
 The first call of an application is to establish a connection with
 an already server. The username and password are sent as part of
@@ -685,13 +686,16 @@ the initialization sequence.
 Future versions may be allowed to set the username and will also
 provide a secure socket layer support.
 @c
-MapiMsg mapi_trace(Mapi mid, int flag){
+MapiMsg mapi_trace(Mapi mid, int flag)
+{
 	assert(mid);
 	mapi_check(mid,mid->error,"mapi_trace");
 	mid->trace = flag;
 	return MOK;
 }
-MapiMsg mapi_trace_log(Mapi mid, char *nme){
+
+MapiMsg mapi_trace_log(Mapi mid, char *nme)
+{
 	assert(mid);
 	mid->tracelog= open_wastream(nme);
 	if( mid->tracelog->errnr) {
@@ -701,27 +705,37 @@ MapiMsg mapi_trace_log(Mapi mid, char *nme){
 	}
 	return MOK;
 }
-MapiMsg mapi_ping(Mapi mid){
+
+MapiMsg mapi_ping(Mapi mid)
+{
 	assert(mid);
 	mapi_check(mid,mid->error,"mapi_ping");
-	if( mid->languageId == LANG_SQL) mapi_query(mid,"select true;");
-	if( mid->languageId == LANG_MAL) mapi_query(mid,"print(1);");
-	if( mid->languageId == LANG_MIL) mapi_query(mid,"print(1);");
+	if( mid->languageId == LANG_SQL)
+		mapi_query(mid,"select true;");
+	if( mid->languageId == LANG_MAL)
+		mapi_query(mid,"print(1);");
+	if( mid->languageId == LANG_MIL)
+		mapi_query(mid,"print(1);");
 	return mapi_error(mid);
 }
-int mapi_setError(Mapi mid, char *msg, char *action){
+
+static int mapi_setError(Mapi mid, char *msg, char *action)
+{
 	char *c;
 	assert(mid);
 	assert(msg);
 	c= (char*) malloc(strlen(msg)+1);
 	strcpy(c,msg);
-	if( mid->errorstr) free(mid->errorstr);
+	if( mid->errorstr)
+		free(mid->errorstr);
 	mid->error = MERROR;
 	mid->errorstr = c;
 	mid->action = action;
 	return mid->error;
 }
-void mapi_clrError(Mapi mid){
+
+void mapi_clrError(Mapi mid)
+{
 	if( mid->error){
 		if(mid->errorstr) free(mid->errorstr);
 		mid->action=0;
@@ -729,12 +743,14 @@ void mapi_clrError(Mapi mid){
 	}
 
 }
-Mapi mapi_new() {
+
+static Mapi mapi_new(void)
+{
 	Mapi m;
 	m = (Mapi) malloc(sizeof(MapiStruct));
 	assert(m);
 	m->template=0;
-        m->query= 0;
+	m->query= 0;
 
 	m->trace = 0;
 	m->everything = 1;
@@ -772,7 +788,8 @@ Mapi mapi_new() {
 	return m;
 }
 
-Mapi mapi_dup(Mapi mid) {
+Mapi mapi_dup(Mapi mid)
+{
 	Mapi m;
 	assert(mid);
 	mapi_check(mid,0,"mapi_dup");
@@ -788,12 +805,16 @@ Mapi mapi_dup(Mapi mid) {
 	m->port= mid->port;
 	return m;
 }
-Mapi mapi_connect_ssl(char *host, char *username, char *password, char *lang) {
+
+Mapi mapi_connect_ssl(char *host, char *username, char *password, char *lang)
+{
 	Mapi mid = mapi_connect(host,username,password,lang);
 	mapi_setError(mid,"SSL connections not yet supported","mapi_connect_ssl");
 	return mid;
 }
-Mapi mapi_connect(char *host, char *username, char *password, char *lang) {
+
+Mapi mapi_connect(char *host, char *username, char *password, char *lang)
+{
 	struct hostent *hp;
 	struct sockaddr_in server;
 	int s;
@@ -801,64 +822,70 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang) {
 	Mapi mid;
 	int port=0,len;
 	char buf[BLOCK];
-	int ret,i=0;
+	int ret;
 
 	mid= mapi_new();
 
-	
+
 	/* avoid writing into constant strings ! */
-	if( host) snprintf(mid->hostname,NAMELEN,"%s",host);
-	else strcpy(mid->hostname,"localhost");
+	if( host)
+		snprintf(mid->hostname,NAMELEN,"%s",host);
+	else
+		strcpy(mid->hostname,"localhost");
 	c= strchr(mid->hostname,':');
-	if( c){
+	if (c) {
 		*c = 0;
 		port = atol(c+1);
-	} 
-	if(port==0){
-                char *def;
-                if((def = getenv("MAPIPORT"))!=(char*)NULL)
-                       port=atoi(def);
 	}
-	if(port==0) port = 50001;/* hardwired default */
-	if(username) strcpy(mid->username,username);
-	if(password==0) password= getlogin();
-	if(password) strcpy(mid->password,password);
-	
+	if(port==0){
+		char *def;
+		if((def = getenv("MAPIPORT"))!=NULL)
+			port=atoi(def);
+	}
+	if(port==0)
+		port = 50001;	       /* hardwired default */
+	if(username)
+		strcpy(mid->username,username);
+	if(password==0)
+		password= getlogin();
+	if(password)
+		strcpy(mid->password,password);
+
 	mid->port= port;
 	hp = gethostbyname(mid->hostname);
 	if(!hp) {
-	    mapi_setError(mid,"gethostbyname failed","mapi_connect");
-	    return(mid);
+		mapi_setError(mid,"gethostbyname failed","mapi_connect");
+		return(mid);
 	}
 	memset(&server, 0, sizeof(server));
 	memcpy(&server.sin_addr, hp->h_addr, hp->h_length);
-	
+
 	server.sin_family = hp->h_addrtype;
 	server.sin_port   = htons((unsigned short)(mid->port&0xFFFF));
-	
+
 	s=socket(AF_INET, SOCK_STREAM, 0);
 	if(s<0) {
-	    mapi_setError(mid,"Open socket failed","mapi_connect");
-	    return(mid);
+		mapi_setError(mid,"Open socket failed","mapi_connect");
+		return(mid);
 	}
 
 	if(connect(s,(struct sockaddr *)&server, sizeof(server))<0) {
-	    perror("! Mapi.mapi_connect: ");
-	    mapi_setError(mid,"Setup connection failed","mapi_connect");
-	    return(mid);
+		perror("! Mapi.mapi_connect: ");
+		mapi_setError(mid,"Setup connection failed","mapi_connect");
+		return(mid);
 	}
-	
+
 	mid->to = socket_wastream(s,"Mapi client write");
-	if( mid->to->errnr){
-	    mapi_setError(mid,"Cannot open socket for writing ","mapi_connect");
-	    return(mid);
+	if (mid->to->errnr){
+		mapi_setError(mid,"Cannot open socket for writing ","mapi_connect");
+		return(mid);
 	}
 	mid->connected=1;
 
 	/* default prompt */
 	strcpy(mid -> prompt,">");
-	
-	{ 
+
+	{
 	memset(buf,0,BLOCK);
 #ifdef BLOCKED
 	snprintf(buf, BLOCK,"%s:%s:blocked\n", mid->username, mid->password);
@@ -882,8 +909,8 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang) {
 	mid->to = block_stream(socket_wstream(s,"Mapi client write"));
 #endif
 	if( mid->to->errnr){
-	    mapi_setError(mid,"Cannot open socket for writing ","mapi_connect");
-	    return(mid);
+		mapi_setError(mid,"Cannot open socket for writing ","mapi_connect");
+		return(mid);
 	}
 
 #ifdef BLOCKED
@@ -892,8 +919,8 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang) {
 	mid->from = socket_rastream(s,"Mapi client read");
 #endif
 	if( mid->from->errnr){
-	    mapi_setError(mid,"Cannot open socket for reading","mapi_connect");
-	    return(mid);
+		mapi_setError(mid,"Cannot open socket for reading","mapi_connect");
+		return(mid);
 	}
 	/* consume the welcome message from the server */
 	while(mid->error==MOK && mid->active ){
@@ -901,64 +928,85 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang) {
 		if( mapi_error(mid)) {  mapi_explain(mid,stdout); break;}
 	}
 
-	if(mid->trace) printf("connection established\n");
-	if( lang==0 || strcmp(lang,"mal")==0) return mid;
+	if(mid->trace)
+		printf("connection established\n");
+	if( lang==0 || strcmp(lang,"mal")==0)
+		return mid;
 
 	strcpy(mid->language,lang);
-	if(strcmp(lang,"mil")==0 ) mid->languageId= LANG_MIL;
-	if(strcmp(lang,"mal")==0 ) mid->languageId= LANG_MAL;
-	if(strcmp(lang,"sql")==0 ) mid->languageId= LANG_SQL;
-	if(strcmp(lang,"xcore")==0 ) mid->languageId= LANG_XCORE;
-	if(strcmp(lang,"xquery")==0 ) mid->languageId= LANG_XQUERY;
+	if(strcmp(lang,"mil")==0 )
+		mid->languageId= LANG_MIL;
+	if(strcmp(lang,"mal")==0 )
+		mid->languageId= LANG_MAL;
+	if(strcmp(lang,"sql")==0 )
+		mid->languageId= LANG_SQL;
+	if(strcmp(lang,"xcore")==0 )
+		mid->languageId= LANG_XCORE;
+	if(strcmp(lang,"xquery")==0 )
+		mid->languageId= LANG_XQUERY;
 #ifdef MONET5
-	  /* start the scenario handler*/
-	  snprintf(buf,BLOCK,"%s();",lang);
-	  if( mapi_error(mid)) return mid;
-	  if( mid->trace) printf("send scenario initializer %s\n", buf);
-	  mapi_query(mid,buf);
+	/* start the scenario handler*/
+	snprintf(buf,BLOCK,"%s();",lang);
+	if( mapi_error(mid))
+		return mid;
+	if( mid->trace)
+		printf("send scenario initializer %s\n", buf);
+	mapi_query(mid,buf);
 #endif
-          return mid;
+	return mid;
 	}
 }
 @-
 Once the start of the prompt string (\0001) has been recognized, the rest should
 be eaten away. It is stored in the prompt buffer for possible subsequent display.
 @c
-MapiMsg mapi_error(Mapi mid){
+MapiMsg mapi_error(Mapi mid)
+{
 	assert(mid);
 	return mid->error;
 }
-void promptMonet(Mapi mid) {
-        int i=0;
-	char c,*s;
+
+static void promptMonet(Mapi mid)
+{
+	int i=0;
+	char *s;
 
 	assert(mid);
-	if( mid->trace) printf("promptMonet:");
+	if( mid->trace)
+		printf("promptMonet:");
 	s= strchr(mid->blk.buf+mid->blk.nxt,'\n');
 	assert(s);
 	*s = 0;
 	i= s-(mid->blk.buf+mid->blk.nxt);
-	if( i < NAMELEN-1) strncpy(mid->prompt,mid->blk.buf+mid->blk.nxt,i+1);
+	if( i < NAMELEN-1)
+		strncpy(mid->prompt,mid->blk.buf+mid->blk.nxt,i+1);
 	mid->blk.nxt += i+1;
 	mid->active = 0;
-	if( mid->trace) printf("%s\n",mid->prompt);
+	if( mid->trace)
+		printf("%s\n",mid->prompt);
 }
 
 @
 Disconnection from the server leads to removal of the
 Mapi structure. Subsequent access may lead to a crash.
 @c
-MapiMsg mapi_disconnect(Mapi mid) {
+MapiMsg mapi_disconnect(Mapi mid)
+{
 	int i;
 	assert(mid);
 	mapi_check(mid,mid->error,"mapi_disconnect");
 	for(i=0;i<mid->cache.writer;i++){
-		if( mid->cache.rows[i]) free( mid->cache.rows[i]);
-		if( mid->cache.anchors[i]) free( mid->cache.anchors[i]);
+		if( mid->cache.rows[i])
+			free( mid->cache.rows[i]);
+		if( mid->cache.anchors[i])
+			free( mid->cache.anchors[i]);
 	}
-	if(mid->cache.fldcnt) (void) free(mid->cache.fldcnt);
-	if(mid->cache.anchors) (void) free(mid->cache.anchors);
-	if(mid->cache.rows) (void) free(mid->cache.rows);
+	if(mid->cache.fldcnt)
+		(void) free(mid->cache.fldcnt);
+	if(mid->cache.anchors)
+		(void) free(mid->cache.anchors);
+	if(mid->cache.rows)
+		(void) free(mid->cache.rows);
 	if( mid->connected >1){
 		mid->connected=0;
 		return mapi_setError(mid,"Warning: multiple connections open",
@@ -973,11 +1021,13 @@ MapiMsg mapi_disconnect(Mapi mid) {
 To synchronize on a prompt, the low level routine mapi_finish can be used.
 It disgards all output received.
 @c
-MapiMsg mapi_finish(Mapi mid) {
+MapiMsg mapi_finish(Mapi mid)
+{
 	assert(mid);
 	mapi_check(mid,mid->error,"mapi_finish");
 	if( mid->active)
-	while(mapi_fetch_line(mid))  ;
+		while(mapi_fetch_line(mid))
+			;
 	return mid->error;
 }
 @-
@@ -1004,12 +1054,14 @@ MapiMsg mapi_bind_var(Mapi mid, int fnr, int type, void *ptr) {
 	mid->fields[fnr].outparam= ptr;
 	if( type>=0 && type < SQL_NUMERIC)
 		mid->fields[fnr].outtype= type;
-	else	return mapi_setError(mid,"Illegal SQL type identifier",
+	else
+		return mapi_setError(mid,"Illegal SQL type identifier",
 					"mapi_bind_var");
 	return MOK;
 }
 MapiMsg mapi_bind_numeric(Mapi mid, int fnr, int scale,int prec, void *ptr) {
-	if( mapi_bind_var(mid,fnr, SQL_NUMERIC,ptr) ) return mid->error;
+	if( mapi_bind_var(mid,fnr, SQL_NUMERIC,ptr) )
+		return mid->error;
 	mid->fields[fnr].scale= scale;
 	mid->fields[fnr].precision= prec;
 	return MOK;
@@ -1031,46 +1083,56 @@ because this may lead to a synchronization error easily.
 		assert(mid->template);
 		strcpy(mid->template,new);
 	}
-	if(mid->trace) printf("modified SQL:%s\n",mid->query);
+	if(mid->trace)
+		printf("modified SQL:%s\n",mid->query);
 	i++;
 @c
-static void mapi_check_query(Mapi mid) {
+static void mapi_check_query(Mapi mid)
+{
 	int i;
-	char *c,*newqry;
+	char *c;
 
 	assert(mid->query);
 	mapi_clrError(mid);
 	i= strlen(mid->query)-1;
 	for(c=mid->query;*c; c++){
 		if( *c == '\n'){
-		mapi_setError(mid,"Newline in query string not allowed","mapi_check_query");
-		*c= ' ';
+			mapi_setError(mid,"Newline in query string not allowed","mapi_check_query");
+			*c= ' ';
 		}
 	}
-	if( mid->languageId== LANG_SQL){
-		if(mid->query[i] != ';'){ @:expandQry(';')@ }
+	if( mid->languageId== LANG_SQL) {
+		if(mid->query[i] != ';') {
+			@:expandQry(';')@
+		}
 	}
-	if( mid->query[i] != '\n'){ @:expandQry('\n')@ }
+	if( mid->query[i] != '\n') {
+		@:expandQry('\n')@
+	}
 }
 
-MapiMsg mapi_timeout(Mapi mid, int time) {
+MapiMsg mapi_timeout(Mapi mid, int time)
+{
 	assert(mid);
 	mapi_check(mid,mid->error,"mapi_timeout");
-	if( mid->trace) printf("Set timeout to %d\n", time);
+	if( mid->trace)
+		printf("Set timeout to %d\n", time);
 	return mapi_setError(mid,"Operation not yet implemented","mapi_timeout");
 }
 
-MapiMsg mapi_explain(Mapi mid, FILE *fd) { 
-	int i,j;
+MapiMsg mapi_explain(Mapi mid, FILE *fd)
+{
+	/*int i;*/
+	int j;
 	assert(mid);
 	mapi_check(mid,mid->error,"mapi_explain");
 	fprintf(fd,"MAPI  = %s\@%s:%d\n",
 		mid->username, mid->hostname, mid->port);
 	fprintf(fd,"ACTION= %s\n", mid->action);
-	fprintf(fd,"QUERY = %s%c", mid->query, 
+	fprintf(fd,"QUERY = %s%c", mid->query,
 		(strchr(mid->query,'\n')?'\0':'\n'));
-	if( mid->error) 
-	fprintf(fd,"ERROR = %s\n",mid->errorstr);
+	if( mid->error)
+		fprintf(fd,"ERROR = %s\n",mid->errorstr);
 /*
 	for(i= mid->cache.reader+1; i<mid->cache.writer-1; i++){
 		fprintf(fd,"CACHE %d:%c",i, mid->cache.rows[i][0]);
@@ -1079,6 +1141,7 @@ MapiMsg mapi_explain(Mapi mid, FILE *fd) {
 		fprintf(fd,"\n");
 	}
 */
+	return MOK;
 }
 @-
 The routine mapi_query is one of the most heavily used ones.
@@ -1095,7 +1158,8 @@ The query is retained in the Mapi structure to repeate shipping.
 			free(mid->template);
 			mid->template=0;
 		}
-		if( mid->query) free(mid->query);
+		if( mid->query)
+			free(mid->query);
 		mid->query= (char*) malloc( len+1);
 		assert(mid->query);
 		strcpy(mid->query,cmd);
@@ -1104,16 +1168,19 @@ The query is retained in the Mapi structure to repeate shipping.
 			assert(mid->template);
 			strcpy(mid->template,cmd);
 		}
-	} 
+	}
 	mapi_check_query(mid);
 	ret= mid->error;
 @c
-MapiMsg mapi_prepare(Mapi mid, char *cmd) {
+MapiMsg mapi_prepare(Mapi mid, char *cmd)
+{
 	int ret;
 	@:prepareQuery@
 	return ret;
 }
-MapiMsg mapi_prepare_array(Mapi mid, char *cmd, char **val) {
+
+MapiMsg mapi_prepare_array(Mapi mid, char *cmd, char **val)
+{
 	int i,ret;
 	@:prepareQuery@
 	/* first get rid of previous bindings */
@@ -1126,7 +1193,8 @@ MapiMsg mapi_prepare_array(Mapi mid, char *cmd, char **val) {
 		mid->fields[i].intype= SQL_AUTO;
 		if( i+1 >= mid->maxfields) mapi_extend_fields(mid,i);
 	}
-	if( mid->trace) printf("mapi_prepare_array:%d\n",i);
+	if( mid->trace)
+		printf("mapi_prepare_array:%d\n",i);
 	return mid->error;
 }
 @-
@@ -1141,13 +1209,16 @@ some care not overfloating the space allocated.
 		mid->query= n;
 	}
 @c
-char *mapi_param_store(Mapi mid){
+char *mapi_param_store(Mapi mid)
+{
 	char *val, buf[MAPIBLKSIZE];
 	char *p=mid->template, *q;
-	int i,k,size=0,colsize, limit;
+	int i, k, size = 0, limit;
 
-	if( mid->template==0) return;
-	if( mid->query) free(mid->query);
+	if( mid->template==0)
+		return NULL;
+	if( mid->query)
+		free(mid->query);
 
 	limit= strlen(mid->template)+MAPIBLKSIZE;
 	mid->query= (char*) malloc(limit);
@@ -1157,52 +1228,60 @@ char *mapi_param_store(Mapi mid){
 	q= strchr(mid->template,PLACEHOLDER);
 	i=0;
 	while(q){
-		if( q>p && *(q-1)=='\\'){ q= strchr(q+1,PLACEHOLDER); continue;}
+		if( q>p && *(q-1)=='\\'){
+			q= strchr(q+1,PLACEHOLDER);
+			continue;
+		}
 
 		k= strlen(mid->query);
 		strncpy(mid->query+k,
-			mid->template+((int)p-(int)mid->template), 
+			mid->template+((int)p-(int)mid->template),
 			(int)q-(int)p);
 		mid->query[k+(int)q-(int)p]=0;
-	
+
 		for(;i<mid->maxfields;i++)
-		if( mid->fields[i].inparam) break;
+			if( mid->fields[i].inparam)
+				break;
 
 		if( i==mid->maxfields || mid->fields[i].inparam==0) {
 			mid->query[strlen(mid->query)]=PLACEHOLDER;
 		} else
-		switch(mid->fields[i].intype){
-		case SQL_INT: @:checkSpace(30)@
-			sprintf(mid->query+strlen(mid->query),
-				"%d",*(int *)mid->fields[i].inparam);
-			break;
-		case SQL_LONG: @:checkSpace(30)@
-			sprintf(mid->query+strlen(mid->query),
-				"%d",*(long *)mid->fields[i].inparam);
-			break;
-		case SQL_FLOAT: @:checkSpace(30)@
-			sprintf(mid->query+strlen(mid->query),
-				"%f",*(float *)mid->fields[i].inparam);
-			break;
-		case SQL_DOUBLE:@:checkSpace(30)@
-			sprintf(mid->query+strlen(mid->query),
-				"%f",*(double *)mid->fields[i].inparam);
-			break;
-		case SQL_CHAR:
-			buf[0] =*(char*)mid->fields[i].inparam;
-			buf[1]=0;
-			val= mapi_quote(buf);
-			@:checkSpace(strlen(val))@
-			sprintf(mid->query+strlen(mid->query), "'%c'",val);
-			break;
-		case SQL_VARCHAR:
-			val= mapi_quote((char*)mid->fields[i].inparam);
-			@:checkSpace(strlen(val))@
-			sprintf(mid->query+strlen(mid->query), "'%c'",val);
-			break;
-		default:
-			strcpy(mid->query+strlen(mid->query),mid->fields[i].inparam);
-		}
+			switch(mid->fields[i].intype) {
+			case SQL_INT:
+				@:checkSpace(30)@
+				sprintf(mid->query+strlen(mid->query),
+					"%d",*(int *)mid->fields[i].inparam);
+				break;
+			case SQL_LONG: 
+				@:checkSpace(30)@
+				sprintf(mid->query+strlen(mid->query),
+					"%ld",*(long *)mid->fields[i].inparam);
+				break;
+			case SQL_FLOAT:
+				@:checkSpace(30)@
+				sprintf(mid->query+strlen(mid->query),
+					"%f",*(float *)mid->fields[i].inparam);
+				break;
+			case SQL_DOUBLE:
+				@:checkSpace(30)@
+				sprintf(mid->query+strlen(mid->query),
+					"%f",*(double *)mid->fields[i].inparam);
+				break;
+			case SQL_CHAR:
+				buf[0] =*(char*)mid->fields[i].inparam;
+				buf[1]=0;
+				val= mapi_quote(buf);
+				@:checkSpace(strlen(val))@
+				sprintf(mid->query+strlen(mid->query), "'%s'",val);
+				break;
+			case SQL_VARCHAR:
+				val= mapi_quote((char*)mid->fields[i].inparam);
+				@:checkSpace(strlen(val))@
+				sprintf(mid->query+strlen(mid->query), "'%s'",val);
+				break;
+			default:
+				strcpy(mid->query+strlen(mid->query),mid->fields[i].inparam);
+			}
 
 		i++;
 		p= q+1;
@@ -1210,12 +1289,14 @@ char *mapi_param_store(Mapi mid){
 	}
 	@:checkSpace(strlen(p))@
 	strcpy(mid->query+strlen(mid->query),p);
-	if( mid->trace) printf("param_store: result=%s\n",mid->query);
+	if( mid->trace)
+		printf("param_store: result=%s\n",mid->query);
 	return mid->query;
 }
 
-MapiMsg mapi_execute(Mapi mid) {
-	int k,size;
+MapiMsg mapi_execute(Mapi mid)
+{
+	int size;
 	char *cmd;
 
 	assert(mid);
@@ -1225,21 +1306,23 @@ MapiMsg mapi_execute(Mapi mid) {
 	size =strlen(cmd) /* null byte */;
 
 	mapi_cache_reset(mid);
-        if (mid->trace) {
-                printf("mapi_query:%d:%s\n",size, cmd);
-        }
-        if (mid->from->errnr || mid->to->errnr) {
-                return mapi_setError(mid, "communication line broken",
+	if (mid->trace) {
+		printf("mapi_query:%d:%s\n",size, cmd);
+	}
+	if (mid->from->errnr || mid->to->errnr) {
+		return mapi_setError(mid, "communication line broken",
 						"mapi_execute");
-        }
+	}
 	if( mid->to->write(mid->to,cmd,1,size) != size){
 		return mapi_setError(mid, "write error on stream",
 				"mapi_execute");
 	}
 	mid->to->flush(mid->to);
-        return MOK;
+	return MOK;
 }
-MapiMsg mapi_execute_array(Mapi mid, char **val) {
+
+MapiMsg mapi_execute_array(Mapi mid, char **val)
+{
 	int ret;
 	char *cmd;
 	cmd= mid->query;
@@ -1248,18 +1331,19 @@ MapiMsg mapi_execute_array(Mapi mid, char **val) {
 	return ret? ret: mapi_execute(mid);
 }
 
-MapiMsg mapi_query(Mapi mid, char* cmd) {
+MapiMsg mapi_query(Mapi mid, char* cmd)
+{
 	int ret;
 	@:prepareQuery@
-	if(ret == MOK) ret= mapi_execute(mid);
+	if(ret == MOK)
+		ret= mapi_execute(mid);
 	if(ret==MOK) {
 		/* look ahead to detect errors */
 		int oldrd= mid->cache.reader;
 		int rd=0;
 		/* mapi_fetch_line(mid);*/
-		while(mid->error==MOK && mid->active && rd++ <mid->cache.limit){
+		while(mid->error==MOK && mid->active && rd++ <mid->cache.limit)
 			mapi_get_row(mid);
-		}
 		mid->cache.reader= oldrd;
 		ret= mid->error;
 	}
@@ -1267,16 +1351,18 @@ MapiMsg mapi_query(Mapi mid, char* cmd) {
 		printf("mapi_query return:%d\n",ret);
 	return ret;
 }
-MapiMsg mapi_query_array(Mapi mid, char* cmd, char **val) {
+
+MapiMsg mapi_query_array(Mapi mid, char* cmd, char **val)
+{
 	int ret;
 	ret= mapi_prepare_array(mid,cmd,val);
-	if(ret == MOK) ret= mapi_execute(mid);
+	if(ret == MOK)
+		ret= mapi_execute(mid);
 	if(ret==MOK) {
 		/* look ahead to detect errors */
 		int oldrd= mid->cache.reader;
-		while(mid->error==MOK && mid->active ){
+		while(mid->error==MOK && mid->active )
 			mapi_get_row(mid);
-		}
 		mid->cache.reader= oldrd;
 		ret= mid->error;
 	}
@@ -1291,7 +1377,8 @@ They will not analyse the result for errors or
 header information, but simply through the output
 received from the server to the stream indicated.
 @c
-MapiMsg mapi_quick_query(Mapi mid, char* cmd, FILE *fd) {
+MapiMsg mapi_quick_query(Mapi mid, char* cmd, FILE *fd)
+{
 	int ret;
 	@:prepareQuery@
 	if(ret == MOK) ret= mapi_execute(mid);
@@ -1303,10 +1390,13 @@ MapiMsg mapi_quick_query(Mapi mid, char* cmd, FILE *fd) {
 		printf("mapi_quick_query return:%d\n",ret);
 	return ret;
 }
-MapiMsg mapi_quick_query_array(Mapi mid, char* cmd, char **val, FILE *fd) {
+
+MapiMsg mapi_quick_query_array(Mapi mid, char* cmd, char **val, FILE *fd)
+{
 	int ret;
 	ret= mapi_prepare_array(mid,cmd,val);
-	if(ret == MOK) ret= mapi_execute(mid);
+	if(ret == MOK)
+		ret= mapi_execute(mid);
 	if(ret==MOK) {
 		/* look ahead to detect errors */
 		mapi_response(mid,fd);
@@ -1317,46 +1407,59 @@ MapiMsg mapi_quick_query_array(Mapi mid, char* cmd, char **val, FILE *fd) {
 	return ret;
 }
 
-void mapi_cache_reset(Mapi mid){
+static void mapi_cache_reset(Mapi mid)
+{
 	int i;
 	mapi_finish(mid);
 	mid->rows_affected = 0;
 	mid->active= 1;
-	for(i=0;i< mid->cache.writer; i++)
-	if( mid->cache.rows[i])
-		mid->cache.rows[i][0]=0;
+	for (i=0;i< mid->cache.writer; i++)
+		if( mid->cache.rows[i])
+			mid->cache.rows[i][0]=0;
 	mid->cache.reader= -1;
 	mid->cache.tuples= 0;
 	mid->cache.writer= 0;
 	memset(mid->cache.fldcnt,0, sizeof(int)* mid->cache.limit);
 }
-MapiMsg mapi_cache_limit(Mapi mid, int limit){
-	int i;
+
+MapiMsg mapi_cache_limit(Mapi mid, int limit)
+{
 	/* clean out superflous space TODO */
 	mid->cache.rowlimit= limit;
 	return MOK;
 }
-MapiMsg mapi_fetch_reset(Mapi mid){
+
+MapiMsg mapi_fetch_reset(Mapi mid)
+{
 	assert(mid);
 	mid->cache.reader= -1;
 	return MOK;
 }
-MapiMsg mapi_seek_row(Mapi mid,int rownr){
+
+MapiMsg mapi_seek_row(Mapi mid,int rownr)
+{
 	int i;
 	assert(mid);
 	mid->cache.reader= -1;
-	if( rownr<0) return mapi_setError(mid,"Illegal row number","mapi_seek_row");
+	if( rownr<0) 
+		return mapi_setError(mid,"Illegal row number","mapi_seek_row");
 	for(i=0; rownr>=0 && i< mid->cache.writer;i++){
-		if( mid->cache.rows[i][0]=='#' ) continue;
-		if( mid->cache.rows[i][0]=='!' ) continue;
-		if(--rownr<0) break;
+		if( mid->cache.rows[i][0]=='#' )
+			continue;
+		if( mid->cache.rows[i][0]=='!' )
+			continue;
+		if(--rownr<0)
+			break;
 	}
-	if( rownr>=0) return mapi_setError(mid,"Row not found","mapi_seek_row");
+	if( rownr>=0)
+		return mapi_setError(mid,"Row not found","mapi_seek_row");
 	mid->cache.reader= i;
 	return MOK;
 }
-static 
-void  mapi_extend_cache(Mapi mid){
+
+static
+void  mapi_extend_cache(Mapi mid)
+{
 	int incr, newsize, oldsize= mid->cache.writer;
 	char **newrows, ***anchors;
 	int *fldcnt;
@@ -1397,21 +1500,25 @@ void  mapi_extend_cache(Mapi mid){
 
 	mid->cache.limit= newsize;
 }
+
 static
-int  mapi_clear_cache(Mapi mid){
-        int i;
-        if( mid->cache.reader+2< mid->cache.writer)
-                return mapi_setError(mid,"Cache reset with non-read lines","mapi_clear");
-        for(i=0; i<mid->cache.writer;i++){
-                if( mid->cache.anchors[i]) free(mid->cache.anchors[i]);
-                mid->cache.anchors[i]=0;
-                if( mid->cache.rows[i]) free(mid->cache.rows[i]);
-                mid->cache.rows[i]=0;
-        }
-        mid->cache.reader= -1;
-        mid->cache.writer= 0;
-        memset(mid->cache.fldcnt,0, mid->cache.limit * sizeof(int));
-        return MOK;
+int  mapi_clear_cache(Mapi mid)
+{
+	int i;
+	if( mid->cache.reader+2< mid->cache.writer)
+		return mapi_setError(mid,"Cache reset with non-read lines","mapi_clear");
+	for(i=0; i<mid->cache.writer;i++){
+		if( mid->cache.anchors[i])
+			free(mid->cache.anchors[i]);
+		mid->cache.anchors[i]=0;
+		if( mid->cache.rows[i])
+			free(mid->cache.rows[i]);
+		mid->cache.rows[i]=0;
+	}
+	mid->cache.reader= -1;
+	mid->cache.writer= 0;
+	memset(mid->cache.fldcnt,0, mid->cache.limit * sizeof(int));
+	return MOK;
 }
 @-
 The routine mapi_fetch_line forms the basic interaction with the server.
@@ -1428,19 +1535,21 @@ The content received is analysed further by mapi_getRow()
 		}
 @c
 
-char * mapi_fetch_line(Mapi mid){
-	char *l,*reply,*newbuf, *s;
-	int k;      
+char * mapi_fetch_line(Mapi mid)
+{
+	char *reply, *newbuf, *s;
+	int k;
 
 
 	if(mid->cache.writer>0 && mid->cache.reader+1< mid->cache.writer)
 		return mid->cache.rows[++mid->cache.reader];
 
-	if( mid->active == 0) return 0;
+	if( mid->active == 0)
+		return 0;
 	mid->error = MOK;
 	/* get rid of old buffer space */
-        if( mid->cache.writer== mid->cache.limit &&
-                mapi_clear_cache(mid)) return 0;
+	if (mid->cache.writer== mid->cache.limit && mapi_clear_cache(mid))
+		return 0;
 
 	/* check if you need to read more blocks to catch a new line */
 	mid->blk.eos=0;
@@ -1458,16 +1567,18 @@ char * mapi_fetch_line(Mapi mid){
 				/* simply shuffle */
 				newbuf= (char *)malloc(mid->blk.lim +1);
 				memcpy(newbuf, mid->blk.buf + mid->blk.nxt, rest+1);
-				if( mid->blk.buf) free(mid->blk.buf);
+				if( mid->blk.buf)
+					free(mid->blk.buf);
 				mid->blk.buf= newbuf;
 				mid->blk.nxt= 0;
 				n = rest;
 			} else{
 				/* extend space */
-				len= mid->blk.lim+BLOCK; 
+				len= mid->blk.lim+BLOCK;
 				newbuf= (char *)malloc(len +1);
 				memcpy(newbuf, mid->blk.buf + mid->blk.nxt, rest+1);
-				if( mid->blk.buf) free(mid->blk.buf);
+				if( mid->blk.buf)
+					free(mid->blk.buf);
 				mid->blk.buf= newbuf;
 				mid->blk.nxt= 0;
 				mid->blk.lim= len;
@@ -1475,17 +1586,19 @@ char * mapi_fetch_line(Mapi mid){
 			}
 		}
 
-                if (mid->from->errnr) {
-                        mapi_setError(mid, "Connection terminated","mapi_fetch_line");
+		if (mid->from->errnr) {
+			mapi_setError(mid, "Connection terminated","mapi_fetch_line");
 			free(reply);
 			return 0;
 		}
 #ifdef BLOCKED
 		/* fetch one more block */
-		len = mid->from->read(mid->from, mid->blk.buf+n, 
+		len = mid->from->read(mid->from, mid->blk.buf+n,
 					1, BLOCK);
-		if(len>=0) mid->blk.buf[n+len]=0;
-		if( len != BLOCK) mid->blk.eos=1;
+		if(len>=0)
+			mid->blk.buf[n+len]=0;
+		if( len != BLOCK)
+			mid->blk.eos=1;
 		@:endofsession@
 #else
 		/* fetch one more line */
@@ -1493,9 +1606,11 @@ char * mapi_fetch_line(Mapi mid){
 		s=mid->blk.buf+n;
 		while( (k= mid->from->read(mid->from,s,1,1))==1 ){
 			len++;
-			if( *s== '\n') break;
+			if( *s== '\n')
+				break;
 			s++;
-			if(s== mid->blk.buf+mid->blk.lim) break;
+			if(s== mid->blk.buf+mid->blk.lim)
+				break;
 		}
 		mid->blk.buf[n+len]=0;
 		@:endofsession@
@@ -1503,8 +1618,8 @@ char * mapi_fetch_line(Mapi mid){
 #endif
 	}
 	if(mid->blk.buf[mid->blk.nxt]== PROMPTBEG){
-			promptMonet(mid);
-			return 0;
+		promptMonet(mid);
+		return 0;
 	}
 	/* we have a complete line in the buffer */
 	s= strchr(mid->blk.buf + mid->blk.nxt,'\n');
@@ -1523,8 +1638,9 @@ char * mapi_fetch_line(Mapi mid){
 
 	mid->cache.rows[mid->cache.writer]= reply;
 	mid->cache.writer++;
-	if( mid->trace) printf("mapi_fetch_line:%s\n", reply);
-        return mid->cache.rows[++mid->cache.reader];
+	if( mid->trace)
+		printf("mapi_fetch_line:%s\n", reply);
+	return mid->cache.rows[++mid->cache.reader];
 }
 @-
 If the answer to a query should be simply passed on towards a client,
@@ -1543,26 +1659,27 @@ empy the row cache.
 		mid->blk.nxt += len;
 		promptMonet(mid);
 		return MOK;
-	} else
-	if( @1 > 0) {
+	} else if( @1 > 0) {
 		fwrite(mid->blk.buf+mid->blk.nxt,1,@1,fd);
 		mid->blk.nxt=0;
 	}
 	if(ferror(fd))
 		return mapi_setError(mid,"Error writing file","mapi.response");
 @c
-MapiMsg mapi_response(Mapi mid, FILE *fd){
+MapiMsg mapi_response(Mapi mid, FILE *fd)
+{
 	char *s;
-	int k;        
+	int k;
 
 
 	if(fd==0)
-	return mapi_setError(mid,"Destination file missing","mapi.response");
+		return mapi_setError(mid,"Destination file missing","mapi.response");
 
 	/* any left over rows in the cache? */
 	for(k= mid->cache.reader+1; k<mid->cache.writer; k++)
 		fprintf(fd,"%s\n", mid->cache.rows[k]);
-	if( mid->active == 0) return 0;
+	if( mid->active == 0)
+		return 0;
 
 	/* check if you need to sent pending information */
 	k= strlen(mid->blk.buf+mid->blk.nxt);
@@ -1579,18 +1696,27 @@ MapiMsg mapi_response(Mapi mid, FILE *fd){
 	s=mid->blk.buf;
 	while( (k= mid->from->read(mid->from,s,1,1))==1 ){
 		fwrite(s,1,1,fd);
-		if( *s == PROMPTBEG) {s++;break;}
+		if( *s == PROMPTBEG) {
+			s++;
+			break;
+		}
 	}
 	if(k==1)
-	while( mid->from->read(mid->from,s,1,1)==1 ){
-		k++;
-		if( *s== '\n'){ *(s+1)=0; break;}
-		s++;
-		if(s== mid->blk.buf+mid->blk.lim) break;
-	}
+		while( mid->from->read(mid->from,s,1,1)==1 ){
+			k++;
+			if( *s== '\n'){
+				*(s+1)=0;
+				break;
+			}
+			s++;
+			if(s== mid->blk.buf+mid->blk.lim)
+				break;
+		}
 #endif
 
-	if(k>0){ @:handlePart(k)@ }
+	if (k>0) {
+		@:handlePart(k)@
+	}
 	mapi_fetch_line(mid);  /* get rid of prompt possibly extending read*/
 /*
 	if(mid->blk.buf[0]== PROMPTBEG){
@@ -1609,15 +1735,18 @@ It returns with 0 upon encountering the prompt
 is reached.
 @c
 static
-void mapi_header(Mapi mid, char *line){
+void mapi_header(Mapi mid, char *line)
+{
 	char *tag= "", *c, *etag;
 	char *buf;
 	int i,cr= mid->cache.reader;
 
-	if( mid->trace) printf("mapi_header:%s\n",line);
+	if( mid->trace)
+		printf("mapi_header:%s\n",line);
 	etag= c= strrchr(line,'#');
-	if( c == 0 || c==line ) return;
-	
+	if( c == 0 || c==line )
+		return;
+
 @-
 After a header analysis, we should have restored the original line,
 because the client may wish to perform a mapi_fetch_line();
@@ -1639,8 +1768,11 @@ if(strncmp(@1,tag,4)==0){
 
 	*line = '['; 	/* fake a value row */
 	*c = ']';
-	c++; while(*c && (*c == ' '|| *c=='\t')) c++;
-	if(*c) tag= c;
+	c++;
+	while(*c && (*c == ' '|| *c=='\t'))
+		c++;
+	if(*c)
+		tag= c;
 
 	@:keepProp("name",columnname)@
 	@:keepProp("type",columntype)@
@@ -1653,8 +1785,9 @@ if(strncmp(@1,tag,4)==0){
 	free(buf);
 }
 
-static 
-int mapi_get_row(Mapi mid) {
+static
+int mapi_get_row(Mapi mid)
+{
 	char *reply=0;
 
 	mid->error = MOK;
@@ -1662,11 +1795,13 @@ int mapi_get_row(Mapi mid) {
 	while(mid->active || mid->cache.reader+1 < mid->cache.writer ){
 		if( mid->active){
 			reply= mapi_fetch_line(mid);
-			if( reply == 0 || mid->error) return MERROR;
-		} else reply = mid->cache.rows[++mid->cache.reader];
-		
+			if( reply == 0 || mid->error)
+				return MERROR;
+		} else
+			reply = mid->cache.rows[++mid->cache.reader];
+
 		switch(reply[0]){
-		case '!': 
+		case '!':
 consumeErrors:		{
 			/* concatenate the error messages */
 			char *olderr= mid->errorstr;
@@ -1680,11 +1815,13 @@ consumeErrors:		{
 			mapi_clrError(mid);
 			mapi_setError(mid,newerr,"mapi_get_row");
 			continue;
-			} break;
+			}
+			break;
 		case '#':
 			mapi_header(mid,reply);
 			if( mid->languageId>= LANG_SQL){
-				if( reply[1]=='(') goto consumeErrors;
+				if( reply[1]=='(')
+					goto consumeErrors;
 				return mapi_get_row(mid);
 			}
 			return MOK;
@@ -1693,20 +1830,23 @@ consumeErrors:		{
 		default:
 			return MOK;
 		}
-		if( mid->everything) break;
-	} 
-        return MERROR;
+		if( mid->everything)
+			break;
+	}
+	return MERROR;
 }
 @-
 Unquoting of a string is done in place. It returns the start
 of the unquoted part section.
 @c
 static
-void unquote(char *msg, char **start, char **next){
+void unquote(char *msg, char **start, char **next)
+{
 	char *p= msg, *s;
 	char quote;
 
-	while(*p && isspace(*p)) p++;
+	while(*p && isspace(*p))
+		p++;
 	*start =p;
 	quote= *p;
 	if( quote=='\'' || quote=='"'){
@@ -1726,27 +1866,36 @@ void unquote(char *msg, char **start, char **next){
 				case 'r': *s= '\r'; break;
 				case 'f': *s= '\f'; break;
 				case '\\': *s= '\\'; break;
-				default: *s =*p;
+				default: *s =*p; break;
 				}
 				p++;
-			} else *s++ = *p++;
+			} else
+				*s++ = *p++;
 		}
 		*p = 0;
 	} else {
-		while( *p && (*p != ',' && *p != ']')) p++;
-		for( s= p-1; s > *start && *s == ' '; s--);
-		if( s>= *start && s< p-1) *s=0;
-		if( *p==0) { *next = p; return;}
+		while( *p && (*p != ',' && *p != ']'))
+			p++;
+		for( s= p-1; s > *start && *s == ' '; s--)
+			;
+		if( s>= *start && s< p-1)
+			*s=0;
+		if( *p==0) {
+			*next = p;
+			return;
+		}
 		*p = 0;
 	}
 	p++;
-	while(*p && *p != '[' && *p != '\t' && *p != ' ') p++;
+	while(*p && *p != '[' && *p != '\t' && *p != ' ')
+		p++;
 	*next = p;
 }
 @-
 The (un)quote routines should use dynamic storage.
 @c
-char *mapi_unquote(char *msg){
+char *mapi_unquote(char *msg)
+{
 	char *start, *next;
 	int size;
 	unquote(msg, &start,&next);
@@ -1755,7 +1904,9 @@ char *mapi_unquote(char *msg){
 	strcpy(next,start);
 	return next;
 }
-char *mapi_quote(char *msg){
+
+char *mapi_quote(char *msg)
+{
 	int len= sizeof(msg)*3;
 	char *s= (char*) malloc(len);
 	char *t=s,*v= s+ len;
@@ -1787,18 +1938,23 @@ int mapi_extend_fields(Mapi mid, int minfields)
 	/* extend the field table */
 	MapiField *nf;
 	int nm= mid->maxfields +32;
-	if( nm <=minfields) nm= minfields+32;
+	if( nm <=minfields)
+		 nm= minfields+32;
 	nf= (MapiField *) malloc(nm * sizeof(MapiField));
 	assert(nf);
 	memset(nf,0,  nm* sizeof(MapiField));
 	memcpy(nf, mid->fields, mid->maxfields * sizeof(MapiField));
-	if( mid->fields) free(mid->fields);
+	if( mid->fields)
+		free(mid->fields);
 	mid->fields= nf;
 	mid->maxfields= nm;
+	return MOK;
 }
-static 
-void mapi_extend_anchor(Mapi mid){
-        int cr= mid->cache.reader;
+
+static
+void mapi_extend_anchor(Mapi mid)
+{
+	int cr= mid->cache.reader;
 	char **ac= mid->cache.anchors[cr], **acnew=0;
 	if( ac == 0 || mid->maxfields> mid->cache.fldcnt[cr]){
 		acnew= (char **)malloc(sizeof(char*)* mid->maxfields);
@@ -1806,81 +1962,90 @@ void mapi_extend_anchor(Mapi mid){
 		memset(acnew, 0, sizeof(char*) * mid->maxfields);
 		mid->cache.anchors[cr]= acnew;
 		if(ac)
-		memcpy(acnew,ac, sizeof(char*)*mid->cache.fldcnt[cr]);
+			memcpy(acnew,ac, sizeof(char*)*mid->cache.fldcnt[cr]);
 	}
-	if(ac) free(ac);
+	if(ac)
+		free(ac);
 }
 @-
 The values of a row are delivered to any bounded variable before
 fetch_row returns. Automatic conversion based on common types
 simplifies the work for the programmers.
 @c
-static 
-void mapi_store_bind(Mapi mid){
+static
+void mapi_store_bind(Mapi mid)
+{
 	int i;
 	int cr= mid->cache.reader;
-	
+
 	for(i=0; i< mid->fieldcnt;i++)
-	if( mid->fields[i].outparam){
-		char *val= mid->cache.anchors[cr][i];
-		void *dst= mid->fields[i].outparam;
-		if( val == 0){
-			mapi_setError(mid,"Field value undefined",
-						"mapi_store_bind");
-			continue;
+		if( mid->fields[i].outparam){
+			char *val= mid->cache.anchors[cr][i];
+			void *dst= mid->fields[i].outparam;
+			if( val == 0){
+				mapi_setError(mid,"Field value undefined",
+					      "mapi_store_bind");
+				continue;
+			}
+			/* auto convert to C-type */
+			switch(mid->fields[i].outtype){
+			case SQL_NUMERIC:
+			case SQL_INT:
+				*(int *)dst = (int) strtol(val,NULL,0);
+				break;
+			case SQL_LONG:
+				*(long *)dst = (long) strtol(val,NULL,0);
+				break;
+			case SQL_CHAR:
+				*(char *)dst = *val;
+				break;
+			case SQL_FLOAT:
+			case SQL_DOUBLE:
+				*(double *)dst = (double) strtod(val,NULL);
+				break;
+			case SQL_TIME:
+			case SQL_DATE:
+			case SQL_AUTO:
+			case SQL_VARCHAR:
+			default:
+				*(char **)dst = val;
+			}
 		}
-		/* auto convert to C-type */
-		switch(mid->fields[i].outtype){
-		case SQL_NUMERIC:
-		case SQL_INT:
-			*(int *)dst = (int) strtol(val,NULL,0);
-			break;
-		case SQL_LONG:
-			*(long *)dst = (long) strtol(val,NULL,0);
-			break;
-		case SQL_CHAR:
-			*(char *)dst = *val;
-			break;
-		case SQL_FLOAT:
-		case SQL_DOUBLE:
-			*(double *)dst = (double) strtod(val,NULL);
-			break;
-		case SQL_TIME:
-		case SQL_DATE:
-		case SQL_AUTO:
-		case SQL_VARCHAR:
-		default:
-			*(char **)dst = val;
-		}
-	}
 }
+
 static
-int mapi_slice_row(Mapi mid) {
-        char *start;
-        char *p;
-        int single, i, cr= mid->cache.reader;
+int mapi_slice_row(Mapi mid)
+{
+	char *start;
+	char *p;
+	int single, i, cr= mid->cache.reader;
 
 	p= mid->cache.rows[cr];
-        if( p== NULL ) return mapi_setError(mid,"Current row missing","mapi_slice_row");
+	if( p== NULL )
+		return mapi_setError(mid,"Current row missing","mapi_slice_row");
 	if( mid->cache.fldcnt[cr]) {
 		mapi_store_bind(mid);
 		return mid->cache.fldcnt[cr]; /* already sliced */
 	}
 	single = *p != '[';
-	if(!single) p++;
+	if(!single)
+		p++;
 
 	mapi_extend_anchor(mid);
-        i=0;
-	do{
+	i=0;
+	do {
 		if( i== mid->maxfields ) {
-			if(mapi_extend_fields(mid,i)) return mid->error;
+			if(mapi_extend_fields(mid,i))
+				return mid->error;
 			mapi_extend_anchor(mid);
 		}
 		unquote(p, &start, &p);
 		mid->cache.anchors[cr][i++] = start;
-		while(*p && *p=='\t' && *p != ']') p++;
-        } while(!single && *p && *p != ']');
-	if( mid->fieldcnt <i) mid->fieldcnt=i;
+		while(*p && *p=='\t' && *p != ']')
+			p++;
+	} while(!single && *p && *p != ']');
+	if (mid->fieldcnt <i)
+		mid->fieldcnt=i;
 	mid->cache.fldcnt[cr]= i;
 	mapi_store_bind(mid);
 	return i;
@@ -1890,7 +2055,8 @@ int mapi_slice_row(Mapi mid) {
 The rows presented are broken down into pieces to
 simplify access later on.
 @c
-int mapi_fetch_row(Mapi mid){
+int mapi_fetch_row(Mapi mid)
+{
 	assert(mid);
 	mapi_check(mid,0,"mapi_fetch_row");
 	if( mapi_get_row(mid)== MOK)
@@ -1900,8 +2066,8 @@ int mapi_fetch_row(Mapi mid){
 @-
 All rows can be cached first as well.
 @c
-int mapi_fetch_all(Mapi mid){
-	int rd;
+int mapi_fetch_all(Mapi mid)
+{
 	assert(mid);
 	mapi_check(mid,0,"mapi_fetch_all");
 	mapi_cache_limit(mid,-1);
@@ -1912,7 +2078,8 @@ int mapi_fetch_all(Mapi mid){
 	return mid->cache.tuples;
 }
 
-char *mapi_fetch_field(Mapi mid, int fnr){
+char *mapi_fetch_field(Mapi mid, int fnr)
+{
 	int cr;
 	assert(mid);
 	mapi_check(mid,0,"mapi_fetch_field");
@@ -1928,7 +2095,9 @@ char *mapi_fetch_field(Mapi mid, int fnr){
 	mapi_setError(mid,"Illegal field number","mapi_fetch_field");
 	return 0;
 }
-char **mapi_fetch_field_array(Mapi mid){
+
+char **mapi_fetch_field_array(Mapi mid)
+{
 	int cr;
 	assert(mid);
 	mapi_check(mid,0,"mapi_fetch_field_array");
@@ -1938,44 +2107,70 @@ char **mapi_fetch_field_array(Mapi mid){
 	return mid->cache.anchors[cr];
 }
 
-int mapi_num_fields(Mapi mid){ 
+int mapi_num_fields(Mapi mid)
+{
 	assert(mid);
 	mapi_check(mid,0,"mapi_num_fields");
 	return mid->fieldcnt;
 }
-int mapi_num_rows(Mapi mid){ 
+
+int mapi_num_rows(Mapi mid)
+{
 	assert(mid);
 	mapi_check(mid,0,"mapi_num_rows");
 	return mid->rows_affected;
 }
 
-char *mapi_get_name(Mapi mid, int fnr) { 
+char *mapi_get_name(Mapi mid, int fnr)
+{
 	assert(mid);
 	mapi_check(mid,0,"mapi_get_name");
 	if( fnr >=0 && fnr <mid->fieldcnt) {
 		if( mid->fields[fnr].columnname[0] == 0)
-		snprintf(mid->fields[fnr].columnname, NAMELEN, "column_%d",fnr);
+			snprintf(mid->fields[fnr].columnname, NAMELEN, "column_%d",fnr);
 		return mid->fields[fnr].columnname;
 	}
 	mapi_setError(mid,"Illegal field number","mapi_get_name");
 	return 0;
 }
-char *mapi_get_table(Mapi mid, int fnr) { 
+
+char *mapi_get_table(Mapi mid, int fnr)
+{
 	assert(mid);
 	mapi_check(mid,0,"mapi_get_table");
 	if( fnr >=0 && fnr <mid->fieldcnt) {
 		if( mid->fields[fnr].tablename[0] == 0)
-		snprintf(mid->fields[fnr].tablename, NAMELEN, "table_%d",fnr);
+			snprintf(mid->fields[fnr].tablename, NAMELEN, "table_%d",fnr);
 		return mid->fields[fnr].tablename;
 	}
 	mapi_setError(mid,"Illegal field number","mapi_get_table");
 	return 0;
 }
-int mapi_rows_affected(Mapi mid) { return mid->rows_affected;}
-char *mapi_get_host(Mapi mid) { return mid->hostname;}
-char *mapi_get_user(Mapi mid) { return mid->username;}
-char *mapi_get_lang(Mapi mid) { return mid->language;}
-char *mapi_get_version(Mapi mid) { return mid->server;}
+
+int mapi_rows_affected(Mapi mid)
+{
+	return mid->rows_affected;
+}
+
+char *mapi_get_host(Mapi mid)
+{
+	return mid->hostname;
+}
+
+char *mapi_get_user(Mapi mid)
+{
+	return mid->username;
+}
+
+char *mapi_get_lang(Mapi mid)
+{
+	return mid->language;
+}
+
+char *mapi_get_version(Mapi mid)
+{
+	return mid->server;
+}
 @c
 @= testField1
 	assert(mid);
@@ -1984,23 +2179,33 @@ char *mapi_get_version(Mapi mid) { return mid->server;}
 		mapi_setError(mid,"Illegal field number",@2);
 		return @1;
 	}
-int mapi_get_type(Mapi mid, int fnr) {
+int mapi_get_type(Mapi mid, int fnr)
+{
 	@:testField1(0,"mapi_get_type")@
 	return mid->fields[fnr].type;
 }
-int mapi_get_scale(Mapi mid, int fnr) {
+
+int mapi_get_scale(Mapi mid, int fnr)
+{
 	@:testField1(0,"mapi_get_scale")@
 	return mid->fields[fnr].scale;
 }
-int mapi_get_precision(Mapi mid, int fnr) {
+
+int mapi_get_precision(Mapi mid, int fnr)
+{
 	@:testField1(0,"mapi_get_precision")@
 	return mid->fields[fnr].precision;
 }
-int mapi_get_len(Mapi mid, int fnr) { 
+
+int mapi_get_len(Mapi mid, int fnr)
+{
 	@:testField(0,"mapi_get_len")@
 	return mid->fields[fnr].colwidth;
 }
 
 @-
-char **mapi_get_fields(Mapi mid, int fnr) { return mid->fields[fnr].type;}
+char **mapi_get_fields(Mapi mid, int fnr)
+{
+	return mid->fields[fnr].type;
+}
 @}

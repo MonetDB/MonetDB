@@ -26,28 +26,28 @@
 @f MapiClient
 @* The Mapi Client interface (V4+V5)
 A textual interface to the Monet server using the Mapi library,
-providing command-line MIL access for its users. It is the preferred 
+providing command-line MIL access for its users. It is the preferred
 interface for non-DBAs.
 
 @+ Manual Page
 @T
 The {\tt MapiClient} program provides textual
-interface to the Monet server. Unlike the Mserver console, the {\tt MapiClient} 
-program is intended not only or the database administrator, but to all other 
+interface to the Monet server. Unlike the Mserver console, the {\tt MapiClient}
+program is intended not only or the database administrator, but to all other
 users. It is more comfortable than the console, since it provides
 a command history and automatic file name completion.
 
 \begin{verbatim}
-MapiClient [-h HOST] [-p PORT] [-d] [-e] [-u username] [-P password] [-c single-command]  
+MapiClient [-h HOST] [-p PORT] [-d] [-e] [-u username] [-P password] [-c single-command]
 \end{verbatim}
 
 The following options are supported:
 \begin{itemize}
-\item {\em -h -p} Connect to Mserver on machine HOST with tcp port PORT. 
+\item {\em -h -p} Connect to Mserver on machine HOST with tcp port PORT.
 \item {\em -d} Debug internalworking.
 \item {\em -c} just execute a one-line command (non-interactive mode).
 \item {\em -u -P} Replace interactive authorization by command line.
-\item{\em -h} A synopsis of the command line options 
+\item{\em -h} A synopsis of the command line options
 Can be used in scripts, but is insecure.
 \end{itemize}
 @
@@ -62,16 +62,16 @@ Can be used in scripts, but is insecure.
 @c
 #include <monet_options.h>
 #include "MapiClient.h"
-#include <stdlib.h> 
-#include <ctype.h> 
-#include <sys/types.h> 
-#include <sys/socket.h> 
+#include <stdlib.h>
+#include <ctype.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
-#include <errno.h> 
-#include <string.h> 
+#include <errno.h>
+#include <string.h>
 /* #include <signal.h> */
 
-#define _strdup( ptr )    strdup((char*)ptr)
+#define _strdup( ptr )		strdup((char*)ptr)
 
 #ifdef HAVE_LANGINFO_H
 #include <langinfo.h>
@@ -137,17 +137,17 @@ schemes to be deployed in the future.
 char *
 simple_prompt(const char *prompt, int maxlen, int echo)
 {
-        int        length = 0;
-        char       *destination = NULL;
-        FILE       *termin = NULL, *termout = NULL;
+	int length = 0;
+	char *destination = NULL;
+	FILE *termin = NULL, *termout = NULL;
 
 #ifdef HAVE_TERMIOS_H
-        struct termios t_orig, t;
+	struct termios t_orig, t;
 #endif
 
-        destination = (char *) malloc(maxlen + 2);
-        if (!destination)
-                return NULL;
+	destination = (char *) malloc(maxlen + 2);
+	if (!destination)
+		return NULL;
 
 	termin = fopen("/dev/tty", "r");
 	termout = fopen("/dev/tty", "w");
@@ -157,66 +157,66 @@ simple_prompt(const char *prompt, int maxlen, int echo)
 		termout = stderr;
 	}
 
-        if (prompt) {
-                fputs( prompt, termout);
-                fflush(termout);
-        }
+	if (prompt) {
+		fputs( prompt, termout);
+		fflush(termout);
+	}
 #ifdef HAVE_TERMIOS_H
-        if (!echo) {
-                tcgetattr(fileno(termin), &t);
-                t_orig = t;
-                t.c_lflag &= ~ECHO;
-                tcsetattr(fileno(termin), TCSAFLUSH, &t);
-        }
+	if (!echo) {
+		tcgetattr(fileno(termin), &t);
+		t_orig = t;
+		t.c_lflag &= ~ECHO;
+		tcsetattr(fileno(termin), TCSAFLUSH, &t);
+	}
 #endif
-        if (fgets(destination, maxlen, termin) == NULL)
-                destination[0] = '\0';
+	if (fgets(destination, maxlen, termin) == NULL)
+		destination[0] = '\0';
 
-        length = strlen(destination);
-        if (length > 0 && destination[length - 1] != '\n') {
-                char	buf[128];
-                int	buflen;
+	length = strlen(destination);
+	if (length > 0 && destination[length - 1] != '\n') {
+		char	buf[128];
+		int	buflen;
 
-                do
-                {
-                        if (fgets(buf, sizeof(buf), termin) == NULL)
-                                break;
-                        buflen = strlen(buf);
-                } while (buflen > 0 && buf[buflen - 1] != '\n');
-        }
+		do {
+			if (fgets(buf, sizeof(buf), termin) == NULL)
+				break;
+			buflen = strlen(buf);
+		} while (buflen > 0 && buf[buflen - 1] != '\n');
+	}
 
-        if (length > 0 && destination[length - 1] == '\n')
-                destination[length - 1] = '\0';
+	if (length > 0 && destination[length - 1] == '\n')
+		destination[length - 1] = '\0';
 #ifdef HAVE_TERMIOS_H
-        if (!echo)
-        {
-                tcsetattr(fileno(termin), TCSAFLUSH, &t_orig);
-                fputs("\n", termout);
-                fflush(termout);
-        }
-	if (termin != stdin) fclose(termin);
-	if (termout != stdout) fclose(termout);
+	if (!echo) {
+		tcsetattr(fileno(termin), TCSAFLUSH, &t_orig);
+		fputs("\n", termout);
+		fflush(termout);
+	}
+	if (termin != stdin)
+		fclose(termin);
+	if (termout != stdout)
+		fclose(termout);
 #endif
         return destination;
 }
 
-extern int errno;                       /* pass errors  */
-char *program;                          /* my name */
+extern int errno;		/* pass errors  */
+char *program;			/* my name */
 
 #define EXIT(x)	{ exit(x); }
 #define LINEMODE	23
 #define BLOCKMODE	32
 
 FILE	*toConsole;
-char 	*message	= 0;
-int 	mode		= LINEMODE;
-char*	sentinel 	= "MapiClient~sentinel"; 
+char	*message	= 0;
+int	mode		= LINEMODE;
+char*	sentinel 	= "MapiClient~sentinel";
 
 
-int doRequest(Mapi mid, char *buf ){
+int doRequest(Mapi mid, char *buf )
+{
 	char *rtrn;
-	int i;
- 
+
 /*
 	if (mapi_quick_query(mid, buf,toConsole) != MOK){
 		mapi_explain(mid,stdout);
@@ -228,7 +228,7 @@ int doRequest(Mapi mid, char *buf ){
 		mapi_explain(mid,stdout);
 		return 'q';
 	}
-	while(rtrn=mapi_fetch_line(mid)){
+	while ((rtrn = mapi_fetch_line(mid)) != 0) {
 		fprintf(toConsole, "%s\n",rtrn);
 	}
 	if (mapi_error(mid)) {
@@ -253,41 +253,44 @@ of the server before continuing
 	message[m_index] = 0;					\
 	cmd = doRequest(mid, message );				\
 	add_history(start_cmd);					\
-        *message = 0; m_index = 0;				\
+	*message = 0; m_index = 0;				\
 }
 #else
 #define SEND_MESSAGE(mid)	{				\
 	message[m_index] = 0;					\
 	cmd = doRequest(mid, message );				\
-        *message = 0; m_index = 0;				\
+	*message = 0; m_index = 0;				\
 }
 #endif
 
-#define GROW_MESSAGE(x)	{					\
+#define GROW_MESSAGE(x)		{				\
 	m_index += x;						\
-       	if (m_size-m_index  < CHUNK_SIZE) {			\
+	if (m_size-m_index  < CHUNK_SIZE) {			\
 		message = (char *) realloc(message, m_size*=2);	\
 		memset(message+m_index, 0, m_size-m_index);	\
 	}							\
 }
-void showCommands(){
+
+void showCommands(void)
+{
 	fprintf(toConsole,"?\t - this message\n");
 	fprintf(toConsole,"!\t - shell escape\n");
 	fprintf(toConsole,"<file\t - read input from file\n");
 	fprintf(toConsole,">file\t - save response in file\n");
 	fprintf(toConsole,">\t - response to terminal\n");
-	fprintf(toConsole,"cd\t - change directory \n");
-	fprintf(toConsole,"\\r\t- run the buffered command \n");
+	fprintf(toConsole,"cd\t - change directory\n");
+	fprintf(toConsole,"\\r\t- run the buffered command\n");
 	fprintf(toConsole,"\\c\t- clear the command buffer\n");
-	fprintf(toConsole,"\\l\t- line is immediately sent \n");
-	fprintf(toConsole,"\\q\t- terminate session \n");
+	fprintf(toConsole,"\\l\t- line is immediately sent\n");
+	fprintf(toConsole,"\\q\t- terminate session\n");
 }
 
-void terminalInput( Mapi mid) {
+void terminalInput( Mapi mid)
+{
 	FILE	*fp;
 	char 	*line=0, *start_cmd, *end_cmd;
 	int	n, m_size=CHUNK_SIZE, m_index=0;
-	char	cmd = 0, ch;
+	char	cmd = 0;
 
 	message = (char *) malloc(CHUNK_SIZE);
 
@@ -297,44 +300,47 @@ void terminalInput( Mapi mid) {
 		}
 #ifdef HAVE_LIBREADLINE
 		if (is_chrsp){
-	        	if ((line = (char *) readline(mid->prompt)) == NULL) {
-	               		return;
+			if ((line = (char *) readline(mid->prompt)) == NULL) {
+				return;
 			}
-		} else 
+		} else
 #endif
-		{	int len;
-		   	char *buf =(char *)malloc(CHUNK_SIZE);
-	        	if ((line =(char *)fgets(buf,CHUNK_SIZE,stdin))==NULL) {
-			   	free(buf);
-	                	return;
+		{
+			int len;
+			char *buf =(char *)malloc(CHUNK_SIZE);
+			if ((line =(char *)fgets(buf,CHUNK_SIZE,stdin))==NULL) {
+				free(buf);
+				return;
 			}
-			/* seems some fgets implementations fon't replace 
+			/* seems some fgets implementations fon't replace
 			the newline with a EOS marker */
 			len = strlen(line);
 			if( len && line[len-1] == '\n')
 				line[len-1] = '\0';
 		}
 		/* find start and end of the command */
-		for(	start_cmd = line;
-			*start_cmd && isspace(*start_cmd);
-			start_cmd++);
+		for (start_cmd = line;
+		     *start_cmd && isspace(*start_cmd);
+		     start_cmd++)
+			;
 		/* empty lines are meaningfull in some interpreters, like mdb*/
-		for(	end_cmd = line + strlen(line) - 1; 
-			isspace(*end_cmd);
-			end_cmd--);
+		for(end_cmd = line + strlen(line) - 1;
+		    isspace(*end_cmd);
+		    end_cmd--)
+			;
 		n = 1 + end_cmd - start_cmd;
 @-
 The MapiClient terminal monitor provides common functionality,
-such as directory changes, reading commands from a file, 
+such as directory changes, reading commands from a file,
 redirection of output to a separate file.
 @c
 		/* is the string a command ? */
 		switch(*start_cmd) {
 		case '\\':
-		        switch(*(start_cmd+1)) {
-		        case 'r': 
+			switch(*(start_cmd+1)) {
+			case 'r':
 				SEND_MESSAGE(mid);
-		                continue;
+				continue;
 			case 'q':
 				cmd = 'q';
 				continue;
@@ -344,7 +350,7 @@ redirection of output to a separate file.
 			case 'l':
 				mode = LINEMODE;
 				/*FALLTHRU*/
-		        case 'c':
+			case 'c':
 				m_index = 0; *message = 0;
 				continue;
 			}
@@ -354,26 +360,25 @@ redirection of output to a separate file.
 			continue;
 		case 'c':
 			if ((start_cmd[1] == 'd') && isspace(start_cmd[2])) {
-			    if (chdir(start_cmd+3)) {
-                                char err[200];
-                                sprintf(err, "chdir: %s", start_cmd+3);
-                                perror(err);
-			    } else {
-				fprintf(toConsole,"chdir to %s\n", start_cmd+3);
-			    }
-			    message[0] = m_index = 0;
-			    continue;
+				if (chdir(start_cmd+3)) {
+					char err[200];
+					sprintf(err, "chdir: %s", start_cmd+3);
+					perror(err);
+				} else {
+					fprintf(toConsole,"chdir to %s\n", start_cmd+3);
+				}
+				message[0] = m_index = 0;
+				continue;
 			}
 			break;
 		case '<':
-			if (fp = fopen(start_cmd+1, "r")) {
-				while (n = fread(message+m_index, 1,
-							 CHUNK_SIZE, fp))
-				{
+			if ((fp = fopen(start_cmd+1, "r")) != NULL) {
+				while ((n = fread(message+m_index, 1,
+						  CHUNK_SIZE, fp)) != 0) {
 					GROW_MESSAGE(n);
 					/* echo to stdout */
 					message[m_index] = 0;
-					fwrite(message+m_index-n, 1, n, stdout); 
+					fwrite(message+m_index-n, 1, n, stdout);
 				}
 			}
 			break;
@@ -411,68 +416,69 @@ using its help operator '?'.
 		case '?':
 			showCommands();
 			continue;
-		} 
+		}
 		/* copy the line to the end of the message */
 		memcpy(message+m_index, start_cmd, n);
 		GROW_MESSAGE(n);
-		
+
 		if (mode == LINEMODE) {
 			SEND_MESSAGE(mid);
-	        }
-        } 
+		}
+	}
 }
 
-void usage( char *prog ){
-        fprintf(stderr, "MapiClient\n");
-        fprintf(stderr, "\toptions:\n");
-        fprintf(stderr, "\t\t -d          | --debug=[level]\n");
-        fprintf(stderr, "\t\t -h hostname | --host=hostname  /* host to connect to */\n");
-        fprintf(stderr, "\t\t -p portnr   | --port=portnr    /* port to connect to */\n");
-        fprintf(stderr, "\t\t -l language   | --language=lang    /* {mal,sql,mil} */\n");
-        fprintf(stderr, "\t\t -u user     | --user=user      /* user id */\n" );
-        fprintf(stderr, "\t\t -P passwd   | --passwd=passwd  /* password */\n");
-        fprintf(stderr, "\t\t -e 	| --error  /* exit on error */\n");
-        fprintf(stderr, "\t\t -s stmt     | --statement=stmt  /* run single statement */\n");
-        fprintf(stderr, "\t\t -t     | --trace  /* trace Monet interaction */\n");
-        exit(-1);
+void usage( char *prog )
+{
+	fprintf(stderr, "MapiClient\n");
+	fprintf(stderr, "\toptions:\n");
+	fprintf(stderr, "\t\t -d          | --debug=[level]\n");
+	fprintf(stderr, "\t\t -h hostname | --host=hostname/* host to connect to */\n");
+	fprintf(stderr, "\t\t -p portnr   | --port=portnr/* port to connect to */\n");
+	fprintf(stderr, "\t\t -l language   | --language=lang/* {mal,sql,mil} */\n");
+	fprintf(stderr, "\t\t -u user     | --user=user/* user id */\n" );
+	fprintf(stderr, "\t\t -P passwd   | --passwd=passwd/* password */\n");
+	fprintf(stderr, "\t\t -e 	| --error/* exit on error */\n");
+	fprintf(stderr, "\t\t -s stmt     | --statement=stmt/* run single statement */\n");
+	fprintf(stderr, "\t\t -t     | --trace/* trace Monet interaction */\n");
+	exit(-1);
 }
 
-int main(int ac, char **av) {
+int main(int ac, char **av)
+{
 	char *prompt= NULL;
-        char buf[BUFSIZ];
-        char *prog = *av, *config = NULL, *passwd = NULL, *user = NULL;
-        char *login = NULL, *db = NULL, *schema= NULL, *host=NULL;
+	char buf[BUFSIZ];
+	char *prog = *av, *config = NULL, *passwd = NULL, *user = NULL;
+	char *host=NULL;
 	char *language = _strdup("mal");
-	int i = 0, debug = 0, fd = 0, port = 0, setlen = 0, trace = 0;
-	opt	*set= NULL;
- 
-	char	*command = NULL;
+	int debug = 0, port = 0, setlen = 0, trace = 0;
+	opt *set= NULL;
 
-        struct stat st;
-        Mapi mid;
+	char *command = NULL;
 
-        static struct option long_options[] =
-             {
-               {"debug", 2, 0, 'd'},
-               {"config", 1, 0, 'c'},
-               {"host", 1, 0, 'h'},
-               {"port", 1, 0, 'p'},
-               {"passwd", 1, 0, 'P'},
-               {"user", 1, 0, 'u'},
-               {"language", 1, 0, 'l'},
-               {"error", 1, 0, 'e'},
-               {"statement", 1, 0, 's'},
-               {"trace",0, 0, 0},
-               {0, 0, 0, 0}
-             };
+	struct stat st;
+	Mapi mid;
 
-        if (!(setlen = mo_builtin_settings(&set)) )
-                usage(av[0]);
+	static struct option long_options[] = {
+		{"debug", 2, 0, 'd'},
+		{"config", 1, 0, 'c'},
+		{"host", 1, 0, 'h'},
+		{"port", 1, 0, 'p'},
+		{"passwd", 1, 0, 'P'},
+		{"user", 1, 0, 'u'},
+		{"language", 1, 0, 'l'},
+		{"error", 1, 0, 'e'},
+		{"statement", 1, 0, 's'},
+		{"trace",0, 0, 0},
+		{0, 0, 0, 0}
+	};
+
+	if (!(setlen = mo_builtin_settings(&set)) )
+		usage(av[0]);
 
 	while(1){
 		int option_index = 0;
 
-		int c = getopt_long( ac, av, "c:d::Dh:p:P:u:s:S:l:e:", 
+		int c = getopt_long( ac, av, "c:d::Dh:p:P:u:s:S:l:e:",
 				long_options, &option_index);
 
 		if (c == -1)
@@ -496,11 +502,11 @@ int main(int ac, char **av) {
 			config = _strdup(optarg);
 			break;
 		case 'd':
-			if (optarg){ 
-				setlen = mo_add_option( &set, setlen, 
+			if (optarg){
+				setlen = mo_add_option( &set, setlen,
 					opt_cmdline, "debug", optarg );
 			} else {
-				setlen = mo_add_option( &set, setlen, 
+				setlen = mo_add_option( &set, setlen,
 					opt_cmdline, "debug", "2" );
 			}
 			break;
@@ -508,7 +514,7 @@ int main(int ac, char **av) {
 			exit_on_error=1;
 			break;
 		case 'h':
-			setlen = mo_add_option( &set, setlen, 
+			setlen = mo_add_option( &set, setlen,
 					opt_cmdline, "host", optarg );
 			break;
 		case 'l':
@@ -519,7 +525,7 @@ int main(int ac, char **av) {
 		case 'p':
 			{char *m= _strdup(optarg);
 			port= strtol(m,NULL,10);
-			setlen = mo_add_option( &set, setlen, 
+			setlen = mo_add_option( &set, setlen,
 					opt_cmdline, "port", m );
 			}
 			break;
@@ -548,28 +554,28 @@ int main(int ac, char **av) {
 		usage(prog);
 	}
 #ifndef NO_LOCALE
-        if (setlocale(LC_CTYPE, "") == NULL){ /* why is this needed ? */
-                fprintf(stderr, "WARN: cannot set locale\n");
-        } else {
-                char *codeset = NULL;
-                if ((codeset = nl_langinfo(CODESET)) == NULL){
-                        fprintf(stderr, "WARN: cannot get codeset\n");
-                } else {
-                        to_utf = iconv_open("UTF-8", codeset);
-                        from_utf = iconv_open(codeset, "UTF-8" );
-                }
-        }
+	if (setlocale(LC_CTYPE, "") == NULL){/* why is this needed ? */
+		fprintf(stderr, "WARN: cannot set locale\n");
+	} else {
+		char *codeset = NULL;
+		if ((codeset = nl_langinfo(CODESET)) == NULL){
+			fprintf(stderr, "WARN: cannot get codeset\n");
+		} else {
+			to_utf = iconv_open("UTF-8", codeset);
+			from_utf = iconv_open(codeset, "UTF-8" );
+		}
+	}
 #endif
 
-        if (config){
-                setlen = mo_config_file(&set, setlen, config );
-                free(config);
-        } else {
-                if (!(setlen = mo_system_config(&set, setlen)) )
-                        usage(prog);
-        }
+	if (config){
+		setlen = mo_config_file(&set, setlen, config );
+		free(config);
+	} else {
+		if (!(setlen = mo_system_config(&set, setlen)) )
+			usage(prog);
+	}
 
-        stream_init();
+	stream_init();
 	if(debug==0){
 		char *nme;
 		snprintf(buf,BUFSIZ,"%s_debug",language);
@@ -587,19 +593,20 @@ int main(int ac, char **av) {
 	if (host == NULL) strcpy(host,"localhost");
 
 
-        prompt = mo_find_option(set, setlen, "prompt");
-        if (!prompt) {
+	prompt = mo_find_option(set, setlen, "prompt");
+	if (!prompt) {
 		if(strcmp(language,"mal")) {
 			char pbuf[256];
 			snprintf(pbuf,256,"%s> ",language);
 			prompt = _strdup(pbuf);
-		} else 	prompt = _strdup(">");
+		} else
+			prompt = _strdup(">");
 	}
 
 	fstat(fileno(stdin),&st);
 #ifdef HAVE_LIBREADLINE
 	if (S_ISCHR(st.st_mode))
-	   is_chrsp = 1;
+		is_chrsp = 1;
 #endif
 /*
 	if (!user)
@@ -622,9 +629,9 @@ int main(int ac, char **av) {
 		snprintf(lang,BUFSIZ,"%s();",language);
 		doRequest(mid, lang);				\
 	}
- 
 
-	if (command) { 
+
+	if (command) {
 		doRequest(mid, command );
 	} else {
 		terminalInput(mid);
