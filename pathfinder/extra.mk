@@ -23,9 +23,15 @@
 
 # extra make rules for Pathfinder
 
+# Twig checks its argument to end in `.mt'. Unfortunately
+# it does that the wrong way and will fail if the pathname
+# of the argument contains dots (which is the case in the
+# automated test environment). So we work around this by
+# temporarily switching to the directory in which the .mt
+# file resides.
 %.symbols.h %.c : %.mt
 	$(LOCKFILE) waiting_for_twig
-	$(TWIG) -t $<
+	( cd `dirname $<` ; $(TWIG) -t `basename $<` )
 	mv -f symbols.h $*.symbols.h
 	sed 's/^short\(.*\)=/static short\1=/' walker.c > $*.c
 	$(RM) walker.c
