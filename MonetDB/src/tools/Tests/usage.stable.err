@@ -10,7 +10,7 @@ stderr of test 'usage` in directory 'src/tools` itself:
 # 16:36:12 >  Mtimeout -timeout 60 Mserver --config= -?
 # 16:36:12 >  
 
-usage: Mserver
+usage: lt-Mserver
 [--dbname database_name ]
 [--dbfarm database_directory ]
 [-d or --debug [debug_level] ]
@@ -35,6 +35,7 @@ Options are:
  -s stmt     | --statement=stmt /* run single statement */
  -t          | --trace          /* trace Monet interaction */
  -?          | --help           /* show this usage message */
+             | --blocked=true   /* run in (non-)blocked mode */
 
 # 16:36:12 >  
 # 16:36:12 >  Mtimeout -timeout 60 MapiClient.py -?
