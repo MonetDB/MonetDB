@@ -109,3 +109,4 @@ SELECT '' AS four, VARCHAR_TBL.*;
       | abcd
 (4 rows)
 
+DROP TABLE VARCHAR_TBL;
