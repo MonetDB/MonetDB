@@ -29,8 +29,9 @@ exit yy;	# 7  (yy:any)
     io.printf("#finish thread\n");	# 8 IOprint_str ($8:int)<-($9:str)
     io.printf("#finish thread2\n");	# 9 IOprint_str ($10:int)<-($11:str)
 exit b1;	# 10  (b1:int)
-    io.printf("#end of program, wait for child\n");	# 11 IOprint_str ($12:int)<-($13:str)
-end main;	# 12  
+    alarm.sleep(10);	# 11 ALARMsleep ($12:void)<-($13:int)
+    io.printf("#end of program, wait for child\n");	# 12 IOprint_str ($14:int)<-($15:str)
+end main;	# 13  
 #start thread
 [ "leave barrier" ]
 #finish thread

@@ -74,18 +74,17 @@ exit t;	# 9  (t:bit)
     redo hdl;	# 11  (hdl:int) jump 3
 exit hdl;	# 12  (hdl:int)
     io.printf("#Main thread\n");	# 13 IOprint_str ($14:int)<-($15:str)
-barrier wl := true;	# 14  (wl:bit)<-($17:bit) jump 22
-    io.printf("#Wait for child to exit %d\n",hdl);	# 15 IOprint_formatted_int ($18:int)<-($19:str)(hdl:int)
-barrier t0 := calc.==(counter,2);	# 16 CALCcompEQintint (t0:bit)<-(counter:int)($11:int) jump 19
-    io.printf("#Child died \n");	# 17 IOprint_str ($21:int)<-($22:str)
-    leave wl;	# 18  (wl:bit) jump 22
-exit t0;	# 19  (t0:bit)
-    alarm.sleep(10);	# 20 ALARMsleep ($23:void)<-($24:int)
-    redo wl;	# 21  (wl:bit) jump 15
-exit wl;	# 22  (wl:bit)
-end main;	# 23  
-[ "#start the child" ]
-#clock tick 1
+barrier wl := true;	# 14  (wl:bit)<-($17:bit) jump 23
+    alarm.sleep(10);	# 15 ALARMsleep ($18:void)<-($19:int)
+    io.printf("#Wait for child to exit %d\n",hdl);	# 16 IOprint_formatted_int ($20:int)<-($21:str)(hdl:int)
+barrier t0 := calc.==(counter,2);	# 17 CALCcompEQintint (t0:bit)<-(counter:int)($11:int) jump 20
+    io.printf("#Child died \n");	# 18 IOprint_str ($23:int)<-($24:str)
+    leave wl;	# 19  (wl:bit) jump 23
+exit t0;	# 20  (t0:bit)
+    alarm.sleep(10);	# 21 ALARMsleep ($25:void)<-($19:int)
+    redo wl;	# 22  (wl:bit) jump 15
+exit wl;	# 23  (wl:bit)
+end main;	# 24  
 #Main thread
 #Wait for child to exit 1083439921
 #counter 1

@@ -78,18 +78,18 @@ stdout of test 'tst1150` in directory 'src/mal` itself:
 ##
 #
 function Admin.main():int;	# 0  (main:int)
-    fp := streams.openWrite("/tmp/test");	# 1 stream_open_wastream (fp:str)<-($2:str)
+    fp := streams.openWrite("tst1150garbage");	# 1 stream_open_wastream (fp:str)<-($2:str)
     streams.writeStr(fp,"Dit is een test\n");	# 2 stream_write_string ($3:void)<-(fp:str)($4:str)
     streams.flush(fp);	# 3 stream_flush_stream ($5:void)<-(fp:str)
     streams.close(fp);	# 4 stream_close_stream ($6:void)<-(fp:str)
-    fp := streams.openRead("/tmp/test");	# 5 stream_open_rastream (fp:str)<-($2:str)
+    fp := streams.openRead("tst1150garbage");	# 5 stream_open_rastream (fp:str)<-($2:str)
     s := streams.readStr(fp);	# 6 stream_read_str (s:str)<-(fp:str)
     io.print(s);	# 7 IOprint_val ($8:int)<-(s:str)
     streams.close(fp);	# 8 stream_close_stream ($9:void)<-(fp:str)
-    fp := streams.openWrite("/tmp/test");	# 9 stream_open_wastream (fp:str)<-($2:str)
+    fp := streams.openWrite("tst1150garbage");	# 9 stream_open_wastream (fp:str)<-($2:str)
     streams.writeInt(fp,1234);	# 10 stream_write_int ($10:void)<-(fp:str)($11:int)
     streams.close(fp);	# 11 stream_close_stream ($12:void)<-(fp:str)
-    fp := streams.openRead("/tmp/test");	# 12 stream_open_rastream (fp:str)<-($2:str)
+    fp := streams.openRead("tst1150garbage");	# 12 stream_open_rastream (fp:str)<-($2:str)
     i := streams.readInt(fp);	# 13 stream_read_int (i:int)<-(fp:str)
     io.print(i);	# 14 IOprint_val ($14:int)<-(i:int)
 end main;	# 15  

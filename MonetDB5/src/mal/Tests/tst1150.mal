@@ -1,16 +1,16 @@
 # simple stream test
-	fp := streams.openWrite("/tmp/test");
+	fp := streams.openWrite("tst1150garbage");
 	streams.writeStr(fp,"Dit is een test\n");
 	streams.flush(fp);
 	streams.close(fp);
-	fp := streams.openRead("/tmp/test");
+	fp := streams.openRead("tst1150garbage");
 	s := streams.readStr(fp);
 	print(s);
 	streams.close(fp);
 
-	fp := streams.openWrite("/tmp/test");
+	fp := streams.openWrite("tst1150garbage");
 	streams.writeInt(fp,1234);
 	streams.close(fp);
-	fp := streams.openRead("/tmp/test");
+	fp := streams.openRead("tst1150garbage");
 	i := streams.readInt(fp);
 	print(i);

@@ -10,4 +10,5 @@ exit	yy;
 	printf("#finish thread\n");
 	printf("#finish thread2\n");
 exit b1;
+	alarm.sleep(10);
 	printf("#end of program, wait for child\n");
