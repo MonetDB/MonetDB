@@ -31,4 +31,4 @@ cd "$srcdir"
 
 # execute the script
 # if no arguments, do a recursive test (Mtest.py -r), else pass on the arguments
-exec python "${builddir}/src/testing/Mtest.py" --monet_mod_path="${MOD_PATH}" --config="${builddir}/conf/monet.conf" --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}" "${@--r}"
+exec python "${builddir}/src/testing/Mtest.py" --monet_mod_path="${MOD_PATH}" --config="${builddir}/conf/monet.conf" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/log" --TSTTRGBASE="${builddir}" "${@--r}"

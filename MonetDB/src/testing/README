@@ -244,6 +244,7 @@ have changed since my proposal.
 	TSTBLDDIR	$TSTBLDBASE/$TSTDIR/Tests
 	TSTTRGDIR	$TSTTRGBASE/mTests/$TSTDIR
 	MONET_CONF	location of monet.conf (default: $MONET_PREFIX/etc/monet.conf)
+	SQL_LOGDIR	as read from $MONET_CONF
 	GDK_DBFARM	as read from $MONET_CONF
 	GDK_DEBUG	debug bitmask for Mserver (default: 10)
 	MONET_MOD_PATH	new module search path of Mserver (if set via --monet_mod_path=<pathlist>)
@@ -251,6 +252,7 @@ have changed since my proposal.
 
 
 - For each directory, Mtest.py creates a database $TSTDB in $GDK_DBFARM
+  and the respective transaction-log directory $TSTDB in $SQL_LOGDIR
   before running any test.
 
 

@@ -575,21 +575,27 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     os.environ['RELBLDDIR'] = env['RELBLDDIR']
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        if os.path.exists(os.path.join(env['GDK_DBFARM'],TSTDB)):
+        for LogDBvar in 'GDK_DBFARM', 'SQL_LOGDIR':
+            LogDBdir = os.path.join(env[LogDBvar],TSTDB)
+            if LogDBvar == 'SQL_LOGDIR':
+                LogDBtxt = "log directory for "
+            else:
+                LogDBtxt = ""
+            if os.path.exists(LogDBdir):
+                try:
+                    shutil.rmtree(LogDBdir)
+                except:
+                    Warn(LogDBtxt+"database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
+                    #TODO:
+                    # add "something" to HTML output
+                    return td
             try:
-                shutil.rmtree(os.path.join(env['GDK_DBFARM'],TSTDB))
+                os.makedirs(LogDBdir)
             except:
-                Warn("database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
+                Warn("creating "+LogDBtxt+"database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
                 #TODO:
                 # add "something" to HTML output
                 return td
-        try:
-            os.makedirs(os.path.join(env['GDK_DBFARM'],TSTDB))
-        except:
-            Warn("creating database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
-            #TODO:
-            # add "something" to HTML output
-            return td
         if not os.path.exists(TSTTRGDIR):
             #TODO: set mode to umask
             os.makedirs(TSTTRGDIR)
@@ -1064,6 +1070,7 @@ def RunTest(env, TST, BusyPorts) :
             FILES = os.path.join(TSTTRGDIR,TST)+" "+os.path.join(TSTTRGDIR,TST)+".*"
             for f in ["bat/\\*", '.gdk_lock']:
                 FILES = FILES+" "+os.path.join(env['GDK_DBFARM'],TSTDB,path(f))
+            FILES = FILES+" "+os.path.join(env['SQL_LOGDIR'],TSTDB,'log\\*')
             WHAT = os.path.join(THISPATH,"MkillUsers")+" -l"+ME+" -p"+ME+" "+FILES+r" \>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.out")+r" 2\>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.err")
             WHEN = "now + "+WAIT+" minutes"
             cmd  = "echo  "+WHAT+"  2>/dev/null | at "+WHEN+" 2>&1 | awk '/^[Jj]ob/{print $2}'"
@@ -1770,7 +1777,8 @@ def main(argv) :
         dft['GDK_DEBUG']      = "TSTDBG"
         dft['MONET_MOD_PATH'] = "''"   #"os.path.join(env['MONET_PREFIX'],'lib')+os.pathsep+os.path.join(env['MONET_PREFIX'],'lib','MonetDB')"
         dft['setMONET_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONET_MOD_PATH']+'\"'"
-        dft['setGDK_DBFARM'] = "'--dbfarm \"'+env['GDK_DBFARM']+'\"'"
+        dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
+        dft['setSQL_LOGDIR']     = "'--set \"sql_logdir='+env['SQL_LOGDIR']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(50000,59999))"
         dft['SQLPORT']        = "str(randomPort(50000,59999))"
         dft['SQLCLIENT']      = "'Msql'" # --port='+env['SQLPORT']"
@@ -1826,6 +1834,8 @@ def main(argv) :
              "override Mserver's default module search path"),
             ('dbfarm', None, 'gdk_dbfarm', '<directory>',
              "override default location of database directory"),
+            ('sql_logdir', None, 'sql_logdir', '<directory>',
+             "override default location of transaction-log directory"),
             ('MAPIPORT', None, 'mapiport', '<port-no.>',
              'default: %s' % dft['MAPIPORT']),
             ('MAPICLIENT', None, 'mapiclient', '<mapi-client program>',
@@ -1889,6 +1899,9 @@ def main(argv) :
         a = opts.get('gdk_dbfarm')
         if a is not None:
             env['GDK_DBFARM'] = a
+        a = opts.get('sql_logdir')
+        if a is not None:
+            env['SQL_LOGDIR'] = a
     if THISFILE == 'Mapprove.py':
         a = opts.get('ext')
         if a is None:
@@ -1953,6 +1966,10 @@ def main(argv) :
             env['setGDK_DBFARM'] = eval(dft['setGDK_DBFARM'])
         else:
             env['setGDK_DBFARM'] = ''
+        if env.has_key('SQL_LOGDIR'):
+            env['setSQL_LOGDIR'] = eval(dft['setSQL_LOGDIR'])
+        else:
+            env['setSQL_LOGDIR'] = ''
 
     if THISFILE == "Mprofile.py"  and  not env['CMDLST']:
         try:
@@ -2034,7 +2051,7 @@ def main(argv) :
     # export and display env
     STDERR.flush()
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars_ + ['GDK_DBFARM','setMONET_MOD_PATH','MAPI_MIL','SQLSERVER_MIL'] 
+        vars_ = vars_ + ['SQL_LOGDIR','GDK_DBFARM','setMONET_MOD_PATH','MAPI_MIL','SQLSERVER_MIL'] 
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
@@ -2078,7 +2095,7 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         exe = {}
         exe['Mtimeout']    = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s --set monet_prompt= --trace' % (opts.config, env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'])
+        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s --set monet_prompt= --trace' % (opts.config, env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'])
         exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py "--config=%s" --host=%s --port=%s' % (opts.config, HOST, env['MAPIPORT'])
         exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']      = CheckExec('python')       , 'python'
@@ -2187,6 +2204,9 @@ def main(argv) :
         if not os.path.exists(env['GDK_DBFARM']):
             #TODO: set mode to umask
             os.makedirs(env['GDK_DBFARM'])
+        if not os.path.exists(env['SQL_LOGDIR']):
+            #TODO: set mode to umask
+            os.makedirs(env['SQL_LOGDIR'])
 
         if os.path.exists(os.path.join(env['GDK_DBFARM'],TSTPREF)):
             try:
