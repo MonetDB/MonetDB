@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <iostream>
+#include "service.h"
 
 using std::cout;
 using std::endl;
@@ -12,10 +13,11 @@ error(const char *msg)
 }
 
 static void
-install(const char *serverpath, const char *user, const char *passwd)
+install(int argc, char **argv, const char *user, const char *passwd)
 {
 	SC_HANDLE handle;
 	SERVICE_DESCRIPTION descr;
+	char server[_MAX_PATH];
 
 	handle = ::OpenSCManager(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
 	if (handle == NULL)
@@ -23,14 +25,41 @@ install(const char *serverpath, const char *user, const char *passwd)
 
 	SC_HANDLE service;
 
+	// name must be quoted if it contains spaces!
+	if (((('a' <= argv[0][0] && argv[0][0] <= 'z') ||
+	      ('A' <= argv[0][0] && argv[0][0] <= 'Z')) &&
+	     argv[0][1] == ':' &&
+	     (argv[0][2] == '\\' || argv[0][2] == '/')) ||
+	    (argv[0][0] == '\\' && argv[0][1] == '\\')) {
+		// absolute path name: either driveletter ":" \path,
+		// driveletter ":" /path, or \\path
+		// find last / or \ (i.e. end of folder name
+		char *base, *p;
+		for (p = argv[0]; *p; p++)
+			if (*p == '\\' || *p == '/')
+				base = p;
+		_snprintf(server, sizeof(server), "\"%.*s\\%s\"",
+			  base - argv[0], argv[0], MSERVICEEXE);
+	} else {
+		_fullpath(server, MSERVICEEXE, sizeof(server));
+	}
+
+	for (int i = 2; i < argc; i++) {
+		if (strlen(server) + strlen(argv[i]) + 4 >= sizeof(server))
+			error("argument list too long");
+		strcat(server, " \"");
+		strcat(server, argv[i]);
+		strcat(server, "\"");
+	}
+
 	service = ::CreateService(handle,
-				  "MonetDB",
+				  MSERVICE,
 				  "MonetDB Database Server",
 				  GENERIC_ALL,
 				  SERVICE_WIN32_OWN_PROCESS,
 				  SERVICE_AUTO_START,
 				  SERVICE_ERROR_NORMAL,
-				  serverpath,
+				  server,
 				  NULL,
 				  NULL,
 				  NULL,
@@ -38,16 +67,24 @@ install(const char *serverpath, const char *user, const char *passwd)
 				  passwd);
 	if (service == NULL)
 		error("Failed to create the MonetDB Database Service");
-	descr.lpDescription = "Manages a MonetDB Database Server";
+	char *buf = (char *) malloc(strlen(server) + 100);
+	strcpy(buf, "Manages a MonetDB Database Server.\n"
+	       "The server is started with the following command:\n");
+	for (int i = 2; i < argc; i++) {
+		strcat(buf, argv[i]);
+		strcat(buf, "\n");
+	}
+	descr.lpDescription = buf;
 	if (!::ChangeServiceConfig2(service, SERVICE_CONFIG_DESCRIPTION, &descr))
 		error("Failed to change service description");
 
+	free(buf);
 	::CloseServiceHandle(service);
 	::CloseServiceHandle(handle);
 }
 
 static void
-uninstall()
+uninstall(void)
 {
 	SC_HANDLE handle;
 
@@ -57,7 +94,7 @@ uninstall()
 
 	SC_HANDLE service;
 
-	service = ::OpenService(handle, "MonetDB", DELETE);
+	service = ::OpenService(handle, MSERVICE, DELETE);
 	if (service != NULL) {
 		if (!::DeleteService(service))
 			error("Failed to delete the MonetDB Database Service");
@@ -67,7 +104,7 @@ uninstall()
 }
 
 static void
-start()
+start(void)
 {
 	SC_HANDLE handle;
 
@@ -77,7 +114,7 @@ start()
 
 	SC_HANDLE service;
 
-	service = ::OpenService(handle, "MonetDB", GENERIC_EXECUTE);
+	service = ::OpenService(handle, MSERVICE, GENERIC_EXECUTE);
 	if (service == NULL)
 		error("Cannot get handle to service");
 	if (!::StartService(service, 0, NULL))
@@ -86,21 +123,57 @@ start()
 	::CloseServiceHandle(handle);
 }
 
+static void
+stop(void)
+{
+	SC_HANDLE handle;
+	SERVICE_STATUS status;
+
+	handle = ::OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+	if (handle == NULL)
+		error("Failed to open Service Control Manager");
+
+	SC_HANDLE service;
+
+	service = ::OpenService(handle, MSERVICE, GENERIC_EXECUTE);
+	if (service == NULL)
+		error("Cannot get handle to service");
+	if (!::ControlService(service, SERVICE_CONTROL_STOP, &status))
+		error("Failed to stop the MonetDB Database Service");
+	::CloseServiceHandle(service);
+	::CloseServiceHandle(handle);
+}
+
+void
+usage(char *progname)
+{
+	cout << "Usage: " << progname << " {/Install,/Uninstall,/Start,/Stop}" << endl;
+	exit(1);
+}
+
 int
 main(int argc, char **argv)
 {
-	if (argc != 2)
-		error("Program requires an argument");
+	if (argc < 2)
+		usage(argv[0]);
 
-	if (strcmp(argv[1], "-install") == 0) {
-		// name must be quoted if it contains spaces!
-		install("\"C:\\Program Files\\CWI\\MonetDB\\MserverService.exe\"",
-			NULL, NULL);
-	} else if (strcmp(argv[1], "-uninstall") == 0)
+	if (strcmp(argv[1], "-install") == 0 ||
+	    strcmp(argv[1], "/Install") == 0) {
+		install(argc, argv, NULL, NULL);
+	} else if (argc == 2 &&
+		   (strcmp(argv[1], "-uninstall") == 0 ||
+		    strcmp(argv[1], "/Uninstall") == 0)) {
 		uninstall();
-	else if (strcmp(argv[1], "-start") == 0)
+	} else if (argc == 2 &&
+		   (strcmp(argv[1], "-start") == 0 ||
+		    strcmp(argv[1], "/Start") == 0)) {
 		start();
-	else
-		error("bad argument");
+	} else if (argc == 2 &&
+		   (strcmp(argv[1], "-stop") == 0 ||
+		    strcmp(argv[1], "/Stop") == 0)) {
+		stop();
+	} else {
+		usage(argv[0]);
+	}
 	return 0;
 }
