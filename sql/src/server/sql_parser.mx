@@ -407,6 +407,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 
 %right <sval> STRING
 
+/* sql prefixes to avoid name clashes on various architectures */
 %token <sval> 
 	IDENT TYPE AGGR sqlINT INTNUM APPROXNUM USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL CAST
@@ -421,7 +422,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER 
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
-%token  UNCOMMITTED COMMITTED REPEATABLE SERIALIZABLE DIAGNOSTICS SIZE
+%token  UNCOMMITTED COMMITTED REPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE
 	
 %token <sval> LIKE BETWEEN ASYMMETRIC SYMMETRIC ORDER BY
 %token <operation> sqlIN EXISTS ESCAPE HAVING GROUP NULLX 
@@ -1190,7 +1191,7 @@ transaction_mode:
 	READ ONLY			{ $$ = tr_readonly; }
  |	READ WRITE			{ $$ = tr_writable; }
  | 	ISOLATION LEVEL iso_level	{ $$ = tr_serializable; }
- | 	DIAGNOSTICS SIZE intval		{ $$ = tr_none; /* not supported */ }	
+ | 	DIAGNOSTICS sqlSIZE intval	{ $$ = tr_none; /* not supported */ }
  ;
 
 iso_level:

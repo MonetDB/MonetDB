@@ -342,7 +342,7 @@ init_keywords()
 	keywords_insert("REPEATABLE", REPEATABLE);
 	keywords_insert("SERIALIZABLE", SERIALIZABLE);
 	keywords_insert("DIAGNOSTICS", DIAGNOSTICS);
-	keywords_insert("SIZE", SIZE);
+	keywords_insert("SIZE", sqlSIZE);
 
 	keywords_insert("MODULE", MODULE );
 	keywords_insert("TYPE", sqlTYPE );
