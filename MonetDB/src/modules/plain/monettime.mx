@@ -1406,13 +1406,12 @@ int timestamp_fromstr(str buf, int *len, timestamp **ret) {
 	if (s <= buf || (*ret)->days == date_nil || (*ret)->msecs == daytime_nil) {
 		**ret = ts_nil;
 	} else {
-	    lng offset = 0, sign = -1;
+	    lng offset = 0;
 
 	    while(GDKisspace(*s)) s++;
 	    /* incase of gmt we need to add the time zone */
 	    if (fleximatch(s, "gmt", 0) == 3) {
 		s += 3;
-		sign = 1;
 	    }
 	    if ((s[0] == '-' || s[0] == '+') &&
 		   GDKisdigit(s[1]) && GDKisdigit(s[2]) && GDKisdigit(s[pos=4]) &&
@@ -1429,10 +1428,8 @@ int timestamp_fromstr(str buf, int *len, timestamp **ret) {
 		offset = get_offset(&tzone_local) * (lng)-60000; 
 		if (timestamp_inside(&tmp, &tmp, &tzone_local, (lng)-3600000)) {
 			**ret = tmp; 
-			sign = 1;
 		}
 	    }
-	    offset *= sign;
 	    timestamp_add(*ret, *ret, &offset); 
 	}
 	return (int) (s-buf);
