@@ -305,8 +305,6 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	any_all_some
 	non_reserved_word
 	ident
-	cident		/* special ident where strings and non-keywords 
-			  are excluded, to solve many parser conflicts */
 	column
 	authid
 	grantee
@@ -2152,7 +2150,7 @@ qname:
  ;
 
 column_ref:
-    cident		{ $$ = dlist_append_string(
+    ident		{ $$ = dlist_append_string(
 				dlist_create(), $1); }
 
  |  ident '.' ident	{ $$ = dlist_append_string(
@@ -2326,14 +2324,6 @@ authid: 		ident ;
 
 ident: 
     IDENT	{ $$ = $1; }	
- |  TYPE	{ $$ = $1; }
- |  AGGR	{ $$ = $1; } 	/* without '(' */
- |  string			
- |  non_reserved_word		
- ;
-
-cident:
-    IDENT
  |  TYPE	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
  |  non_reserved_word		

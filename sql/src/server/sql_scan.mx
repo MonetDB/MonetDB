@@ -440,10 +440,15 @@ scanner_query_processed( struct scanner *s )
 		s->yybak = 0;
 	}
 	if (s->rs) {
+		int cur;
 		s->rs->pos += s->yycur;
+		/* completely eat the query including white space after the ; */
+		cur = s->rs->buf[s->rs->pos];
+		while(isspace(cur)) { 
+			s->rs->pos++;
+			cur = s->rs->buf[s->rs->pos];
+		}
 		assert( s->rs->pos <= s->rs->len);
-		if (s->rs->pos > s->rs->len)
-			s->rs->pos = s->rs->len;
 		s->yycur = 0;
 	}
 }
@@ -935,8 +940,11 @@ sqllex(YYSTYPE * yylval, void *parm)
 	if (token == IDENT || token == COMPARISON ||
 	    token == AGGR || token == TYPE)
 		yylval->sval = _strdup(yylval->sval);
-	if (token == STRING) 
+	if (token == STRING) {
+		if (*yylval -> sval == '"')
+			token = IDENT;
 		yylval->sval = sql_strdup(yylval->sval);
+	}
 
 	lc->key ^= token;
 

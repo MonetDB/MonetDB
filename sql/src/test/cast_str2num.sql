@@ -6,38 +6,28 @@ insert into T values ( 3, 0.3 );
 
 select * from T where I <  2;
 select * from T where I <  '2';
-select * from T where I <  "2";
 select * from T where F <  0.2;
 select * from T where F <  '0.2';
-select * from T where F <  "0.2";
 
 select * from T where I <= 2;
 select * from T where I <= '2';
-select * from T where I <= "2";
 select * from T where F <= 0.2;
 select * from T where F <= '0.2';
-select * from T where F <= "0.2";
 
 select * from T where I  = 2;
 select * from T where I  = '2';
-select * from T where I  = "2";
 select * from T where F  = 0.2;
 select * from T where F  = '0.2';
-select * from T where F  = "0.2";
 
 select * from T where I >= 2;
 select * from T where I >= '2';
-select * from T where I >= "2";
 select * from T where F >= 0.2;
 select * from T where F >= '0.2';
-select * from T where F >= "0.2";
 
 select * from T where I >  2;
 select * from T where I >  '2';
-select * from T where I >  "2";
 select * from T where F >  0.2;
 select * from T where F >  '0.2';
-select * from T where F >  "0.2";
 
 drop table T;
 
