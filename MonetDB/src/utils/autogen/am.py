@@ -184,13 +184,16 @@ def am_scripts(fd, var, scripts, am):
 
     for script in scripts['TARGETS']:
 	if script not in am['BIN_SCRIPTS']:
-		am['BIN_SCRIPTS'].append(script)
+		am['BIN_SCRIPTS'].append("script_" + script)
+        fd.write("script_%s: %s\n" % (script,script))
+        fd.write("\tchmod a+x $<\n")
         if (sd == "$(sysconfdir)"):
                 fd.write("install-exec-local-%s: %s\n" % (script,script))
                 fd.write("\t-mkdir -p $(DESTDIR)%s\n" % (sd))
                 fd.write("\t$(INSTALL) $(INSTALL_BACKUP) $< $(DESTDIR)%s/%s\n\n" % (sd,script))
                 fd.write("uninstall-exec-local-%s: \n" % (script))
                 fd.write("\t$(ECHO) $(DESTDIR)%s/%s\n\n" % (sd,script))
+		
         else:
                 fd.write("install-exec-local-%s: %s\n" % (script,script))
                 fd.write("\t-mkdir -p $(DESTDIR)%s\n" % (sd))
@@ -634,7 +637,6 @@ CXXEXT = \\\"cc\\\"
             fd.write("bin_SCRIPTS = %s\n" % am_list2string(scripts," ",""))
             fd.write("install-exec-local-SCRIPTS: \n" )
             fd.write("all-local-SCRIPTS: $(bin_SCRIPTS)\n" )
-            #fd.write("%s" % am_list2string(scripts,"\tchmod a+x ","\n"))
 
     if (len(am['INSTALL']) > 0):
         fd.write("install-exec-local:%s\n" % \
