@@ -65,6 +65,34 @@ def cond_subdir(fd, dir, i):
         res = "$(" + parts[0] + "_" + str(i) + "_SUBDIR)"
     return res
 
+def am_sort_libs( libs, tree ):
+	res = []
+	for lib in libs:
+		after = -1;
+		# does lib depend on a other library 
+		if tree.has_key('lib_'+ lib):
+			v = tree['lib_'+lib]
+			if (v.has_key("LIBS")):
+				for l in v['LIBS']: 
+					if (len(l) > 3):
+						l = l[3:]; # strip lib prefix
+					if l in res:
+						pos = res.index(l);
+						if (pos > after):
+							after = pos 
+		elif tree.has_key( 'LIBS' ):
+			v = tree['LIBS']
+			if (v.has_key(lib[1:] + "_DLIBS")):
+				for l in v[lib[1:] + '_DLIBS']: 
+					if (len(l) > 3):
+						l = l[3:]; # strip lib prefix
+					if l in res:
+						pos = res.index(l);
+						if (pos > after):
+							after = pos 
+		res.insert(after+1,lib)
+	return res;
+
 def am_subdirs(fd, var, values, am ):
     dirs = []
     i = 0
@@ -702,9 +730,10 @@ CXXEXT = \\\"cc\\\"
           am_list2string(am['EXTRA_DIST']," ",""))
 
     if (len(am['LIBS']) > 0):
+	libs = am_sort_libs( am['LIBS'], tree);
         fd.write("%s_LTLIBRARIES =%s\n" % \
-                    (am['LIBDIR'], am_list2string(am['LIBS']," lib",".la")))
-        for i in am['LIBS']:
+                    (am['LIBDIR'], am_list2string(libs," lib",".la")))
+        for i in libs:
             am['InstallList'].append("\t$("+am['LIBDIR']+"dir)/lib"+i+".so\n")
 
     if (len(am['BINS']) > 0):
