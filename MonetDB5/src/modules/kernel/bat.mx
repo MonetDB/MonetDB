@@ -522,7 +522,7 @@ For more technical information on BATs, we refer to the
 documentation.
 @mal
 command mmap(b:bat[:any,:any], buns_mode:int, hheap_mode:int, 
-		theap_mode:int, hacc_mode:int, tacc_mode:int) :bit 
+		theap_mode:int) :bit 
 address BKCmmap
 comment "For each individual heap, you can change the allocation mode 
         to either STORE_MEM or STORE_MMAP. Passing an int(nil) means:
@@ -535,7 +535,7 @@ address BKCmmap2
 comment "Alias for mmap(b,mode,mode,mode, mode,mode)";
 
 command madvise(b:bat[:any,:any], buns_mode:int, hheap_mode:int, 
-		theap_mode:int, hacc_mode:int, tacc_mode:int) :bit 
+		theap_mode:int) :bit 
 address BKCmadvise
 comment "Modern Operating Systems allow users to influence the buffer 
         management policy of virtual memory. This is a crucial feature 
@@ -598,8 +598,6 @@ comment "Returns the accelerator type of the *persistent* accelerator
         accelerators are generally *not* persistent, and will not be 
 	returned by this function!";
  
-command hasHash(b:bat[:any,:any]):bit 
-address BKChasHash;
 command setHash(b:bat[:any,:any],prop:bit):bit 
 address BKCsetHash;
 
@@ -1297,51 +1295,22 @@ int CMDsave(bit *res, str input) {
 	}
 }
 @c
-int CMDmmap(BAT **r, BAT *b, int *bns, int *hhp, int *thp, int *hacc, int *tacc){
+int CMDmmap(BAT **r, BAT *b, int *bns, int *hhp, int *thp){
 	@:change_heap(bns,(*b->batBuns))@
 	@:change_heap(hhp,b->hheap)@
 	@:change_heap(thp,b->theap)@
-	if (BATmmap(*r=b, *bns, *hhp, *thp, *hacc, *tacc) == 0) {
+	if (BATmmap(*r=b, *bns, *hhp, *thp) == 0) {
 	        BBPfix(b->batCacheid);
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
 }
 
-int CMDmadvise(BAT **r, BAT *b, int *bns, int *hhp, int *thp, 
-		 	        int *hacc, int *tacc)
+int CMDmadvise(BAT **r, BAT *b, int *bns, int *hhp, int *thp)
 {
 	BBPfix(b->batCacheid);
 	return BATmadvise(*r=b, (*bns==int_nil)?-1:*bns, 
-		(*hhp==int_nil)?-1:*hhp, (*thp==int_nil)?-1:*thp, 
-		(*hacc==int_nil)?-1:*hacc, (*tacc==int_nil)?-1:*tacc)?GDK_FAIL:GDK_SUCCEED;
-}
-
-@+ Accelerator Control
-@c
-int CMDaccbuild(BAT *b, int* acc, ptr param, int dummy){
-	(void) dummy;
-	ACCbuild(*acc, b, &b->haccelerator, param); 
-	return GDK_SUCCEED;
-}
-int CMDaccbuild_std(BAT *b, int* acc){
-	return CMDaccbuild(b, acc, NULL, 0);	
-}
-
-int CMDaccdestroy(BAT *b, int *acc) {
-	ACCdestroy(*acc, b, &b->haccelerator);
-	return GDK_SUCCEED;
-}
-
-int CMDaccpresent(int *retval, BAT* b) {
-	*retval = 0;
-	if (b->hacctype) {
-	    int (*check)(Heap*, BAT*) = BATaccelerators[b->hacctype].accRepair;
-	    if (check == NULL || (*check)(&b->haccelerator,b) == GDK_SUCCEED) {
-		*retval = b->hacctype;
- 	    }
-	}
-	return GDK_SUCCEED;
+		(*hhp==int_nil)?-1:*hhp, (*thp==int_nil)?-1:*thp);
 }
 
 /* ITERATIONS ARE DEFINED ELSEWHERE */
@@ -2399,13 +2368,12 @@ str BKCsave2(int *r, int *bid) {
 }
 
 @c
-str BKCmmap(int *res, int *bid, int *bns, int *hhp, int *thp,
-			int *hacc, int *tacc)
+str BKCmmap(int *res, int *bid, int *bns, int *hhp, int *thp)
 {	BAT *b, *bn = NULL;
     if( (b= BATdescriptor(*bid)) == NULL ){
         return throwMessage("bat.mmap", "Cannot access descriptor");
     }
-	if( CMDmmap(&bn,b,bns,hhp,thp,hacc,tacc) == GDK_SUCCEED){
+	if( CMDmmap(&bn,b,bns,hhp,thp) == GDK_SUCCEED){
 		*res= TRUE;
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
@@ -2415,25 +2383,22 @@ str BKCmmap(int *res, int *bid, int *bns, int *hhp, int *thp,
 	return throwMessage("bat.mmap", " failed");
 }
 str BKCmmap2(int *res, int *bid, int *bns){
-	return BKCmmap(res,bid,bns,bns,bns,bns,bns);
+	return BKCmmap(res,bid,bns,bns,bns);
 }
 
-str BKCmadvise(int *res, int *bid, int *bns, int *hhp, int *thp,
-		 	        int *hacc, int *tacc)
+str BKCmadvise(int *res, int *bid, int *bns, int *hhp, int *thp)
 {	BAT *b;
     if( (b= BATdescriptor(*bid)) == NULL ){
         return throwMessage("bat.madvice", "Cannot access descriptor");
     }
 	*res= BATmadvise(b, (*bns==int_nil)?-1:*bns,
-		(*hhp==int_nil)?-1:*hhp, (*thp==int_nil)?-1:*thp,
-		(*hacc==int_nil)?-1:*hacc,
-		(*tacc==int_nil)?-1:*tacc);
+		(*hhp==int_nil)?-1:*hhp, (*thp==int_nil)?-1:*thp);
 	BBPunfix(b->batCacheid);
 	if( *res) return throwMessage("bat.madvise", " failed");
 	return MAL_SUCCEED;
 }
 str BKCmadvise2(int *res,  int *bid, int *mode){
-	return BKCmadvise(res,bid,mode,mode,mode,mode,mode);
+	return BKCmadvise(res,bid,mode,mode,mode);
 }
 
 @+ Accelerator Control
@@ -2449,39 +2414,7 @@ str BKCaccbuild_std(int *ret, int *bid, int* acc){
 	return throwMessage("Accelerator","Obsolete functionality");
 }
 
-str BKCaccdestroy(int *ret, int *bid, int *acc) {
-	BAT *b;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("bat.accdestroy", "Cannot access descriptor");
-    }
-	CMDaccdestroy(b,acc);
-	*ret = TRUE;
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-	/* return throwMessage("Accelerator","Obsolete functionality");*/
-}
 
-str BKCaccpresent(int *ret, int *bid) {
-	BAT *b;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("bat.accpresent", "Cannot access descriptor");
-    }
-	CMDaccpresent(ret,b);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-	/* return throwMessage("Accelerator","Obsolete functionality");*/
-}
-
-
-str BKChasHash(bit *ret, int *bid) {
-	BAT *b;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("bat.hasHash", "Cannot access descriptor");
-    }
-	*ret = b->hacctype == 1;
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
 str BKCsetHash(bit *ret, int *bid, bit *prop) {
 	BAT *b;
 	(void)ret; (void) prop; /* fool compiler */
