@@ -1,6 +1,6 @@
 # Monet Mil to Mal compiler
+include mil_scenario;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
-include mil;
 
 #Predefined code segment
 #The compiler can not guarantee an accurate compilation,
