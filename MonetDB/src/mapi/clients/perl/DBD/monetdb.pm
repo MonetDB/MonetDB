@@ -107,48 +107,34 @@ use strict;
 
 
 sub connect {
-    my $drh = shift;
-    my ($dsn, $user, $password, $attrhash) = @_;
+    my ($drh, $dsn, $user, $password, $attr) = @_;
 
     my $data_source_info = DBD::monetdb->_parse_dsn(
-						   $dsn, ['host', 'port','database','language'],
-						  );
+        $dsn, ['host','port','database','language']);
 
-    my $lang= $data_source_info->{language};
-    $lang     ||= 'sql';
-    if ( ! ($lang eq 'mal' || $lang eq 'sql' || $lang eq 'mil') ) {
-	die "!ERROR languages permitted are 'sql', 'mal', and 'mil'\n";
-    }
-
+    my $lang  = $data_source_info->{language} || 'sql';
+    die "!ERROR languages permitted are 'sql', 'mal', and 'mil'\n"
+        unless ($lang eq 'mal' || $lang eq 'sql' || $lang eq 'mil');
+    my $host  = $data_source_info->{host} || 'localhost';
+    my $port  = $data_source_info->{port} || ( $lang eq 'sql' ? 45123 : 50000 );
     $user     ||= 'monetdb';
     $password ||= 'monetdb';
 
-    my $host  = $data_source_info->{host};
-    my $port  = $data_source_info->{port};
-    $port     ||= ($lang eq 'sql')? 45123 : 50000;
-    $host	  ||= 'localhost';
-
-    my $server = $host.':'.$port;
-    my $dbh = DBI::_new_dbh($drh, {
-				   Name         => $dsn,
-				   USER         => $user,
-				   Username     => $user,
-				   CURRENT_USER => $user,
-				   Language     => $lang
-				  }, {});
-    my $mapi;
-    eval {
-	$mapi = MapiLib::mapi_connect($host, $port, $user, $password, $lang);
-	$dbh->STORE(monetdb_connection => $mapi);
+    my $mapi = eval {  # TODO: do we need 'eval'?
+        MapiLib::mapi_connect($host, $port, $user, $password, $lang);
     };
-    if ($@) {
-	return $dbh->DBI::set_err(1, $@);
-    }
-    if (MapiLib::mapi_error($mapi)) {
-	return $dbh->DBI::set_err(MapiLib::mapi_error($mapi), MapiLib::mapi_error_str($mapi));
-    }
+    return $drh->set_err(1, $@) if $@;
+    my $err = MapiLib::mapi_error($mapi);
+    return $drh->set_err($err, MapiLib::mapi_error_str($mapi)) if $err;
+
+    my ($outer, $dbh) = DBI::_new_dbh($drh, { Name => $dsn });
+
     $dbh->STORE('Active', 1 );
-    return $dbh;
+
+    $dbh->{monetdb_connection} = $mapi;
+    $dbh->{monetdb_language} = $lang;
+
+    return $outer;
 }
 
 
@@ -168,7 +154,7 @@ use strict;
 
 sub ping {
     my $dbh = shift;
-    my $mapi = $dbh->FETCH('monetdb_connection');
+    my $mapi = $dbh->{monetdb_connection};
 
     MapiLib::mapi_ping($mapi) ? 0 : 1;
 }
@@ -234,7 +220,7 @@ sub commit {
     if ($dbh->FETCH('AutoCommit')) {
 	warn 'Commit ineffective while AutoCommit is on';
     } else {
-	MapiLib::mapi_query($dbh->FETCH('monetdb_connection'), 'commit;');
+        MapiLib::mapi_query($dbh->{monetdb_connection},'commit;');
     }
     1;
 }
@@ -245,7 +231,7 @@ sub rollback {
     if ($dbh->FETCH('AutoCommit')) {
 	warn 'Rollback ineffective while AutoCommit is on';
     } else {
-	MapiLib::mapi_query($dbh->FETCH('monetdb_connection'), ($dbh->FETCH('Language') ne 'sql')?'abort;':'rollback;');
+        MapiLib::mapi_query($dbh->{monetdb_connection}, ($dbh->{monetdb_language} ne 'sql') ? 'abort;' : 'rollback;');
     }
     1;
 }
@@ -300,11 +286,11 @@ sub type_info_all {
 sub tables {
     my $dbh = shift;
     my @args = @_;
-    my $mapi = $dbh->FETCH('monetdb_connection');
+    my $mapi = $dbh->{monetdb_connection};
 
     my @table_list;
 
-    my $hdl = MapiLib::mapi_query($mapi, ($dbh->FETCH('Language') ne 'sql')?'ls;':'SELECT name FROM tables;');
+    my $hdl = MapiLib::mapi_query($mapi, ($dbh->{monetdb_language} ne 'sql') ? 'ls;' : 'SELECT name FROM tables;');
     die MapiLib::mapi_error_str($mapi) if MapiLib::mapi_error($mapi);
 
     while (MapiLib::mapi_fetch_row($hdl)) {
@@ -319,7 +305,7 @@ sub tables {
 sub _ListDBs {
     my $dbh = shift;
     my @database_list;
-    push @database_list, MapiLib::mapi_get_dbname($dbh->FETCH('monetdb_connection'));
+    push @database_list, MapiLib::mapi_get_dbname($dbh->{monetdb_connection});
     return @database_list;
 }
 
@@ -332,7 +318,7 @@ sub _ListTables {
 
 sub disconnect {
     my $dbh = shift;
-    my $mapi = $dbh->FETCH('monetdb_connection');
+    my $mapi = $dbh->{monetdb_connection};
     MapiLib::mapi_disconnect($mapi);
     $dbh->STORE('Active', 0 );
     return 1;
@@ -354,7 +340,7 @@ sub STORE {
     if ($key eq 'AutoCommit') {
 	my $old = $dbh->{$key} || 0;
 	if ($new != $old) {
-	    my $mapi = $dbh->FETCH('monetdb_connection');
+	    my $mapi = $dbh->{monetdb_connection};
 	    MapiLib::mapi_setAutocommit($mapi, $new);
 	    $dbh->{$key} = $new;
 	}
@@ -371,7 +357,7 @@ sub STORE {
 sub DESTROY {
     my $dbh = shift;
     $dbh->disconnect if $dbh->FETCH('Active');
-    my $mapi = $dbh->FETCH('monetdb_connection');
+    my $mapi = $dbh->{monetdb_connection};
     MapiLib::mapi_destroy($mapi) if $mapi;
 }
 
@@ -474,7 +460,7 @@ sub fetch {
 
 sub rows {
     my $sth = shift;
-    $sth->FETCH('monetdb_rows');
+    return $sth->{monetdb_rows};
 }
 
 
@@ -517,7 +503,7 @@ sub STORE {
 
 sub DESTROY {
     my $sth = shift;
-    MapiLib::mapi_close_handle($sth->FETCH('monetdb_hdl')) if $sth->FETCH('monetdb_hdl');
+    MapiLib::mapi_close_handle($sth->{monetdb_hdl}) if $sth->{monetdb_hdl};
 }
 
 
