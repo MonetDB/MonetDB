@@ -60,7 +60,7 @@ extern YYSTYPE yylval;
 extern char *getOperator(char *nme);
 
 extern const char *yylexname(int Y);
-extern void mil_parserror(str msg);
+extern void mil_parseError(str msg);
 extern void mil_flushbuffer();
 extern str mil_lastline();
 extern int mil_position();
@@ -264,7 +264,7 @@ int mil_getch() {
                 if (mil_stack->listing) { 
 			printf("#");
 			for(s= mil_stack->nxtline; *s && *s!='\n'; s++)
-				printf("%s",*s);
+				printf("%c",*s);
                         printf("\n");
                         fflush(stdout);
                 }
@@ -331,7 +331,10 @@ void popIterator(){
 		return;
 	}
 	itop--;
-	GDKfree(iterators[itop]);
+	if(iterators[itop]){
+		GDKfree(iterators[itop]);
+		iterators[itop]=0;
+	}
 }
 void resetIterator(){ itop=0;}
 void resetBlock(){ btop=0;}
@@ -352,7 +355,10 @@ void popBlock(){
 		return;
 	}
 	btop--;
-	GDKfree(block[itop]);
+	if(block[btop]){
+		GDKfree(block[btop]);
+		block[btop]=0;
+	}
 }
 
 str getLast(char c){
@@ -388,6 +394,7 @@ void resetIds() {ids =0;}
 void newId(str nme){
 	Ids m;
 	m = (Ids) GDKmalloc(sizeof(*m));
+	if(m == 0) mil_parseError("Failure to create identifier\n");
 	m->peer = ids;
 	m->nme = nme;
 	ids= m;
@@ -490,7 +497,7 @@ The grammatica should be context free.
 #include "mil_parser.h"
 
 #undef yyerror
-#define yyerror(X)      { mil_parserror(X);  }
+#define yyerror(X)      { mil_parseError(X);  }
 
 #define YYPRINT(file,tpe,val)	mil_print(file,tpe,val)
 int yydebug = 1;
@@ -582,16 +589,16 @@ stmt: ';'
     |   TOK_RETURN ret_value ';'
 	{ printf("\treturn %s;\n", $2.val);}
 	/* expression in the while block could be compound !! */
-    |   barrier '(' 
+    |   whilestmt '(' 
 	{ $2.val= newName();
 	  printf("barrier\t%s:= true;\n",$1.val);
 	  pushBlock($1.val);
 	}
-	 expression ')' 
+	 term ')' 
 	{ printf("barrier\t%s:= %s;\n",$2.val,$4.val); 
 	  pushBlock($2.val);
 	}
-	stmt
+	sequential_block
 	{ 
 	  printf("redo\t%s;\n", $1.val);
 	  popBlock();
@@ -623,7 +630,7 @@ ifhead: TOK_IF '(' term ')'
 	}
     ;
 
-barrier:
+whilestmt:
 	TOK_WHILE
 	{ $$.val= newName();}
     ;
@@ -634,7 +641,7 @@ iterator :
     ;
         
 ret_value:
-        expression
+        term
     |   /* empty */
 	{ $$.val= GDKstrdup("nil");}
     ;
@@ -685,8 +692,11 @@ proc_name:
 		}
 		$$=$1;
 	}
-    |   TOK_STRING
-	{ printf("function %s(",$1.val); $$=$1;}
+    |   TOK_CONSTANT
+	{ 
+	  if( $1.tpe == TYPE_str)printf("function %s(",$1.val); 
+	  else mil_parseError("Operator name not a string literal");
+	  $$=$1;}
     |   TOK_OPERATOR
 	{ printf("function %s(",$1.val);$$=$1;}
     ;
@@ -808,19 +818,18 @@ term :
     ;
 
 variable_reference:
-        template 
-    |  	tok_ident
-    ;
+        template  {$$= $1;}
+    |  	tok_ident { $$=$1;} ;
 
 template:
         TOK_TEMPLATE
     |   TOK_ITERTEMP
-    |   TOK_VARTEMP factor1 ')'
+    |   TOK_VARTEMP expression ')'
 	{ char *nme= newName();
 	  printf("\t%s := mil.getVarTemp(%s);\n",nme,$2.val);
 	  $$.val= nme;
 	}
-    |   TOK_VARTEMP factor1 TOK_RANGETEMP ')'
+    |   TOK_VARTEMP expression TOK_RANGETEMP ')'
 	{ char *nme= newName();
 	  printf("\t%s := mil.getVarTempRange(%s);\n",nme,$2.val);
 	  $$.val= nme;
@@ -991,7 +1000,7 @@ If no lookahead character is a used and the next character is a newline,
 we should also copy the input .
 @{
 @y
-void mil_parserror(str msg){
+void mil_parseError(str msg){
         static char buf[1024];
         char *s=buf, *t, *l = mil_lastline();
         int i = strlen(GDKERROR);

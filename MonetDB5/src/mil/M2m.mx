@@ -41,7 +41,7 @@ str absolute_path(str s) {
 
 main(int argc,char ** av)
 {
-        char *buf= (char*) malloc(BUFSIZ), *ptr, *prog = *av, *config = NULL;
+        char *buf, *ptr, *prog = *av, *config = NULL;
         opt *set = NULL;
         int i,debug = 0, setlen = 0, status = 1;
 	int k,len,totlen;
@@ -170,7 +170,7 @@ The files are processed as one big program
 @c
 	i=0;
 	len = totlen = 8*8192;
-	ptr = buf;
+	ptr = buf= (char*) GDKmalloc(totlen);
 	for(k=0;mil_script[k]!= 0; k++) {
 		FILE *fd;
 		char fname[PATHLENGTH];
