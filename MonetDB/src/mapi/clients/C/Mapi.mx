@@ -907,6 +907,8 @@ typedef __int64 mapi_int64;
 			return (e);				\
 		}						\
 	} while (0)
+#define REALLOC(p,s)	((p) = ((p) ? realloc((p),(s)) : malloc((s))))
+
 @+ Blocking
 The server side code works with a common/stream package, a fast buffered IO scheme.
 However, this package is not always available for every language runtime system.
@@ -985,15 +987,10 @@ mapi_ping(Mapi mid)
 static MapiMsg
 mapi_setError(Mapi mid, const char *msg, const char *action)
 {
-	char *c;
-
 	assert(msg);
-	c = malloc(strlen(msg) + 1);
-	strcpy(c, msg);
-	if (mid->errorstr)
-		free(mid->errorstr);
+	REALLOC(mid->errorstr, strlen(msg) + 1);
+	strcpy(mid->errorstr, msg);
 	mid->error = MERROR;
-	mid->errorstr = c;
 	mid->action = action;
 	return mid->error;
 }
@@ -1981,11 +1978,9 @@ mapi_param_store(MapiHdl hdl)
 
 	if (hdl->template == 0)
 		return;
-	if (hdl->query)
-		free(hdl->query);
 
 	lim = strlen(hdl->template) + MAPIBLKSIZE;
-	hdl->query = malloc(lim);
+	REALLOC(hdl->query, lim);
 	assert(hdl->query);
 	hdl->query[0] = 0;
 	k = 0;
@@ -2488,8 +2483,6 @@ mapi_cache_freeup_internal(MapiHdl hdl, int k)
 	return MOK;
 }
 
-#define REALLOC(p,s)	((p) = ((p) ? realloc((p),(s)) : malloc((s))))
-
 static void
 mapi_extend_cache(MapiHdl hdl)
 {
@@ -2929,22 +2922,13 @@ mapi_get_row(MapiHdl hdl)
 		case '!':
 		{
 			/* concatenate the error messages */
-			char *olderr = mid->errorstr;
-			char *newerr;
-			size_t size = olderr ? strlen(olderr) : 0;
+			size_t size = mid->errorstr ? strlen(mid->errorstr) : 0;
 
-			newerr = malloc(size + strlen(reply) + 2);
-			assert(newerr);
-			newerr[0] = 0;
-			if (olderr)
-				strcpy(newerr, olderr);
-			strcat(newerr, reply);
-			strcat(newerr, "\n");
 			mid->error = MERROR;
 			mid->action = "mapi_get_row";
-			if (mid->errorstr)
-				free(mid->errorstr);
-			mid->errorstr = newerr;
+			REALLOC(mid->errorstr, size + strlen(reply) + 2);
+			strcpy(mid->errorstr + size, reply);
+			strcat(mid->errorstr + size, "\n");
 		}
 			break;
 		default:
@@ -3140,17 +3124,15 @@ static void
 mapi_extend_anchor(MapiHdl hdl)
 {
 	int cr = hdl->cache.reader;
-	char **ac = hdl->cache.anchors[cr], **acnew = 0;
+	char **ac = hdl->cache.anchors[cr];
 
 	if (ac == 0 || hdl->maxfields > hdl->cache.fldcnt[cr]) {
-		acnew = malloc(sizeof(char *) * hdl->maxfields);
-		assert(acnew);
-		memset(acnew, 0, sizeof(char *) * hdl->maxfields);
-		hdl->cache.anchors[cr] = acnew;
+		REALLOC(hdl->cache.anchors[cr], sizeof(char *) * hdl->maxfields);
 		if (ac) {
-			memcpy(acnew, ac,
-			       sizeof(char *) * hdl->cache.fldcnt[cr]);
-			free(ac);
+			/* implies hdl->maxfields > hdl->cache.fldcnt[cr] */
+			memset(hdl->cache.anchors[cr] + hdl->cache.fldcnt[cr],
+			       0,
+			       sizeof(char *) * (hdl->maxfields - hdl->cache.fldcnt[cr]));
 		}
 	}
 }
