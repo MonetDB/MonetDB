@@ -269,6 +269,7 @@ print_output (FILE *f)
             /* distinguishes between TEXT and ELEMENT nodes */
             "{\n"
             "var oid_kind := mposjoin(oid_pre, temp1_frag, ws.fetch(PRE_KIND));\n"
+/* FIXME: line should stay as long as BUG 1032273 is not solved */ "oid_kind.access(BAT_READ);\n"
             "var oid_elems := oid_kind.ord_uselect(ELEMENT).mark(0@0).reverse();\n"
             "var oid_texts := oid_kind.ord_uselect(TEXT).mark(0@0).reverse();\n"
             "oid_kind := nil_oid_chr;\n"
@@ -303,7 +304,7 @@ print_output (FILE *f)
             "t_pres := nil_oid_oid;\n"
             "t_frags := nil_oid_oid;\n"
             /* combines the two node outputs */
-            "if (oid_elems.count() = 0) { node_kind_oid_str := tnode_kind_oid_str; }\n"
+            "if (oid_elems.count() = 0) { node_kind_oid_str := tnode_kind_oid_str; } "
             "else { if (oid_texts.count() != 0) "
             "{\n"
             "var res_mu := merged_union(oid_elems, oid_texts, "
@@ -501,7 +502,7 @@ print_output (FILE *f)
             "} else {\n"
             "print(\"to much content in the WS to print it for debugging purposes\");\n"
             "if (ws.fetch(DOC_LOADED).count() > 25) \n"
-            "{ printf(\"# (number of loaded documents: %%i) #\\n\", ws.fetch(DOC_LOADED).count()); }\n"
+            "{ printf(\"# (number of loaded documents: %%i) #\\n\", ws.fetch(DOC_LOADED).count()); } "
             "else {\n"
             "printf(\"#- loaded documents -#\\n\");\n"
             "ws.fetch(DOC_LOADED).print();\n"
@@ -1335,7 +1336,7 @@ castQName (FILE *f)
                which were before strings */
             "if (counted_qn = 0)\n"
             /* the only possible input kind is string -> oid_oid=void|void */
-            "{    item := oid_prop.reverse().mark(0@0).reverse(); }\n"
+            "{    item := oid_prop.reverse().mark(0@0).reverse(); } "
             "else {\n"
             /* qnames and newly generated qnames are merged 
                (first 2 parameters are the oids for the sorting) */
@@ -2027,7 +2028,7 @@ translateIfThen (FILE *f, int act_level, int counter,
     */
 
     translate2MIL (f, act_level, counter, c);
-    fprintf(f, "}\n");
+    fprintf(f, "} ");
     fprintf(f, "else\n{\n");
     translateEmpty (f);
     fprintf(f, "}\n");
@@ -2249,25 +2250,25 @@ evaluateCastBlock (FILE *f, type_co ori, char *cast, char *target_type)
     fprintf(f,
             "{\n"
             "var part_kind := kind.ord_uselect(%s);\n"
-            "oid_oid := part_kind.mark(0@0).reverse();\n"
+            "var oid_oid := part_kind.mark(0@0).reverse();\n"
             "part_kind := nil_oid_oid;\n"
-            "part_item := oid_oid.leftfetchjoin(item);\n",
+            "var part_item := oid_oid.leftfetchjoin(item);\n",
             ori.mil_cast);
     if (ori.kind != co_bool)
         fprintf(f,
-                "part_%s := part_item.leftfetchjoin(%s);\n",
+                "var part_%s := part_item.leftfetchjoin(%s);\n",
                 ori.mil_type, ori.table);
     else
         fprintf(f,
-                "part_%s := part_item;\n",
+                "var part_%s := part_item;\n",
                 ori.mil_type);
 
     fprintf(f,
             "part_item := nil_oid_oid;\n"
-            "part_val := part_%s.%s;\n",
+            "var part_val := part_%s.%s;\n",
             ori.mil_type, cast);
     fprintf(f,
-            "res_mu := merged_union(_oid, oid_oid, _val, part_val);\n"
+            "var res_mu := merged_union(_oid, oid_oid, _val, part_val);\n"
             "oid_oid := nil_oid_oid;\n"
             "part_%s := nil_oid_%s;\n"
             "part_val := nil_oid_%s;\n"
@@ -2936,7 +2937,7 @@ combine_strings (FILE *f)
             "var iter_item := iter.reverse().leftfetchjoin(item);\n"
             "var iter_str := iter_item.leftfetchjoin(str_values);\n"
             "iter_item := nil_oid_oid;\n"
-            "iter_str := iter_str.combine_strings();\n"
+            "iter_str := iter_str.string_join(iter.project(\" \"));\n"
             "iter := iter_str.mark(0@0).reverse();\n"
             "pos := iter.mark(1@0);\n"
             "kind := iter.project(STR);\n");
@@ -3007,13 +3008,13 @@ typed_value (FILE *f, bool tv)
                 "var iter_item := pruned_input.leftfetchjoin(item_str);\n"
                 "item_str := nil_oid_str;\n");
     if (!tv)
-        fprintf(f,"iter_item := iter_item.{concat}();\n");
+        fprintf(f,"iter_item := iter_item.string_join(iter_item.reverse().tunique().project(\"\"));\n");
 
     fprintf(f,
                 "pruned_input := nil_oid_oid;\n"
                 "iter := iter_item.mark(0@0).reverse();\n"
                 "item_str := iter_item.reverse().mark(0@0).reverse();\n"
-            "}\n"
+            "} "
             "else\n"
             "{\n"
                 "var kind_attr := kind.get_type(ATTR);\n"
@@ -3027,7 +3028,7 @@ typed_value (FILE *f, bool tv)
                                          "ws.fetch(PROP_VAL));\n"
                     "item := nil_oid_oid;\n"
                     "frag := nil_oid_oid;\n"
-                "}\n"
+                "} "
                 "else\n"
                 "{\n"
                     /* handles attributes and elements */
@@ -3089,7 +3090,7 @@ typed_value (FILE *f, bool tv)
                     "item_str := nil_oid_str;\n");
 
     if (!tv)
-        fprintf(f,  "iter_item := iter_item.{concat}();\n");
+        fprintf(f,  "iter_item := iter_item.string_join(iter_item.reverse().tunique().project(\"\"));\n");
 
     fprintf(f,
                     "iter := iter_item.mark(0@0).reverse();\n"
@@ -3200,6 +3201,7 @@ is2ns (FILE *f, int counter, PFty_t input_type)
             "kind_elem := nil_oid_int;\n"
             "var item_elem := elem.leftfetchjoin(item);\n"
             "var kind_node := mposjoin (item_elem, frag_elem, ws.fetch(PRE_KIND));\n"
+/* FIXME: line should stay as long as BUG 1032273 is not solved */ "kind_node.access(BAT_READ);\n"
             "var text := kind_node.ord_uselect(TEXT).mark(0@0).reverse();\n"
             "var item_text := text.leftfetchjoin(item_elem);\n"
             "var frag_text := text.leftfetchjoin(frag_elem);\n"
@@ -3346,7 +3348,7 @@ translateFunction (FILE *f, int act_level, int counter,
                 "}\n"
                 "doc_str := nil_oid_str;\n"
                 "doc_str := item.leftfetchjoin(str_values);\n"
-                "frag := doc_str.leftjoin(ws.fetch(DOC_LOADED).reverse());\n"
+                "var frag := doc_str.leftjoin(ws.fetch(DOC_LOADED).reverse());\n"
                 "doc_str := nil_oid_str;\n"
                 "frag := frag.reverse().mark(0@0).reverse();\n"
                 "kind := get_kind(frag, ELEM);\n"
@@ -3382,6 +3384,23 @@ translateFunction (FILE *f, int act_level, int counter,
                 "sorting := nil_oid_oid;\n"
                 "} # end of translate pf:distinct-doc-order (node*) as node*\n"
                );
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"exactly-one")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        fprintf(f,
+                "if (iter.tunique().count() != loop%03u.count()) "
+                "{ ERROR (\"function fn:exactly-one expects "
+                "exactly one value per iteration\"); }\n",
+                act_level);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"zero-or-one")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        fprintf(f,
+                "if (iter.tunique().count() != iter.count()) "
+                "{ ERROR (\"function fn:zero-or-one expects "
+                "zero or one value per iteration\"); }\n");
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"count")))
     {
@@ -3452,7 +3471,7 @@ translateFunction (FILE *f, int act_level, int counter,
                 "difference := nil_oid_oid;\n"
                 "strings := res_mu.fetch(1).leftfetchjoin(str_values);\n"
                 "res_mu := nil_oid_bat;\n"
-                "}\n"
+                "} "
                 "else {\n"
                 "strings := item%03u.leftfetchjoin(str_values);\n"
                 "}\n"
@@ -3466,7 +3485,7 @@ translateFunction (FILE *f, int act_level, int counter,
                 "difference := nil_oid_oid;\n"
                 "search_strs := res_mu.fetch(1).leftfetchjoin(str_values);\n"
                 "res_mu := nil_oid_bat;\n"
-                "}\n"
+                "} "
                 "else {\n"
                 "search_strs := item.leftfetchjoin(str_values);\n"
                 "}\n"
@@ -3575,6 +3594,62 @@ translateFunction (FILE *f, int act_level, int counter,
                 "}\n",
                 act_level, act_level, act_level);
     }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"string-join")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        counter++;
+        saveResult (f, counter); 
+        translate2MIL (f, act_level, counter, args->child[1]->child[0]);
+        fprintf(f,
+                "{ # string-join (string*, string)\n "
+                "var iter_item := iter%03u.reverse().leftfetchjoin(item%03u);\n"
+                "var iter_item_str := iter_item.leftfetchjoin(str_values);\n"
+                "iter_item := nil_oid_oid;\n"
+                "var iter_sep := iter.reverse().leftfetchjoin(item);\n"
+                "var iter_sep_str := iter_sep.leftfetchjoin(str_values);\n"
+                "iter_sep := nil_oid_oid;\n"
+                "iter_item_str := string_join(iter_item_str, iter_sep_str);\n"
+                "iter_sep_str := nil_oid_str;\n"
+                "iter := iter_item_str.mark(0@0).reverse();\n"
+                "iter_item_str := iter_item_str.reverse().mark(0@0).reverse();\n",
+                counter, counter);
+        addValues(f, str_container(), "iter_item_str", "item");
+        fprintf(f,
+                "iter_item_str := nil_oid_str;\n"
+                "item := item.reverse().mark(0@0).reverse();\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(STR);\n"
+                "} # end of string-join (string*, string)\n ");
+        deleteResult (f, counter);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"concat")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        counter++;
+        saveResult (f, counter); 
+        translate2MIL (f, act_level, counter, args->child[1]->child[0]);
+        fprintf(f,
+                "{ # concat (string, string)\n "
+                "var iter_item := iter%03u.reverse().leftfetchjoin(item%03u);\n"
+                "var fst_iter_str := iter_item.leftfetchjoin(str_values);\n"
+                "iter_item := nil_oid_oid;\n"
+                "var iter_item := iter.reverse().leftfetchjoin(item);\n"
+                "var snd_iter_str := iter_item.leftfetchjoin(str_values);\n"
+                "iter_item := nil_oid_oid;\n"
+                "fst_iter_str := fst_iter_str[+](snd_iter_str);\n"
+                "snd_iter_str := nil_oid_str;\n"
+                "iter := fst_iter_str.mark(0@0).reverse();\n"
+                "fst_iter_str := fst_iter_str.reverse().mark(0@0).reverse();\n",
+                counter, counter);
+        addValues(f, str_container(), "fst_iter_str", "item");
+        fprintf(f,
+                "fst_iter_str := nil_oid_str;\n"
+                "item := item.reverse().mark(0@0).reverse();\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(STR);\n"
+                "} # end of concat (string, string)\n ");
+        deleteResult (f, counter);
+    }
     /* calculation functions just call an extra function with
        their operator argument to avoid code duplication */
     else if (!PFqname_eq(fnQname,PFqname (PFns_op,"plus")))
@@ -3642,6 +3717,12 @@ translateFunction (FILE *f, int act_level, int counter,
         fn_data (f);
         translateCast2STR (f, args->type);
         combine_strings (f);
+    }
+    else if (!PFqname_eq(fnQname,
+                         PFqname (PFns_pf,"merge-adjacent-text-nodes")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        is2ns (f, counter, args->type);
     }
     else if (!PFqname_eq(fnQname,
                          PFqname (PFns_fn,"distinct-values")))
@@ -3779,7 +3860,7 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
                     "var selected := item%03u.ord_uselect(1@0);\n"
                     "var skip := 0;\n"
                     "if (selected.count() = item%03u.count()) "
-                    "{ skip := 2; }\n"
+                    "{ skip := 2; } "
                     "else { if (selected.count() = 0) "
                     "{ skip := 1; }}\n",
                     bool_res, bool_res);
@@ -4602,7 +4683,11 @@ PFprintMILtemp (FILE *f, PFcnode_t *c)
             "timer := nil_int;\n"
             "if (rep = tries)\n"
             "{\n");
+
+/* fprintf(f, "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n"); */
+
     print_output (f);
+
     fprintf(f,
             "}\n"
             "}\n"

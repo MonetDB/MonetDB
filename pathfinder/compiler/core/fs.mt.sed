@@ -1537,11 +1537,11 @@ ElementConstructor:     elem (TagName, ElementContent)
          *    -- empty text nodes to be removed.
          *   I'd recommend to introduce something like
          *   ``merge-adjacent-text-nodes()'' here and wrap it around $2$.
-         *   This, however, would break Jan's code. So I leave it as it
-         *   is for now, but we should do that as soon as possible.
-         *     Jens, 27.08.04
+         *     Jens, 27.08.04 - updated 21.09.04 JR
          */
-        [[ $$ ]] = constr_elem ([[ $1$ ]], [[ $2$ ]]);
+        PFfun_t *pf_matn = function (PFqname (PFns_pf, "merge-adjacent-text-nodes"));
+
+        [[ $$ ]] = constr_elem ([[ $1$ ]], APPLY (pf_matn, [[ $2$ ]]));
     }
     ;
 
@@ -1632,21 +1632,18 @@ ElemContSequence:       contseq (Expr, EmptySequence_)
     {
         /*
          * let $v1 := [[ e1 ]] return
-         *   let $v2 := [[ e2 ]] return
-         *     let $v3 := fs:item-sequence-to-node-sequence($v1) return
-         *       ( $v3, $v2 )
+         *     let $v2 := fs:item-sequence-to-node-sequence($v1) return
+         *         $v2
          */
         PFvar_t *v1 = new_var (NULL);
         PFvar_t *v2 = new_var (NULL);
-        PFvar_t *v3 = new_var (NULL);
         PFfun_t *is2ns = 
                 function (PFqname (PFns_pf, "item-sequence-to-node-sequence"));
 
         [[ $$ ]] =
             let (var (v1), [[ $1$ ]],
-                 let (var (v2), [[ $2$ ]],
-                      let (var (v3), APPLY (is2ns, var (v1)),
-                           seq (var (v3), var (v2)))));
+                 let (var (v2), APPLY (is2ns, var (v1)),
+                           var (v2)));
     }
     ;
 ElemContSequence:       contseq (Expr, ElemContSequence)
@@ -1731,26 +1728,23 @@ AttrEnclosedExpr:       Expr
          *     inbetween.
          *
          * let $v1 := [[ $1$ ]] return
-         *   let $v2 := fn:data( $v1 ) return
-         *     let $v3 := for $v4 in $v2 return fn:string($v4)
+         *    let $v2 := for $v3 in $v1 return fn:string($v3)
          *       return
-         *       fn:string-join( $v3, " " )
+         *       fn:string-join( $v2, " " )
          */
         PFcnode_t *ret = NULL;
         PFvar_t *v1 = new_var (NULL);
         PFvar_t *v2 = new_var (NULL);
         PFvar_t *v3 = new_var (NULL);
-        PFvar_t *v4 = new_var (NULL);
         PFfun_t *string = function (PFqname (PFns_fn, "string"));
         PFfun_t *string_join = function (PFqname (PFns_fn, "string-join"));
 
         ret =
             let (var (v1), [[ $$ ]],
-                let (var (v2), fn_data (var (v1)),
-                    let (var (v3),
-                        for_ (var (v4), nil (), var (v2),
-                            APPLY (string, var (v4))),
-                        APPLY (string_join, var (v3), str (" ")))));
+                 let (var (v2),
+                      for_ (var (v3), nil (), var (v1),
+                         APPLY (string, var (v3))),
+                      APPLY (string_join, var (v2), str (" "))));
 
         [[ $$ ]] = ret;
     }

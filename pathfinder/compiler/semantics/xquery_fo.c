@@ -688,6 +688,10 @@
   { .ns = PFns_pf, .loc = "item-sequence-to-untypedAtomic",              \
     .arity = 1, .par_ty = { PFty_star (PFty_item ())},                   \
     .ret_ty = PFty_untypedAtomic () }                                    \
+, /* pf:merge-adjacent-text-nodes (node*) as node* */                    \
+  { .ns = PFns_pf, .loc = "merge-adjacent-text-nodes",                   \
+    .arity = 1, .par_ty = { PFty_star (PFty_node ())},                   \
+    .ret_ty = PFty_star (PFty_node ()) }                                 \
   /* FIXME: distinct-values should be changed to anyAtomicType* */       \
 , /* fn:distinct-values (atomic*) as atomic* */                          \
   { .ns = PFns_fn, .loc = "distinct-values",                             \
@@ -756,6 +760,16 @@
   { .ns = PFns_pf, .loc = "distinct-doc-order",                          \
     .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
     .ret_ty = PFty_star (PFty_node ()) }                                 \
+    /* FIXME: the W3C defined exact-one not so strict, but otherwise
+              the typeswich doesn't work anymore */                      \
+, /* fn:exactly-one (node *) as node */                                  \
+  { .ns = PFns_fn, .loc = "exactly-one",                                 \
+    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
+    .ret_ty = PFty_node () }                                             \
+, /* fn:zero-or-one (node *) as node */                                  \
+  { .ns = PFns_fn, .loc = "zero-or-one",                                 \
+    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
+    .ret_ty = PFty_node () }                                             \
                                                                          \
 , /* pf:root () as document { xs:anyType } *  */                         \
   { .ns = PFns_pf, .loc = "root",                                        \
