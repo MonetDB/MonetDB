@@ -213,7 +213,7 @@ The files are processed as one big program
 
 void mil_code_prelude(){
         printf("# Monet Mil to Mal compiler\n");
-        printf("# Copyright (c) 2001-2003, CWI. ");
+        printf("# Copyright (c) 2001-2004, CWI. ");
         printf("All rights reserved.\n");
 	printf("\n# Predefined code segment\n");
 	advice();

@@ -119,7 +119,7 @@ void monet_hello(opt *set, int setlen) {
     char *msg = mo_find_option(set, setlen, "monet_welcome");
     if ( msg && strcmp(msg,"yes")==0){
         printf("# Monet Database Server V%s\n", GDKgetenv("gdk_version"));
-        printf("# Copyright (c) 1993-2003, CWI. ");
+        printf("# Copyright (c) 1993-2004, CWI. ");
         printf("All rights reserved.\n");
         printf("# compiled for %s/%dbit.\n", 
 		GDKgetenv("gdk_arch"), sizeof(ptr)*8 );
