@@ -79,13 +79,14 @@ static PFarray_t *schm_arr = NULL;
     REL DESC DESCSELF ANC ANCSELF FOL PREC
     FOLSIBL PRECSIBL CHILD PARENT SELF ATTRIB
     XMLELEM NODES TEXT SUM COUNT DIFF DIST
-    CINT CSTR CDEC CDBL TEXT
+    CINT CSTR CDEC CDBL TEXT SEQTY1 ALL
 
 /* Types of non-terminals. */
 %type <algop> query operator rownum project eqjoin
  scjoin crosspr disunion binaryop unaryop select
  type table element relation sum count differ distinct
  castint caststr castdec castdbl textnode ktest xpath
+ seqty1 all
 
 %type <attval> item schmitem
 
@@ -131,6 +132,8 @@ operator:    rownum             {$$=$1;}
         |    castdec            {$$=$1;}
         |    castdbl            {$$=$1;}
         |    textnode           {$$=$1;}
+        |    seqty1             {$$=$1;}
+        |    all                {$$=$1;}
         ;
 
 rownum  :    LSQBR ROWNUM LBRACK item COLON braclist RBRACK operator RSQBR
@@ -141,7 +144,7 @@ rownum  :    LSQBR ROWNUM LBRACK item COLON braclist RBRACK operator RSQBR
         |    LSQBR ROWNUM LBRACK item COLON braclist DIVIDE item RBRACK
              operator RSQBR
              {
-               /* [ROW# (attr:(sortby_atts)/attr) operator] */
+               /* [ROW# (attr:(sortby_atts)/part) operator] */
                $$=rownum ($10, $4, $6, $8);
              }
         ;
@@ -501,7 +504,7 @@ sum     :   LSQBR SUM item COLON LBRACK item RBRACK operator RSQBR
             }
         |   LSQBR SUM item COLON LBRACK item RBRACK DIVIDE item operator RSQBR
             {
-              /* [SUM attr:(attr)/attrlist operator] */
+              /* [SUM attr:(attr)/part operator] */
 	      $$=sum ($10, $3, $6, $9);
             }
         ;
@@ -513,7 +516,7 @@ count   :   LSQBR COUNT item operator RSQBR
             }
         |   LSQBR COUNT item DIVIDE item operator RSQBR
             {
-              /* [COUNT attr/attrlist operator] */
+              /* [COUNT attr/part operator] */
 	      $$=count ($6, $3, $5);
             }
         ;
@@ -564,6 +567,30 @@ textnode :  LSQBR TEXT operator operator RSQBR
             {
               /* [TEXT operator operator] */
 	      $$=textnode ($4);
+            }
+        ;
+
+seqty1  :   LSQBR SEQTY1 item COLON LBRACK item RBRACK operator RSQBR
+            {
+              /* [SEQTY1 attr:(attr) operator] */
+	      $$=seqty1 ($8, $3, $6, NULL);
+            }
+        |   LSQBR SEQTY1 item COLON LBRACK item RBRACK DIVIDE item operator RSQBR
+            {
+              /* [SEQTY1 attr:(attr)/part operator] */
+	      $$=seqty1 ($10, $3, $6, $9);
+            }
+        ;
+
+all     :   LSQBR ALL item COLON LBRACK item RBRACK operator RSQBR
+            {
+              /* [ALL attr:(attr) operator] */
+	      $$=all ($8, $3, $6, NULL);
+            }
+        |   LSQBR ALL item COLON LBRACK item RBRACK DIVIDE item operator RSQBR
+            {
+              /* [ALL attr:(attr)/part operator] */
+	      $$=all ($10, $3, $6, $9);
             }
         ;
 

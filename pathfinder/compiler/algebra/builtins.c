@@ -77,18 +77,18 @@ bin_arith (PFalg_simple_type_t t,
            struct PFalg_pair_t *args)
 {
     return (struct PFalg_pair_t) {
-	.result = project (OP (eqjoin (cast (args[0].result, "item", t),
-				       project (cast (args[1].result,
-						      "item", t),
-						proj ("iter1", "iter"),
-						proj ("item1", "item")),
-				       "iter",
-				       "iter1"),
-			       "res", "item", "item1"),
-			   proj ("iter", "iter"),
-			   proj ("pos", "pos"),
-			   proj ("item", "res")),
-	.doc = PFalg_empty_frag () };
+	.rel = project (OP (eqjoin (cast (args[0].rel, "item", t),
+				    project (cast (args[1].rel,
+						   "item", t),
+					     proj ("iter1", "iter"),
+					     proj ("item1", "item")),
+				    "iter",
+				    "iter1"),
+			    "res", "item", "item1"),
+			proj ("iter", "iter"),
+			proj ("pos", "pos"),
+			proj ("item", "res")),
+	.frag = PFalg_empty_set () };
 }
 
 
@@ -127,12 +127,12 @@ un_func (PFalg_simple_type_t t,
 	 struct PFalg_pair_t *args)
 {
     return (struct PFalg_pair_t) {
-	.result = project (OP (cast (args[0].result, "item", t),
-			       "res", "item"),
-			   proj ("iter", "iter"),
-			   proj ("pos", "pos"),
-			   proj ("item", "res")),
-	.doc = PFalg_empty_frag () };
+	.rel = project (OP (cast (args[0].rel, "item", t),
+			    "res", "item"),
+			proj ("iter", "iter"),
+			proj ("pos", "pos"),
+			proj ("item", "res")),
+	.frag = PFalg_empty_set () };
 }
 
 
@@ -277,9 +277,9 @@ PFbui_op_numeric_idivide_int (PFalg_op_t *loop __attribute__((unused)),
 			      struct PFalg_pair_t *args)
 {
     return (struct PFalg_pair_t) {
-	.result = cast (bin_arith (aat_int, PFalg_divide, args).result,
-			"item", aat_int),
-	.doc = PFalg_empty_frag () };
+	.rel = cast (bin_arith (aat_int, PFalg_divide, args).rel,
+		     "item", aat_int),
+	.frag = PFalg_empty_set () };
 }
 
 /**
@@ -291,9 +291,9 @@ PFbui_op_numeric_idivide_dec (PFalg_op_t *loop __attribute__((unused)),
                              struct PFalg_pair_t *args)
 {
     return (struct PFalg_pair_t) {
-	.result = cast (bin_arith (aat_dec, PFalg_divide, args).result,
-			"item", aat_int),
-	.doc = PFalg_empty_frag () };
+	.rel = cast (bin_arith (aat_dec, PFalg_divide, args).rel,
+		     "item", aat_int),
+	.frag = PFalg_empty_set () };
 }
 
 /**
@@ -305,9 +305,9 @@ PFbui_op_numeric_idivide_dbl (PFalg_op_t *loop __attribute__((unused)),
 			      struct PFalg_pair_t *args)
 {
     return (struct PFalg_pair_t) {
-	.result = cast (bin_arith (aat_dbl, PFalg_divide, args).result,
-			"item", aat_int),
-	.doc = PFalg_empty_frag () };
+	.rel = cast (bin_arith (aat_dbl, PFalg_divide, args).rel,
+		     "item", aat_int),
+	.frag = PFalg_empty_set () };
 }
 
 
@@ -801,17 +801,17 @@ PFbui_op_union (PFalg_op_t *loop __attribute__((unused)),
 		struct PFalg_pair_t *args)
 {
     return (struct  PFalg_pair_t) {
-        .result = rownum (
-	             distinct (
-			 disjunion (
-			     project (args[0].result,
-				      proj ("iter", "iter"),
-				      proj ("item", "item")),
-			     project (args[1].result,
-				      proj ("iter", "iter"),
-				      proj ("item", "item")))),
-		     "pos", sortby ("item"), NULL),
-        .doc = PFalg_set_union (args[1].doc, args[2].doc) };
+        .rel = rownum (
+	           distinct (
+		       disjunion (
+			   project (args[0].rel,
+				    proj ("iter", "iter"),
+				    proj ("item", "item")),
+			   project (args[1].rel,
+				    proj ("iter", "iter"),
+				    proj ("item", "item")))),
+		   "pos", sortby ("item"), NULL),
+        .frag = PFalg_set_union (args[1].frag, args[2].frag) };
 }
 
 /**
@@ -828,17 +828,17 @@ PFbui_op_intersect (PFalg_op_t *loop __attribute__((unused)),
 		    struct PFalg_pair_t *args)
 {
     return (struct  PFalg_pair_t) {
-        .result = rownum (
-	             distinct (
-			 intersect (
-			     project (args[0].result,
-				      proj ("iter", "iter"),
-				      proj ("item", "item")),
-			     project (args[1].result,
-				      proj ("iter", "iter"),
-				      proj ("item", "item")))),
-		     "pos", sortby ("item"), NULL),
-        .doc = PFalg_set_union (args[1].doc, args[2].doc) };
+        .rel = rownum (
+	           distinct (
+		       intersect (
+			   project (args[0].rel,
+				    proj ("iter", "iter"),
+				    proj ("item", "item")),
+			   project (args[1].rel,
+				    proj ("iter", "iter"),
+				    proj ("item", "item")))),
+		   "pos", sortby ("item"), NULL),
+        .frag = PFalg_set_union (args[1].frag, args[2].frag) };
 }
 
 /**
@@ -857,18 +857,18 @@ PFbui_op_except (PFalg_op_t *loop __attribute__((unused)),
 		 struct PFalg_pair_t *args)
 {
     return (struct  PFalg_pair_t) {
-        .result = rownum (
-	             distinct (
-			 difference (
-			     project (args[0].result,
-				      proj ("iter", "iter"),
-				      proj ("item", "item")),
-			     project (args[1].result,
-				      proj ("iter", "iter"),
-				      proj ("item", "item")))),
-		     "pos", sortby ("item"), NULL),
+        .rel = rownum (
+	           distinct (
+		       difference (
+			   project (args[0].rel,
+				    proj ("iter", "iter"),
+				    proj ("item", "item")),
+			   project (args[1].rel,
+				    proj ("iter", "iter"),
+				    proj ("item", "item")))),
+		   "pos", sortby ("item"), NULL),
 	/* result nodes can only originate from first argument TODO*/
-        .doc = args[1].doc };
+        .frag = args[1].frag };
 }
 
 
@@ -894,7 +894,7 @@ PFbui_op_except (PFalg_op_t *loop __attribute__((unused)),
  *   this step
  * - create text nodes from the (concatenated) strings; IMPORTANT:
  *   textnode() function was generalized to retain "pos" numbering
- * - add the new fragment of text nodes (frag) to the .doc field
+ * - add the new fragment of text nodes (frag) to the .frag field
  *   together with those nodes we had in the very beginning (those
  *   in part1, e.g. <foo/>)
  * - project frag on "iter", "pos", "item"
@@ -908,7 +908,7 @@ PFbui_pf_item_seq_to_node_seq (PFalg_op_t *loop __attribute__((unused)),
     /* insert new, consecutive row numbering of "pos" column and
      * carry out type test on "node" type
      */
-    PFalg_op_t *sort = type (rownum (args[0].result, "pos1",
+    PFalg_op_t *sort = type (rownum (args[0].rel, "pos1",
 				     sortby ("pos"), "iter"),
 			     "res", "item", aat_node);
 
@@ -933,35 +933,25 @@ PFbui_pf_item_seq_to_node_seq (PFalg_op_t *loop __attribute__((unused)),
                               strconcat (
 				  cast (part2, "item", aat_str)));
 
-    /* project the new text nodes on "iter", "pos", "item", form
-     * union of projection result and part1, and sort result on "pos"
-     * column
+    /* get the roots of the new text nodes, form union of roots and
+     * part1, and sort result on "pos" column
      */
     return (struct  PFalg_pair_t) {
-                 .result = project (
-                               rownum (
-				   disjunion (
-				       project (t_nodes,
-						proj ("iter", "iter"),
-						proj ("pos", "pos"),
-						proj ("item", "pre")),
-				       part1),
-				   "pos1", sortby ("pos"), "iter"),
-			       proj ("iter", "iter"),
-			       proj ("pos", "pos1"),
-			       proj ("item", "item")),
+                 .rel = project (
+                            rownum (
+				disjunion (
+				    roots (t_nodes),
+				    part1),
+				"pos1", sortby ("pos"), "iter"),
+			    proj ("iter", "iter"),
+			    proj ("pos", "pos1"),
+			    proj ("item", "item")),
 		 /* union of those nodes we had in the very beginning
 		  * (those in part1) and those produced by text node
 		  * creation
 		  */
-                 .doc = PFalg_set_union (args[0].doc,
-		            PFalg_new_frag (project (t_nodes,
-						     proj ("pre", "pre"),
-						     proj ("size", "size"),
-						     proj ("level", "level"),
-						     proj ("kind", "kind"),
-						     proj ("prop", "prop"),
-						     proj ("frag", "frag"))))};
+                 .frag = PFalg_set_union (args[0].frag,
+					  PFalg_set (fragment (t_nodes)))};
 }
 
 
@@ -974,35 +964,22 @@ PFbui_pf_item_seq_to_node_seq (PFalg_op_t *loop __attribute__((unused)),
  * the current algebra representation. It merges consecutive text nodes
  * (with same "iter" and consecutive "pos" values). If a text node
  * is empty, it is discarded.
- * Output: pre | size | level | kind | prop | frag | res | iter | pos
- * The "res" column specifies whether a result node is a newly created
- * node.
+ * The output are an algebra representation of all nodes (old and new,
+ * i.e. unmerged and merged) and a fragment representation of the newly
+ * created nodes only.
  */
 struct PFalg_pair_t
 PFbui_pf_merge_adjacent_text_nodes (PFalg_op_t *loop __attribute__((unused)),
 			 struct PFalg_pair_t *args)
 {
-    PFalg_op_t *merged = merge_adjacent (PFalg_alg_union (args[0].doc),
-					 args[0].result);
+    PFalg_op_t *merged = merge_adjacent (PFalg_set_to_alg (args[0].frag),
+					 args[0].rel);
 
     return (struct  PFalg_pair_t) {
-                 .result = project (merged,
-				    proj ("iter", "iter"),
-				    proj ("pos", "pos"),
-				    proj ("item", "pre")),
-		 /* form union of old and new fragment; to form the new
-		  * fragment, we must select the new text nodes only
-		  */
-		 .doc = PFalg_set_union (args[0].doc,
-					 PFalg_new_frag (
-				             project (
-						 select_ (merged, "res"),
-						 proj ("pre", "pre"),
-						 proj ("size", "size"),
-						 proj ("level", "level"),
-						 proj ("kind", "kind"),
-						 proj ("prop", "prop"),
-						 proj ("frag", "frag")))) };
+                 .rel = roots (merged),
+		 /* form union of old and new fragment */
+		 .frag = PFalg_set_union (args[0].frag,
+					  PFalg_set (fragment (merged))) };
 }
 
 
@@ -1015,13 +992,13 @@ PFbui_pf_distinct_doc_order (PFalg_op_t *loop __attribute__((unused)),
 			     struct PFalg_pair_t *args)
 {
     return (struct  PFalg_pair_t) {
-                 .result = rownum (
-                               distinct (
-				   project (args[0].result,
-					    proj ("iter", "iter"),
-					    proj ("item", "item"))),
-			       "pos", sortby ("item"), "iter"),
-                 .doc = args[0].doc };
+                 .rel = rownum (
+                            distinct (
+				project (args[0].rel,
+					 proj ("iter", "iter"),
+					 proj ("item", "item"))),
+			    "pos", sortby ("item"), "iter"),
+                 .frag = args[0].frag };
 }
 
 
@@ -1048,20 +1025,19 @@ PFbui_fn_boolean_optbln (PFalg_op_t *loop __attribute__((unused)),
 			 struct PFalg_pair_t *args)
 {
     return (struct PFalg_pair_t) {
-	.result = disjunion (
-                      args[0].result,
-                      cross (
-                          difference (
-                              loop,
-                              project (eqjoin (args[0].result,
-                                               project (loop, proj ("iter1",
-                                                                    "iter")),
-                                               "iter", "iter1"),
-                                       proj ("iter", "iter"))
-                              ),
-                          lit_tbl (attlist ("pos", "item"),
-                                   tuple (lit_nat (1), lit_bln (false))))),
-	.doc = PFalg_empty_frag () };
+	.rel = disjunion (args[0].rel,
+			  cross (
+			      difference (loop,
+					  project (eqjoin (
+						       args[0].rel,
+						       project (loop,
+								proj ("iter1",
+								      "iter")),
+						       "iter", "iter1"),
+						   proj ("iter", "iter"))),
+			      lit_tbl (attlist ("pos", "item"),
+				       tuple (lit_nat (1), lit_bln (false))))),
+	.frag = PFalg_empty_set () };
 }
 
 /**
@@ -1073,22 +1049,22 @@ PFbui_fn_boolean_item (PFalg_op_t *loop __attribute__((unused)),
                        struct PFalg_pair_t *args)
 {
     return (struct PFalg_pair_t) {
-	.result = cross (
-                      disjunion (
-                          cross (
-                              distinct (project (args[0].result,
-                                                 proj ("iter", "iter"))),
-                              lit_tbl (attlist ("item"),
-                                       tuple (lit_bln (true)))),
-                          cross (
-                              difference (
-                                  loop,
-                                  project (args[0].result, proj ("iter",
-                                                                 "iter"))),
-                              lit_tbl (attlist ("item"),
-                                       tuple (lit_bln (false))))),
-                      lit_tbl (attlist ("pos"), tuple (lit_nat (1)))),
-	.doc = PFalg_empty_frag ()};
+	.rel = cross (
+                   disjunion (
+		       cross (
+			   distinct (project (args[0].rel,
+					      proj ("iter", "iter"))),
+			   lit_tbl (attlist ("item"),
+				    tuple (lit_bln (true)))),
+		       cross (
+			   difference (
+			       loop,
+			       project (args[0].rel, proj ("iter",
+							   "iter"))),
+			   lit_tbl (attlist ("item"),
+				    tuple (lit_bln (false))))),
+		   lit_tbl (attlist ("pos"), tuple (lit_nat (1)))),
+	.frag = PFalg_empty_set ()};
 }
 
 /**
@@ -1110,22 +1086,22 @@ PFbui_fn_empty (PFalg_op_t *loop __attribute__((unused)),
                 struct PFalg_pair_t *args)
 {
     return (struct PFalg_pair_t) {
-	.result = cross (
-                      disjunion (
-                          cross (
-                              distinct (project (args[0].result,
-                                                 proj ("iter", "iter"))),
-                              lit_tbl (attlist ("item"),
-                                       tuple (lit_bln (false)))),
-                          cross (
-                              difference (
-                                  loop,
-                                  project (args[0].result,
-                                           proj ("iter", "iter"))),
-                              lit_tbl (attlist ("item"),
-                                       tuple (lit_bln (true))))),
-                      lit_tbl (attlist ("pos"), tuple (lit_nat (1)))),
-	.doc = PFalg_empty_frag ()};
+	.rel = cross (
+                   disjunion (
+		       cross (
+			   distinct (project (args[0].rel,
+					      proj ("iter", "iter"))),
+			   lit_tbl (attlist ("item"),
+				    tuple (lit_bln (false)))),
+		       cross (
+			   difference (
+			       loop,
+			       project (args[0].rel,
+					proj ("iter", "iter"))),
+			   lit_tbl (attlist ("item"),
+				    tuple (lit_bln (true))))),
+		   lit_tbl (attlist ("pos"), tuple (lit_nat (1)))),
+	.frag = PFalg_empty_set ()};
 }
 
 

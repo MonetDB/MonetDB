@@ -206,10 +206,9 @@ static PFalg_op_t *prec (PFalg_op_t *n);
 static PFalg_op_t *prec_sibl (PFalg_op_t *n);
 static PFalg_op_t *self (PFalg_op_t *n);
 
-/* Concatenate the parameters of built-in functions. */
+/** Concatenate the parameters of built-in functions. */
 static struct PFalg_pair_t args (struct PFalg_pair_t arg,
                                  struct PFalg_pair_t args);
-
 /** Create the tail of an argument list. */
 static struct PFalg_pair_t args_tail(void);
 
@@ -260,12 +259,12 @@ type_test (PFty_t ty, PFalg_pair_t e, PFalg_op_t *loop)
         return
             disjunion (
                 cross (
-                    distinct (project (e.result, proj ("iter", "iter"))),
+                    distinct (project (e.rel, proj ("iter", "iter"))),
                     lit_tbl (attlist ("subty"), tuple (lit_bln (false)))),
                 cross (
                     difference (
                         loop,
-                        distinct (project (e.result, proj ("iter", "iter")))),
+                        distinct (project (e.rel, proj ("iter", "iter")))),
                     lit_tbl (attlist ("subty"), tuple (lit_bln (true)))));
     /*
      * To test, e.g., for integer values, use
@@ -274,7 +273,7 @@ type_test (PFty_t ty, PFalg_pair_t e, PFalg_op_t *loop)
      *
      */
     else if (PFty_subtype (ty, PFty_star (PFty_xs_integer ())))
-        itemty = project (type (e.result, "itemty", "item", aat_int),
+        itemty = project (type (e.rel, "itemty", "item", aat_int),
                           proj ("iter", "iter"),
                           proj ("pos", "pos"),
                           proj ("itemty", "itemty"));
@@ -285,24 +284,24 @@ type_test (PFty_t ty, PFalg_pair_t e, PFalg_op_t *loop)
          */
         itemty =
             project (
-                or (type (type (e.result, "isint", "item", aat_int),
+                or (type (type (e.rel, "isint", "item", aat_int),
                           "isdec", "item", aat_dec),
                     "itemty", "isint", "isdec"),
                 proj ("iter", "iter"),
                 proj ("pos", "pos"),
                 proj ("itemty", "itemty"));
     else if (PFty_subtype (ty, PFty_star (PFty_xs_double ())))
-        itemty = project (type (e.result, "itemty", "item", aat_dbl),
+        itemty = project (type (e.rel, "itemty", "item", aat_dbl),
                           proj ("iter", "iter"),
                           proj ("pos", "pos"),
                           proj ("itemty", "itemty"));
     else if (PFty_subtype (ty, PFty_star (PFty_xs_boolean ())))
-        itemty = project (type (e.result, "itemty", "item", aat_bln),
+        itemty = project (type (e.rel, "itemty", "item", aat_bln),
                           proj ("iter", "iter"),
                           proj ("pos", "pos"),
                           proj ("itemty", "itemty"));
     else if (PFty_subtype (ty, PFty_star (PFty_xs_string ())))
-        itemty = project (type (e.result, "itemty", "item", aat_str),
+        itemty = project (type (e.rel, "itemty", "item", aat_str),
                           proj ("iter", "iter"),
                           proj ("pos", "pos"),
                           proj ("itemty", "itemty"));
@@ -460,7 +459,7 @@ PFcore2alg (PFcnode_t *c)
     if (!ret)
         PFoops (OOPS_FATAL, "Translation to Relational Algebra failed.");
 
-    return serialize (PFalg_alg_union (ret->alg.doc), ret->alg.result);
+    return serialize (PFalg_set_to_alg (ret->alg.frag), ret->alg.rel);
 
     /*
     return serialize (lit_tbl (attlist ("pos", "item"),
@@ -580,7 +579,7 @@ implty (PFty_t ty)
 static PFalg_env_t
 enventry (PFvar_t *var, PFalg_op_t *result, PFarray_t *doc)
 {
-    return (PFalg_env_t) { .var = var, .result = result, .doc = doc };
+    return (PFalg_env_t) { .var = var, .rel = result, .frag = doc };
 }
 
 
@@ -591,7 +590,8 @@ enventry (PFvar_t *var, PFalg_op_t *result, PFarray_t *doc)
  * information will later be incorporated into the "real" staircase
  * join node.
  */
-static PFalg_op_t *nameTest (PFqname_t qname)
+static PFalg_op_t *
+nameTest (PFqname_t qname)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -601,7 +601,8 @@ static PFalg_op_t *nameTest (PFqname_t qname)
     return ret;
 }
 
-static PFalg_op_t *nodeTest (void)
+static PFalg_op_t *
+nodeTest (void)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -610,7 +611,8 @@ static PFalg_op_t *nodeTest (void)
     return ret;
 }
 
-static PFalg_op_t *commTest (void)
+static PFalg_op_t *
+commTest (void)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -619,7 +621,8 @@ static PFalg_op_t *commTest (void)
     return ret;
 }
 
-static PFalg_op_t *textTest (void)
+static PFalg_op_t *
+textTest (void)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -628,7 +631,8 @@ static PFalg_op_t *textTest (void)
     return ret;
 }
 
-static PFalg_op_t *piTest (void)
+static PFalg_op_t *
+piTest (void)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -637,7 +641,8 @@ static PFalg_op_t *piTest (void)
     return ret;
 }
 
-static PFalg_op_t *pitarTest (char *target)
+static PFalg_op_t *
+pitarTest (char *target)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -647,7 +652,8 @@ static PFalg_op_t *pitarTest (char *target)
     return ret;
 }
 
-static PFalg_op_t *docTest (void)
+static PFalg_op_t *
+docTest (void)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -656,7 +662,8 @@ static PFalg_op_t *docTest (void)
     return ret;
 }
 
-static PFalg_op_t *elemTest (void)
+static PFalg_op_t *
+elemTest (void)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -665,7 +672,8 @@ static PFalg_op_t *elemTest (void)
     return ret;
 }
 
-static PFalg_op_t *attrTest (void)
+static PFalg_op_t *
+attrTest (void)
 {
     PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
 
@@ -682,84 +690,96 @@ static PFalg_op_t *attrTest (void)
  * semantic information will later be incorporated into the "real"
  * staircase join node.
  */
-static PFalg_op_t *anc (PFalg_op_t *n)
+static PFalg_op_t *
+anc (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_anc;
 
     return n;
 }
 
-static PFalg_op_t *anc_self (PFalg_op_t *n)
+static PFalg_op_t *
+anc_self (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_anc_s;
 
     return n;
 }
 
-static PFalg_op_t *attr (PFalg_op_t *n)
+static PFalg_op_t *
+attr (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_attr;
 
     return n;
 }
 
-static PFalg_op_t *child (PFalg_op_t *n)
+static PFalg_op_t *
+child (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_chld;
 
     return n;
 }
 
-static PFalg_op_t *desc (PFalg_op_t *n)
+static PFalg_op_t *
+desc (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_desc;
 
     return n;
 }
 
-static PFalg_op_t *desc_self (PFalg_op_t *n)
+static PFalg_op_t *
+desc_self (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_desc_s;
 
     return n;
 }
 
-static PFalg_op_t *fol (PFalg_op_t *n)
+static PFalg_op_t *
+fol (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_fol;
 
     return n;
 }
 
-static PFalg_op_t *fol_sibl (PFalg_op_t *n)
+static PFalg_op_t *
+fol_sibl (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_fol_s;
 
     return n;
 }
 
-static PFalg_op_t *par (PFalg_op_t *n)
+static PFalg_op_t *
+par (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_par;
 
     return n;
 }
 
-static PFalg_op_t *prec (PFalg_op_t *n)
+static PFalg_op_t *
+prec (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_prec;
 
     return n;
 }
 
-static PFalg_op_t *prec_sibl (PFalg_op_t *n)
+static PFalg_op_t *
+prec_sibl (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_prec_s;
 
     return n;
 }
 
-static PFalg_op_t *self (PFalg_op_t *n)
+static PFalg_op_t *
+self (PFalg_op_t *n)
 {
     n->sem.scjoin.axis = aop_self;
 
@@ -768,19 +788,21 @@ static PFalg_op_t *self (PFalg_op_t *n)
 
 
 /**
- * Create empty document list signalling that there are no live
- *  nodes belonging to an algebra operator.
+ * Create empty set of fragments. It signals that an algebra expression
+ * does not produce any xml nodes (any fragment).
  */
-PFarray_t *PFalg_empty_frag (void)
+PFalg_set_t *
+PFalg_empty_set (void)
 {
     return PFarray (sizeof (PFalg_op_t *));
 }
 
 
 /**
- * Create new list with one fragment.
+ * Create a new set containing one fragment.
  */
-PFarray_t *PFalg_new_frag (PFalg_op_t *n)
+PFalg_set_t *
+PFalg_set (PFalg_op_t *n)
 {
     PFarray_t *ret = PFarray (sizeof (PFalg_op_t *));
 
@@ -792,32 +814,11 @@ PFarray_t *PFalg_new_frag (PFalg_op_t *n)
 
 
 /**
- * Form algebraic disjoint union between the fragments of an
- * algebra operator's document.
+ * Form a set-oriented union between two sets of fragments. Eliminate
+ * duplicate fragments.
  */
-PFalg_op_t *PFalg_alg_union (PFarray_t *frags)
-{
-    unsigned int i;
-    PFalg_op_t *ret;
-
-    /* make sure list contains fragments */
-    if (!PFarray_last (frags))
-        return empty_doc;
-
-    /* pick first fragment */
-    ret = *((PFalg_op_t **) PFarray_at (frags, 0));
-
-    for (i = 1; i < PFarray_last (frags); i++)
-        ret = disjunion (ret, *((PFalg_op_t **) PFarray_at (frags, i)));
-
-    return ret;
-}
-
-
-/**
- * Form a set-oriented union between two lists of fragments.
- */
-PFarray_t *PFalg_set_union (PFarray_t *frag1, PFarray_t *frag2)
+PFalg_set_t *
+PFalg_set_union (PFalg_set_t *frag1, PFalg_set_t *frag2)
 {
     unsigned int i, j;
     PFalg_op_t *n1;
@@ -851,24 +852,48 @@ PFarray_t *PFalg_set_union (PFarray_t *frag1, PFarray_t *frag2)
 
 
 /**
+ * Convert a set of fragments into an algebra expression. The fragments
+ * are unified by a special, fragment-specific union operator. It creates
+ * a binary tree in which the bottom-most leaf is always represented by an
+ * empty fragment.
+ */
+PFalg_op_t *
+PFalg_set_to_alg (PFalg_set_t *frags)
+{
+    unsigned int i;
+    PFalg_op_t *ret;
+
+    /* make sure list contains fragments */
+    ret = empty_frag ();
+
+    /* */
+    for (i = 0; i < PFarray_last (frags); i++)
+        ret = PFalg_frag_union (ret,
+                                *((PFalg_op_t **) PFarray_at (frags, i)));
+
+    return ret;
+}
+
+
+/**
  * Concatenate the parameters of built-in functions. @a args
  * contains the arguments seen so far, @a arg is the new
  * argument to be concatenated to the beginning of the list
  * (in order to maintain correct order of the incoming arguments,
  * because they arrive at this function from last to first).
  */
-static struct PFalg_pair_t args (struct PFalg_pair_t arg,
-                                 struct PFalg_pair_t args)
+static struct PFalg_pair_t
+args (struct PFalg_pair_t arg, struct PFalg_pair_t args)
 {
     PFarray_t *a = PFarray (sizeof (struct  PFalg_pair_t));
     *((struct PFalg_pair_t *) PFarray_add (a)) = arg;
 
     /* check if 'arg' is very first argument to arrive here */
-    if (args.result->sem.builtin.args == NULL)
-        args.result->sem.builtin.args = a;
+    if (args.rel->sem.builtin.args == NULL)
+        args.rel->sem.builtin.args = a;
     else
-        args.result->sem.builtin.args = PFarray_concat (a,
-                                 args.result->sem.builtin.args);
+        args.rel->sem.builtin.args = PFarray_concat (a,
+                                 args.rel->sem.builtin.args);
 
     return args;
 }
@@ -876,14 +901,15 @@ static struct PFalg_pair_t args (struct PFalg_pair_t arg,
 /**
  * Create the tail of an argument list.
  */
-static struct PFalg_pair_t args_tail()
+static struct PFalg_pair_t
+args_tail()
 {
     struct  PFalg_pair_t ret;
     
-    ret.result = PFmalloc (sizeof (PFalg_op_t));
-    ret.doc = PFalg_empty_frag ();
+    ret.rel = PFmalloc (sizeof (PFalg_op_t));
+    ret.frag = PFalg_empty_set ();
 
-    ret.result->sem.builtin.args = NULL;
+    ret.rel->sem.builtin.args = NULL;
 
     return ret;
 }

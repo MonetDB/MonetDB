@@ -2179,13 +2179,13 @@ main = do
           --print xmark_Q2
           -- print algebra expression (DAG) 
           -- (comment all other lines if you want to use `make ps')
-          --putStr (dot (compile xmark_Q2))
+          putStr (dot (compile xmark_Q2))
           -- print algebra expression (tree)
           --print (compile xmark_q)
           -- print result of algebraic evaluation 
           -- print (evaluate (compile xmark_Q2))
           -- compile and evaluate query, then serialize the result as XML
           --putStr (serialize q) 
-          print (TBL [("iter",[NAT]), ("pos",[NAT]), ("item",[INT])]
-                     [[O 1, O 1, I 42]])
+          --print (TBL [("iter",[NAT]), ("pos",[NAT]), ("item",[INT])]
+          --           [[O 1, O 1, I 42]])
 

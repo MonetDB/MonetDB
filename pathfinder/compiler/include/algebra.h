@@ -187,7 +187,6 @@ enum PFalg_op_kind_t {
     , aop_cross            /**< cross product (Cartesian product) */
     , aop_eqjoin           /**< equi-join */
     , aop_scjoin           /**< staircase join */
-    , aop_doc_tbl          /**< document relation */
     , aop_select           /**< selection of rows where column value != 0 */
     , aop_type             /**< selection of rows where a column is of a
 			        certain type */
@@ -223,6 +222,15 @@ enum PFalg_op_kind_t {
     , aop_seqty1           /**< test for exactly one type occurrence in one
                                 iteration (Pathfinder extension) */
     , aop_all              /**< test if all items in an iteration are true */
+    , aop_roots            /**< algebraic representation of the roots of newly
+			        created xml nodes (e.g. created by element());
+			        schema: iter | pos | item */
+    /* all operators below represent xml node fragments with no schema */
+    , aop_fragment         /**< representation of a node fragment */
+    , aop_frag_union       /**< special node type used to form an algebraic
+			        union of fragments */
+    , aop_empty_frag       /**< representation of an empty fragment */
+    , aop_doc_tbl          /**< document relation (is also a fragment) */
 };
 /** algebra operator kinds */
 typedef enum PFalg_op_kind_t PFalg_op_kind_t;
@@ -447,12 +455,6 @@ PFalg_op_t * PFalg_scjoin (PFalg_op_t *doc, PFalg_op_t *n,
 			   PFalg_op_t *scj);
 
 /**
- * Creates a representation for the doc table.
- */
-PFalg_op_t * PFalg_doc_tbl (char *rel);
-
-
-/**
  * Disjoint union of two relations.
  * Both argument must have the same schema.
  */
@@ -607,20 +609,46 @@ PFalg_op_t * PFalg_comment (PFalg_op_t *cont);
 /** Constructor for processing instruction operators. */
 PFalg_op_t * PFalg_processi (PFalg_op_t *cont);
 
-/** Constructor required for fs:item-sequence-to-node-sequence()
+/**
+ * Constructor required for fs:item-sequence-to-node-sequence()
  * functionality
  */
-PFalg_op_t *PFalg_strconcat (PFalg_op_t *n);
+PFalg_op_t * PFalg_strconcat (PFalg_op_t *n);
 
 /** Constructor for pf:merge-adjacent-text-nodes() functionality */
-PFalg_op_t *PFalg_pf_merge_adjacent_text_nodes (PFalg_op_t *doc,
-						PFalg_op_t *n);
+PFalg_op_t * PFalg_pf_merge_adjacent_text_nodes (PFalg_op_t *doc,
+						 PFalg_op_t *n);
 
 /** Cast nat to int. */
 PFalg_op_t * PFalg_cast_item (PFalg_op_t *o);
 
 
 PFalg_op_t * PFalg_serialize (PFalg_op_t *doc, PFalg_op_t *alg);
+
+
+/**
+ * Algebraic representation of the roots of newly created xml nodes
+ * (e.g. created by PFalg_element()); schema: iter | pos | item.
+ */
+PFalg_op_t * PFalg_roots (PFalg_op_t *n);
+
+
+/** Representation of a new fragment. */
+PFalg_op_t * PFalg_fragment (PFalg_op_t *n);
+
+
+/** Form algebraic disjoint union between two fragments. */
+PFalg_op_t * PFalg_frag_union (PFalg_op_t *n1, PFalg_op_t *n2);
+
+
+/** Constructor for an empty fragment */
+PFalg_op_t * PFalg_empty_frag (void);
+
+
+/**
+ * Creates a representation for the doc table.
+ */
+PFalg_op_t * PFalg_doc_tbl (char *rel);
 
 
 /**

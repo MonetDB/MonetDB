@@ -145,4 +145,13 @@
 #define cast_item(o)      PFalg_cast_item ((o))
 
 /** serialization */
-#define serialize(a,b)    PFalg_serialize((a),(b))
+#define serialize(a,b)    PFalg_serialize ((a),(b))
+
+/** constructor for algebraic representation of newly ceated xml nodes */
+#define roots(a)          PFalg_roots ((a))
+
+/** constructor for a new fragment, containing newly ceated xml nodes */
+#define fragment(a)       PFalg_fragment ((a))
+
+/** constructor for an empty fragment */
+#define empty_frag()      PFalg_empty_frag ()

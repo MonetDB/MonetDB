@@ -94,6 +94,11 @@ static int TWIG_ID[] = {
     , [aop_seqty1]       = seqty1
     , [aop_all]          = all
 
+    , [aop_roots]        = roots_
+    , [aop_fragment]     = fragment
+    , [aop_frag_union]   = frag_union
+    , [aop_empty_frag]   = empty_frag
+
     , [aop_serialize]    = serialize  /**< serialize algebra expression below
                                            (This is mainly used explicitly
                                            match the expression root during
@@ -144,6 +149,10 @@ static int TWIG_ID[] = {
 #undef merge_adjacent
 #undef seqty1
 #undef all
+#undef roots_
+#undef fragment
+#undef frag_union
+#undef empty_frag
 #undef serialize
 
 /* ----------------------- End of twig setup -------------------- */

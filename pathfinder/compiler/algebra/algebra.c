@@ -105,7 +105,7 @@ unary_op(PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att,
  *       below. So we have to fall back to the (less readable)
  *       alternative without the explicit field names.
  */
-static PFalg_schema_t doc_schm = {
+/*static PFalg_schema_t doc_schm = {
     .count = 6,
     .items = (struct PFalg_schm_item_t []) { { "pre",   aat_node },
                                              { "size",  aat_int },
@@ -113,6 +113,7 @@ static PFalg_schema_t doc_schm = {
                                              { "kind",  aat_int },
                                              { "prop",  aat_str },
                                              { "frag",  aat_int } } };
+*/
 /*
 static PFalg_schema_t doc_schm = { 
     .count = 6,
@@ -670,7 +671,7 @@ PFalg_scjoin (PFalg_op_t *doc, PFalg_op_t *n, PFalg_op_t *scj)
     ret->sem = scj->sem;
 
 #ifndef NDEBUG
-    /* verify both schemata */
+    /* verify schema of 'n'; it will be the result schema */
     for (i = 0; i < n->schema.count; i++) {
 	if (!strcmp(n->schema.items[i].name, "iter")
 	 || !strcmp(n->schema.items[i].name, "item"))
@@ -680,19 +681,7 @@ PFalg_scjoin (PFalg_op_t *doc, PFalg_op_t *n, PFalg_op_t *scj)
 		    "illegal attribute `%s' in staircase join",
 		    n->schema.items[i].name);
     }
-    for (i = 0; i < doc->schema.count; i++) {
-	if (!strcmp(doc->schema.items[i].name, "pre")
-	 || !strcmp(doc->schema.items[i].name, "size")
-	 || !strcmp(doc->schema.items[i].name, "level")
-	 || !strcmp(doc->schema.items[i].name, "kind")
-	 || !strcmp(doc->schema.items[i].name, "prop")
-	 || !strcmp(doc->schema.items[i].name, "frag"))
-	    continue;
-	else
-	    PFoops (OOPS_FATAL,
-		    "illegal attribute `%s' in staircase join",
-		    doc->schema.items[i].name);
-    }
+
 #endif
 
     /* allocate memory for the result schema (= schema(n)) */
@@ -704,24 +693,6 @@ PFalg_scjoin (PFalg_op_t *doc, PFalg_op_t *n, PFalg_op_t *scj)
     /* copy schema from 'n' argument */
     for (i = 0; i < n->schema.count; i++)
         ret->schema.items[i] = n->schema.items[i];
-
-    return ret;
-}
-
-
-/** Creates a representation of the document table. */
-PFalg_op_t * PFalg_doc_tbl (char *rel)
-{
-    PFalg_op_t         *ret;
-
-    /* instantiate a new document table representation */
-    ret = alg_op_leaf (aop_doc_tbl);
-
-    /* insert name of document relation */
-    ret->sem.doc_tbl.rel = rel;
-
-    /* set doc table schema */
-    ret->schema = doc_schm;
 
     return ret;
 }
@@ -1779,19 +1750,10 @@ PFalg_op_t * PFalg_element (PFalg_op_t *doc, PFalg_op_t *tag,
 			    PFalg_op_t *cont)
 {
     PFalg_op_t *ret = alg_op_wire3 (aop_element, doc, tag, cont);
-    int i;
 
     /* set result schema */
-    ret->schema.count = doc_schm.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    for (i = 0; i < doc_schm.count; i++)
-        ret->schema.items[i] = doc_schm.items[i];
-
-
-    ret->schema.items[ret->schema.count-1].name = "iter";
-    ret->schema.items[ret->schema.count-1].type = aat_nat;
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
 
     return ret;
 }
@@ -1805,19 +1767,10 @@ PFalg_op_t * PFalg_element (PFalg_op_t *doc, PFalg_op_t *tag,
 PFalg_op_t * PFalg_attribute (PFalg_op_t *name, PFalg_op_t *val)
 {
     PFalg_op_t *ret = alg_op_wire2 (aop_attribute, name, val);
-    int i;
 
     /* set result schema */
-    ret->schema.count = doc_schm.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    for (i = 0; i < doc_schm.count; i++)
-        ret->schema.items[i] = doc_schm.items[i];
-
-
-    ret->schema.items[ret->schema.count-1].name = "iter";
-    ret->schema.items[ret->schema.count-1].type = aat_nat;
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
 
     return ret;
 }
@@ -1831,27 +1784,10 @@ PFalg_op_t * PFalg_attribute (PFalg_op_t *name, PFalg_op_t *val)
 PFalg_op_t * PFalg_textnode (PFalg_op_t *cont)
 {
     PFalg_op_t *ret = alg_op_wire1 (aop_textnode, cont);
-    int i;
 
     /* set result schema */
-    ret->schema.count = doc_schm.count + 2;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    for (i = 0; i < doc_schm.count; i++)
-        ret->schema.items[i] = doc_schm.items[i];
-
-    /* Since this functionality is also required for the builtin
-     * item-sequence-to-node-sequence() function, we must
-     * additionally include the "pos" column of the "cont"
-     * parameter into the result (schema).
-     */
-    for (i = 0; i < cont->schema.count; i++) {
-	if (!strcmp ("iter", cont->schema.items[i].name))
-	    ret->schema.items[ret->schema.count-2] = cont->schema.items[i];
-	else if (!strcmp ("pos", cont->schema.items[i].name))
-	    ret->schema.items[ret->schema.count-1] = cont->schema.items[i];
-    }
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
 
     return ret;
 }
@@ -1865,18 +1801,10 @@ PFalg_op_t * PFalg_textnode (PFalg_op_t *cont)
 PFalg_op_t * PFalg_docnode (PFalg_op_t *doc, PFalg_op_t *cont)
 {
     PFalg_op_t *ret = alg_op_wire2 (aop_docnode, doc, cont);
-    int i;
 
     /* set result schema */
-    ret->schema.count = doc_schm.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    for (i = 0; i < doc_schm.count; i++)
-        ret->schema.items[i] = doc_schm.items[i];
-
-    ret->schema.items[ret->schema.count-1].name = "iter";
-    ret->schema.items[ret->schema.count-1].type = aat_nat;
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
 
     return ret;
 }
@@ -1890,18 +1818,10 @@ PFalg_op_t * PFalg_docnode (PFalg_op_t *doc, PFalg_op_t *cont)
 PFalg_op_t * PFalg_comment (PFalg_op_t *cont)
 {
     PFalg_op_t *ret = alg_op_wire1 (aop_comment, cont);
-    int i;
 
     /* set result schema */
-    ret->schema.count = doc_schm.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    for (i = 0; i < doc_schm.count; i++)
-        ret->schema.items[i] = doc_schm.items[i];
-
-    ret->schema.items[ret->schema.count-1].name = "iter";
-    ret->schema.items[ret->schema.count-1].type = aat_nat;
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
 
     return ret;
 }
@@ -1915,18 +1835,10 @@ PFalg_op_t * PFalg_comment (PFalg_op_t *cont)
 PFalg_op_t * PFalg_processi (PFalg_op_t *cont)
 {
     PFalg_op_t *ret = alg_op_wire1 (aop_processi, cont);
-    int i;
 
     /* set result schema */
-    ret->schema.count = doc_schm.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    for (i = 0; i < doc_schm.count; i++)
-        ret->schema.items[i] = doc_schm.items[i];
-
-    ret->schema.items[ret->schema.count-1].name = "iter";
-    ret->schema.items[ret->schema.count-1].type = aat_nat;
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
 
     return ret;
 }
@@ -1977,39 +1889,20 @@ PFalg_strconcat (PFalg_op_t *n)
  * them into one text node. If the content of a text node is empty,
  * discard the node.
  * The input parameters have the following schemata:
- * - @a doc: pre | size | level | kind | prop | frag
+ * - @a doc: none (as it is a node fragment)
  * - @a n:   iter | pos | item
- * The output must have the following schema:
- * pre | size | level | kind | prop | frag | res| iter | pos 
- * The "res" column specifies whether the tuple is a newly
- * created one, i.e. whether it has to be included into the
- * result fragment.
+ * The output are an algebra representation of all nodes (old and new,
+ * i.e. unmerged and merged) and a fragment representation of the newly
+ * created nodes only.
  */
 PFalg_op_t *
 PFalg_pf_merge_adjacent_text_nodes (PFalg_op_t *doc, PFalg_op_t *n)
 {
     PFalg_op_t *ret = alg_op_wire2 (aop_merge_adjacent, doc, n);
-    int i;
 
     /* set result schema */
-    ret->schema.count = doc_schm.count + 3;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    for (i = 0; i < doc_schm.count; i++)
-        ret->schema.items[i] = doc_schm.items[i];
-
-    /* add "res" field */
-    ret->schema.items[ret->schema.count-3].name = "res";
-    ret->schema.items[ret->schema.count-3].type = aat_bln;
-
-    /* add "iter" and "pos" field */
-    for (i = 0; i < n->schema.count; i++) {
-	if (!strcmp ("iter", n->schema.items[i].name))
-	    ret->schema.items[ret->schema.count-2] = n->schema.items[i];
-	else if (!strcmp ("pos", n->schema.items[i].name))
-	    ret->schema.items[ret->schema.count-1] = n->schema.items[i];
-    }
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
 
     return ret;
 }
@@ -2051,4 +1944,100 @@ PFalg_op_t *
 PFalg_serialize (PFalg_op_t *doc, PFalg_op_t *alg)
 {
     return alg_op_wire2 (aop_serialize, doc, alg);
+}
+
+
+/**
+ * Algebraic representation of the roots of newly created xml nodes
+ * (e.g. created by PFalg_element()); schema: iter | pos | item.
+ */
+PFalg_op_t *
+PFalg_roots (PFalg_op_t *n)
+{
+    PFalg_op_t *ret = alg_op_wire1 (aop_roots, n);
+
+    assert (n->schema.count == 0);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 3;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* add attributes iter, pos, item */
+    ret->schema.items[0].name = "iter";
+    ret->schema.items[0].type = aat_nat;
+    ret->schema.items[1].name = "pos";
+    ret->schema.items[1].type = aat_nat;
+    ret->schema.items[2].name = "item";
+    ret->schema.items[2].type = aat_node;
+
+    return ret;
+}
+
+
+/** Representation of a new fragment; schema: none. */
+PFalg_op_t *
+PFalg_fragment (PFalg_op_t *n)
+{
+    PFalg_op_t *ret = alg_op_wire1 (aop_fragment, n);
+
+    assert (n->schema.count == 0);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    return ret;
+}
+
+/** Form algebraic disjoint union between two fragments. */
+PFalg_op_t *
+PFalg_frag_union (PFalg_op_t *n1, PFalg_op_t *n2)
+{
+    PFalg_op_t *ret = alg_op_wire2 (aop_frag_union, n1, n2);
+
+    assert (n1->schema.count == 0);
+    assert (n2->schema.count == 0);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    return ret;
+}
+
+/** Constructor for an empty fragment */
+PFalg_op_t *
+PFalg_empty_frag (void)
+{
+    PFalg_op_t *ret = alg_op_leaf (aop_empty_frag);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    return ret;
+}
+
+/**
+ * Creates a representation of the document table. The document table also
+ * represents a fragment of nodes. That's why it also has no schema.
+ */
+PFalg_op_t *
+PFalg_doc_tbl (char *rel)
+{
+    PFalg_op_t         *ret;
+
+    /* instantiate a new document table representation */
+    ret = alg_op_leaf (aop_doc_tbl);
+
+    /* insert name of document relation */
+    ret->sem.doc_tbl.rel = rel;
+
+    /* set doc table schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    return ret;
 }

@@ -220,7 +220,7 @@ BindingExpr:     for_ (var_, OptVar, CoreExpr, CoreExpr)
         /* translate $v */
         var = cross (lit_tbl (attlist ("pos"),
                               tuple (lit_nat (1))),
-                     project (rownum ([[ $3$ ]].result,
+                     project (rownum ([[ $3$ ]].rel,
                                       "inner",
                                       sortby ("iter", "pos"),
                                       NULL),
@@ -233,7 +233,7 @@ BindingExpr:     for_ (var_, OptVar, CoreExpr, CoreExpr)
 
         /* insert $v and "its document" into NEW environment */
         *((PFalg_env_t *) PFarray_add (env)) = enventry ($1$->sem.var,
-                                                         var, [[ $3$ ]].doc);
+                                                         var, [[ $3$ ]].frag);
 
         /* save old loop operator */
         old_loop = loop;
@@ -242,7 +242,7 @@ BindingExpr:     for_ (var_, OptVar, CoreExpr, CoreExpr)
         loop = project (var, proj ("iter", "iter"));
 
         /* create map relation. */
-        map = project (rownum([[ $3$ ]].result,
+        map = project (rownum([[ $3$ ]].rel,
                               "inner",
                               sortby ("iter", "pos"),
                               NULL),
@@ -269,19 +269,19 @@ BindingExpr:     for_ (var_, OptVar, CoreExpr, CoreExpr)
 
             /* insert $p into NEW environment */
             *((PFalg_env_t *) PFarray_add (env)) =
-                enventry ($2$->sem.var, opt_var, PFalg_empty_frag ());
+                enventry ($2$->sem.var, opt_var, PFalg_empty_set ());
         }
 
         /* update all variable bindings in old environment and put
          * them into new environment */
         for (i = 0; i < PFarray_last (old_env); i++) {
             e = *((PFalg_env_t *) PFarray_at (old_env, i));
-            new_bind = project (eqjoin (e.result, map, "iter", "outer"),
+            new_bind = project (eqjoin (e.rel, map, "iter", "outer"),
                                proj ("iter", "inner"),
                                proj ("pos", "pos"),
                                proj ("item", "item"));
             *((PFalg_env_t *) PFarray_add (env)) =
-                enventry (e.var, new_bind, e.doc);
+                enventry (e.var, new_bind, e.frag);
         }
 
         /* translate e2 under the specified conditions (updated
@@ -297,15 +297,15 @@ BindingExpr:     for_ (var_, OptVar, CoreExpr, CoreExpr)
 
         /* compute result using old env and old loop. */
         [[ $$ ]] =(struct PFalg_pair_t) {
-                 .result = project (rownum (eqjoin([[ $4$ ]].result,
-                                                   map, "iter", "inner"),
-                                            "pos1",
-                                            sortby ("iter", "pos"),
-                                            "outer"),
-                                    proj ("iter", "outer"),
-                                    proj ("pos", "pos1"),
-                                    proj ("item", "item")),
-                 .doc = [[ $4$ ]].doc };
+                 .rel = project (rownum (eqjoin([[ $4$ ]].rel,
+                                                map, "iter", "inner"),
+                                         "pos1",
+                                         sortby ("iter", "pos"),
+                                         "outer"),
+                                 proj ("iter", "outer"),
+                                 proj ("pos", "pos1"),
+                                 proj ("item", "item")),
+                 .frag = [[ $4$ ]].frag };
     }
     ;
 
@@ -342,8 +342,8 @@ BindingExpr:     let (var_, CoreExpr, CoreExpr)
          * environment together with the currently live nodes
          */
          *((PFalg_env_t *) PFarray_add (env)) = enventry ($1$->sem.var,
-                                                          [[ $2$ ]].result,
-                                                          [[ $2$ ]].doc);
+                                                          [[ $2$ ]].rel,
+                                                          [[ $2$ ]].frag);
 
         /* now translate e2 in the new context */
         tDO($%2$);
@@ -423,14 +423,14 @@ TypeswitchExpr:  typesw (CoreExpr,
         for (i = 0; i < PFarray_last (old_env); i++) {
             e = *((PFalg_env_t *) PFarray_at (old_env, i));
             new_bind =
-                project (eqjoin (e.result,
+                project (eqjoin (e.rel,
                                  project (loop, proj ("iter1", "iter")),
                                  "iter", "iter1"),
                          proj ("iter", "iter"),
                          proj ("pos", "pos"),
                          proj ("item", "item"));
             *((PFalg_env_t *) PFarray_add (env))
-                = enventry (e.var, new_bind, e.doc);
+                = enventry (e.var, new_bind, e.frag);
         }
 
         /* translate CoreExpr2 */
@@ -447,14 +447,14 @@ TypeswitchExpr:  typesw (CoreExpr,
         for (i = 0; i < PFarray_last (old_env); i++) {
             e = *((PFalg_env_t *) PFarray_at (old_env, i));
             new_bind =
-                project (eqjoin (e.result,
+                project (eqjoin (e.rel,
                                  project (loop, proj ("iter1", "iter")),
                                  "iter", "iter1"),
                          proj ("iter", "iter"),
                          proj ("pos", "pos"),
                          proj ("item", "item"));
             *((PFalg_env_t *) PFarray_add (env))
-                = enventry (e.var, new_bind, e.doc);
+                = enventry (e.var, new_bind, e.frag);
         }
 
         /* translate CoreExpr3 */
@@ -465,8 +465,8 @@ TypeswitchExpr:  typesw (CoreExpr,
         env = old_env;
 
         [[ $$ ]] = (struct PFalg_pair_t) {
-            .result = disjunion ([[ $2.1.2$ ]].result, [[ $3$ ]].result),
-            .doc    = PFalg_set_union ([[ $2.1.2$ ]].doc, [[ $3$ ]].doc)
+            .rel  = disjunion ([[ $2.1.2$ ]].rel, [[ $3$ ]].rel),
+            .frag = PFalg_set_union ([[ $2.1.2$ ]].frag, [[ $3$ ]].frag)
         };
     }
     ;
@@ -522,7 +522,7 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
         old_loop = loop;
 
         /* create loop2 operator */
-        loop = project (select_ ([[ $1$ ]].result, "item"),
+        loop = project (select_ ([[ $1$ ]].rel, "item"),
                         proj ("iter", "iter"));
 
         /* save old environment */
@@ -533,7 +533,7 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
 
         for (i = 0; i < PFarray_last (old_env); i++) {
             e = *((PFalg_env_t *) PFarray_at (old_env, i));
-            new_bind = project (eqjoin (e.result,
+            new_bind = project (eqjoin (e.rel,
                                         project (loop,
                                                  proj ("iter1", "iter")),
                                         "iter",
@@ -542,14 +542,14 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
                                 proj ("pos", "pos"),
                                 proj ("item", "item"));
             *((PFalg_env_t *) PFarray_add (env)) =
-                enventry (e.var, new_bind, e.doc);
+                enventry (e.var, new_bind, e.frag);
         }
 
         /* translate e2 */
         tDO($%2$);
 
         /* create loop3 operator */
-        loop = project (select_ (not ([[ $1$ ]].result,
+        loop = project (select_ (not ([[ $1$ ]].rel,
                                      "res",
                                      "item"),
                                 "res"),
@@ -560,7 +560,7 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
 
         for (i = 0; i < PFarray_last (old_env); i++) {
             e = *((PFalg_env_t *) PFarray_at (old_env, i));
-            new_bind = project (eqjoin (e.result,
+            new_bind = project (eqjoin (e.rel,
                                         project (loop,
                                                  proj ("iter1", "iter")),
                                         "iter",
@@ -569,7 +569,7 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
                                 proj ("pos", "pos"),
                                 proj ("item", "item"));
             *((PFalg_env_t *) PFarray_add (env)) =
-                enventry (e.var, new_bind, e.doc);
+                enventry (e.var, new_bind, e.frag);
         }
 
         /* translate e3 */
@@ -580,8 +580,8 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
         env = old_env;
 
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = disjunion ([[ $2$ ]].result, [[ $3$ ]].result),
-                 .doc = PFalg_set_union ([[ $2$ ]].doc, [[ $3$ ]].doc) };
+                 .rel  = disjunion ([[ $2$ ]].rel, [[ $3$ ]].rel),
+                 .frag = PFalg_set_union ([[ $2$ ]].frag, [[ $3$ ]].frag) };
     }
     ;
 
@@ -603,19 +603,18 @@ SequenceExpr:    seq (Atom, Atom)
          *
          */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = project (
-                     rownum (
+                 .rel = project (rownum (
                          disjunion (cross (lit_tbl (attlist ("ord"),
                                                     tuple (lit_nat (1))),
-                                           [[ $1$ ]].result),
+                                           [[ $1$ ]].rel),
                                     cross (lit_tbl (attlist ("ord"),
                                                     tuple (lit_nat (2))),
-                                           [[ $2$ ]].result)),
+                                           [[ $2$ ]].rel)),
                          "pos1", sortby ("ord", "pos"), "iter"),
                      proj ("iter", "iter"),
                      proj ("pos", "pos1"),
                      proj ("item", "item")),
-                 .doc = PFalg_set_union ([[ $1$ ]].doc, [[ $2$ ]].doc) };
+                 .frag = PFalg_set_union ([[ $1$ ]].frag, [[ $2$ ]].frag) };
     }
     ;
 
@@ -625,85 +624,85 @@ PathExpr:        LocationStep;
 LocationStep:    ancestor (NodeTest)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = anc ([[ $1$ ]].result),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = anc ([[ $1$ ]].rel),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 LocationStep:    ancestor_or_self (NodeTest)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = anc_self ([[ $1$ ]].result),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = anc_self ([[ $1$ ]].rel),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 LocationStep:    attribute (NodeTest)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = attr ([[ $1$ ]].result),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = attr ([[ $1$ ]].rel),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 LocationStep:    child_ (NodeTest)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = child ([[ $1$ ]].result),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = child ([[ $1$ ]].rel),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 LocationStep:    descendant (NodeTest)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = desc ([[ $1$ ]].result),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = desc ([[ $1$ ]].rel),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 LocationStep:    descendant_or_self (NodeTest)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = desc_self ([[ $1$ ]].result),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = desc_self ([[ $1$ ]].rel),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 LocationStep:    following (NodeTest)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = fol ([[ $1$ ]].result),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = fol ([[ $1$ ]].rel),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 LocationStep:    following_sibling (NodeTest)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = fol_sibl ([[ $1$ ]].result),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = fol_sibl ([[ $1$ ]].rel),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 LocationStep:    parent_ (NodeTest)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = par ([[ $1$ ]].result),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = par ([[ $1$ ]].rel),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 LocationStep:    preceding (NodeTest)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = prec ([[ $1$ ]].result),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = prec ([[ $1$ ]].rel),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 LocationStep:    preceding_sibling (NodeTest)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = prec_sibl ([[ $1$ ]].result),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = prec_sibl ([[ $1$ ]].rel),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 LocationStep:    self (NodeTest)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = self ([[ $1$ ]].result),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = self ([[ $1$ ]].rel),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 
@@ -718,21 +717,21 @@ LocationSteps:   locsteps (LocationStep, CoreExpr)
          *      proj_iter,item (q(e) join (doc U delta1)), delta1))
          */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = rownum (scjoin (PFalg_alg_union ([[ $2$ ]].doc),
-                                           project ([[ $2$ ]].result,
-                                                    proj ("iter", "iter"),
-                                                    proj ("item", "item")),
-                                           [[ $1$ ]].result),
-                                   "pos", sortby ("item"), "iter"),
-                 .doc = [[ $2$ ]].doc};
+                 .rel = rownum (scjoin (PFalg_set_to_alg ([[ $2$ ]].frag),
+                                        project ([[ $2$ ]].rel,
+                                                 proj ("iter", "iter"),
+                                                 proj ("item", "item")),
+                                        [[ $1$ ]].rel),
+                                "pos", sortby ("item"), "iter"),
+                 .frag = [[ $2$ ]].frag};
     }
     ;
 
 NodeTest:        namet
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = nameTest ($$->sem.qname),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = nameTest ($$->sem.qname),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 NodeTest:        KindTest;
@@ -740,57 +739,57 @@ NodeTest:        KindTest;
 KindTest:        kind_node (nil)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = nodeTest (),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = nodeTest (),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 KindTest:        kind_comment (nil)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = commTest (),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = commTest (),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 KindTest:        kind_text (nil)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = textTest (),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = textTest (),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 KindTest:        kind_pi (nil)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = piTest (),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = piTest (),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 KindTest:        kind_pi (lit_str)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = pitarTest ($1$->sem.str),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = pitarTest ($1$->sem.str),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 KindTest:        kind_doc (nil)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = docTest (),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = docTest (),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 KindTest:        kind_elem (nil)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = elemTest (),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = elemTest (),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 KindTest:        kind_attr (nil)
     =
     {
-        [[ $$ ]] = (struct  PFalg_pair_t) { .result = attrTest (),
-                                            .doc = PFalg_empty_frag () };
+        [[ $$ ]] = (struct  PFalg_pair_t) { .rel = attrTest (),
+                                            .frag = PFalg_empty_set () };
     }
     ;
 
@@ -817,31 +816,13 @@ ConstructorExpr: elem (TagName, CoreExpr)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *elem = element (PFalg_alg_union ([[ $2$ ]].doc),
-                                    [[ $1$ ]].result,
-                                    [[ $2$ ]].result);
+        PFalg_op_t *elem = element (PFalg_set_to_alg ([[ $2$ ]].frag),
+                                    [[ $1$ ]].rel,
+                                    [[ $2$ ]].rel);
 
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (project (
-                                      select_ (
-                                          eq (cross (elem,
-                                                     lit_tbl (
-                                                         attlist ("zero"),
-                                                         tuple (
-                                                             lit_int (0)))),
-                                              "res","level","zero"),
-                                          "res"),
-                                      proj ("iter", "iter"),
-                                      proj ("item", "pre")),
-                                  lit_tbl (attlist ("pos"),
-                                           tuple (lit_nat (1)))),
-                 .doc = PFalg_new_frag (project (elem,
-                                                 proj ("pre", "pre"),
-                                                 proj ("size", "size"),
-                                                 proj ("level", "level"),
-                                                 proj ("kind", "kind"),
-                                                 proj ("prop", "prop"),
-                                                 proj ("frag", "frag"))) };
+                 .rel = roots (elem),
+                 .frag = PFalg_set (fragment (elem))};
     }
     ;
 
@@ -868,30 +849,12 @@ ConstructorExpr: attr (TagName, CoreExpr)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *attr = attribute ([[ $1$ ]].result,
-                                      [[ $2$ ]].result);
+        PFalg_op_t *attr = attribute ([[ $1$ ]].rel,
+                                      [[ $2$ ]].rel);
 
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (project (
-                                      select_ (
-                                          eq (cross (attr,
-                                                     lit_tbl (
-                                                         attlist ("zero"),
-                                                         tuple (
-                                                             lit_int (0)))),
-                                              "res","level","zero"),
-                                          "res"),
-                                      proj ("iter", "iter"),
-                                      proj ("item", "pre")),
-                                  lit_tbl (attlist ("pos"),
-                                           tuple (lit_nat (1)))),
-                 .doc = PFalg_new_frag (project (attr,
-                                                 proj ("pre", "pre"),
-                                                 proj ("size", "size"),
-                                                 proj ("level", "level"),
-                                                 proj ("kind", "kind"),
-                                                 proj ("prop", "prop"),
-                                                 proj ("frag", "frag"))) };
+                 .rel = roots (attr),
+                 .frag = PFalg_set (fragment (attr))};
     }
     ;
 
@@ -913,24 +876,11 @@ ConstructorExpr: text (CoreExpr)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *textnode = textnode ([[ $1$ ]].result);
+        PFalg_op_t *textnode = textnode ([[ $1$ ]].rel);
 
-        /* we do not have to check for 'level' == 0, since newly
-         * created text nodes always have that level
-         */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (project (textnode,
-                                           proj ("iter", "iter"),
-                                           proj ("item", "pre")),
-                                  lit_tbl (attlist ("pos"),
-                                           tuple (lit_nat (1)))),
-                 .doc = PFalg_new_frag (project (textnode,
-                                                 proj ("pre", "pre"),
-                                                 proj ("size", "size"),
-                                                 proj ("level", "level"),
-                                                 proj ("kind", "kind"),
-                                                 proj ("prop", "prop"),
-                                                 proj ("frag", "frag"))) };
+                 .rel = roots (textnode),
+                 .frag = PFalg_set (fragment (textnode))};
     }
     ;
 
@@ -952,30 +902,12 @@ ConstructorExpr: doc (CoreExpr)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *docnode = docnode (PFalg_alg_union ([[ $1$ ]].doc),
-                                       [[ $1$ ]].result);
+        PFalg_op_t *docnode = docnode (PFalg_set_to_alg ([[ $1$ ]].frag),
+                                       [[ $1$ ]].rel);
 
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (project (
-                                      select_ (
-                                          eq (cross (docnode,
-                                                     lit_tbl (
-                                                         attlist ("zero"),
-                                                         tuple (
-                                                             lit_int (0)))),
-                                              "res","level","zero"),
-                                          "res"),
-                                      proj ("iter", "iter"),
-                                      proj ("item", "pre")),
-                                  lit_tbl (attlist ("pos"),
-                                           tuple (lit_nat (1)))),
-                 .doc = PFalg_new_frag (project (docnode,
-                                                 proj ("pre", "pre"),
-                                                 proj ("size", "size"),
-                                                 proj ("level", "level"),
-                                                 proj ("kind", "kind"),
-                                                 proj ("prop", "prop"),
-                                                 proj ("frag", "frag"))) };
+                 .rel = roots (docnode),
+                 .frag = PFalg_set (fragment (docnode))};
     }
     ;
 
@@ -997,24 +929,11 @@ ConstructorExpr: comment (lit_str)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *comment = comment ([[ $1$ ]].result);
+        PFalg_op_t *comment = comment ([[ $1$ ]].rel);
 
-        /* we do not have to check for 'level' == 0, since newly
-         * created comments always have that level
-         */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (project (comment,
-                                           proj ("iter", "iter"),
-                                           proj ("item", "pre")),
-                                  lit_tbl (attlist ("pos"),
-                                           tuple (lit_nat (1)))),
-                 .doc = PFalg_new_frag (project (comment,
-                                                 proj ("pre", "pre"),
-                                                 proj ("size", "size"),
-                                                 proj ("level", "level"),
-                                                 proj ("kind", "kind"),
-                                                 proj ("prop", "prop"),
-                                                 proj ("frag", "frag"))) };
+                 .rel = roots (comment),
+                 .frag = PFalg_set (fragment (comment))};
     }
     ;
 
@@ -1036,24 +955,11 @@ ConstructorExpr: pi (lit_str)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *pi = processi ([[ $1$ ]].result);
+        PFalg_op_t *pi = processi ([[ $1$ ]].rel);
 
-        /* we do not have to check for 'level' == 0, since newly
-         * created processing instructions always have that level
-         */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (project (pi,
-                                           proj ("iter", "iter"),
-                                           proj ("item", "pre")),
-                                  lit_tbl (attlist ("pos"),
-                                           tuple (lit_nat (1)))),
-                 .doc = PFalg_new_frag (project (pi,
-                                                 proj ("pre", "pre"),
-                                                 proj ("size", "size"),
-                                                 proj ("level", "level"),
-                                                 proj ("kind", "kind"),
-                                                 proj ("prop", "prop"),
-                                                 proj ("frag", "frag"))) };
+                 .rel = roots (pi),
+                 .frag = PFalg_set (fragment (pi))};
     }
     ;
 
@@ -1061,13 +967,13 @@ TagName:         tag
     =
     {
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (loop,
-                                  lit_tbl( attlist ("pos", "item"),
-                                           tuple (lit_nat (1),
-                                                  lit_str (
-                                                      PFqname_str (
-                                                          $$->sem.qname))))),
-                 .doc = PFalg_empty_frag () };
+                 .rel = cross (loop,
+                               lit_tbl( attlist ("pos", "item"),
+                                        tuple (lit_nat (1),
+                                               lit_str (
+                                                   PFqname_str (
+                                                       $$->sem.qname))))),
+                 .frag = PFalg_empty_set () };
     }
     ;
 TagName:         CoreExpr;
@@ -1140,12 +1046,12 @@ FunctionAppl:    apply (FunctionArgs)
 
 
         [[ $$ ]] = $$->sem.fun->alg (loop,
-                                     [[ $1$ ]].result->sem.builtin.args->base);
+                                     [[ $1$ ]].rel->sem.builtin.args->base);
 /*
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                         .result = $$->sem.fun->alg (loop,
-                                   [[ $1$ ]].result->sem.builtin.args->base),
-                         .doc = PFalg_empty_frag () };
+                         .rel = $$->sem.fun->alg (loop,
+                                   [[ $1$ ]].rel->sem.builtin.args->base),
+                         .frag = PFalg_empty_set () };
 */
     }
     ;
@@ -1164,7 +1070,7 @@ FunctionArgs:    arg (CoreExpr, FunctionArgs)
     {
         /*
          * builds an array of 'result'/'doc' pairs and assigns it to
-         * $$->arg.result->sem.builtin field; $$->arg.doc is always
+         * $$->arg.rel->sem.builtin field; $$->arg.frag is always
          * empty
          */
         [[ $$ ]] = args ([[ $1$ ]], [[ $2$ ]]);
@@ -1206,8 +1112,8 @@ Atom:            var_
 
             if ($$->sem.var == e.var) {
                 [[ $$ ]] = (struct  PFalg_pair_t) {
-                         .result = e.result,
-                         .doc = e.doc };
+                         .rel = e.rel,
+                         .frag = e.frag };
                 break;
             }
         }
@@ -1228,11 +1134,11 @@ LiteralString:    lit_str
          *                          \        \   1 |   c  / /
          */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (loop,
-                                  lit_tbl( attlist ("pos", "item"),
-                                           tuple (lit_nat (1),
-                                                  lit_str ($$->sem.str)))),
-                 .doc = PFalg_empty_frag () };
+                 .rel = cross (loop,
+                               lit_tbl( attlist ("pos", "item"),
+                                        tuple (lit_nat (1),
+                                               lit_str ($$->sem.str)))),
+                 .frag = PFalg_empty_set () };
     }
     ;
 LiteralValue:    lit_int
@@ -1245,11 +1151,11 @@ LiteralValue:    lit_int
          *                          \        \   1 |   c  / /
          */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (loop,
-                                  lit_tbl( attlist ("pos", "item"),
-                                           tuple (lit_nat (1),
-                                                  lit_int ($$->sem.num)))),
-                 .doc = PFalg_empty_frag () };
+                 .rel = cross (loop,
+                               lit_tbl( attlist ("pos", "item"),
+                                        tuple (lit_nat (1),
+                                               lit_int ($$->sem.num)))),
+                 .frag = PFalg_empty_set () };
     }
     ;
 LiteralValue:    lit_dec
@@ -1262,11 +1168,11 @@ LiteralValue:    lit_dec
          *                          \        \   1 |   c  / /
          */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (loop,
-                                  lit_tbl( attlist ("pos", "item"),
-                                           tuple (lit_nat (1),
-                                                  lit_dec ($$->sem.dec)))),
-                 .doc = PFalg_empty_frag () };
+                 .rel = cross (loop,
+                               lit_tbl( attlist ("pos", "item"),
+                                        tuple (lit_nat (1),
+                                               lit_dec ($$->sem.dec)))),
+                 .frag = PFalg_empty_set () };
     }
     ;
 LiteralValue:    lit_dbl
@@ -1279,11 +1185,11 @@ LiteralValue:    lit_dbl
          *                          \        \   1 |   c  / /
          */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (loop,
-                                  lit_tbl( attlist ("pos", "item"),
-                                           tuple (lit_nat (1),
-                                                  lit_dbl ($$->sem.dbl)))),
-                 .doc = PFalg_empty_frag () };
+                 .rel = cross (loop,
+                               lit_tbl( attlist ("pos", "item"),
+                                        tuple (lit_nat (1),
+                                               lit_dbl ($$->sem.dbl)))),
+                 .frag = PFalg_empty_set () };
     }
     ;
 LiteralValue:    true_
@@ -1296,11 +1202,11 @@ LiteralValue:    true_
          *                          \        \   1 |   c  / /
          */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (loop,
-                                  lit_tbl( attlist ("pos", "item"),
-                                           tuple (lit_nat (1),
-                                                  lit_bln (true)))),
-                 .doc = PFalg_empty_frag () };
+                 .rel = cross (loop,
+                               lit_tbl( attlist ("pos", "item"),
+                                        tuple (lit_nat (1),
+                                               lit_bln (true)))),
+                 .frag = PFalg_empty_set () };
     }
     ;
 LiteralValue:    false_
@@ -1313,11 +1219,11 @@ LiteralValue:    false_
          *                          \        \   1 |   c  / /
          */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (loop,
-                                  lit_tbl( attlist ("pos", "item"),
-                                           tuple (lit_nat (1),
-                                                  lit_bln (false)))),
-                 .doc = PFalg_empty_frag () };
+                 .rel = cross (loop,
+                               lit_tbl( attlist ("pos", "item"),
+                                        tuple (lit_nat (1),
+                                               lit_bln (false)))),
+                 .frag = PFalg_empty_set () };
     }
     ;
 LiteralValue:    empty_
@@ -1338,9 +1244,9 @@ LiteralValue:    empty_
          * [[ $$ ]] = lit_tbl (attlist ("iter", "pos", "item"));
          */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = PFalg_lit_tbl_ (attlist ("iter", "pos", "item"),
-                                           0, NULL),
-                 .doc = PFalg_empty_frag () };
+                 .rel = PFalg_lit_tbl_ (attlist ("iter", "pos", "item"),
+                                        0, NULL),
+                 .frag = PFalg_empty_set () };
     }
     ;
 
@@ -1355,11 +1261,11 @@ BuiltIns:        root_
          */
         /* TODO: must be changed completely, builtin function */
         [[ $$ ]] = (struct  PFalg_pair_t) {
-                 .result = cross (loop,
-                                  lit_tbl( attlist ("pos", "item"),
-                                           tuple (lit_nat (1),
-                                                  lit_nat (1)))),
-                 .doc = PFalg_empty_frag () };
+                 .rel = cross (loop,
+                               lit_tbl( attlist ("pos", "item"),
+                                        tuple (lit_nat (1),
+                                               lit_nat (1)))),
+                 .frag = PFalg_empty_set () };
     }
     ;
 

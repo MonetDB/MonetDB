@@ -34,9 +34,18 @@
 
 #include "array.h"
 
+
+/**
+ * For a correct treatment of xml node fragments, we work with sets of
+ * fragments and algebra expressions of fragments. This type represents
+ * a set of xml fragments. Algebra expressions of xml fragments are
+ * represented by PFalg_op_t structs.
+ */
+typedef PFarray_t PFalg_set_t;
+
 struct PFalg_pair_t {
-    struct PFalg_op_t *result;
-    PFarray_t *doc;
+    struct PFalg_op_t *rel;      /* algebra representation of query */
+    PFalg_set_t *frag;           /* set of currently live-node fragments */
 };
 typedef struct PFalg_pair_t PFalg_pair_t;
 
@@ -45,27 +54,28 @@ typedef struct PFalg_pair_t PFalg_pair_t;
 /** Compile XQuery Core into Relational Algebra */
 struct PFalg_op_t *PFcore2alg (PFcnode_t *);
 
-/**
- * Create empty document list signalling that there are no live
- * nodes/fragments belonging to an algebra operator.
- */
-PFarray_t *PFalg_empty_frag (void);
 
 /**
- * Form a set-oriented union between two lists of fragments.
+ * Create empty set of fragments. It signals that an algebra expression
+ * does not produce any xml nodes (any fragment).
  */
-PFarray_t *PFalg_set_union (PFarray_t *frag1, PFarray_t *frag2);
+PFalg_set_t *PFalg_empty_set (void);
 
 /**
- * Create new list with one fragment.
+ * Create a new set containing one fragment.
  */
-PFarray_t *PFalg_new_frag (struct PFalg_op_t *n);
+PFalg_set_t *PFalg_set (struct PFalg_op_t *n);
 
 /**
- * Form algebraic disjoint union between the fragments of an
- * algebra operator's document.
+ * Form a set-oriented union between two sets of fragments.
  */
-struct PFalg_op_t *PFalg_alg_union (PFarray_t *frags);
+PFalg_set_t *PFalg_set_union (PFalg_set_t *frag1, PFalg_set_t *frag2);
+
+/**
+ * Convert a set of fragments into an algebra expression. The fragments
+ * are unified by a special, fragment-specific union operator.
+ */
+struct PFalg_op_t *PFalg_set_to_alg (PFalg_set_t *frags);
 
 
 
@@ -81,8 +91,8 @@ struct PFalg_op_t *PFalg_alg_union (PFarray_t *frags);
 /** environment entry node */
 struct PFalg_env_t {
     PFvar_t               *var;
-    struct PFalg_op_t     *result;
-    PFarray_t             *doc;
+    struct PFalg_op_t     *rel;
+    PFarray_t             *frag;
 };
 /** environment entry node */
 typedef struct PFalg_env_t PFalg_env_t;

@@ -88,19 +88,26 @@ node  lit_tbl      /* literal table */
       seqty1
       all
 
+      roots_
+      fragment
+      frag_union
+      empty_frag
+
       serialize    /* result serialization */
       ;
 
 
 label Query
-      AlgExpr
-      EmptyExpr
+      Rel
+      EmptyRel
+      Frag
+      FragRel
       ;
 
 
-Query:    serialize (AlgExpr, AlgExpr);
+Query:  serialize (Frag, Rel);
 
-AlgExpr:  EmptyExpr
+Rel:  EmptyRel
     =
     {
         /*
@@ -117,11 +124,10 @@ AlgExpr:  EmptyExpr
                                0 /* no of tuples */, NULL /* tuples */);
     }
     ;
-AlgExpr:  lit_tbl;
-AlgExpr:  doc_tbl;
+Rel:  lit_tbl;
 
-AlgExpr:  disjunion (AlgExpr, AlgExpr);
-AlgExpr:  disjunion (EmptyExpr, AlgExpr)
+Rel:  disjunion (Rel, Rel);
+Rel:  disjunion (EmptyRel, Rel)
     =
     {
         /*
@@ -131,7 +137,7 @@ AlgExpr:  disjunion (EmptyExpr, AlgExpr)
     }
     ;
 
-AlgExpr:  disjunion (AlgExpr, EmptyExpr)
+Rel:  disjunion (Rel, EmptyRel)
     =
     {
         /*
@@ -141,8 +147,8 @@ AlgExpr:  disjunion (AlgExpr, EmptyExpr)
     }
     ;
 
-AlgExpr:  difference (AlgExpr, AlgExpr);
-AlgExpr:  difference (AlgExpr, EmptyExpr)
+Rel:  difference (Rel, Rel);
+Rel:  difference (Rel, EmptyRel)
     =
     {
         /*
@@ -152,20 +158,19 @@ AlgExpr:  difference (AlgExpr, EmptyExpr)
     }
     ;
 
-AlgExpr:  intersect (AlgExpr, AlgExpr);
-AlgExpr:  cross (AlgExpr, AlgExpr);
-AlgExpr:  eqjoin (AlgExpr, AlgExpr);
-AlgExpr:  scjoin (AlgExpr, AlgExpr);
-AlgExpr:  rownum (AlgExpr);
-AlgExpr:  project (AlgExpr);
-AlgExpr:  select_ (AlgExpr);
-AlgExpr:  sum (AlgExpr);
-AlgExpr:  count_ (AlgExpr);
-AlgExpr:  distinct (AlgExpr);
-AlgExpr:  type (AlgExpr);
-
-AlgExpr:  cast (AlgExpr);
-AlgExpr:  cast (AlgExpr)
+Rel:  intersect (Rel, Rel);
+Rel:  cross (Rel, Rel);
+Rel:  eqjoin (Rel, Rel);
+Rel:  scjoin (Frag, Rel);
+Rel:  rownum (Rel);
+Rel:  project (Rel);
+Rel:  select_ (Rel);
+Rel:  sum (Rel);
+Rel:  count_ (Rel);
+Rel:  distinct (Rel);
+Rel:  type (Rel);
+Rel:  cast (Rel);
+Rel:  cast (Rel)
     {
         /*
          * If an algebra expression already has the requested
@@ -185,29 +190,47 @@ AlgExpr:  cast (AlgExpr)
     { return $1$; }
     ;
 
-AlgExpr:  num_add (AlgExpr);
-AlgExpr:  num_subtract (AlgExpr);
-AlgExpr:  num_multiply (AlgExpr);
-AlgExpr:  num_divide (AlgExpr);
-AlgExpr:  num_modulo (AlgExpr);
-AlgExpr:  num_neg (AlgExpr);
-AlgExpr:  num_gt (AlgExpr);
-AlgExpr:  num_eq (AlgExpr);
-AlgExpr:  and (AlgExpr);
-AlgExpr:  or (AlgExpr);
-AlgExpr:  not (AlgExpr);
-AlgExpr:  element (AlgExpr, AlgExpr, AlgExpr);
-AlgExpr:  attribute (AlgExpr, AlgExpr);
-AlgExpr:  textnode (AlgExpr);
-AlgExpr:  docnode (AlgExpr, AlgExpr);
-AlgExpr:  comment (AlgExpr);
-AlgExpr:  processi (AlgExpr);
-AlgExpr:  strconcat (AlgExpr);
-AlgExpr:  merge_adjacent (AlgExpr, AlgExpr);
-AlgExpr:  seqty1 (AlgExpr);
-AlgExpr:  all (AlgExpr);
+Rel:  num_add (Rel);
+Rel:  num_subtract (Rel);
+Rel:  num_multiply (Rel);
+Rel:  num_divide (Rel);
+Rel:  num_modulo (Rel);
+Rel:  num_neg (Rel);
+Rel:  num_gt (Rel);
+Rel:  num_eq (Rel);
+Rel:  and (Rel);
+Rel:  or (Rel);
+Rel:  not (Rel);
+Rel:  strconcat (Rel);
+Rel:  seqty1 (Rel);
+Rel:  all (Rel);
 
-EmptyExpr: lit_tbl
+
+Rel:  roots_ (FragRel);
+
+
+FragRel:  element (Frag, Rel, Rel);
+FragRel:  element (Frag, Rel, EmptyRel);
+FragRel:  attribute (Rel, Rel);
+FragRel:  textnode (Rel);
+FragRel:  docnode (Frag, Rel);
+FragRel:  comment (Rel);
+FragRel:  processi (Rel);
+FragRel:  merge_adjacent (Frag, Rel);
+
+
+
+Frag:  doc_tbl;
+Frag:  fragment (FragRel);
+Frag:  frag_union (Frag, Frag);
+Frag:  frag_union (empty_frag, empty_frag)
+    =
+    { return $1$; }
+    ;
+Frag:  empty_frag;
+
+
+EmptyRel: lit_tbl
     {
         /* Only a literal table with no tuples is an empty expression. */
         if ($$->sem.lit_tbl.count != 0)
@@ -217,56 +240,52 @@ EmptyExpr: lit_tbl
     }
     ;
 
-EmptyExpr:  disjunion (EmptyExpr, EmptyExpr);
-EmptyExpr:  difference (EmptyExpr, AlgExpr);
-EmptyExpr:  difference (EmptyExpr, EmptyExpr);
-EmptyExpr:  intersect (EmptyExpr, AlgExpr);
-EmptyExpr:  intersect (AlgExpr, EmptyExpr);
-EmptyExpr:  intersect (EmptyExpr, EmptyExpr);
-EmptyExpr:  cross (EmptyExpr, AlgExpr);
-EmptyExpr:  cross (AlgExpr, EmptyExpr);
-EmptyExpr:  cross (EmptyExpr, EmptyExpr);
-EmptyExpr:  eqjoin (EmptyExpr, AlgExpr);
-EmptyExpr:  eqjoin (AlgExpr, EmptyExpr);
-EmptyExpr:  eqjoin (EmptyExpr, EmptyExpr);
-EmptyExpr:  scjoin (EmptyExpr, AlgExpr);
-EmptyExpr:  scjoin (AlgExpr, EmptyExpr);
-EmptyExpr:  scjoin (EmptyExpr, EmptyExpr);
-EmptyExpr:  rownum (EmptyExpr);
-EmptyExpr:  project (EmptyExpr);
-EmptyExpr:  select_ (EmptyExpr);
-EmptyExpr:  sum (EmptyExpr);
-EmptyExpr:  count_ (EmptyExpr);
-EmptyExpr:  distinct (EmptyExpr);
-EmptyExpr:  type (EmptyExpr);
-EmptyExpr:  cast (EmptyExpr);
-EmptyExpr:  num_add (EmptyExpr);
-EmptyExpr:  num_subtract (EmptyExpr);
-EmptyExpr:  num_multiply (EmptyExpr);
-EmptyExpr:  num_divide (EmptyExpr);
-EmptyExpr:  num_modulo (EmptyExpr);
-EmptyExpr:  num_neg (EmptyExpr);
-EmptyExpr:  num_gt (EmptyExpr);
-EmptyExpr:  num_eq (EmptyExpr);
-EmptyExpr:  and (EmptyExpr);
-EmptyExpr:  or (EmptyExpr);
-EmptyExpr:  not (EmptyExpr);
-EmptyExpr:  element (AlgExpr, EmptyExpr, AlgExpr);
-EmptyExpr:  element (AlgExpr, EmptyExpr, EmptyExpr);
-EmptyExpr:  element (EmptyExpr, EmptyExpr, AlgExpr);
-EmptyExpr:  element (EmptyExpr, EmptyExpr, EmptyExpr);
-EmptyExpr:  attribute (EmptyExpr, AlgExpr);
-EmptyExpr:  attribute (AlgExpr, EmptyExpr);
-EmptyExpr:  attribute (EmptyExpr, EmptyExpr);
-EmptyExpr:  textnode (EmptyExpr);
-EmptyExpr:  comment (EmptyExpr);
-EmptyExpr:  processi (EmptyExpr);
-EmptyExpr:  strconcat (EmptyExpr);
-EmptyExpr:  merge_adjacent (EmptyExpr, AlgExpr);
-EmptyExpr:  merge_adjacent (AlgExpr, EmptyExpr);
-EmptyExpr:  merge_adjacent (EmptyExpr, EmptyExpr);
-EmptyExpr:  seqty1 (EmptyExpr);
-EmptyExpr:  all (EmptyExpr);
+EmptyRel:  disjunion (EmptyRel, EmptyRel);
+EmptyRel:  difference (EmptyRel, Rel);
+EmptyRel:  difference (EmptyRel, EmptyRel);
+EmptyRel:  intersect (EmptyRel, Rel);
+EmptyRel:  intersect (Rel, EmptyRel);
+EmptyRel:  intersect (EmptyRel, EmptyRel);
+EmptyRel:  cross (EmptyRel, Rel);
+EmptyRel:  cross (Rel, EmptyRel);
+EmptyRel:  cross (EmptyRel, EmptyRel);
+EmptyRel:  eqjoin (EmptyRel, Rel);
+EmptyRel:  eqjoin (Rel, EmptyRel);
+EmptyRel:  eqjoin (EmptyRel, EmptyRel);
+EmptyRel:  scjoin (Frag, EmptyRel);
+EmptyRel:  rownum (EmptyRel);
+EmptyRel:  project (EmptyRel);
+EmptyRel:  select_ (EmptyRel);
+EmptyRel:  sum (EmptyRel);
+EmptyRel:  count_ (EmptyRel);
+EmptyRel:  distinct (EmptyRel);
+EmptyRel:  type (EmptyRel);
+EmptyRel:  cast (EmptyRel);
+EmptyRel:  num_add (EmptyRel);
+EmptyRel:  num_subtract (EmptyRel);
+EmptyRel:  num_multiply (EmptyRel);
+EmptyRel:  num_divide (EmptyRel);
+EmptyRel:  num_modulo (EmptyRel);
+EmptyRel:  num_neg (EmptyRel);
+EmptyRel:  num_gt (EmptyRel);
+EmptyRel:  num_eq (EmptyRel);
+EmptyRel:  and (EmptyRel);
+EmptyRel:  or (EmptyRel);
+EmptyRel:  not (EmptyRel);
+EmptyRel:  strconcat (EmptyRel);
+EmptyRel:  seqty1 (EmptyRel);
+EmptyRel:  all (EmptyRel);
+
+
+EmptyRel:  roots_ (element (Frag, EmptyRel, Rel));
+EmptyRel:  roots_ (element (Frag, EmptyRel, EmptyRel));
+EmptyRel:  roots_ (attribute (EmptyRel, Rel));
+EmptyRel:  roots_ (attribute (Rel, EmptyRel));
+EmptyRel:  roots_ (attribute (EmptyRel, EmptyRel));
+EmptyRel:  roots_ (textnode (EmptyRel));
+EmptyRel:  roots_ (comment (EmptyRel));
+EmptyRel:  roots_ (processi (EmptyRel));
+EmptyRel:  roots_ (merge_adjacent (Frag, EmptyRel));
 
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */

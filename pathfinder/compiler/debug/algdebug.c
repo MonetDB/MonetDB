@@ -87,6 +87,10 @@ char *a_id[]  = {
     , [aop_merge_adjacent]   = "merge-adjacent-text-nodes"
     , [aop_seqty1]           = "SEQTY1"
     , [aop_all]              = "ALL"
+    , [aop_roots]            = "ROOTS"
+    , [aop_fragment]         = "FRAGs"
+    , [aop_frag_union]       = "FRAG_UNION"
+    , [aop_empty_frag]       = "EMPTY_FRAG"
 };
 
 /** string representation of algebra atomic types */
@@ -166,6 +170,10 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         , [aop_merge_adjacent] = "grey"
         , [aop_seqty1]         = "grey"
         , [aop_all]            = "grey"
+        , [aop_roots]          = "grey"
+        , [aop_fragment]       = "grey"
+        , [aop_frag_union]     = "grey"
+        , [aop_empty_frag]     = "grey"
     };
 
     n->node_id = node_id;
@@ -433,6 +441,10 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         case aop_processi:
         case aop_concat:
         case aop_merge_adjacent:
+        case aop_roots:
+        case aop_fragment:
+        case aop_frag_union:
+        case aop_empty_frag:
             PFarray_printf (dot, "%s", a_id[n->kind]);
             break;
     }
@@ -649,6 +661,10 @@ alg_pretty (PFalg_op_t *n)
         case aop_processi:
         case aop_concat:
         case aop_merge_adjacent:
+        case aop_roots:
+        case aop_fragment:
+        case aop_frag_union:
+        case aop_empty_frag:
             break;
 
     }

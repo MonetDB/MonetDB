@@ -106,6 +106,7 @@ SEL                    {return SEL;}
 TYPE                   {return TYPE;}
 TBL                    {BEGIN(ATTMODE); return TBL;}
 ELEM                   {return ELEM;}
+TEXT                   {return TEXT;}
 REL                    {BEGIN(RELMODE); return REL;}
 SUM                    {return SUM;}
 COUNT                  {return COUNT;}
@@ -115,7 +116,8 @@ CINT                   {return CINT;}
 CSTR                   {return CSTR;}
 CDEC                   {return CDEC;}
 CDBL                   {return CDBL;}
-TEXT                   {return TEXT;}
+SEQTY1                 {return SEQTY1;}
+ALL                    {return ALL;}
 ![01]                  {/* representation of boolean values */
                         /* Delete ! character. */
                         s = PFstrndup(hsktext + 1, hskleng - 1);

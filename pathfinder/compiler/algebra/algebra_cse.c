@@ -64,6 +64,10 @@ static PFalg_op_t * find_count (PFalg_op_t *new);
 static PFalg_op_t * find_distinct (PFalg_op_t *new);
 static PFalg_op_t * find_strconcat (PFalg_op_t *new);
 static PFalg_op_t * find_merge_adjacent (PFalg_op_t *new);
+static PFalg_op_t * find_roots (PFalg_op_t *new);
+static PFalg_op_t * find_fragment (PFalg_op_t *new);
+static PFalg_op_t * find_frag_union (PFalg_op_t *new);
+static PFalg_op_t * find_empty_frag (PFalg_op_t *new);
 
 static bool tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b);
 
@@ -1049,6 +1053,73 @@ find_boolean_grouping (PFalg_op_t *new)
 
 
 /**
+ * Check whether the roots expression @ new already exists in the
+ * array of existing expressions. It must have the same child node.
+ * We can use find_distinct () for this pupose, it offers the
+ * required functionality.
+ */
+static PFalg_op_t * find_roots (PFalg_op_t *new)
+{
+    return find_distinct (new);
+}
+
+
+/**
+ * Check whether the fragment expression @ new already exists in the
+ * array of existing expressions. It must have the same child node.
+ * We can use find_distinct () for this pupose, it offers the
+ * required functionality.
+ */
+static PFalg_op_t * find_fragment (PFalg_op_t *new)
+{
+    return find_distinct (new);
+}
+
+
+/**
+ * In case of a fragment union operator, we just have to make sure
+ * that @ new has the same two children as any other union operator
+ * in the array of existing operators.
+ * The find_disjunion () routine offers the required functionality.
+ */
+static PFalg_op_t * find_frag_union (PFalg_op_t *new)
+{
+    return find_disjunion (new);
+}
+
+
+/**
+ * Check whether an empty fragment has already been created. If so,
+ * return the existing one.
+ */
+static PFalg_op_t * find_empty_frag (PFalg_op_t *new)
+{
+    unsigned int subex_idx;
+
+    assert (new);
+
+    /* search for empty fragment in the array of existing operators */
+    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
+
+        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+
+        if (old->kind != aop_empty_frag)
+            continue;
+
+        return old;
+    }
+
+    /*
+     * the empty fragment has not yet been created, so add it to the
+     * array of existing subexpressions
+     */
+    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+
+    return new;
+}
+
+
+/**
  *
  */
 PFalg_op_t *
@@ -1143,6 +1214,18 @@ find_subexp (PFalg_op_t *new)
         case aop_seqty1:
         case aop_all:
             return find_boolean_grouping (new);
+
+        case aop_roots:
+	    return find_roots (new);
+
+        case aop_fragment:
+	    return find_fragment (new);
+
+        case aop_frag_union:
+	    return find_frag_union (new);
+
+        case aop_empty_frag:
+	    return find_empty_frag (new);
 
     }
 
