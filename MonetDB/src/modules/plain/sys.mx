@@ -1293,6 +1293,8 @@ int CMDprint_table(BAT* b, ...) {
         va_list ap;
 
         va_start(ap,b);
+	if (!b)
+		return GDK_FAIL;
         do {
                 piv[nbats++] = b;
         } while((b = va_arg(ap, BAT*)) != NULL);
