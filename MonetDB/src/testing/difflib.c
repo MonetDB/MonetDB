@@ -262,11 +262,11 @@ int lw_diff2wc_diff (int doChar, char *lw_diff_fn, char *wc_diff_fn)
       SYSTEM(command);
 
       sprintf(command,
-              "%s -a -d -u%i %s.cp %s.cp > %s",
+              "%s -a -d -U%d %s.cp %s.cp > %s",
               DIFF,MAX(l[0],l[1]),fn[0],fn[1],pipe_fn);
 #else
       sprintf(command,
-              "%s -a -d -u%i %s %s > %s",
+              "%s -a -d -U%d %s %s > %s",
               DIFF,MAX(l[0],l[1]),fn[0],fn[1],pipe_fn);
 #endif
 
