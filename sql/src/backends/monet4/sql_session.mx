@@ -1491,7 +1491,7 @@ int mvc_export_default( mvc *m, stream *s )
 
 int mvc_export_result( mvc *m, stream *s, int res_id )
 {
-	int i, ok = 1;
+	int i, ok = 1, count;
 	res_table *t = find_export_table(m, res_id);
 
 	if (!s)
@@ -1537,7 +1537,6 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 	if (ok) ok = (stream_write(s, " # type\n", 8, 1) == 1);
 
 	if (ok) ok = (stream_write(s, "# ", 2, 1) == 1);
-	int count;
 	for (i = 0; i < t->nr_cols && ok; i++) {
 		res_col *c = t->cols+i;
 
@@ -1568,6 +1567,12 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 			count = 1;
 			count += c->type->digits ? c->type->digits : 19;
 			ok = (stream_printf(s, SZFMT, count) >= 0);
+		} else if (strcmp(c->type->type->sqlname, "real") == 0) {
+			/* [sign]+digit+period+[max 6 digits]+E+[sign]+[max 2 digits] */
+			ok = (stream_printf(s, SZFMT, 13) >= 0);
+		} else if (strcmp(c->type->type->sqlname, "double") == 0) {
+			/* [sign]+digit+period+[max 14 digits]+E+[sign]+[max 3 digits] */
+			ok = (stream_printf(s, SZFMT, 22) >= 0);
 		} else if (strcmp(c->type->type->sqlname, "decimal") == 0) {
 			count = 1 + c->type->digits;
 			if (c->type->scale > 0) count += 1;
