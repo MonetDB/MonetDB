@@ -24,6 +24,12 @@ def msc_assignment(fd, var, values, msc ):
     o = o + " " + v
   fd.write("%s = %s\n" % (var,o) )
 
+def msc_cflags(fd, var, values, msc ):
+  o = ""
+  for v in values:
+    o = o + " " + v
+  fd.write("CFLAGS = $(CFLAGS) %s\n" % (o) )
+
 def msc_extra_dist(fd, var, values, msc ):
   for i in values:
     msc['EXTRA_DIST'].append(i)
@@ -32,7 +38,7 @@ def msc_libdir(fd, var, values, msc ):
   msc['LIBDIR'] = values[0]
 
 def msc_mtsafe(fd, var, values, msc ):
-  fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
+  fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
 def msc_space_sep_list(l):
   res = ""
@@ -97,7 +103,7 @@ def msc_binary(fd, var, binmap, msc ):
     binname = name
   msc['BINS'].append(binname)
   if (binmap.has_key('MTSAFE')):
-    fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
+    fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
   if (binmap.has_key("LIBS")):
     ldadd = binname+"_LIBS =" 
@@ -126,9 +132,9 @@ def msc_binary(fd, var, binmap, msc ):
     fd.write(binname+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
     msc['BUILT_SOURCES'].append("$(" + name + "_SCRIPTS)")
   for t,d in binmap["DEPS"].items():
-    fd.write( regsub.sub("\.o", ".obj", t) + ":" )
+    fd.write( regsub.gsub("\.o", ".obj", t) + ":" )
     for f in d:
-      fd.write(" " + regsub.sub("\.o", ".obj", f) )
+      fd.write(" " + regsub.gsub("\.o", ".obj", f) )
     fd.write("\n")
 
   if (binmap.has_key('HEADERS')):
@@ -155,7 +161,7 @@ def msc_bins(fd, var, binsmap, msc ):
   if (binsmap.has_key("NAME")):
     name = binsmap["NAME"][0] # use first name given
   if (binsmap.has_key('MTSAFE')):
-    fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
+    fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
   for binsrc in binsmap['SOURCES']:
     bin,ext = string.split(binsrc,".", 1) 	
     if (ext not in automake_ext):
@@ -191,9 +197,9 @@ def msc_bins(fd, var, binsmap, msc ):
     fd.write(name+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
     msc['BUILT_SOURCES'].append("$(" + name + "_SCRIPTS)")
   for t,d in binsmap["DEPS"].items():
-    fd.write( regsub.sub("\.o", ".obj", t) + ":" )
+    fd.write( regsub.gsub("\.o", ".obj", t) + ":" )
     for f in d:
-      fd.write(" " + regsub.sub("\.o", ".obj", f) )
+      fd.write(" " + regsub.gsub("\.o", ".obj", f) )
     fd.write("\n")
 
   if (binsmap.has_key('HEADERS')):
@@ -229,7 +235,7 @@ def msc_library(fd, var, libmap, msc ):
     libname = name
   msc['LIBS'].append(sep+libname)
   if (libmap.has_key('MTSAFE')):
-    fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
+    fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
   if (libmap.has_key("LIBS")):
     ldadd = libname+"_LIBS =" 
@@ -263,9 +269,9 @@ def msc_library(fd, var, libmap, msc ):
     fd.write(libname+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
     msc['BUILT_SOURCES'].append("$(" + name + "_SCRIPTS)")
   for t,d in libmap["DEPS"].items():
-    fd.write( regsub.sub("\.o", ".obj", t) + ":" )
+    fd.write( regsub.gsub("\.o", ".obj", t) + ":" )
     for f in d:
-      fd.write(" " + regsub.sub("\.o", ".obj", f) )
+      fd.write(" " + regsub.gsub("\.o", ".obj", f) )
     fd.write("\n")
 
   if (libmap.has_key('HEADERS')):
@@ -295,7 +301,7 @@ def msc_libs(fd, var, libsmap, msc ):
   if (libsmap.has_key("NAME")):
      name = libsmap["NAME"][0] # use first name given
   if (libsmap.has_key('MTSAFE')):
-    fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
+    fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
   for libsrc in libsmap['SOURCES']:
     lib,ext = string.split(libsrc,".", 1) 	
@@ -332,9 +338,9 @@ def msc_libs(fd, var, libsmap, msc ):
     fd.write(name+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
     msc['BUILT_SOURCES'].append("$(" + name + "_SCRIPTS)")
   for t,d in libsmap["DEPS"].items():
-    fd.write( regsub.sub("\.o", ".obj", t) + ":" )
+    fd.write( regsub.gsub("\.o", ".obj", t) + ":" )
     for f in d:
-      fd.write(" " + regsub.sub("\.o", ".obj", f) )
+      fd.write(" " + regsub.gsub("\.o", ".obj", f) )
     fd.write("\n")
 
   if (libsmap.has_key('HEADERS')):
@@ -354,13 +360,13 @@ def msc_includes(fd, var, values, tree):
 output_funcs = { 'SUBDIRS': msc_subdirs, 
 	 	 'EXTRA_DIST': msc_extra_dist,
 	 	 'LIBDIR': msc_libdir,
-		 'MODS' : msc_libs,
 		 'LIBS' : msc_libs,
-		 'MOD' : msc_library,
 		 'LIB' : msc_library,
 		 'BINS' : msc_bins,
 		 'BIN' : msc_binary,
- 		 'INCLUDES' : msc_includes
+ 		 'INCLUDES' : msc_includes,
+		 'MTSAFE' : msc_mtsafe,
+		 'CFLAGS' : msc_cflags
 		}
 
 
@@ -368,7 +374,6 @@ def output(tree, cwd, topdir):
   fd = open(cwd+os.sep+'Makefile.msc',"w")
 
   fd.write('''
-## Makefile for building the GLib, gmodule and gthread dlls with Microsoft C
 ## Use: nmake -f makefile.msc install
 
 # Change this to wherever you want to install the DLLs. This directory
@@ -395,7 +400,8 @@ INSTALL = copy
 MKDIR = mkdir
 CD = cd
 
-CFLAGS = -I. -DHAVE_CONFIG_H
+CFLAGS = -I. -I$(TOPDIR) -DHAVE_CONFIG_H
+
 ''')
 
   msc = {}
@@ -406,12 +412,26 @@ CFLAGS = -I. -DHAVE_CONFIG_H
   msc['HDRS'] = []
   msc['INSTALL'] = []
   msc['LIBDIR'] = 'lib'
+  
+  prefix = os.path.commonprefix([cwd,topdir])
+  d = cwd[len(prefix):]
+  reldir = "" 
+  if (len(d) > 1 and d[0] == os.sep):
+    d = d[1:]
+    d,t = os.path.split(d)  
+    reldir = ".."
+    while(len(d) > 0):
+	reldir = reldir + os.sep + ".."
+	d,t = os.path.split(d)  
+
+  fd.write("TOPDIR = %s\n" % regsub.gsub("/", "\\", reldir))
+  fd.write("!INCLUDE $(TOPDIR)\\rules.msc\n")
   if ("SUBDIRS" in tree.keys()):
-     fd.write("all: all-recursive all-msc\n")
+     fd.write("all: all-msc all-recursive\n")
      fd.write("install: install-recursive install-msc\n")
   else:
      fd.write("all: all-msc\n")
-     fd.write("all: install-msc\n")
+     fd.write("install: install-msc\n")
 	 
   for i in tree.keys():
     j = string.upper(i[0:3])
@@ -434,7 +454,7 @@ CFLAGS = -I. -DHAVE_CONFIG_H
   #fd.write("\n")
 
   fd.write("all-msc:")
-  if (topdir == os.getcwd()):
+  if (topdir == cwd):
     fd.write(" config.h")
   if (len(msc['LIBS']) > 0):
     for v in msc['LIBS']:
@@ -446,7 +466,7 @@ CFLAGS = -I. -DHAVE_CONFIG_H
 
   fd.write("\n")
 
-  if (topdir == os.getcwd()):
+  if (topdir == cwd):
       fd.write("config.h: winconfig.h\n\t$(INSTALL) winconfig.h config.h\n")
 
   fd.write("install-msc: install-exec install-data\n")

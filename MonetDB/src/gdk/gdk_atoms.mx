@@ -1348,7 +1348,6 @@ int strHeapCheck(Heap *hp, HeapRepair *hr) {
 @-
 Convert an "" separated string to a GDK string value.
 @c
-#include <string.h>
 
 int strFromStr(char *src, int *len, char** dst) {
 	str p, start = NULL, cur = src;

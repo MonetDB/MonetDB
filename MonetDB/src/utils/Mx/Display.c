@@ -146,7 +146,7 @@ char *file;
     /* find out the full name in 'full', the basename in 's', end in 't' */ 
     strcpy(full, file);
     for(s=full; s[1]; s++);
-    while(s>=full && *s!='/') s--;
+    while(s>=full && *s!=DIR_SEP) s--;
     for(t=++s; *t; t++) 
         if (t[0] == '.' && t[1] == 'm' && t[2] == 'x' && !t[3]) break; 
     *t = 0;
@@ -181,8 +181,8 @@ char *file;
     } else if WWWMODE {
 	    extern char* outputdir;
     	    /* install the extra HTML filenames */
-	    sprintf(filename_index, "%s/%s", outputdir, s);
-	    sprintf(filename_body, "%s/%s", outputdir, s);
+	    sprintf(filename_index, "%s%c%s", outputdir, DIR_SEP, s);
+	    sprintf(filename_body, "%s%c%s", outputdir, DIR_SEP, s);
 
 	    strcat(filename_index, ".index.html");
 	    ofile_index = fopen(filename_index, "w+");

@@ -1,12 +1,16 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+/* not available on win32, not needed on Linux, test on Sun/Irix/Aix
 #include <unistd.h>
+*/
 #include "Mx.h"
 #include "MxFcnDef.h"
 #include <sys/types.h>
 #include <sys/stat.h> 
+/* not available on win32, not needed on Linux, test on Sun/Irix/Aix
 #include <sys/time.h>
+*/
 #ifndef WIN32
 #include <utime.h>
 #endif
@@ -56,9 +60,9 @@ char *bname;
                                strlen(bname)+strlen(dir2ext(m))+16);
 	
 	if (strlen(dir2ext(m)) == 0)
-	     sprintf(fname, "%s/%s", outputdir, BaseName(s));
+	     sprintf(fname, "%s%c%s", outputdir, DIR_SEP, BaseName(s));
 	else
-	     sprintf(fname, "%s/%s.%s", outputdir, BaseName(s), dir2ext(m));
+	     sprintf(fname, "%s%c%s.%s", outputdir, DIR_SEP, BaseName(s), dir2ext(m));
 
 	for( f= files; f < files + nfile; f++ ){
 		if( strcmp(f->f_name, fname) == 0 ){
@@ -71,10 +75,10 @@ char *bname;
 	f->f_name= fname;
 
 	f->f_str = fname+strlen(fname);;
-	while(f->f_str>fname && f->f_str[-1]!='/') f->f_str--;
+	while(f->f_str>fname && f->f_str[-1]!=DIR_SEP) f->f_str--;
 
         f->f_tmp = (char *)malloc(strlen(outputdir)+strlen(bname)+strlen(dir2ext(m))+17); 
-        sprintf(f->f_tmp,"%s/%s.%s", outputdir,TempName(s), dir2ext(m));
+        sprintf(f->f_tmp,"%s%c%s.%s", outputdir,DIR_SEP,TempName(s), dir2ext(m));
        
 	f->f_mode= 0;
 
@@ -103,8 +107,8 @@ char*	name;
        @f blah/blah indicates a relative path,
        create sub-directories if necessary
     */
-    if(name[0]=='/' || (name[0]=='.' && name[1]=='/'))
-    	name = (strrchr(name, '/')? strrchr(name, '/') + 1: name);
+    if(name[0]==DIR_SEP || (name[0]=='.' && name[1]==DIR_SEP))
+    	name = (strrchr(name, DIR_SEP)? strrchr(name, DIR_SEP) + 1: name);
     strcpy(bname,name);
     return bname;
 }
@@ -124,7 +128,7 @@ char *	name;
 {
     	char *p,*r = p = bname+strlen(BaseName(name));
 	while(--r >= bname)
-		if (*r == '/') break;
+		if (*r == DIR_SEP) break;
 	for(r++, p[1]=0; p > r; p--) 
 		p[0] = p[-1]; 
 	*r = '.';
@@ -137,15 +141,15 @@ char *mode;
 {
     char *p=fname; 
     char *tmp;
-    if(*p=='/') p++;
-    while((tmp=strchr(p,'/'))!=NULL){
+    if(*p==DIR_SEP) p++;
+    while((tmp=strchr(p,DIR_SEP))!=NULL){
 	struct stat buf;	
         *tmp='\0';
         if(stat(fname,&buf)==-1 || !(buf.st_mode&S_IFDIR))
 		if (mkdir(fname,S_IRWXU)==-1)
 			Fatal("fmustopen:","Can't create directory %s\n",fname);
 	p=tmp+1;
-	*tmp='/';
+	*tmp=DIR_SEP;
     }
     return fopen(fname,mode);
 
@@ -249,8 +253,7 @@ void UpdateFiles()
 		/* now use the body file as the output file */ 
 		unlink(filename_index);
 		unlink(f->f_tmp);
-		link(filename_body, f->f_tmp);
-		unlink(filename_body);
+		rename(filename_body, f->f_tmp);
 	    }
         }
 	status = CompareFiles(f->f_tmp, f->f_name);
@@ -286,7 +289,7 @@ char *	name;
 	if( (ifile= fopen(name, "r")) == 0 ) 
 		Fatal("ReadFile", "Can't process %s", name);
 	p = (inputdir = strdup(name)) + strlen(name);
-	while(--p >= inputdir && *p != '/');
+	while(--p >= inputdir && *p != DIR_SEP);
 	p[1] = 0;
 	mx_file= name;
 	mx_line= 1;
@@ -342,8 +345,8 @@ char *NextLine()
 	        while(isspace(*s)) s++;
 	        for(t=s; *t && !isspace(*t); t++);
 		*path = *t = 0;
-		if (*inputdir && *s != '/') { /* absolute path */
-		    sprintf(path, "%s/", inputdir);
+		if (*inputdir && *s != DIR_SEP) { /* absolute path */
+		    sprintf(path, "%s%c", inputdir, DIR_SEP);
 	        }
 		strcat(path, s);
 		fptop[1] = fopen(path, "r");

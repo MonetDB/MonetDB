@@ -379,6 +379,10 @@ that you might well find very useful.
 #include "monet_parse.h"
 #include "monet_deparse.h"
 #include "monet_queue.h"
+
+#ifdef HAVE_SYS_TIMES_H
+# include <sys/times.h>
+#endif
  
 #define PARAM(x)        (argv+x)
 #define RETVAL          (argv)

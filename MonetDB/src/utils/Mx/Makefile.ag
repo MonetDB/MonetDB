@@ -10,10 +10,12 @@ bin_Mx = {
 }
 
 
-bin_prefixMxFile = {
-	SOURCES = prefixMxFile.c disclaimer.c disclaimer.h
-}
+#bin_prefixMxFile = {
+#	SOURCES = prefixMxFile.c disclaimer.c disclaimer.h
+#}
+#
+#BINS = {
+#	SOURCES = idxmx.c epsffit.c 
+#}
 
-BINS = {
-	SOURCES = idxmx.c epsffit.c 
-}
+EXTRA_DIST = prefixMxFile.c disclaimer.c disclaimer.h idxmx.c epsffit.c 

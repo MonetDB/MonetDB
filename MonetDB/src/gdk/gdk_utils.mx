@@ -92,8 +92,9 @@ char	*GDKenvironName[GDKPROP] = {
 # endif
 #endif
 
-#include <pwd.h>
-#include <unistd.h> 
+#ifdef HAVE_PWD_H
+# include <pwd.h>
+#endif
 
 #ifdef __CYGWIN32__
 extern int gethostname(char *s, int len);

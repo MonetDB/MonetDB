@@ -636,7 +636,7 @@ mathon:				math=1; ofile_puts("<i>");
 			} else {
 				char cmd[512], file[512];
 				FILE *fp;
-                                sprintf(file, "%s/%s",outputdir,str);
+                                sprintf(file, "%s%c%s",outputdir,DIR_SEP,str);
                                 p4=strchr(file+strlen(outputdir),'.');
                                 if (p4) *p4=0;
 				strcat(file, ".gif");

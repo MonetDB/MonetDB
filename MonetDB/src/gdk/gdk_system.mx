@@ -7,14 +7,23 @@ functions.
 
 @- Pthread Definitions
 @h
-#ifndef _GDK_PTHREAD_H_
-#define _GDK_PTHREAD_H_
+#ifndef _GDK_SYSTEM_H_
+#define _GDK_SYSTEM_H_
 
 #include <config.h>
 
-#include <malloc.h>     /* malloc, free etc. */
-#include <sys/mman.h>     
-#include <unistd.h>
+#ifdef HAVE_MALLOC_H
+# include <malloc.h>	/* mallopt, mallinfo, and  malloc, free etc. */
+#endif
+
+#ifdef HAVE_SYS_MMAN_H
+# include <sys/mman.h>
+#endif
+
+#if HAVE_UNISTD_H
+# include <unistd.h>     /* io functions */
+#endif
+
 #include <stdio.h>
 
 #ifndef MAP_NORESERVE
@@ -63,11 +72,13 @@ extern struct mallinfo mallinfo();
 @- pthreads Includes and Definitions
 @h
 #include <sys/types.h>
-#include <sys/signal.h>
+#ifdef HAVE_SYS_SIGNAL_H
+# include <sys/signal.h>
+#endif
 
 #ifdef HAVE_PTHREAD_H
-#include <pthread.h>
-#include <semaphore.h>
+# include <pthread.h>
+# include <semaphore.h>
 #endif
 
 typedef void    *MT_Lock;
@@ -260,7 +271,7 @@ extern int _MT_pagesize;
 #define MT_pagesize()	_MT_pagesize
 #define MT_npages()	_MT_npages
 
-#endif /*_GDK_PTHREAD_H_*/
+#endif /*_GDK_SYSTEM_H_*/
 
 @- Mthreads Routine implemtations
 @c
@@ -291,10 +302,14 @@ void MT_init() {
                 _MT_npages = sysconf(_SC_PHYS_PAGES);
 #else
         {
+#ifdef HAVE_RLIMIT
+#ifdef HAVE_SYS_RESOURCE_H
                 #include <sys/resource.h>
+#endif
                 struct rlimit rl;
                 getrlimit(RLIMIT_RSS, &rl);
                 _MT_npages = rl.rlim_cur / _MT_pagesize;
+#endif
         }
 #endif
 	

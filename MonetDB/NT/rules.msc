@@ -1,0 +1,27 @@
+
+MEL=$(TOPDIR)\src\mel\mel
+MX=$(TOPDIR)\src\utils\Mx\Mx
+
+.mx.h:
+	$(MX) $(MXFLAGS) -x h $<
+
+.mx.c:
+	$(MX) $(MXFLAGS) -x c $<
+
+.mx.cc:
+	$(MX) $(MXFLAGS) -x C $<
+
+.mx.m:
+	$(MX) $(MXFLAGS) -x m $<
+
+.mx.mil:
+	$(MX) $(MXFLAGS) -x mil $<
+
+.m.proto.h:
+	$(MEL) $(INCLUDES) -o $@ -proto $<
+
+.m.glue.c:
+	$(MEL) $(INCLUDES) -o $@ -glue $<
+
+.SUFFIXES: .m .mx .proto.h .mil .glue.c
+.PRECIOUS: .m 

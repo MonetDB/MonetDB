@@ -286,31 +286,51 @@ char *alloca ();
 # endif
 #endif
 
-#include <unistd.h>     /* io functions */
 #include <ctype.h>      /* isspace etc. */
 #include <string.h>     /* strcmp, index etc. */
 #include <memory.h>     /* memcpy */
 #include <stdarg.h>     /* va_alist.. */
-#include <dirent.h>     /* directories */
+
+#if HAVE_DIRENT_H
+# include <dirent.h>
+# define NAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define NAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
+
 #include <assert.h>     
 
 #include "gdk_system.h"	
 
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>	/* mallopt, mallinfo */
+#include <sys/types.h> 
+#ifdef HAVE_SYS_FILE_H
+# include <sys/file.h> 
+#endif
+#ifdef HAVE_SYS_PARAM_H
+# include <sys/param.h>  /* MAXPATHLEN */
 #endif
 
-#include <sys/file.h> 
-#include <sys/types.h> 
-#include <sys/times.h> 
-#include <sys/param.h> 
 #undef BUS_OBJERR
 #include <sys/stat.h>
-#include <sys/mman.h>
+
 #include <errno.h> 
-#include <netinet/in.h> 
-#include <netdb.h> 
-#include <sys/wait.h> 
+#ifdef HAVE_NETDB_H
+# include <netinet/in.h> 
+# include <netdb.h> 
+#endif
+#ifdef HAVE_SYS_WAIT_H
+# include <sys/wait.h> 
+#endif
 
 #undef MIN
 #undef MAX

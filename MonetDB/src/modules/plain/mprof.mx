@@ -460,6 +460,14 @@ The implementation is relatively straight forward.
 @+ Tms Atom Implementation
 Fixed size (16 bytes, aligned on 8 bytes).
 @h
+#ifndef MPROF_H
+#define MPROF_H
+
+#include <gdk.h>
+
+#ifdef HAVE_SYS_TIMES_H
+# include <sys/times.h>
+#endif
 
 typedef struct tms Tms;	
 typedef struct mallinfo Mallinfo;	
@@ -475,6 +483,8 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+#endif /*MPROF_H*/
 @-
 The inspections routines are guarded against null value.
 

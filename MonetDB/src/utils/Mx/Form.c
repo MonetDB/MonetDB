@@ -1,5 +1,7 @@
 #include	<stdio.h>
+/* not available on win32, not needed on linux, test on Sun/Irix/aix
 #include 	<pwd.h>
+  */
 #include 	<ctype.h>
 #include	"Mx.h"
 #include	"MxFcnDef.h"

@@ -424,7 +424,6 @@ This function is called once and during the shutdown of the
 server. Since shutdown may be issued from any thread (dangerous)
 it may lead to interference in a parallel session.
 @c
-#include <dirent.h>
 
 void BBPexit()
 {

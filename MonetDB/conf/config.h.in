@@ -94,10 +94,10 @@
 /* Define this if the compiler has bool type defined */
 #undef HAVE_BOOL
 
-/* Define this if you have the bz library */
+/* Define this if you have the readline library */
 #undef HAVE_LIBREADLINE
 
-/* Define this if you have sys_errlist in <stdio.h> */
+/* Define this if you don't have sys_errlist in <stdio.h> */
 #undef NEED_SYS_ERRLIST
 
 /* Define this if you have ctime_r(time_t*,char *buf,size_t s) */
@@ -181,8 +181,14 @@
 /* Define if you have the <ndir.h> header file.  */
 #undef HAVE_NDIR_H
 
+/* Define if you have the <netdb.h> header file.  */
+#undef HAVE_NETDB_H
+
 /* Define if you have the <pthread.h> header file.  */
 #undef HAVE_PTHREAD_H
+
+/* Define if you have the <pwd.h> header file.  */
+#undef HAVE_PWD_H
 
 /* Define if you have the <rlimit.h> header file.  */
 #undef HAVE_RLIMIT_H
@@ -193,14 +199,29 @@
 /* Define if you have the <sys/file.h> header file.  */
 #undef HAVE_SYS_FILE_H
 
+/* Define if you have the <sys/mman.h> header file.  */
+#undef HAVE_SYS_MMAN_H
+
 /* Define if you have the <sys/ndir.h> header file.  */
 #undef HAVE_SYS_NDIR_H
+
+/* Define if you have the <sys/param.h> header file.  */
+#undef HAVE_SYS_PARAM_H
 
 /* Define if you have the <sys/resource.h> header file.  */
 #undef HAVE_SYS_RESOURCE_H
 
+/* Define if you have the <sys/signal.h> header file.  */
+#undef HAVE_SYS_SIGNAL_H
+
 /* Define if you have the <sys/time.h> header file.  */
 #undef HAVE_SYS_TIME_H
+
+/* Define if you have the <sys/times.h> header file.  */
+#undef HAVE_SYS_TIMES_H
+
+/* Define if you have the <sys/utime.h> header file.  */
+#undef HAVE_SYS_UTIME_H
 
 /* Define if you have the <thread.h> header file.  */
 #undef HAVE_THREAD_H

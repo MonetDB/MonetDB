@@ -1,6 +1,18 @@
 /* Debug control
  */
 
+#include <config.h>
+
+#ifdef WIN32
+# include <io.h>
+# include <direct.h>
+# define mkdir(path,op) _mkdir(path)
+#endif
+
+#ifndef DIR_SEP
+#define DIR_SEP '/'
+#endif
+
 #define	DB_DEF	0x10
 #define	DB_TEXT	0x20
 #define	DB_CODE	0x40
@@ -126,7 +138,6 @@ extern	FILE *	ofile_body;
 extern	FILE *	ofile_index;
 extern	FILE *	ifile;
 #define	M_FILES	128
-#define TMPDIR  "./"
 struct file_s {
 	char *	f_name;
 	char *  f_tmp;

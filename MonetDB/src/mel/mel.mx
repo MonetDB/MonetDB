@@ -199,7 +199,10 @@ extern List<char> *dirs;
 #include "mel_tab.h"
 #include <iostream.h>
 #include <fstream.h>
+
+#if HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 #include "use.h"
 #include "link.h"
@@ -718,7 +721,7 @@ char* get_signature(char* fcn){
 #include "mel.h"
 #include <stdio.h>
 #include <string.h>
-#ifndef WIN32
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 #include <iostream.h>
