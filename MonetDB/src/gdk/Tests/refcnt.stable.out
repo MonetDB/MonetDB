@@ -31,7 +31,7 @@ Try: modules;                - for other modules.
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| group	  #
 #---------------------------------------------------------#
-[ "monet_envirenment",	  0,	  "load", "tran", 1	  ]
+[ "monet_environment",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
@@ -58,7 +58,7 @@ Try: modules;                - for other modules.
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| group	  #
 #---------------------------------------------------------#
-[ "monet_envirenment",	  0,	  "load", "tran", 1	  ]
+[ "monet_environment",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
@@ -88,7 +88,7 @@ Try: modules;                - for other modules.
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| group	  #
 #---------------------------------------------------------#
-[ "monet_envirenment",	  0,	  "load", "tran", 1	  ]
+[ "monet_environment",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
@@ -117,7 +117,7 @@ Try: modules;                - for other modules.
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| group	  #
 #---------------------------------------------------------#
-[ "monet_envirenment",	  0,	  "load", "tran", 1	  ]
+[ "monet_environment",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
@@ -150,7 +150,7 @@ Try: modules;                - for other modules.
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| group	  #
 #---------------------------------------------------------#
-[ "monet_envirenment",	  0,	  "load", "tran", 1	  ]
+[ "monet_environment",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_fcn",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_imp",	  0,	  "load", "tran", 1	  ]
 [ "monet_fcn_tpe",	  0,	  "load", "tran", 1	  ]
