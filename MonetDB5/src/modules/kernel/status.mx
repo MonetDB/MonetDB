@@ -68,7 +68,7 @@ C - in use as MIL context buffer
    (i.e. anonymous virtual memory)
 c - free (last usage was M)
 \end{verbatim}
-On Linux, the malloc library appears to be using anonymous virtual memory, which goes unetected.
+On Linux, the malloc library appears to be using anonymous virtual memory, which goes undetected.
 If you want to see all your memory in the map, lower the gdk\_mmap threshold in MonetDB5.conf to a
 low value (say 64KB).
 @-

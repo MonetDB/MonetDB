@@ -23,7 +23,7 @@ LIBS = {
 }
 doc_kernel = {
 	DIR = pkgdatadir/docs/modules/kernel
-	SOURCES = kernel_init.mx \
+	SOURCES = \
 		calc.mx bat.mx algebra.mx status.mx unix.mx \
 		mapi.mx mmath.mx lock.mx alarm.mx \
 		batcalc.mx group.mx aggrX3.mx 
@@ -32,7 +32,7 @@ doc_kernel = {
 scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = calc.mx bat.mx algebra.mx status.mx unix.mx \
-		mapi.mx kernel_init.mx mmath.mx lock.mx alarm.mx \
+		mapi.mx mmath.mx lock.mx alarm.mx \
 		batcalc.mx group.mx aggrX3.mx 
 # pcl.mx
 }

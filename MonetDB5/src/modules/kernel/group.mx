@@ -1,3 +1,20 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2004 CWI.
+@' All Rights Reserved.
+
 @f group
 @a M.L. Kersten, P. Boncz, A.P. de Vries
 @v 2.3
@@ -81,7 +98,7 @@ comment "Produces a new BAT with identical head
 
 
 command group(attr:bat[:any$2,:any$1] )
-	(histo:bat[:any$1,:oid], grp:bat[:any$2,:oid]) 
+	(histo:bat[:any$1,:int], grp:bat[:any$2,:oid]) 
 address GRPgroup
 comment "Cross tabulation group initialization.
          Returned head values are identical as 
@@ -92,7 +109,7 @@ command group(attr:bat[:any$2,:any$1] )
 	:bat[:any$2,:oid] = GRPgroup2
 
 command group(attr:bat[:any$2,:any$1], N:int, rng:int)
-	(histo:bat[:any$1,:oid],grp:bat[:any$2,:oid]) 
+	(histo:bat[:any$1,:int],grp:bat[:any$2,:oid]) 
 address GRPgroup_custom
 comment "Cross tabulation group initialization like 
 	 GRPgroup, but with user provided #bits in 
@@ -317,7 +334,7 @@ static bat build_hl(Heap* hp, bat histo, BAT *b) {
         		}
 		} else if (BATorder(h) == NULL) {
 			BBPreclaim(h);
-			return created;
+			return 0;
 		}
 	}
 	if (strncmp(BBPname(histo), "tmp_", 4) == 0) {
@@ -337,7 +354,7 @@ static bat build_hl(Heap* hp, bat histo, BAT *b) {
         	if (h->halign == 0) h->halign = OIDnew(1);
         	hl->alignment = h->halign;
         	b->hacctype = ACC_histolink;
-		BBPincref(histo,TRUE);
+		BBPincref(histo, TRUE);
 	} 
 	return created;
 }
@@ -349,7 +366,7 @@ CTbuild_hl(
    BAT*         b       /* IN: BAT with head-column. */
 ){
 	bat created = build_hl(hp, param?*param:0, b);
-        /* always retain
+        /* always retain the historgram
 	if (created) {
 		BBPunfix(created);
 	}
@@ -382,7 +399,7 @@ static bat check_hl(Heap* hp, BAT* b) {
 	} else {
 		GDKwarning("CTcheck_hl: histogram disappeared!");
 	}
-	destroy_hl(hp, b, histo);
+	/* destroy_hl(hp, b, histo); not in V5 */
 	return 0;
 }
 
@@ -391,12 +408,21 @@ CTcheck_hl(
    Heap*        hp,     /* put return BAT[oid,any] here. */
    BAT*         b       /* pointer to BAT[oid,any] record.*/
 ){
-        bat histo = check_hl(hp, b);
-        if (histo) {
-                BBPunfix(histo);
-                return GDK_SUCCEED;
-        }
-        return GDK_FAIL;
+	histolink *hl = (histolink*) hp->base;
+	BAT *h = NULL;
+	(void) b;
+
+	if (hl == 0 || hl->histogram == 0 || ABS(hl->histogram) >= BBPsize ||
+		BBP_logical(ABS(hl->histogram)) == NULL ||
+		(h=BBPdescriptor(hl->histogram)) == NULL)
+	{
+		GDKwarning("CTcheck_hl: histogram disappeared!");
+		return GDK_FAIL;
+	} else if (hl->alignment != h->halign) {
+		GDKwarning("CTcheck_hl: histogram was changed!");
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
 }
 void
 CTdestroy_hl(
@@ -429,7 +455,7 @@ CThistogram(
 		/* another accelerator already exists; leave it */
 		*h = BAThistogram(b);
 		return *h?GDK_SUCCEED:GDK_FAIL;
-	}
+	} 
 	if (b->tacctype == ACC_histolink) {
 		histo = check_hl(&b->taccelerator,b);
 	}
@@ -464,7 +490,7 @@ CTtunique(
 		histo = check_hl(&b->taccelerator,b);
 	}
 	if (histo == 0) {
-		if (b->tacctype) { 
+		if (b->tacctype) {
 			ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
 		}
 		histo = build_hl(&b->taccelerator, 0, BATmirror(b));
@@ -617,7 +643,7 @@ hash function and data size etc.;
 appropriate algorithm, i.e., with or without taking advantage of 
 an order of values in the parent groups;
 \item [physical properties:] Values \{standard and custom\}, 
-chosing between a fixed predefined and a custom hashmask. Custom
+choosing between a fixed predefined and a custom hashmask. Custom
 allows the user to determine the size of the hashmask (and indirectly 
 the estimated size of the result). The hashmask is $2^n - 1$ where $n$ 
 is given by the user, or 1023 otherwise, and the derived result
@@ -766,7 +792,7 @@ CTgroup_custom(
 	}
 	bn->tsorted = 0;
 	ALIGNsetH(bn, b);
-	CTbuild_hl(&bn->taccelerator, &histo->batCacheid, BATmirror(bn));
+	build_hl(&bn->taccelerator, histo->batCacheid, BATmirror(bn));
 	if (bn->taccelerator.base == NULL) {
 		BBPreclaim(bn);
 		return GDK_FAIL;

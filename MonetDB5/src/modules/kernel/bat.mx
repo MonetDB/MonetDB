@@ -14,12 +14,6 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f bat
 @v 2.0
@@ -621,7 +615,7 @@ then the fixed-size part of a BUN contains an integer byte-offset into
 the heap. String values themself are stored in this the X.hheap.
 \item[X.theap] similar to X.hheap, but for the tail column.
 \item[X.hacc]. On each column, you might create {\em persistent accelerator
-structures}. Monet has two builtin accelerators (index and hash), but they
+structures}. Monet has two built-in accelerators (index and hash), but they
 are normally constructed on the fly. They are transient. Only hash-tables
 you can be made persistent. User-defined accelerators are always persistent.
 Only one persistent accelerator can exist per head column. It is stored in
@@ -629,8 +623,8 @@ the X.hacc heap.
 \item[X.tacc] similar to X.hacc, but for the tail column.
 \end{description}
 
-Each of these heaps can be {\bf compressed} using the unix {\tt compress}
-utility forming a X.ext.Z file. Monet wil automatically decompress it
+Each of these heaps can be {\bf compressed} using the Unix {\tt compress}
+utility forming a X.ext.Z file. Monet will automatically decompress it
 upon load. Compressed heaps cannot be memory mapped.
 
 A final file present for each t in the BAT directory is:
@@ -1915,6 +1909,24 @@ str BKCbat_append_oidvoid_bat_wrap( int *r, int *bid, int *uid )
 extern ptr BATmin(BAT *b, ptr aggr);
 extern ptr BATmax(BAT *b, ptr aggr);
 
+static oid oid_max( BAT *i )
+{
+        oid o = 0;
+
+        if (BATcount(i))
+                o = *(oid*)BUNhead(i, BUNlast(i)-BUNsize(i));
+        if (!BAThordered(i)) {
+                BUN r,s;
+                int d;
+
+                BATloopFast(i, r, s, d) {
+                        oid v = *(oid*)BUNhead(i, r);
+                        if (v > o) o = v;
+                }
+        }
+        return o;
+}
+
 str BKCoid_bat_append_oid_bat_wrap( int *res, int *bid, int *uid )
 {
 	BUN r=0,s;
@@ -1923,12 +1935,14 @@ str BKCoid_bat_append_oid_bat_wrap( int *res, int *bid, int *uid )
 	@:getBATdescriptor(r,bid,i,append)@
 	@:getBATdescriptor(r,uid,u,append)@
 	
-	assert(i->htype == TYPE_oid && u->htype == TYPE_oid);
-	BATmax(BATmirror(i),&o);
-	o++;
-	BATloop(u, r, s){
-		oid h = *(oid*)BUNhead(u,r) + o;
-		BUNins(i, &h,  BUNtail(u,r));
+        assert(i->htype == TYPE_oid &&
+                (BATcount(u) == 0 || u->htype == TYPE_oid));
+
+        o = oid_max(i);
+        o++;
+        BATloop(u, r, s){
+                oid h = *(oid*)BUNhead(u,r) + o;
+                BUNins(i, &h,  BUNtail(u,r));
         }
 	*res = i->batCacheid;
 	BBPfix(i->batCacheid);
@@ -1942,7 +1956,7 @@ str BKCoid_bat_append_val_wrap( int *r, int *bid, ptr u)
 	@:getBATdescriptor(r,bid,i,append)@
 
 	assert(i->htype == TYPE_oid);
-	BATmax(BATmirror(i),&o);
+        o = oid_max(i);
 	o++;
 	@:derefStr(i,t,u)@
 	BUNins( i, (ptr) & o, u );

@@ -53,7 +53,6 @@ The first group of functions provide abstractions over the
 binary operators +,/,-,*, and %. Both on (BAT,BAT) and (BAT,CST)
 operands.
 @= calcGrp
-#command CMD000(l:bat[:lng,:lng],r:bat[:lng,:lng]):bat[:lng,:lng]= CMD000;
 
 command @1(b:bat[:any$1,:any$2], cst:any$2)
 		:bat[:any$1,:any$2] 

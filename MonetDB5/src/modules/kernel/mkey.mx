@@ -133,9 +133,9 @@ This is done incrementally by joining back the join result to the original
 columns, incrementally one by one for each pair of corresponding
 columns. These values are compared with each other and we AND the
 result of this comparison together for each pair of columns.
-The bat contining these bits is initialized to all TRUE and serves as
+The bat containing these bits is initialized to all TRUE and serves as
 final result after all column pairs have been compared.
-The initial join result is finally filetered with this bit-bat.
+The initial join result is finally filtered with this bit-bat.
 
 Joining back from the initial join-result to the original columns on
 both sides takes quite a lot of memory. For this reason, the false
@@ -311,22 +311,26 @@ int CMDhash_dbl(int *res, dbl* val) {
 }
 
 int CMDhash_str(int *res, lng* val) {
-    GDK_STRHASH(val, *res);
+    hash_t code; /* 64-bits on 64 systems; we truncate it here to save space */
+    GDK_STRHASH(val, code);
+    *res = code;
     return GDK_SUCCEED;
 }
 
 int CMDhash(int *res, ptr val, int tpe) {
+    hash_t code; /* 64-bits on 64 systems; we truncate it here to save space */
     switch(ATOMstorage(tpe)) {
-    case TYPE_void: *res = int_nil; break;
-    case TYPE_chr:  *res = *(chr*) val; break;
-    case TYPE_sht:  *res = *(sht*) val; break;
-    case TYPE_int: 
-    case TYPE_flt:  *res = *(int*) val; break;
-    case TYPE_lng: 
-    case TYPE_dbl:  *res = ((int*) val)[0] ^ ((int*) val)[1]; break;
-    case TYPE_str:  GDK_STRHASH(val, *res); break;
-    default:        *res = (*BATatoms[tpe].atomHash)(val); 
+    case TYPE_void: code = int_nil; break;
+    case TYPE_chr:  code = *(chr*) val; break;
+    case TYPE_sht:  code = *(sht*) val; break;
+    case TYPE_int:
+    case TYPE_flt:  code = *(int*) val; break;
+    case TYPE_lng:
+    case TYPE_dbl:  code = ((int*) val)[0] ^ ((int*) val)[1]; break;
+    case TYPE_str:  GDK_STRHASH(val, code); break;
+    default:        code = (*BATatoms[tpe].atomHash)(val);
     }
+    *res = code;
     return GDK_SUCCEED;
 }
 
@@ -386,7 +390,7 @@ int CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b) {
 	int *end = (int*) BUNtloc(b, BUNlast(b));
 	str base = b->theap.base;
 	while(cur < end) {
-	    int val;
+	    hash_t val;
 	    GDK_STRHASH(base + *cur, val);
 	    *dst = GDK_ROTATE(*dst,lbit,rbit,mask) ^ val;
 	    cur = (int*) (((BUN) cur) + xx);

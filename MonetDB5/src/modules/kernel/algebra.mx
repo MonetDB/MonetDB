@@ -218,7 +218,7 @@ comment "Fill the tail column with a constant value.";
 @T
 Sets in Monet can be viewed in two ways:
 \begin{itemize}
-\item by looking at both colums of a BAT together (Set-, or s-operators).
+\item by looking at both columns of a BAT together (Set-, or s-operators).
 \item by looking at the head column only (Key- or k-operators).
 \end{itemize}
 For this reason, all standard set operations come in two flavors:
@@ -753,7 +753,7 @@ end betweenOO;
 @+ Modeling With Properties
 @T
 The Monet kernel performs {\em run-time optimizations}. To choose between
-alternaticve algorithms in a sensible way, it maintains knowledge about
+alternative algorithms in a sensible way, it maintains knowledge about
 each BAT, sometimes as a {\em BAT property}, sometimes as two
 {\em column properties} for each column (head and tail)
 of a BAT. An example of the former is {\em size(bat) :int}

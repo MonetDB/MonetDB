@@ -14,12 +14,6 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f aggrX3
 @a S. Manegold 
@@ -32,17 +26,18 @@ MIL aggregrate implementations.
 
 The implementation code is derived from the original 'aggr' module. 
 Major changes are
+@T
 \begin{itemize}
 \item
 complete type-specific code expansion to avoid any type-checking in the inner-most loops;
 \item
-where feasable, replaced (expansive) hash-lookup by significantly cheaper positional
+where feasible, replaced (expansive) hash-lookup by significantly cheaper positional
 void-lookups (if the head-column of the group-extend BAT ("e") is "void") or at least by 
 (also positional) array lookups (in case the group-ids span a reasonably small range);
 \item
 in addition to the 2-parameter \{\}(BAT[oid,any$1] b, BAT[oid,any] e)
 functions, there are now also 3-parameter \{\}(BAT[void,any$1] b,
-BAT[void,oid] g, BAT[oid,any] e) functions, that require b & g to be
+BAT[void,oid] g, BAT[oid,any] e) functions, that require b \& g to be
 head-aligned, and to the fetchjoin(reverse(g),b) on-the-fly;
 \end{itemize}
 
