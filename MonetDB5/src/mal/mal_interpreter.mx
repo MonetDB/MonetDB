@@ -527,14 +527,35 @@ is made part of the start-up procedure.
 @-
 @= assignStmt
 {	
+	if( pci->beforeCall && pci->afterCall)
 	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
 		lhs = &stk->stk[pci->argv[k]];
 		rhs = &stk->stk[pci->argv[i]];
-		if( pci->beforeCall) 
-			(*pci->beforeCall)(&stk->stk[pci->argv[k]],&backup);
+		(*pci->beforeCall)(&stk->stk[pci->argv[k]],&backup);
 		VALcopy(lhs,rhs);
-		if( pci->afterCall) 
-			(*pci->afterCall)(&stk->stk[pci->argv[k]],&backup);
+		(*pci->afterCall)(&stk->stk[pci->argv[k]],&backup);
+	}
+	else
+	if( pci->beforeCall )
+	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
+		lhs = &stk->stk[pci->argv[k]];
+		rhs = &stk->stk[pci->argv[i]];
+		(*pci->beforeCall)(&stk->stk[pci->argv[k]],&backup);
+		VALcopy(lhs,rhs);
+	}
+	else
+	if( pci->afterCall)
+	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
+		lhs = &stk->stk[pci->argv[k]];
+		rhs = &stk->stk[pci->argv[i]];
+		VALcopy(lhs,rhs);
+		(*pci->afterCall)(&stk->stk[pci->argv[k]],&backup);
+	}
+	else
+	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
+		lhs = &stk->stk[pci->argv[k]];
+		rhs = &stk->stk[pci->argv[i]];
+		VALcopy(lhs,rhs);
 	}
 	ret = 0;
 }
