@@ -1,5 +1,6 @@
 char rcsid_main[] = "$Id$";
 
+#include "pf_config.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -19,8 +20,11 @@ static char version[] = "BURG, Version 1.0";
 
 extern int main ARGS((int argc, char **argv));
 
-/** strdup_() is not POSIX. We just implement it ourselves. */
-static char *strdup_ (const char *);
+#if HAVE_STRING_H && HAVE_STRDUP
+#include <string.h>
+#else
+static char *strdup (const char *);
+#endif
 
 void doGrammarNts (void);          /* defined in fe.c */
 void makeRuleDescArray (void);     /* defined in be.c */
@@ -90,7 +94,7 @@ main(argc, argv) int argc __attribute__((unused)); char **argv;
 				fprintf(stderr, "Unexpected Filename (%s) after (%s)\n", argv[i], inFileName);
 				exit(1);
 			}
-			inFileName = strdup_ (argv[i]);
+			inFileName = strdup (argv[i]);
 		}
 		if (needInt || needStr) {
 			char *v;
@@ -142,7 +146,7 @@ main(argc, argv) int argc __attribute__((unused)); char **argv;
 	doGrammarNts();
 	build();
 
-	debug(debugTables, foreachList((ListFn) dumpOperator_l, operators));
+	debug(debugTables, foreachList((ListFn) dumpOperator_l, operators_));
 	debug(debugTables, printf("---final set of states ---\n"));
 	debug(debugTables, dumpMapping(globalMap));
 
@@ -190,8 +194,9 @@ main(argc, argv) int argc __attribute__((unused)); char **argv;
 	exit(0);
 }
 
+#if !(HAVE_STRING_H && HAVE_STRDUP)
 static char *
-strdup_ (const char *s) {
+strdup (const char *s) {
 
     int   len = strlen (s);
     char *ret = malloc (len);
@@ -204,3 +209,4 @@ strdup_ (const char *s) {
 
     return ret;
 }
+#endif

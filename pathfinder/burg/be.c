@@ -63,7 +63,7 @@ opsOfArity(arity) int arity;
 	List l;
 
 	c = 0;
-	for (l = operators; l; l = l->next) {
+	for (l = operators_; l; l = l->next) {
 		Operator op = (Operator) l->x;
 		if (op->arity == arity) {
 			fprintf(outfile, "\tcase %d:\n", op->num);
@@ -140,7 +140,7 @@ makeState()
 	fprintf(outfile, "\tswitch (op) {\n");
 	fprintf(outfile, "\tdefault: %s_PANIC(\"Bad op %%d in %s_state\\n\", op); abort(); return 0;\n", prefix, prefix);
 
-	foreachList((ListFn) doLabel, operators);
+	foreachList((ListFn) doLabel, operators_);
 
 	fprintf(outfile, "\t}\n");
 	fprintf(outfile, "}\n");
@@ -308,7 +308,7 @@ doMakeTable(op) Operator op;
 void
 makeTables()
 {
-	foreachList((ListFn) doMakeTable, operators);
+	foreachList((ListFn) doMakeTable, operators_);
 }
 
 RuleAST *pVector;
@@ -866,14 +866,14 @@ makeOperatorVector()
 	List l;
 
 	maxOperator = 0;
-	for (l = operators; l; l = l->next) {
+	for (l = operators_; l; l = l->next) {
 		Operator op = (Operator) l->x;
 		if (op->num > maxOperator) {
 			maxOperator = op->num;
 		}
 	}
 	opVector = (Operator*) zalloc((maxOperator+1) * sizeof(*opVector));
-	for (l = operators; l; l = l->next) {
+	for (l = operators_; l; l = l->next) {
 		Operator op = (Operator) l->x;
 		if (opVector[op->num]) {
 			fprintf(stderr, "ERROR: Non-unique external symbol number (%d)\n", op->num);
@@ -1023,7 +1023,7 @@ reportDiagnostics()
 {
 	List l;
 
-	for (l = operators; l; l = l->next) {
+	for (l = operators_; l; l = l->next) {
 		Operator op = (Operator) l->x;
 		if (!op->ref) {
 			fprintf(stderr, "warning: Unreferenced Operator: %s\n", op->name);

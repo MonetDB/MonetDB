@@ -250,7 +250,7 @@ extern void zfree ARGS((void *));
 extern NonTerminal	start;
 extern List		rules;
 extern List		chainrules;
-extern List		operators;
+extern List		operators_;
 extern List		leaves;
 extern List		nonterminals;
 extern List		grammarNts;

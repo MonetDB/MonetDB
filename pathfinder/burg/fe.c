@@ -213,7 +213,7 @@ void
 doSpec(decls, rules) List decls; List rules;
 {
 	foreachList((ListFn) doDecl, decls);
-	debug(debugTables, foreachList((ListFn) dumpOperator_l, operators));
+	debug(debugTables, foreachList((ListFn) dumpOperator_l, operators_));
 
 	ruleASTs = rules;
 	reveachList((ListFn) doEnterNonTerm, rules);
@@ -223,7 +223,7 @@ doSpec(decls, rules) List decls; List rules;
 	reveachList((ListFn) doRule, rules);
 	debug(debugTables, foreachList((ListFn) dumpRule, rules));
 
-	foreachList((ListFn) doTable, operators);
+	foreachList((ListFn) doTable, operators_);
 }
 
 void

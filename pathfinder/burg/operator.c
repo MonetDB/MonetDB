@@ -5,7 +5,7 @@ char rcsid_operator[] = "$Id$";
 
 int max_arity = -1;
 
-List operators;
+List operators_;
 List leaves;
 
 Operator
@@ -20,7 +20,7 @@ newOperator(name, num, arity) char *name; OperatorNum num; ArityNum arity;
 	op->num = num;
 	op->arity = arity;
 
-	operators = newList(op, operators);
+	operators_ = newList(op, operators_);
 
 	return op;
 }

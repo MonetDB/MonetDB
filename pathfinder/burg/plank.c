@@ -465,7 +465,7 @@ doNonTermPmaps(n) NonTerminal n;
 static void
 makePmaps()
 {
-	foreachList((ListFn) doDimPmaps, operators);
+	foreachList((ListFn) doDimPmaps, operators_);
 	ntVector = (NonTerminal*) zalloc((max_nonterminal) * sizeof(NonTerminal));
 	foreachList((ListFn) doNonTermPmaps, nonterminals);
 }
@@ -848,7 +848,7 @@ makePlankState()
 {
 	fprintf(outfile, "\n");
 	fprintf(outfile, "int %s_TEMP;\n", prefix);
-	foreachList((ListFn) doPlankLabelMacrosSafely, operators);
+	foreachList((ListFn) doPlankLabelMacrosSafely, operators_);
 	fprintf(outfile, "\n");
 
 	fprintf(outfile, "#ifdef __STDC__\n");
@@ -903,7 +903,7 @@ makePlankState()
 	fprintf(outfile, "\tswitch (op) {\n");
 	fprintf(outfile,"\tdefault: %s_PANIC(\"Unknown op %%d in %s_state\\n\", op); abort(); return 0;\n",
 		prefix, prefix);
-	foreachList((ListFn) doPlankLabelSafely, operators);
+	foreachList((ListFn) doPlankLabelSafely, operators_);
 	fprintf(outfile, "\t}\n");
 
 	fprintf(outfile, "}\n");

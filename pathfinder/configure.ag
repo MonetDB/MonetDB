@@ -405,6 +405,11 @@ AC_SUBST(LIBDB_CFLAGS, $LIBDB_CFLAGS)
 AC_SUBST(LIBDB_LIBS, $LIBDB_LIBS)
 AC_SUBST(LIBDB_LDADD, $LIBDB_LDADD)
 
+dnl The Burg code requires strdup(). We test here if strdup() is
+dnl available on the system. If not, we will define it ourselves
+dnl in burg/main.c
+AC_CHECK_HEADERS([string.h], [AC_CHECK_FUNCS([strdup])])
+
 dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
 CXXFLAGS="$CXXFLAGS \$(X_CXXFLAGS)"

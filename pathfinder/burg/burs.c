@@ -63,7 +63,7 @@ build()
 	debug(debugTables, foreachList((ListFn) dumpItem_Set, globalQ->head));
 	
 	for (ts = popQ(globalQ); ts; ts = popQ(globalQ)) {
-		for (ol = operators; ol; ol = ol->next) {
+		for (ol = operators_; ol; ol = ol->next) {
 			Operator op = (Operator) ol->x;
 			addToTable(op->table, ts);
 		}
