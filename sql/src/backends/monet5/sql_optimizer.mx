@@ -103,6 +103,7 @@ type checked and optimized.
 @c
 #include "mal_macro.h"
 #include "mal_optimizer.h"
+#include "mal_debugger.h"
 #include "sql_mvc.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
@@ -177,6 +178,7 @@ optimizeQueryInCache(Client c)
 	int i, j, k, klim;
 	MALfcn setWriteMode = 0;
 	Symbol s;
+	long clk;
 
 #ifdef _SQL_OPTIMIZER_DEBUG
 	stream_printf(GDKout, "First call to SQL optimizer\n");
@@ -188,6 +190,8 @@ The first optimization is to split the program at the
 sql.kdiff instruction, because the choice made has far
 reaching performance/typing consequences.
 @c
+	resetOptimizerDebugger();
+	optimizerDebug(c->curprg->def,"Parser output",1,0);
 	SQLkdiffOptimizer(c);
 @-
 Reduce the program before other optimizations take place
@@ -211,6 +215,7 @@ Reduce the program before other optimizations take place
 The first step is to collect all the sql bind operations and
 to extract some compiler relevant properties from the catalogue.
 @c
+	clk= GDKusec();
 	ns = (InstrPtr *) GDKmalloc(sizeof(InstrPtr) * (mb->stop * 2));
 	k = 1;
 	ns[0] = getInstrPtr(mb, 0);	/* its signature */
@@ -339,7 +344,7 @@ Finalize the factory loop
 	GDKfree(mb->stmt);
 	mb->stmt = ns;
 
-	chkProgram(c->nspace, mb);
+	optimizerCheck(mb,"sql.factorize",1,GDKusec()-clk);
 @-
 At this stage we can once call upon the optimizers to do their work.
 Static known information is known and stored in constant variables,
@@ -347,8 +352,6 @@ which can be used by the rewrite rules.
 This all works under the assumption that the SQL layer properly invalidates
 the cache when the underlying table is changed.
 @c
-	CXoptimizer(c->curprg->def, 0, 0);
-
 #ifdef _SQL_OPTIMIZER_DEBUG
 	printf("DONE CHANGES\n");
 	printFunction(c->fdout, c->curprg->def, LIST_MAL_INSTR);
@@ -417,6 +420,7 @@ void SQLkdiffOptimizer(Client c){
 	InstrPtr *old;
 	InstrPtr q,p;
 	int *map,mtop;
+	long clk= GDKusec();
 
 #ifdef _SQL_OPTIMIZER_DEBUG
 	printf("START kdiff optimizer\n");
@@ -550,7 +554,7 @@ Now we don;t have to perform the expensive kdiff
 		GDKfree(old);
 	}
 	if( total) {
-		optimizerCheck(mb,"sql.kdiff_replacement");
+		optimizerCheck(mb,"sql.kdiff_replacement",1,GDKusec()-clk);
 #ifdef _SQL_OPTIMIZER_DEBUG
 		printf("FINAL STAGE errors=%d\n",mb->errors);
 		printFunction(GDKout,mb,LIST_MAL_ALL);

@@ -414,6 +414,7 @@ SQLsetDebugger(Client c, int onoff)
 
 	if (m == 0 || m->debug == 0)
 		return;
+	c->itrace='n';
 	q = newInstruction(ASSIGNsymbol);
 	functionId(q) = GDKstrdup("mdb");
 	q = pushArgument(c->curprg->def, q, newConstant(c->curprg->def, TYPE_bit, GDKstrdup(onoff ? "true" : "false"), 0));
