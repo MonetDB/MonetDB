@@ -201,7 +201,7 @@ SQLGetTypeInfo_(ODBCStmt *stmt, SQLSMALLINT nSqlDataType)
 		strcat(query, " order by sql_data_type");
 	}
 
-	/* query the MonetDb data dictionary tables */
+	/* query the MonetDB data dictionary tables */
 	assert(query);
 	rc = SQLExecDirect_(stmt, (SQLCHAR *) query, SQL_NTS);
 

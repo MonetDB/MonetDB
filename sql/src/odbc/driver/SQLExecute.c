@@ -106,7 +106,7 @@ ODBCInitResult(ODBCStmt *stmt)
 		}
 
 		s = mapi_get_type(hdl, i);
-		rec->sql_desc_type_name = (SQLCHAR *) strdup(s);
+		rec->sql_desc_type_name = (SQLCHAR *) strdup(s ? s : "");
 		for (p = msql_types; p->name; p++) {
 			if (strcmp(p->name, s) == 0) {
 				for (tp = ODBC_sql_types; tp->concise_type; tp++)
@@ -134,13 +134,17 @@ ODBCInitResult(ODBCStmt *stmt)
 		else
 			rec->sql_desc_case_sensitive = SQL_FALSE;
 
-		rec->sql_desc_base_table_name = (SQLCHAR *) strdup("");
+		s = mapi_get_table(hdl, i);
+		rec->sql_desc_base_table_name = (SQLCHAR *) strdup(s ? s : "");
+		rec->sql_desc_table_name = (SQLCHAR *) strdup(s ? s : "");
+
+		rec->sql_desc_length = mapi_get_len(hdl, i);
+
 		rec->sql_desc_local_type_name = (SQLCHAR *) strdup("");
 		rec->sql_desc_catalog_name = (SQLCHAR *) strdup("");
 		rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("");
 		rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("");
 		rec->sql_desc_schema_name = (SQLCHAR *) strdup("");
-		rec->sql_desc_table_name = (SQLCHAR *) strdup("");
 
 		/* unused fields */
 		rec->sql_desc_data_ptr = NULL;
@@ -148,9 +152,8 @@ ODBCInitResult(ODBCStmt *stmt)
 		rec->sql_desc_octet_length_ptr = NULL;
 		rec->sql_desc_parameter_type = 0;
 
-		/* this call must come after other fields have been
+		/* this must come after other fields have been
 		 * initialized */
-		rec->sql_desc_length = 0;
 		rec->sql_desc_length = ODBCDisplaySize(rec);
 		rec->sql_desc_display_size = rec->sql_desc_length;
 		rec->sql_desc_octet_length = rec->sql_desc_length;

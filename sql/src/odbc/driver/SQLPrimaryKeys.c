@@ -107,7 +107,7 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	strcpy(query_end, " order by table_cat, table_schem, table_name, key_seq");
 	query_end += strlen(query_end);
 
-	/* query the MonetDb data dictionary tables */
+	/* query the MonetDB data dictionary tables */
 	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
 			    (SQLINTEGER) (query_end - query));
 

@@ -90,16 +90,17 @@ SQLTables_(ODBCStmt *stmt,
 		   nTableNameLength == 0 && szTableType && 
 		   strcmp((char*)szTableType, SQL_ALL_TABLE_TYPES) == 0) {
 		/* Special case query to fetch all Table type names. */
-		query = strdup("select "
+		query = strdup("select distinct "
 			       "cast('' as varchar) as table_cat, "
 			       "cast('' as varchar) as table_schem, "
 			       "cast('' as varchar) as table_name, "
-			       "distinct case t.type when 1 then cast('TABLE' as varchar) "
-			       "when 0 then cast('SYSTEM_TABLE' as varchar) when 2 then cast('VIEW' as varchar) "
-			       "when 3 then cast('LOCAL TEMPORARY TABLE' as varchar) "
-			       "else cast('INTERNAL TYPE' as varchar) end as table_type, "
+			       "case when t.istable = true and t.system = false and t.persists = true then cast('TABLE' as varchar) "
+			       "when t.istable = true and t.system = true and t.persists = true then cast('SYSTEM_TABLE' as varchar) "
+			       "when t.istable = false then cast('VIEW' as varchar) "
+			       "when t.istable = true and t.system = false and t.persists = false then cast('LOCAL TEMPORARY TABLE' as varchar) "
+			       "else cast('INTERNAL TABLE TYPE' as varchar) end as table_type, "
 			       "cast('' as varchar) as remarks "
-			       "from sys.tables order by table_type, "
+			       "from (select tables.*, true as persists from tables union select tmp_tables.*, false as persists from tmp_tables) as t order by table_type, "
 			       "table_cat, table_schem, table_name");
 		/* TODO: UNION it with all supported table types */
 	} else {
@@ -118,12 +119,13 @@ SQLTables_(ODBCStmt *stmt,
 			"cast('%.*s' as varchar) as table_cat, "
 			"cast(s.name as varchar) as table_schem, "
 			"cast(t.name as varchar) as table_name, "
-			"case t.type when 0 then cast('TABLE' as varchar) "
-			"when 1 then cast('SYSTEM_TABLE' as varchar) when 2 then cast('VIEW' as varchar) "
-			"when 3 then cast('LOCAL TEMPORARY TABLE' as varchar) "
+			"case when t.istable = true and t.system = false and t.persists = true then cast('TABLE' as varchar) "
+			"when t.istable = true and t.system = true and t.persists = true then cast('SYSTEM_TABLE' as varchar) "
+			"when t.istable = false then cast('VIEW' as varchar) "
+			"when t.istable = true and t.system = false and t.persists = false then cast('LOCAL TEMPORARY TABLE' as varchar) "
 			"else cast('INTERNAL TABLE TYPE' as varchar) end as table_type, "
 			"cast('' as varchar) as remarks "
-			"from sys.schemas s, sys.tables t "
+			"from sys.schemas s, (select tables.*, true as persists from tables union select tmp_tables.*, false as persists from tmp_tables) as t "
 			"where s.id = t.schema_id",
 			nCatalogNameLength, szCatalogName);
 		query_end += strlen(query_end);
@@ -188,7 +190,7 @@ SQLTables_(ODBCStmt *stmt,
 		       "table_schem, table_name");
 	}
 
-	/* query the MonetDb data dictionary tables */
+	/* query the MonetDB data dictionary tables */
 
 	rc = SQLExecDirect_(stmt, (SQLCHAR *) query, SQL_NTS);
 

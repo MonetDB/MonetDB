@@ -189,7 +189,7 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 		query_end += strlen(query_end);
 	}
 
-	/* query the MonetDb data dictionary tables */
+	/* query the MonetDB data dictionary tables */
 	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
 			    (SQLINTEGER) (query_end - query));
 

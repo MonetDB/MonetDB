@@ -13,7 +13,7 @@
  * CLI Compliance: ODBC (Microsoft)
  *
  * Note: this function is not implemented (it only sets an error),
- * because monetDB SQL frontend does not support stored procedures.
+ * because MonetDB SQL frontend does not support stored procedures.
  *
  * Author: Martin van Dinther
  * Date  : 30 aug 2002
