@@ -1,0 +1,9 @@
+# illustrate a short cut reference to the implementation
+
+function doit(s:str)
+address CMDcallString;
+    print("unexpected call to default");
+    call(s);
+end doit;
+
+doit("print(1);");
