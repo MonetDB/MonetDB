@@ -270,7 +270,7 @@ def mFilter (FILE, IGNORE) :
                         fin = open(FILE,"w")
                         fin.write("%s: Removed '%s' to create space for '%s'.\n" % (THISFILE, FILE, fout.name))
                         fin.close()
-                    execpt:
+                    except:
                         pass
                     try:
                         fout.write(ln)
