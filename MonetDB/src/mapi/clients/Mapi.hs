@@ -20,6 +20,11 @@
 --     result <- mapiQuery m "ls;"
 --     putStrLn result
 --     mapiDisconnect m
+--
+-- Compile with :
+--   ghc -package net -c Mapi.hs       -- To compile the module
+--   ghc -package net test.hs Mapi.hs  -- To compile the binary 
+--                                        (module must be compiled already !)
 -- 
 -- ----------------------------------------------------------------------------
 -- Implementation :
