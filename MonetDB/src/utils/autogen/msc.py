@@ -513,6 +513,8 @@ def msc_binary(fd, var, binmap, msc):
                 msc['INSTALL'].append((i, i, '', '$(bindir)'))
         else: # link
             src = binmap[0][4:]
+            fd.write('%s: "%s"\n' % (name, src))
+            fd.write('\t$(CP) "%s" "%s"\n\n' % (src, name))
             n_nme, n_ext = split_filename(name)
             s_nme, s_ext = split_filename(src)
             if n_ext  and  s_ext  and  n_ext == s_ext:
@@ -520,6 +522,7 @@ def msc_binary(fd, var, binmap, msc):
             else:
                 ext = '.exe'
             msc['INSTALL'].append((name, src, ext, '$(bindir)'))
+            msc['SCRIPTS'].append(name)
         return
 
     HDRS = []
