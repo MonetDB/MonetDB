@@ -40,6 +40,10 @@
 #endif
 #include "disclaimer.h"
 
+#ifndef S_ISDIR			/* On Windows :-( */
+#define S_ISDIR(x)	(((x) & S_IFMT) == S_IFDIR)
+#endif
+
 File	files[M_FILES];
 int	nfile = 0;
 
