@@ -166,7 +166,6 @@ static int
 constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 {
 	int idx;
-	InstrPtr q;
 	ValPtr vr = (ValPtr) &a->data;
 	char *val;
 
@@ -175,13 +174,11 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 	VALformat(&val, vr);
 	if (vr->vtype == TYPE_str) {
 		val[strlen(val) - 1] = 0;
-		idx = newConstant(mb, vr->vtype, _strdup(val + 1), 1);
+		idx = newConstant(mb, vr->vtype, _strdup(val + 1), FALSE);
 		GDKfree(val);
 	} else {
-		idx = newConstant(mb, vr->vtype, _strdup(val), 1);
-		q = newStmt(mb, "calc", a->tpe->type->base.name ); 
-		q = pushArgument(mb, q, idx);
-		idx = getDestVar(q);
+		idx = newConstant(mb, vr->vtype, _strdup(val), FALSE);
+		GDKfree(val);
 	}
 	return idx;
 }
@@ -1000,13 +997,17 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_atom:{
-			if (s->op1.aval->isnull) {
-				q = newStmt(mb, 0, s->op1.aval->tpe->type->base.name);
-				q = pushNilType(mb, q, s->op1.aval->tpe->type->base.name);
-				s->nr = getDestVar(q);
+			atom *a = s->op1.aval;
+			if (a->isnull) {
+				q = newStmt(mb, 0, a->tpe->type->base.name);
+				q = pushNilType(mb, q, a->tpe->type->base.name);
 			} else {
-				s->nr = constantAtom(sql, mb, s->op1.aval);
+				int k;
+				q = newStmt(mb, "calc",a->tpe->type->base.name);
+				k = constantAtom(sql, mb, a);
+				q = pushArgument(mb, q, k);
 			}
+			s->nr = getDestVar(q);
 		}
 			break;
 		case st_insert:{
