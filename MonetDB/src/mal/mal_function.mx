@@ -98,7 +98,12 @@ Check barrier should ensure that both end-points of a block for the
 variable referenced in 'pp' exists. In addition, we should ensure
 proper weaveing of the begin-end pairs. This can simply be checked by
 counting the begin/end pairs. It should balance for every block.
-Finally, the destination variable type should be of type 'bit'
+Currently, the barrier control variables should be of type bit,
+sht, int, or lng. A number zero is interpreted as end of the barrier
+block.
+Finally, the barrier label may not be used in any assigment other
+then the barrier statement itself. It may be read, though.
+
 @c
 int getPC(MalBlkPtr mb, InstrPtr p)
 {	int i;
@@ -130,6 +135,14 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 				);
 			return i;
 		} 
+		if( p->argv[0]== v && p != pp){
+			if( p->token== REDOsymbol || p->token== LEAVEsymbol)
+				continue;
+			if( pp->token == CATCHsymbol) continue;
+			GDKerror("label '%s' is readonly in %s[%d]\n",
+				getVarName(mb,v), getFcnName(mb),getPC(mb,p));
+			mb->errors++;
+		}
 	}
 	GDKerror("begin-label '%s' without end-label in %s\n", 
 		getVarName(mb,v), getFcnName(mb));
@@ -151,8 +164,11 @@ void chkCntrl(MalBlkPtr mb, InstrPtr pp)
 void chkBarrier(MalBlkPtr mb, InstrPtr pp)
 {
 	chkCntrl(mb,pp);
-	if( getArgType(mb,pp,0) != TYPE_bit && getArgType(mb,pp,0)!= malAnyType ){
-		GDKerror("barrier '%s' should be of type bit in %s[%d]\n",
+	if( pp->barrier == BARRIERsymbol)
+	if( getArgType(mb,pp,0) != TYPE_bit && getArgType(mb,pp,0)!= malAnyType 
+	 && getArgType(mb,pp,0) != TYPE_sht && getArgType(mb,pp,0)!= TYPE_lng 
+	 && getArgType(mb,pp,0) != TYPE_int ){
+		GDKerror("barrier '%s' should be of type bit or number in %s[%d]\n",
 			getVarName(mb,pp->argv[0]),
 			getFcnName(mb), getPC(mb,pp));
 	}

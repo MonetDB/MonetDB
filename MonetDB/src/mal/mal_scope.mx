@@ -290,6 +290,8 @@ void  printScope(Scope cntxt, int tab, int outer)
 	FILE *fd= GDKout;
 
 	fprintf(fd,"SCOPE %s",s->name);
+	if( s->typeChecker) fprintf(fd, " typechecker");
+	fprintf(fd,"\n");
 	if( s->subscope)
 	for(j=0;j<MAXSCOPE;j++)
 	if(s->subscope[j]){

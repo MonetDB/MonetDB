@@ -24,6 +24,13 @@ natural join on all bat-valued parameters, and executing the
 CMD for each combination of matching tuples. All results are 
 collected in a result BAT. 
 
+MAL does not directly support arbitrary overloading of an
+operator to become its multiplex-ed variant. Instead,
+a call should be made to the pattern multiplex(CMD,A1,...An)
+where CMD is a string literal.
+This pattern is covered by a different type checker and
+whose implementation performs the one-time conversion.
+
 There are two main factors that determine how the multiplex is 
 executed: what kind of command is CMD (either function, 'simple'
 operator, or 'complex' operator)? and: how easy is it to
@@ -65,6 +72,7 @@ executes CMD(argv[]) and inserts the outcome into the result BAT.]
 
 mal_export int CHKmultiplex(Scope scope, MalBlkPtr mb, InstrPtr pci);
 mal_export int CMDmultiplex(MalBlkPtr m, MalStkPtr s, InstrPtr p);
+mal_export int CMDmultiplexSqueeze(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _MAL_MULTIPLEX_H_ */
 
@@ -131,25 +139,43 @@ to lookup its definition.
 @c
 #define REALLY_REALLY_BIG	2000000000
 
-int resolve_multiplex(Scope scope, MalBlkPtr mb, InstrPtr pci,
+int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 	MalBlkPtr m, InstrPtr p)
 {
 	int i, k, t, tpe, tt;
-	int first = TRUE;
+	int first = TRUE, inplace= FALSE;
+	str fcnname;
 	char name[1024];
+@-
+The multiplex operator may be turned into a replacement operator
+enclosing with ':' and '=', e.g. multiplex(":+=",b,c) adds the b and
+c tails and stores it in b. 
+@c
+	if( pci->token == PATTERNsymbol || pci->token == FUNCTIONsymbol)
+		return GDK_FAIL;
+	if( !isVarConstant(mb,pci->argv[1]) || getArgType(mb,pci,1)!=TYPE_str){
+	printInstruction(stdout,mb,pci);
+		GDKerror("multiplexType:string constant expected in %s[%d]\n",
+			getFcnName(mb), getPC(mb,pci));
+		return GDK_FAIL;
+	}
+	fcnname= getVarLiteral(mb,pci->argv[1]);
 
-	if( pci->fcnname[0]==':'){
-		i= strlen(pci->fcnname);
-		if(pci->fcnname[i-2]== '=') 
-			strncpy(name,pci->fcnname+1, i-=2);
-		else	strncpy(name,pci->fcnname,i);
+	if( fcnname[0]==':'){
+		i= strlen(fcnname);
+		if(pci->fcnname[i-2]== '=') {
+			strncpy(name,fcnname+1, i-=2);
+			inplace = TRUE;
+		} else	strncpy(name,fcnname,i);
 		name[i]=0;
-	} else strcpy(name,pci->fcnname);
+	} else strcpy(name,fcnname);
+
 	p->fcnname= GDKstrdup(name);
 	k = newVariable(m, newTmpName(0),malAnyType);
 	p->argv[0]= k;
 #ifdef DEBUG_MULTIPLEX
-	printf("multiplex against operator %s\n",pci->fcnname);
+	printf("multiplex against operator %s (original %s)\n",
+		name,pci->fcnname);
 #endif
 @- Analysis Of The BAT Parameters
 Do basic check on parameters. Look at the tail types in order to derive
@@ -158,12 +184,15 @@ We also want to discover if all the input BAT parameters are sorted
 or in sync. This may enable the use optimizations.
 Constants passed into the multiplex operator are a special case.
 @c
-	for(i=1; i < pci->argc; i++) {
+	for(i=2; i < pci->argc; i++) {
 	    t= getArgType(mb,pci,i);
 	    if( isaBatType(t) ){
 		if (first){
 			first= FALSE;
 			tpe= getHeadType(t);
+		} else{
+			if( getHeadType(t) != tpe)
+			GDKerror("multiplexType:BAT head types differ\n");
 		}
 		tt = getTailType(t);
 	    } else {
@@ -180,29 +209,36 @@ Constants passed into the multiplex operator are a special case.
 		i= typeConformance(mb,pci,tpe);
 	}
 #ifdef DEBUG_MULTIPLEX
-	printInstruction(stdout,mb,pci);
 	printInstruction(stdout,m,p);
 #endif
+	/* re-use old code to resolve the element of the multiplex module */
+	fcnname= pci->modname;
+	pci->modname= 0;
+	findFunctionType(scope,mb,pci);
+	pci->modname= fcnname;
 	return i;
 }
+
 int CHKmultiplex(Scope scope, MalBlkPtr mb, InstrPtr pci)
 {
 	int i;
 	MalBlkPtr m= newMalBlk();
 	InstrPtr p = newInstruction(ASSIGNsymbol);
 
-	i= resolve_multiplex(scope,mb,pci,m,p);
+	i= multiplexType(scope,mb,pci,m,p);
 	freeMalBlk(m);
 	return i;
 }
-
+@- Multiplex dispatch
+When the typing scheme was successful, we can prepare for
+the execution of the operation. Alternatively, type resolution
+has identified to handle this as part of the pattern call by
+ommision of the reference to the module.
+(i.e. multiplex.multiplex("+",b,c) performs upfront static typing,
+and multiplex("+",b,c) performs dynamic type checking.
+@c
 int CMDmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	return (int) raiseException(mb,stk->pc,"MALexception",
-		"multiplex implementation missing");
-}
-int RUNmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int i,k = 0, l, tpe, tt, nbats = 0;
+	int i,k = 0, l, htpe, tt, nbats = 0;
 	BAT *all_synced=NULL;
 	int one_unique = FALSE;
 	int all_unique = TRUE;
@@ -210,31 +246,23 @@ int RUNmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int assignop = FALSE;
 	int max_size = 0;
 	int min_size = REALLY_REALLY_BIG;
+	int inplace = FALSE;
 	char name[128];
 	str s= (str) getArgValue(stk,pci,1);
 	MalBlkPtr m= newMalBlk();
 	InstrPtr p = newInstruction(ASSIGNsymbol);
-@-
-The multiplex operator may be turned into a replacement operator
-enclosing with ':' and '=', e.g. multiplex(":+=",b,c) adds the b and
-c tails and stores it in b. Watch out [:=](b,c) is a valid operation too.
-@c
-	if( strcmp(s,":=")){
-		assignop = TRUE;
-		strcpy(name,":=");
-	} else
-	if( *s == ':'){
-		assignop = TRUE;
-		i = strlen(s)-2;
-		strncpy(name,s+1,i);
-		name[i]=0;
-	} else 
-		strcpy(name,s);
-	p->fcnname= GDKstrdup(name);
-	l= newVariable(m,newTmpName(0),malAnyType);
-	pushArgument(m,p,l);
+
+	printf("calling a multiplex routine\n");
+	i= multiplexType(getClient()->nspace,mb,pci,m,p);
+	if( i<0){
+		GDKerror("CMDmultiplex:type error\n");
+		return GDK_FAIL;
+	}
+
+	if(strcmp(s,p->fcnname) ) assignop= TRUE;
+
 #ifdef DEBUG_MULTIPLEX
-	printf("multiplex against operator %s\n",name);
+	printf("multiplex against operator %s (%d)\n",p->fcnname,assignop);
 #endif
 @- Analysis Of The BAT Parameters
 Do basic check on parameters. Look at the tail types in order to derive
@@ -245,12 +273,14 @@ Constants passed into the multiplex operator are a special case.
 @c
 	for(i=2; i < pci->argc; i++) {
 	    if( isaBatType(getArgType(mb,pci,i)) ){
-		BAT *b = BATdescriptor(*(int*)getArgValue(mb,pci,i));
+		BAT *b = BATdescriptor(*(int*)getArgValue(stk,pci,i));
 		int sz = BATcount(b);
 
+		printf("retrieved a BAT argument %d (isnull?%c\n",
+			*(int*) getArgValue(stk,pci,i), (b==0?'y':'n'));
 		if (min_size == REALLY_REALLY_BIG) {
 		    all_synced = b; 
-		    tpe = BAThtype(b);
+		    htpe = BAThtype(b);
 		    if (assignop && b->batRestricted) {
                         GDKerror("%s: param 1 must be writeable.\n", name);
                         return GDK_FAIL;
@@ -280,8 +310,6 @@ Constants passed into the multiplex operator are a special case.
 		all_sorted = FALSE; 
 		tt= getArgType(mb,pci,i);
 	    }
-	    l= newVariable(m,newTmpName(i),tt);
-	    pushArgument(m,p,l);
 	}
 @- 
 Multiplex functions have multi-equijoin semantics for the matching of 
@@ -308,14 +336,477 @@ by doing binary search on the 10M table.
 		all_sorted = FALSE;
 	}
 #ifdef DEBUG_MULTIPLEX
-	printf("multiplex properties minsize%d \n",min_size);
+	printf("multiplex properties minsize %d \n",min_size);
 	printf("max_size = %d one_unique =%d all_unique=%d\n",
 		max_size,one_unique,all_unique);
 	printf("all_sorted = %d all_synced= %d\n",all_sorted,all_synced);
 	printInstruction(stdout,m,p);
 #endif
-
-@- execution
+@-
+Here comes the big switch to locate the proper sub-optimizer
+inherited from Monet version 4. Old code has been commented
+away and should dissolve during further development
 @c
+/* handle the MIL proc calls.
+        if (sig->pack_fcn == sig->fast_fcn) { 
+                return interpret_multiplex_fcn(
+                                        name, argc, argv, res,
+                                        sig->assignop, stk, min_size,
+                                        tpe, sig->ret_tpe, (GDKfcn) t);
+        } else if (sig->special) {
+		THE IF-THEN-ELSE [A?:B,B] GROUP
+	} else if (sig->fast_fcn != NULL) {
+*/
+	if( p->fcn){
+	if (!ATOMvarsized(tt) && all_synced) {
+		return multiplex_array(mb, stk, pci, m, p, tt,
+						min_size, assignop);
+/*
+                                        name, argc, argv, res,
+                                        sig->fast_fcn, min_size, sig->ret_tpe,
+                                        sig->assignop, FALSE);
+*/
+                }
+/*
+                if (sig->merge_opt && all_sorted) {
+                        return interpret_multiplex_merge(
+                                        name, argc, argv, res,
+                                        sig->fast_fcn, min_size, sig->ret_tpe,
+                                        sig->assignop, FALSE);
+                }
+        */ } /*{
+                return interpret_multiplex_fcn(
+                                        name, argc, argv, res,
+                                        sig->assignop, -1, min_size,
+                                        tpe, sig->ret_tpe, sig->pack_fcn);
+        }
+*/
+
+	freeMalBlk(m);
+	return (int) raiseException(mb,stk->pc,"MALexception",
+		"multiplex implementation missing");
+}
+@-
+Generation of the subsequent code is left to Mx.
+@c
+@:interpret_multiplex_array(multiplex)@
+
+int CMDmultiplexSqueeze(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	return (int) raiseException(mb,stk->pc,"MALexception",
+		"multiplex squeeze implementation missing");
+}
+
+@- Optimized Multiplex Operators: Synced Unique case
+If the BATs fed into the multiplex are all synced and unique, we can 
+just shift a horizontal pointer through them and execute the function.
+
+Speed is won by coding specific cases out. You cannot do all cases.
+We selected the 1, 2 and 3-ary executions of C-implemented functions 
+(no procs; nor builtins) for this (only if the returntype is simple to 
+handle => no bats or varsized returns). BATs may also be constant values 
+in this implementation. 
+
+@= check_multiplex
+if (retval != GDK_SUCCEED) {
+    char buf[32];
+    sprintf(buf, "%d", @2);
+    bulkerror_handle(&bulkerror, buf); 
+    tptr = tnil; /* insert a nil */
+} 
+
+@= BUNins_array_multiplex
+    if (buntrick == 0) { /* non-void head column */
+        bunfastins_nocheck(@1, dst, @2, @3, bunsize);
+    } else if (buntrick == 4) {
+	*(int*) dst = *(int*) @3;
+    } else if (buntrick == 1) {
+	*(chr*) dst = *(chr*) @3;
+    } else if (buntrick == 2) {
+	*(sht*) dst = *(sht*) @3;
+    } else if (buntrick == 8) {
+	*(lng*) dst = *(lng*) @3;
+    } else {
+	memcpy(dst, @3, buntrick);
+    } 
+	dst += bunsize;
+
+@= arrayloop1
+    while(ph < hend) {
+	int retval = (*p->fcn)(tptr,@2);
+	@:check_@1(p->fcnname, (ph - ah)/sh - hdff)@
+	@:BUNins_array_@1(retb, ph, tptr)@
+	p1 += s1; ph += sh;
+    }
+
+@= arrayloop2
+    while(ph < hend) {
+	int retval = (*p->fcn)(tptr,@2,@3);
+	@:check_@1(p->fcnname, (ph - ah)/sh - hdff)@
+	@:BUNins_array_@1(retb, ph, tptr)@
+	p1 += s1; p2 += s2; ph += sh;
+    }
+
+@= arrayloop3
+    while(ph < hend) {
+	int retval = (*p->fcn)(tptr,@2,@3,@4);
+	@:check_@1(p->fcnname, (ph - ah)/sh - hdff)@
+	@:BUNins_array_@1(retb, ph, tptr)@
+	p1 += s1; p2 += s2; p3 += s3; ph += sh;
+    }
+
+@= batinit
+#ifdef DEBUG_MULTIPLEX
+printf("initialize bat arg %d\n",@2);
+#endif
+	b@1 = BATdescriptor(@2);
+	a@1 = ATOMvarsized(b@1->ttype)?b@1->theap.base:0;
+	s@1 = BUNsize(b@1);
+	p@1 = (char*) (BUNfirst(b@1)+b@1->tloc);
+	if (htpe != TYPE_void) 
+		htpe = BAThstore(b@1);
+	ph = (char*) (BUNfirst(b@1)+b@1->hloc);
+	hend = (char*) BUNlast(b@1);
+	hdff = BUNindex(b@1,BUNfirst(b@1))-1;
+	ah = a@1; sh = s@1; bh = b@1;
+ 	hsrt |= b@1->hsorted;
+ 	hky |= b@1->hkey;
+@= arrayinit
+	printf("get argument %d\n",@1+1);
+    if( isaBatType(getArgType(mb,pci,@1+1) )){
+	@:batinit(@1,*(int*)getArgValue(stk,pci,@1+1))@
+    } else {
+	b@1 = 0; a@1 = 0; s@1 = 0; 
+	/* get a reference to the value */
+	p@1 = (str) getArgValue(stk,pci,@1+1);
+    }
+
+@-
+If we know all BAT parameters of a multiplex operation 
+have unique columns that are in sync, we can eliminate 
+matching overhead, as captured by the below macro
+implementation. It is expanded to @`interpret_multiplex_array@5
+and @`interpret_special_array@5.
+
+@= interpret_multiplex_array
+int @1_array(
+	MalBlkPtr mb,
+	MalStkPtr stk,
+	InstrPtr pci,
+	MalBlkPtr m,
+	InstrPtr p,
+	int 	ret_tpe,
+	int 	size,
+	int 	assignop,
+	int 	special
+){
+	ValPtr	argv;
+	ValPtr	res;
+	int	argc= pci->argc-1;
+	str  a1, a2, a3, ah;    /* heap bases */
+	int  s1, s2, s3, sh;    /* bun sizes */
+	str  p1, p2, p3, ph, hend; /* bun pointers */
+	int  hky=0, hsrt=0, hdff, htpe= -1;
+	BAT  *b1, *b2, *b3=0, *retb, *bh=0;
+	int ret_sze = ATOMsize(ret_tpe);
+	ptr  tptr = (ptr) GDKmalloc(ret_sze+8);
+        ptr  tnil = ATOMnilptr(ret_tpe);
+	int replace = FALSE, bunsize, buntrick = 0;
+	bulkerror_t bulkerror;
+	BUN dst;
+#ifdef DEBUG_MULTIPLEX
+	printInstruction(stdout,mb,pci);
+	printInstruction(stdout,m,p);
+#endif
+
+	@:arrayinit(1)@
+	if (argc>=3) {
+		@:arrayinit(2)@
+	}
+	if (argc==4) { 
+		@:arrayinit(3)@
+	}
+        if (assignop && b1->batInserted==b1->batHole + BUNsize(b1)) {
+	    replace = TRUE;
+	    buntrick = ATOMsize(b1->ttype);
+	    ACCremoveall(retb = b1);
+	    dst = BUNtloc(retb, BUNfirst(retb)); 
+        } else {
+            retb = BATnew(htpe, ret_tpe, size);
+	    BATseqbase(retb, bh->hseqbase);
+	    if (htpe == TYPE_void && special == 0 && !ATOMvarsized(ret_tpe)) {
+	    	 buntrick = BUNsize(retb);
+	    	 retb->batBuns->free += BATcount(bh)*buntrick;
+	    } else if (special > 1 && bh->htype == TYPE_void) {
+		 buntrick = -1;
+	    }
+	    dst = BUNfirst(retb); 
+        }
+	bunsize = BUNsize(retb);
+	bulkerror_init(&bulkerror);
+
+#ifdef DEBUG_MULTIPLEX
+	printf("argc %d a1 %d a2 %d a3 %d\n",argc, a1==0, a2==0,a3==0);
+#endif
+	switch(argc){
+	case 2:
+		if (a1) @:arrayloop1(@1,a1+*(int*)p1)@
+		else    @:arrayloop1(@1,p1)@
+		break;
+	case 3:
+	    if (a1) {
+		if (a2) @:arrayloop2(@1,a1+*(int*)p1,a2+*(int*)p2)@
+		else    @:arrayloop2(@1,a1+*(int*)p1,p2)@
+	    } else 
+	    {
+		if (a2) @:arrayloop2(@1,p1,a2+*(int*)p2)@
+		else    @:arrayloop2(@1,p1,p2)@
+	    }
+		break;
+	case 4:
+		if (a1) {
+		    if (a2) {
+			if (a3) @:arrayloop3(@1,a1+*(int*)p1,a2+*(int*)p2,a3+*(int*)p3)@
+			else    @:arrayloop3(@1,a1+*(int*)p1,a2+*(int*)p2,p3)@
+		    } else {
+			if (a3) @:arrayloop3(@1,a1+*(int*)p1,p2,a3+*(int*)p3)@
+			else    @:arrayloop3(@1,a1+*(int*)p1,p2,p3)@
+		    }
+		} else {
+		    if (a2) {
+			if (a3) @:arrayloop3(@1,p1,a2+*(int*)p2,a3+*(int*)p3)@
+			else    @:arrayloop3(@1,p1,a2+*(int*)p2,p3)@
+		    } else {
+			if (a3) @:arrayloop3(@1,p1,p2,a3+*(int*)p3)@
+			else    @:arrayloop3(@1,p1,p2,p3)@
+		    }
+		}
+	}
+	bulkerror_finish(&bulkerror, p->fcnname);
+	GDKfree(tptr);
+
+	if (!assignop) {
+		if (BATcount(retb) == BATcount(bh)) {
+			ALIGNsetH(retb, bh);
+		}
+		BATkey(retb, hky);
+		retb->hsorted = hsrt;
+	} else if (replace) { 
+		retb->tsorted = FALSE;
+		BATkey(BATmirror(retb), FALSE);
+	} else {
+		oid bak = b1->halign;
+		BATclear(b1);
+		BATins(b1, retb);
+		BBPreclaim(retb);
+		retb = b1;
+		b1->halign = bak;
+	}
+	retb->batDirty = 1;
+	retb->tsorted = 0;
+	res= &stk->stk[pci->argv[0]];
+	res->val.bval = retb->batCacheid;
+	res->vtype = TYPE_bat;
+	res->len = 0;
 	return GDK_SUCCEED;
+}
+@+ Generic version
+All multiplex calls in MIL can be translated into a batloop variant.
+This is considered the generic solution, to be used when the modules
+do not provide a fast implementation of the multiplex equivalent.
+
+The call GENERIC(CMD,A1,...An) introduces the following function:
+@T
+\begin{verbatim}
+function CMD000(A1,....,An):bat
+	rB:= new(headtype,tailtype);
+	k := -1:lng;
+barrier mloop:= batloop(k,Ai,h,t);
+	$1:= bat.find(A1,h);
+	$2:= A2;	# in case of constant?
+	...
+	cr:= mod.CMD($1,...,$n);
+	insert(rB,h,cr);
+catch 	GDKerror;
+end	GDKerror;
+	return rB;
+end mloop;
+end function;
+\end
+@
+This script is generated on the fly, because we do not a priori
+known the number/type of arguments. 
+
+The algorithm consists of two phases: phase one deals with
+collecting the relevant information, phase two is the actual
+code construction.
+@c
+int CMDmultiplexGeneric(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int i,k,l,mloop,cursor,refBat,rB,bt,cr,ret= GDK_SUCCEED;
+	int hvar,tvar;
+	int assignop = FALSE;
+	char name[128];
+	str s= (str) getArgValue(stk,pci,1);
+	Symbol fcn;
+	MalBlkPtr m;
+	InstrPtr q,p;
+	static int fcnnr;
+	ValPtr retval;
+
+
+	m = newMalBlk();
+	p = newInstruction(ASSIGNsymbol);
+	/* perform type analysis  and function resolution */
+	i= multiplexType(getClient()->nspace,mb,pci,m,p);
+	if( i<0){
+		GDKerror("CMDmultiplex:type error\n");
+		return GDK_FAIL;
+	}
+
+	if(strcmp(s,p->fcnname) ) assignop= TRUE;
+
+#ifdef DEBUG_MULTIPLEX
+	printf("calling the generic multiplex routine\n");
+	printf("multiplex against operator %s (%d)\n",p->fcnname,assignop);
+#endif
+@-
+Determine the reference BAT for the loop and make it known
+in the new mal block.
+@c
+	for(i=2; i < pci->argc; i++)
+	if( isaBatType(getArgType(mb,pci,i)) ){
+		rB= newConstant(m, getArgType(mb,pci,i), GDKstrdup("refBat"));
+		break;
+	}
+
+	/* function multiplex(A1,....,An):bat[ht,tt] */
+	q= newInstruction(FUNCTIONsymbol);
+	sprintf(name,"multiplex%d",fcnnr++);
+	q->fcnname = GDKstrdup(name);
+	q->argv[0]= newVariable(m,GDKstrdup(name), getVarType(m,rB));
+	for(i=2;i<pci->argc;i++){
+		sprintf(name,"A%d",i);
+		refBat= newVariable(m, GDKstrdup(name), 
+				bt = getArgType(mb,pci,i));
+		pushArgument(m,q,refBat);
+	}
+	pushInstruction(m,q);
+
+	/* rB := new(headtype,tailtype */
+	q= newInstruction(ASSIGNsymbol);
+	q->argv[0]= rB = newVariable(m,GDKstrdup("rB"),bt);
+	q->modname= GDKstrdup("bat");
+	q->fcnname= GDKstrdup("new");
+	q->argv[1]= newVariable(m, malTypeName(getHeadType(bt)), 
+				getHeadType(bt));
+	q->argv[2]= newVariable(m, malTypeName(getTailType(bt)), 
+				getTailType(bt));
+	q->argc= 3;
+	pushInstruction(m,q);
+
+	/* barrier mloop:= bunStream(rB,refBat,h,t); */
+	q= newInstruction(ASSIGNsymbol);
+	q->barrier = BARRIERsymbol;
+	q->argv[0]= mloop= newVariable(m,GDKstrdup("mloop"),TYPE_bit);
+	q->fcnname= GDKstrdup("bunStream");
+	q->argv[1] = cursor;
+	q->argv[2] = refBat;
+	hvar= q->argv[3] = newVariable(m,GDKstrdup("h"),getHeadType(bt));
+	tvar= q->argv[4] = newVariable(m,GDKstrdup("t"),getTailType(bt));
+	q->argc= 5;
+	pushInstruction(m,q);
+	
+
+	/* $1:= bat.find(Ai,h) or constant */
+	for(i=2;i<pci->argc;i++)
+	if( isaBatType(l= getArgType(mb,pci,i)) ){
+		q= newInstruction(ASSIGNsymbol);
+		sprintf(name,"B%d",i);
+		q->argv[0]= newVariable(m, GDKstrdup(name), getTailType(l));
+		q->modname= GDKstrdup("algebra");
+		q->fcnname= GDKstrdup("find");
+		sprintf(name,"A%d",i);
+		q->argv[1]= newVariable(m,GDKstrdup(name),l);
+		q->argv[2]= hvar;
+		q->argc=3;
+		pushInstruction(m,q);
+	}
+
+        /* cr:= mod.CMD($1,...,$n); */
+	q= newInstruction(ASSIGNsymbol);
+	cr= q->argv[0]= newVariable(m,GDKstrdup("cr"),getArgType(m,p,0));
+	q->modname= GDKstrdup(p->modname);
+	q->fcnname= GDKstrdup(p->fcnname);
+	for(i=2;i<pci->argc;i++)
+	if( isaBatType(l= getArgType(mb,pci,i)) ){
+		sprintf(name,"B%d",i);
+		pushArgument(m,q,findVariable(m,name));
+	} else{
+		sprintf(name,"A%d",i);
+		pushArgument(m,q, findVariable(m,name));
+	}
+	pushInstruction(m,q);
+
+        /* insert(rB,h,cr); */
+	k= newBatType(getHeadType(bt),getArgType(m,p,0));
+	q= newInstruction(ASSIGNsymbol);
+	q->modname= GDKstrdup("bat");
+	q->fcnname= GDKstrdup("insert");
+	q->argv[0]= newTmpVariable(m,k);
+	q->argv[1]= rB;
+	q->argv[2]= newVariable(m,GDKstrdup("h"),getHeadType(bt));
+	q->argv[3]= cr;
+	q->argc=4;
+	pushInstruction(m,q);
+
+	/* catch   GDKerror; */
+	q= newInstruction(CATCHsymbol);
+	q->barrier = CATCHsymbol;
+	k= q->argv[0]= newVariable(m, GDKstrdup("GDKerror"),TYPE_str);
+	pushInstruction(m,q);
+
+	/* end     GDKerror; */
+	q= newInstruction(ENDsymbol);
+	q->argv[0]= k;
+	pushInstruction(m,q);
+
+        /* return rB; */
+	q= newInstruction(RETURNsymbol);
+	q->argv[0]= rB;
+	pushInstruction(m,q);
+
+	/* end mloop; */
+	q= newInstruction(ENDsymbol);
+	q->argv[0]= mloop;
+	pushInstruction(m,q);
+
+	/* end function; */
+	q= newInstruction(ENDDEFsymbol);
+	pushInstruction(m,q);
+
+@-
+It is time to type check the code and request for any optimization.
+@c
+	chkProgram(getClient()->nspace,m);
+#ifdef DEBUG_MULTIPLEX
+	printf("# multiplex function generated\n");
+	printFunction(stdout,m);
+#endif
+@-
+After all the preparatory work has been finished, it is time to
+execute the new routine and to return its value. 
+Upon exit, we set the return value of the enclosing instruction
+and leave it up to the interpreter to deal with exception handling.
+@c
+        retval=  &stk->stk[pci->argv[0]];
+        garbageElement(retval);
+        ret= runMAL(getClient(),m,stk,0);
+@-
+It is tempting to retain the function in the namespace of
+the client. However, this complicates the administration, e.g.
+how to detect that a previous instance is already available.
+Therefore, we simple remove the temporary function.
+@c
+
+	freeMalBlk(m);
+	return ret;
 }

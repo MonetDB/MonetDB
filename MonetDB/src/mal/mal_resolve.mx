@@ -103,6 +103,7 @@ html
 #include "mal_function.h"
 
 /* #define DEBUG_MAL_RESOLVE*/
+mal_export void chkProgram(Scope s, MalBlkPtr mb);
 mal_export void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p, int level);
 mal_export int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe);
 mal_export int isPolymorphicArgument(MalBlkPtr mb, InstrPtr p, int i);
@@ -343,8 +344,7 @@ int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe){
 	return -1;
 }
 @-
-The typeChecker is called whenever we enter a new instruction
-in a MAL block. We try to clear the type check flag by looking up the
+We try to clear the type check flag by looking up the
 functions. Errors are simply ignored at this point of the game,
 because they may be resolved as part of the calling sequence.
 @c
@@ -450,7 +450,54 @@ procedure call without arguments and no module name.
 	}
 	p->typechk= TYPE_UNKNOWN;
 }
+@-
+After the parser finishes, we have to look for semantic errors,
+such as flow of control problems and possible typeing conflicts.
+The nesting of BARRIER and CATCH statements with their associated
+flow of control primitives LEAVE and RETRY should form a valid
+hierarchy. Failure to comply is considered a structural error
+and leads to flagging the function as erroneous.
+Also check general conformaty of the ML block structure.
+It should start with a signature and finish with and ENDDEFsymbol
+@c
+void chkProgram(Scope s, MalBlkPtr mb)
+{
+        InstrPtr p;
+	int i, signature= FALSE;
 
+	for(i=0;i<mb->stop;i++) {
+		p= getInstrPtr(mb,i);
+		if(p== NULL) continue;
+		typeChecker(s,mb,p, TYPE_FIXED);
+		switch(p->token){
+		case FUNCTIONsymbol: case COMMANDsymbol:
+		case PATTERNsymbol: case HANDLERsymbol:
+			if( i) {
+			str msg=instruction2str(mb,p);
+			GDKerror("SYNTAX ERROR: signature misplaced\n!%s\n",msg);
+			GDKfree(msg);
+			} else signature = TRUE;
+			break;
+		case ENDsymbol:
+			chkEnd(mb,p);
+			break;
+		case CATCHsymbol:
+			chkCatch(mb,p);
+			break;
+		case LEAVEsymbol:
+		case REDOsymbol:
+			chkLabel(mb,p);
+		}
+		if( p->barrier == BARRIERsymbol)
+			chkBarrier(mb,p);
+	}
+	if( signature == FALSE){
+		str msg=instruction2str(mb,p);
+		GDKerror("SYNTAX ERROR: signature missing\n!%s\n",msg);
+		/* printFunction(stdout,mb);*/
+		GDKfree(msg);
+	}
+}
 @+ Type analysis
 MAL provides for type variables of the form any::N. This feature
 supports polymorphic types, but also complicates the subsequent
@@ -507,7 +554,6 @@ Each time we encounter a polymorphic argument, we update the
 list of type variables. This routine assumes that the type
 index is indeed smaller than MAXARG. 
 (The parser currently enforces a single digit )
-Note that type variables are only relevant from 1..
 The polymorphic type 'any' does never constraint an operation.
 @c
 int updPolyType(int formal, int actual, int polytype[2*MAXARG])

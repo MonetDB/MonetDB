@@ -447,12 +447,21 @@ int parseModule(Client cntxt, int atomary)
 	int x,y,tpe;
 
 	if( ! keyword(cntxt,"module",6) ){
-		if( atomary) return parseError(cntxt,"'module' expected\n");
+		if(atomary &&  idLength(cntxt) >0){
+			/* parse: ATOM id:type */
+			if( currChar(cntxt)==':') {
+				tpe= typeMarker(cntxt);
+			} else tpe= TYPE_int;
+			modname= idCopy(cntxt,idLength(cntxt));
+			malAtomDef(modname,tpe);
+			GDKfree(modname);
+			skipToEnd(cntxt);
+			return 1;
+		} else 	
+		if(atomary) return parseError(cntxt,"'module' expected\n");
 		return 0;
 	}
-
 	@:parsePath@
-
 @-
 Atom storage may be defined in terms of an existing type.
 @c
@@ -703,18 +712,18 @@ Module components may include a function reference overruling
 the built-in type resolver.
 @= typeInfo
 	skipBlanc2(cntxt);
-	if( keyphrase(cntxt,"type",4)){
+	if( keyphrase(cntxt,"check",5)){
 		int l;
 		skipBlanc2(cntxt);
 		if( keyphrase(cntxt,"=",1)==0){
 			parseError(cntxt,"'=' expected\n");
 		} else{
-		skipBlanc2(cntxt);
-		if( l= idLength(cntxt)){
-			str nme = idCopy(cntxt,l);
-			cntxt->nspace->typeChecker = getAddress(nme);
-			GDKfree(nme);
-		} else parseError(cntxt,"<identifier> expected\n");
+			skipBlanc2(cntxt);
+			if( l= idLength(cntxt)){
+				str nme = idCopy(cntxt,l);
+				cntxt->nspace->typeChecker = getAddress(nme);
+				GDKfree(nme);
+			} else parseError(cntxt,"<identifier> expected\n");
 		}
 	} 
 @c

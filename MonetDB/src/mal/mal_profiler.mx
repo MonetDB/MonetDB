@@ -1,4 +1,3 @@
-
 @t MAL dynamic profiler
 @a M. Kersten
 @v 0.0
@@ -13,7 +12,7 @@ using the mprof module and inject the necessary performance
 capturing statements in the instruction sequence of the application.
 
 Fine-grain, platform specific information can be obtained using
-existing profilers, like grprof, or even hardware counters.
+existing profilers, like gprof, or even hardware counters.
 
 The profiler described in this module is focussed on extracting
 MAL related performance information. For the time being, this involves
@@ -26,7 +25,7 @@ in the interpreter to collect the information.
 
 Upon exit of the session, the profiler information is saved
 in a file MALprofilerReport for offline inspection.
-This approach assumes implies that all concurrent users are
+This approach implies that all concurrent users are
 affected by the performance overhead.[estimate]
 @h
 /*
@@ -50,10 +49,44 @@ html
  * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
  */
 #ifndef _MAL_PROFILER_H
+#include "gdk.h"
 #include "mal_scope.h"
 
-/*#define DEBUG_MAL_PROFILER */
+#ifdef HAVE_SYS_TIMES_H
+# include <sys/times.h>
+#endif
+
+#if OSVER < 560 && defined(SOLARIS)
+#include "/usr/ucbinclude/sys/rusage.h"
+#include "/usr/ucbinclude/sys/resource.h"
+#endif
+
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
+#endif
+
+typedef struct tms Tms;
+typedef struct mallinfo Mallinfo;
+typedef struct rusage Rusage;
+
+mal_export int activateCounter(str name);
+mal_export int deactivateCounter(str name);
+
+mal_export void eventRecord(Scope cntxt, MalBlkPtr mb,
+			   MalStkPtr stk, InstrPtr pci);
+mal_export int setLogFile(Scope cntxt, str fname);
+mal_export int startEventLogger(Scope cntxt, str mod, str fcn);
+mal_export int setStartPoint(Scope cntxt, str mod, str fcn);
+mal_export int setEndPoint(Scope cntxt, str mod, str fcn);
+mal_export int stopEventLogger();
+
+mal_export int instrFilter(InstrPtr pci, str mod, str fcn);
+mal_export int eventFilter(Scope cntxt, str mod, str fcn);
+mal_export int resetFilter(Scope cntxt, str mod, str fcn);
+
 mal_export void profileReport(Scope cntxt,int outer, FILE *out);
+
+/*#define DEBUG_MAL_PROFILER */
 
 #endif
 @+ Administration
@@ -64,8 +97,287 @@ spent.
 @c
 #include "mal_profiler.h"
 
+#ifdef MALprofiler
+MT_Lock profileLock = 0;
+FILE *eventstream   = 0;
+#endif
+
+static Tms Tmsnullval;
+
+int Tms_size(){ return sizeof(Tms); }
+int Tms_align(){ return sizeof(double); }
+
+@+ Performance tracing
+The interpreter comes with several variables to hold performance
+related data. In addition to the default performance data collection,
+the user can request performance events to be collected on a statement
+basis. Care should be taken, because it leads to a large trace file,
+unless the results are directly passed to the Monet Performance Monitor
+front-end.
+
+The event log record contains a collection of default counters
+and trace information. Front-ends can filter out the relevant pieces.
+
+The performance monitor has exclusive access to the event file, which
+avoid concurrency conflicts amongst clients. It avoid cluthered
+event records on the event stream.
+@c
+
+static struct{
+	str name;	/* which logical counter is needed */
+	int status;	/* trace it or not */
+} profileCounter[]={
+	/*  0 */ {"cpu",1},
+	/*  1 */ {"mal",1},
+	/*  2 */ {"prop",1},
+	/*  3 */ {"mallinfo",1},
+	/*  4 */ {"rusage",1},
+	/*  5 */ {"time",1},
+	/*  6 */ {"client",1},
+	/*  7 */ {0,0}
+};
+@-
+The counters can be set individually. The XML output uses the order of their
+definition.
+
+@= setCounter
+	int i;
+	for(i=0; profileCounter[i].name;i++)
+	if( strcmp(profileCounter[i].name,name)==0){
+		profileCounter[i].status = @1 ;
+		return GDK_SUCCEED;
+	}
+	GDKerror("profile counter '%s' undefined\n",name);
+	return GDK_FAIL;
+@c
+int activateCounter(str name){ @:setCounter(1)@ }
+int deactivateCounter(str name){ @:setCounter(0)@ }
+
+void eventRecord(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+#ifdef MALprofiler
+	struct tms newTms;
+        struct mallinfo infoMalloc;
+        struct rusage   infoUsage;
+	int oldcount,oldflag;
+	extern int mal_xlisting;
+
+	times(&newTms);
+	if( profileLock==0) profileLock= MT_create_lock();
+	MT_set_lock(profileLock,"profileLock");
+	if( eventstream == NULL) {
+		MT_unset_lock(profileLock,"profileLock");
+		return;
+	}
+
+	infoMalloc = MT_mallinfo();
+	getrusage(RUSAGE_SELF,&infoUsage);
+
+	/* make XML record */
+	fprintf(eventstream,"<event>\n");
+	if( profileCounter[0].status ){
+	fprintf(eventstream,"\t<tms utime=\"%d\" ",
+			newTms.tms_utime - pci->timer.tms_utime);
+	fprintf(eventstream,"cutime=\"%d\" ",
+			newTms.tms_cutime - pci->timer.tms_cutime);
+	fprintf(eventstream,"stime=\"%d\" ",
+			newTms.tms_stime - pci->timer.tms_stime);
+	fprintf(eventstream,"cstime=\"%d\" ",
+			newTms.tms_cstime - pci->timer.tms_cstime);
+	fprintf(eventstream,"/>\n");
+	}
+
+	if( profileCounter[1].status ){
+	fprintf(eventstream,"\t<mal");
+	fprintf(eventstream," module=\"%s\"", 
+		(pci->modname?pci->modname:"unknown"));
+	fprintf(eventstream," function=\"%s\"", 
+		(pci->fcnname?pci->fcnname:"unknown"));
+	fprintf(eventstream," calls=\"%d\"", pci->counter);
+	if( pci->counter){
+                double avg= pci->ticks/(pci->counter+0.0);
+		fprintf(eventstream," average=\"%5.2f\">\n", avg);
+        } 
+	oldcount = pci->counter; pci->counter =0;
+	oldflag= mal_xlisting; mal_xlisting = 0;
+	printInstruction(eventstream,mb,pci);
+	pci->counter= oldcount;
+	mal_xlisting = oldflag;
+	fprintf(eventstream,"\t</mal>\n");
+	}
+
+@-
+The property tracing option inspects the destination variable
+and emits its key properties. This is primarilly meant to
+inspect the properties of BATs and their propagation.
+@c
+	if( profileCounter[2].status && isaBatType(getArgType(mb,pci,0)) ){
+	BAT *b;
+	fprintf(eventstream,"\t<prop");
+	/*
+	fprintf(eventstream,"count=\"%d\" ", BATcount(b));
+	*/
+	fprintf(eventstream,"/>\n");
+	}
+
+	if( profileCounter[3].status ){
+	fprintf(eventstream,"\t<memory ");
+	fprintf(eventstream,"maxrss=\"%d\" ",infoUsage.ru_maxrss);
+	fprintf(eventstream,"arena=\"%d\" ",infoMalloc.arena);
+	fprintf(eventstream,"ordblks=\"%d\" ",infoMalloc.ordblks);
+	fprintf(eventstream,"smblks=\"%d\" ",infoMalloc.smblks);
+	fprintf(eventstream,"\n\thblkhd=\"%d\" ",infoMalloc.hblkhd);
+	fprintf(eventstream,"hblks=\"%d\" ",infoMalloc.hblks);
+	fprintf(eventstream,"fsmblks=\"%d\" ",infoMalloc.fsmblks);
+	fprintf(eventstream,"uordblks=\"%d\" ",infoMalloc.uordblks);
+	fprintf(eventstream,"/>\n");
+	}
+
+	if( profileCounter[4].status ){
+	fprintf(eventstream,"\t<io ");
+	fprintf(eventstream,"minflt=\"%d\" ",infoUsage.ru_minflt);
+	fprintf(eventstream,"majflt=\"%d\" ",infoUsage.ru_majflt);
+	fprintf(eventstream,"nswap=\"%d\" ",infoUsage.ru_nswap);
+	fprintf(eventstream,"\n\tinblock=\"%d\" ",infoUsage.ru_inblock);
+	fprintf(eventstream,"oublock=\"%d\" ",infoUsage.ru_oublock);
+	fprintf(eventstream,"nvcsw=\"%d\" ",infoUsage.ru_nvcsw);
+	fprintf(eventstream,"nivcsw=\"%d\" ",infoUsage.ru_nivcsw);
+	fprintf(eventstream,"/>\n");
+	}
+
+	fprintf(eventstream,"</event>\n");
+	MT_unset_lock(profileLock,"profileLock");
+#endif
+}
+
+int setLogFile(Scope cntxt, str fname){
+#ifdef MALprofiler
+	if( profileLock==0) profileLock= MT_create_lock();
+	MT_set_lock(profileLock,"profileLock");
+	eventstream = fopen(fname,"w");
+	if( eventstream == NULL){
+		GDKerror("Could not create event stream file\n");
+		return -1;
+	}
+	fprintf(eventstream,"<MonetProfile>\n");
+	MT_unset_lock(profileLock,"profileLock");
+#endif
+	return GDK_SUCCEED;
+}
+int setStartPoint(Scope cntxt, str mod, str fcn){
+#ifdef MALprofiler
+	if( profileLock==0) profileLock= MT_create_lock();
+	MT_set_lock(profileLock,"profileLock");
+	printf("# start point not set\n");
+	MT_unset_lock(profileLock,"profileLock");
+#endif
+	return GDK_SUCCEED;
+}
+int setEndPoint(Scope cntxt, str mod, str fcn){
+#ifdef MALprofiler
+	if( profileLock==0) profileLock= MT_create_lock();
+	MT_set_lock(profileLock,"profileLock");
+	printf("# end point not set\n");
+	MT_unset_lock(profileLock,"profileLock");
+#endif
+	return GDK_SUCCEED;
+}
+
+int stopEventLogger(){
+#ifdef MALprofiler
+	if( profileLock==0) profileLock= MT_create_lock();
+	MT_set_lock(profileLock,"profileLock");
+	if( eventstream == NULL) return -1;
+	fprintf(eventstream,"</MonetProfile>\n");
+	fclose(eventstream);
+	eventstream = NULL;
+	MT_unset_lock(profileLock,"profileLock");
+#endif
+	return GDK_SUCCEED;
+}
+@-
+Performance tracing is triggered on an instruction basis.
+Calling eventFilter(M,F) switches the performance tracing
+bit in the instruction record. The routine resetFilter
+clears all performance bits.
+
+The routines rely on waking their way through the
+instructions space from a given context. This has been
+abstracted away.
+@c
+int instrFilter(InstrPtr pci, str mod, str fcn){
+#ifdef MALprofiler
+	if( pci->fcnname && (*fcn=='*' || strcmp(fcn,pci->fcnname)==0) ){
+		if( pci->modname && (*mod=='*' || strcmp(mod,pci->modname)==0))
+		return 1;
+	}
+	 if( pci->modname && *fcn == '*' &&
+	   ( *mod == '*' || strcmp(mod,pci->modname)==0) )
+		return 1;
+#endif
+	return 0;
+}
+
+int eventFilter(Scope cntxt, str mod, str fcn){
+#ifdef MALprofiler
+        int i,j,k,all=0;
+        Scope s=cntxt;
+	Symbol t;
+	InstrPtr p;
+
+	if( profileLock==0) profileLock= MT_create_lock();
+	MT_set_lock(profileLock,"profileLock");
+        while(s!= NULL){
+                if( s->subscope)
+                for(j=0;j<MAXSCOPE;j++)
+                if(s->subscope[j]){
+                        for(t= s->subscope[j];t!=NULL;t=t->peer) {
+				p= getInstrPtr(t->def,0);
+				all = (p->modname && strcmp(p->modname,mod)==0);
+				for(k=0;k<t->def->stop;k++){
+					p= getInstrPtr(t->def,k);
+					if( all || instrFilter(p,mod,fcn)){
+						p->trace = TRUE;
+					printf("set %s[%d]\n",p->fcnname,k);
+					}
+				}
+                        }
+                }
+                s= s->outer;
+        }
+	MT_unset_lock(profileLock,"profileLock");
+#endif
+	return -1;
+}
+int resetFilter(Scope cntxt, str mod, str fcn){
+#ifdef MALprofiler
+        int i,j,k;
+        Scope s=cntxt;
+	Symbol t;
+	InstrPtr p;
+
+	if( profileLock==0) profileLock= MT_create_lock();
+	MT_set_lock(profileLock,"profileLock");
+        while(s!= NULL){
+                if( s->subscope)
+                for(j=0;j<MAXSCOPE;j++)
+                if(s->subscope[j]){
+                        for(t= s->subscope[j];t!=NULL;t=t->peer) {
+				for(k=0;k<t->def->stop;k++){
+					p= getInstrPtr(t->def,k);
+					p->trace=FALSE;
+				}
+                        }
+                }
+                s= s->outer;
+        }
+	MT_unset_lock(profileLock,"profileLock");
+#endif
+	return -1;
+}
 @+ Reporting
-The performance information is collected on instruction basis.
+The performance information is collected on an instruction basis,
+which can be used to generate a first-approximation Monet cost model.
+
 For reporting it would be nice to aggregate the information
 at command/function level. Furthermore, a gprof like analysis
 is extremely helpful. It simple calls for collecting all timings
@@ -78,22 +390,29 @@ being called at least once. The information is not sorted.
 void  profileReport(Scope cntxt, int outer, FILE *out)
 {
 #ifdef MALprofiler
-        int i,j;
+        int i,j,k,oldflag;
+	extern int mal_xlisting;
         Scope s=cntxt;
 	Symbol t;
 	InstrPtr p;
 
-        while(s!= NULL){
+	oldflag= mal_xlisting;
+	mal_xlisting = 0;
+        while(out && s!= NULL){
                 if( s->subscope)
                 for(j=0;j<MAXSCOPE;j++)
                 if(s->subscope[j]){
                         for(t= s->subscope[j];t!=NULL;t=t->peer) {
-				p= getInstrPtr(t->def,0);
-				if( p->counter) printFunction(out, t->def);
+				for(k=0;k<t->def->stop;k++){
+					p= getInstrPtr(t->def,k);
+					if( p->counter) 
+						printInstruction(out, t->def,p);
+				}
                         }
                 }
-                s= s->peer;
+                s= s->outer;
         }
+	mal_xlisting = oldflag;
         if(outer && cntxt->outer) profileReport(cntxt->outer, outer,out);
 #endif
 }

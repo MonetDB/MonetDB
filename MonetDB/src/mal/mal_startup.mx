@@ -53,7 +53,6 @@ mal_export int malStartupAdmin(int listing);
 mal_export void serveClient(void *dummy);
 mal_export void resetClientPrg(Client cntxt);
 mal_export void closeClientPrg(Client cntxt, int flag);
-mal_export void chkClientPrg(Client cntxt);
 mal_export void scheduleClient(str user, int socket);
 #endif /*  _MAL_STARTUP_H*/
 @-
@@ -141,59 +140,8 @@ void closeClientPrg(Client cntxt, int flag){
 			pushEndInstruction(mb);
 	}
 	trimMalBlk(mb);
-	chkClientPrg(cntxt);
+	chkProgram(cntxt->nspace, cntxt->curprg->def);
 	resetClientPrg(cntxt);
-}
-@-
-After the parser finishes, we have to look for semantic errors,
-such as flow of control problems and possible typeing conflicts.
-The nesting of BARRIER and CATCH statements with their associated
-flow of control primitives LEAVE and RETRY should form a valid
-hierarchy. Failure to comply is considered a structural error
-and leads to flagging the function as erroneous.
-
-Also check general conformaty of the ML block structure.
-It should start with a signature and finish with and ENDDEFsymbol
-@c
-void chkClientPrg(Client cntxt)
-{
-        InstrPtr p;
-        MalBlkPtr mb;
-	int i, signature= FALSE;
-
-        mb = cntxt->curprg->def;
-	for(i=0;i<mb->stop;i++) {
-		p= getInstrPtr(mb,i);
-		if(p== NULL) continue;
-		typeChecker(cntxt->nspace,mb,p, TYPE_FIXED);
-		switch(p->token){
-		case FUNCTIONsymbol: case COMMANDsymbol:
-		case PATTERNsymbol: case HANDLERsymbol:
-			if( i) {
-			str msg=instruction2str(mb,p);
-			GDKerror("SYNTAX ERROR: signature misplaced\n!%s\n",msg);
-			GDKfree(msg);
-			} else signature = TRUE;
-			break;
-		case ENDsymbol:
-			chkEnd(mb,p);
-			break;
-		case CATCHsymbol:
-			chkCatch(mb,p);
-			break;
-		case LEAVEsymbol:
-		case REDOsymbol:
-			chkLabel(mb,p);
-		}
-		if( p->barrier == BARRIERsymbol)
-			chkBarrier(mb,p);
-	}
-	if( signature == FALSE){
-		str msg=instruction2str(mb,p);
-		GDKerror("SYNTAX ERROR: signature missing\n!%s\n",msg);
-		/* printFunction(stdout,mb);*/
-		GDKfree(msg);
-	}
 }
 @+ Client authorization
 The default method to interact with the database server is to

@@ -44,6 +44,7 @@ html
 #include "mal_stack.h"
 #include "mal_function.h"
 #include "mal_debugger.h"
+#include "mal_profiler.h"
 #include "mal_client.h"
 
 /*#define DEBUG_MAL_INTERPRETER */
@@ -174,11 +175,10 @@ MALrestart:
 			if( cmd == 'r') goto MALrestart;
 		}
 
-		@:beginProfile@
 		@:MALinterpret@
-		@:endProfile@
 	}
 MALevalExit:
+	@:endProfile@
 	/* garbage collect and return */
 	if( glb == 0) garbageCollector(mb,stk);
 	if( stk->exception >= 0) 
@@ -214,6 +214,7 @@ elements in the value stack.
 @+ The major switch
 
 @= MALinterpret
+	@:beginProfile@
 	ret = 0;
 	switch( pci->token){
 	case ASSIGNsymbol:
@@ -241,15 +242,18 @@ elements in the value stack.
 	case FUNCTIONsymbol:
 	case ENDsymbol:
 		if( pci->argv[0] == stk->exception) stk->exception = -1; 
+		@:endProfile@
 		stk->pc++; 
 		break;
 	case RAISEsymbol:
 		@:raiseControl@
+		@:endProfile@
 		break;
 	case CATCHsymbol:
 		/* catch blocks are skipped unless searched for explicitly*/
 		if(stk->exception < 0) @:leaveControl@
 		stk->exception = -1;
+		@:endProfile@
 		stk->pc++; break;
 	case RETURNsymbol:
 		if( env != NULL){
@@ -289,6 +293,7 @@ symbol table and moves it to the stackframe location.
 		fflush(stdout);*/
 		stk->exception = pci->argv[0];
 	} 
+	@:endProfile@
 	ret = 0;
 }
 if( pci->barrier == BARRIERsymbol){
@@ -349,6 +354,7 @@ are determined at compile time.
 				"too many arguments\n");
 	}
 	@:resultParameter@
+	@:endProfile@
 
 @= patterncall
 	if( pci->fcn== NULL)
@@ -360,6 +366,7 @@ are determined at compile time.
 		ret = (str) (*pci->fcn)(mb,stk,pci);
 		@:resultParameter@
 	}
+	@:endProfile@
 
 @-
 MAL function calls are relatively expensive, because they have to assemble
@@ -371,6 +378,7 @@ non-returned values.
 	garbageElement(retval);
 	ret= runMAL(cntxt,mb,stk,0);
 	@:resultParameter@
+	@:endProfile@
 @-
 All dynamically linked routines are called with references to their
 parameter values. They are assembled below by inspecting the argument list.
@@ -424,11 +432,29 @@ The latter is implemented as a linear scan for the corresponding
 labeled statemtent. This might be optimized later.
 The upper layers have assured that the result variable is of type boolean.
 
+@-
 @= barrierControl
 { 
 	v= &stk->stk[pci->argv[0]];
-	/* skip to end of barrier */
-	if( v->val.cval[0] == FALSE ) @:leaveControl@
+	/* skip to end of barrier, depending on the type */
+	switch(v->vtype){
+	case TYPE_bit:
+		if( v->val.cval[0] == FALSE ) {
+			@:leaveControl@
+		}
+		break;
+	case TYPE_sht:
+		if( v->val.shval == 0)
+		@:leaveControl@
+		break;
+	case TYPE_int:
+		if( v->val.ival == 0)
+		@:leaveControl@
+		break;
+	case TYPE_lng:
+		if( v->val.lval == 0)
+		@:leaveControl@
+	}
 	stk->pc++;
 	break;
 }
@@ -675,20 +701,29 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk)
 }
 
 @+ Performance section
-This will be dealt with at a later stage.
+The interpreter has a built-in performance monitor hook, which is
+activated using the compile option MALprofiler. Activation can lead to
+a significant performance degradation, because for all traced functions
+we have to keep track of essential system counter information.
+
 @= performanceVariables
 #ifdef MALprofiler
-	long oldclk=0,newclk=0;
+	long newclk=0;
 #endif
 @= beginProfile
 #ifdef MALprofiler
-	oldclk= GDKusec();
+	if( pci->trace){
+		pci->clk= GDKusec();
+		times(&pci->timer);
+	}
 #endif
 
 @= endProfile
 #ifdef MALprofiler
-	newclk= GDKusec();
-	pci->counter++;
-	pci->ticks += newclk-oldclk;
-	oldclk=newclk;
+	if( pci->trace){
+		newclk= GDKusec();
+		pci->counter++;
+		pci->ticks += newclk - pci->clk;
+		eventRecord(cntxt->nspace,mb,stk,pci);
+	}
 #endif

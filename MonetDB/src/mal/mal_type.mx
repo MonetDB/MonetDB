@@ -115,7 +115,7 @@ the type descriptor. Including the variable references.
 str malTypeName(malType tpe)
 {
 #ifdef DEBUG_MAL_TYPE
-	printf("maltype: %d %d %d",tpe,getHeadTypeType(tpe),getTailType(tpe));
+	printf("maltype: %d %d %d",tpe,getHeadType(tpe),getTailType(tpe));
 	printf("	: %d\n",isaBatType(tpe));
 #endif
 	if( tpe == malAnyType ) return GDKstrdup("any");

@@ -69,6 +69,13 @@ html
 #include "mal_stack.h"
 #include "mal.h"
 
+#ifdef MALprofiler
+#ifdef HAVE_SYS_TIMES_H
+# include <sys/times.h>
+#endif
+#endif
+
+
 #define DEBUG_MAL_INSTR
 #define MAXARG 16
 #define MAXSTMTS 32
@@ -109,6 +116,9 @@ and the total time spent while executing the instruction.
 (See mal_profiler.mx)
 @h
 #ifdef MALprofiler
+	int	trace;		/* facilitate event tracing */
+	struct  tms timer;	/* clock information */
+	long	clk;		/* microseconds clock */
 	long	counter;
 	long	ticks;		/* micro seconds spent */
 #endif
@@ -376,6 +386,16 @@ InstrPtr newInstruction(int kind){
 	p->varargs = 0;
 	p->argc= 1;
 	p->argv[0] = -1;	/* watch out for direct use in variable table*/
+#ifdef MALprofiler
+	p->timer.tms_utime = 0;
+	p->timer.tms_stime = 0;
+	p->timer.tms_cutime = 0;
+	p->timer.tms_cstime = 0;
+	p->clk = 0;
+	p->ticks = 0;
+	p->trace= 0;
+	p->counter= 0;
+#endif
 	return p;
 }
 
@@ -875,8 +895,10 @@ beginning of each line.
 	if( p->counter){
 		double avg= p->ticks/(p->counter+0.0);
 		sprintf(t,"[%7d,%5.2f]\t",p->counter,avg);
-		advance(t);
-	} 
+	} else
+	if( p->trace)
+		sprintf(t,"[%7c,%7c]\t",'?','?');
+	advance(t);
 #endif
 @c
 str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
@@ -1024,12 +1046,10 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 	advance(t);
 	sprintf(t,";");
 #ifdef DEBUG_MAL_INSTR
-#ifndef MALprofiler
 	if( mal_xlisting){
 		advance(t);
 		t= hiddenInstructionArgs(mb,p,t);
 	}
-#endif
 #endif
 	advance(t);
 	sprintf(t,"\n");

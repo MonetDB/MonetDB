@@ -190,7 +190,7 @@ void processInput(Client c,MalStkPtr glb)
 		if( mb->stop == 1) continue; /* nothing added */
 		p= getInstrPtr(mb, mb->stop-1);
 		pushEndInstruction(mb);
-		chkClientPrg(c);
+		chkProgram(c->nspace, c->curprg->def);
 		if( mb->errors == 0){
 			msg= (str) runMAL(c,mb,0,glb);
 			if( msg && msg != (str) GDK_SUCCEED) {
