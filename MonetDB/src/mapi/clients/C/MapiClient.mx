@@ -652,14 +652,34 @@ dump_table(Mapi mid, char *tname)
 		if (cnt)
 			fprintf(toConsole, ",\n");
 
-		if (strcmp(c_type_digits, "0") == 0) {
-			fprintf(toConsole, "\t\"%s\" %s", c_name, c_type);
+		fprintf(toConsole, "\t\"%s\" ", c_name);
+		if (strcmp(c_type, "int") == 0 ||
+		    strcmp(c_type, "smallint") == 0 ||
+		    strcmp(c_type, "bigint") == 0 ||
+		    strcmp(c_type, "date") == 0) {
+			fprintf(toConsole, "%s", c_type);
+		} else if (strcmp(c_type, "month_interval") == 0) {
+			fprintf(toConsole, "INTERVAL MONTH");
+		} else if (strcmp(c_type, "sec_interval") == 0) {
+			fprintf(toConsole, "INTERVAL SECOND");
+		} else if (strcmp(c_type, "clob") == 0) {
+			fprintf(toConsole, "CHARACTER LARGE OBJECT");
+			if (strcmp(c_type_digits, "0") != 0)
+				fprintf(toConsole, "(%s)", c_type_digits);
+		} else if (strcmp(c_type, "timestamp") == 0 ||
+			   strcmp(c_type, "time") == 0) {
+			fprintf(toConsole, "%s", c_type);
+			if (strcmp(c_type_digits, "0") != 0)
+				fprintf(toConsole, "(%s)", c_type_digits);
+			if (strcmp(c_type_scale, "1") == 0)
+				fprintf(toConsole, " WITH TIME ZONE");
+		} else if (strcmp(c_type_digits, "0") == 0) {
+			fprintf(toConsole, "%s", c_type);
 		} else if (strcmp(c_type_scale, "0") == 0) {
-			fprintf(toConsole, "\t\"%s\" %s(%s)", c_name, c_type,
-				c_type_digits);
+			fprintf(toConsole, "%s(%s)", c_type, c_type_digits);
 		} else {
-			fprintf(toConsole, "\t\"%s\" %s(%s,%s)", c_name,
-				c_type, c_type_digits, c_type_scale);
+			fprintf(toConsole, "%s(%s,%s)", c_type,
+				c_type_digits, c_type_scale);
 		}
 		if (strcmp(c_null, "false") == 0)
 			fprintf(toConsole, " NOT NULL");
