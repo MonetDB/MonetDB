@@ -511,12 +511,15 @@ void debugOptimizers(Client c, MalBlkPtr mb, int pc){
         chkFlow(mb);
     }
 }
-
+@-
+Limit the loop count in the optimizer
+@c
 str MALoptimizer(Client c)
 {   MalBlkPtr mb= c->curprg->def;
     InstrPtr p;
     int pc,qot=0, oldstop;
     str msg= NULL;
+    int cnt =0;
 
     setLifespan(mb);
     oldstop= mb->stop;
@@ -536,13 +539,16 @@ str MALoptimizer(Client c)
                 pc--; /* optimizer statement has been removed*/
             }
         }
-    } while(qot);
+    } while(qot && cnt++ < 64);
 #ifdef DEBUG_MAL_OPTIMIZER
     if( c->debugoptimizer && oldstop!=mb->stop){
     stream_printf(GDKout,"Optimizer effect %d -> %d instructions\n",
         oldstop,mb->stop);
     }
 #endif
+    if( cnt >= 64)
+        return throwMessage("optimizer.MALoptimizer",
+                "too many optimization cycles\n");
     return 0;
 }
 @+ Lifespan analysis
