@@ -2827,7 +2827,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 	}
 
 	if (sn->limit >= 0){
-		if (order && sn->offset < 0) 
+		if (order) 
 			order = stmt_limit(order, sn->limit);
 		else 
 			order = stmt_limit(stmt_dup(s->op1.lval->h->data), sn->limit);
