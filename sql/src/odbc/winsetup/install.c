@@ -17,15 +17,6 @@
  * All Rights Reserved.
  */
 
-/*--------------------------------------------------------------------*/
-/*
-/* ODBCSetupCons - ODBC Setup Console style program that
-/* version checks, copies and installs ODBC32.DLL and a custom
-/* ODBC 32bit driver
-/*
-/* (c) Copyright 1991- 1999 Microsoft Corporation. All rights reserved.
-/*--------------------------------------------------------------------*/
-
 #include "ODBCGlobal.h"
 #include <windows.h>
 #include <sql.h>
