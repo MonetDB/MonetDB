@@ -1471,7 +1471,7 @@ if test "x$have_hwcounters" != xno; then
   LIBS="$LIBS $HWCOUNTERS_LIBS"
   have_hwcounters=no
   case "$host_os-$host" in
-   linux*-i?86*)
+   linux*-i?86*|linux*-x86_64*)
 	AC_CHECK_HEADERS( libperfctr.h ,
 	 AC_CHECK_LIB( perfctr, vperfctr_open , 
 	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfctr" 
