@@ -2426,7 +2426,7 @@ stmt *sql_error( context * sql, int error_code, char *format, ... )
 int parse_error(context * c, char *err)
 {
 	(void)sql_error( c, 4, 
-		 "(%d) %s at token (%d): %s in statement: %s",
+		 "!ERROR (%d) %s at token (%d): %s in statement: %s\n",
 		 c->lineno, err, c->yyval, c->yytext, c->sql);
 	c->cur = ' ';
 	return 1;
