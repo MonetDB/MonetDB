@@ -142,7 +142,7 @@ void monet_hello(opt *set, int setlen) {
         printf("All rights reserved.\n");
         printf("# compiled for %s/%dbit.\n", 
 		GDKgetenv("gdk_arch"), sizeof(ptr)*8 );
-	printf("# config:%s\n", GDKgetenv("config"));
+	printf("# config:%s\n", GDKgetenv("gdk_config"));
 	printf("# dbfarm:%s\n", GDKgetenv("gdk_dbfarm"));
 	printf("# dbname:%s\n", GDKgetenv("gdk_dbname"));
     }
@@ -183,6 +183,7 @@ void monet_init( opt *set, int setlen)
 	}
 
 	if (!n || !dbname || !dbfarmval){
+		fprintf(stderr,"Error, no database name or directory\n");
 		if (n) GDKfree(n);
 		return ;
 	}
@@ -239,7 +240,7 @@ void monet_init( opt *set, int setlen)
 }
 
 int main(int argc, char** av) {
-	char buf[256], *prog = *av, *config = NULL;
+	char buf[BUFSIZ], *prog = *av, *config = NULL;
         opt *set = NULL;
         int i,debug = 0, setlen = 0, status = 1;
 
@@ -318,7 +319,10 @@ A grain size of 128 bytes is used to keep overhead low.
 			usage(prog);
 			break;
 		case 'c':
-			config = strdup(optarg);
+			if( *optarg!='/' && *optarg !='.') {
+				snprintf(buf,BUFSIZ,"%s/%s",monet_cwd,optarg);
+				config= strdup(buf);
+			} else config = strdup(optarg);
 			break;
 		case 'd':
 			debug=1;
@@ -356,7 +360,7 @@ A grain size of 128 bytes is used to keep overhead low.
 		/* update the configuration parameter itself */
 		for(k=0;k<setlen;k++)
 		if( idcmp(set[k].name,"monet_pid")==0){
-			strcpy(set[k].name,"config");
+			strcpy(set[k].name,"gdk_config");
 			set[k].value= absolute_path(config);
 			break;
 		}
@@ -381,7 +385,6 @@ A grain size of 128 bytes is used to keep overhead low.
 #ifdef MSERVER_DEBUG
 	else	mo_print_options(set,setlen);
 #endif
-	/* static_module_init(c,buf);*/
 	monet_init(set, setlen);
 
 	mo_free_options(set,setlen);
