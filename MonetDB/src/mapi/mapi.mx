@@ -147,7 +147,7 @@ int MAPIlisten(int *ret, int *port, int *maxusers){
 	int    	on = 1;
 	int 	msgsock;
 	int	i = 0;
-	pid_t	pid;
+	MT_Id	pid;
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {

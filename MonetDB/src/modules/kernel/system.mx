@@ -792,7 +792,7 @@ static char any_str[] = "any";
 
 int view_scope_names(int *ret){
 	Client c;
-	Symbol s;
+	Scope s;
 	int i=0;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
 
@@ -808,7 +808,8 @@ int view_scope_names(int *ret){
 }
 int view_scope_sig(int *ret,str *nme)
 {	Client c;
-	Symbol s,t;
+	Scope s;
+	Symbol t;
 	int i;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
 
