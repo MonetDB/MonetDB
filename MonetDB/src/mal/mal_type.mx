@@ -36,7 +36,7 @@ html
 #define MAL_TYPE_H
 #include "mal.h"
 
-/*#define DEBUG_MAL_TYPE*/
+/*#define DEBUG_MAL_TYPE */
 /* #define GDKerror printf*/
 
 typedef int malType;
@@ -152,6 +152,9 @@ str malTypeName(malType tpe)
 		}
 		return GDKstrdup(buf);
 	}
+#ifdef DEBUG_MAL_TYPE
+		printf("Rely on GDK atom %s\n",ATOMname(tpe));
+#endif
 	return GDKstrdup(ATOMname(tpe));
 }
 
@@ -248,6 +251,7 @@ int getTypeIndex(str nme){
 	i= ATOMindex(nme);
 	/*printf("getTypeIndex %s %d %d\n",nme,i, GDKatomcnt);*/
 	if( idcmp("any",nme)==0 ) return malAnyType;
+	if( idcmp("nil",nme)==0 ) return TYPE_nil;
 	if( idcmp("bat",nme)==0 ){
 /* printf("found a bat[any,any]\n");*/
 		i = newBatType(TYPE_any,TYPE_any);

@@ -101,7 +101,7 @@ html
 
 #include "mal_function.h"
 
-/* #define DEBUG_MAL_RESOLVE*/
+/*#define DEBUG_MAL_RESOLVE*/
 mal_export void chkProgram(Scope s, MalBlkPtr mb);
 mal_export void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p, int level);
 mal_export int resolveType(int dsttype, int srctype);
@@ -125,7 +125,7 @@ to easily recognize a second instantiation of p(...)]
 #include "mal_resolve.h"
 #ifdef DEBUG_MAL_RESOLVE
 #define DEBUGFCN traceFcnName
-str traceFcnName= "____";
+str traceFcnName= "int";
 int tracefcn;
 #endif
 
@@ -212,6 +212,12 @@ Subsequently, the polymorphic arguments update this table
 and check for any type mismatches that might occur.
 There are at most 2 type variables involved per argument.
 @c
+#ifdef DEBUG_MAL_RESOLVE
+	printf("-->start matching arguments\n");
+	printInstruction(stdout,mb,p);
+	printf("++> against signature\n");
+	printInstruction(stdout,s->def,sig);
+#endif
 	for(k=i=p->retc;i<p->argc;i++){
 		int itype;
 		if( resolveType( getArgType(s->def,sig,k),
@@ -306,8 +312,8 @@ an other alternative.
 		printf("%s:=%s,",malTypeName(getArgType(mb,p,i)),
 				malTypeName(returntype[i]));
 		printf("\n");
-        printInstruction(stdout,mb,getSignature(s));
-        printInstruction(stdout,mb,p);
+		printInstruction(stdout,mb,getSignature(s));
+		printInstruction(stdout,mb,p);
 	}
 #endif
 	for(i=0;i<p->retc;i++) 
@@ -393,8 +399,11 @@ int resolveType(int dsttype, int srctype){
 	int h1,t1,h2,t2,h3,t3;
 #ifdef DEBUG_MAL_RESOLVE
 	if( tracefcn){
-		printf("revolveType dst %s %s\n",
-			malTypeName(dsttype),malTypeName(srctype));
+		printf("revolveType dst %s (%d) %s(%d) ",
+			malTypeName(dsttype), dsttype,
+			malTypeName(srctype),srctype);
+		printf("isanyExpr dst %d", isAnyExpression(dsttype));
+		printf(" src %d\n", isAnyExpression(srctype));
 	}
 #endif
 	/* test for polymorphism types first */
@@ -405,23 +414,23 @@ int resolveType(int dsttype, int srctype){
 	if( dsttype == srctype) return dsttype;
 	if( isaBatType(dsttype) && isaBatType(srctype) ){
 		h1= getHeadType(dsttype);
-		if(  isAnyExpression(h1)) return -1;
+		if(  isAnyExpression(h1)) goto noResolution;
 		h2= getHeadType(srctype);
-		if(  isAnyExpression(h2)) return -1;
+		if(  isAnyExpression(h2)) goto noResolution;
 		t1= getTailType(dsttype);
-		if(  isAnyExpression(t1)) return -1;
+		if(  isAnyExpression(t1)) goto noResolution;
 		t2= getTailType(srctype);
-		if(  isAnyExpression(t2)) return -1;
+		if(  isAnyExpression(t2)) goto noResolution;
 		h3= -1;
 		if( h1 == malAnyType) h3= h2;
 		if( h2 == malAnyType) h3= h1;
 		if( h1 == h2) h3= h1;
-		if(h3 == -1) return -1;
+		if(h3 == -1) goto noResolution;
 		t3= -1;
 		if( t1 == malAnyType) t3= t2;
 		if( t2 == malAnyType) t3= t1;
 		if( t1 == t2) t3= t1;
-		if(t3 == -1) return -1;
+		if(t3 == -1) goto noResolution;
 #ifdef DEBUG_MAL_RESOLVE
 		if( tracefcn){
 			printf("revolveType bat[%s,%s] bat[%s,%s]->bat[%s,%s]\n",
@@ -433,6 +442,10 @@ int resolveType(int dsttype, int srctype){
 #endif
 		return newBatType(h3,t3);
 	}
+noResolution:
+#ifdef DEBUG_MAL_RESOLVE
+	printf("Can not be resolved \n");
+#endif
 	return -1;
 }
 
@@ -531,11 +544,15 @@ is being called, we end up with a TYPE_DYNAMIC case.
 		}
 	}
 	if( p->typechk < level) return;
-@-
+@+ Assignment 
 When we arrive here the operator is an assignment.
 The language should also recognize (a,b):=(1,2);
 This is achieved by propagation of the rhs types to the lhs
 variables.
+Furthermore, the constant nil can be a proper value
+assigned to any variable. 
+This case should be recognized separately, because it
+requires a call to a type-specific setToNil() function call.
 @c
 	p->typechk= TYPE_FIXED;
 	for(k=0,i= p->retc; k<p->retc && i<p->argc; i++,k++){
@@ -543,6 +560,9 @@ variables.
 		int lhs = getArgType(mb,p,k);
 
 		if( p->argv[k]<0) {printf("ASSUMPTION VIOLATION\n");abort();}
+		if( rhs == TYPE_nil){
+			printf("handle a nil assignment");
+		}
 		if( lhs == malAnyType)
 			setVarType(mb,p->argv[k],rhs);
 		else

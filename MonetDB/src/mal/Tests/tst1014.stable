@@ -26,16 +26,16 @@
 #end function;
 function Admin.test():any;	#0 polymorphic:(test:any)
 	io.print("test");	#1:($1:int)<-($2:str)
-	bbp.open();	#2:($3:void)
+	bbp.open();	#2:($3:nil)
 	x := bbp.getObjects();	#3:(x:bat[int,str])
 	io.print(x);	#4:($5:int)<-(x:bat[int,str])
 	io.print("test");	#5:($6:int)<-($2:str)
 	b := mal.new(int,int);	#6:(b:bat[int,int])<-(int:int)(int:int)
 	bat.insert(b,1,2);	#7:($9:bat[int,int])<-(b:bat[int,int])($10:int)($11:int)
-	bbp.deposit("myfirstbat",b);	#8:($12:void)<-($13:str)(b:bat[int,int])
+	bbp.deposit("myfirstbat",b);	#8:($12:nil)<-($13:str)(b:bat[int,int])
 	c := bbp.take("myfirstbat");	#9:(c:bat[any,any])<-($13:str)
 	io.print(c);	#10:($15:int)<-(c:bat[any,any])
-	bbp.close();	#11:($16:void)
+	bbp.close();	#11:($16:nil)
 end function;	#12:
 #
 #test();
@@ -48,20 +48,20 @@ end function;	#12:
 function Admin.main():int;	#0:(main:int)
 	Admin.test();	#1:($1:any)
 	io.print("continue");	#2:($2:int)<-($3:str)
-	bbp.open();	#3:($4:void)
+	bbp.open();	#3:($4:nil)
 	v := bbp.take("myfirstbat");	#4:(v:bat[any,any])<-($6:str)
 	io.print(v);	#5:($7:int)<-(v:bat[any,any])
-	bbp.close();	#6:($8:void)
+	bbp.close();	#6:($8:nil)
 end function;	#7:
 [ "test" ]
 #-------------------------#
 # BAT:	  objects	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 7,	  "mysecondbat"	  ]
+[ 6,	  "mysecondbat"	  ]
 [ "test" ]
 #-----------------#
-# BAT:	  tmp_9	  #
+# BAT:	  tmp_8	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]

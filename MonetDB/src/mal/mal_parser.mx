@@ -322,7 +322,7 @@ int cstLength(Client cntxt, int *type)
 		return 4;
 	}
 	if( *s== 'n' && strncmp(s,"nil",3)==0 && !isalnum(*(s+3)) ){
-		*type = TYPE_void;
+		*type = TYPE_nil;
 		skipBlanc(cntxt);
 		return 3;
 	}
@@ -741,6 +741,8 @@ a column of a BAT.
 		x = cntxt->nxt[l];
 		cntxt->nxt[l]= 0;
 		type= getTypeIndex(cntxt->nxt);
+		if( type == malAnyType)
+			parseError(cntxt,"Type identifier expected\n");
 		cntxt->nxt[l]= x;
 		cntxt->nxt += l;
 	}

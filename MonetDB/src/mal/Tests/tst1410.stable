@@ -69,12 +69,12 @@ function Admin.main():int;	#0:(main:int)
 	io.print(x);	#25:($43:int)<-(x:bat[int,any])
 	io.print("set histogram on tail");	#26:($44:int)<-($45:str)
 	tt := bat.reverse(y);	#27:(tt:bat[fruit,int])<-(y:bat[int,fruit])
-	enum.setHistogram(fruit,tt);	#28:($47:void)<-(fruit:fruit)(tt:bat[fruit,int])
+	enum.setHistogram(fruit,tt);	#28:($47:nil)<-(fruit:fruit)(tt:bat[fruit,int])
 	b := enum.isHistogram(fruit,tt);	#29:(b:bit)<-(fruit:fruit)(tt:bat[fruit,int])
 	io.print(b);	#30:($48:int)<-(b:bit)
 end function;	#31:
 #-------------------------#
-# BAT:	  tmp_4		  #
+# BAT:	  tmp_7		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 0,	  "apples"	  ]
@@ -96,7 +96,7 @@ end function;	#31:
 [ true ]
 [ "start bulk encoding test" ]
 #-------------------------#
-# BAT:	  tmp_6		  #
+# BAT:	  tmp_9		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 0,	  "apples"	  ]
@@ -108,7 +108,7 @@ end function;	#31:
 [ 7,	  "apples"	  ]
 [ "encode the bat" ]
 #-------------------------#
-# BAT:	  tmp_7		  #
+# BAT:	  tmp_10	  #
 # (int)	  (fruit)	  #
 #-------------------------#
 [ 0,	  apples	  ]
@@ -120,7 +120,7 @@ end function;	#31:
 [ 7,	  apples	  ]
 [ "decode the bat" ]
 #-------------------------#
-# BAT:	  tmp_8		  #
+# BAT:	  tmp_11	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 0,	  "apples"	  ]
