@@ -110,7 +110,7 @@ Reduce the program before other optimizations take place
 @c
         ARoptimizer(c, c->curprg->def, 0);
         AMoptimizer(c, c->curprg->def, 0);
-        s= findSymbol("bat","setWriteMode");
+        s= findMALSymbol("bat","setWriteMode");
         if( s)
             setWriteMode = getSignature(s)->fcn;
 
