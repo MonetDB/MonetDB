@@ -2438,11 +2438,8 @@ def main(argv) :
         dft['setSQL_LOGDIR']     = "'--set \"sql_logdir='+env['SQL_LOGDIR']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(40000,49999))"
         dft['SQLPORT']        = "str(randomPort(50000,59999))"
-        if env['VERSION'] >= 49900:
-            dft['SQLCLIENT']  = "'MapiClient --language=sql'" # --port='+env['SQLPORT']"
-        else:
-            dft['SQLCLIENT']  = "'MapiClient --language=sql'" # --port='+env['SQLPORT']"
-        dft['MAPICLIENT']     = "'MapiClient'" # --port='+env['MAPIPORT']"
+        dft['SQLCLIENT']      = "'MapiClient -lsql'" # --port='+env['SQLPORT']"
+        dft['MAPICLIENT']     = "'MapiClient -lmil'" # --port='+env['MAPIPORT']"
         dft['X100CLIENT']     = "'x100run_mapi'" # --port='+env['MAPIPORT']"
         dft['XQUERYCLIENT']   = "'pf -M -O3'" # --port='+env['MAPIPORT']"
     if THISFILE == "Mprofile.py":
