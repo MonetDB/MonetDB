@@ -811,12 +811,12 @@ static char* pre(str s1,str s2){
 }
 static char* local_itoa(ssize_t i){
 	static char buf[32];
-	snprintf(buf, 32, "%ld", i);
+	snprintf(buf, 32, SSZFMT, i);
 	return buf;
 }
 static char* local_utoa(size_t i){
 	static char buf[32];
-	snprintf(buf, 32, "%lu", i);
+	snprintf(buf, 32, SZFMT, i);
 	return buf;
 }
 
@@ -854,7 +854,7 @@ void HASHinfo(BAT *bn, Hash *h, str s){
 	if( cnt[i]) {
 		BUNins(bn, pre(s,local_utoa(i)), local_utoa(cnt[i]));
 	}
-	snprintf(buf, 32, "%lu on %lu", largetot, largebuckets);
+	snprintf(buf, 32, SZFMT " on " SZFMT, largetot, largebuckets);
 	BUNins(bn, pre(s,"collision"), buf);
 }
 

@@ -300,7 +300,7 @@ cleans up the created views.
 BAT *interpret_pin(batrec *r, str s) {
 	BAT *b;
 	BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) on bat(%d) refcnt = %d\n",
-				s, r->id, BBPrefs(r->id)+1);
+				s, (int) r->id, BBPrefs(r->id)+1);
 	b = BATdescriptor(r->id);
 	if (b == NULL) { 
 		return NULL;
@@ -312,11 +312,11 @@ BAT *interpret_pin(batrec *r, str s) {
 			BAT *v = VIEWcreate(b);
 			BBPunfix(r->id);
 			v->batStamp = b->batCacheid;
-			BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) create %d[1,%d] on %d[%d,%d]\n", 
-		        	s, v->batCacheid, tid, b->batCacheid, _b->void_cnt, _b->void_tid);
+			BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) create %d[1,%d] on %d[" SSZFMT "," SSZFMT "]\n", 
+		        	s, (int) v->batCacheid, tid, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
 			_b = b = v; 
 		} else {
-	    		BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) => %d[%d,%d]\n", s,
+	    		BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) => %d[" SSZFMT "," SSZFMT "]\n", s,
 				b->batCacheid, _b->void_cnt+1, _b->void_tid);
 		}
 		_b->void_cnt++;
@@ -331,7 +331,7 @@ BAT *interpret_pin(batrec *r, str s) {
 void interpret_unpin(batrec *r, str s) {
 	BAT *b = BBP_cache(r->id);
 	BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) on bat(%d) refcnt = %d\n",
-				s, r->id, BBPrefs(r->id)-1);
+				s, (int) r->id, BBPrefs(r->id)-1);
 	if (b){
 	    if (b->batStamp != r->stamp) {
 		GDKerror("interpret_unpin(%s) bat=%d,stamp=%d OVERWRITTEN\n", s, r->id, r->stamp);
@@ -339,12 +339,12 @@ void interpret_unpin(batrec *r, str s) {
 		BAT *_b = BBPdescriptor(ABS(r->id));
 		MT_set_lock(monet_voidLock, "unpin");
 		if (--(_b->void_cnt) == 0) {
-			BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => kill %d[%d,%d]\n", 
-				s, b->batCacheid, _b->void_cnt, _b->void_tid);
+			BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => kill %d[" SSZFMT "," SSZFMT "]\n", 
+				s, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
 			_b->void_tid = 0;
 		} else {
-			BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => %d[%d,%d]\n", 
-				s, b->batCacheid, _b->void_cnt, _b->void_tid);
+			BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => %d[" SSZFMT "," SSZFMT "]\n", 
+				s, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
 		}
 		MT_unset_lock(monet_voidLock, "unpin");
 	    }

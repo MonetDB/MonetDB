@@ -204,7 +204,7 @@ int blob_tostr(str* tostr,int* l,blob* p)
 		return 3;
 	}
 
-	sprintf(*tostr,"(%lu:", p->nitems);
+	sprintf(*tostr,"(" SZFMT ":", p->nitems);
 	s = *tostr + strlen(*tostr);
 
 	for (i = 0; i < p->nitems; i++) {

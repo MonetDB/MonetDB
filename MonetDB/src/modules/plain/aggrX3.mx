@@ -324,7 +324,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 	if (e->htype == TYPE_void) {
 		oid nil = oid_nil;
 		(void) nil;	/* silence compiler about unused variable */
-		ALGODEBUG THRprintf(GDKout, "init_result(@1): e->htype == TYPE_void, e->hseqbase=%lu\n", e->hseqbase);
+		ALGODEBUG THRprintf(GDKout, "init_result(@1): e->htype == TYPE_void, e->hseqbase=" SZFMT "\n", (size_t) e->hseqbase);
 		BATloopFast(e, p, q, xx) {
 			void@1_bunfastins_nocheck_noinc(bn, _p, &nil, &zero);
 			_p += _bunsize;
@@ -337,7 +337,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 			_p += _bunsize;
 		}
 		max = *(oid*)BUNhloc(e, BUNlast(e)-BUNsize(e));
-		ALGODEBUG THRprintf(GDKout, "init_result(@1): BAThordered(e)&1, min=%lu, max=%lu\n", min, max);
+		ALGODEBUG THRprintf(GDKout, "init_result(@1): BAThordered(e)&1, min=" SZFMT ", max=" SZFMT "\n", (size_t) min, (size_t) max);
 	} else {
 		oid i;
 		min = max = *(oid*)BUNhloc(e, BUNfirst(e));
@@ -349,7 +349,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 			else
 			if (i > max) max = i;
 		}
-		ALGODEBUG THRprintf(GDKout, "init_result(@1): min=%lu, max=%lu\n", min, max);
+		ALGODEBUG THRprintf(GDKout, "init_result(@1): min=" SZFMT ", max=" SZFMT "\n", (size_t) min, (size_t) max);
 	}
 	bn->batBuns->free = _p - bn->batBuns->base;
 	if (!bn->batDirty) bn->batDirty = TRUE;
@@ -1301,8 +1301,8 @@ BAT* aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, size_t
 	size_t base, end, w;
 	ssize_t offset;
 
-        ALGODEBUG THRprintf(GDKout, "aggrX3_sum3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=%lu,min=%lu,max=%lu);\n",
-	                             bn->batId,b->batId,g->batId,e->batId,range,min,max);
+        ALGODEBUG THRprintf(GDKout, "aggrX3_sum3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" SZFMT ",min=" SZFMT ",max=" SZFMT ");\n",
+	                             bn->batId,b->batId,g->batId,e->batId,range,(size_t) min,(size_t) max);
 	@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,&sums[(*(oid*)h)-min],,@2)@
 	
 	return bn;
@@ -1392,8 +1392,8 @@ BAT* aggrX3_prod3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, size_
 	size_t base, end, w;
 	ssize_t offset;
 
-        ALGODEBUG THRprintf(GDKout, "aggrX3_prod3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=%lu,min=%lu,max=%lu);\n",
-	                             bn->batId,b->batId,g->batId,e->batId,range,min,max);
+        ALGODEBUG THRprintf(GDKout, "aggrX3_prod3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" SZFMT ",min=" SZFMT ",max=" SZFMT ");\n",
+	                             bn->batId,b->batId,g->batId,e->batId,range,(size_t) min,(size_t) max);
 	@:aggrX3_prod3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,&prods[(*(oid*)h)-min],,@2)@
 	
 	return bn;

@@ -698,7 +698,7 @@ Ma_tostr(
 	char buf[1024];
 	int l = 0;
 	
-	sprintf(buf,"(%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld)",
+	sprintf(buf,"(" SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT ")",
 		(ssize_t) M->arena,
 		(ssize_t) M->ordblks,
 		(ssize_t) M->smblks,
@@ -901,15 +901,15 @@ Ru_tostr(
    	int l = 0;
 	char buf[1024];
 
-	sprintf(buf,"(%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld)",
-		R->ru_maxrss,
-		R->ru_minflt,
-		R->ru_majflt,
-		R->ru_nswap,
-		R->ru_inblock,
-		R->ru_oublock,
-		R->ru_nvcsw,
-		R->ru_nivcsw);
+	sprintf(buf,"(" SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT "," SSZFMT ")",
+		(ssize_t) R->ru_maxrss,
+		(ssize_t) R->ru_minflt,
+		(ssize_t) R->ru_majflt,
+		(ssize_t) R->ru_nswap,
+		(ssize_t) R->ru_inblock,
+		(ssize_t) R->ru_oublock,
+		(ssize_t) R->ru_nvcsw,
+		(ssize_t) R->ru_nivcsw);
 	l = (int) strlen(buf) + 1;
 	if (*dst && *len < l ){
 		GDKfree(*dst);

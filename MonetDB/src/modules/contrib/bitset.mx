@@ -113,7 +113,7 @@ module bitset {
 
 /*#define DEBUG */
 
-#define bitset int
+typedef int bitset;
 
 #include "bitset.proto.h"
 
@@ -167,7 +167,7 @@ int bitset_tostr(char** dst,int* len,bitset* atom) {
 	int i;
 
 #ifdef DEBUG
-	printf("printing bitset[%d]\n",*atom);
+	printf("printing bitset[%d]\n",(int)*atom);
 #endif
 
 #ifdef DEBUG
@@ -244,7 +244,7 @@ int newBitset2( bitset* res ) {
 	*res = 0;
 
 #ifdef DEBUG
-	printf("created new empty bitset[%d]\n",*res);
+	printf("created new empty bitset[%d]\n",(int)*res);
 #endif
 
 	return GDK_SUCCEED;

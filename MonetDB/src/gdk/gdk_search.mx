@@ -381,7 +381,7 @@ hash_t HASHlist(Hash* h, size_t i) {
                 c++;
                 i = j;
                 if (i > h->lim) {
-                        stream_printf(GDKout, "hash inconsistency link %d\n",i);
+                        stream_printf(GDKout, "hash inconsistency link " SZFMT "\n",i);
                         break;
                 }
         }

@@ -667,7 +667,7 @@ if (retval) /* only insert some tuples */
 @= check_multiplex
 if (!retval) {
     char buf[32];
-    sprintf(buf, "%ld", (long) (@2));
+    sprintf(buf, PDFMT, (ptrdiff_t) (@2));
     bulkerror_handle(&bulkerror, buf); 
     tptr = tnil; /* insert a nil */
 } 

@@ -981,7 +981,7 @@ nils are not handled properly $=>$ they are treated as normal values
          * enumtype. Create 'bn' result BAT with  this tailtype and dense head.
          */	
 	histo->batBuns->free += BUNsize(histo)*pow_c*card_b;
-	sprintf(buf, "enum_%d", histo->batCacheid);
+	sprintf(buf, "enum_%d", (int) histo->batCacheid);
 	BBPrename(histo->batCacheid, buf);	
 	enum_load(&new_enum_tpe, histo);
 	*res = bn = BATnew(TYPE_void, new_enum_tpe, BATcount(b));

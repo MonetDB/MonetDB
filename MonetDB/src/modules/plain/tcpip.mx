@@ -745,7 +745,7 @@ the standard mechanism.
  			size_t len;
 			int fd = connections[i].sock;
 
-			snprintf(msg, 16384, "err:%s:%lu\n", nm, strlen(errbuf) + 1);
+			snprintf(msg, 16384, "err:%s:" SZFMT "\n", nm, strlen(errbuf) + 1);
 			len = strlen(msg);
 			memcpy(msg+len, errbuf, strlen(errbuf)+1);
 	    		socket_write(fd, len+strlen(errbuf)+1, msg,"error msg");
@@ -1302,8 +1302,8 @@ TCPexport(
 #ifndef WORDS_BIGENDIAN
 	    BATconvert(b,CONV_HTON);
 #endif
-	    sprintf(buf, "bat:%s:%lu*%lu:%s\@%d%s%s:%s\@%d%s%s:%lu:%lu:", 
-		name, BATcount(b), (size_t) BUNsize(b), 
+	    sprintf(buf, "bat:%s:" SZFMT "*%d:%s\@%d%s%s:%s\@%d%s%s:" SZFMT ":" SZFMT ":", 
+		name, BATcount(b), BUNsize(b), 
 		atom_name(b->htype), b->hloc, b->hsorted?"+":"", b->hkey?"k":"",
 		atom_name(b->ttype), b->tloc, b->tsorted?"+":"", b->tkey?"k":"",
 		b->hheap.base?b->hheap.free:0, b->theap.base?b->theap.free:0);
@@ -1613,7 +1613,7 @@ It move the cmd pointer to the "current" position.
 		} else if (ATOMstorage(tpe) == TYPE_str) { 
 		    str t = ATOMname(tpe);
 		    INC_BUFLEN(strlen(t)+strlen(val)+4);
-		    sprintf(cmd, "%s(\"%s\")", (str) t, (str) val);
+		    sprintf(cmd, "%s(\"%s\")", t, (str) val);
 		} else if ((tpe == TYPE_bat) || ATOMextern(tpe)) {
 	            char export_id[17];
 	    	    sprintf(export_id, "p%02d%08d", nparam, eval_id);
@@ -1706,8 +1706,8 @@ Init the connection
 @-
 Send one BAT.
 @c
-	fprintf(fp, "bat:my_table_name:%d*%d:int=%d:flt=%d:0:0\n", 
-		TABLE_SIZE, (int) sizeof(tuple), 0, (int) sizeof(int));
+	fprintf(fp, "bat:my_table_name:%d*" SZFMT ":int=%d:flt=" SZFMT ":0:0\n", 
+		TABLE_SIZE, sizeof(tuple), 0, sizeof(int));
 	fwrite(table, 1, TABLE_SIZE*sizeof(tuple), fp);
 	fflush(fp);
 }

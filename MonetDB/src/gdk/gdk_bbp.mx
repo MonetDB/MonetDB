@@ -632,7 +632,7 @@ int BBPdir(void) {
 	bat i;
 
 	if (GDKdebug&17)
-	THRprintf(GDKerr, "#BBPdir: writing BBP.dir (%d bats).\n", BBPsize);
+	THRprintf(GDKerr, "#BBPdir: writing BBP.dir (%d bats).\n", (int) BBPsize);
 	IODEBUG {
 		THRprintf(GDKerr, "BBPdir start oid=");
 		OIDwrite(GDKerr);
@@ -642,7 +642,7 @@ int BBPdir(void) {
 	if (fp)
 		s = file_wastream(fp, "BBP.dir");
 	if (s == NULL || OIDwrite(s) || 
-	    stream_printf(s, " BBPsize=%d\n", BBPsize) < 0) goto error;
+	    stream_printf(s, " BBPsize=%d\n", (int) BBPsize) < 0) goto error;
 
 	for (i = 1; i < BBPsize; i++)
 	  if (BBP_status(i) & BBPPERSISTENT) {
@@ -903,7 +903,7 @@ void BBPuncacheit(bat i, int unloaddesc) {
 			MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPuncacheit");
 		if (b) {
 			BATDEBUG {
-				THRprintf(GDKerr, "uncache %d (%s)\n", i, BBP_logical(i)); 
+				THRprintf(GDKerr, "uncache %d (%s)\n", (int) i, BBP_logical(i)); 
 			}
 			if (unloaddesc || BBP_desc_count[i&BBPLOCKMASK] > BBP_desc_max) {
 				BBP_desc_count[i&BBPLOCKMASK]--;
@@ -930,7 +930,7 @@ void BBPclear(bat i) {
 		if (pid != locked_by) 
 			MT_set_lock(GDKcacheLock, "BBPclear"); 
 		BATDEBUG {
-			THRprintf(GDKerr, "clear %d (%s)\n", i, BBP_logical(i)); 
+			THRprintf(GDKerr, "clear %d (%s)\n", (int) i, BBP_logical(i)); 
 		}
 		BBPuncacheit(i, TRUE);
 		if (BBPnamecheck(BBP_logical(i)) == 0) {
@@ -963,7 +963,7 @@ void BBPspin(bat i, str s, int event) {
 			MT_sleep_ms(1);
 			spin++;
 		}
-		BATDEBUG THRprintf(GDKout, "BBPspin(%d,%s,%d): " LLFMT " loops\n", i, s, event, spin);
+		BATDEBUG THRprintf(GDKout, "BBPspin(%d,%s,%d): " LLFMT " loops\n", (int) i, s, event, spin);
 	}
 }
 
@@ -1216,7 +1216,7 @@ int BBPreclaim(BAT* b) {
 
 	BATDEBUG THRprintf(GDKerr, 
 	    "BBPreclaim: bat(%d) view=%d lrefs=%d ref=%d stat=%d\n", 
-			b->batCacheid, b->batSharecnt, 
+			(int) b->batCacheid, b->batSharecnt, 
 			BBP_lrefs(b->batCacheid), 
 			BBP_refs(b->batCacheid), BBP_status(b->batCacheid));
 
@@ -1595,7 +1595,7 @@ int bbptrimfirst = BBPMAXTRIM, bbptrimlast = 0, bbpunloadtail, bbpunload, bbptri
 static bat BBPtrim_scan(int mem, int vm, int descs, bat bbppos, bat bbplim) {
 	bbptrimlast = 0;
 	bbptrimmax = BBPMAXTRIM;
-	MEMDEBUG THRprintf(GDKerr, "TRIMSCAN: mem=%d vm=%d, descs=%d, start=%d, limit=%d\n", mem, vm, descs, bbppos, bbplim);
+	MEMDEBUG THRprintf(GDKerr, "TRIMSCAN: mem=%d vm=%d, descs=%d, start=%d, limit=%d\n", mem, vm, descs, (int) bbppos, (int) bbplim);
 	if (bbppos < BBPsize) do { 
 		if (BBP_logical(bbppos)) {
 			BAT *b = BBP_cache(bbppos);
@@ -1638,7 +1638,7 @@ static bat BBPtrim_scan(int mem, int vm, int descs, bat bbppos, bat bbplim) {
 	} else {
 		bbptrimfirst = BBPMAXTRIM;
 	}
-	MEMDEBUG THRprintf(GDKerr, "TRIMSCAN: end at %d (size=%d)\n", bbppos, BBPsize);
+	MEMDEBUG THRprintf(GDKerr, "TRIMSCAN: end at %d (size=%d)\n", bbppos, (int) BBPsize);
 	return bbppos;
 }
 
@@ -1661,7 +1661,7 @@ void BBPtrim_select(size_t *memtarget, size_t *vmtarget, int *ndescs, int dirty)
 		next = bbptrim[cur].next; /* do now, because we overwrite bbptrim[cur].next below */ 
 		
 		MEMDEBUG if (b) {
-			THRprintf(GDKerr, "TRIMSELECT: candidate=%s BAT*=%lx\n", BBPname(bbptrim[cur].bid), (size_t) b);   
+			THRprintf(GDKerr, "TRIMSELECT: candidate=%s BAT*=" PTRFMT "\n", BBPname(bbptrim[cur].bid), (void *) b);   
 			THRprintf(GDKerr, "            (cnt=%d, mode=%d, refs=%d, wait=%d, parent=%d, lastused=%u,%u,%d)\n",
 					bbptrim[cur].cnt, b->batPersistence, BBPrefs(b->batCacheid), (BBPstatus(b->batCacheid)&BBPWAITING)!=0, 
 					VIEWparent(b), BBP_lastused(b->batCacheid), BBPLASTUSED(bbptrim[cur].lastused), bbptrim[cur].lastused);
@@ -1690,7 +1690,7 @@ void BBPtrim_select(size_t *memtarget, size_t *vmtarget, int *ndescs, int dirty)
 			{
 				/* only then we unload! */
 				MEMDEBUG {
-					THRprintf(GDKerr, "TRIMSELECT: unload %s [%lu,%lu] bytes [%lu,%lu] dirty\n",
+					THRprintf(GDKerr, "TRIMSELECT: unload %s [" SZFMT "," SZFMT "] bytes [" SZFMT "," SZFMT "] dirty\n",
 						BBPname(b->batCacheid), 
 						memdelta, vmdelta, memdirty, vmdirty);
 				}
@@ -1710,7 +1710,7 @@ void BBPtrim_select(size_t *memtarget, size_t *vmtarget, int *ndescs, int dirty)
 			} else if (!dirty) {
 				/* do not unload now, but keep around; insert at the end of the new bbptrim list */
 				MEMDEBUG {
-					THRprintf(GDKerr, "TRIMSELECT: keep %s [" LLFMT "," LLFMT "] bytes [" LLFMT "," LLFMT "] dirty target(mem=" LLFMT " vm=" LLFMT " descs=%d)\n",
+					THRprintf(GDKerr, "TRIMSELECT: keep %s [" SZFMT "," SZFMT "] bytes [" SZFMT "," SZFMT "] dirty target(mem=" SZFMT " vm=" SZFMT " descs=%d)\n",
 						BBPname(b->batCacheid), memdelta, vmdelta, memdirty, vmdirty, MAX(0,*memtarget), MAX(0,*vmtarget), *ndescs);
 				}
 				if (bbptrimtail == BBPMAXTRIM) {
@@ -1773,10 +1773,10 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
 		else
 			vmtarget = 0;
 	}
-	MEMDEBUG THRprintf(GDKerr, "BBPTRIM_ENTER: memsize=%lu,vmsize=%lu,ndescs=%d\n", 
+	MEMDEBUG THRprintf(GDKerr, "BBPTRIM_ENTER: memsize=" SZFMT ",vmsize=" SZFMT ",ndescs=%d\n", 
 			GDKmem_cursize(), GDKvm_cursize(), ndescs);
 	ndescs -= BBP_desc_max*(BBPLOCKMASK+1);
-	MEMDEBUG THRprintf(GDKerr, "BBPTRIM: memtarget=%lu vmtarget=%lu,desctarget=%d\n", 
+	MEMDEBUG THRprintf(GDKerr, "BBPTRIM: memtarget=" SZFMT " vmtarget=" SZFMT ",desctarget=%d\n", 
 			memtarget, vmtarget, ndescs);
 	PERFDEBUG THRprintf(GDKerr, "BBPtrim(mem=%d,vm=%d,descs=%d)\n", memtarget>0, vmtarget>0, ndescs>0); 
 
@@ -1817,7 +1817,7 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
 		for(i=bbpunload; i!=BBPMAXTRIM; i = bbptrim[i].next) {
 			BAT *b = BBP_cache(bbptrim[i].bid);
 			MEMDEBUG THRprintf(GDKerr, "BBPTRIM: %9u %7d %s\n",
-					bbptrim[i].lastused, bbptrim[i].bid,
+					bbptrim[i].lastused, (int) bbptrim[i].bid,
 					BBPname(bbptrim[i].bid));
 			bats_written += (b->batPersistence != TRANSIENT && BATdirty(b));
 			bats_unloaded++;
@@ -1828,7 +1828,7 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
 	}
 
 	/* done trimming */
-	MEMDEBUG  THRprintf(GDKerr, "BBPTRIM_EXIT: memsize=%lu,vmsize=%lu\n",
+	MEMDEBUG  THRprintf(GDKerr, "BBPTRIM_EXIT: memsize=" SZFMT ",vmsize=" SZFMT "\n",
 			    GDKmem_cursize(), GDKvm_cursize());
 	PERFDEBUG THRprintf(GDKerr, "BBPtrim(did_scan=%d, bats_unloaded=%d, bats_written=%d) %d ms\n", 
 			    did_scan, bats_unloaded, bats_written, GDKms() - msec); 

@@ -420,7 +420,7 @@ qt_makecross(int *crossid, BAT *qt_hue, BAT *qt_sat, BAT *qt_val, int *cspace)
   last = BUNlast(qt_hue) - BUNsize(qt_hue);
   if (debug)
     printf("makecross: last ID %d, hue %d\n", 
-	   *(zid_t *)BUNhead(qt_hue, last),
+	   (int) *(zid_t *)BUNhead(qt_hue, last),
 	   *(int *)BUNtail(qt_hue, last));
 
   lo_level  = idlevel(*(zid_t *)BUNhead(qt_hue, last));
@@ -438,13 +438,13 @@ qt_makecross(int *crossid, BAT *qt_hue, BAT *qt_sat, BAT *qt_val, int *cspace)
     assert(level >= 0);
 
     if (debug)
-      printf("makecross: real ID %d\n", id);
+      printf("makecross: real ID %d\n", (int) id);
 
     id   -= levels[level].lvl_sid;
     wh    = (int)pow(2., (double)(lo_level - level));
     if (debug)
       printf("makecross: id %d, wh %d, level %d, lo %d, x %d y %d\n",
-	     id, wh, level, lo_level,
+	     (int) id, wh, level, lo_level,
 	     levels[level].lvl_idtoxy[id].id_x,
 	     levels[level].lvl_idtoxy[id].id_y);
     x     = levels[level].lvl_idtoxy[id].id_x * wh;
@@ -669,19 +669,19 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
   if (st_search) delta = now();
 
   if (debug)
-    printf("qt_match: %lu, image_oid %lu\n", 
-	   *(oid *)BUNhead(qt_id, BUNfirst(qt_id)), *ioid);
+    printf("qt_match: " SZFMT ", image_oid " SZFMT "\n", 
+	   (size_t) *(oid *)BUNhead(qt_id, BUNfirst(qt_id)), (size_t) *ioid);
 
   /* Check the consistency of the tables */
   soid = *(oid *)BUNhead(qt_id, BUNfirst(qt_id));
   if (soid != *(oid *)BUNhead(qt_hue, BUNfirst(qt_hue)) ||
       soid != *(oid *)BUNhead(qt_sat, BUNfirst(qt_sat)) ||
       soid != *(oid *)BUNhead(qt_val, BUNfirst(qt_val))) {
-    GDKerror("[qt_match]: Heads differ %lu %lu %lu %lu\n",
-	     soid,
-	     *(oid *)BUNhead(qt_hue, BUNfirst(qt_hue)),
-	     *(oid *)BUNhead(qt_sat, BUNfirst(qt_sat)),
-	     *(oid *)BUNhead(qt_val, BUNfirst(qt_val)));
+    GDKerror("[qt_match]: Heads differ " SZFMT " " SZFMT " " SZFMT " " SZFMT "\n",
+	     (size_t) soid,
+	     (size_t) *(oid *)BUNhead(qt_hue, BUNfirst(qt_hue)),
+	     (size_t) *(oid *)BUNhead(qt_sat, BUNfirst(qt_sat)),
+	     (size_t) *(oid *)BUNhead(qt_val, BUNfirst(qt_val)));
     return GDK_FAIL;
   }
 
@@ -705,8 +705,8 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
   }
 
   if (*ioid - _ioid > BATcount(qt_ioffs)) {
-    GDKerror("[qt_match]: Image oid %lu too large, BATcount %lu\n",
-	     (*ioid - _ioid), BATcount(qt_ioffs));
+    GDKerror("[qt_match]: Image oid " SZFMT " too large, BATcount " SZFMT "\n",
+	     (size_t) (*ioid - _ioid), BATcount(qt_ioffs));
     return GDK_FAIL;
   }
     
@@ -716,7 +716,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
   hsv_size = BUNsize(qt_hue);
 
   if (debug)
-    printf("qt_match: soid %lu, noid %d\n", soid, noid);
+    printf("qt_match: soid " SZFMT ", noid %d\n", (size_t) soid, noid);
   
   /* Make sure the soid and eoid are part of the tables */
   if (noid < 0 || soid >= BATcount(qt_id) || soid + noid > BATcount(qt_id)) {
@@ -795,7 +795,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
     soid++;
   }
   if (debug)
-    printf("match: Starting oid %lu\n", soid);
+    printf("match: Starting oid " SZFMT "\n", (size_t) soid);
   
   for (i = nfeatures - 1; i >= 0; i--) {
     int ncolors;

@@ -312,7 +312,7 @@ BAT *BATmaterialize(BAT *b, size_t size){
 	BUN p = BUNfirst(b), q = BUNlast(b);
 	
     	ALGODEBUG THRprintf(GDKout, 
-			"BATmaterialize(%d,%u);\n", b->batCacheid, size);
+			"BATmaterialize(%d," SZFMT ");\n", (int) b->batCacheid, size);
 	if (BAThdense(b) && ht == TYPE_void) {
 		head = 1;
 		ht = TYPE_oid;

@@ -375,7 +375,7 @@ clusterhashFix( clusterhash *ch ) {
   refCnt = salgebra_incRefCnt( ch );
   (void) refCnt;		/* keep compiler happy */
 #ifdef DEBUG
-printf( "Fix ch for batId %d = %d\n", ABS(ch->b), refCnt );
+printf( "Fix ch for batId %d = %d\n", (int) ABS(ch->b), refCnt );
 #endif
   return 0;
 }
@@ -386,11 +386,11 @@ clusterhashUnfix( clusterhash *ch ) {
   if ( clusterhashIsNil( ch ) ) return 0;
   refCnt = salgebra_decRefCnt( ch );
 #ifdef DEBUG
-printf( "Unfix ch for batId %d = %d\n", ABS(ch->b), refCnt );
+printf( "Unfix ch for batId %d = %d\n", (int) ABS(ch->b), refCnt );
 #endif
   if ( !refCnt ) {
 #ifdef DEBUG
-printf( "Unfix: refcount(%d) == 0\n", ch->b );
+printf( "Unfix: refcount(%d) == 0\n", (int) ch->b );
 #endif
     GDKfree( ch->bname );
     GDKfree( ch->bhash );

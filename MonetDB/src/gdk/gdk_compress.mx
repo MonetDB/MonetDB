@@ -524,8 +524,8 @@ Init globals.
 
     if(global.maxbits > BITS) {
 	fprintf(stderr,
-	"input compressed with %u bits, can only handle %d bits\n",
-	 (unsigned int) global.maxbits, BITS);
+	"input compressed with " SZFMT " bits, can only handle %d bits\n",
+	 global.maxbits, BITS);
 	return -1;
     }
 @-
@@ -750,8 +750,8 @@ main(int argc, char **argv)
         stat(argv[1], &st);
 	size = 5*st.st_size;
  	if (!(ptr=GDKmalloc(size))) {
-		fprintf(stderr, "fatal: could not malloc %ld bytes.\n", 
-			(int)size);
+		fprintf(stderr, "fatal: could not malloc " SZFMT " bytes.\n", 
+			size);
 		exit(1);
 	} 
 	if (strcmp(argv[0],"zip")) {

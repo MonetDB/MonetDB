@@ -1721,7 +1721,7 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
 	limits = NULL;
     }
 
-    ALGODEBUG THRprintf(GDKout, "radix_cluster(%s(%d,%d), %s,%g, %d", b->batId,b->batCacheid,BATtordered(b), nme, *perc, *nbits);
+    ALGODEBUG THRprintf(GDKout, "radix_cluster(%s(%d,%d), %s,%g, %d", b->batId,(int) b->batCacheid,BATtordered(b), nme, *perc, *nbits);
     radix[0] = *nbits; 
     va_start(ap,nbits);
     while((p = va_arg(ap, int*)) != NULL) {
@@ -1846,7 +1846,7 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
     if (limitid) {
 	BBPunfix(limitid);
     }
-    ALGODEBUG THRprintf(GDKout, "%s(%d,%d);\n", bn->batId,bn->batCacheid,BATtordered(bn));
+    ALGODEBUG THRprintf(GDKout, "%s(%d,%d);\n", bn->batId,(int) bn->batCacheid,BATtordered(bn));
     *ret = bn;
     return GDK_SUCCEED;
 }
@@ -2085,7 +2085,7 @@ void hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi,
     } 
 @c
 int phash_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate, bit *cutoff) {
-    ALGODEBUG THRprintf(GDKout, "phash_join(%s(%d,%d),%s(%d,%d),%d,%d,%d) -> ", l->batId,l->batCacheid,BATtordered(l), r->batId,r->batCacheid,BAThordered(r), *radix, *hitrate, *cutoff);
+    ALGODEBUG THRprintf(GDKout, "phash_join(%s(%d,%d),%s(%d,%d),%d,%d,%d) -> ", l->batId,(int)l->batCacheid,BATtordered(l), r->batId,(int)r->batCacheid,BAThordered(r), *radix, *hitrate, *cutoff);
     if (*radix != (BATtordered(l)>>1)) {
 	GDKerror("phash_join: tail of %s is radix clustered on %d bits.\n",
 			l->batId, BATtordered(l)>>1);
@@ -2135,7 +2135,7 @@ int phash_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate, bit *cutoff)
     }}
 xit:
     GDKfree(h.hash);
-    ALGODEBUG THRprintf(GDKout, "%s(%d);\n", bn->batId,bn->batCacheid);
+    ALGODEBUG THRprintf(GDKout, "%s(%d);\n", bn->batId,(int)bn->batCacheid);
     *res = bn;
     return GDK_SUCCEED;
 }}

@@ -1287,12 +1287,12 @@ char *mapi_param_store(Mapi mid)
 			case SQL_FLOAT:
 				@:checkSpace(30)@
 				sprintf(mid->query+strlen(mid->query),
-					"%f",*(float *)mid->fields[i].inparam);
+					"%.9g",*(float *)mid->fields[i].inparam);
 				break;
 			case SQL_DOUBLE:
 				@:checkSpace(30)@
 				sprintf(mid->query+strlen(mid->query),
-					"%f",*(double *)mid->fields[i].inparam);
+					"%.17g",*(double *)mid->fields[i].inparam);
 				break;
 			case SQL_CHAR:
 				buf[0] =*(char*)mid->fields[i].inparam;
@@ -1321,6 +1321,29 @@ char *mapi_param_store(Mapi mid)
 	return mid->query;
 }
 
+/* copied from gdk.mx since it is not included here */
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
+#define SZFMT "%zu"
+#define SSZFMT "%zd"
+#else
+#if SIZEOF_SIZE_T == SIZEOF_INT
+#define SZFMT "%u"
+#define SSZFMT "%d"
+#else
+#if SIZEOF_SIZE_T == SIZEOF_LONG
+#define SZFMT "%lu"
+#define SSZFMT "%ld"
+#else
+#if SIZEOF_SIZE_T == 8
+#define SZFMT ULLFMT
+#define SSZFMT LLFMT
+#else
+#error no definition for SZFMT/SSZFMT
+#endif
+#endif
+#endif
+#endif
+
 MapiMsg mapi_execute_internal(Mapi mid)
 {
 	size_t size;
@@ -1333,7 +1356,7 @@ MapiMsg mapi_execute_internal(Mapi mid)
 
 	mapi_cache_reset(mid);
 	if (mid->trace) {
-		printf("mapi_query:%lu:%s\n", (unsigned long) size, cmd);
+		printf("mapi_query:" SZFMT ":%s\n", size, cmd);
 	}
 	if (mid->from->errnr || mid->to->errnr) {
 		return mapi_setError(mid, "communication line broken",

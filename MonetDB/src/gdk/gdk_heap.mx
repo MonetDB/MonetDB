@@ -275,8 +275,8 @@ int HEAPfree(Heap* h) {
                 if (ret < 0) {
                         GDKsyserror("HEAPfree: %s was not mapped\n",  h->filename);
                 }
-                IODEBUG THRprintf(GDKerr, "munmap(base=%lx, size=%lu) = %d\n", 
-				(size_t) h->base, h->maxsize, ret);
+                IODEBUG THRprintf(GDKerr, "munmap(base=" PTRFMT ", size=" SZFMT ") = %d\n", 
+				(void *) h->base, h->maxsize, ret);
 		if (h->storage == STORE_PRIV) {
 			/* may need to move back the file from X.priv to X */
 			size_t len = strlen(h->filename);
@@ -323,7 +323,7 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 		desc_status = 1; /* modified descriptor */
         }
 	IODEBUG {
-		THRprintf(GDKerr, "HEAPload(%s.%s,storage=%d,offset=%lu,free=%lu,size=%lu) = %d\n", 
+		THRprintf(GDKerr, "HEAPload(%s.%s,storage=%d,offset=" SZFMT ",free=" SZFMT ",size=" SZFMT ") = %d\n", 
 			nme, ext, h->storage, h->offset, h->free, h->size);
 	}
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a file that is open 
@@ -355,7 +355,7 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 		fp = (FILE*) GDKfilelocate(nme, "mrb+", ext);
 		if (fp) {
 			ret = ftruncate(fileno(fp), (off_t) ((double)h->free*1.05));
-			IODEBUG THRprintf(GDKerr, "ftruncate(file=%s, size=%lu) = %d\n", 
+			IODEBUG THRprintf(GDKerr, "ftruncate(file=%s, size=" SZFMT ") = %d\n", 
                                                 h->filename, h->maxsize, ret);
 			fclose(fp);
 			if (ret == 0) {
@@ -389,7 +389,7 @@ int HEAPsave(Heap* h, str nme, str ext) {
 		store = STORE_COMPR; 
 	}
 	IODEBUG {
-		THRprintf(GDKerr, "HEAPsave(%s.%s,storage=%d,offset=%lu,free=%lu,size=%lu)\n", 
+		THRprintf(GDKerr, "HEAPsave(%s.%s,storage=%d,offset=" SZFMT ",free=" SZFMT ",size=" SZFMT ")\n", 
 			nme, ext, h->storage, h->offset, h->free, h->size);
 	}
 	return GDKsave(nme, ext, h->base, h->free, store);
@@ -489,7 +489,7 @@ static void HEAP_printstatus(Heap *heap) {
    size_t block, cur_free = hheader->head;
    CHUNK* blockp;
 
-   THRprintf(GDKerr, "HEAP has head %lu and alignment %d and size %lu\n",
+   THRprintf(GDKerr, "HEAP has head " SZFMT " and alignment %d and size " SZFMT "\n",
 		hheader->head, hheader->alignment, heap->free);
 
    /*
@@ -500,13 +500,13 @@ static void HEAP_printstatus(Heap *heap) {
    while(block < heap->free) {
       blockp = HEAP_index(heap,block,CHUNK);
       if (block == cur_free) {
-          THRprintf(GDKerr, "   free block at %lu has size %lu and next %lu\n",
-				block, blockp->size, (size_t) blockp->next);
+          THRprintf(GDKerr, "   free block at " PTRFMT " has size " SZFMT " and next " SZFMT "\n",
+				(void *) block, blockp->size, blockp->next);
           cur_free = blockp->next;
           block += blockp->size;
       } else {
 	  size_t size = blocksize(hheader,blockp);
-          THRprintf(GDKerr, "   block at %lu with size %lu\n", block, size);
+          THRprintf(GDKerr, "   block at " SZFMT " with size " SZFMT "\n", block, size);
           block += size;
       }
    }
@@ -579,7 +579,7 @@ var_t HEAP_malloc(Heap *heap, size_t nbytes) {
    HEADER* hheader = HEAP_index(heap,0,HEADER);
 
 #ifdef TRACE
-   THRprintf(GDKerr, "Enter malloc with %lu bytes\n", nbytes);
+   THRprintf(GDKerr, "Enter malloc with " SZFMT " bytes\n", nbytes);
 #endif
 
    /* add space for size field */
@@ -606,7 +606,7 @@ var_t HEAP_malloc(Heap *heap, size_t nbytes) {
       blockp = HEAP_index(heap,block,CHUNK);
 
 #ifdef TRACE
-   THRprintf(GDKerr, "block %lu is %lu bytes\n", block, blockp->size);
+   THRprintf(GDKerr, "block " SZFMT " is " SZFMT " bytes\n", block, blockp->size);
 #endif
       if ((trail != 0) && (block <= trail))
 	 GDKfatal("Free list is not orderered in Heapalloc\n");
@@ -641,7 +641,7 @@ var_t HEAP_malloc(Heap *heap, size_t nbytes) {
       trailp = HEAP_index(heap,trail,CHUNK);
 
 #ifdef TRACE
-      THRprintf(GDKerr, "New block made at pos %lu with size %lu\n", block, heap->size - block);
+      THRprintf(GDKerr, "New block made at pos " SZFMT " with size " SZFMT "\n", block, heap->size - block);
 #endif
 
       blockp->next = 0;

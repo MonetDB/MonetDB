@@ -216,7 +216,7 @@ void GDKlog(const char *format, ...) {
 #ifndef HAVE_GETUID
 #define getuid() 0
 #endif
-	fprintf(GDKlockFile, "%s \@ USR=%d PID=%d THR=%lx TIME=%s", buf, 
+	fprintf(GDKlockFile, "%s \@ USR=%d PID=%d THR=" SZFMT " TIME=%s", buf, 
 		(int) getuid(), (int) getpid(), (size_t) MT_getpid(), ctime(&tm));
 	fflush(GDKlockFile);
 
@@ -417,7 +417,7 @@ void GDKmemchk(int memchk, int vmchk) {
 	  int tid = THRgettid();
 	  if (!printing[tid - 1]) {
 		printing[tid - 1] = TRUE;
-		THRprintf(GDKerr, "GDKmemchk (memcur=%lu,memmax=%lu) (vmcur=%lu,vmmax=%lu)\n",
+		THRprintf(GDKerr, "GDKmemchk (memcur=" SZFMT ",memmax=" SZFMT ") (vmcur=" SZFMT ",vmmax=" SZFMT ")\n",
 			memtarget, GDK_mem_maxsize, GDK_vm_cursize, GDK_vm_maxsize);
 		printing[tid - 1] = FALSE;
 	  }
@@ -588,7 +588,7 @@ print_address(ptr address)
   dladdr(address,&dlip);
 
   filename = 0; /* strrchr(dlip.dli_fname,'/'); */
-  printf("%p\t%s\t%s\n",address,dlip.dli_sname,
+  printf(PTRFMT "\t%s\t%s\n",address,dlip.dli_sname,
 	 filename?filename+1:dlip.dli_fname);
 }
 
@@ -643,9 +643,9 @@ del_mem(BAT *b, mem_t mem)
 		if(*(mem_t*)BUNhloc(b,p) == mem) {
 			int idx = -*(int *)BUNtloc(b,p);
 			if(idx > 0) {
-				printf("Double deletion of memory 0x%x, "
-				       "size: %ld, stack:%d\n",
-				       (unsigned int)mem,((ssize_t *)mem)[-1],idx);
+				printf("Double deletion of memory " PTRFMT ", "
+				       "size: " SSZFMT ", stack:%d\n",
+				       (void *) mem,((ssize_t *)mem)[-1],idx);
 				if(mtrace > 1) GDKmprint(&idx);
 			} else {
 				BUNdelete(b,p);
@@ -654,7 +654,7 @@ del_mem(BAT *b, mem_t mem)
 			return;
 		}
 	}
-	printf("Free of unknown memory 0x%lx, size: %ld\n",
+	printf("Free of unknown memory " PTRFMT ", size: " SSZFMT "\n",
 		(size_t)mem,((ssize_t *)mem)[-1]);
 }
 #else
@@ -723,21 +723,21 @@ static
 void GDKmemdump(void) {
 	struct mallinfo m = MT_mallinfo();
 
-	THRprintf(GDKerr, "\n!mallinfo.arena = %ld\n", (ssize_t) m.arena);
-	THRprintf(GDKerr, "!mallinfo.ordblks = %ld\n", (ssize_t) m.ordblks);
-	THRprintf(GDKerr, "!mallinfo.smblks = %ld\n", (ssize_t) m.smblks);
-	THRprintf(GDKerr, "!mallinfo.hblkhd = %ld\n", (ssize_t) m.hblkhd);
-	THRprintf(GDKerr, "!mallinfo.hblks = %ld\n", (ssize_t) m.hblks);
-	THRprintf(GDKerr, "!mallinfo.usmblks = %ld\n", (ssize_t) m.usmblks);
-	THRprintf(GDKerr, "!mallinfo.fsmblks = %ld\n", (ssize_t) m.fsmblks);
-	THRprintf(GDKerr, "!mallinfo.uordblks = %ld\n", (ssize_t) m.uordblks);
-	THRprintf(GDKerr, "!mallinfo.fordblks = %ld\n", (ssize_t) m.fordblks);
+	THRprintf(GDKerr, "\n!mallinfo.arena = " SSZFMT "\n", (ssize_t) m.arena);
+	THRprintf(GDKerr, "!mallinfo.ordblks = " SSZFMT "\n", (ssize_t) m.ordblks);
+	THRprintf(GDKerr, "!mallinfo.smblks = " SSZFMT "\n", (ssize_t) m.smblks);
+	THRprintf(GDKerr, "!mallinfo.hblkhd = " SSZFMT "\n", (ssize_t) m.hblkhd);
+	THRprintf(GDKerr, "!mallinfo.hblks = " SSZFMT "\n", (ssize_t) m.hblks);
+	THRprintf(GDKerr, "!mallinfo.usmblks = " SSZFMT "\n", (ssize_t) m.usmblks);
+	THRprintf(GDKerr, "!mallinfo.fsmblks = " SSZFMT "\n", (ssize_t) m.fsmblks);
+	THRprintf(GDKerr, "!mallinfo.uordblks = " SSZFMT "\n", (ssize_t) m.uordblks);
+	THRprintf(GDKerr, "!mallinfo.fordblks = " SSZFMT "\n", (ssize_t) m.fordblks);
 #ifdef GDK_MEM_KEEPHISTO
 {	int i;
 	THRprintf(GDKerr, "!memory histogram\n");
         for (i = 3; i < GDK_HISTO_MAX_BIT - 1; i++) {
                 size_t j = 1 << i;
-		THRprintf(GDKerr, "! %ld %ld\n", j, GDK_nmallocs[i]);
+		THRprintf(GDKerr, "! " SZFMT " " SZFMT "\n", j, GDK_nmallocs[i]);
         }}
 #endif
 #ifdef GDK_VM_KEEPHISTO
@@ -745,7 +745,7 @@ void GDKmemdump(void) {
 	THRprintf(GDKerr, "\n!virtual memory histogram\n");
         for (i = 12; i < GDK_HISTO_MAX_BIT - 1; i++) {
                 size_t j = 1 << i;
-		THRprintf(GDKerr, "! %ld %ld\n", j, GDK_vm_nallocs[i]);
+		THRprintf(GDKerr, "! " SZFMT " " SZFMT "\n", j, GDK_vm_nallocs[i]);
         }
 #endif
 }
@@ -765,7 +765,7 @@ void GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget) {
 	}
 
         if (GDKthreadLock) MT_set_lock(GDKthreadLock, "GDKmemfail");
-	THRprintf(GDKerr, "%s(%lu) fail => BBPtrim(enter) usage[mem=%lu,vm=%lu]\n", 
+	THRprintf(GDKerr, "%s(" SZFMT ") fail => BBPtrim(enter) usage[mem=" SZFMT ",vm=" SZFMT "]\n", 
 			s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
 	GDKdebug |= 4;
@@ -775,7 +775,7 @@ void GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget) {
 
         if (GDKthreadLock) MT_set_lock(GDKthreadLock, "GDKmemfail");
 	GDKdebug = MIN(GDKdebug,bak);
-	THRprintf(GDKerr, "%s(%lu) fail => BBPtrim(ready) usage[mem=%lu,vm=%lu]\n", 
+	THRprintf(GDKerr, "%s(" SZFMT ") fail => BBPtrim(ready) usage[mem=" SZFMT ",vm=" SZFMT "]\n", 
 			s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
         if (GDKthreadLock) MT_unset_lock(GDKthreadLock, "GDKmemfail");
@@ -810,7 +810,7 @@ void* GDKmalloc(size_t size) {
 #ifdef GDK_MEM_NULLALLOWED
 		return NULL;
 #else
-		GDKfatal("GDKmalloc called with size %lu", size);
+		GDKfatal("GDKmalloc called with size " SZFMT "", size);
 #endif
 	}
 	CHKMEM(size,0);
@@ -1001,7 +1001,7 @@ void* GDKvmalloc(size_t size, size_t *maxsize) {
                         MT_alloc_print();
                         GDKfatal("GDKvmalloc failed for %u bytes",size);
                 } else {
-                        THRprintf(GDKerr, "GDKvmalloc(%d): recovery ok. Continuing..\n", size);
+                        THRprintf(GDKerr, "GDKvmalloc(" SZFMT "): recovery ok. Continuing..\n", size);
                 }
         }
         if (ret != NULL) {
@@ -1019,7 +1019,7 @@ void* GDKvmrealloc(void* pold, size_t oldsize, size_t newsize, size_t oldmax, si
                         MT_alloc_print();
                         GDKfatal("GDKvrealloc failed for %u bytes (from %u)", newsize, oldsize);
                 } else  {
-                        THRprintf(GDKerr, "GDKvmrealloc(%d): recovery ok. Continuing..\n", newsize);
+                        THRprintf(GDKerr, "GDKvmrealloc(" SZFMT "): recovery ok. Continuing..\n", newsize);
                 }
         }
         if (ret != NULL) {
@@ -1496,8 +1496,8 @@ Thread THRnew(MT_Id pid, str name) {
 	s->name = name; 
 	s->cleanup = NULL;
 	s->sp = THRsp();
-	PARDEBUG THRprintf(GDKerr, "%lx %lx sp = %lu\n", 
-			(size_t) s->tid, (size_t) pid, s->sp); 
+	PARDEBUG THRprintf(GDKerr, "%x " SZFMT " sp = " SZFMT "\n", 
+			s->tid, (size_t) pid, s->sp); 
 	PARDEBUG THRprintf(GDKerr, "nrofthreads %d\n", GDKnrofthreads); 
 	GDKnrofthreads++; 
 	MT_alloc_register(&tid, 1, (char) ('0'+ ((int)tid) - 1));
@@ -1515,7 +1515,7 @@ void THRdel(Thread t) {
 		(*t->cleanup)(t);
 	}
 	PARDEBUG 
-	THRprintf(GDKerr, "pid = %lu, disconnected, %d left\n", 
+	THRprintf(GDKerr, "pid = " SZFMT ", disconnected, %d left\n", 
 		(size_t) t->pid, GDKnrofthreads); 
 	t->pid = 0; 
 	GDKnrofthreads--; 

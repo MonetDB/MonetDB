@@ -340,7 +340,7 @@ BAT* BAThashjoin(BAT* l, BAT* r, size_t estimate) {
 		if (BATcount(bn) == BATcount(l)) ALIGNsetH(bn, l);
 		if (BAThkey(l)) BATkey(bn, TRUE);
 	}
-        ESTIDEBUG THRprintf(GDKout, "BAThashjoin: actual resultsize: %d\n",BATcount(bn));
+        ESTIDEBUG THRprintf(GDKout, "BAThashjoin: actual resultsize: " SZFMT "\n",BATcount(bn));
 	return bn;
 }
 
@@ -611,7 +611,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
                 oid l_lo = *(oid*) BUNtail(l, BUNfirst(l));
                 oid l_hi = *(oid*) BUNtail(l, BUNlast(l)-BUNsize(l));
 	        ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BATtordered(l)&1\n");
-		ALGODEBUG THRprintf(GDKout, "r_lo=%u, r_hi=%u, l_lo=%u, l_hi=%u.\n", r_lo, r_hi, l_lo, l_hi);
+		ALGODEBUG THRprintf(GDKout, "r_lo=" SZFMT ", r_hi=" SZFMT ", l_lo=" SZFMT ", l_hi=" SZFMT ".\n", (size_t) r_lo, (size_t) r_hi, (size_t) l_lo, (size_t) l_hi);
                 if (r_lo > l_lo || r_hi < l_hi) {
 			ALGODEBUG THRprintf(GDKout, "shrinking!\n");
 	        	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: l = BATselect(l, &r_lo, &r_hi);\n");
@@ -633,7 +633,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
                 lht = l->htype;
                 rtt = r->ttype;
                 bn = BATnew(BAThtype(l), BATttype(r), estimate);
-                ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: %d\n",BATcount(l));
+                ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: " SZFMT "\n",BATcount(l));
                 dst = BUNfirst(bn);
                 zz = BUNsize(bn);
                 /* TODO: apply the "string trick" (see below) here too */
@@ -660,7 +660,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
                         tpe = TYPE_var; /* insert double-eliminated strings as ints */
                 }
                 bn = BATnew(TYPE_void, ATOMtype(tpe), estimate);
-                ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: %d\n",BATcount(l));
+                ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: " SZFMT "\n",BATcount(l));
                 dst = BUNfirst(bn);
                 zz = BUNsize(bn);
 
@@ -704,7 +704,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
 			hi_pos -= r->hseqbase;
 		else
 			hi_pos = 0;
-		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && BATtvoid(l) && l->tseqbase != oid_nil  =>  bn = BATslice(BATmirror(VIEWhead(BATmirror(r))), lo_pos=%d, hi_pos=%d);\n", lo_pos, hi_pos);
+		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && BATtvoid(l) && l->tseqbase != oid_nil  =>  bn = BATslice(BATmirror(VIEWhead(BATmirror(r))), lo_pos=" SZFMT ", hi_pos=" SZFMT ");\n", lo_pos, hi_pos);
                 bn = BATslice(v, lo_pos, hi_pos);
                 if (seqbase != oid_nil) seqbase += lo_val - l->tseqbase;
                 BATseqbase(bn, seqbase);
@@ -733,7 +733,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
         if (l != l_orig) {
                 BBPreclaim(l); /* was created as a temporary (slice) select on l */
         }
-        ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: actual resultsize: %d\n",BATcount(bn));
+        ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: actual resultsize: " SZFMT "\n",BATcount(bn));
         return bn;
 }
 @-
@@ -770,10 +770,10 @@ In special cases (equal join columns, void join columns, or ordered
 join columns), we take special action.
 @c
 	if (lfetch && !(rfetch && BATcount(l) < BATcount(r))) {
-		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), %d));\n", estimate);
+		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), " SZFMT "));\n", estimate);
 		return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), estimate));
 	} else if (rfetch) {
-		ALGODEBUG THRprintf(GDKout, "BATjoin: BATfetchjoin(l, r, %d);\n", estimate);
+		ALGODEBUG THRprintf(GDKout, "BATjoin: BATfetchjoin(l, r, " SZFMT ");\n", estimate);
 		return BATfetchjoin(l, r, estimate);
 	}
 @-
@@ -785,7 +785,7 @@ loop binary search (both implemented by BATmergejoin).
 		  (((BATtordered(l)&1) && ((lng)BATcount(l) > logl*(lng)BATcount(r))) ||
 		   ((BAThordered(r)&1) && ((lng)BATcount(r) > logr*(lng)BATcount(l))))))
 	{ 
-		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmergejoin(l,r,%d);\n", estimate);
+		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmergejoin(l,r," SZFMT ");\n", estimate);
 		return BATmergejoin(l, r, estimate);
 	}
 @-
@@ -793,17 +793,17 @@ if hash join is not right away possible and we have a binary tree index,
 we do nested loop index lookup join.
 @c
 	if (must_hash && (l->tidx_heap || r->hidx_heap)) {
-		ALGODEBUG THRprintf(GDKout, "BATjoin: BATthetajoin(l,r,JOIN_EQ,%d);\n", estimate);
+		ALGODEBUG THRprintf(GDKout, "BATjoin: BATthetajoin(l,r,JOIN_EQ," SZFMT ");\n", estimate);
 		return BATthetajoin(l, r, JOIN_EQ, estimate);
 	}
 @-
 hash join: the bread&butter join of monet
 @c
 	if (rsize < lsize) { /* assume largest fits memory */
-		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmirror(BAThashjoin(BATmirror(r), BATmirror(l),%d));\n", estimate);
+		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmirror(BAThashjoin(BATmirror(r), BATmirror(l)," SZFMT "));\n", estimate);
 		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), estimate));
         }
-	ALGODEBUG THRprintf(GDKout, "BATjoin: BAThashjoin(l,r,%d);\n",estimate);
+	ALGODEBUG THRprintf(GDKout, "BATjoin: BAThashjoin(l,r," SZFMT ");\n",estimate);
 	return BAThashjoin(l, r, estimate);
 }
 
@@ -850,13 +850,13 @@ BAT *BATouterjoin(BAT *l, BAT *r, size_t estimate) {
 	if (BAThdense(l) && BAThkey(r)) {
 		if (estimate == oid_nil) estimate = BATcount(l);
 		bn = BATnew(TYPE_void, ATOMtype(r->ttype), estimate);
-        	ESTIDEBUG THRprintf(GDKout, "BATouterjoin: estimated resultsize: %d\n", estimate);
+        	ESTIDEBUG THRprintf(GDKout, "BATouterjoin: estimated resultsize: " SZFMT "\n", estimate);
 		BATseqbase(bn, l->hseqbase);
 	}
 	if (BAThdense(r) == FALSE && BAThordered(r)&1) {
 		/* use the merge-join; it takes care of the rest */
 		bn = mergejoin(l, r, bn, ATOMnilptr(r->ttype), estimate);
-  		ESTIDEBUG THRprintf(GDKout, "BATouterjoin: actual resultsize: %d\n",BATcount(bn));
+  		ESTIDEBUG THRprintf(GDKout, "BATouterjoin: actual resultsize: " SZFMT "\n",BATcount(bn));
 		return bn; 
 	} else if (bn == NULL) {
 		@:joinbat(JOIN_EQ, BATouterjoin(l,r,oid_nil), estimate)@
@@ -901,7 +901,7 @@ BAT *BATouterjoin(BAT *l, BAT *r, size_t estimate) {
 	} else {
 		bn->hsorted = BAThordered(l);
 	}
-  	ESTIDEBUG THRprintf(GDKout, "BATouterjoin: actual resultsize: %d\n",BATcount(bn));
+  	ESTIDEBUG THRprintf(GDKout, "BATouterjoin: actual resultsize: " SZFMT "\n",BATcount(bn));
 	return bn; 
 }
 @
@@ -1017,7 +1017,7 @@ BAT *BATthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
 	}
 	@:joinbat(op, BATthetajoin(l,r,op,estimate), estimate)@
 	BATtheta(NULL, bn, l, r, op);
-        ESTIDEBUG THRprintf(GDKout, "BATthetajoin: actual resultsize: %d\n",BATcount(bn));
+        ESTIDEBUG THRprintf(GDKout, "BATthetajoin: actual resultsize: " SZFMT "\n",BATcount(bn));
 	return bn;
 }
 @}
@@ -1061,7 +1061,7 @@ BAT *BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2) {
 	bn->hsorted = BAThordered(l);
 	bn->tsorted = FALSE;
 
-  	ESTIDEBUG THRprintf(GDKout, "BATbandjoin: actual resultsize: %d\n",BATcount(bn));
+  	ESTIDEBUG THRprintf(GDKout, "BATbandjoin: actual resultsize: " SZFMT "\n",BATcount(bn));
 	return bn; 
 }
 @
@@ -1105,7 +1105,7 @@ instead of l, and semijoin using binary search in r.
 @{
 @= semijoinbat
 	bn = BATnew(BAThtype(@1), BATttype(@1), MAX(BATTINY, MIN(BATcount(l), BATcount(r)))); 
-  	ESTIDEBUG THRprintf(GDKout, "%s.semijoinbat: estimated resultsize: %d\n",@4,MAX(BATTINY, MIN(BATcount(l), BATcount(r))));
+  	ESTIDEBUG THRprintf(GDKout, "%s.semijoinbat: estimated resultsize: " SZFMT "\n",@4,MAX(BATTINY, MIN(BATcount(l), BATcount(r))));
 	if (bn == NULL) {
 		return bn; 
 	}
@@ -1186,7 +1186,7 @@ BAT *BATbinsemijoin(BAT *l, BAT *r, BAT *cpy) {
 		}
 	}
 	if (del) BBPreclaim(del);
-  	ESTIDEBUG THRprintf(GDKout, "BATbinsemijoin: actual resultsize: %d\n",BATcount(bn));
+  	ESTIDEBUG THRprintf(GDKout, "BATbinsemijoin: actual resultsize: " SZFMT "\n",BATcount(bn));
 	return bn;
 } 
 
@@ -1257,7 +1257,7 @@ BAT *BATidxsemijoin(BAT *l, BAT *r, BAT *cpy) {
 			ALIGNsetH(bn,l);
 		}
 	}
-  	ESTIDEBUG THRprintf(GDKout, "BATidxsemijoin: actual resultsize: %d\n",BATcount(bn));
+  	ESTIDEBUG THRprintf(GDKout, "BATidxsemijoin: actual resultsize: " SZFMT "\n",BATcount(bn));
 	return bn;
 } 
 
@@ -1318,7 +1318,7 @@ BAT *BATrevsemijoin(BAT *l, BAT *r) {
 	if (BAThkey(r) && BATtkey(l) && BATcount(bn) == BATcount(r)) {
 		ALIGNsetH(bn,r);
 	}
-  	ESTIDEBUG THRprintf(GDKout, "BATrevsemijoin: actual resultsize: %d\n",BATcount(bn));
+  	ESTIDEBUG THRprintf(GDKout, "BATrevsemijoin: actual resultsize: " SZFMT "\n",BATcount(bn));
 	return bn;
 }
 
@@ -1358,7 +1358,7 @@ BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy) {
         base = BUNindex(r, BUNfirst(r));
         end = base + BATcount(r);
         bn = BATnew(BAThtype(cpy), BATttype(cpy), MIN(BATcount(r), BATcount(l)));
-  	ESTIDEBUG THRprintf(GDKout, "BATfetchsemijoin: estimated resultsize: %d\n",MIN(BATcount(r), BATcount(l)));
+  	ESTIDEBUG THRprintf(GDKout, "BATfetchsemijoin: estimated resultsize: " SZFMT "\n",MIN(BATcount(r), BATcount(l)));
         if (bn == NULL) {
                 return NULL;
         }
@@ -1399,7 +1399,7 @@ BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy) {
 			BATkey(BATmirror(bn), BATtkey(cpy));
 		}
 	}
-  	ESTIDEBUG THRprintf(GDKout, "BATfetchsemijoin: actual resultsize: %d\n",BATcount(bn));
+  	ESTIDEBUG THRprintf(GDKout, "BATfetchsemijoin: actual resultsize: " SZFMT "\n",BATcount(bn));
         return bn;
 }
 

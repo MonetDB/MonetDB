@@ -875,7 +875,7 @@ int @1ToStr(char ** dst, int *len, @1 *src) {
 		strcpy(*dst, "nil");
 		return 3;
 	}
-	snprintf(*dst, *len, "@2", (@3) *src);
+	snprintf(*dst, *len, @2, (@3) *src);
 	return (int) strlen(*dst);
 }
 @c
@@ -1136,19 +1136,15 @@ void @1Write( @1 *a, stream *s, size_t cnt) {
 @c 
 
 @:numfromstr(sht,5,32767)@
-@:atomtostr(sht,%hd,sht)@
+@:atomtostr(sht,"%hd",sht)@
 @:atom_io(sht,Sht,sht)@
 
 @:numfromstr(int,10,2147483647)@
-@:atomtostr(int,%d,int)@
+@:atomtostr(int,"%d",int)@
 @:atom_io(int,Int,int)@
 
 @:numfromstr(lng,19,9223372036854775807)@
-#ifdef NATIVE_WIN32
-@:atomtostr(lng,%I64d,lng)@
-#else
-@:atomtostr(lng,%lld,lng)@
-#endif
+@:atomtostr(lng,LLFMT,lng)@
 @c
 @:atom_io(lng,Lng,lng)@
 
@@ -1157,43 +1153,12 @@ int lngToStr(char **dst, int *len, lng *src) {
 	char *p;
 	int l=0;
     
-	ssize_t ll; /* it turned out to be nontrivial to get a long long printed */
 	@:atommem(char,lngStrlen)@
     	if (*src == lng_nil) {
 		strcpy(*dst, "nil");
 		return 3;
 	} 
-#if 1
-#ifdef NATIVE_WIN32
-#define LLFMT "%I64d"
-#else
-#define LLFMT "%lld"
-#endif
 	sprintf(*dst, LLFMT, *src);
-#else
-	p = *dst;
-	*p = 0;
-	if (*src < LL_CONSTANT(0)) {
-		*p++ = '-'; *p = 0;
-	}
-	ll = ll/LL_CONSTANT(100000000000000);
-	if (ll) {
-		l += sprintf(p, "%ld", (ll<0)?-ll:ll); 
-	}
-	ll = (*src % LL_CONSTANT(100000000000000)) / LL_CONSTANT(10000000);
-	if (l) {
-		sprintf(p+l, "%07ld", (ll<0)?-ll:ll);	
-	} else if (ll) {
-		sprintf(p, "%ld", (ll<0)?-ll:ll);	
-	}
-	l += strlen(p+l);
-	ll = (ssize_t) (*src % LL_CONSTANT(10000000));
-	if (l) {
-		sprintf(p+l, "%07ld", (ll<0)?-ll:ll);	
-	} else {
-		sprintf(p, "%ld", (ll<0)?-ll:ll);	
-	}
-#endif
 	return strlen(*dst);
 }
 @c
@@ -1222,7 +1187,7 @@ int ptrFromStr(char* src, int * len, ptr **dst) {
 	} **dst = error?((ptr) ptr_nil):((ptr) base);
 	return (int) (p-src);
 }
-@:atomtostr(ptr,%lx,size_t)@
+@:atomtostr(ptr,SZFMT,size_t)@
 #if SIZEOF_VOID_P == SIZEOF_INT
 @:atom_io(ptr,Int,int)@
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
@@ -1250,7 +1215,7 @@ int dblFromStr(char* src, int* len, dbl **dst)
 	}
 	return (int) (p-src);
 }
-@:atomtostr(dbl,%.17g,double)@
+@:atomtostr(dbl,"%.17g",double)@
 @:atom_io(dbl,Lng,lng)@
 
 #if HAVE_STRTOF && !HAVE_DECL_STRTOF
@@ -1301,7 +1266,7 @@ int fltFromStr(char* src, int* len, flt **dst)
 	}
 	return n;
 }
-@:atomtostr(flt,%.9g,float)@
+@:atomtostr(flt,"%.9g",float)@
 @:atom_io(flt,Int,int)@
 @}
 
@@ -1852,7 +1817,7 @@ int OIDtoStr(char** dst, int *len, oid *src) {
 		strcpy(*dst, "nil");
 		return 3;
 	}
-	snprintf(*dst, *len, "%lu@0", (size_t) *src);
+	snprintf(*dst, *len, SZFMT "@0", (size_t) *src);
 	return (int) strlen(*dst);
 }
 @

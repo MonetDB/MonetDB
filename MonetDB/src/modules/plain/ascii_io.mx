@@ -758,7 +758,7 @@ int ASCIIload_file( ascii *as, bstream *b ){
 			b->pos = (s-b->buf);
 			i++;
 			if (ascii_io_debug && (i%100000) == 0)
-				stream_printf(GDKerr, "inserted %d\n", i);
+				stream_printf(GDKerr, "inserted " SZFMT "\n", i);
 			if (as->nr != ~(size_t)0 && i >= as->nr)
 				break;
 		}
@@ -780,7 +780,7 @@ int dump_file( ascii *as, stream *fd ){
 			return -1;
 		}
 		if (ascii_io_debug && (i%1000000) == 0)
-			stream_printf(GDKerr, "dumped %d lines\n", i);
+			stream_printf(GDKerr, "dumped " SZFMT " lines\n", i);
         } 
 	GDKfree(buf);
 	return 0;
@@ -804,7 +804,7 @@ void output_file_default( ascii *as, BAT *order, stream *fd ){
 		}
 		i++;
 		if (ascii_io_debug && (i%1000000) == 0)
-			stream_printf(GDKerr, "dumped %lu lines\n", i);
+			stream_printf(GDKerr, "dumped " SZFMT " lines\n", i);
         } 
 	GDKfree(buf);
 }
@@ -821,7 +821,7 @@ void output_file_dense( ascii *as, stream *fd ){
 			return;
 		}
 		if (ascii_io_debug && (i%1000000) == 0)
-			stream_printf(GDKerr, "dumped %lu lines\n", i);
+			stream_printf(GDKerr, "dumped " SZFMT " lines\n", i);
         } 
 	GDKfree(buf);
 }
@@ -843,7 +843,7 @@ void output_file_ordered( ascii *as, BAT *order, stream *fd, oid base ){
 			return;
 		}
 		if (ascii_io_debug && (i%1000000) == 0)
-			stream_printf(GDKerr, "dumped %lu lines\n", i);
+			stream_printf(GDKerr, "dumped " SZFMT " lines\n", i);
         } 
 	GDKfree(buf);
 }

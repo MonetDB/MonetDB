@@ -940,7 +940,7 @@ int CMDprompt(Cntxt stk, YYSTREE lt, ValPtr res){
 		for( ; monet_cntxt[stk].outer >0; stk=monet_cntxt[stk].outer);
 		c= monet_clients+stk;
 		c->prompt= (char*) GDKstrdup( x);
-		stream_printf(GDKout,"# new prompt for %s (%d):%s\n",c->user,stk,c->prompt);
+		stream_printf(GDKout,"# new prompt for %s (%d):%s\n",c->user,(int)stk,c->prompt);
 	} else{
 		GDKwarning("prompt: argument missing\n");
 	}

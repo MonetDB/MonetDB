@@ -100,7 +100,7 @@ void checklist(YYSTREE t) {
 	    if (t2 == t) {
 		t1 = yyroot;
 		while(t1 != t2) {
-			fprintf(stderr, "%ld ", (long) t1);
+			fprintf(stderr, PTRFMT " ", (void *) t1);
 			t1 = t1->next;
 		}
 		GDKerror("double present %d!!\n", t);
@@ -574,7 +574,7 @@ if trees are more than 2-deep.
 			_b->batStamp = -_b->batStamp;				\
 		}								\
 		BATDEBUG printf("# batstamp(%d) = %d\n",			\
-			 _b->batCacheid, _b->batStamp);				\
+			 (int) _b->batCacheid, _b->batStamp);			\
 		BBPincref(bid, TRUE);					\
 		BBPunfix(bid);					\
 	}									\

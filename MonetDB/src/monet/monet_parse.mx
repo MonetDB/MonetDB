@@ -1321,59 +1321,59 @@ should be the same. And they are not.. Sucker!
 		if (GDKdebug&32768)
 		switch(yystate) {
 		case 3:	case 20: case 58: case 60: case 181: case 183:
-			sprintf(s,"you forgot a closing ';'.\n"); break;
+			strcpy(s,"you forgot a closing ';'.\n"); break;
 		case 11: case 12:
-			sprintf(s,"identifier expected.\n"); break;
+			strcpy(s,"identifier expected.\n"); break;
 		case 13:
-			sprintf(s,"command name expected.\n"); break;
+			strcpy(s,"command name expected.\n"); break;
 		case 14:
-			sprintf(s,"procedure expected.\n"); break;
+			strcpy(s,"procedure expected.\n"); break;
 		case 18: case 19: case 46: case 47:
-			sprintf(s,"'(' expected.\n"); break;
+			strcpy(s,"'(' expected.\n"); break;
 		case 24: case 33: case 156:
-			sprintf(s,"command invocation missing.\n"); break;
+			strcpy(s,"command invocation missing.\n"); break;
 		case 36:
-			sprintf(s,"would a identifier or ../ be missing?\n");
+			strcpy(s,"would a identifier or ../ be missing?\n");
 			break;
 		case 48: case 51:
-			sprintf(s,"would a ';' or ',' be missing?\n"); break;
+			strcpy(s,"would a ';' or ',' be missing?\n"); break;
 		case 52: case 105: case 108: case 149:
-			sprintf(s,"':=' expected.\n"); break;
+			strcpy(s,"':=' expected.\n"); break;
 		case 78: case 130: case 208: case 229: case 240: case 246:
-			sprintf(s,"']' expected.\n"); break;
+			strcpy(s,"']' expected.\n"); break;
 		case 79:
-			sprintf(s,"forgot to close a block?\n"); break;
+			strcpy(s,"forgot to close a block?\n"); break;
 		case 77: case 80: case 117: case 118:
-			sprintf(s,"')' expected.\n"); break;
+			strcpy(s,"')' expected.\n"); break;
 		case 87:
-			sprintf(s,"would a '~' or '?' be missing?\n"); break;
+			strcpy(s,"would a '~' or '?' be missing?\n"); break;
 		case 95:
-			sprintf(s,"would '..' or ')' be missing?\n"); break;
+			strcpy(s,"would '..' or ')' be missing?\n"); break;
 		case 96: case 97: case 182:
-			sprintf(s,"identifier or string missing.\n"); break;
+			strcpy(s,"identifier or string missing.\n"); break;
 		case 99: case 103: case 107: case 187:
-			sprintf(s,"identifier missing.\n"); break;
+			strcpy(s,"identifier missing.\n"); break;
 		case 129:
-			sprintf(s,"'~' expected.?\n"); break;
+			strcpy(s,"'~' expected.?\n"); break;
 		case 142: case 146: case 163: case 152:	case 202:
-			sprintf(s,"would a ')' or ',' be missing?\n"); break;
+			strcpy(s,"would a ')' or ',' be missing?\n"); break;
 		case 155:
-			sprintf(s,"would a '@' or ';' be missing?\n"); break;
+			strcpy(s,"would a '@' or ';' be missing?\n"); break;
 		case 170:
-			sprintf(s,"would a atom or ')' be missing?\n"); break;
+			strcpy(s,"would a atom or ')' be missing?\n"); break;
 		case 209:
-			sprintf(s,"':' expected.\n"); break;
+			strcpy(s,"':' expected.\n"); break;
 		case 217:
-			sprintf(s,"iterator expected.\n"); break;
+			strcpy(s,"iterator expected.\n"); break;
 		case 224: case 234: case 243:
-			sprintf(s,"atom name expected.\n"); break;
+			strcpy(s,"atom name expected.\n"); break;
 		case 239:
-			sprintf(s,"comma expected.\n"); break;
+			strcpy(s,"comma expected.\n"); break;
 		}
     		}
 #endif
 #endif
-		if (*s == 0) sprintf(s,"can't help you here, sorry.\n");
+		if (*s == 0) strcpy(s,"can't help you here, sorry.\n");
         }
 	GDKerror(buf);
 }
