@@ -296,13 +296,13 @@ int math_binary_ROUND(dbl *res, dbl *x, int *y) {
   return(GDK_SUCCEED);
 }
 
-/* Hardcoded replacement for what configure should set: */
-#ifdef LINUX
-#define HAVE_ISINF
-#else
-#define HAVE_FPCLASS
+#ifdef HAVE_ISINF
+#ifdef HAVE_FPCLASS
+#undef HAVE_FPCLASS
+#endif
 #endif
 
+/* Hardcoded replacement for what configure should set: */
 #ifdef NATIVE_WIN32
 #include <float.h>
 /* Windows spells these differently */
