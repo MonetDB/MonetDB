@@ -70,12 +70,12 @@ void* alloca(size_t);
 
 #include <assert.h>     
 
-
-#if defined (__GNUC__) && defined (__STDC__)
+/* Backward compatibility: configure figures out whether it needs to
+   define "inline" as something else for the architecture it is testing.
+   All uses in the source use "INLINE", so until all occurances of
+   "INLINE" have been replaced by "inline", we just define the latter as
+   the former. */
 #define INLINE	inline
-#else
-#define INLINE
-#endif
 
 #define REGISTER	register
 
