@@ -1,8 +1,0 @@
-# The likeselect operation
-
-	t:= new(:int,:str);
-	insert(t,1,"hello world");
-	insert(t,2,"sleep well");
-
-	b:= multiplex.script("startsWith",t,"");
-	print(b);

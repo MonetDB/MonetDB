@@ -1,6 +1,0 @@
-setoid(oid(20000000));
-module("unix");
-test1.print();
-source(getenv("TSTTRGDIR")+"/no.158.source.mil");
-test2.print();
-quit();
