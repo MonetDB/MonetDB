@@ -725,7 +725,7 @@ def ApproveOutput (env, TST) :
             for f in os.listdir(dir or os.curdir):
                 if f != thefile and test.match(f):
                     list.append(f)
-            if len(list) > 1:
+            if len(list) > 0:
                 Warn('There are other (specific) stable outputs for test  %s:\n  %s' % (os.path.join(TSTDIR,'Tests',TST), str(list)))
                 STDERR.write('  To propagate the changes that were just made in  %s\n' % os.path.join(TSTDIR,'Tests',thefile))
                 STDERR.write('  to the other (specific) stable outputs,\n')
