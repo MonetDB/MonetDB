@@ -204,7 +204,7 @@ typedef enum steam_errors {
 }stream_errors;
 
 int stream_init(void){
-#ifdef WIN32
+#ifdef NATIVE_WIN32
 	int sockopt = SO_SYNCHRONOUS_NONALERT;
 	WSADATA w;
 
@@ -579,7 +579,7 @@ stream *open_bzwastream( char *filename ){
 
 static int socket_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	int size = elmsize*cnt;
-#ifdef WIN32
+#ifdef NATIVE_WIN32
 	size = send( (int)s->stream_data, buf, size, 0 );
 #else
 	size = write( (int)s->stream_data, buf, size );
@@ -590,7 +590,7 @@ static int socket_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
 static int socket_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	int res = 0, size = elmsize*cnt, nr = 0;
 	while( res < size && (
-#ifdef WIN32
+#ifdef NATIVE_WIN32
 		(nr = recv( (int)s->stream_data, buf+res, size-res, 0 )) >= 0
 #else
 		(nr = read( (int)s->stream_data, buf+res, size-res )) > 0
