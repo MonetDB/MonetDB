@@ -1,3 +1,6 @@
+include "mil_algebra_procs";
+include "mil_insert";
+include "mil_system_procs";
 # >Number:         107
 # >Category:       MIL
 # >Synopsis:       related? bug with voids

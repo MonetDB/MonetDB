@@ -1,4 +1,6 @@
 # >Number:         158
+include "mil_algebra_procs";
+include "mil_system_procs";
 # >Category:       Mserver
 # >Synopsis:       non-persistent BATs in source/prelude disappear
 # >Confidential:   no

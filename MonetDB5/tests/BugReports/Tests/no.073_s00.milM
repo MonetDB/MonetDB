@@ -1,4 +1,7 @@
 # >Number:         73
+include "mil_algebra_procs";
+include "mil_insert";
+include "mil_system_procs";
 # >Category:       Mserver
 # >Synopsis:       original BAT unknown after renamed reverse BAT
 # >Confidential:   no

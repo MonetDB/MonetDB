@@ -1,5 +1,8 @@
 # Monet Mil to Mal compiler
 # Copyright (c) 2001-2004, CWI. All rights reserved.
+include "mil_insert";
+include "mil_system_procs";
+include "mil_algebra_procs";
 
 #Predefined code segment
 #The compiler can not guarantee an accurate compilation,

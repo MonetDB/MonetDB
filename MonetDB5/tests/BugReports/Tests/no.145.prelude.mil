@@ -1,4 +1,7 @@
 # >Number:         145
+include "mil_algebra_procs";
+include "mil_insert";
+include "mil_system_procs";
 # >Category:       Module_libgdk
 # >Synopsis:       bug in BATmergejoin (gdk_relop.mx)
 # >Confidential:   no

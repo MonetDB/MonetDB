@@ -1,4 +1,7 @@
 # >Number:         147
+include "mil_algebra_procs";
+include "mil_insert";
+include "mil_system_procs";
 # >Category:       Module_sys
 # >Synopsis:       view_gdk_thread() crashes
 # >Confidential:   no
