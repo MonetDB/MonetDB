@@ -6,6 +6,16 @@
 # dbname:demo
 ##test debugging of a recursive function
 #
+#function level():void;
+#	print("dubble depth\n");
+#	s:= inspect.getStackTrace();
+#	print(s);
+#end level;
+function Admin.level():void; #0  (level:void)
+    io.print("dubble depth\n"); #1 CMDprint_val ($1:int)<-($2:str)
+    s := inspect.getStackTrace(); #2 INSPECTStkTrace (s:bat[void,str])
+    io.print(s); #3 CMDprint_val ($4:int)<-(s:bat[void,str])
+end level; #4  
 #function test(age:int,nme:str):int;
 #	d:= inspect.getStackDepth();
 #	printf("stack depth %d\n",d);
@@ -16,6 +26,7 @@
 #	print(t);
 #	t:= inspect.getStackFrame(d);
 #	print(t);
+#	level();
 #end test;
 function Admin.test(age:int,nme:str):int; #0  (test:int)<-(age:int)(nme:str)
     d := inspect.getStackDepth(); #1 INSPECTStkDepth (d:int)
@@ -27,7 +38,8 @@ function Admin.test(age:int,nme:str):int; #0  (test:int)<-(age:int)(nme:str)
     io.print(t); #7 CMDprint_val ($11:int)<-(t:bat[str,str])
     t := inspect.getStackFrame(d); #8 INSPECTStkFrameN (t:bat[str,str])<-(d:int)
     io.print(t); #9 CMDprint_val ($12:int)<-(t:bat[str,str])
-end test; #10  
+    Admin.level(); #10  ($13:void)
+end test; #11  
 #test(12,"jj");
 #
 function Admin.main():int; #0  (main:int)
@@ -37,19 +49,20 @@ stack depth 2
 simulated error
 #---------------------------------------------------------#
 # BAT:	  stmt						  #
-# (void)  (str)						  #
+# (int)	  (str)						  #
 #---------------------------------------------------------#
-[ nil,	  "function Admin.test(age:int,nme:str):int;"	  ]
-[ nil,	  "    d := inspect.getStackDepth();"		  ]
-[ nil,	  "    system.printf(\"stack depth %d\\n\",d);"	  ]
-[ nil,	  "    system.printf(\"simulated error\\n\");"	  ]
-[ nil,	  "    f := inspect.getCode();"			  ]
-[ nil,	  "    io.print(f);"				  ]
-[ nil,	  "    t := inspect.getStackFrame();"		  ]
-[ nil,	  "    io.print(t);"				  ]
-[ nil,	  "    t := inspect.getStackFrame(d);"		  ]
-[ nil,	  "    io.print(t);"				  ]
-[ nil,	  "end test;"					  ]
+[ 0,	  "function Admin.test(age:int,nme:str):int;"	  ]
+[ 1,	  "    d := inspect.getStackDepth();"		  ]
+[ 2,	  "    system.printf(\"stack depth %d\\n\",d);"	  ]
+[ 3,	  "    system.printf(\"simulated error\\n\");"	  ]
+[ 4,	  "    f := inspect.getCode();"			  ]
+[ 5,	  "    io.print(f);"				  ]
+[ 6,	  "    t := inspect.getStackFrame();"		  ]
+[ 7,	  "    io.print(t);"				  ]
+[ 8,	  "    t := inspect.getStackFrame(d);"		  ]
+[ 9,	  "    io.print(t);"				  ]
+[ 10,	  "    Admin.level();"				  ]
+[ 11,	  "end test;"					  ]
 #-----------------------------------------#
 # BAT:	  frame				  #
 # (str)	  (str)				  #
@@ -67,6 +80,7 @@ simulated error
 [ "t",	  "<frame>"			  ]
 [ "$11",  "0"				  ]
 [ "$12",  "0"				  ]
+[ "$13",  "0@0"				  ]
 #-------------------------#
 # BAT:	  frame		  #
 # (str)	  (str)		  #
@@ -75,4 +89,12 @@ simulated error
 [ "age",  "0"		  ]
 [ "nme",  "12"		  ]
 [ "d",	  "\"jj\""	  ]
+[ "dubble depth\\n" ]
+#---------------------------------------------------------#
+# BAT:	  trace						  #
+# (int)	  (str)						  #
+#---------------------------------------------------------#
+[ 0,	  "inspect.getStackTrace() at #2 in level"	  ]
+[ 1,	  "Admin.level() at #10 in test"		  ]
+[ 2,	  "Admin.test(12,\"jj\") at #1 in main"		  ]
 >

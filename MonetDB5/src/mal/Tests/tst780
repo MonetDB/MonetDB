@@ -1,5 +1,10 @@
 #test debugging of a recursive function
 
+function level():void;
+	print("dubble depth\n");
+	s:= inspect.getStackTrace();
+	print(s);
+end level;
 function test(age:int,nme:str):int;
 	d:= inspect.getStackDepth();
 	printf("stack depth %d\n",d);
@@ -10,5 +15,6 @@ function test(age:int,nme:str):int;
 	print(t);
 	t:= inspect.getStackFrame(d);
 	print(t);
+	level();
 end test;
 test(12,"jj");
