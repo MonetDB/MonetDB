@@ -116,7 +116,9 @@ class Element(_Encode):
     def __str__(self):
         # string representation of the element with its children
         s = ['<%s' % self.tag]
-        for name, value in sorted(self.attrdict.items()):
+        attrlist = self.attrdict.items()
+        attrlist.sort()
+        for name, value in attrlist:
             s.append(' %s="%s"' % (name, self.encode(value, True)))
         if self.children or (not self.xml and not self.isempty):
             s.append('>')
@@ -147,7 +149,9 @@ class Element(_Encode):
                         '"http://www.w3.org/TR/html4/loose.dtd">\n')
         inline = self.tag.lower() in self.inline
         f.write('<%s' % self.tag)
-        for name, value in sorted(self.attrdict.items()):
+        attrlist = self.attrdict.items()
+        attrlist.sort()
+        for name, value in attrlist:
             f.write(' %s="%s"' % (name, self.encode(value, True)))
         if self.children or (not self.xml and not self.isempty):
             if not inline:
