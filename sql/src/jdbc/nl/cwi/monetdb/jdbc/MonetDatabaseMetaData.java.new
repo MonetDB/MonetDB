@@ -1,6 +1,7 @@
 package nl.cwi.monetdb.jdbc;
 
 import java.sql.*;
+import java.util.*;
 
 /**
  * A DatabaseMetaData object suitable for the Monet database
@@ -12,10 +13,17 @@ import java.sql.*;
 public class MonetDatabaseMetaData implements DatabaseMetaData {
 	private Connection con;
 	private Driver driver;
+	private Statement stmt;
 
 	public MonetDatabaseMetaData(Connection parent) {
 		con = parent;
 		driver = new MonetDriver();
+	}
+
+	private synchronized Statement getStmt() throws SQLException {
+		if (stmt == null) stmt = connection.createStatement();
+
+		return(stmt);
 	}
 
 	/**
@@ -1398,7 +1406,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 		orderby = "ORDER BY TABLE_TYPE, TABLE_SCHEM, TABLE_NAME ";
 
-		return(con.createStatement().executeQuery(select + orderby));
+		return(getStmt().executeQuery(select + orderby));
 	}
 
 	/**
@@ -1421,7 +1429,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 				"FROM schemas " +
 				"ORDER BY TABLE_SCHEM";
 
-		return(con.createStatement().executeQuery(query));
+		return(getStmt().executeQuery(query));
 	}
 
 	/**
@@ -1444,7 +1452,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String query =
 			"SELECT '' AS TABLE_CAT WHERE 1 = 0";
 
-		return(con.createStatement().executeQuery(query));
+		return(getStmt().executeQuery(query));
 	}
 
 	/**
@@ -1479,11 +1487,11 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error");
+			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
 	}
 
-	/*
+	/**
 	 * Get a description of table columns available in a catalog.
 	 *
 	 * <P>Only column descriptions matching the catalog, schema, table
@@ -1523,142 +1531,114 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *		allow NULL values.	An empty string means nobody knows.
 	 *	</OL>
 	 *
-	 * @param catalog a catalog name; "" retrieves those without a catalog
+	 * @param catalog a catalog name; "" retrieves those without a catalog;
+	 *                currently ignored
 	 * @param schemaPattern a schema name pattern; "" retrieves those
-	 * without a schema
+	 *                      without a schema
 	 * @param tableNamePattern a table name pattern
 	 * @param columnNamePattern a column name pattern
 	 * @return ResultSet each row is a column description
 	 * @see #getSearchStringEscape
+	 * @throws SQLException if a database error occurs
 	 */
-	public java.sql.ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException
+	public ResultSet getColumns(
+		String catalog,
+		String schemaPattern,
+		String tableNamePattern,
+		String columnNamePattern
+	) throws SQLException
 	{
-		Vector v = new Vector();		// The new ResultSet tuple stuff
-		Field f[] = new Field[18];		// The field descriptors for the new ResultSet
+		String query =
+			"SELECT null AS TABLE_CAT, schemas.name AS TABLE_SCHEM, " +
+			"tables.name AS TABLE_NAME, columns.name AS COLUMN_NAME, " +
+			"columns.type AS TYPE_NAME, columns.type_digits AS COLUMN_SIZE, " +
+			"columns.type_scale AS DECIMAL_DIGITS, 0 AS BUFFER_LENGTH, " +
+			"10 AS NUM_PREC_RADIX, \"null\" AS nullable, null AS REMARKS, " +
+			"columns.default AS COLUMN_DEF, 0 AS SQL_DATA_TYPE, " +
+			"0 AS SQL_DATETIME_SUB, 0 AS CHAR_OCTET_LENGTH, " +
+			"columns.number + 1 AS ORDINAL_POSITION, null AS SCOPE_CATALOG " +
+			"null AS SCOPE_SCHEMA, null AS SCOPE_TABLE " +
+				"FROM columns, tables, schemas " +
+				"WHERE columns.table_id = tables.id " +
+					"AND tables.schema_id = schemas.id ";
 
-		f[0] = new Field(connection, "TABLE_CAT", iVarcharOid, getMaxNameLength());
-		f[1] = new Field(connection, "TABLE_SCHEM", iVarcharOid, getMaxNameLength());
-		f[2] = new Field(connection, "TABLE_NAME", iVarcharOid, getMaxNameLength());
-		f[3] = new Field(connection, "COLUMN_NAME", iVarcharOid, getMaxNameLength());
-		f[4] = new Field(connection, "DATA_TYPE", iInt2Oid, 2);
-		f[5] = new Field(connection, "TYPE_NAME", iVarcharOid, getMaxNameLength());
-		f[6] = new Field(connection, "COLUMN_SIZE", iInt4Oid, 4);
-		f[7] = new Field(connection, "BUFFER_LENGTH", iVarcharOid, getMaxNameLength());
-		f[8] = new Field(connection, "DECIMAL_DIGITS", iInt4Oid, 4);
-		f[9] = new Field(connection, "NUM_PREC_RADIX", iInt4Oid, 4);
-		f[10] = new Field(connection, "NULLABLE", iInt4Oid, 4);
-		f[11] = new Field(connection, "REMARKS", iVarcharOid, getMaxNameLength());
-		f[12] = new Field(connection, "COLUMN_DEF", iVarcharOid, getMaxNameLength());
-		f[13] = new Field(connection, "SQL_DATA_TYPE", iInt4Oid, 4);
-		f[14] = new Field(connection, "SQL_DATETIME_SUB", iInt4Oid, 4);
-		f[15] = new Field(connection, "CHAR_OCTET_LENGTH", iVarcharOid, getMaxNameLength());
-		f[16] = new Field(connection, "ORDINAL_POSITION", iInt4Oid, 4);
-		f[17] = new Field(connection, "IS_NULLABLE", iVarcharOid, getMaxNameLength());
+		// Unfortunately we cannot get everything out of the query, so we have
+		// to add DATA_TYPE, NULLABLE, IS_NULLABLE and SOURCE_DATA_TYPE using
+		// Java logic and a virtual result set.
 
-		String sql;
-		if (connection.haveMinimumServerVersion("7.3")) {
-			sql = "SELECT n.nspname,c.relname,a.attname,a.atttypid,a.attnotnull,a.atttypmod,a.attlen,a.attnum,def.adsrc,dsc.description "+
-				" FROM pg_catalog.pg_namespace n "+
-				" JOIN pg_catalog.pg_class c ON (c.relnamespace = n.oid) "+
-				" JOIN pg_catalog.pg_attribute a ON (a.attrelid=c.oid) "+
-				" LEFT JOIN pg_catalog.pg_attrdef def ON (a.attrelid=def.adrelid AND a.attnum = def.adnum) "+
-				" LEFT JOIN pg_catalog.pg_description dsc ON (c.oid=dsc.objoid AND a.attnum = dsc.objsubid) "+
-				" LEFT JOIN pg_catalog.pg_class dc ON (dc.oid=dsc.classoid AND dc.relname='pg_class') "+
-				" LEFT JOIN pg_catalog.pg_namespace dn ON (dc.relnamespace=dn.oid AND dn.nspname='pg_catalog') "+
-				" WHERE a.attnum > 0 AND NOT a.attisdropped ";
-			if (schemaPattern != null && !"".equals(schemaPattern)) {
-				sql += " AND n.nspname LIKE '"+escapeQuotes(schemaPattern)+"' ";
-			}
-		} else if (connection.haveMinimumServerVersion("7.2")) {
-			sql = "SELECT NULL::text AS nspname,c.relname,a.attname,a.atttypid,a.attnotnull,a.atttypmod,a.attlen,a.attnum,def.adsrc,dsc.description "+
-				" FROM pg_class c "+
-				" JOIN pg_attribute a ON (a.attrelid=c.oid) "+
-				" LEFT JOIN pg_attrdef def ON (a.attrelid=def.adrelid AND a.attnum = def.adnum) "+
-				" LEFT JOIN pg_description dsc ON (c.oid=dsc.objoid AND a.attnum = dsc.objsubid) "+
-				" LEFT JOIN pg_class dc ON (dc.oid=dsc.classoid AND dc.relname='pg_class') "+
-				" WHERE a.attnum > 0 ";
-		} else if (connection.haveMinimumServerVersion("7.1")) {
-			sql = "SELECT NULL::text AS nspname,c.relname,a.attname,a.atttypid,a.attnotnull,a.atttypmod,a.attlen,a.attnum,def.adsrc,dsc.description "+
-				" FROM pg_class c "+
-				" JOIN pg_attribute a ON (a.attrelid=c.oid) "+
-				" LEFT JOIN pg_attrdef def ON (a.attrelid=def.adrelid AND a.attnum = def.adnum) "+
-				" LEFT JOIN pg_description dsc ON (a.oid=dsc.objoid) "+
-				" WHERE a.attnum > 0 ";
-		} else {
-			// if < 7.1 then don't get defaults or descriptions.
-			sql = "SELECT NULL::text AS nspname,c.relname,a.attname,a.atttypid,a.attnotnull,a.atttypmod,a.attlen,a.attnum,NULL AS adsrc,NULL AS description "+
-				" FROM pg_class c, pg_attribute a "+
-				" WHERE a.attrelid=c.oid AND a.attnum > 0 ";
+		if (schemaPattern != null) {
+			query += "AND schemas.name LIKE '" + escapeQuotes(schemaPattern) + "' ";
+		}
+		if (tableNamePattern != null) {
+			query += "AND tables.name LIKE '" + escapeQuotes(tableNamePattern) + "' ";
+		}
+		if (columnNamePattern != null) {
+			query += "AND columns.name LIKE '" + escapeQuotes(columnNamePattern) + "' ";
 		}
 
-		if (tableNamePattern != null && !"".equals(tableNamePattern)) {
-			sql += " AND c.relname LIKE '"+escapeQuotes(tableNamePattern)+"' ";
-		}
-		if (columnNamePattern != null && !"".equals(columnNamePattern)) {
-			sql += " AND a.attname LIKE '"+escapeQuotes(columnNamePattern)+"' ";
-		}
-		sql += " ORDER BY nspname,relname,attnum ";
+		query += "ORDER BY TABLE_SCHEM, TABLE_NAME, ORDINAL_POSITION";
 
-		ResultSet rs = connection.createStatement().executeQuery(sql);
-		while (rs.next())
-		{
-			byte[][] tuple = new byte[18][];
-			int typeOid = rs.getInt("atttypid");
+		String[] columns = {	// Monet would return lowercase columns
+			"table_cat", "table_schem", "table_name", "column_name",
+			"data_type", "type_name", "column_size", "buffer_length",
+			"decimal_digits", "num_prec_radix", "nullable", "remarks",
+			"column_def", "sql_data_type", "sql_datetime_sub",
+			"char_octet_length", "ordinal_position", "is_nullable",
+			"scope_catlog", "scope_schema", "scope_table", "source_data_type"
+		};
 
-			tuple[0] = null;					// Catalog name, not supported
-			tuple[1] = rs.getBytes("nspname");	// Schema
-			tuple[2] = rs.getBytes("relname");	// Table name
-			tuple[3] = rs.getBytes("attname");	// Column name
-			tuple[4] = encoding.encode(Integer.toString(connection.getSQLType(typeOid)));
-			String pgType = connection.getPGType(typeOid);
-			tuple[5] = encoding.encode(pgType);	// Type name
+		String[] types = {
+			"varchar", "varchar", "varchar", "varchar", "mediumint",
+			"varchar", "mediumint", "mediumint", "mediumint", "mediumint",
+			"mediumint", "varchar", "varchar", "mediumint", "mediumint",
+			"mediumint", "mediumint", "varchar", "varchar", "varchar",
+			"varchar", "mediumint"
+		};
 
-			// by default no decimal_digits
-			// if the type is numeric or decimal we will
-			// overwrite later.
-			tuple[8] = encoding.encode("0");
+		String[][] results;
+		ArrayList tmpRes = new ArrayList();
 
-			if (pgType.equals("bpchar") || pgType.equals("varchar"))
-			{
-				int atttypmod = rs.getInt("atttypmod");
-				tuple[6] = encoding.encode(Integer.toString(atttypmod != -1 ? atttypmod - VARHDRSZ : 0));
-			}
-			else if (pgType.equals("numeric") || pgType.equals("decimal"))
-			{
-				int attypmod = rs.getInt("atttypmod") - VARHDRSZ;
-				tuple[6] = encoding.encode(Integer.toString( ( attypmod >> 16 ) & 0xffff ));
-				tuple[8] = encoding.encode(Integer.toString(attypmod & 0xffff));
-				tuple[9] = encoding.encode("10");
-			}
-			else if (pgType.equals("bit") || pgType.equals("varbit")) {
-				tuple[6] = rs.getBytes("atttypmod");
-				tuple[9] = encoding.encode("2");
-			}
-			else {
-				tuple[6] = rs.getBytes("attlen");
-				tuple[9] = encoding.encode("10");
-			}
-
-			tuple[7] = null;						// Buffer length
-
-			tuple[10] = encoding.encode(Integer.toString(rs.getBoolean("attnotnull") ? java.sql.DatabaseMetaData.columnNoNulls : java.sql.DatabaseMetaData.columnNullable));	// Nullable
-			tuple[11] = rs.getBytes("description");				// Description (if any)
-			tuple[12] = rs.getBytes("adsrc");				// Column default
-			tuple[13] = null;						// sql data type (unused)
-			tuple[14] = null;						// sql datetime sub (unused)
-			tuple[15] = tuple[6];					// char octet length
-			tuple[16] = rs.getBytes("attnum");		// ordinal position
-			tuple[17] = encoding.encode(rs.getBoolean("attnotnull") ? "NO" : "YES");	// Is nullable
-
-			v.addElement(tuple);
+		ResultSet rs = getStmt.executeQuery(query);
+		while (rs.next()) {
+			String[] result = new String[22];
+			result[0]  = rs.getString("table_cat");
+			result[1]  = rs.getString("table_schem");
+			result[2]  = rs.getString("table_name");
+			result[3]  = rs.getString("column_name");
+			result[4]  = "" + driver.getJavaType(rs.getString("type_name"));
+			result[5]  = rs.getString("type_name");
+			result[6]  = rs.getString("column_size");
+			result[7]  = rs.getString("buffer_length");
+			result[8]  = rs.getString("decimal_digits");
+			result[9]  = rs.getString("num_prec_radix");
+			result[10] = "" + rs.getBoolean("nullable") ? ResultSetMetaData.columnNullable : ResultSetMetaData.columnNoNulls;
+			result[11] = rs.getString("remarks");
+			result[12] = rs.getString("column_def");
+			result[13] = rs.getString("sql_data_type");
+			result[14] = rs.getString("sql_datetime_sub");
+			result[15] = rs.getString("char_octet_length");
+			result[16] = rs.getString("ordinal_position");
+			result[17] = rs.getBoolean("nullable") ? "YES" : "NO";
+			result[18] = rs.getString("scope_catalog");
+			result[19] = rs.getString("scope_schema");
+			result[20] = rs.getString("scope_table");
+			result[21] = "" + driver.getJavaType("other");
+			tmpRes.add(result);
 		}
 		rs.close();
 
-		return (ResultSet) ((BaseStatement)connection.createStatement()).createDriverResultSet(f, v);
+		results = tmpRes.toArray(new String[tmpRes.size()][]);
+
+		try {
+			return(new MonetVirtualResultSet(columns, types, results));
+		} catch (IllegalArgumentException e) {
+			throw new SQLException("Internal driver error: " + e.getMessage());
+		}
 	}
 
-	/*
+	/**
 	 * Get a description of the access rights for a table's columns.
+	 * Not implemented since,Monet knows no access rights
 	 *
 	 * <P>Only privileges matching the column name criteria are
 	 * returned.  They are ordered by COLUMN_NAME and PRIVILEGE.
@@ -1683,303 +1663,90 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @param columnNamePattern a column name pattern
 	 * @return ResultSet each row is a column privilege description
 	 * @see #getSearchStringEscape
+	 * @throws SQLException if a database error occurs
 	 */
-	public java.sql.ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException
+	public ResultSet getColumnPrivileges(
+		String catalog,
+		String schema,
+		String table,
+		String columnNamePattern
+	) throws SQLException
 	{
-		Field f[] = new Field[8];
-		Vector v = new Vector();
+		String[] columns = {
+			"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME",
+			"GRANTOR", "GRANTEE", "PRIVILEGE", "IS_GRANTABLE"
+		};
 
-		if (table == null)
-			table = "%";
+		String[] types = {
+			"varchar", "varchar", "varchar", "varchar", "varchar",
+			"varchar", "varchar", "varchar"
+		};
 
-		if (columnNamePattern == null)
-			columnNamePattern = "%";
+		String[][] results = new String[0][8];
 
-		f[0] = new Field(connection, "TABLE_CAT", iVarcharOid, getMaxNameLength());
-		f[1] = new Field(connection, "TABLE_SCHEM", iVarcharOid, getMaxNameLength());
-		f[2] = new Field(connection, "TABLE_NAME", iVarcharOid, getMaxNameLength());
-		f[3] = new Field(connection, "COLUMN_NAME", iVarcharOid, getMaxNameLength());
-		f[4] = new Field(connection, "GRANTOR", iVarcharOid, getMaxNameLength());
-		f[5] = new Field(connection, "GRANTEE", iVarcharOid, getMaxNameLength());
-		f[6] = new Field(connection, "PRIVILEGE", iVarcharOid, getMaxNameLength());
-		f[7] = new Field(connection, "IS_GRANTABLE", iVarcharOid, getMaxNameLength());
-
-		String sql;
-		if (connection.haveMinimumServerVersion("7.3")) {
-			sql = "SELECT n.nspname,c.relname,u.usename,c.relacl,a.attname "+
-				" FROM pg_catalog.pg_namespace n, pg_catalog.pg_class c, pg_catalog.pg_user u, pg_catalog.pg_attribute a "+
-				" WHERE c.relnamespace = n.oid "+
-				" AND u.usesysid = c.relowner "+
-				" AND c.oid = a.attrelid "+
-				" AND c.relkind = 'r' "+
-				" AND a.attnum > 0 AND NOT a.attisdropped ";
-			if (schema != null && !"".equals(schema)) {
-				sql += " AND n.nspname = '"+escapeQuotes(schema)+"' ";
-			}
-		} else {
-			sql = "SELECT NULL::text AS nspname,c.relname,u.usename,c.relacl,a.attname "+
-				"FROM pg_class c, pg_user u,pg_attribute a "+
-				" WHERE u.usesysid = c.relowner "+
-				" AND c.oid = a.attrelid "+
-				" AND a.attnum > 0 "+
-				" AND c.relkind = 'r' ";
+		try {
+			return(new MonetVirtualResultSet(columns, types, results));
+		} catch (IllegalArgumentException e) {
+			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
-
-		sql += " AND c.relname = '"+escapeQuotes(table)+"' ";
-		if (columnNamePattern != null && !"".equals(columnNamePattern)) {
-			sql += " AND a.attname LIKE '"+escapeQuotes(columnNamePattern)+"' ";
-		}
-		sql += " ORDER BY attname ";
-
-		ResultSet rs = connection.createStatement().executeQuery(sql);
-		while (rs.next()) {
-			byte schemaName[] = rs.getBytes("nspname");
-			byte tableName[] = rs.getBytes("relname");
-			byte column[] = rs.getBytes("attname");
-			String owner = rs.getString("usename");
-			String acl = rs.getString("relacl");
-			Hashtable permissions = parseACL(acl, owner);
-			String permNames[] = new String[permissions.size()];
-			Enumeration e = permissions.keys();
-			int i=0;
-			while (e.hasMoreElements()) {
-				permNames[i++] = (String)e.nextElement();
-			}
-			sortStringArray(permNames);
-			for (i=0; i<permNames.length; i++) {
-				byte[] privilege = encoding.encode(permNames[i]);
-				Vector grantees = (Vector)permissions.get(permNames[i]);
-				for (int j=0; j<grantees.size(); j++) {
-					String grantee = (String)grantees.elementAt(j);
-					String grantable = owner.equals(grantee) ? "YES" : "NO";
-					byte[][] tuple = new byte[8][];
-					tuple[0] = null;
-					tuple[1] = schemaName;
-					tuple[2] = tableName;
-					tuple[3] = column;
-					tuple[4] = encoding.encode(owner);
-					tuple[5] = encoding.encode(grantee);
-					tuple[6] = privilege;
-					tuple[7] = encoding.encode(grantable);
-					v.addElement(tuple);
-				}
-			}
-		}
-		rs.close();
-
-		return (ResultSet) ((BaseStatement)connection.createStatement()).createDriverResultSet(f, v);
 	}
 
-	/*
-	* Get a description of the access rights for each table available
-	* in a catalog.
-	*
-	* This method is currently unimplemented.
-	*
-	* <P>Only privileges matching the schema and table name
-	* criteria are returned.  They are ordered by TABLE_SCHEM,
-	* TABLE_NAME, and PRIVILEGE.
-	*
-	* <P>Each privilige description has the following columns:
-	*	<OL>
-	*	<LI><B>TABLE_CAT</B> String => table catalog (may be null)
-	*	<LI><B>TABLE_SCHEM</B> String => table schema (may be null)
-	*	<LI><B>TABLE_NAME</B> String => table name
-	*	<LI><B>GRANTOR</B> => grantor of access (may be null)
-	*	<LI><B>GRANTEE</B> String => grantee of access
-	*	<LI><B>PRIVILEGE</B> String => name of access (SELECT,
-	*		INSERT, UPDATE, REFRENCES, ...)
-	*	<LI><B>IS_GRANTABLE</B> String => "YES" if grantee is permitted
-	*		to grant to others; "NO" if not; null if unknown
-	*	</OL>
-	*
-	* @param catalog a catalog name; "" retrieves those without a catalog
-	* @param schemaPattern a schema name pattern; "" retrieves those
-	* without a schema
-	* @param tableNamePattern a table name pattern
-	* @return ResultSet each row is a table privilege description
-	* @see #getSearchStringEscape
-	*/
-	public java.sql.ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) throws SQLException
+	/**
+	 * Get a description of the access rights for each table available
+	 * in a catalog.
+	 * Not implemented since Monet knows no access rights
+	 *
+	 * <P>Only privileges matching the schema and table name
+	 * criteria are returned.  They are ordered by TABLE_SCHEM,
+	 * TABLE_NAME, and PRIVILEGE.
+	 *
+	 * <P>Each privilige description has the following columns:
+	 *	<OL>
+	 *	<LI><B>TABLE_CAT</B> String => table catalog (may be null)
+	 *	<LI><B>TABLE_SCHEM</B> String => table schema (may be null)
+	 *	<LI><B>TABLE_NAME</B> String => table name
+	 *	<LI><B>GRANTOR</B> => grantor of access (may be null)
+	 *	<LI><B>GRANTEE</B> String => grantee of access
+	 *	<LI><B>PRIVILEGE</B> String => name of access (SELECT,
+	 *		INSERT, UPDATE, REFRENCES, ...)
+	 *	<LI><B>IS_GRANTABLE</B> String => "YES" if grantee is permitted
+	 *		to grant to others; "NO" if not; null if unknown
+	 *	</OL>
+	 *
+	 * @param catalog a catalog name; "" retrieves those without a catalog
+	 * @param schemaPattern a schema name pattern; "" retrieves those
+	 *                      without a schema
+	 * @param tableNamePattern a table name pattern
+	 * @return ResultSet each row is a table privilege description
+	 * @see #getSearchStringEscape
+	 * @throws SQLException if a database error occurs
+	 */
+	public ResultSet getTablePrivileges(
+		String catalog,
+		String schemaPattern,
+		String tableNamePattern
+	) throws SQLException
 	{
-		Field f[] = new Field[7];
-		Vector v = new Vector();
+		String[] columns = {
+			"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME",
+			"GRANTOR", "GRANTEE", "PRIVILEGE", "IS_GRANTABLE"
+		};
 
-		f[0] = new Field(connection, "TABLE_CAT", iVarcharOid, getMaxNameLength());
-		f[1] = new Field(connection, "TABLE_SCHEM", iVarcharOid, getMaxNameLength());
-		f[2] = new Field(connection, "TABLE_NAME", iVarcharOid, getMaxNameLength());
-		f[3] = new Field(connection, "GRANTOR", iVarcharOid, getMaxNameLength());
-		f[4] = new Field(connection, "GRANTEE", iVarcharOid, getMaxNameLength());
-		f[5] = new Field(connection, "PRIVILEGE", iVarcharOid, getMaxNameLength());
-		f[6] = new Field(connection, "IS_GRANTABLE", iVarcharOid, getMaxNameLength());
+		String[] types = {
+			"varchar", "varchar", "varchar", "varchar", "varchar",
+			"varchar", "varchar", "varchar"
+		};
 
-		String sql;
-		if (connection.haveMinimumServerVersion("7.3")) {
-			sql = "SELECT n.nspname,c.relname,u.usename,c.relacl "+
-				" FROM pg_catalog.pg_namespace n, pg_catalog.pg_class c, pg_catalog.pg_user u "+
-				" WHERE c.relnamespace = n.oid "+
-				" AND u.usesysid = c.relowner "+
-				" AND c.relkind = 'r' ";
-			if (schemaPattern != null && !"".equals(schemaPattern)) {
-				sql += " AND n.nspname LIKE '"+escapeQuotes(schemaPattern)+"' ";
-			}
-		} else {
-			sql = "SELECT NULL::text AS nspname,c.relname,u.usename,c.relacl "+
-				"FROM pg_class c, pg_user u "+
-				" WHERE u.usesysid = c.relowner "+
-				" AND c.relkind = 'r' ";
-		}
+		String[][] results = new String[0][8];
 
-		if (tableNamePattern != null && !"".equals(tableNamePattern)) {
-			sql += " AND c.relname LIKE '"+escapeQuotes(tableNamePattern)+"' ";
-		}
-		sql += " ORDER BY nspname, relname ";
-
-		ResultSet rs = connection.createStatement().executeQuery(sql);
-		while (rs.next()) {
-			byte schema[] = rs.getBytes("nspname");
-			byte table[] = rs.getBytes("relname");
-			String owner = rs.getString("usename");
-			String acl = rs.getString("relacl");
-			Hashtable permissions = parseACL(acl, owner);
-			String permNames[] = new String[permissions.size()];
-			Enumeration e = permissions.keys();
-			int i=0;
-			while (e.hasMoreElements()) {
-				permNames[i++] = (String)e.nextElement();
-			}
-			sortStringArray(permNames);
-			for (i=0; i<permNames.length; i++) {
-				byte[] privilege = encoding.encode(permNames[i]);
-				Vector grantees = (Vector)permissions.get(permNames[i]);
-				for (int j=0; j<grantees.size(); j++) {
-					String grantee = (String)grantees.elementAt(j);
-					String grantable = owner.equals(grantee) ? "YES" : "NO";
-					byte[][] tuple = new byte[7][];
-					tuple[0] = null;
-					tuple[1] = schema;
-					tuple[2] = table;
-					tuple[3] = encoding.encode(owner);
-					tuple[4] = encoding.encode(grantee);
-					tuple[5] = privilege;
-					tuple[6] = encoding.encode(grantable);
-					v.addElement(tuple);
-				}
-			}
-		}
-		rs.close();
-
-		return (ResultSet) ((BaseStatement)connection.createStatement()).createDriverResultSet(f, v);
-	}
-
-	private static void sortStringArray(String s[]) {
-		for (int i=0; i<s.length-1; i++) {
-			for (int j=i+1; j<s.length; j++) {
-				if (s[i].compareTo(s[j]) > 0) {
-					String tmp = s[i];
-					s[i] = s[j];
-					s[j] = tmp;
-				}
-			}
+		try {
+			return(new MonetVirtualResultSet(columns, types, results));
+		} catch (IllegalArgumentException e) {
+			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
 	}
 
 	/**
-	 * Parse an String of ACLs into a Vector of ACLs.
-	 */
-	private static Vector parseACLArray(String aclString) {
-		Vector acls = new Vector();
-		if (aclString == null || aclString.length() == 0) {
-			return acls;
-		}
-		boolean inQuotes = false;
-		// start at 1 because of leading "{"
-		int beginIndex = 1;
-		char prevChar = ' ';
-		for (int i=beginIndex; i<aclString.length(); i++) {
-
-			char c = aclString.charAt(i);
-			if (c == '"' && prevChar != '\\') {
-				inQuotes = !inQuotes;
-			} else if (c == ',' && !inQuotes) {
-				acls.addElement(aclString.substring(beginIndex,i));
-				beginIndex = i+1;
-			}
-			prevChar = c;
-		}
-		// add last element removing the trailing "}"
-		acls.addElement(aclString.substring(beginIndex,aclString.length()-1));
-
-		// Strip out enclosing quotes, if any.
-		for (int i=0; i<acls.size(); i++) {
-			String acl = (String)acls.elementAt(i);
-			if (acl.startsWith("\"") && acl.endsWith("\"")) {
-				acl = acl.substring(1,acl.length()-1);
-				acls.setElementAt(acl,i);
-			}
-		}
-		return acls;
-	}
-
-	/**
-	 * Add the user described by the given acl to the Vectors of users
-	 * with the privileges described by the acl.
-	 */
-	private void addACLPrivileges(String acl, Hashtable privileges) {
-		int equalIndex = acl.lastIndexOf("=");
-		String name = acl.substring(0,equalIndex);
-		if (name.length() == 0) {
-			name = "PUBLIC";
-		}
-		String privs = acl.substring(equalIndex+1);
-		for (int i=0; i<privs.length(); i++) {
-			char c = privs.charAt(i);
-			String sqlpriv;
-			switch (c) {
-				case 'a': sqlpriv = "INSERT"; break;
-				case 'r': sqlpriv = "SELECT"; break;
-				case 'w': sqlpriv = "UPDATE"; break;
-				case 'd': sqlpriv = "DELETE"; break;
-				case 'R': sqlpriv = "RULE"; break;
-				case 'x': sqlpriv = "REFERENCES"; break;
-				case 't': sqlpriv = "TRIGGER"; break;
-				// the folloowing can't be granted to a table, but
-				// we'll keep them for completeness.
-				case 'X': sqlpriv = "EXECUTE"; break;
-				case 'U': sqlpriv = "USAGE"; break;
-				case 'C': sqlpriv = "CREATE"; break;
-				case 'T': sqlpriv = "CREATE TEMP"; break;
-				default: sqlpriv = "UNKNOWN";
-			}
-			Vector usersWithPermission = (Vector)privileges.get(sqlpriv);
-			if (usersWithPermission == null) {
-				usersWithPermission = new Vector();
-				privileges.put(sqlpriv,usersWithPermission);
-			}
-			usersWithPermission.addElement(name);
-		}
-	}
-
-	/**
-	 * Take the a String representing an array of ACLs and return
-	 * a Hashtable mapping the SQL permission name to a Vector of
-	 * usernames who have that permission.
-	 */
-	protected Hashtable parseACL(String aclArray, String owner) {
-		if (aclArray == null || aclArray == "") {
-			//null acl is a shortcut for owner having full privs
-			aclArray = "{" + owner + "=arwdRxt}";
-		}
-		Vector acls = parseACLArray(aclArray);
-		Hashtable privileges = new Hashtable();
-		for (int i=0; i<acls.size(); i++) {
-			String acl = (String)acls.elementAt(i);
-			addACLPrivileges(acl,privileges);
-		}
-		return privileges;
-	}
-
-	/*
 	 * Get a description of a table's optimal set of columns that
 	 * uniquely identifies a row. They are ordered by SCOPE.
 	 *
@@ -2012,62 +1779,27 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @param scope the scope of interest; use same values as SCOPE
 	 * @param nullable include columns that are nullable?
 	 * @return ResultSet each row is a column description
+	 * @throws SQLException if a database error occurs
 	 */
-	// Implementation note: This is required for Borland's JBuilder to work
-	public java.sql.ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException
+	public ResultSet getBestRowIdentifier(
+		String catalog,
+		String schema,
+		String table,
+		int scope,
+		boolean nullable
+	) throws SQLException
 	{
-		Field f[] = new Field[8];
-		Vector v = new Vector();		// The new ResultSet tuple stuff
+		String columns[] = {
+			"SCOPE", "COLUMN_NAME", "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE",
+			"BUFFER_LENGTH", "DECIMAL_DIGITS", "PSEUDO_COLUMN"
+		};
 
-		f[0] = new Field(connection, "SCOPE", iInt2Oid, 2);
-		f[1] = new Field(connection, "COLUMN_NAME", iVarcharOid, getMaxNameLength());
-		f[2] = new Field(connection, "DATA_TYPE", iInt2Oid, 2);
-		f[3] = new Field(connection, "TYPE_NAME", iVarcharOid, getMaxNameLength());
-		f[4] = new Field(connection, "COLUMN_SIZE", iInt4Oid, 4);
-		f[5] = new Field(connection, "BUFFER_LENGTH", iInt4Oid, 4);
-		f[6] = new Field(connection, "DECIMAL_DIGITS", iInt2Oid, 2);
-		f[7] = new Field(connection, "PSEUDO_COLUMN", iInt2Oid, 2);
+		String types[] = {
+			"mediumint", "varchar", "mediumint", "varchar", "mediumint",
+			"mediumint", "mediumint", "mediumint"
+		};
 
-		/* At the moment this simply returns a table's primary key,
-		 * if there is one.  I believe other unique indexes, ctid,
-		 * and oid should also be considered. -KJ
-		 */
-
-		String from;
-		String where = "";
-		if (connection.haveMinimumServerVersion("7.3")) {
-			from = " FROM pg_catalog.pg_namespace n, pg_catalog.pg_class ct, pg_catalog.pg_class ci, pg_catalog.pg_attribute a, pg_catalog.pg_index i ";
-			where = " AND ct.relnamespace = n.oid ";
-			if (schema != null && !"".equals(schema)) {
-				where += " AND n.nspname = '"+escapeQuotes(schema)+"' ";
-			}
-		} else {
-			from = " FROM pg_class ct, pg_class ci, pg_attribute a, pg_index i ";
-		}
-		String sql = "SELECT a.attname, a.atttypid "+
-			from+
-			" WHERE ct.oid=i.indrelid AND ci.oid=i.indexrelid "+
-			" AND a.attrelid=ci.oid AND i.indisprimary "+
-			" AND ct.relname = '"+escapeQuotes(table)+"' "+
-			where+
-			" ORDER BY a.attnum ";
-
-		ResultSet rs = connection.createStatement().executeQuery(sql);
-		while (rs.next()) {
-			byte tuple[][] = new byte[8][];
-			int columnTypeOid = rs.getInt("atttypid");
-			tuple[0] = encoding.encode(Integer.toString(scope));
-			tuple[1] = rs.getBytes("attname");
-			tuple[2] = encoding.encode(Integer.toString(connection.getSQLType(columnTypeOid)));
-			tuple[3] = encoding.encode(connection.getPGType(columnTypeOid));
-			tuple[4] = null;
-			tuple[5] = null;
-			tuple[6] = null;
-			tuple[7] = encoding.encode(Integer.toString(java.sql.DatabaseMetaData.bestRowNotPseudo));
-			v.addElement(tuple);
-		}
-
-		return (ResultSet) ((BaseStatement)connection.createStatement()).createDriverResultSet(f, v);
+		// now what? huh?
 	}
 
 	/*
