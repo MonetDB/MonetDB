@@ -1,0 +1,7 @@
+The modules contained in the Kernel should solely rely on the
+GDK library. This makes it possible to link them with application
+programs easily.
+
+As a consequence several 'old-fashioned' MIL constructs, e.g.
+new(type1,type2) and print(type_any) are moved to the mal-service
+layer.

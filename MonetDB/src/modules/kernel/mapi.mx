@@ -33,25 +33,25 @@ command Stop(port:int):bit = MAPIstop
 
 # initialization code
 function main():void;
-	vm1:= bat.new(int,str);
+	vm1:= bat(5:int,11:int);
 	bat.setName(vm1,"view_mapi_owner");
-	bat.setRoles(vm1,"mapi","owner");
+	bat.setColumn(vm1,"mapi","owner");
 
-	vm2:= bat.new(int,int);
+	vm2:= bat(5:int,5:int);
 	bat.setName(vm2,"view_mapi_port");
-	bat.setRoles(vm2,"mapi","port");
+	bat.setColumn(vm2,"mapi","port");
 
-	vm3:= bat.new(int,int);
+	vm3:= bat(5:int,5:int);
 	bat.setName(vm3,"view_mapi_maxusers");
-	bat.setRoles(vm3,"mapi","maxusers");
+	bat.setColumn(vm3,"mapi","maxusers");
 
-	vm4:= bat.new(int,int);
+	vm4:= bat(5:int,5:int);
 	bat.setName(vm4,"view_mapi_users");
-	bat.setRoles(vm4,"mapi","users");
+	bat.setColumn(vm4,"mapi","users");
 
-	vm5:= bat.new(int,int);
+	vm5:= bat(5:int,5:int);
 	bat.setName(vm5,"view_mapi_timeout");
-	bat.setRoles(vm5,"mapi","timeout");
+	bat.setColumn(vm5,"mapi","timeout");
 end function;
 	
 @h

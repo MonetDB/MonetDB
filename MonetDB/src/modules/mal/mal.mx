@@ -5,10 +5,14 @@
 This module contains enhances to the MAL interpreter layer, such as
 iterators over ranges and bats, object management, access to the debugger, ....
 This module is loaded directly after the kernel modules and provides
-a first abstraction layer.
+a first abstraction layer. 
 
-@+ Exception handling
-The exception handler works through a string-returning pattern
+Note that the modules located in the kernel directory should not
+rely on the MAL datastructures.
+
+@+ BAT declarations
+A pattern block may be required to make the proper translation to
+the BAT library.
 @mal
 # The routines below are linked with the kernel by default
 
@@ -16,6 +20,20 @@ module mal;
 
 command raise(msg:str) :str = CMDraise
 comment "Raise an exception labelled with a specific message.";
+
+
+pattern bat(ht:any::1, tt:any::2) : bat[any::1,any::2] = CMDBATnew
+comment "Creates a new empty transient BAT, with head- and tail-types as indicated.";
+
+pattern new(ht:any::1, tt:any::2) : bat[any::1,any::2] = CMDBATnew
+comment "Creates a new empty transient BAT, with head- and tail-types as indicated.";
+
+pattern new(ht:any::1, tt:any::2, size:int) : bat[any::1,any::2] = CMDBATnew
+comment "Creates a new empty BAT, directly allocating for 'size' elements.";
+
+pattern bat(ht:any::1, tt:any::2, size:int) : bat[any::1,any::2] = CMDBATnew
+comment "Creates a new empty BAT, directly allocating for 'size' elements.";
+
 @+ Iterator primitives
 This module contains the framework for the construction of iterators.
 Iterators enumerate elements in a collection defined by a few paramaters,
@@ -36,6 +54,7 @@ command nextElement(i:chr, first:chr, last:chr):bit = chrForloop;
 command nextElement(i:sht, first:sht, last:sht):bit = shtForloop; 
 command nextElement(i:lng, first:lng, last:lng):bit = lngForloop; 
 command nextElement(i:int, first:int, last:int):bit = intForloop; 
+
 @+ BAT iterator
 A BATloop iterator uses an integer cursor to keep track of its
 position in the underlying table. 
@@ -76,6 +95,75 @@ comes with a hardwired gdb-like text-based debugger.
 pattern mdb():void = MDBmdb
 	comment "Start interactive debugger";
 
+@-
+The prime scheme to inspect the MAL interpreter status is to use
+the MAL debugger. However, in case of automatic exception handling
+it helps to be able to obtain BAT versions of the critical information,
+such as symbol table (view_var_*),
+stack trace (view_stk_where),
+variable values and their binding (view_stk_*),
+and the instruction(s) being executed (view_mal_stmt).
+
+@mal 
+pattern view_var_type() : bat[int,str] = CMDviewvartype
+	comment "Pseudo bat to gain access to all visible variables";
+pattern view_var_used() : bat[int,str] = CMDviewVarUsed
+	comment "Pseudo bat to map variable name to access modes";
+pattern view_var_constant() : bat[int,str] = CMDviewVarConstant
+	comment "Pseudo bat to map variable name to constant/changeable";
+
+pattern view_stk_value():bat[int,str] = CMDviewStkValue
+	comment "Pseudo bat to map variable name to its value (as a string).";
+pattern view_stk_where():bat[int,str] = CMDviewStkWhere
+	comment "Pseudo bat with a stack trace";
+
+	
+
+@+ Printing 
+The polymorphic print commands are collected here.
+Watch out, the order of definitions is crucial, because the most
+specific should be introduced last.
+@mal
+
+pattern print(b1:bat[ANY::1,ANY], b2:bat[ANY::1,ANY][]):int = CMDprint_table
+ comment "BATs are printed with '#' for legend lines, and the BUNs on seperate
+ lines between brackets, containing each to comma separated values
+ (head and tail).
+ If multiple BATs are passed for printing, print() performs an implicit
+ natural join, producing a multiattribute table.";
+
+pattern print(order:int,b:bat[ANY::1,ANY], b2:bat[ANY::1,ANY][]):int
+                                                = CMDprint_otable
+ comment "The same as normal table print, but enforces to use the order of
+  BAT number [1..argc] to do the printing.";
+
+pattern table(b1:bat[any::1,any], b2:bat[any::1,any][]):int = CMDprint_table_default
+	comment "Print an n-ary table. Like print(n-ary) but does not print oid column";
+
+pattern table(order:int, b1:bat[any::1,any], b2:bat[any::1,any][]):int = CMDprint_otable
+	comment "Print an n-ary table. Use the ordering of param [1..argc]";
+
+pattern print(val:any):int = CMDprint_val
+	comment "Print a MIL value between square brackets.";
+pattern printft(val:any):int = CMDprint_ft
+	comment "Select default format ";
+
+@+ Basic Value Manipulation
+The command below inspect the MAL administration and, therefore,
+can not be included in the kernel library.
+@mal
+pattern type(v:any) : int = CMDtype
+comment "Return the type of a value (expression). Returns an type number.
+ TIP: use the monet_atomtbl BAT to translate type numbers to strings.";
+
+pattern cast(v:any, tpe:int ) : any = CMDcast
+comment "Cast values explicitly, using an integer-expression as type
+specifier.";
+
+pattern cast(v:bat[any::1,any], tpe:int):bat[any::1,any]= CMDbatcast
+comment "Cast values explicitly, using an integer-expression as type
+specifier.";
+
 @+ Dummy code 
 @h
 /*
@@ -103,6 +191,29 @@ pattern mdb():void = MDBmdb
 #endif /* _ITERATOR_H*/
 @c
 #include "monet.h"
+#include <stdarg.h>
+#include <time.h>
+#include "gdk.h"
+#include "mal_stack.h"
+#include "mal_resolve.h"
+#include "mal_squeezer.h"
+#include "mal_client.h"
+
+
+@+ BAT declarations
+@c
+int CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+        int ht, tt, cap=0;
+	int *res;
+
+        ht= getArgType(m,p,1);
+        tt= getArgType(m,p,2);
+        if( p->argc>3)
+                cap= *(int *) getArgReference(s,p,3);
+	res= (int *) getArgReference(s,p,0);
+
+	return CMDnewBat2(res,&ht,&tt,&cap);
+}
 
 @+ Exception implementation
 @c
@@ -260,4 +371,200 @@ int CMDgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	garbageElement(tail);
 	VALinit( tail, getArgType(mb,pci,3),BUNtail(b,p));
 	return GDK_SUCCEED;
+}
+@+ Variables and stack information
+The variable information can be turned into a BAT for inspection as well.
+
+@= Pseudo
+        if (BBPindex("view_@1_@2") <= 0)
+                BATname(b, "@2");
+        BATroles(b,"@1","@2");
+        BATmode(b,TRANSIENT);
+        BATfakeCommit(b);
+        *ret = b->batCacheid;
+
+@c
+int CMDviewvartype(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{	VarPtr *v = m->var;
+	ValPtr w;
+	int bid, *ret= &bid;
+	int i;
+	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
+	if (b == 0) return GDK_FAIL;
+
+	for( ; i<s->stktop ; i++,v++)
+		BUNins(b,&i,malTypeName((*v)->type));
+	@:Pseudo(var,type)@
+	/* store the result ! */
+	w = &s->stk[p->argv[0]];
+	w->val.bval= bid;
+	return GDK_SUCCEED;
+}
+int CMDviewVarUsed(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{	VarPtr *v = m->var;
+	ValPtr w;
+	int bid, *ret= &bid;
+	int i;
+	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
+	if (b == 0) return GDK_FAIL;
+	for( ; i<s->stktop ; i++,v++)
+		BUNins(b,&i,((*v)->isused? "used":""));
+	@:Pseudo(var,protected)@
+	/* store the result ! */
+	w = &s->stk[p->argv[0]];
+	w->val.bval= bid;
+	return GDK_SUCCEED;
+}
+int CMDviewVarConstant(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{	VarPtr *v = m->var;
+	ValPtr w;
+	int bid, *ret= &bid;
+	int i;
+	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
+	if (b == 0) return GDK_FAIL;
+	for( ; i<s->stktop ; i++,v++)
+		BUNins(b,&i,((*v)->isaconstant? "constant":""));
+	@:Pseudo(var,constant)@
+	/* store the result ! */
+	w = &s->stk[p->argv[0]];
+	w->val.bval= bid;
+	return GDK_SUCCEED;
+}
+int CMDviewStkValue(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{	ValPtr v = s->stk;
+	ValPtr w;
+	int i;
+	int bid, *ret= &bid;
+	str buf;
+	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
+	if (b == 0) return GDK_FAIL;
+	for( ; i<s->stktop ; i++,v++){
+		ATOMformat(v->vtype, VALget(v), &buf);
+		BUNins(b,&i,buf);
+	}
+	@:Pseudo(stk,value)@
+	/* store the result ! */
+	w = &s->stk[p->argv[0]];
+	w->val.bval= bid;
+	return GDK_SUCCEED;
+}
+int CMDviewStkWhere(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{	ValPtr v = s->stk;
+	ValPtr w;
+	int bid, *ret= &bid;
+	int i;
+	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
+	if (b == 0) return GDK_FAIL;
+	@:Pseudo(var,type)@
+	/* store the result ! */
+	w = &s->stk[p->argv[0]];
+	w->val.bval= bid;
+	return GDK_SUCCEED;
+}
+@+ Basic value operations
+@c
+int CMDbatcast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	printf("cast(v:bat) not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int CMDcast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	printf("cast(v:any) not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int CMDtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	printf("type(v:any) not yet implemented\n");
+	return GDK_SUCCEED;
+}
+@+ Printing
+The print commands are implemented as single instruction rules,
+because they need access to the calling context.
+Check string printing first !!
+@c
+int CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int tpe = getArgType(mb,pci,1);
+	ptr val = getArgReference(stk,pci,1);
+        FILE *fp = GDKout;
+	if( val==NULL) {
+		tpe = TYPE_str;
+		val = (ptr) "nil";
+	}
+	if( isaBatType(tpe)){
+		BAT *b = BATdescriptor(*(int*)val);
+		if( b== NULL) {
+			GDKerror("CMDprint_val:could not access descriptor\n");
+			return GDK_FAIL;
+		}
+		/* BATprint(b);*/
+		BATmultiprintf(GDKout,2,&b,TRUE,0);
+		return GDK_SUCCEED;
+	}
+        fputs("[ ", fp);
+	if( tpe== TYPE_str)
+		ATOMprint(tpe, *(str*)val, fp);
+        else  	ATOMprint(tpe, val, fp);
+        fputs(" ]\n", fp);
+        return GDK_SUCCEED;
+}
+int CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int tpe = getArgType(mb,pci,1);
+	ptr val = getArgReference(stk,pci,1);
+	switch(tpe){
+	case TYPE_str: 
+		ATOMprint(TYPE_str, *(str*)val, GDKout);
+		break;
+	default: ATOMprint(tpe, val, GDKout);
+	}
+	return GDK_SUCCEED;
+}
+
+int CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
+        BAT *piv[MAXPARAMS],*b;
+        int nbats = 0;
+	int tpe,i=1,order=0;
+	ptr val;
+
+	if(o){
+		order = *(int*) getArgReference(stk,pci,1);
+		i++;
+	}
+	for(; i< pci->argc;i++) {
+		tpe = getArgType(mb,pci,i);
+		val = getArgReference(stk,pci,i);
+		if( !isaBatType(tpe)) return GDK_FAIL;
+		b= BATdescriptor(*(int*)val);
+		if(b == NULL) return GDK_FAIL;
+                piv[nbats++] = b;
+        } 
+        BATmultiprintf(GDKout, nbats, piv, flg, order);
+        return GDK_SUCCEED;
+}
+
+int CMDprint_otable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	CMDotable(mb,stk,pci,1,TRUE);
+        return GDK_SUCCEED;
+}
+
+int CMDprint_table( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	CMDotable(mb,stk,pci,0,FALSE);
+        return GDK_SUCCEED;
+}
+
+int CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+        BAT *piv[MAXPARAMS],*b;
+        int nbats = 0;
+	int tpe,i;
+	ptr val;
+
+	for(i=1; i< pci->argc;i++) {
+		tpe = getArgType(mb,pci,i);
+		val = getArgReference(stk,pci,i);
+		if( !isaBatType(tpe)) return GDK_FAIL;
+		b= BATdescriptor(*(int*)val);
+		if(b == NULL) return GDK_FAIL;
+                piv[nbats++] = b;
+        } 
+        BATmultiprintf(GDKout, i-1, piv, FALSE, 0);
+        return GDK_SUCCEED;
 }

@@ -101,30 +101,6 @@ command set_client_listing(b:bit):void= CMDsetListing
 	comment "Turn on/off echoing of MAL instructions";
 command quit():void= CMDquit
 	comment "Terminate the server"'
-@- MAL interpreter status
-The prime scheme to inspect the MAL interpreter status is to use
-the MAL debugger. However, in case of automatic exception handling
-it helps to be able to obtain BAT versions of the critical information,
-such as symbol table (view_var_*),
-stack trace (view_stk_where),
-variable values and their binding (view_stk_*),
-and the instruction(s) being executed (view_mal_stmt).
-
-@mal 
-pattern view_var_type() : bat[int,str] = view_var_type
-	comment "Pseudo bat to gain access to all visible variables";
-pattern view_var_used() : bat[int,str] = view_var_used
-	comment "Pseudo bat to map variable name to access modes";
-pattern view_var_constant() : bat[int,str] = view_var_constant
-	comment "Pseudo bat to map variable name to constant/changeable";
-
-pattern view_stk_value():bat[int,str] = view_stk_value
-	comment "Pseudo bat to map variable name to its value (as a string).";
-pattern view_stk_where():bat[int,str] = view_stk_where
-	comment "Pseudo bat with a stack trace";
-
-	
-
 @- Monet modules and scopes
 Each module forms a separately named scope. Scopes visible to a user
 are relevant for resolving function names. 
@@ -167,29 +143,9 @@ the MAL interpreter";
 
 
 @- Printing 
-The polymorphic print commands are collected here.
-Watch out, the order of definitions is crucial, because the most
-specific should be introduced last.
+The routines that inspect the runtime setting are moved out of this area.
+
 @mal
-
-pattern print(b1:bat[ANY::1,ANY], b2:bat[ANY::1,ANY][]):int = CMDprint_table
- comment "BATs are printed with '#' for legend lines, and the BUNs on seperate
- lines between brackets, containing each to comma separated values
- (head and tail).
- If multiple BATs are passed for printing, print() performs an implicit
- natural join, producing a multiattribute table.";
-
-pattern print(order:int,b:bat[ANY::1,ANY], b2:bat[ANY::1,ANY][]):int
-                                                = CMDprint_otable
- comment "The same as normal table print, but enforces to use the order of
-  BAT number [1..argc] to do the printing.";
-
-pattern table(b1:bat[any::1,any], b2:bat[any::1,any][]):int = CMDprint_table_default
-	comment "Print an n-ary table. Like print(n-ary) but does not print oid column";
-
-pattern table(order:int, b1:bat[any::1,any], b2:bat[any::1,any][]):int = CMDprint_otable
-	comment "Print an n-ary table. Use the ordering of param [1..argc]";
-
 command printf(format:str,val:bit):int = CMDprint_formatted_bit;
 command printf(format:str,val:chr):int = CMDprint_formatted_chr;
 command printf(format:str,val:int):int = CMDprint_formatted_int;
@@ -200,12 +156,6 @@ command printf(format:str,val:flt):int = CMDprint_formatted_flt;
 command printf(format:str,val:dbl):int = CMDprint_formatted_dbl;
 command printf(val:str):int = CMDprint_str;
 command printf(format:str,val:str):int = CMDprint_formatted_str;
-
-pattern print(val:any):int = CMDprint_val
-comment "Print a MIL value between square brackets.";
-pattern printft(val:any):int = CMDprint_ft
-comment "Select default format ";
-
 
 @{
 @* Implementation Code
@@ -563,87 +513,6 @@ int CMDquit(int *ret) {
 	c= getClient();
 	fclose(c->fdin);
 	c->mode = FINISHING;
-	return GDK_SUCCEED;
-}
-@+ Variables and stack information
-The variable information can be turned into a BAT for inspection as well.
-
-@c
-int view_var_type(MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{	VarPtr *v = m->var;
-	ValPtr w;
-	int bid, *ret= &bid;
-	int i;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-	if (b == 0) return GDK_FAIL;
-
-	for( ; i<s->stktop ; i++,v++)
-		BUNins(b,&i,malTypeName((*v)->type));
-	@:Pseudo(var,type)@
-	/* store the result ! */
-	w = &s->stk[p->argv[0]];
-	w->val.bval= bid;
-	return GDK_SUCCEED;
-}
-int view_var_used(MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{	VarPtr *v = m->var;
-	ValPtr w;
-	int bid, *ret= &bid;
-	int i;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-	if (b == 0) return GDK_FAIL;
-	for( ; i<s->stktop ; i++,v++)
-		BUNins(b,&i,((*v)->isused? "used":""));
-	@:Pseudo(var,protected)@
-	/* store the result ! */
-	w = &s->stk[p->argv[0]];
-	w->val.bval= bid;
-	return GDK_SUCCEED;
-}
-int view_var_constant(MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{	VarPtr *v = m->var;
-	ValPtr w;
-	int bid, *ret= &bid;
-	int i;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-	if (b == 0) return GDK_FAIL;
-	for( ; i<s->stktop ; i++,v++)
-		BUNins(b,&i,((*v)->isaconstant? "constant":""));
-	@:Pseudo(var,constant)@
-	/* store the result ! */
-	w = &s->stk[p->argv[0]];
-	w->val.bval= bid;
-	return GDK_SUCCEED;
-}
-int view_stk_value(MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{	ValPtr v = s->stk;
-	ValPtr w;
-	int i;
-	int bid, *ret= &bid;
-	str buf;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-	if (b == 0) return GDK_FAIL;
-	for( ; i<s->stktop ; i++,v++){
-		ATOMformat(v->vtype, VALget(v), &buf);
-		BUNins(b,&i,buf);
-	}
-	@:Pseudo(stk,value)@
-	/* store the result ! */
-	w = &s->stk[p->argv[0]];
-	w->val.bval= bid;
-	return GDK_SUCCEED;
-}
-int view_stk_where(MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{	ValPtr v = s->stk;
-	ValPtr w;
-	int bid, *ret= &bid;
-	int i;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-	if (b == 0) return GDK_FAIL;
-	@:Pseudo(var,type)@
-	/* store the result ! */
-	w = &s->stk[p->argv[0]];
-	w->val.bval= bid;
 	return GDK_SUCCEED;
 }
 @+ Symbol table 
@@ -1112,82 +981,6 @@ int view_gdk_bbp(int *ret) {
 	return GDK_SUCCEED;
 }
 
-@+ Printing
-The print commands are implemented as single instruction rules,
-because they need access to the calling context.
-Check string printing first !!
-@c
-int CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int tpe = getArgType(mb,pci,1);
-	ptr val = getArgReference(stk,pci,1);
-        FILE *fp = GDKout;
-	if( val==NULL) {
-		tpe = TYPE_str;
-		val = (ptr) "nil";
-	}
-	if( isaBatType(tpe)){
-		BAT *b = BATdescriptor(*(int*)val);
-		if( b== NULL) {
-			GDKerror("CMDprint_val:could not access descriptor\n");
-			return GDK_FAIL;
-		}
-		/* BATprint(b);*/
-		BATmultiprintf(GDKout,2,&b,TRUE,0);
-		return GDK_SUCCEED;
-	}
-        fputs("[ ", fp);
-	if( tpe== TYPE_str)
-		ATOMprint(tpe, *(str*)val, fp);
-        else  	ATOMprint(tpe, val, fp);
-        fputs(" ]\n", fp);
-        return GDK_SUCCEED;
-}
-int CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int tpe = getArgType(mb,pci,1);
-	ptr val = getArgReference(stk,pci,1);
-	switch(tpe){
-	case TYPE_str: 
-		ATOMprint(TYPE_str, *(str*)val, GDKout);
-		break;
-	default: ATOMprint(tpe, val, GDKout);
-	}
-	return GDK_SUCCEED;
-}
-
-int CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
-        BAT *piv[MAXPARAMS],*b;
-        int nbats = 0;
-	int tpe,i=1,order=0;
-	ptr val;
-
-	if(o){
-		order = *(int*) getArgReference(stk,pci,1);
-		i++;
-	}
-	for(; i< pci->argc;i++) {
-		tpe = getArgType(mb,pci,i);
-		val = getArgReference(stk,pci,i);
-		if( !isaBatType(tpe)) return GDK_FAIL;
-		b= BATdescriptor(*(int*)val);
-		if(b == NULL) return GDK_FAIL;
-                piv[nbats++] = b;
-        } 
-        BATmultiprintf(GDKout, nbats, piv, flg, order);
-        return GDK_SUCCEED;
-}
-
-int CMDprint_otable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	CMDotable(mb,stk,pci,1,TRUE);
-        return GDK_SUCCEED;
-}
-
-int CMDprint_table( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	CMDotable(mb,stk,pci,0,FALSE);
-        return GDK_SUCCEED;
-}
-
 @-
 The format string is scrutinized using VALsprintf in the GDK library
 to avoid that passing a wrong argument (e.g. NULL pointer) kills the server.
@@ -1351,23 +1144,6 @@ int CMDprint_formatted_bit(int *ret, ptr fmt, bit *s){
  	@:printFormatted(flt,f)@
  	@:printFormatted(dbl,f)@
 
-int CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-        BAT *piv[MAXPARAMS],*b;
-        int nbats = 0;
-	int tpe,i;
-	ptr val;
-
-	for(i=1; i< pci->argc;i++) {
-		tpe = getArgType(mb,pci,i);
-		val = getArgReference(stk,pci,i);
-		if( !isaBatType(tpe)) return GDK_FAIL;
-		b= BATdescriptor(*(int*)val);
-		if(b == NULL) return GDK_FAIL;
-                piv[nbats++] = b;
-        } 
-        BATmultiprintf(GDKout, i-1, piv, FALSE, 0);
-        return GDK_SUCCEED;
-}
 
 int format_fcn_sig(str *sig, oid *fid){
 	return GDK_FAIL;

@@ -15,8 +15,9 @@ the function resolution scheme.
 
 @mal
 use "kernel/startup";
-use "atoms/blob";
+use "mal/atoms";
 use "mal/mal";
+use "atoms/blob";
 use "mal/squeezer"; 
 use "mal/multiplex";
 use "mal/space"; 

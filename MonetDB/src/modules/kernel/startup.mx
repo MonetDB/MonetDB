@@ -12,7 +12,6 @@ use "kernel/lock";
 use "kernel/mmath";
 use "kernel/bat";
 use "kernel/arith";
-use "kernel/atoms";
 use "kernel/algebra";
 use "kernel/system";
 use "kernel/mapi";

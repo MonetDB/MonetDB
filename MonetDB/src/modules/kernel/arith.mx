@@ -61,6 +61,8 @@ The only exception to this rule are the "==" and "!=" equality
 test routines (it would otherwise become rather difficult to test 
 whether a value is nil). 
 
+The collection of type conversion routines are included here as well.
+
 @* Module Definition
 Most of the primitives are defined here. 
 A heuristic is to organize the routines along the types 
@@ -304,6 +306,89 @@ array. Specific operations work with this interpretation.
 	comment "return a random number";
 	command srand(seed:int) : void = int_srand
 	comment "initialize the rand() function with a seed";
+@+ Type coercions
+The Monet kernel contains a few built-in atomic types together
+with useful functions. 
+Those accessible at the MAL command level are introduced below.
+
+@= convertCmd
+command @1(v:str):@1 = @1FromStrImpl;
+command str(v:@1):str = @1ToStrImpl;
+
+@mal
+@:convertCmd(oid)@
+@:convertCmd(void)@
+@:convertCmd(sht)@
+@:convertCmd(int)@
+@:convertCmd(lng)@
+@:convertCmd(flt)@
+@:convertCmd(dbl)@
+@:convertCmd(bit)@
+@:convertCmd(ptr)@
+@:convertCmd(bat)@
+@:convertCmd(chr)@
+
+command setoid(v:int)= intSetoidImpl;
+command setoid(v:lng)= lngSetoidImpl;
+command setoid(v:oid)= oidSetoidImpl;
+@-
+We might also support a number of common coercion routines.
+Note, we do not support automatic coercion at the MIL level.
+@mal
+command lng(v:oid):lng = lngFromoidImpl;
+command lng(v:int):lng = lngFromintImpl;
+command lng(v:sht):lng = lngFromshtImpl;
+command lng(v:bit):lng = lngFrombitImpl;
+command int(v:sht):int = intFromshtImpl;
+command int(v:bit):int = intFromintImpl;
+command dbl(v:flt):dbl = dblFromfltImpl;
+command oid(v:lng):oid = oidFromlngImpl;
+command oid(v:int):oid = oidFromintImpl;
+command sht(v:int):sht = shtFromintImpl;
+command sht(v:lng):sht = shtFromlngImpl;
+
+command bit(v:bit):bit = bitFrombitImpl;
+command sht(v:sht):sht = shtFromshtImpl;
+command int(v:int):int = intFromintImpl;
+command lng(v:lng):lng = lngFromlngImpl;
+command flt(v:flt):flt = fltFromfltImpl;
+command dbl(v:dbl):dbl = dblFromdblImpl;
+command ptr(v:ptr):ptr = ptrFromptrImpl;
+command oid(v:oid):oid = oidFromoidImpl;
+
+command void(v:void):void = voidFromvoidImpl;
+command bit(v:void):bit = bitFromvoidImpl;
+command sht(v:void):sht = shtFromvoidImpl;
+command int(v:void):int = intFromvoidImpl;
+command lng(v:void):lng = lngFromvoidImpl;
+command bat(v:void):bat = batFromvoidImpl;
+command flt(v:void):flt = fltFromvoidImpl;
+command dbl(v:void):dbl = dblFromvoidImpl;
+command oid(v:void):oid = oidFromvoidImpl;
+command ptr(v:void):ptr = ptrFromvoidImpl;
+@-
+We should also deal with superflous operations, such as int(v:int).
+This is a noop operation that should ideally be filtered out with
+the code squeezer. [TODO]
+@+ OID utility functions
+@mal
+command newoid() : oid = CMDnewoidBase
+comment "Generate a new oid. Equivalent to newoid(0,1)";
+
+command newoid(incr:int) : oid = CMDnewoidInc
+comment "Reserves a range of consecutive unique OIDs; returns the 
+lowest in range. equivalent to newoid(0,incr)";
+
+command newoid(db:int,incr:int) : oid = CMDnewoidDb
+comment "Reserves a range of consecutive unique OIDs for a specific 
+database; returns the lowest in range.";
+
+command setoid(base:oid) : oid = CMDsetoidInc
+comment "Sets the oid range of consecutive unique OIDs; returns the 
+lowest in range.";
+
+command setoid() : oid = CMDsetoidBase
+comment "Equivalent to setoid(1:oid).";
 
 @+ Example script 
 The following example MIL script will do each operation in the
@@ -956,4 +1041,151 @@ int @2_2_@1(@1 *res, @2 *a)
 	@:mal_coercion_impl2(str,lng,D)@
 	@:mal_coercion_impl2(str,flt,f)@
 	@:mal_coercion_impl2(str,dbl,f)@
+@+ The Coercion implementation
+The conversion routines are relatively easy to define.
+@= convertImpl
+
+int @1FromStrImpl(@1 *ret, str *val){
+	int l = sizeof(@1);
+	(void) @1FromStr(*val, &l, &ret);
+	return GDK_SUCCEED;
+}
+int @1ToStrImpl(str *ret, @1 *val){
+	int l=strlen(*ret);
+	(void) @1ToStr(ret,&l,val);
+	return GDK_SUCCEED;
+}
+int @1From@1Impl(@1 *ret, @1 *val){
+	*ret= *val;
+	return GDK_SUCCEED;
+}
+int @1FromvoidImpl(@1 *ret, void *val){
+	memcpy(ret, ATOMnilptr(TYPE_@1), ATOMsize(TYPE_@1));
+	return GDK_SUCCEED;
+}
+@-
+Strings have to be dealt with differently, because
+we recieve a pointer to the string directly.
+To make it work properly, we need a call be reference
+in those places where we leave a result behind.
+@c
+int voidFromStrImpl(void *ret, str val){
+	memcpy(ret, ATOMnilptr(TYPE_void), ATOMsize(TYPE_void));
+	return GDK_SUCCEED;
+}
+int voidToStrImpl(str *ret, void *val){
+	*ret = ATOMnilptr(TYPE_str);
+	return GDK_SUCCEED;
+}
+int oidFromStrImpl(oid *ret, str *val){
+	int l = strlen(*val);
+	(void) OIDfromStr(*val, &l, (ptr) ret);
+	return GDK_SUCCEED;
+}
+int oidToStrImpl(str *ret, oid *val){
+	int l= sizeof(oid);
+	(void) OIDtoStr(ret,&l, val);
+	return GDK_SUCCEED;
+}
+int voidFromvoidImpl(oid *ret, ptr *val){
+	*ret = oid_nil;
+	return GDK_SUCCEED;
+}
+int oidFromoidImpl(oid *ret, oid *val){
+	*ret= *val;
+	return GDK_SUCCEED;
+}
+int oidFromvoidImpl(oid *ret, void *val){
+	memcpy(ret, ATOMnilptr(TYPE_oid), ATOMsize(TYPE_oid));
+	return GDK_SUCCEED;
+}
+@:convertImpl(sht)@
+@:convertImpl(int)@
+@:convertImpl(lng)@
+@:convertImpl(flt)@
+@:convertImpl(dbl)@
+@:convertImpl(bit)@
+@:convertImpl(ptr)@
+@:convertImpl(bat)@
+@:convertImpl(chr)@
+@-
+@= setoidCode
+int @1SetoidImpl(str *ret, @1 *v){
+	OIDbase(*v);
+	return GDK_SUCCEED;
+}
+@c
+@:setoidCode(oid)@
+@:setoidCode(lng)@
+@:setoidCode(int)@
+@-
+Type conversion template. Only allowed then no information is lost.
+
+@= coercionImpl
+int @1From@2Impl(@1 *res, @2 *val){
+	*res = *val;
+	return GDK_SUCCEED;
+}
+@c
+@:coercionImpl(lng,oid)@
+@:coercionImpl(lng,int)@
+@:coercionImpl(lng,sht)@
+@:coercionImpl(lng,bit)@
+@:coercionImpl(int,sht)@
+@:coercionImpl(int,bit)@
+@:coercionImpl(dbl,flt)@
+@:coercionImpl(oid,lng)@
+@:coercionImpl(oid,int)@
+@:coercionImpl(oid,sht)@
+
+int shtFromlngImpl(sht *res, lng *val){
+	/* perform a range check !! */
+	if( *val<0 ||*val >255){
+		raiseException(0,0,"ERROR","coercion error lng->sht\n");
+		return GDK_FAIL;
+	}
+	*res = *val;
+	return GDK_SUCCEED;
+}
+int shtFromintImpl(sht *res, int *val){
+	/* perform a range check !! */
+	if( *val<0 ||*val >255){
+		raiseException(0,0,"ERROR","coercion error int->sht\n");
+		return GDK_FAIL;
+	}
+	*res = *val;
+	return GDK_SUCCEED;
+}
+
+@+ Value, Types and Variables
+The routines below implement the OID utility functions.
+@c
+int CMDnewoidBase(oid *res){
+	*res= OIDnew(1);
+	return GDK_SUCCEED;
+}
+int CMDnewoidInc(oid *res, int *inc){
+	if( *inc <=0)
+		*res= OIDnew(1);
+	else{
+		*res= OIDnew(*inc);
+	}
+	return GDK_SUCCEED;
+}
+int CMDnewoidDb(oid *res, int *db, int *inc){
+	if( *inc <=0)
+		*res= OIDnewdb(0,1);
+	else{
+		*res= OIDnewdb(*inc,*db);
+	}
+	return GDK_SUCCEED;
+}
+int CMDsetoidBase(oid *res){
+	*res= OIDbase(1);
+	return GDK_SUCCEED;
+}
+int CMDsetoidInc(oid *res,oid *inc){
+	*res= OIDbase(*inc);
+	return GDK_SUCCEED;
+}
 @}

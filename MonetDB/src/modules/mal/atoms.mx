@@ -1,0 +1,121 @@
+@t The Atom Module
+@a M.L. Kersten
+@v 1.0
+@* Introduction
+Monet supports definitions of user-defined types. 
+This feature is of particular interest to system experts. 
+It is not meant for end-users trying to intruduce record- or 
+struct-like objects in the database. They better decompose
+the complex object structure and represent the components in
+different BATs.
+
+For the courageous at heart, you may enter the difficult world
+of extending the kernel library. This calls for studying the
+documentation associated with the atom structures (gdk_atoms),
+because you have to develop routines complying with the
+signatures required in the GDK library.
+
+Once you have assembled these primitive, you can introduce them
+in a running server using a ATOM MODULE definition, which contains
+a MAL specification of their signature and calls to the routines
+below to register the atom in the kernel.
+
+Each ruler dealing with registering a function performs the necessary
+type check, but relies on the user to comply with this signature in
+its C-implementation. The ruler calls are part of a module
+initialization routine.
+
+A concrete example is the 'blob' datatype (see blob.mx)
+
+@mal
+module atoms;
+
+pattern tostr(nme:str):int   = atoms_tostr;
+pattern fromstr(nme:str):int = atoms_fromstr;
+pattern nequal(nme:str):int  = atoms_nequal;
+pattern hash(nme:str):int    = atoms_hash;
+pattern null(nme:str):int    = atoms_null;
+pattern convert(nme:str):int = atoms_convert;
+pattern put(nme:str):int     = atoms_put;
+pattern del(nme:str):int     = atoms_del;
+pattern length(nme:str):int  = atoms_length;
+pattern heap(nme:str):int    = atoms_heap;
+
+@c
+@+ The Module implementation
+@h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ *		   Peter Boncz <Peter.Boncz@cwi.nl>
+ *		   Niels Nes <Niels.Nes@cwi.nl>
+ *		   Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
+
+#ifndef _MAL_ATOMS
+#define _MAL_ATOMS
+#include "mal_stack.h"
+#include "mal_resolve.h"
+
+#include "gdk.h"
+#define DEBUG_MAL_ATOMS 1
+#endif /*  _MAL_ATOMS*/
+
+@c
+#include "atoms.h"
+int atoms_tostr(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_tostr:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_fromstr(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_fromstr:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_nequal(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_nequal:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_hash(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_hash:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_null(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_null:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_convert(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_convert:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_put(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_put:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_del(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_del:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_heap(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_heap:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_length(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_length:not yet implemented\n");
+	return GDK_SUCCEED;
+}

@@ -53,7 +53,7 @@ command string( s:str, offset:int ) : str = strTail
 	comment "Return the tail s[offset..n] of a string s[0..n].";
 command string( s:str, offset:int, count:int) : str = strSubString
 	comment "Return substring s[offset..offset+count] of a string s[0..n]";
-pattern +( l:str, r:any) : str = strConcat
+command +( l:str, r:str) : str = strConcat
 	comment "Concatenate two strings.";
 command length( s:str ) : int = strLength
 	comment "Return the length of a string.";
@@ -220,38 +220,24 @@ quit;
 #endif
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 
-int strConcat(MalBlkPtr m, MalStkPtr stk, InstrPtr pci){
-	str *res,s;
-	int t;
+int strConcat(str *res, str *val1, str *val2){
+	str s,t;
 	ptr val;
-	ValPtr v;
-	str valstr = NULL;
-	int l1, l2 = 0;
+	int l1, l2 ;
 
-	res = (str*) getArgReference(stk,pci,0);
-	v = getStkRecord(stk,pci,1);
-	if( v->vtype != TYPE_str) return GDK_FAIL;
-	s = v->val.sval;
+	s = *val1;
+	t = *val2;
 
-	v = getStkRecord(stk,pci,2);
-	t = v->vtype;
-	if( t == TYPE_str) val = v->val.sval; else val = &v->val.ival;
-	
-	
-	RETURN_NIL_IF(strNil(s)||ATOMcmp(t,val,ATOMnilptr(t))==0,TYPE_str);
-	if (t <= 0) return GDK_FAIL;
-	l1 = strlen(s);
-	if (t != TYPE_str){
-		BATatoms[t].atomToStr(&valstr,&l2,val);
-		val = (ptr)valstr;
-	} else {
-		l2 = strlen((str) val);
+	if( strNil(s)|| strNil(t)) {
+		*res= GDKstrdup(str_nil);
+		return GDK_SUCCEED;
 	}
+	l1 = strlen(s);
+	l2 = strlen(t);
 	*res = (str) GDKmalloc(l1+l2+1);
 	memcpy(*res, s, l1);
-	memcpy(*res + l1, (str)val, l2);
+	memcpy(*res + l1, t, l2);
 	(*res)[l1+l2] = '\0';
-	if (valstr) GDKfree(valstr);
 	return GDK_SUCCEED;
 }
 
