@@ -36,7 +36,6 @@
 /* MonetDB / SQL frontend include files */
 #include <mem.h>		/* for ??() */
 #include <query.h>		/* for ??() */
-#include "comm.h"		/* for ??() */
 
 /* standard ODBC driver include files */
 #include <sqltypes.h>		/* ODBC C typedefs */

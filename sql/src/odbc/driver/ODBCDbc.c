@@ -107,8 +107,6 @@ addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg,
 
 	assert(isValidDbc(dbc));
 
-	fprintf(stderr, "%s\n", errMsg);
-
 	error = newODBCError(SQLState, errMsg, nativeErrCode);
 	if (dbc->Error == NULL) {
 		dbc->Error = error;

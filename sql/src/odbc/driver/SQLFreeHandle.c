@@ -74,7 +74,6 @@ SQLFreeHandle(SQLSMALLINT handleType, SQLHANDLE handle)
 		if (dbc->FirstStmt != NULL) {
 			/* There are allocated statements */
 			/* should be closed and freed first */
-			printf("No FirstStmt \n");
 			addDbcError(dbc, "HY010", NULL, 0);
 			return SQL_ERROR;
 		}

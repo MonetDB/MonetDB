@@ -102,7 +102,6 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	/* temporarily hold hostname in buf */
 	__SQLGetPrivateProfileString(dsn, "HOST", "localhost", buf, BUFSIZ,
 				     ODBC_INI);
-	fprintf(stderr, "SQLConnect %s %s %s %d\n", uid, database, buf, port);
 	/* connect to a server on host via port */
 	mid = mapi_connect(buf, port, uid, pwd, "sql");
 	if (mid == NULL || mapi_error(mid)) {

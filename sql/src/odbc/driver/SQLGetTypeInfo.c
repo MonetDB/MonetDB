@@ -171,21 +171,38 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	 *      SMALLINT       INTERVAL_PRECISION 
 	 */
 	strcpy(query,
-	       "SELECT SQLNAME AS TYPE_NAME, SYSTEMNAME AS DATA_TYPE, DIGITS AS COLUMN_SIZE, LITERAL_PREFIX AS LITERAL_PREFIX, LITERAL_SUFFIX AS LITERAL_SUFFIX, CREATE_PARAMS AS CREATE_PARAMS, 1 /* SQL_NULLABLE */ AS NULLABLE, CASE_SENSITIVE AS CASE_SENSITIVE, SEARCHABLE AS SEARCHABLE, UNSIGNED AS UNSIGNED_ATTRIBUTE, FIXED_PREC_SCALE AS FIXED_PREC_SCALE, AUTO_UNIQUE_VALE AS AUTO_UNIQUE_VALE, MONET_TYPE_NAME AS LOCAL_TYPE_NAME, MIN_SCALE AS MINIMUM_SCALE, MAX_SCALE AS MAXIMUM_SCALE, SQL_TYPE AS SQL_DATA_TYPE, NULL AS SQL_DATETIME_SUB, 10 AS NUM_PREC_RADIX, INTERVAL_PREC AS INTERVAL_PRECISION FROM SQL_DATATYPE");
+	       "SELECT SQLNAME AS TYPE_NAME, "
+	       "SYSTEMNAME AS DATA_TYPE, "
+	       "DIGITS AS COLUMN_SIZE, "
+	       "'' /*LITERAL_PREFIX*/ AS LITERAL_PREFIX, "
+	       "'' /*LITERAL_SUFFIX*/ AS LITERAL_SUFFIX, "
+	       "'' /*CREATE_PARAMS*/ AS CREATE_PARAMS, "
+	       "1 /*SQL_NULLABLE*/ AS NULLABLE, "
+	       "0 /*CASE_SENSITIVE*/ AS CASE_SENSITIVE, "
+	       "0 /*SEARCHABLE*/ AS SEARCHABLE, "
+	       "0 /*UNSIGNED*/ AS UNSIGNED_ATTRIBUTE, "
+	       "SCALE /*FIXED_PREC_SCALE*/ AS FIXED_PREC_SCALE, "
+	       "0 /*AUTO_UNIQUE_VALE*/ AS AUTO_UNIQUE_VALE, "
+	       "SYSTEMNAME /*MONET_TYPE_NAME*/ AS LOCAL_TYPE_NAME, "
+	       "0 /*MIN_SCALE*/ AS MINIMUM_SCALE, "
+	       "SCALE /*MAX_SCALE*/ AS MAXIMUM_SCALE, "
+	       "0 /*SQL_TYPE*/ AS SQL_DATA_TYPE, "
+	       "NULL AS SQL_DATETIME_SUB, "
+	       "10 AS NUM_PREC_RADIX, "
+	       "0 /*INTERVAL_PREC*/ AS INTERVAL_PRECISION "
+	       "FROM SQL_DATATYPE");
 
 /* TODO: SEARCHABLE should return an int iso str. Add a CASE SEARCHABLE WHEN ... to convert str to correct int values */
 
-	/* add a selection when a specific SQL data type is requested */
 	if (nSqlDataType != SQL_ALL_TYPES) {
-		/* add the selection condition */
+		/* add a selection when a specific SQL data type is requested */
 		char *tmp = query + strlen(query);
 
 		snprintf(tmp, 30, " WHERE SQL_TYPE = %d", nSqlDataType);
-	}
-
-	/* add the ordering (Note: only needed when all types are selected) */
-	if (nSqlDataType == SQL_ALL_TYPES)
+	} else {
+		/* add the ordering (only needed when all types are selected) */
 		strcat(query, " ORDER BY SQL_TYPE");
+	}
 
 	/* query the MonetDb data dictionary tables */
 	assert(query);
