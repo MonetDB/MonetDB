@@ -1978,9 +1978,15 @@ prepareQuery(MapiHdl hdl, const char *cmd)
 	if (hdl && cmd) {
 		size_t len = strlen(cmd);
 
+		if (hdl->query)
+			free(hdl->query);
 		hdl->query = malloc(len + 1);
 		assert(hdl->query);
 		strcpy(hdl->query, cmd);
+		if (hdl->template) {
+			free(hdl->template);
+			hdl->template = NULL;
+		}
 		if (strchr(cmd, PLACEHOLDER)) {
 			hdl->template = malloc(len + 1);
 			assert(hdl->template);
