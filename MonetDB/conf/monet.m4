@@ -248,7 +248,7 @@ yes-*-*)
 		;;
 	esac
 	;;
--icc-linux*|-ecc-linux*)
+-icc*-linux*|-ecc*-linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
  	LDFLAGS="$LDFLAGS -i_dynamic"
 	dnl  Let warning #140 "too many arguments in function call"
@@ -310,7 +310,7 @@ case $withval in
 	;;
 64)	case "$host-$GCC-$CC" in
 	i?86*-*-*)  AC_ERROR([$host does not support 64 bits]);;
-	x86_64*--icc) AC_ERROR([$CC on $host does not support 64 bits]);;
+	x86_64*--icc*) AC_ERROR([$CC on $host does not support 64 bits]);;
 	esac
 	;;
 *)	AC_ERROR(--with-bits argument must be either 32 or 64);;
