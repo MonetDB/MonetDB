@@ -144,7 +144,7 @@ exps_print(mvc *sql, list *exps, int depth, int alias)
 void
 rel_print(mvc *sql, sql_rel *rel, int depth) 
 {
-	char *r;
+	char *r = NULL;
 
 	if (!rel)
 		return;
@@ -182,11 +182,11 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 		exps_print(sql, rel->exps, depth, 0);
 		break;
 	case op_project:
-		r = "project";
 	case op_select: 
 	case op_groupby: 
 	case op_orderby: 
 	case op_topn: 
+		r = "project";
 		if (rel->op == op_select)
 			r = "select";
 		if (rel->op == op_groupby)
