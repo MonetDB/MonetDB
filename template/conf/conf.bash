@@ -247,6 +247,10 @@ if [ "${os}" = "Linux" ] ; then
 		# libgc in Konstanz
 		conf_opts="${conf_opts} --with-gc=/net/lin_local/libgc-devel"
 	fi
+	if [ "${what}" = "PATHFINDER"  -a  -d /soft/64/gc-6.3  -a  "${hw}" = "x86_64"  -a  "${BITS}" = "64" ] ; then
+		# 64-bit libgc on spin
+		conf_opts="${conf_opts} --with-gc=/soft/64/gc-6.3"
+	fi
 fi
 
 if [ "${os}" = "CYGWIN" ] ; then
