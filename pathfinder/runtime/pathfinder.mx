@@ -109,6 +109,16 @@ PROC get_type (bat[void,int] kind, int type_) : bat[oid,void] :=
         return kind.[and](63).ord_uselect(type_); # 63 = 2^6 - 1
 }
 
+PROC get_type_node (bat[void,int] kind) : bat[oid,void] :=
+{
+        return kind.ord_uselect(NODE, int(nil));
+}
+
+PROC get_type_atomic (bat[void,int] kind) : bat[oid,void] :=
+{
+        return kind.ord_uselect(int(nil), ATOMIC);
+}
+
 PROC get_fragment (bat[void,int] kind) : bat[void,oid] :=
 {
         return kind.[>>](6).[oid];
@@ -272,14 +282,20 @@ const PI := chr(3);
 const DOCUMENT := chr(4);
 
 # types in translation
-const NODE := 0;
-const ATTR := 1;
 const QNAME := 2;
 const BOOL := 3;
 const INT := 4;
 const DEC := 5;
 const DBL := 6;
 const STR := 7;
+# ATOMIC is not a type but all atomic types
+# can be retrieved with 'select(int(nil),ATOMIC)'
+const ATOMIC := 31;
+# NODE is not a type but all node types
+# can be retrieved with 'select(NODE,int(nil))'
+const NODE := 32;
+const ELEM := 33;
+const ATTR := 34;
 
 const WS := 0@0;
 
@@ -404,6 +420,9 @@ ADDHELP("create_ws", "tsheyar", "July 2004",
 creates a new working set and gives back the reference",
 "pathfinder");
 
+@c
+/* don't use the slow version - use the c implementations in pf_support instead */
+/*
 PROC mposjoin (BAT[void,oid] pre, BAT[void,oid] frag, BAT[void, bat] ws_item) : BAT[void,any] :=
 {
     var frag_pre := frag.reverse.leftfetchjoin(pre).[int];
@@ -452,7 +471,8 @@ specified by the second argument (see also 'mposjoin').\n\
 The result is a bat with the head values of the first two arguments in the head\n\
 and the head values from the batlist",
 "pathfinder");
-
+*/
+@mil
 # called by compress_properties
 PROC compress_val(str batname) : bat[void,oid] :=
 {
