@@ -1052,9 +1052,9 @@ Open the file. Memory map it to minimize buffering problems.
 			           fnme,st.st_size);
             	base = cur = (char*)MT_mmap(fnme, 0, 0, st.st_size, NULL);
 		end = cur + st.st_size;
-		if ((int)cur <= 0) {
-			GDKsyserror("CMDimport: MT_mmap('%s', 0, 0, %d, NULL) returns %d\n",
-			            fnme,st.st_size,(int)cur);
+		if (cur == (char*) -1) {
+			GDKsyserror("CMDimport: MT_mmap('%s', 0, 0, %d, NULL) failed\n",
+			            fnme,st.st_size);
 			return GDK_FAIL;
 		}
 	}
