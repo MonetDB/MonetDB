@@ -426,6 +426,7 @@ str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 
 	(void) nilVar; /* fool compiler */
+	(void) s; /* fool compiler */
 	m1 = newMalBlk(MAXVARS,MAXSTMTS);
 	p = newInstruction(ASSIGNsymbol);
 	/* perform type analysis  and function resolution */

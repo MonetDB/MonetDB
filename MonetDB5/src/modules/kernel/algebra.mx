@@ -1417,7 +1417,7 @@ str CMDfetchoid(int * ret, int *bid, oid *pos){
 	if( b->hseqbase == oid_nil)
 		return throwMessage("algebra.fetchoid",
 			"void lookup on uninitialized column");
-	return doCMDfetch((ptr) ret,b,(((oid *)*pos)-b->hseqbase));
+	return doCMDfetch((ptr) ret,b,(lng*)(((oid *)*pos)-b->hseqbase));
 }
 
 str CMDfetch(ptr ret, int *bid, lng *pos){

@@ -286,7 +286,9 @@ fixed-sized types.
 		if(*(@1 *)p2 == @1_nil || *(@1*)p3 == @1_nil)
 			*(@1*)p1= @1_nil;
 		else *(@1*)p1= * (@1*) p2 @2 *(@1 *) p3;
-		((@1*)p1)+= s1; ((@1*)p2)+= s2; ((@1*)p3)+= s3;
+		p1= (ptr)( ((@1*)p1) + s1);
+		p2= (ptr)( ((@1*)p2) + s2);
+		p3= (ptr)( ((@1*)p3) + s3);
 	}
 @-
 This code could be further improved by factoring
@@ -297,7 +299,8 @@ This has been left out.
 		if(*(@1 *)p2 == @1_nil || *(@1*)cst == @1_nil)
 			*(@1*)p1= @1_nil;
 		else *(@1*)p1 = *(@1*) p2 @2 *(@1 *) cst;
-		((@1*)p1)+= s1; ((@1*)p2)+= s2; 
+		p1= (ptr)( ((@1*)p1) + s1);
+		p2= (ptr)( ((@1*)p2) + s2);
 	}
 @-
 The following utility extracts the BATdescriptor
@@ -503,7 +506,8 @@ str CMDbatMODcst(int *ret, int *l, void *cst)
 		if(*(@1 *)p2 == @1_nil )
 			*(@1*)p1= @1_nil;
 		else *(@1*)p1= @2 *(@1 *) p2;
-		((@1*)p1) += s1; ((@1*)p2) += s2; 
+		p1= (ptr)( ((@1*)p1) + s1);
+		p2= (ptr)( ((@1*)p2) + s2);
 	}
 @-
 Unary accummulators are only indirectly called. They can not
@@ -551,7 +555,9 @@ The structure of this code is copied from the arithmetic scheme.
 		if(*(@1 *)p2 == @1_nil || *(@1*)p3 == @1_nil)
 			*(bit*)p1= bit_nil;
 		else *(bit*)p1= * (@1*) p2 @2 *(@1 *) p3;
-		((bit*)p1)+= s1; ((@1*)p2)+= s2; ((@1*)p3)+= s3;
+		p1= (ptr)( ((bit*)p1) + s1);
+		p2= (ptr)( ((@1*)p2) + s2);
+		p3= (ptr)( ((@1*)p3) + s3);
 	}
 @-
 @= cmpLoopCst
@@ -559,7 +565,8 @@ The structure of this code is copied from the arithmetic scheme.
 		if(*(@1 *)p2 == @1_nil || *(@1*)cst == @1_nil)
 			*(bit*)p1= bit_nil;
 		else *(bit*)p1 = *(@1*) p2 @2 *(@1 *) cst;
-		((bit*)p1)+= s1; ((@1*)p2) += s2;
+		p1= (ptr)( ((bit*)p1) + s1);
+		p2= (ptr)( ((@1*)p2) + s2);
 	}
 @= compareImpl
 str compareaccum@1(BAT *dst, BAT *left, BAT *right){

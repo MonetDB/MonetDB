@@ -373,7 +373,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 		}
 		skipWord(b);
 		if(*b==0) { mdbShowBreakpoints(cntxt); continue;}
-		if( !isspace(*b) && *b != 0){
+		if( !isspace((int)*b) && *b != 0){
 			/* set breakpoints by name */
 			mdbSetBreakpointName(cntxt,mb,b,*b);
 		} else {
@@ -389,7 +389,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 		}
 		skipWord(b);
 		/* get rid of break point */
-		if(*b && !isspace(*b)){
+		if(*b && !isspace((int)*b)){
 			mdbClrBreakpointName(cntxt,b);
 		} else {
 			mdbClrBreakpoint(cntxt,p);
@@ -422,10 +422,10 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 		*t = 0;
 		/* you can identify a start and length */
 		t++; skipBlanc(t);
-		if(isdigit(*t)){
+		if(isdigit((int)*t)){
 			size= atol(t);
 			skipWord(t);
-			if( isdigit(*t)) first= atol(t);
+			if( isdigit((int)*t)) first= atol(t);
 		}
 		/* search the symbol */
 		i = findVariable(mb,b);
