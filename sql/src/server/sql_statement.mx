@@ -252,7 +252,7 @@ sql_export sql_subtype *tail_type(stmt * st);
 extern int stmt_list_nrcols(list *l);
 
 sql_export char *column_name(stmt * st);
-extern char *table_name(stmt * st);
+sql_export char *table_name(stmt * st);
 
 sql_export void stmt_destroy(stmt *s );
 extern stmt *stmt_dup( stmt *s );
