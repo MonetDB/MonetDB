@@ -846,13 +846,18 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 	} 	break;
 	case st_aggr: {
 		int l = backend_dumpstmt(sql,mb, s->op1.stval);
+                char *c;
+                /* Cut off the type information.
+                   It should be handled by the type resolver
+                */
+                c= strchr(s->op4.aggrval->aggr->imp,'_');
+                if(c) *c=0;
 
 		@:SQLprelude@
 		if (s->op3.gval){
 			int g = backend_dumpstmt(sql,mb, s->op2.stval);
 			int e = backend_dumpstmt(sql,mb, s->op3.stval);
-			q= newStmt(mb,"multiplex","group");
-			q= pushStr(mb,q,s->op4.aggrval->aggr->imp);
+			q= newStmt(mb,0, s->op4.aggrval->aggr->imp);
 			q= pushArgument(mb,q,l);
 			q= pushArgument(mb,q,g);
 			q= pushArgument(mb,q,e);
