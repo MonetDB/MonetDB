@@ -1,0 +1,18 @@
+#!/bin/sh
+
+builddir=@QMONET_BUILD@
+# make sure srcdir contains absolute path name
+srcdir=`cd '@srcdir@'; pwd`
+
+# enhance various paths to find our stuff
+PATH="${builddir}/src/testing:${builddir}/src/tools:${builddir}/src/mapi/clients:$PATH"
+PYTHONPATH="${builddir}/src/testing:${srcdir}/src/testing:${builddir}/src/common:${srcdir}/src/mapi/clients"
+export PATH PYTHONPATH
+
+# execute Mapprove.py in the source directory
+cd "$srcdir"
+
+# execute the script
+# if no arguments, do a recursive approve (Mapprove.py -r), else pass
+# on the arguments
+exec python "${builddir}/src/testing/Mapprove.py" --config="${builddir}/conf/monet.conf" --TSTTRGBASE="${builddir}" "${@--r}"
