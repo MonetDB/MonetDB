@@ -1,7 +1,7 @@
 
 SUBDIRS = conf src 
 EXTRA_DIST = rules.mk RunMtest.in RunMtest.bat.in \
-		MonetDB-SQL.spec.in MonetDB-SQL.spec mkife.jpg \
+		MonetDB-SQL.spec.in MonetDB-SQL.spec mknife.gif \
 		SQLfeatures.tex HowToStart-SQL HowToStart-SQL-Win32.txt
 EXTRA_DIST_DIR = NT
 
@@ -15,7 +15,7 @@ headers_pc = {
 
 doc_sql = {
 	DIR = datadir/MonetDB/docs/SQL
-	SOURCES = SQLfeatures.tex mknife.jpg
+	SOURCES = SQLfeatures.tex mknife.gif
 }
 
 TESTS = RunMtest
