@@ -109,7 +109,6 @@ m_export void	scheduleClient (Client c);
 m_export int 	acceptClient   (Client c);
 m_export int 	readClient     (Client c);
 m_export YYSTREE	parseClient    (Client c, int reschedule);
-m_export int 	scriptClient   (Client c, str nme, int backup);
 m_export int	serveClient    (Cntxt stk, YYSTREE lt, ValPtr res);
 m_export str	moduleClient   (Client c, YYSTREE lt, int idents);
 m_export int	dropClient     (Client c, YYSTREE lt);
@@ -664,38 +663,6 @@ server unless the name indicates a complete path.
 Actually it makes sense to read the complete file immediately to reduce
 the number of IO calls.
 @c
-int scriptClient(Client c, str nme, int backup){
-        FILE *fd;
-	stream *s;
-	char	dir[2*PATHLENGTH];
-
-        if (c->bkin || c->bkout) {
-                GDKerror("scriptClient: No nesting on input\n");
-                return 0;
-        }
-	if (MT_path_absolute(nme)) {
-		strcpy(dir,nme);
-	} else {
-		sprintf(dir, "%s%c%s", monet_cwd, DIR_SEP, nme);
-	}
-        fd = fopen(dir, "r");
-        if (fd == 0) {
-                GDKerror("Could not find:%s\n", dir);
-                return 0;
-        } 
-	s = file_rastream(fd, dir );
-        if (backup) {
-                c->bkin = c->fdin;
-                c->bkout = c->fdout;
-                c->bkprompt = c->prompt;
-                c->fdin = s;
-        } else {
-                c->fdin = GDKstdin;
-        }
-        c->prompt = (char*) GDKstrdup("");
-        return 1;
-}
-
 int serveClient(Cntxt stk, YYSTREE lt, ValPtr res){
         int     i = 0;
         Client  c;
