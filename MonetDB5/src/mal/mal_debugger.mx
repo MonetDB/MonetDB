@@ -272,7 +272,6 @@ a need for position information as well.
 str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra){
 	InstrPtr p;
 	char target[BLOCK],buf[BLOCK];
-	char *nme, nmebuf[PATHLENGTH];
 	int l,k;
 
 	p= getInstrPtr(mb, pc);
@@ -286,24 +285,18 @@ str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra){
 				str msg=0;
 				ValPtr v= &stk->stk[p->argv[k]];
 
-				if( isTmpVar(mb, getArg(p,k)) ) {
-					snprintf(nmebuf,PATHLENGTH,"%c%d",TMPMARKER,
-						getVarTmp(mb, getArg(p,k)));
-					nme= nmebuf;
-				} else  nme = getArgName(mb,p,k);
-
-				ATOMformat(v->vtype, VALptr(v), &msg);
-				l= strlen(buf);
-				snprintf(buf+l,BLOCK-l,"%s",msg);
-				GDKfree(msg);
-				if( k < p->argc-1 ) {
-					l= strlen(buf);
-					snprintf(buf+l,BLOCK-l,",");
-				}
-			}
-			l= strlen(buf);
-			snprintf(buf+l,BLOCK-l,");");
-		} else{
+                ATOMformat(v->vtype, VALptr(v), &msg);
+                l= strlen(buf);
+                snprintf(buf+l,BLOCK-l,"%s",msg);
+                GDKfree(msg);
+                if( k < p->argc-1 ) {
+                    l= strlen(buf);
+                    snprintf(buf+l,BLOCK-l,",");
+                }
+            }
+            l= strlen(buf);
+            snprintf(buf+l,BLOCK-l,");");
+        } else{
 			strcpy(buf,instruction2str(mb,p,FALSE));
 			strcpy(buf,target);
 		}

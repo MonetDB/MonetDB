@@ -261,6 +261,7 @@ mal_export str getBoxNames(int *bid);
 mal_export str toString(Box box, lng i);
 mal_export int nextBoxElement(Box box, lng *cursor, ValPtr v);
 
+mal_export stream *prepareSaveBox(Box box, str *boxfile, str *boxfilebak);
 mal_export void printSomeBox(stream *fd, int k);
 mal_export void printBox(stream *fd, Box obj);
 mal_export void freeBoxes();
@@ -358,17 +359,15 @@ Box openBox(str name){
 int closeBox(str name ,int flag){
     Box box;
     (void) flag; /* fool the compiler */
-    if( (box=findBox(name))){
-        saveBox(box,flag);
-        return 0;
-    }
+    if( (box=findBox(name)))
+        return saveBox(box,flag);
     return -1;
 }
 void destroyBox(str name){
     int i,j;
     str boxfile;
 
-        mal_set_lock(mal_contextLock, "destroyBox");
+	mal_set_lock(mal_contextLock, "destroyBox");
     for(i=j=0;i<MAXSPACES;i++){
         if( idcmp(box[j]->name,name) == 0){
             free(box[i]->name);
@@ -379,7 +378,7 @@ void destroyBox(str name){
             GDKfree(boxfile); 
         } else box[i] = box[j++];
     }
-        mal_unset_lock(mal_contextLock, "destroyBox");
+	mal_unset_lock(mal_contextLock, "destroyBox");
 
 }
 @+ Operations
@@ -570,51 +569,60 @@ str boxFileName(Box box, str backup){
     snprintf(boxfile+i,PATHLENGTH-i,"/%s.box", box->name);
     return GDKstrdup(boxfile);
 }
-int saveBox(Box box,int flag){
-    int i, ret=0;
-    ValPtr v;
+
+stream *prepareSaveBox(Box box, str *boxfile, str *boxfilebak){
     stream *f;
-    str boxfile, boxfilebak;
 
-    (void) flag; /*fool the compiler */
-    boxfile = boxFileName(box,0);
-    boxfilebak = boxFileName(box,"backup");
+    *boxfile = boxFileName(box,0);
+    *boxfilebak = boxFileName(box,"backup");
 
-    if(boxfile==0) {
+    if(*boxfile==0) {
         GDKerror("saveBox:can not determine box file\n");
-        return 1;
+        return 0;
     }
 #ifdef DEBUG_MAL_BOX
     stream_printf(GDKout,"saveBox:%s\n",boxfile);
 #endif
-    if( access(boxfile,R_OK) == 0){
-        if(access(boxfilebak,R_OK)==0  && unlink(boxfilebak) ) {
+    if( access(*boxfile,R_OK) == 0){
+        if(access(*boxfilebak,R_OK)==0  && unlink(*boxfilebak) ) {
 #ifdef DEBUG_MAL_BOX
             stream_printf(GDKout,"saveBox:can not unlink %s\n",boxfilebak);
 #endif
             GDKerror("saveBox:can not unlink backup\n");
-            GDKfree(boxfile); GDKfree(boxfilebak);
-            return 1;
+            GDKfree(*boxfile); GDKfree(*boxfilebak);
+            return 0;
         } 
 
-        if( link(boxfile,boxfilebak)) {
+        if( link(*boxfile,*boxfilebak)) {
 #ifdef DEBUG_MAL_BOX
             stream_printf(GDKout,"saveBox:%s \n-> %s\n",
                     boxfile,boxfilebak);
 #endif
             GDKerror("saveBox:can not link backup\n");
-            GDKfree(boxfile); GDKfree(boxfilebak);
-            return 1;
+            GDKfree(*boxfile); GDKfree(*boxfilebak);
+            return 0;
         }
-        unlink(boxfile);
+        unlink(*boxfile);
     } 
 
-    f= open_wastream(boxfile);
+    f= open_wastream(*boxfile);
+	if( f != NULL)
+		chmod(*boxfile, (S_IRUSR | S_IWUSR));
+	return f;
+}
+int saveBox(Box box,int flag){
+    int i;
+    stream *f;
+    ValPtr v;
+	str boxfile, boxfilebak;
+
+	(void) flag;
+
+	f= prepareSaveBox(box, &boxfile, &boxfilebak);
     if(f != NULL){
 #ifdef DEBUG_MAL_BOX
     stream_printf(GDKout,"saveBox:created %s\n",boxfile);
 #endif
-        chmod(boxfile, (S_IRUSR | S_IWUSR));
         for(i=0;i<box->sym->vtop; i++){
             v= &box->val->stk[i];
             if( v->vtype == TYPE_bat ) {
@@ -632,16 +640,15 @@ int saveBox(Box box,int flag){
                     getVarName(box->sym,i));
             }
         }
-    } else {
-        GDKerror("saveBox:can not create box file\n");
-        ret= -1;
-    }
-    if(f){
         stream_close(f);
-        if( link(boxfilebak,boxfile) && unlink(boxfilebak) ) ret= -1;
-    }
-    GDKfree(boxfile); GDKfree(boxfilebak);
-    return ret;
+        if( link(boxfilebak,boxfile) && unlink(boxfilebak) ) {
+			GDKfree(boxfile); GDKfree(boxfilebak);
+			return -1;
+		}
+		GDKfree(boxfile); GDKfree(boxfilebak);
+		return 0;
+    } 
+    return -1;
 }
 @-
 Loading a box is equivalent to reading a script.
