@@ -85,7 +85,7 @@
 
 /* 32 bits systems */
 typedef unsigned int nat;
-#define NIL INT_MIN
+#define NIL ((nat) INT_MIN)
 #define NATFMT "u"
 
 #else
