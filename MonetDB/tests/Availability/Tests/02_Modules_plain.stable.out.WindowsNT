@@ -682,8 +682,8 @@ Module: "mmath"
 
 Module: "monettime"
 
-[ 103 ]
-[ 103 ]
+[ 110 ]
+[ 110 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function				type		signature														help													  # name
 # str				str		str															str													  # type
@@ -718,9 +718,11 @@ Module: "monettime"
 [ "[rule]",			  "PROC:      ",  "[rule](BAT[any::1,int], BAT[any::1,str], BAT[any::1,int], BAT[any::1,int], BAT[any::1,int]) : BAT[any::1,rule]",	  "not available"											  ]
 [ "[timestamp]",		  "PROC:      ",  "[timestamp](BAT[any::1,date], BAT[any::1,daytime]) : BAT[any::1,timestamp]",						  "not available"											  ]
 [ "[timestamp]",		  "PROC:      ",  "[timestamp](BAT[any::1,int]) : BAT[any::1,timestamp]",								  "not available"											  ]
+[ "add",			  "COMMAND:   ",  "add(daytime, lng) : daytime",											  "returns the daytime that comes 'msecs' (possibly negative) after 'value'."				  ]
 [ "add",			  "COMMAND:   ",  "add(timestamp, lng) : timestamp",											  "returns the timestamp that comes 'msecs' (possibly negative) after 'value' (!DS2.2)."		  ]
 [ "adddays",			  "COMMAND:   ",  "adddays(date, int) : date",												  "returns the date after a number of days (possibly negative)."					  ]
 [ "addmonths",			  "COMMAND:   ",  "addmonths(date, int) : date",											  "returns the date after a number of months (possibly negative)."					  ]
+[ "addmonths",			  "PROC:      ",  "addmonths(timestamp, int) : timestamp",										  "not available"											  ]
 [ "addyears",			  "COMMAND:   ",  "addyears(date, int) : date",												  "returns the date after a number of years (possibly negative)."					  ]
 [ "compute",			  "COMMAND:   ",  "compute(rule, int) : date",												  "compute the date from a rule in a certain year (!DS2.2)."						  ]
 [ "current_date",		  "PROC:      ",  "current_date() : date",												  "not available"											  ]
@@ -780,9 +782,14 @@ Module: "monettime"
 [ "seconds",			  "COMMAND:   ",  "seconds(daytime) : int",												  "extracts seconds from daytime (value between 0 and 59)"						  ]
 [ "seconds",			  "PROC:      ",  "seconds(timestamp) : int",												  "not available"											  ]
 [ "start_dst",			  "COMMAND:   ",  "start_dst(tzone) : rule",												  "extract rule that determines start of DST from tzone (!DS2.2)."					  ]
+[ "time_add_sec_interval",	  "PROC:      ",  "time_add_sec_interval(daytime, lng) : daytime",									  "not available"											  ]
+[ "time_sub_sec_interval",	  "PROC:      ",  "time_sub_sec_interval(daytime, lng) : daytime",									  "not available"											  ]
 [ "timestamp",			  "COMMAND:   ",  "timestamp(date, daytime) : timestamp",										  "creates a timestamp from (date,daytime) parameters (in the local timezone)."				  ]
 [ "timestamp",			  "COMMAND:   ",  "timestamp(date, daytime, tzone) : timestamp",									  "creates a timestamp from (date,daytime,tzone) parameters (!DS2.2)."					  ]
 [ "timestamp",			  "PROC:      ",  "timestamp(int) : timestamp",												  "not available"											  ]
+[ "timestamp_add_sec_interval",	  "PROC:      ",  "timestamp_add_sec_interval(timestamp, lng) : timestamp",								  "not available"											  ]
+[ "timestamp_sub_month_interval", "PROC:      ",  "timestamp_sub_month_interval(timestamp, int) : timestamp",								  "not available"											  ]
+[ "timestamp_sub_sec_interval",	  "PROC:      ",  "timestamp_sub_sec_interval(timestamp, lng) : timestamp",								  "not available"											  ]
 [ "tzone",			  "COMMAND:   ",  "tzone(int) : tzone",													  "create a tzone as a simple hour difference from GMT. (!DS2.2)"					  ]
 [ "tzone",			  "COMMAND:   ",  "tzone(int, rule, rule) : tzone",											  "create a tzone as an hour difference from GMT and a DST. (!DS2.2)"					  ]
 [ "tzone_local",		  "COMMAND:   ",  "tzone_local() : tzone",												  "get the local tzone; which is used for printing timestamps (!DS2.2)"					  ]
