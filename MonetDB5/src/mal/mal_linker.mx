@@ -132,7 +132,7 @@ MALfcn getAddress(str fcnname){
 }
 
 @+ Module loading
-The default location to search for the module is in monet_mod_path/lib*
+The default location to search for the module is in monet_mod_path
 unless an absolute path is given.
 
 Loading further relies on the Linux policy to search for the module

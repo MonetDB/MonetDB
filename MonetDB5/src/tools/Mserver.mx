@@ -122,6 +122,7 @@ void usage( char *prog ){
         fprintf(stderr, "usage: %s\n", prog);
         fprintf(stderr, "[--dbname database_name ]\n" );
         fprintf(stderr, "[--dbfarm database_directory ]\n" );
+        fprintf(stderr, "[--dbinit stmt]\n" );
         fprintf(stderr, "[-d or --debug [debug_level] ]\n" );
         fprintf(stderr, "[-? or --help ]\n" );
         fprintf(stderr, "[-c or --config config_file ]\n" );
@@ -245,7 +246,7 @@ monet_options.mx.in
 	/* keep them around until goodbye */
 	monet_hello(set,setlen);
 
-	if( mal_init(GDKstrdup(modpath),pf)) return;
+	if( mal_init()) return;
 	if( pf!=prefix) free(pf);
 
 }

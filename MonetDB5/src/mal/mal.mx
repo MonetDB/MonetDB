@@ -216,16 +216,12 @@ mal_export void monet_hello();
 mal_export char            monet_cwd[PATHLENGTH];
 mal_export int             monet_welcome; 
 mal_export str             *monet_script;
-mal_export str             monet_mod_path;
-mal_export str             monet_mal_path;
 @c 
 #include <mal.h>
 
 char            monet_cwd[PATHLENGTH]={0};
 int             monet_welcome=1; 
 str             *monet_script;
-str             monet_mod_path;
-str             monet_mal_path;
 
 @-
 @}
@@ -262,7 +258,7 @@ in a critical section, which was known to be a performance hindrence.
 mal_export int             mal_debug;
 mal_export MT_Lock	mal_contextLock;
 
-mal_export int mal_init(str modpath, str prefix);
+mal_export int mal_init();
 
 /* This should be here, but cannot, as "Client" isn't known, yet ... |-(
  * For now, we move the prototype declaration to src/mal/mal_client.c,
@@ -333,12 +329,7 @@ void tstAligned()
 		GDKfatal("Recompile with STRUCT_ALIGNED flag enabled\n");
 #endif
 }
-int mal_init(str modpath, str prefix){
-	char buf[PATHLENGTH];
-
-	monet_mod_path= modpath;
-	snprintf(buf,PATHLENGTH,"%s/lib/MonetDB",prefix);
-	monet_mal_path= GDKstrdup(buf);
+int mal_init(){
 	mal_contextLock= MT_create_lock();
 	tstAligned();
 	initNamespace("T%d");
