@@ -184,17 +184,27 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_select: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r = stmt_dump( s->op2.stval, nr, sql );
+		if (s->op2.stval->nrcols >= 1){
+			char *op = "=";
+			switch(s->flag){
+			case cmp_equal: op = "="; break;
+			case cmp_notequal: op = "!="; break;
+			case cmp_lt: op = "<"; break;
+			case cmp_lte: op = "<="; break;
+			case cmp_gt: op = ">"; break;
+			case cmp_gte: op = ">="; break;
+			default:
+				len += snprintf( buf+len, BUFSIZ-len, 
+					"error impossible\n");
+	  		} 
+			len += snprintf( buf+len, BUFSIZ-len, 
+				"s%d := [%s](s%d,s%d).select(TRUE);\n", 
+				-s->nr, op, l, r ); 
+		} else {
 		switch(s->flag){
 		case cmp_equal:
-			if (s->op3.stval){
-			    int r2 = stmt_dump( s->op3.stval, nr, sql );
-			    len += snprintf( buf+len, BUFSIZ-len, 
-				"s%d := s%d.uselect(s%d, s%d);\n", 
-				-s->nr, l, r, r2 ); 
-			} else {
-			    len += snprintf( buf+len, BUFSIZ-len, 
+			len += snprintf( buf+len, BUFSIZ-len, 
 				"s%d := s%d.uselect(s%d);\n", -s->nr, l, r ); 
-			}
 			break;
 		case cmp_notequal:
 			(void)(*nr)++; 
@@ -227,6 +237,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			len += snprintf( buf+len, BUFSIZ-len, 
 					"error impossible\n");
 	  	} 
+		}
 	} break;
 	case st_select2: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
@@ -322,8 +333,9 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			s->nr = -stmt_dump( s->op1.cval->s, nr, sql );
 		} else {
 			len += snprintf( buf+len, BUFSIZ-len, 
-			  "s%d := mvc_bind(myc, \"%s\", \"%s\");\n", 
-			  -s->nr, s->op1.cval->table->name, s->op1.cval->name );
+			  "s%d := mvc_bind(myc, \"%s\", \"%s\"); #%s\n", 
+			  -s->nr, s->op1.cval->table->name, s->op1.cval->name,
+				      s->h->tname?s->h->tname:s->h->t->name );
 		}
 		break;
 	case st_reverse: {
@@ -347,12 +359,16 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		if (s->op2.stval){
 			int r = stmt_dump( s->op2.stval, nr, sql );
 			len += snprintf( buf+len, BUFSIZ-len, 
-			  "s%d := s%d.reverse().mark(oid(s%d)).reverse();\n", 
-			  -s->nr, l, r);
+			 "s%d := s%d.reverse().mark(oid(s%d)).reverse();# %s\n",
+			  -s->nr, l, r, 
+			  	(!s->t)?"unknown":
+			  	s->t->tname?s->t->tname:s->t->t->name);
 		} else if (s->flag >= 0){
 			len += snprintf( buf+len, BUFSIZ-len, 
-			  "s%d := s%d.reverse().mark(oid(%d)).reverse();\n", 
-			  -s->nr, l, s->flag);
+			 "s%d := s%d.reverse().mark(oid(%d)).reverse();# %s\n", 
+			  -s->nr, l, s->flag, 
+			  	(!s->t)?"unknown":
+			  	s->t->tname?s->t->tname:s->t->t->name);
 		} else {
 			len += snprintf( buf+len, BUFSIZ-len, 
 			  "s%d := s%d.reverse().mark().reverse();\n", -s->nr, l);
@@ -711,8 +727,10 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	buf[len] = '\0';
 	sql->out->write( sql->out, buf, 1, len );
 
+	/*
 	for (n = s->uses->h; n; n = n->next)
 		stmt_dump(n->data, nr, sql );
+		*/
 
 	if (sql->debug&8)
 		fwrite( buf, 1, len, stderr);
