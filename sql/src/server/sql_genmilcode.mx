@@ -118,7 +118,7 @@ static void write_command( context *sql, char *buf )
 		while (c = strchr(c,'\n'))	*c = '\t';
 		l = snprintf( v, BUFSIZ, "printf(\"< %s >\\n\");\n", s );
 		sql->out->write( sql->out, v, 1, l );
-		free(s);
+		_DELETE(s);
 	}
 }
 
