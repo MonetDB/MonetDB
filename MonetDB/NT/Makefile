@@ -6,23 +6,25 @@ MKDIR = mkdir
 ECHO = echo
 CD = cd
 
-!INCLUDE $(TOPDIR)\rules.msc
+!INCLUDE "$(TOPDIR)\rules.msc"
 
-all: $(SRCDIR)\Makefile.msc all-msc unistd.h
-	$(MAKE) /nologo /f $(SRCDIR)\Makefile.msc all
+prefix = $(MAKEDIR)
 
-check: $(SRCDIR)\Makefile.msc RunMtest.bat
-	$(MAKE) /nologo /i /f $(SRCDIR)\Makefile.msc check
+all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h
+	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" all
+
+check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
+	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" check
 	call RunMtest.bat
 
 install: targetdirs monetdb_config.h all
-	$(INSTALL) monetdb_config.h $(includedir)
-	$(MAKE) /nologo /f $(SRCDIR)\Makefile.msc install
+	$(INSTALL) monetdb_config.h "$(includedir)"
+	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
 
-$(SRCDIR)\Makefile.msc: $(SRCDIR)\src\utils\autogen\autogen.py \
-	$(SRCDIR)\src\utils\autogen\codegen.py \
-	$(SRCDIR)\src\utils\autogen\msc.py
-	$(CD) $(SRCDIR) && $(PYTHON) src\utils\autogen\autogen.py
+$(SRCDIR)\Makefile.msc: "$(SRCDIR)\src\utils\autogen\autogen.py" \
+	"$(SRCDIR)\src\utils\autogen\codegen.py" \
+	"$(SRCDIR)\src\utils\autogen\msc.py"
+	$(CD) "$(SRCDIR)" && "$(PYTHON)" src\utils\autogen\autogen.py
 
 all-msc: monetdb_config.h
 
@@ -35,25 +37,25 @@ unistd.h:
 	$(ECHO) #include "io.h" >> unistd.h
 	$(ECHO) #endif >> unistd.h
 
-RunMtest.bat: $(SRCDIR)\RunMtest.bat.in
-	if exist $(SRCDIR)\RunMtest.bat.in $(CONFIGURE) $(SRCDIR)\RunMtest.bat.in > RunMtest.bat
+RunMtest.bat: "$(SRCDIR)\RunMtest.bat.in"
+	if exist "$(SRCDIR)\RunMtest.bat.in" "$(CONFIGURE)" "$(SRCDIR)\RunMtest.bat.in" > RunMtest.bat
 
 targetdirs:
-	if not exist $(bindir)		$(MKDIR) $(bindir)
-	if not exist $(sbindir)		$(MKDIR) $(sbindir)
-	if not exist $(libexecdir)	$(MKDIR) $(libexecdir)
-	if not exist $(datadir)		$(MKDIR) $(datadir)
-	if not exist $(sysconfdir)	$(MKDIR) $(sysconfdir)
-	if not exist $(sharedstatedir)	$(MKDIR) $(sharedstatedir)
-	if not exist $(localstatedir)	$(MKDIR) $(localstatedir)
-	if not exist $(libdir)		$(MKDIR) $(libdir)
-	if not exist $(infodir)		$(MKDIR) $(infodir)
-	if not exist $(mandir)		$(MKDIR) $(mandir)
-	if not exist $(includedir)	$(MKDIR) $(includedir)
-	if not exist $(pkgdatadir)	$(MKDIR) $(pkgdatadir)
-	if not exist $(pkglibdir)	$(MKDIR) $(pkglibdir)
-	if not exist $(pkglibdir)\Tests	$(MKDIR) $(pkglibdir)\Tests
-	if not exist $(pkgincludedir)	$(MKDIR) $(pkgincludedir)
+	if not exist "$(bindir)"		$(MKDIR) "$(bindir)"
+	if not exist "$(sbindir)"		$(MKDIR) "$(sbindir)"
+	if not exist "$(libexecdir)"		$(MKDIR) "$(libexecdir)"
+	if not exist "$(datadir)"		$(MKDIR) "$(datadir)"
+	if not exist "$(sysconfdir)"		$(MKDIR) "$(sysconfdir)"
+	if not exist "$(sharedstatedir)"	$(MKDIR) "$(sharedstatedir)"
+	if not exist "$(localstatedir)"		$(MKDIR) "$(localstatedir)"
+	if not exist "$(libdir)"		$(MKDIR) "$(libdir)"
+	if not exist "$(infodir)"		$(MKDIR) "$(infodir)"
+	if not exist "$(mandir)"		$(MKDIR) "$(mandir)"
+	if not exist "$(includedir)"		$(MKDIR) "$(includedir)"
+	if not exist "$(pkgdatadir)"		$(MKDIR) "$(pkgdatadir)"
+	if not exist "$(pkglibdir)"		$(MKDIR) "$(pkglibdir)"
+	if not exist "$(pkglibdir)\Tests"	$(MKDIR) "$(pkglibdir)\Tests"
+	if not exist "$(pkgincludedir)"		$(MKDIR) "$(pkgincludedir)"
 
 html:
-	python $(SRCDIR)\doc\mkdoc.py $(SRCDIR) $(TOPDIR)
+	python "$(SRCDIR)\doc\mkdoc.py" "$(SRCDIR)" "$(TOPDIR)"

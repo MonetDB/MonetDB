@@ -26,54 +26,37 @@
 import sys
 import fileinput
 import os
-import string
 
 prefix=os.path.abspath(sys.argv[1]);
 build=prefix
 source=os.path.abspath(os.path.join(build,os.pardir))
 
-# double back slashes
-Qprefix = string.replace(prefix, '\\', '\\\\')
-Qbuild  = string.replace(build,  '\\', '\\\\')
-Qsource = string.replace(source, '\\', '\\\\')
-
 subs = [
-    ('@exec_prefix@',       "@prefix@"),
-    ('@sysconfdir@',        "@prefix@@DIRSEP@etc"),
-    ('@localstatedir@',     "@prefix@@DIRSEP@var"),
-    ('@libdir@',            "@prefix@@DIRSEP@lib"),
-    ('@bindir@',            "@prefix@@DIRSEP@bin"),
-    ('@mandir@',            "@prefix@@DIRSEP@man"),
-    ('@includedir@',        "@prefix@@DIRSEP@include"),
-    ('@datadir@',           "@prefix@@DIRSEP@share"),
-    ('@infodir@',           "@prefix@@DIRSEP@info"),
-    ('@libexecdir@',        "@prefix@@DIRSEP@libexec"),
-    ('@Qexec_prefix@',      "@Qprefix@"),
-    ('@Qsysconfdir@',       "@Qprefix@@QDIRSEP@etc"),
-    ('@Qlocalstatedir@',    "@Qprefix@@QDIRSEP@var"),
-    ('@Qlibdir@',           "@Qprefix@@QDIRSEP@lib"),
-    ('@Qbindir@',           "@Qprefix@@QDIRSEP@bin"),
-    ('@Qmandir@',           "@Qprefix@@QDIRSEP@man"),
-    ('@Qincludedir@',       "@Qprefix@@QDIRSEP@include"),
-    ('@Qdatadir@',          "@Qprefix@@QDIRSEP@share"),
-    ('@Qinfodir@',          "@Qprefix@@QDIRSEP@info"),
-    ('@Qlibexecdir@',       "@Qprefix@@QDIRSEP@libexec"),
-    ('@PACKAGE@',           "MonetDB"),
-    ('@VERSION@',           "4.3.15"),
+    ('@exec_prefix@',       prefix),
+    ('@sysconfdir@',        r"${prefix}\etc"),
+    ('@localstatedir@',     r"${prefix}\var"),
+    ('@libdir@',            r"${prefix}\lib"),
+    ('@bindir@',            r"${prefix}\bin"),
+    ('@mandir@',            r"${prefix}\man"),
+    ('@includedir@',        r"${prefix}\include"),
+    ('@datadir@',           r"${prefix}\share"),
+    ('@infodir@',           r"${prefix}\info"),
+    ('@libexecdir@',        r"${prefix}\libexec"),
+    ('@PACKAGE@',           r"MonetDB"),
+    ('@VERSION@',           r"4.3.15"),
     ('@DIRSEP@',            "\\"),
     ('@prefix@',            prefix),
     ('@MONET_BUILD@',       build),
     ('@MONET_SOURCE@',      source),
-    ('@QDIRSEP@',           "\\\\"),
-    ('@Qprefix@',           Qprefix),
-    ('@QMONET_BUILD@',      Qbuild),
-    ('@QMONET_SOURCE@',     Qsource),
 ]
+
+for key, val in subs[:]:
+    subs.insert(0, ('@Q'+key[1:], val.replace('\\', r'\\')))
 
 
 def substitute(line):
     for (p,v) in subs:
-        line = string.replace(line, p, v);
+        line = line.replace(p, v);
     return line
 
 for line in fileinput.input(sys.argv[2:]):
