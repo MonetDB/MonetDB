@@ -12,30 +12,29 @@ insert(b,4,16);
 insert(b,9,81);
 print(b);
 
-(cidx,vrng):= crackers.new(b);
-z:= crackers.crack(b,cidx,vrng,9,25);
-print(z);
+crackers.new(b);
+y:= crackers.crack(b,9,25);
+print(y);
+crackers.info(b);
 print(b);
-print(cidx);
-print(vrng);
 
-(cidx,vrng):= crackers.new(b);
-y:= crackers.crack(b,cidx,vrng,80,195);
+crackers.new(b);
+y:= crackers.crack(b,80,195);
+print(y);
+crackers.info(b);
 print(b);
-print(cidx);
-print(vrng);
 
-(cidx,vrng):= crackers.new(b);
-y:= crackers.crack(b,cidx,vrng,2,2);
+crackers.new(b);
+y:= crackers.crack(b,2,2);
+print(y);
+crackers.info(b);
 print(b);
-print(cidx);
-print(vrng);
 
-(cidx,vrng):= crackers.new(b);
-y:= crackers.crack(b,cidx,vrng,40,2);
+crackers.new(b);
+y:= crackers.crack(b,40,2);
+print(y);
+crackers.info(b);
 print(b);
-print(cidx);
-print(vrng);
 catch MALexception;
 print(MALexception);
 exit MALexception;

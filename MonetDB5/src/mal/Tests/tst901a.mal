@@ -5,7 +5,7 @@ i:= -1:lng;
 t0:= alarm.usec();
 barrier v:= nextElement(i,0:lng,1000000:lng);
 	insert(b,i,i);
-	redo v;
+	redo v:= nextElement(i,0:lng,1000000:lng);
 exit v;
 t1:= alarm.usec();
 c:= copy(b);

@@ -11,16 +11,14 @@ insert(b,8,64);
 insert(b,4,16);
 insert(b,9,81);
 
-(cidx,vrng):= crackers.new(b);
-crackers.crack(b,cidx,vrng,9,25);
-crackers.crack(b,cidx,vrng,80,195);
-crackers.crack(b,cidx,vrng,2,2);
-print(cidx);
-print(vrng);
+crackers.new(b);
+crackers.crack(b,9,25);
+crackers.crack(b,80,195);
+crackers.crack(b,2,2);
 
-barrier (i,view):= crackers.firstPiece(b,cidx);
+barrier (i,view):= crackers.firstPiece(b);
 	print(view);
-redo i:= crackers.nextPiece(b,cidx,view,i);
+redo i:= crackers.nextPiece(b,view,i);
 exit;
 
 dropPiece(view);

@@ -3,6 +3,6 @@
 	i:= -1:lng;
 barrier v:= i<1000000:lng;
 	i:= i+1;
-	redo v;
+	redo v:= i<1000000:ln;
 exit	v;
 print("end of loop");

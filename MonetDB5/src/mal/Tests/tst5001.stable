@@ -19,30 +19,29 @@
 #insert(b,9,81);
 #print(b);
 #
-#(cidx,vrng):= crackers.new(b);
-#z:= crackers.crack(b,cidx,vrng,9,25);
-#print(z);
+#crackers.new(b);
+#y:= crackers.crack(b,9,25);
+#print(y);
+#crackers.info(b);
 #print(b);
-#print(cidx);
-#print(vrng);
 #
-#(cidx,vrng):= crackers.new(b);
-#y:= crackers.crack(b,cidx,vrng,80,195);
+#crackers.new(b);
+#y:= crackers.crack(b,80,195);
+#print(y);
+#crackers.info(b);
 #print(b);
-#print(cidx);
-#print(vrng);
 #
-#(cidx,vrng):= crackers.new(b);
-#y:= crackers.crack(b,cidx,vrng,2,2);
+#crackers.new(b);
+#y:= crackers.crack(b,2,2);
+#print(y);
+#crackers.info(b);
 #print(b);
-#print(cidx);
-#print(vrng);
 #
-#(cidx,vrng):= crackers.new(b);
-#y:= crackers.crack(b,cidx,vrng,40,2);
+#crackers.new(b);
+#y:= crackers.crack(b,40,2);
+#print(y);
+#crackers.info(b);
 #print(b);
-#print(cidx);
-#print(vrng);
 #catch MALexception;
 #print(MALexception);
 #exit MALexception;
@@ -60,31 +59,30 @@ function Admin.main():int;	# 0  (main:int)
     bat.insert(b,4,16);	# 10 BKCinsert_bun ($27:void)<-(b:bat[:int,:int])($17:int)($28:int)
     bat.insert(b,9,81);	# 11 BKCinsert_bun ($29:void)<-(b:bat[:int,:int])($20:int)($30:int)
     io.print(b);	# 12 IOprint_val ($31:int)<-(b:bat[:int,:int])
-    (cidx,vrng):= crackers.new(b);	# 13 CRKnew (cidx:bat[:int,:int])(vrng:bat[:int,:int])<-(b:bat[:int,:int])
-    z := crackers.crack(b,cidx,vrng,9,25);	# 14 CRKcrackNaive (z:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(vrng:bat[:int,:int])($20:int)($15:int)
-    io.print(z);	# 15 IOprint_val ($35:int)<-(z:int)
-    io.print(b);	# 16 IOprint_val ($36:int)<-(b:bat[:int,:int])
-    io.print(cidx);	# 17 IOprint_val ($37:int)<-(cidx:bat[:int,:int])
-    io.print(vrng);	# 18 IOprint_val ($38:int)<-(vrng:bat[:int,:int])
-    (cidx,vrng):= crackers.new(b);	# 19 CRKnew (cidx:bat[:int,:int])(vrng:bat[:int,:int])<-(b:bat[:int,:int])
-    y := crackers.crack(b,cidx,vrng,80,195);	# 20 CRKcrackNaive (y:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(vrng:bat[:int,:int])($40:int)($41:int)
-    io.print(b);	# 21 IOprint_val ($42:int)<-(b:bat[:int,:int])
-    io.print(cidx);	# 22 IOprint_val ($43:int)<-(cidx:bat[:int,:int])
-    io.print(vrng);	# 23 IOprint_val ($44:int)<-(vrng:bat[:int,:int])
-    (cidx,vrng):= crackers.new(b);	# 24 CRKnew (cidx:bat[:int,:int])(vrng:bat[:int,:int])<-(b:bat[:int,:int])
-    y := crackers.crack(b,cidx,vrng,2,2);	# 25 CRKcrackNaive (y:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(vrng:bat[:int,:int])($45:int)($45:int)
-    io.print(b);	# 26 IOprint_val ($46:int)<-(b:bat[:int,:int])
-    io.print(cidx);	# 27 IOprint_val ($47:int)<-(cidx:bat[:int,:int])
-    io.print(vrng);	# 28 IOprint_val ($48:int)<-(vrng:bat[:int,:int])
-    (cidx,vrng):= crackers.new(b);	# 29 CRKnew (cidx:bat[:int,:int])(vrng:bat[:int,:int])<-(b:bat[:int,:int])
-    y := crackers.crack(b,cidx,vrng,40,2);	# 30 CRKcrackNaive (y:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(vrng:bat[:int,:int])($49:int)($45:int)
-    io.print(b);	# 31 IOprint_val ($50:int)<-(b:bat[:int,:int])
-    io.print(cidx);	# 32 IOprint_val ($51:int)<-(cidx:bat[:int,:int])
-    io.print(vrng);	# 33 IOprint_val ($52:int)<-(vrng:bat[:int,:int])
-catch MALexception;	# 34  (MALexception:any) jump 36
-    io.print(MALexception);	# 35 IOprint_val ($54:int)<-(MALexception:any)
-exit MALexception;	# 36  (MALexception:any)
-end main;	# 37  
+    crackers.new(b);	# 13 CRKnew ($32:void)<-(b:bat[:int,:int])
+    y := crackers.crack(b,9,25);	# 14 CRKcrackNaive (y:int)<-(b:bat[:int,:int])($20:int)($15:int)
+    io.print(y);	# 15 IOprint_val ($34:int)<-(y:int)
+    crackers.info(b);	# 16 CRKinfo ($35:void)<-(b:bat[:int,:int])
+    io.print(b);	# 17 IOprint_val ($36:int)<-(b:bat[:int,:int])
+    crackers.new(b);	# 18 CRKnew ($37:void)<-(b:bat[:int,:int])
+    y := crackers.crack(b,80,195);	# 19 CRKcrackNaive (y:int)<-(b:bat[:int,:int])($38:int)($39:int)
+    io.print(y);	# 20 IOprint_val ($40:int)<-(y:int)
+    crackers.info(b);	# 21 CRKinfo ($41:void)<-(b:bat[:int,:int])
+    io.print(b);	# 22 IOprint_val ($42:int)<-(b:bat[:int,:int])
+    crackers.new(b);	# 23 CRKnew ($43:void)<-(b:bat[:int,:int])
+    y := crackers.crack(b,2,2);	# 24 CRKcrackNaive (y:int)<-(b:bat[:int,:int])($44:int)($44:int)
+    io.print(y);	# 25 IOprint_val ($45:int)<-(y:int)
+    crackers.info(b);	# 26 CRKinfo ($46:void)<-(b:bat[:int,:int])
+    io.print(b);	# 27 IOprint_val ($47:int)<-(b:bat[:int,:int])
+    crackers.new(b);	# 28 CRKnew ($48:void)<-(b:bat[:int,:int])
+    y := crackers.crack(b,40,2);	# 29 CRKcrackNaive (y:int)<-(b:bat[:int,:int])($49:int)($44:int)
+    io.print(y);	# 30 IOprint_val ($50:int)<-(y:int)
+    crackers.info(b);	# 31 CRKinfo ($51:void)<-(b:bat[:int,:int])
+    io.print(b);	# 32 IOprint_val ($52:int)<-(b:bat[:int,:int])
+catch MALexception;	# 33  (MALexception:any) jump 35
+    io.print(MALexception);	# 34 IOprint_val ($54:int)<-(MALexception:any)
+exit MALexception;	# 35  (MALexception:any)
+end main;	# 36  
 #-----------------#
 # h	tmp_4	  # name
 # int	int	  # type
@@ -99,7 +97,13 @@ end main;	# 37
 [ 8,	  64	  ]
 [ 4,	  16	  ]
 [ 9,	  81	  ]
-[ -113 ]
+crackMap created
+[ 2 ]
+# idx bid kind parent rng_max rng_min idx_first idx_last # name
+[   0   4, P, -1 2, 100, 1, 10, ]
+[   1   4, L, 0 2, 8, 1, 2, ]
+[   2   4, L, 0 9, 25, 3, 5, ]
+[   3   4, L, 0 26, 100, 6, 10, ]
 #-----------------#
 # h	tmp_4	  # name
 # int	int	  # type
@@ -114,20 +118,12 @@ end main;	# 37
 [ 8,	  64	  ]
 [ 9,	  81	  ]
 [ 10,	  100	  ]
-#-----------------#
-# h	tmp_5	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  2	  ]
-[ 3,	  5	  ]
-[ 6,	  10	  ]
-#-----------------#
-# h	tmp_6	  # name
-# int	int	  # type
-#-----------------#
-[ 2,	  8	  ]
-[ 9,	  25	  ]
-[ 26,	  100	  ]
+crackMap created
+[ 2 ]
+# idx bid kind parent rng_max rng_min idx_first idx_last # name
+[   0   4, P, -1 2, 100, 1, 10, ]
+[   1   4, L, 0 2, 79, 1, 8, ]
+[   2   4, L, 0 80, 100, 9, 10, ]
 #-----------------#
 # h	tmp_4	  # name
 # int	int	  # type
@@ -142,18 +138,12 @@ end main;	# 37
 [ 8,	  64	  ]
 [ 9,	  81	  ]
 [ 10,	  100	  ]
-#-----------------#
-# h	tmp_7	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  8	  ]
-[ 9,	  10	  ]
-#-----------------#
-# h	tmp_8	  # name
-# int	int	  # type
-#-----------------#
-[ 2,	  79	  ]
-[ 80,	  100	  ]
+crackMap created
+[ 1 ]
+# idx bid kind parent rng_max rng_min idx_first idx_last # name
+[   0   4, P, -1 2, 100, 1, 10, ]
+[   1   4, L, 0 2, 2, 1, 1, ]
+[   2   4, L, 0 3, 100, 2, 10, ]
 #-----------------#
 # h	tmp_4	  # name
 # int	int	  # type
@@ -168,17 +158,6 @@ end main;	# 37
 [ 8,	  64	  ]
 [ 9,	  81	  ]
 [ 10,	  100	  ]
-#-----------------#
-# h	tmp_9	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  1	  ]
-[ 2,	  10	  ]
-#-----------------#
-# h	tmp_10	  # name
-# int	int	  # type
-#-----------------#
-[ 2,	  2	  ]
-[ 3,	  100	  ]
-[ "MALexception:Admin.main[30]:crackers.crack:illegal range\n" ]
+crackMap created
+[ "MALexception:Admin.main[29]:crackers.crack:illegal range\n" ]
 >

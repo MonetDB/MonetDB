@@ -18,16 +18,14 @@
 #insert(b,4,16);
 #insert(b,9,81);
 #
-#(cidx,vrng):= crackers.new(b);
-#crackers.crack(b,cidx,vrng,9,25);
-#crackers.crack(b,cidx,vrng,80,195);
-#crackers.crack(b,cidx,vrng,2,2);
-#print(cidx);
-#print(vrng);
+#crackers.new(b);
+#crackers.crack(b,9,25);
+#crackers.crack(b,80,195);
+#crackers.crack(b,2,2);
 #
-#barrier (i,view):= crackers.firstPiece(b,cidx);
+#barrier (i,view):= crackers.firstPiece(b);
 #	print(view);
-#redo i:= crackers.nextPiece(b,cidx,view,i);
+#redo i:= crackers.nextPiece(b,view,i);
 #exit;
 #
 #dropPiece(view);
@@ -44,63 +42,44 @@ function Admin.main():int;	# 0  (main:int)
     bat.insert(b,8,64);	# 9 BKCinsert_bun ($24:void)<-(b:bat[:int,:int])($25:int)($26:int)
     bat.insert(b,4,16);	# 10 BKCinsert_bun ($27:void)<-(b:bat[:int,:int])($17:int)($28:int)
     bat.insert(b,9,81);	# 11 BKCinsert_bun ($29:void)<-(b:bat[:int,:int])($20:int)($30:int)
-    (cidx,vrng):= crackers.new(b);	# 12 CRKnew (cidx:bat[:int,:int])(vrng:bat[:int,:int])<-(b:bat[:int,:int])
-    crackers.crack(b,cidx,vrng,9,25);	# 13 CRKcrackNaive ($33:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(vrng:bat[:int,:int])($20:int)($15:int)
-    crackers.crack(b,cidx,vrng,80,195);	# 14 CRKcrackNaive ($34:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(vrng:bat[:int,:int])($35:int)($36:int)
-    crackers.crack(b,cidx,vrng,2,2);	# 15 CRKcrackNaive ($37:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(vrng:bat[:int,:int])($9:int)($9:int)
-    io.print(cidx);	# 16 IOprint_val ($38:int)<-(cidx:bat[:int,:int])
-    io.print(vrng);	# 17 IOprint_val ($39:int)<-(vrng:bat[:int,:int])
-barrier (i,view):= crackers.firstPiece(b,cidx);	# 18 CRKfirstPiece (i:int)(view:bat[:int,:int])<-(b:bat[:int,:int])(cidx:bat[:int,:int]) jump 21
-    io.print(view);	# 19 IOprint_val ($42:int)<-(view:bat[:int,:int])
-    redo i := crackers.nextPiece(b,cidx,view,i);	# 20 CRKnextPiece (i:int)<-(b:bat[:int,:int])(cidx:bat[:int,:int])(view:bat[:int,:int])(i:int) jump 19
-exit i;	# 21  (i:int)
-    crackers.dropPiece(view);	# 22 CRKdropPiece ($44:void)<-(view:bat[:int,:int])
-end main;	# 23  
+    crackers.new(b);	# 12 CRKnew ($31:void)<-(b:bat[:int,:int])
+    crackers.crack(b,9,25);	# 13 CRKcrackNaive ($32:int)<-(b:bat[:int,:int])($20:int)($15:int)
+    crackers.crack(b,80,195);	# 14 CRKcrackNaive ($33:int)<-(b:bat[:int,:int])($34:int)($35:int)
+    crackers.crack(b,2,2);	# 15 CRKcrackNaive ($36:int)<-(b:bat[:int,:int])($9:int)($9:int)
+barrier (i,view):= crackers.firstPiece(b);	# 16 CRKfirstPiece (i:int)(view:bat[:int,:int])<-(b:bat[:int,:int]) jump 19
+    io.print(view);	# 17 IOprint_val ($39:int)<-(view:bat[:int,:int])
+    redo i := crackers.nextPiece(b,view,i);	# 18 CRKnextPiece (i:int)<-(b:bat[:int,:int])(view:bat[:int,:int])(i:int) jump 17
+exit i;	# 19  (i:int)
+    crackers.dropPiece(view);	# 20 CRKdropPiece ($41:void)<-(view:bat[:int,:int])
+end main;	# 21  
+crackMap created
 #-----------------#
 # h	tmp_5	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  1	  ]
-[ 3,	  5	  ]
-[ 6,	  8	  ]
-[ 9,	  10	  ]
-[ 2,	  2	  ]
-#-----------------#
-# h	tmp_6	  # name
-# int	int	  # type
-#-----------------#
-[ 2,	  2	  ]
-[ 9,	  25	  ]
-[ 26,	  79	  ]
-[ 80,	  100	  ]
-[ 3,	  8	  ]
-#-----------------#
-# h	tmp_7	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  2	  ]
-#-----------------#
-# h	tmp_7	  # name
 # int	int	  # type
 #-----------------#
 [ 3,	  9	  ]
 [ 5,	  25	  ]
 [ 4,	  16	  ]
 #-----------------#
-# h	tmp_7	  # name
+# h	tmp_5	  # name
 # int	int	  # type
 #-----------------#
 [ 6,	  36	  ]
 [ 7,	  49	  ]
 [ 8,	  64	  ]
 #-----------------#
-# h	tmp_7	  # name
+# h	tmp_5	  # name
 # int	int	  # type
 #-----------------#
 [ 9,	  81	  ]
 [ 10,	  100	  ]
 #-----------------#
-# h	tmp_7	  # name
+# h	tmp_5	  # name
+# int	int	  # type
+#-----------------#
+[ 1,	  2	  ]
+#-----------------#
+# h	tmp_5	  # name
 # int	int	  # type
 #-----------------#
 [ 2,	  4	  ]

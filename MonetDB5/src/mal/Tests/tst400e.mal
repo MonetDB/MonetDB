@@ -9,6 +9,6 @@ end simple;
 	k:= 0:lng;
 barrier	v:= k<1000000:lng;
 	k:= simple(k);
-	redo v;
+	redo v:= k<1000000:lng;
 exit	v;
 print(k);

@@ -19,9 +19,8 @@
 #insert(b,9,81);
 #print(b);
 #
-#(cidx,vrng):= crackers.new(b);
-#print(cidx);
-#print(vrng);
+#crackers.new(b);
+#cracker.info(b);
 #print(b);
 #
 function Admin.main():int;	# 0  (main:int)
@@ -37,11 +36,10 @@ function Admin.main():int;	# 0  (main:int)
     bat.insert(b,4,16);	# 10 BKCinsert_bun ($27:void)<-(b:bat[:int,:int])($17:int)($28:int)
     bat.insert(b,9,81);	# 11 BKCinsert_bun ($29:void)<-(b:bat[:int,:int])($20:int)($30:int)
     io.print(b);	# 12 IOprint_val ($31:int)<-(b:bat[:int,:int])
-    (cidx,vrng):= crackers.new(b);	# 13 CRKnew (cidx:bat[:int,:int])(vrng:bat[:int,:int])<-(b:bat[:int,:int])
-    io.print(cidx);	# 14 IOprint_val ($34:int)<-(cidx:bat[:int,:int])
-    io.print(vrng);	# 15 IOprint_val ($35:int)<-(vrng:bat[:int,:int])
-    io.print(b);	# 16 IOprint_val ($36:int)<-(b:bat[:int,:int])
-end main;	# 17  
+    crackers.new(b);	# 13 CRKnew ($32:void)<-(b:bat[:int,:int])
+    crackers.info(b);	# 14 CRKinfo ($33:void)<-(b:bat[:int,:int])
+    io.print(b);	# 15 IOprint_val ($34:int)<-(b:bat[:int,:int])
+end main;	# 16  
 #-----------------#
 # h	tmp_4	  # name
 # int	int	  # type
@@ -56,16 +54,9 @@ end main;	# 17
 [ 8,	  64	  ]
 [ 4,	  16	  ]
 [ 9,	  81	  ]
-#-----------------#
-# h	tmp_5	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  10	  ]
-#-----------------#
-# h	tmp_6	  # name
-# int	int	  # type
-#-----------------#
-[ 2,	  100	  ]
+crackMap created
+# idx bid kind parent rng_max rng_min idx_first idx_last # name
+[   0   4, L, -1 2, 100, 1, 10, ]
 #-----------------#
 # h	tmp_4	  # name
 # int	int	  # type

@@ -2,6 +2,6 @@
 
 	i:= -1:lng;
 barrier v:= nextElement(i,0:lng,1000000:lng,1:lng);
-	redo v;
+	redo v:= nextElement(i,0:lng,1000000:lng,1:lng);
 exit	v;
 print("end of loop");

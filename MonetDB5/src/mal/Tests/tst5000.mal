@@ -12,7 +12,6 @@ insert(b,4,16);
 insert(b,9,81);
 print(b);
 
-(cidx,vrng):= crackers.new(b);
-print(cidx);
-print(vrng);
+crackers.new(b);
+cracker.info(b);
 print(b);

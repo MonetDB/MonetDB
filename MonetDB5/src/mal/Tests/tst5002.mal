@@ -12,23 +12,23 @@ insert(b,4,16);
 insert(b,9,81);
 print(b);
 
-(cidx,vrng):= crackers.new(b);
-z:= crackers.crack(b,cidx,vrng,9,25);
+crackers.new(b);
+z:= crackers.crack(b,9,25);
+print(z);
+crackers.info(b);
 print(b);
-print(cidx);
-print(vrng);
 
-y:= crackers.crack(b,cidx,vrng,80,195);
+y:= crackers.crack(b,80,195);
+print(z);
+crackers.info(b);
 print(b);
-print(cidx);
-print(vrng);
 
-y:= crackers.crack(b,cidx,vrng,2,2);
+y:= crackers.crack(b,2,2);
+print(z);
+crackers.info(b);
 print(b);
-print(cidx);
-print(vrng);
 
-y:= crackers.crack(b,cidx,vrng,20,99);
+y:= crackers.crack(b,20,99);
+print(z);
+crackers.info(b);
 print(b);
-print(cidx);
-print(vrng);
