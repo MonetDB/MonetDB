@@ -53,8 +53,13 @@ mal_export void chkLabel(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr newCall(str modname, str fcnname, int kind);
 mal_export Symbol cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
 
+#define throwMessage(M)	throwException("%s",M)
+
+/*VARARGS*/
+mal_export str throwException(char *format, ...);
 mal_export str	raiseException(MalBlkPtr mb, int pc, str name, str msg);
 mal_export str appendException(MalBlkPtr mb, int pc, str name, str msg,str old);
+mal_export str locateException(MalBlkPtr mb, int pc, str oldmsg);
 mal_export void	showException(MalBlkPtr mb, int pc, str name, str msg);
 mal_export malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p);
 mal_export void 	printFunction(FILE *fd, MalBlkPtr mb);
@@ -318,20 +323,50 @@ str appendException(MalBlkPtr mb, int pc, str name, str msg,str oldmsg){
 
 	s = mb? getModName(mb): "";
 	fcn= mb? getFcnName(mb):"";
-	snprintf(buf,4196,"%s",oldmsg);
+	buf[0]=0;
+	if(oldmsg) snprintf(buf,4196,"%s",oldmsg);
 	i= strlen(buf);
-	snprintf(buf+i,4196-i,"%s:", name);
+	if(name) snprintf(buf+i,4196-i,"%s:", name);
 	i= strlen(buf);
 	snprintf(buf+i,4196-i,"%s.",s);
 	i= strlen(buf);
 	snprintf(buf+i,4196-i,"%s",fcn);
 	i= strlen(buf);
-	snprintf(buf+i,4196-i,"[%d]:",pc);
+	snprintf(buf+i,4196-i,"[%d]",pc);
 	i= strlen(buf);
-	snprintf(buf+i,4196-i,"%s\n",msg);
+	if(msg) snprintf(buf+i,4196-i,":%s",msg);
 	i= strlen(buf);
-	if(i<4195 && buf[i-1] != '\n'){ buf[i]='\n'; buf[i+1]=0; }
+	if( buf[i-1]!='\n'){ buf[i]='\n'; buf[i+1]=0;}
         return GDKstrdup(buf);
+}
+str locateException(MalBlkPtr mb, int pc, str oldmsg){
+	str s, msg=0,name=0;
+
+	if( s= strchr(oldmsg,':')){
+		*s =0;
+		name= oldmsg;
+		msg= s+1;
+	} else msg=oldmsg;
+	return appendException(mb,pc,name,msg,0);
+}
+@-
+The linked libraries should use the throwException to signal
+an erroneous situation. It takes the name of MAL exception name
+to be raised.
+@c
+/*VARARGS*/
+str throwException(char *format, ...){
+        char message[GDKMAXERRLEN];
+        int len = strlen(MALexception)+1;
+        va_list ap;
+
+        strcpy(message, MALexception);
+	strcat(message,":");
+        va_start(ap, format);
+        vsnprintf(message + len, GDKMAXERRLEN-(len+2), format, ap);
+        va_end(ap);
+
+        return GDKstrdup(message);
 }
 str raiseException(MalBlkPtr mb, int pc, str name, str msg){
 	return appendException(mb,pc,name,msg,"");

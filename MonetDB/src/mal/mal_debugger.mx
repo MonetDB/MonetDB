@@ -178,7 +178,7 @@ int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		stk->cmd= stk->cmd? 0: 'n';
 		cntxt->itrace = cntxt->itrace == 0;
 		if( stk->up) stk->up->cmd=  b?'n':0;
-		return GDK_SUCCEED;
+		return 0;
 	}
 	if( p->argc >1){
 		b= *(int *) getArgReference(stk,p,1);
@@ -187,7 +187,7 @@ int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if( stk->up) stk->up->cmd=  b?'n':0;
 	cntxt->itrace= b? 1: 0;
 	MDBstatus(b);
-	return GDK_SUCCEED;
+	return 0;
 }
 
 @+ MAL parser

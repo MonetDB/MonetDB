@@ -1,5 +1,5 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2001, CWI. All rights reserved.
+# Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
 # gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
 # gdk_dbname:demo
@@ -13,13 +13,18 @@
 #c:= bbp.take("myfirstbat");
 #print(c);
 #bbp.close();
+#catch MALexception;
+#	print(MALexception);
+#end MALexception;
 #
 function Admin.main():int;	#0:(main:int)
 	bbp.open();	#1:($1:void)
 	c := bbp.take("myfirstbat");	#2:(c:bat[any,any])<-($3:str)
-	mal.print(c);	#3:($4:int)<-(c:bat[any,any])
+	io.print(c);	#3:($4:int)<-(c:bat[any,any])
 	bbp.close();	#4:($5:void)
-end function;	#5:
-!ERROR: bbpException:Admin.main[2]:myfirstbat:failed to take from box
-
+catch	MALexception;	#5:(MALexception:str)
+	io.print(MALexception);	#6:($7:int)<-(MALexception:str)
+end	MALexception;	#7:(MALexception:str)
+end function;	#8:
+[ "MALexception:Admin.main[2]:CMDbbptake:myfirstbat:failed to take from box\n" ]
 >

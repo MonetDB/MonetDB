@@ -21,5 +21,4 @@ function Admin.main():int;	#0:(main:int)
 	a := Admin.f(1,b,"hello");	#2:(a:any)<-($5:int)(b:bat[str,int])($6:str)
 end function;	#3:
 !ERROR: MALexception:Admin.main[2]:address of function missing
-
 >

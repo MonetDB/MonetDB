@@ -52,6 +52,9 @@ mal_export MT_Lock	mal_contextLock;
 #define MALprofiler 1		/* activate the profiler */
 /* #undef MALprofiler*/
 
+#define MAL_SUCCEED	(str) 0	/* apparently no error */
+#define MALexception	"MALexception"
+
 #define STRUCT_ALIGNED
 
 #endif /*  _MAL_H*/

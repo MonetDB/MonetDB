@@ -47,7 +47,7 @@
 #        (zb1,b1) := group(x);
 #print("b1 becomes"); print(b1);
 #print("zb1 becomes"); print(zb1);
-#        b2 := derive(b1,y);
+#        b2 := group(b1,y);
 #print("b2 becomes"); print(b2);
 #
 #
@@ -94,13 +94,13 @@ function Admin.main():int;	#0:(main:int)
 	io.print(b1);	#40:($72:int)<-(b1:bat[oid,oid])
 	io.print("zb1 becomes");	#41:($73:int)<-($74:str)
 	io.print(zb1);	#42:($75:int)<-(zb1:bat[chr,int])
-	b2 := group.derive(b1,y);	#43:(b2:bat[oid,oid])<-(b1:bat[oid,oid])(y:bat[oid,dbl])
+	b2 := group.group(b1,y);	#43:(b2:bat[oid,oid])<-(b1:bat[oid,oid])(y:bat[oid,dbl])
 	io.print("b2 becomes");	#44:($77:int)<-($78:str)
 	io.print(b2);	#45:($79:int)<-(b2:bat[oid,oid])
 end function;	#46:
 [ "group x" ]
 #---------------------------------#
-# BAT:	  tmp_9	| tmp_10| tmp_11  #
+# BAT:	  tmp_10| tmp_11| tmp_12  #
 # (oid)	  (chr)	| (dbl)	| (str)	  #
 #---------------------------------#
 [ 1@0,	  'a',	  1,	  "c"	  ]
@@ -113,7 +113,7 @@ end function;	#46:
 [ 8@0,	  'c',	  1,	  "a"	  ]
 [ "b1 becomes" ]
 #-----------------#
-# BAT:	  tmp_12  #
+# BAT:	  tmp_13  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  1@0	  ]
@@ -126,7 +126,7 @@ end function;	#46:
 [ 8@0,	  7@0	  ]
 [ "zb1 becomes" ]
 #-----------------#
-# BAT:	  tmp_13  #
+# BAT:	  tmp_14  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 1@0,	  2	  ]
@@ -134,7 +134,7 @@ end function;	#46:
 [ 7@0,	  2	  ]
 [ "b2 becomes" ]
 #-----------------#
-# BAT:	  tmp_14  #
+# BAT:	  tmp_15  #
 # (void)  (oid)	  #
 #-----------------#
 [ 1@0,	  1@0	  ]

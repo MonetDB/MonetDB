@@ -153,7 +153,7 @@ upon failure, which shortcuts the execution.
 	if(p->modname && 
 	   idcmp(p->modname,scope->name)==0 && 
 	   scope->typeChecker){
-		if( (scope->typeChecker)(scope,mb,p)==0)
+		if( (scope->typeChecker)(scope,mb,p)>=0)
 			return getArgType(mb,p,0);
 		return -3;
 	}
@@ -437,10 +437,10 @@ int resolveType(int dsttype, int srctype){
 }
 
 int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe){
-	if( getDestType(mb,p) == tpe) return 0;
+	if( getDestType(mb,p) == tpe) return tpe;
 	if( getDestType(mb,p) == malAnyType) {
 		setDestType(mb,p,tpe);
-		return 0;
+		return tpe;
 	}
 	if(p->modname)
 	GDKerror("type conflict in statement %s.%s[%d]\n",

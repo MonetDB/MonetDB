@@ -92,7 +92,7 @@ int malStartupAdmin(int listing){
 	initLibraries();
 	startupPrelude(c,SRVINIT,SRVORIGIN);
 	mal_scope = c->nspace->outer;
-	showErrors();
+	showErrors(c);
 	/* showScopeTrail(stdout,c->nspace);*/
 	return 1;
 }

@@ -55,9 +55,12 @@ mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk);
 #include "mal_interpreter.h"
 
 void showErrors(Client cntxt){
+	int i;
 	if( cntxt->errbuf==0 ) return;
 	if( *cntxt->errbuf){
+		i= strlen(cntxt->errbuf);
 		fputs(cntxt->errbuf,cntxt->fdout);
+		if( cntxt->errbuf[i-1]!='\n') fputc('\n',cntxt->fdout);
 		*cntxt->errbuf=0;
 	}
 }
@@ -180,9 +183,16 @@ MALevalExit:
 	/* pass the debug mode */
 	if(env && stk->cmd!='f') env->cmd = stk->cmd; 
 	/* garbage collect and return */
+	if( stk->exception >= 0) {
+		str nme= MALexception, msg;
+		if(stk->stk[stk->exception].vtype== TYPE_str)
+			msg= stk->stk[stk->exception].val.sval;
+		else { nme= getVarName(mb,stk->exception);
+			msg= 0;
+		}
+		ret=appendException(mb,stop-1,nme, " propagated", msg);
+	}
 	if( env != stk ) garbageCollector(mb,stk);
-	if( stk->exception >= 0) 
-		ret=appendException(mb,stop-1,"MALexception", "propagated",ret);
 	return ret;
 }
 @+ Safeguarding
@@ -312,7 +322,8 @@ to a recursive call to the interpreter.
 
 CMDcall initiates calling a linked function, passing pointers 
 to the parameters and result variable, i.e.  f(ptr a0,..., ptr aN)
-The function returns a 1 (GDK_SUCCEED upon success and <=0 to indicate failure.
+The function returns a MAL_SUCCEED upon success and a pointer
+to an exception string upon failure.
 Failure leads to raiseing an exception in the interpreter loop,
 by either looking up the relevant exception message in the module
 administration or construction of a standard string.
@@ -336,7 +347,7 @@ are determined at compile time.
 @= commandcall
 	@:evalParameters@
 	if( pci->fcn== NULL)
-		ret= raiseException(mb,stk->pc,"MALexception",
+		ret= raiseException(mb,stk->pc,MALexception,
 			"address of function missing\n");
 	else
 	switch(pci->argc){
@@ -352,14 +363,14 @@ are determined at compile time.
 	case 7 : ret = (str) (*pci->fcn)(argv[0],argv[1],argv[2],argv[3],
 				argv[4], argv[5],argv[6]); break;
 	default:
-		ret= raiseException(mb,stk->pc,"MALexception",
+		ret= raiseException(mb,stk->pc,MALexception,
 				"too many arguments\n");
 	}
 	@:resultParameter@
 
 @= patterncall
 	if( pci->fcn== NULL)
-		ret= raiseException(mb,stk->pc,"MALexception",
+		ret= raiseException(mb,stk->pc,MALexception,
 			"address of pattern missing\n");
 	else {
 		retval=  &stk->stk[pci->argv[0]];
@@ -377,7 +388,7 @@ non-returned values.
 	retval=  &stk->stk[pci->argv[0]];
 	garbageElement(retval);
 	if( pci->blk== NULL)
-		ret= raiseException(mb,stk->pc,"MALexception",
+		ret= raiseException(mb,stk->pc,MALexception,
 			"reference to MAL function missing\n");
 	else ret= runMAL(cntxt,pci->blk,mb,stk);
 	@:resultParameter@
@@ -512,8 +523,7 @@ the beginning.
 @+ Exception handling
 Calling a built-in or user-defined routine may lead to an error, 
 which in Monet 4.x leads to a message on the user's console,
-cached status message to be dealt with in MAL,
-or as an error status in Mapi.
+cached status message to be dealt with in MAL, or as an error status in Mapi.
 [there are about 55 GDKerror calls in gdk, 91 in monet, and 167 in 
 the modules/plain/*.  The number of fatal errors is 26,7, 2, respectively.]
 
@@ -537,7 +547,7 @@ if( pci->typechk== TYPE_UNKNOWN){
 	@:dynamicTypeCheck@
 	if( pci->typechk== TYPE_UNKNOWN) {
 		@:garbageTypeCheck@
-		ret= raiseException(mb,stk->pc,"MALexception",
+		ret= raiseException(mb,stk->pc,MALexception,
 				    "Instruction type not fixed\n");
 	}
 	@:endProfile@
@@ -555,7 +565,8 @@ may also be handled, i.e. by issueing an GDKerror message.The upper layers
 merely receive a negative integer value to indicate occurrence of an
 error somewhere in the calling sequence.
 
-We have to look into GDKerrbuf to see if they can be recognized.
+We have to also look into GDKerrbuf to see if there was
+an error raised deep insight the system.
 
 The policy for the time being realized in the new module structure is
 to require all functions to return a string-pointer. Upon successfull
@@ -564,19 +575,20 @@ encoding of the exceptional state encountered. This message
 starts with the exception identifer, followed by contextual details.
 
 @= exceptionHndlr
-if( ret != (str) GDK_SUCCEED && ret != NULL){
-	str msg, nxt;
-	int symid= pci->argv[0];
-	msg= strchr(ret,':');
+if( ret != MAL_SUCCEED || (cntxt->errbuf && *cntxt->errbuf)){
+	str msg = 0, nxt;
+	int symid= -1;
+	if(ret ) msg= strchr(ret,':');
 	if( msg) {
 		*msg= 0;
 		symid = findVariable(mb,ret);
+		*msg=':';
 	} else {
-		if( ret == (str) GDK_FAIL ){
+		if( ret == MAL_SUCCEED){
 			if( cntxt->errbuf){
-				msg= GDKstrdup(cntxt->errbuf);
+				ret= msg= GDKstrdup(cntxt->errbuf);
 				*cntxt->errbuf= 0;
-			} else msg = GDKstrdup("unspecified error\n");
+			} else ret= msg = GDKstrdup("unspecified error\n");
 			symid = findVariable(mb,"GDKerror");
 		} else {
 			stk->exception = pci->argv[0];
@@ -587,7 +599,6 @@ if( ret != (str) GDK_SUCCEED && ret != NULL){
 	}
 	stk->exception = symid; 
 	if( symid == -1){
-		*msg=':';
 		@:endProfile@
 		goto MALevalExit;
 	}
@@ -596,21 +607,19 @@ if( ret != (str) GDK_SUCCEED && ret != NULL){
 	if( (nxt= (str) setDynamicType(mb,stk,getVar(mb,symid),TYPE_str)) == 0){
 		v=  &stk->stk[symid];
 		v->vtype = TYPE_str;
-		v->val.pval= GDKstrdup(msg);
-		v->len= strlen(msg);
-		/* stk->exception = symid;*/
+		v->val.pval= GDKstrdup(locateException(mb,stk->pc,ret));
+		v->len= strlen(v->val.pval);
 		GDKfree(ret);
 		ret = 0;
 	} else GDKfree(nxt);
 	@:skipToCatch(symid)@
 }
 @-
-@+ Dynamic type
 During execution we may end up with functions that require
 a dynamic type check, because their arguments may not have
 been known upon compile time.
 This requires an additional call to the typechecker, each time
-the instruction is encoutered. Moreover, we may not store the
+the instruction is encountered. Moreover, we may not store the
 type information in the program description, because the
 actual types may differ between calls.
 @= dynamicTypeCheck

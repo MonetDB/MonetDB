@@ -14,6 +14,7 @@
 #	redo l;
 #end l;
 #
+!ERROR: label 'l' is readonly in main[5]
 function Admin.main():int;	#0:(main:int)
 	r := 0;	#1:(r:int)<-($2:int)
 	l := calc.<(r,1);	#2:(l:bit)<-(r:int)($4:int)
@@ -23,7 +24,5 @@ barrier	l;	#3:(l:bit)
 	redo l ;	#6:(l:bit)
 end	l;	#7:(l:bit)
 end function;	#8:
-!ERROR: label 'l' is readonly in main[5]
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
-
 >

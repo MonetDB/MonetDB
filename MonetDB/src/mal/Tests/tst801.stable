@@ -20,7 +20,7 @@
 #	deposit("STORE_MMAP",1:int);
 #	deposit("STORE_COMPR",2:int);
 #end function;
-function Admin.main():void;	#0:(main:void)
+function constants.main():void;	#0:(main:void)
 	const.deposit("STORE_MEM",0);	#1:($1:void)<-($2:str)($3:int)
 	const.deposit("STORE_MMAP",1);	#2:($4:void)<-($5:str)($6:int)
 	const.deposit("STORE_COMPR",2);	#3:($7:void)<-($8:str)($9:int)

@@ -67,6 +67,9 @@
 ### This should cause an error
 #	_v27:= find(b,"cat");
 #	_v28:= print(_v27);
+#catch MALexception;
+#	print(MALexception);
+#end MALexception;
 ##b.find("cat").print;
 ##
 ### Can we delete them and re-insert them later on
@@ -165,6 +168,7 @@
 ##b.reverse.like(" fox").print;
 ##quit;
 #
+!WARNING: newConstant:int coerced to lng
 function Admin.main():int;	#0:(main:int)
 	_v0 := calc.oid(20000000);	#1:(_v0:oid)<-($2:int)
 	_v1 := calc.setoid(_v0);	#2:(_v1:oid)<-(_v0:oid)
@@ -196,69 +200,72 @@ function Admin.main():int;	#0:(main:int)
 	_v26 := io.print(_v25);	#28:(_v26:int)<-(_v25:int)
 	_v27 := algebra.find(b,"cat");	#29:(_v27:int)<-(b:bat[str,int])($55:str)
 	_v28 := io.print(_v27);	#30:(_v28:int)<-(_v27:int)
-	_v29 := bat.delete(b,"fox",4);	#31:(_v29:bat[str,int])<-(b:bat[str,int])($58:str)($59:int)
-	_v30 := bat.delete(b,"the",1);	#32:(_v30:bat[str,int])<-(b:bat[str,int])($47:str)($61:int)
-	_v31 := bat.delete(b,".",10);	#33:(_v31:bat[str,int])<-(b:bat[str,int])($37:str)($38:int)
-	_v32 := io.print(b);	#34:(_v32:int)<-(b:bat[str,int])
-	_v33 := bat.insert(b,"fox",4);	#35:(_v33:bat[str,int])<-(b:bat[str,int])($58:str)($59:int)
-	_v34 := bat.insert(b,"the",1);	#36:(_v34:bat[str,int])<-(b:bat[str,int])($47:str)($61:int)
-	_v35 := bat.insert(b,".",10);	#37:(_v35:bat[str,int])<-(b:bat[str,int])($37:str)($38:int)
-	_v36 := algebra.count(b);	#38:(_v36:int)<-(b:bat[str,int])
-	_v37 := io.print(_v36);	#39:(_v37:int)<-(_v36:int)
-	_v38 := algebra.select(b,2,4);	#40:(_v38:bat[str,int])<-(b:bat[str,int])($70:int)($59:int)
-	_v39 := io.print(_v38);	#41:(_v39:int)<-(_v38:bat[str,int])
-	_v40 := calc.int(nil);	#42:(_v40:int)<-($73:void)
-	_v41 := algebra.select(b,7,_v40);	#43:(_v41:bat[str,int])<-(b:bat[str,int])($75:int)(_v40:int)
-	_v42 := io.print(_v41);	#44:(_v42:int)<-(_v41:bat[str,int])
-	_v43 := calc.int(nil);	#45:(_v43:int)<-($73:void)
-	_v44 := calc.int(nil);	#46:(_v44:int)<-($73:void)
-	_v45 := algebra.select(b,_v43,_v44);	#47:(_v45:bat[str,int])<-(b:bat[str,int])(_v43:int)(_v44:int)
-	_v46 := io.print(_v45);	#48:(_v46:int)<-(_v45:bat[str,int])
-	_v47 := algebra.fragment(b,"fox","quick",1,5);	#49:(_v47:bat[str,int])<-(b:bat[str,int])($58:str)($82:str)($61:int)($83:int)
-	bns := _v47;	#50:(bns:bat[str,int])<-(_v47:bat[str,int])
-	_v48 := io.print(bns);	#51:(_v48:int)<-(bns:bat[str,int])
-	_v49 := calc.str(nil);	#52:(_v49:str)<-($73:void)
-	_v50 := algebra.fragment(b,"fox",_v49,1,5);	#53:(_v50:bat[str,int])<-(b:bat[str,int])($58:str)(_v49:str)($61:int)($83:int)
-	_v51 := io.print(_v50);	#54:(_v51:int)<-(_v50:bat[str,int])
-	_v52 := calc.str(nil);	#55:(_v52:str)<-($73:void)
-	_v53 := calc.int(nil);	#56:(_v53:int)<-($73:void)
-	_v54 := calc.int(nil);	#57:(_v54:int)<-($73:void)
-	_v55 := algebra.fragment(b,"fox",_v52,_v53,_v54);	#58:(_v55:bat[str,int])<-(b:bat[str,int])($93:str)(_v52:str)(_v53:int)(_v54:int)
-	_v56 := io.print(_v55);	#59:(_v56:int)<-(_v55:bat[str,int])
-	_v57 := calc.str(nil);	#60:(_v57:str)<-($73:void)
-	_v58 := calc.int(nil);	#61:(_v58:int)<-($73:void)
-	_v59 := calc.int(nil);	#62:(_v59:int)<-($73:void)
-	_v60 := algebra.fragment(b,_v57,"f",_v58,_v59);	#63:(_v60:bat[str,int])<-(b:bat[str,int])(_v57:str)($99:str)(_v58:int)(_v59:int)
-	_v61 := io.print(_v60);	#64:(_v61:int)<-(_v60:bat[str,int])
-	_v62 := bat.reverse(b);	#65:(_v62:bat[int,str])<-(b:bat[str,int])
-	_v63 := calc.int(nil);	#66:(_v63:int)<-($73:void)
-	_v64 := calc.int(nil);	#67:(_v64:int)<-($73:void)
-	_v65 := calc.str(nil);	#68:(_v65:str)<-($73:void)
-	_v66 := algebra.fragment(_v62,_v63,_v64,_v65,"f");	#69:(_v66:bat[int,str])<-(_v62:bat[int,str])(_v63:int)(_v64:int)(_v65:str)($99:str)
-	_v67 := io.print(_v66);	#70:(_v67:int)<-(_v66:bat[int,str])
-	_v68 := bat.reverse(bns);	#71:(_v68:bat[int,str])<-(bns:bat[str,int])
-	_v69 := algebra.join(b,_v68);	#72:(_v69:bat[str,str])<-(b:bat[str,int])(_v68:bat[int,str])
-	bnj := _v69;	#73:(bnj:bat[str,str])<-(_v69:bat[str,str])
-	_v70 := io.print(bnj);	#74:(_v70:int)<-(bnj:bat[str,str])
-	_v71 := bat.reverse(bnj);	#75:(_v71:bat[str,str])<-(bnj:bat[str,str])
-	_v72 := algebra.semijoin(b,_v71);	#76:(_v72:bat[str,int])<-(b:bat[str,int])(_v71:bat[str,str])
-	bnk := _v72;	#77:(bnk:bat[str,int])<-(_v72:bat[str,int])
-	_v73 := io.print(bnk);	#78:(_v73:int)<-(bnk:bat[str,int])
-	_v74 := bat.reverse(b);	#79:(_v74:bat[int,str])<-(b:bat[str,int])
-	_v75 := algebra.like(_v74,"ox");	#80:(_v75:bat[int,str])<-(_v74:bat[int,str])($117:str)
-	_v76 := io.print(_v75);	#81:(_v76:int)<-(_v75:bat[int,str])
-	_v77 := bat.reverse(b);	#82:(_v77:bat[int,str])<-(b:bat[str,int])
-	_v78 := algebra.like(_v77,"fo");	#83:(_v78:bat[int,str])<-(_v77:bat[int,str])($121:str)
-	_v79 := io.print(_v78);	#84:(_v79:int)<-(_v78:bat[int,str])
-	_v80 := bat.reverse(b);	#85:(_v80:bat[int,str])<-(b:bat[str,int])
-	_v81 := algebra.like(_v80,"fox");	#86:(_v81:bat[int,str])<-(_v80:bat[int,str])($93:str)
-	_v82 := io.print(_v81);	#87:(_v82:int)<-(_v81:bat[int,str])
-	_v83 := bat.reverse(b);	#88:(_v83:bat[int,str])<-(b:bat[str,int])
-	_v84 := algebra.like(_v83," fox");	#89:(_v84:bat[int,str])<-(_v83:bat[int,str])($128:str)
-	_v85 := io.print(_v84);	#90:(_v85:int)<-(_v84:bat[int,str])
-end function;	#91:
+catch	MALexception;	#31:(MALexception:str)
+	io.print(MALexception);	#32:($58:int)<-(MALexception:str)
+end	MALexception;	#33:(MALexception:str)
+	_v29 := bat.delete(b,"fox",4);	#34:(_v29:bat[str,int])<-(b:bat[str,int])($60:str)($61:int)
+	_v30 := bat.delete(b,"the",1);	#35:(_v30:bat[str,int])<-(b:bat[str,int])($47:str)($63:int)
+	_v31 := bat.delete(b,".",10);	#36:(_v31:bat[str,int])<-(b:bat[str,int])($37:str)($38:int)
+	_v32 := io.print(b);	#37:(_v32:int)<-(b:bat[str,int])
+	_v33 := bat.insert(b,"fox",4);	#38:(_v33:bat[str,int])<-(b:bat[str,int])($60:str)($61:int)
+	_v34 := bat.insert(b,"the",1);	#39:(_v34:bat[str,int])<-(b:bat[str,int])($47:str)($63:int)
+	_v35 := bat.insert(b,".",10);	#40:(_v35:bat[str,int])<-(b:bat[str,int])($37:str)($38:int)
+	_v36 := algebra.count(b);	#41:(_v36:int)<-(b:bat[str,int])
+	_v37 := io.print(_v36);	#42:(_v37:int)<-(_v36:int)
+	_v38 := algebra.select(b,2,4);	#43:(_v38:bat[str,int])<-(b:bat[str,int])($72:int)($61:int)
+	_v39 := io.print(_v38);	#44:(_v39:int)<-(_v38:bat[str,int])
+	_v40 := calc.int(nil);	#45:(_v40:int)<-($75:void)
+	_v41 := algebra.select(b,7,_v40);	#46:(_v41:bat[str,int])<-(b:bat[str,int])($77:int)(_v40:int)
+	_v42 := io.print(_v41);	#47:(_v42:int)<-(_v41:bat[str,int])
+	_v43 := calc.int(nil);	#48:(_v43:int)<-($75:void)
+	_v44 := calc.int(nil);	#49:(_v44:int)<-($75:void)
+	_v45 := algebra.select(b,_v43,_v44);	#50:(_v45:bat[str,int])<-(b:bat[str,int])(_v43:int)(_v44:int)
+	_v46 := io.print(_v45);	#51:(_v46:int)<-(_v45:bat[str,int])
+	_v47 := algebra.fragment(b,"fox","quick",1,5);	#52:(_v47:bat[str,int])<-(b:bat[str,int])($60:str)($84:str)($63:int)($85:int)
+	bns := _v47;	#53:(bns:bat[str,int])<-(_v47:bat[str,int])
+	_v48 := io.print(bns);	#54:(_v48:int)<-(bns:bat[str,int])
+	_v49 := calc.str(nil);	#55:(_v49:str)<-($75:void)
+	_v50 := algebra.fragment(b,"fox",_v49,1,5);	#56:(_v50:bat[str,int])<-(b:bat[str,int])($60:str)(_v49:str)($63:int)($85:int)
+	_v51 := io.print(_v50);	#57:(_v51:int)<-(_v50:bat[str,int])
+	_v52 := calc.str(nil);	#58:(_v52:str)<-($75:void)
+	_v53 := calc.int(nil);	#59:(_v53:int)<-($75:void)
+	_v54 := calc.int(nil);	#60:(_v54:int)<-($75:void)
+	_v55 := algebra.fragment(b,"fox",_v52,_v53,_v54);	#61:(_v55:bat[str,int])<-(b:bat[str,int])($95:str)(_v52:str)(_v53:int)(_v54:int)
+	_v56 := io.print(_v55);	#62:(_v56:int)<-(_v55:bat[str,int])
+	_v57 := calc.str(nil);	#63:(_v57:str)<-($75:void)
+	_v58 := calc.int(nil);	#64:(_v58:int)<-($75:void)
+	_v59 := calc.int(nil);	#65:(_v59:int)<-($75:void)
+	_v60 := algebra.fragment(b,_v57,"f",_v58,_v59);	#66:(_v60:bat[str,int])<-(b:bat[str,int])(_v57:str)($101:str)(_v58:int)(_v59:int)
+	_v61 := io.print(_v60);	#67:(_v61:int)<-(_v60:bat[str,int])
+	_v62 := bat.reverse(b);	#68:(_v62:bat[int,str])<-(b:bat[str,int])
+	_v63 := calc.int(nil);	#69:(_v63:int)<-($75:void)
+	_v64 := calc.int(nil);	#70:(_v64:int)<-($75:void)
+	_v65 := calc.str(nil);	#71:(_v65:str)<-($75:void)
+	_v66 := algebra.fragment(_v62,_v63,_v64,_v65,"f");	#72:(_v66:bat[int,str])<-(_v62:bat[int,str])(_v63:int)(_v64:int)(_v65:str)($101:str)
+	_v67 := io.print(_v66);	#73:(_v67:int)<-(_v66:bat[int,str])
+	_v68 := bat.reverse(bns);	#74:(_v68:bat[int,str])<-(bns:bat[str,int])
+	_v69 := algebra.join(b,_v68);	#75:(_v69:bat[str,str])<-(b:bat[str,int])(_v68:bat[int,str])
+	bnj := _v69;	#76:(bnj:bat[str,str])<-(_v69:bat[str,str])
+	_v70 := io.print(bnj);	#77:(_v70:int)<-(bnj:bat[str,str])
+	_v71 := bat.reverse(bnj);	#78:(_v71:bat[str,str])<-(bnj:bat[str,str])
+	_v72 := algebra.semijoin(b,_v71);	#79:(_v72:bat[str,int])<-(b:bat[str,int])(_v71:bat[str,str])
+	bnk := _v72;	#80:(bnk:bat[str,int])<-(_v72:bat[str,int])
+	_v73 := io.print(bnk);	#81:(_v73:int)<-(bnk:bat[str,int])
+	_v74 := bat.reverse(b);	#82:(_v74:bat[int,str])<-(b:bat[str,int])
+	_v75 := algebra.like(_v74,"ox");	#83:(_v75:bat[int,str])<-(_v74:bat[int,str])($119:str)
+	_v76 := io.print(_v75);	#84:(_v76:int)<-(_v75:bat[int,str])
+	_v77 := bat.reverse(b);	#85:(_v77:bat[int,str])<-(b:bat[str,int])
+	_v78 := algebra.like(_v77,"fo");	#86:(_v78:bat[int,str])<-(_v77:bat[int,str])($123:str)
+	_v79 := io.print(_v78);	#87:(_v79:int)<-(_v78:bat[int,str])
+	_v80 := bat.reverse(b);	#88:(_v80:bat[int,str])<-(b:bat[str,int])
+	_v81 := algebra.like(_v80,"fox");	#89:(_v81:bat[int,str])<-(_v80:bat[int,str])($95:str)
+	_v82 := io.print(_v81);	#90:(_v82:int)<-(_v81:bat[int,str])
+	_v83 := bat.reverse(b);	#91:(_v83:bat[int,str])<-(b:bat[str,int])
+	_v84 := algebra.like(_v83," fox");	#92:(_v84:bat[int,str])<-(_v83:bat[int,str])($130:str)
+	_v85 := io.print(_v84);	#93:(_v85:int)<-(_v84:bat[int,str])
+end function;	#94:
 #-------------------------#
-# BAT:		  tmp_3	  #
+# BAT:		  tmp_7	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "the",	  1	  ]
@@ -276,9 +283,9 @@ end function;	#91:
 [ 1 ]
 [ 4 ]
 [ nil ]
-[ 0 ]
+[ "MALexception:Admin.main[29]:CMDfind: value not found.\n" ]
 #-------------------------#
-# BAT:		  tmp_3	  #
+# BAT:		  tmp_7	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "",		  nil	  ]
@@ -292,14 +299,14 @@ end function;	#91:
 [ nil,		  9	  ]
 [ 12 ]
 #-------------------------#
-# BAT:		  tmp_4	  #
+# BAT:		  tmp_8	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
 [ "brown",	  3	  ]
 [ "fox",	  4	  ]
 #-----------------#
-# BAT:	  tmp_5	  #
+# BAT:	  tmp_9	  #
 # (str)	  (int)	  #
 #-----------------#
 [ "lazy", 7	  ]
@@ -307,7 +314,7 @@ end function;	#91:
 [ nil,	  9	  ]
 [ ".",	  10	  ]
 #-------------------------#
-# BAT:		  tmp_6	  #
+# BAT:		  tmp_10  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -321,14 +328,14 @@ end function;	#91:
 [ "the",	  1	  ]
 [ ".",		  10	  ]
 #-------------------------#
-# BAT:		  tmp_7	  #
+# BAT:		  tmp_11  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
 #-------------------------#
-# BAT:		  tmp_8	  #
+# BAT:		  tmp_12  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -336,7 +343,7 @@ end function;	#91:
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
 #-------------------------#
-# BAT:		  tmp_9	  #
+# BAT:		  tmp_13  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -346,7 +353,7 @@ end function;	#91:
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
 #-------------------------#
-# BAT:		  tmp_10  #
+# BAT:		  tmp_14  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "",		  nil	  ]
@@ -356,7 +363,7 @@ end function;	#91:
 [ nil,		  9	  ]
 [ ".",		  10	  ]
 #-------------------------#
-# BAT:	  tmp_11	  #
+# BAT:	  tmp_15	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ nil,	  ""		  ]
@@ -366,36 +373,36 @@ end function;	#91:
 [ 9,	  nil		  ]
 [ 10,	  "."		  ]
 #---------------------------------#
-# BAT:		  tmp_12	  #
+# BAT:		  tmp_16	  #
 # (str)		  (str)		  #
 #---------------------------------#
 [ "quick",	  "quick"	  ]
 [ "jumps",	  "jumps"	  ]
 [ "fox",	  "fox"		  ]
 #-------------------------#
-# BAT:		  tmp_13  #
+# BAT:		  tmp_17  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
 #-----------------#
-# BAT:	  tmp_14  #
+# BAT:	  tmp_18  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
 #-----------------#
-# BAT:	  tmp_15  #
+# BAT:	  tmp_19  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
 #-----------------#
-# BAT:	  tmp_16  #
+# BAT:	  tmp_20  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
 #-----------------#
-# BAT:	  tmp_17  #
+# BAT:	  tmp_21  #
 # (int)	  (str)	  #
 #-----------------#
 >

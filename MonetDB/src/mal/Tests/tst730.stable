@@ -8,19 +8,19 @@
 # monetrc:/ufs/mk/.monet.conf
 ## functions and rules with variable arguments complicate our live
 #
-#function pr(format:str,arg:any[]):void;
+#function pr(format:str,arg:any...):void;
 #	i:= -1;
 #barrier  b:= iterator.argument(i,arg);
 #end b;
 #end function; 
-function Admin.pr(format:str,arg:any[]):void;	#0:(pr:void)<-(format:str)(arg:any)
+function Admin.pr(format:str,arg:any...):void;	#0:(pr:void)<-(format:str)(arg:any)
 	i := -1;	#1:(i:int)<-($4:int)
 barrier	b := iterator.argument(i,arg);	#2 unknown:(b:any)<-(i:int)(arg:any)
 end	b;	#3:(b:any)
 end function;	#4:
 #
 ## how to iterator through a variable list
-#function prStr(format:str,arg:str[]):void;
+#function prStr(format:str,arg:str...):void;
 #	i:= -1;
 #	limit:= Array.getLength(arg);
 #barrier  b:= nextElement(i,0,limit);	#elm:= arg[i]
@@ -30,7 +30,10 @@ end function;	#4:
 #	printf(elm);
 #end b;
 #end function; 
-function Admin.prStr(format:str,arg:str[]):void;	#0:(prStr:void)<-(format:str)(arg:str)
+!ERROR: 'Array.getLength' undefined in Admin.prStr[2]
+!ERROR: 'Array.get' undefined in Admin.prStr[4]
+!ERROR: 'printf' undefined in Admin.prStr[6]
+function Admin.prStr(format:str,arg:str...):void;	#0:(prStr:void)<-(format:str)(arg:str)
 	i := -1;	#1:(i:int)<-($4:int)
 	limit := Array.getLength(arg);	#2 unknown:(limit:any)<-(arg:str)
 barrier	b := nextElement(i,0,limit);	#3 unknown:(b:any)<-(i:int)($7:int)(limit:any)
@@ -45,15 +48,11 @@ end function;	#9:
 #prStr("hello",1,true);
 #prStr("hello","quick","brown","fox");
 #
+!ERROR: 'prStr' undefined in Admin.main[2]
 function Admin.main():int;	#0:(main:int)
 	Admin.pr("hello",1,true);	#1:($1:void)<-($2:str)($3:int)($4:bit)
 	prStr("hello",1,true);	#2 unknown:($5:any)<-($2:str)($3:int)($4:bit)
 	Admin.prStr("hello","quick","brown","fox");	#3:($6:void)<-($2:str)($7:str)($8:str)($9:str)
 end function;	#4:
-!ERROR: 'getLength' undefined in Admin.prStr[2]
-!ERROR: 'get' undefined in Admin.prStr[4]
-!ERROR: 'printf' undefined in Admin.prStr[6]
-!ERROR: 'prStr' undefined in Admin.main[2]
-!ERROR: MALexception:Admin.pr[2]:Instruction type not fixed
-
+!ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
 >

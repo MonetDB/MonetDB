@@ -69,18 +69,18 @@ typedef struct tms Tms;
 typedef struct mallinfo Mallinfo;
 typedef struct rusage Rusage;
 
-mal_export int activateCounter(str name);
-mal_export int deactivateCounter(str name);
-mal_export int openProfilerStream();
-mal_export int closeProfilerStream();
+mal_export str activateCounter(str name);
+mal_export str deactivateCounter(str name);
+mal_export str openProfilerStream();
+mal_export str closeProfilerStream();
 
 mal_export void eventRecord(Scope cntxt, MalBlkPtr mb,
 			   MalStkPtr stk, InstrPtr pci);
-mal_export int setLogFile(Scope cntxt, str fname);
-mal_export int setStartPoint(Scope cntxt, str mod, str fcn);
-mal_export int setEndPoint(Scope cntxt, str mod, str fcn);
-mal_export int startProfiling();
-mal_export int stopProfiling();
+mal_export str setLogFile(Scope cntxt, str fname);
+mal_export str setStartPoint(Scope cntxt, str mod, str fcn);
+mal_export str setEndPoint(Scope cntxt, str mod, str fcn);
+mal_export str startProfiling();
+mal_export str stopProfiling();
 
 mal_export int instrFilter(InstrPtr pci, str mod, str fcn);
 mal_export int eventFilter(Scope cntxt, str mod, str fcn);
@@ -99,6 +99,7 @@ The counter is incremented each time the instruction is taken into
 execution. Upon return, the timer is incremented with the microseconds
 spent.
 @c
+#include "mal_function.h"
 #include "mal_profiler.h"
 
 #ifdef MALprofiler
@@ -151,13 +152,12 @@ definition.
 	for(i=0; profileCounter[i].name;i++)
 	if( strcmp(profileCounter[i].name,name)==0){
 		profileCounter[i].status = @1 ;
-		return GDK_SUCCEED;
+		return 0;
 	}
-	GDKerror("profile counter '%s' undefined\n",name);
-	return GDK_FAIL;
+	return throwException("@2:profile counter '%s' undefined",name);
 @c
-int activateCounter(str name){ @:setCounter(1)@ }
-int deactivateCounter(str name){ @:setCounter(0)@ }
+str activateCounter(str name){ @:setCounter(1,activateCounter)@ }
+str deactivateCounter(str name){ @:setCounter(0,deactivateCounter)@ }
 
 #define getEventStream()	\
 	if( profileLock==0) profileLock= MT_create_lock(); \
@@ -419,38 +419,37 @@ inspect the properties of BATs and their propagation.
 #endif
 }
 
-int setLogFile(Scope cntxt, str fname){
+str setLogFile(Scope cntxt, str fname){
 #ifdef MALprofiler
 	if( profileLock==0) profileLock= MT_create_lock();
 	MT_set_lock(profileLock,"profileLock");
 	eventstream = fopen(fname,"w");
 	if( eventstream == NULL){
-		GDKerror("Could not create event stream file\n");
-		return -1;
+		return throwMessage("Could not create event stream file");
 	}
 	MT_unset_lock(profileLock,"profileLock");
 #else
 	printf("# Monet not compiled for profiling\n");
 #endif
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 static str clientPrompt;
-int openProfilerStream(){
+str openProfilerStream(){
 	Client c= getClient();
 	malProfileMode = TRUE;
 	eventstream = c->fdout;
 	delayswitch=1;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int closeProfilerStream(){
+str closeProfilerStream(){
 	Client c= getClient();
 	if( eventstream != c->fdout) fclose(eventstream);
 	malProfileMode = FALSE;
 	eventstream = NULL;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int setStartPoint(Scope cntxt, str mod, str fcn){
+str setStartPoint(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
 	getEventStream();
 	printf("# start point not set\n");
@@ -458,9 +457,9 @@ int setStartPoint(Scope cntxt, str mod, str fcn){
 #else
 	printf("# Monet not compiled for profiling\n");
 #endif
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int setEndPoint(Scope cntxt, str mod, str fcn){
+str setEndPoint(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
 	getEventStream();
 	printf("# end point not set\n");
@@ -468,23 +467,23 @@ int setEndPoint(Scope cntxt, str mod, str fcn){
 #else
 	printf("# Monet not compiled for profiling\n");
 #endif
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @-
 When you receive the message to start profiling, we
 should wait for the next instruction the stream
 is initiated. This is controlled by a delay-switch
 @c
-int startProfiling(){
+str startProfiling(){
 	if( eventstream != NULL){
 		malProfileMode= TRUE;
 		delayswitch=1;
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int stopProfiling(){
+str stopProfiling(){
 	malProfileMode= FALSE;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @-
 Performance tracing is triggered on an instruction basis.

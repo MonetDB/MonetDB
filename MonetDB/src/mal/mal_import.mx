@@ -163,7 +163,7 @@ resolving addresses.
 	if( prg){
 		str msg;
 		msg= (str) runMAL(c,prg->def,0,0);
-		if( msg && msg != (str) GDK_SUCCEED){
+		if( msg ){
 			GDKerror(msg);
 			GDKfree(msg);
 		}
@@ -223,7 +223,7 @@ void processInput(Client c,MalStkPtr glb)
 		chkProgram(c->nspace, c->curprg->def);
 		if( mb->errors == 0){
 			msg= (str) runMAL(c,mb,0,glb);
-			if( msg && msg != (str) GDK_SUCCEED) {
+			if( msg ){
 				GDKerror(msg);
 				if( !c->listing) 
 					printFunction(c->fdout,mb);

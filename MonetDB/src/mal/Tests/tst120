@@ -9,4 +9,3 @@ b:= first(1);
 c:= first(1:sht);
 d:= first("hello world");
 e:= top.first(2:sht);
-mdb();

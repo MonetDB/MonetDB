@@ -41,8 +41,7 @@ html
 
 typedef int malType;
 #define malVarType -2
-#define malAnyType 255
-#define TYPE_type 254
+#define malAnyType 255	/* identical to TYPE_any */
 
 #define malVARG " malVARG"
 #define TMPMARKER '$'
@@ -120,6 +119,7 @@ str malTypeName(malType tpe)
 #endif
 	if( tpe == malAnyType ) return GDKstrdup("any");
 	if( tpe == malVarType ) return GDKstrdup("var");
+	if( tpe == TYPE_nil) return GDKstrdup("nil");
 	if( isaBatType(tpe)){
 		char buf[1024],*s;
 		int l=1024;

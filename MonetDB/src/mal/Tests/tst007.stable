@@ -82,6 +82,9 @@ end	FTE;	#23:(FTE:any)
 barrier	FS := not(FTE);	#24 unknown:(FS:any)<-(FTE:any)
 end	FS;	#25:(FS:any)
 end function;	#26:
+Start dynamic type check on:
+	Tail := bat.fetch(b,H);	#2 unknown:(Tail:any)<-(b:any)(H:any)
+type checked version:
+	Tail := bat.fetch(b,H);	#-1 unknown:(Tail:any)<-(b:any)(H:any)
 !ERROR: MALexception:Admin.main[2]:Instruction type not fixed
-
 >

@@ -19,6 +19,9 @@
 #end	t;
 #	i:= 0;
 #
+!ERROR: end-label 'v' doesnot match 't' in main[6]
+!ERROR: end-label 't' doesnot match 'v' in main[9]
+!ERROR: end-label 'v' doesnot match 't' in main[6]
 function Admin.main():int;	#0:(main:int)
 	i := 0;	#1:(i:int)<-($2:int)
 barrier	v := 1;	#2:(v:int)<-($4:int)
@@ -31,9 +34,5 @@ end	v;	#6:(v:int)
 end	t;	#9:(t:bit)
 	i := 0;	#10:(i:int)<-($2:int)
 end function;	#11:
-!ERROR: end-label 'v' doesnot match 't' in main[6]
-!ERROR: end-label 't' doesnot match 'v' in main[9]
-!ERROR: end-label 'v' doesnot match 't' in main[6]
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
-
 >

@@ -5,3 +5,6 @@ bbp.open();
 c:= bbp.take("myfirstbat");
 print(c);
 bbp.close();
+catch MALexception;
+	print(MALexception);
+end MALexception;

@@ -46,5 +46,5 @@ monetrc=/ufs/mk/.monet.conf
 architecture=i686-pc-linux-gnu
 version=5.0
 environment=unknown yet
-pi=nil
+pi=3.147
 >

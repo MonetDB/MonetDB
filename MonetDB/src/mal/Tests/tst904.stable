@@ -14,9 +14,10 @@
 #	insert(b,i,i);
 #	redo v;
 #end v;
+#print(b);
 #c:= 1;
-#x:= multiplex.multiplex("+",b,c);
-#print(x);
+#xz:= multiplex.script("+",b,c);
+#print(xz);
 #
 function Admin.main():int;	#0:(main:int)
 	b := mal.new(lng,lng);	#1:(b:bat[lng,lng])<-(lng:lng)(lng:lng)
@@ -25,8 +26,37 @@ barrier	v := mal.nextElement(i,0,10);	#3:(v:bit)<-(i:lng)($6:lng)($7:lng)
 	bat.insert(b,i,i);	#4:($8:bat[lng,lng])<-(b:bat[lng,lng])(i:lng)(i:lng)
 	redo v ;	#5:(v:bit)
 end	v;	#6:(v:bit)
-	c := 1;	#7:(c:int)<-($10:int)
-	x := multiplex.multiplex("+",b,c);	#8:(x:bat[lng,lng])<-($12:str)(b:bat[lng,lng])(c:int)
-	io.print(x);	#9:($13:int)<-(x:bat[lng,lng])
-end function;	#10:
+	io.print(b);	#7:($9:int)<-(b:bat[lng,lng])
+	c := 1;	#8:(c:int)<-($11:int)
+	xz := multiplex.script("+",b,c);	#9:(xz:bat[lng,lng])<-($13:str)(b:bat[lng,lng])(c:int)
+	io.print(xz);	#10:($14:int)<-(xz:bat[lng,lng])
+end function;	#11:
+#-----------------#
+# BAT:	  tmp_3	  #
+# (lng)	  (lng)	  #
+#-----------------#
+[ 0,	  0	  ]
+[ 1,	  1	  ]
+[ 2,	  2	  ]
+[ 3,	  3	  ]
+[ 4,	  4	  ]
+[ 5,	  5	  ]
+[ 6,	  6	  ]
+[ 7,	  7	  ]
+[ 8,	  8	  ]
+[ 9,	  9	  ]
+#-----------------#
+# BAT:	  tmp_4	  #
+# (lng)	  (lng)	  #
+#-----------------#
+[ 0,	  1	  ]
+[ 1,	  2	  ]
+[ 2,	  3	  ]
+[ 3,	  4	  ]
+[ 4,	  5	  ]
+[ 5,	  6	  ]
+[ 6,	  7	  ]
+[ 7,	  8	  ]
+[ 8,	  9	  ]
+[ 9,	  10	  ]
 >

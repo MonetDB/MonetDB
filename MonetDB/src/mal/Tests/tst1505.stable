@@ -45,6 +45,12 @@
 #	xn:= not(x); print(x,xn);
 #	xandx:= and(x,A); print(x,xandx);
 #	xorx:= or(x,A); print(x,xorx);
+#print("ifthen group");
+#	xif0:= ifthen(x,x);print(x,xif0);
+#	xif1:= ifthen(x,false);print(x,xif1);
+#	xif2:= ifthenelse(x,x,xn);print(x,x,xn,xif2);
+#	xif3:= ifthenelse(x,x,true);print(x,x,xif3);
+#	xif4:= ifthenelse(x,1,2);print(x,xif4);
 #print("accumulators");
 #	x2:= not(x,x); print(x,x2);
 #	x3:= and(x,A); print(x,A,x3);
@@ -91,16 +97,27 @@ function Admin.main():int;	#0:(main:int)
 	io.print(x,xandx);	#38:($60:int)<-(x:bat[oid,bit])(xandx:bat[oid,bit])
 	xorx := batcalc.or(x,A);	#39:(xorx:bat[oid,bit])<-(x:bat[oid,bit])(A:bat[oid,bit])
 	io.print(x,xorx);	#40:($62:int)<-(x:bat[oid,bit])(xorx:bat[oid,bit])
-	io.print("accumulators");	#41:($63:int)<-($64:str)
-	x2 := batcalc.not(x,x);	#42:(x2:bat[oid,bit])<-(x:bat[oid,bit])(x:bat[oid,bit])
-	io.print(x,x2);	#43:($66:int)<-(x:bat[oid,bit])(x2:bat[oid,bit])
-	x3 := batcalc.and(x,A);	#44:(x3:bat[oid,bit])<-(x:bat[oid,bit])(A:bat[oid,bit])
-	io.print(x,A,x3);	#45:($68:int)<-(x:bat[oid,bit])(A:bat[oid,bit])(x3:bat[oid,bit])
-	x4 := batcalc.or(x,A);	#46:(x4:bat[oid,bit])<-(x:bat[oid,bit])(A:bat[oid,bit])
-	io.print(x,A,x4);	#47:($70:int)<-(x:bat[oid,bit])(A:bat[oid,bit])(x4:bat[oid,bit])
-end function;	#48:
+	io.print("ifthen group");	#41:($63:int)<-($64:str)
+	xif0 := batcalc.ifthen(x,x);	#42:(xif0:bat[oid,bit])<-(x:bat[oid,bit])(x:bat[oid,bit])
+	io.print(x,xif0);	#43:($66:int)<-(x:bat[oid,bit])(xif0:bat[oid,bit])
+	xif1 := batcalc.ifthen(x,false);	#44:(xif1:bat[oid,bit])<-(x:bat[oid,bit])($45:bit)
+	io.print(x,xif1);	#45:($68:int)<-(x:bat[oid,bit])(xif1:bat[oid,bit])
+	xif2 := batcalc.ifthenelse(x,x,xn);	#46:(xif2:bat[oid,bit])<-(x:bat[oid,bit])(x:bat[oid,bit])(xn:bat[oid,bit])
+	io.print(x,x,xn,xif2);	#47:($70:int)<-(x:bat[oid,bit])(x:bat[oid,bit])(xn:bat[oid,bit])(xif2:bat[oid,bit])
+	xif3 := batcalc.ifthenelse(x,x,true);	#48:(xif3:bat[oid,bit])<-(x:bat[oid,bit])(x:bat[oid,bit])($42:bit)
+	io.print(x,x,xif3);	#49:($72:int)<-(x:bat[oid,bit])(x:bat[oid,bit])(xif3:bat[oid,bit])
+	xif4 := batcalc.ifthenelse(x,1,2);	#50:(xif4:bat[oid,int])<-(x:bat[oid,bit])($74:int)($75:int)
+	io.print(x,xif4);	#51:($76:int)<-(x:bat[oid,bit])(xif4:bat[oid,int])
+	io.print("accumulators");	#52:($77:int)<-($78:str)
+	x2 := batcalc.not(x,x);	#53:(x2:bat[oid,bit])<-(x:bat[oid,bit])(x:bat[oid,bit])
+	io.print(x,x2);	#54:($80:int)<-(x:bat[oid,bit])(x2:bat[oid,bit])
+	x3 := batcalc.and(x,A);	#55:(x3:bat[oid,bit])<-(x:bat[oid,bit])(A:bat[oid,bit])
+	io.print(x,A,x3);	#56:($82:int)<-(x:bat[oid,bit])(A:bat[oid,bit])(x3:bat[oid,bit])
+	x4 := batcalc.or(x,A);	#57:(x4:bat[oid,bit])<-(x:bat[oid,bit])(A:bat[oid,bit])
+	io.print(x,A,x4);	#58:($84:int)<-(x:bat[oid,bit])(A:bat[oid,bit])(x4:bat[oid,bit])
+end function;	#59:
 #-----------------#
-# BAT:	  tmp_9	  #
+# BAT:	  tmp_11  #
 # (oid)	  (bit)	  #
 #-----------------#
 [ 1@0,	  true	  ]
@@ -114,7 +131,7 @@ end function;	#48:
 [ "count" ]
 [ 8 ]
 #-----------------#
-# BAT:	  tmp_10  #
+# BAT:	  tmp_12  #
 # (oid)	  (bit)	  #
 #-----------------#
 [ 1@0,	  true	  ]
@@ -122,7 +139,7 @@ end function;	#48:
 [ 3@0,	  true	  ]
 [ 4@0,	  false	  ]
 #-----------------#
-# BAT:	  tmp_11  #
+# BAT:	  tmp_13  #
 # (oid)	  (bit)	  #
 #-----------------#
 [ 1@0,	  true	  ]
@@ -130,7 +147,7 @@ end function;	#48:
 [ 3@0,	  false	  ]
 [ 4@0,	  false	  ]
 #-------------------------#
-# BAT:	  tmp_10| tmp_12  #
+# BAT:	  tmp_12| tmp_14  #
 # (oid)	  (bit)	| (bit)	  #
 #-------------------------#
 [ 1@0,	  true,	  false	  ]
@@ -138,7 +155,7 @@ end function;	#48:
 [ 3@0,	  true,	  false	  ]
 [ 4@0,	  false,  true	  ]
 #-------------------------#
-# BAT:	  tmp_10| tmp_13  #
+# BAT:	  tmp_12| tmp_15  #
 # (oid)	  (bit)	| (bit)	  #
 #-------------------------#
 [ 1@0,	  true,	  true	  ]
@@ -146,16 +163,53 @@ end function;	#48:
 [ 3@0,	  true,	  false	  ]
 [ 4@0,	  false,  false	  ]
 #-------------------------#
-# BAT:	  tmp_10| tmp_14  #
+# BAT:	  tmp_12| tmp_16  #
 # (oid)	  (bit)	| (bit)	  #
 #-------------------------#
 [ 1@0,	  true,	  true	  ]
 [ 2@0,	  false,  true	  ]
 [ 3@0,	  true,	  true	  ]
 [ 4@0,	  false,  false	  ]
+[ "ifthen group" ]
+#-------------------------#
+# BAT:	  tmp_12| tmp_17  #
+# (oid)	  (bit)	| (bit)	  #
+#-------------------------#
+[ 1@0,	  true,	  true	  ]
+[ 3@0,	  true,	  true	  ]
+#-------------------------#
+# BAT:	  tmp_12| tmp_18  #
+# (oid)	  (bit)	| (bit)	  #
+#-------------------------#
+[ 1@0,	  true,	  false	  ]
+[ 3@0,	  true,	  false	  ]
+#-----------------------------------------#
+# BAT:	  tmp_12| tmp_12| tmp_14| tmp_19  #
+# (oid)	  (bit)	| (bit)	| (bit)	| (bit)	  #
+#-----------------------------------------#
+[ 1@0,	  true,	  true,	  false,  true	  ]
+[ 2@0,	  false,  false,  true,	  true	  ]
+[ 3@0,	  true,	  true,	  false,  true	  ]
+[ 4@0,	  false,  false,  true,	  true	  ]
+#---------------------------------#
+# BAT:	  tmp_12| tmp_12| tmp_20  #
+# (oid)	  (bit)	| (bit)	| (bit)	  #
+#---------------------------------#
+[ 1@0,	  true,	  true,	  true	  ]
+[ 2@0,	  false,  false,  true	  ]
+[ 3@0,	  true,	  true,	  true	  ]
+[ 4@0,	  false,  false,  true	  ]
+#-------------------------#
+# BAT:	  tmp_12| tmp_21  #
+# (oid)	  (bit)	| (int)	  #
+#-------------------------#
+[ 1@0,	  true,	  1	  ]
+[ 2@0,	  false,  2	  ]
+[ 3@0,	  true,	  1	  ]
+[ 4@0,	  false,  2	  ]
 [ "accumulators" ]
 #-------------------------#
-# BAT:	  tmp_10| tmp_10  #
+# BAT:	  tmp_12| tmp_12  #
 # (oid)	  (bit)	| (bit)	  #
 #-------------------------#
 [ 1@0,	  false,  false	  ]
@@ -163,7 +217,7 @@ end function;	#48:
 [ 3@0,	  false,  false	  ]
 [ 4@0,	  true,	  true	  ]
 #---------------------------------#
-# BAT:	  tmp_10| tmp_11| tmp_15  #
+# BAT:	  tmp_12| tmp_13| tmp_22  #
 # (oid)	  (bit)	| (bit)	| (bit)	  #
 #---------------------------------#
 [ 1@0,	  false,  true,	  false	  ]
@@ -171,7 +225,7 @@ end function;	#48:
 [ 3@0,	  false,  false,  false	  ]
 [ 4@0,	  true,	  false,  false	  ]
 #---------------------------------#
-# BAT:	  tmp_10| tmp_11| tmp_16  #
+# BAT:	  tmp_12| tmp_13| tmp_23  #
 # (oid)	  (bit)	| (bit)	| (bit)	  #
 #---------------------------------#
 [ 1@0,	  false,  true,	  true	  ]

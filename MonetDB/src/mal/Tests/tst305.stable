@@ -28,6 +28,5 @@ function Admin.main():int;	#0:(main:int)
 	Admin.myException();	#1:($1:any)
 	io.print("should not come here");	#2:($2:int)<-($3:str)
 end function;	#3:
-!ERROR: IllegalAccess:Admin.myException[2]:new exception
-MALexception:Admin.myException[4]:propagated
+!ERROR: new exceptionMALexception:Admin.myException[4]: propagated
 >

@@ -12,7 +12,14 @@ bbp.close();
 # the temporary bats of the user
 bbp.open();
 v:= bbp.take("myfirstbat");
+catch MALexception;
+	print(MALexception);
+end MALexception;
 print(v);
 x:= bbp.getObjects();
 print(x);
 bbp.close();
+#catch MALexception;
+	#print(MALexception);
+#end MALexception;
+#print("done");

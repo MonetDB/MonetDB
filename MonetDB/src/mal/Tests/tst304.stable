@@ -36,6 +36,5 @@ catch	IllegalAccess;	#3:(IllegalAccess:str)
 end	IllegalAccess;	#5:(IllegalAccess:str)
 	io.print("done");	#6:($7:int)<-($8:str)
 end function;	#7:
-catched IllegalAccess
-[ "done" ]
+!ERROR: new exceptionMALexception:Admin.myException[4]: propagated
 >

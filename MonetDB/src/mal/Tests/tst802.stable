@@ -11,7 +11,7 @@
 #u:str:=const.take("user");
 #printf("User bound to %s\n",u);
 #
-#v:int:= take("roomnumber");
+#v:int:= const.take("roomnumber");
 #
 #v:= 123;
 #v:= v+1;
@@ -28,6 +28,5 @@ function Admin.main():int;	#0:(main:int)
 	const.release("roomnumber",v);	#7:($10:void)<-($6:str)(v:int)
 end function;	#8:
 User bound to Admin
-!ERROR: boxException:Admin.main[3]:roomnumber:failed to take from box
-
+!ERROR: MALexception:CONSTtake:roomnumber:failed to take from box
 >

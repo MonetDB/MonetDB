@@ -314,7 +314,7 @@ int depositBox(Box box, str name, ValPtr val){
 	printf("depositBox: entered '%s' at %d type %d\n",
 		name,i,v->vtype);
 #endif
-	return GDK_SUCCEED;
+	return 0;
 }
 @-
 Taking an element from a box is only permitted if the type of
@@ -327,25 +327,25 @@ int takeBox(Box box, str name, ValPtr val){
 #ifdef DEBUG_MAL_BOX
 		printf("takeBox: found '%s' at %d\n",name,i);
 #endif
-	if( i<0) return GDK_FAIL;
+	if( i<0) return i;
 	v= &box->val->stk[i];
 	if(val->vtype != v->vtype && v->vtype!= TYPE_any){
 #ifdef DEBUG_MAL_BOX
 	printf("takeBox:type error %d,%d\n",val->vtype,box->val->stk[i].vtype);
 #endif
-		return GDK_FAIL;
+		return -1;
 	}
 	VALcopy(val, &box->val->stk[i]);
 	if( val->vtype == TYPE_bat){
 		BAT *b;
 		b= (BAT*) BBPgetdesc(val->val.bval);
 		if( b ) BBPfix(b->batCacheid);
-		else return GDK_FAIL;
+		else return -1;
 	}
 #ifdef DEBUG_MAL_BOX
 	printf("takeBox:'%s' from '%s'\n",name,box->name);
 #endif
-	return GDK_SUCCEED;
+	return 0;
 }
 
 @-
@@ -362,13 +362,13 @@ int bindBAT(Box box, str name, str location){
 	if( i<0) i= newVariable(box->sym,GDKstrdup(name),TYPE_any);
 	v= &box->val->stk[i];
 	v->val.br.id = BBPindex(location);
-	if( v->val.br.id == 0) return GDK_FAIL;
+	if( v->val.br.id == 0) return -1;
 	v->vtype= TYPE_bat;
 #ifdef DEBUG_MAL_BOX
 	printf("bindBox:'%s' to '%s' [%d] in '%s'\n",
 		name,location,v->val.br.id,box->name);
 #endif
-	return GDK_SUCCEED;
+	return 0;
 }
 
 int releaseBox(Box box, str name){
@@ -378,15 +378,15 @@ int releaseBox(Box box, str name){
 	printf("releaseBox:%s from %s\n",name,box->name);
 #endif
 	i= findVariable(box->sym,name);
-	if( i<0) return GDK_FAIL;
-	return GDK_SUCCEED;
+	if( i<0) return i;
+	return 0;
 }
 
 int releaseAllBox(Box box){
 #ifdef DEBUG_MAL_BOX
 	printf("releaseAllBox:%s \n",box->name);
 #endif
-	return GDK_SUCCEED;
+	return 0;
 }
 
 int discardBox(Box box, str name){
@@ -395,7 +395,7 @@ int discardBox(Box box, str name){
 	printf("discardBox:%s from %s\n",name,box->name);
 #endif
 	i= findVariable(box->sym,name);
-	if( i<0) return GDK_FAIL;
+	if( i<0) return i;
 	garbageElement(&box->val->stk[i]);
 	for(j=i;j< box->sym->vtop-2;j++){
 		box->sym->var[j] = box->sym->var[j+1];
@@ -403,7 +403,7 @@ int discardBox(Box box, str name){
 	}
 	box->sym->vtop--;
 	box->val->stktop--;
-	return GDK_SUCCEED;
+	return 0;
 }
 @+
 The elements can be obtained using iterator, which returns the name
@@ -412,13 +412,13 @@ of the next element in the box.
 int nextBoxElement(Box box, lng *cursor, ValPtr v){
 	if( *cursor >= box->sym->vtop){
 		*cursor = 0;
-		return GDK_SUCCEED;
+		return 0;
 	}
         garbageElement(v);
 	v->vtype= TYPE_str;
         v->val.pval= getName(box,*cursor);
 	*cursor= *cursor+1;
-	return GDK_SUCCEED;
+	return 0;
 }
 str getName(Box box, lng i){
 	str s;
