@@ -800,6 +800,8 @@ usage(const char *prog)
 	exit(-1);
 }
 
+#define SQLdefaultPort 45123 	/* hardwired SQL default */
+
 int
 main(int argc, char **argv)
 {
@@ -854,6 +856,7 @@ main(int argc, char **argv)
 			break;
 		case 'l':
 			guest= !( user!= NULL || passwd!=NULL);
+			if(guest && port==0) port= SQLdefaultPort;
 			language = optarg;
 			break;
 		case 'u':
