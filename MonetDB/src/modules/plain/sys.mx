@@ -272,14 +272,18 @@ that you might well find very useful.
 	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
 	dir(prs.access(BAT_WRITE).col_name("name").replace(rev));
     }
-    PROC ls(str substr) : void := {
-        var nme := view_bbp_name.like(substr);
-	var prs := nme.semijoin(view_bbp_kind.select("pers"));
-	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
-	dir(prs.access(BAT_WRITE).col_name("name").replace(rev));
-    }
     ADDHELP("ls", "boncz", "Feb  6 1996", 
 	"list all data bats. Optionally filter on name with a certain substring", "sys"); 
+
+    PROC ls(str substr) : void := {
+        var nme := view_bbp_name;
+	var prs := nme.semijoin(view_bbp_kind.select("pers"));
+	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
+	prs.access(BAT_WRITE).col_name("name").replace(rev);
+	dir(prs.like(substr));
+    }
+    ADDHELP("ls", "arjen", "Jun 12 2001", 
+	"list all data bats filtered on name with some substring", "sys"); 
 
     PROC exit() : void := {
 	quit;
