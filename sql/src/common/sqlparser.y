@@ -233,17 +233,17 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 -*/
 
 %token <sval> 
-	IDENT TYPE AGGR STRING INT INTNUM APPROXNUM USER USING
+	IDENT TYPE AGGR STRING sqlINT INTNUM APPROXNUM USER USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL LOCAL CAST
-	CHARACTER NUMERIC DECIMAL FLOAT REAL
-	DOUBLE PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
+	CHARACTER NUMERIC sqlDECIMAL sqlFLOAT REAL
+	sqlDOUBLE PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE 
 	CURRENT_USER CURRENT_ROLE CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME
 
 /*
 OPEN CLOSE FETCH 
 */
-%token <sval> DELETE UPDATE SELECT INSERT
+%token <sval> sqlDELETE UPDATE SELECT INSERT
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER UNIONJOIN
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO
 	
@@ -251,7 +251,7 @@ OPEN CLOSE FETCH
 %token <operation> '+' '-' '*' '/'
 -*/
 %token <sval> LIKE BETWEEN ASYMMETRIC SYMMETRIC ORDER BY
-%token <operation> IN EXISTS ESCAPE HAVING GROUP NULLX 
+%token <operation> sqlIN EXISTS ESCAPE HAVING GROUP NULLX 
 %token <operation> FROM FOR MATCH
 
 /* datetime operations */
@@ -294,7 +294,7 @@ UNDER WHENEVER
 %token PATH PRIMARY PRIVILEGES HIERARCHY
 %token<sval> PUBLIC REFERENCES SCHEMA SET
 %token ALTER ADD TABLE TO UNION UNIQUE USER VALUES VIEW WHERE WITH 
-%token<sval> DATE TIME TIMESTAMP INTERVAL
+%token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 %token LIMIT
 
@@ -520,7 +520,7 @@ operation_commalist:
 operation:
     SELECT opt_column_commalist	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
  |  INSERT 			    { $$ = _symbol_create(SQL_INSERT,NULL); }
- |  DELETE 			    { $$ = _symbol_create(SQL_DELETE,NULL); }
+ |  sqlDELETE 			    { $$ = _symbol_create(SQL_DELETE,NULL); }
  |  UPDATE opt_column_commalist     { $$ = _symbol_create_list(SQL_UPDATE,$2); }
  |  REFERENCES opt_column_commalist { $$ = _symbol_create_list(SQL_SELECT,$2); }
 /* | TRIGGER
@@ -674,7 +674,7 @@ ref_action:
 
 opt_ref_delete:
     /* empty */			{ $$ = NULL; }
- | ON DELETE ref_action		{ $$ = _symbol_create_int(SQL_DELETE, $3); }
+ | ON sqlDELETE ref_action		{ $$ = _symbol_create_int(SQL_DELETE, $3); }
  ;
 
 opt_ref_update:
@@ -804,7 +804,7 @@ cursor_def: DECLARE cursor CURSOR FOR select_stmt opt_order_by_clause ;
 sql: close_stmt | open_stmt |	fetch_stmt | delete_stmt_positioned ;
 close_stmt: CLOSE cursor		;
 open_stmt: OPEN cursor		;
-delete_stmt_positioned: DELETE FROM qname WHERE CURRENT OF cursor ;
+delete_stmt_positioned: sqlDELETE FROM qname WHERE CURRENT OF cursor ;
 fetch_stmt: FETCH cursor INTO target_commalist ;
 update_stmt: UPDATE qname SET assignment_commalist CURRENT OF cursor ;
 cursor:	ident ;
@@ -899,7 +899,7 @@ string_commalist:
  ;
 
 delete_stmt:
-    DELETE FROM qname opt_where_clause 
+    sqlDELETE FROM qname opt_where_clause 
 
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $3);
@@ -1336,22 +1336,22 @@ test_for_null:
  ;
 
 in_predicate:
-    scalar_exp NOT IN subquery
+    scalar_exp NOT sqlIN subquery
 		{ dlist *l = dlist_create();
 		  dlist_append_symbol(l, $1); 
 		  dlist_append_symbol(l, $4); 
 		  $$ = _symbol_create_list(SQL_NOT_IN, l ); }
- |  scalar_exp IN subquery 
+ |  scalar_exp sqlIN subquery 
 		{ dlist *l = dlist_create();
 		  dlist_append_symbol(l, $1); 
 		  dlist_append_symbol(l, $3); 
 		  $$ = _symbol_create_list(SQL_IN, l ); }
- |  scalar_exp NOT IN '(' atom_commalist ')'
+ |  scalar_exp NOT sqlIN '(' atom_commalist ')'
 		{ dlist *l = dlist_create();
 		  dlist_append_symbol(l, $1); 
 		  dlist_append_list(l, $5); 
 		  $$ = _symbol_create_list(SQL_NOT_IN, l ); }
- |  scalar_exp IN '(' atom_commalist ')'
+ |  scalar_exp sqlIN '(' atom_commalist ')'
 		{ dlist *l = dlist_create();
 		  dlist_append_symbol(l, $1); 
 		  dlist_append_list(l, $4); 
@@ -1586,7 +1586,7 @@ time_persision:
  ;
 
 datetime_type:
-    DATE			{ $$ = sql_bind_subtype("DATE", 0, 0); }
+    sqlDATE			{ $$ = sql_bind_subtype("DATE", 0, 0); }
  |  TIME time_persision tz 	{ $$ = sql_bind_subtype("TIME", $2, $3); }
  |  TIMESTAMP time_persision tz { $$ = sql_bind_subtype("TIMESTAMP", $2, $3); }
  ;
@@ -1657,7 +1657,7 @@ literal:
  |  APPROXNUM
 		{ sql_subtype *t = sql_bind_subtype("DOUBLE", 51, 0 );
 		  $$ = _newAtomNode( atom_float(t, strtod($1,&$1))); }
- |  DATE STRING 
+ |  sqlDATE STRING 
 		{ sql_subtype *t = sql_bind_subtype("DATE", 0, 0 );
 		  $$ = _newAtomNode( atom_general(t, $2)); }
  |  TIME STRING 
@@ -1796,19 +1796,19 @@ data_type:
  |  NUMERIC '(' intval ')'	{ $$ = sql_bind_subtype("NUMERIC", $3, 0); }
  |  NUMERIC '(' intval ',' intval ')' 
 				{ $$ = sql_bind_subtype("NUMERIC", $3, $5); }
- |  DECIMAL			{ $$ = sql_bind_subtype("DECIMAL", 0, 0); }
- |  DECIMAL '(' intval ')'	{ $$ = sql_bind_subtype("DECIMAL", $3, 0); }
- |  DECIMAL '(' intval ',' intval ')' 
+ |  sqlDECIMAL			{ $$ = sql_bind_subtype("DECIMAL", 0, 0); }
+ |  sqlDECIMAL '(' intval ')'	{ $$ = sql_bind_subtype("DECIMAL", $3, 0); }
+ |  sqlDECIMAL '(' intval ',' intval ')' 
 				{ $$ = sql_bind_subtype("DECIMAL", $3, $5); }
- |  FLOAT			{ $$ = sql_bind_subtype("FLOAT", 0, 0); }
- |  FLOAT '(' intval ')'	{ $$ = sql_bind_subtype("FLOAT", $3, 0); }
- |  FLOAT '(' intval ',' intval ')'	
+ |  sqlFLOAT			{ $$ = sql_bind_subtype("FLOAT", 0, 0); }
+ |  sqlFLOAT '(' intval ')'	{ $$ = sql_bind_subtype("FLOAT", $3, 0); }
+ |  sqlFLOAT '(' intval ',' intval ')'	
 				{ $$ = sql_bind_subtype("FLOAT", $3, $5); }
  |  REAL			{ $$ = sql_bind_subtype("REAL", 0, 0); }
- |  DOUBLE 			{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
- |  DOUBLE '(' intval ',' intval ')' 	
+ |  sqlDOUBLE 			{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
+ |  sqlDOUBLE '(' intval ',' intval ')' 	
 				{ $$ = sql_bind_subtype("DOUBLE", $3, $5); }
- |  DOUBLE PRECISION		{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
+ |  sqlDOUBLE PRECISION		{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
  | datetime_type
  | interval_type		
  | TYPE				{ $$ = sql_bind_subtype($1, 0, 0); _DELETE($1); }
@@ -1829,12 +1829,12 @@ ident:
 non_reserved_word: 
   CHARACTER 	{ $$ = _strdup("character"); }
 | NUMERIC 	{ $$ = _strdup("numeric"); }
-| DECIMAL 	{ $$ = _strdup("decimal"); }
-| FLOAT 	{ $$ = _strdup("float"); }
+| sqlDECIMAL 	{ $$ = _strdup("decimal"); }
+| sqlFLOAT 	{ $$ = _strdup("float"); }
 | REAL 		{ $$ = _strdup("real"); }
-| DOUBLE 	{ $$ = _strdup("double"); }
+| sqlDOUBLE 	{ $$ = _strdup("double"); }
 | PRECISION 	{ $$ = _strdup("precision"); }
-| DATE 		{ $$ = _strdup("date"); }
+| sqlDATE 		{ $$ = _strdup("date"); }
 | TIME 		{ $$ = _strdup("time"); }
 | TIMESTAMP	{ $$ = _strdup("timestamp"); }
 | PATH		{ $$ = _strdup("path"); }
@@ -1856,7 +1856,7 @@ name_commalist:
  ;
 
 intval:
-	INT			{ $$ = strtol($1,&$1,10); }
+	sqlINT			{ $$ = strtol($1,&$1,10); }
  ;
 
 	/* embedded condition things */

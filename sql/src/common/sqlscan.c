@@ -114,15 +114,15 @@ void init_keywords()
 	keywords_insert("DELIMITERS", DELIMITERS );
 	keywords_insert("STDIN", STDIN );
 
-	keywords_insert("DEC", DECIMAL);
-	keywords_insert("DECIMAL", DECIMAL);
+	keywords_insert("DEC", sqlDECIMAL);
+	keywords_insert("DECIMAL", sqlDECIMAL);
 	/*
 	   keywords_insert("DECLARE", DECLARE );
 	 */
 	keywords_insert("DEFAULT", DEFAULT);
 	keywords_insert("DESC", DESC);
 	keywords_insert("DISTINCT", DISTINCT);
-	keywords_insert("DOUBLE", DOUBLE);
+	keywords_insert("DOUBLE", sqlDOUBLE);
 	keywords_insert("DROP", DROP);
 	keywords_insert("ESCAPE", ESCAPE);
 	keywords_insert("EXISTS", EXISTS);
@@ -130,7 +130,7 @@ void init_keywords()
 	/*
 	   keywords_insert("FETCH", FETCH );
 	 */
-	keywords_insert("FLOAT", FLOAT);
+	keywords_insert("FLOAT", sqlFLOAT);
 	keywords_insert("FOR", FOR);
 	keywords_insert("FOREIGN", FOREIGN);
 	/*
@@ -146,7 +146,7 @@ void init_keywords()
 
 	keywords_insert("INSERT", INSERT);
 	keywords_insert("UPDATE", UPDATE);
-	keywords_insert("DELETE", DELETE);
+	keywords_insert("DELETE", sqlDELETE);
 
 	keywords_insert("ACTION", ACTION);
 	keywords_insert("CASCADE", CASCADE);
@@ -157,7 +157,7 @@ void init_keywords()
 	keywords_insert("GLOBAL", GLOBAL);
 	keywords_insert("GROUP", GROUP);
 	keywords_insert("HAVING", HAVING);
-	keywords_insert("IN", IN);
+	keywords_insert("IN", sqlIN);
 	keywords_insert("INNER", INNER);
 	keywords_insert("INTO", INTO);
 	keywords_insert("IS", IS);
@@ -230,7 +230,7 @@ void init_keywords()
 	keywords_insert("WHERE", WHERE);
 	keywords_insert("WITH", WITH);
 
-	keywords_insert("DATE", DATE);
+	keywords_insert("DATE", sqlDATE);
 	keywords_insert("TIME", TIME);
 	keywords_insert("TIMESTAMP", TIMESTAMP);
 	keywords_insert("INTERVAL", INTERVAL);
@@ -547,7 +547,7 @@ static int tokenize(context * lc);
 int number(context * lc, int len)
 {
 	char *yytext = lc->yytext;
-	int token = INT;
+	int token = sqlINT;
 	int cur = 0;
 	int yylen = len;
 	int yysz = lc->yysize;

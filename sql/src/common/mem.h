@@ -10,10 +10,16 @@
 #include <malloc.h>
 #endif
 
-extern void* 	GDKmalloc  (size_t size);
-extern void* 	GDKrealloc (void* pold, size_t size);
-extern void	GDKfree    (void* blk); 
-extern char*	GDKstrdup  (char *s);
+#ifdef _MSC_VER
+#define gdk_export extern __declspec(dllimport)   
+#else
+#define gdk_export extern
+#endif
+
+gdk_export void* 	GDKmalloc  (size_t size);
+gdk_export void* 	GDKrealloc (void* pold, size_t size);
+gdk_export void	GDKfree    (void* blk); 
+gdk_export char*	GDKstrdup  (char *s);
 
 #define NEW( type ) (type*)GDKmalloc(sizeof(type) )
 #define NEW_ARRAY( type, size ) (type*)GDKmalloc((size)*sizeof(type))
