@@ -1,0 +1,41 @@
+# Monet Database Server V4.2
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+>>>>>>#-------------------------#
+# BAT:	  tmp_23	  #
+# (void)  (BAT)		  #
+#-------------------------#
+[ nil,	  <tmp_24>	  ]
+[ nil,	  <tmp_25>	  ]
+>>>>#-------------------------#
+# BAT:	  tmp_26	  #
+# (void)  (BAT)		  #
+#-------------------------#
+[ 0@0,	  <tmp_27>	  ]
+[ 1@0,	  <tmp_28>	  ]
+>#-------------------------#
+# BAT:	  tmp_28	  #
+# (oid)	  (BAT)		  #
+#-------------------------#
+[ 0@0,	  <tmp_27>	  ]
+[ 1@0,	  <tmp_29>	  ]
+>
