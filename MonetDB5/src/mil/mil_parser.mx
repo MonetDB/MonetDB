@@ -1349,7 +1349,7 @@ fcn_hdr:
 	}
     |  TOK_BAT
 	{ 
-	  $$.val="bat";
+	  $$.val="new";
 	}
     |  TOK_OPERATOR '('
 	{ $$= $1; }
