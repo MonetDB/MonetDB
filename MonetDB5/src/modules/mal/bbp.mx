@@ -90,7 +90,7 @@ pattern discard(name:str):void
 address CMDbbpdiscard
 comment "Remove the BAT from the box";
 
-pattern garbage(b:bat[:any,:any])
+pattern garbage(b:bat[:any,:any]):void
 address CMDbbpgarbage
 comment "Designate a BAT as garbage";
 

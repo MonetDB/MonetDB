@@ -157,12 +157,16 @@ str MDBtoggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
         /* Toggle */
         stk->cmd= stk->cmd? 0: 's';
         cntxt->itrace = cntxt->itrace? 0: 's';
+		if(stk->cmd)
+			MDBdelay =1; /* wait for real command */
         if( stk->up) stk->up->cmd=  0;
         return MAL_SUCCEED;
     }
     if( p->argc >1){
         b= *(int *) getArgReference(stk,p,1);
     } else b= stk->cmd;
+	if(b)
+		MDBdelay =1; /* wait for real command */
     MDBstatus(b);
     stk->cmd= b?'n':0;
     if( stk->up) stk->up->cmd=  b?'n':0;
