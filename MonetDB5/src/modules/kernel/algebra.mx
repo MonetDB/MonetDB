@@ -549,12 +549,6 @@ address ALGmark_default
 comment "Produces a new BAT with fresh unique OIDs 
 	in the tail.";
 
-command mark( b:bat[:any$1,:any],g:bat[:oid,:oid] )
-		:bat[:any$1,:oid] 
-address ALGmark_grp
-comment "Produces a new BAT with fresh unique OIDs 
-	in the tail on a group basis.";
-
 command mark( b:bat[:any$1,:any], base:oid ) 
 		:bat[:any$1,:oid] 
 address ALGmark
@@ -1138,10 +1132,6 @@ int CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize) {
 
 int CMDproject(BAT** res, BAT *b, ptr p, int t) {
 	return (*res=BATconst(b, t, p))?GDK_SUCCEED:GDK_FAIL;
-}
-
-int CMDmark_grp(BAT** res, BAT *b, BAT *g){
-	return (*res=BATmark_grp(b, g))?GDK_SUCCEED:GDK_FAIL;
 }
 
 int CMDmark(BAT** res, BAT *b, oid *base){
@@ -1737,17 +1727,6 @@ str ALGproject(int *result, int *bid, ptr p,int *t) {
 		"can not perform a projection");
 }
 
-str ALGmark_grp(int *result, int *bid, int *gid) {
-	BAT *b, *g, *bn= NULL;
-	@:getBATdescriptor(result,bid,b,mark)@
-	@:getBATdescriptor(result,gid,g,mark)@
-	if( CMDmark_grp(&bn,b,g)== GDK_SUCCEED){
-		*result = bn->batCacheid;
-		return MAL_SUCCEED;
-	}
-	return throwMessage("algebra.mark", 
-		"marking group failed");
-}
 str ALGmark(int *result, int *bid, oid *base) {
 	BAT *b,  *bn= NULL;
 	@:getBATdescriptor(result,bid,b,mark)@
