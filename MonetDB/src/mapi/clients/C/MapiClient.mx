@@ -44,7 +44,7 @@ MapiClient [-h HOST] [-p PORT] [-d] [-e] [-u username] [-P password] [-c single-
 The following options are supported:
 \begin{itemize}
 \item {\em -h -p} Connect to Mserver on machine HOST with tcp port PORT.
-\item {\em -d} Debug internalworking.
+\item {\em -d} Debug internal working.
 \item {\em -c} just execute a one-line command (non-interactive mode).
 \item {\em -u -P} Replace interactive authorization by command line.
 \item{\em -h} A synopsis of the command line options
