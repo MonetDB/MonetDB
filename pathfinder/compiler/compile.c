@@ -109,7 +109,7 @@ PFstate_t PFstate = {
     print_pretty        : false,
     stop_after          : 0,
     print_types         : false,
-    optimize            : false,
+    optimize            : 1,
     print_parse_tree    : false,
     print_core_tree     : false,
     print_algebra_tree  : false,
@@ -206,10 +206,6 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     PFma_op_t  *maroot = NULL;
     PFmil_t    *mroot  = NULL;
     PFarray_t  *mil_program = NULL;
-
-    /* FIXME: switch off optimization for summer branch */
-    int optimize = status->optimize;
-    if (status->summer_branch) status->optimize = 0; /* done for speed */
 
     /* elapsed time for compiler phase */
     long tm;
@@ -377,7 +373,6 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
      */
 
     if (status->summer_branch) {
-        status->optimize = optimize; /* can enable dead code elimination */
         tm = PFtimer_start ();
         PFprintMILtemp (pfout, croot, status);
         tm = PFtimer_stop (tm);

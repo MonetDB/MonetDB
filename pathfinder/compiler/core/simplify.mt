@@ -207,7 +207,7 @@ BindingExpr:     let (var_, let (var_, CoreExpr, CoreExpr), CoreExpr)
        * repeated rewritings).  This is why we make re-rewriting
        * conditional:
        */
-      if (PFstate.optimize) 
+      if (PFstate.optimize >= 3) 
           REWRITE;
     }
     =

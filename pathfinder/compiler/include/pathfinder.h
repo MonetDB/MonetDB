@@ -84,7 +84,7 @@ struct PFstate_t {
     bool print_pretty;        /**< command line switch: -P */
     unsigned int stop_after;  /**< processing phase to stop after */
     bool print_types;         /**< command line switch: -t */
-    bool optimize;            /**< command line switch: -O */
+    unsigned int optimize;    /**< command line switch: -O */
     bool print_parse_tree;    /**< command line switch: -p */
     bool print_core_tree;     /**< command line switch: -c */
     bool print_algebra_tree;  /**< command line switch: -a */

@@ -40,307 +40,26 @@
 #include "pfstrings.h"
 #include "oops.h"
 #include "subtyping.h"
+#include "mil_opt.h"
 
-/* ----------------------------------------------------------------------------
- * dead MIL code eliminator (one-day hack by Peter Boncz) 
- *
- * limitations: 
- * - variable names must not exceed 32 characters!
- * - don't declare more than one variable in a line "var x := 1, y;", specially if any but the last is assigned to. 
- * - don't generate MIL statements with inline assignments "x := (y := 1) + 1;"
- * - for better pruning: use assignment notation for update statements "x := x.insert(y);"
- * ----------------------------------------------------------------------------
- */
-
-#define OPT_LINES 20000 /* if first-use further out than this amount of lines, dead codes survises anyhow */
-#define OPT_VARS 4000 /* don't try dead code elimintation above this amount of live variables */
-#define OPT_REFS 32 /* keep track of usage dependencies; may omit some, which results in surviving dead code */
-#define OPT_COND 128 
-
-long long name_if[4], name_else[4];
-
-typedef struct {
-        char *line; /* buffered line of MIL */
-        int lineno; /* absolute lineno in MIL output */
-        char used; /* becomes true if this variable was used */ 
-        char delchar; /* we separate statements by substituting a ';' char (or \n for comments) */
-        char inactive; /* set if we have tried to eliminate this statement already */
-        char nilassign; /* special treatment: nil assignments for early memory reduction are never pruned */
-
-        /* variable references found on this line */
-        short refs;
-        int refline[OPT_REFS];
-        int reflineno[OPT_REFS];
-} opt_line_t;
-
-typedef struct {
-        long long name[4]; /* variable name (32 chars max) */
-        int scope; /* scope in which var was defined */
-        int lastset, lineno; /* point to a line where var was line assigned. lineno must match there as well */
-} opt_var_t;
-
-typedef struct {
-        int lineno; /* number of detected MIL statements */
-        int scope; /* block depth */
-        int iflevel; /* how many conditional blocks have we passed? */
-        int curvar; /* length of variable stack */
-        int optimize; /* should we eliminate dead code at all? */
-        FILE *fp; 
-
-        int condlevel; /* number of nested conditional blocks passed */
-        int condscopes[OPT_COND]; /* scopes where each conditional block starts */
-
-        opt_line_t lines[OPT_LINES]; /* line buffer */
-        opt_var_t vars[OPT_VARS]; /* variable stack */
-} opt_t;
-
-static int opt_findvar(opt_t* o, long long name[4]) {
-        int i;
-        /* stupid algo: walk the varlist backwards until you find something */
-        for(i=o->curvar-1; i>=0; i--) {
-                if ((name[0] == o->vars[i].name[0]) & (name[1] == o->vars[i].name[1]) &  
-                    (name[2] == o->vars[i].name[2]) & (name[3] == o->vars[i].name[3]))
-                {
-                        return i;
-                }
-        }
-        return -1;
-}
-
-static int opt_setname(char *p, long long name[4]) {
-        /* fill a name array with string data */
-        char *src = (char*) name, *dst = src;
-        name[0] = name[1] = name[2] = name[3] = 0;
-        do {
-                if ((dst - src) < 32) *dst++ = *p;
-                p++;
-        } while((*p == '_') | ((*p >= 'a') & (*p <= 'z')) | ((*p >= 'A') & (*p <= 'Z')) | ((*p >= '0') & (*p <= '9')));
-
-        return (dst - src);
-}
-
-static void opt_elim(opt_t* o, int linenr) {
-        /* varnr is being overwritten/end-of-scoped; was it used since last assignment? */
-        if (o->lines[linenr].used == 0 && o->lines[linenr].inactive && o->curvar+1 < OPT_VARS) { 
-                char *p = o->lines[linenr].line;
-
-                if (!o->lines[linenr].nilassign) {
-                        /* eliminate dead code (comment out ) */
-                        if (p[0] == ':' && p[1] == '=') {
-                                p[0] = ';'; p[1] = '#'; /* special case: "var x := y" =>  "var x ;# y" */
-                        } else if (p[0] != '\n') {
-                                p[0] = '#'; 
-                        }
-                        while(p[0]) { /* handle multi-line statements */
-                                if (p[0] == '\n' && p[1] != '\n') p[1] = '#';
-                                p++;
-                        }
-                }
-                /* decrement the references (if any) and try to eliminate more */ 
-                while(o->lines[linenr].refs-- > 0) {
-                        int i = o->lines[linenr].refs;
-                        if (o->lines[o->lines[linenr].refline[i]].lineno == o->lines[linenr].reflineno[i]) {
-                                o->lines[o->lines[linenr].refline[i]].used--;
-                                opt_elim(o, o->lines[linenr].refline[i]);
-                        }
-                }
-        }
-}
-
-static void opt_endblock(opt_t* o, int scope) {
-        /* when exiting a scope; destroy all varables defined in it */
-        while(o->curvar > 0 && o->vars[o->curvar-1].scope >= scope) {
-                int lastset = o->vars[--(o->curvar)].lastset;
-                if (lastset >= 0 && o->vars[o->curvar].lineno == o->lines[lastset].lineno) {
-                        o->lines[lastset].inactive = 1;
-                        opt_elim(o, lastset);
-                }
-        }
-}
-
-static void opt_purgeline(opt_t* o, int linenr) {
-        if (o->lines[linenr].line) {
-                char *p = o->lines[linenr].line;
-                if (p && *p) {
-                        if (*p != ':' && *p != ';') fputs(p, o->fp);
-                        if (o->lines[linenr].delchar) fputc(o->lines[linenr].delchar, o->fp);
-                }
-                o->lines[linenr].line = NULL;
-        }
-}
-
-static void opt_assign(opt_t *o, long long name[4], int curline) {
-        int i = opt_findvar(o, name);
-        /* we may only prune if the variable being overwritten comes from a unconditional scope */
-        if (i >= 0 && (o->condlevel == 0 || o->vars[i].scope >= o->condscopes[o->condlevel-1])) {
-                int lastset = o->vars[i].lastset;
-                if (lastset >= 0 && o->vars[i].lineno == o->lines[lastset].lineno) {
-                        o->lines[lastset].inactive = 1;
-                        opt_elim(o, lastset); /* variable is overwritten; try to eliminate previous assignment */
-                }
-                o->vars[i].lastset = curline;
-                o->vars[i].lineno = o->lines[curline].lineno;
-        }
-}
-
-static opt_t* opt_create(FILE *fp, int optimize) {
-        opt_t *o = (opt_t*) PFmalloc(sizeof(opt_t));
-        memset(o, 0, sizeof(opt_t));
-        o->fp = fp;
-        o->optimize = optimize;
-        opt_setname("if", name_if);
-        opt_setname("else", name_else);
-        return o;
-}
-
-static void opt_destroy(opt_t *o) {
-        int i; 
-        opt_endblock(o, 0); /* destroy all variables (and elim dead code) */
-
-        /* push all lines out of the buffer */
-        for(i=0; i<OPT_LINES; i++) {
-                opt_purgeline(o, (i + o->lineno) % OPT_LINES);
-        }
-        fflush(o->fp);
-}
-
-/*VARARGS*/
-static void opt_printf(opt_t *o, const char *format, ...)
+static void milprintf(opt_t *o, const char *format, ...)
 {
         int j, i = strlen(format) + 80;
-        char *p = PFmalloc(i);
+        char *milbuf = PFmalloc(i);
         va_list ap;
-        long long name[4], assign[4];
-        name[0] = name[1] = name[2] = name[3] = 0;
-        assign[0] = assign[1] = assign[2] = assign[3] = 0;
 
         /* take in a block of MIL statements */
         va_start(ap, format);
-        j = vsnprintf(p, i, format, ap);
+        j = vsnprintf(milbuf, i, format, ap);
         va_end (ap);
         if (j++ > i) {
-                p = PFrealloc(j, p);
+                milbuf = PFrealloc(j, milbuf);
                 va_start(ap, format);
-                vsnprintf(p, j, format, ap);
+                vsnprintf(milbuf, j, format, ap);
                 va_end (ap);
         } 
-        if (!o->optimize)fputs(p, o->fp);
-        else while(*p) {
-                /* add a new yet unused line (MIL statement) */
-                int inc, curline = o->lineno % OPT_LINES;
-                int var_statement = 0, cond_statement = 0;
-                opt_purgeline(o, curline); /* make room if necessary */
-                o->lines[curline].line = p;
-                o->lines[curline].used = 0;
-                o->lines[curline].inactive = 0;
-                o->lines[curline].refs = 0;
-                o->lines[curline].delchar = 0;
-                o->lines[curline].lineno = o->lineno;
-                o->lineno++;
-
-                /* extract the next statement from the MIL block */
-                for(; *p && *p != ';'; p += inc) {
-                        inc = 1;
-                        if (p[0]  == '#') { /* ignore comment lines */
-                                while(p[0] && p[0] != '\n') p++;
-                                o->lines[curline].delchar = '\n';
-                                *p++ = 0;
-                                break;
-                        }
-                        if (p[0] == '\'' && p[1] && p[2] == '\'') { /* prevent '"' and ';' confusing us */
-                                inc = 3;
-                        } else if (p[0] == '"') { /* skip strings separately as they may contain ';' chars */
-                                int escape = 0;
-                                while(p[inc]) {
-                                        if (escape) {
-                                            escape = 0;
-                                        } else if (p[inc] == '\\') {
-                                            escape = 1;
-                                        }
-                                        if (p[inc++] == '"' && !escape) break;
-                                }
-                        }
-                        if (p[0] == ':' && p[1] == '=') { /* a mil assignment; delay registration to statement end */
-                                if (assign[0] == 0) {
-                                        assign[0] = name[0]; assign[1] = name[1];
-                                        assign[2] = name[2]; assign[3] = name[3];
-                                        if (var_statement) break; /* break up var x := y; so we can cut off := y */
-                                }
-                                inc = 2;
-                                while((p[inc] == ' ') | (p[inc] == '\t') | (p[inc] == '\n')) inc++;
-                                if ((p[inc] == 'n') && (p[inc+1] == 'i') && (p[inc+2] == 'l')) {
-                                        o->lines[curline].nilassign = 1; /* nil assignments should never be pruned! */
-                                }
-                        } else if (*p  == '{') {
-                                o->scope++;
-                                if (cond_statement && o->condlevel+1 < OPT_COND) {
-                                       o->condscopes[o->condlevel++] = o->scope;
-                                       cond_statement = 0;
-                                }
-                        } else if (*p  == '}') {
-                                opt_endblock(o, o->scope); /* this will attempt to eliminate dead code */
-                                if (o->condlevel > 0 && o->condscopes[o->condlevel-1] == o->scope) {
-                                        o->condlevel--;
-                                }
-                                o->scope--;
-                        } else if (((p[0] == 'v') | (p[0] == 'V')) && 
-                                   ((p[1] == 'a') | (p[1] == 'A')) && 
-                                   ((p[2] == 'r') | (p[2] == 'R')) && 
-                                   ((p[3] == ' ') | (p[3] == '\t') | (p[3] == '\n'))) 
-                        {
-                                var_statement = 1;
-                                inc = 4;
-                                while((p[inc] == ' ') | (p[inc] == '\t') | (p[inc] == '\n')) inc++;
-                                inc += opt_setname(p+inc, name);
-
-                                if (o->curvar+1 < OPT_VARS) {
-                                        /* put a new variable on the stack */
-                                        o->vars[o->curvar].name[0] = name[0];
-                                        o->vars[o->curvar].name[1] = name[1];
-                                        o->vars[o->curvar].name[2] = name[2];
-                                        o->vars[o->curvar].name[3] = name[3];
-                                        o->vars[o->curvar].scope = o->scope;  
-                                        o->vars[o->curvar].lastset = -1;  
-                                        o->vars[o->curvar].lineno = -1;  
-                                        o->curvar++;
-                                }
-                        } else if (((p[0] >= 'a') & (p[0] <= 'z')) | ((p[0] >= 'A') & (p[0] <= 'Z'))) { 
-                                inc = opt_setname(p, name);
-                                cond_statement = (name[0] == name_if[0]) | (name[0] == name_else[0]);
-                                while((p[inc] == ' ') | (p[inc] == '\t') | (p[inc] == '\n')) inc++;
-                                if ((p[inc] != '(') & (p[inc] != ':')) {
-                                        /* detect use of a mil variable */
-                                        i = opt_findvar(o, name); 
-                                        if (i >= 0 && o->vars[i].lastset >= 0 && 
-                                            o->vars[i].lineno == o->lines[o->vars[i].lastset].lineno)
-                                        {
-                                                int refno = o->lines[curline].refs;
-                                                o->lines[o->vars[i].lastset].used++;
-                                                if (refno < OPT_REFS) {
-                                                       o->lines[curline].refline[refno] = o->vars[i].lastset;
-                                                       o->lines[curline].reflineno[refno] = o->vars[i].lineno; 
-                                                       o->lines[curline].refs++;
-                                                }
-                                        }
-                                }
-                        }
-                }
-                if (assign[0] && !var_statement) {
-                        opt_assign(o, assign, curline); /* it was an assigment stament */
-                }
-                /* separate MIL statements by replacing ';' with 0 */
-                if (*p == ';') {
-                        assign[0] = assign[1] = assign[2] = assign[3] = 0;
-                        o->lines[curline].delchar = ';';
-                        *p++ = 0; 
-                }
-        }
+        opt_mil(o, milbuf);
 }
-
-/* ----------------------------------------------------------------------------
- * end dead MIL code eliminator  
- * ----------------------------------------------------------------------------
- */
 
 /* add some timing results for the code, if set to 1 */ 
 #define TIMINGS 0
@@ -463,7 +182,7 @@ bool_container ()
 static void
 init (opt_t *f)
 {
-    opt_printf(f,
+    milprintf(f,
             "# init ()\n"
             /* pathfinder functions (scj, doc handling) are made visible
                in the server */
@@ -510,7 +229,7 @@ init (opt_t *f)
              /* boolean mapping */
             "var bool_not := bat(oid,oid).insert(0@0,1@0).insert(1@0,0@0);\n"
            );
-    opt_printf(f,
+    milprintf(f,
             "# create nil values\n"
             "var nil_oid_oid := nil;\n"
             "var nil_oid_int := nil;\n"
@@ -546,11 +265,11 @@ static void
 print_output (opt_t *f)
 {
     /*
-     * Note: This output is split up into separate opt_printf's due
+     * Note: This output is split up into separate milprintf's due
      * to the C99 specifications that allows strings to be of
      * maximum length 4K.
      */
-    opt_printf(f, 
+    milprintf(f, 
             "{ # print_output ()\n"
             /* the values of the different kinds are combined
                by inserting the converted bats into 'output_item' */
@@ -628,7 +347,7 @@ print_output (opt_t *f)
             "backup_oids := nil_oid_oid;\n"
             "node_kind_oid_str := nil_oid_str;\n");
 
-    opt_printf (f,
+    milprintf (f,
             /* gets the attribute information for attribute kind */
             "temp_kind_oid_oid := kind.get_type(ATTR).mark(0@0).reverse();\n"
             "backup_oids := temp_kind_oid_oid.reverse();\n"
@@ -707,7 +426,7 @@ print_output (opt_t *f)
             "output_item := output_item.insert(int_kind_oid_str);\n"
             "int_kind_oid_str := nil_oid_str;\n");
 
-    opt_printf (f,
+    milprintf (f,
             /* gets the information for double kind */
             "temp_kind_oid_oid := kind.get_type(DBL);\n"
             "temp_kind_oid_oid := temp_kind_oid_oid.mirror().leftfetchjoin(item);\n"
@@ -829,7 +548,7 @@ print_output (opt_t *f)
 static void
 translateEmpty (opt_t *f)
 {
-    opt_printf(f,
+    milprintf(f,
             "# translateEmpty ()\n"
             "iter := empty_bat;\n"
             "pos := empty_bat;\n"
@@ -848,16 +567,16 @@ translateEmpty (opt_t *f)
 static void
 cleanUpLevel (opt_t *f, int act_level)
 {
-    opt_printf(f, "# cleanUpLevel ()\n");
-    opt_printf(f, "inner%03u := nil_oid_oid;\n", act_level);
-    opt_printf(f, "outer%03u := nil_oid_oid;\n", act_level);
-    opt_printf(f, "loop%03u := nil_oid_oid;\n", act_level);
+    milprintf(f, "# cleanUpLevel ()\n");
+    milprintf(f, "inner%03u := nil_oid_oid;\n", act_level);
+    milprintf(f, "outer%03u := nil_oid_oid;\n", act_level);
+    milprintf(f, "loop%03u := nil_oid_oid;\n", act_level);
 
-    opt_printf(f, "v_vid%03u := nil_oid_oid;\n", act_level);
-    opt_printf(f, "v_iter%03u := nil_oid_oid;\n", act_level);
-    opt_printf(f, "v_pos%03u := nil_oid_oid;\n", act_level);
-    opt_printf(f, "v_item%03u := nil_oid_oid;\n", act_level);
-    opt_printf(f, "v_kind%03u := nil_oid_int;\n", act_level);
+    milprintf(f, "v_vid%03u := nil_oid_oid;\n", act_level);
+    milprintf(f, "v_iter%03u := nil_oid_oid;\n", act_level);
+    milprintf(f, "v_pos%03u := nil_oid_oid;\n", act_level);
+    milprintf(f, "v_item%03u := nil_oid_oid;\n", act_level);
+    milprintf(f, "v_kind%03u := nil_oid_int;\n", act_level);
 }
                                                                                                                                                         
 /**
@@ -872,16 +591,16 @@ cleanUpLevel (opt_t *f, int act_level)
 static void
 translateVar (opt_t *f, int act_level, PFcnode_t *c)
 {
-    opt_printf(f, "{ # translateVar (c)\n");
-    opt_printf(f, "var vid := v_vid%03u.ord_uselect(%i@0);\n", 
+    milprintf(f, "{ # translateVar (c)\n");
+    milprintf(f, "var vid := v_vid%03u.ord_uselect(%i@0);\n", 
             act_level, c->sem.var->vid);
-    opt_printf(f, "vid := vid.mark(0@0).reverse();\n");
-    opt_printf(f, "iter := vid.leftfetchjoin(v_iter%03u);\n", act_level);
-    opt_printf(f, "pos := vid.leftfetchjoin(v_pos%03u);\n", act_level);
-    opt_printf(f, "item := vid.leftfetchjoin(v_item%03u);\n", act_level);
-    opt_printf(f, "kind := vid.leftfetchjoin(v_kind%03u);\n", act_level);
-    opt_printf(f, "vid := nil_oid_oid;\n");
-    opt_printf(f, "} # end of translateVar (c)\n");
+    milprintf(f, "vid := vid.mark(0@0).reverse();\n");
+    milprintf(f, "iter := vid.leftfetchjoin(v_iter%03u);\n", act_level);
+    milprintf(f, "pos := vid.leftfetchjoin(v_pos%03u);\n", act_level);
+    milprintf(f, "item := vid.leftfetchjoin(v_item%03u);\n", act_level);
+    milprintf(f, "kind := vid.leftfetchjoin(v_kind%03u);\n", act_level);
+    milprintf(f, "vid := nil_oid_oid;\n");
+    milprintf(f, "} # end of translateVar (c)\n");
 }
 
 /**
@@ -895,12 +614,12 @@ translateVar (opt_t *f, int act_level, PFcnode_t *c)
 static void
 saveResult (opt_t *f, int counter)
 {
-    opt_printf(f, "{ # saveResult%i () : int\n", counter);
-    opt_printf(f, "var iter%03u := iter;\n", counter);
-    opt_printf(f, "var pos%03u := pos;\n", counter);
-    opt_printf(f, "var item%03u := item;\n", counter);
-    opt_printf(f, "var kind%03u := kind;\n", counter);
-    opt_printf(f,
+    milprintf(f, "{ # saveResult%i () : int\n", counter);
+    milprintf(f, "var iter%03u := iter;\n", counter);
+    milprintf(f, "var pos%03u := pos;\n", counter);
+    milprintf(f, "var item%03u := item;\n", counter);
+    milprintf(f, "var kind%03u := kind;\n", counter);
+    milprintf(f,
             "iter := nil_oid_oid;\n"
             "pos := nil_oid_oid;\n"
             "item := nil_oid_oid;\n"
@@ -920,12 +639,12 @@ saveResult (opt_t *f, int counter)
 static void
 deleteResult (opt_t *f, int counter)
 {
-    opt_printf(f, "# deleteResult%i ()\n", counter);
-    opt_printf(f, "iter%03u := nil_oid_oid;\n", counter);
-    opt_printf(f, "pos%03u := nil_oid_oid;\n", counter);
-    opt_printf(f, "item%03u := nil_oid_oid;\n", counter);
-    opt_printf(f, "kind%03u := nil_oid_int;\n", counter);
-    opt_printf(f, "} # end of deleteResult%i ()\n", counter);
+    milprintf(f, "# deleteResult%i ()\n", counter);
+    milprintf(f, "iter%03u := nil_oid_oid;\n", counter);
+    milprintf(f, "pos%03u := nil_oid_oid;\n", counter);
+    milprintf(f, "item%03u := nil_oid_oid;\n", counter);
+    milprintf(f, "kind%03u := nil_oid_int;\n", counter);
+    milprintf(f, "} # end of deleteResult%i ()\n", counter);
 }
 
 /**
@@ -942,23 +661,23 @@ translateSeq (opt_t *f, int i)
 {
     /* pruning of the two cases where one of
        the intermediate results is empty */
-    opt_printf(f,
+    milprintf(f,
             "if (iter.count() = 0) {\n"
             "        iter := iter%03u;\n"
             "        pos := pos%03u;\n"
             "        item := item%03u;\n"
             "        kind := kind%03u;\n",
             i, i, i, i);
-    opt_printf(f, 
+    milprintf(f, 
             "} else { if (iter%03u.count() != 0)\n",
             i);
-    opt_printf(f,
+    milprintf(f,
             "{ # translateSeq (counter)\n"
             /* FIXME: tests if input is sorted is needed because of merged union*/
             "var merged_result := merged_union "
             "(iter%03u.chk_order(), iter.chk_order(), item%03u, item, kind%03u, kind);\n",
             i, i, i, i);
-    opt_printf(f,
+    milprintf(f,
             "iter := merged_result.fetch(0);\n"
             "item := merged_result.fetch(1);\n"
             "kind := merged_result.fetch(2);\n"
@@ -977,18 +696,18 @@ translateSeq (opt_t *f, int i)
 static void
 project (opt_t *f, int act_level)
 {
-    opt_printf(f, "# project ()\n");
-    opt_printf(f, "var outer%03u := iter;\n", act_level);
-    opt_printf(f, "iter := iter.mark(1@0);\n");
-    opt_printf(f, "var inner%03u := iter;\n", act_level);
-    opt_printf(f, "pos := iter.project(1@0);\n");
-    opt_printf(f, "var loop%03u := inner%03u;\n", act_level, act_level);
+    milprintf(f, "# project ()\n");
+    milprintf(f, "var outer%03u := iter;\n", act_level);
+    milprintf(f, "iter := iter.mark(1@0);\n");
+    milprintf(f, "var inner%03u := iter;\n", act_level);
+    milprintf(f, "pos := iter.project(1@0);\n");
+    milprintf(f, "var loop%03u := inner%03u;\n", act_level, act_level);
 
-    opt_printf(f, "var v_vid%03u;\n", act_level);
-    opt_printf(f, "var v_iter%03u;\n", act_level);
-    opt_printf(f, "var v_pos%03u;\n", act_level);
-    opt_printf(f, "var v_item%03u;\n", act_level);
-    opt_printf(f, "var v_kind%03u;\n", act_level);
+    milprintf(f, "var v_vid%03u;\n", act_level);
+    milprintf(f, "var v_iter%03u;\n", act_level);
+    milprintf(f, "var v_pos%03u;\n", act_level);
+    milprintf(f, "var v_item%03u;\n", act_level);
+    milprintf(f, "var v_kind%03u;\n", act_level);
 }
 
 /**
@@ -1003,11 +722,11 @@ project (opt_t *f, int act_level)
 static void
 getExpanded (opt_t *f, int act_level, int fid)
 {
-    opt_printf(f, 
+    milprintf(f, 
             "{ # getExpanded (fid)\n"
             "var vu_nil := vu_fid.ord_uselect(%i@0);\n",
             fid);
-    opt_printf(f,
+    milprintf(f,
             "var vid_vu := vu_vid.reverse();\n"
             "var oid_nil := vid_vu.leftjoin(vu_nil);\n"
             "vid_vu := nil_oid_oid;\n"
@@ -1015,7 +734,7 @@ getExpanded (opt_t *f, int act_level, int fid)
             "expOid := v_vid%03u.leftjoin(oid_nil);\n",
             /* the vids from the nesting before are looked up */
             act_level - 1);
-    opt_printf(f,
+    milprintf(f,
             "oid_nil := nil_oid_oid;\n"
             "expOid := expOid.mirror();\n"
             "} # end of getExpanded (fid)\n");
@@ -1031,30 +750,30 @@ getExpanded (opt_t *f, int act_level, int fid)
 static void
 expand (opt_t *f, int act_level)
 {
-    opt_printf(f,
+    milprintf(f,
             "{ # expand ()\n"
             "var expOid_iter := expOid.leftfetchjoin(v_iter%03u);\n",
             /* the iters from the nesting before are looked up */
             act_level - 1); 
-    opt_printf(f,
+    milprintf(f,
             "expOid := nil_oid_oid;\n"
             "var iter_expOid := expOid_iter.reverse();\n"
             "expOid_iter := nil_oid_oid;\n"
             "var oidMap_expOid := outer%03u.leftjoin(iter_expOid);\n",
             act_level);
-    opt_printf(f,
+    milprintf(f,
             "iter_expOid := nil_oid_oid;\n"
             "var expOid_oidMap := oidMap_expOid.reverse();\n"
             "oidMap_expOid := nil_oid_oid;\n"
             "expOid_iter := expOid_oidMap.leftfetchjoin(inner%03u);\n",
             act_level);
-    opt_printf(f,
+    milprintf(f,
             "expOid_oidMap := nil_oid_oid;\n"
             "v_iter%03u := expOid_iter;\n",
             act_level);
     /* oidNew_expOid is the relation which maps from old scope to the
        new scope */
-    opt_printf(f,
+    milprintf(f,
             "oidNew_expOid := expOid_iter.mark(0@0).reverse();\n"
             "expOid_iter := nil_oid_oid;\n"
             "} # end of expand ()\n");
@@ -1070,41 +789,41 @@ expand (opt_t *f, int act_level)
 static void
 join (opt_t *f, int act_level)
 {
-    opt_printf(f, "{ # join ()\n");
-    opt_printf(f, "v_iter%03u := v_iter%03u.reverse().mark(0@0).reverse();\n",
+    milprintf(f, "{ # join ()\n");
+    milprintf(f, "v_iter%03u := v_iter%03u.reverse().mark(0@0).reverse();\n",
             act_level, act_level);
-    opt_printf(f, "var new_v_iter := v_iter%03u;\n", act_level);
-    opt_printf(f, "v_iter%03u := bat(void,oid,count(new_v_iter)*2)"
+    milprintf(f, "var new_v_iter := v_iter%03u;\n", act_level);
+    milprintf(f, "v_iter%03u := bat(void,oid,count(new_v_iter)*2)"
                                 ".seqbase(0@0).access(BAT_APPEND).insert(new_v_iter);\n", act_level);
-    opt_printf(f, "new_v_iter := nil_oid_oid;\n");
+    milprintf(f, "new_v_iter := nil_oid_oid;\n");
 
-    opt_printf(f, "var new_v_vid := oidNew_expOid.leftjoin(v_vid%03u);\n", act_level-1);
-    opt_printf(f, "v_vid%03u := bat(void,oid,count(new_v_vid)*2)"
+    milprintf(f, "var new_v_vid := oidNew_expOid.leftjoin(v_vid%03u);\n", act_level-1);
+    milprintf(f, "v_vid%03u := bat(void,oid,count(new_v_vid)*2)"
                                 ".seqbase(0@0).access(BAT_APPEND).insert(new_v_vid);\n", act_level);
-    opt_printf(f, "new_v_vid := nil_oid_oid;\n");
+    milprintf(f, "new_v_vid := nil_oid_oid;\n");
 
-    opt_printf(f, "var new_v_pos := oidNew_expOid.leftjoin(v_pos%03u);\n", act_level-1);
-    opt_printf(f, "v_pos%03u := bat(void,oid,count(new_v_pos)*2)"
+    milprintf(f, "var new_v_pos := oidNew_expOid.leftjoin(v_pos%03u);\n", act_level-1);
+    milprintf(f, "v_pos%03u := bat(void,oid,count(new_v_pos)*2)"
                                 ".seqbase(0@0).access(BAT_APPEND).insert(new_v_pos);\n", act_level);
-    opt_printf(f, "new_v_pos := nil_oid_oid;\n");
+    milprintf(f, "new_v_pos := nil_oid_oid;\n");
 
-    opt_printf(f, "var new_v_item := oidNew_expOid.leftjoin(v_item%03u);\n", act_level-1);
-    opt_printf(f, "v_item%03u := bat(void,oid,count(new_v_item)*2)"
+    milprintf(f, "var new_v_item := oidNew_expOid.leftjoin(v_item%03u);\n", act_level-1);
+    milprintf(f, "v_item%03u := bat(void,oid,count(new_v_item)*2)"
                                 ".seqbase(0@0).access(BAT_APPEND).insert(new_v_item);\n", act_level);
-    opt_printf(f, "new_v_item := nil_oid_oid;\n");
+    milprintf(f, "new_v_item := nil_oid_oid;\n");
 
-    opt_printf(f, "var new_v_kind := oidNew_expOid.leftjoin(v_kind%03u);\n", act_level-1);
-    opt_printf(f, "v_kind%03u := bat(void,int,count(new_v_kind)*2)"
+    milprintf(f, "var new_v_kind := oidNew_expOid.leftjoin(v_kind%03u);\n", act_level-1);
+    milprintf(f, "v_kind%03u := bat(void,int,count(new_v_kind)*2)"
                                 ".seqbase(0@0).access(BAT_APPEND).insert(new_v_kind);\n", act_level);
-    opt_printf(f, "new_v_kind := nil_oid_int;\n");
+    milprintf(f, "new_v_kind := nil_oid_int;\n");
 
-    opt_printf(f, "oidNew_expOid := nil_oid;\n");
-    opt_printf(f, "} # end of join ()\n");
+    milprintf(f, "oidNew_expOid := nil_oid;\n");
+    milprintf(f, "} # end of join ()\n");
 
     /*
-    opt_printf(f, "print (\"testoutput in join() expanded to level %i\");\n",
+    milprintf(f, "print (\"testoutput in join() expanded to level %i\");\n",
             act_level);
-    opt_printf(f, "print (v_vid%03u, v_iter%03u, v_pos%03u, v_kind%03u);\n",
+    milprintf(f, "print (v_vid%03u, v_iter%03u, v_pos%03u, v_kind%03u);\n",
             act_level, act_level, act_level, act_level);
     */
 }
@@ -1119,17 +838,17 @@ join (opt_t *f, int act_level)
 static void
 mapBack (opt_t *f, int act_level)
 {
-    opt_printf(f,
+    milprintf(f,
             "{ # mapBack ()\n"
             /* the iters are mapped back to the next outer scope */
             "var iter_oidMap := inner%03u.reverse();\n",
             act_level);
-    opt_printf(f,
+    milprintf(f,
             "var oid_oidMap := iter.leftfetchjoin(iter_oidMap);\n"
             "iter_oidMap := nil_oid_oid;\n"
             "iter := oid_oidMap.leftfetchjoin(outer%03u);\n",
             act_level);
-    opt_printf(f,
+    milprintf(f,
             "oid_oidMap := nil_oid_oid;\n"
             "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
             "# item := item;\n"
@@ -1148,20 +867,20 @@ mapBack (opt_t *f, int act_level)
 static void
 createNewVarTable (opt_t *f, int act_level)
 {
-    opt_printf(f, "# createNewVarTable ()\n");
-    opt_printf(f,
+    milprintf(f, "# createNewVarTable ()\n");
+    milprintf(f,
             "v_iter%03u := bat(void,oid).seqbase(0@0).access(BAT_APPEND);\n",
             act_level);
-    opt_printf(f,
+    milprintf(f,
             "v_vid%03u := bat(void,oid).seqbase(0@0).access(BAT_APPEND);\n",
             act_level);
-    opt_printf(f,
+    milprintf(f,
             "v_pos%03u := bat(void,oid).seqbase(0@0).access(BAT_APPEND);\n",
             act_level);
-    opt_printf(f,
+    milprintf(f,
             "v_item%03u := bat(void,oid).seqbase(0@0).access(BAT_APPEND);\n",
             act_level);
-    opt_printf(f,
+    milprintf(f,
             "v_kind%03u := bat(void,int).seqbase(0@0).access(BAT_APPEND);\n",
             act_level);
 }
@@ -1178,13 +897,13 @@ createNewVarTable (opt_t *f, int act_level)
 static void
 append (opt_t *f, char *name, int level, char *type_)
 {
-    opt_printf(f, "{ # append (%s, level)\n", name);
-    opt_printf(f, "var seqb := oid(v_%s%03u.count());\n",name, level);
-    opt_printf(f, "var temp_%s := %s.reverse().mark(seqb).reverse();\n", name, name);
-    opt_printf(f, "seqb := nil_oid;\n");
-    opt_printf(f, "v_%s%03u := v_%s%03u.insert(temp_%s);\n", name, level, name, level, name);
-    opt_printf(f, "temp_%s := nil_oid_%s;\n", name, type_);
-    opt_printf(f, "} # append (%s, level)\n", name);
+    milprintf(f, "{ # append (%s, level)\n", name);
+    milprintf(f, "var seqb := oid(v_%s%03u.count());\n",name, level);
+    milprintf(f, "var temp_%s := %s.reverse().mark(seqb).reverse();\n", name, name);
+    milprintf(f, "seqb := nil_oid;\n");
+    milprintf(f, "v_%s%03u := v_%s%03u.insert(temp_%s);\n", name, level, name, level, name);
+    milprintf(f, "temp_%s := nil_oid_%s;\n", name, type_);
+    milprintf(f, "} # append (%s, level)\n", name);
 }
 
 /**
@@ -1199,7 +918,7 @@ append (opt_t *f, char *name, int level, char *type_)
 static void
 insertVar (opt_t *f, int act_level, int vid)
 {
-    opt_printf(f,
+    milprintf(f,
             "{ # insertVar (vid)\n"
             "var vid := iter.project(%i@0);\n",
             vid);
@@ -1210,16 +929,16 @@ insertVar (opt_t *f, int act_level, int vid)
     append (f, "item", act_level, "oid");
     append (f, "kind", act_level, "int");
 
-    opt_printf(f, "vid := nil_oid_oid;\n");
+    milprintf(f, "vid := nil_oid_oid;\n");
     /*
-    opt_printf(f, 
+    milprintf(f, 
             "print(\"testoutput in insertVar(%i@0) expanded to level %i\");\n",
             vid, act_level);
-    opt_printf(f, 
+    milprintf(f, 
             "print (v_vid%03u, v_iter%03u, v_pos%03u, v_kind%03u);\n",
             act_level, act_level, act_level, act_level);
     */
-    opt_printf(f, "} # end of insertVar (vid)\n");
+    milprintf(f, "} # end of insertVar (vid)\n");
 }
 
 /**
@@ -1233,7 +952,7 @@ insertVar (opt_t *f, int act_level, int vid)
 static void
 translateConst (opt_t *f, int act_level, char *kind)
 {
-    opt_printf(f,
+    milprintf(f,
             "# translateConst (kind)\n"
             "iter := loop%03u.reverse().mark(0@0).reverse();\n"
             "pos := iter.project(1@0);\n"
@@ -1257,11 +976,11 @@ static void
 loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
 {
     /* iter|pos|item input contains only nodes (kind=ELEM) */
-    opt_printf(f, "# loop_liftedSCJ (axis, kind, ns, loc)\n");
+    milprintf(f, "# loop_liftedSCJ (axis, kind, ns, loc)\n");
 
     if (!strcmp (axis, "attribute"))
     {
-        opt_printf(f,
+        milprintf(f,
             "{ # attribute axis\n"
             /* get all unique iter|item combinations */
             "var sorting := iter.reverse().sort().reverse();\n"
@@ -1290,14 +1009,14 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
 
         if (ns)
         {
-            opt_printf(f,
+            milprintf(f,
                     "temp1_str := mposjoin(mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_QN)), "
                                           "mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_FRAG)), "
                                           "ws.fetch(QN_NS));\n"
                     "temp1 := temp1_str.ord_uselect(\"%s\");\n"
                     "temp1_str := nil_oid_str;\n",
                     ns);
-            opt_printf(f,
+            milprintf(f,
                     "temp1 := temp1.mark(0@0).reverse();\n"
                     "oid_attr := temp1.leftfetchjoin(oid_attr);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
@@ -1306,14 +1025,14 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
         }
         if (loc)
         {
-            opt_printf(f,
+            milprintf(f,
                     "temp1_str := mposjoin(mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_QN)), "
                                       "mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_FRAG)), "
                                       "ws.fetch(QN_LOC));\n"
                     "temp1 := temp1_str.ord_uselect(\"%s\");\n"
                     "temp1_str := nil_oid_str;\n",
                     loc);
-            opt_printf(f,
+            milprintf(f,
                     "temp1 := temp1.mark(0@0).reverse();\n"
                     "oid_attr := temp1.leftfetchjoin(oid_attr);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
@@ -1323,7 +1042,7 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
 
         /* add '.reverse().mark(0@0).reverse()' to be sure that the head of 
            the results is void */
-        opt_printf(f,
+        milprintf(f,
                 "iter := oid_iter.reverse().mark(0@0).reverse();\n"
                 "oid_iter := nil_oid_oid;\n"
                 "item := oid_attr.reverse().mark(0@0).reverse();\n"
@@ -1334,7 +1053,7 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
     }
     else if (!strcmp (axis, "self"))
     {
-        opt_printf(f,
+        milprintf(f,
             "{ # self axis\n"
             /* get all unique iter|item combinations */
             "var sorting := iter.reverse().sort().reverse();\n"
@@ -1355,7 +1074,7 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
 
         if (kind)
         {
-            opt_printf(f,
+            milprintf(f,
                     "var temp_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
                     "var temp1 := temp_kind.ord_uselect(%s).mark(0@0).reverse();\n"
                     "temp_kind := nil_oid_chr;\n"
@@ -1367,7 +1086,7 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
         }
         else if (ns && loc)
         {
-            opt_printf(f,
+            milprintf(f,
                     "var temp_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
                     "var temp1 := temp_kind.ord_uselect(ELEMENT).mark(0@0).reverse();\n"
                     "temp_kind := nil_oid_chr;\n"
@@ -1375,7 +1094,7 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil_oid_oid;\n");
-            opt_printf(f,
+            milprintf(f,
                     "var temp_str := mposjoin(mposjoin(oid_item, oid_frag, ws.fetch(PRE_PROP)), "
                                              "mposjoin(oid_item, oid_frag, ws.fetch(PRE_FRAG)), "
                                              "ws.fetch(QN_LOC));\n"
@@ -1386,7 +1105,7 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil_oid_oid;\n",
                     loc);
-            opt_printf(f,
+            milprintf(f,
                     "var temp_str := mposjoin(mposjoin(oid_item, oid_frag, ws.fetch(PRE_PROP)), "
                                              "mposjoin(oid_item, oid_frag, ws.fetch(PRE_FRAG)), "
                                              "ws.fetch(QN_NS));\n"
@@ -1400,7 +1119,7 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
         }
         else if (loc)
         {
-            opt_printf(f,
+            milprintf(f,
                     "var temp_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
                     "var temp1 := temp_kind.ord_uselect(ELEMENT).mark(0@0).reverse();\n"
                     "temp_kind := nil_oid_chr;\n"
@@ -1408,7 +1127,7 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil_oid_oid;\n");
-            opt_printf(f,
+            milprintf(f,
                     "var temp_str := mposjoin(mposjoin(oid_item, oid_frag, ws.fetch(PRE_PROP)), "
                                              "mposjoin(oid_item, oid_frag, ws.fetch(PRE_FRAG)), "
                                              "ws.fetch(QN_LOC));\n"
@@ -1422,7 +1141,7 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
         }
         else if (ns)
         {
-            opt_printf(f,
+            milprintf(f,
                     "var temp_kind := mposjoin(oid_item, oid_frag, ws.fetch(PRE_KIND));\n"
                     "var temp1 := temp_kind.ord_uselect(ELEMENT).mark(0@0).reverse();\n"
                     "temp_kind := nil_oid_chr;\n"
@@ -1430,7 +1149,7 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil_oid_oid;\n");
-            opt_printf(f,
+            milprintf(f,
                     "var temp_str := mposjoin(mposjoin(oid_item, oid_frag, ws.fetch(PRE_PROP)), "
                                              "mposjoin(oid_item, oid_frag, ws.fetch(PRE_FRAG)), "
                                              "ws.fetch(QN_NS));\n"
@@ -1443,7 +1162,7 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
                     ns);
         }
         
-        opt_printf(f,
+        milprintf(f,
                 "iter := oid_iter.reverse().mark(0@0).reverse();\n"
                 "oid_iter := nil_oid_oid;\n"
                 "item := oid_item.reverse().mark(0@0).reverse();\n"
@@ -1456,35 +1175,35 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
     {
         if (kind)
         {
-            opt_printf(f,
+            milprintf(f,
                     "res_scj := loop_lifted_%s_step_with_kind_test"
                     "(iter, item, kind.get_fragment(), ws, %s);\n",
                     axis, kind);
         }
         else if (ns && loc)
         {
-            opt_printf(f,
+            milprintf(f,
                     "res_scj := loop_lifted_%s_step_with_nsloc_test"
                     "(iter, item, kind.get_fragment(), ws, \"%s\", \"%s\");\n",
                     axis, ns, loc);
         }
         else if (loc)
         {
-            opt_printf(f,
+            milprintf(f,
                     "res_scj := loop_lifted_%s_step_with_loc_test"
                     "(iter, item, kind.get_fragment(), ws, \"%s\");\n",
                     axis, loc);
         }
         else if (ns)
         {
-            opt_printf(f,
+            milprintf(f,
                     "res_scj := loop_lifted_%s_step_with_ns_test"
                     "(iter, item, kind.get_fragment(), ws, \"%s\");\n", 
                     axis, ns);
         }
         else
         {
-            opt_printf(f,
+            milprintf(f,
                     "res_scj := loop_lifted_%s_step"
                     "(iter, item, kind.get_fragment(), ws);\n", 
                     axis);
@@ -1504,7 +1223,7 @@ translateLocsteps (opt_t *f, PFcnode_t *c)
 {
     char *axis, *ns, *loc;
 
-    opt_printf(f, 
+    milprintf(f, 
             "{ # translateLocsteps (c)\n"
             /* variable for the (iterative) scj */
             "var res_scj;"
@@ -1614,7 +1333,7 @@ translateLocsteps (opt_t *f, PFcnode_t *c)
     if (strcmp (axis, "attribute") && strcmp (axis, "self"))
     {
         /* res_scj = iter|item bat */
-        opt_printf(f,
+        milprintf(f,
                 "iter := res_scj.fetch(0);\n"
                 "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
                 "item := res_scj.fetch(1);\n"
@@ -1626,11 +1345,11 @@ translateLocsteps (opt_t *f, PFcnode_t *c)
     }
 
     if (!strcmp (axis, "attribute"))
-            opt_printf(f, "kind := kind.set_kind(ATTR);\n");
+            milprintf(f, "kind := kind.set_kind(ATTR);\n");
     else
-            opt_printf(f, "kind := kind.set_kind(ELEM);\n");
+            milprintf(f, "kind := kind.set_kind(ELEM);\n");
 
-    opt_printf(f,
+    milprintf(f,
             "res_scj := nil_oid_bat;\n"
             "} # end of translateLocsteps (c)\n"
            );
@@ -1654,11 +1373,11 @@ addValues (opt_t *f,
            char *varname,
            char *result_var)
 {
-    opt_printf(f, "var ins_vals := %s.reverse().mark(nil).reverse();\n", varname);
-    opt_printf(f, "%s := %s.seqbase(nil).insert(ins_vals).seqbase(0@0);\n", t_co.table, t_co.table);
-    opt_printf(f, "ins_vals := nil_oid_%s;\n", t_co.mil_type);
+    milprintf(f, "var ins_vals := %s.reverse().mark(nil).reverse();\n", varname);
+    milprintf(f, "%s := %s.seqbase(nil).insert(ins_vals).seqbase(0@0);\n", t_co.table, t_co.table);
+    milprintf(f, "ins_vals := nil_oid_%s;\n", t_co.mil_type);
     /* get the offsets of the values */
-    opt_printf(f, "%s := %s.leftjoin(%s.reverse());\n", 
+    milprintf(f, "%s := %s.leftjoin(%s.reverse());\n", 
             result_var, varname, t_co.table);
 }
 
@@ -1672,13 +1391,13 @@ addValues (opt_t *f,
 static void
 createEnumeration (opt_t *f, int act_level)
 {
-    opt_printf(f,
+    milprintf(f,
             "{ # createEnumeration ()\n"
             /* the head of item has to be void */
             "var ints_cE := outer%03u.mark_grp(outer%03u.tunique().project(1@0)).[int]();\n",
             act_level, act_level);
     addValues (f, int_container(), "ints_cE", "item");
-    opt_printf(f,
+    milprintf(f,
             "item := item.reverse().mark(0@0).reverse();\n"
             "ints_cE := nil_oid_int;\n"
             "iter := inner%03u.reverse().mark(0@0).reverse();\n"
@@ -1700,7 +1419,7 @@ createEnumeration (opt_t *f, int act_level)
 static void
 castQName (opt_t *f)
 {
-    opt_printf(f,
+    milprintf(f,
             "{ # castQName ()\n"
             "var qnames := kind.get_type(QNAME);\n"
             "var counted_items := kind.count();\n"
@@ -1788,7 +1507,7 @@ castQName (opt_t *f)
 static void
 loop_liftedElemConstr (opt_t *f, int i)
 {
-    opt_printf(f,
+    milprintf(f,
             "{ # loop_liftedElemConstr (counter)\n"
             "var root_level;\n"
             "var root_size;\n"
@@ -1938,7 +1657,7 @@ loop_liftedElemConstr (opt_t *f, int i)
            "iter_size := {sum}(iter_size, iter%03u.tunique());\n",
            i);
 
-    opt_printf(f,
+    milprintf(f,
             "root_level := iter_size.project(chr(0));\n"
             "root_size := iter_size;\n"
             "root_kind := iter_size.project(ELEMENT);\n"
@@ -1946,7 +1665,7 @@ loop_liftedElemConstr (opt_t *f, int i)
             "root_frag := iter_size.project(WS);\n",
             i, i);
 
-    opt_printf(f,
+    milprintf(f,
             "root_level := root_level.reverse().mark(0@0).reverse();\n"
             "root_size := root_size.reverse().mark(0@0).reverse();\n"
             "root_kind := root_kind.reverse().mark(0@0).reverse();\n"
@@ -2044,15 +1763,15 @@ loop_liftedElemConstr (opt_t *f, int i)
             "} else { # if (nodes.count() != 0) ...\n"
            );
 
-    opt_printf(f, "root_level := item%03u.project(chr(0));\n", i);
-    opt_printf(f, "root_size := item%03u.project(0);\n", i);
-    opt_printf(f, "root_kind := item%03u.project(ELEMENT);\n", i);
-    opt_printf(f, "root_prop := item%03u;\n", i);
-    opt_printf(f, "root_frag := item%03u.project(WS);\n", i);
+    milprintf(f, "root_level := item%03u.project(chr(0));\n", i);
+    milprintf(f, "root_size := item%03u.project(0);\n", i);
+    milprintf(f, "root_kind := item%03u.project(ELEMENT);\n", i);
+    milprintf(f, "root_prop := item%03u;\n", i);
+    milprintf(f, "root_frag := item%03u.project(WS);\n", i);
 
- /* attr */ opt_printf(f,
+ /* attr */ milprintf(f,
  /* attr */ "preNew_preOld := item%03u.project(nil);\n", i);
- /* attr */ opt_printf(f,
+ /* attr */ milprintf(f,
  /* attr */ "preNew_preOld := preNew_preOld.reverse().mark(0@0).reverse();\n"
  /* attr */ "preNew_frag := preNew_preOld.reverse().mark(0@0).reverse();\n"
 
@@ -2116,7 +1835,7 @@ loop_liftedElemConstr (opt_t *f, int i)
             /* return the root elements in iter|pos|item|kind representation */
             /* should contain for each iter exactly 1 root element
                unless there is a thinking error */
-    opt_printf(f,
+    milprintf(f,
             "iter := iter%03u;\n"
             "pos := roots.mark(1@0);\n"
             "item := roots;\n"
@@ -2125,7 +1844,7 @@ loop_liftedElemConstr (opt_t *f, int i)
 
  /* attr */ /* attr translation */
  /* attr */ /* 1. step: add subtree copies of attributes */
-    opt_printf(f,
+    milprintf(f,
             "{ # create attribute subtree copies\n"
             /* get the attributes of the subtree copy elements */
             /* because also nil values from the roots are used for matching
@@ -2175,7 +1894,7 @@ loop_liftedElemConstr (opt_t *f, int i)
            );
 
  /* attr */ /* 2. step: add attribute bindings of new root nodes */
-    opt_printf(f,
+    milprintf(f,
             "{ # create attribute root entries\n"
             /* use iter, qn and frag to find unique combinations */
             "var sorting := attr_iter.reverse().sort().reverse();\n"
@@ -2206,7 +1925,7 @@ loop_liftedElemConstr (opt_t *f, int i)
             i, i);
 
             /* insert it into the WS after everything else */
-    opt_printf(f,
+    milprintf(f,
             "var seqb := oid(ws.fetch(ATTR_QN).fetch(WS).count());\n"
             /* get old QN reference and copy it into the new attribute */
             "var attr_qn := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_QN)).seqbase(seqb);\n"
@@ -2221,7 +1940,7 @@ loop_liftedElemConstr (opt_t *f, int i)
             "attr_own := attr_own.reverse().mark(seqb).reverse();\n",
             i);
             /* use the old FRAG values as reference */
-    opt_printf(f,
+    milprintf(f,
             "attr_frag := attr_frag.seqbase(seqb);\n"
             "seqb := nil_oid;\n"
   
@@ -2259,7 +1978,7 @@ loop_liftedElemConstr (opt_t *f, int i)
 static void
 loop_liftedAttrConstr (opt_t *f, int act_level, int i)
 {
-    opt_printf(f,
+    milprintf(f,
             /* test qname and add "" for each empty item */
             "{ # loop_liftedAttrConstr (int i)\n"
             "if (iter%03u.count() != loop%03u.count())\n"
@@ -2277,7 +1996,7 @@ loop_liftedAttrConstr (opt_t *f, int act_level, int i)
             "}\n",
             i, act_level, act_level, act_level);
 
-    opt_printf(f,
+    milprintf(f,
             "var ws_prop_val := ws.fetch(PROP_VAL).fetch(WS);\n"
             /* add strings to PROP_VAL table (but keep the tail of PROP_VAL
                unique */
@@ -2325,7 +2044,7 @@ loop_liftedAttrConstr (opt_t *f, int act_level, int i)
 static void
 loop_liftedTextConstr (opt_t *f)
 {
-    opt_printf(f,
+    milprintf(f,
             "{ # adding new strings to text node content and create new nodes\n"
             "var ws_prop_text := ws.fetch(PROP_TEXT).fetch(WS);\n"
             "var unq := item.tunique().mark(0@0).reverse();\n"
@@ -2405,80 +2124,80 @@ translateIfThen (opt_t *f, int act_level, int counter,
                  PFcnode_t *c, int then, int bool_res)
 {
     act_level++;
-    opt_printf(f, "{ # translateIfThen\n");
+    milprintf(f, "{ # translateIfThen\n");
 
     /* initial setting of new 'scope' */
-    opt_printf(f, "var loop%03u := loop%03u;\n", act_level, act_level-1);
-    opt_printf(f, "var inner%03u := inner%03u;\n", act_level, act_level-1);
-    opt_printf(f, "var outer%03u := outer%03u;\n", act_level, act_level-1);
-    opt_printf(f, "var v_vid%03u := v_vid%03u;\n", act_level, act_level-1);
-    opt_printf(f, "var v_iter%03u := v_iter%03u;\n", act_level, act_level-1);
-    opt_printf(f, "var v_pos%03u := v_pos%03u;\n", act_level, act_level-1);
-    opt_printf(f, "var v_item%03u := v_item%03u;\n", act_level, act_level-1);
-    opt_printf(f, "var v_kind%03u := v_kind%03u;\n", act_level, act_level-1);
+    milprintf(f, "var loop%03u := loop%03u;\n", act_level, act_level-1);
+    milprintf(f, "var inner%03u := inner%03u;\n", act_level, act_level-1);
+    milprintf(f, "var outer%03u := outer%03u;\n", act_level, act_level-1);
+    milprintf(f, "var v_vid%03u := v_vid%03u;\n", act_level, act_level-1);
+    milprintf(f, "var v_iter%03u := v_iter%03u;\n", act_level, act_level-1);
+    milprintf(f, "var v_pos%03u := v_pos%03u;\n", act_level, act_level-1);
+    milprintf(f, "var v_item%03u := v_item%03u;\n", act_level, act_level-1);
+    milprintf(f, "var v_kind%03u := v_kind%03u;\n", act_level, act_level-1);
 
     /* 1. PHASE: create all mapping stuff to next 'scope' */
-    opt_printf(f, "if (skip = 0)\n{\n");
+    milprintf(f, "if (skip = 0)\n{\n");
     /* output for debugging
-    opt_printf(f, "\"PHASE 1 of %s-clause active\".print();\n",then?"then":"else");
+    milprintf(f, "\"PHASE 1 of %s-clause active\".print();\n",then?"then":"else");
     */
 
     /* get the right set of sequences, which have to be processed */
     if (!then)
-            opt_printf(f, "selected := item%03u.ord_uselect(0@0);\n", bool_res);
+            milprintf(f, "selected := item%03u.ord_uselect(0@0);\n", bool_res);
 
-    opt_printf(f, "iter := selected.mirror().join(iter%03u);\n", bool_res);
-    opt_printf(f, "iter := iter.reverse().mark(0@0).reverse();\n");
-    opt_printf(f, "outer%03u := iter;\n", act_level);
-    opt_printf(f, "iter := iter.mark(1@0);\n");
-    opt_printf(f, "inner%03u := iter;\n", act_level);
-    opt_printf(f, "loop%03u := inner%03u;\n", act_level, act_level);
-    opt_printf(f, "iter := nil_oid_oid;\n");
+    milprintf(f, "iter := selected.mirror().join(iter%03u);\n", bool_res);
+    milprintf(f, "iter := iter.reverse().mark(0@0).reverse();\n");
+    milprintf(f, "outer%03u := iter;\n", act_level);
+    milprintf(f, "iter := iter.mark(1@0);\n");
+    milprintf(f, "inner%03u := iter;\n", act_level);
+    milprintf(f, "loop%03u := inner%03u;\n", act_level, act_level);
+    milprintf(f, "iter := nil_oid_oid;\n");
 
     /* - in a first version no variables are pruned
          at an if-then-else node 
        - if-then-else is executed more or less like a for loop */
-    opt_printf(f, "var expOid := v_iter%03u.mirror();\n", act_level);
-    opt_printf(f, "var oidNew_expOid;\n");
+    milprintf(f, "var expOid := v_iter%03u.mirror();\n", act_level);
+    milprintf(f, "var oidNew_expOid;\n");
     expand (f, act_level);
     join (f, act_level);
-    opt_printf(f, "expOid := nil_oid_oid;\n");
+    milprintf(f, "expOid := nil_oid_oid;\n");
 
-    opt_printf(f, "}\n");
+    milprintf(f, "}\n");
 
     /* 2. PHASE: execute then/else expression if there are 
        true/false values in the boolean expression */
     if (then)
-            opt_printf(f, "if (skip != 1)\n{\n");
+            milprintf(f, "if (skip != 1)\n{\n");
     else
-            opt_printf(f, "if (skip != 2)\n{\n");
+            milprintf(f, "if (skip != 2)\n{\n");
     /* output for debugging
-    opt_printf(f, "\"PHASE 2 of %s-clause active\".print();\n",then?"then":"else");
+    milprintf(f, "\"PHASE 2 of %s-clause active\".print();\n",then?"then":"else");
     */
 
     translate2MIL (f, act_level, counter, c);
-    opt_printf(f, "} ");
-    opt_printf(f, "else\n{\n");
+    milprintf(f, "} ");
+    milprintf(f, "else\n{\n");
     translateEmpty (f);
-    opt_printf(f, "}\n");
+    milprintf(f, "}\n");
 
     /* 3. PHASE: create all mapping stuff from to actual 'scope' */
-    opt_printf(f, "if (skip = 0)\n{\n");
+    milprintf(f, "if (skip = 0)\n{\n");
     /* output for debugging
-    opt_printf(f, "\"PHASE 3 of %s-clause active\".print();\n",then?"then":"else");
+    milprintf(f, "\"PHASE 3 of %s-clause active\".print();\n",then?"then":"else");
     */
     mapBack (f, act_level);
-    opt_printf(f, "}\n");
+    milprintf(f, "}\n");
 
     cleanUpLevel (f, act_level);
-    opt_printf(f, "} # end of translateIfThen\n");
+    milprintf(f, "} # end of translateIfThen\n");
     act_level--;
 }
 
 static void
 fn_boolean (opt_t *f, int act_level, PFty_t input_type)
 {
-    opt_printf(f,
+    milprintf(f,
             "{ # translate fn:boolean (item*) as boolean\n"
             "var iter_count := {count}(iter.reverse(), loop%03u.reverse());\n"
             "var trues := iter_count.[!=](0);\n",
@@ -2486,7 +2205,7 @@ fn_boolean (opt_t *f, int act_level, PFty_t input_type)
 
     if (PFty_subtype (input_type, PFty_star(PFty_integer ())))
     {
-        opt_printf(f,
+        milprintf(f,
                 "trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "test := test.leftjoin(iter.reverse());\n"
@@ -2504,7 +2223,7 @@ fn_boolean (opt_t *f, int act_level, PFty_t input_type)
     }
     else if (PFty_subtype (input_type, PFty_star(PFty_double ())))
     {
-        opt_printf(f,
+        milprintf(f,
                 "trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "test := test.leftjoin(iter.reverse());\n"
@@ -2522,7 +2241,7 @@ fn_boolean (opt_t *f, int act_level, PFty_t input_type)
     }
     else if (PFty_subtype (input_type, PFty_star(PFty_decimal ())))
     {
-        opt_printf(f,
+        milprintf(f,
                 "trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "test := test.leftjoin(iter.reverse());\n"
@@ -2540,7 +2259,7 @@ fn_boolean (opt_t *f, int act_level, PFty_t input_type)
     }
     else if (PFty_subtype (input_type, PFty_star(PFty_string ())))
     {
-        opt_printf(f,
+        milprintf(f,
                 "trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "test := test.leftjoin(iter.reverse());\n"
@@ -2559,7 +2278,7 @@ fn_boolean (opt_t *f, int act_level, PFty_t input_type)
     else if (PFty_subtype (input_type, PFty_star(PFty_boolean ())))
     {
         /* this branch never occurs, because it gets optimized away :) */
-        opt_printf(f,
+        milprintf(f,
                 "trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "test := test.leftjoin(iter.reverse());\n"
@@ -2578,7 +2297,7 @@ fn_boolean (opt_t *f, int act_level, PFty_t input_type)
     {
 
         /* FIXME: rewrite stuff two use only one column instead of oid|oid */
-        opt_printf(f,
+        milprintf(f,
                 "trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "iter := iter.reverse();\n"
@@ -2637,7 +2356,7 @@ fn_boolean (opt_t *f, int act_level, PFty_t input_type)
                 "bool_falses := nil_oid_bit;\n"
                 "trues.access(BAT_READ);\n");
     }
-    opt_printf(f,
+    milprintf(f,
             "iter := iter_count.mark(0@0).reverse();\n"
             "iter_count := nil_oid_int;\n"
             "pos := iter.project(1@0);\n"
@@ -2659,7 +2378,7 @@ fn_boolean (opt_t *f, int act_level, PFty_t input_type)
 static void
 testCastComplete (opt_t *f, int act_level, PFty_t type_)
 {
-    opt_printf(f,
+    milprintf(f,
             "if (iter.count() != loop%03u.count())\n"
             "{    ERROR (\"'%s' doesn't allow empty sequences to be casted\"); }\n",
             act_level, PFty_str (type_));
@@ -2676,7 +2395,7 @@ testCastComplete (opt_t *f, int act_level, PFty_t type_)
 static void
 evaluateCastBlock (opt_t *f, type_co ori, char *cast, char *target_type)
 {
-    opt_printf(f,
+    milprintf(f,
             "{\n"
             "var part_kind := kind.ord_uselect(%s);\n"
             "var oid_oid := part_kind.mark(0@0).reverse();\n"
@@ -2684,19 +2403,19 @@ evaluateCastBlock (opt_t *f, type_co ori, char *cast, char *target_type)
             "var part_item := oid_oid.leftfetchjoin(item);\n",
             ori.mil_cast);
     if (ori.kind != co_bool)
-        opt_printf(f,
+        milprintf(f,
                 "var part_%s := part_item.leftfetchjoin(%s);\n",
                 ori.mil_type, ori.table);
     else
-        opt_printf(f,
+        milprintf(f,
                 "var part_%s := part_item;\n",
                 ori.mil_type);
 
-    opt_printf(f,
+    milprintf(f,
             "part_item := nil_oid_oid;\n"
             "var part_val := part_%s.%s;\n",
             ori.mil_type, cast);
-    opt_printf(f,
+    milprintf(f,
             "var res_mu := merged_union(_oid, oid_oid, _val, part_val);\n"
             "oid_oid := nil_oid_oid;\n"
             "part_%s := nil_oid_%s;\n"
@@ -2726,15 +2445,15 @@ evaluateCast (opt_t *f,
 {
     
     if (ori.kind != co_bool)
-        opt_printf(f,
+        milprintf(f,
                 "var ori_val := item.leftfetchjoin(%s);\n"
                 "var cast_val := ori_val.%s;\n"
                 "ori_val := nil_oid_%s;\n",
                 ori.table, cast, ori.mil_type);
     else
-        opt_printf(f, "var cast_val := item.%s;\n", cast);
+        milprintf(f, "var cast_val := item.%s;\n", cast);
 
-    opt_printf(f,
+    milprintf(f,
             "if (cast_val.ord_uselect(%s(nil)).count() != 0)\n"
             "{    ERROR (\"couldn't cast all values from %s to %s\"); }\n",
             target.mil_type, ori.name, target.name);
@@ -2742,9 +2461,9 @@ evaluateCast (opt_t *f,
     if (target.kind != co_bool)
         addValues (f, target, "cast_val", "item");
     else
-        opt_printf(f, "item := cast_val.[oid]();\n");
+        milprintf(f, "item := cast_val.[oid]();\n");
 
-    opt_printf(f,
+    milprintf(f,
             "cast_val := nil_oid_%s;\n"
             "item := item.reverse().mark(0@0).reverse();\n"
             "kind := kind.project(%s);\n",
@@ -2774,7 +2493,7 @@ translateCast2INT (opt_t *f, PFty_t input_type)
         evaluateCast (f, bool_container(), int_container(), "[int]()");
     else /* handles the choice type */
     {
-        opt_printf(f,
+        milprintf(f,
                 "var _oid := kind.ord_uselect(INT);\n"
                 "_oid := _oid.mark(0@0).reverse();\n"
                 "var part_item := _oid.leftfetchjoin(item);\n"
@@ -2786,12 +2505,12 @@ translateCast2INT (opt_t *f, PFty_t input_type)
         evaluateCastBlock (f, dbl_container(), "[int]()", "int");
         evaluateCastBlock (f, str_container(), "[int]()", "int");
 
-        opt_printf(f,
+        milprintf(f,
                 "if (_val.ord_uselect(int(nil)).count() != 0)\n"
                 "{    ERROR (\"couldn't cast all values to integer\"); }\n");
  
         addValues(f, int_container(), "_val", "item");
-        opt_printf(f,
+        milprintf(f,
                 "item := item.reverse().mark(0@0).reverse();\n"
                 "kind := _oid.project(INT);\n");
     }
@@ -2820,7 +2539,7 @@ translateCast2DEC (opt_t *f, PFty_t input_type)
         evaluateCast (f, bool_container(), dec_container(), "[dbl]()");
     else /* handles the choice type */ 
     {
-        opt_printf(f,
+        milprintf(f,
                 "var _oid := kind.ord_uselect(DEC);\n"
                 "_oid := _oid.mark(0@0).reverse();\n"
                 "var part_item := _oid.leftfetchjoin(item);\n"
@@ -2832,12 +2551,12 @@ translateCast2DEC (opt_t *f, PFty_t input_type)
         evaluateCastBlock (f, dbl_container(), "[dbl]()", "dbl");
         evaluateCastBlock (f, str_container(), "[dbl]()", "dbl");
  
-        opt_printf(f,
+        milprintf(f,
                 "if (_val.ord_uselect(dbl(nil)).count() != 0)\n"
                 "{    ERROR (\"couldn't cast all values to decimal\"); }\n");
  
         addValues(f, dec_container(), "_val", "item");
-        opt_printf(f,
+        milprintf(f,
                 "item := item.reverse().mark(0@0).reverse();\n"
                 "kind := _oid.project(DEC);\n");
     }
@@ -2866,7 +2585,7 @@ translateCast2DBL (opt_t *f, PFty_t input_type)
         evaluateCast (f, bool_container(), dbl_container(), "[dbl]()");
     else /* handles the choice type */ 
     {
-        opt_printf(f,
+        milprintf(f,
                 "var _oid := kind.ord_uselect(DBL);\n"
                 "_oid := _oid.mark(0@0).reverse();\n"
                 "var part_item := _oid.leftfetchjoin(item);\n"
@@ -2878,12 +2597,12 @@ translateCast2DBL (opt_t *f, PFty_t input_type)
         evaluateCastBlock (f, int_container(), "[dbl]()", "dbl");
         evaluateCastBlock (f, str_container(), "[dbl]()", "dbl");
  
-        opt_printf(f,
+        milprintf(f,
                 "if (_val.ord_uselect(dbl(nil)).count() != 0)\n"
                 "{    ERROR (\"couldn't cast all values to double\"); }\n");
  
         addValues(f, dbl_container(), "_val", "item");
-        opt_printf(f,
+        milprintf(f,
                 "item := item.reverse().mark(0@0).reverse();\n"
                 "kind := _oid.project(DBL);\n");
     }
@@ -2912,7 +2631,7 @@ translateCast2STR (opt_t *f, PFty_t input_type)
         evaluateCast (f, bool_container(), str_container(), "[str]()");
     else /* handles the choice type */ 
     {
-        opt_printf(f,
+        milprintf(f,
                 "var _oid := kind.ord_uselect(STR);\n"
                 "_oid := _oid.mark(0@0).reverse();\n"
                 "var part_item := _oid.leftfetchjoin(item);\n"
@@ -2924,12 +2643,12 @@ translateCast2STR (opt_t *f, PFty_t input_type)
         evaluateCastBlock (f, dbl_container(), "[str]()", "str");
         evaluateCastBlock (f, int_container(), "[str]()", "str");
  
-        opt_printf(f,
+        milprintf(f,
                 "if (_val.ord_uselect(str(nil)).count() != 0)\n"
                 "{    ERROR (\"couldn't cast all values to string\"); }\n");
  
         addValues(f, str_container(), "_val", "item");
-        opt_printf(f,
+        milprintf(f,
                 "item := item.reverse().mark(0@0).reverse();\n"
                 "kind := _oid.project(STR);\n");
     }
@@ -2958,7 +2677,7 @@ translateCast2BOOL (opt_t *f, PFty_t input_type)
     else if (PFty_eq (input_type, PFty_boolean ()));
     else /* handles the choice type */ 
     {
-        opt_printf(f,
+        milprintf(f,
                 "var _oid := kind.ord_uselect(BOOL);\n"
                 "_oid := _oid.mark(0@0).reverse();\n"
                 "var part_item := _oid.leftfetchjoin(item);\n"
@@ -2970,11 +2689,11 @@ translateCast2BOOL (opt_t *f, PFty_t input_type)
         evaluateCastBlock (f, dbl_container(), "[bit]()", "bit");
         evaluateCastBlock (f, bool_container(), "[!=](\"\")", "bit");
  
-        opt_printf(f,
+        milprintf(f,
                 "if (_val.ord_uselect(bit(nil)).count() != 0)\n"
                 "{    ERROR (\"couldn't cast all values to boolean\"); }\n");
  
-        opt_printf(f,
+        milprintf(f,
                 "item := _val.[oid]();\n"
                 "kind := _oid.project(BOOL);\n");
     }
@@ -3004,7 +2723,7 @@ translateCast (opt_t *f, int act_level, PFcnode_t *c)
     if (input_type.type == ty_opt) 
         input_type = PFty_child (input_type);
 
-    opt_printf(f,
+    milprintf(f,
             "{ # cast from %s to %s\n", 
             PFty_str(input_type), PFty_str(cast_type));
 
@@ -3037,7 +2756,7 @@ translateCast (opt_t *f, int act_level, PFcnode_t *c)
     if (!cast_optional)
         testCastComplete (f, act_level, cast_type);
 
-    opt_printf(f,
+    milprintf(f,
             "} # end of cast from %s to %s\n", 
             PFty_str(input_type), PFty_str(cast_type));
 }
@@ -3060,25 +2779,25 @@ translateCast (opt_t *f, int act_level, PFcnode_t *c)
 static void
 evaluateOp (opt_t *f, int counter, char *operator, type_co t_co, char *div)
 {
-    opt_printf(f, "{ # '%s' calculation\n", operator);
+    milprintf(f, "{ # '%s' calculation\n", operator);
     /* FIXME: assume that both intermediate results are aligned 
               otherwise this doesn't work */
-    opt_printf(f, "var val_snd := item.leftfetchjoin(%s);\n", t_co.table);
+    milprintf(f, "var val_snd := item.leftfetchjoin(%s);\n", t_co.table);
     /* item%03u is the older (first) argument and has to be the first operand
        for the evaluation */
-    opt_printf(f, "var val_fst := item%03u.leftfetchjoin(%s);\n",
+    milprintf(f, "var val_fst := item%03u.leftfetchjoin(%s);\n",
             counter, t_co.table);
     if (div)
-        opt_printf(f, 
+        milprintf(f, 
                 "if (val_snd.ord_uselect(%s).count() > 0)\n"
                 "{   ERROR (\"division by 0 is forbidden\"); }\n",
                 div);
-    opt_printf(f, "val_fst := val_fst.[%s](val_snd);\n", operator);
+    milprintf(f, "val_fst := val_fst.[%s](val_snd);\n", operator);
     addValues(f, t_co, "val_fst", "item");
-    opt_printf(f, "item := item.reverse().mark(0@0).reverse();\n");
-    opt_printf(f, "val_fst := nil_oid_%s;\n", t_co.mil_type);
-    opt_printf(f, "val_snd := nil_oid_%s;\n", t_co.mil_type);
-    opt_printf(f, "} # end of '%s' calculation\n", operator);
+    milprintf(f, "item := item.reverse().mark(0@0).reverse();\n");
+    milprintf(f, "val_fst := nil_oid_%s;\n", t_co.mil_type);
+    milprintf(f, "val_snd := nil_oid_%s;\n", t_co.mil_type);
+    milprintf(f, "} # end of '%s' calculation\n", operator);
 }
 
 /**
@@ -3099,29 +2818,29 @@ static void
 evaluateOpOpt (opt_t *f, int counter, char *operator,
                type_co t_co, char *kind, char *div)
 {
-    opt_printf(f, "{ # '%s' calculation with optional type\n", operator);
-    opt_printf(f, "var val_snd := item.leftfetchjoin(%s);\n", t_co.table);
-    opt_printf(f, "val_snd := iter.reverse().leftfetchjoin(val_snd);\n");
-    opt_printf(f, "var val_fst := item%03u.leftfetchjoin(%s);\n",
+    milprintf(f, "{ # '%s' calculation with optional type\n", operator);
+    milprintf(f, "var val_snd := item.leftfetchjoin(%s);\n", t_co.table);
+    milprintf(f, "val_snd := iter.reverse().leftfetchjoin(val_snd);\n");
+    milprintf(f, "var val_fst := item%03u.leftfetchjoin(%s);\n",
             counter, t_co.table);
-    opt_printf(f, "val_fst := iter%03u.reverse().leftfetchjoin(val_fst);\n",
+    milprintf(f, "val_fst := iter%03u.reverse().leftfetchjoin(val_fst);\n",
             counter);
     if (div)
-        opt_printf(f, 
+        milprintf(f, 
                 "if (val_snd.ord_uselect(%s).count() > 0)\n"
                 "{   ERROR (\"division by 0 is forbidden\") };\n",
                 div);
     /* item%03u is the older (first) argument and has to be the first operand
        for the evaluation */
-    opt_printf(f, "val_fst := val_fst.[%s](val_snd);\n", operator);
-    opt_printf(f, "iter := val_fst.mark(0@0).reverse();\n");
-    opt_printf(f, "pos := iter.project(1@0);\n");
-    opt_printf(f, "kind := iter.project(%s);\n", kind);
+    milprintf(f, "val_fst := val_fst.[%s](val_snd);\n", operator);
+    milprintf(f, "iter := val_fst.mark(0@0).reverse();\n");
+    milprintf(f, "pos := iter.project(1@0);\n");
+    milprintf(f, "kind := iter.project(%s);\n", kind);
     addValues(f, t_co, "val_fst", "item");
-    opt_printf(f, "item := item.reverse().mark(0@0).reverse();\n");
-    opt_printf(f, "val_fst := nil_oid_%s;\n", t_co.mil_type);
-    opt_printf(f, "val_snd := nil_oid_%s;\n", t_co.mil_type);
-    opt_printf(f, "} # end of '%s' calculation with optional type\n", operator);
+    milprintf(f, "item := item.reverse().mark(0@0).reverse();\n");
+    milprintf(f, "val_fst := nil_oid_%s;\n", t_co.mil_type);
+    milprintf(f, "val_snd := nil_oid_%s;\n", t_co.mil_type);
+    milprintf(f, "} # end of '%s' calculation with optional type\n", operator);
 }
 
 /**
@@ -3204,31 +2923,31 @@ translateOperation (opt_t *f, int act_level, int counter,
 static void
 evaluateComp (opt_t *f, int counter, char *operator, type_co t_co)
 {
-    opt_printf(f, "{ # '%s' comparison\n", operator);
+    milprintf(f, "{ # '%s' comparison\n", operator);
     /* FIXME: assume that both intermediate results are aligned 
               otherwise this doesn't work */
     if (t_co.kind != co_bool)
     {
-        opt_printf(f, "var val_snd := item.leftfetchjoin(%s);\n", t_co.table);
+        milprintf(f, "var val_snd := item.leftfetchjoin(%s);\n", t_co.table);
         /* item%03u is the older (first) argument and has to be
            the first operand for the evaluation */
-        opt_printf(f, "var val_fst := item%03u.leftfetchjoin(%s);\n",
+        milprintf(f, "var val_fst := item%03u.leftfetchjoin(%s);\n",
                 counter, t_co.table);
     }
     else
     {
-        opt_printf(f, "var val_snd := item;\n");
+        milprintf(f, "var val_snd := item;\n");
         /* item%03u is the older (first) argument and has to be
            the first operand for the evaluation */
-        opt_printf(f, "var val_fst := item%03u;\n", counter);
+        milprintf(f, "var val_fst := item%03u;\n", counter);
     }
-    opt_printf(f, "var val_bool := val_fst.[%s](val_snd);\n", operator);
-    opt_printf(f, "val_fst := nil_oid_%s;\n", t_co.mil_type);
-    opt_printf(f, "val_snd := nil_oid_%s;\n", t_co.mil_type);
-    opt_printf(f, "item := val_bool.[oid]();\n");
-    opt_printf(f, "val_bool := nil_oid_bit;\n");
-    opt_printf(f, "kind := kind.project(BOOL);\n");
-    opt_printf(f, "} # end of '%s' comparison\n", operator);
+    milprintf(f, "var val_bool := val_fst.[%s](val_snd);\n", operator);
+    milprintf(f, "val_fst := nil_oid_%s;\n", t_co.mil_type);
+    milprintf(f, "val_snd := nil_oid_%s;\n", t_co.mil_type);
+    milprintf(f, "item := val_bool.[oid]();\n");
+    milprintf(f, "val_bool := nil_oid_bit;\n");
+    milprintf(f, "kind := kind.project(BOOL);\n");
+    milprintf(f, "} # end of '%s' comparison\n", operator);
 }
 
 /**
@@ -3245,29 +2964,29 @@ evaluateComp (opt_t *f, int counter, char *operator, type_co t_co)
 static void
 evaluateCompOpt (opt_t *f, int counter, char *operator, type_co t_co)
 {
-    opt_printf(f, "{ # '%s' comparison with optional type\n", operator);
+    milprintf(f, "{ # '%s' comparison with optional type\n", operator);
     if (t_co.kind != co_bool)
     {
-        opt_printf(f, "var val_snd := item.leftfetchjoin(%s);\n", t_co.table);
-        opt_printf(f, "val_snd := iter.reverse().leftfetchjoin(val_snd);\n");
+        milprintf(f, "var val_snd := item.leftfetchjoin(%s);\n", t_co.table);
+        milprintf(f, "val_snd := iter.reverse().leftfetchjoin(val_snd);\n");
         /* item%03u is the older (first) argument and has to be
            the first operand for the evaluation */
-        opt_printf(f, "var val_fst := item%03u.leftfetchjoin(%s);\n",
+        milprintf(f, "var val_fst := item%03u.leftfetchjoin(%s);\n",
                 counter, t_co.table);
-        opt_printf(f, "val_fst := iter%03u.reverse().leftfetchjoin(val_fst);\n",
+        milprintf(f, "val_fst := iter%03u.reverse().leftfetchjoin(val_fst);\n",
                 counter);
     }
     else
     {
-        opt_printf(f, "var val_snd := item;\n");
+        milprintf(f, "var val_snd := item;\n");
         /* item%03u is the older (first) argument and has to be
            the first operand for the evaluation */
-        opt_printf(f, "var val_fst := item%03u;\n", counter);
+        milprintf(f, "var val_fst := item%03u;\n", counter);
     }
-    opt_printf(f, "var val_bool := val_fst.[%s](val_snd);\n", operator);
-    opt_printf(f, "val_fst := nil_oid_%s;\n", t_co.mil_type);
-    opt_printf(f, "val_snd := nil_oid_%s;\n", t_co.mil_type);
-    opt_printf(f,
+    milprintf(f, "var val_bool := val_fst.[%s](val_snd);\n", operator);
+    milprintf(f, "val_fst := nil_oid_%s;\n", t_co.mil_type);
+    milprintf(f, "val_snd := nil_oid_%s;\n", t_co.mil_type);
+    milprintf(f,
             "iter := val_bool.mark(0@0).reverse();\n"
              "pos := iter.project(1@0);\n"
              "item := val_bool.[oid]();\n"
@@ -3361,7 +3080,7 @@ translateComparison (opt_t *f, int act_level, int counter,
 static void
 combine_strings (opt_t *f)
 {
-    opt_printf(f,
+    milprintf(f,
             "{ # combine_strings\n"
             "var iter_item := iter.reverse().leftfetchjoin(item);\n"
             "var iter_str := iter_item.leftfetchjoin(str_values).chk_order();\n"
@@ -3371,7 +3090,7 @@ combine_strings (opt_t *f)
             "pos := iter.mark(1@0);\n"
             "kind := iter.project(STR);\n");
     addValues (f, str_container(), "iter_str", "item");
-    opt_printf(f,
+    milprintf(f,
             "iter_str := nil_oid_str;\n"
             "item := item.reverse().mark(0@0).reverse();\n"
             "} # end of combine_strings\n");
@@ -3396,7 +3115,7 @@ typed_value (opt_t *f, bool tv)
        - only attributes
        - elements and attributes 
        This makes of course the code listed here bigger :) */
-    opt_printf(f,
+    milprintf(f,
             "{ # typed-value\n"
             /* save input iters to return empty string for rows
                which had no text content */
@@ -3441,9 +3160,9 @@ typed_value (opt_t *f, bool tv)
                 "var iter_item := pruned_input.leftfetchjoin(item_str).chk_order();\n"
                 "item_str := nil_oid_str;\n");
     if (!tv)
-        opt_printf(f,"iter_item := iter_item.string_join(iter_item.reverse().tunique().project(\"\"));\n");
+        milprintf(f,"iter_item := iter_item.string_join(iter_item.reverse().tunique().project(\"\"));\n");
 
-    opt_printf(f,
+    milprintf(f,
                 "pruned_input := nil_oid_oid;\n"
                 "iter := iter_item.mark(0@0).reverse();\n"
                 "item_str := iter_item.reverse().mark(0@0).reverse();\n"
@@ -3526,16 +3245,16 @@ typed_value (opt_t *f, bool tv)
                     "iter := nil_oid_oid;\n"
                     "item_str := nil_oid_str;\n");
     if (!tv)
-        opt_printf(f,  "iter_item := iter_item.string_join(iter_item.reverse().tunique().project(\"\"));\n");
+        milprintf(f,  "iter_item := iter_item.string_join(iter_item.reverse().tunique().project(\"\"));\n");
 
-    opt_printf(f,
+    milprintf(f,
                     "iter := iter_item.mark(0@0).reverse();\n"
                     "item_str := iter_item.reverse().mark(0@0).reverse();\n"
                 "}\n"
             "}\n");
 
     addValues (f, str_container(), "item_str", "item");
-    opt_printf(f,
+    milprintf(f,
             "item_str := nil_oid_str;\n"
             "item := item.reverse().mark(0@0).reverse();\n"
             /* adds empty strings if an element had no string content */
@@ -3565,7 +3284,7 @@ typed_value (opt_t *f, bool tv)
 static void
 fn_data (opt_t *f)
 {
-    opt_printf(f,
+    milprintf(f,
             /* split atomic from node types */
             "var atomic := kind.get_type_atomic();\n"
             "atomic := atomic.mark(0@0).reverse();\n"
@@ -3582,7 +3301,7 @@ fn_data (opt_t *f)
             "item := node.leftfetchjoin(item);\n"
             "kind := node.leftfetchjoin(kind);\n");
     typed_value (f, false);
-    opt_printf(f,
+    milprintf(f,
             /* every input row of typed-value gives back exactly
                one output row - therefore a mapping is not necessary */
             "var res_mu := merged_union (node, atomic, "
@@ -3622,7 +3341,7 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
 {
     counter++;
     saveResult (f, counter);
-    opt_printf(f,
+    milprintf(f,
             "{ # item-sequence-to-node-sequence\n"
             "var nodes_order;\n"
             "{\n"
@@ -3691,7 +3410,7 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "kind := atomic.leftfetchjoin(kind);\n",
             counter, counter, counter, counter);
     translateCast2STR (f, input_type);
-    opt_printf(f,
+    milprintf(f,
             "res_mu_is2ns := merged_union (input_order, atomic, "
                                           "input_str, item.leftfetchjoin(str_values), "
                                           /* 3@0 is string constant for combine_text_string */
@@ -3721,7 +3440,7 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
        text-node table and has a different handling in the element construction.
        At least some copying of strings could be avoided :) */
     addValues (f, str_container(), "result_str", "item");
-    opt_printf(f,
+    milprintf(f,
             "result_str := nil_oid_str;\n"
             "iter := result_order;\n"
             "pos := result_order.mark(1@0);\n"
@@ -3730,7 +3449,7 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "kind := iter.project(STR);\n"
             "}\n");
     loop_liftedTextConstr (f); 
-    opt_printf(f,
+    milprintf(f,
             "var res_mu_is2ns := merged_union (iter, nodes_order, "
                                               "item, nodes_order.leftfetchjoin(item%03u), "
                                               "kind, nodes_order.leftfetchjoin(kind%03u));\n"
@@ -3763,7 +3482,7 @@ static void eval_join_helper (opt_t *f,
     {
         if (fst->child[0]->kind == c_attribute)
         {
-            opt_printf(f,
+            milprintf(f,
                     "var join_item1;\n"
                     "{\n"
                     "var join_item_str;\n"
@@ -3775,7 +3494,7 @@ static void eval_join_helper (opt_t *f,
         }
         else
         {
-            opt_printf(f,
+            milprintf(f,
                     "var join_item1;\n"
                     "{\n"
                     "var join_item_str;\n"
@@ -3785,7 +3504,7 @@ static void eval_join_helper (opt_t *f,
                                                "ws.fetch(PROP_TEXT));\n",
                     fst_res, fst_res, fst_res);
         }
-        opt_printf(f,
+        milprintf(f,
                 "join_item1 := join_item_str.[%s]();\n"
                 "}\n"
                 "if (join_item1.ord_uselect(%s(nil)).count() != 0)\n"
@@ -3794,14 +3513,14 @@ static void eval_join_helper (opt_t *f,
     }
     else
     {
-        opt_printf(f, "var join_item1 := item%03u.leftfetchjoin(%s);\n", fst_res, container.table);
+        milprintf(f, "var join_item1 := item%03u.leftfetchjoin(%s);\n", fst_res, container.table);
     }
 
     if (cast_snd)
     {
         if (snd->child[3]->child[0]->kind == c_attribute)
         {
-            opt_printf(f,
+            milprintf(f,
                     "var join_item2;\n"
                     "{\n"
                     "var join_item_str;\n"
@@ -3813,7 +3532,7 @@ static void eval_join_helper (opt_t *f,
         }
         else
         {
-            opt_printf(f,
+            milprintf(f,
                     "var join_item2;\n"
                     "{\n"
                     "var join_item_str;\n"
@@ -3823,7 +3542,7 @@ static void eval_join_helper (opt_t *f,
                                                 "ws.fetch(PROP_TEXT));\n",
                     snd_res, snd_res, snd_res);
         }
-        opt_printf(f,
+        milprintf(f,
                 "join_item2 := join_item_str.[%s]();\n"
                 "}\n"
                 "if (join_item2.ord_uselect(%s(nil)).count() != 0)\n"
@@ -3832,7 +3551,7 @@ static void eval_join_helper (opt_t *f,
     }
     else
     {
-        opt_printf(f, "var join_item2 := item%03u.leftfetchjoin(%s);\n", snd_res, container.table);
+        milprintf(f, "var join_item2 := item%03u.leftfetchjoin(%s);\n", snd_res, container.table);
     }
 }
 
@@ -3910,7 +3629,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
 
     counter++;
     snd_var = counter;
-    opt_printf(f,
+    milprintf(f,
             "{ # evaluate_join\n"
             "var iter%03u;\n"
             "var pos%03u;\n"
@@ -3919,7 +3638,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
             snd_var, snd_var, snd_var, snd_var);
     counter++;
     fst_res = counter;
-    opt_printf(f,
+    milprintf(f,
             "var iter%03u;\n"
             "var pos%03u;\n"
             "var item%03u;\n"
@@ -3927,13 +3646,13 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
             fst_res, fst_res, fst_res, fst_res);
     counter++;
     snd_res = counter;
-    opt_printf(f,
+    milprintf(f,
             "var iter%03u;\n"
             "var pos%03u;\n"
             "var item%03u;\n"
             "var kind%03u;\n",
             snd_res, snd_res, snd_res, snd_res);
-    opt_printf(f,
+    milprintf(f,
             "var jouter%03u ;\n"
             "var jinner%03u ;\n"
             "var jloop%03u  ;\n"
@@ -3949,13 +3668,13 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
     if (lev_fst)
     {
         translate2MIL (f, act_level, counter, fst);
-        opt_printf(f,
+        milprintf(f,
                 "iter%03u := iter;\n"
                 "pos%03u  := pos ;\n"
                 "item%03u := item;\n"
                 "kind%03u := kind;\n",
                 fst_res, fst_res, fst_res, fst_res);
-        opt_printf(f,
+        milprintf(f,
                 "jouter%03u  := outer%03u ;\n"
                 "jinner%03u  := inner%03u ;\n"
                 "jloop%03u   := loop%03u  ;\n"
@@ -3971,7 +3690,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
     }
     else
     {
-        opt_printf(f,
+        milprintf(f,
                 "jouter%03u  := outer%03u ;\n"
                 "jinner%03u  := inner%03u ;\n"
                 "jloop%03u   := loop%03u  ;\n"
@@ -3984,7 +3703,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
                 fst_res, act_level, fst_res, act_level,
                 fst_res, act_level, fst_res, act_level,
                 fst_res, act_level, fst_res, act_level);
-        opt_printf(f,
+        milprintf(f,
                 "outer%03u  := outer%03u .copy().access(BAT_WRITE);\n"
                 "inner%03u  := inner%03u .copy().access(BAT_WRITE);\n"
                 "loop%03u   := loop%03u  .copy().access(BAT_WRITE);\n"
@@ -3998,7 +3717,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
                 act_level, 0, act_level, 0,
                 act_level, 0, act_level, 0);
         translate2MIL (f, act_level, counter, fst);
-        opt_printf(f,
+        milprintf(f,
                 "iter%03u := iter;\n"
                 "pos%03u  := pos ;\n"
                 "item%03u := item;\n"
@@ -4007,7 +3726,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
     }
     if (!lev_snd)
     {
-        opt_printf(f,
+        milprintf(f,
                 "outer%03u  := outer%03u .copy().access(BAT_WRITE);\n"
                 "inner%03u  := inner%03u .copy().access(BAT_WRITE);\n"
                 "loop%03u   := loop%03u  .copy().access(BAT_WRITE);\n"
@@ -4024,7 +3743,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
     else
     {
         /* this part of the code never occurs (at least until now) */
-        opt_printf(f,
+        milprintf(f,
                 "outer%03u  := outer%03u .copy().access(BAT_WRITE);\n"
                 "inner%03u  := inner%03u .copy().access(BAT_WRITE);\n"
                 "loop%03u   := loop%03u  .copy().access(BAT_WRITE);\n"
@@ -4039,7 +3758,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
                 act_level, act_level-1, act_level, act_level-1);
     }
     translate2MIL (f, act_level, counter, snd->child[2]);
-    opt_printf(f,
+    milprintf(f,
             "{  # for-translation\n"
             "# project ()\n"
             "outer%03u := iter;\n"
@@ -4048,7 +3767,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
             "pos := iter.project(1@0);\n"
             "loop%03u := inner%03u;\n",
             act_level, act_level, act_level, act_level);
-    opt_printf(f,
+    milprintf(f,
             "iter%03u := iter;\n"
             "pos%03u  := pos ;\n"
             "item%03u := item;\n"
@@ -4056,13 +3775,13 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
             snd_var, snd_var, snd_var, snd_var);
 
     /* in the actual scenario not supported 
-    opt_printf(f,
+    milprintf(f,
             "var expOid := v_vid%03u.mirror();\n"
             "var oidNew_expOid;\n",
             act_level-1);
             expand (f, act_level);
             join (f, act_level);
-    opt_printf(f, "expOid := nil_oid_oid;\n");
+    milprintf(f, "expOid := nil_oid_oid;\n");
     */
 
 
@@ -4076,7 +3795,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
     }
 
     translate2MIL (f, act_level, counter, snd->child[3]);
-    opt_printf(f,
+    milprintf(f,
             "iter%03u := iter;\n"
             "pos%03u := pos;\n"
             "item%03u := item;\n"
@@ -4085,9 +3804,9 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
         
     /* mapBack (f, act_level); */
     cleanUpLevel (f, act_level);
-    opt_printf(f, "}  # end of for-translation\n");
+    milprintf(f, "}  # end of for-translation\n");
 
-    opt_printf(f,
+    milprintf(f,
             "outer%03u  := jouter%03u ;\n"
             "inner%03u  := jinner%03u ;\n"
             "loop%03u   := jloop%03u  ;\n"
@@ -4123,7 +3842,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
         if (cast_fst || cast_snd)
             PFoops (OOPS_FATAL, "cast to boolean in join not supported until now");
 
-        opt_printf(f,
+        milprintf(f,
                 "var join_item1 := item%03u;\n"
                 "var join_item2 := item%03u;\n",
                 fst_res, snd_res);
@@ -4133,7 +3852,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
         PFoops (OOPS_FATAL, "not supported type for comparison in join");
     }
 
-    opt_printf(f,
+    milprintf(f,
             "join_item1 := join_item1.reverse().leftfetchjoin(iter%03u).reverse();\n"
             "join_item2 := join_item2.reverse().leftfetchjoin(iter%03u).reverse();\n",
             fst_res, snd_res);
@@ -4167,50 +3886,50 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
     }
     else if (!lev_fst && act_level)
     {
-        opt_printf(f,
+        milprintf(f,
                 "# (for now,?) the mapping prohibits to push leftfetchjoin's below the theta-join\n"
                 "# (unless we'd push the mapping, too, but that's a m-n join that might 'explode'...)\n"
                 "var join_result := htordered_unique_thetajoin(join_item1, %s, join_item2.reverse());\n"
                 "var snd_iter := join_result.reverse().mark(0@0).reverse();\n"
                 "var fst_iter := join_result.mark(0@0).reverse();\n",
                 comp);
-        opt_printf(f,
+        milprintf(f,
                 "{\n"
                 "var mapping := outer%03u.reverse().leftfetchjoin(inner%03u);\n",
                 0, 0);
         for (i = 0; i < act_level; i++)
         {
-            opt_printf(f, 
+            milprintf(f, 
                 "mapping := mapping.leftjoin(outer%03u.reverse());\n"
                 "mapping := mapping.leftfetchjoin(inner%03u);\n",
                 i+1, i+1);
         }
-        opt_printf(f,
+        milprintf(f,
                 "fst_iter := fst_iter.leftjoin(mapping);\n"
                 "}\n"
                 "snd_iter := fst_iter.mark(0@0).reverse().leftfetchjoin(snd_iter);\n"
                 "fst_iter := fst_iter.reverse().mark(0@0).reverse();\n");
         if (strcmp(lx,"nil")) {
-            opt_printf(f,
+            milprintf(f,
                 "# leftfetchjoin that cannot be pushed below the theta-join (yet?)\n"
                 "fst_iter := fst_iter.leftjoin(reverse(lx));\n");
         }
         if (strcmp(rx,"nil")) {
-            opt_printf(f,
+            milprintf(f,
                 "# leftfetchjoin that cannot be pushed below the theta-join (yet?)\n"
                 "snd_iter := snd_iter.leftjoin(rx);\n");
         }
     }
     else
     {
-        opt_printf(f,
+        milprintf(f,
                 "# if necessary, we (try to) push leftfetchjoin's below the theta-join\n"
                 "var join_result := htordered_unique_thetajoin(%s, join_item1, %s, join_item2.reverse(), %s);\n"
                 "var snd_iter := join_result.reverse().mark(0@0).reverse();\n"
                 "var fst_iter := join_result.mark(0@0).reverse();\n",
                 lx, comp, rx);
     }
-    opt_printf(f,
+    milprintf(f,
             "# order_fst isn't needed until now\n"
             "# (cannot be pushed below the theta-join due to the 'iter := fst_iter;' hereafter)\n"
             "# var order_fst := fst_iter.leftfetchjoin(inner%03u.reverse());\n"
@@ -4221,7 +3940,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
     /* really dirty optimization to speed up xmark query11 */
     if (res->kind == c_var && res->sem.var == snd->child[0]->sem.var)
     {
-            opt_printf(f,
+            milprintf(f,
                     "# could also be pushed below theta-join, if order_snd wasn't needed for kind (below) ...\n"
                     "item := order_snd.leftfetchjoin(item%03u);\n"
                     "iter := fst_iter;\n"
@@ -4229,28 +3948,28 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
                     "# could also be pushed below theta-join, if order_snd wasn't needed for item (above) ...\n"
                     "kind := order_snd.leftfetchjoin(kind%03u);\n",
                     snd_var, snd_var);
-            opt_printf(f, "} # end of evaluate_join\n");
+            milprintf(f, "} # end of evaluate_join\n");
             return;
     }
 
 
     act_level++;
-    opt_printf(f, "{  # for-translation\n");
+    milprintf(f, "{  # for-translation\n");
 
-    opt_printf(f, "iter := fst_iter;\n");
+    milprintf(f, "iter := fst_iter;\n");
     project (f, act_level);
 
-    opt_printf(f, 
+    milprintf(f, 
             "var expOid := v_vid%03u.mirror();\n"
             "var oidNew_expOid;\n",
             act_level-1);
             expand (f, act_level);
             join (f, act_level);
-    opt_printf(f, "expOid := nil_oid_oid;\n");
+    milprintf(f, "expOid := nil_oid_oid;\n");
 
     if (var_is_used (snd->child[0]->sem.var, res))
     {
-        opt_printf(f,
+        milprintf(f,
                 "# could also be pushed below theta-join, if order_snd wasn't needed for kind (below) ...\n"
                 "item := order_snd.leftfetchjoin(item%03u);\n"
                 "iter := item.mark(1@0);\n"
@@ -4263,7 +3982,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
     if (snd->child[1]->kind == c_var && var_is_used (snd->child[0]->sem.var, res))
     {
         addValues (f, int_container(), "snd_iter.[int]()", "item");
-        opt_printf(f,
+        milprintf(f,
                 "iter := item.mark(1@0);\n"
                 "pos := item.project(1@0);\n"
                 "kind := item.project(INT);\n");
@@ -4275,7 +3994,7 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
     mapBack (f, act_level);
     cleanUpLevel (f, act_level);
     act_level--;
-    opt_printf(f,
+    milprintf(f,
             "}  # end of for-translation\n"
             "} # end of evaluate_join\n");
 }
@@ -4297,7 +4016,7 @@ translateFunction (opt_t *f, int act_level, int counter,
     {
         translate2MIL (f, act_level, counter, args->child[0]);
         /* expects strings otherwise something stupid happens */
-        opt_printf(f,
+        milprintf(f,
                 "{ # translate fn:doc (string?) as document?\n"
                 "var docs := item.tunique().mark(0@0).reverse();\n"
                 "var doc_str := docs.leftfetchjoin(str_values);\n"
@@ -4321,7 +4040,7 @@ translateFunction (opt_t *f, int act_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"distinct-doc-order")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "{ # translate pf:distinct-doc-order (node*) as node*\n"
                 /* FIXME: are attribute nodes automatically filtered? */
                 "if (kind.count() != kind.get_type(ELEM).count()) "
@@ -4356,7 +4075,7 @@ translateFunction (opt_t *f, int act_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"exactly-one")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "if (iter.tunique().count() != loop%03u.count()) "
                 "{ ERROR (\"function fn:exactly-one expects "
                 "exactly one value per iteration\"); }\n",
@@ -4365,7 +4084,7 @@ translateFunction (opt_t *f, int act_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"zero-or-one")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "if (iter.tunique().count() != iter.count()) "
                 "{ ERROR (\"function fn:zero-or-one expects "
                 "zero or one value per iteration\"); }\n");
@@ -4373,7 +4092,7 @@ translateFunction (opt_t *f, int act_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"count")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "{ # translate fn:count (item*) as integer\n"
                 /* counts for all iters the number of items */
                 /* uses the actual loop, to collect the iters, which are translated 
@@ -4382,7 +4101,7 @@ translateFunction (opt_t *f, int act_level, int counter,
                 "iter_count := iter_count.reverse().mark(0@0).reverse();\n",
                 act_level);
         addValues (f, int_container(), "iter_count", "item");
-        opt_printf(f,
+        milprintf(f,
                 "item := item.reverse().mark(0@0).reverse();\n"
                 "iter_count := nil_oid_int;\n"
                 "iter := loop%03u.reverse().mark(0@0).reverse();\n"
@@ -4394,7 +4113,7 @@ translateFunction (opt_t *f, int act_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"empty")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "{ # translate fn:empty (item*) as boolean\n"
                 "var iter_count := {count}(iter.reverse(),loop%03u.reverse());\n"
                 "var iter_bool := iter_count.[=](0).[oid]();\n"
@@ -4410,7 +4129,7 @@ translateFunction (opt_t *f, int act_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"not")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "# translate fn:not (boolean) as boolean\n"
                 "item := item.leftfetchjoin(bool_not);\n"
                );
@@ -4426,7 +4145,7 @@ translateFunction (opt_t *f, int act_level, int counter,
         counter++;
         saveResult (f, counter);
         translate2MIL (f, act_level, counter, args->child[1]->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "{ # fn:contains (string?, string?) as boolean\n"
                 "var strings;\n"
                 "var search_strs;\n"
@@ -4480,7 +4199,7 @@ translateFunction (opt_t *f, int act_level, int counter,
         counter++;
         saveResult (f, counter);
         translate2MIL (f, act_level, counter, args->child[1]->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "item := item.[int]().[and](item%03u.[int]()).[oid]();\n", counter);
         deleteResult (f, counter);
     }
@@ -4490,7 +4209,7 @@ translateFunction (opt_t *f, int act_level, int counter,
         counter++;
         saveResult (f, counter);
         translate2MIL (f, act_level, counter, args->child[1]->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "item := item.[int]().[or](item%03u.[int]()).[oid]();\n", counter);
         deleteResult (f, counter);
     }
@@ -4499,7 +4218,7 @@ translateFunction (opt_t *f, int act_level, int counter,
         if (args->kind == c_nil)
             PFoops (OOPS_WARNING, "fn:root should never be called without context.");
         translate2MIL (f, act_level, counter, args->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "{ # fn:root ()\n"
                 "if (iter.tunique().count() != iter.count()) "
                 "{ ERROR (\"function fn:root expects "
@@ -4595,7 +4314,7 @@ translateFunction (opt_t *f, int act_level, int counter,
             typed_value (f, false);
         }
         translateCast2STR (f, args->child[0]->type);
-        opt_printf(f,
+        milprintf(f,
                 "if (iter.count() != loop%03u.count())\n"
                 "{\n"
                 "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
@@ -4617,7 +4336,7 @@ translateFunction (opt_t *f, int act_level, int counter,
         counter++;
         saveResult (f, counter); 
         translate2MIL (f, act_level, counter, args->child[1]->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "{ # string-join (string*, string)\n "
                 "var iter_item := iter%03u.reverse().leftfetchjoin(item%03u);\n"
                 "var iter_item_str := iter_item.leftfetchjoin(str_values).chk_order();\n"
@@ -4631,7 +4350,7 @@ translateFunction (opt_t *f, int act_level, int counter,
                 "iter_item_str := iter_item_str.reverse().mark(0@0).reverse();\n",
                 counter, counter);
         addValues(f, str_container(), "iter_item_str", "item");
-        opt_printf(f,
+        milprintf(f,
                 "iter_item_str := nil_oid_str;\n"
                 "item := item.reverse().mark(0@0).reverse();\n"
                 "pos := iter.project(1@0);\n"
@@ -4645,7 +4364,7 @@ translateFunction (opt_t *f, int act_level, int counter,
         counter++;
         saveResult (f, counter); 
         translate2MIL (f, act_level, counter, args->child[1]->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "{ # concat (string, string)\n "
                 "var iter_item := iter%03u.reverse().leftfetchjoin(item%03u);\n"
                 "var fst_iter_str := iter_item.leftfetchjoin(str_values);\n"
@@ -4659,7 +4378,7 @@ translateFunction (opt_t *f, int act_level, int counter,
                 "fst_iter_str := fst_iter_str.reverse().mark(0@0).reverse();\n",
                 counter, counter);
         addValues(f, str_container(), "fst_iter_str", "item");
-        opt_printf(f,
+        milprintf(f,
                 "fst_iter_str := nil_oid_str;\n"
                 "item := item.reverse().mark(0@0).reverse();\n"
                 "pos := iter.project(1@0);\n"
@@ -4727,7 +4446,7 @@ translateFunction (opt_t *f, int act_level, int counter,
         counter++;
         saveResult (f, counter);
         translate2MIL (f, act_level, counter, args->child[1]->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "{ # translate op:node-before (node, node) as boolean\n"
                 /* FIXME: in theory this should work (in practise it also
                           does with some examples), but it is assumed,
@@ -4752,7 +4471,7 @@ translateFunction (opt_t *f, int act_level, int counter,
         counter++;
         saveResult (f, counter);
         translate2MIL (f, act_level, counter, args->child[1]->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "{ # translate op:node-after (node, node) as boolean\n"
                 /* FIXME: in theory this should work (in practise it also
                           does with some examples), but it is assumed,
@@ -4777,7 +4496,7 @@ translateFunction (opt_t *f, int act_level, int counter,
         counter++;
         saveResult (f, counter);
         translate2MIL (f, act_level, counter, args->child[1]->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "{ # translate op:is-same-node (node, node) as boolean\n"
                 /* FIXME: in theory this should work (in practise it also
                           does with some examples), but it is assumed,
@@ -4818,7 +4537,7 @@ translateFunction (opt_t *f, int act_level, int counter,
                          PFqname (PFns_fn,"distinct-values")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-        opt_printf(f,
+        milprintf(f,
                 "{ # translate fn:distinct-values (atomic*) as atomic*\n"
                 /*
                 "var sorting := CTgroup(iter).CTgroup(item).CTgroup(kind);\n"
@@ -4851,7 +4570,7 @@ translateFunction (opt_t *f, int act_level, int counter,
     {
         PFlog("function %s is not supported and therefore ignored",
               PFqname_str (fnQname));
-        opt_printf(f,
+        milprintf(f,
                 "# empty intermediate result "
                 "instead of unsupported function %s\n",
                 PFqname_str (fnQname));
@@ -4916,20 +4635,20 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
             translate2MIL (f, act_level, counter, c->child[2]);
             /* not allowed to overwrite iter,pos,item */
             act_level++;
-            opt_printf(f, "if (iter.count() != 0)\n");
-            opt_printf(f, "{  # for-translation\n");
+            milprintf(f, "if (iter.count() != 0)\n");
+            milprintf(f, "{  # for-translation\n");
             project (f, act_level);
 
-            opt_printf(f, "var expOid;\n");
+            milprintf(f, "var expOid;\n");
             getExpanded (f, act_level, c->sem.num);
-            opt_printf(f,
+            milprintf(f,
                     "if (expOid.count() != 0) {\n"
                     "var oidNew_expOid;\n");
                     expand (f, act_level);
                     join (f, act_level);
-            opt_printf(f, "} else {\n");
+            milprintf(f, "} else {\n");
                     createNewVarTable (f, act_level);
-            opt_printf(f, 
+            milprintf(f, 
                     "}  # end if\n"
                     "expOid := nil_oid_oid;\n");
 
@@ -4949,14 +4668,14 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
             
             mapBack (f, act_level);
             cleanUpLevel (f, act_level);
-            opt_printf(f, "}  # end of for-translation\n");
+            milprintf(f, "}  # end of for-translation\n");
             break;
         case c_ifthenelse:
             translate2MIL (f, act_level, counter, c->child[0]);
             counter ++;
             saveResult (f, counter);
             bool_res = counter;
-            opt_printf(f, "{ # ifthenelse-translation\n");
+            milprintf(f, "{ # ifthenelse-translation\n");
             /* idea:
             select trues
             if (trues = count) or (trues = 0)
@@ -4964,7 +4683,7 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
             else
                  do the whole stuff
             */
-            opt_printf(f,
+            milprintf(f,
                     "var selected := item%03u.ord_uselect(1@0);\n"
                     "var skip := 0;\n"
                     "if (selected.count() = item%03u.count()) "
@@ -4996,7 +4715,7 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
                     deleteResult (f, counter);
                     counter--;
             }
-            opt_printf(f, "} # end of ifthenelse-translation\n");
+            milprintf(f, "} # end of ifthenelse-translation\n");
             deleteResult (f, counter);
             break;
         case c_locsteps:
@@ -5041,7 +4760,7 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
             if (!ns)
                 ns = "";
 
-            opt_printf(f,
+            milprintf(f,
                     "{ # tagname-translation\n"
                     "var propID := ws.fetch(QN_NS).fetch(WS)"
                         ".ord_uselect(\"%s\").mirror();\n"
@@ -5052,7 +4771,7 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
                     "var itemID;\n",
                     ns, loc);
 
-            opt_printf(f,
+            milprintf(f,
                     "if (propID.count() = 0)\n"
                     "{\n"
                     "itemID := oid(ws.fetch(QN_LOC).fetch(WS).count());\n"
@@ -5064,7 +4783,7 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
 
             /* translateConst needs a bound variable itemID */
             translateConst (f, act_level, "QNAME");
-            opt_printf(f,
+            milprintf(f,
                     "propID := nil_oid_oid;\n"
                     "itemID := nil_oid;\n"
                     "} # end of tagname-translation\n"
@@ -5075,7 +4794,7 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
             loop_liftedTextConstr (f);
             break;
         case c_lit_str:
-            opt_printf(f,
+            milprintf(f,
                     "{\n"
                     "str_values := str_values.seqbase(nil).insert(nil,\"%s\").seqbase(0@0);\n"
                     "var itemID := str_values.ord_uselect(\"%s\");\n"
@@ -5084,12 +4803,12 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
                     PFesc_string (c->sem.str));
             /* translateConst needs a bound variable itemID */
             translateConst(f, act_level, "STR");
-            opt_printf(f, 
+            milprintf(f, 
                     "itemID := nil_str;\n"
                     "}\n");
             break;
         case c_lit_int:
-            opt_printf(f,
+            milprintf(f,
                     "{\n"
                     "int_values := int_values.seqbase(nil).insert(nil,%u).seqbase(0@0);\n"
                     "var itemID := int_values.ord_uselect(%u);\n"
@@ -5097,12 +4816,12 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
                     c->sem.num, c->sem.num);
             /* translateConst needs a bound variable itemID */
             translateConst(f, act_level, "INT");
-            opt_printf(f, 
+            milprintf(f, 
                     "itemID := nil_int;\n"
                     "}\n");
             break;
         case c_lit_dec:
-            opt_printf(f,
+            milprintf(f,
                     "{\n"
                     "dec_values := dec_values.seqbase(nil).insert(nil,dbl(%g)).seqbase(0@0);\n"
                     "var itemID := dec_values.ord_uselect(dbl(%g));\n"
@@ -5110,12 +4829,12 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
                     c->sem.dec, c->sem.dec);
             /* translateConst needs a bound variable itemID */
             translateConst(f, act_level, "DEC");
-            opt_printf(f, 
+            milprintf(f, 
                     "itemID := nil_dbl;\n"
                     "}\n");
             break;
         case c_lit_dbl:
-            opt_printf(f,
+            milprintf(f,
                     "{\n"
                     "dbl_values := dbl_values.seqbase(nil).insert(nil,dbl(%g)).seqbase(0@0);\n"
                     "var itemID := dbl_values.ord_uselect(dbl(%g));\n"
@@ -5123,27 +4842,27 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
                     c->sem.dbl, c->sem.dbl);
             /* translateConst needs a bound variable itemID */
             translateConst(f, act_level, "DBL");
-            opt_printf(f, 
+            milprintf(f, 
                     "itemID := nil_dbl;\n"
                     "}\n");
             break;
         case c_true:
-            opt_printf(f,
+            milprintf(f,
                     "{\n"
                     "var itemID := 1@0;\n");
             /* translateConst needs a bound variable itemID */
             translateConst(f, act_level, "BOOL");
-            opt_printf(f, 
+            milprintf(f, 
                     "itemID := nil_oid;\n"
                     "}\n");
             break;
         case c_false:
-            opt_printf(f,
+            milprintf(f,
                     "{\n"
                     "var itemID := 0@0;\n");
             /* translateConst needs a bound variable itemID */
             translateConst(f, act_level, "BOOL");
-            opt_printf(f, 
+            milprintf(f, 
                     "itemID := nil_oid;\n"
                     "}\n");
             break;
@@ -6466,7 +6185,7 @@ update_expansion (opt_t *f, PFcnode_t *c,  PFarray_t *way)
     for (m = PFarray_last (way) - 1; m >= 0 
          && *(int *) PFarray_at (way, m) > var->base; m--)
     {
-        opt_printf(f,
+        milprintf(f,
                 "var_usage.insert(%i@0,%i@0);\n",
                 var->vid,
                 *(int *) PFarray_at (way, m));
@@ -6576,10 +6295,11 @@ void
 PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
 {
     PFarray_t *way, *counter;
-    opt_t *f = opt_create(fp, status->optimize);
+    opt_t *f = (opt_t*) PFmalloc(sizeof(opt_t));
+    opt_open(f, fp, status->optimize);
 
 #if 0
-    opt_printf(f, "var x := 1;\nvar y := p(x);\ny := nil;\ny := 0;");
+    milprintf(f, "var _oid := kind.ord_uselect(STR);\n_oid := _oid.mark(0@0).reverse();\np(_oid);\n");
 #endif
     way = PFarray (sizeof (int));
     counter = PFarray (sizeof (int));
@@ -6601,11 +6321,11 @@ PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
 #if TIMINGS
 #if WITH_SCRIPT
 #else
-    opt_printf(f, "var tries := 3;\n");
+    milprintf(f, "var tries := 3;\n");
 #endif
 
     if (status) {}
-    opt_printf(f,
+    milprintf(f,
             "module(alarm);\n"
             "var times := bat(int,int);\n"
             "var rep := 0;\n"
@@ -6621,13 +6341,13 @@ PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
     /* append_lev appends information to the core nodes and
        creates a var_usage table, which is later split in vu_fid
        and vu_vid */
-    opt_printf(f,
+    milprintf(f,
             "{\n"
             "var var_usage := bat(oid,oid);\n"); /* [vid, fid] */
     append_lev (f, c, way, counter);
     /* the contents of var_usage will be sorted by fid and
        then refined (sorted) by vid */
-    opt_printf(f,
+    milprintf(f,
             "var_usage := var_usage.unique().reverse();\n"
             "var_usage.access(BAT_READ);\n"
             "vu_fid := var_usage.mark(1000@0).reverse();\n"
@@ -6646,7 +6366,7 @@ PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
     translate2MIL (f, 0, 0, c);
 
 #if TIMINGS
-    opt_printf(f,
+    milprintf(f,
             "timer := time() - timer;\n"
             "times.insert(rep,timer);\n"
             "timings :+= \"### time for run \" + str(int(rep)) + \": \" + str(timer) + \" msec\\n\";\n"
@@ -6664,29 +6384,29 @@ PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
             "rep := nil; # nil_int is not declared here\n"
             "tries := nil; # nil_int is not declared here\n");
 #if WITH_SCRIPT
-    opt_printf(f, "test_results.insert(test_number,times);\n");
+    milprintf(f, "test_results.insert(test_number,times);\n");
 #endif
 #else
     switch( status->genType ) {
      case PF_GEN_ORG: {
-      opt_printf(f, "xml_print(ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
+      milprintf(f, "xml_print(ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       /* print result in iter|pos|item representation */
       /*
        * print_output (f);
-       * opt_printf(f, "print(\"mil-programm without crash finished :)\");\n");
+       * milprintf(f, "print(\"mil-programm without crash finished :)\");\n");
        */
       }
       break;
      case PF_GEN_XML:
-      opt_printf(f, "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
+      milprintf(f, "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       break;
      case PF_GEN_SAX:
-      opt_printf(f, "print_result(\"sax\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
+      milprintf(f, "print_result(\"sax\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       break;
      default:
-      opt_printf(f, "** ERROR: PFprintMILtemp(): PF_GEN_* excpected!\n");
+      milprintf(f, "** ERROR: PFprintMILtemp(): PF_GEN_* excpected!\n");
     }
 #endif
-    opt_destroy(f);
+    opt_close(f);
 }
 /* vim:set shiftwidth=4 expandtab: */

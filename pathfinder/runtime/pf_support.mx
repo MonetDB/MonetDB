@@ -112,6 +112,12 @@ and the head values from the batlist"
 .END pf_support;
 
 @mil
+PROC chk_order( BAT[any::1,any::2] b ) : bat[any::1,any::2] 
+{
+        VAR h1 := b.ordered();
+        VAR t1 := b.reverse().ordered();
+	return b;
+}
 PROC chk_order( BAT[any::1,any::2] b, bit warn ) : int 
 {
         VAR h1 := b.ordered();

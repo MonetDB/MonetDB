@@ -533,10 +533,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "DHMOPTachmpqrs:t", 
+        c = getopt_long (argc, argv, "DHMO::PTachmpqrs:t", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "DHMOPTachmpqrs:t");
+        c = getopt (argc, argv, "DHMO::PTachmpqrs:t");
 #endif
 
         if (c == -1)
@@ -563,7 +563,7 @@ main (int argc, char *argv[])
                     long_option (opt_buf, ", --%s", 'D'));
             printf ("  -T%s: print elapsed times for compiler phases\n",
                     long_option (opt_buf, ", --%s", 'T'));
-            printf ("  -O%s: enable (expensive) optimizations\n",
+            printf ("  -O[0-3]%s: select optimization level (default=1)\n",
                     long_option (opt_buf, ", --%s", 'O'));
             printf ("  -t%s: print static types (in {...}) for core\n",
                     long_option (opt_buf, ", --%s", 't'));
@@ -633,7 +633,7 @@ main (int argc, char *argv[])
             break;
 
         case 'O':
-            status->optimize = true;
+            status->optimize = optarg?atoi(optarg):3;
             break;
 
         case 't':

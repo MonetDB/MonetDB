@@ -39,5 +39,6 @@ lib_mil = {
 		ma_cse.c \
 		milgen.brg \
 		milprint.c \
+		mil_opt.c \
 		milprint_summer.c
 }

@@ -50,6 +50,7 @@ EXTRA_DIST = \
 	milalgebra.h \
 	milgen.h \
 	milprint.h \
+	mil_opt.h \
 	milprint_summer.h \
 	normalize.h \
 	ns.h \
