@@ -587,6 +587,9 @@ public int sliceRow(){
 	if( cache.fldcnt[cr]>0) return cache.fldcnt[cr];
 	if( s.length()==0) return 0;
 	char p[]= s.toCharArray();
+	int i=0;
+	int f=1,l;
+
 	if( p[0]=='!'){
 		String olderr= errortext;
 		clrError();
@@ -596,17 +599,22 @@ public int sliceRow(){
 	if( p[0]!='['){
 		if(trace) System.out.println("Single field:"+s);
 		cache.fields[cr][0]= s;
+		// count filds by counting the type columns in header
+		// each type looks like (str)\t
+		i=0;
+		for(int k=1; k<p.length; k++)
+		if( p[k]=='\t' && p[k-1]==')') i++;
+		if( fieldcnt<i) fieldcnt= i;
+		if(trace) System.out.println("type cnt:"+i);
 		return 1;
 	}
-	int i=0;
-	int f=1,l;
 
+	if( trace) System.out.println("slice:"+(p.length)+":"+s);
 	do{
 		// skip leading blancs
 		while(f<p.length )
 		if( p[f]=='\t' || p[f] ==' ') f++; else break; 
 		if(f==p.length || p[f]==']') break;
-		//if( trace) System.out.println("slice:"+f);
 
 		if(i== maxfields){
 			if( extendColumns(maxfields+32) != MOK)
@@ -616,17 +624,56 @@ public int sliceRow(){
 				extendFields(j);
 		}
 		l=f+1;
-		while(l<p.length )
-		if( p[l]=='\t' || p[l] ==']') break; else l++;
+		// slicing the row should respect the string/char literal
+		boolean instring=s.charAt(f)=='"' || s.charAt(f)=='\'';
+		char bracket= instring? s.charAt(f) :'\t';
+		if(instring) f++;
+		boolean done =false;
+		
+		while(!done && l<p.length ){
+			switch(p[l]){
+			case '\t':
+			case ']':
+				done = !instring;
+				if( !done) l++;
+				break;
+			case ',':
+				if(!instring){
+					done= true;
+					break;
+				}
+				l++;
+				break;
+			case '\\': l+=2; break;
+			case '\'':
+			case '"':
+				if(instring ){
+					//System.out.println("bracket:"+p[l]+l);
+					if( bracket==p[l]) {
+						done=true;
+						break;
+					}
+				} else System.out.print("unexpected ");
+				break;
+			default: l++;
+			}
+		}
 
-		String fld= unquote(s.substring(f, l));
-		//if(trace) System.out.println("field ["+cr+"]["+i+"]"+fld);
+		//String fld= unquote(s.substring(f, l));
+		String fld= s.substring(f, l);
+		if(trace) System.out.println("field ["+cr+"]["
+				+i+" "+l+"]"+fld+" "+instring);
 		cache.fields[cr][i]= fld;
+		// skip any immediate none-space
+		while(l<p.length )
+		if( p[l]=='\t' || p[l] ==' ') break; else l++; 
+		if(trace && instring) System.out.println("skipped to:"+l);
 		f= l;
 		i++;
 		cache.fldcnt[cr]=i;
-		if( fieldcnt<i) fieldcnt=i;
+		if(i>fieldcnt) fieldcnt=i;
 	} while(f< p.length && p[f]!=']');
+	if(trace) System.out.println("fields extracted:"+i+" fieldcnt:"+fieldcnt);
 	return i;
 }
 
@@ -786,6 +833,10 @@ private void checkQuery(){
 	if( i>=0 && i < query.length()-1)
 		setError("Newline in query string not allowed","checkQuery");
 	query.replace('\n',' ');
+	// trim white space
+	int j= query.length()-1;
+	while(j>0 && ( query.charAt(j)==' ') || query.charAt(j)=='\t') j--;
+	if( j != query.length()-1) query= query.substring(0,j);
 	if( language.equals("sql")){
 		i= query.lastIndexOf(';');
 		if( i != query.length()-1) expandQuery(";");
@@ -1304,7 +1355,7 @@ private void headerDecoder(){
 	String tag= line.substring(etag);
 
 
-	cache.rows[cache.reader]="[ "+ cache.rows[cache.reader].substring(1);
+	cache.rows[cache.reader]="[ "+cache.rows[cache.reader].substring(1,etag);
 	int cnt= sliceRow();
 	if(trace) System.out.println("columns "+cnt);
 	extendColumns(cnt);
@@ -1312,20 +1363,12 @@ private void headerDecoder(){
 		for(int i=0;i<cnt;i++){
 			if(columns[i]==null) columns[i]= new Column();
 			String s= columns[i].columnname= fetchField(i);
-			if(i==cnt-1) {
-				int k= s.indexOf("# name");
-				columns[i].columnname= s.substring(0,k);
-			}
 		}
 	} else	
 	if( tag.equals("# type") ){
 		for(int i=0;i<cnt;i++){
 			if(columns[i]==null) columns[i]= new Column();
 			String s= columns[i].columntype= fetchField(i);
-			if(i==cnt-1) {
-				int k= s.indexOf("# type");
-				columns[i].columntype= s.substring(0,k);
-			}
 		}
 	} else	
 	if( trace) System.out.println("Unrecognized header tag "+tag);
