@@ -3,8 +3,7 @@ import java.sql.*;
 public class Test_Rtimedate {
 	public static void main(String[] args) throws Exception {
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
-		//nl.cwi.monetdb.jdbc.MonetConnection.setDebug(true);
-		Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/database", "monetdb", "monetdb");
+		Connection con = DriverManager.getConnection(args[0]);
 		Statement stmt = con.createStatement();
 		ResultSet rs = null;
 		//DatabaseMetaData dbmd = con.getMetaData();
@@ -28,41 +27,41 @@ public class Test_Rtimedate {
 
 			rs.next();
 			// the next three should all go well
-			System.out.println(rs.getString("id") + ", " + rs.getString("ts") + ", " + rs.getTimestamp("ts"));
-			System.out.println(rs.getString("id") + ", " + rs.getString("ts") + ", " + rs.getTime("ts"));
-			System.out.println(rs.getString("id") + ", " + rs.getString("ts") + ", " + rs.getDate("ts"));
+			System.out.println("1. " + rs.getString("id") + ", " + rs.getString("ts") + ", " + rs.getTimestamp("ts"));
+			System.out.println("2. " + rs.getString("id") + ", " + rs.getString("ts") + ", " + rs.getTime("ts"));
+			System.out.println("3. " + rs.getString("id") + ", " + rs.getString("ts") + ", " + rs.getDate("ts"));
 			rs.next();
 			// the next two should go fine
-			System.out.println(rs.getString("id") + ", " + rs.getString("t") + ", " + rs.getTimestamp("t"));
-			System.out.println(rs.getString("id") + ", " + rs.getString("t") + ", " + rs.getTime("t"));
+			System.out.println("4. " + rs.getString("id") + ", " + rs.getString("t") + ", " + rs.getTimestamp("t"));
+			System.out.println("5. " + rs.getString("id") + ", " + rs.getString("t") + ", " + rs.getTime("t"));
 			// this one should return 0
-			System.out.println(rs.getString("id") + ", " + rs.getString("t") + ", " + rs.getDate("t"));
+			System.out.println("6. " + rs.getString("id") + ", " + rs.getString("t") + ", " + rs.getDate("t"));
 			rs.next();
 			// the next one passes
-			System.out.println(rs.getString("id") + ", " + rs.getString("d") + ", " + rs.getTimestamp("d"));
+			System.out.println("7. " + rs.getString("id") + ", " + rs.getString("d") + ", " + rs.getTimestamp("d"));
 			// this one should return 0
-			System.out.println(rs.getString("id") + ", " + rs.getString("d") + ", " + rs.getTime("d"));
+			System.out.println("8. " + rs.getString("id") + ", " + rs.getString("d") + ", " + rs.getTime("d"));
 			// and this one should pass again
-			System.out.println(rs.getString("id") + ", " + rs.getString("d") + ", " + rs.getDate("d"));
+			System.out.println("9. " + rs.getString("id") + ", " + rs.getString("d") + ", " + rs.getDate("d"));
 
 			// in the tests below a bare string is parsed
 			// everything will fail except the ones commented on
 			rs.next();
 			// timestamp -> timestamp should go
-			System.out.println(rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTimestamp("vc"));
-			System.out.println(rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTime("vc"));
+			System.out.println("1. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTimestamp("vc"));
+			System.out.println("2. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTime("vc"));
 			// timestamp -> date goes because the begin is the same
-			System.out.println(rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getDate("vc"));
+			System.out.println("3. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getDate("vc"));
 			rs.next();
-			System.out.println(rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTimestamp("vc"));
+			System.out.println("4. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTimestamp("vc"));
 			// time -> time should fit
-			System.out.println(rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTime("vc"));
-			System.out.println(rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getDate("vc"));
+			System.out.println("5. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTime("vc"));
+			System.out.println("6. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getDate("vc"));
 			rs.next();
-			System.out.println(rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTimestamp("vc"));
-			System.out.println(rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTime("vc"));
+			System.out.println("7. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTimestamp("vc"));
+			System.out.println("8. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getTime("vc"));
 			// date -> date should be fine
-			System.out.println(rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getDate("vc"));
+			System.out.println("9. " + rs.getString("id") + ", " + rs.getString("vc") + ", " + rs.getDate("vc"));
 		} catch (SQLException e) {
 			System.out.println("failed :( "+ e.getMessage());
 			System.out.println("ABORTING TEST!!!");
