@@ -227,7 +227,7 @@ void	PrPrelude(char *file)
 	    ofile_printf("\t<FRAME src=\"%s.index.html\">\n",s);
 	    ofile_printf("</FRAMESET>\n\n<NOFRAMES>\n");
 	    mx_out = 7;
-	    ofile_printf("<BODY bgcolor=\"#FFFFFF\" text=\"%s\" vlink=\"%s\" link=\"%s\">\n",text_color, vlnk_color, link_color);
+	    ofile_printf("<BODY bgcolor=\"#FFFFFF\" text=\"" text_color "\" vlink=\"" vlnk_color "\" link=\"" link_color "\">\n");
 	}
 	    mx_out = 5;
     } else {
