@@ -439,10 +439,10 @@ Time to execute the script files. Start with the init command[todo]
 		monet_script[i]=0;
         }
 	GDKfree(monet_script);
-        initClientPrg(mal_clients,"main");
-        serveClient(mal_clients);
+	initClientPrg(mal_clients,"main");
+	serveClient(mal_clients);
 
-	MT_global_exit(0);  
+	/* MT_global_exit(0);  */
 	return 0; 
 }
 @}
