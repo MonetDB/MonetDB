@@ -39,6 +39,8 @@ head-aligned, and do the fetchjoin(reverse(g),b) on-the-fly;
 The routines should not be stored in their own module, but
 added to the 'group' module. This can be achieved by setting
 the module.
+
+[TODO look at the :void, :oid cases]
 @mal
 module aggrX3;
 
