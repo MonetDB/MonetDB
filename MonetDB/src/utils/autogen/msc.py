@@ -636,7 +636,7 @@ CXXEXT = \\\"cxx\\\"
 ''')
 
     if 'INCLUDES' not in tree.keys():
-	tree.add('INCLUDES',"")
+	tree.add('INCLUDES',[])
 
     msc = {}
     msc['BUILT_SOURCES'] = []

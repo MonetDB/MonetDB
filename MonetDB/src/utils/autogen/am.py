@@ -554,7 +554,7 @@ CXXEXT = \\\"cc\\\"
 ''')
 
     if 'INCLUDES' not in tree.keys():
-	tree.add('INCLUDES',"")
+	tree.add('INCLUDES',[])
 
     am = {}
     if ('NAME' in tree.keys()):
