@@ -134,7 +134,7 @@ void scheduleClient( str command, bstream *fin, stream *fout)
 	MT_Id p;
 
 	/* decode first user:key:password:lang line */
-    s = strchr(command,'\n');
+        s = strchr(command,'\n');
 	if(s) 
 		*s=0;
 	s= strrchr(command,':');
@@ -327,7 +327,7 @@ str MALreader(Client c){
 	c->fdin->pos += c->yycur;
 	c->yycur = 0;
 	c->fdin->buf[c->fdin->pos] = 0;
-	if( readClient(c,c->prompt)>0 ) {
+	if( readClient(c)>0 ) {
 		return 0;
 	}
 	c->mode = FINISHING;

@@ -218,7 +218,7 @@ mal_export void     closeClient    (Client c);
 mal_export void     killClient     (Client c);
 mal_export void     freeClient  (Client c);
 mal_export void     appendInput(Client c, str msg);
-mal_export int      readClient  (Client c, str prompt);
+mal_export int      readClient  (Client c);
 mal_export void     setClientTrace(Client c, int flag);
 mal_export str      stopClient(Client c, str nme);
 mal_export str      stopClientIndex(Client c, int id);
@@ -806,16 +806,12 @@ The next statement block is to be read. Sent a prompt to warn
 the front-end to issue the request.
 @= sentPrompt
     if(c->promptlength>=0) { 
-        if(!isAdministrator(c))
-            stream_printf(c->fdout,"\001");
-        stream_printf(c->fdout,"%s", (prompt?prompt:c->prompt));
-        if(!isAdministrator(c))
-            stream_printf(c->fdout,"\002\n");
+        stream_write(c->fdout,c->prompt,c->promptlength,1); 
         stream_flush(c->fdout);
     }
 @c
 
-int readClient(Client c,str prompt){
+int readClient(Client c){
 	bstream *in = c->fdin;
 
 #ifdef MAL_CLIENT_DEBUG
@@ -843,7 +839,7 @@ int readClient(Client c,str prompt){
 		if (sum == 0 && in->eof && isa_block_stream(in->s)) {
 			/* we hadn't seen the EOF before, so just try again
 			(this time with prompt) */
-			return readClient(c, prompt);
+			return readClient(c);
 		}
 #ifdef MAL_CLIENT_DEBUG
     printf("# simple stream received:");
@@ -853,7 +849,7 @@ int readClient(Client c,str prompt){
         /* end of stream reached */
         if (c->bak) {
             popClientInput(c);
-            return readClient(c, prompt);
+            return readClient(c);
         }
         return 0;
     }
@@ -867,8 +863,8 @@ int readClient(Client c,str prompt){
             return 0;
         }
         GDKfree(nme);
-        pushClientInput(c, fdin, c->listing, prompt);
-		return readClient(c, prompt);
+        pushClientInput(c, fdin, c->listing, c->prompt);
+		return readClient(c);
     } else {
 #ifdef MAL_CLIENT_DEBUG
         printf("#finished\n");
