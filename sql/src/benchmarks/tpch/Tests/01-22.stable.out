@@ -13,6 +13,8 @@ printf("\nReady.\n");
 
 Ready.
 
+quit();
+
 Over..
 
 # 12:47:38 >  

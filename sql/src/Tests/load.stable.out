@@ -54,6 +54,7 @@ loading module 'sql_server'
 [ "streams",	  2		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "txtsim",	  1		  ]
 [ "uchr",	  3		  ]
 [ "xtables",	  1		  ]
 dropping module 'sql_server'
