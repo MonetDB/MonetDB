@@ -916,14 +916,16 @@ Obtains a list of modules by looking at what files are present in the
 module directory.
 @c
 BAT* TBL_getdir(void) {
+#ifndef STATIC 
+    char *name,*basename;
+    size_t liblen = strlen("lib");
+#endif
     BAT *b = BATnew(TYPE_int, TYPE_str, 100);
     int i = 0;
   
     if (b == NULL) return NULL;  
-#ifndef STATIC 
-    char *name,*basename;
-    size_t liblen = strlen("lib");
 
+#ifndef STATIC 
     MSP_rewind_module_list();
     for (;;) {
             name=MSP_next_module(".mil");
