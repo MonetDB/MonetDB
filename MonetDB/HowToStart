@@ -1,0 +1,89 @@
+
+0) Preliminaries
+================
+
+Thanks to configure and for convenient handling of the common source base,
+temporary (architecture-specific) stuff during compilation, and the final
+architecture-dependent binary distibution, Monet now involves three major
+directory structures:
+
+	BASE	where the common source base has been checked out from the
+		cvs repository.
+
+	BUILD	where "configure" puts the architecture-specific source tree
+		that it generates from the common source base in BASE. 
+		here, also the compilation takes place.
+
+	PREFIX	where "make install" finally puts the binaries, libraries,
+		include files, etc.
+
+in priciple, BASE, BUILD, and PREFIX might be identical, but in many cases,
+it's convenient if they make-up separate directory trees. Then, one can
+easily "rm -rf" BUILD, in order to rebuild the whole stuff from scratch, or
+"rm -rf" BASE and BUILD, once everything is compiled an properly installed
+in PREFIX.
+
+In the remainder, we will just refer to BASE, BUILD, and PREFIX. You can
+(have to ;-) decide for yourself, whether they should be all identical,
+all different, or maybe BASE == BUILD != PREFIX, or BASE != BUILD ==
+PREFIX.
+
+
+1) Preparing your environment
+=============================
+
+To compile Monet-4.2, you first need to set your (architecture dependent)
+environment to be able to compile Monet-4.2. The easiest way to do so, is to
+
+	source conf/conf.bash	(for [ba]sh users)
+or
+	source conf/conf.csh	(for [t]csh users)
+
+in BASE. These scripts look for the some preset environvariables to adopt to
+you preferences. Here are the details:
+
+	To select your desired compiler ("GNU" or "ntv" (native)) and your
+	desired binary type (32bit or 64bit), set the following environment
+	variables before "sourcing" the conf-script:
+		COMP="GNU"	or	COMP="ntv"
+		BITS="32"	or	BITS="64"
+	If not or wrongly set, "GNU32" is used as default.
+
+	Further, you can set the environment variables BUILD and PREFIX to
+	select your desired build and target directory as described above.
+	If not set,
+		BUILD=BASE/`uname`
+		PREFIX=BUILD
+	are used as default.
+
+Depending on the architecture your currenly working on, and depending on
+your settings for COMP, BITS, BUILD, and PREFIX, conf/conf.{ba,c}sh setup
+the environment as needed by configure. Among others, these script take care
+of 
+ - setting the propper PATH & LD_LIBRARY_PATH,
+ - choosing the propper C/C++ compiler calls (i.e., setting command name and
+   flags in CC & CXX),
+ - and setting MONETDIST & MONET_MOD_PATH.
+For details, have a look at the scripts; they're not too weird ... ;-)
+Finally, these scripts tell you how to go on, and which flags to use with
+configure.
+
+
+2) Bootstrap, Configure, Make, & Make Install
+=============================================
+
+Once you setup your environment properly (see above), you just need to
+execute the following in BASE:
+
+	./bootstrap
+
+	cd ${BUILD}
+
+	${BASE}/configure --prefix=${PREFIX}
+
+	make
+	make install
+
+
+Have fun with Monet-4.2!
+
