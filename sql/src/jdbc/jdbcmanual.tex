@@ -53,17 +53,17 @@ Follow the steps below to assure your setup is complete:
  password monetdb)
 \end{enumerate}
 The last step should give you something like this:
-\begin{quote}
-\texttt{\% java -jar jars/MonetJDBC.jar -umonetdb
-password:  \\
-\\
-Welcome to the MonetDB interactive JDBC terminal!\\
-Database: MonetDB 4.3.17 (4.3)\\
-Driver: MonetDB Native Driver 0.4 beta release (0.4)\\
-Type $\backslash$q to quit, $\backslash$h for a list of available commands\\
-auto commit mode: on\\
-monetdb->}
-\end{quote}
+\begin{verbatim}
+% java -jar jars/MonetJDBC.jar -umonetdb
+password:
+
+Welcome to the MonetDB interactive JDBC terminal!
+Database: MonetDB 4.3.17 (4.3)
+Driver: MonetDB Native Driver 0.4 beta release (0.4)
+Type \q to quit, \h for a list of available commands
+auto commit mode: on
+monetdb->
+\end{verbatim}
 
 \subsection{Using the driver in your Java programs}
 In order to use the MonetDB JDBC driver, the jar-archive has to be in the Java classpath.
