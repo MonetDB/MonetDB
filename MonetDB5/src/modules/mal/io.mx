@@ -120,11 +120,13 @@ functions are efficient but work only for binary tables. For printing
 ASCII n-ary tables you can use the @#print@(bat1,bat2,..) command
 from the system.mx module.
 @mal
-command export(b:bat[:any,:any], filepath:str):bit  = IOexport
+command export(b:bat[:any,:any], filepath:str):bit  
+address IOexport
 comment "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
  is put into the .../dbfarm/$DB directory. Success of failure is indicated.";
 
-command import(b:bat[:any,:any], filepath:str) :bit = IOimport
+command import(b:bat[:any,:any], filepath:str) :bit 
+address IOimport
 comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
  parameter BAT. You have to create it! Its signature must match the dump,
  else parsing errors will occur and FALSE is returned.";

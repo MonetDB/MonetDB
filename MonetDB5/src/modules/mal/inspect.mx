@@ -311,7 +311,7 @@ str INSPECTsymbolDef(int *ret, str *nme, str *fcn)
 		str ps;
 		for(i=0;i<s->def->stop;i++){
 			ps= instruction2str(s->def, getInstrPtr(s->def,i),0);
-			BUNins(b,&i,ps);
+			BUNins(b,&i,ps+1);
 			GDKfree(ps);
 		}
 		s= s->peer;

@@ -72,6 +72,7 @@ include "inspect";
 include "optimizer";
 include "chopper";
 include "transaction";
+include "sqlcache";
 #include "sql_server";
 #include "sql";
 include "mil_schema";
