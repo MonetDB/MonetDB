@@ -792,6 +792,7 @@ usage(const char *prog)
 	fprintf(stderr, " -l language | --language=lang  /* {mal,sql,mil} */\n");
 	fprintf(stderr, " -P passwd   | --passwd=passwd  /* password */\n");
 	fprintf(stderr, " -p portnr   | --port=portnr    /* port to connect to */\n");
+	fprintf(stderr, " -q          | --quiet          /* don't print welcome message */\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt /* run single statement */\n");
 	fprintf(stderr, " -t          | --trace          /* trace Monet interaction */\n");
 	fprintf(stderr, " -T          | --time           /* time commands */\n");
@@ -823,6 +824,7 @@ main(int argc, char **argv)
 	int guest = 0;
 	int linemode = 1;
 	int c;
+	int quiet = 0;
 	Mapi mid;
 	static struct option long_options[] = {
 		{"blocked", 1, 0, 'b'},
@@ -838,6 +840,7 @@ main(int argc, char **argv)
 		{"time", 0, 0, 'T'},
 		{"trace", 0, 0, 't'},
 		{"user", 1, 0, 'u'},
+		{"quiet", 0, 0, 'q'},
 		{"help", 0, 0, '?'},
 		{0, 0, 0, 0}
 	};
@@ -849,7 +852,7 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "c:l:u:p:P:h:s:DtTd::?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "c:l:u:p:P:qh:s:DtTd::?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'c':
 			config = optarg;
@@ -877,6 +880,9 @@ main(int argc, char **argv)
 			break;
 		case 's':
 			command = optarg;
+			break;
+		case 'q':
+			quiet = 1;
 			break;
 		case 'D':
 			dodump = 1;
@@ -956,6 +962,12 @@ main(int argc, char **argv)
 	if (mapi_error(mid)) {
 		mapi_explain(mid, stderr);
 		exit(2);
+	}
+	if (!quiet) {
+		char *motd = mapi_get_motd(mid);
+
+		if (motd)
+			printf("%s", motd);
 	}
 	mapi_trace(mid, trace);
 

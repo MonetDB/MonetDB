@@ -251,7 +251,7 @@ m_export str	monet_load_script(str file, str module);
 m_export ptr	monet_eval	(str mil_script, int *ret_type);
 m_export int	monet_exec	(str mil_script);
 m_export void	monet_exit	(int status);
-m_export void	monet_hello	(void);
+m_export void	monet_hello	(stream *out);
 m_export int	monet_sprintf	(str *dst, str format, va_list ap);
 m_export void 	monet_checkbat  (BAT* b, int protect);
 m_export int	monet_syscall	(GDKfcn addr, int argc, ValPtr argv);
@@ -361,7 +361,7 @@ monet interface.
 char monet_arch[PATHLENGTH] = HOST;
 char monet_version[PATHLENGTH] = VERSION;
 
-void monet_hello(void) {
+void monet_hello(stream *out) {
 #ifdef STATIC
     char *linkinfo = "statically";
 #else
@@ -369,12 +369,14 @@ void monet_hello(void) {
 #endif
 
     if (GDKgetenv_isyes("monet_welcome")) {
-        printf("# Monet Database Server V%s\n", monet_version);
-        printf("# Copyright (c) 1993-2004, CWI. ");
-        printf("All rights reserved.\n");
-        printf("# Compiled for %s/" SZFMT "bit; %s linked.\n", 
+	if (out == NULL)
+		out = GDKout;
+        stream_printf(out, "# Monet Database Server V%s\n", monet_version);
+        stream_printf(out, "# Copyright (c) 1993-2004, CWI. "
+			  "All rights reserved.\n");
+        stream_printf(out, "# Compiled for %s/" SZFMT "bit; %s linked.\n", 
 			monet_arch, (size_t) (sizeof(ptr)*8), linkinfo );
-	printf("# Visit http://monetdb.cwi.nl for further information.\n");
+	stream_printf(out, "# Visit http://monetdb.cwi.nl for further information.\n");
     }
 }
 
