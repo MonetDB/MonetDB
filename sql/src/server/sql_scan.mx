@@ -306,6 +306,8 @@ void init_keywords()
 	keywords_insert("EXTERNAL", EXTERNAL );
 	keywords_insert("NAME", sqlNAME );
 	keywords_insert("EXPORT", EXPORT );
+
+	keywords_insert("INDEX", INDEX );
 }
 
 void exit_keywords()

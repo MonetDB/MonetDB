@@ -117,6 +117,8 @@ static void bm_add_bat_intern(bm *bm, oid lbid, oid bid, char *name, int version
 	BUNins(bm->bat_lbid, &bm->vid, &lbid);
 	BUNins(bm->bat_mode, &bm->vid, &mode);
 	BUNins(bm->bat_version, &bm->vid, &version );
+
+	assert(BATcount(bm->bat_lbid) == BATcount(BATkunique(bm->bat_lbid)));
 	BBPincref(bid, TRUE);
 	bm->vid++;
 	if (version > bm->version)
@@ -189,7 +191,7 @@ bm *bm_dup( bm *obm )
 		oid lbid = *(oid*)BUNtail(obm->bat_lbid, 
 				BUNfnd(obm->bat_lbid,&id));
 		BBPincref(bid, TRUE);
-		if (lbid > nbm->lbid) 
+		if (lbid >= nbm->lbid) 
 			nbm->lbid = lbid+1;
 		bm_add_bat_intern(nbm, lbid, bid, name, version, BM_READ);
 	}

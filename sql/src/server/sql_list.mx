@@ -191,7 +191,7 @@ void list_move_data(list * s, list * d, void *data)
 	node *n;
 	for (n = s->h; n; n = n->next) {
 		if (n->data == data) {
-			n->data = NULL;
+			n->data = NULL; /* make sure data isn't destroyed */
 			list_remove_node(s, n);
 			break;
 		}

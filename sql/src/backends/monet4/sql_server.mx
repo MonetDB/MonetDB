@@ -44,6 +44,8 @@ SQL client and the corresponding MIL runtime startup.
 	# the primary, unique and foreign keys
 	.ATOM sql_key = ptr;
 	.END;
+	.ATOM sql_idx = ptr;
+	.END;
 	
 	.BUILTIN sqlclient( int sock ) = 
 		sqlclient;
@@ -52,8 +54,8 @@ SQL client and the corresponding MIL runtime startup.
 	.COMMAND mvc_init(int debug) = mvc_init_wrap; 
 		"create the global catalog"
 
-	.COMMAND mvc_exit() = mvc_exit_wrap; 
-		"cleanup the global catalog"
+	.BUILTIN quit() = mvc_exit_wrap; 
+		"cleanup the global catalog and quit server"
 
 	.COMMAND mvc_create( int debug ) : mvc = mvc_create_wrap;
 		"Create multi version catalog"
@@ -90,17 +92,13 @@ SQL client and the corresponding MIL runtime startup.
 		BAT[any::1,any::2] = 
 		mvc_bind_ubat_wrap; "Bind bat with the updates to tname.cname"
 
-	.COMMAND mvc_bind_obat( mvc c, str sname, str tname, int access ) : 
-		BAT[any::1,any::2] = 
-		mvc_bind_obat_wrap; "Bind the oid bat, tname.OID"
-
 	.COMMAND mvc_bind_dbat( mvc c, str sname, str tname, int access ) : 
 		BAT[any::1,any::2] = mvc_bind_dbat_wrap; 
 		"Bind the table deletes bat, tname.deletes"
 
-	.COMMAND mvc_bind_kbat( mvc c, str sname, str tname, str kname, int access ) : 
-		BAT[any::1,any::2] = mvc_bind_kbat_wrap; 
-		"Bind the key constraint table"
+	.COMMAND mvc_bind_ibat( mvc c, str sname, str tname, str iname, int access ) : 
+		BAT[any::1,any::2] = mvc_bind_ibat_wrap; 
+		"Bind the idx table"
 
 	.COMMAND mvc_bind_schema( mvc c, str sname ) : sql_schema = 
 		mvc_bind_schema_wrap; "Bind schema, sname"
@@ -111,8 +109,11 @@ SQL client and the corresponding MIL runtime startup.
 	.COMMAND mvc_bind_column( mvc c, sql_table t, str cname ) : sql_column = 
 		mvc_bind_column_wrap; "Bind column, t.cname"
 
-	.COMMAND mvc_bind_key( mvc c, sql_table t, str kname ) : sql_key = 
-		mvc_bind_key_wrap; "Bind table key with name, kname"
+	.COMMAND mvc_bind_key( mvc c, sql_schema s, str kname ) : sql_key = 
+		mvc_bind_key_wrap; "Bind key kname"
+
+	.COMMAND mvc_bind_idx( mvc c, sql_schema s, str iname ) : sql_idx = 
+		mvc_bind_idx_wrap; "Bind index with name, iname"
 
 	.COMMAND mvc_drop_schema( mvc c, str name ) = mvc_drop_schema_wrap;
 		"Drop schema"
@@ -146,8 +147,20 @@ SQL client and the corresponding MIL runtime startup.
 	.COMMAND mvc_create_key( mvc m, sql_table t, str name, int kt, sql_key rkey ) :
 		sql_key = mvc_create_fkey_wrap; "Create a foreign key"
 
+	.COMMAND mvc_drop_key( mvc m, sql_schema s, str name ) = 
+		mvc_drop_key_wrap; "Drop a key"
+
 	.COMMAND mvc_create_kc( mvc m, sql_key k, str col ):
 		sql_key = mvc_create_kc_wrap; "Create a key column"
+
+	.COMMAND mvc_create_idx( mvc m, sql_table t, str name, int it):
+		sql_idx = mvc_create_idx_wrap; "Create a index"
+
+	.COMMAND mvc_drop_idx( mvc m, sql_schema s, str name ) = 
+		mvc_drop_idx_wrap; "Drop a idx"
+
+	.COMMAND mvc_create_ic( mvc m, sql_idx i, str col ):
+		sql_idx = mvc_create_ic_wrap; "Create a idx column"
 
 	.COMMAND mvc_create_user( mvc m, str user, str pwd, str fullname, str dschema, int id) = mvc_create_user_wrap; "Create a user"
 
@@ -222,9 +235,10 @@ int mvc_init_wrap( int* debug ){
 	mvc_init(*debug );
 	return GDK_SUCCEED;
 }
-int mvc_exit_wrap( ){
+
+int mvc_exit_wrap(Cntxt stk, YYSTREE lt, ValPtr res){ 
 	mvc_exit();
-	return GDK_SUCCEED;
+	return CMDquit(stk, lt, res);
 }
 
 int mvc_create_wrap( mvc *res, int *debug ){
@@ -291,14 +305,6 @@ int mvc_bind_ubat_wrap( BAT** res, mvc* c, str sname, str tname, str cname, int 
 	return GDK_FAIL;
 }
 
-int mvc_bind_obat_wrap( BAT** res, mvc* c, str sname, str tname, int *access ){
-	*res = mvc_bind_obat( *(mvc**)c, sname, tname, *access );
-	if (*res){
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-}
-
 int mvc_bind_dbat_wrap( BAT** res, mvc* c, str sname, str tname, int *access ){
 	*res = mvc_bind_dbat( *(mvc**)c, sname, tname, *access );
 	if (*res){
@@ -307,14 +313,13 @@ int mvc_bind_dbat_wrap( BAT** res, mvc* c, str sname, str tname, int *access ){
 	return GDK_FAIL;
 }
 
-int mvc_bind_kbat_wrap( BAT** res, mvc* c, str sname, str tname, str kname, int *access ){
-	*res = mvc_bind_kbat( *(mvc**)c, sname, tname, kname, *access );
+int mvc_bind_ibat_wrap( BAT** res, mvc* c, str sname, str tname, str iname, int *access ){
+	*res = mvc_bind_ibat( *(mvc**)c, sname, tname, iname, *access );
 	if (*res){
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
 }
-
 
 int mvc_bind_schema_wrap( sql_schema* res, mvc* c, str sname){
 	*(sql_schema**)res = mvc_bind_schema( *(mvc**)c, sname );
@@ -331,11 +336,15 @@ int mvc_bind_column_wrap( sql_column* res, mvc* c, sql_table *t, str col){
 	return GDK_SUCCEED;
 }
 
-int mvc_bind_key_wrap( sql_key* res, mvc* c, sql_table *t, str name ){
-	*(sql_key**)res = mvc_bind_key( *(mvc**)c, *(sql_table**)t, name);
+int mvc_bind_key_wrap( sql_key* res, mvc* c, sql_schema *s, str name ){
+	*(sql_key**)res = mvc_bind_key( *(mvc**)c, *(sql_schema**)s, name);
 	return GDK_SUCCEED;
 }
 
+int mvc_bind_idx_wrap( sql_idx* res, mvc* c, sql_schema *s, str name ){
+	*(sql_idx**)res = mvc_bind_idx( *(mvc**)c, *(sql_schema**)s, name);
+	return GDK_SUCCEED;
+}
 
 int mvc_create_schema_wrap( sql_schema *s, mvc* c, str name, str auth){
 	*(sql_schema**)s = mvc_create_schema( *(mvc**)c, name, auth );
@@ -403,12 +412,38 @@ int mvc_create_fkey_wrap( sql_key* res, mvc* c, sql_table *t, str name, int *kt,
 	return GDK_SUCCEED;
 }
 
+int mvc_drop_key_wrap( mvc* c, sql_schema *s, str name ){
+	mvc_drop_key( *(mvc**)c, *(sql_schema**)s, name );
+	return GDK_SUCCEED;
+}
+
 int mvc_create_kc_wrap( sql_key* res, mvc* M, sql_key *K, str name )
 {
 	mvc *m = *(mvc**)M;
 	sql_key *k = *(sql_key**)K;
 	sql_column *c = mvc_bind_column( m, k->t, name );
 	*(sql_key**)res = mvc_create_kc( m, k, c );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_idx_wrap( sql_idx* res, mvc* c, sql_table *t, str name, int *it )
+{
+	*(sql_idx**)res 
+		= mvc_create_idx( *(mvc**)c, *(sql_table**)t, name, (idx_type)*it );
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_idx_wrap( mvc* c, sql_schema *s, str name ){
+	mvc_drop_idx( *(mvc**)c, *(sql_schema**)s, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_ic_wrap( sql_idx* res, mvc* M, sql_idx *I, str name )
+{
+	mvc *m = *(mvc**)M;
+	sql_idx *i = *(sql_idx**)I;
+	sql_column *c = mvc_bind_column( m, i->t, name );
+	*(sql_idx**)res = mvc_create_ic( m, i, c );
 	return GDK_SUCCEED;
 }
 
@@ -570,22 +605,6 @@ module(mapi); # mapi_listen
 #vm_maxsize(0LL);
 
 mvc_init(int(monet_environment.find("sql_debug")));
-
-# dirty hack for comments ask menzo
-PROC renameFUNC(str OLD,str NEW) : void := {
- 	VAR funcs := monet_fcn_nme.select(OLD);
- 	funcs := [funcs~NEW];
- 	monet_fcn_nme.replace(funcs);
- 	monet_fcntbl.reverse.replace(funcs);
-}
-
-proc new_quit() := {
-	mvc_exit();
-	eval("old_quit;");
-}
-
-renameFUNC("quit", "old_quit");
-renameFUNC("new_quit", "quit");
 
 proc SQLclient( int sock ) := {
 	dsock := socket_dup(sock);

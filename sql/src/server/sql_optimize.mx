@@ -863,12 +863,13 @@ stmt *optimize( context *c, stmt *s ){
 	case st_create_schema: case st_drop_schema: 
 	case st_create_view: case st_create_table: case st_drop_table: 
 	case st_create_column: case st_null: case st_default: 
-	case st_create_key: case st_create_kc:
+	case st_create_key: case st_create_kc: case st_drop_key:
+	case st_create_idx: case st_create_ic: case st_drop_idx:
 	case st_create_role: case st_drop_role: 
 	case st_grant_role: case st_revoke_role: 
 	case st_grant: case st_revoke:
 
-	case st_dbat: case st_obat: case st_basetable: case st_kbat:
+	case st_dbat: case st_basetable: case st_idxbat:
 
 	case st_atom: 
 	case st_find: 

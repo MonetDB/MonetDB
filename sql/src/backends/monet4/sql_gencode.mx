@@ -325,6 +325,18 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_create_kc:
 		mvc_dump_2( sql, s, "create_kc", nr );
 		break;
+	case st_drop_key:
+		mvc_dump_2( sql, s, "drop_key", nr );
+		break;
+	case st_create_idx: 
+		mvc_dump_3( sql, s, "create_idx", nr );
+		break;
+	case st_create_ic:
+		mvc_dump_2( sql, s, "create_ic", nr );
+		break;
+	case st_drop_idx:
+		mvc_dump_2( sql, s, "drop_idx", nr );
+		break;
 	case st_create_role: 
 		mvc_dump_2( sql, s, "create_role", nr );
 		break;
@@ -351,14 +363,14 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		char *type = (s->type==st_bat)?"":"_ubat";
 		char *hname = NULL;
 		if (s->h->type == st_basetable){
-			hname = s->h->op1.tval->name;
+			hname = s->h->op1.tval->base.name;
 		}
 		len = snprintf( buf, BUFSIZ, 
 			   "s%d := mvc_bind%s(myc, \"%s\", \"%s\", \"%s\", %d)",
 			  -s->nr, type, 
-			  s->op1.cval->t->s->name, 
-			  s->op1.cval->t->name, 
-			  s->op1.cval->name, s->flag);
+			  s->op1.cval->t->s->base.name, 
+			  s->op1.cval->t->base.name, 
+			  s->op1.cval->base.name, s->flag);
 
 		if (s->flag > RDONLY){
 			len += snprintf( buf+len, BUFSIZ-len, 
@@ -376,14 +388,12 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		write_result(sql,buf);
 		write_tail(sql,-s->nr);
 	} break;
-	case st_dbat:
-	case st_obat: {
-		char type = (s->type==st_dbat)?'d':'o';
+	case st_dbat: {
 		len = snprintf( buf, BUFSIZ, 
-		  	"s%d := mvc_bind_%cbat(myc, \"%s\", \"%s\", %d)",
-			  -s->nr, type, 
-			  s->op1.tval->s->name, 
-			  s->op1.tval->name, 
+		  	"s%d := mvc_bind_dbat(myc, \"%s\", \"%s\", %d)",
+			  -s->nr,  
+			  s->op1.tval->s->base.name, 
+			  s->op1.tval->base.name, 
 			  s->flag);
 
 		if (s->flag > RDONLY){
@@ -397,13 +407,13 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		}
 		dump(sql,buf,len,-s->nr);
 	} break;
-	case st_kbat: {
+	case st_idxbat: {
 		len = snprintf( buf, BUFSIZ, 
-		  	"s%d := mvc_bind_kbat(myc, \"%s\", \"%s\", \"%s\", %d)",
+		  	"s%d := mvc_bind_ibat(myc, \"%s\", \"%s\", \"%s\", %d)",
 			  -s->nr, 
-			  s->op1.kval->t->s->name, 
-			  s->op1.kval->t->name, 
-			  s->op1.kval->name,
+			  s->op1.idxval->t->s->base.name, 
+			  s->op1.idxval->t->base.name, 
+			  s->op1.idxval->base.name,
 			  s->flag);
 
 		if (s->flag > RDONLY){
@@ -866,7 +876,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		dump_2( sql, s, "find", nr );
 		break;
 	case st_bulkinsert: {
-		char *tname = s->op1.stval->op1.tval->name;
+		char *tname = s->op1.stval->op1.tval->base.name;
 		int sep =  stmt_dump( s->op2.stval, nr, sql );
 		int rsep =  stmt_dump( s->op3.stval, nr, sql );
 

@@ -55,6 +55,7 @@ typedef union symdata {
 	struct group *gval;
 	struct sql_column *cval;
 	struct sql_key *kval;
+	struct sql_idx *idxval;
 	struct sql_table *tval;
 	struct sql_schema *schema;
 	struct sql_subtype *typeval;

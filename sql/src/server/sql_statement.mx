@@ -52,6 +52,7 @@ typedef enum stmt_type {
 	st_table,
 	st_column,
 	st_key,
+	st_idx,
 	st_create_schema,
 	st_drop_schema,
 	st_create_view,
@@ -61,7 +62,11 @@ typedef enum stmt_type {
 	st_null,
 	st_default,
 	st_create_key,
+	st_create_idx,
 	st_create_kc,
+	st_create_ic,
+	st_drop_key,
+	st_drop_idx,
 	st_create_role,
 	st_drop_role,
 	st_grant_role,
@@ -73,9 +78,8 @@ typedef enum stmt_type {
 	st_bat,
 	st_ubat,
 	st_ibat,	/* intermediate table result */
-	st_obat,
 	st_dbat,
-	st_kbat,
+	st_idxbat,
 	st_const,
 	st_mark,
 	st_reverse,
@@ -195,7 +199,8 @@ extern stmt *stmt_release( char *name);
 extern stmt *stmt_bind_schema( char *name );
 extern stmt *stmt_bind_table ( stmt *schema, char *name );
 extern stmt *stmt_bind_column( stmt *table, char *name  );
-extern stmt *stmt_bind_key   ( stmt *table, char *name  );
+extern stmt *stmt_bind_key   ( stmt *schema, char *name  );
+extern stmt *stmt_bind_index ( stmt *schema, char *name  );
 
 extern stmt *stmt_create_schema( char *name, char *auth );
 extern stmt *stmt_drop_schema( char *name, int dropaction);
@@ -210,6 +215,10 @@ extern stmt *stmt_default( stmt * col, stmt * def);
 
 extern stmt *stmt_create_key( stmt *table, char *kname, key_type kt, stmt *rk); 
 extern stmt *stmt_create_kc( stmt *key, char *name );
+extern stmt *stmt_drop_key( stmt *ss, char *name );
+extern stmt *stmt_create_index( stmt *table, char *iname, idx_type it); 
+extern stmt *stmt_create_ic( stmt *idx, char *name );
+extern stmt *stmt_drop_index( stmt *ss, char *name );
 
 extern stmt *stmt_create_role( char *name, int admin);
 extern stmt *stmt_drop_role( char *name );
@@ -238,8 +247,8 @@ extern stmt *stmt_basetable(sql_table *t);
 
 extern stmt *stmt_cbat(sql_column * c, stmt * basetable, int access, st_type type);
 extern stmt *stmt_ibat(stmt * i, stmt * basetable );
-extern stmt *stmt_tbat(sql_table * t, int access, st_type type);
-extern stmt *stmt_kbat(sql_key *k, int access );
+extern stmt *stmt_tbat(sql_table * t, int access );
+extern stmt *stmt_idxbat(sql_idx *i, int access );
 
 extern stmt *stmt_temp(sql_subtype * t );
 extern stmt *stmt_atom(atom * op1);
@@ -344,6 +353,7 @@ const char * st_type2string(st_type type) {
 	case st_table:	return "st_table";
 	case st_column:	return "st_column";
 	case st_key:	return "st_key";
+	case st_idx:	return "st_idx";
 	case st_create_schema:	return "st_create_schema";
 	case st_drop_schema:	return "st_drop_schema";
 	case st_create_view:	return "st_create_view";
@@ -353,7 +363,11 @@ const char * st_type2string(st_type type) {
 	case st_null:		return "st_null";
 	case st_default:	return "st_default";
 	case st_create_key:	return "st_create_key";
+	case st_create_idx:	return "st_create_idx";
 	case st_create_kc:	return "st_create_kc";
+	case st_create_ic:	return "st_create_ic";
+	case st_drop_key:	return "st_drop_key";
+	case st_drop_idx:	return "st_drop_idx";
 	case st_create_role:	return "st_create_role";
 	case st_drop_role:	return "st_drop_role";
 	case st_grant_role:	return "st_grant_role";
@@ -366,9 +380,8 @@ const char * st_type2string(st_type type) {
 	case st_bat:	return "st_bat";
 	case st_ubat:	return "st_ubat";
 	case st_ibat:	return "st_ibat";
-	case st_obat:	return "st_obat";
 	case st_dbat:	return "st_dbat";
-	case st_kbat:	return "st_kbat";
+	case st_idxbat:	return "st_idxbat";
 
 	case st_const:	return "st_const";
 	case st_mark:	return "st_mark";
@@ -594,7 +607,7 @@ void stmt_destroy(stmt * s)
 		/* reference only independently managed resources */
 		case st_basetable: 
 		case st_bat: case st_ubat:
-		case st_obat: case st_dbat: case st_kbat:
+		case st_dbat: case st_idxbat:
 		case st_none:
 			break;
 
@@ -624,10 +637,13 @@ void stmt_destroy(stmt * s)
 		/* simple case of statements of only statements */
 		case st_release: case st_commit: case st_rollback:
 		case st_schema: case st_table: case st_column: case st_key:
+		case st_idx:
 		case st_create_schema: case st_drop_schema:
 		case st_create_view: case st_create_table: case st_drop_table:
 		case st_create_column: case st_null: case st_default:
 		case st_create_key: case st_create_kc:
+		case st_drop_key: case st_drop_idx: 
+		case st_create_idx: case st_create_ic:
 		case st_create_role: case st_drop_role:
 		case st_grant_role: case st_revoke_role:
 		case st_grant: case st_revoke: 
@@ -738,10 +754,18 @@ stmt *stmt_bind_column(stmt *table, char * name)
 	return s;
 }
 
-stmt *stmt_bind_key(stmt *table, char *name)
+stmt *stmt_bind_key(stmt *schema, char *name)
 {
 	stmt *s = stmt_create(st_key);
-	s->op1.stval = table;
+	s->op1.stval = schema;
+	s->op2.stval = stmt_atom_string(name);
+	return s;
+}
+
+stmt *stmt_bind_index(stmt *schema, char *name)
+{
+	stmt *s = stmt_create(st_idx);
+	s->op1.stval = schema;
 	s->op2.stval = stmt_atom_string(name);
 	return s;
 }
@@ -789,6 +813,22 @@ stmt *stmt_drop_table(stmt * schema, char *name, int dropaction)
 	return s;
 }
 
+stmt *stmt_drop_key( stmt *ss, char *name )
+{
+	stmt *s = stmt_create(st_drop_key);
+	s->op1.stval = ss;
+	s->op2.stval = stmt_atom_string(name);
+	return s;
+}
+
+stmt *stmt_drop_index( stmt *ss, char *name )
+{
+	stmt *s = stmt_create(st_drop_idx);
+	s->op1.stval = ss;
+	s->op2.stval = stmt_atom_string(name);
+	return s;
+}
+
 stmt *stmt_create_column( stmt *table, char * name, char * type, int typedigits, int typescale )
 {
 	list *l = create_stmt_list();
@@ -833,6 +873,23 @@ stmt *stmt_create_kc( stmt *key, char *name )
 {
 	stmt *s = stmt_create(st_create_kc);
 	s->op1.stval = key; 
+	s->op2.stval = stmt_atom_string(name); 
+	return s;
+}
+
+stmt *stmt_create_index( stmt *table, char *name, idx_type it)
+{
+	stmt *s = stmt_create(st_create_idx);
+	s->op1.stval = table; 
+	s->op2.stval = stmt_atom_string(name); 
+	s->op3.stval = stmt_atom_int(it);
+	return s;
+}
+
+stmt *stmt_create_ic( stmt *idx, char *name )
+{
+	stmt *s = stmt_create(st_create_ic);
+	s->op1.stval = idx; 
 	s->op2.stval = stmt_atom_string(name); 
 	return s;
 }
@@ -901,19 +958,19 @@ stmt *stmt_cbat(sql_column * c, stmt * basetable, int access, st_type type)
 	return s;
 }
 
-stmt *stmt_tbat(sql_table * t, int access, st_type type)
+stmt *stmt_tbat(sql_table * t, int access )
 {
-	stmt *s = stmt_create(type);
+	stmt *s = stmt_create(st_dbat);
 	s->nrcols = 0;
 	s->flag = access;
 	s->op1.tval = t;
 	return s;
 }
 
-stmt *stmt_kbat(sql_key * k, int access)
+stmt *stmt_idxbat(sql_idx * i, int access)
 {
-	stmt *s = stmt_create(st_kbat);
-	s->op1.kval = k;
+	stmt *s = stmt_create(st_idxbat);
+	s->op1.idxval = i;
 	s->nrcols = 1;
 	s->flag = access;
 	return s;
@@ -1628,6 +1685,12 @@ sql_subtype *tail_type(stmt * st)
 
 	case st_bat:
 		return st->op1.cval->type;
+	case st_idxbat:
+		if (st->op1.idxval->type == unique){	
+			return sql_bind_localtype( "int" );
+		} else if (st->op1.idxval->type == join_idx){	
+			return sql_bind_localtype( "oid" );
+		}
 	case st_mirror:
 	case st_reverse:
 		return head_type(st->op1.stval);
@@ -1747,7 +1810,7 @@ stmt *tail_column(stmt * st)
 	case st_list:
 		return tail_column(st->op1.lval->h->data);
 
-	case st_kbat: /* required for shrink_select_ranges() in sql_rel2bin.mx */
+	case st_idxbat: /* required for shrink_select_ranges() in sql_rel2bin.mx */
 	case st_relselect: /* required for eliminate_semijoin() in sql_rel2bin.mx */
 	case st_aggr:
 		printf("= TODO: tail_column(%d=%s) -> NULL !?\n",
@@ -1877,7 +1940,7 @@ char *column_name(stmt * st)
 	case st_column_alias:
 		return column_name(st->op3.stval);
 	case st_bat:
-		return _strdup(st->op1.cval->name);
+		return _strdup(st->op1.cval->base.name);
 	case st_atom:
 		if (st->op1.aval->data.vtype == TYPE_str)
 			return atom2string(st->op1.aval);
@@ -1919,7 +1982,7 @@ char *table_name(stmt * st)
 		return table_name(st->op1.stval);
 
 	case st_bat:
-		return st->op1.cval->t->name;
+		return st->op1.cval->t->base.name;
 	case st_alias:
 		return "unknown";
 	case st_column_alias:

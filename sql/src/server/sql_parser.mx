@@ -37,6 +37,7 @@ typedef enum tokens {
 	SQL_CREATE_VIEW,
 	SQL_CREATE_ROLE,
 	SQL_CREATE_FUNC,
+	SQL_CREATE_INDEX,
 	SQL_DROP_SCHEMA,
 	SQL_DROP_TABLE,
 	SQL_DROP_VIEW,
@@ -45,6 +46,7 @@ typedef enum tokens {
 	SQL_DROP_CONSTRAINT,
 	SQL_DROP_DEFAULT,
 	SQL_DROP_FUNC,
+	SQL_DROP_INDEX,
 	SQL_ALTER_TABLE,
 	SQL_SET,
 	SQL_NAME,
@@ -210,6 +212,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	view_def
 	role_def
 	func_def
+	index_def
 	all_or_any_predicate
 	atom_exp
 	between_predicate
@@ -355,6 +358,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_bounds
 	opt_sign
 	opt_all
+	opt_index_type
 	intval
 	opt_nr
 	opt_limit
@@ -460,6 +464,7 @@ UNDER WHENEVER
 
 %token CASE WHEN THEN ELSE END NULLIF COALESCE
 %token COPY RECORDS DELIMITERS STDIN
+%token INDEX
 
 %%
 
@@ -777,7 +782,38 @@ opt_column:
  |   /* empty */ { $$ = 0; }
  ;
 
-create:	role_def | table_def | view_def | func_def;
+create:	role_def | table_def | view_def | func_def | index_def;
+
+index_def:
+    CREATE opt_index_type INDEX ident ON qname '(' column_commalist ')' 
+	{ dlist *l = dlist_create();
+	  dlist_append_string(l, $4);
+	  dlist_append_int(l, $2);
+	  dlist_append_list(l, $6);
+	  dlist_append_list(l, $8);
+	  $$ = _symbol_create_list( SQL_CREATE_INDEX, l); }
+  ;
+
+opt_index_type:
+     UNIQUE		{ $$ = unique; }
+ |   /* empty */	{ $$ = unique; }
+ ;
+
+/* sql-server def
+CREATE [ UNIQUE ] [ CLUSTERED | NONCLUSTERED ] INDEX index_name
+    ON { table | view } ( column [ ASC | DESC ] [ ,...n ] )
+[ WITH < index_option > [ ,...n] ]
+[ ON filegroup ]
+
+< index_option > :: =
+    { PAD_INDEX |
+        FILLFACTOR = fillfactor |
+        IGNORE_DUP_KEY |
+        DROP_EXISTING |
+    STATISTICS_NORECOMPUTE |
+    SORT_IN_TEMPDB 
+}
+*/
 
 role_def:
     CREATE ROLE qname opt_grantor
@@ -1072,6 +1108,7 @@ drop:
 
  |  DROP VIEW qname	  { $$ = _symbol_create_list( SQL_DROP_VIEW, $3 ); }
  |  DROP ROLE qname	  { $$ = _symbol_create_list( SQL_DROP_ROLE, $3 ); }
+ |  DROP INDEX qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }
  ;
 
 drop_action:
@@ -2221,6 +2258,10 @@ const char *token2string(int token)
 		return "Drop View";
 	case SQL_DROP_ROLE:
 		return "Drop ROLE";
+	case SQL_DROP_CONSTRAINT:
+		return "Drop CONSTRAINT";
+	case SQL_DROP_INDEX:
+		return "Drop INDEX";
 	case SQL_ALTER_TABLE:
 		return "Alter Table";
 	case SQL_GRANT_ROLES:
