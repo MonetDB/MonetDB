@@ -65,7 +65,7 @@ The files are processed as one big program
 	len = totlen = 8*8192;
 	ptr = buf = (char *) GDKmalloc(totlen);
 	for(k=0;mal_script[k]!= 0; k++) {
-		sprintf(fname,"%s/%s",cwd,mal_script[k]);
+		sprintf(fname,"%s",mal_script[k]);
 		fd = fopen(fname,"rb");
 		if (fd == 0) {
 			printf("mil: could not open file: %s\n", fname);
