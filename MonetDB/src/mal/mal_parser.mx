@@ -330,7 +330,27 @@ int typeMarker(Client cntxt)
 {	skipBlanc(cntxt);
 	if( *cntxt->nxt==':')
 	switch(*(cntxt->nxt+1)){
-	case 'b': if( keyphrase(cntxt,":bit",4) ) return TYPE_bit;break;
+	case 'b': if( keyphrase(cntxt,":bit",4) ) return TYPE_bit;
+		if( strncmp(cntxt->nxt,"bat[",4)==0){
+			/* parse bat[type,type */
+			str hd = 0, tl =0;
+			int i= malAnyType, ht,tt;
+
+			advance(cntxt,4);
+			if( (hd= idCopy(cntxt,idLength(cntxt))) &&
+			    nextChar(cntxt)==',' &&
+			    (tl= idCopy(cntxt,idLength(cntxt))) ){
+				ht = getTypeIndex(hd);
+				tt = getTypeIndex(tl);
+				i= newBatType(ht,tt);
+			}
+			if( nextChar(cntxt) !=']')
+				parseError(cntxt,"']' expected\n");
+			if( hd ) GDKfree(hd);
+			if( tl ) GDKfree(tl);
+			return i;
+		} 
+		break;
 	case 'c': if( keyphrase(cntxt,":chr",4) ) return TYPE_chr;break;
 	case 'f': if( keyphrase(cntxt,":flt",4) ) return TYPE_flt;break;
 	case 'd': if( keyphrase(cntxt,":dbl",4) ) return TYPE_dbl;break;
@@ -807,7 +827,9 @@ for bat[T1,T2] this is a little tricky to parse.
 		}else
 		if( (idx=findVariableLength(curBlk,cntxt->nxt,i)) == -1){
 			v= idCopy(cntxt,i);
-			idx = newVariable(curBlk, v, malAnyType);
+			i= typeMarker(cntxt);
+			i= i?i: malAnyType;
+			idx = newVariable(curBlk, v, i);
 		} else advance(cntxt,i);
 	} else { 
 		idx= 0;
@@ -892,6 +914,21 @@ This code is used in both positions of the expression
 		goto @1;
 	}
 @-
+@= parseArguments
+	/* get arguments */
+	curInstr->argc=1;
+	while( currChar(cntxt)!= ')'){
+		int idx;
+		@:factor@
+		pushArgument(curBlk,curInstr,idx);
+		if( currChar(cntxt)==',') keyphrase1(cntxt,",");
+		else 
+		if( currChar(cntxt) != ')'){
+			parseError(cntxt,"',' expected\n");
+			cntxt->nxt--; /* keep it */
+			break;
+		}
+	}
 @c
 	@:term(part2)@
 	if( idLength(cntxt)==0 && operatorLength(cntxt)==0) {
@@ -949,20 +986,7 @@ getarguments:
 			curInstr->fcnname = arg;
 		}
 
-		/* get arguments */
-		curInstr->argc=1;
-		while( currChar(cntxt)!= ')'){
-			int idx;
-			@:factor@
-			pushArgument(curBlk,curInstr,idx);
-			if( currChar(cntxt)==',') keyphrase1(cntxt,",");
-			else 
-			if( currChar(cntxt) != ')'){
-				parseError(cntxt,"',' expected\n");
-				cntxt->nxt--; /* keep it */
-				break;
-			}
-		}
+		@:parseArguments@
 		goto part3;
 	} 
 	

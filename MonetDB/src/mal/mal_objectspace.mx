@@ -1,4 +1,4 @@
-@t MAL object binding
+@t MAL object space management
 @a M.L. Kersten
 @* MAL object space management
 The key objects managed by Monet are the persistent BATs, which
@@ -20,20 +20,34 @@ when the client wishes to perform parallel processing.
 Finally, databases, languages, etc. may define constants and variables
 accessible to all hierarchical related clients.
 
-All these cases require a multi-level variable management, which
-encompasses a symbol table, stack with current values, and routines
-to manage them. 
+The approach taken is to rely on the concept of object spaces
+as pioniered in Lynda and -later- JavaSpaces.
+Every module in the Monet virtual machine can act as an object space.
 
-The approach taken is to mimick a hierarchical organized 
-collection of object spaces. Copies can be obtain using the
-function 'bind' and modifications made to the private copy
-are synchronized with the external version upon a call to 'release'
-or 'releaseAll'.
+This space is managed by functions defined in the module.
+The space can be extended with a new object using the function
+'deposit(nme:str,v:any'). An exception is raised when the object
+is already known.
 
+A copy of an object can be obtain using the
+pattern 'take(v:any,nme:str)', where 'nme' denotes the object
+of interest and 'v' the local name where the copy is stored.
+If the type associated with 'v' does not comply with the
+object's type, an exception is raised.
+[at a later stage we may use regular expressions for the names]
+
+The object is given back to the space manager calling 'release(nme:str,v:any)'.
+It may update the content of the repository accordingly.
+However, the local copy of the variable is gone immediately.
+
+Finally, the object manager can be requested to 'discard(nme:str)'
+an object completely.
+
+@+
 Concurrency control, replication services, as well as access
 to remote stores is part of an object space definition.
 Depending on the intended semantics, the object space manager
-(implementations of bind() and release())
+(implementations of deposit(), take(), release() and discard() )
 may keep track of the clients holding links to this members, 
 provide a traditional 2-phase
 locking scheme, optimistic control, or check-out/check-in scheme.
@@ -46,11 +60,11 @@ at a time.
 Example: consider the client function:
 @T
 function myfcn():void;
-	b:= mil.bind(bat,"mytable");
-	c:= sql.bind(bat[int,str], "person","age");
+	b:bat := mil.take("mytable");
+	sql.take(c:bat[int,str], "person","age");
 	d:= intersect(b,c);
 	print(d);
-	u:= bind(str,"user");
+	take(u:str,"user");
 	print(u);
 	release(user);
 end function;
@@ -62,17 +76,17 @@ column. The result bat 'd' is temporary and disappears upon garbage
 collection or explicit 'destroy'. The variable 'u' is looked up
 as the string object user.
 
-The type parameters in the bind() calls enable early type checking
+The type parameters in the take() calls enable early type checking
 Failure to find a properly typed object leads to an exception.
-The type indicator for a bind instruction may be ommitted, but
+The type indicator for a take instruction may be ommitted, but
 this defers type resolution to execution time.
 
 Note, possible extensions for the object space technique is
-to introduce e.g. xml.bind() which converts an XML document to a BAT,
-jpeg.bind() similer for an image.
+to introduce e.g. xml.take() which converts an XML document to a BAT,
+jpeg.take() similer for an image.
 
 @+ Space management
-Every client receives a single object space (client.bind()) upon initialization.
+Every client receives a single object space (client.take()) upon initialization.
 This space is placed subordinate to any space introduced by the
 system administrator. It will contain all global client data and is not
 persistent (?)
@@ -82,27 +96,6 @@ scripts. Variables are added to the object spaces using the export()
 function call, which performs the authorization and possible definition
 clashes.
 @
-@+ BAT reference counting
-A key issue is to deal with temporary BATs in an efficient way.
-Consider the following routine:
-@T
-function fcn():bat[int,str];
-	b:= mil.bind(bat[int,str],"mytable");
-	r:= select(b,1,5);
-	s:= select(b,6,9);
-	t:= select(b,10,19);
-	u:= t;
-	release(t);
-	return s;
-end function;
-@
-The bat 'r' should reclaimed upon exit and we should avoid a double
-reclaim due to the assignment u:=t. The solution implemented is to
-mark a variable as garbage as soon as it receives its first assignment
-that is not a result of a simple assignment. This precludes functions 
-in the algebra that return one of their arguments!
-Furthermore, the bat 't' can not be used after it has been released
-and s is released by the callee.
 @-
 @h
 /*
@@ -207,11 +200,11 @@ void deleteObjectSpace(OBJspace obj){
 }
 @- Binding 
 Each time a user wishes to access a global variable, it
-should call the binding routine.
+should call the take routine.
 The default implementation is given below, we expect 
 different versions to emerge.
 @c
-int bindObject(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+int takeObject(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	return GDK_SUCCEED;
 }
 int releaseObject(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){

@@ -102,7 +102,6 @@ assume here that it aligns with the variable table of the routine.
 		@:safeguardStack@
 	} else {
 		stk = glb;
-		/* stk->stktop= mb->vtop;*/
 		if( mb != stk->blk) GDKerror("runMAL:misalignment of symbols\n");
 	}
 
@@ -116,11 +115,12 @@ and a variable to keep the return value.
 		/* printf("recursive MAL function call %s[%d]\n",
 			pci->fcnname,env->pc); */
 		for(k=1; k<pci->argc; k++){
-			lhs = &stk->stk[k+ SYMBOLFRAME];
-			if( isVarConstant(mbcaller,pci->argv[k]))
+			lhs = &stk->stk[k];
+			/*if( isVarConstant(mbcaller,pci->argv[k]))
 				rhs = &getVarConstant(mbcaller,pci->argv[k]);
-			else	rhs = &env->stk[pci->argv[k]];
+			else */	rhs = &env->stk[pci->argv[k]];
 			VALcopy(lhs,rhs);
+			@:BATfix(rhs)@
 		}
 		stk->up = env;
 		env->down = stk;
@@ -133,7 +133,7 @@ later on any more. The effect is optimal, if at least ca. 20 constants
 are referenced in a function (a gain on tst400a of 20% has been observed).
 Otherwise, it is cheaper to lookup them up. 
 @c
-	for(i=0; i< mb->vtop; i++)
+	for(i= env?pci->argc:1; i< mb->vtop; i++)
 	if( isVarConstant(mb,i) && isVarUsed(mb,i) ){
 		lhs = &stk->stk[i];
 		rhs = &getVarConstant(mb,i);
@@ -230,6 +230,7 @@ elements in the value stack.
 			pci = getInstrPtr(mbcaller,env->pc);
 			lhs = &env->stk[pci->argv[0]];
 			VALcopy(lhs,rhs);
+			@:BATfix(lhs)@
 			if(glb == 0) garbageCollector(mb,stk);
 			if(env) env->cmd = cmd; /* save debugger command */
 			return 0;
@@ -252,6 +253,8 @@ symbol table and moves it to the stackframe location.
 	/* if( isVarConstant(mb,pci->argv[1]))
 		rhs = &getVarConstant(mb,pci->argv[1]);
 	else */	rhs = &stk->stk[pci->argv[1]];
+	garbageElement(lhs);
+	@:BATfix(rhs)@
 	VALcopy(lhs,rhs);
 	if( pci->raise){
 		/* printf("raise exception %s\n", getVarName(mb,pci->argv[0])); 
@@ -326,7 +329,8 @@ are determined at compile time.
 			"address of pattern missing\n");
 	else {
 		retval=  &stk->stk[pci->argv[0]];
-		retval->vtype = getGDKtype(getVarType(mb,pci->argv[0]));
+		retval->vtype = pci->gdktype;
+		garbageElement(retval);
 		ret = (str) (*pci->fcn)(mb,stk,pci);
 	}
 
@@ -336,6 +340,8 @@ a new stack frame and do housekeeping, such as garbagecollection of all
 non-returned values.
 
 @= functioncall
+	lhs = &stk->stk[pci->argv[0]];
+	garbageElement(lhs);
 	ret= runMAL(cntxt,mb,stk,0);
 @-
 All dynamically linked routines are called with references to their
@@ -357,11 +363,11 @@ the bind(namespace,batname,mode) operation.[todo]
 @= evalParameters
 {	int k;
 	retval=  &stk->stk[pci->argv[0]];
-	retval->vtype = getGDKtype(getVarType(mb,pci->argv[0]));
+	retval->vtype = pci->gdktype;
+	garbageElement(retval);
 	for(k=0;k<pci->argc; k++){
 		argv[k] =(ptr) getArgReference(stk,pci,k);
 	} 
-	garbageElement(retval);
 }
 @-
 The type dispatching table in getArgValue can be removed if we 
@@ -410,7 +416,12 @@ You can leave a barrier block by searching for the corresponding 'lab'
 by faking an exception.
 
 @= leaveControl
-	stk->exception= pci->argv[0];
+	/* stk->exception= pci->argv[0];*/
+	for( stk->pc++; stk->pc<stop; stk->pc++){
+	InstrPtr l= getInstrPtr(mb,stk->pc);
+	if( l->token == ENDsymbol && l->argv[0]== pci->argv[0]){
+		break;
+	} }
 @-
 Each time we enter a barrier block, we could keep its position in the
 interpreter stack frame. It forms the starting point to issue a redo.
@@ -538,6 +549,47 @@ str setDynamicType(MalBlkPtr mb, MalStkPtr stk, VarPtr v, int tpe){
 	return raiseException(mb,stk->pc, "setDynamicType",buf);
 }
 
+@+ BAT reference counting
+A key issue is to deal with temporary BATs in an efficient way.
+References to bats in the buffer pool may cause dangling references
+at the language level. This appears as soons as your share
+a reference and delete the BAT from one angle. If not carefull, the
+dangling pointer may subsequently be associated with another BAT
+
+Dangling references can be dealt with in several ways.
+First, we could increase the reference count each time a BAT
+becomes shared and rely on the garbage collector to properly
+decrement the count before abanding a execution frame.
+Second, we could try to avoid dangling pointers by permitting
+just one reference per BAT. This doesn't work, because we may
+keep bat_views around, which depend on the existence of the
+underlying BAT.
+
+@= BATfix
+if(@1->vtype == TYPE_bat)
+{ 	BAT *b;
+	b= (BAT*) BBPgetdesc(@1->val.bval);
+	if( b ) {
+		BBPfix(b->batCacheid);
+		/* printf("increment %s to %d\n",b->batId,  
+			BBP_refs(b->batCacheid)); */
+	} else raiseException(mb,stk->pc,"interpreter",
+		"Can not find bat, internal error\n");
+}
+@-
+
+@= BATunfix
+if(@1->vtype == TYPE_bat && @1->val.bval)
+{ 	BAT *b;
+	b= (BAT*) BBPgetdesc(@1->val.bval);
+	if( b ) {
+		BBPunfix(b->batCacheid);
+		/* printf("decrement %s (%d) to %d\n",b->batId, 
+			@1->val.bval,
+			BBP_refs(b->batCacheid)); */
+	} else GDKerror("interpreter:bat '%d' disappeared\n",@1->val.bval);
+}
+
 @+ Garbage collection
 Garbage collection is relatively straightforward, because most values are
 retained on the stackframe of an interpreter call. However, two storage
@@ -561,6 +613,8 @@ void garbageElement(ValPtr v)
 			GDKfree(v->val.pval);
 		}
 		v->val.pval= NULL;
+	} else {
+		@:BATunfix(v)@
 	}
 }
 @-

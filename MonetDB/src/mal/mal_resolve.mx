@@ -237,7 +237,7 @@ Take care of variable argument lists.
 We found the proper function. Copy some properties. In particuler,
 determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall, PATcall
 @c
-	if(getSignature(s) != p)
+	if(getSignature(s) != p){
 	switch(getSignature(s)->token){
 	case COMMANDsymbol: 
 		p->token = CMDcall; 
@@ -259,14 +259,17 @@ determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall, PATcall
 		showException(mb,getPC(mb,p),"MALresolve","unexpected token type\n");
 		mb->errors++;
 	}
+	}
 	if(tracefcn) printf("%s:=%s\n",malTypeName(getDestType(mb,p)),
 		malTypeName(s1));
 	/* watch out, the destination type may already be known */
 	if( getDestType(mb,p)== malAnyType){
 		setDestType(mb,p,s1);
 		p->modname= GDKstrdup(m->name);
+		p->gdktype =  getGDKtype(getVarType(mb,p->argv[0]));
 		return s1;
 	}
+	p->gdktype =  getGDKtype(getVarType(mb,p->argv[0]));
 	if( getDestType(mb,p) == s1) {
 		p->modname= GDKstrdup(m->name);
 		return s1;
@@ -367,8 +370,10 @@ procedure call without arguments and no module name.
 	}
 	if( getDestType(mb,p)== malAnyType){
 		if( p->argv[0]>=0) setDestType(mb,p,s1);
+		p->gdktype =  getGDKtype(getVarType(mb,p->argv[0]));
 		return;
 	}
+	p->gdktype =  getGDKtype(getVarType(mb,p->argv[0]));
 	if( getDestType(mb,p) == s1) return;
 	if( p->argc <=1) return;
 

@@ -120,6 +120,7 @@ upon destruction of the definition.
 @h
 	str	modname;	/* module context */
 	str	fcnname;	/* function name */
+	int	gdktype;	/* GDK storage type for return value */
 	int	argc;
 	int	argv[1];	/* at least one entry */
 } *InstrPtr, InstrRecord;
@@ -344,6 +345,7 @@ InstrPtr newInstruction(MalBlkPtr mb, int kind){
 	p->typechk = TYPE_UNKNOWN;
 	p->modname= NULL;
 	p->fcnname= NULL;
+	p->gdktype = TYPE_void;
 	p->argc= 1;
 	p->argv[0] = -1;	/* watch out for direct use in variable table*/
 	return p;
@@ -807,12 +809,16 @@ str typechkName(int i){
 }
 str hiddenInstructionArgs(MalBlkPtr mb,InstrPtr p,str s){
 	int i;
+	str tpe;
 	
 	sprintf(s,"\t#%d%s:",getPC(mb,p), typechkName(p->typechk));
 	advance(s);
+	sprintf(s,"%s ", (tpe= malTypeName(p->gdktype)) );
+	GDKfree(tpe);
+	advance(s);
 	for(i=0;i<p->argc;i++)
 	if( p->argv[i] >=0){
-		str tpe= malTypeName(getArgType(mb,p,i));
+		tpe= malTypeName(getArgType(mb,p,i));
 		advance(s);
 		sprintf(s,"(%s:%s)", 
 			(getArgName(mb,p,i)?getArgName(mb,p,i):"nil"), tpe);

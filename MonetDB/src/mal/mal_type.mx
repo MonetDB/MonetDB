@@ -78,6 +78,7 @@ derived from the parser to avoid a loop in the define-structure.
 #define BARRIERsymbol	26
 #define REDOsymbol	27
 #define LEAVEsymbol	28
+#define SPACEsymbol	29
 #define IMPORTsymbol	30	/* dependency on outer scopes */
 #define COMMANDsymbol   31
 #define FUNCTIONsymbol	32
@@ -231,7 +232,15 @@ In many places we need a confirmed type identifier.
 GDK returns the next available index when it can not find the type.
 This is not sufficient here, an error message may have to be generated.
 It is assumed that the type table does not change in the mean time.
+Use the information that identifiers are at least one character
+and are terminated by a null to speedup comparison
 @c
+INLINE
+int idcmp(str n, str m)
+{
+	if( *(short *) n == *(short *) m) return strcmp(n,m);
+	return -1;
+}
 int getTypeIndex(str nme){
 	int i;
 	i= ATOMindex(nme);
@@ -252,16 +261,6 @@ int getGDKtype(int type){
 	if( isBatType(type)) return TYPE_bat;
 	if( type == malAnyType) return TYPE_void;
 	return ATOMtype(type);
-}
-@- 
-Use the information that identifiers are at least one character
-and are terminated by a null to speedup comparison
-@c
-INLINE
-int idcmp(str n, str m)
-{
-	if( *(short *) n == *(short *) m) return strcmp(n,m);
-	return -1;
 }
 str newTmpName(int i){
 	char buf[128];

@@ -61,8 +61,6 @@ mal_export void	restoreFunction(Symbol proc);
 mal_export malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p);
 mal_export void 	printFunction(FILE *fd, MalBlkPtr mb);
 
-#define SYMBOLFRAME GDKatomcnt
-
 #endif /*  _MAL_FCN_H*/
 @-
 The MAL functions are constructed incrementally while parsing the source.
