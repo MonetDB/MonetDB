@@ -171,7 +171,7 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 			fixODBCstring(Value, BufferLength, addDescError, desc);
 			if (rec->sql_desc_name != NULL)
 				free(rec->sql_desc_name);
-			rec->sql_desc_name = (SQLCHAR *) dupODBCstring((SQLCHAR *) Value, BufferLength);
+			rec->sql_desc_name = (SQLCHAR *) dupODBCstring((SQLCHAR *) Value, (size_t) BufferLength);
 			rec->sql_desc_unnamed = rec->sql_desc_name ? SQL_NAMED : SQL_UNNAMED;
 		}
 		return SQL_SUCCESS;

@@ -94,7 +94,7 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 	case SQL_FLOAT:
 	case SQL_REAL:
 	case SQL_DOUBLE:
-		ipdrec->sql_desc_precision = ColumnSize;
+		ipdrec->sql_desc_precision = (SQLSMALLINT) ColumnSize;
 		break;
 	default:
 		ipdrec->sql_desc_length = ColumnSize;

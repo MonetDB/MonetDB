@@ -24,35 +24,20 @@
 
 
 /*
- * Utility function to duplicate an ODBC string (with a
- * length/special code specified, may be non null terminated)
- * to a normal C string (null terminated) or NULL.
+ * Utility function to duplicate an ODBC string (with a length
+ * specified, may not be null terminated) to a normal C string (null
+ * terminated).
  *
- * Precondition: none
- * Postcondition: returns a newly allocated null terminated string or NULL.
+ * Precondition: inStr != NULL
+ * Postcondition: returns a newly allocated null terminated string.
  */
 char *
-dupODBCstring(SQLCHAR *inStr, SQLSMALLINT lenCode)
+dupODBCstring(SQLCHAR *inStr, size_t length)
 {
-	if (inStr == NULL || lenCode == SQL_NULL_DATA) {
-		/* no valid string is provided, so nothing to copy */
-		return NULL;
-	}
+	char *tmp = (char *) malloc((length + 1) * sizeof(char));
 
-	if (lenCode == SQL_NTS) {
-		/* its a Null Terminated String (NTS) */
-		return (char *) strdup((char *) inStr);
-	}
-	if (lenCode >= 0) {
-		/* String length is specified. It may not be Null Terminated. */
-		/* need to copy lenCode chars and null terminate it */
-		char *tmp = (char *) malloc((lenCode + 1) * sizeof(char));
-		assert(tmp);
-		strncpy(tmp, (char *) inStr, lenCode);
-		tmp[lenCode] = '\0';   /* make it null terminated */
-		return tmp;
-	}
-
-	/* All other values for lenCode are Invalid. Cannot copy it. */
-	return NULL;
+	assert(tmp);
+	strncpy(tmp, (char *) inStr, length);
+	tmp[length] = '\0';   /* make it null terminated */
+	return tmp;
 }

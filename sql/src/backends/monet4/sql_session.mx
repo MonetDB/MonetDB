@@ -168,7 +168,7 @@ static void
 reset_arg_tree( YYSTREE args )
 {
 	while(args){
-		int i;
+		unsigned i;
 		for (i=0; i< args->cnt; i++){
 			if (args->yysons[i])
 				reset_arg_tree(args->yysons[i]);
@@ -933,13 +933,13 @@ int sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 	buf[cur--] = 0;
 	if (scale){
 		for(i=0; i<scale; i++){
-			buf[cur--] = (v%10) + '0';
+			buf[cur--] = (char) (v%10 + '0');
 			v /= 10;
 		}
 		buf[cur--] = '.';
 	}
 	while(v){
-		buf[cur--] = (v%10) + '0';
+		buf[cur--] = (char ) (v%10 + '0');
 		v /= 10;
 		done = 1;
 	}

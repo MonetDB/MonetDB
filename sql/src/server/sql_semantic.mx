@@ -586,7 +586,7 @@ static stmt *fix_scale( mvc * sql, sql_subtype * ct, stmt * s, int both, int alw
 	(void) sql; /* Stefan: unused!? */
 
 	if (ct->type->scale == SCALE_FIX && st->type->scale == SCALE_FIX){ 
-		int scale_diff = (ct->scale - st->scale);
+		int scale_diff = ((int) ct->scale - (int) st->scale);
 
 		if (scale_diff){
 			sql_subtype *it = sql_bind_localtype( st->type->name );
@@ -607,7 +607,7 @@ static stmt *fix_scale( mvc * sql, sql_subtype * ct, stmt * s, int both, int alw
 			}
 		}
 	} else if (always && st->scale){ /* scale down */
-		int scale_diff =  - st->scale;
+		int scale_diff =  - (int) st->scale;
 		sql_subtype *it = sql_bind_localtype( st->type->name );
 		sql_subfunc *c = sql_bind_func("scale_down",st,it);
 

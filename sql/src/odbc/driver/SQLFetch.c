@@ -260,8 +260,8 @@ getfloat(ODBCStmt *stmt, const char *data, SQLSMALLINT type,
 		return SQL_ERROR;
 	}
 	if (type == SQL_C_FLOAT) {
-		* (float *) ptr = d;
-		if (* (float *) ptr != d) {
+		* (float *) ptr = (float) d;
+		if ((double) * (float *) ptr != d) {
 			/* Numeric value out of range */
 			addStmtError(stmt, "22003", NULL, 0);
 			return SQL_ERROR;

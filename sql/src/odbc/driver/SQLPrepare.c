@@ -58,7 +58,7 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	/* TODO: count the number of output columns and their description */
 
 	/* we need a null-terminated string, so allocate a copy */
-	query = dupODBCstring(szSqlStr, nSqlStrLength);
+	query = dupODBCstring(szSqlStr, (size_t) nSqlStrLength);
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLPrepare: \"%s\"\n", query);
 #endif

@@ -26,14 +26,14 @@
 
 
 /*
- * Utility function to duplicate an ODBC string (with a
- * length/special code specified, may be non null terminated)
- * to a normal C string (null terminated) or NULL.
+ * Utility function to duplicate an ODBC string (with a length
+ * specified, may be non null terminated) to a normal C string (null
+ * terminated).
  *
- * Precondition: none
- * Postcondition: returns a newly allocated null terminated string or NULL
+ * Precondition: inStr != NULL
+ * Postcondition: returns a newly allocated null terminated string
  */
-char *dupODBCstring(SQLCHAR *inStr, SQLSMALLINT lenCode);
+char *dupODBCstring(SQLCHAR *inStr, size_t length);
 
 /*
  * Utility macro to fix up args that represent an ODBC string.  If len

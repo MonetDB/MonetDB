@@ -58,7 +58,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		szDataSource = (SQLCHAR*)"Default";
 		nDataSourceLength = strlen((char*)szDataSource);
 	}
-	dsn = dupODBCstring(szDataSource, nDataSourceLength);
+	dsn = dupODBCstring(szDataSource, (size_t) nDataSourceLength);
 	/* for now we only allow the default data source */
 	if (strcasecmp(dsn, "default") != 0) {
 		free(dsn);
@@ -70,7 +70,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	if (nUIDLength == 0) {
 		uid = strdup(mo_find_option(NULL, 0, "sql_user"));
 	} else {
-		uid = dupODBCstring(szUID, nUIDLength);
+		uid = dupODBCstring(szUID, (size_t) nUIDLength);
 	}
 	fixODBCstring(szPWD, nPWDLength, addDbcError, dbc);
 	if (nPWDLength == 0) {
@@ -79,7 +79,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 			pwd = "monetdb";
 		pwd = strdup(pwd);
 	} else {
-		pwd = dupODBCstring(szPWD, nPWDLength);
+		pwd = dupODBCstring(szPWD, (size_t) nPWDLength);
 	}
 
 	s = mo_find_option(NULL, 0, "sql_port");
