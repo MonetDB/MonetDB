@@ -52,6 +52,14 @@ int debugger();
 #endif /* _MONET_GLOBAL_H_ */
 @C
 extern "C" {
+#ifdef _CRTDBG_MAP_ALLOC
+/* Windows only:
+   our definition of new and delete clashes with the one if
+   _CRTDBG_MAP_ALLOC is defined.
+*/
+#undef _CRTDBG_MAP_ALLOC
+#endif
+
 #include "Mserver.h"
 #include "monet_context.h"
 #include "monet_interpreter.h"
@@ -105,7 +113,7 @@ gdk/gdk_utils.mx and wrapping malloc in the below dummy function:
 @C
 static int malloc_init=1;
 #ifdef SOLARIS
-#ifndef NOMALLOPT
+#ifdef HAVE_MALLOPT
 #undef malloc
 void* malloc(size_t size) {
 	@:mallopt@
@@ -199,8 +207,8 @@ static Client Monet_init( opt *set, int setlen )
 	if ((p=GDKgetenv("monet_mmap")) )
 		GDKmem_bigsize() = strtol(p,NULL,10);
 
-	if (GDKgetenv_isyes("monet_deamon")){	
-		monet_deamon=1;
+	if (GDKgetenv_isyes("monet_daemon")){	
+		monet_daemon=1;
 	}
 
 	return (Client) monet_init();
@@ -243,7 +251,7 @@ A grain size of 128 bytes is used to keep overhead low.
 #endif
 @C
 
-#ifndef NOMALLOPT
+#ifdef HAVE_MALLOPT
 	@:mallopt@
 #endif
 
@@ -255,6 +263,7 @@ A grain size of 128 bytes is used to keep overhead low.
                {"debug", 2, 0, 'd'},
                {"help", 0, 0, '?'},
                {"set", 1, 0, 's'},
+               {"trace", 0, 0, 0},
                {0, 0, 0, 0}
              };
 
@@ -287,6 +296,11 @@ A grain size of 128 bytes is used to keep overhead low.
 						"dbfarm") == 0){
 				setlen = mo_add_option( &set, setlen, 
 					opt_cmdline, "gdk_dbfarm", optarg );
+				break;
+			}
+			if (strcmp(long_options[option_index].name,
+						"trace") == 0) {
+				monet_listing = 1;
 				break;
 			}
 			usage(prog);
