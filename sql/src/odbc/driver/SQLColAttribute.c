@@ -66,11 +66,6 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 	rec = stmt->ImplRowDescr->descRec + nCol;
 
 	switch (nFieldIdentifier) {
-	case SQL_COLUMN_LENGTH:
-	case SQL_COLUMN_PRECISION:
-	case SQL_COLUMN_SCALE:
-		/* XXX needs to be implemented */
-		break;
 	case SQL_DESC_AUTO_UNIQUE_VALUE: /* SQL_COLUMN_AUTO_INCREMENT */
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_auto_unique_value;
@@ -115,6 +110,7 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 			   pszValue, nValueLengthMax, pnValueLength,
 			   addStmtError, stmt);
 		break;
+	case SQL_COLUMN_LENGTH:
 	case SQL_DESC_LENGTH:
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_length;
@@ -151,10 +147,12 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_octet_length;
 		break;
+	case SQL_COLUMN_PRECISION:
 	case SQL_DESC_PRECISION:
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_precision;
 		break;
+	case SQL_COLUMN_SCALE:
 	case SQL_DESC_SCALE:
 		if (pnValue)
 			* (int *) pnValue = rec->sql_desc_scale;
