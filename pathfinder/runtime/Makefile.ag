@@ -1,0 +1,24 @@
+
+INCLUDES = $(MONET_INCS)
+
+lib__pathfinder = {
+	DIR = libdir/MonetDB
+	SOURCES = \
+		pathfinder.mx \
+		staircasejoin.mx \
+		pair.c \
+		ctxpropmgmt.c \
+		estimation.c \
+		levelsteps.c \
+		ctxpropmgmt.h \
+		pair.h
+
+	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
+	LIBS = $(MONET_LIBS)
+	LDFLAGS = -module
+}
+
+scripts_mil = {
+	DIR = libdir/MonetDB
+	SOURCES = pathfinder.mx
+}
