@@ -309,3 +309,18 @@ tst400e		 1.33/0.97/0.16	1M incr fcn
 
 tst901a		 1.8/1.4/0.4	[+] call	
 tst901b		 4.4/4.1/0.27	[+] call	
+======================== 29 May 2004 ===================
+Same setup on Orion
+The compilation mode for both V5 and V4.3.17 is CFLAGS=-O2 
+command: time Mserver -c perf.conf TST </dev/null >/dev/null
+		orion(2x1.4Mh load 0)	
+base		 0.10/0.08/0.02			 0.80/0.14/0.68
+tst400a		 0.25/0.23/0.02	1M loop	 	 2.80/2.14/0.66
+tst400a2	 0.37/0.35/0.20	1M loop inc	
+tst400bHuge 	 0.83/0.77/0.05	100k count (io)	11.69/10.77/0.85
+tst400cHuge	 0.97/0.83/0.14	100k insert(io)	 5.25/ 4.21/0.98
+tst400d		 0.73/0.72/0.01	1M insert tuple  9.04/ 8.34/0.67
+tst400e		 1.02/1.01/0.01	1M incr fcn      4.66/ 4.01/0.60
+
+tst901a		 0.98/0.93/0.05	[+] call	 8.95/ 8.24/0.68
+tst901b		 4.26/4.13/0.13	[+] call	23.75/23.07/0.65
