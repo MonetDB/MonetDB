@@ -4,3 +4,4 @@
 barrier v:= iterator.nextElement(i,0:lng,1000000:lng);
 	redo v;
 end	v;
+	print(i);

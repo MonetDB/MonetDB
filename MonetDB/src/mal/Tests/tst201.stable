@@ -12,7 +12,7 @@
 ## Predefined code segment
 ##use "mal/iterator";		CAUSES an ERROR!!
 #	_v0:= oid(20000000);
-WARNING:newConstant:int coerced to lng
+!ERROR: WARNING:newConstant:int coerced to lng
 #	_v1:= setoid(_v0);
 ##setoid(oid(20000000));
 ###test basic functionality of the BAT library.
@@ -166,7 +166,7 @@ WARNING:newConstant:int coerced to lng
 ##b.reverse.like(" fox").print;
 ##quit;
 #
-function Client.main():int;	#0:(main:int->0)
+function Admin.main():int;	#0:(main:int->0)
 	_v0 := atoms.oid(20000000);	#1:(_v0:oid->13)($14:int->14)
 	_v1 := atoms.setoid(_v0);	#2:(_v1:any->15)(_v0:oid->13)
 	_v2 := bat.new(str,int);	#3:(_v2:bat[str,int]->16)(str:str->12)(int:int->6)
@@ -259,7 +259,7 @@ function Client.main():int;	#0:(main:int->0)
 	_v85 := system.print(_v84);	#90:(_v85:int->131)(_v84:bat[int,str]->129)
 end function;	#91:
 #-------------------------#
-# BAT:		  tmp_1	  #
+# BAT:		  tmp_6	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "the",	  1	  ]
@@ -280,7 +280,7 @@ end function;	#91:
 !ERROR: CMDfind: value not found.
 [ 0 ]
 #-------------------------#
-# BAT:		  tmp_1	  #
+# BAT:		  tmp_6	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "",		  nil	  ]
@@ -294,14 +294,14 @@ end function;	#91:
 [ nil,		  9	  ]
 [ 12 ]
 #-------------------------#
-# BAT:		  tmp_2	  #
+# BAT:		  tmp_7	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
 [ "brown",	  3	  ]
 [ "fox",	  4	  ]
 #-----------------#
-# BAT:	  tmp_3	  #
+# BAT:	  tmp_8	  #
 # (str)	  (int)	  #
 #-----------------#
 [ "lazy", 7	  ]
@@ -309,7 +309,7 @@ end function;	#91:
 [ nil,	  9	  ]
 [ ".",	  10	  ]
 #-------------------------#
-# BAT:		  tmp_4	  #
+# BAT:		  tmp_9	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -323,14 +323,14 @@ end function;	#91:
 [ "the",	  1	  ]
 [ ".",		  10	  ]
 #-------------------------#
-# BAT:		  tmp_5	  #
+# BAT:		  tmp_10  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
 #-------------------------#
-# BAT:		  tmp_6	  #
+# BAT:		  tmp_11  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -338,7 +338,7 @@ end function;	#91:
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
 #-------------------------#
-# BAT:		  tmp_7	  #
+# BAT:		  tmp_12  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -348,7 +348,7 @@ end function;	#91:
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
 #-------------------------#
-# BAT:		  tmp_8	  #
+# BAT:		  tmp_13  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "",		  nil	  ]
@@ -358,7 +358,7 @@ end function;	#91:
 [ nil,		  9	  ]
 [ ".",		  10	  ]
 #-------------------------#
-# BAT:	  tmp_9		  #
+# BAT:	  tmp_14	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ nil,	  ""		  ]
@@ -368,35 +368,36 @@ end function;	#91:
 [ 9,	  nil		  ]
 [ 10,	  "."		  ]
 #---------------------------------#
-# BAT:		  tmp_10	  #
+# BAT:		  tmp_15	  #
 # (str)		  (str)		  #
 #---------------------------------#
 [ "quick",	  "quick"	  ]
 [ "jumps",	  "jumps"	  ]
 [ "fox",	  "fox"		  ]
 #-------------------------#
-# BAT:		  tmp_11  #
+# BAT:		  tmp_16  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
 #-----------------#
-# BAT:	  tmp_12  #
+# BAT:	  tmp_17  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
 #-----------------#
-# BAT:	  tmp_13  #
+# BAT:	  tmp_18  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
 #-----------------#
-# BAT:	  tmp_14  #
+# BAT:	  tmp_19  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
 #-----------------#
-# BAT:	  tmp_15  #
+# BAT:	  tmp_20  #
 # (int)	  (str)	  #
 #-----------------#
+>

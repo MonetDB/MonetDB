@@ -77,6 +77,7 @@ html
 #define MAXVARS 128
 #define MALBLKSIZE 4096
 #define MAXSTMTS 512
+#define TMPMARKER '$'
 
 typedef struct SYMDEF {
         struct SYMDEF   *peer;  /* where to look next */
@@ -232,6 +233,8 @@ void freeMalBlk(MalBlkPtr mb){
 	int i;
 	for(i=0;i<mb->stop; i++)
 		freeInstruction(getInstrPtr(mb, i));
+	for(i=0;i<mb->vtop; i++)
+		freeVariable(mb, i);
 	GDKfree(mb->stmt); mb->stop = mb->ssize = 0; mb->stmt= 0;
 	GDKfree(mb->code); mb->ctop = mb->csize = 0; mb->code= 0;
 	GDKfree(mb->var); mb->vtop = mb->vsize = 0; mb->var= 0;
@@ -293,7 +296,7 @@ InstrPtr newInstruction(MalBlkPtr mb, int kind){
 		/* printf("generate new code block\n");*/
 		if( newblk== NULL){
 			mb->errors++;
-			GDKerror("ERROR:newInstruction:no storage left\n");
+			GDKerror("newInstruction:no storage left\n");
 			return getInstrPtr(mb,mb->stop-1);
 		}
 		memcpy(newblk,mb->code,mb->ctop);
@@ -355,7 +358,7 @@ Their index is returned for future reference.
 @c
 str newTmpName(int i){
 	char buf[128];
-	sprintf(buf,"$%d",i);
+	sprintf(buf,"%c%d",TMPMARKER,i);
 	return GDKstrdup(buf);
 }
 @-
@@ -420,7 +423,7 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 		/*printf("generate new variable block\n");*/
 		if( new== NULL ){
 			mb->errors++;
-			GDKerror("ERROR:newMalBlk:no storage left\n");
+			GDKerror("newMalBlk:no storage left\n");
 			return mb->vtop;
 		}
 		memcpy(new,mb->var, sizeof(VarRecord)*mb->vtop);
@@ -435,7 +438,7 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 		    if( getVarType(mb,n) != type  &&
 		        getVarType(mb,n) != malAnyType){
 			char buf[1024];
-			sprintf(buf,"ERROR:'%s' type mismatch %d vs %d\n",
+			sprintf(buf,"'%s' type mismatch %d vs %d\n",
 				name, getVarType(mb,n),type);
 			GDKerror(buf);
 		    }
@@ -462,6 +465,7 @@ void freeVariable(MalBlkPtr mb, int varid){
 	v= mb->var[varid];
 	if( v.name) GDKfree(v.name); v.name = 0;
 	if( v.value) GDKfree(v.value); v.value= 0;
+	VALclear(&v.cstvalue);
 }
 @- Constants
 Constants are stored in the symbol table and referenced
@@ -643,17 +647,45 @@ void setReturnArgument(InstrPtr p, int varid){
 	p->argv[0]= varid;
 }
 
+@-
+Instructions are simply appended to a MAL block, provided the
+end-of-function instruction has not already been seen.
+If this happens, a syntax error is reported, because all
+instructions (except top-level instructions) should be
+properly enclosed in block brackets.
+Similarly, FUNCTION and COMMAND statements can only occur as
+the first instruction in a block.
+@c
 void pushInstruction(MalBlkPtr mb, InstrPtr p){
 	int i;
+	InstrPtr prev;
 
+	if(mb->stop > 0 ){
+	prev = getInstrPtr(mb,mb->stop-1);
+	if(prev->token == ENDDEFsymbol && p!=prev){
+		printFunction(stdout,mb);
+		GDKerror("SYNTAX ERROR:%s.%s text after definition ignored\n",
+			getModName(mb), getFcnName(mb));
+		return;
+	} }
+	if( p->token == FUNCTIONsymbol ||
+	    p->token == COMMANDsymbol ||
+	    p->token == PATTERNsymbol ||
+	    p->token == HANDLERsymbol ){
+		if( mb->stop != 0){
+		printInstruction(stdout,mb,p);
+		GDKerror("SYNTAX ERROR: %s.%s statement header misplaced\n",
+			getModName(mb), getFcnName(mb));
+			return;
+		}
+	}
 	i= mb->stop;
 	if( i+1 >= mb->ssize){
 		int *newblk= (int *) GDKmalloc( (mb->ssize + MAXSTMTS)
 						* sizeof(int));
-		/*printf("generate new stmt block\n");*/
 		if( newblk== NULL){
 			mb->errors++;
-			GDKerror("ERROR:pushInstruction:no storage left\n");
+			GDKerror("pushInstruction:no storage left\n");
 			return;
 		}
 		memcpy(newblk,mb->stmt,mb->stop*sizeof(int));

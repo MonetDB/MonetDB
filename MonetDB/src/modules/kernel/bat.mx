@@ -404,8 +404,9 @@ By comparing two OIDs the Monet kernel can very quickly decide that
 two columns are exactly equal. All BAT algebra operations propagate
 these 'sync' OIDs with their own propagation rules.
 @mal
-command synced (b1:bat[any,any], b2:bat[any,any]) : bit = CMDsynced
+command isSynced (b1:bat[any,any], b2:bat[any,any]) : bit = CMDsynced
 comment "Tests whether two BATs are synced or not. ";
+
 @- constants for mmap()
 @mil
     CONST STORE_MEM   := 0;     # load into GDKmalloced memory

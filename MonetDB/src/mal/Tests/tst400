@@ -1,12 +1,12 @@
 
 	i:= -1;
 barrier v1:= iterator.nextElement(i,0,2);
-	v:= "do something";
+	print("do something");
 	redo v1;
 end	v1;
-	v:= "next iteration";
+	print("next iteration");
 	i:= -1;
 barrier v2:= iterator.nextElement(i,0,5,2);
-	v:= "do something else";
+	print("do something else");
 	redo v2;
 end	v2;

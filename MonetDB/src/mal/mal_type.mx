@@ -38,7 +38,7 @@ html
 #include "mal.h"
 
 /*#define DEBUG_MAL_TYPE*/
-#define GDKerror printf
+/* #define GDKerror printf*/
 
 typedef int malType;
 #define malVarType -2
@@ -86,7 +86,7 @@ derived from the parser to avoid a loop in the define-structure.
 #define SCOPEsymbol	41
 #define PUSHsymbol	42	/* move constant to stack */
 #define PATTERNsymbol   44
-#define AGENTsymbol     45
+#define HANDLERsymbol     45
 
 #define FCNcall		50	/* determines interpreter action*/
 #define RLRcall		51

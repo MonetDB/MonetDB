@@ -10,17 +10,16 @@
 ## can be checked after bat module has been added
 #
 #command f(a:any::1, b:bat[any::2,any::1],c:any::2):any = dummy;
-ERROR: address of function dummy not found
+!ERROR: address of function dummy not found
 #function address for 'dummy' not found
-command Client.f(a:any::1,b:bat[any::2,any::1],c:any::2):any = dummy;	#0 unknown:(dummy:any->4)(a:any::1->1)(b:bat[any::2,any::1]->2)(c:any::2->3)
+command Admin.f(a:any::1,b:bat[any::2,any::1],c:any::2):any = dummy;	#0 unknown:(dummy:any->4)(a:any::1->1)(b:bat[any::2,any::1]->2)(c:any::2->3)
 #
 #b:= bat.new(str,int);
 #a:= f(1,b,"hello");
 #
-function Client.main():int;	#0:(main:int->0)
+function Admin.main():int;	#0:(main:int->0)
 	b := bat.new(str,int);	#1:(b:bat[str,int]->13)(str:str->12)(int:int->6)
-	a := Client.f(1,b,"hello");	#2:(a:any->14)($15:int->15)(b:bat[str,int]->13)($16:str->16)
+	a := Admin.f(1,b,"hello");	#2:(a:any->14)($15:int->15)(b:bat[str,int]->13)($16:str->16)
 end function;	#3:
-CATCH ERROR MALexception:Client.main[2]:address of function missing
-
-MALexception:Client.main[2]:address of function missing
+!ERROR: MALexception:Admin.main[2]:address of function missing
+>

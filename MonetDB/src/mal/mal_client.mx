@@ -23,6 +23,9 @@ contains a language specific context, followed by a database schema
 specific context and ending by the user session context.
 Inspection of upper layers is limited as much as possible.
 
+The routines defined below provide management of the client
+administration. Routines dealing with serviceing requests
+are located in mal_startup.
 @{
 @h
 /*
@@ -62,8 +65,10 @@ Inspection of upper layers is limited as much as possible.
 #define AWAITING	4
 
 #define TIMEOUT		(5*60)	/* seconds */
-#define PROCESSTIMEOUT	20	/* seconds */
+#define PROCESSTIMEOUT	2	/* seconds */
 #define BLOCKSIZE	4096
+#define PROMPT 		"\001>\001"
+
 @-
 The user can request server-side compilation as part of the initialization 
 string. 
@@ -78,9 +83,10 @@ typedef struct CLIENT{
 	int	idx;		/* entry in mal_clients */
 	str 	user;		/* user name. */
 	str	password;	/* of user */
+	int	sessionkey;	/* unique key addressed to session */
 	int	permission;	/* access mode */
 	str	language;	/* language indicator */
-	int	trace;		/* trace execution */
+	int	itrace;		/* trace execution using interactive mdb */
 	long	timer;		/* trace time in usec */
 @-
 The time interval between requests are maintained. At some point
@@ -127,14 +133,13 @@ mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
 mal_export Client	initClient(str nme, str passwd, int socket);
 mal_export Client	forkClient     (Client c);
 mal_export Client	getClient	();
-mal_export int		closeClient    (Client c);
+mal_export void 	initClientThread(Client c);
+mal_export void		closeClient    (Client c);
 mal_export void		killClient     (Client c);
 mal_export void 	freeClient	(Client c);
-mal_export void 	runClient	(Client c);
-mal_export int 	readClient	(Client c);
-mal_export void closeClientMain(Client cntxt);
-mal_export void setClientMain(Client cntxt);
+mal_export int 		readClient	(Client c);
 
+#define clientPrompt(X) fprintf(X->fdout, X->prompt); fflush(X->fdout);
 #endif /* _MAL_CLIENT_H_ */
 @-
 Upon acceptance of a connection a client record is initialized.
@@ -220,8 +225,10 @@ Client initClient(str nme, str passwd, int msgsock){
 
        	c->user = nme; 
 	c->language= GDKstrdup("mal");
+	c->sessionkey = 0;
 
 	c->fdin = msgsock? fdopen(msgsock, "r"):stdin;
+	if( c->input == 0)
 	c->input = (str) GDKmalloc(BLOCKSIZE);
 	c->limit = c->input + BLOCKSIZE;
 	c->listing = FALSE;
@@ -229,8 +236,13 @@ Client initClient(str nme, str passwd, int msgsock){
 	c->nxt = c->input;
 
 	c->fdout = msgsock? fdopen(msgsock, "w"):stdout;
-	setbuffer(c->fdout, c->output, 4096);
-	/* c->output = (str) GDKmalloc(BLOCKSIZE);*/
+@-
+The output buffer is currently not used. Beware to garbage
+collect the buffer when in use.
+@c
+/*	c->output = (str) GDKmalloc(BLOCKSIZE);
+	setbuffer(c->fdout, c->output, BLOCKSIZE); */
+	c->output = 0;
  	c->socket = msgsock;
 	
 	c->nspace = mal_scope;
@@ -240,39 +252,45 @@ Client initClient(str nme, str passwd, int msgsock){
 	c->login = time(0); c->delay= TIMEOUT;
 	c->logout= c->login+c->delay;
 	c->mode = AWAITING;
-	c->trace = mal_trace;
+	c->itrace = mal_trace;
 
-	if( isAdministrator(c)) c->prompt= GDKstrdup("adm>");
-	else c->prompt= GDKstrdup("mal>");
-	c->promptlength= strlen(c->prompt);
+	if( ! isAdministrator(c)){
+		/* c->father = mal_clients;*/
+		c->prompt = GDKstrdup(PROMPT);
+		c->promptlength= strlen(c->prompt);
+	} else {
+		c->prompt= GDKstrdup(">");
+		c->promptlength= strlen(c->prompt);
+		initClientThread(c);
+	}
+	return c;
+}
 @-
-All but the first client receive a private thread of control.
+The administrator should be initialized to enable
+interpretation of the command line arguments, before
+it starts serviceing statements
 @c
-	if( ! isAdministrator(c)  && (int)fork() < 0) return c;
-
+void initClientThread(Client c)
+{
+	Thread t;
+	c->mythread = t=  THRnew(MT_getpid(),c->user);
 @-
 The GDK thread administration should be set to reflect use of
 the proper IO descriptors.
 @c
-	t= THRget(THRgettid());
-        if ( t==0) {
-                GDKerror("setChannel: unknown thread\n");
-		return 0;
-        }
-        t->data[1] = c->fdin;
-        t->data[0] = c->fdout;
-	c->mythread = t;
-	
-	/*printf("client accepted %d %d\n", fileno(c->fdin), fileno(c->fdout));*/
-	return c;
-}
-
-void runClient(Client c){
-	while(c->mode > FINISHING && readClient(c)){
-		fprintf(c->fdout,"accepted buffer:\n#%s", c->input);
+	if ( t==0) {
+fprintf(stderr,"#%s thread ended !! %d\n",c->user,t);
+fflush(stderr);
+		GDKerror("Failed to initialize client\n");
 		fflush(c->fdout);
+		(void) fclose(c->fdin);
+		(void) fclose(c->fdout);
+		close(c->socket);
+		return ;
 	}
-}
+	t->data[1] = c->fdin;
+	t->data[0] = c->fdout;
+} 
 
 
 @- Client decendants
@@ -294,6 +312,9 @@ Client forkClient(Client father){
 		GDKfree(son->input);
 		son->input = son->limit = NULL;
 		son->father = father;
+		son->language = GDKstrdup(father->language);
+		son->prompt = GDKstrdup(father->prompt);
+		son->nspace = newScope(mal_scope, GDKstrdup("Client-child"));
 	}
         return son;
 }
@@ -310,7 +331,8 @@ The routine freeClient ends a single client session,
 but through side effects of sharing IO descriptors,
 also its children. Conversely, a child can not close a parent.
 @c
-void freeClient(Client c) {
+void freeClient(Client c)
+{
 	c->mode = FINISHING;
 
 	/* epilogue actions have been done already */
@@ -320,25 +342,41 @@ void freeClient(Client c) {
 		(void) fflush(c->fdout); 
         	(void) fclose(c->fdout);
 		(void) shutdown(c->socket, 2);
+		c->fdout= c->fdin= NULL;
+		c->socket=0;
 	} 
 	/* forked client also */
 
-	GDKfree(c->user);
-	c->user = NULL;
-	c->fdin= c->fdout = NULL;
-	if( c->input ) GDKfree(c->input);
-	c->input = c->limit= NULL;
+	if( c->curprg && c->curprg!= c->mainprg){
+		freeSymbol(c->curprg);
+	}
+	c->curprg= 0;
+	if( c->mainprg){
+		freeSymbol(c->mainprg);
+		c->mainprg= 0;
+	}
+	if( c->nspace != mal_scope){
+/*	Causes malfunctions CHECK OUT
+		if( c->nspace) freeSymbol(c->nspace);
+*/
+		c->nspace=0;
+	}
+	/* if( c->input ) GDKfree(c->input);
+	c->input = c->limit= NULL; */
 	if( c->output ) GDKfree(c->output);
 	c->output= NULL;
-	c->socket = 0;
-	c->mythread= 0;
+	GDKfree(c->language); c->language = NULL;
+	GDKfree(c->prompt); c->prompt = NULL;
 	c->father = 0;
 	c->login = c->delay = c->logout = 0;
 	c->mode = FREECLIENT;
+	THRdel(c->mythread);
+	c->mythread= 0;
+	GDKfree(c->user); c->user = NULL;
 }
 
 @-
-If a client disappears from the scene (eof on stream or quit), we should
+If a client disappears from the scene (eof on stream), we should
 terminate all its children. This is in principle a forcefull action,
 because the children may be ignoring the primary IO streams.
 (Instead they may be blocked in an infinite loop)
@@ -346,7 +384,7 @@ because the children may be ignoring the primary IO streams.
 Special care should be taken by closing the 'adm' thread.
 It is permitted to leave only when it is the sole user of the system.
 @c
-int closeClient(Client c) {
+void closeClient(Client c) {
 	Client k;
 
 	/* kill living background clients */
@@ -355,10 +393,11 @@ int closeClient(Client c) {
 			killClient(k);
 	}
 
-	/* free resources */
+	/* free resources of a single thread */
 	if( !isAdministrator(c)) {
 		freeClient(c);
-		return 0;
+		MT_exit_thread(0);
+		return;
 	} 
 
 	/* adm is set to disallow new clients entering */
@@ -366,17 +405,16 @@ int closeClient(Client c) {
 
 	for (k = mal_clients+1; k < mal_clients+MAL_MAXCLIENTS; k++) 
 	if ((k->mode > FINISHING) ){
-		GDKerror("closeClient:client '%s' was still active\n", k->user);
+		GDKerror("closeClient:client '%s' is still active\n", k->user);
 		killClient(k);
 	}
-	freeClient(c);
-	return 0;
+	/* MT_global_exit(0);*/
 }
 
 @-
 Killing a (child) client is a delicate action, because the state of
 the client is unknown. The current solution is to issue
-a soft-termination request by setting its mode flag. 
+a soft-termination request first by setting its mode flag. 
 The client main interpreter loop should look at it upon each
 cycle and terminate.
 
@@ -384,11 +422,18 @@ After the PROCESSTIMEOUT delay the thread is forcefully killed,
 assuming it was either waiting for a lock, or external
 event in any way.
 
+The current code is not correct. It should selectively kill
+a pthread, rather waiting for them to finish the request being
+handled.  Since they may be waiting for IO this can take a
+very long time, since we have access to the file descriptor it may
+work by closing them.
 @c 
 
 void killClient(Client c){
     if (c && c->user) {
         Thread  victim = c->mythread;
+	MT_Id tid= victim->tid;
+	MT_Id pid= victim->pid;
 
 	if( victim == THRgettid()){
 		GDKerror("killClient: attempt to perform process suicide.\n");
@@ -396,12 +441,15 @@ void killClient(Client c){
 	}
 	c->mode= FINISHING;
 	sleep(PROCESSTIMEOUT);
-	THRdel(victim);
-	MT_kill_thread(victim->tid);
-	freeClient(c);
+printf("killing client %d %d %d\n",c-mal_clients, tid,pid);
+	(void) fclose(c->fdin);
+	(void) fclose(c->fdout);
+	(void) shutdown(c->socket, 2);
+	pthread_kill((pthread_t)(pid-1),SIGHUP);
+printf("Still doesn;t work correctly\n");
     }
 }
-@- Client input
+@+ Client input
 The input is read from a stream and stored in the client record
 input buffer. The storage area grows automatically upon need.
 Where the stream is comming from depends on the connectivity mode.
@@ -413,6 +461,7 @@ void enlargebuffer(Client c, int newsize){
 	int i;
 	int l;
 
+	/* printf("Buffer enlarged \n");*/
 	l = strlen(c->input);
 	i = c->limit- c->input +BLOCKSIZE;
 	s = (char *) GDKmalloc((unsigned)newsize);
@@ -427,15 +476,15 @@ Each operation received from a front-end consists of at least one line.
 If it contains the text #bytes:%6d then it is assumed that a block
 of data can be read in bulk mode containing the request to be processed.
 
-Otherwise the command is build incrementally until the command
-directive "#run:" or eof() is recognized.
-The front-end is warned about the state of the server-side client
-thread by sending a '#ack:' request. This command may later be
-extended with performance related data, such as the time
-it took to process the last request, etc..
+Otherwise the line is interpreted as a MAL instruction and appended
+to the main-procedure associated with a client record. As soon as a
+statementblock is recognized, it is taken into execution.
+
+To simplify misaligned communication with front-ends, we use different
+prompts structures. [think, can we avoid acks]
+
 @h
 #define BYTEMSG	"#bytes:%6d"
-#define RUNCMD	"#go"
 @c
 int readClient(Client c){
 	int i,bytes,len;
@@ -446,104 +495,60 @@ The next statement block is to be read. Sent a prompt to warn
 the front-end to issue the request.
 @c
  	last= s = c->input; *s = 0;
-	/* printf("accept client %d input %d eof %d buffer:\n#%s\n", 
-		c-mal_clients, fileno(c->fdin), feof(c->fdin), c->input);*/
+	bytes = c->limit - c->input;
 again:
-	if (fprintf(c->fdout, c->prompt) == EOF) return 0;
+	if( feof(c->fdout)) return 0;
+	clientPrompt(c);
 	if (fflush(c->fdout) || feof(c->fdout)) return 0;
+	if( feof(c->fdin) ) return 0;
 @-
-Start reading the first line one character at a time.
-The system should use the low level read primitives to ensure that
-the client reader does not hang too long on terminal I/O.
 Beware, that in terminal mode you loose backspaceing options.
 Therefore, most interaction should be regulated through the Mclient
 front-end. This will also take care of buffering a request before
 submission. This avoids a significant number of network interactions.
 @c
-	while ((i = fread(s, 1, 1, c->fdin)) > 0) {
-#ifdef WIN32
-		if (*s == 13) continue; /* filter out ^M */
-#endif
-		if( *s == '\n') break;
-		s++;
-		*s = 0;
-		if (s >= c->limit-1) {
-			int len = c->limit-c->input;
-			enlargebuffer(c, len+BLOCKSIZE);
-			s= c->input+len;
-		}
-	}
-	if (i <= 0) {
+	if(fgets(s,bytes,c->fdin) == NULL){
 		if (feof(c->fdin)
 #ifndef WIN32
 		    || (i < 0 && MT_geterrno() != EAGAIN) 
 #endif
-		) return 0;
+		) {
+			return 0;
+		}
 		MT_seterrno(0);
 		goto again;
-	  }
-	*s= '\n'; s++; *s=0;
-	if( strncmp(last,RUNCMD,strlen(RUNCMD))==0) {
-		*last= 0;
-		return 1;
 	}
+	for(i=0;s[i];i++){
+#ifdef WIN32
+		if (s[i] == 13) continue; /* filter out ^M */
+#endif
+	}
+	if (i >= bytes-1) {
+		int len = c->limit-c->input;
+		enlargebuffer(c, BLOCKSIZE);
+		s= c->input+len;
+		bytes= BLOCKSIZE;
+		goto again;
+	}
+
 @-
 Check to see if this involves a blocked message. If so, read
 the complete block in one blow. Turn the ^M into a space afterwards.
 The alternative is to read the next line;
 @c
-	if( sscanf(last,BYTEMSG,&bytes)==0){
-		last=s;
-		goto again;
-	}
-	len = c->limit - c->input;
-	if( bytes < 0){
-		GDKerror("readClient:illegal message length\n");
-		return 0;
-	}
-	if( bytes >= len)
-		enlargebuffer(c,len-bytes+1);
-
-	i = fread(last, 1, bytes, c->fdin);
-	if( i<0){
-		GDKerror("readClient:unable to read all bytes\n");
-		return 0;
-	}
+	if(*last=='#' && sscanf(last,BYTEMSG,&bytes)==1){
+		if( bytes >= c->limit-c->input)
+			enlargebuffer(c, BLOCKSIZE);
+		if( fread(last, 1,bytes,c->fdin) != bytes){
+			GDKerror("readClient:unable to read all bytes\n");
+			return 0;
+		}
 #ifdef WIN32
-	for(s=last;*s;s++) if( *s == 13) *s = ' ';
+		for(s=last;*s;s++) if( *s == 13) *s = ' ';
 #endif
+		last=s;
+	}
 	return 1;
 }
-@-
-Every client has a 'main' function which catches
-all assignments outside a definition block.
-This procedure is typically cleaned between successive external
-messages except for the variables.
-@c
-
-void setClientMain(Client cntxt){
-        InstrPtr curInstr;
-        MalBlkPtr curBlk;
-        Symbol curPrg;
-
-        if( cntxt->mainprg) return;
-        cntxt->mainprg = newFunction(cntxt->nspace, GDKstrdup("main"));
-        curBlk = cntxt->mainprg->def;
-        curInstr = getSignature(cntxt->mainprg);
-        curInstr->modname= GDKstrdup(cntxt->nspace->name);
-        getVarType(curBlk,findVariable(curBlk,"main"))= TYPE_int;
-	initStack(curBlk);
-        staticTypeCheck(curInstr);
-        insertSymbol(cntxt->nspace,cntxt->mainprg);
-}
-void closeClientMain(Client cntxt){
-        InstrPtr curInstr;
-        MalBlkPtr curBlk;
-
-        curBlk = cntxt->mainprg->def;
-        curInstr= newInstruction(curBlk,ENDDEFsymbol);
-        pushInstruction(curBlk,curInstr);
-}
-
 @
 @}

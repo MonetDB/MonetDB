@@ -9,17 +9,16 @@
 ## check in-compatible polmorphic types
 #
 #command f(a:any::1,b:any::2, c:any::1) :bat[any::1,any::2] =f;
-ERROR: address of function f not found
+!ERROR: address of function f not found
 #function address for 'f' not found
-command Client.f(a:any::1,b:any::2,c:any::1):bat[any::1,any::2] = f;	#0 unknown:(f:bat[any::1,any::2]->0)(a:any::1->1)(b:any::2->2)(c:any::1->3)
+command Admin.f(a:any::1,b:any::2,c:any::1):bat[any::1,any::2] = f;	#0 unknown:(f:bat[any::1,any::2]->0)(a:any::1->1)(b:any::2->2)(c:any::1->3)
 #
 #b:= f(1,2,"help");
 #a:= f(1,2,1);
 #
-function Client.main():int;	#0:(main:int->0)
+function Admin.main():int;	#0:(main:int->0)
 	b := f(1,2,"help");	#1 unknown:(b:any->13)($14:int->14)($15:int->15)($16:str->16)
-	a := Client.f(1,2,1);	#2:(a:bat[int,int]->17)($14:int->14)($15:int->15)($14:int->14)
+	a := Admin.f(1,2,1);	#2:(a:bat[int,int]->17)($14:int->14)($15:int->15)($14:int->14)
 end function;	#3:
-CATCH ERROR MALexception:Client.main[1]:Instruction type not fixed
-
-MALexception:Client.main[1]:Instruction type not fixed
+!ERROR: MALexception:Admin.main[1]:Instruction type not fixed
+>

@@ -28,8 +28,12 @@ end	l;	#8:(l:bit->18)
 end function;	#9:
 #a:= "hello";
 #z:= pl(a);
+#print("done");
 #
-function Client.main():int;	#0:(main:int->0)
+function Admin.main():int;	#0:(main:int->0)
 	a := "hello";	#1:(a:str->13)($14:str->14)
-	z := Client.pl(a);	#2:(z:int->15)(a:str->13)
-end function;	#3:
+	z := Admin.pl(a);	#2:(z:int->15)(a:str->13)
+	system.print("done");	#3:($16:int->16)($17:str->17)
+end function;	#4:
+[ "done" ]
+>

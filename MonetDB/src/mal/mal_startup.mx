@@ -1,36 +1,20 @@
 @t MAL startup
 @a M. Kersten
 @v 0.0
-@+ MAL startup
-Startup of the Monet engine consists of two steps. First, the
-system kernel libraries are loaded.
-The global symbol table is initialized with pre-compiled commands
-and pattern definitions.
-Second, for each service thread we execute a script with predefined
-MAL procedures.
+@+ Serving Clients
 
-The information for the first phase consists of commands 
-signatures bound to actual routine implementations.
-The corresponding libraries may be statically linked or dynamically loaded.
-Failure to find the startup-files terminates to session, because
-there is no way to activate a linked procedure.
+For the time being we distinguish two classes of clients.
+The primary client is the 'Admin', which runs directly
+against the server. 
+It works as a console and will be the recipient of major error messages.
 
-After this initialization phase, the system prohibits dynamic loading of
-C- modules by casual users. For the time being we even forbid it,
-it should be part of the system startup.
-The rational behind this design decision is that the free load/drop
-feature of Monet V4 was hardly used and severely complicates the code.
-In particular, upon each access to the global symbol table we have to be
-prepaired that concurrent threads my be actively changing its structure.
-Especially, dropping modules may cause sever problems by not being
-able to detect references kept around.
-This danger required all accesses to global information to be packaged
-in a critical section, which was known to be a performance hindrence.
+Secondary lients gain access to the Monet server through a internet connection.
+Access through the internet requires a Monet client program at the
+source, but ordinary telnet connections can be applied when the internet
+port number of the database server is publicised.
 
-The current implementation provides each service thread with a privately
-owned scope level. It is used to store MAL scripts including those
-attached to the core modules.
-
+Each user has a separate scope, but the secondary clients have shared
+access to the definitions available to the administrator.
 The global scope and private scopes are separated by an a priori known
 scope name "MAL_scope". 
 
@@ -59,44 +43,244 @@ html
 #define _MAL_STARTUP_H
 
 #include "mal_symbol.h"
-#include "mal_import.h"
+#include "mal_stack.h"
+#include "mal_function.h"
 #include "mal_client.h"
 
 #define SRVINIT "startup.mal"
 #define SRVORIGIN "share/Monet/startup.mal"
 
-mal_export int malStartupAdmin(Client c, str dbname, int listing);
-mal_export Symbol malStartupService(Symbol cntxt);
+mal_export int malStartupAdmin(int listing);
+mal_export void         serveClient     (Client c);
+mal_export void         closeClientMain(Client cntxt);
+mal_export void         setClientMain(Client cntxt);
+mal_export void         scheduleClient(str user, int socket);
 #endif /*  _MAL_STARTUP_H*/
 @-
 The startup script for databases recides in the administrator's
-directory of each database. Upon need, it can be overruled 
+directory of each database. Upon need, its location can be overruled 
 using the configuration scripts.
 If initialization of the server is successful, then the MAL_scope symbol
 position is being returned as the namespace entry point for the client.
 @c
 #include "mal_startup.h"
 
-int malStartupAdmin(Client c, str dbname,int listing){
-        MalBlkPtr curBlk = 0;
-        InstrPtr curInstr=0;
-	char buf[PATHLENGTH];
+void startupPrelude(Client c, str fnme1, str fnme2)
+{	char buf[PATHLENGTH];
 	FILE *fd;
-	
-	sprintf(buf,"%s/%s",GDKdirStr,SRVINIT);
+
+	sprintf(buf,"%s/%s",GDKdirStr,fnme1);
 	SLASH_2_DIR_SEP(buf);
 	if( (fd= fopen(buf,"r")) == NULL){
-		sprintf(buf,"%s/%s",GDKdistrStr,SRVORIGIN);
+		sprintf(buf,"%s/%s",GDKdistrStr,fnme2);
 		SLASH_2_DIR_SEP(buf);
 		if( (fd= fopen(buf,"r")) == NULL){
-			GDKerror("FATAL:server file '%s' missing\n",SRVORIGIN);
-			return 0;
+			GDKerror("FATAL:server file '%s' missing\n",fnme2);
+			return;
 		}
 	} 
 	fclose(fd);
+	malImport(buf,0,0);
+}
 
-	c->nspace= newScope(mal_scope,GDKstrdup("Client"));
-	if( malImport(buf,0,0) == NULL) return 0;
+int malStartupAdmin(int listing){
+	Client c;
+	int oldtrace;
+	c= initClient(GDKstrdup("Admin"),NULL,0);
+        oldtrace = c->itrace;    /* no debugging in startup ! */
+        c->itrace =0;
+	c->nspace= newScope(mal_scope, GDKstrdup("Admin"));
+	startupPrelude(c,SRVINIT,SRVORIGIN);
 	mal_scope = c->nspace;
+        c->itrace = oldtrace;
 	return 1;
+}
+@+ Client main routine
+Every client has a 'main' function which will containt the statements
+outside a definition block.
+The 'main' procedure is typically cleaned between successive external
+messages except for the variables.
+@c
+
+void setClientMain(Client cntxt){
+        InstrPtr curInstr;
+        MalBlkPtr curBlk;
+        Symbol curPrg;
+
+        if( cntxt->mainprg) {
+/* printf("setClientMain error\n");*/
+		return;
+	}
+        cntxt->mainprg = newFunction(cntxt->nspace, GDKstrdup("main"));
+        curBlk = cntxt->mainprg->def;
+        curInstr = getSignature(cntxt->mainprg);
+        curInstr->modname= GDKstrdup(cntxt->nspace->name);
+        getVarType(curBlk,findVariable(curBlk,"main"))= TYPE_int;
+	initStack(curBlk);
+        staticTypeCheck(curInstr);
+        insertSymbol(cntxt->nspace,cntxt->mainprg);
+}
+void closeClientMain(Client cntxt){
+        InstrPtr curInstr;
+        MalBlkPtr curBlk;
+
+	curBlk = cntxt->mainprg->def;
+	curInstr = newInstruction(curBlk, ENDDEFsymbol);
+	pushInstruction(curBlk,curInstr);
+}
+@+ Client authorization
+The default method to interact with the database server is to
+connect using a port number. The first line received should contain
+authorization information, such as user name and a possible session key.
+
+No encryption scheme is performed yet.
+
+An example initialization string would be "guest:23" which indicates access
+of the client named 'guest' to a session previously started under identity 23.
+@c
+void scheduleClient(str user, int socket)
+{
+	str mode;
+	int key=0;
+	Client c;
+	int i;
+	MT_Id p;
+	Thread t;
+
+	mode = strchr(user,':');
+	if(mode && *mode){
+		*mode= 0;
+		mode++;
+		mode= strchr(mode,':');
+		if( mode){
+			key= atol(mode+1);
+		}
+	}
+	c= initClient(GDKstrdup(user),NULL,socket);
+	c->nspace= newScope(mal_scope,GDKstrdup(user));
+	c->sessionkey = key;
+	setClientMain(c);
+	c->curprg= c->mainprg;
+
+	if( (i= MT_create_thread(&p, serveClient, (void *)c)) < 0) {
+		GDKerror("initClient: can not fork new client\n");
+		return;
+	}
+}
+@+ Client service
+@-
+After the client initialization has been finished, we
+can start the interaction protocol. This involves parsing the
+input in the context of an already defined procedure and upon
+success, its execution.
+
+In essence, this calls for an incremental parsing operation, 
+because we should wait until a complete basic block has been detected.
+Test, first collect the instructions before we take them all.
+@-
+In interactive mode, we should remove the instructions before
+accepting new ones. The function signature remains the same
+and the symbol table should also not be affected.
+Aside from removing instruction, we should also condense the
+variable stack, i.e. removing at least the temporary variables,
+but maybe everything beyond a previous defined pont.
+[also clear the stack! ]
+@c
+#define MAGIC GDKatomcnt+2	/* keep at least some */
+
+void    resetMalBlk(Client c, MalStkPtr glb){
+	MalBlkPtr mb;
+        InstrPtr p;
+	VarPtr v;
+        int i,j;
+
+	mb = c->curprg->def;
+        for(i=0;i<mb->stop;i++){
+                p= getInstrPtr(mb,i); 
+                freeInstruction(p);
+        }
+	if( mb->vtop>MAGIC){
+		for(i=j=MAGIC; i< mb->vtop; ){
+			v= mb->var+i;
+			if(v->name[0]==TMPMARKER ) {
+				freeVariable(mb,i);
+				garbageElement(&glb->stk[i]);
+				i++;
+			} else {
+				if(i!=j){
+					mb->var[j]= mb->var[i];
+					glb->stk[j]= glb->stk[i];
+				}
+				i++; j++;
+			}
+			
+		}
+		mb->vtop = j;
+	}
+	mb->stop =1;
+	mb->errors = 0;
+}
+@c
+void serveClient(Client c)
+{
+	int inblock= -1;
+	str msg;
+	InstrPtr p;
+	MalBlkPtr mb;
+	MalStkPtr glb;
+
+	if( !isAdministrator(c) ) initClientThread(c);
+/*printf("MTpid= %d pid %d \n",MT_getpid(), getpid());*/
+@-
+A stack frame is initialized to keep track of global variables.
+Note that it should be garbage collected before returning.
+(See interpreter.mx)
+@c
+	mb= c->curprg->def;
+	newStack(glb,mb->vtop+8);
+	glb->stktop =mb->vtop;
+	glb->blk = mb;
+
+	while(c->mode > FINISHING && readClient(c)){
+		c->nxt= c->input;
+		if( parseMal(c,0)) {
+			resetMalBlk(c,glb);
+			continue;
+		}
+		p= getInstrPtr(mb, mb->stop-1);
+		if( p->barrier && inblock < 0){
+			inblock = p->argv[0];
+		}
+		if( inblock > 0) {
+			if( p->token== ENDsymbol && p->argv[0]== inblock){
+				inblock= -1;
+			} else continue;
+		}
+		chkFlowOfControl(c->curprg);
+		if( c->curprg->def->errors == 0){
+			if( c->listing) printFunction(c->fdout,mb);
+			msg= (str) runMAL(c,c->curprg->def,0,glb);
+			if( msg && msg != (str) GDK_SUCCEED) {
+				if( !c->listing) 
+					printFunction(c->fdout,mb);
+				GDKerror(msg);
+				GDKfree(msg);
+			}
+		}
+		resetMalBlk(c,glb);
+	}
+@-
+Garbage collect and time to close down a client.
+@c
+	garbageCollector(mb,glb);
+	if( c->mode > FINISHING){
+/* printf("#finishing %d\n",c-mal_clients); fflush(stdout); */
+		if( isAdministrator(c)){
+			OIDflushdelta =0;
+			TMcommit();
+			closeClient(c);
+			mal_exit(c);
+		}
+		closeClient(c);
+	}
 }

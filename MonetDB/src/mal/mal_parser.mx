@@ -71,7 +71,7 @@ html
 #include "mal_client.h"
 #include "mal_linker.h"
 
-mal_export void parseMal(Client cntxt);
+mal_export int parseMal(Client cntxt, int flag);
 mal_export void debugParser(int i);
 
 #endif /* _MAL_PARSER_H */
@@ -97,15 +97,6 @@ int echoInput(Client cntxt){
 	}
 }
 #define nextChar(X)  (*(X)->nxt?*(X)->nxt++:0)
-/*
-INLINE
-int nextChar(Client cntxt) {
-        char ch;
-	ch = *cntxt->nxt;
-        if (ch) cntxt->nxt++;
-        return ch;
-}
-*/
 #define currChar(X)	*(X)->nxt
 
 int prevChar(Client cntxt) {
@@ -146,7 +137,7 @@ conversion cost and safes about 20% on lexical analysis.
 int idLength(Client cntxt){
 	int l=0;
 	str s= cntxt->nxt;
-	if( !isalpha(*s) && *s != '_') return 0;
+	if( !isalpha(*s) && *s != '_' && *s!=TMPMARKER) return 0;
 	l++; s++;
 	while( isalnum(*s)  || *s == '_') { s++; l++; }
 	return l;
@@ -463,7 +454,7 @@ int parseImport(Client cntxt)
 
 	@:parsePath@
 
-	(void) malImport(modname, cntxt->listing,0);
+	malImport(modname, cntxt->listing,0);
 	skipToEnd(cntxt);
 	return 1;
 }
@@ -473,7 +464,7 @@ out the code in a few text macros.
 @T
 defineStmt : FUNCTION
 	: COMMAND functionHdr [COMMENT string] ';'
-	: AGENT
+	: HANDLER
 	: RULER functionHdr [COMMENT string] ';'
 
 @= fcnHeader
@@ -626,7 +617,7 @@ Most functions are (dynamically) linked with the kernel.
 		curInstr->modname = GDKstrdup(cntxt->nspace->name);
 		curInstr->fcn = getAddress(nme);
 		if( curInstr->fcn == 0)
-		printf("#function address for '%s' not found\n",nme);
+		fprintf(GDKout,"#function address for '%s' not found\n",nme);
 		curPrg->binding = GDKstrdup(nme);
 		/* defAtomCommand(curInstr);*/
 	} else return (MalBlkPtr) parseError(cntxt,"'=' expected\n");
@@ -720,8 +711,8 @@ int parseEnd(Client cntxt, int *block)
 			*block = FALSE;
 			showit= TRUE;
 		} else
-		if ( keyword(cntxt,"agent",5)){
-			if( curPrg->kind != AGENTsymbol) 
+		if ( keyword(cntxt,"handler",5)){
+			if( curPrg->kind != HANDLERsymbol) 
 				parseError(cntxt,"'end agent' expected\n");
 			curInstr = newInstruction(curBlk,ENDDEFsymbol);
 			pushInstruction(curBlk,curInstr);
@@ -835,7 +826,7 @@ void parseAssign(Client cntxt, int kind)
 	i= idLength(cntxt);
 	if( i==0) {
 		parseError(cntxt,"<identifier> expected\n"); 
-		return;
+		goto part3;
 	}
 	arg= idCopy(cntxt,i);
 
@@ -849,41 +840,63 @@ void parseAssign(Client cntxt, int kind)
 			goto part3;
 		}
 		curInstr->argv[0]= newTmpVariable(curBlk,malAnyType);
+		if( currChar(cntxt) != '.' &&
+		    currChar(cntxt) != '(' ){
+				parseError(cntxt,"'.' or '(' expected\n");
+				goto part3;
+		}
 		goto idseen;
 	}
-	/* now parse the expression */
+@-
+Now parse the expression, start with an operand.
+This code is used in both positions of the expression
+@= term
 	if( i= cstLength(cntxt,&lt)){
 		v= cstCopy(cntxt,i);
 		i= typeMarker(cntxt);
 		if(i) lt = i;
 		i= newConstant(curBlk,lt,v);
 		pushArgument(curInstr,i);
-		goto part2;
+		goto @1;
 	} 
 	if( (v= charCst(cntxt)) ){
 		i= typeMarker(cntxt);
 		if(i) lt = i; else lt= TYPE_chr;
 		i= newConstant(curBlk,lt,v);
 		pushArgument(curInstr,i);
-		goto part2;
+		goto @1;
 	} 
 	if( i = strLength(cntxt) ){
 		lt = TYPE_str;
 		i= newConstant(curBlk,lt,strCopy(cntxt,i));
 		pushArgument(curInstr,i);
-		goto part2;
+		goto @1;
+	}
+@-
+@c
+	@:term(part2)@
+	if( idLength(cntxt)==0 && operatorLength(cntxt)==0) {
+		parseError(cntxt,"<identifier> or <unary operator> expected\n");
+		goto part3;
+	}
+	if( (i=operatorLength(cntxt))) {
+		if( currChar(cntxt) != '.' &&
+		    currChar(cntxt) != '(') goto part2;
 	}
 	if( (i= idLength(cntxt)) || (i=operatorLength(cntxt))) {
 		arg= idCopy(cntxt,i);
 idseen:
 		if( currChar(cntxt) != '.' &&
-		    currChar(cntxt) != '(') {
+		    currChar(cntxt) != '(' &&
+		    (isalpha(*arg) || *arg=='_') ) {
 			pushArgumentId(curInstr,arg);
 			goto part2;
 		}
 
+opseen:
 		/* continue with parseing a function/operator call */
-		if( nextChar(cntxt) == '.'){
+		if( currChar(cntxt) == '.'){
+			nextChar(cntxt);
 			skipBlanc2(cntxt);
 			curInstr->modname = arg;
 			i = idLength(cntxt);
@@ -892,12 +905,17 @@ idseen:
 				curInstr->fcnname = idCopy(cntxt,i);
 			else {
 				parseError(cntxt,"<functionname> expected\n");
-				return;
+				goto part3;
 			}
 			if(nextChar(cntxt) != '(')
-			{ parseError(cntxt,"'(' expected\n");return;}
+			{ parseError(cntxt,"'(' expected\n");goto part3;}
 			skipBlanc2(cntxt);
-		} else curInstr->fcnname = arg;
+		} else if(currChar(cntxt) != '(')
+		{
+			parseError(cntxt,"'(' expected\n");goto part3;
+		} else { nextChar(cntxt);
+			curInstr->fcnname = arg;
+		}
 
 		/* get arguments */
 		curInstr->argc=1;
@@ -929,35 +947,16 @@ part2:
 			pushArgument(curInstr,k); 
 			goto part3;
 		} 
-		if( (v= charCst(cntxt)) ){
-			i= typeMarker(cntxt);
-			if(i) lt = i; else lt= TYPE_chr;
-			i= newConstant(curBlk,lt,v);
-			pushArgument(curInstr,i);
-			goto part3;
-		} 
-		if( i = strLength(cntxt) ){
-			lt = TYPE_str;
-			i= newConstant(curBlk,lt,strCopy(cntxt,i));
-			pushArgument(curInstr,i);
-			goto part3;
-		}
-		if( i = cstLength(cntxt,&lt)) {
-			v= cstCopy(cntxt,i);
-			i= typeMarker(cntxt);
-			if(i) lt = i;
-			i= newConstant(curBlk,lt,v);
-			pushArgument(curInstr,i);
-			goto part3;
-		} 
-		parseError(cntxt,"<identifier> or <constant> expected\n");
+		@:term(part3)@
+		parseError(cntxt,"<term> expected\n");
 	} 
 part3:
 	skipToEnd(cntxt);
 	pushInstruction(curBlk,curInstr);
 }
-void parseMal(Client cntxt){
+int parseMal(Client cntxt, int flag){
 	int block= FALSE, kind=0;
+	Symbol curPrg= cntxt->mainprg;
 
 	echoInput(cntxt);
 	/* here the work takes place */
@@ -1027,7 +1026,8 @@ void parseMal(Client cntxt){
 			kind =0;
 		}
 	}
-	chkFlowOfControl(cntxt->mainprg);
+	if( flag) chkFlowOfControl(curPrg);
+	return curPrg->def->errors;
 }
 @- Error display
 Display the error information for the current client.
@@ -1040,7 +1040,7 @@ int parseError(Client cntxt, str msg)
 	MalBlkPtr curBlk;
 	char buf[1024];
 	char *s=buf, *t, *l = lastline(cntxt);
-	int i = strlen(GDKERROR);
+	int i;
 
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
@@ -1048,25 +1048,24 @@ int parseError(Client cntxt, str msg)
 
 	/* accidental %s directives in the lastline can
 	   crash the vfsprintf later => escape them */
-	*s++= '!';
         for(t=l; *t && *t!='\n'; t++) {
                 if (*t == '%') *s++ = '%';
                 *s++ = *t;
         }
         *s++ = '\n';
-	*s++ = 0;
-	strcat(buf,GDKERROR);
+        *s++ = '!';
 	/* produce the position marker*/
-	i = position(cntxt);
+	i = position(cntxt) + strlen(GDKERROR)-1;
         for(; i > 0; i--) {
                 *s++ = (*l++ != '\t')?' ':'\t';
         }
-        *s++ = '^'; *s++ = '\n'; *s = 0;
+        *s++ = '^'; 
+	*s = 0;
 
         if (msg == 0)
 		msg = "can't help you here, sorry.\n";
 	if( strlen(msg)+strlen(buf) < 1020)
-		sprintf(s, "! %s", msg);
+		sprintf(s, "%s", msg);
 	skipToEnd(cntxt);
         GDKerror(buf);
 	return 0;

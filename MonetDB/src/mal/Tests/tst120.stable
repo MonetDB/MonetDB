@@ -9,11 +9,11 @@
 ##define 2 modules and check location of routines
 #
 #use tst120a;
-ERROR:malImport: could not open file: tst120a
+!ERROR: malImport: could not open file: tst120a
 #use tst120b;
-ERROR:malImport: could not open file: tst120b
+!ERROR: malImport: could not open file: tst120b
 #use tst120a;	# does not do anything
-ERROR:malImport: could not open file: tst120a
+!ERROR: malImport: could not open file: tst120a
 #
 #a:= second("hh");
 #b:= first(1);
@@ -21,13 +21,12 @@ ERROR:malImport: could not open file: tst120a
 #d:= first("hello world");
 #e:= top.first(2:sht);
 #
-function Client.main():int;	#0:(main:int->0)
+function Admin.main():int;	#0:(main:int->0)
 	a := second("hh");	#1 unknown:(a:any->13)($14:str->14)
 	b := first(1);	#2 unknown:(b:any->15)($16:int->16)
 	c := first(1);	#3 unknown:(c:any->17)($16:int->16)
 	d := first("hello world");	#4 unknown:(d:any->18)($19:str->19)
 	e := top.first(2);	#5 unknown:(e:any->20)($21:sht->21)
 end function;	#6:
-CATCH ERROR MALexception:Client.main[1]:Instruction type not fixed
-
-MALexception:Client.main[1]:Instruction type not fixed
+!ERROR: MALexception:Admin.main[1]:Instruction type not fixed
+>

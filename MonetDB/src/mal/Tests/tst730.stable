@@ -45,11 +45,10 @@ end function;	#9:
 #prStr("hello",1,true);
 #prStr("hello","quick","brown","fox");
 #
-function Client.main():int;	#0:(main:int->0)
+function Admin.main():int;	#0:(main:int->0)
 	pr("hello",1,true);	#1 unknown:($13:any->13)($14:str->14)($15:int->15)($16:bit->16)
 	prStr("hello",1,true);	#2 unknown:($17:any->17)($14:str->14)($15:int->15)($16:bit->16)
-	Client.prStr("hello","quick","brown","fox");	#3:($18:void->18)($14:str->14)($19:str->19)($20:str->20)($21:str->21)
+	Admin.prStr("hello","quick","brown","fox");	#3:($18:void->18)($14:str->14)($19:str->19)($20:str->20)($21:str->21)
 end function;	#4:
-CATCH ERROR MALexception:Client.main[1]:Instruction type not fixed
-
-MALexception:Client.main[1]:Instruction type not fixed
+!ERROR: MALexception:Admin.main[1]:Instruction type not fixed
+>

@@ -28,23 +28,27 @@ scope lookup scheme, for 1) the number of languages,
 are limited
 
 The global organization of the namespace consists of a core, language
-and a service
-layer. The core layer contains all pre-compiled and linkable functions.
+and a client layer. 
+The core layer contains all pre-compiled and linkable functions.
 The next layer is bound to a particular front-end language, e.g. MIL or SQL
 and contains a scope level for each module imported.
 Such language scopes may be nested, e.g. MAL->MIL->SQL.
 
-The service layer is formed by service specific scopes. It typically
-contains a collection of private MAL-procedures.
-
-The bottom scope level is the service session scope and
-contains a procedure 'main' to be executed by default. 
+The client layer typically contains a collection of private MAL-procedures.
+It contains a procedure 'main' to be executed by default. 
 Moreover, the symbol table and its binding is retained over successive
 calls to provide for a global variable context.
 
-Unlike Monet V4, a procedure scope is privately assigned to a single service
+Each user has a separate scope, but the secondary clients have shared
+access to the definitions available to the administrator.
+The global scope and private scopes are separated by an a priori known
+scope name "MAL_scope".
+
+
+Unlike Monet V4, a procedure scope is privately assigned to a single client
 thread. Moreover, all dynamically loaded functions remain in existing
-for the duration of the server session. Therefore, we do not have
+for the duration of the server session. Only the administrator can
+load functions (upon system restart). Therefore, we do not have
 to lock the dictionary table while traversing it for information.
 Global (private) variables can be realized keeping the symbol table
 and runtime stack around between requests.
@@ -58,10 +62,6 @@ management)
 
 The name and kind information is replicated from the MAL blocks.
 The name is a shared string and need not be garbage collected here.
-The symbol/instruction kinds are introduced here instead of reusing 
-the defines derived from the parser to avoid a loop in the define-structure.
-The type dispatching table is only required for SCOPYsymbols, a union
-structure would have been better.
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -89,7 +89,7 @@ html
 
 #define MAXSCOPE 256
 
-mal_export Symbol mal_scope;	/* the root of the tree */
+mal_export Symbol mal_scope;	/* the start of the module list */
 
 mal_export void		initScope();
 mal_export Symbol 	newScope(Symbol cntxt, str nme);
@@ -101,13 +101,12 @@ mal_export Symbol 	findSymbol(str mod, str fcn);
 mal_export int	 	displaySymbol(FILE *f, str mod, str fcn);
 mal_export void 	debugScope(str nme);
 
-mal_export Symbol 	newSymbolDefinition(str nme, int kind);
-mal_export Symbol	newSymbol(str nme, int kind, Symbol outer);
-mal_export void	freeSymbol  (Symbol cur);
-mal_export void 	freeAllSymbols();
+mal_export Symbol 	newSymbol(str nme, int kind);
+mal_export void		freeSymbol(Symbol cur);
+mal_export void		freeSymbolList(Symbol cur);
 
 #endif /* _MAL_NAMESPACE_H_ */
-@-
+@+ Scope management
 Upon system restart, the global scope is created. It is called "root" and
 does not contain any symbol definitions. It merely functions as an anchor
 point for the modules to be added later.
@@ -164,6 +163,7 @@ Symbol insertSymbol(Symbol cntxt, Symbol prg){
         sig = getSignature(prg);
         t = getSubScope(sig->fcnname);
         if( cntxt->subscope == NULL){
+printf("unexpected insert in non-initialized scope %s\n",cntxt->name);
 		newSubScope(cntxt);
                 cntxt->subscope[t] = prg;
         } else {
@@ -196,9 +196,9 @@ of the scope tree structure.
 Symbol definitions without an explicit scope are allocated to the root.
 @c
 
-Symbol newSymbolDefinition(str nme, int kind){
+Symbol newSymbol(str nme, int kind){
 	Symbol cur;
-	@:newsymbol(newSymbolDefinition)@
+	@:newsymbol(newSymbol)@
 	return cur;
 }
 Symbol newScope(Symbol cntxt, str nme){
@@ -224,7 +224,6 @@ Symbol fixateScope(Symbol cntxt, str nme){
 	/* printf("fixate the scope %s ",nme);*/
 	cur = findScope(cntxt,nme);
 	if( cur!= NULL) { /* printf("found\n"); */ return cur;}
-	/* printf("new module \n");*/
 	return newScope(cntxt, GDKstrdup(nme));
 }
 
@@ -242,7 +241,8 @@ void  printScope(Symbol cntxt, int tab, int outer)
 			for(t= s->subscope[j];t!=NULL;t=t->peer) {
 				printf(" %s",t->name);
 				if( getSignature(t)==NULL ||
-				    getSignature(t)->fcn==0) printf("(?)");
+				    (getSignature(t)->fcn==0 &&
+				     getSignature(t)->blk==0) ) printf("(?)");
 			}
 			printf("\n");
 		}
@@ -273,17 +273,16 @@ helps in localization of memory leakages.
 @c
 void freeSymbol(Symbol s){
 	if(s==NULL) return;
-	if(s->peer != NULL) freeSymbol(s->peer);
 	if( s->name) GDKfree(s->name);
 	if( s->help) GDKfree(s->help);
 	if( s->def) freeMalBlk(s->def);
+	if( s->subscope) GDKfree(s->subscope);
 	GDKfree(s);
 }
-
-void freeAllSymbols(){
-	freeSymbol(mal_scope);
-	mal_scope =0;
-
+void freeSymbolList(Symbol s){
+	if(s==NULL) return;
+	if(s->peer != NULL) freeSymbol(s->peer);
+	freeSymbol(s);
 }
 @+ Searching the scope structure.
 The routine @%findSymbol@ starts at a scope level and searches 

@@ -73,7 +73,6 @@ at function resoluton.
 [Mx bug, space required here]
 
 @mal
-
 module arith;
 
 	@:mal_isnil(any,any)@

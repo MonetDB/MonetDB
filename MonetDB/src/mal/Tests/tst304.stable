@@ -15,10 +15,11 @@
 #	n0:=0;
 #end	myNewException;
 #
-function Client.main():int;	#0:(main:int->0)
+function Admin.main():int;	#0:(main:int->0)
 	myNewException;	#1:(myNewException:any->13)
 	c4 := "should not come here";	#2:(c4:str->14)($15:str->15)
 catch	myNewException;	#3:(myNewException:any->13)
 	n0 := 0;	#4:(n0:int->16)($17:int->17)
 end	myNewException;	#5:(myNewException:any->13)
 end function;	#6:
+>

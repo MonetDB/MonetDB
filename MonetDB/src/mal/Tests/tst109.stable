@@ -20,10 +20,10 @@
 #end	t;
 #	i:= 0;
 #
-ERROR:7:end-label 'v' doesnot match 't'
-ERROR:9:end-label 't' doesnot match 'v'
-ERROR:7:end-label 'v' doesnot match 't'
-function Client.main():int;	#0:(main:int->0)
+!ERROR: 7:end-label 'v' doesnot match 't'
+!ERROR: 9:end-label 't' doesnot match 'v'
+!ERROR: 7:end-label 'v' doesnot match 't'
+function Admin.main():int;	#0:(main:int->0)
 	i := 0;	#1:(i:int->13)($14:int->14)
 barrier	v := 1;	#2:(v:int->15)($16:int->16)
 	leave v;	#3:(v:int->15)
@@ -35,4 +35,5 @@ end	v;	#7:(v:int->15)
 end	t;	#9:(t:bit->17)
 	i := 0;	#10:(i:int->13)($14:int->14)
 end function;	#11:
-SyntaxError::'Client.main' contains errors
+!ERROR: SyntaxError::'Admin.main' contains errors
+>

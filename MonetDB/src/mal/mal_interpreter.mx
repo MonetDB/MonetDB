@@ -47,13 +47,15 @@ html
 #include "mal_client.h"
 
 /*#define DEBUG_MAL_INTERPRETER */
-mal_export str runMAL(Client c,MalBlkPtr mbcaller, MalStkPtr env);
+mal_export str runMAL(Client c,MalBlkPtr mbcaller, MalStkPtr env, MalStkPtr glb);
 mal_export str setDynamicType(MalBlkPtr mb, MalStkPtr stk, VarPtr v, int tpe);
+mal_export void garbageElement(ValPtr v);
+mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk);
 #endif /*  _MAL_INTERPRET_H*/
 @c
 #include "mal_interpreter.h"
 
-str runMAL(Client cntxt, MalBlkPtr mbcaller, MalStkPtr env){
+str runMAL(Client cntxt, MalBlkPtr mbcaller, MalStkPtr env, MalStkPtr glb){
 	MalBlkPtr mb=mbcaller;
 	MalStkPtr stk= NULL;
 	int space = 0,i;
@@ -88,13 +90,20 @@ Notice that arguments are always the first entries on the stack.
 They are followed by predefined constants.
 
 The env stackframe is only set when a MAL function is called recursively.
+The glb stackframe contains a saved stackframe with global variables. We
+assume here that it aligns with the variable table of the routine.
 @c
 	/* allocate space for value stack */
-	space= mb->vtop+8;
-	newStack(stk,space);
-	stk->stktop= mb->vtop; 
-	stk->blk= mb;
-	@:safeguardStack@
+	if( glb== 0){
+		space= mb->vtop+8;
+		newStack(stk,space);
+		stk->stktop= mb->vtop; 
+		stk->blk= mb;
+		@:safeguardStack@
+	} else {
+		stk = glb;
+		stk->stktop= mb->vtop; 
+	}
 
 	if( env){
 		int k;
@@ -120,7 +129,7 @@ Otherwise, it is cheaper to lookup them up.
 This requires a change in pushArgument and the variable record structure,
 we have not included this option yet.
 @c
-	for(i=0;i< stk->stktop;i++)
+	for(i=0; i< mb->vtop; i++)
 	if( isVarConstant(mb,i) && isVarUsed(mb,i) ){
 		lhs = &stk->stk[i];
 		rhs = &getVarConstant(mb,i);
@@ -136,8 +145,8 @@ MALrestart:
 		pci = getInstrPtr(mb,stk->pc);
 		@:exceptionTest@
 
-		if( cntxt->trace) {
-			cmd = gdbStep(cntxt,mb,stk,pci,cmd);
+		if( cntxt->itrace  ) {
+			cmd = mdbStep(cntxt,mb,stk,pci,cmd);
 			if( cmd == 'q') goto MALevalExit;
 			if( cmd == 'r') goto MALrestart;
 		}
@@ -146,12 +155,8 @@ MALrestart:
 		@:endProfile@
 	}
 MALevalExit:
-	while( cntxt->trace && cmd != 'q' ){
-		cmd = gdbCommand(cntxt,mb,stk,pci,cmd);
-		if( cmd == 'r') goto MALrestart;
-	}
 	/* garbage collect and return */
-	@:cleanupStack@
+	if( glb == 0) garbageCollector(mb,stk);
 	return ret;
 }
 @+ Safeguarding
@@ -222,7 +227,7 @@ elements in the value stack.
 			pci = getInstrPtr(mbcaller,env->pc);
 			lhs = &env->stk[pci->argv[0]];
 			VALcopy(lhs,rhs);
-			@:cleanupStack@
+			if(glb == 0) garbageCollector(mb,stk);
 			if(env) env->cmd = cmd; /* save debugger command */
 			return 0;
 		}
@@ -318,7 +323,7 @@ a new stack frame and do housekeeping, such as garbagecollection of all
 non-returned values.
 
 @= functioncall
-	ret= runMAL(cntxt,mb,stk);
+	ret= runMAL(cntxt,mb,stk,0);
 @-
 All dynamically linked routines are called with references to their
 parameter values. They are assembled below by inspecting the argument list.
@@ -343,7 +348,7 @@ the bind(namespace,batname,mode) operation.[todo]
 	for(k=0;k<pci->argc; k++){
 		argv[k] =(ptr) getArgReference(stk,pci,k);
 	} 
-	@:clearResult(retval)@
+	garbageElement(retval);
 }
 @-
 The type dispatching table in getArgValue can be removed if we 
@@ -484,9 +489,10 @@ if( ret != (str) GDK_SUCCEED && ret != NULL){
 	symid = findVariable(mb,ret);
 	if( symid == -1){
 		*msg=':';
+/*		terminate this block and pass error 
 		if( env == NULL) 
 		fprintf(cntxt->fdout,"CATCH ERROR %s\n",ret);
-		/* terminate this block and pass error */
+*/
 		goto MALevalExit;
 	}
 	msg++;
@@ -526,17 +532,18 @@ have to freed explicitly before a MAL function returns.
 The first step is to always clear the destination variable
 before a function call is made.
 
-@= clearResult
+@c
+void garbageElement(ValPtr v)
 {	
-	if( ATOMstorage(@1->vtype) == TYPE_str){
-		if( @1->val.pval && @1->val.pval != str_nil) {
-		/* printf("clearing nil? %d ",@1->val.pval==str_nil);
-		   printf("%d ",@1->val.pval);
-		   printf("%s\n",@1->val.pval);
+	if( ATOMstorage(v->vtype) == TYPE_str){
+		if( v->val.pval && v->val.pval != str_nil) {
+		/* printf("clearing nil? %d ",v->val.pval==str_nil);
+		   printf("%d ",v->val.pval);
+		   printf("%s\n",v->val.pval);
 		*/
-			GDKfree(@1->val.pval);
+			GDKfree(v->val.pval);
 		}
-		@1->val.pval= NULL;
+		v->val.pval= NULL;
 	}
 }
 @-
@@ -548,16 +555,21 @@ Early experience shows that for small stack frames the overhead
 is about 200 ms for a 1M function call loop (tst400e). This means that
 for the time being we do not introduce more complex garbage
 administration code.
-@= cleanupStack
+
+Also note that for top-level stack frames (no environment available),
+we should retain the value stack because it acts as a global variables. 
+This situation is indicated by the 'global' in the stack frame. 
+Upon termination of the session, the stack should be cleared.
+@c
+void garbageCollector(MalBlkPtr mb, MalStkPtr stk)
 { 	int k;
 	ValPtr v;
 
 	for(k=0;k<mb->vtop;k++) {
-		v= &stk->stk[k];
-		@:clearResult(v)@
+		garbageElement(&stk->stk[k]);
 	}
 }
-	/* to be done */
+
 @+ Performance section
 This will be dealt with at a later stage.
 @= performanceVariables

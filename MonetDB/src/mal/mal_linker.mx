@@ -114,7 +114,7 @@ void *getAddress(str fcnname){
 	msg= dlerror();
 	if(noDlopen && adr == NULL){
 		char buf[1024];
-		sprintf(buf,"ERROR: address of function %s not found\n",
+		sprintf(buf,"address of function %s not found\n",
 			fcnname);
 		GDKerror(buf);
 	}

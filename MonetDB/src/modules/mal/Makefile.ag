@@ -9,7 +9,7 @@ LIBDIR = pkglib
 LIBS = {
 	SEP = _
 	SOURCES = \
-		squeezer.mx iterator.mx startup.mx
+		mdb.mx squeezer.mx iterator.mx startup.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""

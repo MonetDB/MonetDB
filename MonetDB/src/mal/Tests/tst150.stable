@@ -8,9 +8,9 @@
 # monetrc:/ufs/mk/.monet.conf
 ## more complex typechecking, it should not complain at compile time
 #command lookup(nme:str):bat[str,str] = CMDlookup;
-ERROR: address of function CMDlookup not found
+!ERROR: address of function CMDlookup not found
 #function address for 'CMDlookup' not found
-command Client.lookup(nme:str):bat[str,str] = CMDlookup;	#0 unknown:(CMDlookup:bat[str,str]->2)(nme:str->1)
+command Admin.lookup(nme:str):bat[str,str] = CMDlookup;	#0 unknown:(CMDlookup:bat[str,str]->2)(nme:str->1)
 #function sample(nme:str, val:any):bit;
 #   b := lookup(nme); #find a bat
 #   h := select(b,val,val);
@@ -19,12 +19,13 @@ command Client.lookup(nme:str):bat[str,str] = CMDlookup;	#0 unknown:(CMDlookup:b
 #   y := print(val);
 #end function;
 function sample(nme:str,val:any):bit;	#0:(sample:bit->0)(nme:str->1)(val:any->2)
-	b := Client.lookup(nme);	#1:(b:bat[str,str]->15)(nme:str->1)
+	b := Admin.lookup(nme);	#1:(b:bat[str,str]->15)(nme:str->1)
 	h := select(b,val,val);	#2 unknown:(h:any->16)(b:bat[str,str]->15)(val:any->2)(val:any->2)
 	t := count(h);	#3 unknown:(t:any->17)(h:any->16)
 	x := system.print(t);	#4:(x:int->18)(t:any->17)
 	y := system.print(val);	#5:(y:int->19)(val:any->2)
 end function;	#6:
 #
-function Client.main():int;	#0:(main:int->0)
+function Admin.main():int;	#0:(main:int->0)
 end function;	#1:
+>

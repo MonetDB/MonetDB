@@ -41,16 +41,16 @@
 #barrier  unfinished:= 1;
 #	f:=1;
 #
-ERROR:2:label 'Z' not in guarded block
-ERROR:5:label 'L' not in guarded block
-ERROR:6:label 'X' not in guarded block
-ERROR:7:label 'A' not in guarded block
-ERROR:9:label 'L' not in guarded block
-ERROR:11:label 'L' not in guarded block
-ERROR:20:end-label 'B' doesnot match 'A'
-ERROR:21: end-label 'F' without begin-label
-ERROR: 29: begin-label 'unfinished' without end-label
-function Client.main():int;	#0:(main:int->0)
+!ERROR: 2:label 'Z' not in guarded block
+!ERROR: 5:label 'L' not in guarded block
+!ERROR: 6:label 'X' not in guarded block
+!ERROR: 7:label 'A' not in guarded block
+!ERROR: 9:label 'L' not in guarded block
+!ERROR: 11:label 'L' not in guarded block
+!ERROR: 20:end-label 'B' doesnot match 'A'
+!ERROR: 21: end-label 'F' without begin-label
+!ERROR: 29: begin-label 'unfinished' without end-label
+function Admin.main():int;	#0:(main:int->0)
 barrier	L := 1;	#1:(L:int->13)($14:int->14)
 	leave Z;	#2:(Z:any->15)
 	redo L ;	#3:(L:int->13)
@@ -82,4 +82,5 @@ end	A;	#28:(A:int->17)
 barrier	unfinished := 1;	#29:(unfinished:int->23)($14:int->14)
 	f := 1;	#30:(f:int->24)($14:int->14)
 end function;	#31:
-SyntaxError::'Client.main' contains errors
+!ERROR: SyntaxError::'Admin.main' contains errors
+>

@@ -10,3 +10,4 @@ end l;
 end function;
 a:= "hello";
 z:= pl(a);
+print("done");

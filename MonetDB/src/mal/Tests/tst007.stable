@@ -55,7 +55,7 @@
 #
 #
 #
-function Client.main():int;	#0:(main:int->0)
+function Admin.main():int;	#0:(main:int->0)
 barrier	H := batoperatie;	#1 dynamic:(H:any->13)(batoperatie:any->14)
 	Tail := bat.fetch(b,H);	#2 unknown:(Tail:any->15)(b:any->16)(H:any->13)
 	redo H ;	#3:(H:any->13)
@@ -79,9 +79,8 @@ barrier	FT := booleanexpr;	#20 dynamic:(FT:any->28)(booleanexpr:any->29)
 end	FT;	#21:(FT:any->28)
 barrier	FTE := booleanexpr;	#22 dynamic:(FTE:any->30)(booleanexpr:any->29)
 end	FTE;	#23:(FTE:any->30)
-barrier	FS := ~;	#24 dynamic:(FS:any->31)(~:any->32)
+barrier	FS := ~(FTE);	#24 unknown:(FS:any->31)(FTE:any->30)
 end	FS;	#25:(FS:any->31)
 end function;	#26:
-CATCH ERROR MALexception:Client.main[2]:Instruction type not fixed
-
-MALexception:Client.main[2]:Instruction type not fixed
+!ERROR: MALexception:Admin.main[2]:Instruction type not fixed
+>

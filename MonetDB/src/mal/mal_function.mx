@@ -53,6 +53,7 @@ mal_export void 	initStack(MalBlkPtr mb);
 mal_export InstrPtr newFcnCall(MalBlkPtr m, str modname, str fcnname);
 mal_export InstrPtr newCmdCall(MalBlkPtr m, str modname, str fcnname);
 mal_export InstrPtr newPatternCall(MalBlkPtr m, str modname, str fcnname);
+mal_export void		clearFcn(MalBlkPtr m);
 mal_export void 	pushArgumentId(InstrPtr p,str name);
 
 mal_export void chkFlowOfControl(Symbol prg);
@@ -82,7 +83,7 @@ Symbol newFunction(Symbol scope, str nme){
 	MalBlkPtr mb;
 	int i,j;
 
-	s = newSymbolDefinition(nme,FUNCTIONsymbol);
+	s = newSymbol(nme,FUNCTIONsymbol);
 	s->scope = scope;
 	s->def->sym = s;
 	c = newInstruction(s->def, FUNCTIONsymbol);
@@ -187,7 +188,7 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 				return i;
 			} else {
 			mb->errors++;
-			sprintf(buf,"ERROR:%d:end-label '%s' doesnot match '%s'\n",
+			sprintf(buf,"%d:end-label '%s' doesnot match '%s'\n",
 				p->pc,getVarName(mb,p->argv[0]),
 				getVarName(mb,v)
 				);
@@ -197,9 +198,9 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 		} 
 	}
 	if( cnt!= 0)
-	sprintf(buf,"ERROR:%d: non-hierarchical block structure %s %d\n",
+	sprintf(buf,"%d: non-hierarchical block structure %s %d\n",
 			pp->pc,getVarName(mb,v),cnt);
-	else sprintf(buf,"ERROR: %d: begin-label '%s' without end-label\n", 
+	else sprintf(buf,"%d: begin-label '%s' without end-label\n", 
 		begBlk,getVarName(mb,v));
 	GDKerror(buf);
 	mb->errors++;
@@ -221,7 +222,7 @@ void chkBarrier(MalBlkPtr mb, InstrPtr pp)
 
 	if( p->token== ENDsymbol && p->argv[0]==v){
 		mb->errors++;
-		sprintf(buf,"ERROR:%d: end-label '%s' without begin-label\n", 
+		sprintf(buf,"%d: end-label '%s' without begin-label\n", 
 			p->pc,getVarName(mb,v));
 		GDKerror(buf);
 	} */ 		
@@ -229,7 +230,7 @@ void chkBarrier(MalBlkPtr mb, InstrPtr pp)
 
 	if( getArgType(mb,pp,0) != TYPE_bit && pp->token==BARRIERsymbol){
 		mb->errors++;
-		sprintf(buf,"ERROR:%d: barrier '%s' should be of type bit\n",
+		sprintf(buf,"%d: barrier '%s' should be of type bit\n",
 			pp->pc,getVarName(mb,v));
 		GDKerror(buf);
 	}
@@ -252,7 +253,7 @@ void chkEnd(MalBlkPtr mb, InstrPtr pp)
 	} 
 	}
 	mb->errors++;
-	sprintf(buf,"ERROR:%d: end-label '%s' without begin-label\n", 
+	sprintf(buf,"%d: end-label '%s' without begin-label\n", 
 		pp->pc,getVarName(mb,v));
 	GDKerror(buf);
 }
@@ -276,7 +277,7 @@ void chkCatch(MalBlkPtr mb, InstrPtr pp)
 	if( p->token == ENDsymbol && p->argv[0] == v){
 		if( begBlk == -1){
 		mb->errors++;
-		sprintf(buf,"ERROR:%d: missing start of exception block '%s'\n",
+		sprintf(buf,"%d: missing start of exception block '%s'\n",
 			i, getVarName(mb,v));
 		GDKerror(buf);
 		return;
@@ -286,7 +287,7 @@ void chkCatch(MalBlkPtr mb, InstrPtr pp)
 	}
 	if( endBlk<0 && begBlk>=0){
 		mb->errors++;
-		sprintf(buf,"ERROR: CATCH '%s' without end statement\n", 
+		sprintf(buf,"CATCH '%s' without end statement\n", 
 			getVarName(mb,v));
 		GDKerror(buf);
 	}
@@ -307,7 +308,7 @@ void chkRaise(MalBlkPtr mb, InstrPtr pp)
 			begBlk = i;
 		}
 		if (p==pp && begBlk != -1){
-		sprintf(buf,"ERROR: recursive exception '%s' not allowed\n", 
+		sprintf(buf,"recursive exception '%s' not allowed\n", 
 			getVarName(mb,v));
 		GDKerror(buf);
 		mb->errors++;
@@ -339,7 +340,7 @@ void chkLabel(MalBlkPtr mb, InstrPtr pp)
 		}
 	}
 	mb->errors++;
-	sprintf(buf,"ERROR:%d:label '%s' not in guarded block\n",
+	sprintf(buf,"%d:label '%s' not in guarded block\n",
 		pp->pc,getVarName(mb,k));
 	GDKerror(buf);
 }
@@ -448,7 +449,7 @@ Symbol 	cloneFunction(Symbol scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 	InstrPtr pp;
 
 	/* printf("clone the function %s\n",proc->name);*/
-	new= newFunction(scope,proc->name);
+	new= newFunction(scope,GDKstrdup(proc->name));
 	new->def = copyMalBlk(proc->def);
 	/* now change the definition of the original proc */
 	pp = getSignature(new);

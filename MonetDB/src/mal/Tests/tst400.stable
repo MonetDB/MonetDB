@@ -9,26 +9,33 @@
 #
 #	i:= -1;
 #barrier v1:= iterator.nextElement(i,0,2);
-#	v:= "do something";
+#	print("do something");
 #	redo v1;
 #end	v1;
-#	v:= "next iteration";
+#	print("next iteration");
 #	i:= -1;
 #barrier v2:= iterator.nextElement(i,0,5,2);
-#	v:= "do something else";
+#	print("do something else");
 #	redo v2;
 #end	v2;
 #
-function Client.main():int;	#0:(main:int->0)
+function Admin.main():int;	#0:(main:int->0)
 	i := -1;	#1:(i:int->13)($14:int->14)
 barrier	v1 := iterator.nextElement(i,0,2);	#2:(v1:bit->15)(i:int->13)($16:int->16)($17:int->17)
-	v := "do something";	#3:(v:str->18)($19:str->19)
+	system.print("do something");	#3:($18:int->18)($19:str->19)
 	redo v1 ;	#4:(v1:bit->15)
 end	v1;	#5:(v1:bit->15)
-	v := "next iteration";	#6:(v:str->18)($20:str->20)
+	system.print("next iteration");	#6:($20:int->20)($21:str->21)
 	i := -1;	#7:(i:int->13)($14:int->14)
-barrier	v2 := iterator.nextElement(i,0,5,2);	#8:(v2:bit->21)(i:int->13)($16:int->16)($22:int->22)($17:int->17)
-	v := "do something else";	#9:(v:str->18)($23:str->23)
-	redo v2 ;	#10:(v2:bit->21)
-end	v2;	#11:(v2:bit->21)
+barrier	v2 := iterator.nextElement(i,0,5,2);	#8:(v2:bit->22)(i:int->13)($16:int->16)($23:int->23)($17:int->17)
+	system.print("do something else");	#9:($24:int->24)($25:str->25)
+	redo v2 ;	#10:(v2:bit->22)
+end	v2;	#11:(v2:bit->22)
 end function;	#12:
+[ "do something" ]
+[ "do something" ]
+[ "next iteration" ]
+[ "do something else" ]
+[ "do something else" ]
+[ "do something else" ]
+>

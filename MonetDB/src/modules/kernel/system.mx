@@ -642,7 +642,7 @@ view_client_info(int *ret){
 	BUNins(b,"permission", local_itoa(c->permission));
 	BUNins(b,"language", c->language);
 	BUNins(b,"timer", local_itoa(c->timer));
-	BUNins(b,"trace", local_itoa(c->trace));
+	BUNins(b,"trace", local_itoa(c->itrace));
 	@:Pseudo(client,info)@
 	return GDK_FAIL;
 }

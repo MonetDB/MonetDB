@@ -24,40 +24,36 @@ of the client record initialization phase.
 @mal
 module mapi;
 
-command mapiListen():bit  = MAPIlisten_default
+command Listen():int  = MAPIlisten_default
 	comment "Start a Mapi server with the default settings.";
-command mapiListen(port:int, maxusers:int):bit = MAPIlisten
+command Listen(port:int, maxusers:int):int = MAPIlisten
 	comment "Start a Mapi server.";
-command mapiClose(port:int):bit = MAPIclose
+command Stop(port:int):bit = MAPIstop
 	comment "Terminate a listener owned by the client";
 
 # initialization code
-	vm:= bat.new(int,str);
-	bat.setName(vm,"view_mapi_owner");
-	bat.setRoles(vm,"mapi","owner");
-	bat.setPersistent(vm);
+function init();
+	vm1:= bat.new(int,str);
+	bat.setName(vm1,"view_mapi_owner");
+	bat.setRoles(vm1,"mapi","owner");
 
-	vm:= bat.new(int,int);
-	bat.setName(vm,"view_mapi_port");
-	bat.setRoles(vm,"mapi","port");
-	bat.setPersistent(vm);
+	vm2:= bat.new(int,int);
+	bat.setName(vm2,"view_mapi_port");
+	bat.setRoles(vm2,"mapi","port");
 
-	vm:= bat.new(int,int);
-	bat.setName(vm,"view_mapi_maxusers");
-	bat.setRoles(vm,"mapi","maxusers");
-	bat.setPersistent(vm);
+	vm3:= bat.new(int,int);
+	bat.setName(vm3,"view_mapi_maxusers");
+	bat.setRoles(vm3,"mapi","maxusers");
 
-	vm:= bat.new(int,int);
-	bat.setName(vm,"view_mapi_users");
-	bat.setRoles(vm,"mapi","users");
-	bat.setPersistent(vm);
+	vm4:= bat.new(int,int);
+	bat.setName(vm4,"view_mapi_users");
+	bat.setRoles(vm4,"mapi","users");
 
-	vm:= bat.new(int,int);
-	bat.setName(vm,"view_mapi_timeout");
-	bat.setRoles(vm,"mapi","timeout");
-	bat.setPersistent(vm);
+	vm5:= bat.new(int,int);
+	bat.setName(vm5,"view_mapi_timeout");
+	bat.setRoles(vm5,"mapi","timeout");
+end function;
 	
-	mapiListen();
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -88,6 +84,8 @@ command mapiClose(port:int):bit = MAPIclose
 #define MAPIPORT	50000
 #define MAPIMAXUSERS 	5
 
+#define DEBUG_MAPI	0
+
 #endif /* MAPI_H */
 @c
 #include "mapi.h"
@@ -95,6 +93,41 @@ command mapiClose(port:int):bit = MAPIclose
 #include  <sys/socket.h> 
 
 #define SOCKPTR struct sockaddr *
+
+void MAPIlistenThread(int sock)
+{
+	int 	msgsock;
+	do {
+#ifdef AIX
+       		msgsock = accept(sock, 0, (size_t)0);
+#else
+       		msgsock = accept(sock, 0, (int *)0);
+#endif
+
+		if (msgsock == -1) {
+			if (MT_geterrno() != EINTR) {
+				GDKsyserror("monetServer: accept failed\n");
+				return ;
+	    		}
+		} else if (msgsock > 0) {
+			int i;
+			FILE *fdin= fdopen(msgsock,"r");
+			char name[BUFSIZ], *user = name;
+			/* char *name = (char*) alloca(BUFSIZ), *user = name;*/
+
+			/* get user connection string */
+			for(i=0, *user=fgetc(fdin); i<BUFSIZ-1 && *user != '\n'; i++){
+				user++;
+				*user = fgetc(fdin);
+			}
+			*user = 0;
+			if( DEBUG_MAPI) 
+				THRprintf(GDKerr, "mapi:Client accepted %s\n", name);
+			scheduleClient(name, msgsock);
+		}
+	} while (1);
+}
+
 
 int MAPIlisten(int *ret, int *port, int *maxusers){
 	struct sockaddr_in server;
@@ -107,6 +140,7 @@ int MAPIlisten(int *ret, int *port, int *maxusers){
 	int    	on = 1;
 	int 	msgsock;
 	int	i = 0;
+	pid_t	pid;
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {
@@ -120,6 +154,8 @@ The port id is obtained from the Monet configuration file.
 @c
 	if (*port == 0)
 		*port = MAPIPORT;
+	if( DEBUG_MAPI)
+		THRprintf(GDKerr, "start at %d\n", *port);
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = INADDR_ANY;
 	server.sin_port = htons((unsigned short)((*port)&0xFFFF));
@@ -142,54 +178,12 @@ Get the new information for the server socket and start listening.
 	}
 	listen(sock, *maxusers); 
 
-	PARDEBUG {
-		THRprintf(GDKerr, "Internet started at %d\n", server.sin_port);
+	if( MT_create_thread(&pid, MAPIlistenThread, (void*) sock) <0){
+		GDKerror("Can not start internet thread\n");
+		return GDK_FAIL;
 	}
-	do {
-#ifdef AIX
-       		msgsock = accept(sock, 0, (size_t)0);
-#else
-       		msgsock = accept(sock, 0, (int *)0);
-#endif
-
-		if (msgsock == -1) {
-			if (MT_geterrno() != EINTR) {
-				GDKsyserror("monetServer: accept failed\n");
-				return GDK_FAIL;
-	    		}
-		} else if (msgsock > 0) {
-			int i;
-			char *name = (char*) alloca(BUFSIZ), *user = name;
-			FILE *fdin = fdopen(msgsock, "r");
-			FILE *fdout = fdopen(msgsock, "w");
-			Client c;
-
-			if (fdin == 0){
-				GDKsyserror("monetServer: fdin problems\n");
-				continue;
-			}
-			if (fdout == 0){
-				GDKsyserror("monetServer: fdout problems\n");
-				continue;
-			}
-			/* get user name */
-			for(i=0, *user=fgetc(fdin); i<BUFSIZ && *user != '\n'; i++){
-				user++;
-				*user = fgetc(fdin);
-			}
-			*user = 0;
-			c = initClient(GDKstrdup(name), 0, msgsock);
-			if (c == 0) {
-				fprintf(fdout, "Failed to init client for user %s\n", name );
-				fflush(fdout);
-				(void) fclose(fdin);
-				(void) fclose(fdout);
-				close(msgsock);
-				continue;
-			}
-			/* scheduleClient(c);*/
-		}
-	} while (1);
+	if( DEBUG_MAPI)
+		THRprintf(GDKerr, "Internet started at %d\n", server.sin_port);
 	*ret = TRUE;
 	return GDK_SUCCEED;
 }
@@ -199,7 +193,11 @@ int MAPIlisten_default(int *ret){
 	int maxusers = MAPIMAXUSERS;
 	return MAPIlisten(ret, &port, &maxusers);
 }
-int MAPIclose(int *ret, int *port)
+@-
+An internet connection may be terminated by the owner of the process only.
+@c
+int MAPIstop(int *ret, int *pid)
 {
+	printf("kill process %d\n",*pid);
 	return GDK_SUCCEED;
 }

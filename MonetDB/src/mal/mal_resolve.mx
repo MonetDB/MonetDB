@@ -281,7 +281,7 @@ We haven;t found the function.
 @c
 	if( foundbutwrong){
 		char buf[1024];
-		sprintf(buf,"ERROR: type conflict in assignment of %s.%s\n",
+		sprintf(buf,"type conflict in assignment of %s.%s\n",
 			m->name,p->fcnname);
 		GDKerror(buf);
 		printInstruction(stdout,mb,p);
@@ -365,7 +365,7 @@ procedure call without arguments and no module name.
 	if( s1== malAnyType && p->argc>1 ){
 		p->typechk = TYPE_UNKNOWN;
 		if( level <= TYPE_UNKNOWN){
-			sprintf(buf,"ERROR: unknown operator '%s'\n", 
+			sprintf(buf,"unknown operator '%s'\n", 
 				p->fcnname);
 			showException(mb,p->pc,"MALresolve",buf);
 			mb->errors++;
@@ -381,7 +381,7 @@ procedure call without arguments and no module name.
 
 	{ str n1 = malTypeName(s1);
 	  str n2 = malTypeName(getDestType(mb,p));
-	  sprintf(buf,"ERROR: type mismatch %s := %s\n",n2,n1);
+	  sprintf(buf,"type mismatch %s := %s\n",n2,n1);
 	  showException(mb,p->pc,"MALresolve",buf);
 	  mb->errors++;
 	}

@@ -19,7 +19,7 @@
 #end	t;
 #	i:= 0;
 #
-function Client.main():int;	#0:(main:int->0)
+function Admin.main():int;	#0:(main:int->0)
 	i := 0;	#1:(i:int->13)($14:int->14)
 barrier	v := true;	#2:(v:bit->15)($16:bit->16)
 	leave v;	#3:(v:bit->15)
@@ -31,3 +31,4 @@ barrier	t := arith.<(i,3);	#6:(t:bit->18)(i:int->13)($19:int->19)
 end	t;	#9:(t:bit->18)
 	i := 0;	#10:(i:int->13)($14:int->14)
 end function;	#11:
+>

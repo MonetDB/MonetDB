@@ -2,8 +2,31 @@
 @a M. Kersten
 @v 0.0
 @+ MAL interpretation
-Discuss the role of Mal and collect all central definitions here.
 
+Startup of the Monet engine consists of two steps. First, the
+system kernel libraries are loaded.
+The global symbol table is initialized with pre-compiled commands
+and pattern definitions.
+Second, for each service thread we execute a script with predefined
+MAL procedures.
+
+The information for the first phase consists of commands 
+signatures bound to actual routine implementations.
+The corresponding libraries may be statically linked or dynamically loaded.
+Failure to find the startup-files terminates to session, because
+there is no way to activate a linked procedure.
+
+After the initialization phase, the system prohibits dynamic loading of
+C- modules by casual users. For the time being we even forbid it,
+it should be part of the system startup.
+The rational behind this design decision is that the free load/drop
+feature of Monet V4 was hardly used and severely complicates the code.
+In particular, upon each access to the global symbol table we have to be
+prepaired that concurrent threads my be actively changing its structure.
+Especially, dropping modules may cause sever problems by not being
+able to detect references kept around.
+This danger required all accesses to global information to be packaged
+in a critical section, which was known to be a performance hindrence.
 @h
 #ifndef _MAL_H
 #define _MAL_H
@@ -20,7 +43,6 @@ Discuss the role of Mal and collect all central definitions here.
 #define mal_export extern
 #endif
 
-mal_export int 		mal_init();
 mal_export int             mal_listing;
 mal_export int             mal_xlisting;
 mal_export int             mal_debug;
@@ -81,12 +103,10 @@ void tstAligned()
 #endif
 }
 int mal_init(){
-	Client c;
 	mal_contextLock= MT_create_lock();
 	tstAligned();
 	initScope();
-        c= initClient(GDKstrdup("adm"),NULL,0);
-        if( malStartupAdmin(c,GDKdbnameStr,mal_listing) == 0) return -1;
+        if( malStartupAdmin(mal_listing) == 0) return -1;
 	initLibraries(FALSE);
 	return 0;
 }
@@ -95,4 +115,6 @@ int mal_exit(Client cntxt){
 #ifdef MALprofiler
 	profileReport( cntxt->nspace,1,stdout);
 #endif
+	freeSymbolList(mal_scope);
+	GDKexit();
 }

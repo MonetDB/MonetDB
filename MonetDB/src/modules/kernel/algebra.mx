@@ -31,7 +31,6 @@ that return a BAT.
 @-
 
 @mal
-
 module algebra;
 
 command exist(b:bat[any::1,any], h:any::1) : bit = CMDexist

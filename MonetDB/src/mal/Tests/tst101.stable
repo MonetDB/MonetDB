@@ -16,8 +16,9 @@ end function;	#1:
 #b:=3.5+2.7;
 #c:= 7+8;
 #
-function Client.main():int;	#0:(main:int->0)
-	a := Client.+(3,1);	#1:(a:int->13)($14:int->14)($15:int->15)
-	b := Client.+(3.5,2.7);	#2:(b:flt->16)($17:flt->17)($18:flt->18)
-	c := Client.+(7,8);	#3:(c:int->19)($20:int->20)($21:int->21)
+function Admin.main():int;	#0:(main:int->0)
+	a := Admin.+(3,1);	#1:(a:int->13)($14:int->14)($15:int->15)
+	b := Admin.+(3.5,2.7);	#2:(b:flt->16)($17:flt->17)($18:flt->18)
+	c := Admin.+(7,8);	#3:(c:int->19)($20:int->20)($21:int->21)
 end function;	#4:
+>

@@ -77,7 +77,7 @@ acceptable for the kernel.
 void malAtomDef(str name){
 	if( ATOMindex(name)>=0){
 		char buf[1024];
-		sprintf(buf,"ERROR: Redefinition of atom '%s'\n", name);
+		sprintf(buf,"Redefinition of atom '%s'\n", name);
 		GDKerror(buf);
 		return;
 	}

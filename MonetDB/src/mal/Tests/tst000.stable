@@ -8,5 +8,6 @@
 # monetrc:/ufs/mk/.monet.conf
 ##empty test file, used to check startup problems
 #
-function Client.main():int;	#0:(main:int->0)
+function Admin.main():int;	#0:(main:int->0)
 end function;	#1:
+>

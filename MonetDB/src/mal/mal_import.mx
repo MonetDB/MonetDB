@@ -33,7 +33,7 @@ html
 
 #include "mal_symbol.h"
 
-mal_export Symbol malImport(str fname,int listing,int loaded);
+mal_export void malImport(str fname,int listing,int loaded);
 #endif /*  _MAL_IMPORT_H*/
 @-
 The import context is located. If it already exists, we should silently skip
@@ -49,7 +49,7 @@ Make sure it is loaded as well.
 #include "mal_client.h"
 #include "mal_import.h"
 
-Symbol malImport(str fname,int listing,int loaded){
+void malImport(str fname,int listing,int loaded){
 	FILE *fd;
 	long i,len;
 	char *buf;
@@ -83,8 +83,8 @@ Symbol malImport(str fname,int listing,int loaded){
             }
         }
         if (fd == 0) {
-                GDKerror("ERROR:malImport: could not open file: %s\n", fname);
-                return 0;
+                GDKerror("malImport: could not open file: %s\n", fname);
+                return;
         }
         (void) fseek(fd,0L,SEEK_END);
         i = 0; len = ftell(fd)+2;
@@ -94,13 +94,13 @@ Symbol malImport(str fname,int listing,int loaded){
 	c->nxt = c->input = (char *) GDKmalloc(limit);
 	c->limit = c->input + limit;
 	if( c->input == 0){
-		GDKerror("ERROR:unable to allocate buffer\n");
-		return 0;
+		GDKerror("unable to allocate buffer\n");
+		return;
 	}
 
         i=fread(c->input, 1, len, fd);
         if( i != len-2) {
-                GDKerror("ERROR:not enough bytes read \n");
+                GDKerror("not enough bytes read \n");
         }
         fclose(fd);
         c->input[i] = 0;
@@ -119,21 +119,23 @@ resolving addresses.
 	GDKfree(c->input);
 	if( oldmain) {
 		if( c->mainprg != oldmain) {
-			/* closeClientMain(c);*/
 			curBlk = c->curprg->def;
 			curInstr= newInstruction(curBlk,ENDDEFsymbol);
 			pushInstruction(curBlk,curInstr);
-			if( listing && c->mainprg) 
-				printFunction(stdout,c->mainprg->def);
-		}
+		} else closeClientMain(c); 
+		if( listing && c->mainprg) 
+			printFunction(stdout,c->mainprg->def);
 		c->mainprg = oldmain;
-	}
+	} 
 	c->listing = oldlisting;
 	c->input= oldinput;
 	c->limit= oldlimit;
 	c->nxt = oldnxt;
 	c->nspace= oldscope;
-	/* execute main procedure of module */
-	return c->curprg;
+	/* execute main procedure of module? */
+	if( c->curprg){
+		str msg= (str) runMAL(c,c->curprg->def,0,0);
+		if( msg && msg != (str) GDK_SUCCEED) GDKerror(msg);
+	}
 }
 

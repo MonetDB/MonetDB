@@ -21,7 +21,8 @@ end function;	#3:
 #k:= 0;
 #r:= simple(k);
 #
-function Client.main():int;	#0:(main:int->0)
+function Admin.main():int;	#0:(main:int->0)
 	k := 0;	#1:(k:int->13)($14:int->14)
-	r := Client.simple(k);	#2:(r:int->15)(k:int->13)
+	r := Admin.simple(k);	#2:(r:int->15)(k:int->13)
 end function;	#3:
+>

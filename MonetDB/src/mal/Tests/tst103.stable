@@ -17,9 +17,10 @@ end function;	#1:
 #c:= f(1.0, -3);
 #d:= f(true,false);
 #
-function Client.main():int;	#0:(main:int->0)
-	a := Client.f(1,"hello");	#1:(a:bat[str,int]->13)($14:int->14)($15:str->15)
-	b := Client.f(1,"world");	#2:(b:bat[str,int]->16)($14:int->14)($17:str->17)
-	c := Client.f(1.0,-3);	#3:(c:bat[int,flt]->18)($19:flt->19)($20:int->20)
-	d := Client.f(true,false);	#4:(d:bat[bit,bit]->21)($22:bit->22)($23:bit->23)
+function Admin.main():int;	#0:(main:int->0)
+	a := Admin.f(1,"hello");	#1:(a:bat[str,int]->13)($14:int->14)($15:str->15)
+	b := Admin.f(1,"world");	#2:(b:bat[str,int]->16)($14:int->14)($17:str->17)
+	c := Admin.f(1.0,-3);	#3:(c:bat[int,flt]->18)($19:flt->19)($20:int->20)
+	d := Admin.f(true,false);	#4:(d:bat[bit,bit]->21)($22:bit->22)($23:bit->23)
 end function;	#5:
+>

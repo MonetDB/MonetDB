@@ -29,7 +29,7 @@
 #end	IllegalAccess;
 #	x:= "end of program";
 #
-function Client.main():int;	#0:(main:int->0)
+function Admin.main():int;	#0:(main:int->0)
 	p1 := -1;	#1:(p1:int->13)($14:int->14)
 	s0 := squeezer.access("p1");	#2:(s0:int->15)($16:str->16)
 	c1 := 2;	#3:(c1:int->17)($18:int->18)
@@ -45,7 +45,7 @@ end	IllegalAccess;	#11:(IllegalAccess:str->25)
 end function;	#13:
 entering sqzAccess blocking 13 p1
 Modified stmt sequence
-function Client.main():int;	#0:(main:int->0)
+function Admin.main():int;	#0:(main:int->0)
 	p1 := -1;	#1:(p1:int->13)($14:int->14)
 	c1 := 2;	#3:(c1:int->17)($18:int->18)
 	squeezer.AccessTst(p1);	#14:($30:int->30)(p1:int->13)
@@ -61,3 +61,4 @@ end	IllegalAccess;	#11:(IllegalAccess:str->25)
 	x := "end of program";	#12:(x:str->28)($29:str->29)
 end function;	#13:
 Entering AccessTst with argument -1
+>

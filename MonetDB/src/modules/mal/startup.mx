@@ -12,6 +12,8 @@ It should be loaded after the bat module.
 
 The negative effect is that this module is inspected as part of
 the function resolution scheme.
+
+
 @mal
 use "kernel/unix";
 use "kernel/bat";
@@ -20,6 +22,10 @@ use "kernel/atoms";
 use "atoms/blob";
 use "kernel/algebra";
 use "kernel/system";
-use "mapi/mapi";
+use "mal/mdb";
 use "mal/iterator";
 use "mal/squeezer"; 
+use "mapi/mapi";
+@-
+In practice, we have to introduce different startup for each
+client group.

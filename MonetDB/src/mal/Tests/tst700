@@ -6,6 +6,8 @@
 	print('c');
 	print(true);
 	pi := 3.147;
+	x:=1;
+	print(x);
 	print(pi);
 	printf("hello\n");
 	printf("%5d",0);
