@@ -1,6 +1,4 @@
 setaggr_exist
-refcnt
-refcnt2
 bat_nil
 printf
 #printf_dbl switched off as the double cannot hold the data
@@ -10,3 +8,5 @@ modrefcnt1
 modrefcnt2
 monet_mod_cnt-copy_S
 monet_mod_cnt-copy_C
+refcnt
+refcnt2

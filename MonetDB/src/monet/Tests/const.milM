@@ -9,4 +9,7 @@ bb.seqbase(0@0);
 
 [PLUS](aaa, const bb ).print;
 [PLUS](aaa,aaa.project(bb)).print;
+
+aaa := nil;
+
 quit;

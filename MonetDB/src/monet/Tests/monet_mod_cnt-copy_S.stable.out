@@ -86,8 +86,6 @@ print(a.col_name("count"),b.col_name("copy.count"),c.col_name("diff"));
 [ "monet_acctbl",	  2,	  2,		  0	  ]
 [ "monet_atomtbl",	  14,	  14,		  0	  ]
 [ "monet_unicode_case",	  685,	  685,		  0	  ]
-[ "tmp_26",		  2,	  2,		  0	  ]
-[ "tmp_28",		  2,	  2,		  0	  ]
 
 # 15:57:21 >  
 # 15:57:21 >  Done.
