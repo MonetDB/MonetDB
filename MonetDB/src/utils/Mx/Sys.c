@@ -102,7 +102,7 @@ void	Free(char *ptr)
  */
 }
 
-char *	StrDup(char *str)
+char *	StrDup(const char *str)
 {
 	return strcpy(Malloc(strlen(str) + 1), str);
 }

@@ -61,7 +61,7 @@ int CompareFiles(char*,char*);
 void OutputDir(char *dir)
 {
     struct stat buf;
-    if(stat(dir,&buf)==-1 || !(buf.st_mode&S_IFDIR)){
+    if (stat(dir,&buf) == -1 || !S_ISDIR(buf.st_mode)) {
 	fprintf(stderr,"Invalid target directory (%s), using \".\" instead\n",
 		dir);
 	return;
@@ -160,7 +160,7 @@ FILE *fmustopen(char *fname, char *mode)
 		    *tmp = DIR_SEP;
 	    *p = '\0';
 	    tmp = p;
-	    if (stat(fname, &buf) == 0 && (buf.st_mode & S_IFDIR)) {
+	    if (stat(fname, &buf) == 0 && S_ISDIR(buf.st_mode)) {
 		    *p++ = DIR_SEP;
 		    while ((tmp = strchr(p, DIR_SEP)) != NULL) {
 			    *tmp = '\0';
@@ -308,7 +308,7 @@ void	IoReadFile(char *name)
 		Fatal("IoReadFile", "Not a mx-file:%s", name);
 	if( (ifile= fopen(name, "r")) == 0 ) 
 		Fatal("IoReadFile", "Can't process %s", name);
-	p = (inputdir = strdup(name)) + strlen(name);
+	p = (inputdir = StrDup(name)) + strlen(name);
 	while(--p >= inputdir && *p != DIR_SEP);
 	p[1] = 0;
 	mx_file= name;

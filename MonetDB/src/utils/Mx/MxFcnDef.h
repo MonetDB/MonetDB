@@ -170,7 +170,7 @@ extern  void    ofile_puts ARGS((char*));
 
 extern	char *	Malloc ARGS((size_t));
 extern	void	Free ARGS((char *));
-extern	char *	StrDup ARGS((char*));
+extern	char *	StrDup ARGS((const char*));
 extern	char *	Strndup ARGS((const char*,size_t));
  
 extern  void    ofile_printf ARGS((char *,...));
