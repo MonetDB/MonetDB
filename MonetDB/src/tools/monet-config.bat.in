@@ -1,0 +1,22 @@
+@echo off
+
+	set prefix=%~dp0
+	set prefix=%prefix:~0,-4%
+REM	set prefix=@MONET_PREFIX@
+REM	set prefix=@prefix@
+
+if "%1" == "--prefix"	goto prefix
+
+:usage
+	echo.
+	echo Usage: monet-config [OPTION]
+	echo.
+	echo Known values for OPTION are:
+	echo.
+	echo.  --prefix		print monet prefix
+	echo.
+	goto :EOF
+
+:prefix
+	echo %prefix%
+	goto :EOF
