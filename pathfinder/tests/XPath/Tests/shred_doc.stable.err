@@ -1,0 +1,22 @@
+stderr of test 'shred_doc` in directory 'tests/XPath` itself:
+
+
+# 14:23:56 >  
+# 14:23:56 >  Mtimeout -timeout 60 ./shred_doc shred_doc 
+# 14:23:56 >  
+
+
+# 14:23:56 >  
+# 14:23:56 >  ln -s ../../../../../../ufs/manegold/Monet/4.4.0/pathfinder/tests/XPath/Tests/auctions116KB.xml .
+# 14:23:56 >  
+
+
+# 14:23:56 >  
+# 14:23:56 >  pf-shred auctions116KB.xml
+# 14:23:56 >  
+
+
+# 14:23:56 >  
+# 14:23:56 >  Done.
+# 14:23:56 >  
+
