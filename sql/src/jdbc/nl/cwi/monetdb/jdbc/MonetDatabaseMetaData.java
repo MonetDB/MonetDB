@@ -2025,7 +2025,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"fkkey.name AS FK_NAME, pkkey.name AS PK_NAME, " +
 			"" + DatabaseMetaData.importedKeyNotDeferrable + " AS DEFERRABILITY " +
 				"FROM keys AS fkkey, keys AS pkkey, keycolumns AS fkkeycol, " +
-				"keycolumns AS pkkeycol, tables AS fktable, tables AS fktable, " +
+				"keycolumns AS pkkeycol, tables AS fktable, tables AS pktable, " +
 				"schemas AS fkschema, schemas AS pkschema " +
 				"WHERE fktable.id = fkkey.table_id AND pktable.id = pkkey.table_id AND " +
 				"fkkey.id = fkkeycol.id AND pkkey.id = pkkeycol.id AND " +
@@ -2109,7 +2109,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"fkkey.name AS FK_NAME, pkkey.name AS PK_NAME, " +
 			"" + DatabaseMetaData.importedKeyNotDeferrable + " AS DEFERRABILITY " +
 				"FROM keys AS fkkey, keys AS pkkey, keycolumns AS fkkeycol, " +
-				"keycolumns AS pkkeycol, tables AS fktable, tables AS fktable, " +
+				"keycolumns AS pkkeycol, tables AS fktable, tables AS pktable, " +
 				"schemas AS fkschema, schemas AS pkschema " +
 				"WHERE fktable.id = fkkey.table_id AND pktable.id = pkkey.table_id AND " +
 				"fkkey.id = fkkeycol.id AND pkkey.id = pkkeycol.id AND " +
@@ -2204,7 +2204,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"fkkey.name AS FK_NAME, pkkey.name AS PK_NAME, " +
 			"" + DatabaseMetaData.importedKeyNotDeferrable + " AS DEFERRABILITY " +
 				"FROM keys AS fkkey, keys AS pkkey, keycolumns AS fkkeycol, " +
-				"keycolumns AS pkkeycol, tables AS fktable, tables AS fktable, " +
+				"keycolumns AS pkkeycol, tables AS fktable, tables AS pktable, " +
 				"schemas AS fkschema, schemas AS pkschema " +
 				"WHERE fktable.id = fkkey.table_id AND pktable.id = pkkey.table_id AND " +
 				"fkkey.id = fkkeycol.id AND pkkey.id = pkkeycol.id AND " +
