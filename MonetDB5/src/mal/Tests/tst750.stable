@@ -12,7 +12,7 @@
 #end test;
 function Admin.test(b:bat[:any,:any$2],c:any$2):int;	# 0  (test:int)<-(b:bat[:any,:any$2])(c:any$2)
     k := +(1,c);	# 1  unknown (k:any)<-($4:int)(c:any$2)
-    io.print(k);	# 2 CMDprint_val ($5:int)<-(k:any)
+    io.print(k);	# 2 IOprint_val ($5:int)<-(k:any)
 end test;	# 3  
 #
 #b:=new(:int,:int);

@@ -9,7 +9,7 @@
 #	return base;
 #end one;
 function Admin.one(base:int):int;	# 0  (one:int)<-(base:int)
-    io.print(base);	# 1 CMDprint_val ($2:int)<-(base:int)
+    io.print(base);	# 1 IOprint_val ($2:int)<-(base:int)
     return base;	# 2  (one:int)<-(base:int)
 end one;	# 3  
 #
@@ -18,7 +18,7 @@ end one;	# 3
 #	return base;
 #end three;
 function Admin.three(base:int,x:int,y:int):int;	# 0  (three:int)<-(base:int)(x:int)(y:int)
-    io.print(base);	# 1 CMDprint_val ($4:int)<-(base:int)
+    io.print(base);	# 1 IOprint_val ($4:int)<-(base:int)
     return base;	# 2  (three:int)<-(base:int)
 end three;	# 3  
 #function pow(base:int,raise:int):int;
@@ -56,7 +56,7 @@ function Admin.main():int;	# 0  (main:int)
     z := multiplex.script("three",b,2,3);	# 6  (z:bat[:int,:int])<-($12:str)(b:bat[:int,:int])($4:int)($5:int)
     z := multiplex.script("one",b);	# 7  (z:bat[:int,:int])<-($13:str)(b:bat[:int,:int])
     z := multiplex.script("pow",b,2);	# 8  (z:bat[:int,:int])<-($14:str)(b:bat[:int,:int])($4:int)
-    io.print(z);	# 9 CMDprint_val ($15:int)<-(z:bat[:int,:int])
+    io.print(z);	# 9 IOprint_val ($15:int)<-(z:bat[:int,:int])
 end main;	# 10  
 [ 1 ]
 [ 1 ]

@@ -18,7 +18,7 @@
 function Admin.main():int;	# 0  (main:int)
 barrier xx;	# 1  (xx:any) jump 7
 thread b1;	# 2  (b1:int) jump 6
-    io.printf("Entered thread\n");	# 3 SYSprint_str ($3:int)<-($4:str)
+    io.printf("Entered thread\n");	# 3 IOprint_str ($3:int)<-($4:str)
     leave b1;	# 4  (b1:int) jump 6
     redo xx;	# 5  (xx:any) jump 1
 exit b1;	# 6  (b1:int)

@@ -12,7 +12,7 @@
 #end test;
 function Admin.test(b:bat[:any,:any$2],c:any$2):int;	# 0  (test:int)<-(b:bat[:any,:any$2])(c:any$2)
     k := +(1,c);	# 1  unknown (k:any)<-($4:int)(c:any$2)
-    io.print(k);	# 2 CMDprint_val ($5:int)<-(k:any)
+    io.print(k);	# 2 IOprint_val ($5:int)<-(k:any)
 end test;	# 3  
 #
 #c:=new(:int,:str);
@@ -22,7 +22,7 @@ end test;	# 3
 !ERROR: Error in cloned function
 !ERROR: function Admin.test(b:bat[:int,:str],c:str):str;	# 0  (c:str)<-(b:bat[:int,:str])(c:str)
 !ERROR:     k := +(1,c);	# 1  unknown (k:any)<-($4:int)(c:str)
-!ERROR:     io.print(k);	# 2 CMDprint_val ($5:int)<-(k:any)
+!ERROR:     io.print(k);	# 2 IOprint_val ($5:int)<-(k:any)
 !ERROR: end test;	# 3  
 !ERROR: 'Admin.test' undefined in Admin.main[2]
 function Admin.main():int;	# 0  (main:int)

@@ -16,7 +16,7 @@
 function Admin.myException():void;	# 0  (myException:void)
     IllegalAccess := "new exception";	# 1  (IllegalAccess:str)<-($2:str)
     raise IllegalAccess;	# 2  (IllegalAccess:str)
-    io.print("should have left function ");	# 3 CMDprint_val ($3:int)<-($4:str)
+    io.print("should have left function ");	# 3 IOprint_val ($3:int)<-($4:str)
 end myException;	# 4  
 #
 #	myException();
@@ -24,7 +24,7 @@ end myException;	# 4
 #
 function Admin.main():int;	# 0  (main:int)
     Admin.myException();	# 1  ($1:void)
-    io.print("should not come here");	# 2 CMDprint_val ($2:int)<-($3:str)
+    io.print("should not come here");	# 2 IOprint_val ($2:int)<-($3:str)
 end main;	# 3  
 !ERROR: new exceptionMALexception:Admin.myException[4]: propagated
 >

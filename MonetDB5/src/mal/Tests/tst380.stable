@@ -75,7 +75,7 @@ function Admin.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
     bStatus := Admin.get(brev,"getStatus","status");	# 9  (bStatus:bat[:str,:int])<-(brev:bat[:str,:int])($21:str)($22:str)
     bKind := Admin.get(brev,"getKind","kind");	# 10  (bKind:bat[:str,:int])<-(brev:bat[:str,:int])($24:str)($25:str)
     bRef := Admin.getInt(brev,"getRefcnt","refcnt");	# 11  (bRef:bat[:str,:int])<-(brev:bat[:str,:int])($27:str)($28:str)
-    io.table(brev,bm,bHead,bTail,bCount,bHeat,bDirty,bStatus,bKind,bRef);	# 12 CMDttable ($29:int)<-(brev:bat[:str,:int])(bm:bat[:str,:str])(bHead:bat[:any,:any])(bTail:bat[:str,:int])(bCount:bat[:any,:any])(bHeat:bat[:any,:any])(bDirty:bat[:str,:int])(bStatus:bat[:str,:int])(bKind:bat[:str,:int])(bRef:bat[:str,:int])
+    io.table(brev,bm,bHead,bTail,bCount,bHeat,bDirty,bStatus,bKind,bRef);	# 12 IOttable ($29:int)<-(brev:bat[:str,:int])(bm:bat[:str,:str])(bHead:bat[:any,:any])(bTail:bat[:str,:int])(bCount:bat[:any,:any])(bHeat:bat[:any,:any])(bDirty:bat[:str,:int])(bStatus:bat[:str,:int])(bKind:bat[:str,:int])(bRef:bat[:str,:int])
 end dir;	# 13  
 #
 #function dir(s:str):void;
@@ -87,7 +87,7 @@ end dir;	# 13
 function Admin.dir(s:str):void;	# 0  (dir:void)<-(s:str)
     t := bbp.getNames();	# 1 CMDbbpNames (t:bat[:int,:str])
     tn := algebra.like(t,s);	# 2 ALGlike (tn:bat[:int,:str])<-(t:bat[:int,:str])(s:str)
-    io.print(tn);	# 3 CMDprint_val ($4:int)<-(tn:bat[:int,:str])
+    io.print(tn);	# 3 IOprint_val ($4:int)<-(tn:bat[:int,:str])
     Admin.dir(tn);	# 4  ($5:void)<-(tn:bat[:int,:str])
 end dir;	# 5  
 #b:=new(:int,:int);
@@ -105,9 +105,9 @@ function Admin.main():int;	# 0  (main:int)
     b := bbp.new(int:,int:);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
     bat.setName(b,"simplemind");	# 2 BKCsetName ($4:bat[:int,:int])<-(b:bat[:int,:int])($5:str)
     z := bbp.getNames();	# 3 CMDbbpNames (z:bat[:int,:str])
-    io.print("Get first directory");	# 4 CMDprint_val ($7:int)<-($8:str)
+    io.print("Get first directory");	# 4 IOprint_val ($7:int)<-($8:str)
     Admin.dir(z);	# 5  ($9:void)<-(z:bat[:int,:str])
-    io.print("Get second directory");	# 6 CMDprint_val ($10:int)<-($11:str)
+    io.print("Get second directory");	# 6 IOprint_val ($10:int)<-($11:str)
     Admin.dir("simple");	# 7  ($12:void)<-($13:str)
 end main;	# 8  
 [ "Get first directory" ]

@@ -20,10 +20,10 @@ function Admin.main():int;	# 0  (main:int)
     ee_a := bat.insert(x,2@0,'a');	# 3 BKCinsert_bun (ee_a:void)<-(x:bat[:oid,:chr])($8:oid)($6:chr)
     y := bbp.new(chr:,oid:);	# 4 CMDBATnew (y:bat[:chr,:oid])<-($10:chr)($11:oid)
     xr := bat.reverse(x);	# 5 BKCreverse (xr:bat[:chr,:oid])<-(x:bat[:oid,:chr])
-    io.print(xr);	# 6 CMDprint_val ($13:int)<-(xr:bat[:chr,:oid])
+    io.print(xr);	# 6 IOprint_val ($13:int)<-(xr:bat[:chr,:oid])
     bat.insert(y,xr);	# 7 BKCinsert_bat ($14:void)<-(y:bat[:chr,:oid])(xr:bat[:chr,:oid])
-    io.print("result?");	# 8 CMDprint_val ($15:int)<-($16:str)
-    io.print(y);	# 9 CMDprint_val ($17:int)<-(y:bat[:chr,:oid])
+    io.print("result?");	# 8 IOprint_val ($15:int)<-($16:str)
+    io.print(y);	# 9 IOprint_val ($17:int)<-(y:bat[:chr,:oid])
 end main;	# 10  
 #-----------------#
 # t	tmp_4	  # name

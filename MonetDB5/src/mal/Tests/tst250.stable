@@ -41,10 +41,10 @@ function Admin.main():int;	# 0  (main:int)
     err := bat.insert(b,9,n0);	# 11 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($21:int)(n0:int)
     err := bat.insert(b,n0,n0);	# 12 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)(n0:int)
     err := bat.insert(b,n0,81);	# 13 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)($22:int)
-    io.print(b);	# 14 CMDprint_val ($23:int)<-(b:bat[:int,:int])
+    io.print(b);	# 14 IOprint_val ($23:int)<-(b:bat[:int,:int])
 barrier v := bbp.bunStream(b,h,t);	# 15 CMDbunStream (v:lng)<-(b:bat[:int,:int])(h:int)(t:int) jump 19
-    io.printf("%d,",h);	# 16 SYSprint_formatted_int ($27:int)<-($28:str)(h:int)
-    io.printf("%d\n",t);	# 17 SYSprint_formatted_int ($29:int)<-($30:str)(t:int)
+    io.printf("%d,",h);	# 16 IOprint_formatted_int ($27:int)<-($28:str)(h:int)
+    io.printf("%d\n",t);	# 17 IOprint_formatted_int ($29:int)<-($30:str)(t:int)
     redo v;	# 18  (v:lng) jump 15
 exit v;	# 19  (v:lng)
 end main;	# 20  

@@ -49,15 +49,15 @@ function Admin.main():int;	# 0  (main:int)
     nb_a := bat.insert(t,6,mb_a);	# 13 BKCinsert_bun (nb_a:void)<-(t:bat[:int,:url])($27:int)(mb_a:url)
     ob_a := url.url("http://robotics.stanford.edu/icons/ ");	# 14 URLnew (ob_a:url)<-($29:str)
     pb_a := bat.insert(t,7,ob_a);	# 15 BKCinsert_bun (pb_a:void)<-(t:bat[:int,:url])($31:int)(ob_a:url)
-    qb_a := io.print("build a table finished");	# 16 CMDprint_val (qb_a:int)<-($33:str)
-    io.print(t);	# 17 CMDprint_val ($34:int)<-(t:bat[:int,:url])
+    qb_a := io.print("build a table finished");	# 16 IOprint_val (qb_a:int)<-($33:str)
+    io.print(t);	# 17 IOprint_val ($34:int)<-(t:bat[:int,:url])
     rb := bbp.new(int:,url:);	# 18 CMDBATnew (rb:bat[:int,:url])<-($36:int)($37:url)
-    io.print("start loop");	# 19 CMDprint_val ($38:int)<-($39:str)
+    io.print("start loop");	# 19 IOprint_val ($38:int)<-($39:str)
 barrier mloop := bbp.bunStream(t,h,B2);	# 20 CMDbunStream (mloop:lng)<-(t:bat[:int,:url])(h:int)(B2:url) jump 23
-    io.print(B2);	# 21 CMDprint_val ($43:int)<-(B2:url)
+    io.print(B2);	# 21 IOprint_val ($43:int)<-(B2:url)
     redo mloop;	# 22  (mloop:lng) jump 20
 exit mloop;	# 23  (mloop:lng)
-    io.print(rb);	# 24 CMDprint_val ($44:int)<-(rb:bat[:int,:url])
+    io.print(rb);	# 24 IOprint_val ($44:int)<-(rb:bat[:int,:url])
 end main;	# 25  
 [ "build a table finished" ]
 #-------------------------------------------------------------------------#

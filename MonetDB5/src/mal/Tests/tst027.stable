@@ -8,7 +8,7 @@
 #	print(s);
 #end test;
 function Admin.test(s:str,b:bat[:any$1,:any$2]...):void;	# 0  (test:void)<-(s:str)(b:bat[:any$1,:any$2])
-    io.print(s);	# 1 CMDprint_val ($3:int)<-(s:str)
+    io.print(s);	# 1 IOprint_val ($3:int)<-(s:str)
 end test;	# 2  
 #b:= new(:int,:int);
 #c:= new(:int,:int);

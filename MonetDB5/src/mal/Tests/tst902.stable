@@ -44,7 +44,7 @@ barrier w := bbp.bunStream(b,h,t);	# 9 CMDbunStream (w:lng)<-(b:bat[:lng,:lng])(
 catch GDKerror;	# 15  (GDKerror:str) jump 16
 exit GDKerror;	# 16  (GDKerror:str)
 exit w;	# 17  (w:lng)
-    io.print(d);	# 18 CMDprint_val ($22:int)<-(d:bat[:lng,:lng])
+    io.print(d);	# 18 IOprint_val ($22:int)<-(d:bat[:lng,:lng])
 end main;	# 19  
 #-----------------#
 # h	tmp_5	  # name

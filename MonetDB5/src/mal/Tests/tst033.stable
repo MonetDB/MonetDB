@@ -22,13 +22,13 @@ function Admin.main():int;	# 0  (main:int)
     bat.insert(b,2,2);	# 4 BKCinsert_bun ($8:void)<-(b:bat[:int,:int])($9:int)($9:int)
     bat.insert(b,3,3);	# 5 BKCinsert_bun ($10:void)<-(b:bat[:int,:int])($11:int)($11:int)
     z := algebra.select(b,0,2);	# 6 ALGselect (z:bat[:int,:int])<-(b:bat[:int,:int])($5:int)($9:int)
-    io.print(z);	# 7 CMDprint_val ($13:int)<-(z:bat[:int,:int])
+    io.print(z);	# 7 IOprint_val ($13:int)<-(z:bat[:int,:int])
     z := algebra.betweenCO(b,0,2);	# 8  (z:bat[:int,:int])<-(b:bat[:int,:int])($5:int)($9:int)
-    io.print(z);	# 9 CMDprint_val ($14:int)<-(z:bat[:int,:int])
+    io.print(z);	# 9 IOprint_val ($14:int)<-(z:bat[:int,:int])
     z := algebra.betweenOC(b,0,2);	# 10  (z:bat[:int,:int])<-(b:bat[:int,:int])($5:int)($9:int)
-    io.print(z);	# 11 CMDprint_val ($15:int)<-(z:bat[:int,:int])
+    io.print(z);	# 11 IOprint_val ($15:int)<-(z:bat[:int,:int])
     z := algebra.betweenOO(b,0,2);	# 12  (z:bat[:int,:int])<-(b:bat[:int,:int])($5:int)($9:int)
-    io.print(z);	# 13 CMDprint_val ($16:int)<-(z:bat[:int,:int])
+    io.print(z);	# 13 IOprint_val ($16:int)<-(z:bat[:int,:int])
 end main;	# 14  
 #-----------------#
 # h	tmp_5	  # name
