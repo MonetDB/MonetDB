@@ -250,6 +250,13 @@ sub get_info {
 }
 
 
+sub type_info_all {
+    my ($dbh) = @_;
+    require DBD::monetdb::TypeInfo;
+    return $DBD::monetdb::TypeInfo::type_info_all;
+}
+
+
 sub tables {
     my $dbh = shift;
     my @args = @_;
