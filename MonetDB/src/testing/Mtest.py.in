@@ -1995,7 +1995,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             CheckSocket2(env, "MAPI", SrvrErr)
 
         PROLOGUE = ""
-        if os.path.isfile(TST+".prologue"):
+        if os.path.isfile(TST+".prologue") and env['VERSION'] < 49900:
             PROLOGUE = " "+TST+".prologue"
 
         Srvr = '%s%s %s%s "--dbname=%s"' % (MTO, str(STO), exe['Mserver'][1], LOCAL_CONF, TSTDB)
@@ -2115,7 +2115,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             fp.close()
 
     if SERVER in ["MAPI", "SQL"]:
-        if os.path.isfile(TST+".epilogue"):
+        if os.path.isfile(TST+".epilogue") and env['VERSION'] < 49900:
             EPILOGUE = open(TST+".epilogue",'r')
             EpiFailed = ""
             try:
