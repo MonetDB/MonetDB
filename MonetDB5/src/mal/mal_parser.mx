@@ -634,7 +634,7 @@ str parseInclude(Client cntxt)
     malInclude(cntxt,modnme,modnme, 0);
     GDKfree(modnme);
     skipSpace(cntxt);
-    if( cntxt->nxt != ';')
+    if( *(cntxt->nxt) != ';')
             parseError(cntxt,"';' expected\n");
     skipToEnd(cntxt);
     return "";
