@@ -39,6 +39,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_04BD614859FF48E6AF5CE4FAEB68A4D2"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_08736BD670A742A8A23B6B51A8A28668"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -208,6 +214,12 @@
         "Entry"
         {
         "MsmKey" = "8:_3E413BBF2DBF46D989329A381701284D"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_3E72599C61604A7D87B1C78F46B01AAE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -561,12 +573,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_ADE8EA0BE2CB45F795B653DEB63DCD93"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_B0C1E343C42E4E598869BB4BF3570C65"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -664,12 +670,6 @@
         "Entry"
         {
         "MsmKey" = "8:_C51B7FE688944F438F2B652EE0CE72BE"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_C59E23FEE98E461CA797C66EF47CB78F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -987,6 +987,26 @@
             "TargetName" = "8:lib_mel.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_04BD614859FF48E6AF5CE4FAEB68A4D2"
+            {
+            "SourcePath" = "8:..\\DBD\\monetdb.pm"
+            "TargetName" = "8:monetdb.pm"
+            "Tag" = "8:"
+            "Folder" = "8:_4C7001B3CD384BBDAA74C9BD6AD8B7CA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1567,6 +1587,26 @@
             "TargetName" = "8:lib_url.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_3E72599C61604A7D87B1C78F46B01AAE"
+            {
+            "SourcePath" = "8:..\\DBD\\monetdbPP.pm"
+            "TargetName" = "8:monetdbPP.pm"
+            "Tag" = "8:"
+            "Folder" = "8:_4C7001B3CD384BBDAA74C9BD6AD8B7CA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2741,26 +2781,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_ADE8EA0BE2CB45F795B653DEB63DCD93"
-            {
-            "SourcePath" = "8:..\\share\\MonetDB\\perl\\DBD\\monetdb.pm"
-            "TargetName" = "8:monetdb.pm"
-            "Tag" = "8:"
-            "Folder" = "8:_4C7001B3CD384BBDAA74C9BD6AD8B7CA"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_B0C1E343C42E4E598869BB4BF3570C65"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\unix.mil"
@@ -3087,26 +3107,6 @@
             "TargetName" = "8:lib_cluster.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C59E23FEE98E461CA797C66EF47CB78F"
-            {
-            "SourcePath" = "8:..\\share\\MonetDB\\perl\\DBD\\monetdbPP.pm"
-            "TargetName" = "8:monetdbPP.pm"
-            "Tag" = "8:"
-            "Folder" = "8:_4C7001B3CD384BBDAA74C9BD6AD8B7CA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
