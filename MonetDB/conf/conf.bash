@@ -95,7 +95,7 @@ if [ ! -x bootstrap ] ; then
 	fi
 
 	if [ "${os}" = "IRIX64" ] ; then
-		binpath=":/soft/local/bin:/soft64/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin${binpath}"
+		binpath=":/soft64/local/bin:/soft/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin${binpath}"
 		if [ "${COMP}${BITS}" = "GNU64" ] ; then
 			cc="${cc} -mabi=64"
 			cxx="${cxx} -mabi=64"
