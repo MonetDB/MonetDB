@@ -27,8 +27,7 @@ Algorithm merge leads to 0 different answers.
 Algorithm index leads to 0 different answers.
 Algorithm hash leads to 0 different answers.
 Algorithm fetch leads to 0 different answers.
-!ERROR: Cannot perform mergejoin on void fields.
-!ERROR: CMDmergejoin: operation failed.
+Algorithm merge leads to 0 different answers.
 Algorithm index leads to 0 different answers.
 RESULT: 0 tests failed.
 quit;

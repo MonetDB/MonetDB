@@ -134,10 +134,14 @@ BATmalmergejoin(BAT *l, BAT *r) {
     GDKerror( "Cannot perform mergejoin: neither left nor right bat is ordered.\n" );
     return NULL;
   }
+/*
+ * Stefan: There is no reason not to perform a mergejoin on voids, is there?
+ *
   if ( (l->ttype==TYPE_void) || (r->htype==TYPE_void) ) {
     GDKerror( "Cannot perform mergejoin on void fields.\n" );
     return NULL;    
   }
+*/
   return BATmergejoin(l,r);
 }
 
@@ -250,5 +254,4 @@ PROC test_malalgebra() : void := {
 	@:compresults(index,void)@
 
 	printf( "RESULT: %d tests failed.\n", Ntestfailed );
-
 }
