@@ -461,6 +461,7 @@ int cache_bat(BAT ** retval)
 	BAT *b = BATnew(TYPE_str, TYPE_str, BATcount(cache_idx));
 	BUN p,q;
 
+	if( b==NULL) return GDK_FAIL;
 	strcpy(b->hident, "id");
 	strcpy(b->tident, "cached value");
 	BATloop(cache_idx, p, q) {
@@ -984,6 +985,7 @@ int conn_bat(BAT** retval)
 {
 	BAT *b = BATnew(TYPE_int, TYPE_str, 10);
 	int i;
+	if( b==NULL) return GDK_FAIL;
 	strcpy(b->hident, "conn");
 	strcpy(b->tident, "remote");
         for(i=0; i < MAX_CONN; i++) 
@@ -1002,6 +1004,7 @@ int wait_bat(BAT** retval)
 {
 	BAT *b = BATnew(TYPE_int, TYPE_int, 10);
 	int i;
+	if( b==NULL) return GDK_FAIL;
 	strcpy(b->hident, "conn");
 	strcpy(b->tident, "pid");
         for(i=0; i < MAX_CONN; i++)
@@ -1023,6 +1026,7 @@ bat* TCPprelude(void)
 {
 	TCPlock = MT_create_lock();
 	cache_idx = BATnew(TYPE_str, TYPE_ptr, 1000);
+	if( cache_idx == NULL) return NULL;
 	BBPrename(cache_idx->batCacheid, "tcpip_idx");
 
         /* fork extra asynchronous interpreter, so there are always

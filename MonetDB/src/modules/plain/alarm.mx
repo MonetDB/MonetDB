@@ -225,6 +225,7 @@ int CMDtimers(BAT **retval) {
 	char buf[27];
 	int k;
 	*retval = BATnew(TYPE_str, TYPE_str, timerTop);
+	if(*retval == NULL) return GDK_FAIL;
 	BATroles(*retval, "alarm", "action");
 	for (k = 0; k < timerTop; k++) {
 #ifdef HAVE_CTIME_R3

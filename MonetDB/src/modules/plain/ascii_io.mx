@@ -302,7 +302,9 @@ ptr bun_tail(BAT *b, size_t nr){
 
 BAT *void_bat_create(int adt, size_t nr) {
 	BAT *b = BATnew(TYPE_void,adt,nr);
-	BATseqbase(b,0);
+	/* check for correct structures */
+	if( b== NULL) return b;
+	if( BATmirror(b)) BATseqbase(b,0);
 	return b;
 }
 
@@ -498,6 +500,7 @@ BAT *ASCIIcollect_bats( ascii *as ){
 	size_t i;
 	size_t cnt = BATcount(fmt[0].c);
 
+	if( bats == NULL) return NULL;
 	for (i=0; i<as->nr_attrs; i++){
 		BUNins(bats,(ptr)fmt[i].name, (ptr)&fmt[i].c->batCacheid);
 		BATsetaccess(fmt[i].c, BAT_READ);

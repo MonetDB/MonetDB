@@ -463,6 +463,7 @@ int enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe){
 	BUN p,q,r; int xx;
 	unsigned @2 idx;
 	
+	if( bn == NULL) return GDK_FAIL;
 	if (BAThordered(b)&1) {
 	    BATloopFast(src, p, q, xx) {
 		BUN r = (BUN) SORTfnd@4(b, BUNt@3(src,p));
@@ -536,6 +537,7 @@ int enum_encode_multi(BAT** dst, int *enum_t, BAT *src){
 	BUN p,q; int xx;
 	ptr w,nil = ATOMnilptr(b->htype);
 	
+	if( bn == NULL) return GDK_FAIL;
 	BATloopFast(src, p, q, xx) {
 		unsigned @2 *idx = (unsigned @2*) BUNtloc(src,p);
 		if (*(@1*) idx == chr_nil) {

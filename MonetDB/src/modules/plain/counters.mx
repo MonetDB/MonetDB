@@ -1878,6 +1878,7 @@ int counter2bat(BAT **ret, counter *c) {
     }
     ms=c->usec/1000;
     *ret = BATnew(TYPE_str, TYPE_lng, 8);
+    if( *ret == NULL) return GDK_FAIL;
     BUNins(*ret, "status", &c->status);
     BUNins(*ret, "generation", &c->generation);
     BUNins(*ret, "microsecs", &c->usec);
@@ -1921,6 +1922,7 @@ int show_native_events(BAT **ret) {
 #endif
     
     *ret = BATnew(TYPE_int, TYPE_str, NumEvents);
+    if( *ret == NULL) return GDK_FAIL;
 #if defined(HWCOUNTERS)
     for (i = 0; i < NumEvents; i++)
         BUNins(*ret, &i, event[i].native);
@@ -1937,6 +1939,7 @@ int show_unified_events(BAT **ret) {
 #endif
     
     *ret = BATnew(TYPE_int, TYPE_str, NumEvents);
+    if( *ret == NULL) return GDK_FAIL;
 #if defined(HWCOUNTERS)
     for (i = 0; i < NumEvents; i++)
         if (event[i].unified != str_nil)

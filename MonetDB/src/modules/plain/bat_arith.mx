@@ -104,6 +104,7 @@ int batbat_@1_@3(BAT **ret, BAT *l, BAT *r) {
  	           "batbat_@1_@3: BATs l & r must be void-headed and head-aligned.\n");
 
 	bn = BATnew(TYPE_void, l->ttype, BATcount(l));
+	if( bn == NULL) return GDK_FAIL;
 	BATseqbase(bn,l->hseqbase);
 	bn->tsorted = 0;
 
@@ -225,6 +226,7 @@ int valbat_@1_@3(BAT **ret, @1 *v, BAT *b) {
 	/* todo for commutative operators call batval (ie. for * and /) */
 
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
+	if( bn == NULL) return GDK_FAIL;
 	BATseqbase(bn,b->hseqbase);
 	bn->tsorted = 0;
 	bq = (chr*)BUNtloc(b,BUNlast(b));
@@ -293,6 +295,7 @@ int batval_@1_@3(BAT **ret, BAT *b, @1 *v) {
  	           "batval_@1_@3: BAT b must be void-headed.\n");
 
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
+	if( bn == NULL) return GDK_FAIL;
 	BATseqbase(bn,b->hseqbase);
 	bn->tsorted = 0;
 	bq = (chr*)BUNtloc(b,BUNlast(b));

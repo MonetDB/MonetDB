@@ -1678,12 +1678,15 @@ int decimal_divide_default(decimal **ret, decimal *num, decimal *div) {
 int decimal_bulkdivide(BAT** ret, BAT* b, decimal *div, int *prec) {
 	size_t xx = BATcount(b);
 	int yy = 10;
-	BAT *bn = *ret = BATnew(b->htype, TYPE_var, xx);
-	BAT *bm = BATmirror(bn);
+	BAT *bn = BATnew(b->htype, TYPE_var, xx);
+	BAT *bm ;
 	decimal *mult[10];
 	BUN p, q;
 	Heap hp;
 	
+	if(bn == NULL) return GDK_FAIL;
+	*ret = bn;
+	bm = BATmirror(bn);
 	/* create space for decimals */
 	if (prec) {
 		yy = MIN(div->precision+MAX(1,*prec)-1,PRECISION_MAX)+1;

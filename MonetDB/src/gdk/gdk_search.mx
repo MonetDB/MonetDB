@@ -366,6 +366,7 @@ BAT *HASHprint(BAT *b) {
 #endif
 	BUN p,q;
 
+	if( bn == NULL) return NULL;
 	if (!(b && b->hhash_heap)) return 0;
 	BATloop(b,p,q) {
 		size_t i = HASHprobe(&b->hhash, BUNhead(b,p));
@@ -637,6 +638,7 @@ construction in one pass from a sorted histogram
 			histo = unique;
 		} else {
 		   	histo = BATsort(unique);
+			if( histo == NULL) return 0;
 	        	if (unique != h) BBPunfix(unique->batCacheid);
 		}
  		off = BUNindex(histo, BUNfirst(histo));

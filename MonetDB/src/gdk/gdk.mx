@@ -2116,13 +2116,13 @@ and system information.
 @T
 {\tt \begin{tabular}{|lll|}\hline
 void* & GDKmalloc & (size\_t size)\\
-void* & GDKmallocmax & (size\_t size, size\_t *maxsize)\\
+void* & GDKmallocmax & (size\_t size, size\_t *maxsize, int emergency)\\
 void* & GDKrealloc & (void* pold, size\_t size)\\
 void* & GDKreallocmax & (void* pold, size\_t size, size\_t *maxsize)\\
 void & GDKfree & (void* blk)\\
 str & GDKstrdup & (str s)\\
 \hline
-void* & GDKvmalloc & (size\_t size, size\_t *maxsize)\\
+void* & GDKvmalloc & (size\_t size, size\_t *maxsize, int emergency)\\
 void* & GDKvmrealloc & (void* pold, size\_t oldsize, size\_t newsize, size\_t oldmax, size\_t *maxsize)\\
 void & GDKvmfree & (void* blk, size\_t size, size\_t maxsize)\\
 \hline\end{tabular}}
@@ -2155,13 +2155,13 @@ gdk_export size_t 	GDKmem_heapsize(void);
 gdk_export size_t 	GDKmem_heapinuse(void);
 
 gdk_export void* 	GDKmalloc  (size_t size); 
-gdk_export void* 	GDKmallocmax (size_t size, size_t *maxsize); 
+gdk_export void* 	GDKmallocmax (size_t size, size_t *maxsize, int emergency); 
 gdk_export void* 	GDKrealloc (void* pold, size_t size); 
 gdk_export void* 	GDKreallocmax (void* pold, size_t size, size_t *maxsize); 
 gdk_export void		GDKfree    (void* blk); 
 gdk_export str		GDKstrdup  (const char *s);
 
-gdk_export void*	GDKvmalloc  (size_t size, size_t *maxsize);
+gdk_export void*	GDKvmalloc  (size_t size, size_t *maxsize, int emergency);
 gdk_export void*	GDKvmrealloc(void* pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *maxsize);
 gdk_export void		GDKvmfree   (void* blk, size_t size, size_t maxsize);
 @
@@ -2175,6 +2175,7 @@ bit & GDKsilent & \\
 int & GDKfatal & (str msg)\\
 int & GDKwarning & (str msg)\\
 int & GDKerror & (str msg)\\
+int & GDKgoterrors & ()\\
 int & GDKsyserror & (str msg)\\
 str & GDKerrbuf & \\
  & GDKsetbuf& (str buf)  \\
@@ -2216,6 +2217,7 @@ gdk_export int	GDKwarning  (const char* format, ... );
 gdk_export int	GDKerror    (const char* format, ... );
 gdk_export int	GDKsyserror (const char* format, ... );
 gdk_export int	GDKfatal    (const char* format, ... );
+gdk_export int	GDKerrorCount ();
 @
 @{
 @h

@@ -567,6 +567,7 @@ int CMDaggrX3_sum_@1_@3(BAT **ret, BAT *b, BAT *e){
 	oid min, max;
 	oid bhsb;
 
+	if( bn == NULL) return GDK_FAIL;
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_sum_@1_@3[@2](b=%s,e=%s);\n",b->batId,e->batId);
 	/* init: set all sums to zero and calculate min/max oid */
 	@:init_result(@3)@
@@ -618,6 +619,7 @@ int CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
 	oid min, max;
 	oid bhsb;
 
+	if( bn == NULL) return GDK_FAIL;
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_prod_@1_@3[@2](b=%s,e=%s);\n",b->batId,e->batId);
 	/* init: set all prods to zero and calculate min/max oid */
 	@:init_result(@3)@
@@ -686,13 +688,16 @@ int CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
 int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, TYPE_dbl, BATcount(e));	
 	int xx;
-	size_t off = BUNindex(bn,BUNfirst(bn));
+	size_t off;
 	size_t *cnt;
 	size_t slots, range;
 	oid min, max;
 	dbl zero = (dbl) 0, *sums;
 	BUN p, q, r;
 	oid bhsb;
+
+	if( bn == NULL) return GDK_FAIL;
+	off = BUNindex(bn,BUNfirst(bn));
 
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_avg_@1[@2](b=%s,e=%s);\n",b->batId,e->batId);
 	/* init: set all sums & counts to zero and calculate min/max oid */
@@ -803,15 +808,20 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 @= extreme_typed
 int aggrX3_@1_@3_@4(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
-	int (*cmp)(ptr,ptr) = BATatoms[bn->ttype].atomCmp;
-	ptr nil = ATOMnilptr(bn->ttype), zero=nil;
+	int (*cmp)(ptr,ptr);
+	ptr nil, zero=nil;
 	int xx;
-	size_t off = BUNindex(bn,BUNfirst(bn));
+	size_t off;
 	ptr *extremes;
 	BUN p, q, r;
 	size_t slots, range;
 	oid min, max;
 	oid bhsb;
+
+	if( bn == NULL) return GDK_FAIL;
+	cmp = BATatoms[bn->ttype].atomCmp;
+	nil =  ATOMnilptr(bn->ttype);
+	off =  BUNindex(bn,BUNfirst(bn));
 
 	(void) zero;		/* silence compiler about unused variable */
 	ALGODEBUG THRprintf(GDKout, "aggrX3_@1_@3_@4[@2](b=%s,e=%s);\n",b->batId,e->batId);
@@ -983,7 +993,10 @@ int CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils){
 	oid min, max;
 	oid bhsb;
 	int btt;
-	ptr bt_nil = ATOMnilptr(b->ttype);
+	ptr bt_nil;
+
+	if( bn == NULL) return GDK_FAIL;
+	bt_nil = ATOMnilptr(b->ttype);
 
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_count(b=%s,e=%s);\n",b->batId,e->batId);
 	/* init: set all counts to zero and calculate min/max oid */
@@ -1027,6 +1040,7 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
 	BUN p, q, r;
 	int xx;
 
+	if( bn == NULL) return GDK_FAIL;
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
@@ -1319,6 +1333,7 @@ int CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 	size_t base, end, w;
 	ssize_t offset;
 
+	if( bn == NULL) return GDK_FAIL;
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_sum3_@1_@2(b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_sum3_@1: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_sum3_@1: head of BAT g must not be nil.\n");
@@ -1410,6 +1425,7 @@ int CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 	size_t base, end, w;
 	ssize_t offset;
 
+	if( bn == NULL) return GDK_FAIL;
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_prod3_@1_@2(b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_prod3_@1: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_prod3_@1: head of BAT g must not be nil.\n");
@@ -1502,7 +1518,7 @@ int CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 	BAT *bn = BATnew(e->htype, TYPE_dbl, BATcount(e));	
 	int xx;
-	size_t off = BUNindex(bn,BUNfirst(bn));
+	size_t off;
 	size_t *cnt;
 	size_t range; 
 	oid min, max; 
@@ -1513,6 +1529,9 @@ int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
   	size_t base, end, w;
   	ssize_t offset;
   	
+	if( bn == NULL) return GDK_FAIL;
+	off = BUNindex(bn,BUNfirst(bn));
+
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_avg3_@1[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_avg3_@1: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil), "CMDaggrX3_avg3_@1: head of BAT g must not be nil.\n");
@@ -1637,10 +1656,10 @@ int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 @= extreme3_typed
 int aggrX3_@13_@3_@4(BAT **ret, BAT *b, BAT *g, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
-	int (*cmp)(ptr,ptr) = BATatoms[bn->ttype].atomCmp;
-	ptr nil = ATOMnilptr(bn->ttype), zero = nil;
+	int (*cmp)(ptr,ptr);
+	ptr nil, zero = nil;
 	int xx;
-	size_t off = BUNindex(bn,BUNfirst(bn));
+	size_t off;
 	ptr *extremes;
 	BUN p, q, r;
 	size_t slots, range;
@@ -1648,6 +1667,11 @@ int aggrX3_@13_@3_@4(BAT **ret, BAT *b, BAT *g, BAT *e){
 	oid bhsb;
   	size_t base, end, w;
   	ssize_t offset;
+
+	if(bn == NULL) return GDK_FAIL;
+	cmp = BATatoms[bn->ttype].atomCmp;
+	nil = ATOMnilptr(bn->ttype);
+	off = BUNindex(bn,BUNfirst(bn));
 
 	(void) zero;		/* silence compiler about unused variable */
 	ALGODEBUG THRprintf(GDKout, "aggrX3_@1_@3_@4[@2](b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
@@ -1844,6 +1868,8 @@ int CMDaggrX3_count3(BAT **ret, BAT *b, BAT* g, BAT *e, bit *ignore_nils){
   	ssize_t offset;
   	int btt;
 	ptr bt_nil = ATOMnilptr(b->ttype);
+
+	if(bn == NULL) return GDK_FAIL;
 
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_count3(b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_count3: BATs b & g must be of equal size.\n");	*/

@@ -184,7 +184,8 @@ BAT *BATnewstorage(int ht, int tt, size_t cap) {
 
 	/* alloc the main heaps */
 	hole_padding = MAX((int)sizeof(int),bn->dims.bunwidth)/bn->dims.bunwidth;
-	HEAPalloc(bn->batBuns, cap+hole_padding, bn->dims.bunwidth);
+	if( HEAPalloc(bn->batBuns, cap+hole_padding, bn->dims.bunwidth))
+		return NULL;
 	ATOMheap(ht,&bn->hheap, cap);
 	ATOMheap(tt,&bn->theap, cap);
 
@@ -216,12 +217,14 @@ BAT *BATnew(int ht, int tt, size_t cap) {
 	cap += 2; 
 
 	b = BATnewstorage(ht, tt, cap); 
+	if(b==NULL) return b;
 	b->hsorted = (bit) ATOMlinear(ht); 
 	b->tsorted = (bit) ATOMlinear(tt);
 
 	return b;
 }
 
+/* This code is obsolete, never used in the V 4.3.17
 BAT *BATtmp(BAT *b, int keys)
 {
 	int	ht ,tt;
@@ -235,7 +238,7 @@ Remap virtual oids (void) automatically to int (ATOMtype).
 	tt = BATttype(b);
 	ht = BAThtype(b);
 
-	cnt = BATbuncount(b) + 2; /* holes */
+	cnt = BATbuncount(b) + 2; 
 	bn = BATnewstorage(ht, tt, cnt); 
 	if (bn == NULL) {
 		return NULL; 
@@ -247,6 +250,7 @@ Remap virtual oids (void) automatically to int (ATOMtype).
 	}
 	return bn; 
 }
+*/
 @- 
 If the BAT runs out of storage for BUNS it will reallocate space.
 For memory mapped BATs we simple extend the administration after
@@ -505,6 +509,7 @@ BAT *batcopy(BAT *b, int ht, int tt, int writeable) {
 			tt = TYPE_oid;
 		}
 		bn = BATnew(ht, tt, BATcount(b));
+		if( bn == NULL) return NULL;
 @-
 In case we are dealing with fixed size atoms, it suffices to
 ensure enough space (already done by BATnew) and a fast memory
@@ -547,14 +552,18 @@ BAT *BATcopy(BAT *b) {
 	BATcheck(b, "BATcopy");
 
  	bn = batcopy(b, b->htype, b->ttype, TRUE);
+	BATcheck(bn, "BATcopy");
 	BATsetaccess(bn, BAT_WRITE);
 	return bn;
 }
 
 BAT *BATrcopy(BAT *b) {
+	BAT *bn;
 	BATcheck(b, "BATrcopy");
 
-	return batcopy(b, b->htype, b->ttype, FALSE);
+	bn = batcopy(b, b->htype, b->ttype, FALSE);
+	BATcheck(bn, "BATcopy");
+	return bn;
 }
 
 @+ BAT Unit Manipulation
@@ -657,6 +666,7 @@ if ((@1) && b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
     *(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b))))
 {
       b = BATmaterialize(b, (size_t) ((double)BATcount(b)*1.2));
+      if( b== NULL) return b;
 }
 @c
 INLINE BAT *BUNinplace(BAT *b, BUN p, ptr h, ptr t);
@@ -890,6 +900,7 @@ BUN BUNdelete(BAT *b, BUN p) {
 		if (p < b->batInserted || p != last  ) {
 			size_t i = BUNindex(b,p);
       			b = BATmaterialize(b, BATcount(b));
+			if( b == NULL) return NULL;
 			p = BUNptr(b,i);
 		}
 	}
@@ -1584,6 +1595,7 @@ BAT *BATsetaccess(BAT *b, int mode) {
 	    if (b->batSharecnt && mode != BAT_READ) {
 	        GDKwarning("BATsetaccess: %s has %d views; deliver a copy.\n", b->batId, b->batSharecnt);
 	        b = BATsetaccess(batcopy(b,b->htype,b->ttype,TRUE),mode); 
+		if( b == NULL) return 0;
 		if (b->batStamp > 0) b->batStamp = -b->batStamp; /* prevent MIL setaccess */
 	    } else {
 		if (mode == BAT_WRITE) {

@@ -551,6 +551,7 @@ bat* strPrelude(void)
 		int i = UTF8_CONVERSIONS; 
 
 		UTF8_toupperBat = BATnew(TYPE_int, TYPE_int, UTF8_CONVERSIONS);
+		if( UTF8_toupperBat == NULL) return NULL;
 		while(--i >= 0) {
 			int lower = UTF8_lower_upper[i].lower;
 			int upper = UTF8_lower_upper[i].upper;
@@ -1106,6 +1107,7 @@ int strSplit(BAT **Res, str s, str sep)
 	BAT *res = BATnew(TYPE_void,TYPE_str, BUFSIZ);
 	oid n = oid_nil;
 	
+	if ( res == NULL) return GDK_FAIL;
 	while(d){
 		char *e = strstr(d, sep);
 		if (!e) break;

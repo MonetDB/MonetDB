@@ -78,8 +78,10 @@ BAT *BATins(BAT *b, BAT *n) {
 	if (BAThdense(b) && b->htype == TYPE_void){
 		oid t = *(oid*)BUNhead(b,BUNlast(b)-BUNsize(b));
 		oid h = *(oid*)BUNhead(n,BUNfirst(n));
-		if ((t+1) != h)
+		if ((t+1) != h){
 			b = BATmaterialize(b, BATcount(b)+ BATcount(n));
+			if( b == NULL) return b;
+		}
 	}
 
 	needed = BATcount(n) - (((b)->batBuns->size - (b)->batBuns->free)/BUNsize(b));
@@ -237,10 +239,12 @@ BAT *BATmark(BAT *b, oid oid_base) {
 			oid *base, cur = oid_base; 
 			bn = BATnew(TYPE_void, TYPE_oid, xx=BATcount(b)); 
 			bn->batBuns->free += xx*sizeof(oid);
+			if (bn == NULL) return NULL;
 			for(base=(oid*) BUNfirst(bn); xx--; cur++,base++) 
 				*base = cur; 
 		} else {
 			bn = BATnew(b->htype, TYPE_void, BATcount(b)); 
+			if (bn == NULL) return NULL;
 			@:updateloop(bn,b,BUNmark)@
 		}
 		ALIGNsetH(bn,b);
@@ -1241,6 +1245,7 @@ int BATordered@3(BAT *b) {
 }
 
 BAT *BATsort@3(BAT *b) {
+	BAT *bn;
 	int tt = b->ttype;
 
 	BATcheck(b, "BATsort@3: BAT"); 
@@ -1264,16 +1269,19 @@ BAT *BATsort@3(BAT *b) {
 	if (BATordered@4(b)) {
 		/* b is ordered in the opposite direction, hence we return a reverted copy of b */
 		/* a void head column must be materialized to oid before reverting */
-		BAT *bn;
 		int ht = b->htype;
 		if (ht == TYPE_void && b->hseqbase != oid_nil) {
 			ht = TYPE_oid;
 		}
 		bn = BATrevert(batcopy(b, ht, tt, TRUE));
+		if( bn == NULL) return bn;
+
 		bn->hsorted = (bit)GDK_SORTED@2;
 		return bn;
         } 
-	return BATorder@3(batcopy(b, b->htype, tt, TRUE));
+	bn = batcopy(b, b->htype, tt, TRUE);
+	if(bn == NULL) return bn;
+	return BATorder@3(bn);
 }
 
 BAT *BATorder@3(BAT *b) {
@@ -1393,6 +1401,7 @@ BAT *BAThashsplit(BAT *b, size_t n, int unary) {
 	}
 
 	metabat = BATnew(TYPE_int, TYPE_bat, n);
+	if( metabat == NULL) return NULL;
 	bn = unary?VIEWhead_(b,b->batRestricted):b;
 	if (n <= 1) {
 	    BUNins(metabat, &i, &bn->batCacheid);
@@ -1450,6 +1459,7 @@ BAT *BATrangesplit(BAT *b, size_t n, int unary) {
 	bn = unary?VIEWhead_(b,b->batRestricted):b;
 	m = BATmirror(b);
 	metabat = BATnew(BATttype(b), TYPE_bat, n);
+	BATcheck(metabat, "BATrangesplit 2");
 	nilval = ATOMnilptr(BATttype(b));
 
 @- 

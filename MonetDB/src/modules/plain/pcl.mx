@@ -280,6 +280,7 @@ int pcl_info(BAT **result){
 		return GDK_FAIL;
 	}
 	*result = BATnew(TYPE_str, TYPE_str, 5);
+	if( *result == NULL) return GDK_FAIL;
 	BUNins(*result, "vendor", info.vendor);
 	BUNins(*result, "family", info.family);
 	BUNins(*result, "model", info.model);
@@ -358,6 +359,7 @@ int pcl_stop(BAT **result, BAT *event){
 		return GDK_FAIL;
 	}
 	*result = BATnew(TYPE_int, TYPE_lng, cnt);
+	if( *result == NULL) return GDK_FAIL;
 	BATloop(event,p,q){
 		int ev = *(int*)BUNhloc(event,p);
 		if (PCL_EVENT_IS_INT(ev)){
@@ -387,6 +389,7 @@ int pcl_stop_rates(BAT **result, BAT *event){
 		return GDK_FAIL;
 	}
 	*result = BATnew(TYPE_int, TYPE_dbl, cnt);
+	if( *result == NULL) return GDK_FAIL;
 	BATloop(event,p,q){
 		int ev = *(int*)BUNhloc(event,p);
 		if (!PCL_EVENT_IS_INT(ev)){
@@ -405,6 +408,7 @@ int pcl_query(BAT **result, BAT *event, int *mode){
 	BUN p,q;
 
 	*result = BATnew(TYPE_int,TYPE_int,cnt);
+	if( *result == NULL) return GDK_FAIL;
 	BATloop(event,p,q){
 		int ev = *(int*)BUNhloc(event,p);
 		clist = ev;

@@ -496,7 +496,7 @@ void BBPinit(void) {
 		size_t size = (size_t) BBPlimit*sizeof(BBPrec);
 		size_t maxsize = (size_t) BBPmaxsize*sizeof(BBPrec);
 
-		BBP = (BBPrec*) GDKvmalloc(size, &maxsize);
+		BBP = (BBPrec*) GDKvmalloc(size, &maxsize,1);
 		MT_alloc_register(BBP, maxsize, 'P');
 		if (BBP && maxsize >= BBPmaxsize*sizeof(BBPrec)) {
 			BBPmaxsize = (int) (maxsize/sizeof(BBPrec));

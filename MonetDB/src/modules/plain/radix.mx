@@ -1119,12 +1119,14 @@ radix_cluster(attr_int,
 int BATuniform(BAT** bn, oid *base, int *size, int *domain) {
         size_t n = (size_t) *size, i, r;
         BAT *b = BATnew(TYPE_oid, TYPE_int, n);
-	char *firstbun = (char *) BUNfirst(b);
+	char *firstbun;
 	int bunsize;		/* initialized in BATloopFast */
         oid bs = *base;
 	int j = 0;
 	BUN p, q;
 
+	if( b == NULL) return GDK_FAIL;
+	firstbun = (char *) BUNfirst(b);
 	/* preset b->batBuns->free to make BATloopFast work */
         b->batBuns->free += n*BUNsize(b);
 	/* create BUNs with uniform distribution */
@@ -1157,13 +1159,18 @@ int BATnormal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mea
 	unsigned int r = (unsigned int) n;
         size_t d = (size_t) *domain;
         BAT *b = BATnew(TYPE_oid, TYPE_int, n);
-	char *firstbun = (char *) BUNfirst(b);
+	char *firstbun;
 	int bunsize;
 	BUN p, q;
   	int m = *mean, s = *stddev; 
 	oid bs = *base; 
-	int *itab = (int *) GDKmalloc(d*sizeof(int));
-	flt *ftab = (flt *) itab, tot = 0.0;
+	int *itab;
+	flt *ftab, tot = 0.0;
+
+	if( b== NULL) return GDK_FAIL;
+	firstbun = (char *) BUNfirst(b);
+	itab = (int *) GDKmalloc(d*sizeof(int));
+	ftab = (flt *) itab;
 
 	/* assert(0 <= *mean && *mean < *size); */
 
@@ -1321,6 +1328,7 @@ int BATinteger(BAT **ret, BAT* b, int *width) {
 		int xx, yy, buf[256];
 		BUN p, q;
 		bn = BATnew(b->htype, tpe, BATcount(b));
+		if( bn == NULL) return GDK_FAIL;
 		BATloopFast(b, p, q, xx) {
 			for(yy=0; yy < *width; yy++) {
 				buf[yy] = *(int*) BUNtail(b,p);
@@ -1422,6 +1430,7 @@ typedef struct {
 
 BAT* quickbat(BAT *b, size_t cap) {
     BAT *bn = BATnew(HTYPE(b), BATttype(b), cap);
+    if( bn == NULL) return NULL;
     bn->hsorted = bn->tsorted = 0;
     if (b->hkey) BATkey(bn,TRUE);
     if (b->tkey) BATkey(BATmirror(bn),TRUE);
@@ -1898,8 +1907,12 @@ radix setting for a certain BAT dataset (tail column).
 int radix_count(BAT **res, BAT* b, int *shift, int *radix) {
     size_t mask = 1 << *radix;
     int off = *shift;
-    BAT *bn = *res = BATnew(TYPE_int, TYPE_int, mask);
-    int bunsize = BUNsize(b);
+    BAT *bn = BATnew(TYPE_int, TYPE_int, mask);
+    int bunsize;
+
+    if( bn == NULL) return GDK_FAIL;
+    *res= bn;
+    bunsize = BUNsize(b);
 
     /* assert(0 <= *radix && *radix < 32); */
     bn->tsorted = 0;
@@ -1941,8 +1954,11 @@ int radix_count2(BAT **res, BAT* b, int *shift, int *radix) {
     int off = *shift;
     BAT *bn = *res = BATnew(TYPE_int, TYPE_int, mask);
     size_t xx;
-    int *cnt = (int*) BUNfirst(bn);
+    int *cnt;
     BUN p, q;
+
+    if( bn == NULL) return GDK_FAIL;
+    cnt = (int*) BUNfirst(bn);
 
     /* assert(0 <= *radix && *radix < 32); */
     /* initialize the result BAT with ascending head and zero counts */
@@ -2118,11 +2134,16 @@ int phash_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate, bit *cutoff)
 {   size_t k, m, rd = (1 << *radix) - 1; 
     size_t estimate = MIN(BATcount(r),BATcount(l))*(*hitrate);
     BAT *bn = BATnew(HTYPE(l), TTYPE(r), estimate);
-    BUN r_end, l_cur = BUNfirst(l), l_last = BUNlast(l);
-    BUN l_end, r_cur = BUNfirst(r), r_last = BUNlast(r);
-    int xx = BUNsize(l), yy= BUNsize(r);
+    BUN r_end, l_cur, l_last;
+    BUN l_end, r_cur, r_last;
+    int xx, yy;
     int rcut = r->hkey || (*cutoff && (*hitrate == 1));
     Hash h;
+
+    if( bn == NULL) return GDK_FAIL;
+    l_cur = BUNfirst(l); l_last = BUNlast(l);
+    r_cur = BUNfirst(r); r_last = BUNlast(r);
+    xx = BUNsize(l); yy= BUNsize(r);
 
     /* alloc hash table */
     h.lim = BATcount(r) >> *radix; /* mean cluster size */
@@ -2224,6 +2245,7 @@ int radix_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate) {
 
     /* set properties on result bat; so we can return in any moment */
     bn = *res = BATnew(HTYPE(l), TTYPE(r), estimate);
+    if(bn == NULL ) return GDK_FAIL;
     bn->hsorted = BAThordered(l);
     bn->tsorted = 0;
     if (l->hkey && r->hkey) BATkey(bn, TRUE);
@@ -2421,6 +2443,7 @@ int radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier) {
     /* init variables for the decluster operation */
     offset = BATcount(b);
     bn = *res = BATnew(TYPE_void, tpe, offset);
+    if( bn == NULL) return GDK_FAIL;
     bn->batBuns->free += offset*width;
     bn->tsorted = 0;
     BATseqbase(bn, lim = 0); /* current oid */
@@ -2655,6 +2678,7 @@ int radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     /* init variables for the decluster operation */
     offset1 = BATcount(b);
     bn = *res = BATnew(TYPE_void, tpe, offset1);
+    if( bn == NULL) return GDK_FAIL;
     bn->batBuns->free += offset1*width;
     bn->tsorted = 0;
     BATseqbase(bn, lim = 0); /* current oid */
@@ -2759,6 +2783,7 @@ int radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     /* init variables for the decluster operation */
     offset1 = BATcount(b);
     bn = *res = BATnew(TYPE_void, tpe, offset1);
+    if( bn == NULL) return GDK_FAIL;
     bn->batBuns->free += offset1*width;
     bn->tsorted = 0;
     BATseqbase(bn, lim = 0); /* current oid */
@@ -2848,6 +2873,7 @@ int radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     /* init variables for the decluster operation */
     offset1 = BATcount(b);
     bn = *res = BATnew(TYPE_void, tpe, offset1);
+    if( bn == NULL) return GDK_FAIL;
     bn->batBuns->free += offset1*width;
     bn->tsorted = 0;
     BATseqbase(bn, lim = 0); /* current oid */
@@ -3350,6 +3376,7 @@ int posjoin_clustered(BAT** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
 		return GDK_FAIL;
 	}
 	bn = *r = BATnew(TYPE_void, v->ttype, c_cnt);
+	if(bn == NULL) return GDK_FAIL;
 	pos = (oid*) BUNtloc(c,BUNfirst(c));
 	res = (BUN) BUNtloc(bn,BUNfirst(bn));
 

@@ -210,6 +210,7 @@ BAT *BATkunique(BAT *b) {
 		BBPreclaim(tmp2);
 	    }
 	    bn = BATnew(BAThtype(b), BATttype(b), cnt);
+	    if( bn == NULL) return NULL;
 	    BATins_kunique(bn, b);
 	}
 
@@ -251,6 +252,7 @@ BAT *BATsunique (BAT *b) {
 		BBPreclaim(tmp2);
 	    }
 	    bn = BATnew(BAThtype(b), BATttype(b), cnt);
+	    if( bn == NULL) return NULL;
 	    BATins_sunique(bn, b);
 	}
 
@@ -476,6 +478,7 @@ BAT *BAT@1@2(BAT *l, BAT *r) {
 	}
 	smaller = @2_size(l,r);
 	bn = BATnew(BAThtype(l), BATttype(l), MAX(smaller,BATTINY)); 
+	if( bn == NULL) return NULL;
 
 	/* fill result bat bn */
 	ALGODEBUG THRprintf(GDKout, "BAT@1@2: BATins_@1@2(bn, l, r);\n");
@@ -563,9 +566,11 @@ BAT *BAT@1union(BAT *l, BAT *r) {
 	}
 	if (l->htype == TYPE_void) {
 		bn = BATmaterialize_(l, BATcount(l)+BATcount(r));
+		if( bn == NULL) return bn;
 	} else if (l->ttype == TYPE_void) {
 		bn = BATmirror(BATmaterialize_(BATmirror(l), 
 			     		      BATcount(l)+BATcount(r)));
+		if( bn == NULL) return bn;
 	} else {
 		bn = BATcopy(l); 
 	}

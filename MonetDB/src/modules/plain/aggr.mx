@@ -482,6 +482,7 @@ int CMDaggr_sum_@1_@3(BAT **ret, BAT *b, BAT *e){
 	int xx;
 	oid i, range, min, max;
 
+	if( bn == NULL) return GDK_FAIL;
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
@@ -522,6 +523,7 @@ int CMDaggr_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
 	int xx;
 	oid i, range, min, max;
 
+	if( bn == NULL) return GDK_FAIL;
 	/* init: set all prods to one */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
@@ -573,12 +575,14 @@ int CMDaggr_prod_@1_@3(BAT **ret, BAT *b, BAT *e){
 int CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, TYPE_dbl, BATcount(e));	
 	int xx;
-	size_t yy = 0, off = BUNindex(bn,BUNfirst(bn));
+	size_t yy = 0, off ;
 	size_t *cnt;
 	oid i, range, min, max; 
 	dbl zero = (dbl) 0, *sums;
 	BUN p, q, r;
 
+	if( bn == NULL) return GDK_FAIL;
+	off = BUNindex(bn,BUNfirst(bn));
 	/* init sums and counts to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
@@ -627,13 +631,31 @@ TODO: add ALGODEBUG and optimize further?
 int CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e) {
 	int nElements = BATcount(e);
 	BAT *bn = BATnew(e->htype, BATttype(b), nElements);	
-	int xx, off = BUNindex(e,BUNfirst(e)), idx=0;
-	int *cnt = (int*) GDKmalloc(nElements*sizeof(int)); 
-	dbl *sum = (dbl*) GDKmalloc(nElements*sizeof(dbl)); 
-	dbl *sumsquares = (dbl*) GDKmalloc(nElements*sizeof(dbl)); 
+	int xx, off, idx=0;
+	int *cnt ;
+	dbl *sum ;
+	dbl *sumsquares ;
 	@1 zero = (@1) 0;
 	BUN p, q, r;
 	oid previousOid = oid_nil;
+
+	if(bn == NULL) return GDK_FAIL;
+	off = BUNindex(e,BUNfirst(e));
+	cnt = (int*) GDKmalloc(nElements*sizeof(int)); 
+	if(cnt == NULL){
+		/* garbage collect to do */
+		return GDK_FAIL;
+	}
+	sum = (dbl*) GDKmalloc(nElements*sizeof(dbl)); 
+	if(sum == NULL){
+		/* garbage collect to do */
+		return GDK_FAIL;
+	}
+	sumsquares = (dbl*) GDKmalloc(nElements*sizeof(dbl)); 
+	if( sumsquares == NULL){
+		/* garbage collect to do */
+		return GDK_FAIL;
+	}
 
 	/* init sums and counts to zero */
 	memset(cnt, 0, nElements*sizeof(int));
@@ -699,13 +721,23 @@ int CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e) {
 @= extreme
 int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
-	int (*cmp)(ptr,ptr) = BATatoms[bn->ttype].atomCmp;
-	ptr nil = ATOMnilptr(bn->ttype);
+	int (*cmp)(ptr,ptr);
+	ptr nil;
 	int xx;
-	size_t yy = 0, off = BUNindex(e,BUNfirst(e));
-	ptr *extremes = (ptr*) GDKmalloc(BATcount(e)*sizeof(ptr)); 
+	size_t yy = 0, off;
+	ptr *extremes;
 	BUN p, q, r;
 
+	if( bn == NULL) return GDK_FAIL;
+	cmp= BATatoms[bn->ttype].atomCmp;
+	nil = ATOMnilptr(bn->ttype);
+	off = BUNindex(e,BUNfirst(e));
+	extremes = (ptr*) GDKmalloc(BATcount(e)*sizeof(ptr)); 
+	if( extremes == NULL) {
+		/* garbage collect */
+		return GDK_FAIL;
+	}
+	
 	/* init: set all extremes to the zero pointer */
 	memset(extremes, 0, BATcount(e)*sizeof(ptr)); 
 
@@ -789,8 +821,12 @@ int CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils){
 	BUN p, q, r;
 	int xx;
 	oid i, range, min, max;
-  	int btt = b->ttype;
-	ptr bt_nil = ATOMnilptr(b->ttype);
+  	int btt;
+	ptr bt_nil;
+
+	if( bn == NULL) return GDK_FAIL;
+	btt = b->ttype;
+	bt_nil = ATOMnilptr(b->ttype);
 
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
@@ -841,6 +877,7 @@ int CMDaggr_size(BAT **ret, BAT *b, BAT *e){
 	BUN p, q, r;
 	int xx;
 
+	if(bn == NULL) return GDK_FAIL;
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);

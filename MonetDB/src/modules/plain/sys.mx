@@ -859,6 +859,7 @@ int view_client_tree(BAT **retval){
 	char buf[4096]; 
 	int i; 
 
+        if (b == 0) return GDK_FAIL;
         for (i = 0; i < MAXCLIENTS; i++) 
             if (monet_clients[i].mode != FINISHED) {
 		Client c = monet_clients + i;
@@ -1247,6 +1248,7 @@ int get_mem_usage(BAT **ret, lng *minsize) {
 	char buf[1024];
 	bat i;
 
+	if( bn == NULL) return GDK_FAIL;
 	BBPlock("get_mem_usage");
 	for(i=1; i <BBPsize; i++) { 
 		BAT *b = BBP_cache(i);
@@ -1335,6 +1337,7 @@ int get_vm_usage(BAT **ret, lng *minsize) {
 	char buf[1024];
 	bat i;
 
+	if( bn == NULL) return GDK_FAIL;
 	BBPlock("get_vm_usage");
 	for(i=1; i <BBPsize; i++) {
 		BAT *b = BBP_cache(i);
@@ -1500,6 +1503,7 @@ int view_gdk_mem_histo(BAT **retval) {
 	BAT *b = BATnew(TYPE_lng, TYPE_lng, GDK_HISTO_MAX_BIT);
 #ifdef GDK_MEM_KEEPHISTO
 	int i;
+	if( b == NULL) return GDK_FAIL;
 	for (i = 3; i < GDK_HISTO_MAX_BIT - 1; i++) {
 		lng j = 1 << i;
 		lng v = (lng) GDK_nmallocs[i]
@@ -1514,6 +1518,7 @@ int view_gdk_vm_histo(BAT **retval) {
 	BAT *b = BATnew(TYPE_lng, TYPE_lng, GDK_HISTO_MAX_BIT);
 #ifdef GDK_VM_KEEPHISTO
 	int i;
+	if( b == NULL) return GDK_FAIL;
 	for (i = 12; i < GDK_HISTO_MAX_BIT - 1; i++) {
 		lng j = 1 << i;
 		lng v = (lng) GDK_vm_nallocs[i]

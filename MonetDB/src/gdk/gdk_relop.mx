@@ -562,6 +562,7 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
         /* not (yet?) completely typ-optimized ! */
         ALGODEBUG THRprintf(GDKout, "BATfetchjoin: defaultvoidfetchjoin(@1,@2,@3): discovered non-density, resuming with non-void head\n");
         bn = BATnew(BAThtype(l), ATOMtype(tpe), BATcount(l));
+	if( bn == NULL) return bn;
         dst = BUNfirst(bn);
         zz = BUNsize(bn);
         BATloopFast(l, l_cur, l_end, xx) {
@@ -643,6 +644,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
                 lht = l->htype;
                 rtt = r->ttype;
                 bn = BATnew(BAThtype(l), BATttype(r), estimate);
+		if( bn == NULL) return bn;
                 ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: " SZFMT "\n",BATcount(l));
                 dst = BUNfirst(bn);
                 zz = BUNsize(bn);
@@ -670,6 +672,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
                         tpe = TYPE_var; /* insert double-eliminated strings as ints */
                 }
                 bn = BATnew(TYPE_void, ATOMtype(tpe), estimate);
+		if(bn==NULL) return bn;
                 ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: " SZFMT "\n",BATcount(l));
                 dst = BUNfirst(bn);
                 zz = BUNsize(bn);
@@ -723,6 +726,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
                 /* nil join column => empty result */
 		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && BATtvoid(l) && l->tseqbase == oid_nil\n");
                 bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), 10);
+		if(bn==NULL) return bn;
                 ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: %d\n",10);
         }
         /* property propagation */
@@ -861,6 +865,7 @@ BAT *BATouterjoin(BAT *l, BAT *r, size_t estimate) {
 	if (BAThdense(l) && BAThkey(r)) {
 		if (estimate == oid_nil) estimate = BATcount(l);
 		bn = BATnew(TYPE_void, ATOMtype(r->ttype), estimate);
+		if(bn==NULL) return bn;
         	ESTIDEBUG THRprintf(GDKout, "BATouterjoin: estimated resultsize: " SZFMT "\n", estimate);
 		BATseqbase(bn, l->hseqbase);
 	}
@@ -1169,6 +1174,7 @@ BAT *BATbinsemijoin(BAT *l, BAT *r, BAT *cpy) {
 
 	if (!(BAThordered(r)&1)) {
 		del = r = BATsort(r);
+		if( del == NULL) return NULL;
 	}
 
 	switch(loc=var=ATOMstorage(l->htype)) {
@@ -1390,6 +1396,7 @@ BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy) {
         base = BUNindex(r, BUNfirst(r));
         end = base + BATcount(r);
         bn = BATnew(BAThtype(cpy), BATttype(cpy), MIN(BATcount(r), BATcount(l)));
+	if(bn==NULL) return bn;
   	ESTIDEBUG THRprintf(GDKout, "BATfetchsemijoin: estimated resultsize: " SZFMT "\n",MIN(BATcount(r), BATcount(l)));
         if (bn == NULL) {
                 return NULL;

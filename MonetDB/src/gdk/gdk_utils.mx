@@ -620,7 +620,9 @@ GDKmtrace(bit *enable) {
 	if(*enable) {
 		if(memBat == NULL) {
 			memBat   = BATnew(TYPE_ptr,TYPE_int,16384);
+			if( membat == NULL) return GDK_FAIL;
 			stackBat = BATnew(TYPE_ptr,TYPE_ptr,16384);
+			if( stackbat == NULL) return GDK_FAIL;
 			BBPrename(memBat->batCacheid,"mem_trace");
 			BBPrename(stackBat->batCacheid,"mem_stack");
 			memBat->hsorted = memBat->tsorted = 0;
@@ -895,7 +897,7 @@ void GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget) {
 
 
 INLINE
-void* GDKmallocmax(size_t size, size_t *maxsize) {
+void* GDKmallocmax(size_t size, size_t *maxsize, int emergency) {
 	ssize_t *s;
 
         if (size == 0) {
@@ -909,7 +911,8 @@ void* GDKmallocmax(size_t size, size_t *maxsize) {
 	if (size > GDK_mem_bigsize) {
 		size_t newsize = size + sizeof(size_t)+sizeof(size_t);
 		size_t newmax = MAX(*maxsize, newsize);
-		s = (ssize_t*) GDKvmalloc(newsize, &newmax);
+		s = (ssize_t*) GDKvmalloc(newsize, &newmax, emergency);
+		if( s==0 && emergency == 0) return s;
 		MT_alloc_register(s, *maxsize, 'S');
 		s += 2;
 		s[-2] = (ssize_t) newmax;
@@ -935,7 +938,7 @@ void* GDKmallocmax(size_t size, size_t *maxsize) {
 }
 
 void* GDKmalloc(size_t size) {
-	return GDKmallocmax(size, &size);
+	return GDKmallocmax(size, &size, 1);
 }
 	
  
@@ -969,7 +972,7 @@ ptr GDKreallocmax(void* blk, size_t size, size_t *maxsize) {
 	ssize_t oldsize, *s = (ssize_t*) blk;
 
         if (s == NULL) {
-		return GDKmallocmax(size, maxsize);
+		return GDKmallocmax(size, maxsize,1);
 	}
 #ifdef GDK_MEM_NULLALLOWED
         if (size == 0) {
@@ -1023,7 +1026,7 @@ ptr GDKreallocmax(void* blk, size_t size, size_t *maxsize) {
 	else
 #endif
 	oldsize = MIN(size, (size_t) (oldsize - 8));
-        blk = (void* ) GDKmallocmax(size, maxsize);
+        blk = (void* ) GDKmallocmax(size, maxsize,1);
         memcpy(blk, s, oldsize);
         GDKfree(s);
         return (void*) blk;
@@ -1086,13 +1089,17 @@ int GDKmunmap(void* addr, size_t size) {
  
 @- VM alloc
 this affects both physical and logical memory resources.
+The emergency flag can be set to force a fatal error if needed.
+Otherwise, the caller is able to deal with the lack of memory.
 @c
-void* GDKvmalloc(size_t size, size_t *maxsize) {
+void* GDKvmalloc(size_t size, size_t *maxsize, int emergency) {
 	void *ret = MT_vmalloc(size, maxsize);
         if (ret == NULL) {
-                GDKmemfail("GDKvmalloc", size, BBPTRIM_ALL, BBPTRIM_ALL);
+		if( emergency )
+			GDKmemfail("GDKvmalloc", size, BBPTRIM_ALL, BBPTRIM_ALL);
                 ret = MT_vmalloc(size, maxsize);
                 if (ret == NULL) {
+			if( emergency == 0) return ret;
                         MT_alloc_print();
                         GDKfatal("GDKvmalloc failed for %u bytes",size);
                 } else {
@@ -1206,6 +1213,7 @@ int GDKinit(char *dbname, char *dbfarm, int alloc_map) {
 	GDKremovedir(DELDIR);  
 	BBPinit(); 
 	GDKenv = BATnew(TYPE_str,TYPE_str,100);
+	if(GDKenv==NULL) GDKfatal("Could not create BAT");
 	BATrename(GDKenv, "monet_environment");
 	BATmode(GDKenv, TRANSIENT);
 
@@ -1363,14 +1371,22 @@ A non-fatal error returns a message to the user
 and aborts the current transaction.
 Fatal errors are also recorded on the system log for post-mortem
 analysis.
+In non-silent mode the errors are immediately sent to output,
+which makes it hard for upper layers to detect if an error
+was produced in the process. To facilitate such testing,
+a global error count is maintained on a thread basis,
+which can be read out by the function GDKerrorCount();
+
 @c
 int GDKsilent = 0;
+static int    THRerrorcount[THREADDATA];
 
 /* do the real work for GDKaddbuf below. */
 static void doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const char *suffix)
 {
 	char *buf = GDKerrbuf;
 
+	THRerrorcount[THRgettid()]++;
 	if (buf) {
 		char *dst = buf + strlen(buf);
 		size_t maxlen = GDKMAXERRLEN - (dst - buf) - 1;
@@ -1575,6 +1591,10 @@ Real errors should be saved in the lock file for post-crash inspection.
 #endif
 	return -1;
 }
+int GDKerrorCount(){
+	return THRerrorcount[THRgettid()];
+}
+
 
 @- Timers
 The following relative timers are available for inspection.

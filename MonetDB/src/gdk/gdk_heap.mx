@@ -115,7 +115,9 @@ int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
 	}
 	if (h->filename == NULL || (h->size < GDK_vm_minsize)) {
         	h->storage = STORE_MEM;
-                h->base = (char *) GDKmallocmax(h->size, &h->maxsize);
+                h->base = (char *) GDKmallocmax(h->size, &h->maxsize,0);
+		if( h->base == 0)
+			GDKerror("Insufficient space for HEAP.");
 	}
 	if (h->filename && h->base == NULL) {
         	char privext[PATHLENGTH], *of = h->filename;

@@ -1388,6 +1388,7 @@ int CMDlike(BAT **ret, BAT* b, str s) {
 	BUN	u, v;
 	int 	xx, yy=0;
 
+	if( c == NULL ) return GDK_FAIL;
 	for(s=t; *s; s++,yy++)
 		*s = tolower(*s);
 	
