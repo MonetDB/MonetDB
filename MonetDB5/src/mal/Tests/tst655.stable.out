@@ -36,7 +36,7 @@ function Admin.main():int;	# 0  (main:int)
     bat.insert(b2,"hello world");	# 6 BKCinsert_void_bun ($13:void)<-(b2:bat[:void,:str])($14:str)
     bat.insert(b2,"goodbye world");	# 7 BKCinsert_void_bun ($15:void)<-(b2:bat[:void,:str])($16:str)
     tablet.setFormat(b1,b2);	# 8 TABsetFormat ($17:void)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
-    tablet.setStream(s);	# 9 TABsetStream ($18:void)<-(s:str)
+    tablet.setStream(s);	# 9 TABsetStream ($18:void)<-(s:stream)
     tablet.setProperties("name,type,dense,sorted,key,min,max");	# 10 TABsetProperties ($20:int)<-($21:str)
     tablet.display(b1,b2);	# 11 TABdisplayTable ($22:int)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
 end main;	# 12  

@@ -28,3 +28,6 @@ e:= str("nil");	print(e);
 f:= 'Z';	print(f);
 f:= chr(nil);	print(f);
 f:= chr("X");	print(f);
+
+p:= 0:ptr;  print(p);
+p:= 1:ptr;  print(p);

@@ -1,4 +1,5 @@
 # syntax analysis test for guarded blocks, redo's and leave's
+# forcefully end the block, because the parser counts barrier/exit pairs
 barrier	L:= 1;
 	#do it
 	leave Z;	# not known in block
@@ -32,3 +33,4 @@ barrier A:=1;
 exit	A;
 barrier  unfinished:= 1;
 	f:=1;
+end;

@@ -92,7 +92,11 @@ function Admin.main():int;	# 0  (main:int)
     io.print(f);	# 46 IOprint_val ($48:int)<-(f:chr)
     f := calc.chr("X");	# 47 CALCstr2chr (f:chr)<-($49:str)
     io.print(f);	# 48 IOprint_val ($50:int)<-(f:chr)
-end main;	# 49  
+    p := 0:ptr;	# 49  (p:ptr)<-($52:ptr)
+    io.print(p);	# 50 IOprint_val ($53:int)<-(p:ptr)
+    p := 1:ptr;	# 51  (p:ptr)<-($54:ptr)
+    io.print(p);	# 52 IOprint_val ($55:int)<-(p:ptr)
+end main;	# 53  
 [ nil ]
 [ 23 ]
 [ nil ]
@@ -117,6 +121,9 @@ end main;	# 49
 [ Z ]
 [ nil ]
 [ X ]
+[ 0 ]
+[ 1 ]
+#
 
 # 07:58:44 >  
 # 07:58:44 >  Done.
