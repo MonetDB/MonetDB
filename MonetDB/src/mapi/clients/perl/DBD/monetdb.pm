@@ -240,11 +240,11 @@ sub get_info {
 sub monetdb_catalog_info {
     my($dbh) = @_;
     my $sql = <<'SQL';
-select cast( null as varchar ) as table_cat
-     , cast( null as varchar ) as table_schem
-     , cast( null as varchar ) as table_name
-     , cast( null as varchar ) as table_type
-     , cast( null as varchar ) as remarks
+select cast( null as varchar( 128 ) ) as table_cat
+     , cast( null as varchar( 128 ) ) as table_schem
+     , cast( null as varchar( 128 ) ) as table_name
+     , cast( null as varchar( 254 ) ) as table_type
+     , cast( null as varchar( 254 ) ) as remarks
  where 0 = 1
  order by table_cat
 SQL
@@ -257,11 +257,11 @@ SQL
 sub monetdb_schema_info {
     my($dbh) = @_;
     my $sql = <<'SQL';
-select cast( null as varchar ) as table_cat
-     , "name"                  as table_schem
-     , cast( null as varchar ) as table_name
-     , cast( null as varchar ) as table_type
-     , cast( null as varchar ) as remarks
+select cast( null as varchar( 128 ) ) as table_cat
+     , "name"                         as table_schem
+     , cast( null as varchar( 128 ) ) as table_name
+     , cast( null as varchar( 254 ) ) as table_type
+     , cast( null as varchar( 254 ) ) as remarks
   from sys."schemas"
  order by table_schem
 SQL
@@ -283,17 +283,17 @@ sub monetdb_tabletype_info {
     my($dbh) = @_;
     my $sql = <<"SQL";
 select distinct
-       cast( null as varchar ) as table_cat
-     , cast( null as varchar ) as table_schem
-     , cast( null as varchar ) as table_name
+       cast( null as varchar( 128 ) ) as table_cat
+     , cast( null as varchar( 128 ) ) as table_schem
+     , cast( null as varchar( 128 ) ) as table_name
      , case
-         when $ttp->{'TABLE'          } then cast('TABLE'               as varchar )
-         when $ttp->{'SYSTEM TABLE'   } then cast('SYSTEM TABLE'        as varchar )
-         when $ttp->{'LOCAL TEMPORARY'} then cast('LOCAL TEMPORARY'     as varchar )
-         when $ttp->{'VIEW'           } then cast('VIEW'                as varchar )
-         else                                cast('INTERNAL TABLE TYPE' as varchar )
-       end                     as table_type
-     , cast( null as varchar ) as remarks
+         when $ttp->{'TABLE'          } then cast('TABLE'               as varchar( 254 ) )
+         when $ttp->{'SYSTEM TABLE'   } then cast('SYSTEM TABLE'        as varchar( 254 ) )
+         when $ttp->{'LOCAL TEMPORARY'} then cast('LOCAL TEMPORARY'     as varchar( 254 ) )
+         when $ttp->{'VIEW'           } then cast('VIEW'                as varchar( 254 ) )
+         else                                cast('INTERNAL TABLE TYPE' as varchar( 254 ) )
+       end                            as table_type
+     , cast( null as varchar( 254 ) ) as remarks
   from sys."tables" t
  order by table_type
 SQL
@@ -306,17 +306,17 @@ SQL
 sub monetdb_table_info {
     my($dbh, $c, $s, $t, $tt) = @_;
     my $sql = <<"SQL";
-select cast( null     as varchar ) as table_cat
-     , cast( s."name" as varchar ) as table_schem
-     , cast( t."name" as varchar ) as table_name
+select cast( null as varchar( 128 ) ) as table_cat
+     , s."name"                       as table_schem
+     , t."name"                       as table_name
      , case
-         when $ttp->{'TABLE'          } then cast('TABLE'               as varchar )
-         when $ttp->{'SYSTEM TABLE'   } then cast('SYSTEM TABLE'        as varchar )
-         when $ttp->{'LOCAL TEMPORARY'} then cast('LOCAL TEMPORARY'     as varchar )
-         when $ttp->{'VIEW'           } then cast('VIEW'                as varchar )
-         else                                cast('INTERNAL TABLE TYPE' as varchar )
-       end                         as table_type
-     , cast( null     as varchar ) as remarks
+         when $ttp->{'TABLE'          } then cast('TABLE'               as varchar( 254 ) )
+         when $ttp->{'SYSTEM TABLE'   } then cast('SYSTEM TABLE'        as varchar( 254 ) )
+         when $ttp->{'LOCAL TEMPORARY'} then cast('LOCAL TEMPORARY'     as varchar( 254 ) )
+         when $ttp->{'VIEW'           } then cast('VIEW'                as varchar( 254 ) )
+         else                                cast('INTERNAL TABLE TYPE' as varchar( 254 ) )
+       end                            as table_type
+     , cast( null as varchar( 254 ) ) as remarks
   from sys."schemas" s
      , sys."tables"  t
  where t."schema_id" = s."id"
@@ -365,30 +365,30 @@ sub table_info {
 sub column_info {
     my($dbh, $catalog, $schema, $table, $column) = @_;
     my $sql = <<'SQL';
-select cast( null            as varchar  ) as table_cat
-     , cast( s."name"        as varchar  ) as table_schem
-     , cast( t."name"        as varchar  ) as table_name
-     , cast( c."name"        as varchar  ) as column_name
-     , cast( 0               as smallint ) as data_type          -- TODO
-     , cast( c."type"        as varchar  ) as type_name          -- TODO
-     , cast( c."type_digits" as integer  ) as column_size        -- TODO
-     , cast( null            as integer  ) as buffer_length      -- TODO
-     , cast( c."type_scale"  as smallint ) as decimal_digits     -- TODO
-     , cast( null            as smallint ) as num_prec_radix     -- TODO
+select cast( null            as varchar( 128 ) ) as table_cat
+     , s."name"                                  as table_schem
+     , t."name"                                  as table_name
+     , c."name"                                  as column_name
+     , cast( 0               as smallint       ) as data_type          -- TODO
+     , c."type"                                  as type_name          -- TODO
+     , cast( c."type_digits" as integer        ) as column_size        -- TODO
+     , cast( null            as integer        ) as buffer_length      -- TODO
+     , cast( c."type_scale"  as smallint       ) as decimal_digits     -- TODO
+     , cast( null            as smallint       ) as num_prec_radix     -- TODO
      , case c."null"
          when false then cast( 0 as smallint )  -- SQL_NO_NULLS
          when true  then cast( 1 as smallint )  -- SQL_NULLABLE
-       end                                 as nullable
-     , cast( null            as varchar  ) as remarks
-     , cast( c."default"     as varchar  ) as column_def
-     , cast( 0               as smallint ) as sql_data_type      -- TODO
-     , cast( null            as smallint ) as sql_datetime_sub   -- TODO
-     , cast( null            as integer  ) as char_octet_length  -- TODO
-     , cast( c."number" + 1  as integer  ) as ordinal_position
+       end                                       as nullable
+     , cast( null            as varchar( 254 ) ) as remarks
+     , c."default"                               as column_def
+     , cast( 0               as smallint       ) as sql_data_type      -- TODO
+     , cast( null            as smallint       ) as sql_datetime_sub   -- TODO
+     , cast( null            as integer        ) as char_octet_length  -- TODO
+     , cast( c."number" + 1  as integer        ) as ordinal_position
      , case c."null"
-         when false then cast('NO'  as varchar )
-         when true  then cast('YES' as varchar )
-       end                                 as is_nullable
+         when false then cast('NO'  as varchar( 254 ) )
+         when true  then cast('YES' as varchar( 254 ) )
+       end                                       as is_nullable
   from sys."schemas" s
      , sys."tables"  t
      , sys."columns" c
@@ -412,12 +412,12 @@ sub primary_key_info {
     return $dbh->set_err(-1,'Undefined schema','HY009') unless defined $schema;
     return $dbh->set_err(-1,'Undefined table' ,'HY009') unless defined $table;
     my $sql = <<'SQL';
-select cast( null        as varchar  ) as table_cat
-     , cast( s."name"    as varchar  ) as table_schem
-     , cast( t."name"    as varchar  ) as table_name
-     , cast( c."column"  as varchar  ) as column_name
-     , cast( c."nr" + 1  as smallint ) as key_seq
-     , cast( k."name"    as varchar  ) as pk_name
+select cast( null        as varchar( 128 ) ) as table_cat
+     , s."name"                              as table_schem
+     , t."name"                              as table_name
+     , c."column"                            as column_name
+     , cast( c."nr" + 1  as smallint       ) as key_seq
+     , k."name"                              as pk_name
   from sys."schemas"     s
      , sys."tables"      t
      , sys."keys"        k
@@ -440,25 +440,25 @@ SQL
 sub foreign_key_info {
     my($dbh, $c1, $s1, $t1, $c2, $s2, $t2) = @_;
     my $sql = <<'SQL';
-select cast( null         as varchar  ) as uk_table_cat
-     , cast( uks."name"   as varchar  ) as uk_table_schem
-     , cast( ukt."name"   as varchar  ) as uk_table_name
-     , cast( ukc."column" as varchar  ) as uk_column_name
-     , cast( null         as varchar  ) as fk_table_cat
-     , cast( fks."name"   as varchar  ) as fk_table_schem
-     , cast( fkt."name"   as varchar  ) as fk_table_name
-     , cast( fkc."column" as varchar  ) as fk_column_name
-     , cast( fkc."nr" + 1 as smallint ) as ordinal_position
-     , cast( 3            as smallint ) as update_rule    -- SQL_NO_ACTION
-     , cast( 3            as smallint ) as delete_rule    -- SQL_NO_ACTION
-     , cast( fkk."name"   as varchar  ) as fk_name
-     , cast( ukk."name"   as varchar  ) as uk_name
-     , cast( 7            as smallint ) as deferability   -- SQL_NOT_DEFERRABLE
+select cast( null         as varchar( 128 ) ) as uk_table_cat
+     , uks."name"                             as uk_table_schem
+     , ukt."name"                             as uk_table_name
+     , ukc."column"                           as uk_column_name
+     , cast( null         as varchar( 128 ) ) as fk_table_cat
+     , fks."name"                             as fk_table_schem
+     , fkt."name"                             as fk_table_name
+     , fkc."column"                           as fk_column_name
+     , cast( fkc."nr" + 1 as smallint       ) as ordinal_position
+     , cast( 3            as smallint       ) as update_rule    -- SQL_NO_ACTION
+     , cast( 3            as smallint       ) as delete_rule    -- SQL_NO_ACTION
+     , fkk."name"                             as fk_name
+     , ukk."name"                             as uk_name
+     , cast( 7            as smallint       ) as deferability   -- SQL_NOT_DEFERRABLE
      , case  ukk."type"
-         when 0 then cast('PRIMARY'   as varchar )
-         when 1 then cast('UNIQUE'    as varchar )
-         else        cast( ukk."type" as varchar )
-       end                              as unique_or_primary
+         when 0 then cast('PRIMARY'   as varchar( 7 ) )
+         when 1 then cast('UNIQUE'    as varchar( 7 ) )
+         else        cast( ukk."type" as varchar( 7 ) )
+       end                                    as unique_or_primary
   from sys."schemas"    uks
      , sys."tables"     ukt
      , sys."keys"       ukk
