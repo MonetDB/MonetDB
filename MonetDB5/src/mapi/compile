@@ -1,0 +1,9 @@
+cc sample0.c -I$MONET_PREFIX/include/common -I$MONET_PREFIX/include/mapi -Wl,$MONET_PREFIX/lib/MonetDB/libMapi.so -Wl,$MONET_PREFIX/lib/libstream.so -Wl,--rpath -Wl,$MONET_PREFIX/lib/MonetDB:$MONET_PREFIX/lib -o sample0
+
+cc sample1.c -I$MONET_PREFIX/include/common -I$MONET_PREFIX/include/mapi -Wl,$MONET_PREFIX/lib/MonetDB/libMapi.so -Wl,$MONET_PREFIX/lib/libstream.so -Wl,--rpath -Wl,$MONET_PREFIX/lib/MonetDB:$MONET_PREFIX/lib -o sample1
+
+cc sample2.c -I$MONET_PREFIX/include/common -I$MONET_PREFIX/include/mapi -Wl,$MONET_PREFIX/lib/MonetDB/libMapi.so -Wl,$MONET_PREFIX/lib/libstream.so -Wl,--rpath -Wl,$MONET_PREFIX/lib/MonetDB:$MONET_PREFIX/lib -o sample2
+
+cc sample3.c -I$MONET_PREFIX/include/common -I$MONET_PREFIX/include/mapi -Wl,$MONET_PREFIX/lib/MonetDB/libMapi.so -Wl,$MONET_PREFIX/lib/libstream.so -Wl,--rpath -Wl,$MONET_PREFIX/lib/MonetDB:$MONET_PREFIX/lib -o sample3
+
+cc sample4.c -I$MONET_PREFIX/include/common -I$MONET_PREFIX/include/mapi -Wl,$MONET_PREFIX/lib/MonetDB/libMapi.so -Wl,$MONET_PREFIX/lib/libstream.so -Wl,--rpath -Wl,$MONET_PREFIX/lib/MonetDB:$MONET_PREFIX/lib -o sample4
