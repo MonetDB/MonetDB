@@ -1,0 +1,54 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(2000000));
+	aa_a := oid(2000000);
+	ba_a := setoid(aa_a);
+#var k100_unique1 := bat("k100_unique1");
+	k100_unique1 := new("k100_unique1");
+#var b:=k100_unique1.copy();
+	b := copy(k100_unique1,);
+#printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");var c:=join(b.reverse(),k100_unique1);
+	ca_a := printf("#~BeginVariableOutput~#\n");
+	da_a := cpu();
+	ea_a := print(da_a,);
+	fa_a := printf("#~EndVariableOutput~#\n");
+	ga_a := reverse(b,);
+	c := join(ga_a,k100_unique1);
+#printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
+	ha_a := printf("#~BeginVariableOutput~#\n");
+	ia_a := cpu();
+	ja_a := print(ia_a,);
+	ka_a := printf("#~EndVariableOutput~#\n");
+#var d:=join(b.reverse(),k100_unique1);
+	la_a := reverse(b,);
+	d := join(la_a,k100_unique1);
+#printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
+	ma_a := printf("#~BeginVariableOutput~#\n");
+	na_a := cpu();
+	oa_a := print(na_a,);
+	pa_a := printf("#~EndVariableOutput~#\n");
+#commit();
+	qa_a := commit();
+#printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
+	ra_a := printf("#~BeginVariableOutput~#\n");
+	sa_a := cpu();
+	ta_a := print(sa_a,);
+	ua_a := printf("#~EndVariableOutput~#\n");
+#printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");printf("#~BeginVariableOutput~#\n"); io.print(); printf("#~EndVariableOutput~#\n");
+	va_a := printf("#~BeginVariableOutput~#\n");
+	wa_a := memory();
+	xa_a := print(wa_a,);
+	ya_a := printf("#~EndVariableOutput~#\n");
+	ab_a := printf("#~BeginVariableOutput~#\n");
+	io:= mil.take("io");
+	bb_a := print(io,);
+	cb_a := printf("#~EndVariableOutput~#\n");
+#quit();
+	db_a := quit();

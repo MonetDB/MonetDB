@@ -1,0 +1,67 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+#unknown("hello");
+	ca_a := unknown("hello");
+function c():void;
+#proc c() : void { clock().print();}
+	da_a := clock();
+	ea_a := print(da_a,);
+end c;
+#c();
+	fa_a := c();
+#c();
+	ga_a := c();
+function c():void;
+#proc c(): void { clock.print();}
+	clock:= mil.take("clock");
+	ha_a := print(clock,);
+end c;
+#c();
+	ia_a := c();
+function c():void;
+#proc c() : void { cpu().print();}
+	ja_a := cpu();
+	ka_a := print(ja_a,);
+end c;
+#printf("#~BeginVariableOutput~#\n"); c(); printf("#~EndVariableOutput~#\n");
+	la_a := printf("#~BeginVariableOutput~#\n");
+	ma_a := c();
+	na_a := printf("#~EndVariableOutput~#\n");
+function echo(,echo:any...):void;
+#proc echo(..any..) : void { $1.print();}
+	oa_a := print($1,);
+end echo;
+#echo(1);
+	pa_a := echo(1);
+#echo("hello");
+	qa_a := echo("hello");
+#echo(12,13);
+	ra_a := echo(12,13);
+#echo();
+	sa_a := echo();
+function echo(,echo:any...):void;
+#proc echo(..any..) : void { $3.print();}
+	ta_a := print($3,);
+end echo;
+#echo(1);
+	ua_a := echo(1);
+#echo(1,2,3);
+	va_a := echo(1,2,3);
+function forward():void;
+end forward;
+#forward();
+	wa_a := forward();
+#forward();
+	xa_a := forward();
+#quit();
+	ya_a := quit();

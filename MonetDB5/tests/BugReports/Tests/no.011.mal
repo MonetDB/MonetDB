@@ -1,0 +1,82 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#var f := new(int, 0);
+	f := new(:int,0);
+#f.insert(1,10);
+	aa_a := insert(f,1,10);
+#f.insert(2,20);
+	ba_a := insert(f,2,20);
+#f.insert(3,30);
+	ca_a := insert(f,3,30);
+#f.print();
+	da_a := print(f,);
+#f@batloop()  { $head.print(); $tail.print(); }
+barrier	ea_a := bunStream(f,ea_aH,ea_aT);
+	fa_a := print(ea_aH,);
+	ga_a := print(ea_aT,);
+redo	ea_a;
+exit	ea_a;
+#var h := new(int, void);
+	h := new(:int,:void);
+#h.insert(1,void(10));
+	ha_a := void(10);
+	ia_a := insert(h,1,ha_a);
+#h.insert(2,void(20));
+	ja_a := void(20);
+	ka_a := insert(h,2,ja_a);
+#h.insert(3,void(30));
+	la_a := void(30);
+	ma_a := insert(h,3,la_a);
+#h.print();
+	na_a := print(h,);
+#h@batloop()  { $head.print(); $tail.print(); }
+barrier	oa_a := bunStream(h,oa_aH,oa_aT);
+	pa_a := print(oa_aH,);
+	qa_a := print(oa_aT,);
+redo	oa_a;
+exit	oa_a;
+#var k := new(int, void);
+	k := new(:int,:void);
+#k.insert(1,void(nil));
+	nil:= mil.take("nil");
+	ra_a := void(nil);
+	sa_a := insert(k,1,ra_a);
+#k.insert(2,void(nil));
+	ta_a := void(nil);
+	ua_a := insert(k,2,ta_a);
+#k.insert(3,void(nil));
+	va_a := void(nil);
+	wa_a := insert(k,3,va_a);
+#k.print();
+	xa_a := print(k,);
+#k@batloop()  { $head.print(); $tail.print(); }
+barrier	ya_a := bunStream(k,ya_aH,ya_aT);
+	ab_a := print(ya_aH,);
+	bb_a := print(ya_aT,);
+redo	ya_a;
+exit	ya_a;
+#var g := new(int, int);
+	g := new(:int,:int);
+#g.insert(1,10);
+	cb_a := insert(g,1,10);
+#g.insert(2,20);
+	db_a := insert(g,2,20);
+#g.insert(3,30);
+	eb_a := insert(g,3,30);
+#g.print();
+	fb_a := print(g,);
+#g@batloop()  { $head.print(); $tail.print(); }
+barrier	gb_a := bunStream(g,gb_aH,gb_aT);
+	hb_a := print(gb_aH,);
+	ib_a := print(gb_aT,);
+redo	gb_a;
+exit	gb_a;
+#quit();
+	jb_a := quit();

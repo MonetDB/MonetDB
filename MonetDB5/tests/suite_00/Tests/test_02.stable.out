@@ -1,0 +1,164 @@
+stdout of test 'test_02` in directory 'tests/suite_00` itself:
+
+
+# 15:33:21 >  
+# 15:33:21 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  < test_02.milS
+# 15:33:21 >  
+
+# Monet Database Server V4.3.13
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+setoid(oid(20000000));
+var s:= new(str,int);
+insert(s,"hello",1);
+print(find(s,"hello"));
+[ 1 ]
+insert(s,"bello",2);
+insert(s,"cello",3);
+insert(s,"dello",4);
+insert(s,"eello",5);
+insert(s,"fello",6);
+insert(s,"gello",7);
+insert(s,"hello",8);
+printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutput~#\n");
+#~BeginVariableOutput~#
+#-------------------------------------------------#
+# BAT:				  tmp_29	  #
+# (str)				  (str)		  #
+#-------------------------------------------------#
+[ "version",			  "980714"	  ]
+[ "batId",			  "tmp_29"	  ]
+[ "batCacheid",			  "29"		  ]
+[ "batParentid",		  "0"		  ]
+[ "batSharecnt",		  "0"		  ]
+[ "head",			  "str"		  ]
+[ "tail",			  "int"		  ]
+[ "batPersistence",		  "transient"	  ]
+[ "batRestricted",		  "updatable"	  ]
+[ "batRefcnt",			  "1"		  ]
+[ "batLRefcnt",			  "1"		  ]
+[ "batDirty",			  "dirty"	  ]
+[ "batSet",			  "0"		  ]
+[ "void_tid",			  "0"		  ]
+[ "void_cnt",			  "0"		  ]
+[ "hsorted",			  "0"		  ]
+[ "hident",			  "h"		  ]
+[ "hdense",			  "0"		  ]
+[ "hseqbase",			  "0@0"		  ]
+[ "hkey",			  "0"		  ]
+[ "hloc",			  "0"		  ]
+[ "hvarsized",			  "1"		  ]
+[ "halign",			  "20000029"	  ]
+[ "halignflushed",		  "20000000"	  ]
+[ "tident",			  "t"		  ]
+[ "tdense",			  "0"		  ]
+[ "tseqbase",			  "0@0"		  ]
+[ "tsorted",			  "65"		  ]
+[ "tkey",			  "1"		  ]
+[ "tloc",			  "4"		  ]
+[ "tvarsized",			  "0"		  ]
+[ "talign",			  "20000028"	  ]
+[ "talignflushed",		  "20000001"	  ]
+[ "batInserted",		  "1"		  ]
+[ "batDeleted",			  "0"		  ]
+[ "batHole",			  "0"		  ]
+[ "top",			  "9"		  ]
+[ "batStamp",			  "-167"	  ]
+[ "lastUsed",			  "3051"	  ]
+[ "keepAround",			  "0"		  ]
+[ "curStamp",			  "175"		  ]
+[ "batCopiedtodisk",		  "0"		  ]
+[ "batDirtydesc",		  "dirty"	  ]
+[ "batDirtybuns",		  "clean"	  ]
+[ "batBuns.free",		  "72"		  ]
+[ "batBuns.size",		  "424"		  ]
+[ "batBuns.maxsize",		  "424"		  ]
+[ "batBuns.storage",		  "malloced"	  ]
+[ "batBuns.filename",		  "29.buns"	  ]
+[ "batBuns.offset",		  "0"		  ]
+[ "hheapdirty",			  "clean"	  ]
+[ "hheap.free",			  "4180"	  ]
+[ "hheap.size",			  "4724"	  ]
+[ "hheap.maxsize",		  "4724"	  ]
+[ "hheap.storage",		  "malloced"	  ]
+[ "hheap.filename",		  "29.hheap"	  ]
+[ "hheap.offset",		  "0"		  ]
+[ "theapdirty",			  "clean"	  ]
+[ "theap.free",			  "0"		  ]
+[ "theap.size",			  "0"		  ]
+[ "theap.maxsize",		  "0"		  ]
+[ "theap.storage",		  "absent"	  ]
+[ "theap.filename",		  "29.theap"	  ]
+[ "theap.offset",		  "0"		  ]
+[ "hacctype",			  "null"	  ]
+[ "haccdirty",			  "clean"	  ]
+[ "haccCopiedtodisk",		  "0"		  ]
+[ "haccelerator.free",		  "0"		  ]
+[ "haccelerator.size",		  "0"		  ]
+[ "haccelerator.maxsize",	  "0"		  ]
+[ "haccelerator.storage",	  "absent"	  ]
+[ "haccelerator.filename",	  "no file"	  ]
+[ "haccelerator.offset",	  "0"		  ]
+[ "tacctype",			  "null"	  ]
+[ "taccdirty",			  "clean"	  ]
+[ "taccCopiedtodisk",		  "0"		  ]
+[ "taccelerator.free",		  "0"		  ]
+[ "taccelerator.size",		  "0"		  ]
+[ "taccelerator.maxsize",	  "0"		  ]
+[ "taccelerator.storage",	  "absent"	  ]
+[ "taccelerator.filename",	  "no file"	  ]
+[ "taccelerator.offset",	  "0"		  ]
+[ "head_index",			  "absent"	  ]
+[ "tail_index",			  "absent"	  ]
+#~EndVariableOutput~#
+print(find(s,"cello"));
+[ 3 ]
+delete(s,"cello",3);
+print(s);
+#-------------------------#
+# BAT:		  tmp_28  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "hello",	  1	  ]
+[ "bello",	  2	  ]
+[ "hello",	  8	  ]
+[ "dello",	  4	  ]
+[ "eello",	  5	  ]
+[ "fello",	  6	  ]
+[ "gello",	  7	  ]
+var sn:= select(s,1,5);
+print(sn);
+#-------------------------#
+# BAT:		  tmp_29  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "hello",	  1	  ]
+[ "bello",	  2	  ]
+[ "dello",	  4	  ]
+[ "eello",	  5	  ]
+var s2:= semijoin(s.reverse(),sn.reverse());
+print(s2);
+#-------------------------#
+# BAT:	  tmp_30	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "hello"	  ]
+[ 2,	  "bello"	  ]
+[ 4,	  "dello"	  ]
+[ 5,	  "eello"	  ]
+var x:= join(s,s2);
+print(x);
+#---------------------------------#
+# BAT:		  tmp_29	  #
+# (str)		  (str)		  #
+#---------------------------------#
+[ "hello",	  "hello"	  ]
+[ "bello",	  "bello"	  ]
+[ "dello",	  "dello"	  ]
+[ "eello",	  "eello"	  ]
+quit();
+
+# 15:33:22 >  
+# 15:33:22 >  Done.
+# 15:33:22 >  
+

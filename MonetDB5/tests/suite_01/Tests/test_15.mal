@@ -1,0 +1,48 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+#commit(); printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
+	ca_a := commit();
+	da_a := printf("#~BeginVariableOutput~#\n");
+	ea_a := io();
+	fa_a := print(ea_a,);
+	ga_a := printf("#~EndVariableOutput~#\n");
+#commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
+	ha_a := commit();
+	ia_a := commit();
+	ja_a := commit();
+	ka_a := commit();
+	la_a := commit();
+	ma_a := commit();
+	na_a := commit();
+	oa_a := commit();
+#commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
+	pa_a := commit();
+	qa_a := commit();
+	ra_a := commit();
+	sa_a := commit();
+	ta_a := commit();
+	ua_a := commit();
+	va_a := commit();
+	wa_a := commit();
+#commit(); commit(); commit(); commit(); 
+	xa_a := commit();
+	ya_a := commit();
+	ab_a := commit();
+	bb_a := commit();
+#printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
+	cb_a := printf("#~BeginVariableOutput~#\n");
+	db_a := io();
+	eb_a := print(db_a,);
+	fb_a := printf("#~EndVariableOutput~#\n");
+#quit();
+	gb_a := quit();

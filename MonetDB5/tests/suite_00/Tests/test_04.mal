@@ -1,0 +1,43 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+#var b:= new(int,int);
+	b := new(:int,:int);
+#var c:= new(int,int);
+	c := new(:int,:int);
+#b.insert(0,0);
+	ca_a := insert(b,0,0);
+#b.insert(1,1);
+	da_a := insert(b,1,1);
+#b.insert(1,2);
+	ea_a := insert(b,1,2);
+#b.insert(1,3);
+	fa_a := insert(b,1,3);
+#b.insert(1,4);
+	ga_a := insert(b,1,4);
+#c.insert(1,5);
+	ha_a := insert(c,1,5);
+#c.insert(1,4);
+	ia_a := insert(c,1,4);
+#c.insert(2,2);
+	ja_a := insert(c,2,2);
+#b.semijoin(c).print();
+	ka_a := semijoin(b,c);
+	la_a := print(ka_a,);
+#c.semijoin(b).print();
+	ma_a := semijoin(c,b);
+	na_a := print(ma_a,);
+#b.semijoin(b).print();
+	oa_a := semijoin(b,b);
+	pa_a := print(oa_a,);
+#quit();
+	qa_a := quit();

@@ -1,0 +1,54 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+#var test := new(oid,int);
+	test := new(:oid,:int);
+#test.insert(oid(1),1);
+	ca_a := oid(1);
+	da_a := insert(test,ca_a,1);
+#test.insert(oid(2),2);
+	ea_a := oid(2);
+	fa_a := insert(test,ea_a,2);
+#test.insert(oid(3),3);
+	ga_a := oid(3);
+	ha_a := insert(test,ga_a,3);
+function addNr(theNrs:any, theNr:any):any;
+#        printf("add Nr: %d\n",theNr);
+	ia_a := printf("add Nr: %d\n",theNr);
+#        VAR r := [+](theNrs,theNr);
+	r := multiplex.tactics("+",theNrs,theNr);
+#        r.print();
+	ja_a := print(r,);
+#        return r;
+	return ka_a :=r;
+end addNr;
+function loopTest(theBAT:any, theMax:any):void;
+#        VAR i := 0;
+	i := 0;
+#        WHILE (i < theMax) {
+barrier	la_a := true;
+barrier	ma_a := <(i,theMax);
+#                addNr(theBAT,i);
+	na_a := addNr(theBAT,i);
+#                i := i + 1;
+	i := +(i,1);
+redo	la_a;
+exit	ma_a;
+exit	la_a;
+end loopTest;
+#loopTest(test,1);
+	test:= mil.take("test");
+	oa_a := loopTest(test,1);
+#loopTest(test,2);
+	pa_a := loopTest(test,2);
+#quit();
+	qa_a := quit();

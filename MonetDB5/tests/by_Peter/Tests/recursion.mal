@@ -1,0 +1,40 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+function p(i:int):void;
+#proc p(int i) : void { if (i < 10000) p(i+1); }
+barrier	aa_a := <(i,10000);
+	ba_a := +(i,1);
+	ca_a := p(ba_a);
+exit	aa_a;
+end p;
+#p(100).fork();
+	da_a := p(100);
+	ea_a := fork(da_a,);
+#p(300).fork();
+	fa_a := p(300);
+	ga_a := fork(fa_a,);
+#p(301).fork();
+	ha_a := p(301);
+	ia_a := fork(ha_a,);
+#p(302).fork();
+	ja_a := p(302);
+	ka_a := fork(ja_a,);
+#p(303).fork();
+	la_a := p(303);
+	ma_a := fork(la_a,);
+#p(304).fork();
+	na_a := p(304);
+	oa_a := fork(na_a,);
+#sleep(10);
+	pa_a := sleep(10);
+#print(42);
+	qa_a := print(42);
+#quit();
+	ra_a := quit();

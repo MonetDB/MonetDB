@@ -1,0 +1,30 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#var b := bat(void,bit);
+	b := new(:void,:bit);
+#b.insert(nil,true);
+	nil:= mil.take("nil");
+	aa_a := insert(b,nil,true);
+#b.insert(nil,true);
+	ba_a := insert(b,nil,true);
+#b.insert(nil,true);
+	ca_a := insert(b,nil,true);
+#b.insert(nil,true);
+	da_a := insert(b,nil,true);
+#b.seqbase(0@0);
+	ea_a := bat.setSequenceBase(b,0@0);
+#var s := b.select(true);
+	s := select(b,true);
+#b.histogram().print();
+	fa_a := histogram(b,);
+	ga_a := print(fa_a,);
+#quit();
+	ha_a := quit();
+#Identifer 'seqbase' mapped to 'bat.setSequenceBase'

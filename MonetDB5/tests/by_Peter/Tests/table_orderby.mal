@@ -1,0 +1,77 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#var a := new(void,str);
+	a := new(:void,:str);
+#a.insert(nil, "the");
+	nil:= mil.take("nil");
+	aa_a := insert(a,nil,"the");
+#a.insert(nil, "cat");
+	ba_a := insert(a,nil,"cat");
+#a.insert(nil, "sat");
+	ca_a := insert(a,nil,"sat");
+#a.insert(nil, "on");
+	da_a := insert(a,nil,"on");
+#a.insert(nil, "the");
+	ea_a := insert(a,nil,"the");
+#a.insert(nil, "mat");
+	fa_a := insert(a,nil,"mat");
+#var c := a.copy().seqbase(0@0);
+	ga_a := copy(a,);
+	c := bat.setSequenceBase(ga_a,0@0);
+#var b := [str](c);
+	b := multiplex.tactics("str",c);
+#print(c,b);
+	ha_a := print(c,b);
+#var d := c.mark(10000@0);
+	d := mark(c,10000@0);
+#print("1",c,d);
+	ia_a := print("1",c,d);
+#print("2",c,d);
+	ja_a := print("2",c,d);
+#var e := [oid](d).access(BAT_WRITE).seqbase(nil).insert([oid]([*]([int](d),2)));
+	BAT_WRITE:= mil.take("BAT_WRITE");
+	ka_a := multiplex.tactics("oid",d);
+	la_a := access(ka_a,BAT_WRITE);
+	ma_a := multiplex.tactics("int",d);
+	na_a := multiplex.tactics("*",ma_a,2);
+	oa_a := multiplex.tactics("oid",na_a);
+	pa_a := bat.setSequenceBase(la_a,nil);
+	e := insert(pa_a,oa_a);
+#e := e.insert(e.copy()).reverse().sort().mark(0@0).reverse();
+	qa_a := copy(e,);
+	ra_a := insert(e,qa_a);
+	sa_a := reverse(ra_a,);
+	ta_a := sort(sa_a,);
+	ua_a := mark(ta_a,0@0);
+	e := reverse(ua_a,);
+#var f := a.copy().access(BAT_WRITE).insert(a).insert(a).insert(a).seqbase(0@0);
+	va_a := copy(a,);
+	wa_a := access(va_a,BAT_WRITE);
+	xa_a := insert(wa_a,a);
+	ya_a := insert(xa_a,a);
+	ab_a := insert(ya_a,a);
+	f := bat.setSequenceBase(ab_a,0@0);
+#var g := [>]([int](f.mirror()),12);
+	bb_a := mirror(f,);
+	cb_a := multiplex.tactics("int",bb_a);
+	g := multiplex.tactics(">",cb_a,12);
+#print("1",e,f,g);
+	db_a := print("1",e,f,g);
+#print("1,2",e,f,g);
+	eb_a := print("1,2",e,f,g);
+#print("2",e,f,g);
+	fb_a := print("2",e,f,g);
+#print("2,1",e,f,g);
+	gb_a := print("2,1",e,f,g);
+#print("3,1,2",e,f,g);
+	hb_a := print("3,1,2",e,f,g);
+#quit();
+	ib_a := quit();
+#Identifer 'seqbase' mapped to 'bat.setSequenceBase'

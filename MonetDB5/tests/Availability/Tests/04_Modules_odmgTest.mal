@@ -1,0 +1,159 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+function doit(The_mod:str):void;
+#	var Fname:=new(oid,str);Fname.col_name("function");
+	Fname := new(:oid,:str);
+	ca_a := bat.setColumn(Fname,"function");
+#	var FnameS:=new(oid,str);FnameS.col_name("function");
+	FnameS := new(:oid,:str);
+	da_a := bat.setColumn(FnameS,"function");
+#	var Ftype:=new(oid,str);Ftype.col_name("type");
+	Ftype := new(:oid,:str);
+	ea_a := bat.setColumn(Ftype,"type");
+#	var Fsig:=new(oid,str);Fsig.col_name("signature");
+	Fsig := new(:oid,:str);
+	fa_a := bat.setColumn(Fsig,"signature");
+#	var Fhelp:=new(oid,str);Fhelp.col_name("help");
+	Fhelp := new(:oid,:str);
+	ga_a := bat.setColumn(Fhelp,"help");
+#	var Fnts:=new(oid,str);
+	Fnts := new(:oid,:str);
+#	var Mod_fcn:=sdiff(monet_fcntbl.reverse(),Static_fcn).reverse();
+	monet_fcntbl:= mil.take("monet_fcntbl");
+	ha_a := reverse(monet_fcntbl,);
+	Static_fcn:= mil.take("Static_fcn");
+	ia_a := sdiff(ha_a,Static_fcn);
+	Mod_fcn := reverse(ia_a,);
+#	Mod_fcn.sort()@batloop {
+	ja_a := sort(Mod_fcn,);
+#	    var addThis:=false;
+barrier	ka_a := bunStream(ja_a,ka_aH,ka_aT);
+	addThis := false;
+#	    if (not(monet_fcn_mid.exist($t))) {
+	monet_fcn_mid:= mil.take("monet_fcn_mid");
+	la_a := exist(monet_fcn_mid,ka_aT);
+barrier	ma_a := not(la_a);
+#		addThis:=true;
+	addThis := true;
+exit	ma_a;
+#	    } else if (monet_mod_nme.find(monet_fcn_mid.find($t))=The_mod) {
+barrier	na_a := not(ma_a);
+	monet_mod_nme:= mil.take("monet_mod_nme");
+	oa_a := find(monet_fcn_mid,ka_aT);
+	pa_a := find(monet_mod_nme,oa_a);
+barrier	qa_a := =(pa_a,The_mod);
+#		addThis:=true;
+	addThis := true;
+exit	qa_a;
+exit	na_a;
+#	    if (addThis) {
+barrier	ra_a := addThis;
+#		var Tname:=$h;
+	Tname := ka_aH;
+#		var Ttype:=help_tpe(monet_fcn_tpe.find($t));
+	monet_fcn_tpe:= mil.take("monet_fcn_tpe");
+	sa_a := find(monet_fcn_tpe,ka_aT);
+	Ttype := help_tpe(sa_a);
+#		var Tsig:=format_fcn_sig($t);
+	Tsig := format_fcn_sig(ka_aT);
+#		var Thelp:="";
+	Thelp := "";
+#		if (monet_fcn_dsc.exist($t)) {
+	monet_fcn_dsc:= mil.take("monet_fcn_dsc");
+barrier	ta_a := exist(monet_fcn_dsc,ka_aT);
+#			Thelp:=monet_fcn_dsc.find($t);
+	Thelp := find(monet_fcn_dsc,ka_aT);
+exit	ta_a;
+#		} else {
+barrier	ua_a := not(ta_a);
+#			Thelp:="not available";
+	Thelp := "not available";
+exit	ua_a;
+#		Fname.insert($t,Tname);
+	va_a := insert(Fname,ka_aT,Tname);
+#		Ftype.insert($t,Ttype);
+	wa_a := insert(Ftype,ka_aT,Ttype);
+#		Fsig.insert($t,Tsig);
+	xa_a := insert(Fsig,ka_aT,Tsig);
+#		Fhelp.insert($t,Thelp);
+	ya_a := insert(Fhelp,ka_aT,Thelp);
+#		Fnts.insert($t,sprintf("%s %s %s",Tname,Ttype,Tsig));
+	ab_a := sprintf("%s %s %s",Tname,Ttype,Tsig);
+	bb_a := insert(Fnts,ka_aT,ab_a);
+exit	ra_a;
+redo	ka_a;
+exit	ka_a;
+#	Fnts.count().print();
+	cb_a := count(Fnts,);
+	db_a := print(cb_a,);
+#	Fnts.reverse().sort().reverse()@batloop {
+	eb_a := reverse(Fnts,);
+	fb_a := sort(eb_a,);
+	gb_a := reverse(fb_a,);
+#		FnameS.insert($h,Fname.find($h));
+barrier	hb_a := bunStream(gb_a,hb_aH,hb_aT);
+	ib_a := find(Fname,hb_aH);
+	jb_a := insert(FnameS,hb_aH,ib_a);
+redo	hb_a;
+exit	hb_a;
+#	FnameS.count().print(); table(1,FnameS,Ftype,Fsig,Fhelp);
+	kb_a := count(FnameS,);
+	lb_a := print(kb_a,);
+	mb_a := table(1,FnameS,Ftype,Fsig,Fhelp);
+#	Fname.delete();
+	nb_a := delete(Fname,);
+#	FnameS.delete();
+	ob_a := delete(FnameS,);
+#	Ftype.delete();
+	pb_a := delete(Ftype,);
+#	Fsig.delete();
+	qb_a := delete(Fsig,);
+#	Fhelp.delete();
+	rb_a := delete(Fhelp,);
+#	Fnts.delete();
+	sb_a := delete(Fnts,);
+end doit;
+#var Static_fcn:=monet_fcntbl.reverse().copy();
+	monet_fcntbl:= mil.take("monet_fcntbl");
+	tb_a := reverse(monet_fcntbl,);
+	Static_fcn := copy(tb_a,);
+#printf("Module: \"Meta\"\n\n");
+	ub_a := printf("Module: \"Meta\"\n\n");
+#doit("Meta");
+	vb_a := doit("Meta");
+#Static_fcn:=sunion(Static_fcn,monet_fcntbl.reverse());
+	wb_a := reverse(monet_fcntbl,);
+	Static_fcn := sunion(Static_fcn,wb_a);
+#var Odmg_mods:=MODULES.select("odmgTest").copy().access(BAT_WRITE).delete("Meta").sort();
+	MODULES:= mil.take("MODULES");
+	xb_a := select(MODULES,"odmgTest");
+	BAT_WRITE:= mil.take("BAT_WRITE");
+	yb_a := copy(xb_a,);
+	ac_a := access(yb_a,BAT_WRITE);
+	bc_a := delete(ac_a,"Meta");
+	Odmg_mods := sort(bc_a,);
+#table(Odmg_mods.reverse().col_name(sprintf("%i modules",Odmg_mods.count())));
+	cc_a := count(Odmg_mods,);
+	dc_a := sprintf("%i modules",cc_a);
+	ec_a := reverse(Odmg_mods,);
+	fc_a := bat.setColumn(ec_a,dc_a);
+	gc_a := table(fc_a);
+#	var The_mod:=$h;
+barrier	hc_a := bunStream(Odmg_mods,hc_aH,hc_aT);
+	The_mod := hc_aH;
+#	printf("\nModule: \"%s\"\n\n",The_mod);
+	ic_a := printf("\nModule: \"%s\"\n\n",The_mod);
+!ERROR: "	doit(The_mod);"
+!        ^
+! syntax error, unexpected TOK_MODULE.
+#Identifer 'col_name' mapped to 'bat.setColumn'

@@ -1,0 +1,38 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#var ab := new(int,str);
+	ab := new(:int,:str);
+#ab.rename("ab");
+	aa_a := bat.setName(ab,"ab");
+#ab.persists(true);
+	ba_a := persists(ab,true);
+#ab.commit();
+	ca_a := commit(ab,);
+#var ba := ab.reverse();
+	ba := reverse(ab,);
+#ba.rename("ba");
+	da_a := bat.setName(ba,"ba");
+#ba.persists(true);
+	ea_a := persists(ba,true);
+#ba.commit();
+	fa_a := commit(ba,);
+#ab.insert(1,"een");
+	ga_a := insert(ab,1,"een");
+#ba.insert("twee",2);
+	ha_a := insert(ba,"twee",2);
+#ab.print();
+	ia_a := print(ab,);
+#ba.print();
+	ja_a := print(ba,);
+#commit();
+	ka_a := commit();
+#quit();
+	la_a := quit();
+#Identifer 'rename' mapped to 'bat.setName'

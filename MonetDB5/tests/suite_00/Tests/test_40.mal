@@ -1,0 +1,72 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+#var b:= new(int,int);
+	b := new(:int,:int);
+#b.rename("b");
+	ca_a := bat.setName(b,"b");
+#b.insert(1,15);
+	da_a := insert(b,1,15);
+#b.insert(2,4);
+	ea_a := insert(b,2,4);
+#b.insert(3,int(nil));
+	nil:= mil.take("nil");
+	fa_a := int(nil);
+	ga_a := insert(b,3,fa_a);
+#b.insert(4,16);
+	ha_a := insert(b,4,16);
+#b.insert(5,25);
+	ia_a := insert(b,5,25);
+#b.insert(6,36);
+	ja_a := insert(b,6,36);
+#b.insert(7,49);
+	ka_a := insert(b,7,49);
+#b.insert(8,64);
+	la_a := insert(b,8,64);
+#b.insert(9,int(nil));
+	ma_a := int(nil);
+	na_a := insert(b,9,ma_a);
+#b.insert(int(nil),int(nil));
+	oa_a := int(nil);
+	pa_a := int(nil);
+	qa_a := insert(b,oa_a,pa_a);
+#b.insert(int(nil),81);
+	ra_a := int(nil);
+	sa_a := insert(b,ra_a,81);
+#b.save();
+	ta_a := save(b,);
+#load("b");
+	ua_a := load("b");
+#b.position(4).print();
+	va_a := position(b,4);
+	wa_a := print(va_a,);
+#b.fetch(5).print();
+	xa_a := fetch(b,5);
+	ya_a := print(xa_a,);
+#b.fetch(8).print();
+	ab_a := fetch(b,8);
+	bb_a := print(ab_a,);
+#b.slice(5,8).print();
+	cb_a := slice(b,5,8);
+	db_a := print(cb_a,);
+#b.position(111).print();
+	eb_a := position(b,111);
+	fb_a := print(eb_a,);
+#b.fetch(-1).print();
+	gb_a := fetch(b,-1);
+	hb_a := print(gb_a,);
+#b.slice(8,5).print();
+	ib_a := slice(b,8,5);
+	jb_a := print(ib_a,);
+#quit();
+	kb_a := quit();
+#Identifer 'rename' mapped to 'bat.setName'

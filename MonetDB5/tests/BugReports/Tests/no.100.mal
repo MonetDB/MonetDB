@@ -1,0 +1,47 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+#var a := new(int,str);
+	a := new(:int,:str);
+#a.insert(1,"hello world");
+	ca_a := insert(a,1,"hello world");
+#a.print();
+	da_a := print(a,);
+#a.mark(nil).print();
+	nil:= mil.take("nil");
+	ea_a := mark(a,nil);
+	fa_a := print(ea_a,);
+#a.mark(nil).reverse().print();
+	ga_a := mark(a,nil);
+	ha_a := reverse(ga_a,);
+	ia_a := print(ha_a,);
+#[oid](a.mark(nil)).reverse().print();
+	ja_a := mark(a,nil);
+	ka_a := multiplex.tactics("oid",ja_a);
+	la_a := reverse(ka_a,);
+	ma_a := print(la_a,);
+#a.seqbase(100@0);
+	na_a := bat.setSequenceBase(a,100@0);
+#[oid](a.mark(nil)).reverse().print();
+	oa_a := mark(a,nil);
+	pa_a := multiplex.tactics("oid",oa_a);
+	qa_a := reverse(pa_a,);
+	ra_a := print(qa_a,);
+#[oid](a.mark(nil)).reverse().copy().print();
+	sa_a := mark(a,nil);
+	ta_a := multiplex.tactics("oid",sa_a);
+	ua_a := reverse(ta_a,);
+	va_a := copy(ua_a,);
+	wa_a := print(va_a,);
+#quit();
+	xa_a := quit();
+#Identifer 'seqbase' mapped to 'bat.setSequenceBase'

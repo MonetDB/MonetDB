@@ -1,0 +1,48 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+#var a := new(int,int);
+	a := new(:int,:int);
+#a.insert(1,3);
+	ca_a := insert(a,1,3);
+#a.insert(2,2);
+	da_a := insert(a,2,2);
+#a.insert(3,1);
+	ea_a := insert(a,3,1);
+#a.thetajoin(a,LT,lng(nil)).print();
+	LT:= mil.take("LT");
+	nil:= mil.take("nil");
+	fa_a := lng(nil);
+	ga_a := thetajoin(a,a,LT,fa_a);
+	ha_a := print(ga_a,);
+#a.thetajoin(a,LE,lng(nil)).print();
+	LE:= mil.take("LE");
+	ia_a := lng(nil);
+	ja_a := thetajoin(a,a,LE,ia_a);
+	ka_a := print(ja_a,);
+#a.thetajoin(a,EQ,lng(nil)).print();
+	EQ:= mil.take("EQ");
+	la_a := lng(nil);
+	ma_a := thetajoin(a,a,EQ,la_a);
+	na_a := print(ma_a,);
+#a.thetajoin(a,GE,lng(nil)).print();
+	GE:= mil.take("GE");
+	oa_a := lng(nil);
+	pa_a := thetajoin(a,a,GE,oa_a);
+	qa_a := print(pa_a,);
+#a.thetajoin(a,GT,lng(nil)).print();
+	GT:= mil.take("GT");
+	ra_a := lng(nil);
+	sa_a := thetajoin(a,a,GT,ra_a);
+	ta_a := print(sa_a,);
+#quit();
+	ua_a := quit();

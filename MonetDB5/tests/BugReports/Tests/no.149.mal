@@ -1,0 +1,48 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+#var b := new (int, str );
+	b := new(:int,:str);
+function test1():void;
+#        var i := 1;
+	i := 1;
+#        "   test1".print();
+	ca_a := print("   test1",);
+#        var s := sprintf("Hallo dit is een string %d", i);
+	s := sprintf("Hallo dit is een string %d",i);
+#        s.print();
+	da_a := print(s,);
+#        b.insert(i,s);
+	ea_a := insert(b,i,s);
+#        b.insert(i,sprintf("Hallo %d", i));
+	fa_a := sprintf("Hallo %d",i);
+	ga_a := insert(b,i,fa_a);
+#        "   end test1".print();
+	ha_a := print("   end test1",);
+end test1;
+#var j := 0;
+	j := 0;
+#while(j < 5 ){
+barrier	ia_a := true;
+barrier	ja_a := <(j,5);
+#        test1();
+	ka_a := test1();
+#        j := j + 1;
+	j := +(j,1);
+redo	ia_a;
+exit	ja_a;
+exit	ia_a;
+#b.print();
+	b:= mil.take("b");
+	la_a := print(b,);
+#quit();
+	ma_a := quit();

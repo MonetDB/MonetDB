@@ -1,0 +1,20 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#var b := new(int,int);
+	b := new(:int,:int);
+#b.insert(1,2);
+	aa_a := insert(b,1,2);
+#b@batloop(){$h.print();}
+barrier	ba_a := bunStream(b,ba_aH,ba_aT);
+	ca_a := print(ba_aH,);
+redo	ba_a;
+exit	ba_a;
+#quit();
+	da_a := quit();

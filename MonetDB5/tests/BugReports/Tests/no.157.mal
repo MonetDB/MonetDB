@@ -1,0 +1,60 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+#var test := new(oid,lng);
+	test := new(:oid,:lng);
+#test.insert(oid(53991617),lng(60000401));
+	ca_a := oid(53991617);
+	da_a := lng(60000401);
+	ea_a := insert(test,ca_a,da_a);
+#test.insert(oid(53996584),lng(60000400));
+	fa_a := oid(53996584);
+	ga_a := lng(60000400);
+	ha_a := insert(test,fa_a,ga_a);
+#test.insert(oid(55526089),lng(50015637));
+	ia_a := oid(55526089);
+	ja_a := lng(50015637);
+	ka_a := insert(test,ia_a,ja_a);
+#test.print();
+	la_a := print(test,);
+#test.select(lng(0)).print();
+	ma_a := lng(0);
+	na_a := select(test,ma_a);
+	oa_a := print(na_a,);
+#test.select(lng(60000401)).print();
+	pa_a := lng(60000401);
+	qa_a := select(test,pa_a);
+	ra_a := print(qa_a,);
+#test.select(lng(0),lng(1)).print();
+	sa_a := lng(0);
+	ta_a := lng(1);
+	ua_a := select(test,sa_a,ta_a);
+	va_a := print(ua_a,);
+#test.insert(oid(1),lng(1));
+	wa_a := oid(1);
+	xa_a := lng(1);
+	ya_a := insert(test,wa_a,xa_a);
+#test.select(lng(0)).print();
+	ab_a := lng(0);
+	bb_a := select(test,ab_a);
+	cb_a := print(bb_a,);
+#test.select(lng(60000401)).print();
+	db_a := lng(60000401);
+	eb_a := select(test,db_a);
+	fb_a := print(eb_a,);
+#test.select(lng(0),lng(1)).print();
+	gb_a := lng(0);
+	hb_a := lng(1);
+	ib_a := select(test,gb_a,hb_a);
+	jb_a := print(ib_a,);
+#quit();
+	kb_a := quit();

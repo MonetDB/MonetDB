@@ -1,0 +1,96 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+#var c:= new(int,int);
+	c := new(:int,:int);
+#insert(c,1,2);
+	ca_a := insert(c,1,2);
+#insert(c,2,3);
+	da_a := insert(c,2,3);
+#insert(c,2,7);
+	ea_a := insert(c,2,7);
+#insert(c,3,4);
+	fa_a := insert(c,3,4);
+#insert(c,4,5);
+	ga_a := insert(c,4,5);
+#insert(c,5,1);
+	ha_a := insert(c,5,1);
+#count(c).print();
+	ia_a := count(c);
+	ja_a := print(ia_a,);
+#var d:= closure(c);
+	d := closure(c);
+#count(d).print();
+	ka_a := count(d);
+	la_a := print(ka_a,);
+#print(d);
+	ma_a := print(d);
+#var c:= new(int,int);
+	c := new(:int,:int);
+#insert(c,1,2);
+	na_a := insert(c,1,2);
+#insert(c,2,3);
+	oa_a := insert(c,2,3);
+#insert(c,2,7);
+	pa_a := insert(c,2,7);
+#insert(c,3,4);
+	qa_a := insert(c,3,4);
+#insert(c,4,5);
+	ra_a := insert(c,4,5);
+#insert(c,3,5);
+	sa_a := insert(c,3,5);
+#count(c).print();
+	ta_a := count(c);
+	ua_a := print(ta_a,);
+#var d:= new(int,int);
+	d := new(:int,:int);
+#d.insert(1,1);
+	va_a := insert(d,1,1);
+#d.traverse(c).print();
+	wa_a := traverse(d,c);
+	xa_a := print(wa_a,);
+#d.clear();
+	ya_a := clear(d,);
+#d.insert(2,3);
+	ab_a := insert(d,2,3);
+#d.traverse(c).print();
+	bb_a := traverse(d,c);
+	cb_a := print(bb_a,);
+#d.clear();
+	db_a := clear(d,);
+#d.insert(2,2);
+	eb_a := insert(d,2,2);
+#printf("#~BeginVariableOutput~#\n"); time.print(); var z:=d.subgraph(c); time.print(); printf("#~EndVariableOutput~#\n");
+	fb_a := printf("#~BeginVariableOutput~#\n");
+	gb_a := print(alarm.time,);
+	z := subgraph(d,c);
+	hb_a := print(alarm.time,);
+	ib_a := printf("#~EndVariableOutput~#\n");
+#z.print();
+	jb_a := print(z,);
+#d.clear();
+	kb_a := clear(d,);
+#d.insert(2,2);
+	lb_a := insert(d,2,2);
+#d.insert(3,3);
+	mb_a := insert(d,3,3);
+#printf("#~BeginVariableOutput~#\n"); time.print(); z:=d.subgraph(c); time.print(); printf("#~EndVariableOutput~#\n");
+	nb_a := printf("#~BeginVariableOutput~#\n");
+	ob_a := print(alarm.time,);
+	z := subgraph(d,c);
+	pb_a := print(alarm.time,);
+	qb_a := printf("#~EndVariableOutput~#\n");
+#z.print();
+	rb_a := print(z,);
+#quit();
+	sb_a := quit();
+#Identifer 'time' mapped to 'alarm.time'

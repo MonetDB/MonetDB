@@ -1,0 +1,142 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+#var Fname:=new(oid,str);	Fname.col_name("function");
+	Fname := new(:oid,:str);
+	ca_a := bat.setColumn(Fname,"function");
+#var FnameS:=new(oid,str);	FnameS.col_name("function");
+	FnameS := new(:oid,:str);
+	da_a := bat.setColumn(FnameS,"function");
+#var Ftype:=new(oid,str);	Ftype.col_name("type");
+	Ftype := new(:oid,:str);
+	ea_a := bat.setColumn(Ftype,"type");
+#var Fmod:=new(oid,str);		Fmod.col_name("module");
+	Fmod := new(:oid,:str);
+	fa_a := bat.setColumn(Fmod,"module");
+#var Fsig:=new(oid,str);		Fsig.col_name("signature");
+	Fsig := new(:oid,:str);
+	ga_a := bat.setColumn(Fsig,"signature");
+#var Fhelp:=new(oid,str);	Fhelp.col_name("help");
+	Fhelp := new(:oid,:str);
+	ha_a := bat.setColumn(Fhelp,"help");
+#var Fnts:=new(oid,str);
+	Fnts := new(:oid,:str);
+#monet_fcntbl.sort()@batloop {
+	monet_fcntbl:= mil.take("monet_fcntbl");
+	ia_a := sort(monet_fcntbl,);
+#	var Tname:=$h;
+barrier	ja_a := bunStream(ia_a,ja_aH,ja_aT);
+	Tname := ja_aH;
+#	var Ttype:=help_tpe(monet_fcn_tpe.find($t));
+	monet_fcn_tpe:= mil.take("monet_fcn_tpe");
+	ka_a := find(monet_fcn_tpe,ja_aT);
+	Ttype := help_tpe(ka_a);
+#	var Tmod:="";
+	Tmod := "";
+#	if (monet_fcn_mid.exist($t)) {
+	monet_fcn_mid:= mil.take("monet_fcn_mid");
+barrier	la_a := exist(monet_fcn_mid,ja_aT);
+#		Tmod:=monet_mod_nme.find(monet_fcn_mid.find($t));
+	monet_mod_nme:= mil.take("monet_mod_nme");
+	ma_a := find(monet_fcn_mid,ja_aT);
+	Tmod := find(monet_mod_nme,ma_a);
+#		if (Tmod.startsWith("_")) {
+barrier	na_a := startsWith(Tmod,"_");
+#			Tmod := string(Tmod,1);
+	Tmod := string(Tmod,1);
+exit	na_a;
+exit	la_a;
+#	} else {
+barrier	oa_a := not(la_a);
+#		Tmod:="";
+	Tmod := "";
+exit	oa_a;
+#	var Tsig:=format_fcn_sig($t);
+	Tsig := format_fcn_sig(ja_aT);
+#	var Thelp:="";
+	Thelp := "";
+#	if (monet_fcn_dsc.exist($t)) {
+	monet_fcn_dsc:= mil.take("monet_fcn_dsc");
+barrier	pa_a := exist(monet_fcn_dsc,ja_aT);
+#		Thelp:=monet_fcn_dsc.find($t);
+	Thelp := find(monet_fcn_dsc,ja_aT);
+exit	pa_a;
+#	} else {
+barrier	qa_a := not(pa_a);
+#		Thelp:="not available";
+	Thelp := "not available";
+exit	qa_a;
+#	Fname.insert($t,Tname);
+	ra_a := insert(Fname,ja_aT,Tname);
+#	Ftype.insert($t,Ttype);
+	sa_a := insert(Ftype,ja_aT,Ttype);
+#	Fmod.insert($t,Tmod);
+	ta_a := insert(Fmod,ja_aT,Tmod);
+#	Fsig.insert($t,Tsig);
+	ua_a := insert(Fsig,ja_aT,Tsig);
+#	Fhelp.insert($t,Thelp);
+	va_a := insert(Fhelp,ja_aT,Thelp);
+#	Fnts.insert($t,sprintf("%s %s %s",Tname,Ttype,Tsig));
+	wa_a := sprintf("%s %s %s",Tname,Ttype,Tsig);
+	xa_a := insert(Fnts,ja_aT,wa_a);
+redo	ja_a;
+exit	ja_a;
+#Fnts.count().print();
+	ya_a := count(Fnts,);
+	ab_a := print(ya_a,);
+#Fnts.reverse().sort().reverse()@batloop {
+	bb_a := reverse(Fnts,);
+	cb_a := sort(bb_a,);
+	db_a := reverse(cb_a,);
+#	FnameS.insert($h,Fname.find($h));
+barrier	eb_a := bunStream(db_a,eb_aH,eb_aT);
+	fb_a := find(Fname,eb_aH);
+	gb_a := insert(FnameS,eb_aH,fb_a);
+redo	eb_a;
+exit	eb_a;
+#FnameS.count().print();
+	hb_a := count(FnameS,);
+	ib_a := print(hb_a,);
+#var All:=0;
+	All := 0;
+#var Static_mods:=Fmod.reverse().kunique().sort().copy();
+	jb_a := reverse(Fmod,);
+	kb_a := kunique(jb_a,);
+	lb_a := sort(kb_a,);
+	Static_mods := copy(lb_a,);
+#table(Static_mods.reverse().col_name(sprintf("%i modules",Static_mods.count())));
+	mb_a := count(Static_mods,);
+	nb_a := sprintf("%i modules",mb_a);
+	ob_a := reverse(Static_mods,);
+	pb_a := bat.setColumn(ob_a,nb_a);
+	qb_a := table(pb_a);
+#	printf("\nModule: \"%s\"\n\n",$h);
+barrier	rb_a := bunStream(Static_mods,rb_aH,rb_aT);
+	sb_a := printf("\nModule: \"%s\"\n\n",rb_aH);
+#	var FnameM:=kintersect(FnameS,Fmod.select($h));FnameM.col_name("function");
+	tb_a := select(Fmod,rb_aH);
+	FnameM := kintersect(FnameS,tb_a);
+	ub_a := bat.setColumn(FnameM,"function");
+#	FnameM.count().print(); table(1,FnameM,Ftype,Fsig,Fhelp);
+	vb_a := count(FnameM,);
+	wb_a := print(vb_a,);
+	xb_a := table(1,FnameM,Ftype,Fsig,Fhelp);
+#	All:=All+FnameM.count();
+	yb_a := count(FnameM,);
+	All := +(All,yb_a);
+redo	rb_a;
+exit	rb_a;
+#All.print();
+	ac_a := print(All,);
+#quit();
+	bc_a := quit();
+#Identifer 'col_name' mapped to 'bat.setColumn'

@@ -1,0 +1,82 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+function extractBit(theBitsets:any, theBit:any, theStr:any, loop:any):void;
+#        IF (loop = false) {
+barrier	ca_a := =(loop,false);
+#printf("!Before multiplex operation\n");
+	da_a := printf("!Before multiplex operation\n");
+#                res := [*](theBitsets,theBit);
+	res := multiplex.tactics("*",theBitsets,theBit);
+#printf("!After multiplex operation\n");
+	ea_a := printf("!After multiplex operation\n");
+exit	ca_a;
+#        } ELSE {
+barrier	fa_a := not(ca_a);
+#                res := new(theBitsets.htype(),int);
+	ga_a := getHeadType(theBitsets,);
+	res := new(ga_a,:int);
+#                theBitsets@batloop() {
+barrier	ha_a := bunStream(theBitsets,ha_aH,ha_aT);
+#                        VAR b := $t*theBit;
+	b := *(ha_aT,theBit);
+#                        res.insert($h,b);
+	ia_a := insert(res,ha_aH,b);
+redo	ha_a;
+exit	ha_a;
+exit	fa_a;
+#        printf("%s keer\n",theStr);
+	ja_a := printf("%s keer\n",theStr);
+#        res.print();
+	ka_a := print(res,);
+end extractBit;
+function bitsetHist(theEnum:any, theBitsets:any, loop:any):void;
+#        theEnum@batloop() {
+barrier	la_a := bunStream(theEnum,la_aH,la_aT);
+#                VAR c := extractBit(theBitsets,$h,$t,loop);
+	c := extractBit(theBitsets,la_aH,la_aT,loop);
+redo	la_a;
+exit	la_a;
+end bitsetHist;
+#VAR enum := new(int,str);
+	enum := new(:int,:str);
+#enum.insert(0,"nul");
+	ma_a := insert(enum,0,"nul");
+#enum.insert(1,"een");
+	na_a := insert(enum,1,"een");
+#enum.insert(2,"twee");
+	oa_a := insert(enum,2,"twee");
+#enum.insert(3,"drie");
+	pa_a := insert(enum,3,"drie");
+#enum.insert(4,"vier");
+	qa_a := insert(enum,4,"vier");
+#enum.insert(5,"vijf");
+	ra_a := insert(enum,5,"vijf");
+#enum.print();
+	sa_a := print(enum,);
+#VAR bitsets := new(oid,int);
+	bitsets := new(:oid,:int);
+#bitsets.insert(oid(1),2);
+	ta_a := oid(1);
+	ua_a := insert(bitsets,ta_a,2);
+#bitsets.insert(oid(2),4);
+	va_a := oid(2);
+	wa_a := insert(bitsets,va_a,4);
+#bitsets.print();
+	xa_a := print(bitsets,);
+#bitsetHist(enum,bitsets,true);
+	ya_a := bitsetHist(enum,bitsets,true);
+#bitsetHist(enum,bitsets,false);
+	ab_a := bitsetHist(enum,bitsets,false);
+#quit();
+	bb_a := quit();
+#Identifer 'htype' mapped to 'getHeadType'

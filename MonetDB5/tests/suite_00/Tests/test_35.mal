@@ -1,0 +1,77 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+#var c:= new(int,int);
+	c := new(:int,:int);
+#insert(c,1,1);
+	ca_a := insert(c,1,1);
+#insert(c,2,2);
+	da_a := insert(c,2,2);
+#insert(c,3,4);
+	ea_a := insert(c,3,4);
+#insert(c,4,4);
+	fa_a := insert(c,4,4);
+#insert(c,4,9);
+	ga_a := insert(c,4,9);
+#insert(c,5,int(nil));
+	nil:= mil.take("nil");
+	ha_a := int(nil);
+	ia_a := insert(c,5,ha_a);
+#c.print();
+	ja_a := print(c,);
+#var d:= new(int,int);
+	d := new(:int,:int);
+#insert(d,1,1);
+	ka_a := insert(d,1,1);
+#insert(d,2,2);
+	la_a := insert(d,2,2);
+#insert(d,4,3);
+	ma_a := insert(d,4,3);
+#insert(d,4,4);
+	na_a := insert(d,4,4);
+#insert(d,9,4);
+	oa_a := insert(d,9,4);
+#insert(d,int(nil),5);
+	pa_a := int(nil);
+	qa_a := insert(d,pa_a,5);
+#d.print();
+	ra_a := print(d,);
+#var z:=c.semijoin(d);
+	z := semijoin(c,d);
+#z.print();
+	sa_a := print(z,);
+#z:=c.reverse().semijoin(d);
+	ta_a := reverse(c,);
+	z := semijoin(ta_a,d);
+#z.print();
+	ua_a := print(z,);
+#z:=d.semijoin(c);
+	z := semijoin(d,c);
+#z.print();
+	va_a := print(z,);
+#var b:= new(oid,str);
+	b := new(:oid,:str);
+#b.insert(oid(1),"hello");
+	wa_a := oid(1);
+	xa_a := insert(b,wa_a,"hello");
+#b.insert(oid(2),"world");
+	ya_a := oid(2);
+	ab_a := insert(b,ya_a,"world");
+#b.insert(oid(3),"..");
+	bb_a := oid(3);
+	cb_a := insert(b,bb_a,"..");
+#z:= b.semijoin(b);
+	z := semijoin(b,b);
+#z.print();
+	db_a := print(z,);
+#quit();
+	eb_a := quit();

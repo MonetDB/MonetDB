@@ -1,0 +1,71 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#
+	t := new(:oid,:str);
+#var t  := new(oid,str);
+	aa_a := oid(0);
+	ba_a := insert(t,aa_a,"a");
+#t.insert( oid(0), "a" );
+	ca_a := oid(1);
+	da_a := insert(t,ca_a,"b");
+#t.insert( oid(1), "b" );
+	ea_a := oid(2);
+	fa_a := insert(t,ea_a,"c");
+#t.insert( oid(2), "c" );
+	ga_a := oid(3);
+	ha_a := insert(t,ga_a,"d");
+#t.insert( oid(3), "d" );
+	ia_a := oid(4);
+	ja_a := insert(t,ia_a,"e");
+#t.insert( oid(4), "e" );
+	ka_a := oid(5);
+	la_a := insert(t,ka_a,"f");
+#t.insert( oid(5), "f" );
+	ma_a := oid(6);
+	na_a := insert(t,ma_a,"g");
+#t.insert( oid(6), "g" );
+	oa_a := oid(7);
+	pa_a := insert(t,oa_a,"h");
+#t.insert( oid(7), "h" );
+	nil:= mil.take("nil");
+	qa_a := mark(t,nil);
+	ra_a := print(qa_a,);
+#
+	sa_a := oid(0);
+	ta_a := new(:void,:str);
+	t := bat.setSequenceBase(ta_a,sa_a);
+#t  := new(void,str).seqbase(oid(0));
+	ua_a := oid(0);
+	va_a := insert(t,ua_a,"a");
+#t.insert( oid(0), "a" );
+	wa_a := oid(1);
+	xa_a := insert(t,wa_a,"b");
+#t.insert( oid(1), "b" );
+	ya_a := oid(2);
+	ab_a := insert(t,ya_a,"c");
+#t.insert( oid(2), "c" );
+	bb_a := oid(3);
+	cb_a := insert(t,bb_a,"d");
+#t.insert( oid(3), "d" );
+	db_a := oid(4);
+	eb_a := insert(t,db_a,"e");
+#t.insert( oid(4), "e" );
+	fb_a := oid(5);
+	gb_a := insert(t,fb_a,"f");
+#t.insert( oid(5), "f" );
+	hb_a := oid(6);
+	ib_a := insert(t,hb_a,"g");
+#t.insert( oid(6), "g" );
+	jb_a := oid(7);
+	kb_a := insert(t,jb_a,"h");
+#t.insert( oid(7), "h" );
+	lb_a := mark(t,nil);
+	mb_a := print(lb_a,);
+#Identifer 'seqbase' mapped to 'bat.setSequenceBase'

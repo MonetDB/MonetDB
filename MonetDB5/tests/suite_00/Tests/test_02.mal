@@ -1,0 +1,61 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+#var s:= new(str,int);
+	s := new(:str,:int);
+#insert(s,"hello",1);
+	ca_a := insert(s,"hello",1);
+#print(find(s,"hello"));
+	da_a := find(s,"hello");
+	ea_a := print(da_a);
+#insert(s,"bello",2);
+	fa_a := insert(s,"bello",2);
+#insert(s,"cello",3);
+	ga_a := insert(s,"cello",3);
+#insert(s,"dello",4);
+	ha_a := insert(s,"dello",4);
+#insert(s,"eello",5);
+	ia_a := insert(s,"eello",5);
+#insert(s,"fello",6);
+	ja_a := insert(s,"fello",6);
+#insert(s,"gello",7);
+	ka_a := insert(s,"gello",7);
+#insert(s,"hello",8);
+	la_a := insert(s,"hello",8);
+#printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutput~#\n");
+	ma_a := printf("#~BeginVariableOutput~#\n");
+	na_a := info(s);
+	oa_a := print(na_a,);
+	pa_a := printf("#~EndVariableOutput~#\n");
+#print(find(s,"cello"));
+	qa_a := find(s,"cello");
+	ra_a := print(qa_a);
+#delete(s,"cello",3);
+	sa_a := delete(s,"cello",3);
+#print(s);
+	ta_a := print(s);
+#var sn:= select(s,1,5);
+	sn := select(s,1,5);
+#print(sn);
+	ua_a := print(sn);
+#var s2:= semijoin(s.reverse(),sn.reverse());
+	va_a := reverse(s,);
+	wa_a := reverse(sn,);
+	s2 := semijoin(va_a,wa_a);
+#print(s2);
+	xa_a := print(s2);
+#var x:= join(s,s2);
+	x := join(s,s2);
+#print(x);
+	ya_a := print(x);
+#quit();
+	ab_a := quit();

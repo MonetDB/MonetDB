@@ -1,0 +1,40 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+function tst(b:bat[:any,:int]):bat[:any,:any];
+#
+	i := 0;
+#  i := 0;
+barrier	ca_a := true;
+barrier	da_a := <(i,2);
+#  while (i < 2) {
+	b := multiplex.tactics("+",b,1);
+#    b := [+](b, 1);
+	i := +(i,1);
+redo	ca_a;
+exit	da_a;
+exit	ca_a;
+#
+	return ea_a :=b;
+end tst;
+#
+	b1 := new(:int,:int);
+#var b1 := new(int, int);
+	fa_a := insert(b1,0,0);
+#b1.insert(0, 0);
+	ga_a := insert(b1,0,1);
+#
+	bn := tst(b1);
+#var bn := tst(b1);  
+	ha_a := print(bn,);
+#
+	ia_a := quit();

@@ -1,0 +1,54 @@
+# Monet Mil to Mal compiler
+# Copyright (c) 2001-2004, CWI. All rights reserved.
+
+# Predefined code segment
+#The compiler can not guarantee an accurate compilation,
+#because MIL unlike MAL is a dynamically typed language.
+#A few guidelines to maximize usefullness.
+#- make the type of variables explicit, in particular 'nil'
+#- upon advice of M2m to remap identifiers, change it in your program directly
+#setoid(oid(20000000));
+	aa_a := oid(20000000);
+	ba_a := setoid(aa_a);
+#var MODULES:=bat("MODULES");
+	MODULES := new("MODULES");
+#var Static_fcn:=monet_fcntbl.reverse().copy();
+	monet_fcntbl:= mil.take("monet_fcntbl");
+	ca_a := reverse(monet_fcntbl,);
+	Static_fcn := copy(ca_a,);
+#var Fname:=new(oid,str);	Fname.col_name("function");
+	Fname := new(:oid,:str);
+	da_a := bat.setColumn(Fname,"function");
+#var FnameS:=new(oid,str);	FnameS.col_name("function");
+	FnameS := new(:oid,:str);
+	ea_a := bat.setColumn(FnameS,"function");
+#var Ftype:=new(oid,str);	Ftype.col_name("type");
+	Ftype := new(:oid,:str);
+	fa_a := bat.setColumn(Ftype,"type");
+#var Fsig:=new(oid,str);		Fsig.col_name("signature");
+	Fsig := new(:oid,:str);
+	ga_a := bat.setColumn(Fsig,"signature");
+#var Fhelp:=new(oid,str);	Fhelp.col_name("help");
+	Fhelp := new(:oid,:str);
+	ha_a := bat.setColumn(Fhelp,"help");
+#var Fnts:=new(oid,str);
+	Fnts := new(:oid,:str);
+#var Plain_mods:=MODULES.select("plain").sort().copy();
+	ia_a := select(MODULES,"plain");
+	ja_a := sort(ia_a,);
+	Plain_mods := copy(ja_a,);
+#table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
+	ka_a := count(Plain_mods,);
+	la_a := sprintf("%i modules",ka_a);
+	ma_a := reverse(Plain_mods,);
+	na_a := bat.setColumn(ma_a,la_a);
+	oa_a := table(na_a);
+#	var The_mod:=$h;
+barrier	pa_a := bunStream(Plain_mods,pa_aH,pa_aT);
+	The_mod := pa_aH;
+#	printf("\nModule: \"%s\"\n\n",The_mod);
+	qa_a := printf("\nModule: \"%s\"\n\n",The_mod);
+!ERROR: ""
+!        ^
+! syntax error, unexpected TOK_MODULE.
+#Identifer 'col_name' mapped to 'bat.setColumn'
