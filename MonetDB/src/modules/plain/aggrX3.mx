@@ -60,6 +60,25 @@ head-aligned, and to the fetchjoin(reverse(g),b) on-the-fly;
 	"grouped count of true values"
 
 .LOAD
+
+@= sum_avg_procs
+PROC {sum}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,@1] := {
+	return {sum}(g.reverse().join(b),e);
+}
+PROC {avg}(BAT[oid,@1] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,@1] := {
+	return {avg}(g.reverse().join(b),e);
+}
+@m
+@:sum_avg_procs(sht)@
+@:sum_avg_procs(int)@
+@:sum_avg_procs(lng)@
+@:sum_avg_procs(flt)@
+@:sum_avg_procs(dbl)@
+
+PROC {count}(BAT[oid,any] b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,int] := {
+	return {count}(g.reverse().join(b),e);
+}
+
     proc size(BAT[any,bit] b) : int {
 	var h := b.histogram;
 	if (h.exist(true)) 
@@ -616,18 +635,19 @@ int CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e){
 	/* scan b, and increment counts in-place or in cnt-array */
         bhsb = b->hseqbase;
         btt = b->ttype;
-	BATloopFast(b, p, q, xx) {
-		oid *h = (oid*) @5;
-
-		@3(r, bn, (int*)h);
-		if (r) {
-			ptr t = BUNtail(b,p);
-			if (ATOMcmp(btt,t,bt_nil)) {
-				int *dst = (int*) @6;
-				(*dst)++;
-			}
-		}
-	} 
+	switch(ATOMstorage(btt)) {
+	 case TYPE_chr:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,chr))@
+	 case TYPE_sht:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,sht))@
+	 case TYPE_int:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,int))@
+	 case TYPE_lng:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,lng))@
+	 case TYPE_flt:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,flt))@
+	 case TYPE_dbl:	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,dbl))@
+	 default: if (b->tvarsized) {
+			@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,atom_EQ(BUNtvar(b,p),bt_nil,btt))@
+		  } else {
+		 	@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,atom_EQ(BUNtloc(b,p),bt_nil,btt))@
+		  }
+	}
 	if (@1) {
         	/* copy cnt array to final result */
        		BATloopFast(bn, p, q, xx) {
@@ -636,6 +656,24 @@ int CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e){
 		}
 	        GDKfree(cnt);
 	}
+@c
+/*	aggrX3_count_loop
+	@7:	atom_EQ(BUNt{loc,var}(b,p),bt_nil,btt)		b-tail nil check
+		simple_EQ(BUNtloc(b,p),bt_nil,{chr,sht,int,flt,lng,dbl})
+*/
+@= aggrX3_count_loop
+	BATloopFast(b, p, q, xx) {
+		oid *h = (oid*) @5;
+
+		@3(r, bn, (int*)h);
+		if (r) {
+			if (!@7) {
+				int *dst = (int*) @6;
+				(*dst)++;
+			}
+		}
+	} 
+	break;
 @c
 int CMDaggrX3_count(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));	
@@ -1185,6 +1223,33 @@ int CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e){
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
 	btt = b->ttype;
+	switch(ATOMstorage(btt)) {
+	 case TYPE_chr:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,chr))@
+	 case TYPE_sht:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,sht))@
+	 case TYPE_int:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,int))@
+	 case TYPE_lng:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,lng))@
+	 case TYPE_flt:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,flt))@
+	 case TYPE_dbl:	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,simple_EQ(BUNtloc(b,p),bt_nil,dbl))@
+	 default: if (b->tvarsized) {
+			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,atom_EQ(BUNtvar(b,p),bt_nil,btt))@
+		  } else {
+		 	@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,atom_EQ(BUNtloc(b,p),bt_nil,btt))@
+		  }
+	}
+	if (@1) {
+        	/* copy cnt array to final result */
+       		BATloopFast(bn, p, q, xx) {
+			int h = (int)(*(oid*) BUNh@4(bn,p)) - min;
+			*(int*)BUNtloc(bn, p) = cnt[h];
+		}
+	        GDKfree(cnt);
+	}
+@c
+/*	aggrX3_count3_loop
+	@7:	atom_EQ(BUNt{loc,var}(b,p),bt_nil,btt)		b-tail nil check
+		simple_EQ(BUNtloc(b,p),bt_nil,{chr,sht,int,flt,lng,dbl})
+*/
+@= aggrX3_count3_loop
 	BATloopFast(b, p, q, xx) {
 		oid v = *(oid*) @5;
 		
@@ -1194,22 +1259,14 @@ int CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e){
 
 			@3(r, bn, (int*)h);
 			if (r) {
-				ptr t = BUNtail(b,p);
-				if (ATOMcmp(btt,t,bt_nil)) {
+				if (!@7) {
 					int *dst = (int*) @6;
 					(*dst)++;
 				}
 			}
 		}
 	} 
-	if (@1) {
-        	/* copy cnt array to final result */
-       		BATloopFast(bn, p, q, xx) {
-			int h = (int)(*(oid*) BUNh@4(bn,p)) - min;
-			*(int*)BUNtloc(bn, p) = cnt[h];
-		}
-	        GDKfree(cnt);
-	}
+	break;
 @c
 int CMDaggrX3_count3(BAT **ret, BAT *b, BAT* g, BAT *e){
 	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));	
