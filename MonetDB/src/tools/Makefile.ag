@@ -50,7 +50,6 @@ smallTOC_SHARED_MODS =	\
 	../modules/plain/lib_ddbench	\
 	../modules/plain/lib_decimal	\
 	../modules/plain/lib_enum	\
-	../modules/plain/lib_io	\
 	../modules/plain/lib_lock	\
 	../modules/plain/lib_malalgebra	\
 	../modules/plain/lib_mmath	\
