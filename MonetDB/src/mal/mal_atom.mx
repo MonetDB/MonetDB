@@ -36,7 +36,7 @@ html
 #define _MAL_ATOM_H
 
 #include "mal_instruction.h"
-/*#define MAL_ATOM_DEBUG*/
+/* #define MAL_ATOM_DEBUG */
 
 mal_export void malAtomDef(str name,int tpe);
 

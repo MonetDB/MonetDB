@@ -108,7 +108,6 @@ int prevChar(Client cntxt) {
 INLINE
 void skipComment(Client cntxt) { 
 	char c; 
-	if( *cntxt->nxt != '#') return;
 	cntxt->nxt++;
 	while (c = *cntxt->nxt) {
 		if(c== '\n') return;
@@ -348,15 +347,24 @@ int cstLength(Client cntxt, int *type)
 }
 str cstCopy(Client cntxt, int i){ return idCopy(cntxt,i);}
 
-int typeMarker(Client cntxt)
+@-
+Identifiers used as arguments or targets of assignments may be
+qualified with a type. The type should be known before-hand,
+which essential requirs the corresponding module to be loaded first.
+@c
+int typeQualifier(Client cntxt)
 {	
-	if( *cntxt->nxt==':')
-	switch(*(cntxt->nxt+1)){
-	case 'b': if( keyphrase(cntxt,":bit",4) ) return TYPE_bit;
-		if( strncmp(cntxt->nxt,":bat[",5)==0){
-			/* parse bat[type,type */
-			str hd = 0, tl =0;
-			int i= malAnyType, ht,tt;
+	str hd = 0, tl =0;
+	int i= malAnyType, ht,tt;
+
+	if( *cntxt->nxt!=':') return 0;
+
+	cntxt->nxt++;
+	skipBlanc(cntxt);
+	switch(*cntxt->nxt){
+	case 'b': if( keyphrase(cntxt,"bit",3) ) return TYPE_bit;
+		if( strncmp(cntxt->nxt,"bat[",4)==0){
+			/* parse bat[type,type] */
 
 			advance(cntxt,4);
 			if( (hd= idCopy(cntxt,idLength(cntxt))) &&
@@ -372,17 +380,13 @@ int typeMarker(Client cntxt)
 			if( tl ) GDKfree(tl);
 			return i;
 		} 
-		break;
-	case 'c': if( keyphrase(cntxt,":chr",4) ) return TYPE_chr;break;
-	case 'f': if( keyphrase(cntxt,":flt",4) ) return TYPE_flt;break;
-	case 'd': if( keyphrase(cntxt,":dbl",4) ) return TYPE_dbl;break;
-	case 'i': if( keyphrase(cntxt,":int",4) ) return TYPE_int;break;
-	case 'l': if( keyphrase(cntxt,":lng",4) ) return TYPE_lng;break;
-	case 'o': if( keyphrase(cntxt,":oid",4) ) return TYPE_oid;break;
-	case 'p': if( keyphrase(cntxt,":ptr",4) ) return TYPE_ptr;break;
-	case 's': if( keyphrase(cntxt,":sht",4) ) return TYPE_sht;
-		  if( keyphrase(cntxt,":str",4) ) return TYPE_str;break;
-	case 't': if( keyphrase(cntxt,":type",5) ) return TYPE_type;break;
+	default:
+		if( (hd=idCopy(cntxt,idLength(cntxt))) ){
+			ht= getTypeIndex(hd);
+			if( hd) GDKfree(hd);
+			return ht;
+		} 
+		parseError(cntxt,"<type identifier> expected\n");
 	}
 	return 0;
 }
@@ -432,9 +436,10 @@ to a specific named area. The effect is that all definitions may become
 globally known (?) and symbol table should be temporarilly locked
 for updates by concurrent users.
 @T
-moduleStmt : [ATOM] MODULE modname\\
+moduleStmt : [ATOM] MODULE modname [':' type]| [ATOM] id [':' type]\\
 modname    : identifier | string \\
 @-
+An atom statement does not introduce a new module.
 @= parsePath
 	if( x = idLength(cntxt)) modname= idCopy(cntxt,x); else
 	if( y = stringLength(cntxt)) modname= strCopy(cntxt,y);
@@ -449,10 +454,10 @@ int parseModule(Client cntxt, int atomary)
 	if( ! keyword(cntxt,"module",6) ){
 		if(atomary &&  idLength(cntxt) >0){
 			/* parse: ATOM id:type */
-			if( currChar(cntxt)==':') {
-				tpe= typeMarker(cntxt);
-			} else tpe= TYPE_int;
 			modname= idCopy(cntxt,idLength(cntxt));
+			if( currChar(cntxt)==':') {
+				tpe= typeQualifier(cntxt);
+			} else tpe= TYPE_int;
 			malAtomDef(modname,tpe);
 			GDKfree(modname);
 			skipToEnd(cntxt);
@@ -465,9 +470,13 @@ int parseModule(Client cntxt, int atomary)
 @-
 Atom storage may be defined in terms of an existing type.
 @c
-	if( atomary ) {
+	if( atomary ) { 
+		if( strrchr(modname,'/') ){
+			GDKfree(modname);
+			return parseError(cntxt,"<atom name> expected\n");
+		}
 		if( currChar(cntxt)==':') {
-			tpe= typeMarker(cntxt);
+			tpe= typeQualifier(cntxt);
 		} else tpe= TYPE_int;
 		malAtomDef(modname,tpe);
 	}
@@ -561,17 +570,22 @@ defineStmt : FUNCTION
 		skipBlanc2(cntxt);
 		ch = currChar(cntxt);
 	}
-	/* get return type */
 	if( nextChar(cntxt) != ')') {
 		freeInstruction(curInstr);
 		return (MalBlkPtr) parseError(cntxt,"')' expected\n");
 	}
+/*
+The return type is either a single type or multiple return type structure.
+We simply keep track of the number of arguments added and
+during the final phase reshuffle the return values to the beginning (?)
+*/
 	skipBlanc2(cntxt);
 	if( currChar(cntxt) != ':') {
 		/* default */
 		setVarType(curBlk,0,malAnyType);
 	} else { nextChar(cntxt); skipBlanc2(cntxt);
-		@:melType@
+		type= melType(cntxt,curInstr);
+		@:propList@
 		setVarType(curBlk,0,type);
 	}
 	
@@ -586,7 +600,8 @@ functionHdr: fcnName '(' [ binding \{',' binding\}] ')' ':' type\\
 	if( nextChar(cntxt) != ':')
 		return (MalBlkPtr) parseError(cntxt,"':' expected\n");
 	skipBlanc2(cntxt);
-	@:melType@
+	type= melType(cntxt,curInstr);
+	@:propList@
 @-
 MAL variables are statically/dynamically typed.
 Function and procedure arguments should always be typed.
@@ -619,16 +634,17 @@ a column of a BAT.
 			skipBlanc(cntxt);
 		} while( keyphrase1(cntxt,","));
 		if( !keyphrase1(cntxt,"}") )
-			return (MalBlkPtr) parseError(cntxt,"'}' expected\n");
+			/* return (MalBlkPtr) */
+			parseError(cntxt,"'}' expected\n");
 		skipBlanc2(cntxt);
 	}
 @= melElement
 	if( keyword(cntxt,"any",3)){
 		type = malAnyType;
 		if( keyphrase2(cntxt,"::")){
-			if( !isdigit(currChar(cntxt)) )
-				return (MalBlkPtr) parseError(cntxt,"[0-9] expected\n");
-			else {
+			if( !isdigit(currChar(cntxt)) ){
+				parseError(cntxt,"[0-9] expected\n");
+			} else {
 				int k= nextChar(cntxt) - '0';
 				setAnyTailIndex(type,k);
 			}
@@ -646,18 +662,25 @@ a column of a BAT.
 	}
 	skipBlanc2(cntxt);
 @-
-@= melType
+@c
+int melType(Client cntxt, InstrPtr curInstr){
+	int type= malAnyType;
+	int l;
+
 	if( keyword(cntxt,"bat",3)){
 		if( keyphrase1(cntxt,"[")){
 			int ht,tt;
 			@:melElement@ ht = type;
-			if( nextChar(cntxt) !=',')
-				return (MalBlkPtr) parseError(cntxt,"',' expected\n");
+			if( nextChar(cntxt) !=','){
+				parseError(cntxt,"',' expected\n");
+				return malAnyType;
+			}
 			skipBlanc2(cntxt);
 			@:melElement@ tt = type;
 			type = malAnyBatType(ht,tt);
-			if( !keyphrase1(cntxt,"]"))
-				return (MalBlkPtr) parseError(cntxt,"']' expected\n");
+			if( !keyphrase1(cntxt,"]")){
+				parseError(cntxt,"']' expected\n");
+			}
 		} else {
 			type = malAnyBatType(malAnyType,malAnyType);
 			curInstr->polymorphic = TRUE;
@@ -666,7 +689,8 @@ a column of a BAT.
 		@:melElement@
 	}
 	skipBlanc2(cntxt);
-	@:propList@
+	return type;
+}
 @-
 Most functions are (dynamically) linked with the kernel.
 
@@ -710,7 +734,8 @@ help information.
 	skipToEnd(cntxt);
 @-
 Module components may include a function reference overruling
-the built-in type resolver.
+the built-in type resolver. The user-defined type resolver is called
+instead.
 @= typeInfo
 	skipBlanc2(cntxt);
 	if( keyphrase(cntxt,"check",5)){
@@ -859,17 +884,20 @@ for bat[T1,T2] this is a little tricky to parse.
 @= factor
 	if( i= cstLength(cntxt,&lt)){
 		v= cstCopy(cntxt,i);
-		i= typeMarker(cntxt);
+		i= typeQualifier(cntxt);
 		if(i) lt = i;
 		idx= newConstant(curBlk,lt,v);
 	} else
 	if( (v= charCst(cntxt)) ){
-		i= typeMarker(cntxt);
+		i= typeQualifier(cntxt);
 		if(i) lt = i; else lt= TYPE_chr;
 		idx= newConstant(curBlk,lt,v);
 	} else
 	if( i = stringLength(cntxt) ){
-		idx= newConstant(curBlk,TYPE_str,strCopy(cntxt,i));
+		str x= strCopy(cntxt,i);
+		i= typeQualifier(cntxt);
+		if(i) lt = i; else lt= TYPE_str;
+		idx= newConstant(curBlk,lt,x);
 	} else
 	if( i= idLength(cntxt)){
 		/* parse bat[type,type] */
@@ -894,7 +922,7 @@ for bat[T1,T2] this is a little tricky to parse.
 		}else
 		if( (idx=findVariableLength(curBlk,cntxt->nxt,i)) == -1){
 			v= idCopy(cntxt,i);
-			i= typeMarker(cntxt);
+			i= typeQualifier(cntxt);
 			i= i?i: malAnyType;
 			idx = newVariable(curBlk, v, i);
 		} else advance(cntxt,i);
@@ -914,7 +942,7 @@ void parseAssign(Client cntxt, int kind)
 {	InstrPtr curInstr;
 	MalBlkPtr curBlk;
 	Symbol curPrg;
-	int i=0, k=0, lt,rt;
+	int i=0, k=0, lt,rt,l,type;
 	str v, op, arg=0, r;
 
 	curPrg = cntxt->curprg;
@@ -928,10 +956,18 @@ void parseAssign(Client cntxt, int kind)
 		goto part3;
 	}
 	arg= idCopy(cntxt,i);
+@-
+Every target variable may be typed immediately.
+@c
+	type = malAnyType;
+	if( *cntxt->nxt==':' && *(cntxt->nxt+1)!='='){
+		nextChar(cntxt);
+		type= melType(cntxt,curInstr);
+	}
 
 	/* test destination variable or function call */
 	if( keyphrase2(cntxt,":=") ){
-		curInstr->argv[0]= newVariable(curBlk,arg,malAnyType);
+		curInstr->argv[0]= newVariable(curBlk,arg,type);
 	} else {
 		if( curInstr->raise){
 			parseError(cntxt,"':=' expected\n");
@@ -957,14 +993,14 @@ This code is used in both positions of the expression
 @= term
 	if( i= cstLength(cntxt,&lt)){
 		v= cstCopy(cntxt,i);
-		i= typeMarker(cntxt);
+		i= typeQualifier(cntxt);
 		if(i) lt = i;
 		i= newConstant(curBlk,lt,v);
 		pushArgument(curBlk,curInstr,i);
 		goto @1;
 	} 
 	if( (v= charCst(cntxt)) ){
-		i= typeMarker(cntxt);
+		i= typeQualifier(cntxt);
 		if(i) lt = i; else lt= TYPE_chr;
 		i= newConstant(curBlk,lt,v);
 		pushArgument(curBlk,curInstr,i);
@@ -1187,7 +1223,7 @@ int parseError(Client cntxt, str msg)
         if (msg == 0)
 		msg = "can't help you here, sorry.\n";
 	if( strlen(msg)+strlen(buf) < 1020)
-		sprintf(s, "%s", msg);
+		snprintf(s,1020,"%s", msg);
 	skipToEnd(cntxt);
         GDKerror(buf);
 	return 0;

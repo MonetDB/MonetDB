@@ -34,7 +34,7 @@ html
  */
 #ifndef MAL_TYPE_H
 #define MAL_TYPE_H
-#include "gdk.h"
+/*#include "gdk.h"*/
 #include "mal.h"
 
 /*#define DEBUG_MAL_TYPE*/
@@ -122,21 +122,23 @@ str malTypeName(malType tpe)
 	if( tpe == malVarType ) return GDKstrdup("var");
 	if( isaBatType(tpe)){
 		char buf[1024],*s;
+		int l=1024;
 		if( getHeadIndex(tpe) ){
-			sprintf(buf,"bat[any::%d,", getHeadIndex(tpe));
+			snprintf(buf,l,"bat[any::%d,", getHeadIndex(tpe));
 		} else
 		if( getHeadType(tpe) == malAnyType) 
-			sprintf(buf,"bat[any,");
+			snprintf(buf,l,"bat[any,");
 		else
-			sprintf(buf,"bat[%s,", ATOMname(getHeadType(tpe)));
+			snprintf(buf,l,"bat[%s,", ATOMname(getHeadType(tpe)));
+		l -= strlen(buf);
 		s= buf+strlen(buf);
 		if( getTailIndex(tpe) ){
-			sprintf(s,"any::%d]", getTailIndex(tpe));
+			snprintf(s,l,"any::%d]", getTailIndex(tpe));
 		} else
 		if( getTailType(tpe) == malAnyType) 
-			sprintf(s,"any]");
+			snprintf(s,l,"any]");
 		else
-			sprintf(s,"%s]", ATOMname(getTailType(tpe)));
+			snprintf(s,l,"%s]", ATOMname(getTailType(tpe)));
 #ifdef DEBUG_MAL_TYPE
 		printf("%s\n",buf);
 #endif
@@ -146,7 +148,7 @@ str malTypeName(malType tpe)
 		char buf[256];
 		strcpy(buf,"any");
 		if( isAnyExpression(tpe)){
-			sprintf(buf+3,"::%d",getTailIndex(tpe));
+			snprintf(buf+3,253,"::%d",getTailIndex(tpe));
 		}
 		return GDKstrdup(buf);
 	}
@@ -245,8 +247,8 @@ int getTypeIndex(str nme){
 	int i;
 	i= ATOMindex(nme);
 	/* printf("getTypeIndex %s %d %d\n",nme,i, GDKatomcnt);*/
-	if( idcmp("any",nme)==0 || idcmp("ANY",nme)==0) return malAnyType;
-	if( idcmp("bat",nme)==0 || idcmp("BAT",nme)==0){
+	if( idcmp("any",nme)==0 ) return malAnyType;
+	if( idcmp("bat",nme)==0 ){
 /* printf("found a bat[any,any]\n");*/
 		i = newBatType(TYPE_any,TYPE_any);
 /* printf("isAnyexpression? %d\n", isAnyExpression(i));*/
@@ -263,7 +265,7 @@ int getGDKtype(int type){
 	return ATOMtype(type);
 }
 str newTmpName(int i){
-	char buf[128];
-	sprintf(buf,"%c%d",TMPMARKER,i);
+	char buf[PATHLENGTH];
+	snprintf(buf,PATHLENGTH,"%c%d",TMPMARKER,i);
 	return GDKstrdup(buf);
 }

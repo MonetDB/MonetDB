@@ -302,16 +302,28 @@ determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall, PATcall
 		return s1;
 	}
 	p->gdktype =  getGDKtype(getVarType(mb,p->argv[0]));
+@-
+If the destination variable is already strongly typed and result type
+of the operator is left open (manAnyType), then the former type
+prevails.
+@c
+	if( getVarType(mb,p->argv[0])!= malAnyType && s1 == malAnyType){
+#ifdef DEBUG_MAL_RESOLVE
+	if(tracefcn) printf("accepted %s:=%s\n",malTypeName(getDestType(mb,p)),
+		malTypeName(s1));
+#endif
+		return getVarType(mb,p->argv[0]);
+	}
 	if( getDestType(mb,p) == s1) {
 		p->modname= GDKstrdup(m->name);
 		return s1;
+	} else 
 	/*
 	if( typeConformance(mb,p,s1)==0 ){
 		p->gdktype =  getGDKtype(getVarType(mb,p->argv[0]));
 		p->modname= GDKstrdup(m->name);
 		return s1;
 	*/
-	} else 
 	if( getSignature(s)->token !=PATTERNsymbol) foundbutwrong++;
 	s= s->peer;
 	} /* while */
@@ -426,7 +438,7 @@ procedure call without arguments and no module name.
 	if( s1== malAnyType && p->argc>1 ){
 		p->typechk = TYPE_UNKNOWN;
 		if( level <= TYPE_UNKNOWN){
-			sprintf(buf,"unknown operator '%s'\n", 
+			snprintf(buf,1024,"unknown operator '%s'\n", 
 				p->fcnname);
 			showException(mb,getPC(mb,p),"MALresolve",buf);
 			mb->errors++;
@@ -444,7 +456,7 @@ procedure call without arguments and no module name.
 
 	{ str n1 = malTypeName(s1);
 	  str n2 = malTypeName(getDestType(mb,p));
-	  sprintf(buf,"type mismatch %s := %s\n",n2,n1);
+	  snprintf(buf,1024,"type mismatch %s := %s\n",n2,n1);
 	  showException(mb,getPC(mb,p),"MALresolve",buf);
 	  mb->errors++;
 	}

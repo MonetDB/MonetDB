@@ -102,7 +102,9 @@ being called.
 	if( mbcaller== NULL && env != NULL){
 		stk = env;
 		cmd = env->cmd;
-		if( mb != stk->blk) GDKerror("runMAL:misalignment of symbols\n");
+		if( mb != stk->blk) 
+			GDKerror("runMAL:misalignment of symbols\n");
+		pci= getInstrPtr(mb,env->pc);
 	} else {
 		newStack(stk,mb->vtop);
 		stk->stktop= mb->vtop; 

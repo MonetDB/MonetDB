@@ -65,9 +65,9 @@ html
 #ifndef _MAL_INSTR_H
 #define _MAL_INSTR_H
 
+#include "mal.h"
 #include "mal_type.h"
 #include "mal_stack.h"
-#include "mal.h"
 
 #ifdef MALprofiler
 #ifdef HAVE_SYS_TIMES_H

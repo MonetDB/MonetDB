@@ -7,6 +7,7 @@ takes precedence. The context for which the file should be interpreted
 is determined by the module name supplied.
 Typically this involves a module, whose definitions are stored at 
 a known location.
+
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -67,16 +68,20 @@ FILE *malOpenSource(str fname){
 	strcpy(path,fname);
         slash_2_dir_sep(path);
 	if ((fd = fopen(path, "r")) == 0) {
-	    sprintf(path, "%s.mal",path);
+	    /* try to locate the file with 'mal' extension */
+	    snprintf(path,PATHLENGTH, "%s.mal",path);
             if (fname[0] == DIR_SEP) {
                 strcpy(path, path);
                 fd = fopen(path, "r");
             } else {
-                sprintf(path, "%s/modules/%s.mal",GDKdirStr, fname);
+	    /* try to locate the file in the module store */
+                snprintf(path,PATHLENGTH, "%s/modules/%s.mal",GDKdirStr, fname);
 		slash_2_dir_sep(path);
                 fd = fopen(path, "r");
 		if( fd==NULL){
-			sprintf(path, "%s/src/modules/%s.mal",GDKdistrStr, fname);
+		/* try to locate the file in the distribution location */
+			snprintf(path,PATHLENGTH,
+				"%s/src/modules/%s.mal",GDKdistrStr, fname);
 			slash_2_dir_sep(path);
                 	fd = fopen(path, "r");
 		}
@@ -133,6 +138,7 @@ resolving addresses.
 	c->listing = listing;
 	resetClientPrg(c);
 	expandMalBlk(c->curprg->def,lines);
+	c->nxt= c->input;
 	parseMal(c);
 	/* printf("%s:statements %d",fname, c->curprg->def->stop);
 	printf(" variables %d\n",c->curprg->def->vtop); */
@@ -194,9 +200,9 @@ void processInput(Client c,MalStkPtr glb)
 		if( mb->errors == 0){
 			msg= (str) runMAL(c,mb,0,glb);
 			if( msg && msg != (str) GDK_SUCCEED) {
+				GDKerror(msg);
 				if( !c->listing) 
 					printFunction(c->fdout,mb);
-				GDKerror(msg);
 				GDKfree(msg);
 			}
 		} 

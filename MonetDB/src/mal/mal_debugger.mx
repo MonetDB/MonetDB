@@ -198,7 +198,7 @@ char mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd){
 	case 'n': /* next */
 	case 's': /* next */
 		return *b;
-	case 'S': /* display symbol table */
+	case 'm': /* display a module */
 		skipWord(b);
 		skipBlanc(b);
 		debugScope(cntxt->nspace,b);
@@ -406,7 +406,7 @@ void mdbHelp(FILE *f){
 	fprintf(f,"break -- set breakpoint on current instruction\n");
 	fprintf(f,"break <var> -- break on assignment to <var>\n");
 	fprintf(f,"step -- advance to next MAL instruction\n");
-	fprintf(f,"Symbols -- display the symbol table \n");
+	fprintf(f,"module -- display the module [scopes] \n");
 	fprintf(f,"quit -- leaver debugger\n");
 	fprintf(f,"list -- list current program block\n");
 	fprintf(f,"variables -- print variable bindings\n");

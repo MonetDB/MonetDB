@@ -22,32 +22,47 @@ accessible to all hierarchical related clients.
 
 The approach taken is to rely on the concept of object spaces
 as pioniered in Lynda and -later- JavaSpaces.
-Every module in the Monet virtual machine can act as an object space.
 
-This space is managed by functions defined in the module.
-The space can be extended with a new object using the function
-'deposit(nme:str,v:any'). An exception is raised when the object
-is already known.
+The (short) concept name introduced in Monet is the 'box',
+which acts as a container for objects. In particular,
+every module scope comes with a box of objects to store
+constants, global variables, etc., provided it contains
+an implementation of the box interface.
 
-A copy of an object can be obtain using the
-pattern 'take(v:any,nme:str)', where 'nme' denotes the object
-of interest and 'v' the local name where the copy is stored.
-If the type associated with 'v' does not comply with the
-object's type, an exception is raised.
-[at a later stage we may use regular expressions for the names]
+Before a client can interact with a box of objects, it
+should open it, possibly passing qualifying authorization
+information and parameters to instruct the box-manager
+of the intended use.
 
-The object is given back to the space manager calling 'release(nme:str,v:any)'.
-It may update the content of the repository accordingly.
-However, the local copy of the variable is gone immediately.
+At the end of a session, the boxes should be closed. Some box-managers
+may implement a lease-scheme to automatically close interaction
+with a client when the lease runs out.
+
+A box can be extended with a new object using the function
+deposit(nme:str,v:any). The basic implementation silently
+accepts any new definition of the box.
+
+A copy of an object can be obtained using the
+pattern 'take(nme:str):any', where 'nme' denotes the object
+of interest. The type of the receiving variable should
+match the one known for the object.
+
+The object is given back to the box manager calling 'release(nme:str)'
+or 'release(nme:str,newval:any)'.
+It may update the content of the repository accordingly, release locks,
+and move the value to persistent store. Whatever the semantics
+of the box requires. [The default implementation is a no-op]
 
 Finally, the object manager can be requested to 'discard(nme:str)'
-an object completely.
+an object completely.  The default implementation is to reclaim
+the space in the box, which may affect the visibiltiy of the box's content
+when it is concurrently used in an iterator.
 
-@+
+Upon need, a user can extend the functionality of a box by provision
+of additional functions.
 Concurrency control, replication services, as well as access
-to remote stores is part of an object space definition.
-Depending on the intended semantics, the object space manager
-(implementations of deposit(), take(), release() and discard() )
+to remote stores may be delegated to a box manager.
+Depending on the intended semantics, the box manager
 may keep track of the clients holding links to this members, 
 provide a traditional 2-phase
 locking scheme, optimistic control, or check-out/check-in scheme.
@@ -60,43 +75,70 @@ at a time.
 Example: consider the client function:
 @T
 function myfcn():void;
-	b:bat := mil.take("mytable");
-	sql.take(c:bat[int,str], "person","age");
+	b:bat[oid,int] := bbp.take("mytable");
+	c:bat[int,str] := sql.take("person","age");
 	d:= intersect(b,c);
 	print(d);
-	take(u:str,"user");
+	u:str:= client.take("user");
 	print(u);
-	release(user);
+	client.release("user");
 end function;
 @-
 The function obtains a copy from the local persistent bat space,
 much like bat-names are resolved under MIL semantics. The second
 statement uses the default schema to resolve the location of a
 column. The result bat 'd' is temporary and disappears upon garbage
-collection or explicit 'destroy'. The variable 'u' is looked up
-as the string object user.
+collection. The variable 'u' is looked up as the string object user.
 
-The type parameters in the take() calls enable early type checking
+Note that bats b and c need be released at some point. In general
+this point in time does not coincide with a computational boundary
+like return of a function. During a session, several bats may be taken
+out of the box, being processed, and only at the end of a session 
+being released. In this example, it means that the reference to
+b and c is lost at the end of the function (due to garbarge collection)
+and that subsequent use requires another take() call.
+
+The type parameters in the target variable of take() enable early type checking
 Failure to find a properly typed object leads to an exception.
 The type indicator for a take instruction may be ommitted, but
-this defers type resolution to execution time.
+this defers type resolution to execution time, where the type manager
+is called for each unresolved statement.
 
-Note, possible extensions for the object space technique is
+Possible extensions for the box technique is
 to introduce e.g. xml.take() which converts an XML document to a BAT,
 jpeg.take() similer for an image.
 
-@+ Space management
-Every client receives a single object space (client.take()) upon initialization.
-This space is placed subordinate to any space introduced by the
-system administrator. It will contain all global client data and is not
-persistent (?)
+@+ Inheritance.
+Nesting boxes (like Russian dolls) is possible. It provides a simple
+inheritance scheme between boxes, but in general will interfere with
+the semantics of each box. Therefore, nesting should be handled explicitly.
 
-This is typically part of running startup
-scripts. Variables are added to the object spaces using the export()
-function call, which performs the authorization and possible definition
-clashes.
-@
-@-
+@+ Session boxes
+The code base introduced here provides a reference case and
+the building blocks for more advanced box management schemes.
+
+Aside from boxes associated with the modules, they can also be created
+dynamically on behalf of a client. Such boxes are considered private
+and require access by name parameter. 
+At the end of a session they are closed, which means that they are
+saved in persistent store until the next session starts.
+For example:
+@T
+function m():void;
+	box.open("client_name");
+	box.deposit("client_name","pi",3.417:flt);
+	f:flt := box.take("client_name","pi");
+	print(t);
+	box.close("client_name");
+end function;
+
+Every client has a private session scope, which also provides an object box.
+In the namespace it is placed subordinate to any space introduced by the
+system administrator. It will contain global client data, e.g.
+user, language, database, port, and any other session parameter.
+
+The boxes are all collected in the context of the database directory,
+i.e. the directory <GDKdirStr>/boxes
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -119,26 +161,40 @@ clashes.
  * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
  */
 
-#ifndef _MAL_BIND_H
-#define _MAL_BIND_H
+#ifndef _MAL_BOX_H
+#define _MAL_BOX_H
 #include "mal_instruction.h"
 #include "mal_stack.h"
 
-typedef struct BOX{        /* see objectspace.mx */
-        MT_Lock lock;           /* provide exclusive access */
+/*#define DEBUG_MAL_BOX*/
+
+typedef struct BOX{        
+        MT_Lock lock;     /* provide exclusive access */
+	str	name;
         MalBlkPtr sym;		
-        MalStkPtr stk;
-        struct BOX *outer;
+        MalStkPtr val;
 } *Box, BoxRecord;
 
-mal_export void initBox();
-mal_export Box newBox(Box outer);
-mal_export void freeBox(Box obj);
-mal_export void deleteBox(Box obj);
+mal_export Box newBox(str name);
+mal_export Box findBox(str name);
+mal_export Box openBox(str name);
+mal_export int closeBox(str name,int flag);
+mal_export void destroyBox(str name);
+mal_export str boxFileName(Box box, str extension);
+mal_export int saveBox(Box box,int flag);
+mal_export void loadBox(str nme);
+
+mal_export int depositBox(Box box, str name, ValPtr val);
+mal_export int takeBox(Box box, str name, ValPtr val);
+mal_export int releaseBox(Box box, str name);
+mal_export int discardBox(Box box, str name);
+mal_export str getName(Box box, lng i);
+mal_export str toString(Box box, lng i);
+mal_export int nextBoxElement(Box box, lng *cursor, ValPtr v);
 
 mal_export void printSomeBox(FILE *fd, int k);
 mal_export void printBox(FILE *fd, Box obj);
-#endif /* _MAL_BIND_H */
+#endif /* _MAL_BOX_H */
 @-
 The hierarchy of object spaces ends at the root of the tree.
 This is a dummy element and should contain system-wide objects
@@ -146,73 +202,291 @@ only.
 @= newBOX
 	obj= (Box) GDKmalloc(sizeof(BoxRecord));
 	bzero((char*) obj, sizeof(BoxRecord));
+	obj->name= GDKstrdup(name);
 	obj->sym= newMalBlk();
-	obj->stk = newGlobalStack(MAXVARS);
+	obj->val = newGlobalStack(MAXVARS);
+	obj->lock= MT_create_lock();
 @-
 @c
 #include "mal_box.h"
 
-#define MAXSPACES 64	/* >MAXCLIENTS !! */
+#define MAXSPACES 64	/* >MAXCLIENTS+ max modules !! */
 Box boxes[MAXSPACES];
 
-void initBox()
-{
-	Box obj;
-	@:newBOX@
-	boxes[0]= obj;
-}
-
-Box newBox(Box outer){
-	Box obj;
+Box newBox(str name){
+	Box obj= 0;
 	int i;
-        MT_set_lock(mal_contextLock, "deleteBox");
-	@:newBOX@
-	obj->outer = outer;
-
+        MT_set_lock(mal_contextLock, "newBox");
+#ifdef DEBUG_MAL_BOX
+	printf("create new box '%s'\n",name);
+#endif
+	for(i=0; i<MAXSPACES; i++)
+	if( boxes[i]!= NULL && idcmp(name,boxes[i]->name)==0) {
+		MT_unset_lock(mal_contextLock, "newBox");
+		GDKwarning("newBox:duplicate box definition\n");
+		return boxes[i];
+	}
 	for(i=0; i<MAXSPACES; i++)
 	if( boxes[i]== NULL) {
+		@:newBOX@
 		boxes[i]= obj;
 		break;
 	}
+        MT_unset_lock(mal_contextLock, "newBox");
 	if( i== MAXSPACES)
-		GDKerror("too many object spaces\n");
-        MT_unset_lock(mal_contextLock, "deleteBox");
+		GDKerror("too many boxes\n");
+#ifdef DEBUG_MAL_BOX
+	printf("succeeded at %d\n",i);
+#endif
 	return obj;
 
 }
-void freeBox(Box obj){
-	freeMalBlk(obj->sym);
-	freeStack(obj->stk);
-}
-void deleteBox(Box obj){
-	int i,j;
-        MT_set_lock(mal_contextLock, "deleteBox");
-	for(i=j=0;i<MAXSPACES;i++){
-		if( boxes[j] == obj)
-			freeBox(obj);
-		else boxes[i] = boxes[j++];
+
+Box findBox(str name){
+	int i;
+        MT_set_lock(mal_contextLock, "findBox");
+
+	for(i=0; i<MAXSPACES; i++)
+	if( boxes[i]!= NULL && idcmp(name,boxes[i]->name)==0) {
+#ifdef DEBUG_MAL_BOX
+		printf("found the box '%s' %d\n",name,i);
+#endif
+		MT_unset_lock(mal_contextLock, "findBox");
+		return boxes[i];
 	}
-        MT_unset_lock(mal_contextLock, "deleteBox");
+        MT_unset_lock(mal_contextLock, "findBox");
+#ifdef DEBUG_MAL_BOX
+	printf("could not find the box '%s' \n",name);
+#endif
+	return 0;
 
 }
-@- Binding 
-Each time a user wishes to access a global variable, it
-should call the take routine.
-The default implementation is given below, we expect 
-different versions to emerge.
-@c
-int takeObject(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	return GDK_SUCCEED;
+Box openBox(str name){
+	Box box = findBox(name);
+	if( box ) return box;
+	box = newBox(name);
+	loadBox(name);
+	return box;
 }
-int releaseObject(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+int closeBox(str name,int flag){
+	Box box;
+	if( box=findBox(name)){
+		saveBox(box,flag);
+		return 0;
+	}
+	return -1;
+}
+void destroyBox(str name){
+	int i,j;
+	str boxfile;
+
+        MT_set_lock(mal_contextLock, "destroyBox");
+	for(i=j=0;i<MAXSPACES;i++){
+		if( idcmp(boxes[j]->name,name) == 0){
+			free(boxes[i]->name);
+			freeMalBlk(boxes[i]->sym);
+			freeStack(boxes[i]->val);
+			boxfile= boxFileName(boxes[i],0);
+			unlink(boxfile);
+			GDKfree(boxfile); 
+		} else boxes[i] = boxes[j++];
+	}
+        MT_unset_lock(mal_contextLock, "destroyBox");
+
+}
+@+ Operations
+The deposit operation silently accepts any request to store
+an element.
+@c
+int depositBox(Box box, str name, ValPtr val){
+	int i;
+	ValPtr v;
+	i= findVariable(box->sym, name);
+	if( i<0){
+		i= newVariable(box->sym,GDKstrdup(name),val->vtype);
+		chkStack(box->val,i);
+	}
+	v= &box->val->stk[i];
+	box->val->stktop++;
+	VALcopy(v,val);
+#ifdef DEBUG_MAL_BOX
+	printf("depositBox: entered '%s' at %d type %d\n",
+		name,i,v->vtype);
+#endif
 	return GDK_SUCCEED;
 }
 @-
+Taking an element from a box is only permitted if the type of
+the receiver matches the type of the source.
+@c
+int takeBox(Box box, str name, ValPtr val){
+	int i;
+	ValPtr v;
+	i= findVariable(box->sym, name);
+#ifdef DEBUG_MAL_BOX
+		printf("takeBox: found '%s' at %d\n",name,i);
+#endif
+	if( i<0) return GDK_FAIL;
+	v= &box->val->stk[i];
+	if(val->vtype != v->vtype && v->vtype!= TYPE_any){
+#ifdef DEBUG_MAL_BOX
+	printf("takeBox:type error %d,%d\n",val->vtype,box->val->stk[i].vtype);
+#endif
+		return GDK_FAIL;
+	}
+	VALcopy(val, &box->val->stk[i]);
+#ifdef DEBUG_MAL_BOX
+	printf("takeBox:'%s' from '%s'\n",name,box->name);
+#endif
+	return GDK_SUCCEED;
+}
+
+int releaseBox(Box box, str name){
+	int i;
+
+#ifdef DEBUG_MAL_BOX
+	printf("releaseBox:%s from %s\n",name,box->name);
+#endif
+	i= findVariable(box->sym,name);
+	if( i<0) return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+int releaseAllBox(Box box){
+#ifdef DEBUG_MAL_BOX
+	printf("releaseAllBox:%s \n",box->name);
+#endif
+	return GDK_SUCCEED;
+}
+
+int discardBox(Box box, str name){
+	int i,j;
+#ifdef DEBUG_MAL_BOX
+	printf("discardBox:%s from %s\n",name,box->name);
+#endif
+	i= findVariable(box->sym,name);
+	if( i<0) return GDK_FAIL;
+	garbageElement(&box->val->stk[i]);
+	for(j=i;j< box->sym->vtop-2;j++){
+		box->sym->var[j] = box->sym->var[j+1];
+		VALcopy(&box->val->stk[j], &box->val->stk[j+1]);
+	}
+	box->sym->vtop--;
+	box->val->stktop--;
+	return GDK_SUCCEED;
+}
+@+
+The elements can be obtained using iterator, which returns the name
+of the next element in the box.
+@c
+int nextBoxElement(Box box, lng *cursor, ValPtr v){
+	if( *cursor >= box->sym->vtop){
+		*cursor = 0;
+		return GDK_SUCCEED;
+	}
+        garbageElement(v);
+	v->vtype= TYPE_str;
+        v->val.pval= getName(box,*cursor);
+	*cursor= *cursor+1;
+	return GDK_SUCCEED;
+}
+str getName(Box box, lng i){
+	str s;
+	s= getVarName(box->sym,i);
+	return GDKstrdup(s);
+}
+str toString(Box box, lng i){
+	return GDKstrdup("");
+}
+@+ Persistency
+The content of a box is saved on a file for subsequent re-use.
+The storage is explicitly in terms of MAL operations.
+For BAT objects, the corresponding object is made persistent.
+Note that the user can not control these operations directly.
+@c
+str boxFileName(Box box, str extension){
+	char boxfile[PATHLENGTH];
+	if(extension)
+		snprintf(boxfile,PATHLENGTH,"%s/boxes/%s.%s",
+			GDKdirStr,box->name,extension);
+	else	snprintf(boxfile,PATHLENGTH,"%s/boxes/%s.box",
+			GDKdirStr,box->name);
+	return GDKstrdup(boxfile);
+}
+int saveBox(Box box,int flag){
+	int i, ret=0;
+	ValPtr v;
+	FILE *f;
+	str boxfile, boxfilebak;
+
+	boxfile = boxFileName(box,0);
+	boxfilebak = boxFileName(box,"bak");
+
+#ifdef DEBUG_MAL_BOX
+	printf("saveBox:reference %s\n",boxfile);
+#endif
+	if( access(boxfile,R_OK) == 0){
+		if( unlink(boxfilebak) || link(boxfile,boxfilebak)) {
+			GDKerror("saveBox:can not make backup\n");
+			GDKfree(boxfile); GDKfree(boxfilebak);
+			return 1;
+		}
+	} 
+
+	f= fopen(boxfile,"w");
+	if(f != NULL){
+#ifdef DEBUG_MAL_BOX
+	printf("saveBox:created %s\n",boxfile);
+#endif
+		chmod(boxfile, (S_IRUSR | S_IWUSR));
+		if( flag) fprintf(f,"%s.open();\n",box->name);
+		else fprintf(f,"box.open(\"%s\");\n",box->name);
+		for(i=0;i<box->sym->vtop; i++){
+		if( flag) 
+			fprintf(f,"%s.deposit(\"%s\",", 
+				box->name, getVarName(box->sym,i));
+		else fprintf(f,"box.deposit(\"%s\",\"%s\",", 
+				box->name, getVarName(box->sym,i));
+			v= &box->val->stk[i];
+			if( isaBatType(getVarType(box->sym,i) )){
+				fprintf(f,"%s", BBPname(v->val.br.id));
+			} else {
+				VALprint(f,v);
+				fprintf(f,":%s", malTypeName(v->vtype));
+			}
+			fprintf(f,");\n");
+		}
+	} else {
+		GDKerror("saveBox:can not create box file\n");
+		ret= -1;
+	}
+	if(fclose(f) && link(boxfilebak,boxfile) && unlink(boxfilebak) )
+		ret= -1;
+	GDKfree(boxfile); GDKfree(boxfilebak);
+	return ret;
+}
+@-
+Loading a box is equivalent to reading a script.
+@c
+void loadBox(str name){
+	char boxfile[PATHLENGTH];
+	snprintf(boxfile,PATHLENGTH,"%s/boxes/%s.box",GDKdirStr,name);
+#ifdef DEBUG_MAL_BOX
+	printf("loadBox:start loading the file %s\n",boxfile);
+#endif
+	if( access(boxfile,R_OK)== 0){
+		malImport(getClient(),boxfile,0);
+#ifdef DEBUG_MAL_BOX
+		printf("loadBox:loaded the file %s\n",boxfile);
+#endif
+	} 
+}
+@+ Utilities
 Utilities for the debugger permit dumping of all the object
 spaces.
 @c
 void printBox(FILE *fd, Box obj)
-{ printStack(fd,obj->sym,obj->stk); }
+{ printStack(fd,obj->sym,obj->val); }
 
 void printSomeBox(FILE *fd, int k)
 {

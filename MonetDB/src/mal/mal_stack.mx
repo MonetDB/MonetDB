@@ -41,7 +41,7 @@ html
  */
 #ifndef _MAL_STACK_H_
 #define _MAL_STACK_H_
-#include "mal_type.h"
+#include "mal.h"
 #include "mal_instruction.h"
 
 typedef struct MALSTK {
@@ -93,6 +93,7 @@ MalStkPtr newGlobalStack(int size){
 	if( s== NULL)
 		GDKfatal("newGlobalStack:can not obtain memory\n");
 	bzero((char*)s, stackSize(size)+sizeof(MalStack));
+	s->stksize = size;
 	return s;
 }
 
@@ -107,6 +108,17 @@ MalStkPtr reallocStack(MalStkPtr s, int cnt){
 	s->stksize = k;
 	GDKfree(old);
 	return s;
+}
+@-
+When you add a value to the stack, you should ensure that
+there is space left. It should only be used for global
+stack frames, because the others are allocated in the
+runtime stack.
+@c
+void chkStack(MalStkPtr stk, int i){
+	if(stk->stksize <=i){
+		reallocStack(stk,STACKINCR);
+	}
 }
 void freeStack(MalStkPtr stk){
 	GDKfree(stk);

@@ -164,7 +164,8 @@ void *loadModuleLibrary(str modname){
 	printf("load module:path=%s, library=%s\n",library,modname);
 #endif
 	if( modname[0]!='/') {
-		sprintf(buf,"%s/lib/lib_%s.so", GDKdirStr, library);
+		snprintf(buf,MAXPATHLEN,
+			"%s/lib/lib_%s.so", GDKdirStr, library);
 		slash_2_dir_sep(buf);
 		if( access(buf,R_OK)== 0) {
 			handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
@@ -176,7 +177,8 @@ void *loadModuleLibrary(str modname){
 			return handle;
 		}
 	} 
-	sprintf(buf,"%s/%s/lib_%s.so", GDKdistrStr, LIBPATH, library);
+	snprintf(buf,MAXPATHLEN,
+		"%s/%s/lib_%s.so", GDKdistrStr, LIBPATH, library);
 	slash_2_dir_sep(buf);
 	if( access(buf,R_OK) == 0) {
 		handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);

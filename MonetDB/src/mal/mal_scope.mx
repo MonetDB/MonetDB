@@ -3,7 +3,7 @@
 @* MAL runtime name space
 
 The MAL name spaces are organized in a hierarchy of module scopes.
-Each module scope itself is organized as a list of subscopes
+Each scope itself is organized as a list of subscopes
 indexed by the first character of the function name.
 
 A function call mod.fcn(Anme:Type, ..) is resolved as follows. We traverse the
@@ -81,6 +81,7 @@ html
 #ifndef _MAL_SCOPE_H_
 #define _MAL_SCOPE_H_
 #include "mal_instruction.h"
+#include "mal_box.h"
 
 #define MAXSCOPE 256
 
@@ -89,6 +90,7 @@ typedef struct SCOPEDEF {
         str     name;
 	GDKfcn	typeChecker;	/* function address for type checker */
         struct SYMDEF   **subscope; /* type dispatcher table */
+	Box	box;	/* module related objects */
 } *Scope, ScopeDefinition;
 
 

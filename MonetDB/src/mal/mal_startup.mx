@@ -68,10 +68,10 @@ void startupPrelude(Client c, str fnme1, str fnme2)
 {	char buf[PATHLENGTH];
 	FILE *fd;
 
-	sprintf(buf,"%s/%s",GDKdirStr,fnme1);
+	snprintf(buf,PATHLENGTH,"%s/%s",GDKdirStr,fnme1);
 	SLASH_2_DIR_SEP(buf);
 	if( (fd= fopen(buf,"r")) == NULL){
-		sprintf(buf,"%s/%s",GDKdistrStr,fnme2);
+		snprintf(buf,PATHLENGTH,"%s/%s",GDKdistrStr,fnme2);
 		SLASH_2_DIR_SEP(buf);
 		if( (fd= fopen(buf,"r")) == NULL){
 			GDKerror("FATAL:server file '%s' missing\n",fnme2);
