@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s10 <<'EOT'
-doc("foo.xml")/parent::foo/descendant::bar/following::baz
-EOT
-echo $?

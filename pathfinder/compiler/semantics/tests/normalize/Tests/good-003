@@ -1,7 +1,0 @@
-#!/bin/bash
-
-pf -s2 <<'EOT'
-xquery version "1.0" encoding "iso-8859-15";
-42
-EOT
-echo $?

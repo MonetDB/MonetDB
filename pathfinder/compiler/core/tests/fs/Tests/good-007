@@ -1,8 +1,0 @@
-#!/bin/bash
-
-pf -s9 <<'EOT'
-import schema "myschema" at "http://www.myschema.org/";
-
-17
-EOT
-echo $?

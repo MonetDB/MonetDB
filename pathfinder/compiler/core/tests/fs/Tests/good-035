@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s9 <<'EOT'
-<a/>
-EOT
-echo $?

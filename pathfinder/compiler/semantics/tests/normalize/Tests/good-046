@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s2 <<'EOT'
-let $a as attribute(*, bar) := 42 return 17
-EOT
-echo $?

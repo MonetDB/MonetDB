@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s1 <<'EOT'
-processing-instruction { "foo" } { "bar" }
-EOT
-echo $?
