@@ -34,6 +34,7 @@ print(b.info,c.info);
 [ "batPersistence",		  "transient",	  "transient"	  ]
 [ "batRestricted",		  "read-only",	  "read-only"	  ]
 [ "batRefcnt",			  "2",		  "1"		  ]
+[ "batLRefcnt",			  "1",		  "1"		  ]
 [ "batDirty",			  "dirty",	  "dirty"	  ]
 [ "batSet",			  "0",		  "0"		  ]
 [ "void_tid",			  "0",		  "0"		  ]

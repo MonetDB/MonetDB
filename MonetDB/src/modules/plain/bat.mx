@@ -922,6 +922,7 @@ int CMDinfo(BAT **retval, BAT *b){
         BUNins(bn, "batPersistence", mode);
         BUNins(bn, "batRestricted", access);
         BUNins(bn, "batRefcnt", local_itoa(BBP_refs(b->batCacheid)));
+        BUNins(bn, "batLRefcnt", local_itoa(BBP_lrefs(b->batCacheid)));
         BUNins(bn, "batDirty", BATdirty(b)?"dirty":"clean");
         BUNins(bn, "batSet", local_itoa(b->batSet));
         BUNins(bn, "void_tid", local_itoa(b->void_tid));

@@ -103,6 +103,7 @@ stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "batPersistence",		  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient"	  ]
 [ "batRestricted",		  "updatable",	  "updatable",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only"	  ]
 [ "batRefcnt",			  "1",		  "1",		  "2",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
+[ "batLRefcnt",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "2",		  "1",		  "2",		  "1"		  ]
 [ "batDirty",			  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batSet",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "head_index",			  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
