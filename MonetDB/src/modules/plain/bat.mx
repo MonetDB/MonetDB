@@ -612,8 +612,8 @@ these 'sync' OIDs with their own propagation rules.
 
 bat_export size_t void_append_bat( BAT *b, BAT *u);
 bat_export size_t void_insert_bat( BAT *b, BAT *u);
-bat_export size_t void_replace_bat( BAT *b, BAT *u);
-bat_export void void_inplace(BAT *b, oid id, ptr val );
+bat_export ssize_t void_replace_bat( BAT *b, BAT *u);
+bat_export int void_inplace(BAT *b, oid id, ptr val );
 
 #endif /*BAT_H*/
 @c
@@ -771,8 +771,9 @@ size_t void_insert_bat( BAT *b, BAT *u){
 	return nr;
 }
 
-void void_inplace(BAT *b, oid id, ptr val )
+int void_inplace(BAT *b, oid id, ptr val )
 {
+	int res = GDK_SUCCEED;
         BUN p = NULL;
         BUN oldInserted = b->batInserted;
 
@@ -783,18 +784,24 @@ void void_inplace(BAT *b, oid id, ptr val )
         b->batInserted = NULL;
         BUNfndVOID(p, b, (ptr)&id);
         assert(p >= b->batInserted); /* we don't want delete/ins */
-        (void) BUNinplace(b, p, (ptr)&id, val);
+	if (b->batRestricted)
+		GDKerror("void_inplace: access denied\n");
+	assert(!b->batRestricted);
+        if (!BUNinplace(b, p, (ptr)&id, val))
+		res = GDK_FAIL; 
         b->batInserted = oldInserted;
+	return res;
 }
 
-size_t void_replace_bat( BAT *b, BAT *u){
+ssize_t void_replace_bat( BAT *b, BAT *u){
 	size_t nr = 0;
 	BUN r,s;
 
 	BATloop(u, r, s){
 		oid updid = *(oid*)BUNhead(u,r);
 		ptr val = BUNtail(u,r);
-		void_inplace(b,  updid, val);
+		if (void_inplace(b,  updid, val) == GDK_FAIL)
+			return -1;
 		nr++;
 	}
 	return nr;
@@ -890,7 +897,8 @@ int bat_append_val_wrap( BAT **res, BAT *i, ptr u )
 int bat_replace_oid_bat_wrap( BAT **res, BAT *o, BAT *d )
 {
 	*res = o;
-	void_replace_bat( o, d );
+	if (void_replace_bat( o, d ) < 0)
+		return GDK_FAIL;
 	BBPfix(o->batCacheid);
 	return GDK_SUCCEED;
 }

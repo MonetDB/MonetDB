@@ -220,7 +220,7 @@ with: HOUR = integer between 0 and 23
 \end{verbatim}
 @m
 .ATOM daytime = int;
-	.FROMSTR = daytime_fromstr;
+	.FROMSTR = daytime_tz_fromstr;
 	.TOSTR = daytime_tostr;
 .END;
 
@@ -1394,7 +1394,7 @@ int daytime_tz_fromstr(str buf, int *len, daytime **ret)
 	val = **ret + offset;
 	if (val < 0) 
 		val = mtime + val;
-	if (val > mtime) 
+	if (val >= mtime) 
 		val = val - mtime;
 	**ret = (daytime)val;
 	return (int) (s-buf);
