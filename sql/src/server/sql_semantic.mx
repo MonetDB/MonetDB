@@ -1387,12 +1387,15 @@ static stmt *sql_cross(mvc * sql, scope * scp, symbol * q)
 
 	tvar *tv1 = table_ref(sql, scp, tab_ref1);
 	tvar *tv2 = table_ref(sql, scp, tab_ref2);
-	cvar *cv1 = tv1->columns->h->data;
-	cvar *cv2 = tv2->columns->h->data;
+	cvar *cv1;
+	cvar *cv2;
 	stmt *ct;
 
 	if (!tv1 || !tv2)
 		return NULL;
+
+	cv1 = tv1->columns->h->data;
+	cv2 = tv2->columns->h->data;
 
 	ct = stmt_join(stmt_dup(cv1->s), stmt_reverse(stmt_dup(cv2->s)), cmp_all);
 
