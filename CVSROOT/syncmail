@@ -211,7 +211,7 @@ def calculate_diff(filespec, contextlines):
         del lines[DIFF_HEAD_LINES:-DIFF_TAIL_LINES]
         lines.insert(DIFF_HEAD_LINES,
                      '[...%d lines suppressed...]\n' % removedlines)
-    return string.join(lines, '')
+    return string.replace(string.join(lines, ''), '\000', '')
 
 
 
