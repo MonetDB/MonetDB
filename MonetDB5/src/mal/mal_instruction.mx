@@ -1,7 +1,30 @@
-@t MAL instruction blocks
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2004 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
+@'              Sjoerd Mullender  <Sjoerd.Mullender@cwi.nl>
+
 @a M. Kersten
 @v 0.0
-@+ MAL instruction layout
+@+ MAL instruction blocks
 MAL instruction sequences have a simple format.
 The operation is either an assigment "variable := module.fcn(a1..a32)"
 where the actual function arguments are references to variables on the
@@ -78,7 +101,8 @@ barrier (Z,val):=random(1);
 	redo Z;
 exit Z;
 	
-\end{verbatim{
+\end{verbatim}
+@{
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -1655,3 +1679,4 @@ void batFinalCall(ValPtr v){
         else GDKerror("interpreter:bat '%d' disappeared\n",v->val.bval);
 #endif  
 }
+@}

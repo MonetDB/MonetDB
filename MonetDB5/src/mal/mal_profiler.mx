@@ -21,10 +21,9 @@
 @' 		Niels Nes <Niels.Nes@cwi.nl>
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-@t MAL dynamic profiler
 @a M. Kersten
 @v 0.0
-@* Introduction
+@* MAL dynamic profiler
 A key issue in the road towards a high performance Monet implementation
 is to understand where resources are being spent. This information
 can be obtained using different tools and at different levels of
@@ -70,27 +69,8 @@ The profile cache is unlimited.
 The profiler is activated by defining MALprofiler in mal.mx.
 This leads to securing space for the counters and for code
 in the interpreter to collect the information.
-
+@{
 @h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- */
 #ifndef _MAL_PROFILER_H
 #define _MAL_PROFILER_H
 
@@ -854,3 +834,4 @@ void  profileReport(Scope cntxt, int outer, stream *out)
         if(outer && cntxt->outer) profileReport(cntxt->outer, outer,out);
 #endif
 }
+@}

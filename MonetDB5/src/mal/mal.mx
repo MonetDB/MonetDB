@@ -26,35 +26,30 @@
 % define titlepage
 @t The Monet Database System
 @v Version 5.0
-@a Martin L. Kersten & Peter Boncz
+@a Martin L. Kersten 
 
 % create table of contents 
 \newpage
 \tableofcontents
 \newpage
  
-@* Monet
-The Monet kernel library finds its roots in developing the runtime
-system for an object-oriented database language Goblin in the early nineties. 
-This language never reached maturity, but the code base reflects the
-assumptions and chooses made many years ago.
-The Monet kernel library is complemented by a textual interface, 
-called the Monet Interface Language until version 5.
-This language was a poor-mans programming/scripting language to
-directly interact with the kernel code.
+@* Introduction
 
-As of Version 5.0 we use an abstract machine model and an associated
-Monet Assembler Language. This interface is easy to interpret, versatile and 
+MonetDB version 5 is a major departure from the previous MonetDB
+versions. The most notable difference is the new interface language,
+which turns the backend into an abstract database machine with its
+associated assembler language (MAL).
+This interface is designed for ease of interpretation, versatility and 
 flexible to accommodate system debugging and application tool development.
 Although a textual interface potentially leads to a performance degradation, 
-our experience with earlier systems, e.g. Troll and PRISMA,
+our experience with earlier systems, 
 showed that the overhead can be kept within acceptable limits.
 Moreover, a textual interface reduces the programming
 effort otherwise needed to develop test and application programs.
 
-
+@{
 @+ Critical sections and semaphores
-Monet is implemented as a collection of threads. This calls for extreme
+Monet V5 is implemented as a collection of threads. This calls for extreme
 care in coding. At several places locks and semaphores are necessary
 to achieve predictable results. In particular, after they are created
 and when they are inspected or being modified to take decisions.
@@ -71,27 +66,6 @@ mal_contextLock       & mal_client.mx      & {\em created  }\\
 Definitions that need to included in every file of the Monet system,
 as well as in user defined module implementations.
 @h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- *		   Peter Boncz <Peter.Boncz@cwi.nl>
- *		   Niels Nes <Niels.Nes@cwi.nl>
- */
 #ifndef _MAL_H
 #define _MAL_H
 
@@ -108,8 +82,7 @@ as well as in user defined module implementations.
 #define mal_export extern
 #endif
 
-
-#define MONET_ADMIN	"adm"
+#define MONET_ADMIN	"admin"
 
 @+ Monet Calling Options
 The number of invocation arguments is kept to a minimum.
@@ -267,4 +240,4 @@ void mal_exit(Client cntxt){
 	TMcommit();
 	GDKexit(1);
 }
-
+@}

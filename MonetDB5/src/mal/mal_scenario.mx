@@ -22,10 +22,9 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f mal_scenario
-@t MAL scenarios
 @a M. Kersten
 @v 0.0
-@+ Introduction
+@* MAL scenarios
 In Monet multiple languages, optimizers, and execution engines can
 be combined at run time to satisfy a wide user-community.
 A assemblage of components is called a scenario.
@@ -74,26 +73,8 @@ pushing a new one call scenario(language, optimize, tactic,
 processor). Propagation of the state information is
 encapsulated a scenario2scenario() call. Not all transformations
 may be legal.
+@{
 @h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- */
 
 #ifndef _MAL_SCENARIO_H
 #define _MAL_SCENARIO_H
@@ -449,3 +430,5 @@ it will indicate that the kernel is basically running as expected.
 @mal
 #print("Welcome in MAL scenario");
 
+@-
+@}

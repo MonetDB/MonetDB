@@ -21,10 +21,9 @@
 @' 		Niels Nes <Niels.Nes@cwi.nl>
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-@t MAL session startup
 @a M. Kersten
 @v 0.0
-@+ Serving Clients
+@* MAL session startup
 
 For the time being we distinguish two classes of clients.
 The primary client is the 'Admin', which runs directly against the server. 
@@ -39,27 +38,8 @@ Each user has a separate scope, but the secondary clients have shared
 access to the definitions available to the administrator.
 The global scope and private scopes are separated by an a priori known
 scope name "MAL_scope". 
-
+@{
 @h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- */
 #ifndef _MAL_SESSION_H
 #define _MAL_SESSION_H
 
@@ -386,3 +366,4 @@ str MALengine(Client c){
 	if( c->glb) c->glb->cmd= c->itrace?'n':0;
 	return msg;
 }
+@}

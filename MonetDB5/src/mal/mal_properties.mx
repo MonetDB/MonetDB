@@ -23,7 +23,7 @@
 
 @f mal_properties
 @a M. Kersten
-@* Introduction
+@* Property management
 One of the shortcomings of the Monet version 4 system is that most variables,
 e.g. BATS have static/dynamic properties hardwired into the system. 
 The consequence is that it is often hard to detect the property state, and,
@@ -347,26 +347,6 @@ such as updates to a BAT. Default, unsafe=off\\
 read & data can be read but not updated\\
 append & data can be appended\\
 \end{tabular}
-@h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2004 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- */
 @-
 A poperty set contains a multi-list of (name,value) pairs.
 Each list corresponds to an element in the corresponding group, e.g.
@@ -385,6 +365,7 @@ In the implementation below we limit the number of property lists
 per variable to 3, the upperbound for BATs. at a later stage we can
 extend it to support arbitrary sized groups. A reference count is used
 to simplify garbage collection.
+@{
 @h
 #include "mal.h"
 
@@ -475,3 +456,4 @@ str propertySet2str(PropertySet ps, int idx){
 	*s =0;
 	return GDKstrdup(buf);
 }
+@}

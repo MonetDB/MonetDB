@@ -20,13 +20,15 @@
 @' 		Peter Boncz <Peter.Boncz@cwi.nl>
 @' 		Niels Nes <Niels.Nes@cwi.nl>
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+@'              Sjoerd Mullender  <Sjoerd.Mullender@cwi.nl>
 
 @f mal_xml
 @a M. Kersten
-@+ Introduction
+@+ XML interface
 The primitives to manipulate XML objects and to prepare for XML output
 is collected in this single file. It is expected to grow out into
 all the primitives needed to support an XML front-end.
+@{
 @h
 #ifndef _MAL_XML_H
 #include "mal.h"
@@ -56,4 +58,4 @@ char *xmlChr(str s){
         return buf;
 }
 
-
+@}

@@ -1,6 +1,30 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2004 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
+@'              Sjoerd Mullender  <Sjoerd.Mullender@cwi.nl>
+
 @f mal_optimizer
 @a M. Kersten
-@* Introduction
+@* Optimizer framework
 One of the prime reasons to design the MAL intermediate language is to have
 a high-level description for database queries, which is easy to generate by
 a front-end compiler and easy to decode, optimize and interpret.
@@ -394,28 +418,8 @@ with the statements.
 The first implementation of this optimizer is geared at a SQL front-end.
 This involves ca 65 different operators, divided into the
 catalog management (23) and query processing (42)
+@{
 @h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2004 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- */
-
 #include "mal.h"
 #include "mal_function.h"
 #include "mal_client.h"
@@ -1353,3 +1357,4 @@ void moveConstantsFirst(MalBlkPtr mb){
 	/* could be used to shortcut stack initialization */
 	(void) mb; /*fool compilers */
 }
+@}

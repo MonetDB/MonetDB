@@ -21,10 +21,9 @@
 @' 		Niels Nes <Niels.Nes@cwi.nl>
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-@t MAL dynamic loading and execution
 @a M. Kersten
 @v 0.0
-@* Introduction
+@+ MAL dynamic loading and execution
 In line with previous versions of Monet it is possible to extend
 the functionalty using user-defined modules. The corresponding code
 is dynamically loaded when the MAL import command is encountered 
@@ -73,27 +72,9 @@ The MAL program should be compiled with -rdynamic and -ldl.
 This enables loading the routines and finding out the address
 of a particular routine
 
+@{
 For the time being we assume that all commands are statically linked.
 @h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- */
 #ifndef _MAL_LINKER_H
 #include "mal_scope.h"
 #include <dlfcn.h>
@@ -284,3 +265,4 @@ void initLibraries() {
 	}
 */
 }
+@}

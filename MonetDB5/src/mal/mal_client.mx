@@ -20,6 +20,7 @@
 @' 		Peter Boncz <Peter.Boncz@cwi.nl>
 @' 		Niels Nes <Niels.Nes@cwi.nl>
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+@'              Sjoerd Mullender  <Sjoerd.Mullender@cwi.nl>
 
 @a M. L. Kersten
 @v 5.0
@@ -44,6 +45,7 @@ Client records are linked into a hierarchy, where the top record
 describes system-wide resources, owned by the dba. The next layer
 contains the user session descriptors.
 
+@{
 The routines defined below provide management of the client
 administration. Routines dealing with serviceing requests
 are located in mal_startup.
@@ -70,6 +72,7 @@ are located in mal_startup.
 #define TIMEOUT		(5*60)	/* seconds */
 #define PROCESSTIMEOUT	2	/* seconds */
 @-
+@}
 The prompt structure is designed to simplify recognition
 of the language framework for interaction. For direct console
 access it is a short printable ascii string. For access through
@@ -84,6 +87,7 @@ The user can request server-side compilation as part of the
 initialization string. 
 The languages foreseen are SQL, MIL (Monet version 4) and MAL (Monet
 Assembler Language), MDB (Monet DeBugger)
+@{
 @h
 typedef struct CLIENT{
 	int	idx;		/* entry in mal_clients */
@@ -92,6 +96,8 @@ typedef struct CLIENT{
 	int	sessionkey;	/* unique key addressed to session */
 	int	permission;	/* access mode */
 @-
+@}
+@-
 The actions for a client is separated into several stages: parsing,
 strategic optimization, tactial optimization, and execution. 
 The routines to handle them are obtained once the scenario is choosen.
@@ -99,6 +105,7 @@ Each stage carries a state descriptor, but they share the IO state
 description. A backup structure is provided
 to temporarily switch to another scenario. Propagation of the state
 information should be dealt with separately.[TODO]
+@{
 @h
 	str	scenario, oldscenario;	/* scenario management */
 	void	*state[7], *oldstate[7];
@@ -107,13 +114,18 @@ information should be dealt with separately.[TODO]
 	short 	debugoptimizer;
 	long	timer;		/* trace time in usec */
 @-
+@}
+@-
 The time interval between requests are maintained. At some point
 we will kill clients when their time-out value is exceeded.
 A client can manipulate the timeout with a system call.
+@{
 @h
 	time_t		login;	
 	time_t		logout;
 	time_t		delay;
+@-
+@}
 @-
 Communication channels for the interconnect are stored here.
 It is perfectly legal to have a client without input stream.
@@ -121,12 +133,15 @@ It will simple terminate after consuming the input buffer.
 The monitor file descriptor can be set to trace the input received
 from a particular client. This facility is used by Mapi to trace
 the interaction on the system console (sysmon). 
+@{
 @h
 	stream	*fdin, *fdout;		/* streams from and to user. */
 	str	input, output, limit;	/* IO buffers + input limit */
 	str	nxt;			/* next unparsed input */
 	str	prompt;			/* acknowledge prompt */
 	int	promptlength;
+@-
+@}
 @-
 In interactive mode, reading one line at a time, we should be
 aware of parsing compound structures, such as functions and
@@ -135,17 +150,24 @@ which is reset to zero upon encountering an end instruction,
 or the closing bracket has been detected. Once the complete
 structure has been parsed the program can be checked and executed.
 Nesting is indicated using a '+' before the prompt.
+@{
 @h
 	int	blkmode;		/* control block parsing */
+@-
+@}
 @-
 The listing bit set controls the level of detail to be generated during
 program execution tracing. The lowest level (1) simply dumps the input,
 (2) also demonstrates the MAL internal structur (4) adds the hidden information
+@{
 @h
 	bitset	listing;		
 @-
+@}
+@-
 The debug bit set contains the debugger flags for both the GDK kernel and
 the MAL layer.
+@{
 @h
 	bitset debug;
 	stream	*sysmon;		/* trace interaction */
@@ -153,19 +175,25 @@ the MAL layer.
 	int	mode;			/* FREECLIENT..BLOCKED */
 	str	cwd;			/* working directory of client */
 @-
+@}
+@-
 Client records are organized into a two-level dependency
 tree, where children may be created to deal with parallel processing
 activities. Each client runs in its own process thread. Its identity
 is retained here for access by others (=father).
+@{
 @h
 	Thread		mythread;
 	str		errbuf;		/* location of GDK exceptions */
 	struct CLIENT	*father;	
 @-
+@}
+@-
 Each client has a private entry point into the namespace and
 object space (the global variables).
 Moreover, the parser needs some administration variables
 to keep track of critical elements.
+@{
 @h
 	Scope		nspace;
 	Box		ospace;
@@ -775,3 +803,4 @@ printf("bstreamClient:read block\n"); fflush(stdout);
 	@:sysTrace(c->input)@
 	return len != 0;
 }
+@}

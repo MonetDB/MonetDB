@@ -22,7 +22,6 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @a M. L. Kersten
-
 @* MAL runtime name space
 
 The MAL name spaces are organized in a hierarchy of module scopes.
@@ -79,27 +78,8 @@ more relaxed on space allocation, because the size is determined
 by the number of MAL procedure definitions instead of the runtime
 calling behavior. (See mal_interpreter for details on value stack
 management)
-
+@{
 @h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- */
 #ifndef _MAL_SCOPE_H_
 #define _MAL_SCOPE_H_
 #include "mal_box.h"
@@ -495,4 +475,4 @@ void showScopeStatistics(stream *f,Scope s){
 	for(i=0;i<256;i++) cnt[i]=0;
 	showScope(f,s,cnt);
 }
-
+@}
