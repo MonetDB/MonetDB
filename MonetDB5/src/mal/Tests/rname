@@ -1,4 +1,0 @@
-#!/bin/bash
-echo "---->" tst$1
-cp tst$1.test.out tst$1.stable.out
-cp tst$1.test.err tst$1.stable.err
