@@ -2003,7 +2003,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             Srvr = '%s "%s"' % (Srvr, env['MAPI_MIL'])
         if SERVER == "SQL":
             if env['VERSION'] >= 49900:
-                Srvr = "%s --dbinit='include sql; listen(%s:lng);'" % (Srvr, env['SQLPORT'])
+                Srvr = "%s --dbinit='include sql; listen(%s:int);'" % (Srvr, env['SQLPORT'])
             else:
                 Srvr = '%s "%s"' % (Srvr, env['SQL_SERVER_MIL'])
         Srvr = Srvr+PROLOGUE
