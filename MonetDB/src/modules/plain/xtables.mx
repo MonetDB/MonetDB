@@ -997,26 +997,26 @@ CThistosum(BAT **retval,	/* put pointer to BAT[oid,int] record here. */
 	BAT *res = BATnew(TYPE_oid, TYPE_int, BATcount(b));
 	BUN p, q, qb;
 	int xx, i, *z;
-	oid ot, oh;
+	oid *ot, *oh;
 
 	(void) c;
 	if (res == NULL) {
 		return GDK_FAIL;
 	}
 	BATloopFast(b, p, q, xx) {
-		oh = *(oid *) BUNhloc(b, p);
+		oh = (oid *) BUNhloc(b, p);
 		i = *(int *) BUNtloc(b, p);
 
-		BUNfndOID(qb, b, &oh);
+		BUNfndOID(qb, b, oh);
 		if (qb == NULL) {
 			GDKerror("CThistosum: Matching count entry not found\n");
 			continue;
 		}
-		ot = *(oid *) BUNtloc(b, qb);
+		ot = (oid *) BUNtloc(b, qb);
 
-		BUNfndOID(qb, res, &ot);
+		BUNfndOID(qb, res, ot);
 		if (qb == NULL) {
-			BUNins(res, &ot, &i);
+			BUNins(res, ot, &i);
 		} else {
 			z = (int *) BUNtloc(res, qb);
 			*z += i;
@@ -1184,7 +1184,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		bit a_void = (a->ttype == TYPE_void);
 		int xx, tpe = a_void ? TYPE_oid : a->ttype;
 		size_t size = DEFAULT_SIZE;
-		oid *dst, o, id = 0;
+		oid *dst, o, *op = &o, id = 0;
 
 		/* create tmp BAT that holds one cluster; estimate required size using sampling */
 		if (BATcount(b) > DEFAULT_SIZE) {
@@ -1251,7 +1251,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 				@4
 			}
 			o = *(oid *) BUNhead(b, p);
-			BUNfndOID(r, a, &o);
+			BUNfndOID(r, a, op);
 			if (r == NULL) {
 				GDKerror("CTrefine%s: value "SZFMT"@0 not found in head of second BAT;\n"
 					 "CTrefine%s: heads of both BATs do not form a 1-1 match.\n", rev, o, rev);
