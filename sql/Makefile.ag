@@ -1,6 +1,7 @@
 
 SUBDIRS = conf src 
-EXTRA_DIST = rules.mk RunMtest.in RunMtest.bat.in
+EXTRA_DIST = rules.mk RunMtest.in RunMtest.bat.in \
+		MonetDB-SQL.spec.in MonetDB-SQL.spec
 EXTRA_DIST_DIR = NT
 
 EXTRA_HEADERS = sql_config.h

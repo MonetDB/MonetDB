@@ -3,7 +3,7 @@
 INCLUDES = ../common $(MONET_INCS) $(READLINE_INCS) 
 
 bin_Msql = {
-	SOURCES = Msql.c comm.c comm.h mem.h \
+	SOURCES = Msql.c Msql.h comm.c comm.h mem.h \
 		  simple_prompt.c simple_prompt.h query.h
 	WINLIBS = $(SOCKET_LIBS)
 	LIBS = $(MONET_LIBS) -lstream -lmutils $(READLINE_LIBS) $(ICONV_LIBS)

@@ -1,14 +1,6 @@
 
 INCLUDES = ../../common ../../server $(MONET_INCS)
 
-#lib__unique = {
-#	DIR = libdir/MonetDB
-#	SOURCES = unique.mx
-#	WINLIBS = -lbat
-#	LIBS = $(MONET_LIBS)
-#	LDFLAGS = -module
-#}
-
 lib__sql_server = {
 	DIR = libdir/MonetDB
 	SOURCES = \
@@ -22,5 +14,5 @@ lib__sql_server = {
 
 scripts_mil = {
 	DIR = libdir/MonetDB
-	SOURCES = sql_server.mx unique.mx
+	SOURCES = sql_server.mx 
 }

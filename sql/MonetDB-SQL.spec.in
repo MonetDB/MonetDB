@@ -1,9 +1,6 @@
 %define name MonetDB-SQL
-%define major_version 2
-%define minor_version 0
-%define sublevel 0
 %define release 1beta
-%define version %{major_version}.%{minor_version}.%{sublevel}
+%define version @VERSION@
 %define prefix /usr
 
 Name: %{name}
@@ -11,11 +8,11 @@ Version: %{version}
 Release: %{release}
 Summary: MonetDB SQL - Monet Database Management System
 Group: System
-Source: sql-%{major_version}.%{minor_version}.tar.gz
+Source: sql-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 Copyright:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-BuildRequires: MonetDB-server
+BuildRequires: MonetDB-devel
 
 %package client
 Summary: MonetDB SQL clients
@@ -53,7 +50,7 @@ Requires: MonetDB-devel
 %prep
 rm -rf $RPM_BUILD_ROOT
 
-%setup -q -n sql-%{major_version}.%{minor_version}
+%setup -q -n sql-%{version}
 
 %build
 
@@ -77,18 +74,13 @@ rm -fr $RPM_BUILD_ROOT
 
 %files client
 %defattr(-,monetdb,monetdb) 
-%{prefix}/bin/sql_dump 
 %{prefix}/bin/Msql 
-%{prefix}/lib/libsql.*
-%{prefix}/lib/libgdk_wrap.* 
 %{prefix}/lib/libMonetODBC*
 
 %files server
 %defattr(-,monetdb,monetdb) 
 %{prefix}/lib/MonetDB/lib_sql_server*
-%{prefix}/share/MonetDB/*
 
 %files devel
 %defattr(-,monetdb,monetdb) 
-%{prefix}/include/*.h
-%{prefix}/include/*/*.[hcm]
+%{prefix}/include/sql/*.h

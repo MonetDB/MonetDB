@@ -2,7 +2,7 @@
 INCLUDES = \
 	../include \
 	../../client \
-	$(MONET_INCS) 
+	$(MONET_INCS)
 
 DEFS = @DEFS@
 

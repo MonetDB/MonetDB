@@ -8,7 +8,7 @@
  * Copyright in this directory for more information.
  */
 
-#include <config.h>
+#include <monetdb_config.h>
 #include <sql_config.h>
 #include <stdio.h>
 #include <stdlib.h>

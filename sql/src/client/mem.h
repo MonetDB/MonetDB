@@ -1,7 +1,7 @@
 #ifndef _MEM_H_ 
 #define _MEM_H_ 
 
-#include <config.h>
+#include <monetdb_config.h>
 
 #include <sql_config.h>
 
