@@ -333,9 +333,9 @@ ostream &glue::gen_module( ostream &o, const Module &d ){
 	o << "#endif\n\n";
 	o << "typedef int (*fptr)();\n\n";
 
-	o << "EXPORT (int " << d.Name();
-		o << "_Module_Install)( TBLinstall *inst, str user );\n";
-	o << "EXPORT (int " << d.Name() << "_Module_Delete)( str user );\n";
+	o << "int " << d.Name();
+		o << "_Module_Install( TBLinstall *inst, str user );\n";
+	o << "int " << d.Name() << "_Module_Delete( str user );\n";
 
 	//language *l = new protoize();
 	//print_list( o, d.Defs(), l );
