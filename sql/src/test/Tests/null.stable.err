@@ -57,13 +57,13 @@ stderr of test 'null` in directory 'src/test` itself:
 # 11:33:24 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=aquila --port=54613  < null.sql
 # 11:33:24 >  
 
-MAPI  = monetdb@draco:54898
+MAPI  = monetdb@stem:53265
 QUERY = insert into t3 values(NULL,5);
 ERROR = !ERROR: null constraint t3.id violated
-MAPI  = monetdb@draco:54898
+MAPI  = monetdb@stem:53265
 QUERY = insert into t3 values(NULL,6);
 ERROR = !ERROR: null constraint t3.id violated
-MAPI  = monetdb@draco:54898
+MAPI  = monetdb@stem:53265
 QUERY = insert into t3 values(NULL,NULL);
 ERROR = !ERROR: null constraint t3.id violated
 
