@@ -94,14 +94,14 @@ SQLTables_(ODBCStmt *stmt,
 			       "else cast('INTERNAL TABLE TYPE' as varchar) end as table_type, "
 			       "cast('' as varchar) as remarks "
 			       "from sys.\"tables\" t order by table_type");
-		/* TODO: UNION it with all supported table types */
 	} else {
 		/* no special case argument values */
 		char *query_end;
 
 		/* construct the query now */
 		query = (char *) malloc(1000 + nSchemaNameLength +
-					nTableNameLength + nTableTypeLength);
+					nTableNameLength +
+					((nTableTypeLength + 1) / 5) * 67);
 		assert(query);
 		query_end = query;
 
@@ -157,21 +157,34 @@ SQLTables_(ODBCStmt *stmt,
 
 		if (nTableTypeLength > 0) {
 			/* filtering requested on table type */
-			/* TODO: decompose the string szTableType into
-			   separate string values (separated by
-			   comma).
-			   Mapped these string values to type numbers
-			   (see enum table_type in catalog.h).  The
-			   type numbers need to be inserted in the
-			   SQL: " AND T.TYPE IN (<insert the list of
-			   numbers here>)" where the comma separated
-			   numbers are placed in the <insert ...here>
-			   part.  Note: when there is no single type
-			   number mapped use -1 so the SQL becomes: "
-			   AND T.TYPE IN (-1)" This way no records
-			   will be returned and the result set will be
-			   empty.
-			 */
+			char buf[17]; /* the longest string is "GLOBAL TEMPORARY" */
+			int i, j;
+
+			strcpy(query_end, " and (1 = 0");
+			query_end += strlen(query_end);
+			for (i = j = 0; i < nTableTypeLength + 1; i++) {
+				if (i == nTableTypeLength || szTableType[i] == ',') {
+					if (j > 16 || j == 0) {
+						j = 0;
+						continue;
+					}
+					buf[j] = 0;
+					if (strcmp(buf, "VIEW") == 0)
+						strcpy(query_end, " or t.\"istable\" = false");
+					else if (strcmp(buf, "TABLE") == 0)
+						strcpy(query_end, " or t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 0");
+					else if (strcmp(buf, "SYSTEM TABLE") == 0)
+						strcpy(query_end, " or t.\"istable\" = true and t.\"system\" = true and t.\"temporary\" = 0");
+					else if (strcmp(buf, "LOCAL TEMPORARY") == 0)
+						strcpy(query_end, " or t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 1");
+					query_end += strlen(query_end);
+					j = 0;
+				} else if (j < 17 && szTableType[i] != '\'' &&
+					   (j > 0 || szTableType[i] != ' '))
+					buf[j++] = szTableType[i];
+			}
+			strcpy(query_end, ")");
+			query_end += strlen(query_end);
 		}
 
 		/* add the ordering */
