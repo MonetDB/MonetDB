@@ -222,6 +222,7 @@ Include the sql_cache functionality
 include sql_cache;
 include mil_algebra_procs;
 
+@-
 # algebra.kdiff should be replaced (inline) by sql.kdiff
 function sql.kdiff(left:bat[:any$1,:any$2], right:bat[:any$1,:any] ):bat[:any$1,:any$2];
 	cnt:= algebra.count(left);

@@ -600,7 +600,6 @@ SQLmarkTOptimizer(Client c){
 		if( functionId(p) && strcmp(functionName(p),"markT")== 0 &&
 			mb->var[p->argv[0]]->endLifespan== i+1 &&
 			 functionId(old[i+1]) && strcmp(functionId(old[i+1]),"reverse")== 0 ){
-	printf("endof life %d\n",mb->var[p->argv[0]]->endLifespan);
 			actions++;
 			GDKfree(functionId(p));
 			setFunctionId(p,  GDKstrdup("markH"));
