@@ -743,14 +743,14 @@ static void mapi_lost_connection();
 
 /* code adapted from gdk.mx */
 #ifdef HAVE_LONG_LONG
-typedef unsigned long long uint64;
-typedef long long int64;
+typedef unsigned long long mapi_uint64;
+typedef long long mapi_int64;
 #define LLFMT "%lld"		/* format to print a long long */
 #define ULLFMT "%llu"		/* format to print a unsigned long long */
 #else
 #ifdef HAVE___INT64
-typedef unsigned __int64 uint64;
-typedef __int64 int64;
+typedef unsigned __int64 mapi_uint64;
+typedef __int64 mapi_int64;
 #define LLFMT "%I64d"		/* format to print a __int64 */
 #define ULLFMT "%I64u"		/* format to print a unsigned __int64 */
 #endif
@@ -1484,12 +1484,12 @@ static void mapi_param_store(Mapi mid)
 			case SQL_LONGLONG: 
 				@:checkSpace(30)@
 				sprintf(mid->query+k,
-					LLFMT,*(int64 *)mid->fields[i].inparam);
+					LLFMT,*(mapi_int64 *)mid->fields[i].inparam);
 				break;
 			case SQL_ULONGLONG: 
 				@:checkSpace(30)@
 				sprintf(mid->query+k,
-					ULLFMT,*(uint64 *)mid->fields[i].inparam);
+					ULLFMT,*(mapi_uint64 *)mid->fields[i].inparam);
 				break;
 			case SQL_FLOAT:
 				@:checkSpace(30)@
@@ -2343,12 +2343,12 @@ void mapi_store_bind(Mapi mid)
 				break;
 #ifdef HAVE_STRTOLL
 			case SQL_LONGLONG:
-				*(int64 *)dst = strtoll(val,NULL,0);
+				*(mapi_int64 *)dst = strtoll(val,NULL,0);
 				break;
 #endif
 #ifdef HAVE_STRTOULL
 			case SQL_ULONGLONG:
-				*(uint64 *)dst = strtoull(val,NULL,0);
+				*(mapi_uint64 *)dst = strtoull(val,NULL,0);
 				break;
 #endif
 			case SQL_CHAR:
