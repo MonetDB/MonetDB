@@ -14,9 +14,6 @@ it should be possible to connect to a server by providing its
 name only. The corresponding port is searched in the homes file
 and the .gdk_lock file.
 
-Furthermore, it becomes possible to re-connect to a session left
-earlier. (See the Mserver code).
-
 Control directives are '>' to sent output to a file.
 Several textual changes made.
 
@@ -29,35 +26,24 @@ users. It is more comfortable than the console, since it provides
 a command history and automatic file name completion.
 
 \begin{verbatim}
-Mclient [-port HOST:PORT] [-session KEY] [-debug] [-everything] [-prelude FILE] [-c single-command]  
+Mclient 
+        [--config|-c config] 
+        [--debug|-d [level]] 
+        [--host|-h hostname] 
+        [--port|-p portnr]
+        [--noheaders] 
 \end{verbatim}
 
 The following options are supported:
 \begin{itemize}
-\item {\em -port.} Connect to Mserver on machine HOST with tcp port PORT. 
-If your MAPIPORT environment variable points to "HOST:PORT" already, you
-can omit this option.
-\item {\em -debug}. Illustrate internalworking.
-\item {\em -everything}. Print also comment lines received in the result; default is to ignore them.
-\item {\em -prelude.} At the start of the client session, execute --
-before going into command-line mode-- a local file containing MIL statements.
-\item {\em -c.} just execute a one-line MIL command (non-interactive mode).
-\item {\em -session.} re-establish connection  with session identified.
+\item {\em -c|--config}. Config file to read options from.
+\item {\em -d|--debug}. Illustrate internalworking.
+\item {\em -h|--host.} The machine to connect to. 
+\item {\em -p|--port.} The port to use . 
+\item {\em    --noheaders}. Print also comment lines received in the result; default is to ignore them.
 \end{itemize}
 @
 
-@- Files
-Mclient users should be aware of the Monet initialization script
-stored in the database farm. They are shown below.
-@T
-\begin{tabular}{l l}
-\$MONETFARM/\$DB/users/\$USER/general.mil & general MIL commands executed at start \\
-  & of user session. Only the database administrator can change this file.\\
-\$MONETFARM/\$DB/users/\$USER/prelude.mil & private MIL commands, executed \\
-  & at start of user session. Users can edit this file.\\
-\$MONETFARM/\$DB/users/\$USER/epilogue.mil & private MIL commands, executed\\
-  & at end of user session. Users can edit this file.\\
-\end{tabular}
 @
 @{
 @+ Implementation
@@ -67,8 +53,7 @@ stored in the database farm. They are shown below.
 */
 #include "Mapi.h"
 
-#include <stdio.h> 
-#include <stdlib.h> 
+#include <monet_options.h> 
 #include <ctype.h> 
 #include <sys/types.h> 
 #include <sys/socket.h> 
@@ -82,7 +67,6 @@ stored in the database farm. They are shown below.
 #endif
 
 extern int errno;                       /* pass errors  */
-char *program;                          /* my name */
 
 #define EXIT(x)	{ exit(x); }
 #define LINEMODE	23
@@ -287,30 +271,37 @@ using its help operator '?'.
         } 
 }
 
-void usage() {
-	fprintf(stderr, "Usage: %s [-port host:port] ", program);
-	fprintf(stderr, "[-session key] ");
- 	fprintf(stderr, "[-prelude  pfile ] ");
- 	fprintf(stderr, "[-c command] ");
- 	fprintf(stderr, "[-everything] ");
- 	fprintf(stderr, "[-debug] ");
- 	fprintf(stderr, "[-help ] \n");
+void usage(char *prog) {
+	fprintf(stderr, "usage: %s\n", prog);
+	fprintf(stderr, "[-c or --config config_file ]\n" );
+	fprintf(stderr, "[-h or --host hostname ]\n" );
+	fprintf(stderr, "[-p or --port portnr ]\n" );
+ 	fprintf(stderr, "[-d or --debug [ debug_level] ] ");
+ 	fprintf(stderr, "[      --noheaders ] ");
+ 	fprintf(stderr, "[-? or --help ] \n");
  	EXIT(1);
 }
 
-int main(int argc, char **argv) {
+int main(int ac, char **av) {
+	char 	buf[BUFSIZ], *prog = *av, *config = NULL;
+	opt 	*set = NULL;
+	int     port = 0, debug = 0, setlen = 0;
+
 	struct passwd *pwd = getpwuid(getuid());
-	char	*command = 0;
- 	char	*prelude  = 0;  
-	char	*s = NULL, *port = (char *) getenv("MAPIPORT");
-	int	debug = 0;
-	int	everything = 0;
-	int	i;
 	struct stat st;
 	char 	user[80];
-	char 	address[80]	= ":50000"; 
         Msession mid;
-	int	sessionkey	= 0;
+
+        static struct option long_options[] =
+             {
+               {"config", 1, 0, 'c'},
+               {"debug", 2, 0, 'd'},
+               {"host", 1, 0, 'h'},
+               {"port", 1, 0, 'p'},
+               {"help", 0, 0, '?'},
+               {"noheaders", 0, 0, 0},
+               {0, 0, 0, 0}
+             };
 
 	toConsole = stdout;
 	fstat(fileno(stdin),&st);
@@ -320,129 +311,83 @@ int main(int argc, char **argv) {
 	else
 	   is_chrsp = 0;
 
-	program = argv[0];
         strcpy(user, pwd?pwd->pw_name:"guest");
-	if (!port) port = (char *) getenv("MONETPORT");
-	if (port) strcpy(address, port);
  
-	if (argc == 0) {
-		usage();
-	}
-	for(i = 1; i < argc; i++) {
-		if (argv[i][0] == '-') {
-			switch(argv[i][1]) {
-			case 'd':
-				debug++;
+	if (!(setlen = mo_builtin_settings(&set)) )
+                usage(prog);
+
+	while(1){
+		int option_index = 0;
+
+                int c = getopt_long( ac, av, "c:ds:",
+                                long_options, &option_index);
+
+		if (c == -1)
+			break;
+
+		switch (c){
+		case 0:
+			if (strcmp(long_options[option_index].name, 
+						"noheaders") == 0){
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "mapi_noheaders", "yes" );
 				break;
-			case 'e':
-				if (strcmp(argv[i], "-everything") == 0) {
-					everything=1;
-				}
-				break;
-			case 'p':
-				if (strcmp(argv[i], "-port") == 0) {
-					strcpy(address, argv[++i]);
-				} else if (strcmp(argv[i], "-prelude") == 0) {
-					prelude = argv[++i];
-				}
-				break;
-			case 'h':
-				if (strcmp(argv[i], "-help") == 0) {
-					usage();
-					EXIT(0);
-				}
-				break;
-                       case 's':
-                                if (strcmp(argv[i],"-session") == 0) {
-                                        i++;
-                                        sessionkey= atoi(argv[i]);
-                                }
-                                break;
-       			case 'c':
-		        	command = argv[i];
-				break;
-			default:
-				fprintf(stderr, "unknown argument:%s\n", 
-						argv[i]);
-				usage();
 			}
+			usage(prog);
+			break;
+		case 'c':
+			config = strdup(optarg);
+			break;
+		case 'd':
+			debug=1;
+			if (optarg){ 
+				setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "gdk_debug", optarg );
+			}
+			break;
+		case 'e':
+			setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "mapi_everything", "yes" );
+			break;
+		case 'h':
+			setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "host", optarg );
+			break;
+		case 'p':
+			setlen = mo_add_option( &set, setlen, 
+					opt_cmdline, "port", optarg );
+			break;
+		case '?':
+			usage(prog);
+		default:
+			fprintf( stderr, 
+			    "ERROR: getopt returned character code 0%o ??\n",c);
+			usage(prog);
 		}
 	}
-	s = (char *) strchr(address,':');
-	if( s == 0 ){
-		fprintf(toConsole, "address syntax error: %s\n", address);
-		exit(1);
-	}
-	*s = 0;
-	i = atoi(s+1);
-	if (address[0] == '\0'){
-		strcpy(address,"localhost");
+
+	if (config){
+		setlen = mo_config_file(&set, setlen, config, opt_config);
+		free(config);
+	} else {
+		if (!(setlen = mo_system_config(&set, setlen)) )
+			usage(prog);
 	}
 
-	mid = Mconnect(address,i,user,NULL);
-	mid->trace = debug;
-	mid->everything = everything;
-	if( sessionkey) {
-		sprintf(user,"%s:%d\n",user,sessionkey);
-	}
+	port = strtol(mo_find_option(set, setlen, "mapi_port"), NULL, 10);
+	mid = Mconnect(mo_find_option(set, setlen, "host"), port, user, NULL);
+	mid->everything = 1;
+	if ( strcasecmp(
+		mo_find_option(set, setlen, "mapi_noheaders"), "yes")==0)
+		mid->everything = 0;
+
 	if (Merror(mid)) {
 		Mexplain(mid,toConsole);
 		EXIT(2);
 	}
  
-	if (prelude) {
-		int	i,j=0;
-		FILE	*f = fopen(prelude, "r");
+	clientAccept(mid);
 
-		if (!f) {
-			fprintf(toConsole,"unable to open prelude %s.\n", 
-				prelude);
-		} else {
-			char c;
-			char *prev;
-			int len, bufsize = 80;
-			char *buf;
-
-			buf = (char*) malloc(bufsize);
-
-			fseek(f, 0, 2);
-			i = ftell(f);
-			message = (char*) malloc(i+2);
-			fseek(f, 0, 0);
-			fread(message, 1, i, f);
-			if (message[i-1] != '\n')
-				message[i++] = '\n';
-			message[i] = 0;
-			prev = message;
-			for (;*message!=0;message++) {
-				if (*message == '\n') {
-					len = message-prev+1;
-					if (len >= bufsize) {
-						free(buf);
-						bufsize = len+1;
-						buf = (char*) malloc(bufsize);
-					}
-					strncpy(buf, prev, len);
-					buf[len] = 0;
-					doRequest(mid, buf );
-					prev = message+1;
-				}
-			}
-			sprintf(buf, "printf(\"%s\");\n", sentinel);
-@-
-Check basic working of Monet interaction.
-@c
-			doRequest(mid, buf );
-			free(buf);
-		}
-	}
-
-	/* sent a single command to the server */
-	if (command) { 
-		doRequest(mid, command );
-	} else {
-		clientAccept(mid);
-	}
 	FAKE_ALLOCA_CALL; /* buggy Intel C/C++ compiler for Linux; see gdk.h (gdk.mx) for details */
 	return 0;
 }
