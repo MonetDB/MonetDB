@@ -25,6 +25,12 @@ BuildRequires: php python perl
 %define buildperl 1
 %define builddoc 0
 
+%ifarch x86_64
+%define bits 64
+%else
+%define bits 32
+%endif
+
 %package client
 Summary: MonetDB clients
 Group: System
@@ -119,6 +125,7 @@ rm -rf $RPM_BUILD_ROOT
 %build
 
 ./configure \
+	--enable-bits=%{bits} \
 	--prefix=%{prefix} \
 	--sysconfdir=%{sysconfdir} \
 	--localstatedir=%{localstatedir} 
