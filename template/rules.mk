@@ -140,6 +140,9 @@ HIDE=1
 %.py: %.py.i
 	$(SWIG) -python $(SWIGFLAGS) -outdir . -o dymmy.c $<
 
+%.bdy: %.mx
+	$(MX) -1 -H$(HIDE) -t -B $<
+
 %.tex: %.mx
 	$(MX) -1 -H$(HIDE) -t $< 
 
