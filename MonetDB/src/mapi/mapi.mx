@@ -133,10 +133,6 @@ This module contains a simple interface for internet connections.
 #endif
 #include "kernel.h"
 
-#ifdef AIX
-#define SOCKPTR struct sockaddr *
-#define SOCKLEN size_t
-#else
 #ifdef __sgi
 #define SOCKPTR void *
 #define SOCKLEN int
@@ -146,7 +142,6 @@ This module contains a simple interface for internet connections.
 #define SOCKLEN socklen_t
 #else
 #define SOCKLEN int
-#endif
 #endif
 #endif
 

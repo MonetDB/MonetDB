@@ -80,14 +80,7 @@ Too many bugs.
 #define __MALALGEBRA_H__
 #include "gdk.h"
 
-#if defined (__GNUC__) && defined (__STDC__)
-#define INLINE	inline
-#else
-#define INLINE
-#endif
-
 /* nothing much */
-
 
 #endif /* __MALALGEBRA_H__ */
 
