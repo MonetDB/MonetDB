@@ -1383,6 +1383,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         STO = ""
         CTO = ""
 
+    ServerReady = True
     if SERVER in ["MAPI", "SQL"]:
         PROLOGUE = ""
         if os.path.isfile(TST+".prologue"):
@@ -1418,64 +1419,74 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             ln=pSrvrOut.readline()
             SrvrOut.write(ln)
             SrvrOut.flush()
+        if ln[:6] != 'Ready.':
+            ServerReady = False
+
     else:
         ClntOutFile = TestOutFile
         ClntErrFile = TestErrFile
 
-    if   CALL == "other":
-        cmd = MTO+str(CTO)+" "+os.path.join(".",TST+EXT)+" "+TST+" "+PRELUDE
-        RunIt(cmd, "", ClntOutFile, ClntErrFile)
-    elif CALL == "python":
-        cmd = MTO+str(CTO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
-        RunIt(cmd, "", ClntOutFile, ClntErrFile)
-    elif CALL in ["milM", "milS", "milMXs", "milSXs"]:
-        cmd = '%s%s %s --dbname=%s %s < ' % (MTO, str(TOT), exe['Mserver'][1], TSTDB, PRELUDE)
-        if CALL in ["milM", "milS"]:
-            X=""
-        else:
-            X="_s[0-9][0-9]"
-        test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-        d = os.listdir(os.getcwd())
-        d.sort()
-        for f in d:
-            if test.match(f):
-                RunIt(cmd+f, "", ClntOutFile, ClntErrFile)
-    elif CALL in ["milC", "milCXs"]:
-        TSTs = []
-        if CALL == "milC":
-            X=""
-        else:
-            X="_s[0-9][0-9]"
-        test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-        d = os.listdir(os.getcwd())
-        d.sort()
-        for f in d:
-            if test.match(f):
-                TSTs.append(f)
+    if ServerReady:
+        if   CALL == "other":
+            cmd = MTO+str(CTO)+" "+os.path.join(".",TST+EXT)+" "+TST+" "+PRELUDE
+            RunIt(cmd, "", ClntOutFile, ClntErrFile)
+        elif CALL == "python":
+            cmd = MTO+str(CTO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
+            RunIt(cmd, "", ClntOutFile, ClntErrFile)
+        elif CALL in ["milM", "milS", "milMXs", "milSXs"]:
+            cmd = '%s%s %s --dbname=%s %s < ' % (MTO, str(TOT), exe['Mserver'][1], TSTDB, PRELUDE)
+            if CALL in ["milM", "milS"]:
+                X=""
+            else:
+                X="_s[0-9][0-9]"
+            test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
+            d = os.listdir(os.getcwd())
+            d.sort()
+            for f in d:
+                if test.match(f):
+                    RunIt(cmd+f, "", ClntOutFile, ClntErrFile)
+        elif CALL in ["milC", "milCXs"]:
+            TSTs = []
+            if CALL == "milC":
+                X=""
+            else:
+                X="_s[0-9][0-9]"
+            test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
+            d = os.listdir(os.getcwd())
+            d.sort()
+            for f in d:
+                if test.match(f):
+                    TSTs.append(f)
 
-        Clnt = MTO+str(TOT)+" "+exe['Mapi_Client'][1]+" < "
-        for f in TSTs:
-            RunIt(Clnt+f, "", ClntOutFile, ClntErrFile)
+            Clnt = MTO+str(TOT)+" "+exe['Mapi_Client'][1]+" < "
+            for f in TSTs:
+                RunIt(Clnt+f, "", ClntOutFile, ClntErrFile)
 
-        #TODO
-        #elif CALL == "milCXp":
-    elif CALL in ["sql", "sqlXs"]:
-        TSTs = []
-        if CALL == "sql":
-            X=""
-        else:
-            X="_s[0-9][0-9]"
-        test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-        d = os.listdir(os.getcwd())
-        d.sort()
-        for f in d:
-            if test.match(f):
-                TSTs.append(f)
+            #TODO
+            #elif CALL == "milCXp":
+        elif CALL in ["sql", "sqlXs"]:
+            TSTs = []
+            if CALL == "sql":
+                X=""
+            else:
+                X="_s[0-9][0-9]"
+            test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
+            d = os.listdir(os.getcwd())
+            d.sort()
+            for f in d:
+                if test.match(f):
+                    TSTs.append(f)
 
-        Clnt = MTO+str(TOT)+" "+exe['SQL_client'][1]+" < "
-        for f in TSTs:
-            RunIt(Clnt+f, "", ClntOutFile, ClntErrFile)
+            Clnt = MTO+str(TOT)+" "+exe['SQL_client'][1]+" < "
+            for f in TSTs:
+                RunIt(Clnt+f, "", ClntOutFile, ClntErrFile)
 
+    else:
+	for fn in ClntOutFile,ClntErrFile:
+	    fp = open(fn,'a')
+	    fp.write('\n\n! Server not ready; skipping attempt to start client!\n\n')
+	    fp.close()
+	
     if SERVER in ["MAPI", "SQL"]:
         if os.path.isfile(TST+".epilogue"):
             EPILOGUE = open(TST+".epilogue",'r')
