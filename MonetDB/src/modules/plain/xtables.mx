@@ -428,6 +428,7 @@ quit;
 @* Implementation Code
 @c
 #include "xtables.proto.h"
+#include "algebra.h"
 
 @+ HistoLink
 The histolink accelerator establishes a link between a BAT column and a 

@@ -50,6 +50,20 @@ lib__str = {
 	LDFLAGS = -module
 }
 
+lib__xtables = {
+	DIR = pkglibdir
+	SEP = _
+	SOURCES = xtables.mx
+	HEADERS = h proto.h m
+	SCRIPTS = mil ""
+	WINLIBS = -L. ../../common/libstream ../../gdk/libbat \
+		../../monet/libmonet ./lib_algebra \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+	LIBS	= $(ICONV_LIBS)
+	LDFLAGS = -module
+}
+
 LIBS = {
 	DIR = pkglibdir
 	SEP = _
@@ -58,7 +72,7 @@ LIBS = {
 		\
 		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
 		ddbench.mx decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
-		radix.mx stats.mx tcpip.mx uchr.mx unix.mx url.mx xtables.mx
+		radix.mx stats.mx tcpip.mx uchr.mx unix.mx url.mx
 	HEADERS = h proto.h m
 	SCRIPTS = mil ""
 	WINLIBS = -L. ../../common/libstream ../../gdk/libbat \

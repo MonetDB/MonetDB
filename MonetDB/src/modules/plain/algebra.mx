@@ -418,10 +418,9 @@ macro):
 @:sum_definition(@1,flt,@2,flt)@
 @:sum_definition(@1,flt,@2,dbl)@
 @:sum_definition(@1,dbl,@2,dbl)@
-
+@m
 @:aggregate(max,"Give the highest tail value. Error on empty BATs.")@
 @:aggregate(min,"Give the lowest tail value. Error on empty BATs.")@
-
 @= aggregate_definition
 .COMMAND @1 ( BAT[any,@2] ) : @2 = CMD@1_@2; @3
 @= aggregate
@@ -713,10 +712,10 @@ that for the moment are defined as procs.
              (straight forward hack, not tuned for performance at all, just used for testing.)", "algebra");
 
     proc sum( bat[any,sht] b ) : sht { return sum_sht(b); }
-    proc sum( bat[any,int] b ) : sht { return sum_int(b); }
-    proc sum( bat[any,lng] b ) : sht { return sum_lng(b); }
-    proc sum( bat[any,flt] b ) : sht { return sum_flt(b); }
-    proc sum( bat[any,dbl] b ) : sht { return sum_dbl(b); }
+    proc sum( bat[any,int] b ) : int { return sum_int(b); }
+    proc sum( bat[any,lng] b ) : lng { return sum_lng(b); }
+    proc sum( bat[any,flt] b ) : flt { return sum_flt(b); }
+    proc sum( bat[any,dbl] b ) : dbl { return sum_dbl(b); }
 
 .END;
 .END algebra;
