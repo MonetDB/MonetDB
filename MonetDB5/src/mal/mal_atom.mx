@@ -205,7 +205,7 @@ int malAtomArray(int tpe, int size){
 	char name[IDLENGTH];
 	str nme;
 
-	nme = malTypeName(tpe);
+	nme = getTypeName(tpe);
 	stream_printf(GDKout,"enter a new array type definition %s %d\n", nme,size);
 	snprintf(name,IDLENGTH,"%s_", nme);
 	i= strlen(name);

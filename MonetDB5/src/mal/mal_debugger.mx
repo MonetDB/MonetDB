@@ -571,14 +571,15 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
 	} else {
 		ATOMprint(v->vtype,VALptr(v),f);
 	}
-	nme= malTypeName(n->type);
-	nmeOnStk= malTypeName(v->vtype);
+	nme= getTypeName(n->type);
+	nmeOnStk= getTypeName(v->vtype);
 	stream_printf(f,":%s", nme);
 	if( strcmp(nmeOnStk,nme) && 
 	    !(isaBatType(n->type) && strcmp(nmeOnStk,"BAT")==0)){
 		stream_printf(f," != %s (%d)", nmeOnStk,v->vtype);
 	}
 	stream_printf(f," %s", (n->isaconstant?" constant":""));
+	stream_printf(f," %s", (n->isatypevar?" type variable":""));
 	GDKfree(nme); GDKfree(nmeOnStk);
 	if(cnt && isaBatType(n->type) && v->val.ival){
 		BAT *b,*bs;

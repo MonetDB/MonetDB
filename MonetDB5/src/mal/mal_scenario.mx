@@ -176,9 +176,11 @@ Scenario getFreeScenario(){
 }
 @-
 @= initScen
-	if( @1->@2 ) @1->@2Cmd = (GDKfcn)getAddress( @1->@2);
-	if( @1->@2 && @1->@2Cmd == 0) {
+if( @1->@2){
+	if( @1->@2Cmd == 0) @1->@2Cmd = (GDKfcn)getAddress( @1->@2);
+	if( @1->@2Cmd == 0) {
 	    return throwMessage("initScenario","@2 address not found\n"); }
+}
 @-
 A scenario is initialized only once per session. 
 All other requests are silently ignored. 

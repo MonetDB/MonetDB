@@ -73,6 +73,7 @@ as well as in user defined module implementations.
 #ifndef _MAL_H
 #define _MAL_H
 
+#include "monet_options.h"
 #include "gdk.h"
 #include <stream.h>
 
@@ -153,7 +154,7 @@ in a critical section, which was known to be a performance hindrence.
 mal_export int             mal_debug;
 mal_export MT_Lock	mal_contextLock;
 
-mal_export int mal_init(str modpath, str prefix);
+mal_export int mal_init(str modpath, str prefix, opt *set, int setlen);
 
 #define MALprofiler 1		/* activate the profiler */
 /* #undef MALprofiler*/
@@ -217,9 +218,18 @@ void tstAligned()
 		GDKfatal("Recompile with STRUCT_ALIGNED flag enabled\n");
 #endif
 }
-int mal_init(str modpath, str prefix){
+@-
+We should keep track of the command ine arguments for proper
+removal at the end of the session
+@c
+static opt *monet_options;
+static int monet_optionLength;
+
+int mal_init(str modpath, str prefix, opt *set, int setlen){
 	char buf[PATHLENGTH];
 
+	monet_options= set;
+	monet_optionLength= setlen;
 	monet_mod_path= modpath;
 	snprintf(buf,PATHLENGTH,"%s/etc/MonetDB",prefix);
 	monet_mal_path= GDKstrdup(buf);
@@ -240,10 +250,11 @@ int mal_exit(Client cntxt){
 #ifdef MALprofiler
 	profileReport( cntxt->nspace,1, open_wastream("/tmp/Monet.prof"));
 #endif
-	freeScopeList(cntxt->nspace);
 	freeBoxes();
+	cleanupClients();
 	mal_scope = 0;
 	TMcommit();
+	/* mo_free_options(monet_options, monet_optionLength); causes errors */
 	GDKexit(1);
 }
 

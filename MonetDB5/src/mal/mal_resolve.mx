@@ -231,16 +231,10 @@ Note, each function returns at least one value.
 Take care of variable argument lists. They are allowed as the last in the
 signature only.
 Furthermore, for patterns if the formal type is 'any' then all remaining arguments 
-are acceptable and type analysis becomes part of the pattern implementation.
+are acceptable and detailed type analysis becomes part of the pattern 
+implementation.
 In all other cases the type should apply to all remaining arguments.
 @c
-			if( k+1 == sig->argc){
-				if(sig->varargs ){
-					if( sig->token == PATTERNsymbol &&
-					    formal== TYPE_any)
-						continue;
-				}
-			} else k++;
 
 			if( updateTypeMap(formal, actual, polytype)){
 				unmatched= i; 
@@ -255,6 +249,8 @@ turning a contrainted type into 'any', which matches all types.
 				unmatched= i;
 				break;
 			}
+			k++;
+			if(sig->varargs && k == sig->argc) k--;
 		}
 	} else {
 		for(i=p->retc;i<p->argc;i++){
@@ -281,12 +277,12 @@ At a later stage we may automatically insert such coercion requests.
 		if( polymorphic){
 			for(l=0;l<2*p->argc;l++) 
 			if( polytype[l] != TYPE_any)
-			stream_printf((GDKout,"poly %d %s\n",l,malTypeName(polytype[l]));
+			stream_printf((GDKout,"poly %d %s\n",l,getTypeName(polytype[l]));
 		}
 		if( unmatched)
 		stream_printf((GDKout,"mismatch test %s poly %s\n",
-			malTypeName(getArgType(mb,p,unmatched)),
-			malTypeName(getArgType(s->def,sig,unmatched)));
+			getTypeName(getArgType(mb,p,unmatched)),
+			getTypeName(getArgType(s->def,sig,unmatched)));
 	}
 #endif
 	if( unmatched) { s= s->peer; continue; }
@@ -457,8 +453,8 @@ int resolveType(int dsttype, int srctype){
 #ifdef DEBUG_MAL_RESOLVE
 	if( tracefcn){
 		stream_printf((GDKout,"resolveType dst %s (%d) %s(%d)\n",
-			malTypeName(dsttype), dsttype,
-			malTypeName(srctype),srctype);
+			getTypeName(dsttype), dsttype,
+			getTypeName(srctype),srctype);
 	}
 #endif
 	if( dsttype == srctype) return dsttype;
@@ -485,9 +481,9 @@ int resolveType(int dsttype, int srctype){
 #ifdef DEBUG_MAL_RESOLVE
 		if( tracefcn){
 		stream_printf((GDKout,"resolved to bat[%s,%s] bat[%s,%s]->bat[%s:%d,%s:%d]\n",
-			malTypeName(h1),malTypeName(t1),
-			malTypeName(h2),malTypeName(t2),
-			malTypeName(h3),i1,malTypeName(t3),i2
+			getTypeName(h1),getTypeName(t1),
+			getTypeName(h2),getTypeName(t2),
+			getTypeName(h3),i1,getTypeName(t3),i2
 			);
 		}
 #endif
@@ -506,8 +502,8 @@ functions. Errors are simply ignored at this point of the game,
 because they may be resolved as part of the calling sequence.
 @c
 void typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs){
-	str n1 = malTypeName(lhs);
-	str n2 = malTypeName(rhs);
+	str n1 = getTypeName(lhs);
+	str n2 = getTypeName(rhs);
 	char buf[1024];
 	int i;
 	snprintf(buf,1024,"type mismatch %s := ",n1);

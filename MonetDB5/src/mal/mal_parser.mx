@@ -396,7 +396,6 @@ int typeQualifier(Client cntxt)
 			skipSpace(cntxt);
 			return i;
 		}
-		break;
 	default:
 		if( (hd=idCopy(cntxt,idLength(cntxt))) ){
 			ht= getTypeIndex(hd);
@@ -1277,7 +1276,12 @@ Get arguments for a call, assume a single result.
 			} else advance(cntxt,i);
 			curInstr= pushArgument(curBlk,curInstr,idx);
 		} else 
-		{ 
+		if( *cntxt->nxt==':' ){
+			i = typeQualifier(cntxt);
+			i = i >=0? i :TYPE_any;
+			idx= newTypeVariable(curBlk, i );
+			curInstr= pushArgument(curBlk,curInstr,idx);
+		} else { 
 			idx= 0;
 			parseError(cntxt,"<factor> expected\n");
 			pushInstruction(curBlk,curInstr);

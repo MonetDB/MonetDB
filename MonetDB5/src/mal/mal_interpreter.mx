@@ -236,7 +236,7 @@ Since a stack frame may contain values of a previous call,
 we should first remove garbage.
 @c
 	for(i= (env && mbcaller)?pci->argc:1; i< mb->vtop; i++)
-	if( isVarConstant(mb,i) && isVarUsed(mb,i) ){
+	if( isConstant(mb,i) && isVarUsed(mb,i) ){
 		lhs = &stk->stk[i];
 		rhs = &getVarConstant(mb,i);
 		VALcopy(lhs,rhs);
@@ -931,7 +931,7 @@ str setDynamicType(MalBlkPtr mb, MalStkPtr stk, VarPtr v, int tpe, int pc){
 	char buf[2*PATHLENGTH];
 	if( v->type ==tpe) return 0;
 	sprintf(buf,"variable '%s' has already type %s (!=%s)\n",
-		v->name, malTypeName(v->type), malTypeName(tpe));
+		v->name, getTypeName(v->type), getTypeName(tpe));
 	return raiseException(mb,pc, "setDynamicType",buf);
 }
 
@@ -1010,7 +1010,7 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall)
 	printStack(GDKout,mb,stk);
 #endif
 	for(k=0;k<mb->vtop-1; k++) 
-	if(forceall || isVarTmp(mb,k)){
+	if(forceall || isTmpVar(mb,k)){
 		garbageElement(&stk->stk[k]);
 		stk->stk[k].vtype= TYPE_int;
 	}

@@ -131,6 +131,7 @@ typedef struct{
 	str     name;	/* argname or lexical value repr */
 	malType	type;	/* internal type signature */
         bit	isaconstant;	/* value cannot change */
+        bit	isatypevar;	/* denotes a type variable */
         int	tmpindex;	/* temporary variable */
 	int	isused;	/* for stack copying scope */
 	short   fixtype;/* the type has been fixed */
@@ -221,8 +222,9 @@ for separate name space management.
 #define getVar(M,I)		(M)->var[I]
 #define getVarLiteral(M,I) 	(M)->var[I]->literal
 #define getVarTmp(M,I)		(M)->var[I]->tmpindex
-#define isVarConstant(M,I)	((M)->var[I]->isaconstant)
-#define isVarTmp(M,I)	((M)->var[I]->tmpindex)
+#define isConstant(M,I)	((M)->var[I]->isaconstant)
+#define isTypeVar(M,I)	((M)->var[I]->isatypevar)
+#define isTmpVar(M,I)	((M)->var[I]->tmpindex)
 #define isVarUsed(M,I) 		((M)->var[I]->isused)
 #define isFixed(M,I)		((M)->var[I]->fixtype)
 #define setFixed(M,I)		((M)->var[I]->fixtype= 1)
@@ -266,6 +268,7 @@ mal_export int		newVariable(MalBlkPtr mb, str name,malType type);
 mal_export void		copyVariable(MalBlkPtr dst,MalBlkPtr src, VarPtr v);
 mal_export void 	removeVariable(MalBlkPtr mb, int varid);
 mal_export int		newTmpVariable(MalBlkPtr mb, malType type);
+mal_export int		newTypeVariable(MalBlkPtr mb, malType type);
 mal_export void		delVariable(MalBlkPtr mb, int varid);
 mal_export void		freeVariable(MalBlkPtr mb, int varid);
 mal_export int		newConstant(MalBlkPtr mb, malType type, str val, int f);
@@ -583,7 +586,7 @@ int findVariable(MalBlkPtr mb, str name){
 		return i>=mb->vtop? -1:i;
 	} 
 	for(i=mb->vtop-1; i>=0; i--)
-	if(!isVarTmp(mb,i) && idcmp(name, getVarName(mb,i) )==0)
+	if(!isTmpVar(mb,i) && idcmp(name, getVarName(mb,i) )==0)
 		return i;
 	return -1;
 }
@@ -601,7 +604,7 @@ int findVariableLength(MalBlkPtr mb, str name, int len){
 		return i>=mb->vtop? -1:i;
 	}
 	for(i= mb->vtop-1; i>=0; i--) 
-	if( !isVarTmp(mb,i)){
+	if( !isTmpVar(mb,i)){
 		str s = getVarName(mb,i);
 		for(j=0;j<len;j++)
 		if( name[j]!=s[j]) break;
@@ -641,7 +644,6 @@ int isReserved(str nme){
 		  if( idcmp("any",nme)==0) return 1;
 		  break;
 	case 'b': if( idcmp("barrier",nme)==0) return 1;
-		  if( idcmp("bat",nme)==0) return 1;
 		  break;
 	case 'c': if( idcmp("command",nme)==0) return 1;
 		  break;
@@ -710,6 +712,7 @@ If we encounter a Monet type name, it is added to the symbol table with
 proprietary type.
 The makes analyses of patterns like bat(int,str) easier.
 @c
+/*
 	if( isTmpName(name) ) l= TYPE_any; else l = getTypeIndex(name);
 	if( l>= 0 && l != TYPE_any){
 		if( type != l && type != TYPE_any){
@@ -719,11 +722,12 @@ The makes analyses of patterns like bat(int,str) easier.
 		}
 		if( isaBatType(l)){
 			GDKfree(name);
-			name = malTypeName(l);
+			name = getTypeName(l);
 		}
 		type = l;
 		atomary= TRUE;
 	}
+*/
 	if( isReserved(name)){
 		GDKerror("'%s' is a reserved identifier\n",name);
 		GDKfree(name);
@@ -737,7 +741,7 @@ The makes analyses of patterns like bat(int,str) easier.
 	mb->var[n]->props = NULL;
 	setVarType(mb,n,type);
 	getVarLiteral(mb,n)= NULL;
-	isVarConstant(mb,n) = atomary;
+	isConstant(mb,n) = atomary;
 	isVarGarbage(mb,n) = FALSE;
 	if( atomary){
 		getVarConstant(mb,n).val.ival = type;
@@ -763,12 +767,18 @@ int newTmpVariable(MalBlkPtr mb, malType type){
 	getVarTmp(mb,n) = n;
 	setVarType(mb,n,type);
 	getVarLiteral(mb,n)= NULL;
-	isVarConstant(mb,n) = FALSE;
+	isConstant(mb,n) = FALSE;
 	isVarGarbage(mb,n) = FALSE;
 	isVarUsed(mb,n) = FALSE;
 	mb->vtop++;
 	return n;
 } 
+int newTypeVariable(MalBlkPtr mb, malType type){
+	int n;
+	n= newTmpVariable(mb,type);
+	isTypeVar(mb,n)= TRUE;
+	return n;
+}
 void	delVariable(MalBlkPtr mb, int varid){
 	if( varid== mb->vtop-1){
 		GDKfree(getVar(mb,varid)); getVar(mb,varid)=0;
@@ -786,6 +796,7 @@ void	copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v){
         w->fixtype = v->fixtype;
         w->literal= v->literal? GDKstrdup(v->literal):NULL;
         w->isaconstant = v->isaconstant;
+        w->isatypevar = v->isatypevar;
         w->tmpindex = v->tmpindex;
         w->isused = v->isused;
 	VALcopy(&w->value,&v->value);
@@ -874,9 +885,9 @@ int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
 		}
 	}
 	idx= k = newTmpVariable(mb,type);
-/* printf("new constant %d val %s\n",k,val);*/
+/* printf("new constant %d val %s %d\n",k,val,type);*/
 	getVarLiteral(mb,k)= val;
-	isVarConstant(mb,k) = 1;
+	isConstant(mb,k) = 1;
 	isVarUsed(mb,k) = 0;
 	vr = &getVarConstant(mb,k);
 @-
@@ -1001,7 +1012,7 @@ end.
 			goto retryConstant;
 		}
 		if( BATatoms[type].atomFromStr== 0) {
-		s= malTypeName(type);
+		s= getTypeName(type);
 		GDKerror("newConstant:no string coercion for '%s'\n", s);
 		GDKfree(s);
 		break;
@@ -1215,8 +1226,8 @@ str hiddenInstructionArgs(MalBlkPtr mb,InstrPtr p,str s){
 		char nmebuf[PATHLENGTH];
 
 		if( i== p->retc) { sprintf(s,"<-"); advance(s);}
-		tpe= malTypeName(getArgType(mb,p,i));
-		if( isVarTmp(mb, getArg(p,i)) ) {
+		tpe= getTypeName(getArgType(mb,p,i));
+		if( isTmpVar(mb, getArg(p,i)) || isTypeVar(mb, getArg(p,i)) ) {
 			snprintf(nmebuf,PATHLENGTH,"%c%d",TMPMARKER,
 				getVarTmp(mb, getArg(p,i)));
 			nme= nmebuf;
@@ -1246,7 +1257,7 @@ beginning of each line.
 @-
 
 @= showParam
-		tpe= malTypeName(getArgType(mb,p,i));
+		tpe= getTypeName(getArgType(mb,p,i));
 		ps= getVar(mb,getArg(p,i))->props;
 		pstring= propertySet2str(ps,0);
 		advance(t);
@@ -1285,7 +1296,7 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg ){
 	if( p->varargs) sprintf(t,"...");
 	advance(t);
 	if( p->retc ==1){
-		tpe= malTypeName(getArgType(mb,p,0));
+		tpe= getTypeName(getArgType(mb,p,0));
 		sprintf(t,"):%s",tpe);
 		GDKfree(tpe);
 		advance(t);
@@ -1339,7 +1350,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 	s[0]=0;
 	t=s;
 	@:performanceData@
-	if( isVarTmp(mb, getArg(p,0)) ) {
+	if( isTmpVar(mb, getArg(p,0)) ) {
 		snprintf(nmebuf,PATHLENGTH,"%c%d",TMPMARKER,
 			getVarTmp(mb, getArg(p,0)));
 		nme= nmebuf;
@@ -1404,7 +1415,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 		case CATCHsymbol:
 			sprintf(t,"catch %s",nme); break;
 		case ENDDEFsymbol:
-			if( isVarTmp(mb,getDestVar(p)) )
+			if( isTmpVar(mb,getDestVar(p)) )
 				sprintf(t,"end %c%d", TMPMARKER,
 					getVarTmp(mb,getDestVar(p)) );
 			else sprintf(t,"end %s",mb->var[getDestVar(p)]->name);
@@ -1462,22 +1473,31 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 				sprintf(t,"'%s'%s", def, pstring);
 			else	sprintf(t,"%s%s", def, pstring);
 		} else {
-			if( isVarTmp(mb, getArg(p,i)) )
-			sprintf(t,"%c%d%s",TMPMARKER, 
-				getVarTmp(mb,getArg(p,i)),pstring);
-			else sprintf(t,"%s%s", mb->var[getArg(p,i)]->name,pstring);
+			if( isTmpVar(mb, getArg(p,i)) ) {
+			   if( !isTypeVar(mb,getArg(p,i)) )
+				sprintf(t,"%c%d%s",TMPMARKER, 
+					getVarTmp(mb,getArg(p,i)),pstring);
+			} else 
+			if(!isTypeName(getArgName(mb,p,i)) )
+			sprintf(t,"%s%s", mb->var[getArg(p,i)]->name,pstring);
 		}
 		advance(t);
-		if(!isVarTmp(mb,getArg(p,i)) &&
+		if(!isTmpVar(mb,getArg(p,i)) &&
 		    idcmp("bat",getArgName(mb,p,i))==0 ){
 			str hprop=0, tprop=0;
-			str d1=malTypeName(getHeadType( getArgType(mb,p,i))),
-			    d2 =malTypeName(getTailType(getArgType(mb,p,i)));
+			str d1=getTypeName(getHeadType( getArgType(mb,p,i))),
+			    d2 =getTypeName(getTailType(getArgType(mb,p,i)));
 			hprop= propertySet2str(ps,1);
 			tprop= propertySet2str(ps,2);
 			sprintf(t,"[%s,%s]%s",d1,d2,pstring);
 			GDKfree(hprop); GDKfree(tprop);
 			GDKfree(d1); GDKfree(d2);
+			advance(t);
+		} else
+		if(isTypeVar(mb,getArg(p,i)) ){
+			char *tnme= getTypeName(getArgType(mb,p,i));
+			sprintf(t,":%s%s",tnme,pstring);
+			GDKfree(tnme);
 			advance(t);
 		}
 		if(i+1<high) sprintf(t,",");

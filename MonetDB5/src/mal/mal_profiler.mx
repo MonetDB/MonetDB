@@ -280,11 +280,12 @@ inspect the properties of BATs and their propagation.
 
 		v= &stk->stk[getDestVar(pci)];
 		w= getVar(mb, getDestVar(pci));
-		s= malTypeName(v->vtype);
+		s= getTypeName(v->vtype);
 
 		log0("\t<prop ");
 		log("type=\"%s\" ", s); GDKfree(s);
 		if(w->isaconstant) log0("constant=\"true\" ");
+		if(w->isatypevar) log0("typevar=\"true\" ");
 		
 		log0("value=\""); 
 		if( isaBatType(w->type))

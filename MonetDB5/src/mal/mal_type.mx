@@ -99,7 +99,7 @@ derived from the parser to avoid a loop in the define-structure.
 #define STREAMsymbol	63
 #define PATTERNsymbol   64
 
-mal_export str	malTypeName(malType tpe);
+mal_export str	getTypeName(malType tpe);
 mal_export malType coercion(malType t1, malType t2);
 mal_export int	getTypeIndex(str nme);
 mal_export malType reverseBatType(malType v);
@@ -107,6 +107,7 @@ mal_export malType malAnyBatType(malType t1, malType t2);
 mal_export int	idcmp(str n, str m);
 mal_export str	newTmpName(int i);
 mal_export int	isTmpName(str n);
+mal_export int	isTypeName(str n);
 mal_export int	isIdentifier(str s);
 #endif /* MAL_TYPE_H*/
 @-
@@ -115,7 +116,7 @@ the type descriptor. Including the variable references.
 @c
 #include "mal_type.h"
 
-str malTypeName(malType tpe)
+str getTypeName(malType tpe)
 {
 #ifdef DEBUG_MAL_TYPE
 	stream_printf((GDKout,"maltype: %d %d %d",tpe,getHeadType(tpe),getTailType(tpe));
@@ -174,8 +175,8 @@ malType malAnyBatType(malType t1, malType t2){
 }
 
 malType reverseBatType(malType v){
-	str d1= malTypeName(newBatType(getHeadType(v),getTailType(v))),
-	d2=	malTypeName(newBatType(getTailType(v),getHeadType(v)));
+	str d1= getTypeName(newBatType(getHeadType(v),getTailType(v))),
+	d2=	getTypeName(newBatType(getTailType(v),getHeadType(v)));
 	stream_printf(GDKout,"reverseBatType %d %s %s",v,d1,d2);
 	GDKfree(d1); GDKfree(d2);
 	return newBatType(getTailType(v),getHeadType(v));
@@ -248,17 +249,29 @@ int idcmp(str n, str m)
 	if( *(short *) n == *(short *) m) return strcmp(n,m);
 	return -1;
 }
+@-
+The ATOMindex routine is pretty slow, because it performs a
+linear search through the table. This code should actually
+be integrated with the kernel.  
+@c
+#define qt(x) (nme[1]==x[1] && nme[2]==x[2] && x[3]==0)
 int getTypeIndex(str nme){
 	int i;
-	i= ATOMindex(nme);
-	/*stream_printf((GDKout,"getTypeIndex %s %d %d\n",nme,i, GDKatomcnt);*/
-	if( idcmp("any",nme)==0 ) return TYPE_any;
-	if( idcmp("bat",nme)==0 ){
-/* stream_printf((GDKout,"found a bat[any,any]\n");*/
-		i = newBatType(TYPE_any,TYPE_any);
-/* stream_printf((GDKout,"isAnyexpression? %d\n", isAnyExpression(i));*/
-		return i;
+	switch(*nme){
+	case 'a': if(qt("any")) return TYPE_any; break;
+	case 'b': if(qt("bat")) 
+		 return newBatType(TYPE_any,TYPE_any);
+		if(qt("bit")) return TYPE_bit; break;
+	case 'd': if(qt("dbl")) return TYPE_dbl; break;
+	case 'i': if(qt("int")) return TYPE_int; break;
+	case 'f': if(qt("flt")) return TYPE_flt; break;
+	case 'l': if(qt("lng")) return TYPE_lng; break;
+	case 'o': if(qt("oid")) return TYPE_oid; break;
+	case 's': if(qt("str")) return TYPE_str; break;
+		if(qt("sht")) return TYPE_sht; break;
 	}
+	i= ATOMindex(nme);
+	/*stream_printf(GDKout,"getTypeIndex %s %d %d\n",nme,i, GDKatomcnt);*/
 	if( i== -GDKatomcnt) i = TYPE_any;
 	return i;
 }
@@ -273,6 +286,10 @@ str newTmpName(int i){
 	return GDKstrdup(buf);
 }
 int isTmpName(str n){ return n && *n == TMPMARKER;}
+int isTypeName(str n){
+	int i= ATOMindex(n);
+	return i>=0;
+}
 
 int isIdentifier(str s)
 {

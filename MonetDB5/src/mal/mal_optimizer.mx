@@ -525,7 +525,7 @@ void debugLifespan(MalBlkPtr mb){
 	int i;
 	for(i=0; i<mb->vtop; i++){
 		VarPtr v= getVar(mb,i);
-		if( isVarTmp(mb,i))
+		if( isTmpVar(mb,i))
 		printf("%c%d %d - %d\n", TMPMARKER, v->tmpindex,
 				v->beginLifespan, v->endLifespan);
 		else

@@ -539,7 +539,7 @@ int saveBox(Box box,int flag){
 				stream_printf(f,"%s.deposit(\"%s\",", 
 					box->name, getVarName(box->sym,i));
 				ATOMprint(v->vtype,VALptr(v),f);
-				stream_printf(f,":%s);\n", malTypeName(v->vtype));
+				stream_printf(f,":%s);\n", getTypeName(v->vtype));
 			}
 		}
 	} else {

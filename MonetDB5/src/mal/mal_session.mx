@@ -65,6 +65,7 @@ int malStartupAdmin(){
 	char buf[PATHLENGTH];
 	Client c;
 	c= initClient(GDKstrdup("Admin"),NULL,0,0);
+	if(c->nspace) freeScopeList(c->nspace);
 	c->nspace= newScope(NULL, GDKstrdup("Admin"));
 	initLibraries();
 	defaultScenario(c);
@@ -147,11 +148,11 @@ void scheduleClient( str command, int socket, stream *fin, stream *fout)
 		GDKfree(c->nspace->name);
 		c->nspace->name= GDKstrdup(user);
 	} else{
+		if(c->nspace) freeScopeList(c->nspace);
 		c->nspace = newScope(NULL, GDKstrdup(user));
 		c->nspace->outer = mal_scope;
 	}
 
-	/* c->nspace= newScope(NULL,GDKstrdup(user));*/
 	c->nspace->outer = mal_scope;
 	c->sessionkey = key;
 	c->socket= socket;
@@ -201,7 +202,7 @@ void	resetVariables(MalBlkPtr mb, MalStkPtr glb, int start){
         int i,j;
 
 	for(i=j=start; i< mb->vtop; ){
-		if( isVarTmp(mb,i)) {
+		if( isTmpVar(mb,i)) {
 			freeVariable(mb,i);
 			mb->var[i]=0;
 			if(glb) garbageElement(&glb->stk[i]);
