@@ -1,4 +1,4 @@
-This document will help you compile and install the Monet SQL frontend.
+This document will help you compile and install the Monet SQL front end.
 
 This document assumes that you have installed MonetDB
 on a Unix system (e.g., Linux, IRIX, Solaris, AIX, or CYGWIN).
@@ -26,7 +26,7 @@ autoconf/automake/libtool
 
 standard software development tools
 	To compile MonetDB, you also need to have a the following 
-	standard software develpments tools installed and ready for use
+	standard software developments tools installed and ready for use
 	on you system:
 	 - a C/C++ compiler (e.g., GNU's gcc/g++)
 	 - a lexical analyzer generator (e.g., "lex" or "flex")
@@ -81,7 +81,7 @@ The directory where you execute configure is the place where all
 intermediate source and object files are generated during compilation 
 via "make".
 
-The Monet SQL frontend is installed this way in the same location
+The Monet SQL front end is installed this way in the same location
 as the Monet server code. If you prefer installation in the current
 directory, you need to call  configure  without arguments.
 (Use the --help option of configure to find out about configure options).
@@ -109,7 +109,7 @@ privileges.
 Testing the Installation:
 =========================
 
-Testing the sql front-end is preferrable done before you install the 
+Testing the sql front end is preferably done before you install the 
 components in their final location. If you install the code base in its
 default location, you can test the system as follows.
 In the sql top-level directory issue the command
