@@ -390,8 +390,11 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 
 		BUNfndOID(r, bn, h);
 		if (r) {
-			int *dst = (int*) BUNtloc(bn, r);
-			(*dst)++;
+			ptr t = BUNtail(b,p);
+			if (ATOMcmp(btt,t,bt_nil)) {
+				int *dst = (int*) BUNtloc(bn, r);
+				(*dst)++;
+			}
 		}
 	} 
 @c
@@ -402,7 +405,10 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 		int h = (int)(*(oid*) BUNhead(b,p)) - min;
 
 		if (h >= 0 && h < range) {
-			cnt[h]++;
+			ptr t = BUNtail(b,p);
+			if (ATOMcmp(btt,t,bt_nil)) {
+				cnt[h]++;
+			}
 		}
 	} 
 	BATloopFast(bn, p, q, xx) {
@@ -417,6 +423,8 @@ int CMDaggr_count(BAT **ret, BAT *b, BAT *e){
 	int zero = 0, *cnt;
 	BUN p, q, r;
 	int xx, i, range, min, max;
+  	int btt = b->ttype;
+	ptr bt_nil = ATOMnilptr(b->ttype);
 
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;

@@ -615,13 +615,17 @@ int CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e){
 	if (@2) { (void) BATprepareHash(bn); }
 	/* scan b, and increment counts in-place or in cnt-array */
         bhsb = b->hseqbase;
+        btt = b->ttype;
 	BATloopFast(b, p, q, xx) {
 		oid *h = (oid*) @5;
 
 		@3(r, bn, (int*)h);
 		if (r) {
-			int *dst = (int*) @6;
-			(*dst)++;
+			ptr t = BUNtail(b,p);
+			if (ATOMcmp(btt,t,bt_nil)) {
+				int *dst = (int*) @6;
+				(*dst)++;
+			}
 		}
 	} 
 	if (@1) {
@@ -639,6 +643,8 @@ int CMDaggrX3_count(BAT **ret, BAT *b, BAT *e){
 	BUN p, q, r;
 	int xx, range, min, max;
 	oid bhsb;
+	int btt;
+	ptr bt_nil = ATOMnilptr(b->ttype);
 
 	ALGODEBUG THRprintf(GDKout, "CMDaggrX3_(b=%s,e=%s);\n",b->batId,e->batId);
 	/* init: set all counts to zero and calculate min/max oid */
@@ -1178,6 +1184,7 @@ int CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e){
 	offset = base - g->hseqbase;
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
+	btt = b->ttype;
 	BATloopFast(b, p, q, xx) {
 		oid v = *(oid*) @5;
 		
@@ -1187,8 +1194,11 @@ int CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e){
 
 			@3(r, bn, (int*)h);
 			if (r) {
-				int *dst = (int*) @6;
-				(*dst)++;
+				ptr t = BUNtail(b,p);
+				if (ATOMcmp(btt,t,bt_nil)) {
+					int *dst = (int*) @6;
+					(*dst)++;
+				}
 			}
 		}
 	} 
@@ -1208,6 +1218,8 @@ int CMDaggrX3_count3(BAT **ret, BAT *b, BAT* g, BAT *e){
 	int xx, range, min, max;
 	oid bhsb;
   	int base, offset, end, w;
+  	int btt;
+	ptr bt_nil = ATOMnilptr(b->ttype);
 
         ALGODEBUG THRprintf(GDKout, "CMDaggrX3_count3(b=%s,g=%s,e=%s);\n",b->batId,g->batId,e->batId);
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_count3: BATs b & g must be of equal size.\n");	*/
