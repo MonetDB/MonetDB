@@ -1405,15 +1405,19 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
 	GDKerror("radix_cluster: limits %s is not empty and appendable.\n", limits->batId);
 	limits = NULL;
     }
+
+    ALGODEBUG THRprintf(GDKout, "radix_cluster(%s(%d,%d), %s,%g, %d", b->batId,b->batCacheid,BATtordered(b), nme, *perc, *nbits);
     radix[0] = *nbits; 
     va_start(ap,nbits);
     while((p = va_arg(ap, int*)) != NULL) {
+	ALGODEBUG THRprintf(GDKout, ",%d", *p);
         radix[argc] = *p; 
 	shift += ABS(radix[argc]); 
 	argc++; 
     }
     va_end(ap);
     total_shift = shift; 
+    ALGODEBUG THRprintf(GDKout, ") -> ");
 
     lim[0] = BUNlast(b)-BUNfirst(b);
 
@@ -1463,6 +1467,7 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
 	GDKfree(dst);
 	GDKfree(cnt);
     }
+    ALGODEBUG THRprintf(GDKout, "(argc=%d,total_shift=%d) ",argc,total_shift);
     if (argc >= 0) {
 	bn->tsorted = 0; /* partial radix cluster */
     } else {
@@ -1484,6 +1489,7 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
     if (limitid) {
 	BBPunfix(limitid);
     }
+    ALGODEBUG THRprintf(GDKout, "%s(%d,%d);\n", bn->batId,bn->batCacheid,BATtordered(bn));
     *ret = bn;
     return GDK_SUCCEED;
 }
@@ -1570,6 +1576,7 @@ as the mask and link list for all phash invocations.
 
 #define intfastins(b,h,t) {\
             if (_dst >= _end) {\
+		ALGODEBUG THRprintf(GDKout, "phash_join: intfastins: BATextend!\n");\
 		b->batBuns->free = ((BUN) _dst) - b->batBuns->base;\
                 BATextend((b), BATgrows(b));\
                 _dst = (int*) (b->batBuns->base + b->batBuns->free);\
@@ -1664,6 +1671,7 @@ void hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi,
 }
 
 @= hash_join
+    ALGODEBUG THRprintf(GDKout, "phash_join: hash_join[@1,@2,@3,@4,@5,@6,@7,@8]\n");
     /* build phase */
     for(xx=BUNsize(r); rlo<rhi; rlo+=xx) {
 	ptr p = BUN@2(r,rlo);
@@ -1685,6 +1693,7 @@ void hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi,
     } 
 @c
 int phash_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate, bit *cutoff) {
+    ALGODEBUG THRprintf(GDKout, "phash_join(%s(%d,%d),%s(%d,%d),%d,%d,%d) -> ", l->batId,l->batCacheid,BATtordered(l), r->batId,r->batCacheid,BAThordered(r), *radix, *hitrate, *cutoff);
     if (*radix != (BATtordered(l)>>1)) {
 	GDKerror("phash_join: tail of %s is radix clustered on %d bits.\n",
 			l->batId, BATtordered(l)>>1);
@@ -1698,11 +1707,9 @@ int phash_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate, bit *cutoff)
 {   int k, m, rd = (1 << *radix) - 1; 
     int estimate = MIN(BATcount(r),BATcount(l))*(*hitrate);
     BAT *bn = BATnew(BAThtype(l), BATttype(r), estimate);
-    BAT *bm = BATmirror(bn), *ml = BATmirror(l), *mr = BATmirror(r);
     BUN r_end, l_cur = BUNfirst(l), l_last = BUNlast(l);
     BUN l_end, r_cur = BUNfirst(r), r_last = BUNlast(r);
     int xx = BUNsize(l), yy= BUNsize(r);
-    int one = l->tkey || r->hkey;        
     int rcut = r->hkey || (*cutoff && (*hitrate == 1));
     int lcut = l->tkey || (*cutoff && (*hitrate == 1));
     Hash h;
@@ -1721,8 +1728,8 @@ int phash_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate, bit *cutoff)
     /* set properties on result bat */
     bn->hsorted = BAThordered(l);
     bn->tsorted = 0;
-    if (l->hkey && one) BATkey(bn, TRUE);
-    if (r->tkey && one) BATkey(bm, TRUE);
+    if (l->hkey && r->hkey) BATkey(bn, TRUE);
+    if (r->tkey && l->tkey) BATkey(BATmirror(bn), TRUE);
 
     if (BATcount(r))
     if (r->htype == TYPE_oid) {
@@ -1737,6 +1744,7 @@ int phash_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate, bit *cutoff)
     }
 xit:
     GDKfree(h.hash);
+    ALGODEBUG THRprintf(GDKout, "%s(%d);\n", bn->batId,bn->batCacheid);
     *res = bn;
     return GDK_SUCCEED;
 }}
@@ -1745,9 +1753,7 @@ xit:
 @= hash_merge
 if (rd == 0) {
     /* with zero bits, it is fairer not to perform a radix merge */
-    l_end = l_last;
-    r_end = r_last;
-    goto hash@1@2;
+    hash_join(&h, bn, l, l_cur, l_last, r, r_cur, r_last, *radix, rcut);
 } else {
     int y = @1_RADIX(BUN@2(r,r_cur),rd);
     
@@ -1775,11 +1781,7 @@ if (rd == 0) {
                 y = @1_RADIX(v,rd); 
                 if (y != x) break;
             }
-hash@1@2:   if ((l_end-l_cur) < (r_end-r_cur)) { 
-                hash_join(&h, bm, mr, r_cur, r_end, ml, l_cur, l_end, *radix, lcut);
-            } else {
-                hash_join(&h, bn, l, l_cur, l_end, r, r_cur, r_end, *radix, rcut);
-            }
+            hash_join(&h, bn, l, l_cur, l_end, r, r_cur, r_end, *radix, rcut);
             r_cur = r_end;
         } 
         l_cur = l_end;
@@ -1794,7 +1796,6 @@ int radix_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate) {
     BUN r_end, l_cur = BUNfirst(l), l_last = BUNlast(l);
     BUN l_end, r_cur = BUNfirst(r), r_last = BUNlast(r);
     int xx = BUNsize(l), yy = BUNsize(r);
-    int one = l->tkey || r->hkey;	
     int rd = (1 << *radix) -1;	
     int any = ATOMstorage(l->ttype);
     ptr nil = ATOMnilptr(any);
@@ -1815,8 +1816,8 @@ int radix_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate) {
     bn = *res = BATnew(BAThtype(l), BATttype(r), estimate);
     bn->hsorted = BAThordered(l);
     bn->tsorted = 0;
-    if (l->hkey && one) BATkey(bn, TRUE);
-    if (r->tkey && one) BATkey(BATmirror(bn), TRUE);
+    if (l->hkey && r->hkey) BATkey(bn, TRUE);
+    if (r->tkey && l->tkey) BATkey(BATmirror(bn), TRUE);
    
     if (BATcount(r) == 0) return GDK_SUCCEED;	   
     
