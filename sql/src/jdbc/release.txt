@@ -118,3 +118,9 @@ this driver.
   lead to parser errors.
 - The getObject methods do not return all types correct, and currently ignore
   any given type map.
+- Auto-commit mode does NOT commit when:
+  . all of the rows of a resultset are retrieved
+  . another Statement object is executed on the same connection
+  it DOES commit when:
+  . the associated Statement object of a result set is executed
+  . an update, delete or insert statement has finished executing
