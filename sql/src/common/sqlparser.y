@@ -76,8 +76,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	existence_test
 	in_predicate
 	insert_statement
-	commit_statement
-	rollback_statement
+	transaction_statement
 	like_predicate
 	opt_where_clause
 	opt_having_clause
@@ -193,6 +192,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	intval
 
 %type <bval>
+	opt_trans
 	opt_distinct
 	opt_with_check_option
 	opt_with_grant_option
@@ -208,8 +208,9 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 /*
 OPEN CLOSE FETCH 
 */
-%token <sval> DELETE UPDATE COMMIT ROLLBACK SELECT INSERT
+%token <sval> DELETE UPDATE SELECT INSERT
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER UNIONJOIN
+%token <sval> BEGIN COMMIT ROLLBACK ABORT WORK TRANSACTION
 	
 %token <operation> '+' '-' '*' '/'
 %token <sval> LIKE BETWEEN ASYMMETRIC SYMMETRIC ORDER BY
@@ -253,7 +254,7 @@ UNDER WHENEVER
 %token IS KEY ON OPTION OPTIONS
 %token PATH PRIMARY PRIVILEGES 
 %token<sval> PUBLIC REFERENCES SCHEMA SET
-%token ALTER ADD TABLE TO UNION UNIQUE USER VALUES VIEW WHERE WITH WORK
+%token ALTER ADD TABLE TO UNION UNIQUE USER VALUES VIEW WHERE WITH 
 %token<sval> DATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 
@@ -598,15 +599,25 @@ cursor:	ident ;
 
 	/* data manipulative statements */
 
-sql: commit_statement |	rollback_statement | delete_statement_searched 
- | insert_statement | update_statement ;
-
-commit_statement:
-    COMMIT WORK 	{ $$ = _symbol_create( SQL_COMMIT, NULL); }
+sql: 
+   transaction_statement 
+ | delete_statement_searched 
+ | insert_statement 
+ | update_statement 
  ;
 
-rollback_statement:
-    ROLLBACK WORK 	{ $$ = _symbol_create( SQL_ROLLBACK, NULL); }
+transaction_statement:
+    COMMIT opt_trans 	{ $$ = _symbol_create( SQL_COMMIT, NULL); }
+ |  END opt_trans 	{ $$ = _symbol_create( SQL_COMMIT, NULL); }
+ |  ABORT opt_trans 	{ $$ = _symbol_create( SQL_ROLLBACK, NULL); }
+ |  ROLLBACK opt_trans 	{ $$ = _symbol_create( SQL_ROLLBACK, NULL); }
+ |  BEGIN opt_trans 	{ $$ = _symbol_create( SQL_BEGIN, NULL); }
+ ;
+
+opt_trans:
+    WORK		{ $$ = 1; }
+ |  TRANSACTION		{ $$ = 1; }
+ |  /* empty */		{ $$ = 1; }
  ;
 
 delete_statement_searched:

@@ -2660,6 +2660,11 @@ static
 statement *sql_statement( context *sql, symbol *s ){
 	statement *ret = NULL;
 	switch(s->token){
+
+		case SQL_BEGIN: ret = statement_begin(); break;
+		case SQL_COMMIT: ret = statement_commit(); break;
+		case SQL_ROLLBACK: ret = statement_rollback(); break;
+
 		case SQL_CREATE_SCHEMA:
 			{ dlist *l = s->data.lval;
 			  ret = create_schema( sql, l->h->data.lval, 

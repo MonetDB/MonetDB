@@ -49,6 +49,9 @@ typedef enum statement_type {
 	st_name,
 	st_set, 
 	st_sets, 
+	st_begin,
+	st_commit,
+	st_rollback,
 	/* used internally only */
 	st_list, 
 	st_insert_list, 
@@ -87,6 +90,10 @@ typedef struct statement {
 
 extern void st_attache(statement *st, statement *user );
 extern void st_detach(statement *st, statement *user );
+
+extern statement *statement_begin( );
+extern statement *statement_commit( );
+extern statement *statement_rollback( );
 
 extern statement *statement_create_schema( schema *s );
 extern statement *statement_drop_schema( schema *s );

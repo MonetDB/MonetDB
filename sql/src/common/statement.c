@@ -79,6 +79,9 @@ const char *statement2string( statement *s ){
 		cr(st_name,"name");
 		cr(st_set,"set");
 		cr(st_sets,"sets");
+		cr(st_begin,"begin");
+		cr(st_commit,"commit");
+		cr(st_rollback,"rollback");
 		cr(st_list,"list");
 		cr(st_insert_list,"insert_list");
 		cr(st_output,"output");
@@ -174,6 +177,9 @@ void statement_destroy( statement *s ){
 		case st_create_table: 
 		case st_drop_table: 
 
+		case st_begin:
+		case st_commit:
+		case st_rollback:
 		case st_create_column: 
 		case st_column:
 		case st_none:
@@ -182,6 +188,23 @@ void statement_destroy( statement *s ){
 		list_destroy(s->uses);
 		_DELETE(s);
 	}
+}
+
+statement *statement_begin( ){
+	statement *s = statement_create();
+	s->type = st_begin;
+	return s;
+}
+
+statement *statement_commit( ){
+	statement *s = statement_create();
+	s->type = st_commit;
+	return s;
+}
+statement *statement_rollback( ){
+	statement *s = statement_create();
+	s->type = st_rollback;
+	return s;
 }
 
 statement *statement_create_schema( schema *schema ){

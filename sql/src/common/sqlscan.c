@@ -96,7 +96,6 @@ void init_keywords(){
 	/*
 	keywords_insert("CLOSE", CLOSE );
 	*/
-	keywords_insert("COMMIT", COMMIT );
 	keywords_insert("CONSTRAINT", CONSTRAINT );
 	/*
 	keywords_insert("CONTINUE", CONTINUE );
@@ -182,7 +181,6 @@ void init_keywords(){
 	keywords_insert("REFERENCES", REFERENCES );
 	keywords_insert("RESTRICT", RESTRICT );
 	keywords_insert("RIGHT", RIGHT );
-	keywords_insert("ROLLBACK", ROLLBACK );
 	keywords_insert("SCHEMA", SCHEMA );
 	keywords_insert("SELECT", SELECT );
 	keywords_insert("SET", SET );
@@ -212,7 +210,6 @@ void init_keywords(){
 	*/
 	keywords_insert("WHERE", WHERE );
 	keywords_insert("WITH", WITH );
-	keywords_insert("WORK", WORK );
 
 	keywords_insert("DATE", DATE );
 	keywords_insert("TIME", TIME );
@@ -235,6 +232,13 @@ void init_keywords(){
 	keywords_insert("END", END );
 	keywords_insert("NULLIF", NULLIF );
 	keywords_insert("COALESCE", COALESCE );
+
+	keywords_insert("BEGIN", BEGIN );
+	keywords_insert("ABORT", ABORT );
+	keywords_insert("COMMIT", COMMIT );
+	keywords_insert("ROLLBACK", ROLLBACK );
+	keywords_insert("WORK", WORK );
+	keywords_insert("TRANSACTION", TRANSACTION );
 }
 
 void exit_keywords(){
