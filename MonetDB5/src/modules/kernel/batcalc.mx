@@ -300,6 +300,8 @@ The common set of math functions is supported.
 @= scienceFcn
     command @1(x:bat[:any$1,:dbl])  :bat[:any$1,:dbl] 
     address CMDscience_@1;
+    command @1(x:bat[:void,:dbl])  :bat[:void,:dbl] 
+    address CMDsciencevoid_@1;
 @= scienceFcnBinary
     command @1(x:bat[:any$1,:dbl],y:@2):bat[:any$1,:dbl] 
     address CMDscience_@1;
@@ -1170,6 +1172,31 @@ bunins_failed:
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
+/* You don;t have to materialize the oids.
+This is taken care upon access */
+str CMDsciencevoid_@1(int *ret, int *bid){
+	BAT *b,*bn;
+	int xx;
+	BUN p,q;
+	oid o;
+
+	@:getBATdescriptor(ret,bid,b,CMDsciencevoid_@1)@
+
+	bn= BATnew(TYPE_oid,b->ttype, BATcount(b));
+	@:tstBat(CMDsciencevoid_@1)@
+	o= b->hseqbase;
+
+	BATloopFast(b, p, q, xx) {
+		dbl t = *(dbl*) BUNtail(b,p);
+		dbl x= t== dbl_nil? dbl_nil:@1(t);
+		bunfastins(bn, &o, &x);
+		o++;
+	}
+bunins_failed:
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(*ret);
+	return MAL_SUCCEED;
+}
 @= scienceBinaryImpl
 str CMDscience_@1(int *ret, int *bid, @2 *d){
 	BAT *b,*bn;
@@ -1543,5 +1570,4 @@ printf("name %s %s\n",left->batId,right->batId);
 	printf("execution time for CMD000 %d\n",t1-t0);
 	return MAL_SUCCEED;
 }
-
 @}

@@ -19,6 +19,10 @@
 @a A.R. van Ballegooij
 @* Basic array support
 
+The array support library constructs the index arrays essential
+for the Relational Algebra Model language.
+The grid filler operation assumes that there is enough space.
+
 
 @mal
 module array;
@@ -27,12 +31,17 @@ command grid(i:int,j:int,k:int,l:int) :bat[:void,:int]
 address ARRAYgrid
 comment  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)";
 
+command grid(b:bat[:void,:int],i:int,j:int,k:int,l:int) :bat[:void,:int] 
+address ARRAYgridBAT
+comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)";
+
 pattern print(a:bat[:any$1,:any],b:bat[:any$1,:int]...) :void 
 address ARRAYprint
 comment "Prints an array, using 1 value bat and N aligned index bats";
 
 @{
 @- Implementation
+@include ../mal/prelude.mx
 @h
 
 /*============================================================================*/
@@ -61,13 +70,14 @@ extern ptr BATmax(BAT *b, ptr aggr);
 @c
 /*============================================================================*/
 #include "array.h"
+#include "gdk.h"
 #include <math.h>
 #include <time.h>
 
 /*----------------------------------------------------------------------------*/
 
 int
-grid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset)
+fillgrid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset)
 {
 	register int *ptr;
 	int i = *groups;
@@ -79,8 +89,6 @@ grid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset)
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
-	new_int_bat(*out, (i * (n - o) * r));
-	add_ints(*out, (i * (n - o) * r));
 	ptr = get_int_ptr(*out);
 
 	while (i--) {
@@ -100,6 +108,22 @@ grid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset)
 #endif
 
 	return GDK_SUCCEED;
+}
+int
+grid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset)
+{
+	int i = *groups;
+	int n = *groupsize + *offset;
+	int r = *clustersize;
+	int o = *offset;
+
+#ifdef EXCESSIVE_DEBUGGING
+	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
+#endif
+
+	new_int_bat(*out, (i * (n - o) * r));
+	add_ints(*out, (i * (n - o) * r));
+	return fillgrid(out,groups,groupsize,clustersize,offset);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -311,6 +335,16 @@ str
 ARRAYgrid(int *ret, int *groups, int *groupsize, int *clustersize, int *offset){
 	BAT *bn;
 	if( grid(&bn, groups, groupsize, clustersize, offset) == GDK_FAIL)
+		return throwMessage("array.grid","Failed to create the grid\n");
+	BBPincref( *ret= bn->batCacheid, TRUE);
+	BBPunfix(*ret);
+	return MAL_SUCCEED;
+}
+str
+ARRAYgridBAT(int *ret, int *bid, int *groups, int *groupsize, int *clustersize, int *offset){
+	BAT *bn;
+	@:getBATdescriptor(ret,bid,bn,array.grid)@
+	if( fillgrid(&bn, groups, groupsize, clustersize, offset) == GDK_FAIL)
 		return throwMessage("array.grid","Failed to create the grid\n");
 	BBPincref( *ret= bn->batCacheid, TRUE);
 	BBPunfix(*ret);
