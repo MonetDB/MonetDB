@@ -291,12 +291,12 @@ The constants defined in limit.h are defined using autoloaded mil code.
         const @1_MIN   := get@1_MIN();
 @
 
-@+ Example script 
-The following example script will do each operation in the
-arith module. It can be used for testing.
+@+ example script 
+the following example script will do each operation in the
+arith module. it can be used for testing.
 
 @mil
-if (mod = "main"){
+proc test_arith() {
   setoid(oid(20000000));
   sht1 := sht(2);
   sht2 := sht(5);
