@@ -2054,7 +2054,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     elif CALL == "mal":
                         RunIt(cmd+f+" </dev/null", "", ClntOutFile, ClntErrFile)
                     elif env['VERSION'] >= 49900:
-                        RunIt("( M2m %s | %s )" % (f,cmd), "", ClntOutFile, ClntErrFile)
+                        RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f+" </dev/null", "", ClntOutFile, ClntErrFile)
                     else:
                         RunIt(cmd+"< "+f, "", ClntOutFile, ClntErrFile)
         elif CALL in ["milC", "milCXs"]:
