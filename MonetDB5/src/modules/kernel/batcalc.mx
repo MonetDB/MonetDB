@@ -340,7 +340,6 @@ comment "POSIX pattern matching against a string BAT";
 #include "gdk.h"
 #include "math.h"
 #include "mal_exception.h"
-#include "mal_client.h"
 #include <regex.h>
 
 @-
@@ -432,6 +431,9 @@ str CMDbat@1(int *ret, int *l, int *r)
 	@:chkSize(left,right,CMDbat@1)@
 
 	dst= BATcopy(left);
+	if( dst == NULL){
+		return throwMessage("batcalc.mod", "no copy available ");
+	}
 	BBPfix(*ret = dst->batCacheid);
 	return bataccum@1(dst,left,right);
 }
@@ -480,6 +482,9 @@ str CMDbat@1cst(int *ret, int *l, void *cst)
 
 	@:getBATdescriptor(ret,l,left,CMDbat@1)@
 	dst= BATcopy(left);
+	if( dst == NULL){
+		return throwMessage("batcalc.@1", "no copy available ");
+	}
 	d= dst->batCacheid;
 	return CMDbataccum@1cst(ret, &d,l,cst);
 }
@@ -523,6 +528,9 @@ str CMDbatMOD(int *ret, int *l, int *r)
 	@:chkSize(left,right,CMDbatMOD)@
 
 	dst= BATcopy(left);
+	if( dst == NULL){
+		return throwMessage("batcalc.mod", "no copy available ");
+	}
 	BBPfix(*ret = dst->batCacheid);
 	return bataccumMOD(dst,left,right);
 }
@@ -568,6 +576,9 @@ str CMDbatMODcst(int *ret, int *l, void *cst)
 
 	@:getBATdescriptor(ret,l,left,CMDbatMOD)@
 	dst= BATcopy(left);
+	if( dst == 0){
+		return throwMessage("batcalc.mod", "no copy available");
+	}
 	return CMDbataccumMODcst(ret, &dst->batCacheid,l,cst);
 }
 @- Implementation of unary operations
@@ -611,6 +622,9 @@ str CMDunary@1(int *ret, int *bid){
 	
 	@:getBATdescriptor(ret,bid,b,CMDunary@1)@
 	dst= BATcopy(b);
+	if( dst == NULL){
+		return throwMessage("batcalc.unary", "no copy available ");
+	}
 	return CMDunaryAccum@1(ret,&dst->batCacheid,bid);
 }
 @c
