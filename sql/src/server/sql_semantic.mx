@@ -577,7 +577,7 @@ dyncheck_types(mvc *sql, sql_subtype *ct, stmt *s)
 		return res;
 	}
 	if (st) {
-		if ((ct->digits > 0 && ct->scale == 0 && ct->digits < st->digits) || (ct->scale > 0 && ct->digits > 0 && ct->digits - ct->scale < st->digits - st->scale)
+		if ((ct->digits > 0 && ct->scale == 0 && (ct->digits < st->digits || st->digits == 0)) || (ct->scale > 0 && ct->digits > 0 && ct->digits - ct->scale < st->digits - st->scale)
 		    ) {
 			stmt *res = NULL;
 			sql_subtype *it = sql_bind_localtype("lng");

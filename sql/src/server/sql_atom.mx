@@ -199,7 +199,7 @@ atom_destroy(atom *a)
 char *
 atom2string(atom *a)
 {
-	char buf[1024];
+	char buf[BUFSIZ];
 
 	switch (a->data.vtype) {
 	case TYPE_lng:
@@ -224,6 +224,8 @@ atom2string(atom *a)
 		else
 			sprintf(buf, "NULL");
 		break;
+        default:
+                snprintf(buf, BUFSIZ, "atom2string(TYPE_%d) not implemented", a->data.vtype);
 	}
 	return _strdup(buf);
 }
