@@ -974,16 +974,9 @@ def output(tree, cwd, topdir):
     if tree.has_key('bin_Mtimeout'):
         tree = tree.copy()
         del tree['bin_Mtimeout']
-    if tree.has_key('LIBS') and tree['LIBS'].has_key('SOURCES') and 'mprof.mx' in tree['LIBS']['SOURCES']:
+    if tree.has_key('LIB_mprof'):
         tree = tree.copy()
-        tree['LIBS'] = tree['LIBS'].copy()
-        tree['LIBS']['SOURCES'] = tree['LIBS']['SOURCES'][:]
-        tree['LIBS']['SOURCES'].remove('mprof.mx')
-        targets = tree['LIBS']['TARGETS']
-        tree['LIBS']['TARGETS'] = []
-        for t in targets:
-            if t[:6] != 'mprof.':
-                tree['LIBS']['TARGETS'].append(t)
+        del tree['LIB_mprof']
 
     fd = open(os.path.join(cwd, 'Makefile.msc'), "w")
 
