@@ -892,6 +892,8 @@ the function definition in a particular module instead of the current one.
 
     curPrg = cntxt->curprg;
     curBlk = curPrg->def;
+	curBlk->flowfixed= 0;
+	curBlk->typefixed= 0;
     curInstr = getInstrPtr(curBlk,0);
 	if (moduleId(curInstr))
 		freeModuleName(curInstr);

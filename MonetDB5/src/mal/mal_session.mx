@@ -94,6 +94,8 @@ void initClientPrg(Client cntxt, str nme){
 	if( cntxt->curprg && idcmp(nme,cntxt->curprg->name)==0 &&
 	    cntxt->curprg->def->stop <= 1){
 	    mb = cntxt->curprg->def;
+        mb->typefixed=0;
+        mb->flowfixed=0;
 	} else {
 		cntxt->curprg = newFunction(GDKstrdup(nme),FUNCTIONsymbol);
 		mb = cntxt->curprg->def;

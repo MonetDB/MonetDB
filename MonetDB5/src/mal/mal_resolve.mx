@@ -780,23 +780,25 @@ lead to a re-check when it was already fully analysed.
 @c
 void chkProgram(Scope s, MalBlkPtr mb)
 {
-	InstrPtr p;
+	InstrPtr p=0;
     int i, chk=0;
 
 	if( mb->typefixed == 0)
 		for(i=0;i<mb->stop;i++) {
 			p= getInstrPtr(mb,i);
 			if(p== NULL) continue;
-			if( p->typechk == TYPE_BIND) fcnBinder(s,mb,p);
-			else  if( p->typechk != TYPE_FIXED) typeChecker(s,mb,p);
+			if( p->typechk == TYPE_BIND) 
+				fcnBinder(s,mb,p);
+			else if( p->typechk != TYPE_FIXED)
+				typeChecker(s,mb,p);
+
 			if( functionId(p) ){
 				if(p->fcn != NULL && p->typechk== TYPE_FIXED) chk++;
 			} else
 			if( p->typechk== TYPE_FIXED) chk++;
 		}
-/* Not safe yet, goes wrong in module initiated calls
-s
-	mb->typefixed = mb->stop == (chk+1); ignored END */
+/* it is not ready yet, too fragile
+		mb->typefixed = mb->stop == chk; ignored END */
 
 	if( mb->flowfixed == 0)
 		chkFlow(mb);
