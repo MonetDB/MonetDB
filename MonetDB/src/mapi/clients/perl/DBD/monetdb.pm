@@ -39,15 +39,13 @@ require DBD::monetdb::TypeInfo;
 sub driver {
     return $drh if $drh;
 
-    my $class = shift;
-    my $attr  = shift;
-    $class .= '::dr';
+    my ($class, $attr) = @_;
 
-    $drh = DBI::_new_drh($class, {
-				  Name        => 'monetdb',
-				  Version     => $VERSION,
-				  Attribution => 'DBD::monetdb derived from monetdb.pm by Arjan Scherpenisse',
-				 }, {});
+    $drh = DBI::_new_drh($class .'::dr', {
+        Name        => 'monetdb',
+        Version     => $VERSION,
+        Attribution => 'DBD::monetdb derived from monetdb.pm by Arjan Scherpenisse',
+    });
 }
 
 # The monetdb dsn structure is DBI:monetdb:host:port:dbname:language
@@ -148,7 +146,7 @@ use strict;
 
 
 sub ping {
-    my $dbh = shift;
+    my ($dbh) = @_;
     my $mapi = $dbh->{monetdb_connection};
 
     MapiLib::mapi_ping($mapi) ? 0 : 1;
@@ -511,8 +509,7 @@ SQL
 
 
 sub tables {
-    my $dbh = shift;
-    my @args = @_;
+    my ($dbh, @args) = @_;
     my $mapi = $dbh->{monetdb_connection};
 
     my @table_list;
@@ -530,7 +527,7 @@ sub tables {
 
 
 sub _ListDBs {
-    my $dbh = shift;
+    my ($dbh) = @_;
     my @database_list;
     push @database_list, MapiLib::mapi_get_dbname($dbh->{monetdb_connection});
     return @database_list;
@@ -538,13 +535,13 @@ sub _ListDBs {
 
 
 sub _ListTables {
-    my $dbh = shift;
+    my ($dbh) = @_;
     return $dbh->tables;
 }
 
 
 sub disconnect {
-    my $dbh = shift;
+    my ($dbh) = @_;
     my $mapi = $dbh->{monetdb_connection};
     MapiLib::mapi_disconnect($mapi);
     $dbh->STORE('Active', 0 );
@@ -553,36 +550,34 @@ sub disconnect {
 
 
 sub FETCH {
-    my $dbh = shift;
-    my $key = shift;
+    my ($dbh, $key) = @_;
     return $dbh->{$key} if $key =~ /^monetdb_/;
     return $dbh->SUPER::FETCH($key);
 }
 
 
 sub STORE {
-    my $dbh = shift;
-    my ($key, $new) = @_;
+    my ($dbh, $key, $value) = @_;
 
     if ($key eq 'AutoCommit') {
 	my $old = $dbh->{$key} || 0;
-	if ($new != $old) {
+	if ($value != $old) {
 	    my $mapi = $dbh->{monetdb_connection};
-	    MapiLib::mapi_setAutocommit($mapi, $new);
-	    $dbh->{$key} = $new;
+	    MapiLib::mapi_setAutocommit($mapi, $value);
+	    $dbh->{$key} = $value;
 	}
 	return 1;
 
     } elsif ($key =~ /^monetdb_/) {
-	$dbh->{$key} = $new;
+	$dbh->{$key} = $value;
 	return 1;
     }
-    return $dbh->SUPER::STORE($key, $new);
+    return $dbh->SUPER::STORE($key, $value);
 }
 
 
 sub DESTROY {
-    my $dbh = shift;
+    my ($dbh) = @_;
     $dbh->disconnect if $dbh->FETCH('Active');
     my $mapi = $dbh->{monetdb_connection};
     MapiLib::mapi_destroy($mapi) if $mapi;
@@ -685,7 +680,7 @@ sub fetch {
 *fetchrow_arrayref = \&fetch;
 
 sub rows {
-    my $sth = shift;
+    my ($sth) = @_;
     return $sth->{monetdb_rows};
 }
 
@@ -703,8 +698,7 @@ sub finish {
 
 
 sub FETCH {
-    my $sth = shift;
-    my $key = shift;
+    my ($sth, $key) = @_;
 
     return $sth->{NAME} if $key eq 'NAME';
     return $sth->{$key} if $key =~ /^monetdb_/;
@@ -713,8 +707,7 @@ sub FETCH {
 
 
 sub STORE {
-    my $sth = shift;
-    my ($key, $value) = @_;
+    my ($sth, $key, $value) = @_;
 
     if ($key eq 'NAME') {
 	$sth->{NAME} = $value;
