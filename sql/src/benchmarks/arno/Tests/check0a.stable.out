@@ -1,16 +1,17 @@
 stdout of test 'check0a` in directory 'src/benchmarks/arno` itself:
 
 
-# 22:08:12 >  
-# 22:08:12 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_src_benchmarks_arno check0a.prelude < check0a.milM
-# 22:08:12 >  
+# 16:01:27 >  
+# 16:01:27 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_PREFIX__GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX__GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX__GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX__GNU_32_d__/var/MonetDB/log" --set mapi_port=45373 --set sql_port=53186 --set monet_prompt= --trace --dbname=mTests_src_benchmarks_arno check0a.prelude < check0a.milM
+# 16:01:27 >  
 
-# Monet Database Server V4.3.9
-# Copyright (c) 1993-2003, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.3.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
 ls;
-#-------------------------------------------------------------------------------------------------------------------------#
-# name				htype	ttype	count	heat	dirty		status	kind	refcnt	lrefcnt		  # name
+#---------------------------------------------------------------------------------------------------------------------------------#
+# name				htype	ttype		count	heat	dirty		status	kind	refcnt	lrefcnt		  # name
 # str				str	str		lng	int	str		str	str	int	int		  # type
 #---------------------------------------------------------------------------------------------------------------------------------#
 [ "D_atom_14",			  "void", "oid",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
@@ -35,9 +36,9 @@ ls;
 [ "U_atom_element_14",		  "oid",  "str",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_atom_model_id_14",		  "oid",  "lng",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_atom_type_14",		  "oid",  "str",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "U_auths_grantor_1",			  "oid",  "int",  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "U_auths_id_1",			  "oid",  "int",  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "U_auths_name_1",			  "oid",  "str",  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "U_auths_grantor_1",		  "oid",  "int",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "U_auths_id_1",		  "oid",  "int",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "U_auths_name_1",		  "oid",  "str",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_bond_atom1_14",		  "oid",  "str",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_bond_atom2_14",		  "oid",  "str",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_bond_bond_id_14",		  "oid",  "lng",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
@@ -88,11 +89,13 @@ ls;
 [ "U_schemas_authorization_1",	  "void", "str",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_schemas_id_1",		  "void", "int",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_schemas_name_1",		  "void", "str",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "U_tables_clear_14",		  "void", "bit",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_tables_id_14",		  "void", "int",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "U_tables_istable_14",	  "void", "bit",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_tables_name_14",		  "void", "str",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_tables_query_14",		  "void", "str",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_tables_schema_id_14",	  "void", "int",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "U_tables_type_14",		  "void", "int",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "U_tables_system_14",		  "void", "bit",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_types_digits_1",		  "void", "int",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_types_id_1",		  "void", "int",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_types_module_id_1",	  "void", "int",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
@@ -100,14 +103,14 @@ ls;
 [ "U_types_scale_1",		  "void", "int",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_types_sqlname_1",		  "void", "str",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "U_types_systemname_1",	  "void", "str",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "U_user_role_admin_1",	  "oid",  "int",  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "U_user_role_grantor_1",	  "oid",  "int",  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "U_user_role_login_id_1",		  "oid",  "int",  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "U_user_role_role_id_1",		  "oid",  "int",  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "U_users_default_schema_1",		  "oid",  "int",  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "U_users_fullname_1",			  "oid",  "str",  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "U_users_name_1",			  "oid",  "str",  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "U_users_passwd_1",			  "oid",  "str",  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "U_user_role_admin_1",	  "oid",  "int",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "U_user_role_grantor_1",	  "oid",  "int",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "U_user_role_login_id_1",	  "oid",  "int",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "U_user_role_role_id_1",	  "oid",  "int",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "U_users_default_schema_1",	  "oid",  "int",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "U_users_fullname_1",		  "oid",  "str",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "U_users_name_1",		  "oid",  "str",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "U_users_passwd_1",		  "oid",  "str",	  0,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "atom_atom_id_14",		  "void", "str",	  0,	  0,	  "clean",	  "disk", "pers", 0,	  2		  ]
 [ "atom_charge_14",		  "void", "lng",	  0,	  0,	  "clean",	  "disk", "pers", 0,	  2		  ]
 [ "atom_element_14",		  "void", "str",	  0,	  0,	  "clean",	  "disk", "pers", 0,	  2		  ]
@@ -121,15 +124,15 @@ ls;
 [ "bond_bond_id_14",		  "void", "lng",	  0,	  0,	  "clean",	  "disk", "pers", 0,	  2		  ]
 [ "bond_model_id_14",		  "void", "lng",	  0,	  0,	  "clean",	  "disk", "pers", 0,	  2		  ]
 [ "bond_type_14",		  "void", "str",	  0,	  0,	  "clean",	  "disk", "pers", 0,	  2		  ]
-[ "columns_default_14",		  "void", "str",	  81,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "columns_id_14",		  "void", "int",	  81,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "columns_name_14",		  "void", "str",	  81,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "columns_null_14",		  "void", "bit",	  81,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "columns_number_14",		  "void", "int",	  81,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "columns_table_id_14",	  "void", "int",	  81,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "columns_type_14",		  "void", "str",	  81,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "columns_type_digits_14",	  "void", "int",	  81,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "columns_type_scale_14",	  "void", "int",	  81,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "columns_default_14",		  "void", "str",	  99,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "columns_id_14",		  "void", "int",	  99,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "columns_name_14",		  "void", "str",	  99,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "columns_null_14",		  "void", "bit",	  99,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "columns_number_14",		  "void", "int",	  99,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "columns_table_id_14",	  "void", "int",	  99,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "columns_type_14",		  "void", "str",	  99,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "columns_type_digits_14",	  "void", "int",	  99,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "columns_type_scale_14",	  "void", "int",	  99,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "env_name_1",			  "void", "str",	  28,	  0,	  "clean",	  "disk", "pers", 0,	  2		  ]
 [ "env_value_1",		  "void", "str",	  28,	  0,	  "clean",	  "disk", "pers", 0,	  2		  ]
 [ "history_exec_1",		  "void", "int",	  0,	  0,	  "clean",	  "disk", "pers", 0,	  2		  ]
@@ -166,11 +169,13 @@ ls;
 [ "schemas_authorization_1",	  "void", "str",	  2,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "schemas_id_1",		  "void", "int",	  2,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "schemas_name_1",		  "void", "str",	  2,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "tables_id_14",		  "void", "int",	  17,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "tables_name_14",		  "void", "str",	  17,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "tables_query_14",		  "void", "str",	  17,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "tables_schema_id_14",	  "void", "int",	  17,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
-[ "tables_type_14",		  "void", "int",	  17,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "tables_clear_14",		  "void", "bit",	  20,	  0,	  "clean",	  "load", "pers", 20,	  2		  ]
+[ "tables_id_14",		  "void", "int",	  20,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "tables_istable_14",		  "void", "bit",	  20,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "tables_name_14",		  "void", "str",	  20,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "tables_query_14",		  "void", "str",	  20,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "tables_schema_id_14",	  "void", "int",	  20,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "tables_system_14",		  "void", "bit",	  20,	  0,	  "clean",	  "load", "pers", 20,	  2		  ]
 [ "types_digits_1",		  "void", "int",	  26,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "types_id_1",			  "void", "int",	  26,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "types_module_id_1",		  "void", "int",	  26,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
@@ -188,7 +193,7 @@ ls;
 [ "users_passwd_1",		  "void", "str",	  1,	  0,	  "clean",	  "disk", "pers", 0,	  2		  ]
 quit;
 
-# 22:08:13 >  
-# 22:08:13 >  Done.
-# 22:08:13 >  
+# 16:01:28 >  
+# 16:01:28 >  Done.
+# 16:01:28 >  
 
