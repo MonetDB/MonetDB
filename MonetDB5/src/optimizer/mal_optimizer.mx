@@ -267,6 +267,7 @@ Approach: Operator rewriting depends on properties. No general technique.
 The first implementation looks at calculator expressions such as they
 appear frequently in the RAM compiler.
 Impact: high
+Prerequisite: should be called after CXoptimizer to avoid clashes.
 
 @emph{Code Inliner (CIoptimizer)}
 Goal: to reduce the calling depth of the interpreter and to obtain
@@ -320,8 +321,6 @@ them in a preferred order of deployment.
 @tab    Relational expression evaluator. (RXoptimizer)
 @item 
 @tab    Strength Reduction (SRoptimizer)
-@item 
-@tab    Operator Reduction (ORoptimizer)
 
 @item Group B:
 @tab    Common Expression Optimizer (CXoptimizer)
@@ -346,7 +345,11 @@ them in a preferred order of deployment.
 @item group D:
 @tab    Code Parallizer (CPoptimizer)
 @item 
+@tab    Operator Reduction (ORoptimizer)
+@item 
 @tab    Result Cacher (RCoptimizer)
+@item
+@tab	Replication Manager (RManager)
 
 @item group E:
 @tab    MAL Compiler (MCcompiler)
@@ -1021,11 +1024,12 @@ str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                !hasCommonResults(p,q) &&
                !hasSideEffects(p) ){
 #ifdef DEBUG_MAL_OPTIMIZER
-    if( getClient()->debugOptimizer){
-		stream_printf(GDKout,"Found a common expression %d <-> %d\n",j,i);
-		printInstruction(GDKout,mb,q,LIST_MAL_ALL);
-		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-    }
+				if( getClient()->debugOptimizer){
+					stream_printf(GDKout,"Found a common expression "
+						"%d <-> %d\n",j,i);
+					printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+				}
 #endif
                 clrFunction(p);
                 p->token= ASSIGNsymbol;
@@ -1033,10 +1037,10 @@ str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                 for(k=0; k<q->retc; k++)
                 p->argv[p->retc+k]= q->argv[k];
 #ifdef DEBUG_MAL_OPTIMIZER
-    if( getClient()->debugOptimizer){
-		stream_printf(GDKout,"common expression");
-		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-	}
+				if( getClient()->debugOptimizer){
+					stream_printf(GDKout,"common expression");
+					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+				}
 #endif
                 i= ARoptimizerStep(mb,i);
                 goto nxtCommonSubExpression;
@@ -1742,8 +1746,6 @@ str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					p->argv[p->retc]= a;
 					ARreplaceAlias(mb,i+1,mb->stop, p->argv[0], a);
 					p->argv[0]= newTmpVariable(mb, TYPE_void);
-					p->typechk= TYPE_UNKNOWN;
-					p->token = ASSIGNsymbol; /* needed to force rebinding */
 					typeChecker(scope,mb,p);
 					continue;
 				}
@@ -1761,8 +1763,6 @@ str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					p->argv[p->retc]= a;
 					ARreplaceAlias(mb,i+1,mb->stop, p->argv[0], a);
 					p->argv[0]= newTmpVariable(mb, TYPE_void);
-					p->typechk= TYPE_UNKNOWN;
-					p->token = ASSIGNsymbol; /* needed to force rebinding */
 					typeChecker(scope,mb,p);
 					continue;
 				}
