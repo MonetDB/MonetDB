@@ -2243,23 +2243,15 @@ def FindCmdLst(env) :
 ### FindCmdLst(env) #
 
 def MonetDBVersion():
-    print "MonetDBVersion"
-    cmd = CheckExec("monetdb-config")
-    print cmd
-    pOut,pIn = popen2.popen2(cmd+' --version')
-    pIn.close()
-    res = pOut.readlines()[0]
-    res = res.strip();
-    pOut.close()
-    print res
-    (x,y,z) = res.split('.',2)
-    print x,y,z
-    return ((x*100) + y) * 100 + z;
     try:
-	#print x
-	#print ((x*100) + y) * 100 + z;
-	#return ((x*100) + y) * 100 + z;
-	return 1
+        cmd = CheckExec("monetdb-config")
+        pOut,pIn = popen2.popen2(cmd+' --version')
+        pIn.close()
+        res = pOut.readlines()[0]
+        res = res.strip();
+        pOut.close()
+        (x,y,z) = res.split('.',2)
+        return ((int(x)*100) + int(y)) * 100 + int(z);
     except:
 	pass
     return 0
