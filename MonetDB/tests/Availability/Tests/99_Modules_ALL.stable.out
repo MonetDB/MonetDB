@@ -25,6 +25,15 @@ All_mods@batloop {
 	}
 }
   xtables: loading... done.
+     x100: loading... #-----------------------------------------------------------------#
+# l1	| l2	| l3	| l4	| l5	| l6	| l7		  #
+#-----------------------------------------------------------------#
+[ 'a',	  'c',	  1,	  10,	  0,	  0.2,	  2003-01-01	  ]
+[ 'b',	  'c',	  2,	  20,	  0.2,	  0.2,	  2003-01-02	  ]
+[ 'b',	  'c',	  3,	  30,	  0.4,	  0.2,	  2003-01-03	  ]
+
+vectorized_q1("l1","l2","l3","l4","l5","l6","l7",date(2003,1,3),1,1000LL).printf;
+done.
      wisc: loading... done.
    vector: loading... done.
       url: loading... done.
@@ -41,9 +50,10 @@ All_mods@batloop {
     radix: loading... done.
        qt: loading... done.
    perfex: loading... done.
+      pcl: loading... done.
       oo7: loading... done.
     mprof: loading... done.
-monettime: loading... done.
+monettime: loaded.
     mmath: loaded.
       mel: loading... done.
      mapi: loading... done.
@@ -102,6 +112,7 @@ table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod
 [ "monettime"	  ]
 [ "mprof"	  ]
 [ "oo7"		  ]
+[ "pcl"		  ]
 [ "perfex"	  ]
 [ "qt"		  ]
 [ "radix"	  ]
@@ -118,6 +129,7 @@ table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod
 [ "url"		  ]
 [ "vector"	  ]
 [ "wisc"	  ]
+[ "x100"	  ]
 [ "xtables"	  ]
 
 ##Fname:=new(oid,str);Fname.col_name("function");

@@ -66,6 +66,7 @@ loaded;
 [ "monettime",	  nil	  ]
 [ "mprof",	  nil	  ]
 [ "oo7",	  nil	  ]
+[ "pcl",	  nil	  ]
 [ "qt",		  nil	  ]
 [ "radix",	  nil	  ]
 [ "salgebra",	  nil	  ]
@@ -149,6 +150,7 @@ others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRI
 [ "salgebra",	  nil	  ]
 [ "radix",	  nil	  ]
 [ "qt",		  nil	  ]
+[ "pcl",	  nil	  ]
 [ "oo7",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mmath",	  nil	  ]
@@ -635,6 +637,40 @@ others@batloop{
 
 
 	dropping stats
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading pcl
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "pcl",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-----------------#
+# BAT:	  tmp_34  #
+# (str)	  (void)  #
+#-----------------#
+[ "pcl",  nil	  ]
+
+	dropping pcl
 
 #---------------------------------#
 # module	| usage_count	  #

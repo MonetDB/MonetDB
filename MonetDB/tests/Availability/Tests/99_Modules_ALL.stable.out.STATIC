@@ -40,6 +40,7 @@ All_mods@batloop {
  salgebra: loading... done.
     radix: loading... done.
        qt: loading... done.
+      pcl: loading... done.
       oo7: loading... done.
     mprof: loading... done.
 monettime: loading... done.
@@ -101,6 +102,7 @@ table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod
 [ "monettime"	  ]
 [ "mprof"	  ]
 [ "oo7"		  ]
+[ "pcl"		  ]
 [ "qt"		  ]
 [ "radix"	  ]
 [ "salgebra"	  ]
