@@ -809,7 +809,7 @@ if { (eval echo $progname:802: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>out/c
 
   # The compiler can only warn and ignore the option if not recognized
   # So say no if there are warnings
-    perl -i -p -e 's|^conftest.c:\n||' out/conftest.err
+    perl -i -p -e 's/^(conftest.c:|icc: NOTE: The evaluation period for this product ends on .* UTC.)\n//' out/conftest.err
     if test -s out/conftest.err; then
       echo "$ac_t"no 1>&6
       compiler_c_o=no
@@ -843,7 +843,7 @@ if { (eval echo $progname:835: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>conft
 
     # The compiler can only warn and ignore the option if not recognized
     # So say no if there are warnings
-    perl -i -p -e 's|^conftest.c:\n||' conftest.err
+    perl -i -p -e 's/^(conftest.c:|icc: NOTE: The evaluation period for this product ends on .* UTC.)\n//' conftest.err
       if test -s conftest.err; then
 	echo "$ac_t"no 1>&6
 	compiler_o_lo=no
