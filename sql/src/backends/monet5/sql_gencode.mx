@@ -711,7 +711,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_diff:{
-			dump_2(sql, mb, s, "algebra", "kdiff");
+			dump_2(sql, mb, s, "sql", "kdiff");
 		}
 			break;
 		case st_union:{

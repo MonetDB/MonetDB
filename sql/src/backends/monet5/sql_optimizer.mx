@@ -93,7 +93,7 @@ sql_export void addQueryToCache(Client c);
 sql_export void optimizeQueryInCache(Client c);
 sql_export str SQLoptimizer(Client c);
 sql_export void SQLsetAccessMode(Client c);
-
+sql_export void SQLkdiffOptimizer(Client c);
 
 #endif /* _SQL_OPTIMIZER_H_ */
 
@@ -183,6 +183,12 @@ optimizeQueryInCache(Client c)
 	printf("ABOUT TO CHANGE\n");
 	printFunction(GDKout,c->curprg->def,LIST_MAL_ALL);
 #endif
+@-
+The first optimization is to split the program at the
+sql.kdiff instruction, because the choice made has far
+reaching performance/typing consequences.
+@c
+	SQLkdiffOptimizer(c);
 @-
 Reduce the program before other optimizations take place
 @c
@@ -394,3 +400,161 @@ SQLsetAccessMode(Client c)
 	GDKfree(mb->stmt);
 	mb->stmt = ns;
 }
+@-
+The SQLkdiffOptimizer searches this important operator and splits
+the dataflow graph into two sections with a switch on the size of
+the second operand. In many situations it is empty, there are no
+deleted tuples to consider. The effect is that we do not have
+to reduce the table to elements that are still valid.
+
+Beware, the SQL code may contain several kdiff statements.
+One for each base table touched. They should all be split,
+which leads to an explosion in the plan sizes
+@c
+void SQLkdiffOptimizer(Client c){
+	MalBlkPtr mb;
+	int limit,i,k,l,foundit=1,total=0, zero,cnt,lab, endLifespan;
+	InstrPtr *old;
+	InstrPtr q,p;
+	int *map,mtop;
+
+#ifdef _SQL_OPTIMIZER_DEBUG
+	printf("START kdiff optimizer\n");
+	printFunction(GDKout,c->curprg->def,LIST_MAL_ALL);
+#endif
+	while(foundit) {
+		foundit=0;
+		mb= c->curprg->def;
+		setLifespan(mb);
+		limit=mb->stop;
+		old= mb->stmt;
+		newMalBlkStmt(mb,mb->stop*2+5);
+
+		for(i=0;i<limit; i++){
+			p= old[i];
+			if( moduleId(p) && strcmp(moduleName(p),"sql")==0 &&
+			    strcmp(functionName(p),"kdiff")==0){
+				total++;
+				foundit++;
+@-
+The starting situation is to obtain the count and perform
+an instruction copy until the endLifespan of the first operand.
+	cnt:= algebra.count(t);
+barrier doit:= c>0;
+	....
+exit	doit;
+	..rest of code
+@c
+				q= newInstruction(ASSIGNsymbol);
+				cnt= newTmpVariable(mb,TYPE_lng);
+				setVarUsed(mb,cnt,TRUE);
+				q->argv[0]=cnt;
+				q->argv[1]= p->argv[1];
+				q->argc=2;
+				setModuleId(q,GDKstrdup("algebra"));
+				setFunctionId(q,GDKstrdup("count"));
+				pushInstruction(mb,q);
+
+				q= newInstruction(ASSIGNsymbol);
+				q->barrier= BARRIERsymbol;
+				lab= newTmpVariable(mb,TYPE_bit);
+				setVarUsed(mb,lab,TRUE);
+				zero= newConstant(mb,TYPE_lng,GDKstrdup("0:lng"),FALSE);
+				setVarUsed(mb,cnt,TRUE);
+				setVarInitialized(mb,cnt);
+				setVarUsed(mb,zero,TRUE);
+				setModuleId(q,GDKstrdup("calc"));
+				setFunctionId(q,GDKstrdup(">"));
+				q->argv[0]=lab;
+				q->argv[1]=cnt;
+				q->argv[2]=zero;
+				q->retc=1;
+				q->argc=3;
+				pushInstruction(mb,q);
+@-
+We have to perform the expensive kdiff anyway
+@c
+				q= newInstruction(ASSIGNsymbol);
+				setModuleId(q,GDKstrdup("algebra"));
+				setFunctionId(q,GDKstrdup("kdiff"));
+				q->argv[0]= p->argv[0];
+				q->retc=1;
+				pushArgument(mb,q,p->argv[1]);
+				pushArgument(mb,q,p->argv[2]);
+				pushInstruction(mb,q);
+				typeChecker(c->nspace,mb,q,TRUE);
+				endLifespan = mb->var[p->argv[1]]->endLifespan;
+				k= i; /* for later */
+				for(i++;i< limit-1; i++){
+					q= old[i];
+					pushInstruction(mb,q);
+				}
+				i--;
+
+				q= newInstruction(EXITsymbol);
+				q->barrier= EXITsymbol;
+				q->argv[0]= lab;
+				pushInstruction(mb,q);
+
+@-
+Durig the second phase we copy the same sequence, but
+now we have to remap the variables. In this process the
+variable types may change, which means we have to keep
+track of them.
+@c
+				q= newInstruction(ASSIGNsymbol);
+				q->barrier= BARRIERsymbol;
+				setModuleId(q,GDKstrdup("calc"));
+				setFunctionId(q,GDKstrdup("==")); 
+				q->argv[0]=lab;
+				q->argv[1]=cnt;
+				q->argv[2]=zero;
+				q->retc=1;
+				q->argc=3;
+				pushInstruction(mb,q);
+@-
+Now we don;t have to perform the expensive kdiff 
+@c
+				map= (int*) GDKmalloc(2 * sizeof(int)*mb->vtop);
+				map[0]= getArg(p,0);
+				map[1]= getArg(p,1);
+				mtop=2;
+				i=k; 
+				for(i++;i< limit-1; i++){
+					q= copyInstruction(old[i]);
+					for(k=0;k<q->argc; k++)
+					for(l=0;l<mtop; l+=2)
+					if( getArg(q,k)== map[2*l] ){
+						/* deal with the type compatibility issue */
+						q->argv[k]= map[2*l+1];
+						break;
+					}
+					pushInstruction(mb,q);
+				}
+				i--;
+
+				q= newInstruction(EXITsymbol);
+				q->barrier= EXITsymbol;
+				q->argv[0]= lab;
+				pushInstruction(mb,q);
+
+				/* remove the old instruction */
+				GDKfree(map);
+				freeInstruction(p);
+				continue;
+			}
+			/* just move the instruction into place */
+			pushInstruction(mb,p);
+		}
+		foundit= foundit || (i<mb->stop);
+		GDKfree(old);
+	}
+	if( total) {
+		optimizerCheck(mb,"sql.kdiff_replacement");
+#ifdef _SQL_OPTIMIZER_DEBUG
+		printf("FINAL STAGE errors=%d\n",mb->errors);
+		printFunction(GDKout,mb,LIST_MAL_ALL);
+#endif
+	}
+}
+@}
