@@ -70,6 +70,29 @@ static const char *columntypes[NCOLUMNS] = {
 	"smallint"
 };
 
+/* column lengths of result set */
+static const int columnlengths[NCOLUMNS] = {
+	128,
+	  5,
+	 10,
+	128,
+	128,
+	128,
+	  5,
+	  5,
+	  5,
+	  5,
+	  5,
+	  5,
+	128,
+	  5,
+	  5,
+	  5,
+	  5,
+	 10,
+	  5
+};
+
 static struct types {
 	const char *type_name;
 	const int data_type;	/* concise type */
@@ -961,7 +984,8 @@ SQLGetTypeInfo_(ODBCStmt *stmt, SQLSMALLINT nSqlDataType)
 		}
 	}
 
-	mapi_virtual_result(stmt->hdl, NCOLUMNS, columnnames, columntypes, NULL, i, tuples);
+	mapi_virtual_result(stmt->hdl, NCOLUMNS, columnnames, columntypes,
+			    columnlengths, i, tuples);
 
 	return ODBCInitResult(stmt);
 }

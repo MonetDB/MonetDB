@@ -23,8 +23,9 @@
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
 
+#define NCOLUMNS	18
 
-static const char *columnnames[] = {
+static const char *columnnames[NCOLUMNS] = {
 	"table_cat",
 	"table_schem",
 	"table_name",
@@ -44,7 +45,8 @@ static const char *columnnames[] = {
 	"ordinal_position",
 	"is_nullable",
 };
-static const char *columntypes[] = {
+
+static const char *columntypes[NCOLUMNS] = {
 	"varchar",
 	"varchar",
 	"varchar",
@@ -209,13 +211,16 @@ SQLColumns_(ODBCStmt *stmt,
 		int i, j, n;
 		char *data;
 		int concise_type, data_type, sql_data_type, sql_datetime_sub;
+		int columnlengths[NCOLUMNS];
 
 		n = stmt->rowcount;
 		tuples = malloc(sizeof(*tuples) * n);
+		for (j = 0; j < NCOLUMNS; j++)
+			columnlengths[j] = mapi_get_len(stmt->hdl, j);
 		for (i = 0; i < n; i++) {
 			mapi_fetch_row(stmt->hdl);
-			tuples[i] = malloc(sizeof(**tuples) * 18);
-			for (j = 0; j < 18; j++) {
+			tuples[i] = malloc(sizeof(**tuples) * NCOLUMNS);
+			for (j = 0; j < NCOLUMNS; j++) {
 				data = mapi_fetch_field(stmt->hdl, j);
 				tuples[i][j] = data && j != 4 && j != 13 &&
 					j != 14 ? strdup(data) : NULL;
@@ -242,10 +247,10 @@ SQLColumns_(ODBCStmt *stmt,
 
 		ODBCResetStmt(stmt);
 
-		mapi_virtual_result(stmt->hdl, 18, columnnames, columntypes,
-				    NULL, n, tuples);
+		mapi_virtual_result(stmt->hdl, NCOLUMNS, columnnames,
+				    columntypes, columnlengths, n, tuples);
 		for (i = 0; i < n; i++) {
-			for (j = 0; j < 18; j++)
+			for (j = 0; j < NCOLUMNS; j++)
 				if (tuples[i][j])
 					free((void *) tuples[i][j]);
 			free(tuples[i]);
