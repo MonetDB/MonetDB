@@ -77,13 +77,13 @@ SQLRETURN SQLDisconnect(SQLHDBC hDbc)
 		ws->write(ws, buf, chars_printed, 1);
 		ws->flush(ws);
 
-		if (rs->readInt(rs, &flag)) {
+		if (stream_readInt(rs, &flag)) {
 			int type = 0;
 			int status = 0;
 
 			/* TODO check if flag == COMM_DONE */
-			rs->readInt(rs, &type);
-			rs->readInt(rs, &status);
+			stream_readInt(rs, &type);
+			stream_readInt(rs, &status);
 			if (status < 0){
 				/* TODO: handle this case */
 			}

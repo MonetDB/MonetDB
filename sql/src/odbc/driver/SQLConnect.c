@@ -136,7 +136,7 @@ SQLRETURN SQLConnect(
 		memset(lc, 0, sizeof(context));
 		sql_init_context(lc, ws, debug, default_catalog_create());
 		catalog_create_stream(rs, lc);
-		lc->cat->cc_getschema(lc->cat, database, "default-user");
+		lc->cat->cc_getschemas(lc->cat, database, "default-user");
 		if (dbc->Mrs->errnr || lc->out->errnr){
 			/* 08001 = Client unable to establish connection */
 			addDbcError(dbc, "08001", "sockets not opened correctly", 0);

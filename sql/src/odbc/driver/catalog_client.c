@@ -103,7 +103,7 @@ void gettypes( catalog *c ){
 	    n = strchr(start = n+1, '\n'); *n = '\0';
 	    cast = start;
 
-	    sql_create_type( sqlname, name, cast );
+	    sql_create_type( sqlname, name );
 	}
 	/* TODO load proper type cast table */
 
@@ -286,7 +286,7 @@ catalog *catalog_create_stream( stream *in, context *lc ){
 	CC->out = lc->out;
 	CC->lc = lc;
 	c->cc = (char*)CC;
-	c->cc_getschema = &getschema;
+	c->cc_getschemas = &getschema;
 	c->cc_destroy = &cc_destroy;
 
 	types_init( lc->debug );

@@ -121,14 +121,14 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 	hstmt->currentRow = 0;
 
 	rs = dbc->Mrs;
-	if (rs->readInt(rs, &flag) && flag == COMM_DONE) {
+	if (stream_readInt(rs, &flag) && flag == COMM_DONE) {
 		/* 08S01 = Communication link failure */
 		addStmtError(hstmt, "08S01", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	rs->readInt(rs, &type);		/* read result type */
-	rs->readInt(rs, &status);	/* read result size (is < 0 on error) */
+	stream_readInt(rs, &type);		/* read result type */
+	stream_readInt(rs, &status);	/* read result size (is < 0 on error) */
 	if (status < 0) {
 		/* output error */
 		char buf[BLOCK];
@@ -178,8 +178,8 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 				column *col = cs->op1.cval;
 				cHdr->pszSQL_DESC_BASE_COLUMN_NAME = strdup(col->name);
 				cHdr->pszSQL_DESC_BASE_TABLE_NAME = strdup(col->table->name);
-				cHdr->pszSQL_DESC_TYPE_NAME = strdup(col->tpe->sqlname);
-				cHdr->pszSQL_DESC_LOCAL_TYPE_NAME = strdup(col->tpe->name);
+				cHdr->pszSQL_DESC_TYPE_NAME = strdup(col->tpe->type->sqlname);
+				cHdr->pszSQL_DESC_LOCAL_TYPE_NAME = strdup(col->tpe->type->name);
 			}
 			cHdr->pszSQL_DESC_LABEL = strdup(column_name(n->data));
 			cHdr->pszSQL_DESC_CATALOG_NAME = strdup("catalog");

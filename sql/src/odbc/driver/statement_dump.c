@@ -37,9 +37,9 @@ char *atom_dump( atom *a){
 	case general_value:
 			if (a->data.sval)
 			  snprintf(buf, BUFSIZ, "%s(\"%s\")",
-				a->tpe->name, a->data.sval );
+				a->tpe.type->name, a->data.sval );
 			else
-			  snprintf(buf, BUFSIZ, "%s(nil)", a->tpe->name );
+			  snprintf(buf, BUFSIZ, "%s(nil)", a->tpe.type->name );
 			break;
 	}
 	return _strdup(buf);
@@ -55,9 +55,9 @@ char *atom_dump_fast( atom *a){
 	case general_value:
 			if (a->data.sval)
 			  snprintf(buf, BUFSIZ, "%s",
-				a->tpe->name, a->data.sval );
+				a->tpe.type->name, a->data.sval );
 			else
-			  snprintf(buf, BUFSIZ, "nil", a->tpe->name );
+			  snprintf(buf, BUFSIZ, "nil", a->tpe.type->name );
 			break;
 	}
 	return _strdup(buf);
@@ -171,7 +171,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		column *c = s->op2.cval;
 		len += snprintf( buf+len, BUFSIZ-len,
 		"s%d := mvc_create_column(myc, s%d, \"%s\", \"%s\", %d);\n",
-		-s->nr, t, c->name, c->tpe->sqlname, c->colnr );
+		-s->nr, t, c->name, c->tpe->type->sqlname, c->colnr );
 	} break;
 	case st_not_null: {
 		int c = stmt_dump( s->op1.stval, nr, sql );
@@ -240,22 +240,22 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		case cmp_lt:
 			len += snprintf( buf+len, BUFSIZ-len,
 			  "s%d := s%d.mil_select(\"<in>\", %s(nil), s%d);\n",
-			  -s->nr, l, tail_type(s)->name, r );
+			  -s->nr, l, tail_type(s)->type->name, r );
 			break;
 		case cmp_lte:
 			len += snprintf( buf+len, BUFSIZ-len,
 			  "s%d := s%d.uselect(%s(nil), s%d);\n",
-			  -s->nr, l, tail_type(s)->name, r );
+			  -s->nr, l, tail_type(s)->type->name, r );
 			break;
 		case cmp_gt:
 			len += snprintf( buf+len, BUFSIZ-len,
 			  "s%d := s%d.mil_select(\"<in>\", s%d, %s(nil));\n",
-			  -s->nr, l, r, tail_type(s)->name );
+			  -s->nr, l, r, tail_type(s)->type->name );
 			break;
 		case cmp_gte:
 			len += snprintf( buf+len, BUFSIZ-len,
 			  "s%d := s%d.uselect(s%d, %s(nil));\n",
-			  -s->nr, l, r, tail_type(s)->name );
+			  -s->nr, l, r, tail_type(s)->type->name );
 			break;
 		default:
 			len += snprintf( buf+len, BUFSIZ-len,
@@ -561,7 +561,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 				*nr, l, s->op2.aggrval->imp );
 			len += snprintf( buf+len, BUFSIZ-len,
 				"s%d := new(oid,%s);\n"
-				, -s->nr, s->op2.aggrval->res->name );
+				, -s->nr, s->op2.aggrval->res->type->name );
 			len += snprintf( buf+len, BUFSIZ-len,
 				"s%d.insert(oid(0),s%d);\n"
 				, -s->nr, *nr );
@@ -574,7 +574,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		n = s->op2.lval->h;
 
 		if (n){
-		  	char *a = (char*)atom_type(n->data)->name;
+		  	char *a = (char*)atom_type(n->data)->type->name;
 			len += snprintf( buf+len, BUFSIZ-len,
 				"s%db := new(%s,oid);\n", -s->nr, a );
 		}
