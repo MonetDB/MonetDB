@@ -9,7 +9,6 @@
  * -----------------------------------------------
  * Peter Harvey		- pharvey@codebydesign.com
  **************************************************/
-#include <mem.h>
 #include <drvcfg.h>
 #include <string.h>	/* for memset(), memcpy(), strncpy() */
 
