@@ -281,6 +281,8 @@ error(stream *out, char *str)
 {
 	char *p;
 
+	if (stream_errnr(out))
+		return -1;
 	while ((p = strchr(str, '\n')) != NULL) {
 		p++;		/* include newline */
 		if (*str != '!' && stream_write(out, "!", 1, 1) != 1)
@@ -1287,6 +1289,8 @@ int mvc_export_table( mvc *m, stream *s, int res_id, unsigned int offset, unsign
 	}
 
 	if (cnt == 0){
+		if (stream_errnr(s))
+			return -1;
 		stream_flush(s);
 		return 0;
 	}
@@ -1328,8 +1332,10 @@ int mvc_export_table( mvc *m, stream *s, int res_id, unsigned int offset, unsign
 	}
 	BBPunfix(order->batCacheid);
 	ASCIIdestroy_format( &as );
-	stream_flush( s );
 	if (clean)
 		mvc_clean_result(m, t);
+	if (stream_errnr(s) ||
+	    stream_flush(s) < 0)
+		return -1;
 	return 0;
 }
