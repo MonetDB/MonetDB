@@ -22,6 +22,33 @@ def rsplit_filename(f):
 		return (f[:s],f[s+1:])
 	return (base,ext)
 	
+def am_subdirs(fd, var, values, am ):
+  norm = []
+  cond = []
+  for dir in values:
+    if string.find(dir,"?") > -1:
+      cond.append(dir)
+    else:
+      norm.append(dir)
+
+  am_assignment(fd,var,norm,am)
+
+  for dir in cond:
+    parts = string.split(dir,"?")
+    if len(parts) == 2:
+      dirs = string.split(parts[1],":")
+      fd.write("if %s\n" % (parts[0]) )
+      if (len(dirs) > 0):
+        if string.strip(dirs[0]) != "":
+          fd.write("COND_SUBDIRS += %s\n" % (dirs[0]) )
+      if (len(dirs) > 1):
+        if string.strip(dirs[1]) != "":
+          fd.write("else\n")
+          fd.write("COND_SUBDIRS += %s\n" % (dirs[1]) )
+      fd.write("endif\n")
+  if len(cond) > 0:
+    fd.write("SUBDIRS += $(COND_SUBDIRS)\n")
+
 def am_assignment(fd, var, values, am ):
   o = ""
   for v in values:
@@ -440,7 +467,7 @@ def am_includes(fd, var, values, am):
 	incs = incs + " -I" + am_translate_dir(i,am)
   fd.write("INCLUDES = " + incs + "\n")
 
-output_funcs = { 'SUBDIRS': am_assignment, 
+output_funcs = { 'SUBDIRS': am_subdirs, 
 	 	 'EXTRA_DIST': am_extra_dist,
 	 	 'EXTRA_DIST_DIR': am_extra_dist_dir,
 	 	 'EXTRA_HEADERS': am_extra_headers,

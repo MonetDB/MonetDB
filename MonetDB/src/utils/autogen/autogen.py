@@ -84,6 +84,22 @@ if len(sys.argv) > 1:
 else:
   topdir = os.getcwd()
 
+def expand_subdirs(subdirs):
+  res = []
+  for dir in subdirs:
+    if string.find(dir,"?") > -1:
+      parts = string.split(dir,"?")
+      if len(parts) == 2:
+        dirs = string.split(parts[1],":")
+	for d in dirs:
+          if string.strip(d) != "":
+            res.append(d)
+      else:
+        print("!ERROR:syntax error in conditional subdir:",dir)
+    else:
+      res.append(dir)
+  return res
+
 def main(cwd,topdir):
   p = parser()
   read_makefile(p,cwd)
@@ -91,7 +107,8 @@ def main(cwd,topdir):
   (InstallList,OutList) = am.output(p.curvar,cwd,topdir)
   msc.output(p.curvar,cwd,topdir)
   if ('SUBDIRS' in p.curvar.keys()):
-    for dir in p.curvar.value('SUBDIRS'):
+    subdirs = expand_subdirs(p.curvar.value('SUBDIRS'))
+    for dir in subdirs:
 	  d = cwd+os.sep+dir
 	  if (os.path.exists(d)):
 		  print(d)
