@@ -968,8 +968,8 @@ date DATE_MAX, DATE_MIN; /* often used dates; computed once */
 @+ auxiliary functions
 @c
 
-#define tz_isnil(z)	((* (lng *) &z) == lng_nil)
-#define ts_isnil(t)	((* (lng *) &t) == lng_nil)
+#define tz_isnil(z)	((* (lng *) (ptr) &z) == lng_nil)
+#define ts_isnil(t)	((* (lng *) (ptr) &t) == lng_nil)
 
 static timestamp ts_nil;
 static tzone tz_nil;
@@ -979,10 +979,10 @@ static tzone *tz_nilptr = NULL;
 static void date_prelude(void);
 
 bat* monettime_prelude(void){
-	* (lng *) &ts_nil = lng_nil;
+	* (lng *) (ptr) &ts_nil = lng_nil;
 	ts_nilptr = (timestamp*)GDKmalloc(sizeof(timestamp));
 	*ts_nilptr = ts_nil;
-	* (lng *) &tz_nil = lng_nil;
+	* (lng *) (ptr) &tz_nil = lng_nil;
 	tz_nilptr = (tzone*)GDKmalloc(sizeof(tzone));
 	*tz_nilptr = tz_nil;
 	date_prelude();

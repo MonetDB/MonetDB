@@ -700,8 +700,10 @@ with atomic types that have logical references (e.g. BATs of BATs but
 also BATs of ODMG odSet) can never be persistent, as this would make
 the commit tremendously complicated.
 @h
-#define ATOMput(P1, P2, P3, P4)				\
+#define ATOMput(P1, P2, p3, p4)				\
 { int t_ = (P1);                                 	\
+  ptr P3 = (ptr)(p3);					\
+  ptr P4 = (ptr)(p4);					\
   if (t_ == TYPE_oid || t_ == TYPE_ptr || t_ > TYPE_str)\
         t_ = ATOMstorage(t_);                           \
   if (t_ <= TYPE_bat) {					\

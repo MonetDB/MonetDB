@@ -149,7 +149,7 @@ VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
 #else
 #define ATOM_PUT(tpe,hp,dst,src) ATOM_PUT_ANY(tpe,hp,dst,src)
 #endif
-#define SIMPLE_PUT(tpe,hp,dst,src) { *(tpe*) (dst) = *(tpe*) (src); }
+#define SIMPLE_PUT(tpe,hp,dst,src) { *(tpe*) (ptr) (dst) = *(tpe*) (ptr) (src); }
 #define VOID_PUT(tpe,hp,dst,src)   {}
 
 @-

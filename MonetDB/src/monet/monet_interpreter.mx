@@ -1306,7 +1306,7 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			BATloopFast(b,p,q,xx) {
 			    ptr t = BUNtail(b,p);
 			    if ((*cmp)(t, nilptr)) {
-			    	(*tostr)((str*)&v, &len, t);
+			    	(*tostr)((str*)(ptr)&v, &len, t);
 			    	bunfastins_nocheck(bn, r, BUNhead(b,p), v, yy); r += yy;
 			    } else {
 			    	bunfastins_nocheck(bn, r, BUNhead(b,p), str_nil, yy); r += yy;
