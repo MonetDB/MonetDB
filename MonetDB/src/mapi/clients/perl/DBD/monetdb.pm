@@ -629,7 +629,7 @@ sub execute {
 
     my $rows = MapiLib::mapi_rows_affected($hdl);
 
-    if ( MapiLib::mapi_get_querytype($hdl) != 3 ) {
+    if ( MapiLib::mapi_get_querytype($hdl) != 3 && $dbh->{monetdb_language} eq 'sql') {
         $sth->{monetdb_rows} = $rows;
         return $rows || '0E0';
     }
