@@ -47,4 +47,4 @@ BINS = {
 	SOURCES = idxmx.c epsffit.c 
 }
 
-EXTRA_DIST = warning.gif epstogif.in
+EXTRA_DIST = warning.gif epstogif.in getopt.c mygetopt.h
