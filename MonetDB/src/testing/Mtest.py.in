@@ -1750,7 +1750,7 @@ def main(argv) :
         dft['setGDK_DBFARM'] = "'--dbfarm \"'+env['GDK_DBFARM']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(50000,59999))"
         dft['SQLPORT']        = "str(randomPort(50000,59999))"
-        dft['SQLCLIENT']      = "'sql_client'" # --port='+env['SQLPORT']"
+        dft['SQLCLIENT']      = "'Msql'" # --port='+env['SQLPORT']"
         dft['MAPICLIENT']     = "'MapiClient'" # --port='+env['MAPIPORT']"
     if THISFILE == "Mprofile.py":
         dft['CMDLST']         = "FindCmdLst(env)"
