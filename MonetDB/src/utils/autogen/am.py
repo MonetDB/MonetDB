@@ -817,6 +817,9 @@ def am_add_srcdir(path, am, prefix =""):
     return prefix+dir
 
 def am_translate_dir(path, am):
+    # translate any \ path separators to / -- the generated file is
+    # Unix/Linux/Cygwin only
+    path = string.join(string.split(path, '\\'), '/')
     dir = path
     rest = ""
     if string.find(path, '/') >= 0:
