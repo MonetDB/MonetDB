@@ -703,7 +703,7 @@ def ApproveOutput (env, TST) :
                             f.write(l)
                             as = 'Approving'
                         else:
-			    f.write(l[:1]+'\n')
+                            f.write(l[:1]+'\n')
                             as = 'Skipping'
                         Warn('%s new (error) message: "%s"' % (as,string.replace(l, os.linesep, '')))
                         sem = 1
@@ -835,7 +835,7 @@ def CheckMods(env, TST, SERVER) :
             if m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "SQL":
-        for m in "str", "sql_server", "ascii_io", "alarm", "unix", "xtables", "aggrX3", "monettime", "uchr", "mmath", "mkey":
+        for m in "str", env['SQL_SERVER'], "ascii_io", "alarm", "unix", "xtables", "aggrX3", "monettime", "uchr", "mmath", "mkey":
             if m not in env['TST_MODS']:
                 missing.append(m)
     return missing
@@ -1032,8 +1032,8 @@ def RunTest(env, TST, BusyPorts) :
         #TODO:
         #elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
         #SkipTest(env, TST, EXT, "as java is not in $PATH.")
-    elif SERVER == "SQL" and  not env['SQLSERVER_MIL']:
-        SkipTest(env, TST, EXT, "as sql_server.mil is not available.")
+    elif SERVER == "SQL" and  not env['SQL_SERVER_MIL']:
+        SkipTest(env, TST, EXT, "as %s.mil is not available." % env['SQL_SERVER'])
     elif EXT == ".sql" and  not env['exe']['SQL_client'][0]:
         SkipTest(env, TST, EXT, "as "+string.split(env['SQLCLIENT'])[0]+" is not available.")
     elif MissingMods:
@@ -1553,7 +1553,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if SERVER == "MAPI":
             Srvr = '%s "%s"' % (Srvr, env['MAPI_MIL'])
         if SERVER == "SQL":
-            Srvr = '%s "%s"' % (Srvr, env['SQLSERVER_MIL'])
+            Srvr = '%s "%s"' % (Srvr, env['SQL_SERVER_MIL'])
         Srvr = Srvr+PROLOGUE
         #-background"
         if os.name == "nt":
@@ -1997,9 +1997,9 @@ def main(argv) :
              "override default location of database directory"),
             ('sql_logdir', None, 'sql_logdir', '<directory>',
              "override default location of transaction-log directory"),
-            ('MAPICLIENT', None, 'mapiclient', '<mapi-client program>',
+            ('MAPICLIENT', None, 'MAPICLIENT', '<mapi-client program>',
              'default: %s' % dft['MAPICLIENT']),
-            ('SQLCLIENT', None, 'sqlclient', '<sql-client program>',
+            ('SQLCLIENT', None, 'SQLCLIENT', '<sql-client program>',
              'default: %s' % dft['SQLCLIENT']),
             ]
 
@@ -2225,19 +2225,29 @@ def main(argv) :
             if not os.path.isfile(mapi_mil):
                 mapi_mil = ''
         env['MAPI_MIL'] = mapi_mil
-        sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet5/sql_server.mil")
+        if env['SQLCLIENT'][:4] == "Msql":
+            sql_server = "sql_server"
+            sql_trace = "--trace"
+        else:
+            sql_server = "sql_server2"
+            sql_trace = ""
+        env['SQL_SERVER'] = sql_server
+        env['SQL_TRACE'] = sql_trace
+        sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet5/%s.mil" % sql_server)
         if not os.path.isfile(sql_server_mil):
-            sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet4/sql_server.mil")
+            sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet4a/%s.mil" % sql_server)
             if not os.path.isfile(sql_server_mil):
-                sql_server_mil = env['SQL_PREFIX']+path("/lib/MonetDB/sql_server.mil")
+                sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet4/%s.mil" % sql_server)
                 if not os.path.isfile(sql_server_mil):
-                    sql_server_mil = ''
-        env['SQLSERVER_MIL'] = sql_server_mil
+                    sql_server_mil = env['SQL_PREFIX']+path("/lib/MonetDB/%s.mil" % sql_server)
+                    if not os.path.isfile(sql_server_mil):
+                        sql_server_mil = ''
+        env['SQL_SERVER_MIL'] = sql_server_mil
 
     # export and display env
     STDERR.flush()
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars_ + ['SQL_LOGDIR','GDK_DBFARM','setMONET_MOD_PATH','MAPI_MIL','SQLSERVER_MIL'] 
+        vars_ = vars_ + ['SQL_LOGDIR','GDK_DBFARM','setMONET_MOD_PATH','MAPI_MIL','SQL_SERVER','SQL_SERVER_MIL'] 
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
@@ -2287,7 +2297,7 @@ def main(argv) :
         exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']      = CheckExec('python')       , 'python'
         exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
-        exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , '%s -u monetdb -P monetdb --host=%s --port=%s --trace' % (env['SQLCLIENT'], HOST, env['SQLPORT'])
+        exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , '%s -u monetdb -P monetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['SQLPORT'], env['SQL_TRACE'])
         if not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
