@@ -440,15 +440,23 @@ size_t ASCIIassign_BATs( ascii *as, BAT *bats ){
 static
 oid check_BATs( ascii *as ){
 	ascii_io *fmt = as->format;
-	size_t i;
-	size_t cnt = BATcount(fmt[0].c);
-	oid base = fmt[0].c->hseqbase;
+	size_t i=0;
+	size_t cnt;
+	oid base;
 
-	if (!BAThdense(fmt[0].c)) return oid_nil;
+	if(fmt[i].c==NULL) i++; 
+	cnt = BATcount(fmt[i].c);
+	base = fmt[i].c->hseqbase;
+
+	if (!BAThdense(fmt[i].c)) return oid_nil;
 
 	for (i=0; i<as->nr_attrs; i++){
-		BAT *b = fmt[i].c;
-		int offset = BUNindex(b, BUNfirst(b)) + as->offset;
+		BAT *b;
+		int offset;
+
+		b = fmt[i].c;
+		if(b == NULL) continue;
+		offset = BUNindex(b, BUNfirst(b)) + as->offset;
 
 		if (BATcount(b) != cnt ||
 		    b->hseqbase != base)
@@ -647,10 +655,16 @@ static INLINE
 int dump_line( char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs, size_t id ){
 	size_t i;
 	for( i = 0; i<nr_attrs; i++){
-		ascii_io *f = fmt+i;
-		char *p = (char*)bun_tail(f->c,id);
-		int l = f->tostr( f->extra, buf, len, f->adt, p);
-		(void)stream_write( fd, *buf, 1, l );
+		ascii_io *f;
+		char *p;
+		int l;
+
+		f = fmt+i;
+		if( f->c){
+			p = (char*)bun_tail(f->c,id);
+			l = f->tostr( f->extra, buf, len, f->adt, p);
+			(void)stream_write( fd, *buf, 1, l );
+		} 
 		(void)stream_write( fd, f->sep, 1, f->seplen );
 	}
 	return 0;
@@ -659,17 +673,25 @@ int dump_line( char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs,
 static INLINE
 int output_line( char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs, ptr id ){
 	size_t i;
+	
 	for( i = 0; i<nr_attrs; i++){
+		if( fmt[i].c==NULL) continue;
 		fmt[i].p = BUNfnd( fmt[i].c, id );
 		if (fmt[i].p == 0)
 			break;
 	}
 	if ( i == nr_attrs ){
 	    for( i = 0; i<nr_attrs; i++){
-		ascii_io *f = fmt+i;
-		char *p = BUNtail(f->c, f->p);
-		int l = f->tostr(f->extra, buf, len, f->adt, p);
-		(void)stream_write( fd, *buf, 1, l );
+		ascii_io *f;
+		char *p;
+		int l;
+
+		f = fmt+i;
+		if( f->c){
+			p = BUNtail(f->c, f->p);
+			l = f->tostr(f->extra, buf, len, f->adt, p);
+			(void)stream_write( fd, *buf, 1, l );
+		}
 		(void)stream_write( fd, f->sep, 1, f->seplen );
 	    }
 	}
@@ -681,11 +703,14 @@ int output_line_dense( char **buf, int *len, ascii_io *fmt, stream *fd, size_t n
 	size_t i;
 	for( i = 0; i<nr_attrs; i++){
 		ascii_io *f = fmt+i;
-		char *p = BUNtail(f->c, f->p);
-		int l = f->tostr(f->extra, buf, len, f->adt, p);
-		(void)stream_write( fd, *buf, 1, l );
+		char *p;
+		if( f->c){
+			p = BUNtail(f->c, f->p);
+			int l = f->tostr(f->extra, buf, len, f->adt, p);
+			(void)stream_write( fd, *buf, 1, l );
+			f->p = BUNnext( f->c, f->p );
+		}
 		(void)stream_write( fd, f->sep, 1, f->seplen );
-		f->p = BUNnext( f->c, f->p );
 	}
 	return 0;
 }
@@ -695,9 +720,12 @@ int output_line_lookup( char **buf, int *len, ascii_io *fmt, stream *fd, size_t 
 	size_t i;
 	for( i = 0; i<nr_attrs; i++){
 		ascii_io *f = fmt+i;
-		char *p = BUNtail(f->c, BUNptr(f->c,id+BUNindex(f->c,BUNfirst(f->c))));
-		int l = f->tostr(f->extra, buf, len, f->adt, p);
-		(void)stream_write( fd, *buf, 1, l );
+		if( f->c){
+			char *p = BUNtail(f->c, BUNptr(f->c,
+					id+BUNindex(f->c,BUNfirst(f->c))));
+			int l = f->tostr(f->extra, buf, len, f->adt, p);
+			(void)stream_write( fd, *buf, 1, l );
+		}
 		(void)stream_write( fd, f->sep, 1, f->seplen );
 	}
 	return 0;
