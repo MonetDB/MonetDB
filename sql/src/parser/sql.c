@@ -1257,13 +1257,13 @@ statement *check_types( context *sql, column *c, statement *s ){
 	return s;
 }
 
-statement *insert_value( context *sql, column *c, symbol *s ){
+statement *insert_value( context *sql, column *c, statement *id, symbol *s ){
 	if (s->token == SQL_ATOM){
 		statement *a = statement_atom( atom_dup(s->data.aval) );
 		if (!(a = check_types( sql, c, a ))) return NULL;
-		return statement_insert( c, a );
+		return statement_insert( c, id, a );
 	} else if (s->token == SQL_NULL) {
-		return statement_insert( c, NULL);
+		return statement_insert( c, id, NULL);
 	}
 	return NULL;
 }
@@ -1308,8 +1308,10 @@ statement *insert_into( context *sql, dlist *qname, dlist *columns,
 		dnode *n = values->h;
 		node *m = collist->h;
 		list *l = list_create();
-		while(n && m){
-		  statement *iv = insert_value( sql, m->data.cval, n->data.sym);
+		statement *id = (m)?statement_count( 
+					statement_column(m->data.cval) ):NULL;
+		while(n && m && id){
+		  statement *iv = insert_value( sql, m->data.cval, id, n->data.sym);
 
 		  if (iv){
 		  	list_append_statement( l, iv );
@@ -1517,6 +1519,7 @@ list *semantic( context *s,  dlist *sqllist ){
         list *sl = list_create();
         dnode *n = sqllist->h;
         while(n){
+	    if (n->data.sym){
                 statement *res;
                 if ( (res = sql_statement( s, n->data.sym)) == NULL){
                         fprintf(stderr, "Semanic error: %s\n", s->errstr);
@@ -1527,7 +1530,8 @@ list *semantic( context *s,  dlist *sqllist ){
                 } else {
                         list_append_statement(sl, res );
                 }
-                n = n->next;
+	    }
+            n = n->next;
         }
         if (errors == 0)
                 return sl;

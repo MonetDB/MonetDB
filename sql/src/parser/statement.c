@@ -56,6 +56,10 @@ void statement_destroy( statement *s ){
 			statement_destroy( s->op2.stval );
 			break;
 		case st_insert: 
+			statement_destroy( s->op2.stval );
+			if (s->op3.stval)
+				statement_destroy( s->op3.stval );
+			break;
 		case st_delete: 
 			if (s->op2.stval)
 				statement_destroy( s->op2.stval );
@@ -380,12 +384,13 @@ statement *statement_pearl( list *l1){
 	return s;
 }
 
-statement *statement_insert( column *c, statement *v){
+statement *statement_insert( column *c, statement *id, statement *v){
 	statement *s = statement_create();
 	s->type = st_insert;
 	s->op1.cval = c;
+	s->op2.stval = id; id->refcnt++;
 	if (v){
-		s->op2.stval = v; v->refcnt++;
+		s->op3.stval = v; v->refcnt++;
 	}
 	s->h = c->table;
 	return s;

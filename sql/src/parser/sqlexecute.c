@@ -31,7 +31,11 @@ void sql_init_context( context *lc , stream *out, int debug, catalog *cat ){
 	lc->yylen = 0;
 	lc->yysize = BUFSIZ;
 
-        lc->sql = NULL;
+	if (lc->sql)
+		_DELETE(lc->sql);
+	lc->sql = NEW_ARRAY(char, BUFSIZ);
+	lc->sqlsize = BUFSIZ;
+
         sql_statement_init(lc);
 }
 
@@ -82,9 +86,11 @@ int sql_execute( context *lc, stream *in ){
 statement *sqlexecute( context *lc, char *buf ){
         statement *res = NULL;
 
-        lc->filename = _strdup(buf);
+        lc->filename = "<stdin>";
         lc->buf = buf;
         lc->cur = ' ';
+
+	sql_statement_init(lc);
 
 	if (lc->l){
 		dlist_destroy(lc->l);
@@ -95,26 +101,23 @@ statement *sqlexecute( context *lc, char *buf ){
                 list *l = semantic(lc, lc->l);
 		dlist_destroy(lc->l); lc->l = NULL;
                 if (l){ 
-			res = l->h->data.stval; res->refcnt++;
+			if (list_length(l)){
+				res = l->h->data.stval; res->refcnt++;
+			}
 			list_destroy(l);
 		}
         } else {
 		fprintf(stderr, "%s\n", lc->errstr );
 	}
 
-	_DELETE(lc->filename);
         return res;
 }
 
 void sql_statement_init(context *lc){
 	if (lc->sql && lc->debug)
 		fprintf(stderr, "%s\n", lc->sql );
-	if (lc->sql)
-		_DELETE(lc->sql);
-	lc->sql = NEW_ARRAY(char, BUFSIZ);
 	lc->sql[0] = '\0';
 	lc->sqllen = 1;
-	lc->sqlsize = BUFSIZ;
 }
 
 

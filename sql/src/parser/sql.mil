@@ -1,5 +1,6 @@
 module(io);
 module(str);
+module(streams);
 module(sql);
 module(ascii_io);
 

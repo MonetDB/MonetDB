@@ -91,7 +91,7 @@ extern statement *statement_output( statement *l );
 extern statement *statement_diamond( statement *s1 );
 extern statement *statement_pearl( list *s1 );
 
-extern statement *statement_insert( column *c, statement *v );
+extern statement *statement_insert( column *c, statement *id, statement *v );
 extern statement *statement_insert_column( statement *c, statement *a );
 extern statement *statement_update( column *col, statement *values );
 extern statement *statement_delete( column *col, statement *where );

@@ -54,6 +54,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	create
 	drop
 	sql
+	sqlstatement
 	schema
 	schema_name
 	opt_schema_default_char_set
@@ -223,13 +224,17 @@ UNDER WHENEVER
 %%
 
 sql_list:
-    sql ';'		{ context *lc = (context*)parm;
+    sqlstatement 	{ context *lc = (context*)parm;
 			  lc->l = $$ = dlist_append_symbol(dlist_create(), $1 );
 			  sql_statement_init(lc); }
- |  sql_list sql ';' 	{ context *lc = (context*)parm;
+ |  sql_list sqlstatement { context *lc = (context*)parm;
 			  lc->l = $$ = dlist_append_symbol($1, $2); 
 			  sql_statement_init(lc); }
  ;
+
+sqlstatement:
+   sql ';' 		
+ | /*empty*/		{ $$ = NULL; }
 
 
 	/* schema definition language */
@@ -992,34 +997,34 @@ subquery:
 scalar_exp:
     scalar_exp '+' scalar_exp	
 				{ dlist *l = dlist_create();
-				  dlist_append_string(l, "+");
+				  dlist_append_string(l, _strdup("add"));
 	  			  dlist_append_symbol(l, $1);
 	  			  dlist_append_symbol(l, $3);
 	  			  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '-' scalar_exp   
 				{ dlist *l = dlist_create();
-				  dlist_append_string(l, "sub");
+				  dlist_append_string(l, _strdup("sub"));
 	  			  dlist_append_symbol(l, $1);
 	  			  dlist_append_symbol(l, $3);
 	  			  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '*' scalar_exp
 				{ dlist *l = dlist_create();
-				  dlist_append_string(l, "mul");
+				  dlist_append_string(l, _strdup("mul"));
 	  			  dlist_append_symbol(l, $1);
 	  			  dlist_append_symbol(l, $3);
 	  			  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '/' scalar_exp
 				{ dlist *l = dlist_create();
-				  dlist_append_string(l, "div");
+				  dlist_append_string(l, _strdup("div"));
 	  			  dlist_append_symbol(l, $1);
 	  			  dlist_append_symbol(l, $3);
 	  			  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  '+' scalar_exp %prec UMINUS { dlist *l = dlist_create();
-				  dlist_append_string(l, "pos");
+				  dlist_append_string(l, _strdup("pos"));
 	  			  dlist_append_symbol(l, $2);
 	  			  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  '-' scalar_exp %prec UMINUS { dlist *l = dlist_create();
-				  dlist_append_string(l, "neg");
+				  dlist_append_string(l, _strdup("neg"));
 	  			  dlist_append_symbol(l, $2);
 	  			  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  atom
