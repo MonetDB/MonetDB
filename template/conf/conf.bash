@@ -232,9 +232,9 @@ if [ "${os}" = "Linux" ] ; then
 		fi
 	fi
 	domain="`domainname`"
-	if [ -x /usr/lib/java/bin/javac  -a  -x /usr/lib/java/bin/jar ] ; then
+	if [ -x /net/lin_local/java/j2sdk1.4.2/bin/javac  -a  -x /net/lin_local/java/j2sdk1.4.2/bin/jar ] ; then
 		# java in Konstanz
-		binpath="/usr/lib/java/bin:${binpath}"
+		binpath="/net/lin_local/java/j2sdk1.4.2/bin:${binpath}"
 	fi
 	if [ -x /net/lin_local/twig/twig ] ; then
 		# twig in Konstanz
