@@ -15,51 +15,18 @@ quit;
 
 Over..
 
-# 20:07:35 >  
-# 20:07:35 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < marcin3.sql
-# 20:07:35 >  
+# 09:34:05 >  
+# 09:34:05 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=spin --port=58772  < marcin3.sql
+# 09:34:05 >  
 
-SQL  connected to database mTests_src_test using schema sys
-#     1: 0 
-#     2: 1 create table nutki(id int,val int);
-#     3: 1 insert into nutki values(1,1);
-SQL  no Rows affected
-#     4: 1 insert into nutki values(1,2);
-SQL  no Rows affected
-#     5: 1 insert into nutki values(3,4);
-SQL  no Rows affected
-#     6: 1 insert into nutki values(3,3);
-SQL  no Rows affected
-#     7: 1 select id, sum(val) AS valsum from nutki group by id having sum(val)>1;
-#---------------
-#| id | valsum |
-#---------------
+# id,	valsum # name
+# int,	bigint # type
+# 2,	 # tuplecount
+# 0,	 # id
 [ 1,	3	]
 [ 3,	7	]
-SQL  2 Rows affected
-#     8: 1 select id, sum(val) AS valsum from nutki group by id having val>1;
-MAPI  = monetdb@draco:53143
-ACTION= mapi_get_row
-QUERY = select id, sum(val) AS valsum from nutki group by id having val>1;
-ERROR = !Cannot compare sets with values, probably a aggregate function missing
-#     9: 0 -- ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
-#    10: 1 select id, sum(val) AS valsum from nutki group by id having val>2;
-MAPI  = monetdb@draco:53143
-ACTION= mapi_get_row
-QUERY =  select id, sum(val) AS valsum from nutki group by id having val>2;
-ERROR = !Cannot compare sets with values, probably a aggregate function missing
-#     8: -- ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
-#     8: select id, sum(val) AS valsum from nutki group by id having valsum>3;
-MAPI  = monetdb@draco:53143
-ACTION= mapi_get_row
-QUERY =  select id, sum(val) AS valsum from nutki group by id having valsum>3;
-ERROR = !Identifier: valsum unknown or ambigious
 
-#    13: 0 -- ERROR:  Attribute 'valsum' not found
-#    14: 0 
-#    15: 1 drop table nutki;
-
-# 19:16:14 >  
-# 19:16:14 >  Done.
-# 19:16:14 >  
+# 09:34:05 >  
+# 09:34:05 >  Done.
+# 09:34:05 >  
 

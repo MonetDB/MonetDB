@@ -16,22 +16,10 @@ quit;
 
 Over..
 
-# 11:33:24 >  
-# 11:33:24 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=aquila --port=54613  < null.sql
-# 11:33:24 >  
+# 09:34:13 >  
+# 09:34:13 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=spin --port=58772  < null.sql
+# 09:34:13 >  
 
-MAPI  = monetdb@aquila:58081
-ACTION= mapi_get_row
-QUERY = insert into t3 values(NULL,5);
-ERROR = !ERROR: null constraint t3.id failed
-MAPI  = monetdb@aquila:58081
-ACTION= mapi_get_row
-QUERY = insert into t3 values(NULL,6);
-ERROR = !ERROR: null constraint t3.id failed
-MAPI  = monetdb@aquila:58081
-ACTION= mapi_get_row
-QUERY = insert into t3 values(NULL,NULL);
-ERROR = !ERROR: null constraint t3.id failed
 # id,	val # name
 # int,	int # type
 # 2,	 # tuplecount

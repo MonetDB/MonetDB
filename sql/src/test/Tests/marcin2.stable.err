@@ -51,6 +51,14 @@ stderr of test 'marcin2` in directory 'src/test` itself:
 # 20:07:33 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < marcin2.sql
 # 20:07:33 >  
 
+MAPI  = monetdb@spin:58772
+ACTION= mapi_get_row
+QUERY = -- this one works, and I think it shouldn't
+ERROR = !Aggregate: Cannot do a sum(*)
+MAPI  = monetdb@spin:58772
+ACTION= mapi_get_row
+QUERY = -- this one, although wrong, results in core-dump of sql_client :)
+ERROR = !Aggregate: Cannot do a sum(*)
 
 # 20:07:33 >  
 # 20:07:33 >  Done.

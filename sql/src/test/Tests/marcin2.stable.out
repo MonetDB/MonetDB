@@ -15,35 +15,14 @@ quit;
 
 Over..
 
-# 01:19:56 >  
-# 01:19:56 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=54155 --trace < marcin2.sql
-# 01:19:56 >  
+# 09:34:04 >  
+# 09:34:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=spin --port=58772  < marcin2.sql
+# 09:34:04 >  
 
-SQL  connected to database mTests_src_test using schema sys
-#     0: create table t3(id int, val int);
-#     1: insert into t3 values(2,6);
-SQL  no Rows affected
-#     2: insert into t3 values(2,NULL);
-SQL  no Rows affected
-#     3: insert into t3 values(2,5);
-SQL  no Rows affected
-#     4: insert into t3 values(1,NULL);
-SQL  no Rows affected
-#     5: insert into t3 values(1,5);
-SQL  no Rows affected
-#     6: insert into t3 values(1,6);
-SQL  no Rows affected
-#     7: insert into t3 values(NULL,5);
-SQL  no Rows affected
-#     8: insert into t3 values(NULL,6);
-SQL  no Rows affected
-#     9: insert into t3 values(NULL,NULL);
-SQL  no Rows affected
-#    10: -- those 2 don't sort (bad server_output?)
-#    10: select * from t3 order by val;
-#------------
-#| id | val |
-#------------
+# id,	val # name
+# int,	int # type
+# 9,	 # tuplecount
+# 0,	 # id
 [ 2,	nil	]
 [ nil,	nil	]
 [ 1,	nil	]
@@ -53,11 +32,10 @@ SQL  no Rows affected
 [ 1,	6	]
 [ nil,	6	]
 [ 2,	6	]
-SQL  9 Rows affected
-#    11: select * from t3 order by id;
-#------------
-#| id | val |
-#------------
+# id,	val # name
+# int,	int # type
+# 9,	 # tuplecount
+# 1,	 # id
 [ nil,	6	]
 [ nil,	5	]
 [ nil,	nil	]
@@ -67,12 +45,10 @@ SQL  9 Rows affected
 [ 2,	nil	]
 [ 2,	5	]
 [ 2,	6	]
-SQL  9 Rows affected
-#    12: -- but those 2 do
-#    12: select * from t3 order by val,id;
-#------------
-#| id | val |
-#------------
+# id,	val # name
+# int,	int # type
+# 9,	 # tuplecount
+# 2,	 # id
 [ nil,	nil	]
 [ 1,	nil	]
 [ 2,	nil	]
@@ -82,11 +58,10 @@ SQL  9 Rows affected
 [ nil,	6	]
 [ 1,	6	]
 [ 2,	6	]
-SQL  9 Rows affected
-#    13: select * from t3 order by id,val;
-#------------
-#| id | val |
-#------------
+# id,	val # name
+# int,	int # type
+# 9,	 # tuplecount
+# 3,	 # id
 [ nil,	nil	]
 [ nil,	5	]
 [ nil,	6	]
@@ -96,25 +71,8 @@ SQL  9 Rows affected
 [ 2,	nil	]
 [ 2,	5	]
 [ 2,	6	]
-SQL  9 Rows affected
-#    14: -- this one works, and I think it shouldn't
-#    14: --  postgres just sums the first column (result 9)
-#    14: select sum(*) from t3;
-MAPI  = monetdb@draco:53143
-ACTION= mapi_get_row
-QUERY =    select sum(*) from t3;
-ERROR = !Aggregate: Cannot do a sum(*)
-#    15: -- this one, although wrong, results in core-dump of sql_client :)
-#    15: --  postgres just sums the first column of the group (result (3,5)(3,6)(3,nil))
-#    15: select sum(*),val from t3 group by val ;
-MAPI  = monetdb@draco:53143
-ACTION= mapi_get_row
-QUERY = select sum(*),val from t3 group by val ;
-ERROR = !Aggregate: Cannot do a sum(*)
-#    16: drop table t3;
-#    17: COMMIT;
 
-# 01:19:56 >  
-# 01:19:56 >  Done.
-# 01:19:56 >  
+# 09:34:04 >  
+# 09:34:04 >  Done.
+# 09:34:04 >  
 
