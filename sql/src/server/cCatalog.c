@@ -90,6 +90,7 @@ BAT *mvc_bind( mvc *c, oid colid ){
 		c->batptrs = RENEW_ARRAY(BAT*,c->batptrs,c->size);
 		memset(c->batptrs+oldsz, 0, (c->size-oldsz)*sizeof(BAT*) );
 	}
+	/*
 	if (!c->batptrs[cid]){
 		BAT *b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
 					BUNfnd(c->column_bat, (ptr)&cid)));
@@ -97,6 +98,9 @@ BAT *mvc_bind( mvc *c, oid colid ){
 		bat_incref(b);
 	}
 	return c->batptrs[cid];
+	*/
+	return BATdescriptor(*(bat*)BUNtail(c->column_bat,
+				BUNfnd(c->column_bat, (ptr)&cid)));
 }
 
 oid mvc_create_schema( mvc *c, oid sid, char *name, char *auth){
@@ -201,18 +205,20 @@ oid mvc_create_column( mvc *c, oid cid, oid tid,
 			BUNtail(type_sqlr, BUNfnd(type_sqlr, sqltype))));
 	int type = ATOMindex(typename);
 	BAT *b = BATnew( TYPE_void, type, 1000 );
+	BAT *r = BATmirror(c->table_id);
+	oid ltid = *(oid*)BUNtail(r, BUNfnd(r, (ptr)&tid));
+	char *tname = BUNtail(c->table_name, BUNfnd(c->table_name, (ptr)&ltid));
 
 	BATseqbase(b,0);
 	if (c->debug) 
-		printf("mvc_crate_column %d %d %s %s  %d\n", 
+		printf("mvc_create_column %d %d %s %s  %d\n", 
 					cid, tid, name, sqltype, seqnr);
 
 	BATmode(b, PERSISTENT);
 
-	/*
-	snprintf(buf, BUFSIZ, "sql_%ld_%s_%ld", tid, name, cid );
+	/*snprintf(buf, BUFSIZ, "sql_%ld_%s_%ld", tid, name, cid );*/
+	snprintf(buf, BUFSIZ, "sql_%s_%s", tname, name );
 	BATrename(b, buf);
-	*/
 
 	BUNins(c->column_id, 	(ptr)&ci, (ptr)&cid );
 	BUNins(c->column_table, 	(ptr)&ci, (ptr)&tid );

@@ -75,7 +75,6 @@ void getfunctions( catalog *c ){
 	n = start = buf;
 
 	tcnt = strtol(n,&n,10); 
-	printf("types %d\n", tcnt );
 	c->types = list_create();
 	for(i=0;i<tcnt;i++){
 	    char *sqlname, *name, *cast;
@@ -94,7 +93,6 @@ void getfunctions( catalog *c ){
 	/* TODO load proper type cast table */
 
 	tcnt = strtol(n+1,&n,10); 
-	printf("aggr %d\n", tcnt );
 	c->aggrs = list_create();
 	for(i=0;i<tcnt;i++){
 	    char *tname, *imp, *tpe, *res;
@@ -159,7 +157,6 @@ void getschema( catalog *c, char *schema, char *user ){
 	list_append_string( c->schemas, (char*) c->cur_schema );
 
 	tcnt = strtol(n+1,&n,10); 
-	printf("tables %d\n", tcnt );
 	for(i=0;i<tcnt;i++){
 	    long id;
 	    char *tname;
@@ -178,7 +175,6 @@ void getschema( catalog *c, char *schema, char *user ){
 	}
 
 	tcnt = strtol(n+1,&n,10); 
-	printf("columns %d\n", tcnt );
 	for(i=0;i<tcnt;i++){
             long id = 0;
 	    char *tname, *cname, *ctype, *def;
@@ -216,7 +212,6 @@ void getschema( catalog *c, char *schema, char *user ){
 	/* bats are void-aligned */
 	/* read views */
 	tcnt = strtol(n+1,&n,10); 
-	printf("views %d\n", tcnt );
 	for(i=0;i<tcnt;i++){
 	    table *t;
             long id = 0;

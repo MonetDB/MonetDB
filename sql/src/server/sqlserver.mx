@@ -74,13 +74,12 @@ int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
 
   fprintf (stderr, "server listening on port %i\n", port);
 
-  while (server_run) {
+  while (monet_running && server_run) {
     int retval;
     size_t client_len = sizeof (client);
     struct timeval tv;
     fd_set fds;
 
-    /* Watch stdin (fd 0) to see when it has input. */
     FD_ZERO(&fds);
     FD_SET(sock, &fds);
     /* Wait up to five seconds. */

@@ -163,7 +163,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 			s->nr = statement_dump( s->op1.cval->s, nr, sql );
 		} else {
 			len += snprintf( buf+len, BUFSIZ, 
-			"s%d := mvc_bind(myc, %ld);\n", *nr, s->op1.cval->id );
+			"s%d := mvc_bind(myc, %ld); # %s.%s\n", *nr, s->op1.cval->id, s->op1.cval->table->name, s->op1.cval->name );
 
 			s->nr = (*nr)++;
 			if (sql->debug&4){

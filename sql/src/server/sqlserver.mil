@@ -70,7 +70,8 @@ proc bulkload( tab, file, Sep, sze ):= {
 	var seps := load_seps(bats,Sep);
 	var res := load(names, seps, types, file, sze);
 	# merge result
-	var x := bats.reverse().join(names.join(res));
+	var t := names.join(res);
+	var x := bats.reverse().join(t);
 	x@batloop(){ $h.insert($t); }
 }
 Stdout := file_wastream( stdout, "test" );
