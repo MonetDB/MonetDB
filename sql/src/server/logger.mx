@@ -188,16 +188,30 @@ void log_read_updates(stream *s, logformat *l, char *name ){
 		char *end = buf + nr;
 		char *p = buf;
 		BAT *b = BATdescriptor(BBPindex(name));
+		ValRecord hv;
+		ValRecord tv;
 
                 if ( (s->read(s, buf, nr, 1) == 1) && b){
 			int s1,s2;
                         for(; l->nr>0 && p<end; l->nr--){
+				ValPtr h = &hv;
+				ValPtr t = &tv;
                                 s1 = ATOMlen(b->htype, p);
                                 s2 = ATOMlen(b->ttype, p+s1);
+				if (s1 <= sizeof(ValRecord)){
+					memcpy(h,p,s1);
+				} else {
+					h = (ValPtr)p;
+				}
+				if (s2 <= sizeof(ValRecord)){
+					memcpy(t,p+s1,s2);
+				} else {
+					t = (ValPtr)(p+s1);
+				}
                                 if (l->flag == LOG_INSERT)
-                                        BUNins( b, p, p+s1 );
+                                        BUNins( b, h, t );
                                 else if (l->flag == LOG_DELETE)
-                                        BUNdel( b, p, p+s1 );
+                                        BUNdel( b, h, t );
                                 p += s1;
                                 p += s2;
                         }

@@ -148,10 +148,10 @@
 	.COMMAND mvc_default( mvc m, sql_column col, str val ) :
 		sql_column = mvc_default_wrap; "Set column default value"
 
-	.COMMAND mvc_create_key( mvc m, sql_table t, int kt, sql_key *fk ) :
+	.COMMAND mvc_create_key( mvc m, sql_table t, int kt, sql_key fk ) :
 		sql_key = mvc_create_key_wrap; "Create a table key"
 
-	.COMMAND mvc_key_add_column( mvc m, sql_key k, sql_column *c ) :
+	.COMMAND mvc_key_add_column( mvc m, sql_key k, sql_column c ) :
 		sql_key = mvc_key_add_column_wrap; "Key add column"
 
 	.COMMAND mvc_export(stream s, BAT order, BAT bats, str sep, str rsep) =
