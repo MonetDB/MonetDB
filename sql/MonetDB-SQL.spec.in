@@ -134,6 +134,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %if %{buildjava}
 %files java
+%defattr(-,monetdb,monetdb)
 %{prefix}/share/MonetDB/lib/MonetDB_JDBC.jar
 %{prefix}/share/sql/Tests/Test_*.class
 %endif
