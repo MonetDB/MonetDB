@@ -940,7 +940,7 @@ int strIconv( str *res, str org, str f, str t)
 	return GDK_SUCCEED;
 #else
 	(void)res; (void)org; (void)f; (void)t; /* fool the compiler */
-	GDKerror("strIconv:MIL-`iconv()' not available as C-`iconv()' wasn't found during compilation.\n");
+	GDKerror("strIconv: MIL-`iconv()' not available as C-`iconv()' wasn't found during compilation.\n");
 	return GDK_FAIL;
 #endif
 }
