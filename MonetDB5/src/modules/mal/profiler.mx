@@ -168,9 +168,9 @@ str CMDsetFilterProfiler(int *res, str *mod, str *fcn){
 }
 
 str CMDsetAllProfiler(int *res){
-	(void) res; /* fool compiler */
 	str x = GDKstrdup("*");
 	str y = GDKstrdup("*");
+	(void) res; /* fool compiler */
 	return CMDsetFilterProfiler(res, &x, &y);
 }
 str CMDclrFilterProfiler(int *res, str *mod, str *fcn){

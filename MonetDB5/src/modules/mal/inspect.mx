@@ -375,11 +375,11 @@ void INSPECTshowFunction(MalBlkPtr m, lng flg, stream *f) {
 	printFunction(f,m,flg);
 }
 str INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	(void) stk; /* fool compiler */
 	@:getFunction(showFunction)@
 	else { 
 		INSPECTshowFunction(s->def,(lng) FALSE,GDKout);
 	}
+	(void) stk; /* fool compiler */
 	return NULL;
 }
 

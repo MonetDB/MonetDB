@@ -137,6 +137,7 @@ int operatorModifier(str name, str fcnname){
 int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe){
 	int dt= getDestType(mb,p);
 	int rt;
+	Client c;
 
 	rt= resolveType(dt,tpe);
 	if(rt != -1){
@@ -148,7 +149,7 @@ int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe){
 			moduleName(p), functionName(p), getPC(mb,p));
 	else 	GDKerror("type conflict in statement %s[%d]\n",
 			functionName(p), getPC(mb,p));
-	Client c= getClient();
+	c= getClient();
 	if( c && c->listing &(LIST_MAL_INSTR))
 		printFunction(c->fdout,mb,c->listing);
 	return -1;
