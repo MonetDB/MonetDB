@@ -698,7 +698,7 @@ void GDKfree (void *blk) {
 
         if (s == NULL) return;
 	size = GDK_MEM_BLKSIZE(s);
- /* printf("%d free %d\n",s,size);*/
+/*printf("%d free %d\n",s,size); fflush(stdout)*/;
 	if (size > 0) {
 #ifdef GDK_MEM_KEEPHISTO
 		int idx;
@@ -1119,7 +1119,7 @@ void GDKaddbuf(char *message) {
 		strncpy(dst, message, maxlen);
 		dst[maxlen - 1] = '\0';
 	} else if (!GDKsilent) {
-                THRprintf(GDKerr, message); 
+                THRputs(GDKerr, message); 
 	}
 }
 
@@ -1138,7 +1138,6 @@ int GDKwarning(char *format, ...) {
 
 	return 0;
 }
-
 
 /*VARARGS*/
 int GDKerror(char *format, ...) {
@@ -1454,4 +1453,8 @@ int THRprintf(FILE *fp, char *format, ...) {
         return 0;
 }
 
+int THRputs(FILE *fp, char *message){
+	fputs(message, fp);
+	fflush(fp);
+}
 #endif

@@ -49,8 +49,13 @@ ValPtr VALnew(){
 
 ValPtr VALset(ValPtr v, int t, ptr p){
 	switch(ATOMstorage(v->vtype = t)) {
-	case TYPE_chr: v->val.cval[0] = *(chr*) p; break;
+	case TYPE_chr: v->val.cval[0] = *(chr*) p; 
+		       v->val.cval[1] = 0;
+		       v->val.cval[2] = 0;
+		       v->val.cval[3] = 0;
+			break;
 	case TYPE_sht: v->val.shval = *(sht*) p; break;
+	case TYPE_bit:
 	case TYPE_int: v->val.ival = *(int*) p; break;
 	case TYPE_flt: v->val.fval = *(flt*) p; break;
 	case TYPE_dbl: v->val.dval = *(dbl*) p; break;
@@ -66,6 +71,7 @@ void *VALget(ValPtr v){
 	case TYPE_chr: return (void*) &v->val.cval[0];
 	case TYPE_sht: return (void *) &v->val.shval;
 	case TYPE_void:
+	case TYPE_bit:
 	case TYPE_int: return (void *) &v->val.ival;
 	case TYPE_flt: return (void *) &v->val.fval;
 	case TYPE_dbl: return (void *) &v->val.dval;
