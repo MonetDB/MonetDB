@@ -40,7 +40,9 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
                 /* key property gives a bound for equality join; only use this knowledge if
                  * the other column is smaller (i.e. optimization is useful)
                  */
-                if (_lcount < _rcount && BAThkey(r)) {
+		if (BATtkey(l) && BAThkey(r)) {
+    			@3 = MIN(_lcount, _rcount);
+		} else if (_lcount < _rcount && BAThkey(r)) {
                         @3 = _lcount;
                 } else if (_rcount < _lcount && BATtkey(l)) {
                         @3 = _rcount;
