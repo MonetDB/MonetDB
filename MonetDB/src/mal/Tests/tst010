@@ -3,7 +3,7 @@ barrier	L:= 1;
 	#do it
 	leave Z;	# not known in block
 	redo L;
-end 	L;
+exit 	L;
 	redo L;		# outside block
 	leave X;	# outside block
 	redo A;		# outside block
@@ -11,24 +11,24 @@ barrier X:=1;
 	leave L;	# outside block
 	leave X;
 	redo L;		# outside block
-end	X;
+exit	X;
 barrier A:=1;
 	barrier B:= 1;
 		redo A;
-	end	B;
+	exit	B;
 	barrier C:=1;
 		leave A;
-	end 	C;
+	exit 	C;
 
-	end	B;	# out of order
-	end	F;	# unknown
+	exit	B;	# out of order
+	exit	F;	# unknown
 
 	barrier D:=1;
 		leave D;
 		redo  D;  # dead code
-	end	D;
+	exit	D;
 	barrier D:=2;		# duplicate block
-	end	D;
-end	A;
+	exit	D;
+exit	A;
 barrier  unfinished:= 1;
 	f:=1;

@@ -657,8 +657,8 @@ and should be checked.
 				if(p->polymorphic) kind= TYPE_POLYMORPHIC;
 			}
 			break;
-		case ENDsymbol:
-			chkEnd(mb,p); break;
+		case EXITsymbol:
+			chkExit(mb,p); break;
 		case CATCHsymbol:
 			chkCatch(mb,p); break;
 		case THREADsymbol:

@@ -500,7 +500,7 @@ barrier	ci_a:= <(bi_a,1000000);
 #        printf(" %d ms\n",time-t);
 #
 #  }
-end	ci_a;
+exit	ci_a;
 end arith_perftest;
 #}
 #
@@ -618,7 +618,7 @@ barrier	ci_a:= <(bi_a,1000000);
 #        printf(" %d ms\n",time-t);
 #
 #  }
-end	ci_a;
+exit	ci_a;
 end arith_perftest;
 #}
 #
@@ -636,8 +636,8 @@ barrier	qi_a:= si_a;
 	ti_a := insert(int_10K,zz,i);
 #        int_10K.insert(nil,i);
 redo	pi_a;
-end	qi_a;
-end	pi_a;
+exit	qi_a;
+exit	pi_a;
 #}
 	ui_a := bat.setSequenceBase(int_10K,0@0);
 #int_10K.seqbase(0@0);
@@ -662,8 +662,8 @@ barrier	ej_a:= gj_a;
 	jj_a := insert(int_100K,ij_a);
 #        int_100K.insert([+](int_10K,base));
 redo	dj_a;
-end	ej_a;
-end	dj_a;
+exit	ej_a;
+exit	dj_a;
 #}
 	kj_a := bat.setSequenceBase(int_100K,0@0);
 #int_100K.seqbase(0@0);
@@ -704,7 +704,7 @@ end	dj_a;
 #	xj_a := insert(int_1M,wj_a);
 ##        int_1M.insert([+](int_100K,base));
 #redo	sj_a;
-#end	tj_a;
+#exit	tj_a;
 #end	sj_a;
 ##}
 #	yj_a := bat.setSequenceBase(int_1M,0@0);

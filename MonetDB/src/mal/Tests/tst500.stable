@@ -15,7 +15,7 @@
 #	i:= i+1;
 #barrier	v:= i<lim;
 #	z:= simple(i,lim,s);
-#end	v;
+#exit	v;
 #	r:= 3.14:flt;
 #	return r;
 #end simple;
@@ -26,7 +26,7 @@ function Admin.simple(i:int,lim:int,s:str):flt; #0:(simple:flt)<-(i:int)(lim:int
     i := calc.+(i,1); #4:(i:int)<-(i:int)($10:int)
 barrier v := calc.<(i,lim); #5:(v:bit)<-(i:int)(lim:int) jump 8
     z := Admin.simple(i,lim,s); #6:(z:flt)<-(i:int)(lim:int)(s:str)
-end v; #7:(v:bit)
+exit v; #7:(v:bit)
     r := 3.14; #8:(r:flt)<-($14:flt)
     return r; #9:(r:flt)
 end simple; #10:

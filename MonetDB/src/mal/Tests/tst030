@@ -3,4 +3,4 @@
 barrier w:= 1>0;
 	w:= false;
 	print(w);
-end	w;
+exit	w;

@@ -8,5 +8,5 @@ print(t);
 barrier v:= const.iterator(nme:str);
 	print(nme);
 	redo v;
-end v;
+exit v;
 const.close();	# save the content on persistent store

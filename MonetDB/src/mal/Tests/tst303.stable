@@ -15,7 +15,7 @@
 #	IllegalAccess:= "a second exception raise";
 #	raise IllegalAccess;
 #	print("should not come here either\n");
-#end	IllegalAccess;
+#exit	IllegalAccess;
 #	print("should not be done");
 #
 function Admin.main():int; #0:(main:int)
@@ -27,7 +27,7 @@ catch IllegalAccess; #4:(IllegalAccess:str) jump 10
     IllegalAccess := "a second exception raise"; #6:(IllegalAccess:str)<-($7:str)
     raise IllegalAccess; #7:(IllegalAccess:str)
     io.print("should not come here either\n"); #8:($8:int)<-($9:str)
-end IllegalAccess; #9:(IllegalAccess:str)
+exit IllegalAccess; #9:(IllegalAccess:str)
     io.print("should not be done"); #10:($10:int)<-($11:str)
 end main; #11:
 catched an exception

@@ -19,4 +19,4 @@ barrier v:= bunStream(b,h:int,t:int);
 	printf("%d,",h);
 	printf("%d\n",t);
 redo v;
-end v;
+exit v;

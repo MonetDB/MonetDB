@@ -13,5 +13,5 @@
 catch	IllegalAccess;
 	print("should not come here");
 	p3:= p1;
-end	IllegalAccess;
+exit	IllegalAccess;
 	print("done");

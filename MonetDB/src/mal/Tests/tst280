@@ -20,8 +20,8 @@ barrier mloop:=mal.nextElement(m,0:lng,lim);
         bat.insert(resB,nil,cr); 
         redo mloop ;    
 catch   MALexception;  
-end     MALexception; 
-end     mloop;  
+exit    MALexception; 
+exit    mloop;  
         return resB;    
 end tst;   
 

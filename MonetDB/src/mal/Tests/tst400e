@@ -10,5 +10,5 @@ end simple;
 barrier	v:= k<1000000:lng;
 	k:= simple(k);
 	redo v;
-end	v;
+exit	v;
 print(k);

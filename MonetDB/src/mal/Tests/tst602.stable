@@ -16,7 +16,7 @@
 #barrier v:= const.iterator(nme:str);
 #	print(nme);
 #	redo v;
-#end v;
+#exit v;
 #const.close();	# save the content on persistent store
 #
 function Admin.main():int; #0:(main:int)
@@ -26,7 +26,7 @@ function Admin.main():int; #0:(main:int)
 barrier v := const.iterator(nme); #4:(v:lng)<-(nme:str) jump 8
     io.print(nme); #5:($7:int)<-(nme:str)
     redo v ; #6:(v:lng) jump 4
-end v; #7:(v:lng)
+exit v; #7:(v:lng)
     const.close(); #8:($8:void)
 end main; #9:
 [ 3.147 ]

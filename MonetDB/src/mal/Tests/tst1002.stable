@@ -15,7 +15,7 @@
 #bbp.close();
 #catch MALexception;
 #	print(MALexception);
-#end MALexception;
+#exit MALexception;
 #
 function Admin.main():int; #0:(main:int)
     bbp.open(); #1:($1:void)
@@ -24,7 +24,7 @@ function Admin.main():int; #0:(main:int)
     bbp.close(); #4:($5:void)
 catch MALexception; #5:(MALexception:str) jump 8
     io.print(MALexception); #6:($7:int)<-(MALexception:str)
-end MALexception; #7:(MALexception:str)
+exit MALexception; #7:(MALexception:str)
 end main; #8:
 [ "MALexception:Admin.main[2]:bbp.take:failed to take 'myfirstbat' from box\n" ]
 >

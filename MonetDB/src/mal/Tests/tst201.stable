@@ -69,7 +69,7 @@
 #	_v28:= print(_v27);
 #catch MALexception;
 #	print(MALexception);
-#end MALexception;
+#exit  MALexception;
 ##b.find("cat").print;
 ##
 ### Can we delete them and re-insert them later on
@@ -202,7 +202,7 @@ function Admin.main():int; #0:(main:int)
     _v28 := io.print(_v27); #30:(_v28:int)<-(_v27:int)
 catch MALexception; #31:(MALexception:str) jump 34
     io.print(MALexception); #32:($58:int)<-(MALexception:str)
-end MALexception; #33:(MALexception:str)
+exit MALexception; #33:(MALexception:str)
     _v29 := bat.delete(b,"fox",4); #34:(_v29:bat[str,int])<-(b:bat[str,int])($60:str)($61:int)
     _v30 := bat.delete(b,"the",1); #35:(_v30:bat[str,int])<-(b:bat[str,int])($47:str)($63:int)
     _v31 := bat.delete(b,".",10); #36:(_v31:bat[str,int])<-(b:bat[str,int])($37:str)($38:int)

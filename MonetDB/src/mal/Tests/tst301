@@ -4,4 +4,4 @@
 	print("should not come here\n");
 catch IllegalAccess;
 	printf("catched %d\n",IllegalAccess);
-end IllegalAccess;
+exit IllegalAccess;

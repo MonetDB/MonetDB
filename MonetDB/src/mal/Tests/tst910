@@ -11,7 +11,7 @@ i:= -1:lng;
 barrier v:= nextElement(i,0:lng,10:lng);
 	insert(b,i,i);
 	redo v;
-end v;
+exit v;
 c:= copy(b);
 print(c);
 x:= multiplex.script("+",b,c);

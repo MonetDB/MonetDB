@@ -18,8 +18,8 @@ print(b);
 barrier v:= bunStream(b,h:int,t:int);
 	printf("[ %d,",h);
 	printf("%d]\n",t);
-redo v;
-end v;
+	redo v;
+exit v;
 
 
 # String stuff
@@ -36,5 +36,5 @@ barrier v:= bunStream(c,h,ts:str);
 	printf("[%d,",h);
 	printf("%s]\n",ts);
 	redo v;
-end v;
+exit v;
 

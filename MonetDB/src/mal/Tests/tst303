@@ -7,5 +7,5 @@ catch	IllegalAccess;
 	IllegalAccess:= "a second exception raise";
 	raise IllegalAccess;
 	print("should not come here either\n");
-end	IllegalAccess;
+exit	IllegalAccess;
 	print("should not be done");

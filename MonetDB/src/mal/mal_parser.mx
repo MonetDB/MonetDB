@@ -938,6 +938,9 @@ int parse@3(Client cntxt)
 	curInstr->argv[0]= i;
 	if(@3symbol== CATCHsymbol) curInstr->barrier= CATCHsymbol;
 	if(@3symbol== THREADsymbol) curInstr->barrier= THREADsymbol;
+	skipSpace(cntxt);
+	if( *cntxt->nxt != ';')
+		parseError(cntxt,"';' expected\n");
 	@:endparseCntrl@
 }
 @c
@@ -947,7 +950,6 @@ int parse@3(Client cntxt)
 @:parseCntrl("return", 6,RETURN, TYPE_any)@
 @:parseCntrl("leave", 5,LEAVE, TYPE_any)@
 @:parseCntrl("thread", 6,THREAD, TYPE_any)@
-
 @-
 Most instructions are simple assignments, possibly
 modified with a barrier/catch tag.
@@ -1030,10 +1032,8 @@ void parseAssign(Client cntxt, int kind)
 	curBlk = curPrg->def;
 	curInstr = newInstruction(ASSIGNsymbol);
 
-	if( kind== BARRIERsymbol || kind==THREADsymbol)
+	if( kind== BARRIERsymbol || kind==THREADsymbol || kind== EXITsymbol)
 		curInstr->barrier = kind;
-	if( kind==THREADsymbol)
-		curInstr->token = kind;
 	if( *cntxt->nxt=='('){
 		/* parsing multi-assignment */
 		nextChar(cntxt); skipSpace(cntxt);
@@ -1277,6 +1277,9 @@ int parseMal(Client cntxt){
 			  if( parseCATCH(cntxt)) break;
 			  goto allLeft;
 		case 'E': case 'e': 
+			  if( keyword(cntxt,"exit",4))
+				kind= EXITsymbol;
+			  else
 			  if( parseEnd(cntxt)) break;
 			  goto allLeft;
 		case 'F': case 'f': 
@@ -1307,8 +1310,7 @@ int parseMal(Client cntxt){
 			  }
 			  goto allLeft;
 		case 't':
-			  if( keyword(cntxt,"thread",6)) 
-				kind = THREADsymbol; 
+			  if( parseTHREAD(cntxt)) break;
 			  goto allLeft;
 		case 'u': if( parseImport(cntxt)) continue;
 		default: allLeft:

@@ -4,4 +4,4 @@
 	print(i);
 catch 	GDKerror;
 	printf("GDKerror, do something\n");
-end	GDKerror;
+exit	GDKerror;

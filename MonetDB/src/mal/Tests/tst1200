@@ -347,8 +347,8 @@ barrier	mf_a:= of_a;
 	qf_a := insert(date_seq,i,pf_a);
 #	date_seq.insert(i,adddays(date_00,i));
 redo	lf_a;
-end	mf_a;
-end	lf_a;
+exit	mf_a;
+exit	lf_a;
 #}
 	rf_a := setColumn(date_seq,"date");
 #print(date_seq.setColumn("date"),

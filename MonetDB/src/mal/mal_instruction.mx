@@ -1068,14 +1068,9 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 	if( getDestName(mb,p) ) nme= getDestName(mb,p); else nme="";
 	advance(t);
 	if( p->barrier){
-		if( p->barrier== BARRIERsymbol){
-			sprintf(t,"barrier"); 
-			tab=1;
-		} else
-		if( p->barrier== THREADsymbol){
-			sprintf(t,"thread"); 
-			tab=1;
-		}
+		if( p->barrier== BARRIERsymbol){ sprintf(t,"barrier"); tab=1; } 
+		if( p->barrier== THREADsymbol){ sprintf(t,"thread"); tab=1; } 
+		if( p->barrier== EXITsymbol){ sprintf(t,"exit"); tab=1; }
 	}
 	advance(t);
 	switch( p->token){
@@ -1142,6 +1137,9 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 			@:tabulate@
 			sprintf(t,"%s",nme);
 			break;
+		case EXITsymbol:
+			@:tabulate@
+			sprintf(t,"%s",nme); break;
 		default:
 			sprintf(t," ?%d? ",p->token); 
 	}

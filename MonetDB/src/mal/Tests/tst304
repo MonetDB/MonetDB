@@ -12,5 +12,5 @@ end myException;
 #exception block;
 catch	IllegalAccess;
 	printf("catched IllegalAccess\n");
-end	IllegalAccess;
+exit	IllegalAccess;
 	print("done");

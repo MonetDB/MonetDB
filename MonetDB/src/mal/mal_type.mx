@@ -88,6 +88,7 @@ derived from the parser to avoid a loop in the define-structure.
 #define PATTERNsymbol   44
 #define HANDLERsymbol     45
 #define THREADsymbol     46
+#define EXITsymbol	47
 
 #define FCNcall		50	/* determines interpreter action*/
 #define RLRcall		51

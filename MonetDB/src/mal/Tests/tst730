@@ -3,7 +3,7 @@
 function pr(format:str,arg:any...):void;
 	i:= -1;
 barrier  b:= iterator.argument(i,arg);
-end b;
+exit b;
 end pr; 
 
 # how to iterator through a variable list
@@ -15,7 +15,7 @@ barrier  b:= nextElement(i,0,limit);	#elm:= arg[i]
 	printf("argument ");
 	printf(i);
 	printf(elm);
-end b;
+exit b;
 end prStr; 
 
 pr("hello",1,true);

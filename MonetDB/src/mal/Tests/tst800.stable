@@ -23,7 +23,7 @@
 #	val:str := const.toString(nme);
 #	printf("%s\n",val);
 #	redo b;
-#end b;
+#exit b;
 #
 function Admin.main():int; #0:(main:int)
     v := const.take("version"); #1:(v:str)<-($2:str)
@@ -36,7 +36,7 @@ barrier b := const.iterator(nme); #6:(b:lng)<-(nme:str) jump 12
     val := const.toString(nme); #8:(val:str)<-(nme:str)
     system.printf("%s\n",val); #9:($16:int)<-($17:str)(val:str)
     redo b ; #10:(b:lng) jump 6
-end b; #11:(b:lng)
+exit b; #11:(b:lng)
 end main; #12:
 user=Admin
 database=demo

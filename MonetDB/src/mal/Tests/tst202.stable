@@ -23,7 +23,7 @@
 #	printf("catched anything?\n");
 #catch GDKerror;
 #	printf("Catched the renaming exception\n");
-#end GDKerror;
+#exit  GDKerror;
 ##get rid of it again
 #	#destroy(b);
 #	#destroy(c);
@@ -40,7 +40,7 @@ function Admin.main():int; #0:(main:int)
     system.printf("catched anything?\n"); #9:($14:int)<-($15:str)
 catch GDKerror; #10:(GDKerror:str) jump 13
     system.printf("Catched the renaming exception\n"); #11:($17:int)<-($18:str)
-end GDKerror; #12:(GDKerror:str)
+exit GDKerror; #12:(GDKerror:str)
 end main; #13:
 #-----------------#
 # BAT:	  mybat	  #

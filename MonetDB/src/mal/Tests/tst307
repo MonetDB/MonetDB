@@ -5,4 +5,4 @@ z:= find(b,0);
 print("should not come here anymore");
 catch MALexception;
 	print("catched the exception");
-end MALexception;
+exit MALexception;

@@ -29,5 +29,5 @@ barrier mloop := mal.bunStream(t,h:int,B2:url);
 	print(B2);
 	insert(rb,h,B2);
 	redo mloop;
-end mloop;
+exit mloop;
 	print(rb);

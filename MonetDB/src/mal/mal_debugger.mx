@@ -53,6 +53,7 @@ mal_export void printStackElm(FILE *f, MalBlkPtr mb,VarPtr n, ValPtr v,int index
 mal_export void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s);
 
 mal_export int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export int mdbSetCmd(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void printBBPinfo(FILE *out);
 #endif /* _MAL_DEBUGGER_h */
 @+ Debugger framework
@@ -161,6 +162,25 @@ void printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc){
 		fprintf(cntxt->fdout,")\n");
 	}
 }
+void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	int k;
+	str msg;
+	str s;
+
+	msg= instruction2str(mb,p,0);
+	s= strchr(msg,'(');
+	if(s){
+		s++;
+		*s = 0;
+		fprintf(cntxt->fdout,"%s",msg);
+		for(k= p->retc; k<p->argc; k++){
+			VALprint(cntxt->fdout, &stk->stk[p->argv[k]]);
+			if( k < p->argc-1 ) fprintf(cntxt->fdout,",");
+			}
+		fprintf(cntxt->fdout,")\n");
+	} else fprintf(cntxt->fdout,"%s\n",msg);
+	GDKfree(msg);
+}
 
 @+ MDB module implementation 
 The following routines are available for inclusion also in MAL programs.
@@ -186,7 +206,18 @@ int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	} else b= stk->cmd; 
 	if( stk->cmd == 0) stk->cmd= b?'n':0;
 	if( stk->up) stk->up->cmd=  b?'n':0;
-	cntxt->itrace= b? 1: 0;
+	cntxt->itrace= 'n';
+	MDBstatus(b);
+	return 0;
+}
+
+int mdbSetCmd(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	Client cntxt= getClient();
+	int b;
+	b= *(chr *) getArgReference(stk,p,1);
+printf("mdbSetCmd '%c'\n",b);
+	stk->cmd= b;
+	cntxt->itrace= 'T';
 	MDBstatus(b);
 	return 0;
 }
@@ -253,6 +284,9 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 				cntxt->timer = GDKusec();
 			else cntxt->timer = 0;
 		}
+		break;
+	case 'T': /* trace instruction calls */
+		printTraceCall(cntxt,mb,stk,p);
 		break;
 	case 'b':
 		if( strncmp(b,"bbp",3)==0){
@@ -403,6 +437,15 @@ void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
 			long l= GDKusec() - cntxt->timer;
 			fprintf(cntxt->fdout,"[%d usec]",l);
 		}
+		break;
+	case 'T':
+		fprintf(cntxt->fdout,MDBmarker);
+		if( cntxt->timer){
+			long n= GDKusec();
+			long l= n - cntxt->timer;
+			fprintf(cntxt->fdout,"%s[%-3d usec]\n",MDBmarker,l);
+		}
+		printTraceCall(cntxt,mb,stk,p);
 	}
 	if( cntxt->timer) cntxt->timer = GDKusec();
 	fflush(cntxt->fdout);

@@ -5,4 +5,4 @@ barrier v1:= nextElement(i,0.0:flt,2.5:flt, 1.3:flt);
 	print(i);
 	v:= "do something";
 	redo v1;
-end	v1;
+exit	v1;

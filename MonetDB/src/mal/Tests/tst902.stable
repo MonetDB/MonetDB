@@ -13,7 +13,7 @@
 #barrier v:= nextElement(i,0:lng,10:lng);
 #	insert(b,i,i);
 #	redo v;
-#end v;
+#exit v;
 #c:= copy(b);
 #
 #d:= new(lng,lng);
@@ -24,8 +24,8 @@
 #	insert(d,h,t);
 #	redo w;
 #catch 	GDKerror;
-#end	GDKerror;
-#end w;
+#exit	GDKerror;
+#exit w;
 #print(d);
 #
 function Admin.main():int; #0:(main:int)
@@ -34,7 +34,7 @@ function Admin.main():int; #0:(main:int)
 barrier v := mal.nextElement(i,0,10); #3:(v:bit)<-(i:lng)($6:lng)($7:lng) jump 7
     bat.insert(b,i,i); #4:($8:bat[lng,lng])<-(b:bat[lng,lng])(i:lng)(i:lng)
     redo v ; #5:(v:bit) jump 3
-end v; #6:(v:bit)
+exit v; #6:(v:bit)
     c := algebra.copy(b); #7:(c:bat[lng,lng])<-(b:bat[lng,lng])
     d := mal.new(lng,lng); #8:(d:bat[lng,lng])<-(lng:lng)(lng:lng)
 barrier w := mal.bunStream(b,h,t); #9:(w:lng)<-(b:bat[lng,lng])(h:lng)(t:lng) jump 18
@@ -44,8 +44,8 @@ barrier w := mal.bunStream(b,h,t); #9:(w:lng)<-(b:bat[lng,lng])(h:lng)(t:lng) ju
     bat.insert(d,h,t); #13:($16:bat[lng,lng])<-(d:bat[lng,lng])(h:lng)(t:lng)
     redo w ; #14:(w:lng) jump 9
 catch GDKerror; #15:(GDKerror:str) jump 17
-end GDKerror; #16:(GDKerror:str)
-end w; #17:(w:lng)
+exit GDKerror; #16:(GDKerror:str)
+exit w; #17:(w:lng)
     io.print(d); #18:($18:int)<-(d:bat[lng,lng])
 end main; #19:
 #-----------------#

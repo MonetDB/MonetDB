@@ -7,5 +7,5 @@
 barrier b1;
 	s2:= s1;
 	s1:= "bye";
-end 	b1;
+exit 	b1;
 	print(s1);

@@ -6,5 +6,5 @@
 barrier	v:=v;
 	i:= 1;
 	j:= 2;
-end	v;
+exit	v;
 	k:= 3;

@@ -11,8 +11,8 @@ barrier	sj_a:= true;
 barrier	tj_a:= vj_a;
 	xj_a := insert(int_1M,nil,i);
 redo	sj_a;
-end	tj_a;
-end	sj_a;
+exit	tj_a;
+exit	sj_a;
 
         t := alarm.time();
         ug_a := reverse(int_1M);
@@ -60,8 +60,8 @@ barrier	sj_b:= true;
 barrier	tj_b:= vj_b;
 	xj_b := insert(M2,i,i);
 redo	sj_b;
-end	tj_b;
-end	sj_b;
+exit	tj_b;
+exit	sj_b;
 
         t := alarm.time();
         ug_b := reverse(M2);

@@ -4,7 +4,7 @@ i:= -1;
 barrier m:=nextElement(i,1,10);
 	insert(bint,nil,i);
 	redo m;
-end	m;
+exit	m;
 print(bint);
 dint := multiplex.script("decimal",bint);
 print(dint);
@@ -20,7 +20,7 @@ barrier mloop := mal.bunStream(dint,h:void,B2:decimal);
 	print(cr);
 	insert(zint,nil,cr);
 	redo mloop;
-end	mloop;
+exit	mloop;
 	
 print(zint);
 cg:= group(dint);

@@ -6,4 +6,4 @@
 #exception block;
 catch	myNewException;
 	printf("catched exception\n");
-end	myNewException;
+exit	myNewException;

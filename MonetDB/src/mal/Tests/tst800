@@ -15,4 +15,4 @@ barrier b:= const.iterator(nme:str);
 	val:str := const.toString(nme);
 	printf("%s\n",val);
 	redo b;
-end b;
+exit b;

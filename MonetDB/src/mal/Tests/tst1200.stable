@@ -355,8 +355,8 @@
 #	qf_a := insert(date_seq,i,pf_a);
 ##	date_seq.insert(i,adddays(date_00,i));
 #redo	lf_a;
-#end	mf_a;
-#end	lf_a;
+#exit	mf_a;
+#exit	lf_a;
 ##}
 #	rf_a := setColumn(date_seq,"date");
 ##print(date_seq.setColumn("date"),
@@ -774,8 +774,8 @@ barrier mf_a := of_a; #198:(mf_a:bit)<-(of_a:bit) jump 203
     pf_a := mtime.adddays(date_00,i); #199:(pf_a:date)<-(date_00:date)(i:int)
     qf_a := bat.insert(date_seq,i,pf_a); #200:(qf_a:bat[int,date])<-(date_seq:bat[int,date])(i:int)(pf_a:date)
     redo lf_a ; #201:(lf_a:bit) jump 195
-end mf_a; #202:(mf_a:bit)
-end lf_a; #203:(lf_a:bit)
+exit mf_a; #202:(mf_a:bit)
+exit lf_a; #203:(lf_a:bit)
     rf_a := bbp.setColumn(date_seq,"date"); #204:(rf_a:bat[int,date])<-(date_seq:bat[int,date])($358:str)
     sf_a := multiplex.script("weekofyear",date_seq); #205:(sf_a:bat[int,int])<-($360:str)(date_seq:bat[int,date])
     tf_a := bbp.setColumn(sf_a,"weekofyear"); #206:(tf_a:bat[int,int])<-(sf_a:bat[int,int])($360:str)

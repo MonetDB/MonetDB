@@ -7,7 +7,7 @@ printf("str=%s\n",s);
 	i:= i+1;
 barrier	v:= i<lim;
 	z:= simple(i,lim,s);
-end	v;
+exit	v;
 	r:= 3.14:flt;
 	return r;
 end simple;

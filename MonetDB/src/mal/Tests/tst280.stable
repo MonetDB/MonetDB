@@ -33,8 +33,8 @@ end pow; #4:
 #        bat.insert(resB,nil,cr); 
 #        redo mloop ;    
 #catch   MALexception;  
-#end     MALexception; 
-#end     mloop;  
+#exit    MALexception; 
+#exit    mloop;  
 #        return resB;    
 #end tst;   
 function Admin.tst(A2:bat[void,int],A3:bat[void,int]):bat[void,int]; #0:(tst:bat[void,int])<-(A2:bat[void,int])(A3:bat[void,int])
@@ -54,8 +54,8 @@ barrier mloop := mal.nextElement(m,0,lim); #7:(mloop:bit)<-(m:lng)($15:lng)(lim:
     bat.insert(resB,nil,cr); #14:($25:bat[void,int])<-(resB:bat[void,int])($26:void)(cr:int)
     redo mloop ; #15:(mloop:bit) jump 7
 catch MALexception; #16:(MALexception:str) jump 18
-end MALexception; #17:(MALexception:str)
-end mloop; #18:(mloop:bit)
+exit MALexception; #17:(MALexception:str)
+exit mloop; #18:(mloop:bit)
     return resB; #19:(resB:bat[void,int])
 end tst; #20:
 #

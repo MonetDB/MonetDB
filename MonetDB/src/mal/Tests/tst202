@@ -15,7 +15,7 @@
 	printf("catched anything?\n");
 catch GDKerror;
 	printf("Catched the renaming exception\n");
-end GDKerror;
+exit  GDKerror;
 #get rid of it again
 	#destroy(b);
 	#destroy(c);

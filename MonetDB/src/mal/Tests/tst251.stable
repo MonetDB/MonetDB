@@ -26,8 +26,8 @@
 #barrier v:= bunStream(b,h:int,t:int);
 #	printf("[ %d,",h);
 #	printf("%d]\n",t);
-#redo v;
-#end v;
+#	redo v;
+#exit v;
 #
 #
 ## String stuff
@@ -44,7 +44,7 @@
 #	printf("[%d,",h);
 #	printf("%s]\n",ts);
 #	redo v;
-#end v;
+#exit v;
 #
 #
 function Admin.main():int; #0:(main:int)
@@ -66,7 +66,7 @@ barrier v := mal.bunStream(b,h,t); #15:(v:lng)<-(b:bat[int,int])(h:int)(t:int) j
     system.printf("[ %d,",h); #16:($36:int)<-($37:str)(h:int)
     system.printf("%d]\n",t); #17:($38:int)<-($39:str)(t:int)
     redo v ; #18:(v:lng) jump 15
-end v; #19:(v:lng)
+exit v; #19:(v:lng)
     c := mal.new(int,str); #20:(c:bat[int,str])<-(int:int)(str:str)
     bat.insert(c,1,"hello"); #21:($42:bat[int,str])<-(c:bat[int,str])($43:int)($44:str)
     bat.insert(c,2,"brave"); #22:($45:bat[int,str])<-(c:bat[int,str])($46:int)($47:str)
@@ -80,7 +80,7 @@ barrier v := mal.bunStream(c,h,ts); #29:(v:lng)<-(c:bat[int,str])(h:int)(ts:str)
     system.printf("[%d,",h); #30:($63:int)<-($64:str)(h:int)
     system.printf("%s]\n",ts); #31:($65:int)<-($66:str)(ts:str)
     redo v ; #32:(v:lng) jump 29
-end v; #33:(v:lng)
+exit v; #33:(v:lng)
 end main; #34:
 #-----------------#
 # BAT:	  tmp_4	  #

@@ -3,7 +3,7 @@ barrier	H := batoperatie;
 	Tail:= bat.fetch(b,H);
 	#body
 redo 	H;
-end	H;
+exit	H;
 
 
 # de andere loops zijn eenvoudig. 'goto' is altijd beperkt tot
@@ -13,7 +13,7 @@ barrier L := bat.hasMoreElements(b);
 	H:= bat.head(b);
 	v:= bat.nextElement(b);
 redo	L;
-end	L;
+exit	L;
 	
 #een do-while loop
 	entry:= true;
@@ -21,7 +21,7 @@ barrier M:= entry_or_exittest;
 	entry:= false;
 	# rest
 redo	M;
-end	M;
+exit	M;
 
 #een for-loop 
 	i:= 1;
@@ -29,20 +29,20 @@ barrier N:= i<10;
 	#body
 	i:=i+1;
 redo	N;
-end	N;
+exit	N;
 
 
 # de if-then en if-then-else constructies
 
 barrier	FT:= booleanexpr;
 	# thenpart
-end	FT;
+exit	FT;
 
 barrier	FTE:= booleanexpr;
 	# thenpart
-end	FTE;
+exit	FTE;
 barrier FS:= not(FTE);
 	#elsepart
-end	FS;
+exit	FS;
 
 

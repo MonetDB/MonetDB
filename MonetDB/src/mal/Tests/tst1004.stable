@@ -16,7 +16,7 @@
 #c:= bbp.take("myfirstbat");
 #catch MALexception;
 #	print(MALexception);
-#end MALexception;
+#exit MALexception;
 #print(c);
 #print("FIRST ROUND");
 #bbp.close();
@@ -29,7 +29,7 @@
 #v:= bbp.take("myfirstbat");
 #catch MALexception;
 #	print(MALexception);
-#end MALexception;
+#exit MALexception;
 #print(v);
 #x:= catalog.bbpNames();
 #print(x);
@@ -44,7 +44,7 @@ function Admin.main():int; #0:(main:int)
     c := bbp.take("myfirstbat"); #6:(c:bat[any,any])<-($10:str)
 catch MALexception; #7:(MALexception:str) jump 10
     io.print(MALexception); #8:($13:int)<-(MALexception:str)
-end MALexception; #9:(MALexception:str)
+exit MALexception; #9:(MALexception:str)
     io.print(c); #10:($14:int)<-(c:bat[any,any])
     io.print("FIRST ROUND"); #11:($15:int)<-($16:str)
     bbp.close(); #12:($17:void)
@@ -55,7 +55,7 @@ end MALexception; #9:(MALexception:str)
     v := bbp.take("myfirstbat"); #17:(v:bat[any,any])<-($10:str)
 catch MALexception; #18:(MALexception:str) jump 21
     io.print(MALexception); #19:($24:int)<-(MALexception:str)
-end MALexception; #20:(MALexception:str)
+exit MALexception; #20:(MALexception:str)
     io.print(v); #21:($25:int)<-(v:bat[any,any])
     x := catalog.bbpNames(); #22:(x:bat[int,str])
     io.print(x); #23:($27:int)<-(x:bat[int,str])

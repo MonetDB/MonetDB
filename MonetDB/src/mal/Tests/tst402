@@ -4,4 +4,4 @@
 barrier v1:= nextElement(i,'A','C');
 	v:= "do something";
 	redo v1;
-end	v1;
+exit	v1;

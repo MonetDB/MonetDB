@@ -14,6 +14,8 @@
 #	address_str := bat(oid,str);
 #	address_city:= bat(oid,str);
 #
+module sql_schema_demo symbol Admin. main
+!WARNING: insertSymbol:undefined module
 function Admin.main():int; #0:(main:int)
     person_key_name := mal.bat(oid,str); #1:(person_key_name:bat[oid,str])<-(oid:oid)(str:str)
     person_key_age := mal.bat(oid,int); #2:(person_key_age:bat[oid,int])<-(oid:oid)(int:int)

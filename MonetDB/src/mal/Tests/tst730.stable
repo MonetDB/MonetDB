@@ -11,12 +11,12 @@
 #function pr(format:str,arg:any...):void;
 #	i:= -1;
 #barrier  b:= iterator.argument(i,arg);
-#end b;
+#exit b;
 #end pr; 
 function Admin.pr(format:str,arg:any...):void; #0:(pr:void)<-(format:str)(arg:any)
     i := -1; #1:(i:int)<-($4:int)
 barrier b := iterator.argument(i,arg); #2 unknown:(b:any)<-(i:int)(arg:any) jump 4
-end b; #3:(b:any)
+exit b; #3:(b:any)
 end pr; #4:
 #
 ## how to iterator through a variable list
@@ -28,7 +28,7 @@ end pr; #4:
 #	printf("argument ");
 #	printf(i);
 #	printf(elm);
-#end b;
+#exit b;
 #end prStr; 
 !ERROR: 'Array.getLength' undefined in Admin.prStr[2]
 !ERROR: 'Array.get' undefined in Admin.prStr[4]
@@ -41,7 +41,7 @@ barrier b := nextElement(i,0,limit); #3 unknown:(b:any)<-(i:int)($7:int)(limit:a
     system.printf("argument "); #5:($9:int)<-($10:str)
     printf(i); #6 unknown:($11:any)<-(i:int)
     printf(elm); #7 unknown:($12:any)<-(elm:any)
-end b; #8:(b:any)
+exit b; #8:(b:any)
 end prStr; #9:
 #
 #pr("hello",1,true);
@@ -53,7 +53,7 @@ end prStr; #9:
 function Admin.pr(format:str,arg:int...):int; #0:(arg:int)<-(format:str)(arg:int)
     i := -1; #1:(i:int)<-($4:int)
 barrier b := iterator.argument(i,arg); #2 unknown:(b:any)<-(i:int)(arg:int) jump 4
-end b; #3:(b:any)
+exit b; #3:(b:any)
 end pr; #4:
 !ERROR: 'prStr' undefined in Admin.main[2]
 function Admin.main():int; #0:(main:int)

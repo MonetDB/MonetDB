@@ -27,7 +27,7 @@
 #	printf("%d,",h);
 #	printf("%d\n",t);
 #redo v;
-#end v;
+#exit v;
 #
 function Admin.main():int; #0:(main:int)
     b := mal.new(int,int); #1:(b:bat[int,int])<-(int:int)(int:int)
@@ -48,7 +48,7 @@ barrier v := mal.bunStream(b,h,t); #15:(v:lng)<-(b:bat[int,int])(h:int)(t:int) j
     system.printf("%d,",h); #16:($26:int)<-($27:str)(h:int)
     system.printf("%d\n",t); #17:($28:int)<-($29:str)(t:int)
     redo v ; #18:(v:lng) jump 15
-end v; #19:(v:lng)
+exit v; #19:(v:lng)
 end main; #20:
 #-----------------#
 # BAT:	  tmp_4	  #

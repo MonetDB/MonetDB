@@ -14,9 +14,9 @@
 #exception 
 catch WrongBlock;
 	printf("entered wrong block\n");
-end WrongBlock;
+exit WrongBlock;
 
 catch	IllegalAccess;
 	printf("catched IllegalAccess\n");
-end	IllegalAccess;
+exit	IllegalAccess;
 	print("end of program");

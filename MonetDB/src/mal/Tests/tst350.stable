@@ -102,10 +102,10 @@ end main; #6:
 #-----------------------------------------------------------------------------------------------------------------------------------------#
 # bbp	| t			| htype		| ttype		| count	| heat	| dirty		| status	| kind		| refcnt  #
 #-----------------------------------------------------------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",	  "str",	  10,	  9,	  "dirty",	  "dirty",	  "transient",	  1	  ]
-[ 2,	  "timezones",		  "tzone",	  "tzone",	  24,	  10,	  "dirty",	  "dirty",	  "transient",	  1	  ]
-[ 3,	  "tmp_3",		  "int",	  "int",	  1,	  166,	  "clean",	  "clean",	  "persistent",	  0	  ]
-[ 4,	  "tmp_4",		  "int",	  "int",	  0,	  16,	  "dirty",	  "dirty",	  "transient",	  2	  ]
+[ 1,	  "monet_environment",	  "str",	  "str",	  10,	  40,	  "dirty",	  "dirty",	  "transient",	  1	  ]
+[ 2,	  "timezones",		  "tzone",	  "tzone",	  24,	  41,	  "dirty",	  "dirty",	  "transient",	  1	  ]
+[ 3,	  "tmp_3",		  "int",	  "int",	  1,	  196,	  "clean",	  "clean",	  "persistent",	  0	  ]
+[ 4,	  "tmp_4",		  "int",	  "int",	  0,	  46,	  "dirty",	  "dirty",	  "transient",	  2	  ]
 #-----------------#
 # BAT:	  tmp_21  #
 # (int)	  (str)	  #

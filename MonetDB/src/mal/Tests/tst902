@@ -5,7 +5,7 @@ i:= -1:lng;
 barrier v:= nextElement(i,0:lng,10:lng);
 	insert(b,i,i);
 	redo v;
-end v;
+exit v;
 c:= copy(b);
 
 d:= new(lng,lng);
@@ -16,6 +16,6 @@ barrier w:= bunStream(b,h:lng,t:lng);
 	insert(d,h,t);
 	redo w;
 catch 	GDKerror;
-end	GDKerror;
-end w;
+exit	GDKerror;
+exit w;
 print(d);

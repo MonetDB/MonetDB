@@ -33,7 +33,7 @@ html
  * The Original Code is the Monet Database System.
  * 
  * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * Portions created by CWI are Copyright (C) 2001-2002 CWI.  
  * All Rights Reserved.
  * 
  * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
@@ -59,7 +59,7 @@ typedef struct{
 } malTask;
 
 /*#define DEBUG_MAL_INTERPRETER */
-/* #define DEBUG_MAL_PARALLEL */
+/*#define DEBUG_MAL_PARALLEL */
 /*#define STACKTRACE*/
 mal_export void showErrors(Client cntxt);
 mal_export str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller, 
@@ -123,7 +123,7 @@ being called.
 		newStack(stk,mb->vtop);
 		stk->stktop= mb->vtop; 
 		stk->blk= mb;
-		stk->cmd= cntxt->itrace?'n':0; /* set debug mode */
+		stk->cmd= cntxt->itrace; /* set debug mode */
 		@:safeguardStack@
 	} 
 
@@ -258,14 +258,21 @@ MALevalExit:
 }
 void runMALtask(malTask *task){
 #ifdef DEBUG_MAL_PARALLEL
-	printf("create childs in stk %d %d\n",
+	printf("create childs in stk %d %d %d\n", (void *) task,
 		task->stk->shares, &task->stk->shares);
-	if( task->pci)
-	printf("childs sets return action %d %s\n",
-		task->pci->argv[0],
-		getVarName(task->mb,task->pci->argv[0]));
+	printf(" task->cntxt = %d\n",task->cntxt);
+	printf(" task->mb = %d\n",task->mb);
+	printf(" task->stk = %d\n",task->stk);
+	printf(" task->startpc = %d\n",task->startpc);
+	printf(" task->env = %d\n",task->env);
+	printf(" task->pcicaller = %d\n",task->pcicaller);
+	printf(" task->pci = %d\n",task->pci);
+	printf("childs sets return action %d \n",
+		task->pci->argv[0]);
+	printf("start sequence\n");
 #endif
 	runMALsequence(task);
+	GDKfree(task);
 }
 @+ Safeguarding
 The physical stack for each thread is an operating system parameter.
@@ -302,38 +309,35 @@ elements in the value stack.
 	case ASSIGNsymbol:
 		@:assignStmt@ stkpc++; break;
 	case LEAVEsymbol:
+		@:finishChild@
 		stkpc= pci->jump; break;
 	case REDOsymbol:
 		@:redoControl@ break;
 	case BARRIERsymbol:
 		@:barrierControl@ stkpc++;break;
 	case THREADsymbol:
-		printf("create the child %d\n", pci->argv[0]);
 		@:createChild@
-		break;
-	case RLRcall:
-	case PATcall:
-		@:patterncall@ stkpc++; break;
-	case CMDcall:
-		@:commandcall@ stkpc++; break;
-	case FCNcall:
-		@:functioncall@ stkpc++; break;
-	case ENDsymbol:
-		@:finishChild@
-	case RULEsymbol:
-	case COMMANDsymbol:
-	case FUNCTIONsymbol:
-		if( pci->argv[0] == stkexception) stkexception = -1; 
-		stkpc++; 
-		break;
-	case RAISEsymbol:
-		@:raiseControl@
 		break;
 	case CATCHsymbol:
 		/* catch blocks are skipped unless searched for explicitly*/
 		if(stkexception < 0) { stkpc= pci->jump; break;}
 		stkexception = -1;
 		stkpc++; break;
+	case RAISEsymbol:
+		@:raiseControl@
+		break;
+	case RLRcall:
+	case PATcall: @:patterncall@ stkpc++; break;
+	case CMDcall: @:commandcall@ stkpc++; break;
+	case FCNcall: @:functioncall@ stkpc++; break;
+	case EXITsymbol:
+	case ENDsymbol: @:finishChild@
+	case RULEsymbol:
+	case COMMANDsymbol:
+	case FUNCTIONsymbol:
+		if( pci->argv[0] == stkexception) stkexception = -1; 
+		stkpc++; 
+		break;
 	case RETURNsymbol:
 		if( env != NULL && pcicaller != NULL){
 			InstrPtr pp=pci;
@@ -380,9 +384,7 @@ is made part of the start-up procedure.
 	}
 	ret = 0;
 }
-if( pci->barrier == BARRIERsymbol){
-	@:barrierControl@
-} 
+@:blockControl@
 
 @+ MAL API
 The linkage between MAL interpreter and compiled C-routines
@@ -516,9 +518,7 @@ and we have to do some housekeeping, such as string length adjustment.
 @= resultParameter
 	@:exceptionHndlr@
 	if( pci->afterCall) (*pci->afterCall)(&stk->stk[pci->argv[0]],bak);
-	if( pci->barrier==BARRIERsymbol){
-		@:barrierControl@
-	}
+	@:blockControl@
 
 @+ Flow of control statements
 Each assignment (function call) may be part of the initialization
@@ -528,7 +528,18 @@ The latter is implemented as a linear scan for the corresponding
 labeled statemtent. This might be optimized later.
 The upper layers have assured that the result variable is of type boolean.
 
+Likewise, a block may be labelled at to be run in a separate thread.
 @-
+@= blockControl
+	if( pci->barrier) {
+		if( pci->barrier==BARRIERsymbol){
+			@:barrierControl@
+		}
+		if( pci->barrier==THREADsymbol){
+			@:createChild@
+		}
+	}
+
 @= barrierControl
 { 
 	v= &stk->stk[pci->argv[0]];
@@ -583,6 +594,11 @@ jumps are re-established.
 @= redoControl
 	stkpc = pci->jump;
 	@:endProfile@
+	pci= getInstrPtr(mb,stkpc);
+	if( pci->barrier == THREADsymbol){
+		/* restart thread body */
+		stkpc++;
+	} else
 	/* semantic validity of redo stmt has been checked already */
 	/* continue re-execution of the barrier statement */
 	continue;
@@ -614,8 +630,15 @@ sleep(1); }
 Joining a process thread is controlled with a lock part of the stack frame
 @= createChild
 {	MT_Id pid;
-	malTask task;
+	malTask *task= (malTask*) GDKmalloc(sizeof(malTask));
+	ValPtr vp= &stk->stk[pci->argv[0]];
 
+	if( vp->val.ival){
+		/* thread already running */
+printf("skipped already running thread\n");
+		stkpc= pci->jump;
+		break;
+	}
 	if(stk->stklock== 0) stk->stklock= MT_create_lock();
 	MT_set_lock(stk->stklock,"createChild");
 	if( stk->shares == MAXSHARES){
@@ -625,20 +648,31 @@ Joining a process thread is controlled with a lock part of the stack frame
 	} 
 	stk->childs[stk->shares]= pci->argv[0];
 	stk->shares++;
-#ifdef DEBUG_MAL_PARALLEL
-	printf("start parallel thread, shares %d\n",stk->shares);
-#endif
+	vp->val.ival = 1; /* already created */
 	MT_unset_lock(stk->stklock,"createChild");
-	task.cntxt= cntxt; 
-	task.mb= mb; 
-	task.stk=stk; 
-	task.startpc=stkpc+1; 
-	task.env=env;
-	task.pcicaller=pcicaller;
-	task.pci= pci;
+	task->cntxt= cntxt; 
+	task->mb= mb; 
+	task->stk=stk; 
+	task->startpc=stkpc+1; 
+	task->env=env;
+	task->pcicaller=pcicaller;
+	task->pci= pci;
 
+#ifdef DEBUG_MAL_PARALLEL
+	printf("started parallel thread, task address %d\n",(void*)task);
+	printf(" task->cntxt = %d\n",task->cntxt);
+	printf(" task->mb = %d\n",task->mb);
+	printf(" task->stk = %d\n",task->stk);
+	printf(" task->startpc = %d\n",task->startpc);
+	printf(" task->env = %d\n",task->env);
+	printf(" task->pcicaller = %d\n",task->pcicaller);
+	printf(" task->pci = %d\n",task->pci);
+	printInstruction(stdout, mb, pci);
+	printf(" next statement %d\n",pci->jump);
+	printInstruction(stdout, mb, getInstrPtr(mb,pci->jump));
+#endif
 	/* child */
-	MT_create_thread(&pid, runMALtask, (void*) &task);
+	MT_create_thread(&pid, (void (*)())runMALtask, (void*) task);
 	/* parent */
 	stkpc= pci->jump; /* search end of parallel block */
 	break; /* out of instruction switch */

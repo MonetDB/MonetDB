@@ -49,7 +49,7 @@ mal_export int getPC(MalBlkPtr mb, InstrPtr p);
 mal_export void	chkBarrier(MalBlkPtr mb, InstrPtr pp);
 mal_export void	chkRaise(MalBlkPtr mb, InstrPtr pp);
 mal_export void	chkCatch(MalBlkPtr mb, InstrPtr pp);
-mal_export void	chkEnd(MalBlkPtr mb, InstrPtr pp);
+mal_export void	chkExit(MalBlkPtr mb, InstrPtr pp);
 mal_export void chkLabel(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr newCall(str modname, str fcnname, int kind);
 mal_export Symbol cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
@@ -99,7 +99,7 @@ flow of control primitives LEAVE, RETRY, and RAISE should form a valid
 hierarchy. Failure to comply is considered a structural error
 and leads to flagging the function as erroneous.
 
-Check barrier should ensure that both end-points of a block for the
+Check barrier should ensure that both exit-points of a block for the
 variable referenced in 'pp' exists. In addition, we should ensure
 proper weaveing of the begin-end pairs. This can simply be checked by
 counting the begin/end pairs. It should balance for every block.
@@ -143,8 +143,9 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 			GDKerror("recursive block structure %s in %s[%d]\n",
 				getVarName(mb,v), getFcnName(mb),getPC(mb,pp));
 			return i;
-		}  else if(p->barrier) printf("unexpected barrier %s\n", i);
-		if( p->token == ENDsymbol){
+		}  else if(p->barrier && p->barrier != EXITsymbol)
+			printf("unexpected barrier %d\n", i);
+		if( p->barrier == EXITsymbol){
 			if( p->argv[0] == v) {
 				pp->jump = i+1;
 				/* retrofit LEAVE/REDO instructions */
@@ -153,7 +154,7 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 					InstrPtr p1= getInstrPtr(mb,j);
 					if( p1->barrier == THREADsymbol) 
 						lastFork = j;
-					if( p1->token== ENDsymbol && 
+					if( p1->barrier == EXITsymbol && 
 					    p1->argv[0]== lastFork)  
 						lastFork = -1;
 					if( p1->token == REDOsymbol && 
@@ -171,7 +172,7 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 				return i;
 			}
 			mb->errors++;
-			GDKerror("end-label '%s' doesnot match '%s' in %s[%d]\n",
+			GDKerror("exit-label '%s' doesnot match '%s' in %s[%d]\n",
 				getVarName(mb,p->argv[0]),
 				getVarName(mb,v), getFcnName(mb),getPC(mb,p)
 				);
@@ -190,7 +191,7 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 			mb->errors++;
 		}
 	}
-	GDKerror("begin-label '%s' without end-label in %s\n", 
+	GDKerror("begin-label '%s' without exit-label in %s\n", 
 		getVarName(mb,v), getFcnName(mb));
 	mb->errors++;
 	return i;
@@ -203,7 +204,8 @@ void chkCntrl(MalBlkPtr mb, InstrPtr pp)
 	for(i=0; i<mb->stop;i++){
 		InstrPtr p= getInstrPtr(mb,i);
 		if( pp == p  && p->barrier && p->argv[0] == v){
-			i = chkBrackets(mb,pp,i);
+			if( p->barrier != EXITsymbol)
+				i = chkBrackets(mb,pp,i);
 		} 
 	}
 }
@@ -230,7 +232,7 @@ void chkThread(MalBlkPtr mb, InstrPtr pp)
 @-
 Loose END-statements should also be catched.
 @c
-void chkEnd(MalBlkPtr mb, InstrPtr pp)
+void chkExit(MalBlkPtr mb, InstrPtr pp)
 {	int i, v;
 	InstrPtr p;
 
@@ -246,7 +248,7 @@ void chkEnd(MalBlkPtr mb, InstrPtr pp)
 		} 
 	}
 	mb->errors++;
-	GDKerror("end-label '%s' without begin-label in %s[%d]\n", 
+	GDKerror("exit-label '%s' without begin-label in %s[%d]\n", 
 		getVarName(mb,v), getFcnName(mb),getPC(mb,pp));
 }
 @-
@@ -262,10 +264,11 @@ void chkLabel(MalBlkPtr mb, InstrPtr pp)
 		InstrPtr p= getInstrPtr(mb,i);
 		if( p->argv[0]==k && 
 		   (p->barrier == BARRIERsymbol ||
+		    p->barrier == CATCHsymbol ||
 		    p->barrier== THREADsymbol)){
 			begBlk = i;
 		}
-		if( p->token == ENDsymbol && p->argv[0]==k) {
+		if( p->token == EXITsymbol && p->argv[0]==k) {
 			if( begBlk>=0 && n >=begBlk && n<=i) return;
 			begBlk= -1;
 		}

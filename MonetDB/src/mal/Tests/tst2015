@@ -3,7 +3,8 @@
 barrier xx;
 
 thread b1;
+	printf("Entered thread\n");
 	leave b1;
 	redo xx;	# not allowed
-end b1;
-end xx;
+exit b1;
+exit xx;

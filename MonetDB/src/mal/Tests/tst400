@@ -2,10 +2,11 @@
 barrier v1:= nextElement(i,0,2);
 	print("do something");
 	redo v1;
-end	v1;
+exit	v1;
+	printf("left first loop with %s\n",v1);
 	print("next iteration");
 	i:= -1;
 barrier v2:= nextElement(i,0,5,2);
 	print("do something else");
 	redo v2;
-end	v2;
+exit	v2;

@@ -13,7 +13,7 @@
 #print("should not come here anymore");
 #catch MALexception;
 #	print("catched the exception");
-#end MALexception;
+#exit MALexception;
 #
 function Admin.main():int; #0:(main:int)
     b := mal.new(int,int); #1:(b:bat[int,int])<-(int:int)(int:int)
@@ -21,7 +21,7 @@ function Admin.main():int; #0:(main:int)
     io.print("should not come here anymore"); #3:($5:int)<-($6:str)
 catch MALexception; #4:(MALexception:str) jump 7
     io.print("catched the exception"); #5:($8:int)<-($9:str)
-end MALexception; #6:(MALexception:str)
+exit MALexception; #6:(MALexception:str)
 end main; #7:
 [ "catched the exception" ]
 >

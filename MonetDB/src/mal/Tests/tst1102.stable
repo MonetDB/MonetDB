@@ -37,7 +37,7 @@
 #	print(B2);
 #	insert(rb,h,B2);
 #	redo mloop;
-#end mloop;
+#exit mloop;
 #	print(rb);
 #
 function Admin.main():int; #0:(main:int)
@@ -63,7 +63,7 @@ barrier mloop := mal.bunStream(t,h,B2); #18:(mloop:lng)<-(t:bat[int,url])(h:int)
     io.print(B2); #20:($38:int)<-(B2:url)
     bat.insert(rb,h,B2); #21:($39:bat[int,url])<-(rb:bat[int,url])(h:int)(B2:url)
     redo mloop ; #22:(mloop:lng) jump 18
-end mloop; #23:(mloop:lng)
+exit mloop; #23:(mloop:lng)
     io.print(rb); #24:($40:int)<-(rb:bat[int,url])
 end main; #25:
 [ "build a table finished" ]

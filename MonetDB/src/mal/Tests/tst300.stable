@@ -14,7 +14,7 @@
 ##exception block;
 #catch	myNewException;
 #	printf("catched exception\n");
-#end	myNewException;
+#exit	myNewException;
 #
 function Admin.main():int; #0:(main:int)
     myNewException := "new exception"; #1:(myNewException:str)<-($2:str)
@@ -22,7 +22,7 @@ function Admin.main():int; #0:(main:int)
     system.printf("should not come here\n"); #3:($3:int)<-($4:str)
 catch myNewException; #4:(myNewException:str) jump 7
     system.printf("catched exception\n"); #5:($5:int)<-($6:str)
-end myNewException; #6:(myNewException:str)
+exit myNewException; #6:(myNewException:str)
 end main; #7:
 catched exception
 >

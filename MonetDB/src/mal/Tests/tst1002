@@ -7,4 +7,4 @@ print(c);
 bbp.close();
 catch MALexception;
 	print(MALexception);
-end MALexception;
+exit MALexception;
