@@ -904,6 +904,11 @@ that for the moment are defined as procs.
 					ppat :+= pesc;
 					i :+= 1;
 					escaped := false;
+					# this is not quite optimal, but it's the best way to
+					# make sure there is not nil returned below because
+					# there are no wildcards in the pattern while we *did*
+					# change the pattern.
+					hasWildcard := true;
 				} else {
 					ppat :+= "\\";
 					escaped := true;
