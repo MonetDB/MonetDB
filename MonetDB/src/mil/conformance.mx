@@ -60,6 +60,9 @@ struct{
 {"CTrefine",		"refine",0},
 {"CTderive",		"group",0},
 {"CTregroup",		"regroup",0},
+{"time",		"alarm.time()",0},
+{"epoch",		"alarm.epoch()",0},
+{"ctime",		"alarm.ctime()",0},
 {0,0,0}
 };
 
