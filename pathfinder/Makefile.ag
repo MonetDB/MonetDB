@@ -23,7 +23,7 @@
 #         Jens Teubner <jens.teubner@uni-konstanz.de>
 #
 
-SUBDIRS = conf burg compiler loader runtime
+SUBDIRS = conf burg compiler HAVE_LIBXML2?loader runtime
 
 EXTRA_DIST = rules.mk extra.mk RunMtest.in RunMtest.bat.in \
 		MonetDB-PF.spec.in MonetDB-PF.spec rpm.mk.in
