@@ -9,9 +9,22 @@ be paid when necessary. Transaction management is for this purpose
 implemented as a module. This module, once loaded, takes care of writing
 the commited changes, to a transaction log. The log may reside on the
 same system and therefor the writes are done to disk but could also
-reside on an other system and the the changes are flushed through
+reside on an other system and then the changes are flushed through
 the network.  
+The main interface to this logging system is the commit call which
+writes all the delta to the log file. Each bat in Monet keeps track 
+of the changes using the delta management. On commit these changes are
+writen to the log file. The delta management set for new changes.
+Since each commit is writen to the same log file, the beginning and
+end are marked by a log identifier. A server restart should only (re)process
+blocks which are completely writen to disk. The start marker consists of
+a LOG_BEGINBLOCK,logid,length-of-block-between-markers. The end marker
+is just LOG_ENDBLOCK,logid.
 
+TODO
+	handel bbp updates ??
+	convertion between big/little endian
+	
 @* Module Definition
 @m
 .MODULE logger;
@@ -20,8 +33,8 @@ the network.
 @m
 .COMMAND backuphost(str host, int port) = logger_backuphost;
 	"Use the host,port to backup changes to"
-.COMMAND backupfile(str filename ) = logger_backupfile;
-	"Backup to the given file"
+.COMMAND backupfile(str log ) = logger_backupfile;
+	"Backup to the file log and write the log identifier to the file logid"
 
 .COMMAND commit() = logger_commit;
 	"commit on all BATs to the log"
@@ -41,13 +54,19 @@ the network.
 #include <gdk.h>
 #include <sys/stat.h>
 
+#define LOG_BLOCKBEGIN 	0
+#define LOG_BLOCKEND    1
+#define LOG_INSERT 	2
+#define LOG_DELETE	3
+
 int   logger_debug = 0;
 
 char *logger_host = NULL;
 int   logger_port = 0;
 
-char *logger_file = NULL;
-FILE *logger_fp = NULL;
+static char *logger_log 	= NULL;
+static FILE *logger_fp 		= NULL;
+static int   logger_logid 	= 0;
 
 int logger_backuphost(str host, int *port){
 	if (logger_debug&1)
@@ -58,16 +77,16 @@ int logger_backuphost(str host, int *port){
 	return GDK_SUCCEED; 
 }
 
-int logger_backupfile(str filename ){
+int logger_backupfile(str log){
 	if (logger_debug&1)
-		fprintf(stderr, "logger_backupfile %s\n", filename );
+		fprintf(stderr, "logger_backupfile %s\n", log );
 
-	logger_file = GDKstrdup(filename);
+	logger_log = GDKstrdup(log);
 
 	if (logger_fp) 
 		fclose(logger_fp);
 
-	logger_fp = fopen(logger_file,"a"); /* append */
+	logger_fp = fopen(logger_log,"a"); /* append */
 
 	if (logger_fp) 
 		return GDK_SUCCEED; 
@@ -86,43 +105,49 @@ int logger_end(){
 	return GDK_SUCCEED;
 }
 
+typedef struct logf {
+	char flag;
+	int id;
+	int nr; /* not used by block (begin/end) */
+} logf;
+
 void logger_bat(BAT *b){
 	if (logger_debug&2 && 
 	    (b->batInserted < BUNlast(b) || b->batDeleted < b->batHole))
 		fprintf(stderr, "logger_bat %s\n", b->batId);
 
 	if (logger_fp){
+		logf 	l;
 		BUN	p; 
-		char	ins = 1;
-		int nr = BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted);
-		if (nr){
-			fwrite(&b->batCacheid, sizeof(int), 1, logger_fp);
-			fwrite(&ins, sizeof(char), 1, logger_fp);
-			fwrite(&nr, sizeof(int), 1, logger_fp);
-		}
-		for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)) {
+
+		l.flag = LOG_INSERT;
+		l.nr = BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted);
+		if (l.nr){
+		    l.id = b->batCacheid;
+		    fwrite(&l, sizeof(logf), 1, logger_fp);
+		    for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)){
 			int s1,s2;
 			ptr h = BUNhead(b,p);
 			ptr t = BUNtail(b,p);
 			fwrite(h, s1=ATOMlen(b->htype,h),1,logger_fp);
 			fwrite(t, s2=ATOMlen(b->ttype,t),1,logger_fp);
 			sz += (s1+s2);
+		    }
 		}
-		nr = BUNindex(b, b->batHole) - BUNindex(b, b->batDeleted);
-		ins = 0;
-		if (nr){
-			printf("%d del %d\n", b->batCacheid, nr );
-			fwrite(&b->batCacheid, sizeof(int), 1, logger_fp);
-			fwrite(&ins, sizeof(char), 1, logger_fp);
-			fwrite(&nr, sizeof(int), 1, logger_fp);
-		}
-		for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)) {
+		l.flag = LOG_DELETE;
+		l.nr = BUNindex(b, b->batHole) - BUNindex(b, b->batDeleted);
+		if (l.nr){
+		    l.id = b->batCacheid;
+		    printf("%d del %d\n", l.id, l.nr );
+		    fwrite(&l, sizeof(logf), 1, logger_fp);
+		    for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)){
 			int s1,s2;
 			ptr h = BUNhead(b,p);
 			ptr t = BUNtail(b,p);
 			fwrite(h, s1=ATOMlen(b->htype,h),1,logger_fp);
 			fwrite(t, s2=ATOMlen(b->ttype,t),1,logger_fp);
 			sz += (s1+s2);
+		    }
 		}
 	}
 }
@@ -150,19 +175,27 @@ static BAT *dirty_bat(int i) {
 }
 
 int logger_commit(){
-	int i;
+	int  i; 
+	logf l;
 	/* first build the buffer with data to write
          * then write to file, host
          */
 	if (logger_debug&1)
 		fprintf(stderr, "logger_commit\n");
 
+	l.flag = LOG_BLOCKBEGIN;
+	l.id = logger_logid;
+	l.nr = 0;
+
 	BBPlock("logger_commit");
+	fwrite(&l, sizeof(logf), 1, logger_fp);
 	for (i = 1; i < BBPsize; i++) {
 		BAT *b = dirty_bat(i);
 		if (b) logger_bat(b); 
 	}
-	if (logger_fp) fflush(logger_fp);
+	l.flag = LOG_BLOCKEND;
+	fwrite(&l, sizeof(logf), 1, logger_fp);
+	fflush(logger_fp);
 
 	for (i = 1; i < BBPsize; i++) {
 		BAT *b = dirty_bat(i);
@@ -177,6 +210,7 @@ int logger_update() {
 	/* first try the file */
 	/* else get it from the backup server. */
 	int i;
+	int curlogid = 0; 
 	struct stat st;
 	char *buf, *p, *end;
 
@@ -185,7 +219,7 @@ int logger_update() {
 
 	if (logger_fp) 
 		fclose(logger_fp);
-	logger_fp = fopen(logger_file,"r+"); 
+	logger_fp = fopen(logger_log,"r+"); 
 	fstat(fileno(logger_fp),&st);
 	buf = p = GDKmalloc(st.st_size);
 	fread(p, st.st_size, 1, logger_fp);
@@ -193,30 +227,39 @@ int logger_update() {
 
 /*	BBPlock("logger_commit"); */
 	while(p<end){
-		bat id;	
-		char ins;
-		int nr;
+		logf l;
 		BAT *b;
 
-		memcpy(&id, p, sizeof(int)); p += sizeof(int);
-		memcpy(&ins, p, sizeof(char)); p += sizeof(char);
-		memcpy(&nr, p, sizeof(int)); p += sizeof(int);
-		b = BATdescriptor(id); 
-		if (b){
-			for(; nr>0 && p<end; nr--){
-				int s1 = ATOMlen(b->htype, p);
-				int s2 = ATOMlen(b->ttype, p+s1);
-				if (ins)
-					BUNins( b, p, p+s1 );
-				else
-					BUNdel( b, p, p+s1 );
-				p += s1;
-				p += s2;
-		    	}
-		} else {
-			fprintf(stderr,"bat missing %d\n", id);
+		memcpy(&l, p, sizeof(logf)); p += sizeof(logf);
+		if (l.flag == LOG_BLOCKBEGIN){
+			curlogid = l.id;
+		} else if (l.flag == LOG_BLOCKEND ){
+			if (l.id != curlogid){
+		    		fprintf(stderr, 
+				  "BLOCKEND does not match begin, %d != %d\n",
+				  l.id, curlogid);
+				break;
+			}
+		} else { 
+			b = BATdescriptor(l.id); 
+			if (b){
+				for(; l.nr>0 && p<end; l.nr--){
+					int s1 = ATOMlen(b->htype, p);
+					int s2 = ATOMlen(b->ttype, p+s1);
+					if (l.flag == LOG_INSERT)
+						BUNins( b, p, p+s1 );
+					else
+					if (l.flag == LOG_DELETE)
+						BUNdel( b, p, p+s1 );
+					p += s1;
+					p += s2;
+		    		}
+			} else {
+				fprintf(stderr,"bat missing %d\n", l.id);
+			}
 		}
 	}
+	logger_logid = curlogid;
 	for (i = 1; i < BBPsize; i++) {
 		BAT *b = dirty_bat(i);
 		if (b) BATfakeCommit(b); 
