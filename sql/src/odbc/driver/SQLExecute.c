@@ -27,21 +27,26 @@ struct msql_types {
 	int code;
 } msql_types[] = {
 	{"bigint", SQL_BIGINT, SQL_BIGINT, 0},
-	{"bit", SQL_BIT, SQL_BIT, 0},
+	{"boolean", SQL_BIT, SQL_BIT, 0},
 	{"character", SQL_CHAR, SQL_CHAR, 0},
 	{"date", SQL_TYPE_DATE, SQL_DATETIME, SQL_CODE_DATE},
-	{"decimal", SQL_NUMERIC, SQL_NUMERIC, 0},
+	{"decimal", SQL_DECIMAL, SQL_DECIMAL, 0},
 	{"double", SQL_DOUBLE, SQL_DOUBLE, 0},
 	{"float", SQL_FLOAT, SQL_FLOAT, 0},
 	{"int", SQL_INTEGER, SQL_INTEGER, 0},
+	{"mediumint", SQL_INTEGER, SQL_INTEGER, 0},
 	{"month_interval", SQL_INTERVAL_MONTH, SQL_INTERVAL, SQL_CODE_MONTH},
 	{"sec_interval", SQL_INTERVAL_SECOND, SQL_INTERVAL, SQL_CODE_SECOND},
 	{"smallint", SQL_SMALLINT, SQL_SMALLINT, 0},
 	{"time", SQL_TYPE_TIME, SQL_DATETIME, SQL_CODE_TIME},
 	{"timestamp", SQL_TYPE_TIMESTAMP, SQL_DATETIME, SQL_CODE_TIMESTAMP},
 	{"tinyint", SQL_TINYINT, SQL_TINYINT, 0},
-
 	{"varchar", SQL_CHAR, SQL_CHAR, 0},
+	{"blob", SQL_BINARY, SQL_BINARY, 0},
+	{"datetime", 0, 0, 0},
+	{"oid", SQL_GUID, SQL_GUID, 0},
+	{"table", 0, 0, 0},
+	{"ubyte", SQL_TINYINT, SQL_TINYINT, 0},
 	{0, 0, 0, 0},		/* sentinel */
 };
 
