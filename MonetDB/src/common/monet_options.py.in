@@ -37,17 +37,17 @@ class Error(Exception):
 # for the correct value.
 class BuiltinOptions:
     '''Built-in defaults.'''
-    prefix = '@prefix@'
-    exec_prefix = '@exec_prefix@'
-    sysconfdir = '@sysconfdir@'
+    prefix = '@Qprefix@'
+    exec_prefix = '@Qexec_prefix@'
+    sysconfdir = '@Qsysconfdir@'
     gdk_dbname = 'tst'
-    gdk_dbfarm = os.path.join('@localstatedir@','@PACKAGE@')
+    gdk_dbfarm = os.path.join('@Qlocalstatedir@','@PACKAGE@')
     gdk_debug = '8'
     gdk_mmap = '32M'
     monet_admin = 'adm'
     monet_prompt = '>'
     monet_welcome = 'yes'
-    monet_mod_path = os.path.join('@libdir@','@PACKAGE@')
+    monet_mod_path = os.path.join('@Qlibdir@','@PACKAGE@')
     monet_deamon = 'yes'
 
     def get(self, name, default = None):

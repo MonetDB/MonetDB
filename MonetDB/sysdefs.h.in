@@ -1,0 +1,5 @@
+#define DIR_SEP '@QDIRSEP@'
+#define DIR_SEP_STR "@QDIRSEP@"
+#define PATH_SEP ':'
+#define PATH_SEP_STR ":"
+#define SO_EXT ".so"

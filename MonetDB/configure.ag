@@ -41,8 +41,37 @@ AC_DEFINE_UNQUOTED(MONET_PREFIX, "$prefix", [directory prefix])
 # (srcdir can be relative)
 MONET_BUILD=[`pwd`]
 AC_SUBST(MONET_BUILD)
+QMONET_BUILD=`echo "$MONET_BUILD" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST(QMONET_BUILD)
 MONET_SOURCE=[`(cd $srcdir && pwd)`]
 AC_SUBST(MONET_SOURCE)
+QMONET_SOURCE=`echo "$MONET_SOURCE" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST(QMONET_SOURCE)
+
+Qprefix=`echo "$prefix" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST(Qprefix)
+Qexec_prefix=`echo "$exec_prefix" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST(Qexec_prefix)
+Qsrcdir=`echo "$srcdir" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST(Qsrcdir)
+Qlocalstatedir=`echo "$localstatedir" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST(Qlocalstatedir)
+Qlibdir=`echo "$libdir" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST(Qlibdir)
+Qsysconfdir=`echo "$sysconfdir" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST(Qsysconfdir)
+Qbindir=`echo "$bindir" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST(Qbindir)
+Qlibexecdir=`echo "$libexecdir" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST(Qlibexecdir)
+Qdatadir=`echo "$datadir" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST(Qdatadir)
+Qmandir=`echo "$mandir" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST(Qmandir)
+Qincludedir=`echo "$includedir" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST(Qincludedir)
+Qinfodir=`echo "$infodir" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST(Qinfodir)
 
 AM_MONET_COMPILER()
 AM_MONET_TOOLS()
@@ -56,6 +85,8 @@ mac*)	DIRSEP=":";
 	;;
 esac
 AC_SUBST(DIRSEP)
+QDIRSEP=`echo "$DIRSEP" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST(QDIRSEP)
 
 dnl systems checks
 AC_AIX()

@@ -30,6 +30,12 @@
 #define WIN32
 #define NATIVE_WIN32
 
+#define DIR_SEP '\\'
+#define DIR_SEP_STR "\\"
+#define PATH_SEP ';'
+#define PATH_SEP_STR ";"
+#define SO_EXT ".dll"
+
 /* Define if on AIX 3.
    System headers sometimes define this.
    We just want to avoid a redefinition error message.  */

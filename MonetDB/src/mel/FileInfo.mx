@@ -32,13 +32,6 @@
 #include "list.h"
 
 #include <config.h>
-#ifndef DIR_SEP
-#ifdef NATIVE_WIN32
-#define DIR_SEP '\\'
-#else
-#define DIR_SEP '/'
-#endif
-#endif
 
 class FileInfo {
     public:

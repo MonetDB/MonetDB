@@ -23,6 +23,8 @@
  * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
+#include "sysdefs.h"
+
 /* Define this if the compiler has bool type defined */
 #undef HAVE_BOOL
 

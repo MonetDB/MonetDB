@@ -1997,11 +1997,11 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         exe = {}
         exe['Mtimeout']    = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver --config=%s --debug=%s %s %s --set monet_prompt=' % (env['MONET_CONF'], env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'])
-        exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py --config=%s --host=%s --port=%s' % (env['MONET_CONF'], HOST, env['MAPIPORT'])
+        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s --set monet_prompt=' % (env['MONET_CONF'], env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'])
+        exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py "--config=%s" --host=%s --port=%s' % (env['MONET_CONF'], HOST, env['MAPIPORT'])
         exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']      = CheckExec('python')       , 'python'
-        exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), '%s --config=%s --host=%s --port=%s' % (env['MAPICLIENT'], env['MONET_CONF'], HOST, env['MAPIPORT'])
+        exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), '%s "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], env['MONET_CONF'], HOST, env['MAPIPORT'])
         exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , '%s --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['SQLPORT'])
         if not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''

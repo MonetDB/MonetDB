@@ -28,7 +28,7 @@ import os
 if os.environ.has_key('MONET_PREFIX'):
     sys.path.append(os.environ['MONET_PREFIX']+os.sep+'share'+os.sep+'MonetDB'+os.sep+'python')
 else:
-    sys.path.append('@prefix@'+os.sep+'share'+os.sep+'@PACKAGE@'+os.sep+'python')
+    sys.path.append('@Qprefix@'+os.sep+'share'+os.sep+'@PACKAGE@'+os.sep+'python')
 
 import monet_options
 import Mapi

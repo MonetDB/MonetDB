@@ -1,8 +1,8 @@
 #!/bin/sh
 
-builddir=@MONET_BUILD@
+builddir=@QMONET_BUILD@
 # make sure srcdir contains absolute path name
-srcdir=`cd "@srcdir@"; pwd`
+srcdir=`cd '@srcdir@'; pwd`
 
 MOD_PATH="${builddir}/src/modules/plain/.libs:${builddir}/src/modules/calibrator/.libs:${builddir}/src/mapi/.libs"
 

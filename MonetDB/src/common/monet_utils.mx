@@ -52,20 +52,6 @@ server.
 #define mutils_export extern 
 #endif
 
-#ifdef NATIVE_WIN32
-#define DIR_SEP '\\' 
-#define DIR_SEP_STR "\\" 
-#define PATH_SEP ';'
-#define PATH_SEP_STR ";"
-#define SO_EXT ".dll"
-#else
-#define DIR_SEP '/' 
-#define DIR_SEP_STR "/" 
-#define PATH_SEP ':'
-#define PATH_SEP_STR ":"
-#define SO_EXT ".so"
-#endif
-
 #define SLASH_2_DIR_SEP(s) {char *t; for(t=strchr(s, (int)'/'    ); t; t=strchr(t+1, (int)'/'    )) *t=DIR_SEP;}
 #define DIR_SEP_2_SLASH(s) {char *t; for(t=strchr(s, (int)DIR_SEP); t; t=strchr(t+1, (int)DIR_SEP)) *t='/'    ;}
 

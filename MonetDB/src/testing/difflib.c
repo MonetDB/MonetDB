@@ -36,16 +36,20 @@
 #include <stdlib.h>
 #include <time.h>
 
-#ifndef DIR_SEP
-# define DIR_SEP '/'
-#endif
-
 #ifdef NATIVE_WIN32
 #include <windows.h>
 #define DIFF	"diff"		/* --binary */
 #define COPY	"copy /y"	/* "cp -f" */
+
+#ifndef DIR_SEP
+# define DIR_SEP '\\'
+#endif
 #else
 #define DIFF	"diff"
+
+#ifndef DIR_SEP
+# define DIR_SEP '/'
+#endif
 #endif
 
 #define SYSTEM(cmd)	{ TRACE(fprintf(STDERR,"%s => \n",cmd));	\

@@ -32,9 +32,6 @@
 # include <io.h>
 # include <direct.h>
 # define mkdir(path,op) _mkdir(path)
-# define DIR_SEP '\\'
-#else
-# define DIR_SEP '/'
 #endif
 
 #include 	<stdio.h>

@@ -248,7 +248,7 @@ int mo_system_config( opt **Set, int setlen)
 {
 	char config[BUFSIZ];
 
-	snprintf(config,BUFSIZ,"@sysconfdir@%cmonet.conf", DIR_SEP);
+	snprintf(config,BUFSIZ,"@Qsysconfdir@%cmonet.conf", DIR_SEP);
 	mo_substitute(*Set, setlen, config);
 	return mo_config_file(Set, setlen, config );
 }
@@ -279,12 +279,12 @@ int mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("prefix");
 	set[i].value = (char*)malloc(BUFSIZ);
-	snprintf(set[i].value,BUFSIZ,"@prefix@" );
+	snprintf(set[i].value,BUFSIZ,"@Qprefix@" );
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("exec_prefix");
 	set[i].value = (char*)malloc(BUFSIZ);
-	snprintf(set[i].value,BUFSIZ,"@exec_prefix@" );
+	snprintf(set[i].value,BUFSIZ,"@Qexec_prefix@" );
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbname");
@@ -293,7 +293,7 @@ int mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbfarm");
 	set[i].value = (char*)malloc(BUFSIZ);
-	snprintf(set[i].value,BUFSIZ,"@localstatedir@%c@PACKAGE@", DIR_SEP);
+	snprintf(set[i].value,BUFSIZ,"@Qlocalstatedir@%c@PACKAGE@", DIR_SEP);
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_debug");
@@ -318,7 +318,7 @@ int mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_mod_path");
 	set[i].value = (char*)malloc(BUFSIZ);
-	snprintf(set[i].value,BUFSIZ,"@libdir@%c@PACKAGE@", DIR_SEP);
+	snprintf(set[i].value,BUFSIZ,"@Qlibdir@%c@PACKAGE@", DIR_SEP);
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_deamon");

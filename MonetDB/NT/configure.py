@@ -33,9 +33,9 @@ build=prefix
 source=os.path.abspath(os.path.join(build,os.pardir))
 
 # double back slashes
-prefix = string.replace(prefix, '\\', r'\\')
-build  = string.replace(build,  '\\', r'\\')
-source = string.replace(source, '\\', r'\\')
+Qprefix = string.replace(prefix, '\\', '\\\\')
+Qbuild  = string.replace(build,  '\\', '\\\\')
+Qsource = string.replace(source, '\\', '\\\\')
 
 subs = [
     ('@exec_prefix@',       "@prefix@"),
@@ -48,12 +48,26 @@ subs = [
     ('@datadir@',           "@prefix@@DIRSEP@share"),
     ('@infodir@',           "@prefix@@DIRSEP@info"),
     ('@libexecdir@',        "@prefix@@DIRSEP@libexec"),
+    ('@Qexec_prefix@',      "@Qprefix@"),
+    ('@Qsysconfdir@',       "@Qprefix@@QDIRSEP@etc"),
+    ('@Qlocalstatedir@',    "@Qprefix@@QDIRSEP@var"),
+    ('@Qlibdir@',           "@Qprefix@@QDIRSEP@lib"),
+    ('@Qbindir@',           "@Qprefix@@QDIRSEP@bin"),
+    ('@Qmandir@',           "@Qprefix@@QDIRSEP@man"),
+    ('@Qincludedir@',       "@Qprefix@@QDIRSEP@include"),
+    ('@Qdatadir@',          "@Qprefix@@QDIRSEP@share"),
+    ('@Qinfodir@',          "@Qprefix@@QDIRSEP@info"),
+    ('@Qlibexecdir@',       "@Qprefix@@QDIRSEP@libexec"),
     ('@PACKAGE@',           "MonetDB"),
     ('@VERSION@',           "4.3.5"),
-    ('@DIRSEP@',            r"\\"),
+    ('@DIRSEP@',            "\\"),
     ('@prefix@',            prefix),
     ('@MONET_BUILD@',       build),
     ('@MONET_SOURCE@',      source),
+    ('@QDIRSEP@',           "\\\\"),
+    ('@Qprefix@',           Qprefix),
+    ('@QMONET_BUILD@',      Qbuild),
+    ('@QMONET_SOURCE@',     Qsource),
 ]
 
 

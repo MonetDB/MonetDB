@@ -107,13 +107,15 @@ char* filename (char* path)
 
 #if DIR_SEP == '/'
 char* default_tmpdir = "/tmp";
+#define TMPDIR_ENV "TMPDIR"
 #else
-char* default_tmpdir = "\\tmp";
+char* default_tmpdir = "C:\\Temp";
+#define TMPDIR_ENV "TEMP"
 #endif
 
 char* tmpdir()
 {
-  char* rtrn=getenv("TMPDIR");
+  char* rtrn=getenv(TMPDIR_ENV);
   if (!rtrn) rtrn=default_tmpdir;
   return rtrn;
 }
