@@ -152,7 +152,7 @@ To avoid concurrency conflicts, all nodes are explicitly freed.
 @c
 void yyfree(YYSTREE yytree) {
 	YYSTREE delnode;
-	int	i; 
+	unsigned i; 
 
 	while (yytree) {
 		for (i = 0; i < yytree->cnt; i++) {
@@ -193,9 +193,9 @@ YYSTREE yy@1expand( YYSTREE yytree, YYSTREE y) {
 extern str LEXNAME(int);
 
 void yyprint(YYSTREE yytree) {
-	static int level;
+	static unsigned level;
 	char	num[20], tpe[20],*p;
-	int	i;
+	unsigned i;
 
 	for(i = 0; i < level; i++) printf("\t");
 	if (yytree == 0) {
@@ -280,7 +280,7 @@ YYSTREE yyload(FILE *fp) {
 
 
 YYSTREE yycopy(YYSTREE t) {
-        int     i;
+        unsigned i;
         YYSTREE tn;
  
         if (t == 0) {
@@ -380,16 +380,17 @@ We store the parameter evaluation space size in the ival of the exec node.
 @-
 otherwise just count the number of sons (i.e. parameters below 'params' nodes)
 @c
-		int i, sons = 1, range_sons = 0;
+		unsigned i;
+		int sons = 1, range_sons = 0;
 		YYSTREE t = lt;
 		do {
 			t->free.yyid = yyid;
-			for(i=0; i<t->cnt; i++) if (t->yysons[i]) {
-				range_sons |= 
-					(t->yysons[i]->token == TOK_RANGETEMP);
-				yypostprocess(t->yysons[i]);
-				sons++;
-			}
+			for(i=0; i<t->cnt; i++)
+				if (t->yysons[i]) {
+					range_sons |= (t->yysons[i]->token == TOK_RANGETEMP);
+					yypostprocess(t->yysons[i]);
+					sons++;
+				}
 		}  while ((t = t->overflow) != NULL);
 		return range_sons?MAXPARAMS:sons;
 	} 
@@ -411,6 +412,7 @@ traverse the MIL tree.
 YYSTREE yysubstitute_proc(YYSTREE t, int argc, ValPtr argv) {
 	YYSTREE tt = yynode(t->token, 0);
 	int i;
+	unsigned j;
 
 #if 0
 argv->val.ival++; /* PETER: proc instantiation stats hack */
@@ -438,9 +440,9 @@ argv->val.ival++; /* PETER: proc instantiation stats hack */
 	    } 
 	}
 	tt->cnt = t->cnt;
-	for(i = 0; i < t->cnt; i++) 
-       	    if (t->yysons[i]) 
-		tt->yysons[i] = yysubstitute_proc(t->yysons[i], argc, argv);
+	for(j = 0; j < t->cnt; j++) 
+       	    if (t->yysons[j]) 
+		tt->yysons[j] = yysubstitute_proc(t->yysons[j], argc, argv);
 
 	if (t->overflow) 
 	    tt->overflow = yysubstitute_proc(t->overflow, argc, argv);
@@ -454,7 +456,7 @@ argv->val.ival++; /* PETER: proc instantiation stats hack */
 
 YYSTREE yysubstitute_iter(YYSTREE t, int argc, ValPtr argv) {
 	YYSTREE tt = yynode(t->token, 0);
-	int i;
+	unsigned i;
 
 	tt->yyval = t->yyval;
        	if (t->token == TOK_ITERTEMP) {
@@ -546,7 +548,7 @@ if trees are more than 2-deep.
 	case TOK_WHILE:      break;\
 	default:\
 	{       YYSTREE *cleanup_tt, cleanup_t;\
-		int cleanup_j;\
+		unsigned cleanup_j;\
                 for(cleanup_t = (YYSTREE) x; cleanup_t;\
 		    cleanup_t = cleanup_t->overflow ) {\
                         for(cleanup_j = 0, cleanup_tt = cleanup_t->yysons;\
@@ -621,7 +623,7 @@ void yyclean(YYSTREE t) { switch(t->token) {
         GARBAGE(t);
 	for (; t; t = t->overflow) {
                 YYSTREE *sons;
-		int j;
+		unsigned j;
                 for(j = 0, sons= t->yysons; j < t->cnt; j++, sons++) {
                         if (*sons) CLEANUP(*sons);
                 }

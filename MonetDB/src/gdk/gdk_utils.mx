@@ -371,7 +371,7 @@ static int GDK_mem_allocs = 0;
   }\
 }
 
-static volatile ssize_t GDK_mallocedbytes_estimate = 0;
+static volatile size_t GDK_mallocedbytes_estimate = 0;
 static ssize_t GDK_mem_cursize = 0;
 static ssize_t GDK_vm_cursize = 0;
 #ifdef GDK_MEM_TRACE
@@ -399,11 +399,9 @@ size_t GDKmem_heapsize(void) {
 size_t GDKmem_inuse() {
 	/* RAM/swapmem that Monet is really using now */
 	ssize_t mem_cursize = GDK_mem_cursize;
-	ssize_t mem_mallocedbytes_estimate = GDK_mallocedbytes_estimate;
+	size_t mem_mallocedbytes_estimate = GDK_mallocedbytes_estimate;
 	if (mem_cursize < 0)
 		mem_cursize = GDK_mem_cursize = 0;
-	if (mem_mallocedbytes_estimate < 0)
-		mem_mallocedbytes_estimate = GDK_mallocedbytes_estimate = 0;
 
 	return mem_cursize + mem_mallocedbytes_estimate;
 }

@@ -1709,7 +1709,8 @@ void radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, 
 @:radix_chunk(any)@
 
 int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
-    int shift = ABS(*nbits), total_shift, n;
+    int shift = ABS(*nbits), total_shift;
+    size_t n;
     size_t cap = BATcount(b);
     int radix[MAXPARAMS], argc = 1, *p;
     size_t *lim;

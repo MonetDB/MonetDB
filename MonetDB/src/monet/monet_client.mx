@@ -727,7 +727,7 @@ str moduleClient(Client c, str mod, str parmod )
 int dropClient(Client c, YYSTREE lt)
 {
         while (lt) {
-	    int i; 
+	    unsigned i; 
             for(i = 0; i < lt->cnt; i++)  {
         	str mod;
                 if (!lt->yysons[i]) continue;

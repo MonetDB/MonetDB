@@ -365,7 +365,7 @@ int CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res){
 	/* run initscript in the clients lowest stack */
 	CNTXTclient(stk, &c);
         while (lt && ret >= 0) {
-	        int i; 
+	        unsigned i; 
                 for(i = 0; i < lt->cnt; i++)  {
 		    ValRecord res1;
 		    str initstr = NULL;
@@ -599,7 +599,8 @@ int CMDwack(int stk, YYSTREE lt, ValPtr res) {
 Likewise, the type of a variable can be frozen
 @c
 int CMDfreeze(Cntxt stk, YYSTREE lt, ValPtr res){
-        int i,j;
+	unsigned i;
+	int j;
         Variable act;
         YYSTREE t;
 	(void) res;
@@ -957,7 +958,7 @@ int CMDprompt(Cntxt stk, YYSTREE lt, ValPtr res){
 
 int CMDERROR(Cntxt stk, YYSTREE lt, ValPtr res){
 	ValRecord argv[MAXPARAMS];
-	int i;
+	unsigned i;
 	(void) res;
 
         if (lt->cnt < 1) {

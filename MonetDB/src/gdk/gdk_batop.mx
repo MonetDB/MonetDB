@@ -1372,11 +1372,12 @@ BAT *BAThashsplit(BAT *b, size_t n, int unary) {
 	    BUNins(metabat, &i, &bn->batCacheid);
 	} else {
 	    BUN p, q;
-	    for (i=2; i<n; i*=2);
+	    for (i = 2; i < (int) n; i*=2)
+		    ;
             h.mask = i-1;
             h.type = BATttype(b);
 	    cnt = (size_t) (BATMARGIN*(double)BATbuncount(b)/(double)n);
-	    for (i = 0; i < n; i++) {
+	    for (i = 0; i < (int) n; i++) {
 		bf = part_bat(bn, BAThtype(bn), BATttype(bn), cnt, TRUE);
 		if (bf == NULL) {
 			BBPreclaim(metabat);

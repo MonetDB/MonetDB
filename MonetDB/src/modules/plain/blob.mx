@@ -218,11 +218,11 @@ int blob_tostr(str* tostr,int* l,blob* p)
 		expectedlen = 4;
 	else
 		expectedlen = 24 + (p->nitems * 3);
-	if (*l < expectedlen) {
+	if (*l < 0 || (size_t) *l < expectedlen) {
 		if (*tostr != NULL)
 			GDKfree(*tostr);
 		*tostr = (str)GDKmalloc(expectedlen);
-		*l = expectedlen;
+		*l = (int) expectedlen;
 	}
 	if (p->nitems == ~(size_t)0) {
 		strcpy(*tostr, "nil");
@@ -296,11 +296,11 @@ int blob_fromstr(char* instr,int* l,blob** val)
       *val = (blob *)GDKmalloc(nbytes);
       *l = nbytes;
    }
-   else if (*l < nbytes)
+   else if (*l < 0 || (size_t) *l < nbytes)
    {
       GDKfree(*val);
       *val = (blob *)GDKmalloc(nbytes);
-      *l = nbytes;
+      *l = (int) nbytes;
    }
    result = *val;
    result->nitems = nitems;

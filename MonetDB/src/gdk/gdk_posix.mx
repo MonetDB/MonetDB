@@ -185,9 +185,9 @@ gdk_export int		dlclose (void *__handle);
 gdk_export void*	dlsym (void * __handle, const char * __name);
 gdk_export char*	dlerror (void);
 gdk_export int 		gettimeofday(struct timeval *tv, int *ignore_zone);
-gdk_export int win_stat(const char*, struct stat *);
-gdk_export int win_rmdir(const char*);
-gdk_export int win_mkdir(const char*, const int mode);
+gdk_export int		win_stat(const char*, struct stat *);
+gdk_export int		win_rmdir(const char*);
+gdk_export int		win_mkdir(const char*, const int mode);
 #define stat(x,y)	win_stat(x,y)
 #define mkdir		win_mkdir
 #define rmdir		win_rmdir
@@ -352,13 +352,14 @@ int MT_path_absolute(char *pathname) {
 
 #define MT_SMALLBLOCK 256
 
-void MT_init_posix(void){
+void MT_init_posix(int alloc_map){
 	MT_heapbase = 0;
 
 /*
 	_set_sbh_threshold(MT_SMALLBLOCK);
 */
-	MT_alloc_init();
+	if (alloc_map)
+		MT_alloc_init();
 }
 
 char* MT_heapcur(void){
@@ -660,7 +661,9 @@ int gettimeofday(struct timeval *tv, int *ignore_zone) {
 	unsigned int year, day, month;
 	SYSTEMTIME st;
 
+	(void) ignore_zone;
 	GetSystemTime(&st);
+	day = 0;
 	for(year=1970; year<st.wYear; year++)
 		day += LEAPYEAR(year)?366:365;
 
@@ -701,34 +704,49 @@ char *dlerror(void){
   return strerror(errno);
 }
 
-/* dir manipulations fail in WIN32 if file name contains trailing slashes; work around this */
-static char* reduce_dir_name(const char* src, char* dst, const int cap) {
-        int len = strlen(src);
-        char *buf = dst;
-        if (len >= cap) buf = malloc(len+1);
-        while(--len > 0 && src[len-1] != ':' && src[len] == DIR_SEP);
-        for(buf[++len]=0; --len>=0; buf[len]=src[len]);
-        return buf;
+/* dir manipulations fail in WIN32 if file name contains trailing
+ * slashes; work around this */
+static char* reduce_dir_name(const char* src, char* dst, size_t cap)
+{
+	size_t len = strlen(src);
+	char *buf = dst;
+
+	if (len >= cap)
+		buf = malloc(len + 1);
+	while (--len > 0 && src[len-1] != ':' && src[len] == DIR_SEP)
+		;
+	for (buf[++len] = 0; len > 0; buf[len] = src[len])
+		len--;
+	return buf;
 }
 
-int win_stat(const char* pathname, struct stat *st) {
-	char buf[128], *p = reduce_dir_name(pathname, buf, 128);
+int win_stat(const char* pathname, struct stat *st)
+{
+	char buf[128], *p = reduce_dir_name(pathname, buf, sizeof(buf));
 	int ret = stat(p, st);
-	if (p != buf) free(p);
+
+	if (p != buf)
+		free(p);
 	return ret;
 }
 
-int win_rmdir(const char* pathname) {
-	char buf[128], *p = reduce_dir_name(pathname, buf, 128);
+int win_rmdir(const char* pathname)
+{
+	char buf[128], *p = reduce_dir_name(pathname, buf, sizeof(buf));
 	int ret = rmdir(p);
-	if (p != buf) free(p);
+
+	if (p != buf)
+		free(p);
 	return ret;
 }
 
-int win_mkdir(const char* pathname, const int mode) {
-	char buf[128], *p = reduce_dir_name(pathname, buf, 128);
+int win_mkdir(const char* pathname, const int mode)
+{
+	char buf[128], *p = reduce_dir_name(pathname, buf, sizeof(buf));
 	int ret = mkdir(p);
-	if (p != buf) free(p);
+
+	if (p != buf)
+		free(p);
 	return ret;
 }
 

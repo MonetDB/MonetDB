@@ -155,6 +155,14 @@ qsort is macro expanded in four dimensions:
 \end{description}
 Thus, there are 2 * 7 * 2 * 2 = 56 GDKqsort implementation routines.
 @c
+#ifndef HAVE_PTRDIFF_T
+#if SIZEOF_SIZE_T == SIZEOF_INT
+typedef int ptrdiff_t;
+#else
+typedef lng ptrdiff_t;
+#endif
+#endif
+
 #define offset(p) 		(buf->offst + *(var_t*) (p))
 #define direct(p) 		(p)
 
@@ -279,7 +287,7 @@ loop:	swap_cnt = 0;
 	pn = (char *) a + MULT_WIDTH(n);
 	r = MIN(pa - (char *)a, pb - pa);
 	multi_SWAP(@3, a, pb - r, r);
-	r = MIN(pd - pc, pn - pd - buf->width);
+	r = MIN(pd - pc, (ptrdiff_t) (pn - pd - buf->width));
 	multi_SWAP(@3, pb, pn - r, r);
 	if ((r = pb - pa) > buf->width)
 		GDKqsort_@1_@2_@3@5(a, DIV_WIDTH(r), buf);
