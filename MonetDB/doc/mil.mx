@@ -263,10 +263,9 @@ is looked up in the database, e.g. {\tt bat("monet_atomtbl")} and
 {\tt bat("<monet_atomtbl>")} both resolve to the same predefined bat.
 
 \item {\tt ident := expr}\\
-Assignment: put a value in a MIL variable (e.g. {\tt answer := 42}). If the
-variable did not exist yet, it is created on the fly in the current block
-(see the 'Statements' section on MIL blocks and on how to declare
-variables explicitly);
+Assignment: put a value in a MIL variable (e.g. {\tt answer := 42}).
+See the 'Statements' section on MIL blocks and on how to declare
+variables.
 
 \item {\tt command(expr, ..expr.. ) }\\
 Algebraic commands have (an empty) parameter list, which are expressions
@@ -336,7 +335,7 @@ can be executed in parallel. The parallel block terminates execution
 when all statements in it have terminated execution. Example:
 \begin{verbatim}{| join(a1,b1); join(a2,b2); join(a3,b3); |}\end{verbatim}
 \item {\tt VAR ident, ...ident..;}\\
-Variables should be declared (e.g. {\tt var pi,e;}). Their lifetime is the
+Variables must be declared (e.g. {\tt var pi,e;}). Their lifetime is the
 execution of the nearest block (sequential, parallel) in which they were
 declared. If a variable is declared at the top-level; its lifetime is the MIL
 session.
