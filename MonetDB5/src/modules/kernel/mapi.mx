@@ -224,6 +224,7 @@ The alternative V4 feature, i.e. read/write from stream,
 is the default in V5.
 @c
 		if (cmd==NULL) {
+			bstream *bs;
 			int i=0;
 			char *cmd = (char*) GDKmalloc(BLOCK), *user = cmd,*s;
 			int blocked=0;
@@ -272,7 +273,10 @@ is the default in V5.
 #ifdef DEBUG_MAPI
 			THRprintf(GDKerr,"MAPIlisten:client accepted %s\n", cmd);
 #endif
-			scheduleClient(cmd,bstream_create(fdin,blocked?128*BLOCK:0),fdout);
+			bs = bstream_create(fdin,blocked?128*BLOCK:0);
+			if (blocked)
+				bs->eof = 1;
+			scheduleClient(cmd,bs,fdout);
 			/* sent commend to client */
 		} else {
 @-
