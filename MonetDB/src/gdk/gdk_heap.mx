@@ -105,33 +105,32 @@ int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
 		strcat(ext, ".priv");
 	}
         h->base = NULL;
-        h->size = MAX(1,nitems)*itemsize;
+        h->maxsize = h->size = MAX(1,nitems)*itemsize;
         h->offset = h->free = 0;
 
-	if (h->filename == NULL || (h->size*4 < GDK_mem_maxsize)) {
+	/* when using anonymous vm we malloc we need 64K chunks, also we
+         * 20% extra malloc */
+	if (h->size > GDK_mem_bigsize) {
+ 		h->maxsize = (size_t) ((double) h->maxsize * BATMARGIN) - 1;
+		h->maxsize = (1 + (h->maxsize >> 16)) << 16;
+	}
+	if (h->filename == NULL || (h->size < GDKvm_minsize())) {
         	h->storage = STORE_MEM;
-        	h->maxsize = h->size;
-		if (h->size > GDK_mem_bigsize) {
-			/* maxsize is a multiple of 65536, andhas 20% free space */
- 			h->maxsize = (size_t) ((double) h->maxsize * BATMARGIN) - 1;
-			h->maxsize = (1 + (h->maxsize >> 16)) << 16;
-		}
                 h->base = (char *) GDKmallocmax(h->size, &h->maxsize);
 	}
 	if (h->filename && h->base == NULL) {
-		long_str path;
-		int fd;
-		GDKfree(h->filename);
-		h->filename = (str) GDKmalloc(strlen(nme)+strlen(ext)+2);
-		sprintf(h->filename, "%s.%s", nme, ext);
-	        GDKfilepath(path, BATDIR, h->filename, NULL);
-		fd = open(path, O_RDWR|O_CREAT, 0644);  
-		if (fd >= 0) {
-			close(fd);
+		char *of = h->filename;
+		FILE *fp;
+
+		h->filename = NULL;
+		fp = GDKfilelocate(nme, "wb", ext);
+		if (fp != NULL) {
+			fclose(fp);
 			/* a non-persistent heap: we create a .priv but *not* MMAP_PRIV !!! */
         		h->storage = STORE_MMAP;
 			HEAPload(h, nme, ext, FALSE);
 		}
+		GDKfree(of);
 	}
 	return (h->base == NULL)?-1:0;
 }
@@ -155,72 +154,46 @@ int HEAPextend(Heap *h, size_t size) {
 	if (h->filename) {
 		strcpy(nme, h->filename);
 		ext = decompose_filename(nme);
+		strcat(ext, ".priv");
 	}
 	if (size <= h->size) 
 		return 0;
 
 	if (h->storage&STORE_MMAP) { 
-#if 0
-BUG: something below makes tests/by_Peter/Tests/tst_mmap.milM crash
-ifndef NOEXTEND_PRIVMAP
-		/* try to get memory pages allocated just after the mapped region */
-		long_str path;
-		FILE *fp = (FILE*) GDKfilelocate(h->filename, "rb+", NULL);
-		size_t totsize = MT_pagesize()*(1+(h->offset+size-1)/MT_pagesize()); 
-		struct stat st;
-		char *b;
-
-		if (fp == NULL || fstat(fileno(fp), &st)) {
-			GDKsyserror("HEAPextend: failed to open '%s'.\n", h->filename); 
-		} else {
-			if (totsize > st.st_size) {
-                		fseek(fp, totsize, SEEK_SET);
-                		fputc('\n',fp), fflush(fp);
-			}
-			totsize -=  h->offset + h->size;
-			fclose(fp);
-	        	GDKfilepath(path,BATDIR,h->filename,NULL);
-			b = GDKmmap(path, MMAP_COPY|MMAP_SEQUENTIAL, (off_t) (h->offset+h->size), totsize, h->base+h->offset+h->size);
-			if ((b != (char*) -1L)) {
-				h->maxsize = h->size = size;
-				return 0;
-			}
-			IODEBUG GDKsyserror("HEAPmmap: mmap failed to extend '%s'.\n", h->filename); 
-		}
-#endif
 		/* memory mapped files extend: save and remap */
-		if (HEAPsave(h, nme, ext) < 0) return -1;
+		if (HEAPsave(h, nme, ext) < 0) 
+			return -1;
 		HEAPfree(h);
         	h->maxsize = h->size = size;
-                if (HEAPload(h, nme, ext, FALSE) < 0) return -1;
+		if (HEAPload(h, nme, ext, FALSE) >= 0) 
+			return 0;
 	} else {
 		/* extend a malloced heap, possibly switching over to file-mapped storage */
 		Heap bak = *h;
 
-		/* enlarge the heap */
+		/* when using anonymous vm we malloc we need 64K chunks, also we
+         	 * 20% extra malloc */
         	h->maxsize = h->size = size;
 		if (size > GDK_mem_bigsize) {
-			/* maxsize is a multiple of 65536, andhas 20% free space */
  			h->maxsize = (size_t) ((double) h->maxsize * BATMARGIN) - 1;
 			h->maxsize = (1 + (h->maxsize >> 16)) << 16;
 		}
 
 		/* try GDKrealloc if the heap size stays within reasonable limits */
-		if (h->filename == NULL || (size*4 < MAX(GDKvm_minsize(),GDK_mem_maxsize))) {
+		if (h->filename == NULL || (size < GDKvm_minsize())) {
         		h->storage = STORE_MEM;
                 	h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize);
-			if (h->base != NULL) return 0;
+			if (h->base) 
+				return 0;
 		}
 		/* too big: convert it to a disk-based temporary heap */
 		if (h->filename && size >= GDKvm_minsize()) {
-			long_str path;
-			int fd;
-			h->filename = (str) GDKmalloc(strlen(nme)+strlen(ext)+2);
-			sprintf(h->filename, "%s.%s", nme, ext);
-			GDKfilepath(path, BATDIR, h->filename, NULL);
-			fd = open(path, O_RDWR|O_CREAT, 0644);  
-			if (fd >= 0) {
-				close(fd);
+			FILE *fp;
+
+			h->filename = NULL;
+			fp = GDKfilelocate(nme, "wb", ext);
+			if (fp != NULL) {
+				fclose(fp);
 				/* a non-persistent heap: we create a .priv but *not* MMAP_PRIV !!! */
         			h->storage = STORE_MMAP;
 				if (HEAPload(h, nme, ext, FALSE) >= 0) {
@@ -228,10 +201,9 @@ ifndef NOEXTEND_PRIVMAP
 					HEAPfree(&bak);
 					return 0;
 				}
-			}
+			} 
 		}
 		*h = bak;
-		
 	}
 	return -1;
 }
@@ -325,6 +297,7 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 	if (ret == 0 && h->storage == STORE_PRIV) {
 		/* silently remove any previous .ext.priv file */
 		long_str path;
+
 		GDKfilepath(path, BATDIR, nme, priv);
 		(void) unlink(path); /* this is allowed to fail (if it does not exist) */
 
@@ -652,7 +625,8 @@ var_t HEAP_malloc(Heap *heap, size_t nbytes) {
       // Double the size of the heap.
       // TUNE: increase heap by diffent amount.
       */
-      HEAPextend(heap, newsize);
+      if (HEAPextend(heap, newsize) < 0)
+	assert(0); 
       heap->free = newsize;
       hheader = HEAP_index(heap,0,HEADER);
 

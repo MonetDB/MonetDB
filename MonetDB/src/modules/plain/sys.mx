@@ -1135,7 +1135,7 @@ int get_mem_cursize(lng *num) {
 	return GDK_SUCCEED;
 }
 int get_mem_maxsize(lng *num) {
-	*num = GDKmem_maxsize();
+	*num = GDK_mem_maxsize;
 	return GDK_SUCCEED;
 }
 int set_mem_maxsize(lng *num) {
@@ -1155,7 +1155,7 @@ int set_vm_maxsize(lng *num) {
 	return GDK_SUCCEED;
 }
 int get_vmredirect(lng *vmredirect) {
-	*vmredirect = (lng) GDKmem_bigsize();
+	*vmredirect = (lng) GDK_mem_bigsize;
 	return GDK_SUCCEED;
 }
 int set_vmredirect(lng *vmredirect) {
@@ -1163,7 +1163,7 @@ int set_vmredirect(lng *vmredirect) {
 	return GDK_SUCCEED;
 }
 int get_mmapsize(lng *num) {
-	*num = GDKmem_bigsize();
+	*num = GDK_mem_bigsize;
 	return GDK_SUCCEED;
 }
 int set_mmapsize(lng *num) {
