@@ -282,8 +282,9 @@ case $withval in
 	ia64*)	AC_ERROR([we do not support 32 bits on $host, yet]);;
 	esac
 	;;
-64)	case "$host" in
-	i?86*)	AC_ERROR([$host does not support 64 bits]);;
+64)	case "$host-$GCC" in
+	i?86*-*)  AC_ERROR([$host does not support 64 bits]);;
+	x86_64*-) AC_ERROR([$CC on $host does not support 64 bits]);;
 	esac
 	;;
 *)	AC_ERROR(--with-bits argument must be either 32 or 64);;
