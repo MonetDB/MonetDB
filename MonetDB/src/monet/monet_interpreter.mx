@@ -1608,7 +1608,7 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel) {
 		YYSTREE t;
 		int i;
 
-		// limit tree size to handle->parcnt
+		/* limit tree size to handle->parcnt */
 		for(t = handle->tree, i=handle->parcnt; t; 
 			t = t->overflow, i-= YYMAXSONS)
 		{
