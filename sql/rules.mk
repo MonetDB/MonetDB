@@ -178,7 +178,8 @@ $(prefix)/doc/SQLfeatures.tex:	$(prefix)/doc
 	cp $(top_srcdir)/SQLfeatures.tex $(prefix)/doc
 
 $(prefix)/doc/SQLfeatures.aux:	$(prefix)/doc/SQLfeatures.tex
-	(cd doc; latex SQLfeatures.tex; latex SQLfeatures.tex)
+	(cd $(prefix)/doc; latex SQLfeatures.tex; latex SQLfeatures.tex)
 
 html:	$(prefix)/doc/SQLsessionDemo $(prefix)/doc/SQLfeatures.aux
-	latex2html -ascii_mode -notiming -noaddress -style http://monetdb.cwi.nl/MonetDB.css -dir doc doc/SQLfeatures.tex
+	(cd $(prefix)/doc; latex2html -ascii_mode -notiming -noaddress -style http://monetdb.cwi.nl/MonetDB.css SQLfeatures.tex)
+	#(cd $(prefix); latex2html -ascii_mode -notiming -noaddress -style http://monetdb.cwi.nl/MonetDB.css -dir doc doc/SQLfeatures.tex)
