@@ -62,6 +62,7 @@ enum PFphases_t {
     , phas_alg             /**< Algebra tree generation */
     , phas_algopt          /**< Algebra tree rewrite/optimization */
     , phas_mil             /**< MIL code generation */
+    , phas_mil_summer      /**< temporary MIL code generation and print */
    
     , phas_all             /**< Do all processing phases */
 };
