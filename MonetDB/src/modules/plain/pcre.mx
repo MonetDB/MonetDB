@@ -83,7 +83,7 @@ void pcre_exit(void){ }
 
 #else
 
-#include <pcre/pcre.h>
+#include <pcre.h>
 #include "pcre.proto.h"
 
 #define m2p(p) (pcre*)(((sht*)p)+1)

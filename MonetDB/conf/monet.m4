@@ -1474,6 +1474,7 @@ AC_SUBST(PCL_LIBS)
 
 dnl check for the Perl-compatible regular expressions library 
 have_pcre=auto
+need_pcre=no
 PCRE_CFLAGS=""
 PCRE_LIBS=""
 AC_ARG_WITH(pcre,
@@ -1488,8 +1489,16 @@ if test "x$have_pcre" != xno; then
 
   save_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS $PCRE_CFLAGS"
-  AC_CHECK_HEADER(pcre/pcre.h, have_pcre=yes, have_pcre=no)
+  AC_CHECK_HEADER(pcre.h, have_pcre=yes, have_pcre=no)
   CPPFLAGS="$save_CPPFLAGS"
+
+  if test "x$have_pcre" = xno; then
+	need_pcre=yes;
+  	save_CPPFLAGS="$CPPFLAGS"
+  	CPPFLAGS="$CPPFLAGS $PCRE_CFLAGS"
+  	AC_CHECK_HEADER(pcre/pcreposix.h, have_pcre=yes, have_pcre=no)
+  	CPPFLAGS="$save_CPPFLAGS"
+  fi
 
   if test "x$have_pcre" = xyes; then
   	save_LDFLAGS="$LDFLAGS"
@@ -1502,6 +1511,12 @@ if test "x$have_pcre" != xno; then
   if test "x$have_pcre" != xyes; then
     PCRE_CFLAGS=""
     PCRE_LIBS=""
+  fi
+  if test "x$need_pcre" == xyes; then
+    if test -z $PCRE_CFLAGS; then
+    	PCRE_CFLAGS="-I/usr/include"
+    fi
+    PCRE_CFLAGS="$PCRE_CFLAGS/pcre"
   fi
 fi
 AC_SUBST(PCRE_CFLAGS)
