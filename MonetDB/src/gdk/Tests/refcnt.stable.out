@@ -1,9 +1,9 @@
 stdout of test 'refcnt` in directory 'src/gdk` itself:
 
 
-# 16:12:35 >  
-# 16:12:35 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log" --set mapi_port=53027 --set sql_port=57408 --set monet_prompt= --trace --dbname=mTests_src_gdk  < refcnt.milM
-# 16:12:35 >  
+# 11:40:32 >  
+# 11:40:32 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log" --set mapi_port=57441 --set sql_port=54507 --set monet_prompt= --trace --dbname=mTests_src_gdk  < refcnt.milM
+# 11:40:32 >  
 
 # Monet Database Server V4.3.11
 # Copyright (c) 1993-2003, CWI. All rights reserved.
@@ -61,6 +61,8 @@ tmp;
 [ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_proc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_var",	  0,	  "load", "tran", 1	  ]
 [ "adm_fcntbl",		  0,	  "load", "tran", 1	  ]
 [ "adm_acctbl",		  0,	  "load", "tran", 1	  ]
 [ "adm_atomtbl",	  0,	  "load", "tran", 1	  ]
@@ -112,6 +114,8 @@ res := nil;
 [ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_proc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_var",	  0,	  "load", "tran", 1	  ]
 [ "adm_fcntbl",		  0,	  "load", "tran", 1	  ]
 [ "adm_acctbl",		  0,	  "load", "tran", 1	  ]
 [ "adm_atomtbl",	  0,	  "load", "tran", 1	  ]
@@ -143,6 +147,8 @@ res := nil;
 [ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_proc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_var",	  0,	  "load", "tran", 1	  ]
 [ "adm_fcntbl",		  0,	  "load", "tran", 1	  ]
 [ "adm_acctbl",		  0,	  "load", "tran", 1	  ]
 [ "adm_atomtbl",	  0,	  "load", "tran", 1	  ]
@@ -173,15 +179,17 @@ res := nil;
 [ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_proc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_var",	  0,	  "load", "tran", 1	  ]
 [ "adm_fcntbl",		  0,	  "load", "tran", 1	  ]
 [ "adm_acctbl",		  0,	  "load", "tran", 1	  ]
 [ "adm_atomtbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_unicode_case",	  0,	  "load", "tran", 1	  ]
 [ "top",		  0,	  "load", "tran", 0	  ]
-[ "tmp_27",		  0,	  "load", "tran", 0	  ]
+[ "tmp_29",		  0,	  "load", "tran", 0	  ]
 [ "two",		  0,	  "load", "tran", 0	  ]
 [ "ten",		  0,	  "load", "tran", 0	  ]
-[ "tmp_32",		  0,	  "load", "tran", 0	  ]
+[ "tmp_34",		  0,	  "load", "tran", 0	  ]
 [ "twenty",		  0,	  "load", "tran", 0	  ]
 
 #BUGS:
@@ -214,13 +222,15 @@ tmp;
 [ "monet_mod_use",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_load",	  0,	  "load", "tran", 1	  ]
 [ "monet_mod_drop",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_proc",	  0,	  "load", "tran", 1	  ]
+[ "monet_mod_var",	  0,	  "load", "tran", 1	  ]
 [ "adm_fcntbl",		  0,	  "load", "tran", 1	  ]
 [ "adm_acctbl",		  0,	  "load", "tran", 1	  ]
 [ "adm_atomtbl",	  0,	  "load", "tran", 1	  ]
 [ "monet_unicode_case",	  0,	  "load", "tran", 1	  ]
 quit;
 
-# 16:12:35 >  
-# 16:12:35 >  Done.
-# 16:12:35 >  
+# 11:40:32 >  
+# 11:40:32 >  Done.
+# 11:40:32 >  
 
