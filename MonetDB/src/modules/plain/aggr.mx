@@ -35,17 +35,17 @@ test scripts were added.
 @m
 .MODULE aggr;
 
-.COMMAND {sum_sht}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_sht_sht; 
+.COMMAND {sum_sht}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,sht] = CMDaggr_sum_sht_sht; 
 	"grouped tail sum"
 .COMMAND {sum_int}(BAT[oid,sht] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_sht_int; 
 	"grouped tail sum"
-.COMMAND {sum_int}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_sum_int_int; 
+.COMMAND {sum_int}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,int] = CMDaggr_sum_int_int; 
 	"grouped tail sum"
 .COMMAND {sum_lng}(BAT[oid,int] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_sum_int_lng; 
 	"grouped tail sum"
 .COMMAND {sum_lng}(BAT[oid,lng] b, BAT[oid,any] e) : BAT[oid,lng] = CMDaggr_sum_lng_lng; 
 	"grouped tail sum"
-.COMMAND {sum_flt}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_sum_flt_flt; 
+.COMMAND {sum_flt}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,flt] = CMDaggr_sum_flt_flt; 
 	"grouped tail sum"
 .COMMAND {sum_dbl}(BAT[oid,flt] b, BAT[oid,any] e) : BAT[oid,dbl] = CMDaggr_sum_flt_dbl; 
 	"grouped tail sum"
