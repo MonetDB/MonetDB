@@ -24,63 +24,7 @@ Over..
 # 19:06:02 >  
 
 # Start test on localhost:43397
-Modified query:emp:= new(str,int);
-execute:emp:= new(str,int);
-toMonet:emp:= new(str,int);
-
-Start reading from server
-gotLine:
-promptText:
-query return:0
-Modified query:emp.insert("John",23);
-execute:emp.insert("John",23);
-toMonet:emp.insert("John",23);
-
-Start reading from server
-gotLine:
-promptText:
-query return:0
-Modified query:emp.insert("Mary",23);
-execute:emp.insert("Mary",23);
-toMonet:emp.insert("Mary",23);
-
-Start reading from server
-gotLine:
-promptText:
-query return:0
-Modified query:print(emp);
-execute:print(emp);
-toMonet:print(emp);
-
-Start reading from server
-gotLine:#-----------------#
-getRow:#-----------------#
-Start reading from server
-gotLine:# BAT:	  tmp_36  #
-getRow:# BAT:	  tmp_36  #
-Start reading from server
-gotLine:# (str)	  (int)	  #
-getRow:# (str)	  (int)	  #
-Start reading from server
-gotLine:#-----------------#
-getRow:#-----------------#
-Start reading from server
-gotLine:[ "John", 23	  ]
-getRow:[ "John", 23	  ]
-Start reading from server
-gotLine:[ "Mary", 23	  ]
-getRow:[ "Mary", 23	  ]
-Start reading from server
-gotLine:
-promptText:
-query return:0
-getRow:#-----------------#
-getRow:# BAT:	  tmp_36  #
-getRow:# (str)	  (int)	  #
-getRow:#-----------------#
-getRow:[ "John", 23	  ]
 John is 23
-getRow:[ "Mary", 23	  ]
 Mary is 23
 
 # 19:06:03 >  

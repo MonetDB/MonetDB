@@ -42,6 +42,7 @@ All_mods@batloop {
  salgebra: loading... done.
     radix: loading... done.
        qt: loading... done.
+ profiler: loading... done.
       pcl: loading... done.
       oo7: loading... done.
     mprof: loading... done.
@@ -106,6 +107,7 @@ table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
 [ "mprof"	  ]
 [ "oo7"		  ]
 [ "pcl"		  ]
+[ "profiler"	  ]
 [ "qt"		  ]
 [ "radix"	  ]
 [ "salgebra"	  ]

@@ -21,7 +21,7 @@ class sample0
 		System.exit(-1);
 	}
 	if( mapi.gotError()) die(mapi);
-	mapi.trace(true);
+	// mapi.trace(true);
 	
 	if(sqltest){
 		if( mapi.query("create table emp(name varchar,age,int") != mapi.MOK)

@@ -73,6 +73,7 @@ loaded;
 [ "mprof",	  nil	  ]
 [ "oo7",	  nil	  ]
 [ "pcl",	  nil	  ]
+[ "profiler",	  nil	  ]
 [ "qt",		  nil	  ]
 [ "radix",	  nil	  ]
 [ "salgebra",	  nil	  ]
@@ -160,6 +161,7 @@ others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE)
 [ "salgebra",	  nil	  ]
 [ "radix",	  nil	  ]
 [ "qt",		  nil	  ]
+[ "profiler",	  nil	  ]
 [ "pcl",	  nil	  ]
 [ "oo7",	  nil	  ]
 [ "mprof",	  nil	  ]
@@ -570,7 +572,6 @@ others@batloop{
 
 	dropping salgebra
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -609,7 +610,6 @@ others@batloop{
 
 	dropping radix
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -658,7 +658,44 @@ others@batloop{
 
 	dropping stats
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading profiler
+
+#---------------------------------#
+# module		usage_count	  # name
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "profiler",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+#-------------------------#
+# h		tmp_37	  # name
+# str		void	  # type
+#-------------------------#
+[ "profiler",	  nil	  ]
+
+	dropping profiler
+
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -773,7 +810,6 @@ others@batloop{
 
 	dropping mprof
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -812,7 +848,6 @@ others@batloop{
 
 	dropping monettime
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -927,7 +962,6 @@ others@batloop{
 
 	dropping mel
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -971,7 +1005,6 @@ others@batloop{
 
 	dropping streams
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1048,7 +1081,6 @@ others@batloop{
 
 	dropping lock
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1087,7 +1119,6 @@ others@batloop{
 
 	dropping iterator
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1131,7 +1162,6 @@ others@batloop{
 
 	dropping streams
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1170,7 +1200,6 @@ others@batloop{
 
 	dropping decimal
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1224,7 +1253,6 @@ others@batloop{
 
 	dropping streams
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1263,7 +1291,6 @@ others@batloop{
 
 	dropping counters
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1340,7 +1367,6 @@ others@batloop{
 
 	dropping blob
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1417,7 +1443,6 @@ others@batloop{
 
 	dropping bitset
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1499,7 +1524,6 @@ others@batloop{
 
 	dropping streams
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
