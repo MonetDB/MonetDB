@@ -72,10 +72,113 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 		return SQL_ERROR;
 	}
 
+	if (ParameterValuePtr == NULL && StrLen_or_IndPtr == NULL
+	    /* && InputOutputType != SQL_PARAM_OUTPUT */ ) {
+		/* Invalid use of null pointer */
+		addStmtError(stmt, "HY009", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	if (BufferLength < 0) {
+		/* Invalid string or buffer length */
+		addStmtError(stmt, "HY090", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	/* can't let SQLSetDescField below do this check since it
+	   returns the wrong error code if the type is incorrect */
+	switch (ValueType) {
+	case SQL_C_CHAR:
+	case SQL_C_WCHAR:
+	case SQL_C_BINARY:
+	case SQL_C_BIT:
+	case SQL_C_STINYINT:
+	case SQL_C_UTINYINT:
+	case SQL_C_TINYINT:
+	case SQL_C_SSHORT:
+	case SQL_C_USHORT:
+	case SQL_C_SHORT:
+	case SQL_C_SLONG:
+	case SQL_C_ULONG:
+	case SQL_C_LONG:
+	case SQL_C_SBIGINT:
+	case SQL_C_UBIGINT:
+	case SQL_C_NUMERIC:
+	case SQL_C_FLOAT:
+	case SQL_C_DOUBLE:
+	case SQL_C_TYPE_DATE:
+	case SQL_C_TYPE_TIME:
+	case SQL_C_TYPE_TIMESTAMP:
+	case SQL_C_INTERVAL_YEAR:
+	case SQL_C_INTERVAL_MONTH:
+	case SQL_C_INTERVAL_YEAR_TO_MONTH:
+	case SQL_C_INTERVAL_DAY:
+	case SQL_C_INTERVAL_HOUR:
+	case SQL_C_INTERVAL_MINUTE:
+	case SQL_C_INTERVAL_SECOND:
+	case SQL_C_INTERVAL_DAY_TO_HOUR:
+	case SQL_C_INTERVAL_DAY_TO_MINUTE:
+	case SQL_C_INTERVAL_DAY_TO_SECOND:
+	case SQL_C_INTERVAL_HOUR_TO_MINUTE:
+	case SQL_C_INTERVAL_HOUR_TO_SECOND:
+	case SQL_C_INTERVAL_MINUTE_TO_SECOND:
+	case SQL_C_GUID:
+	case SQL_C_DEFAULT:
+		break;
+	default:
+		/* Invalid application buffer type */
+		addStmtError(stmt, "HY003", NULL, 0);
+		return SQL_ERROR;
+	}
+
 	apd = stmt->ApplParamDescr;
 	ipd = stmt->ImplParamDescr;
 	apdrec = addODBCDescRec(apd, ParameterNumber);
 	ipdrec = addODBCDescRec(ipd, ParameterNumber);
+
+	switch (ParameterType) {
+	case SQL_CHAR:
+	case SQL_VARCHAR:
+	case SQL_LONGVARCHAR:
+	case SQL_BINARY:
+	case SQL_VARBINARY:
+	case SQL_LONGVARBINARY:
+	case SQL_TYPE_DATE:
+	case SQL_INTERVAL_MONTH:
+	case SQL_INTERVAL_YEAR:
+	case SQL_INTERVAL_YEAR_TO_MONTH:
+	case SQL_INTERVAL_DAY:
+	case SQL_INTERVAL_HOUR:
+	case SQL_INTERVAL_MINUTE:
+	case SQL_INTERVAL_DAY_TO_HOUR:
+	case SQL_INTERVAL_DAY_TO_MINUTE:
+	case SQL_INTERVAL_HOUR_TO_MINUTE:
+		ipdrec->sql_desc_length = ColumnSize;
+		break;
+	case SQL_TYPE_TIME:
+	case SQL_TYPE_TIMESTAMP:
+	case SQL_INTERVAL_SECOND:
+	case SQL_INTERVAL_DAY_TO_SECOND:
+	case SQL_INTERVAL_HOUR_TO_SECOND:
+	case SQL_INTERVAL_MINUTE_TO_SECOND:
+		ipdrec->sql_desc_precision = DecimalDigits;
+		ipdrec->sql_desc_length = ColumnSize;
+		break;
+	case SQL_DECIMAL:
+	case SQL_NUMERIC:
+		ipdrec->sql_desc_precision = (SQLSMALLINT) ColumnSize;
+		ipdrec->sql_desc_scale = DecimalDigits;
+		break;
+	case SQL_FLOAT:
+	case SQL_REAL:
+	case SQL_DOUBLE:
+		ipdrec->sql_desc_precision = (SQLSMALLINT) ColumnSize;
+		break;
+	default:
+		/* Invalid SQL data type */
+		addStmtError(stmt, "HY004", NULL, 0);
+		return SQL_ERROR;
+	}
 
 	rc = SQLSetDescField_(apd, ParameterNumber,
 			      SQL_DESC_CONCISE_TYPE,
@@ -88,53 +191,6 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 	if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
 		return rc;
 	ipdrec->sql_desc_parameter_type = InputOutputType;
-	switch (ParameterType) {
-	case SQL_CHAR:
-	case SQL_VARCHAR:
-	case SQL_LONGVARCHAR:
-	case SQL_BINARY:
-	case SQL_VARBINARY:
-	case SQL_LONGVARBINARY:
-	case SQL_TYPE_DATE:
-	case SQL_TYPE_TIME:
-	case SQL_TYPE_TIMESTAMP:
-	case SQL_INTERVAL_MONTH:
-	case SQL_INTERVAL_YEAR:
-	case SQL_INTERVAL_YEAR_TO_MONTH:
-	case SQL_INTERVAL_DAY:
-	case SQL_INTERVAL_HOUR:
-	case SQL_INTERVAL_MINUTE:
-	case SQL_INTERVAL_SECOND:
-	case SQL_INTERVAL_DAY_TO_HOUR:
-	case SQL_INTERVAL_DAY_TO_MINUTE:
-	case SQL_INTERVAL_DAY_TO_SECOND:
-	case SQL_INTERVAL_HOUR_TO_MINUTE:
-	case SQL_INTERVAL_HOUR_TO_SECOND:
-	case SQL_INTERVAL_MINUTE_TO_SECOND:
-		ipdrec->sql_desc_length = ColumnSize;
-		break;
-	case SQL_DECIMAL:
-	case SQL_NUMERIC:
-	case SQL_FLOAT:
-	case SQL_REAL:
-	case SQL_DOUBLE:
-		ipdrec->sql_desc_precision = (SQLSMALLINT) ColumnSize;
-		break;
-	}
-	switch (ParameterType) {
-	case SQL_TYPE_TIME:
-	case SQL_TYPE_TIMESTAMP:
-	case SQL_INTERVAL_SECOND:
-	case SQL_INTERVAL_DAY_TO_SECOND:
-	case SQL_INTERVAL_HOUR_TO_SECOND:
-	case SQL_INTERVAL_MINUTE_TO_SECOND:
-		ipdrec->sql_desc_precision = DecimalDigits;
-		break;
-	case SQL_DECIMAL:
-	case SQL_NUMERIC:
-		ipdrec->sql_desc_scale = DecimalDigits;
-		break;
-	}
 	apdrec->sql_desc_data_ptr = ParameterValuePtr;
 	apdrec->sql_desc_octet_length = BufferLength;
 	apdrec->sql_desc_indicator_ptr = StrLen_or_IndPtr;
@@ -220,9 +276,12 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 		break;
 
 	case SQL_C_BINARY:
+	case SQL_C_WCHAR:
 	case SQL_C_NUMERIC:
 	case SQL_C_GUID:
 		/* these are NOT supported */
+		addStmtError(stmt, "IM001", NULL, 0);
+		return SQL_ERROR;
 	default:
 		/* HY003 = Invalid application buffer type */
 		addStmtError(stmt, "HY003", NULL, 0);

@@ -43,8 +43,19 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	/* check input parameters */
 	/* column number 0 (Bookmark column) is not supported */
 	if (nCol == 0) {
-		/* HYC00 = Optional feature not implemented */
-		addStmtError(stmt, "HYC00", NULL, 0);
+		if (nTargetType == SQL_C_BOOKMARK ||
+		    nTargetType == SQL_C_VARBOOKMARK) {
+			/* Optional feature not implemented */
+			addStmtError(stmt, "HYC00", NULL, 0);
+		} else {
+			/* Restricted data type attribute violation */
+			addStmtError(stmt, "07006", NULL, 0);
+		}
+		return SQL_ERROR;
+	}
+	if (stmt->State == EXECUTED &&
+	    nCol > stmt->ImplRowDescr->sql_desc_count) {
+		addStmtError(stmt, "07009", NULL, 0);
 		return SQL_ERROR;
 	}
 	/* For safety: limit the maximum number of columns to bind */
@@ -53,6 +64,58 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 		addStmtError(stmt, "HY000",
 			     "Maximum number of bind columns (8192) exceeded",
 			     0);
+		return SQL_ERROR;
+	}
+
+	/* can't let SQLSetDescField below do this check since it
+	   returns the wrong error code if the type is incorrect */
+	switch (nTargetType) {
+	case SQL_C_CHAR:
+	case SQL_C_WCHAR:
+	case SQL_C_BINARY:
+	case SQL_C_BIT:
+	case SQL_C_STINYINT:
+	case SQL_C_UTINYINT:
+	case SQL_C_TINYINT:
+	case SQL_C_SSHORT:
+	case SQL_C_USHORT:
+	case SQL_C_SHORT:
+	case SQL_C_SLONG:
+	case SQL_C_ULONG:
+	case SQL_C_LONG:
+	case SQL_C_SBIGINT:
+	case SQL_C_UBIGINT:
+	case SQL_C_NUMERIC:
+	case SQL_C_FLOAT:
+	case SQL_C_DOUBLE:
+	case SQL_C_TYPE_DATE:
+	case SQL_C_TYPE_TIME:
+	case SQL_C_TYPE_TIMESTAMP:
+	case SQL_C_INTERVAL_YEAR:
+	case SQL_C_INTERVAL_MONTH:
+	case SQL_C_INTERVAL_YEAR_TO_MONTH:
+	case SQL_C_INTERVAL_DAY:
+	case SQL_C_INTERVAL_HOUR:
+	case SQL_C_INTERVAL_MINUTE:
+	case SQL_C_INTERVAL_SECOND:
+	case SQL_C_INTERVAL_DAY_TO_HOUR:
+	case SQL_C_INTERVAL_DAY_TO_MINUTE:
+	case SQL_C_INTERVAL_DAY_TO_SECOND:
+	case SQL_C_INTERVAL_HOUR_TO_MINUTE:
+	case SQL_C_INTERVAL_HOUR_TO_SECOND:
+	case SQL_C_INTERVAL_MINUTE_TO_SECOND:
+	case SQL_C_GUID:
+	case SQL_C_DEFAULT:
+		break;
+	default:
+		/* Invalid application buffer type */
+		addStmtError(stmt, "HY003", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	if (nTargetValueMax < 0) {
+		/* Invalid string or buffer length */
+		addStmtError(stmt, "HY090", NULL, 0);
 		return SQL_ERROR;
 	}
 

@@ -108,6 +108,7 @@ static struct sql_types c_types[] = {
 	{SQL_C_INTERVAL_HOUR_TO_SECOND, SQL_INTERVAL, SQL_CODE_HOUR_TO_SECOND, UNAFFECTED, 6, UNAFFECTED, UNAFFECTED,},
 	{SQL_C_INTERVAL_MINUTE_TO_SECOND, SQL_INTERVAL, SQL_CODE_MINUTE_TO_SECOND, UNAFFECTED, 6, UNAFFECTED, UNAFFECTED,},
 	{SQL_C_GUID, SQL_C_GUID, 0, UNAFFECTED, UNAFFECTED, UNAFFECTED, UNAFFECTED},
+	{SQL_C_DEFAULT, SQL_C_DEFAULT, 0, UNAFFECTED, UNAFFECTED, UNAFFECTED, UNAFFECTED},
 };
 #define NC_TYPES	(sizeof(c_types)/sizeof(c_types[0]))
 
@@ -237,8 +238,8 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 				return SQL_SUCCESS;
 			}
 		}
-		/* Inconsistent descriptor information */
-		addDescError(desc, "HY021", NULL, 0);
+		/* Invalid attribute/option identifier */
+		addDescError(desc, "HY092", NULL, 0);
 		return SQL_ERROR;
 	case SQL_DESC_DATA_PTR:
 		/* TODO: consistency check */
