@@ -586,12 +586,7 @@ that for the moment are defined as procs.
             } else if (fcn = ">") {
                 return thetajoin(l,r,GT,estimate);
             } else if (fcn = "true") {
-                var bn := new(l,r, l.count*r.count);
-                l@batloop() {
-                    var h := $h;
-                    r@batloop() bn.insert(h,$t);
-                }
-                return bn;
+                return cross(l,r);
             }
         }
         var swapped := false;
