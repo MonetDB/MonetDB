@@ -243,13 +243,13 @@ build the cluster hash from the enum.
 
 @mil
   PROC CHdir() :void {
-    print( ch_namecache, ch_refcnt, ch_cache );
+    print( bat("ch_namecache"), bat("ch_refcnt"), bat("ch_cache") );
   }
   ADDHELP("CHdir", "arjen", "Jul 18 2000",
 	  "List the clusterhash dictionary.", mod);
 
   PROC select( clusterhash ch, any::1 v ): BAT[oid,any::1] {
-    RETURN [ch.uselect( v ).project(v)];
+    RETURN ch.uselect( v ).project(v);
   }
   ADDHELP("select", "arjen", "Jun 16 2000",
 	  "Select using a clusterhash uselect plus a cast.", mod);
@@ -1047,7 +1047,7 @@ salgebra_epilogue(void) {
 
 PROC test_salgebra() : void {   
 
-	ti := new( void, oid );
+	var ti := new( void, oid );
 	ti.insert( nil, 0@0 );
 	ti.insert( nil, 3@0 );
 	ti.insert( nil, 0@0 );
@@ -1056,35 +1056,35 @@ PROC test_salgebra() : void {
 	ti.seqbase( 0@0 );
 	ti.rename( "ti" );
 
-	ch := clusterhash( ti );
+	var ch := clusterhash( ti );
 	ch.rename( "ti" );
 	printf( "Created clusterhash %s\n", str(ch) );
 
-	ch_2 := clusterhash( "ti" );
-	ch_2.info.print;
+	var ch_2 := clusterhash( "ti" );
+	ch_2.info.print();
 	ch_2 := nil;
 
-	tj := new( oid, str );
+	var tj := new( oid, str );
 	tj.rename( "tj" );
 	tj.insert( 2@0, "two" );
 	tj.insert( 3@0, "three" );
 
-	#ch2 := clusterhash( tj.mark(nil).reverse );
+	#ch2 := clusterhash( tj.mark(nil).reverse() );
 	#ch2.rename("tjrev");
 
-	ch.info.print;
-	#ch2.info.print;
+	ch.info.print();
+	#ch2.info.print();
 
 	CHdir();
 
 	# use the clusterhash for a uselect or a ujoin
-	uselect( ch, 0@0 ).print;
-	uselect( ch, 1@0 ).print;
-	uselect( ch, 2@0 ).print;
-	uselect( ch, 3@0 ).print;
+	uselect( ch, 0@0 ).print();
+	uselect( ch, 1@0 ).print();
+	uselect( ch, 2@0 ).print();
+	uselect( ch, 3@0 ).print();
 
-	ujoin( ch, tj ).print;
-	usortedjoin( ch, tj ).print;
+	ujoin( ch, tj ).print();
+	usortedjoin( ch, tj ).print();
 
 	CHdir();
 

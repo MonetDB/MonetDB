@@ -300,12 +300,12 @@ int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
 VAR @1result_void := @1join( l, r );
 @
 @= jointest_oid
-VAR @1result_oid := @1join( [oid](l), [oid](r.reverse).reverse );
+VAR @1result_oid := @1join( [oid](l), [oid](r.reverse()).reverse() );
 @
 @= compresults
 @:jointest_@2(@1)
 IF( not( isnil(@1result_@2) ) ) {
-  Ndiff := diff( result_@2, @1result_@2 ).count;
+  Ndiff := diff( result_@2, @1result_@2 ).count();
   printf( "Algorithm @1 leads to %d different answers.\n", Ndiff );
   IF (Ndiff>0) {
 	Ntestfailed :+= 1;
@@ -324,7 +324,7 @@ PROC test_malalgebra() : void {
 	#
 	VAR Ndiff, l, r;
 
-	dj := new( void, oid ); tf := new( void, int );
+	var dj := new( void, oid ); var tf := new( void, int );
 	dj.insert( nil, 0@0 );  tf.insert( nil, 10 );
 	dj.insert( nil, 0@0 );  tf.insert( nil, 20 );
 	dj.insert( nil, 0@0 );  tf.insert( nil, 30 );
@@ -336,10 +336,10 @@ PROC test_malalgebra() : void {
 	dj.insert( nil, 2@0 );  tf.insert( nil, 10 );
 	dj.seqbase(0@0);        tf.seqbase(0@0);
 
-	l := dj.reverse;
+	l := dj.reverse();
 	r := tf;
 
-	Ntestfailed := 0;
+	var Ntestfailed := 0;
 
 	@:jointest_oid()@
 	@:compresults(hash,oid)@

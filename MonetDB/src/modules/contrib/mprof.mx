@@ -270,15 +270,15 @@ number of physical IOs.
     # The code below collects the differences 
     # subsequently we can print the information
     proc pmPrint() : void {
-	var mprof_cpu := mprof_Ecpu [-] mprof_Bcpu;
+	var mprof_cpu := bat("mprof_Ecpu") [-] bat("mprof_Bcpu");
 	mprof_cpu.rename("utime_stime");
-	var mprof_io  := mprof_Eio [-] mprof_Bio;
+	var mprof_io  := bat("mprof_Eio") [-] bat("mprof_Bio");
 	mprof_io.rename("ru_usage");
-	var mprof_mem := mprof_Emem [-] mprof_Bmem;
+	var mprof_mem := bat("mprof_Emem") [-] bat("mprof_Bmem");
 	mprof_mem.rename("mallinfo");
-	var mprof_clk := mprof_Eclk [-] mprof_Bclk;
+	var mprof_clk := bat("mprof_Eclk") [-] bat("mprof_Bclk");
 	mprof_clk.rename("clock");
-	var mprof_id:= mprof_interval.reverse.join(mprof_name);
+	var mprof_id:= bat("mprof_interval").reverse().join(bat("mprof_name"));
 	mprof_id.rename("mprof_id");
 
 	# Some simple prints
@@ -289,19 +289,19 @@ number of physical IOs.
 
     # more interesting prints
     proc pmSummary() : void {
-	var mprof_cpu := mprof_Ecpu [-] mprof_Bcpu;
-	var mprof_io  := mprof_Eio [-] mprof_Bio;
-	var mprof_mem := mprof_Emem [-] mprof_Bmem;
-	var mprof_clk := mprof_Eclk [-] mprof_Bclk;
-	var mprof_id:= mprof_interval.reverse.join(mprof_name);
+	var mprof_cpu := bat("mprof_Ecpu") [-] bat("mprof_Bcpu");
+	var mprof_io  := bat("mprof_Eio") [-] bat("mprof_Bio");
+	var mprof_mem := bat("mprof_Emem") [-] bat("mprof_Bmem");
+	var mprof_clk := bat("mprof_Eclk") [-] bat("mprof_Bclk");
+	var mprof_id:= bat("mprof_interval").reverse().join(bat("mprof_name"));
 
-	var names:= mprof_name.reverse.kunique;
+	var names:= bat("mprof_name").reverse().kunique();
 	names@batloop() {
 		var t:= mprof_id.select($h);
-		var cnt:= t.count;
+		var cnt:= t.count();
 		printf("Label: %s called: %d\n", $h, cnt);
 
-		var comm:= mprof_tag.reverse.select($t);
+		var comm:= bat("mprof_tag").reverse().select($t);
 		comm@batloop() {
 			printf("%s\n",$h);
 		}
@@ -309,38 +309,38 @@ number of physical IOs.
 		
 		var a:= mprof_clk.semijoin(t);		
 		printf("\ttime\t%4d\t%4d\t%4d\t%4d\n",
-			a.sum,a.sum/a.count,a.min,a.max);
+			a.sum(),a.sum()/a.count(),a.min(),a.max());
 
 		a:= mprof_cpu.semijoin(t);		
 		var z:= [Tms_utime](a);
 		printf("\tutime\t%4d\t%4d\t%4d\t%4d\n",
-			z.sum,z.sum/z.count,z.min,z.max);
+			z.sum(),z.sum()/z.count(),z.min(),z.max());
 			
 		z:= [Tms_stime](a);
 		printf("\tstime\t%4d\t%4d\t%4d\t%4d\n",
-			z.sum,z.sum/z.count,z.min,z.max);
+			z.sum(),z.sum()/z.count(),z.min(),z.max());
 		
 		a:= mprof_io.semijoin(t);
 		z:= [Ru_inblock](a);
 		printf("\tinblock\t%4d\t%4d\t%4d\t%4d\n",
-			z.sum,z.sum/z.count,z.min,z.max);
+			z.sum(),z.sum()/z.count(),z.min(),z.max());
 		
 		z:= [Ru_oublock](a);
 		printf("\toublock\t%4d\t%4d\t%4d\t%4d\n",
-			z.sum,z.sum/z.count,z.min,z.max);
+			z.sum(),z.sum()/z.count(),z.min(),z.max());
 		
 		z:= [Ru_majflt](a);
 		printf("\tmajflt\t%4d\t%4d\t%4d\t%4d\n",
-			z.sum,z.sum/z.count,z.min,z.max);
+			z.sum(),z.sum()/z.count(),z.min(),z.max());
 		
 		z:= [Ru_nvcsw](a) [+] [Ru_nivcsw](a) ;
 		printf("\tcntxsw\t%4d\t%4d\t%4d\t%4d\n",
-			z.sum,z.sum/z.count,z.min,z.max);
+			z.sum(),z.sum()/z.count(),z.min(),z.max());
 
 		a:= mprof_mem.semijoin(t);
 		z:= [Ma_arena](a);
 		printf("\tarena\t%4d\t%4d\t%4d\t%4d\n",
-			z.sum,z.sum/z.count,z.min,z.max);
+			z.sum(),z.sum()/z.count(),z.min(),z.max());
 
 		printf("\n");
 		}
@@ -379,29 +379,29 @@ proc pInit() : void {
 	perf_end_time:= pNew("_end_time", int);
 	perf_end_io:= pNew("_end_io", int);
 	perf_end_memory:= pNew("_end_memory", int);
-	commit;
+	commit();
 }
 
 proc pExit() : void {
-	perf_tag_name.destroy;
-	perf_tag_outer.destroy;
-	perf_tag_size.destroy;
-	perf_beg_time.destroy;
-	perf_beg_io.destroy;
-	perf_beg_memory.destroy;
-	perf_end_time.destroy;
-	perf_end_io.destroy;
-	perf_end_memory.destroy;
-	commit;
+	perf_tag_name.destroy();
+	perf_tag_outer.destroy();
+	perf_tag_size.destroy();
+	perf_beg_time.destroy();
+	perf_beg_io.destroy();
+	perf_beg_memory.destroy();
+	perf_end_time.destroy();
+	perf_end_io.destroy();
+	perf_end_memory.destroy();
+	commit();
 }
 
 proc pBegin(str Name) : any {
-        var l := perf_tag_name.count;
+        var l := perf_tag_name.count();
         perf_tag_name.insert(l,Name);
-        var x:=  io.find("inblock") + io.find("oublock");
+        var x:=  io().find("inblock") + io().find("oublock");
         perf_beg_io.insert(l, x);
         perf_end_io.insert(l, 0);
-        x:= memory.find("usmblks") + memory.find("uordblks");
+        x:= memory().find("usmblks") + memory().find("uordblks");
         perf_beg_memory.insert(l, x);
         perf_end_memory.insert(l, 0);
         perf_end_time.insert(l, 0);
@@ -414,16 +414,16 @@ proc pBegin(str Name) : any {
 proc pEnd(int Tag) : void {
 	var t:= time;
         perf_end_time.replace(Tag, time);
-        var x:=  io.find("inblock") + io.find("oublock");
+        var x:=  io().find("inblock") + io().find("oublock");
         perf_end_io.replace(Tag, x);
-        x:= memory.find("usmblks") + memory.find("uordblks");
+        x:= memory().find("usmblks") + memory().find("uordblks");
         perf_end_memory.replace(Tag, x);
 }
 proc pOuter(int Tag, int outer) : void {
         perf_tag_outer.replace(Tag, Outer);
 }
 proc pSize(str Tag, bat[any,any] Res) : void {
-        perf_tag_size.replace(Tag, Res.count);
+        perf_tag_size.replace(Tag, Res.count());
 }
 
 pPenalty := 6;
@@ -447,27 +447,27 @@ proc pSummary() : void {
         ios.rename("io");
         var mem:= perf_end_memory [-] perf_beg_memory;
         mem.rename("memory");
-	var names:= perf_tag_name.reverse.kunique;
+	var names:= perf_tag_name.reverse().kunique();
 	names@batloop() {
 		var t:= perf_tag_name.select($h);
 		var a:= tim.semijoin(t);
-		a:= a.sum/a.count;
+		a:= a.sum()/a.count();
 		var b:= ios.semijoin(t);
-		b:= b.sum/b.count;
+		b:= b.sum()/b.count();
 		var c:= mem.semijoin(t);
-		c:= c.sum/c.count;
+		c:= c.sum()/c.count();
 		printf("Tag %s average cpu %d io=%d mem=%d\n", $h,a,b,c);
 	}
 }
 proc pDump() : void  {
-        printf("perf_tag_name\n"); perf_tag_name.print;
-        printf("perf_tag_outer\n"); perf_tag_outer.print;
-        printf("perf_tag_size\n"); perf_beg_time.print;
-        printf("perf_beg_io\n"); perf_beg_io.print;
-        printf("perf_beg_memory\n"); perf_beg_memory.print;
-        printf("perf_end_time\n"); perf_end_time.print;
-        printf("perf_end_io\n"); perf_end_io.print;
-        printf("perf_end_memory\n"); perf_end_memory.print;
+        printf("perf_tag_name\n"); perf_tag_name.print();
+        printf("perf_tag_outer\n"); perf_tag_outer.print();
+        printf("perf_tag_size\n"); perf_beg_time.print();
+        printf("perf_beg_io\n"); perf_beg_io.print();
+        printf("perf_beg_memory\n"); perf_beg_memory.print();
+        printf("perf_end_time\n"); perf_end_time.print();
+        printf("perf_end_io\n"); perf_end_io.print();
+        printf("perf_end_memory\n"); perf_end_memory.print();
 }
 @{
 @* Mprof implementation
@@ -1426,13 +1426,13 @@ PROC test_mprof() : void {
 
 	# A test for the performance analysis
 	pmB("abc");
-	monet_atomtbl.count.print;
+	monet_atomtbl.count().print();
 	pmE("abc");
 	pmB("pmPrint");
 	printf("#~BeginVariableOutput~#\n"); pmPrint; printf("#~EndVariableOutput~#\n");
 	pmE("pmPrint");
 	pmB("xyz");
-	monet_fcn_fcn.count;
+	monet_fcn_fcn.count();
 	pmE("xyz");
 	pmB("pmPrint");
 	printf("#~BeginVariableOutput~#\n"); pmPrint; printf("#~EndVariableOutput~#\n");
@@ -1492,44 +1492,44 @@ module(integer,groupFunctional);
 
 
 proc pmSummary() : void {
-	mprof_cnt := mprof_interval.head(1).sort;
+	var mprof_cnt := bat("mprof_interval").head(1).sort();
 	mprof_cnt := mprof_cnt.groupReduce(&int_add(int,int),0);
 	mprof_cnt.rename( "count" );
-	print( mprof_name, mprof_cnt);
+	print( bat("mprof_name"), mprof_cnt);
 }
 
 proc pmPrint() : void {
-   	mprof_cpu := mprof_Ecpu [-] mprof_Bcpu;
-   	mprof_io  := mprof_Eio  [-] mprof_Bio;
-   	mprof_mem := mprof_Emem [-] mprof_Bmem;
+   	var mprof_cpu := bat("mprof_Ecpu") [-] bat("mprof_Bcpu");
+   	var mprof_io  := bat("mprof_Eio")  [-] bat("mprof_Bio");
+   	var mprof_mem := bat("mprof_Emem") [-] bat("mprof_Bmem");
 
-	mprof_cpu := mprof_interval.join(mprof_cpu).sort;
-	mprof_io  := mprof_interval.join(mprof_io ).sort;
-	mprof_mem := mprof_interval.join(mprof_mem).sort;
+	mprof_cpu := bat("mprof_interval").join(mprof_cpu).sort();
+	mprof_io  := bat("mprof_interval").join(mprof_io ).sort();
+	mprof_mem := bat("mprof_interval").join(mprof_mem).sort();
 
-	mprof_utime :=[Tms_utime](mprof_cpu).groupReduce(&int_add(int,int),0);
+	var mprof_utime :=[Tms_utime](mprof_cpu).groupReduce(&int_add(int,int),0);
 	mprof_utime.rename( "utime" );
-	mprof_stime :=[Tms_stime](mprof_cpu).groupReduce(&int_add(int,int),0);
+	var mprof_stime :=[Tms_stime](mprof_cpu).groupReduce(&int_add(int,int),0);
 	mprof_stime.rename( "stime" );
 
-	mprof_majflt :=[Ru_majflt](mprof_io).groupReduce(&int_add(int,int),0);
+	var mprof_majflt :=[Ru_majflt](mprof_io).groupReduce(&int_add(int,int),0);
 	mprof_majflt.rename( "majflt" );
-	mprof_inblock :=[Ru_inblock](mprof_io).groupReduce(&int_add(int,int),0);
+	var mprof_inblock :=[Ru_inblock](mprof_io).groupReduce(&int_add(int,int),0);
 	mprof_inblock.rename( "inblock" );
-	mprof_oublock :=[Ru_oublock](mprof_io).groupReduce(&int_add(int,int),0);
+	var mprof_oublock :=[Ru_oublock](mprof_io).groupReduce(&int_add(int,int),0);
 	mprof_oublock.rename( "oublock" );
 
-	mprof_nivcsw :=[Ru_nivcsw](mprof_io).groupReduce(&int_add(int,int),0);
+	var mprof_nivcsw :=[Ru_nivcsw](mprof_io).groupReduce(&int_add(int,int),0);
 	mprof_nivcsw.rename( "nivcsw" );
-	mprof_nvcsw :=[Ru_nvcsw](mprof_io).groupReduce(&int_add(int,int),0);
+	var mprof_nvcsw :=[Ru_nvcsw](mprof_io).groupReduce(&int_add(int,int),0);
 	mprof_nvcsw.rename( "nvcsw" );
 
-	mprof_arena :=[Ma_arena](mprof_mem).groupReduce(&int_add(int,int),0);
+	var mprof_arena :=[Ma_arena](mprof_mem).groupReduce(&int_add(int,int),0);
 	mprof_arena.rename( "arena" );
 
-	print( mprof_name, mprof_utime, mprof_stime, mprof_arena );
-	print( mprof_name, mprof_majflt, mprof_inblock, mprof_oublock );
-	print( mprof_name, mprof_nivcsw, mprof_nvcsw, mprof_arena );
+	print( bat("mprof_name"), mprof_utime, mprof_stime, mprof_arena );
+	print( bat("mprof_name"), mprof_majflt, mprof_inblock, mprof_oublock );
+	print( bat("mprof_name"), mprof_nivcsw, mprof_nvcsw, mprof_arena );
 }
 
-quit;
+quit();

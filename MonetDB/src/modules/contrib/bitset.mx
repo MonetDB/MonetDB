@@ -419,7 +419,7 @@ PROC test_bitset() : void {
 	sigs("bitset");
 
 	printf("constructor\n");
-	b := newBitset();
+	var b := newBitset();
 	b.print;
 
 	printf("get(15)\n");
@@ -443,7 +443,7 @@ PROC test_bitset() : void {
 	b.print;
 
 	printf("constructor(35)\n");
-	a := newBitset(35);
+	var a := newBitset(35);
 	a.print;
 
 	printf("constructor(0x22)\n");

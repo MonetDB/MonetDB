@@ -58,7 +58,7 @@ not
 [ ttttttttttttttttttttttttttftttff ]
 convert to integer
 [ 35 ]
-quit;
+quit();
 
 # 17:05:31 >  
 # 17:05:31 >  Done.

@@ -38,7 +38,7 @@ Algorithm lefthash leads to 0 different answers.
 Algorithm leftfetch leads to 0 different answers.
 Algorithm leftmerge leads to 0 different answers.
 RESULT: 0 tests failed.
-quit;
+quit();
 
 # 17:06:12 >  
 # 17:06:12 >  Done.

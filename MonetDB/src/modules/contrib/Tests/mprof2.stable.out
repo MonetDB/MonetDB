@@ -96,7 +96,7 @@ Label: xyz called: 1
 	arena	   0	   0	   0	   0
 
 #~EndVariableOutput~#
-quit;
+quit();
 
 # 17:05:15 >  
 # 17:05:15 >  Done.

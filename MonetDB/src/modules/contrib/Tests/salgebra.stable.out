@@ -76,7 +76,7 @@ Created clusterhash ti
 # (int)	  (str)		| (int)		| (clusterhash)	  #
 #---------------------------------------------------------#
 [ 29,	  "ti",		  2,		  ti		  ]
-quit;
+quit();
 
 # 17:06:12 >  
 # 17:06:12 >  Done.
