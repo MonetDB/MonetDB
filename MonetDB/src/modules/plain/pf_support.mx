@@ -61,6 +61,52 @@ Merges pairs of bats according to the order as defined by the first pair's tails
 
 .END pf_support;
 
+@mil
+PROC chk_order( BAT[any::1,any::2] b, bit warn ) : int := {
+        VAR rtrn := 0;
+        VAR h0 := b.ordered();
+        VAR t0 := b.reverse().ordered();
+        VAR oldmsk := debugmask();
+        VAR newmsk := 2+8;
+        if (warn) {
+                newmsk :+= 8*1024*1024;
+        }
+        debugmask(or(oldmsk,newmsk));
+	# "fake" command to trigger property checking on BAT b
+        b := b.reverse().reverse();
+        debugmask(oldmsk);
+        VAR h1 := b.ordered();
+        VAR t1 := b.reverse().ordered();
+        if (h0!=h1) {
+		# "ordered"-flag of head did change
+                rtrn :or= 1;
+        }
+        if (t0!=t1) {
+		# "ordered"-flag of tail did change
+                rtrn :or= 2;
+        }
+        if (not(h1)) {
+		# head is not sorted
+                rtrn :or= 4;
+        }
+        if (not(t1)) {
+		# tail is not sorted
+                rtrn :or= 8;
+        }
+        return rtrn;
+}
+ADDHELP("chk_order", "manegold", "Jul 24 2004",
+	" Simple proc that triggers property checking on BAT b.\n"+
+	" If 'warn' is 'TRUE', warnings are issued if properties\n"+
+	" (e.g., sortedness) do hold, but the respective flags were not set.\n"+
+	" The return value 'r' is a 4-bit pattern, where the bits indicate\n"+
+	" the following when set:\n"+
+	"  0 (and(r,1)==1): 'ordered'-flag of head did change,\n"+
+	"  1 (and(r,2)==2): 'ordered'-flag of tail did change,\n"+
+	"  2 (and(r,4)==4): head is not sorted,\n"+
+	"  3 (and(r,8)==8): tail is not sorted.",
+	"pf_support");
+ 
 @* Module Implementation
 @h
 #ifndef PF_SUPPORT_H
