@@ -78,7 +78,7 @@ initialized C variable. Thereafter, we simple produce
 function calls for each MAL instruction and plug in
 the required flow of control statements.
 Notice that each instruction may produce an exception,
-which should be catched. This code is postponed.
+which should be catched. 
 
 Ofcourse the resulting code is not optimal, e.g.
 the following portion for the example is produced:
@@ -271,22 +271,48 @@ void mccEntry(stream *f, MalBlkPtr mb, int i){
         stream_printf(f,"/* Unknown barrier :%d */",getVarType(mb,i));
     }
 }
+@-
+Before we generate code, we should check existence of
+CATCH blocks. If they do not exist, then any exception
+terminates the function. Otherwise, we jump to the first one.
+@c
 void mccBody(stream *f,MalBlkPtr mb){
     int i,j;
     InstrPtr p;
+    int *catch, ctop=0;
+    catch= (int *) alloca(mb->stop);
+
+    for(i=1; i<mb->stop; i++){
+        p= getInstrPtr(mb,i);
+        if( p->barrier== CATCHsymbol)
+            catch[ctop++]= i;
+    }
+
     for(i=1; i<mb->stop; i++){
         p= getInstrPtr(mb,i);
         if( p->barrier== EXITsymbol )
             stream_printf(f,"\nEXIT_%d:\n",i);
+
+        if( p->barrier== CATCHsymbol ){
+            stream_printf(f,"\nCATCH_%d:\n",i);
+            stream_printf(f,"if( ");
+            mccVar(f,mb,getArg(p,0));
+            stream_printf(f," == MAL_SUCCEED) goto EXIT_%d;\n",p->jump);
+            continue;
+        }
+    
         if( p->blk && p->blk->binding){
-            stream_printf(f,"\tXmsg = ");
+            stream_printf(f,"\tif( Xmsg = ");
             stream_printf(f,"%s(", p->blk->binding);
             mccArg(f,mb,getArg(p,0));
             for(j=1; j<p->argc; j++){
                 stream_printf(f,",");
                 mccArg(f,mb,getArg(p,j));
             }
-            stream_printf(f,");\n");
+            stream_printf(f,") )");
+            if( ctop)
+                stream_printf(f," goto CATCH_%d;\n",catch[--ctop]);
+            else stream_printf(f," return Xmsg;\n");
         }
         if( p->barrier)
         switch(p->barrier){
@@ -296,6 +322,7 @@ void mccBody(stream *f,MalBlkPtr mb){
             stream_printf(f,") ) goto EXIT_%d; ",p->jump);
             stream_printf(f,"\nBARRIER_%d:\n",i+1);
             break;
+        case CATCHsymbol:
         case EXITsymbol:
             break;
         case LEAVEsymbol:
