@@ -34,6 +34,15 @@ if [ -x src/utils/autogen/autogen.py ] ; then
 	CONFDIR="-I `$MONET_PREFIX/bin/monet-config --pkgdatadir`/conf"
 fi
 
+if [ "`uname`" = Darwin  -a  "`type -p glibtool 2>/dev/null`"  -a  "`type -p glibtoolize 2>/dev/null`" ] ; then
+	LIBTOOL=glibtool
+	LIBTOOLIZE=glibtoolize
+	echo "using `type -p glibtool 2>/dev/null` and `type -p glibtoolize 2>/dev/null`."
+  else
+	LIBTOOL=libtool
+	LIBTOOLIZE=libtoolize
+fi
+
 find . -name .incs.\* \-exec rm {} \;
 rm -rf autom4te-*.cache
 
@@ -83,7 +92,7 @@ cat acout.in  >> configure.in
 echo ")" >> configure.in
 
 REQ_LT_VERSION="1.4"
-LT_VERSION=`libtool --version 2>/dev/null | sed -n '/^ltmain\.sh/{s/([^)]*)//g;s/ltmain.sh//g;s/ //g;p;q;}'`
+LT_VERSION=`$LIBTOOL --version 2>/dev/null | sed -n '/^ltmain\.sh/{s/([^)]*)//g;s/ltmain.sh//g;s/ //g;p;q;}'`
 _LT_VERSION=`echo $LT_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _REQ_LT_VERSION=`echo $REQ_LT_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
@@ -97,7 +106,7 @@ elif [ $_LT_VERSION -lt $_REQ_LT_VERSION ]; then
 	done
 fi
 
-test -f conf/ltmain.sh || libtoolize -c -f; 
+test -f conf/ltmain.sh || $LIBTOOLIZE -c -f; 
 
 #if [ ! "`grep \"CC=\$arg\" conf/ltmain.sh 2>/dev/null`" ]; then
 #  perl -i.bak -p -e  's/link \| relink\)/link \| relink\)\n    CC=\$arg/g' conf/ltmain.sh
@@ -299,6 +308,25 @@ grep 'CXXFLAGS="-g -O2"' configure >/dev/null && cat << "EOF" | patch configure
  fi
  
  for ac_declaration in \
+EOF
+
+# patch conf/ltmain.sh to get linking of dependent modules working on MacOS X/Darwin
+test -f conf/ltmain.sh && cat << "EOF" | patch conf/ltmain.sh
+--- conf/ltmain.sh.OK	2003-05-15 19:20:52.000000000 +0200
++++ conf/ltmain.sh	2003-05-15 19:31:40.000000000 +0200
+@@ -1845,7 +1845,11 @@
+ 	    lib_linked=yes
+ 	    case $hardcode_action in
+ 	    immediate | unsupported)
+-	      if test "$hardcode_direct" = no; then
++	      case $host in
++	      *-*-darwin*) fix_hardcode_direct="no";;
++	      *)           fix_hardcode_direct="$hardcode_direct";;
++	      esac
++	      if test "$fix_hardcode_direct" = no; then
+ 		add="$dir/$linklib"
+ 	      elif test "$hardcode_minus_L" = no; then
+ 		case $host in
 EOF
 
 exit 0
