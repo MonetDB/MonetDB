@@ -51,7 +51,6 @@ static stmt *tail_column(stmt * st)
 	case st_join:
 	case st_outerjoin:
 	case st_intersect:
-	case st_derive:
 	case st_find:
 		return tail_column(st->op2.stval);
 
@@ -107,6 +106,7 @@ static stmt *tail_column(stmt * st)
 	case st_atom:
 	case st_var:
 	case st_mark:
+	case st_derive:
 	case st_group_ext:
 	case st_group:	
 	case st_predicate:	/* 1 = 1 is not a column */
@@ -739,13 +739,11 @@ stmt *rel2bin( mvc *c, stmt *s )
 		os = stmt_semijoin(
 			rel2bin(c, s->op1.stval),
 			rel2bin(c, s->op2.stval));
-		/*
 		if (!mvc_debug_on(c,4096) && os->nrcols) {
 			ns = eliminate_semijoin(os);
 		} else {
-		}
-		*/
 			ns = stmt_dup(os);
+		}
 		stmt_destroy(os);
 		s->optimized = ns->optimized = 2;
 		if (ns != s) {
