@@ -1101,6 +1101,10 @@ void sqltypeinit()
 	sql_create_func( "minute", "minutes", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func( "second", "seconds", TMESTAMP, NULL, INT, SCALE_FIX);
 
+	sql_create_func( "dayofyear", "dayofyear", DTE, NULL, INT, SCALE_FIX);
+	sql_create_func( "weekofyear", "weekofyear", DTE, NULL, INT, SCALE_FIX);
+	sql_create_func( "dayofweek", "dayofweek", DTE, NULL, INT, SCALE_FIX);
+
 
 	for(t=strings; t < numerical; t++){
 	  sql_create_func(  "substring", "substring", *t, INT, *t, SCALE_NONE);
