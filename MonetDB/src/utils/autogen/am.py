@@ -519,7 +519,7 @@ def am_library(fd, var, libmap, am):
     	am['NLIBS'].append((libname, sep))
     else:
     	am['LIBS'].append((libname, sep))
-    am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
+        am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
 
     if libmap.has_key('MTSAFE'):
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
