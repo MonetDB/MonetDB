@@ -650,13 +650,8 @@ scanner_string_bs(mvc * c, int quote)
 			return scanner_token_bs(lc, STRING);
 		}
 		lc->yycur--; /* go back to last valid char */
-		/* long utf8, if correct itn't the quote */
-		if ((cur & 0x80) == 0) {
-			if (rs->eof || bstream_next( rs ) <= 0) 
-				cur = EOF;
-		} else {
-			cur = scanner_getc_bs(lc);
-		}
+		/* long utf8, if correct isn't the quote */
+		cur = scanner_getc_bs(lc);
 	}
 	(void)sql_error( c, 2, "Unexpected end of input" );
 	return LEX_ERROR;
