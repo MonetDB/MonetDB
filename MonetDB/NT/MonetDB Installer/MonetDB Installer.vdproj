@@ -411,12 +411,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_83F69A767F6F46BCBA65E1E7D0275560"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_857BE9FF24034E9E86CA49FD6CAD7960"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -496,6 +490,12 @@
         "Entry"
         {
         "MsmKey" = "8:_9D68F46D350A4E80895790D00F825D18"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_9F3B9B983BD048919D9A6C1C9EB96D73"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -875,31 +875,31 @@
     {
         "CustomAction"
         {
-            "{0C9D821E-95BB-411F-BE03-2864360EBF94}:_03AE694258FA4755920B0780ED1FAC19"
+            "{0C9D821E-95BB-411F-BE03-2864360EBF94}:_21F5E48E627D4F8B8E7249E66A1BE586"
             {
             "Name" = "8:odbcinstall.exe"
             "Condition" = "8:"
-            "Object" = "8:_83F69A767F6F46BCBA65E1E7D0275560"
-            "FileType" = "3:2"
-            "InstallAction" = "3:4"
-            "Arguments" = "8:/Uninstall"
-            "EntryPoint" = "8:"
-            "Sequence" = "3:1"
-            "Identifier" = "8:_78719C9F_4D59_4639_BE4F_A784BB4E4111"
-            "InstallerClass" = "11:FALSE"
-            "CustomActionData" = "8:"
-            }
-            "{0C9D821E-95BB-411F-BE03-2864360EBF94}:_0975B2B3FFA64C6EB49EC7F0E5F28C7A"
-            {
-            "Name" = "8:odbcinstall.exe"
-            "Condition" = "8:ODBCDRIVER"
-            "Object" = "8:_83F69A767F6F46BCBA65E1E7D0275560"
+            "Object" = "8:_9F3B9B983BD048919D9A6C1C9EB96D73"
             "FileType" = "3:2"
             "InstallAction" = "3:1"
             "Arguments" = "8:/Install"
             "EntryPoint" = "8:"
             "Sequence" = "3:1"
-            "Identifier" = "8:_F5DEFCA8_DFC3_4A84_9F7E_BE61054F12D7"
+            "Identifier" = "8:_7CDF346D_9B03_415F_B956_8D45E12DC48D"
+            "InstallerClass" = "11:FALSE"
+            "CustomActionData" = "8:"
+            }
+            "{0C9D821E-95BB-411F-BE03-2864360EBF94}:_C3C02C9CFE354440B96871B5D822B307"
+            {
+            "Name" = "8:odbcinstall.exe"
+            "Condition" = "8:"
+            "Object" = "8:_9F3B9B983BD048919D9A6C1C9EB96D73"
+            "FileType" = "3:2"
+            "InstallAction" = "3:4"
+            "Arguments" = "8:/Uninstall"
+            "EntryPoint" = "8:"
+            "Sequence" = "3:1"
+            "Identifier" = "8:_C9B5BDDF_4046_484B_988D_083D9E900371"
             "InstallerClass" = "11:FALSE"
             "CustomActionData" = "8:"
             }
@@ -2241,26 +2241,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_83F69A767F6F46BCBA65E1E7D0275560"
-            {
-            "SourcePath" = "8:..\\..\\..\\sql\\NT\\bin\\install.exe"
-            "TargetName" = "8:odbcinstall.exe"
-            "Tag" = "8:"
-            "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_857BE9FF24034E9E86CA49FD6CAD7960"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\qt.mil"
@@ -2527,6 +2507,26 @@
             "TargetName" = "8:general.mil"
             "Tag" = "8:"
             "Folder" = "8:_562B007DB0FC4C0D8EBC256D71FF091B"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_9F3B9B983BD048919D9A6C1C9EB96D73"
+            {
+            "SourcePath" = "8:..\\..\\..\\sql\\NT\\bin\\odbcinstall.exe"
+            "TargetName" = "8:odbcinstall.exe"
+            "Tag" = "8:"
+            "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3818,7 +3818,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB"
         "ProductCode" = "8:{169E1FC0-12F6-46BC-9C26-E78AB1B456E0}"
-        "PackageCode" = "8:{9F04BF62-2015-4AD3-B58E-B43CD477CAA3}"
+        "PackageCode" = "8:{4BB18C93-B231-4265-990C-3EA5A0E74960}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"

@@ -12,10 +12,10 @@ exec_prefix=@exec_prefix@
 gdk_dbfarm=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm	# origin of the database store
 gdk_dbname=demo			# default database to open
 gdk_debug=0			# debug
-#gdk_mem_bigsize=33554432	# memory chucks of size >= 32M will be mmaped anonymous
-#gdk_vm_minsize=134217728	# memory chucks of size >= 128M will be mmaped
-#gdk_alloc_map=yes		# for 32 bit systems try claim 3G of (virtual) memory
-				# set to "no" to run Mserver with valgrind;
+#gdk_mem_bigsize=33554432	# memory chunks of size >= 32M will be mmaped anonymously
+#gdk_vm_minsize=134217728	# memory chunks of size >= 128M will be mmaped
+#gdk_alloc_map=yes		# for 32 bit systems try to claim 3G of (virtual) memory;
+				# set to "no" to run Mserver with valgrind.
 				# also, you need to tell valgrind to use 8-byte alignment, hence:
 				# "valgrind --alignment=8 Mserver --set gdk_alloc_map=no ..."
 
@@ -63,7 +63,7 @@ monet_daemon=no			# default yes
 
 # Monet Application Interface Section
 #====================================
-#mapi_port=50000			#default port to address a Mserver
+#mapi_port=50000			#default port to address an Mserver
 #mapi_noheaders=no			#show all the mil output
 #mapi_debug=0				#The mapi debug level		
 

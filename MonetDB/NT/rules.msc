@@ -59,6 +59,10 @@ MV=copy
 DEL=del
 CONFIGURE=$(PYTHON) "$(TOPDIR)\configure.py" "$(TOPDIR)" "$(prefix)"
 
+!IFDEF NDEBUG
+CFLAGS = $(CFLAGS) -DNDEBUG
+!ENDIF
+
 {$(SRCDIR)}.mx.h:
 	$(MX) $(MXFLAGS) -x h $<
 
