@@ -627,7 +627,8 @@ public class JdbcClient {
 									for (; rs.next(); count++) {
 										out.print("|");
 										for (int j = 0; j < width.length; j++) {
-											String data = rs.getString(j + 1);
+											String data = (rs.getObject(j + 1)).toString();
+								//			String data = rs.getString(j + 1);
 											if (data == null) data = "<NULL>";
 											out.print(" " + data + repeat(' ', Math.max(width[j] - data.length(), 0)) +  " |");
 										}
@@ -660,7 +661,6 @@ public class JdbcClient {
 							} else {
 								System.err.println("Error: " + e.getMessage());
 							}
-							System.err.println("Executed query: " + query);
 						} finally {
 							query = "";
 						}
@@ -789,6 +789,12 @@ public class JdbcClient {
 					out.print(","); out.print(cols.getString("DECIMAL_DIGITS"));
 				}
 				out.print(")");
+			} else if (
+				type == Types.TIMESTAMP &&
+				size == 0 &&
+				cols.getBoolean("DECIMAL_DIGITS")
+			) {
+				out.print(" WITH TIME ZONE");
 			}
 			if (cols.getInt("NULLABLE") == DatabaseMetaData.columnNoNulls)
 				out.print("\tNOT NULL");
