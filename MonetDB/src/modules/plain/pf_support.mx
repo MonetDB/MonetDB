@@ -177,8 +177,8 @@ int CMDmerged_union(BAT** res, BAT *L, BAT *R, ...){
 
 	BATcheck(L, "CMDmerged_union");
 	BATcheck(R, "CMDmerged_union");
-	ERRORcheck(!(BATtordered(L)&1), "merged_union: tail of first BAT must not be sorted.\n");
-	ERRORcheck(!(BATtordered(R)&1), "merged_union: tail of second BAT must not be sorted.\n");
+	ERRORcheck(!(BATtordered(L)&1), "merged_union: tail of first BAT must be sorted.\n");
+	ERRORcheck(!(BATtordered(R)&1), "merged_union: tail of second BAT must be sorted.\n");
 
 	b[0] = L;
 	b[1] = R;
