@@ -1011,7 +1011,7 @@ sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	int trace = 0, ret = GDK_SUCCEED;
 	ssize_t i = 0;
 	char buf[BUFSIZ + 1];
-	char *user, *passwd, *schema;
+	char *user, *passwd, *schema, *challenge;
 	int blocked = 0;
 
 	mvc *m;
@@ -1049,6 +1049,13 @@ Use default setting for trace.
 		GDKsyserror("mapisqlclient:stream-w problems\n");
 		return connect_error(in, out);
 	}
+	/* send challenge string, currently empty (disabled) */
+	challenge = "::mserver_sql:4\n";
+	/* temporarily misuse user variable */
+	user = GDKmalloc(sizeof(char) * 100);
+	snprintf(user, 100, "%2d%s", strlen(challenge), challenge);
+	stream_write(out, user, strlen(user), 1);
+	GDKfree(user);
 	/* get user name */
 	memset(buf, 0, BUFSIZ);
 	user = buf;

@@ -62,6 +62,7 @@ stderr of test 'unicode_varchar-bug-sf-1041324_JdbcClient` in directory 'src/tes
 # 19:59:40 >  Mtimeout -timeout 9 java -jar /var/tmp/_4.4.0_BUILD_SQL_GNU_32_d_--enable-debug_/src/jdbc/MonetDB_JDBC.jar -p 50830 -f ../../../../../../../ufs/manegold/Monet/4.4.0/sql/src/test/bugs/Tests/../bug-sf-1041324_weird-char.sql
 # 19:59:40 >  
 
+Connection warning: database specifier not supported on this server (mserver_sql), protocol version 4
 
 # 19:59:41 >  
 # 19:59:41 >  Done.

@@ -193,32 +193,26 @@ public class MonetConnection extends Thread implements Connection {
 				monet.debug(f.getAbsolutePath());
 			}
 
-			// we need the socket buffers somehow to be filled, if the server
-			// is going to fill them.  Yield, and hope that that helps.
-			Thread.yield();
-
 			// log in
 			if (blockMode) {
 				// convenience cast shortcut
 				MonetSocketBlockMode blkmon = (MonetSocketBlockMode)monet;
 				String challenge = null;
 
-				if (blkmon.hasData()) {
-					// read the challenge from the server
-					byte[] chal = new byte[2];
-					blkmon.read(chal);
-					int len = 0;
-					try {
-						len = Integer.parseInt(new String(chal, "UTF-8"));
-					} catch (NumberFormatException e) {
-						throw new SQLException("Server challenge length unparsable");
-					}
-					// read the challenge string
-					chal = new byte[len];
-					blkmon.read(chal);
-					
-					challenge = new String(chal, "UTF-8");
+				// read the challenge from the server
+				byte[] chal = new byte[2];
+				blkmon.read(chal);
+				int len = 0;
+				try {
+					len = Integer.parseInt(new String(chal, "UTF-8"));
+				} catch (NumberFormatException e) {
+					throw new SQLException("Server challenge length unparsable");
 				}
+				// read the challenge string
+				chal = new byte[len];
+				blkmon.read(chal);
+				
+				challenge = new String(chal, "UTF-8");
 
 				// mind the newline at the end
 				blkmon.write(getChallengeResponse(
@@ -255,9 +249,8 @@ public class MonetConnection extends Thread implements Connection {
 				}
 			} else {
 				String challenge = null;
-				if (monet.hasData()) {
-					challenge = monet.readLine();
-				}
+				challenge = monet.readLine();
+
 				monet.writeln(getChallengeResponse(
 					challenge,
 					username,
