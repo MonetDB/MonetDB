@@ -115,7 +115,7 @@ PFstate_t PFstate = {
     print_algebra_tree  : false,
     print_ma_tree       : false,
     parse_hsk           : false,
-    genType             : PF_GEN_ORG
+    genType             : PF_GEN_XML
 };
 
 #if 0
