@@ -77,10 +77,10 @@ BAT *BATins(BAT *b, BAT *n) {
 		return BATmirror(BATins(BATmirror(b),BATmirror(n)));
 	}
 
-	if (BAThdense(b) && b->htype == TYPE_void){
+	if (b->htype == TYPE_void && b->hseqbase != oid_nil){
 		oid t = *(oid*)BUNhead(b,BUNlast(b)-BUNsize(b));
 		oid h = *(oid*)BUNhead(n,BUNfirst(n));
-		if ((t+1) != h){
+		if ((t+1) != h || !BAThdense(n)){
 			b = BATmaterialize(b, BATcount(b)+ BATcount(n));
 			if( b == NULL) return b;
 		}
