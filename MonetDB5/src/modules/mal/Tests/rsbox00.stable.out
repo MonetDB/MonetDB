@@ -11,6 +11,8 @@ stdout of test 'rsbox00` in directory 'src/modules/mal` itself:
 
 
 
+
+
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
@@ -109,8 +111,9 @@ exit v;	# 35  (v:lng)
 end main;	# 36  
 &0
 $id myid
+$columncount 2
 $tuplecount 3
-%name column_1	column_2
+%column column_1	column_2
 %table table1	table2
 %schema sys	sys
 %type varchar	int

@@ -1,3 +1,7 @@
+## Test generic ResultSet + rsbox behaviour:
+## create two ResultSets, fill one with two BATs and see if everything is
+## properly released.
+
 include rsbox;
 
 rs := rsbox.create("lost", 1, 11);

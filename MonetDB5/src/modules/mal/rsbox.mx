@@ -930,12 +930,13 @@ str RSwriteHeader(int* retval, int* handle) {
 @c
 	/* serialise the header to the stream */
 	@:MX-writeHeaderLineSingleValue("%s", rs->id == NULL ? "" : rs->id, "id")@
+	@:MX-writeHeaderLineSingleValue("%d", rs->columnCount, "columncount")@
 	@:MX-writeHeaderLineSingleValue("%d", rs->length, "tuplecount")@
 
 	/* walk through the columns, and set those properties that are not
 	 * yet set, but are a necessity */
 
-	if ((bt = stream_printf(s, "%c%s ", RS_LINE_HEADER, "name")) > 0) {
+	if ((bt = stream_printf(s, "%c%s ", RS_LINE_HEADER, "column")) > 0) {
 		bytes += bt;
 		for (i = 0; i < rs->columnCount; i++) {
 			col = rs->columns[i];

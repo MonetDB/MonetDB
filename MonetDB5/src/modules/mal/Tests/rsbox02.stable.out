@@ -15,6 +15,8 @@ stdout of test 'rsbox02` in directory 'src/modules/mal` itself:
 
 
 
+
+
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
@@ -91,8 +93,9 @@ function Admin.main():int;	# 0  (main:int)
 end main;	# 28  
 &0
 $id reuse
+$columncount 1
 $tuplecount 5
-%name the_column
+%column the_column
 %table table1
 %schema sys
 %type int
@@ -106,8 +109,9 @@ $tuplecount 5
 [d6
 &0
 $id reuse
+$columncount 1
 $tuplecount 9
-%name the_column
+%column the_column
 %table table1
 %schema sys
 %type varchar

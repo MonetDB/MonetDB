@@ -1,3 +1,5 @@
+## Test ResultSet reusability using hetrogenous typed BATs
+
 include rsbox;
 
 rs := rsbox.create("reuse", 1, 1);
