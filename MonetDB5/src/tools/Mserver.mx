@@ -152,7 +152,7 @@ void monet_hello(opt *set, int setlen) {
 	printf("# config:%s\n", GDKgetenv("config"));
 	printf("# dbfarm:%s\n", GDKgetenv("gdk_dbfarm"));
 	printf("# dbname:%s\n", GDKgetenv("gdk_dbname"));
-	printf("# Visit http://monetdb.cwi.nl for further information.\n");
+	printf("# Visit http://monetdb.cwi.nl/ for further information.\n");
 
     }
 }
