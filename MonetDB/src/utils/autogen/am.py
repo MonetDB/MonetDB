@@ -326,7 +326,10 @@ def am_translate_dir(path,am):
 def am_includes(fd, var, values, am):
   incs = ""
   for i in values:
-    incs = incs + " -I" + am_translate_dir(i,am)
+    if (i[0] == "-" or i[0] == "$"):
+      	incs = incs + " " + i
+    else:
+	incs = incs + " -I" + am_translate_dir(i,am)
   fd.write("INCLUDES = " + incs + "\n")
 
 output_funcs = { 'SUBDIRS': am_assignment, 

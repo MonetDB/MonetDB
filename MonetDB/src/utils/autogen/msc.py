@@ -345,7 +345,10 @@ def msc_libs(fd, var, libsmap, msc ):
 def msc_includes(fd, var, values, msc):
   incs = ""
   for i in values:
-    incs = incs + " -I" + msc_translate_dir(i,msc)
+    if (i[0] == "-" or i[0] == "$"):
+      	incs = incs + " " + i
+    else:
+	incs = incs + " -I" + msc_translate_dir(i,msc)
   fd.write("INCLUDES = " + incs + "\n")
 
 output_funcs = { 'SUBDIRS': msc_subdirs, 
@@ -443,7 +446,7 @@ CXXEXT = \\\"cxx\\\"
 
   fd.write("all-msc:")
   if (topdir == cwd):
-    fd.write(" config.h")
+    fd.write(" config.h unistd.h")
   if (len(msc['LIBS']) > 0):
     for v in msc['LIBS']:
       fd.write(" lib%s.dll" % (v) )
@@ -456,6 +459,8 @@ CXXEXT = \\\"cxx\\\"
 
   if (topdir == cwd):
       fd.write("config.h: winconfig.h\n\t$(INSTALL) winconfig.h config.h\n")
+  if (topdir == cwd):
+      fd.write("unistd.h: \t$(ECHO) \"#ifndef UNISTD_H\n#define UNISTD_H\n#include <io.h>\n#endif\n\" > unistd.h")
 
   fd.write("install-msc: install-exec install-data\n")
   fd.write("install-exec: all\n")
