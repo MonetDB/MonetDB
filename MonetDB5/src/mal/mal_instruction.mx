@@ -30,7 +30,7 @@ The operation is either an assigment "variable := module.fcn(a1..a32)"
 where the actual function arguments are references to variables on the
 runtime variable stack, or reference to a MAL control statement, 
 i.e. RAISE, CATCH, RETURN, BARRIER, LEAVE,REDO
-
+@-
 A sequence of instructions is represented by a variable, instruction,
 and program stmt block.
 The variable block is the symbol table associated with the instruction sequence.
@@ -39,13 +39,13 @@ a reference to a lexical value when it denotes a constant,
 its associated Mal type identifier.
 Upon procedure return, the variable block is inspected to find
 objects eligable for garbage collection (e.g. strings).
-
+@-
 The instruction is a code byte string overlaid with the
 instruction pattern. This method leads to a large
 allocated block, which can be easily freed, and
 pattern makes it possible to accommodate a variable argument list.
 Each argument list starts with a reference to the destination variable. 
-
+@-
 Variable- and stmt- block together describe the
 static part of a MAL procedure. It carries carry enough information to produce
 a listing and to aid symbolic debugging. Ideally, the listing
@@ -53,14 +53,14 @@ of a MAL program is identical to the non-commented source.
 This costs some space, but will improve readability and permits
 instruction sequences generated internally also to be kept
 around as ascii text for later inclusion.
-
+@-
 WARNING. The way we lay out the instructions means that 
 you can prepare only one instruction at a time, because you don't
 know how many arguments may be needed.
-
+@-
 A variable binding may become CONSTANT for the duration of its
 life time.
-
+@-
 The instruction records contain three optional pointers to functions:
 beforeCall, afterCall, and finalCall. They are bound to the result type.
 All expect a pointer to a VALrecord. The beforeCall is activated
@@ -72,17 +72,18 @@ Typical use of beforeCall and afterCall are handling of BAT references,
 but they can also be used to update a front-end.
 The finalCall is activated when the scope in which the object is
 used is terminated. This may require garbage collection actions.
-
+@-
 [Think, should beforeCall/afterCall also become part of the MAL functions?]
-
+@-
 The procedural abstraction comes in two forms, FUNCTION and STREAM.
 The former behaves as a normal function, it computes one or more results
 and terminates. Contrary, the STREAM call leads to an independent thread
 of control that waits for a re-activation request. Stream operations are
 primarilly interesting within code blocks that are executed repeatedly.
 To illustrate, the program below generates a stream of random numbers.
+@-
 @T
-\begin{verbatim}
+<pre>
 stream random(seed:int):(z:bit,v:int);
 	i:= seed;
 barrier L:= true;
@@ -101,7 +102,7 @@ barrier (Z,val):=random(1);
 	redo Z;
 exit Z;
 	
-\end{verbatim}
+</pre>
 @{
 @h
 /*

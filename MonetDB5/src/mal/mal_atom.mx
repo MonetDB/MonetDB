@@ -23,43 +23,57 @@
 @'              Sjoerd Mullender  <Sjoerd.Mullender@cwi.nl>
 @a M.L.Kersten
 @* Atom administration
-@T
-For the courageous at heart, you may enter the difficult world
-of extending the kernel library. This calls for studying the
-documentation associated with the atom structures (gdk_atoms),
-because you have to develop routines complying with the
-signatures required in the GDK library.
-
-Once you have assembled these primitive, you can introduce them
-in a running server using a ATOM MODULE definition, which contains
-a MAL specification of their signature and calls to the routines
-below to register the atom in the kernel.
-
-Each ruler dealing with registering a function performs the necessary
-type check, but relies on the user to comply with this signature in
-its C-implementation. The ruler calls are part of a module
-initialization routine.
-
-A concrete example is the 'blob' datatype in the Monet 5 atom module
-library(see ../modules/atoms/blob.mx)
-
+Monet supports an extensible type system to accomodate a wide
+spectrum of database kernels and application needs.
+The type administration keeps track of their properties and
+provides access to the underlying implementations.
+@-
 The Monet Assembler Language recognizes the definition of a new
 atom type by replacing the MODULE keyword with ATOM MODULE.
 Atoms definitions require special care, because their definition and 
 properties should be communicated with the GDK kernel library.
 The commands defined in an ATOM MODULE block are screened as of interest 
 to the gdk_atom library. 
+@- Builtin types
+The Monet kernel back-ends (GDK,x100) come with a set of built-in types.
+The GDK atom structure is used to administer all types known.
 
+@- Predefined types
+A small collection of predefined types are shipped with the sysem.
+They implement the types encountered essential for end-user applications,
+such as date, time, blob, and url.
+They are implemented using the type extension mechanism described below.
+As such, they provide examples for future extensions.
+A concrete example is the 'blob' datatype in the Monet 5 atom module
+library(see ../modules/atoms/blob.mx)
+
+@- User defined types
+For the courageous at heart, you may enter the difficult world
+of extending the kernel library. This calls for studying the
+documentation associated with the atom structures (gdk_atoms),
+because you have to develop routines complying with the
+signatures required in the GDK library.
+@-
+The registration functions perform the necessary
+type checks, but relies on the user to comply with this signature in
+its C-implementation. The ruler calls are part of a module
+initialization routine.
+@-
 Functions passed to the GDK kernel are not directly accessible
 as MAL routines, because their implementation requires a
 GDK-specific signature. (See GDK documentation)
-This is realized by renaming them to an non-parseable function.
-
+They are renamed to an non-parseable function, effectively shielding
+them from the MAL programmer.
+@-
 This feature is of particular interest to system experts. 
 It is not meant for end-users trying to intruduce record- or 
 struct-like objects in the database. They better decompose
 the complex object structure and represent the components in
 different BATs.
+@- Enumerated types
+A common class of types are the enumerated types, i.e. a type
+domain is enumerated (dynamically).
+See for more information ../modules/mal/enum.mx
 @{
 @h
 #ifndef _MAL_ATOM_H

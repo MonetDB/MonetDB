@@ -22,10 +22,9 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f atoms
-@t The Atom Module
 @a M.L. Kersten
 @v 1.0
-@* Introduction
+@* User defined atoms
 Monet supports definitions of user-defined types. 
 This feature is of particular interest to system experts. 
 It is not meant for end-users trying to introduce record- or 
@@ -50,7 +49,7 @@ its C-implementation. The ruler calls are part of a module
 initialization routine.
 
 A concrete example is the 'blob' datatype (see blob.mx)
-
+@{
 @mal
 module atoms;
 
@@ -120,3 +119,4 @@ str atomsLength(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	(void) m; (void)s; (void) p; /* fool compiler */
 	return throwMessage("atoms.length", "not yet implemented\n");
 }
+@}

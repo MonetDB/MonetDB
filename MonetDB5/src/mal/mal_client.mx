@@ -30,7 +30,6 @@ or through its server console.
 Access through the internet requires a Monet client program at the
 source, but ordinary telnet connections can be applied when the internet
 port number of the database server is publicised.
-
 At the server, each client is represented by a session record about the
 current status, such as name, file descriptors, namespace, and local stack.
 Furthermore, each client session has a dedicated thread of control.
@@ -40,11 +39,10 @@ They are referenced internally by number. The console is the first and
 should always be present. It reads from standard input and writes to 
 standard output.
 The number of clients depends on the permissible open file descriptors. 
-
+@-
 Client records are linked into a hierarchy, where the top record
 describes system-wide resources, owned by the dba. The next layer
 contains the user session descriptors.
-
 @{
 The routines defined below provide management of the client
 administration. Routines dealing with serviceing requests

@@ -26,10 +26,48 @@
 @* The MAL debugger
 To enable ease of debugging and performance monitoring, the MAL interpreter
 comes with a gdb-like text-based debugger.
-A global table of breakpoints is maintained. Although a little space
+The debugger can be entered at any time using the call mdb().
+Also if there is no apparent console from which the debugger can be controlled.
+
+@- The debugger instruction set
+<table>
+<tr><td>next		</td><td> Advance to next statement</td></tr>
+<tr><td>continue 	</td><td> Continue program being debugged</td></tr>
+<tr><td>bbp 		</td><td> BBP memory layout</td></tr>
+<tr><td>break 		</td><td> set breakpoint on current instruction</td></tr>
+<tr><td>break <var> 	</td><td> break on assignment to <var></td></tr>
+<tr><td>delete <var> 	</td><td> remove break point <var></td></tr>
+<tr><td>step 		</td><td> advance to next MAL instruction</td></tr>
+<tr><td>module 	</td><td> display the module [scopes] </td></tr>
+<tr><td>finish 	</td><td> finish current call</td></tr>
+<tr><td>quit 		</td><td> leave debugger</td></tr>
+<tr><td>list 		</td><td> list current program block</td></tr>
+<tr><td>List 		</td><td> list with type information</td></tr>
+<tr><td>variables 	</td><td> print variable bindings</td></tr>
+<tr><td>print <var> 	</td><td> display value of a variable</td></tr>
+<tr><td>print <var> <cnt>[<first>] </td><td> display BAT chunk</td></tr>
+<tr><td>info <var> 	</td><td> display bat variable properties</td></tr>
+<tr><td>run 		</td><td> restart current procedure</td></tr>
+<tr><td>where 		</td><td> print stack trace</td></tr>
+<tr><td>down  		</td><td> go down the stack</td></tr>
+<tr><td>up  		</td><td> go up the stack</td></tr>
+<tr><td>timer 		</td><td> produce micro-second response time</td></tr>
+<tr><td>help 		</td><td> the help message</td></tr>
+</table>
+@- Breakpoint tables
+A powerful mechanism for debugging a program is to set breakpoints.
+In MAL the breakpoints are designated by the <module>.<variable> name.
+As soon as the variable recieves a new valued the breakpoint effectuated.
+@-
+The breakpoints are maintained in a system-wide
+ global table. Although a little space
 consumptive, it is the easiest to maintain and much less expensive
 as reserving debugger space in each instruction.
 @{
+@- Compilation control
+Being able to debug comes at a price.
+The debugger options can be turned of at compile time using the 
+
 @h
 #ifndef _MAL_DEBUGGER_H
 #define _MAL_DEBUGGER_H

@@ -28,59 +28,58 @@ The key objects managed by Monet are the persistent BATs, which
 call for an efficient scheme to make them accessible for manipulation
 in the MAL procedures taking into account a possibly hostile
 parallel access.
-
+@-
 Most kernel routines produce BATs as a result, which will be referenced 
 from the runtime stack. They should be garbage collected as soon as
 deemed possible to free-up space. By default, temporary results are
 garbage collected before returning from a MAL function.
-
+@-
 Furthermore, clients sessions often come with a global scope of
 variable settings, which are garbage collected only at the end
 of a session. Access to these global variables should be easy,
 but they should also provide protection against concurrent update
 when the client wishes to perform parallel processing.
-
+@-
 Finally, databases, languages, etc. may define constants and variables
 accessible to all hierarchical related clients.
-
 The approach taken is to rely on the concept of object spaces
 as pioniered in Lynda and -later- JavaSpaces.
-
+@-
 The (short) concept name introduced in Monet is the 'box',
 which acts as a container for objects. In particular,
 every module scope comes with a box of objects to store
 constants, global variables, etc., provided it contains
 an implementation of the box interface.
-
-Before a client can interact with a box of objects, it
+@-
+Before a client program  can interact with a box of objects, it
 should open it, possibly passing qualifying authorization
 information and parameters to instruct the box-manager
 of the intended use.
-
+@-
 At the end of a session, the box should be closed. Some box-managers
 may implement a lease-scheme to automatically close interaction
 with a client when the lease runs out.
-
+@-
 A box can be extended with a new object using the function
 deposit(nme:str,v:any). The basic implementation silently
 accepts any new definition of the box.
-
+@-
 A local copy of an object can be obtained using the
 pattern 'take(nme:str):any', where 'nme' denotes the object
 of interest. The type of the receiving variable should
 match the one known for the object.
-
+@-
 The object is given back to the box manager calling 'release(nme:str)'
 or 'release(nme:str,newval:any)'.
 It may update the content of the repository accordingly, release locks,
 and move the value to persistent store. Whatever the semantics
 of the box requires. [The default implementation is a no-op]
-
+@-
 Finally, the object manager can be requested to 'discard(nme:str)'
 an object completely.  The default implementation is to reclaim
 the space in the box, which may affect the visibiltiy of the box's content
 when it is concurrently used in an iterator.
-
+@-
 Upon need, a user can extend the functionality of a box by provision
 of additional functions.
 Concurrency control, replication services, as well as access
@@ -94,7 +93,7 @@ main thread (=client) of control, which operates on a temporary
 snapshot. For the time being we realize the managers as critical
 code sections, i.e. one client is permitted access to the space
 at a time.
-
+@-
 Example: consider the client function:
 @T
 function myfcn():void;
@@ -112,7 +111,7 @@ much like bat-names are resolved under MIL semantics. The second
 statement uses the default schema to resolve the location of a
 column. The result bat 'd' is temporary and disappears upon garbage
 collection. The variable 'u' is looked up as the string object user.
-
+@-
 Note that bats b and c need be released at some point. In general
 this point in time does not coincide with a computational boundary
 like return of a function. During a session, several bats may be taken
@@ -120,13 +119,13 @@ out of the box, being processed, and only at the end of a session
 being released. In this example, it means that the reference to
 b and c is lost at the end of the function (due to garbarge collection)
 and that subsequent use requires another take() call.
-
+@-
 The type parameters in the target variable of take() enable early type checking
 Failure to find a properly typed object leads to an exception.
 The type indicator for a take instruction may be ommitted, but
 this defers type resolution to execution time, where the type manager
 is called for each unresolved statement.
-
+@-
 Possible extensions for the box technique is
 to introduce e.g. xml.take() which converts an XML document to a BAT,
 jpeg.take() similer for an image.
@@ -139,7 +138,6 @@ the semantics of each box. Therefore, nesting should be handled explicitly.
 @+ Session box
 The code base introduced here provides a reference case and
 the building blocks for more advanced box management schemes.
-
 Aside from box associated with the modules, they can also be created
 dynamically on behalf of a client. Such boxes are considered private
 and require access by name parameter. 
@@ -154,12 +152,11 @@ function m():void;
 	print(t);
 	box.close("client_name");
 end function;
-
+@-
 Every client has a private session scope, which also provides an object box.
 In the namespace it is placed subordinate to any space introduced by the
 system administrator. It will contain global client data, e.g.
 user, language, database, port, and any other session parameter.
-
 The boxes are all collected in the context of the database directory,
 i.e. the directory <dbfarm>/box
 @{

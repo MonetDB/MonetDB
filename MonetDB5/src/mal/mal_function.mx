@@ -26,14 +26,14 @@
 @v 0.0
 @+ MAL functions
 MAL functions are represented by MAL instruction lists.
-The first instruction contains the signature.
-
+The first instruction should contain its signature.
+@-
 The representation of the MAL functions is rather traditional,
 using C-structure to collect the necessary information.
 Moreover, we assume that MAL functions are relatively small, up to
 a few hundred of instructions. This assumption makes us to rely on
 linear scans as it comes to locating information of interest.
-
+@-
 The information maintained for each MAL function should both
 be geared towards fast execution and to ease symbolic debugging.
 @{
