@@ -348,7 +348,7 @@ int insert_line( ascii *as, char *line ){
 			insert_val( &fmt[i], s, e );
 			line = end + fmt[i].seplen;
 		} else {
-		        GDKerror("Error: missing sep %s\n", fmt->sep);
+		        GDKerror("Error: missing sep %s line %d field %d\n", fmt->sep, BATcount(fmt->c), i);
 			return -1;
 		}
 		e = 0;
