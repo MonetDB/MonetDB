@@ -276,7 +276,7 @@ at commit-time.
 		}
 	} else {
 		if ((fd = GDKfdlocate(nme, "wb", ext)) >= 0) {
-			if (write(fd, buf, size)  != size) {
+			if (write(fd, buf, size) != (ssize_t) size) {
 				err = -1;
 			}
 			if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 

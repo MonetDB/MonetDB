@@ -58,6 +58,8 @@ m_export void  TBL_newproc(Client c, str nme, str mod,
 			 YYSTREE body, YYSTREE sig, YYSTREE ret);
 m_export void  TBL_delproc(Client client, str nme, str mod, oid pid, int lock);
 
+m_export int TBL_M_client_install(Client client, oid mid);
+m_export int TBL_M_incref(Client client, oid mid);
 
 /* old info functions */
 m_export ptr   TBL_unpacked(ptr imp);

@@ -1139,8 +1139,8 @@ static int dummy;
 #define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2)) 
 
 #define ts_isnil(t) ((t).days == date_nil && (t).msecs == daytime_nil)
-#define tz_isnil(z) ((z).dst == (z).off2 == (z).dst_start == (z).dst_end == 1 \
-			&& (z).off1 == 12 )
+#define tz_isnil(z) ((z).dst == (z).off2 == (z).dst_start == (z).dst_end == (unsigned) 1 \
+			&& (z).off1 == (unsigned) 12 )
 
 static INLINE
 int timestamp_inside(timestamp *ret, timestamp *t, tzone* z, lng offset) {

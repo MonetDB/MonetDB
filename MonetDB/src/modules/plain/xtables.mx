@@ -1439,7 +1439,7 @@ int CTrefine(BAT **res, BAT *b, BAT *a) {
 		BAT *histo = BAThistogram(sample);
 		BATmax(histo,&xx);
 		if (xx > 1) 
-			size = MAX(size, xx*(((float) BATcount(b))/DEFAULT_SIZE));
+			size = MAX(size, (size_t) (xx*(((float) BATcount(b))/DEFAULT_SIZE)));
 		BBPreclaim(sample);
 		BBPreclaim(histo);
 	} 

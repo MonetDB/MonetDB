@@ -477,6 +477,11 @@ m_export Client     ll_client;
 m_export int        ll_nlines;            /* current number of string chunks */
 m_export int        ll_maxlines;          /* maximum number of string chunks */
 m_export str*       ll_lines;             /* string chunks */
+m_export int        ll_parblockdepth;
+m_export YYSTREE    ll_firstnode, ll_sugarnode;
+m_export int        ll_templates;
+m_export int        ll_argc;
+m_export char       ll_ifthenelse[], ll_ifelse[], ll_ifthen[], ll_project[], ll_reverse[];
 
 #define ll_emptychar(x)	((x == 0) || GDKisspace(x))
 
@@ -537,9 +542,8 @@ parses the grammar, executing the inlined C statements along the way.
 #define YYSTYPE	YYSTREE
 #endif
 
-#include "monet.h"
+#include "monet_parse.h"	/* includes monet.h */
 #include "monet_client.h"
-#include "monet_parse.h"
 
 
 #define YYDEBUG	0
@@ -552,16 +556,6 @@ extern int yylex(void);
 #define yyerror(X)	{ ll_parserror(NULL);  }
 #define yylogkill(t)	(t)->yyval.vtype = TYPE_void;
 #define yylogfree(t)
-@y
-extern int	  ll_nlines, ll_maxlines;
-extern str*	  ll_lines;
-extern int        ll_parblockdepth;
-extern int        ll_resolution;
-extern int        ll_modcmds;
-extern YYSTREE    ll_firstnode, ll_sugarnode;
-extern int        ll_templates;
-extern int        ll_argc;
-extern char       ll_ifthenelse[], ll_ifelse[], ll_ifthen[], ll_project[], ll_reverse[];
 
 extern YYSTREE yysugar(YYSTREE node);
 %}

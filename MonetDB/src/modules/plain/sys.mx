@@ -1097,7 +1097,7 @@ int get_mem_maxsize(lng *num) {
 	return GDK_SUCCEED;
 }
 int set_mem_maxsize(lng *num) {
-	GDK_mem_maxsize = *num;
+	GDK_mem_maxsize = (size_t) *num;
 	return GDK_SUCCEED;
 }
 int get_vm_cursize(lng *num) {
@@ -1109,7 +1109,7 @@ int get_vm_maxsize(lng *num) {
 	return GDK_SUCCEED;
 }
 int set_vm_maxsize(lng *num) {
-	GDK_vm_maxsize = *num;
+	GDK_vm_maxsize = (size_t) *num;
 	return GDK_SUCCEED;
 }
 

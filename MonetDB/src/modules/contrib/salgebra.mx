@@ -512,7 +512,7 @@ DICTclustersize(clusterhash* ch, ptr v){
 
 static INLINE void 
 DICTclear(dict_entry *d, int n) {
-  unsigned int i;
+  int i;
   for ( i = 0; i < n; i++ ) { d[i].s = d[i].e = -1; }
 }
 

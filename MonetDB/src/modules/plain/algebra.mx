@@ -1210,7 +1210,7 @@ int CMDfragment(BAT **result, BAT *b, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 		GDK_SUCCEED:GDK_FAIL;
 }
 int CMDthetajoin(BAT **result, BAT *left, BAT *right, int *mode, lng *estimate) {
-	return (*result = BATthetajoin(left, right, *mode, (*estimate == lng_nil)?oid_nil:*estimate))?
+	return (*result = BATthetajoin(left, right, *mode, (*estimate == lng_nil)?oid_nil:(size_t)*estimate))?
 		GDK_SUCCEED:GDK_FAIL;
 }
 int CMDtheta(BAT *inner, BAT *outer, BAT *left, BAT *right, int *mode) {

@@ -184,7 +184,7 @@ Cntxt CNTXTnew(Cntxt outer){
         if (monet_cntxtcur >= MAXCLIENTS) {
                 i = monet_cntxtcur; /* get from freelist */
                 monet_cntxtcur = monet_cntxt[monet_cntxtcur].next;
-        } else if (monet_cntxtfree >= monet_cntxtmax && !CNTXTrealloc(BATMARGIN)) {
+        } else if (monet_cntxtfree >= monet_cntxtmax && !CNTXTrealloc((flt) BATMARGIN)) {
                 MT_unset_lock(monet_contextLock, "CNTXTnew");
                 return 0;
         } else {

@@ -395,7 +395,7 @@ typedef struct {
 
     @1s *atom_@1s_read(@1s* a, stream *s, size_t sz) {
 	int dim;
-	int i;
+	size_t i;
 	for(i=0;i<sz;i++){
 		stream_readInt(s,&dim);
 	
@@ -412,7 +412,7 @@ typedef struct {
     }
 
     void atom_@1s_write(@1s* a, stream *s, size_t sz) {
-	int i;
+	size_t i;
 	for(i=0;i<sz;i++){
 		stream_writeInt(s,a->dimension);
 		s->write(s, (char*)a->data, 1, a->dimension*sizeof(@1));
@@ -1232,7 +1232,8 @@ dblv.print;
 	s->read(s, (char*)a->data, sz, @2*sizeof(@1));
 	
 	if (s->byteorder != 1234){
-		int i,j;
+		int i;
+		size_t j;
 		for (j=0;j<sz;j++) 
 			for (i=0;i<@2;i++) 
 				a->data[i] = convert_@1((@8)a->data[i]);
