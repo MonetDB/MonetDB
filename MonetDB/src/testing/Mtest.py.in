@@ -2188,7 +2188,13 @@ def main(argv) :
 ### main(argv) #
 
 if __name__ == "__main__":
-    main(sys.argv)
+    if '--trace' in sys.argv:
+        sys.argv.remove('--trace')
+        import trace
+        t = trace.Trace(trace=1, count=0)
+        t.runfunc(main, sys.argv)
+    else:
+        main(sys.argv)
 
 #       END
 #############################################################################
