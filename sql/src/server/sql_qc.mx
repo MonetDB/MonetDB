@@ -101,7 +101,7 @@ void qc_destroy( qc *cache /*, Cntxt stk */ )
 	_DELETE(cache);
 }
 
-int param_cmp( var *v1, var *v2 )
+int param_cmp( var_ *v1, var_ *v2 )
 {
 	sql_subtype *t1 = tail_type(v1->s);
 	sql_subtype *t2 = tail_type(v2->s);
@@ -120,8 +120,8 @@ int param_list_cmp( list *l1, list *l2 )
 	if (!l1 || !l2 || list_length(l1) != list_length(l2))
 		return -1;
 	for (n1 = l1->h, n2 = l2->h; n1; n1 = n1->next, n2 = n2->next ){
-		var *v1 = n1->data;
-		var *v2 = n2->data;
+		var_ *v1 = n1->data;
+		var_ *v2 = n2->data;
 		if (param_cmp(v1,v2) != 0)
 			return -1;
 	}

@@ -50,12 +50,12 @@ typedef struct cvar {
 	char *cname;
 } cvar;
 
-typedef struct var {
+typedef struct var_ {
 	sql_ref ref;
 
 	char *name;
 	struct stmt *s;
-} var;
+} var_;
 
 typedef struct scope {
 	stmt *ptable;		/* result pivot table */
@@ -94,7 +94,7 @@ extern tvar *scope_add_table(scope * scp, stmt *table, char *name);
 /* 
  * scope_add_alias adds a alias for a stmt.
  * */
-extern var *scope_add_alias(scope * scp, stmt * s, char *alias ); 
+extern var_ *scope_add_alias(scope * scp, stmt * s, char *alias ); 
 
 
 /* 
@@ -119,7 +119,7 @@ extern tvar *scope_first_table(scope * scp);
 
 extern void scope_dump(scope * s);
 
-extern void var_destroy(var *t);
+extern void var_destroy(var_ *t);
 extern void tvar_destroy(tvar *t);
 
 #endif /*_SQL_SCOPE_H_*/
@@ -153,7 +153,7 @@ void tvar_destroy(tvar *v){
 	}
 }
 
-void var_destroy(var * v)
+void var_destroy(var_ * v)
 {
 	if (sql_ref_dec( &(v->ref) ) == 0){
 		if (v->s)
@@ -262,9 +262,9 @@ tvar *scope_add_table(scope * scp, stmt *s, char *tname)
 	return v;
 }
 
-var *scope_add_alias(scope * scp, stmt * s, char *name)
+var_ *scope_add_alias(scope * scp, stmt * s, char *name)
 {
-	var *v = NEW(var);
+	var_ *v = NEW(var_);
 	v->s = s; 
 	v->name = _strdup(name);
 	sql_ref_init( & (v->ref) );
@@ -395,12 +395,12 @@ static stmt *scope_bind_column_(scope * scp, char *tname, char *cname )
 	return NULL;
 }
 
-static var *scope_bind_alias(scope * scp, char *name )
+static var_ *scope_bind_alias(scope * scp, char *name )
 {
 	for (; scp; scp = scp->p) {
 		node *n = scp->aliases->h;
 		for (; n; n = n->next) {
-			var *v = n->data;
+			var_ *v = n->data;
 			if (strcmp(v->name, name) == 0)
 				return v;
 		}
@@ -412,7 +412,7 @@ stmt *scope_bind(scope * scp, char *tname, char *cname )
 {
 	stmt *s = scope_bind_column_( scp, tname, cname );
 	if (!s && !tname){
-		var *a = scope_bind_alias( scp, cname );
+		var_ *a = scope_bind_alias( scp, cname );
 		if (a) return stmt_dup(a->s);
 		return NULL;
 	}

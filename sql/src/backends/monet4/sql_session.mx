@@ -93,7 +93,7 @@ void backend_dumpproc( context *c, int id, stream *cout, stmt *s )
 	i = snprintf( buf, BUFSIZ, "proc sql%d (", id);
 	if (c->params){
 		for (n = c->params->h; n; n = n->next){
-			var *v = n->data;
+			var_ *v = n->data;
 
 			i += snprintf(buf+i, BUFSIZ-i, "%s %s%c", 
 				v->s->op2.typeval->type->name,

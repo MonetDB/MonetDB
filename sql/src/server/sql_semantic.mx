@@ -83,7 +83,7 @@ void sql_add_arg( context *sql, atom *v )
 
 void sql_add_param( context *sql, char *name, stmt *s )
 {
-	var *v = NEW(var);
+	var_ *v = NEW(var_);
 
 	v->name = name;
 	v->s = s;
@@ -100,7 +100,7 @@ stmt *sql_bind_param( context *sql, char *name )
 	if (sql->params){
 		for(n = sql->params->h; n; n = n->next)
 		{
-			var *v = n->data;
+			var_ *v = n->data;
 			if (strcmp(v->name, name) == 0){
 				return stmt_dup(v->s);
 			}
