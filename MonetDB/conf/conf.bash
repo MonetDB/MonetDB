@@ -76,7 +76,7 @@ base="`pwd`"
 wh_t="`basename $base | perl -pe 's|^([a-zA-Z]+)([^a-zA-Z].*)?$|$1|'`"
 what="`echo ${wh_t} | tr [:lower:] [:upper:]`"
 
-if [ "${what}" != "MONET" ] ; then
+if [ "${what}" != "MONETDB" ] ; then
 	if [ ! "${MONET_PREFIX}" ] ; then
 		MONET_PREFIX=`monet-config --prefix`
 	fi
@@ -188,7 +188,7 @@ if [ "${os}" = "Linux" ] ; then
 		libpath="/soft/IntelC++-6.0-020312Z/lib:${libpath}"
 		cc="icc"
 		cxx="icc"
-		if [ "${what}" = "MONET" ] ; then
+		if [ "${what}" = "MONETDB" ] ; then
 			conf_opts="${conf_opts} --with-hwcounters=${softpath}"
 		fi
 	fi
@@ -269,7 +269,7 @@ if [ "${os}" != "Linux" ] ; then
 	# "our" libs/tools in ${softpath}
 	conf_opts="${conf_opts} --with-readline=${softpath}"
 	case ${what} in
-	MONET)
+	MONETDB)
 		conf_opts="${conf_opts} --with-z=${softpath}"
 		conf_opts="${conf_opts} --with-bz2=${softpath}"
 		;;
@@ -314,8 +314,8 @@ if [ "${INSTRUMENT}" ] ; then
 	conf_opts="${conf_opts} --enable-instrument"
 fi
 
-if [ "${what}" != "MONET" ] ; then
-	# tell configure where to find Monet
+if [ "${what}" != "MONETDB" ] ; then
+	# tell configure where to find MonetDB
 	conf_opts="${conf_opts} --with-monet=${MONET_PREFIX}"
 fi
 
@@ -324,7 +324,7 @@ binpath="${WHAT_PREFIX}/bin:${binpath}"
 
 # the following is nolonger needed for Monet,
 # but still needed for the rest:
-if [ "${what}" != "MONET" ] ; then
+if [ "${what}" != "MONETDB" ] ; then
 	# set MONET_MOD_PATH and prepend it to LD_LIBRARY_PATH
 	package="`egrep -h '^(AM_INIT_AUTOMAKE|PACKAGE).".*"' configure* | head -1 | perl -pe 's/^(AM_INIT_AUTOMAKE|PACKAGE)."(.*)".*$/$2/'`"
 	modpath="${WHAT_PREFIX}/lib/${package}"
