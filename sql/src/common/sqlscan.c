@@ -13,13 +13,9 @@
 void sql_statement_add(context * lc, char *token)
 {
 	int len = strlen(token);
-	if (len > lc->sqlsize) {
-		snprintf(lc->errstr, ERRSIZE, "%s(%d) token to long: %s",
-			 lc->filename, lc->lineno, token);
-		return;
-	}
 	if ((lc->sqllen + len + 1) > lc->sqlsize) {
-		lc->sqlsize *= 2;
+		while( (lc->sqllen + len + 1) > lc->sqlsize)
+			lc->sqlsize *= 2;
 		lc->sql = RENEW_ARRAY(char, lc->sql, lc->sqlsize);
 	}
 	strncpy(lc->sql + lc->sqllen - 1, token, len);
@@ -117,6 +113,7 @@ void init_keywords()
 	keywords_insert("COPY", COPY );
 	keywords_insert("RECORDS", RECORDS );
 	keywords_insert("DELIMITERS", DELIMITERS );
+	keywords_insert("STDIN", STDIN );
 
 	keywords_insert("DEC", DECIMAL);
 	keywords_insert("DECIMAL", DECIMAL);
@@ -159,7 +156,6 @@ void init_keywords()
 	   keywords_insert("GO", GO );
 	 */
 	keywords_insert("GLOBAL", GLOBAL);
-	keywords_insert("GRANT", GRANT);
 	keywords_insert("GROUP", GROUP);
 	keywords_insert("HAVING", HAVING);
 	keywords_insert("IN", IN);
@@ -195,11 +191,14 @@ void init_keywords()
 	keywords_insert("PATH", PATH);
 	keywords_insert("PRECISION", PRECISION);
 	keywords_insert("PRIMARY", PRIMARY);
+
+	keywords_insert("GRANT", GRANT);
+	keywords_insert("REVOKE", REVOKE);
 	keywords_insert("PRIVILEGES", PRIVILEGES);
+	keywords_insert("PUBLIC", PUBLIC);
 	/*
 	   keywords_insert("PROCEDURE", PROCEDURE );
 	 */
-	keywords_insert("PUBLIC", PUBLIC);
 	keywords_insert("REAL", REAL);
 	keywords_insert("RIGHT", RIGHT);
 	keywords_insert("SCHEMA", SCHEMA);
@@ -304,6 +303,7 @@ keyword *find_keyword(char *yytext)
 	return NULL;
 }
 
+/* TODO change to block reads !*/
 static int lex_getc(context * lc)
 {
 	char ch;
@@ -460,7 +460,7 @@ int sql_string(context * lc, int quote)
 			yytext = realloc(yytext, yysz << 1);
 			yysz = yysz << 1;
 		}
-		if (cur == '\\')
+		if (!escape && cur == '\\')
 			escape = 1;
 		else
 			escape = 0;

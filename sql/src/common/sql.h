@@ -78,6 +78,7 @@ typedef enum tokens {
 	SQL_IN,
 	SQL_NOT_IN,
 	SQL_GRANT,
+	SQL_REVOKE,
 	SQL_PARAMETER,
 	SQL_AGGR,
 	SQL_COMPARE,

@@ -650,15 +650,6 @@ int stmt2xml( stmt *s, int *nr, context *sql ){
 		  "s%d := insert(s%d,s%d);\n", s->nr, l, r);
 		FXNODE;
 	} break;
-	case st_update: {
-		int l,r;
-		XNODE("update");
-		l = stmt2xml( s->op1.stval, nr, sql );
-		r = stmt2xml( s->op2.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, 
-		  "s%d := replace(s%d,s%d);\n", s->nr, l, r);
-		FXNODE;
-	} break;
 	case st_replace: {
 		int l,r;
 		XNODE("replace");

@@ -3,6 +3,8 @@
 #include "mem.h"
 #include "statement.h"
 
+/* todo make proper traversal operations */
+
 void st_attache(stmt * st, stmt * user)
 {
 	if (user)
@@ -865,6 +867,17 @@ stmt *stmt_copyfrom(table * t, char * file, char * tsep, char * rsep, int nr )
 	list_append( s->op2.lval, _strdup(rsep));
 	s->flag = nr; 
 	return s;
+}
+
+char *stmt_copyfrom_file( stmt * s)
+{
+	while(s && s->type != st_copyfrom){
+		s = s->op1.stval;
+	}
+	if (s){
+		return s->op2.lval->h->data;
+	}
+	return NULL;
 }
 
 stmt *stmt_list(list * l)

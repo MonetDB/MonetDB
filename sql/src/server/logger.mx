@@ -334,7 +334,7 @@ int readlogs( FILE *fp, char *filename ){
 		logger_id = strtol(id,NULL,10);
 		snprintf(buf, BUFSIZ, "%s.%d", filename, logger_id );
 
-		if (res = readlog(buf) != 0){
+		if ((res = readlog(buf)) != 0){
 			break;
 		}
 	}
@@ -377,17 +377,19 @@ void log_bat_persists(BAT *b ){
 	int len;
 	char buf[BUFSIZ];
 	logformat l;
+	int havevoid = 0;
 
 	l.flag = LOG_CREATE;
 	l.nr = 0;
 	log->write( log, (char*)&l, sizeof(logformat), 1 );
-	log_write_string(log, BBPname(b->batCacheid));
+	log_write_string(log, name);
 	ha = ATOMname(b->htype);
 	if (BAThdense(b)){
 		ha = "vid";
+		havevoid = 1;
 	}
 	ta = ATOMname(b->ttype);
-	if (BATtdense(b)){
+	if (!havevoid && BATtdense(b)){
 		ta = "vid";
 	}
 	len = snprintf(buf, BUFSIZ,"%s,%s", ha, ta );

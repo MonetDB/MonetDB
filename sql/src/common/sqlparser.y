@@ -96,7 +96,8 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	target
 	test_for_null
 	values_or_query_spec
-	privilege_def
+	grant
+	revoke
 	operation
 	table_element
 	table_constraint
@@ -163,7 +164,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_schema_element_list
 	schema_element_list
 	operation_commalist
-	privileges
+	access_right
 	target_commalist
 	opt_into
 	grantee_commalist
@@ -208,6 +209,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_distinct
 	opt_with_check_option
 	opt_with_grant_option
+	opt_grant_option_for
 	opt_asc_desc
 	tz
 
@@ -263,7 +265,7 @@ UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE 
 %token DEFAULT DISTINCT DROP
 %token FOREIGN 
-%token GRANT HAVING INTO
+%token GRANT REVOKE HAVING INTO
 %token IS KEY ON OPTION OPTIONS
 %token PATH PRIMARY PRIVILEGES 
 %token<sval> PUBLIC REFERENCES SCHEMA SET
@@ -272,7 +274,7 @@ UNDER WHENEVER
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 
 %token CASE WHEN THEN ELSE END NULLIF COALESCE
-%token COPY RECORDS DELIMITERS 
+%token COPY RECORDS DELIMITERS STDIN
 
 %%
 
@@ -296,7 +298,7 @@ sqlstmt:
 
 
 	/* schema definition language */
-sql: schema | privilege_def | create | drop ;
+sql: schema | grant | revoke | create | drop ;
 	
 schema:
     CREATE SCHEMA schema_name opt_schema_default_char_set
@@ -351,11 +353,11 @@ schema_element_list:
  |  schema_element_list schema_element 	{ $$ = dlist_append_symbol( $1, $2 ); }
  ;
 
-schema_element: privilege_def | create | drop | alter;
+schema_element: grant | create | drop | alter;
 /* | add */
 
-privilege_def:
-    GRANT privileges ON qname TO grantee_commalist opt_with_grant_option 			
+grant:
+    GRANT access_right ON qname TO grantee_commalist opt_with_grant_option 			
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $2);
 	  dlist_append_list(l, $4);
@@ -363,13 +365,27 @@ privilege_def:
 	  dlist_append_int(l, $7);
 	$$ = _symbol_create_list( SQL_GRANT, l); }
  ;
+revoke:
+    REVOKE opt_grant_option_for access_right ON qname FROM grantee_commalist 
+	{ dlist *l = dlist_create();
+	  dlist_append_list(l, $3);
+	  dlist_append_list(l, $5);
+	  dlist_append_list(l, $7);
+	  dlist_append_int(l, $2);
+	$$ = _symbol_create_list( SQL_REVOKE, l); }
+ ;
 
 opt_with_grant_option:
     /* empty */				{ $$ = FALSE; }
  |	WITH GRANT OPTION		{ $$ = TRUE; }
  ;
 
-privileges:
+opt_grant_option_for:
+    	/* empty */				{ $$ = FALSE; }
+ |	GRANT OPTION FOR		{ $$ = TRUE; }
+ ;
+
+access_right:
     ALL PRIVILEGES			{ $$ = NULL; }
  |  ALL 				{ $$ = NULL; }
  |  operation_commalist			
@@ -700,18 +716,25 @@ copyfrom_stmt:
 	  dlist_append_list(l, $7);
 	  dlist_append_int(l, $2);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
- ;
+  | COPY opt_nr INTO qname FROM STDIN opt_seps 
+	{ dlist *l = dlist_create();
+	  dlist_append_list(l, $4);
+	  dlist_append_string(l, _strdup("stdin"));
+	  dlist_append_list(l, $7);
+	  dlist_append_int(l, $2);
+	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
+  ;
 
 opt_seps:
     /* empty */		
 				{ dlist *l = dlist_create(); 
 				  dlist_append_string(l, _strdup("|")); 
-				  dlist_append_string(l, _strdup("\n")); 
+				  dlist_append_string(l, _strdup("\\n")); 
 				  $$ = l; }
  |  opt_using DELIMITERS STRING 
 				{ dlist *l = dlist_create(); 
 				  dlist_append_string(l, $3); 
-				  dlist_append_string(l, _strdup("\n")); 
+				  dlist_append_string(l, _strdup("\\n")); 
 				  $$ = l; }
  |  opt_using DELIMITERS STRING ',' STRING 
 				{ dlist *l = dlist_create(); 

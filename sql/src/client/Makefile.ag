@@ -2,6 +2,12 @@
 
 INCLUDES = $(MONET_INCS) ../common $(READLINE_INCS)
 
+bin_sql_dump = {
+	SOURCES = sql_dump.c catalog_client.c statement_dump.c \
+		  comm.c comm.h gdk.c query.h
+	LIBS = ../common/libsql $(MONET_LIBS) -lstream -lmutils
+}
+
 bin_sql_client = {
 	SOURCES = sql_client.c catalog_client.c statement_dump.c \
 		  comm.c comm.h gdk.c query.h

@@ -4,6 +4,8 @@
 
 @h
 /* multi version catalog */
+#ifndef __MVC_H
+#define __MVC_H
 
 #include <gdk.h>
 #include <mem.h>
@@ -73,8 +75,6 @@ typedef struct sql_table {
 	int wtime;
 	int flag;
 } sql_table;
-
-#define oid_column(t) ((sql_column*)t->columns->h->data)
 
 typedef struct sql_schema {
 	oid id;
@@ -163,6 +163,8 @@ extern sql_key *mvc_key_add_column( mvc *m, sql_key *k, sql_column *c );
 extern void mvc_export(stream *s, BAT *order, BAT *bats, char *sep, char *rsep);
 extern void mvc_export_schema( mvc *c, stream *s );
 extern int mvc_import_table( mvc *c, stream *s, char *tname, char *sep, char *rsep, int nr);
+
+#endif /*__MVC_H*/
 @c
 
 /* multi version catalog */
@@ -175,8 +177,6 @@ extern int mvc_import_table( mvc *c, stream *s, char *tname, char *sep, char *rs
  *
  * use mmap copy
  *
- * read logs back
- *
  * come up with a multifile log system (so a seperate thread could
  * do the atomic bat commits).
  */
@@ -185,6 +185,7 @@ extern int mvc_import_table( mvc *c, stream *s, char *tname, char *sep, char *rs
 #include <ascii_io.h>
 
 #include "mvc.h"
+#include "logger.h"
 #include <statement.h>
 #include <types.h>
 
@@ -976,13 +977,11 @@ int mvc_type( mvc *c ){
 static void bat_log_persists(BAT *ob){
 	/* log creation of bat */
 	log_bat_persists(ob);
-	/*BATmode(ob, PERSISTENT); should be handled by log manager */
 
 }
 static void bat_log_transient(BAT *ob){
 	/* log destruction of bat */
 	log_bat_transient(ob);
-	BATmode(ob, TRANSIENT);
 }
 
 int void_delete_bat( BAT *b, BAT *u){
@@ -1055,7 +1054,6 @@ static void create_key(sql_trans * tr, sql_schema * gs, sql_table *gt, sql_key *
 		BUNins(kc_col, (ptr)&kc, (ptr)c->name);
 		BUNins(kc_nr, (ptr)&kc, (ptr)&nr);
 	}
-
 }
 
 static void create_column(sql_trans * ctr, sql_schema * gs, sql_table *gt, sql_column *gc, int ci )
@@ -1304,13 +1302,12 @@ static void mvc_forward_create_table(sql_trans * tr, sql_schema * ns,
 
 		snprintf(name, BUFSIZ, "O_%s", nt->name );
 		BATrename(o, name);
+		bat_log_persists(o); 
+		BBPunfix(o->batCacheid);
+
 		snprintf(name, BUFSIZ, "D_%s", nt->name );
 		BATrename(d, name);
-
-		bat_log_persists(o); 
 		bat_log_persists(d); 
-
-		BBPunfix(o->batCacheid);
 		BBPunfix(d->batCacheid);
 
 		create_columns(tr, ns, nt);
@@ -1328,7 +1325,6 @@ static void rollforward_tables(sql_trans *tr, sql_schema * s)
 	if (s->dtables) for (n = s->dtables->h; n; n = n->next) {	
 		sql_table *t = n->data;
 		sql_table *ot = find_table(os, t->name);
-
 
 		BUNdelHead(sql_table_id, (ptr) & t->id);
 		BUNdelHead(sql_table_schema, (ptr) & t->id);
@@ -1649,6 +1645,7 @@ BAT *mvc_bind(mvc * m, char *tname, char *cname, int access)
 	assert(t);
 
 	c = find_column(t, cname);
+
 	if (access > 0){
 		b = bind_writable(tr, c);
 	} else {
@@ -1936,8 +1933,6 @@ sql_key *mvc_create_key( mvc * m, sql_table *t, int kt, sql_key *rkey )
 		fk -> rkey = uk;
 		if (!uk->keys) uk->keys = list_create(NULL);
 		list_append(uk->keys, fk);
-
-		
 	}
 
 	if (!t->nkey) t->nkey = nk;
@@ -2267,7 +2262,6 @@ int mvc_import_table( mvc *m, stream *s, char *tname,
 		BBPunfix(ba->batCacheid);
 		BBPunfix(in->batCacheid);
 	} 
-	col = t->columns->h->data;
 	b = mvc_bind_obat(m, t->name, INS);
 	newid = OIDnew(cnt);
 	nr = cnt;

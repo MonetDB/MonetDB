@@ -42,7 +42,9 @@ void usage( char *prog ){
 	exit(-1);
 }
 
-void receive( stream *rs ){
+void receive( stream *rs, table *t ){
+	const char *copystring =
+	    "COPY %d RECORDS INTO %s FROM stdin USING DELIMITERS '\\t';\n";
 	int flag = 0;
 	if (rs->readInt(rs, &flag) && flag != COMM_DONE){
 		char buf[BLOCK+1], *n = buf;
@@ -63,6 +65,7 @@ void receive( stream *rs ){
 			}
 		}
 		nRows = status;
+		printf( copystring, nRows, t->name);
 		if (type == QTABLE && nRows > 0){
 			int nr = bs_read_next(rs,buf,&last);
 	
@@ -72,101 +75,58 @@ void receive( stream *rs ){
 				fwrite( buf, nr, 1, stdout );
 			}
 		}
-		if (type == QTABLE){ /*|| type == QUPDATE){ */
-			if (nRows > 1)
-				printf("%d Rows affected\n", nRows );
-			else if (nRows == 1)
-				printf("1 Row affected\n" );
-			else 
-				printf("no Rows affected\n" );
-		}
 	} else if (flag != COMM_DONE){
 		printf("flag %d\n", flag);
 	}
 }
 
-static void forward_data(stream *in, context *sql)
+void dump_data( context *lc, stream *rs, table *t )
 {
 	char buf[BUFSIZ];
-	char *s = buf, *e = buf + BUFSIZ;
-	char ch;
-	int c = EOF;
-	int done = 0;
-	int newline = 0;
 
-	while(!done){
-		s = buf;
-		while(s<e){
-			if (in->read(in, &ch, 1, 1) == 1) {
-				c = (int) ch;
-			} else {
-				sql->cur = EOF;
-				done = 1;
-				break;
-			}
-			*s++ = c;
-			if (c == '\n'){
-				if (newline){
-					done = 1;
-					break;
-				} else {
-					newline = 1;
-				}
-			} else {
-				newline = 0;
-			}
-		}
-		sql->out->write(sql->out, buf, 1, s-buf);
-	}
-}
-
-
-void clientAccept( context *lc, stream *rs ){
-	int i;
-	stream *in = file_rastream( stdin, "<stdin>" );
-	stmt *s = NULL;
-	char buf[BUFSIZ];
-
-	while(lc->cur != EOF ){
-		int err = 0;
-		s = sqlnext(lc, in, &err);
-		if (err){
-			printf("%s\n", lc->errstr );
-		       	break;
-		}
+	if (snprintf(buf, BUFSIZ, "select * from %s;\n", t->name) > 0){
+       		stmt *s = sqlexecute(lc, buf);
 		if (s){
 	    		int nr = 1;
-			if (lc->debug&128){
-	    			stmt2xml( s, &nr, lc );
-				stmt_reset( s );
-				nr= 1;
-			} 
 	    		stmt_dump( s, &nr, lc );
-	    		lc->out->flush( lc->out );
 
-			if (s && s->op1.stval->type == st_copyfrom &&
-				strcmp(stmt_copyfrom_file(s), "stdin") == 0){
-				forward_data(in, lc);
-	    			lc->out->flush( lc->out );
+	    		lc->out->flush( lc->out );
+			receive(rs,t);
+		}
+	}
+	printf("\n");
+}
+
+void dump_columns( context *lc, table *t)
+{
+	node *n = t->columns->h;
+	column *c;
+
+	for(;n->next; n = n->next){
+		c = n->data;
+		printf("\t%s %s,\n", c->name, c->tpe->sqlname );
+	}
+       	c = n->data;
+	printf("\t%s %s\n", c->name, c->tpe->sqlname );
+	n = n->next;
+}
+
+void dump_tables( context *lc, stream *rs )
+{
+	node *n = lc->cat->cur_schema->tables->h;
+	for(;n; n = n->next){
+		table *t = n->data;
+		if (!t->temp){
+			if (!t->sql){
+				printf("CREATE TABLE %s (\n", t->name );
+				dump_columns(lc, t);
+				printf(");\n" );
+			} else {
+				printf("CREATE VIEW %s %s\n", t->name, t->sql );
 			}
 		}
-		if (!(lc->debug&64) && s){
-			receive(rs);
-		}
-		if (s) stmt_destroy(s);
+		dump_data( lc, rs, t );
 	}
-	in->destroy(in);
-
-	i = snprintf(buf, BUFSIZ, "s0 := mvc_commit(myc, 0, \"\");\n" );
-	i += snprintf(buf+i, BUFSIZ-i, "result(Output, mvc_type(myc), mvc_status(myc));\n" );
-	ws->write( ws, buf, i, 1 );
-	ws->flush( ws );
-	receive(rs);
-
-	/* client waves goodbye */
-	buf[0] = EOT; 
-	ws->write( ws, buf, 1, 1 );
-	ws->flush( ws );
 }
 
 int
@@ -316,7 +276,8 @@ main(int ac, char **av)
 		ws = lc.out;
 		lc.out = file_wastream(stdout, "<stdout>" );
 	}
-	clientAccept( &lc, rs );
+
+	dump_tables( &lc, rs);
 
 	if (rs){
 	       	rs->close(rs);

@@ -119,6 +119,8 @@ const char *token2string(int token)
 		return "Not In";
 	case SQL_GRANT:
 		return "Grant";
+	case SQL_REVOKE:
+		return "Revoke";
 	case SQL_PARAMETER:
 		return "Parameter";
 	case SQL_AGGR:
@@ -2766,8 +2768,7 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn )
 	}
 
 	if (!subset)
-		if (!subset)
-			return sql_error(sql);
+		return sql_error(sql);
 
 	rl = create_stmt_list();
 	if (sn->selection) {
@@ -2860,6 +2861,25 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn )
 		}
 	}
 	s = stmt_list(rl);
+
+	if (s && subset && sn->distinct){
+		node *n = s->op1.lval->h;
+		group *grp = NULL;
+		rl = create_stmt_list();
+		while(n) {
+			stmt *t = n->data;
+			grp = grp_create(t, grp);
+			n = n->next;
+		}
+		n = s->op1.lval->h;
+		while(n) {
+			stmt *t = n->data;
+			list_append(rl, stmt_join(grp->ext, t, cmp_equal));
+			n = n->next;
+		}
+		s = stmt_list(rl);
+	}
+
 
 	if (s && subset && sn->orderby) {
 		order = query_orderby(sql, scp, sn->orderby, s, subset, grp);
@@ -3018,7 +3038,13 @@ static stmt *column_option(context * sql, symbol * s, stmt * ss,
 		break;
 	case SQL_ATOM: {
 			AtomNode *an = (AtomNode*)s;
-			res = stmt_default(cs, stmt_atom(atom_dup(an->a)));
+			if (!an->a){
+				res = stmt_default(cs, 
+					stmt_atom( atom_general(c->tpe,NULL)));
+			} else {
+				res = stmt_default(cs, 
+					stmt_atom(atom_dup(an->a)));
+			}
 		} break;
 	}
 	if (!res && sql->errstr[0] == '\0') {
@@ -3662,6 +3688,11 @@ static stmt *sql_stmt(context * sql, symbol * s)
 					l->h->next->data.sym);	/* table element */
 		}
 		break;
+	case SQL_GRANT:
+	case SQL_REVOKE:
+		printf("%s\n", s->token == SQL_GRANT?"grant":"revoke");
+		break;
+
 	case SQL_COPYFROM:
 		{
 			dlist *l = s->data.lval;

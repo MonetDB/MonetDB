@@ -38,7 +38,6 @@ typedef enum stmt_type {
 
 	st_reverse,
 	st_atom,
-	st_rel_join,
 	st_join,
 	st_semijoin,
 	st_outerjoin,
@@ -51,7 +50,6 @@ typedef enum stmt_type {
 	st_insert,
 	st_like,
 	st_replace,
-	st_update,
 	st_delete,
 	st_count,
 	st_const,
@@ -169,6 +167,7 @@ extern stmt *stmt_set(stmt * s1);
 extern stmt *stmt_sets(list * s1);
 
 extern stmt *stmt_copyfrom(table * t, char *file, char *tsep, char *rsep, int nr );
+extern char *stmt_copyfrom_file( stmt *s );
 
 extern stmt *stmt_insert(stmt *c, stmt * values);
 extern stmt *stmt_replace(stmt * c, stmt * values);
