@@ -1,11 +1,11 @@
 setoid(oid(20000000));
 
-proc newid(x,y) := {
+proc newid(any x, any y)  {
 	return x+y;
 }
 
 #calling a function;
-b:= new(int,int,0);
+var b:= new(int,int,0);
 b.insert(1,15);
 b.insert(2,4);
 b.insert(3,int(nil));
@@ -19,35 +19,36 @@ b.insert(int(nil),int(nil));
 b.insert(int(nil),81);
 b.rename("tenk1_unique1");
 
-proc dummy :={ return 1; }
+proc dummy() { return 1; }
 
-proc p(B,C) := { 
+proc p(any B, any C) { 
         local :=newid(B,C); 
-        vars; 
+        vars(); 
 }
 
-proc s(low,high) := {
-	vars; t := select(tenk1_unique1,low,high); 
-        t.count.print;
+proc s(int low, int high) := {
+	vars(); 
+	var t := select(tenk1_unique1,low,high); 
+        t.count().print();
 }
 
-#proc echo(x,y):= { vars; z=x; vars; return(z); }
-proc echo(x,y):= { vars; z:=x; vars; return(z); }
-proc New(N,A,Ahsh) := {
-        Nh := newid(N,"_hsh"); 
-        A := new(int,int,1); 
+#proc echo(any x,any y) { vars(); z=x; vars(); return(z); }
+proc echo(any x,any y) { vars(); z:=x; vars(); return(z); }
+proc New(any N,any A,any Ahsh) {
+        var Nh := newid(N,"_hsh"); 
+        var A := new(int,int,1); 
         rename(A,N); 
-        Ahsh := new(oid,int,1); 
-        rename(Ahsh,Nh); vars;
+        var Ahsh := new(oid,int,1); 
+        rename(Ahsh,Nh); vars();
 }
 
 p("b","1");
 
 # passing parameters;
-a:=35;
-echo(a,"hello").print;
+var a:=35;
+echo(a,"hello").print();
 New("r","C","Ch");
-vars;
+vars();
 
 
 s(0,10);
@@ -56,4 +57,4 @@ s(0,11);
 # errors !;
 s(0,99);
 s(0,999);
-quit;
+quit();

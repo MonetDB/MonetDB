@@ -1,15 +1,15 @@
 setoid(oid(20000000));
 # The Monet interpreter supports type casts
-p:=  int("21");
-p.print;
+var p:=  int("21");
+p.print();
 p:= flt("23");
-p.print;
+p.print();
 p:= bit(1);
-p.print;
+p.print();
 z:= int(p);
-z.print;
+z.print();
 p:= bit(0);
-p.print;
+p.print();
 
 p:= str(1);
-quit;
+quit();

@@ -13,7 +13,7 @@ stdout of test 'test_80` in directory 'tests/suite_00` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 # Testing key and set constraints ;
-b:= new(int,int);
+var b:= new(int,int);
 b.key(true);
 insert(b,1,2);
 insert(b,2,2);
@@ -40,7 +40,7 @@ print(b);
 #-----------------#
 [ 1,	  3	  ]
 [ 2,	  4	  ]
-c:= new(int,int);
+var c:= new(int,int);
 set(c,true);
 insert(c,1,2);
 insert(c,2,2);
@@ -67,7 +67,7 @@ print(c);
 #-----------------#
 [ 1,	  2	  ]
 [ 2,	  2	  ]
-quit;
+quit();
 
 # 17:08:53 >  
 # 17:08:53 >  Done.

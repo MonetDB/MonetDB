@@ -1,6 +1,6 @@
 setoid(oid(20000000));
 #testing the set operations;
-b:= new(int,int);
+var b:= new(int,int);
 b.insert(1,15);
 b.insert(2,4);
 b.insert(3,int(nil));
@@ -13,26 +13,26 @@ b.insert(9,int(nil));
 b.insert(int(nil),int(nil));
 b.insert(int(nil),81);
 
-c:= b.copy;
-t:= b.select(80,int(nil)); print(t);
+var c:= b.copy();
+var t:= b.select(80,int(nil)); print(t);
 c.access(BAT_WRITE);
 insert(c,t);print(c);
 
-z:= new(int,int);
+var z:= new(int,int);
 b.replace(1,1);
 z.insert(2,4);
 z.insert(3,9);
 b.replace(z);
-b.print;
+b.print();
 
-c.reverse.print;
-d:= intersect(reverse(c),b);
+c.reverse().print();
+var d:= intersect(reverse(c),b);
 print(d);
-e:= diff(reverse(c),d);
+var e:= diff(reverse(c),d);
 print(e);
-f:= union(e,b);
+var f:= union(e,b);
 print(f);
 # specials
-marcel:= b.kunion(b);
-marcel.print;
-quit;
+var marcel:= b.kunion(b);
+marcel.print();
+quit();

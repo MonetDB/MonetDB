@@ -13,14 +13,14 @@ setoid(oid(20000000));
 # split and re-distribute BATs.
 # This is supported by hashsplit, rangesplit,  and groupby operations.
 
-PROC groupby(b, rng) := {
- VAR r := rng.reverse.number.reverse;
- VAR l := rng.number.reverse;
+PROC groupby(bat b, bat  rng) {
+ VAR r := rng.reverse().number().reverse();
+ VAR l := rng.number().reverse();
  RETURN [select]([l~const b],l,r);
 }
 
 
-b:= new(int,int);
+var b:= new(int,int);
 b.insert(1,15);
 b.insert(2,4);
 b.insert(3,int(nil));
@@ -34,7 +34,7 @@ b.insert(int(nil),int(nil));
 b.insert(int(nil),81);
 b.rename("b");
 
-rng:= new(int,int);
+var rng:= new(int,int);
 rng.insert(1,1);
 rng.insert(1,9);
 rng.insert(int(nil),9);
@@ -42,8 +42,8 @@ rng.insert(1,int(nil));
 rng.insert(9,9);
 rng.insert(3,5);
 
-bb := b.groupby(rng);
-bb.print;
+var bb := b.groupby(rng);
+bb.print();
 #-------------------------#
 # BAT:	  tmp_33	  #
 # (int)	  (BAT)		  #
@@ -54,7 +54,7 @@ bb.print;
 [ 3,	  <tmp_37>	  ]
 [ 4,	  <tmp_38>	  ]
 [ 5,	  <tmp_39>	  ]
-bb@batloop() $t.print;
+bb@batloop() { $t.print(); }
 #-----------------#
 # BAT:	  tmp_34  #
 # (int)	  (int)	  #
@@ -92,7 +92,7 @@ bb@batloop() $t.print;
 [ 2,	  4	  ]
 
 # other values;
-x:= new(int,chr);
+var x:= new(int,chr);
 x.insert(1,'a');
 x.insert(2,'a');
 x.insert(3,'b');
@@ -102,12 +102,12 @@ x.insert(6,'b');
 x.insert(7,'c');
 x.insert(8,'c');
 
-t := new(chr,chr);
+var t := new(chr,chr);
 t.insert('a','b');
 t.insert('c','c');
 t.insert('b','b');
-xx:= x.groupby(t);
-xx.print;
+var xx:= x.groupby(t);
+xx.print();
 #-------------------------#
 # BAT:	  tmp_42	  #
 # (int)	  (BAT)		  #
@@ -115,7 +115,7 @@ xx.print;
 [ 0,	  <tmp_43>	  ]
 [ 1,	  <tmp_44>	  ]
 [ 2,	  <tmp_45>	  ]
-xx@batloop() $t.print;
+xx@batloop() { $t.print(); }
 #-----------------#
 # BAT:	  tmp_43  #
 # (int)	  (chr)	  #
@@ -158,7 +158,7 @@ t.insert("a","b");
 t.insert("c","c");
 t.insert("b","b");
 xx:= x.groupby(t);
-xx.print;
+xx.print();
 #-------------------------#
 # BAT:	  tmp_46	  #
 # (int)	  (BAT)		  #
@@ -166,7 +166,7 @@ xx.print;
 [ 0,	  <tmp_47>	  ]
 [ 1,	  <tmp_48>	  ]
 [ 2,	  <tmp_49>	  ]
-xx@batloop() $t.print;
+xx@batloop() { $t.print(); }
 #-----------------#
 # BAT:	  tmp_47  #
 # (int)	  (str)	  #
@@ -191,7 +191,7 @@ xx@batloop() $t.print;
 [ 4,	  "b"	  ]
 [ 5,	  "b"	  ]
 [ 6,	  "b"	  ]
-quit;
+quit();
 
 # 15:33:39 >  
 # 15:33:39 >  Done.

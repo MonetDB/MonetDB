@@ -13,12 +13,12 @@ stdout of test 'test_10` in directory 'tests/suite_01` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 # long string problems in the Monet parser
-a:="asdfdsfasdfadfadfa";
-b:="01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01";
-c:="01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789";
-c.print;
+var a:="asdfdsfasdfadfadfa";
+var b:="01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01";
+var c:="01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789";
+c.print();
 [ "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789" ]
-quit;
+quit();
 
 # 17:08:57 >  
 # 17:08:57 >  Done.

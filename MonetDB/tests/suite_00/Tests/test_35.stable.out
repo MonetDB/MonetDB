@@ -13,14 +13,14 @@ stdout of test 'test_35` in directory 'tests/suite_00` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 # testing merge semijoin
-c:= new(int,int);
+var c:= new(int,int);
 insert(c,1,1);
 insert(c,2,2);
 insert(c,3,4);
 insert(c,4,4);
 insert(c,4,9);
 insert(c,5,int(nil));
-c.print;
+c.print();
 #-----------------#
 # BAT:	  tmp_24  #
 # (int)	  (int)	  #
@@ -31,14 +31,14 @@ c.print;
 [ 4,	  4	  ]
 [ 4,	  9	  ]
 [ 5,	  nil	  ]
-d:= new(int,int);
+var d:= new(int,int);
 insert(d,1,1);
 insert(d,2,2);
 insert(d,4,3);
 insert(d,4,4);
 insert(d,9,4);
 insert(d,int(nil),5);
-d.print;
+d.print();
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
@@ -49,8 +49,8 @@ d.print;
 [ 4,	  4	  ]
 [ 9,	  4	  ]
 [ nil,	  5	  ]
-z:=c.semijoin(d);
-z.print;
+var z:=c.semijoin(d);
+z.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -59,8 +59,8 @@ z.print;
 [ 2,	  2	  ]
 [ 4,	  4	  ]
 [ 4,	  9	  ]
-z:=c.reverse.semijoin(d);
-z.print;
+z:=c.reverse().semijoin(d);
+z.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -71,7 +71,7 @@ z.print;
 [ 4,	  4	  ]
 [ 9,	  4	  ]
 z:=d.semijoin(c);
-z.print;
+z.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -87,7 +87,7 @@ b.insert(oid(1),"hello");
 b.insert(oid(2),"world");
 b.insert(oid(3),"..");
 z:= b.semijoin(b);
-z.print;
+z.print();
 #-------------------------#
 # BAT:	  tmp_27	  #
 # (void)  (str)		  #
@@ -96,7 +96,7 @@ z.print;
 [ 2@0,	  "world"	  ]
 [ 3@0,	  ".."		  ]
 
-quit;
+quit();
 
 # 17:08:48 >  
 # 17:08:48 >  Done.

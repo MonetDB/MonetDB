@@ -13,7 +13,7 @@ setoid(oid(20000000));
 #focussed on strings
 #it includes insertions,deletions,selections, and joins.
 
-b:= new(str,int);
+var b:= new(str,int);
 b.insert("the",1);
 b.insert("quick",2);
 b.insert("brown",3);
@@ -26,7 +26,7 @@ b.insert(str(nil),9);
 b.insert(".",10);
 b.insert("",int(nil));
 b.insert(str(nil),int(nil));
-b.print;
+b.print();
 #-------------------------#
 # BAT:		  tmp_26  #
 # (str)		  (int)	  #
@@ -46,14 +46,14 @@ b.print;
 
 
 # Testing simple retrievals
-b.find("the").print;
+b.find("the").print();
 [ 1 ]
-b.find("fox").print;
+b.find("fox").print();
 [ 4 ]
-b.find(str(nil)).print;
+b.find(str(nil)).print();
 [ nil ]
 # This should cause an error
-b.find("cat").print;
+b.find("cat").print();
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
 !ERROR: print(param 1): evaluation error.
@@ -62,7 +62,7 @@ b.find("cat").print;
 b.delete("fox",4);
 b.delete("the",1);
 b.delete(".",10);
-b.print;
+b.print();
 #-------------------------#
 # BAT:		  tmp_26  #
 # (str)		  (int)	  #
@@ -80,11 +80,11 @@ b.print;
 b.insert("fox",4);
 b.insert("the",1);
 b.insert(".",10);
-b.count.print;
+b.count().print();
 [ 12 ]
 
 # Lets cut out a few sections
-b.select(2,4).print;
+b.select(2,4).print();
 #-------------------------#
 # BAT:		  tmp_25  #
 # (str)		  (int)	  #
@@ -92,7 +92,7 @@ b.select(2,4).print;
 [ "quick",	  2	  ]
 [ "brown",	  3	  ]
 [ "fox",	  4	  ]
-b.select(7,int(nil)).print;
+b.select(7,int(nil)).print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (str)	  (int)	  #
@@ -101,7 +101,7 @@ b.select(7,int(nil)).print;
 [ "dog",  8	  ]
 [ nil,	  9	  ]
 [ ".",	  10	  ]
-b.select(int(nil),7).print;
+b.select(int(nil),7).print();
 #-------------------------#
 # BAT:		  tmp_25  #
 # (str)		  (int)	  #
@@ -113,7 +113,7 @@ b.select(int(nil),7).print;
 [ "lazy",	  7	  ]
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
-b.select(int(nil),int(nil)).print;
+b.select(int(nil),int(nil)).print();
 #-------------------------#
 # BAT:		  tmp_25  #
 # (str)		  (int)	  #
@@ -129,7 +129,7 @@ b.select(int(nil),int(nil)).print;
 [ "the",	  1	  ]
 [ ".",		  10	  ]
 
-b.reverse.select("fox","quick").print;
+b.reverse().select("fox","quick").print();
 #-------------------------#
 # BAT:	  tmp_25	  #
 # (int)	  (str)		  #
@@ -139,7 +139,7 @@ b.reverse.select("fox","quick").print;
 [ 6,	  "over"	  ]
 [ 7,	  "lazy"	  ]
 [ 4,	  "fox"		  ]
-b.reverse.select("fox",str(nil)).print;
+b.reverse().select("fox",str(nil)).print();
 #-------------------------#
 # BAT:	  tmp_25	  #
 # (int)	  (str)		  #
@@ -150,7 +150,7 @@ b.reverse.select("fox",str(nil)).print;
 [ 7,	  "lazy"	  ]
 [ 4,	  "fox"		  ]
 [ 1,	  "the"		  ]
-b.reverse.select(str(nil),"quick").print;
+b.reverse().select(str(nil),"quick").print();
 #-------------------------#
 # BAT:	  tmp_25	  #
 # (int)	  (str)		  #
@@ -164,7 +164,7 @@ b.reverse.select(str(nil),"quick").print;
 [ 8,	  "dog"		  ]
 [ 4,	  "fox"		  ]
 [ 10,	  "."		  ]
-b.reverse.select(str(nil),str(nil)).print;
+b.reverse().select(str(nil),str(nil)).print();
 #-------------------------#
 # BAT:	  tmp_25	  #
 # (int)	  (str)		  #
@@ -181,7 +181,7 @@ b.reverse.select(str(nil),str(nil)).print;
 [ 10,	  "."		  ]
 
 # A 2-dimensional cut
-bn:=b.fragment("fox","quick",1,5);bn.print;
+var bn:=b.fragment("fox","quick",1,5);bn.print();
 #-------------------------#
 # BAT:		  tmp_25  #
 # (str)		  (int)	  #
@@ -189,7 +189,7 @@ bn:=b.fragment("fox","quick",1,5);bn.print;
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
-b.fragment("fox",str(nil),1,5).print;
+b.fragment("fox",str(nil),1,5).print();
 #-------------------------#
 # BAT:		  tmp_27  #
 # (str)		  (int)	  #
@@ -198,7 +198,7 @@ b.fragment("fox",str(nil),1,5).print;
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
-b.fragment(str(nil),"quick",1,5).print;
+b.fragment(str(nil),"quick",1,5).print();
 #-------------------------#
 # BAT:		  tmp_27  #
 # (str)		  (int)	  #
@@ -207,7 +207,7 @@ b.fragment(str(nil),"quick",1,5).print;
 [ "brown",	  3	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
-b.fragment(str(nil),str(nil),1,5).print;
+b.fragment(str(nil),str(nil),1,5).print();
 #-------------------------#
 # BAT:		  tmp_27  #
 # (str)		  (int)	  #
@@ -217,7 +217,7 @@ b.fragment(str(nil),str(nil),1,5).print;
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
-b.fragment("fox","quick",1,int(nil)).print;
+b.fragment("fox","quick",1,int(nil)).print();
 #-------------------------#
 # BAT:		  tmp_27  #
 # (str)		  (int)	  #
@@ -227,7 +227,7 @@ b.fragment("fox","quick",1,int(nil)).print;
 [ "over",	  6	  ]
 [ "lazy",	  7	  ]
 [ "fox",	  4	  ]
-b.fragment("fox","quick",int(nil),5).print;
+b.fragment("fox","quick",int(nil),5).print();
 #-------------------------#
 # BAT:		  tmp_27  #
 # (str)		  (int)	  #
@@ -235,7 +235,7 @@ b.fragment("fox","quick",int(nil),5).print;
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
-b.fragment("fox","quick",int(nil),int(nil)).print;
+b.fragment("fox","quick",int(nil),int(nil)).print();
 #-------------------------#
 # BAT:		  tmp_27  #
 # (str)		  (int)	  #
@@ -245,7 +245,7 @@ b.fragment("fox","quick",int(nil),int(nil)).print;
 [ "over",	  6	  ]
 [ "lazy",	  7	  ]
 [ "fox",	  4	  ]
-b.fragment("fox",str(nil),int(nil),int(nil)).print;
+b.fragment("fox",str(nil),int(nil),int(nil)).print();
 #-------------------------#
 # BAT:		  tmp_27  #
 # (str)		  (int)	  #
@@ -256,7 +256,7 @@ b.fragment("fox",str(nil),int(nil),int(nil)).print;
 [ "lazy",	  7	  ]
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
-b.fragment(str(nil),"f",int(nil),int(nil)).print;
+b.fragment(str(nil),"f",int(nil),int(nil)).print();
 #-------------------------#
 # BAT:		  tmp_27  #
 # (str)		  (int)	  #
@@ -267,7 +267,7 @@ b.fragment(str(nil),"f",int(nil),int(nil)).print;
 [ "dog",	  8	  ]
 [ nil,		  9	  ]
 [ ".",		  10	  ]
-b.reverse.fragment(int(nil),int(nil),str(nil),"f").print;
+b.reverse().fragment(int(nil),int(nil),str(nil),"f").print();
 #-------------------------#
 # BAT:	  tmp_27	  #
 # (int)	  (str)		  #
@@ -279,8 +279,8 @@ b.reverse.fragment(int(nil),int(nil),str(nil),"f").print;
 [ 9,	  nil		  ]
 [ 10,	  "."		  ]
 
-bn:= b.join(bn.reverse);
-bn.print;
+var b1:= b.join(bn.reverse());
+b1.print();
 #---------------------------------#
 # BAT:		  tmp_27	  #
 # (str)		  (str)		  #
@@ -289,8 +289,8 @@ bn.print;
 [ "jumps",	  "jumps"	  ]
 [ "fox",	  "fox"		  ]
 
-bn:= b.semijoin(bn.reverse);
-bn.print;
+var b2:= b.semijoin(b1.reverse());
+b2.print();
 #-------------------------#
 # BAT:		  tmp_25  #
 # (str)		  (int)	  #
@@ -300,30 +300,30 @@ bn.print;
 [ "fox",	  4	  ]
 
 # testing the like command
-b.reverse.like("ox").print;
+b.reverse().like("ox").print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
-b.reverse.like("fo").print;
+b.reverse().like("fo").print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
-b.reverse.like("fox").print;
+b.reverse().like("fox").print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
-b.reverse.like(" fox").print;
+b.reverse().like(" fox").print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (str)	  #
 #-----------------#
-quit;
+quit();
 
 # 13:36:16 >  
 # 13:36:16 >  Done.

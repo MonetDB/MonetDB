@@ -2,13 +2,13 @@ setoid(oid(20000000));
 #test basic functionality of the BAT library.
 #focussed on temporary reversal of roles.
 
-b:= new(int,str);
+var b:= new(int,str);
 
 b.insert(1,"15");
 
-b.print;
+b.print();
 
-b.reverse.print;
+b.reverse().print();
 
-b.print;
-quit;
+b.print();
+quit();

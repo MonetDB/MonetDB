@@ -14,7 +14,7 @@ stdout of test 'test_40` in directory 'tests/suite_00` itself:
 setoid(oid(20000000));
 # Some applications may wish to directly access the buns
 # i.e. they use a BAT like an array.
-b:= new(int,int);
+var b:= new(int,int);
 b.rename("b");
 
 b.insert(1,15);
@@ -31,15 +31,15 @@ b.insert(int(nil),81);
 #b.rename("b");
 
 
-b.save;
+b.save();
 load("b");
-b.position(4).print;
+b.position(4).print();
 [ 3 ]
-b.fetch(5).print;
+b.fetch(5).print();
 [ 36 ]
-b.fetch(8).print;
+b.fetch(8).print();
 [ nil ]
-b.slice(5,8).print;
+b.slice(5,8).print();
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
@@ -49,20 +49,20 @@ b.slice(5,8).print;
 [ 8,	  64	  ]
 [ 9,	  nil	  ]
 # errors
-b.position(111).print;
+b.position(111).print();
 !ERROR: CMDposition: item not found
 !ERROR: CMDposition: operation failed.
 !ERROR: print(param 1): evaluation error.
-b.fetch(-1).print;
+b.fetch(-1).print();
 !ERROR: CMDfetch: idx out of range
 !ERROR: CMDfetch: operation failed.
 !ERROR: print(param 1): evaluation error.
-b.slice(8,5).print;
+b.slice(8,5).print();
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
 #-----------------#
-quit;
+quit();
 
 # 17:08:49 >  
 # 17:08:49 >  Done.

@@ -12,32 +12,33 @@ stdout of test 'test_15` in directory 'tests/suite_01` itself:
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
-commit; printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+commit(); printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  354	  ]
-[ "majflt",	  498	  ]
+[ "minflt",	  486	  ]
+[ "majflt",	  619	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
-commit; commit; commit; commit; commit; commit; commit; commit; commit; commit; 
-commit; commit; commit; commit; commit; commit; commit; commit; commit; commit; 
-printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n");
+commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
+commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
+commit(); commit(); commit(); commit(); 
+printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  355	  ]
-[ "majflt",	  499	  ]
+[ "minflt",	  487	  ]
+[ "majflt",	  619	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -45,7 +46,7 @@ printf("#~BeginVariableOutput~#\n"); io.print; printf("#~EndVariableOutput~#\n")
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
 
-quit;
+quit();
 
 # 17:08:57 >  
 # 17:08:57 >  Done.

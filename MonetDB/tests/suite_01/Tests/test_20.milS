@@ -5,30 +5,30 @@ setoid(oid(20000000));
 unknown("hello");
 
 #simple procedure with withdrawal
-proc c:= clock.print;
-c;
+proc c(){ clock.print;}
+c();
 undef c;
-c;
+c();
 
 # redefinition of existing procedure
-proc c:= clock.print;
-c;
-proc c:= cpu.print;
-printf("#~BeginVariableOutput~#\n"); c; printf("#~EndVariableOutput~#\n");
+proc c(){ clock.print;}
+c();
+proc c(){ cpu.print;}
+printf("#~BeginVariableOutput~#\n"); c(); printf("#~EndVariableOutput~#\n");
 
-proc echo:= $1.print;
+proc echo(){ $1.print();}
 echo(1);
 echo("hello");
 echo(12,13);
-echo;
-proc echo:= $3.print;
+echo();
+proc echo(){ $3.print();}
 echo(1);
 echo(1,2,3);
 
 # handling non-complete proc definition;
-proc forward;
-forward;
+proc forward() { }
+forward();
 undef forward;
-forward;
+forward();
 
-quit;
+quit();

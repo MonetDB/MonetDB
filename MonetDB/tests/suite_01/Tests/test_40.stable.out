@@ -15,7 +15,7 @@ setoid(oid(20000000));
 #test ascii export/import facility.
 module("ascii_io");
 
-b:= new(str,int);
+var b:= new(str,int);
 b.insert("the",1);
 b.insert("quick",2);
 b.insert("brown",3);
@@ -28,7 +28,7 @@ b.insert(str(nil),9);
 b.insert(".",10);
 b.insert("",int(nil));
 b.insert(str(nil),int(nil));
-b.print;
+b.print();
 #-------------------------#
 # BAT:		  tmp_25  #
 # (str)		  (int)	  #
@@ -47,11 +47,11 @@ b.print;
 [ nil,		  nil	  ]
 b.export("monet2");
 saved in monet2
-b.clear;
-b.count.print;
+b.clear();
+b.count().print();
 [ 0 ]
 b.import("monet2");
-b.print;
+b.print();
 #-------------------------#
 # BAT:		  tmp_25  #
 # (str)		  (int)	  #
@@ -81,7 +81,7 @@ b.insert(8,64);
 b.insert(9,int(nil));
 b.insert(int(nil),int(nil));
 b.insert(int(nil),81);
-b.print;
+b.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -99,11 +99,11 @@ b.print;
 [ nil,	  81	  ]
 b.export("monet1");
 saved in monet1
-b.clear;
-b.count.print;
+b.clear();
+b.count().print();
 [ 0 ]
 b.import("monet1");
-b.print;
+b.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -119,9 +119,9 @@ b.print;
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
-commit;
+commit();
 
-quit;
+quit();
 
 # 17:08:59 >  
 # 17:08:59 >  Done.

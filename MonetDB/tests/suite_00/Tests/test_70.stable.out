@@ -15,14 +15,14 @@ setoid(oid(20000000));
 #This collection of examples is geared at the support
 #of the data mining tool
 
-b:= new(int,int);
+var b:= new(int,int);
 b.insert(1,15);
 b.insert(2,15);
 
-b.sum.print;
+b.sum().print();
 [ 30 ]
 b.insert(3,int(nil));
-b.sum.print;
+b.sum().print();
 [ nil ]
 
 b.insert(4,15);
@@ -32,8 +32,8 @@ b.insert(7,49);
 b.insert(8,64);
 b.insert(9,int(nil));
 
-t:= b.histogram;
-t.print;
+var t:= b.histogram();
+t.print();
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
@@ -44,9 +44,9 @@ t.print;
 [ 36,	  1	  ]
 [ 49,	  1	  ]
 [ 64,	  1	  ]
-commit;
+commit();
 
-s:= new(int,str);
+var s:= new(int,str);
 insert(s,1,"hello");
 insert(s,2,"hello");
 insert(s,3,"hello");
@@ -55,8 +55,8 @@ insert(s,5,"eello");
 insert(s,6,"fello");
 insert(s,7,"fello");
 insert(s,8,"fello");
-t:= s.histogram;
-t.print;
+t:= s.histogram();
+t.print();
 #-------------------------#
 # BAT:		  tmp_26  #
 # (str)		  (int)	  #
@@ -67,14 +67,14 @@ t.print;
 [ "fello",	  3	  ]
 
 #It requires a few additional routines
-c:= new(int,int);
+var c:= new(int,int);
 c.insert(1,15);
 c.insert(2,15);
 c.insert(3,int(nil));
 c.insert(4,0);
 c.insert(5,30);
 
-c.print;
+c.print();
 #-----------------#
 # BAT:	  tmp_23  #
 # (int)	  (int)	  #
@@ -84,8 +84,8 @@ c.print;
 [ 3,	  nil	  ]
 [ 4,	  0	  ]
 [ 5,	  30	  ]
-d:= [<](b,c);
-d.print;
+var d:= [<](b,c);
+d.print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (bit)	  #
@@ -97,7 +97,7 @@ d.print;
 [ 5,	  true	  ]
 
 d:= [<](c,b);
-d.print;
+d.print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (int)	  (bit)	  #
@@ -109,7 +109,7 @@ d.print;
 [ 5,	  false	  ]
 
 d:= [>](c,b);
-d.print;
+d.print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (bit)	  #
@@ -119,7 +119,7 @@ d.print;
 [ 3,	  nil	  ]
 [ 4,	  false	  ]
 [ 5,	  true	  ]
-quit;
+quit();
 
 # 17:08:53 >  
 # 17:08:53 >  Done.

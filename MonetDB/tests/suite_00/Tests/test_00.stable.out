@@ -13,9 +13,9 @@ setoid(oid(20000000));
 #focussed on integers
 #it includes insertions,deletions,selections, and joins.
 
-b:= new(int,int);
+var b:= new(int,int);
 #b.roles("head","tail"); roles was removed from the kernel ops
-printf("#~BeginVariableOutput~#\n"); b.info.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); b.info().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------------------------------#
 # BAT:				  tmp_29	  #
@@ -58,10 +58,10 @@ printf("#~BeginVariableOutput~#\n"); b.info.print; printf("#~EndVariableOutput~#
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
 [ "top",			  "1"		  ]
-[ "batStamp",			  "-173"	  ]
-[ "lastUsed",			  "4002"	  ]
+[ "batStamp",			  "-167"	  ]
+[ "lastUsed",			  "3822"	  ]
 [ "keepAround",			  "0"		  ]
-[ "curStamp",			  "174"		  ]
+[ "curStamp",			  "168"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "clean"	  ]
 [ "batDirtybuns",		  "clean"	  ]
@@ -69,21 +69,21 @@ printf("#~BeginVariableOutput~#\n"); b.info.print; printf("#~EndVariableOutput~#
 [ "batBuns.size",		  "424"		  ]
 [ "batBuns.maxsize",		  "424"		  ]
 [ "batBuns.storage",		  "malloced"	  ]
-[ "batBuns.filename",		  "no file"	  ]
+[ "batBuns.filename",		  "29.buns"	  ]
 [ "batBuns.offset",		  "0"		  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "hheap.free",			  "0"		  ]
 [ "hheap.size",			  "0"		  ]
 [ "hheap.maxsize",		  "0"		  ]
 [ "hheap.storage",		  "absent"	  ]
-[ "hheap.filename",		  "no file"	  ]
+[ "hheap.filename",		  "29.hheap"	  ]
 [ "hheap.offset",		  "0"		  ]
 [ "theapdirty",			  "clean"	  ]
 [ "theap.free",			  "0"		  ]
 [ "theap.size",			  "0"		  ]
 [ "theap.maxsize",		  "0"		  ]
 [ "theap.storage",		  "absent"	  ]
-[ "theap.filename",		  "no file"	  ]
+[ "theap.filename",		  "29.theap"	  ]
 [ "theap.offset",		  "0"		  ]
 [ "hacctype",			  "null"	  ]
 [ "haccdirty",			  "clean"	  ]
@@ -118,7 +118,7 @@ b.insert(8,64);
 b.insert(9,int(nil));
 b.insert(int(nil),int(nil));
 b.insert(int(nil),81);
-b.print;
+b.print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (int)	  (int)	  #
@@ -137,14 +137,14 @@ b.print;
 
 
 # Testing simple retrievals
-b.find(1).print;
+b.find(1).print();
 [ 15 ]
-b.find(4).print;
+b.find(4).print();
 [ 16 ]
-b.find(int(nil)).print;
+b.find(int(nil)).print();
 [ 81 ]
 # This should cause an error
-b.find(10).print;
+b.find(10).print();
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
 !ERROR: print(param 1): evaluation error.
@@ -153,7 +153,7 @@ b.find(10).print;
 b.delete(4,16);
 b.delete(1,15);
 b.delete(int(nil),81);
-b.print;
+b.print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (int)	  (int)	  #
@@ -170,9 +170,9 @@ b.print;
 b.insert(4,16);
 b.insert(int(nil),81);
 b.insert(1,15);
-b.count.print;
+b.count().print();
 [ 11 ]
-b.print;
+b.print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (int)	  (int)	  #
@@ -190,7 +190,7 @@ b.print;
 [ 1,	  15	  ]
 
 # Lets cut out a few sections
-b.select(25,64).print;
+b.select(25,64).print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (int)	  (int)	  #
@@ -199,32 +199,32 @@ b.select(25,64).print;
 [ 6,	  36	  ]
 [ 7,	  49	  ]
 [ 8,	  64	  ]
-b.select(4,15).print;
+b.select(4,15).print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
 [ 1,	  15	  ]
-b.select(4,4).print;
+b.select(4,4).print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
 # This should cause an error
-b.select(4,3).print;
+b.select(4,3).print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (int)	  (int)	  #
 #-----------------#
-b.select(81,int(nil)).print;
+b.select(81,int(nil)).print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (int)	  (int)	  #
 #-----------------#
 [ nil,	  81	  ]
-b.select(int(nil),int(nil)).print;
+b.select(int(nil),int(nil)).print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (int)	  (int)	  #
@@ -239,21 +239,21 @@ b.select(int(nil),int(nil)).print;
 [ 1,	  15	  ]
 
 # A 2-dimensional cut
-bn:=b.fragment(1,5,4,15);bn.print;
+var bn:=b.fragment(1,5,4,15);bn.print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
 [ 1,	  15	  ]
-b.fragment(1,5,16,int(nil)).print;
+b.fragment(1,5,16,int(nil)).print();
 #-----------------#
 # BAT:	  tmp_30  #
 # (int)	  (int)	  #
 #-----------------#
 [ 5,	  25	  ]
 [ 4,	  16	  ]
-b.fragment(1,int(nil),16,int(nil)).print;
+b.fragment(1,int(nil),16,int(nil)).print();
 #-----------------#
 # BAT:	  tmp_30  #
 # (int)	  (int)	  #
@@ -263,7 +263,7 @@ b.fragment(1,int(nil),16,int(nil)).print;
 [ 7,	  49	  ]
 [ 8,	  64	  ]
 [ 4,	  16	  ]
-b.fragment(int(nil),int(nil),16,int(nil)).print;
+b.fragment(int(nil),int(nil),16,int(nil)).print();
 #-----------------#
 # BAT:	  tmp_30  #
 # (int)	  (int)	  #
@@ -275,8 +275,8 @@ b.fragment(int(nil),int(nil),16,int(nil)).print;
 [ 4,	  16	  ]
 [ nil,	  81	  ]
 
-bn:= b.join(bn.reverse);
-bn.print;
+bn:= b.join(bn.reverse());
+bn.print();
 #-----------------#
 # BAT:	  tmp_30  #
 # (int)	  (int)	  #
@@ -284,8 +284,8 @@ bn.print;
 [ 2,	  2	  ]
 [ 1,	  1	  ]
 
-bn:= b.semijoin(bn.reverse);
-bn.print;
+bn:= b.semijoin(bn.reverse());
+bn.print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (int)	  (int)	  #
@@ -294,8 +294,8 @@ bn.print;
 [ 1,	  15	  ]
 
 # band join experiment
-c:= b.copy;
-bandjoin(b,c,4,4).print;
+var c:= b.copy();
+bandjoin(b,c,4,4).print();
 #-----------------#
 # BAT:	  tmp_31  #
 # (int)	  (int)	  #
@@ -310,7 +310,7 @@ bandjoin(b,c,4,4).print;
 [ 2,	  15	  ]
 
 #and theta joins?
-b.thetajoin(c,LT,lng(nil)).print;
+b.thetajoin(c,LT,lng(nil)).print();
 #-----------------#
 # BAT:	  tmp_31  #
 # (int)	  (int)	  #
@@ -320,7 +320,7 @@ b.thetajoin(c,LT,lng(nil)).print;
 [ 2,	  49	  ]
 [ 2,	  64	  ]
 [ 2,	  nil	  ]
-quit;
+quit();
 
 # 15:33:19 >  
 # 15:33:19 >  Done.

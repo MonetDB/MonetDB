@@ -16,29 +16,30 @@ setoid(oid(20000000));
 module("oo7");
 module("alarm");
 
-proc fill(size) := {
-    c:= new(int,int);
+proc fill(int size) {
+    var c:= new(int,int);
     i := 1;
-    while(i < size) 
+    while(i < size) {
       insert(c,i,i:=i+1);
+    }
     insert(c,i,1);
     return c;
 }
     
-c := closure(fill(20)); 
-count(c).print;
+var c := closure(fill(20)); 
+count(c).print();
 [ 400 ]
-z:= time;
-clo:= closure(c);
-printf("#~BeginVariableOutput~#\nclosure in %d ms cnt %d\n#~EndVariableOutput~#\n",time-z,count(clo));
+var z:= time();
+var clo:= closure(c);
+printf("#~BeginVariableOutput~#\nclosure in %d ms cnt %d\n#~EndVariableOutput~#\n",time()-z,count(clo));
 #~BeginVariableOutput~#
-closure in 11 ms cnt 400
+closure in 4 ms cnt 400
 #~EndVariableOutput~#
 ## testing traversal on directed acyclic graph
 ## produces the end-points only
-d:= new(int,int);
+var d:= new(int,int);
 d.insert(1,1);
-d.subgraph(c).print;
+d.subgraph(c).print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #
@@ -444,86 +445,86 @@ d.subgraph(c).print;
 [ 2,	  4	  ]
 [ 2,	  3	  ]
 ## The alternative is to extract a subgraph as a set
-d.clear;
+d.clear();
 d.insert(2,2);
-z:= time;
-e:=d.subgraph(c); printf("#~BeginVariableOutput~#\nsubgraph in %d ms on %d\n#~EndVariableOutput~#\n",time-z,count(e));
+var z:= time();
+var e:=d.subgraph(c); printf("#~BeginVariableOutput~#\nsubgraph in %d ms on %d\n#~EndVariableOutput~#\n",time()-z,count(e));
 #~BeginVariableOutput~#
 subgraph in 1 ms on 400
 #~EndVariableOutput~#
-d.clear;
+d.clear();
 d.insert(2,2);
 d.insert(3,3);
-z:= time; 
-e:=d.subgraph(c); printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time-z,count(e));
+z:= time(); 
+e:=d.subgraph(c); printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time()-z,count(e));
 #~BeginVariableOutput~#
 subgraph in 1 ms cnt 400
 #~EndVariableOutput~#
-d.clear;
+d.clear();
 d.insert(2,2);
 d.insert(3,3);
 d.insert(4,4);
 d.insert(5,5);
-z:= time; 
-e:=d.subgraph(c); printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time-z,count(e));
+z:= time(); 
+e:=d.subgraph(c); printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time()-z,count(e));
 #~BeginVariableOutput~#
-subgraph in 1 ms cnt 400
+subgraph in 0 ms cnt 400
 #~EndVariableOutput~#
 
 ## LARGE TEST
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  120	  ]
+[ "user",	  200	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  130	  ]
+[ "system",	  610	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
-d.clear;
+d.clear();
 d.insert(2,2);
-z:= time;
+z:= time();
 e:=d.subgraph(clo); 
-printf("#~BeginVariableOutput~#\nsubgraph in %d ms on %d\n#~EndVariableOutput~#\n",time-z,count(e));
+printf("#~BeginVariableOutput~#\nsubgraph in %d ms on %d\n#~EndVariableOutput~#\n",time()-z,count(e));
 #~BeginVariableOutput~#
 subgraph in 1 ms on 400
 #~EndVariableOutput~#
-d.clear;
+d.clear();
 ## d.insert(2,2);
 d.insert(3,3);
-z:= time; 
+z:= time(); 
 e:=d.subgraph(clo); 
-printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time-z,count(e));
+printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time()-z,count(e));
 #~BeginVariableOutput~#
-subgraph in 1 ms cnt 400
+subgraph in 0 ms cnt 400
 #~EndVariableOutput~#
-d.clear;
+d.clear();
 ##d.insert(2,2);
 ##d.insert(3,3);
 d.insert(4,4);
 ##d.insert(5,5);
-z:= time; 
-e:=d.subgraph(clo); printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time-z,count(e));
+z:= time(); 
+e:=d.subgraph(clo); printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time()-z,count(e));
 #~BeginVariableOutput~#
-subgraph in 1 ms cnt 400
+subgraph in 0 ms cnt 400
 #~EndVariableOutput~#
 
-printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  120	  ]
+[ "user",	  200	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  130	  ]
+[ "system",	  610	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
-quit;
+quit();
 
 # 17:08:48 >  
 # 17:08:48 >  Done.

@@ -14,19 +14,19 @@ stdout of test 'test_50` in directory 'tests/suite_00` itself:
 setoid(oid(20000000));
 # Selfcontained test of delta operations
 module("trans");
-b:=new(int,int);
-bi:=new(int,int);
-bd:=new(int,int);
+var b:=new(int,int);
+var bi:=new(int,int);
+var bd:=new(int,int);
 insert(b,1,2);
 insert(b,2,3);
-bd:=b.delta;
+bd:=b.delta();
 print(bd);
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
 #-----------------#
-a:= b.alpha;
-a.print;
+var a:= b.alpha();
+a.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #
@@ -37,7 +37,7 @@ a.print;
 #commit the changes and repeat the action
 clear(bd);
 commit(b);
-b.alpha.print;
+b.alpha().print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #
@@ -59,8 +59,8 @@ print(bd);
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  3	  ]
-a:= b.alpha;
-a.print;
+a:= b.alpha();
+a.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -74,7 +74,7 @@ print(b);
 #-----------------#
 [ 2,	  3	  ]
 [ 1,	  2	  ]
-quit;
+quit();
 
 # 17:08:50 >  
 # 17:08:50 >  Done.

@@ -4,7 +4,7 @@ setoid(oid(20000000));
 # It forgot to echo the input line.
 var x;
 #var 34;
-time.print;
+time().print();
 module("alarm");
-printf("#~BeginVariableOutput~#\n"); time.print; printf("#~EndVariableOutput~#\n");
-quit;
+printf("#~BeginVariableOutput~#\n"); time().print(); printf("#~EndVariableOutput~#\n");
+quit();

@@ -3,14 +3,14 @@ setoid(oid(20000000));
 # split and re-distribute BATs.
 # This is supported by hashsplit, rangesplit,  and groupby operations.
 
-PROC groupby(b, rng) := {
- VAR r := rng.reverse.number.reverse;
- VAR l := rng.number.reverse;
+PROC groupby(bat b, bat  rng) {
+ VAR r := rng.reverse().number().reverse();
+ VAR l := rng.number().reverse();
  RETURN [select]([l~const b],l,r);
 }
 
 
-b:= new(int,int);
+var b:= new(int,int);
 b.insert(1,15);
 b.insert(2,4);
 b.insert(3,int(nil));
@@ -24,7 +24,7 @@ b.insert(int(nil),int(nil));
 b.insert(int(nil),81);
 b.rename("b");
 
-rng:= new(int,int);
+var rng:= new(int,int);
 rng.insert(1,1);
 rng.insert(1,9);
 rng.insert(int(nil),9);
@@ -32,12 +32,12 @@ rng.insert(1,int(nil));
 rng.insert(9,9);
 rng.insert(3,5);
 
-bb := b.groupby(rng);
-bb.print;
-bb@batloop() $t.print;
+var bb := b.groupby(rng);
+bb.print();
+bb@batloop() { $t.print(); }
 
 # other values;
-x:= new(int,chr);
+var x:= new(int,chr);
 x.insert(1,'a');
 x.insert(2,'a');
 x.insert(3,'b');
@@ -47,13 +47,13 @@ x.insert(6,'b');
 x.insert(7,'c');
 x.insert(8,'c');
 
-t := new(chr,chr);
+var t := new(chr,chr);
 t.insert('a','b');
 t.insert('c','c');
 t.insert('b','b');
-xx:= x.groupby(t);
-xx.print;
-xx@batloop() $t.print;
+var xx:= x.groupby(t);
+xx.print();
+xx@batloop() { $t.print(); }
 
 # other values;
 x:= new(int,str);
@@ -72,6 +72,6 @@ t.insert("a","b");
 t.insert("c","c");
 t.insert("b","b");
 xx:= x.groupby(t);
-xx.print;
-xx@batloop() $t.print;
-quit;
+xx.print();
+xx@batloop() { $t.print(); }
+quit();

@@ -1,7 +1,7 @@
 setoid(oid(20000000));
 # test correctness of semijoin
-b:= new(int,int);
-c:= new(int,int);
+var b:= new(int,int);
+var c:= new(int,int);
 b.insert(0,0);
 b.insert(1,1);
 b.insert(1,2);
@@ -10,8 +10,8 @@ b.insert(1,4);
 c.insert(1,5);
 c.insert(1,4);
 c.insert(2,2);
-b.semijoin(c).print;
-c.semijoin(b).print;
-b.semijoin(b).print;
+b.semijoin(c).print();
+c.semijoin(b).print();
+b.semijoin(b).print();
 
-quit;
+quit();

@@ -15,13 +15,13 @@ setoid(oid(20000000));
 #exercise simple loop
 bats@batloop() {
 	print("enter");
-        tmp := bats.select($2);
-        tmp.print;
+        var tmp := bats.select($2);
+        tmp.print();
 }
 !WARNING: interpret: convert identifier 'bats' to string.
 !ERROR: interpret_iterator: iterator should work on a BAT.
 
-quit;
+quit();
 
 # 17:09:02 >  
 # 17:09:02 >  Done.

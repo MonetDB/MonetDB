@@ -16,17 +16,17 @@ setoid(oid(20000000));
 module("oo7");
 module("alarm");
 
-c:= new(int,int);
+var c:= new(int,int);
 insert(c,1,2);
 insert(c,2,3);
 insert(c,2,7);
 insert(c,3,4);
 insert(c,4,5);
 insert(c,5,1);
-count(c).print;
+count(c).print();
 [ 6 ]
-d:= closure(c);
-count(d).print;
+var d:= closure(c);
+count(d).print();
 [ 30 ]
 print(d);
 #-----------------#
@@ -65,18 +65,18 @@ print(d);
 [ 4,	  4	  ]
 ## testing traversal on directed acyclic graph
 ## produces the end-points only
-c:= new(int,int);
+var c:= new(int,int);
 insert(c,1,2);
 insert(c,2,3);
 insert(c,2,7);
 insert(c,3,4);
 insert(c,4,5);
 insert(c,3,5);
-count(c).print;
+count(c).print();
 [ 6 ]
-d:= new(int,int);
+var d:= new(int,int);
 d.insert(1,1);
-d.traverse(c).print;
+d.traverse(c).print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -85,7 +85,7 @@ d.traverse(c).print;
 [ 1,	  5	  ]
 d.clear;
 d.insert(2,3);
-d.traverse(c).print;
+d.traverse(c).print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #
@@ -94,12 +94,12 @@ d.traverse(c).print;
 ## The alternative is to extract a subgraph
 d.clear;
 d.insert(2,2);
-printf("#~BeginVariableOutput~#\n"); time.print; z:=d.subgraph(c); time.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); time.print(); var z:=d.subgraph(c); time.print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-[ 418 ]
-[ 418 ]
+[ 201 ]
+[ 201 ]
 #~EndVariableOutput~#
-z.print;
+z.print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #
@@ -112,12 +112,12 @@ z.print;
 d.clear;
 d.insert(2,2);
 d.insert(3,3);
-printf("#~BeginVariableOutput~#\n"); time.print; z:=d.subgraph(c); time.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); time.print(); z:=d.subgraph(c); time.print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-[ 419 ]
-[ 419 ]
+[ 201 ]
+[ 201 ]
 #~EndVariableOutput~#
-z.print;
+z.print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (int)	  (int)	  #
@@ -127,7 +127,7 @@ z.print;
 [ 3,	  5	  ]
 [ 3,	  4	  ]
 [ 4,	  5	  ]
-quit;
+quit();
 
 # 17:08:47 >  
 # 17:08:47 >  Done.
