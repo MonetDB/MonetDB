@@ -633,6 +633,12 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
  command just detects consecutive chunks where (1) the tail values have the same specified
  radix-bits and (2) the head values are ascending"
 
+.COMMAND radix_recluster(bat[oid,oid] b, bat[int,int] radix_cnt, int ignore_bits, int radix_bits) : bat[oid,oid] = radix_recluster;
+"Radix-recluster is a radix-cluster that exploits ordering properties on the input bat: if a bat was radix-clustered on one 
+ column, its other void column was transformed in a series of sorted oid chunks. To radix-cluster this with ignore-bits
+ (basically forming output chunks within a certain range) we now for each output chunk scan all sorted oid sequences and emit
+ results while they fit in the current chunk (no need for multi-pass cluster)."
+
 .COMMAND radix_count2(bat[any,oid] b, int shift, int radix) : bat[int,int] = radix_count2;
 "generates a bat with in head the dense ascending sequence 0..((1 << radix) - 1), and in tail 
 the count of all tail value in b with these radix bits, ignoring the lowmost ones passed in shift"
@@ -852,6 +858,45 @@ PROC test_radix() : void := {
 	Bn := normal(99);
 	Bn.mark(nil).print;
 	Bn.reverse.mark(nil).sort.reverse.print;
+
+        var b := bat(oid,oid,10);
+        { var i := 0; while((i :+= 1) <= 8) b.insert(0@0,9@0); }
+        { var i := 0; while((i :+= 1) <= 8) b.insert(1@0,8@0); }
+        { var i := 0; while((i :+= 1) <= 8) b.insert(6@0,3@0); }
+        { var i := 0; while((i :+= 1) <= 8) b.insert(7@0,2@0); }
+        { var i := 0; while((i :+= 1) <= 8) b.insert(2@0,7@0); }
+        { var i := 0; while((i :+= 1) <= 8) b.insert(3@0,6@0); }
+        { var i := 0; while((i :+= 1) <= 8) b.insert(4@0,5@0); }
+        { var i := 0; while((i :+= 1) <= 8) b.insert(5@0,4@0); }
+        { var i := 0; while((i :+= 1) <= 8) b.insert(9@0,0@0); }
+        { var i := 0; while((i :+= 1) <= 8) b.insert(8@0,1@0); }
+
+        var c := reclustcount(b);
+        c.print;
+                                                                                                                                
+        radix_recluster(b, c, 2, 4).print;
+        radix_recluster(b.reverse.copy.reverse, c, 2, 4).print;
+        radix_recluster(b.mark(0@0), c, 2, 4).print;
+        radix_recluster(b.mark(nil), c, 2, 4).print;
+        b.access(BAT_READ); # b.mark will be a view from now
+        radix_recluster(b.mark(0@0), c, 2, 4).print;
+        radix_recluster(b.mark(nil), c, 2, 4).print;
+}
+                                                                                                                                
+proc reclustcount(bat[oid,oid] b) : bat[int,int] {
+    var r := bat(int,int,8100);
+    var i := 0, j := 0;
+    var o := b.reverse.fetch(0);
+    b@batloop() {
+        if ($h < o) {
+            r.insert(i :+= 1, j);
+            j := 0;
+        }
+        o := $h;
+        j :+= 1;
+    }
+    r.insert(i :+= 1, j);
+    return r;
 }
 
  
@@ -3538,5 +3583,141 @@ int posjoin_clustered(BAT** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
 	BATseqbase(bn, c->hseqbase);
 	bn->tsorted = 0;
 	return GDK_SUCCEED;
+}
+
+static size_t recluster(oid*__r out, oid*__r in, size_t i, size_t n, oid lim, oid loc, int seqbase) {
+    size_t j;
+    if (loc == 0) {
+        i += i; n += n;
+        /* we do the < lim check only once for 16 iterations (32 oids) */
+        while(i+32 <= n && in[i+30] < lim) {
+            for(j=0; j<32; j+=2) {
+                out[j] = in[i+j];    
+                out[j+1] = in[i+j+1];    
+            }
+            out += 32; i += 32;
+        }    
+        while(i < n && in[i] < lim) {
+            *out++ = in[i];    
+            *out++ = in[i+1];    
+            i += 2;
+        }
+        i >>= 1;
+    } else if (loc == sizeof(oid)) { 
+        i += i; n += n;
+        /* if the input bat was reversed, we have to take the second oid from position i-1 */
+        while(i+32 <= n && in[i+30] < lim) {
+            for(j=0; j<32; j+=2) {
+                out[j] = in[i+j];    
+                out[j+1] = in[i+j-1];    
+            }
+            out += 32; i += 32;
+        }    
+        while(i < n && in[i] < lim) {
+            *out++ = in[i];    
+            *out++ = in[i-1];    
+            i += 2;
+        }
+        i >>= 1;
+    } else if (seqbase == oid_nil) {
+        /* void nil tail column */
+        oid *outend = out + n - i;
+        int inc = -loc;
+        in += i*inc;
+        while(out+16 < outend && in[inc << 4] < lim) {
+            for(j=0; j<16; j++) {
+                *out++ = *in; in += inc;
+            }
+        }    
+        while(out < outend && *in < lim) {
+            *out++ = *in; in += inc;
+        }
+        i = n - (outend - out); 
+    } else {
+        /* void tail column */
+        oid seqend = seqbase + n;
+        int inc = -loc;
+        seqbase += i;
+        in += i*inc;
+        while(seqbase+16 < seqend && in[inc << 4] < lim) {
+            for(j=0; j<16; j++) {
+                *out++ = *in; in += inc;
+                *out++ = seqbase++;    
+            }
+        }    
+        while(seqbase < seqend && *in < lim) {
+            *out++ = *in; in += inc;
+            *out++ = seqbase++;
+        }
+        i = n - (seqend - seqbase); 
+    }
+    return i;
+}
+
+int radix_recluster(BAT **res, BAT *b, BAT *cnts, int *radix_skip, int *radix_bits) {
+    oid *in, *out, cur, inc = ((oid) 1) << (*radix_skip), lim = ((oid) 1) << (*radix_bits);  
+    size_t *pos = (size_t*) alloca(sizeof(size_t)*BATcount(cnts));
+    size_t *end = (size_t*) alloca(sizeof(size_t)*BATcount(cnts));
+    size_t xx, yy=0, zz=0;
+    int loc;
+    BUN p, q;
+    BAT *bn;
+
+    if (BAThordered(b)&1) { /* do nothing for sorted (and void) head columns */
+        BBPfix(b->batCacheid);
+	*res = b;
+        return GDK_SUCCEED;
+    }
+
+    /* create the output bat */
+    *res = bn = BATnew(TYPE_oid, (BATtvoid(b) && b->tseqbase == oid_nil)?TYPE_void:TYPE_oid, BATcount(b));
+    if (bn == NULL) return GDK_FAIL;
+    out = (oid*) BUNfirst(bn); 
+    in = (oid*) BUNhloc(b,BUNfirst(b)); 
+
+    /* initialize pos, end indices */
+    BATloopFast(cnts, p, q, xx) {
+        zz += *(int*) BUNtloc(cnts,p);
+        end[yy++] = zz;
+    }
+    for(xx=1; xx<yy; xx++) pos[xx] = end[xx-1];   
+    pos[0] = 0;
+
+    /* loc determines the position of the oid's, and is also used for indicating void tail columns (special case) */ 
+    if (b->ttype) {
+      loc = b->hloc;
+    } else {
+      loc = -(BUNsize(b) / sizeof(oid));
+    }
+
+    /* for all output chunks */
+    for(cur=inc; cur<lim; cur+=inc) {
+        /* for all input sequences */
+        zz=0;
+        while(zz<yy) {
+            /* append input while it matches to output */
+            xx = recluster(out, in, pos[zz], end[zz], cur, loc, bn->ttype?b->tseqbase:oid_nil) - pos[zz];
+            pos[zz] += xx; 
+            out += xx << (bn->ttype != 0); 
+            if (pos[zz] < end[zz]) {
+                zz++;
+            } else {
+                /* empty input sequence is removed from list, replaced by last */
+                pos[zz] = pos[--yy];
+                end[zz] = end[yy];
+            }
+        }
+    }
+
+    /* postprocessing (properties) */
+    bn->hsorted = bn->tsorted = 0;
+    bn->batBuns->free = ((BUN) out) - bn->batBuns->base;
+    if (BATcount(bn) != BATcount(b)) {
+        GDKerror("radix_recluster: %s not was clustered as suggested by %s\n", BBP_logical(b->batCacheid), BBP_logical(cnts->batCacheid));
+        BBPreclaim(bn);
+	return GDK_FAIL;
+    }
+    bn->hsorted = ((((oid) 1) << *radix_bits) - 1) & ~((((oid) 1) << *radix_skip) -1);
+    return GDK_SUCCEED;
 }
 @}
