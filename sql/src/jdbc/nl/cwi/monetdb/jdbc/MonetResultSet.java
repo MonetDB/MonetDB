@@ -520,6 +520,7 @@ public class MonetResultSet implements ResultSet {
 	}
 
 	/**
+	// See Sun JDBC Specification 3.0 Table B-6
 	 * Retrieves the value of the designated column in the current row of this
 	 * ResultSet object as a boolean in the Java programming language.
 	 *
@@ -531,25 +532,41 @@ public class MonetResultSet implements ResultSet {
 	public boolean getBoolean(int columnIndex) throws SQLException{
 		int dataType = MonetDriver.getJavaType(types[columnIndex - 1]);
 		if (dataType == Types.TINYINT ||
-			dataType == Types.BIGINT ||
-			dataType == Types.INTEGER)
+			dataType == Types.SMALLINT ||
+			dataType == Types.INTEGER ||
+			dataType == Types.BIGINT)
 		{
-			if (getInt(columnIndex) == 0) {
+			if (getLong(columnIndex) == 0L) {
 				return(false);
 			} else {
 				return(true);
 			}
-		} else if (dataType == Types.DOUBLE ||
+		} else if (dataType == Types.REAL ||
 			dataType == Types.FLOAT ||
-			dataType == Types.DECIMAL)
+			dataType == Types.DOUBLE)
 		{
 			if (getDouble(columnIndex) == 0.0) {
 				return(false);
 			} else {
 				return(true);
 			}
-		} else {
+		} else if (dataType == Types.DECIMAL ||
+			dataType == Types.NUMERIC)
+		{
+			if (getBigDecimal(columnIndex).compareTo(new BigDecimal(0.0)) == 0) {
+				return(false);
+			} else {
+				return(true);
+			}
+		} else if (dataType == Types.BIT ||
+			dataType == Types.BOOLEAN ||
+			dataType == Types.CHAR ||
+			dataType == Types.VARCHAR ||
+			dataType == Types.LONGVARCHAR)
+		{
 			return((Boolean.valueOf(getString(columnIndex))).booleanValue());
+		} else {
+			throw new SQLException("Conversion from " + types[columnIndex - 1] + " to boolean type not supported");
 		}
 	}
 
