@@ -13,10 +13,20 @@
 #
 # (If not or wrongly set, "GNU32dynamic" is used as default.)
 #
-source `monet-config --prefix`/share/Monet/conf/conf.bash
+#source `monet-config --prefix`/share/Monet/conf/conf.bash
 
 os="`uname`"
 base="${PWD}"
+
+if [ ! -x `monet-config --prefix`/bin/Mserver ] ; then
+	echo ''
+	echo 'could not find monet server.'
+	echo ''
+	return 1
+fi
+
+MONET_PREFIX=`monet-config --prefix`
+	
 
 if [ ! -x bootstrap ] ; then
 	echo ''
@@ -81,20 +91,101 @@ if [ ! -x bootstrap ] ; then
 		fi
 	fi
 
+	# set default compilers & configure options
+
+	if [ "${COMP}" = "GNU" ] ; then
+		# standard GNU compilers are gcc/g++
+		cc="gcc"
+		cxx="g++"
+	fi
+	if [ "${COMP}" = "ntv" ] ; then
+		# standard native compilrs are cc/CC
+		cc="cc"
+		cxx="CC"
+	fi
+	if [ "${LINK}" = "d"   ] ; then
+		# dynamic/shared linking
+		conf_opts="--enable-shared --disable-static"
+	  else
+		# static linking
+	  	conf_opts="--disable-shared --enable-static"
+	fi
+
 	# (additional) system-specific settings
 
+	if [ "${os}" = "Linux" ] ; then
+		if [ "${COMP}" = "ntv" ] ; then
+			# "ntv" on Linux means IntelC++-5.0.1-beta ("icc")
+			export IA32ROOT=/soft/IntelC++-5.0.1-beta/ia32
+			export INTEL_FLEXLM_LICENSE=/soft/IntelC++-5.0.1-beta/licenses
+			libpath="/soft/IntelC++-5.0.1-beta/ia32/lib"
+			cc="icc"
+			cxx="icc"
+		fi
+	fi
+
 	if [ "${os}" = "SunOS" ] ; then
+		# "standard: SunOS paths
+		binpath="/opt/SUNWspro/bin:/usr/local/bin:${binpath}"
+		libpath="/usr/local/lib:${libpath}"
 		if [ "${BITS}" = "64" ] ; then
+			# propper/extended LD_LIBRAY_PATH for 64bit on SunOS
+			libpath="/usr/lib/sparcv9:/usr/ucblib/sparcv9:${libpath}"
+			# GNU ar in /usr/local/bin doesn't support 64bit
+			export AR='/usr/ccs/bin/ar'
+			export AR_FLAGS='-r -cu'
+		fi
+		if [ "${COMP}" = "GNU" ] ; then
+			# required GNU gcc/g++ options for 32 & 64 bit
+			cc="${cc} -m$BITS"
+			cxx="${cxx} -m$BITS"
+		fi
+		if [ "${COMP}${BITS}" = "ntv64" ] ; then
+			# required SUNWspro cc/CC options for 64bit
+			cc="${cc} -xarch=v9"
+			cxx="${cxx} -xarch=v9"
+		fi
+		# our "fake" /soft/local/bin on apps
+		binpath="/var/tmp/local/bin:${binpath}"
+		libpath="/var/tmp/local/lib:${libpath}"
+		if [ "${BITS}" = "64" ] ; then
+			conf_opts="${conf_opts} --with-readline=/var/tmp/soft64/local"
+			conf_opts="${conf_opts} --with-getopt=/var/tmp/soft64/local"
 			conf_opts="${conf_opts} --with-odbc=/var/tmp/soft64/local"
 		else
+			conf_opts="${conf_opts} --with-readline=/var/tmp/soft/local"
+			conf_opts="${conf_opts} --with-getopt=/var/tmp/soft/local"
 			conf_opts="${conf_opts} --with-odbc=/var/tmp/soft/local"
 		fi
 	fi
 
 	if [ "${os}" = "IRIX64" ] ; then
+		# propper/extended paths on medusa
+		binpath="/soft64/local/bin:/soft/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin:${binpath}"
+		if [ "${COMP}${BITS}" = "GNU32" ] ; then
+			# propper/extended paths on medusa
+			libpath="/soft/local/lib:${libpath}"
+		fi
+		if [ "${COMP}${BITS}" = "GNU64" ] ; then
+			# propper/extended paths on medusa
+			libpath="/soft/local/lib/mabi=64:${libpath}"
+			# required GNU gcc/g++ options for 64bit
+			cc="${cc} -mabi=64"
+			cxx="${cxx} -mabi=64"
+		fi
+		if [ "${COMP}${BITS}" = "ntv64" ] ; then
+			# required MIPSpro cc/CC options for 64bit
+			cc="${cc} -64"
+			cxx="${cxx} -64"
+		fi
+		# 32 & 64 bit libreadline for IRIX64 are in /soft${BITS}/local"
 		if [ "${BITS}" = "64" ] ; then
+			conf_opts="${conf_opts} --with-readline=/soft64/local"
+			conf_opts="${conf_opts} --with-getopt=/soft64/local"
 			conf_opts="${conf_opts} --with-odbc=/soft64/local"
 		else
+			conf_opts="${conf_opts} --with-readline=/soft/local"
+			conf_opts="${conf_opts} --with-getopt=/soft/local"
 			conf_opts="${conf_opts} --with-odbc=/soft/local"
 		fi
 	fi
@@ -107,6 +198,15 @@ if [ ! -x bootstrap ] ; then
 
 	# export new settings
 	echo ""
+	echo "Setting..."
+	export CC="${cc}"
+	echo " CC=${CC}"
+	export CXX="${cxx}"
+	echo " CXX=${CXX}"
+	export CFLAGS=""
+	echo " CFLAGS=${CFLAGS}"
+	export CXXFLAGS=""
+	echo " CXXFLAGS=${CXXFLAGS}"
 	if [ "${binpath}" ] ; then
 		if [ "${PATH}" ] ; then
 			# prepend new binpath to existing PATH, if PATH doesn't contain binpath, yet
@@ -140,7 +240,7 @@ if [ ! -x bootstrap ] ; then
 
 #	# this is obsolete (not jet!!)
 #	export MONETDIST="${PREFIX}"
-#	export MONET_MOD_PATH="${PREFIX}/lib:${PREFIX}/lib/Monet"
+	export MONET_MOD_PATH="${PREFIX}/lib:${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
 
 	# for convenience: store the complete configure-call in CONFIGURE
 	export CONFIGURE="${base}/configure ${conf_opts} --with-monet=`monet-config --prefix` --prefix=${PREFIX}"

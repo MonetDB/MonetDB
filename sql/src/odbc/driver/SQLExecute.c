@@ -27,22 +27,6 @@ static char *readline( stream *rs, char *buf ){
 	return start;
 }
 
-typedef struct info {
-	stream *in;
-	stream *out;
-} info;
-
-long oidrange( int nr, catalog *cat ){
-	info *i = (info*)cat->data;
-	char buf[BUFSIZ], *e = NULL;
-	sprintf(buf, "oidrange(Output, %d);\n\001", nr ); 
-	i->out->write(i->out, buf, strlen(buf), 1);
-	i->out->flush(i->out);
-	e = readresult( i->in, buf );
-	if (e) *e = '\0';
-	return strtol(buf, (char **)NULL, 10);
-}
-
 SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 {
     HDRVSTMT 	hStmt	= (HDRVSTMT)hDrvStmt;
