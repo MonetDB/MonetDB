@@ -33,6 +33,7 @@
  ********************************************************************/
 
 #include "ODBCGlobal.h"
+#include "ODBCStmt.h"	/* for isValidStmt() & addStmtError() */
 
 SQLRETURN SQLSetPos(
 	SQLHSTMT	hStmt,
@@ -40,6 +41,8 @@ SQLRETURN SQLSetPos(
 	SQLUSMALLINT	nOperation,
 	SQLUSMALLINT	nLockType )
 {
+	(void) nRow;	/* Stefan: unused!? */
+
 	if (! isValidStmt(hStmt))
 		return SQL_INVALID_HANDLE;
 

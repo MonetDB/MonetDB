@@ -565,6 +565,7 @@ void stmt_destroy(stmt * s)
 		case st_exception:
 		case st_partial_pivot: case st_pivot:
 		case st_export:
+		case st_find:
 
 			if (s->op1.stval) stmt_destroy(s->op1.stval);
 			if (s->op2.stval) stmt_destroy(s->op2.stval);
@@ -645,6 +646,9 @@ void stmt_destroy(stmt * s)
 			if (s->op2.stval) stmt_destroy(s->op2.stval);
 			if (s->op3.stval) stmt_destroy(s->op3.stval);
 			if (s->op4.stval) stmt_destroy(s->op4.stval);
+			break;
+
+		case st_senddata:	/* pacify compiler */
 			break;
 		}
 		if (s->h) 

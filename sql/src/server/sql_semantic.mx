@@ -37,6 +37,10 @@
 #include "sql_parser.h"
 
 extern stmt *semantic( context * sql, symbol * sym);
+extern void sql_add_arg( context *sql, atom *v );		/* used in src/server/sql_parser.y */
+extern void sql_add_param( context *sql, char *name, stmt *s );	/* used in src/server/sql_parser.y */
+extern void sql_destroy_params( context *sql );			/* used in src/server/sql_context.c */
+extern void sql_destroy_args( context *sql );			/* used in src/server/sql_context.c */
 
 #endif /*_SQL_SEMANTIC_H_*/
 
@@ -137,6 +141,8 @@ static sql_schema *cur_schema( context *sql )
 
 static void sql_select_cleanup( context * sql, stmt *s, stmt *subset, group *grp )
 {
+	(void) sql; /* Stefan: unused!? */
+
 	if (grp)
 		grp_destroy(grp);
 	if (subset)
@@ -362,6 +368,7 @@ static sql_table *create_table_intern(context * sql, sql_schema * schema,
 	node *m;
 	mvc *mvc = sql->mvc;
 	sql_table *table = mvc_create_table(mvc, schema, name, type);
+	(void) query; /* Stefan: unused!? */
 
        	for ( m = sq->op1.lval->h; m; m = m->next ) {
 		stmt *st = m->data;
@@ -369,6 +376,7 @@ static sql_table *create_table_intern(context * sql, sql_schema * schema,
 		char *cname = column_name(st);
 		sql_column *col = mvc_create_column(mvc, table, cname, 
 			tp->type->sqlname, tp->digits, tp->scale);
+		(void) col; /* Stefan: unused!? */
 	}
 	return table;
 }
@@ -547,6 +555,8 @@ static stmt *scale_algebra( sql_subfunc *f, stmt *ls, stmt *rs ){
 static stmt *fix_scale( context * sql, sql_subtype * ct, stmt * s, int both, int always)
 {
 	sql_subtype *st = tail_type(s);
+	(void) sql; /* Stefan: unused!? */
+
 	if (ct->type->scale == SCALE_FIX && st->type->scale == SCALE_FIX){ 
 		int scale_diff = (ct->scale - st->scale);
 
@@ -947,6 +957,7 @@ static stmt *sql_op(context * sql, scope * scp, symbol * se, group * grp, stmt *
 {
 	dnode *l = se->data.lval->h;
 	sql_subfunc *f = NULL;
+	(void) scp; (void) grp; (void) subset; /* Stefan: unused!? */
 
 	f = sql_bind_func(l->data.sval, NULL, NULL);
 	if (f) {
@@ -1051,6 +1062,8 @@ static stmt *sql_aggrop(context * sql, scope * scp, symbol * se, group * grp, st
 static stmt *sql_column_value(context * sql, scope * scp, symbol * se, group * grp, stmt * subset)
 {
 	stmt *res = sql_column_ref(sql, scp, se);
+	(void) grp; /* Stefan: unused!? */
+
 	if (res && res->h && subset) {
 		stmt *foundsubset = find_pivot(subset, res->h);
 
@@ -1165,6 +1178,8 @@ static list *pivot_table(stmt *set)
 static stmt *stmt2pivot(context * sql, scope * scp, stmt * s)
 {
 	stmt *ptable = stmt_dup(scp->ptable);
+	(void) sql; /* Stefan: unused!? */
+
 	ptable_statements(ptable) = s;
 	return ptable;
 }
@@ -1172,6 +1187,7 @@ static stmt *stmt2pivot(context * sql, scope * scp, stmt * s)
 static stmt *find_on_column_name(context * sql, scope * scp, tvar * t, char *name)
 {
 	node *m;
+	(void) sql; (void) scp; /* Stefan: unused!? */
 
 	for (m = t->columns->h; m; m = m->next) {
 		cvar *rc = m->data;
@@ -1506,6 +1522,7 @@ static stmt *columns_exp(context * sql, scope * scp, symbol * column_e, group * 
 {
 	char *tname = column_e->data.lval->h->data.sval;
 	tvar *tv = scope_bind_table(scp, tname);
+	(void) sql; /* Stefan: unused!? */
 
 	if (tv) {
 		stmt *foundsubset = find_pivot(subset, tv->s);
@@ -1691,6 +1708,8 @@ static stmt *sql_compare_exp( context *sql, scope *scp, group *grp, stmt *subset
 static stmt *sql_and(context * sql, stmt * ls, stmt * rs)
 {
 	stmt *res = NULL;
+	(void) sql; /* Stefan: unused!? */
+
 	if (!ls || !rs)
 		return NULL;
 	if (ls->type != st_set && ls->type != st_sets) {
@@ -1725,6 +1744,7 @@ static stmt *sql_and(context * sql, stmt * ls, stmt * rs)
 static stmt *sql_or(context * sql, stmt * ls, stmt * rs)
 {
 	stmt *res = NULL;
+	(void) sql; /* Stefan: unused!? */
 
 	if (!ls || !rs)
 		return NULL;
@@ -2079,6 +2099,8 @@ static stmt *having_condition(context * sql, scope * scp, symbol * sc, group * g
 static group *query_groupby_inner(context * sql, scope * scp, stmt * c, stmt * subset, group * cur)
 {
 	stmt *s = find_pivot(subset, c->h);
+	(void) scp; /* Stefan: unused!? */
+
 	if (s) {
 		stmt *j = stmt_join(s, c, cmp_equal);
 		cur = grp_create(j, cur);
@@ -2111,6 +2133,8 @@ static group *query_groupby_outers(context * sql, scope * scp, stmt * subset)
 {
 	group *cur = NULL;
 	node *o = scp->outers->h;
+	(void) sql; /* Stefan: unused!? */
+
 	for ( ; o; o = o->next) {
 		stmt *outer = o->data;
 		stmt *s = find_pivot(subset, outer);
@@ -2124,6 +2148,8 @@ static stmt *query_orderby(context * sql, scope * scp, symbol * orderby, stmt * 
 {
 	stmt *cur = NULL;
 	dnode *o = orderby->data.lval->h;
+	(void) st; /* Stefan: unused!? */
+
 	while (o) {
 		symbol *order = o->data.sym;
 		if (order->token == SQL_COLUMN) {
@@ -2526,6 +2552,7 @@ static stmt *create_view(context * sql, stmt * ss,
 
 	mvc *mvc = sql->mvc;
 	char *name = qname_table(qname);
+	(void) check; /* Stefan: unused!? */
 
 	if (mvc_bind_table(mvc, cur_schema(sql), name)) {
 		stmt_destroy(ss);
@@ -2601,6 +2628,7 @@ static stmt *drop_view(context * sql, dlist * qname )
 static stmt *create_role(context * sql, sql_schema * s, dlist * qname, int grantor)
 {
 	char *role_name = qname->t->data.sval;
+	(void) s; /* Stefan: unused!? */
 
 	if (dlist_length(qname) > 2){
 		return sql_error(sql, 02, 
@@ -2612,6 +2640,7 @@ static stmt *create_role(context * sql, sql_schema * s, dlist * qname, int grant
 static stmt *drop_role(context * sql, sql_schema * s, dlist * qname )
 {
 	char *role_name = qname->t->data.sval;
+	(void) s; /* Stefan: unused!? */
 
 	if (dlist_length(qname) > 2){
 		return sql_error(sql, 02, "qualified role can only have a schema and a role\n");
@@ -3047,6 +3076,7 @@ static stmt *grant_roles(context * sql, sql_schema *schema,
 	/* grant roles to the grantees */
 	dnode *r, *g;
 	list *l = create_stmt_list();
+	(void) sql; (void) schema; (void) admin; (void) grantor; /* Stefan: unused!? */
 	
 	for( r = roles->h; r; r = r->next ){
 		char *role = r->data.sval;
@@ -3064,6 +3094,7 @@ static stmt *revoke_roles(context * sql, sql_schema *schema,
 	/* revoke roles from the grantees */
 	dnode *r, *g;
 	list *l = create_stmt_list();
+	(void) sql; (void) schema; (void) admin; (void) grantor; /* Stefan: unused!? */
 	
 	for( r = roles->h; r; r = r->next ){
 		char *role = r->data.sval;
@@ -3160,6 +3191,8 @@ static void cleanup_stmts(stmt **stmts, int cnt){
 static stmt *sql_insert_check_keys(context * sql, tvar *tv, stmt **inserts, int len, list *key_inserts)
 {
 	char buf[BUFSIZ];
+	(void) len; /* Stefan: unused!? */
+
 	/* int insert = 1;
 	 * while insert and has u/pkey and not defered then
 	 * 	if u/pkey values exist then

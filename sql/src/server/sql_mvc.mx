@@ -1025,6 +1025,8 @@ static sql_kc *kc_dup(sql_trans *tr, sql_table *t, sql_kc *kc)
 {
 	sql_kc *nkc = NEW(sql_kc);
 	sql_column *c = find_column(t,kc->c->name); 
+	(void) tr; /* Stefan: unused!? */
+
 	assert(c);
 	nkc->c = c;
 	nkc->trunc = kc->trunc;
@@ -1872,6 +1874,7 @@ static void create_columns(sql_trans * tr, sql_schema * s, sql_table * t)
 static void drop_keys(sql_trans * tr, sql_table * t)
 {
 	node *n;
+	(void) tr; /* Stefan: unused!? */
 
 	if (t->keys) for (n = t->keys->h; n; n = n->next) {
 		sql_key *k = n->data;
@@ -1886,6 +1889,7 @@ static void drop_keys(sql_trans * tr, sql_table * t)
 static void drop_columns(sql_trans * tr, sql_table * t)
 {
 	node *n;
+	(void) tr; /* Stefan: unused!? */
 
 	for (n = t->columns->h; n; n = n->next) {
 		sql_column *c = n->data;
@@ -2441,6 +2445,7 @@ static void sys_drop_kc(sql_trans *tr, sql_key *k, sql_kc *kc ){
 	sql_table *syskc = find_table(find_schema(tr, "sys"), "keycolumns");
 	BAT *b, *r;
 	oid rid = 0;
+	(void) kc; /* Stefan: unused!? */
 
 	/* drop from sys keys */
 	b = bind_bat(tr, find_column(syskc, "id"), 1);
@@ -2694,6 +2699,7 @@ void mvc_drop_schema(mvc * m, char *sname)
 static sql_table *create_table_intern( mvc *m, char *name, table_type type)
 {
 	sql_table *t = NEW(sql_table);
+	(void) m; /* Stefan: unused!? */
 
 	t->id = OIDnew(1);
 	t->name = _strdup(name);
@@ -2999,6 +3005,7 @@ void mvc_drop_table(mvc * m, sql_schema *s, char *name, int cascade)
 	sql_trans *tr = m->trans;
 	node *n = find_table_node(s, name );
 	sql_table *t = n->data;
+	(void) cascade; /* Stefan: unused!? */
 
 	if (m->debug)
 		fprintf(stderr, "mvc_drop_table %s %s\n", s->name, name);

@@ -35,6 +35,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
+#include "ini.h"	/* for __SQLGetPrivateProfileString() */
 
 SQLRETURN SQLConnect(
 	SQLHDBC		hDbc,

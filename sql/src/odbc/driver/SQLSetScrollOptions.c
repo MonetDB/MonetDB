@@ -42,6 +42,10 @@ SQLRETURN SQLSetScrollOptions(
 	SQLINTEGER	crowKeyset,
 	SQLUSMALLINT	crowRowset )
 {
+	(void) fConcurrency;	/* Stefan: unused!? */
+	(void) crowKeyset;	/* Stefan: unused!? */
+	(void) crowRowset;	/* Stefan: unused!? */
+
 	if (! isValidStmt(hStmt))
 		return SQL_INVALID_HANDLE;
 

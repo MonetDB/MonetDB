@@ -50,6 +50,12 @@ SQLRETURN SQLTablePrivileges(
 {
 	ODBCStmt * stmt = (ODBCStmt *) hStmt;
 
+	(void) szCatalogName;	/* Stefan: unused!? */
+	(void) nCatalogNameLength;	/* Stefan: unused!? */
+	(void) szSchemaName;	/* Stefan: unused!? */
+	(void) nSchemaNameLength;	/* Stefan: unused!? */
+	(void) szTableName;	/* Stefan: unused!? */
+	(void) nTableNameLength;	/* Stefan: unused!? */
 
 	if (! isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;

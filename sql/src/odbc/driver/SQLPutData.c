@@ -45,6 +45,9 @@ SQLRETURN SQLPutData(
 {
 	ODBCStmt * stmt = (ODBCStmt *) hStmt;
 
+	(void) pData;	/* Stefan: unused!? */
+	(void) nLengthOrIndicator;	/* Stefan: unused!? */
+
 	if (! isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
 

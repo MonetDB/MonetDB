@@ -44,6 +44,8 @@ SQLRETURN SQLSetConnectAttr(
 {
 	ODBCDbc * dbc = (ODBCDbc *) ConnectionHandle;
 
+	(void) StringLength;	/* Stefan: unused!? */
+
 	if (! isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
 

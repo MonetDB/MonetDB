@@ -67,6 +67,10 @@ SQLRETURN SQLForeignKeys(
 	char * work_str = NULL;
 	int work_str_len = 1000;
 
+	(void) szPKCatalogName;	/* Stefan: unused!? */
+	(void) nPKCatalogNameLength;	/* Stefan: unused!? */
+	(void) szFKCatalogName;	/* Stefan: unused!? */
+	(void) nFKCatalogNameLength;	/* Stefan: unused!? */
 
 	if (! isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;

@@ -47,6 +47,12 @@ SQLRETURN SQLDescribeParam(
 {
 	ODBCStmt * stmt = (ODBCStmt *) hStmt;
 
+	(void) nParmNumber;	/* Stefan: unused!? */
+	(void) pnDataType;	/* Stefan: unused!? */
+	(void) pnSize;	/* Stefan: unused!? */
+	(void) pnDecDigits;	/* Stefan: unused!? */
+	(void) pnNullable;	/* Stefan: unused!? */
+
 	if (! isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
 

@@ -4,7 +4,7 @@ AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 AH_TOP([#include "sysdefs.h"])
-AH_TOP([#include "stddef.h"])
+AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
 AM_INIT_AUTOMAKE("sql", 2.0, [no-define])
@@ -32,3 +32,7 @@ AM_CONDITIONAL(MONET4,test "x$backend" = xmonet4)
 AM_CONDITIONAL(MONET5,test "x$backend" = xmonet5)
 
 AC_CHECK_HEADERS(termios.h limits.h malloc.h pwd.h) 
+
+dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
+CFLAGS="$CFLAGS \$(X_CFLAGS)"
+CXXFLAGS="$CXXFLAGS \$(X_CXXFLAGS)"

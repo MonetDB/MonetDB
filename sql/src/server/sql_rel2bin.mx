@@ -45,6 +45,7 @@ extern stmt *rel2bin( context *c, stmt *s );
 
 static int cmp_sel2( stmt *sel, st_type *tpe )
 {
+	(void) tpe; /* Stefan: unsed, but required for list_select() / type fcmp() */
 	if (sel->type == st_select2 || sel->type == st_uselect2){
 		return 0;
 	}
@@ -225,7 +226,7 @@ list *shrink_select_ranges(list *oldsels)
 			/* only one select on this column; simply keep it. */
 			list_append( newsels, stmt_dup(colsels->h->data) );
 		} else {
-			list *l1, *l2, *sels2, *sels1[cmp_all];
+			list *sels2, *sels1[cmp_all];
 			stmt *bound[4] = {NULL, NULL, NULL, NULL};
 			stmt *col[4] = {NULL, NULL, NULL, NULL};
 			comp_type ct;
@@ -235,10 +236,10 @@ list *shrink_select_ranges(list *oldsels)
 			/* separate all single-range, equal, notequal, notlike, & like selects and eliminate duplicates
 			 * (notequal, notlike, & like selects are saved and re-added at the end) */
 			for ( ct = cmp_gt; ct < cmp_all; ct++ ){
-				l1 = list_select( colsels, (void*)&ct, (fcmp)&cmp_sel_comp_type, (fdup)&stmt_dup );
-				len += list_length(l1);
-				sels1[ct] = list_distinct( l1, (fcmp)&cmp_sel_val, (fdup)&stmt_dup );
-				list_destroy(l1);
+				list *l = list_select( colsels, (void*)&ct, (fcmp)&cmp_sel_comp_type, (fdup)&stmt_dup );
+				len += list_length(l);
+				sels1[ct] = list_distinct( l, (fcmp)&cmp_sel_val, (fdup)&stmt_dup );
+				list_destroy(l);
 			}
 			/* separate all double-sided range selects */
 			sels2 = list_select( colsels, (void*)1, (fcmp)&cmp_sel2, (fdup)&stmt_dup );
@@ -251,13 +252,14 @@ list *shrink_select_ranges(list *oldsels)
 			 * (x<[=]a<[=]y  =>  a>[=]x && a<[=]y) to find the minimal ranges below */
 			for ( n = sels2->h; n; n = n->next ){
 				stmt *sl, *sr, *s = n->data;
-				comp_type cl, cr;
+				comp_type cl=cmp_all, cr=cmp_all; /* invalid values; just to pacify compilers */
 
 				switch(s->flag){
 				case 0: cl=cmp_gt;  cr=cmp_lt;  break;
 				case 1: cl=cmp_gt;  cr=cmp_lte; break;
 				case 2: cl=cmp_gte; cr=cmp_lt;  break;
 				case 3: cl=cmp_gte; cr=cmp_lte; break;
+				default: assert(0);
 				}
 				sl = stmt_uselect(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval), cl);
 				sr = stmt_uselect(stmt_dup(s->op1.stval), stmt_dup(s->op3.stval), cr);
@@ -343,13 +345,14 @@ list *shrink_select_ranges(list *oldsels)
 			 * 	3) a>=x && a<=y  =>  x<=a<=y
 			 */
 			for ( flg = 0; flg <= 3; flg++ ){
-				comp_type cl, cr;
+				comp_type cl=cmp_all, cr=cmp_all; /* invalid values; just to pacify compilers */
 				
 				switch(flg){
 				case 0: cl=cmp_gt;  cr=cmp_lt;  break;
 				case 1: cl=cmp_gt;  cr=cmp_lte; break;
 				case 2: cl=cmp_gte; cr=cmp_lt;  break;
 				case 3: cl=cmp_gte; cr=cmp_lte; break;
+                                default: assert(0);
 				}
 				if (bound[cl] && bound[cr]) {
 					list_append( newsels, stmt_uselect2( stmt_dup(col[cl]), bound[cl], bound[cr], flg ) );
@@ -461,6 +464,9 @@ stmt *eliminate_semijoin(stmt *s)
 				/* uselect => select  as semijoin also propagates the left input's tail */
 				ns = stmt_select2(stmt_dup(s1), stmt_dup(s2->op2.stval), stmt_dup(s2->op3.stval), s2->flag);
 				break;
+			default:
+				/* pacify compiler; should never be reached. */
+				assert(0);
 			}
 			return ns;
 		}

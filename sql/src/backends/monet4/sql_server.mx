@@ -428,6 +428,8 @@ int mvc_result_table_wrap( int *res_id, mvc *M, int *nr_cols, BAT *order ){
 	return GDK_SUCCEED;
 }
 int mvc_result_row_wrap( int *res_id, mvc *M, int *nr_cols, ptr p, int p_type ){
+	(void) p; (void) p_type; /* Stefan: unused!? */
+
 	*res_id = mvc_result_row( *(mvc**)M, *nr_cols );
 	if (*res_id < 0)
 		return GDK_FAIL;

@@ -44,6 +44,9 @@ SQLRETURN SQLSetStmtAttr(
 {
 	ODBCStmt * stmt = (ODBCStmt *)hStmt;
 
+	(void) Value;	/* Stefan: unused!? */
+	(void) StringLength;	/* Stefan: unused!? */
+
 	if (! isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
 

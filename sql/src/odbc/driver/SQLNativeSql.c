@@ -48,6 +48,12 @@ SQLRETURN SQLNativeSql(
 {
 	ODBCStmt * stmt = (ODBCStmt *) hStmt;
 
+	(void) szSqlStrIn;	/* Stefan: unused!? */
+	(void) cbSqlStrIn;	/* Stefan: unused!? */
+	(void) szSqlStr;	/* Stefan: unused!? */
+	(void) cbSqlStrMax;	/* Stefan: unused!? */
+	(void) pcbSqlStr;	/* Stefan: unused!? */
+
 	if (! isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
 

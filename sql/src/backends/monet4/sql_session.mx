@@ -44,9 +44,11 @@ extern int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res);
 @c
 #include "sql_session.h"
 #include "sql_server.h"
+#include "sql_gencode.h"	/* for stmt_dump() */
 #include <sql_context.h>
 #include <sql_scope.h>
 #include <sql_qc.h>
+#include <sql_parser.h>		/* for sqlparse() */
 
 @= builtin_operand
 {       int _k = interpret(stk, arg(lt, @1), res);
@@ -103,6 +105,7 @@ void backend_dumpproc( context *c, int id, stream *cout, stmt *s )
 int backend_parse( context *c, char *cmd, Cntxt stack )
 {
 	int err = 0;
+	(void) c; /* Stefan: unused!? */
 
 	if (cmd){
 		ValRecord v;

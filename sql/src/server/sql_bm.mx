@@ -403,7 +403,9 @@ void bm_new_bat(bm *bm, oid lbid, oid bid )
 {
 	int mode = BM_WRITE;
 	oid vid = bm_lbid2vid(bm, lbid);
+/* Stefan: not used ?
 	bat obid = *(oid*)BUNtail(bm->bat_bid, BUNfnd(bm->bat_bid, &vid));
+*/
 	/* no BBPdecref(obid, TRUE); here as this needs to be done 
 	 *  by the bm_{commit,abort,destroy} */
 	BBPincref(bid, TRUE);

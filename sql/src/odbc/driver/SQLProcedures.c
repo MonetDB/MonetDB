@@ -50,6 +50,12 @@ SQLRETURN SQLProcedures(
 {
 	ODBCStmt * stmt = (ODBCStmt *) hStmt;
 
+	(void) szCatalogName;	/* Stefan: unused!? */
+	(void) nCatalogNameLength;	/* Stefan: unused!? */
+	(void) szSchemaName;	/* Stefan: unused!? */
+	(void) nSchemaNameLength;	/* Stefan: unused!? */
+	(void) szProcName;	/* Stefan: unused!? */
+	(void) nProcNameLength;	/* Stefan: unused!? */
 
 	if (! isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;

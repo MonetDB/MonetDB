@@ -129,7 +129,7 @@ char *conv( char *org, iconv_t cd)
 
 
 void usage( char *prog ){
-	fprintf(stderr, "Msql\n");
+	fprintf(stderr, "%s\n", prog);
 	fprintf(stderr, "\toptions:\n");
 	fprintf(stderr, "\t\t -d          | --debug=[level]\n"); 
 	fprintf(stderr, "\t\t -e          | --error          /* exit on a SQL error */\n");
@@ -241,6 +241,7 @@ static void header_data( stream *rs, stream *out, int nCols, int trace ){
 	Msql_col *cols = (Msql_col*)malloc(sizeof(Msql_col) * nCols);
 	int cur = 0;
 	int i, len = 0;
+	(void) out; (void) trace; /* Stefan: unused!? */
 
 	memset(cols, 0, nCols*sizeof(Msql_col));
 
@@ -337,7 +338,7 @@ int receive( stream *rs, stream *out, int trace ){
 				return receive(rs, out, trace);
 		}
 		if (type == Q_RESULT) {
-			int i, id;
+			int id;
 			stream_readInt(rs, &id);
 			header_data(rs, out, nRows, trace);
 			nRows = receive(rs, out, trace);
@@ -601,6 +602,7 @@ static void dump_data( stream *ws, stream *rs, int nRows, char *table, int dump,
 	const char *copystring =
 	    "COPY %d RECORDS INTO %s FROM stdin USING DELIMITERS '\\t';\n\n";
 	int last = 0, nr = 0;
+	(void) ws; (void) id; /* Stefan: unused!? */
 
 	if (dump == SQL_DUMP){
 		printf( copystring, nRows, table);
@@ -661,6 +663,7 @@ static char *find_type(char *name, char *Digits, char *Scale)
 	int digits = strtol(Digits,NULL,10);
 	/*int scale = strtol(Scale,NULL,10);*/
 	sql_type *m, *n;
+	(void) Scale; /* Stefan: unused!? */
 
 	/* assumes the types are ordered on name,digits,scale where is always
 	 * 0 > n
@@ -699,6 +702,7 @@ static int dump_type( stream *ws, stream *rs, char **ctypes, int cnt, int rlen, 
 {
 	sql_type *prev = types;
 	int i,j;
+	(void) ws; (void) rs; (void) dump; (void) out; /* Stefan: unused!? */
 
 	for(i=0,j=0; i<cnt; i++, j+=rlen){
 		sql_type *t = create_type( ctypes[j+T_SQLNAME], 
@@ -725,6 +729,8 @@ static const char *column_format = "select name,type,type_digits,type_scale,null
 static int dump_column( stream *ws, stream *rs, char **columns, int cnt, int rlen, int dump, FILE *out )
 {
 	int i,j;
+	(void) ws; (void) rs; /* Stefan: unused!? */
+
 	for(i=0,j=0; i<cnt; i++, j+=rlen){
 	    if (dump == SQL_DUMP){
 		if (strcmp(columns[j+C_TYPE_DIGITS], "0") == 0){
@@ -758,6 +764,8 @@ static int dump_column( stream *ws, stream *rs, char **columns, int cnt, int rle
 static int dump_table( stream *ws, stream *rs, char **tables, int cnt, int rlen, int dump, FILE *out)
 {
 	int i, id;
+	(void) rlen; (void) out; /* Stefan: unused!? */
+
 	for(i=0; i<cnt; i++){
 		int ccnt, res = 0;
 		char query[BUFSIZ], *s = tables[i];
@@ -802,6 +810,8 @@ static int dump_table( stream *ws, stream *rs, char **tables, int cnt, int rlen,
 static int dump_view( stream *ws, stream *rs, char **views, int cnt, int rlen, int dump, FILE *out)
 {
 	int i,j;
+	(void) ws; (void) rs; (void) dump; (void) out; /* Stefan: unused!? */
+
 	for(i=0, j=0; i<cnt; i++, j+=rlen)
 		printf("CREATE VIEW %s %s\n", views[j+0], views[j+1] );
 	return 0;

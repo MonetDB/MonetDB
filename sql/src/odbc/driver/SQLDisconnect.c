@@ -69,7 +69,6 @@ SQLRETURN SQLDisconnect(SQLHDBC hDbc)
 		stream *	rs = dbc->Mrs;
 		stream *	ws = dbc->Mws;
 		int 		debug = dbc->Mdebug;
-		int	flag = 0;
 		char	buf[BUFSIZ];
 
 		if (dbc->autocommit && dbc->Error == NULL){

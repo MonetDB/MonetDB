@@ -56,6 +56,8 @@ sql_export int stmt_dump( stmt *s, int *nr, context *sql );
 
 static void write_head( context *sql, int nr )
 {
+        (void) nr; /* Stefan: unused!? */
+
 	if (sql->debug&2){
 		char *t0 = "t0 := time();\n";
 		int l = strlen(t0);
@@ -88,9 +90,9 @@ static void write_command( context *sql, char *buf )
 		int l;
 		char v[BUFSIZ];
 		char *s = _strdup(buf), *c = s;
-		while (c = strchr(c,'"'))	*c = '`';
+		while ((c = strchr(c,'"')))	*c = '`';
 		c = s;
-		while (c = strchr(c,'\n'))	*c = '\t';
+		while ((c = strchr(c,'\n')))	*c = '\t';
 		l = snprintf( v, BUFSIZ, "printf(\"< %s >\\n\");\n", s );
 		sql->out->write( sql->out, v, 1, l );
 		_DELETE(s);
@@ -105,7 +107,7 @@ static void write_result( context *sql, char *buf )
 		while (a && (y = strstr(a," := "))) {
 			z = *y;
 			*y = '\0';
-			if (  b = strrchr(a,' ' ) )	a = b;
+			if ( (b = strrchr(a,' ' )))	a = b;
 			if (!(b = strrchr(a,'\n')))	b = a;
 			l = snprintf( v, BUFSIZ, 
 				"if (type(%s) != 4) {"

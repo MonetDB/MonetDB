@@ -49,6 +49,7 @@ extern int  keyword_exists(char *yytext);
 #include "sql_symbol.h"
 #include "sql_parser.tab.h"
 #include "sql_statement.h"
+#include "sql_parser.h"	/* for sql_error() */
 
 #include <stream.h>
 #include <unistd.h>

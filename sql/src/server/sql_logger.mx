@@ -235,12 +235,15 @@ static void log_read_updates(logger *logger, logformat *l, char *name ){
 static void log_read_destroy(logger *logger, logformat *l, char *name )
 {
 	oid lbid = bm_find_bat(logger->bm, name);
+	(void) l; /* Stefan: unused!? */
+
 	if (lbid) bm_del_bat(logger->bm, lbid);
 }
 
 static void log_read_create(logger *logger, logformat *l, char *name )
 {
 	char *buf = log_read_string(logger);
+	(void) l; /* Stefan: unused!? */
 
         if (logger->debug&1)
 		fprintf(stderr, "log_read_create %s\n", name );

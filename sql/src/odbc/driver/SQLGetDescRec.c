@@ -43,6 +43,18 @@ SQLRETURN SQLGetDescRec(
 	SQLSMALLINT *	Scale,
 	SQLSMALLINT *	Nullable )
 {
+	(void) DescriptorHandle;	/* Stefan: unused!? */
+	(void) RecordNumber;	/* Stefan: unused!? */
+	(void) Name;	/* Stefan: unused!? */
+	(void) BufferLength;	/* Stefan: unused!? */
+	(void) StringLength;	/* Stefan: unused!? */
+	(void) Type;	/* Stefan: unused!? */
+	(void) SubType;	/* Stefan: unused!? */
+	(void) Length;	/* Stefan: unused!? */
+	(void) Precision;	/* Stefan: unused!? */
+	(void) Scale;	/* Stefan: unused!? */
+	(void) Nullable;	/* Stefan: unused!? */
+
 	/* We have not implemented Descriptors (yet) */
 	/* Hence we can not return an error, such as "IM001: driver not capable". */
 	return SQL_INVALID_HANDLE;

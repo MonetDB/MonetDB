@@ -47,6 +47,11 @@ SQLRETURN SQLGetEnvAttr(
 {
 	ODBCEnv * env = (ODBCEnv *) EnvironmentHandle;
 
+	(void) Attribute;	/* Stefan: unused!? */
+	(void) Value;	/* Stefan: unused!? */
+	(void) BufferLength;	/* Stefan: unused!? */
+	(void) StringLength;	/* Stefan: unused!? */
+
 	if (! isValidEnv(env))
 		return SQL_INVALID_HANDLE;
 

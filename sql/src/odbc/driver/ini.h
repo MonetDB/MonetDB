@@ -23,28 +23,11 @@
  * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
-/**********************************************************************
- * SQLSetDescField()
- * CLI Compliance: ISO 92
- **********************************************************************/
+#ifndef _ODBC_DRIVER_INI_H_
+#define _ODBC_DRIVER_INI_H_
 
-#include "ODBCGlobal.h"
+int __SQLGetPrivateProfileString
+    (char *section, char *entry, char *def_value,
+     char *buf, int buf_len, char *filename);		/* used in SQLConnect.c */
 
-SQLRETURN  SQLSetDescField(
-	SQLHDESC	DescriptorHandle,
-	SQLSMALLINT	RecordNumber,
-	SQLSMALLINT	FieldIdentifier,
-	SQLPOINTER	Value,
-	SQLINTEGER	BufferLength )
-{
-	(void) DescriptorHandle;	/* Stefan: unused!? */
-	(void) RecordNumber;	/* Stefan: unused!? */
-	(void) FieldIdentifier;	/* Stefan: unused!? */
-	(void) Value;	/* Stefan: unused!? */
-	(void) BufferLength;	/* Stefan: unused!? */
-
-	/* no Descriptors supported (yet) */
-	/* no Descriptor handle support, so not possible to set an error */
-	/* so return Invalid Handle */
-	return SQL_INVALID_HANDLE;
-}
+#endif

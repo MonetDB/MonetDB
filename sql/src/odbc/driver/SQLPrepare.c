@@ -43,7 +43,6 @@ SQLRETURN SQLPrepare(
 	SQLINTEGER	nSqlStrLength )
 {
 	ODBCStmt * stmt = (ODBCStmt *) hStmt;
-	RETCODE rc = SQL_ERROR;
 	int params = 0;
 	char *query = 0;
 

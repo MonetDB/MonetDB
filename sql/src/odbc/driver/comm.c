@@ -89,7 +89,7 @@ char *readblock( stream *in ){
 	int len = 0;
 	bstream *s = bstream_create(in, BLOCK);
 	int size = s->size, eof = 0;
-	char *buf = NEW_ARRAY(char, size+1 ), *start = buf;
+	char *buf = NEW_ARRAY(char, size+1 );
 
 	while (!eof){
 		if (bstream_read(s, s->size - (s->len - s->pos)) == 0)
@@ -109,19 +109,22 @@ char *readblock( stream *in ){
 
 int simple_receive( stream *in, stream *out, int debug ){
 	int type = 0, res = 0;
-	int nRows;
+	int nRows = 0;
+
+	(void) out;	/* Stefan: unused!? */
+	(void) debug;	/* Stefan: unused!? */
 
 	if ((res = stream_readInt(in, &type)) && type != Q_END){
-		char buf[BLOCK+1], *n = buf;
+		char buf[BLOCK+1];
 		int last = 0;
 		int status;
 
 		stream_readInt(in, &status);
 		if (status < 0){ /* output error */
 			/* skip rest */
-			int nr = bs_read_next(in,buf,&last);
+			(void) bs_read_next(in,buf,&last);
 			while(!last){
-				int nr = bs_read_next(in,buf,&last);
+				(void) bs_read_next(in,buf,&last);
 			}
 			return status;
 		}

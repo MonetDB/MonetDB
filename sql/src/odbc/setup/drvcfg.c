@@ -12,6 +12,7 @@
 #include <sql_config.h>
 #include <mem.h>
 #include <drvcfg.h>
+#include <string.h>	/* for memset(), memcpy(), strncpy() */
 
 static const char *aHost[] =
 {

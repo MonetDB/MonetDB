@@ -44,6 +44,10 @@ SQLRETURN SQLGetCursorName(
 {
 	ODBCStmt * stmt = (ODBCStmt *) hStmt;
 
+	(void) szCursor;	/* Stefan: unused!? */
+	(void) nCursorMaxLength;	/* Stefan: unused!? */
+	(void) pnCursorLength;	/* Stefan: unused!? */
+
 	if (! isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
 

@@ -46,7 +46,15 @@ SQLRETURN SQLDataSources(
 	SQLSMALLINT BufferLength2,
 	SQLSMALLINT *NameLength2)
 {
-	ODBCEnv * env = (ODBCDbc *) EnvironmentHandle;
+	ODBCEnv * env = (ODBCEnv *) EnvironmentHandle;
+
+	(void) Direction;	/* Stefan: unused!? */
+	(void) ServerName;	/* Stefan: unused!? */
+	(void) BufferLength1;	/* Stefan: unused!? */
+	(void) NameLength1;	/* Stefan: unused!? */
+	(void) Description;	/* Stefan: unused!? */
+	(void) BufferLength2;	/* Stefan: unused!? */
+	(void) NameLength2;	/* Stefan: unused!? */
 
 	if (! isValidEnv(env))
 		return SQL_INVALID_HANDLE;

@@ -143,6 +143,9 @@ sql_export int sqlparse(void *);
 #include "sql_parser.h"
 #include "sql_symbol.h"
 #include "sql_datetime.h"
+#include "sql_decimal.h"	/* for decimal_from_str() */
+#include "sql_semantic.h"	/* for sql_add_param() & sql_add_arg() */
+
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>

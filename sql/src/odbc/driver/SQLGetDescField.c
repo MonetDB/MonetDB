@@ -38,6 +38,13 @@ SQLRETURN SQLGetDescField(
 	SQLINTEGER	BufferLength,
 	SQLINTEGER *	StringLength )
 {
+	(void) DescriptorHandle;	/* Stefan: unused!? */
+	(void) RecordNumber;	/* Stefan: unused!? */
+	(void) FieldIdentifier;	/* Stefan: unused!? */
+	(void) Value;	/* Stefan: unused!? */
+	(void) BufferLength;	/* Stefan: unused!? */
+	(void) StringLength;	/* Stefan: unused!? */
+
 	/* We have not implemented Descriptors (yet) */
 	/* Hence we can not return an error, such as "IM001: driver not capable". */
 	return SQL_INVALID_HANDLE;

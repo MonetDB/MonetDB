@@ -48,6 +48,13 @@ SQLRETURN SQLDriverConnect(
 {
 	ODBCDbc * dbc = (ODBCDbc *) hDbc;
 
+	(void) hWnd;	/* Stefan: unused!? */
+	(void) szConnStrIn;	/* Stefan: unused!? */
+	(void) nConnStrIn;	/* Stefan: unused!? */
+	(void) szConnStrOut;	/* Stefan: unused!? */
+	(void) cbConnStrOutMax;	/* Stefan: unused!? */
+	(void) pnConnStrOut;	/* Stefan: unused!? */
+
 	if (! isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
 

@@ -19,6 +19,8 @@ simple_prompt(const char *prompt, int maxlen, int echo)
 
 #ifdef HAVE_TERMIOS_H
         struct termios t_orig, t;
+#else
+	(void) echo; /* Stefan: unused!? */
 #endif
 
         destination = (char *) malloc(maxlen + 2);

@@ -42,6 +42,17 @@ SQLRETURN SQLSetDescRec(
 	SQLINTEGER *	pnStringLength,
 	SQLINTEGER *	pnIndicator )
 {
+	(void) hDescriptorHandle;	/* Stefan: unused!? */
+	(void) nRecordNumber;	/* Stefan: unused!? */
+	(void) nType;	/* Stefan: unused!? */
+	(void) nSubType;	/* Stefan: unused!? */
+	(void) nLength;	/* Stefan: unused!? */
+	(void) nPrecision;	/* Stefan: unused!? */
+	(void) nScale;	/* Stefan: unused!? */
+	(void) pData;	/* Stefan: unused!? */
+	(void) pnStringLength;	/* Stefan: unused!? */
+	(void) pnIndicator;	/* Stefan: unused!? */
+
 	/* no Descriptors supported (yet) */
 	/* no Descriptor handle support, so not possible to set an error */
 	/* so return Invalid Handle */

@@ -161,6 +161,7 @@ sql_export void parser_exit();
 #include "sql_symbol.h"
 #include "sql_parser.tab.h"
 #include "sql_statement.h"
+#include "sql_scan.h"	/* for keyword_exists(), keywords_insert(), init_keywords(), exit_keywords() */
 #include <string.h>
 
 static int sql_debug = 0;

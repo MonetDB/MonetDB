@@ -44,6 +44,8 @@ SQLRETURN SQLNumParams(
 {
 	ODBCStmt * stmt = (ODBCStmt *) hStmt;
 
+	(void) pnParamCount;	/* Stefan: unused!? */
+
 	if (! isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
 

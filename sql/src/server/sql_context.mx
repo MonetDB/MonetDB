@@ -82,6 +82,10 @@ sql_export void cmd_add_string(context * c, char *str);
 
 sql_export struct stmt *sql_symbol2stmt( context *c );
 
+sql_export int sqlcleanup( context *c, char *cmd, int err);			/* used in src/backends/monet4/sql_session.c */
+sql_export int debug_cmd( context *c, char *cmd, stream *out, int part);	/* used in src/backends/monet4/sql_session.c */
+
+
 #endif	/* _SQL_CONTEXT_H_ */
 
 @c

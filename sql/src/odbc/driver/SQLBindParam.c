@@ -48,6 +48,14 @@ SQLRETURN SQLBindParam(
 {
 	ODBCStmt * stmt = (ODBCStmt *) hStmt;
 
+	(void) ParameterNumber;	/* Stefan: unused!? */
+	(void) ValueType;	/* Stefan: unused!? */
+	(void) ParameterType;	/* Stefan: unused!? */
+	(void) LengthPrecision;	/* Stefan: unused!? */
+	(void) ParameterScale;	/* Stefan: unused!? */
+	(void) ParameterValue;	/* Stefan: unused!? */
+	(void) StrLen_or_Ind;	/* Stefan: unused!? */
+
 	if (! isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
 

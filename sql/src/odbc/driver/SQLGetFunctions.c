@@ -43,6 +43,9 @@ SQLRETURN SQLGetFunctions(
 {
 	ODBCDbc * dbc = (ODBCDbc *) hDbc;
 
+	(void) FunctionId;	/* Stefan: unused!? */
+	(void) Supported;	/* Stefan: unused!? */
+
 	if (! isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
 

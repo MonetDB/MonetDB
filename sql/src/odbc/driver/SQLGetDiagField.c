@@ -47,7 +47,12 @@ SQLRETURN SQLGetDiagField(
 	ODBCEnv * env = NULL;
 	ODBCDbc * dbc = NULL;
 	ODBCStmt * stmt = NULL;
-	SQLRETURN retCode = SQL_SUCCESS;
+
+	(void) RecNumber;	/* Stefan: unused!? */
+	(void) DiagIdentifier;	/* Stefan: unused!? */
+	(void) DiagInfo;	/* Stefan: unused!? */
+	(void) BufferLength;	/* Stefan: unused!? */
+	(void) StringLength;	/* Stefan: unused!? */
 
 	/* input & output parameters validity checks */
 	if ( ! Handle )

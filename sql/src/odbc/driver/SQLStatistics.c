@@ -61,6 +61,8 @@ SQLRETURN SQLStatistics(
 	char * work_str = NULL;
 	int work_str_len = 1000;
 
+	(void) szCatalogName;	/* Stefan: unused!? */
+	(void) nCatalogNameLength;	/* Stefan: unused!? */
 
 	if (! isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;

@@ -46,6 +46,12 @@ SQLRETURN SQLBrowseConnect(
 {
 	ODBCDbc * dbc = (ODBCDbc *) hDbc;
 
+	(void) szConnStrIn;	/* Stefan: unused!? */
+	(void) cbConnStrIn;	/* Stefan: unused!? */
+	(void) szConnStrOut;	/* Stefan: unused!? */
+	(void) cbConnStrOutMax;	/* Stefan: unused!? */
+	(void) pcbConnStrOut;	/* Stefan: unused!? */
+
 	if (! isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
 
