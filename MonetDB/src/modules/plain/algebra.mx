@@ -681,6 +681,9 @@ that for the moment are defined as procs.
 		var isper;
 		var idx;
 		var wasper;
+		var spat := "", c;
+		var len, i;
+		var escaped;
 
 		# preprocess the pattern, remove redundant % and make sure
 		# %_ can be handled by replacing it with _%
@@ -692,11 +695,63 @@ that for the moment are defined as procs.
 		# space after it.  This substitution works for the given
 		# pattern, as it basically requires at least one char to be
 		# between bla and !.
-		pat := substitute(pat, "%_", "_%", true);
-		pat := substitute(pat, "%%", "%", true);
+		# We use a dirty hack to make life simple; in the end we expect
+		# most people to have PCRE installed.  Here we replace % and _
+		# with two characters which are (hopefully) not used in the
+		# input string.
+		var percent := "\x01";
+		var underscore := "\x02";
 		
-		idxper := find_unescaped_occurrence(pat, "%", esc);
-		idxund := find_unescaped_occurrence(pat, "_", esc);
+		# main optimisation and escape char handling loop
+		len := length(pat);
+		i := 0;
+		while (i < len) {
+			c := string(pat, i, 1);
+			if (c = esc) {
+				if ((i + 1) = len) return(nil);	# escape char at end of string
+				if (string(pat, i + 1, 1) = esc) {
+					spat :+= esc;
+					i :+= 1;
+					escaped := false;
+				} else {
+					escaped := true;
+				}
+			} else if (c = "%") {
+				if (escaped = true) {
+					spat :+= c;
+				} else {
+					# find out if we can optimize here
+					if ((i + 1) < len) {
+						if (string(pat, i + 1, 1) = "%") {
+							# useless double %, ignore it
+						} else if (string(pat, i + 1, 1) = "_") {
+							# rewrite pattern, see comment above
+							spat :+= underscore + percent;
+							# skip over the _
+							i :+= 1;
+						} else {
+							spat :+= percent;
+						}
+					}
+				}
+				escaped := false;
+			} else if (c = "_") {
+				if (escaped = true) {
+					spat :+= c;
+				} else {
+					spat :+= underscore;
+				}
+			} else {
+				spat :+= c;
+				escaped := false;
+			}
+			
+			i :+= 1;
+		}
+		
+		pat := spat;
+		idxper := search(pat, percent);
+		idxund := search(pat, underscore);
 
 		# force matching without position freedom for the first part
 		wasper := false;
@@ -772,11 +827,11 @@ that for the moment are defined as procs.
 
 			# find next match for the last matching char (% or _)
 			if (isper) {
-				idxper := find_unescaped_occurrence(pat, "%", esc);
+				idxper := search(pat, percent);
 				# correct value of other index
 				if (idxund > 0) idxund :-= idx;
 			} else {
-				idxund := find_unescaped_occurrence(pat, "_", esc);
+				idxund := search(pat, underscore);
 				# correct value of other index
 				if (idxper > 0) idxper :-= idx;
 			}
@@ -840,9 +895,9 @@ that for the moment are defined as procs.
 		i := 0;
 		while (i < len) {
 			c := string(pat, i, 1);
-			if (c = str(esc)) {
+			if (c = esc) {
 				if ((i + 1) = len) return(nil);	# escape char at end of string
-				if (string(pat, i + 1, 1) = str(esc)) {
+				if (string(pat, i + 1, 1) = esc) {
 					ppat :+= pesc;
 					i :+= 1;
 					escaped := false;
@@ -878,6 +933,7 @@ that for the moment are defined as procs.
 				escaped := false;
 			} else {
 				ppat :+= c;
+				escaped := false;
 			}
 			
 			i :+= 1;
