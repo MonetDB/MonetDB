@@ -91,13 +91,15 @@ typedef struct blob
 
 #include "blob.proto.h"
 
+blob_export size_t blobsize(size_t nitems);
+
 #endif /* __BLOB_H__ */
 @c
 #include <gdk.h>
 
 #include "blob.h"
 
-blob_export size_t blobsize(size_t nitems)
+size_t blobsize(size_t nitems)
 {
    if (nitems == ~(size_t)0)
       nitems = 0;
