@@ -1124,6 +1124,7 @@ MapiMsg mapi_disconnect(Mapi mid)
 	}
 	mid->next = mid->prev = NULL;
 	mid->from = mid->to = NULL;
+	mid->connected = 0;
 	return MOK;
 }
 
