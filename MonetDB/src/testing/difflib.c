@@ -708,12 +708,12 @@ int lwc_diff2html (char *old_fn, char *new_fn,
   fprintf(html_fp,"</TABLE></CENTER>\n");
   fprintf(html_fp,"<HR>\n");
   fprintf(html_fp,"</BODY>\n</HTML>\n");
-  fprintf(html_fp,"<!--%sDiffs-->\n",major?"Major":"Minor");
+  fprintf(html_fp,"<!--%sDiffs-->\n",major?"Major":(minor?"Minor":"No"));
   fflush(html_fp); fclose(html_fp);
 
   for(i=0;i<5;i++) { UNLINK(clmn_fn[i]); free(clmn_fn[i]); }
 
-  fclose(lwc_diff_fp); return (major?2:1);
+  fclose(lwc_diff_fp); return (major?2:(minor?1:0));
 }
 /* lwc_diff2html */
 
