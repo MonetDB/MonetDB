@@ -29,13 +29,14 @@
 \usepackage{cmbright}
 \usepackage{latexsym}
 \usepackage{graphicx}
-\usepackage[paperheight=200cm,paperwidth=200cm]{geometry}
+\usepackage[a4paper,margin=5mm]{geometry}
 \usepackage[scanall]{psfrag}
 \newcommand{\scj}{\includegraphics[scale=0.075]{scj.eps}}
 \pagestyle{empty}
 \begin{document}
 \ttfamily\mathversion{bold}\catcode`_=12
-\includegraphics{dot.ps}
+\enlargethispage{5cm}
+\resizebox{!}{\textheight}{\includegraphics{dot.ps}}
 \end{document}
 
 %%% Local Variables: 

@@ -40,7 +40,7 @@ $(CORE): $(SRCS)
 ps: $(CORE)
 	./$(CORE) | dot -Tps > dot.ps
 	latex dot
-	dvips -E1 -T100cm,100cm dot -o Core.ps
+	dvips -ta4 dot -o Core.ps
 	rm -f dot.{aux,dvi,log,ps}
 
 .PHONY: debug
