@@ -393,6 +393,7 @@ int yydebug=1;
 	join_type
 	outer_join_type
 	time_precision
+	timestamp_precision
 	non_second_datetime_field
 	datetime_field
 	opt_bounds
@@ -2282,16 +2283,29 @@ tz:
  | /* empty */		{ $$ = 0; }
  ;
 
+/* note: the maximum precision for both time and timestamp should be equal
+ *       and at minimum 6.  The SQL standard prescribes that at least two
+ *       fractional precisions are supported: 0 and 6, where 0 is the
+ *       default for time, and 6 the default precision for timestamp.
+ *       It might be nice to check for a certain maximum of precision in
+ *       the future here.
+ */
 time_precision:
 	'(' intval ')' 	{ $$ = $2; }
+/* a time defaults to a fractional precision of 0 */
  | /* empty */		{ $$ = 0; }
+ ;
+
+timestamp_precision:
+	'(' intval ')' 	{ $$ = $2; }
+/* a timestamp defaults to a fractional precision of 6 */
+ | /* empty */		{ $$ = 6; }
  ;
 
 datetime_type:
     sqlDATE			{ $$ = sql_bind_subtype("date", 0, 0); }
- /* SQL obscure rule: fractional seconds precision */
  |  TIME time_precision tz 	{ $$ = sql_bind_subtype("time", $2, $3); }
- |  TIMESTAMP time_precision tz { $$ = sql_bind_subtype("timestamp", $2, $3); }
+ |  TIMESTAMP timestamp_precision tz { $$ = sql_bind_subtype("timestamp", $2, $3); }
  ;
 
 non_second_datetime_field:
