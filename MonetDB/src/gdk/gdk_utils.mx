@@ -244,7 +244,6 @@ void BATSIGabort(int nr) {
 
 #ifdef SIGPIPE
 void BATSIGpipe(int nr) {
-	int	pid;
 	int	status; 
 
 	while (waitpid(-1, &status, WNOHANG) > 0)
