@@ -2188,6 +2188,7 @@ str rule_create_fromstr(rule *ret, str *s){
 	rule *d=0;
 	rule_fromstr(*s,&len,&d);
 	*ret = *d;
+	GDKfree(d);
 	return MAL_SUCCEED;
 }
 
