@@ -58,6 +58,12 @@ The following options are supported:
  -u user     & --user=user      & user id \\
  -?          & --help           & show this usage message \\
 \end{itemize}
+
+Calling "MapiClient -l sql" establishes a SQL connection with an
+Mserver server running on the local machine. The default user
+'monetdb' is used, which provides administrative rights.
+To protect your database you may want to introduce another DBA name and
+limit the access permisions of 'monetdb' to the level of a guest account.
 @
 
 @{
