@@ -69,19 +69,19 @@ b.print();
 [ "",		  nil	  ]
 [ nil,		  nil	  ]
 
-b:= new(int,int);
-b.insert(1,15);
-b.insert(2,4);
-b.insert(3,int(nil));
-b.insert(4,16);
-b.insert(5,25);
-b.insert(6,36);
-b.insert(7,49);
-b.insert(8,64);
-b.insert(9,int(nil));
-b.insert(int(nil),int(nil));
-b.insert(int(nil),81);
-b.print();
+var cb:= new(int,int);
+cb.insert(1,15);
+cb.insert(2,4);
+cb.insert(3,int(nil));
+cb.insert(4,16);
+cb.insert(5,25);
+cb.insert(6,36);
+cb.insert(7,49);
+cb.insert(8,64);
+cb.insert(9,int(nil));
+cb.insert(int(nil),int(nil));
+cb.insert(int(nil),81);
+cb.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -97,13 +97,13 @@ b.print();
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
-b.export("monet1");
+cb.export("monet1");
 saved in monet1
-b.clear();
-b.count().print();
+cb.clear();
+cb.count().print();
 [ 0 ]
-b.import("monet1");
-b.print();
+cb.import("monet1");
+cb.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
