@@ -148,7 +148,7 @@ case $CC-$CXX in
 	dnl  defines that enable the features beyond C89 in the various
 	dnl  platforms.  Here's what we found working so far...
 	case "$CC-$host_os" in
-	gcc-irix*|gcc-cygwin*|gcc-darwin*|gcc-aix*)
+	gcc-irix*|gcc-cygwin*|gcc-darwin*|gcc-aix*|arm-linux-gcc*)
 		;;
 	gcc-solaris*)
 		CFLAGS="$CFLAGS -D__EXTENSIONS__"

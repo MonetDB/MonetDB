@@ -842,10 +842,7 @@ def CheckBATs(env, TST, TSTDB) :
         }
         quit;
     ''')
-    try:
-        pIn.close()
-    except IOError, (IOerrNo, IOerrStr):
-        Warn("Closing input pipe in CheckBATs failed with #%d: '%s'." % (IOerrNo, IOerrStr))
+    pIn.close()
     qOut, qErr = ReadMultiple([pOut, pErr])
     TST_BATS = []
     if qOut:
