@@ -56,14 +56,19 @@ SQL  1 Row affected
 SQL  no Rows affected
 #     8: 1  create table _t1 (CreationPK int, Title varchar(255), CreationDate varchar(255));
 #     9: 1  INSERT INTO _t1 SELECT * from Creation WHERE (Creation.Title = 'Titanic');
+SQL  no Rows affected
 #    10: 1  create table _t2 (ID int, IMDB varchar(255), Image varchar(255), MediaInformationFK int);
 #    11: 1  INSERT INTO _t2 SELECT Video.ID, Video.IMDB, Video.Image, Video.MediaInformationFK FROM Video,_t1 WHERE (Video.ID = _t1.CreationPK);
+SQL  no Rows affected
 #    12: 1  create table _t3 (CreationFK int, CreatorFK int);
 #    13: 1  INSERT INTO _t3 SELECT CreationCreator.CreationFK, CreationCreator.CreatorFK FROM CreationCreator,_t1 WHERE (CreationCreator.CreationFK = _t1.CreationPK);
+SQL  no Rows affected
 #    14: 1  create table _t4 (CreatorPK int, Role varchar(255), IndividualFK int);
 #    15: 1  INSERT INTO _t4 SELECT Creator.CreatorPK, Creator.Role, Creator.IndividualFK FROM Creator,_t3 WHERE (Creator.CreatorPK = _t3.CreatorFK);
+SQL  no Rows affected
 #    16: 1  create table _t5 (IndividualPK int, PersonName varchar(255));
 #    17: 1  INSERT INTO _t5 SELECT Individual.IndividualPK, Individual.PersonName FROM Individual,_t4 WHERE (Individual.IndividualPK = _t4.IndividualFK);
+SQL  no Rows affected
 #    18: 1  SELECT * from _t2;
 #------------------------------------------
 #| id | imdb | image | mediainformationfk |
@@ -11596,10 +11601,13 @@ SQL  3996 Rows affected
 SQL  2987 Rows affected
 #    28: 1  create table _t6 (CreatorPK int, Role varchar(255), IndividualFK int);
 #    29: 1  INSERT INTO _t6 SELECT * from Creator WHERE (Creator.Role = 'Director');
+SQL  no Rows affected
 #    30: 1  create table _t7 (CreationFK int, CreatorFK int);
 #    31: 1  INSERT INTO _t7 SELECT CreationCreator.CreationFK, CreationCreator.CreatorFK FROM CreationCreator,_t6 WHERE (CreationCreator.CreatorFK = _t6.CreatorPK);
+SQL  no Rows affected
 #    32: 1  create table _t8 (IndividualPK int, PersonName varchar(255));
 #    33: 1  INSERT INTO _t8 SELECT Individual.IndividualPK, Individual.PersonName FROM Individual,_t6 WHERE (Individual.IndividualPK = _t6.IndividualFK);
+SQL  no Rows affected
 #    34: 1  SELECT * from _t7;
 #--------------------------
 #| creationfk | creatorfk |
@@ -12346,20 +12354,28 @@ SQL  243 Rows affected
 SQL  243 Rows affected
 #    37: 1  create table _t9 (CreationPK int, Title varchar(255), CreationDate varchar(255));
 #    38: 1  INSERT INTO _t9 SELECT * from Creation WHERE (Creation.CreationDate = '1996');
+SQL  no Rows affected
 #    39: 1  create table _t10 (ID int, IMDB varchar(255), Image varchar(255), MediaInformationFK int);
 #    40: 1  INSERT INTO _t10 SELECT Video.ID, Video.IMDB, Video.Image, Video.MediaInformationFK FROM Video,_t9 WHERE (Video.ID = _t9.CreationPK);
+SQL  no Rows affected
 #    41: 1  create table _t11 (CreatorPK int, Role varchar(255), IndividualFK int);
 #    42: 1  INSERT INTO _t11 SELECT * from Creator WHERE (Creator.Role = 'Writer');
+SQL  no Rows affected
 #    43: 1  create table _t12 (CreationFK int, CreatorFK int);
 #    44: 1  INSERT INTO _t12 SELECT CreationCreator.CreationFK, CreationCreator.CreatorFK FROM CreationCreator,_t11 WHERE (CreationCreator.CreatorFK = _t11.CreatorPK);
+SQL  no Rows affected
 #    45: 1  create table _t13 (CreationFK int, CreatorFK int);
 #    46: 1  INSERT INTO _t13 SELECT _t12.CreationFK, _t12.CreatorFK FROM _t12,_t9 WHERE (_t12.CreationFK = _t9.CreationPK);
+SQL  no Rows affected
 #    47: 1  create table _t14 (CreatorPK int, Role varchar(255), IndividualFK int);
 #    48: 1  INSERT INTO _t14 SELECT _t11.CreatorPK, _t11.Role, _t11.IndividualFK FROM _t11,_t13 WHERE (_t11.CreatorPK = _t13.CreatorFK);
+SQL  no Rows affected
 #    49: 1  create table _t15 (IndividualPK int, PersonName varchar(255));
 #    50: 1  INSERT INTO _t15 SELECT Individual.IndividualPK, Individual.PersonName FROM Individual,_t11 WHERE (Individual.IndividualPK = _t11.IndividualFK);
+SQL  no Rows affected
 #    51: 1  create table _t16 (IndividualPK int, PersonName varchar(255));
 #    52: 1  INSERT INTO _t16 SELECT _t15.IndividualPK, _t15.PersonName FROM _t15,_t14 WHERE (_t15.IndividualPK = _t14.IndividualFK);
+SQL  no Rows affected
 #    53: 1  SELECT * from _t10;
 #------------------------------------------
 #| id | imdb | image | mediainformationfk |
@@ -12504,10 +12520,13 @@ SQL  25 Rows affected
 SQL  39 Rows affected
 #    58: 1  create table _t17 (CreatorPK int, Role varchar(255), IndividualFK int);
 #    59: 1  INSERT INTO _t17 SELECT * from Creator WHERE (Creator.Role = 'Director');
+SQL  no Rows affected
 #    60: 1  create table _t18 (CreationFK int, CreatorFK int);
 #    61: 1  INSERT INTO _t18 SELECT CreationCreator.CreationFK, CreationCreator.CreatorFK FROM CreationCreator,_t17 WHERE (CreationCreator.CreatorFK = _t17.CreatorPK);
+SQL  no Rows affected
 #    62: 1  create table _t19 (CreationPK int, Title varchar(255), CreationDate varchar(255));
 #    63: 1  INSERT INTO _t19 SELECT Creation.CreationPK, Creation.Title, Creation.CreationDate FROM Creation,_t18 WHERE (Creation.CreationPK = _t18.CreationFK);
+SQL  no Rows affected
 #    64: 1  SELECT * from _t17;
 #-----------------------------------
 #| creatorpk | role | individualfk |
@@ -13254,20 +13273,28 @@ SQL  243 Rows affected
 SQL  243 Rows affected
 #    67: 1  create table _t20 (IndividualPK int, PersonName varchar(255));
 #    68: 1  INSERT INTO _t20 SELECT * from Individual WHERE (Individual.PersonName = 'Spielberg,+Steven');
+SQL  no Rows affected
 #    69: 1  create table _t21 (CreatorPK int, Role varchar(255), IndividualFK int);
 #    70: 1  INSERT INTO _t21 SELECT * from Creator WHERE (Creator.Role = 'Director');
+SQL  no Rows affected
 #    71: 1  create table _t22 (CreatorPK int, Role varchar(255), IndividualFK int);
 #    72: 1  INSERT INTO _t22 SELECT _t21.CreatorPK, _t21.Role, _t21.IndividualFK FROM _t21,_t20 WHERE (_t21.IndividualFK = _t20.IndividualPK);
+SQL  no Rows affected
 #    73: 1  create table _t23 (CreatorPK int, Role varchar(255), IndividualFK int);
 #    74: 1  INSERT INTO _t23 SELECT _t21.CreatorPK, _t21.Role, _t21.IndividualFK FROM _t21,_t22 WHERE (_t21.CreatorPK = _t22.CreatorPK);
+SQL  no Rows affected
 #    75: 1  create table _t24 (CreationFK int, CreatorFK int);
 #    76: 1  INSERT INTO _t24 SELECT CreationCreator.CreationFK, CreationCreator.CreatorFK FROM CreationCreator,_t21 WHERE (CreationCreator.CreatorFK = _t21.CreatorPK);
+SQL  no Rows affected
 #    77: 1  create table _t25 (CreationFK int, CreatorFK int);
 #    78: 1  INSERT INTO _t25 SELECT _t24.CreationFK, _t24.CreatorFK FROM _t24,_t22 WHERE (_t24.CreatorFK = _t22.CreatorPK);
+SQL  no Rows affected
 #    79: 1  create table _t26 (CreationPK int, Title varchar(255), CreationDate varchar(255));
 #    80: 1  INSERT INTO _t26 SELECT Creation.CreationPK, Creation.Title, Creation.CreationDate FROM Creation,_t24 WHERE (Creation.CreationPK = _t24.CreationFK);
+SQL  no Rows affected
 #    81: 1  create table _t27 (CreationPK int, Title varchar(255), CreationDate varchar(255));
 #    82: 1  INSERT INTO _t27 SELECT _t26.CreationPK, _t26.Title, _t26.CreationDate FROM _t26,_t25 WHERE (_t26.CreationPK = _t25.CreationFK);
+SQL  no Rows affected
 #    83: 1  SELECT * from _t20;
 #-----------------------------
 #| individualpk | personname |
@@ -13336,14 +13363,19 @@ SQL  10 Rows affected
 SQL  10 Rows affected
 #    88: 1  create table _t29 (IndividualPK int, PersonName varchar(255));
 #    89: 1  INSERT INTO _t29 SELECT * from Individual WHERE (Individual.PersonName LIKE '%Spielberg%');
+SQL  no Rows affected
 #    90: 1  create table _t28 (CreatorPK int, Role varchar(255), IndividualFK int);
 #    91: 1  INSERT INTO _t28 SELECT * from Creator WHERE (Creator.Role = 'Director');
+SQL  no Rows affected
 #    92: 1  create table _t30 (IndividualPK int, PersonName varchar(255), CreatorPK int, Role varchar(255), IndividualFK int);
 #    93: 1  INSERT INTO _t30 SELECT _t29.IndividualPK, _t29.PersonName, _t28.CreatorPK, _t28.Role, _t28.IndividualFK FROM _t29,_t28 WHERE (_t29.IndividualPK = _t28.IndividualFK);
+SQL  no Rows affected
 #    94: 1  create table _t31 (IndividualPK int, PersonName varchar(255), CreatorPK int, Role varchar(255), IndividualFK int, CreationFK int, CreatorFK int);
 #    95: 1  INSERT INTO _t31 SELECT _t30.IndividualPK, _t30.PersonName, _t30.CreatorPK, _t30.Role, _t30.IndividualFK, CreationCreator.CreationFK, CreationCreator.CreatorFK FROM _t30,CreationCreator WHERE (_t30.CreatorPK = CreationCreator.CreatorFK);
+SQL  no Rows affected
 #    96: 1  create table _t32 (IndividualPK int, PersonName varchar(255), CreatorPK int, Role varchar(255), IndividualFK int, CreationFK int, CreatorFK int, CreationPK int, Title varchar(255), CreationDate varchar(255));
 #    97: 1  INSERT INTO _t32 SELECT _t31.IndividualPK, _t31.PersonName, _t31.CreatorPK, _t31.Role, _t31.IndividualFK, _t31.CreationFK, _t31.CreatorFK, Creation.CreationPK, Creation.Title, Creation.CreationDate FROM _t31,Creation WHERE (_t31.CreationFK = Creation.CreationPK);
+SQL  no Rows affected
 #    98: 1  SELECT * from _t32;
 #----------------------------------------------------------------------------------------------------------------------------
 #| individualpk | personname | creatorpk | role | individualfk | creationfk | creatorfk | creationpk | title | creationdate |

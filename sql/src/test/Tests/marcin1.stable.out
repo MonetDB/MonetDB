@@ -25,13 +25,21 @@ SQL  connected to database mTests_src_test using schema sys
 #     3: 1 create table t1(id int, val int);
 #     4: 1 create table t2(id int, val int);
 #     5: 1 insert into t1 values(1,1);
+SQL  no Rows affected
 #     6: 1 insert into t1 values(2,2);
+SQL  no Rows affected
 #     7: 1 insert into t1 values(3,3);
+SQL  no Rows affected
 #     8: 1 insert into t1 values(4,4);
+SQL  no Rows affected
 #     9: 1 insert into t1 values(5,5);
+SQL  no Rows affected
 #    10: 1 insert into t2 values(1,3);
+SQL  no Rows affected
 #    11: 1 insert into t2 values(2,2);
+SQL  no Rows affected
 #    12: 1 insert into t2 values(3,1);
+SQL  no Rows affected
 #    13: 0 
 #    14: 0 #and now some strange queries and even stranger results
 #    15: 0 

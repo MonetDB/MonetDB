@@ -23,8 +23,11 @@ SQL  connected to database mTests_src_test using schema sys
 #     1: 1 create table T ( I int, F float ) ;
 #     2: 0 
 #     3: 1 insert into T values ( 1, 0.1 );
+SQL  no Rows affected
 #     4: 1 insert into T values ( 2, 0.2 );
+SQL  no Rows affected
 #     5: 1 insert into T values ( 3, 0.3 );
+SQL  no Rows affected
 #     6: 0 
 #     7: 1 select * from T where I <  2;
 #---------

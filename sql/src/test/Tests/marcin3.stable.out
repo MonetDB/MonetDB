@@ -23,9 +23,13 @@ SQL  connected to database mTests_src_test using schema sys
 #     1: 0 
 #     2: 1 create table nutki(id int,val int);
 #     3: 1 insert into nutki values(1,1);
+SQL  no Rows affected
 #     4: 1 insert into nutki values(1,2);
+SQL  no Rows affected
 #     5: 1 insert into nutki values(3,4);
+SQL  no Rows affected
 #     6: 1 insert into nutki values(3,3);
+SQL  no Rows affected
 #     7: 1 select id, sum(val) AS valsum from nutki group by id having sum(val)>1;
 #---------------
 #| id | valsum |

@@ -22,14 +22,23 @@ Over..
 SQL  connected to database mTests_src_test using schema sys
 #     1: 1 create table t3(id int, val int);
 #     2: 1 insert into t3 values(2,6);
+SQL  no Rows affected
 #     3: 1 insert into t3 values(2,NULL);
+SQL  no Rows affected
 #     4: 1 insert into t3 values(2,5);
+SQL  no Rows affected
 #     5: 1 insert into t3 values(1,NULL);
+SQL  no Rows affected
 #     6: 1 insert into t3 values(1,5);
+SQL  no Rows affected
 #     7: 1 insert into t3 values(1,6);
+SQL  no Rows affected
 #     8: 1 insert into t3 values(NULL,5);
+SQL  no Rows affected
 #     9: 1 insert into t3 values(NULL,6);
+SQL  no Rows affected
 #    10: 1 insert into t3 values(NULL,NULL);
+SQL  no Rows affected
 #    11: 0 
 #    12: 0 #those 2 don't sort (bad server_output?)
 #    13: 1 select * from t3 order by val;

@@ -22,10 +22,15 @@ Over..
 SQL  connected to database mTests_src_test using schema sys
 #     1: 0 
 #     2: 1 insert into example values( 1, 'test', 0.1 );
+SQL  no Rows affected
 #     3: 1 insert into example values( 5, 'xtest', 0.9 );
+SQL  no Rows affected
 #     4: 1 insert into example values( 9, 'testx', 9.1 );
+SQL  no Rows affected
 #     5: 1 insert into example values( 0, 'texst', 99999.1 );
+SQL  no Rows affected
 #     6: 1 insert into example values( 8, 'texxst', 0.0001 );
+SQL  no Rows affected
 #     7: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
