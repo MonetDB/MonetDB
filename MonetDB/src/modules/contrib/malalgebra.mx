@@ -51,6 +51,7 @@ Too many bugs.
 @:leftjoin(fetch)@
 @:leftjoin(merge)@
 @:leftjoin(hash)@
+@:leftjoin(index)@
 
 
 @= select
@@ -196,7 +197,13 @@ BATmalleftmergejoin(BAT *l, BAT *r) {
 
 BAT*
 BATmalindexjoin(BAT *l, BAT *r) {
-  return BATthetajoin(l,r,JOIN_EQ,oid_nil);
+  return BATindexjoin(l,r,oid_nil);
+}
+
+/* don't reorder! */
+BAT*
+BATmalleftindexjoin(BAT *l, BAT *r) {
+  return BATleftindexjoin(l,r,oid_nil);
 }
 
 @= joincmd
@@ -215,6 +222,7 @@ int CMD@1join(BAT **result, BAT *left, BAT* right) {
 @:joincmd(hash)@
 @:joincmd(lefthash)@
 @:joincmd(index)@
+@:joincmd(leftindex)@
 
 
 @= selectcmd

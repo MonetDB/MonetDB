@@ -300,7 +300,7 @@ bunins_failed:
 	return NULL;
 }
 
-static BAT *batmergejoin(BAT *l, BAT *r, size_t estimate, int swap) {
+static BAT *batmergejoin(BAT *l, BAT *r, size_t estimate, bit swap) {
         @:joincheck(BATmergejoin, l->ttype, r->htype)@
 	if ( swap && (((BAThordered(r)&1)==0) || ((BATtordered(l)&1) && (BATcount(l) > BATcount(r)))) ) {
 		/* reverse join if required (r not sorted) or if l is larger (quick jump through l with binary search) */
@@ -312,13 +312,13 @@ static BAT *batmergejoin(BAT *l, BAT *r, size_t estimate, int swap) {
 
 BAT *BATmergejoin(BAT *l, BAT *r, size_t estimate) {
 	/* allows swapping of left and right input for faster processing */
-	return batmergejoin(l, r, estimate, 1);
+	return batmergejoin(l, r, estimate, TRUE);
 }
 
 BAT *BATleftmergejoin(BAT *l, BAT *r, size_t estimate) {
 	/* do not swap left and right input, 
 	   and hence maintain order of left head in result */
-	return batmergejoin(l, r, estimate, 0);
+	return batmergejoin(l, r, estimate, FALSE);
 }
 
 @- hash join
@@ -630,7 +630,7 @@ bunins_failed:
 @c
 #define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
 
-static BAT* batfetchjoin(BAT *l, BAT *r, size_t estimate, int swap) {
+static BAT* batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap) {
         int xx, yy, zz, lht, rtt;
 	size_t base, end;
 	ssize_t offset;
@@ -807,19 +807,21 @@ ready:
 
 BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
 	/* allows swapping of left and right input for faster processing */
-	return batfetchjoin(l, r, estimate, 1);
+	return batfetchjoin(l, r, estimate, TRUE);
 }
 
 BAT* BATleftfetchjoin(BAT *l, BAT *r, size_t estimate) {
 	/* do not swap left and right input, 
 	   and hence maintain order of left head in result */
-	return batfetchjoin(l, r, estimate, 0);
+	return batfetchjoin(l, r, estimate, FALSE);
 }
 
 @-
 This routine does the join optimization. TODO: it should be expressed in MIL.
 @c
-static BAT *batjoin(BAT *l, BAT *r, size_t estimate, int swap) {
+static BAT *batthetajoin(BAT *l, BAT *r, int op, size_t estimate, bit swap);
+
+static BAT *batjoin(BAT *l, BAT *r, size_t estimate, bit swap) {
 	size_t i, lsize, rsize;
         int lfetch, rfetch, must_hash; 
         lng logr, logl;
@@ -844,7 +846,7 @@ collect statistics that help us decide what to do
 		if (BAThvoid(l) && !BATtvoid(r)) lfetch = 0;
 		if (BATtvoid(r) && !BAThvoid(l)) rfetch = 0;
 	}
-	must_hash = rsize < lsize ? l->thash_heap != NULL : r->hhash_heap != NULL;
+	must_hash = (swap && (rsize < lsize)) ? l->thash_heap != NULL : r->hhash_heap != NULL;
 @-
 In special cases (equal join columns, void join columns, or ordered 
 join columns), we take special action.
@@ -873,8 +875,8 @@ if hash join is not right away possible and we have a binary tree index,
 we do nested loop index lookup join.
 @c
 	if (must_hash && ((l->tidx_heap && swap) || r->hidx_heap)) {
-		ALGODEBUG THRprintf(GDKout, "BATjoin: BATthetajoin(l,r,JOIN_EQ," SZFMT ");\n", estimate);
-		return BATthetajoin(l, r, JOIN_EQ, estimate);
+		ALGODEBUG THRprintf(GDKout, "BATjoin: batthetajoin(l,r,JOIN_EQ," SZFMT ",swap);\n", estimate);
+		return batthetajoin(l, r, JOIN_EQ, estimate, swap);
 	}
 @-
 hash join: the bread&butter join of monet
@@ -889,7 +891,7 @@ hash join: the bread&butter join of monet
 
 BAT *BATjoin(BAT *l, BAT *r, size_t estimate) {
 	/* allows swapping of left and right input for faster processing */
-        BAT *b = batjoin(l, r, estimate, 1);
+        BAT *b = batjoin(l, r, estimate, TRUE);
         BATpropcheck(b, BATPROPS_ALL);
         return b;
 }
@@ -897,7 +899,7 @@ BAT *BATjoin(BAT *l, BAT *r, size_t estimate) {
 BAT *BATleftjoin(BAT *l, BAT *r, size_t estimate) {
 	/* do not swap left and right input, 
 	   and hence maintain order of left head in result */
-        BAT *b = batjoin(l, r, estimate, 0);
+        BAT *b = batjoin(l, r, estimate, FALSE);
         BATpropcheck(b, BATPROPS_ALL);
         return b;
 }
@@ -1058,7 +1060,7 @@ static int IDXthetajoin(BAT *binner, BAT *bouter, BAT *l, BAT *r, int op) {
 	return 0;
 }
 
-int BATtheta(BAT* inner, BAT* outer, BAT* l, BAT* r, int op) {
+static int battheta(BAT* inner, BAT* outer, BAT* l, BAT* r, int op, bit swap) {
 	int leftinner = 1;
 	
 	BATcheck(l, "BATtheta"); 
@@ -1074,7 +1076,7 @@ int BATtheta(BAT* inner, BAT* outer, BAT* l, BAT* r, int op) {
 		return -1;
 	}
 
-	if (r->hidx_heap || (BAThordered(r)&1)) {
+	if (!swap || r->hidx_heap || (BAThordered(r)&1)) {
 		leftinner = 0;
 	} else if (l->tidx_heap || (BATtordered(l)&1)) {
 		BATflipflop(l);
@@ -1102,22 +1104,41 @@ int BATtheta(BAT* inner, BAT* outer, BAT* l, BAT* r, int op) {
 	return 0;
 }
 
-BAT *BATthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
+int BATtheta(BAT* inner, BAT* outer, BAT* l, BAT* r, int op) {
+	return battheta(inner, outer, l, r, op, TRUE);
+}
+
+static BAT *batthetajoin(BAT *l, BAT *r, int op, size_t estimate, bit swap) {
 	BAT	*bn; 
 	
+	@:joinbat(op, batthetajoin(l,r,op,estimate,swap), estimate)@
+	if (battheta(NULL, bn, l, r, op, swap) < 0) {
+		BBPreclaim(bn);
+		return NULL;
+	}
+        ESTIDEBUG THRprintf(GDKout, "batthetajoin: actual resultsize: " SZFMT "\n",BATcount(bn));
+	return bn;
+}
+
+BAT *BATthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
 	@:joincheck(BATthetajoin, l->ttype, r->htype)@
 	if ((op == JOIN_EQ) && (r->hhash_heap || !r->hidx_heap)) { 
 		/* go for the hash solution */
 		ALGODEBUG THRprintf(GDKout, "BATthetajoin: BAThashjoin(l, r);\n");
 		return BAThashjoin(l, r, estimate);
 	}
-	@:joinbat(op, BATthetajoin(l,r,op,estimate), estimate)@
-	if (BATtheta(NULL, bn, l, r, op) < 0) {
-		BBPreclaim(bn);
-		return NULL;
-	}
-        ESTIDEBUG THRprintf(GDKout, "BATthetajoin: actual resultsize: " SZFMT "\n",BATcount(bn));
-	return bn;
+	return batthetajoin(l, r, op, estimate, TRUE);
+}
+
+BAT *BATindexjoin(BAT *l, BAT *r, size_t estimate) {
+        /* allows swapping of left and right input for faster processing */
+	return batthetajoin(l, r, JOIN_EQ, estimate, TRUE);
+}
+
+BAT *BATleftindexjoin(BAT *l, BAT *r, size_t estimate) {
+	/* do not swap left and right input, 
+	   and hence maintain order of left head in result */
+	return batthetajoin(l, r, JOIN_EQ, estimate, FALSE);
 }
 @}
 
