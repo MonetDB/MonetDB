@@ -366,13 +366,13 @@ void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s){
 
         fprintf(f,"Stack pc=%d size=%d top=%d\n",s->pc,s->stksize,s->stktop);
         for( ; i<mb->vtop ; i++){
-		printStackElm(f, mb, mb->var+i, s->stk+i);
+		printStackElm(f, mb, getVar(mb,i), s->stk+i);
         }
 }
 
 void printStackElm(FILE *f, MalBlkPtr mb, VarPtr n, ValPtr v){
 	str nme;
-	fprintf(f,"[%d] %s\t= ",n->offset,n->name);
+	fprintf(f,"[%d] %s\t= ",n->index,n->name);
 	if( n->isaconstant) {
 		VALprint(f,&n->value);
 	} else {

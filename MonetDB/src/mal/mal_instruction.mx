@@ -88,7 +88,7 @@ typedef struct{
 	malType	type;	/* internal type signature */
         bit	isaconstant;	/* value cannot change */
 	int	isused;	/* for stack copying scope */
-	short	offset;	/* offset in stack */
+	short	index;	/* offset in stack */
 	str	literal;/* initial value -> ValRecord */
 	ValRecord value;
 } *VarPtr, VarRecord;
@@ -147,48 +147,49 @@ Allocation of space assumes a rather exotic number of arguments.
 #define getFcnName(M)	getInstrPtr(M,0)->fcnname
 #define getFcnArgCount(M)	getInstrPtr(M,0)->argc
 #define getModName(M)	getInstrPtr(M,0)->modname 
-#define getDestName(M,P)  (M)->var[(P)->argv[0]].name
-#define getDestType(M,P)  (M)->var[(P)->argv[0]].type
-#define getArgName(M,P,I)  (M)->var[(P)->argv[I]].name
-#define getArgType(M,P,I)  (M)->var[(P)->argv[I]].type
-#define getArgDef(M,P,I)  (M)->var[(P)->argv[I]].def
-#define getArgOffset(M,P,I)  (M)->var[(P)->argv[I]].offset
-#define getArgDefault(M,P,I)  (M)->var[(P)->argv[I]].literal
 #define getPrgSize(M)	(M)->stop
 
 #define getVar(M,I)	(M)->var+I
 #define getVarName(M,I)  (M)->var[I].name
 #define getVarType(M,I)  (M)->var[I].type
-#define getVarOffset(M,I)  (M)->var[I].offset
-#define getVarValue(M,I)  (M)->var[I].literal
+#define getVarIndex(M,I)  (M)->var[I].index
+#define getVarLiteral(M,I)  (M)->var[I].literal
 #define isVarConstant(M,I) ((M)->var[I].isaconstant)
 #define isVarUsed(M,I) ((M)->var[I].isused)
 #define getVarConstant(M,I)  ((M)->var[I].value)
-#define getRetType(S)	getDestType(((S).def),0)
+#define copyVar(M,I,J)	(M)->var[I] = (M)->var[J]
+
+#define getDestName(M,P) getVarName(M,(P)->argv[0])
+#define getDestType(M,P)  getVarType((M),(P)->argv[0])
+#define getArgName(M,P,I)  getVarName((M),(P)->argv[I])
+#define getArgType(M,P,I)  getVarType((M),(P)->argv[I])
+#define getArgIndex(M,P,I)  getVarIndex((M),(P)->argv[I])
+#define getArgDefault(M,P,I)  getVarLiteral((M),(P)->argv[I])
 
 mal_export InstrPtr	newInstruction(MalBlkPtr mb, int kind);
+mal_export void		freeInstruction(InstrPtr p);
 mal_export Symbol	newSymbol(str nme, int kind);
 mal_export void 	freeSymbol(Symbol s);
 mal_export void 	freeSymbolList(Symbol s);
 mal_export MalBlkPtr	newMalBlk();
+mal_export void		freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr	copyMalBlk(MalBlkPtr);
-mal_export void		freeInstruction(InstrPtr p);
-mal_export void		freeVariable(MalBlkPtr mb, int varid);
+
 mal_export int		findVariable(MalBlkPtr mb, str name);
 mal_export int		findVariableLenght(MalBlkPtr mb, str name,int len);
 mal_export malType	getType(MalBlkPtr mb, str nme);
 mal_export int		newVariable(MalBlkPtr mb, str name,malType type);
 mal_export int		newTmpVariable(MalBlkPtr mb, malType type);
+mal_export void		freeVariable(MalBlkPtr mb, int varid);
 mal_export int		newConstant(MalBlkPtr mb, malType type, str val);
 mal_export int		isVARG(MalBlkPtr mb, InstrPtr p, int i);
-mal_export MalBlkPtr	copyMalBlk(MalBlkPtr old);
+
 mal_export void		pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export void		pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export void		setReturnArgument(InstrPtr p, int varid);
 mal_export void 	printInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
 mal_export void		promptInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
 mal_export str		instruction2str(MalBlkPtr mb,InstrPtr p);
-mal_export void		freeMalBlk(MalBlkPtr mb);
 
 #endif /*  _MAL_INSTR_H*/
 @c
@@ -439,8 +440,8 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 	n = mb->vtop;
 	getVarName(mb,n) = name;
 	getVarType(mb,n) = type;
-	getVarOffset(mb,n) = n;
-	getVarValue(mb,n)= NULL;
+	getVarIndex(mb,n) = n;
+	getVarLiteral(mb,n)= NULL;
 	isVarConstant(mb,n) = 0;
 	isVarUsed(mb,n) = 0;
 	mb->vtop++;
@@ -510,7 +511,7 @@ int newConstant(MalBlkPtr mb, malType type, str val){
 	}
 	idx= k= newVariable(mb, s=newTmpName(mb->vtop), type);
 /* printf("new constant %d val %s\n",k,val);*/
-	getVarValue(mb,k)= val;
+	getVarLiteral(mb,k)= val;
 	isVarConstant(mb,k) = 1;
 	isVarUsed(mb,k) = 0;
 	vr = &getVarConstant(mb,k);
@@ -695,7 +696,7 @@ str hiddenInstructionArgs(MalBlkPtr mb,InstrPtr p,str s){
 		advance(s);
 		sprintf(s,"(%s:%s->%d)", 
 			(getArgName(mb,p,i)?getArgName(mb,p,i):"nil"),
-			tpe, getArgOffset(mb,p,i));
+			tpe, getArgIndex(mb,p,i));
 		GDKfree(tpe);
 	}
 	advance(s);

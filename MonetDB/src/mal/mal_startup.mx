@@ -275,7 +275,7 @@ void    resetMalBlk(MalBlkPtr mb, MalStkPtr glb){
 				i++;
 			} else {
 				if(i!=j){
-					mb->var[j]= mb->var[i];
+					copyVar(mb,j,i);
 					glb->stk[j]= glb->stk[i];
 				}
 				i++; j++;
