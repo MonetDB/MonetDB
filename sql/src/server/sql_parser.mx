@@ -382,7 +382,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	ref_action 
 	join_type
 	outer_join_type
-	time_persision
+	time_precision
 	non_second_datetime_field
 	datetime_field
 	opt_bounds
@@ -2280,15 +2280,16 @@ tz:
  | /* empty */		{ $$ = 0; }
  ;
 
-time_persision:
+time_precision:
 	'(' intval ')' 	{ $$ = $2; }
  | /* empty */		{ $$ = 0; }
  ;
 
 datetime_type:
     sqlDATE			{ $$ = sql_bind_subtype("date", 0, 0); }
- |  TIME time_persision tz 	{ $$ = sql_bind_subtype("time", $2, $3); }
- |  TIMESTAMP time_persision tz { $$ = sql_bind_subtype("timestamp", $2, $3); }
+ /* SQL obscure rule: fractional seconds precision */
+ |  TIME time_precision tz 	{ $$ = sql_bind_subtype("time", $2, $3); }
+ |  TIMESTAMP time_precision tz { $$ = sql_bind_subtype("timestamp", $2, $3); }
  ;
 
 non_second_datetime_field:
@@ -2305,7 +2306,7 @@ datetime_field:
  ;
 
 start_field:
-    non_second_datetime_field time_persision
+    non_second_datetime_field time_precision
 		{ $$ = dlist_append_int( 
 			 	dlist_append_int( dlist_create(), $1), $2);  }
  ;
@@ -2314,16 +2315,16 @@ end_field:
     non_second_datetime_field 	
 		{ $$ = dlist_append_int( 
 			 	dlist_append_int( dlist_create(), $1), 0);  }
- |  SECOND time_persision	
+ |  SECOND time_precision	
 		{ $$ = dlist_append_int( 
 			 	dlist_append_int( dlist_create(), isec), $2);  }
  ;
 
 single_datetime_field:
-    non_second_datetime_field time_persision 
+    non_second_datetime_field time_precision 
 		{ $$ = dlist_append_int( 
 			 	dlist_append_int( dlist_create(), $1), $2);  }
- |  SECOND time_persision	
+ |  SECOND time_precision	
 		{ $$ = dlist_append_int( 
 			 	dlist_append_int( dlist_create(), isec), $2);  }
  ;
