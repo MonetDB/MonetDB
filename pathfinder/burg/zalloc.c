@@ -6,7 +6,7 @@ char rcsid_zalloc[] = "$Id$";
 
 extern void exit ARGS((int));
 extern void free ARGS((void *));
-extern void *malloc ARGS((unsigned));
+extern void *malloc ARGS((size_t));
 
 int
 fatal(name, line) char *name; int line;
@@ -19,7 +19,7 @@ fatal(name, line) char *name; int line;
 void *
 zalloc(size) unsigned int size;
 {
-	void *t = (void *) malloc(size);
+	void *t = (void *) malloc((size_t)size);
 	if (!t) {
 		fprintf(stderr, "Malloc failed---PROGRAM ABORTED\n");
 		exit(1);
