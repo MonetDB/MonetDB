@@ -1,1 +1,1 @@
-@python %~dpn0 %*
+@python "%~dpn0" %*
