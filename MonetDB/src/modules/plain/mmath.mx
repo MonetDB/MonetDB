@@ -187,7 +187,7 @@ extern double fabs(double x);
 #define pow_binary(x, y, z)   *z = pow(*x,*y)
 #define sqrt_unary(x, z)      *z = sqrt(*x)
 
-#define ceil_unary(x, z)      *z = ceil(*x)
+#define ceil_unary(x, z)      *z = ((-1.0<*x)&&(*x<0.0))?0.0:ceil(*x)
 #define fabs_unary(x, z)      *z = fabs(*x)
 #define floor_unary(x, z)     *z = floor(*x)
 #define fmod_binary(x, y, z)  *z = fmod(*x,*y)
