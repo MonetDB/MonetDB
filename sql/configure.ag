@@ -62,6 +62,7 @@ AM_MONET_LIBS
 dnl libodbc
 have_odbc=auto
 ODBC_LIBS=""
+ODBC_INCS=""
 AC_ARG_WITH(odbc,
 [  --with-odbc=DIR     odbc library is installed in DIR], 
 	[have_odbc="$withval"])

@@ -1,5 +1,5 @@
 
-INCLUDES = -I$(srcdir)/../include $(ODBC_CFLAGS) 
+INCLUDES = -I$(srcdir)/../include $(ODBC_INCS) 
 DEFS = -DUNIXODBC @DEFS@
 
 lib_MonetODBCs = {
