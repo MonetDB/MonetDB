@@ -232,8 +232,8 @@ list *shrink_select_ranges(list *oldsels)
 			node *n;
 			int flg, len = 0;
 			
-			/* separate all single-range, equal, not-equal, & like selects and eliminate duplicates
-			 * (not-equal & like selects are saved and re-added at the end) */
+			/* separate all single-range, equal, notequal, notlike, & like selects and eliminate duplicates
+			 * (notequal, notlike, & like selects are saved and re-added at the end) */
 			for ( ct = cmp_gt; ct < cmp_all; ct++ ){
 				l1 = list_select( colsels, (void*)&ct, (fcmp)&cmp_sel_comp_type, (fdup)&stmt_dup );
 				len += list_length(l1);
@@ -364,12 +364,11 @@ list *shrink_select_ranges(list *oldsels)
 				}
 			}	
 
-			/* finally collect all saved not-equal and like selects */
-			list_merge( newsels, sels1[cmp_like], (fdup)&stmt_dup );
-			list_merge( newsels, sels1[cmp_notequal], (fdup)&stmt_dup );
-
-			list_destroy(sels1[cmp_notequal]);
-			list_destroy(sels1[cmp_like]);
+			/* finally collect all saved like, notlike, and notequal selects */
+			for ( ct = cmp_like; ct >= cmp_notequal; ct-- ) {
+				list_merge( newsels, sels1[ct], (fdup)&stmt_dup );
+				list_destroy(sels1[ct]);
+			}
 		}
 		list_destroy(colsels);
 	}
@@ -408,18 +407,24 @@ stmt *eliminate_semijoin(stmt *s)
 			} else if (PSEL(s2) && s2->flag == cmp_equal) {
 				/* do point select first */
 				swap = 1;
-			} else if (PSEL(s1) && s1->flag == cmp_notequal) {
-				/* do not-equal select last */
-				swap = 1;
 			} else if (PSEL(s2) && s2->flag == cmp_notequal) {
-				/* do not-equal select last */
+				/* do notequal select last */
 				swap = 0;
-			} else if (PSEL(s1) && s1->flag == cmp_like) {
-				/* do like select last */
+			} else if (PSEL(s1) && s1->flag == cmp_notequal) {
+				/* do notequal select last */
+				swap = 1;
+			} else if (PSEL(s2) && s2->flag == cmp_notlike) {
+				/* do notequal select last */
+				swap = 0;
+			} else if (PSEL(s1) && s1->flag == cmp_notlike) {
+				/* do notequal select last */
 				swap = 1;
 			} else if (PSEL(s2) && s2->flag == cmp_like) {
 				/* do like select last */
 				swap = 0;
+			} else if (PSEL(s1) && s1->flag == cmp_like) {
+				/* do like select last */
+				swap = 1;
 			} else if (PSEL(s1)) {
 				/* single-sided range before double-sided range */
 				swap = 0;

@@ -142,8 +142,9 @@ typedef enum comp_type {
 	cmp_lt = 3,
 	cmp_equal = 4,
 	cmp_notequal = 5,
-	cmp_like = 6,
-	cmp_all = 7
+	cmp_notlike = 6,
+	cmp_like = 7,
+	cmp_all = 8
 } comp_type;
 
 typedef struct stmt {
@@ -1069,7 +1070,7 @@ stmt *stmt_select2(stmt * op1, stmt * op2, stmt * op3, int cmp)
 stmt *stmt_uselect(stmt * op1, stmt * op2, comp_type cmptype)
 {
 	stmt *s = stmt_create(st_uselect);
-	assert(cmptype != cmp_like);
+	assert(cmptype != cmp_like && cmptype != cmp_notlike);
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->flag = cmptype;

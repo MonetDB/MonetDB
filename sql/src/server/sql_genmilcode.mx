@@ -475,6 +475,13 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			len = snprintf( buf, BUFSIZ, 
 				"s%d := s%d.likeselect(s%d);\n", -s->nr, l, r ); 
 			break;
+		case cmp_notlike:
+			(void)(*nr)++; 
+			len = snprintf( buf, BUFSIZ, 
+				"s%d := s%d.likeselect(s%d);\n", *nr, l, r ); 
+			len += snprintf( buf+len, BUFSIZ, 
+				"s%d := s%d.kdiff(s%d);\n", -s->nr, l, *nr );
+			break;
 		case cmp_equal:
 			len = snprintf( buf, BUFSIZ, 
 				"s%d := s%d.%s(s%d);\n", -s->nr, l, cmd, r ); 
