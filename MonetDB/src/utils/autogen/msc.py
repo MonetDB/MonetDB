@@ -836,11 +836,11 @@ def gen_mkdir(fd, name, d):
     i = string.rfind(d, '\\')
     if i >= 0:
         dir = d[:i]
-        fd.write('%s: %s\n' % (name, dir) )
+        fd.write('"%s": "%s"\n' % (name, dir) )
         fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (d, d))
         gen_mkdir(fd, dir,dir)
     else:
-        fd.write('%s:\n' % name)
+        fd.write('"%s":\n' % name)
         fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (d, d))
 
 def msc_jar(fd, var, jar, msc):
@@ -898,10 +898,12 @@ def msc_jar(fd, var, jar, msc):
     fd.write("\n!ELSE\n\n")
 
     fd.write('%s:\n' % name)
+    fd.write('install_%s:\n' % name)
 
     fd.write("\n!ENDIF #HAVE_JAVA\n\n")
 
     msc['SCRIPTS'].append(name)
+    msc['INSTALL'].append((name, name, '', None))
 
 def msc_java(fd, var, java, msc):
 
@@ -1142,12 +1144,16 @@ CXXEXT = \\\"cxx\\\"
             fd.write('\tif exist "%s.exe" $(INSTALL) "%s.exe" "$(%sdir)"\n' % (v,v,v))
     if msc['INSTALL']:
         for (dst, src, ext, dir) in msc['INSTALL']:
+            if not dir:
+                continue
             fd.write('install_%s: "%s%s" "%s"\n' % (dst, src, ext, dir))
             fd.write('\tif exist "%s%s" $(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, ext, src, ext, dir, dst, ext))
             if ext == '.dll':
                 fd.write('\tif exist "%s%s" $(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, '.lib', src, '.lib', dir, dst, '.lib'))
         td = {}
         for (x, y, u, dir) in msc['INSTALL']:
+            if not dir:
+                continue
             if not td.has_key(dir):
                 fd.write('"%s":\n' % dir)
                 fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (dir, dir))
