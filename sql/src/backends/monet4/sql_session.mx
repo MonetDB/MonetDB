@@ -346,7 +346,7 @@ enum ex_t {
 int sqlexecute(backend * be, stream *out )
 {
 	char *query = NULL;
-	lng T0, Tparse, Tmil, Texec, T1;
+	lng T0 = 0, Tparse = 0, Tmil = 0, Texec = 0, T1 = 0;
 	mvc *c = be->mvc;
 	int err = 0, cache = 0;
 	enum ex_t explain = ex_none;

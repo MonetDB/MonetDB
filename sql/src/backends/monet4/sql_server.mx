@@ -322,6 +322,7 @@ int logmanager() {
 		MT_sleep_ms(60000); 
 		mvc_logmanager();
 	}
+	return GDK_SUCCEED;	/* or GDK_FAIL since it is not supposed to end/return? */
 }
 
 int mvc_exit_wrap(Cntxt stk, YYSTREE lt, ValPtr res){ 
