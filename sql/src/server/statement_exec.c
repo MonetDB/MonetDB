@@ -95,10 +95,66 @@ static void write_part( context *sql, char *buf, int len )
 		fwrite( buf, 1, len, stderr);
 }
 
+static void write_command( context *sql, char *buf )
+{
+	if (sql->debug&(1024+2048)) {
+		int l;
+		char v[BUFSIZ];
+		char *s = strdup(buf), *c = s;
+		while (c = strchr(c,'"'))	*c = '`';
+		c = s;
+		while (c = strchr(c,'\n'))	*c = '\t';
+		l = snprintf( v, BUFSIZ, "printf(\"< %s >\\n\");\n", s );
+		sql->out->write( sql->out, v, 1, l );
+		free(s);
+	}
+}
+
+static void write_result( context *sql, char *buf )
+{
+	if (sql->debug&(1024+2048)) {
+		int l;
+		char v[BUFSIZ], *a = buf, *b, *y, z;
+		while (a && (y = strstr(a," := "))) {
+			z = *y;
+			*y = '\0';
+			if (  b = strrchr(a,' ' ) )	a = b;
+			if (!(b = strrchr(a,'\n')))	b = a;
+			l = snprintf( v, BUFSIZ, 
+				"if (type(%s) != 4) {"
+				"	print(%s);"
+				"} else {"
+				"	var x := count(%s);"
+				"	printf(\"| %%d * { %%s , %%s } |\\n\",x,head(%s),tail(%s));",
+				b, b, b, b, b );
+			if (sql->debug&2048) {
+			    l += snprintf( v+l, BUFSIZ-l,
+				"	if (x < 40) {"
+				"		print(%s);"
+				"	} else {"
+				"		print(slice(%s,0,9));"
+				"		print(\"...\");"
+				"		print(sample(slice(%s,10,x - 11),10));"
+				"		print(\"...\");"
+				"		print(slice(%s,x - 10,x - 1));"
+				"	}",
+				b, b, b, b );
+			}
+			l += snprintf( v+l, BUFSIZ-l,
+				"}\n") ;
+			sql->out->write( sql->out, v, 1, l );
+			*y = z;
+			a = strchr(y,';');
+		}
+	}
+}
+
 static void dump( context *sql, char *buf, int len, int nr )
 {
 	write_head(sql,nr);
+	write_command(sql,buf);
 	write_part(sql,buf,len);
+	write_result(sql,buf);
 	write_tail(sql,nr);
 }
 
@@ -119,6 +175,7 @@ void dump_header( context *sql, list *l ){
 			(name)?name:"",(type)?type->type->sqlname:"");
 	}
 	len += snprintf(buf+len, BUFSIZ-len, "stream_flush(Output);\n");
+	write_command(sql,buf);
 	write_part(sql,buf,len);
 }
 
@@ -252,6 +309,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		
 		write_head(sql,-s->nr);
 		len = snprintf( buf, BUFSIZ, "b%d := new(str,int);\n", -s->nr);
+		write_command(sql,buf);
 		write_part(sql,buf,len);
 		for(n=k->columns->h;n; n = n->next){
 			kc *kc = n->data;
@@ -259,6 +317,8 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		    	"b%d.insert(\"%s\", %d);\n", -s->nr, kc->c->name, kc->trunc);
 			write_part(sql,buf,len);
 		}
+		len = snprintf( buf, BUFSIZ, "b%d := ", -s->nr);
+		write_result(sql,buf);
 		if (s->flag == fkey){
 			int ft = stmt_dump( s->op2.stval, nr, sql );
 			len = snprintf( buf, BUFSIZ, 
@@ -269,7 +329,9 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		    	"s%d := mvc_create_key(myc, \"%s\", \"%s\", \"%s\", %d, b%d, sql_key(nil));\n",
 			-s->nr, k->t->schema->name, k->t->name, (k->name)?k->name:"", k->type, -s->nr );
 		}
+		write_command(sql,buf);
 		write_part(sql,buf,len);
+		write_result(sql,buf);
 		write_tail(sql,-s->nr);
 	} break;
 	case st_create_role: {
@@ -740,10 +802,13 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_atom: {
 		write_head(sql,-s->nr);
 		len = snprintf( buf, BUFSIZ, "s%d := ", -s->nr);
+		write_command(sql,buf);
 		write_part(sql,buf,len);
 		atom_dump(s->op1.aval, sql);
 		len = snprintf( buf, BUFSIZ, ";\n");
 		write_part(sql,buf,len);
+		len = snprintf( buf, BUFSIZ, "s%d := ", -s->nr);
+		write_result(sql,buf);
 		write_tail(sql,-s->nr);
 	} break;
 	case st_insert: {
@@ -878,7 +943,10 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			}
 			break;
 		}
-		if (len) write_part(sql,buf,len);
+		if (len) {
+			write_command(sql,buf);
+			write_part(sql,buf,len);
+		}
 		len = 0;
 		if (lst->type == st_ordered){
 			order = lst->op1.stval; 
@@ -907,6 +975,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			fprintf(stderr, "not a valid output list %d %d %d\n",
 					lst->type, st_list, st_ordered);
 		}
+		write_command(sql,buf);
 		write_part(sql,buf,len);
 		write_tail(sql,-s->nr);
 	} break;

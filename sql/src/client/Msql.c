@@ -35,6 +35,13 @@
  * 	16	output parsed SQL
  * 	32	execute but there is no output send to the client
  * 	64 	output mil code only, no excution on the server.
+ * 	1024	trace execution on the server-side by echoing each MIL-statement
+ * 		before executing it and printing the respective result immediately
+ * 		(for BATs, on the the cardinality and head- & tail-type are printed).
+ * 	2048	like 1024, but also print BAT: 
+ * 		with <40 BUNs, the whole BAT is printed;
+ * 		for larges BATs, we print the first 10 BUNs, the last 10 BUNs, 
+ * 		and 10 BUNs sampled from the rest.
  */ 
 
 #define SQL_DUMP 1
