@@ -4,3 +4,9 @@ EXTRA_DIST = \
 	install-sh mkinstalldirs missing depcomp \
 	ltmain.sh ltconfig    \
 	stamp-h.in config.h.in
+
+scripts_m4 = {
+	DIR = pkgdatadir/conf
+	SOURCES = monet.m4
+}
+
