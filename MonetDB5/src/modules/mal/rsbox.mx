@@ -540,9 +540,12 @@ str RSBhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
  * @param b the BAT to scan the tail from
  * @return the max width of the tail
  */
-static str tailWidth(int* retval, BAT *b) {
+static str tailWidth(int* retval, BAT* b) {
 	BUN p, q;
 	int max = 0;
+
+	if (b == NULL)
+		throw("resultset.tailWidth", "BAT should not be NULL");
 
 	switch (b->ttype) {
 		case TYPE_bit:
@@ -606,7 +609,7 @@ static str tailWidth(int* retval, BAT *b) {
 /**
  * Helper function that sets a property for a column.  If the
  * maximum property count is reached, an exception is thrown.
- * When setting the width property, with argument NULL, the
+ * When setting the width property, with argument str_nil, the
  * width is automatically determined.  The return
  * value indicates whether a previous value was overwritten.
  * Typical properties are:
@@ -639,7 +642,7 @@ static str RSsetPropertyInternal(
 		if (rs->propertynames[n] == NULL) {
 			rs->propertynames[n] = GDKstrdup(*nme);
 			break;
-		} else if (strcmp(rs->propertynames[n], *nme)) break;
+		} else if (strcmp(rs->propertynames[n], *nme) == 0) break;
 	}
 	if (n == RS_MAX_PROPERTIES)
 		throwf("resultset.setProperty", "Maximum number of properties already set (%d)", RS_MAX_PROPERTIES);
@@ -648,9 +651,8 @@ static str RSsetPropertyInternal(
 		ret = 1;
 		GDKfree(col->properties[n]);
 	}
-	col->properties[n] = (*val == NULL ? NULL : GDKstrdup(*val));
 	
-	if (strcmp("width", *nme) == 0 && *val == NULL) {
+	if (strcmp("width", *nme) == 0 && strNil(*val)) {
 		int width;
 		str tmp;
 		char* buf = GDKmalloc(sizeof(char) * 10);
@@ -661,6 +663,8 @@ static str RSsetPropertyInternal(
 		}
 		snprintf(buf, 9, "%d", width);
 		col->properties[n] = buf;
+	} else {
+		col->properties[n] = (*val == NULL ? NULL : GDKstrdup(*val));
 	}
 
 	*retval = ret;
@@ -716,6 +720,8 @@ str RSaddColumn(int* retval, int* handle, int* bat, str* nme) {
 	memset(col, 0, sizeof(column));
 	/* set name */
 	col->name = GDKstrdup(*nme);
+	col->bat = b;
+	/* also add the name to the list of properties */
 	if ((tmp = RSsetPropertyInternal(&pos, rs, col, &name, nme)) == MAL_SUCCEED) return(tmp);
 
 	*retval = *handle;
@@ -734,7 +740,7 @@ str RSsetPropertyLastCol(int* retval, int* handle, str* nme, str* val) {
 	column* col;
 	resultset* rs;
 	str tmp;
-	
+
 	resolveHandle(&rs, handle);
 	if (rs->complete)
 		throw("resultset.setProperty", "Unable to modify a complete ResultSet");
@@ -873,7 +879,7 @@ str RSsetComplete(int* handle) {
  * @returns the number of bytes written
  */
 str RSwriteHeader(int* retval, int* handle) {
-	int bytes = 0;
+	int bytes = 0, i;
 	stream* s = GDKout;
 	resultset* rs;
 	column* col;
@@ -903,12 +909,8 @@ str RSwriteHeader(int* retval, int* handle) {
 
 			/* write column or row separator */
 			if (col == NULL) {
-				if (stream_write(s, "\t# @3\n", 4 + strlen("@3"), 1) != 1) {
-					*retval = 0;
-					throw("resultset.writeHeader", "Error while writing to the stream");
-				}
-				bytes += 4 + strlen("@3");
-			} else {
+				bytes += stream_printf(s, "\t# %s\n", @3);
+				} else {
 				if (stream_write(s, ",\t", 2, 1) != 1) {
 					*retval = 0;
 					throw("resultset.writeHeader", "Error while writing to the stream");
@@ -922,11 +924,12 @@ str RSwriteHeader(int* retval, int* handle) {
 	}
 @c
 	/* yeah baby!  dirty as hell! */
-	/* note: the spaces after the ',' ARE also copied! */
-	/* TODO: loop through the properties and put them here */
-	@:MX-writeHeaderLine("%s", col->name == NULL ? "" : col->name,name)@
-	@:MX-writeHeaderLine("%d", rs->length,tuplecount)@
-	@:MX-writeHeaderLine("%s", rs->id == NULL ? "" : rs->id,id)@
+	for (i = 0; i < RS_MAX_PROPERTIES; i++) {
+		if (rs->propertynames[i] == NULL) break;
+		@:MX-writeHeaderLine("%s", col->properties[i] == NULL ? "" : col->properties[i], rs->propertynames[i])@
+	}
+	@:MX-writeHeaderLine("%d", rs->length, "tuplecount")@
+	@:MX-writeHeaderLine("%s", rs->id == NULL ? "" : rs->id, "id")@
 
 	*retval = bytes;
 	return(MAL_SUCCEED);
