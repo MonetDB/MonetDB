@@ -332,6 +332,8 @@ reduce (PFcnode_t * p, int goalnt)
     /* PFinfo (OOPS_NOTICE, "in rule %u", rule); */
 
     switch (rule) {
+        /* Query:              main (FunctionDecls, CoreExpr) */
+        case 1:
         /* CoreExpr:           for_ (forbind (forvars (var, nil),
                                               Atom),
                                      CoreExpr) */
@@ -363,6 +365,17 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* Query:              main (FunctionDecls, CoreExpr) */
         case 1:
+            /* TOPDOWN */
+
+            /*
+             * Type-check query body before any user-defined function.
+             * This way we type all global variables (they have been
+             * replaced by `let ...' clauses around the query body),
+             * before we type any function body. (Note that function
+             * bodies may refer global variables.)
+             */
+            reduce (kids[1], nts[1]);
+            reduce (kids[0], nts[0]);
             break;
 
         /* Query:              CoreExpr */
