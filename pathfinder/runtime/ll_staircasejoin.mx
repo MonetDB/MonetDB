@@ -412,7 +412,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
         oid    lst_iter = *(oid*)BUNtail(iter_bat, lst_BUN - bun_size);
         oid    num_iters = (lst_iter - fst_iter) + 1;
 
-        if (num_iters > 1) {
+        if (num_iters > 1 && chunk_size < BATcount(iter_bat)) {
             oid max_iter = fst_iter + chunk_size;
 
             lst_idx = fst_idx + 1;
