@@ -1374,7 +1374,7 @@ analysis.
 int GDKsilent = 0;
 
 /* do the real work for GDKaddbuf below. */
-static void doGDKaddbuf(const char *prefix, const char *message, int messagelen, const char *suffix)
+static void doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const char *suffix)
 {
 	char *buf = GDKerrbuf;
 
@@ -1409,7 +1409,7 @@ static void doGDKaddbuf(const char *prefix, const char *message, int messagelen,
 		char format[32];
 		snprintf(format, sizeof(format), "%s%%.*s%s",
 			 prefix ? prefix : "", suffix ? suffix : "");
-                THRprintf(GDKerr, format, messagelen, message);
+                THRprintf(GDKerr, format, (int) messagelen, message);
 	}
 }
 
@@ -1467,11 +1467,11 @@ void GDKaddbuf(const char *message)
 		if (q) {
 			/* print line including newline */
 			q++;
-			doGDKaddbuf(prefix, p, (int) (q - p), "");
+			doGDKaddbuf(prefix, p, (size_t) (q - p), "");
 		} else {
 			/* no newline at end of buffer: print all the
 			   rest and add a newline */
-			doGDKaddbuf(prefix, p, (int) strlen(p), "\n");
+			doGDKaddbuf(prefix, p, strlen(p), "\n");
 			/* we're done since there were no more newlines */
 			break;
 		}

@@ -2005,7 +2005,7 @@ stream_writeLng(stream *s, lng val)
 int
 stream_read@1Array(stream *s, @2 *val, size_t cnt)
 {
-	if (s->read(s, (void *) val, sizeof(*val), cnt) < cnt) {
+	if (s->read(s, (void *) val, sizeof(*val), cnt) < (ssize_t) cnt) {
 		s->errnr = READ_ERROR;
 		return 0;
 	}
