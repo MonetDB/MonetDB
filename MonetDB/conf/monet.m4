@@ -42,7 +42,8 @@ fi
 AC_ARG_WITH(monet,
 [  --with-monet=DIR     monet is installed in DIR], have_monet="$withval")
 if test "x$have_monet" != xno; then
-  AC_PATH_PROG(MONET_CONFIG,monet-config,,$withval/bin:$PATH)
+  MPATH="$withval/bin:$PATH"
+  AC_PATH_PROG(MONET_CONFIG,monet-config,,$MPATH)
 
   if test "x$MONET_CONFIG" != x; then
     AC_MSG_CHECKING(for Monet >= $MONET_REQUIRED_VERSION) 
@@ -176,8 +177,9 @@ JAR="jar"
 AC_ARG_WITH(java,
 [  --with-java=DIR     javac and jar are installed in DIR/bin], have_java="$withval")
 if test "x$have_java" != xno; then
-  AC_PATH_PROG(JAVAC,javac,,$withval/bin:$PATH)
-  AC_PATH_PROG(JAR,jar,,$withval/bin:$PATH)
+  JPATH="$withval/bin:$PATH"
+  AC_PATH_PROG(JAVAC,javac,,$JPATH)
+  AC_PATH_PROG(JAR,jar,,$JPATH)
   if test "x$JAVAC" = "x"; then
      have_java=no
   elif test "x$JAR" = "x"; then
@@ -225,7 +227,7 @@ AC_PROG_LN_S()
 AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
 AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
-AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH:/bin:/usr/bin:/usr/local/bin)
+AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 
 dnl to shut up automake (.m files are used for mel not for objc)
 AC_CHECK_TOOL(OBJC,objc)
@@ -533,8 +535,7 @@ AC_SUBST(BZ_CFLAGS)
 AC_SUBST(BZ_LIBS)
 
 dnl check for getopt in standard library
-AC_SUBST(LIBOBJS)
-AC_CHECK_FUNCS(getopt_long , , [LIBOBJS="getopt.lo getopt1.lo"] ) 
+AC_CHECK_FUNCS(getopt_long , , AC_LIBOBJ(getopt); AC_LIBOBJ(getopt1))
 
 dnl hwcounters
 have_hwcounters=auto
@@ -659,7 +660,8 @@ AC_DEFUN(AM_MONET_CLIENT,[
 
 dnl check for Monet and some basic utilities
 AM_MONET($1)
-AC_PATH_PROG(MX,Mx,$MONET_PREFIX/bin:$PATH)
-AC_PATH_PROG(MEL,mel,$MONET_PREFIX/bin:$PATH)
+MPATH="$MONET_PREFIX/bin:$PATH"
+AC_PATH_PROG(MX,Mx,,$MPATH)
+AC_PATH_PROG(MEL,mel,,$MPATH)
 
 ])
