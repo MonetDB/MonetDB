@@ -1,0 +1,26 @@
+EXPORTS
+	checkMid
+	promptMonet
+	Mtail
+	Mbind
+	Mgetreply
+	Mdorequest
+	Mconnect
+	Mdup
+	Mnewstruct
+	Mdisconnect
+	Msend
+	Maction
+	Mget
+	Mquery
+	Mfetch
+	Mreset
+	Mbatchreset
+	Mstatistics
+	Mexplain
+	Mgetfields
+	Mslice
+	MsliceText
+	Msync
+	Mtimeout
+	promptMonet

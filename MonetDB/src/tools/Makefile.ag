@@ -16,6 +16,7 @@ EXTRA_DIST = static_modules.mx
 
 lib_Mapi = {
 	SOURCES = Mapi.mx
+	LIBS = $(MAPI_LIBS)
 }
 
 bin_Mserver = {
@@ -29,12 +30,9 @@ bin_Mload = {
 }
 
 bin_Mdestroydb = bin_Mcreatedb
-bin_Mcreatedb = {
-	SOURCES = Mcreatedb.mx
-}
-
 BINS = {
-	SOURCES = Mdump.mx Mshutdown.mx Mrecover.mx Mcgi.mx Mclient.mx
+	SOURCES = Mcreatedb.mx Mdump.mx Mshutdown.mx \
+	          Mrecover.mx Mcgi.mx Mclient.mx
 	LIBS = libMapi ../gdk/libbat $(MAPI_LIBS)
 	Mclient_LIBS = $(READLINE_LIBS) $(SOCKET_LIBS)
 }

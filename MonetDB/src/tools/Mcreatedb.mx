@@ -99,7 +99,6 @@ $MONETHOME/dbfarm/$DB/users/$USER/prelude.mil  # (editable) session prelude
 #define GDK_NOLINK
 #include <gdk.h>
 #include "../gdk/gdk_utils.c"
-#include <sys/param.h>
 
 int error, fatal;
 char homes[PATHLENGTH] = {0}, *home=NULL, *dist, *farm, *db=NULL;
@@ -136,9 +135,10 @@ int main(int argc, char **argv) {
 	if (strcmp(prog, "Mdestroydb") && !GDKenviron[GDKdir][0]) {
 		strcpy(s=GDKenviron[GDKdir], farm);
 		if ((n = strlen(s)) != 0) {
-			if (s[n-1] !='/') s[n++] = '/';
+			if (s[n-1] != DIR_SEP) s[n++] = DIR_SEP;
 		}
-		strcpy(s+n, "dbfarm/");
+		strcpy(s+n, "dbfarm");
+		*(s+n+6) = DIR_SEP;
 		strcpy(s+n+7, db);
 		fprintf(stderr, "Mcreatedb: using default dbdir %s.\n", s);
 	}
@@ -181,7 +181,8 @@ It simply removes all files that look like Monet files.
 void destroyDB(str user) {
         char buffer[2048];
 	if (user) {
-        	sprintf(buffer, "rm -rf %s/users/%s;\n", dbhome, user); 
+        	sprintf(buffer, "rm -rf %s%cusers%c%s;\n", 
+			dbhome, DIR_SEP, user, DIR_SEP); 
 	} else {
         	sprintf(buffer, "rm -rf %s;\n", dbhome); /* NO MERCY */
 	}
@@ -199,7 +200,7 @@ void localmkdir(str nme) {
 	int i=0;
 	char msg[MAXPATHLEN], buffer[MAXPATHLEN], checkbuf[MAXPATHLEN];
 	
-	sprintf(buffer,"%s/%s",dbhome,nme);
+	sprintf(buffer,"%s%c%s",dbhome,DIR_SEP,nme);
 	memset(checkbuf,0,MAXPATHLEN);
 	while(i<strlen(buffer))
 	{
@@ -329,7 +330,7 @@ void dbargs(int argc,char **argv) {
                 fprintf(stderr, "Mcreatedb: database name missing\n");
 		exit(0);
         }
-	sprintf(homes, "%s/homes",farm);
+	sprintf(homes, "%s%chomes",farm, DIR_SEP);
         if (access(homes, R_OK | F_OK) ){
 	    FILE *fp = fopen(homes, "w"); 
 	    if (fp == NULL) {

@@ -237,7 +237,6 @@ extern void checkMid(Msession mid, char *nme);
 extern void promptMonet(Msession mid);
 extern void Mtail(Msession mid, char *qry);
 extern int Mbind(Msession mid, void *ptr);
-extern int Mrepl();
 extern char *Mgetreply(Msession mid);
 extern int Mdorequest(Msession mid,char *cmd);
 extern Msession Mconnect(char *host, int port, char *username, char *password);
@@ -249,7 +248,6 @@ extern int Maction();
 extern int Mget(Msession mid, ...);
 extern int Mquery(Msession mid, char *query, ...);
 extern int Mfetch(Msession mid, ...);
-extern int Mclearerror();
 extern void Mreset();
 extern void Mbatchreset();
 extern void Mstatistics(Msession mid, FILE *fd);
@@ -271,21 +269,16 @@ The Monet application interface commands are described below.
 They have been developed to ease interaction.
 
 @c
-#include  <stdio.h>
-#include  <stdlib.h>
-#include  <ctype.h>
+#include   <gdk.h>
+#include   "Mapi.h"
+
 #include  <sys/types.h>
 #include  <sys/socket.h>
-#include  <netinet/in.h>
-#include  <netdb.h>
-#include  <errno.h>
-#include  <string.h>
-#include  <signal.h>
-#include  <sys/wait.h>
-#include  <stdarg.h>
 
-#include   "Mapi.h"
-#include   "gdk.h"
+#include  <signal.h>
+/*
+#include  <sys/wait.h>
+*/
 
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
@@ -299,9 +292,11 @@ They have been developed to ease interaction.
 #endif
 
 
+/*
 #if sun && !solaris
 extern char *strchr();
 #endif
+*/
 
 char *Mmessages[]= { 
 	"No error:",
