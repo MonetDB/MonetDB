@@ -801,7 +801,7 @@ static stmt *op_stmt2filter(stmt *s)
 		s = stmt_set(s);
 	}
 	if (s->type == st_sets) {
-		printf("#TODO st_sets filter not handled\n" );
+		printf("= TODO st_sets filter not handled\n" );
 	} else {
 		list *l = s->op1.lval;
 		list *filters = 

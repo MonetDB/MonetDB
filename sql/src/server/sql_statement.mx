@@ -1706,6 +1706,11 @@ stmt *tail_column(stmt * st)
 	case st_list:
 		return tail_column(st->op1.lval->h->data);
 
+	case st_kbat: /* required for shrink_select_ranges() in sql_rel2bin.mx */
+		printf("= TODO: tail_column(%d=%s) -> %d=%s !?\n",
+			st->type, st_type2string(st->type), st->type, st_type2string(st->type) );
+		return st;
+
 	case st_relselect:
 	default:
 		fprintf(stderr, "missing tail column %d: %s\n", st->type, st_type2string(st->type) );
@@ -1892,6 +1897,11 @@ sql_column *basecolumn(stmt * st)
 		return basecolumn(st->op1.stval);
 	case st_bat:
 		return st->op1.cval;
+
+	case st_kbat: /* required for shrink_select_ranges() in sql_rel2bin.mx */
+		printf("= TODO: basecolumn(%d=%s) -> NULL !?\n",
+			st->type, st_type2string(st->type) );
+		return NULL;
 
 	default:
 		return basecolumn(tail_column(st));

@@ -32,6 +32,7 @@
 
 #include "sql_context.h"
 #include "sql_statement.h"
+#include "sql_types.h"
 
 extern stmt *rel2bin( context *c, stmt *s );
 
@@ -41,6 +42,84 @@ extern stmt *rel2bin( context *c, stmt *s );
 
 #include "sql_rel2bin.h"
 #include <stdio.h>
+
+static int cmp_sel_st_type( stmt *sel, st_type *tpe )
+{
+	if (sel->type == *tpe){
+		return 0;
+	}
+	return -1;
+}
+
+static int cmp_sel_hasNoBasecol( stmt *sel )
+{
+	int rtrn = -1;
+	if (basecolumn(sel) == NULL){
+		rtrn = 0;
+	}
+	return rtrn;
+}
+
+static int cmp_sel_hasBasecol( stmt *sel )
+{
+	int rtrn = -1;
+	if (basecolumn(sel) != NULL){
+		rtrn = 0;
+	}
+	return rtrn;
+}
+
+static int cmp_sel_basecol( stmt *sel, stmt *key )
+{
+	if (basecolumn(key) == basecolumn(sel)){
+		return 0;
+	}
+	return -1;
+}
+
+static int cmp_sel_val( stmt *sel, stmt *key )
+{
+	if (sel->op2.stval == key->op2.stval){
+		return 0;
+	}
+	return -1;
+}
+
+static int cmp_sel_comp_type( stmt *sel, comp_type *flg )
+{
+	if (sel->type == st_select && sel->flag == *flg){
+		return 0;
+	}
+	return -1;
+}
+
+static stmt* stmt_min(stmt *x, stmt *y)
+{
+	sql_subtype *t;
+	sql_subfunc *f;
+	t = tail_type(x);
+	assert(t);
+/*	assert(t == tail_type(y));	*/
+	f = sql_bind_func_result("sql_min", t, t, t);
+	assert(f);
+	return stmt_binop( x, y, f );
+}
+
+static stmt* stmt_max(stmt *x, stmt *y)
+{
+	sql_subtype *t;
+	sql_subfunc *f;
+	t = tail_type(x);
+	assert(t);
+/*	assert(t == tail_type(y));	*/
+	f = sql_bind_func_result("sql_max", t, t, t);
+	assert(f);
+	return stmt_binop( x, y, f );
+}
+
+
+@(
+@' replaced by "shrink_select_ranges()"
 
 stmt *range_select( stmt *s1, stmt *s2 )
 {
@@ -57,12 +136,15 @@ stmt *range_select( stmt *s1, stmt *s2 )
 	if (s1->flag > s2->flag) /* comp_type order is >,>=,<=,< */
 		return range_select(s2, s1);
 
+	if (s1->flag >= cmp_lte || s2->flag <= cmp_gte ) /* comp_type order is >,>=,<=,< */
+		return stmt_semijoin(stmt_dup(s1),stmt_dup(s2));
+
 	c1 = basecolumn(s1);
 	c2 = basecolumn(s2);
 	if (c1 == c2){
 		int cmp1 = s1->flag;
 		int cmp2 = s2->flag;
-		int cmpX = 0;
+		int cmpX = -1;
 
 		if (cmp1 == cmp_gt && cmp2 == cmp_lt){
 			cmpX = 0;
@@ -82,9 +164,10 @@ stmt *range_select( stmt *s1, stmt *s2 )
 	return stmt_semijoin(stmt_dup(s1),stmt_dup(s2));
 }
 
-list *distill_range_selects(list *l){
+list *distill_range_selects(list *sels)
+{
 	node *n1, *n2;
-	for ( n1 = l->h; n1; n1 = n1->next){
+	for ( n1 = sels->h; n1; n1 = n1->next){
 		stmt *s1 = n1->data;
 		if (s1->type == st_select && s1->flag < cmp_equal){
 			for ( n2 = n1->next; n2; n2 = n2->next){
@@ -92,18 +175,207 @@ list *distill_range_selects(list *l){
 				if (s2->type == st_select && s2->flag < cmp_equal
 				     && basecolumn(s1) == basecolumn(s2)         ){
 					stmt *rs = range_select(s1,s2);
-					l  = list_prepend(l,rs);
-					n1 = list_remove_node(l,n1);
-					n2 = list_remove_node(l,n2);
+					sels = list_prepend(sels,rs);
+					n1 = list_remove_node(sels,n1);
+					n2 = list_remove_node(sels,n2);
 					break;
 				}
 			}
 		}
 	}
-	return l;
+	return sels;
+}
+@)
+
+list *shrink_select_ranges(list *oldsels)
+{
+	/* find minimal ranges for selects per column on one table */
+
+	list *newsels, *haveNoBasecol, *haveBasecol, *basecols;
+	node *bc;
+	
+	newsels  = list_create((fdestroy)&stmt_destroy);
+
+	/* some statments (e.g., st_kbat when checking key constraints during inserts)
+	   don't seem to have a basecolumn, hence, we skip them, here */
+	haveNoBasecol = list_select( oldsels, (void*)1, (fcmp)&cmp_sel_hasNoBasecol, (fdup)&stmt_dup );
+	haveBasecol   = list_select( oldsels, (void*)1, (fcmp)&cmp_sel_hasBasecol,   (fdup)&stmt_dup );  
+	list_destroy(oldsels);
+
+	basecols = list_distinct( haveBasecol, (fcmp)&cmp_sel_basecol, (fdup)&stmt_dup );
+	for ( bc = basecols->h; bc; bc = bc->next ){
+		list *colsels = list_select( haveBasecol, bc->data, (fcmp)&cmp_sel_basecol, (fdup)&stmt_dup );
+		if ( list_length(colsels) == 1 ){
+			/* only one select on this column; simply keep it. */
+			list_append( newsels, stmt_dup(colsels->h->data) );
+		} else {
+			list *l1, *l2, *likesels, *sels2, *sels1[6];
+			stmt *bound[4] = {NULL, NULL, NULL, NULL};
+			stmt *col[4] = {NULL, NULL, NULL, NULL};
+			comp_type CMP_equal = cmp_equal, CMP_notequal = cmp_notequal, ct;
+			st_type ST_select = st_select, ST_select2 = st_select2, ST_like = st_like;
+			node *n;
+			int flg, len = 0;
+			
+			/* save all like selects as we cannot handle them here; eliminate duplicates */
+			l1 = list_select( colsels, (void*)&ST_like, (fcmp)&cmp_sel_st_type, (fdup)&stmt_dup );
+			len += list_length(l1);
+			likesels = list_distinct( l1, (fcmp)&cmp_sel_val, (fdup)&stmt_dup );
+			list_destroy(l1);
+
+			/* separate all single-range, equal, & not-equal selects and eliminate duplicates
+			 * (not-equal selects are saved and re-added at the end) */
+			for ( ct = cmp_gt; ct <= cmp_notequal; ct++ ){
+				l1 = list_select( colsels, (void*)&ct, (fcmp)&cmp_sel_comp_type, (fdup)&stmt_dup );
+				len += list_length(l1);
+				sels1[ct] = list_distinct( l1, (fcmp)&cmp_sel_val, (fdup)&stmt_dup );
+				list_destroy(l1);
+			}
+			/* separate all double-sided range selects */
+			sels2 = list_select( colsels, (void*)&ST_select2, (fcmp)&cmp_sel_st_type, (fdup)&stmt_dup );
+			len += list_length(sels2);
+
+			/* make sure we didn't miss anything */
+			assert(len == list_length(colsels));
+
+			/* split-up each double-sided range select in two single-sided ones
+			 * (x<[=]a<[=]y  =>  a>[=]x && a<[=]y) to find the minimal ranges below */
+			for ( n = sels2->h; n; n = n->next ){
+				stmt *sl, *sr, *s = n->data;
+				comp_type cl, cr;
+
+				switch(s->flag){
+				case 0: cl=cmp_gt;  cr=cmp_lt;  break;
+				case 1: cl=cmp_gt;  cr=cmp_lte; break;
+				case 2: cl=cmp_gte; cr=cmp_lt;  break;
+				case 3: cl=cmp_gte; cr=cmp_lte; break;
+				}
+				sl = stmt_select(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval), cl);
+				sr = stmt_select(stmt_dup(s->op1.stval), stmt_dup(s->op3.stval), cr);
+				list_append( sels1[cl], sl );
+				list_append( sels1[cr], sr );
+			}
+			list_destroy(sels2);
+
+			/* split-up each equal (point) select in two single-sided ones
+			 * (a=x  =>  a>=x && a<=x) to find the minimal ranges below */
+			/*
+			 * in the "worst case", this gets later re-combined to
+			 * 	x<=a<=x   which is identical to   a=x
+			 *
+			 * in case there are other equal (point) or range selects,
+			 * this improves optimization, especially empty selections
+			 * are detected instantly, e.g.:
+			 *	a=x && a=y
+			 *  =>	a>=x && a<=x && a>=y && a<=y
+			 *  =>	a>=max(x,y) && a<=min(x,y)
+			 *  =>  max(x,y)<=a<=min(x,y)
+			 * or
+			 *	a=x && a<=y
+			 *  =>	a>=x && a<=x && a<=y
+			 *  =>	a>=x && a<=min(x,y)
+			 *  =>	x<=a<=min(x,y)
+			 *
+			 * in both cases we end up with just a single select
+			 * instead of two selects plus a semijoin
+			 */
+			for ( n = sels1[cmp_equal]->h; n; n = n->next ){
+				stmt *sl, *sr, *s = n->data;
+
+				sl = stmt_select(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval), cmp_gte);
+				sr = stmt_select(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval), cmp_lte);
+				list_append( sels1[cmp_gte], sl );
+				list_append( sels1[cmp_lte], sr );
+			}
+			list_destroy(sels1[cmp_equal]);
+
+			/* minimize all single-sided range selects */
+			/*
+			 * while
+			 *	1) a< x && a< y  =>  a <  min(x,y)
+			 *	2) a<=x && a<=y  =>  a <= min(x,y)
+			 *	3) a> x && a> y  =>  a >  max(x,y)
+			 *	4) a>=x && a>=y  =>  a >= max(x,y)
+			 * we cannot do similar simple stuff for
+			 *	5) a < x && a <= y
+			 * and
+			 * 	6) a > x && a >= y
+			 * TODO:
+			 * for the latter two cases, produce code like
+			 * 	5: if (x<=y) { a < x } else { a <= y }
+			 * 	6: if (x>=y) { a > x } else { a >= y }
+			 */
+			for ( ct = cmp_gt; ct <= cmp_lt; ct++ ){
+				if ( list_length(sels1[ct]) > 0 ){
+					col[ct] = stmt_dup( ((stmt*)(sels1[ct]->h->data))->op1.stval );
+				}
+				if ( list_length(sels1[ct]) == 1 ){
+					bound[ct] = stmt_dup( ((stmt*)(sels1[ct]->h->data))->op2.stval );
+				}
+				if ( list_length(sels1[ct]) > 1 ){
+					list *bnds = list_create((fdestroy)&stmt_destroy);
+					for ( n = sels1[ct]->h; n; n = n->next ){
+						list_append( bnds, stmt_dup( ((stmt*)(n->data))->op2.stval ) );
+					}
+					if (ct <= cmp_gte)
+						bound[ct] = (stmt*)list_reduce( bnds, (freduce)&stmt_max, (fdup)&stmt_dup );
+					else
+						bound[ct] = (stmt*)list_reduce( bnds, (freduce)&stmt_min, (fdup)&stmt_dup );
+					list_destroy(bnds);
+				}
+				list_destroy(sels1[ct]);
+			}
+			
+			/* pairwise (re-)combine single-sided range selects to double-sided range selects */
+			/*
+			 * 	0) a> x && a< y  =>  x< a< y
+			 * 	1) a> x && a<=y  =>  x< a<=y
+			 * 	2) a>=x && a< y  =>  x<=a< y
+			 * 	3) a>=x && a<=y  =>  x<=a<=y
+			 */
+			for ( flg = 0; flg <= 3; flg++ ){
+				comp_type cl, cr;
+				
+				switch(flg){
+				case 0: cl=cmp_gt;  cr=cmp_lt;  break;
+				case 1: cl=cmp_gt;  cr=cmp_lte; break;
+				case 2: cl=cmp_gte; cr=cmp_lt;  break;
+				case 3: cl=cmp_gte; cr=cmp_lte; break;
+				}
+				if (bound[cl] && bound[cr]) {
+					list_append( newsels, stmt_select2( stmt_dup(col[cl]), bound[cl], bound[cr], flg ) );
+					bound[cl] = bound[cr] = NULL;
+				}
+			}
+			
+			/* collect remaining single-sided range selects that haven't found a partner */
+			for ( ct = cmp_gt; ct <= cmp_lt; ct++ ){
+				if (bound[ct]) {
+					list_append( newsels, stmt_select( stmt_dup(col[ct]), bound[ct], ct ) );
+				}
+			}	
+
+			/* finally collect all saved not-equal and like selects */
+			list_merge( newsels, likesels, (fdup)&stmt_dup );
+			list_merge( newsels, sels1[cmp_notequal], (fdup)&stmt_dup );
+
+			list_destroy(sels1[cmp_notequal]);
+			list_destroy(likesels);
+		}
+		list_destroy(colsels);
+	}
+	/* re-add the skipped statements without basecolumn */
+	list_merge( newsels, haveNoBasecol, (fdup)&stmt_dup );
+
+	list_destroy(haveNoBasecol);
+	list_destroy(haveBasecol);
+	list_destroy(basecols);
+
+	return newsels;
 }
 
-stmt *rel2bin( context *c, stmt *s ){
+stmt *rel2bin( context *c, stmt *s )
+{
 	stmt *res = s;
 
 	switch(s->type){
@@ -164,10 +436,17 @@ stmt *rel2bin( context *c, stmt *s ){
 		}
 		if (list_length(l) == 1){
 			res = stmt_dup(l->h->data);
+@(
+@' replaced by "shrink_select_ranges()"
 		} else if (list_length(l) == 2){
 			res = range_select(l->h->data, l->h->next->data);
+@)
 		} else {
+@(
+@' replaced by "shrink_select_ranges()"
 			l = distill_range_selects(l);
+@)
+			l = shrink_select_ranges(l);
 			res = (stmt*)list_reduce(l, (freduce)&stmt_semijoin, (fdup)&stmt_dup );
 		}
 		list_destroy(l);
