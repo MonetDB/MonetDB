@@ -582,7 +582,6 @@ ptr monet_init(int argc, char **argv){
 	static int gdk_argc = 0;
         Client  c;
 
-	printf("%s\n", argv[0] );
         if (getcwd(monet_cwd, PATHLENGTH-1)  == NULL ){
                 perror("pwd");
                 GDKfatal("monet_init: could not determine current directory\n");

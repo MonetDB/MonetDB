@@ -112,7 +112,6 @@ void parse_mod_path() {
     mod_path=getenv(MONET_MSP);
     if (!mod_path) mod_path = getenv("LD_LIBRARY_PATH");
     if (!mod_path) mod_path = &empty_path;
-printf("%s\n", mod_path );
     len=strlen(mod_path);
     dirbegin=mod_path;
     do
