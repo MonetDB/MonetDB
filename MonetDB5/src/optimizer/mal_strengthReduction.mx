@@ -50,8 +50,9 @@ into two sections. Those that should do Before and  Within the loop.
 str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int i,j,k,n,se/*,moves*/;
     InstrPtr p;
-	int bk, ik, b, blk, blkstart;
+	int bk, ik, b, blk, blkstart, actions=0;
     InstrPtr *before,*within;
+	long clk= GDKusec();
     (void) pci; (void) stk;  /* to fool compilers */
 
     before= (InstrPtr *) alloca((mb->ssize+1) * sizeof(InstrPtr));
@@ -131,6 +132,7 @@ if the variable is overwritten, because they you can not move
 		if( se==0) before[bk++]=p;
 		else within[ik++]= p;
 	}
+	actions +=ik;
 	for( k=0; k< ik; k++)
 		before[bk++]= within[k];
 	before[bk++]= getInstrPtr(mb,i);
@@ -143,7 +145,7 @@ if the variable is overwritten, because they you can not move
 	/*}*/
 	if(pci) 
 		removeInstruction(mb,pci);
-	optimizerCheck(mb,"strengthReduction");
+	optimizerCheck(mb,"strengthReduction",actions, GDKusec()-clk);
     /* remove the SRoptimizer request */
     return NULL;
 }

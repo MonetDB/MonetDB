@@ -70,7 +70,8 @@ str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	VarPtr v;
 	Client cntxt= getClient();
 	Scope s = cntxt->nspace;
-	int  top=0, blk=1;
+	int  top=0, blk=1, actions=0;
+	long clk= GDKusec();
 
     (void) pci; (void) stk;  /* to fool compilers */
 
@@ -94,6 +95,7 @@ str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* 			printf("remove the variable %s at %d\n", getArgName(mb,p,j),i);*/
 				if( getVarScope(mb,getArg(p,j)) == blk){
 					@:releaseBAT()@
+					actions++;
 				}
 			}
 		}
@@ -123,7 +125,7 @@ str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(stmt);
 	if(pci) 
 		removeInstruction(mb,pci);
-	optimizerCheck(mb,"garbageCollector");
+	optimizerCheck(mb,"garbageCollector",actions, GDKusec()-clk);
     return NULL;
 }
 @}

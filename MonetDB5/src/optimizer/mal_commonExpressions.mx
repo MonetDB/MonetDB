@@ -74,6 +74,8 @@ The last instruction signifies the end.
 str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {   int i,j,k;
     InstrPtr p,q;
+	int actions =0;
+	long clk= GDKusec();
 	(void) stk;
 
     for(i=1; i< mb->stop-1; i++){
@@ -112,6 +114,7 @@ str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 #endif
                 i= ARoptimizerStep(mb,i);
+				actions++;
                 goto nxtCommonSubExpression;
             } 
         }
@@ -120,6 +123,6 @@ str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     /* remove the CXoptimizer request */
 	if(pci) 
 		removeInstruction(mb,pci);
-	optimizerCheck(mb,"commonExpressions");
+	optimizerCheck(mb,"commonExpressions",actions, GDKusec()-clk);
     return MAL_SUCCEED;
 }

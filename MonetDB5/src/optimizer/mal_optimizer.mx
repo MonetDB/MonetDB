@@ -492,8 +492,11 @@ to debug.
                   (M)->var[I]->endLifespan)
 
 mal_export str MALoptimizer(Client c);
-mal_export int optimizerCheck(MalBlkPtr mb, str name);
+mal_export int optimizerCheck(MalBlkPtr mb, str name,int actions,long usec);
+mal_export void resetOptimizerDebugger();
 mal_export str optimizeMALBlock(MalBlkPtr mb);
+mal_export void showOptimizerStep(int i,int flg);
+mal_export void showOptimizerHistory();
 mal_export str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export int ARoptimizerStep(MalBlkPtr mb, int pc);
@@ -512,13 +515,14 @@ mal_export void debugLifespan(MalBlkPtr mb);
 mal_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
 mal_export int isUnsafeInstruction(InstrPtr q);
 mal_export int isUnsafeFunction(MalBlkPtr mb,  InstrPtr q);
+mal_export int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
 mal_export int safetyBarrier(MalBlkPtr mb,InstrPtr p, InstrPtr q);
 mal_export int hasSameSignature(InstrPtr p, InstrPtr q);
 mal_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 mal_export int isUpdated(MalBlkPtr mb, int pc);
 mal_export int hasCommonResults(InstrPtr p, InstrPtr q);
 mal_export int hasSideEffects(InstrPtr p);
-
+@}
 @+ Optimizer scenario
 The large number of query transformers calls for a flexible scheme for
 the deploy them. The approach taken is to make all optimizers visible
@@ -541,24 +545,12 @@ instruction can be removed from further consideration. However, in the case
 that a designated function is selected for optimization (e.g. 
 CXoptimizer(Admin,qry)) the pc is assumed 0. The first instruction always
 denotes the signature and can not be removed.
-
 @c
 #include "mal_optimizer.h"
-#include "mal_interpreter.h"    /* for showErrors() */
+#include "mal_interpreter.h"
+#include "mal_debugger.h"
 
-int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
-
-str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	Client cntxt= getClient();
-	(void) stk;
-
-    cntxt->debugOptimizer= cntxt->debugOptimizer? FALSE: TRUE;
-	if(pci) 
-		removeInstruction(mb,pci);
-	return MAL_SUCCEED;
-}
-
-int optimizerCheck(MalBlkPtr mb, str name){
+int optimizerCheck(MalBlkPtr mb, str name,int actions, long usec){
 	chkFlow(mb);
 	chkTypes(getClient()->nspace,mb);
 	chkDeclarations(mb,TRUE);
@@ -569,6 +561,7 @@ int optimizerCheck(MalBlkPtr mb, str name){
 		stream_printf(GDKout,"Optimizer %s failed\n", name);
 		printFunction(GDKout,mb,LIST_MAL_ALL);
 	}
+	optimizerDebug(mb,name,actions,usec);
 	return mb->errors;
 }
 @-
@@ -806,13 +799,14 @@ int ARoptimizerStep(MalBlkPtr mb, int pc)
 }
 str ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {   int i;
+	long clk= GDKusec();
 	(void) stk;
     for(i=1;i< mb->stop; i++)
         i= ARoptimizerStep(mb,i);
     /* remove the ARoptimizer request */
 	if(pci) 
 		removeInstruction(mb,pci);
-	optimizerCheck(mb,"aliasRemoval");
+	optimizerCheck(mb,"aliasRemoval",1,GDKusec()-clk);
     return NULL;
 }
 @+ Access Mode optimizer
@@ -826,6 +820,9 @@ static MALfcn AMsetWriteMode;
 int AMoptimizerStep(MalBlkPtr mb, int pc)
 {   int k,kn=0;
     InstrPtr p;
+	long clk= GDKusec();
+	int actions=0;
+
     p= getInstrPtr(mb,pc);
     if( p->fcn != AMsetWriteMode) return pc;
     kn = getArg(p,1);
@@ -837,10 +834,11 @@ int AMoptimizerStep(MalBlkPtr mb, int pc)
         if( getArg(p,1) == kn){
 			if(p) 
 				removeInstruction(mb,p);
+			actions++;
             return pc-1;
         }
     }
-	optimizerCheck(mb,"accessMode");
+	optimizerCheck(mb,"accessMode",actions,GDKusec()-clk);
     return pc;
 }
 str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1075,6 +1073,8 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     InstrPtr p;
     int *varused;
     int *pcused;
+	int actions=0;
+	long clk= GDKusec();
     (void) pci; (void) stk;  /* to fool compilers */
 
     varused= GDKmalloc(mb->vtop * sizeof(int));
@@ -1135,12 +1135,13 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         } else {
             p = getInstrPtr(mb,i);  
             freeInstruction(p);
+			actions++;
         }
     }
     mb->stop=j; 
     GDKfree(varused);
     GDKfree(pcused);
-	optimizerCheck(mb,"deadCodeRemoval");
+	optimizerCheck(mb,"deadCodeRemoval",actions,GDKusec()-clk);
     /* remove the DCoptimizer request */
     return NULL;
 }
@@ -1273,6 +1274,7 @@ int SPsqueezer000(MalBlkPtr mb, int pc1, int pc2)
 str SPoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {   int i,k,combis=0,squeeze=0;
     InstrPtr p;
+	long clk= GDKusec();
 	(void) stk; /* fool compilers */
 
     /* process the combinators */
@@ -1310,7 +1312,7 @@ str SPoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     /* remove the SPoptimizer request */
 	if(pci) 
 		removeInstruction(mb,pci);
-	optimizerCheck(mb,"selectPushDown");
+	optimizerCheck(mb,"selectPushDown",squeeze, GDKusec()-clk);
     return NULL;
 }
 @-
@@ -1335,9 +1337,10 @@ whenever a new reversal is introduced.
 str RRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {   int i,k,pc;
     InstrPtr q,p;
+	int actions=0;
+	long clk=GDKusec();
 	(void) stk;
 
-	optimizerCheck(mb,"reverseReverse");
 	pc= getPC(mb,pci);
     for(i=1; i< mb->stop; i++){
         p = getInstrPtr(mb,i);
@@ -1362,6 +1365,7 @@ str RRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                 if( pc>k) pc--;
                 removeInstruction(mb,p); i--;
                 if( pc>i) pc--;
+				actions++;
                 break;
                 }
             }
@@ -1369,7 +1373,7 @@ str RRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     }
 	if(pci) 
 		removeInstruction(mb,pci);
-	optimizerCheck(mb,"reverseReverse");
+	optimizerCheck(mb,"reverseReverse",actions,GDKusec()-clk);
     return MAL_SUCCEED;
 }
 @+ Flow analysis
@@ -1664,12 +1668,27 @@ void ORcoercionOptimizer(MalBlkPtr mb, int i, InstrPtr p)
 		ARreplaceAlias(mb,i,mb->stop, a, b);
 		return;
 	}
+	if( strcmp(functionName(p),"str")==0 && t== TYPE_str){
+		removeInstruction(mb,p);
+		ARreplaceAlias(mb,i,mb->stop, a, b);
+		return;
+	}
+	if( strcmp(functionName(p),"oid")==0 && t== TYPE_oid){
+		removeInstruction(mb,p);
+		ARreplaceAlias(mb,i,mb->stop, a, b);
+		return;
+	}
 	if( strcmp(functionName(p),"lng")==0 && t== TYPE_lng){
 		removeInstruction(mb,p);
 		ARreplaceAlias(mb,i,mb->stop, a, b);
 		return;
 	}
 	if( strcmp(functionName(p),"sht")==0 && t== TYPE_sht){
+		removeInstruction(mb,p);
+		ARreplaceAlias(mb,i,mb->stop, a, b);
+		return;
+	}
+	if( strcmp(functionName(p),"bit")==0 && t== TYPE_bit){
 		removeInstruction(mb,p);
 		ARreplaceAlias(mb,i,mb->stop, a, b);
 		return;
@@ -1691,7 +1710,8 @@ str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Client cntxt= getClient();
 	Scope scope= cntxt->nspace;
 	char *olderr;
-	int errlen;
+	int errlen,actions=0;
+	long clk= GDKusec();
     (void) pci; (void) stk;  /* to fool compilers */
 @-
 Safe the errors encountered sofar. They have to be reset
@@ -1702,7 +1722,6 @@ at the end of the optimization attempt.
 	if( errlen) strncpy(olderr,cntxt->errbuf,errlen);
 	if( errlen) strncpy(cntxt->errbuf,olderr,errlen);
 	
-	optimizerCheck(mb,"expressionAccumulation");
     for(i=1; i<mb->stop; i++){
         VarPtr v;
         p= getInstrPtr(mb,i);
@@ -1746,6 +1765,7 @@ at the end of the optimization attempt.
 					stream_printf(GDKout,"FIRST\n");
 					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
+					actions++;
 					continue;
 				}
 			}
@@ -1764,6 +1784,7 @@ at the end of the optimization attempt.
 					stream_printf(GDKout,"SECOND\n");
 					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
+					actions++;
 					continue;
 				}
 			}
@@ -1790,13 +1811,14 @@ at the end of the optimization attempt.
 					} else
 					if( a != b )
 						ARreplaceAlias(mb,i+1,mb->stop, b, a);
+					actions++;
 				}
 			}
 		}
     } 
 	if( errlen) strncpy(cntxt->errbuf,olderr,errlen);
     /* remove the ORoptimizer request */
-	optimizerCheck(mb,"expressionAccumulation");
+	optimizerCheck(mb,"expressionAccumulation",actions,GDKusec()-clk);
 	if( mb->errors) {
 		showErrors();
 		return throwMessage("ORoptimizer","Optimization raised errors");

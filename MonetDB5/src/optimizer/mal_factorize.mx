@@ -83,6 +83,7 @@ str FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int fk=0,sk=0,blk=0, blkstart=0;
     int *varused;
     InstrPtr *first,*second;
+	long clk= GDKusec();
     (void) pci; (void) stk;  /* to fool compilers */
 
     varused= GDKmalloc(mb->vtop * sizeof(int));
@@ -190,7 +191,7 @@ str FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     GDKfree(varused);
     GDKfree(first);
     GDKfree(second);
-	optimizerCheck(mb,"factorize");
+	optimizerCheck(mb,"factorize",1, GDKusec()-clk);
     /* remove the FToptimizer request */
     return NULL;
 }

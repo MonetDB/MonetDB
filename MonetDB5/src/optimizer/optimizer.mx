@@ -97,6 +97,8 @@ comment "Garbage collector optimizer";
 
 pattern setDebug():void 
 address QOTdebugOptimizers;
+pattern clrDebug():void 
+address QOTclrdebugOptimizers;
 
 pattern showFlowGraph(M:str,F:str,s:str):void 
 address QOTshowFlowGraph
@@ -180,9 +182,16 @@ str optimizer_prelude()
 }
 
 
+static int debugOpt=0;
 str QOTdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	debugOptimizers(mb,stk,pci);
-	return NULL;
+	debugOpt= 1;
+	return MAL_SUCCEED;
+}
+str QOTclrdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void)mb; (void)stk; (void) pci;
+	debugOpt= 0;
+	return MAL_SUCCEED;
 }
 @-
 MAL functions can be optimized explicitly using the routines below.
@@ -195,6 +204,8 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Scope  scope=NULL;
 	Symbol s= NULL;
 	Client c= getClient();
+	long clk= GDKusec();
+	int i=0;
 
 	if( stk != 0){
 		modnme= (str)getArgValue(stk,p,1);
@@ -209,8 +220,10 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	if( s == NULL)
 		GDKerror("@1optimizer:Could not find %s.%s\n",modnme,fcnnme);
-	optimizerCheck(s->def,"@1optimizer");
+	if(debugOpt) { i= c->itrace; c->itrace='n';}
 	@1optimizer(s->def,0,0);
+	optimizerCheck(s->def,"@1optimizer",1,GDKusec()-clk);
+	if(debugOpt) { c->itrace=i;}
 	/* if(c->listing) printFunction(GDKout,s->def,c->listing);*/
 
 	removeInstruction(mb, p);
