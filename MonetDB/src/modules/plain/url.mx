@@ -85,48 +85,6 @@ possible to redefine hashing.
 	"Construct a URL from protocol, host,and file"
 .END url;
 
-@* Example Script
-@mil
-PROC test_url() : void {
-  setoid(oid(20000000));
-  var u:= url("http://www.cwi.nl/~mk/Acoi/index.html");
-  u.getHost().print();
-  u.getPort().print();
-  u.getDomain().print();
-  u.getFile().print();
-  u.getAnchor().print();
-  u.getBasename().print();
-  u.getProtocol().print();
-  u.getUser().print();
-  u.getDirectory().print();
-
-  var v:= newurl("http","www.cwi.nl","~monet");
-  v.print();
-  v.getRobotURL().print();
-  var w:= url("http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium");
-  w.getQuery().print();
-  w.getQueryArg().print();
-
-  var t:= new(int, url);
-  t.insert(1, url("http://www.cwi.nl"));
-  t.insert(2, url("http://www.cwi.nl/~monet"));
-  t.insert(3, url("http://www.cwi.nl/~mk/Acoi/doc/features.html"));
-  t.insert(4, url("http://www.educ.uva.nl/schoolweb/rocloka.htm"));
-  t.insert(5, url("http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"));
-  t.insert(6, url("http://www.edgeonline.com/"));
-  t.insert(7, url("http://robotics.stanford.edu/icons/ "));
-  
-  t.print();
-  [getHost](t).print();
-  [getPort](t).print();
-  [getDomain](t).print();
-  [getFile](t).print();
-  [getAnchor](t).print();
-  [getBasename](t).print();
-  [getProtocol](t).print();
-  [getUser](t).print();
-} 
-
 @{
 @* URL command implementation 
 The URLs are stored as strings without further optimization.

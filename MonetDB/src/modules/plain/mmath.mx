@@ -144,48 +144,6 @@ proc exp(flt f) : flt   {return flt(exp(dbl(f)));}
 proc log(flt f) : flt   {return flt(log(dbl(f)));}
 proc log10(flt f) : flt {return flt(log10(dbl(f)));}
 
-@* Example Script
-@mil
-
-PROC test_mmath() : void {
-	setoid(oid(20000000));
-# these tests disabled: they're in mmath2 test
-#	asin(sin(M_PI)).print();
-#	acos(cos(M_PI)).print();
-#	atan(tan(M_PI_2)).print();
-#	atan(tan(M_PI_4)).print();
-#	tan(atan2(dbl(0.1),dbl(1.0))).print();
-#	sqrt(pow(dbl(2),dbl(2))).print();
-
-#	exp(dbl(10)).print();
-#	log(dbl(10)).print();
-#	log10(dbl(10)).print();
-
-#	ceil(dbl(1.2)).print();
-#	fabs(dbl(1.2)).print();
-#	floor(dbl(1.2)).print();
-#	fmod(dbl(15.2),dbl(2.5)).print();
-
-	# NOTE: If there would be a system with large enough doubles than
-	#       the expression could actually produce a correct output...
-	#       (unlikely with IEEE(like) floating point types though)
-	pow(2.0LL,5000.0LL).print();
-	isinf(pow(2.0LL,5000.0LL)).print();
-	pow(-2.0LL,5001.0LL).print();
-	isinf(pow(-2.0LL,5001.0LL)).print();
-	
-	finite(1.0LL).print();
-	finite(log(-1.0LL)).print();
-	finite(pow(2.0LL,5000.0LL)).print();
-	finite(pow(-2.0LL,5001.0LL)).print();
-}
-
-PROC test_mmath_nan() : void {
-	log(-1.0LL).print();
-	(log(-1.0LL)=log(-1.0LL)).print();
-	isnan(log(-1.0LL)).print();
-}
-
 @{
 @h
 #ifndef __MMATH_H__

@@ -9,9 +9,19 @@ stdout of test 'mmath_nan` in directory 'src/modules/plain` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 module("mmath");
-test_mmath_nan();
+log(-1.0LL).print();
 !ERROR: Negative argument is not allowed
 !ERROR: math_unary_LOG: operation failed.
+!ERROR: interpret_params: print(param 1): evaluation error.
+(log(-1.0LL)=log(-1.0LL)).print();
+!ERROR: Negative argument is not allowed
+!ERROR: math_unary_LOG: operation failed.
+!ERROR: interpret_params: =(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
+isnan(log(-1.0LL)).print();
+!ERROR: Negative argument is not allowed
+!ERROR: math_unary_LOG: operation failed.
+!ERROR: interpret_params: isnan(param 1): evaluation error.
 !ERROR: interpret_params: print(param 1): evaluation error.
 quit();
 

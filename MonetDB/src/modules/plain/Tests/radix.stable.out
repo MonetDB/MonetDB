@@ -9,7 +9,8 @@ stdout of test 'radix` in directory 'src/modules/plain` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 module("radix");
-test_radix();
+var Bu := uniform(99);
+Bu.mark(nil).print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (oid)	  (void)  #
@@ -113,6 +114,7 @@ test_radix();
 [ 96@0,	  nil	  ]
 [ 97@0,	  nil	  ]
 [ 98@0,	  nil	  ]
+Bu.reverse().mark(nil).sort().reverse().print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (oid)	  (int)	  #
@@ -216,6 +218,8 @@ test_radix();
 [ nil,	  96	  ]
 [ nil,	  97	  ]
 [ nil,	  98	  ]
+var Bn := normal(99);
+Bn.mark(nil).print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (oid)	  (int)	  #
@@ -319,6 +323,7 @@ test_radix();
 [ 96@0,	  nil	  ]
 [ 97@0,	  nil	  ]
 [ 98@0,	  nil	  ]
+Bn.reverse().mark(nil).sort().reverse().print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (oid)	  (int)	  #

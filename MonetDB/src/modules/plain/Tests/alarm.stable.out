@@ -9,19 +9,32 @@ stdout of test 'alarm` in directory 'src/modules/plain` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 module("alarm");
-test_alarm();
+
+var t0 := time();
+sleep(15);
+var t1 := time();
+print((t1 - t0) / 1000);
 [ 15 ]
+alarm(15, "print(\"alarm went off\");" );
+printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
+timers().print();
 #-----------------------------------------------------------------#
 # alarm				tmp_29				  # name
 # str				str				  # type
 #-----------------------------------------------------------------#
-[ "Fri Mar 12 10:02:38 2004\n",	  "print(\"alarm went off\");"	  ]
-[ 15874 ]
-[ 15874615 ]
-[ 1079082143 ]
-[ "Fri Mar 12 10:02:23 2004\n" ]
+[ "Tue Nov 16 13:39:08 2004\n",	  "print(\"alarm went off\");"	  ]
+time().print();
+[ 16032 ]
+usec().print();
+[ 16033111 ]
+epoch().print();
+[ 1100608733 ]
+ctime().print();
+[ "Tue Nov 16 13:38:53 2004\n" ]
+printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
+sleep(16); # wait for alarm
 [ "alarm went off" ]
 quit();
 

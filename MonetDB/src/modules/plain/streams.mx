@@ -411,16 +411,4 @@ int io_fwrite(Stream *S, str buf, int *nbytes ){
 	stream *s = *(stream**)S;
 	return stream_write( s, buf, 1, *nbytes) == *nbytes ? GDK_SUCCEED : GDK_FAIL;
 }
-@mil
-
-PROC test_streams() : void {
-    s := open_wastream( "test.mil" );
-    stream_write( s, "test\n" );
-    stream_close( s );
-
-    s := open_rastream( "test.mil" );
-    st := stream_read( s );
-    stream_close( s );
-    print(st);
-}
 @}

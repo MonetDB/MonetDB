@@ -1088,41 +1088,4 @@ int ascii_io_output( BAT *order, BAT* seps, BAT* bats, Stream *s ){
 	return ((res==~(size_t)0)?GDK_FAIL:GDK_SUCCEED);
 }
 
-@mil
-
-PROC test_ascii_io() : void {
-
-    #ascii_io_debug(1);
-
-    fp := fopen ( "format", "w+" );
-    fputs( "key,\",\",str\n", fp);
-    fputs( "a_io_test,\"\\n\",dbl\n", fp);
-    fclose( fp );
-
-    fp := fopen ( "data", "w+" );
-    fputs( "test, 0.12345\n", fp);
-    fputs( "second line, 9.0\n", fp);
-    fclose( fp );
-
-    bats := load_data(load_format("format"),"data",10);
-    bats.print();
-    a := bats.find("key").reverse().join( bats.find("a_io_test") );
-    a.print();
-    dump_data(load_format("format"), bats, "data", -1);
-
-    fp := fopen ( "data", "r" );
-    s := fgets( fp ); 
-    s.print();
-    fclose( fp );
-
-    b:=new(int,str);
-    b.insert(1,"import expor");
-    b.insert(5,"are replaced by");
-    b.insert(3,"scripts in ascii_io");
-    b.print();
-    b.export("/tmp/test");
-    c:=new(int,str);
-    c.import("/tmp/test");
-    c.print();
-}
 @}

@@ -13,9 +13,14 @@ stdout of test 'blob` in directory 'src/modules/plain` itself:
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 module("blob");
-test_blob();
+setoid(oid(20000000));
+var bl := blob("(5:11 FC E2 A0 0A)");
+bl.print();
 [ (5: 11 FC E2 A0 0A) ]
+var bl2 := toblob("Hello World");
+bl2.print();
 [ (12: 48 65 6C 6C 6F 20 57 6F 72 6C 64 00) ]
+tostr(bl2).print();
 [ "Hello World" ]
 
 quit();

@@ -447,22 +447,4 @@ int pcl_eventname(str *result, int *event){
 }
 #endif
 
-@mil
-
-PROC test_pcl() : void {
-  names := bat(str,void);
-  names.insert("PCL_L1CACHE_MISS",  nil);
-  names.insert("PCL_L1DCACHE_MISS", nil);
-  names.insert("PCL_L1ICACHE_MISS", nil);
-
-  available := pcl_query(pcl_events,1).select(0);
-
-  L1MISS_EVENTS := pcl_events.semijoin(available).reverse().semijoin(names).reverse();
-  L1MISS_EVENTS.print();
-
-  events := L1MISS_EVENTS;
-  pcl_start(events,1);
-  counts := pcl_stop(events);
-  print(events,counts);
-}
 @}

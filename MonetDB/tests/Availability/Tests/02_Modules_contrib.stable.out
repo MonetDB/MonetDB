@@ -209,8 +209,8 @@ Module: "color"
 
 Module: "ddbench"
 
-[ 57 ]
-[ 57 ]
+[ 50 ]
+[ 50 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature										| help																																													  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -256,30 +256,23 @@ Module: "ddbench"
 [ "subselect",		  "COMMAND:   ",  "subselect(BAT[void,bit32], BAT[oid,any::1], any::1, any::1) : BAT[void,bit32]",	  "do a bitselect on the subset indicated by the first BAT param"																																					  ]
 [ "table",		  "PROC:      ",  "table(str, BAT[any::1,any], ..BAT[any::1,any]..) : void",				  "not available"																																											  ]
 [ "test_ddbench",	  "PROC:      ",  "test_ddbench() : void",								  "not available"																																											  ]
-[ "test_streams",	  "PROC:      ",  "test_streams() : void",								  "not available"																																											  ]
-[ "test_xtables",	  "PROC:      ",  "test_xtables() : void",								  "not available"																																											  ]
 [ "tobat",		  "COMMAND:   ",  "tobat(BAT[void,bit32]) : BAT[oid,void]",						  "convert a bat[void,bit32] bitmap selection into a BAT of oids"																																					  ]
 [ "val_bitselect",	  "COMMAND:   ",  "val_bitselect(BAT[oid,any::1], any::1) : BAT[void,bit32]",				  "do a range-scan equiselect, but output the result as a bitmask, partitioned\n  in 32-bits integers. "																																  ]
 [ "val_oidselect",	  "COMMAND:   ",  "val_oidselect(BAT[oid,any::1], any::1) : BAT[void,oid]",				  "uselect, optimized for enumeration types"																																								  ]
 [ "vals_bitselect",	  "COMMAND:   ",  "vals_bitselect(BAT[oid,any::1], any::1, ..any::1..) : BAT[int,BAT]",			  "computes multiple bitmasks for each equi-select 'v' on 'sel'"																																					  ]
 [ "vals_oidselect",	  "COMMAND:   ",  "vals_oidselect(BAT[oid,any::1], any::1, ..any::1..) : BAT[int,BAT]",			  "uselect, optimized for enum types, on multiple equi-select predicates"																																				  ]
-[ "xtable_histo_direct",  "PROC:      ",  "xtable_histo_direct(..any..) : void",						  "not available"																																											  ]
-[ "xtable_histo_remap",	  "PROC:      ",  "xtable_histo_remap(..any..) : void",							  "not available"																																											  ]
-[ "xtable_print",	  "PROC:      ",  "xtable_print(..any..) : void",							  "not available"																																											  ]
-[ "xtable_realloc",	  "PROC:      ",  "xtable_realloc(BAT[any::1,any::2], int) : BAT[any::1,any::2]",			  "not available"																																											  ]
-[ "xtable_test",	  "PROC:      ",  "xtable_test(str, BAT[any,any], BAT[any,any], BAT[any,any]) : void",			  "not available"																																											  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[any::1,any]) : BAT[any::1,int]",						  "not available"																																											  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[oid,bit], BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",			  "not available"																																											  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[void,bit], BAT[void,oid], BAT[oid,int]) : BAT[oid,int]",			  "not available"																																											  ]
 
 Module: "image"
 
-[ 1 ]
-[ 1 ]
-#---------------------------------------------------------------------------------#
+[ 0 ]
+[ 0 ]
+#-------------------------------------------------#
 # function		type		signature		help			  # name
-#---------------------------------------------------------------------------------#
-[ "test_url",	  "PROC:      ",  "test_url() : void",	  "not available"	  ]
+# str		str	str		str	  # type
+#-------------------------------------------------#
 
 Module: "iterator"
 
@@ -498,8 +491,8 @@ Module: "uchr"
 
 Module: "vector"
 
-[ 141 ]
-[ 141 ]
+[ 139 ]
+[ 139 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			| type		| signature							| help												  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -621,8 +614,6 @@ Module: "vector"
 [ "sum",			  "COMMAND:   ",  "sum(ints) : int",						  "Calculates the sum of the vector elements."							  ]
 [ "tan",			  "PROC:      ",  "tan(flt) : flt",						  "not available"										  ]
 [ "tanh",			  "PROC:      ",  "tanh(flt) : flt",						  "not available"										  ]
-[ "test_mmath",			  "PROC:      ",  "test_mmath() : void",					  "not available"										  ]
-[ "test_mmath_nan",		  "PROC:      ",  "test_mmath_nan() : void",					  "not available"										  ]
 [ "test_vector",		  "PROC:      ",  "test_vector() : void",					  "not available"										  ]
 [ "todbls",			  "COMMAND:   ",  "todbls(flts) : dbls",					  "Converts vectors of flts to vector of dbls"							  ]
 [ "todbls",			  "COMMAND:   ",  "todbls(ints) : dbls",					  "Converts vectors of ints to vector of dbls"							  ]

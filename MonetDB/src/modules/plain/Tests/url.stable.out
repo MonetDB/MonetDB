@@ -13,29 +13,57 @@ stdout of test 'url` in directory 'src/modules/plain` itself:
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 module("url");
-test_url();
+setoid(oid(20000000));
+var u := url("http://www.cwi.nl/~mk/Acoi/index.html");
+u.getHost().print();
 [ "www.cwi.nl" ]
+u.getPort().print();
 [ nil ]
+u.getDomain().print();
 [ "nl" ]
+u.getFile().print();
 [ "index.html" ]
+u.getAnchor().print();
 [ nil ]
+u.getBasename().print();
 [ "index" ]
+u.getProtocol().print();
 [ "http" ]
+u.getUser().print();
 [ "mk" ]
-#-------------------------#
-# BAT:	  dir_name	  #
-# (int)	  (str)		  #
-#-------------------------#
+u.getDirectory().print();
+#-----------------#
+# dir	name	  # name
+# int	str	  # type
+#-----------------#
 [ 0,	  "~mk"		  ]
 [ 1,	  "Acoi"	  ]
+
+var v := newurl("http","www.cwi.nl","~monet");
+v.print();
 [ "http://www.cwi.nl/~monet" ]
+v.getRobotURL().print();
 [ "http://www.cwi.nl/robots.txt" ]
+var w := url("http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium");
+w.getQuery().print();
 [ "name=Planetarium" ]
+w.getQueryArg().print();
 #-------------------------#
 # BAT:	  dir_name	  #
 # (str)	  (str)		  #
 #-------------------------#
 [ "name", "Planetarium"	  ]
+
+var t := new(int, url);
+t.insert(1, url("http://www.cwi.nl"));
+t.insert(2, url("http://www.cwi.nl/~monet"));
+t.insert(3, url("http://www.cwi.nl/~mk/Acoi/doc/features.html"));
+t.insert(4, url("http://www.educ.uva.nl/schoolweb/rocloka.htm"));
+t.insert(5, url("http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"));
+t.insert(6, url("http://www.edgeonline.com/"));
+t.insert(7, url("http://robotics.stanford.edu/icons/"));
+
+t.print();
 #-------------------------------------------------------------------------#
 # BAT:	  tmp_37							  #
 # (int)	  (url)								  #
@@ -46,7 +74,8 @@ test_url();
 [ 4,	  "http://www.educ.uva.nl/schoolweb/rocloka.htm"		  ]
 [ 5,	  "http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"	  ]
 [ 6,	  "http://www.edgeonline.com/"					  ]
-[ 7,	  "http://robotics.stanford.edu/icons/ "			  ]
+[ 7,	  "http://robotics.stanford.edu/icons/"				  ]
+[getHost](t).print();
 #-----------------------------------------#
 # BAT:	  tmp_36			  #
 # (int)	  (str)				  #
@@ -58,6 +87,7 @@ test_url();
 [ 5,	  "www.nedstat.nl"		  ]
 [ 6,	  "www.edgeonline.com"		  ]
 [ 7,	  "robotics.stanford.edu"	  ]
+[getPort](t).print();
 #-----------------#
 # BAT:	  tmp_36  #
 # (int)	  (str)	  #
@@ -69,6 +99,7 @@ test_url();
 [ 5,	  nil	  ]
 [ 6,	  nil	  ]
 [ 7,	  nil	  ]
+[getDomain](t).print();
 #-----------------#
 # BAT:	  tmp_36  #
 # (int)	  (str)	  #
@@ -80,6 +111,7 @@ test_url();
 [ 5,	  "nl"	  ]
 [ 6,	  "com"	  ]
 [ 7,	  "edu"	  ]
+[getFile](t).print();
 #-----------------------------------------#
 # BAT:	  tmp_36			  #
 # (int)	  (str)				  #
@@ -90,7 +122,8 @@ test_url();
 [ 4,	  "rocloka.htm"			  ]
 [ 5,	  "viewstat?name=Planetarium"	  ]
 [ 6,	  ""				  ]
-[ 7,	  " "				  ]
+[ 7,	  ""				  ]
+[getAnchor](t).print();
 #-----------------#
 # BAT:	  tmp_36  #
 # (int)	  (str)	  #
@@ -102,6 +135,7 @@ test_url();
 [ 5,	  nil	  ]
 [ 6,	  nil	  ]
 [ 7,	  nil	  ]
+[getBasename](t).print();
 #-----------------------------------------#
 # BAT:	  tmp_36			  #
 # (int)	  (str)				  #
@@ -112,7 +146,8 @@ test_url();
 [ 4,	  "rocloka"			  ]
 [ 5,	  "viewstat?name=Planetarium"	  ]
 [ 6,	  ""				  ]
-[ 7,	  " "				  ]
+[ 7,	  ""				  ]
+[getProtocol](t).print();
 #-----------------#
 # BAT:	  tmp_36  #
 # (int)	  (str)	  #
@@ -124,6 +159,7 @@ test_url();
 [ 5,	  "http"  ]
 [ 6,	  "http"  ]
 [ 7,	  "http"  ]
+[getUser](t).print();
 #-------------------------#
 # BAT:	  tmp_36	  #
 # (int)	  (str)		  #

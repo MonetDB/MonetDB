@@ -844,16 +844,6 @@ proc cache_join(BAT[void,oid] left, BAT[void,any::1] right) : BAT[void,any::1] {
 }
 
 
-PROC test_radix() : void {
-	var Bu := uniform(99);
-	Bu.mark(nil).print();
-	Bu.reverse().mark(nil).sort().reverse().print();
-	var Bn := normal(99);
-	Bn.mark(nil).print();
-	Bn.reverse().mark(nil).sort().reverse().print();
-}
-
- 
 @f radix_examples
 @mil
 
