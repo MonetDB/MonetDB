@@ -777,7 +777,8 @@ e (SCJ s) [a0,a1] =
                axis Descendant         = descendant
                axis Descendant_or_self = descendant_or_self
                axis Child              = child
-               
+               axis Self               = \t n -> [n]
+
        return (Rel nodes)
     
 e (TBL ty ts) _ = 
@@ -834,6 +835,25 @@ e DMDATA [a0,a1] =
 
        return (Rel datas)
 
+e DMROOT [a0,a1] =
+    do let fs0 = frags a0       -- live XML fragments
+	   r1  = rel a1         -- XML nodes
+
+	   iter = concat (map (keys ["iter"] (cols (schm r1))) (extn r1))
+	   node = concat (map (keys ["item"] (cols (schm r1))) (extn r1))
+ 
+           -- (iter, frag)
+           -- pair iters with their respective iter and XML fragment
+           if_ = zip iter
+                     (map (\n -> head $ filter (contains n) fs0) (map unN node))
+
+           -- relational output
+           -- schm(roots) = iter|item
+           roots :: Rel
+           roots = R [("iter",[NAT]),("item",[STR])]
+                     (map (\(i,f) -> [i, N (root f)]) if_)
+
+       return (Rel roots)
 
 e DMEMPTY _ =
     return (Frag [])    

@@ -85,10 +85,11 @@ data AlgOp = ROWNUM Numb Part
            | TBL    Type [Tuple]
            | DMROOTS
            | DMFRAGS
-           | DMDOC
-           | DMDATA
            | DMEMPTY
            | DMU
+           | DMDOC                  -- fn:doc()
+           | DMDATA                 -- fn:data()
+           | DMROOT                 -- fn:root()
 	     deriving (Ord,Show)
 
 -- equality for algebraic operators used during CSE
@@ -131,10 +132,11 @@ instance Eq AlgOp where
     TBL a ts       == TBL a' ts'        = (a,ts) == (a',ts')
     DMROOTS        == DMROOTS           = True
     DMFRAGS        == DMFRAGS           = True
-    DMDOC          == DMDOC             = True
-    DMDATA         == DMDATA            = True
     DMEMPTY        == DMEMPTY           = True
     DMU            == DMU               = True
+    DMDOC          == DMDOC             = True
+    DMDATA         == DMDATA            = True
+    DMROOT         == DMROOT            = True
     _              == _                 = False
 
 type Col   = String                 -- column name

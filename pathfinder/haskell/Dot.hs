@@ -201,14 +201,16 @@ dot q = (foldr1 (.)                    $
 	    "label=\"\\\\tex[cc][cc]{DMROOTS}\",color=lightblue,fontsize=3"
         label DMFRAGS =
 	    "label=\"\\\\tex[cc][cc]{DMFRAGS}\",color=lightblue,fontsize=3"
-        label DMDOC =
-	    "label=\"\\\\tex[cc][cc]{DMDOC}\",color=lightblue,fontsize=3"
-        label DMDATA =
-	    "label=\"\\\\tex[cc][cc]{DMDATA}\",color=lightblue,fontsize=3"
         label DMEMPTY =
 	    "label=\"\\\\tex[cc][cc]{DMEMPTY}\",color=lightblue,fontsize=3"
         label DMU =
 	    "label=\"\\\\tex[cc][cc]{$\\\\cup$}\",color=lightblue,fontsize=3"
+        label DMDOC =
+	    "label=\"\\\\tex[cc][cc]{DMDOC}\",color=lightblue,fontsize=3"
+        label DMDATA =
+	    "label=\"\\\\tex[cc][cc]{DMDATA}\",color=lightblue,fontsize=3"
+        label DMROOT =
+	    "label=\"\\\\tex[cc][cc]{DMROOT}\",color=lightblue,fontsize=3"
 
         esc :: String -> String
         esc "" = ""

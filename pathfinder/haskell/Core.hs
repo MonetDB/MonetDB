@@ -174,6 +174,7 @@ data XPaxis = Descendant                 -- XPath axes
             | Descendant_or_self
             | Child
             | Parent
+            | Self
               deriving (Ord, Eq)
 type XPstep = (XPaxis, XMLkind, [QName]) -- XPath axis step
 
@@ -182,3 +183,4 @@ instance Show XPaxis where
     show Descendant_or_self = "descendant-or-self"
     show Child              = "child"
     show Parent             = "parent"
+    show Self               = "self"

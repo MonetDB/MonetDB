@@ -319,6 +319,16 @@ t env loop (XFNDATA e0) =
 
        return (a3, [])
 
+t env loop (XFNROOT e0) =
+    do (q0, lv0) <- t env loop e0
+
+       a0 <- live_nodes lv0
+       a1 <- connect DMROOT [a0, q0]
+       a2 <- leaf (TBL [("pos",[NAT])] [[O 1]])
+       a3 <- connect X [a1, a2]
+
+       return (a3, lv0)
+       
 t env loop XFNTRUE =
     do a0 <- leaf (TBL [("pos",[NAT]),("item",[BOOL])] [[O 1, B True]])
        a1 <- connect X [loop, a0]

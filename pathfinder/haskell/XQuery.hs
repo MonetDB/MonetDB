@@ -122,22 +122,6 @@ relps xq = reldot rfdag
     ((rfdag, _), _)  = mapAccumL eval (rdag, pre) $ (zip lvs (repeat (dag adag)))
 ----------------------------------------------------------------------
 
-xq = XFOR "u" (XSEQ (XINT 30) (XINT 20))
-          (XFOR "v" (XSEQ (XINT 1) (XSEQ (XINT 2) (XINT 3)))
-                (XIF (XEQ (XVAR "u") (XTIMES (XVAR "v") (XINT 10)))
-                     (XSTR "match")
-                     XEMPTY
-                )
-          )
-
-xq' = XPATH (XELEM (XSTR "a") 
-                   (XSEQ (XELEM (XSTR "b") (XTEXT (XSTR "foo")))
-                         (XELEM (XSTR "b") (XTEXT (XSTR "bar")))
-                   )
-            )
-            (Child, XMLElem, ["b"])
-           
-
 main = do print xmark_Q5
           putStr (xquery xmark_Q5)
           --putStr (ps xmark_Q5)
@@ -146,7 +130,6 @@ main = do print xmark_Q5
 
 -- TODO:
 --  . document CSE.cse
---  . add fn:root
 --  . add missing XMark queries
 
 -- Local Variables:
