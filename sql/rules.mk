@@ -11,10 +11,17 @@ MXFLAGS= -notouch
 %.y: %.mx
 	$(MX) $(MXFLAGS) -x y $< 
 
-%.tab.c %.tab.h: %.y
-	$(YACC) $(YFLAGS) $<
+%.tab.c: %.y
+	$(LOCKFILE) waiting
+	$(YACC) $(YFLAGS) $^
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
+	rm -f waiting
+
+%.tab.h: %.y
+	$(LOCKFILE) waiting
+	$(YACC) $(YFLAGS) $^
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
+	rm -f waiting
 
 %.l: %.mx
 	$(MX) $(MXFLAGS) -x l $< 

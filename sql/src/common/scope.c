@@ -48,7 +48,7 @@ scope *scope_close( scope *s ){
 var *scope_add_statement( scope *scp, statement *s, char *tname, char *cname ){
 	var *v = NEW(var);
 	v->type = type_statement;
-	v->data.stval = s; s->refcnt++;
+	v->data.stval = s; st_attache(s, NULL);
 	v->tname = (tname)?_strdup(tname):NULL;
 	v->cname = _strdup(cname);
 	v->nr = scp->nr++;

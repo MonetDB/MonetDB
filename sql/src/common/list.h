@@ -33,6 +33,7 @@ extern list *list_append_table(list *l, struct table *data);
 extern list *list_prepend_statement(list *l, struct statement *data);
 
 extern node *list_remove(list *l, node *n );
+extern void list_remove_statement(list *l, struct statement *s );
 
 extern list *list_merge(list *l, list *data);
 extern int list_traverse(list *l, traverse_func f, char *clientdata );

@@ -1,7 +1,5 @@
 ## Process this file with automake to produce Makefile.in
 
-BUILT_SOURCES = cSQLserver.c
-
 INCLUDES = \
 	-I$(MONET_PREFIX)/include \
 	-I$(MONET_PREFIX)/include/gdk \

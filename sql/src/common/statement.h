@@ -46,8 +46,8 @@ typedef enum statement_type {
 	st_aggr,
 	st_exists,
 	st_name,
-	st_diamond, 
-	st_pearl, 
+	st_set, 
+	st_sets, 
 	/* used internally only */
 	st_list, 
 	st_insert_list, 
@@ -80,10 +80,12 @@ typedef struct statement {
 	var   *h;
 	var   *t;
 	int refcnt;
+	list  *uses;
 	value v;
 } statement;
 
-#define st_incref(st) (st)->refcnt++
+extern void st_attache(statement *st, statement *user );
+extern void st_detach(statement *st, statement *user );
 
 extern statement *statement_create_schema( schema *s );
 extern statement *statement_drop_schema( schema *s );
@@ -113,8 +115,8 @@ extern statement *statement_intersect( statement *op1, statement *op2 );
 extern statement *statement_union( statement *op1, statement *op2 );
 extern statement *statement_list( list *l );
 extern statement *statement_output( statement *l );
-extern statement *statement_diamond( statement *s1 );
-extern statement *statement_pearl( list *s1 );
+extern statement *statement_set( statement *s1 );
+extern statement *statement_sets( list *s1 );
 
 extern statement *statement_insert_list( list *l );
 extern statement *statement_insert( column *c, statement *id, statement *v );

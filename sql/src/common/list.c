@@ -35,7 +35,7 @@ static node *node_create_atom( atom *data ){
 static node *node_create_statement( statement *data ){
 	node *n = node_create();
 	if (data ){
-		n->data.stval = data; data->refcnt++;
+		n->data.stval = data; st_attache(data, NULL);
 	}
 	return n;
 }
@@ -193,6 +193,16 @@ list *list_merge(list *l, list *data){
 	return l;
 }
 
+
+void list_remove_statement( list *l, statement *s ){
+	node *p = l->h;
+	for(;p; p = p->next){
+		if (p->data.stval == s){
+			list_remove(l, p);
+			return;
+		}
+	}	
+}
 node *list_remove( list *l, node *n){
 	node *p = l->h;
 	if (p != n) while(p && p->next != n) p = p->next;

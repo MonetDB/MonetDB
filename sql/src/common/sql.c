@@ -130,8 +130,8 @@ static statement *search_condition( context *sql, scope *scp, symbol *sc,
 static statement *scalar_exp( context *sql, scope *scp, symbol *se, 
 		statement *group, statement *subset	);
 
-static statement *pearl2pivot( context *sql, list *ll );
-static statement *diamond2pivot( context *sql, list *l );
+static statement *sets2pivot( context *sql, list *ll );
+static statement *set2pivot( context *sql, list *l );
 static var *query_exp_optname( context *sql, scope *scp, symbol *q );
 
 statement *subquery( context *sql, scope *scp, symbol *sq ) {
@@ -222,8 +222,7 @@ table *create_table_intern( context *sql, schema *schema,
 		char *ctype = tail_type(st)->sqlname;
 		column *col = cat_create_column( cat, 0,
 				table, cname, ctype, "NULL", 1, seqnr);
-		col->s = st;
-		st_incref(st);
+		col->s = st; st_attache(st, NULL);
 		m = m->next;
 		seqnr++;
 	}
@@ -516,7 +515,7 @@ statement *sql_search_case( context *sql, scope *scp, dlist *when_search_list,
 		statement *result = m->data.stval;
 		
 		/* need more semantic tests here */
-		if (cond->type == st_pearl){
+		if (cond->type == st_sets){
 			node *k = cond->op1.lval->h; 
 			statement *cur = NULL;
 
@@ -833,7 +832,7 @@ list *query_and( catalog *cat, list *ands ){
 }
 
 static 
-statement *diamond2pivot( context *sql, list *l ){
+statement *set2pivot( context *sql, list *l ){
 	list *pivots = list_create();
 	node *n;
 	l = query_and( sql->cat, l );
@@ -937,17 +936,17 @@ statement *diamond2pivot( context *sql, list *l ){
  * current version is broken, unique also remove normal doubles.
  */
 static 
-statement *pearl2pivot( context *sql, list *ll ){
+statement *sets2pivot( context *sql, list *ll ){
 	node *n = ll->h;
 	if(n){
-		statement *pivots = diamond2pivot(sql, n->data.lval);
+		statement *pivots = set2pivot(sql, n->data.lval);
 		list *cur = pivots->op1.lval;
 		n = n->next;
 		/*
 		statement *g = NULL;
 		*/
 		while(n){
-			statement *npivots = diamond2pivot(sql, n->data.lval);
+			statement *npivots = set2pivot(sql, n->data.lval);
 			list *l = npivots->op1.lval;
 			list *inserts = list_create();
 
@@ -997,15 +996,15 @@ statement *pearl2pivot( context *sql, list *ll ){
 
 static 
 statement *sql_search_condition2pivot( context *sql, statement *s ){
-	if (s->type != st_diamond && s->type != st_pearl){
-		s = statement_diamond(s);
+	if (s->type != st_set && s->type != st_sets){
+		s = statement_set(s);
 	}
-	if (s->type == st_pearl){
-		statement *ns = pearl2pivot(sql, s->op1.lval);
+	if (s->type == st_sets){
+		statement *ns = sets2pivot(sql, s->op1.lval);
 		statement_destroy(s);
 		s = ns;
 	} else {
-	  	statement *ns = diamond2pivot(sql, s->op1.lval);
+	  	statement *ns = set2pivot(sql, s->op1.lval);
 		statement_destroy(s);
 		s = ns;
 	}
@@ -1475,21 +1474,21 @@ statement *search_condition( context *sql, scope *scp, symbol *sc,
 		statement *ls = search_condition( sql, scp, lo, group, subset );
 		statement *rs = search_condition( sql, scp, ro, group, subset );
 		if (!ls || !rs) return NULL;
-		if (ls->type != st_diamond && ls->type != st_pearl){
-			ls = statement_diamond( ls ); 
+		if (ls->type != st_set && ls->type != st_sets){
+			ls = statement_set( ls ); 
 		}
-		if (rs->type != st_diamond && rs->type != st_pearl){
-			rs = statement_diamond( rs ); 
+		if (rs->type != st_set && rs->type != st_sets){
+			rs = statement_set( rs ); 
 		}
-		if (ls->type == st_diamond && rs->type == st_diamond){
-			ls = statement_pearl( ls->op1.lval );
+		if (ls->type == st_set && rs->type == st_set){
+			ls = statement_sets( ls->op1.lval );
 			list_append_list( ls->op1.lval, rs->op1.lval );
-		} else if (ls->type == st_pearl && rs->type == st_diamond){
+		} else if (ls->type == st_sets && rs->type == st_set){
 			list_append_list( ls->op1.lval, rs->op1.lval );
-		} else if (ls->type == st_diamond && rs->type == st_pearl){
+		} else if (ls->type == st_set && rs->type == st_sets){
 			list_append_list( rs->op1.lval, ls->op1.lval );
 			ls = rs;
-		} else if (ls->type == st_pearl && rs->type == st_pearl){
+		} else if (ls->type == st_sets && rs->type == st_sets){
 			(void)list_map(  ls->op1.lval, 
 				(map_func)&list_map_append_list, rs->op1.sval);
 		}
@@ -1501,29 +1500,29 @@ statement *search_condition( context *sql, scope *scp, symbol *sc,
 		statement *ls = search_condition( sql, scp, lo, group, subset );
 		statement *rs = search_condition( sql, scp, ro, group, subset );
 		if (!ls || !rs) return NULL;
-		if (ls->type != st_diamond && ls->type != st_pearl){
-			ls = statement_diamond( ls ); 
+		if (ls->type != st_set && ls->type != st_sets){
+			ls = statement_set( ls ); 
 		}
-		if (rs->type != st_diamond && rs->type != st_pearl){
-			rs = statement_diamond( rs ); 
+		if (rs->type != st_set && rs->type != st_sets){
+			rs = statement_set( rs ); 
 		}
-		if (ls->type == st_diamond && rs->type == st_diamond){
+		if (ls->type == st_set && rs->type == st_set){
 			list *nl = NULL;
 			list_merge( ls->op1.lval, rs->op1.lval );	
 			statement_destroy(rs);
 			nl = query_and( sql->cat, ls->op1.lval);
 			list_destroy( ls->op1.lval );
 			ls->op1.lval = nl;
-		} else if (ls->type == st_pearl && rs->type == st_diamond){
+		} else if (ls->type == st_sets && rs->type == st_set){
 			list_map(  ls->op1.lval, 
 				(map_func)&list_map_merge, rs->op1.sval);
 			statement_destroy(rs);
-		} else if (ls->type == st_diamond && rs->type == st_pearl){
+		} else if (ls->type == st_set && rs->type == st_sets){
 			list_map(  rs->op1.lval, 
 				(map_func)&list_map_merge, ls->op1.sval);
 			statement_destroy(ls);
 			ls = rs;
-		} else if (ls->type == st_pearl && rs->type == st_pearl){
+		} else if (ls->type == st_sets && rs->type == st_sets){
 			list_map(  ls->op1.lval, 
 				(map_func)&list_map_merge, rs->op1.sval);
 			statement_destroy(rs);
@@ -1565,7 +1564,7 @@ statement *search_condition( context *sql, scope *scp, symbol *sc,
 				statement *sd, *j = sql_compare( sql, ls, 
 						o->data.stval, compare_op );
 				if (!j) return NULL;
-			        sd = statement_diamond(
+			        sd = statement_set(
 				       statement_join( j, o->next->data.stval, 
 				      	 cmp_equal ) ); 
 				o = o->next;
@@ -1689,7 +1688,7 @@ statement *search_condition( context *sql, scope *scp, symbol *sc,
 				  statement *j = statement_join(ls, 
 					statement_reverse(o->data.stval),
 					cmp_equal);
-			          statement *sd = statement_diamond(
+			          statement *sd = statement_set(
 				       statement_join( j, o->next->data.stval, 
 				      	 cmp_equal ) ); 
 				  o = o->next;
@@ -1764,7 +1763,7 @@ statement *search_condition( context *sql, scope *scp, symbol *sc,
 			if (!o)
 			    return j;
 
-			sd = statement_diamond( 
+			sd = statement_set( 
 				 statement_join( j, o->data.stval, cmp_equal )); 
 			o = o->next;
 			for( ; o; o = o->next ){
@@ -1790,7 +1789,7 @@ statement *search_condition( context *sql, scope *scp, symbol *sc,
 			jr = statement_const(
 				statement_diff( head_column(o->data.stval),
 				statement_reverse( o->data.stval )), a);
-			sd = statement_diamond( 
+			sd = statement_set( 
 				 statement_join( j, 
 					statement_reverse(jr), cmp_equal )); 
 			o = o->next;
@@ -2242,8 +2241,7 @@ statement *create_view( context *sql, schema *schema, dlist *qname,
 				char *ctype = tail_type(st)->sqlname;
 				column *col = cat_create_column( cat, 0,  
 					table, cname, ctype, "NULL", 1, seqnr);
-				col->s = st;
-				st_incref(st);
+				col->s = st; st_attache(st, NULL);
 				n = n->next;
 				m = m->next;
 				seqnr++;

@@ -3,6 +3,17 @@
 #include "mem.h"
 #include "statement.h"
 
+void st_attache( statement *st, statement *user ){
+	if (user) list_append_statement(st->uses, user);
+	st->refcnt++;
+}
+
+
+void st_detach( statement *st, statement *user ){
+	list_remove_statement(st->uses, user);
+	statement_destroy(st);
+}
+
 static
 statement *statement_create(){
 	statement *s = NEW(statement);
@@ -15,7 +26,8 @@ statement *statement_create(){
 	s->nr = 0;
 	s->h = NULL;
 	s->t = NULL;
-	s->refcnt = 0;
+	s->refcnt = 1;
+	s->uses = list_create();
 	s->v.data = NULL;
 	s->v.destroy = NULL;
 	return s;
@@ -64,8 +76,8 @@ const char *statement2string( statement *s ){
 		cr(st_aggr,"aggr");
 		cr(st_exists,"exists");
 		cr(st_name,"name");
-		cr(st_diamond,"diamond");
-		cr(st_pearl,"pearl");
+		cr(st_set,"set");
+		cr(st_sets,"sets");
 		cr(st_list,"list");
 		cr(st_insert_list,"insert_list");
 		cr(st_output,"output");
@@ -74,7 +86,8 @@ const char *statement2string( statement *s ){
 }
 
 void statement_destroy( statement *s ){
-	if (--s->refcnt <= 0){
+	assert (s->refcnt > 0);
+	if (--s->refcnt == 0){
 		switch(s->type){
 			/* statement_destroy  op1 */
 		case st_not_null: 
@@ -85,10 +98,10 @@ void statement_destroy( statement *s ){
 		case st_unop: 
 		case st_name: 
 		case st_output: 
-			statement_destroy( s->op1.stval );
+			st_detach( s->op1.stval, s );
 			break;
 		case st_exists:
-			statement_destroy( s->op1.stval );
+			st_detach( s->op1.stval, s );
 			list_destroy( s->op2.lval );
 			break;
 			/* statement_destroy  op1 and op2 */
@@ -106,43 +119,43 @@ void statement_destroy( statement *s ){
 		case st_reorder: 
 		case st_binop: 
 		case st_insert_column: 
-			statement_destroy( s->op1.stval );
-			statement_destroy( s->op2.stval );
+			st_detach( s->op1.stval, s );
+			st_detach( s->op2.stval, s );
 			break;
 		case st_insert: 
-			statement_destroy( s->op2.stval );
+			st_detach( s->op2.stval, s );
 			if (s->op3.stval)
-				statement_destroy( s->op3.stval );
+				st_detach( s->op3.stval, s );
 			break;
 		case st_delete: 
 			if (s->op2.stval)
-				statement_destroy( s->op2.stval );
+				st_detach( s->op2.stval, s );
 			break;
 		case st_mark: 
 		case st_unique: 
-			statement_destroy( s->op1.stval );
+			st_detach( s->op1.stval, s );
 			if (s->op2.stval)
-				statement_destroy( s->op2.stval );
+				st_detach( s->op2.stval, s );
 			break;
 		case st_select: 
 		case st_select2: 
-			statement_destroy( s->op1.stval );
-			statement_destroy( s->op2.stval );
+			st_detach( s->op1.stval, s );
+			st_detach( s->op2.stval, s );
 			if (s->op3.stval)
-				statement_destroy( s->op3.stval );
+				st_detach( s->op3.stval, s );
 			break;
 		case st_aggr: 
-			statement_destroy( s->op1.stval );
+			st_detach( s->op1.stval, s );
 			if (s->op3.stval)
-				statement_destroy( s->op3.stval );
+				st_detach( s->op3.stval, s );
 			break;
-		case st_diamond: 
+		case st_set: 
 		case st_list: 
 		case st_insert_list: 
 		case st_triop: 
 			list_destroy( s->op1.lval );
 			break;
-		case st_pearl: {
+		case st_sets: {
 			node *n = s->op1.lval->h;
 			while(n){
 				list_destroy( n->data.lval );
@@ -164,6 +177,7 @@ void statement_destroy( statement *s ){
 		case st_none:
 			break;
 		}
+		list_destroy(s->uses);
 		_DELETE(s);
 	}
 }
@@ -207,15 +221,15 @@ statement *statement_create_column( column *c ){
 statement *statement_not_null( statement *col ){
 	statement *s = statement_create();
 	s->type = st_not_null;
-	s->op1.stval = col; col->refcnt++;
+	s->op1.stval = col; st_attache(col,s);
 	return s;
 }
 
 statement *statement_default( statement *col, statement *def ){
 	statement *s = statement_create();
 	s->type = st_default;
-	s->op1.stval = col; col->refcnt++;
-	s->op2.stval = def; def->refcnt++;
+	s->op1.stval = col; st_attache(col,s);
+	s->op2.stval = def; st_attache(def,s);
 	return s;
 }
 
@@ -231,7 +245,7 @@ statement *statement_column( column *op1, var *basetable ){
 statement *statement_reverse( statement *s ){
 	statement *ns = statement_create();
 	ns->type = st_reverse;
-	ns->op1.stval = s; s->refcnt++;
+	ns->op1.stval = s; st_attache(s,ns);
 	ns->nrcols = s->nrcols;
 	ns->h = s->t;
 	ns->t = s->h;
@@ -241,7 +255,7 @@ statement *statement_reverse( statement *s ){
 statement *statement_count( statement *s ){
 	statement *ns = statement_create();
 	ns->type = st_count;
-	ns->op1.stval = s; s->refcnt++;
+	ns->op1.stval = s; st_attache(s,ns);
 	ns->nrcols = 0;
 	ns->t = s->t;
 	return ns;
@@ -250,8 +264,8 @@ statement *statement_count( statement *s ){
 statement *statement_const( statement *s, statement *val ){
 	statement *ns = statement_create();
 	ns->type = st_const;
-	ns->op1.stval = s; s->refcnt++;
-	ns->op2.stval = val; val->refcnt++;
+	ns->op1.stval = s; st_attache(s,ns);
+	ns->op2.stval = val; st_attache(val,ns);
 	ns->nrcols = s->nrcols;
 	ns->h = s->h;
 	return ns;
@@ -260,7 +274,7 @@ statement *statement_const( statement *s, statement *val ){
 statement *statement_mark( statement *s, int id ){
 	statement *ns = statement_create();
 	ns->type = st_mark;
-	ns->op1.stval = s; s->refcnt++;
+	ns->op1.stval = s; st_attache(s,ns);
 	ns->flag = id;
 	ns->nrcols = s->nrcols;
 	ns->t = s->t;
@@ -270,8 +284,8 @@ statement *statement_mark( statement *s, int id ){
 statement *statement_remark( statement *s, statement *t, int id ){
 	statement *ns = statement_create();
 	ns->type = st_mark;
-	ns->op1.stval = s; s->refcnt++;
-	ns->op2.stval = t; t->refcnt++;
+	ns->op1.stval = s; st_attache(s,ns);
+	ns->op2.stval = t; st_attache(t,ns);
 	ns->flag = id;
 	ns->nrcols = s->nrcols;
 	ns->t = s->t;
@@ -281,7 +295,7 @@ statement *statement_remark( statement *s, statement *t, int id ){
 statement *statement_group( statement *s ){
 	statement *ns = statement_create();
 	ns->type = st_group;
-	ns->op1.stval = s; s->refcnt++;
+	ns->op1.stval = s; st_attache(s,ns);
 	ns->nrcols = s->nrcols;
 	ns->t = s->t;
 	return ns;
@@ -290,8 +304,8 @@ statement *statement_group( statement *s ){
 statement *statement_derive( statement *s, statement *t ){
 	statement *ns = statement_create();
 	ns->type = st_derive;
-	ns->op1.stval = s; s->refcnt++;
-	ns->op2.stval = t; t->refcnt++;
+	ns->op1.stval = s; st_attache(s,ns);
+	ns->op2.stval = t; st_attache(t,ns);
 	ns->nrcols = s->nrcols;
 	ns->t = s->t;
 	return ns;
@@ -300,9 +314,9 @@ statement *statement_derive( statement *s, statement *t ){
 statement *statement_unique( statement *s, statement *g ){
 	statement *ns = statement_create();
 	ns->type = st_unique;
-	ns->op1.stval = s; s->refcnt++;
+	ns->op1.stval = s; st_attache(s,ns);
 	if (g){
-		ns->op2.stval = g; g->refcnt++;
+		ns->op2.stval = g; st_attache(g,ns);
 	}
 	ns->nrcols = s->nrcols;
 	ns->t = s->t;
@@ -312,8 +326,8 @@ statement *statement_unique( statement *s, statement *g ){
 statement *statement_ordered( statement *order, statement *res ){
 	statement *ns = statement_create();
 	ns->type = st_ordered;
-	ns->op1.stval = order; order->refcnt++;
-	ns->op2.stval = res; res->refcnt++;
+	ns->op1.stval = order; st_attache(order,ns);
+	ns->op2.stval = res; st_attache(res,ns);
 	ns->nrcols = res->nrcols;
 	ns->t = res->t;
 	return ns;
@@ -322,7 +336,7 @@ statement *statement_ordered( statement *order, statement *res ){
 statement *statement_order( statement *s, int direction ){
 	statement *ns = statement_create();
 	ns->type = st_order;
-	ns->op1.stval = s; s->refcnt++;
+	ns->op1.stval = s; st_attache(s,ns);
 	ns->flag = direction;
 	ns->nrcols = s->nrcols;
 	ns->t = s->t;
@@ -332,8 +346,8 @@ statement *statement_order( statement *s, int direction ){
 statement *statement_reorder( statement *s, statement *t, int direction ){
 	statement *ns = statement_create();
 	ns->type = st_reorder;
-	ns->op1.stval = s; s->refcnt++;
-	ns->op2.stval = t; t->refcnt++;
+	ns->op1.stval = s; st_attache(s,ns);
+	ns->op2.stval = t; st_attache(t,ns);
 	ns->flag = direction;
 	ns->nrcols = s->nrcols;
 	ns->t = s->t;
@@ -350,8 +364,8 @@ statement *statement_atom( atom *op1 ){
 statement *statement_select( statement *op1, statement *op2, comp_type cmptype){
 	statement *s = statement_create();
 	s->type = st_select;
-	s->op1.stval = op1; op1->refcnt++;
-	s->op2.stval = op2; op2->refcnt++;
+	s->op1.stval = op1; st_attache(op1,s);
+	s->op2.stval = op2; st_attache(op2,s);
 	assert(cmptype >= cmp_equal && cmptype <= cmp_gte );
 	s->flag = cmptype;
 	s->nrcols = 1;
@@ -363,9 +377,9 @@ statement *statement_select2( statement *op1, statement *op2,
 			      statement *op3, int cmp ){
 	statement *s = statement_create();
 	s->type = st_select2;
-	s->op1.stval = op1; op1->refcnt++;
-	s->op2.stval = op2; op2->refcnt++;
-	s->op3.stval = op3; op3->refcnt++;
+	s->op1.stval = op1; st_attache(op1,s);
+	s->op2.stval = op2; st_attache(op2,s);
+	s->op3.stval = op3; st_attache(op3,s);
 	s->flag = cmp;
 	s->nrcols = 1;
 	s->h = s->op1.stval->h;
@@ -375,8 +389,8 @@ statement *statement_select2( statement *op1, statement *op2,
 statement *statement_like( statement *op1, statement *a ){
 	statement *s = statement_create();
 	s->type = st_like;
-	s->op1.stval = op1; op1->refcnt++;
-	s->op2.stval = a; a->refcnt++;
+	s->op1.stval = op1; st_attache(op1,s);
+	s->op2.stval = a; st_attache(a,s);
 	s->nrcols = 1;
 	s->h = s->op1.stval->h;
 	s->t = s->op1.stval->t;
@@ -386,8 +400,8 @@ statement *statement_like( statement *op1, statement *a ){
 statement *statement_join( statement *op1, statement *op2, comp_type cmptype){
 	statement *s = statement_create();
 	s->type = st_join;
-	s->op1.stval = op1; op1->refcnt++;
-	s->op2.stval = op2; op2->refcnt++;
+	s->op1.stval = op1; st_attache(op1,s);
+	s->op2.stval = op2; st_attache(op2,s);
 	s->flag = cmptype;
 	s->nrcols = 2; 
 	s->h = op1->h;
@@ -398,8 +412,8 @@ statement *statement_join( statement *op1, statement *op2, comp_type cmptype){
 statement *statement_semijoin( statement *op1, statement *op2 ){
 	statement *s = statement_create();
 	s->type = st_semijoin;
-	s->op1.stval = op1; op1->refcnt++;
-	s->op2.stval = op2; op2->refcnt++;
+	s->op1.stval = op1; st_attache(op1,s);
+	s->op2.stval = op2; st_attache(op2,s);
 	s->nrcols = op1->nrcols; 
 	s->h = op1->h;
 	s->t = op1->t;
@@ -408,8 +422,8 @@ statement *statement_semijoin( statement *op1, statement *op2 ){
 statement *statement_diff( statement *op1, statement *op2 ){
 	statement *s = statement_create();
 	s->type = st_diff;
-	s->op1.stval = op1; op1->refcnt++;
-	s->op2.stval = op2; op2->refcnt++;
+	s->op1.stval = op1; st_attache(op1,s);
+	s->op2.stval = op2; st_attache(op2,s);
 	s->nrcols = op1->nrcols; 
 	s->h = op1->h;
 	s->t = op1->t;
@@ -419,8 +433,8 @@ statement *statement_diff( statement *op1, statement *op2 ){
 statement *statement_intersect( statement *op1, statement *op2 ){
 	statement *s = statement_create();
 	s->type = st_intersect;
-	s->op1.stval = op1; op1->refcnt++;
-	s->op2.stval = op2; op2->refcnt++;
+	s->op1.stval = op1; st_attache(op1,s);
+	s->op2.stval = op2; st_attache(op2,s);
 	s->nrcols = op1->nrcols; 
 	s->h = op1->h;
 	s->t = op1->t;
@@ -430,8 +444,8 @@ statement *statement_intersect( statement *op1, statement *op2 ){
 statement *statement_union( statement *op1, statement *op2 ){
 	statement *s = statement_create();
 	s->type = st_union;
-	s->op1.stval = op1; op1->refcnt++;
-	s->op2.stval = op2; op2->refcnt++;
+	s->op1.stval = op1; st_attache(op1,s);
+	s->op2.stval = op2; st_attache(op2,s);
 	s->nrcols = op1->nrcols; 
 	s->h = op1->h;
 	s->t = op1->t;
@@ -454,20 +468,20 @@ statement *statement_list( list *l){
 statement *statement_output( statement *l){
 	statement *s = statement_create();
 	s->type = st_output;
-	s->op1.stval = l; l->refcnt++;
+	s->op1.stval = l; st_attache(l,s);
 	return s;
 }
 
-statement *statement_diamond( statement *s1){
+statement *statement_set( statement *s1){
 	statement *s = statement_create();
-	s->type = st_diamond;
+	s->type = st_set;
 	s->op1.lval = list_append_statement(list_create(), s1);
 	return s;
 }
 
-statement *statement_pearl( list *l1){
+statement *statement_sets( list *l1){
 	statement *s = statement_create();
-	s->type = st_pearl;
+	s->type = st_sets;
 	s->op1.lval = list_append_list(list_create(), l1);
 	return s;
 }
@@ -476,9 +490,9 @@ statement *statement_insert( column *c, statement *id, statement *v){
 	statement *s = statement_create();
 	s->type = st_insert;
 	s->op1.cval = c;
-	s->op2.stval = id; id->refcnt++;
+	s->op2.stval = id; st_attache(id,s);
 	if (v){
-		s->op3.stval = v; v->refcnt++;
+		s->op3.stval = v; st_attache(v,s);
 	}
 	return s;
 }
@@ -486,8 +500,8 @@ statement *statement_insert( column *c, statement *id, statement *v){
 statement *statement_insert_column( statement *c, statement *a){
 	statement *s = statement_create();
 	s->type = st_insert_column;
-	s->op1.stval = c; c->refcnt++;
-	s->op2.stval = a; a->refcnt++;
+	s->op1.stval = c; st_attache(c,s);
+	s->op2.stval = a; st_attache(a,s);
 	s->h = c->h;
 	s->t = c->t;
 	return s;
@@ -496,8 +510,8 @@ statement *statement_insert_column( statement *c, statement *a){
 statement *statement_update( statement *c, statement *b ){
 	statement *s = statement_create();
 	s->type = st_update;
-	s->op1.stval = c; c->refcnt++;
-	s->op2.stval = b; b->refcnt++;
+	s->op1.stval = c; st_attache(c,s);
+	s->op2.stval = b; st_attache(b,s);
 	s->h = c->h;
 	s->nrcols = c->nrcols;
 	return s;
@@ -507,14 +521,14 @@ statement *statement_delete( column *c, statement *where ){
 	statement *s = statement_create();
 	s->type = st_delete;
 	s->op1.cval = c;
-	s->op2.stval = where; where->refcnt++;
+	s->op2.stval = where; st_attache(where,s);
 	return s;
 }
 
 statement *statement_unop( statement *op1, func *op ){
 	statement *s = statement_create();
 	s->type = st_unop;
-	s->op1.stval = op1; op1->refcnt++;
+	s->op1.stval = op1; st_attache(op1,s);
 	s->op2.funcval = op;
 	s->h = op1->h;
 	s->nrcols = op1->nrcols;
@@ -524,8 +538,8 @@ statement *statement_unop( statement *op1, func *op ){
 statement *statement_binop( statement *op1, statement *op2, func *op ){
 	statement *s = statement_create();
 	s->type = st_binop;
-	s->op1.stval = op1; op1->refcnt++;
-	s->op2.stval = op2; op2->refcnt++;
+	s->op1.stval = op1; st_attache(op1,s);
+	s->op2.stval = op2; st_attache(op2,s);
 	s->op3.funcval = op;
 	s->h = op1->h;
 	s->nrcols = (op1->nrcols >= op2->nrcols)?op1->nrcols:op2->nrcols;
@@ -546,10 +560,10 @@ statement *statement_triop( statement *op1, statement *op2, statement *op3, func
 statement *statement_aggr( statement *op1, aggr *op, statement *group ){
 	statement *s = statement_create();
 	s->type = st_aggr;
-	s->op1.stval = op1; op1->refcnt++;
+	s->op1.stval = op1; st_attache(op1,s);
 	s->op2.aggrval = op;
 	if (group){
-		s->op3.stval = group; group->refcnt++;
+		s->op3.stval = group; st_attache(group,s);
 		s->nrcols = 1;
 		s->h = group->h;
 	} else {
@@ -562,7 +576,7 @@ statement *statement_aggr( statement *op1, aggr *op, statement *group ){
 statement *statement_exists( statement *op1, list *l ){
 	statement *s = statement_create();
 	s->type = st_exists;
-	s->op1.stval = op1; op1->refcnt++;
+	s->op1.stval = op1; st_attache(op1,s);
 	s->op2.lval = l;
 	s->h = op1->h;
 	s->nrcols = op1->nrcols;
@@ -572,7 +586,7 @@ statement *statement_exists( statement *op1, list *l ){
 statement *statement_name( statement *op1, char *name ){
 	statement *s = statement_create();
 	s->type = st_name;
-	s->op1.stval = op1; op1->refcnt++;
+	s->op1.stval = op1; st_attache(op1,s);
 	s->op2.sval = _strdup(name);
 	s->h = op1->h;
 	s->t = op1->t;

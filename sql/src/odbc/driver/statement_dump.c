@@ -2,6 +2,7 @@
 #include "mem.h"
 #include "statement.h"
 
+
 static
 char *atom_dump( atom *a){
 	char buf[1024];
@@ -22,10 +23,10 @@ char *atom_dump( atom *a){
 
 static
 char *atom_dump_fast( atom *a){
-	char buf[1024];
+	char buf[BUFSIZ];
 	switch (a->type){
 	case int_value: sprintf(buf, "%d", a->data.ival); break;
-	case string_value: sprintf(buf, "%s", a->data.sval); break;
+	case string_value: sprintf(buf, "\1%s\1", a->data.sval); break;
 	case float_value: sprintf(buf, "%f", a->data.dval); break;
 	case general_value:
 			if (a->data.sval)
@@ -517,7 +518,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	} break;
 	case st_name: s->nr = statement_dump( s->op1.stval, nr, sql );
 		break;
-	case st_diamond: {
+	case st_set: {
 		int l = 0;
 		node *n = s->op1.lval->h;
 		while(n){
@@ -526,7 +527,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		}
 		s->nr = l;
 	} break;
-	case st_pearl: {
+	case st_sets: {
 		int r;
 		node *n = s->op1.lval->h;
 		while(n){
@@ -559,7 +560,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 				n = n->next;
 			}
 		} else {
-			len += snprintf( buf+len, BUFSIZ, "mvc_insert(myc, \"%d,", 
+			len += snprintf( buf+len, BUFSIZ, "0,%d,", 
 				 	list_length(s->op1.lval) );
 			while(n){
 				statement *r = n->data.stval;
@@ -580,7 +581,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 				}
 				n = n->next;
 			}
-			len += snprintf( buf+len, BUFSIZ, "\");\n" );
+			len += snprintf( buf+len, BUFSIZ, "\n" );
 		}
 		s->nr = (*nr)++;
 	} break;

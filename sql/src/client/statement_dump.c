@@ -518,7 +518,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	} break;
 	case st_name: s->nr = statement_dump( s->op1.stval, nr, sql );
 		break;
-	case st_diamond: {
+	case st_set: {
 		int l = 0;
 		node *n = s->op1.lval->h;
 		while(n){
@@ -527,7 +527,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		}
 		s->nr = l;
 	} break;
-	case st_pearl: {
+	case st_sets: {
 		int r;
 		node *n = s->op1.lval->h;
 		while(n){
