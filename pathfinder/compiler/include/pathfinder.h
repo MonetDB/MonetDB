@@ -81,7 +81,7 @@ typedef struct PFstate_t PFstate_t;
  * Has the Pathfinder compiler been invoked on the command line,
  * or from within MonetDB?
  */
-enum PFinvokation_t {
+enum PFinvocation_t {
       invoke_cmdline
     , invoke_monetdb
 };
@@ -102,7 +102,7 @@ struct PFstate_t {
     bool summer_branch;       /**< command line switch: -M */
     bool parse_hsk;           /**< command line switch: -H */
     unsigned int genType;     /* kind of output */
-    enum PFinvokation_t invokation;
+    enum PFinvocation_t invocation;
 };
 
 /** global state of the compiler */

@@ -488,7 +488,7 @@ pf_compile_interface (FILE *pfin, FILE *pfout, char* mode)
 {
         PFstate_t* status = &PFstate; /* incomplete */
 
-        PFstate.invokation = invoke_monetdb;
+        PFstate.invocation = invoke_monetdb;
 
         status->summer_branch = true;
         if ( strcmp(mode,"xml") == 0 ) {
@@ -526,9 +526,9 @@ segfault_handler (int sig)
              "When reporting problems, please attach your XQuery input,\n");
     fprintf (stderr,
              "as well as the following information:\n");
-    fprintf (stderr, "  Invokation: ");
+    fprintf (stderr, "  Invocation: ");
 
-    switch (PFstate.invokation) {
+    switch (PFstate.invocation) {
         case invoke_cmdline: fprintf (stderr, "command line\n");
                              break;
         case invoke_monetdb: fprintf (stderr, "MonetDB\n");

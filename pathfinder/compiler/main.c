@@ -503,7 +503,7 @@ main (int argc, char *argv[])
 
     PFstate_t* status = &PFstate;
 
-    PFstate.invokation = invoke_cmdline;
+    PFstate.invocation = invoke_cmdline;
 
     /* fp of query file (if present) */
     FILE* pfin = stdin;

@@ -58,6 +58,23 @@
  */
 #define XQUERY_FO_MAX_ARITY 4
 
+/**
+ * List all XQuery built-in functions here.
+ *
+ * Be aware that order is significant here:
+ *
+ *  - The first declaration that is found here that matches an
+ *    application's argument types will be chosen
+ *    (see semantics/typecheck.brg:overload; This allows us to
+ *    give more specific and optimized implementations if we
+ *    like.).
+ *
+ *  - Make sure that the *last* function listed is always the
+ *    most generic variant (with a signature as stated in the
+ *    W3C drafts). The parameter types of the last function (with
+ *    correct number of arguments) will decide the function
+ *    conversion (XQuery WD 3.1.5) rule to apply.
+ */
 #define XQUERY_FO                                                        \
 { /* fn:data (item*) as atomic*    (F&O 2.4) */                          \
   { .ns = PFns_fn, .loc = "data",                                        \

@@ -104,8 +104,7 @@ formal_args (PFpnode_t *n)
             return 1 + formal_args (n->child[1]);
         default:
             PFoops_loc (OOPS_FATAL, n->loc,
-                        "illegal node kind (expecting nil/params) "
-                        "in %s:formal_args", __FILE__);
+                        "illegal node kind (expecting nil/params)");
     }
 
     /* just to pacify picky compilers; never reached due to "exit" in PFoops */
@@ -113,28 +112,33 @@ formal_args (PFpnode_t *n)
 }
 
 /**
- * Count the number of actual arguments for the function call in abstract
- * syntax tree node @a n.
+ * Count the number of actual arguments for the function call
+ * (or declaration) in abstract syntax tree node @a n.
  *
- * @param n The current @c p_args node; when called from outside,
- *   this is the topmost @c p_args node below the function
- *   call. (Can also be a @c p_nil node if no parameters are
- *   specified or the bottom is reached during recursion.)
+ * @param n The current @c p_args (or @c p_params) node; when
+ *   called from outside, this is the topmost @c p_args (@c p_params)
+ *   node below the function call (declaration). (Can also be a
+ *   @c p_nil node if no parameters are specified or the bottom
+ *   is reached during recursion.)
  * @return number of actual arguments
  */
 static unsigned int
 actual_args (PFpnode_t *n)
 {
     switch (n->kind) {
+        case p_fun_sig:
+            return actual_args (n->child[0]);
+
         case p_nil:  
             return 0;
 
         case p_args:
+        case p_params:
             return 1 + actual_args (n->child[1]);
 
         default:     
             PFoops_loc (OOPS_FATAL, n->loc,
-                        "illegal node kind (expecting nil/args)");
+                        "illegal node kind (expecting nil/args/params)");
     }
 
     /* just to pacify picky compilers; never reached due to "exit" in PFoops */
@@ -179,7 +183,7 @@ fill_paramlist (PFvar_t **params, PFpnode_t *n)
 
         default:     
             PFoops_loc (OOPS_FATAL, n->loc,
-                        "illegal node kind (expecting nil/args)");
+                        "illegal node kind (expecting nil/params)");
     }
 }
 
@@ -271,9 +275,10 @@ check_fun_usage (PFpnode_t * n)
     for (i = 0; (i < PFPNODE_MAXCHILD) && (n->child[i]); i++)
         check_fun_usage (n->child[i]);
     
-    /* if this is a function application node, see if it is in the list */
     switch (n->kind) {
+
     case p_fun_ref:
+    case p_fun_decl:
         
         funs = PFenv_lookup (PFfun_env, n->sem.qname);
         
@@ -301,55 +306,51 @@ check_fun_usage (PFpnode_t * n)
                             "(got %u)", arity);
 
             n->sem.fun = fun;
-            n->kind = p_apply;
+            n->kind = n->kind == p_fun_ref ? p_apply : p_fun;
             break;
         }
 
         /*
-         * For all the other functions, we search for the variant with
-         * the correct number of arguments.
-         * (We may overload user-defined functions, as soon as they
-         * have a different number of parameters.)
+         * Unset the function reference field in the parse tree
+         * node. Note that this invalidates the sem.qname field!
+         * (sem is a union type).
+         */
+        n->sem.fun = NULL;
+
+        /*
+         * For all the other functions, we search for the last
+         * variant with the correct number of arguments.
+         *
+         * We may overload user-defined functions, as soon as they
+         * have a different number of parameters. For built-ins
+         * we may overload even with same number of parameters.
+         * In that case, we pick the last variant, as this is the
+         * most generic. (For many built-ins we provide several
+         * implementations that are optimized to certain type.
+         * We list them with the most specific variants first
+         * in xquery_fo.c.) Picking the last (and most generic
+         * variant) makes sure that we apply the function conversion
+         * rules (W3C XQuery 3.1.5) correctly.
          */
         for (i = 0; i < PFarray_last (funs); i++) { 
             fun = *((PFfun_t **) PFarray_at (funs, i));
             if (arity == fun->arity)
-                break;
+                n->sem.fun = fun;
         }
 
         /* see if number of actual argument matches function declaration */
-        if (arity != fun->arity)
+        if (! n->sem.fun)
             PFoops_loc (OOPS_APPLYERROR, n->loc,
                         "wrong number of arguments for function `%s' "
                         "(expected %u, got %u)",
                         PFqname_str (fun->qname), fun->arity, arity);
         
         /*
-         * Replace semantic value of abstract syntax tree node with pointer
-         * to #PFfun_t struct. Tree node is now a ``real'' function application.
+         * Replace semantic value of abstract syntax tree node
+         * with pointer to #PFfun_t struct. Tree node is now a
+         * ``real'' function application (declaration).
          */
-        n->sem.fun = fun;
-        n->kind = p_apply;
-        
-        break;
-        
-    case p_fun_decl:
-        
-        /*
-         * For function declaration nodes, we replace the semantic content
-         * by a pointer to the according PFfun_t struct.
-         */
-        funs = PFenv_lookup (PFfun_env, n->sem.qname);
-        
-        if (! funs) 
-            PFoops_loc (OOPS_FATAL, n->loc,
-                        "internal error: reference to undefined function `%s'", 
-                        PFqname_str (n->sem.qname));
-        
-        fun = *((PFfun_t **) PFarray_at (funs, 0));
-
-        n->sem.fun = fun;
-        n->kind = p_fun;
+        n->kind = n->kind == p_fun_ref ? p_apply : p_fun;
         
         break;
         
@@ -416,6 +417,15 @@ fun_add_user (PFqname_t      qn,
     PFfun_t      *fun = PFfun_new (qn, arity, false, NULL, NULL, NULL, params);
     PFarray_t    *funs = NULL;
     unsigned int  i;
+
+    /*
+     * fn:concat() is a very special built-in function: It allows
+     * an arbitrary number of arguments. That's why we could not
+     * detect when fn:concat() is overloaded by a user-defined
+     * function. So we check that here explicitly.
+     */
+    if (PFqname_eq (qn, PFqname (PFns_fn, "concat")) == 0)
+        PFoops (OOPS_FUNCREDEF, "`%s'", PFqname_str (qn));
 
     /* insert new entry into function list */
     if ((funs = PFenv_bind (PFfun_env, qn, fun))) {
