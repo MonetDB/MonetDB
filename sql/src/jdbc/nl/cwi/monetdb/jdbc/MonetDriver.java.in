@@ -285,6 +285,7 @@ public class MonetDriver implements Driver {
 		typeMap.put("datetime", new Integer(Types.TIMESTAMP));
 		typeMap.put("timestamp", new Integer(Types.TIMESTAMP));
 		typeMap.put("blob", new Integer(Types.BLOB));
+		typeMap.put("clob", new Integer(Types.CLOB));
 	}
 
 	/**
