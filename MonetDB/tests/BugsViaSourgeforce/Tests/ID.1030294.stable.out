@@ -17,12 +17,6 @@ stdout of test 'ID.1030294` in directory 'tests/BugsViaSourgeforce` itself:
 
 
 # 13:55:37 >  
-# 13:55:37 >  cat /tmp/Mserver.init
-# 13:55:37 >  
-
-printf("  \n ... loading my secret module that allows me to open a root shell from MIL ...   \n  \n");
-
-# 13:55:37 >  
 # 13:55:37 >  chmod a-w,a+r /tmp/Mserver.init
 # 13:55:37 >  
 
