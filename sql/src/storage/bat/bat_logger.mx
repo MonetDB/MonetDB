@@ -520,17 +520,17 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 
 	snprintf(bak, BUFSIZ, "%s.bak", filename);
 
-	if ((fp = fopen(filename, "r+")) != NULL) {
+	if ((fp = fopen(filename, "r")) != NULL) {
 		if (check_version(logger, fp))
 			 return NULL;
 
 		logger_load(logger, fp);
 		logger_readlogs(logger, fp, filename);
-	} else if ((fp = fopen(bak, "r+")) != NULL) {
+	} else if ((fp = fopen(bak, "r")) != NULL) {
 		fclose(fp);
 		GDKmove(logger->dir, LOGFILE, "bak", logger->dir, LOGFILE, NULL);
 
-		if ((fp = fopen(filename, "r+")) != NULL) {
+		if ((fp = fopen(filename, "r")) != NULL) {
 			if (check_version(logger, fp))
 				 return NULL;
 
@@ -546,6 +546,8 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 			GDKerror("logger could not create file %s\n", filename);
 			return NULL;
 		}
+		fprintf(fp, "%06d\n\n", logger->version);
+	} else {
 		fprintf(fp, "%06d\n\n", logger->version);
 	}
 	logger->id ++;
@@ -593,8 +595,7 @@ logger_exit(logger *logger)
 	if ((fp = fopen(filename, "w")) != NULL) {
 		char ext[BUFSIZ];
 
-		fprintf(fp, "%6d\n", logger->version);
-
+		fprintf(fp, "%06d\n\n", logger->version);
 		logger_save(logger, fp);
 
 		fprintf(fp, "\n");
