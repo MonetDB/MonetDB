@@ -42,6 +42,7 @@ loading module 'sql_server'
 [ "arith",	  1		  ]
 [ "ascii_io",	  1		  ]
 [ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
 [ "blob",	  1		  ]
 [ "kernel",	  1		  ]
 [ "main",	  1		  ]
