@@ -1,12 +1,11 @@
 @echo off
 
-JAR=""
-if exist "%SQL_BUILD%\src\jdbc\MonetDB_JDBC.jar"			set JAR="%SQL_BUILD%\src\jdbc\MonetDB_JDBC.jar"
+set JAR=""
+if exist "%SQL_BUILD%\src\jdbc\MonetDB_JDBC.jar"		set JAR="%SQL_BUILD%\src\jdbc\MonetDB_JDBC.jar"
 if exist "%TSTBLDBASE%\src\jdbc\MonetDB_JDBC.jar"		set JAR="%TSTBLDBASE%\src\jdbc\MonetDB_JDBC.jar"
 if exist "%SQL_PREFIX%\share\MonetDB\lib\MonetDB_JDBC.jar"	set JAR="%SQL_PREFIX%\share\MonetDB\lib\MonetDB_JDBC.jar"
 if exist "%MONETDB_PREFIX%\share\MonetDB\lib\MonetDB_JDBC.jar"	set JAR="%MONETDB_PREFIX%\share\MonetDB\lib\MonetDB_JDBC.jar"
 if JAR == ""							set JAR="%TSTTRGBASE%\share\MonetDB\lib\MonetDB_JDBC.jar"
-fi
 
 echo user=monetdb>	.monetdb
 echo password=monetdb>>	.monetdb
