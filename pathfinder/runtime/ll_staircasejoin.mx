@@ -845,52 +845,55 @@ BATprint(cand_bat);
             }
         }
     }
-    grow = (size_t)stack_top * ((@1 - cnd) + 1);
 
-    /* check, if result buffer is big enough; otherwise extend it */
-    PFll_check_BAT_capacity(res, grow);
-    
-    /* iterate over all descendants until the next limit is reached
-       (either descendant ctx node or end of scope)
-       and insert their pre value into the results */
-    dst = BUNhloc(res, BUNlast(res));
-    if (cand_bat) {
-        if (BATtdense(cand_bat)) {
-            oid cur_pre = 0;
-            oid fst_pre = cnd;
-            oid lst_pre = MIN(@1 , lst_cnd);
-                        
-            for (cur_pre = fst_pre ; cur_pre <= lst_pre ; cur_pre++ ) {
-                for (j = 0 ; j < stack_top ; j++ ) {
-                    *(oid*)dst              = iters_on_stack[j];
-                    *(oid*)(dst+SIZEOF_OID) = cur_pre;
-                    dst += bs_res;
+    if (cnd <= @1) {
+        grow = (size_t)stack_top * ((@1 - cnd) + 1);
+
+        /* check, if result buffer is big enough; otherwise extend it */
+        PFll_check_BAT_capacity(res, grow);
+        
+        /* iterate over all descendants until the next limit is reached
+           (either descendant ctx node or end of scope)
+           and insert their pre value into the results */
+        dst = BUNhloc(res, BUNlast(res));
+        if (cand_bat) {
+            if (BATtdense(cand_bat)) {
+                oid cur_pre = 0;
+                oid fst_pre = cnd;
+                oid lst_pre = MIN(@1 , lst_cnd);
+                            
+                for (cur_pre = fst_pre ; cur_pre <= lst_pre ; cur_pre++ ) {
+                    for (j = 0 ; j < stack_top ; j++ ) {
+                        *(oid*)dst              = iters_on_stack[j];
+                        *(oid*)(dst+SIZEOF_OID) = cur_pre;
+                        dst += bs_res;
+                    }
+                }
+            } else {
+                BUN cur_pre = 0;
+                oid lst_ctx = @1;
+                BUN fst_pre = cnd_bun;
+                BUN lst_pre = BUNtloc(cand_bat, BUNlast(cand_bat));
+                            
+                for (cur_pre = fst_pre ; cur_pre < lst_pre && *(oid*)cur_pre <= lst_ctx; cur_pre += bs_cnd ) {
+                    for (j = 0 ; j < stack_top ; j++ ) {
+                        *(oid*)dst              = iters_on_stack[j];
+                        *(oid*)(dst+SIZEOF_OID) = *(oid*)cur_pre;
+                        dst += bs_res;
+                    }
                 }
             }
         } else {
-            BUN cur_pre = 0;
-            oid lst_ctx = @1;
-            BUN fst_pre = cnd_bun;
-            BUN lst_pre = BUNtloc(cand_bat, BUNlast(cand_bat));
-                        
-            for (cur_pre = fst_pre ; cur_pre < lst_pre && *(oid*)cur_pre <= lst_ctx; cur_pre += bs_cnd ) {
+            for ( ; pre <= @1 ; pre++ ) {
                 for (j = 0 ; j < stack_top ; j++ ) {
                     *(oid*)dst              = iters_on_stack[j];
-                    *(oid*)(dst+SIZEOF_OID) = *(oid*)cur_pre;
+                    *(oid*)(dst+SIZEOF_OID) = pre;
                     dst += bs_res;
                 }
             }
         }
-    } else {
-        for ( ; pre <= @1 ; pre++ ) {
-            for (j = 0 ; j < stack_top ; j++ ) {
-                *(oid*)dst              = iters_on_stack[j];
-                *(oid*)(dst+SIZEOF_OID) = pre;
-                dst += bs_res;
-            }
-        }
+        res->batBuns->free = dst - res->batBuns->base;
     }
-    res->batBuns->free = dst - res->batBuns->base;
     
     pre = @1;
     if (cand_bat) {
