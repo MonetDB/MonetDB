@@ -215,13 +215,13 @@ YYSTREE monet4_interpret( Cntxt procstk, char *name, list *args, int *err )
 {
 	YYSTREE callnode;
 	YYSTREE argtree;
-	node *n;
 	ValRecord v;
 
 	v.vtype = TYPE_void;
 	callnode = milnode(TOK_FUNCTION, TYPE_str, _strdup(name));
  	argtree = Myynode(0,0);
 	if (args){
+		node *n;
   		for (n=args->h; n; n = n->next){
 			atom *a = n->data;
 			YYSTREE arg;

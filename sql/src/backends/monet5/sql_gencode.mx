@@ -259,6 +259,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		} break;
         case st_var: {
 		q= newAssignment(mb);
+		s->nr = getDestVar(q);
 		if (s->op1.sval) {
 			q= pushArgumentId(mb,q,s->op1.sval);
 		} else {
@@ -266,7 +267,6 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			(void)snprintf( buf, 32, "A%d", s->flag);
 			q= pushArgumentId(mb,q,buf);
 		}
-		s->nr = getDestVar(q);
         }       break;
 	case st_update_var:{
 		dump_1(sql,mb,s,"sql","update_var");
@@ -1072,6 +1072,7 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
 	/* result type ? */
 	curInstr->argv[0] = TYPE_void; 
 
+/*
 	if (be->mvc->params){
 		curInstr ->argc = list_length(be->mvc->params);
 		for (n = be->mvc->params->h, i=1; n; n = n->next, i++){
@@ -1079,7 +1080,26 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
 			curInstr->argv[i] = v->s->op2.typeval->type->localtype;
 		}
 	}
-    	backend_dumpstmt( be, curBlk, s);
+*/
+printf("dump proc !\n");
+	if (be->mvc->args){
+		int argc = 0;
+                char arg[32];
+printf("args\n");
+		for (n = be->mvc->args->h, argc = 1; n; n = n->next, argc++){
+			atom *a = n->data;
+			int type = a->tpe->type->localtype;
+                	int varid = 0;
+
+                        snprintf(arg,32,"A%d",argc);
+printf("arg 1 %s\n", arg );
+                        varid= newVariable(curBlk, arg, type);
+                        curInstr = pushArgument(curBlk,curInstr,varid);
+	 		setVarType(curBlk,varid,type);
+                }
+        }
+        backend_dumpstmt( be, curBlk, s);
+
 }
 
 void 
