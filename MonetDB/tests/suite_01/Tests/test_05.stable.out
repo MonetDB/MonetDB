@@ -16,8 +16,8 @@ setoid(oid(20000000));
 # first some basics, escaped characters are normalized
 
 print("got single quote \' .");	# remove superfluous escapes
-print("got single quote ' without escape");
 [ "got single quote ' ." ]
+print("got single quote ' without escape");
 [ "got single quote ' without escape" ]
 print("got tab \t and single newline \n .");
 [ "got tab \t and single newline \n ." ]
@@ -56,8 +56,8 @@ s.print;
 
 # Monet printf should behave as in C
 printf("got single quote \' .\n"); # remove superfluous escapes
-printf("got single quote ' without escape\n");
 got single quote ' .
+printf("got single quote ' without escape\n");
 got single quote ' without escape
 printf("got tab \t and newline \n .\n");
 got tab 	 and newline 

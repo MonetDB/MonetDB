@@ -19,13 +19,13 @@ b.commit;
 b.delete(9); # triggers move (1,1) over (9,2); hash corrupt
 b.delete; # delete (1,1) without hash-lookup
 b.find(1).print; # still finds (1,1) !
-
-quit; 
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
 !ERROR: print(param 1): evaluation error.
 
-# 17:08:30 >  
-# 17:08:30 >  Done.
-# 17:08:30 >  
+quit; 
+
+# 07:44:20 >  
+# 07:44:20 >  Done.
+# 07:44:20 >  
 
