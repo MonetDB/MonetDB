@@ -21,6 +21,7 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCEnv.h"
+#include <sys/types.h> /* for ssize_t on Darwin */
 
 
 SQLRETURN SQL_API

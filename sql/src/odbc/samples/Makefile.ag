@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../include
+INCLUDES = ../include $(MONETDB_INCS)
 
 BINS = {
 	DIR = pkglibdir/Tests
