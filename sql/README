@@ -6,7 +6,7 @@ Installation
 Install Monet, then do the usual ./bootstrap, mkdir Linux, cd Linux, ../configure,
 make, make install sequence. 
 
-Edit your monet.conf to include the sql-libraries in the monet_mod_path:
+Edit your MonetDB.conf to include the sql-libraries in the monet_mod_path:
   monet_mod_path=${exec_prefix}/lib/MonetDB:${exec_prefix}/lib:${exec_prefix}/lib/sql
 
 

@@ -42,7 +42,7 @@ monet>
 <p>
 Here $PREFIX denotes the path where MonetDB has been installed.
 All databases are kept in $PREFIX/var/MonetDB/dbfarm unless this location
-has been changed in the monet.conf file.
+has been changed in the MonetDB.conf file.
 <br>
 The server is initialized by loading the SQL module. It will listen
 to a default port for requests.
@@ -60,7 +60,7 @@ adding the following commandline switch when starting the Mserver:
 $ Mserver --dbname=VOC --set monet_mod_path=$MONET_PREFIX/lib/MonetDB:$SQL_PREFIX/lib/MonetDB
 </pre>
 $MONET_PREFIX & $SQL_PREFIX denote the pathes where MonetDB respectively SQL have been installed.
-Alternatively, you can add $SQL_PREFIX/lib/MonetDB to the monet_mod_path in your monet.conf file.
+Alternatively, you can add $SQL_PREFIX/lib/MonetDB to the monet_mod_path in your MonetDB.conf file.
 <br>
 If you get an error message, e.g. 'port already in use', you might have 
 obsolete Mserver processes hanging around which should be killed first.

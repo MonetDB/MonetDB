@@ -115,7 +115,7 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/share/%{name}/perl/* 
 %{prefix}/share/%{name}/python/* 
 
-%config(noreplace) %{sysconfdir}/monet.conf 
+%config(noreplace) %{sysconfdir}/MonetDB.conf 
 
 %pre client 
 %{_sbindir}/groupadd -g %{monetdb_gid} -r monetdb 2>/dev/null || :
