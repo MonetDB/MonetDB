@@ -80,6 +80,7 @@ AC_CHECK_HEADERS(sys/file.h sys/param.h sys/times.h sys/mman.h sys/signal.h)
 AC_CHECK_HEADERS(rlimit.h netdb.h sys/resource.h)
 
 dnl libpthread
+have_pthread=auto
 PTHREAD_LIBS=""
 PTHREAD_INCS=""
 AC_ARG_WITH(pthread,
@@ -127,6 +128,7 @@ AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_INCS)
 
 dnl libreadline
+have_readline=auto
 READLINE_LIBS=""
 AC_ARG_WITH(readline,
 [  --with-readline=DIR     readline library is installed in DIR], 
