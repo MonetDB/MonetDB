@@ -147,14 +147,14 @@ case $CC-$CXX in
 	dnl  standard.  Moreover, there seems to be no standard for the
 	dnl  defines that enable the features beyond C89 in the various
 	dnl  platforms.  Here's what we found working so far...
-	case "$CC-$host_os" in
-	gcc-irix*|gcc-cygwin*|gcc-darwin*|gcc-aix*|arm-linux-gcc*)
-		;;
-	gcc-solaris*)
+	case "$CC-$gcc_ver-$host_os" in
+	gcc-*-solaris*)
 		CFLAGS="$CFLAGS -D__EXTENSIONS__"
 		CXXFLAGS="$CXXFLAGS -D__EXTENSIONS__"
 		;;
-	gcc-*)	
+	arm-linux-gcc-*|gcc-*-irix*|gcc-*-cygwin*|gcc-*-darwin*|gcc-2.*-aix*|gcc-2.*)
+		;;
+	gcc-3.*)	
 		CFLAGS="$CFLAGS -ansi -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500"
 		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
@@ -185,12 +185,15 @@ case $CC-$CXX in
 		X_CXXFLAGS="$X_CXXFLAGS -Wno-unused"
 		;;
 	esac
-	case $CC-$host_os in
-	gcc-solaris*|gcc-darwin*)
+	case $CC-$gcc_ver-$host_os in
+	gcc-*-solaris*|gcc-*-darwin*|gcc-*-aix*)
 		dnl  In some cases, there is a (possibly) uninitialized
 		dnl  variable in bison.simple ... |-(
 		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
 		X_CXXFLAGS="$X_CXXFLAGS -Wno-uninitialized"
+		;;
+	arm-linux-gcc-3.*)
+		X_CFLAGS="$X_CFLAGS -Wno-strict-aliasing"
 		;;
 	esac
 	;;
@@ -477,12 +480,19 @@ if test "x$enable_optim" = xyes; then
                       dnl  hence, we omit both "-funroll-all-loops" and "-funroll-loops", here
                       ;;
       *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions"
-                      if test "$CC" = "gcc -m64" ; then
+                      if test "$bits" = "64" ; then
                         NO_INLINE_CFLAGS="-O1"
                       fi
                       ;;
-      *irix6.5*)      CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions"
+      *irix*)         CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions"
                       NO_INLINE_CFLAGS="-fno-inline"
+                      ;;
+      *aix*)          CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions"
+                      if test "$bits" = "64" ; then
+                        NO_INLINE_CFLAGS="-O0"
+                      else
+                        NO_INLINE_CFLAGS="-fno-inline"
+                      fi
                       ;;
       *)              CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions";;
       esac
@@ -494,8 +504,8 @@ if test "x$enable_optim" = xyes; then
                       dnl  (Mserver produces some incorrect BATpropcheck warnings);
                       dnl  hence, we use only "-O2", here.
                       ;;
-#      *irix6.5*)      CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
-      *irix6.5*)      CFLAGS="$CFLAGS -O3 -OPT:div_split=ON:fast_complex=ON:fast_exp=ON:fast_nint=ON:Olimit=2147483647:roundoff=3 -TARG:processor=r10k -IPA"
+#      *irix*)        CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
+      *irix*)         CFLAGS="$CFLAGS -O3 -OPT:div_split=ON:fast_complex=ON:fast_exp=ON:fast_nint=ON:Olimit=2147483647:roundoff=3 -TARG:processor=r10k -IPA"
                       LDFLAGS="$LDFLAGS -IPA"
                       ;;
       *-sun-solaris*) CFLAGS="$CFLAGS -xO5";;
