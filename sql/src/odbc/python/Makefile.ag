@@ -21,7 +21,7 @@
 #		Niels Nes <Niels.Nes@cwi.nl>
 #		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-SWIGFLAGS = -DHAVE_LONG_LONG -I@includedir@
+SWIGFLAGS = -DHAVE_LONG_LONG -I@srcdir@/../include
 INCLUDES = -I@PYTHONINC@
 
 _odbc_la_LDFLAGS = -module
