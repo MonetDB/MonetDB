@@ -130,6 +130,8 @@ SQL client and the corresponding MIL runtime startup.
 	.COMMAND mvc_create_key( mvc m, str sname, str tname, str name, int kt, BAT[str,int] columns, sql_key fk ) :
 		sql_key = mvc_create_key_wrap; "Create a table key"
 
+	.COMMAND mvc_create_user( mvc m, str user, str pwd, str fullname, str dschema, int id) = mvc_create_user_wrap; "Create a user"
+
 	.COMMAND mvc_export(Stream s, BAT order, BAT bats, str sep, str rsep) =
 		mvc_export_wrap; "export a table (in order) to stream s with the given tuple and record seperators (sep/rsep)"
 
@@ -368,6 +370,16 @@ int mvc_create_key_wrap( sql_key* res, mvc* c, str sname, str tname, str name, i
 	return GDK_SUCCEED;
 }
 
+int mvc_create_user_wrap( mvc *c, str user, str passwd, str fullname, str dschema, int *grantor)
+{
+	if (sql_create_user( *(mvc**)c, user, passwd, fullname, dschema, *grantor)){
+		return GDK_SUCCEED;
+	} else {
+		return GDK_FAIL;
+	}
+}
+
+
 int mvc_export_wrap( Stream *s, BAT *order, BAT *bats, str sep, str rsep ){
 	mvc_export( *(stream**)s, order, bats, sep, rsep );
 	return GDK_SUCCEED;
@@ -440,6 +452,13 @@ PROC renameFUNC(str OLD,str NEW) : void := {
  	monet_fcn_nme.replace(funcs);
  	monet_fcntbl.reverse.replace(funcs);
 }
+
+const QPARSE := 1;
+const QTABLE := 2;
+const QUPDATE := 3;
+const QDATA := 4;
+const QHEADER := 5;
+const QDEBUG := 5;
 
 var sql_debug := int(monet_environment.find("sql_debug"));
 parser_init(sql_debug);
@@ -632,29 +651,14 @@ var dbname := monet_environment.find("gdk_dbname");
 var dbfarm := monet_environment.find("gdk_dbfarm");
 mvc_init(sql_debug,dbfarm + "/" + dbname + "/log");
 
-proc mvc_bind_( m, schema, Table, column, write_access ){
-	res := mvc_bind(m, schema,Table, column, write_access);
-	if (write_access > 0){
-		res := res.access(BAT_WRITE);
-	} 
-	return res;
-}
-
-proc mvc_bind_dbat_( m, schema, Table, write_access ){
-	res := mvc_bind_dbat(m, schema, Table, write_access);
-	if (write_access > 0){
-		res := res.access(BAT_WRITE);
-	} 
-	return res;
-}
-
 proc initialize(int debug) {
 	# change to sql statements !!
 	var myc := mvc_create(debug);
 	var schema := mvc_admin_login(myc);
 	
 	if (schema != ""){
-		user_name := mvc_bind_( myc, schema, "users", "name", 1);
+		user_name := mvc_bind( myc, schema, "users", "name", 1);
+		user_name.access(BAT_WRITE);
 		if (user_name.count() = 0){
 			mvc_create_user( myc, "monetdb", "monetdb", "MonetDB Admin", "sys", 0);
 			# probably needs priv's too 

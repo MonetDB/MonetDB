@@ -16,11 +16,11 @@ table or column level) overwrite privileges on higher levels.
 int sql_privileges( int authid, int globalprivs );
 int sql_table_privileges( int authid, int tableid, int globalprivs );
 int sql_column_privileges( int authid, int columnid, int tableprivs );
-int sql_create_role(mvc *m,  str auth, str grantor ) ;
+int sql_create_role(mvc *m,  str auth, int grantor ) ;
 int sql_drop_role( mvc *m, str auth );
 int sql_grant_role( mvc *m, str grantee, str auth );
 int sql_revoke_role( mvc *m, str grantee, str auth );
-int sql_create_user( mvc *m, str user, str passwd,str  fullname, str schema_name,str grantor );
+int sql_create_user( mvc *m, str user, str passwd,str  fullname, str schema_name,int grantor );
 int sql_drop_user(mvc *m,  str user);
 
 @c
@@ -98,32 +98,28 @@ int sql_column_privileges( int authid, int columnid, int tprivs ){
 The remainder has been taken over from the sqlserver mil document.
 The code below provides abstractions to manage the priviliges.
 @= accessRight
-	CMDexist(&ret, BATreverse(auth_name), @1);
-	if( ! ret) return FALSE;
+	p = BUNfnd(BATmirror(auth_name), @1);
+	if(!p) return FALSE;
 @= accessId
-	@1 = BUNtloc(auth_name,BUNfnd(BATreverse(auth_name),@2));
+	@1 = bun_find(BATmirror(auth_name),@2);
 @c
-int sql_create_role(mvc *m,  str auth, str grantor ) 
+int sql_create_role(mvc *m,  str auth, int grantor ) 
 { BAT *auth_id, *auth_name, *auth_grantor, *auth_priv;
   bit ret;
-  lng ma;
-  lng zero=0;
+  int zero = 0;
   oid onil =oid_nil;
+  ptr p;
 	auth_id = mvc_bind( m, "sys", "auths", "id", 1); 
 	auth_name = mvc_bind( m, "sys", "auths", "name", 1);
 	auth_grantor = mvc_bind( m, "sys", "auths", "grantor", 1);
 	auth_priv = mvc_bind( m, "sys", "auths", "privileges", 1);
-	BATsetaccess(auth_id,1);
-	BATsetaccess(auth_name,1);
-	BATsetaccess(auth_grantor,1);
-	BATsetaccess(auth_priv,1);
 	
-	CMDexist(&ret, BATreverse(auth_name), auth);
-	if(ret){
+	p = BUNfnd(BATmirror(auth_name), auth);
+	if (p){
 		return FALSE;
 	}
 	if (BATcount(auth_id) > 0) {
-		lng ma;
+		int ma;
 		BATmax(auth_id,&ma);
 		ma++;
 		BUNins(auth_id, &onil, &ma);
@@ -131,7 +127,7 @@ int sql_create_role(mvc *m,  str auth, str grantor )
 		BUNins(auth_id, &onil, &zero);
 	}
 	BUNins(auth_name, &onil, auth);
-	BUNins(auth_grantor, &onil, grantor);
+	BUNins(auth_grantor, &onil, &grantor);
 	BUNins(auth_priv, &onil, &zero); 
 	bat_destroy(auth_id);
 	bat_destroy(auth_name);
@@ -142,20 +138,13 @@ int sql_create_role(mvc *m,  str auth, str grantor )
 int sql_drop_role( mvc *m, str auth )
 { BAT *auth_id, *auth_name, *auth_grantor, *auth_priv, *D_auth;
   bit ret;
-  lng ma;
-  lng zero=0;
-  ptr id;
+  ptr id, p;
   oid onil =oid_nil;
 	auth_id = mvc_bind( m, "sys", "auths", "id", 1);
 	auth_name = mvc_bind( m, "sys", "auths", "name", 1);
 	auth_grantor = mvc_bind( m, "sys", "auths", "grantor", 1);
 	auth_priv = mvc_bind( m, "sys", "auths", "privileges", 1);
 	D_auth = mvc_bind_dbat( m, "sys", "auths", 1);
-	BATsetaccess(auth_id,1);
-	BATsetaccess(auth_name,1);
-	BATsetaccess(auth_grantor,1);
-	BATsetaccess(auth_priv,1);
-	BATsetaccess(D_auth,1);
 	
 	@:accessRight(auth)@
 	@:accessId(id,auth)@
@@ -175,16 +164,12 @@ int sql_drop_role( mvc *m, str auth )
 int sql_grant_role( mvc *m, str grantee, str auth )
 { BAT *auth_ids, *auth_name, *login_id, *role_id;
   bit ret;
-  ptr auth_id, grantee_id;
-  oid onil =oid_nil;
+  ptr auth_id, grantee_id, p;
+  oid onil = oid_nil;
 	auth_ids = mvc_bind( m, "sys", "auths", "id", 1);
 	auth_name = mvc_bind( m, "sys", "auths", "id", 1);
 	login_id = mvc_bind( m, "sys", "user_role", "login_id", 1);
 	role_id = mvc_bind( m, "sys", "user_role", "role_id", 1);
-	BATsetaccess(auth_ids,1);
-	BATsetaccess(auth_name,1);
-	BATsetaccess(login_id,1);
-	BATsetaccess(role_id,1);
 
 	@:accessRight(grantee)@
 	@:accessRight(auth)@
@@ -203,21 +188,17 @@ int sql_grant_role( mvc *m, str grantee, str auth )
 } 
 
 int sql_revoke_role( mvc *m, str grantee, str auth ) 
+/* grantee no longer belongs the role (auth) */ 
 { BAT *auth_ids, *auth_name, *login_id, *role_id, *D_user_role;
   BAT *role, *logins;
   bit ret;
-  ptr id, auth_id, grantee_id;
+  ptr id, auth_id, grantee_id, p;
   oid onil =oid_nil;
 	auth_ids = mvc_bind( m, "sys", "auths", "id", 1);
 	auth_name = mvc_bind( m, "sys", "auths", "id", 1);
 	login_id = mvc_bind( m, "sys", "user_role", "login_id", 1);
 	role_id = mvc_bind( m, "sys", "user_role", "role_id", 1);
 	D_user_role = mvc_bind_dbat( m, "sys", "user_role", 1);
-	BATsetaccess(auth_ids,1);
-	BATsetaccess(auth_name,1);
-	BATsetaccess(login_id,1);
-	BATsetaccess(role_id,1);
-	BATsetaccess(D_user_role,1);
 
 	@:accessRight(grantee)@
 	@:accessRight(auth)@
@@ -225,14 +206,13 @@ int sql_revoke_role( mvc *m, str grantee, str auth )
 	@:accessId(auth_id,auth)@
 	@:accessId(grantee_id,grantee)@
 	
-	/* ???? this is unexpeced */
-	/* role = BATselect(role_id, &role_id);*/
+	role = BATselect(role_id, &auth_id, &auth_id);
 
 	logins = BATsemijoin(login_id,role);
-	CMDexist(&ret, BATreverse(logins), grantee_id);
-	if (!ret)
+	p = BUNfnd(BATmirror(logins), grantee_id);
+	if (!p)
 		return FALSE;
-	id = BUNtloc(logins,BUNfnd(BATreverse(logins),grantee_id));
+	id = bun_find(BATmirror(logins),grantee_id);
 	BUNreplace(login_id,id,&int_nil);
 	BUNreplace(role_id,id,&int_nil);
 	BUNins(D_user_role, &onil,id);
@@ -245,7 +225,7 @@ int sql_revoke_role( mvc *m, str grantee, str auth )
 	return TRUE;
 } 
 
-int sql_create_user( mvc *m, str user, str passwd,str  fullname, str schema_name,str grantor )
+int sql_create_user( mvc *m, str user, str passwd, str fullname, str schema_name,int grantor )
 { BAT *user_name, *user_passwd, *user_fullname, *user_dschema;
   BAT *schema_ids, *schema_names;
   ptr schema_id;
@@ -260,14 +240,8 @@ int sql_create_user( mvc *m, str user, str passwd,str  fullname, str schema_name
 
 	schema_ids = mvc_bind( m, "sys", "schemas", "id", 1);
 	schema_names = mvc_bind( m, "sys", "schemas", "name", 1);
-	BATsetaccess(user_name,1);
-	BATsetaccess(user_passwd,1);
-	BATsetaccess(user_fullname,1);
-	BATsetaccess(user_dschema,1);
-	BATsetaccess(schema_ids,1);
-	BATsetaccess(schema_names,1);
 
-	schema_id = BUNtloc(schema_ids, BUNfnd(BATreverse(schema_names),schema_name));
+	schema_id = bun_find(schema_ids, bun_find(BATmirror(schema_names),schema_name));
 
 	BUNins(user_name, &onil, user);
 	BUNins(user_passwd, &onil, passwd);
@@ -286,26 +260,21 @@ int sql_create_user( mvc *m, str user, str passwd,str  fullname, str schema_name
 int sql_drop_user(mvc *m,  str user) 
 { BAT *user_name, *user_passwd, *user_fullname, *user_dschema, *D_user;
   bit ret;
-  ptr id;
-  oid onil =oid_nil;
+  ptr id, p;
+  oid onil = oid_nil;
 	user_name = mvc_bind( m, "sys", "users", "name", 1);
 	user_passwd = mvc_bind( m, "sys", "users", "passwd", 1);
 	user_fullname = mvc_bind( m, "sys", "users", "fullname", 1);
 	user_dschema = mvc_bind( m, "sys", "users", "default_schema", 1);
 	D_user = mvc_bind_dbat( m, "sys", "users", 1);
-	BATsetaccess(user_name,1);
-	BATsetaccess(user_passwd,1);
-	BATsetaccess(user_fullname,1);
-	BATsetaccess(user_dschema,1);
-	BATsetaccess(D_user,1);
 
-	CMDexist(&ret, BATreverse(user_name), user);
-	if( !ret){
+	p = BUNfnd(BATmirror(user_name), user);
+	if (!p){
 		return;
 	}
 	sql_drop_role( m, user );
 
-	id = BUNhloc(user_name,BUNfnd(BATreverse(user_name),user));
+	id = bun_find(BATmirror(user_name),user);
 	BUNreplace(user_name, id, &str_nil);
 	BUNreplace(user_passwd,id, &str_nil);
 	BUNreplace(user_fullname,id,&str_nil);

@@ -87,7 +87,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 				out->flush( out );
 			} else {
 
-			    if (s && s->op1.stval->type == st_copyfrom &&
+			    if (s && s->type == st_copyfrom &&
 				!stmt_copyfrom_files(s)){
 				/*ask_for_data();*/
 				stream_writeInt( out, 0 );

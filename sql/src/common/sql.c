@@ -2901,7 +2901,7 @@ static stmt *grant_roles(context * sql, schema *schema,
 static stmt *revoke_roles(context * sql, schema *schema,
 		dlist * roles, dlist * grantees, int admin, int grantor)
 {
-	/* grant roles to the grantees */
+	/* revoke roles from the grantees */
 	dnode *r, *g;
 	list *l = create_stmt_list();
 	
