@@ -43,7 +43,7 @@ module("jabberwocky");
 !ERROR: module(jabberwocky): load error.
 module("_jabberwocky");
 !ERROR: module(_jabberwocky): load error.
-quit;
+quit();
 
 # 17:07:22 >  
 # 17:07:22 >  Done.
