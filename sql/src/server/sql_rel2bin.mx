@@ -52,6 +52,24 @@ static int cmp_sel2( stmt *sel, st_type *tpe )
 	return -1;
 }
 
+static int cmp_sel_oneCol( stmt *sel )
+{
+	int rtrn = -1;
+	if (sel->type >= st_select && sel->type <= st_uselect2) {
+		if (sel->op2.stval->nrcols == 0){
+			rtrn = 0;
+		}
+	} else {
+		printf("= TODO: sql_rel2bin: shrink_select_ranges: handle %s!\n", st_type2string(sel->type));
+	}
+	return rtrn;
+}
+
+static int cmp_sel_twoCol( stmt *sel )
+{
+	return !cmp_sel_oneCol(sel);
+}
+
 static int cmp_sel_hasNoBasecol( stmt *sel )
 {
 	int rtrn = -1;
@@ -139,16 +157,23 @@ list *shrink_select_ranges(list *oldsels)
 {
 	/* find minimal ranges for selects per column on one table */
 
-	list *newsels, *haveNoBasecol, *haveBasecol, *basecols;
+	list *newsels, *haveNoBasecol, *haveBasecol, *basecols, *oneColSels, *twoColSels;
 	node *bc;
 	
 	newsels  = list_create((fdestroy)&stmt_destroy);
 
+	/* we skip selects that involve two columns, e.g., R.a < R.b, here */
+	twoColSels = list_select( oldsels, (void*)1L, (fcmp)&cmp_sel_twoCol, (fdup)&stmt_dup );
+	oneColSels = list_select( oldsels, (void*)1L, (fcmp)&cmp_sel_oneCol, (fdup)&stmt_dup );
+	assert(list_length(twoColSels)+list_length(oneColSels)==list_length(oldsels));
+        list_destroy(oldsels);
+
 	/* some statments (e.g., st_idxbat when checking key constraints during inserts)
 	   don't seem to have a basecolumn, hence, we skip them, here */
-	haveNoBasecol = list_select( oldsels, (void*)1L, (fcmp)&cmp_sel_hasNoBasecol, (fdup)&stmt_dup );
-	haveBasecol   = list_select( oldsels, (void*)1L, (fcmp)&cmp_sel_hasBasecol,   (fdup)&stmt_dup );  
-	list_destroy(oldsels);
+	haveNoBasecol = list_select( oneColSels, (void*)1L, (fcmp)&cmp_sel_hasNoBasecol, (fdup)&stmt_dup );
+	haveBasecol   = list_select( oneColSels, (void*)1L, (fcmp)&cmp_sel_hasBasecol,   (fdup)&stmt_dup );  
+	assert(list_length(haveNoBasecol)+list_length(haveBasecol)==list_length(oneColSels));
+	list_destroy(oneColSels);
 
 	basecols = list_distinct( haveBasecol, (fcmp)&cmp_sel_basecol, (fdup)&stmt_dup );
 	for ( bc = basecols->h; bc; bc = bc->next ){
@@ -308,7 +333,10 @@ list *shrink_select_ranges(list *oldsels)
 	}
 	/* re-add the skipped statements without basecolumn */
 	list_merge( newsels, haveNoBasecol, (fdup)&stmt_dup );
+	/* re-add the skipped two-column selects */
+	list_merge( newsels, twoColSels, (fdup)&stmt_dup );
 
+	list_destroy(twoColSels);
 	list_destroy(haveNoBasecol);
 	list_destroy(haveBasecol);
 	list_destroy(basecols);
