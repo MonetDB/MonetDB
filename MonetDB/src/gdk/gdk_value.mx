@@ -85,7 +85,7 @@ void VALclear(ValPtr v){
 	switch(ATOMstorage(v->vtype)) {
 	case TYPE_str:
 	case TYPE_ptr:
-		if(v->val.pval) GDKfree(v->val.pval);
+		if(v->val.pval && v->val.pval != str_nil) GDKfree(v->val.pval);
 		v->val.pval = 0;
 	}
 	/* if (ATOMextern(v->vtype) && v->val.pval) {
@@ -105,8 +105,9 @@ ValPtr VALcopy(ValPtr d, ValPtr s){
 	if (ATOMextern(s->vtype) == 0) {
 		*d = *s;
 	} else if (s->val.pval == 0) {
-		GDKwarning("VALcopy: copying null %s.\n", ATOMname(s->vtype)); 
-		d->vtype = TYPE_void;
+		/*GDKwarning("VALcopy: copying null %s.\n", ATOMname(s->vtype)); */
+		d->val.pval = ATOMnil(s->vtype);
+		d->vtype = s->vtype;
 	} else if (s->vtype == TYPE_str) {
 		d->vtype = TYPE_str;
 		d->val.sval = GDKstrdup(s->val.sval);
@@ -130,21 +131,19 @@ ValPtr VALinit(ValPtr d, int tpe, ptr s){
 		memcpy(&d->val.ival, s, ATOMlen(tpe,s));
 	} else 
 	if (s == 0) {
-		GDKwarning("VALcopy: copying null %s.\n", ATOMname(tpe)); 
-		d->vtype = TYPE_void;
+		GDKerror("VALinit:unsupported init\n");
+		d->vtype= TYPE_int;
 	} else if( ATOMstorage(tpe) == TYPE_str) {
 		d->vtype = TYPE_str;
 		d->val.sval = GDKstrdup(s);
 		d->len = strLen(s);
 	} else {
-/*
-		if( ATOMstorage(tpe)== TYPE_str){
-			d->vtype = tpe;
-			d->val.sval = GDKstrdup(*(str*)s);
-			d->len = strLen(*(str*)s);
-		} else
-*/
-		GDKwarning("VALcopy: not yet supported %s.\n", ATOMname(tpe)); 
+		d->vtype= tpe;
+		d->len = ATOMlen(tpe,s);
+		d->val.pval = GDKmalloc(d->len);
+		memcpy(d->val.pval, s, d->len);
+		/* GDKwarning("VALinit: not yet supported %s.\n", 
+			ATOMname(tpe)); */
 	}
 	return d;
 }
