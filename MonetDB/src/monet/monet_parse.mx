@@ -91,7 +91,7 @@ LEXNAME(int Y)
 		PARSEDEBUG {						\
 			THRprintf(GDKerr, "%s %s\n", LEXNAME(Y), yytext); \
 		}							\
-		switch (Y) {						\
+		switch (ll_lastval) {					\
 		case TOK_CONSTANT:					\
 		case TOK_IDENT:						\
 		case ')':						\
