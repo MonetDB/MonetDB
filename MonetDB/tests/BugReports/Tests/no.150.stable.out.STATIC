@@ -42,6 +42,8 @@ setoid(oid(20000000));
 module("jabberwocky");
 !ERROR: moduleClient: module(jabberwocky) load error.
 module("_jabberwocky");
+!ERROR: TBL_openmod: DL_open: library not found (STATIC).
+!ERROR: TBL_loadmod: module load _jabberwocky cancelled.
 !ERROR: moduleClient: module(_jabberwocky) load error.
 quit();
 

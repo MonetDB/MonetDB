@@ -29,46 +29,49 @@ import mapi.*;
 public class MapiClient 
 {
     public static void usage(){
-	System.out.println("Usage: java MapiClient <host> [<port> [<user> [<password> [<language>]]]]" );
+	System.out.println("Usage: java MapiClient [<host> [<port> [<user> [<password> [<language> [--utf8]]]]]]" );
 	System.exit(1);
     }
 
     public static void main(String argv[]){
 	String hostname = "localhost";
 	int portnr = 50000;
-	String user = "quest";
+	String user = "guest";
 	String password = "anonymous";
 	String lang = "mil";
+	boolean useUTF8 = false;
 
-	if (argv.length == 1){
-      		hostname = argv[0];
-	} else if (argv.length == 2){
-      		hostname = argv[0];
-		portnr = Integer.parseInt(argv[1]);
-	} else if (argv.length == 3){
-		hostname = argv[0];
-		portnr = Integer.parseInt(argv[1]);
-      		user = argv[2];
-	} else if (argv.length == 4){
-		hostname = argv[0];
-		portnr = Integer.parseInt(argv[1]);
-      		user = argv[2];
-      		password = argv[3];
-	} else if (argv.length == 5){
-		hostname = argv[0];
-		portnr = Integer.parseInt(argv[1]);
-      		user = argv[2];
-      		password = argv[3];
-      		lang = argv[4];
-	} else {
-		usage();
+	switch (argv.length) {
+		case 6:
+			useUTF8 = true;
+		case 5:
+			lang = argv[4];
+		case 4:
+			password = argv[3];
+		case 3:
+			user = argv[2];
+		case 2:
+			portnr = Integer.parseInt(argv[1]);
+		case 1:
+			hostname = argv[0];
+		break;
+		default:
+			usage();
+		break;
 	}
 
 	try {
-      		Mapi M = new Mapi( hostname, portnr, user, password, lang );
-		Reader r = new BufferedReader(new InputStreamReader(System.in));
+		Mapi M = new Mapi( hostname, portnr, user, password, lang );
+		Reader r = new BufferedReader(
+			useUTF8 ? 
+				new InputStreamReader(System.in, "UTF-8") :
+				new InputStreamReader(System.in)
+		);
 		LineNumberReader input = new LineNumberReader(r);
-		Writer out = new OutputStreamWriter(System.out);
+		Writer out = 
+			useUTF8 ?
+				new OutputStreamWriter(System.out, "UTF-8") :
+				new OutputStreamWriter(System.out);
 		String s;
 		System.out.print(M.getPrompt());
 		while((s=input.readLine()) != null){

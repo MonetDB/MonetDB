@@ -1,39 +1,14 @@
-stderr of test 'ID.1030294` in directory 'tests/BugsViaSourgeforce` itself:
+stderr of test 'ID.1032186` in directory 'tests/BugsViaSourgeforce` itself:
 
 
-# 13:55:37 >  
-# 13:55:37 >  Mtimeout -timeout 180 ./ID.1030294 ID.1030294 
-# 13:55:37 >  
-
-
-# 13:55:37 >  
-# 13:55:37 >  rm -f /tmp/Mserver.init
-# 13:55:37 >  
-
-
-# 13:55:37 >  
-# 13:55:37 >  echo printf("\n ... loading my secret module that allows me to open a root shell from MIL ... \n\n"); > /tmp/Mserver.init
-# 13:55:37 >  
-
-
-# 13:55:37 >  
-# 13:55:37 >  cat /tmp/Mserver.init
-# 13:55:37 >  
-
-
-# 13:55:37 >  
-# 13:55:37 >  chmod a-w,a+r /tmp/Mserver.init
-# 13:55:37 >  
-
-
-# 13:55:37 >  
-# 13:55:37 >  echo quit(); | Mtimeout -timeout 60 Mserver --config=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__/etc/MonetDB.conf --debug=10 --set monet_mod_path=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__/lib/MonetDB --set gdk_dbfarm=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__/var/MonetDB/dbfarm --set sql_logdir=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__/var/MonetDB/log --set mapi_port=44685 --set sql_port=58674 --set monet_prompt= --trace --dbname=$TSTDB --dbinit=printf("\nHello!\n\n");
-# 13:55:37 >  
+# 23:41:28 >  
+# 23:41:28 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__/var/MonetDB/log" --set mapi_port=40941 --set sql_port=53532 --set monet_prompt= --trace --dbname=mTests_tests_BugsViaSourgeforce  < ID.1032186.milS
+# 23:41:28 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 32biti686-redhat-linux-gnu
-# builtin opt 	gdk_version = 4.4.0_rc1
-# builtin opt 	monet_pid = 5460
+# builtin opt 	gdk_version = 4.4.0_rc2
+# builtin opt 	monet_pid = 24245
 # builtin opt 	prefix = /var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -73,16 +48,12 @@ stderr of test 'ID.1030294` in directory 'tests/BugsViaSourgeforce` itself:
 # cmdline opt 	monet_mod_path = /var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__/lib/MonetDB
 # cmdline opt 	gdk_dbfarm = /var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__/var/MonetDB/dbfarm
 # cmdline opt 	sql_logdir = /var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__/var/MonetDB/log
-# cmdline opt 	mapi_port = 44685
-# cmdline opt 	sql_port = 58674
+# cmdline opt 	mapi_port = 40941
+# cmdline opt 	sql_port = 53532
 # cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbname = mTests_tests_BugsViaSourgeforce
 
-# 13:55:39 >  
-# 13:55:39 >  rm -f /tmp/Mserver.init
-# 13:55:39 >  
-
-
-# 13:55:39 >  
-# 13:55:39 >  Done.
-# 13:55:39 >  
+# 23:41:30 >  
+# 23:41:30 >  Done.
+# 23:41:30 >  
 

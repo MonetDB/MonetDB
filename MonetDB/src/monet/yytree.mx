@@ -564,21 +564,22 @@ if trees are more than 2-deep.
 #define CATCHVAL(stk,lt,res)							\
 	if (res->vtype == TYPE_bat) {						\
 		bat bid = res->val.bval;					\
-		BAT* _b = BBPdescriptor(bid);				\
+		BAT* _b = BBPdescriptor(bid);					\
 		assert(_b != NULL);						\
 		if (_b->batStamp <= stamp) {					\
 			PROPDEBUG monet_checkbat(_b, FALSE);			\
 		} else if (_b->batStamp > 0) {					\
-			CHECKDEBUG monet_checkbat(_b, BATcount(_b) > 0);	\
-			if (BATcount(_b) > 0) {					\
+			CHECKDEBUG monet_checkbat(_b, !(_b->batDirty&2));	\
+			if (!(_b->batDirty&2)) {				\
 				BATsetaccess(_b, BAT_READ);			\
 			}							\
+			_b->batDirty &= ~2;					\
 			_b->batStamp = -_b->batStamp;				\
 		}								\
 		BATDEBUG printf("# batstamp(%d) = %d\n",			\
 			 (int) _b->batCacheid, _b->batStamp);			\
-		BBPincref(bid, TRUE);					\
-		BBPunfix(bid);					\
+		BBPincref(bid, TRUE);						\
+		BBPunfix(bid);							\
 	}									\
 	CATCHREF(stk,lt,res)
 #define CATCHREF(stk,lt,res)						\
