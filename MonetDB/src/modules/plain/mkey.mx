@@ -174,7 +174,7 @@ proc "[:rotate_xor_hash=]"(BAT[any::1,int] h, int nbits, BAT[any::1,any] b) : BA
   return [:xor=]([:rotate=](h, nbits), [hash](b));
 }
 
-proc ds_hash(BAT[str,any] keys) : BAT[oid,int] {
+proc ds_hash(BAT[bat,any] keys) : BAT[oid,int] {
   var nbits := 1 + (31 / keys.count);
   var fst := keys.reverse.fetch(0);
   var res := [hash](bat(fst)).access(BAT_WRITE);
@@ -190,7 +190,7 @@ proc ds_hash(BAT[str,any] keys) : BAT[oid,int] {
 
 const JOIN_BULK_SIZE := INT_MAX;	# 5000000;
 
-proc ds_eq(BAT[void,oid] l_slice, str l_nme, BAT[void,oid] r_slice, str r_nme) : BAT[void,bit] {
+proc ds_eq(BAT[void,oid] l_slice, bat l_nme, BAT[void,oid] r_slice, bat r_nme) : BAT[void,bit] {
   var l := join(l_slice,bat(l_nme));
   var r := join(r_slice,bat(r_nme));
   return [=](l.ds_sort(true),r.ds_sort(true));
@@ -202,21 +202,17 @@ proc ds_link(BAT[oid,any::1] l1, BAT[oid,any::1] r1, ..BAT[oid,any]..) : BAT[oid
 		ERROR("ds_link(BAT[oid,any::1] l1, BAT[oid,any::1] r1, ..BAT[oid,any]..) requires an even number of parameters!\n");
 		return nil;
 	} else {
-		var keys := new(str,str,n / 2);
+		var keys := new(bat,bat,n / 2);
 		var i := 0;
 		while (i < n) {
-			keys.insert(bbpname($(i+1)),bbpname($(i+2)));
+			keys.insert($(i+1),$(i+2));
 			i :+= 2;
 		}
 		return ds_link(keys);
 	}
 }
 
-proc ds_link(BAT[bat,bat] keys) : BAT[oid, oid] {
-	return ds_link(reverse([bbpname](reverse([bbpname](keys)))));
-}
-
-proc ds_link(BAT[str,str] keys) : BAT[oid, oid]
+proc ds_link(BAT[bat,bat] keys) : BAT[oid, oid] 
 {
   var res;
   {
