@@ -841,26 +841,26 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 	res_table *t = find_export_table(m, res_id);
 	
 	m->type = Q_RESULT;
-/*
-	stream_writeInt( s, Q_RESULT );
-	stream_writeInt( s, t->nr_cols );
-	stream_writeInt( s, t->id );
-*/
 	
 	stream_write(s, "# ", strlen("# "), 1);
-	for (i = 0; i < t->nr_cols; i++) 
-	{
+	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols+i;
 		stream_write(s, c->name, strlen(c->name), 1);
 		if(i+1< t->nr_cols)
 			stream_write(s, ",\t", 2, 1);
-/*
-		stream_write(s, c->type->type->sqlname, 
-				strlen(c->type->type->sqlname), 1);
-		stream_write(s, "\n", 1, 1);
-*/
 	}
 	stream_write(s, " # name\n", strlen(" # name\n"), 1);
+
+	stream_write(s, "# ", strlen("# "), 1);
+	for (i = 0; i < t->nr_cols; i++) {
+		res_col *c = t->cols+i;
+		stream_write(s, c->type->type->sqlname, 
+				strlen(c->type->type->sqlname), 1);
+		if(i+1< t->nr_cols)
+			stream_write(s, ",\t", 2, 1);
+	}
+	stream_write(s, " # type\n", strlen(" # type\n"), 1);
+
 	stream_flush(s);
 	return 0;
 }
