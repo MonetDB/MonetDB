@@ -1090,7 +1090,7 @@ class Table {
 		if (dependsOn.needs.contains(this))
 			throw new Exception("Cyclic dependancy graphs are not supported (foreign key relation a->b and b->a)");
 
-		needs.add(dependsOn);
+		if (!needs.contains(dependsOn)) needs.add(dependsOn);
 	}
 
 	List requires(List existingTables) {
