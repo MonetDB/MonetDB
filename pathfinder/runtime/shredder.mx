@@ -30,11 +30,21 @@
 @t shredder
 
 @c
-/*******************************************
-* shredder.c : 'fast' xml document shredder for pathfinder
-* It is an adapted version from pf_shred of the pathfinder loader
-*
-*/
+/**********************************************************************
+ * shredder.c : xml document shredder for pathfinder
+ *
+ * It is an adapted version of loader/pf_shred where I tried to generate
+ * exactly the same BAT's.
+ * TODO:
+ *      - make the code reentrant, eg. no more changing globals and
+ *        static buffers. It will probably become a bit slower so we
+ *        first keep it non-reentrant for some time.
+ *      - stop the xmlparser more elegant in case of an error. xmlStopParser()
+ *        generates a lot of extra confusing 'noise'
+ *      - Have a look at the BAT Accelerator usage with a Monet crack. Maybe we 
+ *        could win a lot here with some simple recoding.
+ *
+ */
 
 #define USE_COMPRESSION
 #define PRINT_STAT 0
@@ -75,12 +85,16 @@ typedef unsigned long long nat;
 nat nnode_pre; /* next preorder rank to assign */
 nat nnode_attr;/* number of attributes counter */
 
+static char emptyString[1] = "";
+
 /*******
  *
  */
 
 #include <gdk.h>
 #include <monet.h>
+
+#include <strings.h>
 
 #include "pathfinder.h"
 
@@ -176,6 +190,10 @@ static shredCtx *createShredCtx(char* name, int fileSize) {
                 else 
                         sb->size = (int)(sb->def->sizeFact * res->estSize);
                 sb->bat  = BATnew(sb->def->headType,sb->def->tailType,sb->size);
+                if ( !sb->bat ) {
+                        stream_printf(GDKerr,"shredder.mx:BATnew(%d) for %s fails, disk full?\n",sb->size,sb->def->name);
+                        return NULL;
+                }
 #ifdef USE_COMPRESSION
                 if ( sb->def->compress ) {
                         /* create an accelerator on the str tail of the BAT */
@@ -309,10 +327,11 @@ static BAT* finalizeShredCtx(shredCtx* ctx) {
         return res;
 }
 
-extern int mainSHREDDER(char* xmlFile);
-extern char *timer_str (long elapsed);
+static int mainSHREDDER(char* xmlFile);
+static char *timer_str (long elapsed);
 
 int fileSize(char* xmlFile) {
+    /* buffer for file I/O status */
     struct stat statbuf;
 
     if (stat (xmlFile, &statbuf) < 0) {
@@ -368,15 +387,16 @@ CMDshred2bats(BAT **res2mil, str docname, str opt)
 #define CHECK_BAT_SIZE(SB,I)    if ( ((I)>=(SB)->size) && incrBATsize(SB,I)<0) return NIL; 
 
 static int incrBATsize(shredBAT* sb, nat i) {
-    size_t newsize;
+    size_t newsize = MAX(sb->size+MAX(MINCHUNK,sb->size/4),i);
 
-    newsize = MAX(sb->size+MAX(MINCHUNK,sb->size/4),i);
-    /* stream_printf(GDKerr,"incrBATsize[\"%s\"](%d to %d)\n",sb->def->name,sb->size,newsize); */
     sb->size= newsize;
-    if ( !(sb->bat = BATextend(sb->bat,newsize)) )
+    if ( !(sb->bat = BATextend(sb->bat,newsize)) ) {
+        stream_printf(GDKerr,"BATextend[\"%s\"](%d to %d) fails\n",sb->def->name,sb->size,newsize);
         return -1;
-    if ( sb->def->tailType != TYPE_str )
+    }
+    if ( sb->def->tailType != TYPE_str ) {
          sb->cast.voidCAST = (void*)BUNfirst(sb->bat);
+    }
     return 1;
 }
 
@@ -481,6 +501,9 @@ char *content_buf;
  */
 #define XML_TAG_MAX PFSHRED_STRLEN_MAX
 
+/**
+ * Node element of the XMD document interpretation stack
+ */
 typedef struct node_t node_t;
 struct node_t {
     nat  pre;                   /**< preorder rank */
@@ -496,7 +519,7 @@ struct node_t {
  * XML node stack maximum depth (use `-d' for deeper XML instances)
  */
 #define XML_DEPTH_MAX 256
-nat xml_depth_max;
+nat xml_depth_max = XML_DEPTH_MAX;
 node_t *lifo;
 
 nat sp = 0;
@@ -507,7 +530,7 @@ nat sp = 0;
 /**
  * convert ms timing value into string
  */
-char *
+static char *
 timer_str (long elapsed)
 {
     char *tm, *str;
@@ -537,39 +560,6 @@ timer_str (long elapsed)
     str += sprintf (str, "%03ldus", elapsed);
 
     return tm;
-}
-
-/**
- * extract namespace prefix ns from QName ns:loc
- * (returns "" if QName is of the form loc)
- */
-char 
-*only_ns (char *qn)
-{
-#define MAX_NS_SIZE 1024
-    static char nsbuff[MAX_NS_SIZE];
-
-    char* colon = strchr (qn, ':');
-
-    if ( !colon ) {
-        nsbuff[0] = 0;
-    } else {
-        *colon = 0;
-        strncpy(nsbuff,qn,MAX_NS_SIZE);
-        *colon = ':';
-    }
-    return nsbuff;
-}
-
-/**
- * extract local part loc from QName ns:loc
- */
-char 
-*only_loc (char *qn)
-{
-    char *colon;
-    
-    return (colon=strchr (qn, ':'))?++colon:qn;
 }
 
 /**
@@ -624,7 +614,7 @@ shred_end_document (void *ctx)
 /**
  * write buffered text content (if any) to prop|text relation
  */
-int 
+static int 
 emitString(shredCtx* ctx, char* s)
 {
     node_t node;
@@ -647,10 +637,9 @@ emitString(shredCtx* ctx, char* s)
     return 1;
 }
 
-#include <strings.h>
-
 const char* del = " \t\n\r";
-int 
+
+static int 
 emitShreddedString(shredCtx* ctx, char* s)
 {
     char *t;
@@ -662,8 +651,8 @@ emitShreddedString(shredCtx* ctx, char* s)
     return 1;
 }
 
-int 
-text2rel (shredCtx* ctx)
+static int 
+handleXmlCharacters (shredCtx* ctx)
 {
     /* is there any buffered text content? */
     if (content) {
@@ -686,15 +675,25 @@ static nat store_NsLoc(char* nsloc) {
 #ifdef USE_COMPRESSION
         BUN bun;
         if ( (bun = BUNfnd(glb_ctx->nslocBAT,nsloc)) ) {
-                oid o = *(oid*)BUNtail(glb_ctx->nslocBAT,bun);
                 glb_ctx->nslocDUPL++;
-                return (nat)o;
+                return *(nat*)BUNtail(glb_ctx->nslocBAT,bun);
         }
 #endif
         nat res;
-        if ( (res=append_str2bat(glb_ctx,QN_NS,only_ns(nsloc)))==NIL)
+        char *colon, *nsStr, *locStr;
+
+        /* new fast namespace/localname decoding */
+        if ( (colon = strchr (nsloc, ':')) ) {
+            nsStr  = nsloc;
+            *colon = '\0';
+            locStr = ++colon; 
+        } else {
+            nsStr  = emptyString;
+            locStr = nsloc; 
+        }
+        if ( (res=append_str2bat(glb_ctx,QN_NS,nsStr))==NIL)
                 return NIL;
-        if ( res != append_str2bat(glb_ctx,QN_LOC,only_loc(nsloc)) ) {
+        if ( res != append_str2bat(glb_ctx,QN_LOC,locStr) ) {
                 stream_printf(GDKerr,"store_NsLoc:NS-LOC sync error");
                 return NIL;
         }
@@ -718,7 +717,7 @@ shred_start_element (void *ctx,
     node_t node;
     nat qn_id, val_id;
 
-    if ( text2rel (glb_ctx) < 0 ) {
+    if ( handleXmlCharacters (glb_ctx) < 0 ) {
         xmlStopParser(ctx);
         return;
     }
@@ -777,7 +776,7 @@ shred_end_element (void *ctx, const xmlChar *tag)
     (void) ctx;
     (void) tag;
 
-    if ( text2rel (glb_ctx) < 0 ) {
+    if ( handleXmlCharacters (glb_ctx) < 0 ) {
         xmlStopParser(ctx);
         return;
     }
@@ -841,7 +840,7 @@ shred_pi (void *ctx, const xmlChar *tgt, const xmlChar *ins)
 
     (void) ctx;
 
-    if ( text2rel (glb_ctx) < 0 ) {
+    if ( handleXmlCharacters (glb_ctx) < 0 ) {
         xmlStopParser(ctx);
         return;
     }
@@ -870,7 +869,7 @@ shred_comment (void *ctx, const xmlChar *c)
 
     (void) ctx;
 
-    if ( text2rel (glb_ctx) < 0 ) {
+    if ( handleXmlCharacters (glb_ctx) < 0 ) {
         xmlStopParser(ctx);
         return;
     }
@@ -939,26 +938,44 @@ xmlSAXHandler shredder = {
   , .initialized           = 0
 };
 
-
-int 
-shred (const char *in, const char *out)
+/**
+ * Main shredder driver handling the libxml2 and buffer stuff
+ */
+static int 
+mainSHREDDER(char* xmlFile)
 {
-    xmlParserCtxtPtr ctx;
+    xmlParserCtxtPtr xmlCtx;
 
-    (void) out;
+    /* this code is not really Unicode or multi-byte aware (yet) */
+    assert (sizeof (char) == sizeof (xmlChar));
 
-    /* parse XML input (receive SAX events) */
-    if ( !(ctx = xmlCreateFileParserCtxt (in)) ) {
-        stream_printf(GDKerr,"shred:xmlCreateFileParserCtxt failed\n"); 
+    /* allocate a buffer for TEXT nodes */
+    assert( (content_buf = (char*) malloc(PFSHRED_STRLEN_MAX)) );
+
+    /* allocate XML node stack */
+    if (! (lifo = (node_t *) malloc (xml_depth_max * sizeof (node_t)))) {
+        stream_printf(GDKerr,
+                 "!ERROR: cannot allocate XML node stack: %s\n",
+                 strerror (errno));
+
         return -1;
     }
-    ctx->sax = &shredder;
-    xmlSwitchEncoding (ctx, XML_CHAR_ENCODING_UTF8);
+
+    /* parse XML input (receive SAX events) */
+    if ( !(xmlCtx = xmlCreateFileParserCtxt (xmlFile)) ) {
+        stream_printf(GDKerr,"shred:xmlCreateFileParserCtxt(\"%s\") failed\n",xmlFile); 
+        return -1;
+    }
+    xmlCtx->sax = &shredder;
+    xmlSwitchEncoding (xmlCtx, XML_CHAR_ENCODING_UTF8);
     
-    (void) xmlParseDocument (ctx);
+    (void) xmlParseDocument (xmlCtx);
+
+    /* free the TEXT buffer */
+    free(content_buf);
 
     /* incomplete, check if something has gone wrong durin shred */
-    if (! ctx->wellFormed) {
+    if (! xmlCtx->wellFormed) {
         stream_printf(GDKerr, 
                  "!ERROR: XML input not well-formed "
                  "(relation files probably contain garbage)\n");
@@ -968,49 +985,14 @@ shred (const char *in, const char *out)
     return 1;
 }
 
-int 
-mainSHREDDER(char* xmlFile)
-{
-    char out[FILENAME_MAX];
-    strncpy (out, xmlFile, FILENAME_MAX);
-
-    /* buffer for file I/O status */
-    struct stat statbuf;
-    
-    /* this code is not really Unicode or multi-byte aware (yet) */
-    assert (sizeof (char) == sizeof (xmlChar));
-
-    xml_depth_max = XML_DEPTH_MAX;
-
-    content_buf = (char*) malloc(PFSHRED_STRLEN_MAX);
-
-    assert(content_buf);
-
-    /* is FILE readable? */
-    if (stat (xmlFile, &statbuf) < 0) {
-        stream_printf(GDKerr,
-                 "!ERROR: cannot stat `%s': %s\n",
-                 xmlFile, strerror (errno));
-
-        return( -1 );
-    }
-
-    /* allocate XML node stack */
-    if (! (lifo = (node_t *) malloc (xml_depth_max * sizeof (node_t)))) {
-        stream_printf(GDKerr,
-                 "!ERROR: cannot allocate XML node stack: %s\n",
-                 strerror (errno));
-
-        return( -1 );
-    }
-
-    /* shredding... */
-    int res = shred (xmlFile, out);
-
-    /* free the buffers */
-    free(content_buf);
-
-    return res;
+/**
+ * Utility function to really quit the Monet server. Usefull to prevent 
+ * hangup on a ReadHat8 bug.
+ */
+int CMDpfquit() {
+        stream_printf(GDKerr,"# Exit through pfquit()!\n"); 
+        _exit(0);
+        return GDK_SUCCEED;
 }
 
 @c
