@@ -614,8 +614,7 @@ sub execute {
         unless @$params == $num_of_params;
 
     for ( 1 .. $num_of_params ) {
-        # TODO: parameter type
-        my $quoted_param = $dbh->quote($params->[$_-1]);
+        my $quoted_param = $dbh->quote($params->[$_-1], $sth->{monetdb_types}[$_-1]);
         $statement =~ s/\?/$quoted_param/;  # TODO: '?' inside quotes/comments
     }
     $sth->trace_msg("    -- Statement: $statement\n", 5);
