@@ -1,9 +1,9 @@
 stdout of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
 
 
-# 10:20:07 >  
-# 10:20:07 >  Mtimeout -timeout 66 Mserver --config=/ufs/manegold/Monet/4.3/monet/_PREFIX_/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_monet --set mapi_port=58924 /ufs/manegold/Monet/4.3/monet/_PREFIX_/share/MonetDB/mapi.mil monet_mod_cnt-copy_C.prologue ; echo  ; echo Over..
-# 10:20:07 >  
+# 11:38:11 >  
+# 11:38:11 >  Mtimeout -timeout 180 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_monet --set mapi_port=52057 /ufs/niels/data/monet/Linux/share/MonetDB/mapi.mil monet_mod_cnt-copy_C.prologue ; echo  ; echo Over..
+# 11:38:11 >  
 
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
@@ -16,44 +16,44 @@ stdout of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
 [ 10033@0,	  2		  ]
 [ 10329@0,	  4		  ]
 [ 10347@0,	  2		  ]
-[ 10413@0,	  2		  ]
-[ 10491@0,	  2		  ]
-[ 10569@0,	  2		  ]
+[ 10415@0,	  2		  ]
+[ 10493@0,	  2		  ]
+[ 10571@0,	  2		  ]
+[ 10583@0,	  2		  ]
+[ 10582@0,	  2		  ]
 [ 10581@0,	  2		  ]
 [ 10580@0,	  2		  ]
-[ 10579@0,	  2		  ]
-[ 10578@0,	  2		  ]
 #-------------------------#
-# BAT:		  tmp_32  #
+# BAT:		  tmp_30  #
 # (oid)		  (int)	  #
 #-------------------------#
 [ 10000@0,	  2	  ]
 [ 10033@0,	  2	  ]
 [ 10329@0,	  4	  ]
 [ 10347@0,	  2	  ]
-[ 10413@0,	  2	  ]
-[ 10491@0,	  2	  ]
-[ 10569@0,	  2	  ]
+[ 10415@0,	  2	  ]
+[ 10493@0,	  2	  ]
+[ 10571@0,	  2	  ]
+[ 10583@0,	  2	  ]
+[ 10582@0,	  2	  ]
 [ 10581@0,	  2	  ]
 [ 10580@0,	  2	  ]
-[ 10579@0,	  2	  ]
-[ 10578@0,	  2	  ]
 #---------------------------------------------------------#
 # BAT:			  count	| copy.count	| diff	  #
 # (str)			  (int)	| (int)		| (int)	  #
 #---------------------------------------------------------#
 [ "monet_environment",	  23,	  23,		  0	  ]
-[ "monet_fcn_fcn",	  561,	  561,		  0	  ]
-[ "monet_fcn_imp",	  635,	  635,		  0	  ]
-[ "monet_fcn_tpe",	  635,	  635,		  0	  ]
-[ "monet_fcn_mid",	  605,	  605,		  0	  ]
+[ "monet_fcn_fcn",	  562,	  562,		  0	  ]
+[ "monet_fcn_imp",	  637,	  637,		  0	  ]
+[ "monet_fcn_tpe",	  637,	  637,		  0	  ]
+[ "monet_fcn_mid",	  606,	  606,		  0	  ]
 [ "monet_fcn_sig",	  38,	  38,		  0	  ]
-[ "monet_fcn_dsc",	  605,	  605,		  0	  ]
-[ "monet_fcn_aut",	  605,	  605,		  0	  ]
-[ "monet_fcn_dat",	  605,	  605,		  0	  ]
-[ "monet_fcn_nme",	  635,	  635,		  0	  ]
-[ "monet_fcn_pro",	  1586,	  1586,		  0	  ]
-[ "monet_fcn_cnt",	  635,	  635,		  0	  ]
+[ "monet_fcn_dsc",	  606,	  606,		  0	  ]
+[ "monet_fcn_aut",	  606,	  606,		  0	  ]
+[ "monet_fcn_dat",	  606,	  606,		  0	  ]
+[ "monet_fcn_nme",	  637,	  637,		  0	  ]
+[ "monet_fcn_pro",	  1594,	  1594,		  0	  ]
+[ "monet_fcn_cnt",	  637,	  637,		  0	  ]
 [ "monet_mod_nme",	  11,	  11,		  0	  ]
 [ "monet_mod_cnt",	  11,	  11,		  0	  ]
 [ "monet_mod_atm",	  5,	  5,		  0	  ]
@@ -63,12 +63,12 @@ stdout of test 'monet_mod_cnt-copy_C` in directory 'src/monet` itself:
 [ "monet_mod_use",	  24,	  24,		  0	  ]
 [ "monet_mod_load",	  6,	  6,		  0	  ]
 [ "monet_mod_drop",	  0,	  0,		  0	  ]
-[ "monet_fcntbl",	  635,	  635,		  0	  ]
+[ "monet_fcntbl",	  637,	  637,		  0	  ]
 [ "monet_acctbl",	  2,	  2,		  0	  ]
 [ "monet_atomtbl",	  18,	  18,		  0	  ]
 [ "mapi_params",	  1,	  1,		  0	  ]
 [ "tmp_26",		  2,	  2,		  0	  ]
-[ "tmp_27",		  635,	  635,		  0	  ]
+[ "tmp_27",		  637,	  637,		  0	  ]
 [ "tmp_28",		  18,	  18,		  0	  ]
 printf("\nReady.\n");
 
@@ -76,9 +76,9 @@ Ready.
 
 Over..
 
-# 10:20:08 >  
-# 10:20:08 >  Mtimeout -timeout 3 MapiClient --port=58924 < monet_mod_cnt-copy_C.milC
-# 10:20:08 >  
+# 11:38:11 >  
+# 11:38:11 >  Mtimeout -timeout 60 MapiClient --port=52057 --config=/ufs/niels/data/monet/Linux/etc/monet.conf < monet_mod_cnt-copy_C.milC
+# 11:38:11 >  
 
 #---------------------------------#
 # BAT:		  monet_mod_cnt	  #
@@ -88,44 +88,47 @@ Over..
 [ 10033@0,	  2		  ]
 [ 10329@0,	  4		  ]
 [ 10347@0,	  2		  ]
-[ 10413@0,	  2		  ]
-[ 10491@0,	  2		  ]
-[ 10569@0,	  2		  ]
+[ 10415@0,	  2		  ]
+[ 10493@0,	  2		  ]
+[ 10571@0,	  2		  ]
+[ 10583@0,	  2		  ]
+[ 10582@0,	  2		  ]
 [ 10581@0,	  2		  ]
 [ 10580@0,	  2		  ]
-[ 10579@0,	  2		  ]
-[ 10578@0,	  2		  ]
 #-------------------------#
-# BAT:		  tmp_32  #
+# BAT:		  tmp_65  #
 # (oid)		  (int)	  #
 #-------------------------#
 [ 10000@0,	  2	  ]
 [ 10033@0,	  2	  ]
 [ 10329@0,	  4	  ]
 [ 10347@0,	  2	  ]
-[ 10413@0,	  2	  ]
-[ 10491@0,	  2	  ]
-[ 10569@0,	  2	  ]
+[ 10415@0,	  2	  ]
+[ 10493@0,	  2	  ]
+[ 10571@0,	  2	  ]
+[ 10583@0,	  2	  ]
+[ 10582@0,	  2	  ]
 [ 10581@0,	  2	  ]
 [ 10580@0,	  2	  ]
-[ 10579@0,	  2	  ]
-[ 10578@0,	  2	  ]
+!WARNING: [copy]: 1 times inserted nil due to errors at tuples "copy.count".
+!WARNING: [copy]: first error was: !ERROR: BATcopy: BAT required.
+!ERROR: CMDcopy: operation failed.
 #---------------------------------------------------------#
 # BAT:			  count	| copy.count	| diff	  #
 # (str)			  (int)	| (int)		| (int)	  #
 #---------------------------------------------------------#
 [ "monet_environment",	  23,	  23,		  0	  ]
-[ "monet_fcn_fcn",	  561,	  561,		  0	  ]
-[ "monet_fcn_imp",	  635,	  635,		  0	  ]
-[ "monet_fcn_tpe",	  635,	  635,		  0	  ]
-[ "monet_fcn_mid",	  605,	  605,		  0	  ]
+[ "monet_fcn_fcn",	  562,	  562,		  0	  ]
+[ "monet_fcn_imp",	  637,	  637,		  0	  ]
+[ "monet_fcn_tpe",	  637,	  637,		  0	  ]
+[ "monet_fcn_mid",	  606,	  606,		  0	  ]
 [ "monet_fcn_sig",	  38,	  38,		  0	  ]
-[ "monet_fcn_dsc",	  605,	  605,		  0	  ]
-[ "monet_fcn_aut",	  605,	  605,		  0	  ]
-[ "monet_fcn_dat",	  605,	  605,		  0	  ]
-[ "monet_fcn_nme",	  635,	  635,		  0	  ]
-[ "monet_fcn_pro",	  1586,	  1586,		  0	  ]
-[ "monet_fcn_cnt",	  635,	  635,		  0	  ]
+[ "monet_fcn_dsc",	  606,	  606,		  0	  ]
+[ "monet_fcn_aut",	  606,	  606,		  0	  ]
+[ "monet_fcn_dat",	  606,	  606,		  0	  ]
+[ "monet_fcn_nme",	  637,	  637,		  0	  ]
+[ "monet_fcn_pro",	  1594,	  1594,		  0	  ]
+[ "monet_fcn_cnt",	  637,	  637,		  0	  ]
 [ "monet_mod_nme",	  11,	  11,		  0	  ]
 [ "monet_mod_cnt",	  11,	  11,		  0	  ]
 [ "monet_mod_atm",	  5,	  5,		  0	  ]
@@ -135,20 +138,55 @@ Over..
 [ "monet_mod_use",	  24,	  24,		  0	  ]
 [ "monet_mod_load",	  6,	  6,		  0	  ]
 [ "monet_mod_drop",	  0,	  0,		  0	  ]
-[ "monet_fcntbl",	  635,	  635,		  0	  ]
+[ "monet_fcntbl",	  637,	  637,		  0	  ]
 [ "monet_acctbl",	  2,	  2,		  0	  ]
 [ "monet_atomtbl",	  18,	  18,		  0	  ]
 [ "mapi_params",	  1,	  1,		  0	  ]
 [ "tmp_26",		  2,	  2,		  0	  ]
-[ "tmp_27",		  635,	  635,		  0	  ]
+[ "tmp_27",		  637,	  637,		  0	  ]
 [ "tmp_28",		  18,	  18,		  0	  ]
+[ "tmp_29",		  2,	  2,		  0	  ]
+[ "tmp_30",		  637,	  637,		  0	  ]
+[ "tmp_31",		  18,	  18,		  0	  ]
+[ "count",		  28,	  28,		  0	  ]
+[ "diff",		  28,	  28,		  0	  ]
+[ "tmp_34",		  23,	  23,		  0	  ]
+[ "tmp_35",		  562,	  562,		  0	  ]
+[ "tmp_36",		  637,	  637,		  0	  ]
+[ "tmp_37",		  637,	  637,		  0	  ]
+[ "tmp_38",		  606,	  606,		  0	  ]
+[ "tmp_39",		  38,	  38,		  0	  ]
+[ "tmp_40",		  606,	  606,		  0	  ]
+[ "tmp_41",		  606,	  606,		  0	  ]
+[ "tmp_42",		  606,	  606,		  0	  ]
+[ "tmp_43",		  637,	  637,		  0	  ]
+[ "tmp_44",		  1594,	  1594,		  0	  ]
+[ "tmp_45",		  637,	  637,		  0	  ]
+[ "tmp_46",		  11,	  11,		  0	  ]
+[ "tmp_47",		  11,	  11,		  0	  ]
+[ "tmp_48",		  5,	  5,		  0	  ]
+[ "tmp_49",		  0,	  0,		  0	  ]
+[ "tmp_50",		  11,	  11,		  0	  ]
+[ "tmp_51",		  3,	  3,		  0	  ]
+[ "tmp_52",		  24,	  24,		  0	  ]
+[ "tmp_53",		  6,	  6,		  0	  ]
+[ "tmp_54",		  0,	  0,		  0	  ]
+[ "tmp_55",		  637,	  637,		  0	  ]
+[ "tmp_56",		  2,	  2,		  0	  ]
+[ "tmp_57",		  18,	  18,		  0	  ]
+[ "tmp_58",		  1,	  1,		  0	  ]
+[ "tmp_59",		  2,	  2,		  0	  ]
+[ "tmp_60",		  637,	  637,		  0	  ]
+[ "tmp_61",		  18,	  18,		  0	  ]
+[ "tmp_62",		  28,	  28,		  0	  ]
+[ "copy.count",		  0,	  0,		  0	  ]
 
-# 10:20:11 >  
-# 10:20:11 >  Mtimeout -timeout 3 Mshutdown.py --set mapi_port=58924
-# 10:20:11 >  
+# 11:38:12 >  
+# 11:38:12 >  Mtimeout -timeout 60 Mshutdown.py --config=/ufs/niels/data/monet/Linux/etc/monet.conf --set mapi_port=52057
+# 11:38:12 >  
 
 
-# 10:21:16 >  
-# 10:21:16 >  Done.
-# 10:21:16 >  
+# 11:38:12 >  
+# 11:38:12 >  Done.
+# 11:38:12 >  
 

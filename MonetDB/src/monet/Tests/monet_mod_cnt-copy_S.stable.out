@@ -1,9 +1,9 @@
 stdout of test 'monet_mod_cnt-copy_S` in directory 'src/monet` itself:
 
 
-# 10:20:07 >  
-# 10:20:07 >  Mtimeout -timeout 3 Mserver --config=/ufs/manegold/Monet/4.3/monet/_PREFIX_/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_monet  < monet_mod_cnt-copy_S.milS
-# 10:20:07 >  
+# 11:38:10 >  
+# 11:38:10 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_monet  < monet_mod_cnt-copy_S.milS
+# 11:38:10 >  
 
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
@@ -16,9 +16,9 @@ stdout of test 'monet_mod_cnt-copy_S` in directory 'src/monet` itself:
 [ 10033@0,	  1		  ]
 [ 10329@0,	  1		  ]
 [ 10347@0,	  1		  ]
-[ 10413@0,	  1		  ]
-[ 10491@0,	  1		  ]
-[ 10569@0,	  1		  ]
+[ 10415@0,	  1		  ]
+[ 10493@0,	  1		  ]
+[ 10571@0,	  1		  ]
 #-------------------------#
 # BAT:		  tmp_26  #
 # (oid)		  (int)	  #
@@ -27,25 +27,25 @@ stdout of test 'monet_mod_cnt-copy_S` in directory 'src/monet` itself:
 [ 10033@0,	  1	  ]
 [ 10329@0,	  1	  ]
 [ 10347@0,	  1	  ]
-[ 10413@0,	  1	  ]
-[ 10491@0,	  1	  ]
-[ 10569@0,	  1	  ]
+[ 10415@0,	  1	  ]
+[ 10493@0,	  1	  ]
+[ 10571@0,	  1	  ]
 #---------------------------------------------------------#
 # BAT:			  count	| copy.count	| diff	  #
 # (str)			  (int)	| (int)		| (int)	  #
 #---------------------------------------------------------#
 [ "monet_environment",	  23,	  23,		  0	  ]
-[ "monet_fcn_fcn",	  508,	  508,		  0	  ]
-[ "monet_fcn_imp",	  571,	  571,		  0	  ]
-[ "monet_fcn_tpe",	  571,	  571,		  0	  ]
-[ "monet_fcn_mid",	  543,	  543,		  0	  ]
+[ "monet_fcn_fcn",	  509,	  509,		  0	  ]
+[ "monet_fcn_imp",	  573,	  573,		  0	  ]
+[ "monet_fcn_tpe",	  573,	  573,		  0	  ]
+[ "monet_fcn_mid",	  544,	  544,		  0	  ]
 [ "monet_fcn_sig",	  37,	  37,		  0	  ]
-[ "monet_fcn_dsc",	  543,	  543,		  0	  ]
-[ "monet_fcn_aut",	  543,	  543,		  0	  ]
-[ "monet_fcn_dat",	  543,	  543,		  0	  ]
-[ "monet_fcn_nme",	  571,	  571,		  0	  ]
-[ "monet_fcn_pro",	  1427,	  1427,		  0	  ]
-[ "monet_fcn_cnt",	  571,	  571,		  0	  ]
+[ "monet_fcn_dsc",	  544,	  544,		  0	  ]
+[ "monet_fcn_aut",	  544,	  544,		  0	  ]
+[ "monet_fcn_dat",	  544,	  544,		  0	  ]
+[ "monet_fcn_nme",	  573,	  573,		  0	  ]
+[ "monet_fcn_pro",	  1435,	  1435,		  0	  ]
+[ "monet_fcn_cnt",	  573,	  573,		  0	  ]
 [ "monet_mod_nme",	  7,	  7,		  0	  ]
 [ "monet_mod_cnt",	  7,	  7,		  0	  ]
 [ "monet_mod_atm",	  0,	  0,		  0	  ]
@@ -55,11 +55,11 @@ stdout of test 'monet_mod_cnt-copy_S` in directory 'src/monet` itself:
 [ "monet_mod_use",	  7,	  7,		  0	  ]
 [ "monet_mod_load",	  4,	  4,		  0	  ]
 [ "monet_mod_drop",	  0,	  0,		  0	  ]
-[ "monet_fcntbl",	  571,	  571,		  0	  ]
+[ "monet_fcntbl",	  573,	  573,		  0	  ]
 [ "monet_acctbl",	  2,	  2,		  0	  ]
 [ "monet_atomtbl",	  13,	  13,		  0	  ]
 
-# 10:20:07 >  
-# 10:20:07 >  Done.
-# 10:20:07 >  
+# 11:38:11 >  
+# 11:38:11 >  Done.
+# 11:38:11 >  
 
