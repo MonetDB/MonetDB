@@ -651,10 +651,12 @@ int CMDgetkey(bit *ret, BAT *b) {
 }
 
 int CMDpersists(BAT **r, BAT *input, bit *param) {
+/*
 	if (*param) {
 		BATpropcheck(input);
         	BATpropcheck(BATmirror(input));
 	}
+*/
 	BATmode(*r=input, *param?PERSISTENT:TRANSIENT);
 	BBPfix(input->batCacheid);
         return GDK_SUCCEED;

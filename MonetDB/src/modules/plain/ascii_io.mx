@@ -71,24 +71,31 @@ proc dump_format( BAT[void,BAT] bats, str fmt ) : BAT[str,BAT] := {
 	var names := [bbpname](bats);
 	var seps  := dump_seps(bats);
 	var types := [bat_ttype](bats);
-	bats:= new(void,bat); bats.seqbase(oid(0));
-	bats.insert(nil,names);
-	bats.insert(nil,seps);
-	bats.insert(nil,types);
+	fmtbats:= new(void,bat); fmtbats.seqbase(oid(0));
+	fmtbats.insert(nil,names);
+	fmtbats.insert(nil,seps);
+	fmtbats.insert(nil,types);
 
 	names := new(void,str); names.seqbase(oid(0));
 	seps := new(void,str); seps.seqbase(oid(0));
 	names.insert(nil,"names");seps.insert(nil,",");
 	names.insert(nil,"seps");seps.insert(nil,",");
 	names.insert(nil,"types");seps.insert(nil,"\n");
-	dump(names, seps, bats, fmt, 1000);
-	return names.reverse.join(bats);
+	dump(names, seps, fmtbats, fmt, 1000);
+	names.insert(nil,"bats"); 
+	fmtbats.insert(nil,bats);
+	return names.reverse.join(fmtbats);
 }
 
 proc dump_data( BAT[str,BAT] fmt, str data, int cnt) := {
 	var names := fmt.find("names");
 	var seps := fmt.find("seps");
-	var bats := [load](names);
+	var bats;
+	if (fmt.exist("bats")){
+		bats := fmt.find("bats");
+	} else {
+		bats := [load](names);
+	}
 	dump( names, seps, bats, data, cnt );
 }
 
@@ -175,7 +182,7 @@ static char *sep_dup( char *sep ){
 	while(sep < end){
 		if (*sep == '\\'){
 			++sep;
-			switch(*sep){
+			switch(*sep++){
 			case 'r': *res++ = '\r'; break;
 			case 'n': *res++ = '\n'; break;
 			case 't': *res++ = '\t'; break;
@@ -183,7 +190,6 @@ static char *sep_dup( char *sep ){
 		} else {
 			*res++ = *sep++; 
 		}
-		sep++;
 	}
 	*res = '\0';
 	return result;
@@ -335,7 +341,7 @@ int insert_line( ascii *as, char *line ){
 			insert_val( &fmt[i], s, e );
 			line = end + fmt[i].seplen;
 		} else {
-		        fprintf(GDKerr, "Error: missing sep %s\n", fmt->sep);
+		        GDKerror("Error: missing sep %s\n", fmt->sep);
 			return -1;
 		}
 		e = 0;
@@ -351,7 +357,7 @@ int insert_line( ascii *as, char *line ){
 		*e = 0;
 		insert_val( &fmt[as->nr_attrs-1], s, e );
 	} else {
-	        fprintf(GDKerr, "Error: missing newline\n" );
+	        GDKerror("Error: missing newline\n" );
 		return -1;
 	}
 	return 0;
@@ -384,6 +390,7 @@ int load_file( ascii *as, stream *fd ){
 		if ((l=fd->read(fd, buf+p, 1, size )) < size )
 			eof = 1;
 		end = s + p + l;
+		*end = '\0';
 		while( s < end ){
 			char *e = strstr( s, sep );
 			if (e){
@@ -432,14 +439,15 @@ BAT *ASCIIload( BAT *names, BAT *seps, BAT *types,
 	as.nr = nr;
 	if (create_loadformat( &as, names, seps, types) >= 0 && 
 	    create_bats( &as ) >= 0){
-		stream *filep = open_rastream( datafile );
-		if (filep && load_file( &as, filep )>=0)
+		stream *s = open_rastream( datafile );
+		if (!s->errnr && load_file( &as, s )>=0)
 			bats = collect_bats( &as );
-		if (filep == NULL){
-		 	fprintf(GDKerr, "could not open file %s\n", datafile );
+		if (s->errnr){
+		 	GDKerror("could not open file %s\n", datafile );
 		} else {
-			filep->close(filep);
+			s->close(s);
 		}
+		s->destroy(s);
 	}
 	destroy_format( &as );
 	return bats;
@@ -453,15 +461,16 @@ void ASCIIdump( BAT *names, BAT *seps, BAT *bats,
 	as.nr = nr;
 	if (create_dumpformat( &as, names, seps, bats) >= 0 && 
 	    assign_BATs( &as, bats ) >=  0){
-		stream *filep = open_wastream( datafile );
-		if (filep && dump_file( &as, filep ) >= 0){
-			printf("saved in %s\n", datafile );
+		stream *s = open_wastream( datafile );
+		if (!s->errnr && dump_file( &as, s ) >= 0){
+			fprintf(GDKerr, "saved in %s\n", datafile );
 		}
-		if (filep == NULL){
-		 	fprintf(GDKerr, "could not open file %s\n", datafile );
+		if (s->errnr){
+		 	GDKerror("could not open file %s\n", datafile );
 		} else {
-			filep->close(filep);
+			s->close(s);
 		}
+		s->destroy(s);
 	}
 }
 
@@ -471,10 +480,11 @@ int init_ascii_io(int *debug){
 }
 int ascii_io_load( BAT **bats, BAT *names, BAT* seps, BAT* types, str datafile, int *nr){
 	*bats = ASCIIload( names, seps, types, datafile, *nr );
-	if (*bats)
+	if (*bats) {
 		return GDK_SUCCEED;
-	else
+	} else {
 		return GDK_FAIL;
+	}
 }
 int ascii_io_dump( BAT *names, BAT* seps, BAT* bats, str datafile, int *nr){
 	ASCIIdump( names, seps, bats, datafile, *nr );
