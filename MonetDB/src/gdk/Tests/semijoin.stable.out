@@ -213,6 +213,92 @@ a.semijoin(c).print;
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
+
+# (try to) force different semijoin implementations
+
+a:=new(int,oid).insert(1,1@0).insert(2,2@0).insert(int(nil),oid(nil)).sort;
+c:=new(int,oid).insert(int(nil),oid(nil));
+i:=0;
+while(i < 100) {
+	i:+=1;
+	c.insert(i, oid(i));
+}
+c:=c.sort;
+
+a.print;
+#-----------------#
+# h	tmp_32	  # name
+# int	oid	  # type
+#-----------------#
+[ nil,	  nil	  ]
+[ 1,	  1@0	  ]
+[ 2,	  2@0	  ]
+c.slice(0,1).print;
+#-----------------#
+# h	tmp_31	  # name
+# int	oid	  # type
+#-----------------#
+[ nil,	  nil	  ]
+[ 1,	  1@0	  ]
+
+# binsemijoin
+a.semijoin(c).print;
+#-----------------#
+# h	tmp_31	  # name
+# int	oid	  # type
+#-----------------#
+[ 1,	  1@0	  ]
+[ 2,	  2@0	  ]
+c.semijoin(a).print;
+#-----------------#
+# h	tmp_31	  # name
+# int	oid	  # type
+#-----------------#
+[ 1,	  1@0	  ]
+[ 2,	  2@0	  ]
+
+a:=a.access(BAT_WRITE).insert(int(nil),oid(nil)).access(BAT_READ);
+c:=c.access(BAT_WRITE).insert(int(nil),oid(nil)).access(BAT_READ);
+
+# idxsemijoin
+ai:=a.copy;
+ai.accbuild(index);
+ci:=c.copy;
+ci.accbuild(index);
+ai.semijoin(ci).print;
+#-----------------#
+# h	tmp_34	  # name
+# int	oid	  # type
+#-----------------#
+[ 1,	  1@0	  ]
+[ 2,	  2@0	  ]
+ci.semijoin(ai).print;
+#-----------------#
+# h	tmp_34	  # name
+# int	oid	  # type
+#-----------------#
+[ 1,	  1@0	  ]
+[ 2,	  2@0	  ]
+
+# hash => kinsertsect & revsemijoin
+ah:=a.copy;
+ah.accbuild(hash);
+ch:=c.copy;
+ch.accbuild(hash);
+ah.semijoin(ch).print;
+#-----------------#
+# h	tmp_36	  # name
+# int	oid	  # type
+#-----------------#
+[ 1,	  1@0	  ]
+[ 2,	  2@0	  ]
+ch.semijoin(ah).print;
+#-----------------#
+# h	tmp_36	  # name
+# int	oid	  # type
+#-----------------#
+[ 1,	  1@0	  ]
+[ 2,	  2@0	  ]
 quit();
 
 # 14:39:13 >  

@@ -279,6 +279,7 @@ TODO synced/key case..
 	BUN q1 = BUNlast(l),  q2 = BUNlast(r);
 	int s1 = BUNsize(l),  s2 = BUNsize(r);
 
+	ALGODEBUG THRprintf(GDKout, "BATins_@1@2: mergecheck[@1, @2, @3, @4, @5];\n");
 	if (p2 < q2) BATloopFast(l, p1, q1, s1) {
             ptr  h = BUNh@2(l,p1);
 	    ptr  t = BUNtail(l,p1); 
@@ -314,6 +315,7 @@ end@2@3:;
 	hash_t s2;
 	ptr h, t, t2 = NULL;
 
+	ALGODEBUG THRprintf(GDKout, "BATins_@1@2: hashcheck[@1, @2, @3, @4, @5];\n");
 	(void) BATprepareHash(r);
 	BATloopFast(l, p1, q1, s1) {
 	    h = BUNh@2(l, p1);
@@ -338,6 +340,7 @@ end@2@3:;
 
     (void)t2;
 
+    ALGODEBUG THRprintf(GDKout, "BATins_@1@2: voidcheck[@1, @2];\n");
     if (BAThdense(l)) {
 	oid ll = *(oid*) BUNhead(l,(p1=BUNfirst(l))); 
     	oid lh = ll + BATcount(l);
@@ -467,6 +470,7 @@ BAT *BAT@1@2(BAT *l, BAT *r) {
 	bn = BATnew(BAThtype(l), BATttype(l), MAX(smaller,BATTINY)); 
 
 	/* fill it */
+	ALGODEBUG THRprintf(GDKout, "BAT@1@2: BATins_@1@2(bn, l, r);\n");
 	BATins_@1@2(bn, l, r);
 
 	/* propagate alignment info */

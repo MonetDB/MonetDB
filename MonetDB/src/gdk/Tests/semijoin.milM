@@ -51,3 +51,40 @@ d.semijoin(b).print;
 
 c.semijoin(a).print;
 a.semijoin(c).print;
+
+# (try to) force different semijoin implementations
+
+a:=new(int,oid).insert(1,1@0).insert(2,2@0).insert(int(nil),oid(nil)).sort;
+c:=new(int,oid).insert(int(nil),oid(nil));
+i:=0;
+while(i < 100) {
+	i:+=1;
+	c.insert(i, oid(i));
+}
+c:=c.sort;
+
+a.print;
+c.slice(0,1).print;
+
+# binsemijoin
+a.semijoin(c).print;
+c.semijoin(a).print;
+
+a:=a.access(BAT_WRITE).insert(int(nil),oid(nil)).access(BAT_READ);
+c:=c.access(BAT_WRITE).insert(int(nil),oid(nil)).access(BAT_READ);
+
+# idxsemijoin
+ai:=a.copy;
+ai.accbuild(index);
+ci:=c.copy;
+ci.accbuild(index);
+ai.semijoin(ci).print;
+ci.semijoin(ai).print;
+
+# hash => kinsertsect & revsemijoin
+ah:=a.copy;
+ah.accbuild(hash);
+ch:=c.copy;
+ch.accbuild(hash);
+ah.semijoin(ch).print;
+ch.semijoin(ah).print;

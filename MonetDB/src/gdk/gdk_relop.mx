@@ -1127,11 +1127,12 @@ differ significantly.
 @= binsemijoin
 {	BUN lp, lq;
 	int xx;
+	ptr nil = ATOMnilptr(l->htype);
 
         if (cpy == l) {
    		BATloopFast(l, lp, lq, xx) {
 			ptr v = BUNh@1(l,lp);
-			if (SORTfnd_@2(r, v)) {
+			if (!@3_EQ(v, nil, @2) && SORTfnd_@2(r, v)) {
 				BUNfastins(bn, v, BUNtail(l,lp));
 			}
 		}
@@ -1139,9 +1140,11 @@ differ significantly.
 		BATloopFast(l, lp, lq, xx) {
 			BUN rp, rq;
 			ptr v = BUNh@1(l,lp);
-			int yy;
-			SORTloop_@2(BATmirror(r), rp, rq, v, v, yy) {
-		    		BUNfastins(bn, v, BUNtail(r,rp));
+			if (!@3_EQ(v, nil, @2)) {
+				int yy;
+				SORTloop_@2(BATmirror(r), rp, rq, v, v, yy) {
+			    		BUNfastins(bn, v, BUNtail(r,rp));
+				}
 			}
 		}
 	} 
@@ -1149,7 +1152,8 @@ differ significantly.
 break;
 @c
 BAT *BATbinsemijoin(BAT *l, BAT *r, BAT *cpy) {
-	BAT *bn, *del = NULL;;
+	BAT *bn, *del = NULL;
+	int loc, var;
 
 	@:joincheck(BATbinsemijoin, l->htype, r->htype)@
 	@:semijoinbat(cpy, TRUE,(l == cpy && (BATtordered(l)&1)), "BATbinsemijoin")@ 
@@ -1158,24 +1162,24 @@ BAT *BATbinsemijoin(BAT *l, BAT *r, BAT *cpy) {
 		del = r = BATsort(r);
 	}
 
-	switch(ATOMstorage(l->htype)) {
-	case TYPE_chr: @:binsemijoin(loc,chr)@
-	case TYPE_sht: @:binsemijoin(loc,sht)@
-	case TYPE_int: @:binsemijoin(loc,int)@
-	case TYPE_flt: @:binsemijoin(loc,flt)@
-	case TYPE_dbl: @:binsemijoin(loc,dbl)@
-	case TYPE_lng: @:binsemijoin(loc,lng)@
+	switch(loc=var=ATOMstorage(l->htype)) {
+	case TYPE_chr: @:binsemijoin(loc,chr,simple)@
+	case TYPE_sht: @:binsemijoin(loc,sht,simple)@
+	case TYPE_int: @:binsemijoin(loc,int,simple)@
+	case TYPE_flt: @:binsemijoin(loc,flt,simple)@
+	case TYPE_dbl: @:binsemijoin(loc,dbl,simple)@
+	case TYPE_lng: @:binsemijoin(loc,lng,simple)@
 	default: if (l->hvarsized) {
 		   if (r->hvarsized) {
-		       @:binsemijoin(var,var)@
+		       @:binsemijoin(var,var,atom)@
 		   } else {
-		       @:binsemijoin(var,loc)@
+		       @:binsemijoin(var,loc,atom)@
 		   }
 		 } else {
 		   if (r->hvarsized) {
-		       @:binsemijoin(loc,var)@
+		       @:binsemijoin(loc,var,atom)@
 		   } else {
-		       @:binsemijoin(loc,loc)@
+		       @:binsemijoin(loc,loc,atom)@
 		   }
 		 }
 	}
@@ -1201,11 +1205,12 @@ for the binary search.
 @= idxsemijoin
 {	BUN lp, lq;
 	int xx;
+	ptr nil = ATOMnilptr(l->htype);
 
 	if (cpy == l) {
 		BATloopFast(l, lp, lq, xx) {
 			ptr v = BUNh@1(l,lp);
-			if (IDXfnd_@2(r, v)) {
+			if (!@3_EQ(v, nil, @2) && IDXfnd_@2(r, v)) {
 				BUNfastins(bn, v, BUNtail(l,lp));
 			}
 		}
@@ -1213,9 +1218,11 @@ for the binary search.
 		BATloopFast(l, lp, lq, xx) {
 			BUN *rp, *rq;
 			ptr v = BUNh@1(l,lp);
-			IDXrng(r, v, v, &rp, &rq);
-			IDXloop(r, rp, rq) {
-			     BUNfastins(bn, v, BUNtail(r,*rp));
+			if (!@3_EQ(v, nil, @2)) {
+				IDXrng(r, v, v, &rp, &rq);
+				IDXloop(r, rp, rq) {
+				     BUNfastins(bn, v, BUNtail(r,*rp));
+				}
 			}
 		}
 	} 
@@ -1224,6 +1231,7 @@ break;
 @c
 BAT *BATidxsemijoin(BAT *l, BAT *r, BAT *cpy) {
 	BAT *bn;
+	int loc, var;
 
 	@:joincheck(BATidxsemijoin, l->htype, r->htype)@
 	@:semijoinbat(cpy, TRUE,FALSE, "BATidxsemijoin")@
@@ -1231,24 +1239,24 @@ BAT *BATidxsemijoin(BAT *l, BAT *r, BAT *cpy) {
 		BATidx(r, 0);
 	}
 
-	switch(ATOMstorage(l->htype)) {
-	case TYPE_chr: @:idxsemijoin(loc,chr)@
-	case TYPE_sht: @:idxsemijoin(loc,sht)@
-	case TYPE_int: @:idxsemijoin(loc,int)@
-	case TYPE_flt: @:idxsemijoin(loc,flt)@
-	case TYPE_dbl: @:idxsemijoin(loc,dbl)@
-	case TYPE_lng: @:idxsemijoin(loc,lng)@
+	switch(loc=var=ATOMstorage(l->htype)) {
+	case TYPE_chr: @:idxsemijoin(loc,chr,simple)@
+	case TYPE_sht: @:idxsemijoin(loc,sht,simple)@
+	case TYPE_int: @:idxsemijoin(loc,int,simple)@
+	case TYPE_flt: @:idxsemijoin(loc,flt,simple)@
+	case TYPE_dbl: @:idxsemijoin(loc,dbl,simple)@
+	case TYPE_lng: @:idxsemijoin(loc,lng,simple)@
 	default: if (l->hvarsized) {
 		   if (r->hvarsized) {
-		       @:idxsemijoin(var,var)@
+		       @:idxsemijoin(var,var,atom)@
 		   } else {
-		       @:idxsemijoin(var,loc)@
+		       @:idxsemijoin(var,loc,atom)@
 		   }
 		 } else {
 		   if (r->hvarsized) {
-		       @:idxsemijoin(loc,var)@
+		       @:idxsemijoin(loc,var,atom)@
 		   } else {
-		       @:idxsemijoin(loc,loc)@
+		       @:idxsemijoin(loc,loc,atom)@
 		   }
 		 }
 	}
@@ -1276,28 +1284,37 @@ iff BAThkey(r) and one on l to find the matching tuples.
 {	int xx;
 	hash_t yy;
 	BUN lp = 0, rp = 0, rq = 0, rr = 0;
+	ptr nil = ATOMnilptr(l->htype);
 
 	if (merge) {
+		ALGODEBUG THRprintf(GDKout, "BATrevsemijoin: merge\n");
 		BATloopFast(r, rp, rq, xx) {
 			ptr v = BUN@3(r,rp);
 			rr = rp + xx;
 			if (rr < rq && @1_EQ(v,BUN@3(r,rr),@2)) continue;
-			HASHloop_@2(l, l->hhash, yy, v, lp)
-				BUNfastins(bn, v, BUNtail(l, lp));
+			if (!@1_EQ(v, nil, @2)) {
+				HASHloop_@2(l, l->hhash, yy, v, lp)
+					BUNfastins(bn, v, BUNtail(l, lp));
+			}
 		}
 	} else if (rdoubles) {
+		ALGODEBUG THRprintf(GDKout, "BATrevsemijoin: rdoubles\n");
 		BATloopFast(r, rp, rq, xx) {
 			ptr v = BUN@3(r,rp);
 			HASHloop_@2(r, r->hhash, yy, v, rr) break;
 			if (rr != rp) continue; 
-			HASHloop_@2(l, l->hhash, yy, v, lp)
-				BUNfastins(bn, v, BUNtail(l, lp));
+			if (!@1_EQ(v, nil, @2)) {
+				HASHloop_@2(l, l->hhash, yy, v, lp)
+					BUNfastins(bn, v, BUNtail(l, lp));
+			}
 		}
 	} else {
 		BATloopFast(r, rp, rq, xx) {
 			ptr v = BUN@3(r,rp);
-			HASHloop_@2(l, l->hhash, yy, v, lp)
-				BUNfastins(bn, v, BUNtail(l, lp));
+			if (!@1_EQ(v, nil, @2)) {
+				HASHloop_@2(l, l->hhash, yy, v, lp)
+					BUNfastins(bn, v, BUNtail(l, lp));
+			}
 		}
 	}
 }
