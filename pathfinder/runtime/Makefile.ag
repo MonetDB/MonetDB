@@ -23,7 +23,7 @@
 #
 
 INCLUDES = $(MONETDB_INCS) $(LIBGC_CFLAGS) $(LIBXML2_CFLAGS) ../compiler/include
-PF_LIBS = $(LIBGC_LDADD) $(LIBXML2_LDADD)
+PF_LIBS = $(LIBGC_LDADD) $(LIBXML2_LDADD) $(LIBGC_LIBS)
 
 lib__pathfinder = {
 	DIR = libdir/MonetDB
