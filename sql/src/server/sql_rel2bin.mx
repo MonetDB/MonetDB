@@ -383,9 +383,14 @@ list *shrink_select_ranges(list *oldsels)
 	basecols = list_distinct( haveBasecol, (fcmp)&cmp_sel_basecol, (fdup)&stmt_dup );
 	for ( bc = basecols->h; bc; bc = bc->next ){
 		list *colsels = list_select( haveBasecol, bc->data, (fcmp)&cmp_sel_basecol, (fdup)&stmt_dup );
+		sql_subtype *tt = tail_type(((stmt*)(colsels->h->data))->op2.stval);
+		assert(tt);
 		if ( list_length(colsels) == 1 ){
 			/* only one select on this column; simply keep it. */
 			list_append( newsels, stmt_dup(colsels->h->data) );
+		} else if ( !sql_bind_func_result("sql_min", tt, tt, tt) || !sql_bind_func_result("sql_max", tt, tt, tt) ) {
+			/* no "min" and/or "max" available on this data type, hence, we cannot apply the following "tricks" */
+			list_merge( newsels, colsels, (fdup)&stmt_dup );
 		} else {
 			list *sels2, *sels1[cmp_all];
 			stmt *bound[4] = {NULL, NULL, NULL, NULL};
