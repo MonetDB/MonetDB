@@ -175,7 +175,7 @@ parse format: INT_YEAR SEP1 INT_MONTH SEP1 INT_DAY
 with:	INT_YEAR = integer between -5867411 and 5867411
 	 INT_DAY = integer between 1 and 31
        INT_MONTH = integer between 1 and 12
-       STR_MONTH = 'JANUARI' or 'FEBRUARI' or 'MARCH' or 'APRIL' or 'MAY'
+       STR_MONTH = 'JANUARY' or 'FEBRUARY' or 'MARCH' or 'APRIL' or 'MAY'
 		   or 'JUNE' or 'JULI' or 'AUGUST' or 'SEPTEMBER' or 'OCTOBER'
 		   or 'NOVEMBER' or 'DECEMBER' (lowercase characters, and/or
 		   only the first three characters are also allowed)
