@@ -267,7 +267,7 @@ ascii_io_export size_t ASCIIassign_BATs( ascii *as, BAT *bats );
 ascii_io_export int ASCIIload_file( ascii *as, bstream *b );
 ascii_io_export BAT *ASCIIcollect_bats( ascii *as );
 ascii_io_export void ASCIIdestroy_format( ascii *as );
-ascii_io_export void ASCIIoutput_file( ascii *as, BAT *order, stream *s );
+ascii_io_export int ASCIIoutput_file( ascii *as, BAT *order, stream *s );
 
 @+ Default from and to string functions
 @h
@@ -688,8 +688,19 @@ int insert_line( ascii *as, char *line ){
 	return res;
 }
 
-static INLINE
-int dump_line( char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs, size_t id ){
+static int
+ascii_io_error(stream *s)
+{
+	char *err = stream_error(s);
+
+	stream_printf( GDKerr, "Stream error %s\n", err);
+	/* use free as stream allocates out side GDK */
+	if (err) free(err);
+	return -1;
+}
+
+static INLINE int 
+dump_line( char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs, size_t id ){
 	size_t i;
 	for( i = 0; i<nr_attrs; i++){
 		ascii_io *f;
@@ -700,9 +711,11 @@ int dump_line( char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs,
 		if( f->c){
 			p = (char*)bun_tail(f->c,id);
 			l = f->tostr( f->extra, buf, len, f->adt, p);
-			(void)stream_write( fd, *buf, 1, l );
+			if (stream_write( fd, *buf, 1, l ) != l)
+				return ascii_io_error(fd);
 		} 
-		(void)stream_write( fd, f->sep, 1, f->seplen );
+		if (stream_write( fd, f->sep, 1, f->seplen ) != f->seplen)
+			return ascii_io_error(fd);
 	}
 	return 0;
 }
@@ -727,9 +740,11 @@ int output_line( char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attr
 		if( f->c){
 			p = BUNtail(f->c, f->p);
 			l = f->tostr(f->extra, buf, len, f->adt, p);
-			(void)stream_write( fd, *buf, 1, l );
+			if (stream_write( fd, *buf, 1, l ) != l)
+				return ascii_io_error(fd);
 		}
-		(void)stream_write( fd, f->sep, 1, f->seplen );
+		if (stream_write( fd, f->sep, 1, f->seplen ) != f->seplen)
+			return ascii_io_error(fd);
 	    }
 	}
 	return 0;
@@ -743,10 +758,12 @@ int output_line_dense( char **buf, int *len, ascii_io *fmt, stream *fd, size_t n
 		if( f->c){
 			char *p = BUNtail(f->c, f->p);
 			int l = f->tostr(f->extra, buf, len, f->adt, p);
-			(void)stream_write( fd, *buf, 1, l );
+			if (stream_write( fd, *buf, 1, l ) != l)
+				return ascii_io_error(fd);
 			f->p = BUNnext( f->c, f->p );
 		}
-		(void)stream_write( fd, f->sep, 1, f->seplen );
+		if (stream_write( fd, f->sep, 1, f->seplen ) != f->seplen)
+			return ascii_io_error(fd);
 	}
 	return 0;
 }
@@ -760,9 +777,11 @@ int output_line_lookup( char **buf, int *len, ascii_io *fmt, stream *fd, size_t 
 			char *p = BUNtail(f->c, BUNptr(f->c,
 					id+BUNindex(f->c,BUNfirst(f->c))));
 			int l = f->tostr(f->extra, buf, len, f->adt, p);
-			(void)stream_write( fd, *buf, 1, l );
+			if (stream_write( fd, *buf, 1, l ) != l)
+				return ascii_io_error(fd);
 		}
-		(void)stream_write( fd, f->sep, 1, f->seplen );
+		if (stream_write( fd, f->sep, 1, f->seplen ) != f->seplen)
+			return ascii_io_error(fd);
 	}
 	return 0;
 }
@@ -851,9 +870,10 @@ int dump_file( ascii *as, stream *fd ){
 	return 0;
 }
 
-static
-void output_file_default( ascii *as, BAT *order, stream *fd ){
-	int len = BUFSIZ; 
+static int 
+output_file_default( ascii *as, BAT *order, stream *fd )
+{
+	int len = BUFSIZ, res = 0; 
 	char *buf = GDKmalloc(len);
 	BUN p,q;
         size_t i = 0;
@@ -863,37 +883,41 @@ void output_file_default( ascii *as, BAT *order, stream *fd ){
 			p < q; p = BUNnext(order, p))
 	{
 		ptr h = BUNhead(order, p);
-		if(output_line( &buf, &len,as->format, fd, as->nr_attrs, h )<0){
+		if ((res = output_line( &buf, &len,as->format, fd, as->nr_attrs, h ))<0){
 			GDKfree(buf);
-			return;
+			return res;
 		}
 		i++;
 		if (ascii_io_debug && (i%1000000) == 0)
 			stream_printf(GDKerr, "dumped " SZFMT " lines\n", i);
         } 
 	GDKfree(buf);
+	return res;
 }
 
-static
-void output_file_dense( ascii *as, stream *fd ){
-	int len = BUFSIZ; 
+static int 
+output_file_dense( ascii *as, stream *fd )
+{
+	int len = BUFSIZ, res = 0; 
 	char *buf = GDKmalloc(len);
         size_t i = 0;
 	
 	for(i=0; i<as->nr; i++){
-		if(output_line_dense( &buf, &len, as->format, fd, as->nr_attrs )<0){
+		if((res = output_line_dense( &buf, &len, as->format, fd, as->nr_attrs))<0){
 			GDKfree(buf);
-			return;
+			return res;
 		}
 		if (ascii_io_debug && (i%1000000) == 0)
 			stream_printf(GDKerr, "dumped " SZFMT " lines\n", i);
         } 
 	GDKfree(buf);
+	return res;
 }
 
-static
-void output_file_ordered( ascii *as, BAT *order, stream *fd, oid base ){
-	int len = BUFSIZ; 
+static int 
+output_file_ordered( ascii *as, BAT *order, stream *fd, oid base )
+{
+	int len = BUFSIZ, res = 0; 
 	char *buf = GDKmalloc(len);
 	BUN p,q;
         size_t i = 0;
@@ -903,18 +927,22 @@ void output_file_ordered( ascii *as, BAT *order, stream *fd, oid base ){
 			p < q; p = BUNnext(order, p))
 	{
 		size_t h = *(oid*)BUNhead(order, p) - base;
-		if(output_line_lookup( &buf, &len, as->format, fd, as->nr_attrs, h )<0){
+		if ((res = output_line_lookup( &buf, &len, as->format, fd, as->nr_attrs, h))<0){
 			GDKfree(buf);
-			return;
+			return res;
 		}
 		if (ascii_io_debug && (i%1000000) == 0)
 			stream_printf(GDKerr, "dumped " SZFMT " lines\n", i);
         } 
 	GDKfree(buf);
+	return res;
 }
 
 #define SIZE 1*1024*1024
-BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr ){
+
+BAT *
+ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr )
+{
 	BAT *res;
 	stream *s = open_rastream( datafile );
 	bstream *b = NULL;
@@ -966,30 +994,37 @@ void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr ){
 	ASCIIdestroy_format( &as );
 }
 
-void ASCIIoutput_file( ascii *as, BAT *order, stream *s ){
+int 
+ASCIIoutput_file( ascii *as, BAT *order, stream *s )
+{
 	oid base = oid_nil;
 	if ((base = check_BATs( as )) != oid_nil ){
 		if (BAThdense(order) && 
  		    order->hseqbase == base && BATcount(order) == as->nr)
-			output_file_dense( as, s );
+			return output_file_dense( as, s );
 		else
-			output_file_ordered( as, order, s, base );
+			return output_file_ordered( as, order, s, base );
 	} else {
-		output_file_default( as, order, s ); 
+		return output_file_default( as, order, s ); 
 	}
 }
 
-size_t ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s ){
+size_t 
+ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s )
+{
+	int res = 0;
 	ascii as;
 
 	as.nr_attrs = 0;
 	as.nr = ~(size_t)0;
 	if (create_dumpformat( &as, NULL, seps, bats) != ~(size_t)0 && 
 	    ASCIIassign_BATs( &as, bats ) != ~(size_t)0){
-		ASCIIoutput_file(&as, order, s);
+		res = ASCIIoutput_file(&as, order, s);
 	}
 	ASCIIdestroy_format( &as );
-	return as.nr;
+	if (res >= 0)
+		return as.nr;
+	return -1;
 }
 
 int init_ascii_io(int *debug){
