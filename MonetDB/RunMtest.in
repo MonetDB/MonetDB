@@ -1,13 +1,17 @@
 #!/bin/sh
 
 builddir=@MONET_BUILD@
-srcdir=@srcdir@
+# make sure srcdir contains absolute path name
+srcdir=`cd "@srcdir@"; pwd`
 
-PATH=${builddir}/src/testing:${builddir}/src/tools:${builddir}/src/mapi/clients:$PATH
-PYTHONPATH=${builddir}/src/testing:${srcdir}/src/testing:${builddir}/src/common:${srcdir}/src/mapi/clients
-LD_LIBRARY_PATH=${builddir}/src/gdk/.libs:${builddir}/src/mapi/clients/.libs:${builddir}/src/mapi/.libs:${builddir}/src/modules/calibrator/.libs:${builddir}/src/modules/plain/.libs:${builddir}/src/modules/plain/stream/.libs:${builddir}/src/monet/.libs
+PATH="${builddir}/src/testing:${builddir}/src/tools:${builddir}/src/mapi/clients:$PATH"
+PYTHONPATH="${builddir}/src/testing:${srcdir}/src/testing:${builddir}/src/common:${srcdir}/src/mapi/clients"
+LD_LIBRARY_PATH="${builddir}/src/gdk/.libs:${builddir}/src/mapi/clients/.libs:${builddir}/src/mapi/.libs:${builddir}/src/modules/calibrator/.libs:${builddir}/src/modules/plain/.libs:${builddir}/src/modules/plain/stream/.libs:${builddir}/src/monet/.libs"
 export PATH PYTHONPATH LD_LIBRARY_PATH
 
-MOD_PATH=${builddir}/src/modules/plain/.libs:${builddir}/src/modules/calibrator/.libs:${builddir}/src/mapi/.libs
+MOD_PATH="${builddir}/src/modules/plain/.libs:${builddir}/src/modules/calibrator/.libs:${builddir}/src/mapi/.libs"
 
-exec python ${builddir}/src/testing/Mtest.py --monet_mod_path=${MOD_PATH} --config=${builddir}/conf/monet.conf -r --dbfarm=${builddir}/dbfarm --TSTTRGBASE=${builddir}
+# execute Mtest.py in the source directory
+cd "$srcdir"
+
+exec python "${builddir}/src/testing/Mtest.py" --monet_mod_path="${MOD_PATH}" --config="${builddir}/conf/monet.conf" -r --dbfarm="${builddir}/dbfarm" --TSTTRGBASE="${builddir}"
