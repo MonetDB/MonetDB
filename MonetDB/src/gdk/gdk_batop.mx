@@ -489,7 +489,7 @@ by bulk copying the heap as well
 		BAT *bm = BATmirror(b);
                 ALIGNsetH(bn,bm);
         }
-	if (ATOMstorage(b->ttype) == TYPE_bit) {
+	if (ATOMstorage(b->ttype) == TYPE_chr) {
 		bit trueval = TRUE;
 		BUN p = BUNfnd(bn, &trueval);
 		BATsetaggr(b,GDK_AGGR_SIZE,p?*(int*)BUNtloc(bn,p):0);

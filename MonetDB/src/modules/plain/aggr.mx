@@ -183,11 +183,6 @@ test scripts were added.
     proc {prod}(BAT[oid, dbl] b, bat[oid,any] e ) : BAT[oid,dbl] {
 		return	 {prod_dbl}(b,e);
     }
-
-    proc card(BAT[any,any] b) : int {
-	return b.tunique.count;
-    }
-
     proc {card}(BAT[oid,any] b, BAT[oid,any] e) : BAT[oid,int] {
 	return {count}(b.sunique,e);
     }
