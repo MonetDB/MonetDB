@@ -1917,7 +1917,7 @@ The remainder is a wrapper around the V4 code base.
 str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid){
 	BAT *b, *e;
 	BAT *bn;
-	int result;
+	int result=0;
 	(void) result; /* fool compilers */
 
 	@:getBATdescriptor(&result,bid,b,sum)@
@@ -1933,7 +1933,7 @@ str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid){
 @= AX3prod
 str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
 	BAT *b, *e, *bn;
-	int result;
+	int result=0;
 	(void) result; /* fool compilers */
 
 	@:getBATdescriptor(&result,bid,b,sum)@
@@ -1969,7 +1969,7 @@ str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
 @= AX3arithavg
 str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid){
 	BAT *b, *e, *bn;
-	int result;
+	int result=0;
 	(void) result; /* fool compilers */
 
 	@:getBATdescriptor(&result,bid,b,avg)@
