@@ -1305,7 +1305,23 @@ main(int argc, char **argv)
 					       "config", optarg);
 			break;
 		case 'l':
-			language = optarg;
+			if (strcmp(optarg, "sql") == 0 ||
+				strcmp(optarg, "sq") == 0 ||
+				strcmp(optarg, "s") == 0)
+			{
+				language = "sql";
+			} else if (strcmp(optarg, "mil") == 0 ||
+				strcmp(optarg, "mi") == 0)
+			{
+				language = "mil";
+			} else if (strcmp(optarg, "mal") == 0 ||
+				strcmp(optarg, "ma") == 0)
+			{	/* usage says it exists */
+				language = "mal";
+			} else {
+				fprintf(stderr, "language option needs to be either one of sql, mil or mal\n");
+				exit(-1);
+			}
 			break;
 		case 'u':
 			guest= 0;
