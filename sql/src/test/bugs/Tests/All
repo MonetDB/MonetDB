@@ -10,7 +10,7 @@ bug-sf-941788
 bug-sf-949071
 bug-sf-949135
 bug-sf-949228
-bug-sf-949255
+float_arith_cast2int-bug-sf-949255
 bug-sf-947600
 subselect_column-bug-sf-951206
 cast_bool2int-bug-sf-951800
