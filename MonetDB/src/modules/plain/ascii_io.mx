@@ -785,14 +785,17 @@ read_more(bstream * in, stream * out, int n)
 	if (out) {
 		do {
 		/* query is not finished ask for more */
-			if (in->eof || !isa_block_stream(in->s) ) { 
-				if (out && stream_write(out,PROMPT2,sizeof(PROMPT2)-1,1) == 1)
-					stream_flush(out);
-				in->eof = 0;
-			}
 			/* we need more query text */
 			if (bstream_next( in ) < 0) 
 				return EOF;
+			if (in->eof) {
+				if (out && stream_write(out,PROMPT2,sizeof(PROMPT2)-1,1) == 1)
+					stream_flush(out);
+				in->eof = 0;
+				/* we need more query text */
+				if (bstream_next( in ) < 0) 
+					return EOF;
+			}
 		} while (in->len <= in->pos); 
 	} else {
 		bstream_read( in, n );
