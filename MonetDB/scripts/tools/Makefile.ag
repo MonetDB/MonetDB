@@ -1,0 +1,5 @@
+
+scripts_mil = {
+	DIR = pkgdatadir/tools
+	SOURCES = backup.mil restore.mil
+}

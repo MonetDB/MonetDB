@@ -1,6 +1,6 @@
-EXTRA_DIST_DIR = gold
+EXTRA_DIST_DIR = gold 
 
-SUBDIRS = 
+SUBDIRS = tools
 
 scripts_mil = {
 	DIR = pkgdatadir

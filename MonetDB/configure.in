@@ -359,6 +359,7 @@ src/tools/monet-config.mx
 conf/Makefile
 doc/Makefile
 scripts/Makefile
+scripts/tools/Makefile
 tests/Makefile
 Makefile
 src/utils/Mx/epstogif
