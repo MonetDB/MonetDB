@@ -1002,11 +1002,14 @@ void sqltypeinit()
 	sql_create_aggr( "count", "count", NULL, INT );
 
 	for(t=misc; t < strings; t++){
+	  	sql_type **u;
+
 		sql_create_func("and","and", *t, *t, *t, SCALE_FIX);
 		sql_create_func("or","or", *t, *t, *t, SCALE_FIX);
 		sql_create_func("xor","xor", *t, *t, *t, SCALE_FIX);
 		sql_create_func("not","not", *t, NULL, *t, SCALE_FIX);
-		sql_create_func("convert","int", *t, NULL, INT, SCALE_FIX);
+	  	for(u=numerical; u < dates; u++)
+	      		sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX );
 	}
 
 	for(t=numerical; t < dates; t++){
