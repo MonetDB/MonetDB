@@ -137,7 +137,7 @@ extern  void    PrevLine NOARGS;
 /* Mx.c
  */
 #ifndef UNIX
-extern	void	Main ARGS((int, char**));
+extern	int	Main ARGS((int, char**));
 #endif
 extern	int	ModeDir ARGS((char));
 extern	char *	ExtMode ARGS((int));
