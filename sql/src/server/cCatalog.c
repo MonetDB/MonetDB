@@ -342,34 +342,78 @@ void mvc_fast_insert( mvc *c, char *insert_string ){
 	}
 }
 
-void mvc_delete( mvc *c, oid tid, oid rid ){
+void mvc_delete( mvc *c, oid tid, BAT *rids ){
 	BAT *columns = BATselect(c->column_table, (ptr)&tid, (ptr)&tid);
 	BUN p,q;
-
-	BATloop(columns, p, q ){
-		oid cid = *(oid*)BUNhead(columns,p);
-		BAT *b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
+	oid cid = *(oid*)BUNhead(columns,BUNfirst(columns));
+	BAT *b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
 				BUNfnd(c->column_bat, (ptr)&cid)));
+	int first =  BUNindex(b,BUNfirst(b));
+	signed long base = b->hseqbase-first;
 
-		BUNdelHead(b,  (ptr)&rid );
-	}	
-}
-
-void mvc_delete_bat( mvc *c, oid tid, BAT *rids ){
-	BAT *columns = BATselect(c->column_table, (ptr)&tid, (ptr)&tid);
-	BUN p,q;
+	assert(BAThdense(b));
 
 	/* bats should be void, ie. first translate the rids to 
 	 * positions then use deletes of positions 
 	 */
+	/*
 	printf("mvc_delete_bat %ld \n", tid);
 	BATprint(rids);
+	*/
+
 
 	BATloop(columns, p, q ){
-		oid cid = *(oid*)BUNhead(columns,p);
-		BAT *b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
+		BUN r,s;
+		int sz;
+		cid = *(oid*)BUNhead(columns,p);
+		b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
 				BUNfnd(c->column_bat, (ptr)&cid)));
 
-		BATdel(b,  rids );
+		BATloopFast(rids,r,s,sz){
+			oid rid = *(oid*)BUNhead(rids,r);
+			BUNdelete(b,  BUNptr(b, rid-base));
+		}
+	}	
+}
+
+void mvc_update( mvc *c, oid tid, oid cid, BAT *v ){
+	BAT *columns = BATselect(c->column_table, (ptr)&tid, (ptr)&tid);
+	BUN p,q;
+	
+	oid fcid = *(oid*)BUNhead(columns,BUNfirst(columns));
+	BAT *b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
+				BUNfnd(c->column_bat, (ptr)&fcid)));
+	int first =  BUNindex(b,BUNfirst(b));
+	signed long base = b->hseqbase-first;
+
+	assert(BAThdense(b));
+	
+	BATloop(columns, p, q ){
+		BUN r,s;
+		int sz;
+
+		oid nil = oid_nil;
+		BAT *u = v; 
+		oid lcid = *(oid*)BUNhead(columns,p);
+		oid thiscid = *(oid*)BUNtail(c->column_id,
+				BUNfnd(c->column_bat, (ptr)&lcid));
+
+		b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
+				BUNfnd(c->column_bat, (ptr)&lcid)));
+
+		if (thiscid != cid){
+			/* may need own BATsemijoin or force one which
+			 * keeps the order, aka fetchjoin
+			 * */
+			u = BATsemijoin(b,v);
+		}
+		BATloopFast(u,r,s,sz){
+			oid rid = *(oid*)BUNhead(u,r);
+			BUNdelete(b,  BUNptr(b, rid-base));
+		}
+		BATloopFast(u,r,s,sz){
+			oid rid = *(oid*)BUNhead(u,r);
+			BUNins(b,  (ptr)&nil, BUNptr(u, rid-base));
+		}
 	}	
 }

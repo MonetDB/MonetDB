@@ -50,14 +50,11 @@
 .COMMAND mvc_insert( mvc c, oid tid, ...any... ) = mvc_insert_wrap; 
 	"Insert, values in the table with the given table id"
 
-.COMMAND mvc_delete( mvc c, oid tid, oid rid ) = mvc_delete_wrap; 
-	"Delete, a row (rid) from the table with the given table id"
-
-.COMMAND mvc_delete( mvc c, oid tid, BAT[oid,any] rids ) = mvc_delete_bat_wrap; 
+.COMMAND mvc_delete( mvc c, oid tid, BAT[oid,any] rids ) = mvc_delete_wrap; 
 	"Delete, all rows (rids) from the table with the given table id"
 
-.COMMAND mvc_update( mvc c, oid tid, oid rid, oid cid, any val ) = mvc_update_wrap; 
-	"Update the value of row(rid), column(cid) of table (tid)"
+.COMMAND mvc_update( mvc c, oid tid, oid cid, BAT[oid,any] val ) = mvc_update_wrap; 
+	"Update the value of column(cid) in table (tid)"
 
 .END mvc;
 @c
@@ -145,20 +142,13 @@ mvc_export int mvc_insert_wrap( mvc* c, oid *tid, ... ){
 	return GDK_SUCCEED;
 }
 
-mvc_export int mvc_delete_wrap( mvc* c, oid *tid, oid *rid ){
-	mvc_delete( *(mvc**)c, *tid, *rid ); 
+mvc_export int mvc_delete_wrap( mvc* c, oid *tid, BAT *rids ){
+	mvc_delete( *(mvc**)c, *tid, rids ); 
 	return GDK_SUCCEED;
 }
 
-mvc_export int mvc_delete_bat_wrap( mvc* c, oid *tid, BAT *rids ){
-	mvc_delete_bat( *(mvc**)c, *tid, rids ); 
-	return GDK_SUCCEED;
-}
-
-mvc_export int mvc_update_wrap( mvc* c, oid *tid, oid *rid, oid *cid, ptr v, int tpe){
-/*
-	mvc_update( *(mvc**)c, *tid, *rid, *cid, v ); 
-*/
+mvc_export int mvc_update_wrap( mvc* c, oid *tid, oid *cid, BAT *v){
+	mvc_update( *(mvc**)c, *tid, *cid, v ); 
 	return GDK_SUCCEED;
 }
 

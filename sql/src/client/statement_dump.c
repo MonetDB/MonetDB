@@ -492,6 +492,13 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		s->nr = (*nr)++;
 	} break;
 	case st_update: {
+		int r = statement_dump( s->op2.stval, nr, sql );
+		len += snprintf( buf+len, BUFSIZ, 
+		  "s%d := mvc_update(myc, oid(%ld), oid(%ld), s%d);\n", 
+		    *nr,	s->op1.cval->table->id, s->op1.cval->id, r);
+		s->nr = (*nr)++;
+	} break;
+	case st_replace: {
 		int l = statement_dump( s->op1.stval, nr, sql );
 		int r = statement_dump( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 

@@ -60,6 +60,7 @@ const char *statement2string( statement *s ){
 		cr(st_insert_column,"insert_column");
 		cr(st_like,"like");
 		cr(st_update,"update");
+		cr(st_replace,"replace");
 		cr(st_delete,"delete");
 		cr(st_count,"count");
 		cr(st_const,"const");
@@ -105,7 +106,7 @@ void statement_destroy( statement *s ){
 			list_destroy( s->op2.lval );
 			break;
 			/* statement_destroy  op1 and op2 */
-		case st_update: 
+		case st_replace: 
 		case st_default: 
 		case st_like: 
 		case st_semijoin: 
@@ -127,6 +128,7 @@ void statement_destroy( statement *s ){
 			if (s->op3.stval)
 				st_detach( s->op3.stval, s );
 			break;
+		case st_update: 
 		case st_delete: 
 			if (s->op2.stval)
 				st_detach( s->op2.stval, s );
@@ -511,15 +513,26 @@ statement *statement_insert_column( statement *c, statement *a){
 	return s;
 }
 
-statement *statement_update( statement *c, statement *b ){
+statement *statement_update( column *c, statement *b ){
 	statement *s = statement_create();
 	s->type = st_update;
+	s->op1.cval = c; 
+	s->op2.stval = b; st_attache(b,s);
+	s->h = NULL;
+	s->nrcols = 1;
+	return s;
+}
+
+statement *statement_replace( statement *c, statement *b ){
+	statement *s = statement_create();
+	s->type = st_replace;
 	s->op1.stval = c; st_attache(c,s);
 	s->op2.stval = b; st_attache(b,s);
 	s->h = c->h;
 	s->nrcols = c->nrcols;
 	return s;
 }
+
 
 statement *statement_delete( column *c, statement *where ){
 	statement *s = statement_create();
@@ -613,6 +626,7 @@ type *tail_type( statement *st ){
 	case st_unique: 
 	case st_union:
 	case st_update: 
+	case st_replace: 
 	case st_delete: 
 	case st_insert: 
 	case st_mark: 

@@ -540,7 +540,7 @@ statement *sql_search_case( context *sql, scope *scp, dlist *when_search_list,
 			result = statement_const( cond, result );
 		else
 			result = statement_semijoin( result, cond);
-		res = statement_update( res, result);
+		res = statement_replace( res, result);
 	}
 	list_destroy(conds);
 	list_destroy(results);
@@ -2581,6 +2581,7 @@ statement *update_set( context *sql, dlist *qname,
 		}
 
 		n = assignmentlist->h;
+		/* change to a list of (column, values-bats) */
 		while (n){
 			dlist *assignment = n->data.sym->data.lval;
 			column *cl = cat_bind_column(
@@ -2592,7 +2593,6 @@ statement *update_set( context *sql, dlist *qname,
 				list_destroy(l);
 				return NULL;
 			} else {
-				statement *scl = statement_column(cl, NULL);
 				symbol *a    = assignment->h->next->data.sym;
 				statement *v = scalar_exp(sql, scp, a, NULL, s);
 
@@ -2600,10 +2600,11 @@ statement *update_set( context *sql, dlist *qname,
 					v = check_types( sql, cl->tpe, v );
 
                                 if (v->nrcols <= 0)
-                                        v = statement_const( s?s:scl, v);
+                                        v = statement_const( 
+					  s?s:statement_column(cl,NULL), v);
 
                                 list_append_statement( l,
-                                        statement_update( scl, v ));
+                                        statement_update( cl, v ));
 			}
 			n = n->next;
 		}
@@ -2623,7 +2624,9 @@ statement *delete_searched( context *sql, dlist *qname, symbol *opt_where){
 	} else {
 		statement *s = NULL;
 		node *n;
+		/*
 		list *l = list_create();
+		*/
 		scope *scp;
 	        
 		scp = scope_open(NULL);
@@ -2633,13 +2636,21 @@ statement *delete_searched( context *sql, dlist *qname, symbol *opt_where){
 			s = search_condition(sql, scp, opt_where, NULL, NULL);
 
 		n = t->columns->h;
+		/*
 		while (n){
 			column *cl = n->data.cval;
 			list_append_statement( l, statement_delete( cl, s ));  
 			n = n->next;
 		}
+		*/
+		s =statement_delete( n->data.cval, s); /* HACK: use column for
+						       now need to change to 
+						       table */
 		scp = scope_close(scp);
+		/*
 		return statement_list(l);
+		*/
+		return s;
 	}
 	return NULL;
 }
