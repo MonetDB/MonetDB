@@ -1973,11 +1973,6 @@ Start of MIL script.
 #~EndVariableOutput~#
 End of MIL script.
 
-# 18:28:00 >  
-# 18:28:00 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708
-# 18:28:00 >  
-
-
 # 18:28:01 >  
 # 18:28:01 >  Done.
 # 18:28:01 >  

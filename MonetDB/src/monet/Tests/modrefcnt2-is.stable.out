@@ -236,11 +236,6 @@ Over..
 [ "sema_up(sema) : void"	  ]
 
 
-# 15:23:57 >  
-# 15:23:57 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=53745
-# 15:23:57 >  
-
-
 # 15:23:58 >  
 # 15:23:58 >  Done.
 # 15:23:58 >  

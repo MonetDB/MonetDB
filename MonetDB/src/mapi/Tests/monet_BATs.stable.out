@@ -4648,11 +4648,6 @@ MapiClient: This is what MapiClient says.
 [ "xor",		  nil	  ]
 [ "{count}",		  nil	  ]
 
-# 18:21:03 >  
-# 18:21:03 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708
-# 18:21:03 >  
-
-
 # 18:21:04 >  
 # 18:21:04 >  Done.
 # 18:21:04 >  

@@ -108,11 +108,6 @@ stderr of test 'ID.853867` in directory 'tests/BugsViaSourgeforce` itself:
 # 16:19:49 >  
 
 
-# 16:19:49 >  
-# 16:19:49 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=49233
-# 16:19:49 >  
-
-
 # 16:19:50 >  
 # 16:19:50 >  Done.
 # 16:19:50 >  

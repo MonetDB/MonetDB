@@ -2074,12 +2074,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if os.name != "nt" and sys.platform != 'cygwin':
             StopAt(ATJOB2,ME)
 
-        if SERVER == "MAPI":
-            AllOut = [SrvrOut, ClntOutFile ]
-            AllErr = [SrvrErr, ClntErrFile ]
-        else:
-            AllOut = [SrvrOut, ClntOutFile]
-            AllErr = [SrvrErr, ClntErrFile]
+        AllOut = [SrvrOut, ClntOutFile]
+        AllErr = [SrvrErr, ClntErrFile]
         TestOut = open(TestOutFile, 'a')
         for q in AllOut:
             if type(q) is type(''):

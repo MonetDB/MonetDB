@@ -83,11 +83,6 @@ MAPI  = monetdb@orion:44109
 QUERY = drop("lock");
 ERROR = !ERROR: TBL_unloadmod: lock was not loaded.
 
-# 00:53:05 >  
-# 00:53:05 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/monet.GNU_32-d.14598/MonetDB/Linux2.4.20-31.9smp/conf/MonetDB.conf" --host=draco --port=42778
-# 00:53:05 >  
-
-
 # 15:28:41 >  
 # 15:28:41 >  Done.
 # 15:28:41 >  

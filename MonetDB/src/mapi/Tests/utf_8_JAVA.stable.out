@@ -22,11 +22,6 @@ Over..
 
 [ "één" ]
 
-# 10:31:31 >  
-# 10:31:31 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/windhouw/src/MonetDB/Linux/etc/monet.conf" --host=ara --port=49406
-# 10:31:31 >  
-
-
 # 10:31:32 >  
 # 10:31:32 >  Done.
 # 10:31:32 >  

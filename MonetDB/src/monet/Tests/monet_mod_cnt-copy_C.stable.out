@@ -182,11 +182,6 @@ Over..
 [ "tmp_35",		  2,	  2,		  0	  ]
 [ "tmp_68",		  15,	  15,		  0	  ]
 
-# 14:24:44 >  
-# 14:24:44 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_4.4_PREFIX_MONETDB_GNU_32_d_--enable-debug_/etc/MonetDB.conf" --host=draco --port=46067
-# 14:24:44 >  
-
-
 # 14:24:45 >  
 # 14:24:45 >  Done.
 # 14:24:45 >  

@@ -28,11 +28,6 @@ rows received 2 with 2 fields
 h=John tmp_35=23 
 h=Mary tmp_35=22 
 
-# 22:25:16 >  
-# 22:25:16 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=42910
-# 22:25:16 >  
-
-
 # 22:25:17 >  
 # 22:25:17 >  Done.
 # 22:25:17 >  

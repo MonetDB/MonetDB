@@ -174,7 +174,6 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/Mdiff*
 %{prefix}/bin/Mtimeout*
 %{prefix}/bin/MkillUsers*
-%{prefix}/bin/Mshutdown.py*
 
 %{prefix}/lib/autogen/* 
 %{prefix}/lib/pkgconfig/MonetDB.pc

@@ -28,11 +28,6 @@ Over..
 John is 23
 Mary is 23
 
-# 19:06:03 >  
-# 19:06:03 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=43397
-# 19:06:03 >  
-
-
 # 19:06:04 >  
 # 19:06:04 >  Done.
 # 19:06:04 >  

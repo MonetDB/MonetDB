@@ -7,5 +7,4 @@ stderr of test 'multiClientPar` in directory 'src/tools` itself:
 #> Mtest:	Mtimeout -timeout 123 Mclient < multiClientPar_p01.milC &
 #> Mtest:	Mtimeout -timeout 123 Mclient < multiClientPar_p00.milC &
 #> Mtest:	Mtimeout -timeout 123 Mclient < multiClientPar_p01.milC &
-#> Mtest:	Mshutdown
 #> Mtest:	sleep 9

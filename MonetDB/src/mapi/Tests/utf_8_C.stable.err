@@ -58,11 +58,6 @@ stderr of test 'utf_8_C` in directory 'src/mapi` itself:
 # 10:32:53 >  
 
 
-# 10:32:53 >  
-# 10:32:53 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/windhouw/src/MonetDB/Linux/etc/monet.conf" --host=ara --port=47332
-# 10:32:53 >  
-
-
 # 10:32:55 >  
 # 10:32:55 >  Done.
 # 10:32:55 >  
