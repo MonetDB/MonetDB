@@ -52,6 +52,7 @@ m_export void	CNTXTclear   (Cntxt i);
 m_export void	CNTXTfree    (Cntxt stk, Client c);
 m_export void	CNTXTdelete  (Cntxt i);
 m_export int	CNTXTclient  (Cntxt i, Client *c);
+m_export void 	CNTXTcopy    (Cntxt dst, Cntxt src);
 
 #define CNTXTuse(stk)		monet_cntxt[stk].used = 1;
 #define CNTXTfree2(stk,c)	if	(c->maxstk != stk) CNTXTfree(stk,c)
