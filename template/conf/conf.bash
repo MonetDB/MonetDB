@@ -198,10 +198,10 @@ if [ "${os}" = "Linux" ] ; then
 	if [ "${COMP}" = "ntv" ] ; then
 		if [ "${hw}" = "ia64" ] ; then
 			cc="ecc"
-			cxx="ecc"
+			cxx="ecpc"
 		  else
 			cc="icc"
-			cxx="icc"
+			cxx="icpc"
 		fi
 		if [ "${what}" = "MONET" ] ; then
 			conf_opts="${conf_opts} --with-hwcounters=${softpath}"
@@ -387,10 +387,6 @@ modpath=`echo "${modpath}" | sed 's|:$||'`
 # export new settings
 echo ""
 echo "Setting..."
-CFLAGS="" ; export CFLAGS
-echo " CFLAGS=${CFLAGS}"
-CXXFLAGS="" ; export CXXFLAGS
-echo " CXXFLAGS=${CXXFLAGS}"
 if [ "${binpath}" ] ; then
 	if [ "${PATH}" ] ; then
 		# prepend new binpath to existing PATH, if PATH doesn't contain binpath, yet
