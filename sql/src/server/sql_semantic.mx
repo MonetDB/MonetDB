@@ -52,6 +52,7 @@ sql_export stmt *fix_scale( mvc * sql, sql_subtype * ct, stmt * s, int both, int
 sql_export void sum_scales( sql_subfunc *f, stmt *ls, stmt *rs );
 sql_export stmt *scale_algebra( sql_subfunc *f, stmt *ls, stmt *rs );
 sql_export stmt * sqlparse_intern(mvc *m, char *query);
+sql_export stmt * scope_sqlparse(mvc *m, scope *scp, char *query);
 
 sql_export stmt *first_subset(stmt * subset);
 
@@ -176,6 +177,29 @@ char *qname_table(dlist * qname)
 }
 
 stmt *
+scope_sqlparse(mvc *m, scope *scp, char *query) 
+{
+	mvc o = *m;
+	stmt *sq;
+
+	m->qc = NULL;
+	m->cache = 0;
+
+	scanner_reset(&m->scanner, query);
+
+	m->params = NULL;
+	m->args = NULL;
+	m->sym = NULL;
+
+	(void)sqlparse(m); /* blindly ignore errors */
+	sq = sql_subquery(m, scp, m->sym, 1);
+
+	symbol_destroy(m->sym);
+	*m = o;
+	return sq;
+}
+
+stmt *
 sqlparse_intern(mvc *m, char *query) 
 {
 	mvc o = *m;
@@ -191,7 +215,7 @@ sqlparse_intern(mvc *m, char *query)
 	m->sym = NULL;
 
 	(void)sqlparse(m); /* blindly ignore errors */
-	sq = sql_subquery(m, NULL, m->sym);
+	sq = scope_subquery(m, NULL, m->sym);
 
 	symbol_destroy(m->sym);
 	*m = o;
@@ -216,7 +240,7 @@ tvar *scope_add_table_columns(mvc * sql, scope * scp, sql_table * t, char *tname
 			c->st = stmt_ibat(sc, stmt_dup(sq));
 		}
 
-		tv = scope_add_table(scp, sq, tname);
+		tv = scope_add_table(scp, sq, tname, NULL);
 		for ( n = t->columns.set->h; n; n = n->next) {
 			sql_column *c = n->data;
 			stmt *sc = stmt_dup(c->st);
@@ -225,7 +249,7 @@ tvar *scope_add_table_columns(mvc * sql, scope * scp, sql_table * t, char *tname
 	} else {
 		stmt *ts;
 
-		tv = scope_add_table(scp, ts = stmt_basetable(t), tname);
+		tv = scope_add_table(scp, ts = stmt_basetable(t), tname, t);
 		for ( n = t->columns.set->h; n; n = n->next) {
 			sql_column *c = n->data;
 			stmt *sc = stmt_cbat(c, stmt_dup(ts), RDONLY, st_bat);

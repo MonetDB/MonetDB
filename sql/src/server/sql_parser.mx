@@ -275,6 +275,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	opt_order_by_clause
 	default
 	default_value
+	cast_value
 	aggr_ref
 	func_ref
 	datetime_funcs
@@ -2248,14 +2249,18 @@ column_ref:
  ;
 
 cast_exp:
-     CAST '(' scalar_exp AS data_type ')'
+     CAST '(' cast_value AS data_type ')'
  	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $3);
 	  dlist_append_type(l, $5);
 	  $$ = _symbol_create_list( SQL_CAST, l ); }
  ;
 
-case_exp: /* could rewrite NULLIF and COALESCE to normal CASE stmts */
+cast_value:
+	scalar_exp
+ | 	NULLX	 { $$ = _newAtomNode(NULL); }
+
+case_exp: 
      NULLIF '(' scalar_exp ',' scalar_exp ')' 
 		{ $$ = _symbol_create_list(SQL_NULLIF,
 		   dlist_append_symbol(
@@ -2385,6 +2390,36 @@ data_type:
  | interval_type		
  | aTYPE		{ $$ = sql_bind_subtype($1, 0, 0); _DELETE($1); }
  | aTYPE '(' nonzero ')'{ $$ = sql_bind_subtype($1, $3, 0); _DELETE($1); }
+ | IDENT		{ mvc *m = (mvc*)parm;
+			  sql_type *t = mvc_bind_type(m, $1); 
+			  if (!t) {
+				char buf[BUFSIZ]; 
+
+				snprintf(buf, BUFSIZ, "Type (%s) unknown", $1);
+				yyerror(buf);
+				$$ = NULL;
+				YYABORT;
+			  } else {
+				$$ = sql_create_subtype(t, 0, 0);
+			  }
+			  _DELETE($1); 
+			}
+		
+ | IDENT '(' nonzero ')'{ mvc *m = (mvc*)parm;
+			  sql_type *t = mvc_bind_type(m, $1); 
+			  if (!t) {
+				char buf[BUFSIZ]; 
+
+				snprintf(buf, BUFSIZ, "Type (%s) unknown", $1);
+				yyerror(buf);
+				$$ = NULL;
+				YYABORT;
+			  } else {
+				$$ = sql_create_subtype(t, $3, 0);
+			  }
+			  _DELETE($1); 
+			}
+		
  ;
 
 opt_var:
@@ -2448,12 +2483,7 @@ string:
  ;
 
 
-
-	/* embedded condition things */
-/* sql: WHENEVER NOT FOUND when_action |	WHENEVER SQLERROR when_action ;
-when_action:	GOTO IDENT |	CONTINUE ; */
 %%
-
 char *token2string(int token)
 {
 	switch (token) {

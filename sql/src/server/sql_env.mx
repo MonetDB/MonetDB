@@ -178,7 +178,7 @@ sql_set_var( mvc *sql, symbol *s )
 		scope *scp = scope_open(NULL);
 
 		char *name = l->h->data.sval;
-		stmt *v = sql_value_exp( sql, scp, val, NULL, NULL);
+		stmt *v = sql_value_exp( sql, scp, val, NULL, NULL, sql_sel);
 		sql_subtype *ctype, *valtype = tail_type(v);
 		str typename;
 		BAT *n, *t;

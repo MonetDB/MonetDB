@@ -706,7 +706,6 @@ stmt *stmt_sql(char *query ){
 	return s;
 }
 
-/* todo use sql_arg */
 stmt *stmt_var(char *varname, sql_subtype *t){
 	stmt *s = stmt_create(st_var);
 	s->op1.sval = varname;
@@ -736,6 +735,7 @@ stmt *stmt_ibat(stmt * op1, stmt * basetable )
 	s->op1.stval = op1;
 	s->nrcols = 1;
 	s->key = op1->key;
+	s->aggr = op1->aggr;
 	s->h = basetable; /* oid's used from this basetable */
 	return s;
 }
@@ -775,6 +775,7 @@ stmt *stmt_const(stmt * s, stmt * val)
 	ns->op2.stval = val;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
+	ns->aggr = s->aggr;
 	ns->h = stmt_dup(s->h);
 	return ns;
 }
@@ -790,6 +791,7 @@ stmt *stmt_mark(stmt * s, int id)
 	ns->op2.stval = stmt_atom_oid(id);
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
+	ns->aggr = s->aggr;
 	ns->h = stmt_dup(s->t);
 	return stmt_reverse(ns);
 }
@@ -800,6 +802,7 @@ stmt *stmt_reverse(stmt * s)
 	ns->op1.stval = s;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
+	ns->aggr = s->aggr;
 	ns->h = stmt_dup(s->t);
 	ns->t = stmt_dup(s->h);
 	return ns;
@@ -811,6 +814,7 @@ stmt *stmt_mirror(stmt * s)
 	ns->op1.stval = s;
 	ns->nrcols = 2;
 	ns->key = s->key;
+	ns->aggr = s->aggr;
 	ns->h = stmt_dup(s->h);
 	ns->t = stmt_dup(s->h);
 	return ns;
@@ -823,6 +827,7 @@ stmt *stmt_limit(stmt * s, int limit)
 	ns->op2.stval = stmt_atom_int(limit);
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
+	ns->aggr = s->aggr;
 	ns->t = stmt_dup(s->t);
 	return ns;
 }
@@ -834,6 +839,7 @@ stmt *stmt_order(stmt * s, int direction)
 	ns->flag = direction;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
+	ns->aggr = s->aggr;
 	ns->t = stmt_dup(s->t);
 	return ns;
 }
@@ -846,6 +852,7 @@ stmt *stmt_reorder(stmt * s, stmt * t, int direction)
 	ns->flag = direction;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
+	ns->aggr = s->aggr;
 	ns->t = stmt_dup(s->t);
 	return ns;
 }
@@ -860,6 +867,7 @@ stmt *stmt_unique(stmt * s, group * g)
 	}
 	ns->nrcols = s->nrcols;
 	ns->key = 1; /* ?? maybe change key to unique ? */
+	ns->aggr = s->aggr;
 	ns->t = stmt_dup(s->t);
 	return ns;
 }
@@ -961,6 +969,7 @@ stmt *stmt_semijoin(stmt * op1, stmt * op2)
 	/* assert( op1->h == op2->h ); */
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
+	s->aggr = op1->aggr;
 	s->h = stmt_dup(op1->h);
 	s->t = stmt_dup(op1->t);
 	return s;
@@ -1062,6 +1071,7 @@ stmt *stmt_diff(stmt * op1, stmt * op2)
 	s->op2.stval = op2;
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
+	s->aggr = op1->aggr;
 	s->h = stmt_dup(op1->h);
 	s->t = stmt_dup(op1->t);
 	return s;
@@ -1111,6 +1121,7 @@ printf("= TODO stmt_intersect (1)\n");
 		}
 		res->nrcols = op1->nrcols;
 		res->key = op1->key;
+		res->aggr = op1->aggr;
 		res->h = stmt_dup(op1->h);
 		res->t = stmt_dup(op1->t);
 	} else {
@@ -1206,6 +1217,7 @@ stmt *stmt_ordered(stmt * order, stmt * res)
 	ns->op2.stval = res;
 	ns->nrcols = res->nrcols;
 	ns->key = res->key;
+	ns->aggr = res->aggr;
 	ns->t = stmt_dup(res->t);
 	return ns;
 }
@@ -1350,6 +1362,7 @@ stmt *stmt_predicate(stmt *cond, stmt *def/*allways done*/, stmt *ss /* done if 
 	s->op2.stval = def;
 	s->op3.stval = ss;
 	s->key = ss->key;
+	s->aggr = ss->aggr;
 	s->nrcols = ss->nrcols;
 	s->h = stmt_dup(ss->h);
 	s->t = stmt_dup(ss->t);
@@ -1377,16 +1390,21 @@ stmt *stmt_unop(stmt * op1, sql_subfunc * op)
 	s->h = stmt_dup(op1->h);
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
+	s->aggr = op1->aggr;
 	return s;
 }
 
 stmt *stmt_binop(stmt * op1, stmt * op2, sql_subfunc * op)
 {
 	stmt *s = stmt_create(st_binop);
+	int aggr = 0;
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	assert(op);
 	s->op4.funcval = op;
+	aggr = op1->aggr;
+	if (!aggr) 	
+		aggr = op2->aggr;
 	if (op1->nrcols > op2->nrcols){
 		s->h = stmt_dup(op1->h);
 		s->nrcols = op1->nrcols;
@@ -1396,6 +1414,7 @@ stmt *stmt_binop(stmt * op1, stmt * op2, sql_subfunc * op)
 		s->nrcols = op2->nrcols;
 		s->key = op2->key;
 	}
+	s->aggr = aggr;
 	return s;
 }
 
@@ -1416,6 +1435,7 @@ stmt *stmt_Nop(stmt * ops, sql_subfunc * op)
 	s->h = stmt_dup(o->h);
 	s->nrcols = o->nrcols;
 	s->key = o->key;
+	s->aggr = o->aggr;
 
 	return s;
 }
@@ -1449,6 +1469,7 @@ stmt *stmt_alias(stmt * op1, char *alias)
 	s->t = stmt_dup(op1->t);
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
+	s->aggr = op1->aggr;
 	return s;
 }
 
@@ -1461,6 +1482,7 @@ stmt *stmt_column(stmt * op1, stmt *t, char *tname, char *cname)
 	s->h = t;
 	s->nrcols = 1; 
 	s->key = op1->key;
+	s->aggr = op1->aggr;
 	return s;
 }
 

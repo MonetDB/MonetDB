@@ -571,7 +571,7 @@ create_func(mvc * sql, dlist * qname, dlist *params, sql_subtype *res, char *imp
 			sql_subtype *t = sql_dup_subtype(m->next->data.typeval);
 			sql_add_param(sql, name, stmt_var(_strdup(name), t ) );
 		}
-		if (!(b = sql_subquery(sql, NULL, body))){
+		if (!(b = scope_subquery(sql, NULL, body))){
 			sql_destroy_params(sql);
  			return NULL;
 		}
@@ -599,15 +599,16 @@ create_view(mvc * sql, sql_schema * ss, dlist * qname, dlist * column_spec,
 		char buf[BUFSIZ];
 		stmt *sq;
 		SelectNode *sn = (SelectNode*)query;
-
 		char *subquery;
 
-		if (sn->limit >= 0) {
-			(void) sql_error( sql, 01, 
+		if (sn->limit >= 0) 
+			return sql_error( sql, 01, 
 				"Limit not supported for views" );
-			return NULL;
-		}
- 		sq = sql_subquery(sql, NULL, query);
+		if (sn->orderby) 
+			return sql_error( sql, 01, 
+				"Order by not supported for views" );
+
+ 		sq = scope_subquery(sql, NULL, query);
 		if (!sq)
 			return NULL;
 
@@ -1182,8 +1183,26 @@ drop_table(mvc * sql, dlist * qname, int drop_action)
 				}
 			}
 		}
-	}
+	} 
 	if (t->type != tt_view){
+		node *n, *m;
+		for (n = t->s->tables.set->h; n; n = n->next ) {
+			sql_table *ot = n->data;
+			if (ot->type == tt_view) {
+				scope *scp = scope_open(NULL);
+				stmt *s = scope_sqlparse(sql, scp, ot->query);
+				
+				for(m = scp->bases->h; m; m = m->next) {
+					sql_table *ut = m->data;
+					if (ut == t) {
+						return sql_error(sql, 02, 
+							"Cannot drop Table %s, views depend on it", tname);
+					}
+				}
+				stmt_destroy(s);
+				scope_close(scp);
+			}
+		}
 		mvc_drop_table(sql, ss, t->base.name, drop_action);
 		return stmt_none();
 	} else {

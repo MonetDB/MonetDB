@@ -58,7 +58,7 @@ static stmt *insert_value(mvc * sql, scope * scp, sql_column * c, symbol * s)
 		return stmt_atom(atom_general(sql_dup_subtype(c->type), NULL));
 	} else {
 		stmt *n = NULL;
-		stmt *a = sql_value_exp(sql, scp, s, NULL, NULL);
+		stmt *a = sql_value_exp(sql, scp, s, NULL, NULL, sql_sel);
 		if (!a || !(n = check_types(sql, c->type, a))) {
 			if (a) stmt_destroy(a);
 			return NULL;
@@ -815,7 +815,7 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 			}
 		}
 	} else {
-		stmt *s = sql_subquery(sql, NULL, val_or_q);
+		stmt *s = scope_subquery(sql, NULL, val_or_q);
 
 		if (!s){
 			scp = scope_close(scp);
@@ -978,7 +978,7 @@ static stmt *update_table(mvc * sql, dlist * qname,
 		tv = scope_add_table_columns(sql, scp, t, t->base.name);
 
 		if (opt_where){
-			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL);
+			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL, sql_where);
 			if (s) 
 				s = stmt2pivot(scp,s);
 			if (!s){
@@ -1014,7 +1014,7 @@ static stmt *update_table(mvc * sql, dlist * qname,
 			}
 			a = assignment->h->next->data.sym;
 			if (a)
-				v = sql_value_exp(sql, scp, a, NULL, s);
+				v = sql_value_exp(sql, scp, a, NULL, s, sql_sel);
 			else 
 				v = stmt_atom(atom_general(
 					sql_dup_subtype(tail_type(cl->s)), 
@@ -1139,7 +1139,7 @@ static stmt *delete_table(mvc * sql, dlist * qname, symbol * opt_where)
 		tv = scope_add_table_columns(sql, scp, t, t->base.name);
 
 		if (opt_where){
-			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL);
+			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL, sql_where);
 			if (s) 
 				s = stmt2pivot(scp,s);
 			if (!s){

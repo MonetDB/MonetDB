@@ -151,7 +151,7 @@ typedef struct sql_table {
 	changeset keys;
 	sql_ukey *pkey;
 
-	oid dbid;     /* bat with deletes */
+	oid dbid;     	 /* bat with deletes */
 
 	struct stmt *st; /* for prepared view's */
 	struct sql_schema *s;
@@ -277,6 +277,8 @@ sql_export BAT *mvc_bind_dbat( mvc *c, char *sname, char *tname, int access );
 sql_export BAT *mvc_bind_ibat(  mvc *c, char *sname, char *tname, char *idx, int access );
 
 sql_export sql_module *mvc_bind_module( mvc *c, char *mname );
+sql_export sql_type *mvc_bind_type(mvc * sql, char *name );
+sql_export sql_type *mod_bind_type(mvc * sql, sql_module *m, char *name );
 sql_export sql_schema *mvc_bind_schema( mvc *c, char *sname );
 sql_export sql_table *mvc_bind_table( mvc *c, sql_schema *s, char *tname );
 sql_export sql_column *mvc_bind_column( mvc *c, sql_table *t, char *cname );
@@ -831,6 +833,20 @@ static
 sql_module *find_module(sql_trans *t, char *mname)
 {
 	node *n = find_module_node( t, mname );
+	if (n) return n->data;
+	return NULL;
+}
+
+static node *
+find_type_node(sql_module * s, char *tname)
+{
+	return cs_find_name( &s->types, tname );
+}
+
+static sql_type *
+find_type(sql_module * s, char *tname)
+{
+	node *n = find_type_node( s, tname );
 	if (n) return n->data;
 	return NULL;
 }
@@ -2982,8 +2998,42 @@ mvc_bind_module(mvc * m, char *mname )
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_bind_module %s\n", mname );
-
 	return s;
+}
+
+sql_type *
+mvc_bind_type(mvc * sql, char *name )
+{
+	node *n;
+	sql_trans *tr = sql->trans;
+	sql_type *t = NULL;
+
+	if (tr->modules.set) for (n = tr->modules.set->h; n && !t; n = n->next){
+		sql_module *m = n->data; 
+		t = find_type(m, name);
+	}
+	if (!t)
+		return NULL;
+	t->base.rtime = tr->rtime;
+
+	if (mvc_debug)
+		fprintf(stderr, "mvc_bind_type %s\n", name );
+	return t;
+}
+
+sql_type *
+mod_bind_type(mvc *sql, sql_module *m, char *name) 
+{
+	sql_trans *tr = sql->trans;
+	sql_type *t = find_type(m, name);
+
+	if (!t)
+		return NULL;
+	t->base.rtime = tr->rtime;
+
+	if (mvc_debug)
+		fprintf(stderr, "mod_bind_type %s\n", name );
+	return t;
 }
 
 sql_schema *
@@ -3394,7 +3444,7 @@ sql_module *mvc_create_module(mvc * m, char *name )
 		fprintf(stderr, "mvc_create_module %s\n", name);
 
 	base_init( &s->base, OIDnew(1), TR_NEW, name);
-	/* later this should hold a list of functions */
+	cs_init( &s->types, (fdestroy)&type_destroy);
 
 	cs_add( &tr->modules, s, TR_NEW);
 

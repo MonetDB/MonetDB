@@ -56,6 +56,7 @@ typedef struct dlist {
 extern dlist *dlist_create();
 extern void dlist_destroy(dlist * l);
 extern void dlist_destroy_keep_data(dlist * l);
+extern void dlist_remove_node( dlist *l, dnode *d );
 extern int dlist_length(dlist * l);
 
 extern dlist *dlist_append_string(dlist * l, char *data);
@@ -328,6 +329,25 @@ void dlist_destroy(dlist * l)
 		}
 		_DELETE(l);
 	}
+}
+
+void dlist_remove_node( dlist *l, dnode *n )
+{
+	dnode *p = l->h;
+	if (p != n)
+		while (p && p->next != n)
+			p = p->next;
+	if (p == n) {
+		l->h = n->next;
+		p = NULL;
+	} else {
+		p->next = n->next;
+	}
+	if (n == l->t)
+		l->t = p;
+	n->data.sval = NULL; /* do not remove data */
+	dnode_destroy(n);
+	l->cnt--;
 }
 
 void dlist_destroy_keep_data(dlist * l)

@@ -59,7 +59,8 @@ typedef struct var_ {
 
 typedef struct scope {
 	stmt *ptable;		/* result pivot table */
-	list *basetables;	/* from part */	
+	list *bases;		/* all used base tables ! */
+	/*list *basetables;	 from part */	
 	list *outers;		/* outer references */
 
 	list *pivots;		/* pivots */
@@ -91,7 +92,7 @@ extern cvar *table_add_column(tvar * t, stmt * s, char *tname, char *cname );
 /* 
  * scope_add_table adds a table (tvar) to the scope scp (name should be set). 
  * */
-extern tvar *scope_add_table(scope * scp, stmt *table, char *name); 
+extern tvar *scope_add_table(scope * scp, stmt *table, char *name, sql_table *t); 
 
 /* 
  * scope_add_alias adds a alias for a stmt.
@@ -177,7 +178,7 @@ scope *scope_open(scope * p)
 	scope *s = NEW(scope);
 
 	s->ptable = stmt_ptable();
-	s->basetables = list_create( (fdestroy)&stmt_destroy );
+	/*s->basetables = list_create( (fdestroy)&stmt_destroy ); */
 	s->pivots = list_create( (fdestroy)&stmt_destroy );
 	s->ppivots = list_create( (fdestroy)&stmt_destroy );
 	s->outers = list_create( (fdestroy)&stmt_destroy );
@@ -185,6 +186,9 @@ scope *scope_open(scope * p)
 	s->tables = list_create((fdestroy)&tvar_destroy);
 	s->aliases = list_create((fdestroy)&var_destroy);
 	s->p = p;
+	s->bases = NULL;
+	if (!p)
+		s->bases = list_create( (fdestroy)NULL ); 
 	return s;
 }
 
@@ -193,7 +197,7 @@ scope *scope_close(scope * s)
 	scope *p = s->p;
 
 	stmt_destroy(s->ptable);
-	list_destroy(s->basetables);
+	/*list_destroy(s->basetables); */
 
 	list_destroy(s->pivots);
 	list_destroy(s->ppivots);
@@ -202,6 +206,8 @@ scope *scope_close(scope * s)
 
 	list_destroy(s->tables);
 	list_destroy(s->aliases);
+	if (s->bases)
+		list_destroy(s->bases);
 	_DELETE(s);
 	return p;
 }
@@ -240,7 +246,7 @@ static int stmt_cmp(stmt *s1, stmt *s2)
 
 static void scope_add_table_(scope * scp, stmt *s, int outer ){
 	
-	list_append(scp->basetables, stmt_dup(s));
+	/*list_append(scp->basetables, stmt_dup(s));  */
 	if (outer) {
 		if (list_find(scp->outers, s, (fcmp)&stmt_cmp) == NULL)
 			list_append(scp->outers, stmt_dup(s));
@@ -266,9 +272,27 @@ cvar *table_add_column(tvar * t, stmt * s,
 	return v;
 }
 
-tvar *scope_add_table(scope * scp, stmt *s, char *tname)
+static
+void scope_append_table(scope *scp, sql_table *t )
+{
+	if (scp->p) {
+		scope_append_table(scp->p, t);
+	} else {
+		node *n;
+		for(n = scp->bases->h; n; n = n->next) {
+			sql_table *ot = n->data;
+			if (t == ot)
+				return;
+		}
+		list_append(scp->bases, t);
+	}
+}
+
+tvar *scope_add_table(scope * scp, stmt *s, char *tname, sql_table *t)
 {
 	tvar *v = NEW(tvar);
+
+	if (t) scope_append_table(scp, t);
 	v->s = s; 
 	v->columns = list_create((fdestroy)&cvar_destroy);
 	v->tname = (tname)?_strdup(tname):NULL;
