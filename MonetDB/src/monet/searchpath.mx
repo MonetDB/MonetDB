@@ -81,24 +81,27 @@ static void print_moddir_list(void) {
 }
 #endif
 
-static 
-void insert_moddir_entry(char *name) {
-    struct moddir *last=moddir_list;
-    struct moddir *newentry=(struct moddir*)GDKmalloc(sizeof(struct moddir));
+static void
+insert_moddir_entry(const char *name)
+{
+	struct moddir *last;
+	struct moddir *newentry;
 
-    if (!strlen(name)) return;
-/*    printf("inserted dir %s\n",name);*/
-    
-    if (moddir_list)
-        {
-            while(last->next) last=last->next;
-            last->next=newentry;
-        }
-    else moddir_list=newentry;
+	if (!name || !*name)
+		return;
+	/* printf("inserted dir %s\n",name); */
 
-    newentry->path=(char *)GDKmalloc(strlen(name)+1);
-    strcpy(newentry->path,name);
-    newentry->next=0;
+	newentry = (struct moddir*) GDKmalloc(sizeof(struct moddir));
+	newentry->next = 0;
+
+	if ((last = moddir_list) != 0) {
+		while (last->next)
+			last = last->next;
+		last->next = newentry;
+	} else
+		moddir_list = newentry;
+
+	newentry->path = GDKstrdup(name);
 }
 
 
