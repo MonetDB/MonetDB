@@ -1107,6 +1107,7 @@ sql_subtype *tail_type(stmt * st)
 	case st_outerjoin:
 		return tail_type(st->op2.stval);
 
+	case st_diff:
 	case st_select:
 	case st_select2:
 	case st_unique:
@@ -1152,6 +1153,7 @@ sql_subtype *head_type(stmt * st)
 	case st_union:
 	case st_alias:
 	case st_column_alias:
+	case st_diff:
 	case st_join:
 	case st_outerjoin:
 	case st_semijoin:
@@ -1186,6 +1188,7 @@ stmt *tail_column(stmt * st)
 	case st_unop:
 	case st_binop:
 
+	case st_diff:
 	case st_like:
 	case st_select:
 	case st_select2:
@@ -1226,6 +1229,7 @@ stmt *head_column(stmt * st)
 	case st_aggr:
 	case st_unop:
 	case st_binop:
+	case st_diff:
 	case st_join:
 	case st_outerjoin:
 	case st_intersect:
@@ -1271,15 +1275,19 @@ static char *aggr_name(char *n1, char *n2)
 char *column_name(stmt * st)
 {
 	switch (st->type) {
+	case st_group:
+	case st_group_ext:
 	case st_reverse:
 		return column_name(head_column(st->op1.stval));
 	case st_join:
 	case st_outerjoin:
+	case st_derive:
 		return column_name(st->op2.stval);
 	case st_union:
 	case st_mark:
 	case st_select:
 	case st_select2:
+	case st_diff:
 		return column_name(st->op1.stval);
 
 	case st_bat:
@@ -1301,15 +1309,19 @@ char *column_name(stmt * st)
 char *table_name(stmt * st)
 {
 	switch (st->type) {
+	case st_group:
+	case st_group_ext:
 	case st_reverse:
 		return table_name(head_column(st->op1.stval));
 	case st_join:
 	case st_outerjoin:
+	case st_derive:
 		return table_name(st->op2.stval);
 	case st_union:
 	case st_mark:
 	case st_select:
 	case st_select2:
+	case st_diff:
 		return table_name(st->op1.stval);
 
 	case st_bat:

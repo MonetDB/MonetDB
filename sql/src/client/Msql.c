@@ -94,7 +94,7 @@ static void forward_data(stream *out, int debug)
 	receive(rs, out, debug);
 }
 
-int column_info( char *buf, int len, Msql_col *cols, int cur ){
+static int column_info( char *buf, int len, Msql_col *cols, int cur ){
 	char *end = buf + len;
 
 	while(buf<end){
@@ -121,7 +121,7 @@ int column_info( char *buf, int len, Msql_col *cols, int cur ){
 	return cur;
 }
 
-void header_data( stream *rs, stream *out, int nCols, int debug ){
+static void header_data( stream *rs, stream *out, int nCols, int debug ){
 	Msql_col *cols = (Msql_col*)malloc(sizeof(Msql_col) * nCols);
 	int cur = 0;
 	int flag = 0, res = 0;
@@ -151,11 +151,13 @@ void header_data( stream *rs, stream *out, int nCols, int debug ){
 		len += 3;
 	} len ++;
 
-	for (i=0; i<len; i++){ printf("-"); } printf("\n");
+	printf("#"); for (i=0; i<len; i++){ printf("-"); } printf("\n");
+	printf("#");
 	for (i=0; i<nCols; i++){ 
 		printf("| %s ", cols[i].name?cols[i].name:""); 
-	} printf("|\n");
-	for (i=0; i<len; i++){ printf("-"); } printf("\n");
+	} 
+	printf("|\n");
+	printf("#"); for (i=0; i<len; i++){ printf("-"); } printf("\n");
 
 	for (i=0; i<nCols; i++){
 		if (cols[i].name) free(cols[i].name);
