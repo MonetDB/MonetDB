@@ -57,24 +57,29 @@ type checked and optimized.
 
 void addQueryToCache(Client c)
 {
-	backend *be = ((backend*)c->state[PARSER]);
+    Scope cache;
+    backend *be = ((backend*)c->state[PARSER]);
 
-        insertSymbol(findModule(c->nspace,"sql_cache"), c->curprg);
-        trimMalBlk(c->curprg->def);
-        c->blkmode =0;
-        chkProgram(c->nspace, c->curprg->def);
+    cache = findModule(c->nspace,"sql_cache");
+    if( cache == 0) {
+        return;
+    }
+    insertSymbol(cache, c->curprg);
+    trimMalBlk(c->curprg->def);
+    c->blkmode =0;
+    chkProgram(c->nspace, c->curprg->def);
 @-
 An error in the compilation should be reported to the user.
 @c
-        if(c->curprg->def->errors){
-        showErrors(c);
-        if(c->listing )
-            printFunction(c->fdout,c->curprg->def,c->listing);
-            stream_flush(c->fdout);
-            return;
-        }
-	if (be->mvc->factory)
-        	optimizeQueryInCache(c);
+    if(c->curprg->def->errors){
+    showErrors(c);
+    if(c->listing )
+        printFunction(c->fdout,c->curprg->def,c->listing);
+        stream_flush(c->fdout);
+        return;
+    }
+    if (be->mvc->factory)
+        optimizeQueryInCache(c);
 }
 @-
 The first step towards an SQL optimizer.

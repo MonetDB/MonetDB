@@ -208,7 +208,7 @@ Continue processing any left-over input from the previous round.
 	if( c->nxt && *c->nxt) return 0;
 
 	T0= GDKusec();
-        prompt= GDKgetenv("monet_prompt");
+        prompt= GDKgetenv("sql_prompt");
         if( prompt== 0) prompt= "sql>";
 	c->prompt= GDKstrdup(prompt);
 	c->promptlength= strlen(prompt);
