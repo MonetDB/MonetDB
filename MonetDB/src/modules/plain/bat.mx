@@ -858,7 +858,7 @@ int oid_bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
         oid o;
 	
 	assert(i->htype == TYPE_oid && 
-		(BATcount(u) == 0 || u->htype == TYPE_oid));
+		(BATcount(u) == 0 || u->htype == TYPE_oid || u->htype == TYPE_void));
 
 	o = oid_max(i);
 	o++;
