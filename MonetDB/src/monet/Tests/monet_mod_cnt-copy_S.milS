@@ -1,7 +1,0 @@
-monet_mod_cnt.print();
-monet_mod_cnt.copy().print();
-var x:=view_bbp_name;
-var a:=x.reverse().mirror().[bat]().[count]();
-var b:=x.reverse().mirror().[bat]().[copy]().[count]();
-var c:=a.[-](b);
-print(a.col_name("count"),b.col_name("copy.count"),c.col_name("diff"));

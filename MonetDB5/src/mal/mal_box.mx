@@ -209,15 +209,6 @@ the answer printed will be [ 0 ]. The reason is that both
 statements are converted into a function and executed independently.
 Between function calls the variables are reset, i.e. temporary
 variables are removed and others are re-initialized. [check]
-
-@+ Box inspection
-Inspection of the Box can be encoded using an iterator at the MAL
-layer and relying on the functionality of the box.
-However, to improve introspection, we assume that all box 
-implementations provide a few rudimentary functions, called objects(arglist)
-and dir(arglist). The function objects() produces a BAT with
-the object names, possibly limited to those identified by
-the arglist.
 @{
 @h
 #ifndef _MAL_BOX_H

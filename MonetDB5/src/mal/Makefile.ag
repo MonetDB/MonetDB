@@ -5,7 +5,7 @@ MTSAFE
 lib_mal = {
 	NAME = mal
 	SOURCES = \
-	mal.mx mal_utils.mx mal_type.mx mal_instruction.mx mal_box.mx mal_scope.mx \
+	mal.mx mal_type.mx mal_instruction.mx mal_box.mx mal_scope.mx \
 	mal_stack.mx mal_import.mx mal_session.mx mal_interpreter.mx \
 	mal_exception.mx mal_resolve.mx mal_function.mx mal_xml.mx \
 	mal_parser.mx mal_linker.mx mal_debugger.mx mal_atom.mx  \
@@ -21,7 +21,7 @@ lib_mal = {
 doc_ml = {
 	DIR = pkgdatadir/docs/mal
 	SOURCES = \
-	mal.mx mal_utils.mx mal_type.mx mal_instruction.mx mal_box.mx mal_scope.mx \
+	mal.mx mal_type.mx mal_instruction.mx mal_box.mx mal_scope.mx \
 	mal_stack.mx mal_import.mx mal_session.mx mal_interpreter.mx \
 	mal_exception.mx mal_resolve.mx mal_function.mx mal_xml.mx \
 	mal_parser.mx mal_linker.mx mal_debugger.mx mal_atom.mx  \

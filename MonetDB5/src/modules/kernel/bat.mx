@@ -810,8 +810,6 @@ by setting the sequential base.
 @+ Minimum and Maximum
 The routines @`BATmin_@5(b) and @`BATmax_@5(b) compute the minimum and
 maximum value of the tail column of a BAT.
-They are defined in the algebra.mx module.
-
 Aggregate values are calculated just before they are requested by
 the user. They are not maintained continuously, because we expect
 them to be used sparsely.
@@ -1912,9 +1910,6 @@ str BKCbat_append_oidvoid_bat_wrap( int *r, int *bid, int *uid )
 	BBPfix(i->batCacheid);
 	return MAL_SUCCEED;
 }
-
-extern ptr BATmin(BAT *b, ptr aggr);
-extern ptr BATmax(BAT *b, ptr aggr);
 
 str BKCoid_bat_append_oid_bat_wrap( int *res, int *bid, int *uid )
 {
