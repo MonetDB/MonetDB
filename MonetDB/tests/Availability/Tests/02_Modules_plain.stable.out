@@ -1,11 +1,16 @@
 stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
 
-#> Mtest:	milS 02_Modules_plain milS
-#> Mtest:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_Availability -single 02_Modules_plain.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for Linux2.2.14-12smp/32bit on Thu Jul 13 17:25:20 CEST 2000.
-#script:02_Modules_plain.milS
+
+# 05:07:11 >  
+# 05:07:11 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_32.23829/monet/.GNU_32/Linux2.2.14-12/share/Monet/monet.Mtest.conf -db Tests_tests_Availability  < 02_Modules_plain.milS
+# 05:07:11 >  
+
+# Monet Database Server V4.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# dbfarm:/var/tmp/monet.GNU_32.23829/monet/.GNU_32/Linux2.2.14-12/dbfarm
+# dbname:Tests_tests_Availability
+# dbdir:/var/tmp/monet.GNU_32.23829/monet/.GNU_32/Linux2.2.14-12/dbfarm/Tests_tests_Availability
 
 loaded;
 #---------------------------------#
@@ -23,8 +28,6 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
 #-----------------#
 # 32 modules	  #
 #-----------------#
@@ -162,11 +165,12 @@ Module: "bitvector"
 
 Module: "blob"
 
-[ 3 ]
-[ 3 ]
+[ 4 ]
+[ 4 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature			| help																  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "nitems",	  "COMMAND: ",	  "nitems(blob) : int",		  "get the number of bytes stored in this blob."										  ]
 [ "toblob",	  "COMMAND: ",	  "toblob(str) : blob",		  "store a string as a blob."													  ]
 [ "tostr",	  "COMMAND: ",	  "tostr(blob) : str",		  "get the bytes from blob as a string, till the first 0 byte\n         or the end of the blob"					  ]
 [ "tostr",	  "COMMAND: ",	  "tostr(blob, int) : str",	  "get the bytes from blob as a string, starting at byte 'index'\n         till the first 0 byte or the end of the blob."	  ]
@@ -314,8 +318,8 @@ Module: "enum"
 
 Module: "io"
 
-[ 23 ]
-[ 23 ]
+[ 24 ]
+[ 24 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature						| help									  #
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -336,6 +340,7 @@ Module: "io"
 [ "fseek",	  "COMMAND: ",	  "fseek(stream, int, int) : int",			  "See: man fseek"							  ]
 [ "ftable",	  "COMMAND: ",	  "ftable(stream, ..BAT[any::1,any]..) : void",		  "Print an n-ary table to a file."					  ]
 [ "ftable",	  "COMMAND: ",	  "ftable(stream, int, ..BAT[any::1,any]..) : void",	  "Print an n-ary table to a file, using order of BAT [1..argc]."	  ]
+[ "ftell",	  "COMMAND: ",	  "ftell(stream) : int",				  "See: man ftell"							  ]
 [ "fwrite",	  "COMMAND: ",	  "fwrite(stream, blob, int) : void",			  "See: man fwrite"							  ]
 [ "fwrite",	  "COMMAND: ",	  "fwrite(stream, str, int) : void",			  "See: man fwrite"							  ]
 [ "popen",	  "COMMAND: ",	  "popen() : bipipe",					  "Open a bidirectional pipe. See: man pipe"				  ]
@@ -422,13 +427,15 @@ Module: "malalgebra"
 
 Module: "mapi"
 
-[ 2 ]
-[ 2 ]
+[ 4 ]
+[ 4 ]
 #-------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature			| help							  #
 #-------------------------------------------------------------------------------------------------------------------------#
-[ "listen",	  "COMMAND: ",	  "listen() : void",		  "start a Mapi server with the default port number."	  ]
-[ "listen",	  "COMMAND: ",	  "listen(int, int) : void",	  "start a Mapi server."				  ]
+[ "_listen",	  "COMMAND: ",	  "_listen() : void",		  "start a Mapi server with the default port number."	  ]
+[ "_listen",	  "COMMAND: ",	  "_listen(int, int) : void",	  "start a Mapi server."				  ]
+[ "listen",	  "PROC: ",	  "listen() : any",		  "not available"					  ]
+[ "listen",	  "PROC: ",	  "listen(int, int) : any",	  "not available"					  ]
 
 Module: "mmath"
 
@@ -760,29 +767,89 @@ Module: "url"
 
 Module: "vector"
 
-[ 18 ]
-[ 18 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature				| help								  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "L2distance",		  "COMMAND: ",	  "L2distance(dbls, dbls) : dbl",	  "Compute the L2 distance between two (feature) vectors."	  ]
-[ "L2distance",		  "COMMAND: ",	  "L2distance(flts, flts) : dbl",	  "Compute the L2 distance between two (feature) vectors."	  ]
-[ "L2distance",		  "COMMAND: ",	  "L2distance(ints, ints) : dbl",	  "Compute the L2 distance between two (feature) vectors."	  ]
-[ "dbls_rancreate",	  "COMMAND: ",	  "dbls_rancreate(int) : dbls",		  "Create a random vector of the requested dimension."		  ]
-[ "dimension",		  "COMMAND: ",	  "dimension(dbls) : int",		  "Return the dimension of the vector."				  ]
-[ "dimension",		  "COMMAND: ",	  "dimension(flts) : int",		  "Return the dimension of the vector."				  ]
-[ "dimension",		  "COMMAND: ",	  "dimension(ints) : int",		  "Return the dimension of the vector."				  ]
-[ "flts_rancreate",	  "COMMAND: ",	  "flts_rancreate(int) : flts",		  "Create a random vector of the requested dimension."		  ]
-[ "getval",		  "COMMAND: ",	  "getval(dbls, int) : dbl",		  "Project the Ith element value out of the vector."		  ]
-[ "getval",		  "COMMAND: ",	  "getval(flts, int) : flt",		  "Project the Ith element value out of the vector."		  ]
-[ "getval",		  "COMMAND: ",	  "getval(ints, int) : int",		  "Project the Ith element value out of the vector."		  ]
-[ "ints_rancreate",	  "COMMAND: ",	  "ints_rancreate(int) : ints",		  "Create a random vector of the requested dimension."		  ]
-[ "maxrange",		  "COMMAND: ",	  "maxrange(BAT[any,dbls]) : dbls",	  "Determine the max values of each dimension in the vectors."	  ]
-[ "maxrange",		  "COMMAND: ",	  "maxrange(BAT[any,flts]) : flts",	  "Determine the max values of each dimension in the vectors."	  ]
-[ "maxrange",		  "COMMAND: ",	  "maxrange(BAT[any,ints]) : ints",	  "Determine the max values of each dimension in the vectors."	  ]
-[ "minrange",		  "COMMAND: ",	  "minrange(BAT[any,dbls]) : dbls",	  "Determine the min values of each dimension in the vectors."	  ]
-[ "minrange",		  "COMMAND: ",	  "minrange(BAT[any,flts]) : flts",	  "Determine the min values of each dimension in the vectors."	  ]
-[ "minrange",		  "COMMAND: ",	  "minrange(BAT[any,ints]) : ints",	  "Determine the min values of each dimension in the vectors."	  ]
+[ 78 ]
+[ 78 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function			| type		| signature							| help												  #
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "*",				  "OPERATOR: ",	  "*(dbl_vector32, dbl) : dbl_vector32",			  "Multiplication of vector of dbls with scalar"						  ]
+[ "*",				  "OPERATOR: ",	  "*(dbls, dbl) : dbls",					  "Multiplication of vector of dbls with scalar"						  ]
+[ "*",				  "OPERATOR: ",	  "*(flts, flt) : flts",					  "Multiplication of vector of flts with scalar"						  ]
+[ "*",				  "OPERATOR: ",	  "*(int_vector64, int) : int_vector64",			  "Multiplication of vector of ints with scalar"						  ]
+[ "*",				  "OPERATOR: ",	  "*(ints, int) : ints",					  "Multiplication of vector of ints with scalar"						  ]
+[ "+",				  "OPERATOR: ",	  "+(dbl_vector32, dbl_vector32) : dbl_vector32",		  "Addition of vectors of dbl_vector32"								  ]
+[ "+",				  "OPERATOR: ",	  "+(dbls, dbls) : dbls",					  "Addition of vectors of dbls"									  ]
+[ "+",				  "OPERATOR: ",	  "+(flts, flts) : flts",					  "Addition of vectors of flts"									  ]
+[ "+",				  "OPERATOR: ",	  "+(int_vector64, int_vector64) : int_vector64",		  "Addition of vectors of int_vector64"								  ]
+[ "+",				  "OPERATOR: ",	  "+(ints, ints) : ints",					  "Addition of vectors of ints"									  ]
+[ "-",				  "OPERATOR: ",	  "-(dbl_vector32, dbl_vector32) : dbl_vector32",		  "Subtraction of vectors of dbls (param 1 - param 2)"						  ]
+[ "-",				  "OPERATOR: ",	  "-(dbls, dbls) : dbls",					  "Subtraction of vectors of dbls (param 1 - param 2)"						  ]
+[ "-",				  "OPERATOR: ",	  "-(flts, flts) : flts",					  "Subtraction of vectors of flts (param 1 - param 2)"						  ]
+[ "-",				  "OPERATOR: ",	  "-(int_vector64, int_vector64) : int_vector64",		  "Subtraction of vectors of ints (param 1 - param 2)"						  ]
+[ "-",				  "OPERATOR: ",	  "-(ints, ints) : ints",					  "Subtraction of vectors of ints (param 1 - param 2)"						  ]
+[ "/",				  "OPERATOR: ",	  "/(dbl_vector32, dbl) : dbl_vector32",			  "Divide vector of dbls by dbl"								  ]
+[ "/",				  "OPERATOR: ",	  "/(dbls, dbl) : dbls",					  "Divide vector of dbls by dbl"								  ]
+[ "/",				  "OPERATOR: ",	  "/(flts, flt) : flts",					  "Divide vector of flts by flt"								  ]
+[ "/",				  "OPERATOR: ",	  "/(int_vector64, int) : int_vector64",			  "Divide vector of ints by int"								  ]
+[ "/",				  "OPERATOR: ",	  "/(ints, int) : ints",					  "Divide vector of ints by int"								  ]
+[ "L2distance",			  "COMMAND: ",	  "L2distance(dbl_vector32, dbl_vector32) : dbl",		  "Calculates Euclidean (L2) distance between 2 vectors"					  ]
+[ "L2distance",			  "COMMAND: ",	  "L2distance(dbls, dbls) : dbl",				  "Calculates Euclidean (L2) distance between 2 vectors"					  ]
+[ "L2distance",			  "COMMAND: ",	  "L2distance(flts, flts) : dbl",				  "Calculates Euclidean (L2) distance between 2 vectors"					  ]
+[ "L2distance",			  "COMMAND: ",	  "L2distance(int_vector64, int_vector64) : dbl",		  "Calculates Euclidean (L2) distance between 2 vectors"					  ]
+[ "L2distance",			  "COMMAND: ",	  "L2distance(ints, ints) : dbl",				  "Calculates Euclidean (L2) distance between 2 vectors"					  ]
+[ "centroid",			  "COMMAND: ",	  "centroid(dbl_vector32) : dbl",				  "Computes the centroid of the given vector"							  ]
+[ "centroid",			  "COMMAND: ",	  "centroid(dbls) : dbl",					  "Computes the centroid of the given vector"							  ]
+[ "centroid",			  "COMMAND: ",	  "centroid(flts) : dbl",					  "Computes the centroid of the given vector"							  ]
+[ "centroid",			  "COMMAND: ",	  "centroid(int_vector64) : dbl",				  "Computes the centroid of the given vector"							  ]
+[ "centroid",			  "COMMAND: ",	  "centroid(ints) : dbl",					  "Computes the centroid of the given vector"							  ]
+[ "dbl_vector32_rancreate",	  "COMMAND: ",	  "dbl_vector32_rancreate() : dbl_vector32",			  "Creates random vector"									  ]
+[ "dbls_rancreate",		  "COMMAND: ",	  "dbls_rancreate(int) : dbls",					  "Creates random vector"									  ]
+[ "dimension",			  "COMMAND: ",	  "dimension(dbl_vector32) : int",				  "Retrieves the dimension of the vector"							  ]
+[ "dimension",			  "COMMAND: ",	  "dimension(dbls) : int",					  "Retrieves the dimension of the vector"							  ]
+[ "dimension",			  "COMMAND: ",	  "dimension(flts) : int",					  "Retrieves the dimension of the vector"							  ]
+[ "dimension",			  "COMMAND: ",	  "dimension(int_vector64) : int",				  "Retrieves the dimension of the vector"							  ]
+[ "dimension",			  "COMMAND: ",	  "dimension(ints) : int",					  "Retrieves the dimension of the vector"							  ]
+[ "flts_rancreate",		  "COMMAND: ",	  "flts_rancreate(int) : flts",					  "Creates random vector"									  ]
+[ "getval",			  "COMMAND: ",	  "getval(dbl_vector32, int) : dbl",				  "Project the Ith element value out of the vector."						  ]
+[ "getval",			  "COMMAND: ",	  "getval(dbls, int) : dbl",					  "Project the Ith element value out of the vector."						  ]
+[ "getval",			  "COMMAND: ",	  "getval(flts, int) : flt",					  "Project the Ith element value out of the vector."						  ]
+[ "getval",			  "COMMAND: ",	  "getval(int_vector64, int) : int",				  "Project the Ith element value out of the vector."						  ]
+[ "getval",			  "COMMAND: ",	  "getval(ints, int) : int",					  "Project the Ith element value out of the vector."						  ]
+[ "int_vector64_rancreate",	  "COMMAND: ",	  "int_vector64_rancreate() : int_vector64",			  "Creates random vector"									  ]
+[ "ints_rancreate",		  "COMMAND: ",	  "ints_rancreate(int) : ints",					  "Creates random vector"									  ]
+[ "length",			  "COMMAND: ",	  "length(dbl_vector32) : dbl",					  "Computes the length of the vector"								  ]
+[ "length",			  "COMMAND: ",	  "length(dbls) : dbl",						  "Computes the length of the vector"								  ]
+[ "length",			  "COMMAND: ",	  "length(flts) : dbl",						  "Computes the length of the vector"								  ]
+[ "length",			  "COMMAND: ",	  "length(int_vector64) : dbl",					  "Computes the length of the vector"								  ]
+[ "length",			  "COMMAND: ",	  "length(ints) : dbl",						  "Computes the length of the vector"								  ]
+[ "maxrange",			  "COMMAND: ",	  "maxrange(BAT[any,dbl_vector32]) : dbl_vector32",		  "Determines the 32 values of each dimension in the vectors."					  ]
+[ "maxrange",			  "COMMAND: ",	  "maxrange(BAT[any,dbls]) : dbls",				  "Determine the max values of each dimension in the vectors."					  ]
+[ "maxrange",			  "COMMAND: ",	  "maxrange(BAT[any,flts]) : flts",				  "Determine the max values of each dimension in the vectors."					  ]
+[ "maxrange",			  "COMMAND: ",	  "maxrange(BAT[any,int_vector64]) : int_vector64",		  "Determines the 64 values of each dimension in the vectors."					  ]
+[ "maxrange",			  "COMMAND: ",	  "maxrange(BAT[any,ints]) : ints",				  "Determine the max values of each dimension in the vectors."					  ]
+[ "meanvector",			  "COMMAND: ",	  "meanvector(BAT[any,dbl_vector32]) : dbl_vector32",		  "Calculates mean vector of given set of vectors"						  ]
+[ "meanvector",			  "COMMAND: ",	  "meanvector(BAT[any,dbls], int) : dbls",			  "Calculates mean vector of given set of vectors (Params: bat[vectors], dimension of vectors)"	  ]
+[ "meanvector",			  "COMMAND: ",	  "meanvector(BAT[any,flts], int) : flts",			  "Calculates mean vector of given set of vectors (Params: bat[vectors], dimension of vectors)"	  ]
+[ "meanvector",			  "COMMAND: ",	  "meanvector(BAT[any,ints], int) : flts",			  "Calculates mean vector of given set of vectors (Params: bat[vectors], dimension of vectors)"	  ]
+[ "minrange",			  "COMMAND: ",	  "minrange(BAT[any,dbl_vector32]) : dbl_vector32",		  "Determines the 32 values of each dimension in the vectors."					  ]
+[ "minrange",			  "COMMAND: ",	  "minrange(BAT[any,dbls]) : dbls",				  "Determine the min values of each dimension in the vectors."					  ]
+[ "minrange",			  "COMMAND: ",	  "minrange(BAT[any,flts]) : flts",				  "Determine the min values of each dimension in the vectors."					  ]
+[ "minrange",			  "COMMAND: ",	  "minrange(BAT[any,int_vector64]) : int_vector64",		  "Determines the 64 values of each dimension in the vectors."					  ]
+[ "minrange",			  "COMMAND: ",	  "minrange(BAT[any,ints]) : ints",				  "Determine the min values of each dimension in the vectors."					  ]
+[ "normalize",			  "COMMAND: ",	  "normalize(dbl_vector32) : dbl_vector32",			  "Normalizes vector"										  ]
+[ "normalize",			  "COMMAND: ",	  "normalize(dbls) : dbls",					  "Normalizes vector"										  ]
+[ "normalize",			  "COMMAND: ",	  "normalize(flts) : flts",					  "Normalizes vector"										  ]
+[ "normalize",			  "COMMAND: ",	  "normalize(ints) : flts",					  "Normalizes vector"										  ]
+[ "todbls",			  "COMMAND: ",	  "todbls(flts) : dbls",					  "Converts vectors of flts to vector of dbls"							  ]
+[ "todbls",			  "COMMAND: ",	  "todbls(ints) : dbls",					  "Converts vectors of ints to vector of dbls"							  ]
+[ "toflts",			  "COMMAND: ",	  "toflts(dbls) : flts",					  "Converts vectors of dbls to vector of flts"							  ]
+[ "toflts",			  "COMMAND: ",	  "toflts(ints) : flts",					  "Converts vectors of ints to vector of flts"							  ]
+[ "toints",			  "COMMAND: ",	  "toints(dbls) : ints",					  "Converts vectors of dbls to vector of ints"							  ]
+[ "toints",			  "COMMAND: ",	  "toints(flts) : ints",					  "Converts vectors of flts to vector of ints"							  ]
+[ "twonormdiff",		  "COMMAND: ",	  "twonormdiff(dbl_vector32, dbl_vector32) : dbl_vector32",	  "Calculates 2norm difference between 2 vectors"						  ]
+[ "twonormdiff",		  "COMMAND: ",	  "twonormdiff(dbls, dbls) : dbls",				  "Calculates 2norm difference between 2 vectors"						  ]
+[ "twonormdiff",		  "COMMAND: ",	  "twonormdiff(flts, flts) : flts",				  "Calculates 2norm difference between 2 vectors"						  ]
+[ "twonormdiff",		  "COMMAND: ",	  "twonormdiff(ints, ints) : flts",				  "Calculates 2norm difference between 2 vectors"						  ]
 
 Module: "wisc"
 
@@ -860,3 +927,8 @@ Module: "mprof"
 [ "pmStart",		  "COMMAND: ",	  "pmStart() : void",				  "Initializes the mprof bats"				  ]
 [ "pmSummary",		  "PROC: ",	  "pmSummary(..any..) : any",			  "not available"					  ]
 [ "pmTag",		  "COMMAND: ",	  "pmTag(str, str) : void",			  "Add comment to a timing period"			  ]
+
+# 11:55:18 >  
+# 11:55:18 >  Done.
+# 11:55:18 >  
+

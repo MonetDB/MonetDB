@@ -1,12 +1,16 @@
 stdout of test 'list` in directory 'tests/from_Twente/moa` itself:
 
-#> Mtest:	milM list milM -prelude list.prelude
-#> Mtest:	Mtimeout -timeout 900 Mserver -modulesilent -yaccsilent -d8 -db tests_from_Twente_moa -prelude list.prelude list.milM
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Mon Feb  7 04:38:02 MET 2000.
-#script:list.milM
-#prelude:list.prelude
+
+# 05:09:19 >  
+# 05:09:19 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_32.23829/monet/.GNU_32/Linux2.2.14-12/share/Monet/monet.Mtest.conf -db Tests_tests_from_Twente_moa list.prelude < list.milM
+# 05:09:19 >  
+
+# Monet Database Server V4.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# dbfarm:/var/tmp/monet.GNU_32.23829/monet/.GNU_32/Linux2.2.14-12/dbfarm
+# dbname:Tests_tests_from_Twente_moa
+# dbdir:/var/tmp/monet.GNU_32.23829/monet/.GNU_32/Linux2.2.14-12/dbfarm/Tests_tests_from_Twente_moa
 
 loaded;
 #---------------------------------#
@@ -1648,11 +1652,11 @@ reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(
 valuesB.find(408@0).print;
 [ 8000 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),0@0))))).print;
-#-------------------------#
-# BAT:	  tmp_179	  #
-# (oid)	  (oid)		  #
-#-------------------------#
-[ 0@0,	  409@0		  ]
+#-----------------#
+# BAT:	  tmp_61  #
+# (oid)	  (oid)	  #
+#-----------------#
+[ 0@0,	  409@0	  ]
 valuesB.find(409@0).print;
 [ 9000 ]
 # {[ 1000 ,  2000 ,  3000 ,  4000 ], [], [ 5000 ,  6000 ,  7000 ], [ 8000 ], [ 9000 ]}
@@ -1687,19 +1691,19 @@ valuesB.find(403@0).print;
 valuesB.find(404@0).print;
 [ 4000 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),1@0))))).print;
-#-------------------------#
-# BAT:	  tmp_182	  #
-# (oid)	  (oid)		  #
-#-------------------------#
-[ 1@0,	  408@0		  ]
+#-----------------#
+# BAT:	  tmp_64  #
+# (oid)	  (oid)	  #
+#-----------------#
+[ 1@0,	  408@0	  ]
 valuesB.find(408@0).print;
 [ 8000 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),0@0))))).print;
-#-------------------------#
-# BAT:	  tmp_163	  #
-# (oid)	  (oid)		  #
-#-------------------------#
-[ 0@0,	  409@0		  ]
+#-----------------#
+# BAT:	  tmp_61  #
+# (oid)	  (oid)	  #
+#-----------------#
+[ 0@0,	  409@0	  ]
 valuesB.find(409@0).print;
 [ 9000 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),3@0))))).print;
@@ -1753,11 +1757,11 @@ valuesList1.find(101@0).print;
 valuesList1.find(102@0).print;
 [ 11 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexList2)))),12@0))))).print;
-#-------------------------#
-# BAT:	  tmp_178	  #
-# (oid)	  (oid)		  #
-#-------------------------#
-[ 12@0,	  103@0		  ]
+#-----------------#
+# BAT:	  tmp_61  #
+# (oid)	  (oid)	  #
+#-----------------#
+[ 12@0,	  103@0	  ]
 valuesList1.find(103@0).print;
 [ 11 ]
 # {[< 10 >], [< 11 >, < 11 >], [< 11 >]}
@@ -1775,11 +1779,11 @@ indexSet1.print;
 [ 1@0,	  11@0	  ]
 [ 2@0,	  12@0	  ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_4))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_4))),reverse(indexList2)))),10@0))))).print;
-#-------------------------#
-# BAT:	  tmp_176	  #
-# (oid)	  (oid)		  #
-#-------------------------#
-[ 10@0,	  100@0		  ]
+#-----------------#
+# BAT:	  tmp_64  #
+# (oid)	  (oid)	  #
+#-----------------#
+[ 10@0,	  100@0	  ]
 valuesList1.find(100@0).print;
 [ 10 ]
 valuesList2.find(100@0).print;
@@ -1943,15 +1947,15 @@ _MMmax_2 := max(orderA);
 _MMcastval_3 := castval(orderA,_MMmax_2);
 _MMoper_4 := [-](_MMcastval_3,orderA);
 reverse(copy_order(reverse(sort(reverse(_MMoper_4))),reverse(indexA))).print;
-#-------------------------#
-# BAT:	  tmp_159	  #
-# (oid)	  (oid)		  #
-#-------------------------#
-[ 2@0,	  2@0		  ]
-[ 3@0,	  3@0		  ]
-[ 0@0,	  0@0		  ]
-[ 1@0,	  1@0		  ]
-[ 4@0,	  4@0		  ]
+#-----------------#
+# BAT:	  tmp_64  #
+# (oid)	  (oid)	  #
+#-----------------#
+[ 2@0,	  2@0	  ]
+[ 3@0,	  3@0	  ]
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 4@0,	  4@0	  ]
 valuesA.find(2@0).print;
 [ 30 ]
 valuesA.find(3@0).print;
@@ -2234,11 +2238,11 @@ reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(reverse(select(rev
 _MMjoin_27.find(1@0).print;
 [ 2000 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(_MMjoin_24)))),3@0))))).print;
-#-------------------------#
-# BAT:	  tmp_255	  #
-# (void)  (oid)		  #
-#-------------------------#
-[ 3@0,	  8@0		  ]
+#-----------------#
+# BAT:	  tmp_93  #
+# (void)  (oid)	  #
+#-----------------#
+[ 3@0,	  8@0	  ]
 _MMjoin_27.find(0@0).print;
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
@@ -2654,18 +2658,18 @@ reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reve
 _MMjoin_6.find(1@0).print;
 [ 30 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),1@0))))).print;
-#-----------------#
-# BAT:	  tmp_52  #
-# (oid)	  (oid)	  #
-#-----------------#
-[ 1@0,	  0@0	  ]
-_MMjoin_6.find(0@0).print;
-[ 20 ]
-reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),0@0))))).print;
 #-------------------------#
 # BAT:	  tmp_289	  #
 # (oid)	  (oid)		  #
 #-------------------------#
+[ 1@0,	  0@0		  ]
+_MMjoin_6.find(0@0).print;
+[ 20 ]
+reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),0@0))))).print;
+#-----------------#
+# BAT:	  tmp_47  #
+# (oid)	  (oid)	  #
+#-----------------#
 # {[ 50 ], [ 40 ], [ 30 ], [ 20 ], []}
 
 _MMoper_2 := [>=](valuesA,20);
@@ -2948,3 +2952,8 @@ _MMmergecast_7.find(2@0).print;
 # [ 2 ,  0 ,  0 ,  0 ,  0 ]
 
 quit;
+
+# 05:09:20 >  
+# 05:09:20 >  Done.
+# 05:09:20 >  
+
