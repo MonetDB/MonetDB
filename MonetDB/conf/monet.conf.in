@@ -76,7 +76,16 @@ monet_deamon=no			# default yes
 #monet_prompt=>			the MIL prompt character
 #monet_version=<str>		to enforce creation of old bat structures
 
+# General client Section
+#====================================
+#host=localhost				#the host the server runs on
+
 # Monet Application Interface Section
 #====================================
-#mapi_port=5050?		default port to address a Mserver
-#msql_port			default place to sent the SQL query
+#mapi_port=50000			#default port to address a Mserver
+#mapi_noheaders=no			#show all the mil output
+#mapi_debug=0				#The mapi debug level		
+
+# SQL Inteface Section
+#====================================
+#sql_port=45123				#default place to sent the SQL query
