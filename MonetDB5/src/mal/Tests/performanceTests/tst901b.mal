@@ -2,8 +2,7 @@
 # using a BATloop !! This is 40x slower as the V4.3 multiplex implementation
 #profiler.setAll();
 #profiler.setLogFile("/tmp/MonetProfile.xml");
-b:= new(:lng,:lng,1000100);
-t0:= alarm.usec();
+b:= new(:lng,:lng);
 t0:= alarm.usec();
 barrier (v,i):= newRange(0:lng);
 	insert(b,i,i);
@@ -12,13 +11,11 @@ exit (v,i);
 t1:= alarm.usec();
 c:=copy(b);
 t2:= alarm.usec();
-d:= new(:lng,:lng,1000100);
+d:= new(:lng,:lng);
 h:= 0:lng;
 t:= 0:lng;
 barrier (mloop,h,t):= newIterator(b);
-	B2:= find(b,h);
-	B3:= find(c,h);
-	cr:= B2+B3;
+	cr:= h+t;
 	insert(d,h,cr);
 catch GDKerror;
 	leave mloop;
