@@ -74,10 +74,6 @@ const char *statement2string( statement *s ){
 void statement_destroy( statement *s ){
 	if (--s->refcnt <= 0){
 		switch(s->type){
-			/* statement_destroy  op2 */
-		case st_update: 
-			statement_destroy( s->op2.stval );
-			break;
 			/* statement_destroy  op1 */
 		case st_not_null: 
 		case st_reverse: 
@@ -95,6 +91,7 @@ void statement_destroy( statement *s ){
 			list_destroy( s->op2.lval );
 			break;
 			/* statement_destroy  op1 and op2 */
+		case st_update: 
 		case st_default: 
 		case st_like: 
 		case st_semijoin: 
@@ -491,11 +488,13 @@ statement *statement_insert_column( statement *c, statement *a){
 	return s;
 }
 
-statement *statement_update( column *c, statement *b ){
+statement *statement_update( statement *c, statement *b ){
 	statement *s = statement_create();
 	s->type = st_update;
-	s->op1.cval = c;
+	s->op1.stval = c; c->refcnt++;
 	s->op2.stval = b; b->refcnt++;
+	s->h = c->h;
+	s->nrcols = c->nrcols;
 	return s;
 }
 
@@ -577,10 +576,15 @@ statement *statement_name( statement *op1, char *name ){
 
 type *tail_type( statement *st ){
 	switch(st->type){
+	case st_const: 
 	case st_join: return tail_type(st->op2.stval);
+
 	case st_select: 
 	case st_select2: 
 	case st_unique: 
+	case st_update: 
+	case st_delete: 
+	case st_insert: 
 	case st_name: return tail_type(st->op1.stval);
 
 	case st_column: return st->op1.cval->tpe; 

@@ -1,4 +1,10 @@
 %{
+/* todo 
+ * add TRANSACTION support
+ * use table/column constrains (such as not null)
+ * use primary/foreign keys
+ * join expressions
+ */
 #include <unistd.h>
 #include "sql.h"
 #include "sqlexecute.h"
@@ -119,6 +125,11 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	ordering_spec
 	table_ref 
 	opt_temp
+	case_exp
+	when_value
+	when_search
+	opt_else
+	opt_table_name
 
 %type <sval>
 	any_all_some
@@ -126,14 +137,13 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	ident
 	column
 	parameter
-	range_variable
 	user
 	name
 	data_type
 	datetime_type
 	interval_type
 	grantee
-	opt_name
+	opt_column_name
 
 %type <l>
 	schema_name
@@ -168,6 +178,10 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	end_field
 	single_datetime_field
 	interval_qualifier
+	scalar_exp_list
+	when_value_list
+	when_search_list
+	opt_derived_column_list
 
 %type <ival>
 	drop_action 
@@ -179,6 +193,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	datetime_field
 	opt_bounds
 	opt_sign
+	opt_all
 	intval
 
 %type <bval>
@@ -242,6 +257,8 @@ UNDER WHENEVER
 %token ALTER ADD TABLE TO UNION UNIQUE USER VALUES VIEW WHERE WITH WORK
 %token<sval> DATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
+
+%token CASE WHEN THEN ELSE END NULLIF COALESCE
 
 %%
 
@@ -756,20 +773,20 @@ query_exp:
 
 non_join_query_exp:
     query_term				
- |  query_exp UNION query_term		
+ |  query_exp UNION opt_all query_term		
 
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $1);
-	  dlist_append_symbol(l, $3);
-	  $$ = _symbol_create_list( SQL_UNION, l); }
-
- |  query_exp UNION ALL query_term		
-
-	{ dlist *l = dlist_create();
-	  dlist_append_symbol(l, $1);
+	  dlist_append_int(l, $3);
 	  dlist_append_symbol(l, $4);
-	  $$ = _symbol_create_list( SQL_UNION_ALL, l); }
+	  $$ = _symbol_create_list( SQL_UNION, l); }
  ;
+
+opt_all:
+     /* empty */		{ $$ = 0; }
+  |  ALL			{ $$ = 1; }
+  ;
+
 
 query_term:
     query_spec 
@@ -813,13 +830,33 @@ table_ref_commalist:
  ;
 
 table_ref:
-    qname			{ $$ = _symbol_create_list(SQL_TABLE, $1 ); }
- |  qname range_variable 	{ dlist *l = dlist_create();
+    qname opt_table_name 	{ dlist *l = dlist_create();
 		  		  dlist_append_list(l, $1);  
-		  	  	  dlist_append_string(l, $2);  
+		  	  	  dlist_append_symbol(l, $2);  
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
- | subquery opt_name		{ $$ = $1; 
-				  dlist_append_string($$->data.lval, $2); }
+ |  subquery opt_table_name	{ $$ = $1; 
+				  dlist_append_symbol($1->data.lval, $2); }
+ |  query_exp opt_table_name	{ $$ = $1; 
+				  dlist_append_symbol($1->data.lval, $2); }
+ ;
+
+opt_table_name:	
+    /* empty */			{ $$ = NULL; }
+ |  ident 
+				{ dlist *l = dlist_create();
+		  		  dlist_append_string(l, $1);  
+		  	  	  dlist_append_list(l, NULL);  
+		  		  $$ = _symbol_create_list(SQL_NAME, l); }
+ |  AS ident opt_derived_column_list 
+				{ dlist *l = dlist_create();
+		  		  dlist_append_string(l, $2);  
+		  	  	  dlist_append_list(l, $3);  
+		  		  $$ = _symbol_create_list(SQL_NAME, l); }
+ ;
+
+opt_derived_column_list:
+    /* empty */				{ $$ = NULL; }
+ |  '(' name_commalist ')'	{ $$ = $2; }
  ;
 
 opt_group_by_clause:
@@ -1073,6 +1110,7 @@ scalar_exp:
  |  datetime_funcs
  |  string_funcs
  |  '(' scalar_exp ')' 		{ $$ = $2; }
+ |  case_exp	
  ;
 
 
@@ -1116,14 +1154,14 @@ column_exp:
   		  dlist_append_string(l, $1);
   		  dlist_append_string(l, NULL);
   		  $$ = _symbol_create_list( SQL_TABLE, l ); }
- |  scalar_exp opt_name	
+ |  scalar_exp opt_column_name	
 		{ dlist *l = dlist_create();
   		  dlist_append_symbol(l, $1);
   		  dlist_append_string(l, $2);
   		  $$ = _symbol_create_list( SQL_COLUMN, l ); }
  ;
 
-opt_name:
+opt_column_name:
     /* empty */	{ $$ = NULL; }
  |  AS ident	{ $$ = $2; }
  ;
@@ -1153,6 +1191,7 @@ parameter_ref:
 		  $$ = _symbol_create_list( SQL_PARAMETER, l ); }
  ;
 
+/* change to set function */
 function_ref:
     AMMSC '(' '*' ')' 	
 		{ dlist *l = dlist_create();
@@ -1322,6 +1361,68 @@ column_ref:
 				  dlist_create(), $1), $3), $5);}
  ;
 
+case_exp: /* could rewrite NULLIF and COALESCE to normal CASE statements */
+     NULLIF '(' scalar_exp ',' scalar_exp ')' 
+		{ $$ = _symbol_create_list(SQL_NULLIF,
+		   dlist_append_symbol(
+		    dlist_append_symbol(
+		     dlist_create(), $3), $5)); }
+ |   COALESCE '(' scalar_exp_list ')'
+		{ $$ = _symbol_create_list(SQL_COALESCE, $3); }
+ |   CASE scalar_exp when_value_list opt_else END
+		{ $$ = _symbol_create_list(SQL_CASE, 
+		   dlist_append_symbol(
+		    dlist_append_list(
+		     dlist_append_symbol(
+		      dlist_create(),$2),$3),$4)); }
+ |   CASE when_search_list opt_else END
+		 { $$ = _symbol_create_list(SQL_CASE, 
+		   dlist_append_symbol(
+		    dlist_append_list(
+		     dlist_create(),$2),$3)); }
+ ;
+
+scalar_exp_list:
+    scalar_exp			
+			{ $$ = dlist_append_symbol( dlist_create(), $1);}
+ |  scalar_exp_list ',' scalar_exp
+			{ $$ = dlist_append_symbol( $1, $3);}
+ ;
+
+when_value:
+    WHEN scalar_exp THEN scalar_exp
+			{ $$ = _symbol_create_list( SQL_WHEN,
+			   dlist_append_symbol(
+			    dlist_append_symbol(
+			     dlist_create(), $2),$4)); }
+ ;
+
+when_value_list:
+    when_value
+			{ $$ = dlist_append_symbol( dlist_create(), $1);}
+ |  when_value_list when_value
+			{ $$ = dlist_append_symbol( $1, $2); }
+ ;
+
+when_search:
+    WHEN search_condition THEN scalar_exp
+			{ $$ = _symbol_create_list( SQL_WHEN,
+			   dlist_append_symbol(
+			    dlist_append_symbol(
+			     dlist_create(), $2),$4)); }
+ ;
+
+when_search_list:
+    when_search
+			{ $$ = dlist_append_symbol( dlist_create(), $1);}
+ |  when_search_list when_search
+			{ $$ = dlist_append_symbol( $1, $2);}
+ ;
+
+opt_else:
+    ELSE scalar_exp	{ $$ = $2; }
+ ;
+
 		/* data types, more types to come */
 
 data_type:
@@ -1359,7 +1460,6 @@ ident: name
 column:	ident ;
 /* :name handled in parser */
 parameter: PARAMETER ;
-range_variable:	name ;
 user: name 	;
 name: 
      NAME 	{ $$ = $1; } 		

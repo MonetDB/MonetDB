@@ -30,6 +30,8 @@ extern list *list_append_statement(list *l, struct statement *data);
 extern list *list_append_column(list *l, struct column *data);
 extern list *list_append_table(list *l, struct table *data);
 
+extern list *list_prepend_statement(list *l, struct statement *data);
+
 extern node *list_remove(list *l, node *n );
 
 extern list *list_merge(list *l, list *data);

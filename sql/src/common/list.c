@@ -129,6 +129,20 @@ list *list_append_table(list *l, table *data){
 	l->type = type_table;
 	return list_append_default(l,n);
 }
+list *list_prepend_default(list *l, node *n){
+	if (!l->cnt){
+		l->t = n;
+	}
+	n->next = l->h;
+	l->h = n;
+	l->cnt++;
+	return l;
+}
+list *list_prepend_statement(list *l, statement *data){
+	node *n = node_create_statement(data);
+	l->type = type_statement;
+	return list_prepend_default(l,n);
+}
 
 list *list_merge(list *l, list *data){
 	if (data){

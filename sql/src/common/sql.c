@@ -1,8 +1,3 @@
-/*
- *	Text handling routines for simple embedded SQL
- */
-
-/* use a template.mil file to hold the string mil data */
 
 /* TODO
    1) fix error output 
@@ -12,9 +7,10 @@
 
    3) remove list_map/traverse
 
-   4) print code and review.
+   4) code review.
 
    5) may need levels of errors/warnings so we can skip non important once
+      add sqlstate to errors
  */ 
 
 #include <unistd.h>
@@ -102,7 +98,6 @@ char *token2string(int token){
 	case SQL_WHERE: return "Where";
 	case SQL_FROM: return "From";
 	case SQL_UNION: return "Union";
-	case SQL_UNION_ALL: return "Union All";
 	case SQL_UPDATE_SET: return "Update Set";
 	case SQL_INSERT_INTO: return "Insert Into";
 	case SQL_INSERT: return "Insert";
@@ -133,20 +128,34 @@ char *token2string(int token){
 	case SQL_INT_VALUE: return "Integer";
 	case SQL_ATOM: return "Atom";
 	case SQL_ESCAPE: return "Escape";
+	case SQL_CASE: return "Case";
+	case SQL_WHEN: return "When";
+	case SQL_COALESCE: return "Coalesce";
+	case SQL_NULLIF: return "Nullif";
+	case SQL_JOIN: return "Join";
+	case SQL_CROSS: return "Cross";
 	default: return "unknown";
 	}
 }
 
 
-static statement *query( context *sql, scope *scp, int distinct, 
+static statement *sql_select( context *sql, scope *scp, int distinct, 
 		dlist *selection, dlist *into, dlist *table_exp, 
 		symbol *orderby );
+static statement *search_condition( context *sql, scope *scp, symbol *sc, 
+		statement *group, statement *subset );
+static statement *scalar_exp( context *sql, scope *scp, symbol *se, 
+		statement *group, statement *subset	);
+
+static statement *pearl2pivot( context *sql, list *ll );
+static statement *diamond2pivot( context *sql, list *l );
+static var *query_exp_optname( context *sql, scope *scp, symbol *q );
 
 statement *subquery( context *sql, scope *scp, symbol *sq ) {
 	dlist *q = sq->data.lval;
 	assert( sq->token == SQL_SELECT );
 	return 
-	query( sql, scp,
+	sql_select( sql, scp,
 		  q->h->data.ival, 
 		  q->h->next->data.lval,
 	          q->h->next->next->data.lval, 
@@ -207,12 +216,11 @@ char *table_name( dlist *tname ){
 }
 
 static
-statement *create_table_intern( context *sql, schema *schema, 
+table *create_table_intern( context *sql, schema *schema, 
 		char *name, char *query, statement *sq ){
 
 	catalog *cat = sql->cat;
 	table *table = cat_create_table( cat, 0, schema, name, 0, query);
-	statement *stct = statement_create_table( table );
 
 	int seqnr = 0;
 	node *m = sq->op1.lval->h;
@@ -228,51 +236,83 @@ statement *create_table_intern( context *sql, schema *schema,
 		m = m->next;
 		seqnr++;
 	}
-	return stct;
+	return table;
 }
 
 static
-char *subquery_optname( context *sql, scope *scp, symbol *query, char *name ){
+char *temp_name( context *sql, scope *scp, char *name ){
 	static int temp_nr = 1;
-	char *tname = NULL;
-	statement *sq = subquery(sql, scp, query );
-	if (!sq) return NULL; 
-	if (dlist_length(query->data.lval) == 6){ /* AS NAME */
-		tname = query->data.lval->t->data.sval;
-	} else {
-		tname = name;
-		snprintf(name,NAMELEN, "temp_%d", temp_nr++);
-	}
-	sq = create_table_intern(sql, sql->cat->cur_schema, 
-			tname, query->sql, sq );
-	if (sq) statement_destroy(sq);
-	return tname;
+
+	snprintf(name, NAMELEN, "temp_t%d", temp_nr++);
+	return name;
 }
 
 static
-table *table_ref( context *sql, scope *scp, symbol *tableref ){
-	char temp[NAMELEN];
+var *table_optname( context *sql, scope *scp, statement *sq,
+		    char *query, symbol *optname ){
+	char temp[NAMELEN+1];
 	char *tname = NULL;
+	dlist *columnrefs = NULL;
+	var *v;
+	table *tab;
+
+	if (optname && optname->token == SQL_NAME ){
+		tname = optname->data.lval->h->data.sval;
+		columnrefs = optname->data.lval->h->next->data.lval;
+	} else {
+		tname = temp_name(sql, scp, temp );
+	}
+	tab = create_table_intern(sql, sql->cat->cur_schema, tname, query, sq );
+
+	v = scope_add_table( scp, tab, tname );
+	if (columnrefs){
+		node *m = sq->op1.lval->h;
+		dnode *d;
+
+		for(d = columnrefs->h; d && m; d = d->next, m = m->next){
+			statement *st = m->data.stval;
+			scope_add_statement( scp, st, d->data.sval );
+			st->h = v; /* Hack to fix ref to temp table */
+		}
+	}
+	return v;
+}
+
+static
+var *subquery_optname( context *sql, scope *scp, symbol *query ){
+	statement *sq = subquery(sql, scp, query );
+
+	if (!sq) return NULL; 
+
+	return table_optname( sql, scp, sq, query->sql, 
+			      query->data.lval->t->data.sym );
+}
+
+static
+var *table_ref( context *sql, scope *scp, symbol *tableref ){
+	char *tname = NULL;
+	table *t = NULL;
+
+	/* todo handle opt_table_ref 
+	   	(ie tableref->data.lval->h-Next->data.sym */
 
 	if (tableref->token == SQL_NAME){
 		tname = table_name(tableref->data.lval->h->data.lval);
+		t = cat_bind_table(sql->cat, sql->cat->cur_schema, tname);
+		if (!t){  
+			snprintf(sql->errstr, ERRSIZE, 
+					_("Unknown table %s"), tname );
+			return NULL;
+		}
+		if (tableref->data.lval->h->next->data.sym){ /* AS */
+			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
+		} 
+		return scope_add_table( scp, t, tname );
 	} else if (tableref->token == SQL_SELECT) {
-		tname = subquery_optname( sql, scp, tableref, temp);
-	} else {
-		tname = table_name(tableref->data.lval);
+		return subquery_optname( sql, scp, tableref );
+	} else { 
+		return query_exp_optname( sql, scp, tableref );
 	}
-	return cat_bind_table(sql->cat, sql->cat->cur_schema, tname);
-}
-
-static
-char *table_ref_var( context *sql, symbol *tableref ){
-	char *var;
-	if (tableref->token == SQL_NAME) {
-		var = tableref->data.lval->h->next->data.sval;
-	} else {
-		var = table_name(tableref->data.lval);
-	}
-	return var;
 }
 
 static
@@ -299,6 +339,13 @@ statement *find_subset( statement *subset, var *t ){
 		}
 		n = n->next;
 	}
+	return NULL;
+}
+
+static
+statement *first_subset( statement *subset ){
+	node *n = subset->op1.lval->h;
+	if (n) return n->data.stval;
 	return NULL;
 }
 
@@ -346,6 +393,145 @@ statement *check_types( context *sql, type *ct, statement *s ){
 	return s;
 }
 
+
+/* The case/when construction in the selection works on the resulting
+   table (ie. on the marked columns). We just need to know which oid list
+   is involved (ie. find one subset).
+   We need to check if for all results the types are the same. 
+ */
+statement *sql_search_case( context *sql, scope *scp, dlist *when_search_list,
+		symbol *opt_else, statement *group, statement *subset	){
+	list *conds = list_create();
+	list *results = list_create();
+	dnode *dn = when_search_list->h;
+	type *restype = NULL;
+	statement *res = NULL;
+	node *n,*m;
+
+	if (dn){
+		dlist *when = dn->data.sym->data.lval;
+		statement *cond, *result;
+
+	       	cond = search_condition( sql, scp, when->h->data.sym, 
+				group, subset);
+		result = scalar_exp( sql, scp, when->h->next->data.sym, 
+				group, subset);
+		if (!cond || !result){
+			list_destroy(conds);
+			list_destroy(results);
+		       	return NULL;
+		}
+		list_prepend_statement(conds, cond );
+		list_prepend_statement(results, result );
+
+		restype = tail_type(result);
+	}
+	if (!restype){
+		snprintf(sql->errstr, ERRSIZE, 
+			_("Error: result type missing"));
+		list_destroy(conds);
+		list_destroy(results);
+		return NULL;
+	}
+	for(dn = dn->next; dn; dn = dn->next){
+		type *tpe = NULL;
+		dlist *when = dn->data.sym->data.lval;
+		statement *cond, *result;
+
+	       	cond = search_condition( sql, scp, when->h->data.sym, 
+				group, subset);
+		result = scalar_exp( sql, scp, when->h->next->data.sym, 
+				group, subset);
+		if (!cond || !result){
+			list_destroy(conds);
+			list_destroy(results);
+		       	return NULL;
+		}
+		list_prepend_statement(conds, cond );
+		list_prepend_statement(results, result );
+
+		tpe = tail_type(result);
+		if (!tpe){
+			snprintf(sql->errstr, ERRSIZE, 
+				_("Error: result type missing"));
+			list_destroy(conds);
+			list_destroy(results);
+			return NULL;
+		}
+		if (restype != tpe){
+		    snprintf(sql->errstr, ERRSIZE, 
+		    _("Error: result types %s,%s of case are not compatible"),
+		    restype->sqlname, tpe->sqlname );
+		    list_destroy(conds);
+		    list_destroy(results);
+		    return NULL;
+		}
+	}
+	if (subset){
+		res = first_subset(subset);
+		if (!res){
+			snprintf(sql->errstr, ERRSIZE, 
+	  		_("Subset not found") );
+		    	list_destroy(conds);
+		    	list_destroy(results);
+		       	return NULL;
+		}
+	} else {
+		printf("Case in query not handled jet\n");
+	}
+	if (opt_else){
+		statement *result = 
+			scalar_exp( sql, scp, opt_else, group, subset);
+		type *t = tail_type(result);
+		if (restype != t){
+			func *c = cat_bind_func_result(sql->cat, "convert",
+				t->sqlname, NULL, NULL, restype->sqlname );
+			if (!c){
+				snprintf(sql->errstr, ERRSIZE, 
+		  		_("Cast between (%s,%s) not possible"), 
+				t->sqlname, restype->sqlname);
+				return NULL;
+			}
+			result = statement_unop( result, c );
+		}
+		if (result->nrcols <= 0){
+			res = statement_const( res, result );
+		} else {
+			res = result;
+		}
+	} else {
+		res = statement_const( res, NULL );
+	}
+	for(n = conds->h, m = results->h; n && m; n = n->next, m = m->next){
+		statement *cond = n->data.stval;
+		statement *result = m->data.stval;
+		if (result->nrcols <= 0)
+			result = statement_const( cond, result );
+		else
+			result = statement_semijoin( result, cond);
+		res = statement_update( res, result);
+	}
+	list_destroy(conds);
+	list_destroy(results);
+	return res;
+}
+
+statement *sql_case( context *sql, scope *scp, symbol *se, statement *group,
+	      statement *subset	){
+	dlist *l = se->data.lval;
+	if (l->h->type == type_list){
+		dlist *when_search_list = l->h->data.lval;
+		symbol *opt_else = l->h->next->data.sym;
+		return sql_search_case(sql, scp, when_search_list, opt_else,
+					group, subset );
+	} else {
+		/*sql_value_case();*/
+		printf("sql_value_case not handeled\n");
+		return NULL;
+	}
+	printf("case %d %s\n", se->token, token2string(se->token));
+	return NULL;
+}
 
 static
 statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
@@ -497,8 +683,164 @@ statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
 			break;
 	case SQL_ATOM:
 			return statement_atom( atom_dup(se->data.aval) );
+	case SQL_CASE: 
+			return sql_case( sql, scp, se, group, subset );
+	case SQL_NULLIF:
+	case SQL_COALESCE:
+			printf("case %d %s\n", se->token, token2string(se->token));
+			return NULL;
+			break;
 	default: 	
 			printf("unknown %d %s\n", se->token, token2string(se->token));
+	}
+	return NULL;
+}
+
+static statement *sql_join
+( 
+	context *sql, 
+	scope *scp, 
+	symbol *tab1, 
+	int natural, 
+	jt jointype, 
+	symbol *tab2, 
+	symbol *js
+){
+  	statement *s = NULL, *subset = NULL;
+	var *tv1, *tv2;
+	
+  	scp = scope_open( scp );
+
+	tv1 = table_ref( sql, scp, tab1);
+	tv2 = table_ref( sql, scp, tab2);
+
+	if (!tv1 || !tv2) return NULL;
+
+	if (js && js->token != SQL_USING){ /* On search_condition */
+		s = search_condition(sql, scp, js, NULL, NULL);
+	} else if (js){ /* using */
+	} else { /* ! js */
+	}
+
+  	if (s){
+		if (s->type != st_diamond && s->type != st_pearl){
+			s = statement_diamond(s);
+		}
+		if (s->type == st_pearl){
+			statement *ns = pearl2pivot(sql, s->op1.lval);
+			statement_destroy(s);
+			s = ns;
+		} else {
+		  	statement *ns = diamond2pivot(sql, s->op1.lval);
+			statement_destroy(s);
+			s = ns;
+		}
+		if (list_length(scp->lifted) > 0){
+			/* possibly lift references */
+	  		snprintf(sql->errstr, ERRSIZE, 
+			_("Outer join with outer reference not implemented\n"));
+			return NULL;
+		}
+  	}
+  	subset = s;
+	if (subset){
+        	list *rl = list_create();
+	    	table *t = NULL;
+		node *n;
+		statement *fs1 = find_subset(subset, tv1);
+		statement *fs2 = find_subset(subset, tv2);
+		statement *ld = NULL, *lc = NULL;
+		statement *rd = NULL, *rc = NULL;
+
+		if(!fs1 || !fs2) return NULL;
+
+		t = tv1->data.tval;
+		if (jointype == jt_left || jointype == jt_full){
+			column *cs = t->columns->h->data.cval;
+			/* we need to add the missing oid's */
+			ld = statement_diff( 
+				statement_column(cs,tv1), 
+				   statement_reverse(subset) );
+			lc = statement_count( ld );
+		}
+		t = tv2->data.tval;
+		if (jointype == jt_right || jointype == jt_full){
+			column *cs = t->columns->h->data.cval;
+			/* we need to add the missing oid's */
+			rd = statement_diff( 
+				statement_column(cs,tv2), 
+				   statement_reverse(subset) );
+			rc = statement_count( rd );
+		}
+		if (jointype == jt_full){
+			statement *lnil = statement_const(rd,statement_atom(NULL));
+			statement *rnil = statement_const(ld,statement_atom(NULL));
+			ld = statement_insert_column( ld,
+			       statement_remark( lnil, 
+				 statement_count(ld), 0));
+			rd = statement_insert_column( rnil,
+			       statement_remark( rd, 
+				 statement_count(rnil), 0));
+		} else {
+			if (ld){
+				ld = statement_mark(statement_reverse(ld),0);
+				rd = statement_const(ld,statement_atom(NULL));
+			} else if (rd){
+				rd = statement_mark(statement_reverse(rd),0);
+				ld = statement_const(rd,statement_atom(NULL));
+			}
+		}
+		t = tv1->data.tval;
+	    	for(n = t->columns->h; n; n = n->next){
+			column *cs = n->data.cval;
+
+			  list_append_statement(rl, 
+			    statement_join(fs1, 
+				statement_column(cs, tv1), cmp_equal));
+	    	}
+		t = tv2->data.tval;
+	    	for(n = t->columns->h; n; n = n->next){
+			column *cs = n->data.cval;
+
+			  list_append_statement(rl, 
+			    statement_join(fs2, 
+				statement_column(cs, tv2), cmp_equal));
+	    	}
+		s = statement_list(rl);
+	}
+	scope_close(scp);
+	return s;
+}
+
+static
+statement *query_exp( context *sql, scope *scp, symbol *q ){
+	dnode *n = q->data.lval->h;
+	symbol *tab_ref1 = n->data.sym; 
+	int natural = n->next->data.ival;
+	jt jointype = (jt)n->next->next->data.ival;
+	symbol *tab_ref2 = n->next->next->next->data.sym;
+	symbol *joinspec = n->next->next->next->next->data.sym;
+
+	return sql_join( sql, scp,
+	    tab_ref1, natural, jointype, tab_ref2, joinspec);
+}
+
+static 
+var *query_exp_optname( context *sql, scope *scp, symbol *q ){
+	/* 
+	 * todo handle SQL_UNION (opt_all) (left/right should
+	 * be added to parser 
+	 */
+	switch(q->token){
+	case SQL_JOIN: { 
+		statement *tq = query_exp( sql, scp, q );
+		return table_optname( sql, scp, 
+				tq, q->sql, q->data.lval->t->data.sym);
+	}
+	case SQL_CROSS:
+		printf("implement crosstables %d %s\n", q->token, token2string(q->token));
+	default:
+		printf("case %d %s\n", q->token, token2string(q->token));
 	}
 	return NULL;
 }
@@ -687,8 +1029,8 @@ statement *sql_compare( context *sql, statement *ls, statement *rs, char *compar
 			return statement_select(
 				statement_binop( ls, rs, cmp), 
 				  statement_atom(atom_general(
-				    cat_bind_type(sql->cat, "BOOL" ), "1")),
-				      cmp_equal);
+				    cat_bind_type(sql->cat, "BOOL" ), 
+				     _strdup("1"))), cmp_equal);
 		}
 		rs = check_types( sql, tail_type(ls), rs );
 		if (!rs) return NULL;
@@ -956,20 +1298,15 @@ statement *search_condition( context *sql, scope *scp, symbol *sc,
 			}
 			return statement_diff(ls, statement_exists( ls, nl));
 		} else if (l->h->next->type == type_symbol){
-			char temp[NAMELEN];
 			statement *sr = statement_reverse(ls);
-			char *name = subquery_optname(sql, scp,
-						l->h->next->data.sym, temp);
-			if (name){
-				table *inner = cat_bind_table(sql->cat, 
-						sql->cat->cur_schema, name);
-				if (inner){
-					return 
-					  statement_reverse(
-					    statement_diff(sr,
-					      statement_reverse( 
-					        inner->columns->h->data.cval->s 					  )));
-				}
+			var  *sqn = subquery_optname(sql, scp,
+						l->h->next->data.sym );
+			if (sqn){
+				return statement_reverse(
+				    statement_diff(sr,
+				      statement_reverse( 
+				        sqn->data.tval->columns->h->data.cval->s
+					  )));
 			}
 			return NULL;
 		} else {
@@ -1353,11 +1690,18 @@ statement *substitute( statement *s, statement *c ){
 }
 
 static
-statement *query( context *sql, scope *scp, int distinct, dlist *selection, 
-	dlist *into, dlist *table_exp , symbol *orderby ) {
-
+statement *sql_select
+( 
+	context *sql, 
+	scope *scp, 
+	int distinct, 
+	dlist *selection, 
+	dlist *into, 
+	dlist *table_exp, 
+	symbol *orderby
+){
   int toplevel = (!scp)?1:0;
-  statement *s = NULL, *ns = NULL;
+  statement *s = NULL;
   dlist *from = table_exp->h->data.sym->data.lval;
 
   symbol *where = table_exp->h->next->data.sym;
@@ -1369,19 +1713,8 @@ statement *query( context *sql, scope *scp, int distinct, dlist *selection,
   if (from){ /* keep variable list with tables and names */
 	  dnode *n = NULL;
 
-	  for( n = from->h; (n); n = n->next ){
-		table *p = table_ref( sql, scp, n->data.sym);
-	  	if (!p){ 
-			symbol *s = (n)?n->data.sym:NULL;
-			if (s && s->token == SQL_NAME)
-				s = s->data.lval->h->data.sym;
-			snprintf(sql->errstr, ERRSIZE,
-			  _("Unknown table %s"), (s)
-				  ?table_name(s->data.lval):"");
-			  return NULL;
-	  	}
-	  	scope_add_table( scp, p, table_ref_var( sql, n->data.sym) );
-	  }
+	  for( n = from->h; (n); n = n->next )
+		table_ref( sql, scp, n->data.sym);
 
   } else if (toplevel) { /* only on top level query */
 	  node *n = sql->cat->cur_schema->tables->h;
@@ -1395,18 +1728,18 @@ statement *query( context *sql, scope *scp, int distinct, dlist *selection,
   if (where){
 	s = search_condition(sql, scp, where, NULL, NULL);
   } else {
-	if (list_length(scp->vars) > 1){
+	if (scope_count_tables(scp) > 1){
+		scope_dump(scp);
 		snprintf(sql->errstr, ERRSIZE, 
 		  _("Subquery over multiple tables misses where condition"));
 		return NULL;
 	}
-	if (list_length(((var*)scp->vars->h->data.sval)->data.tval->columns) < 1 ){
+        s = scope_first_column( scp );
+	if (!s){
 		snprintf(sql->errstr, ERRSIZE, 
-		  _("Subquery table %s has no columns"), 
-		  scp->vars->h->data.tval->name);
+		  	_("Subquery has no columns"));
 		return NULL;
 	}
-        s = scope_first_column( scp );
   }
 
   if (s){
@@ -1414,11 +1747,11 @@ statement *query( context *sql, scope *scp, int distinct, dlist *selection,
 		s = statement_diamond(s);
 	}
 	if (s->type == st_pearl){
-		ns = pearl2pivot(sql, s->op1.lval);
+		statement *ns = pearl2pivot(sql, s->op1.lval);
 		statement_destroy(s);
 		s = ns;
 	} else {
-	  	ns = diamond2pivot(sql, s->op1.lval);
+	  	statement *ns = diamond2pivot(sql, s->op1.lval);
 		statement_destroy(s);
 		s = ns;
 	}
@@ -1584,8 +1917,9 @@ statement *create_view( context *sql, schema *schema, dlist *qname,
 				seqnr++;
 			}
 		} else {
-			stct = create_table_intern( 
+			table *table = create_table_intern( 
 				sql, schema, name, query->sql, sq );
+			stct = statement_create_table( table );
 		}
 		statement_destroy(sq); 
 		return stct;
@@ -1887,11 +2221,16 @@ statement *update_set( context *sql, dlist *qname,
 				  	tname, assignment->h->data.sval);
 				return NULL;
 			} else {
+				statement *scl = statement_column(cl, NULL);
 				symbol *a = assignment->h->next->data.sym;
+				statement *sc = 
+					column_exp( sql, scp, a, NULL,NULL);
+
+				sc = check_types( sql, cl->tpe, sc );
+				/*
                                 statement *sc =
                                     scalar_exp(sql, scp, a, NULL, NULL);
 
-				/* TODO remove substitute look at query*/
 				sc = check_types( sql, cl->tpe, sc );
 				if (!sc) return NULL;
                                 if (sc->nrcols > 0){
@@ -1900,11 +2239,15 @@ statement *update_set( context *sql, dlist *qname,
                                                 sc = sc->op1.stval;
                                         j = statement_semijoin(sc, s );
                                         sc = substitute( co, j );
-                                } else { /* constant case */
+                                } else { 
                                         sc = statement_const( s, sc);
                                 }
+				*/
+                                if (sc->nrcols <= 0)
+                                        sc = statement_const( scl, sc);
+
                                 list_append_statement( l,
-                                        statement_update( cl, sc ));
+                                        statement_update( scl, sc ));
 			}
 			n = n->next;
 		}
@@ -2012,6 +2355,12 @@ statement *sql_statement( context *sql, symbol *s ){
 			break;
 		case SQL_SELECT: 
 			ret = subquery( sql, NULL, s );
+			/* add output statement */
+			if (ret) ret = statement_output( ret );
+			break;
+		case SQL_JOIN: 
+		case SQL_CROSS: 
+			ret = query_exp( sql, NULL, s);
 			/* add output statement */
 			if (ret) ret = statement_output( ret );
 			break;

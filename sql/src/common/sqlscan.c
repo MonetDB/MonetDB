@@ -227,6 +227,14 @@ void init_keywords(){
 	keywords_insert("SECOND", SECOND );
 
 	keywords_insert("SUBSTRING", SUBSTRING );
+
+	keywords_insert("CASE", CASE );
+	keywords_insert("WHEN", WHEN );
+	keywords_insert("THEN", THEN );
+	keywords_insert("ELSE", ELSE );
+	keywords_insert("END", END );
+	keywords_insert("NULLIF", NULLIF );
+	keywords_insert("COALESCE", COALESCE );
 }
 
 void exit_keywords(){

@@ -7,6 +7,8 @@ static void destroy_vars( list *vars ){
 	  	node *n = vars->h;
 	  	for( ; n; n = n->next ){
 			var *v = (var*)n->data.sval;
+			if (v->type == type_statement)
+				statement_destroy(v->data.stval);
 			_DELETE(v->vname);
 			_DELETE(n->data.sval);
 	  	}
@@ -41,22 +43,24 @@ scope *scope_close( scope *s ){
 	return p;
 }
 
-void scope_add_statement( scope *scp, statement *s, char *name ){
+var *scope_add_statement( scope *scp, statement *s, char *name ){
 	var *v = NEW(var);
 	v->type = type_statement;
-	v->data.stval = s;
+	v->data.stval = s; s->refcnt++;
 	v->vname = _strdup(name);
 	v->nr = scp->nr++;
 	list_append_string( scp->vars, (char*)v);
+	return v;
 }
 
-void scope_add_table( scope *scp, table *t, char *name ){
+var *scope_add_table( scope *scp, table *t, char *name ){
 	var *v = NEW(var);
 	v->type = type_table;
 	v->data.tval = t;
 	v->vname = _strdup(name);
 	v->nr = scp->nr++;
 	list_append_string( scp->vars, (char*)v);
+	return v;
 }
 
 static
@@ -92,6 +96,18 @@ list *scope_unique_lifted_vars( scope *s ){
 		}
 	}
 	return r;
+}
+
+/* returns a list of vars */
+int scope_count_tables( scope *s ){
+	int nr = 0;
+	node *n = s->vars->h;
+	for( ; n; n = n->next ){
+		var *v = (var*)n->data.sval;
+		if (v->type == type_table)
+			nr ++;
+	}
+	return nr;
 }
 
 var *scope_bind_table( scope *scp, char *name ){
@@ -186,6 +202,7 @@ statement *scope_first_column( scope *scp ){
 	    } else if (v->type == type_table){
 	      return statement_column(v->data.tval->columns->h->data.cval,v);
 	    }
+	    printf("other type statement ??\n");
 	  }
 	}
 	return NULL;
@@ -207,3 +224,19 @@ var *scope_first_table( scope *scp ){
 	return NULL;
 }
 
+
+void scope_dump( scope *scp ){
+	for( ; scp; scp = scp->p ){
+	  node *n = scp->vars->h; 
+	  printf("-> ");
+	  for( ; n; n = n->next ){
+	    var *v = (var*)n->data.sval;
+	    if (v->type == type_statement){
+		    printf("statement %s ", v->vname );
+	    } else if (v->type == type_table){
+		    printf("table %s ", v->vname );
+	    }
+	  }
+	  printf("\n");
+	}
+}

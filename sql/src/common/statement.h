@@ -119,7 +119,7 @@ extern statement *statement_insert_list( list *l );
 extern statement *statement_insert( column *c, statement *id, statement *v );
 
 extern statement *statement_insert_column( statement *c, statement *a );
-extern statement *statement_update( column *col, statement *values );
+extern statement *statement_update( statement *c, statement *values );
 extern statement *statement_delete( column *col, statement *where );
 
 extern statement *statement_count( statement *s );
