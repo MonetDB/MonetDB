@@ -711,57 +711,7 @@ session:
 definition:
         proc_definition
     ;
-@
-#ifdef MKMODS
-    |   event_definition
-    |   trigger_definition
-    ;
 
-trigger_definition:
-        TOK_TRGDEF TOK_IDENT header
-        {   ll_modcmds = ll_templates = 1;}
-        event_expression statement
-        {   if ($3) {
-		YYSTREE t = Myylognode(TOK_SEQBLOCK, 0);
-		Myylogexpand(t, $3); Myylogexpand(t, $6);
-		$6 = t;
-	    }
-	    Myylogout($6);
-            TEMdefTrigger(ll_client, $2, $5, $6);
-            ll_modcmds = ll_templates = 0;                                    }
-    ;
-
-event_expression:
-        TOK_ON event_term
-        {   $$= Myylognode(0,0); Myylogexpand($$, $2);                          }
-    |   event_expression ',' event_term
-        {   $$= Myylogexpand($1, $3);                                          }
-    ;
-
-event_term: event_item {
-            $$ = (ptr) TEMnewevent(0, $1, 0);
-        } | '~' event_item {
-            $$ = (ptr) TEMnewevent(0, $2, 1);
-        } | event_item '.' event_item {
-            $$ = (ptr) TEMnewevent($1, $3, 0);
-        } | '~' event_item '.' event_item {
-            $$ = (ptr) TEMnewevent($2, $4, 1);
-        }
-    ;
-
-event_item : TOK_IDENT
-        {   $$ = $1;                                                          }
-        | TOK_TEMPLATE
-        {   $$ = $1;                                                          }
-    ;
-
-event_definition:
-        TOK_EVENT TOK_IDENT ';' {   $$ = NULL;
-            TEMdefEvent(ll_client, $2->yyval.val.sval);
-        }
-    ;
-#endif /* MKMODS */
-@y
 statement_seq:
         /* empty */
         {   $$ = Myylognode(TOK_SEQ,0);                                        }
@@ -1095,7 +1045,7 @@ blk_expression:
     ;
 
 expr_rest:
-        '.' {ll_sugarnode = ll_firstnode; } command_or_ident_expression
+        '.' {ll_sugarnode = ll_firstnode; } command_expression
         { ll_firstnode = $3; } expr_rest
         {   $$ = $5;                                                          }
     |   operator_expression { ll_firstnode = $1; } expr_rest
@@ -1164,18 +1114,6 @@ constant_expression:
         {   $$ = $1; $$->token = TOK_CONSTANT;                                }
     ;
 
-command_or_ident_expression:
-        builtin argument_list
-        {   $2->token = $1->token;
-            $2->yyval = $1->yyval;
-            yylogkill($1); $$ = $2;                                           }
-    |   command_or_operator_or_ident argument_list
-        {   $2->yyval = $1->yyval;
-            $2->token = ($1->token == TOK_ASSIGNOP)?TOK_ASSIGNOP:TOK_FUNCTION;
-            yylogkill($1); $$ = $2;                                           }
-    | TOK_ATOM '(' ')' 	{ $$ = $1; }
-    ;
-
 command_expression:
         builtin argument_list
         {   $2->token = $1->token;
@@ -1195,13 +1133,6 @@ operator_expression:
         {   Myylogexpand($1, $3);
             $1->token = ($1->token == TOK_ASSIGNOP)?TOK_ASSIGNOP:TOK_FUNCTION;
             $$ = $1;                                                          }
-    ;
-
-command_or_operator_or_ident:
-	TOK_IDENT
-        {   $$ = $1;                                                          }
-    |   command_or_operator
-        {   $$ = $1;                                                          }
     ;
 
 command_or_operator:
@@ -1234,10 +1165,7 @@ argument_list:
         {   $$ = $2;                                                          }
     |   '(' ')'
         {   $$ = (ptr) yysugar(ll_sugarnode);                                 }
-    /* DISABLED TO ENFORCE () ON COMMANDS
-    |    |* empty *|
-         {   $$ = (ptr) yysugar(ll_sugarnode);                                }
-    */
+    ;
 
 
 expressions:
