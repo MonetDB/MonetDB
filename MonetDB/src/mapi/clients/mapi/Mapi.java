@@ -84,7 +84,7 @@ be consulted before most commands.
 	private String querytext = "";
 
 	private Socket socket;
-	private DataOutputStream toMonet;
+	private OutputStreamWriter toMonet;
 	private BufferedReader fromMonet;
 
 	public Mapi( String host, int port, String user ) throws MapiException
@@ -92,8 +92,10 @@ be consulted before most commands.
 		try{
 			socket   = new Socket( host, port );
 			fromMonet= new BufferedReader(
-			 	new InputStreamReader(socket.getInputStream()));
-			toMonet= new DataOutputStream(socket.getOutputStream());
+			 	new InputStreamReader(socket.getInputStream(),
+						      "UTF-8"));
+			toMonet= new OutputStreamWriter(socket.getOutputStream(),
+							"UTF-8");
 		} catch(IOException e) {
 		    throw new MapiException( "Failed to establish contact\n" );
 		}
@@ -268,7 +270,7 @@ The low-level operation toMonet attempts to send a string to the server.
 			break;
 		}
 		try{
-			toMonet.writeBytes(msg);
+			toMonet.write(msg, 0, msg.length());
 			toMonet.flush();
 		} catch( IOException e){
 			throw new MapiException("Can not write to Monet" );
