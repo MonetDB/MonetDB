@@ -1,12 +1,12 @@
 # 64 bits
 # native
-#CC='cc -xargs=v9' CXX='CC -xargs=v9' \
 # GNU
+CC='cc' CXX='CC' \
 	../configure --with-readline=/var/tmp/local/lib --prefix=`pwd`
 # 32 bits
 # native
 #CC='cc' CXX='CC' \
 # GNU
 #CC='gcc -m32' CXX='g++ -m32' \
-	../configure --with-readline=/usr/local/lib --prefix=`pwd`
+#	../configure --with-readline=/usr/local/lib --prefix=`pwd`
 

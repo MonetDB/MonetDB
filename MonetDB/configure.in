@@ -13,13 +13,14 @@ AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
 dnl we use LEXLIB=-ll because this is usually correctly installed 
 dnl and -lfl usually only in the 32bit version
 dnl some dirty hacks
+MEL_LIBS=""
 thread_safe_flag_spec="-D_REENTRANT"
 [ case "$host_os" in
   solaris*)
     case "$CXX" in
       CC*) 
 	echo "$CXX=CC"
-        LDFLAGS="$LDFLAGS -z muldefs"
+        MEL_LIBS="-z muldefs"
         thread_safe_flag_spec="-mt" ;;
       *) ;;
     esac
@@ -38,6 +39,7 @@ thread_safe_flag_spec="-D_REENTRANT"
     thread_safe_flag_spec="-D_THREAD_SAFE $thread_safe_flag_spec"
     ;;
 esac ]
+AC_SUBST(MEL_LIBS)
 
 dnl Checks for programs.
 AC_PROG_CC
