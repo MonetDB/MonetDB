@@ -360,9 +360,8 @@ PFrevdocorder(BAT *bat, ptr *itr)
 #
 # Each collection contains the following BATs:
 # - prepost : BAT[oid,oid]  Pre/Post-values of nodes
-m4_ifdef(`m4_level',
-`# - level   : BAT[oid,chr]  Pre-value of node/and its level',
-`# - parent  : BAT[oid,oid]  Pre-value of node/Pre-value of its parent')
+# - level   : BAT[oid,chr]  Pre-value of node/and its level,
+# - parent  : BAT[oid,oid]  Pre-value of node/Pre-value of its parent
 # - tag     : BAT[oid,str]  Pre-value of node/Tag name
 #                           Text nodes do not occur in this bat
 # - text    : BAT[oid,str]  Pre-value/Value of text nodes
@@ -382,9 +381,8 @@ m4_ifdef(`m4_level',
 # - Tdoc_height : int           Max. height of docs in working set
 
 var Tdoc_prepost;
-m4_ifdef(`m4_level',
-`var Tdoc_level;',
-`var Tdoc_parent;')
+var Tdoc_level;
+var Tdoc_parent;
 var Tdoc_tag;
 var Tdoc_text;
 var Tdoc_pi;
@@ -428,8 +426,7 @@ PROC doc_finalize() : void :=
 		b := doc.find("aname");
 		doc.replace("aname", [encode](enumaname_type, b));
 	}
-m4_ifdef(`m4_level',
-`
+
         # shrink size of the level table
 	doc_doc@batloop
 	{
@@ -437,7 +434,7 @@ m4_ifdef(`m4_level',
 		doc := $t;
 		b := doc.find("level");
 		doc.replace("level", b.[chr]);
-	}')
+	}
         # generate document statistics
 	doc_doc@batloop
 	{
@@ -514,14 +511,13 @@ PROC doc_to_working_set(str name) : void :=
 	Tdoc_prepost.insert(
 		doc_prepost.bat_renum(deltapre)
 			.reverse.bat_renum(deltapre).reverse);
-m4_ifdef(`m4_level',			
-`	Tdoc_level.insert(
+	Tdoc_level.insert(
 		doc.find("level").bat_renum(1)
-			.reverse.bat_renum(deltapre).reverse);',
-`	Tdoc_parent.insert(Trootpre,grootpre);
+			.reverse.bat_renum(deltapre).reverse);
+	Tdoc_parent.insert(Trootpre,grootpre);
 	Tdoc_parent.insert(
 		doc.find("parent").bat_renum(deltapre)
-			.reverse.bat_renum(deltapre).reverse);')
+			.reverse.bat_renum(deltapre).reverse);
 	Tdoc_tag.insert(
 		doc.find("tag").reverse.bat_renum(deltapre).reverse);
 	Tdoc_text.insert(
@@ -554,9 +550,8 @@ PROC import_doc(str flnm, str name, int height) : oid :=
 	docid := new_Pdoc(name,height);
 	doc := doc_doc.find(docid);
 	doc.find("prepost").import(flnm+".prepost");
-m4_ifdef(`m4_level',
-`	doc.find("level").import(flnm+".level");',
-`	doc.find("parent").import(flnm+".parent");')
+	doc.find("level").import(flnm+".level");
+	doc.find("parent").import(flnm+".parent");
 	doc.find("tag").import(flnm+".tag");
 	doc.find("text").import(flnm+".text");
 	doc.find("pi").import(flnm+".pi");
@@ -576,9 +571,8 @@ PROC new_Pdoc(str name, int height) : oid :=
 	}
 	doc:=new(str,bat);
 	doc.insert("prepost",new(void,oid).seqbase(0@0));
-m4_ifdef(`m4_level',	
-`	doc.insert("level",new(void,oid).seqbase(0@0));',
-`	doc.insert("parent",new(void,oid).seqbase(0@0));')
+	doc.insert("level",new(void,oid).seqbase(0@0));
+	doc.insert("parent",new(void,oid).seqbase(0@0));
 	doc.insert("tag",new(oid,str));
 	doc.insert("text",new(oid,str));
 	doc.insert("pi",new(oid,str));
@@ -611,9 +605,8 @@ PROC Tdoc_init() : void :=
 	enumaname_type := enum_load("enumaname");
 
 	Tdoc_prepost := new(void,oid).seqbase(0@0);
-m4_ifdef(`m4_level',	
-`	Tdoc_level := new(void,chr).seqbase(0@0);',
-`	Tdoc_parent := new(void,oid).seqbase(1@0);')
+	Tdoc_level := new(void,chr).seqbase(0@0);
+	Tdoc_parent := new(void,oid).seqbase(1@0);
 	Tdoc_tag := new(oid,enumtag_type);
 	Tdoc_text := new(oid,str);
 	Tdoc_pi := new(oid,str);
@@ -628,8 +621,7 @@ m4_ifdef(`m4_level',
 	# global root
 	Tdoc_prepost.insert(0@0,0@0);
 	Tdoc_tag.insert(0@0,encode(enumtag_type,"globalroot"));
-m4_ifdef(`m4_level',	
-`	Tdoc_level.insert(0@0,chr(0));')
+	Tdoc_level.insert(0@0,chr(0));
 }
 ADDHELP("Tdoc_init", "keulen", "May 28, 2003",
 "Initialize the BATs for storage of the working set of documents.",
@@ -1053,9 +1045,8 @@ ADDHELP("root_AlgoBasic","keulen","June 10, 2003",
 ### child
 PROC child(pair ctx) : pair :=
 {
-m4_ifdef(`m4_level',
-` return child_AlgoLevel(ctx);',
-` return child_AlgoParent(ctx);')
+ return child_AlgoLevel(ctx);
+ return child_AlgoParent(ctx);
 }
 ADDHELP("child","keulen","June 10, 2003",
 "Returns context sequence with all children of nodes in 'ctx'.\nctx: context node sequence.",
