@@ -1605,13 +1605,13 @@ def RunTest(env, TST, BusyPorts, COND) :
 
         if timeout:
             if quiet:
-                STDOUT.write("\n%s : Timeout!\n", LogLine)
+                STDOUT.write("\n%s : Timeout!\n" % TST)
             else:
                 STDOUT.write("(Timeout!) ")
 
         if killed:
             if quiet:
-                STDOUT.write("\n%s : Killed!\n", LogLine)
+                STDOUT.write("\n%s : Killed!\n" % TST)
             else:
                 STDOUT.write("(Killed!) ")
 		
