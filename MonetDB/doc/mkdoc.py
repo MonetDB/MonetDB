@@ -88,8 +88,9 @@ for f in ['gdk', 'gdk_atoms']:
 runMx(os.path.join(srcdir, 'src', 'monet'), 'monet',
       os.path.join(dstdir, 'doc', 'www'))
 
-runMx(os.path.join(srcdir, 'src', 'mapi', 'clients'), 'MapiClient',
-      os.path.join(dstdir, 'doc', 'www'))
+for f in ['Mapi', 'MapiClient']:
+    runMx(os.path.join(srcdir, 'src', 'mapi', 'clients', 'C'), f,
+          os.path.join(dstdir, 'doc', 'www'))
 
 runMx(os.path.join(srcdir, 'src', 'tools'), 'Mserver',
       os.path.join(dstdir, 'doc', 'www'))
