@@ -1769,6 +1769,7 @@ int strToStr(char** dst, int *len, char* src) {
 
 str strRead(str a, stream *s, size_t cnt) {
 	int len;
+	(void) cnt;
 	assert(cnt==1);
 	if (!stream_readInt(s, &len))
 		return NULL;
@@ -1784,6 +1785,7 @@ str strRead(str a, stream *s, size_t cnt) {
 
 void strWrite(str a, stream *s, size_t cnt) {
 	size_t len = strlen(a);
+	(void) cnt;
 	assert(cnt==1);
 	if (stream_writeInt(s, (int) len))
 		stream_write(s, a, len, 1 );

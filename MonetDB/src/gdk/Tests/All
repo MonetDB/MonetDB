@@ -4,6 +4,7 @@ bat_insert
 reload
 BATkey
 semijoin
+intersect_diff_nil
 binsemijoin
 binsemijoin2
 binsemijoin3
