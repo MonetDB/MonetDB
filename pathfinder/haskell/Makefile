@@ -1,3 +1,5 @@
+# Pathfinder Haskell ``prototype''
+#
 # Copyright Notice:
 # -----------------
 # 
@@ -22,32 +24,37 @@
 #
 # $Id$
 
-CORE = Core
+XQUERY = XQuery
+
+DOT   = dot
+DVIPS = dvips
 
 GHC = ghc
 GHCPACKAGES = 
 
-GHCFLAGS = -O -syslib lang -cpp -fallow-overlapping-instances -fglasgow-exts $(GHCPACKAGES)
+GHCFLAGS = $(GHCPACKAGES)
 GHCIFLAGS = --interactive
 
-SRCS = Core.hs Item.hs Algb.hs Ty.hs Dag.hs XMark.hs
-
+SRCS = Algb.hs CSE.hs Compile.hs Core.hs DM.hs DMGraph.hs Dot.hs \
+       Eval.hs Graph.hs GraphFM.hs Item.hs Ty.hs UDF.hs XMark.hs XQuery.hs
 OBJS = $(SRCS:.hs=.o)
+HIS  = $(SRCS:.hs=.hi)
 
-$(CORE): $(SRCS)
+$(XQUERY): $(SRCS)
 	$(GHC) $(GHCFLAGS) -o $@ --make $@
 	strip $@
-ps: $(CORE)
-	./$(CORE) | dot -Tps > dot.ps
+
+ps: $(XQUERY)
+	./$(XQUERY) | $(DOT) -Tps > dot.ps
 	latex dot
-	dvips -ta4 dot -o Core.ps
-	rm -f dot.{aux,dvi,log,ps}
+	$(DVIPS) dot.dvi -o $(XQUERY).ps
+	$(RM) dot.{aux,dvi,log,ps}
 
 .PHONY: debug
-debug: $(CORE)
+debug: $(XQUERY)
 	$(GHC) $(GHCIFLAGS) $<
 
 .PHONY: clean
 clean:
-	rm -f $(CORE) $(OBJS) *.hi __rm_food
-	rm -f *~ __rm_food
+	$(RM) $(XQUERY) $(OBJS) $(HIS) __rm_food
+	$(RM) *~ __rm_food

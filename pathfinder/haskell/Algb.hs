@@ -1,6 +1,9 @@
+{-# OPTIONS -fallow-overlapping-instances #-}
+
 {--
 
-    Definition of relational algebra (target for XQuery Core compilation).
+    Definition of relational algebra DAGs and relations
+    (target for XQuery Core compilation).
 
     Copyright Notice:
     -----------------
@@ -22,278 +25,164 @@
      of Konstanz. All Rights Reserved.
 
      Contributors:
-	     Torsten Grust <torsten.grust@uni-konstanz.de>
-	     Jens Teubner <jens.teubner@uni-konstanz.de>
-	     Sabine Mayer <sabine.mayer@uni-konstanz.de>
+             Torsten Grust <torsten.grust@uni-konstanz.de>
+             Jens Teubner <jens.teubner@uni-konstanz.de>
+             Sabine Mayer <sabine.mayer@uni-konstanz.de>
 
     $Id$
 
 --}
 
-module Algb (Algb (..), 
-             _PLUS, _TIMES, _MINUS, _DIV, _IDIV, _MOD, 
-             _GT, _EQ, _NOT, _AND, _OR, _NEG,
-             RelID, Attr, Op, Proj, Numb, Arg, Args, Part, Pred, Tuple,
-             Rel (..), Type,
-             schm, attrs, types, extn, idx, proj, keys,
-             XPaxis (..), XPkind (..), XPname, XPstep) where
+module Algb (Algb, AlgOp (..), 
+             Frags,
+             algb, dag, top,
+             Col, Numb, Part, Type, Tuple, 
+             Rel (..), schm, cols, types, extn, idx, proj, keys,
+             DAG,
+             module GraphFM) where
 
-import Item (Item (..))
-import Ty (Ty (..))
+import Core
+import Ty
+import Item
+import GraphFM
 
-import List (intersperse, elemIndex, nub)
+import Control.Monad.State
+import List (elemIndex)
+
+
+data AlgOp = ROWNUM Numb Part
+           | PROJ   [Proj]
+           | SEL    Col
+           | TYPE   Col Col Ty
+           | NEG    Col Col
+           | PLUS   Col Cols
+           | TIMES  Col Cols
+           | MINUS  Col Cols
+           | IDIV   Col Cols
+           | DIV    Col Cols
+           | MOD    Col Cols
+           | GRT    Col Cols
+           | EQL    Col Cols
+           | NOT    Col Col
+           | OR     Col Cols
+           | AND    Col Cols
+           | SUM    Col Col Part
+           | COUNT  Col Part
+           | SEQTY1 Col Col Part
+           | ALL    Col Col Part 
+           | U
+           | DIFF
+           | DIST
+           | X
+           | JOIN   (Col, Col)
+           | CINT   Col
+           | CSTR   Col
+           | CDEC   Col
+           | CDBL   Col
+           | ELEM
+           | TEXT
+           | SCJ    XPstep
+           | TBL    Type [Tuple]
+           | DMROOTS
+           | DMFRAGS
+           | DMDOC
+           | DMDATA
+           | DMEMPTY
+           | DMU
+	     deriving (Ord,Show)
+
+-- equality for algebraic operators used during CSE
+-- (NB. algebraic operators w/ side effects (ELEM, TEXT) 
+-- are _not_ equal to their kind)
+
+instance Eq AlgOp where
+    ROWNUM n ps    == ROWNUM n' ps'     = (n,ps) == (n',ps')
+    PROJ cs        == PROJ cs'          = cs == cs'
+    SEL c          == SEL c'            = c == c'    
+    TYPE c1 c2 t   == TYPE c1' c2' t'   = (c1,c2,t) == (c1',c2',t')
+    NEG c1 c2      == NEG c1' c2'       = (c1,c2) == (c1',c2')
+    PLUS c cs      == PLUS c' cs'       = (c,cs) == (c',cs')
+    TIMES c cs     == TIMES c' cs'      = (c,cs) == (c',cs')
+    MINUS c cs     == MINUS c' cs'      = (c,cs) == (c',cs')
+    IDIV c cs      == IDIV c' cs'       = (c,cs) == (c',cs')
+    DIV c cs       == DIV c' cs'        = (c,cs) == (c',cs')
+    MOD c cs       == MOD c' cs'        = (c,cs) == (c',cs')
+    GRT c cs       == GRT c' cs'        = (c,cs) == (c',cs')
+    EQL c cs       == EQL c' cs'        = (c,cs) == (c',cs')
+    NOT c1 c2      == NOT c1' c2'       = (c1,c2) == (c1',c2')
+    OR c cs        == OR c' cs'         = (c,cs) == (c',cs')
+    AND c cs       == AND c' cs'        = (c,cs) == (c',cs')
+    SUM c1 c2 ps   == SUM c1' c2' ps'   = (c1,c2,ps) == (c1',c2',ps') 
+    COUNT c ps     == COUNT c' ps'      = (c,ps) == (c',ps') 
+    SEQTY1 c1 c2 p == SEQTY1 c1' c2' p' = (c1,c2,p) == (c1',c2',p')
+    ALL c1 c2 p    == ALL c1' c2' p'    = (c1,c2,p) == (c1',c2',p')
+    U              == U                 = True
+    DIFF           == DIFF              = True
+    DIST           == DIST              = True
+    X              == X                 = True
+    JOIN p         == JOIN p'           = p == p'
+    CINT c         == CINT c'           = c == c'
+    CSTR c         == CSTR c'           = c == c'
+    CDEC c         == CDEC c'           = c == c'
+    CDBL c         == CDBL c'           = c == c'
+    ELEM           == ELEM              = False                        -- (!)
+    TEXT           == TEXT              = False                        -- (!)
+    SCJ s          == SCJ s'            = s == s'
+    TBL a ts       == TBL a' ts'        = (a,ts) == (a',ts')
+    DMROOTS        == DMROOTS           = True
+    DMFRAGS        == DMFRAGS           = True
+    DMDOC          == DMDOC             = True
+    DMDATA         == DMDATA            = True
+    DMEMPTY        == DMEMPTY           = True
+    DMU            == DMU               = True
+    _              == _                 = False
+
+type Col   = String                 -- column name
+type Cols  = [Col]                  -- column names
+type Tuple = [Item]                 -- tuple of items
+type Proj  = (Col, Col)             -- item:pre
+type Numb  = (Col, [Col])           -- pos:<ord,pos>
+type Part  = [Col]                  -- optional rownum/aggregation grouping key
+
+-- table/relation type
+type Type  = [(Col, [Ty])]
+
+-- a DAG
+type DAG a = Gr a ()
+
+-- a relational algebra expression: a DAG of algebra operators and
+-- the DAG's top (root) node
+type Algb  = (Node, DAG AlgOp)
+
+-- live fragments of a queryL a DAG of algebra operators and
+-- the list of roots of the sub-DAGs computing those fragments
+type Frags = ([Node], DAG AlgOp)
+
+dag :: Algb -> DAG AlgOp
+top :: Algb -> Node
+dag = snd
+top = fst
+
+-- monadic algebra DAG construction
+algb :: State (DAG AlgOp) Node -> Algb
+algb a = runState a empty
+
 
 ----------------------------------------------------------------------
--- Algebra
-
-
-type RelID = String              -- relation name
-type Attr  = String              -- attribute name
-type Op    = String              -- operator name
-type Proj  = (Attr, Attr)        -- pos:pos1
-type Numb  = (Attr, [Attr])      -- pos:<ord,pos>
-type Arg   = Attr                -- function argument/selection attribute
-type Args  = [Arg]               -- function arguments
-type Part  = [Attr]              -- optional row num/aggregation grouping key
-type Pred  = (Attr, Attr)        -- equi-join predicate (pre = pre1)
-type Tuple = [Item]              -- tuple of items
-
-type Type = [(Attr, [Ty])]       -- relation schema
-
-data Algb = ROWNUM Numb Part Algb
-          | PROJ   [Proj] Algb
-          | SEL    Arg  Algb
-          | TYPE   Arg Arg Ty Algb
-          | OP2    Op ([[Ty]] -> [Ty]) (Item -> Item -> Item) Arg Args Algb
-          | OP1    Op ([[Ty]] -> [Ty]) (Item -> Item)         Arg Arg  Algb
-          | SUM    Arg Arg Part Algb
-          | COUNT  Arg Part Algb
-          | SEQTY1 Arg Arg Part Algb
-          | ALL    Arg Arg Part Algb
-          | U      Algb Algb
-          | DIFF   Algb Algb
-          | DIST   Algb
-	  | X      Algb Algb
-	  | JOIN   Pred Algb Algb
-          | CINT   Arg  Algb  
-          | CSTR   Arg  Algb
-          | CDEC   Arg  Algb
-          | CDBL   Arg  Algb
-          | ELEM   Algb Algb Algb
-          | TEXT   Algb Algb 
-	  | SCJ    XPstep Algb Algb
-	  | REL    RelID
-          | TBL    Type [Tuple]
-
-          | DAG    Int
-
--- result type of arithmetic operators  
-arithty :: [[Ty]] -> [Ty]
-arithty ts = t
-    where 
-    t = case nub ts of
-	[ty] -> ty
-	tys  -> error ("arithmetic operator applied to arguments of type " ++
-		       concat (intersperse "," (map show tys)))
-
-_PLUS  = OP2 "+" arithty plus
-	 where
-	 (I x) `plus` (I y) = I (x + y)
-	 (E x) `plus` (E y) = E (x + y)
-	 (D x) `plus` (D y) = D (x + y)
-
-_TIMES = OP2 "*" arithty times
-	 where
-	 (I x) `times` (I y) = I (x * y)
-	 (E x) `times` (E y) = E (x * y)
-	 (D x) `times` (D y) = D (x * y)
-_MINUS = OP2 "-" arithty minus
-	 where
-	 (I x) `minus` (I y) = I (x - y)
-	 (E x) `minus` (E y) = E (x - y)
-	 (D x) `minus` (D y) = D (x - y)
-
-_IDIV  = OP2 "IDIV" (const [INT]) idiv
-	 where
-	 (I x) `idiv` (I y) = I (truncate (fromInteger x / fromInteger y))
-	 (E x) `idiv` (E y) = I (truncate (x / y))
-	 (D x) `idiv` (D y) = I (truncate (x / y))
-
-_DIV   = OP2 "IDIV" divty div
-	 where
-	 (I x) `div` (I y) = E (fromInteger x / fromInteger y)
-	 (E x) `div` (E y) = E (x / y)
-	 (D x) `div` (D y) = D (x / y)
-
-         divty [[INT],[INT]] = [DEC]
-         divty [[DEC],[DEC]] = [DEC]
-         divty [[DBL],[DBL]] = [DBL]
-
-_MOD   = OP2 "MOD" (const [INT]) modulo
-	 where
-	 (I x) `modulo` (I y) = I (mod x y)
-
-_GT    = OP2 ">" (const [BOOL]) gt                       
-         where
-	 (I x) `gt` (I y) = B (x > y)
-	 (S x) `gt` (S y) = B (x > y)
-	 (B x) `gt` (B y) = B (x > y)
-	 (E x) `gt` (E y) = B (x > y)
-	 (D x) `gt` (D y) = B (x > y)
-	 (N x) `gt` (N y) = B (x > y)
-
-_EQ    = OP2 "=" (const [BOOL]) eq                       
-	 where
-	 (I x) `eq` (I y) = B (x == y)
-	 (S x) `eq` (S y) = B (x == y)
-	 (B x) `eq` (B y) = B (x == y)
-	 (E x) `eq` (E y) = B (x == y)
-	 (D x) `eq` (D y) = B (x == y)
-	 (N x) `eq` (N y) = B (x == y)
-
-_NOT   = OP1 "NOT" (const [BOOL]) _not
-	 where
-	 _not (B x) = B (not x)
-
-_AND   = OP2 "AND" (const [BOOL]) and                   
-         where
-         (B x) `and` (B y) = B (x && y)
-
-_OR    = OP2 "OR" (const [BOOL]) or                     
-         where
-         (B x) `or` (B y)  = B (x || y)
-
-_NEG   = OP1 "NEG" arithty neg
-	 where
-	 neg (I x) = I (negate x)
-	 neg (E x) = E (negate x)
-	 neg (D x) = D (negate x)
-
-instance Show Algb where
-    show = s
-	where
-	s (ROWNUM n p c)         = "[ROW# (" ++ sn ++ sp ++ ")" ++ 
-                                   s c ++ "]"
-	    where
-	    sn = case n of (a,as) -> a ++ ":(" ++ concat (intersperse "," as) ++ ")"
-	    sp = case p of [] -> ""
-			   as -> "/" ++ concat (intersperse "," as)
-
-        s (PROJ p c)             = "[¶ (" ++ 
-                                   concat (intersperse "," (sp p)) ++ ")" ++
-                                   s c ++ "]"
-	    where
-	    sp []         = []
-	    sp ((n,a):ps) = (n ++ ":" ++ a):sp ps
-        s (SEL a c)              = "[SEL (" ++ a ++ ")" ++ s c ++ "]"
-        s (TYPE a1 a2 t c)       = "[TYPE " ++ a1 ++ ":(" ++ a2 ++ ")/" ++
-                                   show t ++ s c ++ "]"
-        s (OP2 op _ _ a as c)    = "[" ++ op ++ " " ++ a ++ ":(" ++ 
-                                   concat (intersperse "," as) ++  
-                                   ")" ++ s c ++ "]"	 
-        s (OP1 op _ _ a as c)    = "[" ++ op ++ " " ++ a ++ 
-                                   ":(" ++ as ++ ")" ++ 
-                                   s c ++ "]"
-        s (SUM a s' p c)         = "[SUM " ++ a ++ ":(" ++ s' ++ ")" ++ sp ++ 
-                                   s c ++ "]"
-	    where
-	    sp = case p of [] -> ""
-			   as -> "/" ++ concat (intersperse "," as)
-        s (COUNT a p c)          = "[COUNT " ++ a ++ sp ++ s c ++ "]"
-	    where
-	    sp = case p of [] -> ""
-			   as -> "/" ++ concat (intersperse "," as)
-        s (SEQTY1 a s' p c)      = "[SEQTY1 " ++ a ++ ":(" ++ s' ++ ")" ++ 
-                                   sp ++ s c ++ "]"
-	    where
-	    sp = case p of [] -> ""
-			   as -> "/" ++ concat (intersperse "," as)
-        s (ALL a s' p c)         = "[ALL " ++ a ++ ":(" ++ s' ++ ")" ++ sp ++ 
-                                   s c ++ "]"
-	    where
-	    sp = case p of [] -> ""
-			   as -> "/" ++ concat (intersperse "," as)
-        s (U c1 c2)              = "[U" ++ s c1 ++ s c2 ++ "]"
-        s (DIFF c1 c2)           = "[\\\\" ++ s c1 ++ s c2 ++ "]"
-        s (DIST c)               = "[DIST " ++ s c ++ "]"
-        s (X c1 c2)              = "[×" ++ s c1 ++ s c2 ++ "]"
-        s (JOIN (a1,a2) c1 c2)   = "[|X| (" ++ a1 ++ "=" ++ a2 ++ ")" ++ 
-                                   s c1 ++ s c2 ++ "]"
-        s (CINT a c)             = "[CINT (" ++ a ++ ")" ++ s c ++ "]"
-        s (CSTR a c)             = "[CSTR (" ++ a ++ ")" ++ s c ++ "]"
-        s (CDEC a c)             = "[CDEC (" ++ a ++ ")" ++ s c ++ "]"
-        s (CDBL a c)             = "[CDBL (" ++ a ++ ")" ++ s c ++ "]"
-        s (SCJ (ax,kt,[]) c1 c2) = "[/|" ++ show ax ++ show kt ++
-                                    s c1 ++ s c2 ++ "]" 
-        s (SCJ (ax,_,[n]) c1 c2) = "[/|" ++ show ax ++ "::" ++ n ++ 
-                                    s c1 ++ s c2 ++ "]" 
-        s (ELEM c1 c2 c3)        = "[ELEM" ++ s c1 ++ s c2 ++ s c3 ++ "]"
-        s (TEXT c1 c2)           = "[TEXT" ++ s c1 ++ s c2 ++ "]"
-        s (REL r)                = "[REL " ++ r ++ "]"
-        s (TBL a t)              = "[TBL " ++ "(" ++ 
-                                   concat (intersperse "," (map attr a)) ++ 
-                                   ")" ++
-		  	           concat (intersperse "," (map show t)) ++ 
-                                   "]"
-	    where
-	    attr (a,ty) = "(" ++ a ++ "," ++ show ty ++ ")"
-        s (DAG i)                = "[DAG (" ++ show i ++ ")]"
-
-
--- equality for two algebraic expressions (to construct DAG from
--- algebraic expression tree) 
---
--- NB. since ELEM/TEXT have side effects (node construction), they
---     are considered _not_ equal here
-instance Eq Algb where
-    (ROWNUM n p c)      == (ROWNUM n' p' c')        = (n,p,c) == (n',p',c')
-    (PROJ p c)          == (PROJ p' c')             = (p,c) == (p',c')
-    (SEL a c)           == (SEL a' c')              = (a,c) == (a',c')
-    (TYPE a1 a2 t c)    == (TYPE a1' a2' t' c')     = 
-        (a1,a2,t,c) == (a1',a2',t',c')
-    (OP2 op _ _ a as c) == (OP2 op' _ _ a' as' c')  = 
-	(op,a,as,c) == (op',a',as',c')
-    (OP1 op _ _ a as c) == (OP1 op' _ _ a' as' c')  =
-	(op,a,as,c) == (op',a',as',c')
-    (SUM a s p c)       == (SUM a' s' p' c')        = 
-        (a,s,p,c) == (a',s',p',c')
-    (SEQTY1 a s p c)    == (SEQTY1 a' s' p' c')     = 
-        (a,s,p,c) == (a',s',p',c')
-    (ALL a s p c)       == (ALL a' s' p' c')        = 
-        (a,s,p,c) == (a',s',p',c')
-    (COUNT a p c)       == (COUNT a' p' c')         = (a,p,c) == (a',p',c')
-    (U c1 c2)           == (U c1' c2')              = (c1,c2) == (c1',c2')
-    (DIFF c1 c2)        == (DIFF c1' c2')           = (c1,c2) == (c1',c2')
-    (DIST c)            == (DIST c')                = c == c'
-    (X c1 c2)           == (X c1' c2')              = (c1,c2) == (c1',c2')
-    (JOIN p c1 c2)      == (JOIN p' c1' c2')        = (p,c1,c2) == (p',c1',c2')
-    (CINT a c)          == (CINT a' c')             = (a,c) == (a',c')
-    (CSTR a c)          == (CSTR a' c')             = (a,c) == (a',c')
-    (CDEC a c)          == (CDEC a' c')             = (a,c) == (a',c')
-    (CDBL a c)          == (CDBL a' c')             = (a,c) == (a',c')
-    (SCJ s c1 c2)       == (SCJ s' c1' c2')         = (s,c1,c2) == (s',c1',c2')
-    (ELEM _ _ _)        == (ELEM _ _ _)             = False
-    (TEXT _ _)          == (TEXT _ _)               = False
-    (REL r)             == (REL r')                 = r == r'
-    (TBL a t)           == (TBL a' t')              = (a,t) == (a',t')
-    (DAG i)             == (DAG i')                 = i == i'
-    _                   == _                        = False
-
-----------------------------------------------------------------------
--- Relations (schema, extension)
+-- relations
 
 data Rel = R Type [Tuple]
-	 deriving Show
+	   deriving Show
 
 -- relation schema
 schm :: Rel -> Type
 schm (R a _) = a
 
--- attribute names
-attrs :: Type -> [Attr]
-attrs = map fst
+-- column names
+cols :: Type -> [Col]
+cols = map fst
 
--- attribute types
+-- column types
 types :: Type -> [[Ty]]
 types = map snd
 
@@ -301,50 +190,24 @@ types = map snd
 extn :: Rel -> [Tuple]
 extn (R _ t) = t
 
--- attribute index
-idx :: Attr -> [Attr] -> Int
+-- column index
+idx :: Col -> [Col] -> Int
 idx a as = case elemIndex a as of
                 Just i  -> i
                 Nothing -> error ("no attribute " ++ a ++ " in " ++ show as)
 
--- translate projection list into attribute index list
-proj :: [Attr] -> [Attr] -> [Int]
+-- translate projection list into column index list
+proj :: [Col] -> [Col] -> [Int]
 proj p as = map (\a -> idx a as) p
 
-
--- create function to extract key attributes k (schema as) from a tuple
-keys :: [Attr] -> [Attr] -> ([a] -> [a])
+-- create function to extract key columns k (schema as) from a tuple
+keys :: [Col] -> [Col] -> ([a] -> [a])
 keys k as = pam (map (flip (!!)) (proj k as))
     where
     pam :: [a -> b] -> a -> [b]
     pam []     _ = []
     pam (f:fs) x = f x : pam fs x
 
--- XPath sublanguage
-data XPaxis = Descendant                 -- XPath axes
-            | Descendant_or_self
-	    | Ancestor
-	    | Following
-	    | Preceding
-            | Child
-              deriving Eq
-data XPkind = Elem                       -- XPath kind test
-            | Text
-            | Node
-              deriving Eq
-type XPname = String                     -- XPath name test
-type XPstep = (XPaxis, XPkind, [XPname]) -- XPath axis step
 
-instance Show XPaxis where
-    show Descendant         = "descendant"
-    show Descendant_or_self = "descendant-or-self"
-    show Ancestor           = "ancestor"
-    show Following          = "following"
-    show Preceding          = "preceding"
-    show Child              = "child"
 
-instance Show XPkind where
-    show Elem = "::*"
-    show Text = "::text()"
-    show Node = "::node()"
 

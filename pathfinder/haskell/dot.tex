@@ -28,15 +28,19 @@
 \documentclass{article}
 \usepackage{cmbright}
 \usepackage{latexsym}
+\usepackage{amssymb}
 \usepackage{graphicx}
-\usepackage[a4paper,margin=5mm]{geometry}
+\usepackage[dvips,a4paper,margin=5mm]{geometry}
 \usepackage[scanall]{psfrag}
 \newcommand{\scj}{\includegraphics[scale=0.075]{scj.eps}}
 \pagestyle{empty}
 \begin{document}
 \ttfamily\mathversion{bold}\catcode`_=12
 \enlargethispage{5cm}
-\resizebox{!}{\textheight}{\includegraphics{dot.ps}}
+\resizebox{0.95\textwidth}{!}{\includegraphics{dot.ps}}
+\newpage
+\enlargethispage{5cm}
+\resizebox{!}{0.95\textheight}{\includegraphics{dot.ps}}
 \end{document}
 
 %%% Local Variables: 

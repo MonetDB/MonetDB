@@ -122,18 +122,35 @@ dag (CSTR a c) ts = memo (CSTR a (DAG n1)) ts1
     where
     (n1, ts1) = dag c ts
 
-dag (SCJ s c1 c2) ts = memo (SCJ s (DAG n1) (DAG n2)) ts2
-    where
-    (n1, ts1) = dag c1 ts 
-    (n2, ts2) = dag c2 ts1 
-
 dag (ELEM c1 c2 c3) ts = memo (ELEM (DAG n1) (DAG n2) (DAG n3)) ts3
      where
      (n1, ts1) = dag c1 ts 
      (n2, ts2) = dag c2 ts1 
      (n3, ts3) = dag c3 ts2 
 
-dag (TEXT c1 c2) ts = memo (TEXT (DAG n1) (DAG n2)) ts2
+dag (TEXT c) ts = memo (TEXT (DAG n1)) ts1
+    where
+    (n1, ts1) = dag c ts 
+
+dag (SCJ s c1 c2) ts = memo (SCJ s (DAG n1) (DAG n2)) ts2
+    where
+    (n1, ts1) = dag c1 ts 
+    (n2, ts2) = dag c2 ts1 
+
+dag (FRAGS c) ts = memo (FRAGS (DAG n1)) ts1
+    where
+    (n1, ts1) = dag c ts
+
+dag (ROOTS c) ts = memo (ROOTS (DAG n1)) ts1
+    where
+    (n1, ts1) = dag c ts
+
+dag (UFRAG c1 c2) ts = memo (UFRAG (DAG n1) (DAG n2)) ts2
+    where
+    (n1, ts1) = dag c1 ts 
+    (n2, ts2) = dag c2 ts1 
+
+dag (DMROOT c1 c2) ts = memo (DMROOT (DAG n1) (DAG n2)) ts2
     where
     (n1, ts1) = dag c1 ts 
     (n2, ts2) = dag c2 ts1 
@@ -241,17 +258,17 @@ dot a = (concat . intersperse "\n") (
     algbdot (d, CDBL a (DAG n1)) = 
         node d ("[label=\"CDBL (" ++ a ++ ")\"]") [n1]
 
+    algbdot (d, ELEM (DAG n1) (DAG n2) (DAG n3)) =
+	node d "[label=\"\\\\tex[cc][cc]{$\\\\varepsilon$}\",color=lawngreen, fontsize=1]" [n1, n2, n3]
+
+    algbdot (d, TEXT (DAG n1)) =
+	node d "[label=\"\\\\tex[cc][cc]{$\\\\tau$}\",color=lawngreen, fontsize=1]" [n1]
+
     algbdot (d, SCJ (ax,kt,[]) (DAG n1) (DAG n2)) =
 	node d ("[label=\"\\\\tex[cc][cc]{$\\\\scj$~" ++ show ax ++ show kt ++ "}\",color=lightblue]") [n1, n2] 
 
     algbdot (d, SCJ (ax,_,[n]) (DAG n1) (DAG n2)) =
 	node d ("[label=\"\\\\tex[cc][cc]{$\\\\scj$~" ++ show ax ++ "::" ++ n ++ "}\",color=lightblue]") [n1, n2] 
-
-    algbdot (d, ELEM (DAG n1) (DAG n2) (DAG n3)) =
-	node d "[label=\"\\\\tex[cc][cc]{$\\\\varepsilon$}\",color=lawngreen, fontsize=1]" [n1, n2, n3]
-
-    algbdot (d, TEXT (DAG n1) (DAG n2)) =
-	node d "[label=\"\\\\tex[cc][cc]{$\\\\tau$}\",color=lawngreen, fontsize=1]" [n1, n2]
 
     algbdot (d, REL r) = 
 	node d ("[label=\"REL " ++ r ++ "\"]") []
@@ -261,6 +278,22 @@ dot a = (concat . intersperse "\n") (
                 concat (intersperse "," (map (escquot . fst) a)) ++ 
                 ")\\n" ++
                 concat (intersperse "," (map (escquot . show) t)) ++ "\"]") []
+
+    algbdot (d, FRAGS (DAG n1)) =
+	node d "[label=\"FRAGS\",color=lightblue]" [n1]
+
+    algbdot (d, ROOTS (DAG n1)) =
+	node d "[label=\"ROOTS\",color=lightblue]" [n1]
+
+    algbdot (d, UFRAG (DAG n1) (DAG n2)) = 
+	node d "[label=\"\\\\tex[cc][cc]{$\\\\cup^\\\\ast$}\",color=lightblue, fontsize=1]" [n1, n2]
+
+    algbdot (d, EFRAG) =
+	node d "[label=\"\\\\tex[cc][cc]{$\\\\varnothing$}\",color=lightblue, fontsize=1]" []
+
+    algbdot (d, DMROOT (DAG n1) (DAG n2)) = 
+	node d "[label=\"DMROOT\",color=lightblue]" [n1, n2]
+
 
     node :: Int -> String -> [Int] -> String
     node d l cs = show d ++ l ++ 

@@ -1,3 +1,5 @@
+{-# OPTIONS -fallow-overlapping-instances -fglasgow-exts #-}
+
 {--
 
     Simple type system used during XQuery Core compilation.
@@ -30,9 +32,9 @@
 
 --}
 
-module Ty (Ty (..), tyunion, tycommon) where
+module Ty (Ty (..), tyunion, tycommon, tyone) where
 
-import List (nub)
+import List (nub, maximumBy, intersperse)
 
 ----------------------------------------------------------------------
 -- Types
@@ -44,7 +46,7 @@ data Ty = INT                              -- int
         | DBL                              -- dbl
         | NAT                              -- nat (oid)
         | NODE                             -- node
-	  deriving Eq
+	  deriving (Eq, Ord)
 
 instance Show Ty where
     show INT     = "int"
@@ -55,19 +57,6 @@ instance Show Ty where
     show NAT     = "nat"
     show NODE    = "node"
 
--- encodes the numeric type hierarchy
-instance Ord Ty where
-    compare INT INT = EQ
-    compare INT DEC = LT
-    compare INT DBL = LT
-    compare DEC INT = GT
-    compare DEC DEC = EQ
-    compare DEC DBL = LT
-    compare DBL INT = GT
-    compare DBL DEC = GT
-    compare DBL DBL = EQ
-    compare t1  t2  = error ("no common numeric type for types: " ++ 
-			     show t1 ++ ", " ++ show t2)
 
 instance Show [Ty] where
     show []        = "ø"
@@ -79,5 +68,25 @@ tyunion (t1, t2) = nub (t1 ++ t2)
 
 -- single common numeric type
 tycommon :: [Ty] -> Ty
-tycommon = maximum
-
+tycommon = maximumBy numhier
+    where
+    -- encodes the numeric type hierarchy
+    numhier :: Ty -> Ty -> Ordering
+    numhier INT INT = EQ
+    numhier INT DEC = LT
+    numhier INT DBL = LT
+    numhier DEC INT = GT
+    numhier DEC DEC = EQ
+    numhier DEC DBL = LT
+    numhier DBL INT = GT
+    numhier DBL DEC = GT
+    numhier DBL DBL = EQ
+    numhier t1   t2 = error ("no common numeric type for " ++ 
+			     show t1 ++ ", " ++ show t2)
+        
+-- all supplied types identical?
+tyone :: [[Ty]] -> [Ty]
+tyone ts = case (nub ts) of
+	   [t] -> t
+	   tys -> error ("expected identical types, but got " ++
+                         concat (intersperse "," (map show tys)))
