@@ -58,6 +58,11 @@ operands.
     address CMDbat@3cst
     comment "(BAT,Constant) calculator function with new BAT result";
 
+    command @1(cst:any$2, b:bat[:any$1,:any$2])
+		:bat[:any$1,:any$2] 
+    address CMDcst@3bat
+    comment "(BAT,Constant) calculator function with new BAT result";
+
     command @1(a:bat[:any$1,:any$2], b:bat[:any$1,:any$2], cst:any$2)
 	:bat[:any$1,:any$2] 
     address CMDbataccum@3cst
@@ -257,6 +262,11 @@ comment "Materialize the virtual oid into an oid";
 command oid(b:bat[:oid,:any$1]):bat[:oid,:any$1] 
 address CMDconvertoid_oid
 comment "Materialize the virtual oid into an oid";
+
+command oid(b:bat[:oid,:int]):bat[:oid,:oid] 
+address CMDconvertint_oid
+comment "Materialize the integer into an oid";
+
 @}
 @+ Scientific routines
 The mmath functions are also overloaded to provide for
@@ -461,6 +471,18 @@ str CMDbat@1cst(int *ret, int *l, void *cst)
 	d= dst->batCacheid;
 	return CMDbataccum@1cst(ret, &d,l,cst);
 }
+str CMDcst@1bat(int *ret, void *cst, int *l)
+{	BAT *dst, *left;
+	int d;
+
+	@:getBATdescriptor(ret,l,left,CMDbat@1)@
+	dst= BATcopy(left);
+	if( dst == NULL){
+		return throwMessage("batcalc.@1", "no copy available ");
+	}
+	d= dst->batCacheid;
+	return CMDbataccum@1cst(ret, &d,l,cst);
+}
 @c
 #include "batcalc.h"
 
@@ -545,6 +567,16 @@ str CMDbataccumMODcst(int *ret, int *r, int *l, void *cst)
 }
 
 str CMDbatMODcst(int *ret, int *l, void *cst)
+{	BAT *dst, *left;
+
+	@:getBATdescriptor(ret,l,left,CMDbatMOD)@
+	dst= BATcopy(left);
+	if( dst == 0){
+		return throwMessage("batcalc.mod", "no copy available");
+	}
+	return CMDbataccumMODcst(ret, &dst->batCacheid,l,cst);
+}
+str CMDcstMODbat(int *ret,void *cst, int *l)
 {	BAT *dst, *left;
 
 	@:getBATdescriptor(ret,l,left,CMDbatMOD)@
@@ -953,6 +985,11 @@ bunins_failed:
 	return MAL_SUCCEED;
 }
 str CMDconvertoid_oid(int *ret, int *bid){
+	/* no-op operation */
+	*ret= *bid;
+	return MAL_SUCCEED;
+}
+str CMDconvertint_oid(int *ret, int *bid){
 	/* no-op operation */
 	*ret= *bid;
 	return MAL_SUCCEED;
