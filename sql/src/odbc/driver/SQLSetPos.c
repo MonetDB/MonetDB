@@ -1,70 +1,75 @@
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is the Monet Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
+
 /********************************************************************
- * SQLSetPos
+ * SQLSetPos()
+ * CLI Compliance: ODBC
  *
- **********************************************************************
- *
- * This code was created by Peter Harvey (mostly during Christmas 98/99).
- * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
- * - Peter Harvey pharvey@codebydesign.com
+ * Author: Martin van Dinther
+ * Date  : 30 aug 2002
  *
  ********************************************************************/
 
-#include "driver.h"
+#include "ODBCGlobal.h"
 
-SQLRETURN SQLSetPos(	SQLHSTMT  		hDrvStmt,
-							SQLUSMALLINT	nRow,
-							SQLUSMALLINT	nOperation,
-							SQLUSMALLINT	nLockType )
+SQLRETURN SQLSetPos(
+	SQLHSTMT	hStmt,
+	SQLUSMALLINT	nRow,
+	SQLUSMALLINT	nOperation,
+	SQLUSMALLINT	nLockType )
 {
-    HDRVSTMT hStmt	= (HDRVSTMT)hDrvStmt;
+	if (! isValidStmt(hStmt))
+		return SQL_INVALID_HANDLE;
 
-	/* SANITY CHECKS */
-    if( hStmt == SQL_NULL_HSTMT )
-        return SQL_INVALID_HANDLE;
-
-	sprintf( hStmt->szSqlMsg, "hStmt = $%08lX", hStmt );
-    logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hStmt->szSqlMsg );
-
-	/* OK */
-
-	switch ( nOperation )
+	/* check the parameter values */
+	switch (nOperation)
 	{
-	case SQL_POSITION:
-		break;
-	case SQL_REFRESH:
-		break;
-	case SQL_UPDATE:
-		break;
-	case SQL_DELETE:
-		break;
-	default:
-		sprintf( hStmt->szSqlMsg, "SQL_ERROR Invalid nOperation=%d", nOperation );
-		logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hStmt->szSqlMsg );
-		return SQL_ERROR;
+		case SQL_POSITION:
+		case SQL_REFRESH:
+		case SQL_UPDATE:
+		case SQL_DELETE:
+		default:
+			/* return error: "Optional feature not implemented" */
+			addStmtError(hStmt, "HYC00", NULL, 0);
+			return SQL_ERROR;
 	}
 
-	switch ( nLockType )
+	switch (nLockType)
 	{
-	case SQL_LOCK_NO_CHANGE:
-		break;
-	case SQL_LOCK_EXCLUSIVE:
-		break;
-	case SQL_LOCK_UNLOCK:
-		break;
-	default:
-		sprintf( hStmt->szSqlMsg, "SQL_ERROR Invalid nLockType=%d", nLockType );
-		logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hStmt->szSqlMsg );
-		return SQL_ERROR;
+		case SQL_LOCK_NO_CHANGE:
+		case SQL_LOCK_EXCLUSIVE:
+		case SQL_LOCK_UNLOCK:
+		default:
+			/* return error: "Optional feature not implemented" */
+			addStmtError(hStmt, "HYC00", NULL, 0);
+			return SQL_ERROR;
 	}
 
-    /************************
-     * REPLACE THIS COMMENT WITH SOMETHING USEFULL
-     ************************/
-    logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR This function not supported" );
+	/* TODO: implement the requested behavior */
 
-
+	/* for now always return error */
+	addStmtError(hStmt, "IM001", NULL, 0);
 	return SQL_ERROR;
 }
-
-

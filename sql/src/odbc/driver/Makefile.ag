@@ -10,11 +10,22 @@ INCLUDES = \
 DEFS = -DUNIXODBC @DEFS@
 
 EXTRA_DIST = \
-	driver.h \
-	driverextras.h 
+	ODBCGlobal.h
 
 lib_MonetODBC = {
 	SOURCES = \
+	ODBCEnv.c \
+	ODBCEnv.h \
+	ODBCDbc.c \
+	ODBCDbc.h \
+	ODBCStmt.c \
+	ODBCStmt.h \
+	ODBCHostVar.c \
+	ODBCHostVar.h \
+	ODBCError.c \
+	ODBCError.h \
+	ODBCUtil.c \
+	ODBCUtil.h \
 	SQLAllocConnect.c \
 	SQLAllocEnv.c \
 	SQLAllocHandle.c \
@@ -72,6 +83,7 @@ lib_MonetODBC = {
 	SQLProcedures.c \
 	SQLPutData.c \
 	SQLRowCount.c \
+	SQLSetConnectAttr.c \
 	SQLSetConnectOption.c \
 	SQLSetCursorName.c \
 	SQLSetDescField.c \
@@ -87,17 +99,6 @@ lib_MonetODBC = {
 	SQLTablePrivileges.c \
 	SQLTables.c \
 	SQLTransact.c \
-	_FreeDbc.c \
-	_FreeStmt.c \
-	_FreeDbcList.c \
-	_FreeStmtList.c \
-	_FreeResults.c \
-	_GetData.c \
-	_NativeToSQLColumnHeader.c \
-	_NativeToSQLType.c \
-	_NativeTypeDesc.c \
-	_NativeTypeLength.c \
-	_NativeTypePrecision.c \
 	catalog_client.c \
 	statement_dump.c \
 	comm.c comm.h \

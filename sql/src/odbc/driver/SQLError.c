@@ -1,75 +1,58 @@
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is the Monet Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
+
 /**********************************************************************
- * SQLError (deprecated see SQLGetDiagRec)
+ * SQLError()
+ * CLI Compliance: deprecated in ODBC 3.0 (replaced by SQLGetDiagRec())
+ * Provided here for old (pre ODBC 3.0) applications and driver managers.
  *
- **********************************************************************
- *
- * This code was created by Peter Harvey (mostly during Christmas 98/99).
- * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
- * - Peter Harvey pharvey@codebydesign.com
+ * Author: Martin van Dinther
+ * Date  : 30 aug 2002
  *
  **********************************************************************/
 
-#include "driver.h"
+#include "ODBCGlobal.h"
 
-SQLRETURN SQLError( SQLHENV     hDrvEnv,
-					SQLHDBC     hDrvDbc,
-					SQLHSTMT    hDrvStmt,
-					SQLCHAR   	*szSqlState,
-					SQLINTEGER  *pfNativeError,
-					SQLCHAR   	*szErrorMsg,
-					SQLSMALLINT nErrorMsgMax,
-					SQLSMALLINT	*pcbErrorMsg )
+SQLRETURN SQLError(
+	SQLHENV		hEnv,
+	SQLHDBC		hDbc,
+	SQLHSTMT	hStmt,
+	SQLCHAR *	szSqlState,
+	SQLINTEGER *	pfNativeError,
+	SQLCHAR *	szErrorMsg,
+	SQLSMALLINT	nErrorMsgMax,
+	SQLSMALLINT *	pcbErrorMsg )
 {
-	HDRVENV		hEnv	= (HDRVENV)hDrvEnv;
-	HDRVDBC		hDbc	= (HDRVDBC)hDrvDbc;
-    HDRVSTMT	hStmt	= (HDRVSTMT)hDrvStmt;
-	char    *pszState       = NULL;			 /* pointer to status code   */
-	char    *pszErrMsg      = NULL;			 /* pointer to error message */
-	char	szMsgHdr[1024];
-	int		nCode;
-
-	/* SANITY CHECKS */
-    if( hEnv == SQL_NULL_HENV && hDbc == SQL_NULL_HDBC && hStmt == SQL_NULL_HSTMT )
-        return SQL_INVALID_HANDLE;
-
-	/* DEFAULTS */
-	szSqlState[0]	= '\0';
-	*pfNativeError	= 0;
-	szErrorMsg[0]	= '\0';
-	*pcbErrorMsg	= 0;
-
-	/* STATEMENT */
-    if( hStmt != SQL_NULL_HENV )
-	{
-		if ( logPopMsg( hStmt->hLog, szMsgHdr, &nCode, hStmt->szSqlMsg ) != LOG_SUCCESS )
-			return SQL_NO_DATA;
-		sprintf( szErrorMsg, "%s%s", szMsgHdr, hStmt->szSqlMsg );
-		*pcbErrorMsg = strlen( szErrorMsg );
-		return SQL_SUCCESS;
-	}
-
-	/* CONNECTION */
-    if( hDbc != SQL_NULL_HDBC )
-	{
-		if ( logPopMsg( hDbc->hLog, szMsgHdr, &nCode, hDbc->szSqlMsg ) != LOG_SUCCESS )
-			return SQL_NO_DATA;
-		sprintf( szErrorMsg, "%s%s", szMsgHdr, hDbc->szSqlMsg );
-		*pcbErrorMsg = strlen( szErrorMsg );
-		return SQL_SUCCESS;
-	}
-
-	/* ENVIRONMENT */
-    if( hEnv != SQL_NULL_HSTMT )
-	{
-		if ( logPopMsg( hEnv->hLog, szMsgHdr, &nCode, hEnv->szSqlMsg ) != LOG_SUCCESS )
-			return SQL_NO_DATA;
-		sprintf( szErrorMsg, "%s%s", szMsgHdr, hEnv->szSqlMsg );
-		*pcbErrorMsg = strlen( szErrorMsg );
-		return SQL_SUCCESS;
-	}
-
-	return SQL_NO_DATA;
+	/* use mapping as described in ODBC 3 SDK Help file */
+	return SQLGetDiagRec(
+		((hStmt) ? SQL_HANDLE_STMT : ((hDbc) ? SQL_HANDLE_DBC : SQL_HANDLE_ENV)),
+		((hStmt) ? hStmt : ((hDbc) ? hDbc : hEnv)),
+		1,	/* first recNumber */
+		szSqlState,
+		pfNativeError,
+		szErrorMsg,
+		nErrorMsgMax,
+		pcbErrorMsg );
 }
-
-

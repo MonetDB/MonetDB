@@ -1,114 +1,175 @@
-/********************************************************************
- * SQLStatistics
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
  *
- **********************************************************************
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- * This code was created by Peter Harvey (mostly during Christmas 98/99).
- * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
- * - Peter Harvey pharvey@codebydesign.com
+ * The Original Code is the Monet Database System.
  *
- ********************************************************************/
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
 
-#include "driver.h"
+/**********************************************************************
+ * SQLStatistics()
+ * CLI Compliance: ISO 92
+ *
+ * Note: catalogs are not supported, we ignore any value set for
+ * szCatalogName.
+ *
+ * Author: Martin van Dinther
+ * Date  : 30 aug 2002
+ *
+ **********************************************************************/
 
-enum nSQLStatistics
+#include "ODBCGlobal.h"
+#include "ODBCStmt.h"
+#include "ODBCUtil.h"
+
+
+SQLRETURN SQLStatistics(
+	SQLHSTMT	hStmt,
+	SQLCHAR *	szCatalogName,
+	SQLSMALLINT	nCatalogNameLength,
+	SQLCHAR *	szSchemaName,
+	SQLSMALLINT	nSchemaNameLength,
+	SQLCHAR *	szTableName,
+	SQLSMALLINT	nTableNameLength,
+	SQLUSMALLINT	nUnique,
+	SQLUSMALLINT	nReserved )
 {
-	TABLE_CAT		= 1,
-	TABLE_SCHEM,
-	TABLE_NAME,
-	NON_UNIQUE,
-	INDEX_QUALIFIER,
-	INDEX_NAME,
-	TYPE,
-	ORDINAL_POSITION,
-	COLUMN_NAME,
-	ASC_OR_DESC,
-	CARDINALITY,
-	PAGES,
-	FILTER_CONDITION,
-	COL_MAX
-};
+	ODBCStmt * stmt = (ODBCStmt *) hStmt;
+	char *	schName = NULL;
+	char *	tabName = NULL;
+	RETCODE rc;
+
+	/* buffer for the constructed query to do meta data retrieval */
+	char * query = NULL;
+	char * work_str = NULL;
+	int work_str_len = 1000;
 
 
-/****************************
- * replace this with init of some struct (see same func for MiniSQL driver) */
-char *aSQLStatistics[] =
-{
-	"one",
-	"two"
-};
-/****************************/
+	if (! isValidStmt(stmt))
+		return SQL_INVALID_HANDLE;
 
+	clearStmtErrors(stmt);
 
-SQLRETURN SQLStatistics(	SQLHSTMT        hDrvStmt,
-							SQLCHAR         *szCatalogName,
-							SQLSMALLINT     nCatalogNameLength,
-							SQLCHAR         *szSchemaName,
-							SQLSMALLINT     nSchemaNameLength,
-							SQLCHAR         *szTableName,      		/* MUST BE SUPPLIED */
-							SQLSMALLINT     nTableNameLength,
-							SQLUSMALLINT    nTypeOfIndex,
-							SQLUSMALLINT    nReserved    )
-{
-    HDRVSTMT 	hStmt	= (HDRVSTMT)hDrvStmt;
-	int			nColumn;
-	int			nCols;
-	int			nRow;
-	COLUMNHDR	*pColumnHeader;			
-	char		szSQL[200];
-
-	/* SANITY CHECKS */
-    if( hStmt == SQL_NULL_HSTMT )
-        return SQL_INVALID_HANDLE;
-
-	sprintf( hStmt->szSqlMsg, "hStmt = $%08lX", hStmt );
-    logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hStmt->szSqlMsg );
-
-	if ( szTableName == NULL )
-	{
-		logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR No table name" );
+	/* check statement cursor state, no query should be prepared or executed */
+	if (stmt->State != INITED) {
+		/* 24000 = Invalid cursor state */
+		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	if ( szTableName[0] == '\0'  )
-	{
-		logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR No table name" );
+	assert(stmt->Query == NULL);
+
+	/* check for valid Unique argument */
+	switch (nUnique) {
+		case SQL_INDEX_ALL:
+		case SQL_INDEX_UNIQUE:
+			break;
+		default:
+			/* HY100 = Invalid Unique value */
+			addStmtError(stmt, "HY100", NULL, 0);
+			return SQL_ERROR;
+	}
+
+	/* check for valid Reserved argument */
+	switch (nReserved) {
+		case SQL_ENSURE:
+		case SQL_QUICK:
+			break;
+		default:
+			/* HY101 = Invalid Reserved value */
+			addStmtError(stmt, "HY101", NULL, 0);
+			return SQL_ERROR;
+	}
+
+
+	/* check if a valid (non null, not empty) table name is supplied */
+	tabName = copyODBCstr2Cstr(szTableName, nTableNameLength);
+	if (tabName == NULL) {
+		/* HY009 = Invalid use of null pointer */
+		addStmtError(stmt, "HY009", NULL, 0);
+		return SQL_ERROR;
+	}
+	assert(tabName);
+	if (strcmp(tabName, "") == 0) {
+		GDKfree(tabName);
+		/* HY090 = Invalid string */
+		addStmtError(stmt, "HY090", NULL, 0);
 		return SQL_ERROR;
 	}
 
-    /**************************
-	 * close any existing result
-     **************************/
-	if ( hStmt->hStmtExtras->aResults )
-		_FreeResults( hStmt->hStmtExtras );
+	/* convert input string parameters to normal null terminated C strings */
+	schName = copyODBCstr2Cstr(szSchemaName, nSchemaNameLength);
 
-	if ( hStmt->pszQuery != NULL )
-		free( hStmt->pszQuery );
-	hStmt->pszQuery = NULL;
 
-    /**************************
-	 * EXEC QUERY TO GET KEYS
-     **************************/
+	/* first create a string buffer for the selection condition */
+	work_str_len += strlen(tabName);
+	if (schName != NULL) {
+		work_str_len += strlen(schName);
+	}
+	work_str = GDKmalloc(work_str_len);
+	assert(work_str);
+	strcpy(work_str, "");	/* initialize it */
 
-    /**************************
-	 * allocate memory for columns headers and result data (row 0 is column header while col 0 is reserved for bookmarks)
-     **************************/
 
-    /**************************
-	 * gather column header information (save col 0 for bookmarks)
-     **************************/
+	/* Construct the selection condition query part */
+	/* search pattern is not allowed for table name so use = and not LIKE */
+	strcat(work_str, " AND T.TABLE_NAME = '");
+	strcat(work_str, tabName);
+	strcat(work_str, "'");
 
-	/************************
-	 * gather data (save col 0 for bookmarks and factor out index columns)
-	 ************************/
+	if (schName != NULL && (strcmp(schName, "") != 0)) {
+		/* filtering requested on schema name */
+		/* search pattern is not allowed so use = and not LIKE */
+		strcat(work_str, " AND S.SCHEMA_NAME = '");
+		strcat(work_str, schName);
+		strcat(work_str, "'");
+	}
 
-    /**************************
-	 * free the snapshot
-     **************************/
 
-    logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_INFO, LOG_INFO, "SQL_SUCCESS" );
-    return SQL_SUCCESS;
+	/* construct the query now */
+	query = GDKmalloc(1000 + strlen(work_str));
+	assert(query);
+
+	/* TODO: finish the SQL query */
+	strcpy(query, "SELECT '' AS TABLE_CAT, S.SCHEMA_NAME AS TABLE_SCHEM, T.TABLE_NAME AS TABLE_NAME, 1 AS NON_UNIQUE, NULL AS INDEX_QUALIFIER, NULL AS INDEX_NAME, 0 AS TYPE, NULL AS ORDINAL_POSITION, C.COLUMN_NAME AS COLUMN_NAME, 'A' AS ASC_OR_DESC, NULL AS CARDINALITY, NULL AS PAGES, NULL AS FILTER_CONDITION FROM SQL_SCHEMA S, SQL_TABLE T, SQL_COLUMN C WHERE S.SCHEMA_ID = T.SCHEMA_ID AND T.TABLE_ID = C.TABLE_ID AND T.TABLE_ID = K.TABLE_ID");
+
+	/* add the selection condition */
+	strcat(query, work_str);
+
+	/* add the ordering */
+	strcat(query, " ORDER BY NON_UNIQUE, TYPE, INDEX_QUALLIFIER, INDEX_NAME, ORDINAL_POSITION");
+	GDKfree(work_str);
+
+	/* Done with parameter values evaluation. Now free the C strings. */
+	if (schName != NULL) {
+		GDKfree(schName);
+	}
+	if (tabName != NULL) {
+		GDKfree(tabName);
+	}
+
+	/* query the MonetDb data dictionary tables */
+	assert(query);
+	rc = SQLExecDirect(hStmt, query, SQL_NTS);
+
+	GDKfree(query);
+
+	return rc;
 }
-
-

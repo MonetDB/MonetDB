@@ -1,36 +1,48 @@
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is the Monet Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
+
 /**********************************************************************
- * SQLParamOptions (deprecated)
- *
- **********************************************************************
- *
- * This code was created by Peter Harvey (mostly during Christmas 98/99).
- * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
- * - Peter Harvey pharvey@codebydesign.com
- *
+ * SQLParamOptions()
+ * CLI Compliance: deprecated in ODBC 3.0 (replaced by SQLSetStmtAttr())
+ * Provided here for old (pre ODBC 3.0) applications and driver managers.
  **********************************************************************/
 
-#include "driver.h"
+#include "ODBCGlobal.h"
 
-SQLRETURN SQLParamOptions(	SQLHSTMT    hDrvStmt,
-							UDWORD      nRow,
-							UDWORD		*pnRow )
+SQLRETURN SQLParamOptions(
+	SQLHSTMT	hStmt,
+	UDWORD		nRow,
+	UDWORD *	pnRow )
 {
-    HDRVSTMT hStmt	= (HDRVSTMT)hDrvStmt;
+	RETCODE rc;
 
-	/* SANITY CHECKS */
-	if ( NULL == hStmt )
-		return SQL_INVALID_HANDLE;
-
-	sprintf( hStmt->szSqlMsg, "hStmt = $%08lX", hStmt );
-	logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hStmt->szSqlMsg );
-
-    /************************
-     * REPLACE THIS COMMENT WITH SOMETHING USEFULL
-     ************************/
-    logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR This function not supported" );
-
-
-    return SQL_ERROR;
+	/* use mapping as described in ODBC 3 SDK Help file */
+	rc = SQLSetStmtAttr(hStmt, SQL_ATTR_PARAMSET_SIZE, &nRow, 0);
+	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
+	{
+		rc = SQLSetStmtAttr(hStmt, SQL_ATTR_PARAMS_PROCESSED_PTR, pnRow, 0);
+	}
+	return rc;
 }
-

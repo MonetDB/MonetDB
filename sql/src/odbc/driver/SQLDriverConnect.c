@@ -1,125 +1,87 @@
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is the Monet Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
+
 /**********************************************************************
- * SQLDriverConnect
+ * SQLDriverConnect()
+ * CLI Compliance: ODBC (Microsoft)
  *
- **********************************************************************
- *
- * This code was created by Peter Harvey (mostly during Christmas 98/99).
- * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
- * - Peter Harvey pharvey@codebydesign.com
+ * Author: Martin van Dinther
+ * Date  : 30 aug 2002
  *
  **********************************************************************/
 
-#include "driver.h"
+#include "ODBCGlobal.h"
+#include "ODBCDbc.h"
 
-SQLRETURN SQLDriverConnect(		SQLHDBC            hDrvDbc,
-								SQLHWND            hWnd,
-								SQLCHAR            *szConnStrIn,
-								SQLSMALLINT        nConnStrIn,
-								SQLCHAR            *szConnStrOut,
-								SQLSMALLINT        cbConnStrOutMax,
-								SQLSMALLINT        *pnConnStrOut,
-								SQLUSMALLINT       nDriverCompletion
-                                )
+
+SQLRETURN SQLDriverConnect(
+	SQLHDBC		hDbc,
+	SQLHWND		hWnd,
+	SQLCHAR *	szConnStrIn,
+	SQLSMALLINT	nConnStrIn,
+	SQLCHAR *	szConnStrOut,
+	SQLSMALLINT	cbConnStrOutMax,
+	SQLSMALLINT *	pnConnStrOut,
+	SQLUSMALLINT	nDriverCompletion )
 {
-	HDRVDBC	hDbc	= (HDRVDBC)hDrvDbc;
-    char    	szDSN[INI_MAX_PROPERTY_VALUE+1]			= "";
-    char    	szDRIVER[INI_MAX_PROPERTY_VALUE+1]		= "";
-    char    	szUID[INI_MAX_PROPERTY_VALUE+1]			= "";
-    char    	szPWD[INI_MAX_PROPERTY_VALUE+1]			= "";
-    char    	szDATABASE[INI_MAX_PROPERTY_VALUE+1]	= "";
-    char    	szHOST[INI_MAX_PROPERTY_VALUE+1]		= "";
-    char    	szPORT[INI_MAX_PROPERTY_VALUE+1]		= "";
-    char    	szSOCKET[INI_MAX_PROPERTY_VALUE+1]		= "";
-    char    	szFLAG[INI_MAX_PROPERTY_VALUE+1]		= "";
-    char    	szNameValue[INI_MAX_PROPERTY_VALUE+1]	= "";
-    char    	szName[INI_MAX_PROPERTY_VALUE+1]		= "";
-    char    	szValue[INI_MAX_PROPERTY_VALUE+1]		= "";
-	int			nOption									= 0;
+	ODBCDbc * dbc = (ODBCDbc *) hDbc;
 
-	/* SANITY CHECKS */
-    if( NULL == hDbc )
-        return SQL_INVALID_HANDLE;
+	if (! isValidDbc(dbc))
+		return SQL_INVALID_HANDLE;
 
-	sprintf( hDbc->szSqlMsg, "hDbc = $%08lX", hDbc );
-    logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hDbc->szSqlMsg );
+	clearDbcErrors(dbc);
 
+	/* check connection state, should not be connected */
+	if (dbc->Connected == 1) {
+		/* 08002 = Connection already in use */
+		addDbcError(dbc, "08002", NULL, 0);
+		return SQL_ERROR;
+	}
+	assert(dbc->Connected == 0);
 
-    if( hDbc->bConnected == 1 )
-    {
-        logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR Already connected" );
-        return SQL_ERROR;
-    }
-
-    if( !szConnStrIn )
-    {
-        logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR Bad argument" );
-        return SQL_ERROR;
-    }
-
-    switch( nDriverCompletion )
-    {
-        case SQL_DRIVER_PROMPT:
-        case SQL_DRIVER_COMPLETE:
-        case SQL_DRIVER_COMPLETE_REQUIRED:
-        case SQL_DRIVER_NOPROMPT:
-        default:
-			sprintf( hDbc->szSqlMsg, "Invalid nDriverCompletion=%d", nDriverCompletion );
-			logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hDbc->szSqlMsg );
-            break;
-    }
-
-    /*************************
-     * 1. parse nConnStrIn for connection options. Format is;
-     *      Property=Value;...
-     * 2. we may not have all options so handle as per DM request
-     * 3. fill as required szConnStrOut
-     *************************/
-	for ( nOption = 1; iniElement( szConnStrIn, ';', '\0', nOption, szNameValue, sizeof(szNameValue) ) == INI_SUCCESS ; nOption++ )
+	/* check input arguments */
+	switch (nDriverCompletion)
 	{
-		szName[0]	= '\0';
-		szValue[0]	= '\0';
-		iniElement( szNameValue, '=', '\0', 0, szName, sizeof(szName) );
-		iniElement( szNameValue, '=', '\0', 1, szValue, sizeof(szValue) );
-		if ( strcasecmp( szName, "DSN" ) == 0 )
-			strcpy( szDSN, szValue );
-		else if ( strcasecmp( szName, "DRIVER" ) == 0 )
-			strcpy( szDRIVER, szValue );
-		else if ( strcasecmp( szName, "UID" ) == 0 )
-			strcpy( szUID, szValue );
-		else if ( strcasecmp( szName, "PWD" ) == 0 )
-			strcpy( szPWD, szValue );
-		else if ( strcasecmp( szName, "SERVER" ) == 0 )
-			strcpy( szHOST, szValue );
-		else if ( strcasecmp( szName, "DB" ) == 0 )
-			strcpy( szDATABASE, szValue );
-		else if ( strcasecmp( szName, "SOCKET" ) == 0 )
-			strcpy( szSOCKET, szValue );
-		else if ( strcasecmp( szName, "PORT" ) == 0 )
-			strcpy( szPORT, szValue );
-		else if ( strcasecmp( szName, "OPTION" ) == 0 )
-			strcpy( szFLAG, szValue );
+		case SQL_DRIVER_PROMPT:
+		case SQL_DRIVER_COMPLETE:
+		case SQL_DRIVER_COMPLETE_REQUIRED:
+		case SQL_DRIVER_NOPROMPT:
+			break;
+		default:
+			/* HY092 = Invalid attribute/option identifier */
+			addDbcError(dbc, "HY092", NULL, 0);
+			return SQL_ERROR;
 	}
 
-	/****************************
-	 * return the connect string we are using
-	 ***************************/
-    if( !szConnStrOut )
-    {
-    }
+	/* TODO: finish implementation */
+	/* TODO: check szConnStrIn, parse it and retrieve the different settings */
+	/* TODO: next call (an internal version of) SQLConnect() */
 
 
-    /*************************
-     * 4. try to connect
-     * 5. set gathered options (ie USE Database or whatever)
-     * 6. set connection state
-     *      hDbc->bConnected = TRUE;
-     *************************/
-	hDbc->bConnected 			= 1;
-
-    logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR This function not supported." );
-
-    return SQL_SUCCESS;
+	/* For now just report "not supported" and return error */
+	/* IM001 = Driver does not support this function */
+	addDbcError(dbc, "IM001", NULL, 0);
+	return SQL_ERROR;
 }
-
-

@@ -1,48 +1,69 @@
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is the Monet Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
+
 /**********************************************************************
- * SQLDescribeParam
+ * SQLDescribeParam()
+ * CLI Compliance: ODBC (Microsoft)
  *
- **********************************************************************
+ * Note: this function is not supported (yet), it returns an error.
  *
- * This code was created by Peter Harvey (mostly during Christmas 98/99).
- * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
- * - Peter Harvey pharvey@codebydesign.com
+ * Author: Martin van Dinther
+ * Date  : 30 aug 2002
  *
  **********************************************************************/
 
-#include "driver.h"
+#include "ODBCGlobal.h"
+#include "ODBCStmt.h"
 
-/* HERES THE CORRECT WAY...
-SQLRETURN SQLDescribeParam( SQLHSTMT      hDrvStmt,
-                                  SQLUSMALLINT  nParmNumber,
-                                  SQLSMALLINT   *pnDataType,
-                                  SQLUINTEGER   *pnSize,
-                                  SQLSMALLINT   *pnDecDigits,
-                                  SQLSMALLINT   *pnNullable )
-HERES THE WAY THAT WORKS... */
-SQLRETURN SQLDescribeParam( SQLHSTMT      hDrvStmt,
-                                  UWORD  nParmNumber,
-                                  SWORD   *pnDataType,
-                                  UDWORD   *pnSize,
-                                  SWORD   *pnDecDigits,
-                                  SWORD   *pnNullable )
+SQLRETURN SQLDescribeParam(
+	SQLHSTMT	hStmt,
+	SQLUSMALLINT	nParmNumber,
+	SQLSMALLINT *	pnDataType,
+	SQLUINTEGER *	pnSize,
+	SQLSMALLINT *	pnDecDigits,
+	SQLSMALLINT *	pnNullable )
 {
-    HDRVSTMT hStmt	= (HDRVSTMT)hDrvStmt;
+	ODBCStmt * stmt = (ODBCStmt *) hStmt;
 
-    /* SANITY CHECKS */
-    if( NULL == hStmt )
-        return SQL_INVALID_HANDLE;
+	if (! isValidStmt(stmt))
+		return SQL_INVALID_HANDLE;
 
-	sprintf( hStmt->szSqlMsg, "hStmt = $%08lX", hStmt );
-    logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hStmt->szSqlMsg );
+	clearStmtErrors(stmt);
 
-    /************************
-     * REPLACE THIS COMMENT WITH SOMETHING USEFULL
-     ************************/
-    logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR This function not supported" );
+	/* check statement cursor state, query should be prepared or executed */
+	if (stmt->State == INITED) {
+		/* HY010 = Function sequence error */
+		addStmtError(stmt, "HY010", NULL, 0);
+		return SQL_ERROR;
+	}
 
+	/* TODO: check the parameter number */
 
-    return SQL_ERROR;
+	/* TODO: retrieve the parameter information from stmt->bindParams */
+
+	/* for now return error IM001: driver not capable */
+	addStmtError(stmt, "IM001", NULL, 0);
+	return SQL_ERROR;
 }
-
-

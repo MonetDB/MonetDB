@@ -1,52 +1,38 @@
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is the Monet Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
+
 /**********************************************************************
- * SQLFreeConnect
- *
- * Do not try to Free Dbc if there are Stmts... return an error. Let the
- * Driver Manager do a recursive clean up if its wants.
- *
- **********************************************************************
- *
- * This code was created by Peter Harvey (mostly during Christmas 98/99).
- * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
- * - Peter Harvey pharvey@codebydesign.com
- *
+ * SQLFreeConnect()
+ * CLI Compliance: deprecated in ODBC 3.0 (replaced by SQLFreeHandle())
+ * Provided here for old (pre ODBC 3.0) applications and driver managers.
  **********************************************************************/
 
-#include "driver.h"
+#include "ODBCGlobal.h"
 
-SQLRETURN _FreeConnect( SQLHDBC hDrvDbc )
+SQLRETURN SQLFreeConnect(SQLHDBC hDrvDbc)
 {
-	HDRVDBC	hDbc	= (HDRVDBC)hDrvDbc;
-	int		nReturn;
-
-	/* SANITY CHECKS */
-    if( NULL == hDbc )
-        return SQL_INVALID_HANDLE;
-
-	sprintf( hDbc->szSqlMsg, "hDbc = $%08lX", hDbc );
-    logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hDbc->szSqlMsg );
-
-    if( hDbc->bConnected )
-    {
-		logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR Connection is active" );
-		return SQL_ERROR;
-    }
-
-	if ( hDbc->hFirstStmt != NULL )
-	{
-		logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR Connection has allocated statements" );
-		return SQL_ERROR;
-	}
-
-	nReturn = _FreeDbc( hDbc );
-
-	return nReturn;
-
+	/* use mapping as described in ODBC 3 SDK Help file */
+	return SQLFreeHandle(SQL_HANDLE_DBC, (SQLHANDLE)hDrvDbc);
 }
-
-SQLRETURN SQLFreeConnect( SQLHDBC hDrvDbc )
-{
-    return _FreeConnect( hDrvDbc );
-}
-

@@ -1,72 +1,116 @@
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is the Monet Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
+
 /**********************************************************************
- * SQLFetch
+ * SQLFetch()
+ * CLI Compliance: ISO 92
  *
- **********************************************************************
- *
- * This code was created by Peter Harvey (mostly during Christmas 98/99).
- * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
- * - Peter Harvey pharvey@codebydesign.com
+ * Author: Martin van Dinther
+ * Date  : 30 aug 2002
  *
  **********************************************************************/
 
-#include "driver.h"
+#include "ODBCGlobal.h"
+#include "ODBCStmt.h"
 
-SQLRETURN SQLFetch( SQLHSTMT  hDrvStmt)
+
+SQLRETURN SQLFetch(SQLHSTMT hStmt)
 {
-    HDRVSTMT 	hStmt		= (HDRVSTMT)hDrvStmt;
-	int			nColumn		= -1;
-	COLUMNHDR	*pColumnHeader;			
+	ODBCStmt * stmt = (ODBCStmt *) hStmt;
+	SQLRETURN retCode = SQL_SUCCESS;
+	OdbcOutHostVar * outVars = NULL;
+	int	idx = 0;
 
-	/* SANITY CHECKS */
-	if ( NULL == hStmt )
+
+	if (! isValidStmt(stmt))
 		return SQL_INVALID_HANDLE;
 
-	sprintf( hStmt->szSqlMsg, "hStmt = $%08lX", hStmt );
-	logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hStmt->szSqlMsg );
+	clearStmtErrors(stmt);
 
-	if ( hStmt->hStmtExtras->nRows < 1 )
-	{
-		logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR No result set." );
+	/* check statement cursor state, query should be executed */
+	if (stmt->State != EXECUTED) {
+		/* caller should have called SQLExecute or SQLExecDirect first */
+		/* HY010 = Function sequence error */
+		addStmtError(stmt, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	/************************
-	 * goto next row
-	 ************************/
-    if ( hStmt->hStmtExtras->nRow < 0 )
+	if (stmt->Result == NULL) {
 		return SQL_NO_DATA;
-
-    if ( hStmt->hStmtExtras->nRow >= hStmt->hStmtExtras->nRows )
+	}
+	if (stmt->nrRows <= 0) {
 		return SQL_NO_DATA;
+	}
+	if (stmt->currentRow >= stmt->nrRows) {
+		return SQL_NO_DATA;
+	}
 
-	hStmt->hStmtExtras->nRow++;
+	/* increase the current Row number */
+	stmt->currentRow++;
 
-	/************************
-	 * transfer bound column values to bound storage as required
-	 ************************/
-	for ( nColumn=1; nColumn <= hStmt->hStmtExtras->nCols; nColumn++ )
+
+	outVars = stmt->bindCols.array;
+	if (outVars == NULL) {
+		/* there are no bound output columns, so we are done */
+		return SQL_SUCCESS;
+	}
+
+	/* transfer result column data to bound column buffers as requested */
+	/* do this for each bound column */
+	for (idx = 1; idx <= stmt->bindCols.size; idx++)
 	{
-		pColumnHeader = (COLUMNHDR*)(hStmt->hStmtExtras->aResults)[nColumn];
-		if ( pColumnHeader->pTargetValue != NULL )
-		{
-			if ( _GetData(	hDrvStmt,
-					nColumn,
-					pColumnHeader->nTargetType,
-					pColumnHeader->pTargetValue,
-					pColumnHeader->nTargetValueMax,
-					pColumnHeader->pnLengthOrIndicator ) 
-				!= SQL_SUCCESS )
-			{
-				sprintf( hStmt->szSqlMsg, "SQL_ERROR Failed to get data for column %d", nColumn );
-				logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hStmt->szSqlMsg );
-				return SQL_ERROR;
+		OdbcOutHostVar var = outVars[idx];
+		if (var != NULL) {
+			/* it is a bound column */
+			SQLRETURN rc = ODBCGetData(stmt, var->icol, var->fCType,
+				var->rgbValue, var->cbValueMax, var->pcbValue);
+
+			/* remember the intermediate return value to be
+			 * returned when we have processed all bound columns.
+			 */
+			switch (rc) {
+				case SQL_ERROR:
+					retCode = rc;
+					break;
+				case SQL_NO_DATA:
+					/* change only when NOT error detected before */
+					if (retCode != SQL_ERROR)
+						retCode = rc;
+					break;
+				case SQL_SUCCESS_WITH_INFO:
+					/* change only when up till now all went successful */
+					if (retCode == SQL_SUCCESS)
+						retCode = rc;
+					break;
+				case SQL_SUCCESS:
+				default:
+					/* do nothing */
+					break;
 			}
 		}
 	}
 
-	logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_INFO, LOG_INFO, "SQL_SUCCESS" );
-	return SQL_SUCCESS;
+	return retCode;
 }
-
-

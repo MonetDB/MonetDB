@@ -1,82 +1,50 @@
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is the Monet Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
+
 /**********************************************************************
- * SQLColAttributes (this function has been deprecated)
- *
- **********************************************************************
- *
- * This code was created by Peter Harvey (mostly during Christmas 98/99).
- * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
- * - Peter Harvey pharvey@codebydesign.com
- *
+ * SQLColAttributes()
+ * CLI Compliance: deprecated in ODBC 3.0 (replaced by SQLColAttribute())
+ * Provided here for old (pre ODBC 3.0) applications and driver managers.
  **********************************************************************/
 
-#include "driver.h"
+#include "ODBCGlobal.h"
 
-SQLRETURN SQLColAttributes(		SQLHSTMT    hDrvStmt,
-								SQLUSMALLINT       nCol,
-								SQLUSMALLINT       nDescType,
-								SQLPOINTER    		pszDesc,
-								SQLSMALLINT       nDescMax,
-								SQLSMALLINT   	*pcbDesc,
-								SQLINTEGER   	*pfDesc )
+SQLRETURN SQLColAttributes(
+	SQLHSTMT	hStmt,
+	SQLUSMALLINT	nCol,
+	SQLUSMALLINT	nDescType,
+	SQLPOINTER	pszDesc,
+	SQLSMALLINT	nDescMax,
+	SQLSMALLINT *	pcbDesc,
+	SQLINTEGER *	pfDesc )
 {
-    HDRVSTMT hStmt	= (HDRVSTMT)hDrvStmt;
+	/* use mapping as described in ODBC 3 SDK Help file */
+	return SQLColAttribute(hStmt, nCol, nDescType, pszDesc, nDescMax, pcbDesc, pfDesc);
 
-    /* SANITY CHECKS */
-    if( NULL == hStmt )
-        return SQL_INVALID_HANDLE;
-
-	sprintf( hStmt->szSqlMsg, "hStmt = $%08lX", hStmt );
-    logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hStmt->szSqlMsg );
-
-    /**************************
-     * 1. verify we have result set
-     * 2. verify col is within range
-     **************************/
-
-
-    /**************************
-     * 3. process request
-     **************************/
-    switch( nDescType )
-    {
-/* enum these
-    case SQL_COLUMN_AUTO_INCREMENT:
-    case SQL_COLUMN_CASE_SENSITIVE:
-    case SQL_COLUMN_COUNT:
-    case SQL_COLUMN_DISPLAY_SIZE:
-    case SQL_COLUMN_LENGTH:
-    case SQL_COLUMN_MONEY:
-    case SQL_COLUMN_NULLABLE:
-    case SQL_COLUMN_PRECISION:
-    case SQL_COLUMN_SCALE:
-    case SQL_COLUMN_SEARCHABLE:
-    case SQL_COLUMN_TYPE:
-    case SQL_COLUMN_UNSIGNED:
-    case SQL_COLUMN_UPDATABLE:
-    case SQL_COLUMN_CATALOG_NAME:
-    case SQL_COLUMN_QUALIFIER_NAME:
-    case SQL_COLUMN_DISTINCT_TYPE:
-    case SQL_COLUMN_LABEL:
-    case SQL_COLUMN_NAME:
-    case SQL_COLUMN_SCHEMA_NAME:
-    case SQL_COLUMN_OWNER_NAME:
-    case SQL_COLUMN_TABLE_NAME:
-    case SQL_COLUMN_TYPE_NAME:
-*/	
-    default:
-		sprintf( hStmt->szSqlMsg, "SQL_ERROR nDescType=%d", nDescType );
-		logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hStmt->szSqlMsg );
-        return SQL_ERROR;
-    }
-
-    /************************
-     * REPLACE THIS COMMENT WITH SOMETHING USEFULL
-     ************************/
-    logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR This function not supported" );
-
-    return SQL_ERROR;
+	/* TODO: implement specials semantics for nDescTypes: SQL_COLUMN_TYPE,
+	   SQL_COLUMN_NAME, SQL_COLUMN_NULLABLE and SQL_COLUMN_COUNT.
+	   See ODBC 3 SDK Help file, SQLColAttributes Mapping.
+	 */
 }
-
-
-

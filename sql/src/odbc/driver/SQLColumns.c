@@ -1,122 +1,183 @@
-/********************************************************************
- * SQLColumns
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
  *
- * This is something of a mess. Part of the problem here is that msqlListFields
- * are returned as mSQL 'column headers'... we want them to be returned as a
- * row for each. So we have to turn the results on their side <groan>.
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- * Another problem is that msqlListFields will also return indexs. So we have
- * to make sure that these are not included here.
+ * The Original Code is the Monet Database System.
  *
- * The end result is more code than what would usually be found here.
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
  *
- **********************************************************************
- *
- * This code was created by Peter Harvey (mostly during Christmas 98/99).
- * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
- * - Peter Harvey pharvey@codebydesign.com
- *
- ********************************************************************/
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
 
-#include "driver.h"
+/**********************************************************************
+ * SQLColumns()
+ * CLI Compliance: X/Open
+ *
+ * Note: catalogs are not supported, we ignore any value set for szCatalogName
+ *
+ * Author: Martin van Dinther
+ * Date  : 30 aug 2002
+ *
+ **********************************************************************/
 
-enum nSQLColumns
+#include "ODBCGlobal.h"
+#include "ODBCStmt.h"
+#include "ODBCUtil.h"
+
+
+SQLRETURN SQLColumns(
+	SQLHSTMT	hStmt,
+	SQLCHAR *	szCatalogName,
+	SQLSMALLINT	nCatalogNameLength,
+	SQLCHAR *	szSchemaName,
+	SQLSMALLINT	nSchemaNameLength,
+	SQLCHAR *	szTableName,
+	SQLSMALLINT	nTableNameLength,
+	SQLCHAR *	szColumnName,
+	SQLSMALLINT	nColumnNameLength )
 {
-	TABLE_CAT		= 1,
-	TABLE_SCHEM,
-	TABLE_NAME,
-	COLUMN_NAME,
-	DATA_TYPE,
-	TYPE_NAME,
-	COLUMN_SIZE,
-	BUFFER_LENGTH,
-	DECIMAL_DIGITS,
-	NUM_PREC_RADIX,
-	NULLABLE,
-	REMARKS,
-	COLUMN_DEF,
-	SQL_DATA_TYPE,
-	SQL_DATETIME_SUB,
-	CHAR_OCTET_LENGTH,
-   	ORDINAL_POSITION,
-	IS_NULLABLE,
-	COL_MAX
-};
+	ODBCStmt * stmt = (ODBCStmt *) hStmt;
+	char *	schName = NULL;
+	char *	tabName = NULL;
+	char *	colName = NULL;
+	RETCODE rc;
 
-/****************************
- * replace this with init of some struct (see same func for MiniSQL driver) */
-char *aSQLColumns[] =
-{
-	"one",
-	"two"
-};
- /***************************/
-
-SQLRETURN SQLColumns( 	SQLHSTMT    hDrvStmt,
-						SQLCHAR     *szCatalogName,
-						SQLSMALLINT nCatalogNameLength,
-						SQLCHAR     *szSchemaName,
-						SQLSMALLINT nSchemaNameLength,
-						SQLCHAR     *szTableName,
-						SQLSMALLINT nTableNameLength,
-						SQLCHAR     *szColumnName,
-						SQLSMALLINT nColumnNameLength )
-{
-    HDRVSTMT	hStmt		= (HDRVSTMT)hDrvStmt;
-
-	COLUMNHDR	*pColumnHeader;			
-	int			nColumn;
-	long		nCols;
-	long		nRow;
-	char		szBuffer[101];
+	/* buffer for the constructed query to do meta data retrieval */
+	char * query = NULL;
+	char * work_str = NULL;
+	int work_str_len = 1000;
 
 
-    /* SANITY CHECKS */
-    if( NULL == hStmt )
-        return SQL_INVALID_HANDLE;
+	if (! isValidStmt(stmt))
+		return SQL_INVALID_HANDLE;
 
-	sprintf( hStmt->szSqlMsg, "hStmt = $%08lX", hStmt );
-    logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hStmt->szSqlMsg );
+	clearStmtErrors(stmt);
 
-	if ( szTableName == NULL || szTableName[0] == '\0' )
-	{
-		logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR Must supply a valid table name" );
+	/* check statement cursor state, no query should be prepared or executed */
+	if (stmt->State != INITED) {
+		/* 24000 = Invalid cursor state */
+		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
 
-    /**************************
-	 * close any existing result
-     **************************/
-	if ( hStmt->hStmtExtras->aResults )
-		_FreeResults( hStmt->hStmtExtras );
+	assert(stmt->Query == NULL);
 
-	if ( hStmt->pszQuery != NULL )
-		free( hStmt->pszQuery );
+	/* convert input string parameters to normal null terminated C strings */
+	schName = copyODBCstr2Cstr(szSchemaName, nSchemaNameLength);
+	tabName = copyODBCstr2Cstr(szTableName, nTableNameLength);
+	colName = copyODBCstr2Cstr(szColumnName, nColumnNameLength);
 
-    /************************
-     * generate a result set listing columns
-     ************************/
+	/* dependent on the input parameter values we must add a
+	   variable selection condition dynamically */
 
-    /**************************
-	 * allocate memory for columns headers and result data (row 0 is column header while col 0 is reserved for bookmarks)
-     **************************/
+	/* first create a string buffer */
+	if (schName != NULL) {
+		work_str_len += strlen(schName);
+	}
+	if (tabName != NULL) {
+		work_str_len += strlen(tabName);
+	}
+	if (colName != NULL) {
+		work_str_len += strlen(colName);
+	}
+	work_str = GDKmalloc(work_str_len);
+	assert(work_str);
+	strcpy(work_str, "");	/* initialize it */
 
-    /**************************
-	 * gather column header information (save col 0 for bookmarks)
-     **************************/
 
-	/************************
-	 * gather data (save col 0 for bookmarks and factor out index columns)
-	 ************************/
+	/* Construct the selection condition query part */
+	if (schName != NULL && (strcmp(schName, "") != 0)) {
+		/* filtering requested on schema name */
+		strcat(work_str, " AND S.SCHEMA_NAME ");
 
-    /**************************
-	 * free the snapshot
-     **************************/
+		/* use LIKE when it contains a wildcard '%' or a '_' */
+		if (strchr(schName, '%') || strchr(schName, '_')) {
+			/* TODO: the wildcard may be escaped.
+			   Check it and may be convert it. */
+			strcat(work_str, "LIKE '");
+		} else {
+			strcat(work_str, "= '");
+		}
+		strcat(work_str, schName);
+		strcat(work_str, "'");
+	}
 
-    logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_INFO, LOG_INFO, "SQL_SUCCESS" );
-    return SQL_SUCCESS;
+	if (tabName != NULL && (strcmp(tabName, "") != 0)) {
+		/* filtering requested on table name */
+		strcat(work_str, " AND T.TABLE_NAME ");
+
+		/* use LIKE when it contains a wildcard '%' or a '_' */
+		if (strchr(tabName, '%') || strchr(tabName, '_')) {
+			/* TODO: the wildcard may be escaped.
+			   Check it and may be convert it. */
+			strcat(work_str, "LIKE '");
+		} else {
+			strcat(work_str, "= '");
+		}
+		strcat(work_str, tabName);
+		strcat(work_str, "'");
+	}
+
+	if (colName != NULL && (strcmp(colName, "") != 0)) {
+		/* filtering requested on column name */
+		strcat(work_str, " AND C.COLUMN_NAME ");
+
+		/* use LIKE when it contains a wildcard '%' or a '_' */
+		if (strchr(colName, '%') || strchr(colName, '_')) {
+			/* TODO: the wildcard may be escaped.
+			   Check it and may be convert it. */
+			strcat(work_str, "LIKE '");
+		} else {
+			strcat(work_str, "= '");
+		}
+		strcat(work_str, colName);
+		strcat(work_str, "'");
+	}
+
+
+	/* construct the query now */
+	query = GDKmalloc(1000 + strlen(work_str));
+	assert(query);
+
+	strcpy(query, "SELECT '' AS TABLE_CAT, S.SCHEMA_NAME AS TABLE_SCHEM, T.TABLE_NAME AS TABLE_NAME, C.COLUMN_NAME AS COLUMN_NAME, C.DATA_TYPE AS DATA_TYPE, C.TYPE_NAME AS TYPE_NAME, C.COLUMN_SIZE AS COLUMN_SIZE, C.BUFFER_LENGTH AS BUFFER_LENGTH, C.DECIMAL_DIGITS AS DECIMAL_DIGITS, C.NUM_PREC_RADIX AS NUM_PREC_RADIX, C.NULLABLE AS NULLABLE, C.REMARKS AS REMARKS, C.COLUMN_DEF AS COLUMN_DEF, C.SQL_DATA_TYPE AS SQL_DATA_TYPE, C.SQL_DATETIME_SUB AS SQL_DATETIME_SUB, C.CHAR_OCTET_LENGTH AS CHAR_OCTET_LENGTH, C.ORDINAL_POSITION AS ORDINAL_POSITION, C.IS_NULLABLE AS IS_NULLABLE FROM SQL_SCHEMA S, SQL_TABLE T, SQL_COLUMN C WHERE S.SCHEMA_ID = T.SCHEMA_ID AND T.TABLE_ID = C.TABLE_ID");
+
+	/* add the selection condition */
+	strcat(query, work_str);
+
+	/* add the ordering */
+	strcat(query, " ORDER BY S.SCHEMA_NAME, T.TABLE_NAME, C.ORDINAL_POSITION");
+	GDKfree(work_str);
+
+	/* Done with parameter values evaluation. Now free the C strings. */
+	if (schName != NULL) {
+		GDKfree(schName);
+	}
+	if (tabName != NULL) {
+		GDKfree(tabName);
+	}
+	if (colName != NULL) {
+		GDKfree(colName);
+	}
+
+	/* query the MonetDb data dictionary tables */
+	assert(query);
+	rc = SQLExecDirect(hStmt, query, SQL_NTS);
+
+	GDKfree(query);
+
+	return rc;
 }
-
-
-

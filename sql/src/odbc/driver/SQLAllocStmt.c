@@ -1,106 +1,42 @@
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is the Monet Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
+
 /**********************************************************************
- * SQLAllocStmt (deprecated)
+ * SQLAllocStmt()
+ * CLI Compliance: deprecated in ODBC 3.0 (replaced by SQLAllocHandle())
+ * Provided here for old (pre ODBC 3.0) applications and driver managers.
  *
- **********************************************************************
- *
- * This code was created by Peter Harvey (mostly during Christmas 98/99).
- * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
- * - Peter Harvey pharvey@codebydesign.com
+ * Author: Martin van Dinther
+ * Date  : 30 aug 2002
  *
  **********************************************************************/
 
-#include "driver.h"
+#include "ODBCGlobal.h"
 
-SQLRETURN _AllocStmt(   SQLHDBC     hDrvDbc,
-                          SQLHSTMT    *phDrvStmt )
+SQLRETURN SQLAllocStmt(SQLHDBC hDbc, SQLHSTMT * phStmt)
 {
-    HDRVDBC     hDbc	= (HDRVDBC)hDrvDbc;
-	HDRVSTMT    *phStmt	= (HDRVSTMT*)phDrvStmt;
-
-    /* SANITY CHECKS */
-    if( hDbc == SQL_NULL_HDBC )
-    {
-        logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_INVALID_HANDLE" );
-        return SQL_INVALID_HANDLE;
-    }
-
-	sprintf( hDbc->szSqlMsg, "hDbc = $%08lX", hDbc );
-    logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hDbc->szSqlMsg );
-
-    if( NULL == phStmt )
-    {
-        logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR phStmt=NULL" );
-        return SQL_ERROR;
-    }
-
-    /* OK */
-
-    /* allocate memory */
-    *phStmt = malloc( sizeof(DRVSTMT) );
-    if( SQL_NULL_HSTMT == *phStmt )
-    {
-        logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR memory allocation failure" );
-        return SQL_ERROR;
-    }
-
-    /* initialize memory */
-	sprintf( hDbc->szSqlMsg, "*phstmt = $%08lX", *phStmt );
-    logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hDbc->szSqlMsg );
-
-	memset( *phStmt, 0, sizeof(DRVSTMT) );	/* SAFETY */
-    (*phStmt)->hDbc			= (SQLPOINTER)hDbc;
-    (*phStmt)->hLog			= NULL;
-    (*phStmt)->hStmtExtras	= NULL;
-    (*phStmt)->pNext		= NULL;
-    (*phStmt)->pPrev		= NULL;
-    (*phStmt)->pszQuery		= NULL;
-    sprintf((char*)(*phStmt)->szCursorName, "CUR_%08lX", *phStmt );
-
-	/* ADD TO DBCs STATEMENT LIST */
-	
-	/* start logging		*/
-    if ( logOpen( &(*phStmt)->hLog, "[template]", NULL, 50 ) )
-	{
-		logOn( (*phStmt)->hLog, 1 );
-		logPushMsg( (*phStmt)->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "Statement logging allocated ok" );
-	}
-	else
-		(*phStmt)->hLog = NULL;
-
-	/* ADD TO END OF LIST */
-	if ( hDbc->hFirstStmt == NULL )
-	{
-		/* 1st is null so the list is empty right now */
-        hDbc->hFirstStmt		= (*phStmt);
-        hDbc->hLastStmt			= (*phStmt);
-	}
-	else
-	{
-		/* at least one node in list */
-		hDbc->hLastStmt->pNext	= (SQLPOINTER)(*phStmt);
-		(*phStmt)->pPrev		= (SQLPOINTER)hDbc->hLastStmt;
-        hDbc->hLastStmt			= (*phStmt);
-	}
-
-/****************************************************************************/
-/* ALLOCATE AND INIT DRIVER EXTRAS HERE 									*/
-    (*phStmt)->hStmtExtras = malloc(sizeof(STMTEXTRAS));
-	memset( (*phStmt)->hStmtExtras, 0, sizeof(STMTEXTRAS) ); /* SAFETY */
-    (*phStmt)->hStmtExtras->aResults	= NULL;
-	(*phStmt)->hStmtExtras->nCols		= 0;
-	(*phStmt)->hStmtExtras->nRow		= 0;
-	(*phStmt)->hStmtExtras->nRows		= 0;
-/****************************************************************************/
-
-    logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_INFO, LOG_INFO, "SQL_SUCCESS" );
-
-    return SQL_SUCCESS;
+	/* use mapping as described in ODBC 3 SDK Help file */
+	return SQLAllocHandle(SQL_HANDLE_STMT, (SQLHANDLE)hDbc, (SQLHANDLE *)phStmt);
 }
-
-SQLRETURN SQLAllocStmt(	SQLHDBC    hDrvDbc,
-				SQLHSTMT    *phDrvStmt )
-{
-  return _AllocStmt( hDrvDbc, phDrvStmt );
-}
-

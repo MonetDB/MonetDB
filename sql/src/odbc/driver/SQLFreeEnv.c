@@ -1,50 +1,38 @@
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is the Monet Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
+
 /**********************************************************************
- * SQLFreeEnv
- *
- * Do not try to Free Env if there are Dbcs... return an error. Let the
- * Driver Manager do a recursive clean up if it wants.
- *
- **********************************************************************
- *
- * This code was created by Peter Harvey (mostly during Christmas 98/99).
- * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
- * - Peter Harvey pharvey@codebydesign.com
- *
+ * SQLFreeEnv()
+ * CLI Compliance: deprecated in ODBC 3.0 (replaced by SQLFreeHandle())
+ * Provided here for old (pre ODBC 3.0) applications and driver managers.
  **********************************************************************/
 
-#include "driver.h"
+#include "ODBCGlobal.h"
 
-SQLRETURN _FreeEnv( SQLHENV hDrvEnv )
+SQLRETURN SQLFreeEnv(SQLHENV hDrvEnv)
 {
-	HDRVENV hEnv	= (HDRVENV)hDrvEnv;
-
-	/* SANITY CHECKS */
-    if( hEnv == SQL_NULL_HENV )
-        return SQL_INVALID_HANDLE;
-
-	sprintf( hEnv->szSqlMsg, "hEnv = $%08lX", hEnv );
-    logPushMsg( hEnv->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hEnv->szSqlMsg );
-
-	if ( hEnv->hFirstDbc != NULL )
-	{
-		logPushMsg( hEnv->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR There are allocated Connections" );
-		return SQL_ERROR;
-	}
-
-/************
- * 	!!! ADD CODE TO FREE DRIVER SPECIFIC MEMORY (hidden in hEnvExtras) HERE !!!
- ************/
-    free( hEnv->hEnvExtras );
-	logPushMsg( hEnv->hLog, __FILE__, __FILE__, __LINE__, LOG_INFO, LOG_INFO, "SQL_SUCCESS" );
-	logClose( hEnv->hLog );
-    free( hEnv );
-
-	return SQL_SUCCESS;
+	/* use mapping as described in ODBC 3 SDK Help file */
+	return SQLFreeHandle(SQL_HANDLE_ENV, (SQLHANDLE)hDrvEnv);
 }
-
-SQLRETURN SQLFreeEnv( SQLHENV hDrvEnv )
-{
-  return  _FreeEnv( hDrvEnv );
-}
-

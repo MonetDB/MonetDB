@@ -1,149 +1,196 @@
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is the Monet Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
+
 /**********************************************************************
- * SQLConnect
+ * SQLConnect()
+ * CLI Compliance: ISO 92
  *
- **********************************************************************
- *
- * This code was created by Peter Harvey (mostly during Christmas 98/99).
- * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
- * - Peter Harvey pharvey@codebydesign.com
+ * Author: Martin van Dinther
+ * Date  : 30 aug 2002
  *
  **********************************************************************/
 
-#include "driver.h"
+#include "ODBCGlobal.h"
+#include "ODBCDbc.h"
+#include "ODBCUtil.h"
 
-
-SQLRETURN SQLConnect(	SQLHDBC        hDrvDbc,
-						SQLCHAR        *szDataSource,
-						SQLSMALLINT    nDataSourceLength,
-						SQLCHAR        *szUID,
-						SQLSMALLINT    nUIDLength,
-						SQLCHAR        *szPWD,
-						SQLSMALLINT    nPWDLength
-                          )
+SQLRETURN SQLConnect(
+	SQLHDBC		hDbc,
+	SQLCHAR *	szDataSource,
+	SQLSMALLINT	nDataSourceLength,
+	SQLCHAR *	szUID,
+	SQLSMALLINT	nUIDLength,
+	SQLCHAR *	szPWD,
+	SQLSMALLINT	nPWDLength )
 {
-	char buf[BUFSIZ];
-	int i, debug = 0, fd = 0;
-	stream *ws = NULL;
-	HDRVDBC 	hDbc	= (HDRVDBC)hDrvDbc;
-    char    	szDATABASE[INI_MAX_PROPERTY_VALUE+1];
-    char    	szUSER[INI_MAX_PROPERTY_VALUE+1];
-    char    	szPASSWD[INI_MAX_PROPERTY_VALUE+1];
-    char    	szHOST[INI_MAX_PROPERTY_VALUE+1];
-    char    	szPORT[INI_MAX_PROPERTY_VALUE+1];
-    char    	szFLAG[INI_MAX_PROPERTY_VALUE+1];
-    context *lc;
+	ODBCDbc * dbc = (ODBCDbc *) hDbc;
+	SQLRETURN rc = SQL_SUCCESS;
+	char * dsn = NULL;
+	char * uid = NULL;
+	char * pwd = NULL;
+	char * database = NULL;
+	char * host = NULL;
+	int port = 0;
+	int debug = 0;
+	char buf[BUFSIZ + 1];
+	char ODBC_INI[] = "ODBC.INI";
+	int socket_fd = 0;
 
-    /* SANITY CHECKS */
-    if( SQL_NULL_HDBC == hDbc )
+
+	if (! isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
 
-	sprintf( hDbc->szSqlMsg, "hDbc=$%08lX 3zDataSource=(%s)", (long)hDbc, szDataSource );
-	logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hDbc->szSqlMsg );
+	clearDbcErrors(dbc);
 
-    if( hDbc->bConnected == 1 )
-    {
-		logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR Already connected" );
-        return SQL_ERROR;
-    }
-
-    if ( nDataSourceLength == SQL_NTS )
-    {
-        if ( strlen( szDataSource ) > ODBC_FILENAME_MAX+INI_MAX_OBJECT_NAME )
-        {
-            logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR Given Data Source is too long. I consider it suspect." );
-            return SQL_ERROR;
-        }
-    }
-    else
-    {
-        if ( nDataSourceLength > ODBC_FILENAME_MAX+INI_MAX_OBJECT_NAME )
-        {
-            logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, "SQL_ERROR Given Data Source is too long. I consider it suspect." );
-            return SQL_ERROR;
-        }
-    }
-
-    /********************
-     * gather and use any required DSN properties
-	 * - DATABASE
-	 * - HOST (localhost assumed if not supplied)
-     ********************/
-    szDATABASE[0] 		= '\0';
-    szUSER[0] 			= '\0';
-    szPASSWD[0] 		= '\0';
-    szHOST[0] 			= '\0';
-    szPORT[0] 			= '\0';
-    szFLAG[0] 			= '\0';
-	SQLGetPrivateProfileString( szDataSource, "DATABASE", "", szDATABASE, sizeof(szDATABASE), "odbc.ini" );
-	if ( szDATABASE[0] == '\0' )
-	{
-		sprintf( hDbc->szSqlMsg, "SQL_ERROR Could not find Driver entry for %s in system information", szDataSource );
-		logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hDbc->szSqlMsg );
+	/* check connection state, should not be connected */
+	if (dbc->Connected == 1) {
+		/* 08002 = Connection already in use */
+		addDbcError(dbc, "08002", NULL, 0);
 		return SQL_ERROR;
 	}
-	SQLGetPrivateProfileString( szDataSource, "USER", "monetdb", szUSER, sizeof(szUSER), "odbc.ini" );
-	SQLGetPrivateProfileString( szDataSource, "PASSWORD", "", szPASSWD, sizeof(szPASSWD), "odbc.ini" );
-	SQLGetPrivateProfileString( szDataSource, "HOST", "localhost", szHOST, sizeof(szHOST), "odbc.ini" );
-	SQLGetPrivateProfileString( szDataSource, "PORT", "0", szPORT, sizeof(szPORT), "odbc.ini" );
-	SQLGetPrivateProfileString( szDataSource, "FLAG", "0", szFLAG, sizeof(szFLAG), "odbc.ini" );
-	
+	assert(dbc->Connected == 0);
 
-    /********************
-     * 1. initialise structures
-     * 2. try connection with database using your native calls
-     * 3. store your server handle in the extras somewhere
-     * 4. set connection state
-     *      hDbc->bConnected = TRUE;
-     ********************/
 
-	/*
-    mtrace();
-    */
-
-	debug = atoi(szFLAG);
-
-	fd = client( szHOST, atoi(szPORT) );
-	hDbc->hDbcExtras->fd = fd;
-	hDbc->hDbcExtras->cursorinfo = SQL_FD_FETCH_NEXT;
-	hDbc->hDbcExtras->rs = block_stream(
-				socket_rstream( fd, "sql client read"));
-	ws = block_stream( socket_wstream( fd, "sql client write")); 
-	lc = &hDbc->hDbcExtras->lc;
-
-	i = snprintf(buf, BUFSIZ, "info(\"%s\", %d, %d);\n", szUSER, debug, 1);
-	ws->write( ws, buf, i, 1 );
-	ws->flush( ws );
-
-	i = snprintf(buf, BUFSIZ, "milsql();\n" );
-	ws->write( ws, buf, i, 1 );
-	ws->flush( ws );
-
-	i = snprintf(buf, BUFSIZ, "myc := mvc_create(%d);\n", debug );
-	ws->write( ws, buf, i, 1 );
-	ws->flush( ws );
-
-	i = snprintf(buf, BUFSIZ, "mvc_login(myc, \"%s\",\"%s\",\"%s\");\n",
-				szDATABASE, szUSER, szPASSWD );
-	ws->write( ws, buf, i, 1 );
-	ws->flush( ws );
-
-	memset(lc, 0, sizeof(context));
-	sql_init_context( lc, ws, debug, default_catalog_create() );
-	catalog_create_stream( hDbc->hDbcExtras->rs, lc );
-
-	lc->cat->cc_getschemas( lc->cat, szDATABASE, "monetdb" );
-
-	if (hDbc->hDbcExtras->rs->errnr || lc->out->errnr){
-		printf("sockets not opened correctly\n");
-		exit(1);
+	/* convert input string parameters to normal null terminated C strings */
+	dsn = copyODBCstr2Cstr(szDataSource, nDataSourceLength);
+	if (dsn == NULL) {
+		/* IM002 = Datasource not found */
+		addDbcError(dbc, "IM002", NULL, 0);
+		return SQL_ERROR;
 	}
 
-    hDbc->bConnected = TRUE;
+	uid = copyODBCstr2Cstr(szUID, nUIDLength);
+	if (uid == NULL) {
+		SQLGetPrivateProfileString(dsn, "UID", "", buf, BUFSIZ, ODBC_INI);
+		uid = GDKstrdup(buf);
+	}
+	pwd = copyODBCstr2Cstr(szPWD, nPWDLength);
+	if (uid == NULL) {
+		SQLGetPrivateProfileString(dsn, "PWD", "", buf, BUFSIZ, ODBC_INI);
+		pwd = GDKstrdup(buf);
+	}
 
-    logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_INFO, LOG_INFO, "SQL_SUCCESS" );
+	/* get the other information from the ODBC.INI file */
+	SQLGetPrivateProfileString(dsn, "DATABASE", "", buf, BUFSIZ, ODBC_INI);
+	database = GDKstrdup(buf);
+	SQLGetPrivateProfileString(dsn, "HOST", "localhost", buf, BUFSIZ, ODBC_INI);
+	host = GDKstrdup(buf);
+	SQLGetPrivateProfileString(dsn, "PORT", "0", buf, BUFSIZ, ODBC_INI);
+	port = atoi(buf);
+	SQLGetPrivateProfileString(dsn, "FLAG", "0", buf, BUFSIZ, ODBC_INI);
+	debug = atoi(buf);
 
-    return SQL_SUCCESS;
+
+	/* Retrieved and checked the arguments.
+	   Now try to open a connection with the server */
+	/* connect to a server on host via port */
+	socket_fd = client(host, port);
+	if (socket_fd > 0) {
+		stream * rs = NULL;
+		stream * ws = NULL;
+		context * lc = NULL;
+		int chars_printed;
+
+		rs = block_stream(socket_rstream(socket_fd, "sql client read"));
+		ws = block_stream(socket_wstream(socket_fd, "sql client write"));
+
+		chars_printed = snprintf(buf, BUFSIZ, "info(\"%s\", %d, %d);\n", uid, debug, 1);
+		ws->write(ws, buf, chars_printed, 1);
+		ws->flush(ws);
+
+		chars_printed = snprintf(buf, BUFSIZ, "milsql();\n");
+		ws->write(ws, buf, chars_printed, 1);
+		ws->flush(ws);
+
+		chars_printed = snprintf(buf, BUFSIZ, "myc := mvc_create(%d);\n", debug);
+		ws->write(ws, buf, chars_printed, 1);
+		ws->flush(ws);
+
+		chars_printed = snprintf(buf, BUFSIZ, "mvc_login(myc, \"%s\",\"%s\",\"%s\");\n", database, uid, pwd);
+		ws->write(ws, buf, chars_printed, 1);
+		ws->flush(ws);
+
+		lc = &dbc->Mlc;
+		memset(lc, 0, sizeof(context));
+		sql_init_context(lc, ws, debug, default_catalog_create());
+		catalog_create_stream(rs, lc);
+		lc->cat->cc_getschema(lc->cat, database, "default-user");
+		if (dbc->Mrs->errnr || lc->out->errnr){
+			/* 08001 = Client unable to establish connection */
+			addDbcError(dbc, "08001", "sockets not opened correctly", 0);
+			rc = SQL_ERROR;
+		} else {
+			/* all went ok, store the connection info */
+			dbc->socket = socket_fd;
+			dbc->Mrs = rs;
+			dbc->Connected = 1;
+		}
+	} else {
+		/* 08001 = Client unable to establish connection */
+		addDbcError(dbc, "08001", NULL, 0);
+		rc = SQL_ERROR;
+	}
+
+	/* store internal information and clean up buffers */
+	if (dbc->Connected == 1) {
+		if (dbc->DSN != NULL) {
+			GDKfree(dbc->DSN);
+			dbc->DSN = NULL;
+		}
+		dbc->DSN = dsn;
+		if (dbc->UID != NULL) {
+			GDKfree(dbc->UID);
+			dbc->UID = NULL;
+		}
+		dbc->UID = uid;
+		if (dbc->PWD != NULL) {
+			GDKfree(dbc->PWD);
+			dbc->PWD = NULL;
+		}
+		dbc->PWD = pwd;
+		if (dbc->DBNAME != NULL) {
+			GDKfree(dbc->DBNAME);
+			dbc->DBNAME = NULL;
+		}
+		dbc->DBNAME = database;
+
+	} else {
+		if (uid != NULL) {
+			GDKfree(uid);
+		}
+		if (pwd != NULL) {
+			GDKfree(pwd);
+		}
+		if (database != NULL) {
+			GDKfree(database);
+		}
+	}
+	/* free allocated but not stored strings */
+	if (host != NULL) {
+		GDKfree(host);
+	}
+
+	return rc;
 }
-
-

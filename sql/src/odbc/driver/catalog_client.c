@@ -1,3 +1,27 @@
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is the Monet Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
+ * All Rights Reserved.
+ *
+ * Contributor(s):
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
+ * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+ */
 
 #include "catalog.h"
 #include "statement.h"
@@ -28,7 +52,7 @@ static char *readblock( stream *s ){
 
 	while ((len = s->read(s, start, 1, BLOCK)) == BLOCK){
 		size += BLOCK;
-		buf = RENEW_ARRAY(char, buf, size); 
+		buf = RENEW_ARRAY(char, buf, size);
 		start = buf + size - BLOCK - 1;
 		*start = '\0';
 	}
@@ -41,16 +65,16 @@ static void send_gettypes( catalog *cat ){
 	char buf[BUFSIZ];
 	cc *i = (cc*)cat->cc;
 
-	sprintf(buf, "types_export(Output);\n" ); 
+	sprintf(buf, "types_export(Output);\n" );
 	i->out->write(i->out, buf, strlen(buf), 1);
 	i->out->flush(i->out);
 }
 
-static void send_getschemas( catalog *cat ){
+static void send_getschema( catalog *cat ){
 	char buf[BUFSIZ];
 	cc *i = (cc*)cat->cc;
 
-	sprintf(buf, "mvc_export_schemas(myc, Output);\n");
+	sprintf(buf, "mvc_export_schema(myc, Output);\n");
 	i->out->write(i->out, buf, strlen(buf), 1);
 	i->out->flush(i->out);
 }
@@ -66,21 +90,24 @@ void gettypes( catalog *c ){
 	buf = readblock(s);
 	n = start = buf;
 
-	tcnt = strtol(n,&n,10); 
+	tcnt = strtol(n,&n,10);
 	for(i=0;i<tcnt;i++){
-	    char *sqlname, *name;
+	    char *sqlname, *name, *cast;
 
 	    n = strchr(start = n+1, ','); *n = '\0';
 	    sqlname = start;
 
-	    n = strchr(start = n+1, '\n'); *n = '\0';
+	    n = strchr(start = n+1, ','); *n = '\0';
 	    name = start;
 
-	    sql_create_type( sqlname, name );
+	    n = strchr(start = n+1, '\n'); *n = '\0';
+	    cast = start;
+
+	    sql_create_type( sqlname, name, cast );
 	}
 	/* TODO load proper type cast table */
 
-	tcnt = strtol(n+1,&n,10); 
+	tcnt = strtol(n+1,&n,10);
 	for(i=0;i<tcnt;i++){
 	    char *tname, *imp, *intype, *result;
 
@@ -99,7 +126,7 @@ void gettypes( catalog *c ){
 	    sql_create_aggr( tname, imp, intype, result );
 	}
 
-	tcnt = strtol(n+1,&n,10); 
+	tcnt = strtol(n+1,&n,10);
 	for(i=0;i<tcnt;i++){
 	    char *tname, *imp, *tpe1, *tpe2, *tpe3, *res;
 
@@ -126,14 +153,25 @@ void gettypes( catalog *c ){
 	_DELETE(buf);
 }
 
-char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
+void getschema( catalog *c, char *schema, char *user ){
 	list *keys = list_create(NULL);
+	stream *s = ((cc*)c->cc)->in;
+	context *lc = ((cc*)c->cc)->lc;
 	int i, tcnt;
-	char *start, *n;
+	char *buf, *start, *n;
 
+	send_getschema(c);
+
+	buf = readblock(s);
 	n = start = buf;
 
-	tcnt = strtol(n,&n,10); 
+	if (c->schemas) list_destroy( c->schemas );
+	c->schemas = list_create((fdestroy)&cat_drop_schema);
+
+	c->cur_schema = cat_create_schema( c, 0, schema, user );
+	list_append( c->schemas, c->cur_schema );
+
+	tcnt = strtol(n,&n,10);
 	for(i=0;i<tcnt;i++){
 	    long id;
 	    char *tname;
@@ -157,76 +195,68 @@ char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
 
 	    if (cnr){
 		int j;
-	    	table *t = 
-		       cat_create_table( c, id, schema, tname, 0, NULL);
+		table *t =
+		       cat_create_table( c, id, c->cur_schema, tname, 0, NULL);
 
 		for(j=0;j<cnr;j++){
-            		long id = 0;
-	    		char *cname, *ctype, *def;
-	    		int nll, ts, td;
-			sql_subtype *type;
+			long id = 0;
+			char *cname, *ctype, *def;
+			int nll;
 
-		    	n = strchr(start = n+1, ','); *n = '\0';
-	    		id = strtol(start, (char**)NULL, 10);
+			n = strchr(start = n+1, ','); *n = '\0';
+			id = strtol(start, (char**)NULL, 10);
 
-	    		n = strchr(start = n+1, ','); *n = '\0';
-	    		cname = start;
+			n = strchr(start = n+1, ','); *n = '\0';
+			cname = start;
 
-	    		n = strchr(start = n+1, ','); *n = '\0';
-	    		ctype = start;
+			n = strchr(start = n+1, ','); *n = '\0';
+			ctype = start;
 
-	    		n = strchr(start = n+1, ','); *n = '\0';
-	    		ts = atoi(start);
+			n = strchr(start = n+1, ','); *n = '\0';
+			def = start;
 
-	    		n = strchr(start = n+1, ','); *n = '\0';
-	    		td = atoi(start);
+			n = strchr(start = n+1, '\n'); *n = '\0';
+			nll = atoi(start);
 
-	    		n = strchr(start = n+1, ','); *n = '\0';
-	    		def = start;
-
-	    		n = strchr(start = n+1, '\n'); *n = '\0';
-	    		nll = atoi(start);
-
-			type = new_subtype( ctype, ts, td);
-	    		cat_create_column( c, id, t, cname, type, def, nll );
+			cat_create_column( c, id, t, cname, ctype, def, nll );
 		}
 	        if (knr){ /* keys */
 		    int j;
 		    for(j=0;j<knr;j++){
 			node *m = NULL;
 			key *k = NULL;
-            		long id = 0, rkid;
+			long id = 0, rkid;
 			int ci, type = 0, cnr = 0;
 
-		    	n = strchr(start = n+1, ','); *n = '\0';
-	    		id = strtol(start, (char**)NULL, 10);
+			n = strchr(start = n+1, ','); *n = '\0';
+			id = strtol(start, (char**)NULL, 10);
 
-		    	n = strchr(start = n+1, ','); *n = '\0';
-	    		type = atoi(start);
+			n = strchr(start = n+1, ','); *n = '\0';
+			type = atoi(start);
 
-		    	n = strchr(start = n+1, ','); *n = '\0';
-	    		cnr = atoi(start);
+			n = strchr(start = n+1, ','); *n = '\0';
+			cnr = atoi(start);
 
-	    		n = strchr(start = n+1, '\n'); *n = '\0';
-	    		rkid = strtol(start, (char**)NULL, 10);
+			n = strchr(start = n+1, '\n'); *n = '\0';
+			rkid = strtol(start, (char**)NULL, 10);
 
 			if (rkid)
 				m = list_find(keys, &rkid, (fcmp)&key_cmp);
 
 			if (m){
-	    			k = cat_table_add_key( t, type, m->data);
-	  			list_remove_node( keys, m); 
+				k = cat_table_add_key( t, type, m->data);
+				list_remove_node( keys, m);
 			} else {
-	    			k = cat_table_add_key( t, type, NULL);
+				k = cat_table_add_key( t, type, NULL);
 				list_append( keys, k);
 			}
 			k->id = id;
 			for(ci = 0; ci<cnr; ci++){
 				char *colname;
 				column *col;
-		    		n = strchr(start = n+1, '\n'); *n = '\0';
-	    			colname = start;
-				
+				n = strchr(start = n+1, '\n'); *n = '\0';
+				colname = start;
+
 				col = cat_bind_column(c, t, colname);
 				assert(col);
 				cat_key_add_column( k, col);
@@ -235,43 +265,9 @@ char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
 	        }
 
 	    } else {
-	    	sqlexecute(lc, query );
+		sqlexecute(lc, query );
 	    }
 	}
-	list_destroy(keys);
-	return n+1;
-}
-
-void getschemas( catalog *c, char *cur_schema_name, char *user ){
-	stream *s = ((cc*)c->cc)->in;
-	context *lc = ((cc*)c->cc)->lc;
-	int i, tcnt;
-	char *buf, *start, *n;
-
-	send_getschemas(c);
-
-	buf = readblock(s);
-	n = start = buf;
-
-	if (c->schemas) list_destroy( c->schemas );
-	c->schemas = list_create((fdestroy)&cat_drop_schema);
-
-	tcnt = strtol(n,&n,10); 
-	n++;
-	for(i=0;i<tcnt;i++){
-		char *name;
-		schema *sch = NULL;
-
-	    	n = strchr(start = n, '\n'); *n = '\0';
-		name = start;
-
-		sch = cat_create_schema( c, 0, name, user );
-		c->cur_schema = sch;
-
-		list_append( c->schemas, sch );
-		n = getschema(c, lc, sch, n+1);
-	}
-	c->cur_schema = cat_bind_schema(c, cur_schema_name);
 	_DELETE(buf);
 }
 
@@ -285,12 +281,12 @@ static void cc_destroy( catalog *c ){
 catalog *catalog_create_stream( stream *in, context *lc ){
 	cc *CC = NEW(cc);
 	catalog *c = lc->cat;
-	
+
 	CC->in = in;
 	CC->out = lc->out;
 	CC->lc = lc;
 	c->cc = (char*)CC;
-	c->cc_getschemas = &getschemas;
+	c->cc_getschema = &getschema;
 	c->cc_destroy = &cc_destroy;
 
 	types_init( lc->debug );
