@@ -153,7 +153,7 @@ only.
 	obj->stk = newGlobalStack(MAXVARS);
 @-
 @c
-#include "mal_objectspace.h"
+#include "mal_box.h"
 
 #define MAXSPACES 64	/* >MAXCLIENTS !! */
 OBJspace objSpace[MAXSPACES];
