@@ -143,6 +143,12 @@ void bm_destroy( bm *bm )
 	BUN p,q;
 	BAT *b = bm->bat_bid;
 
+	/* destroy the deleted */
+	for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)){
+		bat bid = *(oid*)BUNtail(b,p);
+		BBPtransient(bid,FALSE);
+	}
+	/* free resources */
 	BATloop(b, p, q){
 		bat bid = *(oid*)BUNtail(b,p);
 		BBPtransient(bid,FALSE);
@@ -318,7 +324,7 @@ void bm_abort( bm * bm, int tid )
 		BBPtransient(bid, FALSE);
 	}
 	b = bm->bat_version;
-	BATloop(b, p, q){
+	for (p = BUNfirst(b); p < b->batInserted; p = BUNnext(b, p)){ 
 	    	int version = *(int*)BUNtail(b,p);
 	    	if (tid == version){
 	    		oid id = *(oid*)BUNhead(b,p);
@@ -396,19 +402,11 @@ void bm_new_bat(bm *bm, oid lbid, oid bid )
 	int mode = BM_WRITE;
 	oid vid = bm_lbid2vid(bm, lbid);
 	bat obid = *(oid*)BUNtail(bm->bat_bid, BUNfnd(bm->bat_bid, &vid));
-	/* should be done by bm_commit/bm_abort 
-	BBPtransient(obid, FALSE);
-	*/
+	/* no BBPtransient(obid, FALSE); here as this needs to be done 
+	 *  by the bm_{commit,abort,destroy} */
 	BBPpersistent(bid, FALSE);
 	BUNreplace(bm->bat_bid, (ptr)&vid, &bid);
 	BUNreplace(bm->bat_mode, (ptr)&vid, &mode);
-
-	{
-	char *name = bm_lbid2name(bm, lbid);
-	int version = bm_lbid2version(bm, lbid);
-//	bat_rename(obid, name, version, BM_READ);
-//	bat_rename(bid, name, version, BM_WRITE);
-	}
 }
 
 oid bm_add_bat(bm *bm, oid bid, char *name, int version)
@@ -419,10 +417,8 @@ oid bm_add_bat(bm *bm, oid bid, char *name, int version)
 		bm_add_bat_intern(bm, lbid, bid, name, version, BM_WRITE);
 		bat_rename(bid, name, version, BM_WRITE);
 	} else {
-/*	if (lbid > bm->lbid){*/
 		bm_new_bat(bm, lbid, bid);
 		bm_new_version(bm, lbid, version);
-		/*bm->lbid = lbid+1;*/
 	}
 	if (version > bm->version)
 		bm->version = version;
@@ -440,7 +436,7 @@ void bm_del_bat(bm *bm, oid lbid)
 	if (bm->bat_oversion)
 		BUNdelHead(bm->bat_oversion, &vid);
 	/* no BBPtransient(bid, FALSE); here as this needs to be done 
-	 *  by the bm_{commit,abort} */
+	 *  by the bm_{commit,abort,destroy} */
 }
 
 oid bm_find_bat(bm* bm, char *name)

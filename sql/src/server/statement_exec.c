@@ -830,13 +830,17 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_append: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r = stmt_dump( s->op2.stval, nr, sql );
+		/*
 		if (s->op2.stval->nrcols){
+		*/
 			len = snprintf( buf, BUFSIZ, 
 		  	"s%d := append(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
+		/*
 		} else {
 			len = snprintf( buf, BUFSIZ, 
 		  	"s%d := append(s%d,s%d);\n", -s->nr, l, r);
 		}
+		*/
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_replace: {

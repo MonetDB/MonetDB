@@ -2994,14 +2994,14 @@ void mvc_drop_column(mvc * m, sql_table *t, char *name)
 	col->wtime = t->wtime = tr->wtime = tr->stime;
 }
 
-sql_column * mvc_null(mvc * m, sql_column * col, int flag)
+sql_column * mvc_null(mvc * m, sql_column * col, int isnull)
 {
 	sql_trans *tr = m->trans;
 
 	if (m->debug)
-		fprintf(stderr, "mvc_null %s %d\n", col->name, flag);
+		fprintf(stderr, "mvc_null %s %d\n", col->name, isnull);
 
-	if (col->null != flag){
+	if (col->null != isnull){
 		sql_table *syscolumn = find_table(find_schema(tr, "sys"), "columns");
 		BAT *b, *r;
 		oid rid = 0;
@@ -3012,15 +3012,15 @@ sql_column * mvc_null(mvc * m, sql_column * col, int flag)
 		rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & col->id ));
 		BBPunfix(b->batCacheid);
 		b = bind_bat(tr, find_column(syscolumn, "null"), 1);
-		bun_inplace(b, rid, &flag); 
+		bun_inplace(b, rid, &isnull); 
 		BBPunfix(b->batCacheid);
 
 		if (col->flag != TR_NEW) {
 			b = bind_ubat(tr, find_column(syscolumn, "null"), 1);
-			BUNins(b, (ptr) & rid, (ptr) & flag); 
+			BUNins(b, (ptr) & rid, (ptr) & isnull); 
 			BBPunfix(b->batCacheid);
 		}
-		col->flag = flag;
+		col->null = isnull;
 		col->wtime = tr->wtime = tr->stime;
 	}
 
