@@ -1024,7 +1024,7 @@ ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s )
 	ASCIIdestroy_format( &as );
 	if (res >= 0)
 		return as.nr;
-	return -1;
+	return ~(size_t)0;
 }
 
 int init_ascii_io(int *debug){
