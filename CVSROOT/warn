@@ -30,12 +30,14 @@ pathfinder/conf/conf.bash
 EOF
     then
 	cat <<EOF
+
 WARNING:
 
 The file "$dir/$f" should be kept identical in
 MonetDB, template, sql, pathfinder,  xml, pruning, playpen, times100, misq, gis, acoi, monet5!
 
 (If necessary, please contact Stefan.Manegold@cwi.nl for details.)
+
 EOF
     fi
 done
