@@ -1540,13 +1540,18 @@ ssize_t bs_read_next( stream *ss, void *buf, int *last )
 
 	*last = 0;
 	if (s->itotal > s->nr ){
-		size_t rest = s->itotal - s->nr;
+		size_t rest = BLOCK;
+		if ((s->itotal-s->nr) < BLOCK)
+			rest = s->itotal - s->nr;
 		memcpy( buf, s->buf + s->nr, rest );
+		s->nr += rest;
 
-		*last = (s->itotal != BLOCK);
-		s->nr = 0;
-		s->itotal = 0;
-		s->eob = 0;
+		*last = (s->itotal == s->nr);
+		if (*last){
+			s->nr = 0;
+			s->itotal = 0;
+			s->eob = 0;
+		}
 		return rest;
 	} else {
 		if (!stream_readInt( s->s, &nr) ||
