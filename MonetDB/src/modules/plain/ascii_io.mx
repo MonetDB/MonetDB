@@ -325,7 +325,6 @@ int check_BATs( ascii *as ){
 	if (!BAThdense(fmt[0].c)) return -1;
 
 	for (i=0; i<as->nr_attrs; i++){
-		BAT *b = fmt[i].c;
 		if (BATcount(fmt[i].c) != cnt ||
 		    fmt[i].c->hseqbase != base)
 			return -1;
@@ -397,7 +396,7 @@ void insert_val( ascii_io *fmt, char *s, char *e ){
 	BUNins(fmt->c,&int_nil,adt);
 	c1 = BATcount(fmt->c);
 	if (c1 != c+1)
-		printf("%d not inserted %s\n", (int)adt, s);
+		printf("%ld not inserted %s\n", (long)adt, s);
 	GDKfree(adt);
 }
 
@@ -664,7 +663,6 @@ static
 int output_file_dense( ascii *as, stream *fd ){
 	int len = BUFSIZ; 
 	char *buf = GDKmalloc(len);
-	BUN p,q;
         int i = 0;
 	
 	for(i=0; i<as->nr; i++){
