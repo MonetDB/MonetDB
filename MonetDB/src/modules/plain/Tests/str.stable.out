@@ -118,6 +118,51 @@ substitute("A.B.C",".","\\.",false).print;
 substitute("A.B.C",".","\\.",true).print;
 [ "A\\.B\\.C" ]
 
+#unicode tests
+var i := 0;
+while((i :+= 1) < 65535) {
+  var t := unicode(i) + "je";
+  var s := "test" + t;
+  var u := s + " ";
+  var v := " " + s;
+  if (s.chrAt(3) != 't') printf("bug1 in chrAt at %d (=%d)\n", i, int(s.chrAt(i)));
+  if (s.chrAt(5) != 'j') printf("bug2 in chrAt at %d (=%d)\n", i, int(s.chrAt(i)));
+  if (i < 256) {
+    if (isnil(s.chrAt(4))) {
+      printf("char %d is nil\n", i);
+    } else if (s.chrAt(4) != chr(i)) {
+      printf("bug3 in chrAt at %d (=%d)\n", i, int(s.chrAt(4)));
+    }
+  } else {
+    if (not(isnil(s.chrAt(4)))) printf("bug4 in chrAt at %d (=%d)\n", i, int(s.chrAt(i)));
+    if (s.search('j') != 5) printf("bug in s.searchChr at %d (=%d)\n", i, s.search('j'));
+    if (s.r_search('t') != 3) printf("bug in s.r_searchChr at %d (=%d)\n", i, s.r_search('t'));
+  }
+  if (s.unicodeAt(4) != i) printf("bug in unicodeAt at %d (=%d)\n", i, s.unicodeAt(4));
+  if (s.length() != 7) printf("bug in length at %d (=%d)\n", i, s.length);
+  if (s.toUpper.toLower != s.toLower) printf("nonreversible toUpper/toLower at %d\n", i);
+  if (s.toLower.toUpper != s.toUpper) printf("nonreversible toLower/toUpper at %d\n", i);
+  if (s.search(t) != 4) printf("bug1 in s.search at %d (=%d)\n", i, s.search(t));
+  if (s.search("je") != 5) printf("bug2 in s.search at %d (=%d)\n", i, s.search("je"));
+  if (s.r_search(t) != 4) printf("bug1 in s.r_search at %d (=%d)\n", i, s.r_search(t));
+  if (s.r_search("je") != 5) printf("bug2 in s.r_search at %d (=%d)\n", i, s.r_search("je"));
+  if (s.string(4) != t) printf("bug1 in stringtail at %d (=%s)\n", i, s.string(4));
+  if (s.string(5) != "je") printf("bug2 in stringtail at %d (=%s)\n", i, s.string(5));
+  if (s.string(4,3) != t) printf("bug1 in substring at %d (=%s)\n", i, s.string(4,2));
+  if (s.string(5,2) != "je") printf("bug2 in substring at %d (=%s)\n", i, s.string(5,2));
+  if (v.ltrim != s) printf("bug in ltrim at %d (=%s)\n", i, u.ltrim);
+  if (u.rtrim != s) printf("bug in rtrim at %d (=%s)\n", i, v.ltrim);
+  if (not(startsWith(u,s))) printf("bug in startsWith at %d\n", i);
+  if (not(endsWith(v,s))) printf("bug in endsWith at %d\n", i);
+}
+char 128 is nil
+nonreversible toLower/toUpper at 304
+nonreversible toLower/toUpper at 453
+nonreversible toLower/toUpper at 456
+nonreversible toLower/toUpper at 459
+nonreversible toLower/toUpper at 498
+nonreversible toLower/toUpper at 8486
+nonreversible toLower/toUpper at 8490
 quit;
 
 # 17:05:16 >  
