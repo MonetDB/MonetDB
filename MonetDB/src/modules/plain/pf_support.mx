@@ -167,8 +167,8 @@ int CMDmerged_union(BAT** res, BAT *L, BAT *R, ...){
 	BUN cur[MAXPARAMS], lst[MAXPARAMS], dst[MAXPARAMS>>1], DST;
 	int bs[MAXPARAMS], bns[MAXPARAMS>>1], BS;
 	int nbats = 2, npairs = 1, i, j, k, any;
-	chr *w;
-	size_t sze, h;
+	chr *w = NULL;
+	size_t sze = 0, h = 0;
 	va_list ap;
 	
 	*res = NULL;
@@ -223,12 +223,14 @@ int CMDmerged_union(BAT** res, BAT *L, BAT *R, ...){
 	sze = BATcount(b[0]) + BATcount(b[1]);
 	BN = BATnew(TYPE_void, TYPE_bat, npairs);
 	if (BN == NULL) {
+		GDKerror("merged_union: BATnew(TYPE_void, TYPE_bat, %d) failed.\n", npairs);
 		return GDK_FAIL;
 	}
 	for (k=0; k<npairs; k++) {
 		i = k<<1;
 		bn[k] = BATnew(TYPE_void, (b[i]->ttype!=TYPE_void)?b[i]->ttype:TYPE_oid, sze);
 		if (bn[k] == NULL) {
+			GDKerror("merged_union: BATnew(TYPE_void, %s, " SZFMT ") failed.\n", (b[i]->ttype!=TYPE_void)?"TYPE_void":"TYPE_oid", sze);
 			while (k>0) {
 				BBPreclaim(bn[--k]);
 			}
@@ -236,9 +238,12 @@ int CMDmerged_union(BAT** res, BAT *L, BAT *R, ...){
 			return GDK_FAIL;
 		}
 	}
-	w = (chr*)GDKmalloc(sze);
-	if (w == NULL) {
-		goto bunins_failed;
+	if (sze > 0) {
+		w = (chr*)GDKmalloc(sze);
+		if (w == NULL) {
+			GDKerror("merged_union: GDKmalloc(" SZFMT ") failed.\n", sze);
+			goto bunins_failed;
+		}
 	}
 
 	/* do the merged_union */
