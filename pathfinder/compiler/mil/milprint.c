@@ -96,6 +96,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
 #include "milprint.h"
 
@@ -805,6 +806,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
 
     /* generates a number for the row where a value can be found 
        for a lookup in values */
+    /* FIXME: change it into insert in keyed bat and lookup */
     static unsigned int str_count = 0;
     static unsigned int int_count = 0;
     static unsigned int dbl_count = 0;
@@ -814,7 +816,9 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     /* start 'seq_level' from a level where no name conflict can occur */
     static unsigned int seq_level = 10;
 
+/* different kind types */
 #define NODE 'n'
+#define ATTR 'a'
 #define BOOL 'b'
 #define INT 'i'
 #define DBL 'd'
@@ -825,37 +829,66 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     init (void)
     {
         printf("# init ()\n");
+        /* pathfinder functions (scj, doc handling) are made visible */
         printf("module(\"pathfinder\");\n");
 
         /* for debugging purposes "foo.xml" is loaded */
         printf("doc_to_working_set(\"foo.xml\");\n");
+        printf("var TattrID_attr := Tattr_own.mark(0@0).reverse;\n");
+        printf("var TattrID_pre := Tattr_own.reverse.mark(0@0).reverse;\n");
 
+        /* the first loop is initialized */
         printf("var loop000 := bat(void,oid).seqbase(0@0);\n");
         printf("loop000.insert(0@0, 1@0);\n");
+        /* variable environment vars */
         printf("var v_vid000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
         printf("var v_iter000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
         printf("var v_pos000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
         printf("var v_item000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
         printf("var v_kind000 := bat(void,chr).access(BAT_APPEND).seqbase(0@0);\n");
+
+        /* variable binding for loop-lifting of the empty sequence */
         printf("var empty_bat := bat(void,oid);\n");
+
+        /* working variables */
         printf("var temp;");
         printf("var temp2;");
         printf("var temp3;");
+
+        /* variables for (intermediate) results */
         printf("var vid;");
         printf("var iter;");
         printf("var pos;");
         printf("var item;");
         printf("var kind;");
 
+        /* variables for the (iterative) scj */
         printf("var pruned_input;");
         printf("var ctx_dn;");
         printf("var offset;");
     }
 
     static void
+    deleteTemp (void)
+    {
+        printf("# deleteTemp ()\n");
+        printf("temp := nil;\n");
+        printf("temp2 := nil;\n");
+        printf("temp3 := nil;\n");
+    }
+                                                                                                                                                        
+    /**
+     * the variables iter, pos, item, kind are used to
+     * create an human readable output (iter|pos|item),
+     * by converting the underlying value of item|kind
+     * into a string
+     */
+    static void
     print_output (void)
     {
         printf("# print_output ()\n");
+        /* the values of the different kinds are combined
+           by inserting the converted bats into 'temp' */
         printf("temp := bat(oid, str);\n");
 
         printf("temp2 := kind.select('%c');\n", STR);
@@ -865,8 +898,27 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
 
         printf("temp2 := kind.select('%c');\n", NODE);
         printf("temp2 := temp2.mirror.join(item);\n");
-        printf("temp2 := [str](temp2);\n");
-        printf("temp.insert(temp2);\n");
+        printf("temp3 := [str](temp2);\n");
+        printf("temp3 := temp3.[+](\" (node) name: \");\n");
+        printf("temp3 := temp3.[+](temp2.join(Tpre_prop).join(Tprop_loc));\n");
+        printf("temp3 := temp3.[+](\"; size: \");\n");
+        printf("temp3 := temp3.[+](temp2.join(Tpre_size));\n");
+        printf("temp3 := temp3.[+](\"; level: \");\n");
+        printf("temp3 := temp3.[+]([int](temp2.join(Tpre_level)));\n");
+        printf("temp.insert(temp3);\n");
+
+        printf("temp2 := kind.select('%c');\n", ATTR);
+        printf("temp2 := temp2.mirror.join(item);\n");
+        printf("temp3 := [str](temp2);\n");
+        printf("temp3 := temp3.[+](\" (attr) owned by: \");\n");
+        printf("temp3 := temp3.[+](temp2.join(TattrID_pre));\n");
+        printf("temp3 := temp3.[+](\"; \");\n");
+        printf("temp2 := temp2.join(TattrID_attr);\n");
+        printf("temp3 := temp3.[+](temp2.join(Tattr_loc));\n");
+        printf("temp3 := temp3.[+](\"='\");\n");
+        printf("temp3 := temp3.[+](temp2.join(Tattr_val));\n");
+        printf("temp3 := temp3.[+](\"'\");\n");
+        printf("temp.insert(temp3);\n");
 
         printf("temp2 := kind.select('%c');\n", INT);
         printf("temp2 := temp2.mirror.join(item);\n");
@@ -891,8 +943,7 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("print (temp);\n");
         */
         printf("print (iter, pos, temp);\n");
-        printf("temp := nil;\n");
-        printf("temp2 := nil;\n");
+        deleteTemp ();
     }
 
     static void
@@ -906,15 +957,6 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     }
 
     static void
-    deleteTemp (void)
-    {
-        printf("# deleteTemp ()\n");
-        printf("temp := nil;\n");
-        printf("temp2 := nil;\n");
-        printf("temp3 := nil;\n");
-    }
-                                                                                                                                                        
-    static void
     cleanUpLevel (void)
     {
         printf("# cleanUpLevel ()\n");
@@ -926,6 +968,9 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         deleteTemp ();
     }
                                                                                                                                                         
+    /**
+     * lookup a variable in the variable environment
+     */
     static void
     translateVar (PFcnode_t *c)
     {
@@ -940,6 +985,10 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
         printf("vid := nil;\n");
     }
 
+    /**
+     * save the first argument of the sequence
+     * until the second argument is completed
+     */
     static void
     saveSeqResult (int i)
     {
@@ -953,20 +1002,51 @@ PFmilprint (FILE *stream, PFarray_t * milprg)
     static void
     translateSeq (int i)
     {
+        /* translation follows exactly the description in the XQuery for SQL Hosts paper */
         printf("# translateSeq (seq_level)\n");
-printf("iter2 := iter;pos2 := pos;item2 := item;kind2 := kind;iter1 := iter%03u;pos1 := pos%03u;item1 := item%03u;kind1 := kind%03u;\
-ord1 := iter1.project(1@0);ord2 := iter2.project(2@0);temp := count(iter1);temp := oid(temp);\
-iter1 := iter1.reverse;iter1 := iter1.mark(0@0);iter1 := iter1.reverse;iter2 := iter2.reverse;iter2 := iter2.mark(0@0);iter2 := iter2.reverse;iter2 := iter2.seqbase(temp);iter1.access(BAT_APPEND);iter1.insert(iter2);iter1.access(BAT_READ);\
-ord1 := ord1.reverse;ord1 := ord1.mark(0@0);ord1 := ord1.reverse;ord2 := ord2.reverse;ord2 := ord2.mark(0@0);ord2 := ord2.reverse;ord2 := ord2.seqbase(temp);ord1.access(BAT_APPEND);ord1.insert(ord2);ord1.access(BAT_READ);\
-pos1 := pos1.reverse;pos1 := pos1.mark(0@0);pos1 := pos1.reverse;pos2 := pos2.reverse;pos2 := pos2.mark(0@0);pos2 := pos2.reverse;pos2 := pos2.seqbase(temp);pos1.access(BAT_APPEND);pos1.insert(pos2);pos1.access(BAT_READ);\
-item1 := item1.reverse;item1 := item1.mark(0@0);item1 := item1.reverse;item2 := item2.reverse;item2 := item2.mark(0@0);item2 := item2.reverse;item2 := item2.seqbase(temp);item1.access(BAT_APPEND);item1.insert(item2);item1.access(BAT_READ);\
-kind1 := kind1.reverse;kind1 := kind1.mark(0@0);kind1 := kind1.reverse;kind2 := kind2.reverse;kind2 := kind2.mark(0@0);kind2 := kind2.reverse;kind2 := kind2.seqbase(temp);kind1.access(BAT_APPEND);kind1.insert(kind2);kind1.access(BAT_READ);\
-temp := iter1.reverse;temp := temp.sort;temp := temp.reverse;temp := temp.CTrefine(ord1);temp := temp.CTrefine(pos1);temp := temp.mark(0@0);temp := temp.reverse;\
-iter := temp.join(iter1);pos := temp.mark(1@0);item := temp.join(item1);kind := temp.join(kind1);\
-iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2 := nil;ord2 := nil;iter%03u := nil;pos%03u := nil;item%03u := nil;temp := nil;kind1 := nil; kind2 := nil; kind%03u := nil;\n", i, i, i, i, i, i, i, i);
 
+        /* bind the second argument of the sequence to xxx2 and the first argument to xxx1 */
+        printf("iter2 := iter; pos2 := pos; item2 := item; kind2 := kind;\n");
+        printf("iter1 := iter%03u; pos1 := pos%03u; item1 := item%03u; kind1 := kind%03u;\n", i, i, i, i);
+
+        /* add the ord column to the tables and save in temp the end of the first table */
+        printf("ord1 := iter1.project(1@0); ord2 := iter2.project(2@0); temp := count(iter1); temp := oid(temp);\n");
+
+        /* insertion of the second table in the first table (for all 5 columns) */
+        printf("iter1 := iter1.reverse.mark(0@0).reverse; iter2 := iter2.reverse.mark(0@0).reverse;");
+        printf("iter2 := iter2.seqbase(temp); iter1.access(BAT_APPEND); iter1.insert(iter2); iter1.access(BAT_READ);\n");
+
+        printf("ord1 := ord1.reverse.mark(0@0).reverse; ord2 := ord2.reverse.mark(0@0).reverse;");
+        printf("ord2 := ord2.seqbase(temp); ord1.access(BAT_APPEND); ord1.insert(ord2); ord1.access(BAT_READ);\n");
+
+        printf("pos1 := pos1.reverse.mark(0@0).reverse; pos2 := pos2.reverse.mark(0@0).reverse;");
+        printf("pos2 := pos2.seqbase(temp); pos1.access(BAT_APPEND); pos1.insert(pos2); pos1.access(BAT_READ);\n");
+
+        printf("item1 := item1.reverse.mark(0@0).reverse; item2 := item2.reverse.mark(0@0).reverse;");
+        printf("item2 := item2.seqbase(temp); item1.access(BAT_APPEND); item1.insert(item2); item1.access(BAT_READ);\n");
+
+        printf("kind1 := kind1.reverse.mark(0@0).reverse; kind2 := kind2.reverse.mark(0@0).reverse;");
+        printf("kind2 := kind2.seqbase(temp); kind1.access(BAT_APPEND); kind1.insert(kind2); kind1.access(BAT_READ);\n");
+
+        /* create a sorting (sort by iter, ord, pos) for the table */
+        printf("temp := iter1.reverse; temp := temp.sort; temp := temp.reverse;");
+        printf("temp := temp.CTrefine(ord1); temp := temp.CTrefine(pos1);");
+        printf("temp := temp.mark(0@0); temp := temp.reverse;\n");
+
+        /* map sorting to every column */
+        printf("iter := temp.join(iter1);");
+        printf("pos := temp.mark(1@0);");
+        printf("item := temp.join(item1);");
+        printf("kind := temp.join(kind1);\n");
+
+        /* clean up the temporary variables */
+        printf("iter1 := nil; pos1 := nil; item1 := nil; ord1 := nil; iter2 := nil; pos2 := nil; item2 := nil; ord2 := nil;");
+        printf("iter%03u := nil; pos%03u := nil; item%03u := nil; temp := nil; kind1 := nil; kind2 := nil; kind%03u := nil;\n", i, i, i, i);
     }
 
+    /**
+     * create the variables for the next for-scope
+     */
     static void
     project (void)
     {
@@ -978,6 +1058,9 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
         printf("loop%03u := inner%03u;\n", act_level, act_level);
     }
 
+    /**
+     * find the variables which are used in a deeper nesting 
+     */
     static void
     getExpanded (int fid)
     {
@@ -991,6 +1074,10 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
         printf("temp2 := nil;\n");
     }
 
+    /**
+     * create the expanded (inner_outer |X| iter) version of
+     * the mapping
+     */
     static void
     expand (void)
     {
@@ -1007,6 +1094,9 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
         printf("temp2 := temp2.join(temp);\n");
     }
 
+    /**
+     * map the columns to the next scope
+     */
     static void
     join (void)
     {
@@ -1057,20 +1147,28 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
         */
     }
 
+    /**
+     * map the result back to the next outer scope
+     */
     static void
     mapBack (void)
     {
         printf("# mapBack ()\n");
-        printf("temp := iter.mirror;\n");
-        printf("temp3 := inner%03u.reverse;\n", act_level);
-        printf("temp2 := iter.join(temp3);\n");
-        printf("iter := temp2.join(outer%03u);\n", act_level);
+        /* the iters are mapped back to the next outer scope */
+        printf("temp2 := inner%03u.reverse;\n", act_level);
+        printf("temp := iter.join(temp2);\n");
+        printf("iter := temp.join(outer%03u);\n", act_level);
+        /* FIXME: instead of mark the partitioned mark should be used */
         printf("pos := pos.mark(1@0);\n");
         printf("item := item;\n");
         printf("kind := kind;\n");
         deleteTemp ();
     }
 
+    /**
+     * appends the information of a variable to the 
+     * corresponding column of the variable environment
+     */
     static void
     append (char *name, int level)
     {
@@ -1084,29 +1182,21 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
         printf("temp := nil;\n");
     }
 
+    /**
+     * inserts a variable binding into the variable environment
+     * of the actual level (scope)
+     */
     static void
     insertVar (int vid)
     {
-        char *vid_str, *iter_str, *pos_str, *item_str, *kind_str;
-        vid_str = PFmalloc (sizeof("vid"));
-        snprintf (vid_str, sizeof("vid"), "vid");
-        iter_str = PFmalloc (sizeof("iter"));
-        snprintf (iter_str, sizeof("iter"), "iter");
-        pos_str = PFmalloc (sizeof("pos"));
-        snprintf (pos_str, sizeof("pos"), "pos");
-        item_str = PFmalloc (sizeof("item"));
-        snprintf (item_str, sizeof("item"), "item");
-        kind_str = PFmalloc (sizeof("kind"));
-        snprintf (kind_str, sizeof("kind"), "kind");
-
         printf("# insertVar (vid)\n");
         printf("vid := iter.project(%i@0);\n", vid);
 
-        append (vid_str, act_level);
-        append (iter_str, act_level);
-        append (pos_str, act_level);
-        append (item_str, act_level);
-        append (kind_str, act_level);
+        append ("vid", act_level);
+        append ("iter", act_level);
+        append ("pos", act_level);
+        append ("item", act_level);
+        append ("kind", act_level);
         printf("vid := nil;\n");
 
         /*
@@ -1115,6 +1205,9 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
         */
     }
 
+    /**
+     * loop-lifting of a Constant
+     */
     static void
     translateConst (int valueId, char kind)
     {
@@ -1126,62 +1219,114 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
         printf("kind := iter.project('%c');\n", kind);
     }
 
+    /**
+     * iterative loop-lifted staircasejoin
+     */
     static void
-    loop_lifted_scj_begin (char *axis)
+    loop_lifted_scj (char *axis, char *kind, char *ns, char *loc)
     {
-        printf("offset := 0;\n");
-        printf("temp := iter.reverse.sort.reverse.mark(0@0).reverse;\n");
-        printf("iter := temp.join(iter);\n");
-        printf("item := temp.join(item);\n");
-        printf("temp := {count}(iter.reverse, iter.tunique);\n");
-        printf("temp := temp.[-](1);\n");
-        printf("pruned_input := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
-        printf("ctx_dn := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
-        printf("temp@batloop ()\n");
-        printf("{\n");
-        printf("temp2 := item.slice(offset, offset + int($t)).reverse.sort;\n");
-        printf("temp2 := temp2.%s;\n", axis);
-    }
+        if (!strcmp (axis, "attribute"))
+        {
+                printf("temp := iter.reverse.join(item).unique;\n");
+                /* if unique destroys the order a sort is needed */
+                printf("temp := temp.sort;\n");
 
-    static void
-    tagnameTest (char *name, char *field)
-    {
-        printf("temp2 := temp2.mirror.join(Tpre_prop);\n");
-        printf("temp2 := temp2.join(Tprop_%s);\n", field);
-        printf("temp2 := temp2.[=](\"%s\").select(true);\n", name);
-    }
+                printf("temp2 := temp.reverse.mark(0@0).reverse;\n");
+                printf("temp := temp.mark(0@0);\n");
 
-    static void
-    kindTest (char *kind)
-    {
-        printf("temp2 := temp2.mirror.join(Tpre_kind);\n");
-        printf("temp2 := temp2.[=](%s).select(true);\n", kind);
-    }
+                printf("temp3 := TattrID_pre.reverse;\n");
+                printf("temp2 := temp2.join(temp3);\n");
+                
+                if (ns)
+                {
+                        printf("temp3 := temp2.join(TattrID_attr);\n");
+                        printf("temp3 := temp3.join(Tattr_ns);\n");
+                        printf("temp3 := temp3.[=](\"%s\").select(true);\n", ns);
+                        printf("temp3 := temp3.mirror;\n");
+                        printf("temp2 := temp3.join(temp2);\n");
+                }
+                if (loc)
+                {
+                        printf("temp3 := temp2.join(TattrID_attr);\n");
+                        printf("temp3 := temp3.join(Tattr_loc);\n");
+                        printf("temp3 := temp3.[=](\"%s\").select(true);\n", loc);
+                        printf("temp3 := temp3.mirror;\n");
+                        printf("temp2 := temp3.join(temp2);\n");
+                }
 
-    static void
-    loop_lifted_scj_end (void)
-    {
-        printf("temp3 := count (ctx_dn);\n");
-        printf("temp3 := oid (temp3);\n");
-        printf("temp2 := temp2.mark(temp3).reverse;\n");
-        printf("ctx_dn.insert(temp2);\n");
-
-        printf("temp2 := temp2.project($h);\n");
-        printf("pruned_input.insert(temp2);\n");
-
-        printf("offset := offset + $t + 1;\n");
-        printf("}\n");
-
-        printf("offset := nil;\n");
-        deleteTemp();
-        printf("ctx_dn.access(BAT_READ);\n");
-        printf("pruned_input.access(BAT_READ);\n");
+                printf("temp := temp.join(temp2);\n");
+                printf("pruned_input := temp.mark(0@0).reverse;\n");
+                printf("ctx_dn := temp.reverse.mark(0@0).reverse;\n");
+                deleteTemp();
+        }
+        else
+        {
+  
+                printf("offset := 0;\n");
+                printf("temp := iter.reverse.sort.reverse.mark(0@0).reverse;\n");
+                printf("iter := temp.join(iter);\n");
+                printf("item := temp.join(item);\n");
+         
+                /* create a bat containing the number of iter rows, with the
+                   iter as head value and the number of items (this iter has) in the tail */
+                printf("temp := {count}(iter.reverse, iter.tunique);\n");
+                printf("temp := temp.[-](1);\n");
+         
+                /* creates the two output tables, which are joined the result of the scj */
+                printf("pruned_input := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
+                printf("ctx_dn := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n");
+         
+                /* iterate over all iters */
+                printf("temp@batloop ()\n");
+                printf("{\n");
+                        printf("temp2 := item.slice(offset, offset + int($t)).reverse.sort;\n");
+                        printf("temp2 := temp2.%s;\n", axis);
+         
+                /* add kind and tagname test inline */        
+                if (kind) 
+                {
+                        printf("temp2 := temp2.mirror.join(Tpre_kind);\n");
+                        printf("temp2 := temp2.[=](%s).select(true);\n", kind);
+                }
+                if (ns)
+                {
+                        printf("temp2 := temp2.mirror.join(Tpre_prop);\n");
+                        printf("temp2 := temp2.join(Tprop_ns);\n");
+                        printf("temp2 := temp2.[=](\"%s\").select(true);\n", ns);
+                }
+                if (loc)
+                {
+                        printf("temp2 := temp2.mirror.join(Tpre_prop);\n");
+                        printf("temp2 := temp2.join(Tprop_loc);\n");
+                        printf("temp2 := temp2.[=](\"%s\").select(true);\n", loc);
+                }
+         
+                        printf("temp3 := count (ctx_dn);\n");
+                        printf("temp3 := oid (temp3);\n");
+                        printf("temp2 := temp2.mark(temp3).reverse;\n");
+                        printf("ctx_dn.insert(temp2);\n");
+         
+                        printf("temp2 := temp2.project($h);\n");
+                        printf("pruned_input.insert(temp2);\n");
+         
+                        printf("offset := offset + $t + 1;\n");
+                printf("}\n");
+         
+                printf("offset := nil;\n");
+                deleteTemp();
+                printf("ctx_dn.access(BAT_READ);\n");
+                printf("pruned_input.access(BAT_READ);\n");
+        }
     }
 
 
     static void
     translateLocsteps (PFcnode_t *c)
     {
+        char *ns, *loc;
+        char *axis = (char *) PFmalloc (sizeof ("descendant_or_self"));
+
+        /* make this path step only for nodes */
         printf("temp := kind.select('%c');\n", NODE);
         printf("temp := temp.mark(0@0).reverse;\n");
         printf("item := temp.join(item);\n");
@@ -1192,40 +1337,40 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
         switch (c->kind)
         {
                 case c_ancestor:
-                    loop_lifted_scj_begin ("ancestor");
+                    axis = "ancestor";
                     break;
                 case c_ancestor_or_self:
-                    loop_lifted_scj_begin ("ancestor_or_self");
+                    axis = "ancestor_or_self";
                     break;
                 case c_attribute:
-                    PFoops (OOPS_WARNING, "attribute axis is not yet supported");
+                    axis = "attribute";
                     break;
                 case c_child:
-                    loop_lifted_scj_begin ("child");
+                    axis = "child";
                     break;
                 case c_descendant:
-                    loop_lifted_scj_begin ("descendant");
+                    axis = "descendant";
                     break;
                 case c_descendant_or_self:
-                    loop_lifted_scj_begin ("descendant_or_self");
+                    axis = "descendant_or_self";
                     break;
                 case c_following:
-                    loop_lifted_scj_begin ("following");
+                    axis = "following";
                     break;
                 case c_following_sibling:
-                    loop_lifted_scj_begin ("following_sibling");
+                    axis = "following_sibling";
                     break;
                 case c_parent:
-                    loop_lifted_scj_begin ("parent");
+                    axis = "parent";
                     break;
                 case c_preceding:
-                    loop_lifted_scj_begin ("preceding");
+                    axis = "preceding";
                     break;
                 case c_preceding_sibling:
-                    loop_lifted_scj_begin ("preceding_sibling");
+                    axis = "preceding_sibling";
                     break;
                 case c_self:
-                    PFoops (OOPS_WARNING, "self axis is not yet supported");
+                    axis = "attribute";
                     break;
                 default:
                     PFoops (OOPS_FATAL, "illegal XPath axis in MIL-translation");
@@ -1234,43 +1379,46 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
         switch (c->child[0]->kind)
         {
                 case c_namet:
-                    if (!c->child[0]->sem.qname.ns.uri)
-                        tagnameTest (c->child[0]->sem.qname.loc, "loc");
-                    else if (!c->child[0]->sem.qname.loc)
-                        tagnameTest (c->child[0]->sem.qname.ns.uri, "ns");
-                    else
-                    {
-                        tagnameTest (c->child[0]->sem.qname.loc, "loc");
-                        tagnameTest (c->child[0]->sem.qname.ns.uri, "ns");
-                    }
+                    ns = c->child[0]->sem.qname.ns.uri;
+                    loc = c->child[0]->sem.qname.loc;
+
+                    /* translate wildcard '*' as 0 and missing ns as "" */
+                    if (!ns)
+                        ns = "";
+                    else if (!strcmp (ns,"*"))
+                        ns = 0;
+
+                    /* translate wildcard '*' as 0 */
+                    if (loc && (!strcmp(loc,"*")))
+                        loc = 0;
+
+                    loop_lifted_scj (axis, 0, ns, loc); 
                     break;
                 case c_kind_node:
+                    loop_lifted_scj (axis, 0, 0, 0);
                     break;
                 case c_kind_comment:
-                    kindTest ("COMMENT");
+                    loop_lifted_scj (axis, "COMMENT", 0, 0);
                     break;
                 case c_kind_text:
-                    kindTest ("TEXT");
+                    loop_lifted_scj (axis, "TEXT", 0, 0);
                     break;
                 case c_kind_pi:
-                    kindTest ("PI");
+                    loop_lifted_scj (axis, "PI", 0, 0);
                     break;
                 case c_kind_doc:
-                    kindTest ("DOCUMENT");
+                    loop_lifted_scj (axis, "DOCUMENT", 0, 0);
                     break;
                 case c_kind_elem:
-                    kindTest ("ELEMENT");
+                    loop_lifted_scj (axis, "ELEMENT", 0, 0);
                     break;
                 case c_kind_attr:
-                    PFoops (OOPS_WARNING, "attribute kind test is not yet supported");
-                    kindTest ("ATTRIBUTE");
+                    loop_lifted_scj (axis, "ATTRIBUTE", 0, 0);
                     break;
                 default:
                     PFoops (OOPS_FATAL, "illegal node test in MIL-translation");
                     break;
         }
-
-        loop_lifted_scj_end ();
 
         /* temp = iter|item bat */
         printf("temp := pruned_input.reverse.join(ctx_dn);\n");
@@ -1278,7 +1426,10 @@ iter1 := nil;pos1 := nil;item1 := nil;ord1 := nil;iter2 := nil;pos2 := nil;item2
         printf("iter := temp.mark(0@0).reverse;\n");
         printf("pos := temp.mark(0@0).reverse.mark(1@0);\n");
         printf("item := temp.reverse.mark(0@0).reverse;\n");
-        printf("kind := temp.mark(0@0).reverse.project('%c');\n", NODE);
+        if (!strcmp (axis, "attribute"))
+                printf("kind := temp.mark(0@0).reverse.project('%c');\n", ATTR);
+        else
+                printf("kind := temp.mark(0@0).reverse.project('%c');\n", NODE);
 
         printf("pruned_input := nil;");
         printf("ctx_dn := nil;");
