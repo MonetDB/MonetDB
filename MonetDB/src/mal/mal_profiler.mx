@@ -194,8 +194,12 @@ void infoHeapProfile(Heap *hp, str nme){
 }
 void HASHinfoProfile(Hash *h, str s){
 	char buf[MAXPATHLEN];
-	snprintf(buf,MAXPATHLEN,"%s=\"\" mask=\"%d\" lim=\"%d\"", 
-			s,h->mask,h->lim);
+	int i;
+	snprintf(buf,MAXPATHLEN,"%s=\"\" mask=\"", s);
+	i= strlen(buf);
+	snprintf(buf+i,MAXPATHLEN-i,"%d\" lim=\"", h->mask);
+	i= strlen(buf);
+	snprintf(buf+i,MAXPATHLEN-i,"%d\"", h->lim);
 	log0(buf);
 }
 void eventRecord(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

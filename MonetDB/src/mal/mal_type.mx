@@ -127,7 +127,7 @@ str malTypeName(malType tpe)
 			snprintf(buf,l,"bat[any::%d,", getHeadIndex(tpe));
 		} else
 		if( getHeadType(tpe) == malAnyType) 
-			snprintf(buf,l,"bat[any,");
+			snprintf(buf,l,"bat[any,","");
 		else
 			snprintf(buf,l,"bat[%s,", ATOMname(getHeadType(tpe)));
 		l -= strlen(buf);
@@ -136,7 +136,7 @@ str malTypeName(malType tpe)
 			snprintf(s,l,"any::%d]", getTailIndex(tpe));
 		} else
 		if( getTailType(tpe) == malAnyType) 
-			snprintf(s,l,"any]");
+			snprintf(s,l,"any]","");
 		else
 			snprintf(s,l,"%s]", ATOMname(getTailType(tpe)));
 #ifdef DEBUG_MAL_TYPE
@@ -265,8 +265,9 @@ int getGDKtype(int type){
 	return ATOMtype(type);
 }
 str newTmpName(int i){
-	char buf[PATHLENGTH];
-	snprintf(buf,PATHLENGTH,"%c%d",TMPMARKER,i);
+	char buf[PATHLENGTH],*s;
+	snprintf(buf,PATHLENGTH,"%c",TMPMARKER);
+	snprintf(buf+1,PATHLENGTH,"%d",i);
 	return GDKstrdup(buf);
 }
 int isIdentifier(str s)

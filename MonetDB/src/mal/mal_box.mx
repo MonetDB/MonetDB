@@ -435,12 +435,15 @@ For BAT objects, the corresponding object is made persistent.
 Note that the user can not control these operations directly.
 @c
 str boxFileName(Box box, str backup){
-	char boxfile[PATHLENGTH];
-	if(backup)
-		snprintf(boxfile,PATHLENGTH,"%s/boxes/%s/%s.box",
-			GDKdirStr,backup,box->name);
-	else	snprintf(boxfile,PATHLENGTH,"%s/boxes/%s.box",
-			GDKdirStr,box->name);
+	char boxfile[PATHLENGTH],*s;
+	int i= 0;
+	snprintf(boxfile,PATHLENGTH,"%s/boxes/",GDKdirStr);
+	i= strlen(boxfile);
+	if(backup) {
+		snprintf(boxfile+i,PATHLENGTH-i,"/%s/", backup);
+		i= strlen(boxfile);
+	}
+	snprintf(boxfile+i,PATHLENGTH-i,"%s.box", box->name);
 	return GDKstrdup(boxfile);
 }
 int saveBox(Box box,int flag){
@@ -515,7 +518,10 @@ Loading a box is equivalent to reading a script.
 @c
 void loadBox(str name){
 	char boxfile[PATHLENGTH];
-	snprintf(boxfile,PATHLENGTH,"%s/boxes/%s.box",GDKdirStr,name);
+	int i=0;
+	snprintf(boxfile,PATHLENGTH,"%s/boxes/",GDKdirStr);
+	i= strlen(boxfile);
+	snprintf(boxfile+i,PATHLENGTH-i,"%s.box",name);
 #ifdef DEBUG_MAL_BOX
 	printf("loadBox:start loading the file %s\n",boxfile);
 #endif

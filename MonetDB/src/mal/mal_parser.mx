@@ -394,8 +394,8 @@ int typeQualifier(Client cntxt)
 		if( (hd=idCopy(cntxt,idLength(cntxt))) ){
 			ht= getTypeIndex(hd);
 			if( hd) GDKfree(hd);
-			skipBlanc2(cntxt);
 			/* parse the array bound */
+			skipBlanc2(cntxt);
 			if( currChar(cntxt)=='['){
 				int cl,tpe,size;
 				str v;
@@ -556,6 +556,8 @@ the symbol table and stackframe contains the sequence
 f,a1..an,b1..bn. This slightly complicates the implementation
 of the return statement.
 
+Note, the function name could be mod.fcn, which calls for storing
+the function definition in a particular module instead of the current one.
 @= closingBracket
 	if( nextChar(cntxt) != ')') {
 		freeInstruction(curInstr);
@@ -564,29 +566,41 @@ of the return statement.
 @= fcnHeader
 	l = idLength(cntxt);
 	if( l == 0) l = operatorLength(cntxt);
-	if( l == 0) 
-	return (MalBlkPtr) parseError(cntxt,"<identifier> |<operator> expected\n");
+	if( l == 0) return (MalBlkPtr) parseError(cntxt,
+				"<identifier> |<operator> expected\n");
 
 	fnme = idCopy(cntxt,l);
+
+	if( currChar(cntxt) == '.'){
+		nextChar(cntxt);
+		modnme= fnme;
+		l= idLength(cntxt);
+		if( l == 0) l = operatorLength(cntxt);
+		if( l == 0) return (MalBlkPtr) parseError(cntxt,
+					"<identifier> |<operator> expected\n");
+		fnme = idCopy(cntxt,l);
+		parseError(cntxt,"module redirection nyi\n");
+	}
 	if( nextChar(cntxt) != '(') {
 		GDKfree(fnme);
-		return (MalBlkPtr)parseError(cntxt,"'(' expected\n");
+		return (MalBlkPtr)parseError(cntxt,
+			"function header '(' expected\n");
 	}
 	skipBlanc2(cntxt);
+	/* curPrg = cntxt->curprg;
+	curBlk = curPrg->def;
+	curInstr = getInstrPtr(curBlk,0); */
+
+	/* temporary suspend capturing statements in main block */
+	cntxt->backup = cntxt->curprg;
+	cntxt->curprg = newFunction(fnme);
+
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	curInstr = getInstrPtr(curBlk,0);
-
-	/* re-assign MAL block to new function */
-	GDKfree(curPrg->name);
-	curPrg->name = GDKstrdup(fnme);
-	GDKfree(curInstr->fcnname);
-	curInstr->token= FUNCTIONsymbol;
-	curInstr->fcnname = fnme;
-	GDKfree(getVarName(curBlk,0));
-	getVarName(curBlk,0) = GDKstrdup(fnme);
-	setVarType(curBlk,0,malAnyType);
-
+	if( curInstr->modname) GDKfree(curInstr->modname);
+	curInstr->modname = modnme== 0? GDKstrdup(cntxt->nspace->name):modnme;
+	/* insertSymbol(findScope(cntxt->nspace,modnme),curPrg);*/
 
 	/* get calling parameters */
 	ch= currChar(cntxt);
@@ -596,7 +610,7 @@ of the return statement.
 		pushArgument(curBlk,curInstr, newVariable(curBlk,arg,type));
 		skipBlanc2(cntxt);
 		/* the last argument may be variable length */
-		if( keyphrase2(cntxt,"[]") ){
+		if( keyphrase(cntxt,"...",3) ){
 			curInstr->varargs++;
 			break;
 		}
@@ -830,7 +844,7 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	Symbol curPrg = 0;
 	InstrPtr curInstr=0;
 	int l;
-	str fnme=0, arg=0;
+	str fnme=0, modnme=0, arg=0;
 	char ch;
 	int type;
 
@@ -842,6 +856,7 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	chkProgram(cntxt->nspace,curBlk);
 	resetClientPrg(cntxt);
 	/* closeClientPrg(cntxt, FALSE);*/
+	skipBlanc2(cntxt);
 	@:externalFcn@
 	@:helpInfo@
 	showErrors(cntxt);
@@ -855,7 +870,7 @@ MalBlkPtr parseFunction(Client cntxt){
 	Symbol curPrg = 0;
 	InstrPtr curInstr=0;
 	int l;
-	str fnme=0;
+	str fnme=0, modnme=0;
 	char ch;
 	int type, kind= FUNCTIONsymbol;
 

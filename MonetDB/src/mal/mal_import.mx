@@ -73,13 +73,17 @@ FILE *malOpenSource(str fname){
                 fd = fopen(path, "r");
             } else {
 	    /* try to locate the file in the module store */
-                snprintf(path,PATHLENGTH, "%s/modules/%s.mal",GDKdirStr, fname);
+		int i=0;
+                snprintf(path,PATHLENGTH, "%s/mal/",GDKdirStr);
+		i= strlen(path);
+                snprintf(path+i,PATHLENGTH-i, "%s.mal",fname);
 		slash_2_dir_sep(path);
                 fd = fopen(path, "r");
 		if( fd==NULL){
 		/* try to locate the file in the distribution location */
-			snprintf(path,PATHLENGTH,
-				"%s/src/modules/%s.mal",GDKdistrStr, fname);
+			snprintf(path,PATHLENGTH, "%s/src/modules/",GDKdistrStr);
+			i= strlen(path);
+			snprintf(path+i,PATHLENGTH-i, "%s.mal",fname);
 			slash_2_dir_sep(path);
                 	fd = fopen(path, "r");
 		}
@@ -142,7 +146,7 @@ resolving addresses.
 	expandMalBlk(c->curprg->def,lines);
 	c->nxt= c->input;
 	if( parseMal(c)) {
-		/* catch errors*/
+		/* catched errors*/
 		showErrors(c);
 		goto endImport;
 	}

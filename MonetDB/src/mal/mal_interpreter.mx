@@ -66,7 +66,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env){
 	MalStkPtr stk= NULL;
 	int i,k;
 	ValPtr retval, lhs,rhs,v;
-	InstrPtr pci=0; 
+	InstrPtr pci=0, altpci=0; 
 	int stop=0;
 	str ret=0;
 	ptr argv[MAXARG];
@@ -176,6 +176,7 @@ MALrestart:
 		@:MALinterpret@
 	}
 MALevalExit:
+	@:garbageTypeCheck@
 	/* pass the debug mode */
 	if(env && stk->cmd!='f') env->cmd = stk->cmd; 
 	/* garbage collect and return */
@@ -270,6 +271,7 @@ elements in the value stack.
 		@:endProfile@
 		goto MALevalExit;
 	}
+	@:garbageTypeCheck@
 	@:endProfile@
 
 @+ Assignment command
@@ -532,8 +534,12 @@ in which it can be handled.
 
 @= exceptionTest
 if( pci->typechk== TYPE_UNKNOWN){
-	ret= raiseException(mb,stk->pc,"MALexception",
-			    "Instruction type not fixed\n");
+	@:dynamicTypeCheck@
+	if( pci->typechk== TYPE_UNKNOWN) {
+		@:garbageTypeCheck@
+		ret= raiseException(mb,stk->pc,"MALexception",
+				    "Instruction type not fixed\n");
+	}
 	@:endProfile@
 	goto MALevalExit;
 	@:exceptionHndlr@
@@ -600,6 +606,32 @@ if( ret != (str) GDK_SUCCEED && ret != NULL){
 }
 @-
 @+ Dynamic type
+During execution we may end up with functions that require
+a dynamic type check, because their arguments may not have
+been known upon compile time.
+This requires an additional call to the typechecker, each time
+the instruction is encoutered. Moreover, we may not store the
+type information in the program description, because the
+actual types may differ between calls.
+@= dynamicTypeCheck
+	altpci= pci;
+	printf("Start dynamic type check on:\n");
+	printInstruction(stdout, mb, altpci);
+	pci = copyInstruction(pci);
+	typeChecker(getClient()->nspace, mb,pci,TYPE_FIXED);
+	printf("type checked version:\n");
+	printInstruction(stdout, mb, pci);
+@-
+After the instruction has been executed we should
+throw away the temporary copy. Taking care of any
+substructure introduced.
+@= garbageTypeCheck
+	if( altpci){
+		freeInstruction(pci);
+		pci= altpci;
+	}
+	altpci=0;
+@-
 During instruction interpretation we may have to be
 assured that the type associated with a destination variable
 is in line with the result of an operation or exceoption.

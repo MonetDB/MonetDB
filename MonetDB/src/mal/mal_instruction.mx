@@ -615,7 +615,7 @@ MAL interpretation.
 #define MAL_VAR_WINDOW	2*MAXARG
 
 int newConstant(MalBlkPtr mb, malType type, str val){
-	int i,k,idx;
+	int i,k,idx,parsetype=type;
 	str s;
 	ValPtr vr;
 	int tonil= FALSE;
@@ -647,7 +647,10 @@ has been given at the language level. A Warning is issued
 to make the user aware of this situation.
 @c
 	tonil= strcmp(val,"nil")==0;
-	switch( type){
+	 switch( BATatoms[type].storage){
+retryConstant:
+/*
+	switch( parsetype){ */
 	case TYPE_void: VALset(vr,TYPE_void,ATOMnilptr(TYPE_void));break;
 	case TYPE_bit: { int x;
 			 x= val[0]=='t' || val[0]=='T';
@@ -665,18 +668,19 @@ to make the user aware of this situation.
 			if( tonil) vr->val.cval[0] = chr_nil; 
 			break;
 	case TYPE_sht: {long l= strtol(val,NULL,0);
+			vr->vtype = type;
 			if( tonil){ 
-				vr->vtype= TYPE_int;
+				if(type== TYPE_sht) vr->vtype= TYPE_int;
 				vr->val.ival = sht_nil;
 			} else
 			if( l>255 || l<0) {
 				if( l<2^31 && l> -2^31){
-				GDKerror("WARNING:newConstant:sht coerced to int\n");
-				vr->vtype= TYPE_int;
+				GDKwarning("newConstant:sht coerced to int\n");
+				if(type== TYPE_sht) vr->vtype= TYPE_int;
 				vr->val.ival = l;
 				} else{
-				GDKerror("WARNING:newConstant:sht coerced to lng\n");
-				vr->vtype= TYPE_lng;
+				GDKwarning("newConstant:sht coerced to lng\n");
+				if(type== TYPE_sht) vr->vtype= TYPE_lng;
 				vr->val.lval = l;
 				}
 			} else {
@@ -685,16 +689,17 @@ to make the user aware of this situation.
 			}
 			break; }
 	case TYPE_int: {long l= strtol(val,NULL,0);
+			vr->vtype = type;
 			if( tonil){ 
-				vr->vtype= TYPE_int;
+				if(type==TYPE_int) vr->vtype= TYPE_int;
 				vr->val.ival = int_nil;
 			} else
 			if( l>= (1<<15) || l <= (-1<<15)){
-			GDKerror("WARNING:newConstant:int coerced to lng\n");
-				vr->vtype= TYPE_lng;
+			GDKwarning("newConstant:int coerced to lng\n");
+				if(type==TYPE_int) vr->vtype= TYPE_lng;
 				vr->val.lval= l;
 			} else {
-				vr->vtype= TYPE_int;
+				if(type==TYPE_int) vr->vtype= TYPE_int;
 				vr->val.ival= l;
 			}
 			break;}
@@ -704,25 +709,31 @@ to make the user aware of this situation.
 				int site= val[strlen(val)-1]-'0';
 				vr->val.oval= l | (site <<SERVERBITS);
 			}
-			vr->vtype= TYPE_oid;
+			vr->vtype= type;
 			break; }
 	case TYPE_flt: {double d= strtod(val,NULL); 
 			if( tonil) vr->val.fval = flt_nil; 
 			else vr->val.fval= d;
-			vr->vtype= TYPE_flt;
+			vr->vtype= type;
 			break; }
 	case TYPE_dbl: {double d= strtod(val,NULL);
 			if( tonil) vr->val.dval = dbl_nil; 
 			else vr->val.fval= d;
-			vr->vtype= TYPE_dbl;
+			vr->vtype= type;
 			break;}
 	case TYPE_lng: {long l= strtol(val,NULL,0);
 			if( tonil) vr->val.lval = lng_nil; 
 			else vr->val.lval= l;
-			vr->vtype= TYPE_lng;
+			vr->vtype= type;
 			break; }
 	case TYPE_str: 
-			vr->vtype= TYPE_str;
+			vr->vtype= type;
+			if( type != TYPE_str){
+				/* an extern type */
+				ptr *p = (ptr *) &vr->val.ival;
+				(*BATatoms[type].atomFromStr)(val, &vr->len, p);
+				break;
+			}
 			if( tonil) vr->val.sval = GDKstrdup(str_nil);
 			else vr->val.sval= (str) GDKstrdup(val);
 			vr->len= strlen((str) val);
@@ -730,10 +741,17 @@ to make the user aware of this situation.
 @-
 Extended types are always represented as string literals
 and converted to the internal storage structure.
+Beware that the typeFromStr routines generate storage space
+for the new value. This should be garbage collected at the
+end.
 @c
 	default:{ 
 		ptr *p = (ptr *) &vr->val.ival;
-		/* printf("extended type storage %s\n", ATOMname(tp)); */
+
+		if( parsetype != BATatoms[parsetype].storage){
+			parsetype = BATatoms[type].storage;
+			goto retryConstant;
+		}
 		if( BATatoms[type].atomFromStr== 0) {
 		s= malTypeName(type);
 		GDKerror("newConstant:no string coercion for '%s'\n", s);
@@ -742,7 +760,7 @@ and converted to the internal storage structure.
 		}
 #ifdef STRUCT_ALIGNED
 		vr->vtype= type;
-		(*BATatoms[type].atomFromStr)(val, &vr->len, (ptr*) p);
+		(*BATatoms[type].atomFromStr)(val, &vr->len, p);
 #else
 		GDKerror("newConstants:missing implementation\n");
 #endif
@@ -962,7 +980,7 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
 	sprintf(t,"%s(",p->fcnname);
 	for(i=p->retc;i<p->argc;i++){ @:showParam(argc)@ }
 	advance(t);
-	if( p->varargs) sprintf(t,"[]");
+	if( p->varargs) sprintf(t,"...");
 	advance(t);
 	if( p->retc ==1){
 		tpe= malTypeName(getArgType(mb,p,0));

@@ -141,6 +141,7 @@ to keep track of critical elements.
 	Scope		nspace;
 	Box		ospace;
 	Symbol		curprg;		/* focus of parser */
+	Symbol		backup;		/* save parsing context */
 } *Client, ClientRec;
 
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
@@ -267,7 +268,7 @@ collect the buffer when in use.
 	c->blkmode= c->fdin==stdin?0: MAPIBLKSIZE;
 	
 	c->nspace = 0;
-	c->curprg = 0;
+	c->curprg = c->backup = 0;
 
 	c->father = NULL;
 	c->login = time(0); c->delay= TIMEOUT;
@@ -576,7 +577,7 @@ submission. This avoids a significant number of network interactions.
 		@:sysTrace(buf)@
 		GDKerror(buf);
 		/* mimick end of session */
-		snprintf(s,MAPIBLKSIZE,"quit;");
+		snprintf(s,MAPIBLKSIZE,"quit;","");
 		return 1;
 	} 
 	if( c->blkmode==0 && fgets(s,bytes,c->fdin) == NULL){

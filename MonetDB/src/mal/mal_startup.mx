@@ -65,11 +65,16 @@ position is being returned as the namespace entry point for the client.
 void startupPrelude(Client c, str fnme1, str fnme2)
 {	char buf[PATHLENGTH];
 	FILE *fd;
+	int i;
 
-	snprintf(buf,PATHLENGTH,"%s/%s",GDKdirStr,fnme1);
+	snprintf(buf,PATHLENGTH,"%s/",GDKdirStr);
+	i= strlen(buf);
+	snprintf(buf+i,PATHLENGTH-i,"%s",fnme1);
 	SLASH_2_DIR_SEP(buf);
 	if( (fd= fopen(buf,"r")) == NULL){
-		snprintf(buf,PATHLENGTH,"%s/%s",GDKdistrStr,fnme2);
+		snprintf(buf,PATHLENGTH,"%s/",GDKdistrStr);
+		i= strlen(buf);
+		snprintf(buf+i,PATHLENGTH-i,"%s",fnme2);
 		SLASH_2_DIR_SEP(buf);
 		if( (fd= fopen(buf,"r")) == NULL){
 			GDKerror("FATAL:server file '%s' missing\n",fnme2);
@@ -87,6 +92,7 @@ int malStartupAdmin(int listing){
 	initLibraries();
 	startupPrelude(c,SRVINIT,SRVORIGIN);
 	mal_scope = c->nspace->outer;
+	showErrors();
 	/* showScopeTrail(stdout,c->nspace);*/
 	return 1;
 }
@@ -142,7 +148,11 @@ void closeClientPrg(Client cntxt, int flag){
 	}
 	trimMalBlk(mb);
 	chkProgram(cntxt->nspace, cntxt->curprg->def);
-	resetClientPrg(cntxt);
+	showErrors(cntxt);
+	if( cntxt->backup){
+		cntxt->curprg = cntxt->backup;
+		cntxt->backup = 0;
+	} else resetClientPrg(cntxt);
 }
 @+ Client authorization
 The default method to interact with the database server is to

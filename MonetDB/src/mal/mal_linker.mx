@@ -165,11 +165,21 @@ void *loadModuleLibrary(str modname){
 	printf("load module:path=%s, library=%s\n",library,modname);
 #endif
 	if( modname[0]!='/') {
-		snprintf(buf,MAXPATHLEN,
-			"%s/lib/lib_%s.so", GDKdirStr, library);
+		int i;
+		snprintf(buf,MAXPATHLEN, "%s/lib/lib_", GDKdirStr);
+		i= strlen(buf);
+		snprintf(buf+i,MAXPATHLEN-i, "%s.so", library);
+
 		slash_2_dir_sep(buf);
+#ifdef DEBUG_MAL_LINKER
+		printf("access:%s %s\n",buf,
+				access(buf,R_OK)?"failed":"succeeded");
+#endif
 		if( access(buf,R_OK)== 0) {
 			handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
+#ifdef DEBUG_MAL_LINKER
+			printf("load:%s:%s\n",buf,handle==NULL?"failed":"succeeded");
+#endif
 			msg =dlerror();
 			if(handle!= NULL && msg != NULL){
 				GDKerror("loadModuleLibrary(1):%s\n",msg);
@@ -178,20 +188,27 @@ void *loadModuleLibrary(str modname){
 			return handle;
 		}
 	} 
-	snprintf(buf,MAXPATHLEN,
-		"%s/%s/lib_%s.so", GDKdistrStr, LIBPATH, library);
+	snprintf(buf,MAXPATHLEN, "%s/", GDKdistrStr);
+	i= strlen(buf);
+	snprintf(buf+i,MAXPATHLEN-i, "%s/", LIBPATH);
+	i= strlen(buf);
+	snprintf(buf+i,MAXPATHLEN-i, "lib_%s.so", library);
 	slash_2_dir_sep(buf);
+#ifdef DEBUG_MAL_LINKER
+		printf("access:%s %s\n",buf,
+				access(buf,R_OK)?"failed":"succeeded");
+#endif
 	if( access(buf,R_OK) == 0) {
 		handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
+#ifdef DEBUG_MAL_LINKER
+		printf("attempt to load:%s\n",buf,handle==NULL?"failed":"succeeded");
+#endif
 		msg= dlerror();
 		if( handle==NULL && msg != NULL){
 			GDKerror("loadModuleLibrary(2):%s\n", msg);
 			return NULL;
 		}
 	}
-#ifdef DEBUG_MAL_LINKER
-	printf("load:%s:%s\n",buf,handle==NULL?"failed":"succeeded");
-#endif
         MT_set_lock(mal_contextLock, "loadModule");
 	for(i=0;modulesLoaded[i] && i<127;i++);
 	if( i==128)
