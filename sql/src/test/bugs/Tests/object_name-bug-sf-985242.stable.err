@@ -1,4 +1,4 @@
-stderr of test 'bug-sf-985242` in directory 'src/test/bugs` itself:
+stderr of test 'object_name-bug-sf-985242` in directory 'src/test/bugs` itself:
 
 
 # 14:52:46 >  
@@ -53,7 +53,7 @@ stderr of test 'bug-sf-985242` in directory 'src/test/bugs` itself:
 # cmdline opt 	gdk_dbname = mTests_src_test_bugs
 
 # 14:52:48 >  
-# 14:52:48 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=54903  < bug-sf-985242.sql
+# 14:52:48 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=54903  < object_name-bug-sf-985242.sql
 # 14:52:48 >  
 
 MAPI  = monetdb@titan03:54423
