@@ -328,6 +328,10 @@ allocated arena gets to be large, BATs may be swapped out.
 "Give a logical name to the columns of a BAT.
  Returns the BAT itself."
 
+.COMMAND col_name ( BAT[any,any] , str s) : BAT[any,any] = CMDcol_name;
+"Give a logical name to tail column of a BAT.
+ Returns the BAT itself."
+
 .COMMAND persists( BAT[any::1,any::2], bit mode) : BAT[any::1,any::2] = CMDpersists;
 "Make the BAT persistent (mode = TRUE), transient (mode = FALSE).
  or session (mode = bit(nil)). Returns the BAT itself."
@@ -1440,10 +1444,28 @@ CMDroles(BAT **r, BAT *b, str hname, str tname)
 }
 
 int
+CMDcol_name(BAT **r, BAT *b, str tname)
+{
+	BATcol_name(*r = b, tname);
+	BBPfix(b->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int
 CMDrename(bit *retval, BAT *b, str s)
 {
-	int ret = BATname(b, s);
+	int ret;
+	int c;
+	char *t = s;
 
+	for ( ; (c = *t) != 0; t++) {
+		if (c != '_' && !GDKisalnum(c)) {
+			GDKerror("CMDrename: identifier expected: %s\n", s);
+			return GDK_FAIL;
+		}
+	}
+
+ 	ret = BATname(b, s);
 	*retval = FALSE;
 	if (ret == 1) {
 		GDKerror("CMDrename: identifier expected: %s\n", s);

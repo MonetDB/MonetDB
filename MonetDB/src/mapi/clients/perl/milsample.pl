@@ -33,7 +33,7 @@ print "\nstart simple Monet MIL interaction\n";
  # Connect to the database.
   my $dbh = DBI->connect("dbi:monetdb:database=test;host=localhost;port=50000;language=mil",
                          "joe", "joe's password",
-                         {'PrintError' =>1, 'RaiseError' => 1});
+    { PrintError => 0, RaiseError => 1 });
 
   my $sth;
   $sth= $dbh->prepare("print(2);\n");
@@ -46,14 +46,11 @@ print "\nstart simple Monet MIL interaction\n";
   my @row= $sth->fetchrow_array();
   print "field[0]:".$row[0]."size:".$#row."\n";
 
-   $sth= $dbh->prepare("( xyz 1);\n");
-   $sth->execute() ;#||  die "Excution error:\n".$sth->{errstr};
-   if($sth->{err}){
- 	print "ERROR REPORTED:".$sth->{errstr}."\n";
-   }
-   print "STH:".$sth->{row}."\n";
+  # deliberately executing a wrong MIL statement:
+  $sth= $dbh->prepare("( xyz 1);\n");
+  eval { $sth->execute }; print "ERROR REPORTED: $@" if $@;
 
- $dbh->do("b:=new(int,int);");
+ $dbh->do("var b:=new(int,int);");
  $dbh->do("insert(b,3,7);");
 #|| die "Execution Error:\n".$dbh->errstr;
 #
@@ -72,6 +69,7 @@ print "\nstart simple Monet MIL interaction\n";
 	  print "bun:".$aref->[0].",".$aref->[1]."\n";
   }
   # get all rows at once
+  $sth->execute;
   my $tab = $sth->fetchall_arrayref();
   my $r = $#{$tab};		# how to get the array bounds
   my $f = $#{$tab->[0]};	# how to get the array bounds

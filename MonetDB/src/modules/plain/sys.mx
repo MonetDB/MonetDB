@@ -265,10 +265,6 @@ Some explanation of what mem\_usage() and vm\_usage() display:
     ADDHELP("help", "boncz", "Feb  6 1996",
          "provide help for a MIL construct.", "sys");
 
-    PROC col_name(BAT[any::1,any::2] b, str name) : bat[any::1,any::2] {
-	b.bbpname(name);
-	return b;
-    }
     PROC rename(BAT[any::1,any::2] b, str name) : bat[any::1,any::2] {
 	if (not(b.bbpname(name))) ERROR("rename(%s,%s): operation failed\n", str(b), name);
 	return b;

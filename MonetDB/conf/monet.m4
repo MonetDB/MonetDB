@@ -185,6 +185,17 @@ AC_HELP_STRING([--without-gcc], [do not use GCC]), [
 		dnl  Portland Group compiler (pgcc/pgCC)
 		pgcc*)	CC="$CC -fPIC";;
 		esac
+		case $host_os in
+		linux*)
+		    dnl  Since version 8.0, ecc/ecpc are also called icc/icpc,
+		    dnl  and icc/icpc requires "-no-gcc" to avoid predefining
+		    dnl  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
+		    icc_ver="`$CC --version 2>/dev/null`"
+		    case $icc_ver in
+		    8.*)	CC="icc -no-gcc"	CXX="icpc -no-gcc";;
+		    esac
+		    ;;
+		esac
 		;;
 	esac])
 
@@ -206,7 +217,7 @@ AC_PROG_CPP()
 AC_PROG_GCC_TRADITIONAL()
 
 case $GCC-$host_os in
-yes-*)	gcc_ver="`$CC --version | head -n1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)\([[^0-9]].*\)*$|\1|'`";;
+yes-*)	gcc_ver="`$CC -dumpversion 2>/dev/null`";;
 esac
 
 dnl  Set compiler switches.
@@ -316,10 +327,18 @@ yes-*-*)
 	dnl  become an error to make configure tests work properly.
 	CFLAGS="$CFLAGS -we140"
 	CXXFLAGS="$CXXFLAGS -we140"
-	dnl  Version 8.0 doesn't find sigset-t when -ansi is set... !?
+	dnl  Check for PIC does not work with Version 8.1, unless we disable
+	dnl  remark #1418: external definition with no prior declaration ... !?
+	case $icc_ver in
+	8.1*)	CFLAGS="$CFLAGS -wd1418"
+		CXXFLAGS="$CXXFLAGS -wd1418"
+		;;
+	*)	;;
+	esac
+	dnl  Version 8.* doesn't find sigset-t when -ansi is set... !?
 	case $icc_ver in
 	8.*)	;;
-	*)	CFLAGS="$CFLAGS -ansi"	CXXFLAGS="$CXXFLAGS -ansi";
+	*)	CFLAGS="$CFLAGS -ansi"	CXXFLAGS="$CXXFLAGS -ansi";;
 	esac
 	dnl Define the same settings as for gcc, as we use the same
 	dnl header files
@@ -338,7 +357,13 @@ yes-*-*)
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
 	X_CFLAGS="$X_CFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,269,108,188,1357,102,70"
+	case $icc_ver in
+	8.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572" ;;
+	esac
 	X_CXXFLAGS="$X_CXXFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,269,108,188,1357,102,70"
+	case $icc_ver in
+	8.[[1-9]]*)	X_CXXFLAGS="$X_CXXFLAGS,1572" ;;
+	esac
 	dnl  #1418: external definition with no prior declaration
 	dnl  #1419: external declaration in primary source file
 	dnl  # 279: controlling expression is constant
@@ -358,6 +383,7 @@ yes-*-*)
 	dnl  #1357: optimization disabled due to excessive resource requirements; contact Intel Premier Support for assistance
 	dnl  # 102: forward declaration of enum type is nonstandard
 	dnl  #  70: incomplete type is not allowed
+	dnl  #1572: floating-point equality and inequality comparisons are unreliable
 	;;
 -pgcc*-linux*)
 	dnl  Portland Group (PGI) (pgcc/pgCC on Linux)
@@ -398,7 +424,6 @@ case $enableval in
 	;;
 64)	case "$host-$GCC-$CC" in
 	i?86*-*-*)  AC_ERROR([$host does not support 64 bits]);;
-	x86_64*--icc*) AC_ERROR([$CC on $host does not support 64 bits]);;
 	esac
 	;;
 *)	AC_ERROR(--enable-bits argument must be either 32 or 64);;
@@ -645,172 +670,164 @@ AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
+
 AC_ARG_WITH(swig,
 	AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
 	SWIG="$withval",
 	SWIG=swig)
-AC_MSG_CHECKING([for swig >= 1.3.20])
+case "$SWIG" in
+yes|auto)
+  SWIG=swig;;
+esac
+case "$SWIG" in
+no) ;;
+/*) AC_MSG_CHECKING(whether $SWIG does exist and is executable)
+    if test -x "$SWIG"; then
+      AC_MSG_RESULT(yes)
+    else
+      AC_MSG_RESULT(no)
+      SWIG=no
+    fi;;
+*)  AC_PATH_PROG(SWIG,$SWIG,no,$PATH);;
+esac
 if test "x$SWIG" != xno; then
-  case "$SWIG" in
-  yes|auto)
-    SWIG=swig;;
-  esac
   # we want the right version...
-  case `$SWIG -version 2>&1` in
+  AC_MSG_CHECKING(whether $SWIG is >= 1.3.20)
+  swig_ver="`"$SWIG" -version 2>&1 | grep Version`"
+  case "$swig_ver" in
   *Version\ 1.3.2*)
-    # ...and it must support -outdir
-    case `$SWIG -help 2>&1` in
-    *-outdir*) ;;
-    *) SWIG=no;;
-    esac ;;
-  *) SWIG=no;;
+      AC_MSG_RESULT(yes: $swig_ver);;
+  *)  AC_MSG_RESULT(no: $swig_ver)
+      SWIG=no;;
   esac
 fi
-have_swig=no
-if test x"$SWIG" != xno; then
-	have_swig=yes
+if test "x$SWIG" != xno; then
+  # ...and it must support -outdir
+  AC_MSG_CHECKING(whether $SWIG supports "-outdir")
+  case `$SWIG -help 2>&1` in
+  *-outdir*) 
+      AC_MSG_RESULT(yes);;
+  *)  AC_MSG_RESULT(no)
+      SWIG=no;;
+  esac
 fi
-AC_MSG_RESULT($have_swig)
 AC_SUBST(SWIG)
 AM_CONDITIONAL(HAVE_SWIG, test x"$SWIG" != xno)
 
+
 AC_ARG_WITH(python,
 	AC_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
-	python="$withval",
-	python=auto)
-case "$python" in
+	PYTHON="$withval",
+	PYTHON=python)
+case "$PYTHON" in
 yes|auto)
-  PYTHON=python;;
-no)
-  ;;
-*)
-  PYTHON="$python"
-  python=yes
-  ;;
+    PYTHON=python;;
 esac
-AC_MSG_CHECKING([for python >= 2.0])
-if test "x$python" != xno; then
-  case `"$PYTHON" -c 'import sys; print sys.version[[:3]]' 2>/dev/null` in
-  2.*) ;;
-  '')
-     case "$python" in
-     auto) ;;
-     *) AC_MSG_ERROR([$PYTHON not found])
-	;;
-     esac
-     python=no;;
-  *) case "$python" in
-     auto) ;;
-     *) AC_MSG_ERROR([Your Python version is too old, at least 2.X required])
-	;;
-     esac
-     python=no;;
+case "$PYTHON" in
+no) ;;
+/*) AC_MSG_CHECKING(whether $PYTHON does exist and is executable)
+    if test -x "$PYTHON"; then
+      AC_MSG_RESULT(yes)
+    else
+      AC_MSG_RESULT(no)
+      PYTHON=no
+    fi;;
+*)  AC_PATH_PROG(PYTHON,$PYTHON,no,$PATH);;
+esac
+if test "x$PYTHON" != xno; then
+  AC_MSG_CHECKING(whether $PYTHON is >= 2.0)
+  python_ver="`"$PYTHON" -c 'import sys; print sys.version[[:3]]' 2>/dev/null`"
+  case "$python_ver" in
+  2.*)
+     AC_MSG_RESULT(yes: $python_ver);;
+  *) AC_MSG_ERROR(no: $python_ver)
+     PYTHON=no;;
   esac
 fi
-if test "x$python" != xno; then
+AC_SUBST(PYTHON)
+AM_CONDITIONAL(HAVE_PYTHON, test x"$PYTHON" != xno)
+
+PYTHONINC=''
+if test "x$PYTHON" != xno; then
+  AC_MSG_CHECKING(for $PYTHON's include directory)
   PYTHONINC=`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()' 2>/dev/null`
   if test ! "$PYTHONINC"; then
-    case "$python" in
-    auto)
-      ;;
-    *)
-      AC_MSG_ERROR([No Python include directory found.  Is Python installed properly?])
-      ;;
-    esac
-    python=no
+    AC_MSG_RESULT(not found.  Is Python installed properly?)
   elif test ! -f "$PYTHONINC/Python.h"; then
-    case "$python" in
-    auto)
-      ;;
-    *)
-      AC_MSG_ERROR([No Python.h include file found.  Is Python installed properly?])
-      ;;
-    esac
-    python=no
+    AC_MSG_RESULT($PYTHONINC/Python.h does not exist.  Is Python installed properly?)
+    PYTHONINC=''
+  else
+    AC_MSG_RESULT($PYTHONINC)
   fi
 fi
-if test "x$python" != xno; then
+AC_SUBST(PYTHONINC)
+
+PYTHON_LIBDIR=''
+if test "x$PYTHONINC" != x; then
+  AC_MSG_CHECKING(for $PYTHON's library directory)
   PYTHON_LIBDIR=`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")' 2>/dev/null`
   if test ! "$PYTHON_LIBDIR"; then
-    case "$python" in
-    auto)
-      ;;
-    *)
-      AC_MSG_ERROR([No Python library directory found.  Is Python installed properly?])
-      ;;
-    esac
-    python=no
+    AC_MSG_RESULT(not found.  Is Python installed properly?)
+  else
+    AC_MSG_RESULT(\$prefix/$PYTHON_LIBDIR)
   fi
 fi
-if test x"$python" != xno; then
-	python=yes
-fi
-AC_MSG_RESULT($python)
-AC_SUBST(PYTHONINC)
-AC_SUBST(PYTHON)
 AC_SUBST(PYTHON_LIBDIR)
-AM_CONDITIONAL(HAVE_PYTHON, test x"$python" != xno)
-AM_CONDITIONAL(HAVE_PYTHON_SWIG, test x"$python" != xno -a x"$SWIG" != xno)
+AM_CONDITIONAL(HAVE_PYTHON_DEVEL, test "x$PYTHON_LIBDIR" != x)
+AM_CONDITIONAL(HAVE_PYTHON_SWIG,  test "x$PYTHON_LIBDIR" != x -a x"$SWIG" != xno)
+
 
 AC_ARG_WITH(perl,
 	AC_HELP_STRING([--with-perl=FILE], [perl is installed as FILE]),
-	perl="$withval",
-	perl=auto)
-case "$perl" in
+	PERL="$withval",
+	PERL=perl)
+case "$PERL" in
 yes|auto)
   PERL=perl;;
-no)
-  ;;
-*)
-  PERL="$perl"
-  perl=yes
-  ;;
 esac
-AC_MSG_CHECKING([for perl])
-if test "x$perl" != xno; then
+case "$PERL" in
+no) ;;
+/*) AC_MSG_CHECKING(whether $PERL does exist and is executable)
+    if test -x "$PERL"; then
+      AC_MSG_RESULT(yes)
+    else
+      AC_MSG_RESULT(no)
+      PERL=no
+    fi;;
+*)  AC_PATH_PROG(PERL,$PERL,no,$PATH);;
+esac
+AC_SUBST(PERL)
+AM_CONDITIONAL(HAVE_PERL, test x"$PERL" != xno)
+
+PERLINC=''
+if test "x$PERL" != xno; then
+  AC_MSG_CHECKING(for $PERL's include directory)
   PERLINC=`"$PERL" -MConfig -e 'print "$Config{archlibexp}/CORE"'`
   if test ! "$PERLINC"; then
-    case "$perl" in
-    auto)
-      ;;
-    *)
-      AC_MSG_ERROR([No Perl include directory found.  Is Perl installed properly?])
-      ;;
-    esac
-    perl=no
+    AC_MSG_RESULT(not found.  Is Perl installed properly?)
   elif test ! -f "$PERLINC/perl.h"; then
-    case "$perl" in
-    auto)
-      ;;
-    *)
-      AC_MSG_ERROR([No perl.h include file found.  Is Perl installed properly?])
-      ;;
-    esac
-    perl=no
+    AC_MSG_RESULT($PERLINC/perl.h does not exist.  Is Perl installed properly?)
+    PERLINC=''
+  else
+    AC_MSG_RESULT($PERLINC)
   fi
 fi
-if test "x$perl" != xno; then
+AC_SUBST(PERLINC)
+
+PERL_LIBDIR=''
+if test "x$PERLINC" != x; then
+  AC_MSG_CHECKING(for $PERL's library directory)
   PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
   if test ! "$PERL_LIBDIR"; then
-    case "$perl" in
-    auto)
-      ;;
-    *)
-      AC_MSG_ERROR([No Perl library directory found.  Is Perl installed properly?])
-      ;;
-    esac
-    perl=no
+    AC_MSG_RESULT(not found.  Is Perl installed properly?)
+  else
+    AC_MSG_RESULT(\$prefix/$PERL_LIBDIR)
   fi
 fi
-if test x"$perl" != xno; then
-	perl=yes
-fi
-AC_MSG_RESULT($perl)
-AC_SUBST(PERLINC)
-AC_SUBST(PERL)
 AC_SUBST(PERL_LIBDIR)
-AM_CONDITIONAL(HAVE_PERL, test x"$perl" != xno)
-AM_CONDITIONAL(HAVE_PERL_SWIG, test x"$perl" != xno -a x"$SWIG" != xno)
+AM_CONDITIONAL(HAVE_PERL_DEVEL, test "x$PERL_LIBDIR" != x)
+AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$PERL_LIBDIR" != x -a x"$SWIG" != xno)
+
 
 dnl to shut up automake (.m files are used for mel not for objc)
 AC_CHECK_TOOL(OBJC,objc)
@@ -1000,13 +1017,13 @@ if test "x$enable_optim" = xyes; then
       case "$host-$icc_ver" in
       dnl Portland Group compiler (pgcc/pgCC) has $icc_ver=""
       *-*-*-)    ;;
-      dnl  With icc-8.0, Interprocedural (IP) Optimization does not seem to work with MonetDB:
+      dnl  With icc-8.*, Interprocedural (IP) Optimization does not seem to work with MonetDB:
       dnl  With "-ipo -ipo_obj", pass-through linker options ("-Wl,...") are not handled correctly,
       dnl  and with "-ip -ipo_obj", the resulting Mserver segfaults immediately.
-      dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.0.
-      x86_64-*-*-8.0) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
-      i*86-*-*-8.0)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
-      ia64-*-*-8.0)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
+      dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.*.
+      x86_64-*-*-8.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
+      i*86-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
+      ia64-*-*-8.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
       ia64-*-*)       CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo -ipo_obj -tpp2 -mcpu=itanium2"
                       dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
@@ -1540,7 +1557,7 @@ if test "x$have_pcre" != xno; then
     	PCRE_LIBS="`$PCRE_CONFIG --libs`"
     fi
 
-    req_pcre_ver='4.0'
+    req_pcre_ver='4.5'
     AC_MSG_CHECKING(for pcre >= $req_pcre_ver)
     if test "x$PCRE_CONFIG" = x; then
     	have_pcre=no
@@ -1658,6 +1675,7 @@ fi ]
 AC_MSG_RESULT($INSTALL_BACKUP)
 AC_SUBST(INSTALL_BACKUP)
 
+
 PHP_INCS=""
 PHP_EXTENSIONDIR=""
 AC_ARG_WITH(php,
@@ -1667,31 +1685,67 @@ AC_ARG_WITH(php,
 AC_ARG_WITH(php-config, AC_HELP_STRING([--with-php-config=FILE], [Path to php-config script]),
 	PHP_CONFIG="$withval",
 	PHP_CONFIG=php-config)
-
+case "$PHP_CONFIG" in
+yes|auto) PHP_CONFIG=php-config;;
+esac
 if test "x$have_php" != xno; then
-	AC_CHECK_PROG(have_php, $PHP_CONFIG, $have_php, no)
-	if test $have_php = no; then
-		AC_MSG_ERROR(Cannot find php-config. Please use --with-php-config=PATH)
+	if test "x$PHP_CONFIG" != xno; then
+		AC_PATH_PROG(PHP_CONFIG, $PHP_CONFIG, no)
+	fi
+	if test $PHP_CONFIG = no; then
+		AC_MSG_RESULT(Cannot find php-config. Please use --with-php-config=PATH)
+		have_php=no
 	fi
 fi
-AC_MSG_CHECKING([for PHP])
 if test "x$have_php" != xno; then
+	AC_MSG_CHECKING([for PHP])
 	php_prefix="`$PHP_CONFIG --prefix`"
 	if test -z "$php_prefix"; then
 		have_php=no
+		AC_MSG_RESULT($have_php)
 	else
 		PHP_INCS=" `$PHP_CONFIG --includes`"
-		PHP_EXTENSIONDIR="`$PHP_CONFIG --extension-dir | sed -e s+$php_prefix++g`"
+		PHP_EXTENSIONDIR="`$PHP_CONFIG --extension-dir | sed -e s+$php_prefix/++g`"
+		have_php=yes
+		AC_MSG_RESULT($have_php: PHP_INCS="$PHP_INCS" PHP_EXTENSIONDIR="\$prefix/$PHP_EXTENSIONDIR")
 	fi
 fi
-if test x"$have_php" != xno; then
-	have_php=yes
-fi
-AC_MSG_RESULT($have_php)
 AC_SUBST(PHP_INCS)
 AC_SUBST(PHP_EXTENSIONDIR)
 AM_CONDITIONAL(HAVE_PHP, test x"$have_php" != xno)
 
+PHP_PEARDIR=""
+AC_ARG_WITH(pear,
+	AC_HELP_STRING([--with-pear=FILE], [Path to pear]),
+	have_pear="$withval" PEAR="$withval/bin/pear",
+	have_pear=auto PEAR="pear")
+
+if test x"$have_php" = xno; then
+	have_pear=no
+fi
+if test "x$have_pear" != xno; then
+	if test "x$PEAR" != xno; then
+		AC_PATH_PROG(PEAR, $PEAR, no)
+	fi
+	if test $PEAR = no; then
+		AC_MSG_RESULT(Cannot find pear. Please use --with-pear=PATH)
+		have_pear=no
+	fi
+fi
+if test "x$have_pear" != xno; then
+	AC_MSG_CHECKING(for $PEAR's php_dir)
+	php_peardir="`$PEAR config-get php_dir | grep php_dir`"
+	if test -z "$php_peardir"; then
+		have_pear=no
+		AC_MSG_RESULT(not found)
+	else
+		PHP_PEARDIR="`echo "$php_peardir" | sed -e "s+php_dir *= *$php_prefix/++g"`"
+		have_pear=yes
+		AC_MSG_RESULT(\$prefix/$PHP_PEARDIR)
+	fi
+fi
+AC_SUBST(PHP_PEARDIR)
+AM_CONDITIONAL(HAVE_PEAR, test x"$have_pear" != xno)
 
 
 AC_SUBST(CFLAGS)

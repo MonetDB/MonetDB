@@ -32,9 +32,9 @@ Only the standard types sht, int, lng, flt, dbl are supported.
 @T
 \begin{verbatim}
 	signatures
-	@1:	sht, int, lng, flt, dbl	arithmetic type
-	@2:	+,   -,	  *,   /,   %	basic arithmetic operator
-	@3:	add, sub, mul, div, mod	basic arithmetic operator name
+	@1:	sht, int, lng, flt, dbl arithmetic type
+	@2:	+,   -,  *,   /,   %   basic arithmetic operator
+	@3:	add, sub, mul, div, mod basic arithmetic operator name
 \end{verbatim}
 @= signatures
 .OPERATOR@4 (BAT[void,@1]) "[@2]" (BAT[void,@1]) : BAT[void,@1] = batbat_@1_@3;
@@ -84,9 +84,9 @@ Only the standard types sht, int, lng, flt, dbl are supported.
 
 @c
 /*	implementation
-	@1:	sht, int, lng, flt, dbl	arithmetic type
-	@2:	+,   -,	  *,   /,   %	basic arithmetic operator
-	@3:	add, sub, mul, div, mod	basic arithmetic operator name
+	@1:	sht, int, lng, flt, dbl arithmetic type
+	@2:	+,   -,   *,   /,   %   basic arithmetic operator
+	@3:	add, sub, mul, div, mod basic arithmetic operator name
 */
 @= implementations
 int

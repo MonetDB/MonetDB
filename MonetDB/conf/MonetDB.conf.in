@@ -83,8 +83,6 @@ monet_prompt=MonetDB>
 # Show version and copyright information when starting the server or
 # a MIL client?
 monet_welcome=yes
-# set to yes if you don't want to type () after each operator
-monet_nostalgic=no
 # Where do the MonetDB modules reside?
 monet_mod_path=@libdir@@DIRSEP@@PACKAGE@
 # Start Mserver in daemon mode, or start with MIL interactive interface?

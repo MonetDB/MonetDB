@@ -45,7 +45,7 @@ var aA2 := uselect(aA, true).mark(0@0);   aA2.print();
 #-----------------#
 [ 0@0,	  0@0	  ]
 
-print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delete("lastUsed").delete("curStamp").sort().col_name("a"),aA.info().col_name("aA"),aA2.info().col_name("aA2"));
+print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delete("lastUsed").delete("curStamp").delete("halign").delete("talign").sort().col_name("a"),aA.info().col_name("aA"),aA2.info().col_name("aA2"));
 #---------------------------------------------------------------------------------#
 # BAT:				  a		| aA		| aA2		  #
 # (str)				  (str)		| (str)		| (str)		  #
@@ -81,7 +81,6 @@ print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delet
 [ "haccelerator.size",		  "0",		  "0",		  "0"		  ]
 [ "haccelerator.storage",	  "absent",	  "absent",	  "absent"	  ]
 [ "hacctype",			  "null",	  "null",	  "null"	  ]
-[ "halign",			  "2008",	  "2008",	  "2013"	  ]
 [ "hdense",			  "1",		  "1",		  "0"		  ]
 [ "head",			  "void",	  "void",	  "oid"		  ]
 [ "head_index",			  "absent",	  "absent",	  "absent"	  ]
@@ -115,7 +114,6 @@ print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delet
 [ "tacctype",			  "null",	  "null",	  "null"	  ]
 [ "tail",			  "int",	  "bit",	  "void"	  ]
 [ "tail_index",			  "absent",	  "absent",	  "absent"	  ]
-[ "talign",			  "2006",	  "2010",	  "2017"	  ]
 [ "tdense",			  "0",		  "0",		  "1"		  ]
 [ "theap.filename",		  "no file",	  "no file",	  "no file"	  ]
 [ "theap.free",			  "0",		  "0",		  "0"		  ]
@@ -156,7 +154,7 @@ aA2 := uselect(aA, true).mark(0@0);   aA2.print();
 #-----------------#
 [ 1@0,	  0@0	  ]
 
-print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delete("lastUsed").delete("curStamp").sort().col_name("a"),aA.info().col_name("aA"),aA2.info().col_name("aA2"));
+print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delete("lastUsed").delete("curStamp").delete("halign").delete("talign").sort().col_name("a"),aA.info().col_name("aA"),aA2.info().col_name("aA2"));
 #---------------------------------------------------------------------------------#
 # BAT:				  a		| aA		| aA2		  #
 # (str)				  (str)		| (str)		| (str)		  #
@@ -192,7 +190,6 @@ print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delet
 [ "haccelerator.size",		  "0",		  "0",		  "0"		  ]
 [ "haccelerator.storage",	  "absent",	  "absent",	  "absent"	  ]
 [ "hacctype",			  "null",	  "null",	  "null"	  ]
-[ "halign",			  "2008",	  "2008",	  "2068"	  ]
 [ "hdense",			  "1",		  "1",		  "0"		  ]
 [ "head",			  "void",	  "void",	  "oid"		  ]
 [ "head_index",			  "absent",	  "absent",	  "absent"	  ]
@@ -226,7 +223,6 @@ print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delet
 [ "tacctype",			  "null",	  "null",	  "null"	  ]
 [ "tail",			  "int",	  "bit",	  "void"	  ]
 [ "tail_index",			  "absent",	  "absent",	  "absent"	  ]
-[ "talign",			  "2006",	  "2065",	  "2072"	  ]
 [ "tdense",			  "0",		  "0",		  "1"		  ]
 [ "theap.filename",		  "no file",	  "no file",	  "no file"	  ]
 [ "theap.free",			  "0",		  "0",		  "0"		  ]
@@ -269,7 +265,7 @@ aA2 := uselect(aA, true).mark(0@0);   aA2.print();
 #-----------------#
 [ 2@0,	  0@0	  ]
 
-print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delete("lastUsed").delete("curStamp").sort().col_name("a"),aA.info().col_name("aA"),aA2.info().col_name("aA2"));
+print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delete("lastUsed").delete("curStamp").delete("halign").delete("talign").sort().col_name("a"),aA.info().col_name("aA"),aA2.info().col_name("aA2"));
 #---------------------------------------------------------------------------------#
 # BAT:				  a		| aA		| aA2		  #
 # (str)				  (str)		| (str)		| (str)		  #
@@ -305,7 +301,6 @@ print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delet
 [ "haccelerator.size",		  "0",		  "0",		  "0"		  ]
 [ "haccelerator.storage",	  "absent",	  "absent",	  "absent"	  ]
 [ "hacctype",			  "null",	  "null",	  "null"	  ]
-[ "halign",			  "2008",	  "2008",	  "2126"	  ]
 [ "hdense",			  "1",		  "1",		  "1"		  ]
 [ "head",			  "void",	  "void",	  "void"	  ]
 [ "head_index",			  "absent",	  "absent",	  "absent"	  ]
@@ -339,7 +334,6 @@ print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delet
 [ "tacctype",			  "null",	  "null",	  "null"	  ]
 [ "tail",			  "int",	  "bit",	  "void"	  ]
 [ "tail_index",			  "absent",	  "absent",	  "absent"	  ]
-[ "talign",			  "2006",	  "2120",	  "2129"	  ]
 [ "tdense",			  "0",		  "0",		  "1"		  ]
 [ "theap.filename",		  "no file",	  "no file",	  "no file"	  ]
 [ "theap.free",			  "0",		  "0",		  "0"		  ]

@@ -81,6 +81,8 @@ proc load_format( str fmt ) : BAT[str,BAT] {
 	names.insert(nil,"types");seps.insert(nil,"\n");types.insert(nil,"str");
 	return load(names, seps, types, fmt, 1000);
 }
+ADDHELP("load_format", "niels", "Jan 2005",
+  "Load Mload-style format file fmt", "ascii_io");
 
 proc load_data( BAT[str,BAT] fmt, str data, int nr ) : BAT[str,BAT] {
 	var names := fmt.find("names");
@@ -88,6 +90,8 @@ proc load_data( BAT[str,BAT] fmt, str data, int nr ) : BAT[str,BAT] {
 	var types := fmt.find("types");
 	return load(names, seps, types, data, nr);
 }
+ADDHELP("load_data", "niels", "Jan 2005",
+  "Load data given Mload-style format; limit to nr elements (all if -1)", "ascii_io");
 
 proc make_persistent( BAT[str,BAT] bats ) : void {
 	if (bats.exist("key")){
@@ -111,6 +115,8 @@ proc make_persistent( BAT[str,BAT] bats ) : void {
 		}
 	}
 }
+ADDHELP("make_persistent", "niels", "Jan 2005",
+  "Make loaded bats persistent.", "ascii_io");
 
 proc merge_data( BAT[str,BAT] bats ) : void {
 	if (bats.exist("key")){
@@ -119,15 +125,23 @@ proc merge_data( BAT[str,BAT] bats ) : void {
 		nbats@batloop(){
 			var b := keybat.reverse().join($t);
 			var o := bat($h);
-			o.insert(b);
+			var a := o.access();
+			o.access(BAT_APPEND);
+			o.append(b);
+			o.access(a);
 		}
 	} else {
 		bats@batloop(){
 			var o := bat($h);
-			o.insert($t);
+			var a := o.access();
+			o.access(BAT_APPEND);
+			o.append($t);
+			o.access(a);
 		}
 	}
 }
+ADDHELP("merge_data", "niels", "Jan 2005",
+  "Merge loaded bats with existing ones.", "ascii_io");
 
 proc dump_seps( BAT[void,BAT] bats ) : BAT[void,str] {
 	var seps := new(void,str); seps.seqbase(oid(0));

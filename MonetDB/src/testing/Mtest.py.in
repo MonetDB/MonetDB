@@ -76,9 +76,12 @@ CONDITIONALS = {
     'HAVE_MONET5'      : "@HAVE_MONET5_FALSE@",
     'HAVE_MONET'       : "@HAVE_MONET_FALSE@",
     'HAVE_PERL'        : "@HAVE_PERL_FALSE@",
+    'HAVE_PERL_DEVEL'  : "@HAVE_PERL_DEVEL_FALSE@",
     'HAVE_PERL_SWIG'   : "@HAVE_PERL_SWIG_FALSE@",
     'HAVE_PHP'         : "@HAVE_PHP_FALSE@",
+    'HAVE_PEAR'        : "@HAVE_PEAR_FALSE@",
     'HAVE_PYTHON'      : "@HAVE_PYTHON_FALSE@",
+    'HAVE_PYTHON_DEVEL': "@HAVE_PYTHON_DEVEL_FALSE@",
     'HAVE_PYTHON_SWIG' : "@HAVE_PYTHON_SWIG_FALSE@",
     'HAVE_SWIG'        : "@HAVE_SWIG_FALSE@",
     'LINK_STATIC'      : "@LINK_STATIC_FALSE@",
@@ -1381,10 +1384,6 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
     elif sys.platform == "cygwin"  and  url(TSTDIR)+"/"+TST in NotOnCYG:
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on CYGWIN.")
-    elif SERVER == "MAPI" and  not env['MAPI_MIL']:
-        elem = SkipTest(env, TST, EXT, "as 'mapi.mil' is not available.")
-        #elif SERVER == "MAPI" and  os.name == "nt":
-        #elem = SkipTest(env, TST, EXT, "as Mapi is (currently?) not working on WindowsNT.")
     elif EXT == ".milC" and  not env['exe']['Mapi_Client'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['MAPICLIENT'].split(None, 1)[0]+" is not available.")
     elif EXT == ".x100" and  not env['exe']['X100_Client'][0]:
@@ -1396,13 +1395,9 @@ def RunTest(env, TST, BusyPorts, COND) :
         #TODO:
         #elif EXT == ".milC":
         #elem = SkipTest(env, TST, EXT, "as MapiClient-tests are temporary not supported by "+THISFILE+".")
-        ##elif EXT == ".milC"  and  os.name == "nt":
-        ###elem = SkipTest(env, TST, EXT, "as MapiClient is currently not working on WindowsNT.")
         #TODO:
         #elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
         #elem = SkipTest(env, TST, EXT, "as java is not in $PATH.")
-    elif SERVER == "SQL" and  not env['SQL_SERVER_MIL']:
-        elem = SkipTest(env, TST, EXT, "as %s.mil is not available." % env['SQL_SERVER'])
     elif EXT == ".sql" and  not env['exe']['SQL_client'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['SQLCLIENT'].split(None, 1)[0]+" is not available.")
     elif MissingMods:
@@ -1995,17 +1990,17 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             CheckSocket2(env, "MAPI", SrvrErr)
 
         PROLOGUE = ""
-        if os.path.isfile(TST+".prologue"):
+        if os.path.isfile(TST+".prologue") and env['VERSION'] < 49900:
             PROLOGUE = " "+TST+".prologue"
 
         Srvr = '%s%s %s%s "--dbname=%s"' % (MTO, str(STO), exe['Mserver'][1], LOCAL_CONF, TSTDB)
         if SERVER == "MAPI":
-            Srvr = '%s "%s"' % (Srvr, env['MAPI_MIL'])
+            Srvr = '%s --dbinit="module(mapi); mapi_start();"' % Srvr
         if SERVER == "SQL":
             if env['VERSION'] >= 49900:
-                Srvr = "%s --dbinit='include sql; listen(%s:int);'" % (Srvr, env['SQLPORT'])
+                Srvr = '%s --dbinit="include sql; listen(%s:int);"' % (Srvr, env['SQLPORT'])
             else:
-                Srvr = '%s "%s"' % (Srvr, env['SQL_SERVER_MIL'])
+                Srvr = '%s --dbinit="module(sql_server); sql_server_start();"' % Srvr
         Srvr = Srvr+PROLOGUE
         #-background"
         if os.name == "nt":
@@ -2050,11 +2045,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             for f in d:
                 if test.match(f):
                     if CALL in ["pf", "pfXs"]:
-                        RunIt("( %s %s | %s --dbinit='module(pathfinder,pf_support,ascii_io);' )" % (exe['XQuery_Client'][1],f,cmd.replace(' --trace ',' ')), "", ClntOutFile, ClntErrFile)
+                        RunIt('( %s %s | %s --dbinit="module(pathfinder,pf_support,ascii_io);" )' % (exe['XQuery_Client'][1],f,cmd.replace(' --trace ',' ')), "", ClntOutFile, ClntErrFile)
                     elif CALL == "mal":
                         RunIt(cmd+f+" </dev/null", "", ClntOutFile, ClntErrFile)
                     elif env['VERSION'] >= 49900:
-                        RunIt("( M2m %s | %s )" % (f,cmd), "", ClntOutFile, ClntErrFile)
+                        RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f+" </dev/null", "", ClntOutFile, ClntErrFile)
                     else:
                         RunIt(cmd+"< "+f, "", ClntOutFile, ClntErrFile)
         elif CALL in ["milC", "milCXs"]:
@@ -2115,7 +2110,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             fp.close()
 
     if SERVER in ["MAPI", "SQL"]:
-        if os.path.isfile(TST+".epilogue"):
+        if os.path.isfile(TST+".epilogue") and env['VERSION'] < 49900:
             EPILOGUE = open(TST+".epilogue",'r')
             EpiFailed = ""
             try:
@@ -2438,13 +2433,10 @@ def main(argv) :
         dft['setSQL_LOGDIR']     = "'--set \"sql_logdir='+env['SQL_LOGDIR']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(40000,49999))"
         dft['SQLPORT']        = "str(randomPort(50000,59999))"
-        if env['VERSION'] >= 49900:
-            dft['SQLCLIENT']  = "'MapiClient --language=sql'" # --port='+env['SQLPORT']"
-        else:
-            dft['SQLCLIENT']  = "'MapiClient --language=sql'" # --port='+env['SQLPORT']"
-        dft['MAPICLIENT']     = "'MapiClient'" # --port='+env['MAPIPORT']"
+        dft['SQLCLIENT']      = "'MapiClient -lsql'" # --port='+env['SQLPORT']"
+        dft['MAPICLIENT']     = "'MapiClient -lmil'" # --port='+env['MAPIPORT']"
         dft['X100CLIENT']     = "'x100run_mapi'" # --port='+env['MAPIPORT']"
-        dft['XQUERYCLIENT']   = "'pf -M -O3'" # --port='+env['MAPIPORT']"
+        dft['XQUERYCLIENT']   = "'pf -O3'" # --port='+env['MAPIPORT']"
     if THISFILE == "Mprofile.py":
         dft['CMDLST']         = "FindCmdLst(env)"
 
@@ -2733,31 +2725,13 @@ def main(argv) :
 
     # find mil script for MAPI and SQL server
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        mapi_mil = env['MONETDB_BUILD']+path("/src/mapi/mapi.mil")
-        if not os.path.isfile(mapi_mil):
-            mapi_mil = env['MONETDB_PREFIX']+path("/lib/MonetDB/mapi.mil")
-            if not os.path.isfile(mapi_mil):
-                mapi_mil = ''
-        env['MAPI_MIL'] = mapi_mil
         env['SQL_SERVER'] = "sql_server"
         env['SQL_TRACE'] = ""
-        sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet5/sql_server.mil")
-        if not os.path.isfile(sql_server_mil):
-            sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet4/sql_server.mil")
-            if not os.path.isfile(sql_server_mil):
-                sql_server_mil = env['SQL_PREFIX']+path("/lib/MonetDB/sql_server.mil")
-                if not os.path.isfile(sql_server_mil):
-                    sql_server_mil = env['TSTTRGBASE']+path("/lib/MonetDB/sql_server.mil")
-                    if not os.path.isfile(sql_server_mil):
-                        sql_server_mil = env['MONETDB_PREFIX']+path("/lib/MonetDB/sql_server.mil")
-                        if not os.path.isfile(sql_server_mil):
-                            sql_server_mil = ''
-        env['SQL_SERVER_MIL'] = sql_server_mil
 
     # export and display env
     STDERR.flush()
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars_ + ['SQL_LOGDIR','GDK_DBFARM','setMONETDB_MOD_PATH','MAPI_MIL','SQL_SERVER','SQL_SERVER_MIL']
+        vars_ = vars_ + ['SQL_LOGDIR','GDK_DBFARM','setMONETDB_MOD_PATH','SQL_SERVER']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
@@ -2946,6 +2920,21 @@ def main(argv) :
             print "Bits: ", env['TST_BITS']
             print "Modules: ", env['TST_MODS']
         STDOUT.flush()
+
+        is_pf = False
+        am_init_pf = re.compile('AM_INIT_AUTOMAKE\("pathfinder",.*,.*\)', re.MULTILINE)
+        configure_ag = os.path.join(env['TSTSRCBASE'],"configure.ag")
+        if os.path.isfile(configure_ag):
+            for l in fileinput.input(configure_ag):
+                if am_init_pf.match(l) and not is_pf:
+                    is_pf = True
+        if is_pf:
+            if not env['exe']['XQuery_Client'][0]:
+                ErrXit('Stopping Pathfinder testing as XQuery compiler "%s" is not available!' % \
+                       env['XQUERYCLIENT'].split(None, 1)[0])
+            MissingMods = CheckMods(env, '', '', 'pf') 
+            if MissingMods:
+                ErrXit('Stopping Pathfinder testing as modules "%s" are missing!' % str(MissingMods))
 
         host = ''
         for S in 'MAPI', 'SQL':

@@ -80,6 +80,7 @@ PHP_FUNCTION(monetdb_fetch_row);
 PHP_FUNCTION(monetdb_free_result);
 PHP_FUNCTION(monetdb_data_seek);
 PHP_FUNCTION(monetdb_escape_string);
+PHP_FUNCTION(monetdb_affected_rows);
 PHP_FUNCTION(monetdb_ping);
 PHP_FUNCTION(monetdb_info);
 

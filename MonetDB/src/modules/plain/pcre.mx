@@ -184,7 +184,8 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 	else
 		r = BATnew(strs->htype, TYPE_str, BATcount(strs));
 	if ((re = pcre_compile(pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
-		GDKerror("pcre_select: pcre compile failed\n");
+		GDKerror("pcre_select: pcre compile of pattern (%s) failed\n",
+			pattern);
 		return GDK_FAIL;
 	}
 	BATloop(strs, p, q) {
@@ -213,7 +214,8 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 	else
 		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
 	if ((re = pcre_compile(pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
-		GDKerror("pcre_select: pcre compile failed\n");
+		GDKerror("pcre_uselect: pcre compile of pattern (%s) failed\n",
+			pattern);
 		return GDK_FAIL;
 	}
 	BATloop(strs, p, q) {

@@ -73,7 +73,7 @@ have changed since my proposal.
      (optional)                                            (TST.prelude)  (^)
   + for MapiClient- & Msql- tests, a MIL script to be used as
      prologue for Mserver, i.e., a script that is executed by Mserver after
-     mapi.mil/sqlserver.mil, but before (the first)
+     mapi/sql_server is started, but before (the first)
      MapiClient/Msql connects to Mserver
      (optional)                                            (TST.prologue) (^)
   + for MapiClient- & Msql- tests, a MIL script to be used as
@@ -103,11 +103,11 @@ have changed since my proposal.
   * TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
   * python TST.py [TST.prelude]
   * Mserver --dbname=TSTDB [TST.prelude] < TST.mil(M|S)
-  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT $MONETDB_PREFIX/lib/MonetDB/mapi.mil [TST.prologue] &
+  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT --dbinit="module(mapi); mapi_start();" [TST.prologue] &
          MapiClient < TST[_(s|p)XX].milC
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
-  * Mserver --dbname=TSTDB --set sql_port=$SQLPORT $SQL_PREFIX/lib/MonetDB/sqlserver.mil [TST.prologue] &
+  * Mserver --dbname=TSTDB --set sql_port=$SQLPORT --dbinit="module(sql_server); sql_server_start();" [TST.prologue] &
          Msql < TST[_(s|p)XX].sql
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]

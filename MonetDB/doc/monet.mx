@@ -492,7 +492,7 @@ We now open a new window and start the @[<a href="../../Tools/MapiClient/index.h
 to the same port number we passed to {\tt @[<a href="../Modules/mapi/index.html">listen()</a>@} on the local machine. This
 will establish a @[<acronym title="MonetDB Interpreter Language">MIL</acronym>@ session with the MonetDB server, so we get a prompt:
 
-@[<a name="ls">@;
+@[<a name="ls"></a>@;
 \begin{verbatim}
 $ MapiClient --host localhost --port 45678
 # Monet Database Server V4.4.0

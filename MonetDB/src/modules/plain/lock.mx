@@ -37,8 +37,7 @@ as already present in the Monet system.
 .COMMAND lock_set(lock) = set_lock;
 	"try to set a lock; if set, block till it is freed"
 .COMMAND lock_try(lock) : int = try_lock;
-	"try a lock, if free set it and return 0,
-		if not return EBUSY"
+	"try a lock, if free set it and return 0, if not return EBUSY"
 .COMMAND lock_unset(lock) = unset_lock;
 	"unset a lock"
 .COMMAND lock_destroy(lock) = destroy_lock;

@@ -102,6 +102,7 @@ function_entry monetdb_functions[] = {
 	    PHP_FE(monetdb_free_result, NULL)
 	    PHP_FE(monetdb_data_seek, NULL)
 	    PHP_FE(monetdb_escape_string, NULL)
+	    PHP_FE(monetdb_affected_rows, NULL)
 	    PHP_FE(monetdb_ping, NULL)
 	PHP_FE(monetdb_info, NULL) {NULL, NULL, NULL}	/* Must be the last line in monetdb_functions[] */
 };
@@ -157,7 +158,7 @@ _free_monetdb_link(zend_rsrc_list_entry * rsrc TSRMLS_DC)
 
 /* }}} */
 
-/* {{{ _free_monetdb_link
+/* {{{ _free_monetdb_handle
  */
 static void
 _free_monetdb_handle(zend_rsrc_list_entry * rsrc TSRMLS_DC)
@@ -800,8 +801,7 @@ php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int result_type)
 				add_assoc_null(return_value, fieldname);
 			}
 		} else {	/* not null */
-			if ((strcmp(fieldtype, "tinyint") == 0) || (strcmp(fieldtype, "smallint") == 0) || (strcmp(fieldtype, "mediumint") == 0) || (strcmp(fieldtype, "integer") == 0) || (strcmp(fieldtype, "number") == 0) ||
-			    (strcmp(fieldtype, "int") == 0) || (strcmp(fieldtype, "decimal") == 0) || (strcmp(fieldtype, "numeric") == 0) || (strcmp(fieldtype, "month_interval") == 0) || (strcmp(fieldtype, "sec_interval") == 0)) {
+			if ((strcmp(fieldtype, "tinyint") == 0) || (strcmp(fieldtype, "smallint") == 0) || (strcmp(fieldtype, "int") == 0) || (strcmp(fieldtype, "month_interval") == 0) || (strcmp(fieldtype, "sec_interval") == 0)) {
 				/* long value */
 				long lval = strtol(value, NULL, 10);
 
@@ -811,7 +811,7 @@ php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int result_type)
 				if (result_type & MONETDB_ASSOC) {
 					add_assoc_long(return_value, fieldname, lval);
 				}
-			} else if ((strcmp(fieldtype, "float") == 0) || (strcmp(fieldtype, "double") == 0) || (strcmp(fieldtype, "real") == 0)) {
+			} else if ((strcmp(fieldtype, "double") == 0) || (strcmp(fieldtype, "real") == 0)) {
 				/* double value */
 				double dval = strtod(value, NULL);
 
@@ -833,6 +833,7 @@ php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int result_type)
 
 			} else {
 				/* strings */
+				/* (strcmp(fieldtype, "decimal") == 0) */
 				if (result_type & MONETDB_NUM) {
 					add_index_string(return_value, i, value, 1);
 				}
@@ -937,6 +938,24 @@ PHP_FUNCTION(monetdb_escape_string)
 
 /* }}} */
 
+/* {{{ proto long monetdb_affected_rows([int link_identifier])
+   Get affected row count */
+PHP_FUNCTION(monetdb_affected_rows)
+{
+	zval **result;
+	MapiHdl handle;
+
+	if (ZEND_NUM_ARGS() != 1 || zend_get_parameters_ex(1, &result) == FAILURE) {
+		WRONG_PARAM_COUNT;
+	}
+
+	ZEND_FETCH_RESOURCE(handle, MapiHdl, result, -1, "MonetDB result handle", le_handle);
+
+	RETURN_LONG(mapi_rows_affected(handle));
+}
+
+/* }}} */
+
 /* {{{ proto bool monetdb_ping([int link_identifier])
    Ping a server connection. If no connection then reconnect. */
 PHP_FUNCTION(monetdb_ping)
@@ -968,8 +987,6 @@ PHP_FUNCTION(monetdb_ping)
 }
 
 /* }}} */
-
-
 
 /* {{{ proto bool mysql_free_result(resource result)
    Free result memory */

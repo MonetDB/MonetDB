@@ -25,7 +25,10 @@ $monet = new Mapi(
 
 print "> ";
 while ( !(($line=<>) =~ /quit;/) ){
-	print $monet->cmd($line);
+	$monet->doRequest($line);
+	while( $monet->getReply() )  {
+		print $monet->{row};
+	}
 	print "> ";
 }
 

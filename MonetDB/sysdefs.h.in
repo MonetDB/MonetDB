@@ -30,7 +30,7 @@
 #endif
 
 
-#if (!defined __GNUC__) && defined __INTEL_COMPILER && __INTEL_COMPILER == 800
+#if (!defined __GNUC__) && defined __INTEL_COMPILER && __INTEL_COMPILER >= 800
 /*
  * With "-no-gcc", icc 8.0 does not predefine __GNUC__, and hence __REDIRECT
  * is not defined in /usr/include/sys/cdefs.h; which in turn causes readdir to

@@ -42,7 +42,6 @@ class BuiltinOptions:
     monet_admin = 'adm'
     monet_prompt = '>'
     monet_welcome = 'yes'
-    monet_nostalgic = 'no'
     monet_mod_path = os.path.join('@Qlibdir@','@PACKAGE@')
     monet_daemon = 'yes'
 

@@ -65,8 +65,6 @@ typedef struct CLIENT {
 	str top, limit;		/* parser pointers */
 	char *cptr;		/* parser pointers */
 	char *cline;		/* current parse line */
-	char *cleanup;		/* optional pointer to the buffer
-				   which needs garbage collection */
 	YYSTREE tree;		/* current request */
 	YYSTREE mil_accept;	/* accept request */
 	Cntxt maxstk;		/* highest context stack */
@@ -83,6 +81,7 @@ m_export ClientRec monet_clients[MAXCLIENTS + 1];
 m_export Client ll_client;
 
 m_export Client initClient(str name, str prompt, int thread);
+m_export void freeClient(Client c);
 m_export Client forkClient(Cntxt stk, int thread);
 m_export int closeClient(Client c, int thread);
 m_export void killClient(Client c, int thread);
@@ -152,7 +151,6 @@ initClient(str nme, str prompt, int thread)
 	monet_cntxt[c->stk].outer = c->stk ? 0 : -1;
 	monet_cntxt[c->stk].next = -1;
 	monet_cntxt[c->stk].shadow = 0;
-	c->cleanup = NULL;
 	if (c->input == 0) {
 		c->input = (str) GDKmalloc(4096);
 	}
@@ -203,7 +201,6 @@ scheduleFile(str filename)
 void
 scheduleClient(Client c)
 {
-	static int monet_first = 1;
 	Request req = NULL;
 	YYSTREE t;
 	int k;
@@ -213,14 +210,15 @@ scheduleClient(Client c)
 		c->mil_accept->yyval.val.pval = (ptr) serveClient;
 		t->yyval.val.ival = (int) (c - monet_clients);
 	}
-	if (monet_first) {
-		monet_first = 0;
+	if (monet_script) {	/* first time */
 		if (monet_dbinit) {
 			monet_eval(monet_dbinit, &k);
 		}
 		for (k = 0; monet_script[k]; k++) {
 			QMADD(req, 0, scheduleFile(monet_script[k]), "source(<user script>);");
 		}
+		GDKfree(monet_script);
+		monet_script = NULL;
 	}
 	if (c != monet_clients || monet_daemon != 1) {
 		QMADD(req, c->stk, c->mil_accept, "readCmd;");

@@ -61,7 +61,7 @@ def cond_subdir(fd, dir, i):
 
 def am_sort_libs(libs, tree):
     res = []
-    for (pref,lib,sep) in libs:
+    for (pref,lib,sep,cond) in libs:
         after = -1
         # does lib depend on a other library
         if tree.has_key('lib_'+ lib):
@@ -84,7 +84,7 @@ def am_sort_libs(libs, tree):
                         pos = res.index(l)
                         if pos > after:
                             after = pos
-        res.insert(after + 1, (pref, lib, sep))
+        res.insert(after + 1, (pref, lib, sep, cond))
     return res
 
 def am_subdirs(fd, var, values, am):
@@ -286,11 +286,22 @@ def am_scripts(fd, var, scripts, am):
             fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n\n" % (sd, script))
             fd.write("uninstall-local-%s: \n" % script)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
-        am['INSTALL'].append(script)
-        am['UNINSTALL'].append(script)
+
 	cond = ''
+	s = script
 	if scripts.has_key('COND'):
-        	cond = '#' + string.join(scripts['COND'], '+')
+            condname = string.join(scripts['COND'], '+')
+	    fd.write("uninstall-local-:\n");
+	    fd.write("install-exec-local-:\n");
+    	    name = string.replace(script, '.', '_')
+            fd.write("if %s\n" % (condname))
+            fd.write(" C_%s = %s\n" % (name,script))
+            fd.write("endif\n")
+            cond = '#' + condname
+	    s = "$(C_" + name + ")"
+		
+        am['INSTALL'].append(s)
+        am['UNINSTALL'].append(s)
         am['InstallList'].append("\t"+sd+"/"+script+cond+"\n")
 
     am_find_ins(am, scripts)
@@ -316,9 +327,9 @@ def am_headers(fd, var, headers, am):
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, header))
             am['INSTALL'].append(header)
             am['UNINSTALL'].append(header)
-	    cond = ''
-	    if headers.has_key('COND'):
-       	       cond = '#' + string.join(headers['COND'], '+')
+            cond = ''
+            if headers.has_key('COND'):
+                cond = '#' + string.join(headers['COND'], '+')
             am['InstallList'].append("\t"+sd+"/"+header+cond+"\n")
 
     am_find_ins(am, headers)
@@ -401,7 +412,7 @@ def am_binary(fd, var, binmap, am):
 
     cond = ''
     if binmap.has_key('COND'):
-       	cond = '#' + string.join(binmap['COND'], '+')
+        cond = '#' + string.join(binmap['COND'], '+')
 
     SCRIPTS = []
     scripts_ext = []
@@ -577,15 +588,23 @@ def am_library(fd, var, libmap, am):
     if libmap.has_key('SCRIPTS'):
         scripts_ext = libmap['SCRIPTS']
 
+    cname = libname
+    cond = ''
+    condname = ''
+    if libmap.has_key('COND'):
+        condname = string.join(libmap['COND'], '+')
+        cond = '#' + condname
+        fd.write("if %s\n" % (condname))
+        fd.write(" C_%s = %s\n" % (libname,libname))
+        fd.write("endif\n")
+	cname = "$(C_" + libname + ")"
+
     ld = am_translate_dir(ld, am)
     fd.write("%sdir = %s\n" % (libname, ld))
     if libmap.has_key('NOINST'):
         am['NLIBS'].append((pref, libname, sep))
     else:
-        am['LIBS'].append((pref, libname, sep))
-	cond = ''
-	if libmap.has_key('COND'):
-        	cond = '#' + string.join(libmap['COND'], '+')
+        am['LIBS'].append((pref, libname, sep, condname))
         am['InstallList'].append("\t%s/%s%s%s.so%s\n" % (ld, pref, sep, libname, cond))
 
     if libmap.has_key('MTSAFE'):
@@ -624,7 +643,7 @@ def am_library(fd, var, libmap, am):
         fd.write("%s_scripts = %s\n" % (libname, am_list2string(SCRIPTS, " ", "")))
         am['BUILT_SOURCES'].append("$(" + libname + "_scripts)")
         fd.write("all-local-%s: $(%s_scripts)\n" % (libname, libname))
-        am['ALL'].append(libname)
+        am['ALL'].append(cname)
 
     am_find_hdrs(am, libmap)
     am_find_ins(am, libmap)
@@ -696,7 +715,7 @@ def am_libs(fd, var, libsmap, am):
 
         ld = am_translate_dir(ld, am)
         fd.write("%sdir = %s\n" % (libname, ld))
-        am['LIBS'].append(('lib', libname, sep))
+        am['LIBS'].append(('lib', libname, sep, ''))
         am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
 
     if libsmap.has_key('HEADERS'):
@@ -971,8 +990,13 @@ CXXEXT = \\\"cc\\\"
 
         libs = am_sort_libs(am['LIBS'], tree)
         s = ""
-        for (pref, lib, sep) in am['LIBS']:
-            fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
+        for (pref, lib, sep, cond) in am['LIBS']:
+	    if cond != '':
+        	fd.write("if %s\n" % (cond))
+            	fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
+        	fd.write("endif\n")
+	    else:
+            	fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
 
     if am['NLIBS']:
         fd.write("noinst_LTLIBRARIES =")
@@ -1021,7 +1045,7 @@ CXXEXT = \\\"cc\\\"
 
     fd.write('''
 include $(top_srcdir)/*.mk
-
+include $(top_builddir)/*.mk
 ''')
     fd.close()
 

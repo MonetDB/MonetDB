@@ -503,7 +503,7 @@ typedef signed char bit;
 typedef signed char chr;
 typedef short sht;
 #ifdef MONET_OID32
-#define SIZEOF_OID	4
+#define SIZEOF_OID	SIZEOF_INT
 typedef unsigned int oid;
 #else
 #define SIZEOF_OID	SIZEOF_SIZE_T
@@ -1435,6 +1435,7 @@ gdk_export BAT *BATkey(BAT *b, int onoff);
 gdk_export BAT *BATset(BAT *b, int onoff);
 gdk_export BAT *BATmode(BAT *b, int onoff);
 gdk_export BAT *BATroles(BAT *b, str hnme, str tnme);
+gdk_export BAT *BATcol_name(BAT *b, str tnme);
 gdk_export int BATname(BAT *b, str nme);
 gdk_export BAT *BATseqbase(BAT *b, oid o);
 gdk_export BAT *BATsetaccess(BAT *b, int mode);
@@ -1624,7 +1625,7 @@ gdk_export int GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext
 @item int
 @tab BATprintf (stream *f, BAT *b)
 @item int
-@tab BATmultiprintf (stream *f, int argc, BAT *b[], int printoid, int order)
+@tab BATmultiprintf (stream *f, int argc, BAT *b[], int printoid, int order, int printorderby)
 @end multitable
 hline\end{tabular}
 @
@@ -1644,7 +1645,7 @@ over them, and prints the multi-column result on the file.
 @h
 gdk_export int BATprint(BAT *b);
 gdk_export int BATprintf(stream *f, BAT *b);
-gdk_export int BATmultiprintf(stream *f, int argc, BAT *argv[], int printoid, int order);
+gdk_export int BATmultiprintf(stream *f, int argc, BAT *argv[], int printoid, int order, int printorderby);
 @
 @}
 

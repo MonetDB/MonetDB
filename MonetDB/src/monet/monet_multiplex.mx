@@ -741,6 +741,11 @@ in this implementation.
 	p@1 = (char*) (BUNfirst(b@1)+b@1->tloc);
 	if (htpe != TYPE_void)
 		htpe = (special>1)?ATOMtype(b@1->htype):BAThstore(b@1);
+	if (htpe == TYPE_void) {
+		if (hseq == oid_nil) {
+			hseq = b@1->hseqbase;
+		}
+	}
 	ph = (char*) (BUNfirst(b@1)+b@1->hloc);
 	hend = (char*) BUNlast(b@1);
 	hdff = BUNindex(b@1,BUNfirst(b@1))-1;
@@ -771,6 +776,7 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 	int  s1, s2 = 0,    s3 = 0,    sh = 0;    /* bun sizes */
 	str  p1, p2 = NULL, p3 = NULL, ph = NULL, hend = NULL; /* bun pointers */
 	int  hky=0, hsrt=0, htpe=-1, ok = 0;
+	oid  hseq = oid_nil;
 	size_t hdff;
 	BAT  *b1, *b2, *b3=0, *retb, *bh=0;
 	int ret_sze = ATOMsize(ret_tpe);
@@ -798,7 +804,7 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 		dst = BUNtloc(retb, BUNfirst(retb));
 	} else {
 		retb = BATnew(htpe, ret_tpe, size);
-		BATseqbase(retb, bh->hseqbase);
+		BATseqbase(retb, hseq);
 		if (htpe == TYPE_void && special == 0 && !ATOMvarsized(ret_tpe)) {
 			buntrick = BUNsize(retb);
 			retb->batBuns->free += BATcount(bh)*buntrick;

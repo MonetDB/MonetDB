@@ -18,23 +18,56 @@ Source: %{name}-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 Copyright:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-BuildRequires: php python perl
+BuildRequires: python 
+
+%define builddoc 0
+%if 0
+%define buildphp 1
+%define buildperl 1
+%define buildpython 1
+%define comp_cc gcc
+%define comp_cxx g++
+%endif
+
+# groups of related archs
+%define all_x86 i386 i586 i686
+
+%ifarch %{all_x86}
+%define bits 32
+%else
+%define bits 64
+%endif
 
 %package client
 Summary: MonetDB clients
 Group: System
 
+%if %{buildphp}
 %package php
 Summary: MonetDB php interface
 Group: System
+BuildRequires: php 
+%define with_php --with-php
+%else
+%define with_php --without-php
+%endif
 
+%if %{buildpython}
 %package python
 Summary: MonetDB python interface
 Group: System
+BuildRequires: python
+%endif
 
+%if %{buildperl}
 %package perl
 Summary: MonetDB perl interface
 Group: System
+BuildRequires: perl 
+%define with_perl --with-perl
+%else
+%define with_perl --without-perl
+%endif
 
 %package server
 Summary: MonetDB server 
@@ -44,7 +77,7 @@ Group: System
 Summary: MonetDB development package 
 Group: System 
 
-%if %{DOCTOOLS}
+%if %{builddoc}
 %package docu
 Summary: MonetDB documentation
 Group: System 
@@ -59,23 +92,30 @@ accellerators, SQL- and XML- frontends.
 %description client
 Add the MonetDB client description here
 
+%if %{buildphp}
 %description php
 Add the MonetDB php description here
 Requires: %{name}-client
 Requires: php
 %define php_extensiondir %(php-config --extension-dir)
+%define php_peardir %(pear config-get php_dir | sed -e s+php_dir=++g)
+%endif
 
+%if %{buildpython}
 %description python
 Add the MonetDB python description here
 Requires: %{name}-client
 Requires: python
 %define python_libdir %(python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")')
+%endif
 
+%if %{buildperl}
 %description perl
 Add the MonetDB perl description here
 Requires: %{name}-client
 Requires: perl
 %define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
+%endif
 
 %description server
 Add the MonetDB server description here
@@ -88,7 +128,7 @@ Requires: epsffit
 PreReq: /sbin/chkconfig, /sbin/service, sh-utils
 PreReq: %{_sbindir}/groupadd, %{_sbindir}/useradd
 
-%if %{DOCTOOLS}
+%if %{builddoc}
 %description docu
 Add the MonetDB documentation description here
 %endif
@@ -102,9 +142,13 @@ rm -rf $RPM_BUILD_ROOT
 %build
 
 ./configure \
+	--enable-bits=%{bits} \
+	--with-gcc="%{comp_cc}" \
+	--with-gxx="%{comp_cxx}" \
 	--prefix=%{prefix} \
 	--sysconfdir=%{sysconfdir} \
-	--localstatedir=%{localstatedir} 
+	--localstatedir=%{localstatedir} \
+	%{with_php} %{with_perl}
 
 make
 
@@ -139,11 +183,9 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/lib/libmutils.*
 %{prefix}/lib/libMapi.* 
 %{prefix}/lib/libstream.*
-%{prefix}/lib/%{name}/java/*jar
+%{prefix}/share/%{name}/lib/*jar
 %{prefix}/lib/%{name}/Tests/*
-
-# fix should be install in script langs subdirs
-%{prefix}/share/%{name}/perl/* 
+%{prefix}/share/%{name}/Tests/*.class
 %{prefix}/share/%{name}/python/* 
 
 %config(noreplace) %{sysconfdir}/MonetDB.conf 
@@ -152,18 +194,26 @@ rm -fr $RPM_BUILD_ROOT
 %{_sbindir}/groupadd -g %{monetdb_gid} -r monetdb 2>/dev/null || :
 %{_sbindir}/useradd -d %{localstatedir}/%{name} -s /bin/true -g monetdb -M -r -u %{monetdb_uid} monetdb 2>/dev/null || :
 
+%if %{buildphp}
 %files php
 %defattr(-,monetdb,monetdb) 
 %{php_extensiondir}/*
+%{php_peardir}/DB/*
+%{prefix}/share/%{name}/php/*
+%endif
 
+%if %{buildpython}
 %files python
 %defattr(-,monetdb,monetdb) 
 %{prefix}/%{python_libdir}/*
+%endif
 
+%if %{buildperl}
 %files perl
 %defattr(-,monetdb,monetdb) 
 %{prefix}/%{perl_libdir}/*
-%{prefix}/%{perl_libdir}/DBD/*
+%{prefix}/share/%{name}/perl/* 
+%endif
 
 %files server
 %defattr(-,monetdb,monetdb) 
@@ -209,7 +259,7 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/include/%{name}/*.h
 %{prefix}/include/%{name}/*/*.[hcm]
 
-%if %{DOCTOOLS}
+%if %{builddoc}
 %files docu
 %defattr(-,monetdb,monetdb)
 %{prefix}/share/%{name}/docs/*/*.html

@@ -1023,6 +1023,17 @@ Mark the value as totally ready in the cache.
 @- insert a new connection
 also involves forking a waiter thread
 @c
+static char TCPhostname[128] = { 0 };
+static char *
+hostname(void)
+{
+	if (!*TCPhostname)
+		gethostname(TCPhostname, 128);
+	return TCPhostname;
+}
+
+static int listeners = 0, ports[256] = { 0 };
+
 static int
 conn_insert(str host, int port, int me, int sock)
 {
@@ -1119,8 +1130,6 @@ wait_bat(BAT **retval)
 @+ prelude
 Init the global structures.
 @c
-int listeners = 0, ports[256] = { 0 };
-
 bat *
 TCPprelude(void)
 {
@@ -1195,8 +1204,12 @@ TCPlisten(int *port)
 Register ourselves
 @c
 	MT_set_lock(TCPlock, "TCPlisten");
-	while (ports[port_no])
+	while (port_no < 256 && ports[port_no])
 		port_no++;
+	if (port_no == 256) {
+		GDKsyserror("TCPlisten: too many listners\n");
+		return GDK_FAIL;
+	}
 	ports[port_no] = *port;
 	listeners++;
 	MT_unset_lock(TCPlock, "TCPlisten");
@@ -1285,15 +1298,6 @@ TCPlisten_default(void)
 @+ terminate(int)
 Stop a TCP/IP server
 @c
-static char TCPhostname[128] = { 0 };
-static char *
-hostname(void)
-{
-	if (!*TCPhostname)
-		gethostname(TCPhostname, 128);
-	return TCPhostname;
-}
-
 int
 TCPterminate(int *port)
 {

@@ -41,9 +41,9 @@
   +----------------------------------------------------------------------+
 */
 
-// alter this to point at your local PEAR installation (PHP lib dir)
-ini_set("include_path", "..:/ufs/scherpen/local/lib/php");
-
+# if monetdb.php isn't installed into the correct pear/DB directory
+# we load first 
+#require("DB/monetdb.php");
 require("DB.php");
 
 function printtable($resultset) {
@@ -105,11 +105,11 @@ check($db, "Connection refused");
 echo "<h1>Welcome to MonetDB/MIL in PHP/PEAR</h1>";
 
 echo "<p>Making a test table:";
-check($all = $db->getAll('(new (int, str)).insert(1, "Row 1").insert(2, "Next row").insert(3, "Another row").print;'));
+check($all = $db->getAll('(new (int, str)).insert(1, "Row 1").insert(2, "Next row").insert(3, "Another row").print();'));
 printtable($all);
 
 print "<p>Output of <tt>ls;</tt>:";
-check($all = $db->getAll("ls;"));
+check($all = $db->getAll("ls();"));
 printtable($all);
 
 

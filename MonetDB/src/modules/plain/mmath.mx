@@ -62,10 +62,10 @@ where x is given in radians. The return value is between -1 and 1."
 where x is given in radians"
 
    .COMMAND cosh(dbl)	  : dbl = math_unary_COSH;
-"The cosh() function  returns the hyperbolic cosine of x,
+"The cosh() function returns the hyperbolic cosine of x,
 which is defined mathematically as (exp(x) + exp(-x)) / 2."
    .COMMAND sinh(dbl)	  : dbl = math_unary_SINH;
-"The sinh() function  returns  the  hyperbolic sine of x,
+"The sinh() function returns the hyperbolic sine of x,
 which is defined mathematically as (exp(x) - exp(-x)) / 2."
    .COMMAND tanh(dbl)	  : dbl = math_unary_TANH;
 "The tanh() function returns the hyperbolic tangent of x,
@@ -80,14 +80,14 @@ which is defined mathematically as sinh(x) / cosh(x)."
 "The log10(x) function returns the base-10 logarithm of x."
 
    .COMMAND pow(dbl,dbl)  : dbl = math_binary_POW;
-"The pow(x,y) function	returns the value of x raised to the power of y."
+"The pow(x,y) function returns the value of x raised to the power of y."
    .COMMAND sqrt(dbl)	  : dbl = math_unary_SQRT;
 "The sqrt(x) function returns the non-negative square root of x."
 
    .COMMAND ceil(dbl)	  : dbl = math_unary_CEIL;
 "The ceil(x) function rounds x upwards to the nearest integer."
    .COMMAND fabs(dbl)	  : dbl = math_unary_FABS;
-"The fabs(x) function  returns	the  absolute value of the
+"The fabs(x) function returns the absolute value of the
 floating-point number x."
    .COMMAND floor(dbl)	  : dbl = math_unary_FLOOR;
 "The floor(x) function rounds x downwards to the nearest integer."
