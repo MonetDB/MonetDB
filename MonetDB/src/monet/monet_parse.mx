@@ -853,8 +853,8 @@ proc_definition:
             /* DIRECT: insert the new proc */
 	    yylogout($$);
             TBL_newproc(ll_client, $2->yyval.val.sval, ll_parent_module(), $$, sig, ret);
-	    if (sig) yylogfree(sig);
-	    if (ret) yylogfree(ret);
+	    if (sig) { yylogfree(sig); }
+	    if (ret) { yylogfree(ret); }
             ll_modcmds = ll_templates = 0;                                    }
     |   TOK_PROCDEF proc_name ';'
         {   yylogout($2);
