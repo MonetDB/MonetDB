@@ -66,10 +66,10 @@ can be found in this module.
  THIS COMMAND SHOULD NOT BE USED FROM MIL! DANGEROUS! DEBUGGING PUPOSES ONLY!"
 
 .COMMAND order(BAT[any::1,any::2] b) : BAT[any::1,any::2] = CMDorder;
-"Sorts the BAT itself, in place. Returns b."
+"Sorts the BAT itself, in place, on ascending head values. Returns b."
 
 .COMMAND order_rev(BAT[any::1,any::2] b) : BAT[any::1,any::2] = CMDorder_rev;
-"Sorts the BAT itself, in place. Returns b."
+"Sorts the BAT itself, in place, on descending head values. Returns b."
 
 .COMMAND revert(BAT[any::1,any::2] b) : BAT[any::1,any::2] = CMDrevert;
 "Puts all BUNs in a BAT in reverse order. Returns b."
