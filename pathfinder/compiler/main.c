@@ -465,42 +465,8 @@ static const char
 
 #endif
 
-#include "parser.h"       /* parsing XQuery syntax */
-#include "abssyn.h"
-#include "varscope.h"     /* variable scoping */
-#include "normalize.h"    /* parse tree normalization */
-#include "ns.h"           /* namespaces */
-#include "nsres.h"        /* namespace resolution */
-#include "xquery_fo.h"    /* built-in XQuery F&O */
-#include "func_chk.h"     /* function resolution */
-#include "prettyp.h"
-#include "abssynprint.h"
-#include "coreprint.h"
-#include "algdebug.h"
-#include "ma_debug.h"
-#include "timer.h"
-#include "fs.h"           /* core mapping (formal semantics) */
-#include "types.h"        /* type system */
-#include "import.h"       /* XML Schema import */
-#include "simplify.h"     /* core simplification */
-#include "typecheck.h"    /* type inference and check */
-#include "algebra.h"      /* algebra tree */
-#include "core2alg.h"     /* Compile Core to Relational Algebra */
-#include "algopt.h"
-#include "algebra_cse.h"
-#include "ma_gen.h"       /* MIL algebra generation */
-#include "ma_opt.h"
-#include "ma_cse.h"
-#include "milgen.h"       /* MIL command tree generation */
-#include "milprint.h"     /* create string representation of MIL tree */
-#include "milprint_summer.h" /* create MILcode directly from the Core tree */
 #include "oops.h"
 #include "mem.h"
-#include "coreopt.h"
-#include "hsk_parser.h"
-
-/* GC_max_retries, GC_gc_no */
-#include "gc.h"
 
 static char *phases[] = {
     [ 1]    "right after input parsing",
@@ -525,10 +491,7 @@ static char *phases[] = {
     [20]    "after the MIL program has been serialized"
 };
 
-#define STOP_POINT(a) \
-    if ((a) == PFstate.stop_after) \
-        goto bailout;
-
+/* pretty ugly to have such a global, could not entirely remove it yet JF */
 /** global state of the compiler */
 PFstate_t PFstate = {
     quiet               : false,
@@ -552,96 +515,20 @@ PFstate_t PFstate = {
  */
 static char *progname = 0;
 
-#if 0
-/**
- * @c dirname(argv[0]) is stored here later. The dirname() call may
- * modify its argument (according to the manpage). To avoid modifying
- * @c argv[0] we make a copy first and store it here.
- */
-/*static char *pathname = 0;*/ /* StM: unused! */
-
-/**
- * Print abstract syntax tree in dot notation or prettyprinted,
- * depending on command line switches.
- */
-static void
-print_abssyn (PFpnode_t * proot)
-{
-    if (PFstate.print_dot)
-        PFabssyn_dot (stdout, proot);
-
-    if (PFstate.print_pretty)
-        PFabssyn_pretty (stdout, proot);
-}
-
-
-/**
- * Print core tree in dot notation or prettyprinted,
- * depending on command line switches.
- */
-static void
-print_core (PFcnode_t * croot)
-{
-    if (PFstate.print_dot)
-        PFcore_dot (stdout, croot);
-
-    if (PFstate.print_pretty)
-        PFcore_pretty (stdout, croot);
-}
-
-/**
- * Print algebra tree in dot notation or prettyprinted,
- * depending on command line switches.
- */
-static void
-print_algebra (PFalg_op_t * aroot)
-{
-    if (PFstate.print_dot)
-        PFalg_dot (stdout, aroot);
-
-    if (PFstate.print_pretty)
-        PFalg_pretty (stdout, aroot);
-}
-
-/**
- * Print MIL tree in dot notation or prettyprinted,
- * depending on command line switches.
- */
-static void
-print_mil (PFmnode_t * mroot)
-{
-    if (PFstate.print_dot)
-        PFmil_dot (stdout, mroot);
-
-    if (PFstate.print_pretty)
-        PFmil_pretty (stdout, mroot);
-}
-#endif
-
-
-static PFcnode_t * unfold_lets (PFcnode_t *c);
-
 /**
  * Entry point to the Pathfinder compiler,
- * parses the command line (switches), then invokes the pipeline
- * of query processing steps (starting with the parser).
+ * parses the command line (switches), then invokes the compiler driver
+ * function pf_compile();
  */
 int
 main (int argc, char *argv[])
 {
-    PFpnode_t  *proot  = NULL;
-    PFcnode_t  *croot  = NULL;
-    PFalg_op_t *aroot  = NULL;
-    PFma_op_t  *maroot = NULL;
-    PFmil_t    *mroot  = NULL;
-    PFarray_t  *mil_program = NULL;
     unsigned int i;
+
+    PFstate_t* status = &PFstate;
 
     /* fd of query file (if present) */
     int query = 0;
-
-    /* elapsed time for compiler phase */
-    long tm;
 
     /*
      * Determine basename(argv[0]) and dirname(argv[0]) on *copies*
@@ -714,58 +601,58 @@ main (int argc, char *argv[])
             exit (0);
           
         case 'q':
-            PFstate.quiet = true;
+            status->quiet = true;
             break;
 
         case 'p':
-            PFstate.print_parse_tree = true;
+            status->print_parse_tree = true;
             break;
 
         case 'c':
-            PFstate.print_core_tree = true;
+            status->print_core_tree = true;
             break;
 
         case 'a':
-            PFstate.print_algebra_tree = true;
+            status->print_algebra_tree = true;
             break;
 
         case 'm':
-            PFstate.print_ma_tree = true;
+            status->print_ma_tree = true;
             break;
 
         case 's':
-            PFstate.stop_after = atoi (optarg);
-            if (PFstate.stop_after >= (sizeof (phases) / sizeof (*phases)))
+            status->stop_after = atoi (optarg);
+            if (status->stop_after >= (sizeof (phases) / sizeof (*phases)))
                 PFoops (OOPS_CMDLINEARGS,
                         "unrecognized stop point. Try `%s -h'", progname);
             break;
 
         case 'D':
-            PFstate.print_dot = true;
+            status->print_dot = true;
             break;
 
         case 'H':
-            PFstate.parse_hsk = true;
+            status->parse_hsk = true;
             break;
 
         case 'M':
-            PFstate.summer_branch = true;
+            status->summer_branch = true;
             break;
 
         case 'P':
-            PFstate.print_pretty = true;
+            status->print_pretty = true;
             break;
 
         case 'T':
-            PFstate.timing = true;
+            status->timing = true;
             break;
 
         case 'O':
-            PFstate.optimize = true;
+            status->optimize = true;
             break;
 
         case 't':
-            PFstate.print_types = true;
+            status->print_types = true;
             break;
 
         default:
@@ -794,539 +681,14 @@ main (int argc, char *argv[])
         }
     }
 
-    /* setup for garbage collector 
-     */
-  
-    /* how often will retry GC before we report out of memory and give up? */
-    GC_max_retries = 2;
-
-    /* Parsing of Haskell XQuery to Algebra output */
-    if (PFstate.parse_hsk)
-    {
-        aroot = PFhsk_parse ();
-        goto subexelim;
-    }
-
-    /* compiler chain below 
-     */
-    tm = PFtimer_start ();
-  
-    /* Invoke parser on stdin (or whatever stdin has been dup'ed to) 
-     */
-    PFparse (&proot);
-
-    tm = PFtimer_stop (tm);
-    if (PFstate.timing)
-        PFlog ("parsing:\t\t %s", PFtimer_str (tm));
-
-    STOP_POINT(1);
-    
-    tm = PFtimer_start ();
-
-    /* Abstract syntax tree normalization 
-     */
-    proot = PFnormalize_abssyn (proot);
-
-    tm = PFtimer_stop (tm);
-    if (PFstate.timing)
-        PFlog ("normalization:\t %s", PFtimer_str (tm));
-
-    STOP_POINT(2);
-    
-    tm = PFtimer_start ();
-
-    /* Resolve NS usage */
-    PFns_resolve (proot);
-
-    STOP_POINT(3);
-    
-    /* Check variable scoping and replace QNames by PFvar_t pointers */
-    PFvarscope (proot);
-  
-    STOP_POINT(4);
-
-    /* Load built-in XQuery F&O into function environment */
-    PFfun_xquery_fo ();
-
-    STOP_POINT(5);
-
-    /* Resolve function usage 
-     */
-    PFfun_check (proot);
-
-    tm = PFtimer_stop (tm);
-    if (PFstate.timing)
-        PFlog ("semantical analysis:\t %s", PFtimer_str (tm));
-
-    STOP_POINT(6);
-
-    tm = PFtimer_start ();
-
-    /* Load XML Schema/XQuery predefined types into the type environment */
-    PFty_predefined ();
-    
-    STOP_POINT(7);
-
-    /* XML Schema import */
-    PFschema_import (proot);
-
-    tm = PFtimer_stop (tm);
-    if (PFstate.timing)
-        PFlog ("XML Schema import:\t %s", PFtimer_str (tm));
-
-    STOP_POINT(8);
-
-    tm = PFtimer_start ();
-
-    /* XQuery core mapping
-     */
-    croot = PFfs (proot);
-
-    tm = PFtimer_stop (tm);
-    if (PFstate.timing)
-        PFlog ("core mapping:\t\t %s", PFtimer_str (tm));
-
-    STOP_POINT(9);
-
-    /* Core simplification */
-    tm = PFtimer_start ();
-
-    croot = PFsimplify (croot);
-
-    tm = PFtimer_stop (tm);
-    if (PFstate.timing)
-        PFlog ("core simplification:\t %s", PFtimer_str (tm));
-
-    STOP_POINT(10);
-
-    /* Type inference and check */
-    tm = PFtimer_start ();
-  
-    croot = PFty_check (croot);
-
-    tm = PFtimer_stop (tm);
-    if (PFstate.timing)
-        PFlog ("type checking:\t %s", PFtimer_str (tm));
-
-    STOP_POINT(11);
-
-
-    /* Core tree optimization */
-    tm = PFtimer_start ();
-  
-    croot = PFcoreopt (croot);
-
-    tm = PFtimer_stop (tm);
-    if (PFstate.timing)
-        PFlog ("core tree optimization:\t %s", PFtimer_str (tm));
-
-    STOP_POINT(12);
-
-
-    /*
-     * FIXME:
-     * This is the place where we should do some optimization stuff
-     * on our core tree. This optimization should end in an unfolding
-     * of all unneccessary `let' clauses; we need that for efficient
-     * MIL code generation.
-     * As we don't have nifty optimizations yet, we do unfolding right
-     * here. Lateron, we put unfolding into (maybe twig based)
-     * optimization code.
-     */
-
-#if 0
-    /* ***** begin of temporary unfolding code ***** */
-
-    tm = PFtimer_start ();
-
-    croot = unfold_lets (croot);
-
-    tm = PFtimer_stop (tm);
-    if (PFstate.timing)
-        PFlog ("let unfolding:\t %s", PFtimer_str (tm));
-
-#ifdef DEBUG_UNFOLDING
-    print_core (croot);
-#endif
-
-    /* ***** end of temporary unfolding code ***** */
-#endif
-
-    /*
-     * generate temporary MIL Code (summer branch version)
-     */
-
-    if (PFstate.summer_branch) {
-        tm = PFtimer_start ();
-        PFprintMILtemp (stdout, croot);
-        tm = PFtimer_stop (tm);
-
-        if (PFstate.timing)
-            PFlog ("MIL code output:\t %s", PFtimer_str (tm));
-        goto bailout;
-    }
-
-    /*
-     * map core to algebra tree
-     */
-    tm = PFtimer_start ();
-
-    aroot = PFcore2alg (croot);
-
-    tm = PFtimer_stop (tm);
-    if (PFstate.timing)
-        PFlog ("Algebra tree generation:\t %s", PFtimer_str (tm));
-
-    STOP_POINT(13);
-
-    /* Rewrite/optimize algebra tree */
-    tm = PFtimer_start ();
-
-    aroot = PFalgopt (aroot);
-
-    tm = PFtimer_stop (tm);
-
-    if (PFstate.timing)
-        PFlog ("Algebra tree rewrite/optimization:\t %s", PFtimer_str (tm));
-
-    STOP_POINT(14);
-
-    tm = PFtimer_start ();
-
-    /* 
-     * common subexpression elimination in the algebra tree
-     */
-subexelim:
-    tm = PFtimer_start ();
-
-    aroot = PFcse_eliminate (aroot);
-
-    tm = PFtimer_stop (tm);
-    if (PFstate.timing)
-        PFlog ("Common subexpression elimination in algebra tree:\t %s",
-               PFtimer_str (tm));
-
-    STOP_POINT(15);
-
-    /* Compile algebra into two-column MIL algebra */
-    tm = PFtimer_start ();
-    maroot = PFma_gen (aroot);
-    tm = PFtimer_stop (tm);
-
-    if (PFstate.timing)
-        PFlog ("Compilation to MIL algebra:\t %s", PFtimer_str (tm));
-
-    STOP_POINT(16);
-
-    /* MIL algebra common subexpression elimination */
-    tm = PFtimer_start ();
-    maroot = PFma_opt (maroot);
-    tm = PFtimer_stop (tm);
-
-    if (PFstate.timing)
-        PFlog ("MIL algebra optimization:\t %s", PFtimer_str (tm));
-
-    STOP_POINT(17);
-
-    /* MIL algebra common subexpression elimination */
-    tm = PFtimer_start ();
-    maroot = PFma_cse (maroot);
-    tm = PFtimer_stop (tm);
-
-    if (PFstate.timing)
-        PFlog ("MIL algebra CSE:\t %s", PFtimer_str (tm));
-
-    STOP_POINT(18);
-
-    /* Map core to MIL */
-    tm = PFtimer_start ();
-    mroot = PFmilgen (maroot);
-    tm = PFtimer_stop (tm);
-
-    if (PFstate.timing)
-        PFlog ("MIL code generation:\t %s", PFtimer_str (tm));
-
-    STOP_POINT(19);
-
-    /* Render MIL program in Monet MIL syntax 
-     */
-    if (!(mil_program = PFmil_serialize (mroot)))
+    /* Now call the main compiler driver */
+    if ( pf_compile( /*stdout,*/ status) < 0 )
         goto failure;
-
-    STOP_POINT(20);
-
-    /* Print MIL program to stdout */
-    if (mil_program)
-        PFmilprint (stdout, mil_program);
-
- bailout:
-    /* Finally report on # of GCs run */
-    if (PFstate.timing)
-        PFlog ("#garbage collections:\t %d", (int) GC_gc_no);
-
-    /* print abstract syntax tree if requested */
-    if (PFstate.print_parse_tree) {
-        if (proot) {
-            if (PFstate.print_pretty) {
-                printf ("Parse tree %s:\n", phases[PFstate.stop_after]);
-                PFabssyn_pretty (stdout, proot);
-            }
-            if (PFstate.print_dot)
-                PFabssyn_dot (stdout, proot);
-        }
-        else
-            PFinfo (OOPS_NOTICE,
-                    "parse tree not available at this point of compilation");
-    }
-
-    /* print core tree if requested */
-    if (PFstate.print_core_tree) {
-        if (croot) {
-            if (PFstate.print_pretty) {
-                printf ("Core tree %s:\n", phases[PFstate.stop_after]);
-                PFcore_pretty (stdout, croot);
-            }
-            if (PFstate.print_dot)
-                PFcore_dot (stdout, croot);
-        }
-        else
-            PFinfo (OOPS_NOTICE,
-                    "core tree not available at this point of compilation");
-    }
-
-    /* print algebra tree if requested */
-    if (PFstate.print_algebra_tree) {
-        if (aroot) {
-            if (PFstate.print_pretty) {
-                printf ("Algebra tree %s:\n", phases[PFstate.stop_after]);
-                PFalg_pretty (stdout, aroot);
-            }
-            if (PFstate.print_dot)
-                PFalg_dot (stdout, aroot);
-        }
-        else
-            PFinfo (OOPS_NOTICE,
-                    "core tree not available at this point of compilation");
-    }
-
-    /* print MIL algebra tree if requested */
-    if (PFstate.print_ma_tree) {
-        if (maroot) {
-            if (PFstate.print_pretty) {
-                PFinfo (OOPS_WARNING,
-                        "Cannot prettyprint MIL algebra tree. Sorry.");
-            }
-            if (PFstate.print_dot)
-                PFma_dot (stdout, maroot);
-        }
-        else
-            PFinfo (OOPS_NOTICE,
-                    "MIL algebra tree not available at this "
-                    "point of compilation");
-    }
 
     exit (EXIT_SUCCESS);
 
  failure:
-    exit (EXIT_FAILURE);
-}
-
-/**
- * Walk core tree @a e and replace occurrences of variable @a v
- * by core tree @a a (i.e., compute e[a/v]).
- *
- * @note Only copies the single node @a a for each occurence of
- *       @a v. Only use this function if you
- *       - either call it only with atoms @a a,
- *       - or copy @a a at most once (i.e. @a v occurs at most
- *         once in @a e).
- *       Otherwise we might come into deep trouble as children
- *       of @a e would have more than one parent afterwards...
- *
- * @param v variable to replace
- * @param a core tree to insert for @a v
- * @param e core tree to walk over
- * @return modified core tree
- */
-static void
-replace_var (PFvar_t *v, PFcnode_t *a, PFcnode_t *e)
-{
-  unsigned short int i;
-
-  assert (v && a && e);
-
-  if (e->kind == c_var && e->sem.var == v)
-      *e = *a;
-  else
-      for (i = 0; (i < PFCNODE_MAXCHILD) && e->child[i]; i++)
-          replace_var (v, a, e->child[i]);
-}
-
-/**
- * Worker for #unfoldable
- *
- * Walks recursively through the core tree fragment @a e and
- * tests if all occurences of @a v could be unfolded. The walk
- * is stopped immediately if anything violates the unfoldable
- * conditions.
- *
- * The parameter @a num_occur is considered as a static variable
- * for this tree walk, it is incremented with every occurence
- * of @a v. Obviously it should have an initial value of 0 when
- * called from outside (see #unfoldable).
- *
- * Parameter @a e1_is_atomic gives the information if we can
- * safely unfold although we counted more than one occurence
- * of @a v.
- *
- * @param v            the variable that should be unfolded
- * @param e            root node of current core sub-tree
- * @param num_occur    total occurences of this variable found so far;
- *                     should be 0 when called from outside.
- * @param e1_is_atomic Is the replacement for @a v an atom? In that
- *                     case @a v can also be replaced if there are
- *                     multiple occurences.
- */
-static bool
-unfoldable_ (PFvar_t *v, PFcnode_t *e, int *num_occur, bool e1_is_atomic)
-{
-    unsigned int i;
-
-    /* if we found an occurence of this variable, count it */
-    if ((e->kind == c_var) && (e->sem.var == v))
-        (*num_occur)++;
-
-    /*
-     * if the bound expression was not an atom, abort if we counted
-     * more than one occurence.
-     */
-    if ((*num_occur > 1) && !e1_is_atomic)
-        return false;
-
-    /* visit all our children and test for them */
-    for (i = 0; i < PFCNODE_MAXCHILD && e->child[i]; i++)
-        if (!unfoldable_ (v, e->child[i], num_occur, e1_is_atomic))
-            return false;
-
-    /*
-     * We may not unfold if $v occurs in special places
-     */
-    switch (e->kind) {
-
-        /*
-         * Do not unfold $v in the `in' clause of FLWOR expressions
-         */
-        case c_for:      
-            assert (e->child[2]->kind == c_var);
-            if (e->child[2]->sem.var != v)
-                return true;
-            break;
-
-        /*
-         * Only unfold $v in an `if-then-else' condition
-         * if e1 is an atom.
-         */
-        case c_ifthenelse:
-            if (e1_is_atomic
-                || (e->child[0]->kind != c_var)
-                || (e->child[0]->sem.var != v))
-                return true;
-            break;
-
-        /*
-         * We can safely unfold variables here
-         */
-        case c_var:
-        case c_lit_str:
-        case c_lit_int:
-        case c_lit_dec:
-        case c_lit_dbl:
-        case c_nil:
-        case c_empty:
-        case c_let:
-        case c_seq:
-            return true;
-
-        default:
-            break;
-    }
-
-    return false;
-}
-
-/**
- * Test if the expression
- *
- * @verbatim
-     let $v := e1 return e2
-@endverbatim
- * 
- * can be unfolded to
- *
- * @verbatim
-     e2[e1/$v]
-@endverbatim
- *
- * This is only possible, if some conditions are met (in order):
- *
- *  - $v must not occur as the `in' part of a FLWOR expression.
- *    (MIL code generation would fail otherwise, as iteration does
- *    not happen over a BAT variable.)
- *
- *  - If $v is an atom, we can safely unfold it.
- *
- *  - If $v occurs more than once in e2, do not unfold for performance
- *    reasons. (We don't want to re-evaluate e2 more than once.)
- *    This restriction is also implied by the implementation of
- *    replace_var().
- *
- *  - Note that we do not consider conditional expressions separately.
- *    This implies lazy evaluation as in the W3C drafts. (Particularly,
- *    errors within a twig of an if-then-else clause are only raised,
- *    if that twig is actually chosen by the if-then-else condition.)
- */
-static bool
-unfoldable (PFvar_t *v, PFcnode_t *e1, PFcnode_t *e2)
-{
-    bool e1_is_atomic;
-    int  num_occur;
-
-    /* see if e1 is atomic */
-    switch (e1->kind) {
-        case c_var:
-        case c_lit_str:
-        case c_lit_int:
-        case c_lit_dec:
-        case c_lit_dbl:
-            e1_is_atomic = true;
-            break;
-
-        default:
-            e1_is_atomic = false;
-            break;
-    }
-
-    num_occur = 0;
-
-    return unfoldable_ (v, e2, &num_occur, e1_is_atomic);
-}
-
-static PFcnode_t *
-unfold_lets (PFcnode_t *c)
-{
-    unsigned int i;
-
-    if (c->kind == c_let) {
-        if (unfoldable (c->child[0]->sem.var, c->child[1], c->child[2])) {
-            replace_var (c->child[0]->sem.var, c->child[1], c->child[2]);
-            return unfold_lets (c->child[2]);
-        }
-    }
-
-    for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
-        c->child[i] = unfold_lets (c->child[i]);
-
-    return c;
+    exit (EXIT_FAILURE); /* JF: cannot be called in runtime env */
 }
 
 /* vim:set shiftwidth=4 expandtab: */

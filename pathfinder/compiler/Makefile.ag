@@ -43,6 +43,7 @@ bin_pf = {
 	SOURCES = \
 	     env.c \
 	     main.c \
+	     compile.c \
 	     oops.c \
 	     pfstrings.c \
 	     qname.c \
