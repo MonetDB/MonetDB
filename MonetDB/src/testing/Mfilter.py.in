@@ -75,6 +75,10 @@ test = (
 ##                    r": Symbol .(?:exit|_setjmp). causes overflow in R_X86_64_PC32 relocation$",
 ##                    r"^\+\=+\+$",
 ##                    r"^\+\-+\+$",
+                # Tokens & messages depend on flex/bison
+                    r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
+                    r'^(?:ERROR = !|)(?:syntax|parse) error, ',
+                    r'^.*: at \([0-9]+,[0-9]+\-[0-9]+,[0-9]+\): ',
                  ])+')',  re.MULTILINE),
         # differing error messages when loading non-existing modules in dynamic and static Mserver
         re.compile('(?:'+')|(?:'.join([
@@ -175,10 +179,6 @@ test = (
                     r'^\[ (?:\-|)0 \]$',
 ##                # src/mapi/monet_BATs (on Linux2.4.26.ntv_32-d):
 ##                    r'^\[ "monet_mod_use",\t* *(?:44|66)\t* *\]$',
-                # Tokens & messages depend on flex/bison
-                    r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
-                    r'^(?:ERROR = !|)(?:syntax|parse) error, ',
-                    r'^.*: at \([0-9]+,[0-9]+\-[0-9]+,[0-9]+\): ',
 ##                # Intel compiler seems to do some (re-)compilation for src/mapi/examples/C/
 ##                    r'^IPO: using IR for .*$',
 ##                    r'^IPO: performing single-file optimizations$',
