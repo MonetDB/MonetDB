@@ -1,0 +1,5 @@
+module(ascii_io,unix);
+path:=getenv("TSTTRGDIR");
+load(path+"/format", path+"/test100k", 100000);
+commit;
+quit;
