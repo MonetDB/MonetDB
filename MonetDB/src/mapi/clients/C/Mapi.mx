@@ -827,14 +827,19 @@ typedef __int64 mapi_int64;
 /* define printf formats for printing size_t and ssize_t variables */
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
 #define SZFMT "%zu"
+#define SSZFMT "%zd"
 #elif SIZEOF_SIZE_T == SIZEOF_INT
 #define SZFMT "%u"
+#define SSZFMT "%d"
 #elif SIZEOF_SIZE_T == SIZEOF_LONG
 #define SZFMT "%lu"
+#define SSZFMT "%ld"
 #elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
-#define SZFMT LLFMT
+#define SZFMT ULLFMT
+#define SSZFMT LLFMT
 #elif SIZEOF_SIZE_T == SIZEOF___INT64
-#define SZFMT LLFMT
+#define SZFMT ULLFMT
+#define SSZFMT LLFMT
 #else
 #error no definition for SZFMT
 #endif
@@ -2214,7 +2219,7 @@ char * mapi_fetch_line_internal(Mapi mid)
 			len = stream_read(mid->from, mid->blk.buf+n, 1, BLOCK);
 			mid->blk.buf[n+len]=0;
 			if( mid->trace) {
-				printf("got next block: length:%d\n",len);
+				printf("got next block: length:" SSZFMT "\n",len);
 				printf("text:%s\n",mid->blk.buf+n);
 			}
 			@:endofsession(len)@
