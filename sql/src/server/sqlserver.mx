@@ -692,7 +692,7 @@ proc SQLclient_thread( int sock ):= {
 }
 
 proc sqlexecute( str cmd, stream Output ):= {
-	print(cmd);
+	#print(cmd);
 	eval(cmd);
 }
 
