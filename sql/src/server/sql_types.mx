@@ -1080,7 +1080,8 @@ void sqltypeinit()
 		}
 	}
 
-	for(t=numerical; t < dates; t++){
+	/* all numericals including the temporal intervals */
+	for(t=numerical; *t != DTE; t++){
 		sql_subtype *lt = sql_bind_localtype( (*t)->base.name );
 
 		sql_create_func("sql_sub","-", *t, *t, *t, SCALE_FIX);
@@ -1203,23 +1204,25 @@ void sqltypeinit()
 	sql_create_func("convert", "date", TMESTAMP, NULL, DTE, SCALE_NONE );
 
 	sql_create_func( "current_date", "current_date", NULL, NULL, DTE, SCALE_NONE );
-/* does not work?!?
-	sql_create_func( "curdate", "current_date", NULL, NULL, DTE, SCALE_NONE ); *//* JDBC */
+	sql_create_func( "curdate", "current_date", NULL, NULL, DTE, SCALE_NONE ); 
 	sql_create_func( "current_time", "current_time", NULL, NULL, TME, SCALE_NONE );
-/* does not work?!?
-	sql_create_func( "curtime", "current_time", NULL, NULL, TME, SCALE_NONE ); *//* JDBC */
+	sql_create_func( "curtime", "current_time", NULL, NULL, TME, SCALE_NONE ); 
 	sql_create_func( "current_timestamp", "current_timestamp", NULL, NULL, TMESTAMP, SCALE_NONE );
-/* already there?!?
-	sql_create_func( "now", "current_timestamp", NULL, NULL, TMESTAMP, SCALE_NONE );*/
 
 	sql_create_func( "sql_sub", "date_sub_sec_interval", DTE, SECINT, DTE, SCALE_FIX);
 	sql_create_func( "sql_sub", "date_sub_month_interval", DTE, MONINT, DTE, SCALE_FIX);
+	sql_create_func( "sql_sub", "timestamp_sub_sec_interval", TMESTAMP, SECINT, TMESTAMP, SCALE_FIX);
+	sql_create_func( "sql_sub", "timestamp_sub_month_interval", TMESTAMP, MONINT, TMESTAMP, SCALE_FIX);
+	sql_create_func( "sql_sub", "time_sub_sec_interval", TME, SECINT, TME, SCALE_FIX);
 
 	sql_create_func( "sql_sub", "diff", DTE, DTE, INT, SCALE_FIX);
 	sql_create_func( "sql_sub", "diff", TMESTAMP, TMESTAMP, LNG, SCALE_FIX);
 
 	sql_create_func( "sql_add", "date_add_sec_interval", DTE, SECINT, DTE, SCALE_FIX);
 	sql_create_func( "sql_add", "addmonths", DTE, MONINT, DTE, SCALE_FIX);
+	sql_create_func( "sql_add", "timestamp_add_sec_interval", TMESTAMP, SECINT, TMESTAMP, SCALE_FIX);
+	sql_create_func( "sql_add", "addmonths", TMESTAMP, MONINT, TMESTAMP, SCALE_FIX);
+	sql_create_func( "sql_add", "time_add_sec_interval", TME, SECINT, TME, SCALE_FIX);
 	sql_create_func( "local_timezone", "local_timezone", NULL, NULL, SECINT,  SCALE_FIX);
 
 	sql_create_func( "year", "year", DTE, NULL, INT, SCALE_FIX);
@@ -1238,8 +1241,8 @@ void sqltypeinit()
 	sql_create_func( "dayofyear", "dayofyear", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func( "weekofyear", "weekofyear", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func( "dayofweek", "dayofweek", DTE, NULL, INT, SCALE_FIX);
-	sql_create_func( "dayofmonth", "day", DTE, NULL, INT, SCALE_FIX); /* JDBC */
-	sql_create_func( "week", "weekofyear", DTE, NULL, INT, SCALE_FIX); /* JDBC */
+	sql_create_func( "dayofmonth", "day", DTE, NULL, INT, SCALE_FIX); 
+	sql_create_func( "week", "weekofyear", DTE, NULL, INT, SCALE_FIX); 
 
 
 	for(t=strings; t < numerical; t++){

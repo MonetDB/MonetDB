@@ -250,11 +250,11 @@ An alternative scheme is to collect these statements in an SQL boot file.
 @c
 int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 { 
-	int ret, *Debug = NULL;
+	int ret, *Debug = NULL, **D = &Debug;
   	if (lt->cnt != 1) {
         	return handle_argerror(res, lt->cnt, 1);
   	}
-	builtin_operand( stk, lt, 0, (ptr*)&Debug, TYPE_int, res);
+	builtin_operand( stk, lt, 0, (ptr*)D, TYPE_int, res);
 	backend_init( &monet4_freestack, &monet4_freecode, &monet4_parse );
 	if ( (ret = mvc_init(*Debug, (backend_stack)stk )) > 0 ){
 		#define S(q) sqlstatement(q,stk)
