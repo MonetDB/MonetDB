@@ -283,13 +283,14 @@ void logger_bat(buf_p buf, BAT *b ){
 	}
 }
 
+INLINE
 static BAT *dirty_bat(int i) {
 	if (logger_debug&4)
 		fprintf(stderr, "dirty_bat %d\n", i);
 
 	if (BBP_logical(i)) {
 		BAT *b;
-		BBPspin(i, "dirty_bat");
+		/*BBPspin(i, "dirty_bat");*/
 		b = BBP_cache(i);
 		if (b != NULL) {
 			if ((b->batPersistence&PERSISTENT) && BATdirty(b)) {
@@ -322,16 +323,14 @@ int logger_commit(){
 	bwrite(buf, &id, sizeof(int));
 	for (i = 1; i < BBPsize; i++) {
 		BAT *b = dirty_bat(i);
-		if (b) logger_bat(buf,b); 
+		if (b){
+		       logger_bat(buf,b); 
+		       BATfakeCommit(b); 
+		}
 	}
 	*((int*)buf->root->buf) = buffer_used(buf);
 	buffer_flush(buf, logger_fp);
 	destroy_buffer(buf);
-
-	for (i = 1; i < BBPsize; i++) {
-		BAT *b = dirty_bat(i);
-		if (b) BATfakeCommit(b); 
-	}
 	BBPunlock("logger_commit");
 	
 	return GDK_SUCCEED; 
@@ -419,6 +418,7 @@ int logger_update() {
 	    p += sizeof(int);
 	    
 	    merge_block(p,block_end);
+	    p = block_end;
 	    logger_logid = id;
 	}
 
