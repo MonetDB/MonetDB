@@ -239,7 +239,7 @@ void advice(){
 	for(i=0; hlp[i]; i++) printf("#%s\n",hlp[i]);
 }
 char *code[]={
-"#include \"mil_prelude\";",
+"#use the \"mil_schema\" for additional support routines",
 0
 };
 void mil_code_prelude(){

@@ -155,7 +155,13 @@ extern void showmappings();
 
 extern int constantdeclaration;
 
-extern void resetIds();
+typedef struct IDS{
+        str nme;
+        struct IDS *peer;
+} *Ids;
+extern Ids ids;
+
+extern void resetIds(Ids prev);
 extern void pushIterator(str nme);
 extern void newId(str nme);
 extern void popIterator();
@@ -219,7 +225,7 @@ needed for tracing the parser.
 				if(trace_code)
 				printf("\tmil.line(\"%s\");\n",
 					mapi_quote(yytext,strlen(yytext))); 
-				rem;
+				comment =0;
 				return yylex();}
 ("nil"|"NIL")^({L}|{P})         { Vector(TOK_CONSTANT, TYPE_void, "nil", 3);   }
 ("proc"|"PROC")       { Symbol(TOK_PROCDEF);                                  }
@@ -540,14 +546,14 @@ introduced in a block and issue a bind operation before using them.
 Variables that are introduced at the LHS of an assignment
 need not be bound through the BAT binding operation.
 @c
-typedef struct IDS{
-	str nme;
-	struct IDS *peer;
-} *Ids;
-
 Ids ids;
 
-void resetIds() {ids =0;}
+void resetIds(Ids prev) {
+        while(ids && prev != ids){
+                ids =prev->peer;
+                GDKfree(prev);
+        }
+}
 
 void newId(str nme){
 	Ids m;
@@ -768,7 +774,7 @@ MIL_session:
     ;
 
 session:
-        proc_definition {resetIds();}
+        proc_definition {resetIds(ids);}
     |   TOK_MODULE '(' module_list ')' ';'
     |   statement
     ;
@@ -983,7 +989,11 @@ parallel_block:
 
 
 proc_definition:
-        TOK_PROCDEF proc_name '(' proc_header sequential_block
+        TOK_PROCDEF proc_name '(' proc_header 
+	{
+		$$.val = (str) ids;
+	}
+	sequential_block
 	{ 
 #ifdef M2Moffline
 	  printf("end %s;\n",$2.val); 
@@ -991,45 +1001,10 @@ proc_definition:
 	TODO
 #endif
 	}
-    |   TOK_PROCDEF proc_name {
-#ifdef M2Moffline
-	  printf(");\n");
-#else
-	TODO
-#endif
-	} sequential_block
-	{ 
-#ifdef M2Moffline
-	  rem; printf("end %s;\n",$2.val); 
-#else
-	TODO
-#endif
-	}
     |   TOK_PROCDEF tok_ident ';'
-    |   TOK_PROCDEF proc_name {
-#ifdef M2Moffline
-	  rem; printf(");\n");
-#else
-	TODO
-#endif
-	} TOK_ASSIGNMENT sequential_block
-	{ 
-#ifdef M2Moffline
-	  rem; printf("end %s;\n",$2.val); 
-#else
-	TODO
-#endif
-	}
-    |   TOK_PROCDEF proc_name '(' proc_header TOK_ASSIGNMENT stmt
-	{ 
-#ifdef M2Moffline
-	  rem; printf("end %s;\n",$2.val); 
-#else
-	TODO
-#endif
-	}
     |   TOK_UNDEF tok_ident';'
     ;
+
 
 proc_name:
         tok_ident
