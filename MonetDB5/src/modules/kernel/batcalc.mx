@@ -286,9 +286,9 @@ fixed-sized types.
 		if(*(@1 *)p2 == @1_nil || *(@1*)p3 == @1_nil)
 			*(@1*)p1= @1_nil;
 		else *(@1*)p1= * (@1*) p2 @2 *(@1 *) p3;
-		p1= (ptr)( ((@1*)p1) + s1);
-		p2= (ptr)( ((@1*)p2) + s2);
-		p3= (ptr)( ((@1*)p3) + s3);
+		p1= (ptr)( ((char*)p1) + s1);
+		p2= (ptr)( ((char*)p2) + s2);
+		p3= (ptr)( ((char*)p3) + s3);
 	}
 @-
 This code could be further improved by factoring
@@ -299,8 +299,8 @@ This has been left out.
 		if(*(@1 *)p2 == @1_nil || *(@1*)cst == @1_nil)
 			*(@1*)p1= @1_nil;
 		else *(@1*)p1 = *(@1*) p2 @2 *(@1 *) cst;
-		p1= (ptr)( ((@1*)p1) + s1);
-		p2= (ptr)( ((@1*)p2) + s2);
+		p1= (ptr)( ((char *)p1) + s1);
+		p2= (ptr)( ((char *)p2) + s2);
 	}
 @-
 The following utility extracts the BATdescriptor
@@ -506,8 +506,8 @@ str CMDbatMODcst(int *ret, int *l, void *cst)
 		if(*(@1 *)p2 == @1_nil )
 			*(@1*)p1= @1_nil;
 		else *(@1*)p1= @2 *(@1 *) p2;
-		p1= (ptr)( ((@1*)p1) + s1);
-		p2= (ptr)( ((@1*)p2) + s2);
+		p1= (ptr)( ((char *)p1) + s1);
+		p2= (ptr)( ((char *)p2) + s2);
 	}
 @-
 Unary accummulators are only indirectly called. They can not
@@ -555,9 +555,9 @@ The structure of this code is copied from the arithmetic scheme.
 		if(*(@1 *)p2 == @1_nil || *(@1*)p3 == @1_nil)
 			*(bit*)p1= bit_nil;
 		else *(bit*)p1= * (@1*) p2 @2 *(@1 *) p3;
-		p1= (ptr)( ((bit*)p1) + s1);
-		p2= (ptr)( ((@1*)p2) + s2);
-		p3= (ptr)( ((@1*)p3) + s3);
+		p1= (ptr)( ((char *)p1) + s1);
+		p2= (ptr)( ((char *)p2) + s2);
+		p3= (ptr)( ((char *)p3) + s3);
 	}
 @-
 @= cmpLoopCst
@@ -565,8 +565,8 @@ The structure of this code is copied from the arithmetic scheme.
 		if(*(@1 *)p2 == @1_nil || *(@1*)cst == @1_nil)
 			*(bit*)p1= bit_nil;
 		else *(bit*)p1 = *(@1*) p2 @2 *(@1 *) cst;
-		p1= (ptr)( ((bit*)p1) + s1);
-		p2= (ptr)( ((@1*)p2) + s2);
+		p1= (ptr)( ((char *)p1) + s1);
+		p2= (ptr)( ((char *)p2) + s2);
 	}
 @= compareImpl
 str compareaccum@1(BAT *dst, BAT *left, BAT *right){
@@ -610,7 +610,7 @@ str CMDcmp@1(int *ret, int *l, int *r)
 	BATloopFast(left,p,q,xx){
 		ptr h= BUNhead(left,p);
 		bunfastins_nocheck(dst,p1,h,&bn,s1);
-		p1= (ptr)( ((int*)p1) + s1);
+		p1= (ptr)( ((char*)p1) + s1);
 	}
 bunins_failed:
 	dst->hsorted= BAThordered(left);
@@ -675,7 +675,7 @@ str CMDcmp@1cst(int *ret, int *l, void *cst)
 	BATloopFast(left,p,q,xx){
 		ptr h= BUNhead(left,p);
 		bunfastins_nocheck(dst,p1,h,&bn,s1);
-		p1= (ptr)( ((int*)p1) + s1);
+		p1= (ptr)( ((char*)p1) + s1);
 	}
 bunins_failed:
 	dst->hsorted= BAThordered(left);
@@ -724,8 +724,8 @@ str CMDbitbataccumNOT(int *ret, int *d, int *l)
 		if(*(bit *)p1 == bit_nil )
 			*(bit*)p2 = bit_nil;
 		else *(bit*) p2 =  ! * (bit*) p1;
-		p2= (ptr)( ((int*)p2) + s2);
-		p1= (ptr)( ((int*)p1) + s1);
+		p2= (ptr)( ((char*)p2) + s2);
+		p1= (ptr)( ((char*)p1) + s1);
 	}
 
 	BBPfix(*ret = dst->batCacheid);
@@ -748,7 +748,7 @@ str CMDbitbatNOT(int *ret, int *l)
 	BATloopFast(left,p,q,xx){
 		ptr h= BUNhead(left,p);
 		bunfastins_nocheck(dst,p1,h,&bn,s1);
-		p1= (ptr)( ((int*)p1) + s1);
+		p1= (ptr)( ((char *)p1) + s1);
 	}
 bunins_failed:
 	dst->hsorted= BAThordered(left);

@@ -1,8 +1,8 @@
 # Monet Database Server V5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
 # dbname:demo
 ## functions and rules with variable arguments complicate our live
 #
@@ -49,10 +49,10 @@ end prStr;	# 9
 !ERROR: 'iterator.argument' undefined in Admin.pr[2]
 !ERROR: Error in cloned function
 !ERROR: function Admin.pr(format:str,arg:int...):int;	# 0  (arg:int)<-(format:str)(arg:int)
-    i := -1;	# 1  (i:int)<-($4:int)
-barrier b := iterator.argument(i,arg);	# 2  unknown (b:any)<-(i:int)(arg:int) jump 3
-exit b;	# 3  (b:any)
-end pr;	# 4  
+!ERROR:     i := -1;	# 1  (i:int)<-($4:int)
+!ERROR: barrier b := iterator.argument(i,arg);	# 2  unknown (b:any)<-(i:int)(arg:int) jump 3
+!ERROR: exit b;	# 3  (b:any)
+!ERROR: end pr;	# 4  
 !ERROR: 'Admin.pr' undefined in Admin.main[1]
 !ERROR: 'prStr' undefined in Admin.main[2]
 !ERROR: 'prStr' undefined in Admin.main[3]

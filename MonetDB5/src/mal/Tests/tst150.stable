@@ -1,8 +1,8 @@
 # Monet Database Server V5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
+# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
 # dbname:demo
 #command Admin.lookup(nme:str):bat[str,str] = CMDlookup; 
 !ERROR: address of 'CMDlookup' not found
@@ -27,12 +27,12 @@ end sample;	# 6
 !ERROR: 'algebra.select' undefined in Admin.sample[2]
 !ERROR: Error in cloned function
 !ERROR: function Admin.sample(nme:str,val:int):int;	# 0  (val:int)<-(nme:str)(val:int)
-    b := Admin.lookup(nme);	# 1 CMDlookup (b:bat[str,str])<-(nme:str)
-    h := algebra.select(b,val,val);	# 2 CMDselect (h:bat[str,str])<-(b:bat[str,str])(val:int)(val:int)
-    t := algebra.count(h);	# 3 CMDcount_bat (t:int)<-(h:bat[str,str])
-    x := io.print(t);	# 4 CMDprint_val (x:int)<-(t:int)
-    y := io.print(val);	# 5 CMDprint_val (y:int)<-(val:int)
-end sample;	# 6  
+!ERROR:     b := Admin.lookup(nme);	# 1 CMDlookup (b:bat[str,str])<-(nme:str)
+!ERROR:     h := algebra.select(b,val,val);	# 2 CMDselect (h:bat[str,str])<-(b:bat[str,str])(val:int)(val:int)
+!ERROR:     t := algebra.count(h);	# 3 CMDcount_bat (t:int)<-(h:bat[str,str])
+!ERROR:     x := io.print(t);	# 4 CMDprint_val (x:int)<-(t:int)
+!ERROR:     y := io.print(val);	# 5 CMDprint_val (y:int)<-(val:int)
+!ERROR: end sample;	# 6  
 !ERROR: 'Admin.sample' undefined in Admin.main[2]
 function Admin.main():int;	# 0  (main:int)
     Admin.sample("hello","world");	# 1  ($1:bit)<-($2:str)($3:str)

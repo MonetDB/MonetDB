@@ -1,0 +1,36 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
+# dbname:demo
+##Parsing properties and keeping them around
+## note the use of the first parameter to obtain property set
+#function newsemijoin(A:bat[int{sorted,dense},any::1], B:bat[int{sorted},any::2])
+#end newsemijoin;
+function Admin.newsemijoin(A:bat[int,any::1]{unique,dense,sorted},B:bat[int,any::2]{sorted}):bat[int,any::1];	# 0  dynamic (A:bat[int,any::1])<-(A:bat[int,any::1])(B:bat[int,any::2])
+end newsemijoin;	# 1  
+#z:=new(:int{sorted},int);
+#w:=new(:{sequence},int);
+#w:bat[int,int]:=new(:int,:int);
+#y:=sort(w:bat[int,int]{sorted,dense});
+#print(1);
+#y:int{+sorted}:=sort(w);
+#
+!ERROR: z:=new(:int{sorted},int);
+!                  ^',' expected
+!ERROR: w:=new(:{sequence},int);
+!               ^',' expected
+!ERROR: y:=sort(w:bat[int,int]{sorted,dense});
+!                ^',' expected
+!ERROR: y:int{+sorted}:=sort(w);
+!            ^'.' or '(' expected
+function Admin.main():int;	# 0  unknown (main:int)
+    z := new(:int);	# 1  unknown (z:any)<-($2:int)
+    w := new(:any);	# 2  unknown (w:bat[int,int])<-($4:any)
+    w := new(:int,:int);	# 3  unknown (w:bat[int,int])<-($5:int)($6:int)
+    y := sort(w);	# 4  unknown (y:int)<-(w:bat[int,int])
+    print(1);	# 5  unknown ($8:any)<-($9:int)
+    y;	# 6  unknown (y:int)
+end main;	# 7  unknown 
+>
