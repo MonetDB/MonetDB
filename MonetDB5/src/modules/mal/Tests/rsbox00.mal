@@ -8,19 +8,16 @@ bat.insert(b1, nil, "test1");
 bat.insert(b1, nil, "test2");
 
 resultset.addColumn(rs, b1, "col1");
-resultset.setProperty(rs, "table_name", "table1");
+resultset.setProperty(rs, "name", "table1");
 resultset.setProperty(rs, "schema", "sys");
-resultset.setProperty(rs, "length", nil:str);
-resultset.setProperty(rs, "type", "varchar");
 
 b2 := bbp.new(:void, :int);
 bat.insert(b2, nil, 2);
 bat.insert(b2, nil, 5);
 
 resultset.addColumn(rs, b2, "col2");
-resultset.setProperty(rs, "length", "1");
-resultset.setProperty(rs, "table_name", "table2");
-resultset.setProperty(rs, "type", "int");
+resultset.setProperty(rs, "width", 1);
+resultset.setProperty(rs, "name", "table2");
 resultset.setProperty(rs, "schema", "sys");
 
 resultset.setComplete(rs);

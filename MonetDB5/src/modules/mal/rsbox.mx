@@ -663,7 +663,9 @@ static str RSsetPropertyStrInternal(
 	}
 @c
 	@:MX-setPropertyNoNil(name)@
+	else
 	@:MX-setPropertyNoNil(type)@
+	else
 @= MX-setProperty
 	if (strcmp("@1", *nme) == 0) {
 		if (strNil(*val)) *val = "";
@@ -676,7 +678,10 @@ static str RSsetPropertyStrInternal(
 	}
 @c
 	@:MX-setProperty(table)@
+	else
 	@:MX-setProperty(schema)@
+	else
+		throwf("resultset.setProperty", "Invalid property '%s'", *nme);
 
 	*retval = ret;
 	return(MAL_SUCCEED);
@@ -720,8 +725,12 @@ static str RSsetPropertyIntInternal(
 	}
 @c
 	@:MX-setPropertyInt(digits)@
+	else
 	@:MX-setPropertyInt(scale)@
+	else
 	@:MX-setPropertyInt(width)@
+	else
+		throwf("resultset.setProperty", "Invalid property '%s'", *nme);
 
 	*retval = ret;
 	return(MAL_SUCCEED);
