@@ -231,7 +231,8 @@ def am_additional_install_libs(name, sep, list, am):
 def am_deps(fd, deps, objext, am):
     if len(am['DEPS']) <= 0:
         for t, deplist in deps.items():
-            n = string.replace(t, '.o', '.lo', 1)
+            t = t.replace('\\', '/')
+            n = t.replace('.o', '.lo', 1)
             if t != n:
                 fd.write(n + " ")
             fd.write(t + ":")
@@ -739,14 +740,14 @@ def am_jar(fd, var, jar, am):
 
     fd.write("\n%s_class_files= " % (name))
     for j in jar['TARGETS']:
-        fd.write("%s " % j)
+        # translate any \ path separators to / -- the generated file
+        # is Unix/Linux/Cygwin only
+        fd.write("%s " % j.replace('\\', '/'))
 
     fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
-    fd.write("\t$(JAVAC) -d . -classpath \"`$(CYGPATH_WP) \"$(CLASSPATH)\"`\" $(JAVACFLAGS) `$(CYGPATH_WP) $(subst $$,\\\\$$,$^)`\n")
-
+    fd.write("\tfor f in $(subst $$,\\$$,$^); do set $${1+\"$$@\"} \"`$(CYGPATH_W) $$f`\"; done; $(JAVAC) -d . -classpath \"`$(CYGPATH_WP) \"$(CLASSPATH)\"`\" $(JAVACFLAGS) $${1+\"$$@\"}\n")
     fd.write("%s.jar: $(%s_class_files) $(%s_manifest_file)\n" % (name, name, name))
-    fd.write("\t$(JAR) $(JARFLAGS) -cf%s `$(CYGPATH_WP) $@ $(%s_manifest_file) $(subst $$,\\\\$$,$(%s_class_files))`\n" % (manifest_flag, name, name))
-
+    fd.write("\tfor f in $@ $(%s_manifest_file) $(subst $$,\\$$,$(%s_class_files)); do set $${1+\"$$@\"} \"`$(CYGPATH_W) $$f`\"; done; $(JAR) $(JARFLAGS) -cf%s $${1+\"$$@\"}\n" % (name, name, manifest_flag))
     fd.write("install-exec-local-%s_jar: %s.jar\n" % (name, name))
     fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
     fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s.jar\n" % (jd, name))
@@ -791,7 +792,7 @@ def am_java(fd, var, java, am):
         fd.write("%s " % j)
 
     fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
-    fd.write("\t$(JAVAC) -d . -classpath \"`$(CYGPATH_WP) \"$(CLASSPATH)\"`\" $(JAVACFLAGS) `$(CYGPATH_WP) $(subst $$,\\\\$$,$^)`\n")
+    fd.write("\tfor f in $(subst $$,\\$$,$^); do set $${1+\"$$@\"} \"`$(CYGPATH_W) $$f`\"; done; $(JAVAC) -d . -classpath \"`$(CYGPATH_WP) \"$(CLASSPATH)\"`\" $(JAVACFLAGS) $${1+\"$$@\"}\n")
 
     fd.write("install-exec-local-%s_class: %s.class\n" % (name, name))
     fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
@@ -830,7 +831,7 @@ def am_add_srcdir(path, am, prefix =""):
 def am_translate_dir(path, am):
     # translate any \ path separators to / -- the generated file is
     # Unix/Linux/Cygwin only
-    path = string.join(string.split(path, '\\'), '/')
+    path = path.replace('\\', '/')
     dir = path
     rest = ""
     if string.find(path, '/') >= 0:
