@@ -2332,6 +2332,10 @@ The values of a row are delivered to any bounded variable before
 fetch_row returns. Automatic conversion based on common types
 simplifies the work for the programmers.
 @c
+#if HAVE_STRTOF && !HAVE_DECL_STRTOF
+extern float strtof(const char *, char **);
+#endif
+
 static
 void mapi_store_bind(Mapi mid)
 {
