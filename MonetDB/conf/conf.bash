@@ -154,10 +154,6 @@ if [ "${os}" = "Linux" ] ; then
 		echo ''
 		echo "${hw}"' is 32-bit, only; hence, using BITS="32".'
 		BITS="32"
-	  elif [ "${BITS}" = "64"  -a  "${hw}" = "x86_64"  -a  "${COMP}" = "ntv" ] ; then
-		echo ''
-		echo 'icc does not support 64-bit on '"${hw}"' (yet?); hence, using BITS="32".'
-		BITS="32"
 	  elif [ "${BITS}" = "32"  -a  "${hw}" = "ia64" ] ; then
 		echo ''
 		echo 'Currently, we do not support 32-bit on '"${hw}"'; hence, using BITS="64".'
@@ -204,6 +200,15 @@ if [ "${os}" = "Linux" ] ; then
 			conf_opts="${conf_opts} --with-gc=${softpath}"
 			;;
 		esac
+	fi
+	if [ "${hw}${COMP}${BITS}" = "x86_64ntv64" ] ; then
+		d="`ls -d /soft/64/IntelC* | tail -n1`"
+		if [ "$d"  -a  -d "$d/bin" ] ; then
+			binpath="$d/bin:${binpath}"
+		fi
+		if [ "$d"  -a  -d "$d/lib" ] ; then
+			libpath="$d/lib:${libpath}"
+		fi
 	fi
 	if [ "${COMP}" = "PGI" ] ; then
 		# Portland Group compiler on spin
