@@ -339,7 +339,7 @@ void bm_cleanup( bm *bm )
 		BATloop(b, p, q){
 			BUN z;
 	   	 	oid id = *(oid*)BUNhead(b,p);
-	    		oid opbid = *(int*)BUNtail(b,p);
+	    		oid opbid = *(oid*)BUNtail(b,p);
 			oid pbid = 0;
 
 			/* keep the bat id's, schema_table_* can become too long! */
