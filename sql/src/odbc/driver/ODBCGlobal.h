@@ -43,10 +43,6 @@
 #define odbc_export extern 
 #endif
 
-/* MonetDB / SQL frontend include files */
-#include <mem.h>		/* for ??() */
-#include <query.h>		/* for ??() */
-
 /* standard ODBC driver include files */
 #include <sqltypes.h>		/* ODBC C typedefs */
 /* Note: sqlext.h includes sql.h so it is not needed here to be included */
@@ -63,6 +59,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <assert.h>
 
 /* these functions are called from within the library */
 SQLRETURN SQLAllocHandle_(SQLSMALLINT nHandleType, SQLHANDLE nInputHandle,
