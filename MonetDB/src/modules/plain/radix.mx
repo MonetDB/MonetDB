@@ -2380,11 +2380,16 @@ price paid are two parameters to radix\_decluster.
         lim += mult;
         yy = 0;
         while(yy < cnt) {
-	    int nxt = cnk[yy].nxt;
             p = src1 + cnk[yy].cur1;
             q = src1 + cnk[yy].end1;
             r = src2 + cnk[yy].cur2;
-            while(p < q) {
+            while(TRUE) {
+                if (p >= q) {
+		    int nxt = cnk[yy].nxt;
+		    if (nxt < 0) nxt = --cnt;
+                    cnk[yy] = cnk[nxt];
+                    break; /* cluster exhausted; overwrite with last; start over */
+                }
                 cur = *(oid*) BUNtloc(b,p);
                 if (cur >= lim) {
                     cnk[yy].cur2 = r - src2;
@@ -2395,8 +2400,6 @@ price paid are two parameters to radix\_decluster.
                 @2_put(dst[cur], @1, BUN@3(a,r));
 		r += zz;
             }
-            if (nxt < 0) nxt = --cnt; /* cluster exhausted; overwrite with last; start over */
-            cnk[yy] = cnk[nxt];
         }
     } break;
 } 
