@@ -119,14 +119,14 @@ TMcommit(void)
 			} else if ((BBP_status(i) & (BBPDELETED | BBPTMP)) && BBP_refs(i) <= 0 && BBP_lrefs(i) <= 0) {
 				BAT *b = BBPquickdesc(i, TRUE);
 
+				/* the unloaded ones are deleted without loading */
+				/* delete disk images */
+				BATdelete(b);	
 				if (BBP_cache(i)) {
-					/* those that quickdesc decides to load => proper unfix */
-					BBPunfix(i);
-				} else {
-					/* the unloaded ones are deleted without loading */
-					BATdelete(b);	/* delete disk images */
-					BBPclear(i);	/* clear with locking */
+					/* those that quickdesc decides to load => free memory */
+					BATfree(b);
 				}
+				BBPclear(i);	/* clear with locking */
 			}
 			BBP_status_off(i, BBPDELETED | BBPSWAPPED | BBPNEW, "TMcommit");
 		}
