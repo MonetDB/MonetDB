@@ -1795,14 +1795,18 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel)
 		YYSTREE t;
 		int i;
 
-		/* limit tree size to handle->parcnt */
-		for(t = handle->tree, i=handle->parcnt; t; 
-			t = t->overflow, i-= YYMAXSONS)
-		{
+		/* limit tree size to handle->parcnt, by 'hiding' child nodes, hacking the yystree->cnt field */
+		for(t = handle->tree, i=handle->parcnt; t; t = t->overflow, i-= YYMAXSONS) {
 			t->cnt = MAX(0, MIN(YYMAXSONS,i));
 		}
 		
+ 		/* execute last block with less (i.e. parcnt) statements in it */
 		@:par_interpret(handle)@
+
+		/* undo the above operation: unhide child nodes, as this tree will be reused, e.g. if in a while block */
+		for(t = handle->tree, i=handle->parmax; t; t = t->overflow, i-= YYMAXSONS) {
+			t->cnt = MAX(0, MIN(YYMAXSONS,i));
+		}
 
 		i = handle->status;
 	}
