@@ -78,7 +78,7 @@ that you might well find very useful.
 @- GDK status 
 @m
 .COMMAND view_gdk_env( ): BAT[str,str] = view_gdk_env; 
-	"Pseudo bat to map thread to name"
+	"List the values of all environment variables"
 .COMMAND view_gdk_thread( ): BAT[int,str] = view_gdk_thread; 
 	"Pseudo bat to map thread to name"
 
@@ -648,7 +648,6 @@ int view_gdk_env(
 ){
 	BAT *b = *retval = GDKenv;
 	if (b == 0) return GDK_FAIL;
-	@:Pseudo(gdk,env)@
 	return GDK_SUCCEED;
 }
 
