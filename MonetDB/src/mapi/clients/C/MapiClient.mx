@@ -177,7 +177,7 @@ showCommands(void)
 	fprintf(toConsole, "cd\t - change directory\n");
 	/*fprintf(toConsole, "\\r\t- run the buffered command\n");*/
 	/*fprintf(toConsole, "\\c\t- clear the command buffer\n");*/
-	fprintf(toConsole, "\\l\t- line is immediately sent\n");
+	fprintf(toConsole, "\\l\t- line is sent immediately\n");
 	fprintf(toConsole, "\\q\t- terminate session\n");
 }
 
