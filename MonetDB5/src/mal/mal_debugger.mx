@@ -346,7 +346,7 @@ The commands are self-explanatory.
 The prompt string sent to the user indicates the debugger mode.
 @c
 void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
-    char *b;
+    char *b,*c;
     stream *out = cntxt->fdout;
     int listing=cntxt->listing;
 
@@ -362,6 +362,9 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
     	readClient(cntxt,(cntxt==mal_clients?"mdb>":"\001mdb>\001"));
     	b = CURRENT(cntxt);
     	skipBlanc(cntxt,b);
+        /* terminate the line with zero */
+        c= strchr(b,'\n');
+        if( c) *c =0;
     	switch(*b){
     	case 0: 
     		cntxt->fdin->pos += cntxt->yycur; 
