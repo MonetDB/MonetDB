@@ -754,6 +754,17 @@ AC_CHECK_TOOL(OBJC,objc)
 dnl Checks for header files.
 AC_HEADER_STDC()
 
+case "$host_os" in
+    cygwin*)
+	;;
+    *)
+	CYGPATH_W=echo
+	CYGPATH_WP=echo
+	AC_SUBST(CYGPATH_W)
+	AC_SUBST(CYGPATH_WP)
+	;;
+esac
+
 ]) dnl AC_DEFUN AM_MONETDB_TOOLS
 
 AC_DEFUN([AM_MONETDB_OPTIONS],

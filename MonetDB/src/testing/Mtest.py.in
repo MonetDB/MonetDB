@@ -2181,6 +2181,9 @@ if hasattr(os,"symlink"):
 else:
     SymlinkOrCopy = shutil.copy
 
+os.environ['CYGPATH_W'] = '@CYGPATH_W@'
+os.environ['CYGPATH_WP'] = '@CYGPATH_WP@'
+
 if os.environ.has_key('HOST'):
     HOST = os.environ['HOST']
 elif os.name != "nt":

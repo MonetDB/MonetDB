@@ -731,10 +731,10 @@ def am_jar(fd, var, jar, am):
         fd.write("%s " % j)
 
     fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
-    fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $(subst $$,\\$$,$^)\n")
+    fd.write("\t$(JAVAC) -d . -classpath \"`$(CYGPATH_WP) \"$(CLASSPATH)\"`\" $(JAVACFLAGS) `$(CYGPATH_WP) $(subst $$,\\$$,$^)`\n")
 
     fd.write("%s.jar: $(%s_class_files) $(%s_manifest_file)\n" % (name, name, name))
-    fd.write("\t$(JAR) $(JARFLAGS) -cf%s $@ $(%s_manifest_file) $(subst $$,\\$$,$(%s_class_files))\n" % (manifest_flag, name, name))
+    fd.write("\t$(JAR) $(JARFLAGS) -cf%s `$(CYGPATH_WP) $@ $(%s_manifest_file) $(subst $$,\\$$,$(%s_class_files))`\n" % (manifest_flag, name, name))
 
     fd.write("install-exec-local-%s_jar: %s.jar\n" % (name, name))
     fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
@@ -780,7 +780,7 @@ def am_java(fd, var, java, am):
         fd.write("%s " % j)
 
     fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
-    fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $(subst $$,\\$$,$^)\n")
+    fd.write("\t$(JAVAC) -d . -classpath \"`$(CYGPATH_WP) \"$(CLASSPATH)\"`\" $(JAVACFLAGS) `$(CYGPATH_WP) $(subst $$,\\$$,$^)`\n")
 
     fd.write("install-exec-local-%s_class: %s.class\n" % (name, name))
     fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)

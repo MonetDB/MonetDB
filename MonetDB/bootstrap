@@ -207,6 +207,26 @@ aclocal -I . -I conf $LT_M4_DIR $PKG_M4_DIR $CONFDIR
 # (just adding -IPA to LDFLAGS somehow doesn't help ...)
 perl -i -p -e 's|(LD-ld. )|$1-IPA |g' aclocal.m4
 
+# patch aclocal.m4 for cygpath on CYGWIN
+grep -q CYGPATH_W aclocal.m4 && cat << "EOF" | patch aclocal.m4
+--- aclocal.m4.ORG      2004-09-07 18:32:18.593750000 +0200
++++ aclocal.m4  2004-09-07 18:34:05.453125000 +0200
+@@ -6386,11 +6386,14 @@
+ if test -z "$CYGPATH_W"; then
+   if (cygpath --version) >/dev/null 2>/dev/null; then
+     CYGPATH_W='cygpath -w'
++    CYGPATH_WP='cygpath -wp'
+   else
+     CYGPATH_W=echo
++    CYGPATH_WP=echo
+   fi
+ fi
+ AC_SUBST([CYGPATH_W])
++AC_SUBST([CYGPATH_WP])
+ 
+ # Define the identity of the package.
+ dnl Distinguish between old-style and new-style calls.
+EOF
 
 # older versions of automake/aclocal don't know about the
 # Intel compiler on Linux (icc/ecc), yet...
