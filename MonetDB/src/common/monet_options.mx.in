@@ -303,7 +303,7 @@ int mo_system_config( opt **Set, int setlen )
 		Set = &default_set;
 		setlen = default_setlen;
 	}
-	cfg = mo_find_option(*Set, setlen, "prefix");
+	cfg = mo_find_option(*Set, setlen, "config");
 	strcpy(config, cfg);
 	mo_substitute(*Set, setlen, config);
 	return mo_config_file(Set, setlen, config );
