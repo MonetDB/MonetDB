@@ -3,23 +3,23 @@
 @' except in compliance with the License. You may obtain a copy of
 @' the License at
 @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-@' 
+@'
 @' Software distributed under the License is distributed on an "AS
 @' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
 @' implied. See the License for the specific language governing
 @' rights and limitations under the License.
-@' 
+@'
 @' The Original Code is the Monet Database System.
-@' 
+@'
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
+@'
 @' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold <Stefan.Manegold@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
 
 @a M. Kersten and Peter Boncz and Niels Nes
 @v 5
@@ -51,6 +51,8 @@ The following options are supported:
 \item{\em -blocked=true} run in (non-)blocked mode
 \item{\em -h} A synopsis of the command line options
 Can be used in scripts, but is insecure.
+\item{\em -trace} produces a trace of the interaction with the server
+\item{\em -t} produce response timings
 \end{itemize}
 @
 
@@ -95,6 +97,53 @@ int blocked= 1;
 int sql_session= 0, mil_session=1;
 char *sql_continue= "---> ";
 char *sql_prompt= "sql> ";
+long usec=0;
+long GDKtime_startsec=0;
+char *mark,*mark2="";
+
+/* stolen piece */
+#ifdef HAVE_FTIME
+#include <sys/timeb.h>
+#endif
+
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
+lng GDKusec(void) {
+#ifdef HAVE_GETTIMEOFDAY
+        struct timeval tp;
+        gettimeofday(&tp, NULL);
+        return ((lng) (tp.tv_sec-GDKtime_startsec))*
+                (1000000) + (lng) tp.tv_usec;
+#else
+#ifdef HAVE_FTIME
+        struct timeb tb;
+        ftime(&tb);
+        return ((lng) (tb.time-GDKtime_startsec))*(1000000) +
+               ((lng) tb.millitm)*(1000);
+#endif
+#endif
+}
+
+/* generate the time information if the marker is set */
+long t0,t1;
+void timerStart(){
+	t0= GDKusec();
+}
+void timerEnd(){
+	t1= GDKusec();
+	if(mark){
+		printf("%s %d usec %s\n",mark,t1-t0,mark2);
+	}
+}
 
 #ifdef HAVE_ICONV
 iconv_t to_utf = NULL;
@@ -222,6 +271,7 @@ int doRequest(Mapi mid, char *buf )
 	char *rtrn;
 	MapiHdl hdl;
 
+	timerStart();
 	if ((hdl = mapi_query(mid, buf)) == NULL){
 		mapi_explain(mid, stdout);
 		return 0;
@@ -234,6 +284,7 @@ int doRequest(Mapi mid, char *buf )
 	while ((rtrn = mapi_fetch_line(hdl)) != 0) {
 		fprintf(toConsole, "%s\n", rtrn);
 	}
+	timerEnd();
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stdout);
 		mapi_close_handle(hdl);
@@ -420,6 +471,18 @@ redirection of output to a separate file.
 				/*FALLTHRU*/
 			case 'c':
 				m_index = 0; *message = 0;
+				continue;
+@-
+The timer switch can be used to obtain rudimentary timing
+information. The switch may be follows by a tag to
+simplify subsequent retrieval from the output.
+@c
+			case 'T':
+				mark=0;
+				continue;
+			case 't':
+				if(mark==0) mark= "Timer";
+				mark2= _strdup(start_cmd+2);
 				continue;
 			}
 			break;
@@ -705,6 +768,7 @@ int main(int ac, char **av)
 		{"error", 1, 0, 'e'},
 		{"statement", 1, 0, 's'},
 		{"trace", 0, 0, 't'},
+		{"time", 0, 0, 'T'},
 		{"help", 0, 0, '?'},
 		{"set", 1, 0, 'S'},
 		{0, 0, 0, 0}
@@ -716,7 +780,7 @@ int main(int ac, char **av)
 	while(1){
 		int option_index = 0;
 
-		int c = getopt_long( ac, av, "c:d::Dh:p:P:u:s:S:l:e:t?",
+		int c = getopt_long( ac, av, "c:d::Dh:p:P:u:s:S:l:e:T:t?",
 				long_options, &option_index);
 
 		if (c == -1)
@@ -787,6 +851,10 @@ int main(int ac, char **av)
 			break;
 		case 't':
 			trace = 1;
+			break;
+		case 'T':
+			usec= GDKusec();
+			mark= "Timer ";
 			break;
 		case 'u':
 			user = _strdup(optarg);
