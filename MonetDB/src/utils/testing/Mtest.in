@@ -582,8 +582,8 @@ function milC () {
 	local EXT="$1"     ; if [ "$1" ] ; then  shift ; fi
 	local PRELUDE="$1" ; if [ "$1" ] ; then  shift ; fi
 
-	LOG2 "$MSERVER -db $TSTDB -prelude $TSTTRGBASE/src/modules/plain/mapi.mil &"
-	      $MSERVER -db $TSTDB -prelude $TSTTRGBASE/src/modules/plain/mapi.mil &
+	LOG2 "$MSERVER -db $TSTDB -prelude $MONETDIST/share/Monet/mapi.mil -background &"
+	      $MSERVER -db $TSTDB -prelude $MONETDIST/share/Monet/mapi.mil -background &
 	LOG2x sleep 9
 	LOG2 "$MCLIENT $PRELUDE < $TST.$EXT"
 	      $MCLIENT $PRELUDE < $TST.$EXT
@@ -596,8 +596,8 @@ function milCXs () {
 	local EXT="$1"     ; if [ "$1" ] ; then  shift ; fi
 	local PRELUDE="$1" ; if [ "$1" ] ; then  shift ; fi
 
-	LOG2 "$MSERVER -db $TSTDB -prelude $TSTTRGBASE/src/modules/plain/mapi.mil &"
-	      $MSERVER -db $TSTDB -prelude $TSTTRGBASE/src/modules/plain/mapi.mil &
+	LOG2 "$MSERVER -db $TSTDB -prelude $MONETDIST/share/Monet/mapi.mil -background &"
+	      $MSERVER -db $TSTDB -prelude $MONETDIST/share/Monet/mapi.mil -background &
 	LOG2x sleep 9
 	for SCRIPT in ${TST}_s[0-9][0-9].$EXT ; do
 		LOG2 "$MCLIENT $PRELUDE < $SCRIPT"
@@ -612,8 +612,8 @@ function milCXp () {
 	local EXT="$1"     ; if [ "$1" ] ; then  shift ; fi
 	local PRELUDE="$1" ; if [ "$1" ] ; then  shift ; fi
 
-	LOG2 "$MSERVER -db $TSTDB -prelude $TSTTRGBASE/src/modules/plain/mapi.mil &"
-	      $MSERVER -db $TSTDB -prelude $TSTTRGBASE/src/modules/plain/mapi.mil &
+	LOG2 "$MSERVER -db $TSTDB -prelude $MONETDIST/share/Monet/mapi.mil -background &"
+	      $MSERVER -db $TSTDB -prelude $MONETDIST/share/Monet/mapi.mil -background &
 	LOG2x sleep 9
 	(
 	 for SCRIPT in ${TST}_p[0-9][0-9].$EXT ; do
