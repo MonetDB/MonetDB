@@ -236,11 +236,25 @@ void chkFlow(MalBlkPtr mb)
             }
             break;
         case YIELDsymbol:
-            { InstrPtr pn= getInstrPtr(mb,0);
-            if( pn->token != FACTORYsymbol){
-                GDKerror("SYNTAX ERROR: yield misplaced\n!");
+            { InstrPtr ps= getInstrPtr(mb,0);
+            if( ps->token != FACTORYsymbol){
+                GDKerror("yield misplaced\n!");
                 mb->errors++;
             } }
+        case RETURNsymbol:
+            {   InstrPtr ps= getInstrPtr(mb,0);
+                int i;
+                if( ps->retc != p->retc){
+                    GDKerror("invalid return target\n!");
+                    mb->errors++;
+                } else
+                if(ps->typechk == TYPE_FIXED)
+                for(i=0;i<p->retc; i++)
+                if( getArgType(mb,ps,i) != getArgType(mb,p,i)){
+                    GDKerror("type mismatch at argument %d\n",i);
+                    mb->errors++;
+                }
+            }
             break;
         default:
             if( isaSignature(p) && i ){
