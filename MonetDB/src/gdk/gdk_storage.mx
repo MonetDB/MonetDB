@@ -275,7 +275,7 @@ at commit-time.
 			/* write() on 64-bits Redhat for IA64 returns 32-bits signed result (= OS BUG)! */
 			while(size > 0)  {
 				/* circumvent problems by writing huge buffers in chunks <= 1GB */
-				int ret = write(fd, buf, MIN(1<<29, size));
+				int ret = write(fd, buf, MIN(1<<30, size));
 				if (ret < 0) {
 					err = ret;
 					GDKsyserror("GDKsave: error %d on: name=%s, ext=%s, mode=%d\n", 
@@ -327,7 +327,7 @@ char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode){
 		char *dst = buf = (char *) GDKmalloc(chunk); 
 
 		for(n_expected = size; n_expected > 0; n_expected -= n){
-                        n = read(fd, dst, n_expected);
+                        n = read(fd, dst, MIN(1<<30,n_expected));
 			IODEBUG THRprintf(GDKerr, "read(dst " PTRFMT ", n_expected " SZFMT ", fd %d) = " SSZFMT "\n", 
 							(void *) dst, n_expected, fd, n);
 			if (n <= 0) break;
@@ -338,20 +338,14 @@ char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode){
 	    if ((fp = GDKfilelocate(nme, "mrb+", ext)) != NULL) {
 		char path[MAXPATHLEN];
 		int tpe = 0;
-		/*
-	        int tpe = (store==STORE_MMAP)?MAP_SHARED:MAP_PRIVATE;
-	        int mod = (PROT_READ|PROT_WRITE);
-		*/
-		int mod = (store==STORE_MMAP)?(MMAP_WRITE):(MMAP_COPY);
-	        /* hack for STORE_MMAP & BAT_APPEND. This re-introduces the risk of stray
-                 * memory writes into read-only heaps. In order to limit risk we might want 
-                 * to only make the last part PROT_WRITE 
-		 * int mod = (store==STORE_MMAP)?PROT_READ:(PROT_READ|PROT_WRITE); 
- 		 */
+	        int mod = MMAP_READ|MMAP_WRITE|MMAP_SEQUENTIAL;
+
 		fseek(fp, (ssize_t) chunk, SEEK_SET);
-               	fputc('\n',fp); fflush(fp);
-	
-		fclose(fp); fp = NULL;
+               	fputc('\n',fp); 
+		fflush(fp);
+		fclose(fp); 
+		fp = NULL;
+
 	        GDKfilepath(path,BATDIR,nme,ext);
 		buf = (char *)GDKmmap(path, mod, (off_t)0, chunk, (void*)0);	
 		if (buf == (char *) -1L)  {
@@ -477,7 +471,7 @@ static int HEAPcheckmode(Heap *h, char storage, int persistent, int writeable) {
 }
 
 static void DESCsetmodes(BAT *b, BAT *img) {
-	int pers = BBP_status(b->batCacheid)&(BBPPERSISTENT|BBPDELETED);
+	int pers = BBP_status(b->batCacheid)&BBPEXISTING;
 
 	/* sanity check: if nothing proposed, set proposed modes to current modes */
 	if (b->batMapdirty == 0 || b->batMapbuns == (char) -1) {

@@ -372,9 +372,9 @@ BAT *BATmaterialize(BAT *b, size_t size){
 	b->batDirtybuns = TRUE;
 
 	/* cleanup the old heaps */
-	if (buns.base) HEAPfree(&buns);
-	if (th.base) HEAPfree(&th);
-	if (hh.base) HEAPfree(&hh);
+	HEAPfree(&buns);
+	HEAPfree(&th);
+	HEAPfree(&hh);
 	
 	bn = BATmirror(b);
 	bn->dims.headtype = b->dims.tailtype;
