@@ -1895,7 +1895,7 @@ ssize_t bstream_read( bstream *s, size_t size )
 		memmove( s->buf, s->buf + s->pos, used);
 		s->pos = 0; 
 	}
-	while ((rd = s->s->read(s->s, s->buf + used, 1, len)) > 0 ) {
+	while (len > 0 && (rd = s->s->read(s->s, s->buf + used, 1, len)) > 0 ) {
 		len -= rd;
 		used += rd;
 		res += rd;

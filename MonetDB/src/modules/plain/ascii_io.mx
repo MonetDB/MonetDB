@@ -788,7 +788,7 @@ int output_line_lookup( char **buf, int *len, ascii_io *fmt, stream *fd, size_t 
 
 
 int ASCIIload_file( ascii *as, bstream *b ){
-	int res = 0, eof = 0, done = 0;
+	int res = 0, done = 0;
 	size_t i = 0;
 	char *sep = as->format[as->nr_attrs-1].sep;
         int seplen = as->format[as->nr_attrs-1].seplen;
@@ -796,10 +796,13 @@ int ASCIIload_file( ascii *as, bstream *b ){
 	if (ascii_io_debug)
 		stream_printf( GDKerr, "ASCIIload_file\n");
 
-	while(!eof && res == 0 && (as->nr == ~(size_t)0 || i < as->nr)){
+	while(!b->eof && res == 0 && (as->nr == ~(size_t)0 || i < as->nr)){
 		char *s, *end;
-		if (bstream_read(b, b->size - (b->len - b->pos)) == 0)
-			eof = 1;
+		if (bstream_read(b, b->size - (b->len - b->pos)) < 0) {
+			GDKerror("read error\n");
+			res = -1;
+			break;
+		}
 		end = b->buf + b->len;
 		s = b->buf + b->pos;
 		*end = '\0';
@@ -809,7 +812,7 @@ int ASCIIload_file( ascii *as, bstream *b ){
 			if (e){
 				*e = '\0';
 				if ((e-s) <= 1){ /* empty line indicates eof */
-					eof = 1;
+					b->eof = 1;
 					break;
 				}
 				if (insert_line(as, s ) < 0){
@@ -819,7 +822,7 @@ int ASCIIload_file( ascii *as, bstream *b ){
 				}
 				s = e + seplen;
 				done = 1;
-			} else if (eof && s + as->nr_attrs < end){
+			} else if (b->eof && s + as->nr_attrs < end){
 				if (insert_line(as, s ) < 0){
 					GDKerror("value %s not inserted\n", s);	
 					res = -1;
@@ -830,8 +833,16 @@ int ASCIIload_file( ascii *as, bstream *b ){
 				if (!done){ /* nothing found in current buf
 					     * ie. need to enlarge 
 					     */
-					if (bstream_read(b, b->size*16) == 0)
-						eof = 1;
+					int size = b->size;
+
+					if (b->pos == 0 || (b->len - b->pos >
+						b->size>>1) )
+						size <<= 4;
+					if (bstream_read(b, size) < 0) {
+						GDKerror("read error\n");
+						res = -1;
+						break;
+					}
 					end = b->buf + b->len;
 					s = b->buf + b->pos;
 					*end = '\0';
