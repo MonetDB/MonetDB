@@ -1296,7 +1296,6 @@ has been given at the language level. A Warning is issued
 to make the user aware of this situation.
 @{
 @c
-     /*switch( BATatoms[type].storage){*/
 retryConstant:
     switch( parsetype){ 
     case TYPE_bit: { int x = (val[0]=='t' || val[0]=='T')?TRUE:FALSE;

@@ -1143,7 +1143,7 @@ int TABLETload_file( Tablet *as, bstream *b ){
 	int res = 0, eof = 0, done = 0;
 	size_t i = 0;
 	char *sep = as->format[as->nr_attrs-1].sep;
-        int seplen = as->format[as->nr_attrs-1].seplen;
+	int seplen = as->format[as->nr_attrs-1].seplen;
 
 	if (tablet_debug)
 		stream_printf( GDKerr, "TABLETload_file\n");
