@@ -28,6 +28,9 @@ can be found in this module.
 .COMMAND bat(int ht, int tt, int size) : BAT[any,any] = CMDnew;
 "Creates a new empty BAT, directly allocating for 'size' elements."
 
+.COMMAND bat(int ht, int tt, lng size) : BAT[any,any] = CMDnew_lng;
+"Creates a new empty BAT, directly allocating for 'size' elements."
+
 .COMMAND reverse(BAT[any::1,any::2]) : BAT[any::2,any::1] = CMDreverse;
 "Returns the reverse view of a BAT (head is tail and tail is head).
  BEWARE:  no copying is involved; input and output refer to the same object!"
@@ -94,10 +97,10 @@ can be found in this module.
 
 @- BAT properties 
 @m
-.COMMAND count ( int bid ) : int = CMDsize;
+.COMMAND count ( int bid ) : lng = CMDsize;
 "Returns the current size (in number of elements) of a BAT."
 
-.COMMAND capacity ( int bid ) : int = CMDcapacity;
+.COMMAND capacity ( int bid ) : lng = CMDcapacity;
 "Returns the current allocation size (in max number of elements) of a BAT."
 
 .COMMAND info ( BAT[any,any] ) : BAT[str,str] = CMDinfo;
@@ -405,7 +408,7 @@ these 'sync' OIDs with their own propagation rules.
         return b.destroy;
     }
 
-    PROC capacity(bat[any,any] b) : int 
+    PROC capacity(bat[any,any] b) : lng 
 	return capacity(int(b));
 
     PROC save(bat[any::1,any::2] b) : bat[any::1,any::2] {
@@ -433,6 +436,9 @@ these 'sync' OIDs with their own propagation rules.
 
     PROC new(int ht, int tt, int cnt) : bat[any,any]
 	return bat(ht,tt,cnt);
+
+    PROC new(int ht, int tt, lng cnt) : bat[any,any]
+	return bat(ht,tt,cnt);
 .END;
 
 .END bat;
@@ -448,6 +454,11 @@ these 'sync' OIDs with their own propagation rules.
 @c
 #include "monet.h"
 #include "bat.proto.h"
+
+int CMDnew_lng(BAT **ret, int *ht, int *tt, lng *cap){
+	*ret = BATnew(*ht, *tt, *cap);
+	return (*ret)?GDK_SUCCEED:GDK_FAIL;
+}
 
 int CMDnew(BAT **ret, int *ht, int *tt, int *cap){
 	*ret = BATnew(*ht, *tt, *cap);
@@ -570,11 +581,11 @@ int CMDdelete_bat_head(BAT **r, BAT *b, BAT *s){
 	return GDK_SUCCEED;
 } 
 
-int CMDsize(int *res, int *bid) {
+int CMDsize(lng *res, int *bid) {
 	if (BBPcheck(*bid, "CMDsize")) {
 		BAT *b = (BAT*) BBPgetdesc(*bid);
 		if (b == NULL) {
-			*res = int_nil;
+			*res = lng_nil;
 		} else if (BBP_cache(*bid)) {
 			*res = BATcount(b);  
 		} else {
@@ -585,11 +596,11 @@ int CMDsize(int *res, int *bid) {
 	return GDK_SUCCEED;
 }
 
-int CMDcapacity(int *res, int *bid) {
+int CMDcapacity(lng *res, int *bid) {
 	if (BBPcheck(*bid, "CMDcapacity")) {
 		BAT *b = (BAT*) BBPgetdesc(*bid);
 		if (b == NULL) {
-			*res = int_nil;
+			*res = lng_nil;
 		} else {
 			*res = BATcapacity(b);
 		}
@@ -684,9 +695,9 @@ char* pre(str s1,str s2){
 	strcpy(buf,s1); strcat(buf,s2);
 	return buf;
 }
-static char* local_itoa(int i){
+static char* local_itoa(long i){
 	static char buf[32];
-	sprintf(buf,"%d",i);
+	sprintf(buf,"%ld",i);
 	return buf;
 }
 
