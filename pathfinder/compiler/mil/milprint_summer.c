@@ -6298,9 +6298,6 @@ PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
     opt_t *f = (opt_t*) PFmalloc(sizeof(opt_t));
     opt_open(f, fp, status->optimize);
 
-#if 0
-    milprintf(f, "var _oid := kind.ord_uselect(STR);\n_oid := _oid.mark(0@0).reverse();\np(_oid);\n");
-#endif
     way = PFarray (sizeof (int));
     counter = PFarray (sizeof (int));
     *(int *) PFarray_add (counter) = 0; 

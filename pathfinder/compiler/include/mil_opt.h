@@ -42,9 +42,9 @@
  */
 
 #define OPT_STMTS 32767 /* <65535 if first-use further out than this amount of stamements, dead codes survises anyhow */
-#define OPT_VARS 8192 /* don't try dead code elimintation above this amount of live variables */
-#define OPT_REFS 12 /* keep track of usage dependencies; may omit some, which results in surviving dead code */
-#define OPT_COND 255 
+#define OPT_VARS 1024 /* don't try dead code elimintation above this amount of live variables */
+#define OPT_REFS 64 /* keep track of usage dependencies; may omit some, which results in surviving dead code */
+#define OPT_CONDS 32  /* maximum if-nesting */
 
 typedef struct {
         char *mil; /* buffered line of MIL */
@@ -69,12 +69,27 @@ typedef struct {
 			 (((((x)->prefix[0] == (y)->prefix[0]) & ((x)->prefix[1] == (y)->prefix[1])) & \
 			    (OPT_NAME_SUFFIXLEN(x) != 0)) && \
 			   (strncmp((x)->suffix, (y)->suffix, OPT_NAME_SUFFIXLEN(x)) == 0)))
+
 typedef struct {
         opt_name_t name; /* variable name  */
         unsigned short scope; /* scope in which var was defined */
-        unsigned short lastset; /* point to a statement where var was assigned.  stmt_nr must match there as well */
-        unsigned int stmt_nr; 
+
+	/* a set of statements that last assigned to it (may be multiple due to if-then-else) */
+        unsigned short lastset[OPT_REFS]; 
+        unsigned int stmt_nr[OPT_REFS]; 
+	unsigned char setmax; /* last occupied position  in lastset/stmt_nr */
+
+
+	/* range alive references in lastset/stmt_nr for a certain 'cond' */
+	unsigned char always; /* bitmask: var always assigned in cond (bitpos)? */
+	unsigned char setlo[OPT_CONDS+OPT_CONDS];
+	unsigned char sethi[OPT_CONDS+OPT_CONDS];
 } opt_var_t;
+
+/* for each condlevel, there is a cond (even) for the if and (odd) for the else block 
+ * 0 = root, 1 = unused, 2 = first iflevel 3= first elselevel, 4 = second iflevel, etc 
+ */
+#define OPT_COND(o) ((o)->condlevel + (o)->condlevel + (o)->condifelse[(o)->condlevel])
 
 typedef struct {
         unsigned int curstmt; /* number of detected MIL statements so far */
@@ -83,8 +98,11 @@ typedef struct {
         unsigned int iflevel; /* how many conditionals have we passed? */
         unsigned int optimize; 
 
-        unsigned int condlevel; /* number of nested conditional blocks recorded on stack (<OPT_COND) */
-        unsigned short condscopes[OPT_COND]; /* scopes where each conditional block starts */
+	unsigned char if_statement; 
+	unsigned char else_statement;
+        unsigned short condlevel; /* number of nested conditional blocks recorded on stack (<OPT_CONDS) */
+        unsigned short condscopes[OPT_CONDS]; /* scopes where each conditional block starts */
+        unsigned char condifelse[OPT_CONDS]; /* scopes where each conditional block starts */
 
         opt_stmt_t stmts[OPT_STMTS]; /* line buffer */
         opt_var_t vars[OPT_VARS]; /* variable stack */
