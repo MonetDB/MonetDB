@@ -386,6 +386,22 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
         stream_printf(GDKout," %d replaced %s->%s \n",i,getTypeName(x),getTypeName(y));
 #endif 
         } else
+        if( isaColType(x)){
+            int tail;
+            int tx;
+            tail = getTailType(x);
+            tx = getTailIndex(x);
+            if(v && tx == v && tail == TYPE_any){
+                tx= 0;
+                tail = t;
+            }
+            y= newColType(tail);
+            setAnyTailIndex(y,tx);
+            setArgType(mb,p,i,y);
+#ifdef DEBUG_MAL_FCN
+        stream_printf(GDKout," %d replaced %s->%s \n",i,getTypeName(x),getTypeName(y));
+#endif 
+        } else
         if(v>0 &&  getTailIndex(x) == v){
 #ifdef DEBUG_MAL_FCN
         stream_printf(GDKout," replace x= %s polymorphic\n",getTypeName(x));
@@ -430,6 +446,12 @@ Symbol  cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
             tail = getTailType(t);
             if( isPolymorphic(getHeadType(v)) )
             replaceTypeVar(new->def, pp, getHeadIndex(v), head);
+            if( isPolymorphic(getTailType(v)) )
+            replaceTypeVar(new->def, pp, getTailIndex(v), tail);
+        } else
+        if( isaColType(t) ){
+            int tail;
+            tail = getTailType(t);
             if( isPolymorphic(getTailType(v)) )
             replaceTypeVar(new->def, pp, getTailIndex(v), tail);
         } else

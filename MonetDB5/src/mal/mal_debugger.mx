@@ -783,7 +783,10 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
                 BBP_refs(ABS(b->batCacheid))-1);
             BBPunfix(b->batCacheid);
         }
-    }
+    } else
+    if(cnt && isaColType(n->type) && v && v->val.ival){
+		stream_printf(f,"Operation not yet implemented for :col types\n");
+	}
     stream_printf(f,"\n");
 }
 void printBatInfo(stream *f, VarPtr n, ValPtr v){

@@ -800,7 +800,7 @@ instead.
 		skipSpace(cntxt);
 		if ((l = idLength(cntxt))) {
 			str nme = idCopy(cntxt, l);
-			cntxt->nspace->typeChecker = getAddress(nme,1);
+			cntxt->nspace->typeChecker = getAddress(nme,0);
 			GDKfree(nme);
 		} else {
 			parseError(cntxt, "<identifier> expected\n");
@@ -1198,7 +1198,7 @@ This scheme is intended for just-in-time compilation.
         nme = idCopy(cntxt,i);
         if( moduleId(curInstr)) freeModuleName(curInstr);
         setModuleScope(curInstr, cntxt->nspace);
-        curInstr->fcn = getAddress(nme,1);
+        curInstr->fcn = getAddress(nme,0);
         curBlk->binding = nme;
         if( cntxt->nspace->isAtomModule) 
             malAtomProperty(curBlk, curInstr);
@@ -1236,7 +1236,7 @@ MalBlkPtr parseFunction(Client cntxt, int kind){
             return 0;
         }
         nme = idCopy(cntxt,i);
-        curInstr->fcn = getAddress(nme,1);
+        curInstr->fcn = getAddress(nme,0);
         skipSpace(cntxt);
     }
     /* block is terminated at the END statement */

@@ -491,6 +491,12 @@ inspect the properties of BATs and their propagation.
         if( isaBatType(w->type))
             stream_printf(eventstream,"%s",
                 BBPdescriptor(v->val.bval)->batId);
+		else
+        if( isaBatType(w->type))
+            stream_printf(eventstream,"Column name not yet known");
+		else
+        if( isaBatType(w->type))
+            stream_printf(eventstream,"Column name not yet known");
         else  if( w->type == TYPE_str){
             char *t,*tt;
             s= GDKmalloc(v->len+1);
