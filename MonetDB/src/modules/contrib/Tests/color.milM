@@ -1,0 +1,3 @@
+module("color");
+test_color();
+quit;
