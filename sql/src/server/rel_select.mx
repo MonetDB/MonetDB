@@ -166,7 +166,8 @@ exp_like( sql_exp *l, sql_exp *r, sql_exp *esc, int like)
 	if (esc)
 		e->r = exp_exp(r,esc);
 	e->type = e_cmp;
-	e->f = (void*)like; /* .. */
+	e->flag = like;
+	e->f = NULL;
 	return e;
 }
 
@@ -179,7 +180,8 @@ exp_compare( sql_exp *l, sql_exp *r, int cmptype)
 	e->l = l;
 	e->r = r;
 	e->type = e_cmp;
-	e->f = (void*)cmptype; /* .. */
+	e->flag = cmptype;
+	e->f = NULL;
 	return e;
 }
 

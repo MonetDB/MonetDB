@@ -23,6 +23,7 @@ typedef struct expression {
 	void *r;
 	expression_type  type;	/* atom, cmp, func/aggr */
 	void *f; 	/* =,!=, but also func's and aggr's and column type */
+	int  flag;
 	char card;	/* card 
 				(0 truth value!)
 				(1 atoms (some aggr too))) 
