@@ -1109,13 +1109,15 @@ if( ret != MAL_SUCCEED ) {
     str msg = 0, nxt;
     int symid= -1;
 	if( stk->cmd  ) {
+        stream_printf(cntxt->fdout,"!ERROR: %s\n",ret);
+		stk->cmd='n';
 		mdbStep(cntxt,mb,stk,stkpc);
-            if( stk->cmd == 'q') goto MALevalExit;
-            if( stk->cmd == 'r') {
-                stk->cmd = 'n';
-                goto MALrestart;
-            }
-        }
+		if( stk->cmd == 'q') goto MALevalExit;
+		if( stk->cmd == 'r') {
+			stk->cmd = 'n';
+			goto MALrestart;
+		}
+	}
     if(ret ) msg= strchr(ret,':');
     if( msg) {
         *msg= 0;
