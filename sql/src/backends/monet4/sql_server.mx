@@ -123,12 +123,15 @@ stream.
 
 	.COMMAND hash( any::1 v, int sh ) : int = hash_wrap; "calculate a hash value and shift left"
 
-	.COMMAND round( sht v, sht r ) : sht = sht_round_wrap; "round off the value v to nearests multiple of r"
+@= mel_round
+	.COMMAND round( @1 v, @1 r ) : @1 = @1_round_wrap; "round off the value v to nearests multiple of r"
+@m
 
-	.COMMAND round( int v, int r ) : int = int_round_wrap; "round off the value v to nearests multiple of r"
+@:mel_round(sht)@
+@:mel_round(int)@
+@:mel_round(lng)@
 
-	.COMMAND round( lng v, lng r ) : lng = lng_round_wrap; "round off the value v to nearests multiple of r"
-
+@m
 	.COMMAND round( flt v, flt r ) : flt = flt_round_wrap; "round off the value v to nearests multiple of r"
 
 	.COMMAND round( dbl v, dbl r ) : dbl = dbl_round_wrap; "round off the value v to nearests multiple of r"

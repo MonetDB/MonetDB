@@ -52,7 +52,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "sql_scenario.h"
 #include "sql_gencode.h"
 
-extern void pushCatchDefault(MalBlkPtr mb, str nme,int autocommit);
+static void pushCatchDefault(MalBlkPtr mb, str nme,int autocommit);
 
 static int SQLinitialized;
 
@@ -98,6 +98,7 @@ str SQLinitClient(Client c){
 			"Catalogue not available\n");
 	}
 	if( (backend*) c->state[PARSER] == 0){
+		/* currently disabled caching, first get simple stuff to work */
 		m = mvc_create(0, 0, NULL, c->fdout);
 		/* replace user name with client record setting later on */
 		schema = mvc_login(m, "monetdb", "monetdb");
@@ -261,8 +262,9 @@ str SQLparser(Client c) {
 	str msg=0;
 	int debug=0, err=0,cache= 0,len;
 	backend *be;
+	mvc *m;
 	MalBlkRecord oldstate;
-	lng T0;
+	lng T0 = 0;
 	InstrPtr q;
 
 	oldstate= *c->curprg->def;
@@ -271,53 +273,65 @@ str SQLparser(Client c) {
 #endif
 	debug= SQLsetEnvironment(c);
 	be = ((backend*)c->state[PARSER]);
+	m = be->mvc;
 	/* input string is copied to the SQL structure for parsing */
-	scanner_reset(&be->mvc->scanner, _strdup(c->nxt));
+	scanner_reset(&m->scanner, _strdup(c->nxt));
 
-        be->mvc->type = Q_PARSE;
+        m->type = Q_PARSE;
 
-        cache = be->mvc->cache;
+        cache = m->cache;
 
-        if (!be->mvc->trans)
-                mvc_trans(be->mvc);
+        if (!m->trans)
+                mvc_trans(m);
 
-	T0 = GDKusec();
+        if (explainSQL())
+		T0 = GDKusec();
 
-        if ((err = sqlparse(be->mvc)) ||
+        if ((err = sqlparse(m)) ||
             /* Only forget old errors on transaction boundaries */
-            (mvc_status(be->mvc) && be->mvc->type != Q_TRANS) || 
-	    !be->mvc->sym) {
+            (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
                 if (!err)
-                        err = mvc_status(be->mvc);
-		stream_printf(c->fdout,"#%s\n", be->mvc->errstr);
-		*be->mvc->errstr=0;
+                        err = mvc_status(m);
+		stream_printf(c->fdout,"#%s\n", m->errstr);
+		*m->errstr=0;
 		msg= throwMessage("SQLparser","Parser errors\n");
-                sqlcleanup(be->mvc, err, cache);
+                sqlcleanup(m, err, cache);
         }
-	len= strlen(be->mvc->scanner.buf);
+	len= strlen(m->scanner.buf);
 	c->nxt +=len;
 @-
 We have dealt with the first parsing step and advanced the input reader
 to the next statement (if any).
 Now is the time to also perform the semantic analysis, optimize and produce code.
 @c
-	if( err == 0){
-                stmt *s = sql_symbol2stmt(be->mvc);
+	if( err == 0 &&
+	    (!(be->q = qc_match(m->qc, m->sym, m->args, m->scanner.key))) ) {
+                stmt *s = sql_symbol2stmt(m);
 
-                if (!s && (err = mvc_status(be->mvc)) ){
-			stream_printf(c->fdout,"#%s\n", be->mvc->errstr);
-			*be->mvc->errstr=0;
-                        sqlcleanup(be->mvc, err, cache);
+                if (!s && (err = mvc_status(m)) ){
+			stream_printf(c->fdout,"#%s\n", m->errstr);
+			*m->errstr=0;
+                        sqlcleanup(m, err, cache);
 			msg= throwMessage("SQLparser","Semantic errors\n");
 			goto finalize;
                 }
                 assert(s);
 		/* generate MAL code */
-		if (!be->mvc->cache) {
+		if (!m->cache) {
 			backend_dumpstmt( be, c->curprg->def, s );
 		} else {
-			backend_dumpproc( be, c->curprg->def, 
-					  be->mvc->qc->id, s );
+			printf("cached case!!\n");
+			/* generate a factory instantiation */
+			backend_dumpproc( be, c, m->qc->id, s );
+			be->q = qc_insert(
+				      m->qc, 
+				      m->sym, 	/* the sql symbol tree */
+				      m->args,	/* the argument list */
+				      m->scanner.key,/* the statement hash key*/
+				      m->type,	/* the type of the statement */
+				      "the mal block?" );
+			be->q->code = (backend_code)c->curprg;
+			m->sym = NULL;
 		}
 	} 
 #ifdef _SQL_PARSER_DEBUG
@@ -341,7 +355,7 @@ The default action is to print them out at the end of the
 query block.
 @c
 	if( err ==0 ){
-		pushCatchDefault(c->curprg->def,"sqlerror",be->mvc->auto_commit);
+		pushCatchDefault(c->curprg->def,"sqlerror", m->auto_commit);
 		pushEndInstruction(c->curprg->def);
 		chkProgram(c->nspace, c->curprg->def);
 		if( c->curprg->def->errors){
@@ -363,8 +377,8 @@ finalize:
 	} 
 #ifdef _SQL_PARSER_DEBUG
 	else {
-	printf("SQL finished:%s\n",msg);
-	printFunction(c->fdout,c->curprg->def, c->listing);
+		printf("SQL finished:%s\n",msg);
+		printFunction(c->fdout,c->curprg->def, c->listing);
 	}
 #endif
 	stream_flush(c->fdout);
@@ -471,7 +485,7 @@ str SQLoutput(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		IOprintBoth(mb,stk,p,1,"[ "," ]\n");
 	else {
 		IOprintBoth(mb,stk,p,1,"[ ",0);
-		for(i=2; i<p->argc-2;i++)
+		for(i=2; i<p->argc-1;i++)
 			IOprintBoth(mb,stk,p,i,", ",0);
 		IOprintBoth(mb,stk,p,i,", ", "]\n");
 	}
@@ -497,6 +511,7 @@ generates the default code block, ie catch it and print
 the error. It should also deal with the auto_commit
 situation. [todo]
 @c
+static
 void pushCatchDefault(MalBlkPtr mb, str nme, int autocommit){
 	InstrPtr p;
 	int i;

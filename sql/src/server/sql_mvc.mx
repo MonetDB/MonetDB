@@ -2189,6 +2189,7 @@ mvc_logmanager()
 
 	if (!logger || log_changes(logger) < 100)
 		return;
+
 	MT_set_lock(mvc_lock, "mvc_commit");
 	if (!logger)
 		return;

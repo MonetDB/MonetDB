@@ -504,6 +504,8 @@ logger_create(int debug, char *logdir, char *dbname, int version, struct bm *bm 
 
 void logger_destroy(logger *logger)
 {
+	if (logger->bm)
+		logger_cleanup(logger);
 	_DELETE(logger->dir);
 	logger_close(logger);
 	_DELETE(logger);
@@ -540,10 +542,6 @@ int logger_exit(logger *logger)
 		if (GDKmove( logger->dir, LOGFILE, "bak", 
 		     	 logger->dir, LOGFILE, ext ) < 0)
 			return SQL_ERR;
-		
-		bm_cleanup(logger->bm);
-		if (TMcommit() != 0)	/* cleanup old bats */
-			return SQL_ERR;
 	} else {
 		GDKerror("logger could not open %s\n", filename );
 		return SQL_ERR;
@@ -566,6 +564,10 @@ int logger_cleanup(logger *logger)
 	char buf[BUFSIZ];
 	char id[BUFSIZ];
 	FILE *fp = NULL;
+
+	bm_cleanup(logger->bm);
+	if (TMcommit() != 0)	/* cleanup old bats */
+		return SQL_ERR;
 
 	snprintf(buf, BUFSIZ,"%s%s.bak-%d", logger->dir, LOGFILE, logger->id);
         if (logger->debug&1)

@@ -49,7 +49,7 @@ A dummy module is needed to load properly.
 #include <mal_function.h>
 
 sql_export int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
-sql_export void backend_dumpproc( backend *be, MalBlkPtr mb, int id, stmt *s );
+sql_export void backend_dumpproc( backend *be, Client c, int id, stmt *s );
 
 #define _SQL_GENCODE_DEBUG
 #endif /* _SQL2MAL_H */
@@ -772,7 +772,8 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			q= pushArgument(mb,q,l);
 			q= pushArgument(mb,q,r);
 		} else  {
-			q= newStmt(mb,"multiplex", s->op4.funcval->func->imp);
+			//q= newStmt(mb,"multiplex", s->op4.funcval->func->imp);
+			q= newStmt(mb, NULL, s->op4.funcval->func->imp);
 			q= pushArgument(mb,q,l);
 			q= pushArgument(mb,q,r);
 		}
@@ -1042,23 +1043,36 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
     return s->nr;
 }
 
-void backend_dumpproc( backend *be, MalBlkPtr mb, int id, stmt *s )
+void backend_dumpproc( backend *be, Client c, int id, stmt *s )
 {
+        MalBlkPtr curBlk = 0;
+        Symbol curPrg = 0;
+	InstrPtr curInstr=0;
+
 	int i = 0;
-	char buf[BUFSIZ];
+	char fnme[BUFSIZ];
 	node *n;
 	
-	(void)id;
-	/* TODO change mal procs */ 
-	if (be->mvc->params){
-		for (n = be->mvc->params->h; n; n = n->next){
-			var_ *v = n->data;
+	/* later we could use the id directly (as its unique) and
+ 	   just create a InstrPtr using newInstruction */
+	i = snprintf( fnme, BUFSIZ, "sql%d", id);
 
-			i += snprintf(buf+i, BUFSIZ-i, "%s %s%c", 
-				v->s->op2.typeval->type->base.name,
-				v->name, (n->next)?',':' '
-				);
+	c->backup = c->curprg;
+	(void)id;
+	/* later we change this to a factory ? */
+	c->curprg = newFunction( fnme, FUNCTIONsymbol);
+	curPrg = c->curprg;
+        curBlk = curPrg->def;
+        curInstr = getInstrPtr(curBlk,0);
+	/* result type ? */
+	curInstr->argv[0] = TYPE_void; 
+
+	if (be->mvc->params){
+		curInstr ->argc = list_length(be->mvc->params);
+		for (n = be->mvc->params->h, i=1; n; n = n->next, i++){
+			var_ *v = n->data;
+			curInstr->argv[i] = v->s->op2.typeval->type->localtype;
 		}
 	}
-    	backend_dumpstmt( be, mb, s);
+    	backend_dumpstmt( be, curBlk, s);
 }

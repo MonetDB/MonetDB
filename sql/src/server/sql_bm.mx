@@ -97,6 +97,7 @@ typedef struct bm {
 	BAT*	bat_mode;	/*	[ void, int ] 	*/
 	BAT*	bat_oversion;	/* 	[ void, int ]   */
 	BAT*	bat_pbid;	/*	[ void, oid ] 	*/
+	BAT*	bat_opbid;	/*	[ void, oid ] 	*/
 } bm;
 
 static int bm_debug = 0;
@@ -200,6 +201,7 @@ bm_create(int debug )
 	bm->bat_version = bm_create_bat(TYPE_oid,TYPE_int,BUFSIZ); 
 	bm->bat_oversion = NULL;
 	bm->bat_pbid = NULL;
+	bm->bat_opbid = NULL;
 	return bm;
 }
 
@@ -234,6 +236,8 @@ bm_destroy( bm *bm )
 		bat_destroy(bm->bat_oversion);
 	if (bm->bat_pbid) 
 		bat_destroy(bm->bat_pbid);
+	if (bm->bat_opbid) 
+		bat_destroy(bm->bat_opbid);
 
 	_DELETE(bm);
 }
@@ -315,37 +319,44 @@ void bm_save( bm *bm, FILE *fp )
 	    	fprintf(fp, "%s,%d,%d\n", name, version, pbid); 
 		assert( BBP_status(pbid)&BBPPERSISTENT);
 	}
+	assert(!bm->bat_opbid);
+
 	if (bm->bat_pbid)
-		bat_destroy(bm->bat_pbid);
+		bm->bat_opbid = bm->bat_pbid;
 	bm->bat_pbid = pbat;
+
+	if (bm->bat_oversion)
+		bat_destroy(bm->bat_oversion);
+	bm->bat_oversion = bat_copy(bm->bat_version, "bm_cleanup");
 }
 
 void bm_cleanup( bm *bm )
 {
 	BUN p,q;
 
-	if (bm->bat_oversion){
-		BAT *b = bm->bat_oversion;
+	if (bm->bat_opbid){
+		BAT *b = bm->bat_opbid;
 		BATloop(b, p, q){
+			BUN z;
 	   	 	oid id = *(oid*)BUNhead(b,p);
-	    		int oversion = *(int*)BUNtail(b,p);
-	    		str name = BUNtail(bm->bat_name, 
-					BUNfnd(bm->bat_name,&id));
-	    		int version = *(int*)BUNtail(bm->bat_version, 
-					BUNfnd(bm->bat_version,&id));
-	    		if (version > oversion) {	
-	    			char name_version[BUFSIZ];
+	    		oid opbid = *(oid*)BUNtail(b,p);
+			oid pbid = 0;
+
+			/* keep the bat id's, schema_table_* can become too long! */
+	    		if (bm->bat_pbid && (z = BUNfnd(bm->bat_pbid, &id)) )
+				pbid = *(oid*)BUNtail(bm->bat_pbid, z);
+
+	    		if (opbid != pbid) {
 				BAT *ob = NULL;
 
-	    			snprintf( name_version, BUFSIZ, "%s_%d", name, oversion); 
-				ob = bat_descriptor(BBPindex(name_version), "bm_cleanup");
+				ob = bat_descriptor(opbid, "bm_cleanup");
 	    			BATmode(ob, TRANSIENT);
 				bat_destroy(ob);
 			}
 	    	}
-		bat_destroy(bm->bat_oversion);
+		bat_destroy(bm->bat_opbid);
 	}
-	bm->bat_oversion = bat_copy(bm->bat_version, "bm_cleanup");
+	bm->bat_opbid = NULL;
 }
 
 void bm_load( bm *bm, FILE *fp )
@@ -568,8 +579,10 @@ void bm_del_bat(bm *bm, oid lbid)
 	BUNdelHead(bm->bat_bid, &vid);
 	BUNdelHead(bm->bat_lbid, &vid);
 	BUNdelHead(bm->bat_mode, &vid);
+/*
 	if (bm->bat_oversion)
 		BUNdelHead(bm->bat_oversion, &vid);
+*/
 }
 
 oid bm_find_bat(bm* bm, char *name)
