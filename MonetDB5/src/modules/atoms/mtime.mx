@@ -233,7 +233,7 @@ address date_tostr;
 @-
 A few interval operations.
 @mal
-command date_sub_sec_interval(t:date,s:int):date 
+command date_sub_sec_interval(t:date,s:lng):date 
 address MTIMEdate_sub_sec_interval_wrap
 comment "Subtract seconds from a date";
 command MTIMEdate_add_sec_interval(t:date,s:int):date 
@@ -2272,7 +2272,7 @@ int tzone_extract_minutes(int *ret, tzone* t) {
 	return GDK_SUCCEED;
 }
 
-int date_sub_sec_interval_wrap(date *ret, date* t, int *sec) {
+int date_sub_sec_interval_wrap(date *ret, date* t, lng *sec) {
         if (*sec > 0){
 		int delta= -1 * *sec / 86400;
                 return date_adddays(ret, t, &delta);
@@ -2818,7 +2818,7 @@ str MTIMEtzone_extract_minutes(int *ret, tzone* t) {
 	tzone_extract_minutes(ret, t);
         return MAL_SUCCEED;
 }
-str MTIMEdate_sub_sec_interval_wrap(date *ret, date* t, int *sec) {
+str MTIMEdate_sub_sec_interval_wrap(date *ret, date* t, lng *sec) {
 	date_sub_sec_interval_wrap(ret, t, sec);
         return MAL_SUCCEED;
 }
