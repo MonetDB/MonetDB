@@ -31,10 +31,10 @@ proc load_data( BAT[str,BAT] fmt, str data, int nr ) : BAT[str,BAT] := {
 
 proc make_persistent( BAT[str,BAT] bats ) := {
 	if (bats.exist("key")){
-		var key := bats.find("key");
-		bats := bats.diff(bats.select(key));
+		var keybat := bats.find("key");
+		bats := bats.diff(bats.reverse.select("key").reverse);
 		bats@batloop(){
-			var b:= key.reverse().join($t);
+			var b := keybat.reverse().join($t);
 			b.rename($h);
 			b.persists(true);
 		}
@@ -55,7 +55,7 @@ proc dump_seps( BAT[void,BAT] bats ) : BAT[void,str] := {
 		if (id != cnt) {
 			seps.insert(nil,",");
 		} else {
-			seps.insert(nil,"\\n");
+			seps.insert(nil,"\n");
 		}
 		id += 1;
 	}
@@ -167,9 +167,11 @@ ptr *ADT_fromStr( int type, char *s){
 char *ADT_toStr( int type, ptr a){
 	int l = 0;
 	char *res = NULL;
+/*
         if (type == TYPE_str)
                 res = GDKstrdup((char*)a);
         else
+*/
                 BATatoms[type].atomToStr( &res, &l, a);
 	return res;
 }
@@ -318,7 +320,7 @@ int insert_line( ascii *as, char *line ){
 		while(*line){
 			if (*line == *(fmt[i].sep) && 
 			     strncmp( fmt[i].sep, line, fmt[i].seplen) == 0 ){
-				e = strstr( line, fmt[i].sep ); 
+				e = line; /*strstr( line, fmt[i].sep ); */
 				break;
 		     	} else if(*line == '\"'){
 				quotes = 1;
@@ -347,19 +349,35 @@ int insert_line( ascii *as, char *line ){
 		e = 0;
 	}
 	s=line;
-	/*
-	while(*line!='\n') line++;
-	*/
-	while(*line) line++;
-	e = line; /*strchr( line, '\n' );*/
-	/* add remove quotes */
+	while(*line){
+		if (*line == *(fmt[as->nr_attrs-1].sep) && 
+		     strncmp( fmt[as->nr_attrs-1].sep, line, 
+			      fmt[as->nr_attrs-1].seplen) == 0 ){
+			e = line; /*strstr( line, fmt[as->nr_attrs-1].sep ); */
+			break;
+	     	} else if(*line == '\"'){
+			quotes = 1;
+			line++;
+			while( *line && *line!='\"') line++;
+			if (*line) line++;
+		} else {
+			line++;
+		}
+	}
+	if (!e) e = line;
 	if (e){
+		char *end = e;
+		if (quotes){
+			quotes = 0;
+			s = strchr(s, '\"');
+			s++;
+			e = strchr(s, '\"');
+		}
 		*e = 0;
 		insert_val( &fmt[as->nr_attrs-1], s, e );
-	} else {
-	        GDKerror("Error: missing newline\n" );
-		return -1;
+		line = end + fmt[as->nr_attrs-1].seplen;
 	}
+	e = 0;
 	return 0;
 }
 

@@ -10,11 +10,9 @@ PROC grp_dump(b) : str := {
 	var first := bats.find(nil);
 	if (first.htype != void){
 		var r := [first~].reverse.copy;
-		r.print;
 		r.rename("key");
 		bats.access(BAT_APPEND);
 		bats.insert(nil, r);
-		bats.print;
 	}
 	var name := bbpname(first);
 	var file := backup_dir + name;
@@ -31,11 +29,15 @@ PROC backup( str Dir ) : void := {
 	var bats := [load](prs);
 	var cnts := [count](bats);
 	var seqs := [seqinfo](bats);
+	notvoid := seqs.select("-2147483648").mark(0@0);
+	seqs := seqs.kdiff(notvoid);
 	var grps := CTgroup(cnts,seqs);
 	var files := {grp_dump}(grps.reverse.join(bats));
+	bats := bats.semijoin(notvoid);
+	files.insert( {grp_dump}(notvoid.reverse.join(bats) ));
+	files.rename("files");
 	bats := new(bat,bat);
-	bats.rename("files");
 	bats.insert(files,files);
 	grp_dump(bats);
 }
-backup("/ufs/niels/data/bup/");
+backup("/tmp/bup/");
