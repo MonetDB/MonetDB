@@ -861,7 +861,7 @@ public String getLanguage(){
 }
 public String getDBname(){
 	check("getDBname");
-	return language;
+	return dbname;
 }
 public int getPort(){
 	check("getPort");
