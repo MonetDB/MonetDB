@@ -352,6 +352,9 @@ capabilities depend on the malloc implementation used at run time.
 			}
 			if(strcmp(long_options[option_index].name,
                                                 "dbinit") == 0){
+				if( monet_dbinit)
+				fprintf(stderr, "!ERROR: --dbinit set twice,"
+						" last one takes precedence\n");
 				monet_dbinit = optarg;
 				break;
 			}
@@ -382,7 +385,7 @@ capabilities depend on the malloc implementation used at run time.
 				setlen = mo_add_option( &set, setlen, 
 					opt_cmdline, optarg, tmp+1 );
 			} else {
-				fprintf(stderr, "ERROR: wrong format %s\n", 
+				fprintf(stderr, "!ERROR: wrong format %s\n", 
 					optarg);
 			}
 		 } break;
@@ -390,7 +393,7 @@ capabilities depend on the malloc implementation used at run time.
 			usage(prog);
 		default:
 			fprintf( stderr, 
-			    "ERROR: getopt returned character code 0%o ??\n",c);
+			    "!ERROR: getopt returned character code 0%o ??\n",c);
 			usage(prog);
 		}
 	}
