@@ -1088,6 +1088,38 @@ int sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 	return ret;
 }
 
+int mvc_new(Cntxt stk, YYSTREE lt, ValPtr res)
+{
+	stream *in = GDKin, *out = GDKout;
+	bstream *rs;
+	mvc *m;
+
+  	if (lt->cnt != 0)
+        	return handle_argerror(res, lt->cnt, 0);
+
+	rs = bstream_create(in, 0);
+	m = mvc_create(1, (backend_stack)stk, rs, out );
+
+	mvc_trans(m); /* start transaction */
+	m->user_id = m->role_id = USER_MONETDB;
+	m->user = _strdup("monetdb");
+	m->trans->schema = mvc_bind_schema(m, "sys");
+
+	res->vtype = TYPE_mvc;
+	res->val.pval = (ptr)m;
+	return GDK_SUCCEED;
+}
+
+int mvc_destroy_wrap(mvc *m, int *commit )
+{
+	if (*commit)
+		mvc_commit(*(mvc**)m, 0, NULL);
+	else
+		mvc_rollback(*(mvc**)m, 0, NULL);
+	mvc_destroy(*(mvc**)m);
+	return GDK_SUCCEED;
+}
+
 
 @= dec_tostr
 	char buf[32];

@@ -35,6 +35,16 @@ for the time being.
 	.ATOM mvc = ptr;
 	.END;
 
+@+ extra low level interface 
+@m
+	.BUILTIN mvc_new() : mvc = mvc_new;
+	"create a sql contect"
+
+	.command mvc_destroy(mvc m, int commit) = mvc_destroy_wrap;
+	"commit/abort and destroy sql contect"
+@+ 
+@m
+
 	.BUILTIN sqlclient( Stream s_in, Stream s_out ) = sqlclient;
 	"Read sql statements from s_in and output results on s_out"
 
