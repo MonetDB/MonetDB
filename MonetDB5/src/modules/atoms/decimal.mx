@@ -50,6 +50,7 @@ decimal columns is their use as foreign key on tables imported from another DBMS
 @- construction
 @mal
 atom module decimal;
+# The type is an overlaid of integer. See prelude
 #command  tostr()= decimal_tostr;
 #command  fromstr()= decimal_fromstr;
 #command  comp()= decimal_compare;
@@ -1131,7 +1132,7 @@ str decimal_prelude() {
 	BATatoms[TYPE_decimal].atomConvert= (void(*)()) decimal_convert;
 	BATatoms[TYPE_decimal].atomLen= (int(*)()) decimal_length;
 	BATatoms[TYPE_decimal].atomPut= (void(*)()) decimal_put;
-	BATatoms[TYPE_decimal].atomDel= (int(*)())decimal_del;
+	BATatoms[TYPE_decimal].atomDel= (void(*)())decimal_del;
 	BATatoms[TYPE_decimal].atomHeap= (int(*)())decimal_heap;
 	BATatoms[TYPE_decimal].atomHeapCheck= HEAP_check;
 	BATatoms[TYPE_decimal].storage= TYPE_decimal;

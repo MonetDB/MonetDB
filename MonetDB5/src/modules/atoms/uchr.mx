@@ -111,7 +111,12 @@ int uchr_fromstr(str uchrStr, int *len, uchr** c) {
 		**sc = chr_nil;
 		p += 3;
 	} else {
-		**c = (uchr)strtol(p, &p, 10);
+		char v = strtol(p, &p, 10);
+		if( v<0 ){
+			GDKwarning("Unsigned character overflow\n");
+			v= chr_nil;
+		}
+		**c = (uchr)v;
 	}
 
 
@@ -124,7 +129,7 @@ int uchr_fromstr(str uchrStr, int *len, uchr** c) {
 }
 
 int uchr_tostr(char **uchrStr, int *len, uchr *c) {
-
+	char sc = *(char*) c;
 #ifdef DEBUG
 	printf("* uchr_tostr:\n");
 	printf("  - *len: %d\n",*len);
@@ -138,11 +143,15 @@ int uchr_tostr(char **uchrStr, int *len, uchr *c) {
 		*uchrStr = GDKmalloc(4);
 		*len = 4;
 	}
-	if( *c== chr_nil){
+	if( sc<0){
+		GDKwarning("Unsigned character overflow\n");
+		sc= chr_nil;
+	}
+	if( sc== chr_nil){
 		strcpy(*uchrStr,"nil");
 		return 3;
 	}
-	snprintf(*uchrStr, *len,"%u",(int)*c);
+	snprintf(*uchrStr, *len,"%u",sc);
 
 #ifdef DEBUG
 	printf("  = *uchrStr: %s\n",*uchrStr);

@@ -94,8 +94,6 @@ command chrAt( s:str, index:int) : chr = STRChrAt
 	comment "String array lookup operation.";
 command match(s:str, pat:str): bit = STRmatch
 	comment "POSIX pattern matching against a string";
-command match(b:bat[any::1,str], pat:str): bat[any::1,bit] = STRmatchBAT
-	comment "POSIX pattern matching against a string BAT";
 command unicodeAt(s:str, index:int) : int = STRWChrAt
         comment "get a unicode character (as an int) from a string position.";
 command unicode(wchar:int) : str = STRFromWChr
@@ -706,17 +704,6 @@ str STRmatch(int  *ret, str *val, str *pat){
 		return throwMessage("str.match","Compilation of regular expression failed");
 	error= regexec(&prg,*val,0,0,0);
 	*ret= error == 0;
-	return MAL_SUCCEED;
-}
-str STRmatchBAT(int  *ret, int *bid, str *pat){
-	regex_t prg;
-	BAT *b, *bn;
-
-	int error= regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
-	if( error<0)
-		return throwMessage("str.match","Compilation of regular expression failed");
-	return throwMessage("str.match","BAT pattern match not yet implemented");
-	*ret= 0;
 	return MAL_SUCCEED;
 }
 

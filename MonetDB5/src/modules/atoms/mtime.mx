@@ -860,7 +860,7 @@ typedef union {
 		       weekday:4,  /* values: [-7..-1,1..7] */
 		       empty:7;	   /* rule uses just 32-7=25 bits */
 	}s;
-        unsigned int asint; /* the same, seen as single value */
+        int asint; /* the same, seen as single value */
 } rule;
 @c
 #define get_rule(r)     ((r).s.weekday | ((r).s.day<<6) | ((r).s.minutes<<10) | ((r).s.month<<21))
