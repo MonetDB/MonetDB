@@ -22,7 +22,7 @@ set pkglibdir=%libdir%\%pkg%
 set pkgdatadir=%datadir%\%pkg%
 set pkgincludedir=%includedir%\%pkg%
 set modpath=%pkglibdir%
-set classpath=%pkglibdir%\java\mapi.jar
+set classpath=%pkgdatadir%\lib\mapi.jar
 
 if "%1" == ""	goto usage
 
