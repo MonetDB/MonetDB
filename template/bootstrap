@@ -221,7 +221,7 @@ echo "Patching aclocal.m4 for Intel compiler on Linux (icc/ecc)."
 cat << "EOF" | patch aclocal.m4
 --- aclocal.m4~	Wed Jan 16 20:34:17 2002
 +++ aclocal.m4	Wed Jan 16 20:37:55 2002
-@@ -2542,8 +2542,14 @@
+@@ -2542,8 +2542,17 @@
        ;;
  
 -    *)
@@ -230,7 +230,10 @@ cat << "EOF" | patch aclocal.m4
 -    esac
 +    linux*)
 +      lt_cv_prog_cc_pic='-Kpic'
-+      lt_cv_prog_cc_static='-static'
++      case "$CC" in
++        pgcc*)	lt_cv_prog_cc_static='-Bstatic';;
++        *)	lt_cv_prog_cc_static='-static';;
++      esac
 +      lt_cv_prog_cc_wl='-Wl,'
 +      ;;
 +
