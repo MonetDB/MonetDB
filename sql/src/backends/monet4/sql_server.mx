@@ -163,17 +163,23 @@ stream.
 		"cast to short and check for overflow"
 	.COMMAND "sht"( lng v, int digits ) : sht = lng_2_sht;
 		"cast to short and check for overflow"
+	.COMMAND "sht"( dbl v, int digits ) : sht = dbl_2_sht;
+		"cast to short and check for overflow"
 	.COMMAND "int"( sht v, int digits ) : int = sht_2_int;
 		"cast to int and check for overflow"
 	.COMMAND "int"( int v, int digits ) : int = int_2_int;
 		"cast to int and check for overflow"
 	.COMMAND "int"( lng v, int digits ) : int = lng_2_int;
 		"cast to int and check for overflow"
+	.COMMAND "int"( dbl v, int digits ) : int = dbl_2_int;
+		"cast to int and check for overflow"
 	.COMMAND "lng"( sht v, int digits ) : lng = sht_2_lng;
 		"cast to int and check for overflow"
 	.COMMAND "lng"( int v, int digits ) : lng = int_2_lng;
 		"cast to int and check for overflow"
 	.COMMAND "lng"( lng v, int digits ) : lng = lng_2_lng;
+		"cast to int and check for overflow"
+	.COMMAND "lng"( dbl v, int digits ) : lng = dbl_2_lng;
 		"cast to int and check for overflow"
 .END sql_server;
 
@@ -604,7 +610,8 @@ static lng max_values[20] =
 	LL_CONSTANT(100000000000000),
 	LL_CONSTANT(1000000000000000),
 	LL_CONSTANT(10000000000000000),
-	LL_CONSTANT(100000000000000000)
+	LL_CONSTANT(100000000000000000),
+	LL_CONSTANT(1000000000000000000)
 };
 
 @= numcast
@@ -629,12 +636,15 @@ int @2_2_@1( @1 *res, @2 *v, int *len ){
 @:numcast(sht,sht)@
 @:numcast(sht,int)@
 @:numcast(sht,lng)@
+@:numcast(sht,dbl)@
 @:numcast(int,sht)@
 @:numcast(int,int)@
 @:numcast(int,lng)@
+@:numcast(int,dbl)@
 @:numcast(lng,sht)@
 @:numcast(lng,int)@
 @:numcast(lng,lng)@
+@:numcast(lng,dbl)@
 
 @-
 An SQL session needs a minimal set of modules, shown below.

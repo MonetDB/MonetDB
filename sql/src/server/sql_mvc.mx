@@ -558,6 +558,7 @@ static BAT *col_bind( sql_trans * tr, oid lbid, sql_column *c, int access )
 			c->base.wtime = c->t->base.wtime = 
 				c->t->s->base.wtime = tr->wtime = tr->stime;
 			bm_new_bat(tr->bm, lbid, b);
+			b->batDirty |= 2;
 		}
 	}
 	return b;
@@ -2184,15 +2185,18 @@ void mvc_exit()
 void 
 mvc_logmanager()
 {
+ 	int res = SQL_OK;
+
 	if (!logger || log_changes(logger) < 100)
 		return;
 	MT_set_lock(mvc_lock, "mvc_commit");
 	if (!logger)
 		return;
-	logger_restart(logger);
+	res = logger_restart(logger);
 	cleanup = 1;
 	MT_unset_lock(mvc_lock, "mvc_commit");
-	logger_cleanup(logger);
+	if (res == SQL_OK)
+		logger_cleanup(logger);
 	cleanup = 0;
 }
 
@@ -2209,12 +2213,12 @@ int mvc_type( mvc *m ){
 	return res;
 }
 
-typedef void (*rfufunc)( sql_trans *tr, sql_base *fs, sql_base *ts );
+typedef int (*rfufunc)( sql_trans *tr, sql_base *fs, sql_base *ts );
 typedef sql_base *(*rfcfunc)( sql_trans *tr, sql_base *b );
-typedef sql_base *(*rfdfunc)( sql_trans *tr, sql_base *b );
+typedef int (*rfdfunc)( sql_trans *tr, sql_base *b );
 typedef sql_base *(*dupfunc)( sql_trans *tr, int flag, sql_base *b, sql_base *p );
 
-static void 
+static int 
 rollforward_changeset_updates(sql_trans *tr, changeset *fs, changeset *ts, 
 	sql_base *b,
 	rfufunc rollforward_updates, 
@@ -2222,17 +2226,18 @@ rollforward_changeset_updates(sql_trans *tr, changeset *fs, changeset *ts,
 	rfdfunc rollforward_deletes, 
 	dupfunc fd)
 {
+	int ok = SQL_OK;
 	node *n = NULL;
 	
 	/* delete removed bases */
-	if (fs->dset) for (n = fs->dset->h; n; n = n->next) {	
+	if (fs->dset) for (n = fs->dset->h; ok == SQL_OK && n; n = n->next) {	
 		sql_base *fb = n->data;
 		node *tbn = cs_find_name(ts, fb->name);
 
 		if (tbn) {
 			sql_base *tb = tbn->data;
 			if (rollforward_deletes) 
-				rollforward_deletes(tr, tb);
+				ok = rollforward_deletes(tr, tb);
 			if (ts->nelm == tbn)
 				ts->nelm = tbn->next;
 			if (tr->parent != gtrans) {
@@ -2249,31 +2254,38 @@ rollforward_changeset_updates(sql_trans *tr, changeset *fs, changeset *ts,
 	if (fs->set){
 		/* update existing */
 		if (rollforward_updates) {
-			for (n = fs->set->h; n && n != fs->nelm; n = n->next) {	
+			for (n = fs->set->h; 
+			     ok == SQL_OK && n && n != fs->nelm; n = n->next) {	
 				sql_base *fb = n->data;
 				node *tbn = cs_find_name(ts, fb->name);
 	
 				if (tbn && fb->wtime && fb->flag == TR_OLD) {
 					sql_base *tb = tbn->data;
-					rollforward_updates(tr, fb, tb);
+					ok = rollforward_updates(tr, fb, tb);
 				}
 			}
 		}
 		/* add the new bases */
 		if (fd) {
-			for (n = fs->nelm; n; n = n->next) {
+			for (n = fs->nelm; ok == SQL_OK && n; n = n->next) {
 				sql_base *fb = n->data;
 				sql_base *tb = fd(tr, TR_NEW, fb, b);
 	
 				/* conditional add the new bases */
-				if (tb && rollforward_creates)
-					cs_add( ts, rollforward_creates(tr, tb), TR_NEW );
+				if (tb && rollforward_creates) {
+				     sql_base *r = rollforward_creates(tr, tb);
+				     if (r)
+				     	cs_add( ts, r, TR_NEW );
+				     else
+					ok = SQL_ERR;
+				}
 			}
 		}
 	}
+	return ok;
 }
 
-static void
+static int
 rollforward_changeset_creates( sql_trans *tr, changeset *cs, rfcfunc rf )
 {
 	if (cs->set){
@@ -2282,50 +2294,43 @@ rollforward_changeset_creates( sql_trans *tr, changeset *cs, rfcfunc rf )
 		for (n = cs->set->h; n; n = n->next){
 			sql_base *b = n->data;
 
-			rf(tr, b);
+			if (!rf(tr, b))
+				return SQL_ERR;
 		}
 	}
+	return SQL_OK;
 }
 
-static void
+static int
 rollforward_changeset_deletes( sql_trans *tr, changeset *cs, rfdfunc rf )
 {
+	int ok = SQL_OK;
 	if (!cs) 
-		return;
+		return ok;
 	if (cs->dset){
 		node *n;
-		for (n = cs->dset->h; n; n = n->next){
+		for (n = cs->dset->h; ok == SQL_OK && n; n = n->next){
 			sql_base *b = n->data;
 
-			rf(tr, b);
+			ok = rf(tr, b);
 		}
 	}
 	if (cs->set){
 		node *n;
-		for (n = cs->set->h; n; n = n->next){
+		for (n = cs->set->h; ok == SQL_OK && n; n = n->next){
 			sql_base *b = n->data;
 
-			rf(tr, b);
+			ok = rf(tr, b);
 		}
 	}
-}
-
-static void
-rollforward_changeset_map( sql_trans *tr, changeset *cs, rfdfunc rf )
-{
-	if (cs->set){
-		node *n;
-		for (n = cs->set->h; n; n = n->next){
-			sql_base *b = n->data;
-
-			rf(tr, b);
-		}
-	}
+	return ok;
 }
 
 static sql_idx *
 rollforward_create_idx( sql_trans *tr, sql_idx *i )
 {
+	int ok = SQL_OK;
+
 	if (i->bat.bid && i->bat.ubid){
 		char bname[BUFSIZ];
 		BAT *b = bm_lbid2bat( tr->bm, i->bat.bid);
@@ -2335,14 +2340,14 @@ rollforward_create_idx( sql_trans *tr, sql_idx *i )
 				i->t->base.name, i->base.name );
 		i->bat.bid = bm_add_bat(tr->parent->bm, b->batCacheid, bname,0);
 		if (tr->parent == gtrans) 
-			log_bat_persists(logger, b, i->bat.bid, bname); 
+			ok = log_bat_persists(logger, b, i->bat.bid, bname); 
 		bat_destroy(b);
 
 		snprintf(bname, BUFSIZ, "U_%s_%s", 	
 				i->t->base.name, i->base.name );
 		i->bat.ubid = bm_add_bat(tr->parent->bm, u->batCacheid,bname,0);
-		if (tr->parent == gtrans) 
-			log_bat_persists(logger, u, i->bat.ubid, bname); 
+		if (tr->parent == gtrans && ok == SQL_OK) 
+			ok = log_bat_persists(logger, u, i->bat.ubid, bname); 
 		bat_destroy(u);
 	} else {
 		sql_kc *c = i->columns->h->data;
@@ -2350,6 +2355,8 @@ rollforward_create_idx( sql_trans *tr, sql_idx *i )
 		BATkey(BATmirror(b), BOUND2BTRUE);
 		bat_destroy(b);
 	}
+	if (ok != SQL_OK)
+		return NULL;
 	return i;
 }
 
@@ -2363,6 +2370,7 @@ rollforward_create_key( sql_trans *tr, sql_key *k )
 static sql_column *
 rollforward_create_column( sql_trans *tr, sql_column *c )
 {
+	int ok = SQL_OK;
 	char bname[BUFSIZ];
 	BAT *b, *u;
 
@@ -2375,7 +2383,7 @@ rollforward_create_column( sql_trans *tr, sql_column *c )
 		c->bat.bid = 
 			bm_add_bat(tr->parent->bm, b->batCacheid, bname, 0);
 		if (tr->parent == gtrans)
-			log_bat_persists(logger, b, c->bat.bid, bname); 
+			ok = log_bat_persists(logger, b, c->bat.bid, bname); 
 		bat_destroy(b);
 	
 		u = bm_lbid2bat( tr->bm, c->bat.ubid);
@@ -2383,17 +2391,21 @@ rollforward_create_column( sql_trans *tr, sql_column *c )
 			c->t->base.name, c->base.name );
 		c->bat.ubid = 
 			bm_add_bat(tr->parent->bm, u->batCacheid, bname, 0);
-		if (tr->parent == gtrans)
-			log_bat_persists(logger, u, c->bat.ubid, bname); 
+		if (tr->parent == gtrans && ok == SQL_OK)
+			ok = log_bat_persists(logger, u, c->bat.ubid, bname); 
 		bat_destroy(u);
 	}
 
+	if (ok != SQL_OK)
+		return NULL;
 	return c;
 }
 
 static sql_table *
 rollforward_create_table( sql_trans *tr, sql_table *t )
 {
+	int ok = SQL_OK;
+
 	if (t->table && t->persists) {
 		/* only register bats for non cleared tables */
 
@@ -2406,7 +2418,7 @@ rollforward_create_table( sql_trans *tr, sql_table *t )
 			t->dbid = bm_add_bat(tr->parent->bm, 
 						d->batCacheid, name, 0);
 			if (tr->parent == gtrans) 
-				log_bat_persists(logger, d, t->dbid, name); 
+				ok = log_bat_persists(logger, d, t->dbid, name);
 			bat_destroy(d);
 		}
 
@@ -2415,37 +2427,47 @@ rollforward_create_table( sql_trans *tr, sql_table *t )
 		rollforward_changeset_creates( tr, &t->idxs, 
 			(rfcfunc)&rollforward_create_idx );
 	}
+	if (ok != SQL_OK)
+		return NULL;
 	return t;
 }
 
-static void
+static int
 rollforward_drop_column( sql_trans *tr, sql_column *c )
 {
+	int ok = SQL_OK;
+
 	if (c->bat.bid && c->bat.ubid){
 		if (tr->parent == gtrans) {
-			log_bat_transient(logger, c->bat.bid); 
-			log_bat_transient(logger, c->bat.ubid); 
+			ok = log_bat_transient(logger, c->bat.bid); 
+			if (ok == SQL_OK)
+				ok = log_bat_transient(logger, c->bat.ubid); 
 		}
 		bm_del_bat(tr->parent->bm, c->bat.bid);
 		bm_del_bat(tr->parent->bm, c->bat.ubid);
 	}
+	return SQL_OK;
 }
 
-static void
+static int
 rollforward_drop_idx( sql_trans *tr, sql_idx *i )
 {
+	int ok = SQL_OK;
+
 	if (i->bat.bid && i->bat.ubid){
 		if (tr->parent == gtrans) {
-			log_bat_transient(logger, i->bat.bid); 
-			log_bat_transient(logger, i->bat.ubid); 
+			ok = log_bat_transient(logger, i->bat.bid); 
+			if (ok == SQL_OK)
+				ok = log_bat_transient(logger, i->bat.ubid); 
 		}
 		bm_del_bat(tr->parent->bm, i->bat.bid);
 		bm_del_bat(tr->parent->bm, i->bat.ubid);
 	}
 	list_remove_data(i->t->s->idxs, i);
+	return SQL_OK;
 }
 
-static void
+static int
 rollforward_drop_key( sql_trans *tr, sql_key *k )
 {
 	(void) tr; /* unused! */
@@ -2456,23 +2478,30 @@ rollforward_drop_key( sql_trans *tr, sql_key *k )
 		node *n = list_find_name(fk->rkey->keys, fk->k.base.name);
 		list_remove_node(fk->rkey->keys, n);
 	}
+	return SQL_OK;
 }
 
-static void 
+static int 
 rollforward_drop_table( sql_trans *tr, sql_table *t )
 {
+	int ok = SQL_OK;
+
 	if (t->table && t->persists && !t->clear) {
 		if (tr->parent == gtrans) 
-			log_bat_transient(logger, t->dbid); 
+			ok = log_bat_transient(logger, t->dbid); 
 		bm_del_bat(tr->parent->bm, t->dbid);
 	} 
 
-	rollforward_changeset_deletes( tr, &t->columns, 
+	if (ok == SQL_OK)
+		ok = rollforward_changeset_deletes( tr, &t->columns, 
 			(rfdfunc)&rollforward_drop_column);
-	rollforward_changeset_deletes( tr, &t->idxs, 
+	if (ok == SQL_OK)
+		ok = rollforward_changeset_deletes( tr, &t->idxs, 
 			(rfdfunc)&rollforward_drop_idx);
-	rollforward_changeset_deletes( tr, &t->keys, 
+	if (ok == SQL_OK)
+		ok = rollforward_changeset_deletes( tr, &t->keys, 
 			(rfdfunc)&rollforward_drop_key);
+	return ok;
 }
 
 static void 
@@ -2490,38 +2519,43 @@ rollforward_create_schema( sql_trans *tr, sql_schema *s )
 	return s;
 }
 
-static void
+static int
 rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 {
+	int ok = SQL_OK;
 	sql_trans *ttr = tr->parent;
 	node *n, *m;
 
 	/* cannot update views, temporaries and cleared tables */
 	if (!ft->table || !ft->persists || ft->clear) 
-		return;
+		return ok;
 
-	rollforward_changeset_updates( tr, &ft->columns, &tt->columns, 
+	ok = rollforward_changeset_updates( tr, &ft->columns, &tt->columns, 
 		&tt->base,
 		(rfufunc)NULL, 
 		(rfcfunc)&rollforward_create_column,
-		(rfcfunc)&rollforward_drop_column,
+		(rfdfunc)&rollforward_drop_column,
 		(dupfunc)&column_dup );
-	rollforward_changeset_updates( tr, &ft->idxs, &tt->idxs, &tt->base,
-		(rfufunc)NULL, 
-		(rfcfunc)&rollforward_create_idx,
-		(rfcfunc)&rollforward_drop_idx,
-		(dupfunc)&idx_dup );
-	rollforward_changeset_updates( tr, &ft->keys, &tt->keys, &tt->base,
-		(rfufunc)NULL, 
-		(rfcfunc)&rollforward_create_key,
-		(rfcfunc)&rollforward_drop_key,
-		(dupfunc)&key_dup );
+	if (ok == SQL_OK)
+		ok = rollforward_changeset_updates( tr, &ft->idxs, &tt->idxs, 
+			&tt->base,
+			(rfufunc)NULL, 
+			(rfcfunc)&rollforward_create_idx,
+			(rfdfunc)&rollforward_drop_idx,
+			(dupfunc)&idx_dup );
+	if (ok == SQL_OK)
+		ok = rollforward_changeset_updates( tr, &ft->keys, &tt->keys, 
+			&tt->base,
+			(rfufunc)NULL, 
+			(rfcfunc)&rollforward_create_key,
+			(rfdfunc)&rollforward_drop_key,
+			(dupfunc)&key_dup );
 
 	assert(cs_size( &tt->columns) == cs_size( &ft->columns));
 
 	n = ft->columns.set->h;
 	m = tt->columns.set->h;
-	if (n && m) {
+	if (ok == SQL_OK && n && m) {
 		BAT *db = bm_lbid2bat( tr->bm, ft->dbid );
 
                 tt->base.rtime = ft->base.rtime;
@@ -2530,7 +2564,7 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 		if (BUNlast(db) > db->batInserted) {
 			bm_new_bat( ttr->bm, tt->dbid, db);
 			if (ttr == gtrans)
-				log_bat(logger, tt->dbid, db);
+				ok = log_bat(logger, tt->dbid, db);
 		} else {
 			bat_destroy(db);
 			db = NULL;
@@ -2575,8 +2609,8 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 				void_delete_bat(cur, db, 1);
 				bat_destroy(cur);
 			}
-			if (ttr == gtrans)
-				log_bat(logger, oc->bat.bid, ins);
+			if (ok == SQL_OK && ttr == gtrans)
+				ok = log_bat(logger, oc->bat.bid, ins);
 			bat_destroy(ins);
 			if (BUNlast(ups) > ups->batInserted) {
 				BAT *cur = bm_lbid2bat( 
@@ -2585,16 +2619,17 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 				bm_new_bat( ttr->bm, oc->bat.ubid, ups);
 				void_replace_bat(cur, ups);
 				bat_destroy(cur);
-				if (ttr == gtrans) 
-					log_bat(logger, oc->bat.ubid, ups);
+				if (ok == SQL_OK && ttr == gtrans) 
+					ok = log_bat(logger, oc->bat.ubid, ups);
 			}
 			bat_destroy(ups);
 
 			n = n->next;
 			m = m->next;
-		} while (n && m);
+		} while (ok == SQL_OK && n && m);
 		if (tt->idxs.set){
-			for(n = tt->idxs.set->h, m = tt->idxs.set->h; n && m; 
+			for(n = tt->idxs.set->h, m = tt->idxs.set->h; 
+				ok == SQL_OK && n && m; 
 				n = n->next, m = m->next){
 			    sql_idx *ci = n->data;
 			    sql_idx *oi = m->data;
@@ -2612,7 +2647,7 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 				if (BUNlast(ins) > ins->batInserted) {
 					bm_new_bat( ttr->bm, oi->bat.bid, ins);
 					if (ttr == gtrans)
-					     log_bat(logger, oi->bat.bid, ins);
+					     ok = log_bat(logger, oi->bat.bid, ins);
 				} else if (db) {
 					BAT *cur = bm_lbid2bat( 
 						ttr->bm, oi->bat.bid);
@@ -2624,7 +2659,7 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 				if (BUNlast(ups) > ups->batInserted) {
 					bm_new_bat( ttr->bm, oi->bat.ubid, ups);
 					if (ttr == gtrans)
-					    log_bat(logger, oi->bat.ubid, ups);
+					    ok = log_bat(logger, oi->bat.ubid, ups);
 				}
 				bat_destroy(ups);
 			    }
@@ -2634,6 +2669,7 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 			bat_destroy(db);
 
 	}
+	return ok;
 }
 
 static sql_table *
@@ -2644,32 +2680,37 @@ conditional_table_dup(sql_trans *tr, int flag, sql_table * ot, sql_schema *s)
 	return NULL;
 }
 
-static void
+static int
 rollforward_update_schema( sql_trans *tr, sql_schema *fs, sql_schema *ts)
 {
-	rollforward_changeset_updates( tr, &fs->tables, &ts->tables, &ts->base,
+	return rollforward_changeset_updates( tr, &fs->tables, &ts->tables, 
+		&ts->base,
 		(rfufunc)&rollforward_update_table, 
 		(rfcfunc)&rollforward_create_table,
 		(rfdfunc)&rollforward_drop_table,
 		(dupfunc)&conditional_table_dup );
 }
 
-static void 
+static int 
 rollforward_trans(sql_trans *tr)
 {
-	rollforward_changeset_updates(tr, &tr->modules, &tr->parent->modules, 
-		(sql_base*)tr->parent,
-		(rfufunc)NULL, 
-		(rfcfunc)NULL, 
-		(rfcfunc)NULL, 
-		(dupfunc)&module_dup);
+	int ok = rollforward_changeset_updates(tr, &tr->modules, 
+			&tr->parent->modules, 
+			(sql_base*)tr->parent,
+			(rfufunc)NULL, 
+			(rfcfunc)NULL, 
+			(rfdfunc)NULL, 
+			(dupfunc)&module_dup);
 
-	rollforward_changeset_updates(tr, &tr->schemas, &tr->parent->schemas, 
-		(sql_base*)tr->parent,
-		(rfufunc)&rollforward_update_schema, 
-		(rfcfunc)&rollforward_create_schema, 
-		(rfcfunc)&rollforward_drop_schema, 
-		(dupfunc)&schema_dup);
+	if (ok == SQL_OK)
+		ok = rollforward_changeset_updates(tr, &tr->schemas, 
+			&tr->parent->schemas, 
+			(sql_base*)tr->parent,
+			(rfufunc)&rollforward_update_schema, 
+			(rfcfunc)&rollforward_create_schema, 
+			(rfdfunc)&rollforward_drop_schema, 
+			(dupfunc)&schema_dup);
+	return ok;
 }
 
 static int validate_tables(sql_schema * s, sql_schema * os)
@@ -2768,6 +2809,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 	sql_trans *tr = m->trans;
 	int level = (chain)?tr->level:ISO_SERIALIZABLE;
 	int res = -1;
+	int ok = SQL_OK;
 
 	assert(tr);
 	if (mvc_debug)
@@ -2794,9 +2836,14 @@ int mvc_commit(mvc * m, int chain, char *name)
 	}
 
 	/* first commit all the savepoints */
-	while (tr->parent != gtrans) {
-		rollforward_trans(tr);
+	while (tr->parent != gtrans && ok == SQL_OK) {
+		ok = rollforward_trans(tr);
 		tr = trans_destroy(tr);
+	}
+	if (ok != SQL_OK) {
+		GDKerror("Cannot commit this transaction will abort instead");
+		mvc_rollback(m, chain, name);
+		return -1;
 	}
 
 	/* if there is nothing to commit reuse the current transaction */
@@ -2823,13 +2870,17 @@ int mvc_commit(mvc * m, int chain, char *name)
 		/* write phase */
 		if (mvc_debug)
 			fprintf(stderr, "forwarding changes\n");
-		log_tstart(logger);
-		rollforward_trans(tr);
-		log_tend(logger);
+		ok = log_tstart(logger);
+		if (ok == SQL_OK)
+			ok = rollforward_trans(tr);
+		if (ok == SQL_OK)
+			ok = log_tend(logger);
 		if (mvc_debug)
 			fprintf(stderr, "done forwarding changes\n");
 		res = Q_TRANS;
 		MT_unset_lock(mvc_lock, "mvc_commit");
+		if (ok != SQL_OK)
+			GDKfatal("Your disk seems to be full, exiting ...");
 	} else {
 		MT_unset_lock(mvc_lock, "mvc_commit");
 		GDKerror("Cannot commit this transaction because of concurency conflicts will abort instead");

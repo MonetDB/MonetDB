@@ -29,6 +29,7 @@ bat ids.
 #ifndef _SQL_BM_H_
 #define _SQL_BM_H_
 
+#include "sql_mem.h"
 #include <gdk.h>
 
 extern void bat_destroy(BAT *b);
