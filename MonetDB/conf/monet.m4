@@ -1518,63 +1518,60 @@ AC_SUBST(PCL_LIBS)
 
 dnl check for the Perl-compatible regular expressions library 
 have_pcre=auto
-need_pcre=no
 PCRE_CFLAGS=""
 PCRE_LIBS=""
-PCRE_CONFIG="pcre-config"
+PCRE_CONFIG=""
 AC_ARG_WITH(pcre,
 	AC_HELP_STRING([--with-pcre=DIR],
 		[pcre library is installed in DIR]),
 	have_pcre="$withval")
 if test "x$have_pcre" != xno; then
-  if test "x$have_pcre" != xauto; then
-    PCRE_CFLAGS="-I$withval/include"
-    PCRE_LIBS="-L$withval/lib"
-	PCRE_CONFIG="$withval/bin/pcre-config"
-  fi
 
-  save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $PCRE_CFLAGS"
-  AC_CHECK_HEADER(pcre.h, have_pcre=yes, have_pcre=no)
-  CPPFLAGS="$save_CPPFLAGS"
+    MPATH="$withval/bin:$PATH"
+    AC_PATH_PROG(PCRE_CONFIG,pcre-config,,$MPATH)
+    if test "x$PCRE_CONFIG" = x; then
+    	AC_MSG_RESULT(pcre-config not found; please use --with-pcre=<path>)
+    else
+    	PCRE_CFLAGS="`$PCRE_CONFIG --cflags`"
+    	PCRE_LIBS="`$PCRE_CONFIG --libs`"
+    fi
 
-  if test "x$have_pcre" = xno; then
-	need_pcre=yes;
-  	save_CPPFLAGS="$CPPFLAGS"
-  	CPPFLAGS="$CPPFLAGS $PCRE_CFLAGS"
-  	AC_CHECK_HEADER(pcre/pcreposix.h, have_pcre=yes, have_pcre=no)
-  	CPPFLAGS="$save_CPPFLAGS"
-  fi
-
-  if test "x$have_pcre" = xyes; then
-  	save_LDFLAGS="$LDFLAGS"
-  	LDFLAGS="$LDFLAGS $PCRE_LIBS"
-  	AC_CHECK_LIB(pcre, pcre_compile, PCRE_LIBS="$PCRE_LIBS -lpcre" have_pcre=yes, have_pcre=no)
-  	LDFLAGS="$save_LDFLAGS"
-  fi
-
-  if test "x$have_pcre" = xyes; then
-    	AC_MSG_CHECKING(for pcre >= 4.0)
-		pcre_ver="`$PCRE_CONFIG --version 2>/dev/null`"
-    	if test MONETDB_VERSION_TO_NUMBER(echo $pcre_ver) -ge MONETDB_VERSION_TO_NUMBER(echo "4.0"); then
+    req_pcre_ver='4.0'
+    AC_MSG_CHECKING(for pcre >= $req_pcre_ver)
+    if test "x$PCRE_CONFIG" = x; then
+    	have_pcre=no
+    	AC_MSG_RESULT($have_pcre (without pcre-config to query the pcre version, we assume it's < $req_pcre_ver))
+    else
+    	pcre_ver="`$PCRE_CONFIG --version 2>/dev/null`"
+    	if test MONETDB_VERSION_TO_NUMBER(echo $pcre_ver) -ge MONETDB_VERSION_TO_NUMBER(echo "$req_pcre_ver"); then
       		have_pcre=yes
-        	AC_DEFINE(HAVE_LIBPCRE, 1, [Define if you have the pcre library]) 
+      		AC_MSG_RESULT($have_pcre (found $pcre_ver))
     	else
       		have_pcre=no
-      		need_pcre=no
+      		AC_MSG_RESULT($have_pcre (found only $pcre_ver))
     	fi
-    	AC_MSG_RESULT($have_pcre -> $pcre_ver found)
-  fi
-
-  if test "x$have_pcre" != xyes; then
-    PCRE_CFLAGS=""
-    PCRE_LIBS=""
-  elif test "x$need_pcre" == xyes; then
-    if test -z $PCRE_CFLAGS; then
-    	PCRE_CFLAGS="-I/usr/include"
     fi
-    PCRE_CFLAGS="$PCRE_CFLAGS/pcre"
-  fi
+
+    if test "x$have_pcre" = xyes; then
+    	save_CPPFLAGS="$CPPFLAGS"
+    	CPPFLAGS="$CPPFLAGS $PCRE_CFLAGS"
+    	AC_CHECK_HEADER(pcre.h, have_pcre=yes, have_pcre=no)
+    	CPPFLAGS="$save_CPPFLAGS"
+    fi
+
+    if test "x$have_pcre" = xyes; then
+    	save_LDFLAGS="$LDFLAGS"
+    	LDFLAGS="$LDFLAGS $PCRE_LIBS"
+    	AC_CHECK_LIB(pcre, pcre_compile, PCRE_LIBS="$PCRE_LIBS -lpcre" have_pcre=yes, have_pcre=no)
+    	LDFLAGS="$save_LDFLAGS"
+    fi
+
+    if test "x$have_pcre" = xyes; then
+    	AC_DEFINE(HAVE_LIBPCRE, 1, [Define if you have the pcre library])
+    else
+    	PCRE_CFLAGS=""
+    	PCRE_LIBS=""
+    fi
 fi
 AC_SUBST(PCRE_CFLAGS)
 AC_SUBST(PCRE_LIBS)
