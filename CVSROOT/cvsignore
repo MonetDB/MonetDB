@@ -1,5 +1,7 @@
 *.pyc
 *.pyo
+*.log
+*.rpt
 .incs.ag
 .incs.in
 Makefile.am
