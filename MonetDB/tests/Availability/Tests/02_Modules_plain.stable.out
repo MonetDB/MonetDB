@@ -54,7 +54,6 @@ Try: modules;                - for other modules.
 [ "salgebra"	  ]
 [ "stats"	  ]
 [ "tcpip"	  ]
-[ "temporal"	  ]
 [ "tpcd"	  ]
 [ "uchr"	  ]
 [ "unix"	  ]
@@ -669,48 +668,6 @@ Module: "tcpip"
 [ "terminate",	  "COMMAND: ",	  "terminate(int) : void",		  "stop a TCP/IP server"																				  ]
 [ "waits",	  "COMMAND: ",	  "waits() : BAT[int,int]",		  "a BAT with all current waiting threads."																		  ]
 !WARNING: TCPepilogue: terminate 0 listeners
-
-Module: "temporal"
-
-[ 34 ]
-[ 34 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature					| help									  #
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "*",			  "OPERATOR: ",	  "*(duration, flt) : duration",		  "produce a new duration with length a multiple from the original"	  ]
-[ "*",			  "OPERATOR: ",	  "*(interval, flt) : interval",		  "produce a new interval with length a multiple from the original"	  ]
-[ "+",			  "OPERATOR: ",	  "+(instant, duration) : instant",		  "add a duration to an instant to produce a new instant"		  ]
-[ "+",			  "OPERATOR: ",	  "+(interval, duration) : interval",		  "add a duration to the length of an interval"				  ]
-[ "-",			  "OPERATOR: ",	  "-(instant, duration) : instant",		  "substract a duration to an instant to produce a new instant"		  ]
-[ "-",			  "OPERATOR: ",	  "-(instant, instant) : duration",		  "substract two instants to get a duration"				  ]
-[ "-",			  "OPERATOR: ",	  "-(interval, duration) : interval",		  "substract a duration from the length of an interval"			  ]
-[ "<",			  "OPERATOR: ",	  "<(instant, interval) : bit",			  "test whether a time insant lies before a time interval"		  ]
-[ "<",			  "OPERATOR: ",	  "<(interval, interval) : bit",		  "test whether one time interval precedes another entirely"		  ]
-[ ">",			  "OPERATOR: ",	  ">(instant, interval) : bit",			  "test whether a time insant lies after a time interval"		  ]
-[ ">",			  "OPERATOR: ",	  ">(interval, interval) : bit",		  "test whether one time intervals entirely succeeds another"		  ]
-[ "date",		  "COMMAND: ",	  "date(str) : instant",			  "creates an instant from a string field (e.g., YYYY-MM-DD)"		  ]
-[ "day",		  "COMMAND: ",	  "day(duration) : int",			  "returns the integer day value from a duration"			  ]
-[ "day",		  "COMMAND: ",	  "day(instant) : int",				  "returns the integer day value from an instant"			  ]
-[ "end_interval",	  "COMMAND: ",	  "end_interval(interval) : instant",		  "gets the ending instant of an interval"				  ]
-[ "epoch",		  "COMMAND: ",	  "epoch(instant) : lng",			  "creates a number of seconds since 1970 from an instant"		  ]
-[ "epoch",		  "COMMAND: ",	  "epoch(lng) : instant",			  "creates an instant from a number of seconds since 1970"		  ]
-[ "fromday",		  "COMMAND: ",	  "fromday(int, int, int) : instant",		  "creates an instant from a (year, month, day) specification"		  ]
-[ "fromtime",		  "COMMAND: ",	  "fromtime(int, int, int, int, int) : instant",  "creates an instant from (year, month, day, hours, week)"		  ]
-[ "hours",		  "COMMAND: ",	  "hours(duration) : int",			  "returns the integer hour value from a duration"			  ]
-[ "hours",		  "COMMAND: ",	  "hours(instant) : int",			  "returns the integer hour value from an instant"			  ]
-[ "in",			  "COMMAND: ",	  "in(instant, interval) : bit",		  "tests whether an instant lies in an interval"			  ]
-[ "include",		  "COMMAND: ",	  "include(interval, interval) : bit",		  "test whether the first interval totally includes the second"		  ]
-[ "included",		  "COMMAND: ",	  "included(interval, interval) : bit",		  "test whether the first interval is totally included by the second"	  ]
-[ "intersect",		  "COMMAND: ",	  "intersect(interval, interval) : interval",	  "get the intersection of two intervals"				  ]
-[ "minutes",		  "COMMAND: ",	  "minutes(duration) : int",			  "returns the integer minute value from a duration"			  ]
-[ "minutes",		  "COMMAND: ",	  "minutes(instant) : int",			  "returns the integer minute value from an instant"			  ]
-[ "month",		  "COMMAND: ",	  "month(duration) : int",			  "returns the integer month value {jan=1,..dec=12} from a duration"	  ]
-[ "month",		  "COMMAND: ",	  "month(instant) : int",			  "returns the integer month value {jan=1,..dec=12} from an instant"	  ]
-[ "new_interval",	  "COMMAND: ",	  "new_interval(instant, instant) : interval",	  "build an interval from two instants (starting and ending)"		  ]
-[ "overlap",		  "COMMAND: ",	  "overlap(interval, interval) : bit",		  "test whether to intervals overlap"					  ]
-[ "start_interval",	  "COMMAND: ",	  "start_interval(interval) : instant",		  "gets the starting instant of an interval"				  ]
-[ "year",		  "COMMAND: ",	  "year(duration) : int",			  "returns the integer year value from a duration"			  ]
-[ "year",		  "COMMAND: ",	  "year(instant) : int",			  "returns the integer year value from an instant"			  ]
 
 Module: "tpcd"
 

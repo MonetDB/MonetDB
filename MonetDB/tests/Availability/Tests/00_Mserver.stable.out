@@ -63,7 +63,6 @@ Try: modules;                - for other modules.
 [ "str",	  "static"	  ]
 [ "sys",	  "static"	  ]
 [ "tcpip",	  "plain"	  ]
-[ "temporal",	  "plain"	  ]
 [ "tpcd",	  "plain"	  ]
 [ "trans",	  "static"	  ]
 [ "uchr",	  "plain"	  ]
@@ -75,11 +74,11 @@ Try: modules;                - for other modules.
 #-----------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-----------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  42,	  0,	  "clean",	  "load", "pers", 1	  ]
+[ "MODULES",	  "str",  "str",  41,	  0,	  "clean",	  "load", "pers", 1	  ]
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  42,	  0,	  "clean",	  "load", "pers", 1	  ]
+[ "MODULES",		  "str",  "str",  41,	  0,	  "clean",	  "load", "pers", 1	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  467,	  0,	  "dirty",	  "load", "tran", 1	  ]
@@ -142,7 +141,6 @@ Try: modules;                - for other modules.
 [ "salgebra"		  ]
 [ "stats"		  ]
 [ "tcpip"		  ]
-[ "temporal"		  ]
 [ "tpcd"		  ]
 [ "uchr"		  ]
 [ "unix"		  ]

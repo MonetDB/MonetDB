@@ -83,7 +83,6 @@ Try: modules;                - for other modules.
 [ "str",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "tcpip",	  nil	  ]
-[ "temporal",	  nil	  ]
 [ "tpcd",	  nil	  ]
 [ "trans",	  nil	  ]
 [ "uchr",	  nil	  ]
@@ -138,7 +137,6 @@ Try: modules;                - for other modules.
 [ "unix",	  nil	  ]
 [ "uchr",	  nil	  ]
 [ "tpcd",	  nil	  ]
-[ "temporal",	  nil	  ]
 [ "tcpip",	  nil	  ]
 [ "stats",	  nil	  ]
 [ "salgebra",	  nil	  ]
@@ -396,40 +394,6 @@ Try: modules;                - for other modules.
 [ "tpcd", nil	  ]
 
 	dropping tpcd
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading temporal
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "temporal",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_25  #
-# (str)		  (void)  #
-#-------------------------#
-[ "temporal",	  nil	  ]
-
-	dropping temporal
 
 #---------------------------------#
 # module	| usage_count	  #
