@@ -1118,6 +1118,7 @@ int ACCrepairSTD(Heap *hp, BAT *b) {
 
 	if (hr.validmask) {
 		GDKfree(hr.validmask);
+		hr.validmask = NULL;
 	}
 	if (ret == FALSE) {
 		GDKerror("ACCrepairSTD(%s): check failed, destroying accelerator.\n", b->batId);

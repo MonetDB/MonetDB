@@ -448,6 +448,7 @@ int BATfree(BAT *b) {
 		HEAPfree(&b->hheap);
 	}
 	GDKfree(BATmirror(b));
+	BBP_cache(-b->batCacheid) = NULL;
 
 	return 0;
 }
@@ -1261,10 +1262,10 @@ BAT *BATsetaccess(BAT *b, int mode) {
 	    if (action) {
 		BATmmap(b, m1, m2, m3, m4, m5);
 		if (action == 2) {
-			str s = BBPname(b->batCacheid);
+			bat bid = b->batCacheid;
 			BBPsave(b);
 			BATfree(b);
-			b = BATload(s);
+			b = BATload_intern(bid);
 		}
 	    }
 	}
@@ -1748,6 +1749,7 @@ static int atomrepair(BAT *b) {
 			ret = FALSE;
 		}
 		GDKfree(hr.validmask);
+		hr.validmask = NULL;
 	} else {
 		GDKerror("BATrepair(%s): must correct *all* values to nil.\n", b->batId);
 		HEAPfree(hp);

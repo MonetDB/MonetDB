@@ -522,22 +522,29 @@ void VIEWdestroy(BAT *v) {
 
 	VIEWunlink(b);
 	/* free memory private to this view */
-	if (m != NULL) GDKfree(m);
+	if (m != NULL) {
+		GDKfree(m);
+		BBP_cache(-b->batCacheid) = NULL;
+	}
 
 	if (b->hhash_heap && b->hhash_heap->base == (ptr) bs->H.hash.link) {
 		HEAPfree(b->hhash_heap);
 		GDKfree(b->hhash_heap);
+		b->hhash_heap = NULL;
 	}
 	if (b->thash_heap && b->thash_heap->base == (ptr) bs->T.hash.link) {
 		HEAPfree(b->thash_heap);
 		GDKfree(b->thash_heap);
+		b->thash_heap = NULL;
 	}
 	if (b->hidx_heap && b->hidx_heap->base == (ptr) bs->H.idx.base) {
 		HEAPfree(b->hidx_heap);
 		GDKfree(b->hidx_heap);
+		b->hidx_heap = NULL;
 	}
 	if (b->tidx_heap && b->tidx_heap->base == (ptr) bs->T.idx.base) {
 		HEAPfree(b->tidx_heap);
 		GDKfree(b->tidx_heap);
+		b->tidx_heap = NULL;
 	}
 }

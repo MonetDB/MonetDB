@@ -102,6 +102,7 @@ void *VALget(ValPtr v){
 void VALclear(ValPtr v){
 	if (ATOMextern(v->vtype) && v->val.pval) {
 		GDKfree(v->val.pval);
+		v->val.pval = NULL;
 	}
 	VALempty(v);
 }
