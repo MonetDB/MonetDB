@@ -87,6 +87,11 @@ test = (
                 # tests/from_Twente/Bugs/Arjen_02:
                 "|" r'^\[ "((bat|cur)Stamp|[ht]align(|flushed))",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+"\t* +\]$'
                 "|" r'^\[ "[ht]sorted",\t* +"(1|65)",\t* +"[0-9\-]+",\t* +"[0-9\-]+"\t* +\]$'
+                # Mtest warnings
+                "|" r'^(quit)?;$'
+                "|" r'^(printf\("\\n)?! Mserver still running after Mshutdown\. Quitting now\. !(\\n"\);)?$'
+                "|" r"^! Socket-Check failed for (SQL|MAPI)server on <[a-zA-Z0-9]*:[0-9]+> with #[0-9]+; '.*' !$"
+                "|" r'^! Waiting [0-9]+ seconds ([0-9]/[0-9]) \.\.\. Done\.$'
                  ,  re.MULTILINE)
         )
 
