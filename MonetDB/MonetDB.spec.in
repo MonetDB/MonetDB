@@ -1,7 +1,10 @@
 %define name MonetDB
 %define release 1
 %define version @VERSION@
+
 %define prefix /usr
+%define sysconfdir /etc
+%define localstatedir /var/lib
 
 %define monetdb_uid    85
 %define monetdb_gid    85
@@ -56,7 +59,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %build
 
-./configure --prefix=%{prefix} 
+./configure \
+	--prefix=%{prefix} \
+	--sysconfdir=%{sysconfdir} \
+	--localstatedir=%{localstatedir} 
 
 make
 
@@ -66,13 +72,16 @@ rm -rf $RPM_BUILD_ROOT
 make install \
 	DESTDIR=$RPM_BUILD_ROOT 
 
+mkdir -p $RPM_BUILD_ROOT/%{localstatedir}/MonetDB/
+# insert example db here!
+
 find $RPM_BUILD_ROOT -name .incs.in | xargs rm
 
 # cleanup stuff we don't want to install
 rm -rf $RPM_BUILD_ROOT%{prefix}/bin/epsffit
-rm -rf $RPM_BUILD_ROOT%{prefix}/share/MonetDB/conf/conf.bash
-rm -rf $RPM_BUILD_ROOT%{prefix}/share/MonetDB/general.mil
-rm -rf $RPM_BUILD_ROOT%{prefix}/share/MonetDB/lady.gif
+rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/conf/conf.bash
+rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/general.mil
+rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/lady.gif
 
 # Fixes monet config script
 #perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
@@ -86,18 +95,18 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/lib/libmutils.*
 %{prefix}/lib/libMapi.* 
 %{prefix}/lib/libstream.*
-%{prefix}/lib/MonetDB/java/*jar
-%{prefix}/lib/MonetDB/Tests/*
+%{prefix}/lib/%{name}/java/*jar
+%{prefix}/lib/%{name}/Tests/*
 
 # fix should be install in script langs subdirs
-%{prefix}/share/MonetDB/perl/* 
-%{prefix}/share/MonetDB/python/* 
+%{prefix}/share/%{name}/perl/* 
+%{prefix}/share/%{name}/python/* 
 
-%{prefix}/etc/monet.conf 
+%config(noreplace) %{sysconfdir}/monet.conf 
 
 %pre client 
 %{_sbindir}/groupadd -g %{monetdb_gid} -r monetdb 2>/dev/null || :
-%{_sbindir}/useradd -d %{_var}/lib/monetdb -s /bin/true -g monetdb -M -r -u %{monetdb_uid} monetdb 2>/dev/null || :
+%{_sbindir}/useradd -d %{localstatedir}/%{name} -s /bin/true -g monetdb -M -r -u %{monetdb_uid} monetdb 2>/dev/null || :
 
 %files server
 %defattr(-,monetdb,monetdb) 
@@ -105,16 +114,18 @@ rm -fr $RPM_BUILD_ROOT
 
 %{prefix}/lib/libbat.*
 %{prefix}/lib/libmonet.*
-%{prefix}/lib/MonetDB/*.so* 
-%{prefix}/lib/MonetDB/*.la* 
-%{prefix}/lib/MonetDB/*.mil* 
+%{prefix}/lib/%{name}/*.so* 
+%{prefix}/lib/%{name}/*.la* 
+%{prefix}/lib/%{name}/*.mil* 
 
-%{prefix}/share/MonetDB/tools/* 
+%{prefix}/share/%{name}/tools/* 
+
+%dir %{localstatedir}/%{name}
 
 %files devel
 %defattr(-,monetdb,monetdb) 
 %{prefix}/bin/monet-config*
-%{prefix}/share/MonetDB/conf/monet.m4 
+%{prefix}/share/%{name}/conf/monet.m4 
 
 %{prefix}/bin/mel
 %{prefix}/bin/calibrator
@@ -122,8 +133,8 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/prefixMxFile 
 %{prefix}/bin/idxmx 
 
-%{prefix}/share/MonetDB/Mprofile-commands.lst 
-%{prefix}/share/MonetDB/quit.mil 
+%{prefix}/share/%{name}/Mprofile-commands.lst 
+%{prefix}/share/%{name}/quit.mil 
 
 %{prefix}/bin/prof.py*
 %{prefix}/bin/Mtest.py*
@@ -138,8 +149,8 @@ rm -fr $RPM_BUILD_ROOT
 
 %{prefix}/lib/autogen/* 
 
-%{prefix}/include/MonetDB/*.h
-%{prefix}/include/MonetDB/*/*.[hcm]
+%{prefix}/include/%{name}/*.h
+%{prefix}/include/%{name}/*/*.[hcm]
 
 %post server
 umask 022

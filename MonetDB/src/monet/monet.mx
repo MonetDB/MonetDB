@@ -408,9 +408,6 @@ ptr monet_init(void){
 
 	monet_running = 1;
 
-#ifdef IRIX
-        setbuffer(stdout, GDKmalloc(4096), 4096);
-#endif
         ll_init();
         monet_critical   = MT_create_lock();
         monet_contextLock= MT_create_lock();

@@ -277,7 +277,7 @@ capabilities depend on the malloc implementation used at run time.
 	    if (mallopt(M_MXFAST, 192)) {
 		fprintf(stderr, "monet: mallopt(M_MXFAST,192) fails.\n");
 	    }
-#ifdef IRIX
+#ifdef M_BLKSZ
 	    if (mallopt(M_BLKSZ, 8*1024)) {
 		fprintf(stderr, "monet: mallopt(M_BLKSZ,8*1024) fails.\n");
 	    }
