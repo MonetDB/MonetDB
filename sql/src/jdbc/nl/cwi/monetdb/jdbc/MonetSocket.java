@@ -35,11 +35,11 @@ import java.net.*;
  * <br /><br />
  * For debugging purposes a socket level debugging is implemented where each and
  * every interaction to and from the MonetDB server is logged to a file on disk.
- * Incomming messages are prefixed by "&lt;&lt;", outgoing messages by
- * "&gt;&gt;".
+ * Incoming messages are prefixed by "RX", outgoing messages by
+ * "TX".
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 1.4
+ * @version 1.5
  */
 class MonetSocket {
 	/** Reader from the Socket */
@@ -127,7 +127,7 @@ class MonetSocket {
 			// it's a bit nasty if an exception is thrown from the log,
 			// but ignoring it can be nasty as well, so it is decided to
 			// let it go so there is feedback about something going wrong
-			if (debug) log.write("<< " + data);
+			if (debug) logTx(data);
 		}
 	}
 
@@ -174,10 +174,7 @@ class MonetSocket {
 			// it's a bit nasty if an exception is thrown from the log,
 			// but ignoring it can be nasty as well, so it is decided to
 			// let it go so there is feedback about something going wrong
-			if (debug) {
-				log.write(">> " + line + "\n");
-				log.flush();
-			}
+			if (debug) logRx(line);
 
 			if (line != null) {
 				lineType = getLineType(line);
@@ -276,5 +273,37 @@ class MonetSocket {
 	protected void finalize() throws Throwable {
 		disconnect();
 		super.finalize();
+	}
+
+
+	/**
+	 * Writes a logline tagged with a timestamp using the given string.
+	 * Used for debugging purposes only and represents a message that is
+	 * connected to writing to the socket.
+	 * A logline might look like:
+	 * TX 152545124: Hello MonetDB!
+	 *
+	 * @param message the message to log
+	 * @throws IOException if an IO error occurs while writing to the logfile
+	 */
+	void logTx(String message) throws IOException {
+		log.write("TX " + System.currentTimeMillis() +
+			": " + message + "\n");
+	}
+
+	/**
+	 * Writes a logline tagged with a timestamp using the given string,
+	 * and flushes afterwards.  Used for debugging purposes only and
+	 * represents a message that is connected to reading from the socket.
+	 * A logline might look like:
+	 * RX 152545124: Hi JDBC!
+	 *
+	 * @param message the message to log
+	 * @throws IOException if an IO error occurs while writing to the logfile
+	 */
+	void logRx(String message) throws IOException {
+		log.write("RX " + System.currentTimeMillis() +
+			": " + message + "\n");
+		log.flush();
 	}
 }
