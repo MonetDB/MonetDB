@@ -7,16 +7,14 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("#advanced features BATs as primitives.\n");
-	mil.line("");
 	mil.line("var c:= new(int,bat);");
 	c := new(nil:int,:bat[:any,:any]);
 	mil.line("#c.insert(1,gdk_cpu_stat);\n");
-	mil.line("c.insert(1,cpu);");
 	cpu:= mil.take("cpu");
 	ca_a := insert(c,1,cpu);
 	mil.line("c.insert(2,c);");

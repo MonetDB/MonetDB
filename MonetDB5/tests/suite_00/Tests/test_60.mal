@@ -7,16 +7,13 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("# For distributed processing it should be possible\n");
-	mil.line("# split and re-distribute BATs.");
 	mil.line("# split and re-distribute BATs.\n");
-	mil.line("# This is supported by hashsplit, rangesplit,  and groupby operations.");
 	mil.line("# This is supported by hashsplit, rangesplit,  and groupby operations.\n");
-	mil.line("");
 	mil.line("PROC groupby(bat b, bat  rng) : bat {");
 function groupby(b:bat[:any,:any], rng:bat[:any,:any]):bat[:any,:any];
 	mil.line(" VAR r := rng.reverse().number().reverse();");
@@ -84,10 +81,9 @@ end groupby;
 	mil.line("bb@batloop() { $t.print(); }");
 barrier	ib_a := bunStream(bb,ib_aH,ib_aT);
 	jb_a := print(ib_aT);
-redo	ib_a;
+redo	ib_a := bunStream(bb,ib_aH,ib_aT);
 exit	ib_a;
 	mil.line("# other values;\n");
-	mil.line("var x:= new(int,chr);");
 	x := new(nil:int,nil:chr);
 	mil.line("x.insert(1,'a');");
 	kb_a := insert(x,1,'a');
@@ -120,10 +116,9 @@ exit	ib_a;
 	mil.line("xx@batloop() { $t.print(); }");
 barrier	wb_a := bunStream(xx,wb_aH,wb_aT);
 	xb_a := print(wb_aT);
-redo	wb_a;
+redo	wb_a := bunStream(xx,wb_aH,wb_aT);
 exit	wb_a;
 	mil.line("# other values;\n");
-	mil.line("x:= new(int,str);");
 	x := new(nil:int,nil:str);
 	mil.line("x.insert(1,\"a\");");
 	yb_a := insert(x,1,"a");
@@ -158,7 +153,7 @@ exit	wb_a;
 	mil.line("xx@batloop() { $t.print(); }");
 barrier	mc_a := bunStream(xx,mc_aH,mc_aT);
 	nc_a := print(mc_aT);
-redo	mc_a;
+redo	mc_a := bunStream(xx,mc_aH,mc_aT);
 exit	mc_a;
 	mil.line("quit();");
 	oc_a := quit();

@@ -7,18 +7,15 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("# escape sequences\n");
-	mil.line("# first some basics, escaped characters are normalized");
 	mil.line("# first some basics, escaped characters are normalized\n");
-	mil.line("");
 	mil.line("print(\"got single quote \\' .\");\t# remove superfluous escapes");
 	ca_a := print("got single quote \' .");
 	mil.line("# remove superfluous escapes\n");
-	mil.line("print(\"got single quote ' without escape\");");
 	da_a := print("got single quote ' without escape");
 	mil.line("print(\"got tab \\t and single newline \\n .\");");
 	ea_a := print("got tab \t and single newline \n .");
@@ -37,7 +34,6 @@
 	t3 := "problem signalled before \\\"";
 	ja_a := print(t3);
 	mil.line("# character constants\n");
-	mil.line("var c0:= \"\\n\"; c0.print();");
 	c0 := "\n";
 	ka_a := print(c0);
 	mil.line("var c1:= \"\\'\"; c1.print();");
@@ -57,10 +53,8 @@
 	mil.line("s.print();");
 	qa_a := print(s);
 	mil.line("# Monet printf should behave as in C\n");
-	mil.line("printf(\"got single quote \\' .\\n\"); # remove superfluous escapes");
 	ra_a := printf("got single quote \' .\n");
 	mil.line("# remove superfluous escapes\n");
-	mil.line("printf(\"got single quote ' without escape\\n\");");
 	sa_a := printf("got single quote ' without escape\n");
 	mil.line("printf(\"got tab \\t and newline \\n .\\n\");");
 	ta_a := printf("got tab \t and newline \n .\n");

@@ -7,16 +7,13 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("#test basic functionality of the BAT library.\n");
-	mil.line("#focussed on strings");
 	mil.line("#focussed on strings\n");
-	mil.line("#it includes insertions,deletions,selections, and joins.");
 	mil.line("#it includes insertions,deletions,selections, and joins.\n");
-	mil.line("");
 	mil.line("var b:= new(str,int);");
 	b := new(nil:str,nil:int);
 	mil.line("b.insert(\"the\",1);");
@@ -50,7 +47,6 @@
 	mil.line("b.print();");
 	sa_a := print(b);
 	mil.line("# Testing simple retrievals\n");
-	mil.line("b.find(\"the\").print();");
 	ta_a := find(b,"the");
 	ua_a := print(ta_a);
 	mil.line("b.find(\"fox\").print();");
@@ -61,11 +57,9 @@
 	ya_a := find(b,xa_a);
 	ab_a := print(ya_a);
 	mil.line("# This should cause an error\n");
-	mil.line("b.find(\"cat\").print();");
 #ignore	bb_a := find(b,"cat");
 #ignore	cb_a := print(bb_a);
 	mil.line("# Can we delete them and re-insert them later on\n");
-	mil.line("b.delete(\"fox\",4);");
 	db_a := delete(b,"fox",4);
 	mil.line("b.delete(\"the\",1);");
 	eb_a := delete(b,"the",1);
@@ -83,7 +77,6 @@
 	kb_a := count(b);
 	lb_a := print(kb_a);
 	mil.line("# Lets cut out a few sections\n");
-	mil.line("b.select(2,4).print();");
 	mb_a := select(b,2,4);
 	nb_a := print(mb_a);
 	mil.line("b.select(7,int(nil)).print();");
@@ -120,7 +113,6 @@
 	nc_a := select(mc_a,kc_a,lc_a);
 	oc_a := print(nc_a);
 	mil.line("# A 2-dimensional cut\n");
-	mil.line("var bn:=b.fragment(\"fox\",\"quick\",1,5);bn.print();");
 	bn := fragment(b,"fox","quick",1,5);
 	pc_a := print(bn);
 	mil.line("b.fragment(\"fox\",str(nil),1,5).print();");
@@ -179,7 +171,6 @@
 	mil.line("b2.print();");
 	fe_a := print(b2);
 	mil.line("# testing the like command\n");
-	mil.line("b.reverse().like(\"ox\").print();");
 	ge_a := reverse(b);
 	he_a := like(ge_a,"ox");
 	ie_a := print(he_a);

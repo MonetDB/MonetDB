@@ -7,12 +7,11 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("# Testing key and set constraints ;\n");
-	mil.line("var b:= new(int,int);");
 	b := new(nil:int,nil:int);
 	mil.line("b.key(true);");
 	ca_a := bat.setKey(b,true);

@@ -7,14 +7,12 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("# Some applications may wish to directly access the buns\n");
-	mil.line("# i.e. they use a BAT like an array.");
 	mil.line("# i.e. they use a BAT like an array.\n");
-	mil.line("var b:= new(int,int);");
 	b := new(nil:int,nil:int);
 	mil.line("b.rename(\"b\");");
 	ca_a := bat.setName(b,"b");
@@ -46,7 +44,6 @@
 	ra_a := int(nil);
 	sa_a := insert(b,ra_a,81);
 	mil.line("#b.rename(\"b\");\n");
-	mil.line("");
 	mil.line("b.save();");
 	ta_a := save(b);
 	mil.line("load(\"b\");");
@@ -64,7 +61,6 @@
 	cb_a := slice(b,5,8);
 	db_a := print(cb_a);
 	mil.line("# errors\n");
-	mil.line("b.position(111).print();");
 	eb_a := position(b,111);
 	fb_a := print(eb_a);
 	mil.line("b.fetch(-1).print();");

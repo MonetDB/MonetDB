@@ -7,7 +7,7 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
@@ -122,37 +122,21 @@
 	mil.line("t2.print();");
 	mc_a := print(t2);
 	mil.line("#print(t2.histogram,x,y);\n");
-	mil.line("#CTprint(t2.histogram,y);");
 	mil.line("#CTprint(t2.histogram,y);\n");
-	mil.line("");
 	mil.line("#x1y := CTderive(x1,y);\n");
-	mil.line("#h := x1y.histogram();");
 	mil.line("#h := x1y.histogram();\n");
-	mil.line("#h.roles(\"count\",\"oid\");");
 	mil.line("#h.roles(\"count\",\"oid\");\n");
-	mil.line("#print(h.reverse,x,y);");
 	mil.line("#print(h.reverse,x,y);\n");
-	mil.line("#");
 	mil.line("#\n");
-	mil.line("#x1yz := CTderive(x1y,z);");
 	mil.line("#x1yz := CTderive(x1y,z);\n");
-	mil.line("#h := x1yz.histogram();");
 	mil.line("#h := x1yz.histogram();\n");
-	mil.line("#h.roles(\"count\",\"oid\");");
 	mil.line("#h.roles(\"count\",\"oid\");\n");
-	mil.line("#print(h.reverse,x,y,z);");
 	mil.line("#print(h.reverse,x,y,z);\n");
-	mil.line("#");
 	mil.line("#\n");
-	mil.line("#");
 	mil.line("#\n");
-	mil.line("#CThistogram(x1).print;");
 	mil.line("#CThistogram(x1).print;\n");
-	mil.line("#CThistogram(x1y).print;");
 	mil.line("#CThistogram(x1y).print;\n");
-	mil.line("#CThistogram(x1yz).print;");
 	mil.line("#CThistogram(x1yz).print;\n");
-	mil.line("");
 	mil.line("quit();");
 	nc_a := quit();
 #Identifer 'rename' mapped to 'bat.setName'

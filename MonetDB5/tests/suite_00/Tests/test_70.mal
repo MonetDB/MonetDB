@@ -7,14 +7,12 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("#This collection of examples is geared at the support\n");
-	mil.line("#of the data mining tool");
 	mil.line("#of the data mining tool\n");
-	mil.line("");
 	mil.line("var b:= new(int,int);");
 	b := new(nil:int,nil:int);
 	mil.line("b.insert(1,15);");
@@ -72,7 +70,6 @@
 	mil.line("t.print();");
 	cb_a := print(t);
 	mil.line("#It requires a few additional routines\n");
-	mil.line("var c:= new(int,int);");
 	c := new(nil:int,nil:int);
 	mil.line("c.insert(1,15);");
 	db_a := insert(c,1,15);

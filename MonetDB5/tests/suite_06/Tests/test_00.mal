@@ -7,12 +7,11 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("#create two tables and check out the alignment code\n");
-	mil.line("");
 	mil.line("var t:= new(int, int);");
 	t := new(nil:int,nil:int);
 	mil.line("t.insert(1,2);");
@@ -46,7 +45,6 @@
 	BAT_WRITE:= mil.take("BAT_WRITE");
 	qa_a := access(t2,BAT_WRITE);
 	mil.line("#t2.order;\n");
-	mil.line("module(\"cluster\");");
 	mil.line("t2.order();");
 	ra_a := order(t2);
 	mil.line("print(t2.ordered());");
@@ -61,7 +59,6 @@
 	xa_a := isSynced(t2,t);
 	ya_a := print(xa_a);
 	mil.line("#t.sync(t2);\n");
-	mil.line("t.print();");
 	ab_a := print(t);
 	mil.line("print(t2.aligned(t));");
 	bb_a := aligned(t2,t);

@@ -7,18 +7,15 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("# definition and use of Monet procs.\n");
-	mil.line("# Note that complex procs should normally be prepared in block mode.");
 	mil.line("# Note that complex procs should normally be prepared in block mode.\n");
-	mil.line("");
 	mil.line("unknown(\"hello\");");
 	ca_a := unknown("hello");
 	mil.line("#simple procedure with withdrawal\n");
-	mil.line("proc c() : void { \"clock\".print();}");
 function c():void;
 !ERROR: "proc c() : void { "clock".print();}"
 !                                   ^

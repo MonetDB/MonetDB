@@ -7,7 +7,7 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
@@ -17,7 +17,6 @@ function newid(x:any, y:any):any;
 	return ca_a :=+(x,y);
 end newid;
 	mil.line("#calling a function;\n");
-	mil.line("var b:= new(int,int,0);");
 	b := new(nil:int,nil:int,0);
 	mil.line("b.insert(1,15);");
 	da_a := insert(b,1,15);
@@ -71,7 +70,6 @@ function s(low:int, high:int):void;
 	ab_a := print(ya_a);
 end s;
 	mil.line("#proc echo(any x,any y) : any { vars(); z=x; vars(); return(z); }\n");
-	mil.line("proc echo(any x,any y) : any { vars(); var z:=x; vars(); return(z); }");
 function echo(x:any, y:any):any;
 	bb_a := vars();
 	z := x;
@@ -95,7 +93,6 @@ end New;
 	mil.line("p(\"b\",\"1\");");
 	hb_a := p("b","1");
 	mil.line("# passing parameters;\n");
-	mil.line("var a:=35;");
 	a := 35;
 	mil.line("echo(a,\"hello\").print();");
 	ib_a := echo(a,"hello");
@@ -109,7 +106,6 @@ end New;
 	mil.line("s(0,11);");
 	nb_a := s(0,11);
 	mil.line("# errors !;\n");
-	mil.line("s(0,99);");
 	ob_a := s(0,99);
 	mil.line("s(0,999);");
 	pb_a := s(0,999);

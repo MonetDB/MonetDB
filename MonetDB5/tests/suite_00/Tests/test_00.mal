@@ -7,20 +7,16 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("#test basic functionality of the BAT library.\n");
-	mil.line("#focussed on integers");
 	mil.line("#focussed on integers\n");
-	mil.line("#it includes insertions,deletions,selections, and joins.");
 	mil.line("#it includes insertions,deletions,selections, and joins.\n");
-	mil.line("");
 	mil.line("var b:= new(int,int);");
 	b := new(nil:int,nil:int);
 	mil.line("#b.roles(\"head\",\"tail\"); roles was removed from the kernel ops\n");
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); b.info().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	ca_a := printf("#~BeginVariableOutput~#\n");
 	da_a := info(b);
 	ea_a := print(da_a);
@@ -55,7 +51,6 @@
 	mil.line("b.print();");
 	wa_a := print(b);
 	mil.line("# Testing simple retrievals\n");
-	mil.line("b.find(1).print();");
 	xa_a := find(b,1);
 	ya_a := print(xa_a);
 	mil.line("b.find(4).print();");
@@ -66,11 +61,9 @@
 	db_a := find(b,cb_a);
 	eb_a := print(db_a);
 	mil.line("# This should cause an error\n");
-	mil.line("b.find(10).print();");
 #ignore	fb_a := find(b,10);
 #ignore	gb_a := print(fb_a);
 	mil.line("# Can we delete them and re-insert them later on\n");
-	mil.line("b.delete(4,16);");
 	hb_a := delete(b,4,16);
 	mil.line("b.delete(1,15);");
 	ib_a := delete(b,1,15);
@@ -92,7 +85,6 @@
 	mil.line("b.print();");
 	sb_a := print(b);
 	mil.line("# Lets cut out a few sections\n");
-	mil.line("b.select(25,64).print();");
 	tb_a := select(b,25,64);
 	ub_a := print(tb_a);
 	mil.line("b.select(4,15).print();");
@@ -102,7 +94,6 @@
 	xb_a := select(b,4,4);
 	yb_a := print(xb_a);
 	mil.line("# This should cause an error\n");
-	mil.line("b.select(4,3).print();");
 	ac_a := select(b,4,3);
 	bc_a := print(ac_a);
 	mil.line("b.select(81,int(nil)).print();");
@@ -115,7 +106,6 @@
 	hc_a := select(b,fc_a,gc_a);
 	ic_a := print(hc_a);
 	mil.line("# A 2-dimensional cut\n");
-	mil.line("var bn:=b.fragment(1,5,4,15);bn.print();");
 	bn := fragment(b,1,5,4,15);
 	jc_a := print(bn);
 	mil.line("b.fragment(1,5,16,int(nil)).print();");
@@ -144,13 +134,11 @@
 	mil.line("bn.print();");
 	ad_a := print(bn);
 	mil.line("# band join experiment\n");
-	mil.line("var c:= b.copy();");
 	c := copy(b);
 	mil.line("bandjoin(b,c,4,4).print();");
 	bd_a := bandjoin(b,c,4,4);
 	cd_a := print(bd_a);
 	mil.line("#and theta joins\?\n");
-	mil.line("b.thetajoin(c,LT,lng(nil)).print();");
 	LT:= mil.take("LT");
 	dd_a := lng(nil);
 	ed_a := thetajoin(b,c,LT,dd_a);

@@ -7,12 +7,11 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additioStatisticsnal support routines
 	mil.line("setoid(oid(2000000));");
 	aa_a := oid(2000000);
 	ba_a := setoid(aa_a);
 	mil.line("# analyse selectioStatisticsn using indexing\n");
-	mil.line("var k10_unique1 := bat(\"k10_unique1\");");
 	k10_unique1 := new("k10_unique1");
 	mil.line("print(count(k10_unique1));");
 	ca_a := count(k10_unique1);
@@ -53,7 +52,7 @@
 	xa_a := printf("#~EndVariableOutput~#\n");
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memStatisticsory().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	ya_a := printf("#~BeginVariableOutput~#\n");
-	ab_a := memStatisticsory();
+	ab_a := status.memStatisticsStatistics();
 	bb_a := print(ab_a);
 	cb_a := printf("#~EndVariableOutput~#\n");
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
@@ -62,7 +61,6 @@
 	fb_a := print(eb_a);
 	gb_a := printf("#~EndVariableOutput~#\n");
 	mil.line("#Index first to speed-up selectioStatisticsn\n");
-	mil.line("accbuild(k10_unique1,\"index\");");
 	hb_a := accbuild(k10_unique1,"index");
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	ib_a := printf("#~BeginVariableOutput~#\n");
@@ -100,7 +98,7 @@
 	cc_a := printf("#~EndVariableOutput~#\n");
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memStatisticsory().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	dc_a := printf("#~BeginVariableOutput~#\n");
-	ec_a := memStatisticsory();
+	ec_a := status.memStatisticsStatistics();
 	fc_a := print(ec_a);
 	gc_a := printf("#~EndVariableOutput~#\n");
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
@@ -139,7 +137,7 @@
 	bd_a := printf("#~EndVariableOutput~#\n");
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memStatisticsory().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	cd_a := printf("#~BeginVariableOutput~#\n");
-	dd_a := memStatisticsory();
+	dd_a := status.memStatisticsStatistics();
 	ed_a := print(dd_a);
 	fd_a := printf("#~EndVariableOutput~#\n");
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
@@ -148,7 +146,6 @@
 	id_a := print(hd_a);
 	jd_a := printf("#~EndVariableOutput~#\n");
 	mil.line("#index the tail\n");
-	mil.line("accbuild(reverse(k10_unique1),\"index\");");
 	kd_a := reverse(k10_unique1);
 	ld_a := accbuild(kd_a,"index");
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
@@ -187,7 +184,7 @@
 	ge_a := printf("#~EndVariableOutput~#\n");
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memStatisticsory().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	he_a := printf("#~BeginVariableOutput~#\n");
-	ie_a := memStatisticsory();
+	ie_a := status.memStatisticsStatistics();
 	je_a := print(ie_a);
 	ke_a := printf("#~EndVariableOutput~#\n");
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
@@ -197,3 +194,4 @@
 	oe_a := printf("#~EndVariableOutput~#\n");
 	mil.line("quit();");
 	pe_a := quit();
+#Identifer 'memStatisticsory' mapped to 'status.memStatistics'

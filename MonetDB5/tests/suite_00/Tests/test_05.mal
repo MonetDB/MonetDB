@@ -7,16 +7,13 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("#test basic functionality of the BAT library.\n");
-	mil.line("#focussed on float");
 	mil.line("#focussed on float\n");
-	mil.line("#it includes insertions,deletions,selections, and joins.");
 	mil.line("#it includes insertions,deletions,selections, and joins.\n");
-	mil.line("");
 	mil.line("print(3.147);");
 	ca_a := print(3.147);
 	mil.line("var b:= new(flt,flt);");
@@ -51,7 +48,6 @@
 	mil.line("b.print();");
 	ta_a := print(b);
 	mil.line("# Testing simple retrievals\n");
-	mil.line("b.find(1.2).print();");
 	ua_a := find(b,1.2);
 	va_a := print(ua_a);
 	mil.line("b.find(4.5).print();");
@@ -62,11 +58,9 @@
 	ab_a := find(b,ya_a);
 	bb_a := print(ab_a);
 	mil.line("# This should cause an error\n");
-	mil.line("b.find(10.1).print();");
 #ignore	cb_a := find(b,10.1);
 #ignore	db_a := print(cb_a);
 	mil.line("# Can we delete them and re-insert them later on\n");
-	mil.line("b.delete(4.5, 16.7);");
 	eb_a := delete(b,4.5,16.7);
 	mil.line("b.delete(1.2, 15.6);");
 	fb_a := delete(b,1.2,15.6);
@@ -86,7 +80,6 @@
 	nb_a := count(b);
 	ob_a := print(nb_a);
 	mil.line("# Lets cut out a few sections\n");
-	mil.line("b.select(25.6,64.5).print();");
 	pb_a := select(b,25.6,64.5);
 	qb_a := print(pb_a);
 	mil.line("b.select(4.5,15.6).print();");
@@ -96,7 +89,6 @@
 	tb_a := select(b,4.5,4.5);
 	ub_a := print(tb_a);
 	mil.line("# This should cause an error\n");
-	mil.line("b.select(4.5,3.4).print();");
 	vb_a := select(b,4.5,3.4);
 	wb_a := print(vb_a);
 	mil.line("b.select(81.2,flt(nil)).print();");
@@ -109,7 +101,6 @@
 	dc_a := select(b,bc_a,cc_a);
 	ec_a := print(dc_a);
 	mil.line("# A 2-dimensional cut\n");
-	mil.line("var bn:=b.fragment(1.2,5.6,4.5,15.6);bn.print();");
 	bn := fragment(b,1.2,5.6,4.5,15.6);
 	fc_a := print(bn);
 	mil.line("b.fragment(1.2,5.6,16.2,flt(nil)).print();");
@@ -137,7 +128,6 @@
 	mil.line("b2.print();");
 	uc_a := print(b2);
 	mil.line("# band join experiment\n");
-	mil.line("var c:= b.copy();");
 	c := copy(b);
 	mil.line("bandjoin(b,c,4.5,4.5).print();");
 	vc_a := bandjoin(b,c,4.5,4.5);

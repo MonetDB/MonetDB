@@ -7,12 +7,11 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("# testing merge semijoin\n");
-	mil.line("var c:= new(int,int);");
 	c := new(nil:int,nil:int);
 	mil.line("insert(c,1,1);");
 	ca_a := insert(c,1,1);
@@ -60,7 +59,6 @@
 	mil.line("z.print();");
 	va_a := print(z);
 	mil.line("# String management\n");
-	mil.line("var b:= new(oid,str);");
 	b := new(nil:oid,nil:str);
 	mil.line("b.insert(oid(1),\"hello\");");
 	wa_a := oid(1);

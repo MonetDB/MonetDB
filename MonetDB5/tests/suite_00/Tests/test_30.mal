@@ -7,12 +7,11 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("## testing transitive closure on cyclic graph;\n");
-	mil.line("module(\"oo7\");");
 	mil.line("var c:= new(int,int);");
 	c := new(nil:int,nil:int);
 	mil.line("insert(c,1,2);");
@@ -38,9 +37,7 @@
 	mil.line("print(d);");
 	ma_a := print(d);
 	mil.line("## testing traversal on directed acyclic graph\n");
-	mil.line("## produces the end-points only");
 	mil.line("## produces the end-points only\n");
-	mil.line("var c:= new(int,int);");
 	c := new(nil:int,nil:int);
 	mil.line("insert(c,1,2);");
 	na_a := insert(c,1,2);
@@ -72,7 +69,6 @@
 	bb_a := traverse(d,c);
 	cb_a := print(bb_a);
 	mil.line("## The alternative is to extract a subgraph\n");
-	mil.line("d.clear();");
 	db_a := clear(d);
 	mil.line("d.insert(2,2);");
 	eb_a := insert(d,2,2);

@@ -7,14 +7,12 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(2000000));");
 	aa_a := oid(2000000);
 	ba_a := setoid(aa_a);
 	mil.line("# make a wisconsin-like database\n");
-	mil.line("# it uses the predefined wisconsin generator");
 	mil.line("# it uses the predefined wisconsin generator\n");
-	mil.line("module(\"wisc\");");
 	mil.line("wisc(\"W10k\",10000);");
 	ca_a := wisc("W10k",10000);
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpu().print(); printf(\"#~EndVariableOutput~#\\n\");");
@@ -24,7 +22,7 @@
 	ga_a := printf("#~EndVariableOutput~#\n");
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	ha_a := printf("#~BeginVariableOutput~#\n");
-	ia_a := memory();
+	ia_a := status.memStatistics();
 	ja_a := print(ia_a);
 	ka_a := printf("#~EndVariableOutput~#\n");
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); io().print(); printf(\"#~EndVariableOutput~#\\n\");");
@@ -53,7 +51,7 @@
 	db_a := printf("#~EndVariableOutput~#\n");
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	eb_a := printf("#~BeginVariableOutput~#\n");
-	fb_a := memory();
+	fb_a := status.memStatistics();
 	gb_a := print(fb_a);
 	hb_a := printf("#~EndVariableOutput~#\n");
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); io().print(); printf(\"#~EndVariableOutput~#\\n\");");
@@ -75,3 +73,4 @@
 	ub_a := printf("#~EndVariableOutput~#\n");
 	mil.line("quit();");
 	vb_a := quit();
+#Identifer 'memory' mapped to 'status.memStatistics'

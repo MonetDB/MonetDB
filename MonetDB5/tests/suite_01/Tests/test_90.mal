@@ -7,18 +7,14 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("# This test at some point caused Monet to hang and\n");
-	mil.line("# it did not present the error messages at the proper line.");
 	mil.line("# it did not present the error messages at the proper line.\n");
-	mil.line("# It forgot to echo the input line.");
 	mil.line("# It forgot to echo the input line.\n");
-	mil.line("var x;");
 	mil.line("#var 34;\n");
-	mil.line("time().print();");
 	ca_a := alarm.time();
 	da_a := print(ca_a);
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); time().print(); printf(\"#~EndVariableOutput~#\\n\");");

@@ -7,12 +7,11 @@
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#include "mil_prelude";
+#use the "mil_schema" for additioStatisticsnal support routines
 	mil.line("setoid(oid(2000000));");
 	aa_a := oid(2000000);
 	ba_a := setoid(aa_a);
 	mil.line("# Testing effect on semijoin ordering\n");
-	mil.line("load(\"k10_unique1\");");
 	ca_a := load("k10_unique1");
 	mil.line("var k10_unique1:= bat(\"k10_unique1\");");
 	k10_unique1 := new("k10_unique1");
@@ -24,7 +23,7 @@
 	fa_a := print(ea_a);
 	ga_a := printf("#~EndVariableOutput~#\n");
 	ha_a := printf("#~BeginVariableOutput~#\n");
-	ia_a := memStatisticsory();
+	ia_a := status.memStatisticsStatistics();
 	ja_a := print(ia_a);
 	ka_a := printf("#~EndVariableOutput~#\n");
 	la_a := printf("#~BeginVariableOutput~#\n");
@@ -67,7 +66,7 @@
 	mb_a := print(lb_a);
 	nb_a := printf("#~EndVariableOutput~#\n");
 	ob_a := printf("#~BeginVariableOutput~#\n");
-	pb_a := memStatisticsory();
+	pb_a := status.memStatisticsStatistics();
 	qb_a := print(pb_a);
 	rb_a := printf("#~EndVariableOutput~#\n");
 	sb_a := printf("#~BeginVariableOutput~#\n");
@@ -110,7 +109,7 @@
 	tc_a := print(sc_a);
 	uc_a := printf("#~EndVariableOutput~#\n");
 	vc_a := printf("#~BeginVariableOutput~#\n");
-	wc_a := memStatisticsory();
+	wc_a := status.memStatisticsStatistics();
 	xc_a := print(wc_a);
 	yc_a := printf("#~EndVariableOutput~#\n");
 	ad_a := printf("#~BeginVariableOutput~#\n");
@@ -119,3 +118,4 @@
 	dd_a := printf("#~EndVariableOutput~#\n");
 	mil.line("quit();");
 	ed_a := quit();
+#Identifer 'memStatisticsory' mapped to 'status.memStatistics'
