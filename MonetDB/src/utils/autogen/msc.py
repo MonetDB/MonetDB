@@ -45,6 +45,10 @@ def msc_list2string(l,pre,post):
     return res
 
 def msc_subdirs(fd, var, values, msc ):
+    # HACK to keep uncompilable stuff out of Windows makefiles.
+    if 'calibrator' in values:
+        values = values[:]
+        values.remove('calibrator')
     fd.write("%s = %s\n" % (var,string.join(values)))
     fd.write("all-recursive: %s\n" % msc_list2string(values,"","-all ") )
     for v in values:
@@ -643,6 +647,22 @@ output_funcs = { 'SUBDIRS': msc_subdirs,
                 }
 
 def output(tree, cwd, topdir):
+    # HACKS to keep uncompilable stuff out of Windows makefiles.
+    if tree.has_key('bin_Mtimeout'):
+        tree = tree.copy()
+        del tree['bin_Mtimeout']
+    if tree.has_key('LIBS') and tree['LIBS'].has_key('SOURCES') and 'mprof.mx' in tree['LIBS']['SOURCES']:
+        tree = tree.copy()
+        tree['LIBS'] = tree['LIBS'].copy()
+        tree['LIBS']['SOURCES'] = tree['LIBS']['SOURCES'][:]
+        tree['LIBS']['SOURCES'].remove('mprof.mx')
+        tree['LIBS']['SOURCES'].remove('unix.mx')
+        targets = tree['LIBS']['TARGETS']
+        tree['LIBS']['TARGETS'] = []
+        for t in targets:
+            if t[:6] != 'mprof.' and t[:5] != 'unix.':
+                tree['LIBS']['TARGETS'].append(t)
+
     fd = open(os.path.join(cwd,'Makefile.msc'),"w")
 
     fd.write('''
