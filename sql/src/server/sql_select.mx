@@ -559,7 +559,7 @@ static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist
 			list_destroy(results);
 			return sql_error(sql, 02, "Subset not found for case stmt");
 		}
-	} else {
+	} else if (f != sql_sel) {
 		return sql_error(sql, 02, "Case in query currently not supported");
 	}
 	if (opt_else || else_stmt) {
@@ -1001,6 +1001,7 @@ sql_value_exp(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset, i
 			stmt *t = stmt_dup(s->op1.lval->h->data);
 			stmt_destroy(s);
 			s = t;
+			s->aggr = 1; /* single value */
 		}
 		return s;
 	}
