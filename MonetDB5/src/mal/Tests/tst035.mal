@@ -5,8 +5,8 @@ z:=z; print(z);
 print("done");
 
 b:=new(:int,:int);
-i:= getRefCount(b); print(i);
+i:= getLRefCount(b); print(i);
 b:=b;
-i:= getRefCount(b); print(i);
+i:= getLRefCount(b); print(i);
 b:=b;
-i:= getRefCount(b); print(i);
+i:= getLRefCount(b); print(i);

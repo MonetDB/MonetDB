@@ -8,15 +8,18 @@ function refs():void;
 end refs;
 
 b:= new(:int,:int);
+#refs();
 insert(b,23,32);
+#refs();
 setName(b,"tasks");
-refs();
+#refs();
 setPersistent(b);
-refs();
+#refs();
 # it is committed 
+print("open box");
 bbp.open();
-t:= bind("tasks");
 refs();
+t:= bind("tasks");
 print(t);
 bat.destroy(t,true);
 refs();

@@ -1,5 +1,6 @@
 #Access BATs 
 
+mdb();
 b:= new(:int,:int);
 insert(b,1,2);
 bat.setName(b,"mybat");

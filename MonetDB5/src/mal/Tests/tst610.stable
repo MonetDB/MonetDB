@@ -1,0 +1,129 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# compiled for 32biti686-pc-linux-gnu/32bit.
+# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
+# dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
+##this test is used to monitor reference count setting
+##create a persistent bat and destroy it in the next session
+#function refs():void;
+#    g:=bbp.getNames();
+#    gr:=bbp.getRefCount();
+#    gl:=bbp.getLRefCount();
+#    print(g,gr,gl);
+#end refs;
+function Admin.refs():void;	# 0  (refs:void)
+    g := bbp.getNames();	# 1 CMDbbpNames (g:bat[:int,:str])
+    gr := bbp.getRefCount();	# 2 CMDbbpRefCount (gr:bat[:int,:int])
+    gl := bbp.getLRefCount();	# 3 CMDbbpLRefCount (gl:bat[:int,:int])
+    io.print(g,gr,gl);	# 4 IOtable ($4:int)<-(g:bat[:int,:str])(gr:bat[:int,:int])(gl:bat[:int,:int])
+end refs;	# 5  
+#
+#b:= new(:int,:int);
+##refs();
+#insert(b,23,32);
+##refs();
+#setName(b,"tasks");
+##refs();
+#setPersistent(b);
+##refs();
+## it is committed 
+#print("open box");
+#bbp.open();
+#refs();
+#t:= bind("tasks");
+#print(t);
+#bat.destroy(t,true);
+#refs();
+## the bat is still visible, because the destroy only
+## marks it for deletion at the end of session or
+## when the reference counters drop to zero
+#t:= bind("tasks");
+#refs();
+#print(t);
+## to really remove, we get rid of the current
+## references as well
+#bbp.release(t);
+#refs();
+#print(t);
+## but it is still there and should
+#t:=bind("tasks");
+#refs();
+#print(t);
+##its reference count should be dropped to 1
+#c:= getRefCount(t);
+#print(c);
+##however, in the next session it has disappeared
+#refs();
+#
+function Admin.main():int;	# 0  (main:int)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
+    bat.insert(b,23,32);	# 2 BKCinsert_bun ($4:void)<-(b:bat[:int,:int])($5:int)($6:int)
+    bat.setName(b,"tasks");	# 3 BKCsetName ($7:void)<-(b:bat[:int,:int])($8:str)
+    bat.setPersistent(b);	# 4 BKCsetPersistent ($9:bit)<-(b:bat[:int,:int])
+    io.print("open box");	# 5 IOprint_val ($10:int)<-($11:str)
+    bbp.open();	# 6 CMDbbpopen ($12:void)
+    Admin.refs();	# 7  ($13:void)
+    t := bbp.bind("tasks");	# 8 CMDbbpbind (t:bat[:any,:any])<-($8:str)
+    io.print(t);	# 9 IOprint_val ($15:int)<-(t:bat[:any,:any])
+    bat.destroy(t,true);	# 10 BKCdestroyImmediate ($16:void)<-(t:bat[:any,:any])($17:bit)
+    Admin.refs();	# 11  ($18:void)
+    t := bbp.bind("tasks");	# 12 CMDbbpbind (t:bat[:any,:any])<-($8:str)
+    Admin.refs();	# 13  ($19:void)
+    io.print(t);	# 14 IOprint_val ($20:int)<-(t:bat[:any,:any])
+    bbp.release(t);	# 15 CMDbbpreleaseBAT ($21:void)<-(t:bat[:any,:any])
+    Admin.refs();	# 16  ($22:void)
+    io.print(t);	# 17 IOprint_val ($23:int)<-(t:bat[:any,:any])
+    t := bbp.bind("tasks");	# 18 CMDbbpbind (t:bat[:any,:any])<-($8:str)
+    Admin.refs();	# 19  ($24:void)
+    io.print(t);	# 20 IOprint_val ($25:int)<-(t:bat[:any,:any])
+    c := bbp.getRefCount(t);	# 21 CMDgetBATrefcnt (c:int)<-(t:bat[:any,:any])
+    io.print(c);	# 22 IOprint_val ($27:int)<-(c:int)
+    Admin.refs();	# 23  ($28:void)
+end main;	# 24  
+[ "open box" ]
+#---------------------------------------------------------#
+# bbp	name			refcnt	lrefcnt		  # name
+# int	str			int	int		  # type
+#---------------------------------------------------------#
+[ 1,	  "monet_environment",	  1,	  0		  ]
+[ 2,	  "monet_unicode_case",	  1,	  0		  ]
+[ 3,	  "timezones",		  1,	  0		  ]
+[ 4,	  "tasks",		  1,	  2		  ]
+#-----------------#
+# h	tasks	  # name
+# int	int	  # type
+#-----------------#
+[ 23,	  32	  ]
+#---------------------------------------------------------#
+# bbp	name			refcnt	lrefcnt		  # name
+# int	str			int	int		  # type
+#---------------------------------------------------------#
+[ 1,	  "monet_environment",	  1,	  0		  ]
+[ 2,	  "monet_unicode_case",	  1,	  0		  ]
+[ 3,	  "timezones",		  1,	  0		  ]
+[ 4,	  "tasks",		  1,	  2		  ]
+#---------------------------------------------------------#
+# bbp	name			refcnt	lrefcnt		  # name
+# int	str			int	int		  # type
+#---------------------------------------------------------#
+[ 1,	  "monet_environment",	  1,	  0		  ]
+[ 2,	  "monet_unicode_case",	  1,	  0		  ]
+[ 3,	  "timezones",		  1,	  0		  ]
+[ 4,	  "tasks",		  1,	  3		  ]
+#-----------------#
+# h	tasks	  # name
+# int	int	  # type
+#-----------------#
+[ 23,	  32	  ]
+free the bat as well#---------------------------------------------------------#
+# bbp	name			refcnt	lrefcnt		  # name
+# int	str			int	int		  # type
+#---------------------------------------------------------#
+[ 1,	  "monet_environment",	  1,	  0		  ]
+[ 2,	  "monet_unicode_case",	  1,	  0		  ]
+[ 3,	  "timezones",		  1,	  0		  ]
+[ "nil" ]
+!ERROR: MALexception:bbp.bind:failed to find 'tasks' in box
+>
