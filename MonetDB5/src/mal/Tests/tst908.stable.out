@@ -25,8 +25,8 @@ stdout of test 'tst908` in directory 'src/mal` itself:
 function Admin.perftst(b:bat[:any$1,:any$2],div:any$2):void;	# 0  (perftst:void)<-(b:bat[:any$1,:any$2])(div:any$2)
     io.print("perftst");	# 1 IOprint_val ($3:int)<-($4:str)
     io.print(div);	# 2 IOprint_val ($5:int)<-(div:any$2)
-    reduce := multiplex.script("/",b,div);	# 3  unknown (reduce:bat[:any,:any])<-($7:str)(b:bat[:any$1,:any$2])(div:any$2)
-    io.print(reduce);	# 4 IOprint_val ($8:int)<-(reduce:bat[:any,:any])
+    reduce := multiplex.script("/",b,div);	# 3  unknown (reduce:any)<-($7:str)(b:bat[:any$1,:any$2])(div:any$2)
+    io.print(reduce);	# 4 IOprint_val ($8:int)<-(reduce:any)
 end perftst;	# 5  
 #
 #

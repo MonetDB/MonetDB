@@ -23,6 +23,6 @@ print(tz);
 # optimized sequence
 ab:= select(r,0,6);
 bc:= join(ab,s);
-debugOptimizers();
+setDebug();
 SPoptimizer();
 end qry;

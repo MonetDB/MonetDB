@@ -15,6 +15,6 @@ z:= select(t,0,6);
 print(z);
 
 
-debugOptimizers();
+setDebug();
 SPoptimizer(Admin,qry);
 end qry;

@@ -23,6 +23,6 @@ print(z);
 a:= semijoin(s,r);
 z:= select(a,0,2);
 print(z);
-debugOptimizers();
+setDebug();
 SPoptimizer();
 end qry;

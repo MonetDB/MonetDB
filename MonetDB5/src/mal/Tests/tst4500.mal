@@ -1,6 +1,6 @@
 # Beware this is not the correct TPC-1, but a merely a test
 include sql;
-debugOptimizers();
+setDebug();
 CXoptimizer();
 ARoptimizer();
 DCoptimizer();

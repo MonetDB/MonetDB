@@ -1,6 +1,6 @@
 # testing the library for unsafe instructions
 # bat C can still be shared with B
-debugOptimizers();
+optimizer.setDebug();
 CXoptimizer();
 ARoptimizer();
 b:= new(:int,:int);

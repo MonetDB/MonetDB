@@ -1,6 +1,6 @@
 #tesing the optimizers
 
-#debugOptimizers();
+#setDebug();
 function qry(i:dbl):dbl;
    i:= 1.0:dbl;
    z:= sin(i);
