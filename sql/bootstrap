@@ -193,9 +193,10 @@ if [ -d "$d" ] ; then
 	LT_M4_DIR="-I $d"
 fi
 
-# make sure, aclocal finds pkg.m4 even if pkgconfig is installed in /usr/local (aka. /soft/local)
+# make sure, aclocal finds pkg.m4 even if pkg-config is not installed in /usr/;
+# requires that location of pkg-config is in PATH
 PKG_M4_DIR=""
-d="/usr/local/share/aclocal"
+d="`type -p pkg-config | sed 's|/bin/pkg-config$||'`/share/aclocal"
 if [ -d "$d" ] ; then
 	PKG_M4_DIR="-I $d"
 fi
