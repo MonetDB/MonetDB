@@ -649,7 +649,7 @@ public class JdbcClient {
 									// find the widths of the columns
 									int[] width = new int[md.getColumnCount()];
 									for (int j = 0; j < md.getColumnCount(); j++) {
-										width[j] = Math.max((md.getColumnDisplaySize(j + 1) == 0 ? 8 : md.getColumnDisplaySize(j + 1)), md.getColumnLabel(j + 1).length());
+										width[j] = Math.max((md.getColumnDisplaySize(j + 1) < 6 ? 6 : md.getColumnDisplaySize(j + 1)), md.getColumnLabel(j + 1).length());
 									}
 
 									out.print("+");

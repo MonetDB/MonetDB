@@ -47,14 +47,14 @@ extern BAT *mvc_import_table(mvc *c, bstream *s, char *tname, char *sep, char *r
 	int l;
 
 	if (v == @1_nil) {
-		if (*len < 4){
+		if (*len < 5){
 			if (*Buf)
 				GDKfree(*Buf);
-			*len = 4;
+			*len = 5;
 			*Buf = GDKmalloc(*len);
 		}
-		strcpy(*Buf, "nil");
-		return 3;
+		strcpy(*Buf, "NULL");
+		return 4;
 	}
 		
 	if (v<0) v = -v;
@@ -121,8 +121,8 @@ sql_time_tostr(void *M, char **buf, int *len, int type, ptr A)
 			*buf = (str) GDKmalloc(*len = 16);
 		}
 		s = *buf;
-		strcpy(s, "nil");
-		return 3;
+		strcpy(s, "NULL");
+		return 4;
 	}
 
 	val = *a + timezone;
@@ -166,8 +166,8 @@ sql_timestamp_tostr(void *M, char **buf, int *len, int type, ptr A)
 			*buf = (str) GDKmalloc(*len = 16);
 		}
 		s = *buf;
-		strcpy(s, "nil");
-		return 3;
+		strcpy(s, "NULL");
+		return 4;
 	}
 
 	timestamp_add(&tmp, a, &timezone);
