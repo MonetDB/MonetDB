@@ -140,7 +140,7 @@ char *expand_esc_quots (char *quot);
 static PFarray_t *lexical_stack;
 
 /** initialize the lexical state stack when scanner starts up */
-#define YY_USER_INIT assert (lexical_stack = PFarray (sizeof (int)))
+#define YY_USER_INIT (lexical_stack = PFarray (sizeof (int)))
 		     
 /** current stack pointer for #lexical_stack */
 static unsigned lexical_sp = 0;

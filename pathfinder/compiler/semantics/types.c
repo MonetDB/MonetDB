@@ -822,7 +822,10 @@ ty_printf (PFarray_t *s, const char *fmt, ...)
     va_list ts;
 
     va_start (ts, fmt);
-    assert (PFarray_vprintf (s, fmt, ts) >= 0);
+
+    if (PFarray_vprintf (s, fmt, ts) < 0)
+        PFoops (OOPS_FATAL, "error printing type using PFarray_vprintf");
+
     va_end (ts);
 }
 
