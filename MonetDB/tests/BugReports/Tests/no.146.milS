@@ -104,5 +104,4 @@ setoid(oid(2000000));
 module("jOdmg");
 loaded();
 sigs("jOdmg");
-procs();
 quit();
