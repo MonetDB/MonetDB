@@ -2,6 +2,7 @@
 #include <mem.h>
 #include <string.h>
 #include "types.h"
+#include "sql.h"
 
 static int sql_debug = 0;
 
@@ -11,32 +12,41 @@ list *funcs = NULL;
 
 sql_type *sql_bind_type(char *sqlname)
 {
+	char *name = toLower(sqlname);
 	node *n = types->h;
 	while (n) {
 		sql_type *t = n->data;
-		if (strcmp(t->sqlname, sqlname) == 0)
+		if (strcmp(t->sqlname, name) == 0){
+			_DELETE(name);
 			return t;
+		}
 		n = n->next;
 	}
+	_DELETE(name);
 	return NULL;
 }
 
-sql_aggr *sql_bind_aggr(char *name, char *type)
+sql_aggr *sql_bind_aggr(char *sqlname, char *type)
 {
+	char *name = toLower(sqlname);
 	node *n = aggrs->h;
 	while (n) {
 		sql_aggr *t = n->data;
 		if (strcmp(t->name, name) == 0 &&
 		    (!t->tpe
-		     || (type && strcmp(t->tpe->sqlname, type) == 0)))
+		     || (type && strcmp(t->tpe->sqlname, type) == 0))){
+			_DELETE(name);
 			return t;
+		}
 		n = n->next;
 	}
+	_DELETE(name);
 	return NULL;
 }
 
-sql_func *sql_bind_func(char *name, char *tp1, char *tp2, char *tp3)
+sql_func *sql_bind_func(char *sqlname, char *tp1, char *tp2, char *tp3)
 {
+	char *name = toLower(sqlname);
 	node *n = funcs->h;
 	while (n) {
 		sql_func *t = n->data;
@@ -47,16 +57,20 @@ sql_func *sql_bind_func(char *name, char *tp1, char *tp2, char *tp3)
 						 && strcmp(t->tpe3->
 							   sqlname,
 							   tp3) == 0)
-						|| (!tp3 && !t->tpe3)))
+						|| (!tp3 && !t->tpe3))){
+			_DELETE(name);
 			return t;
+		}
 		n = n->next;
 	}
+	_DELETE(name);
 	return NULL;
 }
 
-sql_func *sql_bind_func_result(char *name,
+sql_func *sql_bind_func_result(char *sqlname,
 			   char *tp1, char *tp2, char *tp3, char *res)
 {
+	char *name = toLower(sqlname);
 	node *n = funcs->h;
 	while (n) {
 		sql_func *t = n->data;
@@ -68,10 +82,13 @@ sql_func *sql_bind_func_result(char *name,
 							   sqlname,
 							   tp3) == 0)
 						|| (!tp3 && !t->tpe3))
-		    && strcmp(t->res->sqlname, res) == 0)
+		    && strcmp(t->res->sqlname, res) == 0){
+			_DELETE(name);
 			return t;
+		}
 		n = n->next;
 	}
+	_DELETE(name);
 	return NULL;
 }
 
@@ -80,7 +97,7 @@ sql_type *sql_create_type(char *sqlname, char *name, char *cast )
 {
 	sql_type *t = NEW(sql_type);
 
-	t->sqlname = _strdup(sqlname);
+	t->sqlname = toLower(sqlname);
 	t->name = _strdup(name);
 	t->cast = NULL;
 	if (strlen(cast) > 0)
@@ -101,7 +118,7 @@ sql_aggr *sql_create_aggr(char *name, char *imp, char *tpe, char *res )
 {
 	sql_aggr *t = NEW(sql_aggr);
 
-	t->name = _strdup(name);
+	t->name = toLower(name);
 	t->imp = _strdup(imp);
 	if (strlen(tpe)) {
 		t->tpe = sql_bind_type(tpe);
@@ -128,7 +145,7 @@ sql_func *sql_create_func(char *name, char *imp, char *tpe1,
 {
 	sql_func *t = NEW(sql_func);
 
-	t->name = _strdup(name);
+	t->name = toLower(name);
 	t->imp = _strdup(imp);
 	t->tpe1 = sql_bind_type(tpe1);
 	assert(t->tpe1);

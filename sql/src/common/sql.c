@@ -24,14 +24,20 @@
  * -- need to be move to seperate file 
  */
 /* implace cast to lower case string */
-char *toLower(char *v)
+char *mkLower(char *s)
 {
-	char *s = v;
-	while (*v) {
-		*v = (char) tolower(*v);
-		v++;
+	char *r = s;
+	while (*s) {
+		*s = (char) tolower(*s);
+		s++;
 	}
-	return s;
+	return r;
+}
+
+char *toLower(const char *s)
+{
+	char *r = _strdup(s);
+	return mkLower(r);
 }
 
 /* concat s1,s2 into a new result string */

@@ -14,7 +14,8 @@
 #define _(String) (String)
 #define N_(String) (String)
 
-extern char *toLower(char *v);
+extern char *mkLower(char *v);
+extern char *toLower(const char *v);
 
 typedef enum tokens {
 	SQL_CREATE_SCHEMA,

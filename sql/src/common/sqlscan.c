@@ -59,7 +59,7 @@ void keywords_insert(char *k, int token)
 	int len = 0;
 	int bucket = keyword_key(k, &len) & HASH_MASK;
 
-	kw->keyword = toLower(_strdup(k));
+	kw->keyword = toLower(k);
 	kw->len = len;
 	kw->token = token;
 	kw->next = keywords[bucket];
@@ -273,7 +273,7 @@ void exit_keywords()
 keyword *find_keyword(char *yytext)
 {
 	int len = 0;
-	int bucket = keyword_key(toLower(yytext), &len) & HASH_MASK;
+	int bucket = keyword_key(mkLower(yytext), &len) & HASH_MASK;
 	keyword *k = keywords[bucket];
 	while (k) {
 		if (len == k->len) {

@@ -1260,25 +1260,25 @@ atom:
 function_ref:
     AMMSC '(' '*' ')' 	
 		{ dlist *l = dlist_create();
-  		  dlist_append_string(l, toLower($1));
+  		  dlist_append_string(l, $1);
   		  dlist_append_int(l, FALSE);
   		  dlist_append_symbol(l, NULL);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  |  AMMSC '(' DISTINCT column_ref ')' 
 		{ dlist *l = dlist_create();
-  		  dlist_append_string(l, toLower($1));
+  		  dlist_append_string(l, $1);
   		  dlist_append_int(l, TRUE);
   		  dlist_append_symbol(l, _symbol_create_list(SQL_COLUMN, $4));
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  |  AMMSC '(' ALL scalar_exp ')'
 		{ dlist *l = dlist_create();
-  		  dlist_append_string(l, toLower($1));
+  		  dlist_append_string(l, $1);
   		  dlist_append_int(l, FALSE);
   		  dlist_append_symbol(l, $4);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  |  AMMSC '(' scalar_exp ')' 
 		{ dlist *l = dlist_create();
-  		  dlist_append_string(l, toLower($1));
+  		  dlist_append_string(l, $1);
   		  dlist_append_int(l, FALSE);
   		  dlist_append_symbol(l, $3);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
