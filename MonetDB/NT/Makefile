@@ -38,7 +38,7 @@ unistd.h:
 	$(ECHO) #endif >> unistd.h
 
 RunMtest.bat: "$(SRCDIR)\RunMtest.bat.in"
-	if exist "$(SRCDIR)\RunMtest.bat.in" "$(CONFIGURE)" "$(SRCDIR)\RunMtest.bat.in" > RunMtest.bat
+	if exist "$(SRCDIR)\RunMtest.bat.in" $(CONFIGURE) "$(SRCDIR)\RunMtest.bat.in" > RunMtest.bat
 
 targetdirs:
 	if not exist "$(bindir)"		$(MKDIR) "$(bindir)"
