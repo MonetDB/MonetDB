@@ -9,6 +9,21 @@ stdout of test 'ID.1032186` in directory 'tests/BugsViaSourgeforce` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+[ 2 ]
+[ 2 ]
+[ 2 ]
+[ 2 ]
+[ 2 ]
+[ 2 ]
+[ 2 ]
+[ 2 ]
+[ 2 ]
+[ 2 ]
+quit();
+
+# 15:43:44 >  
+# 15:43:44 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__/etc/MonetDB.conf --debug=10 --set monet_mod_path=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__/lib/MonetDB --set gdk_dbfarm=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__/var/MonetDB/dbfarm --set sql_logdir=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d__/var/MonetDB/log --set mapi_port=46747 --set sql_port=53355 --set monet_prompt= --trace --dbname=mTests_tests_BugsViaSourgeforce
+# 15:43:44 >  
 
 
 if ( 1 = 2 ) print(1); else print(2);
@@ -20,7 +35,9 @@ if ( 1 = 2 )	print(1)
 
 if ( 1 = 2 )	print(1);
   else	print(2);
-[ 2 ]
+!ERROR: "  else	print(2);"
+!              	         ^
+! can't help you here, sorry.
 
 if ( 1 = 2 )
 	print(1)
@@ -31,8 +48,10 @@ if ( 1 = 2 )
 if ( 1 = 2 )
 	print(1);
   else
+!ERROR: "  else"
+!              ^
+! can't help you here, sorry.
 	print(2);
-[ 2 ]
 
 if ( 1 = 2 ) { print(1); } else { print(2); }
 [ 2 ]
@@ -42,8 +61,9 @@ if ( 1 = 2 )	{ print(1);
 [ 2 ]
 
 if ( 1 = 2 )	{ print(1); }
-  else	{ print(2); }
-[ 2 ]
+  else	{ print(2); !ERROR: "  else	{ print(2); }"
+!              	             ^
+! can't help you here, sorry.
 
 if ( 1 = 2 )
 	{ print(1);
@@ -54,9 +74,10 @@ if ( 1 = 2 )
 if ( 1 = 2 )
 	{ print(1); }
   else
-	{ print(2); }
-[ 2 ]
-
+!ERROR: "  else"
+!              ^
+! can't help you here, sorry.
+	{ print(2); 
 quit();
 
 # 23:41:30 >  
