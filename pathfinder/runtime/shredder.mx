@@ -141,6 +141,10 @@ typedef struct shredCtx {
         shredBAT        dstBAT[SHRED_BATS]; /* all the result BATs */
         BAT*            nslocBAT;       /* the BAT to compress NS and LOC */
         int             nslocDUPL;      /* the number of duplicates nslocs */
+        int             shredWords;     /* store all words in text seperate,
+                                         * this is something the Tijah 
+                                         * people were asking for
+                                         */
 } shredCtx;
 
 /* the minimal incremental size of a BAT during estimation process */
@@ -195,12 +199,13 @@ static shredCtx *createShredCtx(char* name, int fileSize) {
         }
         res->nslocDUPL= 0;
 #endif
+        res->shredWords = 0; /* do not shred words by default */
         glb_ctx = res;
         return res;
 }
 
 /* function to tailor the exact size 'n' of the bat ctx->dstBAT[idx]. If
- * corerct the batsize will always shrink!
+ * correct the batsize will always shrink!
  */
 static void setBATcapacity(shredCtx* ctx, int idx, int n) {
         BAT* b = ctx->dstBAT[idx].bat;
@@ -276,7 +281,7 @@ static BAT* finalizeShredCtx(shredCtx* ctx) {
         setBATcapacity(ctx,ATTR_QN,  nnode_attr);
         setBATcapacity(ctx,ATTR_PROP,nnode_attr);
 
-        /* BATprintf(GDKout,ctx->dstBAT[PROP_VAL].bat); */
+        /* BATprintf(GDKout,ctx->dstBAT[PROP_TEXT].bat); */
 
         for(i=0; i<SHRED_BATS; i++) {
                 shredBAT* sb = &ctx->dstBAT[i];
@@ -320,7 +325,7 @@ int fileSize(char* xmlFile) {
 }
 
 int
-CMDshred2bats(BAT **res2mil, str docname)
+CMDshred2bats(BAT **res2mil, str docname, str opt)
 {
     /* shred context */
     shredCtx* ctx;
@@ -340,6 +345,7 @@ CMDshred2bats(BAT **res2mil, str docname)
 
     if ( !(ctx = createShredCtx(docname, xmlFileSize)) )
         return GDK_FAIL;
+    ctx->shredWords = (strcmp(opt,"tijah")==0);
 
     if ( mainSHREDDER(docname) < 0 )
         return GDK_FAIL;
@@ -619,33 +625,62 @@ shred_end_document (void *ctx)
  * write buffered text content (if any) to prop|text relation
  */
 int 
-text2rel ()
+emitString(shredCtx* ctx, char* s)
 {
     node_t node;
 
+    (void)ctx;
+    /* fill the node */
+    node.pre   = nnode_pre++;
+    node.size  = 0;
+    node.level = level;
+    node.kind  = TEXT;
+    if ( (node.prop=append_str2bat(glb_ctx,PROP_TEXT,s)) == NIL)
+            return -1;
+
+    /* this text node contributes to the size of its parent */
+    TOP ().size++;
+
+    /* enter text node into pre|size|level|prop|kind relation */
+    if ( emitnode (node) < 0 )
+        return -1;
+    return 1;
+}
+
+#include <strings.h>
+
+const char* del = " \t\n\r";
+int 
+emitShreddedString(shredCtx* ctx, char* s)
+{
+    char *t;
+
+    if ( (t = strtok(s,del)) ) do {
+        if ( emitString(ctx,t) < 0 )
+             return -1;
+    } while ( (t=strtok(NULL,del)) );
+    return 1;
+}
+
+int 
+text2rel (shredCtx* ctx)
+{
     /* is there any buffered text content? */
     if (content) {
         content_buf[content] = 0; /* properly terminate string content_buf */
 
-        /* fill the node */
-        node.pre   = nnode_pre++;
-        node.size  = 0;
-        node.level = level;
-        node.kind  = TEXT;
-        if ( (node.prop=append_str2bat(glb_ctx,PROP_TEXT,content_buf)) == NIL)
+        if ( !ctx->shredWords ) {
+            if ( emitString(ctx,content_buf) < 0 )
                 return -1;
-
-        /* this text node contributes to the size of its parent */
-        TOP ().size++;
-
-        /* enter text node into pre|size|level|prop|kind relation */
-        if ( emitnode (node) < 0 )
-            return -1;
+        } else {
+            /* do the Tijah support thing */
+            if ( emitShreddedString(ctx,content_buf) < 0 )
+                return -1;
+        }
     }
     content = 0;
     return 1;
 }
-
 
 static nat store_NsLoc(char* nsloc) {
 #ifdef USE_COMPRESSION
@@ -683,7 +718,7 @@ shred_start_element (void *ctx,
     node_t node;
     nat qn_id, val_id;
 
-    if ( text2rel () < 0 ) {
+    if ( text2rel (glb_ctx) < 0 ) {
         xmlStopParser(ctx);
         return;
     }
@@ -742,7 +777,7 @@ shred_end_element (void *ctx, const xmlChar *tag)
     (void) ctx;
     (void) tag;
 
-    if ( text2rel () < 0 ) {
+    if ( text2rel (glb_ctx) < 0 ) {
         xmlStopParser(ctx);
         return;
     }
@@ -806,7 +841,7 @@ shred_pi (void *ctx, const xmlChar *tgt, const xmlChar *ins)
 
     (void) ctx;
 
-    if ( text2rel () < 0 ) {
+    if ( text2rel (glb_ctx) < 0 ) {
         xmlStopParser(ctx);
         return;
     }
@@ -835,7 +870,7 @@ shred_comment (void *ctx, const xmlChar *c)
 
     (void) ctx;
 
-    if ( text2rel () < 0 ) {
+    if ( text2rel (glb_ctx) < 0 ) {
         xmlStopParser(ctx);
         return;
     }

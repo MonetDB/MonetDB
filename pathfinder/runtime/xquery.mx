@@ -35,8 +35,11 @@
 * xquery.c : xquery command stuff
 *
 */
+
 #include <gdk.h>
 #include <monet.h>
+
+#include <setjmp.h>
 
 #include "pathfinder.h"
 
@@ -124,7 +127,25 @@ typedef struct {
                               * number of top-level result items printed on
                               * the current line.
                               */
+        jmp_buf exitPoint;   /* point to jump to after error */
 } XqueryCtx;
+
+/** 
+ * The error handler which finishes the execution of the print with a 
+ * longjmp() to the end.
+ */
+static void fatal_err(XqueryCtx* ctx, const char *msg, ...) {
+    va_list msgs;
+    char    errmsg[1024];
+        
+    va_start (msgs, msg);
+    vsnprintf (errmsg, 1024, msg, msgs);
+    va_end (msgs);
+    /* */
+    stream_printf(GDKerr,"!ERROR: XML Generation: %s\n",errmsg);
+    /* */
+    longjmp(ctx->exitPoint,1);
+}
 
 
 /**
@@ -132,31 +153,24 @@ typedef struct {
  * initializes all other data structures.
  */
 
-static BAT* fetchWsContextBAT(BAT* ws, int batID, int wsID) {
-        /* stream_printf(GDKout,"# FETCH WS[%d][%d] \n",batID,wsID); */
-        BUN bun = BUNfnd(ws,&batID);
+static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int batID, int wsID) {
+        BUN bun;
 
-        if ( !bun ) {
-              stream_printf(GDKout,"# NOT FOUND BAT[%d] in WS!!!!\n",batID);
-              return NULL;
-        }
+        if ( !(bun = BUNfnd(ws,&batID)) )
+              fatal_err(ctx,"fetchWsContextBAT: NOT FOUND BAT[%d]",batID);
+
         BAT* batbat;
         
-        if ( !( batbat = BATdescriptor(*(bat*)bun)) ) {
-                stream_printf(GDKout,"# FETCH BATBAT for WS[%d][%d] FAILED\n",batID ,wsID);
-                return NULL;
-        }
-
+        if ( !( batbat = BATdescriptor(*(bat*)bun)) )
+                fatal_err(ctx,"fetchWsContextBAT:FETCH BATBAT for WS[%d][%d] FAILED\n",batID ,wsID);
 
         BUN bbun = BUNfnd(batbat,&wsID);
-        BAT *res;
-        if ( !bbun ) {
-                stream_printf(GDKout,"# NOT FOUND BAT[%d][%d] in WS!!!!\n",batID,wsID);
-                return NULL;
-        } else {
-                if ( !(res = BATdescriptor(*(bat*)bbun)) ) {
-                         stream_printf(GDKout,"# FETCH WS[%d][%d] FAILED\n",batID,wsID);
-                }
+        BAT *res = NULL;
+        if ( !bbun )
+                fatal_err(ctx,"fetchWsContextBAT:NOT FOUND BAT[%d][%d] in WS!!!!\n",batID,wsID);
+        else {
+                if ( !(res = BATdescriptor(*(bat*)bbun)) )
+                         fatal_err(ctx,"fetchWsContextBAT:FETCH WS[%d][%d] FAILED\n",batID,wsID);
         }
         BBPunfix( BBPcacheid( batbat ) );
         return res;
@@ -171,12 +185,11 @@ static BAT* fetchWsContextBAT(BAT* ws, int batID, int wsID) {
 static BAT* wsBAT(XqueryCtx* ctx, int batId) {
         if ( !ctx->curBAT[batId] ) { 
                 if ( !( ctx->curBAT[batId] = 
-                        fetchWsContextBAT(ctx->ws, batId, ctx->curFRAG)) )
-                        stream_printf(GDKout,"NIL ctx->curBAT[%d]\n",batId);
+                        fetchWsContextBAT(ctx,ctx->ws,batId,ctx->curFRAG)) )
+                        fatal_err(ctx,"unable to load wsBAT[%d]",batId);
         }
         return ctx->curBAT[batId];
 }
-
 
 static void switchWsContext(XqueryCtx* ctx, int wsID) {
         if ( ctx->curFRAG != wsID ) {
@@ -350,7 +363,6 @@ static void handle_startDocument(XqueryCtx* ctx) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
                         emit_start();
-                        /* emit(START_DOC, NULL); */
                 } else
                         stream_printf(GDKout,"<S\n");
         } else { /* xmlMode */
@@ -364,7 +376,6 @@ static void handle_startDocument(XqueryCtx* ctx) {
 static void handle_endDocument(XqueryCtx* ctx) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
-                        /* emit(END_DOC, NULL); */
                         emit_end();
                 } else 
                         stream_printf(GDKout,"<E\n");
@@ -375,7 +386,7 @@ static void handle_endDocument(XqueryCtx* ctx) {
 
 /**
  * Output generation handler. This one of my own invented event describing
- * the usage of an attribute. A sequnce of these events will be ended
+ * the usage of an attribute. A sequence of these events will be ended
  * by a handle_attributeEnd() call.
  */
 static void handle_attribute(XqueryCtx* ctx, str ns, str name, str value) {
@@ -513,11 +524,11 @@ static void handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
  * Utility function. It reads the tail value of an element in a 
  * [void,any] BAT indexed by oid_index. 
  */
-static ptr idxTV(str name, BAT* b, oid oid_index) {
+static ptr idxTV(XqueryCtx* ctx, str name, BAT* b, oid oid_index) {
         ptr res;
 
         if ( !b )
-                stream_printf(GDKout,"NIL BAT[\"%s\"]\n",name);
+                fatal_err(ctx,"NIL BAT[\"%s\"]\n",name);
         if (is_fake_project(b)) {
         	res = BUNtail(b,BUNfirst(b));
         } else if ( BUNsize(b) == 1 ) {
@@ -535,6 +546,8 @@ static ptr idxTV(str name, BAT* b, oid oid_index) {
                 BUN bun = BUNptr(b,real_index);
                 res = BUNtail(b,bun);
         }
+        if ( ! res )
+                fatal_err(ctx,"idxTV: BAT[%s][%d], NULL (ptr) result",name,oid_index);
         return res;
 }
 
@@ -545,10 +558,7 @@ static ptr idxTV(str name, BAT* b, oid oid_index) {
 static ptr idxTVinWS(XqueryCtx* ctx, int batId, oid oid_index) {
         BAT* b = wsBAT(ctx, batId);
 
-        if ( !b )
-                return NULL;
-        ptr res = idxTV("tmp",b,oid_index);
-        return res;
+        return idxTV(ctx,"tmp",b,oid_index);
 }
 
 /**
@@ -559,11 +569,9 @@ static ptr idxTVinWSorFRGN(XqueryCtx* ctx, int fragId, int batId, oid oid_index)
         if ( ctx->curFRAG == fragId ) 
                 return idxTVinWS(ctx,batId,oid_index);
         else {
-                BAT* b = fetchWsContextBAT(ctx->ws, batId, fragId);
+                BAT* b = fetchWsContextBAT(ctx,ctx->ws,batId,fragId);
 
-                if ( !b )
-                        stream_printf(GDKout,"NIL BAT[%d][%d]\n",fragId,batId);
-                ptr res = idxTV("tmp",b,oid_index);
+                ptr res = idxTV(ctx,"tmp",b,oid_index);
                 BBPunfix( BBPcacheid( b ) );
                 return res;
         }
@@ -573,9 +581,11 @@ static ptr idxTVinWSorFRGN(XqueryCtx* ctx, int fragId, int batId, oid oid_index)
  * Handle the generation of the attributes of the node with oid 'pre'. This
  * function is only called from the xquery_node_print() function.
  */
-static void query_attr_print(XqueryCtx* ctx, oid pre) {
-        BAT* b = BATuselect(wsBAT(ctx,ATTR_OWN),&pre,&pre);
+static int query_attr_print(XqueryCtx* ctx, oid pre) {
+        BAT *b;
 
+        if ( !(b  = BATuselect(wsBAT(ctx,ATTR_OWN),&pre,&pre)) )
+                fatal_err(ctx,"query_attr_print: uselect fails\n");
         BUN p, q; 
         BATloop(b, p, q) {
                 oid id = *(oid*)BUNhead(b, p);
@@ -593,6 +603,7 @@ static void query_attr_print(XqueryCtx* ctx, oid pre) {
         }
         handle_attributeEnd(ctx);
         BBPunfix( BBPcacheid( b ) );
+        return 1;
 }
 
 /**
@@ -636,7 +647,7 @@ static void xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag) {
                         break;
                         }
                 default:
-                        stream_printf(GDKout,"Unknow kind IN xquery_node_print");
+                        fatal_err(ctx,"Unknow kind IN xquery_node_print");
         }
 }
 
@@ -662,7 +673,6 @@ static void xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
                 p = BUNfirst(b);
         else
                 BUNfndOID(p, b,&from);
-        /* BATprintf(GDKout,b); */
         for(q = BUNlast(b); p<q; p = BUNnext(b, p)) {
                 oid pre = *(oid*)BUNhead(b, p);
                 do {
@@ -698,11 +708,9 @@ static int ws_documentIndex(BAT* ws, str docName) {
         BUN b = BUNfnd(ws,&doc_loaded_idx);
         /*
          * if ( !b )
-         *       stream_printf(GDKout,"NOT FOUND DOCBAT!!!!\n");
+         *       stream_printf(GDKxxx,"NOT FOUND DOCBAT!!!!\n");
          */
         BAT* doc_loaded = BATdescriptor(*(bat*)b);
-
-        /* BATprintf(GDKout,doc_loaded); */
 
         BUN p, q; 
         BATloop(doc_loaded, p, q) {
@@ -710,7 +718,6 @@ static int ws_documentIndex(BAT* ws, str docName) {
                 str docNm = (str)BUNtail(doc_loaded, p);
 
                 if ( strcmp(docName,docNm) == 0 ) {
-                        /* stream_printf(GDKout,"found document: %s\t(id=%d@0)\n",docNm,docId); */
                         BBPunfix( BBPcacheid( doc_loaded ) );
                         return docId;
                 }
@@ -719,37 +726,20 @@ static int ws_documentIndex(BAT* ws, str docName) {
         return -1;
 }
 
-static void doDump(str docName, XqueryCtx* ctx) {
-        stream_printf(GDKout,"# dump of document \"%s\", frag=%d\n",docName,ctx->curFRAG);
-        stream_printf(GDKout,"# ********pre_size********:\n");
-
-}
-
-int xquery_dump_doc_main(BAT* ws, str docName) {
-        int docIndex = ws_documentIndex(ws,docName);
-        if ( docIndex < 0 ) {
-                stream_printf(GDKout,"# unable to find document \"%s\" in working set!\n",docName);
-                return GDK_SUCCEED;
-        }
-        /* */
-        XqueryCtx  ctx_struct, *ctx = &ctx_struct;
-        createWsContext(ctx,ws,docIndex,"xml");
-        /* */
-        doDump(docName,ctx);
-        switchWsContext(ctx,-1); /* close all open context BAT's */
-        /* */
-        return GDK_SUCCEED;
-}
-
 int xquery_print_doc_main(str mode, BAT* ws, str docName) {
         int docIndex = ws_documentIndex(ws,docName);
         if ( docIndex < 0 ) {
-                stream_printf(GDKout,"# unable to find document \"%s\" in working set!\n",docName);
+                stream_printf(GDKerr,"# unable to find document \"%s\" in working set!\n",docName);
                 return GDK_SUCCEED;
         }
         /* */
         XqueryCtx  ctx_struct, *ctx = &ctx_struct;
         createWsContext(ctx,ws,docIndex,mode);
+        /* */
+        /* now set the exit point in case of an error */
+        if ( setjmp(ctx_struct.exitPoint) != 0 ) {
+                return GDK_FAIL;
+        }
         /* */
         handle_startDocument(ctx);
         xquery_pre_range(ctx,wsBAT(ctx,PRE_SIZE),0/*start*/,1 /* first is doc ? */);
@@ -799,7 +789,6 @@ static void  seqEnd(XqueryCtx* ctx) {
  */
 static void  seqEmitNode(XqueryCtx* ctx, oid preVal, BAT* pre_frag) {
         int size = *(int*)idxTVinWS(ctx,PRE_SIZE,preVal);
-        /* stream_printf(GDKout,"Emit NODE: %d, size = %d\n",preVal,size); */
         MY_xquery_pre_range(ctx,preVal,preVal+size, pre_frag);
 }
 
@@ -905,6 +894,10 @@ int xquery_print_result_main(
         XqueryCtx  ctx_struct, *ctx = &ctx_struct;
         createWsContext(ctx,ws,-1,mode);
         /* */
+        /* now set the exit point in case of an error */
+        if ( setjmp(ctx_struct.exitPoint) != 0 ) {
+                return GDK_FAIL;
+        }
         if ( DEBUG_BAT ) {
                 stream_printf(GDKout,"# RAW XQUERY RESULT:\n");
                 stream_printf(GDKout,"# pre\tkind\tvaloid\tval\n");
@@ -917,7 +910,7 @@ int xquery_print_result_main(
         BATloop(item, p, q) {
                 oid pre = *(oid*)BUNhead(item, p);
                 oid valoid = *(oid*)BUNtail(item, p);
-                int cmbn_frag_kind = *(int*)idxTV("kind",kind,pre);
+                int cmbn_frag_kind = *(int*)idxTV(ctx,"kind",kind,pre);
                 if ( DEBUG_BAT )
                         stream_printf(GDKout,"## pre=%d\tcbn=%d\tkind=%d\tv_oid=%d\t",pre,cmbn_frag_kind,XTRACT_KIND(cmbn_frag_kind),valoid);
                 switch( XTRACT_KIND(cmbn_frag_kind) ) {
@@ -943,32 +936,32 @@ int xquery_print_result_main(
                         break;
                         }
                  case DBL: {
-                        dbl dv = *(dbl*)idxTV("dblVAL",dblVAL,valoid);
+                        dbl dv = *(dbl*)idxTV(ctx,"dblVAL",dblVAL,valoid);
                         if (DEBUG_BAT) stream_printf(GDKout,"%f\n",dv);
                         seqEmitDbl(ctx,dv); /* INCOMPLETE ?diff between d and e */
                         break;
                         }
                  case DEC: {
-                        dbl dv = *(dbl*)idxTV("decCVAL",decVAL,valoid);
+                        dbl dv = *(dbl*)idxTV(ctx,"decCVAL",decVAL,valoid);
                         if (DEBUG_BAT) stream_printf(GDKout,"%f\n",dv);
                         seqEmitDbl(ctx,dv); /* INCOMPLETE ?diff between d and e */
                         break;
                         }
                  case INT: {
-                        int iv = *(int*)idxTV("intVAL",intVAL,valoid);
+                        int iv = *(int*)idxTV(ctx,"intVAL",intVAL,valoid);
                         if (DEBUG_BAT) stream_printf(GDKout,"%d\n",iv);
                         seqEmitInt(ctx,iv);
                         break;
                         }
                  case STR: {
-                        str sv = (str)idxTV("strVAL",strVAL,valoid);
+                        str sv = (str)idxTV(ctx,"strVAL",strVAL,valoid);
                         if (DEBUG_BAT) stream_printf(GDKout,"\"%s\"\n",sv);
                         seqEmitStr(ctx,sv);
                         break;
                         }
                  default:
-                        stream_printf(GDKout,"XUNKNOW_TYPE(\'%c\'ch(%d))\n",cmbn_frag_kind,cmbn_frag_kind);
-                        stream_printf(GDKout,"[kind=%d, frag=%d]\n",XTRACT_KIND(cmbn_frag_kind),XTRACT_FRAG(cmbn_frag_kind));
+                        stream_printf(GDKerr,"[kind=%d, frag=%d]\n",XTRACT_KIND(cmbn_frag_kind),XTRACT_FRAG(cmbn_frag_kind));
+                        fatal_err(ctx,"UNKNOW_TYPE(\'%c\'ch(%d))\n",cmbn_frag_kind,cmbn_frag_kind);
                 }
         }
         /* */
@@ -977,11 +970,6 @@ int xquery_print_result_main(
         switchWsContext(ctx,-1); /* close all open context BAT's */
         /* */
         return GDK_SUCCEED;
-}
-
-/* incomplete, should remove pf_ping() */
-void call2pf_ping() {
-        pf_ping();
 }
 
 static FILE *string2FILE(char* s) {
@@ -1005,13 +993,6 @@ static FILE *string2FILE(char* s) {
  */
 static int xquery_compile2MIL(FILE* in, FILE* out, char* mode) {
         return pf_compile_interface(in, out, mode);
-        /*
-         * char c;
-         * while ( (c=fgetc(in)) != EOF )
-         *        fputc(c,out);
-         * fflush(out);
-         * return 1;
-         */
 }
 
 /**
@@ -1039,7 +1020,6 @@ int xquery_xquery(str  mode, str q) {
         FILE    *milStream;
         FILE    *queryStream;
 
-        /* stream_printf(GDKerr,"xquery_xquery(\"%s\",\"%s\")\n",mode,q) */;
         /* first open a temporary file to store the comp */
 #ifdef XQMILDEBUG
         char* milFile = XQMILDEBUG;
@@ -1078,7 +1058,6 @@ int xquery_xquery(str  mode, str q) {
                 return GDK_FAIL;
         }
 #endif
-        /* stream_printf(GDKout,"SUCCESS: xquery(\"%s\",\"%s\")\n",mode,q); */
         return GDK_SUCCEED;
 }
 
