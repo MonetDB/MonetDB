@@ -1092,112 +1092,93 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		return(0);
 	}
 
-	/*
+	/**
 	 * What is the maximum length of a table name
 	 *
 	 * @return max name length in bytes
-	 * @exception SQLException if a database access error occurs
 	 */
-	public int getMaxTableNameLength() throws SQLException
-	{
-		return getMaxNameLength();
+	public int getMaxTableNameLength() {
+		return(0);
 	}
 
-	/*
+	/**
 	 * What is the maximum number of tables that can be specified
 	 * in a SELECT?
 	 *
 	 * @return the maximum
-	 * @exception SQLException if a database access error occurs
 	 */
-	public int getMaxTablesInSelect() throws SQLException
-	{
-		return 0; // no limit
+	public int getMaxTablesInSelect() {
+		return(0); // no limit
 	}
 
-	/*
+	/**
 	 * What is the maximum length of a user name
 	 *
 	 * @return the max name length in bytes
 	 * @exception SQLException if a database access error occurs
 	 */
-	public int getMaxUserNameLength() throws SQLException
-	{
-		return getMaxNameLength();
+	public int getMaxUserNameLength() {
+		return(0);	// no limit
 	}
 
-
-	/*
-	 * What is the database's default transaction isolation level?  We
-	 * do not support this, so all transactions are SERIALIZABLE.
+	/**
+	 * What is the database's default transaction isolation level?
+	 * We only see commited data, nonrepeatable reads and phantom
+	 * reads can occur.
 	 *
 	 * @return the default isolation level
-	 * @exception SQLException if a database access error occurs
 	 * @see Connection
 	 */
-	public int getDefaultTransactionIsolation() throws SQLException
-	{
-		return Connection.TRANSACTION_READ_COMMITTED;
+	public int getDefaultTransactionIsolation() throws {
+		return(Connection.TRANSACTION_READ_COMMITTED);
 	}
 
-	/*
+	/**
 	 * Are transactions supported?	If not, commit and rollback are noops
 	 * and the isolation level is TRANSACTION_NONE.  We do support
 	 * transactions.
 	 *
 	 * @return true if transactions are supported
-	 * @exception SQLException if a database access error occurs
 	 */
-	public boolean supportsTransactions() throws SQLException
-	{
-		return true;
+	public boolean supportsTransactions() {
+		return(true);
 	}
 
-	/*
+	/**
 	 * Does the database support the given transaction isolation level?
-	 * We only support TRANSACTION_SERIALIZABLE and TRANSACTION_READ_COMMITTED
+	 * We only support TRANSACTION_READ_COMMITTED as far as I know
 	 *
 	 * @param level the values are defined in java.sql.Connection
 	 * @return true if so
-	 * @exception SQLException if a database access error occurs
 	 * @see Connection
 	 */
-	public boolean supportsTransactionIsolationLevel(int level) throws SQLException
-	{
-		if (level == Connection.TRANSACTION_SERIALIZABLE ||
-				level == Connection.TRANSACTION_READ_COMMITTED)
-			return true;
-		else if (connection.haveMinimumServerVersion("7.5") && (level == Connection.TRANSACTION_READ_UNCOMMITTED || level == Connection.TRANSACTION_REPEATABLE_READ))
-			return true;
-		else
-			return false;
+	public boolean supportsTransactionIsolationLevel(int level) {
+		return(level == Connection.TRANSACTION_READ_COMMITTED);
 	}
 
-	/*
+	/**
 	 * Are both data definition and data manipulation transactions
 	 * supported?
+	 * Supposedly that data definition is like CREATE or ALTER TABLE
+	 * yes it is.
 	 *
 	 * @return true if so
-	 * @exception SQLException if a database access error occurs
 	 */
-	public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException
-	{
-		return true;
+	public boolean supportsDataDefinitionAndDataManipulationTransactions() {
+		return(true);
 	}
 
-	/*
+	/**
 	 * Are only data manipulation statements withing a transaction
 	 * supported?
 	 *
 	 * @return true if so
-	 * @exception SQLException if a database access error occurs
 	 */
-	public boolean supportsDataManipulationTransactionsOnly() throws SQLException
-	{
-		return false;
+	public boolean supportsDataManipulationTransactionsOnly() {
+		return(false);
 	}
 
-	/*
+	/**
 	 * Does a data definition statement within a transaction force
 	 * the transaction to commit?  I think this means something like:
 	 *
@@ -1214,11 +1195,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * does the CREATE TABLE call cause a commit?  The answer is no.
 	 *
 	 * @return true if so
-	 * @exception SQLException if a database access error occurs
 	 */
-	public boolean dataDefinitionCausesTransactionCommit() throws SQLException
-	{
-		return false;
+	public boolean dataDefinitionCausesTransactionCommit() {
+		return(false);
 	}
 
 	/*
