@@ -33,6 +33,12 @@
 #define BUFLEN 1024
 #endif
 
+#if !defined(PY_LONG_LONG) && defined(LONG_LONG)
+/* in python 2.2 it's still called LONG_LONG, but we use the newer
+   name PY_LONG_LONG */
+#define PY_LONG_LONG LONG_LONG
+#endif
+
 static PyObject *ErrorObject;
 %}
 
