@@ -1453,6 +1453,7 @@ select_stmt:
 	   } else {
                 $$ = NULL;
 		yyerror("order by and limit are not allowed with a select statement");
+		YYABORT;
 	   }
  	}
  |  set_select                    	%prec UMINUS
@@ -1588,6 +1589,7 @@ table_ref:
 				{ $$ = NULL;
 				  symbol_destroy($1);
 				  yyerror("Subquery table reference needs alias");
+				  YYABORT;
 				}
  |  joined_table 		{ $$ = $1; 
 				  dlist_append_symbol($1->data.lval, NULL); }
@@ -2166,19 +2168,41 @@ literal:
 		  $$ = _newAtomNode( atom_float(t, val)); }
  |  sqlDATE string 
 		{ sql_subtype *t = sql_bind_subtype("DATE", 0, 0 );
-		  $$ = _newAtomNode( atom_general(t, $2)); }
+		  atom *a = atom_general(t, $2); 
+		  if (!a) {
+			yyerror("incorrect date value");
+			$$ = NULL;
+			YYABORT;
+		  } else {
+		  	$$ = _newAtomNode(a); 
+		} }
  |  TIME string 
 		{ sql_subtype *t = sql_bind_subtype("TIME", 0, 0 );
-		  $$ = _newAtomNode( atom_general(t, $2)); }
+		  atom *a = atom_general(t, $2); 
+		  if (!a) {
+			yyerror("incorrect time value");
+			$$ = NULL;
+			YYABORT;
+		  } else {
+		  	$$ = _newAtomNode(a); 
+		} }
  |  TIMESTAMP string 
 		{ sql_subtype *t = sql_bind_subtype("TIMESTAMP", 0, 0 );
-		  $$ = _newAtomNode( atom_general(t, $2)); }
+		  atom *a = atom_general(t, $2); 
+		  if (!a) {
+			yyerror("incorrect timestamp value");
+			$$ = NULL;
+			YYABORT;
+		  } else {
+		  	$$ = _newAtomNode(a); 
+		} }
  |  INTERVAL opt_sign string interval_qualifier
 		{ mvc *m = (mvc*)parm;
 	  	  int i,tpe;
 	  	  if ( (tpe = parse_interval( m, $2, $3, $4, &i)) < 0 ){
 			yyerror("incorrect interval");
 			$$ = NULL;
+			YYABORT;
 	  	  } else {
 			sql_subtype *t; 
 			if (tpe == 0){
@@ -2302,7 +2326,8 @@ when_search_list:
  ;
 
 opt_else:
-    ELSE scalar_exp	{ $$ = $2; }
+    /* empty */	        { $$ = NULL; }
+ |  ELSE scalar_exp	{ $$ = $2; }
  ;
 
 		/* data types, more types to come */
@@ -2312,6 +2337,7 @@ nonzero:
 		  if ($$ == 0) {
 			$$ = -1;
 			yyerror("Positive value expected");
+			YYABORT;
 		  }
 		}
 	;
@@ -2330,6 +2356,7 @@ data_type:
 				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $5, $3);
 				yyerror(buf);
 				$$ = NULL;
+				YYABORT;
 			  } else {
 			        $$ = sql_bind_subtype("NUMERIC", $3, $5); 
 			  }
@@ -2344,6 +2371,7 @@ data_type:
 				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $5, $3);
 				yyerror(buf);
 				$$ = NULL;
+				YYABORT;
 			  } else {
 				$$ = sql_bind_subtype("DECIMAL", $3, $5); 
 			  }
@@ -2358,6 +2386,7 @@ data_type:
 				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $5, $3);
 				yyerror(buf);
 				$$ = NULL;
+				YYABORT;
 			  } else {
 				$$ = sql_bind_subtype("FLOAT", $3, $5); 
 			  }
@@ -2371,6 +2400,7 @@ data_type:
 				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $5, $3);
 				yyerror(buf);
 				$$ = NULL;
+				YYABORT;
 			  } else {
 				$$ = sql_bind_subtype("DOUBLE", $3, $5); 
 			  }
@@ -2422,6 +2452,7 @@ non_reserved_word:
 | sqlNAME	{ $$ = _strdup("name"); }
 | sqlTYPE	{ $$ = _strdup("type"); }
 | PRIVILEGES	{ $$ = _strdup("privileges"); }
+| START		{ $$ = _strdup("start"); }
 ;
 
 name_commalist:

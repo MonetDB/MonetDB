@@ -40,24 +40,6 @@ for the time being.
 
 	.ATOM mvc = ptr;
 	.END;
-	.ATOM sql_module = ptr;
-	.END;
-	.ATOM sql_schema = ptr;
-	.END;
-	.ATOM sql_table = ptr;
-	.END;
-	.ATOM sql_column = ptr;
-	.END;
-	# the primary, unique and foreign keys
-	.ATOM sql_key = ptr;
-	.END;
-	.ATOM sql_idx = ptr;
-	.END;
-
-	# TODO the check constraints (including IS (NOT) NULL) 
-	.ATOM sql_check = ptr;
-	.END; 
-	
 
 	.BUILTIN sqlclient( Stream s_in, Stream s_out ) = sqlclient;
 	"Read sql statements from s_in and output results on s_out"
@@ -73,12 +55,6 @@ for the time being.
 
 	.BUILTIN quit() = mvc_exit_wrap; 
 		"cleanup the global catalog and quit server"
-
-	.BUILTIN mvc_create( Stream rs, Stream ws ) : mvc = mvc_create_wrap;
-		"Create multi version catalog"
-
-	.COMMAND mvc_destroy( mvc m ) = mvc_destroy_wrap;
-		"Destroy multi version catalog"
 
 	.COMMAND mvc_sql( mvc m, str cmd ) = mvc_sql_wrap;
 		"execute a sql query"
@@ -107,85 +83,6 @@ for the time being.
 	.COMMAND mvc_bind_ibat( mvc c, str sname, str tname, str iname, int access ) : 
 		BAT[any::1,any::2] = mvc_bind_ibat_wrap; 
 		"Bind the idx table"
-
-	.COMMAND mvc_bind_module( mvc c, str mname ) : sql_module = 
-		mvc_bind_module_wrap; "Bind module, mname"
-
-	.COMMAND mvc_bind_schema( mvc c, str sname ) : sql_schema = 
-		mvc_bind_schema_wrap; "Bind schema, sname"
-
-	.COMMAND mvc_bind_table( mvc c, sql_schema s, str tname ) : sql_table = 
-		mvc_bind_table_wrap; "Bind table, s.tname"
-
-	.COMMAND mvc_bind_column( mvc c, sql_table t, str cname ) : sql_column = 
-		mvc_bind_column_wrap; "Bind column, t.cname"
-
-	.COMMAND mvc_bind_key( mvc c, sql_schema s, str kname ) : sql_key = 
-		mvc_bind_key_wrap; "Bind key kname"
-
-	.COMMAND mvc_bind_idx( mvc c, sql_schema s, str iname ) : sql_idx = 
-		mvc_bind_idx_wrap; "Bind index with name, iname"
-
-	.COMMAND mvc_drop_module( mvc c, str name ) = mvc_drop_module_wrap;
-		"Drop module"
-
-	.COMMAND mvc_create_module( mvc c, str name ) : sql_module = 
-		mvc_create_module_wrap; "Create module"
-
-	.COMMAND mvc_drop_schema( mvc c, str name ) = mvc_drop_schema_wrap;
-		"Drop schema"
-
-	.COMMAND mvc_create_schema( mvc c, str name, str auth) : sql_schema = 
-		mvc_create_schema_wrap; "Create schema"
-
-	.COMMAND mvc_drop_table( mvc c, sql_schema s, str name, int cascade ) = 
-		mvc_drop_table_wrap; "Drop table"
-
-	.COMMAND mvc_create_table( mvc c, sql_schema s, str name, int type, int sz) : 
-		sql_table = mvc_create_table_wrap; "Create table"
-
-	.COMMAND mvc_create_view( mvc c, sql_schema s, str name, str sql) :
-		sql_table = mvc_create_view_wrap; "Create view"
-
-	.COMMAND mvc_drop_column( mvc c, sql_table t, str name ) = 
-		mvc_drop_column_wrap; "Drop column"
-
-	.COMMAND mvc_create_column( mvc m, sql_table t, str name, str type, int type_digits, int type_scale ) : sql_column = mvc_create_column_wrap; "Create column"
-
-	.COMMAND mvc_null( mvc m, sql_column col, int flag ) : 
-		sql_column = mvc_null_wrap; "Set column null or not"
-
-	.COMMAND mvc_default( mvc m, sql_column col, any val ) :
-		sql_column = mvc_default_wrap; "Set column default value"
-
-	.COMMAND mvc_create_key( mvc m, sql_table t, str name, int kt):
-		sql_key = mvc_create_key_wrap; "Create a unique key"
-
-	.COMMAND mvc_create_key( mvc m, sql_table t, str name, int kt, sql_key rkey ) :
-		sql_key = mvc_create_fkey_wrap; "Create a foreign key"
-
-	.COMMAND mvc_drop_key( mvc m, sql_schema s, str name ) = 
-		mvc_drop_key_wrap; "Drop a key"
-
-	.COMMAND mvc_create_kc( mvc m, sql_key k, str col ):
-		sql_key = mvc_create_kc_wrap; "Create a key column"
-
-	.COMMAND mvc_create_idx( mvc m, sql_table t, str name, int it):
-		sql_idx = mvc_create_idx_wrap; "Create a index"
-
-	.COMMAND mvc_drop_idx( mvc m, sql_schema s, str name ) = 
-		mvc_drop_idx_wrap; "Drop a idx"
-
-	.COMMAND mvc_create_ic( mvc m, sql_idx i, str col ):
-		sql_idx = mvc_create_ic_wrap; "Create a idx column"
-
-	.COMMAND mvc_create_role( mvc m, str name, int grantor ) = mvc_create_role_wrap; "Create a role"
-
-	.COMMAND mvc_drop_role( mvc m, str name ) = mvc_drop_role_wrap; "Drop a role"
-
-	.COMMAND mvc_create_user( mvc m, str user, str pwd, str fullname, str dschema, int id) = mvc_create_user_wrap; "Create a user"
-
-	.COMMAND mvc_drop_user( mvc m, str name ) = mvc_drop_user_wrap; "Drop a user"
 
 	.COMMAND mvc_result_table( mvc m, int nr_cols, any order ) : int = mvc_result_row_wrap; "Create structure to cache a row query result" 
 
@@ -241,6 +138,16 @@ kernel libraries, e.g. bat.mx
 	.COMMAND cast2lng( str v ) : lng = cast2lng; "cast to lng"
 	.COMMAND cast2flt( str v ) : flt = cast2flt; "cast to flt"
 	.COMMAND cast2dbl( str v ) : dbl = cast2dbl; "cast to dbl"
+	.COMMAND cast2sht( str v, int digits, int scale ) : sht = trunc2sht; 
+		"cast to sht"
+	.COMMAND cast2int( str v, int digits, int scale ) : int = trunc2int; 
+		"cast to int"
+	.COMMAND cast2lng( str v, int digits, int scale ) : lng = trunc2lng; 
+		"cast to lng"
+	.COMMAND cast2flt( str v, int digits, int scale ) : flt = trunc2flt; 
+		"cast to flt"
+	.COMMAND cast2dbl( str v, int digits, int scale ) : dbl = trunc2dbl; 
+		"cast to dbl"
 
 .END sql_server;
 
@@ -272,6 +179,8 @@ kernel libraries, e.g. bat.mx
 #include "sql_server.h"
 #include "sql_privileges.h"
 #include "sql_session.h"
+#include <sql_decimal.h>
+#include <sql_string.h>
 #include <algebra.h>
 
 static int builtin_operand( Cntxt stk, YYSTREE lt, int arg_nr, ptr *Res, int type, ValPtr res)
@@ -285,14 +194,15 @@ static int builtin_operand( Cntxt stk, YYSTREE lt, int arg_nr, ptr *Res, int typ
 	return 0;
 }
 
-int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res){ 
-	int *Debug = NULL;
+int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
+{ 
+	int ret, *Debug = NULL;
   	if (lt->cnt != 1) {
         	return handle_argerror(res, lt->cnt, 1);
   	}
 	builtin_operand( stk, lt, 0, (ptr*)&Debug, TYPE_int, res);
 	backend_init( &monet4_freestack, &monet4_freecode, &monet4_parse );
-	if ( mvc_init(*Debug, (backend_stack)stk ) ){
+	if ( (ret = mvc_init(*Debug, (backend_stack)stk )) > 0 ){
 		sqlstatement("GRANT ALL on modules to monetdb with grant option with hierarchy option;", stk);
 		sqlstatement("GRANT ALL on schemas to monetdb with grant option with hierarchy option;", stk);
 		sqlstatement("GRANT ALL on tables to monetdb with grant option with hierarchy option;", stk);
@@ -306,6 +216,8 @@ int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res){
 		sqlstatement("GRANT ALL on auths to monetdb with grant option with hierarchy option;", stk);
 		sqlstatement("GRANT ALL on privileges to monetdb with grant option with hierarchy option;", stk);
 		sqlstatement("CREATE TABLE history (start TIMESTAMP, query VARCHAR, parse MEDIUMINT, mil MEDIUMINT, exec MEDIUMINT, total MEDIUMINT, \"user\" VARCHAR);", stk);
+	} else if (ret < 0) {
+		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
 }
@@ -331,27 +243,6 @@ int mvc_exit_wrap(Cntxt stk, YYSTREE lt, ValPtr res){
 		mvc_exit();
 	}
 	return CMDquit(stk, lt, res);
-}
-
-int 
-mvc_create_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
-{ 
-	stream **Rs, **Ws;
-
-  	if (lt->cnt != 2) {
-        	return handle_argerror(res, lt->cnt, 2);
-  	}
-	builtin_operand( stk, lt, 0, (ptr*)&Rs, TYPE_Stream, res);
-	builtin_operand( stk, lt, 1, (ptr*)&Ws, TYPE_Stream, res);
-        res->val.pval = (ptr) mvc_create( 1, 
-			(backend_stack)stk, bstream_create(*Rs, 1), *Ws );
-        res->vtype = TYPE_mvc;
-	return GDK_SUCCEED;
-}
-
-int mvc_destroy_wrap( mvc *c ){
-	mvc_destroy( *(mvc**)c );
-	return GDK_SUCCEED;
 }
 
 int mvc_sql_wrap( mvc *c, str cmd ){
@@ -406,192 +297,6 @@ int mvc_bind_ibat_wrap( BAT** res, mvc* c, str sname, str tname, str iname, int 
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
-}
-
-int mvc_bind_module_wrap( sql_module* res, mvc* c, str mname){
-	*(sql_module**)res = mvc_bind_module( *(mvc**)c, mname );
-	return GDK_SUCCEED;
-}
-
-int mvc_bind_schema_wrap( sql_schema* res, mvc* c, str sname){
-	*(sql_schema**)res = mvc_bind_schema( *(mvc**)c, sname );
-	return GDK_SUCCEED;
-}
-
-int mvc_bind_table_wrap( sql_table* res, mvc* c, sql_schema *s, str tname){
-	*(sql_table**)res = mvc_bind_table( *(mvc**)c, *(sql_schema**)s, tname);
-	return GDK_SUCCEED;
-}
-
-int mvc_bind_column_wrap( sql_column* res, mvc* c, sql_table *t, str col){
-	*(sql_column**)res = mvc_bind_column( *(mvc**)c, *(sql_table**)t, col);
-	return GDK_SUCCEED;
-}
-
-int mvc_bind_key_wrap( sql_key* res, mvc* c, sql_schema *s, str name ){
-	*(sql_key**)res = mvc_bind_key( *(mvc**)c, *(sql_schema**)s, name);
-	return GDK_SUCCEED;
-}
-
-int mvc_bind_idx_wrap( sql_idx* res, mvc* c, sql_schema *s, str name ){
-	*(sql_idx**)res = mvc_bind_idx( *(mvc**)c, *(sql_schema**)s, name);
-	return GDK_SUCCEED;
-}
-
-int mvc_create_module_wrap( sql_module *s, mvc* c, str name){
-	*(sql_module**)s = mvc_create_module( *(mvc**)c, name);
-	return GDK_SUCCEED;
-}
-
-int mvc_drop_module_wrap( mvc* c, str name){
-	mvc_drop_module( *(mvc**)c, name );
-	return GDK_SUCCEED;
-}
-
-int mvc_create_schema_wrap( sql_schema *s, mvc* c, str name, str auth){
-	*(sql_schema**)s = mvc_create_schema( *(mvc**)c, name, auth );
-	return GDK_SUCCEED;
-}
-
-int mvc_drop_schema_wrap( mvc* c, str name){
-	mvc_drop_schema( *(mvc**)c, name );
-	return GDK_SUCCEED;
-}
-
-int mvc_create_table_wrap( sql_table *res, mvc* c, sql_schema *s, str name, int* type, int *sz){
-	*(sql_table**)res = mvc_create_table( *(mvc**)c, *(sql_schema**)s, name, (table_type)*type, *sz );
-	return GDK_SUCCEED;
-}
-
-int mvc_create_view_wrap( sql_table *res, mvc* c, sql_schema *s, str name, str sql){
-	*(sql_table**)res = mvc_create_view( *(mvc**)c, *(sql_schema**)s, name, sql );
-	return GDK_SUCCEED;
-}
-
-int mvc_drop_table_wrap( mvc* c, sql_schema *s, str name, int* cascade){
-	mvc_drop_table( *(mvc**)c, *(sql_schema**)s, name, *cascade );
-	return GDK_SUCCEED;
-}
-
-
-int mvc_create_column_wrap( sql_column* res, mvc* c, sql_table *t, 
-		str name, str type, int *ts, int *td){
-	*(sql_column**)res = 
-	  mvc_create_column( *(mvc**)c, *(sql_table**)t, name, type, *ts, *td);
-	return GDK_SUCCEED;
-}
-
-int mvc_drop_column_wrap( mvc* c, sql_table *t, str name){
-	mvc_drop_column( *(mvc**)c, *(sql_table**)t, name );
-	return GDK_SUCCEED;
-}
-
-int mvc_null_wrap( sql_column* res, mvc* c, sql_column* col, int *flag){
-	*(sql_column**)res = mvc_null( *(mvc**)c, *(sql_column**)col, *flag );
-	return GDK_SUCCEED;
-}
-
-int mvc_default_wrap( sql_column* res, mvc* c, sql_column* col, ptr val, int tpe)
-{
-	int l = 0;
-	str v = NULL;
-
-	l = BATatoms[tpe].atomToStr(&v, &l, val );
-	if (l) {
-		*(sql_column**)res = mvc_default( *(mvc**)c, *(sql_column**)col, v );
-		if (v) GDKfree(v);
-		return GDK_SUCCEED;
-	} else {
-		return GDK_FAIL;
-	}
-}
-
-int mvc_create_key_wrap( sql_key* res, mvc* c, sql_table *t, str name, int *kt )
-{
-	*(sql_key**)res 
-		= mvc_create_key( *(mvc**)c, *(sql_table**)t, name, (key_type)*kt, NULL);
-	return GDK_SUCCEED;
-}
-
-int mvc_create_fkey_wrap( sql_key* res, mvc* c, sql_table *t, str name, int *kt, sql_key *ukey)
-{
-	mvc *m = *(mvc**)c;
-	if (!ukey)
-		return GDK_FAIL;
-	*(sql_key**)res 
-		= mvc_create_key( m, *(sql_table**)t, name, (key_type)*kt, *(sql_key**)ukey);
-	return GDK_SUCCEED;
-}
-
-int mvc_drop_key_wrap( mvc* c, sql_schema *s, str name ){
-	mvc_drop_key( *(mvc**)c, *(sql_schema**)s, name );
-	return GDK_SUCCEED;
-}
-
-int mvc_create_kc_wrap( sql_key* res, mvc* M, sql_key *K, str name )
-{
-	mvc *m = *(mvc**)M;
-	sql_key *k = *(sql_key**)K;
-	sql_column *c = mvc_bind_column( m, k->t, name );
-	*(sql_key**)res = mvc_create_kc( m, k, c );
-	return GDK_SUCCEED;
-}
-
-int mvc_create_idx_wrap( sql_idx* res, mvc* c, sql_table *t, str name, int *it )
-{
-	*(sql_idx**)res 
-		= mvc_create_idx( *(mvc**)c, *(sql_table**)t, name, (idx_type)*it );
-	return GDK_SUCCEED;
-}
-
-int mvc_drop_idx_wrap( mvc* c, sql_schema *s, str name ){
-	mvc_drop_idx( *(mvc**)c, *(sql_schema**)s, name );
-	return GDK_SUCCEED;
-}
-
-int mvc_create_ic_wrap( sql_idx* res, mvc* M, sql_idx *I, str name )
-{
-	mvc *m = *(mvc**)M;
-	sql_idx *i = *(sql_idx**)I;
-	sql_column *c = mvc_bind_column( m, i->t, name );
-	*(sql_idx**)res = mvc_create_ic( m, i, c );
-	return GDK_SUCCEED;
-}
-
-int mvc_create_user_wrap( mvc *c, str user, str passwd, str fullname, str dschema, int *grantor)
-{
-	if (sql_create_user( *(mvc**)c, user, passwd, fullname, dschema, *grantor)){
-		return GDK_SUCCEED;
-	} else {
-		return GDK_FAIL;
-	}
-}
-
-int mvc_drop_user_wrap( mvc *c, str user )
-{
-	if (sql_drop_user( *(mvc**)c, user)){
-		return GDK_SUCCEED;
-	} else {
-		return GDK_FAIL;
-	}
-}
-
-int mvc_create_role_wrap( mvc *c, str role, int *grantor)
-{
-	if (sql_create_role( *(mvc**)c, role, *grantor)){
-		return GDK_SUCCEED;
-	} else {
-		return GDK_FAIL;
-	}
-}
-
-int mvc_drop_role_wrap( mvc *c, str role )
-{
-	if (sql_drop_role( *(mvc**)c, role)){
-		return GDK_SUCCEED;
-	} else {
-		return GDK_FAIL;
-	}
 }
 
 int mvc_result_table_wrap( int *res_id, mvc *M, int *nr_cols, BAT *order ){
@@ -734,6 +439,43 @@ int @1_round_wrap( @1 *res, @1 *v, @1 *r )
 	*res = val;
 	return GDK_SUCCEED;
 }
+
+int trunc2@1( @1 *res, str val, int *d, int *sc )
+{
+	char *s = strip_extra_zeros(val);
+	char *dot = strchr(s, '.');
+	int digits = strlen(s) - 1;
+	int scale = digits - (dot-s);
+	lng value = 0;
+
+	if (!dot) {
+		GDKerror("decimal (%s) doesn't have format (%d,%d)", val, *d, *sc);
+		return GDK_FAIL;
+	}
+		
+	value = decimal_from_str(s);
+	if (*s == '+' || *s == '-')
+		digits --;
+	if (scale < *sc){
+		while(scale < *sc) {
+			value *= 10;
+			scale ++;
+			digits ++;
+		}
+	} else if (scale > *sc){
+		while(scale > *sc) {
+			value /= 10;
+			scale --;
+			digits --;
+		}
+	}
+	if (digits > *d) {
+		GDKerror("decimal (%s) doesn't have format (%d,%d)", val, *d, *sc);
+		return GDK_FAIL;
+	}
+	*res = value;
+	return GDK_SUCCEED;
+}
 @c
 
 @:round(sht)@
@@ -756,6 +498,34 @@ int @1_round_wrap( @1 *res, @1 *v, @1 *r )
 	*res = val;
 	return GDK_SUCCEED;
 }
+
+int trunc2@1( @1 *res, str val, int *d, int *s )
+{
+	ptr p = NULL;
+	int len = 0;
+	int e = ATOMfromstr(TYPE_@1, &p, &len, val);
+	int digits = *d - *s;
+	lng value = 1;
+	
+	if (e <= 0 || !p || ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0) {
+		if (p)
+			GDKfree(p);
+		return GDK_FAIL;
+	}
+	while(digits > 0) {
+		digits--;
+		value *= 10;
+	}
+	if (*(@1*)p > value) {
+		GDKerror("double (%s) doesn't have format (%d,%d)", val, *d, *s);
+		return GDK_FAIL;
+		
+	}
+	*res = *(@1*)p;
+	if (p)
+		GDKfree(p);
+	return GDK_SUCCEED;
+}
 @c
 
 @:fround(flt)@
@@ -768,7 +538,7 @@ int cast2@1( @1 *res, str val )
 	int len = 0;
 	int e = ATOMfromstr(TYPE_@1, &p, &len, val);
 	
-	if (e <= 0 || !p) {
+	if (e <= 0 || !p || ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0) {
 		if (p)
 			GDKfree(p);
 		return GDK_FAIL;
@@ -778,6 +548,7 @@ int cast2@1( @1 *res, str val )
 		GDKfree(p);
 	return GDK_SUCCEED;
 }
+
 @c
 
 @:cast(sht)@
@@ -799,15 +570,20 @@ module(mapi); # mapi_listen
 # low memory usage for testing unloading
 #mem_maxsize(0LL);
 #vm_maxsize(0LL);
-
-mvc_init(int(monet_environment.find("sql_debug")));
-fork(logmanager);
+err := CATCH( mvc_init(int(monet_environment.find("sql_debug"))) );
 
 proc SQLclient( Stream s_in, Stream s_out ) := {
 	fork(sqlclient(s_in, s_out));
 }
 
-mapi_listen(int(monet_environment.find("sql_port")), 5, "SQLclient").fork();
-# start a default mapi client for debugging, this should go once
-# MonetDB SQL gets stable.
-mapi_listen(int(monet_environment.find("mapi_port")), 5, "").fork();
+if (isnil(err)){
+	fork(logmanager);
+
+	mapi_listen(int(monet_environment.find("sql_port")), 5, "SQLclient").fork();
+	# start a default mapi client for debugging, this should go once
+	# MonetDB SQL gets stable.
+	mapi_listen(int(monet_environment.find("mapi_port")), 5, "").fork();
+} else {
+	printf(err);
+	drop(sql_server);
+}

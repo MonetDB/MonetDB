@@ -142,14 +142,17 @@ atom *atom_general(sql_subtype * tpe, char *val)
 	if (atom_debug) 
 		fprintf(stderr, "atom_general(%s,%s)\n", tpe->type->sqlname,val);
 	if (val){
+		int type = a->data.vtype;
 		a->isnull = 0;
-		if (ATOMstorage(tpe->type->localtype) == TYPE_str){
+		if (ATOMstorage(type) == TYPE_str){
 			a->isnull = 0;
 			a->data.val.sval = sql2str(val);
 			a->data.len = strlen(a->data.val.sval); 
 		} else {
-			int res = ATOMfromstr(a->data.vtype, &p, &a->data.len, val);
-			if (res <= 0 || !p){
+			int res = ATOMfromstr(type, &p, &a->data.len, val);
+			/* no result or nil means error (SQL has NULL not nil)*/
+			if (res <= 0 || !p ||
+			    ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
 				_DELETE(val);
 				_DELETE(a);
 				if (p)
@@ -222,17 +225,17 @@ void atom_dump( atom *a, stream *s){
 	if (!a->isnull && a->data.vtype == TYPE_str){
 		ATOMprint(a->data.vtype, VALget(&a->data), s);
 	} else if (!a->isnull && ATOMstorage(a->data.vtype) == TYPE_str){
-		stream_write(s, a->tpe->type->name, strlen(a->tpe->type->name), 1);
+		stream_write(s, a->tpe->type->base.name, strlen(a->tpe->type->base.name), 1);
 		stream_write(s, "(", 1, 1);
 		ATOMprint(a->data.vtype, VALget(&a->data), s);
 		stream_write(s, ")", 1, 1);
 	} else if (!a->isnull){
-		stream_write(s, a->tpe->type->name, strlen(a->tpe->type->name), 1);
+		stream_write(s, a->tpe->type->base.name, strlen(a->tpe->type->base.name), 1);
 		stream_write(s, "(\"", 2, 1);
 		ATOMprint(a->data.vtype, VALget(&a->data), s);
 		stream_write(s, "\")", 2, 1);
 	} else {
-		stream_write(s, a->tpe->type->name, strlen(a->tpe->type->name), 1);
+		stream_write(s, a->tpe->type->base.name, strlen(a->tpe->type->base.name), 1);
 		stream_write(s, "(nil)", 5, 1);
 	}
 }

@@ -34,8 +34,19 @@
 #include <sql_list.h>
 #include "sql_symbol.h"
 #include "sql_parser.h"
+#include "sql_scope.h"
 
 sql_export stmt *semantic( mvc * sql, symbol * sym);
+
+sql_export sql_schema *cur_schema( mvc *sql );
+sql_export sql_schema *qname_schema(mvc *sql, dlist * qname);
+sql_export char *qname_table(dlist * qname);
+sql_export tvar *scope_add_table_columns(mvc * sql, scope * scp, sql_table * t, char *tname);
+
+sql_export void cleanup_stmts(stmt **stmts, int cnt);
+sql_export stmt *sql_insert(mvc * sql, sql_table *t, stmt **inserts, int len);
+sql_export stmt *sql_delete( mvc *sql, tvar *tv, sql_table *t, stmt *s );
+sql_export stmt *sql_subquery(mvc * sql, scope * scp, symbol * sq);
 
 sql_export void sql_add_arg( mvc *sql, atom *v );		/* used in src/server/sql_parser.y */
 sql_export void sql_add_param( mvc *sql, char *name, stmt *s );	/* used in src/server/sql_parser.y */
@@ -49,9 +60,9 @@ sql_export void sql_destroy_args( mvc *sql );			/* used in backend */
 #include "sql_parser.h"
 #include "sql_symbol.h"
 #include "sql_statement.h"
-#include "sql_scope.h"
 #include "sql_semantic.h"
 #include "sql_trans.h"
+#include "sql_schema.h"
 #include "sql_privileges.h"
 
 #include <unistd.h>
@@ -133,9 +144,8 @@ static stmt *sql_compare_exp( mvc *sql, scope *scp, group *grp, stmt *subset, sy
 
 static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q);
 static tvar *sql_subquery_optname(mvc * sql, scope * scp, symbol * query);
-static stmt *sql_subquery(mvc * sql, scope * scp, symbol * sq);
 
-static sql_schema *cur_schema( mvc *sql )
+sql_schema *cur_schema( mvc *sql )
 {
 	return sql->trans->schema;
 }
@@ -152,7 +162,7 @@ static void sql_select_cleanup( mvc * sql, stmt *s, stmt *subset, group *grp )
 		stmt_destroy(s);
 }
 
-static sql_schema *qname_schema(mvc *sql, dlist * qname)
+sql_schema *qname_schema(mvc *sql, dlist * qname)
 {
 	sql_schema *s = cur_schema(sql);
 	assert(qname && qname->h);
@@ -164,7 +174,7 @@ static sql_schema *qname_schema(mvc *sql, dlist * qname)
 	return s;
 }
 
-static char *qname_table(dlist * qname)
+char *qname_table(dlist * qname)
 {
 	assert(qname && qname->h);
 
@@ -199,7 +209,7 @@ sqlparse_intern(mvc *m, char *query)
 	return sq;
 }
 
-static tvar *scope_add_table_columns(mvc * sql, scope * scp, sql_table * t, char *tname)
+tvar *scope_add_table_columns(mvc * sql, scope * scp, sql_table * t, char *tname)
 {
 	node *n, *m;
 	tvar *tv = NULL;
@@ -277,7 +287,7 @@ static tvar *table_ref(mvc * sql, scope * scp, symbol * tableref)
 	}
 }
 
-static stmt *sql_subquery(mvc * sql, scope * scp, symbol * sq)
+stmt *sql_subquery(mvc * sql, scope * scp, symbol * sq)
 {
 	int toplevel = (!scp) ? 1 : 0;
 	stmt *res = NULL;
@@ -288,7 +298,10 @@ static stmt *sql_subquery(mvc * sql, scope * scp, symbol * sq)
 		(void) sql_error( sql, 01, "Can only limit outer select " );
 		return NULL;
 	}
-
+	if (!toplevel && sn->orderby){
+		(void) sql_error( sql, 01, "Can only order by outer select " );
+		return NULL;
+	}
 
 	if (sn->from) {		/* keep variable list with tables and names */
 		dlist *fl = sn->from->data.lval;
@@ -477,20 +490,6 @@ static tvar *sql_subquery_optname(mvc * sql, scope * scp,
 	return table_optname(sql, scp, sq, QUERY(sql->scanner), sn->name);
 }
 
-static char *schema_name(dlist * name_auth)
-{
-	assert(name_auth && name_auth->h);
-
-	return name_auth->h->data.sval;
-}
-
-static char *schema_auth(dlist * name_auth)
-{
-	assert(name_auth && name_auth->h && dlist_length(name_auth) == 2);
-
-	return name_auth->h->next->data.sval;
-}
-
 static stmt *find_pivot(stmt * subset, stmt * t)
 {
 	assert(subset->type == st_ptable);
@@ -566,7 +565,7 @@ static stmt *scale_algebra( sql_subfunc *f, stmt *ls, stmt *rs ){
 	sql_subtype *rt = tail_type(rs);
 
 	if (lt->type->scale == SCALE_FIX && rt->scale){ 
-		sql_subtype *it = sql_bind_localtype( lt->type->name );
+		sql_subtype *it = sql_bind_localtype( lt->type->base.name );
 		sql_subfunc *c = NULL;
 
 		if (strcmp(f->func->imp, "/") == 0){
@@ -590,7 +589,7 @@ static stmt *fix_scale( mvc * sql, sql_subtype * ct, stmt * s, int both, int alw
 		int scale_diff = ((int) ct->scale - (int) st->scale);
 
 		if (scale_diff){
-			sql_subtype *it = sql_bind_localtype( st->type->name );
+			sql_subtype *it = sql_bind_localtype( st->type->base.name );
 			sql_subfunc *c = NULL;
 
 			if (scale_diff < 0){
@@ -609,7 +608,7 @@ static stmt *fix_scale( mvc * sql, sql_subtype * ct, stmt * s, int both, int alw
 		}
 	} else if (always && st->scale){ /* scale down */
 		int scale_diff =  - (int) st->scale;
-		sql_subtype *it = sql_bind_localtype( st->type->name );
+		sql_subtype *it = sql_bind_localtype( st->type->base.name );
 		sql_subfunc *c = sql_bind_func("scale_down",st,it);
 
 		if (c) {
@@ -618,7 +617,7 @@ static stmt *fix_scale( mvc * sql, sql_subtype * ct, stmt * s, int both, int alw
 			c->res.scale = 0;
 			return stmt_binop(s, stmt_atom(a), c);
 		} else {
-			printf("scale_down mising (%s)\n", st->type->name);
+			printf("scale_down mising (%s)\n", st->type->base.name);
 		}
 	}
 	return s;
@@ -648,18 +647,40 @@ static stmt *check_types(mvc * sql, sql_subtype * ct, stmt * s )
 					ct->digits-ct->scale < 
 						st->digits-st->scale) 
 				) {
-					/* TODO here trunc-ing could be added, 
-					 * which requires a warning! 
-					 */
 					sql_subfunc_destroy(c);
-					return sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->name, ct->type->sqlname, ct->digits, ct->scale, ct->type->name);
+					return sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
 				}
 				return fix_scale(sql, ct, stmt_unop(s, c), 1,
 					(st->type->scale == SCALE_FIX));
 			}
+			/* here we need to check if we could convert using
+			   the more complex conversion functions 
+			   (convert(x,int,int) -> y)
+			 */
+			if (st->scale == 0) {
+				sql_subtype *it = sql_bind_localtype( "int" );
+				list *ops = list_create((fdestroy)&
+					sql_subtype_destroy);
+				list_append(ops, sql_dup_subtype(st));
+				list_append(ops, sql_dup_subtype(it));
+				list_append(ops, sql_dup_subtype(it));
+				c = sql_bind_func_result_( "convert", ops, ct);
+				list_destroy(ops);
+				if (c){ 
+					ops = create_stmt_list();
+					list_append(ops, s);
+					list_append(ops, stmt_atom(
+						atom_int(sql_dup_subtype(it), 
+						ct->digits)));
+					list_append(ops, stmt_atom(
+						atom_int(sql_dup_subtype(it), 
+						ct->scale)));
+					return stmt_Nop(stmt_list(ops), c);
+				}
+			}
 		}
 		if (!t || subtype_cmp(t, ct) != 0) {
-			return sql_error(sql, 02, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->name, ct->type->sqlname, ct->digits, ct->scale, ct->type->name);
+			return sql_error(sql, 02, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
 		}
 	} else {
 		assert(0);
@@ -671,12 +692,43 @@ static stmt *check_types(mvc * sql, sql_subtype * ct, stmt * s )
 		    (ct->scale > 0 && ct->digits > 0 
 			&& ct->digits-ct->scale < st->digits-st->scale) 
 		){
-			return sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->name, ct->type->sqlname, ct->digits, ct->scale, ct->type->name);
+			return sql_error(sql, 03, "Types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal", st->type->sqlname, st->digits, st->scale, st->type->base.name, ct->type->sqlname, ct->digits, ct->scale, ct->type->base.name);
 		}
 	}
 	return fix_scale(sql, ct, s, 1, 0);
 }
 
+
+static sql_subtype *supertype( sql_subtype *r, sql_subtype *i ) 
+{
+	/* first find super type */
+	char *tpe = r->type->sqlname;
+	int digits = 0;
+	unsigned int scale = sql_max(i->scale,r->scale);
+
+	if (i->type->nr > r->type->nr)
+		tpe = i->type->sqlname;
+	if (i->digits && r->digits) {
+		if (i->digits > r->digits) {
+			digits = i->digits;
+			if (i->scale < scale)
+				digits += scale-i->scale;	
+		} else if (i->digits < r->digits) {
+			digits = r->digits;
+			if (r->scale < scale)
+				digits += scale-r->scale;	
+		} else {
+			/* same number of digits */
+			digits = i->digits;
+			if (i->scale < r->scale) 
+				digits += r->scale - i->scale;	
+			else 
+				digits += i->scale - r->scale;	
+		}
+	}
+
+	return sql_bind_subtype(tpe,digits,scale);
+}
 
 /* convert_types convert both the stmt's L and R such that they get
  * matching types. On failure <0 is returned;
@@ -693,33 +745,7 @@ static int convert_types(mvc * sql, stmt ** L, stmt ** R, int scale_fixing )
 		sql_subtype *r = rt;
 
 		if (subtype_cmp(lt,rt) != 0){
-			/* first find super type */
-			char *tpe = r->type->sqlname;
-			int digits = 0;
-			unsigned int scale = sql_max(i->scale,r->scale);
-			sql_subtype *super;
-			if (lt->type->nr > rt->type->nr)
-				tpe = i->type->sqlname;
-			if (i->digits && r->digits) {
-				if (i->digits > r->digits) {
-					digits = i->digits;
-					if (i->scale < scale)
-						digits += scale-i->scale;	
-				} else if (i->digits < r->digits) {
-					digits = r->digits;
-					if (r->scale < scale)
-						digits += scale-r->scale;	
-				} else {
-					/* same number of digits */
-					digits = i->digits;
-					if (i->scale < r->scale) 
-						digits += r->scale - i->scale;	
-					else 
-						digits += i->scale - r->scale;	
-				}
-			}
-
-			super = sql_bind_subtype(tpe,digits,scale);
+			sql_subtype *super = supertype(r, i);
 			if (scale_fixing){
 				/* convert ls to super type */
 				ls = check_types(sql, super, ls);
@@ -788,7 +814,7 @@ static stmt *sql_case(mvc * sql, scope * scp, symbol *opt_cond, dlist * when_sea
 		list_prepend(conds, cond);
 		list_prepend(results, result);
 
-		restype = tail_type(result);
+		restype = sql_dup_subtype(tail_type(result));
 	}
 	if (!restype) {
 		list_destroy(conds);
@@ -823,12 +849,14 @@ static stmt *sql_case(mvc * sql, scope * scp, symbol *opt_cond, dlist * when_sea
 			list_destroy(results);
 			return sql_error(sql, 02, "Error: result type missing");
 		}
-		/* TODO keep super type */
-		if (subtype_cmp(restype, tpe) != 0) {
+		tpe = supertype(restype, tpe);
+		if (!tpe) {
 			list_destroy(conds);
 			list_destroy(results);
 			return sql_error(sql, 02, "Error: result types %s,%s of case are not compatible", restype->type->sqlname, tpe->type->sqlname);
 		}
+		sql_subtype_destroy( restype );
+		restype = tpe;
 	}
 	if (subset) {
 		res = first_subset(subset);
@@ -855,8 +883,11 @@ static stmt *sql_case(mvc * sql, scope * scp, symbol *opt_cond, dlist * when_sea
 			res = result;
 		}
 	} else {
-		res = stmt_const(res, NULL);
+		res = stmt_const(res, stmt_atom( atom_general( sql_dup_subtype(restype), NULL)));
 	}
+	if (restype) 
+		sql_subtype_destroy(restype);
+	restype = tail_type(res);
 	for (n = conds->h, m = results->h; n && m;
 	     n = n->next, m = m->next) {
 		stmt *cond = stmt_dup(n->data);
@@ -889,6 +920,13 @@ static stmt *sql_case(mvc * sql, scope * scp, symbol *opt_cond, dlist * when_sea
 			result = stmt_const(cond, result);
 		else 
 			result = stmt_semijoin(result, cond);
+		
+		if (! (result = check_types(sql, restype, result)) ) {
+			list_destroy(conds);
+			list_destroy(results);
+			stmt_destroy(res);
+			return NULL;
+		}
 		res = stmt_replace(res, result);
 	}
 	list_destroy(conds);
@@ -2703,728 +2741,6 @@ static char *strfnd( char *s, char *sep )
 	return NULL;
 }
 
-static stmt *create_view(mvc * sql, stmt * ss,
-			 dlist * qname, dlist * column_spec,
-			 symbol * query, int check)
-{
-
-	char *name = qname_table(qname);
-	(void) check; /* Stefan: unused!? */
-
-	if (mvc_bind_table(sql, cur_schema(sql), name)) {
-		stmt_destroy(ss);
-		return sql_error(sql, 02, "Create View name %s already in use", name);
-	} else {
-		char buf[BUFSIZ];
-		stmt *sq, *stct = NULL;
-		SelectNode *sn = (SelectNode*)query;
-
-		char *subquery;
-		list *l;
-
-		if (sn->limit >= 0) {
-			(void) sql_error( sql, 01, 
-				"Limit not supported for views" );
-			return NULL;
-		}
- 		sq = sql_subquery(sql, NULL, query);
-		if (!sq)
-			return NULL;
-
- 		subquery = QUERY(sql->scanner) + sql->scanner.as;
- 		l = create_stmt_list();
-		if (column_spec) {
-			dnode *n = column_spec->h;
-			node *m = sq->op1.lval->h;
-			stmt *ts = stmt_create_view( ss, name, subquery);
-
-			list_append(l, ts);
-			for (; n; n = n->next, m = m->next) {
-				char *cname = n->data.sval;
-				stmt *cs, *st = m->data;
-				sql_subtype *tp = tail_type(st);
-				cs = stmt_create_column(stmt_dup(ts), cname, 
-					tp->type->sqlname, 
-					tp->digits, tp->scale);
-				list_append(l, cs);
-			}
-		} else {
-			node *m;
-			stmt *ts = stmt_create_view( ss, name, subquery);
-
-			list_append(l, ts);
-       			for ( m = sq->op1.lval->h; m; m = m->next) {
-				stmt *cs, *st = m->data;
-				char *cname = column_name(st);
-				sql_subtype *tp = tail_type(st);
-
-				cs = stmt_create_column(stmt_dup(ts), cname, 
-					tp->type->sqlname, 
-					tp->digits, tp->scale);
-				_DELETE(cname);
-				list_append(l, cs);
-			}
-		}
-		snprintf(buf, BUFSIZ, "grant select on \"%s\" to \"%s\" with grant option with hierarchy option;", name, sql->user);
-		list_append( l, stmt_sql(buf));
-		stct = stmt_list(l);
-		stmt_destroy(sq);
-		return stct;
-	}
-	return NULL;
-}
-
-static stmt *drop_view(mvc * sql, dlist * qname )
-{
-	stmt *res = NULL;
-	char *tname = qname_table(qname);
-	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname);
-
-	if (!t) {
-		return sql_error(sql, 02, 
-			 "Drop View, view %s unknown", tname);
-	} else if (t->type == tt_view){
-		stmt *ss = stmt_bind_schema( cur_schema(sql)->base.name );
-		res = stmt_drop_table(ss, t->base.name, 0);
-	} else {
-		return sql_error(sql, 02, 
-			 "Drop View, cannot drop view %s", tname);
-	}
-	return res;
-}
-
-static stmt *
-create_index(mvc * sql, stmt *ss, char * iname, int itype, 
-	     dlist * qname, dlist * column_list) 
-{
-
-	char *name = qname_table(qname);
-
-	sql_table *t = mvc_bind_table(sql, cur_schema(sql), name); 
-	if (!t){
-		stmt_destroy(ss);
-		return sql_error(sql, 02, 
-			"Create Index could not find table name %s", name);
-	} else {
-		dnode *n = column_list->h;
-		list *l = create_stmt_list();
-		stmt *ts = stmt_bind_table( ss, name );
-		stmt *cis = stmt_create_index( ts, iname, (idx_type)itype);
-
-		list_append(l, cis);
-		for (; n; n = n->next) {
-			char *cname = n->data.sval;
-			sql_column *c = mvc_bind_column(sql, t, cname);
-			if (!c){
-				list_destroy(l);
-				return sql_error(sql, 02, 
-				  "Create Index unknown column %s", cname);
-			} else {
-				list_append(l, 
-					stmt_create_ic( stmt_dup(cis), cname));
-			}
-		}
-		return stmt_list(l);
-	}
-	return NULL;
-}
-
-static stmt *drop_index(mvc * sql, dlist * qname )
-{
-	stmt *res = NULL;
-	char *iname = qname_table(qname);
-
-	sql_idx *i = mvc_bind_idx(sql, cur_schema(sql), iname);
-
-	if (!i) {
-		return sql_error(sql, 02, 
-			 "Drop Index, index %s unknown", iname);
-	} else {
-		stmt *ss = stmt_bind_schema( cur_schema(sql)->base.name );
-		res = stmt_drop_index(ss, i->base.name);
-	}
-	return res;
-}
-
-static stmt *
-create_user(mvc * sql, char * user, char * passwd, char *fullname, char *schema)
-{
-	int schema_id = 0;
-	list *l;
-	char buf[BUFSIZ];
-
-	if (sql_find_auth( sql, user) >= 0) {
-		return sql_error(sql, 02, 
-			 "User %s already exists", user);
-	}
-	if ((schema_id = sql_find_schema( sql, schema)) < 0) {
-		return sql_error(sql, 02, 
-			 "Schema %s doesn't exist", schema);
-	}
-	l = create_stmt_list();
-	snprintf(buf, BUFSIZ, "insert into users values('%s','%s','%s',%d);", user, passwd, fullname, schema_id );
-	list_append(l, stmt_sql(buf));
-	snprintf(buf, BUFSIZ, "insert into auths values(" SZFMT ", '%s', %d);", OIDnew(1), user, sql->user_id);
-	list_append(l, stmt_sql(buf));
-	return stmt_list(l);
-}
-
-static stmt *drop_user(mvc * sql, char * user )
-{
-	(void) sql; /* Stefan: unused!? */
-	/* TODO check if user exists */
-
-	return stmt_drop_user(user);
-}
-
-static stmt *
-create_role(mvc * sql, dlist * qname, int grantor)
-{
-	char *role_name = qname->t->data.sval;
-
-	if (dlist_length(qname) > 2){
-		return sql_error(sql, 02, 
-			"qualified role can only have a schema and a role\n");
-	} 
-	return stmt_create_role(role_name, grantor);
-}
-
-static stmt *drop_role(mvc * sql, dlist * qname )
-{
-	char *role_name = qname->t->data.sval;
-
-	if (dlist_length(qname) > 2){
-		return sql_error(sql, 02, "qualified role can only have a schema and a role\n");
-	} 
-	return stmt_drop_role(role_name);
-}
-
-static stmt *column_constraint_type(mvc * sql, char *name, symbol * s, stmt * ss, stmt * ts, stmt * cs, char *cname)
-{
-	stmt *res = NULL;
-
-	switch (s->token) {
-	case SQL_UNIQUE: 
-	case SQL_PRIMARY_KEY: 
-	{
-		key_type kt = (s->token == SQL_UNIQUE)?ukey:pkey;
-		res = stmt_create_key(ts, name, kt, NULL);
-		res = stmt_create_kc( res, cname );
-		stmt_destroy(ss);
-		stmt_destroy(cs);
-	} break;
-	case SQL_FOREIGN_KEY:
-	{
-		dnode *n = s->data.lval->h;
-		char *rtname = qname_table(n->data.lval);
-		char *rcname = n->data.lval->h->data.sval;
-		list *cols = list_append(list_create(NULL),rcname);
-		sql_table *rt = mvc_bind_table( sql, cur_schema(sql), rtname );
-		sql_key *rk = mvc_bind_ukey( rt, cols);
-		stmt *rks;
-
-		list_destroy(cols);
-		if (!rt) 
-			return sql_error(sql, 02, "table %s unknown\n", rtname);
-
-		rks = stmt_bind_key(ss, rk->base.name);
-		if (!rks) {
-			return sql_error(sql, 02, "Could not find referenced unique key in table %s\n", rk->base.name );
-		}
-		res = stmt_create_key(ts, name, fkey, rks);
-		res = stmt_create_kc( res, cname );
-		stmt_destroy(cs);
-	} break;
-	case SQL_NOT_NULL:
-	case SQL_NULL: {
-		int null = (s->token == SQL_NOT_NULL)?0:1;
-		res = stmt_null(cs, null);
-		stmt_destroy(ss);
-		stmt_destroy(ts);
-	} 	break;
-	}
-
-	if (!res) {
-		return sql_error(sql, 02, 
-			 "Unknown constraint (%ld)->token = %s\n",
-			 (long) s, token2string(s->token));
-	}
-	return res;
-}
-
-/* 
-column_option: default | column_constraint ;
-*/
-
-static char *table_constraint_name()
-{
-	oid id = OIDnew(1);
-	static char buf[BUFSIZ];
-	snprintf(buf, BUFSIZ, "c%ld", id );
-	return buf;
-}
-
-
-static stmt *column_option(mvc * sql, symbol * s, stmt * ss, stmt * ts, stmt * cs, char *cname, sql_subtype *ctype)
-{
-	stmt *res = NULL;
-	assert(cs);
-	switch (s->token) {
-	case SQL_CONSTRAINT:
-		{
-			dlist *l = s->data.lval;
-			char *opt_name = l->h->data.sval;  
-			symbol *sym = l->h->next->data.sym;
-			if (!opt_name) 
-				opt_name = table_constraint_name();
-			res = column_constraint_type(sql, opt_name, sym, ss, ts, cs, cname);
-		}
-		break;
-	case SQL_ATOM: {
-			AtomNode *an = (AtomNode*)s;
-			if (!an || !an->a){
-				res = stmt_default(cs, stmt_atom(atom_general(sql_dup_subtype(ctype),NULL)));
-			} else {
-				res = stmt_default(cs, stmt_atom(atom_dup(an->a)));
-			}
-			stmt_destroy(ss);
-			stmt_destroy(ts);
-		} break;
-	}
-	if (!res) {
-		return sql_error(sql, 02, 
-			 "Unknown column option (%ld)->token = %s\n",
-			 (long) s, token2string(s->token));
-	}
-	return res;
-}
-
-static void column_options(mvc * sql, dlist * opt_list, list *stmt_list, stmt *ss, stmt * ts, stmt * cs, char *cname, sql_subtype *ctype )
-{
-	stmt *res = cs;
-
-	assert(cs);
-	if (opt_list) {
-		dnode *n = NULL;
-		for (n = opt_list->h; n && res; n = n->next) {
-			res = column_option(sql, n->data.sym, stmt_dup(ss), stmt_dup(ts), stmt_dup(cs), cname, ctype);
-			list_append( stmt_list, res);
-		}
-	}
-	stmt_destroy(ss);
-	stmt_destroy(ts);
-	stmt_destroy(cs);
-}
-
-typedef struct tmp_column {
-	char *name;
-	stmt *s;
-	sql_subtype *type;
-} tmp_column;
-
-tmp_column *create_tmp_col( char *name, stmt *cs, sql_subtype *type )
-{
-	tmp_column * tc = NEW(tmp_column);
-	tc -> name = name;
-	tc -> s = cs;
-	tc -> type = type;
-	return tc;
-}
-
-void destroy_tmp_col( tmp_column *c) 
-{
-	_DELETE(c);
-}
-
-stmt *find_column_stmt( list *columns, char *name)
-{
-	node *n;
-	for (n=columns->h; n; n = n->next ){
-		tmp_column *c = n->data;
-		if (strcmp(c->name, name) == 0)
-			return stmt_dup(c->s);
-	}
-	return NULL;
-}
-
-sql_subtype *find_column_type( list *columns, char *name)
-{
-	node *n;
-	for (n=columns->h; n; n = n->next ){
-		tmp_column *c = n->data;
-		if (strcmp(c->name, name) == 0)
-			return c->type;
-	}
-	return NULL;
-}
-
-static stmt *create_column(mvc * sql, symbol * s, stmt * ss, stmt * ts, 
-	char *tname, list *columns )
-{
-	dlist *l = s->data.lval;
-	char *cname = l->h->data.sval;
-	sql_table *t = mvc_bind_table( sql, cur_schema(sql), tname );
-	sql_subtype *ctype = l->h->next->data.typeval;
-	dlist *opt_list = NULL; 
-	stmt *res = NULL;
-
-	if (l->h->next->next)
-		opt_list = l->h->next->next->data.lval;
-
-	if (cname && ctype) {
-		list *l = create_stmt_list();
-		stmt *cs = stmt_create_column(ts, cname, ctype->type->sqlname,
-			ctype->digits, ctype->scale);
-
-		l = list_append( l, cs );
-		list_append(columns, create_tmp_col(cname, cs, ctype) );
-		column_options(sql, opt_list, l, ss, stmt_dup(ts), stmt_dup(cs), cname, ctype);
-		if (t) { /* search default value */
-			stmt *d = 0;
-			stmt *null = 0;
-			node *n;
-			for (n = l->h; n && !(d && null) ; n = n ->next) {
-				stmt *s = n->data;
-				if (s->type == st_default) 
-					d = s; 
-				if (s->type == st_null) 
-					null = s; 
-			}
-			if (d) {
-				if (!d->op2.stval->op1.aval->data.val.pval && 
-				    null &&
-				    null->op2.stval->op1.aval->data.val.ival==1)
-				{
-					list_destroy(l);
-					return sql_error(sql, 02, 
-			 			"Default value is NULL, but column has NOT NULL constraint\n" );
-				}
-				/* todo remove completely the double layer
-				 * for schema changes !
-				 */
-				list_append(l,
-					stmt_append(
-					 stmt_ibat(stmt_dup(cs), stmt_dup(ts)),
-					 stmt_const(
-					  stmt_cbat(
-					   mvc_first_column(sql, t), 
-					   stmt_dup(ts), 0, st_bat), 
-					  stmt_dup(d->op2.stval) )));
-			} else {
-				list_destroy(l);
-				return sql_error(sql, 02, "No Default value for alter table add\n" );
-			}
-		}
-		res = stmt_list(l);
-	}
-
-	if (!res) {
-		return sql_error(sql, 02, "Create Column: type or name");
-	}
-	return res;
-}
-
-static stmt *table_foreign_key( mvc * sql, char *name, symbol * s, stmt * ss, stmt * ts, char *tname, list * columns )
-{
-	stmt *res = NULL;
-	dnode *n = s->data.lval->h;
-	char *rtname = qname_table(n->data.lval);
-	sql_table *t = mvc_bind_table( sql, cur_schema(sql), tname );
-	sql_table *ft = mvc_bind_table( sql, cur_schema(sql), rtname );
-
-	if (!ft){
-		return sql_error(sql, 02, "Table %s unknown\n", rtname );
-	} else {
-		sql_key *rk = NULL;
-		dnode *nms = n->next->data.lval->h;
-		node *fnms;
-		stmt *srk;
-
-		if (n->next->next->data.lval){ /* find unique referenced key */
-			dnode *rnms = n->next->next->data.lval->h;
-			list *cols = list_create(NULL);
-
-			for( ;rnms; rnms = rnms->next)
-				list_append(cols, rnms->data.sval);
-
-			/* find key in ft->keys*/
-			rk = mvc_bind_ukey(ft, cols);
-			list_destroy(cols);
-		} else { /* no list of columns to find referenced unique key ie
-			    use ft.pkey */
-			rk = &ft->pkey->k;
-		}
-		if (!rk){
-			return sql_error(sql, 02, "Could not find referenced unique key in table %s\n", ft->base.name );
-		}
-		srk = stmt_bind_key( ss, rk->base.name );
-		res = stmt_create_key(ts, name, fkey, srk);
-
-		for(fnms = rk->columns->h; nms && fnms; nms = nms->next, fnms = fnms->next){
-			char *nm = nms->data.sval;
-			/* use tmp columns to find col nm */
-			stmt *c = find_column_stmt(columns, nm );
-
-			/* if table already exists use it to find nm */
-			if (!c && t && mvc_bind_column(sql, t, nm)) {
-				c = stmt_bind_column( stmt_dup(ts), nm );
-			}
-			if (!c){
-				if (res) stmt_destroy(res);
-				return sql_error(sql, 02, "Table %s has no column %s\n", tname, nm);
-			}
-			res = stmt_create_kc( res, nm );
-			stmt_destroy(c);
-		}
-		if (nms || fnms){
-			if (res) stmt_destroy(res);
-			return sql_error(sql, 02, "Not all colunms are handeled in the foreign key\n");
-		}
-	}
-	return res;
-}
-
-static stmt *table_constraint_type( mvc * sql, char *name, symbol * s, stmt * ss, stmt *ts, char *tname, list* columns )
-{
-	stmt *res = NULL;
-	sql_table *t = mvc_bind_table( sql, cur_schema(sql), tname );
-
-	switch(s->token){
-		case SQL_UNIQUE: 
-		case SQL_PRIMARY_KEY:
-		{
-			key_type kt = (s->token==SQL_PRIMARY_KEY?pkey:ukey);
-			stmt *ks = stmt_create_key(ts, name, kt, NULL);
-			dnode *nms = s->data.lval->h;
-
-			for(;nms; nms = nms->next){
-				char *nm = nms->data.sval;
-				stmt *c = find_column_stmt(columns, nm);
-
-				if (!c && t && mvc_bind_column(sql, t, nm)) {
-					c = stmt_bind_column( stmt_dup(ts), nm );
-				}
-				if (!c) {
-					return sql_error(sql, 02, "Table %s has no column %s\n", tname, nm);
-				}
-				ks = stmt_create_kc( ks, nm );
-				stmt_destroy(c);
-			}
-			res = ks;
-			stmt_destroy(ss);
-		} break;
-		case SQL_FOREIGN_KEY:
-			res = table_foreign_key( sql, name, s, ss, ts, tname, columns );
-		 	break;
-	}
-	if (!res) {
-		return sql_error(sql, 02, 
-			 "Table Constraint Type: wrong token (%ld) = %s\n",
-			 (long) s, token2string(s->token));
-	}
-	return res;
-}
-
-static stmt *table_constraint( mvc * sql, symbol * s, stmt *ss, stmt * ts, char *tname, list *columns) 
-{
-	stmt *res = NULL;
-
-	if (s->token == SQL_CONSTRAINT){
-		dlist *l = s->data.lval;
-		char *opt_name = l->h->data.sval; 
-		symbol *sym = l->h->next->data.sym;
-		if (!opt_name) 
-			opt_name = table_constraint_name();
-		res = table_constraint_type(sql, opt_name, sym, ss, ts, tname, columns );
-	}
-
-	if (!res) {
-		return sql_error(sql, 02, 
-			 "Table Constraint: wrong token (%ld) = %s\n",
-			 (long) s, token2string(s->token));
-	}
-	return res;
-}
-
-static stmt *table_element(mvc * sql, symbol * s, stmt *ss, stmt * ts, char *tname, list *columns /* list of (name,ctype,stmt) */  )
-{
-	stmt *res = NULL;
-
-	switch (s->token) {
-	case SQL_COLUMN:
-		res = create_column(sql, s, ss, ts, tname, columns);
-		break;
-	case SQL_CONSTRAINT:
-		res = table_constraint(sql, s, ss, ts, tname, columns);
-		break;
-	case SQL_COLUMN_OPTIONS:
-		{
-			dnode *n = s->data.lval->h;
-			char *cname = n->data.sval;
-			stmt *cs = find_column_stmt(columns, cname);
-			sql_subtype *ctype = find_column_type(columns, cname);
-			dlist *olist = n->next->data.lval;
-
-			if (!cs || !ctype){
-				return sql_error(sql, 02, "Column %s not found\n", cname);
-			} else {
-				list *l = list_create((fdestroy)&stmt_destroy);
-				column_options(sql, olist, l, ss, ts, cs, cname, ctype);
-				res = stmt_list(l);
-			}
-		} break;
-	case SQL_LIKE:
-		{
-			list *newcolumns = create_stmt_list();
-			char *name = qname_table(s->data.lval);
-			sql_table *t = mvc_bind_table( sql, cur_schema(sql), name );
-			node *n;
-
-			for (n = t->columns.set->h; n; n = n->next ){ 
-				sql_column *oc = n->data;
-				stmt *sc = stmt_create_column(stmt_dup(ts), oc->base.name, oc->type->type->sqlname, oc->type->digits, oc->type->scale);
-				list_append(newcolumns, sc);
-			}
-			res = stmt_list(newcolumns);
-			stmt_destroy(ss);
-			stmt_destroy(ts);
-		} break;
-	}
-	if (!res) {
-		return sql_error(sql, 02, 
-			 "Unknown table element (%ld)->token = %s\n",
-			 (long) s, token2string(s->token));
-	}
-	return res;
-}
-
-static stmt *create_table(mvc * sql, stmt * ss,
-			int temp, dlist * qname, dlist * columns, int size)
-{
-	char *name = qname_table(qname);
-
-	if (mvc_bind_table(sql, cur_schema(sql), name)) {
-		stmt_destroy(ss);
-		return sql_error(sql, 02, 
-			 "Create Table name %s already in use", name);
-	} else {
-		char buf[BUFSIZ];
-
-		table_type type = (temp)?tt_session:tt_base; 
-		stmt *ts = stmt_create_table(ss, name, type, size);
-		list *new_columns = list_append(create_stmt_list(), ts);
-		list *tmp_columns = list_create((fdestroy)&destroy_tmp_col);
-		dnode *n;
-
-		for (n = columns->h; n; n = n->next) {
-			stmt *te = table_element(sql, n->data.sym, 
-				stmt_dup(ss), stmt_dup(ts), name, tmp_columns);
-			if (!te){
-				list_destroy(new_columns);
-				return NULL;
-			}
-			list_append(new_columns, te );
-		}
-		list_destroy(tmp_columns);
-		snprintf(buf, BUFSIZ, "grant all on \"%s\" to \"%s\" with grant option with hierarchy option;", name, sql->user);
-		list_append( new_columns, stmt_sql(buf));
-		return stmt_list(new_columns);
-	}
-}
-
-static stmt *drop_table(mvc * sql, dlist * qname, int drop_action)
-{
-	stmt *res = NULL;
-	char *tname = qname_table(qname);
-	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname);
-
-	if (!t) {
-		return sql_error(sql, 02, 
-			 "Drop Table, table %s unknown", tname);
-	} else if (t->type != tt_view){
-		stmt *ss = stmt_bind_schema( cur_schema(sql)->base.name );
-		res = stmt_drop_table(ss, t->base.name, drop_action);
-	} else {
-		return sql_error(sql, 02, 
-			 "Drop Table, cannot drop view %s ", tname);
-	}
-	return res;
-}
-
-static stmt *alter_table(mvc * sql, stmt *ss, dlist * qname, symbol * te)
-{
-	char *name = qname_table(qname);
-	sql_table *table = NULL;
-
-	if ((table = mvc_bind_table(sql, cur_schema(sql), name)) == NULL) {
-		stmt_destroy(ss);
-		return sql_error(sql, 02, 
-			 "Alter Table name %s doesn't exist", name);
-	} else {
-		stmt *ts = stmt_bind_table(stmt_dup(ss), table->base.name);
-		list *tmp_columns = list_create((fdestroy)&destroy_tmp_col);
-		stmt *c = table_element(sql, te, ss, ts, name, tmp_columns );
-		list_destroy(tmp_columns);
-		return c;
-	}
-}
-
-static stmt *create_schema(mvc * sql, dlist * auth_name, dlist * schema_elements)
-{
-	char *name = schema_name(auth_name);
-	char *auth = schema_auth(auth_name);
-
-	if (auth == NULL) {
-		auth = cur_schema(sql)->auth;
-	}
-	if (mvc_bind_schema(sql, name)) {
-		return sql_error(sql, 02, 
-			"Create Schema name %s already in use", name);
-	} else {
-		stmt *st = stmt_create_schema(name, auth);
-		list *schema_objects = list_append(create_stmt_list(), st);
-
-		dnode *n = schema_elements->h;
-
-		while (n) {
-			if (n->data.sym->token == SQL_CREATE_TABLE) {
-				dlist *l = n->data.sym->data.lval;
-				st = create_table(sql, stmt_dup(st),
-						  l->h->data.ival,
-						  l->h->next->data.lval,
-						  l->h->next->next->data.lval,
-						  l->h->next->next->next->data.ival);
-			} else if (n->data.sym->token == SQL_CREATE_VIEW) {
-				dlist *l = n->data.sym->data.lval;
-				st = create_view(sql, stmt_dup(st),
-						 l->h->data.lval,
-						 l->h->next->data.lval,
-						 l->h->next->next->data.
-						 sym,
-						 l->h->next->next->next->
-						 data.ival);
-			}
-			list_append(schema_objects, st);
-			n = n->next;
-		}
-		return stmt_list(schema_objects);
-	}
-}
-
-static stmt *drop_schema(mvc * sql, dlist * qname, int dropaction)
-{
-	char *name = schema_name(qname);
-	sql_schema *s = mvc_bind_schema( sql, name );
-
-	if (!s) {
-		return sql_error(sql, 02, 
-			 "Drop Schema name %s does not exist", name);
-	} else {
-		return stmt_drop_schema(name, dropaction);
-	}
-}
-
-
 static stmt *insert_value(mvc * sql, scope * scp, sql_column * c, symbol * s)
 {
 	if (s->token == SQL_NULL) {
@@ -3441,7 +2757,7 @@ static stmt *insert_value(mvc * sql, scope * scp, sql_column * c, symbol * s)
 	return NULL;
 }
 
-static void cleanup_stmts(stmt **stmts, int cnt){
+void cleanup_stmts(stmt **stmts, int cnt){
 	int i;
 	for (i=0; i<cnt; i++){
 		if (stmts[i])
@@ -3955,7 +3271,7 @@ sql_update_idxs(mvc * sql, sql_table *t, stmt **updates, list *l)
 	return res;
 }
 
-static stmt *sql_insert(mvc * sql, sql_table *t, stmt **inserts, int len)
+stmt *sql_insert(mvc * sql, sql_table *t, stmt **inserts, int len)
 {
 	char buf[BUFSIZ];
 	int i;
@@ -4372,7 +3688,7 @@ sql_delete_idxs(mvc * sql, sql_table *t, stmt *vals, list *l)
 }
 
 
-static stmt *
+stmt *
 sql_delete( mvc *sql, tvar *tv, sql_table *t, stmt *s )
 {
 	node *n;
@@ -4443,741 +3759,31 @@ static stmt *delete_table(mvc * sql, dlist * qname, symbol * opt_where)
 	return NULL;
 }
 
-static stmt *grant_roles(mvc * sql, sql_schema *schema,
-		dlist * roles, dlist * grantees, int grant, int grantor)
-{
-	/* grant roles to the grantees */
-	dnode *r, *g;
-	list *l = create_stmt_list();
-	(void) sql; (void) schema; (void) grant; (void) grantor; /* Stefan: unused!? */
-	
-	for( r = roles->h; r; r = r->next ){
-		char *role = r->data.sval;
-
-		/*
-		role_id = relproject(relselect(auths, role),id);
-		exception(count(role_id) == 0), "Role %s not found !", role;
-		*/
-		for( g = grantees->h; g; g = g->next ){
-			char *grantee = g->data.sval;
-
-			/* 
-			   grantee_id = relproject(relselect(auths,grantee),id);
-			   exception (count(grantee_id) == 0), "User/role %s not found !", grantee;
-			   r = relselect(role_user,role_id,grantee_id)
-			   exception(count(r) > 0), "Role (%s,%s) already granted", role, grantee;
-			   relinsert(role_user,role_id,grantee_id,grantor,grant);
-			 */ 
-			list_append(l, stmt_grant_role(grantee, role) );
-		}
-	}
-	return stmt_list(l);
-}
-
-static stmt *revoke_roles(mvc * sql, sql_schema *schema,
-		dlist * roles, dlist * grantees, int admin, int grantor)
-{
-	/* revoke roles from the grantees */
-	dnode *r, *g;
-	list *l = create_stmt_list();
-	(void) sql; (void) schema; (void) admin; (void) grantor; /* Stefan: unused!? */
-	
-	for( r = roles->h; r; r = r->next ){
-		char *role = r->data.sval;
-		for( g = grantees->h; g; g = g->next ){
-			char *grantee = g->data.sval;
-			list_append(l, stmt_revoke_role(grantee, role) );
-		}
-	}
-	return stmt_list(l);
-}
-
-static stmt *
-sql_insert_priv( mvc *sql, int auth_id, int obj_id, 
-	int privilege, int grantor, int grantable, int hierarchy)
-{
-	sql_schema *ss = mvc_bind_schema( sql, "sys");
-	sql_table *pt = mvc_bind_table( sql, ss, "privileges" );
-	node *n = pt->columns.set->h;
-	stmt *res, **inserts = NEW_ARRAY(stmt*,6);
-	stmt *pts = stmt_bind_table( stmt_bind_schema( "sys" ), "privileges" );
-
-	inserts[0] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat),
- 			stmt_atom_int(obj_id));
-	n = n->next;
-	inserts[1] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat),
- 			stmt_atom_int(auth_id));
-	n = n->next;
-	inserts[2] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat),
- 			stmt_atom_int(privilege));
-	n = n->next;
-	inserts[3] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat),
- 			stmt_atom_int(grantor));
-	n = n->next;
-	inserts[4] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat),
- 			stmt_atom_int(grantable));
-	n = n->next;
-	inserts[5] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat),
- 			stmt_atom_int(hierarchy));
-	stmt_destroy(pts);
-	res = sql_insert(sql, pt, inserts, 6);
-	cleanup_stmts(inserts, 6);
-	return res;
-}
-
-void
-sql_insert_all_privs( mvc *sql, int auth_id, int obj_id, 
-			int grantor, int grantable, int hierarchy, list *l) 
-{
-	list_append(l, sql_insert_priv( sql, auth_id, obj_id, PRIV_SELECT, 
-		grantor, grantable, hierarchy ));
-	list_append(l, sql_insert_priv( sql, auth_id, obj_id, PRIV_UPDATE, 
-		grantor, grantable, hierarchy ));
-	list_append(l, sql_insert_priv( sql, auth_id, obj_id, PRIV_INSERT, 
-		grantor, grantable, hierarchy ));
-	list_append(l, sql_insert_priv( sql, auth_id, obj_id, PRIV_DELETE, 
-		grantor, grantable, hierarchy ));
-}
-
-const char *
-priv2string( int priv )
-{
-	switch(priv) {
-	case PRIV_SELECT: return "SELECT";
-	case PRIV_UPDATE: return "UPDATE";
-	case PRIV_INSERT: return "INSERT";
-	case PRIV_DELETE: return "DELETE";
-	case PRIV_EXECUTE: return "EXECUTE";
-	}
-	return "UNKNOWN PRIV";
-}
-
-static stmt *
-grant_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,  
-	dlist *grantees, int grant, int hierarchy, int grantor )
-{
-	dnode *gn;
-	sql_table *t = mvc_bind_table( sql, cur, tname );
-	list *l;
-
-	if (!t) {
-		return sql_error(sql, 02, 
-			 "GRANT Table name %s doesn't exist", tname);
-	}
-		
- 	l = create_stmt_list();
-	if (privs == NULL){ /* ALL [ PRIVILEGES ] */
-		int all = PRIV_SELECT|PRIV_UPDATE|PRIV_INSERT|PRIV_DELETE;
-		int allowed = sql_grantable( sql, grantor, t->s->base.id, all, 1);
-
-		if (!allowed)
-			allowed = sql_grantable( sql, grantor, t->base.id, all,0);
-		if (!allowed){
-			list_destroy(l);
-			return sql_error(sql, 02, 
-				 "GRANTOR %s is not allowed to grant ALL privileges for table %s", sql->user, tname);
-		}
-
-		for ( gn = grantees->h; gn; gn = gn->next ) {
-			char *grantee = gn->data.sval;
-			int grantee_id = sql_find_auth(sql, grantee);
-
-			if (grantee_id < 0){
-				list_destroy(l);
-				return sql_error(sql, 02,
-					"User/Role %s unknown", grantee);
-			}
-			sql_insert_all_privs(sql, grantee_id, t->base.id, grantor, grant, hierarchy, l);
-		}
-		return stmt_list(l);
-	}
-	for ( gn = grantees->h; gn; gn = gn->next ) {
-		dnode *opn;
-		char *grantee = gn->data.sval;
-		int grantee_id = sql_find_auth(sql, grantee);
-
-		if (grantee_id < 0){
-			list_destroy(l);
-			return sql_error(sql, 02, 
-				"User/Role %s unknown", grantee);
-		}
-
-		for ( opn = privs->h; opn; opn = opn->next ){
-			symbol *op = opn->data.sym;
-			int priv = PRIV_SELECT;
-
-			switch(op->token) {
-			case SQL_SELECT: priv = PRIV_SELECT; break;
-			case SQL_UPDATE: priv = PRIV_UPDATE; break;
-
-			case SQL_INSERT: priv = PRIV_INSERT; break;
-			case SQL_DELETE: priv = PRIV_DELETE; break;
-
-			case SQL_EXECUTE:
-			default:
-				list_destroy(l);
-				return sql_error(sql, 02, 
-			 		"Cannot GRANT EXECUTE on table name %s",
-					tname);
-			}
-
-			if ((op->token == SQL_SELECT || 
-			     op->token == SQL_UPDATE) && op->data.lval){
-				dnode *cn;
-
-				for(cn = op->data.lval->h; cn; cn = cn->next) {
-					char *cname = cn->data.sval;
-					sql_column *c=0;
-
-					int allowed = sql_grantable( sql, 
-						grantor, t->s->base.id, 
-						priv, 1);
-
-					if (!allowed)
-						allowed = sql_grantable( sql, 
-							grantor, 
-							t->base.id, priv, 1);
-					if (!allowed)
-						allowed = sql_grantable( sql, 
-							grantor, 
-							c->base.id, priv, 0);
-					if (!allowed) {
-						list_destroy(l);
-						return sql_error(sql, 02, 
-				 			"GRANTOR %s is not allowed to grant privilege %s for table %s", sql->user, priv2string(priv), tname);
-					}
-
-					c = mvc_bind_column( sql, t, cname );
-					if (!c) {
-						list_destroy(l);
-						return sql_error(sql, 02, 
-			 				"Grant: table %s has no column %s", tname, cname);
-					}
-		     			list_append(l, sql_insert_priv( 
-						sql, grantee_id, 
-						c->base.id, priv, 
-						grantor, grant, hierarchy ));
-				}
-			} else {
-				int allowed = sql_grantable( sql, grantor, 
-					t->s->base.id, priv, 1);
-
-				if (!allowed)
-					allowed = sql_grantable( sql, grantor, 
-						t->base.id, priv, 0);
-				if (!allowed) {
-					list_destroy(l);
-					return sql_error(sql, 02, 
-				 		"GRANTOR %s is not allowed to grant privilege %s for table %s", sql->user, priv2string(priv), tname);
-				}
-
-				list_append(l, sql_insert_priv( sql, 
-					grantee_id, t->base.id, priv, 
-					grantor, grant, hierarchy ));
-			}
-		}
-	}
-	return stmt_list(l);
-}
-
-static stmt *
-grant_func( mvc *sql, sql_schema *cur, dlist *privs, char *fname,  
-	dlist *grantees, int grant, int hierarchy, int grantor )
-{
-/* todo */
-	(void)sql;
-	(void)cur;
-	(void)privs;
-	(void)fname;
-	(void)grantees;
-	(void)grant;
-	(void)hierarchy;
-	(void)grantor;
-	return NULL;
-}
-
-
-static stmt *grant_privs(mvc *sql, sql_schema *cur, 
-	dlist *privs, dlist *grantees, 
-	int grant, int hierarchy, int grantor )
-{
-	dlist *obj_privs = privs->h->data.lval;
-	symbol *obj      = privs->h->next->data.sym;
-	int token = obj->token;
-	
-	if (token == SQL_NAME)
-		if (mvc_bind_table(sql, cur, obj->data.sval) != NULL)	
-			token = SQL_TABLE;
-
-	switch(token){
-	case SQL_TABLE:
-		return
-		grant_table( sql, cur, obj_privs, obj->data.sval, grantees,
-				grant, hierarchy, grantor );
-	case SQL_NAME:
-		return
-		grant_func( sql, cur, obj_privs, obj->data.sval, grantees,
-				grant, hierarchy, grantor );
-	default: 
-		return sql_error(sql, 02, "Grant: unknown token %d", token );
-	}
-	return NULL;
-}
-	
-static stmt *
-sql_delete_priv( mvc *sql, int auth_id, int obj_id, 
-	int privilege, int grantor, int grantable, int hierarchy)
-{
-	sql_schema *ss = mvc_bind_schema( sql, "sys");
-	sql_table *pt = mvc_bind_table( sql, ss, "privileges" );
-	node *n = pt->columns.set->h;
-
-	stmt *pts = stmt_bind_table( stmt_bind_schema( "sys" ), "privileges" );
-	stmt *s = stmt_relselect_init();
-	scope *scp = scope_open(NULL);
-	tvar *ptv = scope_add_table_columns(sql, scp, pt, pt->base.name);
-
-	(void)grantor;
-	(void)grantable;
-	(void)hierarchy;
-
-	stmt_relselect_fill( s, stmt_uselect(
-		stmt_cbat(n->data, stmt_dup(pts), RDONLY, st_bat),
- 			stmt_atom_int(auth_id), cmp_equal));
-	n = n->next;
-	stmt_relselect_fill( s, stmt_uselect(
-		stmt_cbat(n->data, stmt_dup(pts), RDONLY, st_bat),
- 			stmt_atom_int(privilege), cmp_equal));
-	n = n->next;
-	stmt_relselect_fill( s, stmt_uselect(
-		stmt_cbat(n->data, stmt_dup(pts), RDONLY, st_bat),
- 			stmt_atom_int(obj_id), cmp_equal));
-	
-	s = sql_delete(sql, ptv, pt, s);
-	scope_close(scp);
-	return s;
-}
-
-static stmt *
-revoke_table( mvc *sql, sql_schema *cur, dlist *privs, char *tname,  
-	dlist *grantees, int grant, int hierarchy, int grantor )
-{
-	dnode *gn;
-	sql_table *t = mvc_bind_table( sql, cur, tname );
-	list *l;
-
-	if (!t) {
-		return sql_error(sql, 02, 
-			 "REVOKE Table name %s doesn't exist", tname);
-	}
-		
-	/* TODO 
-	if (grant)
-		do update !
-	if (hierarchy)
-		do update !
-	if (grant || hierarchy)
-		return
-	 */
- 	l = create_stmt_list();
-	if (privs == NULL){ /* ALL [ PRIVILEGES ] */
-		for ( gn = grantees->h; gn; gn = gn->next ) {
-			char *grantee = gn->data.sval;
-			int grantee_id = sql_find_auth(sql, grantee);
-
-			if (grantee_id < 0){
-				list_destroy(l);
-				return sql_error(sql, 02,
-					"User/Role %s unknown", grantee);
-			}
-
-		     	list_append(l, sql_delete_priv( sql, grantee_id, 
-				t->base.id, PRIV_SELECT, grantor, grant, 
-				hierarchy ));
-		     	list_append(l, sql_delete_priv( sql, grantee_id, 
-				t->base.id, PRIV_UPDATE, grantor, grant, 
-				hierarchy ));
-		     	list_append(l, sql_delete_priv( sql, grantee_id, 
-				t->base.id, PRIV_INSERT, grantor, grant, 
-				hierarchy ));
-		     	list_append(l, sql_delete_priv( sql, grantee_id, 
-				t->base.id, PRIV_DELETE, grantor, grant,
-				hierarchy ));
-			/* TODO if hierarchy also delete all sub objects 
-				(ie columns) with these privs */
-		}
-		return stmt_list(l);
-	}
-	for ( gn = grantees->h; gn; gn = gn->next ) {
-		char *grantee = gn->data.sval;
-		int grantee_id = sql_find_auth(sql, grantee);
-		dnode *opn;
-
-		if (grantee_id < 0){
-			list_destroy(l);
-			return sql_error(sql, 02, 
-				"User/Role %s unknown", grantee);
-		}
-
-		for ( opn = privs->h; opn; opn = opn->next ){
-			symbol *op = opn->data.sym;
-			int priv = PRIV_SELECT;
-
-			switch(op->token) {
-			case SQL_SELECT: priv = PRIV_SELECT; break;
-			case SQL_UPDATE: priv = PRIV_UPDATE; break;
-
-			case SQL_INSERT: priv = PRIV_INSERT; break;
-			case SQL_DELETE: priv = PRIV_DELETE; break;
-
-			case SQL_EXECUTE:
-			default:
-				list_destroy(l);
-				return sql_error(sql, 02, 
-			 		"Cannot GRANT EXECUTE on table name %s",
-					tname);
-			}
-
-			if ((op->token == SQL_SELECT || 
-			     op->token == SQL_UPDATE) && op->data.lval){
-				dnode *cn;
-
-				for(cn = op->data.lval->h; cn; cn = cn->next) {
-					char *cname = cn->data.sval;
-					sql_column *c;
-
-					c = mvc_bind_column( sql, t, cname );
-					if (!c) {
-						list_destroy(l);
-						return sql_error(sql, 02, 
-			 				"Grant: table %s has no column %s", tname, cname);
-					}
-		     			list_append(l, sql_delete_priv( 
-						sql, grantee_id, 
-						c->base.id, priv, 
-						grantor, grant, hierarchy ));
-				}
-			} else {
-				list_append(l, sql_delete_priv( sql, 
-					grantee_id, t->base.id, priv, 
-					grantor, grant, hierarchy ));
-			}
-		}
-	}
-	return stmt_list(l);
-}
-
-static stmt *
-revoke_func( mvc *sql, sql_schema *cur, dlist *privs, char *fname,  
-	dlist *grantees, int grant, int hierarchy, int grantor )
-{
-/* todo */
-	(void)sql;
-	(void)cur;
-	(void)privs;
-	(void)fname;
-	(void)grantees;
-	(void)grant;
-	(void)hierarchy;
-	(void)grantor;
-	return NULL;
-}
-
-static stmt *revoke_privs(mvc *sql, sql_schema *cur, 
-	dlist *privs, dlist *grantees, 
-	int grant, int hierarchy, int grantor )
-{
-	dlist *obj_privs = privs->h->data.lval;
-	symbol *obj      = privs->h->next->data.sym;
-	int token = obj->token;
-	
-	if (token == SQL_NAME)
-		if (mvc_bind_table(sql, cur, obj->data.sval) != NULL)	
-			token = SQL_TABLE;
-
-	switch(token){
-	case SQL_TABLE:
-		return
-		revoke_table( sql, cur, obj_privs, obj->data.sval, grantees,
-				grant, hierarchy, grantor );
-	case SQL_NAME:
-		return
-		revoke_func( sql, cur, obj_privs, obj->data.sval, grantees,
-				grant, hierarchy, grantor );
-	default: 
-		return sql_error(sql, 02, "Grant: unknown token %d", token );
-	}
-	return NULL;
-}
-
-
-static stmt *create_module(mvc * sql, dlist *qname ){
-	char *mname = qname_table(qname);
-	(void)sql;
-	return stmt_create_module(mname);
-}
-
-static stmt *drop_module(mvc * sql, dlist *qname ){
-	char *mname = qname_table(qname);
-	(void)sql;
-	return stmt_drop_module(mname);
-}
-
-static stmt *create_type(mvc * sql, dlist * qname, char *impl ){
-	char *tname = qname_table(qname);
-	(void)sql;
-
-	sql_create_type(tname, 0, 0, 0, impl);
-	return stmt_none();
-}
-
-static stmt *create_func(mvc * sql, dlist * qname, dlist *params, sql_subtype *res, char *impl, symbol *body ){
-	char *fname = qname_table(qname);
-	dnode *n;
-	list *l = list_create((fdestroy)&arg_destroy);
-
-	for(n=params->h; n; n = n->next){ 
-		dnode *an = n->data.lval->h;
-		list_append(l, 
-			sql_create_arg( 
-				_strdup(an->data.sval),
-				sql_dup_subtype(an->next->data.typeval)));
-	}
-	if (body){ /* sql func */
-		char *subquery = QUERY(sql->scanner) + sql->scanner.as;
-		stmt *b = NULL;
-		
-		for(n=params->h; n; n = n->next){ 
-			dnode *m = n->data.lval->h;
-			char *name = _strdup(m->data.sval);
-			sql_subtype *t = sql_dup_subtype(m->next->data.typeval);
-			sql_add_param(sql, name, stmt_var(_strdup(name), t ) );
-		}
-		if (!(b = sql_subquery(sql, NULL, body))){
-			sql_destroy_params(sql);
- 			return NULL;
-		}
-		sql_destroy_params(sql);
-		stmt_destroy(b);
-		
-		sql_create_sqlfunc(fname, subquery, l, sql_dup_subtype(res));
-	} else {
-		sql_create_func_(fname, impl, l, sql_dup_subtype(res));
-	}
-	return stmt_none();
-}
 
 static stmt *sql_stmt(mvc * sql, symbol * s)
 {
-	sql_schema *cur = cur_schema(sql);
 	stmt *ret = NULL;
 	switch (s->token) {
+
 	case TR_COMMIT: case TR_SAVEPOINT: 
 	case TR_RELEASE: case TR_ROLLBACK:
 	case TR_START: case TR_MODE:
 		return transaction(sql, s);
 
-	/* all schema changes will change to
-	   direct execution only and move into their own file
-	   sql_schema !
- 	 */
-	case SQL_CREATE_SCHEMA:
-		{
-			dlist *l = s->data.lval;
-			ret = create_schema(sql, 
-				l->h->data.lval, /* qname (name.authid) */
-				l->h->next->next->next->data.lval /* schema_elements */);
-			sql->type = Q_SCHEMA;
-		}
-		break;
-	case SQL_DROP_SCHEMA:
-		{
-			dlist *l = s->data.lval;
-			ret = drop_schema(sql, 
-				l->h->data.lval, /* qname */
-				l->h->next->next->data.ival); /* drop_action */
-			sql->type = Q_SCHEMA;
-		}
-		break;
-	case SQL_DROP_TABLE:
-		{
-			dlist *l = s->data.lval;
-			ret = drop_table(sql, l->h->data.lval,
-				         l->h->next->data.ival);
-			sql->type = Q_SCHEMA;
-		}
-		break;
-	case SQL_DROP_VIEW:
-		{
-			dlist *l = s->data.lval;
-			ret = drop_view(sql, l);
-			sql->type = Q_SCHEMA;
-		}
-		break;
-	case SQL_CREATE_TABLE:
-		{
-			
-			stmt *ss = stmt_bind_schema(cur->base.name);
-			dlist *l = s->data.lval;
-			ret = create_table(sql, ss,
-					   l->h->data.ival,
-					   l->h->next->data.lval,
-					   l->h->next->next->data.lval,
-					   l->h->next->next->next->data.ival
-					   );
-			sql->type = Q_SCHEMA;
-		}
-		break;
-	case SQL_CREATE_VIEW:
-		{
-			stmt *ss = stmt_bind_schema(cur->base.name);
-			dlist *l = s->data.lval;
-			ret = create_view(sql, ss,
-					  l->h->data.lval,
-					  l->h->next->data.lval,
-					  l->h->next->next->data.sym,
-					  l->h->next->next->next->data.
-					  ival);
-			sql->type = Q_SCHEMA;
-		}
-		break;
-	case SQL_CREATE_INDEX:
-		{
-			stmt *ss = stmt_bind_schema(cur->base.name);
-			dlist *l = s->data.lval;
-			ret = create_index(sql, ss,
-					  l->h->data.sval,
-					  l->h->next->data.ival,
-					  l->h->next->next->data.lval,
-					  l->h->next->next->next->data.lval);
-			sql->type = Q_SCHEMA;
-		}
-		break;
-	case SQL_DROP_INDEX:
-		{
-			dlist *l = s->data.lval;
-			ret = drop_index(sql, l); /* index name */
-			sql->type = Q_SCHEMA;
-		}
-		break;
-	case SQL_CREATE_USER:
-		{
-			dlist *l = s->data.lval;
-			ret = create_user(sql, 
-				  l->h->data.sval, /* user name */
-				  l->h->next->data.sval, /* password */
-				  l->h->next->next->data.sval, /* fullname */
-				  l->h->next->next->next->data.sval); /* dschema */
-			sql->type = Q_SCHEMA;
-		}
-		break;
-	case SQL_DROP_USER:
-			ret = drop_user(sql, s->data.sval); /* user name */
-			sql->type = Q_SCHEMA;
-		break;
-	case SQL_CREATE_ROLE:
-		{
-			dlist *l = s->data.lval;
-			ret = create_role(sql, 
-				  l->h->data.lval, /* role name */
-				  l->h->next->data.ival); /* role grantor */
-			sql->type = Q_SCHEMA;
-		}
-		break;
-	case SQL_DROP_ROLE:
-		{
-			dlist *l = s->data.lval;
-			ret = drop_role(sql, l); /* role name */
-			sql->type = Q_SCHEMA;
-		}
-		break;
+	case SQL_CREATE_SCHEMA: case SQL_DROP_SCHEMA:
+	case SQL_CREATE_TABLE: case SQL_DROP_TABLE: 
 	case SQL_ALTER_TABLE:
-		{
-			stmt *ss = stmt_bind_schema(cur->base.name);
-			dlist *l = s->data.lval;
-			ret = alter_table(sql, ss,
-					l->h->data.lval,	/* table name */
-					l->h->next->data.sym);	/* table element */
-			sql->type = Q_SCHEMA;
-		}
-		break;
+	case SQL_CREATE_VIEW: case SQL_DROP_VIEW:
+	case SQL_CREATE_INDEX: case SQL_DROP_INDEX:
+	case SQL_CREATE_USER: case SQL_DROP_USER:
+	case SQL_CREATE_ROLE: case SQL_DROP_ROLE:
 	case SQL_GRANT_ROLES:
-		{
-			dlist *l = s->data.lval;
-			ret = grant_roles(sql, cur, 
-			    l->h->data.lval,	/* authids */
-			    l->h->next->data.lval,	/* grantees */
-			    l->h->next->next->data.ival, /* admin? */
-			    l->h->next->next->next->data.ival?
-				sql->user_id:sql->role_id); 
-				/* grantor ? */
-			sql->type = Q_SCHEMA;
-		} break;
-	case SQL_GRANT:
-		{
-			dlist *l = s->data.lval;
-			ret = grant_privs( sql, cur,
-			    l->h->data.lval,		/* privileges */
-			    l->h->next->data.lval,	/* grantees */
-			    l->h->next->next->data.ival, /* grant ? */
-			    l->h->next->next->next->data.ival, /* hierarchy ? */
-			    l->h->next->next->next->next->data.ival?
-				sql->user_id:sql->role_id); 
-				/* grantor ? */
-			sql->type = Q_SCHEMA;
-		} break;
-	case SQL_REVOKE:
-		{
-			dlist *l = s->data.lval;
-			ret = revoke_privs( sql, cur,
-			    l->h->data.lval,		/* privileges */
-			    l->h->next->data.lval,	/* grantees */
-			    l->h->next->next->data.ival, /* grant ? */
-			    l->h->next->next->next->data.ival, /* hierarchy ? */
-			    l->h->next->next->next->next->data.ival?
-				sql->user_id:sql->role_id); 
-				/* grantor ? */
-			sql->type = Q_SCHEMA;
-		} break;
-
-	case SQL_CREATE_MODULE:
-		{
-			dlist *l = s->data.lval;
-			ret = create_module( sql, l);
-			sql->type = Q_SCHEMA;
-		}
-		break;
-
-	case SQL_DROP_MODULE:
-		{
-			dlist *l = s->data.lval;
-			ret = drop_module( sql, l );
-			sql->type = Q_SCHEMA;
-		}
-		break;
-
+	case SQL_GRANT: case SQL_REVOKE:
+	case SQL_CREATE_MODULE: case SQL_DROP_MODULE:
 	case SQL_CREATE_TYPE:
-		{
-			dlist *l = s->data.lval;
-			ret = create_type( sql, l->h->data.lval,
-					  l->h->next->data.sval );
-			sql->type = Q_SCHEMA;
-		}
-		break;
-
 	case SQL_CREATE_FUNC:
-		{
-			dlist *l = s->data.lval;
-			ret = create_func( sql, l->h->data.lval,
-					  l->h->next->data.lval,
-					  l->h->next->next->data.typeval,
-					  l->h->next->next->next->data.sval,
-					  l->h->next->next->next->next->data.sym
-					);
-			sql->type = Q_SCHEMA;
-		}
-		break;
-
+		return schema(sql, s);
+	
 	case SQL_COPYFROM:
 		{
 			dlist *l = s->data.lval;

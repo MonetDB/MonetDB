@@ -252,14 +252,13 @@ static void log_read_create(logger *logger, logformat *l, char *name )
 		fprintf(stderr, "log_read_create %s\n", name );
 
 	if (!buf){
-		fprintf(stderr, "logger could not read create (%s)\n", name);
+		GDKerror("logger could not read create (%s)\n", name);
 	} else {
 		int ht, tt, hseq = 0, tseq = 0;
 		char *ha = buf, *ta = strchr(buf, ',');
 		BAT *b;
 		if (!ta){
-			fprintf(stderr, 
-				"logger types are not ',' seperated (%s)\n",
+			GDKerror( "logger types are not ',' seperated (%s)\n",
 				buf);
 			return;
 		}
@@ -284,7 +283,7 @@ static void log_read_create(logger *logger, logformat *l, char *name )
 			BATseqbase(BATreverse(b),0);
 
 		if (!b){
-			fprintf(stderr, 
+			GDKerror( 
 				"logger could not create bat (%s,%s,%s,%d,%d)\n"
 				,name,ha,ta,ht,tt);
 			return;
@@ -341,8 +340,7 @@ static int logger_readlog( logger *logger, char *filename ){
 			name = log_read_string(logger);
 
 			if (!name){
-				fprintf(stderr, 
-					"logger could not read name (%d)\n", 
+				GDKerror( "logger could not read name (%d)\n", 
 					l.flag );
 				return -1;
 			}
@@ -374,7 +372,7 @@ static int logger_readlog( logger *logger, char *filename ){
 			log_read_destroy(logger, &l, name );
 			break;
 		default:
-			fprintf(stderr, "logger error %d %s\n", l.flag, name);
+			GDKerror( "logger error %d %s\n", l.flag, name);
 			return -2;
 		}
 		if (name) _DELETE(name);
@@ -452,15 +450,13 @@ logger *logger_new(int debug, char *logdir, char *dbname, struct bm *bm){
 		}
 	} else if ( (fp = fopen(filename, "w")) == NULL){
 		if (!GDKcreatedir(filename)){
-			fprintf(stderr, 
-				"logger could not create log directory %s\n", 
+			GDKerror( "logger could not create log directory %s\n", 
 				logger->dir);
-			exit(1);
+			return NULL;
 		} else if ( (fp = fopen(filename, "w")) == NULL){
-			fprintf(stderr, 
-				"logger could not create file %s\n", 
+			GDKerror( "logger could not create file %s\n", 
 				filename);
-			exit(1);
+			return NULL;
 		}
 		fprintf(fp, "\n" );
 	}
@@ -471,9 +467,12 @@ logger *logger_new(int debug, char *logdir, char *dbname, struct bm *bm){
 	return logger;
 }
 
-logger *logger_create(int debug, char *logdir, char *dbname, struct bm *bm ){
+logger *
+logger_create(int debug, char *logdir, char *dbname, struct bm *bm )
+{
 	logger *logger =  logger_new(debug, logdir, dbname, bm);
-	logger_open(logger);
+	if (logger)
+		logger_open(logger);
 	return logger;
 }
 
@@ -509,7 +508,7 @@ void logger_exit(logger *logger) {
 		bm_cleanup(logger->bm);
 		TMcommit();	/* cleanup old bats */
 	} else {
-		fprintf(stderr, "logger could not open %s\n", filename );
+		GDKerror("logger could not open %s\n", filename );
 	}
 }
 

@@ -57,6 +57,7 @@ transaction(mvc * sql, symbol * s)
 	/* todo add start transaction and set iso levels */
 	case TR_RELEASE:
 		mvc_release( sql, s->data.sval );
+		break;
 	case TR_COMMIT:
 		ret = mvc_commit( sql, s->data.ival, NULL);
 		if (ret < 0) 
@@ -83,5 +84,7 @@ transaction(mvc * sql, symbol * s)
 			 "transaction unknown Symbol(%ld)->token = %s",
 			 (long) s, token2string(s->token));
 	}
+	/* any transaction statement switches of autocommit */
+	sql->autocommit->val.ival = FALSE;
 	return stmt_none();
 }

@@ -43,11 +43,24 @@ sql_export list *types;
 
 #define sql_max(i1,i2) ((i1)<(i2))?(i2):(i1)
 
+typedef int sqlid;
+
+typedef struct sql_base {
+	int wtime;
+	int rtime;
+	int flag;
+	sqlid id;
+	char *name; 	
+} sql_base;
+
+sql_export void base_init( sql_base *b, sqlid id, int flag, char *name );
+sql_export void base_set_name( sql_base *b, char *name );
+sql_export void base_destroy( sql_base *b );
+
 typedef struct sql_type {
-	sql_ref ref;
+	sql_base base;
 
 	char *sqlname;
-	char *name;
 	unsigned int digits;
 	unsigned int scale; /* indicates how scale is used in functions */
 	unsigned int radix; 
@@ -183,12 +196,36 @@ static list *subfuncs = NULL;
 
 static void sqltypeinit();
 
+void
+base_init( sql_base *b, sqlid id, int flag, char *name )
+{
+	b->id = id;
+	b->wtime = 0;
+	b->rtime = 0;
+	b->flag = flag;
+	b->name = NULL;
+	if (name) b->name = _strdup(name);
+}
+
+void
+base_set_name( sql_base *b, char *name )
+{
+	assert(name);
+	if (b->name) _DELETE(b->name);
+	b->name = _strdup(name);
+}
+
+void
+base_destroy( sql_base *b )
+{
+	if (b->name) _DELETE(b->name);
+}
+
 sql_subtype *sql_create_subtype( sql_type *t, unsigned int digits, unsigned int scale )
 {
 	sql_subtype *res = NEW(sql_subtype);
 
 	sql_ref_init( &(res->ref) );
-	sql_ref_inc( &(t->ref) );
 	res->type = t;
 	res->digits = digits?digits:t->digits;
 	res->scale = scale;
@@ -244,26 +281,22 @@ sql_subtype *sql_bind_subtype( char *name, unsigned int digits, unsigned int sca
 }
 
 static int sql_end = 0;
+
 static void type_destroy(sql_type * t)
 {
-	int ref = 0;
-	if ((ref = sql_ref_dec( &(t->ref) )) == 0){
-		_DELETE(t->sqlname);
-		_DELETE(t->name);
-		_DELETE(t);
-	} else if (sql_end == END_TYPE){
-		printf("= REFCOUNT of type %s %s is wrong %d\n", t->name, t->sqlname, ref);
-	}
+	base_destroy( &t->base );
+	_DELETE(t->sqlname);
+	_DELETE(t);
 }
 
 void sql_subtype_destroy(sql_subtype * t)
 {
 	int ref = 0;
 	if ((ref = sql_ref_dec( &(t->ref)) ) == 0){
-		type_destroy(t->type);
 		_DELETE(t);
 	} else if (sql_end == END_SUBTYPE){
-		printf("= REFCOUNT of subtype %s %s is wrong %d\n", t->type->name, t->type->sqlname, ref);
+		printf("= REFCOUNT of subtype %s %s is wrong %d\n", 
+			t->type->base.name, t->type->sqlname, ref);
 	}
 }
 
@@ -272,7 +305,7 @@ sql_subtype *sql_bind_localtype( char *name )
 	node *n = localtypes->h;
 	while (n) {
 		sql_subtype *t = n->data;
-		if (strcmp(t->type->name, name) == 0){
+		if (strcmp(t->type->base.name, name) == 0){
 			return t;
 		}
 		n = n->next;
@@ -286,7 +319,7 @@ sql_type *sql_bind_type( char *name )
 	node *n = types->h;
 	while (n) {
 		sql_type *t = n->data;
-		if (strcmp(t->name, name) == 0){
+		if (strcmp(t->base.name, name) == 0){
 			return t;
 		}
 		n = n->next;
@@ -552,12 +585,11 @@ sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale
 {
 	sql_type *t = NEW(sql_type);
 
-	sql_ref_init( &(t->ref) );
+	base_init( &t->base, OIDnew(1), TR_OLD, name);
 	t->sqlname = toLower(sqlname);
 	t->digits = digits;
 	t->scale = scale;
 	t->radix = radix;
-	t->name = _strdup(name);
 	t->nr = list_length(types);
 	if (t->nr){
 		sql_type *pt = types->t->data;
@@ -565,7 +597,7 @@ sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale
 		if (strcmp(pt->sqlname, t->sqlname) != 0)
 			t->nr ++;
 	}
-	t->localtype = ATOMindex(t->name);
+	t->localtype = ATOMindex(t->base.name);
 	if (!keyword_exists(t->sqlname))
 		keywords_insert(t->sqlname, TYPE);
 	list_append(types, t);
@@ -812,7 +844,7 @@ void sqltypeinit()
 		if (*t != OID){
 			sql_subtype *r = NULL;
 			char buf[50];
-			char *lt = local_result((*t)->name);
+			char *lt = local_result((*t)->base.name);
 			snprintf(buf,50,"sum_%s", lt);
 			r = sql_bind_localtype(lt);
 			sql_create_aggr("sum", buf, *t, r->type);
@@ -821,9 +853,9 @@ void sqltypeinit()
 	}
 	for(t=decimals; t < floats; t+=3){
 		char buf[50];
-		snprintf(buf,50,"sum_%s", (*(t+1))->name);
+		snprintf(buf,50,"sum_%s", (*(t+1))->base.name);
 		sql_create_aggr("sum", buf, *(t), *(t+1));
-		snprintf(buf,50,"sum_%s", (*(t+2))->name);
+		snprintf(buf,50,"sum_%s", (*(t+2))->base.name);
 		sql_create_aggr("sum", buf, *(t+1), *(t+2));
 		sql_create_aggr("sum", buf, *(t+2), *(t+2));
 		sql_create_aggr("avg", "avg", *(t), DBL);
@@ -833,7 +865,7 @@ void sqltypeinit()
 	for(t=floats; t < dates; t++){
 		sql_subtype *r = NULL;
 		char buf[50];
-		char *lt = local_result((*t)->name);
+		char *lt = local_result((*t)->base.name);
 		snprintf(buf,50,"sum_%s", lt);
 		r = sql_bind_localtype(lt);
 		sql_create_aggr("sum", buf, *t, r->type);
@@ -867,7 +899,7 @@ void sqltypeinit()
 
 	/* scale fixing for all numbers */
 	for(t=numerical; t < dates; t++){
-		sql_subtype *lt = sql_bind_localtype( (*t)->name );
+		sql_subtype *lt = sql_bind_localtype( (*t)->base.name );
 	      	sql_create_func("scale_up", "*", *t, lt->type, *t, SCALE_NONE );
 	      	sql_create_func("scale_down", "round", *t, lt->type, *t, SCALE_NONE );
 	}
@@ -877,7 +909,7 @@ void sqltypeinit()
 	  sql_type **u;
 	  for(u=numerical; u < dates; u++){
 	    if (*t != *u)
-	      	sql_create_func("convert", (*u)->name, *t, NULL, *u, SCALE_FIX );
+	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX );
 	  }
 	}
 
@@ -887,18 +919,36 @@ void sqltypeinit()
 	  sql_type **u;
 	  for(u=strings; u < numerical; u++){
 	    if (*t != *u)
-	      	sql_create_func("convert", (*u)->name, *t, NULL, *u, SCALE_FIX );
+	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX );
 	  }
 	}
 
-	/* convert string to numerical */
+	/* convert string to numerical (excluding decimals)  */
 	for(t=strings; t < numerical; t++){
 	  sql_type **u;
-	  for(u=numerical; u < dates; u++){
+	  for(u=numerical; u < decimals; u++){
 		char buf[50];
 
-		snprintf(buf,50,"cast2%s", (*u)->name);
+		snprintf(buf,50,"cast2%s", (*u)->base.name);
 	      	sql_create_func("convert", buf, *t, NULL, *u, SCALE_FIX );
+	  }
+	}
+	/* convert string to decimals, these require a more complex conversion
+	   as both number of digits and precision should be checked */
+	for(t=strings; t < numerical; t++){
+	  sql_type **u;
+	  for(u=decimals; u < dates; u++){
+		char buf[50];
+
+		snprintf(buf,50,"cast2%s", (*u)->base.name);
+	  	sql_create_func_( "convert", buf, 
+		 list_append(
+	 	   list_append( 
+	  	     list_append(list_create((fdestroy)&arg_destroy),
+	  	     sql_create_arg(NULL, sql_create_subtype(*t, 0, 0))),
+	 	   sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))),
+ 		 sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))), 
+	    	sql_create_subtype(*u, 0, 0));
 	  }
 	}
 
@@ -906,7 +956,7 @@ void sqltypeinit()
 	for(t=numerical; t < dates; t++){
 	  sql_type **u;
 	  for(u=strings; u < numerical; u++){
-	      	sql_create_func("convert", (*u)->name, *t, NULL, *u, SCALE_FIX);
+	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX);
 	  }
 	}
 

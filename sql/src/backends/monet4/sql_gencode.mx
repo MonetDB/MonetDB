@@ -63,21 +63,6 @@ void stmt_reset( stmt *s )
 		case st_aggr:
 		case st_op: case st_unop: case st_binop: case st_Nop:
 
-		case st_schema: case st_table: case st_column: case st_key:
-		case st_idx:
-		case st_create_module: case st_drop_module:
-		case st_create_type: case st_drop_type:
-		case st_create_func: case st_drop_func:
-		case st_create_schema: case st_drop_schema:
-		case st_create_view: case st_create_table: case st_drop_table:
-		case st_create_column: case st_null: case st_default:
-		case st_create_key: case st_create_kc:
-		case st_drop_key: case st_drop_idx: 
-		case st_create_idx: case st_create_ic:
-		case st_create_user: case st_drop_user:
-		case st_create_role: case st_drop_role:
-		case st_grant_role: case st_revoke_role:
-
 		case st_const: case st_mark:
 		case st_reverse: case st_mirror:
 		case st_limit: case st_order: case st_reorder:
@@ -248,77 +233,6 @@ void mvc_dump_2( backend *sql, stmt *s, char *name, int *nr )
 	_DELETE(buf);
 }
 
-void mvc_dump_3( backend *sql, stmt *s, char *name, int *nr )
-{
-	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
-	int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
-	int o3 = backend_dumpstmt_(s->op3.stval, nr, sql);
-	size_t buflen = strlen(name) + 128;
-	char *buf = NEW_ARRAY(char, buflen);
-	size_t len = snprintf( buf, buflen, 
-		"var s%d := mvc_%s(myc, s%d, s%d, s%d);\n", 
-		-s->nr, name, o1, o2, o3);
-	assert(len <= buflen);
-	dump(sql,buf,len,-s->nr);
-	_DELETE(buf);
-}
-
-void mvc_dump_4( backend *sql, stmt *s, char *name, int *nr )
-{
-	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
-	int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
-	int o3 = backend_dumpstmt_(s->op3.stval, nr, sql);
-	int o4 = backend_dumpstmt_(s->op4.stval, nr, sql);
-	size_t buflen = strlen(name) + 128;
-	char *buf = NEW_ARRAY(char, buflen);
-	size_t len = snprintf( buf, buflen, 
-		"var s%d := mvc_%s(myc, s%d, s%d, s%d, s%d);\n", 
-		-s->nr, name, o1, o2, o3, o4);
-	assert(len <= buflen);
-	dump(sql,buf,len,-s->nr);
-	_DELETE(buf);
-}
-
-void mvc_dump_5( backend *sql, stmt *s, char *name, int *nr )
-{
-	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
-	int o2 = backend_dumpstmt_(s->op2.stval, nr, sql);
-	int o3 = backend_dumpstmt_(s->op3.stval, nr, sql);
-	int o4 = backend_dumpstmt_(s->op4.stval, nr, sql);
-	size_t buflen = strlen(name) + 128;
-	char *buf = NEW_ARRAY(char, buflen);
-	size_t len = snprintf( buf, buflen, 
-		"var s%d := mvc_%s(myc, s%d, s%d, s%d, s%d, %d);\n", 
-		-s->nr, name, o1, o2, o3, o4, s->flag);
-	assert(len <= buflen);
-	dump(sql,buf,len,-s->nr);
-	_DELETE(buf);
-}
-
-void mvc_dump_n( backend *sql, stmt *s, char *name, int *nr )
-{
-	size_t buflen = strlen(name) + BUFSIZ;
-	char *buf = NEW_ARRAY(char, buflen);
-	node *n;
-
-	size_t len = snprintf( buf, buflen, 
-		"var s%d := mvc_%s(myc", -s->nr, name);
-	assert(len <= buflen);
-	for(n = s->op1.stval->op1.lval->h; n; n = n->next){
-		int o = backend_dumpstmt_(n->data, nr, sql);
-		if (len + 20 > buflen) {
-			buflen += BUFSIZ;
-			buf = RENEW_ARRAY(char,buf,buflen);
-		}
-		len += snprintf( buf+len, buflen-len, ", s%d", o);
-		assert(len <= buflen);
-	}
-	len += snprintf( buf+len, buflen-len, ");\n");
-	assert(len <= buflen);
-	dump(sql,buf,len,-s->nr);
-	_DELETE(buf);
-}
-
 void dump_1( backend *sql, stmt *s, char *name, int *nr )
 {
 	int o1 = backend_dumpstmt_(s->op1.stval, nr, sql);
@@ -385,24 +299,6 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 	case st_sql: 
 		mvc_dump_1( sql, s, "sql", nr  ); 
 		break;
-	case st_create_module: 
-		mvc_dump_1( sql, s, "create_module", nr  ); 
-		break;
-	case st_drop_module: 
-		mvc_dump_1( sql, s, "drop_module", nr  ); 
-		break;
-	case st_create_type: 
-		mvc_dump_1( sql, s, "create_type", nr  ); 
-		break;
-	case st_drop_type: 
-		mvc_dump_1( sql, s, "drop_type", nr  ); 
-		break;
-	case st_create_func: 
-		mvc_dump_1( sql, s, "create_func", nr  ); 
-		break;
-	case st_drop_func: 
-		mvc_dump_1( sql, s, "drop_func", nr  ); 
-		break;
 	case st_assign: {
 		int val = backend_dumpstmt_( s->op1.stval, nr, sql );
 		size_t buflen = strlen(s->op4.sval) + 32;
@@ -424,88 +320,12 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		_DELETE(buf);
 		break;
 	}
-	case st_schema: 
-		mvc_dump_1( sql, s, "bind_schema", nr );
-	 	break;
-	case st_table: 
-		mvc_dump_2( sql, s, "bind_table", nr );
-	 	break;
-	case st_column: 
-		mvc_dump_2( sql, s, "bind_column", nr );
-	 	break;
-	case st_key: 
-		mvc_dump_2( sql, s, "bind_key", nr );
-	 	break;
-	case st_create_schema: 
-		mvc_dump_2( sql, s, "create_schema", nr );
-		break;
-	case st_drop_schema: 
-		mvc_dump_2( sql, s, "drop_schema", nr );
-		break;
-	case st_create_view: 
-		mvc_dump_3( sql, s, "create_view", nr );
-		break;
-	case st_create_table: 
-		mvc_dump_4( sql, s, "create_table", nr );
-		break;
-	case st_drop_table: 
-		mvc_dump_3( sql, s, "drop_table", nr );
-		break;
-	case st_create_column: 
-		mvc_dump_n( sql, s, "create_column", nr );
-		break;
-	case st_null: 
-		mvc_dump_2( sql, s, "null", nr );
-	 	break;
-	case st_default: 
-		mvc_dump_2( sql, s, "default", nr );
-		break;
-	case st_create_key: 
-		if (!s->op4.stval){
-			mvc_dump_3( sql, s, "create_key", nr );
-		} else {
-			mvc_dump_4( sql, s, "create_key", nr );
-		}
-		break;
-	case st_create_kc:
-		mvc_dump_2( sql, s, "create_kc", nr );
-		break;
-	case st_drop_key:
-		mvc_dump_2( sql, s, "drop_key", nr );
-		break;
-	case st_create_idx: 
-		mvc_dump_3( sql, s, "create_idx", nr );
-		break;
-	case st_create_ic:
-		mvc_dump_2( sql, s, "create_ic", nr );
-		break;
-	case st_drop_idx:
-		mvc_dump_2( sql, s, "drop_idx", nr );
-		break;
-	case st_create_user: 
-		mvc_dump_5( sql, s, "create_user", nr );
-		break;
-	case st_drop_user: 
-		mvc_dump_1( sql, s, "drop_user", nr );
-		break;
-	case st_create_role: 
-		mvc_dump_2( sql, s, "create_role", nr );
-		break;
-	case st_drop_role: 
-		mvc_dump_1( sql, s, "drop_role", nr );
-		break;
-	case st_grant_role: 
-		mvc_dump_2( sql, s, "grant_role", nr );
-		break;
-	case st_revoke_role: 
-		mvc_dump_2( sql, s, "revoke_role", nr );
-		break;
 	case st_temp: {
-		size_t buflen = strlen(s->op4.typeval->type->name) + 64;
+		size_t buflen = strlen(s->op4.typeval->type->base.name) + 64;
 		buf = NEW_ARRAY(char, buflen+1);
 		len = snprintf( buf, buflen, 
 			"var s%d := new(void,%s).seqbase(oid(0));\n", 
-			-s->nr, s->op4.typeval->type->name );
+			-s->nr, s->op4.typeval->type->base.name );
 		assert(len <= buflen);
 		dump(sql,buf,len,-s->nr);
 		_DELETE(buf);
@@ -719,22 +539,22 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		case cmp_lt:
 			len = snprintf( buf, BUFSIZ, 
 			  "var s%d := s%d.%s(%s(nil), s%d, FALSE, FALSE);\n", 
-			  -s->nr, l, cmd, tail_type(s)->type->name, r ); 
+			  -s->nr, l, cmd, tail_type(s)->type->base.name, r ); 
 			break;
 		case cmp_lte:
 			len = snprintf( buf, BUFSIZ, 
 			  "var s%d := s%d.%s(%s(nil), s%d);\n", 
-			  -s->nr, l, cmd, tail_type(s)->type->name, r ); 
+			  -s->nr, l, cmd, tail_type(s)->type->base.name, r ); 
 			break;
 		case cmp_gt:
 			len = snprintf( buf, BUFSIZ, 
 			  "var s%d := s%d.%s(s%d, %s(nil), FALSE, FALSE);\n", 
-			  -s->nr, l, cmd, r, tail_type(s)->type->name ); 
+			  -s->nr, l, cmd, r, tail_type(s)->type->base.name ); 
 			break;
 		case cmp_gte: 
 			len = snprintf( buf, BUFSIZ, 
 			  "var s%d := s%d.%s(s%d, %s(nil));\n", 
-			  -s->nr, l, cmd, r, tail_type(s)->type->name ); 
+			  -s->nr, l, cmd, r, tail_type(s)->type->base.name ); 
 			break;
 		default:
 			len = snprintf( buf, BUFSIZ, 
@@ -1336,7 +1156,6 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 	case st_ptable:
 	case st_pivot:
 	case st_partial_pivot:
-	case st_idx:
 		printf("backend_dumpstmt_: not implemented stmt %s\n", st_type2string(s->type));
 		assert(0);
 	}
@@ -1374,7 +1193,7 @@ void backend_dumpproc( backend *be, int id, stmt *s )
 			var_ *v = n->data;
 
 			i += snprintf(buf+i, BUFSIZ-i, "%s %s%c", 
-				v->s->op2.typeval->type->name,
+				v->s->op2.typeval->type->base.name,
 				v->name, (n->next)?',':' '
 				);
 		}
