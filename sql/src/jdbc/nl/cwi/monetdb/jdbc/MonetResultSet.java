@@ -372,8 +372,6 @@ public class MonetResultSet implements ResultSet {
 		absolute(0);
 	}
 
-	public void 	cancelRowUpdates() {}
-
 	/**
 	 * Clears all warnings reported for this ResultSet object. After a call to
 	 * this method, the method getWarnings returns null until a new warning is
@@ -416,8 +414,6 @@ public class MonetResultSet implements ResultSet {
 		}
 	}
 
-	public void 	deleteRow() {}
-
 	/**
 	// Chapter 14.2.3 from Sun JDBC 3.0 specification
 	 * Maps the given ResultSet column name to its ResultSet column index.
@@ -450,6 +446,9 @@ public class MonetResultSet implements ResultSet {
 
 	public Array 	getArray(int i) { return(null); }
 	public Array 	getArray(String colName) { return(null); }
+
+	/* Mapi doesn't allow something for streams at the moment, thus all
+	   not implemented for now */
 	public InputStream 	getAsciiStream(int columnIndex) { return(null); }
 	public InputStream 	getAsciiStream(String columnName) { return(null); }
 	public BigDecimal 	getBigDecimal(int columnIndex) { return(null); }
@@ -458,8 +457,15 @@ public class MonetResultSet implements ResultSet {
 	public BigDecimal 	getBigDecimal(String columnName, int scale) { return(null); }
 	public InputStream 	getBinaryStream(int columnIndex) { return(null); }
 	public InputStream 	getBinaryStream(String columnName) { return(null); }
+	public InputStream 	getUnicodeStream(int columnIndex) { return(null); }
+	public InputStream 	getUnicodeStream(String columnName) { return(null); }
 	public Blob 	getBlob(int i) { return(null); }
 	public Blob 	getBlob(String colName) { return(null); }
+	public Reader 	getCharacterStream(int columnIndex) { return(null); }
+	public Reader 	getCharacterStream(String columnName) { return(null); }
+	public Clob 	getClob(int i) { return(null); }
+	public Clob 	getClob(String colName) { return(null); }
+
 
 	/**
 	 * Retrieves the value of the designated column in the current row of this
@@ -487,16 +493,120 @@ public class MonetResultSet implements ResultSet {
 		return(getBoolean(findColumn(columnName)));
 	}
 
-	public byte 	getByte(int columnIndex) { return((byte)0); }
-	public byte 	getByte(String columnName) { return((byte)0); }
-	public byte[] 	getBytes(int columnIndex) { return(null); }
-	public byte[] 	getBytes(String columnName) { return(null); }
-	public Reader 	getCharacterStream(int columnIndex) { return(null); }
-	public Reader 	getCharacterStream(String columnName) { return(null); }
-	public Clob 	getClob(int i) { return(null); }
-	public Clob 	getClob(String colName) { return(null); }
-	public int 	getConcurrency() { return(-1); }
-	public String 	getCursorName() { return(null); }
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a byte in the Java programming language.
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is 0
+	 * @throws SQLException if a database access error occurs
+	 */
+	public byte getByte(int columnIndex) throws SQLException {
+		String bytes = getString(columnIndex);
+		if (bytes == null || bytes.length() == 0) {
+			return((byte)0);
+		} else {
+			return(bytes.getBytes()[0]);
+		}
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a byte in the Java programming language.
+	 *
+	 * @param columnName the SQL name of the column
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is 0
+	 * @throws SQLException if a database access error occurs
+	 */
+	public byte getByte(String columnName) throws SQLException {
+		return(getByte(findColumn(columnName)));
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a byte array in the Java programming language. The
+	 * bytes represent the raw values returned by the driver.
+	 * <br /><br />
+	 * NOTE: Since the mapi protocol is ASCII-based, this method only returns
+	 *       Java byte representations of Strings, which is nothing more than
+	 *       an encoding into a sequence of bytes using the platform's default
+	 *       charset.
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is null
+	 * @throws SQLException if a database access error occurs
+	 */
+	public byte[] getBytes(int columnIndex) throws SQLException {
+		String bytes = getString(columnIndex);
+		if (bytes == null) {
+			return(null);
+		} else {
+			return(bytes.getBytes());
+		}
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a byte array in the Java programming language. The
+	 * bytes represent the raw values returned by the driver.
+	 * <br /><br />
+	 * NOTE: Since the mapi protocol is ASCII-based, this method only returns
+	 *       Java byte representations of Strings, which is nothing more than
+	 *       an encoding into a sequence of bytes using the platform's default
+	 *       charset.
+	 *
+	 * @param columnName the SQL name of the column
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is null
+	 * @throws SQLException if a database access error occurs
+	 */
+	public byte[] getBytes(String columnName) throws SQLException {
+		return(getBytes(findColumn(columnName)));
+	}
+
+	/**
+	 * Retrieves the concurrency mode of this ResultSet object. The concurrency
+	 * used is determined by the Statement object that created the result set.
+	 * <br /><br />
+	 * NOTE: MonetDB only supports read-only result sets, and will always return
+	 *       ResultSet.CONCUR_READ_ONLY
+	 *
+	 * @return the concurrency type, either ResultSet.CONCUR_READ_ONLY or
+	 *         ResultSet.CONCUR_UPDATABLE
+	 */
+	public int getConcurrency() {
+		return(concurrency);
+	}
+
+	/**
+	 * Retrieves the name of the SQL cursor used by this ResultSet object.
+	 * In SQL, a result table is retrieved through a cursor that is named.
+	 * For MonetDB this is the tableID returned in a resultset header. The
+	 * current row of a result set can be updated or deleted using a positioned
+	 * update/delete statement that references the cursor name. To insure that
+	 * the cursor has the proper isolation level to support update, the
+	 * cursor's SELECT statement should be of the form SELECT FOR UPDATE. If
+	 * FOR UPDATE is omitted, the positioned updates may fail.
+	 * <br /><br />
+	 * The JDBC API supports this SQL feature by providing the name of the SQL
+	 * cursor used by a ResultSet object. The current row of a ResultSet object
+	 * is also the current row of this SQL cursor.
+	 * <br /><br />
+	 * Note: If positioned update is not supported, a SQLException is thrown.
+	 *       MonetDB currently doesn't support updates, so the SQLException is
+	 *       thrown for now.
+	 *
+	 * @return the SQL name for this ResultSet object's cursor
+	 * @throws SQLException if a database access error occurs
+	 */
+	public String getCursorName() throws SQLException {
+		throw new SQLException("Positioned updates not supported for this " +
+							   "cursor (" + tableID + ")");
+		return("" + tableID);
+	}
 
 	/**
 	 * Retrieves the value of the designated column in the current row of this
@@ -539,16 +649,17 @@ public class MonetResultSet implements ResultSet {
 	 * @return the current fetch direction for this ResultSet object
 	 */
 	public int getFetchDirection() {
-		return(-1);
+		return(FETCH_FORWARD);
 	}
 
 	/**
 	 * Retrieves the fetch size for this ResultSet object.
+	 * In our case this is equal to the fetchsize of the parent statement.
 	 *
 	 * @return the current fetch size for this ResultSet object
 	 */
 	public int getFetchSize() {
-		return(-1);
+		return(statement.getFetchSize());
 	}
 
 	/**
@@ -671,17 +782,35 @@ public class MonetResultSet implements ResultSet {
 				return(columns.length);
 			}
 
-			public boolean isAutoIncrement(int column) {return(false);}
+			/**
+			 * Indicates whether the designated column is automatically
+			 * numbered, thus read-only.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return true if so; false otherwise
+			 * @throws SQLException if a database access error occurs
+			 */
+			public boolean isAutoIncrement(int column) throws SQLException {
+				// the only column I know of is a 'secret' column called rowid
+				// with datatype oid
+				// avoid nullpointer exception here
+				if ("oid".equals(getColumnTypeName(column))) {
+					return(true);
+				} else {
+					return(false);
+				}
+			}
 
 			/**
 			 * Indicates whether a column's case matters. This holds for all
 			 * columns in MonetDB resultsets since the mapping is done case
-			 * sensitive. Therefore this method will always return true.
+			 * insensitive. Therefore this method will always return false.
 			 *
-			 * @returns true
+			 * @param column the first column is 1, the second is 2, ...
+			 * @returns true if so; false otherwise
 			 */
 			public boolean isCaseSensitive(int column) {
-				return(true);
+				return(false);
 			}
 
 			public boolean isSearchable(int column) {return(false);}
@@ -689,6 +818,16 @@ public class MonetResultSet implements ResultSet {
 			public int isNullable(int column) {return(columnNullableUnknown);}
 			public boolean isSigned(int column) {return(false);}
 			public int getColumnDisplaySize(int column) {return(-1);}
+			public String getSchemaName(int column) {return(null);}
+			public int getPrecision(int column) {return(-1);}
+			public int getScale(int column) {return(-1);}
+			public String getTableName(int column) {return(null);}
+			public String getCatalogName(int column) {return(null);}
+			public boolean isReadOnly(int column) {return(false);}
+			public boolean isWritable(int column) {return(false);}
+			public boolean isDefinitelyWritable(int column) {return(false);}
+
+			public String getColumnClassName(int column) {return(null);}
 
 			/**
 			 * Gets the designated column's suggested title for use in printouts
@@ -716,12 +855,6 @@ public class MonetResultSet implements ResultSet {
 					throw new SQLException("No such column " + column);
 				}
 			}
-
-			public String getSchemaName(int column) {return(null);}
-			public int getPrecision(int column) {return(-1);}
-			public int getScale(int column) {return(-1);}
-			public String getTableName(int column) {return(null);}
-			public String getCatalogName(int column) {return(null);}
 
 			/**
 			 * Retrieves the designated column's SQL type.
@@ -752,11 +885,6 @@ public class MonetResultSet implements ResultSet {
 					throw new SQLException("No such column " + column);
 				}
 			}
-
-			public boolean isReadOnly(int column) {return(false);}
-			public boolean isWritable(int column) {return(false);}
-			public boolean isDefinitelyWritable(int column) {return(false);}
-			public String getColumnClassName(int column) {return(null);}
 		});
 	}
 
@@ -886,7 +1014,16 @@ public class MonetResultSet implements ResultSet {
 
 	public Ref 	getRef(int i) { return(null); }
 	public Ref 	getRef(String colName) { return(null); }
-	public int 	getRow() { return(-1); }
+
+	/**
+	 * Retrieves the current row number. The first row is number 1, the second
+	 * number 2, and so on.
+	 *
+	 * @return the current row number; 0 if there is no current row
+	 */
+	public int getRow() {
+		return(curRow);
+	}
 
 	/**
 	 * Retrieves the value of the designated column in the current row of this
@@ -970,13 +1107,13 @@ public class MonetResultSet implements ResultSet {
 	}
 
 	/* only parse the date pattern once, use it multiple times */
-	private final static SimpleDateFormat mTimestamp = 
+	private final static SimpleDateFormat mTimestamp =
 		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-	private final static SimpleDateFormat mTime = 
+	private final static SimpleDateFormat mTime =
 		new SimpleDateFormat("HH:mm:ss.SSS");
-	private final static SimpleDateFormat mDate = 
+	private final static SimpleDateFormat mDate =
 		new SimpleDateFormat("yyyy-MM-dd");
-	
+
 	/**
 	 * Retrieves the value of the designated column in the current row of this
 	 * ResultSet object as a java.sql.Date object in the Java programming
@@ -990,7 +1127,7 @@ public class MonetResultSet implements ResultSet {
 	public java.sql.Date getDate(int columnIndex) throws SQLException {
 		return(getDate(columnIndex, Calendar.getInstance()));
 	}
-	
+
 	/**
 	 * Retrieves the value of the designated column in the current row of this
 	 * ResultSet object as a java.sql.Date object in the Java programming
@@ -1009,7 +1146,7 @@ public class MonetResultSet implements ResultSet {
 	{
 		String monetDate;
 		if ((monetDate = getString(columnIndex)) == null) return(null);
-		
+
 		mDate.setCalendar(cal);
 		try {
 			return(new java.sql.Date(mDate.parse(monetDate).getTime()));
@@ -1017,7 +1154,7 @@ public class MonetResultSet implements ResultSet {
 			return(new java.sql.Date(0L));
 		}
 	}
-	
+
 	/**
 	 * Retrieves the value of the designated column in the current row of this
 	 * ResultSet object as a java.sql.Date object in the Java programming
@@ -1032,7 +1169,7 @@ public class MonetResultSet implements ResultSet {
 	public java.sql.Date getDate(String columnName) throws SQLException {
 		return(getDate(columnName, Calendar.getInstance()));
 	}
-	
+
 	/**
 	 * Retrieves the value of the designated column in the current row of this
 	 * ResultSet object as a java.sql.Date object in the Java programming
@@ -1052,7 +1189,7 @@ public class MonetResultSet implements ResultSet {
 	{
 		return(getDate(findColumn(columnName), cal));
 	}
-	
+
 	/**
 	 * Retrieves the value of the designated column in the current row of this
 	 * ResultSet object as a java.sql.Time object in the Java programming
@@ -1087,7 +1224,7 @@ public class MonetResultSet implements ResultSet {
 	{
 		String monetDate;
 		if ((monetDate = getString(columnIndex)) == null) return(null);
-		
+
 		mDate.setCalendar(cal);
 		try {
 			return(new Time(mTime.parse(monetDate).getTime()));
@@ -1095,7 +1232,7 @@ public class MonetResultSet implements ResultSet {
 			return(new Time(0L));
 		}
 	}
-	
+
 	/**
 	 * Retrieves the value of the designated column in the current row of this
 	 * ResultSet object as a java.sql.Time object in the Java programming
@@ -1109,7 +1246,7 @@ public class MonetResultSet implements ResultSet {
 	public Time getTime(String columnName) throws SQLException {
 		return(getTime(columnName, Calendar.getInstance()));
 	}
-	
+
 	/**
 	 * Retrieves the value of the designated column in the current row of
 	 * this ResultSet object as a java.sql.Time object in the Java programming
@@ -1125,12 +1262,12 @@ public class MonetResultSet implements ResultSet {
 	 *         language
 	 * @throws SQLException if a database access error occurs
 	 */
-	public Time getTime(String columnName, Calendar cal) 
+	public Time getTime(String columnName, Calendar cal)
 		throws SQLException
 	{
 		return(getTime(findColumn(columnName), cal));
 	}
-	
+
 	/**
 	 * Retrieves the value of the designated column in the current row of this
 	 * ResultSet object as a java.sql.Timestamp object in the Java programming
@@ -1144,7 +1281,7 @@ public class MonetResultSet implements ResultSet {
 	public Timestamp getTimestamp(int columnIndex) throws SQLException {
 		return(getTimestamp(columnIndex, Calendar.getInstance()));
 	}
-	
+
 	/**
 	 * Retrieves the value of the designated column in the current row of this
 	 * ResultSet object as a java.sql.Timestamp object in the Java programming
@@ -1165,7 +1302,7 @@ public class MonetResultSet implements ResultSet {
 	{
 		String monetDate;
 		if ((monetDate = getString(columnIndex)) == null) return(null);
-		
+
 		mDate.setCalendar(cal);
 		try {
 			return(new Timestamp(mTimestamp.parse(monetDate).getTime()));
@@ -1173,7 +1310,7 @@ public class MonetResultSet implements ResultSet {
 			return(new Timestamp(0L));
 		}
 	}
-	
+
 	/**
 	 * Retrieves the value of the designated column in the current row of this
 	 * ResultSet object as a java.sql.Timestamp object in the Java programming
@@ -1203,15 +1340,23 @@ public class MonetResultSet implements ResultSet {
 	 *         language
 	 * @throws SQLException if a database access error occurs
 	 */
-	public Timestamp getTimestamp(String columnName, Calendar cal) 
+	public Timestamp getTimestamp(String columnName, Calendar cal)
 		throws SQLException
 	{
 		return(getTimestamp(findColumn(columnName), cal));
 	}
-	
-	public int 	getType() { return(-1); }
-	public InputStream 	getUnicodeStream(int columnIndex) { return(null); }
-	public InputStream 	getUnicodeStream(String columnName) { return(null); }
+
+	/**
+	 * Retrieves the type of this ResultSet object. The type is determined by
+	 * the Statement object that created the result set.
+	 *
+	 * @return ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE,
+	 *         or ResultSet.TYPE_SCROLL_SENSITIVE
+	 */
+	public int getType() {
+		return(type);
+	}
+
 	public URL 	getURL(int columnIndex) { return(null); }
 	public URL 	getURL(String columnName) { return(null); }
 
@@ -1237,8 +1382,6 @@ public class MonetResultSet implements ResultSet {
 		// specification.
 		return(warnings);
 	}
-
-	public void 	insertRow() {}
 
 	/**
 	 * Retrieves whether the cursor is after the last row in this ResultSet
@@ -1293,9 +1436,6 @@ public class MonetResultSet implements ResultSet {
 		return(absolute(-1));
 	}
 
-	public void 	moveToCurrentRow() {}
-	public void 	moveToInsertRow() {}
-
 	/**
 	 * Moves the cursor down one row from its current position. A ResultSet
 	 * cursor is initially positioned before the first row; the first call to
@@ -1327,8 +1467,6 @@ public class MonetResultSet implements ResultSet {
 		return(relative(-1));
 	}
 
-	public void refreshRow() {}
-
 	/**
 	 * Moves the cursor a relative number of rows, either positive or negative.
 	 * Attempting to move beyond the first/last row in the result set positions
@@ -1350,6 +1488,14 @@ public class MonetResultSet implements ResultSet {
 		return(absolute(curRow + rows));
 	}
 
+	/* these methods are all related to updateable result sets, which we
+	   currently do not support */
+	public void 	cancelRowUpdates() {}
+	public void 	deleteRow() {}
+	public void 	insertRow() {}
+	public void 	moveToCurrentRow() {}
+	public void 	moveToInsertRow() {}
+	public void refreshRow() {}
 	public boolean 	rowDeleted() { return(false); }
 	public boolean 	rowInserted() { return(false); }
 	public boolean 	rowUpdated() { return(false); }
