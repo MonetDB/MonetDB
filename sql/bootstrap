@@ -22,6 +22,12 @@ fi
 
 find . -name .cache\* \-exec rm {} \;
 $AUTOGEN
+
+cat configure.ag > configure.in
+echo "AC_OUTPUT(" >> configure.in
+cat acout.in  >> configure.in
+echo ")" >> configure.in
+
 test -f conf/ltmain.sh || libtoolize -c -f; 
 #if [ ! "`grep \"CC=\$arg\" conf/ltmain.sh 2>/dev/null`" ]; then
 #  perl -i -p -e  's/link \| relink\)/link \| relink\)\n    CC=\$arg/g' conf/ltmain.sh
