@@ -1948,8 +1948,6 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 					"AND tables.schema_id = schemas.id " +
 					"AND keys.type = 0 ";
 
-		// SCOPE, DATA_TYPE, PSEUDO_COLUMN have to be generated with Java logic
-
 		if (schema != null) {
 			query += "AND schemas.name LIKE '" + escapeQuotes(schema) + "' ";
 		}
