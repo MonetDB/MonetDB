@@ -2013,7 +2013,7 @@ void hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi,
         int width2 = ATOMsize(r->ttype) >> 2;
         int distance2 = 1 << ((p2->ttype - r->ttype) >> 1);
 	int any  = ATOMstorage(r->htype);
-	size_t mask = ~0;
+	size_t mask = ~ (size_t) 0;
 	if (cutoff) {
 	    @:hash_join(any,head,tail,atom,NOTSO,hloc,tloc,break;)@
 	} else {
@@ -2026,7 +2026,7 @@ void hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi,
         ATOMstorage(l->htype) != TYPE_int || ATOMstorage(r->ttype) != TYPE_int) 
     {
 	int any  = ATOMstorage(r->htype);
-	size_t mask = ~0;
+	size_t mask = ~ (size_t) 0;
 	if (cutoff) {
 	    @:hash_join(any,head,tail,atom,bun,head,tail,break;)@
 	} else {
