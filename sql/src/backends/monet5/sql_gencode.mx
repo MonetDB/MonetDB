@@ -717,7 +717,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		@:SQLpostlude@
 	} 	break;
 	case st_derive: {
-		dump_1(sql,mb,s,"group","group");
+		dump_2(sql,mb,s,"group","group");
 	} 	break;
 	case st_unique: {
 		int k, l = backend_dumpstmt(sql,mb, s->op1.stval);
