@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+import sys
+import os
+
+if os.environ.has_key('MONET_PREFIX'):
+    sys.path.append(os.environ['MONET_PREFIX']+os.sep+'share'+os.sep+'MonetDB'+os.sep+'python')
+else:
+    sys.path.append('@prefix@'+os.sep+'share'+os.sep+'@PACKAGE@'+os.sep+'python')
+
+from monet_options import *
+from Mapi import *
+
+import fileinput;
+
+opt = parse_options(sys.argv[1:])
+
+s = server( ConfigOptions.get(opt,"host","localhost"), int(ConfigOptions.get(opt,"mapi_port")), environ['USER'])
+print("#MapiClient (python) connected to %s:%d as %s" % (ConfigOptions.get(opt,"host","localhost"), int(ConfigOptions.get(opt,"mapi_port")), environ['USER']))
+
+#fi = fileinput.FileInput()
+fi = sys.stdin
+
+sys.stdout.write( s.prompt )
+line= fi.readline()
+while( line != "quit;\n" ):
+    res = s.cmd( line )
+    print(res);
+    sys.stdout.write( s.prompt )
+    line = fi.readline()
+
+s.disconnect()
