@@ -1327,7 +1327,7 @@ static int make_writable(Heap *hp, int committed, int *remap, int *reload) {
 	p = strstr(hp->filename, ".priv");
         if (p) {
 		/* state(4), goto state (1) */
-	       	return STORE_PRIV; 
+	       	return hp->storage = STORE_PRIV; 
 	}
 	if (!committed) {
 		/* state(3), goto state (2) */
