@@ -536,7 +536,7 @@ int readClient(Client c)
 		PARSEDEBUG THRprintf(GDKerr, "%.*s", c->top - (c->input + offset), c->input+offset);
 		/* this loop wil check whether we got enough data for
 		   a complete MIL statement, and in addition will
-		   remove all comments and normalize line endings. */
+		   normalize line endings. */
 		for (s = p = c->input + offset; s < c->top; s++) {
 			switch (*s) {
 			case '\r':
