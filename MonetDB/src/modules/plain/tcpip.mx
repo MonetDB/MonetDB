@@ -641,8 +641,8 @@ First stop to examine its type, and heap sizes.
 		if ((ht=strchr(p,':')) && (tt=strchr(ht+1,':')) && 
 		    (hs=strchr(tt+1,':')) && (ts=strchr(hs+1,':')))
 		{
-		    char *tmod = tt-1;
-		    char *hmod = hs-1;
+		    char *hmod = tt-1;
+		    char *tmod = hs-1;
 		
 		    if (*hmod == 'k') { h_key = 1; hmod--; }
 		    if (*tmod == 'k') { t_key = 1; tmod--; }
