@@ -90,6 +90,7 @@ code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
 	    'dvi':	[ '.ps' ],
 	    'fig':	[ '.eps' ],
 	    'feps':	[ '.eps' ],
+	    'in':	[ '' ],
 }
 
 c_inc = "^[ \t]*#[ \t]*include[ \t]*[<\"]\([a-zA-Z0-9\.\_]*\)[>\"]"
