@@ -322,11 +322,12 @@ int insert_line( ascii *as, char *line ){
 			     strncmp( fmt[i].sep, line, fmt[i].seplen) == 0 ){
 				e = line; /*strstr( line, fmt[i].sep ); */
 				break;
-		     	} else if(*line == '\"'){
+		     	} else if(*line == '\"' && *(line-1) != '\\'){
 				quotes = 1;
 				line++;
 				while( *line && *line!='\"') line++;
 				if (*line) line++;
+				else return -1;
 			} else {
 				line++;
 			}
@@ -336,6 +337,7 @@ int insert_line( ascii *as, char *line ){
 			if (quotes){
 				quotes = 0;
 				s = strchr(s, '\"');
+				if (!s) return -1;
 				s++;
 				e = strchr(s, '\"');
 			}
@@ -355,11 +357,12 @@ int insert_line( ascii *as, char *line ){
 			      fmt[as->nr_attrs-1].seplen) == 0 ){
 			e = line; /*strstr( line, fmt[as->nr_attrs-1].sep ); */
 			break;
-	     	} else if(*line == '\"'){
+		} else if(*line == '\"' && *(line-1) != '\\'){
 			quotes = 1;
 			line++;
 			while( *line && *line!='\"') line++;
 			if (*line) line++;
+			else return -1;
 		} else {
 			line++;
 		}
@@ -370,6 +373,7 @@ int insert_line( ascii *as, char *line ){
 		if (quotes){
 			quotes = 0;
 			s = strchr(s, '\"');
+			if (!s) return -1;
 			s++;
 			e = strchr(s, '\"');
 		}
