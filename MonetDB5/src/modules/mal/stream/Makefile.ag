@@ -1,5 +1,5 @@
 
-INCLUDES = -I$(MONET_BUILD)/src/gdk -I$(MONET_BUILD)/src/monet \
+INCLUDES = -I$(MONETDB_BUILD)/src/gdk -I$(MONETDB_BUILD)/src/monet \
 	$(Z_CFLAGS) $(BZ_CFLAGS)
 MTSAFE
 

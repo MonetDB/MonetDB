@@ -15,7 +15,7 @@ Mdestroydb -db <name> [-monetrc <environment>]
 
 Mcreatedb -db <name> [-monetrc <environment>]  
 	  the default database location is ./dbfarm/
-	  the environment variables as stored in '.MonetDB.conf'\n
+	  the environment variables as stored in '.MonetDB5.conf'\n
 \end{verbatim}
  
 @- Function
@@ -30,7 +30,7 @@ a database is localized in one {\em database-directory}.
 The default is to localize all databases in a DBFARM, which is
 typically set to a system wide variable to allocate the disk files
 to a specific piece of hardware (e.g. a RAID-5 box).
-The default DBFARM and DB are obtained from a .MonetDB.conf file, which 
+The default DBFARM and DB are obtained from a .MonetDB5.conf file, which 
 resides in the current or the home directory of the user or is
 passed upon system initialization.
 The default directory for a database named DB is {\tt\small ./DBFARM/DB}. 
@@ -124,7 +124,7 @@ By default adm and guest are introduced
 void usage(){
         printf("usage:\n%s -db <name> [-monetrc <environment>]\n",prog);
 	printf("\tthe default database location is ./dbfarm/\n");
-	printf("\tthe environment variables as stored in '.MonetDB.conf'\n");
+	printf("\tthe environment variables as stored in '.MonetDB5.conf'\n");
 	exit(0);
 }
 
@@ -289,7 +289,7 @@ void initDB(char *db) {
 
 @- Common utilities
 The routine getarguments is shared by most tools.
-It locates the .MonetDB.conf file and initializes the dbfarm parameter.
+It locates the .MonetDB5.conf file and initializes the dbfarm parameter.
 The location of the source scripts for the database are localized in the
 MONETDB-PREFIX directory, where all installation files are maintained.
 
