@@ -1,0 +1,28 @@
+module(xtables,vectors,ascii_io);
+
+backup_dir := "";
+
+proc seqinfo(BAT b) : str := {
+	return b.info.find("hseqbase");
+}
+PROC grp_dump(b) : str := {
+	var bats := [~b];
+	var name := bbpname(bats.find(nil));
+	var file := backup_dir + name;
+	bats := dump_format( bats, file + ".fmt" );
+	dump_data( bats, file + ".dat.bz2", -1 );
+	return file;
+}
+PROC backup( str Dir ) : void := {
+	backup_dir := Dir; 
+        var nme := view_bbp_name;
+        var prs := nme.semijoin(view_bbp_kind.select("pers"));
+	rprs := [oid](prs.reverse);
+	prs := rprs.reverse.copy;
+	var bats := [load](prs);
+	var cnts := [count](bats);
+	var seqs := [seqinfo](bats);
+	var grps := CTgroup(cnts,seqs);
+	var files := {grp_dump}(grps.reverse.join(bats));
+	files.print;
+}
