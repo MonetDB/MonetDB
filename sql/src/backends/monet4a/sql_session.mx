@@ -303,9 +303,8 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 		c->params = NULL;
 
 		/* beware to use free instead of _DELETE
- 	 	 * as the stream library is build with out 
-	 	 * libbat ie. it cannot use gdkmalloc 
-	 	 * can be used */
+ 	 	 * as the stream library is built without 
+	 	 * libbat i.e. it cannot use gdkmalloc */
 	        free(cmd); 
 		cmd = NULL;
 
@@ -389,18 +388,19 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 
 @-
 The new SQL client server works with a Mapi compliant front-end.
-The routine below is called when some-one knocks on the door for
+The routine below is called when someone knocks on the door for
 an SQL connection.
 
 To simplify the implementation, we will patch MAPIlisten to
-recognize the call for SQLmapiclient and adhire to the Mapi protocol
+recognize the call for SQLmapiclient and adhere to the Mapi protocol
 to read an authentication line, i.e.
 <username>:<password>:blocked
 We assume that a new user-context has been set using a proper fork()
 command. This means that the SQL client runs under the authentication of
 the DBA.
 @c
-int mapisqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
+int mapisqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
+{
 	int debug = 0, trace = 0, reply_size = 100, sock, *Sock, go = TRUE;
 	ssize_t i=0;
 	char buf[BUFSIZ+1], *errbuf;
@@ -423,7 +423,7 @@ int mapisqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	sock = *Sock;
 
 @-
-Start analysis using the mapic-client protocol.
+Start analysis using the mapi-client protocol.
 Use default setting for trace and reply_size.
 @c
 	in = socket_rastream(sock, "mapisqlclient-r");
@@ -460,7 +460,7 @@ Use default setting for trace and reply_size.
 		passwd++;
 		user= GDKstrdup(buf);
 		passwd= GDKstrdup(passwd);
-	}/* ignore for the time being the password info
+	}/* ignore the password info for the time being
 	 else {
 		fprintf(stdout,"mapisqlclient: missing identity\n");
 		return connect_error(in, out, sock);
@@ -503,7 +503,7 @@ These lines should be eaten away into the prompt is encountered.
 		mvc_destroy(m);
 		return connect_error(in, out, sock);
 	}
-/* Sent the profile for the client for inspection*/
+/* Send the profile for the client for inspection*/
 	w= "[ \"version\",	\"4.3\"	]\n";
 	if( stream_write(out, w, 1, strlen(w))<0)
 		return connect_error(in,out,sock);
@@ -545,13 +545,13 @@ These lines should be eaten away into the prompt is encountered.
 		stream_flush(out);
 		/* fprintf(stdout,"mapisqlclient:ready to accept next query\n");*/
 		if( blocked ){
-		while ((len = stream_read(in, start, 1, BUFSIZ)) == BUFSIZ){
-			inlen += BUFSIZ;
-			size += BUFSIZ;
-			inbuf = RENEW_ARRAY(char, inbuf, size); 
-			start = inbuf + size - BUFSIZ - 1;
-			*start = '\0';
-		}
+			while ((len = stream_read(in, start, 1, BUFSIZ)) == BUFSIZ){
+				inlen += BUFSIZ;
+				size += BUFSIZ;
+				inbuf = RENEW_ARRAY(char, inbuf, size); 
+				start = inbuf + size - BUFSIZ - 1;
+				*start = '\0';
+			}
 		} else { /* line mode */
 			char *s= start;
 			char *lim= start+BUFSIZ;
@@ -580,7 +580,7 @@ These lines should be eaten away into the prompt is encountered.
 		inlen += len;
 		inbuf[inlen] = '\0';
 @-
-The clients will first sent a server initialization string.
+The clients will first send a server initialization string.
 In this case we expect something like sql(....
 To make our live easy now, we simple eat away these or the first request
 		if( firstrequest){
@@ -685,7 +685,8 @@ To make our live easy now, we simple eat away these or the first request
 	return l-1;
 @c
 
-int dec_tostr( void *extra, char **Buf, int *len, int type, ptr a){
+int dec_tostr( void *extra, char **Buf, int *len, int type, ptr a)
+{
 	/* support dec map to sht, int and lng */
 	if (type == TYPE_sht){
 		@:dec_tostr(sht)@
@@ -748,7 +749,8 @@ int dec_tostr( void *extra, char **Buf, int *len, int type, ptr a){
 	return (ptr*)r;
 @c
 
-ptr *dec_frstr( void *extra, int type, char *s){
+ptr *dec_frstr( void *extra, int type, char *s)
+{
 	/* support dec map to sht, int and lng */
 	if (type == TYPE_sht){
 		@:dec_frstr(sht)@
@@ -822,7 +824,8 @@ BAT *mvc_import_table( mvc *m, stream *s, char *tname,
 	return bats;
 }
 
-static res_table *find_export_table( mvc *m, int res_id ){
+static res_table *find_export_table( mvc *m, int res_id )
+{
 	res_table *r = m->results;
 	for( ; r; r = r->next){
 		if (r->id == res_id)
