@@ -170,15 +170,15 @@ void Mserver_abort() {
 #endif
 @C
 void usage( char *prog ){
-	fprintf(stderr, "usage: %s\n", prog);
-	fprintf(stderr, "[--dbname database_name ]\n" );
-	fprintf(stderr, "[--dbfarm database_directory ]\n" ); 
-	fprintf(stderr, "[--dbinit=<stmt> ]\n" );
-	fprintf(stderr, "[-d<debug_level> or --debug=<debug_level> ]\n" );
-	fprintf(stderr, "[-? or --help ]\n" );
-	fprintf(stderr, "[-c or --config config_file ]\n" );
-	fprintf(stderr, "[-s or --set option=value ]\n" );
-	fprintf(stderr, "script+\n" );
+	fprintf(stderr, "Usage: %s [ options ] [ script+ ]                   \n", prog);
+	fprintf(stderr, "Options are:                                        \n");
+	fprintf(stderr, " -c <config_file>    | --config=<config_file>       \n");
+	fprintf(stderr, "                       --dbname=<database_name>     \n");
+	fprintf(stderr, "                       --dbfarm=<database_directory>\n"); 
+	fprintf(stderr, "                       --dbinit=<MIL_statement>     \n");
+	fprintf(stderr, " -d <debug_level>    | --debug=<debug_level>        \n");
+	fprintf(stderr, " -s <option>=<value> | --set <option>=<value>       \n");
+	fprintf(stderr, " -?                  | --help                       \n");
 	exit(-1);
 }
 

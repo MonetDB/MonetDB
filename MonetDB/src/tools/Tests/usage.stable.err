@@ -10,15 +10,15 @@ stderr of test 'usage` in directory 'src/tools` itself:
 # 16:36:12 >  Mtimeout -timeout 60 Mserver --config= -?
 # 16:36:12 >  
 
-usage: Mserver
-[--dbname database_name ]
-[--dbfarm database_directory ]
-[--dbinit stmt ]
-[-d or --debug [debug_level] ]
-[-? or --help ]
-[-c or --config config_file ]
-[-s or --set option=value ]
-script+
+Usage: Mserver [ options ] [ script+ ]                   
+Options are:                                        
+ -c <config_file>    | --config=<config_file>       
+                       --dbname=<database_name>     
+                       --dbfarm=<database_directory>
+                       --dbinit=<MIL_statement>              
+ -d <debug_level>    | --debug=<debug_level>        
+ -s <option>=<value> | --set <option>=<value>       
+ -?                  | --help                       
 
 # 16:36:12 >  
 # 16:36:12 >  Mtimeout -timeout 60 MapiClient -?
