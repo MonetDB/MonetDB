@@ -593,8 +593,8 @@ the function definition in a particular module instead of the current one.
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	curInstr = getInstrPtr(curBlk,0);
-	if( curInstr->modname) GDKfree(curInstr->modname);
-	curInstr->modname = modnme== 0? GDKstrdup(cntxt->nspace->name):modnme;
+	if( moduleName(curInstr)) GDKfree(moduleName(curInstr));
+	setModuleId(curInstr, modnme== 0? GDKstrdup(cntxt->nspace->name):modnme);
 
 	/* get calling parameters */
 	ch= currChar(cntxt);
@@ -823,8 +823,8 @@ Most functions are (dynamically) linked with the kernel.
 			return 0;
 		}
 		nme = idCopy(cntxt,i);
-		if( curInstr->modname) GDKfree(curInstr->modname);
-		curInstr->modname = GDKstrdup(cntxt->nspace->name);
+		if( moduleId(curInstr)) GDKfree(curInstr->modname);
+		setModuleId(curInstr, GDKstrdup(cntxt->nspace->name));
 		curInstr->fcn = getAddress(nme);
 		curBlk->binding = nme;
 		if( cntxt->nspace->isAtomModule) 
@@ -1320,11 +1320,11 @@ startFCNcall:
 		if( currChar(cntxt) == '.'){
 			nextChar(cntxt);
 			skipSpace(cntxt);
-			curInstr->modname = arg;
+			setModuleId(curInstr, arg);
 			i = idLength(cntxt);
 			if( i==0) i= operatorLength(cntxt);
 			if( i )
-				curInstr->fcnname = idCopy(cntxt,i);
+				setFunctionId(curInstr, idCopy(cntxt,i));
 			else {
 				parseError(cntxt,"<functionname> expected\n");
 				pushInstruction(curBlk,curInstr);
@@ -1343,7 +1343,7 @@ startFCNcall:
 			return;
 		} else { 
 			nextChar(cntxt); skipSpace(cntxt);
-			curInstr->fcnname = arg;
+			setFunctionId(curInstr, arg);
 		}
 getarguments:
 
@@ -1357,7 +1357,7 @@ getarguments:
 part2:	/* consume <operator><term> part of expression */
 	if( i= operatorLength(cntxt) ){
 		/* operator expression */
-		curInstr->fcnname = idCopy(cntxt,i);
+		setFunctionId(curInstr, idCopy(cntxt,i));
 		if( l = idLength(cntxt)) {
 			@:GETvariable@
 			curInstr= pushArgument(curBlk,curInstr,varid); 
@@ -1376,15 +1376,17 @@ part3:
 	skipToEnd(cntxt);
 	pushInstruction(curBlk,curInstr);
 }
+#define BRKONERR if( curPrg->def->errors>=MAXERRORS) return curPrg->def->errors;
 int parseMAL(Client cntxt, Symbol curPrg){
 	int kind=0, i;
 	/*Symbol curPrg= cntxt->curprg;*/
 	InstrPtr curInstr;
+	char c;
 
 	echoInput(cntxt);
 	/* here the work takes place */
-	while( currChar(cntxt) && curPrg->def->errors<MAXERRORS){
-		switch( currChar(cntxt)){
+	while( c=currChar(cntxt) ){
+		switch( c){
 		case ';': case '\n': case '\r': case '\f': 
 			nextChar(cntxt);
 			echoInput(cntxt);
@@ -1458,6 +1460,7 @@ int parseMAL(Client cntxt, Symbol curPrg){
 		default: allLeft:
 			parseAssign(cntxt,kind);
 			kind =0;
+			BRKONERR;
 		}
 	}
 	return curPrg->def->errors;

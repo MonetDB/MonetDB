@@ -257,8 +257,8 @@ void eventRecord(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	}
 	log0("\"");
 	
-	log(" module=\"%s\"", (pci->modname?pci->modname:"unknown"));
-	log(" function=\"%s\"", (pci->fcnname?pci->fcnname:"unknown"));
+	log(" module=\"%s\"", (moduleId(pci)?moduleName(pci):"unknown"));
+	log(" function=\"%s\"", (functionId(pci)?functionName(pci):"unknown"));
 	log(" calls=\"%d\"", pci->counter);
 	if( pci->counter){
                 double avg= pci->ticks/(pci->counter+0.0);
@@ -501,12 +501,12 @@ abstracted away.
 @c
 int instrFilter(InstrPtr pci, str mod, str fcn){
 #ifdef MALprofiler
-	if( pci->fcnname && (*fcn=='*' || strcmp(fcn,pci->fcnname)==0) ){
-		if( pci->modname && (*mod=='*' || strcmp(mod,pci->modname)==0))
+	if( functionId(pci) && (*fcn=='*' || strcmp(fcn,functionName(pci))==0) ){
+		if( moduleId(pci) && (*mod=='*' || strcmp(mod,moduleName(pci))==0))
 		return 1;
 	}
-	 if( pci->modname && *fcn == '*' &&
-	   ( *mod == '*' || strcmp(mod,pci->modname)==0) )
+	 if( moduleId(pci) && *fcn == '*' &&
+	   ( *mod == '*' || strcmp(mod,moduleName(pci))==0) )
 		return 1;
 #else
 	stream_printf(GDKout,"# Monet not compiled for profiling\n");
@@ -531,8 +531,8 @@ int eventFilter(Scope cntxt, str mod, str fcn){
                 if(s->subscope[j]){
                         for(t= s->subscope[j];t!=NULL;t=t->peer) {
 				p= getInstrPtr(t->def,0);
-				moduleOnly = (  p->modname && 
-						strcmp(p->modname,mod)==0);
+				moduleOnly = ( moduleName(p) && 
+						strcmp(moduleName(p),mod)==0);
 				for(k=0;k<t->def->stop;k++){
 					p= getInstrPtr(t->def,k);
 					if( moduleOnly || all 

@@ -78,7 +78,7 @@ Symbol newFunction(str nme,int kind){
 
 	s = newSymbol(nme,kind);
 	p = newInstruction(kind);
-	p->fcnname = GDKstrdup(nme);
+	setFunctionId(p, GDKstrdup(nme));
 	getDestVar(p)= newVariable(s->def,GDKstrdup(nme),TYPE_any);
 	pushInstruction(s->def,p);
 	return s;
@@ -86,8 +86,8 @@ Symbol newFunction(str nme,int kind){
 InstrPtr newCall(str modname, str fcnname, int kind){
 	InstrPtr p;
 	p= newInstruction(kind);
-	p->modname= GDKstrdup(modname);
-	p->fcnname= GDKstrdup(fcnname);
+	setModuleId(p, GDKstrdup(modname));
+	setFunctionId(p, GDKstrdup(fcnname));
 	return p;
 }
 @-
@@ -100,9 +100,9 @@ Symbol	getSymbol(Scope scope, InstrPtr p){
 	Scope m;
 	Symbol s;
 
-	for(m= findScope(scope,p->modname); m; m= m->outer)
-        if(idcmp(m->name, p->modname)==0 ) {
-                s= m->subscope[getSubScope(p->fcnname)];
+	for(m= findScope(scope,moduleName(p)); m; m= m->outer)
+        if(idcmp(m->name, moduleName(p))==0 ) {
+                s= m->subscope[getSubScope(functionName(p))];
                 for(; s; s= s->peer)
                 if( getSignature(s)->fcn == p->fcn) return s;
         }

@@ -208,7 +208,7 @@ of the return statement.
 		pci= pcicaller;
 		pp = getInstrPtr(mb, 0);
 		/* stream_printf(GDKout,"recursive MAL function call %s[%d]\n",
-			pci->fcnname,pcicaller); */
+			functionName(pci),pcicaller); */
 		for(k=pp->retc, i= pci->retc; i<pci->argc; i++,k++){
 			lhs = &stk->stk[pp->argv[k]];
 			if( k== pp->argc-1) k--; /* variable args */

@@ -153,8 +153,8 @@ Check first for a module specific type checker. It takes
 precedence and should handle all cases. It returns -1
 upon failure, which shortcuts the execution.
 @c
-	if(p->modname && scope->typeChecker &&
-		idcmp(p->modname,scope->name)==0 ){
+	if(moduleId(p) && scope->typeChecker &&
+		idcmp(moduleName(p),scope->name)==0 ){
 		if( (scope->typeChecker)(scope,mb,p)>=0)
 			return getArgType(mb,p,0);
 		return -3;
@@ -164,9 +164,9 @@ Within a module find the subscope to locate the element in its list
 of symbols.
 @c
 	m= scope;
-	s= m->subscope[getSubScope(p->fcnname)];
+	s= m->subscope[getSubScope(functionName(p))];
 	while(s != NULL){	/* single scope element check */
-	if( idcmp(p->fcnname,s->name ) ){
+	if( idcmp(functionName(p),s->name ) ){
 		s= s->peer; continue;
 	}
 #ifdef DEBUG_MAL_RESOLVE
@@ -214,7 +214,7 @@ Note, each function returns at least one value.
 @c
 	if( sig->polymorphic ){
 		if(polyVector[0]==0) polyInit();
-		memcpy(polytype,polyVector,sizeof(polyVector));
+		memcpy(polytype,polyVector, sizeof(polyVector));
 		polymorphic++;
 		for(k=i=p->retc;i<p->argc;i++){
 			int actual = getArgType(mb,p,i);
@@ -258,7 +258,7 @@ At a later stage we may automatically insert such coercion requests.
 #ifdef DEBUG_MAL_RESOLVE
 	if(tracefcn) {
 		 stream_printf((GDKout,"finished %s.%s unmatched=%d polymorphic=%d %d\n",
-			sig->modname,sig->fcnname,
+			moduleName(sig), functionName(sig),
 			unmatched, polymorphic,p==sig);
 		if( polymorphic){
 			for(l=0;l<2*p->argc;l++) 
@@ -294,8 +294,8 @@ the resulting type can not be determined.
 			returntype[i]= TYPE_any;
 			s1= -1;
 			GDKerror("type conflict in statement %s.%s[%d]\n",
-				(p->modname?p->modname:""),
-				p->fcnname,getPC(mb,p));
+				(moduleId(p)?moduleName(p):""),
+				functionName(p),getPC(mb,p));
 		}
 		k++;
 		if( sig->varargs && k== sig->argc) k--;
@@ -324,7 +324,7 @@ It may happen that an argument was still untyped and as a result of
 the polymorphism matching became strongly typed. This should be
 reflected in the symbol table. 
 @c
-	if(p->modname == 0) p->modname= GDKstrdup(m->name);
+	if(moduleId(p) == 0) setModuleId(p, GDKstrdup(m->name));
 	s1= returntype[0];	/* for those interested */
 	GDKfree(returntype);
 	foundbutwrong = 0;
@@ -410,10 +410,10 @@ with one of the target variables.
 	if( foundbutwrong ){
 		if(m->name)
 		GDKerror("type conflict in assignment of %s.%s\n",
-			m->name,p->fcnname);
+			m->name,functionName(p));
 		else {
 		str err;
-		GDKerror("type conflict in assignment of %s\n", p->fcnname);
+		GDKerror("type conflict in assignment of %s\n", functionName(p));
 		err= instruction2str(mb,p,0);
 		GDKerror(err);
 		GDKfree(err);
@@ -503,15 +503,15 @@ message to the user.
 			p->typechk = MIN(p->typechk,typeKind(mb,p,0));
 		return;
 	}
-	if( p->fcnname){
+	if( functionId(p)){
 #ifdef DEBUG_MAL_RESOLVE
-		tracefcn= idcmp(p->fcnname,traceFcnName)==0;
+		tracefcn= idcmp(functionName(p),traceFcnName)==0;
 #endif
-		m= findScope(scope,p->modname);
+		m= findScope(scope,moduleName(p));
 		while(s1<0 && m!= NULL){
-			if( m->subscope[getSubScope(p->fcnname)])
+			if( m->subscope[getSubScope(functionName(p))])
 				s1= findFunctionType(m,mb,p);
-			if( p->modname) break;
+			if( moduleId(p)) break;
 			m= m->outer;
 		}
 		if( s1>= 0) return;
@@ -526,12 +526,12 @@ that the error was not caused by checking the definition
 of a polymorphic function or the module or function name are variables,
 In those cases, the detailed analysis is performed upon an actual call.
 @c
-		if( p->modname && (i=findVariable(mb,p->modname)) != -1 &&
+		if( moduleId(p) && (i=findVariable(mb,moduleName(p))) != -1 &&
                     getVarType(mb,i) == TYPE_str){
 			for(i=0;i<p->retc;i++) setFixed(mb,p->argv[i]);
 			p->typechk= TYPE_UNKNOWN;return;
 		} else
-		if( p->fcnname && (i=findVariable(mb,p->fcnname)) != -1 &&
+		if( functionId(p) && (i=findVariable(mb,functionName(p))) != -1 &&
                     getVarType(mb,i) == TYPE_str){
 			for(i=0;i<p->retc;i++) setFixed(mb,p->argv[i]);
 			p->typechk= TYPE_UNKNOWN; return; 
@@ -540,9 +540,9 @@ In those cases, the detailed analysis is performed upon an actual call.
 		     ! getInstrPtr(mb,0)->polymorphic)  {
 			mb->errors++;
 			GDKerror("'%s%s%s' undefined in %s.%s[%d]\n", 
-				(p->modname?p->modname:""), (p->modname?".":""),
-				p->fcnname, scope->name,
-				getInstrPtr(mb,0)->fcnname,getPC(mb,p));
+				(moduleId(p)?moduleName(p):""), (moduleName(p)?".":""),
+				functionName(p), scope->name,
+				functionName(getInstrPtr(mb,0)),getPC(mb,p));
 		}
 		return;
 	}
@@ -603,20 +603,20 @@ InstrPtr dynamicTypeChecker(Scope scope, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 #endif
 
 	pci = copyInstruction(p);
-        if( pci->fcnname && (i=findVariable(mb,pci->fcnname)) != -1){
+        if( functionId(pci) && (i=findVariable(mb,functionName(pci))) != -1){
                 if( getVarType(mb,i) != TYPE_str)
-                        pci->fcnname= 0;
+                        functionName(pci)= 0;
                 else {
-                        GDKfree(pci->fcnname);
-                        pci->fcnname= GDKstrdup( stk->stk[i].val.sval);
+                        GDKfree(functionName(pci));
+                        functionName(pci)= GDKstrdup( stk->stk[i].val.sval);
                 }
         }
-        if( pci->modname && (i=findVariable(mb,pci->modname)) != -1){
+        if( moduleId(pci) && (i=findVariable(mb,moduleName(pci))) != -1){
                 if( getVarType(mb,i) != TYPE_str)
-                        pci->modname= 0;
+                        setModuleId(pci, 0);
                 else {
-                        GDKfree(pci->modname);
-                        pci->modname= GDKstrdup( stk->stk[i].val.sval);
+                        freeModuleName(pci);
+                        setModuleId(pci, GDKstrdup( stk->stk[i].val.sval));
                 }
         }
 #ifdef DEBUG_MAL_RESOLVE
@@ -644,12 +644,12 @@ int fcnBinder(Scope scope, MalBlkPtr mb, InstrPtr p){
 	Symbol s;
 
 	if( p->token != ASSIGNsymbol) return 0;
-	if( p->modname== NULL || p->fcnname== NULL) return 0;
-	for(m= findScope(scope,p->modname); m; m= m->outer)
-	if(idcmp(m->name, p->modname)==0 ) {
-		s= m->subscope[getSubScope(p->fcnname)];
+	if( moduleId(p)== NULL || functionId(p)== NULL) return 0;
+	for(m= findScope(scope,moduleName(p)); m; m= m->outer)
+	if(idcmp(m->name, moduleName(p))==0 ) {
+		s= m->subscope[getSubScope(functionName(p))];
 		for(; s; s= s->peer)
-		if( idcmp(p->fcnname,s->name)==0 &&
+		if( idcmp(functionName(p),s->name)==0 &&
 		    p->argc == getSignature(s)->argc ){
 			/* found it */
 			@:bindFunction@

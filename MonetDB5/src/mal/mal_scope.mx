@@ -227,15 +227,14 @@ void insertSymbol(Scope scope, Symbol prg){
 	Scope c;
 
         sig = getSignature(prg);
-	if(sig->modname && idcmp(sig->modname,scope->name) != 0){
+	if(moduleId(sig) && idcmp(moduleName(sig),scope->name) != 0){
 		/* move the definition to the proper place */
-		c= findScope(scope,sig->modname);
+		c= findScope(scope,moduleName(sig));
 		if(c == NULL){
 			GDKwarning("insertSymbol:undefined module\n");
-printf("module %s symbol %s. %s\n",scope->name, sig->modname,sig->fcnname);
 		} else scope = c;
 	}
-        t = getSubScope(sig->fcnname);
+        t = getSubScope(functionName(sig));
         if( scope->subscope == NULL){
 		newSubScope(scope);
                 scope->subscope[t] = prg;

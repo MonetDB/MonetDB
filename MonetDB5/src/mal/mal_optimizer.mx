@@ -481,7 +481,7 @@ str MALoptimizer(Client c)
 		qot=0;
 		for(pc=0, qot=0; pc< mb->stop; pc++){
 			p= getInstrPtr(mb,pc);
-			if( p->modname && idcmp(p->modname,"optimizer")==0)
+			if( moduleId(p) && idcmp(moduleName(p),"optimizer")==0)
 				qot++;
 		}
 		if( qot==0){
@@ -494,7 +494,7 @@ str MALoptimizer(Client c)
 		qot=0;
 		for(pc=0; pc< mb->stop; pc++){
 			p= getInstrPtr(mb,pc);
-			if( p->modname && idcmp(p->modname,"optimizer")==0){
+			if( moduleId(p) && idcmp(moduleName(p),"optimizer")==0){
 				qot++;
 				if( p->fcn)
 					msg= (str) (*p->fcn)(mb,0,p);
@@ -646,7 +646,7 @@ int ARoptimizerStep(Client cntxt, MalBlkPtr mb, int pc)
 { 	int k,kn=0;
 	InstrPtr p;
 	p= getInstrPtr(mb,pc);
-	if( p->modname || p->fcnname) return pc;
+	if( moduleId(p) || functionId(p)) return pc;
 	if( p->token != ASSIGNsymbol) return pc;
 	if( blockStart(p) || blockExit(p) || blockCntrl(p)) return pc;
 
@@ -701,13 +701,13 @@ as 'corrupt'.
 
 int hasSameSignature(InstrPtr p, InstrPtr q){	
 	if( q->retc != p->retc && q->argc != p->argc) return FALSE;
-	if( q->fcnname==0 && p->fcnname!=0 ) return FALSE;
-	if( q->fcnname!=0 && p->fcnname==0 ) return FALSE;
-	if( q->fcnname && p->fcnname && idcmp(q->fcnname,p->fcnname) ) 
+	if( functionId(q)==0 && functionId(p)!=0 ) return FALSE;
+	if( functionId(q)!=0 && functionId(p)==0 ) return FALSE;
+	if( functionId(q) && functionId(p) && idcmp(functionName(q),functionName(p)) ) 
 		return FALSE;
-	if( q->modname==0 && p->modname!=0 ) return FALSE;
-	if( q->modname!=0 && p->modname==0 ) return FALSE;
-	if( q->modname && p->modname && idcmp(q->modname,p->modname))
+	if( moduleId(q)==0 && moduleId(p)!=0 ) return FALSE;
+	if( moduleId(q)!=0 && moduleId(p)==0 ) return FALSE;
+	if( moduleId(q) && moduleId(p) && idcmp(moduleName(q),moduleName(p)))
 		return FALSE;
 	/* actually also check their types */
 	return TRUE;
@@ -743,7 +743,7 @@ int isUnsafeFunction(MalBlkPtr mb, InstrPtr q)
 {
 	Symbol s=0;
 	Client c;
-	if( q->fcn==0 || q->fcnname== 0) return FALSE;
+	if( q->fcn==0 || functionId(q)== 0) return FALSE;
 	c= getClient();
 	if( c ) s= getSymbol(c->nspace,q);
 	/* check arguments for 'unsafe' property */
@@ -943,12 +943,12 @@ previouse ones.
 @c
 int hasSideEffects(InstrPtr p){
 	if( blockStart(p) || blockExit(p) || blockCntrl(p)) return TRUE;
-	if(p->fcnname && strncmp("print",p->fcnname,5)==0) return TRUE;
-	if(p->fcnname && strncmp("fprint",p->fcnname,6)==0) return TRUE;
-	if(p->fcnname && idcmp("deposit",p->fcnname)==0) return TRUE;
-	if(p->fcnname && idcmp("insert",p->fcnname)==0) return TRUE;
-	if(p->fcnname && idcmp("prelude",p->fcnname)==0) return TRUE;
-	if(p->fcnname && idcmp("decimal_prelude",p->fcnname)==0) return TRUE;
+	if(functionId(p) && strncmp("print",functionName(p),5)==0) return TRUE;
+	if(functionId(p) && strncmp("fprint",functionName(p),6)==0) return TRUE;
+	if(functionId(p) && idcmp("deposit",functionName(p))==0) return TRUE;
+	if(functionId(p) && idcmp("insert",functionName(p))==0) return TRUE;
+	if(functionId(p) && idcmp("prelude",functionName(p))==0) return TRUE;
+	if(functionId(p) && idcmp("decimal_prelude",functionName(p))==0) return TRUE;
 	return FALSE;
 }
 str DCoptimizer(Client cntxt, MalBlkPtr mb, int pc)
@@ -1077,8 +1077,8 @@ is safe.
 During a final pass through the program, we can convert all combinators 
 back into their elementary steps.
 @= fndOperator
-	(( @1->modname==0 || (@2 && idcmp(@1->modname,@2)==0) ) &&
-	     (@1->fcnname==0 || (@3 && idcmp(@1->fcnname,@3)==0) ))
+	(( moduleId(@1)==0 || (@2 && idcmp(moduleName(@1),@2)==0) ) &&
+	     (functionId(@1)==0 || (@3 && idcmp(functionName(@1),@3)==0) ))
 @-
 A more complete implementation should als push the selection through
 multiple operators. In particular, a reverse operator may obscure
@@ -1094,8 +1094,8 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
 		if( @:fndOperator(q,"algebra","semijoin")@ ){
 			if( p->argv[0]== q->argv[2]){
 				GDKfree(p->fcnname);
-				GDKfree(p->modname); p->modname= NULL;
-				p->fcnname= GDKstrdup("reverse_semijoin");
+				GDKfree(p->modname); setModuleId(p, NULL);
+				setFunctionId(p, GDKstrdup("reverse_semijoin"));
 				p= pushArgument(mb,p,q->argv[1]);
 				removeInstruction(mb,pc2);
 				return 1;
@@ -1104,8 +1104,8 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
 		if( @:fndOperator(q,"algebra","select")@ ){
 			if( p->argv[0]== q->argv[1]){
 				GDKfree(p->fcnname);
-				GDKfree(p->modname); p->modname= NULL;
-				p->fcnname= GDKstrdup("reverse_select");
+				GDKfree(p->modname); setModuleId(p, NULL);
+				setFunctionId(p, GDKstrdup("reverse_select"));
 				p= pushArgument(mb,p,q->argv[1]);
 				p= pushArgument(mb,p,q->argv[2]);
 				p= pushArgument(mb,p,q->argv[3]);
@@ -1118,8 +1118,8 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
 		if( @:fndOperator(q,"algebra","select")@ ){
 			if( p->argv[0]== q->argv[1]){
 				GDKfree(p->fcnname);
-				GDKfree(p->modname); p->modname= NULL;
-				p->fcnname= GDKstrdup("semijoin_select");
+				GDKfree(p->modname); setModuleId(p, NULL);
+				setFunctionId(p, GDKstrdup("semijoin_select"));
 				p= pushArgument(mb,p,q->argv[2]);
 				p= pushArgument(mb,p,q->argv[3]);
 				removeInstruction(mb,pc2);
@@ -1274,7 +1274,7 @@ void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname){
 	if(idcmp(fname,"stdout")==0) f= GDKout; else
 	f= open_wastream(fname);
 	p= getInstrPtr(mb,0);
-	stream_printf(f,"digraph %s{\n", p->fcnname);
+	stream_printf(f,"digraph %s{\n", functionName(p));
 	p= getInstrPtr(mb,0);
 	showFlowDetails(mb,stk,p,0,f);
 	for(k=p->retc;k<p->argc;k++){

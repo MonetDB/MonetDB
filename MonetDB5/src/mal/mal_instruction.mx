@@ -197,13 +197,24 @@ typedef struct MALBLK{
 
 @-
 Allocation of space assumes a rather exotic number of arguments.
+Access to module and function name are cast in macros to prepare
+for separate name space management.
 @h
+#define moduleId(P)		(P)->modname
+#define setModuleId(P,S)	(P)->modname= S
+#define moduleName(P)		(P)->modname
+#define freeModuleName(P)	{ GDKfree((P)->modname); (P)->modname=0;}
+#define functionId(P)		(P)->fcnname
+#define setFunctionId(P,S)	(P)->fcnname= S
+#define functionName(P)		(P)->fcnname
+#define freeFunctionName(P)	{ GDKfree((P)->fcnname); (P)->fcnname=0;}
+
 #define getInstrPtr(M,I)	(M)->stmt[I]
 #define getSignature(S)		getInstrPtr((S)->def,0)
-#define getFcnName(M)	getInstrPtr(M,0)->fcnname
-#define getArgCount(M)	getInstrPtr(M,0)->argc
-#define getModName(M)	getInstrPtr(M,0)->modname 
-#define getPrgSize(M)	(M)->stop
+#define getFcnName(M)		functionName(getInstrPtr(M,0))
+#define getArgCount(M)		getInstrPtr(M,0)->argc
+#define getModName(M)		moduleName(getInstrPtr(M,0))
+#define getPrgSize(M)		(M)->stop
 
 #define getVar(M,I)		(M)->var[I]
 #define getVarLiteral(M,I) 	(M)->var[I]->literal
@@ -466,8 +477,8 @@ InstrPtr newInstruction(int kind){
 	p->token = kind;
 	p->barrier= 0;
 	p->typechk = TYPE_UNKNOWN;
-	p->modname= NULL;
-	p->fcnname= NULL;
+	setModuleId(p, NULL);
+	setFunctionId(p, NULL);
 	p->props= NULL;
 	p->beforeCall = p->afterCall = p->finalCall= 0;
 	p->fcn= NULL;
@@ -504,8 +515,8 @@ InstrPtr copyInstruction(InstrPtr p)
 	return new;
 }
 void clrFunction(InstrPtr p){
-	if(p->modname) GDKfree(p->modname); p->modname= 0;
-	if(p->fcnname) GDKfree(p->fcnname); p->fcnname= 0;
+	if(moduleId(p)) freeModuleName(p);
+	if(functionId(p)) freeFunctionName(p);
 	p->fcn= 0;
 }
 void clrInstruction(InstrPtr p){
@@ -525,8 +536,8 @@ void oldmoveInstruction(InstrPtr new, InstrPtr p){
 
 	space = sizeof(InstrRecord) + sizeof(int) * p->argc;
 	memcpy((char*) new, (char*) p, space);
-	new->fcnname = p->fcnname? GDKstrdup(p->fcnname): NULL;
-	new->modname = p->modname? GDKstrdup(p->modname): NULL;
+	setFunctionId(new, functionId(p)? GDKstrdup(functionName(p)): NULL);
+	setModuleId(new, moduleId(p)? GDKstrdup(moduleName(p)): NULL);
 }
 @-
 Query optimizers walk their way through a MAL program block.
@@ -1157,7 +1168,7 @@ variable to hold the result instead.
 mal_export void pushEndInstruction(MalBlkPtr mb){
 	InstrPtr p;
 	p= newInstruction(ENDDEFsymbol);
-	getDestVar(p) = findVariable(mb,getInstrPtr(mb,0)->fcnname);
+	getDestVar(p) = findVariable(mb,functionName(getInstrPtr(mb,0)));
 	p->argc =0;
 	p->retc = 0;
 	pushInstruction(mb,p);
@@ -1261,9 +1272,9 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg ){
 	sprintf(t,"%s ",fcnClass(p));
 
 	advance(t);
-	if( p->modname) sprintf(t,"%s.",p->modname);
+	if( moduleName(p)) sprintf(t,"%s.",moduleName(p));
 	advance(t);
-	sprintf(t,"%s(",p->fcnname);
+	sprintf(t,"%s(",functionName(p));
 	for(i=p->retc;i<p->argc;i++){ @:showParam(argc)@ }
 	advance(t);
 	if( p->varargs) sprintf(t,"...");
@@ -1347,7 +1358,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 		case PATcall:
 		case CMDcall:
 		case ASSIGNsymbol:
-			if( p->argc<=1 && p->fcnname==NULL){
+			if( p->argc<=1 && functionId(p)==NULL){
 				@:tabulate@
 				sprintf(t,"%s%s",nme,pstring); 
 				@:propertyList@
@@ -1422,14 +1433,14 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 	GDKfree(pstring); pstring=0;
 	advance(t);
 	low= p->retc; high= p->argc;
-	if( p->modname) sprintf(t,"%s.",p->modname);
+	if( moduleName(p)) sprintf(t,"%s.",moduleName(p));
 	advance(t);
 	if( p->token == RETURNsymbol){
 		/* low= 0; high= p->retc;*/
 		low= p->retc; high= p->argc;
 		if( high-low>1 ) sprintf(t,"(");
-	} else if( p->fcnname ) {
-		sprintf(t,"%s(",p->fcnname);
+	} else if( functionId(p) ) {
+		sprintf(t,"%s(",functionName(p));
 	} else if( p->retc>1) sprintf(t,"(");
 
 	for(i=low;i<high;i++){
@@ -1471,7 +1482,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 	if( p->token == RETURNsymbol){
 		if( high-low>1 ) sprintf(t,")");
 	} else
-	if(p->fcnname || p->retc>1 ) sprintf(t,")");
+	if(functionId(p) || p->retc>1 ) sprintf(t,")");
 	advance(t);
 	sprintf(t,";");
 	if( flg & (LIST_MAL_TYPE | LIST_MAL_BIND)){
