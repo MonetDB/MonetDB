@@ -9,6 +9,15 @@
 #include "list.h"
 #include <string.h>
 
+#include <config.h>
+#ifndef DIR_SEP
+#ifdef NATIVE_WIN32
+#define DIR_SEP '\\'
+#else
+#define DIR_SEP '/'
+#endif
+#endif
+
 class Link: public language {
     private:
 	List *monet_mod_path;
@@ -82,7 +91,7 @@ ostream &Link::gen_module( ostream &o, const Module &d ){
 }
 
 static char *basename( char *filename ){
-	char *p = strdup(strrchr( filename, '/' )+1);
+	char *p = strdup(strrchr( filename, DIR_SEP )+1);
 	char *q = strrchr( p, '.' );
 	if (q)
 		*q  = '\0';
@@ -95,9 +104,9 @@ static int matchlen( char *dir, char *file ){
 	int len;
 
 	for( ds = dir; *ds; ds++) {
-		if (*ds != '/') continue;
+		if (*ds != DIR_SEP) continue;
 		for( fs = file; *fs; fs++) {
-			if (*fs != '/') continue;
+			if (*fs != DIR_SEP) continue;
 
 			len = 0;
 			for(d = ds, f = fs; *d && *f && *d == *f; d++, f++) {
