@@ -509,11 +509,23 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		int r2 = stmt_dump( s->op3.stval, nr, sql );
 		switch(s->flag){
 		case 0: 
+			len = snprintf( buf, BUFSIZ, 
+			  "s%d := s%d.uselect(s%d, s%d, FALSE, FALSE);\n", 
+			  -s->nr, l, r1, r2 ); 
+			break;
 		case 1: 
+			len = snprintf( buf, BUFSIZ, 
+			  "s%d := s%d.uselect(s%d, s%d, FALSE, TRUE);\n", 
+			  -s->nr, l, r1, r2 ); 
+			break;
 		case 2: 
+			len = snprintf( buf, BUFSIZ, 
+			  "s%d := s%d.uselect(s%d, s%d, TRUE, FALSE);\n", 
+			  -s->nr, l, r1, r2 ); 
+			break;
 		case 3: 
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.uselect(s%d, s%d);\n", 
+			  "s%d := s%d.uselect(s%d, s%d, TRUE, TRUE);\n", 
 			  -s->nr, l, r1, r2 ); 
 			break;
 		}
