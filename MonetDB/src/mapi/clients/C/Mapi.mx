@@ -1492,7 +1492,8 @@ finish_handle(MapiHdl hdl)
 	if (hdl == NULL)
 		return MERROR;
 	mid = hdl->mid;
-	if (mid->active == hdl && read_into_cache(hdl, 0) != MOK)
+	if (mid->active == hdl && !hdl->needmore &&
+	    read_into_cache(hdl, 0) != MOK)
 		return MERROR;
 	if (mid->to) {
 		if (hdl->needmore) {
@@ -2592,7 +2593,7 @@ slice_row(char *reply, char *null, char ***anchorsp, int length)
 
 	reply++;		/* skip over initial '[' */
 	i = 0;
-	anchors = malloc(length * sizeof(*anchors));
+	anchors = length == 0 ? NULL : malloc(length * sizeof(*anchors));
 	do {
 		if (i >= length) {
 			length = i + 1;
@@ -3890,6 +3891,16 @@ int
 mapi_get_field_count(MapiHdl hdl)
 {
 	mapi_hdl_check(hdl, "mapi_get_field_count");
+	if (hdl->result && hdl->result->fieldcnt == 0) {
+		/* no rows have been sliced yet, and there was no
+		   header, so try to figure out how many rows there
+		   are for ourselves */
+		int i;
+
+		for (i = 0; i < hdl->result->cache.writer; i++)
+			if (hdl->result->cache.rows[i][0] == '[')
+				mapi_slice_row(hdl->result, i);
+	}
 	return hdl->result ? hdl->result->fieldcnt : 0;
 }
 
