@@ -2685,7 +2685,7 @@ int jivejoin1(BAT **res, BAT* bo, BAT *proj, BAT *attr, BAT *radix_count, int *s
 } 
 
 @= jivejoin2
-if (@6 && proj->ttype != TYPE_void) {
+if (@6 || proj->ttype != TYPE_void) {
 	long off = BUNindex(attr, BUNfirst(attr)) - attr->hseqbase;
 	BATloopFast(proj, p, q, xx) {
 		r = BUNptr(attr, off + *(long*) BUN@4(proj, p));
