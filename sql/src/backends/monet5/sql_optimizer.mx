@@ -63,7 +63,7 @@ An error in the compilation should be reported to the user.
             stream_flush(c->fdout);
             return;
         }
-        /*optimizeQueryInCache(c);*/
+        optimizeQueryInCache(c);
 }
 @-
 The first attempt to building an SQL optimizer.
@@ -74,6 +74,9 @@ enable re-entry when used as a cache-optimized query.
 @c
 str SQLoptimizer(Client c) {
     (void) c;
+    printf("SQLoptimizer\n");
+        printFunction(c->fdout,c->curprg->def, LIST_MAL_ALL);
+    printf("done\n");
     return MAL_SUCCEED;
 }
 
@@ -84,12 +87,13 @@ void optimizeQueryInCache(Client c) {
         int i,k;
 
 #ifdef _SQL_OPTIMIZER_DEBUG
-	printf("First call to SQL optimizer\n");
+        printf("First call to SQL optimizer\n");
 #endif
         mb= c->curprg->def;
         ns= (InstrPtr *) GDKmalloc( sizeof(InstrPtr) * (mb->stop+4));
         k=1;
         ns[0] = getInstrPtr(mb,0); /* its signature */
+        ns[0]->token = FACTORYsymbol;
         for(i= 0; i< mb->stop; i++){
             p= getInstrPtr(mb,i);
             if( functionName(p) && moduleName(p) &&
@@ -131,13 +135,13 @@ Finalize the factory loop
         p->argv[0]= v;
         ns[k++]= p;
         ns[k++]= getInstrPtr(mb,i);
-        chkProgram(c->nspace,mb);
 
-        mb->stop += 0;
+        mb->stop += 4;
         GDKfree(mb->stmt);
         mb->stmt = ns;
+        chkProgram(c->nspace,mb);
 #ifdef _SQL_OPTIMIZER_DEBUG
-        printFunction(c->fdout,c->curprg->def, c->listing);
+        printFunction(c->fdout,c->curprg->def, LIST_MAL_ALL);
 #endif
 }
 
