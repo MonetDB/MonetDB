@@ -132,23 +132,22 @@ changes.
 @c
 void monet_hello(opt *set, int setlen) {
 #ifdef STATIC
-    char *linkinfo = "statically";
+	char *linkinfo = "statically";
 #else
-    char *linkinfo = "dynamically";
+	char *linkinfo = "dynamically";
 #endif
-    char *msg = mo_find_option(set, setlen, "monet_welcome");
+	char *msg = mo_find_option(set, setlen, "monet_welcome");
     if ( msg && strcmp(msg,"yes")==0){
-        printf("# Monet Database Server V%s\n", GDKgetenv("gdk_version"));
-        printf("# Copyright (c) 1993-2005, CWI. ");
-        printf("All rights reserved.\n");
-        printf("# Compiled for %s/" SZFMT "bit; %s linked.\n", 
+		printf("# Monet Database Server V%s\n", GDKgetenv("gdk_version"));
+		printf("# Copyright (c) 1993-2005, CWI. ");
+		printf("All rights reserved.\n");
+		printf("# Compiled for %s/" SZFMT "bit; %s linked.\n", 
 		HOST, (size_t) (sizeof(ptr)*8), linkinfo );
-	printf("# config:%s\n", GDKgetenv("config"));
-	printf("# dbfarm:%s\n", GDKgetenv("gdk_dbfarm"));
-	printf("# dbname:%s\n", GDKgetenv("gdk_dbname"));
-	printf("# Visit http://monetdb.cwi.nl/ for further information.\n");
-
-    }
+		printf("# config:%s\n", GDKgetenv("config"));
+		printf("# dbfarm:%s\n", GDKgetenv("gdk_dbfarm"));
+		printf("# dbname:%s\n", GDKgetenv("gdk_dbname"));
+		printf("# Visit http://monetdb.cwi.nl/ for further information.\n");
+	}
 }
 
 str absolute_path(str s) {
@@ -249,12 +248,26 @@ monet_options.mx.in
 
 }
 
-int main(int argc, char** av) {
+int main(int argc, char** av, char** envp) {
 	char buf[BUFSIZ], *prog = *av;
         opt *set = NULL;
         int i,debug = 0, setlen = 0, listing=0;
 	str dbinit= NULL;
 
+	/* clear all environment variables */
+	for (i = 0; envp[i] != 0; i++)
+		memset(envp[i], 0, strlen(envp[i]));
+	/* clear all arguments that contain non-printable characters */
+	for (i = 0; av[i] != 0; i++) {
+		int j;
+		for (j = 0; j < strlen(av[i]); j++) {
+			if (!isprint(av[i][j])) {
+				/* non-printable char found! */
+				fprintf(stderr, "warning: discarding argument %d: it contains non-printable characters\n", i);
+				memset(av[i], 0, strlen(av[i]));
+			}
+		}
+	}
 
 @-
 We give malloc advice here. Main goal: prevent fragmentation.
@@ -352,9 +365,10 @@ faster system start.
 			}
 			if (strcmp(long_options[option_index].name, 
 						"dbinit") == 0){
-				if( dbinit)
-				fprintf(stderr,"!ERROR --dbinit set twice\n");
-				dbinit = optarg;
+				if(dbinit)
+					fprintf(stderr, "warning: ignoring multiple --dbinit argument\n");
+				else
+					dbinit = optarg;
 				break;
 			}
 			usage(prog);
@@ -390,6 +404,7 @@ faster system start.
 			}
 		 } break;
 		case 't': /* trace option, currently ignored */
+			fprintf(stderr, "warning: trace option not yet supported\n");
 			break;
 		case '?':
 			usage(prog);
@@ -424,14 +439,16 @@ faster system start.
 Time to execute the script files. Start with the init command[todo]
 @c
 	if( dbinit )
-		callString(mal_clients,GDKstrdup(dbinit),listing);
+		callString(mal_clients, dbinit, listing);
 	if( GDKgetenv("mal_listing"))
 		sscanf( GDKgetenv("mal_listing"),"%d",&listing);
-        for(i=0; monet_script[i]; i++) {
-                malInclude(mal_clients, monet_script[i], 0, listing);
+
+	for(i=0; monet_script[i]; i++) {
+		malInclude(mal_clients, monet_script[i], 0, listing);
 		GDKfree(monet_script[i]);
 		monet_script[i]=0;
-        }
+	}
+
 	GDKfree(monet_script);
 	initClientPrg(mal_clients,"main");
 	serveClient(mal_clients);
