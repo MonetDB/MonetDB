@@ -15,15 +15,17 @@ typedef struct cc {
 
 extern statement *sqlexecute( context *lc, char *buf );
 
+#define CHUNK (64*1024)
+
 static char *readblock( stream *s ){
 	int len = 0;
-	int size = BUFSIZ + 1;
+	int size = CHUNK + 1;
 	char *buf = NEW_ARRAY(char, size ), *start = buf;
 
-	while ((len = s->read(s, start, 1, BUFSIZ)) == BUFSIZ){
-		size += BUFSIZ;
+	while ((len = s->read(s, start, 1, CHUNK)) == CHUNK){
+		size += CHUNK;
 		buf = RENEW_ARRAY(char, buf, size); 
-		start+= BUFSIZ;
+		start = buf + size - CHUNK - 1;
 		*start = '\0';
 	}
 	start += len;
@@ -115,15 +117,24 @@ void getfunctions( catalog *c ){
 	tcnt = strtol(n+1,&n,10); 
 	c->funcs = list_create();
 	for(i=0;i<tcnt;i++){
-	    char *tname, *imp;
+	    char *tname, *imp, *tpe1, *tpe2, *res;
 
 	    n = strchr(start = n+1, '\t'); *n = '\0';
 	    tname = removeQuotes(start, '"');
 
-	    n = strchr(start = n+1, '\n'); *n = '\0';
+	    n = strchr(start = n+1, '\t'); *n = '\0';
 	    imp = removeQuotes(start, '"');
 
-	    cat_create_func( c, tname, imp, i );
+	    n = strchr(start = n+1, '\t'); *n = '\0';
+	    tpe1 = removeQuotes(start, '"');
+
+	    n = strchr(start = n+1, '\t'); *n = '\0';
+	    tpe2 = removeQuotes(start, '"');
+
+	    n = strchr(start = n+1, '\n'); *n = '\0';
+	    res = removeQuotes(start, '"');
+
+	    cat_create_func( c, tname, imp, tpe1, tpe2, res, i );
 	}
 	_DELETE(buf);
 }

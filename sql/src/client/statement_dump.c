@@ -284,7 +284,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		}
 		k++;
 		while(n){
-			len += snprintf( buf+len, BUFSIZ, "s%d := atom(%s);\n", k++, 
+			len += snprintf( buf+len, BUFSIZ, "s%d := %s;\n", k++, 
 					atom2string(n->data.aval) );
 			len += snprintf( buf+len, BUFSIZ, "insert(oid(s%d), s%d);\n", *nr, k);
 			n = n->next;
@@ -294,7 +294,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		s->nr = (*nr)++;
 	} 	break;
 	case st_atom: {
-		len += snprintf( buf+len, BUFSIZ, "s%d := atom(%s);\n", *nr, atom2string(s->op1.aval));
+		len += snprintf( buf+len, BUFSIZ, "s%d := %s;\n", *nr, atom2string(s->op1.aval));
 		s->nr = (*nr)++;
 	} break;
 	case st_cast: {
@@ -410,6 +410,23 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		if (sql->debug&32){
 			len += snprintf( buf+len, BUFSIZ,
 			"stream_write(Output,\"0\\n\");stream_flush(Output);\n");
+			if (lst->type == st_list){
+				list *l = lst->op1.lval;
+				node *n = l->h;
+
+				len += snprintf( buf+len, BUFSIZ, "table(\n");
+				if (n){
+					len += snprintf( buf+len, BUFSIZ,
+						"s%d", n->data.stval->nr);
+					n = n->next;
+				}
+				while(n){
+					len += snprintf( buf+len, BUFSIZ,
+						", s%d", n->data.stval->nr);
+					n = n->next;
+				}
+				len += snprintf( buf+len, BUFSIZ, ");\n");
+			}
 			break;
 		}
 		if (lst->type == st_ordered){
