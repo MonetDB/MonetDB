@@ -5,6 +5,7 @@ MTSAFE
 
 # install these libs in the pkglib
 LIBDIR = pkglib
+SUBDIRS = stream
 
 LIBS = {
 	SEP = _
@@ -23,18 +24,11 @@ LIBS = {
 
 }
 
-lib_stream  =  {
-	SOURCES = stream.mx
-	HEADERS = h
-	LIBS = \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS)
-}
-
 lib__streams = {
 	SOURCES = streams.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	LIBS = ../../gdk/libbat ../../monet/libmonet ./libstream \
+	LIBS = ../../gdk/libbat ../../monet/libmonet ./stream/libstream \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
@@ -42,7 +36,7 @@ lib__ascii_io = {
 	SOURCES = ascii_io.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	LIBS = ../../gdk/libbat ../../monet/libmonet ./libstream ./lib_streams
+	LIBS = ../../gdk/libbat ../../monet/libmonet ./stream/libstream ./lib_streams
 }
 
 lib__counters = {
