@@ -517,12 +517,14 @@ Limit the loop count in the optimizer
 str MALoptimizer(Client c)
 {   MalBlkPtr mb= c->curprg->def;
     InstrPtr p;
-    int pc,qot=0, oldstop;
+    int pc,qot=0;
     str msg= NULL;
     int cnt =0;
+#ifdef DEBUG_MAL_OPTIMIZER
+    int oldstop= mb->stop;
+#endif
 
     setLifespan(mb);
-    oldstop= mb->stop;
     do{
         qot=0;
         for(pc=0; pc< mb->stop; pc++){
