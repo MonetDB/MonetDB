@@ -12,7 +12,7 @@ lib_mal = {
 	mal_client.mx mal_profiler.mx mal_scenario.mx mal_factory.mx \
 	mal_namespace.mx mal_properties.mx mal_optimizer.mx scenario_init.mx \
 	mal_syntax.mx mal_macro.mx mal_compiler.mx mal_costmodel.mx \
-	mal_builder.mx
+	mal_builder.mx mal_scheduler.mx
 
 	HEADERS = h 
 	SCRIPTS = mal
@@ -30,7 +30,7 @@ lib_mal = {
 #	mal_client.mx mal_profiler.mx mal_scenario.mx mal_factory.mx \
 #	mal_namespace.mx mal_properties.mx mal_optimizer.mx scenario_init.mx \
 #	mal_syntax.mx mal_macro.mx mal_compiler.mx mal_costmodel.mx \
-# 	mal_builder.mx
+# 	mal_builder.mx mal_scheduler.mx
 #}
 scripts_mal = {
 	DIR = pkglibdir

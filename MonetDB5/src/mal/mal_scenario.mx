@@ -172,7 +172,7 @@ struct SCENARIO scenarioRec[MAXSCEN]={
     "MALreader",    0,0,
     "MALparser",    0, 0,
     "MALoptimizer", 0, 0,
-    0,      0, 0,
+    "MALscheduler", 0, 0,
     "MALengine",    0, 0,  0},
 {"mil", "MILinit",0,"MILexit",0,
 	"MILinitClient",0,

@@ -119,7 +119,7 @@ information should be dealt with separately.[TODO]
     void    *state[7], *oldstate[7];
     MALfcn  phase[7], oldphase[7];
     short   itrace;     /* trace execution using interactive mdb */
-    short   debugoptimizer;
+    short   debugOptimizer,debugScheduler;
     long    timer;      /* trace time in usec */
 @-
 @}
@@ -398,7 +398,7 @@ collect the buffer when in use.
     c->logout= c->login+c->delay;
     c->mode = AWAITING;
     c->itrace = 0;
-    c->debugoptimizer = 0;
+    c->debugOptimizer = c->debugScheduler= 0;
     c->errbuf = 0;
 
     c->cwd= GDKstrdup(monet_cwd);

@@ -526,7 +526,7 @@ str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Client cntxt= getClient();
 	(void) stk;
 
-    cntxt->debugoptimizer= cntxt->debugoptimizer? FALSE: TRUE;
+    cntxt->debugOptimizer= cntxt->debugOptimizer? FALSE: TRUE;
 	@:optimizerCleanup(pci)@
 	return MAL_SUCCEED;
 }
@@ -563,7 +563,7 @@ str optimizeMALBlock(MalBlkPtr mb)
         }
     } while(qot && cnt++ < 64);
 #ifdef DEBUG_MAL_OPTIMIZER
-    if( getClient()->debugoptimizer && oldstop!=mb->stop){
+    if( getClient()->debugOptimizer && oldstop!=mb->stop){
     stream_printf(GDKout,"Optimizer effect %d -> %d instructions\n",
         oldstop,mb->stop);
     }
@@ -718,7 +718,7 @@ int ARoptimizerStep(MalBlkPtr mb, int pc)
         ARreplaceAlias(mb,pc+1,m,p->argv[k], p->argv[p->retc+k]);
         kn++;
 #ifdef DEBUG_MAL_OPTIMIZER
-        if( getClient()->debugoptimizer){
+        if( getClient()->debugOptimizer){
 			stream_printf(GDKout,"Delete alias assignment\n");
 			printInstruction(GDKout,mb,p,LIST_MAL_ALL);
         }
@@ -905,7 +905,7 @@ int safetyBarrier(MalBlkPtr mb,InstrPtr p, InstrPtr q)
     for(i=p->retc; i<p->argc;i++)
     if( p->argv[i]== q->argv[j] ) {
 #ifdef DEBUG_MAL_OPTIMIZER2
-	if( getClient()->debugoptimizer){
+	if( getClient()->debugOptimizer){
 	stream_printf(GDKout,"Found assignment barrier for \n");
 	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 	printInstruction(GDKout,mb,q,LIST_MAL_ALL);
@@ -919,7 +919,7 @@ int safetyBarrier(MalBlkPtr mb,InstrPtr p, InstrPtr q)
         for(j=q->retc; j<q->argc; j++)
         if( p->argv[i]== q->argv[j] ) {
 #ifdef DEBUG_MAL_OPTIMIZER
-	if( getClient()->debugoptimizer){
+	if( getClient()->debugOptimizer){
 	stream_printf(GDKout,"Found overlapping assignment barrier for \n");
 	printInstruction(GDKout,mb,q,LIST_MAL_ALL);
 	}
@@ -997,7 +997,7 @@ str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                !hasCommonResults(p,q) &&
                !hasSideEffects(p) ){
 #ifdef DEBUG_MAL_OPTIMIZER
-    if( getClient()->debugoptimizer){
+    if( getClient()->debugOptimizer){
 		stream_printf(GDKout,"Found a common expression %d <-> %d\n",j,i);
 		printInstruction(GDKout,mb,q,LIST_MAL_ALL);
 		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
@@ -1009,7 +1009,7 @@ str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                 for(k=0; k<q->retc; k++)
                 p->argv[p->retc+k]= q->argv[k];
 #ifdef DEBUG_MAL_OPTIMIZER
-    if( getClient()->debugoptimizer){
+    if( getClient()->debugOptimizer){
 		stream_printf(GDKout,"common expression");
 		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 	}
@@ -1103,7 +1103,7 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     }
 #ifdef DEBUG_MAL_OPTIMIZER
 	{Client cntxt= getClient();
-    if( cntxt->debugoptimizer){
+    if( cntxt->debugOptimizer){
     if(dc){
     stream_printf(GDKout,"Dead code variables \n");
     for(i=0;i< mb->vtop; i++)
@@ -1130,7 +1130,6 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     GDKfree(varused);
     GDKfree(pcused);
     /* remove the DCoptimizer request */
-    /* removeInstruction(mb,pci); was dead code ! */
     return NULL;
 }
 @-
@@ -1267,7 +1266,7 @@ str SPoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         for(k=i+1; k<mb->stop && isAlife(mb,p->argv[0],k); k++)
         if( SPcombi000(mb,i,k)){
 #ifdef DEBUG_MAL_OPTIMIZER
-            if( getClient()->debugoptimizer){
+            if( getClient()->debugOptimizer){
             stream_printf(GDKout,"Combinator found\n");
             printInstruction(GDKout,mb,getInstrPtr(mb,i),LIST_MAL_ALL);
             }
@@ -1283,7 +1282,7 @@ str SPoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         for(k=i+1; k<mb->stop && isAlife(mb,p->argv[0],k); k++)
         if( SPsqueezer000(mb,i,k)){
 #ifdef DEBUG_MAL_OPTIMIZER
-            if( getClient()->debugoptimizer){
+            if( getClient()->debugOptimizer){
             stream_printf(GDKout,"Squeezer found\n");
             printInstruction(GDKout,mb,getInstrPtr(mb,i),LIST_MAL_ALL);
             }
@@ -1331,7 +1330,7 @@ str RRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                     p->argv[0]== q->argv[1] && 
                    !isTouched(mb,p->argv[0],i+1,k)){
 #ifdef DEBUG_MAL_OPTIMIZER
-        if( getClient()->debugoptimizer){
+        if( getClient()->debugOptimizer){
             stream_printf(GDKout,"Reverse Removal\n");
             printInstruction(GDKout,mb,p,LIST_MAL_ALL);
             printInstruction(GDKout,mb,q,LIST_MAL_ALL);
@@ -1483,7 +1482,7 @@ str RXoptimizer(Client cntxt, MalBlkPtr mb, int pc){
 	(void) cntxt; (void) mb; (void) pc;
 
 #ifdef DEBUG_MAL_OPTIMIZER
-	if( cntxt->debugoptimizer){
+	if( cntxt->debugOptimizer){
 		stream_printf(GDKout,"Relational expression optimizer\n");
 	}
 #endif
