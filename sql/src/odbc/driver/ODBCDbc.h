@@ -50,8 +50,11 @@ typedef struct tODBCDRIVERDBC {
 	stream *Mws;		/* write stream for writing SQL statements */
 	int Mdebug;
 
-	/* Dbc children: list of ODBC Statement handles created within this Connection */
-	void *FirstStmt;	/* first in list or NULL */
+	/* Dbc children: list of ODBC Statement handles created within
+	   this Connection */
+	/* can't use ODBCStmt *FirstStmt here because of ordering of
+	   include files */
+	struct tODBCDRIVERSTMT *FirstStmt; /* first in list or NULL */
 } ODBCDbc;
 
 

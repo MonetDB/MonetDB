@@ -41,7 +41,6 @@ newODBCStmt(ODBCDbc *dbc)
 	assert(dbc);
 
 	stmt->Dbc = dbc;
-	stmt->next = NULL;
 	stmt->Error = NULL;
 
 	stmt->State = INITED;
@@ -60,14 +59,8 @@ newODBCStmt(ODBCDbc *dbc)
 	stmt->currentRow = 0;
 
 	/* add this stmt to the administrative linked stmt list */
-	if (dbc->FirstStmt == NULL) {
-		/* it is the first stmt within this dbc */
-		dbc->FirstStmt = stmt;
-	} else {
-		/* add it in front of the list */
-		stmt->next = dbc->FirstStmt;
-		dbc->FirstStmt = stmt;
-	}
+	stmt->next = dbc->FirstStmt;
+	dbc->FirstStmt = stmt;
 
 	stmt->Type = ODBC_STMT_MAGIC_NR;	/* set it valid */
 
@@ -164,6 +157,8 @@ getStmtError(ODBCStmt *stmt)
 void
 destroyODBCStmt(ODBCStmt *stmt)
 {
+	ODBCStmt **stmtp;
+
 	assert(isValidStmt(stmt));
 	assert(stmt->State == INITED || stmt->State == PREPARED);
 
@@ -174,32 +169,22 @@ destroyODBCStmt(ODBCStmt *stmt)
 	assert(stmt->Dbc);
 	assert(stmt->Dbc->FirstStmt);
 
-	{
-		/* search for this stmt in the list */
-		ODBCStmt *tmp_stmt = (ODBCStmt *) stmt->Dbc->FirstStmt;
-		ODBCStmt *prv_stmt = NULL;
+	/* search for stmt in linked list */
+	stmtp = &stmt->Dbc->FirstStmt;
+	while (*stmtp && *stmtp != stmt)
+		stmtp = &(*stmtp)->next;
+	/* stmtp points to location in list where stmt is found */
 
-		while ((tmp_stmt != NULL) && (tmp_stmt != stmt)) {
-			prv_stmt = tmp_stmt;
-			tmp_stmt = tmp_stmt->next;
-		}
+	assert(*stmtp == stmt);/* we must have found it */
 
-		assert(tmp_stmt == stmt);	/* we must have found it */
-
-		/* now remove it from the linked list */
-		if (prv_stmt != NULL) {
-			prv_stmt->next = stmt->next;
-		} else {
-			stmt->Dbc->FirstStmt = stmt->next;
-		}
-	}
+	/* now remove it from the linked list */
+	*stmtp = stmt->next;
 
 	/* cleanup own managed data */
 	deleteODBCErrorList(stmt->Error);
 
-	if (stmt->Query) {
+	if (stmt->Query)
 		free(stmt->Query);
-	}
 
 	destroyOdbcInArray(&stmt->bindParams);
 	destroyOdbcOutArray(&stmt->bindCols);
@@ -208,9 +193,8 @@ destroyODBCStmt(ODBCStmt *stmt)
 		/* probably we need to free strings in here */
 		free(stmt->ResultCols);
 	}
-	if (stmt->ResultRows) {
+	if (stmt->ResultRows)
 		free(stmt->ResultRows);
-	}
 
 	free(stmt);
 }
