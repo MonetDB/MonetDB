@@ -40,6 +40,7 @@ include unix;
 include lock;
 include alarm;
 include mmath;
+include streams;
 
 #atom extnsions
 include blob;
@@ -63,7 +64,6 @@ include mapi;
 
 # MAL related extensions
 include clients;
-include streams;
 include tablet;
 include io;
 include enum;

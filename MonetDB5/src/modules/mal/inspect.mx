@@ -194,12 +194,12 @@ str INSPECTget@1(int *ret)
 	Scope s;
 	Symbol t;
 	int i;
-        oid k= 0;
+	oid k= 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 
-        if (b == 0) 
-            return throwMessage("inspect.get@1", "failed to create BAT");
-        BATseqbase(b,k);
+	if (b == 0) 
+		return throwMessage("inspect.get@1", "failed to create BAT");
+	BATseqbase(b,k);
 	c= getClient();
 	s= c->nspace;
 	while(s){
@@ -225,12 +225,12 @@ str INSPECTgetkind(int *ret)
 	Scope s;
 	Symbol t;
 	int i;
-        oid k= 0;
+	oid k= 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 
-        if (b == 0) 
-            return throwMessage("inspect.get@1", "failed to create BAT");
-        BATseqbase(b,k);
+	if (b == 0) 
+		return throwMessage("inspect.get@1", "failed to create BAT");
+	BATseqbase(b,k);
 	c= getClient();
 	s= c->nspace;
 	while(s){
@@ -257,9 +257,9 @@ str INSPECTgetaddress(int *ret)
         oid k= 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 
-        if (b == 0) 
-            return throwMessage("inspect.get@1", "failed to create BAT");
-        BATseqbase(b,k);
+	if (b == 0) 
+		return throwMessage("inspect.get@1", "failed to create BAT");
+	BATseqbase(b,k);
 	c= getClient();
 	s= c->nspace;
 	while(s){
@@ -288,9 +288,9 @@ str INSPECTgetsignature(int *ret)
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
         char sig[4096];
 
-        if (b == 0) 
-            return throwMessage("inspect.get@1", "failed to create BAT");
-        BATseqbase(b,k);
+	if (b == 0) 
+		return throwMessage("inspect.get@1", "failed to create BAT");
+	BATseqbase(b,k);
 	c= getClient();
 	s= c->nspace;
 	while(s){
