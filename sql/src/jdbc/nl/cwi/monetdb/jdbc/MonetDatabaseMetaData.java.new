@@ -416,11 +416,12 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 	/**
 	 * Can an "ORDER BY" clause use columns not in the SELECT?
+	 * Monet = SQL99 = false
 	 *
 	 * @return true if so
 	 */
 	public boolean supportsOrderByUnrelated() {
-		return(true);
+		return(false);
 	}
 
 	/**
