@@ -156,6 +156,7 @@ BAT *void_bat_create(int adt, int nr) {
 	return b;
 }
 
+static
 ptr *ADT_fromStr( int type, char *s){
         int l = 0;
         ptr *res = NULL;
@@ -165,6 +166,8 @@ ptr *ADT_fromStr( int type, char *s){
                 BATatoms[type].atomFromStr(s, &l, (ptr)&res);
         return res;
 }
+
+static
 char *ADT_toStr( int type, ptr a){
 	int l = 0;
 	char *res = NULL;

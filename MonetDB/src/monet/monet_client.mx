@@ -302,12 +302,14 @@ void freeClient(Client c) {
 		FILE *bkin = t->data[1], *bkout = t->data[0];
 		ValRecord res;
 
+		printf("normal client (%d)\n", (int)c->stk);
 		if (c->stk) shutdown(c->socket, 2);
 		monetSetChannel(t, bkin, bkout);
        		TBL_exitclient(c);
 		GDKlog("Mserver: %s session ends", c->user);	
 		(void) fflush(c->fdout); 
 		if (fileno(c->fdin) != 0){
+			printf("fclose()\n" );
         		(void) fclose(c->fdin);
         		(void) fclose(c->fdout);
 		}
