@@ -1122,8 +1122,7 @@ MapiMsg mapi_timeout(Mapi mid, int time)
 
 MapiMsg mapi_explain(Mapi mid, FILE *fd)
 {
-	/*int i;*/
-	int j;
+	/*int i, j;*/
 	assert(mid);
 	mapi_check(mid,mid->error,"mapi_explain");
 	fprintf(fd,"MAPI  = %s\@%s:%d\n",
@@ -1537,7 +1536,7 @@ The content received is analysed further by mapi_getRow()
 
 char * mapi_fetch_line(Mapi mid)
 {
-	char *reply, *newbuf, *s;
+	char *reply, *s;
 	int k;
 
 
