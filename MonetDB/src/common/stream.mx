@@ -220,8 +220,6 @@ it is resized. The spare byte is kept.
 @h
 #endif /*_STREAM_H_*/
 @c
-/* should move to configure */
-#define _FILE_OFFSET_BITS 64
 #include <config.h>
 #include "stream.h"
 #include <string.h>

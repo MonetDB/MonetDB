@@ -192,6 +192,7 @@ AC_TRY_COMPILE( [#include <time.h> ],
 [ char buf[26]; time_t t; ctime_r(&t,buf,26); ], 
 [ AC_DEFINE(HAVE_CTIME_R3, 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)]) ], [ ctime_r3=no ])
 AC_MSG_RESULT($ctime_r3)
+AC_SYS_LARGEFILE()
 
 dnl Mx and mel are used during make
 MEL="$MONET_BUILD/src/mel/mel"
