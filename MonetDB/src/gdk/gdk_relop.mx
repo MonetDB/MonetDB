@@ -228,12 +228,12 @@ static BAT* mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 	r_start = r_end = BUNfirst(r);
 
 	switch(loc) {
-	case TYPE_chr: @:mergejoin(simple,loc,loc,chr)@
-	case TYPE_sht: @:mergejoin(simple,loc,loc,sht)@
-	case TYPE_int: @:mergejoin(simple,loc,loc,int)@
-	case TYPE_flt: @:mergejoin(simple,loc,loc,flt)@
-	case TYPE_lng: @:mergejoin(simple,loc,loc,lng)@
-	case TYPE_dbl: @:mergejoin(simple,loc,loc,dbl)@
+	case TYPE_chr: @:mergejoin(simple,loc,loc,chr)@; break;
+	case TYPE_sht: @:mergejoin(simple,loc,loc,sht)@; break;
+	case TYPE_int: @:mergejoin(simple,loc,loc,int)@; break;
+	case TYPE_flt: @:mergejoin(simple,loc,loc,flt)@; break;
+	case TYPE_lng: @:mergejoin(simple,loc,loc,lng)@; break;
+	case TYPE_dbl: @:mergejoin(simple,loc,loc,dbl)@; break;
 	default: if (l->tvarsized) {
 		       var = ATOMstorage(l->ttype);
 		       if (r->hvarsized) {
@@ -251,6 +251,7 @@ static BAT* mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
       		           @:mergejoin(atom,loc,loc,loc)@
 		       }
 	         }
+		 break;
 	}
 
 	if (nil_on_miss) {
