@@ -21,16 +21,14 @@
 # by Arjan Scherpenisse <acscherp@science.uva.nl>
 
 package DBD::monetdb;
+
 use strict;
-
-use DBI;
-use Carp;
-use vars qw($VERSION $drh);
 use sigtrap;
-# use Data::Dump qw(dump);
+use DBI();
+use MapiLib();
 
-$VERSION = '0.03';
-$drh = undef;
+our $VERSION = '0.03';
+our $drh = undef;
 
 require DBD::monetdb::GetInfo;
 require DBD::monetdb::TypeInfo;
@@ -98,9 +96,6 @@ package DBD::monetdb::dr;
 
 $DBD::monetdb::dr::imp_data_size = 0;
 
-use MapiLib;
-use strict;
-
 
 sub connect {
     my ($drh, $dsn, $user, $password, $attr) = @_;
@@ -141,8 +136,6 @@ sub data_sources {
 package DBD::monetdb::db;
 
 $DBD::monetdb::db::imp_data_size = 0;
-use MapiLib;
-use strict;
 
 
 sub ping {
@@ -584,11 +577,8 @@ sub DESTROY {
 }
 
 
+
 package DBD::monetdb::st;
-
-use DBI qw(:sql_types);
-use MapiLib;
-
 
 $DBD::monetdb::st::imp_data_size = 0;
 
@@ -678,6 +668,7 @@ sub fetch {
 }
 
 *fetchrow_arrayref = \&fetch;
+
 
 sub rows {
     my ($sth) = @_;
