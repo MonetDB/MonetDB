@@ -836,7 +836,7 @@ opt_passwd:
 
 opt_schema:
 	/* empty */		{ $$ = NULL; }
-  |	SCHEMA ident		{ $$ = $2; }
+  |	SET SCHEMA ident		{ $$ = $2; }
   ;
 
 alter_table_element:
@@ -1045,6 +1045,12 @@ default:
 default_value:
     literal
 
+ |  BOOL_FALSE
+               { sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
+                 $$ = _newAtomNode( atom_general(t, _strdup("false"))); }
+ |  BOOL_TRUE
+               { sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
+                 $$ = _newAtomNode( atom_general(t, _strdup("true"))); }
  |  NULLX
 		{ $$ = _newAtomNode( NULL);  }
  ;
@@ -2865,6 +2871,7 @@ non_reserved_word:
   CHARACTER { $$ = _strdup("character"); }
 | OBJECT	{ $$ = _strdup("object"); }
 | LARGE		{ $$ = _strdup("large"); }
+| PASSWORD	{ $$ = _strdup("password"); }
 | sqlDECIMAL{ $$ = _strdup("decimal"); }
 | sqlFLOAT 	{ $$ = _strdup("float"); }
 | sqlDOUBLE { $$ = _strdup("double"); }
