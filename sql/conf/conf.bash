@@ -221,10 +221,6 @@ if [ "${os}" = "Linux" ] ; then
 			# specific settings for Sara's Itanium system
 			binpath="/home/niels/soft/local/bin:${binpath}"
 			libpath="/home/niels/soft/local/lib:${libpath}"
-			if [ "${COMP}" = "ntv" ] ; then
-				binpath="/home/niels/opt/intel/compiler70/ia64/bin:${binpath}"
-				libpath="/home/niels/opt/intel/compiler70/ia64/lib:${libpath}"
-			fi
 		fi
 	fi
 fi
