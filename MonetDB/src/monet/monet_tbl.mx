@@ -1384,11 +1384,12 @@ static int unloadmod_bat(BAT* b, oid mid) {
 static int unloadmod_check_use(oid mid, str module, int ntpes, int *tpes, int naccs, int *accs) {
         int i, j;
 	BUN p, q;
+	str foundvar;
 
 	if (ntpes == 0 && naccs == 0) return 0;
 
 	/* look in all MIL variable contexts for values of soon obsolete types */
-	str foundvar = VARfindinstance(&i, &j, ntpes, tpes);
+	foundvar = VARfindinstance(&i, &j, ntpes, tpes);
 	if (foundvar) {
 		Client c;
 		CNTXTclient(i, &c);
