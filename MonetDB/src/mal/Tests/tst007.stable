@@ -82,8 +82,6 @@ end	FTE;	#23:(FTE:any)
 barrier	FS := not(FTE);	#24 unknown:(FS:any)<-(FTE:any) jump 26
 end	FS;	#25:(FS:any)
 end function;	#26:
-Start dynamic type check on:
-barrier	H := batoperatie;	#1 unknown:(H:any)<-(batoperatie:any) jump 5
-type checked version:
-barrier	H := batoperatie;	#-1 dynamic:(H:any)<-(batoperatie:any) jump 5
+!ERROR: 'bat.hasMoreElements' undefined in Admin.main[-1]
+!ERROR: MALexception:Admin.main[5]:Instruction type not fixed
 >

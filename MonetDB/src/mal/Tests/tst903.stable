@@ -15,9 +15,9 @@
 #	redo v;
 #end v;
 #c:= copy(b);
-#t0:= system.usec();
+#t0:= alarm.usec();
 #x:= multiplex.script("+",b,c);
-#t1:= system.usec();
+#t1:= alarm.usec();
 #d0:= t1-t0;
 ##printf("multiplex.+ %d\n",d0);
 #
@@ -29,9 +29,9 @@ barrier	v := mal.nextElement(i,0,1000000);	#3:(v:bit)<-(i:lng)($6:lng)($7:lng) j
 	redo v ;	#5:(v:bit) jump 3
 end	v;	#6:(v:bit)
 	c := algebra.copy(b);	#7:(c:bat[lng,lng])<-(b:bat[lng,lng])
-	t0 := system.usec();	#8:(t0:lng)
+	t0 := alarm.usec();	#8:(t0:lng)
 	x := multiplex.script("+",b,c);	#9:(x:bat[lng,lng])<-($12:str)(b:bat[lng,lng])(c:bat[lng,lng])
-	t1 := system.usec();	#10:(t1:lng)
+	t1 := alarm.usec();	#10:(t1:lng)
 	d0 := calc.-(t1,t0);	#11:(d0:lng)<-(t1:lng)(t0:lng)
 end function;	#12:
 >

@@ -38,5 +38,13 @@ end function;	#9:
 [ "architecture" ]
 [ "version" ]
 [ "environment" ]
+[ "STORE_MEM" ]
+[ "STORE_MMAP" ]
+[ "STORE_COMPR" ]
+[ "BUF_NORMAL" ]
+[ "BUF_RANDOM" ]
+[ "BUF_SEQUENTIAL" ]
+[ "BUF_WILLNEED" ]
+[ "BUF_DONTNEED" ]
 [ "pi" ]
 >

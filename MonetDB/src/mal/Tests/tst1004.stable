@@ -31,7 +31,7 @@
 #	print(MALexception);
 #end MALexception;
 #print(v);
-#x:= bbp.getName();
+#x:= catalog.bbpNames();
 #print(x);
 #bbp.close();
 #
@@ -57,7 +57,7 @@ catch	MALexception;	#18:(MALexception:str) jump 21
 	io.print(MALexception);	#19:($24:int)<-(MALexception:str)
 end	MALexception;	#20:(MALexception:str)
 	io.print(v);	#21:($25:int)<-(v:bat[any,any])
-	x := bbp.getName();	#22:(x:bat[int,str])
+	x := catalog.bbpNames();	#22:(x:bat[int,str])
 	io.print(x);	#23:($27:int)<-(x:bat[int,str])
 	bbp.close();	#24:($28:void)
 end function;	#25:
@@ -80,7 +80,7 @@ end function;	#25:
 #-----------------#
 [ 1,	  2	  ]
 #---------------------------------#
-# BAT:	  BATname		  #
+# BAT:	  name			  #
 # (int)	  (str)			  #
 #---------------------------------#
 [ 1,	  "monet_environment"	  ]

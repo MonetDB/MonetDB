@@ -5,12 +5,12 @@ c := 'a';
 b:= true;
 bb:= new(void,str);
 
-st:= type(s); printf("string %d\n",st);
-it:= type(i); printf("int %d\n",it);
-ft:= type(f); printf("flt %d\n",ft);
-ct:= type(c); printf("chr %d\n",ct);
-bt:= type(b); printf("bit %d\n",bt);
-bbt:= type(bb); printf("bat %d\n",bbt);
+st:= getType(s); printf("string %d\n",st);
+it:= getType(i); printf("int %d\n",it);
+ft:= getType(f); printf("flt %d\n",ft);
+ct:= getType(c); printf("chr %d\n",ct);
+bt:= getType(b); printf("bit %d\n",bt);
+bbt:= getType(bb); printf("bat %d\n",bbt);
 
 # get them as strings
 v:= "";

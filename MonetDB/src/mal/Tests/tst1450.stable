@@ -13,7 +13,7 @@
 ##
 ###line 567 "/ufs/mk/monet_4-3/src/modules/plain/ddbench.mx"
 ##
-#	view_bbp_name:= bbp.getName();
+#	view_bbp_name:= catalog.bbpNames();
 #	aa_a := reverse(view_bbp_name);
 #barrier	ba_a:= exist(aa_a,"tpe");
 ##if (view_bbp_name.reverse.exist("tpe")) {
@@ -230,7 +230,7 @@
 !ERROR: multiplexType:string constant expected in main[33]
 !ERROR: 'multiplex.script' undefined in Admin.main[33]
 function Admin.main():int;	#0:(main:int)
-	view_bbp_name := bbp.getName();	#1:(view_bbp_name:bat[int,str])
+	view_bbp_name := catalog.bbpNames();	#1:(view_bbp_name:bat[int,str])
 	aa_a := bat.reverse(view_bbp_name);	#2:(aa_a:bat[str,int])<-(view_bbp_name:bat[int,str])
 barrier	ba_a := algebra.exist(aa_a,"tpe");	#3:(ba_a:bit)<-(aa_a:bat[str,int])($4:str) jump 8
 	tpe := bbp.bind("tpe");	#4:(tpe:bat[any,any])<-($4:str)

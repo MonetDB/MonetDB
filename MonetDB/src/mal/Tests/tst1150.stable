@@ -113,5 +113,5 @@ function Admin.main():int;	#0:(main:int)
 	quit := bbp.bind("quit");	#32:(quit:bat[any,any])<-($52:str)
 end function;	#33:
 [ "Dit is een test\\n" ]
-!ERROR: !WARNING: io_fprintf: not yet defined in version-5
+!ERROR: MALexception:io_fprintf: not yet defined in version-5
 >

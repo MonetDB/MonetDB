@@ -85,13 +85,13 @@ function Admin.main():int;	#0:(main:int)
 end function;	#11:
 [ 2 ]
 #-----------------#
-# BAT:	  tmp_3	  #
+# BAT:	  tmp_4	  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  1	  ]
 [ 1@0,	  2	  ]
 #-----------------#
-# BAT:	  tmp_3	  #
+# BAT:	  tmp_4	  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  1	  ]
@@ -106,7 +106,7 @@ B2 value 2
 B3 value 2
 result 4
 #-----------------#
-# BAT:	  tmp_5	  #
+# BAT:	  tmp_6	  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  2	  ]

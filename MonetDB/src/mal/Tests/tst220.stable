@@ -102,18 +102,18 @@ refcount =1
 #-------------------------#
 [ 1,	  "bat B"	  ]
 refcount =2
-after assignment refcount =3
-after 2nd assignment refcount =4
-after 3rd assignment refcount =3
+after assignment refcount =2
+after 2nd assignment refcount =2
+after 3rd assignment refcount =1
 #-------------------------#
 # BAT:	  tmp_6		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "bat B"	  ]
-after 4rd assignment refcount =3
-after 5rd assignment refcount =2
+after 4rd assignment refcount =1
+after 5rd assignment refcount =1
 call function
-enter function refcount =3
-local in function refcount =4
-return from function refcount =3
+enter function refcount =2
+local in function refcount =2
+return from function refcount =1
 >

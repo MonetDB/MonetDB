@@ -13,12 +13,12 @@
 #b:= true;
 #bb:= new(void,str);
 #
-#st:= type(s); printf("string %d\n",st);
-#it:= type(i); printf("int %d\n",it);
-#ft:= type(f); printf("flt %d\n",ft);
-#ct:= type(c); printf("chr %d\n",ct);
-#bt:= type(b); printf("bit %d\n",bt);
-#bbt:= type(bb); printf("bat %d\n",bbt);
+#st:= getType(s); printf("string %d\n",st);
+#it:= getType(i); printf("int %d\n",it);
+#ft:= getType(f); printf("flt %d\n",ft);
+#ct:= getType(c); printf("chr %d\n",ct);
+#bt:= getType(b); printf("bit %d\n",bt);
+#bbt:= getType(bb); printf("bat %d\n",bbt);
 #
 ## get them as strings
 #v:= "";
@@ -37,17 +37,17 @@ function Admin.main():int;	#0:(main:int)
 	c := 'a';	#4:(c:chr)<-($8:chr)
 	b := true;	#5:(b:bit)<-($10:bit)
 	bb := mal.new(void,str);	#6:(bb:bat[void,str])<-(void:void)(str:str)
-	st := mal.type(s);	#7:(st:int)<-(s:str)
+	st := mal.getType(s);	#7:(st:int)<-(s:str)
 	system.printf("string %d\n",st);	#8:($15:int)<-($16:str)(st:int)
-	it := mal.type(i);	#9:(it:int)<-(i:int)
+	it := mal.getType(i);	#9:(it:int)<-(i:int)
 	system.printf("int %d\n",it);	#10:($18:int)<-($19:str)(it:int)
-	ft := mal.type(f);	#11:(ft:int)<-(f:flt)
+	ft := mal.getType(f);	#11:(ft:int)<-(f:flt)
 	system.printf("flt %d\n",ft);	#12:($21:int)<-($22:str)(ft:int)
-	ct := mal.type(c);	#13:(ct:int)<-(c:chr)
+	ct := mal.getType(c);	#13:(ct:int)<-(c:chr)
 	system.printf("chr %d\n",ct);	#14:($24:int)<-($25:str)(ct:int)
-	bt := mal.type(b);	#15:(bt:int)<-(b:bit)
+	bt := mal.getType(b);	#15:(bt:int)<-(b:bit)
 	system.printf("bit %d\n",bt);	#16:($27:int)<-($28:str)(bt:int)
-	bbt := mal.type(bb);	#17:(bbt:int)<-(bb:bat[void,str])
+	bbt := mal.getType(bb);	#17:(bbt:int)<-(bb:bat[void,str])
 	system.printf("bat %d\n",bbt);	#18:($30:int)<-($31:str)(bbt:int)
 	v := "";	#19:(v:str)<-($33:str)
 	v := mal.typename(st);	#20:(v:str)<-(st:int)

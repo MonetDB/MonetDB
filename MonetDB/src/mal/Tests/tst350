@@ -1,0 +1,48 @@
+#inspection of the runtime setting
+#it uses the dynamic type analysis scheme
+
+function dir(b:bat[int,str]):void;
+	atm:= catalog.atomNames();
+	brev:= reverse(b);
+	bm := mirror(brev);
+	h := catalog.bbpHeadType();
+	bHead:= join(brev,h);
+	setName(bHead,"htype");
+	h := catalog.bbpTailType();
+	bTail:= join(brev,h);
+	setName(bTail,"ttype");
+	bcount:= catalog.bbpCount();
+	bCount:= join(brev,bcount);
+	setName(bCount,"count");
+	bheat:= catalog.bbpHeat();
+	bHeat:= join(brev,bheat);
+	setName(bHeat,"heat");
+	bdirty:= catalog.bbpDirty();
+	bDirty:= join(brev,bdirty);
+	setName(bDirty,"dirty");
+	bstatus:= catalog.bbpDirty();
+	bStatus:= join(brev,bstatus);
+	setName(bStatus,"status");
+	bkind:= catalog.bbpKind();
+	bKind:= join(brev,bkind);
+	setName(bKind,"kind");
+	bref:= catalog.bbpRefcnt();
+	bRef:= join(brev,bref);
+	setName(bRef,"refcnt");
+	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
+end function;
+
+function dir(s:str):void;
+	t:= catalog.bbpNames();
+	tn:= like(t,s);
+	print(tn);
+	dir(tn);
+end function;
+b:=new(int,int);
+setName(b,"simplemind");
+
+z:= catalog.bbpNames();
+dir(z);
+
+dir("simple");
+

@@ -46,5 +46,13 @@ monetrc=/ufs/mk/.monet.conf
 architecture=i686-pc-linux-gnu
 version=5.0
 environment=unknown yet
+STORE_MEM=0
+STORE_MMAP=1
+STORE_COMPR=2
+BUF_NORMAL=0
+BUF_RANDOM=1
+BUF_SEQUENTIAL=2
+BUF_WILLNEED=3
+BUF_DONTNEED=4
 pi=3.147
 >

@@ -1,0 +1,127 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+##inspection of the runtime setting
+##it uses the dynamic type analysis scheme
+#
+## type error when the type variable numbers are ignored
+##function get(br:bat[any,any],nme:str, title:str):bat;
+#function get(br:bat[any::1,any::2],nme:str, title:str):bat[any::3,any::4];
+#	b:= catalog.nme();
+#	z:= join(br,b);
+#	setName(z,title);
+#	return z;
+#end function;
+function Admin.get(br:bat[any::1,any::2],nme:str,title:str):bat[any::3,any::4];	#0 polymorphic:(get:bat[any::3,any::4])<-(br:bat[any::1,any::2])(nme:str)(title:str)
+	b := catalog.nme();	#1 unknown:(b:any)
+	z := join(br,b);	#2 unknown:(z:any)<-(br:bat[any::1,any::2])(b:any)
+	setName(z,title);	#3 unknown:($6:any)<-(z:any)(title:str)
+	return z;	#4:(z:any)
+end function;	#5:
+## Note the type of the variables will be fixed during the first call
+## Thus, a better schould would be a term rewriter call, which
+## replaces an instruction
+##rule get(Y:bat,N:str)
+#function getInt(br:bat[any::1,any::2],nme:str, title:str):bat[any::3,any::4];
+#	b:= catalog.nme();
+#	z:= join(br,b);
+#	setName(z,title);
+#	return z;
+#end function;
+function Admin.getInt(br:bat[any::1,any::2],nme:str,title:str):bat[any::3,any::4];	#0 polymorphic:(getInt:bat[any::3,any::4])<-(br:bat[any::1,any::2])(nme:str)(title:str)
+	b := catalog.nme();	#1 unknown:(b:any)
+	z := join(br,b);	#2 unknown:(z:any)<-(br:bat[any::1,any::2])(b:any)
+	setName(z,title);	#3 unknown:($6:any)<-(z:any)(title:str)
+	return z;	#4:(z:any)
+end function;	#5:
+#function getLng(br:bat[any::1,any::2],nme:str, title:str):bat[any::3,any::4];
+#	b:= catalog.nme();
+#	z:= join(br,b);
+#	setName(z,title);
+#	return z;
+#end function;
+function Admin.getLng(br:bat[any::1,any::2],nme:str,title:str):bat[any::3,any::4];	#0 polymorphic:(getLng:bat[any::3,any::4])<-(br:bat[any::1,any::2])(nme:str)(title:str)
+	b := catalog.nme();	#1 unknown:(b:any)
+	z := join(br,b);	#2 unknown:(z:any)<-(br:bat[any::1,any::2])(b:any)
+	setName(z,title);	#3 unknown:($6:any)<-(z:any)(title:str)
+	return z;	#4:(z:any)
+end function;	#5:
+#function dir(b:bat[int,str]):void;
+#	atm:= catalog.atomNames();
+#	brev:= reverse(b);
+#	bm := mirror(brev);
+#	bHead:= get(brev,"bbpHeadType","htype");
+#	bTail:= get(brev,"bbpTailType","ttype");
+#	bCount:= getLng(brev,"bbpCount","count");
+#	bHeat:= getInt(brev,"bbpHeat","heat");
+#	bDirty:= get(brev,"bbpDirty","dirty");
+#	bStatus:= get(brev,"bbpStatus","status");
+#	bKind:= get(brev,"bbpKind","kind");
+#	bRef:= getInt(brev,"bbpRefcnt","refcnt");
+#	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
+#end function;
+function Admin.dir(b:bat[int,str]):void;	#0:(dir:void)<-(b:bat[int,str])
+	atm := catalog.atomNames();	#1:(atm:bat[int,str])
+	brev := bat.reverse(b);	#2:(brev:bat[str,int])<-(b:bat[int,str])
+	bm := bat.mirror(brev);	#3:(bm:bat[str,str])<-(brev:bat[str,int])
+	bHead := Admin.get(brev,"bbpHeadType","htype");	#4:(bHead:bat[any,any])<-(brev:bat[str,int])($6:str)($7:str)
+	bTail := Admin.get(brev,"bbpTailType","ttype");	#5:(bTail:bat[str,int])<-(brev:bat[str,int])($9:str)($10:str)
+	bCount := Admin.getLng(brev,"bbpCount","count");	#6:(bCount:bat[any,any])<-(brev:bat[str,int])($12:str)($13:str)
+	bHeat := Admin.getInt(brev,"bbpHeat","heat");	#7:(bHeat:bat[any,any])<-(brev:bat[str,int])($15:str)($16:str)
+	bDirty := Admin.get(brev,"bbpDirty","dirty");	#8:(bDirty:bat[str,int])<-(brev:bat[str,int])($18:str)($19:str)
+	bStatus := Admin.get(brev,"bbpStatus","status");	#9:(bStatus:bat[str,int])<-(brev:bat[str,int])($21:str)($22:str)
+	bKind := Admin.get(brev,"bbpKind","kind");	#10:(bKind:bat[str,int])<-(brev:bat[str,int])($24:str)($25:str)
+	bRef := Admin.getInt(brev,"bbpRefcnt","refcnt");	#11:(bRef:bat[str,int])<-(brev:bat[str,int])($27:str)($28:str)
+	io.table(brev,bm,bHead,bTail,bCount,bHeat,bDirty,bStatus,bKind,bRef);	#12:($29:int)<-(brev:bat[str,int])(bm:bat[str,str])(bHead:bat[any,any])(bTail:bat[str,int])(bCount:bat[any,any])(bHeat:bat[any,any])(bDirty:bat[str,int])(bStatus:bat[str,int])(bKind:bat[str,int])(bRef:bat[str,int])
+end function;	#13:
+#
+#function dir(s:str):void;
+#	t:= catalog.bbpNames();
+#	tn:= like(t,s);
+#	print(tn);
+#	dir(tn);
+#end function;
+function Admin.dir(s:str):void;	#0:(dir:void)<-(s:str)
+	t := catalog.bbpNames();	#1:(t:bat[int,str])
+	tn := algebra.like(t,s);	#2:(tn:bat[int,str])<-(t:bat[int,str])(s:str)
+	io.print(tn);	#3:($4:int)<-(tn:bat[int,str])
+	Admin.dir(tn);	#4:($5:void)<-(tn:bat[int,str])
+end function;	#5:
+#b:=new(int,int);
+#setName(b,"simplemind");
+#
+#z:= catalog.bbpNames();
+#dir(z);
+#
+#dir("simple");
+#
+#
+function Admin.main():int;	#0:(main:int)
+	b := mal.new(int,int);	#1:(b:bat[int,int])<-(int:int)(int:int)
+	bbp.setName(b,"simplemind");	#2:($3:bat[int,int])<-(b:bat[int,int])($4:str)
+	z := catalog.bbpNames();	#3:(z:bat[int,str])
+	Admin.dir(z);	#4:($6:void)<-(z:bat[int,str])
+	Admin.dir("simple");	#5:($7:void)<-($8:str)
+end function;	#6:
+#---------------------------------------------------------------------------------------------------------------------------------#
+# name	| tmp_8			| htype		| ttype		| count	| heat	| dirty		| status| kind		| refcnt  #
+#---------------------------------------------------------------------------------------------------------------------------------#
+[ 1,	  "monet_environment",	  "str",	  "str",	  10,	  25,	  "dirty",	  "load", "transient",	  1	  ]
+[ 2,	  "timezones",		  "tzone",	  "tzone",	  24,	  26,	  "dirty",	  "load", "transient",	  1	  ]
+[ 3,	  "tmp_3",		  "int",	  "int",	  1,	  181,	  "clean",	  "load", "persistent",	  0	  ]
+[ 4,	  "simplemind",		  "int",	  "int",	  0,	  31,	  "dirty",	  "load", "transient",	  1	  ]
+#-------------------------#
+# BAT:	  tmp_18	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 4,	  "simplemind"	  ]
+#---------------------------------------------------------------------------------------------------------#
+# tmp_18| tmp_11	| htype	| ttype	| count	| heat	| dirty		| status| kind		| refcnt  #
+#---------------------------------------------------------------------------------------------------------#
+[ 4,	  "simplemind",	  "int",  "int",  0,	  31,	  "dirty",	  "load", "transient",	  1	  ]
+>

@@ -23,6 +23,6 @@ catch MALexception;
 	print(MALexception);
 end MALexception;
 print(v);
-x:= bbp.getName();
+x:= catalog.bbpNames();
 print(x);
 bbp.close();
