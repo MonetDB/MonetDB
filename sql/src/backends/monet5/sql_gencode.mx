@@ -175,12 +175,11 @@ int constantAtom(backend *sql, MalBlkPtr mb, atom *a){
 	(void) sql;
 
 	VALformat(&val,vr);
-	if( vr->vtype == TYPE_str){
+	if( vr->vtype == TYPE_str ){
 		val[strlen(val)-1]=0;
 		idx= newConstant(mb,vr->vtype,GDKstrdup(val+1),1);
 		GDKfree(val);
-	} else
-	idx= newConstant(mb,vr->vtype,val,1);
+	} else	idx= newConstant(mb,vr->vtype,val,1);
 	return idx;
 }
 @-
@@ -358,7 +357,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		s->nr= k;
 		} break;
 	case st_const: {
-		dump_2(sql,mb,s,"algebra","project");
+		dump_2(sql,mb,s,"bbp","project");
 		} break;
 	case st_mark: {
 		dump_2(sql,mb,s,"algebra","mark");
@@ -653,13 +652,18 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			@:SQLpostlude@
 			break;
 		case cmp_all: /* aka cross table */
+			{ int z;
 			@:newStmt("bat","reverse")@
 			@:pushArg(r)@
 			@:getReturn(k)@
 
+			@:newStmt("calc",tail_type(s)->type->base.name)@
+			@:pushNilType(tail_type(s)->type->base.name)@
+			@:getReturn(z)@
+
 			@:newStmt("algebra","project")@
 			@:pushArg(k)@
-			@:pushInt(0)@
+			@:pushInt(z)@
 			@:getReturn(k)@
 
 			@:newStmt("bat","reverse")@
@@ -668,7 +672,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 
 			@:newStmt("algebra","project")@
 			@:pushArg(l)@
-			@:pushInt(0)@
+			@:pushInt(z)@
 			@:getReturn(k2)@
 
 			@:newStmt("algebra","join")@
@@ -676,6 +680,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			@:pushArg(k)@
 			@:SQLpostlude@
 			break;
+			}
 		default:
 			GDKerror("SQL2MAL: error impossible\n");
 	  	} 
@@ -835,7 +840,11 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		@:SQLpostlude@
 	} 	break;
 	case st_atom: {
-		s->nr= constantAtom(sql,mb,s->op1.aval);
+		if( s->op1.aval->isnull){
+			@:newStmt("calc",s->op1.aval->tpe->type->base.name)@
+			@:pushNil(s->op1.aval->tpe->type->base.name)@
+			@:getReturn(s->nr)@
+		} else	s->nr= constantAtom(sql,mb,s->op1.aval);
 	} break;
 	case st_insert: {
 		int l = backend_dumpstmt(sql,mb, s->op1.stval);
@@ -884,7 +893,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		int r = backend_dumpstmt(sql,mb, s->op2.stval);
 		@:SQLprelude@
 		/* if(bit(l)) { error(r);}  ==raising an exception*/
-		@:newStmt("sql","error")@
+		@:newStmt("sql","assert")@
 		@:pushArg(l)@
 		@:pushArg(r)@
 		@:SQLpostlude@

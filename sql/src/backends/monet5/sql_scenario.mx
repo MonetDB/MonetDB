@@ -168,7 +168,7 @@ Continue processing any left-over input from the previous round.
 		if( c->input[cnt-1]==';') break;
 		/* add the newline before reading the next part */
 		c->input[cnt]= '\n';
-		c->input[cnt+1]= 0;
+		c->input[++cnt]= 0;
 		c->nxt= c->input+cnt;
 		oldcnt=cnt;
 	}
@@ -325,7 +325,7 @@ The default action is to print them out at the end of the
 query block.
 @c
 	if( err ==0 ){
-		pushCatchDefault(c->curprg->def,"sqlerror",0);
+		pushCatchDefault(c->curprg->def,"sqlerror",be->mvc->auto_commit);
 		pushEndInstruction(c->curprg->def);
 		chkProgram(c->nspace, c->curprg->def);
 		if( c->curprg->def->errors){
@@ -383,6 +383,15 @@ str SQLengine(Client c) {
 	T0= GDKusec();
 	c->glb= 0;
 	msg= MALengine(c);
+@-
+Any error encountered during execution should block further processing
+unless auto_commit has been set.
+@c
+	if( msg != MAL_SUCCEED) stream_printf(GDKout,"error received %s\n",msg);
+	if( c->curprg->def->errors){
+		stream_printf(GDKout,"Execution produced errors");
+		sql_error(be->mvc,1,"Execution produced errors");
+	}
 	c->glb= oldglb;
 	if( explainSQL()){
 		lng tot= be->Tparse;
@@ -457,13 +466,13 @@ str SQLoutputBats(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	return MAL_SUCCEED;
 }
 @-
-Errors detected during the execution of a code block
+Assertion errors detected during the execution of a code block
 raises an exception.
 @c
-str SQLerror(int *ret, int *bit, str *msg){
+str SQLassert(int *ret, bit *flg, str *msg){
 	(void) ret;
-	if( *bit)
-		return throwMessage("sqlerror",msg);
+	if( *flg)
+		return throwException("SQLerror","assert",*msg);
 	return MAL_SUCCEED;
 }
 @- Utilities
@@ -502,12 +511,17 @@ void pushCatchDefault(MalBlkPtr mb, str nme, int autocommit){
 		moduleId(p)= GDKstrdup("sql");
 		functionId(p)= GDKstrdup("rollback");
 		pushInstruction(mb,p);
+	} else {
+		p= newInstruction(RAISEsymbol);
+		p->barrier= RAISEsymbol;
+		p->argv[0] = findVariable(mb,GDKstrdup("sqlerror"));
+		i= newConstant(mb,TYPE_str,GDKstrdup("Transaction abort"),0);
+		p= pushArgument(mb,p,i);
+		pushInstruction(mb,p);
 	}
 
 	p= newInstruction(EXITsymbol);
-	getDestVar(p) = findVariable(mb,GDKstrdup(nme));
-	p->argc =1;
-	p->retc = 1;
+	p->argv[0] = findVariable(mb,GDKstrdup(nme));
 	p->barrier= EXITsymbol;
 	pushInstruction(mb,p);
 }

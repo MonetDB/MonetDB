@@ -50,15 +50,16 @@ command column(b:bat, v:str,t:str,digits:int,scale:int)
 address SQLcolumn
 comment "Rename a table column";
 
+command assert(b:bit,msg:str):void
+address SQLassert
+comment "Generate an exception when b==true";
+
 pattern output(a:any...)
 address SQLoutput;
 pattern output(a:bat[:any,:any]...)
 address SQLoutputBats
 comment "Overloading of the core print routines to obtain proper layout";
 
-command error(b:bit,msg:str):void
-address SQLerror
-comment "Conditionally generate an exception";
 @- The SQL multi-version catalog
 This module also contains the definitions for managing an SQL database schema in
 version 5.  It is an adaptation of the original V4.3 code base. 
@@ -118,10 +119,16 @@ comment "Bind the bat tname.cname into the
 The Monet 5 code generator uses several SQL specific wrapper functions.
 They are not present in V4
 @mal
+command commit() :int 
+address mvc_commitDefault_wrap
+comment "Commit transaction";
 command commit( chain:int, name:str) :int 
 address mvc_commit_wrap
 comment "Commit transaction/savepoint and chain";
 
+command rollback():int 
+address mvc_rollbackDefault_wrap
+comment "Rollback transaction";
 command rollback( chain:int, name:str ):int 
 address mvc_rollback_wrap
 comment "Rollback transaction/savepoint and chain";
@@ -487,11 +494,23 @@ str mvc_commit_wrap(int* res, int* chain, str *name){
 	*res = mvc_commit( m, *chain, *name );
 	return MAL_SUCCEED;
 }
+str mvc_commitDefault_wrap(int* res){
+	mvc *m;
+	@:getContext(m,mvc)@
+	*res = mvc_commit( m, 0, NULL );
+	return MAL_SUCCEED;
+}
 
 str mvc_rollback_wrap(int *res, int *chain, str *name ){
 	mvc *m;
 	@:getContext(m,mvc)@
 	*res = mvc_rollback( m, *chain, *name );
+	return MAL_SUCCEED;
+}
+str mvc_rollbackDefault_wrap(int *res ){
+	mvc *m;
+	@:getContext(m,mvc)@
+	*res = mvc_rollback( m, 0, NULL );
 	return MAL_SUCCEED;
 }
 
