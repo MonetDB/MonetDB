@@ -200,6 +200,7 @@ Directive str2dir[]={
     "bib",BibTeX,"bib",
     "{",InHide,"",
     "}",OutHide,"",
+    "/",Comment,"",
     NULL,Nop,NULL};
 
 #define NUMEXTENS (sizeof(str2dir)/sizeof(Directive))

@@ -162,6 +162,8 @@ again:  switch( d->d_dir ){
 	    	d->d_dir = dirbak; /* dirbak=0; */
 		goto again;
 	    } break;
+	case Comment:
+	    break;
 	default:
 	    if (dirbak==d->d_dir && dstbak && (dstbak == d->d_file))
 	    	PrCodeDisplay(d, 0);

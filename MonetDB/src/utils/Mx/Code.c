@@ -100,6 +100,8 @@ again:  switch( d->d_dir ){
                 d->d_dir = bak;
                 goto again;
             } break;
+	case Comment:
+	    break;
 	default:
 	    Fatal("GenCode", "Unknown directive:%c", d->d_dir);
 	}

@@ -37,7 +37,7 @@ typedef enum {
     Nop =0,
     Index0,Index1,Index2,Index3,Index4,Index5,Index6,Index7,Index8,Index9,
     Bfile, Efile, Ofile, Mxmacro, Ifdef, Ifndef, Endif,
-    Title, Author, Version, Date, InHide, OutHide, 
+    Title, Author, Version, Date, InHide, OutHide, Comment, 
     Module, Section, Subsection, Paragraph, Qtex, Qcode, Continue,
     Pspec, Pimpl, Cdef, Csrc, CCsrc, ODLspec, SQL,
     OQLspec, Cyacc, Clex, Prolog, Haskell, Monet, MILcode, Qnap, HTML, Java,

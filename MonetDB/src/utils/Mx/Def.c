@@ -319,6 +319,8 @@ char *	name;
 	    d->d_blk = blk;
 	    HideOff();
 	    break;
+	case Comment:
+	    break;
 	default:
 	    Fatal("MakeDefs", "Unknown directive:%c%c", MARK, dir);
 	    break;
