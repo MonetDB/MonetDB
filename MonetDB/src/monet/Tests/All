@@ -3,3 +3,5 @@ refcnt
 bat_nil
 printf
 const
+modrefcnt1
+modrefcnt2

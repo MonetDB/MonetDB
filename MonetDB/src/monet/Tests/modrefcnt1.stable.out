@@ -1,0 +1,80 @@
+stdout of test 'modrefcnt1` in directory 'src/monet` itself:
+
+
+# 15:35:24 >  
+# 15:35:24 >  Mtimeout -timeout 600 Mserver -monetrc /var/tmp/StM/.monet.Mtest.conf -db Tests_src_monet  < modrefcnt1.milM
+# 15:35:24 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# dbfarm:/var/tmp/StM/dbfarm
+# dbname:Tests_src_monet
+# dbdir:/var/tmp/StM/dbfarm/Tests_src_monet
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "lock",	  2		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-----------------#
+# BAT:	  tmp_24  #
+# (int)	  (lock)  #
+#-----------------#
+[ 0 ]
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "lock",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-----------------#
+# BAT:	  tmp_24  #
+# (int)	  (lock)  #
+#-----------------#
+[ 0 ]
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ 26 ]
+!WARNING: CMDsize: range error 26
+[ nil ]
+
+# 15:35:25 >  
+# 15:35:25 >  Done.
+# 15:35:25 >  
+

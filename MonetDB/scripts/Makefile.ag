@@ -4,5 +4,5 @@ SUBDIRS = tools
 
 scripts_mil = {
 	DIR = pkgdatadir
-	SOURCES = general.mil init.mil
+	SOURCES = general.mil quit.mil monet.conf
 }

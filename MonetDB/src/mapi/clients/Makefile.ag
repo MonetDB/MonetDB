@@ -8,7 +8,7 @@ MAPI_LIBS = $(SOCKET_LIBS) $(GDK_LIBS)
 
 lib_Mapi = {
 	SOURCES = Mapi.mx 
-	LIBS = $(MAPI_LIBS)
+	LIBS = $(MAPI_LIBS) ../../gdk/libbat
 	HEADERS = h
 }
 

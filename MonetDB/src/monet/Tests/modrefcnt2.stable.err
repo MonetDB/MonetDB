@@ -1,0 +1,27 @@
+stderr of test 'modrefcnt2` in directory 'src/monet` itself:
+
+
+# 15:31:13 >  
+# 15:31:13 >  Mtimeout -timeout 1860 Mserver -monetrc /var/tmp/StM/.monet.Mtest.conf -db Tests_src_monet /net/thor/export/scratch1/manegold/Monet_4-3/GNU_32/Linux2.4.2-0.1.28smp/share/Monet/mapi.mil modrefcnt2.prologue
+# 15:31:13 >  
+
+
+# 15:31:22 >  
+# 15:31:22 >  Mtimeout -timeout 600 MapiClient -everything  < modrefcnt2_s00.milC
+# 15:31:22 >  
+
+
+# 15:31:23 >  
+# 15:31:23 >  Mtimeout -timeout 600 MapiClient -everything  < modrefcnt2_s01.milC
+# 15:31:23 >  
+
+
+# 15:31:23 >  
+# 15:31:23 >  Mtimeout -timeout 600 Mshutdown
+# 15:31:23 >  
+
+
+# 15:31:24 >  
+# 15:31:24 >  Done.
+# 15:31:24 >  
+

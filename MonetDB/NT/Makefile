@@ -6,21 +6,20 @@ MKDIR = mkdir
 ECHO = echo
 CD = cd
 
-MONET_BUILD = $(MAKEDIR)
+MONET_BUILD  = $(MAKEDIR)
+MONET_PREFIX = $(MAKEDIR)
 
 !INCLUDE $(TOPDIR)\rules.msc
 
 all: $(SRCDIR)\Makefile.msc all-msc
 	set MONET_BUILD=$(MONET_BUILD)
+	set MONET_PREFIX=$(MONET_PREFIX)
 	$(MAKE) /nologo /k /f $(SRCDIR)\Makefile.msc all
 
 install: targetdirs
 	set MONET_BUILD=$(MONET_BUILD)
+	set MONET_PREFIX=$(MONET_PREFIX)
 	$(MAKE) /nologo /k /f $(SRCDIR)\Makefile.msc install
-
-monet_build:
-	if "$(MONET_BUILD)" == "" set MONET_BUILD=$(MAKEDIR)
-	set
 
 $(SRCDIR)\Makefile.msc: $(SRCDIR)\src\utils\autogen\autogen.py \
 	$(SRCDIR)\src\utils\autogen\codegen.py \
@@ -31,8 +30,7 @@ all-msc: config.h unistd.h sys\socket.h
 
 config.h: winconfig.h
 	$(INSTALL) winconfig.h config.h
-	if     "$(MONET_PREFIX)" == ""  $(ECHO) #define MONET_PREFIX "$(MAKEDIR)"      | sed "s|\\|\\\\|g" >> config.h
-	if not "$(MONET_PREFIX)" == ""  $(ECHO) #define MONET_PREFIX "$(MONET_PREFIX)" | sed "s|\\|\\\\|g" >> config.h
+	$(ECHO) #define MONET_PREFIX "$(MONET_PREFIX)" | sed "s|\\|\\\\|g" >> config.h
 
 unistd.h: 
 	$(ECHO) #ifndef UNISTD_H > unistd.h
