@@ -16,6 +16,7 @@
 #define _symbol_create_int(t,d)     symbol_create_int( (context*)parm, t, d)
 #define _symbol_create_symbol(t,d)  symbol_create_symbol( (context*)parm, t, d)
 #define _symbol_create_atom(t,d)    symbol_create_atom( (context*)parm, t, d)
+#define _symbol_init(s,t)    	    symbol_init( s, (context*)parm, t)
 
 extern int parse_error(void *lc, char *s);
 
@@ -290,6 +291,7 @@ sqlstmt:
 			  lc->sym = $$ = $1; YYACCEPT; }
  | /*empty*/		{ context *lc = (context*)parm; 
 			  lc->sym = $$ = NULL; YYACCEPT; }
+ ;
 
 
 	/* schema definition language */
@@ -326,6 +328,7 @@ schema_name:
 	{ $$ = dlist_create();
 	  dlist_append_string($$, $1 );
 	  dlist_append_string($$, $3 ); }
+ ;
 
 opt_schema_default_char_set:
     /* empty */		   	{ $$ = NULL; }
@@ -615,6 +618,7 @@ opt_with_check_option:
 opt_column_commalist:
     /* empty */			{ $$ = NULL; }
  | column_commalist_parens
+ ;
 
 column_commalist_parens:
    '(' column_commalist ')' 	{ $$ = $2; } 
@@ -723,6 +727,7 @@ opt_using:
 opt_nr:
     /* empty */			{ $$ = -1; }
  |  intval RECORDS		{ $$ = $1; }
+ ;
 
 delete_stmt:
     DELETE FROM qname opt_where_clause 
@@ -922,14 +927,19 @@ simple_select:
     SELECT opt_distinct selection opt_into
            table_exp opt_order_by_clause
 
-	{ dlist *l = dlist_create();
-	  dlist_append_int(l, $2);
-	  dlist_append_list(l, $3);
-	  dlist_append_list(l, $4);
-	  dlist_append_list(l, $5);
-	  dlist_append_symbol(l, $6);
-	  $$ = _symbol_create_list( SQL_SELECT, l ); 		
-}
+	{ SelectNode *sn = NEW(SelectNode);
+	  sn->distinct = $2;
+	  sn->selection = $3;
+	  sn->into = $4;
+	  sn->from = $5->h->data.sym;
+	  sn->where = $5->h->next->data.sym;
+	  sn->groupby = $5->h->next->next->data.sym;
+	  sn->having = $5->h->next->next->next->data.sym;
+	  sn->orderby = $6;
+	  sn->name = NULL;
+
+	  $$ = (symbol*)sn;
+	  _symbol_init($$, SQL_SELECT); }
 
  |  select_clause UNION opt_all select_clause
 
@@ -983,8 +993,10 @@ simple_table:
 
 table_ref:
     simple_table
- |  select_with_parens table_name		{ $$ = $1; 
-				  dlist_append_symbol($1->data.lval, $2); }
+ |  select_with_parens table_name	
+				{ SelectNode *sn = (SelectNode*)$1;
+				  $$ = $1; 
+				  sn->name = $2; }
  |  joined_table 		{ $$ = $1; 
 				  dlist_append_symbol($1->data.lval, NULL); }
  |  '(' joined_table ')' table_name	
@@ -1122,6 +1134,7 @@ opt_bounds:
    /* empty */ 	{ $$ = 0; }
  | ASYMMETRIC 	{ $$ = 0; }
  | SYMMETRIC 	{ $$ = 1; }
+ ;
 
 like_predicate:
     scalar_exp NOT LIKE atom_exp
@@ -1206,13 +1219,17 @@ existence_test:
 subquery:
     '(' SELECT opt_distinct  selection table_exp ')' 
 
-	{ dlist *l = dlist_create();
-	  dlist_append_int(l, $3);
-	  dlist_append_list(l, $4);
-	  dlist_append_list(l, NULL); /* no INTO */
-	  dlist_append_list(l, $5);
-	  dlist_append_symbol(l, NULL); /* no ordering*/
-	  $$ = _symbol_create_list( SQL_SELECT, l ); 		}
+	{ SelectNode *sn = NEW(SelectNode);
+	  sn->distinct = $3;
+	  sn->selection = $4;
+	  sn->into = NULL;
+	  sn->from = $5->h->data.sym;
+	  sn->where = $5->h->next->data.sym;
+	  sn->groupby = $5->h->next->next->data.sym;
+	  sn->having = $5->h->next->next->next->data.sym;
+	  sn->orderby = NULL;
+	  $$ = (symbol*)sn;
+	  _symbol_init($$, SQL_SELECT); }
  ;
 
 	/* scalar expressions */
@@ -1356,7 +1373,7 @@ opt_sign:
    '+'		{ $$ = 1; }
  | '-' 		{ $$ = -1; }
  | /* empty */	{ $$ = 1; }
-
+ ;
 
 tz:
 	WITH TIME ZONE	{ $$ = 1; }
@@ -1488,6 +1505,7 @@ cast_exp:
 	  dlist_append_symbol(l, $3);
 	  dlist_append_string(l, _strdup($5));
 	  $$ = _symbol_create_list( SQL_CAST, l ); }
+ ;
 
 case_exp: /* could rewrite NULLIF and COALESCE to normal CASE stmts */
      NULLIF '(' scalar_exp ',' scalar_exp ')' 
@@ -1615,6 +1633,7 @@ name_commalist:
 
 intval:
 	INT			{ $$ = strtol($1,&$1,10); }
+ ;
 
 	/* embedded condition things */
 /* sql: WHENEVER NOT FOUND when_action |	WHENEVER SQLERROR when_action ;

@@ -30,6 +30,7 @@ typedef enum stmt_type {
 
 	st_reverse,
 	st_atom,
+	st_rel_join,
 	st_join,
 	st_semijoin,
 	st_outerjoin,
@@ -142,6 +143,13 @@ extern stmt *stmt_like(stmt * op1, stmt * a);
 extern stmt *stmt_join(stmt * op1, stmt * op2, comp_type cmptype);
 extern stmt *stmt_outerjoin(stmt * op1, stmt * op2, comp_type cmptype);
 extern stmt *stmt_semijoin(stmt * op1, stmt * op2);
+
+extern stmt *stmt_push_down_head(stmt * s, stmt * select);
+extern stmt *stmt_push_down_tail(stmt * s, stmt * select);
+extern stmt *stmt_push_join_head(stmt * s, stmt * join);
+extern stmt *stmt_push_join_tail(stmt * s, stmt * join);
+extern stmt *stmt_join2select(stmt * join);
+
 extern stmt *stmt_diff(stmt * op1, stmt * op2);
 extern stmt *stmt_intersect(stmt * op1, stmt * op2);
 extern stmt *stmt_union(stmt * op1, stmt * op2);
@@ -193,10 +201,13 @@ extern int stmt_dump(stmt * s, int *nr, context * sql);
 
 extern void stmt_destroy(stmt *s );
 extern void stmt_reset( stmt *s );
+extern stmt *stmt_dup( stmt *s );
 
 extern group *grp_create(stmt * s, group *og );
 extern group *grp_semijoin(group *og, stmt *s );
 extern void grp_destroy(group * g);
+
+extern int stmt_cmp_nrcols( stmt *s, int *nr );
 
 /* reset the stmt nr's */
 #endif				/* _STATEMENT_H_ */

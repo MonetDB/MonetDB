@@ -712,6 +712,98 @@ stmt *stmt_semijoin(stmt * op1, stmt * op2)
 	s->t = op1->t;
 	return s;
 }
+
+stmt *stmt_push_down_head(stmt * join, stmt * select){
+	if (join->type == st_join){
+		stmt *op1 = stmt_semijoin(join->op1.stval,select);
+		return stmt_join(op1,join->op2.stval, join->flag);
+	} else if (join->type == st_intersect){
+		return stmt_intersect(
+			stmt_push_down_head(join->op1.stval, select),
+			stmt_push_down_head(join->op2.stval, select)
+				);
+	} else if (join->type == st_reverse){
+		return stmt_reverse(
+			stmt_push_down_tail(join->op1.stval, 
+				stmt_reverse(select)));
+	} else {
+		printf("todo push down head %d\n", join->type);
+	}
+	return join;
+}
+
+stmt *stmt_push_down_tail(stmt * join, stmt * select){
+	if (join->type == st_join){
+		stmt *tail = stmt_reverse(join->op2.stval);
+		stmt *op2 = stmt_reverse(stmt_semijoin(tail,select));
+		return stmt_join(join->op1.stval,op2, join->flag);
+	} else if (join->type == st_intersect){
+		return stmt_intersect(
+			stmt_push_down_tail(join->op1.stval, select),
+			stmt_push_down_tail(join->op2.stval, select)
+				);
+	} else if (join->type == st_reverse){
+		return stmt_reverse(
+			stmt_push_down_head(join->op1.stval, 
+				stmt_reverse(select)));
+	} else {
+		printf("todo push down tail %d\n", join->type);
+	}
+	return join;
+}
+
+stmt *stmt_push_join_head(stmt * s, stmt * join){
+	if (s->type == st_join){
+		stmt *op1 = stmt_join(join,s->op1.stval,cmp_equal);
+		return stmt_join( op1, s->op2.stval, s->flag );
+	} else if (s->type == st_reverse){
+		return stmt_reverse(
+			stmt_push_join_tail(s->op1.stval, stmt_reverse(join)));
+	} else if (s->type == st_intersect){
+		return stmt_intersect(
+			stmt_push_join_head(s->op1.stval, join),
+			stmt_push_join_head(s->op2.stval, join)
+				);
+	} else {
+		printf("todo push join head %d\n", s->type);
+	}
+	return s;
+}
+
+stmt *stmt_push_join_tail(stmt * s, stmt * join){
+	if (s->type == st_join){
+		stmt *op2 = stmt_join(s->op2.stval,join,cmp_equal);
+		return stmt_join( s->op1.stval, op2, s->flag );
+	} else if (s->type == st_reverse){
+		return stmt_reverse(
+			stmt_push_join_head(s->op1.stval, stmt_reverse(join)));
+	} else if (s->type == st_intersect){
+		return stmt_intersect(
+			stmt_push_join_tail(s->op1.stval, join),
+			stmt_push_join_tail(s->op2.stval, join)
+				);
+	} else {
+		printf("todo push join tail %d\n", s->type);
+	}
+	return s;
+}
+
+stmt *stmt_join2select(stmt * j){
+	if (j->type == st_join){
+		return stmt_select(j->op1.stval, 
+				stmt_reverse(j->op2.stval), j->flag);
+	} else if (j->type == st_reverse){
+		return stmt_join2select(j->op1.stval);
+	} else if (j->type == st_intersect){
+		return stmt_semijoin(
+			stmt_join2select(j->op1.stval),
+			stmt_join2select(j->op2.stval));
+	} else {
+		printf("todo join2select %d\n", j->type);
+	}
+	return j;
+}
+
 stmt *stmt_diff(stmt * op1, stmt * op2)
 {
 	stmt *s = stmt_create();
@@ -731,6 +823,9 @@ stmt *stmt_intersect(stmt * op1, stmt * op2)
 {
 	stmt *s = stmt_create();
 	s->type = st_intersect;
+	if (op1->h != op2->h){
+		op2 = stmt_reverse(op2);
+	}
 	s->op1.stval = op1;
 	st_attache(op1, s);
 	s->op2.stval = op2;
@@ -804,6 +899,12 @@ stmt *stmt_result(stmt * l)
 	return s;
 }
 
+stmt *stmt_dup( stmt * s)
+{
+	st_attache(s, NULL);
+	return s;
+}
+
 stmt *stmt_set(stmt * s1)
 {
 	stmt *s = stmt_create();
@@ -817,7 +918,7 @@ stmt *stmt_sets(list * l1)
 {
 	stmt *s = stmt_create();
 	s->type = st_sets;
-	s->op1.lval = list_append(list_create((fdestroy)&list_destroy),l1);
+	s->op1.lval = l1;
 	return s;
 }
 
@@ -1183,4 +1284,11 @@ char *column_name(stmt * st)
 		fprintf(stderr, "missing name %d\n", st->type );
 		return NULL;
 	}
+}
+
+int stmt_cmp_nrcols( stmt *s, int *nr ){
+	if (s->nrcols == *nr){
+		return 0;
+	}
+	return -1;
 }

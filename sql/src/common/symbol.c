@@ -6,10 +6,8 @@
 
 int symbol_debug = 0;
 
-symbol *symbol_create_default(context * lc, int token)
+symbol *symbol_init(symbol *s, context * lc, int token)
 {
-	symbol *s = NEW(symbol);
-	s->lexion = NULL;
 	s->token = token;
 	s->data.lval = NULL;
 	s->type = type_list;
@@ -22,7 +20,8 @@ symbol *symbol_create_default(context * lc, int token)
 
 symbol *symbol_create(context * lc, int token, char *data)
 {
-	symbol *s = symbol_create_default(lc, token);
+	symbol *s = NEW(symbol);
+	symbol_init(s, lc, token);
 	s->data.sval = data;
 	s->type = type_string;
 	if (symbol_debug)
@@ -33,7 +32,8 @@ symbol *symbol_create(context * lc, int token, char *data)
 
 symbol *symbol_create_list(context * lc, int token, dlist * data)
 {
-	symbol *s = symbol_create_default(lc, token);
+	symbol *s = NEW(symbol);
+	symbol_init(s, lc, token);
 	s->data.lval = data;
 	s->type = type_list;
 	if (symbol_debug)
@@ -45,7 +45,8 @@ symbol *symbol_create_list(context * lc, int token, dlist * data)
 
 symbol *symbol_create_int(context * lc, int token, int data)
 {
-	symbol *s = symbol_create_default(lc, token);
+	symbol *s = NEW(symbol);
+	symbol_init(s, lc, token);
 	s->data.ival = data;
 	s->type = type_int;
 	if (symbol_debug)
@@ -56,7 +57,8 @@ symbol *symbol_create_int(context * lc, int token, int data)
 
 symbol *symbol_create_symbol(context * lc, int token, symbol * data)
 {
-	symbol *s = symbol_create_default(lc, token);
+	symbol *s = NEW(symbol);
+	symbol_init(s, lc, token);
 	s->data.sym = data;
 	s->type = type_symbol;
 	if (symbol_debug)
@@ -68,12 +70,14 @@ symbol *symbol_create_symbol(context * lc, int token, symbol * data)
 
 symbol *symbol_create_atom(context * lc, int token, atom * data)
 {
-	symbol *s = symbol_create_default(lc, token);
-	s->data.aval = data;
-	s->type = type_atom;
+	AtomNode *s = NEW(AtomNode);
+
+	symbol_init((symbol*)s, lc, token);
+	s->a = data;
+	s->s.type = type_atom;
 	if (symbol_debug)
 		fprintf(stderr, "%ld = symbol_create_atom(%s,%s)\n",
-			(long) s, token2string(s->token),
+			(long) s, token2string(s->s.token),
 			atom2string(data));
 	return s;
 }
@@ -82,9 +86,10 @@ void symbol_destroy(symbol * s)
 {
 	if (s && s->data.sval) {
 		switch (s->type) {
-		case type_atom:
-			atom_destroy(s->data.aval);
-			break;
+		case type_atom: {
+			AtomNode *a = (AtomNode*)s;
+			atom_destroy(a->a);
+		} break;
 		case type_symbol:
 			symbol_destroy(s->data.sym);
 			break;

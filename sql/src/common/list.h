@@ -3,20 +3,6 @@
 
 #include "sym.h"
 
-/*
-typedef struct node {
-	struct node *next;
-	symdata data;
-} node;
-
-typedef struct list {
-	symtype type;
-	node *h;
-	node *t;
-	int cnt;
-} list;
-*/
-
 typedef struct node {
 	struct node *next;
 	void *data;
@@ -47,7 +33,7 @@ extern node *list_remove_node(list * l, node * n);
 extern void list_remove_data(list * l, void *data);
 extern void list_move_data(list * l, list * d, void *data);
 
-extern list *list_merge(list * l, list * data);
+
 extern int list_traverse(list * l, traverse_func f, char *clientdata);
 extern list *list_map(list * l, map_func f, char *clientdata);
 
@@ -56,6 +42,15 @@ extern list *list_map(list * l, map_func f, char *clientdata);
  * Returns 0 if data and key are equal 
  * */
 typedef int (*fcmp)(void *data,void *key); 
+typedef void *(*fdup)(void *data); 
+typedef void *(*freduce)(void *v1, void *v2); 
+
 extern node *list_find(list * l, void *key, fcmp cmp ); 
+extern list *list_select(list * l, void *key, fcmp cmp, fdup dup ); 
+extern list *list_distinct(list * l, fcmp cmp, fdup dup ); 
+extern void *list_reduce(list * l, freduce red, fdup dup );
+
+extern list *list_copy(list * l, fdup dup);
+extern list *list_merge(list * l, list * data, fdup dup);
 
 #endif				/* LIST_H */

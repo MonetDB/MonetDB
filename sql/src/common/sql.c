@@ -1,8 +1,4 @@
 
-/* TODO
-   fix error output, use (x)gettext to internationalize this
- */
-
 #include <unistd.h>
 #include "sql.h"
 #include "symbol.h"
@@ -14,46 +10,9 @@
 
 #include <scope.h>
 
-#define NAMELEN 64
-
 #define create_stmt_list() list_create((fdestroy)&stmt_destroy)
 #define create_column_list() list_create((fdestroy)NULL)
 #define create_atom_list() list_create((fdestroy)&atom_destroy)
-/* 
- * some string functions.
- * -- need to be move to seperate file 
- */
-/* implace cast to lower case string */
-char *mkLower(char *s)
-{
-	char *r = s;
-	while (*s) {
-		*s = (char) tolower(*s);
-		s++;
-	}
-	return r;
-}
-
-char *toLower(const char *s)
-{
-	char *r = _strdup(s);
-	return mkLower(r);
-}
-
-/* concat s1,s2 into a new result string */
-char *strconcat(const char *s1, const char *s2)
-{
-	int i, j, l1 = strlen(s1);
-	int l2 = strlen(s2) + 1;
-	char *new_s = NEW_ARRAY(char, l1 + l2);
-	for (i = 0; i < l1; i++) {
-		new_s[i] = s1[i];
-	}
-	for (j = 0; j < l2; j++, i++) {
-		new_s[i] = s2[j];
-	}
-	return new_s;
-}
 
 /* 
  * For debugging purposes we need to be able to convert sql-tokens to 
@@ -200,9 +159,7 @@ const char *token2string(int token)
 }
 
 
-static stmt *sql_select(context * sql, scope * scp, int distinct,
-			dlist * selection, dlist * into,
-			dlist * table_exp, symbol * orderby);
+static stmt *sql_select(context * sql, scope * scp, SelectNode *sn );
 static stmt *sql_simple_select(context * sql, scope * scp,
 			       dlist * selection);
 static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc,
@@ -216,15 +173,10 @@ static tvar *query_exp_optname(context * sql, scope * scp, symbol * q);
 
 static stmt *sql_subquery(context * sql, scope * scp, symbol * sq)
 {
-	dlist *q = sq->data.lval;
-	assert(sq->token == SQL_SELECT);
-	return
-	    sql_select(sql, scp,
-		       q->h->data.ival,
-		       q->h->next->data.lval,
-		       q->h->next->next->data.lval,
-		       q->h->next->next->next->data.lval,
-		       q->h->next->next->next->next->data.sym);
+	SelectNode *sn = (SelectNode*)sq;
+	assert(sn->s.token == SQL_SELECT);
+
+	return sql_select(sql, scp, sn );
 }
 
 static stmt *scope_subquery(context * sql, scope * scp, symbol * sq)
@@ -363,7 +315,7 @@ static tvar *table_optname(context * sql, scope * scp, stmt * sq,
 			char *cname = column_name(st);
 			stmt *bc = tail_column(st);
 
-			while (bc->type == st_column &&
+			while (bc->type == st_bat &&
 			       (bc->h == NULL || bc->h->tname == NULL) &&
 			       bc->op1.cval->table->name == NULL
 			       && bc->op1.cval->s != NULL) {
@@ -386,6 +338,7 @@ static tvar *table_optname(context * sql, scope * scp, stmt * sq,
 static tvar *sql_subquery_optname(context * sql, scope * scp,
 				  symbol * query)
 {
+	SelectNode *sn = (SelectNode*)query;
 	scope *nscp = scope_open(scp);
 	tvar *res = NULL;
 	stmt *sq = sql_subquery(sql, nscp, query);
@@ -393,8 +346,7 @@ static tvar *sql_subquery_optname(context * sql, scope * scp,
 	if (!sq)
 		return NULL;
 
-	res = table_optname(sql, scp, sq, query->sql,
-			    query->data.lval->t->data.sym);
+	res = table_optname(sql, scp, sq, sn->s.sql, sn->name);
 	scp = scope_close(nscp);
 	return res;
 }
@@ -932,8 +884,10 @@ static stmt *sql_value_exp(context * sql, scope * scp, symbol * se,
 	case SQL_PARAMETER:
 		printf("parameter not used\n");
 		break;
-	case SQL_ATOM:
-		return stmt_atom(atom_dup(se->data.aval));
+	case SQL_ATOM: {
+		AtomNode *an = (AtomNode*)se;
+		return stmt_atom(atom_dup(an->a));
+	}
 	case SQL_CAST:
 		return sql_cast(sql, scp, se, grp, subset);
 	case SQL_CASE:
@@ -950,174 +904,351 @@ static stmt *sql_value_exp(context * sql, scope * scp, symbol * se,
 	return NULL;
 }
 
-static list *query_and(catalog * cat, list * ands)
+/* key is a join output */
+static int cmp_sel_head( stmt *sel, stmt *key )
 {
-	list *l = NULL;
-	node *n = ands->h;
-	int len = list_length(ands), changed = 0;
-
-	while (n && (len > 0)) {
-		/* the first in the list changes every interation */
-		stmt *s = n->data;
-		node *m = n->next;
-		l = create_stmt_list();
-		while (m) {
-			stmt *olds = s;
-			stmt *t = m->data;
-			if (s->nrcols == 1) {
-				tvar *sv = s->h;
-
-				if (t->nrcols == 1 && sv == t->h) {
-					s = stmt_semijoin(s, t);
-				}
-				if (t->nrcols == 2) {
-					if (sv == t->h) {
-						s = stmt_semijoin(t, s);
-					} else if (sv == t->t) {
-						stmt *r = stmt_reverse(t);
-						s = stmt_semijoin(r, s);
-					}
-				}
-			} else if (s->nrcols == 2) {
-				tvar *sv = s->h;
-				if (t->nrcols == 1) {
-					if (sv == t->h) {
-						s = stmt_semijoin(s, t);
-					} else if (s->t == t->h) {
-						s = stmt_reverse(s);
-						s = stmt_semijoin(s, t);
-					}
-				} else if (t->nrcols == 2) {
-					if (sv == t->h && s->t == t->t) {
-						s = stmt_intersect(s, t);
-					} else if (sv == t->t
-						   && s->t == t->h) {
-						s = stmt_reverse(s);
-						s = stmt_intersect(s, t);
-					}
-				}
-			}
-			/* if s changed, t is used so no need to store */
-			if (s == olds) {
-				list_append(l, t); st_attache(t,NULL);
-			} else {
-				changed++;
-				len--;
-			}
-			m = m->next;
-		}
-		if (s){
-			list_append(l, s); st_attache(s, NULL);
-		}
-		n = l->h;
-		len--;
+	if (key->h && key->h == sel->h){
+		return 0;
 	}
-	return l;
+	return -1;
+}
+
+static int cmp_sel_tail( stmt *sel, stmt *key )
+{
+	if (key->t && key->t == sel->h){
+		return 0;
+	}
+	return -1;
+}
+
+static int stmt_cmp_head_tail( stmt *h, stmt *key )
+{
+	if (h->nrcols != key->nrcols ) {
+		return -1;
+	}
+	if (h->nrcols == 1 && h->h == key->h){
+		return 0;
+	}
+	if (h->nrcols == 2 && (
+		(h->h == key->h && h->t == key->t) ||
+		(h->t == key->h && h->h == key->t) )){
+		return 0;
+	}
+	return -1;
+}
+
+static int select_count( stmt *s )
+{
+	switch(s->type){
+		case st_intersect: return select_count( s->op1.stval );
+		case st_join: return select_count(s->op1.stval) +
+					select_count(s->op2.stval);
+		case st_reverse: return select_count(s->op1.stval);
+				 /*
+		case st_semijoin: return 1;
+		*/
+		case st_semijoin: return select_count(s->op1.stval) +
+					select_count(s->op2.stval);
+		case st_select: return 1;
+		default: return 0;
+	}
+}
+
+static int reduced_joins( stmt *s, int *key )
+{
+	int c = select_count(s);
+	if (c == *key) return 0;
+	return -1;
+}
+
+static stmt *stmt_smallest( stmt *h, stmt *key )
+{
+	int h1 = select_count(h);
+	int h2 = select_count(key);
+
+	if (h1 > h2){
+		h->refcnt++;
+		return h;
+	} else {
+		key->refcnt++;
+		return key;
+	}
+}
+
+static int pivot_cmp_head( stmt *piv, stmt *key )
+{
+	if (key->h && key->h == piv->t){
+		return 0;
+	}
+	return -1;
+}
+
+static int pivot_cmp_tail( stmt *piv, stmt *key )
+{
+	if (key->t && key->t == piv->t){
+		return 0;
+	}
+	return -1;
+}
+
+
+static int data_cmp( void *d, void *k )
+{
+	if (d == k) 
+		return 0;
+	return -1;
+}
+
+/*
+ * The push_selects_down function converts a conjunction set into a
+ * reduced conjuntion tree where the selects are grouped together and
+ * pushed under the join. Also joins are grouped together.
+ * */
+static list *push_selects_down(list * con){
+	int one = 1;
+	int two = 2;
+
+	list *rsel = create_stmt_list();
+	list *res = create_stmt_list();
+	list *sels, *dsels, *joins, *djoins;
+	node *n = NULL;
+       
+	sels = list_select(con, (void*)&one, (fcmp)&stmt_cmp_nrcols, (fdup)&stmt_dup );
+	dsels = list_distinct( sels, (fcmp)&stmt_cmp_head_tail, (fdup)&stmt_dup );
+
+	joins = list_select(con, (void*)&two, (fcmp)&stmt_cmp_nrcols, (fdup)&stmt_dup );
+	djoins = list_distinct( joins, (fcmp)&stmt_cmp_head_tail, (fdup)&stmt_dup );
+
+	for( n = dsels->h; n; n = n->next){
+		list *esels = list_select(sels, n->data, (fcmp)&stmt_cmp_head_tail, (fdup)&stmt_dup );
+		stmt *sel = (stmt*)list_reduce(esels, (freduce)&stmt_semijoin, (fdup)&stmt_dup );
+		list_destroy(esels);
+		/* todo check for foreign key selects */
+		list_append(rsel, sel);
+	}
+	list_destroy(sels);
+	list_destroy(dsels);
+
+	/* todo join order rewrites */
+	for( n = djoins->h; n; n = n->next){
+		list *ejoins = list_select(joins, n->data, (fcmp)&stmt_cmp_head_tail, (fdup)&stmt_dup );
+		stmt *join = (stmt*)list_reduce(ejoins, (freduce)&stmt_intersect, (fdup)&stmt_dup );
+
+		/* todo check for foreign key joins */
+		node *hsel = list_find(rsel, (void*)join, (fcmp)&cmp_sel_head);
+		node *tsel = list_find(rsel, (void*)join, (fcmp)&cmp_sel_tail);
+
+		list_destroy(ejoins);
+
+		if (hsel){
+			stmt *njoin = stmt_push_down_head(join, hsel->data);
+			join = njoin;
+		}
+		if (tsel){
+			stmt *njoin = stmt_push_down_tail(join, tsel->data);
+			join = njoin;
+		}
+		list_append(res, join);
+	}
+	/* find least expensive join (with head/tail selects) */
+	/* continue finding usages of this until done */
+
+	list_destroy(joins);
+	list_destroy(djoins);
+	if (!list_length(res)){
+		if (list_length(rsel) == 1){
+			list_destroy(res);
+			return rsel;
+		} else {
+			printf("error: more then one selected but no joins\n");
+		}
+	}
+	list_destroy(rsel);
+	return res;
+}
+
+list *pivot( list *pivots, stmt *st, stmt *p, int markid ){
+	list *npivots;
+	stmt *j, *pnl, *pnr;
+	node *pn;
+
+	node *tp = list_find(pivots, (void*)st, (fcmp)&pivot_cmp_tail);
+
+	j = stmt_push_join_head(st, p);
+	if (tp){
+		/* convert to a select [op](l,r).select(TRUE); */
+		j = stmt_push_join_tail(j, stmt_reverse(tp->data));
+		j = stmt_join2select(j);
+	}
+
+	pnl = stmt_mark(j, markid);
+	pnr = stmt_mark(stmt_reverse(j), markid);
+
+	/*
+	if (tp)
+		pnr = stmt_intersect(pnr,pnl);
+		*/
+
+	npivots = create_stmt_list();
+	if (!tp)
+		list_append (npivots, pnl );
+	for (pn = pivots->h; pn; pn = pn->next){
+		list_append (npivots, stmt_join (pnr, pn->data, cmp_equal));
+	}
+	return npivots;
+}
+
+/* merge_pivot_sets tries to merge pivot sets using the joins in the join set
+ * returns a set of pivot sets.
+ * */
+/*
+static list *merge_pivot_sets(list *pivotsets, list *joins)
+{
+	stmt *st;
+	if (list_length(joins) == 0)
+		return NULL;
+	if (!pivotsets){
+		list *pivots = create_stmt_list();
+		node *n = joins->h;
+		pivotsets = list_create((fdestroy)&list_destroy);
+		st = n->data;
+
+		if (st->nrcols == 1) {
+			list_append(pivots, 
+					stmt_mark(stmt_reverse(st), markid++));
+		}
+		if (st->nrcols == 2) {
+			list_append(pivots, 
+					stmt_mark (stmt_reverse(st), markid));
+			list_append(pivots, 
+					stmt_mark(st, markid++));
+		}
+		list_append(pivotsets,pivots);
+	}
+}
+*/
+
+static list *pivot_sets(list *joins, int *Markid)
+{
+	int markid = *Markid;
+	list *psets = list_create((fdestroy)&list_destroy);
+	node *n;
+
+	for( n = joins->h; n; n = n->next ){
+		list *pivots = create_stmt_list();
+		stmt *st = n->data;
+
+		if (st->nrcols == 1) {
+			list_append(pivots, 
+					stmt_mark(stmt_reverse(st), markid++));
+		}
+		if (st->nrcols == 2) {
+			list_append(pivots, 
+					stmt_mark (stmt_reverse(st), markid));
+			list_append(pivots, 
+					stmt_mark(st, markid++));
+		}
+		list_append(psets,pivots);
+	}
+	*Markid = markid;
+	return psets;
+}
+
+static stmt *jointree_tmp(context * sql, list * l)
+{
+	int markid = 0, flag = 0;
+	list *ps, *joins, *pivots = create_stmt_list();
+
+	/*
+	l = push_selects_down(l);
+	*/
+	
+	flag = 2;
+	joins = list_select(l, (void*)&flag, 
+			(fcmp)&reduced_joins, (fdup)&stmt_dup );
+	printf("%d\n", list_length(joins));
+	ps = pivot_sets(joins, &markid);
+	flag = 1;
+	joins = list_select(l, (void*)&flag, 
+			(fcmp)&reduced_joins, (fdup)&stmt_dup );
+	printf("%d\n", list_length(joins));
+	/*
+	merge_pivot_sets(ps, joins);
+	*/
+	flag = 0;
+	joins = list_select(l, (void*)&flag, 
+			(fcmp)&reduced_joins, (fdup)&stmt_dup );
+	printf("%d\n", list_length(joins));
+	/*
+	merge_pivot_sets(ps, joins);
+	*/
+	return NULL;
 }
 
 static stmt *set2pivot(context * sql, list * l)
 {
 	list *pivots = create_stmt_list();
+	stmt *join, *st;
 	node *n;
-	l = query_and(sql->cat, l);
+	int len = 0;
+	int markid = 0;
+
+	l = push_selects_down(l);
+	/*
+	jointree_tmp(sql, l);
+	*/
 	n = l->h;
-	if (n) {
-		int len = 0;
-		int markid = 0;
-		stmt *st = n->data;
-		if (st->nrcols == 1) {
-			list_append(pivots, 
-				stmt_mark(stmt_reverse(st), markid++));
-		}
-		if (st->nrcols == 2) {
-			list_append(pivots,
-				stmt_mark (stmt_reverse(st), markid));
-			list_append(pivots, stmt_mark(st, markid++));
-		}
-		n = list_remove_node(l, n);
-		len = list_length(l) + 1;
-		while (list_length(l) > 0 && len > 0) {
-			len--;
-			n = l->h;
-			while (n) {
-				stmt *st = n->data;
-				list *npivots = create_stmt_list();
-				node *p = NULL;
-				for ( p = pivots->h; p; p = p->next) {
-					stmt *tmp = p->data;
-					tvar *tv = tmp->t;
-					if (tv == st->h) {
-						stmt *m = stmt_mark
-						    (stmt_reverse(st), markid);
-						stmt *m1 = stmt_mark(st,
-								     markid++);
-						stmt *j = stmt_join(p->data,
-							     stmt_reverse(m),
-							      cmp_equal);
-						stmt *pnl = stmt_mark(j,
-								      markid);
-						stmt *pnr = stmt_mark
-						    (stmt_reverse(j), markid++);
-						list_append (npivots,
-						     stmt_join(pnl, m1,
-							       cmp_equal));
 
-						for (p = pivots->h;p;p=p->next){
-							list_append (npivots,
-							     stmt_join
-							     (pnr, p->data,
-							      cmp_equal));
-						}
-						list_destroy(pivots);
-						pivots = npivots;
-						n = list_remove_node(l, n);
-						break;
-					} else if (tv == st->t) {
-						stmt *m1 =
-						    stmt_mark
-						    (stmt_reverse(st),
-						     markid);
-						stmt *m = stmt_mark(st,
-								    markid++);
-						stmt *j =
-						    stmt_join(p->data,
-							      stmt_reverse
-							      (m),
-							      cmp_equal);
-						stmt *pnl = stmt_mark(j,
-								      markid);
-						stmt *pnr =
-						    stmt_mark
-						    (stmt_reverse(j),
-						     markid++);
-						list_append
-						    (npivots,
-						     stmt_join(pnl,
-							       m1,
-							       cmp_equal));
-
-						for (p = pivots->h;p;p=p->next){
-							list_append(npivots,
-							     stmt_join
-							     (pnr, p->data,
-							      cmp_equal));
-						}
-						list_destroy(pivots);
-						pivots = npivots;
-						n = list_remove_node(l, n);
-						break;
-					}
-				}
-				if (n)
-					n = n->next;
-			}
-		}
-		if (!len) {
-			snprintf(sql->errstr, ERRSIZE,
+	join = (stmt*)list_reduce(l, (freduce)&stmt_smallest, (fdup)&stmt_dup );
+	n = list_find(l, (void*)join, data_cmp);
+	if (!n) {
+		snprintf(sql->errstr, ERRSIZE,
 			 _("Semantically incorrect query, unrelated tables"));
-			assert(0);
-			return NULL;
+		return NULL;
+	}
+	st = n->data;
+	if (st->nrcols == 1) {
+		list_append(pivots, stmt_mark(stmt_reverse(st), markid++));
+	}
+	if (st->nrcols == 2) {
+		list_append(pivots, stmt_mark (stmt_reverse(st), markid));
+		list_append(pivots, stmt_mark(st, markid++));
+	}
+	n = list_remove_node(l, n);
+	len = list_length(l) + 1;
+	while (list_length(l) > 0 && len > 0) {
+		len--;
+		n = l->h;
+		while (n) {
+			stmt *st = n->data;
+			node *p = NULL;
+			for ( p = pivots->h; p; p = p->next) {
+				list *nps = NULL;
+				stmt *pv = p->data;
+				if (pv->t == st->h) {
+					nps = pivot(pivots, st,pv,markid++);
+					list_destroy(pivots);
+					pivots = nps;
+					n = list_remove_node(l, n);
+					break;
+				} else if (pv->t == st->t) {
+					nps = pivot(pivots, stmt_reverse(st), 
+						pv, markid++);
+					list_destroy(pivots);
+					pivots = nps;
+					n = list_remove_node(l, n);
+					break;
+				}
+			}
+			if (n)
+				n = n->next;
 		}
+	}
+	if (!len) {
+		snprintf(sql->errstr, ERRSIZE,
+			 _("Semantically incorrect query, unrelated tables"));
+		assert(0);
+		return NULL;
 	}
 	list_destroy(l);
 	return stmt_list(pivots);
@@ -1687,14 +1818,16 @@ static stmt *sql_column_exp(context * sql, scope * scp, symbol * column_e,
 	return res;
 }
 
-list *list_map_merge(list * l2, int seqnr, list * l1)
+static list *list_map_merge(list * l2, int seqnr, list * l1)
 {
-	return list_merge(l1, l2);
+	list *res = list_copy(l1, (fdup)&stmt_dup);
+	res = list_merge(res, l2, (fdup)&stmt_dup);
+	return res;
 }
 
-list *list_map_append_list(list * l2, int seqnr, list * l1)
+static list *list_map_append_list(list * l2, int seqnr, list * l1)
 {
-	return list_append(l1, l2);
+	return list_append(l1, list_copy(l2, (fdup)&stmt_dup));
 }
 
 static stmt *sql_compare(context * sql, stmt * ls,
@@ -1739,7 +1872,6 @@ static stmt *sql_compare(context * sql, stmt * ls,
 			/* 
 			 * same table, ie. no join 
 			 * do a [compare_op].select(true) 
-			 */
 			sql_func *cmp = sql_bind_func(compare_op,
 						  tail_type(ls)->sqlname,
 						  tail_type(rs)->sqlname,
@@ -1761,6 +1893,8 @@ static stmt *sql_compare(context * sql, stmt * ls,
 						   ("BOOL"),
 						   _strdup
 						   ("1"))), cmp_equal);
+			 */
+			return stmt_select(ls, rs, type);
 		}
 		rs = check_types(sql, tail_type(ls), rs);
 		if (!rs)
@@ -1780,8 +1914,9 @@ static stmt *sql_compare(context * sql, stmt * ls,
 	}
 }
 
-stmt *sql_and(context * sql, stmt * ls, stmt * rs)
+static stmt *sql_and(context * sql, stmt * ls, stmt * rs)
 {
+	stmt *res = NULL;
 	if (!ls || !rs)
 		return NULL;
 	if (ls->type != st_set && ls->type != st_sets) {
@@ -1791,27 +1926,72 @@ stmt *sql_and(context * sql, stmt * ls, stmt * rs)
 		rs = stmt_set(rs);
 	}
 	if (ls->type == st_set && rs->type == st_set) {
-		list *nl = NULL;
-		list_merge(ls->op1.lval, rs->op1.lval);
+		list_merge( ls->op1.lval, rs->op1.lval,(fdup)&stmt_dup);
 		stmt_destroy(rs);
-		nl = query_and(sql->cat, ls->op1.lval);
-		list_destroy(ls->op1.lval);
-		ls->op1.lval = nl;
+		res = ls;
 	} else if (ls->type == st_sets && rs->type == st_set) {
-		list_map(ls->op1.lval, (map_func) & list_map_merge,
-			 rs->op1.sval);
+		res = stmt_sets(list_map(ls->op1.lval, 
+					(map_func) & list_map_merge,
+			 		rs->op1.sval));
 		stmt_destroy(rs);
-	} else if (ls->type == st_set && rs->type == st_sets) {
-		list_map(rs->op1.lval, (map_func) & list_map_merge,
-			 ls->op1.sval);
 		stmt_destroy(ls);
-		ls = rs;
+	} else if (ls->type == st_set && rs->type == st_sets) {
+		res = stmt_sets(list_map(rs->op1.lval, 
+					(map_func) & list_map_merge,
+			 		ls->op1.sval));
+		stmt_destroy(rs);
+		stmt_destroy(ls);
 	} else if (ls->type == st_sets && rs->type == st_sets) {
-		list_map(ls->op1.lval, (map_func) & list_map_merge,
-			 rs->op1.sval);
+		res = stmt_sets(list_map(ls->op1.lval, 
+					(map_func) & list_map_merge,
+			 		rs->op1.sval));
+		stmt_destroy(rs);
+		stmt_destroy(ls);
+	}
+	return res;
+}
+
+static stmt *sql_or(context * sql, stmt * ls, stmt * rs)
+{
+	stmt *res = NULL;
+
+	if (!ls || !rs)
+		return NULL;
+	if (ls->type != st_set && ls->type != st_sets) {
+		ls = stmt_set(ls);
+	}
+	if (rs->type != st_set && rs->type != st_sets) {
+		rs = stmt_set(rs);
+	}
+	if (ls->type == st_set && rs->type == st_set) {
+		res = stmt_sets(
+			list_append(
+				list_create((fdestroy)&list_destroy),
+				list_copy(ls->op1.lval, (fdup)&stmt_dup)));
+			list_append(res->op1.lval, 
+				list_copy(rs->op1.lval, (fdup)&stmt_dup));
+		stmt_destroy(ls);
+		stmt_destroy(rs);
+	} else if (ls->type == st_sets
+		   && rs->type == st_set) {
+		list_append(ls->op1.lval, 
+				list_copy(rs->op1.lval, (fdup)&stmt_dup));
+		res = ls;
+		stmt_destroy(rs);
+	} else if (ls->type == st_set
+		   && rs->type == st_sets) {
+		list_append(rs->op1.lval, 
+				list_copy(ls->op1.lval, (fdup)&stmt_dup));
+		res = rs;
+		stmt_destroy(ls);
+	} else if (ls->type == st_sets
+		   && rs->type == st_sets) {
+		(void) list_map(ls->op1.lval, (map_func) &
+			list_map_append_list, rs->op1.sval);
+		res = ls;
 		stmt_destroy(rs);
 	}
-	return ls;
+	return res;
 }
 
 static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc,
@@ -1824,46 +2004,17 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc,
 		{
 			symbol *lo = sc->data.lval->h->data.sym;
 			symbol *ro = sc->data.lval->h->next->data.sym;
-			stmt *ls =
-			    sql_logical_exp(sql, scp, lo, grp, subset);
-			stmt *rs =
-			    sql_logical_exp(sql, scp, ro, grp, subset);
-			if (!ls || !rs)
-				return NULL;
-			if (ls->type != st_set && ls->type != st_sets) {
-				ls = stmt_set(ls);
-			}
-			if (rs->type != st_set && rs->type != st_sets) {
-				rs = stmt_set(rs);
-			}
-			if (ls->type == st_set && rs->type == st_set) {
-				ls = stmt_sets(ls->op1.lval);
-				list_append(ls->op1.lval, rs->op1.lval);
-			} else if (ls->type == st_sets
-				   && rs->type == st_set) {
-				list_append(ls->op1.lval, rs->op1.lval);
-			} else if (ls->type == st_set
-				   && rs->type == st_sets) {
-				list_append(rs->op1.lval, ls->op1.lval);
-				ls = rs;
-			} else if (ls->type == st_sets
-				   && rs->type == st_sets) {
-				(void) list_map(ls->op1.lval,
-						(map_func) &
-						list_map_append_list,
-						rs->op1.sval);
-			}
-			return ls;
+			stmt *ls = sql_logical_exp(sql, scp, lo, grp, subset);
+			stmt *rs = sql_logical_exp(sql, scp, ro, grp, subset);
+			return sql_or(sql, ls, rs);
 		}
 		break;
 	case SQL_AND:
 		{
 			symbol *lo = sc->data.lval->h->data.sym;
 			symbol *ro = sc->data.lval->h->next->data.sym;
-			stmt *ls =
-			    sql_logical_exp(sql, scp, lo, grp, subset);
-			stmt *rs =
-			    sql_logical_exp(sql, scp, ro, grp, subset);
+			stmt *ls = sql_logical_exp(sql, scp, lo, grp, subset);
+			stmt *rs = sql_logical_exp(sql, scp, ro, grp, subset);
 			return sql_and(sql, ls, rs);
 		}
 		break;
@@ -2001,7 +2152,8 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc,
 			if (!ls)
 				return NULL;
 			if (ro->token == SQL_ATOM) {
-				a = ro->data.aval;
+				AtomNode *an = (AtomNode*)ro;
+				a = an->a;
 			} else {
 				a = ro->data.lval->h->data.aval;
 				e = ro->data.lval->h->next->data.aval;
@@ -2037,8 +2189,8 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc,
 				dnode *n = l->h->next->data.lval->h;
 				list *nl = create_atom_list();
 				while (n) {
-					list_append(nl, 
-					    atom_dup(n->data.sym->data.aval));
+					AtomNode *an = n->data.symv;
+					list_append(nl, atom_dup(an->a));
 					n = n->next;
 				}
 				return stmt_exists(ls, nl);
@@ -2313,8 +2465,8 @@ static stmt *having_condition(context * sql, scope * scp, symbol * sc,
 }
 
 
-group *query_groupby_inner(context * sql, scope * scp, stmt * c, stmt * st,
-			   group * cur)
+static group *query_groupby_inner(context * sql, scope * scp, stmt * c, 
+		stmt * st, group * cur)
 {
 	node *n = st->op1.lval->h;
 	while (n) {
@@ -2377,7 +2529,7 @@ static stmt *query_orderby(context * sql, scope * scp,
 			stmt *sc = sql_column_ref(sql, scp, col);
 			if (sc) {
 				stmt *j = NULL;
-				if (sc->type == st_column) {
+				if (sc->type == st_bat) {
 					j = find_subset(subset, sc->h);
 					if (!j) {
 						snprintf(sql->errstr,
@@ -2442,7 +2594,7 @@ static stmt *sql_simple_select(context * sql, scope * scp,
 			/* t1.* */
 			if (cs->type == st_list
 			    && n->data.sym->token == SQL_TABLE)
-				list_merge(rl, cs->op1.lval);
+				list_merge(rl, cs->op1.lval, (fdup)&stmt_dup);
 			else if (cs->type == st_list) {	/* subquery */
 				printf("subquery in simple_select\n");
 			} else
@@ -2470,33 +2622,23 @@ static stmt *sql_error(context * sql)
 	return NULL;
 }
 
-static
-stmt *sql_select
-    (context * sql,
-     scope * scp,
-     int distinct,
-     dlist * selection, dlist * into, dlist * table_exp, symbol * orderby)
+static stmt *sql_select(context * sql, scope * scp, SelectNode *sn )
 {
 	list *rl;
 	int toplevel = (!scp) ? 1 : 0;
 	stmt *s = NULL;
 
-	symbol *from = table_exp->h->data.sym;
-
-	symbol *where = table_exp->h->next->data.sym;
-	symbol *groupby = table_exp->h->next->next->data.sym;
-	symbol *having = table_exp->h->next->next->next->data.sym;
 	stmt *order = NULL, *subset = NULL;
 	group *grp = NULL;
 
-	if (!from && !where)
-		return sql_simple_select(sql, scp, selection);
+	if (!sn->from && !sn->where)
+		return sql_simple_select(sql, scp, sn->selection);
 
 	if (toplevel)
 		scp = scope_open(scp);
 
-	if (from) {		/* keep variable list with tables and names */
-		dlist *fl = from->data.lval;
+	if (sn->from) {		/* keep variable list with tables and names */
+		dlist *fl = sn->from->data.lval;
 		dnode *n = NULL;
 		tvar *fnd = (tvar *) 1;
 
@@ -2515,17 +2657,18 @@ stmt *sql_select
 		}
 	}
 
-	if (where) {
+	if (sn->where) {
 		node *n;
 		stmt *cur = NULL;
 
-		s = sql_logical_exp(sql, scp, where, NULL, NULL);
+		s = sql_logical_exp(sql, scp, sn->where, NULL, NULL);
 		if (!s) return NULL;
 		if (s->type != st_set && s->type != st_sets) {
 			s = stmt_set(s);
 		}
 		/* check for tables not used in the where part 
 		 */
+		if (s->type == st_set){ /* TODO: handle st_sets!! */
 		for (n = scp->tables->h; n; n = n->next) {
 			tvar *v = n->data;
 			stmt *tmp = complex_find_subset(s, v);
@@ -2537,6 +2680,7 @@ stmt *sql_select
 					cur = tmp;
 				/* add join to an allready used column */
 				} else {	
+					printf("missing table %s\n", cv->tname );
 					tmp = stmt_join(cur,
 						stmt_reverse(tmp), cmp_all);
 				}
@@ -2545,7 +2689,8 @@ stmt *sql_select
 				cur = tmp;
 			}
 		}
-	} else if (from) {
+		}
+	} else if (sn->from) {
 		node *n;
 		stmt *cur = NULL;
 		for (n = scp->tables->h; n; n = n->next) {
@@ -2577,8 +2722,8 @@ stmt *sql_select
 
 	if (s) {
 		s = stmt2pivot(sql, scp, s);
-		if (s && groupby) {
-			grp = query_groupby(sql, scp, groupby, s);
+		if (s && sn->groupby) {
+			grp = query_groupby(sql, scp, sn->groupby, s);
 			if (!grp) {
 				if (subset)
 					stmt_destroy(subset);
@@ -2597,8 +2742,8 @@ stmt *sql_select
 	}
 
 	subset = s;
-	if (having) {
-		s = having_condition(sql, scp, having, grp, subset);
+	if (sn->having) {
+		s = having_condition(sql, scp, sn->having, grp, subset);
 
 		if (!s)
 			return sql_error(sql);
@@ -2622,8 +2767,8 @@ stmt *sql_select
 			return sql_error(sql);
 
 	rl = create_stmt_list();
-	if (selection) {
-		dnode *n = selection->h;
+	if (sn->selection) {
+		dnode *n = sn->selection->h;
 
 		while (n) {
 			stmt *cs = sql_column_exp(sql, scp, n->data.sym,
@@ -2634,7 +2779,7 @@ stmt *sql_select
 			/* t1.* */
 			if (cs->type == st_list
 			    && n->data.sym->token == SQL_TABLE)
-				list_merge(rl, cs->op1.lval);
+				list_merge(rl, cs->op1.lval, (fdup)&stmt_dup);
 			else if (cs->type == st_list) {	/* subquery */
 				if (list_length(cs->op1.lval) == 1) {	/* single value */
 					stmt *ss = subset->op1.lval->h->data;
@@ -2712,8 +2857,8 @@ stmt *sql_select
 	}
 	s = stmt_list(rl);
 
-	if (s && subset && orderby) {
-		order = query_orderby(sql, scp, orderby, s, subset, grp);
+	if (s && subset && sn->orderby) {
+		order = query_orderby(sql, scp, sn->orderby, s, subset, grp);
 		if (!order) {
 			if (subset)
 				stmt_destroy(subset);
@@ -2867,9 +3012,10 @@ static stmt *column_option(context * sql, symbol * s, stmt * ss,
 			res = column_constraint_type(sql, sym, ss, ts, cs, c);
 		}
 		break;
-	case SQL_ATOM:
-		res = stmt_default(cs, stmt_atom(atom_dup(s->data.aval)));
-		break;
+	case SQL_ATOM: {
+			AtomNode *an = (AtomNode*)s;
+			res = stmt_default(cs, stmt_atom(atom_dup(an->a)));
+		} break;
 	}
 	if (!res && sql->errstr[0] == '\0') {
 		snprintf(sql->errstr, ERRSIZE,

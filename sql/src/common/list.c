@@ -72,19 +72,6 @@ list *list_prepend(list * l, void * data)
 	return l;
 }
 
-list *list_merge(list * l, list * data)
-{
-	if (data) {
-		node *n = data->h;
-		while (n) {
-			list_append(l, n->data);
-			n = n->next;
-		}
-	}
-	return l;
-}
-
-
 node *list_remove_node(list * l, node * n)
 {
 	node *p = l->h;
@@ -167,6 +154,65 @@ node *list_find(list * l, void *key, fcmp cmp)
 	}
 	return NULL;
 }
+
+list *list_select(list * l, void *key, fcmp cmp, fdup dup)
+{
+	list *res = list_create(l->destroy);
+	node *n = NULL;
+	if (key){
+       		for ( n	= l->h;	n; n = n->next){
+			if (cmp(n->data,key) == 0){
+				list_append(res, dup(n->data));
+			}
+		}
+	}
+	return res;
+}
+
+list *list_distinct(list * l, fcmp cmp, fdup dup)
+{
+	list *res = list_create(l->destroy);
+	node *n = NULL;
+       	for ( n	= l->h;	n; n = n->next){
+		if (!list_find(res,n->data,cmp)){
+			list_append(res, dup(n->data));
+		}
+	}
+	return res;
+}
+
+void *list_reduce(list * l, freduce red, fdup dup )
+{
+	void *res = NULL;
+	node *n = l->h;
+	if (n)
+		res = dup(n->data);
+       	for ( n = n->next ; n; n = n->next){
+		void *nw = red(res, n->data);
+		l->destroy(res);
+		res = nw;
+	}
+	return res;
+}
+
+list *list_merge(list * l, list * data, fdup dup)
+{
+	if (data) {
+		node *n = data->h;
+		while (n) {
+			list_append(l, dup(n->data));
+			n = n->next;
+		}
+	}
+	return l;
+}
+
+list *list_copy(list * l, fdup dup )
+{
+	list *res = list_create(l->destroy);
+	return list_merge(res, l, dup );
+}
+
 
 #ifdef TEST
 #include <stdio.h>

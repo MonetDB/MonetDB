@@ -11,6 +11,7 @@ typedef union symbdata {
 	struct atom *aval;
 	struct dlist *lval;
 	struct symbol *sym;
+	void *symv; /* temp version of symbol which can be easily casted */
 } symbdata;
 
 typedef struct dnode {
@@ -36,15 +37,51 @@ extern dlist *dlist_append_symbol(dlist * l, struct symbol *data);
 extern dlist *dlist_append_atom(dlist * l, struct atom *data);
 
 typedef struct symbol {
-	int token;
-	char *lexion;
-	symtype type;
-	symbdata data;
-
 	int lineno;
 	char *filename;
 	char *sql;
+
+	int token;
+
+	symtype type;
+	symbdata data;
 } symbol;
+
+/*
+typedef struct Symbol {
+	int lineno;
+	char *filename;
+	char *sql;
+
+	int token;
+} Symbol;
+*/
+
+typedef struct SelectNode {
+	symbol s;
+
+	int distinct;
+	struct dlist *selection;
+	struct dlist *into; /* ?? */
+	symbol * from;
+	symbol * where;
+	symbol * groupby;
+	symbol * having;
+	symbol * orderby;
+	symbol * name;
+} SelectNode;
+
+typedef struct ListNode {
+	symbol s;
+	struct dlist *l;
+} ListNode;
+
+typedef struct AtomNode {
+	symbol s;
+	struct atom  *a;
+} AtomNode;
+
+extern symbol *symbol_init(symbol *s, struct context *c, int token );
 
 extern symbol *symbol_create(struct context *c, int token, char *data);
 
