@@ -77,33 +77,6 @@ end f3;	# 27
 #
 #
 #ORoptimizer Admin.f3
-Found binary OR candidate right
-    t4 := batcalc.*(64,t3);	# 4 CMDcstMULbat (t4:bat[:void,:int])<-($5:int)(t3:bat[:void,:int])
-    batcalc.*(t3,64,t3);	# 4 CMDbataccumMULcst2 ($33:void)<-(t3:bat[:void,:int])($5:int)(t3:bat[:void,:int])
-Found binary OR candidate left
-    t5 := batcalc.+(t2,t3);	# 5 CMDbatADD (t5:bat[:void,:int])<-(t2:bat[:void,:int])(t3:bat[:void,:int])
-    batcalc.+(t2,t2,t3);	# 5 CMDbataccumADD ($34:void)<-(t2:bat[:void,:int])(t2:bat[:void,:int])(t3:bat[:void,:int])
-Found unary OR candidate
-    t6 := batcalc.oid(t2);	# 6 CMDconvertvoid_int_oid (t6:bat[:void,:oid])<-(t2:bat[:void,:int])
-Found binary OR candidate right
-    t11 := batcalc.*(64,t10);	# 11 CMDcstMULbat (t11:bat[:void,:int])<-($5:int)(t10:bat[:void,:int])
-    batcalc.*(t10,64,t10);	# 11 CMDbataccumMULcst2 ($35:void)<-(t10:bat[:void,:int])($5:int)(t10:bat[:void,:int])
-Found binary OR candidate left
-    t12 := batcalc.+(t9,t10);	# 12 CMDbatADD (t12:bat[:void,:int])<-(t9:bat[:void,:int])(t10:bat[:void,:int])
-    batcalc.+(t9,t9,t10);	# 12 CMDbataccumADD ($36:void)<-(t9:bat[:void,:int])(t9:bat[:void,:int])(t10:bat[:void,:int])
-Found unary OR candidate
-    t13 := batcalc.oid(t9);	# 13 CMDconvertvoid_int_oid (t13:bat[:void,:oid])<-(t9:bat[:void,:int])
-Found binary OR candidate left
-    t15 := batcalc.*(t7,t14);	# 15 CMDbatMUL (t15:bat[:void,:int])<-(t7:bat[:void,:int])(t14:bat[:void,:int])
-    batcalc.*(t7,t7,t14);	# 15 CMDbataccumMUL ($37:void)<-(t7:bat[:void,:int])(t7:bat[:void,:int])(t14:bat[:void,:int])
-Found binary OR candidate right
-    t18 := batcalc.*(64,t17);	# 18 CMDcstMULbat (t18:bat[:void,:int])<-($5:int)(t17:bat[:void,:int])
-    batcalc.*(t17,64,t17);	# 18 CMDbataccumMULcst2 ($38:void)<-(t17:bat[:void,:int])($5:int)(t17:bat[:void,:int])
-Found binary OR candidate left
-    t19 := batcalc.+(t16,t17);	# 19 CMDbatADD (t19:bat[:void,:int])<-(t16:bat[:void,:int])(t17:bat[:void,:int])
-    batcalc.+(t16,t16,t17);	# 19 CMDbataccumADD ($39:void)<-(t16:bat[:void,:int])(t16:bat[:void,:int])(t17:bat[:void,:int])
-Found unary OR candidate
-    t20 := batcalc.oid(t16);	# 20 CMDconvertvoid_int_oid (t20:bat[:void,:oid])<-(t16:bat[:void,:int])
 function Admin.f3():void;	# 0  (f3:void)
     t1 := bbp.bind("A_bat");	# 1 CMDbbpbind (t1:bat[:void,:int])<-($2:str)
     t3 := array.grid(4096,64,1,0);	# 2 ARRAYgrid (t3:bat[:void,:int])<-($4:int)($5:int)($6:int)($7:int)

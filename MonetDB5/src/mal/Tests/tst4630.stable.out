@@ -172,16 +172,6 @@ end qry1;	# 73
 #optimize(Admin,qry1);
 #showFunction(Admin,qry1);
 #
-Relational expression optimizer
-target= V11
-Hit on pattern 0 pc 11
-Hit on pattern 1 pc 12
-Hit on pattern 1 pc 17
-Hit on pattern 1 pc 20
-Hit on pattern 1 pc 29
-Hit on pattern 1 pc 32
-Hit on pattern 1 pc 37
-Hit on pattern 1 pc 48
 function Admin.main():int;	# 0  (main:int)
     mdb.showFunction("Admin","qry1");	# 1 MDBshowFunction3 ($4:void)<-($2:str)($3:str)
 end main;	# 2  
