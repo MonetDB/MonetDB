@@ -1,7 +1,7 @@
 dir;
 ls;
-a.print;
-b.print;
-c.print;
-d.print;
+bat("a").print;
+bat("b").print;
+bat("c").print;
+bat("d").print;
 quit;   

@@ -11,9 +11,9 @@ stdout of test 'const` in directory 'src/monet` itself:
 PROC plus( int a, int b ) : int {RETURN a + b; }
 PROC PLUS( bat[void,int] a, bat[void,int] b ): bat[void,int] {RETURN [plus](a, b); }
 
-bb := new( void, int ).insert(nil, 10).insert(nil,20);
-aaa := new( void, bat ).insert(nil, bb).insert(nil,[plus](bb, const 30));
-aaa.print;
+var bb := new( void, int ).insert(nil, 10).insert(nil,20);
+var aaa := new( void, bat ).insert(nil, bb).insert(nil,[plus](bb, const 30));
+aaa.print();
 #-------------------------#
 # BAT:	  tmp_28	  #
 # (void)  (BAT)		  #
@@ -23,14 +23,14 @@ aaa.print;
 aaa.seqbase(0@0);
 bb.seqbase(0@0);
 
-[PLUS](aaa, const bb ).print;
+[PLUS](aaa, const bb ).print();
 #-------------------------#
 # BAT:	  tmp_31	  #
 # (void)  (BAT)		  #
 #-------------------------#
 [ 0@0,	  <tmp_32>	  ]
 [ 1@0,	  <tmp_33>	  ]
-[PLUS](aaa,aaa.project(bb)).print;
+[PLUS](aaa,aaa.project(bb)).print();
 #-------------------------#
 # BAT:	  tmp_33	  #
 # (oid)	  (BAT)		  #

@@ -6,14 +6,14 @@
 # does not decreases the inserted BAT's plevel, and hence leaves a
 # persistent "orphan"-BAT behind...
 
-b:=new(int,int);
+var b:=new(int,int);
 b.rename("b");
-a:=new(int,bat);
+var a:=new(int,bat);
 a.rename("a");
 a.insert(1,b);
-d:=new(int,int);
+var d:=new(int,int);
 d.rename("d");
-c:=new(int,bat);
+var c:=new(int,bat);
 c.rename("c");
 c.insert(1,d);
 dir;

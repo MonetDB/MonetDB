@@ -7,11 +7,15 @@ stdout of test 'setaggr_exist` in directory 'src/monet` itself:
 # compiled for i686-pc-linux-gnu/32bit.
 #script:setaggr_exist.milM
 
+# 11:48:26 >  
+# 11:48:26 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/Linux-i686/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=41715 --set sql_port=50742 --set monet_prompt= --trace --dbname=mTests_src_monet  < setaggr_exist.milM
+# 11:48:26 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-b := new(oid, bit);
+# Monet Database Server V4.3.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+var b := new(oid, bit);
 
 b.insert(oid(4), true);
 b.insert(oid(4), true);
@@ -61,7 +65,7 @@ proc exist(BAT[bit,bit] b) : bit := {
   return b.exist(true);
 }
 
-x := {exist}(b);
+var x := {exist}(b);
 x.print;
 #-----------------#
 # BAT:	  tmp_27  #
@@ -80,7 +84,7 @@ x.print;
 b.insert(oid(1), true);
 
 x := {exist}(b);
-x.print;
+x.print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (oid)	  (bit)	  #
@@ -96,11 +100,11 @@ x.print;
 [ 12@0,	  false	  ]
 [ 1@0,	  true	  ]
 
-bs := b.sort;
-bss := b.sort_ht;
+var bs := b.sort();
+var bss := b.sort_ht();
 printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
-bs.print;
+bs.print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (oid)	  (bit)	  #
@@ -119,15 +123,15 @@ bs.print;
 [ 8@0,	  false	  ]
 [ 9@0,	  nil	  ]
 [ 9@0,	  true	  ]
-[ 10@0,	  nil	  ]
 [ 10@0,	  false	  ]
-[ 11@0,	  false	  ]
-[ 11@0,	  nil	  ]
+[ 10@0,	  nil	  ]
 [ 11@0,	  true	  ]
+[ 11@0,	  nil	  ]
+[ 11@0,	  false	  ]
 [ 12@0,	  nil	  ]
 printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
-bss.print;
+bss.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (oid)	  (bit)	  #
@@ -154,7 +158,7 @@ bss.print;
 [ 12@0,	  nil	  ]
 
 x := {exist}(bs);
-x.print;
+x.print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (oid)	  (bit)	  #
@@ -170,8 +174,8 @@ x.print;
 [ 11@0,	  true	  ]
 [ 12@0,	  false	  ]
 
-y := {exist}(bss);
-y.print;
+var y := {exist}(bss);
+y.print();
 #-----------------#
 # BAT:	  tmp_30  #
 # (oid)	  (bit)	  #
@@ -187,21 +191,21 @@ y.print;
 [ 11@0,	  true	  ]
 [ 12@0,	  false	  ]
 
-bst := b.reverse.sort.reverse;
-bsst := b.reverse.sort_ht.reverse;
+var bst := b.reverse().sort().reverse();
+var bsst := b.reverse().sort_ht().reverse();
 
 x := {exist}(bst);
 printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
-x.print;
+x.print();
 #-----------------#
 # BAT:	  tmp_32  #
 # (oid)	  (bit)	  #
 #-----------------#
-[ 12@0,	  false	  ]
-[ 9@0,	  true	  ]
-[ 11@0,	  true	  ]
 [ 10@0,	  false	  ]
+[ 11@0,	  true	  ]
+[ 9@0,	  true	  ]
+[ 12@0,	  false	  ]
 [ 8@0,	  false	  ]
 [ 5@0,	  true	  ]
 [ 7@0,	  false	  ]
@@ -210,7 +214,7 @@ x.print;
 [ 6@0,	  true	  ]
 printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
-x.sort_ht.print;
+x.sort_ht().print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (oid)	  (bit)	  #
@@ -227,7 +231,7 @@ x.sort_ht.print;
 [ 12@0,	  false	  ]
 
 y := {exist}(bsst);
-y.print;
+y.print();
 #-----------------#
 # BAT:	  tmp_35  #
 # (oid)	  (bit)	  #
@@ -242,7 +246,7 @@ y.print;
 [ 1@0,	  true	  ]
 [ 4@0,	  true	  ]
 [ 6@0,	  true	  ]
-y.sort_ht.print;
+y.sort_ht().print();
 #-----------------#
 # BAT:	  tmp_30  #
 # (oid)	  (bit)	  #
@@ -280,7 +284,7 @@ bss@hashloop(oid(5)) {
 [ false ]
 
 x := {exist}(bs);
-x.print;
+x.print();
 #-----------------#
 # BAT:	  tmp_33  #
 # (oid)	  (bit)	  #
@@ -297,7 +301,7 @@ x.print;
 [ 12@0,	  false	  ]
 
 y := {exist}(bss);
-y.print;
+y.print();
 #-----------------#
 # BAT:	  tmp_30  #
 # (oid)	  (bit)	  #
@@ -330,11 +334,11 @@ bss@hashloop(oid(5)) {
 [ true ]
 [ false ]
 
-bs.reverse.accbuild("hash");
-bss.reverse.accbuild("hash");
+bs.reverse().accbuild("hash");
+bss.reverse().accbuild("hash");
 
 x := {exist}(bs);
-x.print;
+x.print();
 #-----------------#
 # BAT:	  tmp_32  #
 # (oid)	  (bit)	  #
@@ -351,7 +355,7 @@ x.print;
 [ 12@0,	  false	  ]
 
 y := {exist}(bss);
-y.print;
+y.print();
 #-----------------#
 # BAT:	  tmp_35  #
 # (oid)	  (bit)	  #

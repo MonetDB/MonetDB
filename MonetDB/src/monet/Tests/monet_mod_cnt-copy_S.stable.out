@@ -52,10 +52,10 @@ monet_mod_cnt.copy.print;
 [ 10611@0,	  1	  ]
 [ 10691@0,	  1	  ]
 [ 10692@0,	  1	  ]
-x:=view_bbp_name;
-a:=x.reverse.mirror.[bat].[count];
-b:=x.reverse.mirror.[bat].[copy].[count];
-c:=a.[-](b);
+var x:=view_bbp_name;
+var a:=x.reverse.mirror.[bat].[count];
+var b:=x.reverse.mirror.[bat].[copy].[count];
+var c:=a.[-](b);
 print(a.col_name("count"),b.col_name("copy.count"),c.col_name("diff"));
 #---------------------------------------------------------#
 # BAT:			  count	| copy.count	| diff	  #
@@ -83,7 +83,7 @@ print(a.col_name("count"),b.col_name("copy.count"),c.col_name("diff"));
 [ "monet_mod_load",	  0,	  0,		  0	  ]
 [ "monet_mod_drop",	  0,	  0,		  0	  ]
 [ "monet_mod_proc",	  103,	  103,		  0	  ]
-[ "monet_mod_var",	  26,	  26,		  0	  ]
+[ "monet_mod_var",	  50,	  50,		  0	  ]
 [ "adm_fcntbl",		  684,	  684,		  0	  ]
 [ "adm_acctbl",		  2,	  2,		  0	  ]
 [ "adm_atomtbl",	  14,	  14,		  0	  ]

@@ -1,4 +1,4 @@
-b := new(oid, bit);
+var b := new(oid, bit);
 
 b.insert(oid(4), true);
 b.insert(oid(4), true);
@@ -25,39 +25,39 @@ proc exist(BAT[bit,bit] b) : bit := {
   return b.exist(true);
 }
 
-x := {exist}(b);
+var x := {exist}(b);
 x.print;
 
 b.insert(oid(1), true);
 
 x := {exist}(b);
-x.print;
+x.print();
 
-bs := b.sort;
-bss := b.sort_ht;
+var bs := b.sort();
+var bss := b.sort_ht();
 printf("#~BeginVariableOutput~#\n");
-bs.print;
+bs.print();
 printf("#~EndVariableOutput~#\n");
-bss.print;
+bss.print();
 
 x := {exist}(bs);
-x.print;
+x.print();
 
-y := {exist}(bss);
-y.print;
+var y := {exist}(bss);
+y.print();
 
-bst := b.reverse.sort.reverse;
-bsst := b.reverse.sort_ht.reverse;
+var bst := b.reverse().sort().reverse();
+var bsst := b.reverse().sort_ht().reverse();
 
 x := {exist}(bst);
 printf("#~BeginVariableOutput~#\n");
-x.print;
+x.print();
 printf("#~EndVariableOutput~#\n");
-x.sort_ht.print;
+x.sort_ht().print();
 
 y := {exist}(bsst);
-y.print;
-y.sort_ht.print;
+y.print();
+y.sort_ht().print();
 
 
 bs.accbuild("hash");
@@ -73,10 +73,10 @@ bss@hashloop(oid(5)) {
 }
 
 x := {exist}(bs);
-x.print;
+x.print();
 
 y := {exist}(bss);
-y.print;
+y.print();
 
 printf("#~BeginVariableOutput~#\n");
 bs@hashloop(oid(5)) {
@@ -87,14 +87,14 @@ bss@hashloop(oid(5)) {
   print($t);
 }
 
-bs.reverse.accbuild("hash");
-bss.reverse.accbuild("hash");
+bs.reverse().accbuild("hash");
+bss.reverse().accbuild("hash");
 
 x := {exist}(bs);
-x.print;
+x.print();
 
 y := {exist}(bss);
-y.print;
+y.print();
 
 printf("#~BeginVariableOutput~#\n");
 bs@hashloop(oid(5)) {

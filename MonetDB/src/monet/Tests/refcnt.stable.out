@@ -15,10 +15,12 @@ stdout of test 'refcnt` in directory 'src/monet` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 # restart gives correct refcnt b from 0 to 1 
 # since b is part of a and persistent expected refcnt should be 2
-b:=new(int,int);
+# bat of bats can no longer be made persistent and therefor this test
+# losses much of its use
+var b:=new(int,int);
 b.rename("b");
 b.persists(true);
-a:=new(int,bat);
+var a:=new(int,bat);
 a.rename("a");
 a.persists(true);
 !ERROR: BATmode: BAT type implies that a[int,BAT] cannot be made persistent.
@@ -40,21 +42,17 @@ ls;
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-------------------------------------------------------------------------------------------------#
 [ "b",	  "int",  "int",  0,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-a.print;
-!WARNING: interpret: convert identifier 'a' to string.
-[ "a" ]
-b.print;
+bat("a").print;
+!ERROR: print(param 1): invalid BAT.
+bat("b").print;
 #-----------------#
 # BAT:	  b	  #
 # (int)	  (int)	  #
 #-----------------#
 # tidy up
-a.persists(false); 
-!WARNING: interpret: convert identifier 'a' to string.
-!ERROR: interpret: no matching MIL operator to 'persists(str, bit)'.
-!MAYBE YOU MEAN:
-!	persists(BAT[any::1,any::2], bit) : BAT[any::1,any::2]
-b.persists(false); 
+bat("a").persists(false); 
+!ERROR: persists(param 1): invalid BAT.
+bat("b").persists(false); 
 commit;
 quit;   
 
