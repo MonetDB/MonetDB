@@ -831,8 +831,13 @@ Create the result BAT and execute the select algorithm.
 Propagate alignment info. Key properties are inherited from the parent. 
 Hash changes the order; IDX yields ordered tail; scan respects original order.
 @c
-        BATkey(bn, b->hkey);
-        BATkey(BATmirror(bn), b->tkey);
+	if (BATcount(bn)){
+        	BATkey(bn, b->hkey);
+        	BATkey(BATmirror(bn), b->tkey);
+	} else {
+		BATkey(bn,TRUE);
+        	BATkey(BATmirror(bn), TRUE);
+	}
 
 	if (equi && b->thash_heap) {
 	    bn->hsorted = bn->tsorted = FALSE;

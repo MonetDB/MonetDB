@@ -354,9 +354,17 @@ old and build new. The accelerators are only preserved for very small BATs.
 BAT *BATclear(BAT *b) {	
 	int hacc, tacc, bs=BUNsize(b);
 	BUN p, q;
+	int voidbat = 0;
 
-	if (BATcount(b) < 20) {
-		/* small BAT: delete all elements by hand */
+        if (BAThdense(b) && b->htype == TYPE_void){
+		voidbat = 1;
+        }
+        if (BATtdense(b) && b->ttype == TYPE_void){
+		voidbat = 1;
+        }
+
+	/* small BAT: delete all elements by hand */
+	if (!voidbat && BATcount(b) < 20) {
 		BATloopDEL(b, p, q, bs) {
 			p = BUNdelete(b,p);
 		}

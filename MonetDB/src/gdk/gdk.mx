@@ -2566,7 +2566,7 @@ do not forget to update the current pointer with a p = @%BUNdelete@(b,p)
 After the delete/update has taken place, the pointer p is in an 
 inconsistent state till the next iteration of the batloop starts.
 @h
-#define BATloopDEL(r,	p, q, x) \
+#define BATloopDEL(r, p, q, x) \
 	for(p = BUNfirst(r), q = BUNlast(r), x = BUNsize(r); p < q;\
 	    q=MIN(q,BUNlast(r)), p += x)
 
