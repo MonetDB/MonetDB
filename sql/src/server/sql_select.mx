@@ -997,7 +997,7 @@ sql_value_exp(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset, i
 		return sql_column_value(sql, scp, se, grp, subset, f);
 	case SQL_SELECT: {
 		stmt *s = scope_subquery(sql, scp, se);
-		if (s->type == st_list && list_length(s->op1.lval) == 1) {
+		if (s && s->type == st_list && list_length(s->op1.lval) == 1) {
 			stmt *t = stmt_dup(s->op1.lval->h->data);
 			stmt_destroy(s);
 			s = t;
