@@ -137,6 +137,7 @@ atom *atom_general(sql_subtype * tpe, char *val)
 	a->data.val.pval = NULL; 
 	a->data.vtype = tpe->type->localtype;
 	a->data.len = 0;
+
 	assert(a->data.vtype >= 0);
 
 	if (atom_debug) 
@@ -144,9 +145,14 @@ atom *atom_general(sql_subtype * tpe, char *val)
 	if (val){
 		a->isnull = 0;
 		ATOMfromstr(a->data.vtype, &p, &a->data.len, val);
+		if (!p){
+			_DELETE(val);
+			_DELETE(a);
+			return NULL;
+		}
 		VALset(&a->data, a->data.vtype, p);
 
-		if (p && ATOMstorage(a->data.vtype) >= TYPE_str) 
+		if (p && ATOMstorage(a->data.vtype) < TYPE_str) 
 			GDKfree(p);
 		_DELETE(val);
 	} else if (ATOMstorage(a->data.vtype) < TYPE_str){

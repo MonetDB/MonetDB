@@ -704,6 +704,8 @@ void sqltypeinit()
 	TME = *t++ = sql_create_type("TIME", 0, 0, 0, 		"daytime");
 	*t++ = sql_create_type("DATETIME", 0, 0, 0, 		"timestamp");
 	TMESTAMP = *t++ = sql_create_type("TIMESTAMP", 0, 0,0, 		"timestamp");
+
+	*t++ = sql_create_type("BLOB", 0, 0, 0, "blob");
 	*t = NULL;
 
 	for(i=0; ts[i]; i++){
