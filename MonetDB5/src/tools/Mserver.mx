@@ -446,6 +446,7 @@ Time to execute the script files. Start with the init command[todo]
 	if( GDKgetenv("mal_listing"))
 		sscanf( GDKgetenv("mal_listing"),"%d",&listing);
 
+	initClientPrg(mal_clients,"main");
 	for(i=0; monet_script[i]; i++) {
 		malInclude(mal_clients, monet_script[i], 0, listing);
 		GDKfree(monet_script[i]);
@@ -453,7 +454,6 @@ Time to execute the script files. Start with the init command[todo]
 	}
 
 	GDKfree(monet_script);
-	initClientPrg(mal_clients,"main");
 	serveClient(mal_clients);
 
 	/* MT_global_exit(0);  */
