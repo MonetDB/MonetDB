@@ -17,7 +17,11 @@ cmd_options = [
     ('port',None,'mapi_port','port','port to connect to (default: 50000)'),
     ]
 
-opt = monet_options.parse_options(sys.argv[1:], cmd_options)
+try:
+    opt = monet_options.parse_options(sys.argv[1:], cmd_options)
+except monet_options.Error:
+    # error parsing options
+    sys.exit(1)
 
 s = server( opt.get("host","localhost"), int(opt.get("mapi_port",50000)), environ['USER'])
 print("#MapiClient (python) connected to %s:%d as %s" % (opt.get("host","localhost"), int(opt.get("mapi_port",50000)), environ['USER']))
