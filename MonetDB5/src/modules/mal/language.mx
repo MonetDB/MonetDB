@@ -132,12 +132,6 @@ pattern include(f:str):void= CMDincludeFile
 @h
 #ifndef _LANGUAGE_H
 #define _LANGUAGE_H
-#include "mal.h"
-#include "mal_scope.h"
-#include "mal_session.h"
-#include "mal_resolve.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
 #endif /* _LANGUAGE_H*/
 @-
 @= Pseudo
@@ -151,6 +145,12 @@ pattern include(f:str):void= CMDincludeFile
 @c
 
 #include "language.h"
+#include "mal.h"
+#include "mal_scope.h"
+#include "mal_session.h"
+#include "mal_resolve.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
 
 str CMDraise(str *ret,  str *msg){
 	*ret= GDKstrdup(*msg);

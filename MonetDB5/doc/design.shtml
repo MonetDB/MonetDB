@@ -3,11 +3,11 @@
 <head>
 <body>
 <!--#include virtual="MAL/mal/index.html" -->
-<!--#include virtual="MAL/mal_instruction/index.html" -->
 <!--#include virtual="MAL/mal_parser/index.html" -->
-<!--#include virtual="MAL/mal_scenario/index.html" -->
+<!--#include virtual="MAL/mal_instruction/index.html" -->
 <!--#include virtual="MAL/mal_client/index.html" -->
 <!--#include virtual="MAL/mal_session/index.html" -->
+<!--#include virtual="MAL/mal_scenario/index.html" -->
 <!--#include virtual="MAL/mal_function/index.html" -->
 <!--#include virtual="MAL/mal_interpreter/index.html" -->
 <!--#include virtual="MAL/mal_import/index.html" -->
