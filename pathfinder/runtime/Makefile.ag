@@ -36,7 +36,16 @@ lib__pathfinder = {
 	LIBS = $(MONETDB_LIBS)
 }
 
+lib__pf_support = {
+	DIR = libdir/MonetDB
+	SOURCES = \
+		pf_support.mx
+
+	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
+	LIBS = $(MONETDB_LIBS)
+}
+
 scripts_mil = {
 	DIR = libdir/MonetDB
-	SOURCES = pathfinder.mx
+	SOURCES = pathfinder.mx pf_support.mx
 }

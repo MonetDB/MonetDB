@@ -52,7 +52,6 @@
 @:install_module(mkey)@
 @:install_module(mmath)@
 @:install_module(monettime)@
-@:install_module(pf_support)@
 @:install_module(profiler)@
 @:install_module(radix)@
 @:install_module(stats)@

@@ -9,6 +9,7 @@ stdout of test 'sigs` in directory 'runtime` itself:
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 var mods := new(void,str);
+mods.insert(nil,"pf_support");
 mods.insert(nil,"pathfinder");
 
 mods@batloop{
@@ -17,6 +18,17 @@ mods@batloop{
 	sigs($t);
 	drop($t);
 }
+module 'pf_support'
+#-----------------------------------------------------------------------------------------#
+# signature										  # name
+# str											  # type
+#-----------------------------------------------------------------------------------------#
+[ "chk_order(BAT[any::1,any::2], bit) : int"						  ]
+[ "combine_text_string(BAT[void,oid], BAT[void,oid], BAT[void,str], int) : BAT[oid,str]"  ]
+[ "mark_grp(BAT[any::1,oid], BAT[oid,oid]) : BAT[any::1,oid]"				  ]
+[ "merged_union(BAT[void,any::1], BAT[void,any::1], ..BAT[void,any]..) : BAT[void,BAT]"	  ]
+[ "mposjoin(BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[void,any]"		  ]
+[ "mvaljoin(BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[oid,oid]"		  ]
 module 'pathfinder'
 #-----------------------------------------------------------------------------------------#
 # signature										  # name

@@ -30,7 +30,6 @@ MODULES.replace("mkey",      "plain");
 MODULES.replace("mmath",     "plain");
 MODULES.replace("monettime", "plain");
 MODULES.replace("pcl",       "plain");
-MODULES.replace("pf_support","plain");
 MODULES.replace("profiler",  "plain");
 MODULES.replace("radix",     "plain");
 MODULES.replace("salgebra",  "plain");

@@ -1,4 +1,5 @@
 var mods := new(void,str);
+mods.insert(nil,"pf_support");
 mods.insert(nil,"pathfinder");
 
 mods@batloop{

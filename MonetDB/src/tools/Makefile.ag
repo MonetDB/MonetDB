@@ -50,7 +50,6 @@ smallTOC_SHARED_MODS =	\
 	../modules/plain/lib_mkey	\
 	../modules/plain/lib_mmath	\
 	../modules/plain/lib_monettime	\
-	../modules/plain/lib_pf_support	\
 	../modules/plain/lib_profiler	\
 	../modules/plain/lib_radix	\
 	../modules/plain/lib_stats	\
