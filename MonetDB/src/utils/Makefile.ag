@@ -23,4 +23,8 @@
 
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = Mx autogen
+# When cross-compiling, we need an "Mx" working on the building host, not on
+# the target host, hence we don't need to build an "Mx", here. 
+# We actually skip building "Mx" in order to avoid problems...
+
+SUBDIRS = CROSS_COMPILING?:Mx autogen

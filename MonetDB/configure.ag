@@ -212,7 +212,10 @@ fi
 dnl Checks for library functions.
 AC_FUNC_ALLOCA()
 AC_FUNC_MMAP()
-AC_FUNC_SETPGRP()
+dnl  autoconf says, we cannot use AC_FUNC_SETPGRP when cross-compiling...
+if test x$cross_compiling != xyes; then
+	AC_FUNC_SETPGRP()
+fi
 AC_TYPE_SIGNAL()
 AC_FUNC_UTIME_NULL()
 AC_FUNC_VPRINTF()
@@ -234,7 +237,16 @@ AC_MSG_RESULT($ctime_r3)
 AC_SYS_LARGEFILE()
 
 dnl Mx and mel are used during make
-MEL="$MONET_BUILD/src/mel/mel"
+if test x$cross_compiling != xyes; then
+	dnl  When not cross-compiling, make sure we use the MEL/Mx created during the very make.
+	MEL="$MONET_BUILD/src/mel/mel"
+	MX="$MONET_BUILD/src/utils/Mx/Mx"
+else
+	dnl  When cross-compiling, we need to have MEL/Mx in our PATH that work on the building host.
+	MEL="mel"
+	MX="Mx"
+fi
 AC_SUBST(MEL)
-MX="$MONET_BUILD/src/utils/Mx/Mx"
 AC_SUBST(MX)
+
+AM_CONDITIONAL(CROSS_COMPILING,test x$cross_compiling = xyes)
