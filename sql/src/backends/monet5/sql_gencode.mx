@@ -774,7 +774,9 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 				s->nr = getDestVar(q);
 				q= pushArgument(mb,q,l);
 			} else {
-				q= newStmt(mb,NULL,s->op4.funcval->func->imp);
+				q= newStmt(mb,"multiplex","script");
+				s->nr = getDestVar(q);
+				q= pushStr(mb,q,s->op4.funcval->func->imp);
 				q= pushArgument(mb,q,l);
 			}
 		} else {
