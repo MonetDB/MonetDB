@@ -127,6 +127,20 @@ Over..
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "uchr",	  2		  ]
+#---------------------------------#
+# signature			  # name
+# str				  # type
+#---------------------------------#
+[ "lock_create() : lock"	  ]
+[ "lock_destroy(lock) : void"	  ]
+[ "lock_set(lock) : void"	  ]
+[ "lock_try(lock) : int"	  ]
+[ "lock_unset(lock) : void"	  ]
+[ "sema_create(int) : sema"	  ]
+[ "sema_destroy(sema) : void"	  ]
+[ "sema_down(sema) : void"	  ]
+[ "sema_try(sema) : int"	  ]
+[ "sema_up(sema) : void"	  ]
 
 
 # 22:59:33 >  
@@ -188,7 +202,22 @@ Over..
 
 
 #---------------------------------#
-# module	| usage_count	  #
+# signature			  # name
+# str				  # type
+#---------------------------------#
+[ "lock_create() : lock"	  ]
+[ "lock_destroy(lock) : void"	  ]
+[ "lock_set(lock) : void"	  ]
+[ "lock_try(lock) : int"	  ]
+[ "lock_unset(lock) : void"	  ]
+[ "sema_create(int) : sema"	  ]
+[ "sema_destroy(sema) : void"	  ]
+[ "sema_down(sema) : void"	  ]
+[ "sema_try(sema) : int"	  ]
+[ "sema_up(sema) : void"	  ]
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
 #---------------------------------#
 [ "_mapi",	  1		  ]
 [ "algebra",	  1		  ]
@@ -201,6 +230,20 @@ Over..
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "uchr",	  2		  ]
+#---------------------------------#
+# signature			  # name
+# str				  # type
+#---------------------------------#
+[ "lock_create() : lock"	  ]
+[ "lock_destroy(lock) : void"	  ]
+[ "lock_set(lock) : void"	  ]
+[ "lock_try(lock) : int"	  ]
+[ "lock_unset(lock) : void"	  ]
+[ "sema_create(int) : sema"	  ]
+[ "sema_destroy(sema) : void"	  ]
+[ "sema_down(sema) : void"	  ]
+[ "sema_try(sema) : int"	  ]
+[ "sema_up(sema) : void"	  ]
 
 
 # 15:23:57 >  
