@@ -17,7 +17,7 @@ without permission of the copyright owner. }
 for text corpora (many different clusters (>30000), widely varying size (Zipfian)).
 (May 2001:) Arjen added some minor changes to better handle `clustered' groups;
 for now, limited applicability to a derived property, using
-$$ \mathrm{sorted} \land \mathrm{keyed} \implies \mathrm{clustered} $$
+$$ \mathrm{sorted} \land \mathrm{keyed} \\implies \mathrm{clustered} $$
 
 (before:)
 \begin{verbatim}
@@ -72,48 +72,12 @@ can be used as well; note for instance that histogram == \{count\}(b.reverse).
 
 @* Module Definition
 The Monet interface module specification is shown below.
-@mil
-.MODULE xtables;
+@mal
 
 .ATOM mapentry[16,4];
 .END;
 .ATOM idxentry[8,4];
 .END;
-
-@-
-basic multi-attribute group operations, that take the incremental approach. 
-CT[re]group and CTderive implement GROUPBY, CTrefine implements ORDERBY.
-@mil
-.COMMAND CTgroup(BAT[oid,any] attr) : BAT[oid,oid] = CTgroup;
-        "Cross tabulation group initialization.
-         Returned head values are identical as in 'attr'. Tail values are from
-         the same domain and indicate unique groups in 'attr' tail column."
- 
-.COMMAND _CTgroup(BAT[oid,any] attr, int N, int rng) : BAT[oid,oid] = CTgroup_custom;
-        "Cross tabulation group initialization like CTgroup, but with user
-         provided #bits in hashmask and #distinct values in range."
- 
-.COMMAND CTderive(BAT[oid,any] ct, BAT[oid,any] attr) : BAT[oid,oid] = CTderive;
-        "Cross tabulation group extension step.
-         Returned head values are identical as in 'ct'. Tail values are from
-         the same domain and indicate further refinement of the groups in 'ct',
-         taking into account also the tail-values in 'attr'."
-
-.COMMAND CTgroup(BAT[oid,any] ct, BAT[oid,any] attr) : BAT[oid,oid] = CTderive;
-        "binary grouping; a synonym for CTderive(ct,attr)"
-
-.COMMAND CTregroup(BAT[oid,oid] ct, BAT[oid,any] attr) : BAT[oid,oid] 
-		= CTregroup; "modifies ct and returns it doing a group"
-
-.COMMAND CTrefine(BAT[oid,any] b, BAT[oid,any] a) : BAT[oid,oid] = CTrefine;
-	"refine the ordering of a tail-ordered BAT by sub-ordering on the 
-         values of a second bat 'a' (where the heads of a and b match 1-1).  
-         The effect of this is similar to (hash-based) CTderive, with the 
-	 distinction that the group ids respect the ordering of the group values."
-@-
-histogram support. during group computation we already compute histograms
-for quick re-use. They are attached to the CT by means of a histolink.
-@mil
 .ACCELERATOR histolink(any);
       .BUILD     = CTbuild_hl;
       .DESTROY   = CTdestroy_hl;
@@ -121,41 +85,81 @@ for quick re-use. They are attached to the CT by means of a histolink.
       .DELETE    = CTupdate_hl;
 .END;
 
-.COMMAND histogram(BAT[oid,any::1]) : BAT[any::1,int] = CThistogram;
-        "compute a histogram on the tail. Optimized for retrieving the
-         already present histogram on a cross-table computed by CTgroup."
+@-
+basic multi-attribute group operations, that take the incremental approach. 
+CT[re]group and CTderive implement GROUPBY, CTrefine implements ORDERBY.
+@mal
+atom module mapentry:int[16];
+atom module indxentry:int[4];
 
-.COMMAND tunique(BAT[oid,any::1]) : BAT[any::1,void] = CTtunique;
-        "get all unique tail values. Optimized for getting all unique
-         oids from a cross-table computed by CTgroup."
+module xtables;
+command CTgroup(attr:BAT[oid,any] ) : BAT[oid,oid] = CTgroup 
+comment "Cross tabulation group initialization.
+         Returned head values are identical as in 'attr'. Tail values are from
+         the same domain and indicate unique groups in 'attr' tail column.";
+ 
+command _CTgroup(attr:BAT[oid,any], N:int, rng:int) : BAT[oid,oid] = CTgroup_custom 
+comment "Cross tabulation group initialization like CTgroup, but with user
+         provided #bits in hashmask and #distinct values in range.";
+ 
+command CTderive(ct:BAT[oid,any], attr:BAT[oid,any]) : BAT[oid,oid] = CTderive 
+comment "Cross tabulation group extension step.
+         Returned head values are identical as in 'ct'. Tail values are from
+         the same domain and indicate further refinement of the groups in 'ct',
+         taking into account also the tail-values in 'attr'.";
 
-.COMMAND CTsubhisto(BAT[void,bit] sel, BAT[void,oid] grp, BAT[oid,any] domain) 
-	: BAT[oid,int] = CTsubhisto; 
-	"optimized sub-histogram for synced grp[void,oid] and sel[void,bit] 
-         bats on a previously known domain "
+command CTgroup(ct:BAT[oid,any], attr:BAT[oid,any]) : BAT[oid,oid] = CTderive 
+comment "binary grouping; a synonym for CTderive(ct,attr)";
 
-.COMMAND CThistosum(BAT[oid,oid] ct, BAT[oid,int] histo) : BAT[oid,int] = CThistosum;
-        "Produce sum over old histogram table"
+command CTregroup(ct:BAT[oid,oid], attr:BAT[oid,any]) : BAT[oid,oid] = CTregroup
+comment "modifies ct and returns it doing a group";
+
+command CTrefine(b:BAT[oid,any], a:BAT[oid,any]) : BAT[oid,oid] = CTrefine 
+comment "refine the ordering of a tail-ordered BAT by sub-ordering on the 
+         values of a second bat 'a' (where the heads of a and b match 1-1).  
+         The effect of this is similar to (hash-based) CTderive, with the 
+	 distinction that the group ids respect the ordering of the group values.";
+@-
+histogram support. during group computation we already compute histograms
+for quick re-use. They are attached to the CT by means of a histolink.
+@mal
+
+command histogram(a:BAT[oid,any::1]) : BAT[any::1,int] = CThistogram 
+comment "compute a histogram on the tail. Optimized for retrieving the
+         already present histogram on a cross-table computed by CTgroup.";
+
+command tunique(a:BAT[oid,any::1]) : BAT[any::1,void] = CTtunique 
+comment "get all unique tail values. Optimized for getting all unique
+         oids from a cross-table computed by CTgroup.";
+
+command CTsubhisto(sel:BAT[void,bit], grp:BAT[void,oid], domain:BAT[oid,any]) 
+	: BAT[oid,int] = CTsubhisto
+comment "optimized sub-histogram for synced grp[void,oid] and sel[void,bit] 
+         bats on a previously known domain ";
+
+command CThistosum(ct:BAT[oid,oid], histo:BAT[oid,int]) : BAT[oid,int] = CThistosum 
+comment "Produce sum over old histogram table";
 
 @- 
 multi-group: groupings on different bats that produce the same encodings. these
 can be used for multi-attribute join.
-@mil
-.COMMAND CTmultigroup(BAT[any::1,any]) : BAT[BAT[oid,oid],void] = CTmultigroup;
-	"Group multiple BATs passed in the head of the first parameter.
+@mal
+command CTmultigroup(a:BAT[any::1,any]) : BAT[BAT[oid,oid],void] = CTmultigroup 
+comment "Group multiple BATs passed in the head of the first parameter.
          Passing is either direct thourgh nested BATs or as string (identified by name); 
-         This multi-BAT CTgroup guarantees same group oids for same values"
+         This multi-BAT CTgroup guarantees same group oids for same values";
 
-.COMMAND CTmultiderive(BAT[any::1,any::2]) : BAT[BAT[oid,oid],void] = CTmultiderive;
-	"Group multiple BATs passed in the head (ct) and tail (attr) of the first parameter, 
+command CTmultiderive(a:BAT[any::1,any::2]) : BAT[BAT[oid,oid],void] = CTmultiderive 
+comment "Group multiple BATs passed in the head (ct) and tail (attr) of the first parameter, 
          Passing is either direct thourgh nested BATs or as string (identified by name); 
-         This multi-BAT CTderive guarantees same group oids for same values"
+         This multi-BAT CTderive guarantees same group oids for same values";
 
-.COMMAND CTmultiregroup(BAT[any::1,any::2]) : BAT[BAT[oid,oid],void] = CTmultiregroup;
-	"Re-group multiple BATs passed in the head (ct) and tail (attr) of the first parameter, 
+command CTmultiregroup(a:BAT[any::1,any::2]) : BAT[BAT[oid,oid],void] = CTmultiregroup 
+comment "Re-group multiple BATs passed in the head (ct) and tail (attr) of the first parameter, 
          Passing is either direct thourgh nested BATs or as string (identified by name); 
-         This multi-BAT CTregroup guarantees same group oids for same values"
-
+         This multi-BAT CTregroup guarantees same group oids for same values";
+@- 
+Old stuff to be (re)moved
 .LOAD
      PROC CTorderby(bat[oid,any] b, bat[oid,any] a) : bat[oid,oid] {
          if (not(b.reverse.ordered)) {
@@ -220,175 +224,6 @@ CTsubgroup(ct,attr,sel), let their internally generated histogram on
 the group-ids of the newly computed CT BAT behind using
 the {\tt histolink} accelerator, so the overloaded histogram(ct)
 will be able to pick it up without computation.
-
-@* Example Script
-The cross tables are checked using the scripts defined below.
-@mil
-setoid(oid(20000000));
-module(xtables);
-
-# First some procs for convenience: 
-# - xtable_print(group[oid,oid], str, attr1[oid,a1], attr2[oid,a2], ...)
-# 	print group count table 
-# - xtable_realloc(bat, capacity):  bat
-#	allocate more memory and return a copy of a bat
-# - xtable_test(str title, bat x, bat y, bat z)
-#	 major test script on xtable functionality
- 
-proc xtable_print := {
-    printf("\n# %s (ct: %d elts, %d groups, %d bytes)\n",
-                $2, $3.count, $1.count, $3.batsize);
-    table($1.col_name("count"), $(4..));
-}
-
-proc xtable_histo_direct := {
-    var histo := $2.histogram;
-    histo.xtable_print($(1..), histo.mirror.col_name("gid"));
-}
-
-proc xtable_histo_remap := {
-    var map := new(oid,oid).key(true).reverse.insert($2);
-    map.join($2.histogram).xtable_print($(1..), map.col_name("gid"));
-}
- 
-proc xtable_realloc(b,cap) := {
-    var inf := b.info;
-    var ht := monet_atomtbl.find(inf.find("head"));
-    var tt := monet_atomtbl.find(inf.find("tail"));
-    var bn := new(ht, tt, cap);
-    bn.insert(b);
-    if (ht = void) bn.seqbase(b.reverse.fetch(0));
-    if (tt = void) bn.seqbase(b.fetch(0));
-    return bn;
-}
- 
-proc xtable_test(title, x, y, z) := {
-    printf("# xtable_test: %s grouping (%d tuples, %d bytes)\n\n",
-                title, x.count, x.batsize + y.batsize + z.batsize);
-    x.col_name("x"); y.col_name("y"); z.col_name("z");
-    var yy := [+](y,dbl(1.0)).col_name("yy");
- 
-    print(x.slice(0,7).col_name("x"),y,yy,z);
-    printf("synced(x,y) := %s\n", synced(x,y).str);
-    printf("synced(x,z) := %s\n", synced(x,z).str);
-
-    # test group 
-    var b1 := CTgroup(x);
-    xtable_histo_direct("group(x)", b1, x);
-
-    # test derive
-    b1 := CTgroup(b1,y).access(BAT_WRITE);
-    xtable_histo_direct("group(x,y)", b1, x, y);
-
-    # test orderby
-{   var b2 := CTrefine(x.reverse.sort.reverse, y);
-    xtable_histo_remap("orderby(x,y)", b2, x, y); }
- 
-    # test subgroup
-{   var b2 := {count}([<=](y,dbl(2.0)),b1,b1.histogram).col_name("count");
-    b2.xtable_print("subhisto(x,y|1-2)", x, y, b2.mirror.col_name("gid")); }
-    b1 := CTsubgroup(b1,y, y.uselect(dbl(1.0),dbl(2.0)));
-    xtable_histo_direct("group(x,y|1-2)", b1, x, y);
-
-    # test regroup
-    CTregroup(b1,z);
-    xtable_histo_direct("regroup(x,y,z)", b1, x, y, z);
-
-    # test multigroup
-    b1 := CTmultigroup(new(bat,void).insert(y,nil).insert(yy,nil)).reverse;
-    xtable_histo_remap("multigroup(y)", b1.fetch(0), y); 
-    xtable_histo_remap("multigroup(yy)", b1.fetch(1), yy); 
-
-    # test multiderive
-    b1 := CTmultiderive(new(bat,bat).insert(y,x).insert(yy,x)).reverse;
-    xtable_histo_remap("multigroup(y,x)", b1.fetch(0), y, x); 
-    xtable_histo_remap("multigroup(yy,x)", b1.fetch(1), yy, x); 
-
-    # test multiregroup
-    b1 := CTmultiregroup(project(b1.reverse,z)).reverse;
-    xtable_histo_remap("multiregroup(y,x)", b1.fetch(0), y, x, z); 
-    xtable_histo_remap("multiregroup(yy,x)", b1.fetch(1), yy, x, z); 
-}
-
-x := new(oid,chr);
-x.insert(1@0,'a');
-x.insert(2@0,'a');
-x.insert(3@0,'b');
-x.insert(4@0,'b');
-x.insert(5@0,'b');
-x.insert(6@0,'b');
-x.insert(7@0,'c');
-x.insert(8@0,'c');
- 
-y:= new(oid,dbl);
-y.insert(1@0,dbl(1.0));
-y.insert(2@0,dbl(2.0));
-y.insert(3@0,dbl(2.0));
-y.insert(4@0,dbl(2.0));
-y.insert(5@0,dbl(2.0));
-y.insert(6@0,dbl(3.0));
-y.insert(7@0,dbl(1.0));
-y.insert(8@0,dbl(1.0));
- 
-z:= new(oid,str);
-z.insert(1@0,"c");
-z.insert(2@0,"a");
-z.insert(3@0,"b");
-z.insert(4@0,"c");
-z.insert(5@0,"a");
-z.insert(6@0,"a");
-z.insert(7@0,"c");
-z.insert(8@0,"a");
-
-xtable_test("small hash", x, y, z);
- 
-# create vectorized versions
-x := x.reverse.project.reverse.copy;
-y := y.reverse.project.reverse.copy;
-z := z.reverse.project.reverse.copy;
- 
-# activate voids
-x.seqbase(1@0);
-y.seqbase(1@0);
-z.seqbase(1@0);
- 
-xtable_test("small vectorized", x, y, z);
- 
-print("growing vectorized tables from 8 to 512k elements...");
-x := x.xtable_realloc(512*1024);
-y := y.xtable_realloc(512*1024);
-z := z.xtable_realloc(512*1024);
-var i := 17;
-while((i := i - 1) > 0) {
-        x.insert(x.copy);
-        y.insert(y.copy);
-        z.insert(z.copy);
-        print(x.count);
-}
-print("done!");
- 
-xtable_test("big vectorized", x, y, z);
- 
-# materialize the oids again
-x := [oid](x.reverse).reverse;
-y := [oid](y.reverse).reverse;
-z := [oid](z.reverse).reverse;
-y.access(BAT_WRITE);
-z.access(BAT_WRITE);
-y.insert(0@0,dbl(nil));
-z.insert(0@0,str(nil));
-y.delete(0@0);
-z.delete(0@0);
- 
-xtable_test("big hash", x, y, z);
- 
-# let the Mserver find out that the head columns are equal
-y := x.mirror.join(y);
-z := x.mirror.join(z);
- 
-xtable_test("big synced", x, y, z);
-
-quit;
 
 @{
 @* Implementation Code
@@ -550,7 +385,7 @@ identifiers, which are always OIDs.
 This strategy is also followed on binary groupings; here 
 we construct a special integer consisting of the XORed hashnumber 
 of both columns. In such a way, we can build a hash table on
-map_entries (instead of simple atomic values -- the unary case).
+map\_entries (instead of simple atomic values -- the unary case).
 
 In the unary group case, we optimized processing on 1-byte
 and 2-byte values by using direct mapping in an array instead of 
