@@ -20,6 +20,8 @@
 import java.sql.*;
 import java.io.*;
 import java.util.*;
+import java.util.zip.*;
+import java.net.*;
 
 /**
  * This program acts like an extended client program for MonetDB. Its look
@@ -258,6 +260,8 @@ public class JdbcClient {
 "-p --port  The port number to connect to.\n" +
 "-f --file  A file name to use either for reading or writing.  The file will\n" +
 "           be used for writing when dump mode is used (-d --dump).\n" +
+"           In read mode, the file can also be an URL pointing to a plain\n" +
+"           text file that is optionally gzip compressed.\n " +
 "-u --user  The username to use when connecting to the database.\n" +
 "-d --dump  Dumps the given table(s), or the complete database if none given.\n" +
 "--help     This screen.\n" +
@@ -455,8 +459,27 @@ public class JdbcClient {
 				(((ArrayList)(arg.get("-echo"))).get(1) != null);
 			if (hasFile) {
 				int batchSize = 0;
-				// open the file
-				in = new BufferedReader(new FileReader(tmp));
+				// figure out whether it is an URL
+				try {
+					URL u = new URL(tmp);
+					HttpURLConnection.setFollowRedirects(true);
+					HttpURLConnection con =
+						(HttpURLConnection)u.openConnection();
+					con.setRequestMethod("GET");
+					String ct = con.getContentType();
+					if ("application/x-gzip".equals(ct)) {
+						// open gzip stream
+						in = new BufferedReader(new InputStreamReader(
+							new GZIPInputStream(con.getInputStream())));
+					} else {
+						// text/plain otherwise just attempt to read as is
+						in = new BufferedReader(new InputStreamReader(
+							con.getInputStream()));
+					}
+				} catch (MalformedURLException e) {
+					// probably a real file, open it
+					in = new BufferedReader(new FileReader(tmp));
+				}
 
 				// check for batch mode
 				ltmp = (ArrayList)(arg.get("Xbatching"));
