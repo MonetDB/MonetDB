@@ -1,0 +1,98 @@
+stdout of test 'tst4620` in directory 'src/optimizer` itself:
+
+
+# 08:01:51 >  
+# 08:01:51 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4620.mal </dev/null
+# 08:01:51 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
+##some join operations
+#function algebra.joinPath( a:bat[:any$1,:any$2],
+#    z:= join(a,b);
+#    zz:= join(z,c);
+#    return zz;
+#end joinPath;
+function algebra.joinPath(a:bat[:any$1,:any$2],b:bat[:any$2,:any$3],c:bat[:any$3,:any$4]):bat[:any$1,:any$4];	# 0  dynamic (joinPath:bat[:any$1,:any$4])<-(a:bat[:any$1,:any$2])(b:bat[:any$2,:any$3])(c:bat[:any$3,:any$4])
+    z := algebra.join(a,b);	# 1 ALGjoin (z:bat[:any,:any])<-(a:bat[:any$1,:any$2])(b:bat[:any$2,:any$3])
+    zz := algebra.join(z,c);	# 2 ALGjoin (zz:bat[:any,:any])<-(z:bat[:any,:any])(c:bat[:any$3,:any$4])
+    return zz;	# 3  (zz:bat[:any,:any])
+end joinPath;	# 4  
+#
+#b:= new(:int,:int);
+#barrier (k,v):= newRange(0:int);
+#        insert(b,v,v);
+#        redo (k,v):= nextElement(1:int,100:int);
+#exit (k,v);
+#
+#
+#i:= count(b);
+#print(i);
+#
+#c:= select(b,0:int,9:int);
+#i:= count(c);
+#print(i);
+#d:= select(b,0:int,49:int);
+#i:= count(d);
+#print(i);
+#
+#optimizer.MCoptimizer("algebra","joinPath");
+##to be detected by join inversion
+#z:= join(b,c);
+#zz:= join(z,d);
+#i:= count(zz);
+#print(i);
+#showFunction();
+#
+#
+function Admin.main():int;	# 0  (main:int)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
+barrier (k,v):= mal.newRange(0:int);	# 2 RNGnewRange_int (k:bit)(v:int)<-($6:int) jump 5
+    bat.insert(b,v,v);	# 3 BKCinsert_bun ($7:bat[:int,:int])<-(b:bat[:int,:int])(v:int)(v:int)
+    redo (k,v):= mal.nextElement(1:int,100:int);	# 4 RNGnextElement_int (k:bit)(v:int)<-($8:int)($9:int) jump 3
+exit (k,v);	# 5  (k:bit)(v:int)
+    i := algebra.count(b);	# 6 ALGcount_bat (i:lng)<-(b:bat[:int,:int])
+    io.print(i);	# 7 IOprint_val ($11:int)<-(i:lng)
+    c := algebra.select(b,0:int,9:int);	# 8 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])($6:int)($13:int)
+    i := algebra.count(c);	# 9 ALGcount_bat (i:lng)<-(c:bat[:int,:int])
+    io.print(i);	# 10 IOprint_val ($14:int)<-(i:lng)
+    d := algebra.select(b,0:int,49:int);	# 11 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])($6:int)($16:int)
+    i := algebra.count(d);	# 12 ALGcount_bat (i:lng)<-(d:bat[:int,:int])
+    io.print(i);	# 13 IOprint_val ($17:int)<-(i:lng)
+    zz := algebra.joinPath(b,c,d);	# 14  (zz:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])(d:bat[:int,:int])
+    i := algebra.count(zz);	# 15 ALGcount_bat (i:lng)<-(zz:bat[:int,:int])
+    io.print(i);	# 16 IOprint_val ($23:int)<-(i:lng)
+    mdb.showFunction();	# 17 MDBshowFunction ($24:void)
+[ 100 ]
+[ 10 ]
+[ 50 ]
+[ 10 ]
+function Admin.main():int;
+    b := bbp.new(:int,:int);
+barrier (k,v):= mal.newRange(0:int);
+    bat.insert(b,v,v);
+    redo (k,v):= mal.nextElement(1:int,100:int);
+exit (k,v);
+    i := algebra.count(b);
+    io.print(i);
+    c := algebra.select(b,0:int,9:int);
+    i := algebra.count(c);
+    io.print(i);
+    d := algebra.select(b,0:int,49:int);
+    i := algebra.count(d);
+    io.print(i);
+    zz := algebra.joinPath(b,c,d);
+    i := algebra.count(zz);
+    io.print(i);
+    mdb.showFunction();
+#
+
+# 08:01:51 >  
+# 08:01:51 >  Done.
+# 08:01:51 >  
+

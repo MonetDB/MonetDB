@@ -1,0 +1,17 @@
+# the first test for macro expansions and inversions
+include sql;
+
+function welcome(lim:int):void;
+    i:= 0;
+barrier j:= i<lim;
+    print("Welcome");
+    i:= i+1;
+    redo j:= i<lim;
+exit j;
+end welcome;
+
+optimizer.macroExpansion("Admin","welcome");
+
+print("test expansion");
+welcome(2);
+showFunction();

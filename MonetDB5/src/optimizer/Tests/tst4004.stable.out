@@ -1,0 +1,65 @@
+stdout of test 'tst4004` in directory 'src/optimizer` itself:
+
+
+# 11:08:28 >  
+# 11:08:28 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=44745 --set sql_port=56225 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4004.mal </dev/null
+# 11:08:28 >  
+
+# Monet Database Server V4.7.1
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
+# Visit http://monetdb.cwi.nl/ for further information.
+##dead code by forward analysis
+#
+#A :=23;
+#D :=22;
+#
+#B:= true;
+#barrier c:= B;
+#	A:=1;
+#	D:= 3;	# may not be removed
+#	E:= 5;
+#	F:=6;	# may be removed
+#exit c;
+#
+#barrier c:= not(B);
+#	A:=2;
+#	F:=7;	# may be removed
+#exit c;
+#
+#print(A);
+#print(D);
+#print(E);
+#
+#optimizer.deadCodeRemoval();
+#
+#
+!ERROR: 'F' used outside declaration scope in main[12]
+!ERROR: 'E' may not be used before being set in main[16]
+function Admin.main():int;	# 0  (main:int)
+    A := 23;	# 1  (A:int)<-($2:int)
+    D := 22;	# 2  (D:int)<-($4:int)
+    B := true;	# 3  (B:bit)<-($6:bit)
+barrier c := B;	# 4  (c:bit)<-(B:bit) jump 9
+    A := 1;	# 5  (A:int)<-($8:int)
+    D := 3;	# 6  (D:int)<-($9:int)
+    E := 5;	# 7  (E:int)<-($11:int)
+    F := 6;	# 8  (F:int)<-($13:int)
+exit c;	# 9  (c:bit)
+barrier c := calc.not(B);	# 10 CALCunarybitNOT (c:bit)<-(B:bit) jump 13
+    A := 2;	# 11  (A:int)<-($14:int)
+    F := 7;	# 12  (F:int)<-($15:int)
+exit c;	# 13  (c:bit)
+    io.print(A);	# 14 IOprint_val ($16:int)<-(A:int)
+    io.print(D);	# 15 IOprint_val ($17:int)<-(D:int)
+    io.print(E);	# 16 IOprint_val ($18:int)<-(E:int)
+    optimizer.deadCodeRemoval();	# 17 QOTDCoptimizer ($19:str)
+end main;	# 18  
+
+# 11:08:28 >  
+# 11:08:28 >  Done.
+# 11:08:28 >  
+

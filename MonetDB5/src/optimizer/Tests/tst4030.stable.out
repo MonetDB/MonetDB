@@ -1,0 +1,64 @@
+stdout of test 'tst4030` in directory 'src/optimizer` itself:
+
+
+# 08:01:47 >  
+# 08:01:47 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4030.mal </dev/null
+# 08:01:47 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
+## testing subsumption optimalisation
+#r:= new(:int,:int);
+#insert(r,5,1);
+#insert(r,6,2);
+#insert(r,7,3);
+#insert(r,8,4);
+#s:= select(r,0,5);	# equal to a copy
+#print(s);
+#t:= select(r,0,3);
+##print(t);
+#u:= select(r,0,3);	# reuse t
+#print(u);
+#print("done");
+#CXoptimizer();
+#ARoptimizer();
+#
+function Admin.main():int;	# 0  (main:int)
+    r := bbp.new(:int,:int);	# 1 CMDBATnew (r:bat[:int,:int])<-($2:int)($3:int)
+    bat.insert(r,5,1);	# 2 BKCinsert_bun ($4:bat[:int,:int])<-(r:bat[:int,:int])($5:int)($6:int)
+    bat.insert(r,6,2);	# 3 BKCinsert_bun ($7:bat[:int,:int])<-(r:bat[:int,:int])($8:int)($9:int)
+    bat.insert(r,7,3);	# 4 BKCinsert_bun ($10:bat[:int,:int])<-(r:bat[:int,:int])($11:int)($12:int)
+    bat.insert(r,8,4);	# 5 BKCinsert_bun ($13:bat[:int,:int])<-(r:bat[:int,:int])($14:int)($15:int)
+    s := algebra.select(r,0,5);	# 6 ALGselect (s:bat[:int,:int])<-(r:bat[:int,:int])($17:int)($5:int)
+    io.print(s);	# 7 IOprint_val ($18:int)<-(s:bat[:int,:int])
+    t := algebra.select(r,0,3);	# 8 ALGselect (t:bat[:int,:int])<-(r:bat[:int,:int])($17:int)($12:int)
+    u := algebra.select(r,0,3);	# 9 ALGselect (u:bat[:int,:int])<-(r:bat[:int,:int])($17:int)($12:int)
+    io.print(u);	# 10 IOprint_val ($21:int)<-(u:bat[:int,:int])
+    io.print("done");	# 11 IOprint_val ($22:int)<-($23:str)
+end main;	# 12  
+#-----------------#
+# h	tmp_5	  # name
+# int	int	  # type
+#-----------------#
+[ 5,	  1	  ]
+[ 6,	  2	  ]
+[ 7,	  3	  ]
+[ 8,	  4	  ]
+#-----------------#
+# h	tmp_7	  # name
+# int	int	  # type
+#-----------------#
+[ 5,	  1	  ]
+[ 6,	  2	  ]
+[ 7,	  3	  ]
+[ "done" ]
+
+# 08:01:47 >  
+# 08:01:47 >  Done.
+# 08:01:47 >  
+

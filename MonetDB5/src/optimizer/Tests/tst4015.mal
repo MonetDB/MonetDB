@@ -1,0 +1,9 @@
+# testing repeatative reverse optimalisation
+r:= new(:int,:int);
+insert(r,5,1);
+s:= reverse(r);
+k:=23;
+t:= reverse(s);
+print(t);
+setDebug();
+reversalRemoval();
