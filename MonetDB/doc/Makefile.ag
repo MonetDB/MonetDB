@@ -6,5 +6,5 @@ doc_mil = {
 	SOURCES = mil.mx
 }
 doc_monet = {
-	SOURCES = monet.mx monet.feps odmg.fig
+	SOURCES = monet.mx monet.feps 
 }
