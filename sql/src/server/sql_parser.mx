@@ -211,7 +211,9 @@ sql_export int sqlparse(void *);
 }
 %{
 extern int sqllex( YYSTYPE *yylval, void *m );
+/* enable to activate debugging support
 int yydebug=1;
+*/
 %}
 
 	/* symbolic tokens */
