@@ -5,10 +5,10 @@ MTSAFE
 
 LIBDIR = pkglib
 
-lib_stream  =  {
-	SOURCES = stream.mx
-	HEADERS = h
-	LIBS = \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) 
-}
+#lib_stream  =  {
+#	SOURCES = stream.mx
+#	HEADERS = h
+#	LIBS = \
+#		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) 
+#}
 
