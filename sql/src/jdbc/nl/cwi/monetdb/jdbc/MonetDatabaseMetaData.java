@@ -1396,6 +1396,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		if (tableNamePattern != null) {
 			select += "AND TABLE_NAME LIKE '" + escapeQuotes(tableNamePattern) + "' ";
 		}
+		if (schemaPattern != null) {
+			select += "AND TABLE_SCHEM LIKE '" + escapeQuotes(schemaPattern) + "' ";
+		}
 		if (types != null) {
 			select += "AND (";
 			for (int i = 0; i < types.length; i++) {

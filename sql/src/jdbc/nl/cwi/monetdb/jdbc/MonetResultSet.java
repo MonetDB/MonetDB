@@ -163,9 +163,6 @@ public class MonetResultSet implements ResultSet {
 		if (columns.length != types.length) {
 			throw new IllegalArgumentException("Given arguments are not the same size!");
 		}
-		if (results != columns.length) {
-			throw new IllegalArgumentException("Given arguments are not consistant!");
-		}
 		if (results < 0) {
 			throw new IllegalArgumentException("Negative rowcount not allowed!");
 		}
