@@ -217,19 +217,20 @@ int doRequest(Mapi mid, char *buf )
 /*
 	if (mapi_quick_query(mid, buf,toConsole) != MOK){
 		mapi_explain(mid,stdout);
-		return 'q';
+		return 0;
 	}
 	fflush(toConsole);
 */
 	if (mapi_query(mid, buf) != MOK){
 		mapi_explain(mid,stdout);
-		return 'q';
+		return 0;
 	}
 	while ((rtrn = mapi_fetch_line(mid)) != 0) {
 		fprintf(toConsole, "%s\n",rtrn);
 	}
 	if (mapi_error(mid)) {
-		return 'q';
+		mapi_explain(mid,stdout);
+		return 0;
 	}
 	return 0;
 }
