@@ -2183,10 +2183,10 @@ core2mil (assgn_fn_t assgn_fn, PFvar_t * v, PFcnode_t * c)
 
         case c_ifthenelse:              /* if-then-else conditional */
             return map_ifthenelse (assgn_fn, v, c);
-
-        case c_instof:                  /* 'instance of' operator */
+/* has become obsolete
+        case c_instof:                  / * 'instance of' operator * /
             return map_instof (v, c);
-
+*/
         case c_locsteps:                /* path of location steps only */
             return map_locsteps (assgn_fn, v, c);
 
@@ -2231,6 +2231,14 @@ core2mil (assgn_fn_t assgn_fn, PFvar_t * v, PFcnode_t * c)
         case c_kind_attr:
 
         case c_namet:                   /* name test */
+
+        case c_elem:   
+        case c_attr:   
+        case c_text:   
+        case c_doc:    
+        case c_comment:
+        case c_pi:     
+        case c_tag:
 
         case c_error:                   /* Built-in function 'error' */
 
