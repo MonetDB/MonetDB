@@ -148,6 +148,10 @@ comment "round off the value v to nearests multiple of r";
 @:mal_round(flt)@
 @:mal_round(dbl)@
 
+@-
+Include the sql_cache functionality
+@mal
+include sql_cache;
 @h
 #ifndef _SQL_H
 #define _SQL_H
