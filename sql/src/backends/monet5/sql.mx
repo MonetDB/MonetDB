@@ -192,11 +192,12 @@ comment "cast string to @1";
 command str( v:any, digits:int ) :str 
 address str_cast
 comment "cast value to string";
-@mal
+
 @= mal_cast2
 command @1( v:@2, digits:int ) :@1 
 address @2_2_@1
 comment "cast @1 to @1 and check for overflow";
+@mal
 @:mal_cast2(sht,sht)@
 @:mal_cast2(sht,int)@
 @:mal_cast2(sht,lng)@
@@ -209,9 +210,6 @@ comment "cast @1 to @1 and check for overflow";
 @:mal_cast2(lng,int)@
 @:mal_cast2(lng,lng)@
 @:mal_cast2(lng,dbl)@
-
-@= mal_bin_cast
-@mal
 @-
 Include the sql_cache functionality
 @mal

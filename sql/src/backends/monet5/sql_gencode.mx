@@ -797,7 +797,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt(mb, "bbp", "project");
 				q = pushArgument(mb, q, r);
-				q = pushInt(mb, q, z);
+				q = pushArgument(mb, q, z);
 				r = getDestVar(q);
 
 				q = newStmt(mb, "bat", "reverse");
@@ -806,7 +806,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt(mb, "bbp", "project");
 				q = pushArgument(mb, q, l);
-				q = pushInt(mb, q, z);
+				q = pushArgument(mb, q, z);
 				l = getDestVar(q);
 
 				q = newStmt(mb, "algebra", "join");
@@ -936,8 +936,8 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int ops[MAXARG];
 			node *n;
 
-			stmt *op1 = s->op1.lval->h->data;
-			int l = backend_dumpstmt(sql, mb, op1);
+			/* dump operands */
+			backend_dumpstmt(sql, mb, s->op1.stval);	
 
 			@:SQLprelude@
 			if (s->nrcols) {
@@ -956,7 +956,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 					if (!op->nrcols) {
 						q = newStmt(mb, "batcalc", "zipper");
-						q = pushArgument(mb, q, l);
+						q = pushArgument(mb, q, h->nr);
 						q = pushArgument(mb, q, n);
 						ops[opslen++] = getDestVar(q);
 					}
@@ -1009,7 +1009,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			break;
 		case st_atom:{
 			atom *a = s->op1.aval;
-			if (a->isnull) {
+			if (atom_null(a)) {
 				q = newStmt(mb, 0, a->tpe->type->base.name);
 				q = pushNilType(mb, q, a->tpe->type->base.name);
 			} else {
@@ -1062,9 +1062,15 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLpostlude@
 		} break;
 		case st_table_clear:{
-			fprintf(stderr, "time to implement table clear\n");
-		}
-			break;
+			sql_table *t = s->op1.tval;
+
+			@:SQLprelude@
+			q = newStmt(mb, "sql", "clear_table");
+			q = pushStr(mb, q, t->s->base.name);
+			q = pushStr(mb, q, t->base.name);
+			s->nr = getDestVar(q);
+			@:SQLpostlude@
+		} break;
 		case st_exception:{
 			int l = backend_dumpstmt(sql, mb, s->op1.stval);
 			int r = backend_dumpstmt(sql, mb, s->op2.stval);
@@ -1305,19 +1311,20 @@ backend_call(backend *be, Client c, int id, list *args)
 	q = newStmt(mb, "sql_cache", name);
 	setVarType(mb, getArg(q, 0), TYPE_void);
 	if (args) {
-		node *n;
+		node *n, *p;
 
-		for (n = args->h; n; n = n->next) {
+		for (n = args->h, p = be->q->params->h; n && p; 
+		     n = n->next, p = p->next) {
 			atom *a = n->data;
-			int _t;
 
 			if (atom_null(a)) {
-				if (a->data.vtype == TYPE_str && a->data.val.sval == NULL) {
-					a->data.val.sval = _strdup(str_nil);
-				}
+				sql_subtype *t = p->data;
+				/* need type from the prepared argument */
+				q = pushNilType(mb, q, t->type->base.name);
+			} else {
+				int _t = constantAtom(be, mb, a);
+				q = pushArgument(mb, q, _t);
 			}
-			_t = constantAtom(be, mb, a);
-			q = pushArgument(mb, q, _t);
 		}
 	}
 }
