@@ -697,7 +697,7 @@ dump_tables(Mapi mid)
 		char *vname = mapi_fetch_field(hdl, 0);
 		char *query = mapi_fetch_field(hdl, 1);
 
-		fprintf(toConsole, "CREATE VIEW %s %s\n", vname, query);
+		fprintf(toConsole, "CREATE VIEW %s AS %s\n", vname, query);
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
@@ -705,6 +705,9 @@ dump_tables(Mapi mid)
 		return 1;
 	}
 	mapi_close_handle(hdl);
+
+	// finally commit the whole transaction
+	fprintf(toConsole, "COMMIT;\n");
 
 	return rc;
 }
