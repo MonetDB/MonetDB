@@ -124,7 +124,7 @@ to the user to alter the trace/debugger options.
 #include "mal_atom.h"       /* for showAtoms() */
 #include "mal_interpreter.h"    /* for getArgReference() */
 #include "mal_linker.h"     /* for getAddress() */
-#include "mal_scope.h"      /* for showScopeStatistics() */
+#include "mal_scope.h"      /* for showModuleStatistics() */
 
 mdbStateRecord mdbTable[MAL_MAXCLIENTS];
 
@@ -387,7 +387,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
             showScenarioByName(out, cntxt->scenario);
         } else 
         if( strncmp("scope",b,3)==0){
-            showScopeStatistics(out,cntxt->nspace);
+            showModuleStatistics(out,cntxt->nspace);
             break;
         } 
         stk->cmd= *b;
@@ -400,7 +400,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
         int i;
 
         if( strncmp("modules",b,7)==0){
-            showScopes(out, cntxt->nspace);
+            showModules(out, cntxt->nspace);
             continue;
         }
 
@@ -410,7 +410,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
             modnme=b;
             fcnname= strchr(b,'.');
             if( fcnname == NULL){
-                fsym= findScope(cntxt->nspace,modnme);
+                fsym= findModule(cntxt->nspace,modnme);
                 if( fsym==0) {
                     stream_printf(out,"%smodule not found\n",
                             "#mdb ");
@@ -426,7 +426,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
                 continue;
             }
         }
-        debugScope(out,cntxt->nspace,b);
+        debugModule(out,cntxt->nspace,b);
         }
         break;
     case 't': /* trace breakpoint */
@@ -552,7 +552,7 @@ signatures satisfying the pattern.
             modnme=b;
             fcnname= strchr(b,'.');
             if( fcnname == NULL){
-                fsym= findScope(cntxt->nspace,modnme);
+                fsym= findModule(cntxt->nspace,modnme);
                 if( fsym==0) {
                     stream_printf(out,"%smodule not found\n",
                             "#mdb ");
@@ -569,13 +569,13 @@ signatures satisfying the pattern.
             } 
             *fcnname = 0;
             fcnname ++;
-            fsym= findScope(cntxt->nspace,modnme);
+            fsym= findModule(cntxt->nspace,modnme);
             if( fsym==0) {
                 stream_printf(out,"%smodule not found\n","#mdb ");
                 continue;
             }
             /* display the overloaded symbol definition */
-            if( displayScope(out,fsym,fcnname,listing)==0){
+            if( displayModule(out,fsym,fcnname,listing)==0){
                 stream_printf(out,"%sSymbol '%s.%s' not found\n",
                     "#mdb ",modnme,fcnname);
             } 

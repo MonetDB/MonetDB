@@ -264,7 +264,17 @@ Rationale: substitution of code blocks (or macro expansion) leads to
 longer linear code sequences. This provides opportunities for squeezing.
 Moreover, at runtime building and managing a stackframe is rather expensive.
 This should be avoided for functions called repeatedly.
-Approach: use a property attached to functions or automatic for small ones.
+Approach: called explicity to inline a module (or symbol)
+Impact: medium
+
+@emph{Code Outliner (COoptimizer)}
+Goal: to reduce the program size by replacing a group with a single
+instruction
+Rationale: inverse macro expansion leads to
+shorter linear code sequences. This provides opportunities for less interpreter
+overhead, and to optimize complex, but repetative instruction sequences
+with a single hardwired call
+Approach: called explicitly to outline a module (or symbol)
 Impact: medium
 
 
@@ -496,7 +506,10 @@ int hasCommonResults(InstrPtr p, InstrPtr q);
 
 void debugOptimizers(Client c, MalBlkPtr mb, int pc){
     c->debugoptimizer= c->debugoptimizer?0:1;
-    if(pc) removeInstruction(mb,pc);
+    if(pc) {
+        removeInstruction(mb,pc);
+        chkFlow(mb);
+    }
 }
 
 str MALoptimizer(Client c)
@@ -516,6 +529,7 @@ str MALoptimizer(Client c)
                 if( p->fcn)
                     msg= (str) (*p->fcn)(mb,0,p);
                 if( msg) {
+                    GDKerror(msg);
                     showErrors();
                     return msg;
                 }
@@ -683,7 +697,10 @@ int ARoptimizerStep(Client cntxt, MalBlkPtr mb, int pc)
     if(kn == p->retc)
     {
         /* all target variables pushed through */
-        if(pc) removeInstruction(mb,pc);
+        if(pc) {
+            removeInstruction(mb,pc);
+            chkFlow(mb);
+        }
         return pc-1;
     }
     return pc;
@@ -693,7 +710,10 @@ str ARoptimizer(Client cntxt, MalBlkPtr mb, int pc)
     for(i=1;i< mb->stop; i++)
         i= ARoptimizerStep(cntxt,mb,i);
     /* remove the ARoptimizer request */
-    if(pc) removeInstruction(mb,pc);
+        if(pc) {
+            removeInstruction(mb,pc);
+            chkFlow(mb);
+        }
     return NULL;
 }
 @+ Access Mode optimizer
@@ -718,6 +738,7 @@ int AMoptimizerStep(Client cntxt, MalBlkPtr mb, int pc)
         if( p->fcn != AMsetWriteMode) continue;
         if( getArg(p,1) == kn){
             removeInstruction(mb,pc);
+            chkFlow(mb);
             return pc-1;
         }
     }
@@ -733,7 +754,10 @@ str AMoptimizer(Client cntxt, MalBlkPtr mb, int pc)
     for(i=1;i< mb->stop; i++)
         i= AMoptimizerStep(cntxt,mb,i);
     /* remove the AMoptimizer request */
-    if(pc) removeInstruction(mb,pc);
+    if(pc) {
+        removeInstruction(mb,pc);
+        chkFlow(mb);
+    }
     return NULL;
 }
 
@@ -963,7 +987,10 @@ str CXoptimizer(Client cntxt, MalBlkPtr mb, int pc)
         nxtCommonSubExpression: ;
     }
     /* remove the CXoptimizer request */
-    if(pc) removeInstruction(mb,pc);
+    if(pc) {
+        removeInstruction(mb,pc);
+        chkFlow(mb);
+    }
     return NULL;
 }
 
@@ -1150,6 +1177,7 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
                 setFunctionId(p, GDKstrdup("reverse_semijoin"));
                 p= pushArgument(mb,p,q->argv[1]);
                 removeInstruction(mb,pc2);
+                chkFlow(mb);
                 return 1;
             }
         }
@@ -1162,6 +1190,7 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
                 p= pushArgument(mb,p,q->argv[2]);
                 p= pushArgument(mb,p,q->argv[3]);
                 removeInstruction(mb,pc2);
+                chkFlow(mb);
                 return 1;
             }
         }
@@ -1175,6 +1204,7 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
                 p= pushArgument(mb,p,q->argv[2]);
                 p= pushArgument(mb,p,q->argv[3]);
                 removeInstruction(mb,pc2);
+                chkFlow(mb);
                 return 1;
             }
         }
@@ -1226,7 +1256,10 @@ str SPoptimizer(Client cntxt, MalBlkPtr mb, int pc)
     }
 
     /* remove the SPoptimizer request */
-    if(pc) removeInstruction(mb,pc);
+    if(pc) {
+        removeInstruction(mb,pc);
+        chkFlow(mb);
+    }
     return NULL;
 }
 @-
@@ -1280,7 +1313,10 @@ str RRoptimizer(Client cntxt, MalBlkPtr mb, int pc)
             }
         }
     }
-    if(pc) removeInstruction(mb,pc);
+    if(pc) {
+        removeInstruction(mb,pc);
+        chkFlow(mb);
+    }
     return NULL;
 }
 @+ Flow analysis

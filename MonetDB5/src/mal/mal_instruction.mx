@@ -379,16 +379,16 @@ typedef struct SYMDEF {
 typedef struct VARRECORD{
     str     name;   /* argname or lexical value repr */
     malType type;   /* internal type signature */
-    int gdktype; /* for backend */
-        bit isaconstant;    /* value cannot change */
-        bit isatypevar; /* denotes a type variable */
-        int tmpindex;   /* temporary variable */
+    int     gdktype; /* for backend */
+    bit     isaconstant;    /* value cannot change */
+    bit     isatypevar; /* denotes a type variable */
+    int     tmpindex;   /* temporary variable */
     short   isinit; /* used once as destination */
     short   isused; /* for stack copying scope */
     short   fixtype;/* the type has been fixed */
     short   garbage;/* remove upon function return */
     short   beginLifespan, endLifespan; /* for optimizers */
-    str literal;/* initial value string */
+    str     literal;/* initial value string */
     PropertySet props; /* private list of (name,value) pairs */
     ValRecord value;
 } *VarPtr, VarRecord;
@@ -519,7 +519,9 @@ mal_export MalBlkPtr    copyMalBlk(MalBlkPtr);
 mal_export void     expandMalBlk(MalBlkPtr mb, int lines);
 mal_export void     trimMalBlk(MalBlkPtr mb);
 mal_export void     moveInstruction(MalBlkPtr mb, int pc, int target);
+mal_export void     insertInstruction(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export void     removeInstruction(MalBlkPtr mb, int pc);
+mal_export void     removeInstructionBlock(MalBlkPtr mb, int pc, int cnt);
 mal_export str      operatorName(int i);
 
 mal_export int      findVariable(MalBlkPtr mb, str name);
@@ -861,8 +863,37 @@ void removeInstruction(MalBlkPtr mb, int pc){
     mb->stmt[i]=0;
     freeInstruction(p); 
 }
+void removeInstructionBlock(MalBlkPtr mb, int pc, int cnt){
+    int i;
+    InstrPtr p;
+    
+    for(i=pc; i< pc+cnt; i++){
+            p= getInstrPtr(mb,i);
+            freeInstruction(p); 
+    }
+     
+    for(i=pc; i<mb->stop-cnt; i++)
+        mb->stmt[i]= mb->stmt[i+cnt];
+    mb->stop -= cnt;
+    for(; i<mb->stop; i++) mb->stmt[i]=0;
+}
 void moveInstruction(MalBlkPtr mb, int pc, int target){
-    (void) mb;  (void) pc;  (void)target;/* fool the compiler */
+    InstrPtr p;
+    int i;
+    p = getInstrPtr(mb,pc);
+    if( pc > target ){
+        for(i = pc; i>target; i--)
+            mb->stmt[i]= mb->stmt[i-1];
+        mb->stmt[i]=p;
+    } else {
+        for(i = target; i>pc; i--)
+            mb->stmt[i]= mb->stmt[i-1];
+        mb->stmt[i]=p;
+    }
+}
+void insertInstruction(MalBlkPtr mb, InstrPtr p, int pc){
+    pushInstruction(mb,p); /* to ensure room */
+    moveInstruction(mb, mb->stop-1,pc);
 }
 @-
 Beware that the first argument of a signature is reserved for the function
@@ -1725,8 +1756,6 @@ str operatorName(int i){
     case FACTORYsymbol: return "factory";
     case COMMANDsymbol: return "command";
     case PATTERNsymbol: return "pattern";
-    case MACROsymbol: return "macro";
-    case ORCAMsymbol: return "orcam";
     case THREADsymbol:  return "thread";
     }
     return "Undefined";
@@ -1816,8 +1845,6 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
         case FUNCTIONsymbol:
         case FACTORYsymbol:
         case PATTERNsymbol:
-        case MACROsymbol:
-        case ORCAMsymbol:
             return fcnDefinition(mb,p,s,flg); 
         default:
             sprintf(t," ?%d? ",p->token); 

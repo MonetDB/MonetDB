@@ -418,9 +418,6 @@ This piece of code may be shared by the separate binder
         case FUNCTIONsymbol: 
             p->token = FCNcall; 
             break;
-        case MACROsymbol:
-        case ORCAMsymbol:
-            break;
         default:
             showException(mb,getPC(mb,p),"MALresolve",
                     "unexpected token type\n");
@@ -595,7 +592,7 @@ message to the user.
 #ifdef DEBUG_MAL_RESOLVE
         tracefcn= idcmp(functionName(p),traceFcnName)==0;
 #endif
-        m= findScope(scope,moduleName(p));
+        m= findModule(scope,moduleName(p));
         while(s1<0 && m!= NULL){
             if( m->subscope[(int)(getSubScope(functionName(p)))])
                 s1= findFunctionType(m,mb,p);
@@ -698,7 +695,7 @@ InstrPtr dynamicTypeChecker(Scope scope, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
                         setModuleId(pci, NULL);
                 else {
                         freeModuleName(pci);
-                        setModuleScope(pci, findScope(scope, stk->stk[i].val.sval));
+                        setModuleScope(pci, findModule(scope, stk->stk[i].val.sval));
                 }
         }
 #ifdef DEBUG_MAL_RESOLVE
@@ -727,7 +724,7 @@ int fcnBinder(Scope scope, MalBlkPtr mb, InstrPtr p){
 
     if( p->token != ASSIGNsymbol) return 0;
     if( moduleId(p)== NULL || functionId(p)== NULL) return 0;
-    for(m= findScope(scope,moduleName(p)); m; m= m->outer)
+    for(m= findModule(scope,moduleName(p)); m; m= m->outer)
     if(idcmp(m->name, moduleName(p))==0 ) {
         s= m->subscope[(int)(getSubScope(functionName(p)))];
         for(; s; s= s->peer)

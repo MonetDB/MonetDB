@@ -91,7 +91,7 @@ Symbol  getFunctionSymbol(Scope scope, InstrPtr p){
     Scope m;
     Symbol s;
 
-    for(m= findScope(scope,moduleName(p)); m; m= m->outer)
+    for(m= findModule(scope,moduleName(p)); m; m= m->outer)
         if(idcmp(m->name, moduleName(p))==0 ) {
                 s= m->subscope[(int)(getSubScope(functionName(p)))];
                 for(; s; s= s->peer)

@@ -37,9 +37,7 @@ Lexical tokens are illustrated in small capitals.
 @item commandStmt	
 @tab : @code{ command } header 
 @item
-@tab : @code{ address } identifier
 @item patternStmt	
-@tab : @code{ pattern } header 
 @code{ address } identifier
 @item functionStmt	
 @tab : @code{ function } header statement* @code{ end } identifier
@@ -52,6 +50,7 @@ Lexical tokens are illustrated in small capitals.
 @tab : @code{ comment} string_literal 
 @item header		
 @tab : hdrName '(' params ')' result 
+@code{ address } identifier
 @item hdrName		
 @tab : [ moduleId '.'] identifier 
 @item result		

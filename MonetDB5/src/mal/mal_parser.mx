@@ -561,7 +561,7 @@ str parseAtom(Client cntxt)
     modnme= idCopy(cntxt,idLength(cntxt));
     tpe= parseTypeId(cntxt,TYPE_int);
     malAtomDefinition(modnme,tpe);
-    if( findScope(cntxt->nspace,modnme) != NULL)
+    if( findModule(cntxt->nspace,modnme) != NULL)
         cntxt->curprg->def->errors  = FATALINPUT;
     else
         cntxt->nspace = fixateScope(cntxt->nspace, modnme, strlen(modnme));
@@ -578,7 +578,7 @@ str parseModule(Client cntxt)
     if( (x = stringLength(cntxt))) modnme= strCopy(cntxt,x);
     if( modnme==0)
         return parseError(cntxt,"<module path> expected\n");
-    if( findScope(cntxt->nspace,modnme) != NULL)
+    if( findModule(cntxt->nspace,modnme) != NULL)
         cntxt->curprg->def->errors  = FATALINPUT;
     else
         cntxt->nspace = fixateScope(cntxt->nspace, modnme, strlen(modnme));
@@ -1252,7 +1252,7 @@ startFCNcall:
             arg= idCopy(cntxt,l);
             nextChar(cntxt);
             skipSpace(cntxt);
-            scope= findScope(cntxt->nspace,arg);
+            scope= findModule(cntxt->nspace,arg);
             if( scope==0){
                 parseError(cntxt,"<modulename> expected\n");
                 pushInstruction(curBlk,curInstr);
@@ -1386,18 +1386,7 @@ int parseMAL(Client cntxt, Symbol curPrg){
         case 'M': case 'm': 
               if( keyword(cntxt,"module",6) &&
                 parseModule(cntxt)!= 0) break;
-              if( keyword(cntxt,"macro",5) ){
-                cntxt->blkmode++;
-                parseFunction(cntxt,MACROsymbol);
-                break;
-              } 
               goto allLeft;
-        case 'O': case 'o':
-              if( keyword(cntxt,"orcam",5) ){
-                cntxt->blkmode++;
-                parseFunction(cntxt,ORCAMsymbol);
-                break;
-              } 
         case 'P': case 'p': 
               if( keyword(cntxt,"pattern",7) ) {
                 parseCommandPattern(cntxt, PATTERNsymbol);

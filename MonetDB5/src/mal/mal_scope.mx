@@ -96,20 +96,20 @@ mal_export Scope    mal_scope;  /* the start of the module list */
 
 mal_export Scope    newScope(Scope scope, str nme);
 mal_export Scope    fixateScope(Scope scope, str nme, int len);
-mal_export void         freeScope(Scope cur);
-mal_export void         freeScopeList(Scope cur);
+mal_export void     freeScope(Scope cur);
+mal_export void     freeScopeList(Scope cur);
 mal_export void     insertSymbol(Scope scope, Symbol prg);
 mal_export void     deleteSymbol(Scope scope, Symbol prg);
-mal_export Scope    findScope(Scope scope, str name);
-mal_export Symbol   findSymbolInScope(Scope v, str fcn);
+mal_export Scope    findModule(Scope scope, str name);
+mal_export Symbol   findSymbolInModule(Scope v, str fcn);
 mal_export Symbol   findMALSymbol(str mod, str fcn);
-mal_export int      displayScope(stream *f, Scope v, str fcn,int listing);
-mal_export void     showScopes(stream *f, Scope s);
-mal_export void     debugScope(stream *f, Scope v, str nme);
+mal_export int      displayModule(stream *f, Scope v, str fcn,int listing);
+mal_export void     showModules(stream *f, Scope v);
+mal_export void     debugModule(stream *f, Scope v, str nme);
 mal_export void     dumpManual(stream *f, Scope v, int recursive);
 mal_export void     dumpManualHeader(stream *f);
 mal_export void     dumpManualFooter(stream *f);
-mal_export void     showScopeStatistics(stream *f,Scope s); /* used in src/mal/mal_debugger.c */
+mal_export void     showModuleStatistics(stream *f,Scope s); /* used in src/mal/mal_debugger.c */
 
 #define getSubScope(N)  (*(N))
 
@@ -242,7 +242,7 @@ void insertSymbol(Scope scope, Symbol prg){
         sig = getSignature(prg);
     if(moduleId(sig) && idcmp(moduleName(sig),scope->name) != 0){
         /* move the definition to the proper place */
-        c= findScope(scope,moduleName(sig));
+        c= findModule(scope,moduleName(sig));
         if(c == NULL){
             GDKwarning("insertSymbol:undefined module\n");
         } else scope = c;
@@ -274,7 +274,7 @@ void deleteSymbol(Scope scope, Symbol prg){
         sig = getSignature(prg);
     if(moduleId(sig) && idcmp(moduleName(sig),scope->name) != 0){
         /* move the definition to the proper place */
-        Scope c= findScope(scope,moduleName(sig));
+        Scope c= findModule(scope,moduleName(sig));
         if(c == NULL){
             GDKwarning("deleteSymbol:undefined module\n");
         } else scope = c;
@@ -301,7 +301,7 @@ void deleteSymbol(Scope scope, Symbol prg){
 Finding a scope is unrestricted. For modules we explicitly look for
 the start of a new module scope.
 @c
-Scope findScope(Scope scope, str name){
+Scope findModule(Scope scope, str name){
     if( scope->name==NULL) return NULL;
     if( name==NULL) return scope;
     if( scopeJump[(int)(*name)][(int)(*(name+1))]) 
@@ -325,7 +325,7 @@ block introduces a temporary scope.
 The variation on this routine is to dump the definition of
 all matching definitions.
 @c
-Symbol findSymbolInScope(Scope v, str fcn){
+Symbol findSymbolInModule(Scope v, str fcn){
     Symbol s;
     if( v == NULL || fcn == NULL) return NULL;
     s= v->subscope[(int)(*fcn)];
@@ -337,10 +337,10 @@ Symbol findSymbolInScope(Scope v, str fcn){
 }
 Symbol findMALSymbol(str mod, str fcn){
     Scope v;
-    v= findScope(mal_scope, mod);
-    return findSymbolInScope(v,fcn);
+    v= findModule(mal_scope, mod);
+    return findSymbolInModule(v,fcn);
 }
-int displayScope(stream *f, Scope v, str fcn, int listing){
+int displayModule(stream *f, Scope v, str fcn, int listing){
     Symbol s;
     int k=0;
 
@@ -385,7 +385,7 @@ void  printScope(stream *fd, Scope scope, int tab, int outer)
     if(outer && scope->outer) printScope(fd,scope->outer,tab+1, outer);
 }
 
-void showScopes(stream *f, Scope s)
+void showModules(stream *f, Scope s)
 {
     for(; s; s= s->outer) {
         stream_printf(f,"%s",s->name);
@@ -396,14 +396,14 @@ void showScopes(stream *f, Scope s)
     stream_printf(f,"\n");
 }
 
-void debugScope(stream *f, Scope start, str nme){
+void debugModule(stream *f, Scope start, str nme){
     Scope m;
     if( nme==0 || *nme ==0) printScope(f, start,0,TRUE);
     else{
         char *s;
         for(s=nme;*s && (isalnum((int) *s) ||*s=='_');s++);
         *s = 0;
-        m= findScope(start,nme);
+        m= findModule(start,nme);
         if( m== NULL) stream_printf(f,"Scope '%s' not found\n",nme);
         else printScope(f,m,0,FALSE);
     }
@@ -491,7 +491,7 @@ void dumpManual(stream *f, Scope s, int recursive){
 Summarize the type resolution table.
 @c
 
-void showScope(stream *f, Scope v,int cnt[256]){
+void showModuleStat(stream *f, Scope v,int cnt[256]){
     int sigs=0,i,max=0,m;
     Symbol s;
     int c[256];
@@ -514,13 +514,13 @@ void showScope(stream *f, Scope v,int cnt[256]){
         stream_printf(f,"%20s",(m++ ==0?v->name:""));
         stream_printf(f,"[%c] %5d %5d\n",i,c[i],(cnt[i]-c[i]/2));
     }
-    if(v->outer) showScope(f,v->outer,cnt);
+    if(v->outer) showModuleStat(f,v->outer,cnt);
 }
-void showScopeStatistics(stream *f,Scope s){
+void showModuleStatistics(stream *f,Scope s){
     int i,cnt[256];
 
-        stream_printf(f,"%20s%5s%5s\n","module","#sig","avg chk");
+    stream_printf(f,"%20s%5s%5s\n","module","#sig","avg chk");
     for(i=0;i<256;i++) cnt[i]=0;
-    showScope(f,s,cnt);
+    showModuleStat(f,s,cnt);
 }
 @}
