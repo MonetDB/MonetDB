@@ -31,7 +31,7 @@ The {\tt mel} utility is a tool for extending monet.
 @+ Manual Page
 @T
 Monet can be extended using the MEL language. 
-We refer to the @[<a href="../mel.html">MEL Reference Manual</a>@
+We refer to the @[<a href="../index.html">MEL Reference Manual</a>@
 for the syntax and semantics of the MEL module specification language.
 
 @- Usage

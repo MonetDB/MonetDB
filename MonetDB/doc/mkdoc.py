@@ -21,7 +21,7 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-import sys, os
+import sys, os, string
 
 if len(sys.argv) != 3:
     print '''\
@@ -62,7 +62,7 @@ def unlink(file):
     except os.error:
         pass
 
-def runMx(srcdir, base, dstdir):
+def runMx(srcdir, base, dstdir, suffix='' ):
     print 'runMx', srcdir, base, dstdir
     cmd = '%s "-R%s" -H1 -w "%s" 2>&1' % (mx, tmpdir, os.path.join(srcdir, base + '.mx'))
     print cmd
@@ -72,7 +72,8 @@ def runMx(srcdir, base, dstdir):
     srcfile = os.path.join(tmpdir, base + '.body.html')
     if not os.path.exists(srcfile):
         srcfile = os.path.join(tmpdir, base + '.html')
-    copyfile(srcfile, os.path.join(dstdir, base + '.html'))
+    os.makedirs(os.path.join(dstdir, base+suffix))
+    copyfile(srcfile, os.path.join(dstdir, base+suffix, 'index.html'))
     unlink(os.path.join(tmpdir, base + '.html'))
     unlink(os.path.join(tmpdir, base + '.index.html'))
     unlink(os.path.join(tmpdir, base + '.body.html'))
@@ -92,52 +93,57 @@ def removedir(dir):
     os.rmdir(dir)
 
 removedir(os.path.join(dstdir, 'doc', 'www'))
-os.makedirs(os.path.join(dstdir, 'doc', 'www', 'modules'))
-
-for f in ['monet.gif', 'mel.gif']:
-    copyfile(os.path.join(srcdir, 'doc', f),
-             os.path.join(dstdir, 'doc', f))
-for f in ['bat.gif', 'bat1.gif', 'bat2.gif']:
-    copyfile(os.path.join(srcdir, 'src', 'gdk', f),
-             os.path.join(dstdir, 'doc', 'www', f))
+copyfile(os.path.join(srcdir, 'doc', 'monet.html'),
+         os.path.join(dstdir, 'doc', 'monet.html'))
 
 for f in ['monet', 'mil', 'mel']:
-    runMx(os.path.join(srcdir, 'doc'), f, os.path.join(dstdir, 'doc'))
+    runMx(os.path.join(srcdir, 'doc'), f, os.path.join(dstdir, 'doc', 'www', 'Services'))
+for f in ['monet.gif', 'mel.gif']:
+    d = string.split(f,'.')[0]
+    copyfile(os.path.join(srcdir, 'doc', f),
+             os.path.join(dstdir, 'doc', 'www', 'Services', d, f))
 
 runMx(os.path.join(srcdir, 'src', 'mel'), 'mel',
-      os.path.join(dstdir, 'doc', 'www'))
+      os.path.join(dstdir, 'doc', 'www', 'Services', 'mel'), '-tool')
 
 for f in ['gdk', 'gdk_atoms']:
     runMx(os.path.join(srcdir, 'src', 'gdk'), f,
-          os.path.join(dstdir, 'doc', 'www'))
+          os.path.join(dstdir, 'doc', 'www', 'Services'))
+for f in ['bat.gif', 'bat1.gif', 'bat2.gif']:
+    copyfile(os.path.join(srcdir, 'src', 'gdk', f),
+             os.path.join(dstdir, 'doc', 'www', 'Services', 'gdk', f))
 
 runMx(os.path.join(srcdir, 'src', 'monet'), 'monet',
       os.path.join(dstdir, 'doc', 'www'))
+copyfile(os.path.join(srcdir, 'src', 'monet', 'monet.gif'),
+         os.path.join(dstdir, 'doc', 'www', 'monet', 'monet.gif'))
 
-for f in ['Mapi', 'MapiClient']:
-    runMx(os.path.join(srcdir, 'src', 'mapi', 'clients', 'C'), f,
-          os.path.join(dstdir, 'doc', 'www'))
+runMx(os.path.join(srcdir, 'src', 'mapi', 'clients', 'C'), 'Mapi',
+      os.path.join(dstdir, 'doc', 'www', 'APIs'), 'C')
+
+runMx(os.path.join(srcdir, 'src', 'mapi', 'clients', 'C'), 'MapiClient',
+      os.path.join(dstdir, 'doc', 'www'))
 
 runMx(os.path.join(srcdir, 'src', 'tools'), 'Mserver',
       os.path.join(dstdir, 'doc', 'www'))
 
 runMx(os.path.join(srcdir, 'src', 'mapi'), 'mapi',
-      os.path.join(dstdir, 'doc', 'www', 'modules'))
+      os.path.join(dstdir, 'doc', 'www', 'Modules'))
 
 runMx(os.path.join(srcdir, 'src', 'modules', 'calibrator'), 'calib',
-      os.path.join(dstdir, 'doc', 'www', 'modules'))
+      os.path.join(dstdir, 'doc', 'www', 'Modules'))
 
 for f in ['aggrX3', 'aggr', 'alarm', 'algebra', 'arith', 'ascii_io', 'bat',
           'blob', 'counters', 'decimal', 'enum', 'kernel',
           'lock', 'mmath', 'monettime', 'pcl', 'radix', 'streams', 'str', 'sys',
           'tcpip', 'trans', 'unix', 'url', 'xtables']:
     runMx(os.path.join(srcdir, 'src', 'modules', 'plain'), f,
-          os.path.join(dstdir, 'doc', 'www', 'modules'))
+          os.path.join(dstdir, 'doc', 'www', 'Modules'))
 
 for f in ['bitset', 'bitvector', 'ddbench', 'mel', 'mprof', 'oo7', 'qt', 'tpcd',
           'wisc']:
     runMx(os.path.join(srcdir, 'src', 'modules', 'contrib'), f,
-          os.path.join(dstdir, 'doc', 'www', 'modules'))
+          os.path.join(dstdir, 'doc', 'www', 'Modules'))
 
 for f in ['README', 'load.mil', 'init.mil']:
     copyfile(os.path.join(srcdir, 'scripts', 'gold', f),

@@ -81,7 +81,7 @@ unique numerical identifiers. The next section discusses these in detail.
 
 \item {\tt ptr}\\
 pointers. Seldomly used. Some volatile representations (like stream pointers
-in the @[<a href=www/modules/streams.html">io</a>@ module) use it as data representation.
+in the @[<a href="../../Modules/streams/index.html">streams (io)</a>@ module) use it as data representation.
 This datatype may not be used in persistent BATs.  Its size is that of
 {\tt int} on 32-bit platforms and that of {\tt lng} on 64-bit platforms.
 \item {\tt flt}\\
@@ -467,8 +467,8 @@ in the current context:
 \end{verbatim}
 The standard collection of variables consists of a number of constants that are needed
 by various operators ({\tt @[<a href="../../Modules/bat/index.html#mod_2_0_3">access</a>@(BAT[any,any], int {\bf BAT\_XX})},
-{\tt @[<a href="../../modules/bat/index.html#mod_2_0_6">madvise</a>@(BAT[any,any], int {\bf BUF\_XX})} and
-{\tt @[<a href="../../modules/bat/index.html#mod_2_0_6">mmap</a>@(BAT[any,any], int {\bf STORE\_XX})}). The
+{\tt @[<a href="../../Modules/bat/index.html#mod_2_0_6">madvise</a>@(BAT[any,any], int {\bf BUF\_XX})} and
+{\tt @[<a href="../../Modules/bat/index.html#mod_2_0_6">mmap</a>@(BAT[any,any], int {\bf STORE\_XX})}). The
 {\tt values\_status} tells whether it is a variable or a constant. For variables, the {\tt type\_status}
 may either be {\tt liquid} or {\tt frozen}, which indicates whether the variable may be assigned a value
 of another type.
@@ -545,7 +545,7 @@ yourself in some text-file. Maybe your \$DBDIR/users/\$USER is a good place
 for that, since MIL scripts placed there can easily be read in (see 'source()').
 PROCs cannot be made persistent either.  You can, however,
 put them in a MIL initialization file passed as startup parameter to
-@[<a href="www/Mserver.html">Mserver</a>@.
+@[<a href="../../Mserver/index.html">Mserver</a>@.
 
 MIL procedures are not typed; you can use them just as another MIL command.
 The signature of a procedure is that of a command with a variable
@@ -781,7 +781,7 @@ This will yield an empty BAT with a VOID head column.
 @-
 You need to activate the VOID column in a BAT created by hand by specifying a
 base OID of your choice.  This can be done with the command
-@[<a href="../../modules/bat/index.html#mod_2_0_3"><tt>bat[VOID,T].<bf>seqbase</bf>(oid)</tt></a>@.
+@[<a href="../../Modules/bat/index.html#mod_2_0_3"><tt>bat[VOID,T].<bf>seqbase</bf>(oid)</tt></a>@.
 
 @+ Operations on BATs with a VOID column
 @T
@@ -927,7 +927,7 @@ For reasons similar to the pump, a tertiary {\tt CTrefine} will soon be introduc
 two void-headed parameters where the tail columns make up the head and tail of the first parameter
 in the binary version.
 
-More information on grouping and ordering can be found in the @[<a href="../../modules/xtables/index.html">xtables module</a>@.
+More information on grouping and ordering can be found in the @[<a href="../../Modules/xtables/index.html">xtables module</a>@.
 
 @+ Updates and Transactions
 @T
@@ -1301,18 +1301,18 @@ A common application of {\tt @[<a href="../../Modules/kernel/index.html#mod_2_3_
 end{verbatim}
 
 The session is ended with a {\tt @[<a href="../../Modules/kernel/index.html#mod_2_3_1">quit()</a>@}. Note that typing this in the
-{\tt @[<a href="../Mserver/index.html">Mserver</a>@} console with stop the Monet server
-immediately, whereas in the {\tt @[<a href="www/MapiClient/index.html">MapiClient</a>@} it
+{\tt @[<a href="../../Mserver/index.html">Mserver</a>@} console with stop the Monet server
+immediately, whereas in the {\tt @[<a href="../../MapiClient/index.html">MapiClient</a>@} it
 will only end the current user session. The server can be shutdown from the
-{\tt @[<a href="../MapiClient/index.html">MapiClient</a>@} (and also from the
-{\tt @[<a href="../Mserver/index.html">Mserver</a>@} console) with {\tt @[<a href="../../Modules/kernel.html#mod_2_3_1">shutdown()</a>@}.
+{\tt @[<a href="../../MapiClient/index.html">MapiClient</a>@} (and also from the
+{\tt @[<a href="../../Mserver/index.html">Mserver</a>@} console) with {\tt @[<a href="../../Modules/kernel/index.html#mod_2_3_1">shutdown()</a>@}.
 
 @* Further Reference
 @T
 We recommend you to study the commands in the following modules:
 \begin{description}
 \item[system] @[<a href="../../Modules/kernel/index.html">kernel</a>@ (special keywords),
-@[<a href="../../Modules/sys/index.html">sys</a>@ (especially look at the @[<a href="www/modules/sys.html#mod_2_1_0">PROCs</a>@).
+@[<a href="../../Modules/sys/index.html">sys</a>@ (especially look at the @[<a href="../../Modules/sys/index.html#mod_2_1_0">PROCs</a>@).
 
 \item[bats] @[<a href="../../Modules/bat/index.html">bat</a>@ (basic bat management) and
 @[<a href="../../Modules/algebra/index.html">algebra</a>@ (the core algebra).

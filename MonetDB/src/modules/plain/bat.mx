@@ -29,7 +29,7 @@
 @T
 This module contains all commands that are of use when managing Binary 
 Association Tables (BATs). The relational operations you can execute
-on BATs have the form of a @[<a href="algebra.html">neat algebra</a>@. 
+on BATs have the form of a @[<a href="../algebra/index.html">neat algebra</a>@. 
 
 But a database system needs more that just this algebra, since often it
 is crucial to do table-updates (this would not be permitted in a strict 
@@ -163,7 +163,7 @@ have the first character of their named replaced by 't' ({\tt sorted}, {\tt tden
 [ "hindex",          "absent"     ] # name of built-in accelerator: hash or index (T-tree) 
 \end{verbatim}
 
-As described in the @[<a href="../gdk.html#mod_1_3_0">GDK Technical Reference</a>@,
+As described in the @[<a href="../../Services/gdk/index.html#mod_1_3_0">GDK Technical Reference</a>@,
 BATs store their data in one to five heaps, of which at least one called {\tt batBuns}
 is present always. For each column type that is {\em variable-sized} - like {\tt str} - another 
 heap might be present ({\tt hheap} and {\tt theap}). If a column has a user-defined search 
@@ -381,7 +381,7 @@ A final file present for each t in the BAT directory is:
 \end{description}
 @
 For more technical information on BATs, we refer to the 
-@[<a href="http://www.cwi.nl/~monet/www/scw/gdk/470_pseudo.html">GDK</a>@
+@[<a href="../../Services/gdk/index.html">GDK</a>@
 documentation.
 @m
 .COMMAND mmap(BAT[any::1,any::2], int buns_mode, int hheap_mode, int theap_mode, 
@@ -425,7 +425,7 @@ a list of all currently known accelarator types.
 \end{verbatim}
 @
 More info on how to write new search accelerators can be found in the
-@[<a href="../../mel.html">MEL documentation</a>@.
+@[<a href="../../Services/mel/index.html">MEL documentation</a>@.
 @m
 .COMMAND accbuild(BAT[any,any] b, int acctype) = CMDaccbuild_std;
 "Build an accelerator on the head column of b. The builtin accelerator
