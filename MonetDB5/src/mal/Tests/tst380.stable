@@ -19,7 +19,7 @@
 function Admin.get(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (get:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
     b := bbp.nme();	# 1  unknown (b:any)
     z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:any])<-(br:bat[:any$1,:any$2])(b:any)
-    bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:any])<-(z:bat[:any,:any])(title:str)
+    bat.setColumn(z,title);	# 3 BKCsetColumn ($6:void)<-(z:bat[:any,:any])(title:str)
     return z;	# 4  (z:bat[:any,:any])
 end get;	# 5  
 ## Note the type of the variables will be fixed during the first call
@@ -35,7 +35,7 @@ end get;	# 5
 function Admin.getInt(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (getInt:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
     b := bbp.nme();	# 1  unknown (b:any)
     z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:any])<-(br:bat[:any$1,:any$2])(b:any)
-    bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:any])<-(z:bat[:any,:any])(title:str)
+    bat.setColumn(z,title);	# 3 BKCsetColumn ($6:void)<-(z:bat[:any,:any])(title:str)
     return z;	# 4  (z:bat[:any,:any])
 end getInt;	# 5  
 #function getLng(br:bat[:any$1,:any$2],nme:str, title:str):bat[:any$3,:any$4];
@@ -47,7 +47,7 @@ end getInt;	# 5
 function Admin.getLng(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (getLng:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
     b := bbp.nme();	# 1  unknown (b:any)
     z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:any])<-(br:bat[:any$1,:any$2])(b:any)
-    bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:any])<-(z:bat[:any,:any])(title:str)
+    bat.setColumn(z,title);	# 3 BKCsetColumn ($6:void)<-(z:bat[:any,:any])(title:str)
     return z;	# 4  (z:bat[:any,:any])
 end getLng;	# 5  
 #function dir(b:bat[:int,:str]):void;
@@ -104,7 +104,7 @@ end dir;	# 5
 #
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
-    bat.setName(b,"simplemind");	# 2 BKCsetName ($4:bat[:int,:int])<-(b:bat[:int,:int])($5:str)
+    bat.setName(b,"simplemind");	# 2 BKCsetName ($4:void)<-(b:bat[:int,:int])($5:str)
     z := bbp.getNames();	# 3 CMDbbpNames (z:bat[:int,:str])
     io.print("Get first directory");	# 4 IOprint_val ($7:int)<-($8:str)
     Admin.dir(z);	# 5  ($9:void)<-(z:bat[:int,:str])
@@ -119,7 +119,7 @@ end main;	# 8
 [ 1,	  "monet_environment",	  "str",  "str",	  31,	  151,	  "dirty",	  "load", "transient",	  3	  ]
 [ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  152,	  "dirty",	  "load", "transient",	  3	  ]
 [ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "load", "transient",	  3	  ]
-[ 4,	  "simplemind",		  "int",  "int",	  0,	  41,	  "dirty",	  "load", "transient",	  3	  ]
+[ 4,	  "simplemind",		  "int",  "int",	  0,	  42,	  "dirty",	  "load", "transient",	  3	  ]
 [ "Get second directory" ]
 #-------------------------#
 # h	tmp_25		  # name
@@ -130,5 +130,5 @@ end main;	# 8
 # tmp_25	tmp_28		htype	ttype	count	heat	dirty		status	kind		refcnt	  # name
 # int	str		str	str	lng	int	str		str	str		int	  # type
 #---------------------------------------------------------------------------------------------------------#
-[ 4,	  "simplemind",	  "int",  "int",  0,	  169,	  "dirty",	  "load", "transient",	  5	  ]
+[ 4,	  "simplemind",	  "int",  "int",  0,	  173,	  "dirty",	  "load", "transient",	  5	  ]
 >

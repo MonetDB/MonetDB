@@ -22,7 +22,7 @@ function Admin.steal(bb:bat[:any$1,:any$2]):bat[:any$1,:any$2];	# 0  dynamic (st
     loc := bb;	# 3  (loc:bat[:any$1,:any$2])<-(bb:bat[:any$1,:any$2])
     i := bbp.getRefCount(bb);	# 4 CMDgetBATrefcnt (i:int)<-(bb:bat[:any$1,:any$2])
     io.printf("local in function refcount =%d\n",i);	# 5 IOprint_formatted_int ($6:int)<-($7:str)(i:int)
-    return bb;	# 6  (steal:bat[:any$1,:any$2])<-(bb:bat[:any$1,:any$2])
+    return bb;	# 6  (bb:bat[:any$1,:any$2])
 end steal;	# 7  
 #
 #	b:= new(:int,:str);

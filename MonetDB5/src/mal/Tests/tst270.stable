@@ -24,7 +24,7 @@
 #
 #b:= new(:int,:int);
 #printf("#~BeginVariableOutput~#\n"); 
-#binfo:= info(b);
+#binfo:= bat.info(b);
 #print(binfo); 
 #printf("#~EndVariableOutput~#\n");
 #
@@ -92,7 +92,7 @@ end main;	# 30
 [ "batPersistence",		  "transient"	  ]
 [ "batRestricted",		  "updatable"	  ]
 [ "batRefcnt",			  "1"		  ]
-[ "batLRefcnt",			  "2"		  ]
+[ "batLRefcnt",			  "1"		  ]
 [ "batDirty",			  "dirty"	  ]
 [ "batSet",			  "0"		  ]
 [ "void_tid",			  "0"		  ]

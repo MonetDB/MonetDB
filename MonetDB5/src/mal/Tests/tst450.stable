@@ -67,6 +67,7 @@ end main;	# 12
 #-------------------------#
 [ nil,	  "Admin"	  ]
 [ nil,	  "sql"		  ]
+[ nil,	  "transaction"	  ]
 [ nil,	  "crackers"	  ]
 [ nil,	  "chopper"	  ]
 [ nil,	  "optimizer"	  ]

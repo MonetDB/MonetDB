@@ -17,7 +17,7 @@ setoid(o);
 
 b:= new(:int,:int);
 printf("#~BeginVariableOutput~#\n"); 
-binfo:= info(b);
+binfo:= bat.info(b);
 print(binfo); 
 printf("#~EndVariableOutput~#\n");
 

@@ -39,5 +39,5 @@ refcount =1
 #-------------------------#
 [ 1,	  "bat B"	  ]
 refcount =1
-after mirror assignment refcount =2
+after mirror assignment refcount =1
 >

@@ -108,7 +108,7 @@ end main;	# 21
 [ 8,	  64	  ]
 [ 9,	  81	  ]
 #-----------------#
-# h	tmp_8	  # name
+# h	tmp_6	  # name
 # lng	bit	  # type
 #-----------------#
 [ 0,	  true	  ]
@@ -122,7 +122,7 @@ end main;	# 21
 [ 8,	  true	  ]
 [ 9,	  true	  ]
 #-----------------#
-# h	tmp_9	  # name
+# h	tmp_8	  # name
 # lng	bit	  # type
 #-----------------#
 [ 0,	  true	  ]
@@ -136,7 +136,7 @@ end main;	# 21
 [ 8,	  false	  ]
 [ 9,	  false	  ]
 #-----------------#
-# h	tmp_10	  # name
+# h	tmp_9	  # name
 # lng	bit	  # type
 #-----------------#
 [ 0,	  false	  ]

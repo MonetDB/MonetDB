@@ -40,5 +40,5 @@ refcount =1
 #-------------------------#
 [ 1,	  "bat B"	  ]
 second refcount =1
-after reverse assignment refcount =2
+after reverse assignment refcount =1
 >
