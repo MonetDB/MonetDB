@@ -45,6 +45,8 @@ bind()     	&       Bind string C-variable to field	 [NON_JAVA]
 bind_var() 	&       Bind typed C-variable to field [NON_JAVA]
 bind_numeric()	& 	Bind numeric C-variable to field [NON_JAVA]
 cacheLimit()	& 	Set the tuple cache limit 
+cacheShuffle()	& 	Set the cache shuffle percentage 
+cacheFreeup()	&	Empty a fraction of the cache
 connect()  	&       Connect to a Mserver 
 connectSSL()	& 	Connect to a Mserver using SSL [TODO]
 disconnect()	& 	Disconnect from server
@@ -61,8 +63,9 @@ fetchAllRows()	&       Fetch all answers from server into cache
 finish()	&       Terminate the current query
 getHost() 	&       Host name of server
 getLanguage()	& 	Query language name
-getVersion()	& 	Monet version identifier
-getVersionId()	& 	Monet version generation number
+getMapiVersion()	& 	Mapi version identifier
+getMonetVersion()	& 	Monet version identifier
+getMonetId()	& 	Monet version generation number
 getUser() 	&       Get current user name
 getDBname() 	&       Get current database name
 getTable()    	&       Get current table name
@@ -71,6 +74,7 @@ getColumnName()	& 	Get columns name
 getRowCount() 	&       Number of lines in cache or -1
 getTupleCount()	&       Number of tuples in cache or -1
 gotError()    	&       Test for error occurrence
+getPort()	&	Connection IP number
 ping()     	&       Test server for accessibility
 prepareQuery() 	&       Prepare a query for execution
 prepareQueryArray()&       Prepare a query for execution using arguments
@@ -152,8 +156,9 @@ public class Mapi
 	public final String PLACEHOLDER    ="?";
 
 
-	private String server;
-	private boolean MONET5;
+	private String version;
+	private String mapiversion;
+	private boolean blocked= false;
 	private String host = "localhost";
 	private int port = 50001;
 	private String username= "anonymous";
@@ -180,7 +185,6 @@ public class Mapi
 	private String prompt;
 	
 	// Tabular cache
-	private boolean	headerFound= false;
 	private int fieldcnt= 0;
 	private int maxfields= 32;
 	private int minfields= 0;
@@ -217,6 +221,13 @@ private int portnr( String monetport ){
 	} 
 	return port;
 }
+// To make life of front-end easier they may call for
+// properties to be understood by each running server.
+// The actual parameter settings may at a later stage
+// be obtained from some system configuration file/ Mguardian
+public String getDefaultHost(){ return "localhost";}
+public int getDefaultPort(){ return 50000;}
+public String getDefaultLanguage(){ return "mil";}
 	
 public Mapi(){}
 public Mapi( String host, int port, String user, String pwd, String lang)
@@ -226,6 +237,13 @@ throws MapiException
 }
 	
 //------------------ The actual implementation ---------
+/**
+ * the default communication mode is current line-based
+ * a future version should also support the more efficient block mode
+*/
+public void setBlocking(boolean f){
+	blocked= f;
+}
 /**
  * Toggle the debugging flag for the Mapi interface library
  * @param flg the new value 
@@ -290,6 +308,9 @@ public Mapi connect( String host, int port, String user, String pwd, String lang
 throws MapiException
 {
 	error = MOK;
+	this.host =host;
+	this.port = port;
+	connected= false;
 	try{
 		if(trace) 
 			System.out.println("setup socket "+host+":"+port);
@@ -304,33 +325,55 @@ throws MapiException
 		errortext= "Failed to establish contact\n" ;
 		throw new MapiException( errortext );
 	}
+	blocked=false;
+	this.mapiversion= "1.0";
 	this.username= user;
 	this.password = pwd;
 	this.active = true;
 	if(trace) System.out.println("sent initialization command");
-	toMonet(user+":"+pwd+"\n");
-	while( !gotError() && active){
-		getRow();
-		if( server == null) server= blk.buf;
-		if( gotError()) return this;
+	if( pwd.length()>0) pwd= ":"+pwd;
+	if( blocked)
+		toMonet(user+pwd+":blocked\n");
+	else 	toMonet(user+pwd+"\n");
+/* 
+The rendezvous between client application and server requires
+some care. The general approach is to expect a property table
+from the server upon succesful connection. An example feedback is:
+	[ "version",	"4.3.12" ]
+	[ "language",	"sql" ]
+	[ "dbname",	"db" ]
+	[ "user",	"anonymous"]
+These properties should comply with the parameters passed to connect,
+in the sense that non-initialized paramaters are filled by the server.
+Moreover, the user and language parameters should match the value returned.
+The language property returned should match the required language interaction.
+*/
+	while( !gotError() && active && fetchRow()>0){
+		if( cache.fldcnt[cache.reader]== 0){
+			System.out.println("Unexpected reply:"
+				+ cache.rows[cache.reader]);
+			continue;
+		}
+		String property= fetchField(0);
+		String value= fetchField(1);
+		//System.out.println("fields:"+property+","+value);
+		if( property.equals("language") && !lang.equals("") &&
+		   !value.equals(lang)){
+			setError("Incompatible language requirement","connect");
+			System.out.println("exepcted:"+lang);
+		} else language= lang;
+		if( property.equals("version")) version= value;
+		if( property.equals("dbname")) dbname= value;
+			
 	}
-	// Assume return of a single line with the server identity
-	MONET5= server.indexOf("5.0")==0;
-	if(trace)
-		System.out.println("Monet version 5?"+MONET5+":"+
-			(server.indexOf("5.0"))+":"+server);
+	if( gotError()) {
+		connected = false;
+		active= false;
+		if(trace) System.out.println("Error occurred in initialization");
+		return this;
+	}
 	if(trace) System.out.println("Connection established");
 	connected= true;
-
-	// set the language scenario
-	if( !language.equals("mil") &&
-	    !(language.equals("mal") && MONET5) &&
-	    !language.equals("sql") ){
-		setError("Illegal language scenario","connect");
-		explain();
-	} else language= lang;
-	// sent the language scenario initialization command
-	// query(lang+"()");
 	return this;
 }
 
@@ -395,12 +438,7 @@ private void promptMonet() throws MapiException  {
 public int disconnect() {
 	check("disconnect");
 	if( gotError()) return MERROR;
-	for(int i=0; i< cache.writer; i++){
-		cache.rows[i]= null;
-		cache.fields[i]= null;
-	}
-	cache.writer= 0;
-	cache.reader= -1;
+	cache= new RowCache();
 	blk= new IoCache();
 	connected= active= false;
 	toMonet = null; fromMonet = null; traceLog = null;
@@ -414,8 +452,10 @@ public int reconnect(){
 	check("reconnect");
 	if( gotError()) return MERROR;
 	if( connected) disconnect();
+	cache= new RowCache();
+	blk= new IoCache();
 	try{
-	connect(host, port,username,password,language);
+		connect(host, port,username,password,language);
 	} catch( MapiException e) {}
 	return MOK;
 }
@@ -534,7 +574,7 @@ private void storeBind(){
 */
 public int sliceRow(){
 	int cr= cache.reader;
-	if(cr<0){
+	if(cr<0 || cr >= cache.writer){
 		setError("Current row missing","sliceRow");
 		return 0;
 	}
@@ -543,26 +583,29 @@ public int sliceRow(){
 		setError("Current row missing","sliceRow");
 		return 0;
 	}
+	// avoid duplicate slicing
 	if( cache.fldcnt[cr]>0) return cache.fldcnt[cr];
 	if( s.length()==0) return 0;
 	char p[]= s.toCharArray();
-	if( p == null)
-		setError("Current row missing","sliceRow");
 	if( p[0]=='!'){
 		String olderr= errortext;
 		clrError();
 		setError(olderr+s,"sliceRow");
 		return 0;
 	}
-	boolean single = p[0]!= '[';
+	if( p[0]!='['){
+		if(trace) System.out.println("Single field:"+s);
+		cache.fields[cr][0]= s;
+		return 1;
+	}
 	int i=0;
 	int f=1,l;
-	// skip leading blancs
 
 	do{
+		// skip leading blancs
 		while(f<p.length )
 		if( p[f]=='\t' || p[f] ==' ') f++; else break; 
-		if( p[f]==']') break;
+		if(f==p.length || p[f]==']') break;
 		//if( trace) System.out.println("slice:"+f);
 
 		if(i== maxfields){
@@ -579,12 +622,11 @@ public int sliceRow(){
 		String fld= unquote(s.substring(f, l));
 		//if(trace) System.out.println("field ["+cr+"]["+i+"]"+fld);
 		cache.fields[cr][i]= fld;
-
 		f= l;
 		i++;
-	} while(f< p.length && !single && p[f]!=']');
-	cache.fldcnt[cr]=i;
-	if( fieldcnt<i) fieldcnt=i;
+		cache.fldcnt[cr]=i;
+		if( fieldcnt<i) fieldcnt=i;
+	} while(f< p.length && p[f]!=']');
 	return i;
 }
 
@@ -598,7 +640,7 @@ public int fetchRow(){
 }
 public int fetchAllRows(){
 	check("fetchAllRows");
-	cacheLimit(-1,-1);
+	cacheLimit(-1);
 	cache.tuples=0;
 	while( getRow()== MOK)
 		sliceRow();
@@ -609,6 +651,10 @@ public int fetchAllRows(){
 public String fetchField(int fnr){
 	check("fetchField");
 	int cr= cache.reader;
+	if(cr <0 || cr >cache.writer) {
+		setError("No tuple in cache","fetchField"); 
+		return null;
+	}
 	if( fnr>=0){
 		if( cache.fldcnt[cr]==0){
 			//System.out.println("reslice");
@@ -626,28 +672,37 @@ public String fetchField(int fnr){
 public String[] fetchFieldArray(int fnr){
 	check("fetchField");
 	int cr = cache.reader;
+	if(cr <0) {
+		setError("No tuple in cache","fetchFieldArray"); 
+		return null;
+	}
+
 	String f[]= new String[cache.fldcnt[cr]];
 	for(int i=0;i<cache.fldcnt[cr]; i++)
 		f[i]= cache.fields[cr][i];
 	return f;
 }
-public int getColumnCount(){
+public synchronized int getColumnCount(){
 	check("getColumnCount");
-	return headerFound? fieldcnt-1:fieldcnt;
+	return fieldcnt;
 }
-public String getColumnName(int i){
+public synchronized String getColumnName(int i){
 	check("getColumnName");
 	if(i<fieldcnt && columns[i]!= null && columns[i].columnname!= null)
 		return columns[i].columnname;
 	return "";
 }
-public int getRowCount(){
+public synchronized int getRowCount(){
 	check("getRowCount");
 	return rows_affected;
 }
 public String getName(int fnr){
 	check("getName");
 	int cr= cache.reader;
+	if(cr <0) {
+		setError("No tuple in cache","getName"); 
+		return null;
+	}
 	if( fnr >=0 && fnr < cache.fldcnt[cr]){
 		if(columns[fnr].columnname== null)
 			columns[fnr].columnname= "column_"+fnr;
@@ -659,6 +714,10 @@ public String getName(int fnr){
 public String getTable(int fnr){
 	check("getTable");
 	int cr= cache.reader;
+	if(cr <0) {
+		setError("No tuple in cache","getTable"); 
+		return null;
+	}
 	if( fnr >=0 && fnr < cache.fldcnt[cr]){
 		if(columns[fnr].tablename== null)
 			columns[fnr].tablename= "table_"+fnr;
@@ -679,6 +738,10 @@ public String getUser(){
 	check("getUser");
 	return username;
 }
+public String getPassword(){
+	check("getPassword");
+	return password;
+}
 public String getLanguage(){
 	check("getLanguage");
 	return language;
@@ -687,13 +750,21 @@ public String getDBname(){
 	check("getDBname");
 	return language;
 }
-public String getVersion(){
-	check("getVersion");
-	return server;
+public int getPort(){
+	check("getPort");
+	return port;
 }
-public int getVersionId(){
-	check("getVersionId");
-	if( MONET5) return 5;
+public String getMapiVersion(){
+	check("getMapiVersion");
+	return mapiversion;
+}
+public String getMonetVersion(){
+	check("getMonetVersion");
+	return version;
+}
+public int getMonetId(){
+	check("getMonetId");
+	if(version!=null && version.charAt(0)=='4') return 4;
 	return 4;
 }
 // ------------------------ Handling queries
@@ -715,7 +786,7 @@ private void checkQuery(){
 	if( i>=0 && i < query.length()-1)
 		setError("Newline in query string not allowed","checkQuery");
 	query.replace('\n',' ');
-	if( languageId == LANG_SQL){
+	if( language.equals("sql")){
 		i= query.lastIndexOf(';');
 		if( i != query.length()-1) expandQuery(";");
 	}
@@ -729,6 +800,7 @@ private void checkQuery(){
 private int prepareQueryInternal(String cmd){
 	if( cmd == null || cmd.length()==0){
 		// use previous query
+		if(query==null) query="";
 	} else {
 		query = cmd;
 		qrytemplate= null;
@@ -813,7 +885,7 @@ private void paramStore(){
 */
 private int executeInternal(){
 	paramStore();
-	cacheReset();
+	cacheResetInternal();
 	if(trace) System.out.print("execute:"+query);
 	if( query.indexOf("#trace on")==0){
 		System.out.println("Set trace on");
@@ -866,6 +938,7 @@ private int answerLookAhead(){
 	return error;
 }
 public int query(String cmd){
+	if(cmd == null) return setError("Null query","query");
 	prepareQueryInternal(cmd);
 	if( error== MOK) executeInternal();
 	if( error== MOK) answerLookAhead();
@@ -883,6 +956,7 @@ public int query(String cmd){
 
 */
 public int queryArray(String cmd, String arg[]){
+	if(cmd == null) return setError("Null query","queryArray");
 	prepareQueryArrayInternal(cmd,arg);
 	if( error== MOK) executeInternal();
 	if( error== MOK) answerLookAhead();
@@ -898,6 +972,7 @@ public int queryArray(String cmd, String arg[]){
 */
 public int quickQuery(String cmd, DataOutputStream fd){
 	check("quickQuery");
+	if(cmd == null) return setError("Null query","queryArray");
 	prepareQueryInternal(cmd);
 	if( error== MOK) executeInternal();
 	if( error== MOK) quickResponse(fd);
@@ -906,6 +981,7 @@ public int quickQuery(String cmd, DataOutputStream fd){
 }
 public int quickQueryArray(String cmd, String arg[], DataOutputStream fd){
 	check("quickQueryArray");
+	if(cmd == null) return setError("Null query","quickQueryArray");
 	prepareQueryArrayInternal(cmd,arg);
 	if( error== MOK) executeInternal();
 	if( error== MOK) quickResponse(fd);
@@ -922,51 +998,107 @@ public int quickQueryArray(String cmd, String arg[], DataOutputStream fd){
  * @param cmd - the query to be executed
  *        window- the window size to be maintained in the cache
 */
-public int initStream(String cmd, int windowsize){
-	check("initStream");
+public int openStream(String cmd, int windowsize){
+	check("openStream");
+	if(cmd == null) return setError("Null query","openStream");
 	query(cmd);
 	if( gotError()) return error;
 	// reset the active flag to enable continual reads
-	cacheReset();
-	cacheLimit(windowsize,1);
+	cacheResetInternal();
+	cacheLimit(windowsize);
+	cacheShuffle(1);
+	return error;
+}
+/**
+ * A stream can be closed by sending a request to abort the
+ * further generation of tuples at the server side.
+ * Note that we do not wait for any reply, because this will
+ * appear at the stream-reader, a possibly different thread.
+*/
+public int closeStream(String cmd){
+	prepareQueryInternal(cmd);
+	paramStore();
+	try{
+		toMonet(query);
+	} catch( MapiException m){
+		setError("Write error on stream","execute");
+	}	
 	return error;
 }
 
 // -------------------- Cache Management ------------------
 /**
+ * Empty the cache is controlled by the shuffle percentage.
+ * It is a factor between 0..100 and indicates the number of space
+ * to be freed each time the cache should be emptied
+ * @param percentage - amount to be freed
+*/
+public int cacheFreeup(int percentage){
+	if( cache.writer==0 && cache.reader== -1) return MOK;
+	if( percentage==100){
+		//System.out.println("allocate new cache struct");
+		cache= new RowCache();
+		return MOK;
+	}
+	if( percentage <0 || percentage>100) percentage=100;
+	int k= (cache.writer * percentage) /100;
+	if( k < 1) k =1;
+	System.out.println("shuffle cache:"+percentage+" tuples:"+k);
+	for(int i=0; i< cache.writer-k; i++){
+		cache.rows[i]= cache.rows[i+k];
+		cache.fldcnt[i]= cache.fldcnt[i+k];
+		cache.fields[i]= cache.fields[i+k];
+	}
+	for(int i=k; i< cache.limit; i++){
+		cache.rows[i]= null;
+		cache.fldcnt[i]=0;
+		cache.fields[i]= new String[maxfields];
+		for(int j=0;j<maxfields;j++)
+			cache.fields[i][j]= null;
+	}
+	cache.reader -=k;
+	if(cache.reader < -1) cache.reader= -1;
+	cache.writer -=k;
+	if(cache.writer < 0) cache.writer= 0;
+	System.out.println("new reader:"+cache.reader+" writer:"+cache.writer);
+	return MOK;
+}
+/**
  * CacheReset throws away any tuples left in the cache and
  * prepares it for the next sequence;
  * It should re-size the cache too.
+ * It should retain the field information
 */
-private void cacheReset()
+private void cacheResetInternal()
 {
 	finish_internal();
 	rows_affected= 0;
 	active= true;
 	if( cache.fldcnt==null)
 		cache.fldcnt = new int[cache.limit];
-	for(int i=0; i< cache.limit; i++){
-		cache.fldcnt[i]=0;
-		cache.rows[i]= null;
-		if( cache.fields[i] != null){
-			for(int j=0;j<maxfields;j++)
-				cache.fields[i][j]= null;
-		} else cache.fields[i]= new String[maxfields];
-	}
-	cache.reader= -1;
-	headerFound= false;
 	fieldcnt=0;
-	cache.writer=0;
 	cache.tuples= 0;
+	cacheFreeup(100);
 }
 
 /**
  * Users may change the cache size limit
  * @param limit - new limit to be obeyed
- *	shuffle - amount of tuples to be shuffled upon full cache.
+ *	shuffle - percentage of tuples to be shuffled upon full cache.
 */
-public int cacheLimit(int limit, int shuffle){
+public int cacheLimit(int limit){
 	cache.rowlimit= limit;
+	return MOK;
+}
+/**
+ * Users may change the cache shuffle percentage
+ * @param shuffle - percentage of tuples to be shuffled upon full cache.
+*/
+public int cacheShuffle(int shuffle){
+	if( shuffle< -1 || shuffle>100) {
+		cache.shuffle=100;
+		return setError("Illegal shuffle percentage","cacheLimit");
+	}
 	cache.shuffle= shuffle;
 	return MOK;
 }
@@ -1010,13 +1142,16 @@ public int seekRow(int rownr){
 private void extendCache(){
 	int oldsize= cache.limit;
 	if( oldsize == cache.rowlimit){
+		System.out.println("Row cache limit reached extendCache");
 		setError("Row cache limit reached","extendCache");
 		// shuffle the cache content
+		if( cache.shuffle>0)
+		System.out.println("Reshuffle the cache ");
 	}
 	int incr = oldsize /10;
 	int newsize = oldsize +(incr<100? 100: incr);
 	if( newsize >cache.rowlimit && cache.rowlimit>0)
-	newsize = cache.rowlimit;
+		newsize = cache.rowlimit;
 
 	String newrows[]= new String[newsize];
 	if(oldsize>0){
@@ -1045,9 +1180,13 @@ private void extendCache(){
 
 private int clearCache(){
 	// remove all left-over fields
-	if( cache.reader+2<cache.writer)
-		return setError("Cache reset with non-read lines","clearCache");
-	cacheReset();
+	if( cache.reader+2<cache.writer){
+		System.out.println("Cache reset with non-read lines");
+		System.out.println("reader:"+cache.reader+" writer:"+cache.writer);
+		setError("Cache reset with non-read lines","clearCache");
+	}
+	cacheFreeup(cache.shuffle);
+	//cacheResetInternal();
 	return MOK;
 }
     
@@ -1062,7 +1201,6 @@ public String fetchLine() throws MapiException {
 	return fetchLineInternal();
 }
 public String fetchLineInternal() throws MapiException {
-	    
 	if( cache.writer>0 && cache.reader+1<cache.writer){
 		if( trace) System.out.println("useCachedLine:"+cache.rows[cache.reader+1]);
 		return cache.rows[++cache.reader];
@@ -1070,7 +1208,9 @@ public String fetchLineInternal() throws MapiException {
 	if( ! active) return null;
 	error= MOK;
 	// get rid of the old buffer space
-	if( cache.writer ==cache.rowlimit && clearCache()!= 0) return null;
+	if( cache.writer ==cache.rowlimit){
+		 clearCache();
+	}
 
 	// check if you need to read more blocks to read a line
 	blk.eos= false;
@@ -1080,11 +1220,16 @@ public String fetchLineInternal() throws MapiException {
 	int len= 0;
 	String s="";
 	blk.buf= null;
+	if( !connected){
+		setError("Lost connection with server","fetchLine");
+		return null;
+	}
 	if( trace) System.out.println("Start reading from server");
 	try {
 		blk.buf = fromMonet.readLine();
 		if(trace) System.out.println("gotLine:"+blk.buf);
 	} catch(IOException e){
+		connected= false;
 		error= Mapi.MAPIERROR;
 		errortext= "Communication broken";
 		throw new MapiException( errortext);
@@ -1166,20 +1311,27 @@ private void headerDecoder(){
 	if( tag.equals("# name") ){
 		for(int i=0;i<cnt;i++){
 			if(columns[i]==null) columns[i]= new Column();
-			columns[i].columnname= fetchField(i);
+			String s= columns[i].columnname= fetchField(i);
+			if(i==cnt-1) {
+				int k= s.indexOf("# name");
+				columns[i].columnname= s.substring(0,k);
+			}
 		}
 	} else	
 	if( tag.equals("# type") ){
 		for(int i=0;i<cnt;i++){
 			if(columns[i]==null) columns[i]= new Column();
-			columns[i].columntype= fetchField(i);
+			String s= columns[i].columntype= fetchField(i);
+			if(i==cnt-1) {
+				int k= s.indexOf("# name");
+				columns[i].columntype= s.substring(0,k);
+			}
 		}
 	} else	
 	if( trace) System.out.println("Unrecognized header tag "+tag);
 	//REST LATER
 
 	cache.rows[cache.reader]= line;
-	headerFound= true;
 }
 
 // Extract the next row from the cache.
@@ -1200,14 +1352,12 @@ private int getRow(){
 			if( gotError() || reply == null) return MERROR;
 		} else reply = cache.rows[++cache.reader];
 
-		if(trace) System.out.println("getRow:"+reply);
+		if(trace) System.out.println("getRow:"+cache.reader);
 		if( reply.length()>0)
 		switch(reply.charAt(0)){
 		    case '#': 
-			if( !(languageId>= LANG_SQL && reply.charAt(1)!='(')){
-				headerDecoder();
-				return getRow();
-			} 
+			headerDecoder();
+			return getRow();
 		    case '!': 
 			// concatenate error messages
 			String olderr= errortext;
@@ -1266,7 +1416,7 @@ public String unquote(String msg){
 		l= msg.lastIndexOf(bracket);
 		if( l<0){
 			if(trace) System.out.println("closing "+bracket+" not found:"+msg);
-			l= p.length-1;
+			return msg;
 		}
 		return msg.substring(f+1,l);
 	} else 
@@ -1279,7 +1429,7 @@ public boolean gotError(){
 	return error!=MOK;
 }
 public String getExplanation(){
-    return "Mapi:"+dbname+"\nERROR:"+errortext+
+    return "Mapi:"+dbname+"\nERROR:"+errortext+"\nERRNR:"+error+
 	   "\nACTION:"+action+"\nQUERY:"+query+"\n";
 }
 
@@ -1342,17 +1492,20 @@ class IoCache
 }
 class RowCache{
     int rowlimit= -1;   /* maximal number of rows to cache */
-    int shuffle= 0;	/* number of tuples to shuffle upon overflow */
+    int shuffle= 100;	/* percentage of tuples to shuffle upon overflow */
     int limit=100;      /* current storage space limit */
     int writer= 0;
     int reader= -1;
     int tuples=0;     /* actual tuples in cache */
-    int  fldcnt[] = new int[100];   /* actual number of columns in each row */
-    String rows[]= new String[100]; /* string representation of rows received */
-    String fields[][]= new String[100][];
+    int  fldcnt[] = new int[limit];   /* actual number of columns in each row */
+    String rows[]= new String[limit]; /* string representation of rows received */
+    String fields[][]= new String[limit][];
     public RowCache(){
-	for(int i=0;i<100; i++){
+	for(int i=0;i<limit; i++){
 		fields[i]= new String[maxfields];
+		rows[i]=null;
+		fldcnt[i]=0;
+		for(int j=0;j<maxfields;j++) fields[i][j]= null;
 	}
     }
 }
