@@ -64,8 +64,9 @@ class DB_monetdb extends DB_common
             'transactions' => true,
             'limit' => 'alter'
         );
-	/*
-        $this->errorcode_map = array(
+
+        $this->errorcode_map = array(-1 => DB_ERROR_SYNTAX);
+        /*
             1004 => DB_ERROR_CANNOT_CREATE,
             1005 => DB_ERROR_CANNOT_CREATE,
             1006 => DB_ERROR_CANNOT_CREATE,
@@ -185,7 +186,9 @@ class DB_monetdb extends DB_common
     {
         $this->last_query = $query;
         $query = $this->modifyQuery($query);
-        /* echo "<pre>$query</pre>"; */
+        if (defined("MONETDB_DEBUG") && MONETDB_DEBUG) {
+            echo "<pre>$query</pre>";
+        }
         $result = @monetdb_query($query, $this->connection);
 
         if (!$result) {
@@ -242,17 +245,19 @@ class DB_monetdb extends DB_common
      */
     function fetchInto($result, &$arr, $fetchmode, $rownum=null)
     {
-        if ($rownum !== null) {
+        // FIXME: monetdb_seek_row()!!
+        /*
+	        if ($rownum !== null) {
             if (!@monetdb_data_seek($result, $rownum)) {
                 return null;
             }
-        }
+        }*/
 	
         if ($fetchmode & DB_FETCHMODE_ASSOC) {
             $arr = monetdb_fetch_assoc($result);
         } else {
             $arr = monetdb_fetch_row($result);
-        } // other fetchmodes are handled internally by db_common.
+        }
 
         if (!$arr) {
             $errno = @monetdb_errno($this->connection);
@@ -279,7 +284,7 @@ class DB_monetdb extends DB_common
     function freeResult($result)
     {
         if (is_resource($result)) {
-        	return monetdb_free_result($result);
+            return monetdb_free_result($result);
         }
 
         $result = (int)$result; // $result is a prepared query handle
@@ -559,6 +564,9 @@ class DB_monetdb extends DB_common
         if ($errno === null) {
             $errno = $this->errorCode(monetdb_errno($this->connection));
         }
+        if (defined("MONETDB_DEBUG") && MONETDB_DEBUG) {
+            echo "<p><strong>MonetDB Error ($errno) raised:</strong> " . monetdb_error($this->connection);
+        }
         return $this->raiseError($errno, null, null, null,
                                  @monetdb_errno($this->connection) . " ** " .
                                  @monetdb_error($this->connection));
@@ -571,8 +579,16 @@ class DB_monetdb extends DB_common
 	    $res = $this->getAll("select tables.name as \"table\" ,columns.name,columns.type,type_digits as len,".
 				 "number from tables inner join columns on tables.id=columns.table_id " .
 				 "where tables.name='${result}' order by number", DB_FETCHMODE_ASSOC);
-	} else
-	  return $this->raiseError(DB_ERROR_NOT_CAPABLE);
+	} elseif (is_resource($result)) {
+        $res = array();
+        for ($i=0; $i<monetdb_num_fields($result); $i++) {
+            $row = array();
+            $row["name"] = monetdb_field_name($i, $result);
+            $row["type"] = monetdb_field_type($i, $result);
+            $res[] = $row;
+        }
+    } else
+        return $this->raiseError(DB_ERROR_NOT_CAPABLE);
 	
 	return $res;
     }
