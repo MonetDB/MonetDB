@@ -681,6 +681,19 @@ that for the moment are defined as procs.
 		var isper;
 		var idx;
 		var wasper;
+
+		# preprocess the pattern, remove redundant % and make sure
+		# %_ can be handled by replacing it with _%
+		# consider 'bla%_!': this would match anything like /bla.+!/
+		# since we match from the left, the _ is matched immediately,
+		# after which the ! might not be found.  To circumvent this
+		# problem, we replace %_ with _%.  This results in the _ being
+		# matched immediately -- which is already was -- and a variable
+		# space after it.  This substitution works for the given
+		# pattern, as it basically requires at least one char to be
+		# between bla and !.
+		pat := substitute(pat, "%_", "_%", true);
+		pat := substitute(pat, "%%", "%", true);
 		
 		idxper := find_unescaped_occurrence(pat, '%');
 		idxund := find_unescaped_occurrence(pat, '_');
