@@ -40,6 +40,12 @@
 # - normalize all path's used
 # - remove one of milM, milS
 
+try:
+    True
+except NameError:
+    # provide values for old Python versions
+    False, True = 0, 1
+
 import os
 import sys
 import getopt
@@ -57,6 +63,56 @@ import select
 import Mfilter
 import prof
 
+def _configure(str):
+    # expand configure variables in str and return result
+    config = [
+        ('${source}', '@QMONET_SOURCE@'),
+        ('${build}', '@QMONET_BUILD@'),
+
+        ('${bindir}', '@Qbindir@'),
+##        ('${sbindir}', '@Qsbindir@'),
+        ('${libexecdir}', '@Qlibexecdir@'),
+        ('${datadir}', '@Qdatadir@'),
+        ('${sysconfdir}', '@Qsysconfdir@'),
+##        ('${sharedstatedir}', '@Qsharedstatedir@'),
+        ('${localstatedir}', '@Qlocalstatedir@'),
+        ('${libdir}', '@Qlibdir@'),
+        ('${includedir}', '@Qincludedir@'),
+##        ('${oldincludedir}', '@Qoldincludedir@'),
+        ('${infodir}', '@Qinfodir@'),
+        ('${mandir}', '@Qmandir@'),
+        ('${Qbindir}', '@Qbindir@'),
+##        ('${Qsbindir}', '@Qsbindir@'),
+        ('${Qlibexecdir}', '@Qlibexecdir@'),
+        ('${Qdatadir}', '@Qdatadir@'),
+        ('${Qsysconfdir}', '@Qsysconfdir@'),
+##        ('${Qsharedstatedir}', '@Qsharedstatedir@'),
+        ('${Qlocalstatedir}', '@Qlocalstatedir@'),
+        ('${Qlibdir}', '@Qlibdir@'),
+        ('${Qincludedir}', '@Qincludedir@'),
+##        ('${Qoldincludedir}', '@Qoldincludedir@'),
+        ('${Qinfodir}', '@Qinfodir@'),
+        ('${Qmandir}', '@Qmandir@'),
+        # put these at end (in this order!) for efficiency
+        ('${exec_prefix}', '@Qexec_prefix@'),
+        ('${Qexec_prefix}', '@Qexec_prefix@'),
+        ('${prefix}', '@Qprefix@'),
+        ('${Qprefix}', '@Qprefix@'),
+        ]
+    changed = True
+    while '$' in str and changed:
+        changed = False
+        for key, val in config:
+            nstr = string.replace(str, key, val)
+            changed = changed or str != nstr
+            str = nstr
+    return str
+
+# add dir where monet_options is installed to sys.path
+# we must expand configure variables in the process
+sys.path.append(_configure(os.path.join('@Qdatadir@','@PACKAGE@','python')))
+import monet_options
+
 STDOUT = sys.stdout
 STDERR = sys.stdout     # err
 
@@ -64,114 +120,26 @@ TIMES = []
 
 random.seed(time.time())
 
-def Usage () :
-    print '''\
+def Usage (options) :
+    try:
+        monet_options.usage(options, '%s [options] ( [<dir>] [<tests>] | [<dirs>] )' % THISFILE)
+    except monet_options.Error:
+        pass
 
-Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
-''' % THISFILE
-
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        print """\
- -I<exp> : ignore lines matching <exp> during diff (default: -I'%s')
- -C<num> : use <num> lines of context during diff (default: -C1)
- -A<num> : accuracy for diff: 0=lines, 1=words, 2=chars (default: -A1)
-""" % dftIGNORE
-
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        print """\
- -t<sec> : timeout: kill (hanging) tests after <sec> seconds;
-            -t0 means no timeout (default: -t60)
- -r      : proceed in subdirectories as well (implies 'All')
-
- -d<num>
- --debug<num>
-         : debug value to be used by Mserver (default: -d%s)
-           (see `Mserver --help` for details)
-            
- -c<path>
- --config=<path>
-         : location of monet.conf file; default is
-                %smonet.conf                        
-
- --monet_mod_path=<pathlist>
-         : overwrite Mserver's default module search path
- --dbfarm=<directory>
-         : overwrite default location of database directory
-""" % (TSTDBG, path(GetMonetConfig('--prefix')+"/etc/"))
-
-    if THISFILE == "Mprofile.py":
-        print '''\
- --CMDLST=<path>
-         : location of .Mprofile-commands.lst file; default is the first found of
-                %s.Mprofile-commands.lst                        
-                <TSTSRCBASE>%s.Mprofile-commands.lst            
-                %s.Mprofile-commands.lst                               
-                %sMprofile-commands.lst                                                                      
-''' % (os.getcwd()+os.sep,
-       os.sep,
-       os.environ['HOME']+os.sep,
-       path(GetMonetConfig('--prefix')+"/share/MonetDB/"))
-
-    if THISFILE == "Mapprove.py":
-        print """\
- -x<ext> : consider only output files *.<ext><sys> (<ext> = 'out' or 'err')
-            (default: <ext> = 'out' & 'err')
- -s<sys> : consider only output files *.<ext><sys> 
-            (<sys> = '', '.%s', '.%s', '.%s.(32|64)bit,'
-                     or any of these plus suffix '.STATIC')
-            (default: <sys> = '')
- -r      : proceed in subdirectories as well (implies 'All')
- -f      : force approval of error messages (i.e., lines starting with '!')
-""" % (OS, OSVER, OSVER)
-
-    print '''\
- --MONET_SOURCE=<abspath>
- --MONET_BUILD=<abspath>
- --MONET_PREFIX=<abspath>
- --SQL_PREFIX=<abspath>
- --TSTSRCBASE=<abspath>
- --TSTBLDBASE=<abspath>
- --TSTTRGBASE=<abspath>
-         : overrule defaults:
-                MONET_SOURCE=%s
-                MONET_BUILD=%s
-                MONET_PREFIX=%s
-                SQL_PREFIX=%s
-                TSTSRCBASE=<MONET_SOURCE>
-                TSTBLDBASE=<MONET_BUILD>
-                TSTTRGBASE=<MONET_PREFIX>
-''' % (GetMonetConfig('--source'),
-       GetMonetConfig('--build'),
-       GetMonetConfig('--prefix'),
-       SQLprefix)
-
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        print '''\
- --MAPICLIENT=<mapi-client program>
- --SQLCLIENT=<sql-client program>
- --MAPIPORT=<port-no.>
- --SQLPORT=<port-no.>
-         : overrule defaults:
-                MAPICLIENT=%s
-                SQLCLIENT=%s
-                MAPIPORT=%s
-                SQLPORT=%s
-''' % (dft['MAPICLIENT'], dft['SQLCLIENT'], dft['MAPIPORT'], dft['SQLPORT'])
-
-    print """\
- <dir>   : if present, %s behaves as if called in <dir>
+    sys.stderr.write("""
+ <dir>   : if present, %(prog)s behaves as if called in <dir>
  <tests> : list of tests to be processed; if none or 'All' is given,
             all tests listed in 'Tests/All' are processed
             (defaults to 'All' if -r is used)
- <dirs>  : list of directories to be processed; if present, %s
+ <dirs>  : list of directories to be processed; if present, %(prog)s
             processes 'All' tests in each directory of <dirs>; -r may be used also
 
-         See  %sREADME
-         for details about  %s.
-""" % (THISFILE,
-       THISFILE,
-       path(GetMonetConfig('--source')+"/src/testing/"),
-       THISFILE)
+         See  %(readme)s
+         for details about  %(prog)s.
+""" % {'prog': THISFILE,
+       'readme': os.path.join(GetMonetConfig('--source'),'src','testing','README'),
+       })
+    raise
 
 ### Usage () #
 
@@ -204,7 +172,7 @@ def Warn(TEXT) :
 ### Warn(TEXT) #
 
 def startswith(str,pre) :
-    return not ((len(str) < len(pre)) or (str[:len(pre)] != pre))
+    return str[:len(pre)] == pre
 ### startswith(str,pre) #
 
 import urllib
@@ -966,7 +934,7 @@ def RunTest(env, TST, BusyPorts) :
                     prof.prof(f, env['CMDLST'])
                     os.rename(f,f+".no_prof")
                     os.rename("prof_"+f,f)
-                    os.system(env['exe']['Mdiff'][1]+' '+par['IGNORE']+' '+par['CONTEXT']+' -A'+str(par['ACCURACY'])+' '+f+'.no_prof '+f+' '+f+'.prof.diff.html')
+                    os.system('%s -I"%s" %s -A%d %s.no_prof %s %s.prof.diff.html' % (env['exe']['Mdiff'][1],par['IGNORE'],par['CONTEXT'],par['ACCURACY'],f,f,f))
 
         BITS = env['TST_BITS']
         if env['TST_STATIC']:
@@ -1138,10 +1106,10 @@ def RunTest(env, TST, BusyPorts) :
             SetExecEnv(env['exe'],0)
 
         if THISFILE in ["Mtest.py", "Mprofile.py"]:
-            Mfilter.mFilter(TST+STABLEout,par['IGNORE'][3:-1])
-            Mfilter.mFilter(TST+STABLEerr,par['IGNORE'][3:-1])
-            Mfilter.mFilter(TST+".test.out",par['IGNORE'][3:-1])
-            Mfilter.mFilter(TST+".test.err",par['IGNORE'][3:-1])
+            Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
+            Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
+            Mfilter.mFilter(TST+".test.out",par['IGNORE'])
+            Mfilter.mFilter(TST+".test.err",par['IGNORE'])
 
             testO = re.compile("^/"+TST+STABLEout+"/([^/]*)/", re.MULTILINE)
             testE = re.compile("^/"+TST+STABLEerr+"/([^/]*)/", re.MULTILINE)
@@ -1170,7 +1138,7 @@ def RunTest(env, TST, BusyPorts) :
             #       timedout = 0
             #       signal.alarm(par['TIMEOUT'])
             #       try:
-            #               os.system(MDIFF+' '+par['IGNORE']+' '+par['CONTEXT']+' -A'+str(ACCURACY)+' -r"'+REVo+'" '+TST+STABLEout+'.FILTERED '+TST+'.test.out.FILTERED '+TST+'.out.diff.html')
+            #               os.system(MDIFF+' -I"'+par['IGNORE']+'" '+par['CONTEXT']+' -A'+str(ACCURACY)+' -r"'+REVo+'" '+TST+STABLEout+'.FILTERED '+TST+'.test.out.FILTERED '+TST+'.out.diff.html')
             #       except TimeoutError, t:
             #               timedout = 1
             #       signal.alarm(0)
@@ -1180,7 +1148,7 @@ def RunTest(env, TST, BusyPorts) :
             while timedout and ACCURACYout >= 0:
                 if ACCURACYout == 0:
                     MDIFF = MDIFF0
-                timedout = os.system(MDIFF+' '+par['IGNORE']+' '+par['CONTEXT']+' -A'+str(ACCURACYout)+' -r"'+REVo+'" '+TST+STABLEout+'.FILTERED '+TST+'.test.out.FILTERED '+TST+'.out.diff.html')
+                timedout = os.system(MDIFF+' -I"'+par['IGNORE']+'" '+par['CONTEXT']+' -A'+str(ACCURACYout)+' -r"'+REVo+'" '+TST+STABLEout+'.FILTERED '+TST+'.test.out.FILTERED '+TST+'.out.diff.html')
                 ACCURACYout = ACCURACYout - 1
 
             #TODO:
@@ -1189,7 +1157,7 @@ def RunTest(env, TST, BusyPorts) :
             #       timedout = 0
             #       signal.alarm(par['TIMEOUT'])
             #       try:
-            #               os.system(MDIFF+' '+par['IGNORE']+' '+par['CONTEXT']+' -A'+str(ACCURACY)+' -r"'+REVe+'" '+TST+STABLEerr+'.FILTERED '+TST+'.test.err.FILTERED '+TST+'.err.diff.html')
+            #               os.system(MDIFF+' -I"'+par['IGNORE']+'" '+par['CONTEXT']+' -A'+str(ACCURACY)+' -r"'+REVe+'" '+TST+STABLEerr+'.FILTERED '+TST+'.test.err.FILTERED '+TST+'.err.diff.html')
             #       except TimeoutError, t:
             #               timedout = 1
             #       signal.alarm(0)
@@ -1199,7 +1167,7 @@ def RunTest(env, TST, BusyPorts) :
             while timedout and ACCURACYerr >= 0:
                 if ACCURACYerr == 0:
                     MDIFF = MDIFF0
-                timedout = os.system('%s %s %s -A%s -r"%s" %s%s.FILTERED %s.test.err.FILTERED %s.err.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], str(ACCURACYerr), REVe, TST, STABLEerr, TST, TST))
+                timedout = os.system('%s -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.err.FILTERED %s.err.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 ACCURACYerr = ACCURACYerr - 1
 
             AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
@@ -1644,16 +1612,6 @@ URLSUFFIX_D = ''
 
 par = {}
 
-def FindMonetConf(env) :
-    dirs = []
-    dirs.append(path(env['MONET_PREFIX']+"/etc/"))
-    for d in dirs:
-        f = d+'monet.conf'
-        if os.path.isfile(f):
-            return f
-    return ""
-### FindMonetConf(env) #
-
 def FindCmdLst(env) :
     dirs = [ os.path.join(os.getcwd(),"."), os.path.join(env['TSTSRCBASE'],".") ]
     if os.environ.has_key('HOME'):
@@ -1666,32 +1624,23 @@ def FindCmdLst(env) :
     return ""
 ### FindCmdLst(env) #
 
-def ReadFromMonetConf(env, var) :
-    value = ""
-    test = re.compile("^\s*"+var+"\s*=\s*([^#\n]+)", re.MULTILINE)
-    for l in fileinput.input(env['MONET_CONF']):
-        m = test.match(l)
-        if m:
-            value = string.replace(string.strip(m.group(1)), '"', '')
-    test = re.compile("^[^\${}]*\${([^}]+)}", re.MULTILINE)
-    m = test.match(value)
-    while m:
-        v = m.group(1)
-        value = string.replace(value, '${%s}' % v, ReadFromMonetConf(env, v))
-        m = test.match(value)
-    return value
-### ReadFromMonetConf(env, var) #
-
+_MonetConfigDict = {
+    '--source': '@QMONET_SOURCE@',
+    '--build': '@QMONET_BUILD@',
+    '--prefix': '@Qprefix@',
+    }
 def GetMonetConfig(arg) :
-    value = ""
-    #pOut,pIn = popen2.popen2(os.path.join(THISPATH,'monet-config')+' '+arg)
-    pOut,pIn = popen2.popen2('monet-config '+arg)
-    pIn.close()
-    qOut = pOut.readlines()
-    pOut.close()
-    if len(qOut):
-        value = string.strip(qOut[0])
-    return value
+    # this works for arg in ('--source', '--build', '--prefix')
+    return _configure(_MonetConfigDict[arg])
+##    value = ""
+##    #pOut,pIn = popen2.popen2(os.path.join(THISPATH,'monet-config')+' '+arg)
+##    pOut,pIn = popen2.popen2('monet-config '+arg)
+##    pIn.close()
+##    qOut = pOut.readlines()
+##    pOut.close()
+##    if len(qOut):
+##        value = string.strip(qOut[0])
+##    return value
 ### GetMonetConfig(arg) #
 
 SQLprefix = ''
@@ -1721,7 +1670,6 @@ def main(argv) :
     dft['TSTTRGBASE']     = "env['MONET_PREFIX']"   # or os.getcwd() ?
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         dft['GDK_DEBUG']      = "TSTDBG"
-        dft['MONET_CONF']     = "FindMonetConf(env)"
         dft['MONET_MOD_PATH'] = "''"   #"os.path.join(env['MONET_PREFIX'],'lib')+os.pathsep+os.path.join(env['MONET_PREFIX'],'lib','MonetDB')"
         dft['setMONET_MOD_PATH'] = "'--set monet_mod_path='+env['MONET_MOD_PATH']"
         dft['setGDK_DBFARM'] = "'--dbfarm '+env['GDK_DBFARM']"
@@ -1734,21 +1682,6 @@ def main(argv) :
     env = {}
 
     #par = {}
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        par['IGNORE']    = '-I"'+dftIGNORE+'"'
-        par['CONTEXT']   = '-C1'
-        if os.name == "nt":
-            par['ACCURACY'] = 0
-        else:
-            par['ACCURACY'] = 1
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        par['TIMEOUT']   = 60
-    if THISFILE == "Mapprove.py":
-        par['EXTENSION'] = ['out', 'err']
-        par['SYSTEM']    = ''
-        par['FORCE']     = 0
-    par['RECURSIVE'] = 0
-
     # get current environment
     for v in vars:
         if os.environ.has_key(v):
@@ -1757,83 +1690,131 @@ def main(argv) :
             # make sure, that PATHs ar absolute
 
     # commandline options overrule environment
-    shortOpts = "?hr"
-    longOpts  = ["help", "TSTSRCBASE=", "TSTBLDBASE=", "TSTTRGBASE=", "MONET_SOURCE=", "MONET_BUILD=", "MONET_PREFIX=", "SQL_PREFIX="]
+    cmd_options = [
+        # long name, short name, GDK option, argument, comment
+        (None, 'r', 'recursive', None,
+         "recurse into subdirectories (implies 'All')"),
+        ('MONET_SOURCE', None, 'MONET_SOURCE', '<path>',
+         'default: "%s"' % GetMonetConfig('--source')),
+        ('MONET_BUILD', None, 'MONET_BUILD', '<path>',
+         'default: "%s"' % GetMonetConfig('--build')),
+        ('MONET_PREFIX', None, 'MONET_PREFIX', '<path>',
+         'default: "%s"' % GetMonetConfig('--prefix')),
+        ('SQL_PREFIX', None, 'SQL_PREFIX', '<path>',
+         'default: "%s"' % SQLprefix),
+        ('TSTSRCBASE', None, 'TSTSRCBASE', '<path>',
+         'default: <MONET_SOURCE>'),
+        ('TSTBLDBASE', None, 'TSTBLDBASE', '<path>',
+         'default: <MONET_BUILD>'),
+        ('TSTTRGBASE', None, 'TSTTRGBASE', '<path>',
+         'default: <MONET_PREFIX>'),
+        ]
+
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        shortOpts = shortOpts + "I:C:A:"
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        shortOpts = shortOpts + "t:"
-        shortOpts = shortOpts + "c:d:"
-        longOpts  = longOpts  + ["config=", "debug=", "monet_mod_path=", "dbfarm="]
-        longOpts  = longOpts  + ["MAPIPORT=", "SQLPORT=", "SQLCLIENT=", "MAPICLIENT="]
-    if THISFILE == "Mprofile.py":
-        longOpts  = longOpts  + ["CMDLST="]
-    if THISFILE == "Mapprove.py":
-        shortOpts = shortOpts + "x:s:f"
+        common_options = cmd_options + [
+            (None, 'I', 'ignore', '<exp>',
+             "ignore lines matching <exp> during diff (default: '%s')" % dftIGNORE),
+            (None, 'C', 'context', '<num>',
+             "use <num> lines of context during diff (default: -C1)"),
+            (None, 'A', 'accuracy', '<num>',
+             "accuracy for diff: 0=lines, 1=words, 2=chars (default: -A1)"),
+            (None, 't', 'timeout', '<sec>',
+             "timeout: kill (hanging) tests after <sec> seconds;\n"
+             "-t0 means no timeout (default: -t60)"),
+            ('debug', 'd', 'debug', '<num>',
+             ("debug value to be used by Mserver (default: -d%s)\n"
+              "(see `Mserver --help' for details)") % TSTDBG),
+            ('monet_mod_path', None, 'monet_mod_path', '<pathlist>',
+             "override Mserver's default module search path"),
+            ('dbfarm', None, 'gdk_dbfarm', '<directory>',
+             "override default location of database directory"),
+            ('MAPIPORT', None, 'mapiport', '<port-no.>',
+             'default: %s' % dft['MAPIPORT']),
+            ('MAPICLIENT', None, 'mapiclient', '<mapi-client program>',
+             'default: %s' % dft['MAPICLIENT']),
+            ('SQLPORT', None, 'sqlport', '<port-no.>',
+             'default: %s' % dft['SQLPORT']),
+            ('SQLCLIENT', None, 'sqlclient', '<sql-client program>',
+             'default: %s' % dft['SQLCLIENT']),
+            ]
+
+    if THISFILE == 'Mtest.py':
+        options = common_options # + []
+    elif THISFILE == "Mprofile.py":
+        options = common_options + [
+            ('CMDLIST', None, 'cmdlist', '<path>',
+             "location of .Mprofile-commands.lst file; default is the first of\n" +
+             "\t%s\n" % os.path.join(os.getcwd(), '.Mprofile-commands.lst') +
+             "\t%s\n" % os.path.join('<TSTSRCBASE>', '.Mprofile-commands.lst') +
+             "\t%s\n" % os.path.join(os.environ['HOME'],'.Mprofile-commands.lst') +
+             "\t%s" % os.path.join(GetMonetConfig('--prefix'),'share','MonetDB','Mprofile-commands.lst')
+             ),
+            ]
+    elif THISFILE == 'Mapprove.py':
+        options = cmd_options + [
+            (None, 'x', 'ext', '<ext>',
+             "consider only output files *.<ext><sys> (<ext> = 'out' or 'err')\n"
+             "(default: <ext> = 'out' & 'err')"),
+            (None, 's', 'sys', '<sys>',
+             "consider only output files *.<ext><sys>\n"
+             "(<sys> = '', '.%s', '.%s', '.%s.(32|64)bit,'\n"
+             "\tor any of these plus suffix '.STATIC')\n"
+             "(default: <sys> = '')" % (OS, OSVER, OSVER)),
+            (None, 'f', 'force', None,
+             "force approval of error messages (i.e., lines starting with '!')"),
+            ]
+    else:
+        options = []
+
     try:
-        opts, args = getopt.getopt(argv[1:], shortOpts, longOpts)
-    except getopt.GetoptError:
-        Usage()
+        opts, args = monet_options.parse_options(argv[1:], options, Usage)
+    except monet_options.Error:
         sys.exit(1)
-    for o, a in opts:
-        # Mtest.py & Mprofile.py & Mapprove.py
-        if   o in ("-?", "-h", "--help"):
-            Usage()
-            sys.exit(0)
-        elif o == "-r":
-            par['RECURSIVE'] = 1
-            # commandline options overrule environment
-        # Mtest.py
-        elif o == "-I":
-            par['IGNORE'] = o+`a`
-        elif o == "-C":
-            par['CONTEXT'] = o+str(int(a))
-        elif o == "-A":
-            a = int(a)
-            if a not in (0,1,2):
-                Usage()
-                ErrXit("Accuracy for diff (-A) must be one of: 0=lines, 1=words, 2=chars !")
-            #TODO
-            if os.name == "nt"  and  a != 0:
-                Warn("Currently only '-A0` is supported on WindowsNT!")
-                a = 0
-            par['ACCURACY'] = a
-        # Mtest.py & Mprofile.py
-        elif o == "-t":
-            par['TIMEOUT'] = int(a)
-        # Mapprove.py
-        elif o == "-x":
-            if a not in ('out', 'err'):
-                Usage()
-                ErrXit("Extension (-x) must be one of: 'out', 'err' !")
-            par['EXTENSION'] = [a]
-        elif o == "-f":
-            par['FORCE'] = 1
-        elif o == "-s":
-            XTS = []
-            for xts in ('', '.'+OS, '.'+OSVER, '.'+OSVER+'.32bit', '.'+OSVER+'.64bit'):
-                XTS.append(xts)
-                XTS.append(xts+'.STATIC')
-            if a not in XTS:
-                Usage()
-                ErrXit("System (-s) must be one of: "+str(XTS)[1:-1]+" !")
-            par['SYSTEM'] = a
-        # Mtest.py & Mprofile.py & Mapprove.py
-        elif o == "-d"  or  o == "--debug":
+    par['RECURSIVE'] = opts.get('recursive', 0)
+    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+        par['IGNORE'] = opts.get('ignore', dftIGNORE)
+        par['CONTEXT'] = '-C%d' % int(opts.get('context', 1))
+        a = int(opts.get('accuracy', (os.name != 'nt' and 1) or 0))
+        if a not in (0,1,2):
+            ErrExit('Accuracy for diff (-A) must be one of: 0=lines, 1=words, 2=chars !')
+        if os.name == "nt" and a != 0:
+            Warn("Currently only '-A0` is supported on WindowsNT!")
+            a = 0
+        par['ACCURACY'] = a
+        par['TIMEOUT'] = int(opts.get('timeout', 60))
+        a = opts.get('debug')
+        if a is not None:
             env['GDK_DEBUG'] = str(int(a))
-        elif o == "-c"  or  o == "--config":
-            env['MONET_CONF'] = a
-        elif o == "--monet_mod_path":
+        a = opts.get('monet_mod_path')
+        if a is not None:
             env['MONET_MOD_PATH'] = a
-        elif o == "--dbfarm":
+        a = opts.get('gdk_dbfarm')
+        if a is not None:
             env['GDK_DBFARM'] = a
-        elif len(o) > 2  and  o[:2] == "--"  and  string.upper(o[2:]) in vars:
-            env[string.upper(o[2:])] = a
-            #TODO:
-            # make sure, that PATHs ar absolute
+    if THISFILE == 'Mapprove.py':
+        a = opts.get('ext')
+        if a is None:
+            par['EXTENSION'] = ['out', 'err']
+        elif a in ('out', 'err'):
+            par['EXTENSION'] = [a]
         else:
-            Usage()
-            ErrXit("Illegal option: '"+o+"`!")
+            ErrXit("Extension (-x) must be one of: 'out', 'err' !")
+        par['FORCE'] = opts.get('force', False)
+        XTS = []
+        for xts in ('', '.'+OS, '.'+OSVER, '.'+OSVER+'.32bit', '.'+OSVER+'.64bit'):
+            XTS.append(xts)
+            XTS.append(xts+'.STATIC')
+        a = opts.get('sys')
+        if a is None:
+            par['SYSTEM'] = ''
+        elif a in XTS:
+            par['SYSTEM'] = a
+        else:
+            ErrXit("System (-s) must be one of: "+str(XTS)[1:-1]+" !")
+    for v in vars:
+        a = opts.get(v)
+        if a is not None:
+            env[v] = a
 
     # display par's
     STDERR.flush()
@@ -1851,7 +1832,7 @@ def main(argv) :
 
     # tidy-up and fall-back to defaults where necessary
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars + ['GDK_DEBUG', 'MONET_CONF', 'MONET_MOD_PATH']
+        vars_ = vars + ['GDK_DEBUG', 'MONET_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars
     for v in vars_:
@@ -1869,12 +1850,11 @@ def main(argv) :
         else:
             env['setGDK_DBFARM'] = ''
 
-    if ( THISFILE in ["Mtest.py", "Mprofile.py"] )  and  not env['MONET_CONF']:
-        Usage()
-        ErrXit("No monet.conf found!")
-
     if THISFILE == "Mprofile.py"  and  not env['CMDLST']:
-        Usage()
+        try:
+            Usage(options)
+        except monet_options.Error:
+            pass
         ErrXit("No .Mprofile-commands.lst found!")
 
     #TODO:
@@ -1931,9 +1911,6 @@ def main(argv) :
     #for v in 'RELSRCBASE', 'RELBLDBASE':
     #       print v+" = "+str(env[v])
     #STDOUT.flush()
-
-    if THISFILE in ["Mtest.py", "Mprofile.py"] and not env.has_key('GDK_DBFARM'):
-        env['GDK_DBFARM'] = path(ReadFromMonetConf(env, "gdk_dbfarm"))
 
     # find mil script for MAPI and SQL server
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
@@ -1997,11 +1974,11 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         exe = {}
         exe['Mtimeout']    = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s --set monet_prompt=' % (env['MONET_CONF'], env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'])
-        exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py "--config=%s" --host=%s --port=%s' % (env['MONET_CONF'], HOST, env['MAPIPORT'])
+        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s --set monet_prompt=' % (opts.config, env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'])
+        exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py "--config=%s" --host=%s --port=%s' % (opts.config, HOST, env['MAPIPORT'])
         exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']      = CheckExec('python')       , 'python'
-        exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), '%s "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], env['MONET_CONF'], HOST, env['MAPIPORT'])
+        exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), '%s "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
         exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , '%s --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['SQLPORT'])
         if not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
