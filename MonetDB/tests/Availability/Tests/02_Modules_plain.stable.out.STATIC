@@ -1,11 +1,11 @@
 stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
 
 
-# 12:48:10 >  
-# 12:48:10 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_tests_Availability  < 02_Modules_plain.milS
-# 12:48:10 >  
+# 11:19:49 >  
+# 11:19:49 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build-static/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build-static/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build-static/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build-static/src/mapi/.libs" --dbfarm "/ufs/sjoerd/src/MonetDB/build-static/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_Availability  < 02_Modules_plain.milS
+# 11:19:49 >  
 
-# Monet Database Server V4.3.5
+# Monet Database Server V4.3.7
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; statically linked.
 setoid(oid(20000000));
@@ -25,7 +25,7 @@ mod_mprof:=MODULES.reverse.select("mprof").reverse;
 Plain_mods:=MODULES.select("plain").copy.access(BAT_WRITE).delete("mprof","plain").sort.copy.access(BAT_WRITE).insert(mod_mprof);
 table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 #-----------------#
-# 35 modules	  #
+# 37 modules	  #
 #-----------------#
 [ "aggr"	  ]
 [ "aggrX3"	  ]
@@ -518,36 +518,36 @@ Module: "decimal"
 
 [ 29 ]
 [ 29 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature								| help																																																																																							  #
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "*",			  "OPERATOR:  ",  "*(decimal, decimal) : decimal",					  "Returns a decimal whose value is exactly (val1 * val2)."																																																																																  ]
-[ "+",			  "OPERATOR:  ",  "+(decimal, decimal) : decimal",					  "Returns a decimal whose value is extactly (val1 + val2)."																																																																																  ]
-[ "-",			  "OPERATOR:  ",  "-(decimal) : decimal",						  "Returns a decimal whose value is -1 * value, with equal scale and precision as 'value'."																																																																												  ]
-[ "-",			  "OPERATOR:  ",  "-(decimal, decimal) : decimal",					  "Returns a decimal whose value is exactly (val1 - val2)."																																																																																  ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature								| help																																																																																									  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "*",			  "OPERATOR:  ",  "*(decimal, decimal) : decimal",					  "Returns a decimal whose value is exactly (val1 * val2)."																																																																																		  ]
+[ "+",			  "OPERATOR:  ",  "+(decimal, decimal) : decimal",					  "Returns a decimal whose value is extactly (val1 + val2)."																																																																																		  ]
+[ "-",			  "OPERATOR:  ",  "-(decimal) : decimal",						  "Returns a decimal whose value is -1 * value, with equal scale and precision as 'value'."																																																																														  ]
+[ "-",			  "OPERATOR:  ",  "-(decimal, decimal) : decimal",					  "Returns a decimal whose value is exactly (val1 - val2)."																																																																																		  ]
 [ "/",			  "OPERATOR:  ",  "/(decimal, decimal) : decimal",					  "Returns a decimal whose value is val1 DIV val2, (scale=0) like in C integer division. \n      This operator can implement MOD as MOD(x,y) = x - y*DIV(d,y). \n      Use the tertiary divide(num,div,prec) command for dividing with arbitrary precision. \n      Division by zero returns decimal(nil)."																																																				  ]
-[ "[/]",		  "PROC:      ",  "[/](BAT[any::1,decimal], decimal) : BAT[any::1,decimal]",		  "not available"																																																																																					  ]
-[ "[divide]",		  "PROC:      ",  "[divide](BAT[any::1,decimal], decimal, int) : BAT[any::1,decimal]",	  "not available"																																																																																					  ]
-[ "abs",		  "COMMAND:   ",  "abs(decimal) : decimal",						  "Returns a decimal whose value is the absolute value of this number."																																																																															  ]
-[ "addscale",		  "COMMAND:   ",  "addscale(decimal, int) : decimal",					  "Return a  decimal with the same number as value, but with scale = value.scale + delta.\n      This can be seen as shifting the dot in the floating-point value of the decimal\n      to the left (delta < 0) or right (delta > 0) (!DS2.2)."																																																										  ]
-[ "bulkdivide",		  "COMMAND:   ",  "bulkdivide(BAT[any::1,decimal], decimal) : BAT[any::1,decimal]",	  "(!DS2.2)"																																																																																						  ]
-[ "bulkdivide",		  "COMMAND:   ",  "bulkdivide(BAT[any::1,decimal], decimal, int) : BAT[any::1,decimal]",  "(!DS2.2)"																																																																																						  ]
-[ "dbl",		  "COMMAND:   ",  "dbl(decimal) : dbl",							  "Return the value of a decimal as a double (return dbl(nil) on overflow)."																																																																														  ]
-[ "decimal",		  "COMMAND:   ",  "decimal(dbl) : decimal",						  "Create a decimal from a double value."																																																																																		  ]
-[ "decimal",		  "COMMAND:   ",  "decimal(flt) : decimal",						  "Create a decimal from a float value."																																																																																		  ]
-[ "decimal",		  "COMMAND:   ",  "decimal(int) : decimal",						  "Translates an integer into a decimal."																																																																																		  ]
-[ "decimal",		  "COMMAND:   ",  "decimal(lng) : decimal",						  "Translates a long into a decimal."																																																																																			  ]
-[ "decimal_minrepeat",	  "COMMAND:   ",  "decimal_minrepeat(int) : void",					  "set number of repeating characters after which to condense decimals (!DS2.2)."																																																																													  ]
-[ "divide",		  "COMMAND:   ",  "divide(decimal, decimal, int) : decimal",				  "Returns a decimal whose value is (val1 / val2), truncated to a specified precision.\n      Division by zero returns decimal(nil)."																																																																							  ]
-[ "flt",		  "COMMAND:   ",  "flt(decimal) : flt",							  "Return the value of a decimal as a float (return flt(nil) on overflow)."																																																																														  ]
-[ "getprecision",	  "COMMAND:   ",  "getprecision(decimal) : int",					  "Returns the precision of this number (!DS2.2)."																																																																																	  ]
-[ "getscale",		  "COMMAND:   ",  "getscale(decimal) : int",						  "Returns the scale of this number (!DS2.2)"																																																																																		  ]
-[ "int",		  "COMMAND:   ",  "int(decimal) : int",							  "Return the truncated value of a decimal as an integer (return int(nil) on overflow)."																																																																												  ]
-[ "istenfold",		  "COMMAND:   ",  "istenfold(decimal) : bit",						  "returns whether decimal is an exact multiple of 10 (!DS2.2)."																																																																															  ]
-[ "lng",		  "COMMAND:   ",  "lng(decimal) : lng",							  "Return the truncated value of a decimal as a long (return lng(nil) on overflow)."																																																																													  ]
-[ "pow",		  "COMMAND:   ",  "pow(decimal, int) : decimal",					  "Raises a decimal to the power of some integer.\n      The precision of the result is the precision of the decimal (!DS2.2)."																																																																								  ]
-[ "pow",		  "COMMAND:   ",  "pow(decimal, int, int) : decimal",					  "Raises a decimal to the power of some integer.\n      The precision argument determines the maximum precision of the result (!DS2.2)."																																																																						  ]
-[ "setprecision",	  "COMMAND:   ",  "setprecision(decimal, int) : decimal",				  "Return the same number but with a different precision; i.e. truncated or zero-padded (!DS2.2)."																																																																											  ]
+[ "[/]",		  "PROC:      ",  "[/](BAT[any::1,decimal], decimal) : BAT[any::1,decimal]",		  "not available"																																																																																							  ]
+[ "[divide]",		  "PROC:      ",  "[divide](BAT[any::1,decimal], decimal, int) : BAT[any::1,decimal]",	  "not available"																																																																																							  ]
+[ "abs",		  "COMMAND:   ",  "abs(decimal) : decimal",						  "Returns a decimal whose value is the absolute value of this number."																																																																																	  ]
+[ "addscale",		  "COMMAND:   ",  "addscale(decimal, int) : decimal",					  "Return a  decimal with the same number as value, but with scale = value.scale + delta.\n      This can be seen as shifting the dot in the floating-point value of the decimal\n      to the left (delta < 0) or right (delta > 0) (!DS2.2)."																																																												  ]
+[ "bulkdivide",		  "COMMAND:   ",  "bulkdivide(BAT[any::1,decimal], decimal) : BAT[any::1,decimal]",	  "(!DS2.2)"																																																																																								  ]
+[ "bulkdivide",		  "COMMAND:   ",  "bulkdivide(BAT[any::1,decimal], decimal, int) : BAT[any::1,decimal]",  "(!DS2.2)"																																																																																								  ]
+[ "dbl",		  "COMMAND:   ",  "dbl(decimal) : dbl",							  "Return the value of a decimal as a double (return dbl(nil) on overflow)."																																																																																  ]
+[ "decimal",		  "COMMAND:   ",  "decimal(dbl) : decimal",						  "Create a decimal from a double value."																																																																																				  ]
+[ "decimal",		  "COMMAND:   ",  "decimal(flt) : decimal",						  "Create a decimal from a float value."																																																																																				  ]
+[ "decimal",		  "COMMAND:   ",  "decimal(int) : decimal",						  "Translates an integer into a decimal."																																																																																				  ]
+[ "decimal",		  "COMMAND:   ",  "decimal(lng) : decimal",						  "Translates a long into a decimal."																																																																																					  ]
+[ "decimal_minrepeat",	  "COMMAND:   ",  "decimal_minrepeat(int) : void",					  "set number of repeating characters after which to condense decimals (!DS2.2)."																																																																															  ]
+[ "divide",		  "COMMAND:   ",  "divide(decimal, decimal, int) : decimal",				  "Returns a decimal whose value is (val1 / val2), truncated to a specified precision.\n      Division by zero returns decimal(nil)."																																																																									  ]
+[ "flt",		  "COMMAND:   ",  "flt(decimal) : flt",							  "Return the value of a decimal as a float (return flt(nil) on overflow)."																																																																																  ]
+[ "getprecision",	  "COMMAND:   ",  "getprecision(decimal) : int",					  "Returns the precision of this number (!DS2.2)."																																																																																			  ]
+[ "getscale",		  "COMMAND:   ",  "getscale(decimal) : int",						  "Returns the scale of this number (!DS2.2)"																																																																																				  ]
+[ "int",		  "COMMAND:   ",  "int(decimal) : int",							  "Return the truncated value of a decimal as an integer (return int(nil) on overflow)."																																																																														  ]
+[ "istenfold",		  "COMMAND:   ",  "istenfold(decimal) : bit",						  "returns whether decimal is an exact multiple of 10 (!DS2.2)."																																																																																	  ]
+[ "lng",		  "COMMAND:   ",  "lng(decimal) : lng",							  "Return the truncated value of a decimal as a long (return lng(nil) on overflow)."																																																																															  ]
+[ "pow",		  "COMMAND:   ",  "pow(decimal, int) : decimal",					  "Raises a decimal to the power of some integer.\n      The precision of the result is the precision of the decimal (!DS2.2)."																																																																										  ]
+[ "pow",		  "COMMAND:   ",  "pow(decimal, int, int) : decimal",					  "Raises a decimal to the power of some integer.\n      The precision argument determines the maximum precision of the result (!DS2.2)."																																																																								  ]
+[ "setprecision",	  "COMMAND:   ",  "setprecision(decimal, int) : decimal",				  "Return the same number but with a different precision; i.e. truncated or zero-padded (!DS2.2)."																																																																													  ]
 [ "setscale",		  "COMMAND:   ",  "setscale(decimal, int) : decimal",					  "Normalize the number of a decimal by setting the scale to a fixed value.\n      This is compensated by making the number shorter (by truncation) or by enlarging\n      it with trailing zeros (!DS2.2)."																																																																  ]
 [ "str",		  "COMMAND:   ",  "str(decimal, str) : str",						  "Formats a decimal in a fixed-width string (truncated, if necessary).\n      format = [ '+' ] ( N1 | ( N1 '.' N2 ) | ( '.' N2 ) ) [ 'E' N3 ]\n       with: Nx = a number of the form [0-9]+ (possibly starting with 0)\n      where: N1 = is the number of digits before the decimal point (default = 0)\n             N2 = is the number of digits after the decimal point (default = 1)\n             N3 = the number of digits to use for the scale (default = 2)\n      A zero will be printed with only one zero digit (left space-padded), unless N1 has a \n      leading zero, in which case a zero-padded number of width N1 is produced. \n      If the plus at start is specified, positive numbers start with a plus. "	  ]
 
@@ -879,7 +879,6 @@ Module: "salgebra"
 [ "ujoin",	  "COMMAND:   ",  "ujoin(clusterhash, BAT[any,any]) : BAT[oid,void]",		  "Return join(ch, b).mark(nil) with propagated clustering."		  ]
 [ "uselect",	  "COMMAND:   ",  "uselect(clusterhash, any) : BAT[oid,void]",			  "Return select(ch, v).mark(nil) with propagated clustering."		  ]
 [ "usortedjoin",  "COMMAND:   ",  "usortedjoin(clusterhash, BAT[any,any]) : BAT[oid,void]",	  "Return join(ch, b).mark(nil).sort with propagated clustering."	  ]
-#BBPreclaim: bat(33) view=0 mod=0 ref=2 stat=129
 
 Module: "stats"
 
@@ -1018,16 +1017,13 @@ Module: "uchr"
 
 Module: "unix"
 
-[ 4 ]
-[ 4 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature				| help																									  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "getenv",	  "COMMAND:   ",  "getenv(str) : str",			  "Get the environment variable string."																				  ]
-[ "run",	  "COMMAND:   ",  "run(blob, str, ..str..) : blob",	  "Execute a command, passing the optional strings as commandline arguments.\nThis function pipes the blob data to its childs stdin.\nThe data from the childs stdout is caught and returned as a blob."  ]
-[ "setenv",	  "COMMAND:   ",  "setenv(str, str) : bit",		  "Set the environment variable string."																				  ]
-[ "system",	  "COMMAND:   ",  "system(str) : int",			  "Execute a command and give back the return value"																			  ]
-#BBPreclaim: bat(33) view=0 mod=0 ref=2 stat=129
+[ 2 ]
+[ 2 ]
+#---------------------------------------------------------------------------------------------------------#
+# function	| type		| signature			| help					  #
+#---------------------------------------------------------------------------------------------------------#
+[ "getenv",	  "COMMAND:   ",  "getenv(str) : str",		  "Get the environment variable string."  ]
+[ "setenv",	  "COMMAND:   ",  "setenv(str, str) : bit",	  "Set the environment variable string."  ]
 
 Module: "url"
 
@@ -1054,7 +1050,6 @@ Module: "url"
 [ "isaURL",	  "COMMAND:   ",  "isaURL(url) : bit",			  "Check conformity of the URL syntax"			  ]
 [ "newurl",	  "COMMAND:   ",  "newurl(str, str, int, str) : url",	  "Construct a URL from protocol, host,port,and file"	  ]
 [ "newurl",	  "COMMAND:   ",  "newurl(str, str, str) : url",	  "Construct a URL from protocol, host,and file"	  ]
-#BBPreclaim: bat(33) view=0 mod=0 ref=2 stat=129
 
 Module: "vector"
 
@@ -1186,7 +1181,6 @@ Module: "vector"
 [ "variance2",			  "COMMAND:   ",  "variance2(flts) : dbl",					  "Calculates the squared variance of the vector elements."					  ]
 [ "variance2",			  "COMMAND:   ",  "variance2(int_vector64) : dbl",				  "Calculates the squared variance of the vector elements."					  ]
 [ "variance2",			  "COMMAND:   ",  "variance2(ints) : dbl",					  "Calculates the squared variance of the vector elements."					  ]
-#BBPreclaim: bat(33) view=0 mod=0 ref=2 stat=129
 
 Module: "wisc"
 
@@ -1225,7 +1219,6 @@ Module: "xtables"
 [ "tunique",		  "COMMAND:   ",  "tunique(BAT[oid,any::1]) : BAT[any::1,void]",				  "get all unique tail values. Optimized for getting all unique\n         oids from a cross-table computed by CTgroup."																								  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[oid,bit], BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[void,bit], BAT[void,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
-#BBPreclaim: bat(33) view=0 mod=0 ref=2 stat=129
 
 Module: "mprof"
 
@@ -1266,11 +1259,10 @@ Module: "mprof"
 [ "pmStart",		  "COMMAND:   ",  "pmStart() : void",				  "Initializes the mprof bats"				  ]
 [ "pmSummary",		  "PROC:      ",  "pmSummary(..any..) : any",			  "not available"					  ]
 [ "pmTag",		  "COMMAND:   ",  "pmTag(str, str) : void",			  "Add comment to a timing period"			  ]
-#BBPreclaim: bat(33) view=0 mod=0 ref=2 stat=129
 
 quit;
 
-# 18:03:45 >  
-# 18:03:45 >  Done.
-# 18:03:45 >  
+# 11:19:51 >  
+# 11:19:51 >  Done.
+# 11:19:51 >  
 

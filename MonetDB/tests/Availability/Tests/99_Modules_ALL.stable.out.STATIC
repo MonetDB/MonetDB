@@ -1,11 +1,11 @@
 stdout of test '99_Modules_ALL` in directory 'tests/Availability` itself:
 
 
-# 11:15:52 >  
-# 11:15:52 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/MonetDB/_BUILD_s_/conf/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/MonetDB/_BUILD_s_/src/modules/plain/.libs:/var/tmp/MonetDB/_BUILD_s_/src/modules/calibrator/.libs:/var/tmp/MonetDB/_BUILD_s_/src/mapi/.libs" --dbfarm "/var/tmp/MonetDB/_BUILD_s_/dbfarm" --set monet_prompt= --dbname=Tests_tests_Availability  < 99_Modules_ALL.milS
-# 11:15:52 >  
+# 11:19:52 >  
+# 11:19:52 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build-static/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build-static/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build-static/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build-static/src/mapi/.libs" --dbfarm "/ufs/sjoerd/src/MonetDB/build-static/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_Availability  < 99_Modules_ALL.milS
+# 11:19:52 >  
 
-# Monet Database Server V4.3.5
+# Monet Database Server V4.3.7
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; statically linked.
 setoid(oid(20000000));
@@ -57,7 +57,7 @@ malalgebra: loading... done.
  counters: loading... done.
   cluster: loaded.
     calib: loading... done.
-     blob: loaded.
+     blob: loading... done.
 bitvector: loaded.
    bitset: loading... done.
 bat_arith: loading... done.
@@ -71,7 +71,7 @@ bat_arith: loading... done.
 
 table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod_nme.count)));
 #-----------------#
-# 40 modules	  #
+# 44 modules	  #
 #-----------------#
 [ "aggr"	  ]
 [ "aggrX3"	  ]
@@ -167,7 +167,7 @@ table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod
 
 quit;
 
-# 18:03:48 >  
-# 18:03:48 >  Done.
-# 18:03:48 >  
+# 11:19:52 >  
+# 11:19:52 >  Done.
+# 11:19:52 >  
 
