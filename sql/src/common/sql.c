@@ -434,6 +434,11 @@ statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
 		if (!l->h->next->next->data.sym){
 		    	table *t = ((var*)scp->vars->h->data.sval)->t;
 		    	s = statement_column( t->columns->h->data.cval);
+			if (s && subset){
+				statement *foundsubset = find_subset(subset, t);
+
+				s = statement_join(foundsubset, s, cmp_equal);
+			} 
 		} else {
 		    	s = scalar_exp( sql, scp, l->h->next->next->data.sym, 
 					group, subset);
@@ -691,15 +696,10 @@ statement *search_condition( context *sql, scope *scp, symbol *sc ){
 	       		rs = scalar_exp(sql, scp, ro, NULL, NULL);
 		} else {
 			rs = subquery(sql, scp, ro );
+			return rs;
 		}
-		if (!ls || !rs){
-			/*
-			snprintf(sql->errstr, ERRSIZE, 
-		  	_("Compare(%s) missing left or right handside"),
-			compare_op);
-			*/
-		       	return NULL;
-		}
+		if (!ls || !rs) return NULL;
+
 		if (ls->h == NULL && rs->h == NULL){
 			snprintf(sql->errstr, ERRSIZE, 
 		  	_("Compare(%s) between two atoms is not possible"),
