@@ -54,7 +54,6 @@ stderr of test 'tst5003` in directory 'src/mal` itself:
 # cmdline opt 	sql_port = 54365
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_mal
-Mserver: /ufs/mk/monet5/src/gdk/gdk_utils.mx:954: GDKfree: Assertion `(size&2) == 0' failed.
 
 # 20:19:22 >  
 # 20:19:22 >  Done.
