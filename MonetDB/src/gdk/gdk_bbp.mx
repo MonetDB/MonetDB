@@ -752,7 +752,7 @@ void BBPcacheit(BAT* b, int lock) {
                 strcpy(b->batId, BBP_logical(i));
 		if (++BBP_curstamp < 0) BBP_curstamp = 0;
                 b->batStamp = BBP_curstamp;
-                b->creator_tid = (int) THRgettid();
+                b->creator_tid = (int) (long) THRgettid();
                 BBP_refs(i) = 1; /* new bats have 1 pin */
 		BBP_plevel(i) = 0; /* and is transient */
                 BATDEBUG THRprintf(GDKerr, "%d = new %s(%s,%s)\n", i,
@@ -1149,7 +1149,7 @@ TODO merge BBPfree with BATfree? Its function isto prepare a BAT for being
 unloaded (or even destroyed, if the BAT is not persistent).
 @c
 int BBPfree(BAT *b) {
-	int xx, bid = ABS(b->batCacheid), parent = VIEWparent(b);
+	int bid = ABS(b->batCacheid), parent = VIEWparent(b);
 	int destroy = (BBP_plevel(bid)) == 0 && 
 		      (BBP_status(bid)&BBPDELETED) == 0;
 
