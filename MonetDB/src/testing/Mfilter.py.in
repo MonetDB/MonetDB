@@ -160,7 +160,7 @@ def mFilter (FILE, IGNORE) :
             oline = "#~ " + iline
         elif test[4].match(iline):
             # differences due to property-checking, which we what to treat as "minor differences"; see above
-            oline = "%" + iline
+            oline = "=" + iline
         elif len(ftmp) > 2              and \
              test[3].match(iline)       and \
              test[2].match(ftmp[-1])    and \
@@ -201,7 +201,7 @@ def mFilter (FILE, IGNORE) :
                     el = el + 1
                     ew = ew + w
                     ec = ec + c
-                    if not re.match('^%',ln, re.MULTILINE):
+                    if not re.match('^=',ln, re.MULTILINE):
                         il = il + 1
                         iw = iw + w
                         ic = ic + c
@@ -210,9 +210,9 @@ def mFilter (FILE, IGNORE) :
     fout = open(FILE + ".FILTERED", "w")
     if (al > 0) or (aw > 0) or (ac >0):
         fout.write("Statistics about std"+WHAT+" of test '"+TST+"` in directory '"+TSTDIR+"`:\n")
-        fout.write( "  %9d lines, %9d words, %9d chars   in lines not matching '^$|%s|^%%`\n" % (il,iw,ic,IGNORE))
-        fout.write("%% %9d lines, %9d words, %9d chars   in lines not matching '^$|%s`\n"     % (el,ew,ec,IGNORE))
-        fout.write( "# %9d lines, %9d words, %9d chars   in all lines\n"                      % (al,aw,ac))
+        fout.write("  %9d lines, %9d words, %9d chars   in lines not matching '^$|%s|^=`\n" % (il,iw,ic,IGNORE))
+        fout.write("= %9d lines, %9d words, %9d chars   in lines not matching '^$|%s`\n"    % (el,ew,ec,IGNORE))
+        fout.write("# %9d lines, %9d words, %9d chars   in all lines\n"                     % (al,aw,ac))
         fout.write("\n")
         for ln in ftmp:
             fout.write(ln)
