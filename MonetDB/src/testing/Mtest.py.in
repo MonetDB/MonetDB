@@ -1461,7 +1461,6 @@ def Check(command, input) :
     qOut, qErr = ReadMultiple([pOut, pErr])
     qOut = string.split(qOut, '\n')
     qErr = string.split(qErr, '\n')
-    rOutErr = 0
     for l in qOut+qErr:
         if l[:1] == "!" and \
                (len(l) < 24  or  
@@ -1478,8 +1477,8 @@ def Check(command, input) :
             STDERR.write("\n")
             STDERR.flush()
             #sys.exit(1)
-            break
-    return rOutErr
+            return 1
+    return 0
 ### Check(command, input) #
 
 def CheckExec(cmd) :
