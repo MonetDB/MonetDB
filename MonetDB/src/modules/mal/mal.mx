@@ -57,11 +57,11 @@ location of the underlying BAT.
 The generic solutions are also provided as patterns, because this
 trims the number of function signatures in the symbol table.
 @mal
-pattern getHead(b:bat[any::1,any], i:lng):any::1 = CMDgetHead
-comment "return the BUN head value using the iterator.";
+pattern getHead(i:int, b:bat[any::1,any]):any::1 = CMDgetHead
+comment "return the BUN head value using the cursor.";
 
-pattern getTail(b:bat[any,any::1], i:lng):any::1 = CMDgetTail
-comment "return the BUN tail value using the iterator.";
+pattern getTail(i:int, b:bat[any,any::1]):any::1 = CMDgetTail
+comment "return the BUN tail value using the cursor.";
 
 @-
 @+ The Monet Debugger interface
@@ -170,10 +170,10 @@ int CMDnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	*ret = *cursor < limit;
 
 	if( *ret== FALSE) return GDK_SUCCEED;
-/* todo head = ... tail = ... */
+	/* get head = ... tail = ... */
 	p = BUNptr(b,*cursor);
-	/* garbageElement(head);
-	garbageElement(tail); */
+	garbageElement(head);
+	garbageElement(tail); 
 	VALinit( head, getArgType(mb,pci,3),BUNhead(b,p));
 	VALinit( tail, getArgType(mb,pci,4),BUNtail(b,p));
 	return GDK_SUCCEED;
@@ -194,20 +194,59 @@ int CMDnextSlice(int *ret, lng *cursor, int *bid, lng *low, lng *high)
 }
 @-
 The fetch operations are all pretty straight forward, provided
-you know the underlying type.
-@= getElement
-int CMDgetHead_@1_@2(@1 *ret, @2 *cursor, int bid){
-	BAT *b;
-	@:batcheck(ret,bid,b,"CMDgetHead_@1_@2")@
-	printf("getHead_@1_@2 not yet implemented\n");
-	return GDK_SUCCEED;
-}
+you know the underlying type. Often it is cheaper to use
+the extended BAT iterator, because then it can re-use the
+BAT descriptor.
 @c
 int CMDgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	printf("getHead not yet implemented\n");
+	BAT *b;
+	int *cursor;
+	int *bid;
+	int limit;
+	BUN p;
+	ValPtr head;
+	int r, *ret=&r;
+
+	cursor = (int *) getArgReference(stk,pci,1);
+	bid = (int *) getArgReference(stk,pci,2);
+	head = &stk->stk[pci->argv[0]];
+
+	@:batcheck(ret,bid,b,"CMDnextElement")@
+	limit=  BUNindex(b,BUNlast(b));
+	if( *cursor<0  || *cursor >=limit) {
+		return (int)raiseException(mb,stk->pc,"MALexception",
+					"getHead:range error");
+	}
+
+	/* get head = ... */
+	p = BUNptr(b,*cursor);
+	garbageElement(head);
+	VALinit( head, getArgType(mb,pci,3),BUNhead(b,p));
 	return GDK_SUCCEED;
 }
 int CMDgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	printf("getTail not yet implemented\n");
+	BAT *b;
+	int *cursor;
+	int *bid;
+	int limit;
+	BUN p;
+	ValPtr tail;
+	int r, *ret=&r;
+
+	cursor = (int *) getArgReference(stk,pci,1);
+	bid = (int *) getArgReference(stk,pci,2);
+	tail = &stk->stk[pci->argv[0]];
+
+	@:batcheck(ret,bid,b,"CMDnextElement")@
+	limit=  BUNindex(b,BUNlast(b));
+	if( *cursor<0  || *cursor >=limit) {
+		return (int)raiseException(mb,stk->pc,"MALexception",
+					"getTail:range error");
+	}
+
+	/* get head = ... */
+	p = BUNptr(b,*cursor);
+	garbageElement(tail);
+	VALinit( tail, getArgType(mb,pci,3),BUNtail(b,p));
 	return GDK_SUCCEED;
 }
