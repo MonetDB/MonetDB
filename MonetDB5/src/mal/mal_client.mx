@@ -324,6 +324,7 @@ Client initClient(str nme, str passwd, bstream *fin, stream *fout){
     }
 
 	c->user = nme; 
+	c->password = passwd;
     c->scenario= NULL;
     c->oldscenario = NULL;
     c->sessionkey = 0;
@@ -495,7 +496,14 @@ void freeClient(Client c)
     c->login = c->delay = c->logout = 0;
     THRdel(c->mythread);
     c->mythread= 0;
-    GDKfree(c->user); c->user = NULL;
+	if (c->user) {
+    	GDKfree(c->user); 
+		c->user = NULL;
+	}
+	if (c->password) {
+    	GDKfree(c->password); 
+		c->password = NULL;
+	}
     c->mode = FREECLIENT;
 }
 
@@ -595,10 +603,22 @@ void cleanupClients(){
     Client c;
     for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
         /* if( c->nspace){ freeScopeList(c->nspace); c->nspace=0;}*/
-        if( c->cwd){ GDKfree(c->cwd); c->cwd=0;}
-        if( c->prompt){ GDKfree(c->prompt); c->prompt=0;}
-        if( c->user){ GDKfree(c->user); c->user=0;}
-        if( c->password){ GDKfree(c->password); c->password=0;}
+        if( c->cwd){ 
+				GDKfree(c->cwd); 
+				c->cwd=0;
+		}
+        if( c->prompt){ 
+				GDKfree(c->prompt); 
+				c->prompt=0;
+		}
+        if( c->user){ 
+				GDKfree(c->user); 
+				c->user=0;
+		}
+        if( c->password){ 
+				GDKfree(c->password); 
+				c->password=0;
+		}
         if( c->fdin){
     		(void) stream_close(c->fdin->s);
     		(void) stream_destroy(c->fdin->s); 
@@ -758,19 +778,20 @@ int readClient(Client c,str prompt){
 		in->pos++;
 
 	if (in->pos >= in->len) {
-		ssize_t rd;
+		ssize_t rd, sum = 0;
 		assert(in->pos == in->len);
 
 		if (in->eof || !isa_block_stream(in->s)) {
     		@:sentPrompt@
 			in->eof = 0;
 		}
-		if ((rd = bstream_next(in)) == 0) {
-			if (rd == 0 && in->eof && isa_block_stream(in->s)) {
-				/* we hadn't seen the EOF before, so just try again
-				(this time with prompt) */
-				return readClient(c, prompt);
-			}
+		while ((rd = bstream_next(in)) > 0 && !in->eof) {
+			sum += rd;
+		}
+		if (sum == 0 && in->eof && isa_block_stream(in->s)) {
+			/* we hadn't seen the EOF before, so just try again
+			(this time with prompt) */
+			return readClient(c, prompt);
 		}
 #ifdef MAL_CLIENT_DEBUG
     printf("# simple stream received:");

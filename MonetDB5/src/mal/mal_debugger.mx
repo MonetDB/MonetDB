@@ -359,7 +359,9 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 		cntxt->yycur = 0;
 		cntxt->fdin->buf[cntxt->fdin->pos] = 0;
 
-    	readClient(cntxt,(cntxt==mal_clients?"mdb>":"\001mdb>\001"));
+		if (readClient(cntxt,(cntxt==mal_clients?"mdb>":"\001mdb>\001")) <= 0) {
+        	return;
+		}
     	b = CURRENT(cntxt);
     	skipBlanc(cntxt,b);
         /* terminate the line with zero */
@@ -369,11 +371,13 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
     	case 0: 
     		cntxt->fdin->pos += cntxt->yycur; 
 			cntxt->yycur = 0;
-			cntxt->fdin->buf[cntxt->fdin->pos] = 0;
         	return;
-    	case 'a': if( strncmp("atoms",b,5)==0) showAtoms(out);
+    	case 'a': 
+			if( strncmp("atoms",b,5)==0) 
+				showAtoms(out);
         	break;
-    	case 'c': if( strncmp("call",b,4)==0){
+    	case 'c': 
+			if( strncmp("call",b,4)==0) {
             	GDKerror("call instruction not yet implemented\n");
             	break;
          	}

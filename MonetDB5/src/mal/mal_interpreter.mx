@@ -467,11 +467,12 @@ elements in the value stack.
     case PATcall: @:patterncall@ break;
     case CMDcall: @:commandcall@ break;
     case FACcall: @:factorycall@ break;
-    case FCNcall: if( pci->fcn) {
+    case FCNcall: 
+				if (pci->fcn) {
                     @:commandcall@ 
                 } else {
                     @:functioncall@ 
-                    break;
+                	break;
                 }
     case NOOPsymbol:
     case ENDsymbol: 
