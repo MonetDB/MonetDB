@@ -52,10 +52,16 @@ def msc_list2string(l, pre, post):
     return res
 
 def msc_subdirs(fd, var, values, msc):
-    # HACK to cope with conditional subdirs for cross-compiling:
+    # to cope with conditional subdirs:
     Vals = []
     for v in values:
-        Vals.append(string.replace(v,'CROSS_COMPILING?:',''))
+	cond = string.split(v, '?', 1)
+	if (len(cond) == 1):
+		Vals.append(cond[0])
+	else:
+		thn = string.split(cond[1], ':', 1)
+		if (len(thn) > 1):
+			Vals.append(thn[1])
     values = Vals
     # HACK to keep uncompilable stuff out of Windows makefiles.
     if 'calibrator' in values:

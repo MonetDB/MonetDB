@@ -441,6 +441,8 @@ def expand_env(i):
 
       if os.environ.has_key( var ):
         value = os.environ[var]
+        value = re.sub('{', '(', value)
+        value = re.sub('}', ')', value)
         return value + rest
     return None
 
