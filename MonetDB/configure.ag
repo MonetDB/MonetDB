@@ -76,7 +76,7 @@ AC_MSG_RESULT($FIG2DEV_EPS)
 AC_SUBST(FIG2DEV_EPS)
 AM_CONDITIONAL(DOCTOOLS, test -n "$LATEX" -a -n "$FIG2DEV" -a -n "$DVIPS") 
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH:/bin:/usr/bin:/usr/local/bin)
-AC_CHECK_PROG(LOCKFILE,lockfile,lockfile,echo)
+AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
 
 dnl to shut up automake (.m files are used for mel not for objc)
 AC_CHECK_TOOL(OBJC,objc)
