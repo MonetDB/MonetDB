@@ -157,7 +157,7 @@ public class JdbcClient {
 		if (pass == null) {
 			PasswordField passfield = new PasswordField();
 			try {
-				pass = passfield.getPassword("password: ");
+				pass = String.valueOf(passfield.getPassword(System.in, "password: "));
 			} catch(IOException ioe) {
 				System.err.println("Invalid password!");
 				System.exit(-1);
@@ -888,83 +888,117 @@ class SQLStack {
 }
 
 /**
- * This class prompts the user for a password and attempts to mask input with ""
+ * This class prompts the user for a password and attempts to mask input with "*"
  */
 class PasswordField {
 
-  /**
-   *@param prompt The prompt to display to the user.
-   *@return The password as entered by the user.
-   */
-   String getPassword(String prompt) throws IOException {
-      // password holder
-      String password = "";
-      MaskingThread maskingthread = new MaskingThread(prompt);
-      Thread thread = new Thread(maskingthread);
-      thread.start();
-      // block until enter is pressed
-      while (true) {
-         char c = (char)System.in.read();
-         // assume enter pressed, stop masking
-         maskingthread.stopMasking();
+	/**
+	 *@param input stream to be used (e.g. System.in)
+	 *@param prompt The prompt to display to the user.
+	 *@return The password as entered by the user.
+	 */
+	public static final char[] getPassword(InputStream in, String prompt) throws IOException {
+		MaskingThread maskingthread = new MaskingThread(prompt);
+		Thread thread = new Thread(maskingthread);
+		thread.start();
 
-         if (c == '\r') {
-            c = (char)System.in.read();
-            if (c == '\n') {
-               break;
-            } else {
-               continue;
-            }
-         } else if (c == '\n') {
-            break;
-         } else {
-            // store the password
-            password += c;
-         }
-      }
-      return(password);
-   }
+		char[] lineBuffer;
+		char[] buf;
+		int i;
+
+		buf = lineBuffer = new char[128];
+
+		int room = buf.length;
+		int offset = 0;
+		int c;
+
+		boolean finished = false;
+		while (!finished) {
+			switch (c = in.read()) {
+				case -1:
+				case '\n':
+					finished = true;
+					continue;
+
+				case '\r':
+					int c2 = in.read();
+					if ((c2 != '\n') && (c2 != -1)) {
+						if (!(in instanceof PushbackInputStream)) {
+							in = new PushbackInputStream(in);
+						}
+						((PushbackInputStream)in).unread(c2);
+					} else {
+						finished = true;
+						continue;
+					}
+
+				default:
+					if (--room < 0) {
+						buf = new char[offset + 128];
+						room = buf.length - offset - 1;
+						System.arraycopy(lineBuffer, 0, buf, 0, offset);
+						Arrays.fill(lineBuffer, ' ');
+						lineBuffer = buf;
+					}
+					buf[offset++] = (char) c;
+					break;
+			}
+		}
+		maskingthread.stopMasking();
+		if (offset == 0) {
+			return null;
+		}
+		char[] ret = new char[offset];
+		System.arraycopy(buf, 0, ret, 0, offset);
+		Arrays.fill(buf, ' ');
+		return ret;
+	}
 }
 
 class MaskingThread extends Thread {
-   private boolean stop = false;
-   private int index;
-   private String prompt;
+	private volatile boolean stop = false;
+
+	/**
+	 *@param prompt The prompt displayed to the user
+	 */
+	public MaskingThread(String prompt) {
+		System.err.print(prompt);
+	}
 
 
-  /**
-   *@param prompt The prompt displayed to the user
-   */
-   public MaskingThread(String prompt) {
-      this.prompt = prompt;
-   }
+	/**
+	 * Begin masking until asked to stop.
+	 */
+	public void run() {
+		int priority = Thread.currentThread().getPriority();
+		Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+
+		try {
+			while(!stop) {
+				System.err.print("\010 ");
+				System.err.flush();
+				try {
+					// attempt masking at this rate
+					this.sleep(1);
+				} catch (InterruptedException iex) {
+					Thread.currentThread().interrupt();
+					return;
+				}
+			}
+			System.out.print("\010" + "  \010\010");
+		} finally {
+			// restore the original priority
+			Thread.currentThread().setPriority(priority);
+		}
+	}
 
 
-  /**
-   * Begin masking until asked to stop.
-   */
-   public void run() {
-      while(!stop) {
-         try {
-            // attempt masking at this rate
-            this.sleep(1);
-         } catch (InterruptedException iex) {
-            iex.printStackTrace();
-         }
-         if (!stop) {
-            System.err.print("\r" + prompt + " \r" + prompt);
-         }
-         System.err.flush();
-      }
-   }
-
-
-  /**
-   * Instruct the thread to stop masking.
-   */
-   public void stopMasking() {
-      this.stop = true;
-   }
+	/**
+	 * Instruct the thread to stop masking.
+	 */
+	public void stopMasking() {
+		stop = true;
+	}
 }
 
 class Table {

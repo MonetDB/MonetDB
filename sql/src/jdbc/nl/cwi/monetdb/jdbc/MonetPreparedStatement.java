@@ -328,7 +328,7 @@ public class MonetPreparedStatement
 	public void setBigDecimal(int parameterIndex, BigDecimal x)
 		throws SQLException
 	{
-		throw new SQLException("Operation currently not supported!");
+		setValue(parameterIndex, x.toString());
 	}
 
 	/**
@@ -595,18 +595,35 @@ public class MonetPreparedStatement
 	 *                      the given object is ambiguous
 	 */
 	public void setObject(int parameterIndex, Object x) throws SQLException {
+		/**
+		 * NOTE:
+		 * This function should convert (see table B-5) the given object to the
+		 * underlying datatype of the query requirements.
+		 * This conversion is impossible since we don't know anything about the
+		 * query at this point.  Future real prepare queries should solve this.
+		 */
 		if (x instanceof SQLData) {
 			// do something with:
 			// ((SQLData)x).writeSQL( [java.sql.SQLOutput] );
+			// needs an SQLOutput stream... bit too far away from reality
+			throw new SQLException("Operation currently not supported!");
 		} else if (x instanceof Blob) {
 			setBlob(parameterIndex, (Blob)x);
-			// you get the point...
-
+		} else if (x instanceof java.sql.Date) {
+			setDate(parameterIndex, (java.sql.Date)x);
+		} else if (x instanceof Timestamp) {
+			setTimestamp(parameterIndex, (Timestamp)x);
+		} else if (x instanceof Time) {
+			setTime(parameterIndex, (Time)x);
 		} else if (x instanceof Number) {
 			// catches:
 			// BigDecimal, BigInteger, Byte, Double, Float, Integer, Long, Short
+			// just write them as is
+			setValue(parameterIndex, x.toString());
+		} else {
+			// write the rest as 'varchar'
+			setString(parameterIndex, x.toString());
 		}
-		throw new SQLException("Operation currently not supported!");
 	}
 
 	/**
