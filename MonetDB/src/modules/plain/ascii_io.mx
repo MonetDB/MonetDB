@@ -198,9 +198,11 @@ static char *sep_dup( char *sep ){
 static
 int create_loadformat( ascii *as, BAT *names, BAT *seps, BAT *types ){
 	int p;
-	ascii_io *fmt = as->format;
+	int nr_attrs = BATcount(names);
+	ascii_io *fmt = as->format =  
+		(ascii_io*)GDKmalloc(sizeof(ascii_io) * (nr_attrs + 1) );
 
-	as->nr_attrs = BATcount(names);
+	as->nr_attrs = nr_attrs;
 	for (p=0; p<as->nr_attrs; p++){
 		fmt[p].name = (char*)bun_tail(names, p);
 		fmt[p].sep = sep_dup((char*)bun_tail(seps, p));
@@ -214,9 +216,11 @@ int create_loadformat( ascii *as, BAT *names, BAT *seps, BAT *types ){
 static
 int create_dumpformat( ascii *as, BAT *names, BAT *seps, BAT *bats ){
 	int p;
-	ascii_io *fmt = as->format;
+	int nr_attrs = BATcount(names);
+	ascii_io *fmt = as->format =  
+		(ascii_io*)GDKmalloc(sizeof(ascii_io) * (nr_attrs + 1) );
 
-	as->nr_attrs = BATcount(names);
+	as->nr_attrs = nr_attrs;
 	for (p=0; p<as->nr_attrs; p++){
 		BAT *b = (BAT*)BATdescriptor(*(bat*)bun_tail(bats, p));
 		fmt[p].name = (char*)bun_tail(names, p);
@@ -459,7 +463,6 @@ BAT *ASCIIload( BAT *names, BAT *seps, BAT *types,
 
 	as.nr_attrs = 0;
 	as.nr = nr;
-	as.format = GDKmalloc(sizeof(ascii_io) * (BATcount(names) + 1) );
 	if (create_loadformat( &as, names, seps, types) >= 0 && 
 	    create_bats( &as ) >= 0){
 		stream *s = open_rastream( datafile );
@@ -495,6 +498,7 @@ void ASCIIdump( BAT *names, BAT *seps, BAT *bats,
 		}
 		s->destroy(s);
 	}
+	destroy_format( &as );
 }
 
 int init_ascii_io(int *debug){

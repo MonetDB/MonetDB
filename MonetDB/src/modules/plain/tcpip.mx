@@ -46,6 +46,12 @@ only one will be created.
 "start a TCP/IP server with the default port number."
 .COMMAND listen(int port) = TCPlisten;
 "start a TCP/IP server"
+
+.COMMAND TCPIP_listen()  = TCPlisten_default;
+"start a TCP/IP server with the default port number."
+.COMMAND TCPIP_listen(int port) = TCPlisten;
+"start a TCP/IP server"
+
 .COMMAND terminate() = TCPterminate_default;
 "stop a TCP/IP server"
 .COMMAND terminate(int port) = TCPterminate;
