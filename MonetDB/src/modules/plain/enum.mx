@@ -115,8 +115,8 @@ will even be the case for long 64-bit integers.
 @mil
     proc enum_create(str name, BAT[any,any] data) : int {
 	var tpe := enum_new(name, data);
-	if (monet_atomtbl != adm_atomtbl)
-	    adm_atomtbl.insert(sprintf("%s",name),tpe);
+	if (monet_atomtbl != bat("adm_atomtbl"))
+	    bat("adm_atomtbl").insert(sprintf("%s",name),tpe);
 	monet_atomtbl.insert(sprintf("%s",name),tpe);
 	return tpe;
     }
@@ -125,8 +125,8 @@ will even be the case for long 64-bit integers.
 
     proc enum_load(str name) : void {
 	var tpe := enum_load(bat(name));
-	if (monet_atomtbl != adm_atomtbl)
-	    adm_atomtbl.insert(sprintf("%s",name),tpe);
+	if (monet_atomtbl != bat("adm_atomtbl"))
+	    bat("adm_atomtbl").insert(sprintf("%s",name),tpe);
 	monet_atomtbl.insert(sprintf("%s",name),tpe);
 	return tpe;
     }
@@ -134,9 +134,9 @@ will even be the case for long 64-bit integers.
          "activate an enumeration type from a histogram bat.", "enum");
 
     proc enum_drop(int tpe) : void {
-	if (monet_atomtbl != adm_atomtbl)
-	    adm_atomtbl.reverse.delete(tpe);
-	monet_atomtbl.reverse.delete(tpe);
+	if (monet_atomtbl != bat("adm_atomtbl"))
+	    bat("adm_atomtbl").reverse().delete(tpe);
+	monet_atomtbl.reverse().delete(tpe);
 	enum_destroy(tpe);
     }
     ADDHELP("enum_drop", "boncz", "Sep  6 1997",
@@ -146,7 +146,7 @@ will even be the case for long 64-bit integers.
         var nme := sprintf("enum_%d", abs(int(map)));
         map.rename(nme);
         var tpe := enum_load(nme);
-        enum_sethisto(tpe, b.reverse);
+        enum_sethisto(tpe, b.reverse());
         return [*nme](b);
     }
     ADDHELP("enum_trick", "boncz", "Dec  5 1998",
