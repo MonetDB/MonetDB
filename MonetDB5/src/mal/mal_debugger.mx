@@ -551,7 +551,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	/* search the symbol */
         	i = findVariable(mb,b);
         	if( i<0){
-            	stream_printf(out,"%sSymbol not found\n","#mdb ");
+            	stream_printf(out,"%s Symbol not found\n","#mdb ");
         	} else{
             	printBatInfo(out,getVar(mb,i),stk->stk+i);
         	}

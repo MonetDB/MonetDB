@@ -156,7 +156,13 @@ str loadModuleLibrary(str modnme){
     int i = 0, idx;
 
     for(idx=0;modulesLoaded[idx] && idx<MAXMODULES;idx++)
-        if( strcmp(modulesLoaded[idx],modnme)==0) return 0;
+        if( strcmp(modulesLoaded[idx],modnme)==0) {
+#ifdef DEBUG_MAL_LINKER
+        stream_printf(GDKout,"already load:%s:%s\n",modnme,handle==NULL?
+            (handle==NULL?errbuf:"failed"):"succeeded");
+#endif
+			return 0;
+		}
     if( idx== MAXMODULES){
         GDKfatal("too many modules\n");
     }
@@ -185,9 +191,10 @@ Use the search path provided in the configuration file
                 "loadModuleLibrary",modnme);
         }
         GDKfree(fullname);
-    }
+    } else
+		stream_printf(GDKout,"failed to bind:%s\n",nme);
 
-        mal_set_lock(mal_contextLock, "loadModule");
+	mal_set_lock(mal_contextLock, "loadModule");
     for(i=0;modulesLoaded[i] && i<127;i++);
     if( i==MAXMODULES)
         GDKerror("loadModule:too many modules loaded\n");

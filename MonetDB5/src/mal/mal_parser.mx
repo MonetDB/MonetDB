@@ -59,6 +59,8 @@ this buffer contains the complete MIL structure to be parsed.
 
 #include "mal_import.h"
 
+#define MAXERRORS 100
+
 #define CURRENT(c) (c->fdin->buf + c->fdin->pos + c->yycur)
 #define currChar(X) (*CURRENT(X))
 #define nextChar(X) X->yycur++
@@ -66,7 +68,21 @@ this buffer contains the complete MIL structure to be parsed.
 
 mal_export void initParser();   /* needed in src/mal/mal.c */
 mal_export int parseMAL(Client cntxt, Symbol curPrg);
+mal_export void echoInput(Client cntxt);
 mal_export void debugParser(int i);
+mal_export str parseError(Client cntxt, str msg);
+mal_export void advance(Client cntxt, int length);
+mal_export void skipSpace(Client cntxt);
+mal_export void skipToEnd(Client cntxt);
+mal_export int idLength(Client cntxt);
+mal_export str idCopy(Client cntxt, int len);
+mal_export int cstLength(Client cntxt, int *type);
+mal_export str cstCopy(Client cntxt, int len);
+mal_export int operatorLength(Client cntxt);
+mal_export str operatorCopy(Client cntxt, int length);
+mal_export int keyphrase(Client cntxt, str kw, int length);
+mal_export int keyphrase1(Client cntxt, str kw);
+mal_export int keyphrase2(Client cntxt, str kw);
 
 #endif /* _MAL_PARSER_H */
 
@@ -82,9 +98,7 @@ request and each time we encounter EOL.
 #include "mal_interpreter.h"    /* for showErrors() */
 #include "mal_instruction.h"    /* for pushEndInstruction(), findVariableLength() */
 
-str parseError(Client cntxt, str msg);
 
-#define MAXERRORS 100
 #define FATALINPUT MAXERRORS+1
 #define NL(X) ((X)=='\n' || (X)=='\r')
 
@@ -429,7 +443,7 @@ int cstLength(Client cntxt, int *type)
 		i++;
 		s++;
 	}
-	if (*s == '.') {
+	if (*s == '.' && isdigit(*(s+1)) ) {
 		i++;
 		s++;
 		while (isdigit(*s)) {

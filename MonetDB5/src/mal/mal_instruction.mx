@@ -485,6 +485,7 @@ for separate name space management.
 #define isTypeVar(M,I)  ((M)->var[I]->isatypevar)
 #define isTmpVar(M,I)   ((M)->var[I]->tmpindex)
 #define isVarUsed(M,I)      ((M)->var[I]->isused)
+#define setVarUsed(M,I,X)      ((M)->var[I]->isused)=X
 #define isVarInitialized(M,I)   ((M)->var[I]->isinit)
 #define isFixed(M,I)        ((M)->var[I]->fixtype)
 #define setFixed(M,I)       ((M)->var[I]->fixtype= 1)
@@ -496,6 +497,7 @@ for separate name space management.
         (M)->var[J]= NULL;
 
 #define getDestVar(P)   (P)->argv[0]
+#define setDestVar(P,X)   (P)->argv[0]  =X
 #define setDestType(M,P,V)  setVarType((M),getDestVar(P),V)
 #define getDestType(M,P)    destinationType((M),(P))
 #define getArg(P,I) (P)->argv[I]
@@ -1080,7 +1082,7 @@ int newVariable(MalBlkPtr mb, str name, malType type){
     getVarLiteral(mb,n)= NULL;
     isConstant(mb,n) = FALSE;
     garbageControl(mb,n) = FALSE;
-    isVarUsed(mb,n) = FALSE;
+    setVarUsed(mb,n,FALSE);
     isVarInitialized(mb,n) = FALSE;
     mb->vtop++;
     return n;
@@ -1127,7 +1129,7 @@ int newTmpVariable(MalBlkPtr mb, malType type){
     getVarLiteral(mb,n)= NULL;
     isConstant(mb,n) = FALSE;
     garbageControl(mb,n) = FALSE;
-    isVarUsed(mb,n) = FALSE;
+    setVarUsed(mb,n,FALSE);
     isVarInitialized(mb,n) = FALSE;
     mb->vtop++;
     return n;
@@ -1274,7 +1276,7 @@ int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
     getVarLiteral(mb,k)= val;
     isConstant(mb,k) = 1;
 	setFixed(mb,k);
-    isVarUsed(mb,k) = FALSE;
+    setVarUsed(mb,k,FALSE);
     isVarInitialized(mb,k) = FALSE;
     vr = &getVarConstant(mb,k);
     tonil= niltst && strncmp(val,"nil",3)==0;
@@ -1445,24 +1447,24 @@ before being assigned.
 Failure to obey should mark the instruction as type-error.
 @c
 InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid){
-        int n;
+	int n;
         
-        n = p->argc;
-        if( n == MAXARG-1){
-        InstrPtr pn;
-        int pc = 0;
-        int space= (p->maxarg-1)*sizeof(int)+ sizeof(InstrRecord);
-        pn = GDKmalloc(space+MAXARG*sizeof(int));
-        memcpy((char *)pn,(char *)p,space);
-        pn->maxarg= p->maxarg+MAXARG;
-        pc= getPC(mb,p);
-        if( pc>=0) mb->stmt[pc]= pn;
-        GDKfree(p);
-        p=pn;
-        } 
-    p->argc++;
-    p->argv[n] = varid;
-    isVarUsed(mb,varid) = TRUE;
+	n = p->argc;
+	if( n == MAXARG-1){
+		InstrPtr pn;
+		int pc = 0;
+		int space= (p->maxarg-1)*sizeof(int)+ sizeof(InstrRecord);
+		pn = GDKmalloc(space+MAXARG*sizeof(int));
+		memcpy((char *)pn,(char *)p,space);
+		pn->maxarg= p->maxarg+MAXARG;
+		pc= getPC(mb,p);
+		if( pc>=0) mb->stmt[pc]= pn;
+		GDKfree(p);
+		p=pn;
+	} 
+	p->argc++;
+	p->argv[n] = varid;
+    setVarUsed(mb,varid,TRUE);
     return p;
 } 
 void setVarInitialized(MalBlkPtr mb, int varid){
@@ -1530,7 +1532,7 @@ void setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe)
 }
 void setReturnArgument(InstrPtr p, int i)
 {
-    getDestVar(p) = i;
+    setDestVar(p, i);
 }
 @-
 Temporary names are not materialized as strings unless necessary.
@@ -1585,7 +1587,8 @@ variable to hold the result instead.
 void pushEndInstruction(MalBlkPtr mb){
     InstrPtr p;
     p= newInstruction(ENDsymbol);
-    getDestVar(p) = findVariable(mb,functionName(getInstrPtr(mb,0)));
+    setDestVar(p, findVariable(mb,functionName(getInstrPtr(mb,0))));
+	setVarInitialized(mb,getDestVar(p));
     p->argc =0;
     p->retc = 0;
     pushInstruction(mb,p);

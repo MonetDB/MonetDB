@@ -70,7 +70,7 @@ Symbol newFunction(str nme,int kind){
     s = newSymbol(nme,kind);
     p = newInstruction(kind);
     setFunctionId(p, GDKstrdup(nme));
-    getDestVar(p)= newVariable(s->def,GDKstrdup(nme),TYPE_any);
+    setDestVar(p, newVariable(s->def,GDKstrdup(nme),TYPE_any));
     pushInstruction(s->def,p);
     return s;
 }
