@@ -334,7 +334,7 @@ def am_doc(fd, var, docmap, am):
     if name[0] == "_":
         name = name[1:]
 
-    doc_ext = ['pdf', 'ps', 'html']
+    doc_ext = ['pdf', 'ps', 'html', 'bdy']
 
     srcs = name+"_DOCS ="
     for target in docmap['TARGETS']:

@@ -74,6 +74,7 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2xsl, '.xsl'),
                   (mx2sh, ''),
                   (mx2tex, '.tex'),
+                  (mx2tex, '.bdy'),
                   (mx2html, '.html'), ],
                 'mx.in': [ (mx2mil, '.mil'),
                   (mx2mal, '.mal'),
@@ -94,6 +95,7 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2xsl, '.xsl'),
                   (mx2sh, ''),
                   (mx2tex, '.tex'),
+                  (mx2tex, '.bdy'),
                   (mx2html, '.html'), ]
 }
 end_code_extract = { 'mx': e_mx, 'mx.in': e_mx }
@@ -164,6 +166,7 @@ scan_map = { 'c': [ c_inc, None, '' ],
          'm': [ m_use, m_sep, '.m' ],
          'xsl': [ xsl_inc, None, '' ],
          'tex': [ tex_inc, None, '' ],
+         'bdy': [ tex_inc, None, '' ],
 }
 
 dep_rules = { 'glue.c': [ 'm', '.proto.h' ] ,
