@@ -23,6 +23,9 @@ MXFLAGS= -notouch
 	$(LEX) $(LFLAGS) $*.l
 	if [ -f lex.yy.c ]; then $(MV) lex.yy.c $*.yy.c ; fi
 
+%.cc: %.mx
+	$(MX) $(MXFLAGS) -x C $<
+
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
 

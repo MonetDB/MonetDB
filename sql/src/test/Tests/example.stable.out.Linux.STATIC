@@ -1,0 +1,64 @@
+stdout of test 'example` in directory 'src/test` itself:
+
+
+# 15:49:45 >  
+# 15:49:45 >  Mtimeout -timeout 480 Mserver -monetrc /var/tmp/manegold.GNU_32-d.6756/monet/.GNU_32-d/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf -db Tests_src_test /var/tmp/manegold.GNU_32-d.6756/sql/src/parser/catalog.mil /var/tmp/manegold.GNU_32-d.6756/sql/src/parser/aserver.mil
+# 15:49:45 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/var/tmp/manegold.GNU_32-d.6756/monet/.GNU_32-d/Linux2.2.14-12smp/dbfarm
+# dbname:Tests_src_test
+# dbdir:/var/tmp/manegold.GNU_32-d.6756/monet/.GNU_32-d/Linux2.2.14-12smp/dbfarm/Tests_src_test
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+printf("\nReady.\n");
+
+Ready.
+[ 7 ]
+quit;
+
+Over..
+
+# 15:39:17 >  
+# 15:39:17 >  Mtimeout -timeout 432 sql_client --port=58607  < example.sql
+# 15:39:17 >  
+
+types 13
+aggr 5
+tables 0
+columns 0
+views 0
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+
+# 15:49:54 >  
+# 15:49:54 >  Done.
+# 15:49:54 >  
+

@@ -59,18 +59,15 @@ cat << "EOF" | patch configure
    ac_cv_prog_cc_g=yes
  else
    ac_cv_prog_cc_g=no
+@@ -1218,7 +1218,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   echo 'void f(){}' > conftest.cc
+-if test -z "`${CXX-g++} -g -c conftest.cc 2>&1`"; then
++if test -z "`${CXX-g++} -g -c conftest.cc 2>&1 | grep -v '^conftest.cc:$'`"; then
+   ac_cv_prog_cxx_g=yes
+ else
+   ac_cv_prog_cxx_g=no
 EOF
-
-# currently, we don't use/check for a C++ compiler in SQL
-#@@ -1218,7 +1218,7 @@
-#   echo $ac_n "(cached) $ac_c" 1>&6
-# else
-#   echo 'void f(){}' > conftest.cc
-#-if test -z "`${CXX-g++} -g -c conftest.cc 2>&1`"; then
-#+if test -z "`${CXX-g++} -g -c conftest.cc 2>&1 | grep -v '^conftest.cc:$'`"; then
-#   ac_cv_prog_cxx_g=yes
-# else
-#   ac_cv_prog_cxx_g=no
-#EOF
 
 exit 0

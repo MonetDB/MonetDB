@@ -32,6 +32,7 @@ esac ]
 
 dnl Checks for programs.
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_GCC_TRADITIONAL
 AC_PROG_INSTALL
@@ -94,6 +95,26 @@ fi
 AM_CONDITIONAL(HAVE_ODBC,test "x$have_odbc" = xyes)
 AC_SUBST(ODBC_LIBS)
 AC_SUBST(ODBC_INCS)
+
+SHARED_LIBS=''
+[
+if [ "$enable_static" = "yes" ]; then
+	CFLAGS="$CFLAGS -DSTATIC"
+	SHARED_LIBS='$(smallTOC_SHARED_LIBS)'
+	case "$host_os" in
+	*)	CFLAGS="$CFLAGS -DsmallTOC -DSQLmodules";;
+#	aix*)	CFLAGS="$CFLAGS -DsmallTOC";;
+#	*)	SHARED_LIBS="$SHARED_LIBS "'$(largeTOC_SHARED_LIBS)';;
+	esac
+	if test "x$GCC" != xyes; then
+		case "$host_os" in
+		irix*)	SHARED_LIBS="$SHARED_LIBS -lm";;
+		esac
+	fi
+fi
+]
+AC_SUBST(SHARED_LIBS)
+AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
 
 dnl Checks for library functions.
 AC_SUBST(thread_safe_flag_spec)
