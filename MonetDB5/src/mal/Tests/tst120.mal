@@ -1,8 +1,8 @@
 #define 2 modules and check location of routines
 
-use tst120a;	# lookup DBHOME/mal/tst120a.mal
-use tst120b;
-use tst120a;	# does not do anything
+include tst120a;	# lookup DBHOME/mal/tst120a.mal
+include tst120b;
+include tst120a;	# does not do anything
 
 a:= second("hh");
 b:= first(1);

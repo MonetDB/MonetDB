@@ -1,12 +1,10 @@
 # Testing the box interfaces
-# open de const box and display its content
+# open de MIL support box and display its content
 
-const.open();
-t:flt := const.take("pi");
-print(t);
-#barrier (nme,v):= const.iterator();
-barrier v:= const.iterator(nme:str);
+mil.open();
+#barrier (nme,v):= mil.iterator();
+barrier v:= mil.iterator(nme:str);
 	print(nme);
-	redo v:=const.iterator(nme:str);
+	redo v:=mil.iterator(nme:str);
 exit v;
-const.close();	# save the content on persistent store
+mil.close();	# save the content on persistent store

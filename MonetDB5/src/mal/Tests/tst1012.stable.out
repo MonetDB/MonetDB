@@ -69,5 +69,5 @@ bbp.take not yet fully implemented
 [ false ]
 [ true ]
 [ "" ]
-[ nil ]
+[ 0 ]
 >

@@ -144,6 +144,10 @@ tst600
 tst6000
 tst601
 tst602
+tst604
+tst605
+tst606
+tst607
 tst610
 tst611
 tst654
@@ -155,9 +159,6 @@ tst755
 tst760
 tst770
 tst780
-tst800
-tst801
-tst802
 tst820
 tst890
 tst900

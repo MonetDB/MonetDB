@@ -18,7 +18,7 @@ stdout of test 'tst2035` in directory 'src/mal` itself:
 #end clkticks;
 function Admin.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
 barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
-    io.printf("clock tick %d\n",n);	# 2 IOprint_formatted_int ($4:int)<-($5:str)(n:int)
+    io.printf("#clock tick %d\n",n);	# 2 IOprint_formatted_int ($4:int)<-($5:str)(n:int)
     alarm.sleep(5);	# 3 ALARMsleep ($6:void)<-($7:int)
     n := calc.-(n,1);	# 4 CALCbinarySUBintint (n:int)<-(n:int)($8:int)
     redo b := calc.>(n,0);	# 5 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 2
@@ -53,14 +53,14 @@ end clkticks;	# 7
 function Admin.main():int;	# 0  (main:int)
     counter := 0;	# 1  (counter:int)<-($2:int)
 thread hdl := 0;	# 2  (hdl:int)<-($2:int) jump 12
-    io.print("start the child");	# 3 IOprint_val ($4:int)<-($5:str)
+    io.print("#start the child");	# 3 IOprint_val ($4:int)<-($5:str)
     Admin.clkticks(1);	# 4  ($6:void)<-($7:int)
     counter := calc.+(counter,1);	# 5 CALCbinaryADDintint (counter:int)<-(counter:int)($7:int)
-    io.printf("counter %d\n",counter);	# 6 IOprint_formatted_int ($8:int)<-($9:str)(counter:int)
+    io.printf("#counter %d\n",counter);	# 6 IOprint_formatted_int ($8:int)<-($9:str)(counter:int)
 barrier t := calc.==(counter,2);	# 7 CALCcompEQintint (t:bit)<-(counter:int)($11:int) jump 9
     leave hdl;	# 8  (hdl:int) jump 12
 exit t;	# 9  (t:bit)
-    io.printf("Redo thread\n");	# 10 IOprint_str ($12:int)<-($13:str)
+    io.printf("#Redo thread\n");	# 10 IOprint_str ($12:int)<-($13:str)
     redo hdl;	# 11  (hdl:int) jump 3
 exit hdl;	# 12  (hdl:int)
     io.printf("Main thread\n");	# 13 IOprint_str ($14:int)<-($15:str)
@@ -74,16 +74,16 @@ exit t0;	# 19  (t0:bit)
     redo wl;	# 21  (wl:bit) jump 15
 exit wl;	# 22  (wl:bit)
 end main;	# 23  
-[ "start the child" ]
-clock tick 1
+[ "#start the child" ]
+#clock tick 1
 Main thread
-Wait for child to exit 1083874097
-counter 1
-Redo thread
-[ "start the child" ]
-clock tick 1
-Wait for child to exit 1083874097
-counter 2
-Wait for child to exit 1083874097
+Wait for child to exit 1083636529
+#counter 1
+#Redo thread
+[ "#start the child" ]
+#clock tick 1
+Wait for child to exit 1083636529
+#counter 2
+Wait for child to exit 1083636529
 Child died 
 >

@@ -1,11 +1,11 @@
 # simple parallel with control flow
 
 thread b1:=0;
-	printf("start thread\n");
+	printf("#start thread\n");
 barrier yy;
 	leave yy;
 	redo yy;	
 exit	yy;
-	printf("finish thread\n");
+	printf("#finish thread\n");
 exit b1;
-	printf("end of program, wait for child\n");
+	printf("#end of program, wait for child\n");

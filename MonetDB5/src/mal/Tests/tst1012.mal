@@ -21,6 +21,6 @@ bbp.close();
 # not properly closed. This means that a temporary bat
 #remains in store.
 bbp.open();
-#v:= bat.take("mysecondbat");
+v:= bbp.take("mysecondbat");
 print(v);
 bbp.close();

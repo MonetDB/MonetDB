@@ -4,8 +4,9 @@
 # who can open any box.
 
 const.open();
-const.deposit("pi",3.147:flt);
-pi:flt := const.take("pi");
-print(pi);
+pi := 3.147:flt;
+const.deposit(pi);
+p2:flt := const.take(pi);
+print(p2);
 const.close();	# save the content on persistent store
-print(pi);
+print(p2);

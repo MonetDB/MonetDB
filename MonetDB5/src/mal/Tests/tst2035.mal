@@ -2,7 +2,7 @@
 
 function clkticks(n:int):void;
 barrier	b:= n>0;
-	printf("clock tick %d\n",n);
+	printf("#clock tick %d\n",n);
 	alarm.sleep(5);
 	n:= n-1;
 	redo b:= n>0;
@@ -11,14 +11,14 @@ end clkticks;
 
 counter:=0;
 thread 	hdl:=0;	# synchronize through a counter
-	print("start the child");
+	print("#start the child");
 	clkticks(1);
 	counter:= counter+1;
-	printf("counter %d\n",counter);
+	printf("#counter %d\n",counter);
 barrier t:= counter==2;
 	leave hdl;
 exit	t;
-	printf("Redo thread\n");
+	printf("#Redo thread\n");
 	redo hdl;
 exit	hdl;
 

@@ -8,9 +8,12 @@ module constants;
 
 #the variables introduced in main are retained as globals
 function main():void;
-	deposit("STORE_MEM",0:int);
-	deposit("STORE_MMAP",1:int);
-	deposit("STORE_COMPR",2:int);
+	STORE_MEM :=0;
+	STORE_MMAP :=1;
+	STORE_COMPR :=2;
+	const.deposit(STORE_MEM);
+	const.deposit(STORE_MMAP);
+	const.deposit(STORE_COMPR);
 end main;
 
 # take uses the 'root' versions.

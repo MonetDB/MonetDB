@@ -3,7 +3,7 @@
 
 # Predefined code segment
 #
-use "kernel/alarm";
+include "kernel/alarm";
 #module(alarm); 
 #
 	tries:= 5;

@@ -67,13 +67,13 @@ end main;	# 12
 # void	str		  # type
 #-------------------------#
 [ nil,	  "Admin"	  ]
-[ nil,	  "sql"		  ]
 [ nil,	  "transaction"	  ]
 [ nil,	  "chopper"	  ]
 [ nil,	  "optimizer"	  ]
 [ nil,	  "inspect"	  ]
 [ nil,	  "box"		  ]
 [ nil,	  "bbp"		  ]
+[ nil,	  "mil"		  ]
 [ nil,	  "const"	  ]
 [ nil,	  "profiler"	  ]
 [ nil,	  "mal"		  ]
