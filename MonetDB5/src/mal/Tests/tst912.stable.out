@@ -1,9 +1,9 @@
 stdout of test 'tst912` in directory 'src/mal` itself:
 
 
-# 10:09:22 >  
-# 10:09:22 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42496 --set sql_port=54971 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst912.mal </dev/null
-# 10:09:22 >  
+# 08:01:41 >  
+# 08:01:41 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst912.mal </dev/null
+# 08:01:41 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
@@ -11,7 +11,7 @@ stdout of test 'tst912` in directory 'src/mal` itself:
 # config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## analyse the overhead of chopping a table
 ## the multiplex code blocks.
 #
@@ -119,17 +119,17 @@ exit doit;	# 11  (doit:bit)
     Admin.choptest(b,1000:lng,base);	# 17  ($27:void)<-(b:bat[:void,:lng])($28:lng)(base:lng)
     Admin.choptest(b,100:lng,base);	# 18  ($29:void)<-(b:bat[:void,:lng])($30:lng)(base:lng)
 end main;	# 19  
-#select direct 24473 usec
+#select direct 24666 usec
 #factory done
-#chopped at 100000 24760 287  at 28.700001 usec
+#chopped at 100000 25865 1199  at 119.900002 usec
 #factory done
-#chopped at 10000 26270 1797  at 17.969999 usec
+#chopped at 10000 27181 2515  at 25.150000 usec
 #factory done
-#chopped at 1000 39602 15129  at 15.129000 usec
+#chopped at 1000 42119 17453  at 17.452999 usec
 #factory done
-#chopped at 100 173014 149384  at 14.938400 usec
+#chopped at 100 177391 152725  at 15.272500 usec
 
-# 22:47:22 >  
-# 22:47:22 >  Done.
-# 22:47:22 >  
+# 08:01:42 >  
+# 08:01:42 >  Done.
+# 08:01:42 >  
 

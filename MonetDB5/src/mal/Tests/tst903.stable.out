@@ -1,21 +1,27 @@
 stdout of test 'tst903` in directory 'src/mal` itself:
-# Monet Database Server V5.0
+
+
+# 08:19:07 >  
+# 08:19:07 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=46963 --set sql_port=59214 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst903.mal </dev/null
+# 08:19:07 >  
+
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
-# dbname:demo
-# Visit http://monetdb.cwi.nl for further information.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
 ## the multiplex code blocks.
 #
 #b:= new(:void,:lng);
-#i:= -1:lng;
-#barrier v:= nextElement(i,0:lng,1000000:lng);
+#barrier (go,i):= newRange(0:lng);
 #	k:= rand();
 #	l:= lng(k);
 #	insert(b,nil,l);
-#	redo v:= nextElement(i,0:lng,1000000:lng);
-#exit v;
+#	redo (go,i):= nextElement(1:lng,1000000:lng);
+#exit (go,i);
+#
 ##setReadMode(b);
 #mx:= max(b); 
 ##printf("max %d",mx);
@@ -233,17 +239,21 @@ exit (go,i);	# 7  (go:bit)(i:lng)
     d0 := calc.-(t1,t0);	# 108 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     io.printf("#multiplex.tactics(+) %d\n",d0);	# 109 IOprint_formatted_lng ($78:int)<-($79:str)(d0:lng)
 end main;	# 110  
-#copy 11545#count 1000000
-#select none 91151 count 0
-#select all 13229 count 1000000
-#select 0.05 6881 count 50004
-#select 0.1 7819 count 100016
-#select 0.2 9859 count 199929
-#select 0.4 13757 count 399791
-#select 0.6 16267 count 600237
-#select 0.8 16832 count 799837
-#select 1.0 14092 count 999999
-#tail sort 181077 count 1000000
-#multiplex.script(+) 5624266
-#multiplex.tactics(+) 25245
->
+#copy 40175#count 1000000
+#select none 276801 count 0
+#select all 46839 count 1000000
+#select 0.05 25553 count 50004
+#select 0.1 27371 count 100016
+#select 0.2 30800 count 199929
+#select 0.4 38282 count 399791
+#select 0.6 44000 count 600237
+#select 0.8 46273 count 799837
+#select 1.0 44508 count 999999
+#tail sort 540049 count 1000000
+#multiplex.script(+) 23829530
+#multiplex.tactics(+) 78436
+
+# 08:19:33 >  
+# 08:19:33 >  Done.
+# 08:19:33 >  
+

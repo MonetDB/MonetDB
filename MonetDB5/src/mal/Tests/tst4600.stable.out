@@ -1,9 +1,9 @@
 stdout of test 'tst4600` in directory 'src/mal` itself:
 
 
-# 22:41:24 >  
-# 22:41:24 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=44767 --set sql_port=52701 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4600.mal </dev/null
-# 22:41:24 >  
+# 08:01:48 >  
+# 08:01:48 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4600.mal </dev/null
+# 08:01:48 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
@@ -11,7 +11,7 @@ stdout of test 'tst4600` in directory 'src/mal` itself:
 # config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## the first test for macro expansions and inversions
 #function welcome(lim:int):void;
 #    i:= 0;
@@ -60,7 +60,7 @@ exit $13;
     inspect.showFunction();
 end main;
 
-# 22:47:28 >  
-# 22:47:28 >  Done.
-# 22:47:28 >  
+# 08:01:49 >  
+# 08:01:49 >  Done.
+# 08:01:49 >  
 

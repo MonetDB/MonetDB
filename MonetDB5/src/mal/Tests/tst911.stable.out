@@ -1,9 +1,9 @@
 stdout of test 'tst911` in directory 'src/mal` itself:
 
 
-# 09:56:13 >  
-# 09:56:13 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=46829 --set sql_port=57502 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst911.mal </dev/null
-# 09:56:13 >  
+# 08:01:40 >  
+# 08:01:40 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst911.mal </dev/null
+# 08:01:40 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
@@ -11,7 +11,7 @@ stdout of test 'tst911` in directory 'src/mal` itself:
 # config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## analyse the overhead of chopping a table
 ## the multiplex code blocks.
 #
@@ -94,13 +94,13 @@ exit doit;	# 11  (doit:bit)
     Admin.choptest(b,1000:lng,base);	# 17  ($27:void)<-(b:bat[:void,:lng])($28:lng)(base:lng)
     Admin.choptest(b,100:lng,base);	# 18  ($29:void)<-(b:bat[:void,:lng])($30:lng)(base:lng)
 end main;	# 19  
-#select direct 24130 usec
-#chopped at 100000 27378 3248  at 324.799988 usec
-#chopped at 10000 36317 12187  at 121.870003 usec
-#chopped at 1000 37269 13139  at 13.139000 usec
-#chopped at 100 157264 133134  at 13.313400 usec
+#select direct 23562 usec
+#chopped at 100000 24244 682  at 68.199997 usec
+#chopped at 10000 24980 1418  at 14.180000 usec
+#chopped at 1000 36293 12731  at 12.731000 usec
+#chopped at 100 148204 124642  at 12.464200 usec
 
-# 22:47:20 >  
-# 22:47:20 >  Done.
-# 22:47:20 >  
+# 08:01:41 >  
+# 08:01:41 >  Done.
+# 08:01:41 >  
 

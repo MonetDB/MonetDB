@@ -1,9 +1,9 @@
 stdout of test 'tst4611` in directory 'src/mal` itself:
 
 
-# 20:31:57 >  
-# 20:31:57 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=45201 --set sql_port=53796 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4611.mal </dev/null
-# 20:31:57 >  
+# 08:01:51 >  
+# 08:01:51 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4611.mal </dev/null
+# 08:01:51 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
@@ -53,7 +53,7 @@ function Admin.main():int;
     inspect.showFunction();
 end main;
 
-# 22:47:31 >  
-# 22:47:31 >  Done.
-# 22:47:31 >  
+# 08:01:51 >  
+# 08:01:51 >  Done.
+# 08:01:51 >  
 

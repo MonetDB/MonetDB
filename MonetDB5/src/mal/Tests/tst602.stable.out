@@ -1,23 +1,26 @@
 stdout of test 'tst602` in directory 'src/mal` itself:
-# Monet Database Server V5.0
+
+
+# 08:01:24 >  
+# 08:01:24 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst602.mal </dev/null
+# 08:01:24 >  
+
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
-# dbname:demo
-# Visit http://monetdb.cwi.nl for further information.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
 ## Testing the box interfaces
-## open de const box and display its content
+## open de MIL support box and display its content
 #
-#const.open();
-#t:flt := const.take("pi");
-#print(t);
-##barrier (nme,v):= const.iterator();
-#barrier v:= const.iterator(nme:str);
+#mil.open();
+#barrier (v,nme):= mil.iterator();
 #	print(nme);
-#	redo v:=const.iterator(nme:str);
+#	redo (v,nme):=mil.iterator();
 #exit v;
-#const.close();	# save the content on persistent store
+#mil.close();	# save the content on persistent store
 #
 function Admin.main():int;	# 0  (main:int)
     mil.open();	# 1 MILopen ($1:void)
@@ -57,4 +60,8 @@ end main;	# 7
 [ "M_2_SQRTPI" ]
 [ "M_SQRT2" ]
 [ "M_SQRT1_2" ]
->
+
+# 08:01:24 >  
+# 08:01:24 >  Done.
+# 08:01:24 >  
+

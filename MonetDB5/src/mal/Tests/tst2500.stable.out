@@ -1,23 +1,27 @@
 stdout of test 'tst2500` in directory 'src/mal` itself:
-# Monet Database Server V5.0
+
+
+# 08:01:04 >  
+# 08:01:04 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst2500.mal </dev/null
+# 08:01:04 >  
+
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
-# dbname:demo
-# Visit http://monetdb.cwi.nl for further information.
-## Stream functions seem to provide a better control structure
-## The first stream doesn;t do much, because its state can not be inspected.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
+## The prototypical factory construct
 #
-#stream random(seed:int):bit;
+#factory random(seed:int):int;
 #	i:= seed;
-#barrier L:= true;
+#barrier always:= true;
 #	i:= 125 *i;
 #	i:= i % 32767;
-#	return L:=true;
-#	redo L;
-#exit L;
-#	return L:= false;
+#	yield i;
+#	redo always;
+#exit always;
 #end;
 factory Admin.random(seed:int):int;	# 0  (random:int)<-(seed:int)
     i := seed;	# 1  (i:int)<-(seed:int)
@@ -42,4 +46,8 @@ function Admin.main():int;	# 0  (main:int)
 end main;	# 5  
 [ 125 ]
 [ 15625 ]
->
+
+# 08:01:04 >  
+# 08:01:04 >  Done.
+# 08:01:04 >  
+

@@ -1,9 +1,9 @@
 stdout of test 'tst4015` in directory 'src/mal` itself:
 
 
-# 22:27:30 >  
-# 22:27:30 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=45221 --set sql_port=59674 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4015.mal </dev/null
-# 22:27:30 >  
+# 08:01:45 >  
+# 08:01:45 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4015.mal </dev/null
+# 08:01:45 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
@@ -11,7 +11,7 @@ stdout of test 'tst4015` in directory 'src/mal` itself:
 # config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## testing repeatative reverse optimalisation
 #r:= new(:int,:int);
 #insert(r,5,1);
@@ -22,10 +22,6 @@ stdout of test 'tst4015` in directory 'src/mal` itself:
 #debugOptimizers();
 #RRoptimizer();
 #
-Reverse Removal
-    s := bat.reverse(r);	# 3 BKCreverse (s:bat[:int,:int])<-(r:bat[:int,:int])
-    t := bat.reverse(s);	# 5 BKCreverse (t:bat[:int,:int])<-(s:bat[:int,:int])
-Optimizer effect 10 -> 6 instructions
 function Admin.main():int;	# 0  (main:int)
     r := bbp.new(:int,:int);	# 1 CMDBATnew (r:bat[:int,:int])<-($2:int)($3:int)
     bat.insert(r,5,1);	# 2 BKCinsert_bun ($4:void)<-(r:bat[:int,:int])($5:int)($6:int)
@@ -38,7 +34,7 @@ end main;	# 5
 #-----------------#
 [ 5,	  1	  ]
 
-# 22:47:25 >  
-# 22:47:25 >  Done.
-# 22:47:25 >  
+# 08:01:45 >  
+# 08:01:45 >  Done.
+# 08:01:45 >  
 

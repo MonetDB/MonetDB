@@ -1,17 +1,17 @@
 stdout of test 'tst024` in directory 'src/mal` itself:
 
 
-# 10:50:54 >  
-# 10:50:54 >  Mtimeout -timeout 60 Mserver "--config=/home/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/home/mk/monet5/Linux/lib/MonetDB5:/home/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/home/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/home/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=46279 --set sql_port=58931 --set monet_prompt= --trace "--config=/home/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst024.mal </dev/null
-# 10:50:54 >  
+# 07:58:40 >  
+# 07:58:40 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst024.mal </dev/null
+# 07:58:40 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
-# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ##detect illegal use of temporary variables
 #i:= 12;		# internal location of i is 3
 #
@@ -31,7 +31,7 @@ function Admin.main():int;	# 0  unknown (main:int)
     print($5);	# 5  unknown ($8:any)<-($5:any)
 end main;	# 6  unknown 
 
-# 22:43:48 >  
-# 22:43:48 >  Done.
-# 22:43:48 >  
+# 07:58:40 >  
+# 07:58:40 >  Done.
+# 07:58:40 >  
 

@@ -1,11 +1,17 @@
 stdout of test 'tst200` in directory 'src/mal` itself:
-# Monet Database Server V5.0
+
+
+# 07:59:14 >  
+# 07:59:14 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst200.mal </dev/null
+# 07:59:14 >  
+
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
-# dbname:demo
-# Visit http://monetdb.cwi.nl for further information.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
 ## The series tst2?? is a patched version of suite_00
 ## The first and foremost BAT operations
 #
@@ -87,4 +93,8 @@ end main;	# 20
 [ 7,	  49,	  49,	  49	  ]
 [ 8,	  64,	  64,	  64	  ]
 [ 9,	  nil,	  nil,	  nil	  ]
->
+
+# 07:59:14 >  
+# 07:59:14 >  Done.
+# 07:59:14 >  
+

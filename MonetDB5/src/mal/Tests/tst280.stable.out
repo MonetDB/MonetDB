@@ -1,11 +1,17 @@
 stdout of test 'tst280` in directory 'src/mal` itself:
-# Monet Database Server V5.0
+
+
+# 08:01:12 >  
+# 08:01:12 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst280.mal </dev/null
+# 08:01:12 >  
+
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
-# dbname:demo
-# Visit http://monetdb.cwi.nl for further information.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
 #function pow(i:int,j:int):int;
 #	z:= i+j;
 #	printf("result %d\n",z);
@@ -22,9 +28,8 @@ end pow;	# 4
 #	bat.setSequenceBase(resB,0@0);
 #	lim:= count(A2);
 #	printf("count %d\n",lim);
-#	m:= -1:lng;
 #	l:= lng(lim);
-#barrier mloop:=mal.nextElement(m,0:lng,l,1:lng); 
+#barrier (mloop,m):=mal.newRange(0:lng);
 #	printf("loopindex %d\n",m);
 #        B2 := algebra.fetch(A2,m);       
 #	printf("B2 value %d\n",B2);
@@ -32,10 +37,11 @@ end pow;	# 4
 #	printf("B3 value %d\n",B3);
 #        cr := pow(B2,B3);
 #        insert(resB,nil,cr); 
-#        redo mloop:=mal.nextElement(m,0:lng,l,1:lng);    
+#        redo (mloop,m) :=mal.nextElement(1:lng,l);    
 #catch   MALexception;  
 #exit    MALexception; 
-#exit    mloop;  
+#exit    (mloop,m) ;  
+#  
 #        return resB;    
 #end tst;   
 function Admin.tst(A2:bat[:void,:int],A3:bat[:void,:int]):bat[:void,:int];	# 0  (tst:bat[:void,:int])<-(A2:bat[:void,:int])(A3:bat[:void,:int])
@@ -107,9 +113,13 @@ B2 value 2
 B3 value 2
 result 4
 #-----------------#
-# h	tmp_5	  # name
+# h	tmp_6	  # name
 # void	int	  # type
 #-----------------#
 [ 0@0,	  2	  ]
 [ 1@0,	  4	  ]
->
+
+# 08:01:12 >  
+# 08:01:12 >  Done.
+# 08:01:12 >  
+

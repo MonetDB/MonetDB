@@ -1,17 +1,17 @@
 stdout of test 'tst606` in directory 'src/mal` itself:
 
 
-# 19:49:17 >  
-# 19:49:17 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB/log" --set mapi_port=40188 --set sql_port=57061 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst606.mal </dev/null
-# 19:49:17 >  
+# 08:01:25 >  
+# 08:01:25 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst606.mal </dev/null
+# 08:01:25 >  
 
-# Monet Database Server V5.0
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
-# dbname:demo
-# Visit http://monetdb.cwi.nl for further information.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
 ## partial definition of the object space for MIL
 ## it is subordinate to the MIL space dealing with persistent bats
 ## CONST STORE_MEM   := 0; 
@@ -22,9 +22,12 @@ stdout of test 'tst606` in directory 'src/mal` itself:
 #
 ##the variables introduced in main are retained as globals
 #function main():void;
-#	deposit("STORE_MEM",0:int);
-#	deposit("STORE_MMAP",1:int);
-#	deposit("STORE_COMPR",2:int);
+#	STORE_MEM :=0;
+#	STORE_MMAP :=1;
+#	STORE_COMPR :=2;
+#	const.deposit(STORE_MEM);
+#	const.deposit(STORE_MMAP);
+#	const.deposit(STORE_COMPR);
 #end main;
 function constants.main():void;	# 0  (main:void)
     STORE_MEM := 0;	# 1  (STORE_MEM:int)<-($2:int)
@@ -62,4 +65,8 @@ end release;	# 3
 #
 #
 function constants.deposit(v:any,name:str):void;	# 0  (deposit:void)<-(v:any)(name:str)
->
+
+# 08:01:25 >  
+# 08:01:25 >  Done.
+# 08:01:25 >  
+

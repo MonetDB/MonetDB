@@ -1,11 +1,17 @@
 stdout of test 'tst010` in directory 'src/mal` itself:
-# Monet Database Server V5.0
+
+
+# 07:58:35 >  
+# 07:58:35 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst010.mal </dev/null
+# 07:58:35 >  
+
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
-# dbname:demo
-# Visit http://monetdb.cwi.nl for further information.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
 ## syntax analysis test for guarded blocks, redo's and leave's
 #barrier	L:= 1;
 #	#do it
@@ -82,4 +88,8 @@ exit D;	# 27  (D:int)
 exit A;	# 28  (A:int)
 barrier unfinished := 1;	# 29  (unfinished:int)<-($2:int)
     f := 1;	# 30  (f:int)<-($2:int)
->
+
+# 07:58:35 >  
+# 07:58:35 >  Done.
+# 07:58:35 >  
+

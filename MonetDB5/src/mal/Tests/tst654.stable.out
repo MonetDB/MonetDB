@@ -1,11 +1,17 @@
 stdout of test 'tst654` in directory 'src/mal` itself:
-# Monet Database Server V5.0
+
+
+# 08:01:27 >  
+# 08:01:27 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst654.mal </dev/null
+# 08:01:27 >  
+
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
-# dbname:demo
-# Visit http://monetdb.cwi.nl for further information.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
 ## An extensive test for the new tablet layout
 #mdb('T');
 #tablet.display(2,"strong");
@@ -86,37 +92,37 @@ function Admin.main():int;	# 0  (main:int)
     tablet.page(b1,b2);	# 30 TABpage ($60:int)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
 end main;	# 31  
 #Monet Debugger on
-#mdb     tablet.display(2,"strong")
+#mdb !    tablet.display(2,"strong")
 #-----------------------#
 # $4,	$5		# name
 #-----------------------#
 [ 2,	"strong"	]
 #-----------------------#
-#mdb     tablet.display(2,"strong",true)
+#mdb !    tablet.display(2,"strong",true)
 #-------------------------------#
 # $4,	$5,		$7	# name
 #-------------------------------#
 [ 2,	"strong",	true	]
 #-------------------------------#
-#mdb     first := 1;
-#mdb     last := 2;
-#mdb     tablet.display(1,2)
+#mdb !    first := 1;
+#mdb !    last := 2;
+#mdb !    tablet.display(1,2)
 #-----------------------#
 # first,	last	# name
 #-----------------------#
 [ 1,		2	]
 #-----------------------#
-#mdb     tablet.setFormat(1,2)
-#mdb     tablet.setProperties("name,type")
-#mdb     tablet.setColumnName(0,"Eerste")
-#mdb     b1 := bbp.new(0@0,0)
-#mdb     bat.insert(<tmp_4>,42)
-#mdb     bat.insert(<tmp_4>,49)
-#mdb     b2 := bbp.new(0@0,nil)
-#mdb     bat.insert(<tmp_5>,"hello world")
-#mdb     bat.insert(<tmp_5>,"goodbye world")
-#mdb     tablet.setProperties("name,type,dense,sorted,key,min,max")
-#mdb     tablet.display(<tmp_4>,<tmp_5>)
+#mdb !    tablet.setFormat(1,2)
+#mdb !    tablet.setProperties("name,type")
+#mdb !    tablet.setColumnName(0,"Eerste")
+#mdb !    b1 := bbp.new(0@0,0)
+#mdb !    bat.insert(<tmp_4>,42)
+#mdb !    bat.insert(<tmp_4>,49)
+#mdb !    b2 := bbp.new(0@0,nil)
+#mdb !    bat.insert(<tmp_5>,"hello world")
+#mdb !    bat.insert(<tmp_5>,"goodbye world")
+#mdb !    tablet.setProperties("name,type,dense,sorted,key,min,max")
+#mdb !    tablet.display(<tmp_4>,<tmp_5>)
 #---------------------------------------#
 # tmp_4,	tmp_5			# name
 # int,		str			# type
@@ -129,13 +135,13 @@ end main;	# 31
 [ 42,		"hello world"		]
 [ 49,		"goodbye world"		]
 #---------------------------------------#
-#mdb     in := calc.int(nil)
-#mdb     bat.insert(<tmp_4>,nil)
-#mdb     bat.insert(<tmp_5>,nil)
-#mdb     tablet.setProperties(nil)
-#mdb     tablet.setColumnDecimal(0,3,1)
-#mdb     tablet.setColumnNull(1,"unknown")
-#mdb     tablet.display(<tmp_4>,<tmp_5>)
+#mdb !    in := calc.int(nil)
+#mdb !    bat.insert(<tmp_4>,nil)
+#mdb !    bat.insert(<tmp_5>,nil)
+#mdb !    tablet.setProperties(nil)
+#mdb !    tablet.setColumnDecimal(0,3,1)
+#mdb !    tablet.setColumnNull(1,"unknown")
+#mdb !    tablet.display(<tmp_4>,<tmp_5>)
 #---------------------------------------#
 # tmp_4,	tmp_5			# name
 #---------------------------------------#
@@ -143,15 +149,19 @@ end main;	# 31
 [  4.9,		"goodbye world"		]
 [  nil,		unknown			]
 #---------------------------------------#
-#mdb     sn := calc.str(nil)
-#mdb     tablet.setTableBracket("<rowset>","</rowset>")
-#mdb     tablet.setRowBracket("<row>","</row>")
-#mdb     tablet.setColumnBracket(0,"<age>","</age>")
-#mdb     tablet.setColumnBracket(1,"<title>","</title>")
-#mdb     tablet.page(<tmp_4>,<tmp_5>)
+#mdb !    sn := calc.str(nil)
+#mdb !    tablet.setTableBracket("<rowset>","</rowset>")
+#mdb !    tablet.setRowBracket("<row>","</row>")
+#mdb !    tablet.setColumnBracket(0,"<age>","</age>")
+#mdb !    tablet.setColumnBracket(1,"<title>","</title>")
+#mdb !    tablet.page(<tmp_4>,<tmp_5>)
 <rowset><row><age> 4.2</age>	<title>"hello world"</title>		</row>
 <row><age> 4.9</age>	<title>"goodbye world"</title>		</row>
 <row><age> nil</age>	<title>unknown</title>			</row>
 </rowset>
-#mdb end main;
->
+#mdb !end main;
+
+# 08:01:27 >  
+# 08:01:27 >  Done.
+# 08:01:27 >  
+

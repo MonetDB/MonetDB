@@ -1,27 +1,23 @@
 stdout of test 'tst2035` in directory 'src/mal` itself:
 
 
-# 10:33:21 >  
-# 10:33:21 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=45083 --set sql_port=56671 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst2035.mal </dev/null
-# 10:33:21 >  
-
-
-
-
+# 08:00:00 >  
+# 08:00:00 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst2035.mal </dev/null
+# 08:00:00 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
-# dbname:demo
-# Visit http://monetdb.cwi.nl for further information.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
 ##The 2000 serie  is focussed on parallelism
 #
 #function clkticks(n:int):void;
 #barrier	b:= n>0;
-#	printf("clock tick %d\n",n);
-#	alarm.sleep(5);
+#	#printf("#clock tick %d\n",n);
+#	alarm.sleep(2);
 #	n:= n-1;
 #	redo b:= n>0;
 #exit	b;
@@ -36,26 +32,27 @@ end clkticks;	# 6
 #
 #counter:=0;
 #thread 	hdl:=0;	# synchronize through a counter
-#	print("start the child");
+#	print("#start the child");
 #	clkticks(1);
 #	counter:= counter+1;
-#	printf("counter %d\n",counter);
+#	#printf("#counter %d\n",counter);
 #barrier t:= counter==2;
 #	leave hdl;
 #exit	t;
-#	printf("Redo thread\n");
+#	#printf("#Redo thread\n");
 #	redo hdl;
 #exit	hdl;
 #
-#printf("Main thread\n");
+#printf("#Main thread\n");
 ## loop to wait for the child to exit
 #barrier wl:= true;
-#	printf("Wait for child to exit %d\n",hdl);
+#	alarm.sleep(5);
+#	printf("#Wait for child to exit %d\n",hdl);
 #barrier	t0:=counter == 2;
-#	printf("Child died \n");
+#	printf("#Child died \n");
 #	leave wl;
 #exit	t0;
-#	alarm.sleep(10);
+#	alarm.sleep(5);
 #	redo wl;
 #exit	wl;
 #
@@ -83,12 +80,9 @@ exit t0;	# 18  (t0:bit)
 exit wl;	# 21  (wl:bit)
 end main;	# 22  
 #Main thread
-#Wait for child to exit 1083439921
-#counter 1
-#Redo thread
 [ "#start the child" ]
-#clock tick 1
-#counter 2
-#Wait for child to exit 1083439921
-#Child died 
->
+
+# 08:01:00 >  
+# 08:01:00 >  Done.
+# 08:01:00 >  
+

@@ -1,17 +1,17 @@
 stdout of test 'tst039` in directory 'src/mal` itself:
 
 
-# 18:26:04 >  
-# 18:26:04 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB/log" --set mapi_port=49025 --set sql_port=56914 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst039.mal </dev/null
-# 18:26:04 >  
+# 07:58:43 >  
+# 07:58:43 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst039.mal </dev/null
+# 07:58:43 >  
 
-# Monet Database Server V5.0
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for 32biti686-pc-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## complex analysis
 #
 #function sample(nme:str, val:any):bit;
@@ -21,6 +21,7 @@ stdout of test 'tst039` in directory 'src/mal` itself:
 #   t := count(h);
 #   x := print(t);
 #   y := print(val);
+#   return sample:=true;
 #end sample;
 function Admin.sample(nme:str,val:any):bit;	# 0  (sample:bit)<-(nme:str)(val:any)
     c := calc.*(2,3);	# 1 CALCbinaryMULintint (c:int)<-($4:int)($5:int)
@@ -33,7 +34,7 @@ function Admin.sample(nme:str,val:any):bit;	# 0  (sample:bit)<-(nme:str)(val:any
 end sample;	# 8  
 #
 
-# 22:43:52 >  
-# 22:43:52 >  Done.
-# 22:43:52 >  
+# 07:58:43 >  
+# 07:58:43 >  Done.
+# 07:58:43 >  
 

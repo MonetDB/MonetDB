@@ -1,28 +1,35 @@
 stdout of test 'tst910` in directory 'src/mal` itself:
-# Monet Database Server V5.0
+
+
+# 08:01:39 >  
+# 08:01:39 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst910.mal </dev/null
+# 08:01:39 >  
+
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
-# dbname:demo
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
 ## the multiplex code blocks.
 ## this is the equivalent to tst901, but now without batcalc support
 #
 #function inc(a:lng,b:lng):lng;
-#	z:= a+b;
-#	return z;
+#       z:= a+b;
+#       return z;
 #end inc;
 function Admin.inc(a:lng,b:lng):lng;	# 0  (inc:lng)<-(a:lng)(b:lng)
     z := calc.+(a,b);	# 1 CALCbinaryADDlnglng (z:lng)<-(a:lng)(b:lng)
     return z;	# 2  (z:lng)
 end inc;	# 3  
-#
 #b:= new(:lng,:lng);
 #i:= -1:lng;
-#barrier v:= nextElement(i,0:lng,10:lng);
-#	insert(b,i,i);
-#	redo v;
-#exit v;
+#barrier (v,i):= newRange(0:lng);
+#       insert(b,i,i);
+#       redo (v,i):= nextElement(1:lng,10:lng);
+#exit (v,i);
+#
 #c:= copy(b);
 #print(c);
 #x:= multiplex.script("+",b,c);
@@ -66,8 +73,8 @@ exit (v,i);	# 6  (v:bit)(i:lng)
     io.print(z);	# 22 IOprint_val ($27:int)<-(z:bat[:lng,:bit])
 end main;	# 23  
 #-----------------#
-# BAT:	  tmp_5	  #
-# (lng)	  (lng)	  #
+# h	tmp_5	  # name
+# lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
 [ 1,	  1	  ]
@@ -80,8 +87,8 @@ end main;	# 23
 [ 8,	  8	  ]
 [ 9,	  9	  ]
 #-----------------#
-# BAT:	  tmp_6	  #
-# (lng)	  (lng)	  #
+# h	tmp_6	  # name
+# lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
 [ 1,	  2	  ]
@@ -94,8 +101,8 @@ end main;	# 23
 [ 8,	  16	  ]
 [ 9,	  18	  ]
 #-----------------#
-# BAT:	  tmp_7	  #
-# (lng)	  (lng)	  #
+# h	tmp_6	  # name
+# lng	lng	  # type
 #-----------------#
 [ 0,	  1	  ]
 [ 1,	  2	  ]
@@ -108,8 +115,8 @@ end main;	# 23
 [ 8,	  9	  ]
 [ 9,	  10	  ]
 #-----------------#
-# BAT:	  tmp_8	  #
-# (lng)	  (lng)	  #
+# h	tmp_6	  # name
+# lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
 [ 1,	  2	  ]
@@ -122,8 +129,8 @@ end main;	# 23
 [ 8,	  16	  ]
 [ 9,	  18	  ]
 #-----------------#
-# BAT:	  tmp_9	  #
-# (lng)	  (lng)	  #
+# h	tmp_6	  # name
+# lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
 [ 1,	  1	  ]
@@ -136,8 +143,8 @@ end main;	# 23
 [ 8,	  64	  ]
 [ 9,	  81	  ]
 #-----------------#
-# BAT:	  tmp_10  #
-# (lng)	  (bit)	  #
+# h	tmp_7	  # name
+# lng	bit	  # type
 #-----------------#
 [ 0,	  true	  ]
 [ 1,	  true	  ]
@@ -150,8 +157,8 @@ end main;	# 23
 [ 8,	  true	  ]
 [ 9,	  true	  ]
 #-----------------#
-# BAT:	  tmp_11  #
-# (lng)	  (bit)	  #
+# h	tmp_7	  # name
+# lng	bit	  # type
 #-----------------#
 [ 0,	  true	  ]
 [ 1,	  true	  ]
@@ -164,8 +171,8 @@ end main;	# 23
 [ 8,	  false	  ]
 [ 9,	  false	  ]
 #-----------------#
-# BAT:	  tmp_12  #
-# (lng)	  (bit)	  #
+# h	tmp_8	  # name
+# lng	bit	  # type
 #-----------------#
 [ 0,	  false	  ]
 [ 1,	  false	  ]
@@ -177,4 +184,8 @@ end main;	# 23
 [ 7,	  true	  ]
 [ 8,	  true	  ]
 [ 9,	  true	  ]
->
+
+# 08:01:39 >  
+# 08:01:39 >  Done.
+# 08:01:39 >  
+

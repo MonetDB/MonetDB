@@ -1,28 +1,31 @@
 stdout of test 'tst607` in directory 'src/mal` itself:
 
 
-# 23:21:53 >  
-# 23:21:53 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB/log" --set mapi_port=41389 --set sql_port=59888 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst607.mal </dev/null
-# 23:21:53 >  
+# 08:01:25 >  
+# 08:01:25 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst607.mal </dev/null
+# 08:01:25 >  
 
-# Monet Database Server V5.0
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for 32biti686-pc-linux-gnu/32bit.
-# config:/ufs/mk/monet5/src/mal/Tests/tst.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
-# dbname:demo
-# Visit http://monetdb.cwi.nl for further information.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
 ## using spaces
 #
-#u:str:=const.take("user");
+#u:str:=const.take(user);
 #printf("User bound to %s\n",u);
+#roomnumber:= 321;
+#const.deposit(roomnumber);
 #
-#v:int:= const.take("roomnumber");
-#
+#v:int:= const.take(roomnumber);
+#print(v);
 #v:= 123;
 #v:= v+1;
-#release("roomnumber",v);
-#release("roomnumber",v); # failure? done twice or implicit take?
+#const.release(roomnumber);
+#print("attempt twice to release");
+#const.release(roomnumber); # failure? done twice or implicit take?
 #
 function Admin.main():int;	# 0  (main:int)
     u := const.take(user);	# 1 CSTtake (u:str)<-(user:any)
@@ -40,4 +43,8 @@ end main;	# 12
 User bound to Admin
 [ 321 ]
 [ "attempt twice to release" ]
->
+
+# 08:01:25 >  
+# 08:01:25 >  Done.
+# 08:01:25 >  
+
