@@ -46,7 +46,7 @@ html
 mal_export int malStartupAdmin();
 mal_export void serveClient(void *dummy);
 mal_export void initClientPrg(Client cntxt, str nme);
-mal_export void scheduleClient(str user, str passwd, str api, int msocket, stream *fin, stream *fout);
+mal_export void scheduleClient(str user, str passwd, int msocket, stream *fin, stream *fout);
 
 mal_export str MALreader(Client c);
 mal_export str MALparser(Client c);
@@ -113,7 +113,7 @@ No encryption scheme is performed yet.
 An example initialization string would be "guest:23" which indicates access
 of the client named 'guest' to a session previously started under identity 23.
 @c
-void scheduleClient(str user, str passwd, str api, int socket, stream *fin, stream *fout)
+void scheduleClient(str user, str passwd, int socket, stream *fin, stream *fout)
 {
 	str mode;
 	int key=0;
@@ -229,7 +229,8 @@ A stack frame is initialized to keep track of global variables.
 	c->glb->stktop =mb->vtop;
 	c->glb->blk = mb;
 
-	if( setScenario(c,"mal")==0) runScenario(c);
+	if( c->scenario==0) defaultScenario(c);
+	runScenario(c);
         garbageCollector(c->curprg->def,c->glb,0);
 
 	if( c->mode > FINISHING){

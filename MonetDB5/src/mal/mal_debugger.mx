@@ -52,7 +52,7 @@ mal_export void mdbHelp(stream *f);
 mal_export void printStackElm(stream *f, MalBlkPtr mb,VarPtr n, ValPtr v,int index, int cnt,int first);
 mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
-mal_export str callString(MalBlkPtr mb, MalStkPtr stk, int pc);
+mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc);
 
 mal_export int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export int mdbSetCmd(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -147,7 +147,7 @@ void mdbClrBreakpointName(Client cntxt, str name)
 #define skipNonBlanc(X)	while(*(X) && !isspace(*X)) X++;
 #define skipWord(X)	skipNonBlanc(X); skipBlanc(X);
 
-str callString(MalBlkPtr mb, MalStkPtr stk, int pc){
+str call2str(MalBlkPtr mb, MalStkPtr stk, int pc){
 	InstrPtr p;
 	char buf[8192];
 	int l,k;
@@ -178,7 +178,7 @@ str callString(MalBlkPtr mb, MalStkPtr stk, int pc){
 void printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc){
 	str msg;
 
-	msg= callString(mb,stk,pc);
+	msg= call2str(mb,stk,pc);
 	stream_printf(cntxt->fdout,"%s\n",msg);
 	GDKfree(msg);
 }
