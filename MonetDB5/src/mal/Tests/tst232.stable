@@ -19,15 +19,15 @@
 #	printf("after destroy refcount =%d\n",i);
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:str);	# 1 CMDBATnew (b:bat[int,str])<-($2:int)($3:str)
-    i := bat.getBATrefcnt(b);	# 2 getBATrefcnt (i:int)<-(b:bat[int,str])
+    b := bbp.new(int:,str:);	# 1 CMDBATnew (b:bat[:int,:str])<-($2:int)($3:str)
+    i := bat.getBATrefcnt(b);	# 2 getBATrefcnt (i:int)<-(b:bat[:int,:str])
     system.printf("refcount =%d\n",i);	# 3 SYSprint_formatted_int ($5:int)<-($6:str)(i:int)
-    bat.insert(b,1,"bat B");	# 4 CMDinsert_bun ($7:void)<-(b:bat[int,str])($8:int)($9:str)
-    io.print(b);	# 5 CMDprint_val ($10:int)<-(b:bat[int,str])
-    i := bat.getBATrefcnt(b);	# 6 getBATrefcnt (i:int)<-(b:bat[int,str])
+    bat.insert(b,1,"bat B");	# 4 CMDinsert_bun ($7:void)<-(b:bat[:int,:str])($8:int)($9:str)
+    io.print(b);	# 5 CMDprint_val ($10:int)<-(b:bat[:int,:str])
+    i := bat.getBATrefcnt(b);	# 6 getBATrefcnt (i:int)<-(b:bat[:int,:str])
     system.printf("refcount =%d\n",i);	# 7 SYSprint_formatted_int ($11:int)<-($6:str)(i:int)
-    bat.destroy(b);	# 8 CMDdestroy ($12:void)<-(b:bat[int,str])
-    i := bat.getBATrefcnt(b);	# 9 getBATrefcnt (i:int)<-(b:bat[int,str])
+    bat.destroy(b);	# 8 CMDdestroy ($12:void)<-(b:bat[:int,:str])
+    i := bat.getBATrefcnt(b);	# 9 getBATrefcnt (i:int)<-(b:bat[:int,:str])
     system.printf("after destroy refcount =%d\n",i);	# 10 SYSprint_formatted_int ($13:int)<-($14:str)(i:int)
 end main;	# 11  
 refcount =1

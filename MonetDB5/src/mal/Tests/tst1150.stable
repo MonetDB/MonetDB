@@ -107,7 +107,7 @@ function Admin.main():int;	# 0  (main:int)
     io.fprintf(fp," %d",10);	# 29 io_fprintf ($47:void)<-(fp:fstream)($27:str)($28:any)
     io.fprintf(fp," %f\n",7.0);	# 30 io_fprintf ($48:void)<-(fp:fstream)($34:str)($35:any)
     oa_a := system.printf("%s\n",s);	# 31 SYSprint_formatted_str (oa_a:int)<-($50:str)(s:str)
-    quit := bbp.bind("quit");	# 32 CMDbbpbind (quit:bat[any,any])<-($52:str)
+    quit := bbp.bind("quit");	# 32 CMDbbpbind (quit:bat[:any,:any])<-($52:str)
 end main;	# 33  
 [ "Dit is een test\\n" ]
 !ERROR: MALexception:io.fprintf: not yet defined in version-5

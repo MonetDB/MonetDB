@@ -1,5 +1,5 @@
 # parsing operations with multi-assignments
-function swap(x:str,y:str):(a:str,b:str);
+function swap(x:str,y:str) (a:str,b:str);
 	a:=y; b:=x;
 	return (a,b);
 end swap;

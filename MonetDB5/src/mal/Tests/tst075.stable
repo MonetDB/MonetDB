@@ -5,14 +5,14 @@
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
 # dbname:demo
 ## parsing operations with multi-assignments
-#function swap(x:str,y:str):(a:str,b:str);
+#function swap(x:str,y:str) (a:str,b:str);
 #	a:=y; b:=x;
 #	return (a,b);
 #end swap;
-function Admin.swap(x:str,y:str):(a:str,b:str);	# 0  (a:str)(b:str)<-(x:str)(y:str)
+function Admin.swap(x:str,y:str) (:str,b:str);	# 0  (:str)(b:str)<-(x:str)(y:str)
     a := y;	# 1  (a:str)<-(y:str)
     b := x;	# 2  (b:str)<-(x:str)
-    return (a,b);	# 3  (a:str)(b:str)<-(a:str)(b:str)
+    return (a,b);	# 3  (:str)(b:str)<-(a:str)(b:str)
 end swap;	# 4  
 #
 #(x,y):= swap("world","hello");

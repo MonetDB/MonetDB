@@ -3,7 +3,7 @@
 # currently the tactics is replaced by a script during
 # initial analysis. It should remain 'tactics'
 
-function perftst( b:bat[any::1,any::2],div:any::2):void;
+function perftst( b:bat[:any$1,:any$2],div:any$2):void;
 	print("perftst");print(div);
 	reduce:= multiplex.tactics("/",b,div);
 	print(reduce);

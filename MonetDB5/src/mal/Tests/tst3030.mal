@@ -1,7 +1,7 @@
 #Parsing properties and keeping them around
 # note the use of the first parameter to obtain property set
-function newsemijoin(A:bat[int{sorted,dense},any::1], B:bat[int{sorted},any::2])
-	:(A:bat[int{+unique},any::1]);
+function newsemijoin(A:bat[:int{sorted,dense},:any$1], 
+		B:bat[:int{sorted},:any$2]) :bat[:int{unique},:any$1];
 end newsemijoin;
 z:=new(:int{sorted},int);
 w:=new(:{sequence},int);

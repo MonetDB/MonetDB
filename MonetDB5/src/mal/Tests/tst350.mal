@@ -1,7 +1,7 @@
 #inspection of the runtime setting
 #it uses the dynamic type analysis scheme
 
-function dir(b:bat[int,str]):void;
+function dir(b:bat[:int,:str]):void;
 	atm:= inspect.getAtoms();
 	brev:= reverse(b);
 	bm := mirror(brev);

@@ -2,8 +2,8 @@
 #it uses the dynamic type analysis scheme
 
 # type error when the type variable numbers are ignored
-#function get(br:bat[any,any],nme:str, title:str):bat;
-function get(br:bat[any$1,any$2],nme:str, title:str):bat[any$3,any$4];
+#function get(br:bat[:any,:any],nme:str, title:str):bat;
+function get(br:bat[:any$1,:any$2],nme:str, title:str):bat[:any$3,:any$4];
 	b:= bbp.nme();
 	z:= join(br,b);
 	setColumn(z,title);
@@ -13,19 +13,19 @@ end get;
 # Thus, a better schould would be a term rewriter call, which
 # replaces an instruction
 #rule get(Y:bat,N:str)
-function getInt(br:bat[any$1,any$2],nme:str, title:str):bat[any$3,any$4];
+function getInt(br:bat[:any$1,:any$2],nme:str, title:str):bat[:any$3,:any$4];
 	b:= bbp.nme();
 	z:= join(br,b);
 	setColumn(z,title);
 	return z;
 end getInt;
-function getLng(br:bat[any$1,any$2],nme:str, title:str):bat[any$3,any$4];
+function getLng(br:bat[:any$1,:any$2],nme:str, title:str):bat[:any$3,:any$4];
 	b:= bbp.nme();
 	z:= join(br,b);
 	setColumn(z,title);
 	return z;
 end getLng;
-function dir(b:bat[int,str]):void;
+function dir(b:bat[:int,:str]):void;
 	atm:= inspect.getAtoms();
 	brev:= reverse(b);
 	bm := mirror(brev);

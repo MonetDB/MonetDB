@@ -11,7 +11,7 @@
 #function dummy();
 #	pi:=0:int;
 #end dummy;
-function Admin.dummy():any;	# 0  dynamic (dummy:any)
+function Admin.dummy():void;	# 0  (dummy:void)
     pi := 0;	# 1  (pi:int)<-($2:int)
 end dummy;	# 2  
 #

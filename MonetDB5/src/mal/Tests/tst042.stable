@@ -34,7 +34,7 @@ function Admin.main():int;	# 0  (main:int)
     f := 3.14;	# 3  (f:flt)<-($6:flt)
     c := 'a';	# 4  (c:chr)<-($8:chr)
     b := true;	# 5  (b:bit)<-($10:bit)
-    bb := bbp.new(:void,:str);	# 6 CMDBATnew (bb:bat[void,str])<-($12:void)($13:str)
+    bb := bbp.new(void:,str:);	# 6 CMDBATnew (bb:bat[:void,:str])<-($12:void)($13:str)
     st := inspect.getType(s);	# 7 INSPECTtype (st:int)<-(s:str)
     system.printf("string %d\n",st);	# 8 SYSprint_formatted_int ($15:int)<-($16:str)(st:int)
     it := inspect.getType(i);	# 9 INSPECTtype (it:int)<-(i:int)
@@ -45,7 +45,7 @@ function Admin.main():int;	# 0  (main:int)
     system.printf("chr %d\n",ct);	# 14 SYSprint_formatted_int ($24:int)<-($25:str)(ct:int)
     bt := inspect.getType(b);	# 15 INSPECTtype (bt:int)<-(b:bit)
     system.printf("bit %d\n",bt);	# 16 SYSprint_formatted_int ($27:int)<-($28:str)(bt:int)
-    bbt := inspect.getType(bb);	# 17 INSPECTtype (bbt:int)<-(bb:bat[void,str])
+    bbt := inspect.getType(bb);	# 17 INSPECTtype (bbt:int)<-(bb:bat[:void,:str])
     system.printf("bat %d\n",bbt);	# 18 SYSprint_formatted_int ($30:int)<-($31:str)(bbt:int)
     v := "";	# 19  (v:str)<-($33:str)
     v := inspect.getTypeName(st);	# 20 INSPECTtypename (v:str)<-(st:int)
@@ -72,5 +72,5 @@ int int
 flt flt
 chr chr
 bit bit
-bat bat[void,str]
+bat bat[:void,:str]
 >

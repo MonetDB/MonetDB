@@ -82,7 +82,7 @@ barrier FT := booleanexpr;	# 20  (FT:any)<-(booleanexpr:any) jump 21
 exit FT;	# 21  (FT:any)
 barrier FTE := booleanexpr;	# 22  (FTE:any)<-(booleanexpr:any) jump 23
 exit FTE;	# 23  (FTE:any)
-barrier FS := batcalc.not(FTE);	# 24 CMDbitbatNOT (FS:bat[any,bit])<-(FTE:any) jump 25
-exit FS;	# 25  (FS:bat[any,bit])
+barrier FS := batcalc.not(FTE);	# 24 CMDbitbatNOT (FS:bat[:any,:bit])<-(FTE:any) jump 25
+exit FS;	# 25  (FS:bat[:any,:bit])
 end main;	# 26  
 >
