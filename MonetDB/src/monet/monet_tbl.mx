@@ -433,7 +433,9 @@ void* DL_open(char* nme, int mode) {
 	DL_errno = 0;
 #ifndef STATIC
 	DL_errmsg = NULL;
-#ifdef _AIX
+
+/* AIX requires RTLD_MEMBER to load a module that is a member of an archive.  */
+#ifdef RTLD_MEMBER
         mode |= RTLD_MEMBER;
 #endif
 #endif
