@@ -464,7 +464,8 @@ below.  The global variables should not be modified directly.
 #define TYPE_dbl	9		
 #define TYPE_lng	10		
 #define TYPE_str	11		
-#define TYPE_any	255		/* limit types to <255! */
+#define TYPE_nil	254		/* limit user types to <254! */
+#define TYPE_any	255		
 
 typedef signed char	bit; 		
 typedef signed char	chr; 		
