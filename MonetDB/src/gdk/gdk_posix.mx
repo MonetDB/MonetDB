@@ -61,15 +61,22 @@ the WIN32 native platform.
 # define mkdir(path,mode) _mkdir(path)
 #endif
 
-#define NOMALLOPT 	/* we assume no mallopt if there is no mallinfo */
-
 #ifndef HAVE_MALLINFO
+#ifndef M_MXFAST
 #define M_MXFAST	1  /* set size of blocks to be fast */
+#endif
+#ifndef M_NLBLKS
 #define M_NLBLKS	2  /* set number of block in a holding block */
+#endif
+#ifndef M_GRAIN
 #define M_GRAIN		3  /* set number of sizes mapped to one, for */
                            /* small blocks */
+#endif
+#ifndef M_KEEP
 #define M_KEEP		4  /* retain contents of block after a free */
                            /* until another allocation */
+#endif
+#ifndef HAVE_STRUCT_MALLINFO
 struct mallinfo  {
         int arena;      /* total space in arena */
         int ordblks;    /* number of ordinary blocks */
@@ -82,7 +89,7 @@ struct mallinfo  {
         int fordblks;   /* space in free ordinary blocks */
         int keepcost;   /* cost of enabling keep option */
 };
-typedef struct mallinfo mallinfo_t;
+#endif
 
 #define mallinfo() 		{0}
 #define mallopt(cmd,value)	0

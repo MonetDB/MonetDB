@@ -75,6 +75,14 @@ int debugger();
 #endif /* _MONET_GLOBAL_H_ */
 @C
 extern "C" {
+#ifdef _CRTDBG_MAP_ALLOC
+/* Windows only:
+   our definition of new and delete clashes with the one if
+   _CRTDBG_MAP_ALLOC is defined.
+*/
+#undef _CRTDBG_MAP_ALLOC
+#endif
+
 #include "Mserver.h"
 #include "monet_context.h"
 #include "monet_interpreter.h"
@@ -128,7 +136,7 @@ gdk/gdk_utils.mx and wrapping malloc in the below dummy function:
 @C
 static int malloc_init=1;
 #ifdef SOLARIS
-#ifndef NOMALLOPT
+#ifdef HAVE_MALLOPT
 #undef malloc
 void* malloc(size_t size) {
 	@:mallopt@
@@ -266,7 +274,7 @@ A grain size of 128 bytes is used to keep overhead low.
 #endif
 @C
 
-#ifndef NOMALLOPT
+#ifdef HAVE_MALLOPT
 	@:mallopt@
 #endif
 
