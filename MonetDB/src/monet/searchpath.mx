@@ -37,6 +37,9 @@
 #ifndef SO_EXT
 #define SO_EXT ".so"
 #endif
+static size_t SO_EXT_LEN;	/* length of SO_EXT string, will be
+				   filled in before use */
+
 /* 
  * prototypes 
  *
@@ -214,7 +217,9 @@ char *MSP_locate_module(char *mod_name) {
             if ( next_module[fulllen-len-1] == DIR_SEP &&
 		 !strcmp(&next_module[fulllen-len],name))
                 {
-                    fullname=(char *)GDKmalloc(fulllen+4);
+		    if (!SO_EXT_LEN)
+			SO_EXT_LEN = strlen(SO_EXT);
+                    fullname=(char *)GDKmalloc(fulllen+SO_EXT_LEN+1);
                     sprintf(fullname,"%s%s",next_module, SO_EXT);
                     GDKfree(next_module);
                     GDKfree(name);
