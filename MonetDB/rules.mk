@@ -31,7 +31,7 @@ MV=mv
 HIDE=1
 
 %.h: %.mx
-	$(MX) $(MXFLAGS) -x h $<
+	$(MX) $(MXFLAGS) -l -x h $<
 
 %.c: %.mx
 	$(MX) $(MXFLAGS) -x c $<
