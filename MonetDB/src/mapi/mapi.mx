@@ -184,18 +184,30 @@ Get the new information for the server socket and start listening.
 		THRprintf(GDKerr, "MAPIlisten:Internet started at %d\n", server.sin_port);
 	}
 	do {
-#ifdef AIX
-       		msgsock = accept(sock, 0, (size_t)0);
-#else
-       		msgsock = accept(sock, 0, (int *)0);
-#endif
+		int retval;
+    		struct timeval tv;
+    		fd_set fds;
 
-		if (msgsock == -1) {
+    		FD_ZERO(&fds);
+    		FD_SET(sock, &fds);
+    		/* Wait up to five seconds. */
+    		tv.tv_sec = 5;
+    		tv.tv_usec = 0;
+
+    		retval = select(sock+1, &fds, &fds, &fds, &tv);
+    		if (retval &&
+#ifdef AIX
+       			(msgsock = accept(sock, 0, (size_t)0))
+#else
+       			(msgsock = accept(sock, 0, (int *)0))
+#endif
+			< 0) {
+
 			if (MT_geterrno() != EINTR) {
 				GDKsyserror("MAPIlisten:accept failed\n");
 				return GDK_FAIL;
 	    		}
-		} else if (msgsock > 0) {
+		} else if (retval) {
 			if (STREQ(cmd,"")) {
 				int i;
 				char *name = (char*) alloca(BUFSIZ), *user = name;
@@ -247,8 +259,10 @@ changed setbuf to setbuffer to avoid unintentional buffer overflow.
 				snprintf( buf, BUFSIZ, "%s(%d);\n", cmd, msgsock );
 				interpret_str( stk, buf, res);
 			}
+		} else {
+			printf(" nothing to accept\n");
 		}
-	} while (1);
+	} while (monet_running);
 	return GDK_SUCCEED;
 }
 

@@ -735,6 +735,7 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
         	if (lt->cnt > 0) { 
 			@:builtin_operand(0, TYPE_int, statusp)@
         	}
+		monet_running = 0;
 		/*
 		freeClient(c);
 		monet_exit();
@@ -770,15 +771,18 @@ int CMDshutdown(Cntxt stk, YYSTREE lt, ValPtr res){
 	} else if (monet_deamon == 1) {
 		fprintf(GDKout,"Shutdown of server in progress\n");
 		fflush(GDKout);
+		monet_running = 0;
 		CMDquit(stk, lt, res);
 		closeClient(monet_clients, TRUE);
 		return 0;
 	} else {
 		int status = 1, *statusp = &status;
+		monet_running = 0;
         	if (lt->cnt > 0) { 
             	    @:builtin_operand(0, TYPE_int, statusp)@
         	}
 		fflush(GDKout);
+		fclose(GDKout);
 		MT_global_exit(*statusp);
 	}
 	return CMDquit(stk, lt, res);

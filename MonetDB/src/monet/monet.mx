@@ -248,6 +248,7 @@ typedef struct {
 
 @+ Interface functions 
 @h
+m_export int 	monet_running;
 m_export ptr	monet_init	(int argc, char** argv );
 m_export ptr	monet_eval	(str mil_script, int *ret_type);
 m_export int	monet_exec	(str mil_script);
@@ -333,6 +334,7 @@ m_export char 		monet_version[PATHLENGTH];
 @c 
 #include "monet.h"
 
+int 		monet_running = 0;
 char            monet_cwd[PATHLENGTH]={0}, *monet_ver=0;
 char            *monet_prompt="\1>\1";
 int             monet_listing=0, monet_welcome=1, monet_deamon=2;
@@ -551,6 +553,8 @@ provided to make inclusion of new modules a piece of cake.
 ptr monet_init(int argc, char **argv ){
         static char buf[256];
         Client  c;
+
+	monet_running = 1;
 
         if (getcwd(monet_cwd, PATHLENGTH-1)  == NULL ){
                 perror("pwd");
