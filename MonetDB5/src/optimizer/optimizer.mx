@@ -83,6 +83,12 @@ pattern garbageCollector(mod:any, fcn:any):str
 address QOTGCoptimizerCALL
 comment "Garbage collector optimizer";
 
+pattern factorize():str 
+address QOTFToptimizer;
+pattern factorize(mod:any, fcn:any):str 
+address QOTFToptimizerCALL
+comment "Garbage collector optimizer";
+
 pattern setDebug():void 
 address QOTdebugOptimizers;
 
@@ -148,6 +154,7 @@ optimizer.prelude();
 #include "optimizer.h"
 #include "mal_interpreter.h"
 #include "mal_optimizer.h"
+#include "mal_factorize.h"
 #include "mal_scenario.h"
 
 @
@@ -205,6 +212,7 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:QOTC(GC)@
 	@:QOTC(RR)@
 	@:QOTC(OR)@
+	@:QOTC(FT)@
 
 str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str modnme= getArgName(mb,pci,1);
