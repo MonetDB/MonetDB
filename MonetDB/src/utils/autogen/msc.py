@@ -19,13 +19,13 @@ def msc_subdirs(fd, var, values, msc ):
   fd.write("all-recursive: %s\n" % msc_list2string(values,"","-all ") )
   for v in values:
     fd.write("%s-all: %s\n" % (v,v))
-    fd.write("\t$(CD) %s && $(MAKE) /k /f ..\\$(SRCDIR)\\%s\\Makefile.msc all SRCDIR=..\\$(SRCDIR)\\%s\n" % (v,v,v)) 
+    fd.write("\t$(CD) %s && $(MAKE) /nologo /k /f Makefile.msc all \n" % v) 
     fd.write("%s: \n\tif not exist %s $(MKDIR) %s\n" % (v,v,v))
     fd.write("\t$(INSTALL) $(SRCDIR)\\%s\\Makefile.msc %s\n" % (v,v))
   fd.write("install-recursive: %s\n" % msc_list2string(values,"","-install ") )
   for v in values:
     fd.write("%s-install: $(bindir) $(libdir)\n" % v)
-    fd.write("\t$(CD) %s && $(MAKE) /k /f Makefile.msc install\n" % v) 
+    fd.write("\t$(CD) %s && $(MAKE) /nologo /k /f Makefile.msc install\n" % v) 
 
 def msc_assignment(fd, var, values, msc ):
   o = ""
@@ -483,6 +483,7 @@ CXXEXT = \\\"cxx\\\"
   prefix = os.path.commonprefix([cwd,topdir])
   d = cwd[len(prefix):]
   reldir = "." 
+  srcdir = d
   if (len(d) > 1 and d[0] == os.sep):
     d = d[1:]
     while(len(d) > 0):
@@ -490,6 +491,7 @@ CXXEXT = \\\"cxx\\\"
 	d,t = os.path.split(d)  
 
   fd.write("TOPDIR = %s\n" % regsub.gsub("/", "\\", reldir))
+  fd.write("SRCDIR = $(TOPDIR)\\..%s\n" % regsub.gsub("/", "\\", srcdir))
   fd.write("!INCLUDE $(TOPDIR)\\rules.msc\n")
   if ("SUBDIRS" in tree.keys()):
      fd.write("all: all-msc all-recursive\n")
