@@ -3,22 +3,22 @@
 BUILT_SOURCES = cSQLserver.c
 
 INCLUDES = \
-	-I$(MONETDIST)/include \
-	-I$(MONETDIST)/include/gdk \
-	-I$(MONETDIST)/include/monet \
-	-I$(MONETDIST)/include/plain \
-	-I$(MONETDIST)/include/stream \
+	-I$(MONET_PREFIX)/include \
+	-I$(MONET_PREFIX)/include/gdk \
+	-I$(MONET_PREFIX)/include/monet \
+	-I$(MONET_PREFIX)/include/plain \
+	-I$(MONET_PREFIX)/include/stream \
 	-I${top_srcdir}/src/common \
 	$(GETOPT_INCS)
 
 lib__sqlserver = {
 	SOURCES = sqlserver.mx 
-	LIBS = -L$(MONETDIST)/lib/Monet
+	LIBS = -L$(MONET_PREFIX)/lib/Monet
 }
 
 lib__mvc = {
 	SOURCES = mvc.mx cCatalog.c cCatalog.h
-	LIBS = -L$(MONETDIST)/lib/Monet
+	LIBS = -L$(MONET_PREFIX)/lib/Monet
 }
 
 scripts_mil = {

@@ -1,11 +1,11 @@
 ## Process this file with automake to produce Makefile.in
 
 INCLUDES = \
-	-I$(MONETDIST)/include \
-	-I$(MONETDIST)/include/gdk \
-	-I$(MONETDIST)/include/monet \
-	-I$(MONETDIST)/include/plain \
-	-I$(MONETDIST)/include/stream \
+	-I$(MONET_PREFIX)/include \
+	-I$(MONET_PREFIX)/include/gdk \
+	-I$(MONET_PREFIX)/include/monet \
+	-I$(MONET_PREFIX)/include/plain \
+	-I$(MONET_PREFIX)/include/stream \
 	-I${top_srcdir}/src/common \
 	-I${top_builddir}/src/common \
 	$(GETOPT_INCS)
@@ -13,13 +13,13 @@ INCLUDES = \
 lib__sql = {
 	SOURCES = sql.m sql_module.c catalog_module.c statement_dump.c
 	LIBS = ../common/libsql \
-		-L$(MONETDIST)/lib/Monet 
+		-L$(MONET_PREFIX)/lib/Monet 
 }
 
 bin_sql_client = {
 	SOURCES = sql_client.c catalog_client.c statement_dump.c \
 		  comm.c comm.h gdk.c 
 	LIBS = ../common/libsql \
-		-L$(MONETDIST)/lib/Monet -lstream \
+		-L$(MONET_PREFIX)/lib/Monet -lstream \
 			$(READLINE_LIBS) $(GETOPT_LIBS)
 }

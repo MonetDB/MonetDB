@@ -3,8 +3,8 @@ INCLUDES = \
         -I$(srcdir)/../include -I. \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/src/common \
-	-I$(MONETDIST)/include/plain \
-	-I$(MONETDIST)/include/stream \
+	-I$(MONET_PREFIX)/include/plain \
+	-I$(MONET_PREFIX)/include/stream \
 	-I$(top_builddir)/ \
 	$(ODBC_INCS)
 
@@ -105,5 +105,5 @@ lib_MonetODBC = {
 	gdk.c 
 	LIBS = \
 	../../common/libsql \
-	-L$(MONETDIST)/lib/Monet -lstream  -lm
+	-L$(MONET_PREFIX)/lib/Monet -lstream  -lm
 }

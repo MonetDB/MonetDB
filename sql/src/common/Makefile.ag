@@ -3,8 +3,8 @@
 YFLAGS = -d -p sql
 
 INCLUDES = \
-	-I$(MONETDIST)/include  \
-	-I$(MONETDIST)/include/stream
+	-I$(MONET_PREFIX)/include  \
+	-I$(MONET_PREFIX)/include/stream
 
 lib_sql = {
 	SOURCES = \

@@ -300,7 +300,6 @@ if ( ! -x bootstrap ) then
 #	endif
 
 #	# this still needed for SQL
-	setenv MONETDIST "${MONET_PREFIX}"
 	setenv MONET_MOD_PATH "${SQL_PREFIX}/lib:${SQL_PREFIX}/lib/sql:${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
 	echo " MONET_MOD_PATH=${MONET_MOD_PATH}"
 

@@ -270,7 +270,6 @@ if [ ! -x bootstrap ] ; then
 #	fi
 
 #	# this still needed for SQL
-	export MONETDIST="${MONET_PREFIX}"
 	export MONET_MOD_PATH="${SQL_PREFIX}/lib:${SQL_PREFIX}/lib/sql:${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
 	echo " MONET_MOD_PATH=${MONET_MOD_PATH}"
 

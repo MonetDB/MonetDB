@@ -1,5 +1,5 @@
-MEL=$(MONETDIST)/bin/mel
-MX=$(MONETDIST)/bin/Mx
+MEL=$(MONET_PREFIX)/bin/mel
+MX=$(MONET_PREFIX)/bin/Mx
 MXFLAGS= -notouch
 
 %.h: %.mx

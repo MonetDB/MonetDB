@@ -3,28 +3,28 @@ AC_DEFUN(AM_MONET,
 
 dnl check for monet
 have_monet=auto
-MONETDIST="."
+MONET_PREFIX="."
 AC_ARG_WITH(monet,
 [  --with-monet=DIR     monet is installed in DIR], have_monet="$withval")
 if test "x$have_monet" != xno; then
   if test "x$have_monet" != xauto; then
     AC_CHECK_PROG(MONET_CONFIG,monet-config,$withval/bin/monet-config,,$withval/bin)
-    MONETDIST=`$MONET_CONFIG --prefix`
+    MONET_PREFIX=`$MONET_CONFIG --prefix`
     GDKLIBS=`$MONET_CONFIG --gdklibs`
     have_monet=yes
   else
     have_monet=yes
     AC_CHECK_PROG(MONET_CONFIG,monet-config,monet-config)
-    MONETDIST=`$MONET_CONFIG --prefix`
+    MONET_PREFIX=`$MONET_CONFIG --prefix`
     GDKLIBS=`$MONET_CONFIG --gdklibs`
   fi
 
   if test "x$have_monet" != xyes; then
-    MONETDIST=""
+    MONET_PREFIX=""
     GDKLIBS=""
   fi
 fi
-AC_SUBST(MONETDIST)
+AC_SUBST(MONET_PREFIX)
 AC_SUBST(GDKLIBS)
 ])
 
