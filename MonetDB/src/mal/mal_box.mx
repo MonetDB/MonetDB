@@ -163,8 +163,8 @@ i.e. the directory <GDKdirStr>/boxes
 
 #ifndef _MAL_BOX_H
 #define _MAL_BOX_H
-#include "mal_instruction.h"
 #include "mal_stack.h"
+#include "mal_instruction.h"
 
 /*#define DEBUG_MAL_BOX*/
 
@@ -475,7 +475,7 @@ void loadBox(str name){
 	printf("loadBox:start loading the file %s\n",boxfile);
 #endif
 	if( access(boxfile,R_OK)== 0){
-		malImport(getClient(),boxfile,0);
+		malImportDirect(boxfile);
 #ifdef DEBUG_MAL_BOX
 		printf("loadBox:loaded the file %s\n",boxfile);
 #endif

@@ -65,7 +65,6 @@ html
 #ifndef _MAL_INSTR_H
 #define _MAL_INSTR_H
 
-#include "mal.h"
 #include "mal_type.h"
 #include "mal_stack.h"
 
@@ -130,10 +129,9 @@ upon destruction of the definition.
 @h
 	str	modname;	/* module context */
 	str	fcnname;	/* function name */
-	int	gdktype;	/* GDK storage type for return value */
 	short	polymorphic;	/* complex type analysis */
 	short	varargs;	/* variable number of arguments */
-	int	argc;
+	short	argc,retc;	/* total and result argument count */
 	int	argv[1];	/* at least one entry */
 } *InstrPtr, InstrRecord;
 
@@ -381,10 +379,12 @@ InstrPtr newInstruction(int kind){
 	p->typechk = TYPE_UNKNOWN;
 	p->modname= NULL;
 	p->fcnname= NULL;
-	p->gdktype = TYPE_void;
+	p->fcn= NULL;
+	p->blk= NULL;
 	p->polymorphic = 0;
 	p->varargs = 0;
 	p->argc= 1;
+	p->retc= 1;
 	p->argv[0] = -1;	/* watch out for direct use in variable table*/
 #ifdef MALprofiler
 	p->timer.tms_utime = 0;
@@ -843,12 +843,15 @@ mal_export void pushEndInstruction(MalBlkPtr mb){
 	InstrPtr p;
 	p= newInstruction(ENDDEFsymbol);
 	p->argc =0;
+	p->retc = 0;
 	pushInstruction(mb,p);
 }
-@-
+@+ Reverse programming
 The internal representation should be such that it becomes
 easy to re-produce the original textual input, possibly annotated with
 system debugging information in additional commentary blocks.
+Furthermore, all typing information should be made explicit,
+because we do not keep track where variables are declared.
 
 The hiddenInstruction operator assumes a sufficiently large block
 to leave information on the signature behind.
@@ -871,15 +874,13 @@ str hiddenInstructionArgs(MalBlkPtr mb,InstrPtr p,str s){
 	
 	sprintf(s,"\t#%d%s:",getPC(mb,p), typechkName(p->typechk));
 	advance(s);
-	sprintf(s,"%s ", (tpe= malTypeName(p->gdktype)) );
-	GDKfree(tpe);
-	advance(s);
 	for(i=0;i<p->argc;i++)
 	if( p->argv[i] >=0){
+		if( i== p->retc) { sprintf(s,"<-"); advance(s);}
 		tpe= malTypeName(getArgType(mb,p,i));
-		advance(s);
 		sprintf(s,"(%s:%s)", 
 			(getArgName(mb,p,i)?getArgName(mb,p,i):"nil"), tpe);
+		advance(s);
 		GDKfree(tpe);
 	}
 	advance(s);
@@ -900,6 +901,15 @@ beginning of each line.
 		sprintf(t,"[%7c,%7c]\t",'?','?');
 	advance(t);
 #endif
+@-
+
+@= showParam
+		tpe= malTypeName(getArgType(mb,p,i));
+		advance(t);
+		sprintf(t,"%s:%s",getArgName(mb,p,i),tpe);
+		advance(t);
+		if( i<p->@1-1) sprintf(t,",");
+		GDKfree(tpe);
 @c
 str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
 	int i;
@@ -919,21 +929,20 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
 	if( p->modname) sprintf(t,"%s.",p->modname);
 	advance(t);
 	sprintf(t,"%s(",p->fcnname);
-	for(i=1;i<p->argc;i++){
-		tpe= malTypeName(getArgType(mb,p,i));
-		advance(t);
-		sprintf(t,"%s:%s",getArgName(mb,p,i),tpe);
-		advance(t);
-		if( i<p->argc-1) sprintf(t,",");
-		GDKfree(tpe);
-	}
+	for(i=p->retc;i<p->argc;i++){ @:showParam(argc)@ }
 	advance(t);
 	if( p->varargs) sprintf(t,"[]");
 	advance(t);
-	tpe= malTypeName(getArgType(mb,p,0));
-	sprintf(t,"):%s",tpe);
-	GDKfree(tpe);
-	advance(t);
+	if( p->retc ==1){
+		tpe= malTypeName(getArgType(mb,p,0));
+		sprintf(t,"):%s",tpe);
+		GDKfree(tpe);
+		advance(t);
+	} else {
+		sprintf(t,"):("); t+= 3;
+		for(i=0;i<p->retc;i++){ @:showParam(retc)@ }
+		*t++ = ')';
+	}
 	if(mb->binding)
 		sprintf(t," = %s;",mb->binding);
 	else	sprintf(t,";");
@@ -976,9 +985,22 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 			if( p->argc<=1 && p->fcnname==NULL)
 				sprintf(t,"\t%s",nme); 
 			else
-			if( *nme!='$')
+			if( *nme!='$'){
+				if( p->retc == 1){
 				sprintf(t,"\t%s := ",nme); 
-			else
+				break;
+				}
+				/* display multi-assignment */
+				*t++ = '\t';
+				*t++ = '(';
+				for(i=0;i<p->retc;i++){
+					sprintf(t,"%s",getArgName(mb,p,i));
+					advance(t);
+					if( i<p->retc-1) 
+						*t++= ',';
+				}
+				sprintf(t,"):=");t+=3;
+			}else
 				sprintf(t,"\t"); 
 			break;
 		case REDOsymbol:
@@ -1020,7 +1042,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 	if( p->modname) sprintf(t,"%s.",p->modname);
 	advance(t);
 	if( p->fcnname) sprintf(t,"%s(",p->fcnname);
-	for(i=1;i<p->argc;i++){
+	for(i=p->retc;i<p->argc;i++){
 		advance(t);
 		if( i+1<p->argc && isVARG(mb,p,i+1)) {sprintf(t,"...");break;}
 		if( getArgDefault(mb,p,i) != NULL){
@@ -1071,6 +1093,7 @@ void printInstruction(FILE *fd, MalBlkPtr mb, InstrPtr p){
 void printSignature(FILE *fd, Symbol s){
 	InstrPtr p;
 	str txt= GDKmalloc(8192);
+	bzero(txt,8192);
 	p= getSignature(s);
 	(void) fcnDefinition(s->def, p,txt);
 	fprintf(fd,"%s",txt);

@@ -31,9 +31,6 @@ html
 #ifndef _MAL_DEBUGGER_H
 #define _MAL_DEBUGGER_H
 
-#include "mal.h"
-#include "mal_stack.h"
-#include "mal_function.h"
 #include "mal_client.h"
 
 #define MAXBREAKS 32
@@ -75,7 +72,7 @@ char isBreakpoint(Client cntxt, InstrPtr p){
 	return 0;
 }
 void mdbSetBreakpointName(Client cntxt, MalBlkPtr mb, str name, char cmd){
-	int i;
+	int i,j;
 	char *c=name;
 	InstrPtr p;
 	mdbState mdb= mdbTable + cntxt->idx;
@@ -84,7 +81,8 @@ void mdbSetBreakpointName(Client cntxt, MalBlkPtr mb, str name, char cmd){
 	*c = 0;
 	for(i=0;i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
-		if( p->argc>0 &&  strcmp(getDestName(mb,p),name)==0){
+		for(j=0;j<p->retc;j++)
+		if( strcmp(getVarName(mb,p->argv[j]),name) == 0){
 			mdbSetBreakpoint(cntxt,mb,p,cmd);
 			return;
 		}
@@ -139,7 +137,7 @@ void printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk){
 		promptInstruction(cntxt->fdout,mb,p);
 		p= getInstrPtr(mb, 0);
 		fprintf(cntxt->fdout," at #%d in %s(", stk->pc, getFcnName(mb));
-		for(k=1; k<p->argc; k++){
+		for(k= p->retc; k<p->argc; k++){
 			VALprint(cntxt->fdout, &stk->stk[p->argv[k]]);
 			if( k < p->argc-1 ) fprintf(cntxt->fdout,",");
 		}
@@ -314,9 +312,7 @@ signatures satisfying the pattern.
 				fprintf(out,"Symbol '%s.%s' not found\n",
 					modname,fcnname);
 			} 
-			continue;
-		}
-		printFunction(out,mb);
+		} else printFunction(out,mb);
 		continue;
 	}
 	case 'r': /* reset program counter */

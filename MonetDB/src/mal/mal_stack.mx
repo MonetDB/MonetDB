@@ -42,7 +42,6 @@ html
 #ifndef _MAL_STACK_H_
 #define _MAL_STACK_H_
 #include "mal.h"
-#include "mal_instruction.h"
 
 typedef struct MALSTK {
 	int	pc;		/* current instruction */

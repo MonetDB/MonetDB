@@ -14,6 +14,7 @@ in MONETPREFIX/<dbname>/mal/<modulepath>/<modulename>.mal.
 [reminder, directory structure of a database dir:
 .../bat
 .../bin		# database specific binaries
+.../boxes	# persistent store for state variables
 .../include	# all files needed for a compilation of an application
 .../lib		# all libraries (or symbolic links) ,,
 .../mal		# all scripts needed by the MAL interpreter

@@ -52,8 +52,7 @@ are located in mal_startup.
 
 #ifndef _MAL_CLIENT_H_
 #define _MAL_CLIENT_H_
-#include "mal_function.h"
-#include "mal_box.h"
+#include "mal_resolve.h"
 #include "mal.h"
 
 #define MAL_MAXCLIENTS	32

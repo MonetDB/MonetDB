@@ -41,11 +41,8 @@ html
 #ifndef _MAL_INTERPRET_H
 #define _MAL_INTERPRET_H
 
-#include "mal_stack.h"
-#include "mal_function.h"
-#include "mal_debugger.h"
-#include "mal_profiler.h"
 #include "mal_client.h"
+#include "mal_profiler.h"
 
 /*#define DEBUG_MAL_INTERPRETER */
 mal_export void showErrors(Client cntxt);
@@ -113,17 +110,22 @@ being called.
 	} 
 
 	if( env && mbcaller){
-		int k;
+		InstrPtr pp;
+		int k,n=0;
 @-
-Beware, the prelude of the stack frame contains 
-a variable to keep the return value.
+Beware, a function signature f(a1..an):(b1..bn) is parsed in such a way that
+the symbol table and stackframe contains the sequence 
+f,a1..an,b1..bn. This slightly complicates the implementation
+of the return statement.
 @c
 		pci= getInstrPtr(mbcaller,env->pc);
+		pp = getInstrPtr(mb, 0);
 		/* printf("recursive MAL function call %s[%d]\n",
 			pci->fcnname,env->pc); */
-		for(k=1; k<pci->argc; k++){
-			lhs = &stk->stk[k];
-			rhs = &env->stk[pci->argv[k]];
+		for(k=pp->retc, i= pci->retc; i<pci->argc; i++,k++){
+			lhs = &stk->stk[pp->argv[k]];
+			if( k== pp->argc-1) k--; /* variable args */
+			rhs = &env->stk[pci->argv[i]];
 			VALcopy(lhs,rhs);
 			@:BATfix(rhs)@
 		}
@@ -141,7 +143,7 @@ observed due the small size of the function).
 Moreover, we have to copy the result types to the stack for later
 use. In particular, to enable proper dynamic type analysis.
 @c
-	for(i= env?pci->argc:1; i< mb->vtop; i++)
+	for(i= (env && mbcaller)?pci->argc:1; i< mb->vtop; i++)
 	if( isVarConstant(mb,i) && isVarUsed(mb,i) ){
 		lhs = &stk->stk[i];
 		rhs = &getVarConstant(mb,i);
@@ -151,7 +153,7 @@ use. In particular, to enable proper dynamic type analysis.
 		pci = getInstrPtr(mb,i);
 		if( pci->argv[0]>=0){
 			retval=  &stk->stk[pci->argv[0]];
-			retval->vtype = pci->gdktype;
+			retval->vtype =getGDKtype(getVarType(mb,pci->argv[0]));
 		}
 	}
 
@@ -248,13 +250,16 @@ elements in the value stack.
 		stk->exception = -1;
 		stk->pc++; break;
 	case RETURNsymbol:
-		if( env != NULL){
-			rhs = &stk->stk[pci->argv[0]];
+		if( env != NULL && mbcaller != NULL){
+			InstrPtr pp=pci;
 			@:endProfile@
 			pci = getInstrPtr(mbcaller,env->pc);
-			lhs = &env->stk[pci->argv[0]];
-			VALcopy(lhs,rhs);
-			@:BATfix(lhs)@
+			for(i=0;i < pci->retc; i++){
+				rhs = &stk->stk[pp->argv[i]];
+				lhs = &env->stk[pci->argv[i]];
+				VALcopy(lhs,rhs);
+				@:BATfix(lhs)@
+			}
 			if(env) env->cmd = cmd; /* save debugger command */
 			goto MALevalExit;
 		}

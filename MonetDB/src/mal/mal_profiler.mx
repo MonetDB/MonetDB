@@ -49,7 +49,6 @@ html
  * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
  */
 #ifndef _MAL_PROFILER_H
-/*#include "gdk.h"*/
 #include "mal_scope.h"
 
 #ifdef HAVE_SYS_TIMES_H

@@ -59,7 +59,6 @@ mal_export MT_Lock	mal_contextLock;
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_linker.h"
-#include "mal_startup.h"
 
 int             mal_listing= 0;
 int             mal_xlisting= 0;

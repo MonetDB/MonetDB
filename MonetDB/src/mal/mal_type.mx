@@ -34,7 +34,6 @@ html
  */
 #ifndef MAL_TYPE_H
 #define MAL_TYPE_H
-/*#include "gdk.h"*/
 #include "mal.h"
 
 /*#define DEBUG_MAL_TYPE*/

@@ -32,13 +32,11 @@ html
 #ifndef _MAL_IMPORT_H
 #define _MAL_IMPORT_H
 
-#include "mal_scope.h"
-#include "mal_stack.h"
-#include "mal_function.h"
 #include "mal_client.h"
 
 mal_export void slash_2_dir_sep(str fname);
 mal_export void malImport(Client c, str fname,int listing);
+mal_export void malImportDirect(str fname);
 mal_export FILE *malOpenSource(str fname);
 mal_export void processInput(Client c,MalStkPtr glb);
 mal_export void runScript(Client c, str fname, int listing);
@@ -90,6 +88,9 @@ FILE *malOpenSource(str fname){
 	return fd;
 }
 
+void malImportDirect(str fname){
+	malImport(getClient(),fname,0);
+}
 void malImport(Client c, str fname,int listing){
 	FILE *fd;
 	long i=0,len;

@@ -80,7 +80,6 @@ html
  */
 #ifndef _MAL_SCOPE_H_
 #define _MAL_SCOPE_H_
-#include "mal_instruction.h"
 #include "mal_box.h"
 
 #define MAXSCOPE 256
@@ -89,7 +88,7 @@ typedef struct SCOPEDEF {
         struct SCOPEDEF   *outer; /* outer level in the scope tree */
         str     name;
 	GDKfcn	typeChecker;	/* function address for type checker */
-        struct SYMDEF   **subscope; /* type dispatcher table */
+        Symbol *subscope; /* type dispatcher table */
 	Box	box;	/* module related objects */
 } *Scope, ScopeDefinition;
 

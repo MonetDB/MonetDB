@@ -56,8 +56,6 @@ mal_export Symbol cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr
 mal_export str	raiseException(MalBlkPtr mb, int pc, str name, str msg);
 mal_export str appendException(MalBlkPtr mb, int pc, str name, str msg,str old);
 mal_export void	showException(MalBlkPtr mb, int pc, str name, str msg);
-mal_export void	safeFunction(Symbol proc);
-mal_export void	restoreFunction(Symbol proc);
 mal_export malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p);
 mal_export void 	printFunction(FILE *fd, MalBlkPtr mb);
 
@@ -335,23 +333,6 @@ void showException(MalBlkPtr mb, int pc, str name, str msg){
 	n= raiseException(mb,pc,name,msg);
 	GDKerror(n);
 	GDKfree(n);
-}
-@- utilities
-During the lifetime of a MAL function, it may be subject to
-manipulation by squeezer modules. They inspect the code and
-are allowed to enhance it to improve interpretation. Since the
-optimization schemes deployed during a session, or even between
-successive calls of a function, we should forbid changes to
-the symbol table and original instruction sequence.
-The routines below ensure safeguarding  and restoring the state.
-@c
-void	safeFunction(Symbol proc){
-#ifdef DEBUG_MAL_FCN
-#endif
-}
-void	restoreFunction(Symbol proc){
-#ifdef DEBUG_MAL_FCN
-#endif
 }
 @-
 For commands we do not have to clone the routine. We merely have to
