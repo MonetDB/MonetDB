@@ -211,7 +211,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	} 	break;
 	case st_unique: {
 		int l = statement_dump( s->op1.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.unique();\n", *nr, l);
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.reverse.kunique().reverse;\n", *nr, l);
 		s->nr = (*nr)++;
 	} 	break;
 	case st_order: {
@@ -260,13 +260,13 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		if (s->op3.stval){
 			int r = statement_dump( s->op3.stval, nr, sql );
 			len += snprintf( buf+len, BUFSIZ, 
-					"s%d := {%s}(s%d,s%d);\n", 
-					*nr, s->op2.aggrval->imp, r, l);
+					"s%d := {%s}(s%d.reverse().join(s%d),s%d.reverse().kunique());\n", 
+					*nr, s->op2.aggrval->imp, r, l, r);
 		} else {
 			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.%s();\n", 
 					*nr, l, s->op2.aggrval->imp );
 			len += snprintf( buf+len, BUFSIZ, "s%d := new(oid,%s);\n"
-				, *nr+1, basecolumn(s->op1.stval)->tpe->name );
+				, *nr+1, s->op2.aggrval->res->name );
 			len += snprintf( buf+len, BUFSIZ, "s%d.insert(oid(0),s%d);\n"
 				, *nr+1, *nr );
 			(*nr)++;

@@ -19,6 +19,9 @@
 /* Define if you have the mallopt function.  */
 #undef HAVE_MALLOPT
 
+/* Define if you have the <dlfcn.h> header file.  */
+#undef HAVE_DLFCN_H
+
 /* Define if you have the <getopt.h> header file.  */
 #undef HAVE_GETOPT_H
 

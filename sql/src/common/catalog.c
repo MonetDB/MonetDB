@@ -155,12 +155,15 @@ void type_destroy( type *t ){
 	_DELETE(t);
 }
 
-aggr *cat_create_aggr( catalog *cat, char *name, char *imp, int nr ){
+aggr *cat_create_aggr( catalog *cat, char *name, char *imp, char *tpe, char *res, int nr ){
 	aggr *t = NEW(aggr);
 
 	t->name = _strdup(name);
 	t->imp = _strdup(imp);
+	t->tpe = cat_bind_type( cat, tpe );
+	t->res = cat_bind_type( cat, res );
 	t->nr = nr;
+	printf("aggr %s %s\n", name, tpe );
 	list_append_string(cat->aggrs, (char*)t );
 	return t;
 }
@@ -233,11 +236,12 @@ type *cat_bind_type( catalog *cat, char *sqlname){
 	return NULL;
 }
 
-aggr *cat_bind_aggr( catalog *cat, char *name){
+aggr *cat_bind_aggr( catalog *cat, char *name, char *type){
 	node *n = cat->aggrs->h;
 	while(n){
 		aggr *t = (aggr*)n->data.sval;
-		if (strcmp(t->name, name) == 0)
+		if (strcmp(t->name, name) == 0 &&
+		    strcmp(t->tpe->sqlname, type) == 0)
 			return t;
 		n = n->next;
 	}

@@ -95,15 +95,21 @@ void getfunctions( catalog *c ){
 	printf("aggr %d\n", tcnt );
 	c->aggrs = list_create();
 	for(i=0;i<tcnt;i++){
-	    char *tname, *imp;
+	    char *tname, *imp, *tpe, *res;
 
 	    n = strchr(start = n+1, '\t'); *n = '\0';
 	    tname = removeQuotes(start, '"');
 
-	    n = strchr(start = n+1, '\n'); *n = '\0';
+	    n = strchr(start = n+1, '\t'); *n = '\0';
 	    imp = removeQuotes(start, '"');
 
-	    cat_create_aggr( c, tname, imp, i );
+	    n = strchr(start = n+1, '\t'); *n = '\0';
+	    tpe = removeQuotes(start, '"');
+
+	    n = strchr(start = n+1, '\n'); *n = '\0';
+	    res = removeQuotes(start, '"');
+
+	    cat_create_aggr( c, tname, imp, tpe, res, i );
 	}
 
 	tcnt = strtol(n+1,&n,10); 

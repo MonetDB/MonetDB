@@ -200,8 +200,9 @@ static
 char *table_name( dlist *tname ){
 	assert(tname && tname->h);
 
-	if (dlist_length(tname) == 1)
+	if (dlist_length(tname) == 1){
 		return tname->h->data.sval;
+	}
 	if (dlist_length(tname) == 2)
 		return tname->h->next->data.sval;
 	return "Unknown";
@@ -256,9 +257,42 @@ statement *find_subset( statement *subset, table *t ){
 	return NULL;
 }
 
+static
+statement *check_types( context *sql, column *c, statement *s ){
+	char *stype = (char*)column_type(s);
+
+	if (stype){
+		type *st = cat_bind_type( sql->cat, stype );
+		if (st){
+			type *t1 = c->tpe;
+			type *t = st;
+
+			while( t && strcmp(t->sqlname, t1->sqlname ) != 0 ){
+				t = t->cast;
+			}
+			if( !t || strcmp(t->sqlname, t1->sqlname ) != 0 ){
+				snprintf(sql->errstr, ERRSIZE, 
+	 			_("Types %s and %s are not equal" ), 
+	 			(t)?t->sqlname:"unknown", t1->sqlname);
+				return NULL;
+			} else if (t != st){
+				return statement_cast( t1->name, s );
+			}
+		} else {
+			snprintf(sql->errstr, ERRSIZE, _("Unknown type %s" ), 
+				stype );
+			return NULL;
+		}
+	} else {
+		snprintf(sql->errstr, ERRSIZE, _("Unknown type" ) );
+		return NULL;
+	}
+	return s;
+}
+
 
 static
-statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
+statement *scalar_exp( symbol *se, context *sql, list *tables, statement *group,
 	      statement *subset	){
 
 	column* c = NULL;
@@ -269,9 +303,9 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
 		func *f = cat_bind_func(sql->cat, l->data.sval);
 		if (f){
 			statement *rs = scalar_exp( l->next->data.sym, 
-						sql, tables, groupby, subset);
+						sql, tables, group, subset);
 			statement *ls = scalar_exp( l->next->next->data.sym, 
-						sql, tables, groupby, subset);
+						sql, tables, group, subset);
 			if (!rs || !ls) return NULL;
 			return statement_binop( rs, ls ,f );
 		} else {
@@ -285,7 +319,7 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
 		func *f = cat_bind_func(sql->cat, l->data.sval);
 		if (f){
 			statement *rs = scalar_exp( l->next->data.sym, 
-						sql, tables, groupby, subset);
+						sql, tables, group, subset);
 			if (!rs) return NULL;
 			return statement_unop( rs, f );
 		} else {
@@ -298,9 +332,15 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
 		c = column_ref( sql, tables, se );
 		if (c){ 
 			statement *res = statement_column(c);
+			if (group) group = 
+				statement_reverse(statement_unique(group));
 			if (res && subset){
 				statement *foundsubset = 
 					find_subset(subset, c->table);
+
+				if (group)
+					foundsubset = statement_join( group, 
+							foundsubset, cmp_equal); 
 				res = statement_join(foundsubset, res,
 						cmp_equal);
 			} 
@@ -309,7 +349,7 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
 	} break;
 	case SQL_AMMSC: {
 		dlist *l = se->data.lval;
-		aggr *a = cat_bind_aggr(sql->cat, l->h->data.sval );
+		aggr *a = NULL;
 		int distinct = l->h->next->data.ival;
 		statement *s = NULL;
 		if (!l->h->next->next->data.sym){
@@ -318,16 +358,20 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
 		    	s = statement_column( t->columns->h->data.cval);
 		} else {
 		    	s = scalar_exp( l->h->next->next->data.sym, 
-					sql, tables, groupby, subset);
+					sql, tables, group, subset);
 		}
 		if (s && distinct) s = statement_unique(s);
+		if (s) 
+		  a = cat_bind_aggr(sql->cat, l->h->data.sval, 
+				  	(char*)column_type(s) );
 		if (s && a){
-			if (groupby){
-			  column *c = basecolumn(s);
-			  statement *foundsubset = 
-				find_subset(subset, c->table);
-
-			  return statement_aggr(s, a, foundsubset);
+			if (group){
+			  	column *c = basecolumn(s);
+			  	statement *foundsubset = 
+					find_subset(subset, c->table);
+				s = statement_join(foundsubset, s,
+						cmp_equal);
+			  return statement_aggr(s, a, group);
 			} else {
 			  return statement_aggr(s, a, NULL);
 			}
@@ -350,7 +394,7 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, symbol *groupby,
 }
 
 static
-statement *column_exp( context *sql, list *tables, symbol *column_e, symbol *groupby, statement *subset ){
+statement *column_exp( context *sql, list *tables, symbol *column_e, statement *group, statement *subset ){
 
 	switch(column_e->token){
 	case SQL_TABLE: { /* table.* */
@@ -358,11 +402,15 @@ statement *column_exp( context *sql, list *tables, symbol *column_e, symbol *gro
 		char *tname = column_e->data.lval->h->data.sval;
 		table *t = bind_table( tables, tname ); 
 
+		if (group) group = statement_reverse(statement_unique(group));
+
 		/* needs more work ???*/
 		if (t){
 			statement *foundsubset = find_subset(subset,t);
 			list *columns = list_create();
 			node *n = t->columns->h; 
+			if (group) foundsubset = 
+				statement_join( group, foundsubset, cmp_equal );
 			while(n){
 				list_append_statement(columns, 
 				 	statement_join(foundsubset,
@@ -376,7 +424,7 @@ statement *column_exp( context *sql, list *tables, symbol *column_e, symbol *gro
 	case SQL_COLUMN:
 	{
 		dlist *l = column_e->data.lval;
-		statement *s = scalar_exp(l->h->data.sym, sql, tables, groupby, subset);
+		statement *s = scalar_exp(l->h->data.sym, sql, tables, group, subset);
 		if (s && l->h->next->data.sval){
 			s = statement_name(s, l->h->next->data.sval);
 		} 
@@ -596,6 +644,8 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 			rs = statement_reverse( rs );
 			return statement_join( ls, rs, type );
 		} else {
+			rs = check_types( sql, basecolumn(ls), rs );
+			if (!rs) return NULL;
 			return statement_select( ls, rs, type );
 		}
 	} break;
@@ -907,7 +957,9 @@ statement *pearl2pivot( context *sql, list *ll ){
 
 static
 statement *query_groupby( context *sql, list *tables, symbol *groupby, statement *st ){
+	/*
 	list *l = list_create();
+	*/
 	statement *cur = NULL;
 	dnode *o = groupby->data.lval->h;
 	node *p;
@@ -928,8 +980,27 @@ statement *query_groupby( context *sql, list *tables, symbol *groupby, statement
 	    }
 	    o = o->next;
 	}
+
+	/* no need to join the group ids */
+	/*
 	p = st->op1.lval->h;
 	cur = statement_reverse(cur);
+	while(p){
+		statement *s = p->data.stval;
+		list_append_statement(l, statement_join( cur, s, cmp_equal ));
+		p = p->next;
+	}
+	return statement_list(l);
+	*/
+	return cur;
+}
+
+
+static
+statement *group_join( context *sql, statement *group, statement *st ){
+	list *l = list_create();
+	node *p = st->op1.lval->h;
+	statement *cur = statement_reverse(statement_unique(group));
 	while(p){
 		statement *s = p->data.stval;
 		list_append_statement(l, statement_join( cur, s, cmp_equal ));
@@ -939,9 +1010,10 @@ statement *query_groupby( context *sql, list *tables, symbol *groupby, statement
 }
 
 static
-statement *query_orderby( context *sql, list *tables, symbol *orderby, statement *st ){
+statement *query_orderby( context *sql, list *tables, symbol *orderby, statement *st, statement *group ){
 	statement *cur = NULL;
 	dnode *o = orderby->data.lval->h;
+	if (group) group = statement_reverse(statement_unique(group));
 	while(o){
 	    node *n = st->op1.lval->h;
 	    symbol *order = o->data.sym;
@@ -952,7 +1024,10 @@ statement *query_orderby( context *sql, list *tables, symbol *orderby, statement
 	        while(n){
 		    statement *s = n->data.stval;
 		    if (s->t->id == c->table->id ){
-			statement *j = statement_join( s, statement_column(c), 
+			statement *j = s;
+			if (group)
+				j = statement_join( group, s, cmp_equal); 
+		        j = statement_join( j, statement_column(c), 
 						cmp_equal);
 			if (cur) cur = statement_reorder( cur, j, direction);
 			else cur = statement_order( j, direction );
@@ -966,20 +1041,6 @@ statement *query_orderby( context *sql, list *tables, symbol *orderby, statement
 	    }
 	    o = o->next;
 	}
-	/*
-	cur = statement_mark(cur);
-	*/
-	/*
-	list *l = list_create();
-	node *p;
-	p = st->op1.lval->h;
-	while(p){
-		statement *s = p->data.stval;
-		list_append_statement(l, statement_join( cur, s, cmp_equal ));
-		p = p->next;
-	}
-	return statement_list(l);
-	*/
 	return cur;
 }
 
@@ -1010,31 +1071,31 @@ statement *query( context *sql, int distinct, dlist *selection, dlist *into,
   symbol *where = table_exp->h->next->data.sym;
   symbol *groupby = table_exp->h->next->next->data.sym;
   symbol *having = table_exp->h->next->next->next->data.sym;
-  statement *order = NULL;
+  statement *order = NULL, *group = NULL, *grouped = NULL;
   (void)having;
 
   if (from){ 
 	  /* keep lists with tables and with (names) */
-	  table *p = (table*)1;
+	  table *p = NULL;
 	  dnode *n = from->h;
 
-	  for( ftables = list_create(); (n && p); n = n->next ){
+	  for( ftables = list_create(); n; n = n->next ){
 		var *v = NEW(var);
 		p = v->t = table_ref( sql, n->data.sym);
+	  	if (!p){ 
+			symbol *s = (n)?n->data.sym:NULL;
+			if (s && s->token == SQL_NAME)
+				s = s->data.lval->h->data.sym;
+			snprintf(sql->errstr, ERRSIZE,
+			  _("Unknown table %s"), (s)
+				  ?table_name(s->data.lval):"");
+			  return NULL;
+	  	}
 		v->vname = table_ref_var( sql, n->data.sym);
 
 	  	list_append_string( ftables, (char*)v);
 	  }
 
-	  if (!p){ 
-		symbol *s = (n)?n->data.sym:NULL;
-		if (s && s->token == SQL_NAME)
-			s = s->data.lval->h->data.sym;
-		snprintf(sql->errstr, ERRSIZE,
-		  _("Unknown table %s"), (s)
-			  ?table_name(s->data.lval):"");
-		  return NULL;
-	  }
   } else {
 	  node *n = sql->cat->cur_schema->tables->h;
 
@@ -1079,8 +1140,11 @@ statement *query( context *sql, int distinct, dlist *selection, dlist *into,
 		s = ns;
 	}
 
-  	if (s && groupby) s = query_groupby(sql, ftables, groupby, s );
-  	if (s && orderby) order = query_orderby(sql, ftables, orderby, s );
+  	if (s && groupby)
+	       group = query_groupby(sql, ftables, groupby, s );
+
+  	if (s && orderby)
+	       	order = query_orderby(sql, ftables, orderby, s, group );
   }
 
   if (s){
@@ -1088,7 +1152,7 @@ statement *query( context *sql, int distinct, dlist *selection, dlist *into,
 	  dnode *n = selection->h;
 	  while (n){
 		statement *cs = 
-			column_exp(sql, ftables, n->data.sym, groupby, s);
+			column_exp(sql, ftables, n->data.sym, group, s);
 		if (!cs) return NULL;
 		list_append_statement(rl, cs);
 		n = n->next;
@@ -1351,38 +1415,6 @@ statement * create_schema( context *sql, dlist *auth_name,
 	}
 }
 
-
-statement *check_types( context *sql, column *c, statement *s ){
-	char *stype = (char*)column_type(s);
-
-	if (stype){
-		type *st = cat_bind_type( sql->cat, stype );
-		if (st){
-			type *t1 = c->tpe;
-			type *t = st;
-
-			while( t && strcmp(t->sqlname, t1->sqlname ) != 0 ){
-				t = t->cast;
-			}
-			if( !t || strcmp(t->sqlname, t1->sqlname ) != 0 ){
-				snprintf(sql->errstr, ERRSIZE, 
-	 			_("Types %s and %s are not equal" ), 
-	 			(t)?t->sqlname:"unknown", t1->sqlname);
-				return NULL;
-			} else if (t != st){
-				return statement_cast( t1->name, s );
-			}
-		} else {
-			snprintf(sql->errstr, ERRSIZE, _("Unknown type %s" ), 
-				stype );
-			return NULL;
-		}
-	} else {
-		snprintf(sql->errstr, ERRSIZE, _("Unknown type" ) );
-		return NULL;
-	}
-	return s;
-}
 
 statement *insert_value( context *sql, column *c, statement *id, symbol *s ){
 	if (s->token == SQL_ATOM){

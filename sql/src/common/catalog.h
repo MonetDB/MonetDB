@@ -40,6 +40,8 @@ typedef struct column {
 typedef struct aggr {
 	char *name;
 	char *imp;
+	type *tpe;
+	type *res;
 	int nr;
 } aggr;
 
@@ -88,8 +90,9 @@ extern	type *cat_bind_type( catalog *cat, char *name);
 extern	type *cat_create_type( catalog *cat, char *sqlname, 
 				char *name, char *cast, int nr);
 
-extern	aggr *cat_bind_aggr( catalog *cat, char *name);
-extern	aggr *cat_create_aggr( catalog *cat, char *name, char *imp, int nr);
+extern	aggr *cat_bind_aggr( catalog *cat, char *name, char *type);
+extern	aggr *cat_create_aggr( catalog *cat, char *name, char *imp, 
+						char *tpe, char *res, int nr);
 
 extern	func *cat_bind_func( catalog *cat, char *name);
 extern	func *cat_create_func( catalog *cat, char *name, char *imp, int nr);

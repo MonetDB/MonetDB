@@ -5,6 +5,7 @@ module(str);
 module(alarm);
 module(unix);
 module(ddbench);
+module(aggr);
 module(mvc);
 
 proc default_val( myc, cid, val ) := {
@@ -107,7 +108,7 @@ proc ascii_export_functions(Output):= {
 	server_output( Output, type_sql, type_sql, type_db, type_cast );
 
 	output_count( sql_aggr_name, Output);
-	server_output( Output, sql_aggr_name, sql_aggr_name, sql_aggr_imp );
+	server_output( Output, sql_aggr_name, sql_aggr_name, sql_aggr_imp, sql_aggr_type, sql_aggr_result );
 		
 	output_count( sql_func_name, Output);
 	server_output( Output, sql_func_name, sql_func_name, sql_func_imp );

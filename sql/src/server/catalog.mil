@@ -46,7 +46,7 @@ catalog_bat("type_module", str);
 catalog_bat("type_cast", str);
 
 proc new_type( str sqlname, str nme, str downcast, str mod ) := {
-	id := oid(type_sql.count());
+	var id := oid(type_sql.count());
 	type_sql.insert(id, sqlname);
 	type_db.insert(id, nme);
 	type_cast.insert(id, downcast);
@@ -80,28 +80,24 @@ if (type_sql.count() <= 0){
 catalog_bat("sql_aggr_name", str);
 catalog_bat("sql_aggr_imp", str);
 catalog_bat("sql_aggr_module", str);
+catalog_bat("sql_aggr_type", str);
+catalog_bat("sql_aggr_result", str);
+
+proc new_aggr( str name, str imp, str mod, str tpe, str res ) := {
+	var id := oid(sql_aggr_name.count());
+	sql_aggr_name.insert(id, name);
+	sql_aggr_imp.insert(id, imp);
+	sql_aggr_module.insert(id, mod );
+	sql_aggr_type.insert(id, tpe );
+	sql_aggr_result.insert(id, res );
+}
 
 if (sql_aggr_name.count() <= 0){
-	id := 0;
-	sql_aggr_name.insert(oid(id),"min");
-	sql_aggr_imp.insert(oid(id),"min");
-	sql_aggr_module.insert(oid(id),"");
-	id := id + 1;
-	sql_aggr_name.insert(oid(id),"max");
-	sql_aggr_imp.insert(oid(id),"max");
-	sql_aggr_module.insert(oid(id),"");
-	id := id + 1;
-	sql_aggr_name.insert(oid(id),"count");
-	sql_aggr_imp.insert(oid(id),"count");
-	sql_aggr_module.insert(oid(id),"");
-	id := id + 1;
-	sql_aggr_name.insert(oid(id),"avg");
-	sql_aggr_imp.insert(oid(id),"avg");
-	sql_aggr_module.insert(oid(id),"");
-	id := id + 1;
-	sql_aggr_name.insert(oid(id),"sum");
-	sql_aggr_imp.insert(oid(id),"sum");
-	sql_aggr_module.insert(oid(id),"");
+	type_sql@batloop(){ new_aggr( "min", "min", "", $t, $t ); }
+	type_sql@batloop(){ new_aggr( "max", "max", "", $t, $t ); }
+	type_sql@batloop(){ new_aggr( "sum", "sum", "", $t, $t ); }
+	type_sql@batloop(){ new_aggr( "avg", "avg", "", $t, $t ); }
+	type_sql@batloop(){ new_aggr( "count", "count", "", $t, "INTEGER" ); }
 }
 
 catalog_bat("sql_func_name", str);

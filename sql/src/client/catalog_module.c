@@ -28,23 +28,16 @@ static void getfunctions( catalog *c ){
 	int i, tcnt;
 	BUN p,q;
 
-	BAT *sql_type_name;
-	BAT *sql_type_monet;
-	BAT *sql_type_cast;
+	BAT *sql_type_name = BATdescriptor(BBPindex("type_sql" ));
+	BAT *sql_type_monet = BATdescriptor(BBPindex("type_db" ));
+	BAT *sql_type_cast = BATdescriptor(BBPindex("type_cast" ));
 
-	BAT *sql_aggr_name;
-	BAT *sql_aggr_imp;
-	BAT *sql_func_name;
-	BAT *sql_func_imp;
-
-	sql_type_name = BATdescriptor(BBPindex("type_sql" ));
-	sql_type_monet = BATdescriptor(BBPindex("type_db" ));
-	sql_type_cast = BATdescriptor(BBPindex("type_cast" ));
-
-	sql_aggr_name = BATdescriptor(BBPindex("sql_aggr_name"));
-	sql_aggr_imp = BATdescriptor(BBPindex("sql_aggr_imp"));
-	sql_func_name = BATdescriptor(BBPindex("sql_func_name"));
-	sql_func_imp = BATdescriptor(BBPindex("sql_func_imp"));
+	BAT *sql_aggr_name = BATdescriptor(BBPindex("sql_aggr_name"));
+	BAT *sql_aggr_imp = BATdescriptor(BBPindex("sql_aggr_imp"));
+	BAT *sql_aggr_type = BATdescriptor(BBPindex("sql_aggr_type"));
+	BAT *sql_aggr_result = BATdescriptor(BBPindex("sql_aggr_result"));
+	BAT *sql_func_name = BATdescriptor(BBPindex("sql_func_name"));
+	BAT *sql_func_imp = BATdescriptor(BBPindex("sql_func_imp"));
 	 
 	c->types = list_create();
 	BATloop(sql_type_name, p, q){
@@ -61,7 +54,9 @@ static void getfunctions( catalog *c ){
 	    int tnr = *(int*)BUNhead(sql_aggr_name, p );
 	    char *tname = (char*)BUNtail(sql_aggr_name, p);
 	    char *imp = (char*)BUNfind(sql_aggr_imp, &tnr);
-	    cat_create_aggr( c, tname, imp, tnr );
+	    char *tpe = (char*)BUNfind(sql_aggr_type, &tnr);
+	    char *res = (char*)BUNfind(sql_aggr_result, &tnr);
+	    cat_create_aggr( c, tname, imp, tpe, res, tnr );
 	}
 
 	c->funcs = list_create();
