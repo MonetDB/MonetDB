@@ -149,7 +149,7 @@ class MonetSocketBlockMode extends MonetSocket {
 	/**
 	 * Reads up to count bytes from the stream, and returns them in a byte array
 	 *
-	 * @param a byte array, which should be filled with data from the stream
+	 * @param data a byte array, which should be filled with data from the stream
 	 * @return the number of bytes actually read, never less than zero
 	 * @throws IOException if some IO error occurs
 	 */

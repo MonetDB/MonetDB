@@ -67,7 +67,7 @@ public class MonetConnection implements Connection {
 	 * username and password for later use by the createStatement() call.
 	 * This constructor is only accessible to classes from the jdbc package.
 	 *
-	 * @param host the hostname to connect to
+	 * @param hostname the hostname to connect to
 	 * @param port the port to connect on the host to
 	 * @param database the database to use then connected
 	 * @param username the username to use to identify
@@ -186,7 +186,7 @@ public class MonetConnection implements Connection {
 	 * Sets whether Connections should produce debug information.<br />
 	 * Call this method before creating a new Connection!
 	 *
-	 * @param debug a boolean flag indicating wether to debug or not
+	 * @param dbug a boolean flag indicating wether to debug or not
 	 */
 	public static void setDebug(boolean dbug) {
 		debug = dbug;

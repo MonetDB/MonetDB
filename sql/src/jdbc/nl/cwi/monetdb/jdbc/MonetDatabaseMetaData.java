@@ -1264,7 +1264,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *
 	 * @param catalog - a catalog name; "" retrieves those without a
 	 *	catalog; null means drop catalog name from criteria
-	 * @param schemaParrern - a schema name pattern; "" retrieves those
+	 * @param schemaPattern - a schema name pattern; "" retrieves those
 	 *	without a schema - we ignore this parameter
 	 * @param procedureNamePattern - a procedure name pattern
 	 * @return ResultSet - each row is a procedure description
@@ -1352,7 +1352,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * returns the given string between two double quotes for usage as
 	 * exact column or table name in SQL queries.
 	 *
-	 * @param the string to quote
+	 * @param in the string to quote
 	 * @return the quoted string
 	 */
 	private static String dq(String in) {
@@ -2205,13 +2205,17 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *	<LI><B>PK_NAME</B> String => primary key identifier (may be null)
 	 *	</OL>
 	 *
-	 * @param catalog a catalog name; "" retrieves those without a catalog
-	 * @param schema a schema name pattern; "" retrieves those
+	 * @param pcatalog primary key catalog name; "" retrieves those without a catalog
+	 * @param pschema primary key schema name pattern; "" retrieves those
 	 * without a schema
-	 * @param table a table name
+	 * @param ptable primary key table name
+	 * @param fcatalog foreign key catalog name; "" retrieves those without a catalog
+	 * @param fschema foreign key schema name pattern; "" retrieves those
+	 * without a schema
+	 * @param ftable koreign key table name
 	 * @return ResultSet each row is a foreign key column description
-	 * @see #getImportedKeys
 	 * @throws SQLException if a database error occurs
+	 * @see #getImportedKeys
 	 */
 	public ResultSet getCrossReference(
 		String pcatalog,

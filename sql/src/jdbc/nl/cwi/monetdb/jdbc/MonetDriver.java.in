@@ -17,7 +17,7 @@ import java.util.Properties;
  * This Driver supports Monet database URLs. MonetDB URLs are defined as:<br />
  * <tt>jdbc:monetdb://&lt;host&gt;[:&lt;port&gt]/&lt;database&gt;</tt><br />
  * where [:&lt;port&gt] denotes that a port is optional. If not given the default
- * of which @JDBC_DEF_PORT@ will be used.
+ * (@JDBC_DEF_PORT@) will be used.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version @JDBC_MAJOR@.@JDBC_MINOR@ (@JDBC_VER_SUFFIX@)

@@ -146,9 +146,9 @@ public class MonetResultSet implements ResultSet {
 	 * Constructor used by MonetFillableResultSet.
 	 * DO NOT USE THIS CONSTRUCTOR IF YOU ARE NOT EXTENDING THIS OBJECT!
 	 *
-	 * @param String[] columns the column names
-	 * @param String[] types the column types
-	 * @param int results the number of rows in the ResultSet
+	 * @param columns the column names
+	 * @param types the column types
+	 * @param results the number of rows in the ResultSet
 	 * @throws IOException if communicating with monet failed
 	 * @throws SQLException is a protocol error occurs
 	 */
@@ -1211,10 +1211,13 @@ public class MonetResultSet implements ResultSet {
 	}
 
 	/* only parse the date pattern once, use it multiple times */
+	/** Format of a timestamp returned by Mserver */
 	private final static SimpleDateFormat mTimestamp =
 		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+	/** Format of a time returned by Mserver */
 	private final static SimpleDateFormat mTime =
 		new SimpleDateFormat("HH:mm:ss.SSS");
+	/** Format of a date returned by Mserver */
 	private final static SimpleDateFormat mDate =
 		new SimpleDateFormat("yyyy-MM-dd");
 

@@ -68,13 +68,10 @@ public class MonetStatement implements Statement {
 	 * to set up a socket to Monet and attempts to login.
 	 * This constructor is only accessible to classes from the jdbc package.
 	 *
-	 * @param hostname the hostname where the Monet server resides
-	 * @param port the port to connect on the host to
-	 * @param database the database to use
-	 * @param username the username to identify with
-	 * @param password the password to use while identifying
+	 * @param monet the connection to Mserver to use
 	 * @param connection the connection that created this Statement
-	 * @param debug if debugging should be on or off for this Statement
+	 * @param resultSetType type of ResultSet to produce
+	 * @param resultSetConcurrency concurrency of ResultSet to produce
 	 * @throws SQLException if an error occurs during login
 	 * @throws IllegalArgumentException is one of the arguments is null or empty
 	 */
