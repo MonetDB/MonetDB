@@ -340,6 +340,7 @@ int yydebug=1;
 	opt_passwd
 	varchar
 	clob
+	blob
 
 %type <l>
 	object_privileges
@@ -442,7 +443,8 @@ int yydebug=1;
 %token <sval>
 	IDENT aMODULE aTYPE ALIAS AGGR sqlINT INTNUM APPROXNUM USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL CAST CONVERT
-	CHARACTER VARCHAR CLOB VARYING LARGE OBJECT sqlDECIMAL sqlFLOAT
+	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB BINARY BLOB
+	sqlDECIMAL sqlFLOAT
 	SMALLINT MEDIUMINT BIGINT sqlINTEGER
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE
@@ -2697,6 +2699,16 @@ data_type:
 			   *       See p. 125 SQL-99
 			   */
 			}
+ |  blob	{ $$ = sql_bind_subtype("blob", 0, 0); }
+ |  blob '(' nonzero ')'
+			{ $$ = sql_bind_subtype("blob", $3, 0);
+			  /* NOTE: BLOB may be called as BLOB(2K) which is equivalent
+			   *       to BLOB(2048).  Due to 'nonzero' it is not possible
+			   *       to enter this as the parser rejects it.  However it
+			   *       might be a ToDo for the future.
+			   *       See p. 85 SQL-99
+			   */
+			}
  |  SMALLINT	{ $$ = sql_bind_subtype("smallint", 0, 0); }
  |  sqlINTEGER	{ $$ = sql_bind_subtype("int", 0, 0); }
  |  BIGINT		{ $$ = sql_bind_subtype("bigint", 0, 0); }
@@ -2834,6 +2846,10 @@ clob:
 	CLOB					{ $$ = $1; }
  |	CHARACTER LARGE OBJECT	{ $$ = $1; }
 ;
+blob:
+	BLOB					{ $$ = $1; }
+ |	BINARY LARGE OBJECT		{ $$ = $1; }
+;
 
 column:			ident ;
 
@@ -2848,34 +2864,19 @@ ident:
  |  non_reserved_word
  ;
 
-non_reserved_word:
-  CHARACTER { $$ = _strdup("character"); }
-| OBJECT	{ $$ = _strdup("object"); }
-| LARGE		{ $$ = _strdup("large"); }
-| PASSWORD	{ $$ = _strdup("password"); }
-| sqlDECIMAL{ $$ = _strdup("decimal"); }
-| sqlFLOAT 	{ $$ = _strdup("float"); }
-| sqlDOUBLE { $$ = _strdup("double"); }
-| PRECISION { $$ = _strdup("precision"); }
-| sqlDATE 	{ $$ = _strdup("date"); }
-| TIME 		{ $$ = _strdup("time"); }
-| TIMESTAMP	{ $$ = _strdup("timestamp"); }
-| PATH		{ $$ = _strdup("path"); }
-| ROLE		{ $$ = _strdup("role"); }
-| DEFAULT	{ $$ = _strdup("default"); }
-| YEAR		{ $$ = _strdup("year"); }
-| MONTH		{ $$ = _strdup("month"); }
-| DAY		{ $$ = _strdup("day"); }
-| HOUR		{ $$ = _strdup("hour"); }
-| MINUTE	{ $$ = _strdup("minute"); }
-| SECOND	{ $$ = _strdup("second"); }
-| ZONE		{ $$ = _strdup("zone"); }
+non_reserved_word:  /* (lexicographically sorted for convenience) */
+  LARGE		{ $$ = _strdup("large"); }		/* sloppy: officially reserved */
+| MODULE	{ $$ = _strdup("module"); }		/* sloppy: officially reserved */
 | sqlNAME	{ $$ = _strdup("name"); }
+| OBJECT	{ $$ = _strdup("object"); }		/* sloppy: officially reserved */
+| PASSWORD	{ $$ = _strdup("password"); }	/* neither reserved nor non-reserv. */
+| PATH		{ $$ = _strdup("path"); }		/* sloppy: officially reserved */
+| PRECISION { $$ = _strdup("precision"); }	/* sloppy: officially reserved */
+| PRIVILEGES{ $$ = _strdup("privileges"); }	/* sloppy: officially reserved */
+| ROLE		{ $$ = _strdup("role"); }		/* neither reserved nor non-reserv. */
 | TYPE		{ $$ = _strdup("type"); }
-| MODULE	{ $$ = _strdup("module"); }
-| PRIVILEGES{ $$ = _strdup("privileges"); }
-| START		{ $$ = _strdup("start"); }
-| VALUE		{ $$ = _strdup("value"); }
+| VALUE		{ $$ = _strdup("value"); }		/* sloppy: officially reserved */
+| ZONE		{ $$ = _strdup("zone"); }		/* sloppy: officially reserved */
 ;
 
 name_commalist:
