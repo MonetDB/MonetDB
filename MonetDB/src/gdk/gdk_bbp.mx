@@ -426,7 +426,7 @@ void BBPinit(void) {
 	oid	BBPoid = 0;
 	char	logical[1024], batname[1024];
 	char	path[1024];
-	lng     max_stamp = 0;
+	int     max_stamp = 0, min_stamp = 0x7fffffff;
      
 	/* try to obtain a BBP.dir */
 	GDKfilepath(path, BATDIR, "BBP", "bak");
@@ -523,6 +523,7 @@ void BBPinit(void) {
 		BBP_physical(i) = GDKstrdup(BBPparse(&c)); 
 		BBP_lastused(i) = BBPLASTUSED(atoi(BBPparse(&c)));
 		if (BBP_lastused(i) > max_stamp) max_stamp = BBP_lastused(i);
+		if (BBP_lastused(i) < min_stamp) min_stamp = BBP_lastused(i);
 		BBP_lrefs(i) = 0;
 		BBP_lrefs(i) = 1; /* any BAT we encounter here is persistent, so has a logical reference */
 		c = strchr(batname, '~');
@@ -542,10 +543,12 @@ void BBPinit(void) {
 	} 
 	fclose(fp); 
 
-	/* normalize saved LRU stamp to the current time */ 
-	max_stamp -= (lng) BBPLASTUSED(GDKcsec());
-	for(i=1; i<BBPsize; i++) if (BBP_logical(i)) {
-		BBP_lastused(i) = (unsigned int) (((lng) BBP_lastused(i)) - max_stamp); 
+	/* normalize saved LRU stamps */
+	if (min_stamp <= max_stamp) {
+		for(i=1; i<BBPsize; i++)
+			if (BBP_logical(i))
+				BBP_lastused(i) -= min_stamp; 
+		GDKsetstamp(max_stamp - min_stamp);
 	}
 
 	/* init hash table */
@@ -706,7 +709,7 @@ BATstore* BBPgetdesc(bat i) {
 					MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPgetdesc");
                         }
 		}
-		if (b) BBP_lastused(i) = BBPLASTUSED(GDKcsec());
+		if (b) BBP_lastused(i) = BBPLASTUSED(GDKstamp());
     	}
 	return (BATstore*) b;
 }
@@ -867,7 +870,7 @@ void BBPcacheit(BAT* b) {
         }
 	mode = (BBP_status(i) | BBPLOADED) & ~BBPWAITING;
 	BBP_status_set(i, mode, "BBPcacheit");
-        BBP_lastused(i) = BBPLASTUSED(GDKcsec() + ((mode==BBPLOADED)?150:0));
+        BBP_lastused(i) = BBPLASTUSED(GDKstamp() + ((mode==BBPLOADED)?150:0));
         if (BBP_desc(i) == NULL) BBP_desc_count[ABS(i)&BBPLOCKMASK]++;
         BBP_cache(i) = b;
         BBP_cache(-i) = bm = BBPmirror(b);
@@ -1128,12 +1131,12 @@ int BBPdecref(bat i, int logical) {
 	assert(b && b->batPersistence == PERSISTENT ? BBP_lrefs(i) > 0 : TRUE);
 	if (BBP_lrefs(i) > 0 || BBP_refs(i) > 0) {
 		/* bat cannot be swapped out. renew its last usage stamp for the BBP LRU policy */
-		int sec = BBPLASTUSED(GDKcsec());
+		int sec = BBPLASTUSED(GDKstamp());
 		if (sec > BBPLASTUSED(BBP_lastused(i))) BBP_lastused(i) = sec;
         } else if (b && b->batKeeparound == TRUE) {
                 /* bat could have been swapped out but user requested not to do so. Also renew its last usage stamp. */
                 MEMDEBUG THRprintf(GDKerr, "BBPdecref: keeping %s for resurrection (mode=%d).\n", BBPname(b->batCacheid), b->batPersistence);
-                BBP_lastused(i) = BBPLASTUSED(GDKcsec());
+                BBP_lastused(i) = BBPLASTUSED(GDKstamp());
 	} else if (b || (BBP_status(i)&BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit while locked so no other thread thinks its available anymore */
 		BBP_unload_on(i, "BBPdecref");
@@ -1839,7 +1842,7 @@ void BBPhot(bat i) {
         if (BBPcheck(i, "BBPhot")) {
 		if (pid != locked_by)
 			MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPhot");
-		BBP_lastused(i) = BBPLASTUSED(GDKcsec() + 30000);
+		BBP_lastused(i) = BBPLASTUSED(GDKstamp() + 30000);
 		if (pid != locked_by)
 			MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPhot");
         }

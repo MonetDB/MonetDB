@@ -39,7 +39,8 @@ gdk_export int  GDKgetHome   (void);
 
 gdk_export lng  GDKusec      (void);
 gdk_export int  GDKms        (void);
-gdk_export int  GDKcsec      (void);
+gdk_export int  GDKstamp     (void);
+gdk_export void GDKsetstamp  (int newstamp);
 
 gdk_export BAT *GDKenv;
 
@@ -1469,18 +1470,14 @@ int GDKms(void) {
 #endif
 }
 
-int GDKcsec(void) {
-#ifdef HAVE_GETTIMEOFDAY
-	struct timeval tp;
-	gettimeofday(&tp, NULL);
-        return (tp.tv_sec-GDKtime_startsec)*100 + tp.tv_usec/10000;
-#else
-#ifdef HAVE_FTIME
-	struct timeb tb;
-	ftime(&tb);
-	return (tb.time-GDKtime_startsec)*100 + tb.millitm/10;
-#endif
-#endif
+static int stamp = 0;
+int GDKstamp(void)
+{
+	return ++stamp;
+}
+void GDKsetstamp(int newstamp)
+{
+	stamp = newstamp;
 }
 
 
