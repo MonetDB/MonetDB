@@ -115,7 +115,7 @@
 #define HAVE_GETHOSTNAME 1
 
 /* Define if you have the getopt function.  */
-#undef HAVE_GETOPT 
+#define HAVE_GETOPT 1
 
 /* Define if you have the getpagesize function.  */
 #undef HAVE_GETPAGESIZE 
