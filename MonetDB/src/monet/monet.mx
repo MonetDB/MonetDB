@@ -74,29 +74,28 @@ GDKcacheLock    & BBPdir        & BBPlogical, BBPphysical, BBPstatus,
                 & BBPclear      & BBPlogical, BBPphysical, BBPstatus,
                                   BBPrefs\\
                 & BBPuncacheit  & BBPcache \\\hline
-monet_critical          & monet.mx      & {\em created  }\\
-                & clrRequest    & QMrequests, qm_first, qm_last, qm_top, qm_bot\
-\
-monet_contextLock       & monet.mx      & {\em created  }\\
-                & CNTXTfree     & monet_cntxt monet_cntxtcur\\
-                & CNTXTnew      & monet_cntxt monet_cntxtcur\\
-                & CNTXTreserve  & monet_cntxt monet_cntxtcur\\
-                & VARnew        & monet_cntxt\\\hline
-monet_parserLock        & monet_init    & {\em created  }\\
-                & parserEntry & ll_client and parser\\
-                & parserExit &  ll_client and parser\\
-monet_notifyLock        & monet_init    & {\em created  }\\
+monet\_critical          & monet.mx      & {\em created  }\\
+                & clrRequest    & QMrequests, qm\_first, qm\_last, qm\_top, qm\_bot\\
+monet\_contextLock       & monet.mx      & {\em created  }\\
+                & CNTXTfree     & monet\_cntxt monet\_cntxtcur\\
+                & CNTXTnew      & monet\_cntxt monet\_cntxtcur\\
+                & CNTXTreserve  & monet\_cntxt monet\_cntxtcur\\
+                & VARnew        & monet\_cntxt\\\hline
+monet\_parserLock        & monet\_init    & {\em created  }\\
+                & parserEntry & ll\_client and parser\\
+                & parserExit &  ll\_client and parser\\
+monet\_notifyLock	& monet\_init    & {\em created  }\\
                 & CMDstop & (trigger) notifiers \\
-TBL_readLock    & monet_tbl.mx  & {  }\\
-TBL_writeLock   & monet_tbl.mx  & {  }\\\hline
-monet_started   & monet_init    & {\em created}\\
+TBL\_readLock   & monet\_tbl.mx & {  }\\
+TBL\_writeLock  & monet\_tbl.mx & {  }\\\hline
+monet\_started  & monet\_init   & {\em created}\\
                 & main          & {\em down for Internet Thread}\\
-                & monetServer   & {\em up for Internet Thread\\\hline
-monet_available & monet_init    & {\em created}\\
-                & clrRequest    & QMrequests, qm_first, qm_last, qm_top, qm_bot\\
+                & monetServer   & {\em up for Internet Thread}\\\hline
+monet\_available	& monet\_init    & {\em created}\\
+                & clrRequest    & QMrequests, qm\_first, qm\_last, qm\_top, qm\_bot\\
                 & wakeupRequest & {\em up for available MIL request}\\
-                & getRequest & {\em down to get request from queu}
-                &               & {\em up to signal available requests}\\\hline
+                & getRequest & {\em down to get request from queu} \\
+                &               & {\em up to signal available requests}\\ \hline
 \end{tabular}
  
 @T

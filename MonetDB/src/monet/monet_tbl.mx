@@ -1209,7 +1209,7 @@ loaded	byuser	level	ACTION (in order!)
 \item[cinstall]	copy TBL\_ to client->
 \item[mod\_inst]	dlsym/<name>\_Module\_Install (that calls TBL\_Inst\_Depend)
 \item[cinstall]	copies to client->xx tables and returns MIL init script.
-\begin{description}
+\end{description}
 @
 @c
 
