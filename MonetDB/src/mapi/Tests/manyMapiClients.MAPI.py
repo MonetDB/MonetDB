@@ -35,7 +35,7 @@ def main(argv) :
     STDOUT = sys.stdout
     STDERR = sys.stderr
 
-    n = 195
+    n = 1234
 
     STDOUT.write("\n# %d Mapi-Client connections\n\n" % n)
     STDERR.write("\n# %d Mapi-Client connections\n\n" % n)
