@@ -32,17 +32,19 @@ interface for non-DBAs.
 @+ Manual Page
 @T
 The {\tt MapiClient} program provides a textual
-interface to the Monet server. Unlike the Mserver console, the {\tt MapiClient}
-program is intended not only for the database administrator, but to all other
-users. It is more comfortable than the console, since it provides
-a command history and automatic file name completion.
-The default authorization for SQL interaction is the user 'monetdb'.
+interface to the MonetDB server. Unlike the Mserver console, the
+{\tt MapiClient} program is intended not only for the database
+administrator, but for all users. It is more comfortable than the
+console, since it provides a command history and automatic file name
+completion. The default authorization for SQL interaction is the user
+'monetdb'.
 
 \begin{verbatim}
 MapiClient [options] [inputfile+]
 \end{verbatim}
 
 The following options are supported:
+
 \begin{tabular} {l l l}
  -b t/f      & --blocked=true/false& blocked mode \\
  -d          & --debug=[level]  & set debug level \\
