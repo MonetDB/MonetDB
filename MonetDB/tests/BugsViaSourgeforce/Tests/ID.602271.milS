@@ -1,4 +1,3 @@
-
 # Build two simple bats, using OIDs.
 var oid_oid_bat := insert(insert(bat(oid,oid),oid(0),oid(0)),oid(1),oid(1));
 print(oid_oid_bat);

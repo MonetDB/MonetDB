@@ -1,8 +1,8 @@
-stdout of test 'no.174` in directory 'tests/BugReports` itself:
+stdout of test 'ID.602463` in directory 'tests/BugsViaSourgeforce` itself:
 
 
 # 16:45:43 >  
-# 16:45:43 >  Mtimeout -timeout 60 Mserver --config=/home/arjen/local/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_tests_BugReports  < no.174.milS
+# 16:45:43 >  Mtimeout -timeout 60 Mserver --config=/home/arjen/local/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_tests_BugsViaSourgeforce  < ID.602463.milS
 # 16:45:43 >  
 
 # Monet Database Server V4.3.5
