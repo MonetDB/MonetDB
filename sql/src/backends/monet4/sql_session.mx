@@ -375,8 +375,8 @@ output_prepare( stream *out, cq *q )
 
 enum ex_t {
 	ex_none,
-	ex_mil,
-	ex_sql
+	ex_plan,
+	ex_performance
 };
 
 int sqlexecute(backend * be, stream *out )
@@ -397,13 +397,13 @@ int sqlexecute(backend * be, stream *out )
 
 	if (c->explain)
 	{
-	    	if (strcmp(c->explain, "mil") == 0)
-			explain = ex_mil;
-	    	else if (strcmp(c->explain, "sql") == 0)
-			explain = ex_sql;
+	    	if (strcmp(c->explain, "plan") == 0)
+			explain = ex_plan;
+	    	else if (strcmp(c->explain, "performance") == 0)
+			explain = ex_performance;
 	}
 
-	if (explain == ex_sql)
+	if (explain == ex_performance)
 		T0 = GDKusec();
 
 	if ((err = sqlparse(c)) ||
@@ -414,10 +414,10 @@ int sqlexecute(backend * be, stream *out )
 		return sqlcleanup(c, err, cache);
 	}
 
-	if (explain == ex_sql)
+	if (explain == ex_performance)
 		Tparse = GDKusec();
 
-	if (explain == ex_mil || !c->cache ||
+	if (explain == ex_plan || !c->cache ||
 	    !(q = qc_find(c->qc, c->sym, c->params, c->scanner.key))) {
 		char *cmd = NULL;
 		stmt *s = sql_symbol2stmt(c);
@@ -428,7 +428,7 @@ int sqlexecute(backend * be, stream *out )
 		}
 		assert(s);
 
-		if (explain == ex_mil) {
+		if (explain == ex_plan) {
 			/* insert mil statements into a bat */
 			if (c->args && c->params){
 				node *n, *m;
@@ -448,7 +448,7 @@ int sqlexecute(backend * be, stream *out )
 			}
 		}
 
-		if (explain == ex_mil || !c->cache) {
+		if (explain == ex_plan || !c->cache) {
 			int nr = 1;
 
 			backend_dumpstmt( s, &nr, be );
@@ -459,7 +459,7 @@ int sqlexecute(backend * be, stream *out )
     		stream_flush( be->out );
 		stmt_destroy(s);
 
-		if (explain == ex_mil) {
+		if (explain == ex_plan) {
 			err = explain_cmd( c, cmd, out);
 		} else {
 			err = backend_parse( c->stk, cmd );
@@ -480,7 +480,7 @@ int sqlexecute(backend * be, stream *out )
 			return sqlcleanup(c, err, cache);
 	}
 
-	if (explain == ex_sql) {
+	if (explain == ex_performance) {
 		query = _strdup(QUERY(c->scanner));
 		Tmil = GDKusec();
 	}
@@ -513,7 +513,7 @@ int sqlexecute(backend * be, stream *out )
 		c->type = q->type;
 		err = backend_fastpath( (Cntxt)(ptrdiff_t)q->stk, (YYSTREE)q->code, c->args);
 	}
-	if (explain == ex_sql)
+	if (explain == ex_performance)
 		Texec = GDKusec();
 
 	/*
@@ -526,7 +526,7 @@ int sqlexecute(backend * be, stream *out )
 		c->qc = qc_create();
 	}
 
-	if (explain == ex_sql) {
+	if (explain == ex_performance) {
 		char *e = c->explain;
 		char buf[BUFSIZ];
 
@@ -540,7 +540,7 @@ int sqlexecute(backend * be, stream *out )
 		c->explain = e;
 	}
 
-	if (!err && explain != ex_mil) {
+	if (!err && explain != ex_plan) {
 		if (mvc_status(c) < 0)
 			error(out, "Error in result");
 	}

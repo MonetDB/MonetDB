@@ -35,6 +35,8 @@ we update its context descriptor to denote an SQL scenario.
 #include "sql_scenario.h"
 #include "sql_gencode.h"
 
+extern void pushCatchDefault(MalBlkPtr mb, str nme,int autocommit);
+
 static int SQLinitialized;
 
 str SQLinit(Client c){
@@ -200,12 +202,6 @@ A future version may analyse the parameter settings in more detail.
 #define skip() while(*c->nxt && isspace(*c->nxt) ) c->nxt++;
 #define tst(X) (strncmp(c->nxt,(X),strlen(X))==0 && isspace(c->nxt[strlen(X)]))
 
-enum ex_t {
-        ex_none,
-        ex_mil,
-        ex_sql
-};
-
 void SQLsetDebugger(Client c)
 {
 	InstrPtr q;
@@ -240,9 +236,9 @@ The core part of the SQL interface, parse the query and
 prepare the intermediate code.
 @c
 #define explainMAL() (be->mvc->explain && \
-	strcmp(be->mvc->explain, "mal") == 0)
+	strcmp(be->mvc->explain, "plan") == 0)
 #define explainSQL() (be->mvc->explain && \
-	strcmp(be->mvc->explain, "sql") == 0)
+	strcmp(be->mvc->explain, "performance") == 0)
 
 str SQLparser(Client c) {
 	str msg=0;
@@ -329,7 +325,7 @@ The default action is to print them out at the end of the
 query block.
 @c
 	if( err ==0 ){
-		pushCatchDefault(c->curprg->def,"sqlerror");
+		pushCatchDefault(c->curprg->def,"sqlerror",0);
 		pushEndInstruction(c->curprg->def);
 		chkProgram(c->nspace, c->curprg->def);
 		if( c->curprg->def->errors){
@@ -469,6 +465,51 @@ str SQLerror(int *ret, int *bit, str *msg){
 	if( *bit)
 		return throwMessage("sqlerror",msg);
 	return MAL_SUCCEED;
+}
+@- Utilities
+Catching errors is a recurring situation. The block below 
+generates the default code block, ie catch it and print
+the error. It should also deal with the auto_commit
+situation. [todo]
+@c
+void pushCatchDefault(MalBlkPtr mb, str nme, int autocommit){
+	InstrPtr p;
+	int i;
+
+	if(autocommit){
+		p= newInstruction(ASSIGNsymbol);
+		moduleId(p)= GDKstrdup("sql");
+		functionId(p)= GDKstrdup("commit");
+		pushInstruction(mb,p);
+	}
+	p= newInstruction(CATCHsymbol);
+	i= findVariable(mb,nme);
+	if( i< 0) i= newVariable(mb,GDKstrdup(nme),TYPE_str);
+	getDestVar(p) = i;
+	p->argc =1;
+	p->retc = 1;
+	p->barrier= CATCHsymbol;
+	pushInstruction(mb,p);
+
+	p= newInstruction(ASSIGNsymbol);
+	moduleId(p)= GDKstrdup("io");
+	functionId(p)= GDKstrdup("print");
+	pushArgumentId(mb, p, GDKstrdup(nme));
+	pushInstruction(mb,p);
+
+	if(autocommit){
+		p= newInstruction(ASSIGNsymbol);
+		moduleId(p)= GDKstrdup("sql");
+		functionId(p)= GDKstrdup("rollback");
+		pushInstruction(mb,p);
+	}
+
+	p= newInstruction(EXITsymbol);
+	getDestVar(p) = findVariable(mb,GDKstrdup(nme));
+	p->argc =1;
+	p->retc = 1;
+	p->barrier= EXITsymbol;
+	pushInstruction(mb,p);
 }
 @mal
 # nothing special to do
