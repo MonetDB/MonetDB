@@ -44,7 +44,7 @@ int sql_privileges( int authid ){
 	BAT *auths_id = desc("auths_id"); 
 	BAT *auths_priv = desc("auths_privileges");
 	ptr lid = bun_find(BATmirror(auths_id), &authid);
-	int res = *(int*)buf_find(auths_priv, lid);
+	int res = *(int*)bun_find(auths_priv, lid);
 	
 	BBPunfix(auths_id->batCacheid);
 	BBPunfix(auths_priv->batCacheid);
@@ -58,7 +58,7 @@ int sql_table_privileges( int authid, int tableid, int gprivs ){
 	BAT *tables = BATselect(tp_table_id, &tableid, &tableid );
 	BAT *auths = BATsemijoin(tp_auth_id, tables);
 	ptr lid = bun_find(BATmirror(auths), &authid);
-	int res = *(int*)buf_find(tp_priv, lid);
+	int res = *(int*)bun_find(tp_priv, lid);
 	
 	BBPunfix(tables->batCacheid);
 	BBPunfix(auths->batCacheid);
@@ -76,7 +76,7 @@ int sql_column_privileges( int authid, int columnid, int tprivs ){
 	BAT *columns = BATselect(tp_column_id, &columnid, &columnid );
 	BAT *auths = BATsemijoin(tp_auth_id, columns);
 	ptr lid = bun_find(BATmirror(auths), &authid);
-	int res = *(int*)buf_find(tp_priv, lid);
+	int res = *(int*)bun_find(tp_priv, lid);
 	
 	BBPunfix(columns->batCacheid);
 	BBPunfix(auths->batCacheid);
