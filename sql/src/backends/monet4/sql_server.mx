@@ -606,7 +606,7 @@ int @2_2_@1( @1 *res, @2 *v, int *len ){
 	
 	/* count the number of digits in the input */
 	while(cpyval /= 10) inlen++;
-	if (inlen > p) {
+	if (p && inlen > p) {
 		GDKerror("@2_2_@1: too many digits (%d > %d)\n", inlen, p);
 		return(GDK_FAIL);
 	}
@@ -636,7 +636,7 @@ int @2_2_@1( @1 *res, @2 *v, int *len ){
 	
 	/* count the number of digits in the input */
 	while(cpyval /= 10) inlen++;
-	if (inlen > p) {
+	if (p && inlen > p) {
 		GDKerror("@2_2_@1: too many digits (%d > %d)\n", inlen, p);
 		return(GDK_FAIL);
 	}
