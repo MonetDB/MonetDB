@@ -337,6 +337,10 @@ typedef struct {
 	int next;
 } MT_mmap_t;
 
+#ifdef HAVE_POSIX_FADVISE
+static int do_not_use_posix_fadvise = 0;
+#endif
+
 #define MT_MMAP_MINSIZE (1<<22)
 #define MT_MMAP_BUFSIZE 100
 MT_mmap_t MT_mmap_tab[MT_MMAP_BUFSIZE];
@@ -448,7 +452,8 @@ MT_mmap_del(void *base, size_t len)
 				MT_mmap_tab[prev].next = MT_mmap_tab[victim].next;
 			}
 #ifdef HAVE_POSIX_FADVISE
-			if (MT_mmap_tab[victim].fd >= 0) {
+			if (!do_not_use_posix_fadvise &&
+			    MT_mmap_tab[victim].fd >= 0) {
 				/* tell the OS quite clearly that you want to drop this */
 				ret = posix_fadvise(MT_mmap_tab[victim].fd, 0LL, MT_mmap_tab[victim].len, POSIX_FADV_DONTNEED);
 #ifdef MMAP_DEBUG
@@ -476,19 +481,21 @@ MT_fadvise(void *base, size_t len, int advice)
 	int ret = 0;
 
 #ifdef HAVE_POSIX_FADVISE
-	int i;
+	if (!do_not_use_posix_fadvise) {
+		int i;
 
-	(void) pthread_mutex_lock(&MT_mmap_lock);
-	i = MT_mmap_idx(base, len);
-	if (i >= 0) {
-		if (MT_mmap_tab[i].fd >= 0) {
-			ret = posix_fadvise(MT_mmap_tab[i].fd, 0, len, advice);
+		(void) pthread_mutex_lock(&MT_mmap_lock);
+		i = MT_mmap_idx(base, len);
+		if (i >= 0) {
+			if (MT_mmap_tab[i].fd >= 0) {
+				ret = posix_fadvise(MT_mmap_tab[i].fd, 0, len, advice);
 #ifdef MMAP_DEBUG
-			stream_printf(GDKerr, "MT_fadvise: posix_fadvise(%s,fd=%d,%uMB,%d) = %d\n", MT_mmap_tab[i].path, MT_mmap_tab[i].fd, (unsigned int) (len >> 20), advice, ret);
+				stream_printf(GDKerr, "MT_fadvise: posix_fadvise(%s,fd=%d,%uMB,%d) = %d\n", MT_mmap_tab[i].path, MT_mmap_tab[i].fd, (unsigned int) (len >> 20), advice, ret);
 #endif
+			}
 		}
+		(void) pthread_mutex_unlock(&MT_mmap_lock);
 	}
-	(void) pthread_mutex_unlock(&MT_mmap_lock);
 #else
 	(void) base;
 	(void) len;
@@ -562,10 +569,12 @@ MT_mmap_trim(size_t lim, void *fp)
 				stream_printf(err, "MT_mmap_trim: posix_madvise(%s,fd=%d,%uMB,POSIX_MADV_DONTNEED) = %d\n", MT_mmap_tab[i].path, MT_mmap_tab[i].fd, (unsigned int) (MT_mmap_tab[i].len >> 20), ret);
 			}
 #ifdef HAVE_POSIX_FADVISE
-			/* tell the OS quite clearly that you want to drop this */
-			ret = posix_fadvise(MT_mmap_tab[i].fd, 0LL, MT_mmap_tab[i].len, POSIX_FADV_DONTNEED);
-			if (err) {
-				stream_printf(err, "MT_mmap_trim: posix_fadvise(%s,fd=%d,%uMB,POSIX_FADV_DONTNEED) = %d\n", MT_mmap_tab[i].path, MT_mmap_tab[i].fd, (unsigned int) (MT_mmap_tab[i].len >> 20), ret);
+			if (!do_not_use_posix_fadvise) {
+				/* tell the OS quite clearly that you want to drop this */
+				ret = posix_fadvise(MT_mmap_tab[i].fd, 0LL, MT_mmap_tab[i].len, POSIX_FADV_DONTNEED);
+				if (err) {
+					stream_printf(err, "MT_mmap_trim: posix_fadvise(%s,fd=%d,%uMB,POSIX_FADV_DONTNEED) = %d\n", MT_mmap_tab[i].path, MT_mmap_tab[i].fd, (unsigned int) (MT_mmap_tab[i].len >> 20), ret);
+				}
 			}
 #endif
 		}
@@ -601,9 +610,26 @@ MT_mmap_unpin(void *base, size_t len)
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 }
 
+#ifdef HAVE_POSIX_FADVISE
+#ifdef HAVE_UNAME
+#include <sys/utsname.h>
+#endif
+#endif
+
 void
 MT_init_posix(int alloc_map)
 {
+#ifdef HAVE_POSIX_FADVISE
+#ifdef HAVE_UNAME
+	struct utsname ubuf;
+
+	/* do not use posix_fadvise on Linux systems running a 2.4 or
+	   older kernel */
+	do_not_use_posix_fadvise = uname(&ubuf) == 0 &&
+		strcmp(ubuf.sysname, "Linux") == 0 &&
+		strncmp(ubuf.release, "2.4", 3) <= 0;
+#endif
+#endif
 	MT_heapbase = (char *) sbrk(0);
 	if (alloc_map)
 		MT_alloc_init();

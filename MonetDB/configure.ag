@@ -238,7 +238,7 @@ AC_CHECK_FUNCS(fstat getpwuid getuid ftime sysconf)
 AC_CHECK_FUNCS(mrand48 drand48)
 AC_CHECK_FUNCS(nanosleep lockf)
 AC_CHECK_FUNCS(ctime_r localtime_r isinf fpclassify fpclass getlogin)
-AC_CHECK_FUNCS(madvise posix_madvise posix_fadvise)
+AC_CHECK_FUNCS(madvise posix_madvise posix_fadvise uname)
 AC_CHECK_DECLS([strdup, strtof])
 AC_CHECK_DECLS([strtoll, strtoull])
 ctime_r3=yes
