@@ -908,7 +908,7 @@ Create the result BAT and execute the select algorithm.
  	                                    b->batId, b->batId, bn->batId);
 	        bn = BAT_hashselect(b, bn, tl);
 	    } else {
-                ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_scanselect(b=$s, bn=$s, tl, th, equi=%d, lval=%d, hval=%d, nocheck=%d);\n",
+                ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): BAT_scanselect(b=%s, bn=%s, tl, th, equi=%d, lval=%d, hval=%d, nocheck=%d);\n",
                                             b->batId, b->batId, bn->batId, equi, lval, hval, nocheck);
 		bn = BAT_scanselect(b, bn, tl, th, li, hi, equi, lval, hval, nocheck);
 	    }
