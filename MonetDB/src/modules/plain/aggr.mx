@@ -1,5 +1,5 @@
 @f aggr
-@a P. Boncz 
+@a P. Boncz, S. Manegold 
 @t Aggregates Module
 @v 1.0
 
@@ -133,28 +133,24 @@ structure to compute a group of common aggregates.
 #include <gdk.h>
 #include "aggr.proto.h"
 
-@= arithpump
-int CMDaggr_sum_@1(BAT **ret, BAT *b, BAT *e){
-	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
-	@1 zero = (@1) 0;
-	BUN p, q, r;
-	int xx;
+/* 
+with group OIDs spanning a range of less SMALL_AGGR_MAX (the actual number
+of groups might be even less, in case there are "holes" in the group OID
+range), we use a simple array as temporary sum/cnt table on order to benefit
+from positional lookups; with size of sum <= 8 bytes and size of cnt == 4
+bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
+*/
+#define SMALL_AGGR_MAX 1024
 
-	/* init: set all sums to zero */
-	bn->tsorted = bn->hsorted = 0;
-	ALIGNsetH(bn, e);
-	BATloopFast(e, p, q, xx) {
-		BUNfastins(bn, BUNhead(e,p), &zero);
-	}
-	/* scan b, and add values to sums in-place */
+@= large_aggr_sum
 	(void) BATprepareHash(bn);
 	BATloopFast(b, p, q, xx) {
-		oid *h = (oid*) BUNhead(b,p);
-		@1 *t = (@1*) BUNtail(b,p);
+		oid *h = (oid*) BUNhloc(b,p);
+		@1 *t = (@1*) BUN@2(b,p);
 
-		BUNfndOID(r, bn, h);
+		/* BUNfndOID(r, bn, h);*/	HASHfnd_int(r,bn,(int*)h);
 		if (r) {
-			@1 *dst = (@1*) BUNtloc(bn, r);
+			@1 *dst = (@1*) BUN@2(bn, r);
 			if (*dst != @1_nil) {
 				if (*t == @1_nil) {	
 					*dst = @1_nil;
@@ -164,33 +160,42 @@ int CMDaggr_sum_@1(BAT **ret, BAT *b, BAT *e){
 			} 
 		}
 	} 
-	*ret = bn;
-	return GDK_SUCCEED;
-}
+@c
+@= small_aggr_sum
+	sums = (@1*) GDKmalloc(range*sizeof(@1));
+	for (i = 0; i < range; i++) sums[i] = zero;
+	BATloopFast(b, p, q, xx) {
+		int h = (int)(*(oid*) BUNhloc(b,p)) - min;
+		@1 *t = (@1*) BUN@2(b,p);
 
-int CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e){
-	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
-	int xx, yy = 0, off = BUNindex(bn,BUNfirst(bn));
-	int *cnt = (int*) GDKmalloc(BATcount(e)*sizeof(int)); 
-	@1 zero = (@1) 0;
-	BUN p, q, r;
-
-	/* init sums and counts to zero */
-	bn->tsorted = bn->hsorted = 0;
-	ALIGNsetH(bn, e);
-	memset(cnt, 0, BATcount(e)*sizeof(int));
-	BATloopFast(e, p, q, xx) {
-		BUNfastins(bn, BUNhead(e,p), &zero);
+		if (h >= 0 && h < range) {
+			@1 *dst = sums + h;
+			if (*dst != @1_nil) {
+				if (*t == @1_nil) {	
+					*dst = @1_nil;
+				} else {
+					*dst += *t;
+				}
+			} 
+		}
+	} 
+	BATloopFast(bn, p, q, xx) {
+		int h = (int)(*(oid*) BUNhloc(bn,p)) - min;
+		*(@1*)BUN@2(bn, p) = sums[h];
 	}
-	/* scan b, adding sums, and incrementing counts */
+        GDKfree(sums);
+@c
+@= large_aggr_avg
+	cnt  = (int*) GDKmalloc(BATcount(e)*sizeof(int));
+	memset(cnt, 0, BATcount(e)*sizeof(int));
 	(void) BATprepareHash(bn);
 	BATloopFast(b, p, q, xx) {
-		oid *h = (oid*) BUNhead(b,p);
-		@1 *t = (@1*) BUNtail(b,p);
+		oid *h = (oid*) BUNhloc(b,p);
+		@1 *t = (@1*) BUN@2(b,p);
 
-		BUNfndOID(r,bn,h);
+		/*BUNfndOID(r,bn,h);*/	HASHfnd_int(r,bn,(int*)h);
 		if (r) {
-			@1 *dst = (@1*) BUNtloc(bn, r);
+			@1 *dst = (@1*) BUN@2(bn, r);
 			if (*dst != @1_nil) {
 				if (*t == @1_nil) {	
 					*dst = @1_nil;
@@ -203,7 +208,7 @@ int CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e){
 	} 
 	/* postprocess by dividing sums by counts */
 	BATloopFast(bn, p, q, xx) {
-		@1 *dst = (@1*) BUNtail(bn, p);
+		@1 *dst = (@1*) BUN@2(bn, p);
 		if (cnt[yy] == 0) {
 			*dst = @1_nil;
 		} else if (*dst != @1_nil) {
@@ -211,17 +216,129 @@ int CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e){
 		} yy++;
 	} 
 	GDKfree(cnt);
+@c
+@= small_aggr_avg
+	sums = (@1*) GDKmalloc(range*sizeof(@1));
+	cnt  = (int*) GDKmalloc(range*sizeof(int));
+	for (i = 0; i < range; i++) sums[i] = zero;
+	memset(cnt, 0, range*sizeof(int));
+	BATloopFast(b, p, q, xx) {
+		int h = (int)(*(oid*) BUNhloc(b,p)) - min;
+		@1 *t = (@1*) BUN@2(b,p);
+
+		if (h >= 0 && h < range) {
+			@1 *dst = sums + h;
+			if (*dst != @1_nil) {
+				if (*t == @1_nil) {	
+					*dst = @1_nil;
+				} else {
+					*dst += *t;
+				}
+				cnt[h]++;
+			} 
+		}
+	} 
+	/* postprocess by dividing sums by counts */
+	BATloopFast(bn, p, q, xx) {
+		int h = (int)(*(oid*) BUNhloc(bn,p)) - min;
+		@1 *dst = (@1*) BUN@2(bn, p);
+		if (cnt[h] == 0 || sums[h] == @1_nil) {
+			*dst = @1_nil;
+		} else {
+			*dst = sums[h]/cnt[h];
+		}
+	}
+        GDKfree(sums);
+	GDKfree(cnt);
+@c
+
+@= arithpumpoid
+int CMDaggr_sum_@1(BAT **ret, BAT *b, BAT *e){
+	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
+	@1 zero = (@1) 0, *sums;
+	BUN p, q, r;
+	int xx, i, range, min, max;
+
+	/* init: set all sums to zero */
+	bn->tsorted = bn->hsorted = 0;
+	ALIGNsetH(bn, e);
+	if (BAThordered(e)&1) {
+		min = (int)(*(oid*)BUNhloc(e, BUNfirst(e)));
+		BATloopFast(e, p, q, xx) {
+			BUNfastins(bn, BUNhloc(e,p), &zero);
+		}
+		max = (int)(*(oid*)BUNhloc(e, BUNlast(e)-BUNsize(e)));
+	} else {
+		min = max = (int)(*(oid*)BUNhloc(e, BUNfirst(e)));
+		BATloopFast(e, p, q, xx) {
+			BUNfastins(bn, BUNhloc(e,p), &zero);
+			i = (int)(*(oid*)BUNhloc(e, p));
+			if (i < min) min = i;
+			else
+			if (i > max) max = i;
+		}
+	}
+	range = max - min + 1;
+
+	/* scan b, and add values to sums in-place */
+	if (range > SMALL_AGGR_MAX) {
+		ALGODEBUG THRprintf(GDKout, "CMDaggr_sum_@1: range(=%d) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_sum\n",range,SMALL_AGGR_MAX);
+		@:large_aggr_sum(@1,@2)@
+	} else {
+		ALGODEBUG THRprintf(GDKout, "CMDaggr_sum_@1: range(=%d) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_sum\n",range,SMALL_AGGR_MAX);
+		@:small_aggr_sum(@1,@2)@
+	}
+	*ret = bn;
+	return GDK_SUCCEED;
+}
+
+int CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e){
+	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
+	int xx, yy = 0, off = BUNindex(bn,BUNfirst(bn));
+	int *cnt, i, range, min, max; 
+	@1 zero = (@1) 0, *sums;
+	BUN p, q, r;
+
+	/* init sums and counts to zero */
+	bn->tsorted = bn->hsorted = 0;
+	ALIGNsetH(bn, e);
+	if (BAThordered(e)&1) {
+		min = (int)(*(oid*)BUNhloc(e, BUNfirst(e)));
+		BATloopFast(e, p, q, xx) {
+			BUNfastins(bn, BUNhloc(e,p), &zero);
+		}
+		max = (int)(*(oid*)BUNhloc(e, BUNlast(e)-BUNsize(e)));
+	} else {
+		min = max = (int)(*(oid*)BUNhloc(e, BUNfirst(e)));
+		BATloopFast(e, p, q, xx) {
+			BUNfastins(bn, BUNhloc(e,p), &zero);
+			i = (int)(*(oid*)BUNhloc(e, p));
+			if (i < min) min = i;
+			else
+			if (i > max) max = i;
+		}
+	}
+	range = max - min + 1;
+
+	/* scan b, adding sums, and incrementing counts */
+	if (range > SMALL_AGGR_MAX) {
+		ALGODEBUG THRprintf(GDKout, "CMDaggr_avg_@1: range(=%d) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_avg\n",range,SMALL_AGGR_MAX);
+		@:large_aggr_avg(@1,@2)@
+	} else {
+		ALGODEBUG THRprintf(GDKout, "CMDaggr_avg_@1: range(=%d) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_avg\n",range,SMALL_AGGR_MAX);
+		@:small_aggr_avg(@1,@2)@
+	}
 	*ret = bn;
 	return GDK_SUCCEED;
 }
 @c
-@:arithpump(sht)@
-@:arithpump(int)@
-@:arithpump(lng)@
-@:arithpump(flt)@
-@:arithpump(dbl)@
+@:arithpumpoid(sht,tloc)@
+@:arithpumpoid(int,tloc)@
+@:arithpumpoid(lng,tloc)@
+@:arithpumpoid(flt,tloc)@
+@:arithpumpoid(dbl,tloc)@
 
-@= extreme
+@= extremeoid
 int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int (*cmp)(ptr,ptr) = BATatoms[bn->ttype].atomCmp;
@@ -236,10 +353,10 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 	/* scan b and replace totals by the extreme value (just pointers to vals in b) */
 	(void) BATprepareHash(e);
 	BATloopFast(b, p, q, xx) {
-		oid *h = (oid*) BUNhead(b,p);
+		oid *h = (oid*) BUNhloc(b,p);
 		ptr t =  BUNtail(b,p);
 
-		BUNfndOID(r,e,h);
+		/*BUNfndOID(r,e,h);*/	HASHfnd_int(r,e,(int*)h);
 		if (r) {
 			ptr *val = extremes + (BUNindex(e,r) - off);
 			if (*val != nil) {
@@ -254,7 +371,7 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 	/* insert the extreme values into the result */
 	BATloopFast(e, p, q, xx) {
 		ptr val = extremes[yy++];
-		BUNfastins(bn, BUNhead(e,p), val?val:nil); 
+		BUNfastins(bn, BUNhloc(e,p), val?val:nil); 
 	} 
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
@@ -263,32 +380,73 @@ int CMDaggr_@1(BAT **ret, BAT *b, BAT *e){
 	return GDK_SUCCEED;
 }
 @c
-@:extreme(min,<)@
-@:extreme(max,>)@
+@:extremeoid(min,<)@
+@:extremeoid(max,>)@
 
-int CMDaggr_count(BAT **ret, BAT *b, BAT *e){
-	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));	
-	int zero = 0;
-	BUN p, q, r;
-	int xx;
-
-	/* init: set all sums to zero */
-	bn->tsorted = bn->hsorted = 0;
-	ALIGNsetH(bn, e);
-	BATloopFast(e, p, q, xx) {
-		BUNfastins(bn, BUNhead(e,p), &zero);
-	}
-	/* scan b, and add increment totals for true values */
+@= large_aggr_count
 	(void) BATprepareHash(bn);
 	BATloopFast(b, p, q, xx) {
-		oid *h = (oid*) BUNhead(b,p);
+		oid *h = (oid*) BUNhloc(b,p);
 
-		BUNfndOID(r, bn, h);
+		/*BUNfndOID(r, bn, h);*/	HASHfnd_int(r,bn,(int*)h);
 		if (r) {
 			int *dst = (int*) BUNtloc(bn, r);
 			(*dst)++;
 		}
 	} 
+@c
+@= small_aggr_count
+	cnt  = (int*) GDKmalloc(range*sizeof(int));
+	memset(cnt, 0, range*sizeof(int));
+	BATloopFast(b, p, q, xx) {
+		int h = (int)(*(chr*) BUNhloc(b,p)) - min;
+
+		if (h >= 0 && h < range) {
+			cnt[h]++;
+		}
+	} 
+	BATloopFast(bn, p, q, xx) {
+		int h = (int)(*(chr*) BUNhloc(bn,p)) - min;
+		*(int*)BUNtloc(bn, p) = cnt[h];
+	}
+        GDKfree(cnt);
+@c
+
+int CMDaggr_count(BAT **ret, BAT *b, BAT *e){
+	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));	
+	int zero = 0, *cnt;
+	BUN p, q, r;
+	int xx, i, range, min, max;
+
+	/* init: set all sums to zero */
+	bn->tsorted = bn->hsorted = 0;
+	ALIGNsetH(bn, e);
+	if (BAThordered(e)&1) {
+		min = (int)(*(oid*)BUNhloc(e, BUNfirst(e)));
+		BATloopFast(e, p, q, xx) {
+			BUNfastins(bn, BUNhloc(e,p), &zero);
+		}
+		max = (int)(*(oid*)BUNhloc(e, BUNlast(e)-BUNsize(e)));
+	} else {
+		min = max = (int)(*(oid*)BUNhloc(e, BUNfirst(e)));
+		BATloopFast(e, p, q, xx) {
+			BUNfastins(bn, BUNhloc(e,p), &zero);
+			i = (int)(*(oid*)BUNhloc(e, p));
+			if (i < min) min = i;
+			else
+			if (i > max) max = i;
+		}
+	}
+	range = max - min + 1;
+
+	/* scan b, and add increment totals for true values */
+	if (range > SMALL_AGGR_MAX) {
+		ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%d) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count\n",range,SMALL_AGGR_MAX);
+		@:large_aggr_count@
+	} else {
+		ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%d) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count\n",range,SMALL_AGGR_MAX);
+		@:small_aggr_count@
+	}
 	*ret = bn;
 	return GDK_SUCCEED;
 }
@@ -311,7 +469,7 @@ int CMDaggr_size(BAT **ret, BAT *b, BAT *e){
 		if (*(bit*) BUNtloc(b,p) == TRUE) {
 			oid *h = (oid*) BUNhead(b,p);
 
-			BUNfndOID(r, bn, h);
+			/*BUNfndOID(r, bn, h);*/	HASHfnd_int(r,bn,(int*)h);
 			if (r) {
 				int *dst = (int*) BUNtloc(bn, r);
 				(*dst)++;
@@ -321,5 +479,6 @@ int CMDaggr_size(BAT **ret, BAT *b, BAT *e){
 	*ret = bn;
 	return GDK_SUCCEED;
 }
+
 @}
 @}
