@@ -29,3 +29,8 @@ java_sample0 = {
 	DIR = pkglibdir/Tests
 	SOURCES = sample0.java
 }
+
+java_sample1 = {
+	DIR = pkglibdir/Tests
+	SOURCES = sample1.java
+}
