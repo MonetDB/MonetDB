@@ -301,13 +301,14 @@ static stmt *sql_subquery(context * sql, scope * scp, symbol * sq)
 		return NULL;
 	}
 
-	if (toplevel)
-		scp = scope_open(scp);
 
 	if (sn->from) {		/* keep variable list with tables and names */
 		dlist *fl = sn->from->data.lval;
 		dnode *n = NULL;
 		tvar *fnd = (tvar *) 1;
+
+		if (toplevel)
+			scp = scope_open(scp);
 
 		for (n = fl->h; (n && fnd); n = n->next)
 			fnd = table_ref(sql, scp, n->data.sym);
@@ -319,12 +320,7 @@ static stmt *sql_subquery(context * sql, scope * scp, symbol * sq)
 		}
 
 	} else if (toplevel) {	/* only on top level query */
-		node *n = cur_schema(sql)->tables->h;
-
-		for (; (n); n = n->next) {
-			table *p = n->data;
-			scope_add_table_columns(scp, p, p->name);
-		}
+		return sql_simple_select(sql, scp, sn->selection);
 	}
 
 	res = sql_select(sql, scp, sn, toplevel );

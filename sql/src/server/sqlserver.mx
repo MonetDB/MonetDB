@@ -5,7 +5,7 @@ The sqlserver module contains the complete wrapper interface for the
 SQL client and the corresponding MIL runtime startup.
 @m
 .MODULE sqlserver;
-	.USE ascii_io;
+	.USE ascii_io; 
 
 	.ATOM mvc = ptr;
 	.END;

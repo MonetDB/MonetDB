@@ -15,5 +15,4 @@ lib_sql = {
 		atom.c atom.h mem.h string.c \
 		datetime.c datetime.h var.h scope.c scope.h context.h
 	WINLIBS = $(MONET_LIBS) -lbat
-	HEADERS = h tab.h
 }
