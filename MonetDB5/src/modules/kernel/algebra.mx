@@ -572,7 +572,7 @@ address ALGsum_@1_@2
 comment "Gives the sum of all tail values";
 command prod(b:bat[:any,:@1] ) :@2 
 address ALGprod_@1_@2
-comment "Gives the produc of all tail values";
+comment "Gives the product of all tail values";
 @mal
 @:sum_definition(sht,sht)@
 @:sum_definition(sht,int)@
@@ -1485,7 +1485,7 @@ str ALGsum_@1_@2(@2* res, int *bid) {
 @= ALGprod_implementation
 str ALGprod_@1_@2(@2* res, int *bid) {
 	BAT *b;
-	@:getBATdescriptor(res,bid,b,sum)@
+	@:getBATdescriptor(res,bid,b,prod)@
 	CMDprod_@1_@2(res,b);
         return MAL_SUCCEED;
 }

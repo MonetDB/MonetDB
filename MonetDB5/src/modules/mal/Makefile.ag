@@ -12,8 +12,8 @@ LIBS = {
 		chopper.mx language.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx io.mx \
 		enum.mx streams.mx inspect.mx crackers.mx \
-		thread.mx optimizer.mx clients.mx tablet.mx \
-		transaction.mx factory.mx mdb.mx costmodel.mx
+		thread.mx clients.mx tablet.mx \
+		transaction.mx factory.mx mdb.mx 
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
@@ -39,8 +39,8 @@ lib__pcre = {
 #		startup.mx mal_init.mx language.mx box.mx multiplex.mx  \
 #		atoms.mx profiler.mx const.mx bbp.mx io.mx \
 #		enum.mx streams.mx inspect.mx crackers.mx \
-#		chopper.mx thread.mx optimizer.mx clients.mx tablet.mx \
-#		transaction.mx factory.mx mdb.mx costmodel.mx
+#		chopper.mx thread.mx clients.mx tablet.mx \
+#		transaction.mx factory.mx mdb.mx 
 #}
 
 scripts_mal = {
@@ -48,8 +48,8 @@ scripts_mal = {
 	SOURCES = language.mx mal_init.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx  \
 		enum.mx streams.mx inspect.mx crackers.mx io.mal \
-		chopper.mx thread.mx optimizer.mx clients.mx tablet.mx \
-		transaction.mx factory.mx mdb.mx costmodel.mx pcre.mx
+		chopper.mx thread.mx clients.mx tablet.mx \
+		transaction.mx factory.mx mdb.mx pcre.mx
 }
 
 #EXTRA_DIST_DIR = Tests

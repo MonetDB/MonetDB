@@ -453,7 +453,7 @@ coordination).
         /* error occurred */
 #ifdef MAL_SCENARIO_DEBUG
         stream_printf(GDKout,"Error in @1 phase\n");
-        if( c->mode > FINISHING && c->nxt!=c->input)
+        if( c->mode > FINISHING )
             stream_printf(GDKout,"%s",msg);
 #endif
         GDKfree(msg); msg=0;

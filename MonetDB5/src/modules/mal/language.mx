@@ -93,11 +93,6 @@ command source(f:str):void
 address CMDevalFile
 comment "Merge the instructions stored in the 
 	file with the current program";
-
-pattern Mcc(mod:str, fcn:str):void
-address MCdynamicCompiler
-comment "MAL to C compiler for functions";
-@-
 @{
 @+ Dummy code 
 @h

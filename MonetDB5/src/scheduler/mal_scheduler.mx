@@ -97,6 +97,11 @@ Goal: Updates to the Boxes may have to  forwarded to stand-by replicas.
 Rationale: actually a refinement of the notification scheme, but geared at
 maintaining a replicated system.
 
+@emph{Materialized Execution Optimizer (MEOscheduler)}
+Goal:to transfor the program into fragment-based processing
+Rationale: to reduce the impact of resource limitations, such
+as main memory, in the face of materialized intermediate.
+
 @emph{Run parallelization (RUNparallel)}
 Goal: to improve throughput/response time by exploiting parallel hardware
 
