@@ -630,7 +630,7 @@ check_types(mvc * sql, sql_subtype * ct, stmt * s, check_type tpe )
 		    (sc && ct->scale > 0 && ct->digits > 0 && 
 		     ct->digits-ct->scale < st->digits-st->scale) 
 		){
-			if (tpe == type_dyncheck && st->fixed == 0) {
+			if (tpe == type_dyncheck) {
 				s = dyncheck_types(sql, ct, s);
 				if (s)
 					return fix_scale(sql, ct, s, 1, 

@@ -1569,7 +1569,7 @@ complex_select:
 
 set_select:
 
-    simple_select UNION 
+    complex_select UNION 
 	set_distinct opt_corresponding complex_select
 
 	{ dlist *l = dlist_create();
@@ -1579,7 +1579,7 @@ set_select:
 	  dlist_append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_UNION, l); }
 
- |  simple_select EXCEPT set_distinct opt_corresponding complex_select
+ |  complex_select EXCEPT set_distinct opt_corresponding complex_select
 
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $1);
@@ -1588,7 +1588,7 @@ set_select:
 	  dlist_append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_EXCEPT, l); }
 
- |  simple_select INTERSECT set_distinct opt_corresponding complex_select
+ |  complex_select INTERSECT set_distinct opt_corresponding complex_select
 
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $1);

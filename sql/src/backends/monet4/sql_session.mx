@@ -1415,7 +1415,9 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 	ok = (stream_write(s, "# ", 2, 1) == 1);
 	for (i = 0; i < t->nr_cols && ok; i++) {
 		res_col *c = t->cols+i;
-		ok = (stream_write(s, c->tn, strlen(c->tn), 1) == 1);
+		int len = strlen(c->tn);
+		if (len)
+			ok = (stream_write(s, c->tn, len, 1) == 1);
 		if(i+1< t->nr_cols && ok)
 			ok = (stream_write(s, ",\t", 2, 1) == 1);
 	}

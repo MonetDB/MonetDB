@@ -40,6 +40,7 @@ sql_export stmt *selects( mvc * sql, symbol * sym);
 
 sql_export stmt *sql_subquery(mvc * sql, scope * scp, symbol * sq, int toplevel);
 sql_export stmt *scope_subquery(mvc * sql, scope * scp, symbol * sq );
+sql_export stmt *flat_subquery(mvc * sql, symbol * sq );
 
 sql_export stmt *sql_value_exp(mvc * sql, scope * scp, symbol * se, group * grp, stmt * subset, int f);
 sql_export stmt *sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset, int f);
@@ -161,6 +162,36 @@ stmt *scope_subquery(mvc * sql, scope * scp, symbol * sq)
 	return s;
 }
 
+/* handle limit and orderby properly ! */
+stmt *flat_subquery(mvc * sql, symbol * sq)
+{
+	scope *scp = scope_open(NULL);
+	stmt *s = sql_subquery(sql, scp, sq, 1);
+	scp = scope_close(scp);
+
+	if (s->type == st_ordered) {
+		list *l = create_stmt_list();
+		node *n;
+
+		for (n = s->op2.stval->op1.lval->h; n; n = n->next) {
+			stmt *sc = stmt_dup(n->data);
+			list_append( l, 
+			    stmt_reverse(
+			    stmt_order(
+			      stmt_reverse(
+				stmt_join(
+				    stmt_mark( 
+				    	stmt_reverse(
+					   stmt_dup(s->op1.stval)), 
+					0),
+				    sc, cmp_equal)
+			      ), 1))
+			    );
+		}
+		s = stmt_list(l);
+	}
+	return s;
+}
 
 /* 
  * Column references, can be done using simple names or aliases and
@@ -312,7 +343,7 @@ static tvar *sql_subquery_optname(mvc * sql, scope * scp,
 				  symbol * query)
 {
 	SelectNode *sn = (SelectNode*)query;
-	stmt *sq = scope_subquery(sql, NULL, query);
+	stmt *sq = flat_subquery(sql, query);
 	char *tname = NULL;
 
 	if (!sq)
@@ -1441,7 +1472,8 @@ static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q)
 			return res;
 		}
 	default:
-		printf("case %d %s\n", q->token, token2string(q->token));
+		(void) sql_error( sql, 02, 
+			"case %d %s\n", q->token, token2string(q->token));
 	}
 	return NULL;
 }
@@ -1605,7 +1637,20 @@ stmt *sql_compare(mvc * sql, stmt * ls,
 
 static stmt *sql_compare_exp( mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symbol *ro, char *compare_op, int f )
 {
-	stmt *rs, *ls = sql_value_exp(sql, scp, lo, grp, subset, f);
+	stmt *rs, *ls;
+
+	if (lo->token == SQL_SELECT) {
+		symbol *tmp = lo;
+		lo = ro;
+		ro = tmp;
+
+		if (compare_op[0] == '>') 
+			compare_op[0] = '<';
+		else if (compare_op[0] == '<') 
+			compare_op[0] = '>';
+	}
+
+	ls = sql_value_exp(sql, scp, lo, grp, subset, f);
 	if (!ls)
 		return NULL;
 	if (ro->token != SQL_SELECT) {
@@ -1661,7 +1706,7 @@ static stmt *sql_compare_exp( mvc *sql, scope *scp, group *grp, stmt *subset, sy
 
 			if (subset){ /* filter subset */
 				ls = stmt_join(find_pivot(subset, ls->h), ls, cmp_equal);
-			} else {
+			} else if (ls->nrcols) {
 				ls = stmt_join(scope_find_pivot(scp, ls->h), ls, cmp_equal);
 			}
 			cmp = sql_compare(sql, ls, cmp, compare_op, f);
@@ -2212,6 +2257,13 @@ sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset,
 		stmt *t = first_subset(subset);
 		t = stmt_const( t, stmt_bool(1) ); 
 		return stmt_select(t, s, cmp_equal);
+	} 
+	if (s && s->type == st_filter) {
+		filter(scp->ptable, s);
+		if (subset)
+			return first_subset(subset);
+		else 
+			return stmt_dup(scope_first_column(scp)->s);
 	}
 	return s;
 }

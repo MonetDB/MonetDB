@@ -823,7 +823,7 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 			}
 		}
 	} else {
-		stmt *s = scope_subquery(sql, NULL, val_or_q);
+		stmt *s = flat_subquery(sql, val_or_q);
 
 		if (!s){
 			scp = scope_close(scp);

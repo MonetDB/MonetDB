@@ -1508,6 +1508,7 @@ sql_subtype *head_type(stmt * st)
 	case st_mark:
 	case st_group:
 	case st_group_ext:
+	case st_order:
 		return head_type(st->op1.stval);
 	case st_relselect:
 	case st_reljoin:
