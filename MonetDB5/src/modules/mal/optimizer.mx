@@ -67,12 +67,22 @@ pattern debugOptimizers():void
 address QOTdebugOptimizers;
 
 pattern showFlowGraph(M:any,F:any,s:str):void 
-address CMDshowFlowGraph
+address QOTshowFlowGraph
 comment "Dump the data flow of the function 
 	M.F in a format recognizable by the 
 	command 'dot' on the file s";
 @-
+The remainder of this file contains dynamic optimization
+routines, i.e. those not covered by the current backend.
+The most important one is the multi-path join, which should
+be optimized to reduce a potential exploding size/
+@mal
+pattern algebra.joinPath(b:bat[:any$1,:any$2], 
+        c:bat[:any$2,:any$3]...):bat[:any$1,:any$3]
+address QOTjoinPath
+comment "Evaluate a join path.";
 @{
+@include prelude.mx
 @+ Dummy code 
 @h
 #ifndef _OPTIMIZER_H
@@ -108,7 +118,7 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	else
 		printf("#@1optimizer %s.%s\n",modnme,fcnnme);
 	setLifespan(s->def);
-	@1optimizer(c,s->def,0);
+        @1optimizer(c,s->def,0);
 	if(c->listing) printFunction(GDKout,s->def,c->listing);
 
 	removeInstruction(mb, getPC(mb,p));
@@ -128,7 +138,7 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:QOTC(RR)@
 
 
-str CMDshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
         str fname= (str) getArgValue(stk,p,3);
 	str     modnme= getArgName(mb,p,1);
 	str     fcnnme= getArgName(mb,p,2);
@@ -146,5 +156,63 @@ str CMDshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
                 showFlowGraph(s->def,stk,fname);
         }
         return NULL;
+}
+@-
+The join path optimizer takes a join sequence and
+attempts to minimize the intermediate result.
+The choice depends on a good estimate of intermediate
+results.
+For the time being, we use a simplistic model, based
+on the assumption that most joins are FK joins anyway.
+@c
+#define OPTIMIZER_DEBUG
+lng QOTjoinEstimate(BAT *l, BAT *r){
+    lng lc,rc;
+    lc= BATcount(l);
+    rc= BATcount(r);
+    return MIN(lc,rc);
+}
+str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+    BAT *joins[MAXARG],*b=0;
+    lng estimate,e;
+    int top,i,j,ret,*bid;
+    (void) mb;
+    (void)ret;
+    top=0;
+    for(i=pci->retc; i<pci->argc; i++){
+        bid= (int*) getArgReference(stk,pci,i);
+#ifdef OPTIMIZER_DEBUG
+        printf("bid %d\n",*bid);
+#endif
+        @:getBATdescriptor(&ret,bid,b,algebra.joinPath)@
+        joins[top++]=b;
+    }
+    /* solve the join by pairing the smallest first */
+    while( top>2){
+        j =0;
+        estimate = BATcount(joins[0]);
+        for(i=1;i<top-1;i++){
+            e= QOTjoinEstimate(joins[i],joins[i+1]);
+            if( e< estimate) {
+                estimate= e;
+                j= i;
+            }
+        }
+#ifdef OPTIMIZER_DEBUG
+        printf("join %d and %d\n",joins[j]->batCacheid,joins[j+1]->batCacheid);
+#endif
+        b= BATjoin(joins[j],joins[j+1],estimate);
+        joins[j]=b;
+        for(i=j+1;i<top;i++)
+            joins[i]= joins[i+1];
+        top--;
+    }
+#ifdef OPTIMIZER_DEBUG
+        printf("join %d and %d\n",joins[0]->batCacheid,joins[1]->batCacheid);
+#endif
+    estimate = BATcount(joins[0]);
+    b= BATjoin(joins[0],joins[1],estimate);
+    *(int*) getArgReference(stk,pci,0) = b->batCacheid;
+    return NULL;
 }
 @}
