@@ -99,12 +99,12 @@ on a lower level than, say, SQL allows to re-use the same system in multiple app
 was one of Monet's design goals.  \\
 
 Monet has been applied succesfully to
-@[<a href="http://www.cwi.nl/htbin/ins1/publications?request=intabstract&key=BoWiKe:ICDE:98">OLAP</a>@,
-@[<a href="http://www.cwi.nl/htbin/ins1/publications?request=intabstract&key=BoRuKw:VLDB:98">data mining</a>@,
-@[<a href="http://www.cwi.nl/htbin/ins1/publications?request=intabstract&key=BoQuKe:EDBT:96">GIS</a>@,
-@[<a href="http://www.cwi.nl/htbin/ins1/publications/?request=intabstract&key=VrMaNeKe:SIGMOD:02">k-NN search</a>@,
-@[<a href="http://www.cwi.nl/htbin/ins1/publications?request=intabstract&key=ScKeWi:ICDE:01">XML</a>@-,
-@[<a href="http://www.cwi.nl/htbin/ins1/publications?request=intabstract&key=NeKe:BNCOD:98">image</a>@- and
+@[<a href="http://www.cwi.nl/htbin/ins1/publications?request=abstract&key=BoWiKe:ICDE:98">OLAP</a>@,
+@[<a href="http://www.cwi.nl/htbin/ins1/publications?request=abstract&key=BoRuKw:VLDB:98">data mining</a>@,
+@[<a href="http://www.cwi.nl/htbin/ins1/publications?request=abstract&key=BoQuKe:EDBT:96">GIS</a>@,
+@[<a href="http://www.cwi.nl/htbin/ins1/publications/?request=abstract&key=VrMaNeKe:SIGMOD:02">k-NN search</a>@,
+@[<a href="http://www.cwi.nl/htbin/ins1/publications?request=abstract&key=ScKeWi:ICDE:01">XML</a>@-,
+@[<a href="http://www.cwi.nl/htbin/ins1/publications?request=abstract&key=NeKe:BNCOD:98">image</a>@- and
 @[<a href="http://citeseer.nj.nec.com/501825.html">video</a>@-databases.\\
 
 \begin{center}
