@@ -42,7 +42,7 @@ public class JdbcClient {
 			} else if (!debug && args[i].equals("-d")) {
 				debug = true;
 			} else if (args[i].equals("--help")) {
-				System.out.println("Usage java -jar examples.jar [-h host] [-u user] [-f file] [-d]");
+				System.out.println("Usage java -jar examples.jar [-h host[:port]] [-u user] [-f file] [-d]");
 				System.out.println("where arguments may be written directly after the option like -hlocalhost.");
 				System.out.println("If no host is given, localhost is assumed. The program will ask for the");
 				System.out.println("username if not given. If no input file is given, an interactive session");
