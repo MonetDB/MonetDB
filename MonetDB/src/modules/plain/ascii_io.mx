@@ -142,7 +142,6 @@ typedef struct ascii_load_t {
 } ascii;
 
 static int ascii_io_debug = 0;
-  
 
 ptr bun_tail(BAT *b, int nr){
 	REGISTER int _i = BUNindex((b),BUNfirst((b)));
@@ -215,6 +214,8 @@ int create_loadformat( ascii *as, BAT *names, BAT *seps, BAT *types ){
 		fmt[p].seplen = strlen( fmt[p].sep );
 		fmt[p].type = (char*)bun_tail(types, p);
 		fmt[p].adt = ATOMindex( fmt[p].type );
+		if (ascii_io_debug)
+			printf("%s\n", fmt[p] );
 	}
 	return as->nr_attrs;
 }
@@ -437,7 +438,10 @@ int load_file( ascii *as, stream *fd ){
 	char *s = buf,*sep = as->format[as->nr_attrs-1].sep;
         int i = 0, seplen = as->format[as->nr_attrs-1].seplen;
 
-	while(!eof && i < as->nr){
+	if (ascii_io_debug)
+		fprintf( GDKerr, "load_file\n");
+
+	while(!eof && (as->nr < 0|| i < as->nr)){
 		int l, size = SIZE-p;
 		char *end;
 		if ((l=fd->read(fd, buf+p, 1, size )) < size )
@@ -462,7 +466,7 @@ int load_file( ascii *as, stream *fd ){
 			i++;
 			if (ascii_io_debug && (i%100000) == 0)
 				fprintf(GDKerr, "inserted %d\n", i);
-			if (i >= as->nr)
+			if (as->nr > 0 && i >= as->nr)
 				break;
 		}
 		s = buf;
