@@ -56,3 +56,14 @@ class groupvar(var):
 
     def __getitem__(self,key):
         return self._values[key]
+
+    def __setitem__(self,key,value):
+        self._values[key] = value
+        
+    def __delitem__(self,key):
+        del self._values[key]
+
+    def copy(self):
+        g = groupvar(self._name)
+        g._values = self._values.copy()
+        return g
