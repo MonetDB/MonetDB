@@ -422,7 +422,7 @@ argv->val.ival++; /* PETER: proc instantiation stats hack */
 		tt->yyval.vtype = TYPE_int;
 		tt->yyval.val.ival = argc;
 	    } else if ((i>0) && (i <= argc)) {
-	        tt->yyval.vtype = TYPE_void;
+	        tt->yyval.vtype = TYPE_ptr;
 		tt->yyval.val.pval = argv+i;
 	    } else { 
 		GDKerror("yysubstitute: illegal argument '$%d'.\n", i);
@@ -458,7 +458,7 @@ YYSTREE yysubstitute_iter(YYSTREE t, int argc, ValPtr argv) {
 
 	tt->yyval = t->yyval;
        	if (t->token == TOK_ITERTEMP) {
-	    tt->yyval.vtype = TYPE_void;
+	    tt->yyval.vtype = TYPE_ptr;
 	    tt->yyval.val.pval = argv + t->yyval.val.ival;
 	} else if (t->yyval.val.pval && ATOMextern(t->yyval.vtype)) {
 	    if (t->yyval.vtype == TYPE_str) {

@@ -148,15 +148,6 @@ gdk/gdk_utils.mx and wrapping malloc in the below dummy function:
 #ifdef HAVE_MALLOPT
 static int malloc_init=1;
 #endif
-#ifdef SOLARIS
-#ifdef HAVE_MALLOPT
-#undef malloc
-void* malloc(size_t size) {
-	@:mallopt@
-	return realloc(0,size);
-}
-#endif
-#endif
 @C
 #ifdef NATIVE_WIN32
 #include <eh.h>

@@ -31,10 +31,6 @@
 #include "disclaimer.h"
 
 #define END_OF_HEADER_MARKER  "@'EOHMARKER (DO NOT EDIT THIS LINE)"
-#if defined(CYGWIN32)
-extern char     *optarg;
-extern int      optind, opterr, optopt;
-#endif
 
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>

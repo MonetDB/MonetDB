@@ -443,11 +443,6 @@ It should be explicitly set afterwards.
 # include <sys/times.h>
 #endif
 
-#if OSVER < 560 && defined(SOLARIS)
-#include "/usr/ucbinclude/sys/rusage.h"
-#include "/usr/ucbinclude/sys/resource.h"
-#endif
-
 #ifdef HAVE_SYS_RESOURCE_H
 #include <sys/resource.h>
 #endif
@@ -552,8 +547,7 @@ No new ones are created. Nothing really happens in the GDK world of BATs.
 	switch(lt->token) {
 	case TOK_ITERTEMP:
 	case TOK_TEMPLATE:
-		if (!lt->yyval.val.pval && !(lt->yyval.vtype == TYPE_int &&
-		  (lt->yyval.val.ival > 0) && (lt->yyval.val.ival < MAXPARAMS)))
+		if (!lt->yyval.val.pval || lt->yyval.vtype != TYPE_ptr) 
 		{
 		      	GDKerror("interpret: unresolved reference.\n");
 		      	return -1;
@@ -1070,7 +1064,7 @@ int interpret_ident(int	stk, YYSTREE lt, ValPtr res)
 		GDKfree(lt->yyval.val.pval);
 		/* resolve only once: TEMPLATE */
         	lt->token = TOK_TEMPLATE; 
-		lt->yyval.vtype = v->binding.vtype;
+		lt->yyval.vtype = TYPE_ptr;
 		lt->yyval.val.pval = &v->binding;
 		*res = v->binding;
 		return 0;
@@ -1401,6 +1395,7 @@ into a TEMPLATE, to avoid resolving it again.
 @c
 		arg(lt,0)->token = TOK_TEMPLATE;
 		GDKfree(arg(lt,0)->yyval.val.pval);
+                arg(lt,0)->yyval.vtype = TYPE_ptr;
 		arg(lt,0)->yyval.val.pval = &act->binding;
 		value = &act->binding;
 	} else {
