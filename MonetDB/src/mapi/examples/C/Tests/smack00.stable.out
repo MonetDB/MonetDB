@@ -19,6 +19,11 @@ Over..
 # 22:38:32 >  
 
 
+# 22:09:58 >  
+# 22:09:58 >  smack00 40178
+# 22:09:58 >  
+
+
 # 22:38:35 >  
 # 22:38:35 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=49350
 # 22:38:35 >  

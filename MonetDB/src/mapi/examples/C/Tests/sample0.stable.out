@@ -18,6 +18,11 @@ Over..
 # 22:20:45 >  Mtimeout -timeout 60 ./sample0.MAPI sample0 
 # 22:20:45 >  
 
+
+# 22:09:41 >  
+# 22:09:41 >  sample0 draco 40178 mil
+# 22:09:41 >  
+
 # Start mil test on draco.ins
 John is 23
 Mary is 22

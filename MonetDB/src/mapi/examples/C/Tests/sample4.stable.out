@@ -18,6 +18,11 @@ Over..
 # 22:25:19 >  Mtimeout -timeout 60 ./sample4.MAPI sample4 
 # 22:25:19 >  
 
+
+# 22:09:55 >  
+# 22:09:55 >  sample4 draco 40178 mil
+# 22:09:55 >  
+
 rows received 2
 John is 23
 Mary is 22
