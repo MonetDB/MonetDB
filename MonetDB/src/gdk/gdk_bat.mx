@@ -1557,10 +1557,10 @@ Merge scan check to see if head values are sorted (&key)
 	switch(ATOMstorage(tpe)) {
 	case TYPE_chr: @:merge_disprove(simple,chr,loc)@
 	case TYPE_sht: @:merge_disprove(simple,sht,loc)@
-	case TYPE_int:
-	case TYPE_flt: @:merge_disprove(simple,int,loc)@
-	case TYPE_lng:
-	case TYPE_dbl: @:merge_disprove(simple,lng,loc)@
+	case TYPE_int: @:merge_disprove(simple,int,loc)@
+	case TYPE_flt: @:merge_disprove(simple,flt,loc)@
+	case TYPE_lng: @:merge_disprove(simple,lng,loc)@
+	case TYPE_dbl: @:merge_disprove(simple,dbl,loc)@
 	default:       @:merge_disprove(atom,tpe,ead)@
 	}
 
