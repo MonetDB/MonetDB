@@ -152,16 +152,16 @@ parseint(const char *data, bignum_t *nval)
 	return 1 + overflow;
 }
 
-static void
-parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival, int *ivalscale)
+static int
+parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival)
 {
 	unsigned int f = 1;
+	int ivalscale = 0;
 
 	ival->intval.day_second.fraction = 0;
-	*ivalscale = 0;
 	while (nval->scale > 0) {
 		if (f < 1000000000) {
-			(*ivalscale)++;
+			ivalscale++;
 			ival->intval.day_second.fraction += (SQLUINTEGER) ((nval->val % 10) * f);
 			f *= 10;
 		}
@@ -169,8 +169,8 @@ parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival, int *ivalscale)
 		nval->scale--;
 	}
 	/* normalize scale */
-	while (*ivalscale > 0 && ival->intval.day_second.fraction % 10 != 0) {
-		(*ivalscale)--;
+	while (ivalscale > 0 && ival->intval.day_second.fraction % 10 != 0) {
+		ivalscale--;
 		ival->intval.day_second.fraction /= 10;
 	}
 	ival->interval_type = SQL_IS_DAY_TO_SECOND;
@@ -182,6 +182,7 @@ parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival, int *ivalscale)
 	ival->intval.day_second.hour = (SQLUINTEGER) (nval->val % 24);
 	nval->val /= 24;
 	ival->intval.day_second.day = (SQLUINTEGER) nval->val;
+	return ivalscale;
 }
 
 static void
@@ -526,7 +527,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		/* interval types are transferred as ints but need to
 		   be converted to the internal interval formats */
 		if (sql_type == SQL_INTERVAL_SECOND)
-			parsesecondinterval(&nval, &ival, &i);
+			i = parsesecondinterval(&nval, &ival);
 		else if (sql_type == SQL_INTERVAL_MONTH)
 			parsemonthinterval(&nval, &ival);
 		break;
@@ -1512,7 +1513,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
-			parsesecondinterval(&nval, &ival, &i);
+			i = parsesecondinterval(&nval, &ival);
 			break;
 		case SQL_INTERVAL_SECOND:
 			break;

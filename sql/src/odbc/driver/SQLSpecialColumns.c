@@ -117,18 +117,22 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 		strcpy(query_end,
 		       "select "
 		       "cast(1 as smallint) as scope, "
-		       "cast(c.name as varchar) as column_name, "
-		       "cast(c.type as smallint) as data_type, "
-		       "cast(c.type_name as varchar) as type_name, "
-		       "cast(c.column_size as integer) as column_size, "
-		       "cast(c.buffer_length as integer) as buffer_length, "
-		       "cast(c.decimal_digits as smallint) as decimal_digits, "
+		       "cast(c.\"name\" as varchar) as column_name, "
+		       "cast(c.\"type\" as smallint) as data_type, "
+		       "cast(c.\"type\" as varchar) as type_name, "
+		       "cast(c.\"type_digits\" as integer) as column_size, "
+		       "cast(0 as integer) as buffer_length, "
+		       "cast(c.\"type_scale\" as smallint) as decimal_digits, "
 		       "cast(1 as smallint) as pseudo_column "
-		       "from sys.schemas s, sys.tables t, "
-		       " columns c, keys k, keycolumns kc "
-		       "where s.id = t.schema_id and t.id = c.table_id and "
-		       " t.id = k.table_id and c.id = kc.'column' and "
-		       " kc.id = k.id" /*" and k.is_primary = 1"*/);
+		       "from sys.\"schemas\" s, sys.\"tables\" t, "
+		       "sys.\"columns\" c, sys.\"keys\" k, "
+		       "sys.\"keycolumns\" kc "
+		       "where s.\"id\" = t.\"schema_id\" and "
+		       "t.\"id\" = c.\"table_id\" and "
+		       "t.\"id\" = k.\"table_id\" and "
+		       "c.\"name\" = kc.\"column\" and "
+		       "kc.\"id\" = k.\"id\" and "
+		       "k.\"type\" in (0, 1)");
 		query_end += strlen(query_end);
 		/* TODO: improve the SQL to get the correct result:
 		   - only one set of columns should be returned, also when
@@ -143,21 +147,21 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 
 		/* add the selection condition */
 		/* search pattern is not allowed for table name so use = and not LIKE */
-		sprintf(query_end, " and t.name = '%.*s'",
+		sprintf(query_end, " and t.\"name\" = '%.*s'",
 			nTableNameLength, szTableName);
 		query_end += strlen(query_end);
 
 		if (szSchemaName != NULL && nSchemaNameLength > 0) {
 			/* filtering requested on schema name */
 			/* search pattern is not allowed so use = and not LIKE */
-			sprintf(query_end, " and s.name = '%.*s'",
+			sprintf(query_end, " and s.\"name\" = '%.*s'",
 				nSchemaNameLength, szSchemaName);
 			query_end += strlen(query_end);
 		}
 
 		/* add an extra selection when SQL_NO_NULLS is requested */
 		if (nNullable == SQL_NO_NULLS) {
-			strcpy(query_end, " and c.is_nullable = 0");
+			strcpy(query_end, " and c.\"null\" = false");
 			query_end += strlen(query_end);
 		}
 
@@ -177,9 +181,10 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 		       "1 as buffer_length, "
 		       "cast(0 as smallint) as decimal_digits, "
 		       "cast(0 as smallint) as pseudo_column "
-		       "from sys.schemas s where 0 = 1");
+		       "from sys.\"schemas\" s where 0 = 1");
 		query_end += strlen(query_end);
 	}
+	assert(query_end - query < 1000 + nTableNameLength + nSchemaNameLength);
 
 	/* query the MonetDB data dictionary tables */
 	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,

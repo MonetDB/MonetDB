@@ -80,14 +80,14 @@ SQLColumns_(ODBCStmt *stmt,
 	sprintf(query_end,
 		"select "
 		"cast('' as varchar) as table_cat, "
-		"cast(s.name as varchar) as table_schem, "
-		"cast(t.name as varchar) as table_name, "
-		"cast(c.name as varchar) as column_name, "
-		"cast(c.type as smallint) as data_type, "
-		"cast(c.type as varchar) as type_name, "
-		"cast(c.type_digits as integer) as column_size, "
-		"cast(c.type_digits as integer) as buffer_length, "
-		"cast(c.type_scale as smallint) as decimal_digits, "
+		"cast(s.\"name\" as varchar) as table_schem, "
+		"cast(t.\"name\" as varchar) as table_name, "
+		"cast(c.\"name\" as varchar) as column_name, "
+		"cast(c.\"type\" as smallint) as data_type, "
+		"cast(c.\"type\" as varchar) as type_name, "
+		"cast(c.\"type_digits\" as integer) as column_size, "
+		"cast(c.\"type_digits\" as integer) as buffer_length, "
+		"cast(c.\"type_scale\" as smallint) as decimal_digits, "
 		"cast(0 as smallint) as num_prec_radix, "
 		"case c.\"null\" when true then cast(%d as smallint) "
 		/* XXX should this be SQL_NULLABLE_UNKNOWN instead of
@@ -95,15 +95,15 @@ SQLColumns_(ODBCStmt *stmt,
 		"when false then cast(%d as smallint) end as nullable, "
 		"cast('' as varchar) as remarks, "
 		"cast('' as varchar) as column_def, "
-		"cast(c.type as smallint) as sql_data_type, "
+		"cast(c.\"type\" as smallint) as sql_data_type, "
 		"cast('' as varchar) as sql_datetime_sub, "
 		"cast('' as varchar) as char_octet_length, "
-		"cast(c.number as integer) as ordinal_position, "
+		"cast(c.\"number\" as integer) as ordinal_position, "
 		"case c.\"null\" when true then cast('yes' as varchar) "
 		/* should this be '' instead of 'no'? */
 		"when false then cast('no' as varchar) end as is_nullable "
-		"from sys.schemas s, sys.tables t, sys.columns c "
-		"where s.id = t.schema_id and t.id = c.table_id",
+		"from sys.\"schemas\" s, sys.\"tables\" t, sys.\"columns\" c "
+		"where s.\"id\" = t.\"schema_id\" and t.\"id\" = c.\"table_id\"",
 		SQL_NULLABLE, SQL_NO_NULLS);
 	query_end += strlen(query_end);
 
@@ -116,7 +116,7 @@ SQLColumns_(ODBCStmt *stmt,
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		/* TODO: the wildcard may be escaped. Check it and may
 		   be convert it. */
-		sprintf(query_end, " and s.name %s '%.*s'",
+		sprintf(query_end, " and s.\"name\" %s '%.*s'",
 			memchr(szSchemaName, '%', nSchemaNameLength) ||
 			memchr(szSchemaName, '_', nSchemaNameLength) ?
 			"like" : "=",
@@ -129,7 +129,7 @@ SQLColumns_(ODBCStmt *stmt,
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		/* TODO: the wildcard may be escaped.  Check it and
 		   may be convert it. */
-		sprintf(query_end, " and t.name %s '%.*s'",
+		sprintf(query_end, " and t.\"name\" %s '%.*s'",
 			memchr(szTableName, '%', nTableNameLength) ||
 			memchr(szTableName, '_', nTableNameLength) ?
 			"like" : "=",
@@ -142,7 +142,7 @@ SQLColumns_(ODBCStmt *stmt,
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		/* TODO: the wildcard may be escaped.  Check it and
 		   may be convert it. */
-		sprintf(query_end, " and c.name %s '%.*s'",
+		sprintf(query_end, " and c.\"name\" %s '%.*s'",
 			memchr(szColumnName, '%', nColumnNameLength) ||
 			memchr(szColumnName, '_', nColumnNameLength) ?
 			"like" : "=",
@@ -155,6 +155,7 @@ SQLColumns_(ODBCStmt *stmt,
 	       " order by table_cat, table_schem, "
 	       "table_name, ordinal_position");
 	query_end += strlen(query_end);
+	assert(query_end - query < 1200 + nSchemaNameLength + nTableNameLength + nColumnNameLength);
 
 	/* query the MonetDB data dictionary tables */
 	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,

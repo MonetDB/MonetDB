@@ -90,25 +90,30 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	sprintf(query_end,
 		"select "
 		"cast(null as varchar) as pktable_cat, "
-		"cast(pks.name as varchar) as pktable_schem, "
-		"cast(pkt.name as varchar) as pktable_name, "
+		"cast(pks.\"name\" as varchar) as pktable_schem, "
+		"cast(pkt.\"name\" as varchar) as pktable_name, "
 		"cast(pkkc.\"column\" as varchar) as pkcolumn_name, "
 		"cast(null as varchar) as fktable_cat, "
-		"cast(fks.name as varchar) as fktable_schem, "
-		"cast(fkt.name as varchar) as fktable_name, "
+		"cast(fks.\"name\" as varchar) as fktable_schem, "
+		"cast(fkt.\"name\" as varchar) as fktable_name, "
 		"cast(fkkc.\"column\" as varchar) as fkcolumn_name, "
-		"cast(fkk.type + 1 as smallint) as key_seq, "
+		"cast(fkk.\"type\" + 1 as smallint) as key_seq, "
 		"cast(%d as smallint) as update_rule, "
 		"cast(%d as smallint) as delete_rule, "
-		"cast(fkk.name as varchar) as fk_name, "
-		"cast(pkk.name as varchar) as pk_name, "
+		"cast(fkk.\"name\" as varchar) as fk_name, "
+		"cast(pkk.\"name\" as varchar) as pk_name, "
 		"cast(%d as smallint) as deferrability "
-		"from sys.schemas fks, sys.tables fkt, keycolumns fkkc, "
-		"sys.schemas pks, sys.tables pkt, keycolumns pkkc "
-		"where fkt.id = fkk.table_id and pkt.id = pkk.table_id and "
-		"fkk.id = fkkc.id and pkk.id = pkkc.id and "
-		"fks.id = fkt.schema_id and pks.id = pkt.schema_id and "
-		"fkk.rkey > -1 and fkk.rkey = pkk.id",
+		"from sys.\"schemas\" fks, sys.\"tables\" fkt, "
+		"sys.\"keycolumns\" fkkc, sys.\"schemas\" pks, "
+		"sys.\"tables\" pkt, sys.\"keycolumns\" pkkc "
+		"where fkt.\"id\" = fkk.\"table_id\" and "
+		"pkt.\"id\" = pkk.\"table_id\" and "
+		"fkk.\"id\" = fkkc.\"id\" and "
+		"pkk.\"id\" = pkkc.\"id\" and "
+		"fks.\"id\" = fkt.\"schema_id\" and "
+		"pks.\"id\" = pkt.\"schema_id\" and "
+		"fkk.\"rkey\" > -1 and "
+		"fkk.\"rkey\" = pkk.\"id\"",
 		SQL_NO_ACTION, SQL_NO_ACTION, SQL_NOT_DEFERRABLE);
 	query_end += strlen(query_end);
 
@@ -116,7 +121,7 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	if (szPKSchemaName != NULL && nPKSchemaNameLength > 0) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and pks.name = '%.*s'",
+		sprintf(query_end, " and pks.\"name\" = '%.*s'",
 			nPKSchemaNameLength, szPKSchemaName);
 		query_end += strlen(query_end);
 	}
@@ -124,7 +129,7 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	if (szPKTableName != NULL && nPKTableNameLength > 0) {
 		/* filtering requested on table name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and pkt.name = '%.*s'",
+		sprintf(query_end, " and pkt.\"name\" = '%.*s'",
 			nPKTableNameLength, szPKTableName);
 		query_end += strlen(query_end);
 	}
@@ -132,7 +137,7 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	if (szFKSchemaName != NULL && nFKSchemaNameLength > 0) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and fks.name = '%.*s'",
+		sprintf(query_end, " and fks.\"name\" = '%.*s'",
 			nFKSchemaNameLength, szFKSchemaName);
 		query_end += strlen(query_end);
 	}
@@ -140,7 +145,7 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	if (szFKTableName != NULL && nFKTableNameLength > 0) {
 		/* filtering requested on table name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and fkt.name = '%.*s'",
+		sprintf(query_end, " and fkt.\"name\" = '%.*s'",
 			nFKTableNameLength, szFKTableName);
 		query_end += strlen(query_end);
 	}
@@ -156,6 +161,7 @@ SQLForeignKeys_(ODBCStmt *stmt,
 		szPKTableName != NULL ? "fk" : "pk",
 		szPKTableName != NULL ? "fk" : "pk");
 	query_end += strlen(query_end);
+	assert(query_end - query < 1200 + nPKSchemaNameLength + nPKTableNameLength + nFKSchemaNameLength + nFKTableNameLength);
 
 	/* query the MonetDB data dictionary tables */
 	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,

@@ -86,7 +86,7 @@ SQLStatistics_(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	query = (char *) malloc(1000 + nTableNameLength + nSchemaNameLength);
+	query = (char *) malloc(1200 + nTableNameLength + nSchemaNameLength);
 	assert(query);
 	query_end = query;
 
@@ -109,38 +109,41 @@ SQLStatistics_(ODBCStmt *stmt,
 	sprintf(query_end,
 		"select "
 		"cast(null as varchar) as table_cat, "
-		"cast(s.name as varchar) as table_schem, "
-		"cast(t.name as varchar) as table_name, "
-		"case when k.name is null then cast(1 as smallint) "
+		"cast(s.\"name\" as varchar) as table_schem, "
+		"cast(t.\"name\" as varchar) as table_name, "
+		"case when k.\"name\" is null then cast(1 as smallint) "
 		"else cast(0 as smallint) end as non_unique, "
 		"cast(null as varchar) as index_qualifier, "
-		"cast(i.name as varchar) as index_name, "
-		"case i.type when 0 then cast(%d as smallint) "
+		"cast(i.\"name\" as varchar) as index_name, "
+		"case i.\"type\" when 0 then cast(%d as smallint) "
 		"else cast(%d as smallint) end as type, "
-		"cast(kc.nr as smallint) as ordinal_position, "
-		"cast(c.name as varchar) as column_name, "
+		"cast(kc.\"nr\" as smallint) as ordinal_position, "
+		"cast(c.\"name\" as varchar) as column_name, "
 		"cast(null as char(1)) as asc_or_desc, "
 		"cast(null as integer) as cardinality, "
 		"cast(null as integer) as pages, "
 		"cast(null as varchar) as filter_condition "
-		"from sys.idxs i, sys.schemas s, sys.tables t, "
-		"sys.columns c,  sys.keycolumns kc, sys.keys k "
-		"where i.table_id = t.id and t.schema_id = s.id and "
-		"i.id = kc.id and t.id = c.table_id and "
-		"kc.\"column\" = c.name and (k.type is null or k.type = 1)",
+		"from sys.\"idxs\" i, sys.\"schemas\" s, sys.\"tables\" t, "
+		"sys.\"columns\" c,  sys.\"keycolumns\" kc, sys.\"keys\" k "
+		"where i.\"table_id\" = t.\"id\" and "
+		"t.\"schema_id\" = s.\"id\" and "
+		"i.\"id\" = kc.\"id\" and "
+		"t.\"id\" = c.\"table_id\" and "
+		"kc.\"column\" = c.\"name\" and "
+		"(k.\"type\" is null or k.\"type\" = 1)",
 		SQL_INDEX_HASHED, SQL_INDEX_OTHER);
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
 	/* search pattern is not allowed for table name so use = and not LIKE */
-	sprintf(query_end, " and t.name = '%.*s'",
+	sprintf(query_end, " and t.\"name\" = '%.*s'",
 		nTableNameLength, szTableName);
 	query_end += strlen(query_end);
 
 	if (szSchemaName != NULL) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and s.name = '%.*s'",
+		sprintf(query_end, " and s.\"name\" = '%.*s'",
 			nSchemaNameLength, szSchemaName);
 		query_end += strlen(query_end);
 	}
@@ -150,6 +153,7 @@ SQLStatistics_(ODBCStmt *stmt,
 	       " order by non_unique, type, index_qualifier, index_name, "
 	       "ordinal_position");
 	query_end += strlen(query_end);
+	assert(query_end - query < 1200 + nTableNameLength + nSchemaNameLength);
 
 	/* query the MonetDB data dictionary tables */
 	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,

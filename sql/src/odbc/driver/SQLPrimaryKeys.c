@@ -71,26 +71,29 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	strcpy(query_end,
 	       "select "
 	       "cast(null as varchar) as table_cat, "
-	       "cast(s.name as varchar) as table_schem, "
-	       "cast(t.name as varchar) as table_name, "
+	       "cast(s.\"name\" as varchar) as table_schem, "
+	       "cast(t.\"name\" as varchar) as table_name, "
 	       "cast(kc.\"column\" as varchar) as column_name, "
-	       "cast(k.type + 1 as smallint) as key_seq, "
-	       "cast(k.name as varchar) as pk_name "
-	       "from sys.schemas s, sys.tables t, sys.keys k, sys.keycolumns kc "
-	       "where k.id = kc.id and k.table_id = t.id and "
-	       "t.schema_id = s.id and k.type = 0");
+	       "cast(k.\"type\" + 1 as smallint) as key_seq, "
+	       "cast(k.\"name\" as varchar) as pk_name "
+	       "from sys.\"schemas\" s, sys.\"tables\" t, "
+	       "sys.\"keys\" k, sys.\"keycolumns\" kc "
+	       "where k.\"id\" = kc.\"id\" and "
+	       "k.\"table_id\" = t.\"id\" and "
+	       "t.\"schema_id\" = s.\"id\" and "
+	       "k.\"type\" = 0");
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
 	/* search pattern is not allowed for table name so use = and not LIKE */
-	sprintf(query_end, " and t.name = '%.*s'",
+	sprintf(query_end, " and t.\"name\" = '%.*s'",
 		nTableNameLength, szTableName);
 	query_end += strlen(query_end);
 
 	if (szSchemaName != NULL) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and s.name = '%.*s'",
+		sprintf(query_end, " and s.\"name\" = '%.*s'",
 			nSchemaNameLength, szSchemaName);
 		query_end += strlen(query_end);
 	}
@@ -98,6 +101,7 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	/* add the ordering */
 	strcpy(query_end, " order by table_schem, table_name, key_seq");
 	query_end += strlen(query_end);
+	assert(query_end - query < 1000 + nTableNameLength + nSchemaNameLength);
 
 	/* query the MonetDB data dictionary tables */
 	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,

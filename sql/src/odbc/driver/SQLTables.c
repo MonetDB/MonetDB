@@ -68,7 +68,7 @@ SQLTables_(ODBCStmt *stmt,
 			       "cast('' as varchar) as table_name, "
 			       "cast('' as varchar) as table_type, "
 			       "cast('' as varchar) as remarks "
-			       "from sys.schemas where 0 = 1");
+			       "from sys.\"schemas\" where 0 = 1");
 	} else if (nCatalogNameLength == 0 && nTableNameLength == 0 &&
 		   szSchemaName && 
 		   strcmp((char*)szSchemaName, SQL_ALL_SCHEMAS) == 0) {
@@ -78,7 +78,7 @@ SQLTables_(ODBCStmt *stmt,
 			       "cast('' as varchar) as table_name, "
 			       "cast('' as varchar) as table_type, "
 			       "cast('' as varchar) as remarks "
-			       "from sys.schemas order by table_schem");
+			       "from sys.\"schemas\" order by table_schem");
 	} else if (nCatalogNameLength == 0 && nSchemaNameLength == 0 &&
 		   nTableNameLength == 0 && szTableType && 
 		   strcmp((char*)szTableType, SQL_ALL_TABLE_TYPES) == 0) {
@@ -87,13 +87,13 @@ SQLTables_(ODBCStmt *stmt,
 			       "cast(null as varchar) as table_cat, "
 			       "cast('' as varchar) as table_schem, "
 			       "cast('' as varchar) as table_name, "
-			       "case when t.istable = true and t.system = false and t.\"temporary\" = 0 then cast('TABLE' as varchar) "
-			       "when t.istable = true and t.system = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar) "
-			       "when t.istable = false then cast('VIEW' as varchar) "
-			       "when t.istable = true and t.system = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar) "
+			       "case when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 0 then cast('TABLE' as varchar) "
+			       "when t.\"istable\" = true and t.\"system\" = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar) "
+			       "when t.\"istable\" = false then cast('VIEW' as varchar) "
+			       "when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar) "
 			       "else cast('INTERNAL TABLE TYPE' as varchar) end as table_type, "
 			       "cast('' as varchar) as remarks "
-			       "from sys.tables t order by table_type");
+			       "from sys.\"tables\" t order by table_type");
 		/* TODO: UNION it with all supported table types */
 	} else {
 		/* no special case argument values */
@@ -108,16 +108,16 @@ SQLTables_(ODBCStmt *stmt,
 		strcpy(query_end,
 		       "select "
 		       "cast(null as varchar) as table_cat, "
-		       "cast(s.name as varchar) as table_schem, "
-		       "cast(t.name as varchar) as table_name, "
-		       "case when t.istable = true and t.system = false and t.\"temporary\" = 0 then cast('TABLE' as varchar) "
-		       "when t.istable = true and t.system = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar) "
-		       "when t.istable = false then cast('VIEW' as varchar) "
-		       "when t.istable = true and t.system = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar) "
+		       "cast(s.\"name\" as varchar) as table_schem, "
+		       "cast(t.\"name\" as varchar) as table_name, "
+		       "case when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 0 then cast('TABLE' as varchar) "
+		       "when t.\"istable\" = true and t.\"system\" = true and t.\"temporary\" = 0 then cast('SYSTEM TABLE' as varchar) "
+		       "when t.\"istable\" = false then cast('VIEW' as varchar) "
+		       "when t.\"istable\" = true and t.\"system\" = false and t.\"temporary\" = 1 then cast('LOCAL TEMPORARY' as varchar) "
 		       "else cast('INTERNAL TABLE TYPE' as varchar) end as table_type, "
 		       "cast('' as varchar) as remarks "
-		       "from sys.schemas s, sys.tables t "
-		       "where s.id = t.schema_id");
+		       "from sys.\"schemas\" s, sys.\"tables\" t "
+		       "where s.\"id\" = t.\"schema_id\"");
 		query_end += strlen(query_end);
 
 		/* dependent on the input parameter values we must add a
@@ -134,7 +134,7 @@ SQLTables_(ODBCStmt *stmt,
 			/* use LIKE when it contains a wildcard '%' or a '_' */
 			/* TODO: the wildcard may be escaped. Check it
 			   and maybe convert it. */
-			sprintf(query_end, " and s.name %s '%.*s'",
+			sprintf(query_end, " and s.\"name\" %s '%.*s'",
 				memchr(szSchemaName, '%', nSchemaNameLength) ||
 				memchr(szSchemaName, '_', nSchemaNameLength) ?
 				"like" : "=",
@@ -147,7 +147,7 @@ SQLTables_(ODBCStmt *stmt,
 			/* use LIKE when it contains a wildcard '%' or a '_' */
 			/* TODO: the wildcard may be escaped.  Check
 			   it and may be convert it. */
-			sprintf(query_end, " and t.name %s '%.*s'",
+			sprintf(query_end, " and t.\"name\" %s '%.*s'",
 				memchr(szTableName, '%', nTableNameLength) ||
 				memchr(szTableName, '_', nTableNameLength) ?
 				"like" : "=",
@@ -178,6 +178,8 @@ SQLTables_(ODBCStmt *stmt,
 		strcpy(query_end,
 		       " order by table_type, "
 		       "table_schem, table_name");
+		query_end += strlen(query_end);
+		assert(query_end - query < 1000 + nSchemaNameLength + nTableNameLength + nTableTypeLength);
 	}
 
 	/* query the MonetDB data dictionary tables */
