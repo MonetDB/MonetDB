@@ -14,7 +14,7 @@ stdout of test 'mprof2` in directory 'src/modules/contrib` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 module("mprof");
 test_mprof();
-[ 16 ]
+[ 17 ]
 #~BeginVariableOutput~#
 #-------------------------------------------------#
 # BAT:	  mprof_id	| clock	| utime_stime	  #

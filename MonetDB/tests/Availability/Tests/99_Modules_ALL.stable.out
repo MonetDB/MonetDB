@@ -31,7 +31,7 @@ All_mods@batloop {
    vector: loading... done.
       url: loading... done.
      unix: loading... done.
-     uchr: loading... done.
+     uchr: loaded.
     trans: loaded.
      tpcd: loading... done.
     tcpip: loading... done.

@@ -25,6 +25,7 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 test.print;
 #-----------------#
 # BAT:	  tmp_28  #
@@ -47,6 +48,7 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 test.print;
 #-----------------#
 # BAT:	  tmp_28  #
@@ -68,6 +70,7 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 test.print;
 !ERROR: atom 'lock' unknown, in BAT '29'.
 !ERROR: atom 'lock' unknown, in BAT '29'.

@@ -24,6 +24,7 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 [~mmn()].reverse.sort.print;
 #-------------------------#
 # BAT:		  tmp_30  #
@@ -37,6 +38,7 @@ loaded;
 [ "str",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
+[ "uchr",	  nil	  ]
 [~view_modules].reverse.kunique.sort.print;
 #-------------------------#
 # BAT:		  tmp_26  #
@@ -101,6 +103,7 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 [~mmn()].reverse.sort.print;
 #-------------------------#
 # BAT:		  tmp_27  #
@@ -115,6 +118,7 @@ loaded;
 [ "str",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
+[ "uchr",	  nil	  ]
 
 # # module("Meta");
 # # loaded;
@@ -132,6 +136,7 @@ fix:=mmn().reverse.copy;
 [ "str",	  nil	  ]
 [ "bat",	  nil	  ]
 [ "algebra",	  nil	  ]
+[ "uchr",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
 [ "cluster",	  nil	  ]
@@ -147,7 +152,6 @@ others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE)
 [ "vector",	  nil	  ]
 [ "url",	  nil	  ]
 [ "unix",	  nil	  ]
-[ "uchr",	  nil	  ]
 [ "tpcd",	  nil	  ]
 [ "tcpip",	  nil	  ]
 [ "streams",	  nil	  ]
@@ -206,6 +210,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_27  #
@@ -227,6 +232,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading wisc
 
@@ -242,6 +248,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 [ "wisc",	  1		  ]
 #-----------------#
 # BAT:	  tmp_26  #
@@ -263,6 +270,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading vector
 
@@ -279,6 +287,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 [ "vector",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_30  #
@@ -304,6 +313,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading url
 
@@ -319,6 +329,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 [ "url",	  1		  ]
 #-----------------#
 # BAT:	  tmp_27  #
@@ -340,6 +351,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading unix
 
@@ -355,6 +367,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 [ "unix",	  1		  ]
 #-----------------#
 # BAT:	  tmp_26  #
@@ -376,42 +389,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-
-	loading uchr
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
 [ "uchr",	  1		  ]
-#-----------------#
-# BAT:	  tmp_32  #
-# (str)	  (void)  #
-#-----------------#
-[ "uchr", nil	  ]
-
-	dropping uchr
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
 
 	loading tpcd
 
@@ -428,6 +406,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "tpcd",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-----------------#
 # BAT:	  tmp_31  #
 # (str)	  (void)  #
@@ -448,6 +427,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading tcpip
 
@@ -464,6 +444,7 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "tcpip",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_26  #
 # (str)		  (void)  #
@@ -484,6 +465,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading streams
 
@@ -500,6 +482,7 @@ others@batloop{
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_30  #
 # (str)		  (void)  #
@@ -520,6 +503,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading stats
 
@@ -536,6 +520,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_33  #
 # (str)		  (void)  #
@@ -556,6 +541,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading salgebra
 
@@ -572,6 +558,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_33  #
 # (str)		  (void)  #
@@ -593,6 +580,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading radix
 
@@ -609,6 +597,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_26  #
 # (str)		  (void)  #
@@ -630,6 +619,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading qt
 
@@ -648,20 +638,16 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  1		  ]
+[ "uchr",	  2		  ]
 #-------------------------#
 # BAT:		  tmp_34  #
 # (str)		  (void)  #
 #-------------------------#
 [ "qt",		  nil	  ]
-[ "uchr",	  nil	  ]
 [ "bitvector",	  nil	  ]
 [ "stats",	  nil	  ]
 
 	dropping qt
-
-
-	dropping uchr
 
 
 	dropping bitvector
@@ -682,6 +668,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading pcl
 
@@ -698,6 +685,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-----------------#
 # BAT:	  tmp_33  #
 # (str)	  (void)  #
@@ -718,6 +706,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading oo7
 
@@ -734,6 +723,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-----------------#
 # BAT:	  tmp_26  #
 # (str)	  (void)  #
@@ -754,6 +744,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading mprof
 
@@ -770,6 +761,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_47  #
 # (str)		  (void)  #
@@ -791,6 +783,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading monettime
 
@@ -807,6 +800,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_46  #
 # (str)		  (void)  #
@@ -828,6 +822,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading mmath
 
@@ -844,6 +839,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_50  #
 # (str)		  (void)  #
@@ -864,6 +860,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading mel
 
@@ -880,6 +877,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-----------------#
 # BAT:	  tmp_49  #
 # (str)	  (void)  #
@@ -901,6 +899,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading mapi
 
@@ -918,6 +917,7 @@ others@batloop{
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_46  #
 # (str)		  (void)  #
@@ -943,6 +943,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading malalgebra
 
@@ -959,6 +960,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_45  #
 # (str)		  (void)  #
@@ -979,6 +981,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading lock
 
@@ -995,6 +998,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-----------------#
 # BAT:	  tmp_52  #
 # (str)	  (void)  #
@@ -1016,6 +1020,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading iterator
 
@@ -1032,6 +1037,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_50  #
 # (str)		  (void)  #
@@ -1053,6 +1059,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading enum
 
@@ -1070,6 +1077,7 @@ others@batloop{
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_47  #
 # (str)		  (void)  #
@@ -1095,6 +1103,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading decimal
 
@@ -1111,6 +1120,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_52  #
 # (str)		  (void)  #
@@ -1132,6 +1142,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading ddbench
 
@@ -1150,6 +1161,7 @@ others@batloop{
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_45  #
@@ -1184,6 +1196,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading counters
 
@@ -1200,6 +1213,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_49  #
 # (str)		  (void)  #
@@ -1221,6 +1235,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading calib
 
@@ -1237,6 +1252,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_46  #
 # (str)		  (void)  #
@@ -1257,6 +1273,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading blob
 
@@ -1273,6 +1290,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-----------------#
 # BAT:	  tmp_45  #
 # (str)	  (void)  #
@@ -1294,6 +1312,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading bitvector
 
@@ -1310,6 +1329,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_47  #
 # (str)		  (void)  #
@@ -1330,6 +1350,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading bitset
 
@@ -1346,6 +1367,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_54  #
 # (str)		  (void)  #
@@ -1367,6 +1389,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading bat_arith
 
@@ -1383,6 +1406,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_49  #
 # (str)		  (void)  #
@@ -1403,6 +1427,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading ascii_io
 
@@ -1420,6 +1445,7 @@ others@batloop{
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_46  #
 # (str)		  (void)  #
@@ -1445,6 +1471,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading alarm
 
@@ -1461,6 +1488,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_45  #
 # (str)		  (void)  #
@@ -1481,6 +1509,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading aggrX3
 
@@ -1497,6 +1526,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  2		  ]
 #-------------------------#
 # BAT:		  tmp_47  #
 # (str)		  (void)  #
@@ -1517,6 +1547,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 
 	loading aggr
 
@@ -1533,6 +1564,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  2		  ]
 #-----------------#
 # BAT:	  tmp_54  #
 # (str)	  (void)  #
@@ -1553,6 +1585,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  1		  ]
 quit;
 
 # 16:53:25 >  

@@ -45,7 +45,6 @@ table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 [ "stats"	  ]
 [ "streams"	  ]
 [ "tcpip"	  ]
-[ "uchr"	  ]
 [ "unix"	  ]
 [ "url"		  ]
 [ "xtables"	  ]
@@ -105,8 +104,8 @@ Plain_mods@batloop {
 
 Module: "aggr"
 
-[ 29 ]
-[ 29 ]
+[ 33 ]
+[ 33 ]
 #---------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature							| help				  #
 #---------------------------------------------------------------------------------------------------------------------------------#
@@ -121,6 +120,7 @@ Module: "aggr"
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,int], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail average"	  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail average"	  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail average"	  ]
+[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,uchr], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail average"	  ]
 [ "{card}",	  "PROC:      ",  "{card}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",		  "not available"		  ]
 [ "{count}",	  "COMMAND:   ",  "{count}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",		  "grouped count"		  ]
 [ "{max}",	  "COMMAND:   ",  "{max}(BAT[oid,any::1], BAT[oid,any]) : BAT[oid,any::1]",	  "grouped tail maximum"	  ]
@@ -131,20 +131,23 @@ Module: "aggr"
 [ "{sum_flt}",	  "COMMAND:   ",  "{sum_flt}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",	  "grouped tail sum"		  ]
 [ "{sum_int}",	  "COMMAND:   ",  "{sum_int}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",	  "grouped tail sum"		  ]
 [ "{sum_int}",	  "COMMAND:   ",  "{sum_int}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,int]",	  "grouped tail sum"		  ]
+[ "{sum_int}",	  "COMMAND:   ",  "{sum_int}(BAT[oid,uchr], BAT[oid,any]) : BAT[oid,int]",	  "grouped tail sum"		  ]
 [ "{sum_lng}",	  "COMMAND:   ",  "{sum_lng}(BAT[oid,int], BAT[oid,any]) : BAT[oid,lng]",	  "grouped tail sum"		  ]
 [ "{sum_lng}",	  "COMMAND:   ",  "{sum_lng}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,lng]",	  "grouped tail sum"		  ]
 [ "{sum_sht}",	  "COMMAND:   ",  "{sum_sht}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,sht]",	  "grouped tail sum"		  ]
+[ "{sum_uchr}",	  "COMMAND:   ",  "{sum_uchr}(BAT[oid,uchr], BAT[oid,any]) : BAT[oid,uchr]",	  "grouped tail sum"		  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,dbl], BAT[oid,any]) : BAT[oid,dbl]",		  "not available"		  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",		  "not available"		  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",		  "not available"		  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,lng]",		  "not available"		  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,sht]",		  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,uchr], BAT[oid,any]) : BAT[oid,uchr]",		  "not available"		  ]
 
 Module: "aggrX3"
 
-[ 50 ]
-[ 50 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------#
+[ 58 ]
+[ 58 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature								| help				  #
 #-----------------------------------------------------------------------------------------------------------------------------------------#
 [ "aggrtst",	  "PROC:      ",  "aggrtst(int, int, str, ..str..) : any",				  "not available"		  ]
@@ -163,6 +166,8 @@ Module: "aggrX3"
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,lng], BAT[oid,oid], BAT[oid,any]) : BAT[oid,dbl]",	  "grouped tail average on lng"	  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,dbl]",			  "grouped tail average on sht"	  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,sht], BAT[oid,oid], BAT[oid,any]) : BAT[oid,dbl]",	  "grouped tail average on sht"	  ]
+[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,uchr], BAT[oid,any]) : BAT[oid,dbl]",				  "grouped tail average on uchr"  ]
+[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,uchr], BAT[oid,oid], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail average on uchr"  ]
 [ "{card}",	  "PROC:      ",  "{card}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",			  "not available"		  ]
 [ "{count}",	  "COMMAND:   ",  "{count}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",			  "grouped count"		  ]
 [ "{count}",	  "COMMAND:   ",  "{count}(BAT[oid,any], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",	  "grouped count"		  ]
@@ -181,12 +186,16 @@ Module: "aggrX3"
 [ "{sum_int}",	  "COMMAND:   ",  "{sum_int}(BAT[oid,int], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",	  "grouped tail sum on int"	  ]
 [ "{sum_int}",	  "COMMAND:   ",  "{sum_int}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,int]",		  "grouped tail sum on sht"	  ]
 [ "{sum_int}",	  "COMMAND:   ",  "{sum_int}(BAT[oid,sht], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",	  "grouped tail sum on sht"	  ]
+[ "{sum_int}",	  "COMMAND:   ",  "{sum_int}(BAT[oid,uchr], BAT[oid,any]) : BAT[oid,int]",			  "grouped tail sum on uchr"	  ]
+[ "{sum_int}",	  "COMMAND:   ",  "{sum_int}(BAT[oid,uchr], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",	  "grouped tail sum on uchr"	  ]
 [ "{sum_lng}",	  "COMMAND:   ",  "{sum_lng}(BAT[oid,int], BAT[oid,any]) : BAT[oid,lng]",		  "grouped tail sum on int"	  ]
 [ "{sum_lng}",	  "COMMAND:   ",  "{sum_lng}(BAT[oid,int], BAT[oid,oid], BAT[oid,any]) : BAT[oid,lng]",	  "grouped tail sum on int"	  ]
 [ "{sum_lng}",	  "COMMAND:   ",  "{sum_lng}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,lng]",		  "grouped tail sum on lng"	  ]
 [ "{sum_lng}",	  "COMMAND:   ",  "{sum_lng}(BAT[oid,lng], BAT[oid,oid], BAT[oid,any]) : BAT[oid,lng]",	  "grouped tail sum on lng"	  ]
 [ "{sum_sht}",	  "COMMAND:   ",  "{sum_sht}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,sht]",		  "grouped tail sum on sht"	  ]
 [ "{sum_sht}",	  "COMMAND:   ",  "{sum_sht}(BAT[oid,sht], BAT[oid,oid], BAT[oid,any]) : BAT[oid,sht]",	  "grouped tail sum on sht"	  ]
+[ "{sum_uchr}",	  "COMMAND:   ",  "{sum_uchr}(BAT[oid,uchr], BAT[oid,any]) : BAT[oid,uchr]",			  "grouped tail sum on uchr"	  ]
+[ "{sum_uchr}",	  "COMMAND:   ",  "{sum_uchr}(BAT[oid,uchr], BAT[oid,oid], BAT[oid,any]) : BAT[oid,uchr]",	  "grouped tail sum on uchr"	  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,dbl], BAT[oid,any]) : BAT[oid,dbl]",			  "not available"		  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,dbl], BAT[oid,oid], BAT[oid,any]) : BAT[oid,dbl]",	  "not available"		  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",			  "not available"		  ]
@@ -197,6 +206,8 @@ Module: "aggrX3"
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,lng], BAT[oid,oid], BAT[oid,any]) : BAT[oid,lng]",	  "not available"		  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,sht]",			  "not available"		  ]
 [ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,sht], BAT[oid,oid], BAT[oid,any]) : BAT[oid,sht]",	  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,uchr], BAT[oid,any]) : BAT[oid,uchr]",				  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,uchr], BAT[oid,oid], BAT[oid,any]) : BAT[oid,uchr]",		  "not available"		  ]
 
 Module: "alarm"
 
@@ -1010,15 +1021,6 @@ Module: "tcpip"
 [ "terminate",	  "COMMAND:   ",  "terminate() : void",			  "stop a TCP/IP server"																				  ]
 [ "terminate",	  "COMMAND:   ",  "terminate(int) : void",		  "stop a TCP/IP server"																				  ]
 [ "waits",	  "COMMAND:   ",  "waits() : BAT[int,int]",		  "a BAT with all current waiting threads."																		  ]
-
-Module: "uchr"
-
-[ 1 ]
-[ 1 ]
-#---------------------------------------------------------------------------------#
-# function	| type	| signature	| help	  #
-#---------------------------------------------------------------------------------#
-[ "test_uchr",	  "PROC:      ",  "test_uchr() : void",	  "not available"	  ]
 
 Module: "unix"
 
