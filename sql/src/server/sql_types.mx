@@ -969,17 +969,17 @@ void sqltypeinit()
 
 	OID = *t++ = sql_create_type("OID", 9, 0, 10, 0, 	"oid");
 	/*sql_type("TINYINT", 3, SCALE_FIX, 10, 0, 		"uchr"); */
-	*t++ = sql_create_type("SMALLINT", 5, SCALE_FIX, 10, 0,		  "sht");
-	INT = *t++ = sql_create_type("INT", 10, SCALE_FIX, 10, 0,     "int");
-	LNG = *t++ = sql_create_type("BIGINT", 19, SCALE_FIX, 10, 0,  "lng");
+	      *t++ = sql_create_type("SMALLINT", 0, SCALE_FIX, 10, 0, "sht");
+	INT = *t++ = sql_create_type("INT",      0, SCALE_FIX, 10, 0, "int");
+	LNG = *t++ = sql_create_type("BIGINT",   0, SCALE_FIX, 10, 0, "lng");
 
 	decimals = t;
 	/* decimal(d,s) (d indicates nr digits,
 			s scale indicates nr of digits after the dot .) */
 	/*#sql_type("DECIMAL", 2, SCALE_FIX, 10, 		"uchr"); */
-	T = *t++ = sql_create_type("DECIMAL", 5, SCALE_FIX, 10, 0,	"sht");
-	*t++ = sql_create_type("DECIMAL", 10, SCALE_FIX, 10, 0,		"int");
-	*t++ = sql_create_type("DECIMAL", 19, SCALE_FIX, 10, 0,		"lng");
+	*t++ = sql_create_type("DECIMAL",  5, SCALE_FIX, 10, 0,	"sht");
+	*t++ = sql_create_type("DECIMAL", 10, SCALE_FIX, 10, 0,	"int");
+	*t++ = sql_create_type("DECIMAL", 19, SCALE_FIX, 10, 0,	"lng");
 
 	/* float(n) (n indicates precision of atleast n digits)*/
 	/* ie n <= 23 -> flt */
@@ -997,7 +997,6 @@ void sqltypeinit()
 	SECINT = *t++ = sql_create_type("SEC_INTERVAL", 0, 0, 10, 1, 	"lng");
 	DTE = *t++ = sql_create_type("DATE", 0, 0, 0, 1, 	"date");
 	TME = *t++ = sql_create_type("TIME", 0, 0, 0, 1, 	"daytime");
-	*t++ = sql_create_type("DATETIME", 0, 0, 0, 1, 		"timestamp");
 	TMESTAMP = *t++ = sql_create_type("TIMESTAMP", 0, 0, 0, 1,"timestamp");
 
 	*t++ = sql_create_type("BLOB", 0, 0, 0, 0, "sqlblob");
@@ -1093,11 +1092,11 @@ void sqltypeinit()
 		sql_create_func("abs", "abs", *t, NULL, *t, SCALE_FIX );
 		sql_create_func("sign", "sign", *t, NULL, *t, SCALE_FIX );
 		sql_create_func("power", "pow", *t, INT, *t, SCALE_FIX );
-	  	sql_create_func("degrees", "deg", *t, NULL, *t, SCALE_NONE);
-	  	sql_create_func("radians", "rad", *t, NULL, *t, SCALE_NONE);
+		sql_create_func("degrees", "deg", *t, NULL, *t, SCALE_NONE);
+		sql_create_func("radians", "rad", *t, NULL, *t, SCALE_NONE);
 		/* scale fixing for all numbers */
-	      	sql_create_func("scale_up", "*", *t, lt->type, *t, SCALE_NONE );
-	      	sql_create_func("scale_down", "round", *t, lt->type, *t, SCALE_NONE );
+		sql_create_func("scale_up", "*", *t, lt->type, *t, SCALE_NONE );
+		sql_create_func("scale_down", "round", *t, lt->type, *t, SCALE_NONE );
 	}
 	for(t=decimals; t < dates; t++){
 	  	sql_create_func("truncate", "trunc", *t, INT, *t, SCALE_NONE);
@@ -1109,7 +1108,7 @@ void sqltypeinit()
 	for(t=numerical; t < dates; t++){
 	  sql_type **u;
 	  for(u=numerical; u < dates; u++){
-	    /* numerics can allways be converted to numerics with more digits */
+	    /* numerics can always be converted to numerics with more digits */
 	    if ((*t)->digits <= (*u)->digits) 
 	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX );
 	    if ((*t)->digits > (*u)->digits && *t != *u)
