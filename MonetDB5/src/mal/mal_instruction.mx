@@ -1454,7 +1454,7 @@ InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid){
 	int n;
         
 	n = p->argc;
-	if( n == MAXARG-1){
+	if( n == p->maxarg-1){
 		InstrPtr pn;
 		int pc = 0;
 		int space= (p->maxarg-1)*sizeof(int)+ sizeof(InstrRecord);
