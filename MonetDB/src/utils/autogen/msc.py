@@ -214,11 +214,14 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc):
             add = add + " $(LIBOBJS)"
         elif l[:2] == "-l":
             add = add + " lib"+l[2:]+".lib"
-        elif l[0] in ("-", "$"):
-            add = add + " " + l
-        elif l[0] not in  ("@"):
-            add = add + " " + msc_translate_dir(l, msc) + ".lib"
-            deps = deps + " " + msc_translate_dir(l, msc) + ".lib"
+        elif l[0] == "-":
+            add = add + ' "%s"' % l
+        elif l[0] == '$':
+            add = add + ' %s' % l
+        elif l[0] != "@":
+            add = add + ' "%s.lib"' % msc_translate_dir(l, msc)
+            deps = deps + ' "%s.lib"' % msc_translate_dir(l, msc)
+    # this can probably be removed...
     for l in dlibs:
         if l == "@LIBOBJS@":
             add = add + " $(LIBOBJS)"
@@ -759,10 +762,12 @@ def msc_libs(fd, var, libsmap, msc):
 def msc_includes(fd, var, values, msc):
     incs = "-I$(SRCDIR)"
     for i in values:
-        if i[0] == "-" or i[0] == "$":
-            incs = incs + " " + string.replace(i, '/', '\\')
+        if i[0] == "-":
+            incs = incs + ' "%s"' % i.replace('/', '\\')
+        elif i[0] == "$":
+            incs = incs + ' %s' % i.replace('/', '\\')
         else:
-            incs = incs + " -I" + msc_translate_dir(i, msc) \
+            incs = incs + ' "-I%s"' % msc_translate_dir(i, msc) \
                    + msc_add_srcdir(i, msc, " -I")
     fd.write("INCLUDES = " + incs + "\n")
 
