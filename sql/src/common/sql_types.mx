@@ -40,6 +40,7 @@ sqlcommon_export list *types;
 
 sqlcommon_export char *sql_bind_alias( char *alias );
 sqlcommon_export sql_subtype *sql_bind_subtype( char *name, unsigned int digits, unsigned int scale );
+sqlcommon_export sql_subtype *sql_bind_numeric( int localtype, unsigned int digits );
 sqlcommon_export sql_subtype *sql_bind_localtype( char *name );
 sqlcommon_export sql_subtype *sql_create_subtype( sql_type *t, unsigned int s, unsigned int d );
 sqlcommon_export sql_subtype *sql_dup_subtype( sql_subtype *t );
@@ -156,6 +157,52 @@ sql_subtype *sql_dup_subtype( sql_subtype *res )
 	sql_ref_inc( &(res->ref) );
 	MT_unset_lock(lock, "sql_dup_subtype");
 	return res;
+}
+
+int localtypes_cmp( int nlt, int olt )
+{
+	if (nlt == TYPE_flt || nlt == TYPE_dbl) {
+		nlt = TYPE_dbl;
+	} else if (nlt == TYPE_sht || nlt == TYPE_int || nlt == TYPE_lng) {
+		nlt = TYPE_lng;
+	}
+	if (nlt == olt)
+		return 1;
+	return 0;
+}
+
+sql_subtype *sql_bind_numeric( int localtype, unsigned int digits )
+{
+	if (localtype == TYPE_flt || localtype == TYPE_dbl) {
+		localtype = TYPE_dbl;
+	} else {
+		localtype = TYPE_lng;
+	}
+
+	node *m, *n;
+	for ( n = types->h; n; n = n->next ) {
+		sql_type *t = n->data;
+		if (localtypes_cmp(t->localtype, localtype)){
+			if ((digits && t->digits >= digits) ||
+					(digits == t->digits)){
+				return sql_create_subtype(t, digits, 0);
+			}
+			for (m = n->next; m; m = m->next ) {
+				t = m->data;
+				if (!localtypes_cmp(t->localtype, localtype)){
+					break;
+				}
+				n = m;
+				if ((digits && t->digits >= digits) ||
+					(digits == t->digits)){
+					return sql_create_subtype(t, digits, 0);
+				}
+			}
+			t = n->data;
+			return sql_create_subtype(t, digits, 0);
+		}
+	}
+	return NULL;
 }
 
 sql_subtype *sql_bind_subtype( char *name, unsigned int digits, unsigned int scale )
@@ -853,11 +900,11 @@ void sqltypeinit()
 
 	numerical = t;
 
-	OID = *t++ = sql_create_type("OID", 9, 0, 10, 0, 	"oid");
-	/*sql_type("TINYINT", 3, SCALE_FIX, 10, 0, 		"uchr"); */
-	      *t++ = sql_create_type("SMALLINT", 0, SCALE_FIX, 10, 0, "sht");
-	INT = *t++ = sql_create_type("INT",      0, SCALE_FIX, 10, 0, "int");
-	LNG = *t++ = sql_create_type("BIGINT",   0, SCALE_FIX, 10, 0, "lng");
+	OID = *t++ = sql_create_type("OID", 9, 0, 10, 1, 	"oid");
+	/*sql_type("TINYINT", 2, SCALE_FIX, 10, 1, 		"uchr"); */
+	      *t++ = sql_create_type("SMALLINT",  4, SCALE_FIX, 10, 1, "sht");
+	INT = *t++ = sql_create_type("INT",       9, SCALE_FIX, 10, 1, "int");
+	LNG = *t++ = sql_create_type("BIGINT",   19, SCALE_FIX, 10, 1, "lng");
 
 	decimals = t;
 	/* decimal(d,s) (d indicates nr digits,

@@ -182,7 +182,8 @@ typedef struct sql_key { /* pkey, ukey, fkey */
 	struct list *columns; 	/* list of sql_kc */
 	struct sql_table *t;
 } sql_key;
-#define internal_key(k) (k->base.name[0] == '#')
+#define INTERNAL_KEY_MARKER  '~'
+#define internal_key(k) (k->base.name[0] == INTERNAL_KEY_MARKER)
 
 typedef struct sql_ukey { /* pkey, ukey */
 	sql_key k;

@@ -901,7 +901,7 @@ static char *table_constraint_name()
 {
 	oid id = OIDnew(1);
 	static char buf[BUFSIZ];
-	snprintf(buf, BUFSIZ, "#c%ld", id );
+	snprintf(buf, BUFSIZ, "%cc%ld", INTERNAL_KEY_MARKER, id );
 	return buf;
 }
 

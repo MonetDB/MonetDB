@@ -52,4 +52,3 @@ lng decimal_from_str( char *dec ){
 	else
 		return res;
 }
-

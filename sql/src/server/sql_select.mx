@@ -594,7 +594,15 @@ static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist
 			return NULL;
 		}
 	} else {
-		res = stmt_const(res, stmt_atom( atom_general( sql_dup_subtype(restype), NULL)));
+		stmt *a = stmt_atom( atom_general( sql_dup_subtype(restype), NULL));
+		if (res) {
+			res = stmt_const(res, a);
+		} else if (!subset) {
+			res = a;
+		} else {
+			stmt_destroy(a);
+			return sql_error(sql, 02, "Case in query currently not supported");
+		}
 	}
 
 	for (n = conds->h, m = results->h; n && m;

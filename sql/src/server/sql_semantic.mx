@@ -332,28 +332,41 @@ stmt *sum_scales( sql_subfunc *f, stmt *ls, stmt *rs )
 {
 	if (strcmp(f->func->imp, "*") == 0 && 
 			f->func->res->type->scale == SCALE_FIX){
+		sql_subtype fres = *f->res;
 		f->res->scale = tail_type(ls)->scale + 
 					tail_type(rs)->scale;
 		f->res->digits = tail_type(ls)->digits + 
 					tail_type(rs)->digits;
 		/* HACK alert: digits should be less then max */
-		if (f->res->digits > 19)
+		if (f->res->type->radix == 10 && f->res->digits > 19)
 			f->res->digits = 19;
+		if (f->res->type->radix == 2 && f->res->digits > 53)
+			f->res->digits = 53;
 		/* sum of digits may mean we need a bigger result type 
  		 * as the function don't support this we need to
 		 * make bigger input types!
 		 */
 		if (f) {
-			sql_subtype *t = sql_bind_subtype( 
-				f->res->type->sqlname,
-				f->res->digits, f->res->scale );
-			if (subtype_cmp( t, f->res) != 0) {
+			sql_subtype *t = NULL;
+
+			/* numeric types are fixed length */
+			if (f->res->type->fixed) {
+				t = sql_bind_numeric( f->res->type->localtype, f->res->digits);
+		    } else {
+				t = sql_bind_subtype( 
+					f->res->type->sqlname,
+					f->res->digits, f->res->scale );
+			}
+			if (subtype_cmp( t, &fres) != 0) {
+				sql_subtype *fr = f->res;
 				sql_subfunc *c = NULL;
 				
+				f->res = t;
 				c = sql_bind_func_result("convert",
 							  	f->res,NULL,t);
 				if (c) 
 					ls = stmt_unop(ls, c);
+				t = fr;
 			}
 			sql_subtype_destroy(t);
 		}

@@ -2652,7 +2652,7 @@ when_search_list:
 
 opt_else:
     /* empty */	        { $$ = NULL; }
- |  ELSE scalar_exp	{ $$ = $2; }
+ |  ELSE scalar_exp		{ $$ = $2; }
  ;
 
 		/* data types, more types to come */

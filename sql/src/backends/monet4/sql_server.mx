@@ -153,9 +153,9 @@ stream.
 		"cast to int"
 	.COMMAND cast2lng( str v, int digits, int scale ) : lng = trunc2lng; 
 		"cast to lng"
-	.COMMAND cast2flt( str v, int digits, int scale ) : flt = trunc2flt; 
+	.COMMAND cast2flt( str v, int digits, int scale ) : flt = ftrunc2flt; 
 		"cast to flt"
-	.COMMAND cast2dbl( str v, int digits, int scale ) : dbl = trunc2dbl; 
+	.COMMAND cast2dbl( str v, int digits, int scale ) : dbl = ftrunc2dbl; 
 		"cast to dbl"
 
 	.COMMAND "str"( any v, int digits ) : str = str_cast;
@@ -588,13 +588,13 @@ int @1_round_wrap( @1 *res, @1 *v, @1 *r )
 	return GDK_SUCCEED;
 }
 
-int trunc2@1( @1 *res, str val, int *d, int *s )
+int ftrunc2@1( @1 *res, str val, int *d, int *s )
 {
 	ptr p = NULL;
 	int len = 0;
 	int e;
 	int digits = *d - *s;
-	lng value = 1;
+	dbl value = 1;
 	
  	e = ATOMfromstr(TYPE_@1, &p, &len, val);
 	if (e < 0 || !p || 
@@ -611,7 +611,6 @@ int trunc2@1( @1 *res, str val, int *d, int *s )
 	if (*(@1*)p > value) {
 		GDKerror("double (%s) doesn't have format (%d,%d)", val, *d, *s);
 		return GDK_FAIL;
-		
 	}
 	*res = *(@1*)p;
 	if (p)
@@ -737,7 +736,7 @@ int @2_2_@1( @1 *res, @2 *v, int *len ){
 @= numcastdown
 int @2_2_@1( @1 *res, @2 *v, int *len ){
 	int p = *len, inlen = 1;
-	@2 val = *v, cpyval = val;
+	lng val = *v, cpyval = val;
 
 	/* shortcut nil */
 	if (*v == @2_nil) {
