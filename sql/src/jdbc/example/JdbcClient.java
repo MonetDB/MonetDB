@@ -3,15 +3,14 @@ import java.io.*;
 import java.util.*;
 
 /**
- * -- rewrite this school example of how not to write proper software
- * This rather awkard implemented program acts like an extended client program
- * for MonetDB. It's look and feel is very much like PostgreSQL's interactive
- * terminal program.
+ * This program acts like an extended client program for MonetDB. It's look
+ * and feel is very much like PostgreSQL's interactive terminal program.
  * Although it looks like this client is designed for MonetDB, it shows
  * the power of the JDBC interface since it built on top of JDBC only.
  * Every database which has a JDBC driver should work with this client.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @version 1.0
  */
 
 public class JdbcClient {
@@ -27,7 +26,7 @@ public class JdbcClient {
 		// arguments which need a value
 		ArrayList value = new ArrayList();
 		value.add("1");
-		
+
 		arg.put("h", value);
 		arg.put("-host", value);
 		value = (ArrayList)(value.clone());
@@ -45,31 +44,31 @@ public class JdbcClient {
 		arg.put("Xblksize", value);
 		value = (ArrayList)(value.clone());
 		arg.put("Xoutput", value);
-		
+
 		// arguments which can have zero to lots of arguments
 		value = new ArrayList();
 		value.add("0*");
-		
+
 		arg.put("d", value);
 		arg.put("-dump", value);
-		
+
 		// arguments which can have zero or one argument(s)
 		value = new ArrayList();
 		value.add("01");
-		
+
 		value = (ArrayList)(value.clone());
 		arg.put("Xdebug", value);
 		value = (ArrayList)(value.clone());
 		arg.put("Xbatching", value);
-		
+
 		// arguments which have no argument(s)
 		value = new ArrayList();
 		value.add("0");
-		
+
 		value = (ArrayList)(value.clone());
 		arg.put("-help", value);
-		
-		
+
+
 		// default values, the username is prefixed with a space to identify
 		// at a later stage if it has been set via the command line
 		((ArrayList)(arg.get("u"))).add(" " + System.getProperty("user.name"));
@@ -149,7 +148,7 @@ public class JdbcClient {
 					value = (ArrayList)(arg.get(new String("" + args[i].charAt(1))));
 					moreData = args[i].length() > 2 ? true : false;
 				}
-				
+
 				if (value != null) {
 					String type = (String)(value.get(0));
 					if (type == null)
@@ -203,7 +202,7 @@ public class JdbcClient {
 				}
 			}
 		}
-		
+
 		if (((ArrayList)(arg.get("-help"))).get(1) != null) {
 			System.out.print(
 "Usage java -jar MonetJDBC.jar [-h host[:port]] [-p port] [-f file] [-u user]\n" +
@@ -286,13 +285,13 @@ public class JdbcClient {
 		if ("line".equals(tmp)) attr += "blockmode=false&";
 		tmp = (String)(((ArrayList)(arg.get("Xblksize"))).get(1));
 		if (tmp != null) attr += "blockmode_blocksize=" + tmp + "&";
-		
+
 		ArrayList ltmp = (ArrayList)(arg.get("Xdebug"));
 		if (ltmp.get(1) != null) {
 			attr += "debug=true&";
 			if (ltmp.size() == 3) attr += "logfile=" + ltmp.get(2).toString() + "&";
 		}
-			
+
 
 		// request a connection suitable for MonetDB from the driver manager
 		// note that the database specifier is currently not implemented, for
@@ -417,7 +416,7 @@ public class JdbcClient {
 				int batchSize = 0;
 				// open the file
 				in = new BufferedReader(new FileReader(tmp));
-				
+
 				// check for batch mode
 				ltmp = (ArrayList)(arg.get("Xbatching"));
 				if (ltmp.get(1) != null) {
@@ -668,7 +667,7 @@ public class JdbcClient {
 			// because this is an explicit batch from a file, we turn off
 			// auto-commit
 			con.setAutoCommit(false);
-		
+
 			// the main loop
 			for (i = 1; (curLine = in.readLine()) != null; i++) {
 				query.append(curLine);
