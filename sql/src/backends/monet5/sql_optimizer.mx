@@ -42,6 +42,7 @@ sql_export str SQLoptimizer(Client c);
 The queries are stored in a cache after they have been
 type checked and optimized.
 @c
+#include "mal_optimizer.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
 #include "sql_gencode.h"
@@ -69,17 +70,23 @@ An error in the compilation should be reported to the user.
         	optimizeQueryInCache(c);
 }
 @-
-The first attempt to building an SQL optimizer.
+The first step towards an SQL optimizer.
 This versions simply runs through the MAL script and re-orders the instructions
 into catalog operations, query graph, and result preparation.
 This distinction is used to turn the function into a factory, which would
 enable re-entry when used as a cache-optimized query.
+
+We also apply the Alias Removal optimizer to trim the instruction list
+by removing simple assignments.
+
 @c
+#define TOSMALL 3
+
 str SQLoptimizer(Client c) {
     (void) c;
 #ifdef _SQL_OPTIMIZER_DEBUG
     printf("SQLoptimizer\n");
-        printFunction(c->fdout,c->curprg->def, LIST_MAL_ALL);
+        printFunction(c->fdout,c->curprg->def, LIST_MAL_INSTR);
     printf("done\n");
 #endif
     return MAL_SUCCEED;
@@ -90,11 +97,23 @@ void optimizeQueryInCache(Client c) {
         InstrPtr *ns,p;
         int t,v;
         int i,k;
+        MALfcn setWriteMode=0;
+        Symbol s;
 
 #ifdef _SQL_OPTIMIZER_DEBUG
         printf("First call to SQL optimizer\n");
 #endif
         mb= c->curprg->def;
+        if( mb->stop <= TOSMALL ) return;
+@-
+Reduce the program before other optimizations take place
+@c
+        ARoptimizer(c, c->curprg->def, 0);
+        AMoptimizer(c, c->curprg->def, 0);
+        s= findSymbol("bat","setWriteMode");
+        if( s)
+            setWriteMode = getSignature(s)->fcn;
+
         ns= (InstrPtr *) GDKmalloc( sizeof(InstrPtr) * (mb->stop+4));
         k=1;
         ns[0] = getInstrPtr(mb,0); /* its signature */
@@ -104,6 +123,8 @@ void optimizeQueryInCache(Client c) {
             if( functionName(p) && moduleName(p) &&
                 strncmp(functionName(p),"bind",4)==0 &&
                 strcmp(moduleName(p),"sql") ==0 )
+                ns[k++]= p;
+            if( setWriteMode && p->fcn == setWriteMode)
                 ns[k++]= p;
         }
 @-
@@ -122,6 +143,7 @@ Inject the factory loop
             if( !(functionName(p) && moduleName(p) &&
                 strncmp(functionName(p),"bind",4)==0 &&
                 strcmp(moduleName(p),"sql") ==0 ) )
+            if( !(setWriteMode && p->fcn == setWriteMode) )
                 ns[k++]= p;
         }
 @-
@@ -146,7 +168,7 @@ Finalize the factory loop
         mb->stmt = ns;
         chkProgram(c->nspace,mb);
 #ifdef _SQL_OPTIMIZER_DEBUG
-        printFunction(c->fdout,c->curprg->def, LIST_MAL_ALL);
+        printFunction(c->fdout,c->curprg->def, LIST_MAL_INSTR);
 #endif
 }
 
