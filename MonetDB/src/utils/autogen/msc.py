@@ -899,13 +899,13 @@ CXXEXT = \\\"cxx\\\"
     if len(msc['BINS']) > 0:
         for v in msc['BINS']:
             fd.write("install_bin_%s: %s.exe\n" % (v, v))
-            fd.write("\t$(INSTALL) %s.exe $(bindir)\n" % v)
+            fd.write("\tif exist %s.exe $(INSTALL) %s.exe $(bindir)\n" % (v,v))
     if len(msc['INSTALL']) > 0:
         for (dst, src, ext, dir) in msc['INSTALL']:
             fd.write("install_%s: %s%s %s\n" % (dst, src, ext, dir))
-            fd.write("\t$(INSTALL) %s%s %s\\%s%s\n" % (src, ext, dir, dst, ext))
+            fd.write("\tif exist %s%s $(INSTALL) %s%s %s\\%s%s\n" % (src, ext, src, ext, dir, dst, ext))
             if ext == '.dll':
-                fd.write("\t$(INSTALL) %s%s %s\\%s%s\n" % (src, '.lib', dir, dst, '.lib'))
+                fd.write("\tif exist %s%s $(INSTALL) %s%s %s\\%s%s\n" % (src, '.lib', src, '.lib', dir, dst, '.lib'))
         td = []
         for (x, y, u, dir) in msc['INSTALL']:
             if td.count(dir) == 0:
