@@ -754,7 +754,8 @@ static int interpret_@1_array(
 	    }
 	}
 	bulkerror_finish(&bulkerror, name);
-	GDKfree(tptr);
+	if (tptr != tnil)
+		GDKfree(tptr);
 
 	if (!assignop) {
 		if (BATcount(retb) == BATcount(bh)) {
