@@ -168,18 +168,16 @@ $(patsubst %.c,%.o,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.o: %.c
 
 SUFFIXES-local: $(BUILT_SOURCES)
 
-$(prefix)/doc:
-	mkdir $(prefix)/doc
-
-$(prefix)/doc/SQLsessionDemo:	$(prefix)/doc
+$(prefix)/doc/SQLsessionDemo:	$(top_srcdir)/SQLsessionDemo
+	-@mkdir -p $(prefix)/doc
 	cp $(top_srcdir)/SQLsessionDemo $(prefix)/doc
 
-$(prefix)/doc/SQLfeatures.tex:	$(prefix)/doc
-	cp $(top_srcdir)/SQLfeatures.tex $(prefix)/doc
+$(prefix)/doc/SQLfeatures/SQLfeatures.tex:	$(top_srcdir)/SQLfeatures.tex
+	-@mkdir -p $(prefix)/doc/SQLfeatures
+	cp $(top_srcdir)/SQLfeatures.tex $(prefix)/doc/SQLfeatures
 
-$(prefix)/doc/SQLfeatures.aux:	$(prefix)/doc/SQLfeatures.tex
-	(cd $(prefix)/doc; latex SQLfeatures.tex; latex SQLfeatures.tex)
+$(prefix)/doc/SQLfeatures/SQLfeatures.aux:	$(prefix)/doc/SQLfeatures/SQLfeatures.tex
+	(cd $(prefix)/doc/SQLfeatures; latex SQLfeatures.tex; latex SQLfeatures.tex)
 
-html:	$(prefix)/doc/SQLsessionDemo $(prefix)/doc/SQLfeatures.aux
-	(cd $(prefix)/doc; latex2html -ascii_mode -notiming -noaddress -style http://monetdb.cwi.nl/MonetDB.css SQLfeatures.tex)
-	#(cd $(prefix); latex2html -ascii_mode -notiming -noaddress -style http://monetdb.cwi.nl/MonetDB.css -dir doc doc/SQLfeatures.tex)
+html:	$(prefix)/doc/SQLsessionDemo $(prefix)/doc/SQLfeatures/SQLfeatures.aux
+	(cd $(prefix); latex2html -ascii_mode -notiming -noaddress -style http://monetdb.cwi.nl/MonetDB.css -dir doc/SQLfeatures doc/SQLfeatures/SQLfeatures.tex)
