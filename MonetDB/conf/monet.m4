@@ -102,7 +102,10 @@ AC_ARG_WITH(gcc,
 	case $withval in
 	no)	CC=cc CXX=CC;;
 	yes)	CC=gcc CXX=g++;;
-	icc)	CC="icc -i_dynamic" CXX="icpc -i_dynamic";;
+	icc)	CC=icc CXX=icpc LDFLAGS="$LDFLAGS -i_dynamic"
+		dnl Let warning #140 "too many arguments in function call"
+		dnl become an error to make configure tests work properly.
+		CFLAGS="$CFLAGS -we140" CXXFLAGS="$CXXFLAGS -we140";;
 	*)	CC=$withval;;
 	esac])
 
@@ -110,7 +113,10 @@ AC_ARG_WITH(gxx,
 [  --with-gxx=<compiler>   which C++ compiler to use], [
 	case $withval in
 	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
-	icpc)	CXX="icpc -i_dynamic";;
+	icpc)	CXX=icpc LDFLAGS="$LDFLAGS -i_dynamic"
+		dnl Let warning #140 "too many arguments in function call"
+		dnl become an error to make configure tests work properly.
+		CXXFLAGS="$CXXFLAGS -we140";;
 	*)	CXX=$withval;;
 	esac])
 
@@ -344,8 +350,8 @@ AC_ARG_ENABLE(warning,
   enable_warning=$enableval, enable_warning=no)
 if test "x$enable_warning" = xyes; then
   if test "x$GCC" = xyes; then
-    CFLAGS="$CFLAGS -Wall -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500"
-    CXXFLAGS="$CXXFLAGS -Wall -ansi"
+    CFLAGS="$CFLAGS -Wall -ansi -std=c99 -pedantic -Wno-long-long Wno-unused-function -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500"
+    CXXFLAGS="$CXXFLAGS -Wall -ansi -pedantic -Wno-long-long -Wno-unused-function"
   else
     case "$host_os" in
     linux*) CFLAGS="$CFLAGS -w2 -Wall -ansi -c99-"
