@@ -37,6 +37,8 @@ standard software development tools
 	 - a C/C++ compiler (e.g., GNU's gcc/g++)
 	 - a lexical analyzer generator (e.g., "lex" or "flex")
 	 - a parser generator (e.g., "yacc" or "bison")
+	 - GNU make ("gmake") (native make's on, e.g., IRIX and Solaris
+	   usually don't work)
 
 dlcompat (MacOS X/Darwin, only)
 	MacOS X/Darwin itself does not support dlopen, however, there's
