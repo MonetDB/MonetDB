@@ -41,45 +41,45 @@ pattern optimize(mod:any, fcn:any)
 address QOToptimize
 comment "Optimize a specific operation";
 
-pattern CXoptimizer():str 
+pattern commonExpressionRemoval():str 
 address QOTCXoptimizer;
-pattern CXoptimizer(mod:any, fcn:any):str 
+pattern commonExpressionRemoval(mod:any, fcn:any):str 
 address QOTCXoptimizerCALL
 comment "Common subexpression optimizer";
 
-pattern ARoptimizer():str 
+pattern aliasRemoval():str 
 address QOTARoptimizer;
-pattern ARoptimizer(mod:any, fcn:any):str 
+pattern aliasRemoval(mod:any, fcn:any):str 
 address QOTARoptimizerCALL
 comment "Alias removal optimizer";
 
-pattern DCoptimizer():str 
+pattern deadCodeRemoval():str 
 address QOTDCoptimizer;
-pattern DCoptimizer(mod:any, fcn:any):str 
+pattern deadCodeRemoval(mod:any, fcn:any):str 
 address QOTDCoptimizerCALL
 comment "Dead code optimizer";
 
-pattern SPoptimizer():str 
+pattern selectPushdown():str 
 address QOTSPoptimizer;
-pattern SPoptimizer(mod:any, fcn:any):str 
+pattern selectPushdown(mod:any, fcn:any):str 
 address QOTSPoptimizerCALL
 comment "Selection push-down optimizer";
 
-pattern RRoptimizer():str 
+pattern reversalRemoval():str 
 address QOTRRoptimizer;
-pattern RRoptimizer(mod:any, fcn:any):str 
+pattern reversalRemoval(mod:any, fcn:any):str 
 address QOTRRoptimizerCALL
 comment "Reversal idempotency removal";
 
-pattern ORoptimizer():str 
+pattern expressionAccumulation():str 
 address QOTORoptimizer;
-pattern ORoptimizer(mod:any, fcn:any):str 
+pattern expressionAccumulation(mod:any, fcn:any):str 
 address QOTORoptimizerCALL
 comment "Replace calculations with accumulator model";
 
-pattern GCoptimizer():str 
+pattern garbageCollector():str 
 address QOTGCoptimizer;
-pattern GCoptimizer(mod:any, fcn:any):str 
+pattern garbageCollector(mod:any, fcn:any):str 
 address QOTGCoptimizerCALL
 comment "Garbage collector optimizer";
 
@@ -94,24 +94,24 @@ comment "Dump the data flow of the function
 @-
 The macro processors are also be called during optimizer time
 @mal
-pattern MEoptimizer():void 
+pattern macroExpansion():void 
 address QOTMEoptimizer
 comment "Inliner of any function";
-pattern MEoptimizer(mod:str):void 
+pattern macroExpansion(mod:str):void 
 address QOTMEoptimizerModule
 comment "Inliner of functions in a specific module";
-pattern MEoptimizer(mod:str, fcn:str):void
+pattern macroExpansion(mod:str, fcn:str):void
 address QOTMEoptimizerSymbol
 comment "Inliner of a specific function";
 
-pattern MCoptimizer():void
-address QOTMCoptimizer
+pattern macroContraction():void
+address QOTmacroContraction
 comment "Inliner of any function";
-pattern MCoptimizer(mod:str):void
-address QOTMCoptimizerModule
+pattern macroContraction(mod:str):void
+address QOTmacroContractionModule
 comment "Inliner of functions in a specific module";
-pattern MCoptimizer(mod:str, fcn:str):void
-address QOTMCoptimizerSymbol
+pattern macroContraction(mod:str, fcn:str):void
+address QOTmacroContractionSymbol
 comment "Inliner of a specific function";
 
 @-
@@ -132,13 +132,12 @@ The most important one is the multi-path join, which should
 be optimized to reduce a potential exploding size/
 @mal
 pattern algebra.joinPath(b:bat[:any$1,:any$2], 
-        c:bat[:any$2,:any$3]...):bat[:any$1,:any$3]
+        aliasRemoval:bat[:any$2,:any$3]...):bat[:any$1,:any$3]
 address QOTjoinPath
 comment "Evaluate a join path.";
 
 optimizer.prelude();
 @{
-@include ../modules/mal/prelude.mx
 @+ Dummy code 
 @h
 #ifndef _OPTIMIZER_H
@@ -255,7 +254,7 @@ lng QOTjoinEstimate(BAT *l, BAT *r){
 str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
     BAT *joins[MAXARG],*b=0;
     lng estimate,e;
-    int top,i,j,ret = 0,*bid;
+    int top,top2,i,j,ret = 0,*bid;
     (void) mb;
     (void)ret;
     top=0;
@@ -264,9 +263,13 @@ str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 #ifdef OPTIMIZER_DEBUG
         printf("bid %d\n",*bid);
 #endif
-        @:getBATdescriptor(&ret,bid,b,algebra.joinPath)@
+		if( (b= BATdescriptor(*bid)) == NULL ){
+			 return throwMessage("algebra.joinPath", "Cannot access descriptor");
+		}
+
         joins[top++]=b;
     }
+	top2= top;
     /* solve the join by pairing the smallest first */
     while( top>2){
         j =0;
@@ -294,6 +297,8 @@ str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
     b= BATjoin(joins[0],joins[1],estimate);
     BBPfix(b->batCacheid);
     *(int*) getArgReference(stk,pci,0) = b->batCacheid;
+	for(i=0;i<top2;i++)
+		BBPunfix(joins[i]->batCacheid);
     return NULL;
 }
 @}

@@ -1812,6 +1812,10 @@ str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     } 
 	chkProgram(scope,mb);
     /* remove the ORoptimizer request */
+	if( mb->errors) {
+		showErrors();
+		return throwMessage("ORoptimizer","Optimization raised errors");
+	}
 	@:optimizerCleanup(pci)@
     return MAL_SUCCEED;
 }
