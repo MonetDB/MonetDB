@@ -340,7 +340,7 @@ public class JdbcClient {
 			boolean hasXMLDump = tmp != null && tmp.equals("xml");
 
 			// start SQL output
-			if (!hasXMLDump) out.println("START TRANSACTION;");
+			if (!hasXMLDump) out.println("START TRANSACTION;\n");
 
 			// dump specific table(s) or not?
 			if (ltmp.size() > 2) { // yes we do
@@ -1013,11 +1013,13 @@ public class JdbcClient {
 				dbmd,
 				table
 			);
+			out.println();
 			dumpTable(
 				out,
 				stmt,
 				table.getFqnameQ()
 			);
+			out.println();
 		} else {
 			if (table.getType().equals("VIEW")) {
 				out.println("<!-- unable to represent VIEW " + table.getFqnameQ() + " -->");
