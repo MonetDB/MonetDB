@@ -975,7 +975,32 @@ public class MonetResultSet implements ResultSet {
 				return(false);
 			}
 
-			public String getColumnClassName(int column) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+			/**
+			 * Returns the fully-qualified name of the Java class whose
+			 * instances are manufactured if the method ResultSet.getObject
+			 * is called to retrieve a value from the column.
+			 * ResultSet.getObject may return a subclass of the class returned
+			 * by this method.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return the fully-qualified name of the class in the Java
+			 *         programming language that would be used by the method
+			 *         ResultSet.getObject to retrieve the value in the
+			 *         specified column. This is the class name used for custom
+			 *         mapping.
+			 * @throws SQLException if there is no such column
+			 */
+			public String getColumnClassName(int column) throws SQLException {
+				try {
+					return(
+						getClassForType(
+							MonetDriver.getJavaType(types[column - 1])
+						).getName()
+					);
+				} catch (IndexOutOfBoundsException e) {
+					throw new SQLException("No such column " + column);
+				}
+			}
 
 			/**
 			 * Gets the designated column's suggested title for use in printouts
@@ -1081,45 +1106,74 @@ public class MonetResultSet implements ResultSet {
 			return(null);
 		}
 
+		Class type = getClassForType(MonetDriver.getJavaType(types[i - 1]));
+		
+		if (type == BigDecimal.class) {
+			return(getBigDecimal(i));
+		} else if (type == Boolean.class) {
+			return(Boolean.valueOf(getBoolean(i)));
+		} else if (type == Integer.class) {
+			return(new Integer(getInt(i)));
+		} else if (type == Long.class) {
+			return(new Long(getLong(i)));
+		} else if (type == Float.class) {
+			return(new Float(getFloat(i)));
+		} else if (type == Double.class) {
+			return(new Double(getDouble(i)));
+		} else if (type == java.sql.Date.class) {
+			return(getDate(i));
+		} else if (type == Time.class) {
+			return(getTime(i));
+		} else if (type == Timestamp.class) {
+			return(getTimestamp(i));
+		} else {
+			return(getString(i));
+		}
+	}
+
+	/**
+	 * Helper method to support the getObject and
+	 * ResultsetMetaData.getColumnClassName JDBC methods.
+	 *
+	 * @param type a value from java.sql.Types
+	 * @return a Class object from which an instance would be returned
+	 */
+	private Class getClassForType(int type) {
 		/**
 		 * This switch returns the types as objects according to table B-3 from
 		 * Sun's JDBC specification 3.0
 		 */
-		switch(MonetDriver.getJavaType(types[i - 1])) {
+		switch(type) {
 			case Types.CHAR:
 			case Types.VARCHAR:
 			case Types.LONGVARCHAR:
-				return(getString(i));
+				return(String.class);
 			case Types.NUMERIC:
 			case Types.DECIMAL:
-				return(getBigDecimal(i));
+				return(BigDecimal.class);
 			case Types.BIT: // we don't use type BIT, it's here for completeness
 			case Types.BOOLEAN:
-				return(Boolean.valueOf(getBoolean(i)));
+				return(Boolean.class);
 			case Types.TINYINT:
 			case Types.SMALLINT:
 			case Types.INTEGER:
-				return(new Integer(getInt(i)));
+				return(Integer.class);
 			case Types.BIGINT:
-				return(new Long(getLong(i)));
+				return(Long.class);
 			case Types.REAL:
-				return(new Float(getFloat(i)));
+				return(Float.class);
 			case Types.FLOAT:
 			case Types.DOUBLE:
-				return(new Double(getDouble(i)));
-			case Types.BINARY:
-			case Types.VARBINARY:
-			case Types.LONGVARBINARY:	// we don't have any of the above three
-				// luckily, an array is an object ;-)
-				return(getString(i).getBytes());
+				return(Double.class);
 			case Types.DATE:
-				return(getDate(i));
+				return(java.sql.Date.class);
 			case Types.TIME:
-				return(getTime(i));
+				return(Time.class);
 			case Types.TIMESTAMP:
-				return(getTimestamp(i));
+				return(Timestamp.class);
 
-			case Types.DISTINCT: // all below are currently not implemented and used
+			// all below are currently not implemented and used
+			case Types.DISTINCT:
 			case Types.CLOB:
 			case Types.BLOB:
 			case Types.ARRAY:
@@ -1127,8 +1181,11 @@ public class MonetResultSet implements ResultSet {
 			case Types.REF:
 			case Types.DATALINK:
 			case Types.OTHER:
+			case Types.BINARY:
+			case Types.VARBINARY:
+			case Types.LONGVARBINARY:
 			default:
-				return(getString(i));
+				return(String.class);
 		}
 	}
 
