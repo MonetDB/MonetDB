@@ -2274,7 +2274,7 @@ string:
     STRING
 		{ $$ = $1; }
  |  STRING string 
-		{ $$ = strconcat($1,$2); }
+		{ $$ = strconcat($1,$2); _DELETE($1); _DELETE($2); }
  ;
 
 
