@@ -208,7 +208,7 @@ fprintf(stderr,",");
             }
         }
         i=0;
-        while(idxvector[i]==0) {
+        while(idxvector[i]==0 && i<dims) {
 #ifdef EXCESSIVE_DEBUGGING
 fprintf(stderr,"[");
 #endif
@@ -233,7 +233,7 @@ fprintf(stderr,"%d\@0",arrayindex[offset]);
 		  goto exit_err_full;
         }
         i = 0;
-        while((++idxvector[i]) == lenvector[i]) {
+        while((++idxvector[i]) == lenvector[i] && i<dims) {
 #ifdef EXCESSIVE_DEBUGGING
 fprintf(stderr,"]");
 #endif
