@@ -614,7 +614,6 @@ create_view(mvc * sql, sql_schema * ss, dlist * qname, dlist * column_spec,
 		SelectNode *sn = (SelectNode*)query;
 
 		char *subquery;
-		list *l;
 
 		if (sn->limit >= 0) {
 			(void) sql_error( sql, 01, 
@@ -626,7 +625,6 @@ create_view(mvc * sql, sql_schema * ss, dlist * qname, dlist * column_spec,
 			return NULL;
 
  		subquery = QUERY(sql->scanner) + sql->scanner.as;
- 		l = create_stmt_list();
 		if (column_spec) {
 			dnode *n = column_spec->h;
 			node *m = sq->op1.lval->h;
