@@ -677,9 +677,10 @@ int CMDpersists(BAT **r, BAT *input, bit *param) {
 }
 
 int CMDsetaccess(BAT **r, BAT *input, int *param) {
+	bat oldCacheid = input->batCacheid;
 	*r = BATsetaccess(input, *param);
-	if (*r == input) {
-		BBPfix(input->batCacheid);
+	if ((*r)->batCacheid == oldCacheid) {
+		BBPfix(oldCacheid);
 	}
         return GDK_SUCCEED;
 }
