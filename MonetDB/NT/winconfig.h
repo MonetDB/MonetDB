@@ -461,6 +461,9 @@
 /* The size of a `size_t', as computed by sizeof. */
 #define SIZEOF_SIZE_T 4
 
+/* The size of a `ptrdiff_t', as computed by sizeof. */
+#define SIZEOF_PTRDIFF_T 4
+
 /* The size of a `void *', as computed by sizeof. */
 #define SIZEOF_VOID_P 4
 
