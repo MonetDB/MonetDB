@@ -13,7 +13,7 @@ class sample0
 		System.exit(-1);
 	}
 	int port = (new Integer(args[0])).intValue();
-	System.out.println("Start test on localhost:"+args[0]);
+	System.out.println("# Start test on localhost:"+args[0]);
 	try{
 		mapi.connect("localhost",port,"guest","anonymous","mil");
 	} catch(MapiException e){
