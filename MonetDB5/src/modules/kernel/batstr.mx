@@ -41,9 +41,9 @@ command bytes( s:bat[:void,:str] ) :bat[:void,:int]
 address STRbatBytes
 comment "Return the string length in bytes.";
 
-#command chrAt( s:bat[:void,:str], index:int) :bat[:void,:chr]
-#address STRbatChrAt
-#comment "String array lookup operation.";
+command chrAt( s:bat[:void,:str], index:bat[:void,:int]) :bat[:void,:chr]
+address STRbatChrAt
+comment "String array lookup operation.";
 
 command match(b:bat[:void,:str], pat:str):bat[:void,:bit]
 address STRbatmatchCst
@@ -93,19 +93,19 @@ command +( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:str]
 address STRbatConcat
 comment "Concatenate two strings.";
 
+command string(b:bat[:void,:str],offset:bat[:void,:int]) :bat[:void,:str]
+address STRbatTail
+comment "Return the tail s[offset..n] of a string s[0..n].";
+
+command unicodeAt(s:bat[:void,:str], index:bat[:void,:int]) :bat[:void,:int]
+address STRbatWChrAt
+comment "get a unicode character (as an int) from a string position.";
+
 @-
 not now
 command string(s:bat[:void,:str],offset:int,count:int):bat[:void:str]
 address STRbatSubString
 comment "Return substring s[offset..offset+count] of a string s[0..n]";
-
-command string(b:bat[:void,:str],offset:int) :bat[:void,:str]
-address STRbatTail
-comment "Return the tail s[offset..n] of a string s[0..n].";
-
-command unicodeAt(s:bat[:void,:str], index:int) :bat[:void,:int]
-address STRWbatChrAt
-comment "get a unicode character (as an int) from a string position.";
 
 command unicode(wchar:bat[:void,:int]) :bat[:void,:str]
 address STRbatFromWChr
@@ -128,12 +128,12 @@ comment "Reverse search for a char. Returns position, -1 if not found.";
 command substitute(s:bat[:void,:str],src:bat[:void,:str],dst:bat[:void,:str],rep:bat[:void,:bit]):bat[:void,:str]
 address STRbatSubstitute
 comment "Substitute first occurrence of 'src' by
-    'dst'.  Iff repeated = true this is
-    repeated while 'src' can be found in the
-    result string. In order to prevent
-    recursion and result strings of unlimited
-    size, repeating is only done iff src is
-    not a substring of dst.";
+	'dst'.  Iff repeated = true this is
+	repeated while 'src' can be found in the
+	result string. In order to prevent
+	recursion and result strings of unlimited
+	size, repeating is only done iff src is
+	not a substring of dst.";
 
 @+ Implementation
 @c
@@ -150,43 +150,40 @@ comment "Substitute first occurrence of 'src' by
 #ifdef HAVE_ICONV_H
 #include <iconv.h>
 #endif
-@-
-Let's see how many different versions we need
-@= prepareOperand
-    if( (@1= BATdescriptor(*@2)) == NULL ){
-        return throwMessage("batstr.@3", "Cannot access descriptor");
-    }
-@= prepareOperand2
-    if( (@1= BATdescriptor(*@2)) == NULL ){
-        return throwMessage("batstr.@5", "Cannot access descriptor");
-    }
-    if( (@3= BATdescriptor(*@4)) == NULL ){
-		BBPunfix(@1->batCacheid);
-        return throwMessage("batstr.@5", "Cannot access descriptor");
-    }
-@= prepareResult
-    @1= BATnew(@2->htype,TYPE_@3,BATcount(@2));
-	if( @2->htype== TYPE_void)
-		BATseqbase(@1, @2->hseqbase);
-	@2->hsorted=@1->hsorted;
-    if( @1 == NULL){
-        BBPunfix(@2->batCacheid);
-        return throwMessage("batstr.@4", "no space available ");
-    }
-@= prepareResult2
-    @1= BATnew(@2->htype,TYPE_@4,BATcount(@2));
-	if( @2->htype== TYPE_void)
-		BATseqbase(@1, @2->hseqbase);
-	@2->hsorted=@1->hsorted;
-    if( @1 == NULL){
-        BBPunfix(@2->batCacheid);
-        BBPunfix(@3->batCacheid);
-        return throwMessage("batstr.@5", "no space available ");
-    }
-@= finalizeResult
-    BBPincref(*@1 = @2->batCacheid,TRUE);
-    BBPunfix(*@1);
-    BBPunfix(@3->batCacheid);
+
+#define prepareOperand(X,Y,Z) \
+	if( (X= BATdescriptor(*Y)) == NULL ) \
+	    return throwMessage("batstr." Z, "Cannot access descriptor");
+#define prepareOperand2(X,Y,A,B,Z) \
+	if( (X= BATdescriptor(*Y)) == NULL ) \
+	    return throwMessage("batstr." Z, "Cannot access descriptor"); \
+	if( (A= BATdescriptor(*B)) == NULL ){\
+		BBPunfix(X->batCacheid); \
+	    return throwMessage("batstr."Z, "Cannot access descriptor"); \
+	}
+#define prepareResult(X,Y,T,Z) \
+	X= BATnew(Y->htype,T,BATcount(Y)); \
+	if( Y->htype== TYPE_void) \
+		BATseqbase(X, Y->hseqbase); \
+	Y->hsorted=X->hsorted; \
+	if( X == NULL){ \
+	    BBPunfix(Y->batCacheid); \
+	    return throwMessage("batstr." Z, "no space available "); \
+	}
+#define prepareResult2(X,Y,A,T,Z) \
+	X= BATnew(Y->htype,T,BATcount(Y)); \
+	if( Y->htype== TYPE_void) \
+		BATseqbase(X, Y->hseqbase); \
+	Y->hsorted=X->hsorted; \
+	if( X == NULL){ \
+	    BBPunfix(Y->batCacheid); \
+	    BBPunfix(A->batCacheid); \
+	    return throwMessage("batstr." Z, "no space available "); \
+	}
+#define finalizeResult(X,Y,Z) \
+	BBPincref(*X = Y->batCacheid,TRUE);\
+	BBPunfix(*X);\
+	BBPunfix(Z->batCacheid);
 @= BATint
 str STRbat@1(int *ret, int *l)
 {   BAT *bn, *b;
@@ -195,23 +192,23 @@ str STRbat@1(int *ret, int *l)
 	@3 x;
 	int y, *yp = &y;
 
-	@:prepareOperand(b,l,@1)@
-	@:prepareResult(bn,b,int,@1)@
+	prepareOperand(b,l,"@1");
+	prepareResult(bn,b,TYPE_int,"@1");
 
-    BATloopFast(b, p, q, xx) {
-        ptr h = BUNhead(b,p);
-        x= (@3) BUNtail(b,p);
+	BATloopFast(b, p, q, xx) {
+	    ptr h = BUNhead(b,p);
+	    x= (@3) BUNtail(b,p);
 		if(x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
 			y= int_nil;
 		else @2(yp,x);
-        bunfastins(bn, h, yp);
-    }
-	@:finalizeResult(ret,bn,b);
-    return MAL_SUCCEED;
+	    bunfastins(bn, h, yp);
+	}
+	finalizeResult(ret,bn,b);
+	return MAL_SUCCEED;
 bunins_failed:
-    BBPunfix(b->batCacheid);
-    BBPunfix(bn->batCacheid);
-    return throwMessage("batstr.==", "bunins failed");
+	BBPunfix(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	return throwMessage("batstr.==", "bunins failed");
 }
 
 @c
@@ -225,23 +222,23 @@ str STRbat@1(int *ret, int *l)
 	@3 x;
 	@4 y, *yp = &y;
 
-	@:prepareOperand(b,l,@1)@
-	@:prepareResult(bn,b,@4,@1)@
+	prepareOperand(b,l,"@1");
+	prepareResult(bn,b,TYPE_@4,"@1");
 
-    BATloopFast(b, p, q, xx) {
-        ptr h = BUNhead(b,p);
-        x= (@3) BUNtail(b,p);
+	BATloopFast(b, p, q, xx) {
+	    ptr h = BUNhead(b,p);
+	    x= (@3) BUNtail(b,p);
 		if(x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
 			y= @4_nil;
 		else @2(yp,x);
-        bunfastins(bn, h, *yp);
-    }
-	@:finalizeResult(ret,bn,b);
-    return MAL_SUCCEED;
+	    bunfastins(bn, h, *yp);
+	}
+	finalizeResult(ret,bn,b);
+	return MAL_SUCCEED;
 bunins_failed:
-    BBPunfix(b->batCacheid);
-    BBPunfix(bn->batCacheid);
-    return throwMessage("batstr.==", "bunins failed");
+	BBPunfix(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	return throwMessage("batstr.==", "bunins failed");
 }
 @c
 	@:BATstr(Lower,strLower,str,str)@
@@ -249,9 +246,6 @@ bunins_failed:
 	@:BATstr(Strip,strStrip,str,str)@
 	@:BATstr(Ltrim,strLtrim,str,str)@
 	@:BATstr(Rtrim,strRtrim,str,str)@
-@-
-	@:BATstr(unicode,strFromWChr,str,int)@
-	@:BATstr(charAt,strChrAt,str,chr)@
 @-
 @c
 str STRbatEqualCst(int *ret, int *l,str *cst)
@@ -261,22 +255,22 @@ str STRbatEqualCst(int *ret, int *l,str *cst)
 	str x;
 	bit y;
 
-	@:prepareOperand(b,l,==)@
-	@:prepareResult(bn,b,bit,==)@
-    BATloopFast(b, p, q, xx) {
-        ptr h = BUNhead(b,p);
-        x= (str) BUNtail(b,p);
+	prepareOperand(b,l,"==");
+	prepareResult(bn,b,TYPE_bit,"==");
+	BATloopFast(b, p, q, xx) {
+	    ptr h = BUNhead(b,p);
+	    x= (str) BUNtail(b,p);
 		if(x== 0 || *x == 0 || strcmp(x,str_nil)== 0)
 			y= bit_nil;
 		else y= strcmp(x,*cst)==0;
-        bunfastins(bn, h, &y);
-    }
-	@:finalizeResult(ret,bn,b);
-    return MAL_SUCCEED;
+	    bunfastins(bn, h, &y);
+	}
+	finalizeResult(ret,bn,b);
+	return MAL_SUCCEED;
 bunins_failed:
-    BBPunfix(b->batCacheid);
-    BBPunfix(bn->batCacheid);
-    return throwMessage("batstr.==", "bunins failed");
+	BBPunfix(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	return throwMessage("batstr.==", "bunins failed");
 }
 @-
 A general assumption in all cases is the bats are synchronized on their
@@ -291,35 +285,35 @@ str STRbatEqual(int *ret, int *l, int *r)
 	BUN o,p,q;
 	int xx,yy;
 
-	@:prepareOperand2(left,l,right,r,==)@
+	prepareOperand2(left,l,right,r,"==");
 	@:chkSize(left,right,CMDcompare@1)@
-	@:prepareResult2(bn,left,right,bit,==)@
+	prepareResult2(bn,left,right,TYPE_bit,"==");
 
-    o = BUNfirst(left);
-    p = BUNfirst(right);
-    q = BUNlast(right);
-    xx = BUNsize(left);
-    yy = BUNsize(right);
-    while(p<q) {
+	o = BUNfirst(left);
+	p = BUNfirst(right);
+	q = BUNlast(right);
+	xx = BUNsize(left);
+	yy = BUNsize(right);
+	while(p<q) {
 		bit y = TRUE;
-        ptr h = BUNhead(left,o);
-        ptr tl = BUNtail(left,o);
-        ptr tr = BUNtail(right,p);
+	    ptr h = BUNhead(left,o);
+	    ptr tl = BUNtail(left,o);
+	    ptr tr = BUNtail(right,p);
 	if(tl == 0 || tr == 0 || strcmp(tl,tr) != 0)
 		y = FALSE;
-        bunfastins(bn, h, &y);
+	    bunfastins(bn, h, &y);
 	o += xx;
 	p += yy;
-    }
-    BBPunfix(right->batCacheid);
-	@:finalizeResult(ret,bn,left)@
-    return MAL_SUCCEED;
+	}
+	BBPunfix(right->batCacheid);
+	finalizeResult(ret,bn,left);
+	return MAL_SUCCEED;
 
 bunins_failed:
-    BBPunfix(left->batCacheid);
-    BBPunfix(right->batCacheid);
-    BBPunfix(*ret);
-    return throwMessage("batstr.==", "bunins failed");
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
+	BBPunfix(*ret);
+	return throwMessage("batstr.==", "bunins failed");
 }
 @= binarySTR
 str STRbat@1(int *ret, int *l, int *r)
@@ -328,107 +322,104 @@ str STRbat@1(int *ret, int *l, int *r)
 	int xx,yy;
 	@2 v, *vp= &v;
 
-	@:prepareOperand2(left,l,right,r,==)@
+	prepareOperand2(left,l,right,r,@4);
 	@:chkSize(left,right,CMDcompare@1)@
-	@:prepareResult2(bn,left,right,@2,==)@
+	prepareResult2(bn,left,right,TYPE_@2,@4);
 
-    o = BUNfirst(left);
-    p = BUNfirst(right);
-    q = BUNlast(right);
-    xx = BUNsize(left);
-    yy = BUNsize(right);
-    while(p<q) {
-        ptr h = BUNhead(left,o);
-        ptr tl = BUNtail(left,o);
-        ptr tr = BUNtail(right,p);
+	o = BUNfirst(left);
+	p = BUNfirst(right);
+	q = BUNlast(right);
+	xx = BUNsize(left);
+	yy = BUNsize(right);
+	while(p<q) {
+	    ptr h = BUNhead(left,o);
+	    ptr tl = BUNtail(left,o);
+	    ptr tr = BUNtail(right,p);
 		@3(vp, tl, tr);
 		bunfastins(bn, h, vp);
 		o += xx;
 		p += yy;
-    }
-    BBPunfix(right->batCacheid);
-	@:finalizeResult(ret,bn,left)@
-    return MAL_SUCCEED;
+	}
+	BBPunfix(right->batCacheid);
+	finalizeResult(ret,bn,left);
+	return MAL_SUCCEED;
 
 bunins_failed:
-    BBPunfix(left->batCacheid);
-    BBPunfix(right->batCacheid);
-    BBPunfix(*ret);
-    return throwMessage("batstr.==", "bunins failed");
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
+	BBPunfix(*ret);
+	return throwMessage("batstr.==", "bunins failed");
 }
-@= binarySTRchrint
-str STRbat@1(int *ret, int *l, int *r)
-{   BAT *bn, *left, *right;
-	BUN o,p,q;
-	int xx,yy;
+@= binarySTRint
+str STRbat@1(int *ret, int *l, int *cst)
+{   BAT *bn, *left;
+	BUN p,q;
+	int xx;
 	@2 v, *vp= &v;
 
-	@:prepareOperand2(left,l,right,r,==)@
-	@:chkSize(left,right,CMDcompare@1)@
-	@:prepareResult2(bn,left,right,@2,==)@
+	prepareOperand(left,l,@4);
+	prepareResult(bn,left,TYPE_@2,@4);
 
-    o = BUNfirst(left);
-    p = BUNfirst(right);
-    q = BUNlast(right);
-    xx = BUNsize(left);
-    yy = BUNsize(right);
-    while(p<q) {
-        ptr h = BUNhead(left,o);
-        ptr tl = BUNtail(left,o);
-        ptr tr = BUNtail(right,p);
-		@3(vp, tl, tr);
+	p = BUNfirst(left);
+	q = BUNlast(left);
+	xx = BUNsize(left);
+	while(p<q) {
+	    ptr h = BUNhead(left,p);
+	    ptr tl = BUNtail(left,p);
+		@3(vp, tl, cst);
 		bunfastins(bn, h, vp);
-		o += xx;
-		p += yy;
-    }
-    BBPunfix(right->batCacheid);
-	@:finalizeResult(ret,bn,left)@
-    return MAL_SUCCEED;
+		p += xx;
+	}
+	finalizeResult(ret,bn,left);
+	return MAL_SUCCEED;
 
 bunins_failed:
-    BBPunfix(left->batCacheid);
-    BBPunfix(right->batCacheid);
-    BBPunfix(*ret);
-    return throwMessage("batstr.==", "bunins failed");
+	BBPunfix(left->batCacheid);
+	BBPunfix(*ret);
+	return throwMessage("batstr.==", "bunins failed");
 }
 @c
-	@:binarySTR(Prefix,bit, strPrefix)@
-	@:binarySTR(Suffix,bit, strSuffix)@
-	@:binarySTR(strSearch,int, strStrSearch)@
-	@:binarySTR(RstrSearch,int, strReverseStrSearch)@
+	@:binarySTR(Prefix,bit, strPrefix,"prefix")@
+	@:binarySTR(Suffix,bit, strSuffix,"suffix")@
+	@:binarySTR(strSearch,int, strStrSearch,"search")@
+	@:binarySTR(RstrSearch,int, strReverseStrSearch,"r_search")@
+	@:binarySTRint(Tail,str,strTail,"tail")@
+@-
+	@:binarySTRint(ChrAt,int,strChrAt,"chrAt")@
+
 str STRbatConcat(int *ret, int *l, int *r)
 {   BAT *bn, *left, *right;
 	BUN o,p,q;
 	int xx,yy;
 	str v, *vp= &v;
 
-	@:prepareOperand2(left,l,right,r,+)@
+	prepareOperand2(left,l,right,r,"+");
 	@:chkSize(left,right,STRconcat)@
-	@:prepareResult2(bn,left,right,str,+)@
+	prepareResult2(bn,left,right,TYPE_str,"+");
 
-    o = BUNfirst(left);
-    p = BUNfirst(right);
-    q = BUNlast(right);
-    xx = BUNsize(left);
-    yy = BUNsize(right);
-    while(p<q) {
-        ptr h = BUNhead(left,o);
-        ptr tl = BUNtail(left,o);
-        ptr tr = BUNtail(right,p);
+	o = BUNfirst(left);
+	p = BUNfirst(right);
+	q = BUNlast(right);
+	xx = BUNsize(left);
+	yy = BUNsize(right);
+	while(p<q) {
+	    ptr h = BUNhead(left,o);
+	    ptr tl = BUNtail(left,o);
+	    ptr tr = BUNtail(right,p);
 		strConcat(vp, tl, tr, TYPE_str);
 		bunfastins(bn, h, v);
 		o += xx;
 		p += yy;
-    }
-    BBPunfix(right->batCacheid);
-	@:finalizeResult(ret,bn,left)@
-    return MAL_SUCCEED;
+	}
+	BBPunfix(right->batCacheid);
+	finalizeResult(ret,bn,left);
+	return MAL_SUCCEED;
 
 bunins_failed:
-    BBPunfix(left->batCacheid);
-    BBPunfix(right->batCacheid);
-    BBPunfix(*ret);
-    return throwMessage("batstr.==", "bunins failed");
+	BBPunfix(right->batCacheid);
+	BBPunfix(left->batCacheid);
+	BBPunfix(*ret);
+	return throwMessage("batstr.==", "bunins failed");
 }
 
 str
@@ -448,9 +439,7 @@ str STRbatmatchCst(int  *ret, int *bid, str *pat){
 		return throwMessage("str.match",
 				"Compilation of regular expression failed");
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("batstr.match", "Cannot access descriptor");
-    }
+	prepareOperand(b,bid,"match");
 	bn= BATnew(BAThtype(b), TYPE_bit, BATcount(b));
 
 	tpe= BATttype(b);

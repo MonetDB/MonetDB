@@ -316,7 +316,7 @@ MAPIlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	SOCKLEN length = 0;
 	int on = 1;
 	int i = 0;
-	int pid;
+	int pid, *pidp= &pid;
 	int port;
 	int maxusers;
 	char msg[512], *cmd, *usockfile, host[512];
@@ -399,7 +399,7 @@ Get the new information for the server socket and start listening.
 	threadcommand= cmd;
 	*Sock = sock;
 
-	if( MT_create_thread((MT_Id *)&pid,
+	if( MT_create_thread((MT_Id *)pidp,
 			(void (*)(void *))MAPIlistenThread, Sock) <0){
 			return throwMessage("mapi.listen", "starting thread failed");
 	}
