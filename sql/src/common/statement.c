@@ -972,7 +972,7 @@ stmt *stmt_dup( stmt * s)
 
 stmt *stmt_push_down_head(stmt * join, stmt * select){
 	if (join->type == st_join){
-		stmt *op1 = stmt_semijoin( stmt_dup( join->op1.stval) ,select);
+		stmt *op1 = stmt_semijoin( stmt_dup(join->op1.stval) ,select);
 		stmt *res = stmt_join(op1, stmt_dup(join->op2.stval) , join->flag);
 		stmt_destroy(join);
 		return res;

@@ -1022,12 +1022,10 @@ static list *push_selects_down(list * con){
 		list_destroy(ejoins);
 
 		if (hsel){
-			stmt *njoin = stmt_push_down_head(join, hsel->data);
-			join = njoin;
+			join = stmt_push_down_head(join, stmt_dup(hsel->data));
 		}
 		if (tsel){
-			stmt *njoin = stmt_push_down_tail(join, tsel->data);
-			join = njoin;
+			join = stmt_push_down_tail(join, stmt_dup(tsel->data));
 		}
 		list_append(res, join);
 	}
@@ -1187,6 +1185,8 @@ static stmt *set2pivot(context * sql, list * l)
 	n = list_find(l, (void*)join, data_cmp);
 	stmt_destroy(join);
 	if (!n) {
+		list_destroy(l);
+		list_destroy(pivots);
 		return sql_error(sql, 02, "Semantically incorrect query, unrelated tables");
 	}
 	st = n->data;
@@ -2464,7 +2464,6 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 					cur = stmt_dup(tmp);
 				/* add join to an allready used column */
 				} else {	
-					printf("missing table %s\n", cv->tname );
 					tmp = stmt_join(stmt_dup(cur),
 						stmt_reverse(tmp), cmp_all);
 				}

@@ -188,8 +188,7 @@ void *list_reduce(list * l, freduce red, fdup dup )
 	if (n)
 		res = dup(n->data);
        	for ( n = n->next ; n; n = n->next){
-		void *nw = red(res, dup(n->data));
-		res = nw;
+		res = red(res, dup(n->data));
 	}
 	return res;
 }
