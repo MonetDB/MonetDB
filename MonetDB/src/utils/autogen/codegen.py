@@ -78,7 +78,7 @@ code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
 	    'i':	[ '_wrap.c' ],
 	    'glue.c': 	[ '.glue.o' ],
 	    'fgr':     [ '_engine.c', '_proto.h' ],
-	    'class':   [ '.java' ],
+	    'java':   [ '.class' ],
 	    'mx.in':	[ '.mx' ]
 }
 
