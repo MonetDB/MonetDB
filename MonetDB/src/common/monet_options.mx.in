@@ -13,6 +13,11 @@ file, special config file or command line option).
 #define _MO_H_
 
 #include "monet_utils.h"
+#ifndef HAVE_GETOPT_LONG 
+#  include "monet_getopt.h"
+#else
+#  include "getopt.h"
+#endif
 
 typedef enum opt_kind
 {
@@ -32,6 +37,7 @@ typedef struct opt
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /* mo_print_options will print the option set on stderr */
 mutils_export void mo_print_options(opt *set, int setlen);
 
