@@ -21,7 +21,7 @@ SQLRETURN SQLDisconnect( SQLHDBC    hDrvDbc )
     if( NULL == hDbc )
         return SQL_INVALID_HANDLE;
 
-	sprintf( hDbc->szSqlMsg, "hDbc = $%08lX", hDbc );
+	sprintf( hDbc->szSqlMsg, "hDbc = $%08X", hDbc );
     logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hDbc->szSqlMsg );
 
     if( hDbc->bConnected == 0 )
@@ -39,6 +39,23 @@ SQLRETURN SQLDisconnect( SQLHDBC    hDrvDbc )
     /****************************
      * 1. do driver specific close here
      ****************************/
+    { 
+	int flag = 0;
+	stream *rs = hDbc->hDbcExtras->rs;
+      	context *sql = &hDbc->hDbcExtras->lc;
+	char eot = EOT;
+
+	sql->out->write( sql->out, &eot, 1, 1 );
+	sql->out->flush( sql->out );
+
+	if (rs->readInt(rs, &flag)){
+		/* todo check if flag == COMM_DONE */
+		printf("flag %d\n", flag );
+	}
+    	rs->close(rs);
+    	rs->destroy(rs);
+    }
+    sql_exit_context( &hDbc->hDbcExtras->lc );
     hDbc->bConnected 		= 0;
 
     logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_INFO, LOG_INFO, "SQL_SUCCESS" );

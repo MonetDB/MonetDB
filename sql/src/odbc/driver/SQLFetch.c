@@ -51,11 +51,12 @@ SQLRETURN SQLFetch( SQLHSTMT  hDrvStmt)
 		if ( pColumnHeader->pTargetValue != NULL )
 		{
 			if ( _GetData(	hDrvStmt,
-								nColumn,
-								pColumnHeader->nTargetType,
-								pColumnHeader->pTargetValue,
-								pColumnHeader->nTargetValueMax,
-								pColumnHeader->pnLengthOrIndicator ) != SQL_SUCCESS )
+					nColumn,
+					pColumnHeader->nTargetType,
+					pColumnHeader->pTargetValue,
+					pColumnHeader->nTargetValueMax,
+					pColumnHeader->pnLengthOrIndicator ) 
+				!= SQL_SUCCESS )
 			{
 				sprintf( hStmt->szSqlMsg, "SQL_ERROR Failed to get data for column %d", nColumn );
 				logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hStmt->szSqlMsg );

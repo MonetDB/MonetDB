@@ -12,23 +12,23 @@
 
 #include "driver.h"
 
-extern statement *sqlexecute( context *, char *);
+extern stmt *sqlexecute( context *, char *);
 
-#define CHUNK (64*1024)
+char *receive( stream *rs ){
+	char *buf = NULL;
+	int flag = 0;
+	if (rs->readInt(rs, &flag) && flag != COMM_DONE){
+		int size = BLOCK+1, nr, last = 0;
 
-static char *readblock( stream *s ){
-	int len = 0;
-	int size = CHUNK + 1;
-	char *buf = NEW_ARRAY(char, size ), *start = buf;
-
-	while ((len = s->read(s, start, 1, CHUNK)) == CHUNK){
-		size += CHUNK;
-		buf = RENEW_ARRAY(char, buf, size); 
-		start = buf + size - CHUNK - 1;
-		*start = '\0';
+		buf = malloc(size);
+	        nr = bs_read_next(rs,buf,&last);
+		while(!last){
+			buf = realloc(buf,size+BLOCK);
+			nr = bs_read_next(rs,buf,&last);
+		}
+	} else if (flag != COMM_DONE){
+		printf("flag %d\n", flag);
 	}
-	start += len;
-	*start = '\0';
 	return buf;
 }
 
@@ -40,7 +40,7 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 	int			nCols = 0;
 	int			nRows = 0;
 	COLUMNHDR	*pColumnHeader;			
-	statement *res = NULL;
+	stmt *res = NULL;
 	context *sql;
 	stream *rs;
 
@@ -48,7 +48,7 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
     if( NULL == hStmt )
         return SQL_INVALID_HANDLE;
 
-	sprintf( (char*)hStmt->szSqlMsg, "hStmt = $%08lX", hStmt );
+	sprintf( (char*)hStmt->szSqlMsg, "hStmt = $%08lX", (long)hStmt );
     logPushMsg( hStmt->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hStmt->szSqlMsg );
 
     if( hStmt->pszQuery == NULL )
@@ -70,14 +70,11 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 	 * send prepared query to server
      **************************/
 
-	res =  sqlexecute( 
-			&((DRVDBC*)hStmt->hDbc)->hDbcExtras->lc,
-			(char*)hStmt->pszQuery
-		); 
+	res =  sqlexecute( sql, (char*)hStmt->pszQuery); 
 
 	if (res){
 	    int nr = 1;
-	    statement_dump( res, &nr, sql );
+	    stmt_dump( res, &nr, sql );
 
 	    sql->out->flush( sql->out );
 	}
@@ -91,11 +88,10 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 		nCols = list_length(res->op1.lval);
 		hStmt->hStmtExtras->nCols = nCols;
 	}
-	if (res && res->type == st_output){
+	if (res && res->type == st_output){ 
 		list *l;
 		node *n;
-
-		char *buf = readblock( rs ), *start = buf, *m = buf;
+		char *buf = receive( rs ), *start = buf, *m = buf;
 
 		if (res->op1.stval->type == st_order){
 			l = res->op2.stval->op1.lval;
@@ -103,35 +99,37 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 			l = res->op1.stval->op1.lval;
 		}
 
-		n = l->h;
-
 		nRows = strtol(m,&m,10);
+		n = l->h;
 		m++;
-
-		hStmt->hStmtExtras->nRows = nRows; 
-
-		nCols = list_length(l);
+		hStmt->hStmtExtras->nRows = nRows;
+		nCols = list_length(l); 
+		printf("nRows %d, nCols %d\n", nRows, nCols );
 		hStmt->hStmtExtras->aResults = NEW_ARRAY(char*,(nCols+1)*(nRows+1));
 		hStmt->hStmtExtras->nCols = nCols;
 		for( nColumn = 1; nColumn <= nCols; nColumn++){
-			column *col = head_column(n->data.stval);
+			stmt *cs = tail_column(n->data);
 			COLUMNHDR* cHdr = NEW(COLUMNHDR);
+			memset(cHdr,0,sizeof(cHdr));
 			(hStmt->hStmtExtras->aResults[nColumn]) = (char*)cHdr;
-			cHdr->pszSQL_DESC_BASE_COLUMN_NAME = strdup("no colname jet");
-			cHdr->pszSQL_DESC_BASE_TABLE_NAME = strdup("table name");
+			if (cs){
+				column *col = cs->op1.cval;
+				cHdr->pszSQL_DESC_BASE_COLUMN_NAME = strdup(col->name);
+				cHdr->pszSQL_DESC_BASE_TABLE_NAME = strdup(col->table->name);
+				cHdr->pszSQL_DESC_TYPE_NAME = strdup(col->tpe->sqlname);
+				cHdr->pszSQL_DESC_LOCAL_TYPE_NAME = strdup(col->tpe->name);
+				printf("column %s %s\n", cHdr->pszSQL_DESC_BASE_COLUMN_NAME, cHdr->pszSQL_DESC_TYPE_NAME);
+			}
+			cHdr->pszSQL_DESC_LABEL = strdup(column_name(n->data));
 			cHdr->pszSQL_DESC_CATALOG_NAME = strdup("catalog");
-			cHdr->pszSQL_DESC_LABEL = strdup(column_name(n->data.stval));
 			cHdr->pszSQL_DESC_LITERAL_PREFIX = strdup("pre");
 			cHdr->pszSQL_DESC_LITERAL_SUFFIX = strdup("suf");
-			cHdr->pszSQL_DESC_LOCAL_TYPE_NAME = strdup("str");
 			cHdr->pszSQL_DESC_NAME = strdup("name");
 			cHdr->pszSQL_DESC_SCHEMA_NAME = strdup("schema");
 			cHdr->pszSQL_DESC_TABLE_NAME = strdup("table");
-			cHdr->pszSQL_DESC_TYPE_NAME = strdup("str");
 			n = n->next;
 		}
 
-		start = buf;
 	        for( nRow = 1; nRow <= nRows; nRow++){
 	 	 for( nColumn = 1; nColumn <= nCols; nColumn++){
 		  start = m;
@@ -149,7 +147,7 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 		}
 		_DELETE(buf);
 	}
-	if (res) statement_destroy(res);
+	if (res) stmt_destroy(res);
 
     /**************************
 	 * gather column header information (save col 0 for bookmarks)

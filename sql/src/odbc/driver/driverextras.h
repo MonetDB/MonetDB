@@ -1,4 +1,4 @@
-#include <stream.h>
+#include "comm.h"
 #include <context.h>
 #include <statement.h>
 #include <mem.h>
@@ -89,6 +89,7 @@ typedef struct tDBCEXTRAS
     int     fd;
     stream *rs;
     context lc;
+    int  cursorinfo; /* direction etc */
 
 } DBCEXTRAS, *HDBCEXTRAS;
 

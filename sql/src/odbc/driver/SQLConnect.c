@@ -22,10 +22,13 @@ SQLRETURN SQLConnect(	SQLHDBC        hDrvDbc,
 						SQLSMALLINT    nPWDLength
                           )
 {
-	int debug = 0, fd = 0;
-	stream *out = NULL;
+	char buf[BUFSIZ];
+	int i, debug = 0, fd = 0;
+	stream *ws = NULL;
 	HDRVDBC 	hDbc	= (HDRVDBC)hDrvDbc;
     char    	szDATABASE[INI_MAX_PROPERTY_VALUE+1];
+    char    	szUSER[INI_MAX_PROPERTY_VALUE+1];
+    char    	szPASSWD[INI_MAX_PROPERTY_VALUE+1];
     char    	szHOST[INI_MAX_PROPERTY_VALUE+1];
     char    	szPORT[INI_MAX_PROPERTY_VALUE+1];
     char    	szFLAG[INI_MAX_PROPERTY_VALUE+1];
@@ -35,7 +38,7 @@ SQLRETURN SQLConnect(	SQLHDBC        hDrvDbc,
     if( SQL_NULL_HDBC == hDbc )
 		return SQL_INVALID_HANDLE;
 
-	sprintf( hDbc->szSqlMsg, "hDbc=$%08lX 3zDataSource=(%s)", hDbc, szDataSource );
+	sprintf( hDbc->szSqlMsg, "hDbc=$%08lX 3zDataSource=(%s)", (long)hDbc, szDataSource );
 	logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hDbc->szSqlMsg );
 
     if( hDbc->bConnected == 1 )
@@ -67,6 +70,8 @@ SQLRETURN SQLConnect(	SQLHDBC        hDrvDbc,
 	 * - HOST (localhost assumed if not supplied)
      ********************/
     szDATABASE[0] 		= '\0';
+    szUSER[0] 			= '\0';
+    szPASSWD[0] 		= '\0';
     szHOST[0] 			= '\0';
     szPORT[0] 			= '\0';
     szFLAG[0] 			= '\0';
@@ -77,6 +82,8 @@ SQLRETURN SQLConnect(	SQLHDBC        hDrvDbc,
 		logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_WARNING, LOG_WARNING, hDbc->szSqlMsg );
 		return SQL_ERROR;
 	}
+	SQLGetPrivateProfileString( szDataSource, "USER", "sqladmin", szUSER, sizeof(szUSER), "odbc.ini" );
+	SQLGetPrivateProfileString( szDataSource, "PASSWORD", "", szPASSWD, sizeof(szPASSWD), "odbc.ini" );
 	SQLGetPrivateProfileString( szDataSource, "HOST", "localhost", szHOST, sizeof(szHOST), "odbc.ini" );
 	SQLGetPrivateProfileString( szDataSource, "PORT", "0", szPORT, sizeof(szPORT), "odbc.ini" );
 	SQLGetPrivateProfileString( szDataSource, "FLAG", "0", szFLAG, sizeof(szFLAG), "odbc.ini" );
@@ -90,19 +97,43 @@ SQLRETURN SQLConnect(	SQLHDBC        hDrvDbc,
      *      hDbc->bConnected = TRUE;
      ********************/
 
+	/*
+    mtrace();
+    */
+
 	debug = atoi(szFLAG);
 
 	fd = client( szHOST, atoi(szPORT) );
 	hDbc->hDbcExtras->fd = fd;
+	hDbc->hDbcExtras->cursorinfo = SQL_FD_FETCH_NEXT;
 	hDbc->hDbcExtras->rs = block_stream(
-			socket_rstream( fd, "sql client read"));
-	out = block_stream(socket_wstream( fd, "sql client write")); 
+				socket_rstream( fd, "sql client read"));
+	ws = block_stream( socket_wstream( fd, "sql client write")); 
 	lc = &hDbc->hDbcExtras->lc;
-	sql_init_context( lc, out, debug, default_catalog_create() );
+
+	i = snprintf(buf, BUFSIZ, "info(\"%s\", %d, %d);\n", szUSER, debug, 1);
+	ws->write( ws, buf, i, 1 );
+	ws->flush( ws );
+
+	i = snprintf(buf, BUFSIZ, "milsql();\n" );
+	ws->write( ws, buf, i, 1 );
+	ws->flush( ws );
+
+	i = snprintf(buf, BUFSIZ, "myc := mvc_create(%d);\n", debug );
+	ws->write( ws, buf, i, 1 );
+	ws->flush( ws );
+
+	i = snprintf(buf, BUFSIZ, "mvc_login(myc, \"%s\",\"%s\",\"%s\");\n",
+				szDATABASE, szUSER, szPASSWD );
+	ws->write( ws, buf, i, 1 );
+	ws->flush( ws );
+
+	memset(lc, 0, sizeof(context));
+	sql_init_context( lc, ws, debug, default_catalog_create() );
 	catalog_create_stream( hDbc->hDbcExtras->rs, lc );
+
 	lc->cat->cc_getschema( lc->cat, szDATABASE, "default-user" );
 
-	printf("catalog created\n");
 	if (hDbc->hDbcExtras->rs->errnr || lc->out->errnr){
 		printf("sockets not opened correctly\n");
 		exit(1);
