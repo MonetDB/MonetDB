@@ -495,9 +495,6 @@ coordination).
 @-
 @{
 @= runPhase
-#ifdef MAL_SCENARIO_DEBUG
-    stream_printf(GDKout,"start @1\n");
-#endif
     if(msg== MAL_SUCCEED && c->phase[@1] && (msg= (str) (*c->phase[@1])(c)) ){
         /* error occurred */
 #ifdef MAL_SCENARIO_DEBUG

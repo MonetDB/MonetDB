@@ -106,6 +106,33 @@ state until we are finished.
 The script being read my contain errors, such as non-balanced
 brackets as indicated by blkmode.
 It should be reset before continuing.
+@-
+@= restoreClient1
+    c->fdin = oldfdin; 
+    c->yycur = oldyycur; 
+    c->listing = oldlisting;
+    c->mode = oldmode;
+    c->blkmode = oldblkmode;
+	c->bak = oldbak;
+	/* if(c->prompt) GDKfree(c->prompt); careful, avoid double */
+    c->prompt = oldprompt;
+	c->promptlength= strlen(c->prompt);
+@= restoreClient2
+    c->glb = oldglb;
+    c->nspace = oldnspace;
+    c->curprg = oldprg;
+@= restoreClient
+	@:restoreClient1()@
+	@:restoreClient2()@
+@= runPhase
+    if(msg== MAL_SUCCEED && c->phase[@1] && (msg= (str) (*c->phase[@1])(c)) ){
+        /* error occurred */
+		stream_printf(GDKout,"%s",msg);
+        GDKfree(msg); msg=0;
+        @:@1()@
+		return;
+    }
+
 @c
 void 
 malInclude(Client c, str name, str libname, int listing)
@@ -145,8 +172,23 @@ resolving addresses.
 			runScenario(c);
 		}
     } else {
+		str msg=MAL_SUCCEED;
 		initClientPrg(c, "main"); /* create new context */
-    	runScenario(c);
+		@:runPhase(READER,restoreClient1)@
+		@:runPhase(PARSER,restoreClient1)@
+		/* restore IO channel */
+		if (c->fdin){
+            (void) stream_close(c->fdin->s);
+            (void) stream_destroy(c->fdin->s);
+            (void) bstream_destroy(c->fdin);
+		}
+		@:restoreClient1()@
+		@:runPhase(OPTIMIZE,restoreClient2)@
+		@:runPhase(SCHEDULER,restoreClient2)@
+		@:runPhase(ENGINE,restoreClient2)@
+		@:restoreClient2()@
+		return;
+    	/*runScenario(c);*/
     }
 
     if (c->fdin){
@@ -155,19 +197,7 @@ resolving addresses.
             (void) bstream_destroy(c->fdin);
     }
 
-    c->fdin = oldfdin; 
-    c->yycur = oldyycur; 
-    c->listing = oldlisting;
-    c->mode = oldmode;
-    c->blkmode = oldblkmode;
-	if (c->prompt)
-		GDKfree(c->prompt);
-    c->prompt = oldprompt;
-	c->promptlength= strlen(c->prompt);
-    c->glb = oldglb;
-    c->nspace = oldnspace;
-    c->curprg = oldprg;
-	c->bak = oldbak;
+	@:restoreClient()@
 }
 @+ File and input processing
 A recurring situation is to execute a stream of simple MAL instructions
@@ -186,29 +216,7 @@ Running looks much like an Import operation, except for the execution
 phase. This is performed in the context of an a priori defined
 stack frame. Life becomes a little complicated when the script contains
 a definition.
-
 @c
-/* Old version
-void callString(Client c, str s, int listing)
-{
-	int len = strlen(s);
-	buffer *b;
-	
-	b = (buffer*)GDKmalloc(sizeof(buffer));
-	if (s[len-1] != '\n') {
-		char *n = GDKmalloc(len + 1 + 1);
-		strncpy(n, s, len);
-		n[len] = '\n';
-		n[len+1] = 0;
-		s = n;
-		len++;
-	}
-	buffer_init(b, s, len ); 
-	pushClientInput(c, 
-		bstream_create( buffer_rastream(b, "callString"), b->len ),
-		listing, "");
-}
-*/
 void callString(Client c, str s, int listing)
 {
     bstream *oldfdin = c->fdin;
@@ -218,12 +226,12 @@ void callString(Client c, str s, int listing)
     int oldblkmode = c->blkmode;
     str oldprompt = c->prompt;
 	ClientInput *oldbak = c->bak;
-
 	Scope oldnspace = c->nspace;
     Symbol oldprg = c->curprg;
     MalStkPtr oldglb = c->glb;
 	int len = strlen(s);
 	buffer *b;
+	str msg= MAL_SUCCEED;
 	
 	c->yycur = 0;
     c->prompt = GDKstrdup(""); /* do not produce visible prompts */
@@ -245,24 +253,15 @@ void callString(Client c, str s, int listing)
 	pushClientInput(c, 
 		bstream_create( buffer_rastream(b, "callString"), b->len ),
 		listing, "");
-
-@-
-We have saved the context and parsed the result.
-Now we can execute the program using a separated client.
-@c
 	initClientPrg(c, "main"); /* create new context */
-	runScenarioBody(c);
-
-    c->fdin = oldfdin; 
-    c->yycur = oldyycur; 
-    c->listing = oldlisting;
-    c->mode = oldmode;
-    c->blkmode = oldblkmode;
-    c->prompt = oldprompt;
-	c->promptlength= strlen(c->prompt);
-    c->glb = oldglb;
-    c->nspace = oldnspace;
-    c->curprg = oldprg;
-	c->bak = oldbak;
+	@:runPhase(READER,restoreClient1)@
+	@:runPhase(PARSER,restoreClient1)@
+	/* restore IO channel */
+	@:restoreClient1()@
+	@:runPhase(OPTIMIZE,restoreClient2)@
+	@:runPhase(SCHEDULER,restoreClient2)@
+	@:runPhase(ENGINE,restoreClient2)@
+	@:restoreClient2()@
 }
+
 @}

@@ -144,6 +144,7 @@ from a particular client. This facility is used by Mapi to trace
 the interaction on the system console (sysmon). 
 @h
     bstream  *fdin;
+	bstream	 *console;	/* always available for reading */
     int      yycur;		/* the scanners current position */
     ClientInput *bak;   /* used for recursive script and string execution */
     stream   *fdout;    /* streams from and to user. */
@@ -279,6 +280,7 @@ bstream *getConsole(Client c){
 	x= c->bak;
 	while(x->next) x= x->next;
 	return x->fdin;
+	/* return c->console;*/
 }
 void pushClientInput(Client c, bstream *new_input, int listing, char *prompt)
 {
@@ -387,6 +389,7 @@ Client initClient(str nme, str passwd, bstream *fin, stream *fout){
     c->blkmode = 0;
 
     c->fdin = fin? fin : bstream_create(GDKin,0);
+	c->console= c->fdin;
     c->yycur = 0;
     c->bak = NULL;
 
