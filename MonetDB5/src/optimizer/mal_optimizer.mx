@@ -1683,6 +1683,7 @@ and propagate the alias through the remainder of the code.
 
 The implementation is straight forward. We only deal with the
 arithmetic operations available in batcalc right now.
+This set will be gradually be extended.
 The key decision is to determine whether we may overwrite
 any of the arguments. We assume this is permissible if the argument
 was produced by an operator from the algebra, algebra2, group, aggrX3 modules.
@@ -1718,8 +1719,6 @@ int ORvalidSource(MalBlkPtr mb, int v, int pc, int stop){
 	}
 	return 1;
 }
-#undef DEBUG_MAL_OPTIMIZER
-#define DEBUG_MAL_OPTIMIZER 1
 str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {   int i,j,a;
     InstrPtr p;
@@ -1730,14 +1729,14 @@ str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         VarPtr v;
         p= getInstrPtr(mb,i);
 		if( moduleName(p)==0 || strcmp(moduleName(p),"batcalc")) continue;
-		if( p->argc== 3) {
-			/* binary operation, check first argument */
+		if( p->argc == 3) {
+			/* binary/unary operation, check first argument */
 			v= getVar(mb, a =getArg(p,1));
 
 			if( isaBatType(v->type) && v->endLifespan ==i ) {
 				if( ORvalidSource(mb,a,i, v->beginLifespan) ){
 #ifdef DEBUG_MAL_OPTIMIZER
-					stream_printf(GDKout,"found OR candidate\n");
+					stream_printf(GDKout,"Found binary OR candidate left\n");
 					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
 					pushArgument(mb,p,a);
@@ -1747,14 +1746,18 @@ str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					ARreplaceAlias(mb,i+1,mb->stop, p->argv[0], a);
 					p->argv[0]= newTmpVariable(mb, TYPE_void);
 					typeChecker(scope,mb,p);
+#ifdef DEBUG_MAL_OPTIMIZER
+					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif
 					continue;
 				}
 			}
+			/* continue with binary version */
 			v= getVar(mb, a =getArg(p,2));
 			if( isaBatType(v->type) && v->endLifespan ==i ) {
 				if( ORvalidSource(mb,a,i, v->beginLifespan) ){
 #ifdef DEBUG_MAL_OPTIMIZER
-					stream_printf(GDKout,"found OR candidate\n");
+					stream_printf(GDKout,"Found binary OR candidate right\n");
 					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
 					pushArgument(mb,p,a);
@@ -1764,11 +1767,38 @@ str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					ARreplaceAlias(mb,i+1,mb->stop, p->argv[0], a);
 					p->argv[0]= newTmpVariable(mb, TYPE_void);
 					typeChecker(scope,mb,p);
+#ifdef DEBUG_MAL_OPTIMIZER
+					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif
 					continue;
 				}
 			}
+		} else
+		if( p->argc == 2) {
+			/* binary/unary operation, check first argument  and return type*/
+			int olderr= mb->errors;
+			int oldtarget= p->argv[0];
+			v= getVar(mb, a =getArg(p,1));
+
+			if( isaBatType(v->type) && v->endLifespan ==i ) {
+				if( ORvalidSource(mb,a,i, v->beginLifespan) ){
+#ifdef DEBUG_MAL_OPTIMIZER
+					stream_printf(GDKout,"Found unary OR candidate\n");
+					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif
+					mb->errors=0;
+					p->argv[0]= a;
+					typeChecker(scope,mb,p);
+					if( p->typechk == TYPE_UNKNOWN){
+						mb->errors= olderr;
+						p->argv[0]= oldtarget;
+						typeChecker(scope,mb,p);
+					} else 
+						ARreplaceAlias(mb,i+1,mb->stop, oldtarget, a);
+				}
+			}
 		}
-    }
+    } 
 	chkProgram(scope,mb);
     /* remove the ORoptimizer request */
 	@:optimizerCleanup(pci)@
