@@ -29,24 +29,36 @@ if two bat operands are provided that they are already
 aligned on the head.
 @mal
 module batstr;
+command str(b:bat[:void,:str]):bat[:void,:str]
+address STRbattostr
+comment "Identity mapping for string bats";
+
 command length( s:bat[:any$1,:str] ) :bat[:any$1,:int]
 address STRbatLength
 comment "Return the length of a string.";
+
+command bytes( s:bat[:any$1,:str] ) :bat[:any$1,:int]
+address STRbatBytes
+comment "Return the string length in bytes.";
+
+command chrAt( s:bat[:any$1,:str], index:int) :bat[:any$1,:chr]
+address STRbatChrAt
+comment "String array lookup operation.";
 
 command match(b:bat[:any$1,:str], pat:str):bat[:any$1,:bit]
 address STRbatmatchCst
 comment "POSIX pattern matching against a string BAT";
 
-command ==( l:bat[:any$1,:str], r:str) :bat[:any$1,:str]
+command ==( l:bat[:any$1,:str], r:str) :bat[:any$1,:bit]
 address STRbatEqualCst
 comment "Equate a bat of strings against a singleton";
 
 @-
 not now
+command ==( l:bat[:any$1,:str], r:bat[:any$1,:str]) :bat[:any$1,:str]
+address STRbatEqual
+comment "Equate a bat of strings against a singleton";
 
-command str(b:bat[:void,:str]):bat[:void,:str]
-address STRbattostr
-comment "Identity mapping for string bats";
 
 command string(b:bat[:void,:str],offset:int) :bat[:void,:str]
 address STRbatTail
@@ -56,22 +68,9 @@ command string(s:bat[:void,:str],offset:int,count:int):bat[:void:str]
 address STRbatSubString
 comment "Return substring s[offset..offset+count] of a string s[0..n]";
 
-command ==( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:str]
-address STRbatEqual
-comment "Equate a bat of strings against a singleton";
-
 command +( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:str]
 address STRbatConcat
 comment "Concatenate two strings.";
-
-
-command nbytes( s:bat[:void,:str] ) :bat[:void,:int]
-address STRbatBytes
-comment "Return the string length in bytes.";
-
-command chrAt( s:bat[:void,:str], index:int) :bat[:void,:chr]
-address STRbatChrAt
-comment "String array lookup operation.";
 
 command unicodeAt(s:bat[:void,:str], index:int) :bat[:void,:int]
 address STRWbatChrAt
@@ -149,6 +148,7 @@ comment "Substitute first occurrence of 'src' by
 #include "str.h"
 #include <string.h>
 #include "mal_exception.h"
+#include "../atoms/str.h"
 #include <regex.h>
 
 #ifdef HAVE_LANGINFO_H
@@ -195,7 +195,12 @@ bunins_failed:
 }
 
 @c
-	@:BATstr(Length,strLength,str,int)@
+	@:BATstr(Length,STRLength,str,int)@
+	@:BATstr(bytes,STRBytes,str,int)@
+	@:BATstr(lower,STRLower,str,str)@
+	@:BATstr(upper,STRUpper,str,str)@
+@-
+	@:BATstr(charAt,ChrAt,str,chr)@
 @-
 @c
 str STRbatEqualCst(int *ret, int *l,str *cst)
@@ -232,6 +237,11 @@ bunins_failed:
     return MAL_SUCCEED;
 }
 @c
+str
+STRbatstrtostr(int *ret, int *bid){
+	BBPincref(*ret= *bid,TRUE);
+	return MAL_SUCCEED;
+}
 
 str STRbatmatchCst(int  *ret, int *bid, str *pat){
         regex_t prg;
@@ -268,4 +278,5 @@ bunins_failed:
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
 @}
