@@ -30,6 +30,7 @@ static void atom_dump( atom *a, stream *s){
 			s->write(s, buf, 1, i);
 			break;
 	default:
+			break;
 	}
 }
 
