@@ -23,18 +23,17 @@
 #end b;
 #
 !ERROR: 'take' undefined in Admin.main[6]
-!ERROR: 'iterator' undefined in Admin.main[7]
 function Admin.main():int;	#0:void (main:int)
-	v := Admin.take("version",str);	#1:bit (v:bit)($2:str)(str:str)
-	u := Admin.take("user",str);	#2:bit (u:bit)($5:str)(str:str)
-	db := Admin.take("gdk_dbname",str);	#3:bit (db:bit)($7:str)(str:str)
-	df := Admin.take("gdk_dbfarm");	#4:void (df:any)($9:str)
-	dd := Admin.take("gdk_dbdir");	#5:void (dd:any)($11:str)
+	v := space.take("version",str);	#1:bit (v:bit)($2:str)(str:str)
+	u := space.take("user",str);	#2:bit (u:bit)($5:str)(str:str)
+	db := space.take("gdk_dbname",str);	#3:bit (db:bit)($7:str)(str:str)
+	df := space.take("gdk_dbfarm");	#4:void (df:any)($9:str)
+	dd := space.take("gdk_dbdir");	#5:void (dd:any)($11:str)
 	bb := take("environment",bat[void,str]);	#6 unknown:void (bb:any)($13:str)(bat[void,str]:bat[void,str])
-barrier	b := space.iterator("mal_constants",-1,name,value);	#7 unknown:void (b:any)($16:str)($17:int)(name:str)(value:str)
+barrier	b := space.iterator("mal_constants",-1,name,value);	#7:bit (b:bit)($16:str)($17:int)(name:str)(value:str)
 	system.printf("%s=",name);	#8:int ($20:int)($21:str)(name:str)
 	system.printf("%s\n",value);	#9:int ($22:int)($23:str)(value:str)
-end	b;	#10:void (b:any)
+end	b;	#10:bit (b:bit)
 end function;	#11:void 
 space_take not yet implemented
 space_take not yet implemented

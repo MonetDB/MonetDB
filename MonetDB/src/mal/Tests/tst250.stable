@@ -23,9 +23,9 @@
 #err := insert(b,n0,n0);
 #err := insert(b,n0,81);
 #print(b);
-#i := -1:int;
-#barrier v:= batloop(i,b);
-#	print(i);
+#barrier v:= bunStream(b,h:int,t:int);
+#	printf("%d,",h);
+#	printf("%d\n",t);
 #redo v;
 #end v;
 #
@@ -33,7 +33,7 @@ function Admin.main():int;	#0:void (main:int)
 	b := mal.new(int,int);	#1:BAT (b:bat[int,int])(int:int)(int:int)
 	err := bat.insert(b,1,15);	#2:BAT (err:bat[int,int])(b:bat[int,int])($4:int)($5:int)
 	err := bat.insert(b,2,4);	#3:BAT (err:bat[int,int])(b:bat[int,int])($6:int)($7:int)
-	n0 := arith.int(nil);	#4:int (n0:int)($9:void)
+	n0 := calc.int(nil);	#4:int (n0:int)($9:void)
 	err := bat.insert(b,3,n0);	#5:BAT (err:bat[int,int])(b:bat[int,int])($10:int)(n0:int)
 	err := bat.insert(b,4,16);	#6:BAT (err:bat[int,int])(b:bat[int,int])($7:int)($11:int)
 	err := bat.insert(b,5,25);	#7:BAT (err:bat[int,int])(b:bat[int,int])($12:int)($13:int)
@@ -44,11 +44,11 @@ function Admin.main():int;	#0:void (main:int)
 	err := bat.insert(b,n0,n0);	#12:BAT (err:bat[int,int])(b:bat[int,int])(n0:int)(n0:int)
 	err := bat.insert(b,n0,81);	#13:BAT (err:bat[int,int])(b:bat[int,int])(n0:int)($21:int)
 	mal.print(b);	#14:int ($22:int)(b:bat[int,int])
-	i := -1;	#15:int (i:int)($24:int)
-barrier	v := mal.batloop(i,b);	#16:bit (v:bit)(i:int)(b:bat[int,int])
-	mal.print(i);	#17:int ($26:int)(i:int)
-	redo v ;	#18:bit (v:bit)
-end	v;	#19:bit (v:bit)
+barrier	v := mal.bunStream(b,h,t);	#15:lng (v:lng)(b:bat[int,int])(h:int)(t:int)
+	system.printf("%d,",h);	#16:int ($26:int)($27:str)(h:int)
+	system.printf("%d\n",t);	#17:int ($28:int)($29:str)(t:int)
+	redo v ;	#18:lng (v:lng)
+end	v;	#19:lng (v:lng)
 end function;	#20:void 
 #-----------------#
 # BAT:	  tmp_5	  #
@@ -65,15 +65,15 @@ end function;	#20:void
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
-[ 1 ]
-[ 2 ]
-[ 3 ]
-[ 4 ]
-[ 5 ]
-[ 6 ]
-[ 7 ]
-[ 8 ]
-[ 9 ]
-[ 10 ]
-[ 11 ]
+1,15
+2,4
+3,nil
+4,16
+5,25
+6,36
+7,49
+8,64
+9,nil
+nil,nil
+nil,81
 >

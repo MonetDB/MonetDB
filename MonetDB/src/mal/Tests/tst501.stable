@@ -14,7 +14,7 @@
 #	return i;
 #end function;
 function Admin.simple(i:int):int;	#0:void (simple:int)(i:int)
-	i := arith.+(i,1);	#1:int (i:int)(i:int)($2:int)
+	i := calc.+(i,1);	#1:int (i:int)(i:int)($2:int)
 	return i;	#2:int (i:int)
 end function;	#3:void 
 #

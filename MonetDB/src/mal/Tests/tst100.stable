@@ -15,10 +15,10 @@
 #
 #
 function Admin.main():int;	#0:void (main:int)
-	a := arith.+(3,1);	#1:int (a:int)($2:int)($3:int)
-	c := arith.+(7,8);	#2:int (c:int)($5:int)($6:int)
-	b := arith.+(3.5,2.7);	#3:flt (b:flt)($8:flt)($9:flt)
+	a := calc.+(3,1);	#1:int (a:int)($2:int)($3:int)
+	c := calc.+(7,8);	#2:int (c:int)($5:int)($6:int)
+	b := calc.+(3.5,2.7);	#3:flt (b:flt)($8:flt)($9:flt)
 	s := "hello world";	#4:str (s:str)($11:str)
-	d := arith.+(3,1);	#5:int (d:int)($2:int)($3:int)
+	d := calc.+(3,1);	#5:int (d:int)($2:int)($3:int)
 end function;	#6:void 
 >

@@ -21,7 +21,7 @@
 function Admin.main():int;	#0:void (main:int)
 	s0 := "hello";	#1:str (s0:str)($2:str)
 	s0 := "world";	#2:str (s0:str)($3:str)
-	b1 := arith.=(s0,"world");	#3:bit (b1:bit)(s0:str)($3:str)
+	b1 := calc.=(s0,"world");	#3:bit (b1:bit)(s0:str)($3:str)
 	s1 := s0;	#4:str (s1:str)(s0:str)
 barrier	b1;	#5:bit (b1:bit)
 	s2 := s1;	#6:str (s2:str)(s1:str)

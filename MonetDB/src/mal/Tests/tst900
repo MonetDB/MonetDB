@@ -1,19 +1,7 @@
-# the multiplex code blocks.
+# the multiplex code blocks. Testing syntax errors
 
 b:= new(lng,lng);
-t0:= system.usec();
-i:= -1:lng;
-barrier v:= nextElement(i,0:lng,1000000:lng);
-	insert(b,i,i);
-	redo v;
-end v;
-t1:= system.usec();
-tz:= t1-t0;
-print(tz);
-t0:= system.usec();
-c:= copy(b);
-t1:= system.usec();
-tz:= t1-t0;
-print(tz);
 x:= multiplex.+(b,b);
+d:= [+](b,c);
+print("another one\n");
 a:= b [+] b;

@@ -41,23 +41,15 @@
 #barrier  unfinished:= 1;
 #	f:=1;
 #
-!ERROR: barrier 'L' should be of type bit in main[1]
 !ERROR: label 'Z' not in guarded block in main[2]
 !ERROR: label 'L' not in guarded block in main[5]
 !ERROR: label 'X' not in guarded block in main[6]
 !ERROR: label 'A' not in guarded block in main[7]
-!ERROR: barrier 'X' should be of type bit in main[8]
 !ERROR: label 'L' not in guarded block in main[9]
 !ERROR: label 'L' not in guarded block in main[11]
 !ERROR: end-label 'B' doesnot match 'A' in main[20]
-!ERROR: barrier 'A' should be of type bit in main[13]
-!ERROR: barrier 'B' should be of type bit in main[14]
-!ERROR: barrier 'C' should be of type bit in main[17]
 !ERROR: end-label 'F' without begin-label inmain[21]
-!ERROR: barrier 'D' should be of type bit in main[22]
-!ERROR: barrier 'D' should be of type bit in main[26]
 !ERROR: begin-label 'unfinished' without end-label in main
-!ERROR: barrier 'unfinished' should be of type bit in main[29]
 function Admin.main():int;	#0:void (main:int)
 barrier	L := 1;	#1:int (L:int)($2:int)
 	leave Z;	#2:void (Z:any)

@@ -1,0 +1,125 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+##Same as tst200, but includes testing of the profiler
+#
+#profiler.setFilter("*","insert");
+#profiler.setFilter("*","print");
+#profiler.setLogFile("/tmp/MonetProfile");
+#
+#o:=oid(20000000);
+#setoid(o);
+##test basic functionality of the BAT library.
+##focussed on integers
+##it includes insertions,deletions,selections, and joins.
+#
+#b:= new(int,int);
+#printf("#~BeginVariableOutput~#\n"); 
+##binfo:= info(b);
+##err:= print(binfo); 
+#printf("#~EndVariableOutput~#\n");
+#
+#profiler.start();
+#err := insert(b,1,15);
+#err := insert(b,2,4);
+#n0  := int(nil);
+#err := insert(b,3,n0);
+#err := insert(b,4,16);
+#err := insert(b,5,25);
+#err := insert(b,6,36);
+#err := insert(b,7,49);
+#err := insert(b,8,64);
+#err := insert(b,9,n0);
+#err := insert(b,n0,n0);
+#err := insert(b,n0,81);
+#print(b);
+#print(b,b,b);
+#profiler.stop();
+#
+!ERROR: WARNING:newConstant:int coerced to lng
+function Admin.main():int;	#0:void (main:int)
+	profiler.setFilter("*","insert");	#1:void ($1:any)($2:str)($3:str)
+	profiler.setFilter("*","print");	#2:void ($4:any)($2:str)($5:str)
+	profiler.setLogFile("/tmp/MonetProfile");	#3:void ($6:any)($7:str)
+	o := calc.oid(20000000);	#4:oid (o:oid)($9:int)
+	calc.setoid(o);	#5:oid ($10:oid)(o:oid)
+	b := mal.new(int,int);	#6:BAT (b:bat[int,int])(int:int)(int:int)
+	system.printf("#~BeginVariableOutput~#\n");	#7:int ($13:int)($14:str)
+	system.printf("#~EndVariableOutput~#\n");	#8:int ($15:int)($16:str)
+	profiler.start();	#9:void ($17:any)
+	err := bat.insert(b,1,15);	#10:BAT (err:bat[int,int])(b:bat[int,int])($19:int)($20:int)
+	err := bat.insert(b,2,4);	#11:BAT (err:bat[int,int])(b:bat[int,int])($21:int)($22:int)
+	n0 := calc.int(nil);	#12:int (n0:int)($24:void)
+	err := bat.insert(b,3,n0);	#13:BAT (err:bat[int,int])(b:bat[int,int])($25:int)(n0:int)
+	err := bat.insert(b,4,16);	#14:BAT (err:bat[int,int])(b:bat[int,int])($22:int)($26:int)
+	err := bat.insert(b,5,25);	#15:BAT (err:bat[int,int])(b:bat[int,int])($27:int)($28:int)
+	err := bat.insert(b,6,36);	#16:BAT (err:bat[int,int])(b:bat[int,int])($29:int)($30:int)
+	err := bat.insert(b,7,49);	#17:BAT (err:bat[int,int])(b:bat[int,int])($31:int)($32:int)
+	err := bat.insert(b,8,64);	#18:BAT (err:bat[int,int])(b:bat[int,int])($33:int)($34:int)
+	err := bat.insert(b,9,n0);	#19:BAT (err:bat[int,int])(b:bat[int,int])($35:int)(n0:int)
+	err := bat.insert(b,n0,n0);	#20:BAT (err:bat[int,int])(b:bat[int,int])(n0:int)(n0:int)
+	err := bat.insert(b,n0,81);	#21:BAT (err:bat[int,int])(b:bat[int,int])(n0:int)($36:int)
+	mal.print(b);	#22:int ($37:int)(b:bat[int,int])
+	mal.print(b,b,b);	#23:int ($38:int)(b:bat[int,int])(b:bat[int,int])(b:bat[int,int])
+	profiler.stop();	#24:void ($39:any)
+end function;	#25:void 
+set insert[10]
+set insert[11]
+set insert[13]
+set insert[14]
+set insert[15]
+set insert[16]
+set insert[17]
+set insert[18]
+set insert[19]
+set insert[20]
+set insert[21]
+set insert[0]
+set insert[0]
+set print[22]
+set print[23]
+set print[0]
+set print[0]
+set print[0]
+# Send the Monet performance events to a file
+#~BeginVariableOutput~#
+#~EndVariableOutput~#
+# Start the performance monitor
+#-----------------#
+# BAT:	  tmp_5	  #
+# (int)	  (int)	  #
+#-----------------#
+[ 1,	  15	  ]
+[ 2,	  4	  ]
+[ 3,	  nil	  ]
+[ 4,	  16	  ]
+[ 5,	  25	  ]
+[ 6,	  36	  ]
+[ 7,	  49	  ]
+[ 8,	  64	  ]
+[ 9,	  nil	  ]
+[ nil,	  nil	  ]
+[ nil,	  81	  ]
+#-----------------#
+# tmp_5	| tmp_5	  #
+#-----------------#
+[ 15,	  15	  ]
+[ 4,	  4	  ]
+[ nil,	  nil	  ]
+[ 16,	  16	  ]
+[ 25,	  25	  ]
+[ 36,	  36	  ]
+[ 49,	  49	  ]
+[ 64,	  64	  ]
+[ nil,	  nil	  ]
+[ nil,	  81	  ]
+[ nil,	  nil	  ]
+[ 81,	  81	  ]
+[ 81,	  nil	  ]
+# Stop the performance monitor
+>

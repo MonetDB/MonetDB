@@ -17,8 +17,8 @@
 #	return r;
 #end function;
 function Admin.simple(i:int,lim:int,s:str):flt;	#0:void (simple:flt)(i:int)(lim:int)(s:str)
-	i := arith.+(i,1);	#1:int (i:int)(i:int)($4:int)
-barrier	v := arith.<(i,lim);	#2:bit (v:bit)(i:int)(lim:int)
+	i := calc.+(i,1);	#1:int (i:int)(i:int)($4:int)
+barrier	v := calc.<(i,lim);	#2:bit (v:bit)(i:int)(lim:int)
 	z := Admin.simple(i,lim,s);	#3:flt (z:flt)(i:int)(lim:int)(s:str)
 end	v;	#4:bit (v:bit)
 	r := 3.14;	#5:flt (r:flt)($8:flt)
