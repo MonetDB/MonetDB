@@ -5,3 +5,4 @@ HAVE_JAVA?Test_PStimedate
 HAVE_JAVA?Test_Rbooleans
 HAVE_JAVA?Test_Rpositioning
 HAVE_JAVA?Test_Sbatching
+HAVE_JAVA?Test_PStimezone
