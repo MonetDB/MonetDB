@@ -1779,8 +1779,8 @@ typedef struct {
 	/* generic (fixed + varsized atom) ADT functions */
 	int	(*atomFromStr)		(str s, int* len, ptr* dst); 
 	int	(*atomToStr)		(str* s, int* len, ptr src); 
-	void	*(*atomRead)		(ptr a, stream* s); 
-	void	(*atomWrite)		(ptr a, stream* s); 
+	void	*(*atomRead)		(ptr a, stream* s, size_t cnt); 
+	void	(*atomWrite)		(ptr a, stream* s, size_t cnt); 
 	int	(*atomCmp)		(ptr v1, ptr v2); 
 	unsigned int (*atomHash)	(ptr v); 
 	/* optional functions */ 

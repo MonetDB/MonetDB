@@ -113,6 +113,13 @@ stream_export int stream_readInt( stream *s, int *val );
 stream_export int stream_writeInt( stream *s, const int val );
 stream_export int stream_readLng( stream *s, lng *val );
 stream_export int stream_writeLng( stream *s, const lng val );
+
+stream_export int stream_readShtArray( stream *s, short *val, size_t cnt );
+stream_export int stream_writeShtArray( stream *s, const short *val, size_t cnt );
+stream_export int stream_readIntArray( stream *s, int *val, size_t cnt );
+stream_export int stream_writeIntArray( stream *s, const int *val, size_t cnt );
+stream_export int stream_readLngArray( stream *s, lng *val, size_t cnt );
+stream_export int stream_writeLngArray( stream *s, const lng *val, size_t cnt );
 stream_export int stream_printf( stream *s, const char *format, ...);
 
 stream_export stream *open_rstream( char *filename );
@@ -183,6 +190,8 @@ stream_export int bs_read_next( stream *s, char *buf, int *last );
 
 #endif /*_STREAM_H_*/
 @c
+/* should move to configure */
+#define _FILE_OFFSET_BITS 64
 #include <config.h>
 #include "stream.h"
 #include <string.h>
@@ -395,7 +404,7 @@ stream *open_wstream( char *filename ){
 	} 
 #endif
 	{
-		s = open_stream( filename, "wb");
+		s = open_stream( filename, "ab");
 		s->access = ST_WRITE;
 		s->type = ST_BIN;
 		if (s->errnr == NO__ERROR)
@@ -1052,6 +1061,56 @@ int stream_readLng( stream *s, lng *val ){
 
 int stream_writeLng( stream *s, const lng val ){
 	int ok = s->write(s, (char*)&val, sizeof(lng), 1)==1;
+	if (!ok) s->errnr = WRITE_ERROR;
+	return ok;
+}
+
+int stream_readShtArray( stream *s, short *val, size_t cnt ){
+	int ok = s->read(s, (char*)val, sizeof(short), cnt) == cnt;
+	if (!ok) s->errnr = READ_ERROR;
+	if (s->byteorder != 1234){
+		int i= 0;
+		for(i = 0; i<cnt; i++)
+			val[i] = short_int_SWAP(val[i]);	
+	}
+	return ok;
+}
+
+int stream_writeShtArray( stream *s, const short *val, size_t cnt ){
+	int ok = s->write(s, (char*)&val, sizeof(short), cnt)==cnt;
+	if (!ok) s->errnr = WRITE_ERROR;
+	return ok;
+}
+
+extern int stream_readIntArray( stream *s, int *val, size_t cnt ){
+	int ok = s->read(s, (char*)val, sizeof(int), cnt) == cnt;
+	if (!ok) s->errnr = READ_ERROR;
+	if (s->byteorder != 1234){
+		int i= 0;
+		for(i = 0; i<cnt; i++)
+			val[i] = normal_int_SWAP(val[i]);	
+	}
+	return ok;
+}
+extern int stream_writeIntArray( stream *s, const int *val, size_t cnt ){
+	int ok = s->write(s, (char*)&val, sizeof(int), cnt)==cnt;
+	if (!ok) s->errnr = WRITE_ERROR;
+	return ok;
+}
+
+int stream_readLngArray( stream *s, lng *val, size_t cnt ){
+	int ok = s->read(s, (char*)val, sizeof(lng), cnt) == cnt;
+	if (!ok) s->errnr = READ_ERROR;
+	if (s->byteorder != 1234){
+		int i= 0;
+		for(i = 0; i<cnt; i++)
+			val[i] = long_long_SWAP(val[i]);	
+	}
+	return ok;
+}
+
+int stream_writeLngArray( stream *s, const lng *val, size_t cnt ){
+	int ok = s->write(s, (char*)&val, sizeof(lng), cnt)==cnt;
 	if (!ok) s->errnr = WRITE_ERROR;
 	return ok;
 }

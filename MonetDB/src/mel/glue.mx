@@ -510,13 +510,13 @@ void gen_default_atomops( ostream &o, int op, const Atom &d ){
 
 	case OP_READ	:
 	o << "char * " << atom;
-	o << "_read( char *a, stream *s) {\n";
+	o << "_read( char *a, stream *s, size_t cnt) {\n";
 	o << "   return NULL;\n";
 	o << "}\n\n";
 	break;
 	case OP_WRITE	:
 	o << "void " << atom;
-	o << "_write( char *a, stream *s) {\n";
+	o << "_write( char *a, stream *s, size_t cnt) {\n";
 	o << "}\n\n";
 	break;
 
@@ -1419,11 +1419,11 @@ ostream &typecheck::gen_atomops( ostream &o, const Atomops &d ){
 		break;
         case OP_WRITE :
 		o << "extern void " << fcn;
-		o << "(void *atom, stream *s);\n";
+		o << "(void *atom, stream *s, size_t cnt);\n";
 		break;
         case OP_READ :
 		o << "extern void *" << fcn;
-		o << "(void *atom, stream *s);\n";
+		o << "(void *atom, stream *s, size_t cnt);\n";
 		break;
         case OP_COMP 	:
         case OP_NEQUAL 	:

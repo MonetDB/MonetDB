@@ -57,7 +57,6 @@ LIBS = {
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 
 }
-#compress.mx t1.mx
 
 lib__counters = {
 	DIR = pkglibdir
