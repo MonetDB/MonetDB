@@ -290,7 +290,7 @@ case $withval in
 esac
 bits=$withval
 ])
-if test "$bits" == "64"; then
+if test "$bits" = "64"; then
 	dnl  Keep in mind how to call the 32-bit compiler.
 	case "$GCC-$host_os-$host" in
 	yes-linux*-x86_64*)
@@ -455,7 +455,7 @@ AC_PROG_LIBTOOL()
 AM_PROG_LIBTOOL()
 
 dnl AC_PROG_CC_STDC()
-if test "$bits" == "64"; then
+if test "$bits" = "64"; then
 	dnl  On 64-bit systems, there might be no 64-bit libfl or libl, which is not a major problem,
 	dnl  as we define our own yywrap function, and hence don't need these libraries.
 	dnl  However, the standard "AC_PROG_LEX" & "AM_PROG_LEX" tests fail to correctly determine,
