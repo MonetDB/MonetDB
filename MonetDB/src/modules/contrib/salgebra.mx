@@ -249,7 +249,7 @@ build the cluster hash from the enum.
 	  "List the clusterhash dictionary.", mod);
 
   PROC select( clusterhash ch, any::1 v ): BAT[oid,any::1] {
-    RETURN [ch.uselect( v )~const v];
+    RETURN [ch.uselect( v ).project(v)];
   }
   ADDHELP("select", "arjen", "Jun 16 2000",
 	  "Select using a clusterhash uselect plus a cast.", mod);

@@ -155,7 +155,7 @@ proc bat_ttype( bat b ) : str {
 }
 
 proc dump_format( BAT[void,BAT] bats, str fmt ) : BAT[str,BAT] {
-	bats := [~bats].seqbase(oid(0));
+	bats := bats.reverse().mark(oid(0)).reverse();
 	var names := [bbpname](bats);
 	var seps  := dump_seps(bats);
 	var types := [bat_ttype](bats);
