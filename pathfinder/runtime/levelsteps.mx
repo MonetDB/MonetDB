@@ -89,7 +89,7 @@
 @:lev_end_reverse@
 @-
 
-# PARAMETERS: function name
+PARAMETERS: function name
 @= lev_head
 int
 PFlev_@1 (BAT **result, BAT *pre_level, BAT *ctx, int *height, int *upperbound)
@@ -123,7 +123,7 @@ PFlev_@1 (BAT **result, BAT *pre_level, BAT *ctx, int *height, int *upperbound)
         return GDK_FAIL;
     }
 @-
-# PARAMETERS: search level 
+PARAMETERS: search level 
 @= lev_init_forward
     /* ----------------- initialization of table cursors ------------------- */
 
@@ -155,7 +155,7 @@ PFlev_@1 (BAT **result, BAT *pre_level, BAT *ctx, int *height, int *upperbound)
     level_cur++;
     ctx_cur += ctx_bunsize;
 @-
-# PARAMETERS: search level 
+PARAMETERS: search level 
 @= lev_init_reverse
     /* ----------------- initialization of table cursors ------------------- */
 
@@ -190,7 +190,7 @@ PFlev_@1 (BAT **result, BAT *pre_level, BAT *ctx, int *height, int *upperbound)
     level_cur--;
     ctx_cur -= ctx_bunsize;
 @-
-# PARAMETERS: search level, stack condition, forward res/level cursor, forward ctx cursor, outer loop end 
+PARAMETERS: search level, stack condition, forward res/level cursor, forward ctx cursor, outer loop end 
 @= lev_main
     /* ---------------------------- main part ----------------------------- 
      * - the outer loop traverses all context nodes
@@ -266,7 +266,8 @@ outer_loop:
             break;
     }   
 @-
-# PARAMETERS: search level, stack condition, forward res/level cursor, forward ctx cursor, outer loop end 
+
+PARAMETERS: search level, stack condition, forward res/level cursor, forward ctx cursor, outer loop end 
 @= lev_main_par
     /* ---------------------------- main part ----------------------------- 
      * - the outer loop traverses all context nodes
@@ -281,6 +282,14 @@ outer_loop:
      *                       level(y) = search-level(v). 
      */
 
+    /* filter out document nodes because they have no parents */
+    while (search_level == -2 && ctx_cur >= ctx_last) 
+    {
+        ctx_cur -= ctx_bunsize;
+        level_cur = *(oid*) BUNhead(ctx, ctx_cur);
+        search_level = level[level_cur] - 1;
+    } 
+           
 outer_loop:
     while (ctx_cur >= ctx_last)
     {
@@ -313,6 +322,15 @@ outer_loop:
         {
             level_cur = ctx_next_pre;
             search_level = level[level_cur] - 1;
+            
+            /* filter out document nodes because they have no parents */
+            while (search_level == -2 && ctx_cur >= ctx_last) 
+            {
+                ctx_cur -= ctx_bunsize;
+                level_cur = *(oid*) BUNhead(ctx, ctx_cur);
+                search_level = level[level_cur] - 1;
+            } 
+            
             level_cur--;
             ctx_cur -= ctx_bunsize;
         }
@@ -322,7 +340,7 @@ outer_loop:
      * and those context nodes still living on stack
      */
 
-    while (TRUE)
+    while (search_level != -2)
     {
         /* check search-region of current context node 
          */

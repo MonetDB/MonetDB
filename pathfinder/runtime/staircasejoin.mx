@@ -57,57 +57,40 @@ const int PF_SOFTWARE_PREFETCH = 128;
 /*******************************************************************/
 
 /* DESCENDANT STEP */
-@:scj_head(_desc)
+@:scj_head(_desc)@
     int max_post;
-@:scj_specialcases
-
-@:scj_init
+@:scj_specialcases@
+@:scj_init@
     max_post = -1;
-@:scj_desc(pre_cur++;)
-
+@:scj_desc(pre_cur++;)@
 @:scj_end
-
-
 
 /* DESCENDANT-OR-SELF STEP */
-@:scj_head(_descorself)
+@:scj_head(_descorself)@
     int max_post;
-@:scj_specialcases
-
-@:scj_init
+@:scj_specialcases@
+@:scj_init@
     max_post = -1;
-@:scj_desc()
-
-@:scj_end
-
-
+@:scj_desc()@
+@:scj_end@
 
 /* ANCESTOR STEP */
-@:scj_head(_anc)
+@:scj_head(_anc)@
     oid ctx_pre, post;
-@:scj_specialcases
-
-@:scj_init
+@:scj_specialcases@
+@:scj_init@
     pre_cur = *(oid*)BUNhead(pre_size, BUNfirst(pre_size));
-@:scj_anc(<)
-
-@:scj_end
-
-
+@:scj_anc(<)@
+@:scj_end@
 
 /* ANCESTOR-OR-SELF STEP */
-@:scj_head(_ancorself)
+@:scj_head(_ancorself)@
     oid ctx_pre, post;
-
-@:scj_specialcases
-
-@:scj_init
+@:scj_specialcases@
+@:scj_init@
     pre_cur = *(oid*)BUNhead(pre_size, BUNfirst(pre_size));
-
-@:scj_anc(<=)
-
-@:scj_end
-
+@:scj_anc(<=)@
+@:scj_end@
 
 
 @= scj_head
