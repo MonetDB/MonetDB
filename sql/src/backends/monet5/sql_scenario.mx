@@ -59,14 +59,12 @@ static void pushCatchDefault(MalBlkPtr mb, str nme,int autocommit);
 
 static int SQLinitialized;
 
-#define _SQL_SCENARIO_DEBUG
-
 static void 
 monet5_freestack( backend_stack stk)
 {
 	(void) stk;
 #ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout,"monet5_freestack\n");
+	stream_printf(GDKout,"#monet5_freestack\n");
 #endif
 }
 
@@ -75,7 +73,7 @@ monet5_parse( backend_stack stk, char *cmd)
 {
 	(void) stk; (void) cmd;
 #ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout,"monet5_parse:%s\n",cmd);
+	stream_printf(GDKout,"#monet5_parse:%s\n",cmd);
 #endif
 }
 
@@ -84,13 +82,13 @@ monet5_freecode(backend_code code, backend_stack stk, int nr)
 {
 	(void) code; (void) stk; (void)nr;
 #ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout,"monet5_free:%d\n",nr);
+	stream_printf(GDKout,"#monet5_free:%d\n",nr);
 #endif
 }
 	
 str SQLinit(Client c){
 #ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout,"SQLinit Monet 5\n");
+	stream_printf(GDKout,"#SQLinit Monet 5\n");
 #endif
 	if( SQLinitialized ){
 		return throwMessage("SQLinit",
@@ -108,7 +106,7 @@ str SQLinit(Client c){
 }
 str SQLexit(Client c){
 #ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout,"SQLexit\n");
+	stream_printf(GDKout,"#SQLexit\n");
 #endif
 	(void)c; /* not used */
 	if( SQLinitialized == FALSE){
@@ -124,7 +122,7 @@ str SQLinitClient(Client c){
 	str schema;
 
 #ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout,"SQLinitClient\n");
+	stream_printf(GDKout,"#SQLinitClient\n");
 #endif
 	if( SQLinitialized == FALSE){
 		return throwMessage("SQLinitClient",
@@ -150,7 +148,7 @@ str SQLinitClient(Client c){
 }
 str SQLexitClient(Client c){
 #ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout,"SQLexitClient\n");
+	stream_printf(GDKout,"#SQLexitClient\n");
 #endif
 	if( SQLinitialized == FALSE){
 		return throwMessage("SQLinitClient",
@@ -180,7 +178,7 @@ str SQLstatement(int *ret, str *cmd){
 	Client c;
 
 #ifdef _SQL_READER_DEBUG
-	stream_printf(GDKout,"SQLstatement:%s\n",*cmd);
+	stream_printf(GDKout,"#SQLstatement:%s\n",*cmd);
 #endif
 	c = getClient();
 	appendInput(c,*cmd);
@@ -197,8 +195,9 @@ str SQLreader(Client c){
 	int cnt, oldcnt,eof=0;
 	lng T0;
 	backend *be = ((backend*)c->state[PARSER]);
+        str prompt;
 #ifdef _SQL_READER_DEBUG
-	stream_printf(GDKout,"SQLparser: start reading SQL block\n");
+	stream_printf(GDKout,"#SQLparser: start reading SQL block\n");
 #endif
 	if( c->mode <= FINISHING)
 		return throwMessage("SQLreader","end of SQL input\n");
@@ -209,8 +208,11 @@ Continue processing any left-over input from the previous round.
 	if( c->nxt && *c->nxt) return 0;
 
 	T0= GDKusec();
-	c->prompt= GDKstrdup("sql>");
-	c->promptlength= strlen(c->prompt);
+        prompt= GDKgetenv("monet_prompt");
+        if( prompt== 0) prompt= "sql>";
+	c->prompt= GDKstrdup(prompt);
+	c->promptlength= strlen(prompt);
+    do{
 	c->nxt=c->input;
 	oldcnt= cnt=0;
 	while( c->mode > FINISHING && (eof=readClient(c,c->prompt))){
@@ -226,14 +228,16 @@ Continue processing any left-over input from the previous round.
 	c->input[cnt]= '\n';
 	c->input[cnt+1]= 0;
 	c->nxt=c->input;
-
 #ifdef _SQL_READER_DEBUG
-	stream_printf(GDKout,"SQL blk:%s\n",c->input);
+	stream_printf(GDKout,"#SQL blk:%s\n",c->input);
 #endif
 	if(eof==0 || strncmp(c->nxt,"quit",4)==0) {
 		c->mode= FINISHING;
 		return throwMessage("SQLreader","end of SQL input\n");
 	}
+        if( strlen(c->nxt) > 1 && !(c->nxt[0]== '-' && c->nxt[1]=='-'))
+            break;
+    } while(1);
 	if(be) be->Tread= GDKusec()-T0;
 	return 0;
 }
@@ -291,7 +295,7 @@ str SQLparser(Client c) {
 
 	oldstate= *c->curprg->def;
 #ifdef _SQL_PARSER_DEBUG
-	stream_printf(GDKout,"SQL compilation %s\n",c->nxt);
+	stream_printf(GDKout,"#SQL compilation %s\n",c->nxt);
 #endif
 	SQLsetDebugger(c);
 	be = ((backend*)c->state[PARSER]);
@@ -363,7 +367,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 		}
 	} 
 #ifdef _SQL_PARSER_DEBUG
-	else stream_printf(GDKout,"parse result %d\n",err);
+	else stream_printf(GDKout,"#parse result %d\n",err);
 #endif
 	if( be->q ) 
 		backend_call(be, c, be->q->id, m->args );
@@ -409,7 +413,7 @@ finalize:
 	} 
 #ifdef _SQL_PARSER_DEBUG
 	else {
-		printf("SQL finished:%s\n",msg);
+		printf("#SQL finished:%s\n",msg);
 		printFunction(c->fdout,c->curprg->def, c->listing);
 	}
 #endif
@@ -442,7 +446,7 @@ str SQLengine(Client c) {
 	if( c->curprg->def->errors)
 		return throwMessage("SQLengine","Program contains errors\n");
 #ifdef SQL_SCENARIO_DEBUG
-	stream_printf(GDKout,"Ready to execute SQL statement\n");
+	stream_printf(GDKout,"#Ready to execute SQL statement\n");
 #endif
 	T0= GDKusec();
 	c->glb= 0;
@@ -452,7 +456,7 @@ Any error encountered during execution should block further processing
 unless auto_commit has been set.
 @c
 	if(c->curprg->def->errors){
-		stream_printf(GDKout,"Execution produced errors");
+		stream_printf(GDKout,"#Execution produced errors");
 		sql_error(m,1,"Execution produced errors");
 	}
 	c->glb= oldglb;
