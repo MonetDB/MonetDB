@@ -484,17 +484,18 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	strcpy(mid -> prompt,"\001>\001");
 	
 	{ char buf[MAPIBLKSIZE];
-	  int c;
+	  char c;
+	  int ret;
 	  strcpy(buf,mid->username);
 	  strcat(buf,"\n");
 	  /* fprintf(mid->to,buf);*/
 	  if(mid->trace){
 			printf("sending first request [%d]:%s",MAPIBLKSIZE,buf);
 			fflush(stdout);
-	}
-	  c= mid->to->write(mid->to,buf,1,MAPIBLKSIZE);
+	  }
+	  ret= mid->to->write(mid->to,buf,1,MAPIBLKSIZE);
 	  mid->to->flush(mid->to);
-	  if( c != MAPIBLKSIZE){
+	  if( ret != MAPIBLKSIZE){
 	    mid->error = MMAPIERR;
 	    sprintf(mid->errortext,"Could not send initial bytes %d.",c);
 	    return(mid);
@@ -502,7 +503,7 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
           printf("awaiting response from server\n");
 	  fflush(stdout); 
 	  while( !((mid->from->read(mid->from,(char*)&c,1,1)==1 && c == PROMPT) || (c == EOF)) ) 
-		if(mid->trace) printf("got char %d %c\n",c,c);
+		if(mid->trace) printf("got char %d=%c\n",(int)c,c);
 	  if (c == EOF) {
 	    /* perror("! Mapi.Mconnect.connect: "); */
 	    mid->error = MMAPIERR;
@@ -961,7 +962,7 @@ int k,size;
         if (mid->trace) {
                 printf("Mdorequest:%d:%s",size, cmd);
         }
-        if (mid->from->error(mid->from) || mid->to->error(mid->to)) {
+        if (mid->from->errnr || mid->to->errnr) {
                 sprintf(mid->errortext, "!communication line broken\n");
 		mid->error= MMONETERR;
                 return mid->error;
@@ -1006,7 +1007,7 @@ char *Mgetreply(Msession mid) {
 
         while ( mid->from->read(mid->from,(char*)&ch,1,1) == 1) {
 		if(ch== PROMPT) break;
-                if (mid->from->error(mid->from)) break;
+                if (mid->from->errnr) break;
 		if( ch == '\n') break;
                 if (!isprint(ch) && !isspace(ch)) {
                         sprintf(mid->errortext, "!terminating connection\n");
@@ -1035,7 +1036,7 @@ char *Mgetreply(Msession mid) {
 	}
 	if( mid->reply[0]=='#' && mid->everything==0) return Mgetreply(mid);
         
-        if (mid->from->error(mid->from)) {
+        if (mid->from->errnr) {
                 sprintf(mid->errortext, "!connection broken\n");
 		mid->error= MMONETERR;
                 return 0;
