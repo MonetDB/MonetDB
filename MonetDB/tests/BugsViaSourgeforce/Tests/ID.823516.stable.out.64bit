@@ -25,8 +25,8 @@ print(b.info,c.info);
 # (str)				  (str)		| (str)		  #
 #-----------------------------------------------------------------#
 [ "version",			  "980714",	  "980714"	  ]
-[ "batId",			  "tmp_29",	  "tmp_28"	  ]
-[ "batCacheid",			  "29",		  "28"		  ]
+[ "batId",			  "tmp_29",	  "tmp_30"	  ]
+[ "batCacheid",			  "29",		  "30"		  ]
 [ "batParentid",		  "0",		  "29"		  ]
 [ "batSharecnt",		  "1",		  "1"		  ]
 [ "head",			  "oid",	  "oid"		  ]
@@ -45,8 +45,8 @@ print(b.info,c.info);
 [ "hkey",			  "1",		  "1"		  ]
 [ "hloc",			  "0",		  "0"		  ]
 [ "hvarsized",			  "0",		  "0"		  ]
-[ "halign",			  "1002382",	  "1002382"	  ]
-[ "halignflushed",		  "1002375",	  "1002375"	  ]
+[ "halign",			  "1002598",	  "1002598"	  ]
+[ "halignflushed",		  "1002591",	  "1002591"	  ]
 [ "tident",			  "t",		  "t"		  ]
 [ "tdense",			  "0",		  "0"		  ]
 [ "tseqbase",			  "nil",	  "nil"		  ]
@@ -54,16 +54,16 @@ print(b.info,c.info);
 [ "tkey",			  "1",		  "1"		  ]
 [ "tloc",			  "8",		  "8"		  ]
 [ "tvarsized",			  "0",		  "0"		  ]
-[ "talign",			  "1002381",	  "1002381"	  ]
-[ "talignflushed",		  "1002376",	  "1002376"	  ]
+[ "talign",			  "1002597",	  "1002597"	  ]
+[ "talignflushed",		  "1002592",	  "1002592"	  ]
 [ "batInserted",		  "1",		  "1"		  ]
 [ "batDeleted",			  "0",		  "0"		  ]
 [ "batHole",			  "0",		  "0"		  ]
 [ "top",			  "4",		  "4"		  ]
-[ "batStamp",			  "-165",	  "-166"	  ]
-[ "lastUsed",			  "3986",	  "4024"	  ]
+[ "batStamp",			  "-175",	  "-176"	  ]
+[ "lastUsed",			  "4006",	  "4044"	  ]
 [ "keepAround",			  "0",		  "0"		  ]
-[ "curStamp",			  "167",	  "170"		  ]
+[ "curStamp",			  "177",	  "180"		  ]
 [ "batCopiedtodisk",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean"	  ]
@@ -144,8 +144,8 @@ kdiff(pre,post).print;
 # BAT:	  tmp_29	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 28,	  "tmp_28"	  ]
 [ 29,	  "tmp_29"	  ]
+[ 30,	  "tmp_30"	  ]
 
 # the post BAT is new. correct.
 # the histogram-accellerator BAT of the view 
@@ -155,8 +155,7 @@ kdiff(post,pre).print;
 # BAT:	  tmp_29	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 30,	  "tmp_30"	  ]
-[ 32,	  "histo_tmp_28"  ]
+[ 28,	  "tmp_28"	  ]
 
 # 17:26:11 >  
 # 17:26:11 >  Done.
