@@ -102,7 +102,7 @@ daemonize (void)
      * disassociate from controlling terminal and process group;
      * ensure the process can't reacquire a new controlling terminal
      */
-    if (setpgrp () == -1)
+    if (setpgid (0,0) == -1)
         PFoops (OOPS_FATAL, "cannot diassociate from controlling tty");
 
     /* be immune from pgrp leader death */
