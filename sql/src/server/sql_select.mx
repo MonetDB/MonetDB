@@ -1385,6 +1385,7 @@ static stmt *sql_compare(mvc * sql, stmt * ls,
 		rs = stmt_reverse(rs);
 		return stmt_join(ls, rs, type);
 	} else {
+		stmt *res;
 		if (ls->nrcols == 0) {
 			stmt *t = ls;
 			ls = rs;
@@ -1395,7 +1396,10 @@ static stmt *sql_compare(mvc * sql, stmt * ls,
 			if (rs) stmt_destroy(rs);
 			return NULL;
 		}
-		return stmt_uselect(ls, rs, type);
+		res = stmt_uselect(ls, rs, type);
+		if (ls->nrcols == 2 || rs->nrcols == 2)
+			res = stmt_filter(res);
+		return res;
 	}
 }
 
