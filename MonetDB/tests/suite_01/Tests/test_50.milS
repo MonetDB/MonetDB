@@ -1,7 +1,7 @@
 setoid(oid(20000000));
 #advanced features BATs as primitives.
 
-var c:= new(int,bat);
+var c:= new(int,bat).rename("c");
 #c.insert(1,gdk_cpu_stat);
 c.insert(1,cpu());
 c.insert(2,c);
