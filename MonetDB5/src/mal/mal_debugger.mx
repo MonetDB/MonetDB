@@ -402,6 +402,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
     	case 'q': 
         	stk->cmd= 'q';/* return from this debugger */
         	cntxt->itrace= 0;
+        	cntxt->timer= 0;
         	MDBstatus(0);
 			cntxt->fdin= oldin;
 			cntxt->prompt = oldprompt;
