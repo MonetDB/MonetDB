@@ -178,14 +178,12 @@ int stream_write_string( stream *S, str data ){
 	return GDK_SUCCEED;
 }
 
-<<<<<<< streams.mx
 int stream_writeInt_wrap( stream *S, int *data ){
 	stream *s = *(stream**)S;
 	s->writeInt( s, *data);
 	return GDK_SUCCEED;
 }
 
-=======
 #define CHUNK (64*1024)
 int stream_read_string( str *res, stream *S ){
 	stream *s = *(stream**)S;
