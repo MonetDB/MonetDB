@@ -774,6 +774,11 @@ TagName:         CoreExpr;
 FunctionAppl:    apply (FunctionArgs)
     =
     {
+        if (!$$->sem.fun->alg)
+            PFoops (OOPS_FATAL,
+                    "Algebra implementation for function `%s' unknown.",
+                    PFqname_str ($$->sem.fun->qname));
+
         [[ $$ ]] = $$->sem.fun->alg (loop, &delta, 
                                      [[ $1$ ]]->sem.builtin.args->base);
     }
