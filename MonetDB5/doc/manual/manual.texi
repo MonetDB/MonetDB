@@ -34,18 +34,17 @@ Last updated: @value{UPDATED}
 
 @ifnottex
 @page
-@node Top, AboutThisManual, (dir), (dir)
+@node Top, About_this_manual, (dir), (dir)
 @top MonetDB
 
-@include Assets/GeneralInfo
+@include Assets/General_information
 @menu
-* AboutThisManual::
-* Introduction::
+* About_this_manual::
+* Introduction_V5::
 @end menu
 @end ifnottex
 
-@include Assets/AboutThisManual
+@include Assets/About_this_manual
 
-@node Introduction, , AboutThisManual , Top
 @include Assets/mal.bdy.texi
 @bye
