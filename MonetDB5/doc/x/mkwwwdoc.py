@@ -1,3 +1,5 @@
+# WARNING THIS FILE IS OBSOLETE
+
 # The contents of this file are subject to the MonetDB Public
 # License Version 1.0 (the "License"); you may not use this file
 # except in compliance with the License. You may obtain a copy of
@@ -23,16 +25,18 @@
 
 import sys, os, string
 
-if len(sys.argv) != 3:
+if len(sys.argv) != 4:
     print '''\
-Usage: %s srcdir dstdir
+Usage: %s kind srcdir dstdir
 
+where kind is either html or tex
 where srcdir is the top of the MonetDB source directory tree, and
 dstdir is the top of the installation tree.''' % sys.argv[0]
     sys.exit(1)
 
-srcdir = sys.argv[1]
-dstdir = sys.argv[2]
+doctype= sys.argv[1]
+srcdir = sys.argv[2]
+dstdir = sys.argv[3]
 
 # Here a hack to make this work on Windows:
 # The command name cannot have any spaces, not even quoted, so we
@@ -67,21 +71,24 @@ def runMx(srcdir, base, dstdir, suffix='' ):
     cwd = os.getcwd()
     print cwd, '->', srcdir
     os.chdir(srcdir)
-    cmd = '%s "-R%s" -H1 -w "%s" 2>&1' % (mx, tmpdir, base + '.mx')
+    if doctype== 'html':
+	    cmd = '%s "-R%s" -H1 -w -I "%s" 2>&1' % (mx, tmpdir, base + '.mx')
+    else:
+	    cmd = '%s "-R%s" -H1 -t -I "%s" 2>&1' % (mx, tmpdir, base + '.mx')
     print cmd
     f = os.popen(cmd, 'r')
     dummy = f.read()                    # discard output
     f.close()
     print srcdir, '->', cwd
     os.chdir(cwd)
-    srcfile = os.path.join(tmpdir, base + '.body.html')
+    srcfile = os.path.join(tmpdir, base + '.body.'+doctype)
     if not os.path.exists(srcfile):
-        srcfile = os.path.join(tmpdir, base + '.html')
+        srcfile = os.path.join(tmpdir, base + '.' + doctype)
     os.makedirs(os.path.join(dstdir, base+suffix))
-    copyfile(srcfile, os.path.join(dstdir, base+suffix, 'index.html'))
-    unlink(os.path.join(tmpdir, base + '.html'))
-    unlink(os.path.join(tmpdir, base + '.index.html'))
-    unlink(os.path.join(tmpdir, base + '.body.html'))
+    copyfile(srcfile, os.path.join(dstdir, base+suffix, 'index.' +doctype))
+    unlink(os.path.join(tmpdir, base + '.' + doctype))
+    unlink(os.path.join(tmpdir, base + '.index.'+doctype))
+    unlink(os.path.join(tmpdir, base + '.body.'+doctype))
 
 def removedir(dir):
     """Remove DIR recursively."""
@@ -182,17 +189,26 @@ runMx(os.path.join(srcdir, 'src', 'mapi', 'clients', 'C'), 'MapiClient',
 #    copyfile(os.path.join(srcdir, f),
 #             os.path.join(dstdir, 'doc', 'www', f))
 
-copyfile(os.path.join(srcdir, 'doc', 'design.shtml'),
-         os.path.join(dstdir, 'doc/www', 'design.shtml'))
+if doctype=='html':
+	copyfile(os.path.join(srcdir, 'doc', 'design.shtml'),
+		os.path.join(dstdir, 'doc/www', 'design.shtml'))
+
+if doctype=='tex':
+	copyfile(os.path.join(srcdir, 'doc', 'design.tex'),
+	 os.path.join(dstdir, 'doc/www', 'design.tex'))
+	copyfile(os.path.join(srcdir, 'doc', 'latex8.sty'),
+	 os.path.join(dstdir, 'doc/www', 'latex8.sty'))
+	copyfile(os.path.join(srcdir, 'doc', 'multiFloats.sty'),
+	 os.path.join(dstdir, 'doc/www', 'multiFloats.sty'))
 
 f = open(os.path.join(dstdir, 'doc', 'www', 'sql.html'), 'w')
 f.write('''\
 <html>
-  <body>
-    <h3>
-      <a href="mailto:niels@cwi.nl">The SQL frontend is not documented yet</a>
-    </h3>
-  </body>
-</html>
+<body>
+<h3>
+ <a href="mailto:niels@cwi.nl">The SQL frontend is not documented yet</a>
+</h3>
+</body>
+   </html>
 ''')
 f.close()

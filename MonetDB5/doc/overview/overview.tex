@@ -1,0 +1,124 @@
+%\documentclass[letterpaper]{vldb}
+%\documentclass[a4paper]{vldb}
+\documentclass[letterpaper,times,10pt,twocolumn]{article}
+\usepackage{latex8}
+\usepackage{times}
+\usepackage[english]{babel}
+\usepackage{epsf}
+\usepackage{amsmath}
+\usepackage{txfonts}
+\usepackage{multiFloats}
+\usepackage{pslatex}
+\usepackage[refpage]{nomencl}
+
+\newcommand{\myplot}[3]{
+        \hspace*{#1cm}
+        \parbox{#2cm}{
+        \mbox{\epsfxsize=#2cm
+              \epsffile{#3}}
+        }
+}
+\def\HEADLINE{\vspace{-5pt}\noindent\rule{\linewidth}{1pt}\vspace{-5pt}}
+\def\TAILLINE{\vspace{-12pt}\noindent\rule{\linewidth}{1pt}\vspace{-2pt}}
+\def\Skip{\par\bigskip\nobreak\noindent}
+\def\LINE{\noindent\rule{\linewidth}{1pt}}
+\def\BN{\begin{scriptsize}\begin{eqnarray}}
+\def\EN{\end{eqnarray}\end{scriptsize}}
+\def\BD{\begin{scriptsize}\begin{eqnarray*}}
+\def\ED{\end{eqnarray*}\end{scriptsize}}
+\def\path#1#2{\raisebox{-3pt}{\mbox{$\stackrel{#2}{\overline{\scriptscriptstyle
+#1}}$}}}
+\def\bmt{\begin{scriptsize}$}
+\def\emt{$\end{scriptsize}}
+ 
+\def\drawpsfig#1#2#3#4#5{
+    \begin{figure}
+        \vspace{-10pt}
+        \epsfxsize=#4\textwidth
+        \mbox{\hspace*{#5}\epsffile{#1} }
+        \vspace{-8pt}
+        \caption{#2} \label{#3}
+        \vspace{-10pt}
+    \end{figure}
+}
+\def\draw2psfig#1#2#3#4{
+    \begin{figure*}[hbt]
+        \mbox{\hspace{#4}\epsffile{#1}}\\
+        \caption{#2}
+        \label{#3}
+    \end{figure*}
+}
+                                                                                
+                                                                                
+\renewcommand{\textfraction}{0.0}
+\renewcommand{\bottomfraction}{1.0}
+\renewcommand{\topfraction}{1.0}
+\renewcommand{\dbltopfraction}{1.0}
+                                                                                
+\begin{document}
+%\input{coverpage.tex}
+                                                                                
+                                                                                
+                                                                                
+\title{Monet Version 5}
+                                                                                
+\long\def\longwho{
+  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}cccccc}
+        &                       Martin Kersten
+        %&                       Niels Nes et.al
+        %&\\[-.5ex]
+        & \footnotesize\sf      Martin.Kersten@cwi.nl
+        %& \footnotesize\sf      Niels.Nes@cwi.nl
+  \end{tabular*}
+}
+\long\def\shortwho{
+  \begin{tabular*}{.97\textwidth}{@{\extracolsep{\fill}}cccccc}
+        &                       Martin Kersten
+        %&                       Niels Nes et.al.
+  \end{tabular*}
+}
+\long\def\longwhere{
+  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}ccc}
+        &\\             & CWI
+        &\\             & Kruislaan 413
+        &\\             & 1098 SJ Amsterdam
+        &\\             & The Netherlands
+  \end{tabular*}
+}
+\long\def\shortwhere{
+  \begin{tabular}{c}
+                CWI, Kruislaan 413, 1098 SJ Amsterdam, The Netherlands\\
+                {\small\tt\{Martin.Kersten\}@cwi.nl}
+  \end{tabular}
+}
+\newcommand{\codesize}{\small}
+\newcommand{\eq}[1]{$\equiv$}
+                                                                                
+\author{\\[-5ex]\shortwho\\[1ex]\shortwhere}
+
+\maketitle
+\maketableofcontents
+\input{MAL/mal.tex}
+\input{MAL/mal_instruction.tex}
+\input{MAL/mal_parser.tex}
+\input{MAL/mal_scenario.tex}
+\input{MAL/mal_client.tex}
+\input{MAL/mal_session.tex}
+\input{MAL/mal_function.tex}
+\input{MAL/mal_interpreter.tex}
+\input{MAL/mal_import.tex}
+\input{MAL/mal_linker.tex}
+\input{MAL/mal_optimizer.tex}
+\input{MAL/mal_box.tex}
+\input{MAL/mal_type.tex}
+\input{MAL/mal_properties.tex}
+\input{MAL/mal_atom.tex}
+\input{MAL/mal_resolve.tex}
+\input{MAL/mal_namespace.tex}
+\input{MAL/mal_scope.tex}
+\input{MAL/mal_stack.tex}
+\input{MAL/mal_startup.tex}
+\input{MAL/mal_xml.tex}
+\input{MAL/mal_debugger.tex}
+\input{MAL/mal/mal_profiler.tex}
+\end{document}
