@@ -17,6 +17,7 @@ Too many bugs.
 @:join(fetch)@
 @:join(merge)@
 @:join(hash)@
+@:join(lrhash)@
 @:join(index)@
 
 @= sum
@@ -99,6 +100,12 @@ BATmalhashjoin(BAT *l, BAT *r) {
   return BAThashjoin(l,r);
 }
 
+/* don't reorder! */
+BAT*
+BATmallrhashjoin(BAT *l, BAT *r) {
+  return BAThashjoin(l,r);
+}
+
 BAT*
 BATmalmergejoin(BAT *l, BAT *r) {
   if ( !((BATtordered(l)&1)||(BAThordered(r)&1)) ) {
@@ -126,6 +133,7 @@ int CMD@1join(BAT **result, BAT *left, BAT* right) {
 }
 @c
 @:joincmd(hash)@
+@:joincmd(lrhash)@
 @:joincmd(fetch)@
 @:joincmd(merge)@
 @:joincmd(index)@
