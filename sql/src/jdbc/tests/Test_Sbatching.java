@@ -37,14 +37,14 @@ public class Test_Sbatching {
 			System.out.println("passed :)");
 
 			// start batching a large amount of inserts
-			for (int i = 1; i <= 30000; i++) {	// three batches, otherwise Mtest times out
+			for (int i = 1; i <= 30000; i++) {
 				stmt.addBatch("INSERT INTO table_Test_Sbatching VALUES (" + i + ")");
-				if (i % 8000 == 0) {
-					System.out.print("2. executing batch (8000 inserts)...");
+				if (i % 400 == 0) {
+					System.out.print("2. executing batch (400 inserts)...");
 					int[] cnts = stmt.executeBatch();
 					System.out.println("passed :)");
 					System.out.print("3. checking number of update counts...");
-					if (cnts.length != 8000) throw new SQLException("Invalid size: " + cnts.length);
+					if (cnts.length != 400) throw new SQLException("Invalid size: " + cnts.length);
 					System.out.println(cnts.length + " passed :)");
 					System.out.print("4. checking update counts (should all be 1)...");
 					for (int j = 0; j < cnts.length; j++) {
