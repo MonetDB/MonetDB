@@ -1,2 +1,3 @@
 sql = major:2; minor:5; release:0;
 MonetDB = major:4; minor:5; release:0;
+jdbc = major:1; minor:0; suffix:Dawn+;
