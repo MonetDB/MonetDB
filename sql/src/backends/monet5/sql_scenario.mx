@@ -56,6 +56,35 @@ static void pushCatchDefault(MalBlkPtr mb, str nme,int autocommit);
 
 static int SQLinitialized;
 
+#define _SQL_SCENARIO_DEBUG
+
+static void 
+monet5_freestack( backend_stack stk)
+{
+	(void) stk;
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"monet5_freestack\n");
+#endif
+}
+
+static void 
+monet5_parse( backend_stack stk, char *cmd)
+{
+	(void) stk; (void) cmd;
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"monet5_parse:%s\n",cmd);
+#endif
+}
+
+static void 
+monet5_freecode(backend_code code, backend_stack stk, int nr)
+{
+	(void) code; (void) stk; (void)nr;
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout,"monet5_free:%d\n",nr);
+#endif
+}
+	
 str SQLinit(Client c){
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout,"SQLinit Monet 5\n");
@@ -66,6 +95,7 @@ str SQLinit(Client c){
 	}
 	SQLinitialized= FALSE;
 	(void)c; /* not used */
+	backend_init( &monet5_freestack, &monet5_freecode, &monet5_parse );
 	if( mvc_init(FALSE,0) <0) {
 		return throwMessage("SQLinit",
 			"Catalogue initialization failed\n");
@@ -99,7 +129,7 @@ str SQLinitClient(Client c){
 	}
 	if( (backend*) c->state[PARSER] == 0){
 		/* currently disabled caching, first get simple stuff to work */
-		m = mvc_create(0, 0, NULL, c->fdout);
+		m = mvc_create(1, 0, NULL, c->fdout);
 		/* replace user name with client record setting later on */
 		schema = mvc_login(m, "monetdb", "monetdb");
 		if( !schema){
@@ -320,7 +350,6 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 		if (!m->cache) {
 			backend_dumpstmt( be, c->curprg->def, s );
 		} else {
-			printf("cached case!!\n");
 			/* generate a factory instantiation */
 			backend_dumpproc( be, c, m->qc->id, s );
 			be->q = qc_insert(
@@ -329,7 +358,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 				      m->args,	/* the argument list */
 				      m->scanner.key,/* the statement hash key*/
 				      m->type,	/* the type of the statement */
-				      "the mal block?" );
+				      _strdup("the mal block?") );
 			be->q->code = (backend_code)c->curprg;
 			m->sym = NULL;
 		}
@@ -396,6 +425,7 @@ be stored in an SQL table
 		
 	return msg;
 }
+
 @-
 Execution of the SQL program is delegated to the MALengine.
 @c
@@ -405,6 +435,12 @@ str SQLengine(Client c) {
 	backend *be= ((backend*)c->state[PARSER]);
 	lng T0;
 
+	if( be->q ) {
+		char name[BUFSIZ];
+
+		(void)snprintf( name, BUFSIZ, "sql%d", be->q->id);
+		backend_call(be, c, name, be->mvc->args );
+	}
 	if( c->curprg->def->errors)
 		return throwMessage("SQLengine","Program contains errors\n");
 #ifdef SQL_SCENARIO_DEBUG

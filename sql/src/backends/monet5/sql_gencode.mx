@@ -50,6 +50,7 @@ A dummy module is needed to load properly.
 
 sql_export int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
 sql_export void backend_dumpproc( backend *be, Client c, int id, stmt *s );
+sql_export void backend_call( backend *be, Client c, char *name, list *args );
 
 #define _SQL_GENCODE_DEBUG
 #endif /* _SQL2MAL_H */
@@ -257,10 +258,14 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		q= pushArgument(mb,q,o1);
 		} break;
         case st_var: {
-                int val = backend_dumpstmt(sql,mb, s->op2.stval);
 		q= newAssignment(mb);
-		q= pushArgumentId(mb,q,s->op1.sval);
-		q= pushArgument(mb,q,val);
+		if (s->op1.sval) {
+			q= pushArgumentId(mb,q,s->op1.sval);
+		} else {
+			char buf[32];
+			(void)snprintf( buf, 32, "A%d", s->flag);
+			q= pushArgumentId(mb,q,buf);
+		}
 		s->nr = getDestVar(q);
         }       break;
 	case st_update_var:{
@@ -1075,4 +1080,30 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
 		}
 	}
     	backend_dumpstmt( be, curBlk, s);
+}
+
+void 
+backend_call( backend *be, Client c, char *name, list *args ) 
+{
+	
+	InstrPtr q;
+        MalBlkPtr mb = c->curprg->def;
+
+	q= newStmt(mb, "sql", name);
+	if (args){
+		node *n;
+  		for (n=args->h; n; n = n->next){
+			atom *a = n->data;
+			int _t;
+
+			if (atom_null(a)) {
+				if (a->data.vtype == TYPE_str && 
+				    a->data.val.sval == NULL) {
+					a->data.val.sval = GDKstrdup(str_nil);
+				}
+			}
+			_t = constantAtom(be, mb, a);
+			q= pushArgument(mb,q,_t);
+		}
+	}
 }

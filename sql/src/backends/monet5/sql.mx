@@ -253,25 +253,6 @@ void backend_destroy( backend *b )
 	_DELETE(b);
 }
 
-void monet5_freestack( backend_stack stk){
-	(void) stk;
-#ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout,"monet5_freestack\n");
-#endif
-}
-void monet5_parse( backend_stack stk, char *cmd){
-	(void) stk; (void) cmd;
-#ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout,"monet5_parse:%s\n",cmd);
-#endif
-}
-void monet5_freecode(backend_code code, backend_stack stk, int nr){
-	(void) code; (void) stk; (void)nr;
-#ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout,"monet5_free:%d\n",nr);
-#endif
-}
-	
 @-
 Stuff copied from the Monet 4 back end
 Lookup the statement associated with a specific identifier
