@@ -29,9 +29,8 @@ EXTRA_DIST = monet_getopt.h getopt.c getopt1.c memcmp.c
 
 lib_mutils = { 
 	NAME = mutils
-	SOURCES = monet_utils.mx monet_options.mx.in @LIBOBJS@ monet_getopt.h
+	SOURCES = monet_utils.mx monet_options.mx.in monet_getopt.h
 	HEADERS = h
-	LIBS = @LIBOBJS@
 }
 
 scripts_py = {

@@ -25,7 +25,10 @@
 
 /* Manual config.h. needed for win32 .  */
 
+#include <process.h>
+
 #define WIN32
+#define NATIVE_WIN32
 
 /* Define if on AIX 3.
    System headers sometimes define this.
@@ -48,7 +51,7 @@
 #define HAVE_ALLOCA 1
 
 /* Define if you have <alloca.h> and it should be used (not on Ultrix).  */
-#undef HAVE_ALLOCA_H 
+/* #undef HAVE_ALLOCA_H */
 
 /* Define if you don't have vprintf but do have _doprnt.  */
 /* #undef HAVE_DOPRNT */
@@ -57,10 +60,10 @@
 #define HAVE_MMAP 1
 
 /* Define if you have <sys/wait.h> that is POSIX.1 compatible.  */
-#undef HAVE_SYS_WAIT_H 
+/* #undef HAVE_SYS_WAIT_H */
 
 /* Define if your struct tm has tm_zone.  */
-#undef HAVE_TM_ZONE
+/* #undef HAVE_TM_ZONE */
 
 /* Define if you don't have tm_zone but do have the external array
    tzname.  */
@@ -85,7 +88,7 @@
 #define RETSIGTYPE void
 
 /* Define if the `setpgrp' function takes no argument.  */
-#undef SETPGRP_VOID 
+/* #undef SETPGRP_VOID */
 
 /* Define to `unsigned' if <sys/types.h> doesn't define.  */
 /* #undef size_t */
@@ -106,7 +109,7 @@
 #define STDC_HEADERS 1
 
 /* Define if you can safely include both <sys/time.h> and <time.h>.  */
-#undef TIME_WITH_SYS_TIME 
+/* #undef TIME_WITH_SYS_TIME */
 
 /* Define if your <sys/time.h> declares struct tm.  */
 /* #undef TM_IN_SYS_TIME */
@@ -122,16 +125,43 @@
 #define HAVE_BOOL 1
 
 /* Define this if you have the readline library */
-#undef HAVE_LIBREADLINE 
+/* #undef HAVE_LIBREADLINE */
+/* #undef HAVE_LIBZ */
+/* #undef HAVE_LIBBZ2 */
+
+/* Define these if you have the respective hardware-counters library */
+/* #undef HAVE_LIBPPERF	*/ /* Linux <= 2.2 */
+/* #undef HAVE_LIBPERFCTR */ /* Linux >= 2.4 */
+/* #undef HAVE_LIBPERFMON */ /* Solaris <= 7 */
+/* #undef HAVE_LIBCPC */ /* Solaris >= 8 */
 
 /* Define this if you have ctime_r(time_t*,char *buf,size_t s) */
 /* #undef HAVE_CTIME_R3 */
 
+/* LONGLONG */
+/* #undef HAVE_LONGLONG */
+#define HAVE__INT64 1
+
+/* The number of bytes in a char.  */
+#define SIZEOF_CHAR 1
+
+/* The number of bytes in a int.  */
+#define SIZEOF_INT 4
+
 /* The number of bytes in a long.  */
 #define SIZEOF_LONG 4
 
+/* The number of bytes in a long long.  */
+/* #undef SIZEOF_LONG_LONG */
+
+/* The number of bytes in a short.  */
+#define SIZEOF_SHORT 2
+
 /* Define if you have the ctime_r function.  */
-#undef HAVE_CTIME_R 
+/* #undef HAVE_CTIME_R */
+
+/* Define if you have the fstat function.  */
+#define HAVE_FSTAT 1
 
 /* Define if you have the getcwd function.  */
 #define HAVE_GETCWD 1
@@ -140,32 +170,57 @@
 #define HAVE_GETHOSTNAME 1
 
 /* Define if you have the getopt function.  */
-#undef HAVE_GETOPT
+/* #undef HAVE_GETOPT */
+
+/* Define if you have the getopt_long function.  */
+/* #undef HAVE_GETOPT_LONG */
 
 /* Define if you have the getpagesize function.  */
-#undef HAVE_GETPAGESIZE 
+/* #undef HAVE_GETPAGESIZE */
 
 /* Define if you have the getpgid function.  */
-#undef HAVE_GETPGID 
+/* #undef HAVE_GETPGID */
+
+/* Define if you have the getpwuid function.  */
+/* #undef HAVE_GETPWUID */
+
+/* Define if you have the getrlimit function.  */
+/* #undef HAVE_GETRLIMIT */
 
 /* Define if you have the gettimeofday function.  */
-#undef HAVE_GETTIMEOFDAY 
+/* #undef HAVE_GETTIMEOFDAY */
+
+/* Define if you have the getuid function.  */
+/* #undef HAVE_GETUID */
+
+/* Define if you have the mallinfo function.  */
+/* #undef HAVE_MALLINFO */
+
+/* Define if you have the mallopt function.  */
+/* #undef HAVE_MALLOPT */
 
 /* Define if you have the mkdir function.  */
 #define HAVE_MKDIR 1
 
 /* Define if you have the putenv function.  */
-#define HAVE_SETENV 1
 #define HAVE_PUTENV 1
-
-/* Define if you have the rlimit function.  */
-/* #undef HAVE_RLIMIT */
 
 /* Define if you have the rmdir function.  */
 #define HAVE_RMDIR 1
 
 /* Define if you have the select function.  */
 #define HAVE_SELECT 1
+
+/* Define if you have the setenv function.  */
+#define HAVE_SETENV 1
+
+/* Define if you have the snprintf function.  */
+#define HAVE_SNPRINTF 1
+#define snprintf _snprintf
+
+/* Define if you have the strcasecmp function.  */
+#define HAVE_STRCASECMP 1
+#define strcasecmp(x,y) stricmp(x,y)
 
 /* Define if you have the strcspn function.  */
 #define HAVE_STRCSPN 1
@@ -185,25 +240,33 @@
 /* Define if you have the strtol function.  */
 #define HAVE_STRTOL 1
 
+/* Define if you have the vsnprintf function.  */
+#define HAVE_VSNPRINTF 1
+#define vsnprintf _vsnprintf
+
 /* Define if you have the <dirent.h> header file.  */
-#undef HAVE_DIRENT_H 
+/* #undef HAVE_DIRENT_H */
+
+/* Define if you have the <dlfcn.h> header file.  */
+/* #undef HAVE_DLFCN_H */
 
 /* Define if you have the <fcntl.h> header file.  */
 #define HAVE_FCNTL_H 1
-#define HAVE_FCNTL  1
-#define HAVE_SETSOCKOPT 0
-
-/* Define if you have the <dlfcn.h> header file.  */
-#undef HAVE_DLFCN_H 
 
 /* Define if you have the <getopt.h> header file.  */
-#undef HAVE_GETOPT_H 
+/* #undef HAVE_GETOPT_H */
+
+/* Define if you have the <libcpc.h> header file.  */
+/* #undef HAVE_LIBCPC_H */
+
+/* Define if you have the <libperfctr.h> header file.  */
+/* #undef HAVE_LIBPERFCTR_H */
+
+/* Define if you have the <libpperf.h> header file.  */
+/* #undef HAVE_LIBPPERF_H */
 
 /* Define if you have the <limits.h> header file.  */
 #define HAVE_LIMITS_H 1
-
-/* Define if you have the <pwd.h> header file.  */
-#undef HAVE_PWD_H 
 
 /* Define if you have the <malloc.h> header file.  */
 #define HAVE_MALLOC_H 1
@@ -211,14 +274,23 @@
 /* Define if you have the <ndir.h> header file.  */
 /* #undef HAVE_NDIR_H */
 
+/* Define if you have the <netdb.h> header file.  */
+/* #undef HAVE_NETDB_H */
+
+/* Define if you have the <perfmon.h> header file.  */
+/* #undef HAVE_PERFMON_H */
+
 /* Define if you have the <pthread.h> header file.  */
 #define HAVE_PTHREAD_H 1
 
+/* Define if you have the <pwd.h> header file.  */
+/* #undef HAVE_PWD_H */
+
+/* Define if you have the <rlimit.h> header file.  */
+/* #undef HAVE_RLIMIT_H */
+
 /* Define if you have the <semaphore.h> header file.  */
 #define HAVE_SEMAPHORE_H 1
-
-/* Define if you have the <stdlib.h> header file.  */
-#define HAVE_STDLIB_H 1
 
 /* Define if you have the <string.h> header file.  */
 #define HAVE_STRING_H 1
@@ -226,48 +298,41 @@
 /* Define if you have the <strings.h> header file.  */
 /* #undef HAVE_STRINGS_H */
 
-
-/* Define if you have the <rlimit.h> header file.  */
-/* #undef HAVE_RLIMIT_H */
-
 /* Define if you have the <sys/dir.h> header file.  */
 /* #undef HAVE_SYS_DIR_H */
 
 /* Define if you have the <sys/file.h> header file.  */
-#undef HAVE_SYS_FILE_H 
-
-/* Define if you have the <sys/param.h> header file.  */
-#undef HAVE_SYS_PARAM_H 
-
-/* Define if you have the <sys/times.h> header file.  */
-#undef HAVE_SYS_TIMES_H 
+/* #undef HAVE_SYS_FILE_H */
 
 /* Define if you have the <sys/mman.h> header file.  */
-#undef HAVE_SYS_MMAN_H 
+/* #undef HAVE_SYS_MMAN_H */
 
 /* Define if you have the <sys/ndir.h> header file.  */
 /* #undef HAVE_SYS_NDIR_H */
 
+/* Define if you have the <sys/param.h> header file.  */
+/* #undef HAVE_SYS_PARAM_H */
+
 /* Define if you have the <sys/resource.h> header file.  */
-#undef HAVE_SYS_RESOURCE_H 
+/* #undef HAVE_SYS_RESOURCE_H */
+
+/* Define if you have the <sys/signal.h> header file.  */
+/* #undef HAVE_SYS_SIGNAL_H */
 
 /* Define if you have the <sys/time.h> header file.  */
-#undef HAVE_SYS_TIME_H 
+/* #undef HAVE_SYS_TIME_H */
+
+/* Define if you have the <sys/times.h> header file.  */
+/* #undef HAVE_SYS_TIMES_H */
 
 /* Define if you have the <sys/utime.h> header file.  */
 #define HAVE_SYS_UTIME_H 1
-
-/* Define if you have the <netdb.h> header file.  */
-#undef HAVE_NETDB_H 
-
-/* Define if you have the <thread.h> header file.  */
-/* #undef HAVE_THREAD_H */
 
 /* Define if you have the <time.h> header file.  */
 #define HAVE_TIME_H 1
 
 /* Define if you have the <unistd.h> header file.  */
-#undef HAVE_UNISTD_H 
+/* #undef HAVE_UNISTD_H */
 
 /* Name of package */
 #define PACKAGE "MonetDB"
@@ -278,20 +343,4 @@
 /* Host identifier */
 #define HOST "i686-pc-win32"
 
-#undef HAVE_LONGLONG
-#define HAVE__INT64
-
-#define HAVE_SNPRINTF 1
-#define snprintf _snprintf
-#define HAVE_VSNPRINTF 1
-#define vsnprintf _vsnprintf
-
-#define HAVE_STRCASECMP 1
-#define strcasecmp(x,y) stricmp(x,y)
-
-#define HAVE_FSTAT 1
-
-/* dirty hack */
-#include <winlibc.h>
-
-#define HAVE_NOMALLINFO
+/* directory prefix */

@@ -57,7 +57,6 @@ pkgincludedir = $(includedir)\$(pkg)
 #-FI$(TOPDIR)\config.h 
 LIBC_INCS = $(PTHREAD_INCS)
 SOCKET_LIBS = wsock32.lib
-LIBOBJS = getopt.obj getopt1.obj
 
 CXX=$(CC)
 MEL=$(TOPDIR)\src\mel\mel
