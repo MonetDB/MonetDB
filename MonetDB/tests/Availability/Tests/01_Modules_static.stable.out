@@ -46,12 +46,12 @@ monet_fcntbl.sort@batloop {
 }
 
 Fnts.count.print;
-[ 657 ]
+[ 661 ]
 Fnts.reverse.sort.reverse@batloop {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count.print;
-[ 657 ]
+[ 661 ]
 
 All:=0;
 
@@ -135,8 +135,8 @@ Module: ""
 
 Module: "algebra"
 
-[ 108 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 112 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																													  # name
 # str		str		str											str																																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -212,6 +212,10 @@ Module: "algebra"
 [ "project",	  "COMMAND:   ",  "project(BAT[any::1,any], any::2) : BAT[any::1,any::2]",				  "Fill the tail column with a constant value."																																  ]
 [ "rangesplit",	  "COMMAND:   ",  "rangesplit(BAT[any::1,any::2], int) : BAT[any::2,BAT]",				  "Split a BAT on tail column in 'ranges' equally sized\nconsecutive ranges. Returns a recursive BAT, containing the\nfragments in the tail, the higher-bound of the range in the head.\nThe higher bound of the last range is 'nil'."									  ]
 [ "rev_select",	  "PROC:      ",  "rev_select(BAT[any::1,any::2], str, any::2) : BAT[any::1,any::2]",			  "(value OP column) select rather than (column OP value)"																														  ]
+[ "rmax_lower",	  "COMMAND:   ",  "rmax_lower(BAT[any::1,oid], any::1) : oid",						  "find the highest oid that may contain <= the passed value in an rmin() summary."																																																																		  ]
+[ "rmax_summary", "COMMAND:   ",  "rmax_summary(BAT[void,any::1], int) : BAT[any::1,oid]",				  "provide a running-maximum summary of a specified size on the tail. It will be sorted on value and oid."																																																															  ]
+[ "rmin_higher",  "COMMAND:   ",  "rmin_higher(BAT[any::1,oid], any::1) : oid",						  "find the lowest oid that may contain >= the passed value, in an rmax() summary."																																																																		  ]
+[ "rmin_summary", "COMMAND:   ",  "rmin_summary(BAT[void,any::1], int) : BAT[any::1,oid]",				  "provide a running-minimum summary of a specified size on the tail. It will be sorted on value (reversely on oid)."																																																														  ]
 [ "sample",	  "COMMAND:   ",  "sample(BAT[any::1,any::2], int) : BAT[any::1,any::2]",				  "Produce a random selection of size 'num' from the input BAT."																													  ]
 [ "sdiff",	  "COMMAND:   ",  "sdiff(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",			  "Returns the difference taken over *both* columns of two BATs.  \n Results in all BUNs of 'left' that are *not* in 'right'. Does *not* do\n double-elimination over the 'left' BUNs, If you want this, use:\n 'sdiff(left.sunique,right.sunique)' or: 'sdiff(left,right).sunique'."			  ]
 [ "select",	  "COMMAND:   ",  "select(BAT[any::1,any::2], any::2) : BAT[any::1,any::2]",				  "Select all BUNs of a BAT with a certain tail value. Selection\n on NIL is also possible (it should be properly casted, e.g.: int(nil))."																				  ]
@@ -790,7 +794,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",									  "save all persistent BATs"																																																																									  ]
 
 All.print;
-[ 657 ]
+[ 661 ]
 
 quit;
 
