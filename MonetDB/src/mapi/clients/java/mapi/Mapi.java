@@ -607,7 +607,6 @@ public String unescapeMILstr(String str) {
 		unescape = false;
 	}
 	dst[d]='\0';
-System.err.println("["+str+"]->["+(new String(dst))+"]");
 	return new String(dst);
 }
 
