@@ -1,8 +1,8 @@
 #!/usr/bin/perl -w
-# The Monet DBI driver implementation. New version based on the MapiLib SWIG.
+# The MonetDB DBI driver implementation. New version based on the MapiLib SWIG.
 # by Arjan Scherpenisse <acscherp@science.uva.nl>
 
-package DBD::monet;
+package DBD::monetdb;
 use strict;
 
 use DBI;
@@ -25,16 +25,16 @@ sub driver {
     $class .= '::dr';
     
     $drh = DBI::_new_drh($class, {
-				  Name        => 'monet',
+				  Name        => 'monetdb',
 				  Version     => $VERSION,
-				  Err         => \$DBD::monet::err,
-				  Errstr      => \$DBD::monet::errstr,
-				  State       => \$DBD::monet::state,
-				  Attribution => 'DBD::monet derived from monet.pm by Arjan Scherpenisse',
+				  Err         => \$DBD::monetdb::err,
+				  Errstr      => \$DBD::monetdb::errstr,
+				  State       => \$DBD::monetdb::state,
+				  Attribution => 'DBD::monetdb derived from monetdb.pm by Arjan Scherpenisse',
 				 }, {});
 }
 
-# The monet dsn structure is DBI:monet:host:port:dbname:language
+# The monetdb dsn structure is DBI:monetdb:host:port:dbname:language
 sub _parse_dsn {
     my $class = shift;
     my ($dsn, $args) = @_;
@@ -80,9 +80,9 @@ sub _parse_dsn_host {
 
 
 
-package DBD::monet::dr;
+package DBD::monetdb::dr;
 
-$DBD::monet::dr::imp_data_size = 0;
+$DBD::monetdb::dr::imp_data_size = 0;
 
 use MapiLib;
 use strict;
@@ -92,7 +92,7 @@ sub connect {
     my $drh = shift;
     my ($dsn, $user, $password, $attrhash) = @_;
 
-    my $data_source_info = DBD::monet->_parse_dsn(
+    my $data_source_info = DBD::monetdb->_parse_dsn(
 						   $dsn, ['host', 'port','database','language'],
 						  );
 
@@ -118,27 +118,31 @@ sub connect {
 				   CURRENT_USER => $user,
 				   Language     => $lang
 				  }, {});
+    my $mapi;
     eval {
-	my $mapi = mapi_connect($host, $port, $user, $password, $lang);
-	$dbh->STORE(monet_connection => $mapi);
+	$mapi = mapi_connect($host, $port, $user, $password, $lang);
+	$dbh->STORE(monetdb_connection => $mapi);
     };
     if ($@) {
 	return $dbh->DBI::set_err(1, $@);
+    }
+    if (mapi_error($mapi)) {
+	return $dbh->DBI::set_err(mapi_error($mapi), mapi_error_str($mapi));
     }
     return $dbh;
 }
 
 
 sub data_sources {
-    return ("dbi:monet:");
+    return ("dbi:monetdb:");
 }
 
 
 sub disconnect_all {}
 
-package DBD::monet::db;
+package DBD::monetdb::db;
 
-$DBD::monet::db::imp_data_size = 0;
+$DBD::monetdb::db::imp_data_size = 0;
 use MapiLib;
 use strict;
 
@@ -183,8 +187,8 @@ sub prepare {
     my $sth = DBI::_new_sth($dbh, {
 				   Statement => $statement,
 				  });
-    $sth->STORE(monet_handle => $dbh->FETCH('monet_connection'));
-    $sth->STORE(monet_params => []);
+    $sth->STORE(monetdb_handle => $dbh->FETCH('monetdb_connection'));
+    $sth->STORE(monetdb_params => []);
     $sth->STORE(NUM_OF_PARAMS => _count_param($statement));
     $sth;
 }
@@ -195,7 +199,7 @@ sub commit {
     if ($dbh->FETCH('AutoCommit')) {
 	warn 'Commit ineffective while AutoCommit is on';
     } else {
-	mapi_query($dbh->FETCH('monet_connection'), "commit;");
+	mapi_query($dbh->FETCH('monetdb_connection'), "commit;");
     }
     1;
 }
@@ -206,7 +210,7 @@ sub rollback {
     if ($dbh->FETCH('AutoCommit')) {
 	warn 'Rollback ineffective while AutoCommit is on';
     } else {
-	mapi_query($dbh->FETCH('monet_connection'), ($dbh->FETCH('Language') ne "sql")?"abort;":"rollback;");
+	mapi_query($dbh->FETCH('monetdb_connection'), ($dbh->FETCH('Language') ne "sql")?"abort;":"rollback;");
     }
     1;
 }
@@ -215,7 +219,7 @@ sub rollback {
 sub tables {
     my $dbh = shift;
     my @args = @_;
-    my $mapi = $dbh->FETCH('monet_connection');
+    my $mapi = $dbh->FETCH('monetdb_connection');
 
     my @table_list;
 	
@@ -234,7 +238,7 @@ sub tables {
 sub _ListDBs {
     my $dbh = shift;
     my @database_list;
-    push @database_list, mapi_get_dbname($dbh->FETCH('monet_connection'));
+    push @database_list, mapi_get_dbname($dbh->FETCH('monetdb_connection'));
     return @database_list;
 }
 
@@ -247,14 +251,14 @@ sub _ListTables {
 
 sub disconnect {
     my $dbh = shift;
-    my $mapi = $dbh->FETCH('monet_connection');
+    my $mapi = $dbh->FETCH('monetdb_connection');
     mapi_disconnect($mapi);
     return 1;
 }
 
 sub get_info {
     my ($dbh, $w) = @_;
-    my $mapi = $dbh->FETCH('monet_connection');
+    my $mapi = $dbh->FETCH('monetdb_connection');
 
     return "MonetDB"
       if $w == 17;		# "SQL_DBMS_NAME";
@@ -278,7 +282,7 @@ sub get_info {
 sub FETCH {
     my $dbh = shift;
     my $key = shift;
-    return $dbh->{$key} if $key =~ /^monet_/;
+    return $dbh->{$key} if $key =~ /^monetdb_/;
     return $dbh->SUPER::FETCH($key);
 }
 
@@ -290,13 +294,13 @@ sub STORE {
     if ($key eq 'AutoCommit') {
 	my $old = $dbh->{$key} || 0;
 	if ($new != $old) {
-	    my $mapi = $dbh->FETCH('monet_connection');
+	    my $mapi = $dbh->FETCH('monetdb_connection');
 	    mapi_setAutocommit($mapi, $new);
 	    $dbh->{$key} = $new;
 	}
 	return 1;
 
-    } elsif ($key =~ /^monet_/) {
+    } elsif ($key =~ /^monetdb_/) {
 	$dbh->{$key} = $new;
 	return 1;
     }
@@ -306,18 +310,18 @@ sub STORE {
 
 sub DESTROY {
     my $dbh = shift;
-    my $mapi = $dbh->FETCH('monet_connection');
+    my $mapi = $dbh->FETCH('monetdb_connection');
     mapi_destroy($mapi) if $mapi;
 }
 
 
-package DBD::monet::st;
+package DBD::monetdb::st;
 
 use DBI qw(:sql_types);
 use MapiLib;
 
 
-$DBD::monet::st::imp_data_size = 0;
+$DBD::monetdb::st::imp_data_size = 0;
 
 sub bind_param {
     my $sth = shift;
@@ -327,8 +331,8 @@ sub bind_param {
 	my $dbh = $sth->{Database};
 	$value = $dbh->quote($sth, $type);
     }
-    my $params = $sth->FETCH('monet_params');
-    my $paramtype = $sth->FETCH('monet_types');
+    my $params = $sth->FETCH('monetdb_params');
+    my $paramtype = $sth->FETCH('monetdb_types');
     #print "converted:".$value." type:".$type."\n";
     $params->[$index - 1] = $value;
     $paramtype->[$index - 1] = $type;
@@ -338,10 +342,10 @@ sub execute {
     my($sth, @bind_values) = @_;
     my $statement = $sth->{Statement};
     my $dbh = $sth->{Database};
-    my $mapi = $dbh->FETCH('monet_connection');
+    my $mapi = $dbh->FETCH('monetdb_connection');
     my $hdl;
 
-    my $mparams = $sth->FETCH('monet_params');
+    my $mparams = $sth->FETCH('monetdb_params');
     my $params = (@bind_values) ?  \@bind_values : $mparams;
     my $num_param = $sth->FETCH('NUM_OF_PARAMS');
     if (@$params != $num_param) {
@@ -359,45 +363,49 @@ sub execute {
 
 	$hdl = mapi_query($mapi, $statement);
 
-	# $sth->{row} = $mapi->getFirstAnswer();
-	$sth->STORE(monet_hdl => $hdl);
-	$sth->STORE(errstr => mapi_error_str($mapi));
-	$sth->STORE(err => mapi_error($mapi));
+	$sth->STORE(monetdb_hdl => $hdl);
+	$sth->STORE(monetdb_errstr => mapi_result_error($hdl));
+	$sth->STORE(monetdb_err => mapi_result_error($hdl)?1:0);
 	$sth->STORE(rows => mapi_rows_affected($hdl));
-	$sth->STORE(monet_querytype => ($hdl));
+	$sth->STORE(monetdb_querytype => mapi_get_querytype($hdl));
 
-	my $first = 1;
-	my @names = ();
-	my @types = (); my @precisions = (); my @nullables = ();
+	if ($sth->FETCH('monetdb_err') == 0) {
+	    my $first = 1;
+	    my @names = ();
+	    my @types = (); my @precisions = (); my @nullables = ();
 
-	my $numfields = mapi_get_field_count($hdl);
-
-	while (mapi_fetch_row($hdl)) {
-	    my @row = ();
-	    for (my $i=0; $i<$numfields; $i++) {
-		push @row, mapi_fetch_field($hdl, $i);
-		if ($first) {
-		    push @names, mapi_get_name($hdl, $i);
-		    push @types, mapi_get_type($hdl, $i);
-		    push @precisions, mapi_get_len($hdl, $i);
-		    push @nullables, 0;
+	    my $numfields;
+	    
+	    while (mapi_fetch_row($hdl)) {
+		$numfields =  mapi_get_field_count($hdl) if !defined($numfields);
+		my @row = ();
+		for (my $i=0; $i<$numfields; $i++) {
+		    push @row, mapi_fetch_field($hdl, $i);
+		    if ($first) {
+			push @names, mapi_get_name($hdl, $i);
+			push @types, mapi_get_type($hdl, $i);
+			push @precisions, mapi_get_len($hdl, $i);
+			push @nullables, 0;
+		    }
 		}
+		$first = 0;
+		push @data, \@row;
 	    }
-	    $first = 0;
-	    push @data, \@row;
-	}
+	    
+	    $sth->{monetdb_data} = \@data;
+	    $sth->{monetdb_rows} = @data;
+	    $sth->STORE(NUM_OF_FIELDS => $numfields);
+	    $sth->STORE(NAME => \@names);
 
-	$sth->{monet_data} = \@data;
-	$sth->{monet_rows} = @data;
-	$sth->STORE(NUM_OF_FIELDS => $numfields);
-	$sth->STORE(NAME => \@names);
-	# $sth->STORE(TYPE => \@types);
-	# $sth->STORE(PRECISION => \@precisions);
-	# $sth->STORE(NULLABLE => \@nullables);
+	    # FIXME: conversion from monet types to DBD sqltypes!
+	    # $sth->STORE(TYPE => \@types);
+	    # $sth->STORE(PRECISION => \@precisions);
+	    # $sth->STORE(NULLABLE => \@nullables);
+	}
     };
 	
-    if ($@ or mapi_error($mapi)) {
-	$sth->DBI::set_err(mapi_error($mapi), mapi_error_str($mapi));
+    if ($@ or $sth->FETCH('monetdb_err')) {
+	$sth->DBI::set_err($sth->{monetdb_err}, $sth->{monetdb_errstr});
 	return undef;
     }
 
@@ -410,7 +418,7 @@ sub execute {
 sub fetchrow_arrayref  {
 
     my $sth = shift;
-    my $data = $sth->FETCH('monet_data');
+    my $data = $sth->FETCH('monetdb_data');
     my $row = shift @$data;
     
     if (!$row) {
@@ -427,7 +435,7 @@ sub fetchrow_arrayref  {
 
 sub rows {
     my $sth = shift;
-    $sth->FETCH('monet_rows');
+    $sth->FETCH('monetdb_rows');
 }
 
 
@@ -436,7 +444,7 @@ sub FETCH {
     my $key = shift;
     
     return $sth->{NAME} if $key eq 'NAME';
-    return $sth->{$key} if $key =~ /^monet_/;
+    return $sth->{$key} if $key =~ /^monetdb_/;
     return $sth->SUPER::FETCH($key);
 }
 
@@ -448,7 +456,7 @@ sub STORE {
     if ($key eq 'NAME') {
 	$sth->{NAME} = $value;
 	return 1;
-    } elsif ($key =~ /^monet_/) {
+    } elsif ($key =~ /^monetdb_/) {
 	$sth->{$key} = $value;
 	return 1;
     }
@@ -458,7 +466,7 @@ sub STORE {
 
 sub DESTROY {
     my $sth = shift;
-    mapi_close_handle($sth->FETCH('monet_hdl')) if $sth->FETCH('monet_hdl');
+    mapi_close_handle($sth->FETCH('monetdb_hdl')) if $sth->FETCH('monetdb_hdl');
 }
 
 
@@ -467,17 +475,17 @@ __END__
 
 =head1 NAME
 
-DBD::monet - DBD implementation on top of SWIG bindings
+DBD::monetdb - DBD implementation on top of SWIG bindings
 
 =head1 SYNOPSIS
 
     use DBI;
 
-    $dsn = "dbi:monet:database=$database;host=$hostname";
+    $dsn = "dbi:monetdb:database=$database;host=$hostname";
 
     $dbh = DBI->connect($dsn, $user, $password);
 
-    $drh = DBI->install_driver("monet");
+    $drh = DBI->install_driver("monetdb");
 
     $sth = $dbh->prepare("SELECT * FROM foo WHERE bla");
     $sth->execute;
@@ -493,7 +501,7 @@ DBD::monet - DBD implementation on top of SWIG bindings
   use DBI;
 
   # Connect to the database.
-  my $dbh = DBI->connect("dbi:monet:database=test;host=localhost",
+  my $dbh = DBI->connect("dbi:monetdb:database=test;host=localhost",
                          "joe", "joe's password",
                          {'RaiseError' => 1});
 
@@ -527,19 +535,19 @@ DBD::monet - DBD implementation on top of SWIG bindings
 
 =head1 DESCRIPTION
 
-DBD::monet is a Pure Perl client interface for the Monet Database Server. It means this module enables you to connect to MonetDB server from any platform where Perl is running, but MonetDB has not been installed.
+DBD::monetdb is a Pure Perl client interface for the MonetDB Database Server. It means this module enables you to connect to MonetDB server from any platform where Perl is running, but MonetDB has not been installed.
 
 From perl you activate the interface with the statement
 
     use DBI;
 
-After that you can connect to multiple Monet database servers
+After that you can connect to multiple MonetDB database servers
 and send multiple queries to any of them via a simple object oriented
 interface. Two types of objects are available: database handles and
 statement handles. Perl returns a database handle to the connect
 method like so:
 
-  $dbh = DBI->connect("dbi:monet:database=$db;host=$host",
+  $dbh = DBI->connect("dbi:monetdb:database=$db;host=$host",
 		      $user, $password, {RaiseError => 1});
 
 Once you have connected to a database, you can can execute SQL
@@ -585,9 +593,9 @@ I's more formal approach:
 
     use DBI;
 
-    $dsn = "dbi:monet:$database";
-    $dsn = "dbi:monet:database=$database;host=$hostname";
-    $dsn = "dbi:monet:database=$database;host=$hostname;port=$port";
+    $dsn = "dbi:monetdb:$database";
+    $dsn = "dbi:monetdb:database=$database;host=$hostname";
+    $dsn = "dbi:monetdb:database=$database;host=$hostname;port=$port";
 
     $dbh = DBI->connect($dsn, $user, $password);
 
@@ -650,7 +658,7 @@ Once connected to the desired database on the desired MonetDB server with the "D
 =head1 DATABASE HANDLES
 =head1 STATEMENT HANDLES
 
-The statement handles of DBD::monet support a number
+The statement handles of DBD::monetdb support a number
 of attributes. You access these by using, for example,
 
   my $numFields = $sth->{'NUM_OF_FIELDS'};
@@ -727,7 +735,7 @@ Cannot be used
 
 =item * The return value of I<execute('SELECT * from table')>
 
-<DBD::monet> surely returns <0E0>.
+<DBD::monetdb> surely returns <0E0>.
 
 =back
 

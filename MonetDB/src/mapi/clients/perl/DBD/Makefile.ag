@@ -26,5 +26,5 @@ MTSAFE
 scripts_perl = {
 	EXT = pl pm
 	DIR = pkgdatadir/perl/DBD
-	SOURCES = monet.pm 
+	SOURCES = monetdb.pm monetdbPP.pm
 }
