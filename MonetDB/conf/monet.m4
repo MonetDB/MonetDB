@@ -85,6 +85,16 @@ AM_CONDITIONAL(HAVE_MONET,test x$have_monet = xyes)
 
 AC_DEFUN(AM_MONET_COMPILER,
 [
+
+dnl Some special requirements for MacOS X/Darwin
+case "$host" in
+powerpc-apple-darwin*)
+	CPPFLAGS="$CPPFLAGS -I/sw/include"
+	LDFLAGS="$LDFLAGS -L/sw/lib"
+	CFLAGS="$CFLAGS -Ddlsym=dlsym_prepend_underscore"
+	;;
+esac
+
 dnl check for compiler
 AC_ARG_WITH(gcc,
 [  --with-gcc=<compiler>   which C compiler to use
@@ -205,15 +215,6 @@ AM_CONDITIONAL(HAVE_JAVA,test x$have_java = xyes)
 ])
 
 AC_DEFUN(AM_MONET_TOOLS,[
-
-dnl Some special requirements for MacOS X/Darwin
-case "$host" in
-powerpc-apple-darwin*)
-	CPPFLAGS="$CFLAGS -I/sw/include"
-	LDFLAGS="$LDFLAGS -L/sw/lib"
-	CFLAGS="$CFLAGS -Ddlsym=dlsym_prepend_underscore"
-	;;
-esac
 
 dnl AM_PROG_LIBTOOL has loads of required macros, when those are not satisfied within
 dnl this macro block the requirement is pushed to the next level, e.g. configure.ag
