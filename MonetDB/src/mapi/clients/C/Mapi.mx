@@ -550,6 +550,7 @@ typedef struct {
 	char language[NAMELEN];
 	char database[NAMELEN];
 	int languageId;
+	int versionId;		/* Monet 4 or 5 */
 	char prompt[NAMELEN];
 
 	int everything;		/* keep all lines received */
@@ -582,6 +583,9 @@ the error status of the Mapi structure.
 #define mapi_check(X,C) assert(X);if((X)->connected==0) { \
 	mapi_setError((X),"Connection lost",C); \
 	return (X)->error; } mapi_clrError(X);
+#define mapi_check0(X,C) assert(X);if((X)->connected==0) { \
+	mapi_setError((X),"Connection lost",C); \
+	return 0; } mapi_clrError(X);
 
 #ifdef __cplusplus
 extern "C" {
@@ -666,6 +670,8 @@ static int mapi_get_row(Mapi mid) ;
 static int mapi_extend_fields(Mapi mid,int minfields);
 static int mapi_slice_row(Mapi mid);
 static int mapi_setError(Mapi mid, char *msg, char *action);
+static char * mapi_fetch_line_internal(Mapi mid);
+static MapiMsg mapi_finish_internal(Mapi mid);
 
 #ifndef HAVE_GETLOGIN
 #define getlogin() "win32"
@@ -754,9 +760,11 @@ static Mapi mapi_new(void)
 #ifdef MONET5
 	strcpy(m->language,"mal");
 	m->languageId= LANG_MAL;
+	m->versionId = 5;
 #else
 	strcpy(m->language,"mil");
 	m->languageId= LANG_MIL;
+	m->versionId= 4;
 #endif
 	strcpy(m->username,"anonymous");
 	strcpy(m->password,"unknown");
@@ -790,7 +798,7 @@ static Mapi mapi_new(void)
 Mapi mapi_dup(Mapi mid)
 {
 	Mapi m;
-	mapi_check(mid,"mapi_dup");
+	mapi_check0(mid,"mapi_dup");
 	mid->connected++;	/* connection is shared */
 	m= mapi_new();
 	m->to= mid->to;
@@ -929,6 +937,7 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang)
 	while(mid->error==MOK && mid->active ){
 		mapi_get_row(mid);
 		if( mapi_error(mid)) {  mapi_explain(mid,stdout); break;}
+		if( mid->cache.rows)
 		mid->versionId= strcmp("Mserver 5.0",mid->cache.rows[0])==0? 5:4;
 	}
 
@@ -1650,7 +1659,7 @@ char * mapi_fetch_line_internal(Mapi mid)
 }
 char * mapi_fetch_line(Mapi mid)
 {
-	mapi_check(mid,"mapi_fetch_line");
+	mapi_check0(mid,"mapi_fetch_line");
 	return mapi_fetch_line_internal(mid);
 }
 @-
@@ -1661,7 +1670,7 @@ MapiMsg mapi_finish_internal(Mapi mid)
 {
 	mapi_check(mid,"mapi_finish");
 	if( mid->active)
-		while(mapi_fetch_line_internal(mid) != 0)
+		while(mapi_fetch_line_internal(mid) != (char*) 0)
 			;
 	return mid->error;
 }
@@ -2092,7 +2101,7 @@ int mapi_fetch_all_rows(Mapi mid)
 char *mapi_fetch_field(Mapi mid, int fnr)
 {
 	int cr;
-	mapi_check(mid,"mapi_fetch_field");
+	mapi_check0(mid,"mapi_fetch_field");
 	cr= mid->cache.reader;
 
 	if( fnr >=0 ){
@@ -2109,7 +2118,7 @@ char *mapi_fetch_field(Mapi mid, int fnr)
 char **mapi_fetch_field_array(Mapi mid)
 {
 	int cr;
-	mapi_check(mid,"mapi_fetch_field_array");
+	mapi_check0(mid,"mapi_fetch_field_array");
 	cr= mid->cache.reader;
 	if( mid->cache.fldcnt[cr]==0)
 		mapi_slice_row(mid);
@@ -2130,7 +2139,7 @@ int mapi_get_row_count(Mapi mid)
 
 char *mapi_get_name(Mapi mid, int fnr)
 {
-	mapi_check(mid,"mapi_get_name");
+	mapi_check0(mid,"mapi_get_name");
 	if( fnr >=0 && fnr <mid->fieldcnt) {
 		if( mid->fields[fnr].columnname[0] == 0)
 			snprintf(mid->fields[fnr].columnname, NAMELEN, "column_%d",fnr);
@@ -2142,7 +2151,7 @@ char *mapi_get_name(Mapi mid, int fnr)
 
 char *mapi_get_table(Mapi mid, int fnr)
 {
-	mapi_check(mid,"mapi_get_table");
+	mapi_check0(mid,"mapi_get_table");
 	if( fnr >=0 && fnr <mid->fieldcnt) {
 		if( mid->fields[fnr].tablename[0] == 0)
 			snprintf(mid->fields[fnr].tablename, NAMELEN, "table_%d",fnr);
@@ -2160,28 +2169,29 @@ int mapi_rows_affected(Mapi mid)
 
 char *mapi_get_host(Mapi mid)
 {
-	mapi_check(mid,"mapi_get_host");
+	mapi_check0(mid,"mapi_get_host");
 	return mid->hostname;
 }
 
 char *mapi_get_user(Mapi mid)
 {
-	mapi_check(mid,"mapi_get_user");
+	mapi_check0(mid,"mapi_get_user");
 	return mid->username;
 }
 
 char *mapi_get_lang(Mapi mid)
 {
-	mapi_check(mid,"mapi_get_lang");
+	mapi_check0(mid,"mapi_get_lang");
 	return mid->language;
 }
 
 char *mapi_get_version(Mapi mid)
 {
-	mapi_check(mid,"mapi_get_version");
+	mapi_check0(mid,"mapi_get_version");
 	return mid->server;
 }
-int mapi_get_versionId(IdMapi mid)
+int mapi_get_versionId(Mapi mid)
+{
 	return mid->versionId;
 }
 @c
