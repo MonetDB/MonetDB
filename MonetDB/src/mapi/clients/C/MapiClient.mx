@@ -605,17 +605,52 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 	return 0;
 }
 
+static void
+quoted_print(FILE *f, const char *s)
+{
+	putc('"', f);
+	while (*s) {
+		switch (*s) {
+		case '\\':
+		case '"':
+			putc('\\', f);
+			putc(*s, f);
+			break;
+		case '\n':
+			putc('\\', f);
+			putc('n', f);
+			break;
+		case '\t':
+			putc('\\', f);
+			putc('t', f);
+			break;
+		default:
+			if ((0 < *s && *s < 32) || *s == '\377')
+				fprintf(f, "\\%03o", *s & 0377);
+			else
+				putc(*s, f);
+			break;
+		}
+		s++;
+	}
+	putc('"', f);
+}
+
 static int
 dump_table(Mapi mid, char *tname)
 {
 	int cnt = 0, i;
 	MapiHdl hdl;
-	char query[BUFSIZ];
+	char *query;
+	size_t maxquerylen = BUFSIZ + strlen(tname);
 	int *string;
 
-	fprintf(toConsole, "CREATE TABLE \"%s\" (\n", tname);
+	query = malloc(maxquerylen);
+	fprintf(toConsole, "CREATE TABLE ");
+	quoted_print(toConsole, tname);
+	fprintf(toConsole, " (\n");
 
-	snprintf(query, sizeof(query),
+	snprintf(query, maxquerylen,
 		 "SELECT \"name\","		/* 0 */
 			"\"type\","		/* 1 */
 			"\"type_digits\","	/* 2 */
@@ -633,6 +668,7 @@ dump_table(Mapi mid, char *tname)
 			mapi_close_handle(hdl);
 		} else
 			mapi_explain(mid, stderr);
+		free(query);
 		return 1;
 	}
 
@@ -647,12 +683,15 @@ dump_table(Mapi mid, char *tname)
 		if (mapi_error(mid)) {
 			mapi_explain_query(hdl, stderr);
 			mapi_close_handle(hdl);
+			free(query);
 			return 1;
 		}
 		if (cnt)
 			fprintf(toConsole, ",\n");
 
-		fprintf(toConsole, "\t\"%s\" ", c_name);
+		putc('\t', toConsole);
+		quoted_print(toConsole, c_name);
+		putc(' ', toConsole);
 		if (strcmp(c_type, "int") == 0 ||
 		    strcmp(c_type, "smallint") == 0 ||
 		    strcmp(c_type, "bigint") == 0 ||
@@ -690,10 +729,11 @@ dump_table(Mapi mid, char *tname)
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
+		free(query);
 		return 1;
 	}
 	mapi_close_handle(hdl);
-	snprintf(query, sizeof(query),
+	snprintf(query, maxquerylen,
 		 "SELECT \"kc\".\"column\","		/* 0 */
 		 	"\"kc\".\"nr\", "		/* 1 */
 			"\"k\".\"name\" "		/* 2 */
@@ -712,6 +752,7 @@ dump_table(Mapi mid, char *tname)
 			mapi_close_handle(hdl);
 		} else
 			mapi_explain(mid, stderr);
+		free(query);
 		return 1;
 	}
 	cnt = 0;
@@ -722,17 +763,20 @@ dump_table(Mapi mid, char *tname)
 		if (mapi_error(mid)) {
 			mapi_explain_query(hdl, stderr);
 			mapi_close_handle(hdl);
+			free(query);
 			return 1;
 		}
 		if (cnt == 0) {
 			fprintf(toConsole, ",\n\t");
-			if (k_name)
-				fprintf(toConsole, "CONSTRAINT \"%s\" ",
-					k_name);
+			if (k_name) {
+				fprintf(toConsole, "CONSTRAINT ");
+				quoted_print(toConsole, k_name);
+				putc(' ', toConsole);
+			}
 			fprintf(toConsole, "PRIMARY KEY (");
 		} else
 			fprintf(toConsole, ", ");
-		fprintf(toConsole, "\"%s\"", c_column);
+		quoted_print(toConsole, c_column);
 		cnt++;
 	}
 	if (cnt)
@@ -740,11 +784,12 @@ dump_table(Mapi mid, char *tname)
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
+		free(query);
 		return 1;
 	}
 	mapi_close_handle(hdl);
 
-	snprintf(query, sizeof(query),
+	snprintf(query, maxquerylen,
 		 "SELECT \"kc\".\"column\","		/* 0 */
 		 	"\"kc\".\"nr\", "		/* 1 */
 			"\"k\".\"name\" "		/* 2 */
@@ -763,6 +808,7 @@ dump_table(Mapi mid, char *tname)
 			mapi_close_handle(hdl);
 		} else
 			mapi_explain(mid, stderr);
+		free(query);
 		return 1;
 	}
 	cnt = 0;
@@ -773,17 +819,21 @@ dump_table(Mapi mid, char *tname)
 		if (mapi_error(mid)) {
 			mapi_explain_query(hdl, stderr);
 			mapi_close_handle(hdl);
+			free(query);
 			return 1;
 		}
 		if (cnt == 0) {
 			fprintf(toConsole, ",\n\t");
-			if (k_name)
-				fprintf(toConsole, "CONSTRAINT \"%s\" ",
+			if (k_name) {
+				fprintf(toConsole, "CONSTRAINT ",
 					k_name);
+				quoted_print(toConsole, k_name);
+				putc(' ', toConsole);
+			}
 			fprintf(toConsole, "UNIQUE (");
 		} else
 			fprintf(toConsole, ", ");
-		fprintf(toConsole, "\"%s\"", c_column);
+		quoted_print(toConsole, c_column);
 		cnt++;
 	}
 	if (cnt)
@@ -791,11 +841,12 @@ dump_table(Mapi mid, char *tname)
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
+		free(query);
 		return 1;
 	}
 	mapi_close_handle(hdl);
 
-	snprintf(query, sizeof(query),
+	snprintf(query, maxquerylen,
 		 "SELECT \"pkt\".\"name\","		/* 0 */
 			"\"pkkc\".\"column\","		/* 1 */
 			"\"fkkc\".\"column\","		/* 2 */
@@ -822,6 +873,7 @@ dump_table(Mapi mid, char *tname)
 			mapi_close_handle(hdl);
 		} else
 			mapi_explain(mid, stderr);
+		free(query);
 		return 1;
 	}
 	cnt = mapi_fetch_row(hdl);
@@ -837,6 +889,7 @@ dump_table(Mapi mid, char *tname)
 		if (mapi_error(mid)) {
 			mapi_explain_query(hdl, stderr);
 			mapi_close_handle(hdl);
+			free(query);
 			return 1;
 		}
 		assert(strcmp(c_nr, "0") == 0);
@@ -855,19 +908,24 @@ dump_table(Mapi mid, char *tname)
 			fkeys[nkeys - 1] = mapi_fetch_field(hdl, 2);
 		}
 		fprintf(toConsole, ",\n\t");
-		if (c_fkname)
-			fprintf(toConsole, "CONSTRAINT \"%s\" ", c_fkname);
+		if (c_fkname) {
+			fprintf(toConsole, "CONSTRAINT ");
+			quoted_print(toConsole, c_fkname);
+			putc(' ', toConsole);
+		}
 		fprintf(toConsole, "FOREIGN KEY (");
 		for (i = 0; i < nkeys; i++) {
 			if (i > 0)
 				fprintf(toConsole, ", ");
-			fprintf(toConsole, "\"%s\"", fkeys[i]);
+			quoted_print(toConsole, fkeys[i]);
 		}
-		fprintf(toConsole, ") REFERENCES \"%s\" (", c_name);
+		fprintf(toConsole, ") REFERENCES ");
+		quoted_print(toConsole, c_name);
+		fprintf(toConsole, " (");
 		for (i = 0; i < nkeys; i++) {
 			if (i > 0)
 				fprintf(toConsole, ", ");
-			fprintf(toConsole, "\"%s\"", pkeys[i]);
+			quoted_print(toConsole, pkeys[i]);
 		}
 		fprintf(toConsole, ")");
 		free(fkeys);
@@ -876,6 +934,7 @@ dump_table(Mapi mid, char *tname)
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
+		free(query);
 		return 1;
 	}
 	mapi_close_handle(hdl);
@@ -884,29 +943,32 @@ dump_table(Mapi mid, char *tname)
 
 	fprintf(toConsole, ");\n");
 
-	snprintf(query, sizeof(query), "SELECT count(*) FROM \"%s\"", tname);
+	snprintf(query, maxquerylen, "SELECT count(*) FROM \"%s\"", tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		if (hdl) {
 			mapi_explain_query(hdl, stderr);
 			mapi_close_handle(hdl);
 		} else
 			mapi_explain(mid, stderr);
+		free(query);
 		return 1;
 	}
 	if (mapi_fetch_row(hdl)) {
 		char *cnt = mapi_fetch_field(hdl, 0);
-		fprintf(toConsole, "COPY %s RECORDS INTO \"%s\" FROM "
-			"stdin USING DELIMITERS '\\t';\n", cnt, tname);
+		fprintf(toConsole, "COPY %s RECORDS INTO ", cnt);
+		quoted_print(toConsole, tname);
+		fprintf(toConsole, " FROM stdin USING DELIMITERS '\\t';\n");
 	}
 	mapi_close_handle(hdl);
 
-	snprintf(query, sizeof(query), "SELECT * FROM \"%s\"", tname);
+	snprintf(query, maxquerylen, "SELECT * FROM \"%s\"", tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		if (hdl) {
 			mapi_explain_query(hdl, stderr);
 			mapi_close_handle(hdl);
 		} else
 			mapi_explain(mid, stderr);
+		free(query);
 		return 1;
 	}
 
@@ -930,38 +992,7 @@ dump_table(Mapi mid, char *tname)
 			else if (string[i]) {
 				/* write double-quoted string with
 				   certain characters escaped */
-				putc('"', toConsole);
-				while (*s) {
-					/* strToStr and strFromStr in gdk_atoms.mx only
-					   support \t \n \\ \" and \377 */
-					switch (*s) {
-					case '\\':
-					case '"':
-						putc('\\', toConsole);
-						putc(*s, toConsole);
-						break;
-					case '\n':
-						putc('\\', toConsole);
-						putc('n', toConsole);
-						break;
-					case '\t':
-						putc('\\', toConsole);
-						putc('t', toConsole);
-						break;
-					default:
-						if ((0 < *s && *s < 32) || *s == '\377') {
-							char *tmp = malloc(sizeof(char) * 4 + 1);
-							snprintf(tmp, 5, "\\%03o", (unsigned char)*s);
-							fwrite(tmp, 4, 1, toConsole);
-							free(tmp);
-						} else {
-							putc(*s, toConsole);
-						}
-						break;
-					}
-					s++;
-				}
-				putc('"', toConsole);
+				quoted_print(toConsole, s);
 			} else
 				fputs(s, toConsole);
 			if (i < cnt - 1)
@@ -974,9 +1005,11 @@ dump_table(Mapi mid, char *tname)
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
+		free(query);
 		return 1;
 	}
 	mapi_close_handle(hdl);
+	free(query);
 	return 0;
 }
 
@@ -1024,7 +1057,9 @@ dump_tables(Mapi mid)
 		char *vname = mapi_fetch_field(hdl, 0);
 		char *query = mapi_fetch_field(hdl, 1);
 
-		fprintf(toConsole, "CREATE VIEW \"%s\" AS %s\n", vname, query);
+		fprintf(toConsole, "CREATE VIEW ");
+		quoted_print(toConsole, vname);
+		fprintf(toConsole, " AS %s\n", query);
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
