@@ -1,10 +1,10 @@
 stdout of test 'str_heap` in directory 'src/gdk` itself:
 
-#> Mtest:	milM str_heap milM
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_gdk str_heap.milM
-# Monet Database Server V4.1
+#> Mtest (13:50:12):	milM str_heap milM
+#> Mtest (13:50:12):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_gdk str_heap.milM
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:str_heap.milM
 
 loaded;
@@ -64,3 +64,4 @@ DRUID_sample.print;
 [ 5,	  "laune · Débats et mesures sur la sécurité · Nouvelle escalade dans le ciel irakien · Le procès Clinton · Tremblement de terre en Colombie · Open d'Australie [ Tous les titres ] EtsurYahoo! · BD: festival d'Angoulême · La sélection de la semaine · Mon Yahoo! : votre Yahoo! à vous! · Yahoo! recrute [ Tout sur Yahoo! ] Yahoo! Europe  Allemagne - Danemark - Espagne - Italie - Norvège - R.U. & Irlande - Suède Yahoo! Monde Yahoo! (US) - Asie - Australie & N.Z. - Canada - Corée - Japon - chinois -"	  ]
 
 DRUID_sample.persists(false);
+quit;

@@ -1,10 +1,10 @@
 stdout of test 'printf` in directory 'src/monet` itself:
 
-#> Mtest:	milM printf milM
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_monet printf.milM
-# Monet Database Server V4.1
+#> Mtest (13:52:00):	milM printf milM
+#> Mtest (13:52:00):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_monet printf.milM
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:printf.milM
 
 loaded;
@@ -57,3 +57,4 @@ printf("X%-3.2sX\n", "ABC");
 XAB X
 printf("X%-3.2sX\n", "ABCD");
 XAB X
+quit;

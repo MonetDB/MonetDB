@@ -1,11 +1,11 @@
 stdout of test 'temporal` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other temporal
-#> Mtest:	Mtimeout -timeout 420 ./temporal temporal
-#> Mlog:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db modules_plain temporal.mil
-# Monet Database Server V4.1
+#> Mtest (13:50:48):	other temporal 420
+#> Mtest (13:50:48):	Mtimeout -timeout 420 ./temporal temporal
+#> Mlog (13:50:48):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain temporal.mil
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:temporal.mil
 
 loaded;
@@ -27,7 +27,7 @@ Try: modules;                - for other modules.
 
 #You are system administrator (adm)!
 
-#line 352 "temporal.mx"
+#line 352 "../../../../src/modules/plain/temporal.mx"
 module(temporal);
 
 proc check_date(str d) : str {
@@ -129,3 +129,5 @@ in(date("1999/06/07"), new_interval(date("1999/02/02"), date("1999/06/06"))).pri
 [ true ]
 >=(new_interval(date("1999/02/02"), date("1999/03/03")), new_interval(date("1999/03/03"), date("1999/06/06"))).print;
 [ false ]
+
+quit;

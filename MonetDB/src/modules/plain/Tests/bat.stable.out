@@ -1,11 +1,11 @@
 stdout of test 'bat` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other bat
-#> Mtest:	Mtimeout -timeout 420 ./bat bat
-#> Mlog:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db modules_plain bat.mil
-# Monet Database Server V4.1
+#> Mtest (13:50:16):	other bat 420
+#> Mtest (13:50:16):	Mtimeout -timeout 420 ./bat bat
+#> Mlog (13:50:16):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain bat.mil
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:bat.mil
 
 loaded;
@@ -39,7 +39,7 @@ printf("* Example BAT\n");
 * Example BAT
 testje.print;
 #-------------------------#
-# BAT:	  tmp_25	  #
+# BAT:	  tmp_26	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "one"		  ]
@@ -57,14 +57,14 @@ printf("\n* deleteBuns: Delete the exact BUN\n");
 * deleteBuns: Delete the exact BUN
 deltest.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_25  #
 # (int)	  (str)	  #
 #-----------------#
 [ 1,	  "one"	  ]
 testje.deleteBuns(deltest);
 testje.print;
 #-------------------------#
-# BAT:	  tmp_25	  #
+# BAT:	  tmp_26	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 3,	  "drie"	  ]
@@ -90,7 +90,9 @@ deltest.print;
 testje.delete(deltest);
 testje.print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_26  #
 # (int)	  (str)	  #
 #-----------------#
 [ 1,	  "een"	  ]
+
+quit;

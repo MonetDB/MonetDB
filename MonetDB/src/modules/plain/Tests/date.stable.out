@@ -1,11 +1,11 @@
 stdout of test 'date` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other date
-#> Mtest:	Mtimeout -timeout 420 ./date date
-#> Mlog:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db modules_plain date.mil
-# Monet Database Server V4.1
+#> Mtest (13:50:47):	other date 420
+#> Mtest (13:50:47):	Mtimeout -timeout 420 ./date date
+#> Mlog (13:50:47):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain date.mil
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:date.mil
 
 loaded;
@@ -82,3 +82,5 @@ module(temporal);
 [ false ]
 (date("1998-10-10") = date("1998-10-10")).print;
 [ true ]
+
+quit;

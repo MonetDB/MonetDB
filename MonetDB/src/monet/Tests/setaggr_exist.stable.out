@@ -1,10 +1,10 @@
 stdout of test 'setaggr_exist` in directory 'src/monet` itself:
 
-#> Mtest:	milM setaggr_exist milM
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_monet setaggr_exist.milM
-# Monet Database Server V4.1
+#> Mtest (13:51:58):	milM setaggr_exist milM
+#> Mtest (13:51:58):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_monet setaggr_exist.milM
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Mon Jan 31 04:43:27 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:setaggr_exist.milM
 
 loaded;
@@ -123,9 +123,9 @@ bs.print;
 [ 4@0,	  true	  ]
 [ 4@0,	  true	  ]
 [ 4@0,	  true	  ]
-[ 5@0,	  true	  ]
-[ 5@0,	  true	  ]
 [ 5@0,	  false	  ]
+[ 5@0,	  true	  ]
+[ 5@0,	  true	  ]
 [ 6@0,	  true	  ]
 [ 7@0,	  false	  ]
 [ 8@0,	  false	  ]
@@ -136,8 +136,8 @@ bs.print;
 [ 10@0,	  false	  ]
 [ 10@0,	  nil	  ]
 [ 11@0,	  nil	  ]
-[ 11@0,	  true	  ]
 [ 11@0,	  false	  ]
+[ 11@0,	  true	  ]
 [ 12@0,	  nil	  ]
 printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
@@ -216,8 +216,8 @@ x.print;
 [ 9@0,	  true	  ]
 [ 11@0,	  true	  ]
 [ 12@0,	  false	  ]
-[ 7@0,	  false	  ]
 [ 8@0,	  false	  ]
+[ 7@0,	  false	  ]
 [ 5@0,	  true	  ]
 [ 4@0,	  true	  ]
 [ 6@0,	  true	  ]
@@ -281,9 +281,9 @@ printf("#~BeginVariableOutput~#\n");
 bs@hashloop(oid(5)) {
   print($t);
 }
+[ true ]
+[ true ]
 [ false ]
-[ true ]
-[ true ]
 printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
 bss@hashloop(oid(5)) {
@@ -332,9 +332,9 @@ printf("#~BeginVariableOutput~#\n");
 bs@hashloop(oid(5)) {
   print($t);
 }
+[ true ]
+[ true ]
 [ false ]
-[ true ]
-[ true ]
 printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
 bss@hashloop(oid(5)) {
@@ -386,9 +386,9 @@ printf("#~BeginVariableOutput~#\n");
 bs@hashloop(oid(5)) {
   print($t);
 }
+[ true ]
+[ true ]
 [ false ]
-[ true ]
-[ true ]
 printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
 bss@hashloop(oid(5)) {
@@ -423,3 +423,4 @@ bss.reverse@hashloop(true) {
 [ 4@0 ]
 [ 4@0 ]
 [ 1@0 ]
+quit;

@@ -1,11 +1,11 @@
 stdout of test 'bitset` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other bitset
-#> Mtest:	Mtimeout -timeout 420 ./bitset bitset
-#> Mlog:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db modules_plain bitset.mil
-# Monet Database Server V4.1
+#> Mtest (13:50:49):	other bitset 420
+#> Mtest (13:50:49):	Mtimeout -timeout 420 ./bitset bitset
+#> Mlog (13:50:49):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain bitset.mil
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:bitset.mil
 
 loaded;
@@ -27,7 +27,7 @@ Try: modules;                - for other modules.
 
 #You are system administrator (adm)!
 
-#line 394 "bitset.mx"
+#line 394 "../../../../src/modules/plain/bitset.mx"
 
 
 sigs("bitset");
@@ -119,3 +119,5 @@ printf("convert to integer\n");
 convert to integer
 bitset_toInt(a).print;
 [ 35 ]
+ 
+quit;
