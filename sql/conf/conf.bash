@@ -1,6 +1,6 @@
 #
 # This script is supposed to be "sourced" in order to set your (architecture
-# dependent) environment to be able to compile Monet 4.2.
+# dependent) environment to be able to compile sql.
 #
 # To select your desired compiler ("GNU" or "ntv" (native)), your desired
 # binary type (32bit or 64bit), and whether binarys should be linked
@@ -20,7 +20,7 @@ base="${PWD}"
 
 if [ ! -x bootstrap ] ; then
 	echo ''
-	echo 'conf/conf.bash has to be "sourced" in the top-level directory of the checked-out Monet source tree.'
+	echo 'conf/conf.bash has to be "sourced" in the top-level directory of the checked-out sql source tree.'
 	echo ''
   else
 	binpath=""
@@ -149,7 +149,7 @@ if [ ! -x bootstrap ] ; then
 	mkdir -p ${BUILD}
 
 	echo ""
-	echo "To compile sql, just execute:"
+	echo "To compile SQL, just execute:"
 	echo -e "\t./bootstrap"
 	echo -e "\tcd ${BUILD}"
 	echo -e "\t${CONFIGURE}"
