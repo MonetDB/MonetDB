@@ -232,7 +232,6 @@ char *hlp[]={
 "A few guidelines to maximize usefullness.",
 "- make the type of variables explicit, in particular 'nil'",
 "- upon advice of M2m to remap identifiers, change it in your program directly",
-"include \"mil_prelude\";",
 0
 };
 void advice(){
@@ -240,7 +239,7 @@ void advice(){
 	for(i=0; hlp[i]; i++) printf("#%s\n",hlp[i]);
 }
 char *code[]={
-"include \"mil_prelude\";",
+"#include \"mil_prelude\";",
 0
 };
 void mil_code_prelude(){

@@ -198,9 +198,8 @@ needed for tracing the parser.
 #define YY_NEVER_INTERACTIVE	1 /* workaround to flex bug */
 #define YY_USE_PROTOS	  	/* make sure ANSI-C prototyes are used */
 
-#define RETURN(Y)       { PARSEDEBUG {\
-                                THRprintf(GDKerr, "\n%s %s\n", yylexname(Y), yytext);\
-                          } return Y; }
+#define RETURN(Y)       { /* printf("\n%s %s\n", yylexname(Y), yytext); */\
+                          return Y; }
 
 
 #define YY_INPUT(buf,result,max_size)   { int c = mil_getch();\
@@ -215,10 +214,11 @@ needed for tracing the parser.
 %}
 
 %%
-"#".*"\n"                   { rem;
+"#".*"\n"                   { 
 				if(trace_code)
 				printf("\tmil.line(\"%s\");\n",
 					mapi_quote(yytext,strlen(yytext))); 
+				rem;
 				return yylex();}
 ("nil"|"NIL")^({L}|{P})         { Vector(TOK_CONSTANT, TYPE_void, "nil", 3);   }
 ("proc"|"PROC")       { Symbol(TOK_PROCDEF);                                  }
@@ -241,7 +241,6 @@ needed for tracing the parser.
 ("$h"|"$H"|"$head"|"$HEAD") { Vector(TOK_ITERTEMP, TYPE_str, getLastHead(), 1);         }
 ("$t"|"$T"|"$tail"|"$TAIL") { Vector(TOK_ITERTEMP, TYPE_str, getLastTail(), 1);         }
 "$"{D}+               { Vector(TOK_TEMPLATE,TYPE_int,yytext,yyleng);       }
-":="                  { Symbol(TOK_ASSIGNMENT);                               }
 ("[:=]")	|
 ("[:"{OPER}"=]")	|
 ("[:"{IDENT}"=]")	|
@@ -258,20 +257,23 @@ needed for tracing the parser.
 			Vector(TOK_OPERATOR2, TYPE_str, yytext,yyleng); 
 		}
 (":"{IDENT}"=")	|
-(":"{OPER}"=")	| 
-{OPER}		|
-({OPER}"=")	{	yytext[yyleng]=0;
+(":"{OPER}"=")	{	yytext[yyleng]=0;
+			Vector(TOK_OPERATOR, TYPE_str, yytext,yyleng); 
+		}
+{OPER}		{	yytext[yyleng]=0;
 			if( yyleng==1 && yytext[0]=='='){
 				yytext[1]='=';
 				yytext[2]=0;
 				yyleng++;
 				Vector(TOK_OPERATOR, TYPE_str, yytext,yyleng); 
-			} else 
-			if( !yytext[1] && (yytext[0]=='~' ||
-				yytext[0]=='?' || yytext[0]==':')){
-				Symbol(yytext[0]);
-			} else Vector(TOK_OPERATOR, TYPE_str, yytext,yyleng); 
+			} else {
+				Vector(TOK_OPERATOR, TYPE_str, yytext,yyleng); 
+			}
 		}
+({OPER}"=")	{	yytext[yyleng]=0;
+			Vector(TOK_OPERATOR, TYPE_str, yytext,yyleng); 
+		}
+":="                  { Symbol(TOK_ASSIGNMENT);                               }
 "(*"                  { Symbol(TOK_DEREF);                                    }
 "[*"                  { Symbol(TOK_SETOP);                                    }
 "{*"                  { Symbol(TOK_SETAGGR);                                  }
@@ -286,11 +288,15 @@ needed for tracing the parser.
 ("-")?{D}+{E}         { Vector(TOK_CONSTANT, TYPE_flt,  yytext, yyleng);         }
 "'"\\0{O}({O})?({O})?"'" {Vector(TOK_CONSTANT, TYPE_chr, yytext, yyleng);        }
 \"[^\n"]*\"		{
-                        if ( yytext[yyleng-2] != '\\') {
+                        if ( yytext[yyleng-2] == '\\') {
+				if( yytext[yyleng-3]=='\\'){
                                 Vector(TOK_CONSTANT, TYPE_str, yytext, yyleng);
+				} else {
+					unput('"');
+					yymore(); 
+				}
                         } else {
-				unput('"');
-				yymore(); 
+                                Vector(TOK_CONSTANT, TYPE_str, yytext, yyleng);
 			}					                     }
 \'[^\n']*\'            { 
                         if (yytext[yyleng-2] != '\\') {
@@ -375,19 +381,21 @@ int mil_getch() {
 	ch = *mil_stack->cptr;
 
         if (ch == '\n' || (ch && mil_stack->cptr == mil_stack->buf) ){
-                if (mil_stack->listing && trace_code!=0) { 
 #ifdef M2Moffline
-			for(s= mil_stack->nxtline; *s && *s!='\n'; s++)
-				i++;
+		for(s= mil_stack->nxtline; s && *s && *s!='\n'; s++)
+			i++;
+                if (mil_stack->listing && trace_code!=0) { 
 			comment= (char*) GDKmalloc(i+1);
 			strncpy(comment,mil_stack->nxtline,i);
 			comment[i]=0;
+                }
+		mil_stack->prevline= mil_stack->nxtline;
+		if( s && *s)
+			mil_stack->nxtline = s+1;
+                else 	mil_stack->nxtline = s;
 #else
 	TODO
 #endif
-                }
-		mil_stack->prevline= mil_stack->nxtline;
-                mil_stack->nxtline = s+1;
         } 
         if (ch) mil_stack->cptr++;
         return ch;
@@ -398,13 +406,17 @@ For error reporting we have to find the start of the previous line,
 which, ofcourse, is easy.
 @c
 str mil_lastline(){ 
-	if( mil_stack->nxtline == 0)
+	if( mil_stack->prevline )
 		return mil_stack->prevline;
+	if( mil_stack->nxtline == 0) 
+		return mil_stack->buf;
 	return mil_stack->nxtline; 
 }
 long mil_position()
 {
-	return (long)(mil_stack->cptr)- (long)mil_stack->nxtline;
+	if( mil_stack->prevline )
+	return (long)(mil_stack->cptr)- (long)mil_stack->prevline;
+	return (long)(mil_stack->cptr)- (long)mil_stack->buf;
 }
 @-
 Long strings are in this version easier to handle, because the input is
@@ -600,7 +612,8 @@ str multiplexOp[]={"+","++","-","--","/","*","%",">","<","<=",">=","==","!=","an
 	"or","not","void","bit","chr","sht","bat","int","oid","ptr",
         "flt","dbl","lng","str","asin","acos","atan","cos","sin",
 	"tan","cosh","sinh","tanh","exp","log","log10","sqrt",
-	"ceil","fabs","floor","round","fmod","atan2","pow",0};
+	"ceil","fabs","floor","round","fmod","atan2","pow",
+	"ifthen","ifthenelse",0};
 
 char *bindFcn(str nme){
 	char buffer[1024];
@@ -715,6 +728,7 @@ int yydebug = 1;
 int constantdeclaration = 0;
 void debugParser(int i){ yydebug=i; }
 
+
 yystype accum;
 extern char *comment;
 extern int trace_code;
@@ -733,7 +747,8 @@ extern int trace_code;
 %token TOK_ANY TOK_UNDEF TOK_DEREF TOK_ANYNUM
 
 %left TOK_ITERATION
-%left TOK_ASSIGNMENT TOK_OPERATOR
+%left TOK_OPERATOR TOK_OPERATOR2 TOK_OPERATOR3
+%left TOK_ASSIGNMENT 
 %left ':'
 %%
 program:
@@ -1064,7 +1079,8 @@ proc_name:
 	TODO
 #endif
 		
-	$$=$1;} ;
+	$$=$1;} 
+;
 
 proc_header:
          mel_header ret_type
@@ -1213,21 +1229,21 @@ constant: TOK_CONST
 	
 term :
 	factor
-    |	factor1 TOK_OPERATOR2 term	/* deal with += and friends */
+    |	factor TOK_OPERATOR2 term	/* deal with += and friends */
 	{ char stmt[1024];
 	  $1.val = emitExpr($1.val);
 	  $3.val = emitExpr($3.val);
 	  sprintf(stmt,"%c(%s,%s)", $2.val[0],$1.val,$3.val);
 	  $$.val=GDKstrdup(stmt);
 	}
-    |	factor1 TOK_OPERATOR3 term	/* deal with :+= and friends */
+    |	factor TOK_OPERATOR3 term	/* deal with :+= and friends */
 	{ char stmt[1024];
 	  $1.val = emitExpr($1.val);
 	  $3.val = emitExpr($3.val);
 	  sprintf(stmt,"%c(%s,%s)", $2.val[1],$1.val,$3.val);
 	  $$.val=GDKstrdup(stmt);
 	}
-    |	factor1 TOK_OPERATOR term
+    |	factor TOK_OPERATOR term
 	{ char stmt[1024];
 	  $1.val = emitExpr($1.val);
 	  $3.val = emitExpr($3.val);
@@ -1240,7 +1256,7 @@ term :
 	  sprintf(stmt,"%s%s)", bindFcn($1.val),$2.val);
 	  $$.val=GDKstrdup(stmt);
 	}
-    |	factor1 tok_ident term
+    |	factor tok_ident term
 	{ char stmt[1024];
 	  $1.val = emitExpr($1.val);
 	  $3.val = emitExpr($3.val);
@@ -1347,7 +1363,7 @@ fcn_hdr:
 	{ 
 	  $$.val="new";
 	}
-    |  TOK_OPERATOR '('
+    |  TOK_OPERATOR 
 	{ $$.val= bindFcn($1.val); }
     |  tok_ident	
 	{ $$= $1; }
