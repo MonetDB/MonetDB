@@ -1354,6 +1354,16 @@ BAT *BAThashsplit(BAT *b, size_t n, int unary) {
 
 	/* assert(n <= 0x40000000); */
 	BATcheck(b, "BAThashsplit");
+	if (n > BATcount(b)) {
+		GDKwarning("BAThashsplit: reduced number of ranges (" SZFMT ") to number of tuples (" SZFMT ").",
+				n, BATcount(b) );
+		n = BATcount(b);
+	}
+	if (n < 1) {
+		GDKerror("BAThashsplit: number of ranges must not be less than 1!\n");
+		return 0;
+	}
+
 	metabat = BATnew(TYPE_int, TYPE_bat, n);
 	bn = unary?VIEWhead_(b,b->batRestricted):b;
 	if (n <= 1) {
@@ -1397,6 +1407,15 @@ BAT *BATrangesplit(BAT *b, size_t n, int unary) {
 	size_t 	thorough = (n<=1 || BATtvoid(b) || (BATtordered(b)&1))?1:10;
 
 	BATcheck(b, "BATrangesplit");
+	if (n > BATcount(b)) {
+		GDKwarning("BATrangesplit: reduced number of ranges (" SZFMT ") to number of tuples (" SZFMT ").",
+				n, BATcount(b) );
+		n = BATcount(b);
+	}
+	if (n < 1) {
+		GDKerror("BAThashsplit: number of ranges must not be less than 1!\n");
+		return 0;
+	}
 
 	/* assert(BATcount(b)/n <= 0x7fffffff); */
 	bn = unary?VIEWhead_(b,b->batRestricted):b;
