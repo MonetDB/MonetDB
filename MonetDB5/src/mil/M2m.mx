@@ -1,6 +1,6 @@
 @a M.L. Kersten
 @v 1.0
-@* Standalone MIL parser
+@* Standalone MIL compiler
 
 This program is an off-line compiler for mil programs developed on
 pre-Version 5. The approach taken is to be able to compile mil
@@ -17,9 +17,7 @@ the applications at a later stage.
 #define _M2M_H
 #include "mal_config.h"
 #include "monet_options.h"
-#include "gdk.h"
-#include "mal_type.h"	/* for idcmp() */
-#include "mil_parser.h"	/* for mil_push() */
+#include "mil_compiler.h"	/* for mil_push() */
 #endif
 
 void prelude();
