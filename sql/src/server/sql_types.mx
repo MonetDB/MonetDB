@@ -1184,6 +1184,28 @@ void sqltypeinit()
 	  sql_create_func( "lower", "toLower", *t, NULL, *t, SCALE_NONE);
 	  sql_create_func( "char_length", "length", *t, NULL, INT, SCALE_NONE);
 	  sql_create_func( "character_length", "length", *t, NULL, INT, SCALE_NONE);
+
+	  sql_create_func( "soundex", "soundex", *t, NULL, *t, SCALE_NONE);
+	  sql_create_func( "editdistance", "editdistance", *t, *t, INT, SCALE_FIX);
+	  sql_create_func( "editdistance2", "editdistance2", *t, *t, INT, SCALE_FIX);
+
+	  /* fstrcmp is licensed under GPL :-/  */
+	  /* sql_create_func( "fstrcmp", "fstrcmp", *t, *t, DBL, SCALE_FIX); */
+
+	  sql_create_func( "levenshtein", "levenshtein", *t, *t, INT, SCALE_FIX);
+	  sql_create_func_( "levenshtein", "levenshtein",
+		list_append(
+	 	  list_append( 
+                    list_append(
+                      list_append(
+                        list_append(
+                          list_create((fdestroy)&arg_destroy),
+	  	        sql_create_arg(NULL, sql_create_subtype(*t, 0, 0))),
+	 	      sql_create_arg(NULL, sql_create_subtype(*t, 0, 0))),
+ 		    sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))), 
+ 		  sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))), 
+               sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))), 
+	    sql_create_subtype(*t, 0, 0));
 	}
 }
 
