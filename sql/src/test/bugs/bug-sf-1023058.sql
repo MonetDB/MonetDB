@@ -2,8 +2,8 @@ CREATE TABLE _metadata (
 artist VARCHAR(255),
 album VARCHAR(255),
 track VARCHAR(255),
-tracknum INT(10),
-duration INT(10)
+tracknum INT,
+duration INT
 );
 
 CREATE VIEW metadata AS
