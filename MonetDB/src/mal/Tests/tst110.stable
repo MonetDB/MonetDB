@@ -17,13 +17,13 @@
 #end	v;
 #	k:= 3;
 #
-function Admin.main():int;	#0:void (main:int)
-	i := 0;	#1:int (i:int)($2:int)
-	v := false;	#2:bit (v:bit)($4:bit)
-barrier	v := v;	#3:bit (v:bit)(v:bit)
-	i := 1;	#4:int (i:int)($5:int)
-	j := 2;	#5:int (j:int)($7:int)
-end	v;	#6:bit (v:bit)
-	k := 3;	#7:int (k:int)($9:int)
-end function;	#8:void 
+function Admin.main():int;	#0:(main:int)
+	i := 0;	#1:(i:int)<-($2:int)
+	v := false;	#2:(v:bit)<-($4:bit)
+barrier	v := v;	#3:(v:bit)<-(v:bit)
+	i := 1;	#4:(i:int)<-($5:int)
+	j := 2;	#5:(j:int)<-($7:int)
+end	v;	#6:(v:bit)
+	k := 3;	#7:(k:int)<-($9:int)
+end function;	#8:
 >

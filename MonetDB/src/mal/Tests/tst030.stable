@@ -14,12 +14,12 @@
 #end	w;
 #
 !ERROR: label 'w' is readonly in main[2]
-function Admin.main():int;	#0:void (main:int)
-barrier	w := calc.>(1,0);	#1:bit (w:bit)($2:int)($3:int)
-	w := false;	#2:bit (w:bit)($4:bit)
-	mal.print(w);	#3:int ($5:int)(w:bit)
-end	w;	#4:bit (w:bit)
-end function;	#5:void 
+function Admin.main():int;	#0:(main:int)
+barrier	w := calc.>(1,0);	#1:(w:bit)<-($2:int)($3:int)
+	w := false;	#2:(w:bit)<-($4:bit)
+	mal.print(w);	#3:($5:int)<-(w:bit)
+end	w;	#4:(w:bit)
+end function;	#5:
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
 
 >

@@ -22,21 +22,21 @@
 #	printf("after reverse assignment refcount =%d\n",i);
 #
 #
-function Admin.main():int;	#0:void (main:int)
-	b := mal.new(int,str);	#1:BAT (b:bat[int,str])(int:int)(str:str)
-	i := bat.getBATrefcnt(b);	#2:int (i:int)(b:bat[int,str])
-	system.printf("refcount =%d\n",i);	#3:int ($5:int)($6:str)(i:int)
-	bat.insert(b,1,"bat B");	#4:BAT ($7:bat[int,str])(b:bat[int,str])($8:int)($9:str)
-	mal.print(b);	#5:int ($10:int)(b:bat[int,str])
-	i := bat.getBATrefcnt(b);	#6:int (i:int)(b:bat[int,str])
-	system.printf("refcount =%d\n",i);	#7:int ($11:int)($6:str)(i:int)
-	b5 := bat.reverse(b);	#8:BAT (b5:bat[str,int])(b:bat[int,str])
-	i := bat.getBATrefcnt(b);	#9:int (i:int)(b:bat[int,str])
-	system.printf("after reverse assignment refcount =%d\n",i);	#10:int ($13:int)($14:str)(i:int)
-end function;	#11:void 
+function Admin.main():int;	#0:(main:int)
+	b := mal.new(int,str);	#1:(b:bat[int,str])<-(int:int)(str:str)
+	i := bat.getBATrefcnt(b);	#2:(i:int)<-(b:bat[int,str])
+	system.printf("refcount =%d\n",i);	#3:($5:int)<-($6:str)(i:int)
+	bat.insert(b,1,"bat B");	#4:($7:bat[int,str])<-(b:bat[int,str])($8:int)($9:str)
+	mal.print(b);	#5:($10:int)<-(b:bat[int,str])
+	i := bat.getBATrefcnt(b);	#6:(i:int)<-(b:bat[int,str])
+	system.printf("refcount =%d\n",i);	#7:($11:int)<-($6:str)(i:int)
+	b5 := bat.reverse(b);	#8:(b5:bat[str,int])<-(b:bat[int,str])
+	i := bat.getBATrefcnt(b);	#9:(i:int)<-(b:bat[int,str])
+	system.printf("after reverse assignment refcount =%d\n",i);	#10:($13:int)<-($14:str)(i:int)
+end function;	#11:
 refcount =1
 #-------------------------#
-# BAT:	  tmp_5		  #
+# BAT:	  tmp_1		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "bat B"	  ]

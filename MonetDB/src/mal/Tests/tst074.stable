@@ -6,13 +6,20 @@
 # gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
-## test illegal variable use
+## parsing operations with multi-assignments
+#function swap(x:str):str;
+#	return x;
+#end function;
+function Admin.swap(x:str):str;	#0:(swap:str)<-(x:str)
+	return x;	#1:(x:str)
+end function;	#2:
 #
-#a:=b;	#b not yet defined
-#b:=c;	#c undefined
+#x:= swap("world hello");
+#print(x);
 #
 function Admin.main():int;	#0:(main:int)
-	a := b;	#1 dynamic:(a:any)<-(b:any)
-	b := c;	#2 dynamic:(b:any)<-(c:any)
+	x := Admin.swap("world hello");	#1:(x:str)<-($2:str)
+	mal.print(x);	#2:($3:int)<-(x:str)
 end function;	#3:
+[ "world hello" ]
 >

@@ -17,7 +17,7 @@
 #	p1:= -1;
 #	s0:= squeezer.access("p1");
 #	c1:= 2;
-#	c2:= arith.+(p1,p1);	# forbidden function
+#	c2:= +(p1,p1);	# forbidden function
 #	c4:= "should not come here";
 ##exception 
 #catch WrongBlock;
@@ -29,38 +29,41 @@
 #end	IllegalAccess;
 #	print("end of program");
 #
-!ERROR: '+' undefined in Admin.main[4]
-function Admin.main():int;	#0:void (main:int)
-	p1 := -1;	#1:int (p1:int)($2:int)
-	s0 := squeezer.access("p1");	#2:int (s0:int)($4:str)
-	c1 := 2;	#3:int (c1:int)($6:int)
-	c2 := arith.+(p1,p1);	#4 unknown:void (c2:any)(p1:int)(p1:int)
-	c4 := "should not come here";	#5:str (c4:str)($9:str)
-catch	WrongBlock;	#6:str (WrongBlock:str)
-	system.printf("entered wrong block\n");	#7:int ($11:int)($12:str)
-end	WrongBlock;	#8:str (WrongBlock:str)
-catch	IllegalAccess;	#9:str (IllegalAccess:str)
-	system.printf("catched IllegalAccess\n");	#10:int ($14:int)($15:str)
-end	IllegalAccess;	#11:str (IllegalAccess:str)
-	mal.print("end of program");	#12:int ($16:int)($17:str)
-end function;	#13:void 
+function Admin.main():int;	#0:(main:int)
+	p1 := -1;	#1:(p1:int)<-($2:int)
+	s0 := squeezer.access("p1");	#2:(s0:int)<-($4:str)
+	c1 := 2;	#3:(c1:int)<-($6:int)
+	c2 := calc.+(p1,p1);	#4:(c2:int)<-(p1:int)(p1:int)
+	c4 := "should not come here";	#5:(c4:str)<-($9:str)
+catch	WrongBlock;	#6:(WrongBlock:str)
+	system.printf("entered wrong block\n");	#7:($11:int)<-($12:str)
+end	WrongBlock;	#8:(WrongBlock:str)
+catch	IllegalAccess;	#9:(IllegalAccess:str)
+	system.printf("catched IllegalAccess\n");	#10:($14:int)<-($15:str)
+end	IllegalAccess;	#11:(IllegalAccess:str)
+	mal.print("end of program");	#12:($16:int)<-($17:str)
+end function;	#13:
 entering sqzAccess blocking 1 p1
+	s0 := squeezer.access("p1");	#2:(s0:int)<-($4:str)
+	squeezer.AccessTst(p1);	#14:($18:int)<-(p1:int)
+	s0 := squeezer.access("p1");	#2:(s0:int)<-($4:str)
+	squeezer.AccessTst(p1);	#15:($19:int)<-(p1:int)
 Modified stmt sequence
-function Admin.main():int;	#0:void (main:int)
-	p1 := -1;	#1:int (p1:int)($2:int)
-	c1 := 2;	#2:int (c1:int)($6:int)
-	squeezer.AccessTst(p1);	#3:int ($18:int)(p1:int)
-	squeezer.AccessTst(p1);	#4:int ($19:int)(p1:int)
-	c2 := arith.+(p1,p1);	#5 unknown:void (c2:any)(p1:int)(p1:int)
-	c4 := "should not come here";	#6:str (c4:str)($9:str)
-catch	WrongBlock;	#7:str (WrongBlock:str)
-	system.printf("entered wrong block\n");	#8:int ($11:int)($12:str)
-end	WrongBlock;	#9:str (WrongBlock:str)
-catch	IllegalAccess;	#10:str (IllegalAccess:str)
-	system.printf("catched IllegalAccess\n");	#11:int ($14:int)($15:str)
-end	IllegalAccess;	#12:str (IllegalAccess:str)
-	mal.print("end of program");	#13:int ($16:int)($17:str)
-end function;	#14:void 
+function Admin.main():int;	#0:(main:int)
+	p1 := -1;	#1:(p1:int)<-($2:int)
+	c1 := 2;	#2:(c1:int)<-($6:int)
+	squeezer.AccessTst(p1);	#3:($18:int)<-(p1:int)
+	squeezer.AccessTst(p1);	#4:($19:int)<-(p1:int)
+	c2 := calc.+(p1,p1);	#5:(c2:int)<-(p1:int)(p1:int)
+	c4 := "should not come here";	#6:(c4:str)<-($9:str)
+catch	WrongBlock;	#7:(WrongBlock:str)
+	system.printf("entered wrong block\n");	#8:($11:int)<-($12:str)
+end	WrongBlock;	#9:(WrongBlock:str)
+catch	IllegalAccess;	#10:(IllegalAccess:str)
+	system.printf("catched IllegalAccess\n");	#11:($14:int)<-($15:str)
+end	IllegalAccess;	#12:(IllegalAccess:str)
+	mal.print("end of program");	#13:($16:int)<-($17:str)
+end function;	#14:
 Entering AccessTst with argument -1
 catched IllegalAccess
 [ "end of program" ]

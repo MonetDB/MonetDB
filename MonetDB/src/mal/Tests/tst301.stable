@@ -14,13 +14,13 @@
 #	printf("catched %d\n",IllegalAccess);
 #end IllegalAccess;
 #
-function Admin.main():int;	#0:void (main:int)
-	IllegalAccess := 1234;	#1:int (IllegalAccess:int)($2:int)
-	raise IllegalAccess;	#2:int (IllegalAccess:int)
-	mal.print("should not come here\n");	#3:int ($3:int)($4:str)
-catch	IllegalAccess;	#4:int (IllegalAccess:int)
-	system.printf("catched %d\n",IllegalAccess);	#5:int ($5:int)($6:str)(IllegalAccess:int)
-end	IllegalAccess;	#6:int (IllegalAccess:int)
-end function;	#7:void 
+function Admin.main():int;	#0:(main:int)
+	IllegalAccess := 1234;	#1:(IllegalAccess:int)<-($2:int)
+	raise IllegalAccess;	#2:(IllegalAccess:int)
+	mal.print("should not come here\n");	#3:($3:int)<-($4:str)
+catch	IllegalAccess;	#4:(IllegalAccess:int)
+	system.printf("catched %d\n",IllegalAccess);	#5:($5:int)<-($6:str)(IllegalAccess:int)
+end	IllegalAccess;	#6:(IllegalAccess:int)
+end function;	#7:
 catched 1234
 >

@@ -1,0 +1,39 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## parsing operations with multi-assignments
+#function swap(x:int,y:int):(a:int,b:int);
+#	a:=y; b:=x;
+#end function;
+function Admin.swap(x:int,y:int):(a:int,b:int);	#0:(a:int)(b:int)<-(x:int)(y:int)
+	a := y;	#1:(a:int)<-(y:int)
+	b := x;	#2:(b:int)<-(x:int)
+end function;	#3:
+#
+#(x,y):= swap(1,2);
+#print(x);
+#print(y);
+#a:= swap(3,4);
+#print(a);
+#(c,d):= ("hello","world");
+#print(d);
+#
+!ERROR: (c,d):= ("hello","world");
+!               ^<identifier> or <unary operator> expected
+function Admin.main():int;	#0:(main:int)
+	(x,y):=Admin.swap(1,2);	#1:(x:int)(y:int)<-($3:int)($4:int)
+	mal.print(x);	#2:($5:int)<-(x:int)
+	mal.print(y);	#3:($6:int)<-(y:int)
+	a := Admin.swap(3,4);	#4:(a:int)<-($8:int)($9:int)
+	mal.print(a);	#5:($10:int)<-(a:int)
+	(c,d):=main;	#6:(c:bat[any::15,any::15])(d:any)<-(main:int)
+	print(d);	#7 unknown:($13:any)<-(d:any)
+end function;	#8:
+!ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
+
+>

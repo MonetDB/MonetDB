@@ -13,11 +13,11 @@
 #lock.unset(l);
 #lock.destroy(l);
 #
-function Admin.main():int;	#0:void (main:int)
-	l := lock.create();	#1:lock (l:lock)
-	lock.set(l);	#2:void ($2:any)(l:lock)
-	i := lock.try(l);	#3:int (i:int)(l:lock)
-	lock.unset(l);	#4:void ($4:any)(l:lock)
-	lock.destroy(l);	#5:void ($5:any)(l:lock)
-end function;	#6:void 
+function Admin.main():int;	#0:(main:int)
+	l := lock.create();	#1:(l:lock)
+	lock.set(l);	#2:($2:any)<-(l:lock)
+	i := lock.try(l);	#3:(i:int)<-(l:lock)
+	lock.unset(l);	#4:($4:any)<-(l:lock)
+	lock.destroy(l);	#5:($5:any)<-(l:lock)
+end function;	#6:
 >

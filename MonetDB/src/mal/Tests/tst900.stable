@@ -17,12 +17,12 @@
 !ERROR: a:= b [+] b;
 !             ^operator expected
 !ERROR: multiplexType:string constant expected in main[2]
-function Admin.main():int;	#0:void (main:int)
-	b := mal.new(lng,lng);	#1:BAT (b:bat[lng,lng])(lng:lng)(lng:lng)
-	x := multiplex.+(b,b);	#2:void (x:any)(b:bat[lng,lng])(b:bat[lng,lng])
-	d;	#3:void (d:any)
-	a := b;	#4:BAT (a:bat[lng,lng])(b:bat[lng,lng])
-end function;	#5:void 
+function Admin.main():int;	#0:(main:int)
+	b := mal.new(lng,lng);	#1:(b:bat[lng,lng])<-(lng:lng)(lng:lng)
+	x := multiplex.+(b,b);	#2:(x:any)<-(b:bat[lng,lng])(b:bat[lng,lng])
+	d;	#3:(d:any)
+	a := b;	#4:(a:bat[lng,lng])<-(b:bat[lng,lng])
+end function;	#5:
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
 
 >

@@ -17,14 +17,14 @@
 #
 #	return bb;
 #end function; 
-function Admin.steal(bb:bat[any::1,any::2]):bat[any::1,any::2];	#0 polymorphic:void (steal:bat[any::1,any::2])(bb:bat[any::1,any::2])
-	i := bat.getBATrefcnt(bb);	#1:int (i:int)(bb:bat[any::1,any::2])
-	system.printf("enter function refcount =%d\n",i);	#2:int ($3:int)($4:str)(i:int)
-	loc := bb;	#3 polymorphic:void (loc:any)(bb:bat[any::1,any::2])
-	i := bat.getBATrefcnt(bb);	#4:int (i:int)(bb:bat[any::1,any::2])
-	system.printf("local in function refcount =%d\n",i);	#5:int ($6:int)($7:str)(i:int)
-	return bb;	#6:BAT (bb:bat[any::1,any::2])
-end function;	#7:void 
+function Admin.steal(bb:bat[any::1,any::2]):bat[any::1,any::2];	#0 polymorphic:(steal:bat[any::1,any::2])<-(bb:bat[any::1,any::2])
+	i := bat.getBATrefcnt(bb);	#1:(i:int)<-(bb:bat[any::1,any::2])
+	system.printf("enter function refcount =%d\n",i);	#2:($3:int)<-($4:str)(i:int)
+	loc := bb;	#3 polymorphic:(loc:any)<-(bb:bat[any::1,any::2])
+	i := bat.getBATrefcnt(bb);	#4:(i:int)<-(bb:bat[any::1,any::2])
+	system.printf("local in function refcount =%d\n",i);	#5:($6:int)<-($7:str)(i:int)
+	return bb;	#6:(bb:bat[any::1,any::2])
+end function;	#7:
 #
 #	b:= new(int,str);
 #	i:= getBATrefcnt(b);
@@ -66,35 +66,35 @@ end function;	#7:void
 #	i:= getBATrefcnt(b);
 #	printf("return from function refcount =%d\n",i);
 #
-function Admin.main():int;	#0:void (main:int)
-	b := mal.new(int,str);	#1:BAT (b:bat[int,str])(int:int)(str:str)
-	i := bat.getBATrefcnt(b);	#2:int (i:int)(b:bat[int,str])
-	system.printf("refcount =%d\n",i);	#3:int ($5:int)($6:str)(i:int)
-	bat.insert(b,1,"bat B");	#4:BAT ($7:bat[int,str])(b:bat[int,str])($8:int)($9:str)
-	mal.print(b);	#5:int ($10:int)(b:bat[int,str])
-	i := bat.getBATrefcnt(b);	#6:int (i:int)(b:bat[int,str])
-	system.printf("refcount =%d\n",i);	#7:int ($11:int)($6:str)(i:int)
-	b2 := b;	#8:BAT (b2:bat[int,str])(b:bat[int,str])
-	i := bat.getBATrefcnt(b);	#9:int (i:int)(b:bat[int,str])
-	system.printf("after assignment refcount =%d\n",i);	#10:int ($13:int)($14:str)(i:int)
-	b3 := b;	#11:BAT (b3:bat[int,str])(b:bat[int,str])
-	i := bat.getBATrefcnt(b);	#12:int (i:int)(b:bat[int,str])
-	system.printf("after 2nd assignment refcount =%d\n",i);	#13:int ($16:int)($17:str)(i:int)
-	b3 := mal.new(int,str);	#14:BAT (b3:bat[int,str])(int:int)(str:str)
-	i := bat.getBATrefcnt(b);	#15:int (i:int)(b:bat[int,str])
-	system.printf("after 3rd assignment refcount =%d\n",i);	#16:int ($18:int)($19:str)(i:int)
-	b4 := algebra.select(b,"bat B","bat B");	#17:BAT (b4:bat[int,str])(b:bat[int,str])($9:str)($9:str)
-	mal.print(b4);	#18:int ($21:int)(b4:bat[int,str])
-	i := bat.getBATrefcnt(b);	#19:int (i:int)(b:bat[int,str])
-	system.printf("after 4rd assignment refcount =%d\n",i);	#20:int ($22:int)($23:str)(i:int)
-	b2 := b3;	#21:BAT (b2:bat[int,str])(b3:bat[int,str])
-	i := bat.getBATrefcnt(b);	#22:int (i:int)(b:bat[int,str])
-	system.printf("after 5rd assignment refcount =%d\n",i);	#23:int ($24:int)($25:str)(i:int)
-	system.printf("call function\n");	#24:int ($26:int)($27:str)
-	d := Admin.steal(b);	#25:BAT (d:bat[int,str])(b:bat[int,str])
-	i := bat.getBATrefcnt(b);	#26:int (i:int)(b:bat[int,str])
-	system.printf("return from function refcount =%d\n",i);	#27:int ($29:int)($30:str)(i:int)
-end function;	#28:void 
+function Admin.main():int;	#0:(main:int)
+	b := mal.new(int,str);	#1:(b:bat[int,str])<-(int:int)(str:str)
+	i := bat.getBATrefcnt(b);	#2:(i:int)<-(b:bat[int,str])
+	system.printf("refcount =%d\n",i);	#3:($5:int)<-($6:str)(i:int)
+	bat.insert(b,1,"bat B");	#4:($7:bat[int,str])<-(b:bat[int,str])($8:int)($9:str)
+	mal.print(b);	#5:($10:int)<-(b:bat[int,str])
+	i := bat.getBATrefcnt(b);	#6:(i:int)<-(b:bat[int,str])
+	system.printf("refcount =%d\n",i);	#7:($11:int)<-($6:str)(i:int)
+	b2 := b;	#8:(b2:bat[int,str])<-(b:bat[int,str])
+	i := bat.getBATrefcnt(b);	#9:(i:int)<-(b:bat[int,str])
+	system.printf("after assignment refcount =%d\n",i);	#10:($13:int)<-($14:str)(i:int)
+	b3 := b;	#11:(b3:bat[int,str])<-(b:bat[int,str])
+	i := bat.getBATrefcnt(b);	#12:(i:int)<-(b:bat[int,str])
+	system.printf("after 2nd assignment refcount =%d\n",i);	#13:($16:int)<-($17:str)(i:int)
+	b3 := mal.new(int,str);	#14:(b3:bat[int,str])<-(int:int)(str:str)
+	i := bat.getBATrefcnt(b);	#15:(i:int)<-(b:bat[int,str])
+	system.printf("after 3rd assignment refcount =%d\n",i);	#16:($18:int)<-($19:str)(i:int)
+	b4 := algebra.select(b,"bat B","bat B");	#17:(b4:bat[int,str])<-(b:bat[int,str])($9:str)($9:str)
+	mal.print(b4);	#18:($21:int)<-(b4:bat[int,str])
+	i := bat.getBATrefcnt(b);	#19:(i:int)<-(b:bat[int,str])
+	system.printf("after 4rd assignment refcount =%d\n",i);	#20:($22:int)<-($23:str)(i:int)
+	b2 := b3;	#21:(b2:bat[int,str])<-(b3:bat[int,str])
+	i := bat.getBATrefcnt(b);	#22:(i:int)<-(b:bat[int,str])
+	system.printf("after 5rd assignment refcount =%d\n",i);	#23:($24:int)<-($25:str)(i:int)
+	system.printf("call function\n");	#24:($26:int)<-($27:str)
+	d := Admin.steal(b);	#25:(d:bat[int,str])<-(b:bat[int,str])
+	i := bat.getBATrefcnt(b);	#26:(i:int)<-(b:bat[int,str])
+	system.printf("return from function refcount =%d\n",i);	#27:($29:int)<-($30:str)(i:int)
+end function;	#28:
 refcount =1
 #-------------------------#
 # BAT:	  tmp_1		  #

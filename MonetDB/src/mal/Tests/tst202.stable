@@ -28,20 +28,20 @@
 #	#destroy(b);
 #	#destroy(c);
 #
-function Admin.main():int;	#0:void (main:int)
-	b := mal.new(int,int);	#1:BAT (b:bat[int,int])(int:int)(int:int)
-	bat.setName(b,"mybat");	#2:void ($3:any)(b:bat[int,int])($4:str)
-	bat.setRole(b,"first","second");	#3:BAT ($5:bat[int,int])(b:bat[int,int])($6:str)($7:str)
-	mal.print(b);	#4:int ($8:int)(b:bat[int,int])
-	c := mal.new(int,str);	#5:BAT (c:bat[int,str])(int:int)(str:str)
-	bat.setName(c,"mybat");	#6:void ($11:any)(c:bat[int,str])($4:str)
-	mal.print(c);	#7:int ($12:int)(c:bat[int,str])
-	mal.print(c);	#8:int ($13:int)(c:bat[int,str])
-	system.printf("catched anything?\n");	#9:int ($14:int)($15:str)
-catch	GDKerror;	#10:str (GDKerror:str)
-	system.printf("Catched the renaming exception\n");	#11:int ($17:int)($18:str)
-end	GDKerror;	#12:str (GDKerror:str)
-end function;	#13:void 
+function Admin.main():int;	#0:(main:int)
+	b := mal.new(int,int);	#1:(b:bat[int,int])<-(int:int)(int:int)
+	bat.setName(b,"mybat");	#2:($3:any)<-(b:bat[int,int])($4:str)
+	bat.setRole(b,"first","second");	#3:($5:bat[int,int])<-(b:bat[int,int])($6:str)($7:str)
+	mal.print(b);	#4:($8:int)<-(b:bat[int,int])
+	c := mal.new(int,str);	#5:(c:bat[int,str])<-(int:int)(str:str)
+	bat.setName(c,"mybat");	#6:($11:any)<-(c:bat[int,str])($4:str)
+	mal.print(c);	#7:($12:int)<-(c:bat[int,str])
+	mal.print(c);	#8:($13:int)<-(c:bat[int,str])
+	system.printf("catched anything?\n");	#9:($14:int)<-($15:str)
+catch	GDKerror;	#10:(GDKerror:str)
+	system.printf("Catched the renaming exception\n");	#11:($17:int)<-($18:str)
+end	GDKerror;	#12:(GDKerror:str)
+end function;	#13:
 #-----------------#
 # BAT:	  mybat	  #
 # (int)	  (int)	  #

@@ -6,18 +6,16 @@
 # gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
-## the calls are wrong, they violate the type constraint
-#command + (L:any::1, R:any::1):any::1 = addIntInt
-!ERROR: address of 'addIntInt' not found
-command Admin.+(L:any::1,R:any::1):any::1 = addIntInt;	#0 polymorphic:(+:any::1)<-(L:any::1)(R:any::1)
+## parsing operations with multi-assignments
 #
-#a:=1+"hello";
-#b:=3.5+1;
+#(x,y):= point(z:int);
+#(initial:str,surname:str):= getName();
 #
-!ERROR: '+' undefined in Admin.main[1]
+!ERROR: 'point' undefined in Admin.main[1]
+!ERROR: 'getName' undefined in Admin.main[2]
 function Admin.main():int;	#0:(main:int)
-	a := +(1,"hello");	#1 unknown:(a:any)<-($2:int)($3:str)
-	b := calc.+(3.5,1);	#2:(b:flt)<-($5:flt)($2:int)
+	(x,y):=point(z);	#1 unknown:(x:any)(y:any)<-(z:int)
+	(initial,surname):=getName();	#2 unknown:(initial:str)(surname:str)
 end function;	#3:
 !ERROR: MALexception:Admin.main[1]:Instruction type not fixed
 

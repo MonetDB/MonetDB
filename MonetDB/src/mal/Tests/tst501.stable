@@ -13,16 +13,16 @@
 #	i:= i+1;
 #	return i;
 #end function;
-function Admin.simple(i:int):int;	#0:void (simple:int)(i:int)
-	i := calc.+(i,1);	#1:int (i:int)(i:int)($2:int)
-	return i;	#2:int (i:int)
-end function;	#3:void 
+function Admin.simple(i:int):int;	#0:(simple:int)<-(i:int)
+	i := calc.+(i,1);	#1:(i:int)<-(i:int)($2:int)
+	return i;	#2:(i:int)
+end function;	#3:
 #
 #k:= 0;
 #r:= simple(k);
 #
-function Admin.main():int;	#0:void (main:int)
-	k := 0;	#1:int (k:int)($2:int)
-	r := Admin.simple(k);	#2:int (r:int)(k:int)
-end function;	#3:void 
+function Admin.main():int;	#0:(main:int)
+	k := 0;	#1:(k:int)<-($2:int)
+	r := Admin.simple(k);	#2:(r:int)<-(k:int)
+end function;	#3:
 >

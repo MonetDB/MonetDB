@@ -25,25 +25,25 @@
 #	printf("%6.2f\n",pi);
 #	printf("single line %s \n","hello");
 #
-function Admin.main():int;	#0:void (main:int)
-	mal.print('c');	#1:int ($1:int)($2:chr)
-	mal.print("hello world");	#2:int ($3:int)($4:str)
-	mal.print(0);	#3:int ($5:int)($6:int)
-	mal.print(1);	#4:int ($7:int)($8:lng)
-	mal.print('c');	#5:int ($9:int)($2:chr)
-	mal.print(true);	#6:int ($10:int)($11:bit)
-	pi := 3.147;	#7:flt (pi:flt)($13:flt)
-	x := 1;	#8:int (x:int)($15:int)
-	mal.print(x);	#9:int ($16:int)(x:int)
-	mal.print(pi);	#10:int ($17:int)(pi:flt)
-	system.printf("hello\n");	#11:int ($18:int)($19:str)
-	system.printf("%5d\n",0);	#12:int ($20:int)($21:str)($6:int)
-	system.printf("%5d\n",1);	#13:int ($22:int)($21:str)($8:lng)
-	system.printf("%c\n",'c');	#14:int ($23:int)($24:str)($2:chr)
-	system.printf("%-8s\n",true);	#15:int ($25:int)($26:str)($11:bit)
-	system.printf("%6.2f\n",pi);	#16:int ($27:int)($28:str)(pi:flt)
-	system.printf("single line %s \n","hello");	#17:int ($29:int)($30:str)($31:str)
-end function;	#18:void 
+function Admin.main():int;	#0:(main:int)
+	mal.print('c');	#1:($1:int)<-($2:chr)
+	mal.print("hello world");	#2:($3:int)<-($4:str)
+	mal.print(0);	#3:($5:int)<-($6:int)
+	mal.print(1);	#4:($7:int)<-($8:lng)
+	mal.print('c');	#5:($9:int)<-($2:chr)
+	mal.print(true);	#6:($10:int)<-($11:bit)
+	pi := 3.147;	#7:(pi:flt)<-($13:flt)
+	x := 1;	#8:(x:int)<-($15:int)
+	mal.print(x);	#9:($16:int)<-(x:int)
+	mal.print(pi);	#10:($17:int)<-(pi:flt)
+	system.printf("hello\n");	#11:($18:int)<-($19:str)
+	system.printf("%5d\n",0);	#12:($20:int)<-($21:str)($6:int)
+	system.printf("%5d\n",1);	#13:($22:int)<-($21:str)($8:lng)
+	system.printf("%c\n",'c');	#14:($23:int)<-($24:str)($2:chr)
+	system.printf("%-8s\n",true);	#15:($25:int)<-($26:str)($11:bit)
+	system.printf("%6.2f\n",pi);	#16:($27:int)<-($28:str)(pi:flt)
+	system.printf("single line %s \n","hello");	#17:($29:int)<-($30:str)($31:str)
+end function;	#18:
 [ 'c' ]
 [ "hello world" ]
 [ 0 ]

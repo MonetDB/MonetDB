@@ -16,13 +16,13 @@
 #	printf("catched exception\n");
 #end	myNewException;
 #
-function Admin.main():int;	#0:void (main:int)
-	myNewException := "new exception";	#1:str (myNewException:str)($2:str)
-	raise myNewException;	#2:str (myNewException:str)
-	system.printf("should not come here\n");	#3:int ($3:int)($4:str)
-catch	myNewException;	#4:str (myNewException:str)
-	system.printf("catched exception\n");	#5:int ($5:int)($6:str)
-end	myNewException;	#6:str (myNewException:str)
-end function;	#7:void 
+function Admin.main():int;	#0:(main:int)
+	myNewException := "new exception";	#1:(myNewException:str)<-($2:str)
+	raise myNewException;	#2:(myNewException:str)
+	system.printf("should not come here\n");	#3:($3:int)<-($4:str)
+catch	myNewException;	#4:(myNewException:str)
+	system.printf("catched exception\n");	#5:($5:int)<-($6:str)
+end	myNewException;	#6:(myNewException:str)
+end function;	#7:
 catched exception
 >

@@ -18,19 +18,19 @@
 #	redo v2;
 #end	v2;
 #
-function Admin.main():int;	#0:void (main:int)
-	i := -1;	#1:int (i:int)($2:int)
-barrier	v1 := mal.nextElement(i,0,2);	#2:bit (v1:bit)(i:int)($4:int)($5:int)
-	mal.print("do something");	#3:int ($6:int)($7:str)
-	redo v1 ;	#4:bit (v1:bit)
-end	v1;	#5:bit (v1:bit)
-	mal.print("next iteration");	#6:int ($8:int)($9:str)
-	i := -1;	#7:int (i:int)($2:int)
-barrier	v2 := mal.nextElement(i,0,5,2);	#8:bit (v2:bit)(i:int)($4:int)($11:int)($5:int)
-	mal.print("do something else");	#9:int ($12:int)($13:str)
-	redo v2 ;	#10:bit (v2:bit)
-end	v2;	#11:bit (v2:bit)
-end function;	#12:void 
+function Admin.main():int;	#0:(main:int)
+	i := -1;	#1:(i:int)<-($2:int)
+barrier	v1 := mal.nextElement(i,0,2);	#2:(v1:bit)<-(i:int)($4:int)($5:int)
+	mal.print("do something");	#3:($6:int)<-($7:str)
+	redo v1 ;	#4:(v1:bit)
+end	v1;	#5:(v1:bit)
+	mal.print("next iteration");	#6:($8:int)<-($9:str)
+	i := -1;	#7:(i:int)<-($2:int)
+barrier	v2 := mal.nextElement(i,0,5,2);	#8:(v2:bit)<-(i:int)($4:int)($11:int)($5:int)
+	mal.print("do something else");	#9:($12:int)<-($13:str)
+	redo v2 ;	#10:(v2:bit)
+end	v2;	#11:(v2:bit)
+end function;	#12:
 [ "do something" ]
 [ "do something" ]
 [ "next iteration" ]

@@ -24,28 +24,32 @@
 #end	IllegalAccess;
 #	print("done");
 #
-function Admin.main():int;	#0:void (main:int)
-	p1 := 1;	#1:int (p1:int)($2:int)
-	s0 := squeezer.access("p1");	#2:int (s0:int)($4:str)
-	p2 := p1;	#3:int (p2:int)(p1:int)
-catch	IllegalAccess;	#4:str (IllegalAccess:str)
-	mal.print("should not come here");	#5:int ($7:int)($8:str)
-	p3 := p1;	#6:int (p3:int)(p1:int)
-end	IllegalAccess;	#7:str (IllegalAccess:str)
-	mal.print("done");	#8:int ($10:int)($11:str)
-end function;	#9:void 
+function Admin.main():int;	#0:(main:int)
+	p1 := 1;	#1:(p1:int)<-($2:int)
+	s0 := squeezer.access("p1");	#2:(s0:int)<-($4:str)
+	p2 := p1;	#3:(p2:int)<-(p1:int)
+catch	IllegalAccess;	#4:(IllegalAccess:str)
+	mal.print("should not come here");	#5:($7:int)<-($8:str)
+	p3 := p1;	#6:(p3:int)<-(p1:int)
+end	IllegalAccess;	#7:(IllegalAccess:str)
+	mal.print("done");	#8:($10:int)<-($11:str)
+end function;	#9:
 entering sqzAccess blocking 1 p1
+	s0 := squeezer.access("p1");	#2:(s0:int)<-($4:str)
+	squeezer.AccessTst(p1);	#10:($12:int)<-(p1:int)
+	s0 := squeezer.access("p1");	#2:(s0:int)<-($4:str)
+	squeezer.AccessTst(p1);	#11:($13:int)<-(p1:int)
 Modified stmt sequence
-function Admin.main():int;	#0:void (main:int)
-	p1 := 1;	#1:int (p1:int)($2:int)
-	squeezer.AccessTst(p1);	#2:int ($12:int)(p1:int)
-	p2 := p1;	#3:int (p2:int)(p1:int)
-catch	IllegalAccess;	#4:str (IllegalAccess:str)
-	mal.print("should not come here");	#5:int ($7:int)($8:str)
-	squeezer.AccessTst(p1);	#6:int ($13:int)(p1:int)
-	p3 := p1;	#7:int (p3:int)(p1:int)
-end	IllegalAccess;	#8:str (IllegalAccess:str)
-	mal.print("done");	#9:int ($10:int)($11:str)
-end function;	#10:void 
+function Admin.main():int;	#0:(main:int)
+	p1 := 1;	#1:(p1:int)<-($2:int)
+	squeezer.AccessTst(p1);	#2:($12:int)<-(p1:int)
+	p2 := p1;	#3:(p2:int)<-(p1:int)
+catch	IllegalAccess;	#4:(IllegalAccess:str)
+	mal.print("should not come here");	#5:($7:int)<-($8:str)
+	squeezer.AccessTst(p1);	#6:($13:int)<-(p1:int)
+	p3 := p1;	#7:(p3:int)<-(p1:int)
+end	IllegalAccess;	#8:(IllegalAccess:str)
+	mal.print("done");	#9:($10:int)<-($11:str)
+end function;	#10:
 [ "done" ]
 >

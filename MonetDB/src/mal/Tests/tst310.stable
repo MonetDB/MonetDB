@@ -18,20 +18,20 @@
 #i1:=  c3;	# replace i1 as c0, unless reassigned
 #i2:= c1+c3;	# evalutate constant
 #
-function Admin.main():int;	#0:void (main:int)
-	s0 := squeezer.prepare();	#1:int (s0:int)
-	c1 := 0;	#2:int (c1:int)($3:int)
-	c2 := 1;	#3:int (c2:int)($5:int)
-	c3 := -1;	#4:int (c3:int)($7:int)
-	i1 := c3;	#5:int (i1:int)(c3:int)
-	i2 := calc.+(c1,c3);	#6:int (i2:int)(c1:int)(c3:int)
-end function;	#7:void 
+function Admin.main():int;	#0:(main:int)
+	s0 := squeezer.prepare();	#1:(s0:int)
+	c1 := 0;	#2:(c1:int)<-($3:int)
+	c2 := 1;	#3:(c2:int)<-($5:int)
+	c3 := -1;	#4:(c3:int)<-($7:int)
+	i1 := c3;	#5:(i1:int)<-(c3:int)
+	i2 := calc.+(c1,c3);	#6:(i2:int)<-(c1:int)(c3:int)
+end function;	#7:
 Modified stmt sequence
-function Admin.main():int;	#0:void (main:int)
-	c1 := 0;	#1:int (c1:int)($3:int)
-	c2 := 1;	#2:int (c2:int)($5:int)
-	c3 := -1;	#3:int (c3:int)($7:int)
-	i1 := c3;	#4:int (i1:int)(c3:int)
-	i2 := calc.+(c1,c3);	#5:int (i2:int)(c1:int)(c3:int)
-end function;	#6:void 
+function Admin.main():int;	#0:(main:int)
+	c1 := 0;	#1:(c1:int)<-($3:int)
+	c2 := 1;	#2:(c2:int)<-($5:int)
+	c3 := -1;	#3:(c3:int)<-($7:int)
+	i1 := c3;	#4:(i1:int)<-(c3:int)
+	i2 := calc.+(c1,c3);	#5:(i2:int)<-(c1:int)(c3:int)
+end function;	#6:
 >

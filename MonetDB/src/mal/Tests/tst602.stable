@@ -19,16 +19,16 @@
 #end v;
 #const.close();	# save the content on persistent store
 #
-function Admin.main():int;	#0:void (main:int)
-	const.open();	#1:oid ($1:void)
-	t := const.take("pi");	#2:flt (t:flt)($3:str)
-	mal.print(t);	#3:int ($4:int)(t:flt)
-barrier	v := const.iterator(nme);	#4:lng (v:lng)(nme:str)
-	mal.print(nme);	#5:int ($7:int)(nme:str)
-	redo v ;	#6:lng (v:lng)
-end	v;	#7:lng (v:lng)
-	const.close();	#8:oid ($8:void)
-end function;	#9:void 
+function Admin.main():int;	#0:(main:int)
+	const.open();	#1:($1:void)
+	t := const.take("pi");	#2:(t:flt)<-($3:str)
+	mal.print(t);	#3:($4:int)<-(t:flt)
+barrier	v := const.iterator(nme);	#4:(v:lng)<-(nme:str)
+	mal.print(nme);	#5:($7:int)<-(nme:str)
+	redo v ;	#6:(v:lng)
+end	v;	#7:(v:lng)
+	const.close();	#8:($8:void)
+end function;	#9:
 [ 3.147 ]
 [ "user" ]
 [ "database" ]

@@ -12,11 +12,11 @@
 #	raise IllegalAccess;
 #	print("should not come here\n");
 #
-function Admin.main():int;	#0:void (main:int)
-	IllegalAccess := 1234;	#1:int (IllegalAccess:int)($2:int)
-	raise IllegalAccess;	#2:int (IllegalAccess:int)
-	mal.print("should not come here\n");	#3:int ($3:int)($4:str)
-end function;	#4:void 
+function Admin.main():int;	#0:(main:int)
+	IllegalAccess := 1234;	#1:(IllegalAccess:int)<-($2:int)
+	raise IllegalAccess;	#2:(IllegalAccess:int)
+	mal.print("should not come here\n");	#3:($3:int)<-($4:str)
+end function;	#4:
 !ERROR: IllegalAccess:Admin.main[2]:raise exception
 
 MALexception:Admin.main[4]:propagated

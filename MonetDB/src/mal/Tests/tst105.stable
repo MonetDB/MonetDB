@@ -12,17 +12,17 @@
 #module bat2;
 #command new(h:any::1,t:any::2):bat[any::1,any::2]= GDKbatnew;
 !ERROR: address of 'GDKbatnew' not found
-command bat2.new(h:any::1,t:any::2):bat[any::1,any::2] = GDKbatnew;	#0 polymorphic:void (new:bat[any::1,any::2])(h:any::1)(t:any::2)
+command bat2.new(h:any::1,t:any::2):bat[any::1,any::2] = GDKbatnew;	#0 polymorphic:(new:bat[any::1,any::2])<-(h:any::1)(t:any::2)
 #
 #a:= bat2.new(str,int);
 #b:= bat2.new(str,int);
 #c:= new(str,int);
 #
-function bat2.main():int;	#0:void (main:int)
-	a := bat2.new(str,int);	#1:BAT (a:bat[str,int])(str:str)(int:int)
-	b := bat2.new(str,int);	#2:BAT (b:bat[str,int])(str:str)(int:int)
-	c := bat2.new(str,int);	#3:BAT (c:bat[str,int])(str:str)(int:int)
-end function;	#4:void 
+function bat2.main():int;	#0:(main:int)
+	a := bat2.new(str,int);	#1:(a:bat[str,int])<-(str:str)(int:int)
+	b := bat2.new(str,int);	#2:(b:bat[str,int])<-(str:str)(int:int)
+	c := bat2.new(str,int);	#3:(c:bat[str,int])<-(str:str)(int:int)
+end function;	#4:
 !ERROR: MALexception:bat2.main[1]:address of function missing
 
 >

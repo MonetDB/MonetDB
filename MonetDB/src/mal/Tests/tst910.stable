@@ -13,10 +13,10 @@
 #	z:= a+b;
 #	return z;
 #end function;
-function Admin.inc(a:lng,b:lng):lng;	#0:void (inc:lng)(a:lng)(b:lng)
-	z := calc.+(a,b);	#1:lng (z:lng)(a:lng)(b:lng)
-	return z;	#2:lng (z:lng)
-end function;	#3:void 
+function Admin.inc(a:lng,b:lng):lng;	#0:(inc:lng)<-(a:lng)(b:lng)
+	z := calc.+(a,b);	#1:(z:lng)<-(a:lng)(b:lng)
+	return z;	#2:(z:lng)
+end function;	#3:
 #
 #b:= new(lng,lng);
 #i:= -1:lng;
@@ -42,32 +42,32 @@ end function;	#3:void
 #print(z);
 #
 #
-function Admin.main():int;	#0:void (main:int)
-	b := mal.new(lng,lng);	#1:BAT (b:bat[lng,lng])(lng:lng)(lng:lng)
-	i := -1;	#2:lng (i:lng)($4:lng)
-barrier	v := mal.nextElement(i,0,10);	#3:bit (v:bit)(i:lng)($6:lng)($7:lng)
-	bat.insert(b,i,i);	#4:BAT ($8:bat[lng,lng])(b:bat[lng,lng])(i:lng)(i:lng)
-	redo v ;	#5:bit (v:bit)
-end	v;	#6:bit (v:bit)
-	c := algebra.copy(b);	#7:BAT (c:bat[lng,lng])(b:bat[lng,lng])
-	mal.print(c);	#8:int ($10:int)(c:bat[lng,lng])
-	x := multiplex.script("+",b,c);	#9:BAT (x:bat[lng,lng])($12:str)(b:bat[lng,lng])(c:bat[lng,lng])
-	mal.print(x);	#10:int ($13:int)(x:bat[lng,lng])
-	x := multiplex.script("+",b,1);	#11:BAT (x:bat[lng,lng])($12:str)(b:bat[lng,lng])($14:lng)
-	mal.print(x);	#12:int ($15:int)(x:bat[lng,lng])
-	x := multiplex.script("inc",b,c);	#13:BAT (x:bat[lng,lng])($16:str)(b:bat[lng,lng])(c:bat[lng,lng])
-	mal.print(x);	#14:int ($17:int)(x:bat[lng,lng])
-	x := multiplex.script("*",b,c);	#15:BAT (x:bat[lng,lng])($18:str)(b:bat[lng,lng])(c:bat[lng,lng])
-	mal.print(x);	#16:int ($19:int)(x:bat[lng,lng])
-	y := multiplex.script("==",b,b);	#17:BAT (y:bat[lng,bit])($21:str)(b:bat[lng,lng])(b:bat[lng,lng])
-	mal.print(y);	#18:int ($22:int)(y:bat[lng,bit])
-	y := multiplex.script("=",b,x);	#19:BAT (y:bat[lng,bit])($23:str)(b:bat[lng,lng])(x:bat[lng,lng])
-	mal.print(y);	#20:int ($24:int)(y:bat[lng,bit])
-	z := multiplex.script("not",y);	#21:BAT (z:bat[lng,bit])($26:str)(y:bat[lng,bit])
-	mal.print(z);	#22:int ($27:int)(z:bat[lng,bit])
-end function;	#23:void 
+function Admin.main():int;	#0:(main:int)
+	b := mal.new(lng,lng);	#1:(b:bat[lng,lng])<-(lng:lng)(lng:lng)
+	i := -1;	#2:(i:lng)<-($4:lng)
+barrier	v := mal.nextElement(i,0,10);	#3:(v:bit)<-(i:lng)($6:lng)($7:lng)
+	bat.insert(b,i,i);	#4:($8:bat[lng,lng])<-(b:bat[lng,lng])(i:lng)(i:lng)
+	redo v ;	#5:(v:bit)
+end	v;	#6:(v:bit)
+	c := algebra.copy(b);	#7:(c:bat[lng,lng])<-(b:bat[lng,lng])
+	mal.print(c);	#8:($10:int)<-(c:bat[lng,lng])
+	x := multiplex.script("+",b,c);	#9:(x:bat[lng,lng])<-($12:str)(b:bat[lng,lng])(c:bat[lng,lng])
+	mal.print(x);	#10:($13:int)<-(x:bat[lng,lng])
+	x := multiplex.script("+",b,1);	#11:(x:bat[lng,lng])<-($12:str)(b:bat[lng,lng])($14:lng)
+	mal.print(x);	#12:($15:int)<-(x:bat[lng,lng])
+	x := multiplex.script("inc",b,c);	#13:(x:bat[lng,lng])<-($16:str)(b:bat[lng,lng])(c:bat[lng,lng])
+	mal.print(x);	#14:($17:int)<-(x:bat[lng,lng])
+	x := multiplex.script("*",b,c);	#15:(x:bat[lng,lng])<-($18:str)(b:bat[lng,lng])(c:bat[lng,lng])
+	mal.print(x);	#16:($19:int)<-(x:bat[lng,lng])
+	y := multiplex.script("==",b,b);	#17:(y:bat[lng,bit])<-($21:str)(b:bat[lng,lng])(b:bat[lng,lng])
+	mal.print(y);	#18:($22:int)<-(y:bat[lng,bit])
+	y := multiplex.script("=",b,x);	#19:(y:bat[lng,bit])<-($23:str)(b:bat[lng,lng])(x:bat[lng,lng])
+	mal.print(y);	#20:($24:int)<-(y:bat[lng,bit])
+	z := multiplex.script("not",y);	#21:(z:bat[lng,bit])<-($26:str)(y:bat[lng,bit])
+	mal.print(z);	#22:($27:int)<-(z:bat[lng,bit])
+end function;	#23:
 #-----------------#
-# BAT:	  tmp_4	  #
+# BAT:	  tmp_2	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]
@@ -137,7 +137,7 @@ end function;	#23:void
 [ 8,	  64	  ]
 [ 9,	  81	  ]
 #-----------------#
-# BAT:	  tmp_2	  #
+# BAT:	  tmp_4	  #
 # (lng)	  (bit)	  #
 #-----------------#
 [ 0,	  true	  ]
@@ -151,7 +151,7 @@ end function;	#23:void
 [ 8,	  true	  ]
 [ 9,	  true	  ]
 #-----------------#
-# BAT:	  tmp_2	  #
+# BAT:	  tmp_4	  #
 # (lng)	  (bit)	  #
 #-----------------#
 [ 0,	  true	  ]
@@ -165,7 +165,7 @@ end function;	#23:void
 [ 8,	  false	  ]
 [ 9,	  false	  ]
 #-----------------#
-# BAT:	  tmp_1	  #
+# BAT:	  tmp_5	  #
 # (lng)	  (bit)	  #
 #-----------------#
 [ 0,	  false	  ]

@@ -9,7 +9,7 @@
 	p1:= -1;
 	s0:= squeezer.access("p1");
 	c1:= 2;
-	c2:= arith.+(p1,p1);	# forbidden function
+	c2:= +(p1,p1);	# forbidden function
 	c4:= "should not come here";
 #exception 
 catch WrongBlock;
