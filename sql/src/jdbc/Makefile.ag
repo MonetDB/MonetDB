@@ -33,6 +33,7 @@ jar_MonetDB_JDBC = {
 	          nl/cwi/monetdb/jdbc/MonetPreparedStatement.java \
 	          nl/cwi/monetdb/jdbc/MonetSocketBlockMode.java \
 	          nl/cwi/monetdb/jdbc/MonetDataSource.java \
+	          nl/cwi/monetdb/jdbc/MonetClob.java \
 	          example/JdbcClient.java
 	MANIFEST = srcdir/manifest
 }
