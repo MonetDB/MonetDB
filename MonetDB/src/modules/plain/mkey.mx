@@ -323,12 +323,9 @@ CMDhash_dbl(int *res, dbl *val)
 }
 
 int
-CMDhash_str(int *res, lng *val)
+CMDhash_str(int *res, str val)
 {
-	hash_t code;		/* 64-bits on 64 systems; we truncate it here to save space */
-
-	GDK_STRHASH(val, code);
-	*res = code;
+	*res = strHash(val);
 	return GDK_SUCCEED;
 }
 
@@ -356,7 +353,7 @@ CMDhash(int *res, ptr val, int tpe)
 		code = ((int *) val)[0] ^ ((int *) val)[1];
 		break;
 	case TYPE_str:
-		GDK_STRHASH(val, code);
+		code = strHash((char*)val);
 		break;
 	default:
 		code = (*BATatoms[tpe].atomHash) (val);
@@ -431,7 +428,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 		while (cur < end) {
 			hash_t val;
 
-			GDK_STRHASH(base + *cur, val);
+			val = strHash(base + *cur);
 			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ val;
 			cur = (int *) (((BUN) cur) + xx);
 			dst = (int *) (((BUN) dst) + yy);

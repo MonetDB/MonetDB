@@ -1670,26 +1670,20 @@ strHeap(Heap *d, size_t cap)
 
 @- Hash Function 
 @T
-The old hash function takes a maximum of 10 probes at equal distance and 
-multiplies these together. This hash function does not take all characters into
-account and may therefore run into trouble (e.g. on sets of strings that have
-a long mean length and where only a small portion of the characters differs).
+The string hash function is a very simple hash function that xors and 
+rotates all characters together. 
 
-Therefore we switch to new simple hash function that xors and rotates all 
-characters together. 
-
-We preserve the old hash function for use inside string heaps. This ensures that
-old bats with these string heaps will still be compatible. TODO: replace by strHash.
 @h
 #define GDK_ROTATE(x,y,z,m) ((((x) << (y)) & ~(m)) | (((x) >> (z)) & (m)))
 
+@c
 #define GDK_STRHASH(x,y) {						\
 		str _s = (str) (x);					\
 		for((y)=0; *_s; _s++) {					\
 			(y) = GDK_ROTATE(y, 4, SIZEOF_OID*8-4, 15) ^ *_s; \
 		}							\
 	}
-@c
+
 hash_t
 strHash(str s)
 {
@@ -1697,40 +1691,6 @@ strHash(str s)
 
 	GDK_STRHASH(s, res);
 	return res;
-}
-
-static INLINE hash_t
-strOldHash(str s)
-{
-	hash_t h;
-	ptrdiff_t len;
-	char *t;
-
-	if (GDK_STRNIL(s)) {
-		return 0;
-	}
-	while (*s == ' ') {
-		s++;		/* discard leading spaces */
-	}
-	for (t = s; *t; t++)
-		;
-	while (t > s && t[-1] == ' ') {
-		t--;		/* discard trailing spaces */
-	}
-	len = t - s;
-	h = *s++;		/* get first char */
-	if (len-- > 1) {
-		h = mult7(h) + t[-1];	/* get last char */
-		if (len-- > 1) {
-			ptrdiff_t i = 0, j = MAX(len, 8), k = j * MIN(len, 8);
-
-			/* get 8 intermediate chars. 8==2^3 */
-			for (i = 0; i < k; i += j) {
-				h = mult7(h) + s[i >> 3];
-			}
-		}
-	}
-	return h & 0x7fffffff;
 }
 
 @- 
@@ -1742,7 +1702,7 @@ var_t
 strLocate(Heap *h, str v)
 {
 	var_t *htab = (var_t *) h->base;
-	var_t *l, *e = htab + (strOldHash(v) & GDK_STRHASHMASK);
+	var_t *l, *e = htab + (strHash(v) & GDK_STRHASHMASK);
 
 	if (*e) {
 		for (l = e; *l && *l < h->free; l = (var_t *) ((char *) h->base + *l)) {
@@ -1790,7 +1750,7 @@ strPut(Heap *h, var_t *dst, str v)
 	size_t elimlimit = GDK_ELIMBASE(h->free) + GDK_ELIMLIMIT;
 
 	/* search hash-table, if double-elimination is still in place */
-	off = strOldHash(v) & GDK_STRHASHMASK;
+	off = strHash(v) & GDK_STRHASHMASK;
 	for (l = ((var_t *) h->base) + off; *l && *l < h->free; l = (var_t *) (h->base + *l)) {
 		str x = (str) (h->base + *l + sizeof(var_t));
 

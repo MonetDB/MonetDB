@@ -15,10 +15,10 @@
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
 @' All Rights Reserved.
 
-@a M.L. Kersten, P. Boncz, A.P. de Vries, N.J. Nes -- $Id$
 @f xtables
-@t Cross Table Module
+@a M.L. Kersten, P. Boncz, A.P. de Vries, N.J. Nes -- $Id$
 @v 2.2
+@t Cross Table Module
 @T
 {\bf Copyright \copyright\ 1996-1999 by Data Distilleries, All Rights Reserved.
 
@@ -340,7 +340,7 @@ hashing.
 #define match_hash(b,p,r) BUNfndOID(r,b,p); if (r == NULL) continue;
 
 #define declare_atom int any = b->ttype; hash_t (*hashfcn)(ptr) = BATatoms[any].atomHash;
-#define declare_simple		/* any and hash would otherwise give unused variable warning */
+#define declare_simple	/* any and hash would otherwise give unused variable warning */
 
 #define htype_sync(b) BAThdense(b)?TYPE_void:TYPE_oid
 #define htype_hash(b) TYPE_oid
@@ -364,7 +364,7 @@ hashing.
 #define declare_clustered   int samecluster = TRUE;
 
 #define chain_unclustered   for (zz = hash[c]; zz > 0; zz = e->link)
-#define chain_clustered	    for (zz = hash[c]; (zz > 0) && (samecluster); zz = e->link)
+#define chain_clustered     for (zz = hash[c]; (zz > 0) && (samecluster); zz = e->link)
 
 #define tst_grp_unclustered(eq,p,t)    (eq(p, tcur, t))
 #define tst_grp_clustered(eq,p,t)      (samecluster = eq(p, tcur, t))
@@ -573,7 +573,7 @@ tailtype(BAT *b, int str_trick)
 int
 CTgroup(grp *g,			/* put pointer to grp record here. */
 	BAT *b			/* pointer to BAT[oid,oid] record. */
-    )
+)
 {
 	@:CTgroupbody(STANDARD)@
 }
@@ -583,7 +583,7 @@ CTgroup_custom(grp *g,		/* put pointer to grp record here. */
 	       BAT *b,		/* pointer to BAT[oid,oid] record. */
 	       int *N,		/* number of bits for hashmask */
 	       int *rng		/* expected number of entries in map */
-    )
+)
 {
 	@:CTgroupbody(CUSTOM)@
 }
@@ -611,7 +611,7 @@ CTgroup_custom(grp *g,		/* put pointer to grp record here. */
 
 @= choosegroupSTANDARD
 	/* Choose appropriate @4 CTgroup implementation */
-	switch (@1) {
+	switch(@1) {
 	case TYPE_chr:
 		@?@5:returnvalue(@5)@ CTgroup_chr_@4_STANDARD(b,@2,@3);
 		break;
@@ -631,7 +631,7 @@ CTgroup_custom(grp *g,		/* put pointer to grp record here. */
 
 @= choosegroupCUSTOM
 	/* Choose appropriate @4 CTgroup implementation */
-	switch (@1) {
+	switch(@1) {
 	case TYPE_chr:
 		@?@5:returnvalue(@5)@ CTgroup_chr_@4_CUSTOM(mask,*rng,b,@2,@3);
 		break;
@@ -753,7 +753,7 @@ bunins_failed:
 int
 derive(grp *g, BAT *ct, BAT *b, int tt, map_T *m)
 {
-	BAT *histo = NULL, *bn = NULL; 
+	BAT *histo = NULL, *bn = NULL;
 	int synced = ALIGNsynced(ct, b);
 
 	/* create the result bat 'bn' */
@@ -820,10 +820,11 @@ The routine CThistosum takes an grouping and a histogram and produces
 a new histogram by summing the old values within the same group.
 @c
 int
-CThistosum(BAT **retval,	/* put pointer to BAT[oid,int] record here. */
-	   BAT *b,		/* pointer to BAT[oid,oid] record. */
-	   BAT *c		/* pointer to BAT[oid,int] record. */
-    )
+CThistosum(
+	BAT**	retval,	/* put pointer to BAT[oid,int] record here. */
+	BAT*	b,	/* pointer to BAT[oid,oid] record. */
+	BAT*	c	/* pointer to BAT[oid,int] record. */
+)
 {
 	BAT *res = BATnew(TYPE_oid, TYPE_int, BATcount(b));
 	BUN p, q, qb;
@@ -857,8 +858,6 @@ CThistosum(BAT **retval,	/* put pointer to BAT[oid,int] record here. */
 	*retval = res;
 	return GDK_SUCCEED;
 }
-
-
 
 int
 CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
@@ -907,7 +906,7 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 	bn->htype = BATmirror(bn)->ttype = TYPE_oid;
 	strcpy(bn->hatom, "oid");
 	/* assert(offsetof(idxentry_t,hcur) == 0);
-	   ALIGNsetH(bn, dom); */
+	ALIGNsetH(bn, dom); */
 
 	/* add the counts for this selection using the hash table */
 	zz = BUNsize(sel);
@@ -964,7 +963,7 @@ sort_flush(struct refine *buf, size_t size, int tpe, BUN base, oid *dst, oid *id
 		val = base + buf->off;
 		if ((*cmp) (cur, val)) {
 			cur = val;
-			id ++;
+			id++;
 		}
 		*dst++ = buf->o;
 		*dst++ = id;
@@ -976,8 +975,7 @@ sort_flush(struct refine *buf, size_t size, int tpe, BUN base, oid *dst, oid *id
 	return dst;
 }
 
-static
-    int
+static int
 refine(BAT **res, BAT *b, BAT *a, int rv)
 {
 	str rev = rv ? "_rev" : "";
@@ -1005,7 +1003,6 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		return GDK_FAIL;
 	}
 @)
-
 	if (b->tkey) {		/* if key, no further refinements can take place */
 		bn = BATmark(b, 0);
 	} else {
