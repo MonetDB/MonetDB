@@ -25,7 +25,7 @@
 #
 
 os="`uname`"
-base="${PWD}"
+base=`pwd`
 
 if [ ! -x bootstrap ] ; then
 	echo ''
@@ -42,13 +42,15 @@ if [ ! -x bootstrap ] ; then
 		echo ''
 		echo 'MONET_BUILD not set to specify desired compilation directory.'
 		echo 'Using MONET_BUILD="'${base}/${os}'" (default).'
-		export MONET_BUILD="${base}/${os}"
+		MONET_BUILD="${base}/${os}"
+		export MONET_BUILD
 	fi
 	if [ ! "${MONET_PREFIX}" ] ; then
 		echo ''
 		echo 'MONET_PREFIX not set to specify desired target directory.'
 		echo 'Using MONET_PREFIX="'${MONET_BUILD}'" (default).'
-		export MONET_PREFIX="${MONET_BUILD}"
+		MONET_PREFIX="${MONET_BUILD}"
+		export MONET_PREFIX
 	fi
 
 	if [ "${COMP}" != "GNU"  -a  "${COMP}" != "ntv" ] ; then
@@ -63,8 +65,9 @@ if [ ! -x bootstrap ] ; then
 		echo 'Using BITS="32" (default).'
 		BITS="32"
 	fi
-	LINK="`echo "${LINK}" | cut -c1`"
-	if [ "${LINK}" != "d"    -a  "${LINK}" != "s"   ] ; then
+	case "$LINK" in
+	[ds]*)	;;
+	*)
 		echo ''
 		echo 'LINK not set to either "dynamic" or "static" to select the desired way of linking.'
 		if [ "${os}${COMP}" = "Linuxntv" ] ; then
@@ -74,7 +77,8 @@ if [ ! -x bootstrap ] ; then
 			echo 'Using LINK="dynamic" (default).'
 			LINK="d"
 		fi
-	fi
+		;;
+	esac
 
 	# exclude "illegal" combinations
 
@@ -124,15 +128,19 @@ if [ ! -x bootstrap ] ; then
 			if [ -f /opt/intel/licenses/l_cpp.lic  -a  -f /opt/intel/compiler50/ia32/bin/iccvars.sh ] ; then
 				# "ntv" on Linux means IntelC++-5.0.1 ("icc")
 				# source /opt/intel/compiler50/ia32/bin/iccvars.sh
-				export IA32ROOT=/opt/intel/compiler50/ia32
-				export INTEL_FLEXLM_LICENSE=/opt/intel/licenses
+				IA32ROOT=/opt/intel/compiler50/ia32
+				export IA32ROOT
+				INTEL_FLEXLM_LICENSE=/opt/intel/licenses
+				export INTEL_FLEXLM_LICENSE
 				libpath="${IA32ROOT}/lib:${libpath}"
 				binpath="${IA32ROOT}/bin:${binpath}"
 			  else
 				# "ntv" on Linux means IntelC++-5.0.1 ("icc")
 				# source /soft/IntelC++-5.0.1/bin/iccvars.sh
-				export IA32ROOT=/soft/IntelC++-5.0.1
-				export INTEL_FLEXLM_LICENSE=/soft/IntelC++-5.0.1/licenses
+				IA32ROOT=/soft/IntelC++-5.0.1
+				export IA32ROOT
+				INTEL_FLEXLM_LICENSE=/soft/IntelC++-5.0.1/licenses
+				export INTEL_FLEXLM_LICENSE
 				libpath="${IA32ROOT}/lib:${libpath}"
 			fi
 			cc="icc"
@@ -150,14 +158,16 @@ if [ ! -x bootstrap ] ; then
 		binpath="/opt/SUNWspro/bin:/sw/SunOS/5.8/bin:/usr/java/bin:${binpath}"
 		libpath="/sw/SunOS/5.8/lib:${libpath}"
 		if [ "${BITS}" = "64" ] ; then
-			# propper/extended LD_LIBRAY_PATH for 64bit on SunOS
+			# propper/extended LD_LIBRARY_PATH for 64bit on SunOS
 			libpath="/usr/lib/sparcv9:/usr/ucblib/sparcv9:${libpath}"
 			# GNU ar in /usr/local/bin doesn't support 64bit
-			export AR='/usr/ccs/bin/ar'
-			export AR_FLAGS='-r -cu'
+			AR='/usr/ccs/bin/ar'
+			export AR
+			AR_FLAGS='-r -cu'
+			export AR_FLAGS
 		fi
 		if [ "${COMP}${BITS}${LINK}" = "ntv32d" ] ; then
-			# propper/extended LD_LIBRAY_PATH for native 32bit shared libs on SunOS
+			# propper/extended LD_LIBRARY_PATH for native 32bit shared libs on SunOS
 			libpath="/usr/ucblib:${libpath}"
 		fi
 		if [ "${COMP}${BITS}" = "GNU64" ] ; then
@@ -248,53 +258,76 @@ if [ ! -x bootstrap ] ; then
 	# export new settings
 	echo ""
 	echo "Setting..."
-	export CC="${cc}"
+	CC="${cc}"
+	export CC
 	echo " CC=${CC}"
-	export CXX="${cxx}"
+	CXX="${cxx}"
+	export CXX
 	echo " CXX=${CXX}"
-	export CFLAGS=""
+	CFLAGS=""
+	export CFLAGS
 	echo " CFLAGS=${CFLAGS}"
-	export CXXFLAGS=""
+	CXXFLAGS=""
+	export CXXFLAGS
 	echo " CXXFLAGS=${CXXFLAGS}"
 	if [ "${binpath}" ] ; then
 		if [ "${PATH}" ] ; then
 			# prepend new binpath to existing PATH, if PATH doesn't contain binpath, yet
-			if [ "`echo ":${PATH}:" | sed "s|:${binpath}:|:|"`" = ":${PATH}:" ] ; then
-				export PATH="${binpath}:${PATH}"
-			fi
+			case "$PATH" in
+			${binpath}:* | *:${binpath} | *:${binpath}:*)
+				;;
+			*)
+				PATH="${binpath}:${PATH}"
+				export PATH
+				;;
+			esac
 		  else
 			# set PATH as binpath
-			export PATH="${binpath}"
+			PATH="${binpath}"
+			export PATH
 		fi
 		echo " PATH=${PATH}"
 	fi
 	if [ "${libpath}" ] ; then
 		if [ "${LD_LIBRARY_PATH}" ] ; then
 			# prepend new libpath to existing LD_LIBRARY_PATH, if LD_LIBRARY_PATH doesn't contain libpath, yet
-			if [ "`echo ":${LD_LIBRARY_PATH}:" | sed "s|:${libpath}:|:|"`" = ":${LD_LIBRARY_PATH}:" ] ; then
-				export LD_LIBRARY_PATH="${libpath}:${LD_LIBRARY_PATH}"
-			fi
+			case "$LD_LIBRARY_PATH" in
+			${libpath} | ${libpath}:* | *:${libpath} | *:${libpath}:*)
+				;;
+			*)
+				LD_LIBRARY_PATH="${libpath}:${LD_LIBRARY_PATH}"
+				export LD_LIBRARY_PATH
+				;;
+			esac
 		  else
 			# set LD_LIBRARY_PATH as libpath
-			export LD_LIBRARY_PATH="${libpath}"
+			LD_LIBRARY_PATH="${libpath}"
+			export LD_LIBRARY_PATH
 		fi
 		echo " LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 	fi
 	if [ "${modpath}" ] ; then
 		if [ "${MONET_MOD_PATH}" ] ; then
 			# prepend new modpath to existing MONET_MOD_PATH, if MONET_MOD_PATH doesn't contain modpath, yet
-			if [ "`echo ":${MONET_MOD_PATH}:" | sed "s|:${modpath}:|:|"`" = ":${MONET_MOD_PATH}:" ] ; then
-				export MONET_MOD_PATH="${modpath}:${MONET_MOD_PATH}"
-			fi
+			case "$MONET_MOD_PATH" in
+			${modpath}:* | *:${modpath} | ${modpath} | *:${modpath}:*)
+				;;
+			*)
+				MONET_MOD_PATH="${modpath}:${MONET_MOD_PATH}"
+				export MONET_MOD_PATH
+				;;
+			esac
 		  else
 			# set MONET_MOD_PATH as modpath
-			export MONET_MOD_PATH="${modpath}"
+			MONET_MOD_PATH="${modpath}"
+			export MONET_MOD_PATH
 		fi
 		echo " MONET_MOD_PATH=${MONET_MOD_PATH}"
 	fi
 
 	# for convenience: store the complete configure-call in MONET_CONFIGURE
-	export MONET_CONFIGURE="${base}/configure ${conf_opts} --prefix=${MONET_PREFIX}"
+	MONET_CONFIGURE="${base}/configure ${conf_opts} --prefix=${MONET_PREFIX}"
+	export MONET_CONFIGURE
 	echo " MONET_CONFIGURE=${MONET_CONFIGURE}"
 
 	mkdir -p ${MONET_BUILD}
