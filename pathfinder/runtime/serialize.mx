@@ -34,18 +34,10 @@
 /*******************************************
 * serialize.c : XML serialization
 *
-* TODO:
-* - Decide how to generate output for query results. I propose that we
-*   generate output in three different modes:
-*   1) "xml", generate the xml output data as we do now.
-*   2) "sax", generate the Sax-O-Phone SAX event stream as we do now
-*   3) "?galax?", generate exactly the same output as GALAX
 */
 
 #include <gdk.h>
 #include <monet.h>
-
-#include <setjmp.h>
 
 #include "pathfinder.h"
 
@@ -81,16 +73,17 @@ typedef struct {
         str  val;
 } SmartStrBuff;
 
-static str ssb_alloc(SmartStrBuff* ssb, str s) {
+static int ssb_alloc(SmartStrBuff* ssb, str s) {
         if ( s ) {
                 size_t l = strlen(s)+1;
 
                 if ( l <= SMART_STR_SZ )
-                        return ssb->val = memcpy(&ssb->stack_buff,s,l);
+                        return (ssb->val = memcpy(&ssb->stack_buff,s,l)) != NULL;
                 else
-                        return ssb->val = strdup(s);
+                        return (ssb->val = strdup(s)) != NULL;
         } else
-                return ssb->val = NULL;
+                ssb->val = NULL;
+	return 1;
 }
 
 static void ssb_free(SmartStrBuff* ssb) {
@@ -136,24 +129,23 @@ typedef struct {
                               * number of top-level result items printed on
                               * the current line.
                               */
-        jmp_buf exitPoint;   /* point to jump to after error */
 } XqueryCtx;
 
 /** 
- * The error handler which finishes the execution of the print with a 
- * longjmp() to the end.
+ * The local error handler for the serialization.
  */
-static void fatal_err(XqueryCtx* ctx, const char *msg, ...) {
+static int fatal_err(XqueryCtx* ctx, const char *msg, ...) {
     va_list msgs;
     char    errmsg[1024];
         
+    (void)ctx;
     va_start (msgs, msg);
     vsnprintf (errmsg, 1024, msg, msgs);
     va_end (msgs);
     /* */
     stream_printf(GDKerr,"\n!ERROR: XML Generation: %s\n",errmsg);
     /* */
-    longjmp(ctx->exitPoint,1);
+    return 0;
 }
 
 
@@ -167,23 +159,35 @@ static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int batID, int wsID) {
         oid BATid = (oid)batID;
         oid WSid  = (oid)wsID;
 
-	if ( wsID < 0 )
+	if ( wsID < 0 ) {
               fatal_err(ctx,"fetchWsContextBAT: NO wsID CONTEXT SELECTED");
-        if ( !(bun = BUNfnd(ws,&BATid)) )
+	      return NULL;
+	}
+        if ( !(bun = BUNfnd(ws,&BATid)) ) {
               fatal_err(ctx,"fetchWsContextBAT: NOT FOUND BAT[%d]",batID);
+	      return NULL;
+	}
+
 
         BAT* batbat;
         
-        if ( !( batbat = BATdescriptor(*(bat*)bun)) )
+        if ( !( batbat = BATdescriptor(*(bat*)bun)) ) {
                 fatal_err(ctx,"fetchWsContextBAT:FETCH BATBAT for WS[%d][%d] FAILED\n",batID ,wsID);
+		return NULL;
+	}
 
         BUN bbun = BUNfnd(batbat,&WSid);
         BAT *res = NULL;
-        if ( !bbun )
+        if ( !bbun ) {
+        	BBPunfix( BBPcacheid( batbat ) );
                 fatal_err(ctx,"fetchWsContextBAT:NOT FOUND BAT[%d][%d] in WS!!!!\n",batID,wsID);
-        else {
-                if ( !(res = BATdescriptor(*(bat*)bbun)) )
-                         fatal_err(ctx,"fetchWsContextBAT:FETCH WS[%d][%d] FAILED\n",batID,wsID);
+		return NULL;
+        } else {
+                if ( !(res = BATdescriptor(*(bat*)bbun)) ) {
+        		BBPunfix( BBPcacheid( batbat ) );
+                        fatal_err(ctx,"fetchWsContextBAT:FETCH WS[%d][%d] FAILED\n",batID,wsID);
+			return NULL;
+		}
         }
         BBPunfix( BBPcacheid( batbat ) );
         return res;
@@ -198,8 +202,10 @@ static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int batID, int wsID) {
 static BAT* wsBAT(XqueryCtx* ctx, int batId) {
         if ( !ctx->curBAT[batId] ) { 
                 if ( !( ctx->curBAT[batId] = 
-                        fetchWsContextBAT(ctx,ctx->ws,batId,ctx->curFRAG)) )
+                        fetchWsContextBAT(ctx,ctx->ws,batId,ctx->curFRAG)) ) {
                         fatal_err(ctx,"unable to load wsBAT[%d]",batId);
+			return NULL;
+		}
         }
         return ctx->curBAT[batId];
 }
@@ -224,7 +230,7 @@ static int switchWsContext(XqueryCtx* ctx, int wsID) {
 	return res;
 }
 
-static void createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
+static int createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
         int i;
 
         ctx->dmMode = ctx->mapiMode = 0;
@@ -255,6 +261,8 @@ static void createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
                 switchWsContext(ctx, wsID);
         /* */
         ctx->stackPtr  = 0;
+	/* */
+	return 1;
 }
 
 /**
@@ -267,12 +275,15 @@ static int moreTags(XqueryCtx* ctx) {
 /**
  * Push the pre-value, namespace and nodename of stack
  */
-static void pushTag(XqueryCtx* ctx, oid pre, str ns, str name, int empty) {
+static int pushTag(XqueryCtx* ctx, oid pre, str ns, str name, int empty) {
         ctx->tagStack[ctx->stackPtr].pre    = pre;
         ctx->tagStack[ctx->stackPtr].empty  = empty;
-        ssb_alloc(&ctx->tagStack[ctx->stackPtr].ssb_ns,   ns);
-        ssb_alloc(&ctx->tagStack[ctx->stackPtr].ssb_name, name);
+        if (!ssb_alloc(&ctx->tagStack[ctx->stackPtr].ssb_ns,   ns) )
+		return 0;
+        if (!ssb_alloc(&ctx->tagStack[ctx->stackPtr].ssb_name, name) )
+		return 0;;
         ctx->stackPtr++;
+	return 1;
 }
 
 /**
@@ -309,11 +320,12 @@ static void popTag(XqueryCtx* ctx) {
  *
  */
 
-static void emit_start() {
+static int emit_start() {
         stream_printf(GDKout,"#-------------------------#\n");
         stream_printf(GDKout,"# h     SAXtape           #\n");
         stream_printf(GDKout,"# str   str               #\n");
         stream_printf(GDKout,"#-------------------------#\n");
+	return 1;
 }
 
 /**
@@ -379,7 +391,7 @@ static void init_isspecial() {
  * This function is responsible for the presentation of special characters
  * and XML entity characters in the result.
  */
-static void emit_escaped(char* src, int mode) {
+static int emit_escaped(char* src, int mode) {
         /* Emit a string with all special character escaped. Inspired by
          * function strToStr() in gdk_atoms.mx
          */
@@ -406,22 +418,26 @@ static void emit_escaped(char* src, int mode) {
                 stream_flush(GDKout);
                 stream_write(GDKout,&src[start],end-start,1); /* flush */
         }
+	return 1;
 }
 
-static void emit(char* eventName, char* val, int escaped) {
+static int emit(char* eventName, char* val, int escaped) {
         if ( val ) {
                 if ( escaped ) {
                         stream_printf(GDKout,"[\"%s\",\t\"",eventName);
-                        emit_escaped(val, escaped-1);
+                        if ( !emit_escaped(val, escaped-1) )
+				return 0;
                         stream_printf(GDKout,"\"]\n");
                 } else {
                         stream_printf(GDKout,"[\"%s\",\t\"%s\"]\n",eventName,val);
                 }
         } else
                 stream_printf(GDKout,"[\"%s\",\tnil]\n",eventName);
+	return 1;
 }
 
-static void emit_end() {
+static int emit_end() {
+	return 1;
 }
 
 /*
@@ -444,10 +460,11 @@ static void emit_end() {
 /**
  * Output generation handler. Handles equivalent of * SAX startDocument() event.
  */
-static void handle_startDocument(XqueryCtx* ctx) {
+static int handle_startDocument(XqueryCtx* ctx) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
-                        emit_start();
+                        if ( !emit_start() )
+			    return 0;
                 } else
                         stream_printf(GDKout,"<S\n");
         } else if (ctx->mapiMode) { /* xml mode (mapi) */
@@ -455,20 +472,23 @@ static void handle_startDocument(XqueryCtx* ctx) {
         } else { /* xml mode */
                 stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
         }
+	return 1;
 }
 
 /**
  * Output generation handler. Handles equivalent of * SAX endDocument() event.
  */
-static void handle_endDocument(XqueryCtx* ctx) {
+static int handle_endDocument(XqueryCtx* ctx) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
-                        emit_end();
+                        if ( !emit_end() )
+				return 0;
                 } else 
                         stream_printf(GDKout,"<E\n");
         } else { /* xmlMode */
                 stream_printf(GDKout,"\n");
         }
+	return 1;
 }
 
 /**
@@ -476,13 +496,16 @@ static void handle_endDocument(XqueryCtx* ctx) {
  * the usage of an attribute. A sequence of these events will be ended
  * by a handle_attributeEnd() call.
  */
-static void handle_attribute(XqueryCtx* ctx, str ns, str name, str value, int top) {
+static int handle_attribute(XqueryCtx* ctx, str ns, str name, str value, int top) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
-                        emit(" attribute",name,0);
+                        if ( !emit(" attribute",name,0) )
+				return 0;
                         if ( ns && (strlen(ns)>0) )
-                                emit(" attribute prefix",ns,0);
-                        emit(" attribute value",value,0);
+                                if ( !emit(" attribute prefix",ns,0) )
+					return 0;
+                        if ( !emit(" attribute value",value,0) )
+				return 0;
                 } else {
                         stream_printf(GDKout,"<A %s=\"%s\"\n",name,value);
                 }
@@ -499,32 +522,36 @@ static void handle_attribute(XqueryCtx* ctx, str ns, str name, str value, int to
                         stream_printf(GDKout," %s=\"%s\"",name,value);
                 }
         }
+	return 1;
 }
 
 /**
  * Output generation handler. This one of my own invented event indicating
  * there will be no more attribute events for this node.
  */
-static void handle_attributeEnd(XqueryCtx* ctx, int emptyNode) {
+static int handle_attributeEnd(XqueryCtx* ctx, int emptyNode) {
         if (ctx->saxMode ) {
         } else { /* xmlMode */
                 if ( emptyNode )
                      stream_printf(GDKout,"/");
                 stream_printf(GDKout,">");
         }
-
+	return 1;
 }
 
 /**
  * Output generation handler. Handles equivalent of * SAX startElement() event.
  */
-static void handle_startElement(XqueryCtx* ctx, str ns, str name /*,str *atts*/) {
+static int handle_startElement(XqueryCtx* ctx, str ns, str name /*,str *atts*/) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
-                        emit("startElement",NULL,0);
+                        if ( !emit("startElement",NULL,0) )
+				return 0;
                         if ( ns && (strlen(ns)>0) )
-                                emit(" prefix",ns,0);
-                        emit(" localname",name,0);
+                                if ( !emit(" prefix",ns,0) )
+					return 0;
+                        if ( !emit(" localname",name,0) )
+				return 0;
                 } else {
                         stream_printf(GDKout,"<s %s\n",name);
                 }
@@ -535,18 +562,22 @@ static void handle_startElement(XqueryCtx* ctx, str ns, str name /*,str *atts*/)
                         stream_printf(GDKout,"<%s",name);
                 }
         }
+	return 1;
 }
 
 /**
  * Output generation handler. Handles equivalent of * SAX endElement() event.
  */
-static void handle_endElement(XqueryCtx* ctx, str ns, str name, int emptyNode) {
+static int handle_endElement(XqueryCtx* ctx, str ns, str name, int emptyNode) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
-                        emit("endElement",NULL,0);
+                        if ( !emit("endElement",NULL,0) )
+				return 0;
                         if ( ns && (strlen(ns)>0) )
-                                emit(" prefix",ns,0);
-                        emit(" localname",name,0);
+                                if ( !emit(" prefix",ns,0) )
+					return 0;
+                        if ( !emit(" localname",name,0) )
+				return 0;
                 } else {
                         stream_printf(GDKout,"<e %s\n",name);
                 }
@@ -559,24 +590,29 @@ static void handle_endElement(XqueryCtx* ctx, str ns, str name, int emptyNode) {
                         }
                 }
         }
+	return 1;
 }
 
 /**
  * Output generation handler. One on my own again. This one should handle a
  * reference. Don't know wat to to about it now.
  */
-static void handle_reference(XqueryCtx* ctx, str name) {
-        if (ctx && name) {};
+static int handle_reference(XqueryCtx* ctx, str name) {
+        (void)ctx;
+	(void)name;
+	return 1;
 }
 
 /**
  * Output generation handler. Handles equivalent of * SAX characters() event.
  */
-static void handle_characters(XqueryCtx* ctx, str ch, str top) {
+static int handle_characters(XqueryCtx* ctx, str ch, str top) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
-                        emit("characters",NULL,0);
-                        emit(" pcdata",ch,1);
+                        if (!emit("characters",NULL,0))
+				return 0;
+                        if (!emit(" pcdata",ch,1))
+				return 0;
                 } else {
                         stream_printf(GDKout,"%s\n",ch);
                 }
@@ -587,6 +623,7 @@ static void handle_characters(XqueryCtx* ctx, str ch, str top) {
                 if ( ctx->dmMode && top )
                         stream_printf(GDKout,"\"}");
         }
+	return 1;
 }
 
 /**
@@ -594,31 +631,33 @@ static void handle_characters(XqueryCtx* ctx, str ch, str top) {
  * event. I see no reason why it should be used here but I include it for
  * completeness.
  */
-static void handle_ignorableWhitespace(XqueryCtx* ctx, str ch) {
-        handle_characters(ctx,ch,0); /* dispatch */
+static int handle_ignorableWhitespace(XqueryCtx* ctx, str ch) {
+        return handle_characters(ctx,ch,0); /* dispatch */
 }
 
 /**
  * Output generation handler. Again an own event. But this one should be
  * used I think because the comments are used and stored by  Pathfinder.
  */
-static void handle_comment(XqueryCtx* ctx, str comm) {
+static int handle_comment(XqueryCtx* ctx, str comm) {
         if (ctx->saxMode ) {
                 /* incomplete */
         } else { /* xmlMode */
                 stream_printf(GDKout,"<!--%s-->",comm);
         }
+	return 1;
 }
 
 /**
  * Output generation handler. Handles equivalent of * SAX processingInstruction() event.
  */
-static void handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
+static int handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
         if (ctx->saxMode ) {
                 /* incomplete */
         } else { /* xmlMode */
                 stream_printf(GDKout,"<?%s %s?>",target,data);
         }
+	return 1;
 }
 
 /**
@@ -630,8 +669,10 @@ static ptr idxTV(XqueryCtx* ctx, str name, BAT* b, oid oid_index) {
 
         if ( !b ) {
                 fatal_err(ctx,"idxTV: NIL BAT[\"%s\"]",name);
+		return NULL;
         } else if ( BATcount(b) == 0 ) {
-                fatal_err(ctx,"idxTV: BAT[%s] is empty",name);
+		fatal_err(ctx,"idxTV: BAT[%s] is empty",name);
+                return NULL; 
         } else if ( is_fake_project(b) ) {
         	res = BUNtail(b,BUNfirst(b));
         } else {
@@ -644,10 +685,13 @@ static ptr idxTV(XqueryCtx* ctx, str name, BAT* b, oid oid_index) {
                         fatal_err(ctx,"idxTV, BAT[%s]: "SZFMT" not within ["SZFMT","SZFMT"]", 
                                   name, (size_t)oid_index, (size_t)(*(oid*)BUNhead(b,BUNfirst(b))), 
                                   (size_t)(*(oid*)BUNhead(b,BUNlast(b)-BUNsize(b))));
+			return NULL;
                 }
         }
-        if ( ! res )
+        if ( ! res ) {
                 fatal_err(ctx,"idxTV: BAT[%s]["SZFMT"], NULL (ptr) result",name,(size_t)oid_index);
+		return NULL;
+	}
         return res;
 }
 
@@ -656,9 +700,14 @@ static ptr idxTV(XqueryCtx* ctx, str name, BAT* b, oid oid_index) {
  */
 
 static ptr idxTVinWS(XqueryCtx* ctx, int batId, oid oid_index) {
-        BAT* b = wsBAT(ctx, batId);
+        BAT* b;
+	
 
-        return idxTV(ctx,"tmp",b,oid_index);
+	if ( (b = wsBAT(ctx, batId)) ) {
+        	return idxTV(ctx,"tmp",b,oid_index);
+	} else {
+		return NULL;
+	}
 }
 
 /**
@@ -669,11 +718,17 @@ static ptr idxTVinWSorFRGN(XqueryCtx* ctx, int fragId, int batId, oid oid_index)
         if ( ctx->curFRAG == fragId ) 
                 return idxTVinWS(ctx,batId,oid_index);
         else {
-                BAT* b = fetchWsContextBAT(ctx,ctx->ws,batId,fragId);
+                BAT* b;
+		
+		if ( !(b = fetchWsContextBAT(ctx,ctx->ws,batId,fragId)) )
+			return NULL;
+		else {
+                	ptr res;
 
-                ptr res = idxTV(ctx,"tmp",b,oid_index);
-                BBPunfix( BBPcacheid( b ) );
-                return res;
+			res = idxTV(ctx,"tmp",b,oid_index);
+                	BBPunfix( BBPcacheid( b ) );
+                	return res;
+		}
         }
 }
 
@@ -682,78 +737,112 @@ static ptr idxTVinWSorFRGN(XqueryCtx* ctx, int fragId, int batId, oid oid_index)
  * function is only called from the xquery_node_print() function.
  */
 
-static void process_attr(XqueryCtx* ctx, int frag, oid id, int top) {
-        oid prop_oid = *(oid*)idxTVinWSorFRGN(ctx,frag,ATTR_PROP,id);
-        int afrag     = (int)*(oid*)idxTVinWSorFRGN(ctx,frag,ATTR_FRAG,id);
-        str val      = (str)idxTVinWSorFRGN(ctx,afrag,PROP_VAL,prop_oid);
+#define CHKVP(P)	if (!(P)) return 0
+
+static int process_attr(XqueryCtx* ctx, int frag, oid id, int top) {
+	ptr vp;
+
+        CHKVP(vp = idxTVinWSorFRGN(ctx,frag,ATTR_PROP,id));
+        oid prop_oid = *(oid*)vp;
+        CHKVP(vp = idxTVinWSorFRGN(ctx,frag,ATTR_FRAG,id));
+        int afrag    = (int)*(oid*)vp;
+        CHKVP(vp = idxTVinWSorFRGN(ctx,afrag,PROP_VAL,prop_oid));
+        str val      = (str)vp;
         /* */
-        oid qn_oid = *(oid*)idxTVinWSorFRGN(ctx,frag,ATTR_QN,id);
-        str ns     = (str)idxTVinWSorFRGN(ctx,afrag,QN_NS,qn_oid);
-        str name   = (str)idxTVinWSorFRGN(ctx,afrag,QN_LOC,qn_oid);
+        CHKVP(vp = idxTVinWSorFRGN(ctx,frag,ATTR_QN,id));
+        oid qn_oid = *(oid*)vp;
+        CHKVP(vp = idxTVinWSorFRGN(ctx,afrag,QN_NS,qn_oid));
+        str ns     = (str)vp;
+        CHKVP(vp = idxTVinWSorFRGN(ctx,afrag,QN_LOC,qn_oid));
+        str name   = (str)vp;
         /* */
-        handle_attribute(ctx,ns,name,val,top);
+        return handle_attribute(ctx,ns,name,val,top);
 }
 
 static int process_node_attr(XqueryCtx* ctx, int nFRAG, oid pre, int emptyNode) {
         BAT *b;
 
         if ( !(b  = BATuselect(wsBAT(ctx,ATTR_OWN),&pre,&pre)) )
-                fatal_err(ctx,"process_node_attr: uselect fails\n");
+                return fatal_err(ctx,"process_node_attr: uselect fails\n");
         BUN p, q; 
         BATloop(b, p, q) {
                 oid id = *(oid*)BUNhead(b, p);
-		process_attr(ctx,nFRAG,id,0/*top*/);
+		if ( ! process_attr(ctx,nFRAG,id,0/*top*/) ) {
+        		BBPunfix( BBPcacheid( b ) );
+			return 0;
+		}
         }
-        handle_attributeEnd(ctx,emptyNode);
         BBPunfix( BBPcacheid( b ) );
-        return 1;
+        return handle_attributeEnd(ctx,emptyNode);
 }
 
 /**
  * Handle the generation of the node with oid 'pre'.
  */
-static void xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
-        chr kind = *(chr*)idxTVinWS(ctx,PRE_KIND,pre);
-        oid prop = *(oid*)idxTVinWS(ctx,PRE_PROP,pre);
+static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
+	ptr vp;
+        chr kind;
+        oid prop;
 
+        CHKVP(vp = idxTVinWS(ctx,PRE_KIND,pre));
+        kind = *(chr*)vp;
+        CHKVP(vp = idxTVinWS(ctx,PRE_PROP,pre));
+        prop = *(oid*)vp;
         int vFRAG = ctx->curFRAG;
         if ( pre_frag ) {
-                vFRAG = (int)*(oid*)idxTV(ctx,"par_pre_frag",pre_frag,pre);
+                CHKVP(vp = idxTV(ctx,"par_pre_frag",pre_frag,pre));
+                vFRAG = (int)*(oid*)vp;
 	}
-	if (0) stream_printf(GDKout,"QNP[|xpre="SZFMT",nf=%d,vf=%d|]",(size_t)pre,ctx->curFRAG,vFRAG);
         switch( kind ) {
                 case (char)0: {/* ELEMENT */
-                        str name = (str)idxTVinWSorFRGN(ctx,vFRAG,QN_LOC,prop);
-                        str ns   = (str)idxTVinWSorFRGN(ctx,vFRAG,QN_NS,prop);
-                        handle_startElement(ctx,ns,name);
-                        int size = *(int*)idxTVinWS(ctx,PRE_SIZE,pre);
-                        process_node_attr(ctx,ctx->curFRAG,pre,(size==0));
-                        pushTag(ctx,pre+size,ns,name,(size==0));
+                        str name, ns;
+                        CHKVP(vp = idxTVinWSorFRGN(ctx,vFRAG,QN_NS,prop));
+                        ns   = (str)vp;
+                        CHKVP(vp = (str)idxTVinWSorFRGN(ctx,vFRAG,QN_LOC,prop));
+			name = (str)vp;
+                        if ( !handle_startElement(ctx,ns,name) )
+				return 0;
+                        CHKVP(vp = idxTVinWS(ctx,PRE_SIZE,pre));
+                        int size = *(int*)vp;
+                        if ( !process_node_attr(ctx,ctx->curFRAG,pre,(size==0)))
+				return 0;
+                        if (!pushTag(ctx,pre+size,ns,name,(size==0)))
+				return 0;
                         break;
                         }
                 case (char)1: {/* TEXT */
-                        handle_characters(ctx,(str)idxTVinWSorFRGN(ctx,vFRAG,PROP_TEXT,prop),(top?"text":0));
+                        if ( !handle_characters(ctx,(str)idxTVinWSorFRGN(ctx,vFRAG,PROP_TEXT,prop),(top?"text":0)))
+				return 0;
                         break;
                         }
                 case (char)2: {/* COMMENT */
-                        handle_comment(ctx,(str)idxTVinWSorFRGN(ctx,vFRAG,PROP_COM,prop));
+                        if ( !handle_comment(ctx,(str)idxTVinWSorFRGN(ctx,vFRAG,PROP_COM,prop)))
+				return 0;
                         break;
                         }
                 case (char)3: {/* PI */
-                        str target = (str)idxTVinWSorFRGN(ctx,vFRAG,PROP_TGT,prop);
-                        str data   = (str)idxTVinWSorFRGN(ctx,vFRAG,PROP_INS,prop);
-                        handle_processingInstruction(ctx,target,data);
+                        str target, data;
+                        CHKVP(target = idxTVinWSorFRGN(ctx,vFRAG,PROP_TGT,prop));
+                        target = (str)vp;
+                        CHKVP(data = idxTVinWSorFRGN(ctx,vFRAG,PROP_INS,prop));
+                        data   = (str)vp;
+                        if (!handle_processingInstruction(ctx,target,data))
+				return 0;
                         break;
                         }
                 case (char)4: {/* DOCUMENT */
                         /* The node represents an entire document */
-                        int offset = *(int*)idxTVinWS(ctx,PRE_SIZE,pre);
-                        pushTag(ctx,pre+offset,"","",0/*false*/);
+                        CHKVP(vp = idxTVinWS(ctx,PRE_SIZE,pre));
+                        int offset = *(int*)vp;
+                        if (!pushTag(ctx,pre+offset,"","",0/*false*/))
+				return 0;
                         break;
                         }
                 default:
-                        fatal_err(ctx,"Unknow kind IN xquery_node_print");
+                        return fatal_err(ctx,"Unknow kind IN xquery_node_print");
         }
+	return 1;
+
 }
 
 #define ALLTAGS INT_MAX
@@ -761,18 +850,20 @@ static void xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
 /**
  * handle the closing tag of a document.
  */
-static void xquery_endtag_print(XqueryCtx* ctx, oid pre) {
+static int xquery_endtag_print(XqueryCtx* ctx, oid pre) {
         while( moreTags(ctx) && ((pre==ALLTAGS)||(pre > topTag(ctx))) ) { /*?? */
                 if ( strlen(topName(ctx)) > 0 )
-                        handle_endElement(ctx,topNs(ctx),topName(ctx),topEmpty(ctx));
+                        if ( !handle_endElement(ctx,topNs(ctx),topName(ctx),topEmpty(ctx)))
+				return 0;
                 popTag(ctx);
         }
+	return 1;
 }
 
 /**
  * handle the range of pre numbers [from .. to]
  */
-static void xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
+static int xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
         BUN p, q; 
         if ( from == 0 ) /* first BUN, because of 1..n/0..n-1 problem */
                 p = BUNfirst(b);
@@ -781,23 +872,30 @@ static void xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
         for(q = BUNlast(b); p<q; p = BUNnext(b, p)) {
                 oid pre = *(oid*)BUNhead(b, p);
                 do {
-                        xquery_node_print(ctx, pre, 0 /*pre_frag*/, 0 /*false*/);
-                        xquery_endtag_print(ctx,++pre);
+                        if ( !xquery_node_print(ctx, pre, 0 /*pre_frag*/, 0 /*false*/))
+				return 0;
+                        if ( !xquery_endtag_print(ctx,++pre) )
+				return 0;
                 } while( moreTags(ctx) && (pre<to) );
         }
         if ( moreTags(ctx) ) {
                 /* INCOMPLETE, the next line works but WHY? Should work without */
-                xquery_endtag_print(ctx,ALLTAGS);
+                if ( !xquery_endtag_print(ctx,ALLTAGS) )
+			return 0;
         }
+	return 1;
 }
 
-static void MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag, int top) {
+static int MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag, int top) {
         oid pre = from;
 
         do {
-                xquery_node_print(ctx, pre,pre_frag,top&&(from==to)); /*cheat*/
-                xquery_endtag_print(ctx,++pre);
+                if ( !xquery_node_print(ctx, pre,pre_frag,top&&(from==to)) /*cheat*/ )
+			return 0;
+                if ( !xquery_endtag_print(ctx,++pre) )
+			return 0;
         } while( moreTags(ctx) && (pre<=to) );
+	return 1;
 }
 
 /**
@@ -811,10 +909,10 @@ static int ws_documentIndex(BAT* ws, str docName) {
         oid doc_loaded_idx = (oid)DOC_LOADED;
 
         BUN b = BUNfnd(ws,&doc_loaded_idx);
-        /*
-         * if ( !b )
-         *       stream_printf(GDKxxx,"NOT FOUND DOCBAT!!!!\n");
-         */
+
+	if ( !b )
+	    return fatal_err(0,"ws_documentIndex: unable to find docbat in WS");
+
         BAT* doc_loaded = BATdescriptor(*(bat*)b);
 
         BUN p, q; 
@@ -839,16 +937,15 @@ int xquery_print_doc_main(str mode, BAT* ws, str docName) {
         }
         /* */
         XqueryCtx  ctx_struct, *ctx = &ctx_struct;
-        createWsContext(ctx,ws,docIndex,mode);
+        if ( !createWsContext(ctx,ws,docIndex,mode) )
+		return GDK_FAIL;
         /* */
-        /* now set the exit point in case of an error */
-        if ( setjmp(ctx_struct.exitPoint) != 0 ) {
-                return GDK_FAIL;
-        }
-        /* */
-        handle_startDocument(ctx);
-        xquery_pre_range(ctx,wsBAT(ctx,PRE_SIZE),0/*start*/,1 /* first is doc ? */);
-        handle_endDocument(ctx);
+        if ( !handle_startDocument(ctx) )
+		return GDK_FAIL;
+        if ( !xquery_pre_range(ctx,wsBAT(ctx,PRE_SIZE),0/*start*/,1 /* first is doc ? */) )
+		return GDK_FAIL;
+        if ( !handle_endDocument(ctx) )
+		return GDK_FAIL;
         switchWsContext(ctx,-1); /* close all open context BAT's */
         /* */
         return GDK_SUCCEED;
@@ -866,7 +963,7 @@ int xquery_print_doc_main(str mode, BAT* ws, str docName) {
 /**
  * Handle the start() of an XQUERY/Pathfinder result sequence
  */
-static void  seqHeadStart(XqueryCtx* ctx) {
+static int  seqHeadStart(XqueryCtx* ctx) {
 	if ( ! ctx->dmMode ) { /* dmMode has no header */
              if (ctx->mapiMode) {
                 stream_printf(GDKout,"=<?xml version=\"1.0\" encoding=\"utf-8\"?>\n=");
@@ -876,20 +973,22 @@ static void  seqHeadStart(XqueryCtx* ctx) {
              handle_startElement(ctx,NULL,XQRESTAG);
              ctx->nAttrOnLine = 0;
 	}
+	return 1;
 }
 
-static void  seqHeadEnd(XqueryCtx* ctx) {
+static int  seqHeadEnd(XqueryCtx* ctx) {
 	if ( ! ctx->dmMode ) { /* dmMode has no header */
 	    handle_attributeEnd(ctx,0);
 	    if ( !ctx->saxMode )
 	         stream_printf(GDKout, ctx->mapiMode?"\n=":"\n");
 	}
+	return 1;
 }
 
 /**
  * Handle the end() of an XQUERY/Pathfinder result sequence
  */
-static void  seqEnd(XqueryCtx* ctx) {
+static int  seqEnd(XqueryCtx* ctx) {
         if ( ctx->saxMode ) {
                 handle_endElement(ctx,NULL,XQRESTAG,0/* not empty*/);
         } else if ( ctx->dmMode ) {
@@ -899,43 +998,49 @@ static void  seqEnd(XqueryCtx* ctx) {
         } else {
                 stream_printf(GDKout,"\n</%s>\n",XQRESTAG);
         }
+	return 1;
 }
 
 
 /**
  * Emit a NODE element of an XQUERY/Pathfinder result sequence
  */
-static void  seqEmitNode(XqueryCtx* ctx, oid preVal, BAT* pre_frag, int top) {
+static int seqEmitNode(XqueryCtx* ctx, oid preVal, BAT* pre_frag, int top) {
+	ptr vp;
+
         /* incomplete, different for dmMode ?? */
-        int size = *(int*)idxTVinWS(ctx,PRE_SIZE,preVal);
-        MY_xquery_pre_range(ctx,preVal,preVal+size, pre_frag, top);
+	CHKVP(vp = idxTVinWS(ctx,PRE_SIZE,preVal));
+        int size = *(int*)vp;
+        return MY_xquery_pre_range(ctx,preVal,preVal+size, pre_frag, top);
+		
 }
 
 /**
  * Emit a Boolean element of an XQUERY/Pathfinder result sequence
  */
-static void  seqEmitBool(XqueryCtx* ctx, int bv) {
+static int  seqEmitBool(XqueryCtx* ctx, int bv) {
         char *bool_str = (char*)(bv?"true":"false");
 
         if ( ctx->saxMode ) {
-                handle_characters(ctx,bool_str,0);
+                return handle_characters(ctx,bool_str,0);
         } else if ( ctx->dmMode ) {
                 stream_printf(GDKout,"%s() ",bool_str);
         } else {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"%s ",bool_str);
         }
+	return 1;
 }
 
 /**
  * Emit a Integer element of an XQUERY/Pathfinder result sequence
  */
-static void  seqEmitInt(XqueryCtx* ctx, int iv) {
+static int  seqEmitInt(XqueryCtx* ctx, int iv) {
         if ( ctx->saxMode ) {
                 char buff[32];
 
                 sprintf(buff,"%d",iv);
-                handle_characters(ctx,buff,0);
+                return handle_characters(ctx,buff,0);
         } else if ( ctx->dmMode ) {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"%d",iv);
@@ -943,17 +1048,18 @@ static void  seqEmitInt(XqueryCtx* ctx, int iv) {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"%d ",iv);
         }
+	return 1;
 }
 
 /**
  * Emit a Double element of an XQUERY/Pathfinder result sequence
  */
-static void  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
+static int  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
         if ( ctx->saxMode ) {
                 char buff[32];
 
                 sprintf(buff,"%f",dv);
-                handle_characters(ctx,buff,0);
+                return handle_characters(ctx,buff,0);
         } else if ( ctx->dmMode ) {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"%f",dv);
@@ -961,14 +1067,15 @@ static void  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"%f ",dv);
         }
+	return 1;
 }
 
 /**
  * Emit a String element of an XQUERY/Pathfinder result sequence
  */
-static void  seqEmitStr(XqueryCtx* ctx, str sv) {
+static int  seqEmitStr(XqueryCtx* ctx, str sv) {
         if ( ctx->saxMode ) {
-                handle_characters(ctx,sv,"text");
+                return handle_characters(ctx,sv,"text");
         } else if ( ctx->dmMode ) {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"\"");
@@ -980,6 +1087,7 @@ static void  seqEmitStr(XqueryCtx* ctx, str sv) {
                 emit_escaped( sv, 1+ctx->mapiMode);
                 stream_printf(GDKout,"\" ");
         }
+	return 1;
 }
 
 /**
@@ -1024,15 +1132,14 @@ int xquery_print_result_main(
                 BAT* decVAL,
                 BAT* strVAL
         ) {
+	ptr vp;
+
         XqueryCtx  ctx_struct, *ctx = &ctx_struct;
-        createWsContext(ctx,ws,-1,mode);
+        if ( !createWsContext(ctx,ws,-1,mode) )
+		return GDK_FAIL;
         /* */
-        /* now set the exit point in case of an error */
-        if ( setjmp(ctx_struct.exitPoint) != 0 ) {
-                return GDK_FAIL;
-        }
-        /* */
-        seqHeadStart(ctx);
+        if ( !seqHeadStart(ctx) )
+		return GDK_FAIL;
 	if ( ! ctx->dmMode ) {
 	    /* If the mode is not the DM mode do a scan of all attributes here
 	     * and generate the appropriate calls to connect them to the
@@ -1040,24 +1147,29 @@ int xquery_print_result_main(
 	     */
             BUN p, q; 
             BATloop(item, p, q) {
-                oid pre = *(oid*)BUNhead(item, p);
-                oid valoid = *(oid*)BUNtail(item, p);
-                int cmbn_frag_kind = *(int*)idxTV(ctx,"kind",kind,pre);
+                oid pre, valoid;
+                pre = *(oid*)BUNhead(item, p);
+                valoid = *(oid*)BUNtail(item, p);
+		CHKVP( vp = idxTV(ctx,"kind",kind,pre) );
+                int cmbn_frag_kind = *(int*)vp;
 
                 if ( XTRACT_KIND(cmbn_frag_kind) == ATTR ) {
                      int frag = XTRACT_FRAG(cmbn_frag_kind);
-		     process_attr(ctx,frag,valoid,1/* top */);
+		     if ( !process_attr(ctx,frag,valoid,1/* top */) )
+		     	return GDK_FAIL;
 		}
 	    }
 	}
-        seqHeadEnd(ctx);
+        if ( !seqHeadEnd(ctx) )
+		return GDK_FAIL;
         /* */
 	int cnt = 0; /* loopcounter, used for checking when to print commas. */
         BUN p, q; 
         BATloop(item, p, q) {
                 oid pre = *(oid*)BUNhead(item, p);
                 oid valoid = *(oid*)BUNtail(item, p);
-                int cmbn_frag_kind = *(int*)idxTV(ctx,"kind",kind,pre);
+		CHKVP( vp = idxTV(ctx,"kind",kind,pre) );
+                int cmbn_frag_kind = *(int*)vp;
                 if ( cnt++ && ctx->dmMode  ) {
                         /* should print a separator here */
                         stream_printf(GDKout,"%s",ctx->dmSeparator);
@@ -1066,7 +1178,8 @@ int xquery_print_result_main(
                  case ATTR: {
 		 	if ( ctx->dmMode ) {
                             int frag = XTRACT_FRAG(cmbn_frag_kind);
-			    process_attr(ctx,frag,valoid,1/* top */);
+			    if ( !process_attr(ctx,frag,valoid,1/* top */) )
+			    	return GDK_FAIL;
 			}
                         break;
                         };
@@ -1077,7 +1190,8 @@ int xquery_print_result_main(
                          * for TEXT
                          */
                         int oldCtx = switchWsContext(ctx,frag);
-                        seqEmitNode(ctx, valoid, wsBAT(ctx,PRE_FRAG),1/*top*/);
+                        if ( !seqEmitNode(ctx, valoid, wsBAT(ctx,PRE_FRAG),1/*top*/) )
+				return GDK_FAIL;
                         switchWsContext(ctx,oldCtx);
                         break;
                         };
@@ -1086,41 +1200,54 @@ int xquery_print_result_main(
                         break;
                         };
                  case BOOL: {
-                        seqEmitBool(ctx,valoid);
+                        if ( !seqEmitBool(ctx,valoid) )
+				return GDK_FAIL;
                         break;
                         }
                  case DBL: {
-                        dbl dv = *(dbl*)idxTV(ctx,"dblVAL",dblVAL,valoid);
-                        seqEmitDbl(ctx,dv); /* INCOMPLETE ?diff between d and e */
+			CHKVP(vp = idxTV(ctx,"dblVAL",dblVAL,valoid));
+                        dbl dv = *(dbl*)vp;
+                        if (!seqEmitDbl(ctx,dv) )
+				return GDK_FAIL; /* INCOMPLETE ?diff between d and e */
                         break;
                         }
                  case DEC: {
-                        dbl dv = *(dbl*)idxTV(ctx,"decCVAL",decVAL,valoid);
-                        seqEmitDbl(ctx,dv); /* INCOMPLETE ?diff between d and e */
+		        CHKVP(vp = idxTV(ctx,"decCVAL",decVAL,valoid));
+                        dbl dv = *(dbl*)vp;
+                        if ( !seqEmitDbl(ctx,dv) )
+				return GDK_FAIL; /* INCOMPLETE ?diff between d and e */
                         break;
                         }
                  case INT: {
-                        int iv = *(int*)idxTV(ctx,"intVAL",intVAL,valoid);
-                        seqEmitInt(ctx,iv);
+			CHKVP(vp = idxTV(ctx,"intVAL",intVAL,valoid));
+                        int iv = *(int*)vp;
+                        if ( !seqEmitInt(ctx,iv) )
+				return GDK_FAIL;
                         break;
                         }
                  case STR: {
-                        str sv = (str)idxTV(ctx,"strVAL",strVAL,valoid);
-                        seqEmitStr(ctx,sv);
+			CHKVP(vp = idxTV(ctx,"strVAL",strVAL,valoid));
+                        str sv = (str)vp;
+                        if ( !seqEmitStr(ctx,sv) )
+				return GDK_FAIL;
                         break;
                         }
                  case U_A: {
-                        str sv = (str)idxTV(ctx,"strVAL",strVAL,valoid);
-                        seqEmitStr(ctx,sv);
+			CHKVP(vp = idxTV(ctx,"strVAL",strVAL,valoid));
+                        str sv = (str)vp;
+                        if ( !seqEmitStr(ctx,sv) )
+				return GDK_FAIL;
                         break;
                         }
                  default:
                         stream_printf(GDKerr,"[kind=%d, frag=%d]\n",XTRACT_KIND(cmbn_frag_kind),XTRACT_FRAG(cmbn_frag_kind));
                         fatal_err(ctx,"UNKNOW_TYPE(\'%c\'ch(%d))\n",cmbn_frag_kind,cmbn_frag_kind);
+			return GDK_FAIL;
                 }
         }
         /* */
-        seqEnd(ctx);
+        if ( !seqEnd(ctx) )
+		return GDK_FAIL;
         /* */
         switchWsContext(ctx,-1); /* close all open context BAT's */
         /* */
