@@ -288,7 +288,7 @@ command epoch():timestamp
 address MTIMEepoch
 comment "unix-time (epoch) support: seconds since the Unix epoch";
 command epoch(t:timestamp):lng 
-address MTIMEepoch2
+address MTIMEepoch2lng
 comment "unix-time (epoch) support:
 	seconds since epoch";
 
@@ -350,9 +350,9 @@ address tzone_tostr;
 command str():str   
 address MTIMEtzone_tostr;
 #.NULL	 address tzone_null;
-command timestamp(secs:lng):timestamp
+command timestamp(secs:int):timestamp
 address MTIMEtimestamp
-comment "Enhancement of timestamp atom definition";
+comment "Utility function to create a timestamp from a number of seconds since the Unix epoch";
 
 
 atom rule :int;
@@ -2905,7 +2905,7 @@ str MTIMEepoch(timestamp *ret) {
 	return(e);
 }
 
-str MTIMEepoch2(lng *ret, timestamp *t){
+str MTIMEepoch2lng(lng *ret, timestamp *t){
 	timestamp e;
 	lng v;
 	MTIMEepoch(&e);
