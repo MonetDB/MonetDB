@@ -552,6 +552,9 @@ enum_export int enum_table(BAT** dst, int *enum_t) {
 	return GDK_SUCCEED;
 }
 
+@h
+enum_export int enum_chktpe(int tpe);
+@c
 enum_export int enum_chktpe(int tpe) {
 	int i;
 	for(i=0; i<MAX_ENUM; i++)

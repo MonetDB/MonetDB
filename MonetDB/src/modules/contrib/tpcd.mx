@@ -763,7 +763,7 @@ DVIsave(
    Heap*	hp,	/* INOUT: accelerator heap. */
    BAT*		b	/* IN: BAT with accelerated head column. */
 ){
-	vectoridx *v = (vectoridx*) hp->base;	
+	/* vectoridx *v = (vectoridx*) hp->base; */
 }
 
 
@@ -916,7 +916,7 @@ DVsave(
    Heap*	hp,	/* INOUT: accelerator heap. */
    BAT*		b	/* IN: BAT with accelerated head column. */
 ){
-	datavector *v = (datavector*) hp->base;	
+	/* datavector *v = (datavector*) hp->base; */
 }
 
 int

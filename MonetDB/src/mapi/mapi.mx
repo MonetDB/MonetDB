@@ -130,6 +130,7 @@ This module contains a simple interface for internet connections.
 #ifdef HAVE_WINSOCK_H
 # include <winsock.h>
 #endif
+#include "kernel.h"
 
 #ifdef AIX
 #define SOCKPTR struct sockaddr *
@@ -302,7 +303,6 @@ Get the new information for the server socket and start listening.
 						msgsock);
 			} else {
 				ValRecord res;
-				ptr val = &res.val.ival;
 				int cres = 0;
 				char buf[BUFSIZ];
 	

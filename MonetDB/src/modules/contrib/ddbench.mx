@@ -672,6 +672,7 @@ PROC test_ddbench() : void := {
 #include "ddbench.h"
 #include "streams.h"
 #include "enum.proto.h"
+#include "enum.h"
 
 static size_t estimate(BAT* b, size_t lo, size_t hi) {
 	BUN p = BUNptr(b, BUNindex(b,BUNfirst(b))+lo);

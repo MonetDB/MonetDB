@@ -501,11 +501,6 @@ MT_Id MT_getpid(void){
 }
 
 int MT_alive(int pid) {
-#ifdef HAVE_GETPGID
-	pid_t st = getpgid(pid);
-	return (st >= 0 && st != ESRCH);
-#else
-	return 0;		/* XXX */
-#endif
+	return kill(pid, 0) == 0;
 }
 

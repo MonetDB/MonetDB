@@ -234,9 +234,8 @@ int interpret_str(Cntxt stk, str buf, ValPtr res) {
 First interpret file name, then read file, then call interpret_str(). 
 @c
 int interpret_file(Cntxt stk, YYSTREE lt, ValPtr res){
-        int     i, totlen, len;
+        int     i;
         char    *ptr, *buf;
-        FILE    *fd;
         Client  c;
 
 	if (lt->cnt != 1) {

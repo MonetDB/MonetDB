@@ -123,9 +123,6 @@
 /* Define to 1 if you have the `getpagesize' function. */
 /* #undef HAVE_GETPAGESIZE */
 
-/* Define to 1 if you have the `getpgid' function. */
-/* #undef HAVE_GETPGID */
-
 /* Define to 1 if you have the `getpwuid' function. */
 /* #undef HAVE_GETPWUID */
 
