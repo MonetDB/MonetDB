@@ -74,8 +74,8 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 
 	apd = stmt->ApplParamDescr;
 	ipd = stmt->ImplParamDescr;
-	apdrec = addODBCDescRec(stmt->ApplParamDescr, ParameterNumber);
-	ipdrec = addODBCDescRec(stmt->ImplParamDescr, ParameterNumber);
+	apdrec = addODBCDescRec(apd, ParameterNumber);
+	ipdrec = addODBCDescRec(ipd, ParameterNumber);
 
 	rc = SQLSetDescField_(apd, ParameterNumber,
 			      SQL_DESC_CONCISE_TYPE,
@@ -230,7 +230,7 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 	}
 
 	if (ret == MOK)
-		return SQL_SUCCESS;
+		return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 
 	addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
 	return SQL_ERROR;
