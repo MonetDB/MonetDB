@@ -527,7 +527,8 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				mdbShowBreakpoints(cntxt); 
 				continue;
 			}
-			if( strcmp(b,"breakpoint") == 0 || isspace((int)b[1]) ){
+			if( strncmp(b,"break",5) == 0 ) b+=4;
+			if( isspace((int)b[1]) ){
 				skipWord(cntxt,b);
 				if( *b && !isspace((int)*b) )
 					/* set breakpoints by name */
