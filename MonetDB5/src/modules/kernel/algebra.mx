@@ -137,7 +137,7 @@ command slice(b:bat[:any$1,:any$2], x:int, y:int) :bat[:any$1,:any$2]
 address ALGslice
 comment "Return the slice with the BUNs at position x till y.";
 
-command topN ( b:bat[:any,:any], top:lng ) :int 
+command topN( b:bat[:any$1,:any$2], top:lng ) :bat[:any$1,:any$2]
 address ALGtopN
 comment "Trim all but the top N tuples.";
 
@@ -1566,13 +1566,14 @@ str ALGmaxany(ptr result, int *bid) {
 
 
 str ALGtopN(int *res, int *bid, lng *top) {
-	if (BBPcheck(*bid, "BATsize")) {
-		BAT *b = (BAT*) BBPgetdesc(*bid);
-		if (b == NULL) {
-			*res = int_nil;
-		} else
-			(void) BATtopN(b, *top);
-	}
+	BAT *b;
+	b = BATdescriptor(*bid);
+	if (b == NULL) {
+         return throwMessage("algebra.top", "Cannot access descriptor");
+	} 
+	(void) BATtopN(b, *top);
+	BBPincref(*res= b->batCacheid,TRUE);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
