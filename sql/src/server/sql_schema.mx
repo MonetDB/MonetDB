@@ -1272,7 +1272,7 @@ create_schema(mvc * sql, dlist * auth_name, dlist * schema_elements)
 
 	if (auth && (auth_id = sql_find_auth( sql, auth)) < 0) {
 		return sql_error(sql, 02, 
-			 "Authorizaion %s doesn't exist", auth);
+			 "Authorization %s doesn't exist", auth);
 	}
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN){
 		return sql_error(sql, 02, 
