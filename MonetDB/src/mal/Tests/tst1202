@@ -69,4 +69,3 @@ print("start");
 #	pd_a := setColumn(od_a,"end_dst");
 #print("end_dst");print(pd_a);
 #	qd_a := print(ld_a,nd_a,pd_a);
-mdb();
