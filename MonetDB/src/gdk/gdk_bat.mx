@@ -519,12 +519,17 @@ copy of the valid BUN sequence.
 }
 
 BAT *BATcopy(BAT *b) {
-	BAT *bn = batcopy(b, b->htype, b->ttype, TRUE);
+	BAT *bn;
+	BATcheck(b, "BATcopy");
+
+ 	bn = batcopy(b, b->htype, b->ttype, TRUE);
 	BATsetaccess(bn, BAT_WRITE);
 	return bn;
 }
 
 BAT *BATrcopy(BAT *b) {
+	BATcheck(b, "BATrcopy");
+
 	return batcopy(b, b->htype, b->ttype, FALSE);
 }
 

@@ -716,7 +716,7 @@ void BBPtransient(bat i, int trans) {
 		  && BBP_refs(i) == 0){
 			BAT *b = BBP_cache(i);
 			if (b) BBPfree(b);
-	        }
+		}
 	}
 }
 void BATpersistent(void *dummy, int *d2, bat *i) {
