@@ -156,12 +156,17 @@ typedef enum {
  , com_db
  , tgtins_db } db_id_t;
 
+/** template for temporary directory */
+#define TMPDIR_TEMPLATE "pf-shred_XXXXXX"
+
+char tmpdir[] = TMPDIR_TEMPLATE;
+
 db_t dbs[] = {
     /* db id  handle file name  */
-    [nsloc_db]  { 0, "nsloc_dbXXXXXX"  }
-  , [text_db]   { 0, "text_dbXXXXXX"   }
-  , [com_db]    { 0, "com_dbXXXXXX"    } 
-  , [tgtins_db] { 0, "tgtins_dbXXXXXX" }
+    [nsloc_db]  { 0, TMPDIR_TEMPLATE "/nsloc.db"  }
+  , [text_db]   { 0, TMPDIR_TEMPLATE "/text.db"   }
+  , [com_db]    { 0, TMPDIR_TEMPLATE "/com.db"    } 
+  , [tgtins_db] { 0, TMPDIR_TEMPLATE "/tgtins.db" }
 };
 
 #endif /* HAVE_LIBDB */
@@ -430,13 +435,8 @@ open_db (db_id_t db)
         exit (EXIT_FAILURE);
     }
 
-    if (mkstemp (dbs[db].file) < 0) {
-        fprintf (stderr, 
-                 "!ERROR: could not open temporary DB file: %s\n",
-                 strerror (errno));
-
-        exit (EXIT_FAILURE);        
-    }
+    /* replace directory part of database filename */
+    memcpy (dbs[db].file, tmpdir, sizeof (TMPDIR_TEMPLATE) - 1);
 
     /*
      * BerkeleyDB has changed the signature of DB->open somewhere
@@ -450,7 +450,7 @@ open_db (db_id_t db)
                                   0,
 #endif
                                   dbs[db].file, 0, DB_BTREE, 
-                                  DB_TRUNCATE, 0600))) {
+                                  DB_CREATE, 0600))) {
         dbs[db].dbp->err (dbs[db].dbp, err,
                           "!ERROR: could not open DB `%s'", dbs[db].file); 
 
@@ -1041,6 +1041,9 @@ shred (const char *in, const char *out)
 
 #if HAVE_LIBDB
     /* create and open DB files */
+    if (mkdtemp (tmpdir) == 0)
+        fprintf (stderr, "!ERROR: unable to create temporary directory :%s\n",
+                         strerror (errno));
     open_db (nsloc_db);
     open_db (text_db);
     open_db (com_db);
@@ -1077,6 +1080,11 @@ shred (const char *in, const char *out)
     close_db (com_db, 1);
     close_db (text_db, 1);
     close_db (nsloc_db, 1);
+
+    if (rmdir (tmpdir) != 0)
+        fprintf (stderr, 
+                 "!WARNING: could not delete temporary directory `%s': %s\n",
+                 tmpdir, strerror (errno));
 #endif
 
     if (! ctx->wellFormed) {
