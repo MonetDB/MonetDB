@@ -21,6 +21,12 @@
 @a Peter Boncz, Martin Kersten
 
 @* Multiplexed Function Execution 
+[WARNING] the semantics of the documentation does not align
+with the implementation. For, in search for efficient
+operators we assume aligned BATs and the script version does
+not respect duplicates in the non-first arguments
+[/WARNING]
+
 This module contains the generic implementation of the 
 MIL [X]() multiplex operators. 
 Multiplex operators provide the possibility of executing any

@@ -1,5 +1,8 @@
 MAL language issues
-- re-enact calling the debugger from a script
+- the multiplex semantics in M5 is different from M4.
+The role of it should be reconsidered, because it is 
+an efficient implementation of a macro at language level.
+
 - assignment of the form b:=multiplex.tactics("op",b,..) not safe
   actually reference counting BATs is not stable. 
   rethink the before/after structure for garabage collection
@@ -9,6 +12,7 @@ MAL language issues
 action.
 - Modules should make the expections being thrown explicit
 - Expand the property management infrastructure. tst3K serie
+- Test proper declaration of variables to avoid uninitalized variabless
 
 - consider statistics/type catalog at MAL layer only.
 - derive multiplex implementations variants automatically?
@@ -45,7 +49,6 @@ Optimizer
 - the lifespan analyses should take care of nested blocks
 
 API issues
-- Mapi access to sql client should be set
 - Japi should be aligned with latest Mapi 
 - The java front-end terminal and profiler should be re-vived
 - Multi-client (concurrent) access has not been tested yet
@@ -61,11 +64,13 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20050302 re-enact calling the debugger from a script
 20050228 The garbage control is too complicated and consumes too much power.
   before/after calls are only focussed on the first destination argument.
   the patch into the direction of symbol table lookup made it worse
   Garbage collector redone.
 
+20050225 added statistics catalog at MAL layer only.
 20041220 Split inpection module into mdb+inspect
 20041216 A function may carry an address, to enable JIT
 20041216 The replace/insert operations for bats arguments should set the 
