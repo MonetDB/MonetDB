@@ -1987,36 +1987,36 @@ char * mapi_fetch_line_internal(Mapi mid)
 			mapi_setError(mid, "Connection terminated","mapi_fetch_line");
 			return 0;
 		}
-	if( mid->blocked){
-		/* fetch one more block */
-		if( mid->trace)
-			printf("fetch next block: start at:%d\n",n);
-		len = stream_read(mid->from, mid->blk.buf+n, 1, BLOCK);
-		mid->blk.buf[n+len]=0;
-		if( mid->trace) {
-			printf("got next block: length:%d\n",len);
-			printf("text:%s\n",mid->blk.buf+n);
-		}
-		@:endofsession(len)@
-	} else {
-		/* fetch one more line */
-		len=0;
-		s=mid->blk.buf+n;
-		while( (k= stream_read(mid->from,s,1,1))==1 ){
-			if (k<0){
-				mapi_setError(mid, "Connection terminated","mapi_fetch_line");
-				return 0;
+		if( mid->blocked){
+			/* fetch one more block */
+			if( mid->trace)
+				printf("fetch next block: start at:%d\n",n);
+			len = stream_read(mid->from, mid->blk.buf+n, 1, BLOCK);
+			mid->blk.buf[n+len]=0;
+			if( mid->trace) {
+				printf("got next block: length:%d\n",len);
+				printf("text:%s\n",mid->blk.buf+n);
 			}
-			len++;
-			if( *s== '\n')
-				break;
-			s++;
-			if(s== mid->blk.buf+mid->blk.lim)
-				break;
+			@:endofsession(len)@
+		} else {
+			/* fetch one more line */
+			len=0;
+			s=mid->blk.buf+n;
+			while( (k= stream_read(mid->from,s,1,1))==1 ){
+				if (k<0){
+					mapi_setError(mid, "Connection terminated","mapi_fetch_line");
+					return 0;
+				}
+				len++;
+				if( *s== '\n')
+					break;
+				s++;
+				if(s== mid->blk.buf+mid->blk.lim)
+					break;
+			}
+			mid->blk.buf[n+len]=0;
+			@:endofsession(k)@
 		}
-		mid->blk.buf[n+len]=0;
-		@:endofsession(k)@
-	}
 	}
 	if( mid->trace) {
 		printf("got complete block: \n");
@@ -2117,13 +2117,13 @@ MapiMsg mapi_quick_response(Mapi mid, FILE *fd)
 	mid->blk.eos=0;
 	mid->blk.nxt=0;
 	if( mid->blocked){
-	while( (k= stream_read(mid->from,mid->blk.buf,1,BLOCK))== BLOCK){
-		if(k<0) {
-			mapi_setError(mid, "Connection terminated","mapi_quick_response");
-			break;
+		while( (k= stream_read(mid->from,mid->blk.buf,1,BLOCK))== BLOCK){
+			if(k<0) {
+				mapi_setError(mid, "Connection terminated","mapi_quick_response");
+				break;
+			}
+			@:handlePart(BLOCK)@
 		}
-		@:handlePart(BLOCK)@
-	}
 	} else {
 		/* read until we find the prompt */
 		s=mid->blk.buf;
