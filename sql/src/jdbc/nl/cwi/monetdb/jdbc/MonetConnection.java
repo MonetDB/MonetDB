@@ -296,27 +296,18 @@ public class MonetConnection implements Connection {
 	public boolean getAutoCommit() throws SQLException {
 		// get it from the database
 		Statement stmt;
-		boolean closeIt;
 
-		// use an existing statement, if one exists
-		Iterator it = statements.keySet().iterator();
-		if (it.hasNext()) {
-			stmt = (Statement)(it.next());
-			closeIt = false;
-		} else {
-			stmt = createStatement();
-			closeIt = true;
-		}
+		stmt = createStatement();
 		ResultSet rs =
-			stmt.executeQuery("SELECT value FROM session WHERE name='auto_commit'");
+			stmt.executeQuery("SELECT \"value\" FROM \"session\" WHERE \"name\"='auto_commit'");
 		if (rs.next()) {
 			boolean ret = rs.getBoolean(1);
 			rs.close();
-			if (closeIt) stmt.close();
+			stmt.close();
 			return(ret);
 		} else {
 			rs.close();
-			if (closeIt) stmt.close();
+			stmt.close();
 			throw new SQLException("Driver Panic!!! Monet doesn't want to tell us what we need! BAAAAAAAAAAAD MONET!");
 		}
 	}
