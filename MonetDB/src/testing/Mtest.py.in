@@ -1035,16 +1035,20 @@ def RunTest(env, TST, BusyPorts) :
             MkillUsers = "echo  "+WHAT+"  2>/dev/null | at now + 1 minute 2>&1 | awk '/^[Jj]ob/{print $2}'"
 
         #if THISFILE == "Mtest.py":
-        TestOut = open(TST+".test.out","w")
-        TestErr = open(TST+".test.err","w")
+        TestOutFile = TST+".test.out"
+        TestErrFile = TST+".test.err"
+        TestOut = open(TestOutFile,"w")
+        TestErr = open(TestErrFile,"w")
         #else:  # THISFILE == "Mprofile.py"
         #       TestOut = open(TST+".profile.out","w")
         #       TestErr = open(TST+".profile.err","w")
         TestOut.write("stdout of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
         TestErr.write("stderr of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
+        TestOut.close()
+        TestErr.close()
 
         t0 = time.time()
-        DoIt (env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME)
+        DoIt (env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME)
         t1 = time.time()
         TX = t1 - t0
         STDOUT.write(" %7.3fs " % TX)
@@ -1243,9 +1247,23 @@ def Prompt(cmd) :
 ### Prompt(cmd) #
 
 def LaunchIt(cmd, TestIn, TestOut, TestErr) :
-    TestOut.write(Prompt(cmd)) ; TestOut.flush()
-    TestErr.write(Prompt(cmd)) ; TestErr.flush()
-    pOut,pIn,pErr = popen2.popen3(cmd)
+    if type(TestOut) is type('') and type(TestErr) is type(''):
+        f = open(TestOut, 'a')
+        f.write(Prompt(cmd))
+        f.close()
+        cmd = cmd + ' >> ' + TestOut
+        f = open(TestErr, 'a')
+        f.write(Prompt(cmd))
+        f.close()
+        cmd = cmd + ' 2>> ' + TestErr
+        pIn = os.popen(cmd, 'w')
+        pOut = pErr = None
+    else:
+        TestOut.write(Prompt(cmd))
+        TestOut.flush()
+        TestErr.write(Prompt(cmd))
+        TestErr.flush()
+        pOut,pIn,pErr = popen2.popen3(cmd)
     pIn.write(TestIn)
     pIn.flush()
     return pIn, pOut, pErr
@@ -1260,6 +1278,12 @@ def ReadMultiple(inpipes, outpipes = None):
         # we will return nothing.  the input from the pipes will be
         # written to the correspondging outpipes.
         outbuffers = None
+        # in this case it may be that inpipes are all None and
+        # outpipes are all strings
+        if inpipes == [None]*len(inpipes):
+            # we only check inpipes
+            # we're done
+            return
     if os.name == 'nt':
         # On Windows, select only works on sockets.
         # We must hope that reading the pipes in order won't cause
@@ -1311,7 +1335,7 @@ def Log() :
     time.strftime('%H:%M:%S> ',time.localtime(time.time()))
 ### Log() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) :
     ATJOB2 = ""
     LogLine = os.path.join(env['TSTDIR'],TST+EXT)+' '+PRELUDE+' (<='+str(STIMEOUT+60)+'s) ...'
     STDERR.flush()
@@ -1348,10 +1372,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             Srvr = Srvr+' ; echo  ; '
         Srvr = Srvr+'echo Over..'
 
-        SrvrOut = open(TST+".server.out","w")
-        SrvrErr = open(TST+".server.err","w")
-        ClntOut = open(TST+".client.out","w")
-        ClntErr = open(TST+".client.err","w")
+        SrvrOutFile = TST+".server.out"
+        SrvrErrFile = TST+".server.err"
+        SrvrOut = open(SrvrOutFile,"w")
+        SrvrErr = open(SrvrErrFile,"w")
+        ClntOutFile = TST+".client.out"
+        ClntErrFile = TST+".client.err"
+        open(ClntOutFile,"w").close()
+        open(ClntErrFile,"w").close()
 
         CheckSocket(env, SERVER, SrvrErr, LogLine)
 
@@ -1362,15 +1390,15 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             SrvrOut.write(ln)
             SrvrOut.flush()
     else:
-        ClntOut = TestOut
-        ClntErr = TestErr
+        ClntOutFile = TestOutFile
+        ClntErrFile = TestErrFile
 
     if   CALL == "other":
         cmd = MTO+str(CTO)+" "+os.path.join(".",TST+EXT)+" "+TST+" "+PRELUDE
-        RunIt(cmd, "", ClntOut, ClntErr)
+        RunIt(cmd, "", ClntOutFile, ClntErrFile)
     elif CALL == "python":
         cmd = MTO+str(CTO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
-        RunIt(cmd, "", ClntOut, ClntErr)
+        RunIt(cmd, "", ClntOutFile, ClntErrFile)
     elif CALL in ["milM", "milS", "milMXs", "milSXs"]:
         cmd = MTO+str(TOT)+" "+exe['Mserver'][1]
         cmd = cmd+" --dbname="+TSTDB+" "+PRELUDE+" < "
@@ -1383,7 +1411,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
         d.sort()
         for f in d:
             if test.match(f):
-                RunIt(cmd+f, "", ClntOut, ClntErr)
+                RunIt(cmd+f, "", ClntOutFile, ClntErrFile)
     elif CALL in ["milC", "milCXs"]:
         TSTs = []
         if CALL == "milC":
@@ -1399,7 +1427,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 
         Clnt = MTO+str(TOT)+" "+exe['Mapi_Client'][1]+" < "
         for f in TSTs:
-            RunIt(Clnt+f, "", ClntOut, ClntErr)
+            RunIt(Clnt+f, "", ClntOutFile, ClntErrFile)
 
         #TODO
         #elif CALL == "milCXp":
@@ -1418,7 +1446,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 
         Clnt = MTO+str(TOT)+" "+exe['SQL_client'][1]+" < "
         for f in TSTs:
-            RunIt(Clnt+f, "", ClntOut, ClntErr)
+            RunIt(Clnt+f, "", ClntOutFile, ClntErrFile)
 
     if SERVER in ["MAPI", "SQL"]:
         if os.path.isfile(TST+".epilogue"):
@@ -1443,9 +1471,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 
         if SERVER == "MAPI":
             Shwn = MTO+str(TOT)+" "+exe['Mshutdown'][1]
-            ShwnOut = open(TST+".shutdown.out","w")
-            ShwnErr = open(TST+".shutdown.err","w")
-            RunIt(Shwn, "", ShwnOut, ShwnErr)
+            ShwnOutFile = TST+".shutdown.out"
+            ShwnErrFile = TST+".shutdown.err"
+            open(ShwnOutFile,"w").close()
+            open(ShwnErrFile,"w").close()
+            RunIt(Shwn, "", ShwnOutFile, ShwnErrFile)
             time.sleep(1)             # give it time to actually shut down
 
         try:
@@ -1464,28 +1494,41 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             StopAt(ATJOB2,ME)
 
         if SERVER == "MAPI":
-            AllOut = [SrvrOut, ClntOut, ShwnOut]
-            AllErr = [SrvrErr, ClntErr, ShwnErr]
+            AllOut = [SrvrOut, ClntOutFile, ShwnOutFile]
+            AllErr = [SrvrErr, ClntErrFile, ShwnErrFile]
         else:
-            AllOut = [SrvrOut, ClntOut]
-            AllErr = [SrvrErr, ClntErr]
+            AllOut = [SrvrOut, ClntOutFile]
+            AllErr = [SrvrErr, ClntErrFile]
+        TestOut = open(TestOutFile, 'a')
         for q in AllOut:
-            n = q.name
-            q.close()
+            if type(q) is type(''):
+                n = q
+            else:
+                n = q.name
+                q.close()
             q = open(n,'r')
-            TestOut.writelines(q.readlines())
+            TestOut.write(q.read())
+            TestOut.flush()
             q.close()
-        TestOut.flush()
+        TestErr = open(TestErrFile, 'a')
         for q in AllErr:
-            n = q.name
-            q.close()
+            if type(q) is type(''):
+                n = q
+            else:
+                n = q.name
+                q.close()
             q = open(n,'r')
-            TestErr.writelines(q.readlines())
+            TestErr.write(q.read())
+            TestErr.flush()
             q.close()
-        TestErr.flush()
+    else:
+        TestOut = open(TestOutFile, 'a')
+        TestErr = open(TestErrFile, 'a')
 
-    TestOut.write(Prompt('Done.')) ; TestOut.flush()
-    TestErr.write(Prompt('Done.')) ; TestErr.flush()
+    TestOut.write(Prompt('Done.'))
+    TestOut.close()
+    TestErr.write(Prompt('Done.'))
+    TestErr.close()
 ### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) #
 
 def Check(command, input) :
@@ -1674,8 +1717,8 @@ def main(argv) :
         dft['setGDK_DBFARM'] = "'--dbfarm \"'+env['GDK_DBFARM']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(50000,59999))"
         dft['SQLPORT']        = "str(randomPort(50000,59999))"
-        dft['SQLCLIENT']      = "'sql_client'"	# --port='+env['SQLPORT']"
-        dft['MAPICLIENT']     = "'MapiClient'"	# --port='+env['MAPIPORT']"
+        dft['SQLCLIENT']      = "'sql_client'" # --port='+env['SQLPORT']"
+        dft['MAPICLIENT']     = "'MapiClient'" # --port='+env['MAPIPORT']"
     if THISFILE == "Mprofile.py":
         dft['CMDLST']         = "FindCmdLst(env)"
     env = {}
@@ -1925,7 +1968,7 @@ def main(argv) :
             if not os.path.isfile(sqlserver_mil):
                 sqlserver_mil = ''
         env['SQLSERVER_MIL'] = sqlserver_mil
-	env['TRACE_MIL'] = os.path.join(env['TSTTRGBASE'],TSTPREF,"trace.mil")
+        env['TRACE_MIL'] = os.path.join(env['TSTTRGBASE'],TSTPREF,"trace.mil")
 
     # export and display env
     STDERR.flush()
@@ -2094,8 +2137,8 @@ def main(argv) :
         except:
             ErrXit("Failed to create %s" % os.path.join(env['GDK_DBFARM'],TSTPREF))
 
-	os.makedirs(os.path.join(env['TSTTRGBASE'],TSTPREF))
-	open(env['TRACE_MIL'],"w").close()
+        os.makedirs(os.path.join(env['TSTTRGBASE'],TSTPREF))
+        open(env['TRACE_MIL'],"w").close()
         if Check(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]   +" --dbname="+TSTPREF, "quit;\n"):
             sys.exit(1)
         GetBitsAndModsAndStatic(env)
