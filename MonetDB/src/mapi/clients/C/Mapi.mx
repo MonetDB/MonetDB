@@ -265,8 +265,10 @@ do {
 \item[Mapi mapi\_connect(const char *host, int port, const char *username, const char *password, const char *lang)]:
 Setup a connection with a Mserver at a {\em host}:{\em port} and login
 with {\em username} and {\em password}. If host == NULL, the local
-host is accessed.  If port == 0, a default port is used.  If username
-== NULL, the username of the owner of the client application
+host is accessed.  If host starts with a '/' and the system supports it,
+host is actually the name of a UNIX domain socket, and port is ignored.
+If port == 0, a default port is used.  If username == NULL,
+the username of the owner of the client application
 containing the Mapi code is used.  If password == NULL, the password
 is omitted.  The preferred query language is any of
 \{sql,mil,mal,xcore,xquery\}\\ On success, the function returns a
@@ -590,6 +592,9 @@ by inspecting the field descriptor returned by mapi\_fetch\_field.
 #ifdef HAVE_WINSOCK_H
 # include <winsock.h>
 #endif
+#ifdef HAVE_SYS_UN_H
+#include <sys/un.h>
+#endif
 
 #include  <signal.h>
 #include  <string.h>
@@ -613,9 +618,6 @@ by inspecting the field descriptor returned by mapi\_fetch\_field.
 #include <stdio.h>		/* for FILE * */
 
 /*#define MONET5*/
-
-#define MAPINAMELEN	256
-#define MAPIBLKSIZE	256	/* minimum buffer shipped */
 
 #define MAPI_AUTO	0	/* automatic type detection */
 #define MAPI_TINY	1
@@ -662,6 +664,8 @@ The type of both the 'param' and 'binding'
 variables refer to their underlying C-type. They are used for
 automatic type coercion between back-end and application.
 @c
+
+#define MAPIBLKSIZE	256	/* minimum buffer shipped */
 
 /* information about the columns in a result set */
 struct MapiColumn {
@@ -729,17 +733,18 @@ struct BlockCache {
 typedef struct MapiStruct *Mapi;
 @c
 struct MapiStruct {
-	char server[MAPINAMELEN];	/* server version */
-	char mapiversion[MAPINAMELEN];	/* mapi version */
-	char hostname[MAPINAMELEN];
+	char *server;		/* server version */
+	char *mapiversion;	/* mapi version */
+	char *hostname;
 	int port;
+	char *sockfile;
 #ifdef HAVE_OPENSSL
 	int secure;
 #endif
-	char username[MAPINAMELEN];
-	char password[MAPINAMELEN];
-	char language[MAPINAMELEN];
-	char database[MAPINAMELEN];	/* to obtain from server */
+	char *username;
+	char *password;
+	char *language;
+	char *database;		/* to obtain from server */
 	int languageId;
 	int versionId;		/* Monet 4 or 5 */
 	char *motd;		/* welcome message from server */
@@ -1649,20 +1654,20 @@ mapi_new(void)
 	/* then fill in some details */
 	mid->blocked = blocked;
 	mid->error = MOK;
-	strcpy(mid->hostname, "localhost");
+	mid->hostname = strdup("localhost");
 #ifdef MONET5
-	strcpy(mid->language, "mal");
+	mid->language = strdup("mal");
 	mid->languageId = LANG_MAL;
 	mid->versionId = 5;
 #else
-	strcpy(mid->language, "mil");
+	mid->language = strdup("mil");
 	mid->languageId = LANG_MIL;
 	mid->versionId = 4;
 #endif
 	mid->motd = NULL;
-	strcpy(mid->mapiversion, "mapi 1.0");
-	strcpy(mid->username, "anonymous");
-	strcpy(mid->password, "unknown");
+	mid->mapiversion = strdup("mapi 1.0");
+	mid->username = strdup("anonymous");
+	mid->password = strdup("unknown");
 
 	mid->cachelimit = 1000;
 	mid->tracelog = NULL;
@@ -1697,10 +1702,9 @@ mapi_mapi(const char *host, int port, const char *username,
 		return NULL;
 
 	if (host) {
-		strncpy(mid->hostname, host, sizeof(mid->hostname) - 1);
-		mid->hostname[sizeof(mid->hostname) - 1] = 0;
-	} else
-		strcpy(mid->hostname, "localhost");
+		free(mid->hostname);
+		mid->hostname = strdup(host);
+	}
 	if (port == 0) {
 		char *def;
 
@@ -1715,17 +1719,18 @@ mapi_mapi(const char *host, int port, const char *username,
 #endif
 	}
 	if (username) {
-		strncpy(mid->username, username, sizeof(mid->username) - 1);
-		mid->username[sizeof(mid->username) - 1] = 0;
+		free(mid->username);
+		mid->username = strdup(username);
 	}
 	if (password == 0)
 		password = getlogin();
 	if (password) {
-		strncpy(mid->password, password, sizeof(mid->password) - 1);
-		mid->password[sizeof(mid->password) - 1] = 0;
+		free(mid->password);
+		mid->password = strdup(password);
 	}
 
 	mid->port = port;
+	mid->sockfile = NULL;
 #ifdef HAVE_OPENSSL
 	mid->secure = 0;
 #endif
@@ -1737,8 +1742,8 @@ mapi_mapi(const char *host, int port, const char *username,
 		lang = "mil";
 #endif
 	}
-	strncpy(mid->language, lang, sizeof(mid->language) - 1);
-	mid->language[sizeof(mid->language) - 1] = 0;
+	free(mid->language);
+	mid->language = strdup(lang);
 
 	if (strcmp(lang, "mil") == 0)
 		mid->languageId = LANG_MIL;
@@ -1769,6 +1774,20 @@ mapi_destroy(Mapi mid)
 		free(mid->blk.buf);
 	if (mid->errorstr)
 		free(mid->errorstr);
+	if (mid->hostname)
+		free(mid->hostname);
+	if (mid->username)
+		free(mid->username);
+	if (mid->password)
+		free(mid->password);
+	if (mid->language)
+		free(mid->language);
+	if (mid->mapiversion)
+		free(mid->mapiversion);
+	if (mid->database)
+		free(mid->database);
+	if (mid->server)
+		free(mid->server);
 	free(mid);
 	return MOK;
 }
@@ -1913,8 +1932,12 @@ ssl_error(int err, int ret)
 MapiMsg
 mapi_reconnect(Mapi mid)
 {
-	struct hostent *hp;
 	struct sockaddr_in server;
+#ifdef HAVE_SYS_UN_H
+	struct sockaddr_un userver;
+#endif
+	struct sockaddr *serv;
+	size_t servsize;
 	int s;
 	char buf[BLOCK];
 	size_t len;
@@ -1927,16 +1950,37 @@ mapi_reconnect(Mapi mid)
 	if (mid->connected)
 		close_connection(mid);
 
-	hp = gethostbyname(mid->hostname);
-	if (!hp) {
-		return mapi_setError(mid, "gethostbyname failed",
-				     "mapi_reconnect", MERROR);
-	}
-	memset(&server, 0, sizeof(server));
-	memcpy(&server.sin_addr, hp->h_addr, hp->h_length);
+#ifdef HAVE_SYS_UN_H
+	if (
+#ifdef HAVE_OPENSSL
+	    !mid->secure &&
+#endif
+	    mid->hostname && mid->hostname[0] == '/') {
+		if (strlen(mid->hostname) >= sizeof(userver.sun_path)) {
+			return mapi_setError(mid, "path name too long",
+					     "mapi_reconnect", MERROR);
+		}
+		userver.sun_family = AF_UNIX;
+		strncpy(userver.sun_path, mid->hostname, sizeof(userver.sun_path));
+		serv = (struct sockaddr *) &userver;
+		servsize = sizeof(userver);
+	} else
+#endif
+	{
+		struct hostent *hp;
 
-	server.sin_family = hp->h_addrtype;
-	server.sin_port = htons((unsigned short) (mid->port & 0xFFFF));
+		hp = gethostbyname(mid->hostname);
+		if (hp == NULL) {
+			return mapi_setError(mid, "gethostbyname failed",
+					     "mapi_reconnect", MERROR);
+		}
+		memset(&server, 0, sizeof(server));
+		memcpy(&server.sin_addr, hp->h_addr, hp->h_length);
+		server.sin_family = hp->h_addrtype;
+		server.sin_port = htons((unsigned short) (mid->port & 0xFFFF));
+		serv = (struct sockaddr *) &server;
+		servsize = sizeof(server);
+	}
 
 #ifdef HAVE_OPENSSL
 	if (mid->secure && mapi_ssl_ctx == NULL) {
@@ -1951,13 +1995,13 @@ mapi_reconnect(Mapi mid)
 		SSL_CTX_set_verify(mapi_ssl_ctx, SSL_VERIFY_NONE, NULL);
 	}
 #endif
-	s = socket(AF_INET, SOCK_STREAM, 0);
+	s = socket(serv->sa_family, SOCK_STREAM, 0);
 	if (s < 0) {
 		return mapi_setError(mid, "Open socket failed",
 				     "mapi_reconnect", MERROR);
 	}
 
-	if (connect(s, (struct sockaddr *) &server, sizeof(server)) < 0) {
+	if (connect(s, serv, servsize) < 0) {
 #ifdef NATIVE_WIN32
 		fprintf(stderr, "!ERROR mapi_reconnect: connect: error %d\n",
 			WSAGetLastError());
@@ -4149,7 +4193,7 @@ char *
 mapi_get_dbname(Mapi mid)
 {
 	mapi_check0(mid, "mapi_get_dbname");
-	return mid->database;
+	return mid->database ? mid->database : "";
 }
 
 char *
@@ -4184,7 +4228,7 @@ char *
 mapi_get_monet_version(Mapi mid)
 {
 	mapi_check0(mid, "mapi_get_monet_version");
-	return mid->server;
+	return mid->server ? mid->server : "";
 }
 
 int

@@ -593,23 +593,26 @@ Module: "lock"
 
 Module: "mapi"
 
-[ 19 ]
-[ 19 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature						| help																							  #
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 21 ]
+[ 21 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function			type		signature									help																																								  # name
+# str			str		str										str																																								  # type
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "fclose",		  "PROC:      ",  "fclose(Stream) : void",				  "not available"																					  ]
 [ "fflush",		  "PROC:      ",  "fflush(Stream) : void",				  "not available"																					  ]
 [ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",				  "not available"																					  ]
 [ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",				  "not available"																					  ]
-[ "get_mapi_port",	  "PROC:      ",  "get_mapi_port() : void",							  "not available"																																						  ]
+[ "get_mapi_port",	  "PROC:      ",  "get_mapi_port() : int",							  "not available"																																						  ]
 [ "listen",		  "PROC:      ",  "listen() : void",								  "Start the Mapi listener on 50000."																																				  ]
 [ "listen",		  "PROC:      ",  "listen(int) : void",								  "Start the Mapi listener on <port>."																																				  ]
 [ "listen",		  "PROC:      ",  "listen(int, int) : void",							  "Start the Mapi listener on <port> for <maxusers>."																																		  ]
 [ "listen",		  "PROC:      ",  "listen(int, int, str) : void",						  "Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."																		  ]
 [ "listen",		  "PROC:      ",  "listen(int, str) : void",							  "Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called."																											  ]
+[ "listen",		  "PROC:      ",  "listen(int, str, int, str) : void",						  "Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked."																  ]
 [ "listen",		  "PROC:      ",  "listen(str) : void",								  "Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called."																											  ]
-[ "mapi_listen",	  "BUILTIN:   ",  "mapi_listen(int port, int maxusers, str cmd) ",	  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
+[ "mapi_listen",	  "PROC:      ",  "mapi_listen(int, int, str) : void",						  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."																  ]
+[ "mapi_listen2",	  "BUILTIN:   ",  "mapi_listen2(int port, str sockfile, int maxusers, str cmd) ",		  "Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked. <sockfile> is the name of a Unix socket."								  ]
 [ "mapi_listen_ssl",	  "BUILTIN:   ",  "mapi_listen_ssl(int port, int maxusers, str keyfile, str certfile, str cmd) ", "Start the Mapi listener on <port> for <maxusers> using SSL.\n<keyfile> and <certfile> give the path names for files with the server key and certificates in PEM format.\nFor a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
 [ "mapi_server",	  "PROC:      ",  "mapi_server(int, int) : void",						  "not available"																																						  ]
 [ "mapi_stream_read",	  "PROC:      ",  "mapi_stream_read(Stream) : str",			  "Read a string from <S> until a '1' character."																	  ]

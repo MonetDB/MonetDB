@@ -26,8 +26,8 @@ This module contains a simple interface for internet connections.
 .MODULE mapi;
 	.USE streams;
 
-	.BUILTIN mapi_listen(int port, int maxusers, str cmd) = MAPIlisten; 
-		"Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."
+	.BUILTIN mapi_listen2(int port, str sockfile, int maxusers, str cmd) = MAPIlisten; 
+		"Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked. <sockfile> is the name of a Unix socket."
 
 	.BUILTIN mapi_listen_ssl(int port, int maxusers, str keyfile, str certfile, str cmd) = MAPIlistenSSL;
 		"Start the Mapi listener on <port> for <maxusers> using SSL.\n<keyfile> and <certfile> give the path names for files with the server key and certificates in PEM format.\nFor a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."
@@ -44,35 +44,49 @@ This module contains a simple interface for internet connections.
 	VAR mapi_params := bat(int,str);
 	mapi_params.rename("mapi_params");
 
-	PROC listen(int port, int maxusers, str cmd) : void {
+	PROC mapi_listen(int port, int maxusers, str cmd) : void {
+		mapi_listen2(port, str(nil), maxusers, cmd);
+	}
+	ADDHELP("mapi_listen", "sjoerd", "Oct 5 2005",
+		"Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked.",
+		mod());
+
+	PROC listen(int port, str sockfile, int maxusers, str cmd) : void {
 		mapi_params.insert(port,cmd);
-		mapi_listen(port,maxusers,cmd);
+		mapi_listen2(port,sockfile,maxusers,cmd);
+	}
+	ADDHELP("listen", "sjoerd", "Oct  5 2004",
+		"Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.",
+		mod());
+
+	PROC listen(int port, int maxusers, str cmd) : void {
+		listen(port,str(nil),maxusers,cmd);
 	}
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.",
 		mod());
 
-	PROC listen(int port, int maxusers) : void { listen(port,maxusers,""); }
+	PROC listen(int port, int maxusers) : void { listen(port,str(nil),maxusers,""); }
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port> for <maxusers>.",
 		mod());
 
-	PROC listen(int port, str cmd) : void { listen(port,5,cmd); }
+	PROC listen(int port, str cmd) : void { listen(port,str(nil),5,cmd); }
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.",
 		mod());
 
-	PROC listen(int port) : void { listen(port,5,""); }
+	PROC listen(int port) : void { listen(port,str(nil),5,""); }
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port>.",
 		mod());
 
-	PROC listen(str cmd) : void { listen(50000,5,cmd); }
+	PROC listen(str cmd) : void { listen(50000,str(nil),5,cmd); }
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called.",
 		mod());
 
-	PROC listen() : void { listen(50000,5,""); }
+	PROC listen() : void { listen(50000,str(nil),5,""); }
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on 50000.",
 		mod());
@@ -129,6 +143,9 @@ This module contains a simple interface for internet connections.
 #ifdef HAVE_WINSOCK_H
 # include <winsock.h>
 #endif
+#ifdef HAVE_SYS_UN_H
+#include <sys/un.h>
+#endif
 #include "kernel.h"
 
 #define SOCKPTR struct sockaddr *
@@ -164,62 +181,104 @@ This module contains a simple interface for internet connections.
 int MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 	struct sockaddr_in server;
-	int 	sock;
-	SOCKLEN 	length = 0;
-	int    	on = 1;
-	int	i = 0;
+	int sock = -1;
+#ifdef HAVE_SYS_UN_H
+	struct sockaddr_un userver;
+	int usock = -1;
+#endif
+	char *usockfile;
+	SOCKLEN length = 0;
+	int on = 1;
+	int i = 0;
 
 	int port, *Port;
 	int maxusers, *Maxusers;
-	char *cmd, *Cmd;
+	char *cmd;
 	Client father;
 
         CNTXTclient(stk, &father);
-	if (lt->cnt != 3) {
-		return handle_argerror(res,lt->cnt,3);
+	if (lt->cnt != 4) {
+		return handle_argerror(res,lt->cnt,4);
 	}
 	@:builtin_operand(0,TYPE_int,Port)@
 	port = *Port;
-	@:builtin_operand(1,TYPE_int,Maxusers)@
+	@:builtin_operand(1,TYPE_str,usockfile)@
+	if (usockfile == NULL || *usockfile == 0 ||
+	    strcmp(usockfile, str_nil) == 0)
+		usockfile = NULL;
+	else {
+#ifdef HAVE_SYS_UN_H
+		usockfile = GDKstrdup(usockfile);
+#else
+		usockfile = NULL;
+		GDKwarning("MAPIlisten: Unix domain sockets are not supported\n");
+#endif
+	}
+	@:builtin_operand(2,TYPE_int,Maxusers)@
 	maxusers = *Maxusers;
-	@:builtin_operand(2,TYPE_str,Cmd)@
-	cmd = GDKstrdup(Cmd);
+	@:builtin_operand(3,TYPE_str,cmd)@
+	cmd = GDKstrdup(cmd);
 	res->vtype = TYPE_void;
 
 	port = (port?port:MAPIPORT);
 	maxusers = (maxusers?maxusers:MAPIMAXUSERS);
 
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock < 0) {
-		GDKsyserror("MAPIlisten:creation of stream socket failed\n");
+	if (port <= 0 && usockfile == NULL) {
+		GDKsyserror("MAPIlisten: no port or socket file specified\n");
 		return GDK_FAIL;
 	}
+
+	if (port > 0) {
+		sock = socket(AF_INET, SOCK_STREAM, 0);
+		if (sock < 0) {
+			GDKsyserror("MAPIlisten:creation of stream socket failed\n");
+			return GDK_FAIL;
+		}
 @-
 Set server port and allow internet connections from any workstation.
 Bind the socket to the server port.
 The port id should be obtained from the Homes file.
 @c
-	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = INADDR_ANY;
-	server.sin_port = htons((unsigned short)((port)&0xFFFF));
-   	for (i=0;i<8;i++)
-	    server.sin_zero[i]=0;
- 
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*) &on, sizeof on);
+		server.sin_family = AF_INET;
+		server.sin_addr.s_addr = INADDR_ANY;
+		server.sin_port = htons((unsigned short)((port)&0xFFFF));
+		for (i=0;i<8;i++)
+		    server.sin_zero[i]=0;
 
-	length = (SOCKLEN) sizeof(server);
-	if (bind(sock, (SOCKPTR)&server, length) < 0) {
-		GDKsyserror("MAPIlisten:binding to stream socket (%d) failed\n", port);
-		return GDK_FAIL;
-	}
+		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*) &on, sizeof on);
+
+		length = (SOCKLEN) sizeof(server);
+		if (bind(sock, (SOCKPTR)&server, length) < 0) {
+			GDKsyserror("MAPIlisten:binding to stream socket (%d) failed\n", port);
+			return GDK_FAIL;
+		}
 @-
 Get the new information for the server socket and start listening.
 @c
-	if (getsockname(sock, (SOCKPTR)&server, &length) < 0) {
-		GDKsyserror("MAPIlisten:getting socket name\n");
-		return GDK_FAIL;
+		if (getsockname(sock, (SOCKPTR)&server, &length) < 0) {
+			GDKsyserror("MAPIlisten:getting socket name\n");
+			return GDK_FAIL;
+		}
+		listen(sock, maxusers); 
 	}
-	listen(sock, maxusers); 
+#ifdef HAVE_SYS_UN_H
+	if (usockfile) {
+		usock = socket(AF_UNIX, SOCK_STREAM, 0);
+		if (usock < 0) {
+			GDKsyserror("MAPIlisten:creation of Unix socket failed\n");
+			return GDK_FAIL;
+		}
+		userver.sun_family = AF_UNIX;
+		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
+
+		length = (SOCKLEN) sizeof(userver);
+		if (bind(usock, (SOCKPTR)&userver, length) < 0) {
+			GDKsyserror("MAPIlisten:binding to Unix socket (%s) failed\n", usockfile);
+			return GDK_FAIL;
+		}
+		listen(usock, maxusers); 
+	}		
+#endif
 
 	PARDEBUG {
 		THRprintf(GDKerr, "MAPIlisten:Internet started at %d\n", port);
@@ -231,12 +290,23 @@ Get the new information for the server socket and start listening.
 		int msgsock;
 
     		FD_ZERO(&fds);
-    		FD_SET(sock, &fds);
+		if (sock >= 0)
+			FD_SET(sock, &fds);
+#ifdef HAVE_SYS_UN_H
+		if (usock >= 0)
+			FD_SET(usock, &fds);
+#endif
     		/* Wait up to 0.5 seconds. */
     		tv.tv_sec = 0;
     		tv.tv_usec = 500;
 
-    		retval = select(sock+1, &fds, &fds, &fds, &tv);
+		/* temporarily use msgsock to record the larger of sock and usock */
+		msgsock = sock;
+#ifdef HAVE_SYS_UN_H
+		if (usock > sock)
+			msgsock = usock;
+#endif
+    		retval = select(msgsock+1, &fds, NULL, NULL, &tv);
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
@@ -244,17 +314,30 @@ Get the new information for the server socket and start listening.
 		if (retval < 0) {
 			if (MT_geterrno() != EINTR) {
 				GDKsyserror("MAPIlisten:select failed\n");
-				return GDK_FAIL;
+				goto error;
 			}
 			continue;
 		}
-    		if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
-			if (MT_geterrno() != EINTR) {
-				GDKsyserror("MAPIlisten:accept failed\n");
-				return GDK_FAIL;
-	    		}
+		if (sock >= 0 && FD_ISSET(sock, &fds)) {
+			if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
+				if (MT_geterrno() != EINTR) {
+					GDKsyserror("MAPIlisten:accept failed\n");
+					goto error;
+				}
+				continue;
+			}
+#ifdef HAVE_SYS_UN_H
+		} else if (usock >= 0 && FD_ISSET(usock, &fds)) {
+			if ((msgsock = accept(usock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
+				if (MT_geterrno() != EINTR) {
+					GDKsyserror("MAPIlisten:accept failed\n");
+					goto error;
+				}
+				continue;
+			}
+#endif
+		} else
 			continue;
-		}
 		if (STREQ(cmd,"")) {
 			int i=0;
 			char *name = (char*) GDKmalloc(BLOCK), *user = name,*s;
@@ -345,7 +428,17 @@ Get the new information for the server socket and start listening.
 			interpret_str( stk, buf, &res);
 		}
 	} while (monet_running);
+#ifdef HAVE_SYS_UN_H
+	if (usockfile)
+		unlink(usockfile);
+#endif
 	return GDK_SUCCEED;
+  error:
+#ifdef HAVE_SYS_UN_H
+	if (usockfile)
+		unlink(usockfile);
+#endif
+	return GDK_FAIL;
 }
 
 #ifdef HAVE_OPENSSL
@@ -471,9 +564,9 @@ int MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	int port, *Port;
 	int maxusers, *Maxusers;
-	char *keyfile, *Keyfile;
-	char *certfile, *Certfile;
-	char *cmd, *Cmd;
+	char *keyfile;
+	char *certfile;
+	char *cmd;
 	Client father;
 	SSL_CTX *ctx = NULL;
 	SSL *ssl = NULL;
@@ -486,12 +579,12 @@ int MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 	port = *Port;
 	@:builtin_operand(1,TYPE_int,Maxusers)@;
 	maxusers = *Maxusers;
-	@:builtin_operand(2,TYPE_str,Keyfile)@;
-	keyfile = GDKstrdup(Keyfile);
-	@:builtin_operand(3,TYPE_str,Certfile)@;
-	certfile = GDKstrdup(Certfile);
-	@:builtin_operand(4,TYPE_str,Cmd)@;
-	cmd = GDKstrdup(Cmd);
+	@:builtin_operand(2,TYPE_str,keyfile)@;
+	keyfile = GDKstrdup(keyfile);
+	@:builtin_operand(3,TYPE_str,certfile)@;
+	certfile = GDKstrdup(certfile);
+	@:builtin_operand(4,TYPE_str,cmd)@;
+	cmd = GDKstrdup(cmd);
 	res->vtype = TYPE_void;
 
 	if (!port)
@@ -776,11 +869,11 @@ int stream_read_until(str *res, Stream *S , str stop)
 @}
 @- daemon initialization
 @mil
-proc get_mapi_port() : void {
+proc get_mapi_port() : int {
 	if (monet_environment.exist("mapi_port")){
 		return int(monet_environment.find("mapi_port"));
 	}
-	ERROR("mapi_port is set\n");
+	ERROR("mapi_port is not set\n");
 }
 
 proc mapi_server(int port, int nr) : void {
