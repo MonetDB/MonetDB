@@ -641,10 +641,10 @@ sub execute {
         push @nullables , 0;  # TODO
     }
     $sth->STORE('NUM_OF_FIELDS', $field_count) unless $sth->FETCH('NUM_OF_FIELDS');
-    $sth->STORE('NAME'         , \@names     );
-#   $sth->STORE('TYPE'         , \@types     );  # TODO: monetdb2dbi
-#   $sth->STORE('PRECISION'    , \@precisions);  # TODO
-#   $sth->STORE('NULLABLE'     , \@nullables );  # TODO
+    $sth->{NAME}      = \@names;
+#   $sth->{TYPE}      = \@types;       # TODO: monetdb2dbi
+#   $sth->{PRECISION} = \@precisions;  # TODO
+#   $sth->{NULLABLE}  = \@nullables;   # TODO
     $sth->STORE('Active', 1 );
 
     $sth->{monetdb_rows} = 0;
@@ -697,7 +697,6 @@ sub finish {
 sub FETCH {
     my ($sth, $key) = @_;
 
-    return $sth->{NAME} if $key eq 'NAME';
     return $sth->{$key} if $key =~ /^monetdb_/;
     return $sth->SUPER::FETCH($key);
 }
@@ -706,10 +705,7 @@ sub FETCH {
 sub STORE {
     my ($sth, $key, $value) = @_;
 
-    if ($key eq 'NAME') {
-	$sth->{NAME} = $value;
-	return 1;
-    } elsif ($key =~ /^monetdb_/) {
+    if ($key =~ /^monetdb_/) {
 	$sth->{$key} = $value;
 	return 1;
     }
