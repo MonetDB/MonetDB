@@ -14,7 +14,7 @@ print "\nstart simple Monet MIL interaction\n";
 	#}
 
  # Connect to the database.
-  my $dbh = DBI->connect("dbi:monet:database=test;host=localhost;port=50001;language=mil",
+  my $dbh = DBI->connect("dbi:monet:database=test;host=localhost;port=49999;language=mil",
                          "joe", "joe's password",
                          {'PrintError' =>0, 'RaiseError' => 0});
 
@@ -24,20 +24,25 @@ print "\nstart simple Monet MIL interaction\n";
   my @row= $sth->fetchrow_array();
   print "field[0]:".$row[0]."size:".$#row."\n";
 
-  $sth= $dbh->prepare("( xyz 1);\n");
-  $sth->execute() ;#||  die "Excution error:\n".$sth->{errstr};
-  if($sth->{err}){
-	print "ERROR REPORTED:".$sth->{errstr}."\n";
-  }
-  print "STH:".$sth->{row}."\n";
+  $sth= $dbh->prepare("print(3);\n");
+  $sth->execute() || die "Execution error:\n".$sth->{errstr};
+  my @row= $sth->fetchrow_array();
+  print "field[0]:".$row[0]."size:".$#row."\n";
 
-  $dbh->do("b:=new(int,int);");
-  $dbh->do("insert(b,3,7);");
-	#|| die "Execution Error:\n".$dbh->errstr;
+   $sth= $dbh->prepare("( xyz 1);\n");
+   $sth->execute() ;#||  die "Excution error:\n".$sth->{errstr};
+   if($sth->{err}){
+ 	print "ERROR REPORTED:".$sth->{errstr}."\n";
+   }
+   print "STH:".$sth->{row}."\n";
 
-  # variable binding stuff
-  my $head= 11;
-  my $tail= 13;
+ $dbh->do("b:=new(int,int);");
+ $dbh->do("insert(b,3,7);");
+#|| die "Execution Error:\n".$dbh->errstr;
+#
+ # variable binding stuff
+ my $head= 11;
+ my $tail= 13;
 
   $sth= $dbh->prepare("insert(b,?,?);");
   $sth->bind_param(1,$head,{TYPE => SQL_INTEGER });
@@ -46,9 +51,9 @@ print "\nstart simple Monet MIL interaction\n";
 
   $sth= $dbh->prepare("print(b);");
   $sth->execute() ;#||  die "Excution error:\n".$sth->{errstr};
-  #while ( my $aref = $sth->fetchrow_arrayref() ){
-	  #print "bun:".$aref->[0].",".$aref->[1]."\n";
-  #}
+  while ( my $aref = $sth->fetchrow_arrayref() ){
+	  print "bun:".$aref->[0].",".$aref->[1]."\n";
+  }
   # get all rows at once
   my $tab = $sth->fetchall_arrayref();
   my $r = $#{$tab};		# how to get the array bounds
@@ -66,9 +71,9 @@ print "\nstart simple Monet MIL interaction\n";
  # }
 
 
-  #my @answ = $dbh->selectrow_array("print(b);");
-  #print "field[0]:".$answ[0]."\n";
-  #print "field[1]:".$answ[1]."\n";
+ #my @answ = $dbh->selectrow_array("print(b);");
+ #print "field[0]:".$answ[0]."\n";
+ #print "field[1]:".$answ[1]."\n";
 
   #my $ar = $dbh->selectrow_arrayref("print(b);");
   #print "field[0]:".$ar->[0]."\n";

@@ -109,10 +109,13 @@ sub doRequest {
 	if( $mapi->{trace}) {
 		print "Send:$cmd\n";
 	}
-	my($missing) = 256 - length($cmd) % 256;
-	my($blk) = $cmd . ' ' x $missing; 
-	$mapi->{SOCKET}->send( $blk ) 
-		|| die "!ERROR can't send $blk: $!";
+	#my($missing) = 256 - length($cmd) % 256;
+	#my($blk) = $cmd . ' ' x $missing; 
+	if( index($cmd,"\n") <0){
+		$cmd= "$cmd\n";
+	}
+	$mapi->{SOCKET}->send( $cmd ) 
+		|| die "!ERROR can't send $cmd: $!";
 }
 
 # reading the next answer may require removal of the left-overs
@@ -180,6 +183,10 @@ sub propertyTest{
 sub getLine {
 	my ($mapi)= @_;
 	my $buf= $mapi->{BUF};
+	if($mapi->{trace}) {
+		my $i= index($buf,"\n");
+		print "getLine start $i\n";
+	}
 	while ( index($buf,"\n") <0 ) {
 		$mapi->{SOCKET}->recv($buf,256)
 		|| die "!ERROR can't receive: $!";
@@ -197,19 +204,27 @@ sub getReply {
 		#return 0;
 	#}
 	while( $doit > 0 ){
-		if( $mapi->{BUF} eq "" ) { $mapi->getLine(); }
+		if($mapi->{trace}) {
+			#my $i= $mapi->{BUF};
+			#my $l= length($i);
+			#print "doit leftover:$l:$i!\n";
+		}
+		$mapi->{BUF} =~ s/ //g;
+		#if( $mapi->{BUF} eq "" ) { $mapi->getLine(); }
+		{ $mapi->getLine(); }
 		my $row= $mapi->{BUF};
-		my $e = index($row,"\002");
+		my $e = index($row,"\001");
 		#if($e == undef){ print "002 not found\n";}
 		#if($e < 0){ print "002 not found (-1)\n";}
 		my $n = index($row,"\n");
+		#print "e=$e n=$n \n";
 		if(($e < 0) || ( $n < $e) ){
 			$row = substr($mapi->{BUF},0,$n);
 			if($mapi->{trace}){ print "new row:".$row."\n";}
 			$n= $n+1;
 			$mapi->{BUF} = substr($mapi->{BUF},$n,length($mapi->{BUF}));
 		}
-		if( ($e > 0) && ($e < $n) ){
+		if( ($e >= 0) && ($e < $n) ){
 			$mapi->{BUF}= undef;
 			$mapi->{row}= undef;
 			$mapi->{active} = 0;
