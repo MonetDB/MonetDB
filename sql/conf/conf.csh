@@ -1,6 +1,6 @@
 #
 # This script is supposed to be "sourced" in order to set your (architecture
-# dependent) environment to be able to compile sq.
+# dependent) environment to be able to compile sql.
 #
 # To select your desired compiler ("GNU" or "ntv" (native)), your desired
 # binary type (32bit or 64bit), and whether binarys should be linked
@@ -13,11 +13,20 @@
 #
 # (If not or wrongly set, "GNU32dynamic" is used as default.)
 #
-
-source `monet-config --prefix`/share/Monet/conf/conf.csh
+#source `monet-config --prefix`/share/Monet/conf/conf.bash
 
 set os = "`uname`"
 set base = "${PWD}"
+
+if ( ! -x `monet-config --prefix`/bin/Mserver ) then
+	echo ''
+	echo 'could not find monet server.'
+	echo ''
+	return 1
+fi
+
+set MONET_PREFIX = `monet-config --prefix`
+
 
 if ( ! -x bootstrap ) then
 	echo ''
@@ -27,20 +36,21 @@ if ( ! -x bootstrap ) then
 	set binpath = ""
 	set libpath = ""
 
-	# check for not set variables (BUILD, PREFIX, COMP, BITS, LINK)
+	# check for not set variables (SQL_BUILD, PREFIX, COMP, BITS, LINK)
 
-	if ( ! ${?BUILD} ) then
+	if ( ! ${?SQL_BUILD} ) then
 		echo ''
-		echo 'BUILD not set to specify desired compilation directory.'
-		echo 'Using BUILD="'${base}/${os}'" (default).'
-		set BUILD = "${base}/${os}"
+		echo 'SQL_BUILD not set to specify desired compilation directory.'
+		echo 'Using SQL_BUILD="'${base}/${os}'" (default).'
+		set SQL_BUILD = "${base}/${os}"
 	endif
 	if ( ! ${?PREFIX} ) then
 		echo ''
 		echo 'PREFIX not set to specify desired target directory.'
-		echo 'Using PREFIX="'${BUILD}'" (default).'
-		set PREFIX = "${BUILD}"
+		echo 'Using PREFIX="'${SQL_BUILD}'" (default).'
+		set PREFIX = "${SQL_BUILD}"
 	endif
+
 	if ( ! ${?COMP} ) then
 		echo ''
 		echo 'COMP not set to either "GNU" or "ntv" (native) to select the desired compiler.'
@@ -53,6 +63,7 @@ if ( ! -x bootstrap ) then
 		echo 'Using BITS="32" (default).'
 		set BITS = "32"
 	endif
+
 	if ( ! ${?LINK} ) then
 		echo ''
 		echo 'LINK not set to either "dynamic" or "static" to select the desired way of linking.'
@@ -65,7 +76,7 @@ if ( ! -x bootstrap ) then
 		endif
 	endif
 
-	# check for incorrectly set variables (BUILD, PREFIX, COMP, BITS, LINK)
+	# check for incorrectly set variables (SQL_BUILD, PREFIX, COMP, BITS, LINK)
 
 	if ( "${COMP}" != "GNU"  &&  "${COMP}" != "ntv" ) then
 		echo ''
@@ -100,27 +111,107 @@ if ( ! -x bootstrap ) then
 			echo 'Linux doesn'\''t support 64 bit, yet; hence, using BITS="32".'
 			set BITS = "32"
 		endif
-		if ( "${COMP}" = "ntv" && "${LINK}" == "d" ) then
-			echo ''
-			echo 'Intel compiler on Linux doesn'\''t support dynamic linking, yet; hence, using LINK="static".'
-			set LINK = "s"
-		endif
 	endif
 
 	# set default compilers & configure options
 
+	if ( "${COMP}" == "GNU" ) then
+		# standard GNU compilers are gcc/g++
+		set cc = "gcc"
+		set cxx = "g++"
+	endif
+	if ( "${COMP}" == "ntv" ) then
+		# standard native compilrs are cc/CC
+		set cc = "cc"
+		set cxx = "CC"
+	endif
+	if ( "${LINK}" == "d"   ) then
+		# dynamic/shared linking
+		set conf_opts = "--enable-shared --disable-static"
+	  else
+		# static linking
+		set conf_opts = "--disable-shared --enable-static"
+	endif
+
+	# (additional) system-specific settings
+
+	if ( "${os}" == "Linux" ) then
+		if ( "${COMP}" == "ntv" ) then
+			# "ntv" on Linux means IntelC++-5.0.1-beta ("icc")
+			setenv IA32ROOT /soft/IntelC++-5.0.1-beta/ia32
+			setenv INTEL_FLEXLM_LICENSE /soft/IntelC++-5.0.1-beta/licenses
+			set libpath = "/soft/IntelC++-5.0.1-beta/ia32/lib"
+			set cc = "icc"
+			set cxx = "icc"
+			if ( "${LINK}" == "d" ) then
+				# otherwise, Mserver crashes due to the "alloca(3)"-problem
+				set conf_opts = "${conf_opts} --enable-debug"
+			endif
+		endif
+	endif
+
 	if ( "${os}" == "SunOS" ) then
+		# "standard: SunOS paths
+		set binpath = "/opt/SUNWspro/bin:/usr/local/bin:${binpath}"
+		set libpath = "/usr/local/lib:${libpath}"
 		if ( "${BITS}" == "64" ) then
+			# propper/extended LD_LIBRAY_PATH for 64bit on SunOS
+			set libpath = "/usr/lib/sparcv9:/usr/ucblib/sparcv9:${libpath}"
+			# GNU ar in /usr/local/bin doesn't support 64bit
+			setenv AR '/usr/ccs/bin/ar'
+			setenv AR_FLAGS '-r -cu'
+		endif
+		if ( "${COMP}" == "GNU" ) then
+			# required GNU gcc/g++ options for 32 & 64 bit
+			set cc = "${cc} -m$BITS"
+			set cxx = "${cxx} -m$BITS"
+		endif
+		if ( "${COMP}${BITS}" == "ntv64" ) then
+			# required SUNWspro cc/CC options for 64bit
+			set cc = "${cc} -xarch=v9"
+			set cxx = "${cxx} -xarch=v9"
+		endif
+		# our "fake" /soft/local/bin on apps
+		set binpath = "/var/tmp/local/bin:${binpath}"
+		set libpath = "/var/tmp/local/lib:${libpath}"
+		if ( "${BITS}" == "64" ) then
+			set conf_opts = "${conf_opts} --with-readline=/var/tmp/soft64/local"
+			set conf_opts = "${conf_opts} --with-getopt=/var/tmp/soft64/local"
 			set conf_opts = "${conf_opts} --with-odbc=/var/tmp/soft64/local"
 		else
+			set conf_opts = "${conf_opts} --with-readline=/var/tmp/soft/local"
+			set conf_opts = "${conf_opts} --with-getopt=/var/tmp/soft/local"
 			set conf_opts = "${conf_opts} --with-odbc=/var/tmp/soft/local"
 		endif
 	endif
 
 	if ( "${os}" == "IRIX64" ) then
+		# propper/extended paths on medusa
+		set binpath = "/soft64/local/bin:/soft/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin:${binpath}"
+		if ( "${COMP}${BITS}" == "GNU32" ) then
+			# propper/extended paths on medusa
+			set libpath = "/soft/local/lib:${libpath}"
+		endif
+		if ( "${COMP}${BITS}" == "GNU64" ) then
+			# propper/extended paths on medusa
+			set libpath = "/soft/local/lib/mabi=64:${libpath}"
+			# required GNU gcc/g++ options for 64bit
+			set cc = "${cc} -mabi=64"
+			set cxx = "${cxx} -mabi=64"
+		endif
+		if ( "${COMP}${BITS}" == "ntv64" ) then
+			# required MIPSpro cc/CC options for 64bit
+			set cc = "${cc} -64"
+			set cxx = "${cxx} -64"
+		endif
+		# 32 & 64 bit libreadline for IRIX64 are in /ufs/monet/lib
 		if ( "${BITS}" == "64" ) then
+			set conf_opts = "${conf_opts} --with-readline=/soft64/local"
+			set conf_opts = "${conf_opts} --with-getopt=/soft64/local"
 			set conf_opts = "${conf_opts} --with-odbc=/soft64/local"
 		else
+			set conf_opts = "${conf_opts} --with-readline=/soft/local"
+			set conf_opts = "${conf_opts} --with-getopt=/soft/local"
 			set conf_opts = "${conf_opts} --with-odbc=/soft/local"
 		endif
 	endif
@@ -133,6 +224,15 @@ if ( ! -x bootstrap ) then
 
 	# export new settings
 	echo ""
+	echo "Setting..."
+	setenv CC "${cc}"
+	echo " CC=${CC}"
+	setenv CXX "${cxx}"
+	echo " CXX=${CXX}"
+	setenv CFLAGS ""
+	echo " CFLAGS=${CFLAGS}"
+	setenv CXXFLAGS ""
+	echo " CXXFLAGS=${CXXFLAGS}"
 	if ( ${%binpath} ) then
 		if ( ${?PATH} ) then
 			# prepend new binpath to existing PATH, if PATH doesn't contain binpath, yet
@@ -164,20 +264,20 @@ if ( ! -x bootstrap ) then
 #	  else	setenv LD_LIBRARY_PATH "${PREFIX}/lib:${PREFIX}/lib/Monet"
 #	endif
 
-#	# this is obsolete
+#	# this is obsolete (not jet!!)
 #	setenv MONETDIST "${PREFIX}"
-#	setenv MONET_MOD_PATH "${PREFIX}/lib:${PREFIX}/lib/Monet"
+	setenv MONET_MOD_PATH "${PREFIX}/lib:${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
 
 	# for convenience: store the complete configure-call in CONFIGURE
-	setenv CONFIGURE "${base}/configure ${conf_opts} --prefix=${PREFIX}"
+	setenv CONFIGURE "${base}/configure ${conf_opts} --with-monet=${MONET_PREFIX} --prefix=${PREFIX}"
 	echo " CONFIGURE=${CONFIGURE}"
 
-	mkdir -p ${BUILD}
+	mkdir -p ${SQL_BUILD}
 
 	echo ""
 	echo "To compile SQL, just execute:"
 	echo "\t./bootstrap"
-	echo "\tcd ${BUILD}"
+	echo "\tcd ${SQL_BUILD}"
 	echo "\t${CONFIGURE}"
 	echo "\tmake"
 	echo "\tmake install"

@@ -84,11 +84,6 @@ if [ ! -x bootstrap ] ; then
 			echo 'Linux doesn'\''t support 64 bit, yet; hence, using BITS="32".'
 			BITS="32"
 		fi
-		if [ "${COMP}" = "ntv" -a "${LINK}" = "d" ] ; then
-			echo ''
-			echo 'Intel compiler on Linux doesn'\''t support dynamic linking, yet; hence, using LINK="static".'
-			LINK="s"
-		fi
 	fi
 
 	# set default compilers & configure options
@@ -121,6 +116,10 @@ if [ ! -x bootstrap ] ; then
 			libpath="/soft/IntelC++-5.0.1-beta/ia32/lib"
 			cc="icc"
 			cxx="icc"
+			if [ "${LINK}" = "d" ] ; then
+				# otherwise, Mserver crashes due to the "alloca(3)"-problem
+				conf_opts="${conf_opts} --enable-debug"
+			fi
 		fi
 	fi
 
@@ -243,7 +242,7 @@ if [ ! -x bootstrap ] ; then
 	export MONET_MOD_PATH="${PREFIX}/lib:${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
 
 	# for convenience: store the complete configure-call in CONFIGURE
-	export CONFIGURE="${base}/configure ${conf_opts} --with-monet=`monet-config --prefix` --prefix=${PREFIX}"
+	export CONFIGURE="${base}/configure ${conf_opts} --with-monet=${MONET_PREFIX} --prefix=${PREFIX}"
 	echo " CONFIGURE=${CONFIGURE}"
 
 	mkdir -p ${SQL_BUILD}
