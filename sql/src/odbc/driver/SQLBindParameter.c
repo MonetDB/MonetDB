@@ -174,6 +174,16 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 	case SQL_DOUBLE:
 		ipdrec->sql_desc_precision = (SQLSMALLINT) ColumnSize;
 		break;
+	case SQL_WCHAR:
+	case SQL_WVARCHAR:
+	case SQL_WLONGVARCHAR:
+	case SQL_BIT:
+	case SQL_TINYINT:
+	case SQL_SMALLINT:
+	case SQL_INTEGER:
+	case SQL_BIGINT:
+	case SQL_GUID:
+		break;
 	default:
 		/* Invalid SQL data type */
 		addStmtError(stmt, "HY004", NULL, 0);
