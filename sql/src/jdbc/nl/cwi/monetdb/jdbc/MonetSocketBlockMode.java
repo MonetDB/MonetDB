@@ -25,7 +25,7 @@ import java.net.*;
  * line query, and should be less intensive for the server.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.1 (part of MonetDB JDBC beta release)
+ * @version 0.2 (part of MonetDB JDBC beta release)
  */
 class MonetSocketBlockMode extends MonetSocket {
 	private InputStream fromMonetRaw;

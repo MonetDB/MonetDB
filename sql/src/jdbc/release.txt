@@ -1,8 +1,8 @@
 RELEASE NOTES
-MonetDB JDBC driver version 0.3 beta
+MonetDB JDBC driver version 0.4 beta
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2004-04-06
+Release date: 2004-04-18
 
 This JDBC driver for MonetDB is a thirth implementation of a JDBC driver
 for the Monet Main Memory Database. See http://monetdb.cwi.nl/ for more info
@@ -118,9 +118,13 @@ this driver.
   lead to parser errors.
 - The getObject methods do not return all types correct, and currently ignore
   any given type map.
-- Auto-commit mode does NOT commit when:
-  . all of the rows of a resultset are retrieved
-  . another Statement object is executed on the same connection
-  it DOES commit when:
-  . the associated Statement object of a result set is executed
-  . an update, delete or insert statement has finished executing
+- Auto-commit behaviour is defined by the server which handles the auto-commit.
+- The connection with the database server currently knows two modes: line-mode
+  and block-mode. The first is the default due to its known stability, the
+  latter is still tested, although it seems to work correctly. The major
+  advantage of using block-mode over line-mode is that multi-line queries are
+  allowed. To enable block-mode one can call MonetDriver.setBlockMode(true)
+  before creating a Connection, or by creating a build.local.properties with
+  JDBC_DEF_BLOCKMODE=true in it. The latter method changes the default method
+  for the driver, and requires a rebuild of the driver using ant. This is
+  disencouraged for non-developers.

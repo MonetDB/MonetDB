@@ -28,7 +28,7 @@ import java.nio.ByteOrder;
  * createStatement() method with default transactions and cursors.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.3 (beta release)
+ * @version 0.4 (beta release)
  */
 public class MonetConnection implements Connection {
 	private final String host;
