@@ -1,8 +1,23 @@
 char rcsid_be[] = "$Id$";
 
+#if HAVE_CONFIG_H
+#include <pf_config.h>
+#endif
+
 #include <stdio.h>
+
+#if HAVE_STRING_H
 #include <string.h>
+#endif
+
+#ifdef HAVE_STDBOOL_H
 #include <stdbool.h>
+#elif !defined(HAVE_BOOL)
+#define bool    char
+#define true    (char)1
+#define false   (char)0
+#endif
+
 #include "b.h"
 #include "fe.h"
 
