@@ -438,8 +438,18 @@ open_db (db_id_t db)
         exit (EXIT_FAILURE);        
     }
 
-    if ((err = dbs[db].dbp->open (dbs[db].dbp, dbs[db].file, 0,
-                                  DB_BTREE, 
+    /*
+     * BerkeleyDB has changed the signature of DB->open somewhere
+     * between versions 4.0.14 and 4.1.25. The latter requires an
+     * additional argument, `txnid' (transaction id). The configure
+     * script checks this and sets BERKELEYDB_HAS_TRANSACTION to 1
+     * if the parameter is needed, and to 0 if not.
+     */
+    if ((err = dbs[db].dbp->open (dbs[db].dbp,
+#if BERKELEYDB_HAS_TXN
+                                  0,
+#endif
+                                  dbs[db].file, 0, DB_BTREE, 
                                   DB_TRUNCATE, 0600))) {
         dbs[db].dbp->err (dbs[db].dbp, err,
                           "!ERROR: could not open DB `%s'", dbs[db].file); 

@@ -295,7 +295,38 @@ if test "x$have_berkeleydb" != xno; then
 typedef unsigned long u_long;
 #endif
 ])
-fi
+
+dnl Some BerkeleyDB versions define the `open' function with 6, some with 7
+dnl parameters (one for transaction support). Let's see which one we have here.
+AC_MSG_CHECKING([for transaction support in BerkeleyDB])
+AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
+#if !HAVE_U_LONG
+typedef unsigned long u_long;
+#endif /* !HAVE_U_LONG */
+#include <db.h>
+]],
+[[ DB *dbp = 0; dbp->open (dbp, 0, "test", 0, DB_BTREE, DB_TRUNCATE, 0600); ]]
+),
+[AC_DEFINE(BERKELEYDB_HAS_TXN, 1,
+           [Does BerkeleyDB have transaction support?])
+AC_MSG_RESULT(yes)],[
+AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
+#if !HAVE_U_LONG
+typedef unsigned long u_long;
+#endif /* !HAVE_U_LONG */
+#include <db.h>
+]],
+[[ DB *dbp = 0; dbp->open (dbp, "test", 0, DB_BTREE, DB_TRUNCATE, 0600); ]]
+),
+[AC_DEFINE(BERKELEYDB_HAS_TXN, 0,
+           [Does BerkeleyDB have transaction support?])
+AC_MSG_RESULT(no)],
+[AC_MSG_WARN([Your BerkeleyDB installation is not usable for Pathfinder.
+Duplicate removal feature in pf-shred will be disabled.])
+have_berkeleydb='xno'])])
+
+fi   dnl BerkeleyDB library found?
+
 LDFLAGS="$save_LDFLAGS"
 CPPFLAGS="$save_CPPFLAGS"
 
