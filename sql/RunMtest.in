@@ -13,9 +13,18 @@ then
 	exit 1
 fi
 
+# where compiled modules are to be found
+MOD_PATH="${builddir}/src/server/.libs:${MONET_PREFIX}/lib/MonetDB"
+
+if [ "${LD_LIBRARY_PATH}" ] ; then
+	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
+fi
+if [ "${uname}" = "Darwin"  -a  "${DYLD_LIBRARY_PATH}" ] ; then
+	DYLD_LIBRARY_PATH=":${DYLD_LIBRARY_PATH}"
+fi
+
 # enhance PATH with Msql and MonetDB binaries
 PATH="${builddir}/src/client:${builddir}/src/tools:${MONET_PREFIX}/bin:$PATH"
-MOD_PATH="${builddir}/src/server/.libs:${MONET_PREFIX}/lib/MonetDB"
 libpath="${MOD_PATH}:${builddir}/src/client/.libs:${builddir}/src/common/.libs:${builddir}/src/odbc/driver/.libs:${builddir}/src/odbc/setup/.libs"
 LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
 if [ "${uname}" = "Darwin" ] ; then
