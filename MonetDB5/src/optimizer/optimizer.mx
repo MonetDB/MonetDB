@@ -95,6 +95,12 @@ pattern factorize(mod:str, fcn:str):str
 address QOTFToptimizerCALL
 comment "Garbage collector optimizer";
 
+pattern partitionedQuery():str 
+address QOTBPToptimizer;
+pattern partitionedQuery(mod:str, fcn:str):str 
+address QOTBPToptimizerCALL
+comment "Reversal idempotency removal";
+
 pattern setDebug():void 
 address QOTdebugOptimizers;
 pattern clrDebug():void 
@@ -167,6 +173,7 @@ optimizer.prelude();
 #include "mal_commonExpressions.h"
 #include "mal_garbageCollector.h"
 #include "mal_factorize.h"
+#include "mal_partitionedQuery.h"
 #include "mal_strengthReduction.h"
 #include "mal_scenario.h"
 
@@ -219,10 +226,10 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		s= findSymbolInModule(scope,fcnnme);
 
 	if( s == NULL)
-		GDKerror("@1optimizer:Could not find %s.%s\n",modnme,fcnnme);
+		GDKerror(@2" optimizer:Could not find %s.%s\n",modnme,fcnnme);
 	if(debugOpt) { i= c->itrace; c->itrace='n';}
 	@1optimizer(s->def,0,0);
-	optimizerCheck(s->def,"@1optimizer",1,GDKusec()-clk);
+	optimizerCheck(s->def,@2 " optimizer",1,GDKusec()-clk);
 	if(debugOpt) { c->itrace=i;}
 	/* if(c->listing) printFunction(GDKout,s->def,c->listing);*/
 
@@ -235,15 +242,16 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return NULL;
 }
 @c
-	@:QOTC(CX)@
-	@:QOTC(AR)@
-	@:QOTC(DC)@
-	@:QOTC(SP)@
-	@:QOTC(GC)@
-	@:QOTC(RR)@
-	@:QOTC(OR)@
-	@:QOTC(FT)@
-	@:QOTC(SR)@
+	@:QOTC(CX,"commonExpressionRemoval")@
+	@:QOTC(AR,"aliasRemoval")@
+	@:QOTC(DC,"deadCodeRemoval")@
+	@:QOTC(SP,"selectPushdown")@
+	@:QOTC(GC,"garbageCollector")@
+	@:QOTC(RR,"reversalRemoval")@
+	@:QOTC(BPT,"partitionedQuery")@
+	@:QOTC(OR,"expressionAccumulation")@
+	@:QOTC(FT,"factorize")@
+	@:QOTC(SR,"strengthReduction")@
 
 str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str modnme;
@@ -357,4 +365,5 @@ str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		BBPunfix(joins[i]->batCacheid);
     return NULL;
 }
+
 @}
