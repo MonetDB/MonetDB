@@ -40,7 +40,7 @@
 #define fatal(m) printf("Fatal '%s' file=%s, line=%d", m, __FILE__, __LINE__);
 #define fatalex(m) {fatal(m); exit(1); }
 
-#ifdef WIN32
+#ifdef NATIVE_WIN32
 
 #include <Windows.h>
 
