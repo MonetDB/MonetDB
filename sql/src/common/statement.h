@@ -7,6 +7,11 @@
 #include "catalog.h"
 #include "var.h"
 
+#define RDONLY 0
+#define INS 1
+#define DEL 2
+#define UPD 3
+
 typedef enum stmt_type {
 	st_none,
 	st_schema,
@@ -14,6 +19,9 @@ typedef enum stmt_type {
 	st_column,
 	st_key,
 	st_bat,
+	st_ubat,
+	st_obat,
+	st_dbat,
 	st_drop_schema,
 	st_create_schema,
 	st_drop_table,
@@ -41,10 +49,9 @@ typedef enum stmt_type {
 	st_select2,
 	st_copyfrom,
 	st_insert,
-	st_insert_column,
 	st_like,
-	st_update,
 	st_replace,
+	st_update,
 	st_delete,
 	st_count,
 	st_const,
@@ -127,7 +134,9 @@ extern stmt *stmt_create_column(stmt *t, column * c);
 extern stmt *stmt_not_null(stmt * col);
 extern stmt *stmt_default(stmt * col, stmt * def);
 
-extern stmt *stmt_column(column * c, tvar * basetable);
+extern stmt *stmt_cbat(column * c, tvar * basetable, int access, int type);
+extern stmt *stmt_tbat(table * t, int access, int type);
+
 extern stmt *stmt_reverse(stmt * s);
 extern stmt *stmt_atom(atom * op1);
 extern stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype);
@@ -161,9 +170,7 @@ extern stmt *stmt_sets(list * s1);
 
 extern stmt *stmt_copyfrom(table * t, char *file, char *tsep, char *rsep, int nr );
 
-extern stmt *stmt_insert(table * t, list * l);
-extern stmt *stmt_insert_column(stmt * c, stmt * a);
-extern stmt *stmt_update(column * c, stmt * values);
+extern stmt *stmt_insert(stmt *c, stmt * values);
 extern stmt *stmt_replace(stmt * c, stmt * values);
 extern stmt *stmt_delete(table * t, stmt * where);
 

@@ -184,17 +184,27 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_select: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r = stmt_dump( s->op2.stval, nr, sql );
+		if (s->op2.stval->nrcols >= 1){
+			char *op = "=";
+			switch(s->flag){
+			case cmp_equal: op = "="; break;
+			case cmp_notequal: op = "!="; break;
+			case cmp_lt: op = "<"; break;
+			case cmp_lte: op = "<="; break;
+			case cmp_gt: op = ">"; break;
+			case cmp_gte: op = ">="; break;
+			default:
+				len += snprintf( buf+len, BUFSIZ-len, 
+					"error impossible\n");
+	  		} 
+			len += snprintf( buf+len, BUFSIZ-len, 
+				"s%d := [%s](s%d,s%d).select(TRUE);\n", 
+				-s->nr, op, l, r ); 
+		} else {
 		switch(s->flag){
 		case cmp_equal:
-			if (s->op3.stval){
-			    int r2 = stmt_dump( s->op3.stval, nr, sql );
-			    len += snprintf( buf+len, BUFSIZ-len, 
-				"s%d := s%d.uselect(s%d, s%d);\n", 
-				-s->nr, l, r, r2 ); 
-			} else {
-			    len += snprintf( buf+len, BUFSIZ-len, 
+			len += snprintf( buf+len, BUFSIZ-len, 
 				"s%d := s%d.uselect(s%d);\n", -s->nr, l, r ); 
-			}
 			break;
 		case cmp_notequal:
 			(void)(*nr)++; 
@@ -227,6 +237,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			len += snprintf( buf+len, BUFSIZ-len, 
 					"error impossible\n");
 	  	} 
+		}
 	} break;
 	case st_select2: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
@@ -318,14 +329,45 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	  	} break;
 	}
 	case st_bat:
+	case st_ubat: {
+		char *type = (s->type==st_dbat)?"":"_ubat";
 		if (table_isview(s->op1.cval->table)){
 			s->nr = -stmt_dump( s->op1.cval->s, nr, sql );
 		} else {
 			len += snprintf( buf+len, BUFSIZ-len, 
-			  "s%d := mvc_bind(myc, \"%s\", \"%s\");\n", 
-			  -s->nr, s->op1.cval->table->name, s->op1.cval->name );
+			  	"s%d := mvc_bind%s(myc, \"%s\", \"%s\", %d)",
+			  -s->nr, type, s->op1.cval->table->name, 
+			  s->op1.cval->name, s->flag);
+
+			if (s->flag > RDONLY){
+				len += snprintf( buf+len, BUFSIZ-len, 
+			  		".access(BAT_WRITE)"); 
+			}
+			len += snprintf( buf+len, BUFSIZ-len, "; #%s\n", 
+			  s->h->tname?s->h->tname:s->h->t->name );
+			if (sql->debug&4){
+		  		len += snprintf( buf+len, BUFSIZ-len, 
+				"s%d.info.print();", -s->nr);
+			}
 		}
-		break;
+	} break;
+	case st_dbat:
+	case st_obat: {
+		char type = (s->type==st_dbat)?'d':'o';
+		len += snprintf( buf+len, BUFSIZ-len, 
+		  	"s%d := mvc_bind_%cbat(myc, \"%s\", %d)",
+			  -s->nr, type, s->op1.tval->name, s->flag);
+
+		if (s->flag > RDONLY){
+			len += snprintf( buf+len, BUFSIZ-len, 
+		  		".access(BAT_WRITE)"); 
+		}
+		len += snprintf( buf+len, BUFSIZ-len, ";\n" ); 
+		if (sql->debug&4){
+			len += snprintf( buf+len, BUFSIZ-len, 
+			"s%d.info.print();\n", -s->nr);
+		}
+	} break;
 	case st_reverse: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ-len, 
@@ -347,12 +389,16 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		if (s->op2.stval){
 			int r = stmt_dump( s->op2.stval, nr, sql );
 			len += snprintf( buf+len, BUFSIZ-len, 
-			  "s%d := s%d.reverse().mark(oid(s%d)).reverse();\n", 
-			  -s->nr, l, r);
+			 "s%d := s%d.reverse().mark(oid(s%d)).reverse();# %s\n",
+			  -s->nr, l, r, 
+			  	(!s->t)?"unknown":
+			  	s->t->tname?s->t->tname:s->t->t->name);
 		} else if (s->flag >= 0){
 			len += snprintf( buf+len, BUFSIZ-len, 
-			  "s%d := s%d.reverse().mark(oid(%d)).reverse();\n", 
-			  -s->nr, l, s->flag);
+			 "s%d := s%d.reverse().mark(oid(%d)).reverse();# %s\n", 
+			  -s->nr, l, s->flag, 
+			  	(!s->t)?"unknown":
+			  	s->t->tname?s->t->tname:s->t->t->name);
 		} else {
 			len += snprintf( buf+len, BUFSIZ-len, 
 			  "s%d := s%d.reverse().mark().reverse();\n", -s->nr, l);
@@ -527,20 +573,13 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r = stmt_dump( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ-len, 
-		  "s%d := insert(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
-	} break;
-	case st_update: {
-		int r = stmt_dump( s->op2.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ-len, 
-		  "s%d := mvc_update(myc, \"%s\", \"%s\", s%d);\n", 
-		    -s->nr,	s->op1.cval->table->name, s->op1.cval->name, r);
+		  "s%d := insert(s%d,s%d);\n", -s->nr, l, r);
 	} break;
 	case st_replace: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r = stmt_dump( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ-len, 
-		  "s%d := [oid](s%d.reverse()).reverse().access(BAT_WRITE).replace(s%d);\n", 
-		  -s->nr, l, r);
+		  "s%d := replace(s%d,s%d);\n", -s->nr, l, r);
 	} break;
 	case st_delete: {
 		if (s->op2.stval){
@@ -588,39 +627,16 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	} break;
 	case st_insert: {
 		stmt *r = s->op2.lval->h->data;
-		if (r->nrcols > 0  /* insert columns */
-		   || (!(sql->optimize & SQL_FAST_INSERT)) ){
-			for( n = s->op2.lval->h ;n; n = n->next ){
-				stmt_dump(n->data, nr, sql);
-			}
-			len += snprintf( buf+len, BUFSIZ-len, 
-				"mvc_insert(myc, \"%s\"", s->op1.tval->name );
-			for( n = s->op2.lval->h ;n; n = n->next ){
-				r = n->data;
-				len += snprintf( buf+len, BUFSIZ-len, 
-					",s%d", r->nr);
-			}
-			len += snprintf( buf+len, BUFSIZ-len, ");\n" );
-		} else {
-			len += snprintf( buf+len, BUFSIZ-len, "0,%s,", 
-				      s->op1.tval->name );
-			for( n = s->op2.lval->h ;n; n = n->next ){
-				char *s = NULL;
-				r = n->data;
-				while(r->type == st_unop){ /* cast */
-					if (strcmp(r->op2.funcval->name,
-							"neg") ==0){
-						buf[len] = '-';
-						len++;
-					}
-					r = r->op1.stval;
-				}
-				len += snprintf( buf+len, BUFSIZ-len, "%s,",
-				   s = atom_dump_fast(r->op1.aval) );
-				_DELETE(s);
-			}
-			len += snprintf( buf+len, BUFSIZ-len, "\n" );
+		for( n = s->op2.lval->h ;n; n = n->next ){
+			stmt_dump(n->data, nr, sql);
 		}
+		len += snprintf( buf+len, BUFSIZ-len, 
+			"mvc_insert(myc, \"%s\"", s->op1.tval->name );
+		for( n = s->op2.lval->h ;n; n = n->next ){
+			r = n->data;
+			len += snprintf( buf+len, BUFSIZ-len, ",s%d", r->nr);
+		}
+		len += snprintf( buf+len, BUFSIZ-len, ");\n" );
 	} break;
 	case st_ordered: {
 		int l =  stmt_dump( s->op1.stval, nr, sql );
@@ -686,7 +702,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_result: {
 		stmt *k = s->op1.stval;
 		int l =  stmt_dump( k, nr, sql );
-		if (k->type != st_insert || !(sql->optimize & SQL_FAST_INSERT)){
+		if (k->type != st_insert){
 			len += snprintf( buf+len, BUFSIZ-len,
 			"result(Output,mvc_type(myc),mvc_status(myc));\n",l);
 		} else {
@@ -711,8 +727,10 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	buf[len] = '\0';
 	sql->out->write( sql->out, buf, 1, len );
 
+	/*
 	for (n = s->uses->h; n; n = n->next)
 		stmt_dump(n->data, nr, sql );
+		*/
 
 	if (sql->debug&8)
 		fwrite( buf, 1, len, stderr);

@@ -641,32 +641,31 @@ int stmt2xml( stmt *s, int *nr, context *sql ){
 				"s%d := %s;\n", s->nr, atom2xml(s->op1.aval));
 		FXNODE;
 	} break;
-	case st_insert_column: {
+	case st_insert: {
 		int l,r;
 		XNODE("insert_column");
 		l = stmt2xml( s->op1.stval, nr, sql );
 		r = stmt2xml( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
-		  "s%d := insert(s%d.access(BAT_WRITE),s%d);\n", s->nr, l, r);
+		  "s%d := insert(s%d,s%d);\n", s->nr, l, r);
 		FXNODE;
 	} break;
 	case st_update: {
-		int r;
-		XNODE("update");
-		r = stmt2xml( s->op2.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, 
-		  "s%d := mvc_update(myc, oid(%ld), oid(%ld), s%d);\n", 
-		    s->nr,	s->op1.cval->table->id, s->op1.cval->id, r);
-		FXNODE;
-	} break;
-	case st_replace: {
 		int l,r;
 		XNODE("update");
 		l = stmt2xml( s->op1.stval, nr, sql );
 		r = stmt2xml( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
-		  "s%d := [oid](s%d.reverse()).reverse().access(BAT_WRITE).replace(s%d);\n", 
-		  s->nr, l, r);
+		  "s%d := replace(s%d,s%d);\n", s->nr, l, r);
+		FXNODE;
+	} break;
+	case st_replace: {
+		int l,r;
+		XNODE("replace");
+		l = stmt2xml( s->op1.stval, nr, sql );
+		r = stmt2xml( s->op2.stval, nr, sql );
+		len += snprintf( buf+len, BUFSIZ, 
+		  "s%d := replace(s%d,s%d);\n", s->nr, l, r);
 		FXNODE;
 	} break;
 	case st_delete: {
@@ -711,42 +710,6 @@ int stmt2xml( stmt *s, int *nr, context *sql ){
 		XNODE("list");
 		for( n = s->op1.lval->h; n; n = n->next ){
 			(void)stmt2xml( n->data, nr, sql );
-		}
-		FXNODE;
-	} break;
-	case st_insert: {
-		XNODE("insert");
-		if (!(sql->optimize & SQL_FAST_INSERT)){
-			for( n = s->op2.lval->h ;n; n = n->next ){
-				stmt2xml(n->data, nr, sql);
-			}
-			len += snprintf( buf+len, BUFSIZ, 
-				"mvc_insert(myc, %ld", s->op1.tval->id );
-			for( n = s->op2.lval->h ;n; n = n->next ){
-				stmt *r = n->data;
-				len += snprintf( buf+len, BUFSIZ, ",s%d",r->nr);
-			}
-			len += snprintf( buf+len, BUFSIZ, ");\n" );
-		} else {
-			len += snprintf( buf+len, BUFSIZ, "0,%ld,", 
-				      s->op1.tval->id );
-			for( n = s->op2.lval->h ;n; n = n->next ){
-				char *s = NULL;
-				stmt *r = n->data;
-				if (r->op3.stval){
-					stmt *a = r->op3.stval;
-					while(a->type == st_unop){ /* cast */
-						a = a->op1.stval;
-					}
-					len += snprintf( buf+len, BUFSIZ, "%s,",
-					   s = atom2xml_fast(a->op1.aval) );
-				} else {
-					len += snprintf( buf+len, BUFSIZ, "%s,",
-					   s = atom2xml_fast(r->op1.aval) );
-				}
-				_DELETE(s);
-			}
-			len += snprintf( buf+len, BUFSIZ, "\n" );
 		}
 		FXNODE;
 	} break;

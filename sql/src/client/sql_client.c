@@ -157,7 +157,7 @@ main(int ac, char **av)
 	char *user = NULL, *passwd = "";
 	char *prog = *av, *host = "localhost";
 	int debug = 0, fd = 0, port = 45123;
-	int opt = SQL_FAST_INSERT, i = 0;
+	int i = 0;
 	context lc;
 
 	static struct option long_options[] =
@@ -168,7 +168,6 @@ main(int ac, char **av)
                {"passwd", 1, 0, 'P'},
                {"schema", 1, 0, 's'},
                {"user", 1, 0, 'u'},
-               {"optimize", 1, 0, 'o'},
                {0, 0, 0, 0}
              };
 
@@ -209,9 +208,6 @@ main(int ac, char **av)
 		case 'u':
 			user=_strdup(optarg);
 			break;
-		case 'o':
-			opt=strtol(optarg,NULL,10);
-			break;
 		case '?':
 			usage(prog);
 		default:
@@ -237,7 +233,7 @@ main(int ac, char **av)
 	if (!schema) schema = _strdup("default-schema");
 	if (!user) user = _strdup("sqladmin");
 
-	i = snprintf(buf, BUFSIZ, "info(\"%s\", %d, %d);\n", user, debug, opt);
+	i = snprintf(buf, BUFSIZ, "info(\"%s\", %d);\n", user, debug );
 	ws->write( ws, buf, i, 1 );
 	ws->flush( ws );
 
@@ -266,7 +262,6 @@ main(int ac, char **av)
 
 	memset(&lc, 0, sizeof(lc));
 	sql_init_context( &lc, ws, debug, default_catalog_create() );
-	lc.optimize = opt;
 	catalog_create_stream( rs, &lc );
 
 	lc.cat->cc_getschema( lc.cat, schema, user );

@@ -269,7 +269,7 @@ static tvar *scope_add_table_columns(scope * scp, table * t, char *tname)
 	node *n = t->columns->h;
 	for (; n; n = n->next) {
 		column *c = n->data;
-		stmt *sc = stmt_column(c, tv);
+		stmt *sc = stmt_cbat(c, tv, RDONLY, st_bat);
 		table_add_column(tv, c, sc, tv->tname, c->name);
 	}
 	return tv;
@@ -1285,7 +1285,7 @@ static stmt *sets2pivot(context * sql, list * ll)
 					stmt *md = m->data;
 					if (cd->t == md->t) {
 						list_append (inserts,
-						     stmt_insert_column
+						     stmt_insert
 						     (cd, md));
 					}
 					c = c->next;
@@ -1347,7 +1347,7 @@ static stmt *find_on_column_name(context * sql, scope * scp, tvar * t,
 	for (m = t->t->columns->h; m; m = m->next) {
 		column *rc = m->data;
 		if (strcmp(name, rc->name) == 0) {
-			return stmt_column(rc, t);
+			return stmt_cbat(rc, t, RDONLY, st_bat);
 		}
 	}
 	return NULL;
@@ -1362,7 +1362,7 @@ static list *join_on_column_name(context * sql, scope * scp, tvar * tv,
 		column *lc = n->data;
 		stmt *rs = find_on_column_name(sql, scp, r, lc->name);
 		if (rs) {
-			list_append(res, stmt_column(lc, tv));
+			list_append(res, stmt_cbat(lc, tv, RDONLY, st_bat));
 			list_append(res, rs);
 		} else if (all) {
 			list_destroy(res);
@@ -1507,7 +1507,7 @@ static stmt *sql_join_
 		if (jointype == jt_left || jointype == jt_full) {
 			column *cs = t->columns->h->data;
 			/* we need to add the missing oid's */
-			ld = stmt_diff(stmt_column(cs, tv1),
+			ld = stmt_diff(stmt_cbat(cs, tv1, RDONLY, st_bat),
 				       stmt_reverse(fs1));
 			ld = stmt_mark(stmt_reverse(ld), -1);
 		}
@@ -1515,7 +1515,7 @@ static stmt *sql_join_
 		if (jointype == jt_right || jointype == jt_full) {
 			column *cs = t->columns->h->data;
 			/* we need to add the missing oid's */
-			rd = stmt_diff(stmt_column(cs, tv2),
+			rd = stmt_diff(stmt_cbat(cs, tv2, RDONLY, st_bat),
 				       stmt_reverse(fs2));
 			rd = stmt_mark(stmt_reverse(rd), -1);
 		}
@@ -1526,8 +1526,9 @@ static stmt *sql_join_
 
 			list_append(l1,
 					 stmt_join(fs1,
-						   stmt_column
-						   (cs, tv1), cmp_equal));
+						   stmt_cbat
+						   (cs, tv1, RDONLY, st_bat), 
+						   cmp_equal));
 		}
 		t = tv2->t;
 		for (n = t->columns->h; n; n = n->next) {
@@ -1535,8 +1536,9 @@ static stmt *sql_join_
 
 			list_append(l1,
 					 stmt_join(fs2,
-						   stmt_column
-						   (cs, tv2), cmp_equal));
+						   stmt_cbat
+						   (cs, tv2, RDONLY, st_bat), 
+						   cmp_equal));
 		}
 		l2 = create_stmt_list();
 		if (jointype == jt_left || jointype == jt_full) {
@@ -1550,9 +1552,8 @@ static stmt *sql_join_
 						 stmt_union(m->data,
 							    stmt_join
 							    (ld,
-							     stmt_column
-							     (cs,
-							      tv1),
+							     stmt_cbat(cs, tv1,
+								RDONLY, st_bat),
 							     cmp_equal)));
 			}
 			t = tv2->t;
@@ -1599,9 +1600,8 @@ static stmt *sql_join_
 						 stmt_union(m->data,
 							    stmt_join
 							    (rd,
-							     stmt_column
-							     (cs,
-							      tv2),
+							     stmt_cbat(cs, tv2,
+							      RDONLY, st_bat),
 							     cmp_equal)));
 			}
 			list_destroy(l1);
@@ -1640,10 +1640,10 @@ static stmt *sql_cross(context * sql, scope * scp, symbol * q)
 	if (!tv1 || !tv2)
 		return NULL;
 
-	ct = stmt_join(stmt_column
-		       (tv1->t->columns->h->data, tv1),
-		       stmt_reverse(stmt_column
-				    (tv2->t->columns->h->data, tv2)), cmp_all);
+	ct = stmt_join(stmt_cbat
+		       (tv1->t->columns->h->data, tv1, RDONLY, st_bat),
+		       stmt_reverse(stmt_cbat (tv2->t->columns->h->data, 
+				       tv2, RDONLY, st_bat)), cmp_all);
 
 	if (ct) {
 		list *rl = create_stmt_list();
@@ -1660,12 +1660,9 @@ static stmt *sql_cross(context * sql, scope * scp, symbol * q)
 			t = tv->t;
 			for (n = t->columns->h; n; n = n->next) {
 				column *cs = n->data;
-				list_append(rl,
-						 stmt_join
-						 (foundsubset,
-						  stmt_column(cs,
-							      tv),
-						  cmp_equal));
+				list_append(rl, stmt_join (foundsubset,
+				   stmt_cbat(cs, tv, RDONLY, st_bat),
+					  cmp_equal));
 			}
 		}
 		return stmt_list(rl);
@@ -1767,9 +1764,9 @@ static stmt *columns_exp(context * sql, scope * scp, symbol * column_e,
 			foundsubset = stmt_join(grp->ext,
 						foundsubset, cmp_equal);
 		while (n) {
-			list_append(columns,
-				stmt_join(foundsubset,
-					stmt_column(n->data, tv), cmp_equal));
+			list_append(columns, stmt_join(foundsubset,
+				stmt_cbat(n->data, tv, RDONLY, st_bat), 
+					cmp_equal));
 			n = n->next;
 		}
 		return stmt_list(columns);
@@ -2694,12 +2691,18 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn )
 		node *n;
 		stmt *cur = NULL;
 		for (n = scp->tables->h; n; n = n->next) {
-			tvar *v = n->data;
+			tvar *tv = n->data;
 			stmt *tmp = NULL;
-			cvar *cv = v->columns->h->data;
+			cvar *cv = tv->columns->h->data;
 			tmp = cv -> s;
 			if (!cur) {
-				cur = tmp;
+				if (!table_isview(tv->t)){
+					cur = stmt_diff(tmp,
+					 stmt_reverse(
+					  stmt_tbat(tv->t, RDONLY, st_dbat )));
+				} else {
+					cur = tmp;
+				}
 			} else {
 				tmp =
 				    stmt_join(cur,
@@ -2725,8 +2728,8 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn )
 		if (s && sn->groupby) {
 			grp = query_groupby(sql, scp, sn->groupby, s);
 			if (!grp) {
-				if (subset)
-					stmt_destroy(subset);
+				if (s)
+					stmt_destroy(s);
 				return NULL;
 			}
 		}
@@ -2734,8 +2737,8 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn )
 		if (s && list_length(scp->lifted) > 0) {
 			grp = query_groupby_lifted(sql, scp, s);
 			if (!grp) {
-				if (subset)
-					stmt_destroy(subset);
+				if (s)
+					stmt_destroy(s);
 				return NULL;
 			}
 		}
@@ -2816,8 +2819,9 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn )
 				for (n = t->columns->h; n; n = n->next) {
 					column *cs = n->data;
 					list_append(rl,
-						stmt_join(foundsubset,
-						stmt_column(cs, tv),cmp_equal));
+					  stmt_join(foundsubset,
+					  stmt_cbat(cs, tv, RDONLY, st_bat),
+							cmp_equal));
 				}
 			}
 		} else {
@@ -3370,6 +3374,8 @@ static stmt *insert_value(context * sql, scope * scp, column * c,
 static stmt *insert_into(context * sql, dlist * qname,
 			 dlist * columns, symbol * val_or_q)
 {
+	scope *scp;
+	tvar *tv = NULL;
 
 	catalog *cat = sql->cat;
 	char *tname = table_name(qname);
@@ -3411,6 +3417,9 @@ static stmt *insert_into(context * sql, dlist * qname,
 	for (i = 0; i < len; i++)
 		inserts[i] = NULL;
 
+	scp = scope_open(NULL);
+	tv = scope_add_table_columns(scp, t, t->name);
+
 	if (val_or_q->token == SQL_VALUES) {
 		dlist *values = val_or_q->data.lval;
 		if (dlist_length(values) != list_length(collist)) {
@@ -3418,6 +3427,7 @@ static stmt *insert_into(context * sql, dlist * qname,
 				 _
 				 ("Inserting into table %s, number of values doesn't match number of columns"),
 				 tname);
+			scp = scope_close(scp);
 			return NULL;
 		} else {
 			dnode *n;
@@ -3426,21 +3436,26 @@ static stmt *insert_into(context * sql, dlist * qname,
 			for (n = values->h, m = collist->h;
 			     n && m; n = n->next, m = m->next) {
 				column *c = m->data;
-				inserts[c->colnr] = insert_value(sql, NULL, 
-							c, n->data.sym);
+				inserts[c->colnr] = stmt_insert(
+				    stmt_cbat(c, tv, INS, st_bat), 
+				       insert_value(sql, NULL, c, n->data.sym));
 			}
 
 		}
 	} else {
 		stmt *s = sql_subquery(sql, NULL, val_or_q);
 
-		if (!s)
+
+		if (!s){
+			scp = scope_close(scp);
 			return NULL;
+		}
 		if (list_length(s->op1.lval) != list_length(collist)) {
 			snprintf(sql->errstr, ERRSIZE,
 				 _
 				 ("Inserting into table %s, query result doesn't match number of columns"),
 				 tname);
+			scp = scope_close(scp);
 			return NULL;
 		} else {
 			node *m, *n;
@@ -3448,16 +3463,18 @@ static stmt *insert_into(context * sql, dlist * qname,
 			for (n = s->op1.lval->h, m = collist->h;
 			     n && m; n = n->next, m = m->next) {
 				column *c = m->data;
-				inserts[c->colnr] = n->data;
+				inserts[c->colnr] = stmt_insert(
+					stmt_cbat(c, tv, INS, st_bat), n->data);
 			}
 		}
 	}
+	scp = scope_close(scp);
 	for (i = 0; i < len; i++) {
 		if (!inserts[i])
 			return NULL;
 		list_append(l, inserts[i]);
 	}
-	return stmt_insert(t, l);
+	return stmt_list(l);
 }
 
 static stmt *sql_update(context * sql, dlist * qname,
@@ -3471,12 +3488,13 @@ static stmt *sql_update(context * sql, dlist * qname,
 		snprintf(sql->errstr, ERRSIZE,
 			 _("Updating non existing table %s"), tname);
 	} else {
+		tvar *tv = NULL;
 		dnode *n;
 		list *l = create_stmt_list();
 		scope *scp;
 
 		scp = scope_open(NULL);
-		scope_add_table_columns(scp, t, t->name);
+		tv = scope_add_table_columns(scp, t, t->name);
 
 		if (opt_where){
 			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL);
@@ -3485,7 +3503,6 @@ static stmt *sql_update(context * sql, dlist * qname,
 		}
 
 		n = assignmentlist->h;
-		/* change to a list of (column, values-bats) */
 		while (n) {
 			symbol *a;
 			stmt *v;
@@ -3512,7 +3529,11 @@ static stmt *sql_update(context * sql, dlist * qname,
 				v = stmt_const(
 				  stmt_reverse(s ? first_subset(s) : cl->s), v);
 
-			list_append(l, stmt_update(cl->c, v));
+
+			list_append(l, stmt_replace(
+					stmt_cbat(cl->c, tv, UPD, st_bat), v));
+			list_append(l, stmt_insert(
+					stmt_cbat(cl->c, tv, UPD, st_ubat), v));
 			n = n->next;
 		}
 		scp = scope_close(scp);
@@ -3531,20 +3552,35 @@ static stmt *delete_searched(context * sql, dlist * qname,
 		snprintf(sql->errstr, ERRSIZE,
 			 _("Deleting from non existing table %s"), tname);
 	} else {
-		stmt *s = NULL;
+		int first = 1;
+		tvar *tv = NULL;
+		node *n;
+		stmt *v, *s = NULL;
 		scope *scp;
+		list *l = create_stmt_list();
+		sql_type *to = sql_bind_type("OID");
 
 		scp = scope_open(NULL);
-		scope_add_table_columns(scp, t, t->name);
+		tv = scope_add_table_columns(scp, t, t->name);
 
 		if (opt_where)
-			s = sql_logical_exp(sql, scp, opt_where, NULL,
-					    NULL);
+			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL);
 
-		s = stmt_delete(t, s);
-
+		v = stmt_const( s, stmt_atom(atom_general(to, NULL)));
+		list_append(l, stmt_insert(
+				stmt_tbat(tv->t, INS, st_dbat ), 
+				stmt_reverse( v )));
+		list_append(l, stmt_replace(
+				stmt_tbat(tv->t, DEL, st_obat), v));
+		for(n = t->columns->h; n; n = n->next){
+			column *c = n->data;
+			stmt *v = stmt_const( s, 
+				stmt_atom(atom_general(c->tpe, NULL)));
+			list_append(l, stmt_replace(
+					stmt_cbat(c, tv, DEL, st_bat), v));
+		}
 		scp = scope_close(scp);
-		return s;
+		return stmt_list(l);
 	}
 	return NULL;
 }

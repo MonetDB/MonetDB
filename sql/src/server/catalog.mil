@@ -123,6 +123,7 @@ sql_func( "strconcat", "+", "STRING", "STRING", "", "STRING");
 sql_func( "substring", "string", "VARCHAR", "INTEGER", "INTEGER", "VARCHAR");
 sql_func( "strconcat", "+", "VARCHAR", "VARCHAR", "", "VARCHAR");
 
-var sql_log_dir := view_gdk_env.find("gdk_dir");
-mvc_init(0,sql_log_dir);
+var dbname := monet_environment.find("gdk_dbname");
+var dbfarm := monet_environment.find("gdk_dbfarm");
+mvc_init(0,dbfarm + "/" + dbname);
 

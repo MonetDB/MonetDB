@@ -30,6 +30,8 @@ blocks which are completely writen to disk.
 extern void logger_init(int debug, char *dirname );
 extern void logger_exit();
 extern void log_bat(BAT *b);
+extern void log_bat_persists(BAT *b );
+extern void log_bat_transient(BAT *b );
 
 #endif /*_LOGGER_H_*/
 @c
@@ -70,7 +72,7 @@ int readlogs( char *filename ){
 void logger_init(int debug, char *dirname){
 	char buf[BUFSIZ];
 
-	logdir = strdup(dirname);
+	logdir = _strdup(dirname);
 	logger_debug = debug;
 
 	snprintf(buf, BUFSIZ, "%s%c%d.log", logdir, DIR_SEP, 0);
@@ -84,8 +86,44 @@ void logger_exit(){
 	log->destroy(log);
 }
 
+void log_bat_persists(BAT *b ){
+	int len;
+	char buf[BUFSIZ];
+	logformat l;
+
+	l.id = b->batCacheid;
+	l.flag = LOG_CREATE;
+	l.nr = 0;
+	log->write( log, (char*)&l, sizeof(logformat), 1 );
+	len = snprintf(buf, BUFSIZ,"%s,%s,%s", 
+			ATOMname(b->htype), 
+			ATOMname(b->ttype), 
+			BBPname(b->batCacheid) );
+	log->writeInt( log, len );
+	log->write( log, buf, len, 1 );
+	
+        if (logger_debug&2)
+		printf("new bat htype %d ttype %d id %d\n", 
+			b->htype, b->ttype, l.id );
+	log_bat(b);
+}
+void log_bat_transient(BAT *b ){
+	int len;
+	char buf[BUFSIZ];
+	logformat l;
+
+	l.id = b->batCacheid;
+	l.flag = LOG_DESTROY;
+	l.nr = 0;
+	log->write( log, (char*)&l, sizeof(logformat), 1 );
+	
+        if (logger_debug&2)
+		printf("destroyed bat htype %d ttype %d id %d\n", 
+			b->htype, b->ttype, l.id );
+	BATfakeCommit(b);
+}
+
 void log_bat(BAT *b ){
-	/* TODO write deletes/inserts to log */
 	logformat l;
 	int 	status;
 	BUN	p; 
@@ -119,8 +157,11 @@ void log_bat(BAT *b ){
 	    	if (logger_debug)
 			fprintf(stderr, "Logged %ld %d deletes\n", l.id, l.nr );
 	}
-/*
 	BATfakeCommit(b);
-*/
-	BATcommit(b);
 }
+
+void logger_commit(){
+	int *kills = TMfakeCommit();
+	TMkill(kills);
+}
+	

@@ -79,7 +79,7 @@ symbol *symbol_create_atom(context * lc, int token, atom * data)
 		fprintf(stderr, "%ld = symbol_create_atom(%s,%s)\n",
 			(long) s, token2string(s->s.token),
 			atom2string(data));
-	return s;
+	return (symbol*)s;
 }
 
 void symbol_destroy(symbol * s)

@@ -6,8 +6,6 @@
 
 #define ERRSIZE 1024
 
-#define SQL_FAST_INSERT 1
-
 typedef struct context {
 	int cur;
 	int prev;		/* previous token lr(1) is to restrictive for SQL */
@@ -17,7 +15,6 @@ typedef struct context {
 	int yylen;
 	int yysize;
 	int debug;
-	int optimize;
 
 	char *sql;
 	int sqllen;

@@ -153,7 +153,6 @@ void stmt_destroy(stmt * s)
 			list_destroy(s->op2.lval);
 			break;
 			/* stmt_destroy  op1 and op2 */
-		case st_replace:
 		case st_default:
 		case st_like:
 		case st_semijoin:
@@ -167,7 +166,8 @@ void stmt_destroy(stmt * s)
 		case st_ordered:
 		case st_reorder:
 		case st_binop:
-		case st_insert_column:
+		case st_insert:
+		case st_replace:
 		case st_add_col:
 			st_detach(s->op1.stval, s);
 			st_detach(s->op2.stval, s);
@@ -177,7 +177,6 @@ void stmt_destroy(stmt * s)
 			if (s->op2.stval)
 				st_detach(s->op2.stval, s);
 			break;
-		case st_update:
 		case st_delete:
 			if (s->op2.stval)
 				st_detach(s->op2.stval, s);
@@ -204,9 +203,6 @@ void stmt_destroy(stmt * s)
 		case st_list:
 		case st_triop:
 			list_destroy(s->op1.lval);
-			break;
-		case st_insert:
-			list_destroy(s->op2.lval);
 			break;
 		case st_sets:
 			{
@@ -259,16 +255,17 @@ void stmt_reset( stmt *s ){
 		stmt_reset(s->op1.stval);
 		break;
 
-	case st_replace: case st_default: case st_like: case st_semijoin: 
+	case st_default: case st_like: case st_semijoin: 
 	case st_diff: case st_intersect: case st_union: case st_join: 
 	case st_outerjoin: 
 	case st_const: case st_derive: case st_ordered: case st_reorder: 
-	case st_binop: case st_insert_column: case st_add_col:
+	case st_binop: case st_insert: case st_add_col:
+	case st_replace: 
 
 		stmt_reset(s->op1.stval);
 		stmt_reset(s->op2.stval);
 		break;
-	case st_update: case st_delete: 
+	case st_delete: 
 
 		if (s->op2.stval)
 			stmt_reset(s->op2.stval);
@@ -297,11 +294,6 @@ void stmt_reset( stmt *s ){
 		break;
 	case st_set: case st_list: case st_triop: 
 		for (n = s->op1.lval->h; n; n = n->next ){
-			stmt_reset( n->data );
-		}
-		break;
-	case st_insert: 
-		for (n = s->op2.lval->h; n; n = n->next ){
 			stmt_reset( n->data );
 		}
 		break;
@@ -475,17 +467,28 @@ stmt *stmt_default(stmt * col, stmt * def)
 	return s;
 }
 
-stmt *stmt_column(column * op1, tvar * basetable)
+stmt *stmt_cbat(column * op1, tvar * basetable, int access, int type)
 {
 	stmt *s = stmt_create();
-	s->type = st_bat;
+	s->type = type;
 	s->op1.cval = op1;
 	s->nrcols = 1;
+	s->flag = access;
 
 	if (basetable) {
 		s->h = basetable;
 		basetable->refcnt++;
 	}
+	return s;
+}
+
+stmt *stmt_tbat(table * t, int access, int type)
+{
+	stmt *s = stmt_create();
+	s->type = type;
+	s->nrcols = 0;
+	s->flag = access;
+	s->op1.tval = t;
 	return s;
 }
 
@@ -864,15 +867,6 @@ stmt *stmt_copyfrom(table * t, char * file, char * tsep, char * rsep, int nr )
 	return s;
 }
 
-stmt *stmt_insert(table * t, list * l)
-{
-	stmt *s = stmt_create();
-	s->type = st_insert;
-	s->op1.tval = t;
-	s->op2.lval = l;
-	return s;
-}
-
 stmt *stmt_list(list * l)
 {
 	stmt *s = stmt_create();
@@ -922,28 +916,16 @@ stmt *stmt_sets(list * l1)
 	return s;
 }
 
-stmt *stmt_insert_column(stmt * c, stmt * a)
+stmt *stmt_insert(stmt * c, stmt * a)
 {
 	stmt *s = stmt_create();
-	s->type = st_insert_column;
+	s->type = st_insert;
 	s->op1.stval = c;
 	st_attache(c, s);
 	s->op2.stval = a;
 	st_attache(a, s);
 	s->h = c->h;
 	s->t = c->t;
-	return s;
-}
-
-stmt *stmt_update(column * c, stmt * b)
-{
-	stmt *s = stmt_create();
-	s->type = st_update;
-	s->op1.cval = c;
-	s->op2.stval = b;
-	st_attache(b, s);
-	s->h = NULL;
-	s->nrcols = 1;
 	return s;
 }
 
@@ -955,8 +937,8 @@ stmt *stmt_replace(stmt * c, stmt * b)
 	st_attache(c, s);
 	s->op2.stval = b;
 	st_attache(b, s);
-	s->h = c->h;
-	s->nrcols = c->nrcols;
+	s->h = NULL;
+	s->nrcols = 1;
 	return s;
 }
 
@@ -1105,7 +1087,6 @@ sql_type *tail_type(stmt * st)
 	case st_select2:
 	case st_unique:
 	case st_union:
-	case st_update:
 	case st_replace:
 	case st_mark:
 	case st_name:
