@@ -355,6 +355,8 @@ faster system start.
 			}
 			if (strcmp(long_options[option_index].name, 
 						"dbinit") == 0){
+				if( dbinit)
+				fprintf(stderr,"!ERROR --dbinit set twice\n");
 				dbinit = optarg;
 				break;
 			}
@@ -407,11 +409,6 @@ faster system start.
 	i = 0;
 	monet_script = (str*)GDKmalloc( sizeof(str) * (argc+1) );
 	monet_script[i] = NULL;
-	if( dbinit) {
-		monet_script[i] = absolute_path(dbinit);
-		monet_script[i+1] = NULL;
-		i++;
-	}
 	while(optind < argc){
 		monet_script[i] = absolute_path(av[optind]);
 		monet_script[i+1] = NULL;

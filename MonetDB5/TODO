@@ -37,8 +37,6 @@ action.
 - keep the list of profile filters in server and update after each resolve call
 
 Implementation
-- BAT reference counting in the face of MAL function calls is not
-correct (tst220.mal and tst610.mal)
 - global resource management is not ok yet, for 10M tapestry it
 is about 5 times slower. It appears that it grows too slow,
 spending its time on copying bats all the time.
@@ -52,20 +50,22 @@ API issues
 
 V4 issues
 - overlay V4 database with V5 session
-- The V4 testing scheme has not been activated yet
-
 - The group and radix modules should be brought in line with V4
 - Several of the MIL scripts associated with the modules have not
   been converted yet. Reliance on scripts should be minimal
-- The constant definitions of MIL should go to a prelude file
-and not hardwired in the const.mx
+
 Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20040801 The V4 testing scheme has been activated 
+20040805 The constant definitions of MIL should go to a prelude file
+	and not hardwired in the const.mx
 20040805 What to do with Mcreatedb and friends: not needed
 	wait for Mguardian
 20040804 add multiple path analysis (searchpath.mx from V4)
+20040730 BAT reference counting in the face of MAL function calls is not
+correct (tst220.mal and tst610.mal)
 20040529 replace module and function names with entries into a system/user id table
   [expected gain 10-20% due to less mallocs of small structures]
   [only seen in very lengthy programs
