@@ -497,7 +497,6 @@ void pushCatchDefault(MalBlkPtr mb, str nme, int autocommit){
 	getDestVar(p) = i;
 	p->argc =1;
 	p->retc = 1;
-	p->barrier= CATCHsymbol;
 	pushInstruction(mb,p);
 
 	p= newInstruction(ASSIGNsymbol);

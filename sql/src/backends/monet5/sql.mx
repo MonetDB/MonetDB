@@ -172,13 +172,13 @@ command dropTable(name:str,  cascade:bit )
 address mvc_drop_table_wrap 
 comment "Drop table from a schema";
 
-command createTable(name:str, temp:int, size:int):void 
-address mvc_create_table_wrap
-comment "Create table in current schema";
+#command createTable(name:str, temp:int, size:int):void 
+#address mvc_create_table_wrap
+#comment "Create table in current schema";
 
-command createView( name:str, sql:str) 
-address mvc_create_view_wrap 
-comment "Create view within the current schema";
+#command createView( name:str, sql:str) 
+#address mvc_create_view_wrap 
+#comment "Create view within the current schema";
 
 command dropColumn( name:str ) 
 address mvc_drop_column_wrap 
@@ -661,6 +661,7 @@ str mvc_drop_schema_wrap(int *ret, str *name){
 	return MAL_SUCCEED;
 }
 
+/* old
 str mvc_create_table_wrap(int *ret, str *name, bit* temp, int *size){
 	backend *be;
 	mvc *c;
@@ -690,6 +691,7 @@ str mvc_create_view_wrap(int *ret, str *name, str *sql){
 	*ret = 0;
 	return MAL_SUCCEED;
 }
+*/
 
 str mvc_drop_table_wrap(int *ret, str *name, bit* cascade){
 	backend *be;

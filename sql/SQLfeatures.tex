@@ -10,7 +10,7 @@
 \usepackage{color}
 \usepackage{url}
 \begin{document}
-\title{The MonetDB SQL front-end}
+\title{The MonetDB/SQL front-end}
 \author{ Niels Nes, Martin Kersten, {\small \textsc{CWI}, Netherlands}}
 \date{}
 \maketitle
@@ -42,13 +42,265 @@ This document has been written to give a quick introduction on the SQL
 front-end, its limitations, and the way to use it. 
 Proficiency in SQL is assumed.
 Information on the architecture of MonetDB and the available programming
-language interfaces can be found on the website http://monetdb.cwi.nl.
-A historical database is used in Section \ref{Tutorial}
-set-up your first application.
-A brief description of the application interfaces is given in Section \ref{Apis}.
+language interfaces can be found on the website http://monetdb.cwi.nl/.
 
-\section{Session overview}
-discuss MapiClient and Mknife
+\section{Getting started}
+The MonetDB/SQL front-end can be used in different ways. 
+A simple textual interface is described in Section \ref{mapi} and
+using it in through a web-form in Section\ref{form}.
+The ODBC and JDBC application interfaces provide the bridges
+to externally developed products. The interaction with
+a generic DBMS IDE is described in Section \ref{ide}.
+MonetDB comes with a home-brewed GUI, called Mknife, which
+is shortly introduced in Section \ref{mknife}
+
+The examples are illustrated using the VOC database, shortly introduced
+next.
+\subsection{The Dutch United East India Company (VOC)}
+Exploring the wealth of functionality offered by MonetDB is best
+started using a toy database being distributed with all packages.
+This database provides a peephole view into the administrative
+system of a multi-national company, the Verenigde Oostindische Companie (VOC).
+
+The VOC was granted a monopoly on the trade in the East Indies on March 20, 1602
+by the representatives of the provinces of the Dutch republic.
+Attached to this monopoly was the duty to fight the enemies of the Republic and 
+prevent other European nations to enter the East India trade.
+During its history of 200 years, the VOC became the largest company of its kind, 
+trading spices like nutmeg, cloves, cinnamon and pepper, and other consumer 
+products like tea, silk and Chinese porcelain.
+Her factories or trace centers were world famous: Desjima in Japan, 
+Mokha in Yemen, Surat in Persia and of course Batavia, 
+the Company's headquarters on Java.
+
+The history of the VOC is an active area of research and
+a focal point for multi-country heritage projects, e.g. 
+TANAP\footnote{http://www.tanap.net/content/about/heritage.htm},
+which includes a short historic overview of the VOC written by
+world expert on the topic F. Gaastra.
+The archives of the VOC are spread around the world, but a large
+contingent still resides in the 
+National Archive
+\footnote{ http://www.nationaalarchief.nl/collectie/zoeken/toegangen/VOC\_inventarissen/default.asp?ComponentID=5535\&SourcePageID=6947 }
+, The Hague.
+
+The archives comprise over 25 million historical records.
+Much of which has not (yet) been digitized.
+
+The MonetDB tutorial is based on the material published in the book 
+J.R. Bruijn, F.S. Gaastra and I. Schaar, Dutch-Asiatic Shipping in the 17th and 18th Centuries</i>, which
+gives an account of the trips made to the East and ships returned safely
+(or wrecked on the way). A total of 8000 records are provided. 
+They include information about ship name and type, captain,
+the arrival/departure of harbors along the route, personnel accounts, 
+and anecdotal information.
+
+The VOC database containst a single SQL table:
+{\footnotesize
+\begin{verbatim}
+create table voyage(
+         number integer,
+         trip   integer,
+          boatname varchar(25),
+         master varchar(25),
+         tonnage integer,
+         birth   varchar(10),
+         acquired integer,
+         yard    varchar(1),
+         chamber varchar(1),
+         departure       date,
+         harbour varchar(12),
+         cape_arrival date,
+         cape_departure date,
+         destination_arrival date,
+         destination_harbour varchar(12) );
+\end{verbatim}
+}
+
+\subsection{Textual interface}
+\label{mapi}
+In this section we illustrate the textual interface to MonetDB/SQL using the
+MapiClient program. This combination is the baseline for all interactions.
+Failure to get it working often implies a wrong or inconsistent installation.
+
+To start a session, you should have installed both the
+MonetDB back-end and SQL front-end according to the 'HowToStart' descriptions.
+\footnote{http://monetdb.cwi.nl/GetGoing/Download/index.html}
+
+The next step is to start the MonetDB server.
+Before you start, make sure that both back-end and front-end can be found.
+The command `which Mserver` and `which MapiClient` should return the proper path
+to the binaries.  
+Furthermore, critial information is retained in a configuration file. 
+By default, it is located in the distribution directory and in most
+cases it is sufficient.
+You may overrule configuration settings by making a copy into your 
+home directory (See \ref{configfile}).
+
+The MonetDB server does not contain hardwired knowledge on its SQL frontend.
+It must be initialized and told to accept SQL sessions. In a separate window
+start the server to access the VOC database:
+
+{\footnotesize
+\begin{verbatim}
+$ mkdir -p $PREFIX/var/MonetDB/dbfarm/VOC
+$ Mserver --dbname=VOC 
+# Monet Database Server V4.3.14
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+monet>module(sql_server);
+monet>
+\end{verbatim}
+}
+
+Here \$PREFIX denotes the path where MonetDB has been installed.
+All databases are kept in \$PREFIX/var/MonetDB/dbfarm unless this location
+has been changed in the monet.conf file.
+
+The server is initialized by loading the SQL module. It will listen
+to a default port for requests.
+In case loading the SQL module ("sql\_server") fails, this might be caused by
+the fact, that Mserver fails to find the module. There are two possible
+reasons for this:
+
+\begin{itemize}
+\item
+The SQL frontend it not installed. Since the SQL frontend comes from a separate 
+source repository,
+it should be installed separately (unless you did install the binary package on Windows).
+\item The SQL frontend is installed, but in a difference place, i.e., with a different 
+PREFIX, than MonetDB.
+In this case, you need to tell the Mserver, where to find the sql\_server module.
+You can do this by 
+adding the following switch when starting the Mserver:
+\begin{verbatim}
+--set monet_mod_path=$MONET_PREFIX/lib/MonetDB:\
+\$SQL_PREFIX/lib/MonetDB
+\end{verbatim}
+\$MONET\_PREFIX and \$SQL\_PREFIX denote the pathes where MonetDB respectively SQL have
+been installed.
+Alternatively, you can add \$SQL\_PREFIX/lib/MonetDB to the monet\_mod\_path in your
+ monet.conf file.
+\end{itemize}
+
+If you get an error message, e.g. 'port already in use', you might have 
+an obsolete Mserver process hanging around which should be killed first.
+
+The distribution comes with a simple textual interface with
+command-line history features, called MapiClient.
+To connect to the running MonetDB/SQL server using the
+default authorization information, type:
+
+\begin{verbatim}
+$ MapiClient  -lsql -u monetdb -P monetdb
+sql>
+\end{verbatim}
+You can also identify the port listening to SQL requests using
+the parameters '-p <sql\_port>'. Its default is obtained from
+the configuration file.
+To be assured of a proper SQL environment, you could inspect the catalog
+tables as follows, the actual output may slightly differ in your version:
+\begin{verbatim}
+sql> select name from tables;
+\# name \# name
+\# varchar \# type
+\# 12 \# tuplecount
+\# 1 \# id
+\# count 12
+[ "schemas"     ]
+[ "tables"      ]
+[ "columns"     ]
+[ "keys"        ]
+[ "idxs"        ]
+[ "keycolumns"  ]
+[ "types"       ]
+[ "users"       ]
+[ "auths"       ]
+[ "user\_role"   ]
+[ "table\_privileges"    ]
+[ "column\_privileges"   ]
+\end{verbatim}
+
+If you do not see the sql$>$ prompt, or worse get an error
+message 'connection refused' you may call for an expert.
+It indicates use of an inconsistent MapiClient and Mserver,
+or basic problems in setting up a TCP/IP connection.
+
+The MapiClient provides a simple textual interface including
+a command line history. A synopsis of the commands can be obtained
+by typing '?'.
+
+The next step is to initialize and load the VOC database, if such has
+not been done before by your MonetDB system administrator. It involves
+creation of the SQL table, loading the tuples, and committing the
+transaction. All this is packaged in an SQL script file you should
+be able to find in the distribution tree under the name voc\_dump.sql.
+At the MapiClient console give the command to read sql statements
+from the designated file.
+
+\begin{verbatim}
+sql> <voc_dump.sql
+sql>
+\end{verbatim}
+
+The VOC database in its full incarnation contains over 8000
+records. To retrieve part of it, you have to use selection and order
+by predicates. A few illustrative SQL statements and snippets of
+the answers are shown.
+{\footnotesize
+\begin{verbatim}
+sql> select boatname,destination_arrival 
+sql> from voyage 
+sql> order by destination_arrival;
+# boatname destination_arrival # name
+# varchar date # type
+# 5 # tuplecount
+[ "LES DEUX SOEURS",           nil ]
+[ "BRESLAU",            1783-08-06 ]
+[ "POTSDAM",            1783-08-09 ]
+[ "MAGDEBURG",          1783-09-05 ]
+[ "GERECHTIGHEID",      1783-11-08 ]
+sql> create view R as 
+sql> select boatname as boot, tonnage as weight 
+sql> from voyage;
+sql> select * from R;
+# boot weight # name
+# varchar int # type
+# 5 # tuplecount
+[ "BRESLAU",            1150]
+[ "LES DEUX SOEURS",     582]
+[ "POTSDAM",            1150]
+[ "GERECHTIGHEID",      1150]
+[ "MAGDEBURG",          nil]
+sql> select boatname 
+sql> from voyage
+sql> where tonnage between 0 and 1000;
+# boatname # name
+# varchar # type
+# 1 # tuplecount
+[ "LES DEUX SOEURS" ]
+\end{verbatim}
+}
+
+\subsection{Simple web-form}
+label{form}
+\subsection{A DBMS gui}
+\label{ide}
+\subsection{Mknife}
+\label{mknife}
+A flexible graphical user interface has been designed to interact with
+the MonetDB server using any of its languages. The interaction is based
+on the Mapi protocol.
+
+Its working is described in a separate document, found on the
+MonetDB website \footnote{http://monetdb.cwi.nl/GetGoing/Usage/Mknife/index.html}.
+
+
+\section{Functional overview}
+\label{Functionality}
+The MonetDB/SQL front-end is designed with the SQL'03 standard as the reference
+point. The primary goal is to provide Core SQL'03 conformance and
+selectively add feature packages.
 
 \subsection*{Session parameters}
 A limited number of SQL session parameters can be set with the
@@ -59,19 +311,14 @@ the following paramters.
 \begin{tabular}{ll l}
 auto\_commit & boolean & toggle the auto commit transaction mode\\
 reply\_size & integer & limit the number of tuples returned by a query. (-1 implies everything being returned)\\
-explain & "mil" | "sql" & toggle between {\sc sql} execution and
-explanation of the intermediate code produced by the compiler\\
+explain & 'plan' & Generate the MIL query execution plan\\
+	& 'history' & keep a log of the statements executed in the history table\\
 debug & integer value & toggle debugging flags inside the system. 
 See for an overview the MonetDB configuration file\\
 \end{tabular}
 
-\section{Functional overview}
-\label{Functionality}
-The MonetDB/SQL front-end is designed with the SQL'03 standard as the reference
-point. The primary goal is to provide Core SQL'03 conformance and
-selectively add feature packages.
-
 %Packages included
+\subsection*{Packages}
 The feature packages identified in the standard are often vendor specific
 and their design reflect more the result of a democratic process then
 the result of a scientific/engineering task.
@@ -276,7 +523,10 @@ Strict serializability is the sole isolation level supported.
 \subsubsection*{START TRANSACTION}
 \subsubsection*{TRUNCATE TABLE}
 
-\subsection{The todo-list}
+\section{Configuration files}
+\label{configfile}
+
+\section{The todo-list}
 SQL'99 and its successor SQL-2003 are extensive languages.
 Several language constructs have been included/retained for
 compatibility reasons, or a vendor pressing for it.
