@@ -178,6 +178,7 @@ int main(int argc,char ** av)
         mo_substitute(set, setlen, dbfarm);
 
 	/* not needed? if (!GDKinit(dbname, dbfarm,0)) return 1;  ERROR? */
+	(void) dbname;
 @-
 The files are processed as one big program
 @c

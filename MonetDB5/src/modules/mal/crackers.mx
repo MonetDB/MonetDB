@@ -182,6 +182,7 @@ int findCrackMap(int bid){
 	if( i== maxCrackMap){
 		CrackMap *x= (CrackMap*) GDKmalloc(sizeof(CrackMap) * (i+10));
 		if(crackMap){
+			fprintf(stderr,"reallocate Crackmap\n");
 			memcpy(x,crackMap, sizeof(CrackMap)* i);
 			GDKfree(crackMap);
 		}
@@ -235,6 +236,7 @@ str initCrackMap(CrackMap *map, int *bid){
 	char buf[128]; /* scratch space */
 
         @:getBATdescriptor(&result,bid,b,initCrackMap)@
+	(void) result;
 @-
 The target BAT should not be modified by the applications,
 otherwise the partitioning scheme becomes void
@@ -337,6 +339,7 @@ str CRKcrackNaive(int *partid, int *bid, int *low, int *hgh)
 	if( *(int*) low > *(int*) hgh)
                 return throwMessage("crackers.crack","illegal range");
         @:getBATdescriptor(&result,bid,b,CRKcrackNaive)@
+	(void) result;
 	m= findCrackMap(*bid);
 @-
 Inspect the value range table to only further crack qualifying fragments.
@@ -363,27 +366,30 @@ Inspect the value range table to only further crack qualifying fragments.
 		piece = crackMap[m].pieces+i;
 		/* set bounds */
 		xx= BUNsize(b);
-		vmin= BUNptr(b, piece->idx_first)-xx;
-		vmax= BUNptr(b,piece->idx_last)+xx;
+		vmin= (ptr)((char*)BUNptr(b,piece->idx_first)-xx);
+		vmax= (ptr)((char*)BUNptr(b,piece->idx_last)+xx);
 
 		vm= BUNtail(b,vmin+xx);
-		for(p = vmin+xx; p < vmax; p += xx, vm+=xx) {
+		for(p = (ptr)((char*) vmin+xx); p < vmax; 
+			p = (ptr)((char*)p+ xx), 
+			vm= (ptr)((char*)vm+xx)) {
 			if( *(int *)vm < *(int *)low){
 				/* exchange with first low*/
-				vmin+= xx;
+				vmin= (ptr)((char*)vmin+xx);
 				if( vmin != p){
 					@:exchange(vmin,p)@
 				}
 			} else
 			if( *(int *)vm > *(int *) hgh){
 				/* exchange with qualifying tail elm */
-				vmax-= xx;
+				vmax= (ptr)((char*)vmax-xx);
 				while( *(int*) BUNtail(b,vmax) >
 						*(int*)hgh && vmax>p) 
-					vmax -=xx;
+					vmax= (ptr)((char*)vmax-xx);
 				if( vmax != p){
 					@:exchange(vmax,p)@
-					p-= xx; vm-= xx;
+					vm= (ptr)((char*)vm-xx);
+					p= (ptr)((char*)p-xx);
 @-
 The choosen element could also be less then 'low' and an 
 exchange operation could be saved. It turned out that
@@ -526,9 +532,10 @@ str CRKfirstPiece(int *newpid, int *vid, int *bid)
 	int m,i,result=0;
 
         @:getBATdescriptor(&result,bid,b,Piece)@
+	(void) result;
 	m= findCrackMap(*bid);
 
-	BATrestricted(b)= BAT_READ;
+	b->batRestricted= BAT_READ;
 	view= VIEWcreate_(b,TRUE);
 	BBPfix(*vid=  view->batCacheid);
 
@@ -547,6 +554,7 @@ str CRKnextPiece(int *newpid, int *bid, int *vbid, int *pid)
 
         @:getBATdescriptor(&result,bid,b,nextPiece)@
         @:getBATdescriptor(&result,vbid,vid,nextPiece)@
+	(void) result;
 	m= findCrackMap(*bid);
 
 	/* test validity of pid  [todo] */
@@ -578,6 +586,7 @@ str CRKgetPiece0(int *vbid, int *bid, int *piece)
         @:getBATdescriptor(&result,bid,b,getPiece)@
 	CRKfirstPiece( &result, vbid, bid);
         @:getBATdescriptor(&result,&result,vid,getPiece)@
+	(void) result;
 	m= findCrackMap(*vbid);
 	CRKsetBounds(b,vid,m,*piece);
 	return MAL_SUCCEED;
@@ -588,6 +597,7 @@ str CRKgetPiece1(int *newpid, int *bid, int *vbid, int *piece)
 
         @:getBATdescriptor(&result,bid,b,getPiece)@
         @:getBATdescriptor(&result,vbid,vid,getPiece)@
+	(void) result;
 	m= findCrackMap(*bid);
 	/* test validity of piece */
 	CRKsetBounds(b,vid,m,*piece);
@@ -626,6 +636,7 @@ str CRKdropPiece(int *newpid, int *bid){
 	int result=0;
 	(void) newpid;
         @:getBATdescriptor(&result,bid,b,dropPiece)@
+	(void) result;
 	VIEWdestroy(b);
 	return MAL_SUCCEED;
 } 
