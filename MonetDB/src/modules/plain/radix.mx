@@ -749,16 +749,16 @@ if (not(b.exist("larger_all")))
 # passes (4+3) to fit the 64-entry TLB
 #
 cluster_larger := radix_cluster(larger_key, 4, 3);
-250
+#250
 cluster_smaller := radix_cluster(smaller_key, 4, 3);
-626
+#626
 
 # phash, followed by radix-sort
 #
 # As we have 2M tuples with max value 2000000, we need to cluster on 21 bits (7+7+7) in order to achieve radix-sort.
 #
 res_join := phash_join(cluster_larger, cluster_smaller.reverse, 7, 2, false).reverse.radix_cluster(7,7,7).reverse;
-2.7
+#2.7
 res_larger_sorted := res_join.mark(0@0).reverse; 
 
 # no longer needed
@@ -767,9 +767,9 @@ cluster_smaller := 0;
 
 # positional-join projected columns from larger table into result
 res_b1 := join(res_larger_sorted, larger_b1);
-570
+#570
 res_bZ := join(res_larger_sorted, larger_bZ);
-570
+#570
 
 # no longer needed
 res_larger_sorted := 0;
@@ -779,8 +779,8 @@ res_larger_sorted := 0;
 # are 20 significant bits, so we ignore the lower 20-6=14 bits.
 #
 res_smaller_clustered := res_join.reverse.mark(0@0).reverse.radix_cluster(-14,6); 
-589
-344
+#589
+#344
 
 # no longer needed
 res_join := 0;
@@ -1145,7 +1145,7 @@ void move_chunks(move_t *mov, BUN base, int from, int end) {
     }
 }
 
-void rearrange_chunks(BAT *b, BAT *limits, move_t *mov, BUN base, int* dst, int* lim, int *cnt, int n) {
+void rearrange_chunks(BAT *b, BAT *limits, move_t *mov, BUN base, int* dst, int* lim, unsigned int *cnt, int n) {
      int i, cur = 0, start = 0, id = -1;
      if (limits && BATcount(limits)) {
 	id = *(int*) BUNhloc(limits, BUNlast(limits) - BUNsize(limits));
@@ -1203,7 +1203,7 @@ void rearrange_chunks(BAT *b, BAT *limits, move_t *mov, BUN base, int* dst, int*
 }
 
 void sample_buns(BAT *bn, BAT *b, BUN src, BUN cur, BUN end, 
-		 int* dst, int* lim, int* cnt, int n) 
+		 int* dst, int* lim, unsigned int* cnt, int n) 
 {
     int ntuples = (end-src)/BUNsize(b);
     int done = (cur-src)/BUNsize(b); 
@@ -1354,7 +1354,7 @@ void cnt_buns_any(BAT *bn, BAT *b, BUN src, BUN end, unsigned int* cnt,
 
 @= radix_chunk
 void radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, BUN out, 
-			int *lim, int nbits, int shift, int *dst, int *cnt, oid *maxbits) 
+			int *lim, int nbits, int shift, int *dst, unsigned int *cnt, oid *maxbits) 
 {
     BUN lo_limit, hi_limit, cur;
     int ntuples = BUNindex(b,end)-BUNindex(b,start);
@@ -1390,12 +1390,12 @@ void radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, 
     
     /* out of memory in some bucket: count and finish */
     if (cur < end) {
-	memset(cnt, 0, nchunks*sizeof(int));
+	memset(cnt, 0, nchunks*sizeof(unsigned int));
 	cnt_buns_@1(bn, b, cur, end, cnt, mask, shift);
 	rearrange_chunks(bn, limits, mov, out, dst, lim, cnt, nchunks);
         radix_buns_@1(bn, b, cur, end, out, dst, lim, mask, shift, maxbits);
     } else if (limits) {
-	memset(cnt, 0, nchunks*sizeof(int));
+	memset(cnt, 0, nchunks*sizeof(unsigned int));
 	rearrange_chunks(bn, limits, mov, out, dst, lim, cnt, nchunks);
     }
     if (nchunks>512) GDKfree(mov);
@@ -1447,7 +1447,7 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
     while(--argc >= 0 && radix[argc] > 0) {
 	int i, h = 1<<radix[argc], j = h*sizeof(int), *k, *l = lim;
 	int *dst = (int*) GDKmalloc(sizeof(int)*h);
-	int *cnt = (int*) GDKmalloc(sizeof(int)*h);
+	unsigned int *cnt = (unsigned int*) GDKmalloc(sizeof(unsigned int)*h);
 	BAT *prev = bn, *lims = NULL;
 	BUN p, q;
 	
@@ -1734,7 +1734,6 @@ int phash_join(BAT **res, BAT* l, BAT *r, int *radix, int *hitrate, bit *cutoff)
     BUN l_end, r_cur = BUNfirst(r), r_last = BUNlast(r);
     int xx = BUNsize(l), yy= BUNsize(r);
     int rcut = r->hkey || (*cutoff && (*hitrate == 1));
-    int lcut = l->tkey || (*cutoff && (*hitrate == 1));
     Hash h;
 
     /* alloc hash table */
