@@ -868,14 +868,14 @@ public class JdbcClient {
 		boolean fq
 	) throws SQLException {
 		// hande views directly
-		if (table.getType().equals("VIEW")) {
+		if (table.getType().indexOf("VIEW") != -1) {
 			String[] types = new String[1];
 			types[0] = table.getType();
 			ResultSet tbl = dbmd.getTables(table.getCat(), table.getSchem(), table.getName(), types);
 			if (!tbl.next()) throw new SQLException("Whoops no data for " + table);
 
 			// This will probably only work for MonetDB
-			out.print("CREATE VIEW ");
+			out.print("CREATE " + table.getType() + " ");
 		 	out.print(fq ? table.getFqnameQ() : table.getNameQ());
 			out.print(" AS ");
 		 	out.println(tbl.getString("REMARKS").trim());
