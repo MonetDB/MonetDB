@@ -1708,8 +1708,8 @@ stmt *grp_find_groupby_col( group *g , stmt *s )
 {
 	node *n;
 
-	/* groups built for outer references or implicite groups 
-		can allways find columns */ 
+	/* groups built for outer references or implicit groups 
+		can always find columns */ 
 	if (!g->cols)
 		return s;
 
