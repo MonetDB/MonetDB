@@ -925,7 +925,7 @@ void GDKexit() {
 All semaphores used by the application should be mentioned here.
 They are initialized during system initialization.
 @c
-int		GDKdebug = 2; 
+int		GDKdebug = 0; 
 
 MT_Lock		GDKthreadLock = NULL; 
 MT_Lock		GDKstatusLock[BBPLOCKMASK+1]; 

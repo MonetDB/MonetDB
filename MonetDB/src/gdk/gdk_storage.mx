@@ -428,6 +428,8 @@ static BAT *DESCload(int i) {
 	b->hhash_heap = b->thash_heap = NULL; 
 	b->hidx_heap = b->tidx_heap = NULL; 
 	b->batSharecnt = b->void_cnt = 0;
+	/* mil shouldn't mess with just loaded bats */
+	if (b->batStamp > 0) b->batStamp = -b->batStamp;
 	return b;
 }
 
