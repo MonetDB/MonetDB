@@ -183,6 +183,8 @@ static stmt *sql_column_ref(mvc * sql, scope * scp, symbol * column_r)
 
 		if (strcasecmp(name, "rowid") == 0){
 			cvar *cv = scope_first_column(scp);
+			if (!cv)
+				return sql_error( sql, 02, "ROWID used without table ref");
 			return stmt_mirror(stmt_dup(cv->s));
 		} else if (!(cs = scope_bind(scp, NULL, name))) {
 			/* maybe simple param */
