@@ -115,8 +115,8 @@ sub connect {
 						  );
 
     my $lang= $data_source_info->{language};
-    $lang     ||= "sql";
-    if ( ! ($lang eq "mal" || $lang eq "sql" || $lang eq "mil") ) {
+    $lang     ||= 'sql';
+    if ( ! ($lang eq 'mal' || $lang eq 'sql' || $lang eq 'mil') ) {
 	die "!ERROR languages permitted are 'sql', 'mal', and 'mil'\n";
     }
 
@@ -125,10 +125,10 @@ sub connect {
 
     my $host  = $data_source_info->{host};
     my $port  = $data_source_info->{port};
-    $port     ||= ($lang eq "sql")? 45123 : 50000;
-    $host	  ||= "localhost";
+    $port     ||= ($lang eq 'sql')? 45123 : 50000;
+    $host	  ||= 'localhost';
 
-    my $server = $host.":".$port;
+    my $server = $host.':'.$port;
     my $dbh = DBI::_new_dbh($drh, {
 				   Name         => $dsn,
 				   USER         => $user,
@@ -152,7 +152,7 @@ sub connect {
 
 
 sub data_sources {
-    return ("dbi:monetdb:");
+    return ('dbi:monetdb:');
 }
 
 
@@ -225,7 +225,7 @@ sub commit {
     if ($dbh->FETCH('AutoCommit')) {
 	warn 'Commit ineffective while AutoCommit is on';
     } else {
-	MapiLib::mapi_query($dbh->FETCH('monetdb_connection'), "commit;");
+	MapiLib::mapi_query($dbh->FETCH('monetdb_connection'), 'commit;');
     }
     1;
 }
@@ -236,7 +236,7 @@ sub rollback {
     if ($dbh->FETCH('AutoCommit')) {
 	warn 'Rollback ineffective while AutoCommit is on';
     } else {
-	MapiLib::mapi_query($dbh->FETCH('monetdb_connection'), ($dbh->FETCH('Language') ne "sql")?"abort;":"rollback;");
+	MapiLib::mapi_query($dbh->FETCH('monetdb_connection'), ($dbh->FETCH('Language') ne 'sql')?'abort;':'rollback;');
     }
     1;
 }
@@ -265,7 +265,7 @@ sub tables {
 
     my @table_list;
 	
-    my $hdl = MapiLib::mapi_query($mapi, ($dbh->FETCH('Language') ne "sql")?"ls;":"SELECT name FROM tables;");
+    my $hdl = MapiLib::mapi_query($mapi, ($dbh->FETCH('Language') ne 'sql')?'ls;':'SELECT name FROM tables;');
     die MapiLib::mapi_error_str($mapi) if MapiLib::mapi_error($mapi);
 
     while (MapiLib::mapi_fetch_row($hdl)) {
@@ -501,9 +501,9 @@ DBD::monetdb - DBD implementation on top of SWIG bindings
 
     $dbh = DBI->connect($dsn, $user, $password);
 
-    $drh = DBI->install_driver("monetdb");
+    $drh = DBI->install_driver('monetdb');
 
-    $sth = $dbh->prepare("SELECT * FROM foo WHERE bla");
+    $sth = $dbh->prepare('SELECT * FROM foo WHERE bla');
     $sth->execute;
     $numRows = $sth->rows;
     $numFields = $sth->{'NUM_OF_FIELDS'};
@@ -517,28 +517,28 @@ DBD::monetdb - DBD implementation on top of SWIG bindings
   use DBI;
 
   # Connect to the database.
-  my $dbh = DBI->connect("dbi:monetdb:database=test;host=localhost",
-                         "joe", "joe's password",
+  my $dbh = DBI->connect('dbi:monetdb:database=test;host=localhost',
+                         'joe', "joe's password",
                          {'RaiseError' => 1});
 
   # Drop table 'foo'. This may fail, if 'foo' doesn't exist.
   # Thus we put an eval around it.
-  eval { $dbh->do("DROP TABLE foo") };
+  eval { $dbh->do('DROP TABLE foo') };
   print "Dropping foo failed: $@\n" if $@;
 
   # Create a new table 'foo'. This must not fail, thus we don't
   # catch errors.
-  $dbh->do("CREATE TABLE foo (id INTEGER, name VARCHAR(20))");
+  $dbh->do('CREATE TABLE foo (id INTEGER, name VARCHAR(20))');
 
   # INSERT some data into 'foo'. We are using $dbh->quote() for
   # quoting the name.
-  $dbh->do("INSERT INTO foo VALUES (1, " . $dbh->quote("Tim") . ")");
+  $dbh->do('INSERT INTO foo VALUES (1, ' . $dbh->quote('Tim') . ')');
 
   # Same thing, but using placeholders
-  $dbh->do("INSERT INTO foo VALUES (?, ?)", undef, 2, "Jochen");
+  $dbh->do('INSERT INTO foo VALUES (?, ?)', undef, 2, 'Jochen');
 
   # Now retrieve data from the table.
-  my $sth = $dbh->prepare("SELECT id, name FROM foo");
+  my $sth = $dbh->prepare('SELECT id, name FROM foo');
   $sth->execute();
   while (my $ref = $sth->fetchrow_arrayref()) {
     print "Found a row: id = $ref->[0], name = $ref->[1]\n";
@@ -569,14 +569,14 @@ method like so:
 Once you have connected to a database, you can can execute SQL
 statements with:
 
-  my $query = sprintf("INSERT INTO foo VALUES (%d, %s)",
-		      $number, $dbh->quote("name"));
+  my $query = sprintf('INSERT INTO foo VALUES (%d, %s)',
+		      $number, $dbh->quote('name'));
   $dbh->do($query);
 
 See L<DBI(3)> for details on the quote and do methods. An alternative
 approach is
 
-  $dbh->do("INSERT INTO foo VALUES (?, ?)", undef,
+  $dbh->do('INSERT INTO foo VALUES (?, ?)', undef,
 	   $number, $name);
 
 in which case the quote method is executed automatically. See also
