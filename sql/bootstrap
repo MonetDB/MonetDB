@@ -311,7 +311,7 @@ grep 'CXXFLAGS="-g -O2"' configure >/dev/null && cat << "EOF" | patch configure
 EOF
 
 # patch conf/ltmain.sh to get linking of dependent modules working on MacOS X/Darwin
-test -f conf/ltmain.sh && cat << "EOF" | patch conf/ltmain.sh
+test -f conf/ltmain.sh && { grep 'fix_hardcode_direct' conf/ltmain.sh >/dev/null || cat << "EOF" | patch conf/ltmain.sh ; }
 --- conf/ltmain.sh.OK	2003-05-15 19:20:52.000000000 +0200
 +++ conf/ltmain.sh	2003-05-15 19:31:40.000000000 +0200
 @@ -1845,7 +1845,11 @@
