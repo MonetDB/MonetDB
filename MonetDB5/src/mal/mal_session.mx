@@ -372,9 +372,9 @@ str MALengine(Client c){
 	msg= (str) runMAL(c,prg->def,0,c->glb,0);
 	if( msg ){
 		GDKerror(msg);
-		showErrors();
 		if( !c->listing) 
 			printFunction(c->fdout,c->curprg->def, c->listing);
+		showErrors();
 	}
 	resetInstructions(prg->def,1);
 	resetVariables(prg->def,c->glb,0);
