@@ -2610,23 +2610,12 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 				} else { 
 					bat_destroy(ocur);
 				}
-			/* write but read, ie append/update the current */
 			} else if (oc->base.wtime > cc->base.wtime) { 
-				BAT *ocur = bm_lbid2bat( ttr->bm, oc->bat.bid);
-
-				if (BATcount(ocur)){
-					BAT *i = BATalpha(ins);
-
-					printf("append\n");
-					/* void union ? */
-					cur = bat_lcopy(ocur, "rollforward");
-					void_append_bat(cur, ins);
-					assert(cur->htype == TYPE_void);
-					bat_destroy(ins);
-					bat_destroy(i);
-				} else { 
-					bat_destroy(ocur);
-				}
+				/* write without read, ie append 
+				 * are handled by the special insert bat,
+				 * so we should not arrive here 
+				 */
+				assert(0);
 			}
 			if (BUNlast(cur) > cur->batInserted) {
 				renewed = 1;
@@ -2659,7 +2648,6 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 			if (cc->base.rtime)
                 		oc->base.rtime = tr->stime;
                 	oc->base.wtime = tr->stime;
-			
 
 			n = n->next;
 			m = m->next;
@@ -2769,9 +2757,15 @@ static int validate_tables(sql_schema * s, sql_schema * os)
 				sql_column *oc = p->data;
 				/* t wrote, ie. check read and write time */
 				/* read or write after t's write */
+				/* also allow for appends after writes as long
+				   as no reads were done */
 				if (c->base.wtime &&
 				    (c->base.wtime < oc->base.rtime
-				     || c->base.wtime < oc->base.wtime)) {
+				     /* allow for late appends, ie 
+	                              * wtime but no rtime 
+				      */
+				     || (c->base.wtime < oc->base.wtime && 
+					 c->base.rtime))) {
 					return 0;
 				}
 				/* commited write before t's read */
@@ -3375,7 +3369,9 @@ mvc_bind_key(mvc * m, sql_schema * s, char *kname )
 	if (!n)
 		return NULL;
 	k = n->data;
+	/*
 	k->base.rtime = k->t->base.rtime = s->base.rtime;
+	*/
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_bind_key %s.%s\n", s->base.name, kname );
@@ -3393,7 +3389,9 @@ mvc_bind_idx(mvc * m, sql_schema * s, char *iname )
 	if (!n)
 		return NULL;
 	i = n->data;
+	/*
 	i->base.rtime = i->t->base.rtime = s->base.rtime;
+	*/
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_bind_idx %s.%s\n", s->base.name, iname );
