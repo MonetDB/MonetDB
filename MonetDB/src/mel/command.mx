@@ -80,7 +80,7 @@ class Command : public Symbol {
 #include <stdio.h>
 #include <stdlib.h>
 
-extern int id_rand();
+static int id_rand(void);
 /*
 extern "C" {
      extern long rand();
@@ -218,7 +218,7 @@ random numbers with history (to avoid doubles)
 static int id_hist[MAX_ID_HIST];
 static int id_size = 0;
 
-int id_rand(){
+static int id_rand(void){
 	int i, r = rand();
 	for(i = 0; i < id_size; i++) 
 		if (id_hist[i] == r) {
