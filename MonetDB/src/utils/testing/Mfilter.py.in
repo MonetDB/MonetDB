@@ -109,13 +109,14 @@ def mFilter (FILE, IGNORE) :
 				ftmp.append(ln)
 
 	fout = open(FILE + ".FILTERED", "w")
-	fout.write("Statistics about std"+WHAT+" of test '"+TST+"` in directory '"+TSTDIR+"`:\n")
-	fout.write("  %9d lines, %9d words, %9d chars   in lines not matching '%s|^$`\n" % (il,iw,ic,IGNORE))
-	fout.write("# %9d lines, %9d words, %9d chars   in all lines\n" % (al,aw,ac))
-	fout.write("\n")
-	for ln in ftmp:
-		fout.write(ln)
-	fout.flush()
+	if (al > 0) or (aw > 0) or (ac >0):
+		fout.write("Statistics about std"+WHAT+" of test '"+TST+"` in directory '"+TSTDIR+"`:\n")
+		fout.write("  %9d lines, %9d words, %9d chars   in lines not matching '%s|^$`\n" % (il,iw,ic,IGNORE))
+		fout.write("# %9d lines, %9d words, %9d chars   in all lines\n" % (al,aw,ac))
+		fout.write("\n")
+		for ln in ftmp:
+			fout.write(ln)
+		fout.flush()
 	fout.close()
 	if os.name == "nt":
 		time.sleep(1)

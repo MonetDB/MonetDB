@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <time.h>
 
 #ifndef DIR_SEP
 # define DIR_SEP '/'
@@ -60,32 +61,58 @@ int oldnew2u_diff (int context, char *ignore, char *old_fn, char *new_fn, char *
 {
   char command[BUFLEN];
   int r;
+  struct stat old_fstat, new_fstat;
+  FILE *u_diff_fp,*oldnew_fp;
+  char c,line[BUFLEN];
 
   TRACE(fprintf(STDERR,"oldnew2u_diff(%i,%s,%s,%s,%s)\n",context,ignore,old_fn,new_fn,u_diff_fn));
 
-#ifdef NATIVE_WIN32
-  sprintf(command,"%s %s %s.cp > nul",COPY,old_fn,old_fn);
-  SYSTEM(command);
-  sleep(1);
-  sprintf(command,"%s %s %s.cp > nul",COPY,new_fn,new_fn);
-  SYSTEM(command);
-  sleep(1);
+  stat(old_fn,&old_fstat);
+  stat(new_fn,&new_fstat);
 
-  sprintf(command,"%s %s -d -u%i %s.cp %s.cp > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
-#else
-  sprintf(command,"%s %s -d -u%i %s %s > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
-#endif
+  if ((old_fstat.st_size != 0) && (new_fstat.st_size != 0)) {
+    #ifdef NATIVE_WIN32
+      sprintf(command,"%s %s %s.cp > nul",COPY,old_fn,old_fn);
+      SYSTEM(command);
+      sleep(1);
+      sprintf(command,"%s %s %s.cp > nul",COPY,new_fn,new_fn);
+      SYSTEM(command);
+      sleep(1);
 
-  SYSTEM(command);
+      sprintf(command,"%s %s -d -u%i %s.cp %s.cp > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
+    #else
+      sprintf(command,"%s %s -d -u%i %s %s > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
+    #endif
 
-#ifdef NATIVE_WIN32
-#ifdef DEBUG
-  sprintf(command,"dir %s* %s* %s*",old_fn,new_fn,u_diff_fn);
-  SYSTEM(command);
-#endif
-  sprintf(command,"del %s.cp %s.cp",old_fn,new_fn);
-  SYSTEM(command);
-#endif
+      SYSTEM(command);
+
+    #ifdef NATIVE_WIN32
+      #ifdef DEBUG
+        sprintf(command,"dir %s* %s* %s*",old_fn,new_fn,u_diff_fn);
+        SYSTEM(command);
+      #endif
+      sprintf(command,"del %s.cp %s.cp",old_fn,new_fn);
+      SYSTEM(command);
+    #endif
+  } else {
+    u_diff_fp=Wfopen(u_diff_fn);
+    fprintf(u_diff_fp,"--- %s\t%s",old_fn,ctime(&old_fstat.st_mtime));
+    fprintf(u_diff_fp,"+++ %s\t%s",new_fn,ctime(&new_fstat.st_mtime));
+    if (old_fstat.st_size == 0) {
+      c='+';
+      fprintf(u_diff_fp,"@@ -0,0 +1,0 @@\n");
+      oldnew_fp=Rfopen(new_fn);
+    } else {
+      c='-';
+      fprintf(u_diff_fp,"@@ -1,0 +0,0 @@\n");
+      oldnew_fp=Rfopen(old_fn);
+    }
+    while(fgets(line,BUFLEN,oldnew_fp)) {
+      fprintf(u_diff_fp,"%c%s",c,line);
+    }
+    fclose(oldnew_fp);
+    fflush(u_diff_fp); fclose(u_diff_fp);
+  }
 
   return 1;
 }
