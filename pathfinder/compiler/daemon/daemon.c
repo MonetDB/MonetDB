@@ -118,7 +118,7 @@ daemonize (void)
 in_background:
     /* close all file descs but stderr (log output) */
     for (fd = 0; fd < FOPEN_MAX; fd++)
-        if (fd != fileno (stderr))
+        if (fd != (int) fileno (stderr))
             close (fd);
 
     /* clear a possible EBADF from a close */
