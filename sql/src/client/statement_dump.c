@@ -412,7 +412,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		int l = statement_dump( s->op1.stval, nr, sql );
 		int r = statement_dump( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
-			"s%d := [oid](s%d.reverse).reverse().access(BAT_WRITE).replace(s%d);\n", *nr, l, r);
+			"s%d := [oid](s%d.reverse()).reverse().access(BAT_WRITE).replace(s%d);\n", *nr, l, r);
 		s->nr = (*nr)++;
 	} break;
 	case st_delete: {
