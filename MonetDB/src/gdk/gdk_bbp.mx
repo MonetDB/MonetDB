@@ -229,7 +229,7 @@ The swap algorithm is simple FIFO, which is not optimal, of course..
 extern int      BBP_desc_max, BBP_desc_count[BBPLOCKMASK+1];
 @c
 #if SIZEOF_VOID_P==8
-int             BBP_desc_max = 1<<30; /* 64-bits platforms have practically no limit on cached bat descriptors */
+int             BBP_desc_max = 1<<20; /* 64-bits platforms have practically no limit on cached bat descriptors */
 #else
 int             BBP_desc_max = 8192; /* 32-bits platforms prefer to have less than 8*8192=64K descs ~= 64MB in the malloc heap for those */
 #endif
@@ -1700,7 +1700,7 @@ void BBPtrim_select(size_t *memtarget, size_t *vmtarget, int *ndescs, int dirty)
 			size_t memdirty = BATmemsize(b,TRUE);
 			size_t vmdirty  = BATvmsize(b,TRUE);
 
-			if ((b->batPersistence == TRANSIENT || /* the BAT needs not be saved when unloaded, OR.. */
+			if (((b->batPersistence == TRANSIENT && BBP_lrefs(bbptrim[cur].bid) == 0) || /* needs not be saved when unloaded, OR.. */
 			     (vmdirty == 0 && memdirty <= sizeof(BATstore)) || /* the BAT is actually clean, OR.. */
                              dirty)  /* we are allowed to cause I/O (second run).. */
 			&&						/* AND ... */
@@ -1747,8 +1747,11 @@ void BBPtrim_select(size_t *memtarget, size_t *vmtarget, int *ndescs, int dirty)
                         }
                 } else {
                         /* BAT was touched (or unloaded) since trimscan =>  it is discarded from both lists */
-                        MEMDEBUG THRprintf(GDKerr, "TRIMSELECT: delete %s from trimlist (has been %s)\n",
-                                                BBPname(bbptrim[cur].bid), b?"touched since last scan":"unloaded already");
+			char buf[80], *bnme = BBP_logical(bbptrim[cur].bid);
+			if (bnme == NULL) {
+				sprintf(bnme = buf, "tmp_%d", bbptrim[cur].bid);
+			}
+                        MEMDEBUG THRprintf(GDKerr, "TRIMSELECT: delete %s from trimlist (has been %s)\n", bnme, b?"touched since last scan":"unloaded already");
                 }
 
 		if (*memtarget == 0 && *vmtarget == 0 && *ndescs <= 0) {
@@ -1762,6 +1765,8 @@ void BBPtrim_select(size_t *memtarget, size_t *vmtarget, int *ndescs, int dirty)
 	}
 	MEMDEBUG THRprintf(GDKerr, "TRIMSELECT: end\n");
 }
+
+extern int monet_exec(str);
 
 void BBPtrim(size_t memtarget, size_t vmtarget) {
 	int i, limit, scan, did_scan = FALSE, ndescs = 0;
@@ -1795,7 +1800,7 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
 			vmtarget = 0;
 	}
 	MEMDEBUG THRprintf(GDKerr, "BBPTRIM_ENTER: memsize=" SZFMT ",vmsize=" SZFMT ",ndescs=%d\n", 
-			GDKmem_cursize(), GDKvm_cursize(), ndescs);
+			GDKmem_inuse(), GDKvm_cursize(), ndescs);
 	ndescs -= BBP_desc_max*(BBPLOCKMASK+1);
 	MEMDEBUG THRprintf(GDKerr, "BBPTRIM: memtarget=" SZFMT " vmtarget=" SZFMT ",desctarget=%d\n", 
 			memtarget, vmtarget, ndescs);
