@@ -102,7 +102,7 @@ monet\_notifyLock	& monet\_init    & {\em created  }\\
                 & CMDstop & (trigger) notifiers \\
 TBL\_readLock   & monet\_tbl.mx & {  }\\
 TBL\_writeLock  & monet\_tbl.mx & {  }\\\hline
-monet\_started  & monet\_init   & {\em created}\\
+monet\_forksync & monet\_init   & {\em created}\\
                 & main          & {\em down for Internet Thread}\\\hline
 monet\_available	& monet\_init    & {\em created}\\
                 & clrRequest    & QMrequests, qm\_first, qm\_last, qm\_top, qm\_bot\\
@@ -305,7 +305,6 @@ m_export MT_Lock		monet_parserLock;	/* protects access to yacc/lex*/
 m_export MT_Lock		monet_contextLock;	/* protects CNTXT structures */
 m_export MT_Lock		monet_voidLock;		/* protects void hack */
 m_export MT_Sema		monet_available;	/* worker threads in queue */
-m_export MT_Sema		monet_started;		/* internet thread started? */
 m_export MT_Sema		monet_forksync;		/* sync semaphore for fork */
 
 m_export int		monet_tokseq;		/* value of TOK_SEQ */
@@ -344,7 +343,7 @@ str		monet_dbinit = NULL;
 str		monet_general =0;
 MT_Lock         monet_critical, monet_notifyLock, monet_voidLock;
 MT_Lock		monet_parserLock, monet_contextLock;
-MT_Sema         monet_started, monet_available, monet_forksync;
+MT_Sema         monet_available, monet_forksync;
 
 @-
 Fill in default tokens. yacc and bison yield different numbers.
@@ -425,7 +424,6 @@ int protectMonet(void)
 		monet_parserLock = MT_create_lock();
 		monet_notifyLock = MT_create_lock();
 		monet_voidLock   = MT_create_lock();
-		monet_started    = MT_create_sema(0);
 		monet_available  = MT_create_sema(0);
 		monet_forksync   = MT_create_sema(0);
 		TBL_protect();
