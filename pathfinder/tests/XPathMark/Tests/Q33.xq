@@ -1,1 +1,1 @@
-//*[name()='svg:item']
+doc("document_1.xml")//*[name()='svg:item']

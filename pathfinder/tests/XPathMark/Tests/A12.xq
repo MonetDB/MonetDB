@@ -1,1 +1,1 @@
-//*[lang('it')]
+doc("document_2.xml")//*[lang('it')]

@@ -1,1 +1,1 @@
-/site/regions/*/item/mailbox/mail[substring-before(date,'/')='10']
+doc("document_1.xml")/site/regions/*/item/mailbox/mail[substring-before(date,'/')='10']

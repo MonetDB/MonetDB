@@ -1,1 +1,1 @@
-//*[boolean(namespace-uri())]
+doc("document_2.xml")//*[boolean(namespace-uri())]

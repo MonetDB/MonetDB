@@ -1,1 +1,1 @@
-/site/regions/*/item
+doc("document_1.xml")/site/regions/*/item
