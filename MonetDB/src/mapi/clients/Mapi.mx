@@ -393,17 +393,14 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	COUNT(mid,1);
 	if(host) strcpy(mid->hostname,host); 
 	
-	if(port) mid->port = port; 
-	else {
-	    if((defport = getenv("MONETPORT"))!=(char*)NULL && 
-	       ((mid->port=atoi(defport))!=0) && 
-	       errno != ERANGE)
-		errno= errno; /* no error */
-	    else {      
+	if(port) 
+		mid->port = port; 
+	else if((defport = getenv("MONETPORT")) == (char*)NULL || 
+	       ((mid->port=atoi(defport))==0) || errno != ERANGE)
+	{
 		mid->error = MMAPIERR; 
 		sprintf(mid->errortext,     "Illegal or unknown port number"); 
 		return(mid);
-	   }
 	}
 	
 	if(username) strcpy(mid->username,username);

@@ -847,7 +847,7 @@ void *MT_vmalloc(size_t size, size_t *maxsize) {
 				MAP_PRIVATE|MAP_FIXED, fd, 0);
         }
         close(fd);
-        return (void*) (q == (char*) -1)?NULL:q;
+        return (void*) ((q == (char*) -1)?NULL:q);
 }
 
 void MT_vmfree(void *p, size_t size) {

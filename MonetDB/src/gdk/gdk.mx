@@ -282,6 +282,8 @@ char *alloca ();
 #   endif
 #  endif
 # endif
+# else
+char *alloca ();
 #endif
 
 #include <ctype.h>      /* isspace etc. */
@@ -1252,8 +1254,8 @@ gdk_export BUN 		BUNfnd     (BAT *b, ptr left);
 
 #define BUNhloc(b,p)	((BUN) (((char*) p) + (b)->hloc))
 #define BUNtloc(b,p)	((BUN) (((char*) p) + (b)->tloc))
-#define BUNhvar(b,p)	((b)->htype?(Hbase(b)+*(int*)BUNhloc(b,p)):BUNhpos(b,p))
-#define BUNtvar(b,p)	((b)->ttype?(Tbase(b)+*(int*)BUNtloc(b,p)):BUNtpos(b,p))
+#define BUNhvar(b,p)	((b)->htype?(Hbase(b)+*(int*)BUNhloc(b,p)):(BUN)BUNhpos(b,p))
+#define BUNtvar(b,p)	((b)->ttype?(Tbase(b)+*(int*)BUNtloc(b,p)):(BUN)BUNtpos(b,p))
 
 #define BUNfirst(b)	(((char*) (b)->batHole) + BUNsize(b))
 #define BUNlast(b)	(Bunbase(b)+ (b)->batBuns->free)

@@ -267,7 +267,7 @@ BAT* BATconst(BAT *b, int tailtype, ptr v) {
 		v = &((BAT*) v)->batCacheid;
 	} else if (tailtype == TYPE_void && b->htype == TYPE_void) {
 		tailtype = TYPE_oid;
-		v = (ptr) oid_nil;
+		v = ATOMnilptr(TYPE_oid);
 	}
         bn = BATnew(b->htype, tailtype, BATcount(b));
 	if (bn == NULL) {

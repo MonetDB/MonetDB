@@ -303,7 +303,7 @@ void MT_exit_thread(int s) {
 
 
 int MT_kill_thread (MT_Id t) {
-	int id = (int)t-1;
+	long id = (long)(t-1);
 	return pthread_kill((pthread_t)id, SIGHUP);
 }
 
@@ -431,7 +431,7 @@ void 	MT_dump_sema (MT_Sema s, FILE *fp, char *name) {
 }
 
 MT_Id MT_getpid(){
-	return (MT_Id)((int)pthread_self()+1);
+	return (MT_Id)((long)pthread_self()+1);
 }
 
 int MT_alive(int pid) {
