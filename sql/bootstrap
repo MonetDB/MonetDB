@@ -35,7 +35,7 @@ test -f conf/ltmain.sh || libtoolize -c -f;
 #fi
 # default deplibs_check_method (pass all libs)
 # needed since deplibs is switched off in libtool 1.3c (we cannot wait for 1.4)
-perl -i -p -e  's/&& deplibs_check_method=unknown/&& deplibs_check_method=pass_all/g' conf/ltconfig
+#perl -i -p -e  's/&& deplibs_check_method=unknown/&& deplibs_check_method=pass_all/g' conf/ltconfig
 aclocal -I .
 autoheader
 automake -a -c
