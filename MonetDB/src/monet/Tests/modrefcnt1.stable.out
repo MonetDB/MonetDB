@@ -72,10 +72,10 @@ loaded;
 [ "trans",	  1		  ]
 [ "uchr",	  2		  ]
 test.print;
-!ERROR: atom 'lock' unknown, in BAT '28'.
+!ERROR: atom 'lock' unknown, in BAT '30'.
 !ERROR: interpret: MIL operator invocation of 'print(BAT)' with illegal types.
 test.count.print;
-!ERROR: atom 'lock' unknown, in BAT '28'.
+!ERROR: atom 'lock' unknown, in BAT '30'.
 !ERROR: interpret: MIL operator invocation of 'count(BAT)' with illegal types.
 !ERROR: print(param 1): evaluation error.
 
