@@ -52,7 +52,9 @@ end main;	# 5
 [ 21,	  "mapentry",	  "mapentry",	  16	  ]
 [ 22,	  "idxentry",	  "idxentry",	  8	  ]
 [ 23,	  "stream",	  "int",	  4	  ]
-[ 24,	  "enum",	  "int",	  4	  ]
+[ 24,	  "bstream",	  "int",	  4	  ]
+[ 25,	  "enum",	  "int",	  4	  ]
+#
 
 # 22:47:41 >  
 # 22:47:41 >  Done.
