@@ -29,6 +29,8 @@ communication.
 MapiException can be constructed with or without an exception message.
 */
 
+package mapi;
+
 public
 class MapiException extends Exception {
     public MapiException() {

@@ -110,13 +110,13 @@ unquote()  	&       remove escaped characters
  * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
  */
 
+package mapi;
+
 import java.awt.*;
 import java.applet.Applet;
 import java.applet.*;
 import java.io.*;
 import java.net.Socket;
-
-
 
 public class Mapi 
 {
