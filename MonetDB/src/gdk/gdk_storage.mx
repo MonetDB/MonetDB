@@ -345,7 +345,7 @@ char *GDKload(str nme, str ext, int size, int chunk, int mode){
 	    return 0; 
 	}}
 	if (n_expected >  0 && !varsize) {
-       	    GDKerror("GDKload: read error: name=%s, ext=%s\n", nme,ext?ext:"");
+       	    GDKerror("GDKload: read error: name=%s, ext=%s, n_expected=%d\n", nme,ext?ext:"",n_expected);
 	    return 0;
        	} else if (n_expected < 0) {
        	    GDKwarning("GDKload: file larger than expected: name=%s, ext=%s\n", nme, ext?ext:"");
@@ -522,6 +522,8 @@ BAT *BATsave(BAT *bd) {
 		if (remap) {
 			b->batBuns->free -= remap*BUNsize(b);
 			b->batBuns->base += remap*BUNsize(b);
+			bd->batDirtydesc = TRUE; /* offsets will change in the bat descriptor */
+			bd->batMapdirty = TRUE; /* flush descriptor after unload */
 		}
 	}
 

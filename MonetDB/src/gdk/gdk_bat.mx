@@ -430,6 +430,7 @@ int BATfree(BAT *b) {
 		HEAPfree(&b->hheap);
 	}
 	GDKfree(BATmirror(b));
+
 	return 0;
 }
 

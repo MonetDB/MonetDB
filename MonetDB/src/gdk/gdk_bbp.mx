@@ -1215,7 +1215,7 @@ int BBPfree(BAT *b) {
 	if (destroy) {
 		BBPclear(bid, TRUE); /* if destroyed; de-register from BBP */
 	} else {
-        	BBPuncacheit(bid, TRUE); /* just mark unloaded */
+		BBPuncacheit(bid, TRUE); /* just mark unloaded */
 	}
 	return 0; 
 }
