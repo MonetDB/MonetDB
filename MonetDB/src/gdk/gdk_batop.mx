@@ -41,6 +41,8 @@ The content of a BAT can be appended to (removed from) another using
 @%BATins@ (@%BATdel@).
 @c
 BAT *BATins(BAT *b, BAT *n) {
+	int needed = 0;
+
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return b;
 	}
@@ -53,7 +55,10 @@ BAT *BATins(BAT *b, BAT *n) {
 	{
 		return BATmirror(BATins(BATmirror(b),BATmirror(n)));
 	}
-	BATextend(b, BATcount(b) + BATcount(n)); /* allocation hint */ 
+
+	needed = BATcount(n) - (((b)->batBuns->size - (b)->batBuns->free)/BUNsize(b));
+  	if (needed > 0)
+		BATextend(b, BATcapacity(b) + needed); /* allocation hint */ 
 
 	if (b->hidx_heap || b->tidx_heap) {
                 IDXdestroy(b);
