@@ -631,7 +631,7 @@ compression of property duplicates",
 PROC import_doc(str flnm, str name) : void
 {
     # create doc_name table in case it does not exist
-    if (not(view_bbp_name.reverse().exist("doc_name")))
+    if (not(view_bbp_name().reverse().exist("doc_name")))
     {    
         new(oid,str).persists(true).bbpname("doc_name");
         new(oid,int).persists(true).bbpname("doc_height");
@@ -839,7 +839,7 @@ delete the persistent BATS that store the document.",
 
 PROC delete_all_docs() : void
 {
-    if (not(view_bbp_name.reverse().exist("doc_name")))
+    if (not(view_bbp_name().reverse().exist("doc_name")))
 	{ print("no documents to delete"); }
     else {
         bat("doc_name")@batloop () {
