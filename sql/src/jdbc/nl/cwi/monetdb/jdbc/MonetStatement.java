@@ -44,6 +44,8 @@ public class MonetStatement implements Statement {
 	private MonetSocket monet;
 	private Connection connection;
 	private MonetResultSet lastResultSet;
+	private SQLWarning warnings;
+	private boolean closed;
 	private int fetchSize = DEF_FETCHSIZE;
 	private int maxRows = DEF_MAXROWS;
 	private int fetchDirection = ResultSet.FETCH_FORWARD;
@@ -84,13 +86,13 @@ public class MonetStatement implements Statement {
 		
 		// check our limits, and generate warnings as appropriate
 		if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY) {
-			((MonetConnection)connection).addWarning("No concurrency mode other then read only is supported, continuing with concurrency level READ_ONLY");
+			addWarning("No concurrency mode other then read only is supported, continuing with concurrency level READ_ONLY");
 			resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
 		}
 
 		// check type for supported mode
 		if (resultSetType == ResultSet.TYPE_SCROLL_SENSITIVE) {
-			((MonetConnection)connection).addWarning("Change sensitive scrolling ResultSet objects are not supported, continuing with a change non-sensitive scrollable cursor.");
+			addWarning("Change sensitive scrolling ResultSet objects are not supported, continuing with a change non-sensitive scrollable cursor.");
 			resultSetType = ResultSet.TYPE_SCROLL_INSENSITIVE;
 		}
 				
@@ -105,6 +107,8 @@ public class MonetStatement implements Statement {
 		// make the thread a little more important
 		cache.setPriority(cache.getPriority() + 1);
 		cache.start();
+		
+		closed = false;
 	}
 
 	//== methods of interface Statement
@@ -112,7 +116,15 @@ public class MonetStatement implements Statement {
 	public void addBatch(String sql) {}
 	public void cancel() {}
 	public void clearBatch() {}
-	public void clearWarnings() {}
+	
+	/**
+	 * Clears all warnings reported for this Statement object. After a call to
+	 * this method, the method getWarnings returns null until a new warning is
+	 * reported for this Statement object.
+	 */
+	public void clearWarnings() {
+		warnings = null;
+	}
 	
 	/**
 	 * Releases this Statement object's database and JDBC resources immediately
@@ -131,6 +143,7 @@ public class MonetStatement implements Statement {
 		// close previous ResultSet, if not closed already
 		if (lastResultSet != null) lastResultSet.close();
 		cache.shutdown();
+		closed = true;
 	}
 	
 	/**
@@ -337,7 +350,29 @@ public class MonetStatement implements Statement {
 		return(-1);
 	}
 	
-	public SQLWarning getWarnings() {return(null);}
+	/**
+	 * Retrieves the first warning reported by calls on this Statement object.
+	 * If there is more than one warning, subsequent warnings will be chained to
+	 * the first one and can be retrieved by calling the method
+	 * SQLWarning.getNextWarning on the warning that was retrieved previously.
+	 * <br /><br />
+	 * This method may not be called on a closed statement; doing so will cause
+	 * an SQLException to be thrown.
+	 * <br /><br />
+	 * Note: Subsequent warnings will be chained to this SQLWarning.
+	 *
+	 * @return the first SQLWarning object or null if there are none
+	 * @throws SQLException if a database access error occurs or this method is
+	 *         called on a closed connection
+	 */
+	public SQLWarning getWarnings() throws SQLException {
+		if (closed) throw new SQLException("Cannot call on closed Statement");
+		
+		// if there are no warnings, this will be null, which fits with the
+		// specification.
+		return(warnings);
+	}
+	
 	public void setCursorName(String name) {}
 	public void setEscapeProcessing(boolean enable) {}
 	
@@ -408,6 +443,22 @@ public class MonetStatement implements Statement {
 	
 	protected void finalize() {
 		close();
+	}
+
+	/**
+	 * Adds a warning to the pile of warnings this Statement object has. If
+	 * there were no warnings (or clearWarnings was called) this warning will
+	 * be the first, otherwise this warning will get appended to the current
+	 * warning.
+	 *
+	 * @param reason the warning message
+	 */
+	private void addWarning(String reason) {
+		if (warnings == null) {
+			warnings = new SQLWarning(reason);
+		} else {
+			warnings.setNextWarning(new SQLWarning(reason));
+		}
 	}
 
 	

@@ -438,7 +438,7 @@ public class MonetConnection implements Connection {
 	 *
 	 * @param reason the warning message
 	 */
-	void addWarning(String reason) {
+	private void addWarning(String reason) {
 		if (warnings == null) {
 			warnings = new SQLWarning(reason);
 		} else {

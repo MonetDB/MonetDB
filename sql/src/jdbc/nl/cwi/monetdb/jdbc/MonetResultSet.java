@@ -46,6 +46,7 @@ public class MonetResultSet implements ResultSet {
 
 	private int type = TYPE_FORWARD_ONLY;
 	private int concurrency = CONCUR_READ_ONLY;
+	private SQLWarning warnings;
 
 	/**
 	 * Main constructor, sends query to Monet and reads header
@@ -283,8 +284,16 @@ public class MonetResultSet implements ResultSet {
 	}
 
 	public void 	cancelRowUpdates() {}
-	public void 	clearWarnings() {}
-
+	
+	/**
+	 * Clears all warnings reported for this ResultSet object. After a call to
+	 * this method, the method getWarnings returns null until a new warning is
+	 * reported for this ResultSet object.
+	 */
+	public void clearWarnings() {
+		warnings = null;
+	}
+	
 	/**
 	 * Releases this ResultSet object's database (and JDBC) resources
 	 * immediately instead of waiting for this to happen when it is
@@ -826,7 +835,30 @@ public class MonetResultSet implements ResultSet {
 	public InputStream 	getUnicodeStream(String columnName) { return(null); }
 	public URL 	getURL(int columnIndex) { return(null); }
 	public URL 	getURL(String columnName) { return(null); }
-	public SQLWarning 	getWarnings() { return(null); }
+	
+	/**
+	 * Retrieves the first warning reported by calls on this ResultSet object.
+	 * If there is more than one warning, subsequent warnings will be chained to
+	 * the first one and can be retrieved by calling the method
+	 * SQLWarning.getNextWarning on the warning that was retrieved previously.
+	 * <br /><br />
+	 * This method may not be called on a closed result set; doing so will cause
+	 * an SQLException to be thrown.
+	 * <br /><br />
+	 * Note: Subsequent warnings will be chained to this SQLWarning.
+	 *
+	 * @return the first SQLWarning object or null if there are none
+	 * @throws SQLException if a database access error occurs or this method is
+	 *         called on a closed connection
+	 */
+	public SQLWarning getWarnings() throws SQLException {
+		if (closed) throw new SQLException("Cannot call on closed ResultSet");
+		
+		// if there are no warnings, this will be null, which fits with the
+		// specification.
+		return(warnings);
+	}
+	
 	public void 	insertRow() {}
 
 	/**
@@ -1010,5 +1042,21 @@ public class MonetResultSet implements ResultSet {
 
 	protected void finalize() {
 		close();
+	}
+	
+	/**
+	 * Adds a warning to the pile of warnings this ResultSet object has. If
+	 * there were no warnings (or clearWarnings was called) this warning will
+	 * be the first, otherwise this warning will get appended to the current
+	 * warning.
+	 *
+	 * @param reason the warning message
+	 */
+	private void addWarning(String reason) {
+		if (warnings == null) {
+			warnings = new SQLWarning(reason);
+		} else {
+			warnings.setNextWarning(new SQLWarning(reason));
+		}
 	}
 }
