@@ -248,7 +248,7 @@ now(void)
 #endif
 }
 
-void
+bat*
 qt_prelude(void)
 {
   zid_t lid;
@@ -355,7 +355,7 @@ qt_prelude(void)
   }
 
   crossuniq = (int)(now() / S(1));
-  return;
+  return NULL;
 }
 
 void

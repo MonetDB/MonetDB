@@ -262,9 +262,13 @@ Some explanation of what mem_usage() and vm_usage() display:
     ADDHELP("modules", "boncz", "Aug 14 1997",
 	"list all installed modules, plus owner and db restrictions", "sys"); 
 	
-    PROC loaded() : void := table(1,
-	monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)).reverse.sort.reverse.col_name("module"), 
-	monet_mod_cnt.copy.col_name("usage_count"));
+    PROC loaded() : void {
+        var hidden := monet_mod_nme.semijoin(monet_mod_nme.[startsWith]("_").uselect(true));
+	var mods := monet_mod_nme.kdiff(hidden).access(BAT_WRITE);
+        var disappeared := hidden.reverse.kdiff([+]("_",mods).reverse).reverse;
+	table(1, mods.insert(disappeared).reverse.sort.reverse.col_name("module"), 
+                 monet_mod_cnt.copy.col_name("usage_count"));
+    }
     ADDHELP("loaded", "boncz", "Feb  6 1996", 
 	"list all loaded modules, and the number of active users.", "sys"); 
 
@@ -376,7 +380,8 @@ Some explanation of what mem_usage() and vm_usage() display:
 	"list all active clients by their number.", "sys"); 
 
     PROC vars() : void := 
-	table(view_var_name, view_var_type, view_var_kind, view_var_constant, view_var_value);
+	table(view_var_name.kdiff([startsWith](view_var_name, ".").uselect(true)), 
+              view_var_type, view_var_kind, view_var_constant, view_var_value);
     ADDHELP("vars", "boncz", "Feb  6 1996", 
         	"list all Monet variables and their values.", "sys"); 
 

@@ -959,7 +959,7 @@ Init the global structures.
 @c
 int listeners=0, ports[256] = {0};
 
-void TCPprelude(void){
+bat* TCPprelude(void){
 	TCPlock = MT_create_lock();
 	cache_idx = BATnew(TYPE_str, TYPE_ptr, 1000);
 	BBPrename(cache_idx->batCacheid, "tcpip_idx");
@@ -967,6 +967,7 @@ void TCPprelude(void){
         /* fork extra asynchronous interpreter, so there are always
            two threads to handle to asynchronous requests */
         monetFork();
+	return NULL;
 }
 
 @+ prelude

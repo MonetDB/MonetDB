@@ -906,11 +906,11 @@ void decimal_put(Heap* h, var_t* bun, decimal* val) {
 
 @- operator implementations
 @c
-void decimal_prelude(void) {
+bat* decimal_prelude(void) {
 	int x, y, z, r, s=0;
 
 	if (decimal_nil) {
-		return;
+		return NULL;
 	}
 	/* setup the lookup tables; our alorithms never do %10 and /10 (expensive operators) */
 	for(x=0; x < 10; x++) {
@@ -968,6 +968,7 @@ void decimal_prelude(void) {
 	decimal_dbl_max = decimal_copy(decimal_dbl_min, decimal_dbl_min->precision);
 	decimal_dbl_max->negative = 0;
 
+	return NULL;
 }
 
 void decimal_epilogue(void){

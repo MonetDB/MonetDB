@@ -158,10 +158,11 @@ static RETSIGTYPE CLKsignal(int nr){
 }
 #endif
 
-void CLKprelude(void){
+bat* CLKprelude(void){
 #ifdef SIGALRM
         (void) signal(SIGALRM, CLKsignal);
 #endif
+	return NULL;
 }
 
 void CLKepilogue(void){

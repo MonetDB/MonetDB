@@ -53,6 +53,7 @@ descriptors.
 
 typedef struct _modstack_t {
 	str mod;
+	ptr var;
 	struct _modstack_t *up;
 } modstack;
 
@@ -309,8 +310,23 @@ void freeClient(Client c) {
 	c->mode = FINISHING;
 	MT_unset_lock(monet_contextLock, "freeClient");
 
-	/* epilogue actions */
-	if (c->father < 0) { /* normal client */
+	/* epilogue: free all resources taken by client */
+	if (c->tree) {
+		yyfree(c->tree); /* garbage collect return values in last MIL tree */
+		c->tree = NULL;
+	}
+	/* destroy MIL stack (must happen before module drops) */
+	CNTXTclear(c->stk);
+	CNTXTfree2(c->stk, c); 
+	CNTXTdelete(c->stk);
+	c->top = c->limit = NULL;
+
+	/* free other buffers, fds referenced by the client */
+	if (c->father >= 0) { 
+		/* tmp client resus parent so misses some epilogue work */
+		c->father = monet_cntxt[c->stk].outer = -1;
+	} else {
+		/* normal client  */
 		Thread t = THRget(THRgettid()); 
 		stream *bkin = t->data[1], *bkout = t->data[0];
 
@@ -319,7 +335,7 @@ void freeClient(Client c) {
 			c->cleanup = NULL;
 		}
 		monetSetChannel(t, bkin, bkout);
-       		TBL_exitclient(c);
+       		TBL_exitclient(c); /* module drops */
 		GDKlog("Mserver: %s session ends", c->user);	
 		(void) c->fdout->flush(c->fdout); 
 		c->fdin->close(c->fdin);
@@ -331,22 +347,10 @@ void freeClient(Client c) {
 		}
 		GDKfree(c->user); 
 		GDKfree(c->prompt); 
-	} else { 			/* nested client */
-		c->father = monet_cntxt[c->stk].outer = -1;
 	}
-
-	/* destroy all bindings */
-	if (c->tree) {
-		yyfree(c->tree);
-		c->tree = NULL;
-	}
-	CNTXTclear(c->stk);
-	CNTXTfree2(c->stk, c); 
-	CNTXTdelete(c->stk);
 	GDKfree(c->input);
 	GDKfree(c->output);
 	c->input = c->output = NULL;
-	c->top = c->limit = NULL;
 	c->user = c->prompt = NULL;
 	c->children = 0;
 	c->mode = FINISHED;
@@ -689,6 +693,7 @@ void moduleEnterClient(Client c, str mod){
 		modstack *s = (modstack*)GDKmalloc(sizeof(modstack));
 		s->mod = GDKstrdup(mod);
 		s->up = c->m_stack;
+		s->var = CNTXTregvars(c);
 		c->m_stack = s;
 	}
 }
@@ -696,7 +701,9 @@ void moduleEnterClient(Client c, str mod){
 void moduleExitClient(Client c){
 	if (c->m_stack){
 		modstack *s = c->m_stack;
+		ptr var = CNTXTregvars(c);
 		c->m_stack = s->up;
+		if (c->m_stack) c->m_stack->var = var;
 		GDKfree(s->mod);
 		GDKfree(s);
 	}

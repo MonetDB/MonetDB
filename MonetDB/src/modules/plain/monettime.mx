@@ -947,7 +947,7 @@ static tzone *tz_nilptr = NULL;
 
 static void date_prelude(void);
 
-void monettime_prelude(void){
+bat* monettime_prelude(void){
 	ts_nil.days = date_nil;
 	ts_nil.msecs = daytime_nil;
 	ts_nilptr = (timestamp*)GDKmalloc(sizeof(timestamp));
@@ -955,6 +955,7 @@ void monettime_prelude(void){
 	tz_nilptr = (tzone*)GDKmalloc(sizeof(tzone));
 	*tz_nilptr = tz_nil;
 	date_prelude();
+	return NULL;
 }
 void monettime_epilogue(void){
 	GDKfree(ts_nilptr);

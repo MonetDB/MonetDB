@@ -584,8 +584,9 @@ int enum_ishisto(bit* ret, int* enum_t, BAT* column) {
 	return GDK_SUCCEED;
 }
 
-void enum_prelude(void) {
+bat* enum_prelude(void) {
 	enum_lock = MT_create_lock();
+	return NULL;
 }
 
 void enum_epilogue(void) {

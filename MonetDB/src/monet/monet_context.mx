@@ -83,18 +83,19 @@ m_export void	CNTXTfree    (Cntxt stk, Client c);
 m_export void	CNTXTdelete  (Cntxt i);
 m_export int	CNTXTclient  (Cntxt i, Client *c);
 m_export void 	CNTXTcopy    (Cntxt src, Client c);
+m_export ptr    CNTXTregvars (Client c);
 
 /* inline for speed */
 #define CNTXTuse(stk)		monet_cntxt[stk].used = 1;
 #define CNTXTfree2(stk,c)	if ((c) && (c)->maxstk != stk) CNTXTfree(stk,c)
 #define CNTXTfree1(stk)		{ Client c; CNTXTclient(stk, &c); CNTXTfree2(stk,c); }
 
-m_export Variable	VARfind      (Cntxt *stk, str scope);
-m_export Variable	VARlocalfind (Cntxt *stk, str scope);
-m_export Variable	VARnew       (Cntxt stk, str name);  
-m_export int 	VARpurge     (int nbats, int* bats, int natoms, int* atoms);
+m_export Variable	VARfind        (Cntxt *stk, str scope);
+m_export Variable	VARlocalfind   (Cntxt *stk, str scope);
+m_export Variable	VARnew         (Cntxt stk, str name);  
+m_export str 		VARfindinstance(Cntxt *foundstk, int *foundatom, int natoms, int* atoms);
+m_export void           VARdel         (Cntxt stk, Variable del);
 
-#define VARclearBAT(B)	((B) && VARpurge(1, &(B)->batCacheid, 0, NULL))
 #define VARfreeze(X)	((X) && ((X)->frozen=TRUE))
 #define VARfixate(X)	((X) && ((X)->constant=(X)->frozen=TRUE))
 
@@ -286,6 +287,15 @@ void CNTXTcopy(Cntxt stk, Client c){
 	}
 }
 
+ptr CNTXTregvars(Client c) {
+        Variable n, r =  monet_cntxt[c->stk].var;
+        if (c->m_stack)
+                for(n=r; n != c->m_stack->var; n = n->next)
+                        TBL_Install_MilVar(c, c->m_stack->mod, (ptr) n);
+        return (ptr) r;
+}
+
+
 @-
 A variable is initialized as an integer 0 and made accessible through
 a context.
@@ -360,57 +370,71 @@ Variable VARlocalfind(Cntxt *stk, str nme){
 
 
 @-
-Sometimes we are hard-forced to unload a particular kind of BAT. For example, if
-a MIL module is dropped that contains an ADT implementation, and we have BATs in
-memory of that type. This routine is a kind of a hack that goes through all live
-MIL variables, and unloads such bats. The list of bats that are on the death-list 
-and should be 'purged' is passed as a parameter (see TBL_unloadmod in monet_tbl.mx).
+In order to drop a module we must enforce that the client does not use
+anu more instances of soon-to-be-obsolete atomic types (that disappear 
+through the drop). Thus, we check the client's variable stack, and
+even better, check all variable stacks for such offending varaiables.
+
+If any variables of offending types are found, the drop will fail.
+
+BAT values are now checked in the drop implementation (monet_tbl).
 @c
-int VARpurge(int nbats, int *bats, int natoms, int *atoms){
-	int i, *dst = (int*) alloca((1+natoms)*(int)sizeof(int));
-	Cntxt j;
+str VARfindinstance(Cntxt *foundstk, int* foundatom, int natoms, int *atoms){
 	Variable v;
+	Cntxt j;
+	int i;
 
-	if (nbats == 0 && natoms == 0) return 0;
+        MT_set_lock(monet_contextLock, "VARfindinstance");
+	for (j = 0; j < monet_cntxtmax; j++) {
+		if (!monet_cntxt[j].used) 
+			continue;
 
-	for(i=0; i<natoms; i++) {
-		dst[i] = ATOMstorage(atoms[i]);
-		if (dst[i] > TYPE_str) dst[i] = 0; 
-	}
-	for(i=0; i<nbats; i++) {
-		if (bats[i] < 0)  bats[i] = -bats[i];
-	}
-
-	for (j = 0; j < monet_cntxtmax; j++) if (monet_cntxt[j].used)
-	for (v = monet_cntxt[j].var; v; v = v->next) {
-		int tpe = v->binding.vtype;
-		if (tpe == TYPE_bat) {
-			int bid = ABS(v->binding.val.bval);
-			for(i=0; i<nbats; i++) 
-				if (bats[i] == bid) {
-				    v->binding.vtype = TYPE_int; 
-				    break;
+		for (v = monet_cntxt[j].var; v; v = v->next) {
+			if (v->binding.vtype > TYPE_str) {
+				for(i=0; i<natoms; i++) { 
+			        	if (atoms[i] == v->binding.vtype) {
+						str foundvar = GDKstrdup(v->name);
+						*foundstk = j;
+						*foundatom = v->binding.vtype;
+        					MT_unset_lock(monet_contextLock, "VARfindinstance");
+						return foundvar;
+					}
 				}
-		} else if (tpe > TYPE_str) {
-			for(i=0; i<natoms; i++) 
-		        if (atoms[i] == tpe) {
-				if (dst[i]) {
-				    v->binding.vtype = dst[i];
-				} else {
-				    if (ATOMextern(tpe)) {
-					GDKfree(v->binding.val.pval);
-				    }
-				    v->binding.vtype = TYPE_int; 
-	   			    v->binding.val.ival = int_nil;
-				}
-				break;
 			}
 		}
 	}
-	for(i=0; i<nbats; i++) {
-		BAT* b = BBPcache(bats[i]);
-		if (b != NULL) BBPreclaim(b);
+        MT_unset_lock(monet_contextLock, "VARfindinstance");
+	return NULL;
+}
+
+void VARdel(Cntxt stk, Variable del){
+	Variable cur, last = NULL, modify = NULL;
+	int found = FALSE;
+
+        MT_set_lock(monet_contextLock, "VARdel");
+	for(cur = monet_cntxt[stk].var; cur; cur = cur->next) {
+		if (cur == del) {
+			modify = last;
+			found = TRUE;
+		}
+		last = cur;
 	}
-	return 0;
+	if (found) {
+		/* put it at the end of the list, invalidate name, and unfix value */
+		if (modify) {
+			modify->next = del->next;
+		} else {
+			monet_cntxt[stk].var = del->next;
+		}
+		last->next = del;
+		del->next = NULL;
+
+		/* do not destroy Variable nor memory space because of potential race conditions */
+		ATOMunfix(del->binding.vtype, VALptr(&del->binding));
+		del->name[0] = '.'; /* normal MIL variable names cannot have a dot */
+		del->binding.vtype = TYPE_void;
+		/* del->binding.val.pval is leaked on purpose */
+	}
+        MT_unset_lock(monet_contextLock, "VARdel");
 }
 @
