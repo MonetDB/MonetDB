@@ -95,9 +95,9 @@ code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
 	    'mil.in':	[ '.mil' ],
 }
 
-lib_code_gen = { 'fgr':	[ '_proto.h', '_glue.c' ], }
+lib_code_gen = { 'fgr':	[ '_glue.c' ], }
 
-bin_code_gen = { 'fgr':	[ '_proto.h', '_engine.c' ], }
+bin_code_gen = { }
 
 c_inc = "^[ \t]*#[ \t]*include[ \t]*[<\"]\([a-zA-Z0-9\.\_\-]*\)[>\"]"
 m_use = "^[ \t]*\.[Uu][Ss][Ee][ \t]+\([a-zA-Z0-9\.\_, ]*\);"
