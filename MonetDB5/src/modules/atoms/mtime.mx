@@ -224,7 +224,7 @@ Other print formats can be achieved by writing a customized MIL procedure
 that extract year, month and day from a date as integers and formats those 
 in a string.
 @mal
-atom module date :int;
+atom date :int;
 command fromstr() :date 
 address date_fromstr;
 command tostr() :str 
@@ -260,7 +260,7 @@ with: HOUR = integer between 0 and 23
 \end{verbatim}
 }
 @mal
-atom module daytime :int;
+atom daytime :int;
 command fromstr():daytime 
 address daytime_fromstr;
 command tostr():str 
@@ -293,7 +293,7 @@ an explicit GMT specifier, it is taken to be a timestamp in the local
 timezone. The default local timzone is just GMT+00, but iit can be set 
 arbitrarily.
 @mal
-atom module timestamp :lng;# not stored as a lng !
+atom timestamp :lng;# not stored as a lng !
 command fromstr():timestamp 
 address timestamp_fromstr;
 command tostr():str 
@@ -358,7 +358,7 @@ Other values of the rule parameters on creating a timezone will produce a
 nil-timezone.
 
 @mal
-atom module tzone :lng;
+atom tzone :lng;
 command fromstr():tzone 
 address tzone_fromstr;
 command tostr():str   
@@ -371,7 +371,7 @@ address MTIMEtimestamp
 comment "Enhancement of timestamp atom definition";
 
 
-atom module rule :int;
+atom rule :int;
 command fromstr():rule 
 address rule_fromstr;
 command tostr():str 

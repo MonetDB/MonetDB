@@ -42,7 +42,7 @@ the bytes-size of the blob (excluding the integer), and then just binary data.
 
 @+ Module Definition
 @mal
-atom module blob;
+atom blob;
 
 command tostr()   address BLOBtostr;
 command fromstr() address BLOBfromstr;

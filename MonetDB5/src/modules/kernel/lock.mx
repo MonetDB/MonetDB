@@ -23,7 +23,7 @@ This module provides simple SMP lock and thread functionality
 as already present in the Monet system.
 
 @mal
-atom module lock:ptr;
+atom lock:ptr;
 
 command create() :lock 
 address LCKcreate
@@ -48,7 +48,7 @@ comment "Overloaded atom function";
 
 @- semaphores
 @mal
-atom module sema:ptr;
+atom sema:ptr;
 
 command create(init:int ) :sema 
 address SEMAcreate
