@@ -230,7 +230,7 @@ sql_subtype *sql_bind_subtype( char *name, int digits, int scale )
 
 static void type_destroy(sql_type * t)
 {
-	if (sql_ref_inc( &(t->ref) ) == 0){
+	if (sql_ref_dec( &(t->ref) ) == 0){
 		printf("destroy type %s\n", t->sqlname );
 		_DELETE(t->sqlname);
 		_DELETE(t->name);
