@@ -473,9 +473,8 @@ An atom statement does not introduce a new module.
 		return parseError(cntxt,"<module path> expected\n");
 @c
 int parseModule(Client cntxt, int atomary)
-{	
-	str modname=0;
-	int x,y,tpe;
+{	str modname=0;
+	int l,x,y,tpe;
 
 	if( ! keyword(cntxt,"module",6) ){
 		if(atomary &&  idLength(cntxt) >0){
@@ -486,7 +485,7 @@ int parseModule(Client cntxt, int atomary)
 			} else tpe= TYPE_int;
 			malAtomDefinition(modname,tpe);
 			GDKfree(modname);
-			skipToEnd(cntxt);
+			@:helpInfo(cntxt->nspace->help)@
 			return 1;
 		} else 	
 		if(atomary) return parseError(cntxt,"'module' expected\n");
@@ -513,7 +512,7 @@ Atom storage may be defined in terms of an existing type.
 	if( atomary) cntxt->nspace->isAtomModule = TRUE;
 	GDKfree(modname);
 	@:typeInfo@
-	skipToEnd(cntxt);
+	@:helpInfo(cntxt->nspace->help)@
 	return 1;
 }
 @- Import statement
@@ -849,7 +848,7 @@ help information.
 	if( keyphrase(cntxt,"comment",7)){
 		skipSpace(cntxt);
 		if( l= stringLength(cntxt)){
-			curBlk->help = strCopy(cntxt,l);
+			@1 = strCopy(cntxt,l);
 		} else parseError(cntxt,"<string> expected\n");
 	} 
 	skipToEnd(cntxt);
@@ -895,7 +894,7 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	}
 	skipSpace(cntxt);
 	@:externalFcn@
-	@:helpInfo@
+	@:helpInfo(curBlk->help)@
 	showErrors(cntxt);
 	if(curBlk && cntxt->listing) 
 		printFunction(GDKout, curBlk, cntxt->listing);
@@ -913,7 +912,7 @@ MalBlkPtr parseFunction(Client cntxt, int kind){
 
 	@:fcnHeader@
 	/* block is terminated at the END statement */
-	@:helpInfo@
+	@:helpInfo(curBlk->help)@
 	return curBlk;
 }
 

@@ -69,8 +69,7 @@ are located in mal_startup.
 #define TIMEOUT		(5*60)	/* seconds */
 #define PROCESSTIMEOUT	2	/* seconds */
 #define BLOCKSIZE	4096
-#define MAPIBLKSIZE	1024
-#define PROMPT 		"\001>\001"
+#define MAPIBLKSIZE	256
 
 @-
 The prompt structure is designed to simplify recognition
@@ -180,9 +179,10 @@ mal_export void		killClient     (Client c);
 mal_export void 	freeClient	(Client c);
 mal_export int 		readClient	(Client c, str prompt);
 mal_export void 	setClientTrace(Client c, int flag);
-
-#define clientPrompt(X,Msg) stream_printf(X->fdout,"%s",Msg);\
-	X->fdout->flush(X->fdout);
+mal_export str 		stopClient(Client c, str nme);
+mal_export str 		stopClientIndex(Client c, int id);
+mal_export str 		resumeClient(Client c, int sessionkey);
+mal_export str 		suspendClient(Client c, int sessionkey, int timeout);
 
 #endif /* _MAL_CLIENT_H_ */
 @-
@@ -306,19 +306,13 @@ collect the buffer when in use.
 	c->debugoptimizer = 0;
 	c->errbuf = 0;
 
-	if( ! isAdministrator(c)){
-		/* access from a front-end application */
-		c->prompt = GDKstrdup(PROMPT);
-		c->promptlength= strlen(c->prompt);
-	} else {
-		c->prompt= GDKstrdup(">");
-		c->promptlength= strlen(c->prompt);
-		initClientThread(c);
-	}
 	{ char buffer[1024];
 	 	getcwd(buffer,1024);
 		c->cwd= GDKstrdup(buffer);
 	}
+	c->prompt= GDKstrdup(">");
+	c->promptlength= strlen(c->prompt);
+	if( isAdministrator(c)) initClientThread(c);
 	return c;
 }
 @-
@@ -424,7 +418,7 @@ void freeClient(Client c)
 	}
 	c->father = 0;
 	c->login = c->delay = c->logout = 0;
-	/* THRdel(c->mythread);*/
+	THRdel(c->mythread);
 	c->mythread= 0;
 	GDKfree(c->user); c->user = NULL;
 	c->mode = FREECLIENT;
@@ -457,7 +451,6 @@ void closeClient(Client c) {
 	/* free resources of a single thread */
 	if( !isAdministrator(c)) {
 		freeClient(c);
-		/* MT_exit_thread(0);*/
 		return;
 	} 
 
@@ -520,6 +513,49 @@ void killClient(Client c){
 	sleep(PROCESSTIMEOUT);
 	GDKwarning("killClient:process killed\n");
     }
+}
+@-
+An internet connection may be terminated from the server console.
+And killing the administrator this way is prohibited.
+@c
+str stopClientIndex(Client c, int id){
+        if( ! isAdministrator(c))
+                return throwMessage("stop","Only permitted from server console");
+        if( id<=0 || id>=MAL_MAXCLIENTS || mal_clients[id].mode==FREECLIENT)
+                return throwMessage("stop","Illegal client index");
+        killClient(mal_clients+id);
+	return MAL_SUCCEED;
+}
+str stopClient(Client c, str nme){
+        if( ! isAdministrator(c))
+                return throwMessage("stop","Only permitted from server console");
+
+	MT_set_lock(mal_contextLock, "stopClient");
+	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
+		if (c->mode > FREECLIENT && strcmp(nme,c->user)==0) {
+			killClient(c);
+			MT_unset_lock(mal_contextLock, "stopClient");
+			return MAL_SUCCEED;
+		}
+	}
+	MT_unset_lock(mal_contextLock, "stopClient");
+	return throwMessage("stop","Illegal client name");
+}
+@-
+A client may temporarily leave the scene by calling the routine suspend(K,T),
+where K is a user defined random number to represent the session, and T is
+a timeout value (in seconds). If the client returns within T seconds the changes
+are high his thread of control is still avaiable and the session can be
+continued where he left off.
+@c
+str suspendClient(Client c, int sessionkey, int timeout){
+	c->sessionkey= sessionkey;
+	c->delay += timeout *1000;
+	
+	return throwMessage("suspend","Not yet implemented");
+}
+str resumeClient(Client c,int sessionkey){
+	return throwMessage("suspend","Not yet implemented");
 }
 @+ Spying on clients
 To enable tracing interactions from the internet connections,
@@ -624,7 +660,17 @@ readAgain:
 	free= c->limit - s-1;	/* reserve null byte */
 	free= free>BLOCKSIZE?BLOCKSIZE:free;
 
-	if(c->promptlength) { clientPrompt(c,prompt);}
+@-
+Prompting for additional input depends on the source.
+All except the console should mark the prompt with the
+\001 and \002 brackets.
+@c
+	if(c->promptlength) { 
+		if(isAdministrator(c))
+			stream_printf(c->fdout,"%s",prompt);
+		else	stream_printf(c->fdout,"\001%s\002",prompt);
+		c->fdout->flush(c->fdout);
+	}
 @-
 Beware, that in terminal mode you loose backspaceing options.
 Therefore, most interaction should be regulated through the Mclient

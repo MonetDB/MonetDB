@@ -91,6 +91,7 @@ typedef struct SCOPEDEF {
         Symbol *subscope; /* type dispatcher table */
 	Box	box;	/* module related objects */
 	int	isAtomModule; /* atom module definition ? */
+	str	help;	/* short description of module functionality*/
 } *Scope, ScopeDefinition;
 
 
@@ -410,6 +411,8 @@ void dumpManual(stream *f, Scope s, int recursive){
 	s= list[k];
 	stream_printf(f,"<%smodule name=\"%s\">\n", 
 		(s->isAtomModule?"atom":""),xmlChr(s->name));
+	if(s->help)
+		stream_printf(f,"%s\n",s->help);
 	if( s->subscope)
 	for(j=0;j<MAXSCOPE;j++)
 	if(s->subscope[j]){
