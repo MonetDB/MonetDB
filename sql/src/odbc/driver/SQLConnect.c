@@ -17,10 +17,11 @@
  *
  **********************************************************************/
 
+#include <monet_options.h>
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
-#include "ini.h"		/* for __SQLGetPrivateProfileString() */
+#include <strings.h>
 
 SQLRETURN
 SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
@@ -32,18 +33,9 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	char *dsn = NULL;
 	char *uid = NULL;
 	char *pwd = NULL;
-	char *database = NULL;
 	char *schema = NULL;
 	int port = 0;
-	int debug = 0;
-	int trace = 0;
-	char buf[BUFSIZ + 1];
-
-#ifdef WIN32
-	char ODBC_INI[] = "ODBC.INI";
-#else
-	char ODBC_INI[] = "~/.odbc.ini";	/* name and place for the user DSNs */
-#endif
+	char *s;
 	Mapi mid;
 
 	if (!isValidDbc(dbc))
@@ -62,48 +54,45 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	/* convert input string parameters to normal null terminated C strings */
 	fixODBCstring(szDataSource, nDataSourceLength);
 	if (nDataSourceLength == 0) {
-		/* IM002 = Datasource not found */
+		szDataSource = "Default";
+		nDataSourceLength = strlen(szDataSource);
+	}
+	dsn = dupODBCstring(szDataSource, nDataSourceLength);
+	/* for now we only allow the default data source */
+	if (strcasecmp(dsn, "default") != 0) {
+		free(dsn);
 		addDbcError(dbc, "IM002", NULL, 0);
 		return SQL_ERROR;
 	}
-	dsn = dupODBCstring(szDataSource, nDataSourceLength);
 
 	fixODBCstring(szUID, nUIDLength);
 	if (nUIDLength == 0) {
-		__SQLGetPrivateProfileString(dsn, "USER", "", buf, BUFSIZ,
-					     ODBC_INI);
-		uid = strdup(buf);
+		uid = strdup(mo_find_option(NULL, 0, "sql_user"));
 	} else {
 		uid = dupODBCstring(szUID, nUIDLength);
 	}
 	fixODBCstring(szPWD, nPWDLength);
 	if (nPWDLength == 0) {
-		__SQLGetPrivateProfileString(dsn, "PASSWORD", "", buf, BUFSIZ,
-					     ODBC_INI);
-		pwd = strdup(buf);
+		pwd = mo_find_option(NULL, 0, "sql_passwd");
+		if (pwd == NULL)
+			pwd = "monetdb";
+		pwd = strdup(pwd);
 	} else {
 		pwd = dupODBCstring(szPWD, nPWDLength);
 	}
 
-	/* get the other information from the ODBC.INI file */
-	__SQLGetPrivateProfileString(dsn, "DATABASE", "", buf, BUFSIZ,
-				     ODBC_INI);
-	database = strdup(buf);
-	/* TODO: Provided database/schema are currently not used/implemented */
-	__SQLGetPrivateProfileString(dsn, "PORT", "0", buf, BUFSIZ, ODBC_INI);
-	port = atoi(buf);
-	__SQLGetPrivateProfileString(dsn, "DEBUG", "0", buf, BUFSIZ, ODBC_INI);
-	debug = atoi(buf);
-	__SQLGetPrivateProfileString(dsn, "TRACE", "0", buf, BUFSIZ, ODBC_INI);
-	trace = atoi(buf);
+	s = "47111";/*s = mo_find_option(NULL, 0, "sql_port");*/
+	port = atoi(s);
+
+	/* TODO: get and use a database name */
 
 	/* Retrieved and checked the arguments.
 	   Now try to open a connection with the server */
-	/* temporarily hold hostname in buf */
-	__SQLGetPrivateProfileString(dsn, "HOST", "localhost", buf, BUFSIZ,
-				     ODBC_INI);
+	/* temporarily hold hostname in s */
+	s = mo_find_option(NULL, 0, "host");
+
 	/* connect to a server on host via port */
-	mid = mapi_connect(buf, port, uid, pwd, "sql");
+	mid = mapi_connect(s, port, uid, pwd, "sql");
 	if (mid == NULL || mapi_error(mid)) {
 		/* 08001 = Client unable to establish connection */
 		addDbcError(dbc, "08001", NULL, 0);
@@ -115,8 +104,8 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 			free(uid);
 		if (pwd != NULL)
 			free(pwd);
-		if (database != NULL)
-			free(database);
+		if (dsn != NULL)
+			free(dsn);
 	} else {
 		/* store internal information and clean up buffers */
 		dbc->Connected = 1;
