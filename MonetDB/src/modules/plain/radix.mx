@@ -611,7 +611,17 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
 		bat[any::1,any::2] = radix_cluster;
 "do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters.
  partial radix cluster (i.e. skipping lower significant bits) can be indicated
- by pasing a negative number of bits as last parameter. "
+ by passing a negative number of bits as last parameter. 
+
+ If you pass an appendable, empty, limits bat, a radix_count2 result with the resulting cluster 
+ boundaries is returned in it. Note that you pass a batname of b, as returned by b.bbpname().
+
+ If you pass a non-empty limits bat, it is used for resuming the clustering. The operation
+ assumes that all significant highermost bits are already clustered, and limits contains
+ the cluster sizes.
+
+ If you pass a non-empty but writable limits bat, it will be used as above for resume,
+ and will also be overwritten with the new cluster boundaries"
 
 .COMMAND radix_bits(bat[any,any] b) : int = radix_bits;
 "return the number of bits on which the head column is radix clustered." 
@@ -622,6 +632,10 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
  notice that the bat b maybe partially radix-clustered (or not at all). the radix_count
  command just detects consecutive chunks where (1) the tail values have the same specified
  radix-bits and (2) the head values are ascending"
+
+.COMMAND radix_count2(bat[oid,oid] b, int shift, int radix) : bat[int,int] = radix_count2;
+"generates a bat with in head the dense ascending sequence 0..((1 << radix) - 1), and in tail 
+the count of all tail value in b with these radix bits, ignoring the lowmost ones passed in shift"
 
 .COMMAND radix_decluster(bat[oid,any::1] b, bat[int,int] radix_cnt, int multiplier) : 
          bat[void,any::1] = radix_decluster;
@@ -640,7 +654,7 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
 	bat[any,any] = phash_join;
 "partitioned hash-join on radix clustered inputs"
 
-.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,any::1] attr, BAT[int,int] cnt, int shift, int nbits) : BAT[void,any::1] = jivejoin1; 
+.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,any::1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,any::1] = jivejoin1; 
 "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
 
 .COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,any::1] attr) : BAT[void,any::1] = jivejoin2; 
@@ -657,12 +671,6 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
 
 .ATOM pax@1 = integer@1;
 .END;
-
-.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,integer@1] attr, BAT[int,int] cnt, int shift, int nbits) : bat[void,integer@1] = jivejoin1; 
-"positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
-
-.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,integer@1] attr) : BAT[void,integer@1] = jivejoin2; 
-"positional join that creates a void head by inserting the join result positionally"
 
 .COMMAND posjoin(BAT[void,oid] proj, BAT[void,integer@1] attr) : BAT[void,integer@1] = posjoin_tuple;
 "positional join with built-in NSM projection" 
@@ -968,28 +976,42 @@ module(alarm,radix);
 
 proc log2(int n) : int { var ret := 0; while((n :/= 2) > 0) ret :+= 1; return ret; }
 
-proc tst(BAT[any,any] attr) {
-	var proj := sample(attr.mark(0@0).reverse, 100000);
-	var nbits := 12; 
+proc jivetest(BAT[oid,oid] proj, BAT[void,any] attr, int nbits) {
 	var shift := max(0, 1 + log2(attr.count) - nbits);
 	var mask := ((1 << nbits) - 1) << shift;
 	var cnt := [>>]([and]([int](proj), mask), shift).histogram.sort;
-	var b1, b2, b3 := bat(void,oid,1+proj.count);
-	{ var t := time; b1 := jivejoin1(b3, proj, attr, cnt, shift, nbits); print(time - t); }
-	var c := b3.mirror.[int].[and](mask).[>>](shift); 
+	cnt.sum.print;
+	var b1, b3, b2 := bat(void,oid,1+proj.count);
+	{ var t := time; b1 := jivejoin1(b2, proj, attr, cnt, shift, nbits); print(time - t); }
+	var c := b2.mirror.[int].[and](mask).[>>](shift); 
 	c.slice(0,7).print;
 	c.histogram.max.print;
-	{ var t := time; b2 := b3.jivejoin2(attr); print(time - t); }
+	{ var t := time; b3 := b2.jivejoin2(attr); print(time - t); }
 	b1.count.print;
 	b1.slice(0,7).print;
-	b2.count.print;
-	b2.slice(0,7).print;
-	b1.sample(20).reverse.join(b2).print;
+	b3.count.print;
+	b3.slice(0,7).print;
+	b1.slice(200,220).reverse.join(b3).print;
 }
 
-tst(larger_all.mark(0@0).reverse);
-tst([int](larger_b1));
-tst([intX](larger_all.mark(0@0).reverse));
+var proj := [oid](smaller_aY).reverse.mirror.copy;
+var attr_integer16 := [integer](smaller_aY,16);
+var attr_int16 := [intX](attr_integer16);
+var attr_int := smaller_aY;
+
+jivetest(proj, attr_integer16, 12);
+jivetest(proj, attr_int16, 12);
+jivetest(proj, attr_int, 12);
+
+var cnt := radix_count2(proj, 8, 12);
+var b2 := bat(void,oid,proj.count);
+var b1 := jivejoin1(b2, proj, attr_int, cnt, 8, 12); 
+b2.slice(0,30).print;
+var b3 := radix_cluster(b2, cnt.bbpname, 1.0, -1, 7); 
+b3.info.find("tsorted").print;
+var b4 := radix_cluster(b2, cnt.bbpname, 1.0, 1, 7); 
+b4.info.find("tsorted").print;
+radix_cluster(attr_int,  
 
 @* Implementation
 @c
@@ -1583,9 +1605,8 @@ void radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, 
 @:radix_chunk(any)@
 
 int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
-    int shift = ABS(*nbits), total_shift, n = 1, cap = BATcount(b);
-    int radix[MAXPARAMS], argc = 1, *p;
-    int *lim = (int*) GDKmalloc(sizeof(int));
+    int shift = ABS(*nbits), total_shift, n, cap = BATcount(b);
+    int radix[MAXPARAMS], argc = 1, *p, *lim;
     oid maxbits = 0;
     bat limitid = BBPindex(nme);
     BAT *bn = b, *limits = NULL;
@@ -1600,7 +1621,7 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
 	GDKerror("radix_cluster: limits %s is not of right type.\n", limits->batId);
 	limits = NULL;
     }
-    if (limits && (BATcount(limits) || limits->batRestricted == BAT_READ)) {
+    if (limits && (BATcount(limits)==0 && limits->batRestricted == BAT_READ)) {
 	GDKerror("radix_cluster: limits %s is not empty and appendable.\n", limits->batId);
 	limits = NULL;
     }
@@ -1618,7 +1639,46 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
     total_shift = shift; 
     ALGODEBUG THRprintf(GDKout, ") -> ");
 
-    lim[0] = BUNlast(b)-BUNfirst(b);
+    if (limits && BATcount(limits)) {
+	/* we can now resume partial clustering by passing in of a radix_count2 bat */
+	int tot=0, xx, prev = -1;
+	BUN r, q;
+        lim = (int*) GDKmalloc(BATcount(limits)*sizeof(int));
+	
+	/* find the destination byte-offsets using the radix-count bat */
+	n = 0;
+	BATloopFast(limits, r, q, xx) {
+		int cnt = *(int*) BUNtloc(limits,r);
+		int cur = *(int*) BUNhloc(limits,r);
+		if (cur <= prev) {
+			GDKerror("radix_cluster: non ascending bits %d,%d in limits bat %s!\n", prev, cur, BBP_logical(limitid));
+			BBPunfix(limitid);
+			GDKfree(lim);
+			return GDK_FAIL;
+		}
+		tot += cnt;
+		lim[n++] = BUNsize(b) * tot;
+		prev = cur;
+	}
+	if (n == 0 || tot != BATcount(b)) {
+		GDKerror("radix_cluster: total number size %d of all limits %s does not end up to size %d of %s!\n", 
+			tot, nme, BATcount(b), BBP_logical(b->batCacheid));
+		BBPunfix(limitid);
+		GDKfree(lim);
+		return GDK_FAIL;
+	}
+	if (limits->batRestricted == BAT_WRITE) {
+		BATclear(limits); /* overwrite with resulting bounds */
+	} else {
+		limits = NULL;
+	}
+	total_shift = 30+MIN(0,radix[0]); /* just assume the new cluster bits are consecutive.. */
+    } else {
+	/* just start with one cluster: the entire bat */
+        lim = (int*) GDKmalloc(sizeof(int));
+        lim[0] = BUNlast(b)-BUNfirst(b);
+	n = 1;
+    }
 
     while(--argc >= 0 && radix[argc] > 0) {
 	int i, h = 1<<radix[argc], j = h*sizeof(int), *k, *l = lim;
@@ -1755,6 +1815,31 @@ int radix_count(BAT **res, BAT* b, int *shift, int *radix) {
     /* sign the tail column of the radix_count so we can check later */
     bn->talign = (*radix << 24) ^ (*shift << 16) ^ b->halign;
     return GDK_SUCCEED; 
+}
+
+int radix_count2(BAT **res, BAT* b, int *shift, int *radix) {
+    int mask = 1 << *radix, off = *shift;
+    BAT *bn = *res = BATnew(TYPE_int, TYPE_int, mask);
+    int xx, *cnt = (int*) BUNfirst(bn);
+    BUN p, q;
+
+    /* initialize the result BAT with ascending head and zero counts */
+    for(xx=0; xx<mask; xx++) { 
+	cnt[xx+xx] = xx;
+	cnt[xx+xx+1] = 0; 
+    }
+    bn->batBuns->free += BUNsize(bn)*mask;
+    mask = (mask-1) << off;
+
+    /* compute the result: a histogram of bit patterns */
+    BATloopFast(b, p, q, xx) {
+  	oid idx = oid_RADIX(BUNtail(b,p), mask) >> off;
+        cnt[idx+idx+1]++;
+    }
+    BATkey(bn, TRUE);
+    bn->hsorted = 1;
+    bn->tsorted = 0;
+    return GDK_SUCCEED;
 }
 
 @+ Phash Join
@@ -2433,7 +2518,7 @@ int jivejoin1(BAT **res, BAT* bo, BAT *proj, BAT *attr, BAT *radix_count, int *s
 	int any = ((attr->tatom[0] == 'p' && attr->tatom[1] == 'a' && attr->tatom[2] == 'x') ? attr->ttype - 1 : attr->ttype);
 	BAT *bn = *res = BATnew(TYPE_void, any, BATcount(proj));
 	int xx = bo->batBuns->free, yy = 1 << *nbits, zz = *shift;
-	size_t *cluster = (size_t*) GDKmalloc(yy*sizeof(size_t));
+	size_t *cluster = (size_t*) GDKmalloc((yy+1)*sizeof(size_t));
 	BUN p, q, r, bobak;
 
 	if (bn == NULL || cluster == NULL) {
@@ -2443,17 +2528,31 @@ int jivejoin1(BAT **res, BAT* bo, BAT *proj, BAT *attr, BAT *radix_count, int *s
 	bo->batBuns->free += BATcount(proj)*BUNsize(bo);
 	if (bo->batBuns->free > bo->batBuns->size) {
 		bo->batBuns->free = xx;
+		BBPreclaim(bn);
 		GDKerror("jivejoin1: preallocated second result BAT is too small.\n");
 		return GDK_FAIL;
 	}
 
 	/* find the destination byte-offsets using the radix-count bat */
-	for(xx=0; xx<yy; xx++) cluster[xx] = 0;
+	for(xx=0; xx<=yy; xx++) cluster[xx] = 0;
 	BATloopFast(radix_count, p, q, xx) {
-		cluster[*(int*) BUNhloc(radix_count,p)] += *(int*) BUNtloc(radix_count,p);
+		int idx = *(int*) BUNhloc(radix_count,p);
+		if (idx < 0 || idx >= yy) {
+			BBPreclaim(bn);
+			GDKerror("jivejoin1: illegal cluster id %d in %s.\n", idx, BBP_logical(radix_count->batCacheid));
+			return GDK_FAIL;
+		}
+		cluster[1+idx] += *(int*) BUNtloc(radix_count,p);
 	}
 	cluster[0] = BUNindex(bn, BUNfirst(bn));
-	for(xx=1; xx<yy; xx++) cluster[xx] = cluster[xx-1] + cluster[xx];
+	for(xx=1; xx<=yy; xx++) cluster[xx] += cluster[xx-1];
+	xx = cluster[yy] - cluster[0];
+	if (xx != BATcount(proj)) {
+		BBPreclaim(bn);
+		GDKerror("jivejoin1: total cluster entries %d in %s does not match size %d of %s.\n",
+			xx, BBP_logical(radix_count->batCacheid), BATcount(proj), BBP_logical(proj->batCacheid));
+		return GDK_FAIL;
+	}
 	yy = (yy-1) << zz; /* yy is mask, zz is shift */
 
 	/* make the BUNindex of bo the same as those in bn */
